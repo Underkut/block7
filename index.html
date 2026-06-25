@@ -1,0 +1,3257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>BLOCK 7</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLOCK7">
+<meta name="theme-color" content="#0d0e10">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg:#0b0c0f; --s1:#14161b; --s2:#1e2028;
+  --bd:#2a2e3c; --bd2:#363c50;
+  --tx:#eef0fa; --tx2:#8892b4; --tx3:#4e566e;
+  --ac:#5a70f8; --ov:#e84040; --ok:#22c46e; --so:#e08830;
+  --del:#e84040;
+  --c0:#9490fa; --c1:#f0b030; --c2:#22e080;
+  --c3:#38b0fa; --c4:#f060a8; --c5:#b088fa;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  font-family:'Pretendard',-apple-system,sans-serif;
+  background:var(--bg);color:var(--tx);
+  font-size:14px;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;height:46px;
+  background:rgba(13,14,16,.97);
+  border-bottom:1px solid var(--bd);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.logo{font-family:'DM Mono',monospace;font-size:13px;letter-spacing:.15em;color:var(--tx2);}
+.logo b{color:var(--ac);font-weight:500;}
+.tabs{display:flex;gap:1px;}
+.tab{
+  padding:4px 11px;border-radius:6px;border:none;
+  background:transparent;color:var(--tx2);
+  font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.tab.on{color:var(--tx);background:var(--s2);}
+.hdr-r{display:flex;align-items:center;gap:6px;}
+.date-l{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);}
+
+/* 휴지통 버튼 */
+.trash-btn{
+  position:relative;
+  padding:4px 8px;border-radius:6px;
+  border:1px solid var(--bd2);background:transparent;
+  color:var(--tx3);font-size:13px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:color .15s;
+}
+.trash-btn:hover{color:var(--tx2);}
+.trash-badge{
+  position:absolute;top:-3px;right:-3px;
+  min-width:14px;height:14px;border-radius:7px;
+  background:var(--ov);color:#fff;
+  font-size:8px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 3px;display:none;
+}
+.trash-badge.on{display:flex;}
+
+.ai-b{
+  padding:4px 9px;border-radius:6px;
+  border:1px solid var(--bd2);background:transparent;color:var(--tx2);
+  font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-family:'Pretendard',sans-serif;
+}
+/* undo/redo — true flat, no box */
+.ur-btn{
+  background:none;border:none;box-shadow:none;
+  color:var(--tx3);font-size:17px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  padding:4px 4px;line-height:1;
+  font-family:'DM Mono',monospace;
+  transition:color .12s;
+  -webkit-appearance:none;appearance:none;
+}
+.ur-btn:hover:not(:disabled){color:var(--tx);}
+.ur-btn:disabled{color:var(--tx3);opacity:.18;cursor:default;}
+
+/* ── DATE NAV ── */
+.date-nav{display:flex;align-items:center;gap:4px;}
+.date-nav-btn{
+  background:none;border:none;color:var(--tx3);
+  font-size:16px;cursor:pointer;padding:2px 4px;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .12s;line-height:1;
+}
+.date-nav-btn:hover{color:var(--tx);}
+.date-l{
+  font-family:'DM Mono',monospace;font-size:12px;color:var(--tx3);
+  min-width:44px;text-align:center;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.date-l:hover{color:var(--tx2);}
+
+/* ── DATE SWIPE OVERLAY ── */
+
+/* ── MINI MOVE MENU ── */
+.mini-menu{
+  position:fixed;z-index:200;
+  background:var(--s2);border:1px solid var(--bd2);
+  border-radius:10px;padding:4px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  display:none;min-width:140px;
+}
+.mini-menu.show{display:block;}
+.mini-item{
+  padding:9px 14px;border-radius:7px;
+  font-size:13px;font-weight:500;color:var(--tx2);
+  cursor:pointer;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .1s,color .1s;
+}
+.mini-item:hover{background:var(--s3);color:var(--tx);}
+.mini-item.danger{color:var(--ov);}
+
+/* ── DATE PICKER OVERLAY ── */
+.datepick-overlay{
+  position:fixed;inset:0;z-index:210;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  display:none;
+}
+.datepick-overlay.show{display:flex;}
+.datepick-box{
+  background:var(--s1);border:1px solid var(--bd2);
+  border-radius:14px;padding:20px;min-width:280px;
+}
+.datepick-title{font-size:13px;font-weight:600;color:var(--tx2);margin-bottom:14px;}
+.datepick-input{
+  width:100%;background:var(--s2);border:1px solid var(--bd2);
+  border-radius:8px;padding:10px 12px;color:var(--tx);
+  font-family:'Pretendard',sans-serif;font-size:16px;
+  outline:none;-webkit-appearance:none;
+}
+.datepick-btns{display:flex;gap:8px;margin-top:14px;}
+.datepick-ok{
+  flex:1;padding:10px;border-radius:8px;border:none;
+  background:var(--ac);color:#fff;
+  font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;
+}
+.datepick-cancel{
+  padding:10px 16px;border-radius:8px;
+  border:1px solid var(--bd2);background:transparent;
+  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:13px;
+  cursor:pointer;
+}
+#weeklyView,#monthlyView{display:none;padding:14px;}
+
+/* total bar */
+.total-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 2px;}
+.total-prog{flex:1;height:2px;background:var(--bd2);border-radius:1px;}
+.total-fill{height:100%;border-radius:1px;background:var(--ac);transition:width .3s;}
+.total-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);white-space:nowrap;}
+.total-lbl.ov{color:var(--ov);}
+
+/* add hidden section */
+.add-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.add-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  border:1px solid var(--bd2);background:transparent;color:var(--tx2);
+  font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-family:'Pretendard',sans-serif;transition:color .12s,border-color .12s;
+}
+.add-btn:hover{color:var(--tx);border-color:var(--bd2);}
+.add-dot{width:5px;height:5px;border-radius:50%;}
+/* preset buttons: A and ★ */
+.preset-btn{
+  display:flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:8px;
+  border:1px solid var(--bd2);background:transparent;
+  color:var(--tx2);font-size:12px;font-weight:700;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  font-family:'DM Mono',monospace;transition:all .15s;flex-shrink:0;
+}
+/* ★ two steps larger, shift up 1px to center optically */
+.preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
+.preset-btn:hover{border-color:var(--ac);color:var(--ac);}
+.preset-btn.on{background:var(--ac);border-color:var(--ac);color:#fff;}
+.preset-btn.on:hover{background:var(--ac);}
+.preset-sep{width:1px;height:16px;background:var(--bd2);flex-shrink:0;margin:0 2px;}
+
+/* add-btn count — matches section color via inline style */
+.add-btn-cnt{
+  font-family:'DM Mono',monospace;font-size:10px;
+  margin-left:1px;font-weight:600;
+}
+
+/* ── TIME SECTION ── */
+.ts{margin-bottom:8px;border:1px solid var(--bd);border-radius:12px;background:var(--s1);overflow:hidden;will-change:transform;}
+.ts.now{border-color:var(--bd2);}
+.ts-hd{
+  display:flex;align-items:center;gap:8px;padding:11px 13px;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.ts-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.ts-name{font-size:13px;font-weight:600;}
+.ts-sp{flex:1;}
+.ts-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:16px;padding:0 3px;-webkit-tap-highlight-color:transparent;}
+.ts.cl .ts-body{display:none;}
+.ts-body{padding:0 10px 10px;}
+
+/* collapsed section summary */
+.ts-summary{
+  display:none;
+  align-items:center;
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--tx2);letter-spacing:.02em;
+}
+.ts.cl .ts-summary{display:flex;}
+
+/* section swiping — lifted feel */
+.ts.swiping{
+  box-shadow:0 8px 28px rgba(0,0,0,.5);
+  border-color:var(--bd2);
+  z-index:10;
+}
+
+/* drag drop indicator line */
+.drop-ind{
+  height:2px;border-radius:1px;
+  margin:2px 0;pointer-events:none;
+  display:none;
+}
+.drop-ind.show{display:block;}
+
+/* block long-press "press" state before drag activates */
+.big-item.pressing,.sm-item.pressing{
+  transform:scale(.98);
+  transition:transform .15s;
+  opacity:.85;
+}
+
+/* ── BLOCK SWIPE WRAPPER ── */
+.swipe-wrap{
+  position:relative;overflow:hidden;border-radius:8px;
+  margin-bottom:5px;
+}
+
+/* red delete underlay (touch swipe left) */
+.del-underlay{
+  position:absolute;top:0;right:0;bottom:0;
+  width:72px;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:16px;
+  background:var(--del);border-radius:0 8px 8px 0;
+  opacity:0;pointer-events:none;transition:opacity .1s;
+}
+/* monochrome complete underlay (touch swipe right) */
+.chk-underlay{
+  position:absolute;top:0;left:0;bottom:0;
+  width:72px;display:flex;align-items:center;justify-content:flex-start;
+  padding-left:16px;
+  background:var(--tx2);border-radius:8px 0 0 8px;
+  opacity:0;pointer-events:none;transition:opacity .1s;
+}
+
+/* ── BIG BLOCK (E method: colored left bar, no indent) ── */
+.big-list{display:flex;flex-direction:column;}
+
+.big-item{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 10px 9px 12px;
+  background:rgba(90,112,248,.10);
+  border:1px solid rgba(90,112,248,.28);
+  border-left:3px solid var(--sec-color, var(--ac));
+  border-radius:8px;
+  touch-action:pan-y;
+  user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;
+  position:relative;
+  transition:transform .18s,box-shadow .18s,opacity .18s,border-color .15s;
+  will-change:transform;cursor:grab;
+}
+.big-item.done-st{opacity:.36;}
+.big-item.over{background:rgba(232,64,64,.10);border-color:rgba(232,64,64,.32);border-left-color:var(--ov);}
+/* Keyboard "active" selection (desktop only) — distinct from text-edit
+   focus and from drag-active, so a clicked-but-not-editing row reads
+   clearly as selected. */
+.big-item.kb-active,.sm-item.kb-active{
+  outline:2px solid var(--ac);
+  outline-offset:-1px;
+  background:rgba(90,112,248,.16);
+}
+.big-item.drag-active{
+  opacity:.55;cursor:grabbing;
+  transform:scale(1.03) translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
+  border-color:rgba(90,112,248,.55);
+  z-index:10;
+  /* The original row stays in place while the floating ghost (#dg) shows
+     the item being dragged — desaturate/grey its text so it reads as
+     "inactive / being moved" rather than a duplicate live row. */
+  filter:grayscale(1);
+}
+.big-item.drag-active .bi-inp{color:var(--tx3)!important;}
+.big-item.dov{outline:1.5px solid var(--ac);}
+
+/* hover delete button — desktop only */
+.blk-del{
+  background:none;border:none;color:var(--tx3);cursor:pointer;
+  font-size:14px;padding:2px 4px;flex-shrink:0;
+  opacity:0;transition:opacity .12s,color .12s;
+  -webkit-tap-highlight-color:transparent;
+  line-height:1;
+}
+.big-item:hover .blk-del,
+.sm-item:hover .blk-del{opacity:1;}
+.blk-del:hover{color:var(--ov);}
+/* always visible on touch devices */
+@media(hover:none){.blk-del{opacity:.4;}}
+
+.bi-dh{color:var(--tx3);font-size:11px;flex-shrink:0;cursor:grab;}
+.bi-inp{
+  flex:0 0 auto;background:transparent;border:none;outline:none;
+  color:var(--tx);font-family:'Pretendard',sans-serif;
+  font-size:16px;font-weight:600;min-width:24px;-webkit-appearance:none;
+  cursor:text;
+}
+.bi-inp::placeholder{color:var(--tx3);font-weight:400;font-size:14px;}
+/* Prevent iOS's long-press text-selection callout from racing our
+   custom long-press handler. Short taps still focus/place the caret
+   normally; only the OS's selection-bubble UI is suppressed. */
+.bi-inp,.si-inp{-webkit-touch-callout:none;}
+/* Spacer fills remaining row width — this is the drag/right-click zone */
+.row-spacer{flex:1;min-width:8px;align-self:stretch;cursor:grab;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+/* shared check button — rounded square, same for big and small */
+.blk-chk{
+  width:15px;height:15px;border-radius:4px;
+  border:1.5px solid var(--bd2);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:9px;color:transparent;
+  -webkit-tap-highlight-color:transparent;transition:all .15s;
+}
+.blk-chk:hover{border-color:var(--tx2);}
+.big-item.done-st .blk-chk,
+.sm-item.done-st .blk-chk{background:var(--tx2);border-color:var(--tx2);color:var(--bg);}
+
+/* big add ghost */
+.big-add{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px 8px 14px;margin-bottom:6px;
+  border:1px dashed var(--bd2);border-radius:8px;
+}
+.big-add:focus-within{border-color:rgba(90,112,248,.4);border-style:solid;}
+.ba-inp{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--tx);font-family:'Pretendard',sans-serif;
+  font-size:16px;font-weight:600;min-width:0;-webkit-appearance:none;
+}
+.ba-inp::placeholder{color:var(--tx3);font-weight:400;font-size:14px;}
+.ba-icon{font-size:10px;color:var(--tx3);flex-shrink:0;line-height:1;}
+
+.div-line{height:1px;background:var(--bd);margin:6px 0 8px;}
+
+/* ── SMALL BLOCK (E method: 1px left bar, indented, smaller text) ── */
+.sm-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;padding-left:12px;}
+.sm-lbl{font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--tx3);text-transform:uppercase;}
+.sm-cnt-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--tx3);}
+.sm-cnt-lbl.ov{color:var(--so);}
+.sm-list{display:flex;flex-direction:column;}
+
+.sm-item{
+  display:flex;align-items:center;gap:7px;
+  padding:7px 9px 7px 12px;
+  margin-left:12px; /* indent vs big */
+  background:var(--s2);
+  border:1px solid var(--bd);
+  border-left:1px solid var(--sec-color, var(--tx3)); /* thin colored bar */
+  border-radius:7px;
+  touch-action:pan-y;
+  user-select:none;-webkit-user-select:none;
+  -webkit-touch-callout:none;
+  position:relative;
+  transition:transform .18s,box-shadow .18s,opacity .18s;
+  will-change:transform;cursor:grab;
+}
+.sm-item.done-st{opacity:.32;}
+.sm-item.over{border-left-color:var(--so);background:rgba(224,136,48,.06);}
+.sm-item.drag-active{
+  opacity:.55;cursor:grabbing;
+  transform:scale(1.03) translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
+  border-color:var(--bd2);
+  z-index:10;
+  filter:grayscale(1);
+}
+.sm-item.drag-active .si-inp{color:var(--tx3)!important;}
+.sm-item.dov{outline:1.5px solid var(--ac);}
+
+.si-dh{color:var(--tx3);font-size:10px;flex-shrink:0;cursor:grab;}
+.si-inp{
+  flex:0 0 auto;background:transparent;border:none;outline:none;
+  color:var(--tx2); /* slightly dimmer than big */
+  font-family:'Pretendard',sans-serif;
+  font-size:13px;font-weight:500;min-width:20px;-webkit-appearance:none;
+  cursor:text;
+}
+.si-inp::placeholder{color:var(--tx3);font-weight:400;font-size:12px;}
+.over-pip{width:4px;height:4px;border-radius:50%;background:var(--so);flex-shrink:0;}
+
+/* sm inline ghost — always visible at bottom, no + button */
+.sm-ghost-inline{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 9px 6px 12px;
+  margin-left:12px;
+  border:1px dashed var(--bd);
+  border-radius:7px;margin-top:4px;
+}
+.sm-ghost-inline:focus-within{border-color:var(--bd2);border-style:solid;}
+.sgi-inp{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--tx2);font-family:'Pretendard',sans-serif;
+  font-size:13px;font-weight:500;min-width:0;-webkit-appearance:none;
+}
+.sgi-inp::placeholder{color:var(--tx3);font-weight:400;font-size:12px;}
+
+/* drag ghost */
+#dg{
+  position:fixed;z-index:9999;pointer-events:none;border-radius:10px;
+  opacity:.96;box-shadow:0 12px 36px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
+  display:none;
+  /* Solid fallback first (in case backdrop-filter is unsupported) */
+  background:rgba(20,22,28,.92);
+  /* iOS-style frosted glass: blur + slight saturation boost */
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  backdrop-filter:blur(18px) saturate(160%);
+  overflow:hidden;
+}
+
+/* ── TRASH PANEL ── */
+.trash-panel{
+  position:fixed;top:0;right:0;bottom:0;left:0;z-index:80;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.trash-panel.op{opacity:1;pointer-events:all;}
+.trash-sheet{
+  width:100%;max-width:480px;
+  background:var(--s1);border-radius:16px 16px 0 0;
+  padding:20px 16px 36px;
+  transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+  max-height:70vh;overflow-y:auto;
+}
+.trash-panel.op .trash-sheet{transform:translateY(0);}
+.trash-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.trash-title{font-size:13px;font-weight:600;color:var(--tx2);display:flex;align-items:center;gap:7px;}
+.trash-actions{display:flex;gap:8px;}
+.trash-clear{
+  background:none;border:none;
+  color:var(--ov);font-size:11px;cursor:pointer;
+  font-family:'Pretendard',sans-serif;-webkit-tap-highlight-color:transparent;
+  opacity:.7;
+}
+.trash-clear:hover{opacity:1;}
+.trash-close-btn{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;}
+.trash-empty{color:var(--tx3);font-size:13px;text-align:center;padding:24px 0;}
+.trash-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:8px;
+  background:var(--s2);border:1px solid var(--bd);
+  margin-bottom:6px;
+}
+.trash-item-info{flex:1;}
+.trash-item-text{font-size:13px;font-weight:600;color:var(--tx2);}
+.trash-item-meta{font-size:10px;color:var(--tx3);margin-top:2px;font-family:'DM Mono',monospace;}
+.trash-type{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bd2);color:var(--tx3);flex-shrink:0;}
+.trash-restore{
+  background:none;border:none;
+  color:var(--tx3);font-size:11px;padding:3px 4px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;font-family:'Pretendard',sans-serif;flex-shrink:0;
+}
+.trash-restore:hover{color:var(--tx);}
+
+/* ── DATE NAV ── */
+.date-nav-hint{
+  display:flex;align-items:center;gap:4px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--tx3);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .12s;
+}
+.date-nav-hint:hover{color:var(--tx2);}
+.date-arrow{font-size:16px;}
+
+/* D view swipe transition */
+#pageContent{
+  will-change:transform;
+  transition:none;
+  overflow:hidden;
+}
+#pageContent.sliding{
+  transition:transform .22s cubic-bezier(.4,0,.2,1), opacity .18s;
+}
+/* slide out: current page exits */
+#pageContent.nav-out-left{opacity:0;transform:translateX(-100%);}
+#pageContent.nav-out-right{opacity:0;transform:translateX(100%);}
+/* slide in: new page enters from opposite side */
+#pageContent.nav-in-left{opacity:0;transform:translateX(100%);}
+#pageContent.nav-in-right{opacity:0;transform:translateX(-100%);}
+
+/* ── TASK MOVE MINI MENU ── */
+.task-menu{
+  position:fixed;z-index:200;
+  background:var(--s1);border:1px solid var(--bd2);
+  border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);
+  padding:4px;
+  min-width:150px;
+  animation:menuIn .15s ease;
+}
+@keyframes menuIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.task-menu-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--tx2);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .1s,color .1s;
+}
+.task-menu-item:hover,.task-menu-item:active{background:var(--s2);color:var(--tx);}
+.task-menu-icon{font-size:14px;flex-shrink:0;width:18px;text-align:center;}
+.task-menu-sep{height:1px;background:var(--bd);margin:3px 4px;}
+.task-menu-overlay{position:fixed;inset:0;z-index:199;}
+.ai-dr{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--s1);border-top:1px solid var(--bd2);
+  padding:14px 16px 28px;
+  transform:translateY(100%);
+  transition:transform .22s cubic-bezier(.4,0,.2,1);
+}
+.ai-dr.op{transform:translateY(0);}
+.ai-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ai-ttl{font-size:12px;font-weight:600;color:var(--tx2);}
+.ai-x{background:none;border:none;color:var(--tx2);cursor:pointer;font-size:18px;}
+.ai-row{display:flex;gap:7px;}
+.ai-inp{
+  flex:1;background:var(--s2);border:1px solid var(--bd2);
+  border-radius:7px;padding:9px 11px;
+  color:var(--tx);font-family:'Pretendard',sans-serif;font-size:16px;
+  outline:none;-webkit-appearance:none;
+}
+.ai-send{
+  padding:9px 14px;border-radius:7px;border:none;
+  background:var(--ac);color:#fff;
+  font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.ai-send:disabled{opacity:.4;}
+.ai-res{margin-top:9px;font-size:12px;color:var(--tx2);line-height:1.6;}
+.ai-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+.ai-chip{
+  padding:4px 11px;border-radius:20px;
+  border:1px solid var(--bd2);background:var(--s2);
+  color:var(--tx2);font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.ai-chip.ap{border-color:rgba(45,148,100,.35);color:var(--ok);}
+
+/* ── WEEKLY/MONTHLY ── */
+.view-ttl{font-size:16px;font-weight:700;margin-bottom:14px;}
+.wscr{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.wkg{display:grid;grid-template-columns:48px repeat(7,minmax(68px,1fr));gap:2px;min-width:540px;}
+.wh{padding:4px;text-align:center;font-size:9px;font-weight:700;color:var(--tx3);font-family:'DM Mono',monospace;}
+.wh.tc{color:var(--ac);}
+.wlbl{padding:4px;font-size:9px;color:var(--tx3);font-family:'DM Mono',monospace;display:flex;align-items:center;}
+.wc{background:var(--s1);border:1px solid var(--bd);border-radius:5px;padding:4px 6px;min-height:36px;}
+.wc.tc{border-color:rgba(81,101,246,.22);}
+.wbig{font-size:11px;font-weight:600;color:var(--ac);line-height:1.4;}
+.wbig.done{opacity:.25;}
+.wsm{font-size:10px;color:var(--tx2);line-height:1.4;}
+.wsm.done{opacity:.25;text-decoration:line-through;}
+.wmore{font-size:9px;color:var(--tx3);font-family:'DM Mono',monospace;}
+.mnav{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.mnb{background:var(--s2);border:1px solid var(--bd);color:var(--tx2);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;}
+.mttl{font-size:16px;font-weight:700;}
+.mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:'DM Mono',monospace;}
+.mcc{background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:5px;min-height:50px;}
+.mcc.empty{background:transparent;border-color:transparent;}
+.mcc.mct{border-color:rgba(81,101,246,.3);}
+.mcd{font-size:9px;font-weight:700;color:var(--tx2);margin-bottom:3px;}
+.mcc.mct .mcd{color:var(--ac);}
+.mcdots{display:flex;flex-wrap:wrap;gap:2px;}
+.mcdot{width:4px;height:4px;border-radius:50%;background:var(--ac);}
+.mcdot.ov{background:var(--ov);}.mcdot.dn{opacity:.25;}
+.mcsc{font-size:8px;color:var(--tx3);margin-top:2px;font-family:'DM Mono',monospace;}
+
+::-webkit-scrollbar{width:0;height:0;}
+
+/* ── LOGIN / AUTH SCREEN ── */
+#authScreen{
+  position:fixed;inset:0;z-index:5000;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#authScreen.hidden{display:none;}
+.auth-box{
+  width:100%;max-width:340px;
+}
+.auth-logo{
+  font-family:'DM Mono',monospace;font-size:20px;letter-spacing:.12em;
+  text-align:center;margin-bottom:6px;color:var(--tx);
+}
+.auth-logo b{font-style:normal;color:var(--ac);}
+.auth-sub{
+  text-align:center;font-size:12px;color:var(--tx3);margin-bottom:28px;
+}
+.auth-field{margin-bottom:12px;}
+.auth-input{
+  width:100%;background:var(--s2);border:1px solid var(--bd2);
+  border-radius:8px;padding:11px 14px;
+  color:var(--tx);font-family:'Pretendard',sans-serif;font-size:15px;
+  outline:none;-webkit-appearance:none;box-sizing:border-box;
+}
+.auth-input:focus{border-color:rgba(90,112,248,.5);}
+.auth-btn{
+  width:100%;padding:11px;border-radius:8px;border:none;
+  background:var(--ac);color:#fff;
+  font-family:'Pretendard',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;margin-top:4px;
+}
+.auth-btn:disabled{opacity:.5;cursor:default;}
+.auth-switch{
+  text-align:center;margin-top:16px;font-size:12px;color:var(--tx3);
+}
+.auth-switch button{
+  background:none;border:none;color:var(--ac);
+  font-size:12px;cursor:pointer;padding:0 4px;
+  font-family:'Pretendard',sans-serif;
+}
+.auth-error{
+  color:var(--ov);font-size:12px;margin-top:10px;text-align:center;
+  min-height:16px;
+}
+.auth-loading{
+  text-align:center;color:var(--tx3);font-size:12px;margin-top:10px;
+}
+#userBadge{
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;
+  font-size:13px;color:var(--tx3);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  padding:2px 4px;
+}
+#userBadge:hover{color:var(--tx2);}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- ── AUTH SCREEN (shown before the app until login) ── -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">BLO<b>CK</b>7</div>
+    <div class="auth-sub" id="authSub">로그인하고 모든 기기에서 동기화하세요</div>
+
+    <div class="auth-field">
+      <input type="email" id="authEmail" class="auth-input" placeholder="이메일" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <input type="password" id="authPassword" class="auth-input" placeholder="비밀번호 (6자 이상)" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')authSubmit()">
+    </div>
+
+    <button class="auth-btn" id="authSubmitBtn" onclick="authSubmit()">로그인</button>
+
+    <div class="auth-switch" id="authSwitchRow">
+      계정이 없으신가요? <button onclick="authToggleMode()">회원가입</button>
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="auth-loading" id="authLoading" style="display:none">처리 중...</div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">BLO<b>CK</b>7</div>
+  <div class="tabs">
+    <button class="tab on" onclick="sw('today',this)">D</button>
+    <button class="tab" onclick="sw('weekly',this)">W</button>
+    <button class="tab" onclick="sw('monthly',this)">M</button>
+  </div>
+  <div class="hdr-r">
+    <button id="userBadge" onclick="authSignOut()" title="로그아웃">⏻</button>
+    <div class="date-nav-hint" onclick="navigateDate(-1)" id="dateBack" style="display:none">
+      <span class="date-arrow">‹</span>
+    </div>
+    <div class="date-l" id="hDate" onclick="navigateDate(0)" style="cursor:pointer;min-width:36px;text-align:center;"></div>
+    <div class="date-nav-hint" onclick="navigateDate(1)" id="dateFwd" style="display:none">
+      <span class="date-arrow">›</span>
+    </div>
+    <button class="ur-btn" id="undoBtn" onclick="doUndo()" title="실행취소" disabled>↩</button>
+    <button class="ur-btn" id="redoBtn" onclick="doRedo()" title="다시실행" disabled>↪</button>
+    <button class="trash-btn" onclick="openTrash()" title="휴지통">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 3.5h10M5 3.5V2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v1M11.5 3.5l-.7 7.5a.5.5 0 0 1-.5.5H3.7a.5.5 0 0 1-.5-.5l-.7-7.5"/>
+        <line x1="5.5" y1="6" x2="5.5" y2="9.5"/><line x1="8.5" y1="6" x2="8.5" y2="9.5"/>
+      </svg>
+      <span class="trash-badge" id="trashBadge"></span>
+    </button>
+    <button class="ai-b" onclick="toggleAI()">✦</button>
+  </div>
+</header>
+
+<div id="pageContent">
+<div id="todayView">
+  <div class="total-row" id="totalRow">
+    <div class="total-prog"><div class="total-fill" id="tFill" style="width:0%"></div></div>
+    <span class="total-lbl" id="tLbl">0 / 6</span>
+  </div>
+  <div class="add-row" id="addRow"></div>
+  <div id="secList"></div>
+  <div id="dateSwipeCatcher" style="min-height:200px;"></div>
+</div>
+<div id="weeklyView" style="display:none;padding:14px;"></div>
+<div id="monthlyView" style="display:none;padding:14px;"></div>
+</div>
+
+<!-- Task move mini menu -->
+<div class="task-menu-overlay" id="taskMenuOverlay" style="display:none" onclick="closeTaskMenu()"></div>
+<div class="task-menu" id="taskMenu" style="display:none">
+  <div class="task-menu-item" onclick="moveTaskTo(1)">
+    <span class="task-menu-icon">→</span>내일로
+  </div>
+  <div class="task-menu-item" onclick="moveTaskTo(7)">
+    <span class="task-menu-icon">⟶</span>다음 주로
+  </div>
+  <div class="task-menu-sep"></div>
+  <label class="task-menu-item" for="datePickerInput" id="dateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
+    <span class="task-menu-icon">…</span><span id="dateLabelText">날짜 지정</span>
+    <input type="date" id="datePickerInput"
+      style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;
+             font-size:16px;-webkit-appearance:none;cursor:pointer;"
+      onchange="moveTaskToPickedDate(this.value)"
+      onfocus="prepDatePicker()">
+  </label>
+</div>
+
+<!-- (date input now lives inline inside the task menu, see below) -->
+<div id="dg"></div>
+
+<!-- Trash Panel -->
+<div class="trash-panel" id="trashPanel" onclick="trashBgClick(event)">
+  <div class="trash-sheet" id="trashSheet">
+    <div class="trash-hdr">
+      <div class="trash-title">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 3.5h10M5 3.5V2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v1M11.5 3.5l-.7 7.5a.5.5 0 0 1-.5.5H3.7a.5.5 0 0 1-.5-.5l-.7-7.5"/>
+          <line x1="5.5" y1="6" x2="5.5" y2="9.5"/><line x1="8.5" y1="6" x2="8.5" y2="9.5"/>
+        </svg>
+        휴지통
+      </div>
+      <div class="trash-actions">
+        <button class="trash-clear" onclick="clearTrash()">전체 삭제</button>
+        <button class="trash-close-btn" onclick="closeTrash()">×</button>
+      </div>
+    </div>
+    <div id="trashList"></div>
+  </div>
+</div>
+
+<!-- AI Drawer -->
+<div class="ai-dr" id="aiDr">
+  <div class="ai-top">
+    <div class="ai-ttl">AI 블럭 제안</div>
+    <button class="ai-x" onclick="toggleAI()">×</button>
+  </div>
+  <div class="ai-row">
+    <input class="ai-inp" id="aiIn" inputmode="text" enterkeyhint="send"
+      placeholder="오늘 할 일을 알려주세요"
+      onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229)askAI()">
+    <button class="ai-send" id="aiBtn" onclick="askAI()">제안</button>
+  </div>
+  <div class="ai-res" id="aiRes"></div>
+  <div class="ai-chips" id="aiChips"></div>
+</div>
+
+<script>
+// ═══════ CONFIG ═══════
+const DOW=['일','월','화','수','목','금','토'];
+const MONS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const SECS=[
+  {id:'dawn',name:'새벽',color:'var(--c0)',def:false},
+  {id:'am',  name:'오전',color:'var(--c2)',def:true},
+  {id:'morn',name:'점심',color:'var(--c1)',def:false},
+  {id:'pm',  name:'오후',color:'var(--c3)',def:true},
+  {id:'eve', name:'저녁',color:'var(--c4)',def:false},
+  {id:'night',name:'밤', color:'var(--c5)',def:true},
+];
+const SWIPE_THRESHOLD=72; // px to trigger delete
+
+// ═══════ STATE ═══════
+function load(){
+  try{const s=localStorage.getItem('b7v1');if(s)return JSON.parse(s);}catch(e){}
+  return{vis:['am','pm','night'],prevVis:null,preset:null,collapsed:[],days:{}};
+}
+const ST=load();
+function rawSave(){
+  try{localStorage.setItem('b7v1',JSON.stringify(ST));}catch(e){}
+  if(typeof fbPushState==='function')fbPushState();
+}
+
+// ═══════ UNDO / REDO ═══════
+const UNDO_STACK=[];
+const REDO_STACK=[];
+const MAX_UNDO=50;
+let _applyingHistory=false;
+
+function snapshot(){
+  return JSON.stringify({
+    vis:[...ST.vis],
+    prevVis:ST.prevVis?[...ST.prevVis]:null,
+    preset:ST.preset,
+    collapsed:[...(ST.collapsed||[])],
+    days:JSON.parse(JSON.stringify(ST.days))
+  });
+}
+
+// Call BEFORE mutating ST — records pre-mutation state
+function beforeSave(){
+  if(_applyingHistory)return;
+  UNDO_STACK.push(snapshot());
+  if(UNDO_STACK.length>MAX_UNDO)UNDO_STACK.shift();
+  REDO_STACK.length=0;
+  updateUrBtns();
+}
+
+// Just persists
+function save(){rawSave();updateUrBtns();}
+
+function applySnapshot(snap){
+  _applyingHistory=true;
+  const s=JSON.parse(snap);
+  ST.vis=s.vis;ST.prevVis=s.prevVis;ST.preset=s.preset;
+  ST.collapsed=s.collapsed||[];ST.days=s.days;
+  rawSave();
+  _applyingHistory=false;
+  renderToday();
+  updateUrBtns();
+}
+
+function doUndo(){
+  if(!UNDO_STACK.length)return;
+  REDO_STACK.push(snapshot()); // save current as redo point
+  applySnapshot(UNDO_STACK.pop());
+}
+
+function doRedo(){
+  if(!REDO_STACK.length)return;
+  UNDO_STACK.push(snapshot());
+  applySnapshot(REDO_STACK.pop());
+}
+
+function updateUrBtns(){
+  const u=document.getElementById('undoBtn');
+  const r=document.getElementById('redoBtn');
+  if(u)u.disabled=UNDO_STACK.length===0;
+  if(r)r.disabled=REDO_STACK.length===0;
+}
+
+// Debounced capture for text edits — snapshot before first keystroke, debounce reset
+let _textSnapTimer=null;
+let _textSnapTaken=false;
+function saveText(){
+  if(!_applyingHistory&&!_textSnapTaken){
+    // Take pre-edit snapshot on first keystroke
+    UNDO_STACK.push(snapshot());
+    if(UNDO_STACK.length>MAX_UNDO)UNDO_STACK.shift();
+    REDO_STACK.length=0;
+    _textSnapTaken=true;
+    updateUrBtns();
+  }
+  rawSave();
+  // Reset after 1.5s of no typing so next edit session gets its own snapshot
+  clearTimeout(_textSnapTimer);
+  _textSnapTimer=setTimeout(()=>{_textSnapTaken=false;},1500);
+}
+function z(n){return String(n).padStart(2,'0');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function getDay(k){if(!ST.days[k])ST.days[k]={big:{},small:{},trash:[]};if(!ST.days[k].trash)ST.days[k].trash=[];return ST.days[k];}
+function getBigs(k,id){const d=getDay(k);if(!d.big[id])d.big[id]=[];return d.big[id];}
+function getSmalls(k,id){const d=getDay(k);if(!d.small[id])d.small[id]=[];return d.small[id];}
+function getTrash(k){return getDay(k).trash;}
+
+function totalBigCount(k){
+  return SECS.reduce((a,s)=>a+(getBigs(k,s.id).filter(b=>b.text?.trim()).length),0);
+}
+
+// ═══════ VIEW DATE (navigable date) ═══════
+let viewDate = new Date(); // the date currently shown in D view
+
+function tKey(d){
+  const dt = d || viewDate;
+  return `${dt.getFullYear()}-${z(dt.getMonth()+1)}-${z(dt.getDate())}`;
+}
+function todayKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+}
+function addDays(d, n){
+  const r=new Date(d);r.setDate(r.getDate()+n);return r;
+}
+function isToday(d){return tKey(d)===todayKey();}
+
+
+let mCur={y:new Date().getFullYear(),m:new Date().getMonth()};
+
+// ═══════ TRASH ═══════
+function sendToTrash(k,type,secId,item){
+  const sec=SECS.find(s=>s.id===secId);
+  getTrash(k).unshift({
+    type,secId,secName:sec?.name||'',
+    text:item.text,done:item.done,
+    ts:Date.now()
+  });
+  rawSave();updateTrashBadge();
+}
+
+function updateTrashBadge(){
+  const k=tKey();const n=getTrash(k).length;
+  const badge=document.getElementById('trashBadge');
+  badge.textContent=n>9?'9+':n||'';
+  badge.className='trash-badge'+(n>0?' on':'');
+}
+
+function openTrash(){
+  renderTrashList();
+  document.getElementById('trashPanel').classList.add('op');
+}
+function closeTrash(){document.getElementById('trashPanel').classList.remove('op');}
+function trashBgClick(e){if(e.target===document.getElementById('trashPanel'))closeTrash();}
+
+function renderTrashList(){
+  const k=tKey();const trash=getTrash(k);
+  const list=document.getElementById('trashList');
+  if(trash.length===0){list.innerHTML='<div class="trash-empty">비어있어요</div>';return;}
+  list.innerHTML='';
+  trash.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='trash-item';
+    const info=document.createElement('div');info.className='trash-item-info';
+    const txt=document.createElement('div');txt.className='trash-item-text';txt.textContent=item.text;
+    const meta=document.createElement('div');meta.className='trash-item-meta';
+    meta.textContent=`${item.secName} · ${item.type==='big'?'빅':'스몰'}`;
+    info.append(txt,meta);
+    const typeLbl=document.createElement('span');typeLbl.className='trash-type';
+    typeLbl.textContent=item.type==='big'?'빅':'스몰';
+    const restoreBtn=document.createElement('button');restoreBtn.className='trash-restore';
+    restoreBtn.textContent='복원';
+    restoreBtn.onclick=()=>restoreFromTrash(i);
+    row.append(info,typeLbl,restoreBtn);
+    list.appendChild(row);
+  });
+}
+
+function restoreFromTrash(i){
+  const k=tKey();const trash=getTrash(k);
+  beforeSave();
+  const item=trash.splice(i,1)[0];
+  if(item.type==='big'){
+    getBigs(k,item.secId).push({text:item.text,done:item.done});
+  } else {
+    getSmalls(k,item.secId).push({text:item.text,done:item.done});
+  }
+  save();updateTrashBadge();renderTrashList();renderSecBody(item.secId);updateTotal();
+}
+
+function clearTrash(){
+  const k=tKey();beforeSave();getDay(k).trash=[];
+  save();updateTrashBadge();renderTrashList();
+}
+
+// ═══════ TABS ═══════
+function sw(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  ['todayView','weeklyView','monthlyView'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById(t+'View').style.display='block';
+  if(t==='today')renderToday();
+  if(t==='weekly')renderWeekly();
+  if(t==='monthly')renderMonthly();
+}
+
+// ═══════ TODAY ═══════
+function renderToday(){renderAddRow();renderSecs();updateTotal();updateTrashBadge();}
+
+function renderAddRow(){
+  const row=document.getElementById('addRow');row.innerHTML='';
+  row.style.display='flex';
+
+  const allIds=SECS.map(s=>s.id);
+  const defIds=['am','pm','night'];
+  const isAllOn=ST.preset==='all';
+  const isStarOn=ST.preset==='star';
+
+  // A button — toggle all 6
+  const btnA=document.createElement('button');
+  btnA.className='preset-btn'+(isAllOn?' on':'');
+  btnA.title=isAllOn?'이전 보기로':'전체 펼치기';
+  btnA.textContent='A';
+  btnA.onclick=()=>{
+    beforeSave();
+    if(isAllOn){
+      ST.vis=ST.prevVis||defIds;ST.preset=null;ST.prevVis=null;
+    } else {
+      ST.prevVis=[...ST.vis];ST.preset='all';ST.vis=[...allIds];
+    }
+    ST.collapsed=[];
+    save();renderToday();
+  };
+  row.appendChild(btnA);
+
+  // ★ button — toggle default 3
+  const btnStar=document.createElement('button');
+  btnStar.className='preset-btn star-btn'+(isStarOn?' on':'');
+  btnStar.title=isStarOn?'이전 보기로':'기본 3개';
+  btnStar.textContent='★';
+  btnStar.onclick=()=>{
+    beforeSave();
+    if(isStarOn){
+      ST.vis=ST.prevVis||defIds;ST.preset=null;ST.prevVis=null;
+    } else {
+      ST.prevVis=[...ST.vis];ST.preset='star';ST.vis=[...defIds];
+    }
+    ST.collapsed=[];
+    save();renderToday();
+  };
+  row.appendChild(btnStar);
+
+  // separator
+  const sep=document.createElement('div');sep.className='preset-sep';row.appendChild(sep);
+
+  // individual hidden section buttons — name + count in section color
+  const k=tKey();
+  const hidden=SECS.filter(s=>!ST.vis.includes(s.id));
+  hidden.forEach(sec=>{
+    const bigPending=getBigs(k,sec.id).filter(b=>b.text?.trim()&&!b.done).length;
+    const smPending=getSmalls(k,sec.id).filter(s=>s.text?.trim()&&!s.done).length;
+    const hasPending=bigPending>0||smPending>0;
+    // resolve CSS var to actual hex for inline style
+    const colorMap={'var(--c0)':'#9490fa','var(--c1)':'#f0b030','var(--c2)':'#22e080',
+      'var(--c3)':'#38b0fa','var(--c4)':'#f060a8','var(--c5)':'#b088fa'};
+    const resolvedColor=colorMap[sec.color]||'#8892b4';
+
+    const btn=document.createElement('button');btn.className='add-btn';
+    const dot=document.createElement('span');dot.className='add-dot';dot.style.background=resolvedColor;
+    const nameSpan=document.createElement('span');nameSpan.textContent=sec.name;
+    nameSpan.style.color=resolvedColor;
+    btn.append(dot,nameSpan);
+    if(hasPending){
+      const cnt=document.createElement('span');cnt.className='add-btn-cnt';
+      cnt.textContent=`${bigPending}/${smPending}`;
+      cnt.style.color=resolvedColor;
+      btn.appendChild(cnt);
+    }
+    btn.onclick=()=>{
+      beforeSave();
+      ST.preset=null;ST.prevVis=null;
+      ST.vis.push(sec.id);
+      ST.vis.sort((a,b)=>SECS.findIndex(s=>s.id===a)-SECS.findIndex(s=>s.id===b));
+      save();renderToday();
+    };
+    row.appendChild(btn);
+  });
+}
+
+function curSecId(){
+  const h=new Date().getHours();
+  if(h>=4&&h<7)return'dawn';if(h>=7&&h<10)return'morn';
+  if(h>=10&&h<13)return'am';if(h>=13&&h<17)return'pm';
+  if(h>=17&&h<21)return'eve';return'night';
+}
+
+// ═══════ HEADER SWIPE (swipe-left to hide section) ═══════
+function attachHdSwipe(trigger, ts, onHide, excludeInputs=false){
+  const THRESHOLD=80;
+  let startX=0,startY=0,curX=0,swiping=false,touchId=null,decided=false;
+
+  trigger.addEventListener('touchstart',e=>{
+    if(excludeInputs&&e.target.closest('input,textarea,button'))return;
+    const t=e.touches[0];
+    touchId=t.identifier;startX=t.clientX;startY=t.clientY;
+    curX=0;swiping=false;decided=false;
+  },{passive:true});
+
+  trigger.addEventListener('touchmove',e=>{
+    let t=null;
+    for(let i=0;i<e.touches.length;i++){if(e.touches[i].identifier===touchId){t=e.touches[i];break;}}
+    if(!t)return;
+    const dx=t.clientX-startX,dy=t.clientY-startY;
+    if(!decided){
+      if(Math.abs(dx)<6&&Math.abs(dy)<6)return; // not moved enough yet
+      decided=true;
+      if(Math.abs(dy)>Math.abs(dx)+6){
+        // vertical — let scroll happen, bail
+        swiping=false;return;
+      }
+      if(dx<0){
+        // horizontal left — this is our gesture
+        swiping=true;
+        // prevent input from gaining focus (was touched but not tapped)
+        if(document.activeElement&&trigger.contains(document.activeElement)){
+          document.activeElement.blur();
+        }
+      } else {
+        // right swipe — ignore
+        swiping=false;return;
+      }
+    }
+    if(!swiping)return;
+    e.preventDefault();
+    curX=Math.max(dx,-THRESHOLD*1.4);
+    ts.classList.add('swiping');
+    ts.style.transform=`translateX(${curX}px)`;
+    ts.style.opacity=String(1-Math.abs(curX)/THRESHOLD*0.5);
+  },{passive:false});
+
+  trigger.addEventListener('touchend',e=>{
+    ts.classList.remove('swiping');
+    if(!swiping){ts.style.transform='';ts.style.opacity='';return;}
+    if(Math.abs(curX)>=THRESHOLD){
+      ts.style.transition='transform .18s,opacity .18s';
+      ts.style.transform=`translateX(-110%)`;
+      ts.style.opacity='0';
+      setTimeout(()=>{
+        ts.style.transition='';ts.style.transform='';ts.style.opacity='';
+        onHide();
+      },180);
+    } else {
+      ts.style.transition='transform .2s,opacity .2s';
+      ts.style.transform='';ts.style.opacity='';
+      setTimeout(()=>ts.style.transition='',200);
+    }
+    swiping=false;curX=0;decided=false;
+  },{passive:true});
+}
+
+function renderSecs(){
+  const list=document.getElementById('secList');list.innerHTML='';
+  const k=tKey();
+
+  SECS.filter(s=>ST.vis.includes(s.id)).forEach(sec=>{
+    const ts=document.createElement('div');
+    if(!ST.collapsed)ST.collapsed=[];
+    const startCollapsed=ST.collapsed.includes(sec.id);
+    ts.className='ts'+(startCollapsed?' cl':'');
+    ts.id=`ts-${sec.id}`;
+
+    const hd=document.createElement('div');hd.className='ts-hd';
+    const dot=document.createElement('div');dot.className='ts-dot';dot.style.background=sec.color;
+    const name=document.createElement('span');name.className='ts-name';name.textContent=sec.name;
+    const sp=document.createElement('span');sp.className='ts-sp';
+    const sumEl=document.createElement('span');sumEl.className='ts-summary';sumEl.id=`tsum-${sec.id}`;
+
+    const rm=document.createElement('button');rm.className='ts-rm';rm.textContent='−';rm.title='숨기기';
+    rm.onclick=e=>{
+      e.stopPropagation();
+      beforeSave();
+      ST.preset=null;ST.prevVis=null;
+      ST.vis=ST.vis.filter(i=>i!==sec.id);
+      ST.collapsed=(ST.collapsed||[]).filter(i=>i!==sec.id);
+      save();renderToday();
+    };
+
+    // header click toggles collapse — saves to ST
+    hd.append(dot,name,sp,sumEl,rm);
+    hd.onclick=e=>{
+      if(e.target===rm)return;
+      beforeSave();
+      const isNowCollapsed=ts.classList.toggle('cl');
+      if(!ST.collapsed)ST.collapsed=[];
+      if(isNowCollapsed){
+        if(!ST.collapsed.includes(sec.id))ST.collapsed.push(sec.id);
+      } else {
+        ST.collapsed=ST.collapsed.filter(i=>i!==sec.id);
+      }
+      save();
+      updateSecSummary(sec.id);
+    };
+
+    // swipe-left on header → hide entire section
+    const hideSection=()=>{
+      beforeSave();
+      ST.preset=null;ST.prevVis=null;
+      ST.vis=ST.vis.filter(i=>i!==sec.id);
+      ST.collapsed=(ST.collapsed||[]).filter(i=>i!==sec.id);
+      save();renderToday();
+    };
+    attachHdSwipe(hd, ts, hideSection, false);
+
+    const body=document.createElement('div');body.className='ts-body';body.id=`tb-${sec.id}`;
+    ts.append(hd,body);list.appendChild(ts);
+    renderSecBody(sec.id);
+    updateSecSummary(sec.id);
+
+    // swipe only on ghost (empty input) areas, not on existing task rows
+    // attached inside renderSecBody after ghosts are created
+  });
+}
+
+function updateSecSummary(id){
+  const el=document.getElementById(`tsum-${id}`);if(!el)return;
+  const k=tKey();
+  const bigCount=getBigs(k,id).filter(b=>b.text?.trim()&&!b.done).length;
+  const smCount=getSmalls(k,id).filter(s=>s.text?.trim()&&!s.done).length;
+  if(bigCount===0&&smCount===0){el.textContent='';return;}
+  el.textContent=`${bigCount}/${smCount}`;
+}
+
+function renderSecBody(id){
+  const tb=document.getElementById(`tb-${id}`);if(!tb)return;
+  tb.innerHTML='';
+  const k=tKey();
+  const sec=SECS.find(s=>s.id===id);
+  const secColor=sec?.color||'var(--ac)';
+  tb.style.setProperty('--sec-color', secColor);
+  // ts element for section swipe-hide
+  const ts=document.getElementById(`ts-${id}`);
+
+  // big list
+  const bigList=document.createElement('div');bigList.className='big-list';bigList.id=`bl-${id}`;
+  getBigs(k,id).forEach((b,i)=>bigList.appendChild(makeBigWrap(id,i,b,secColor)));
+  tb.appendChild(bigList);
+
+  // big add ghost — attach section swipe (empty input area → hide section)
+  const ba=makeBigGhost(id,secColor);tb.appendChild(ba);
+  if(ts){
+    attachHdSwipe(ba,ts,()=>{
+      beforeSave();
+      ST.preset=null;ST.prevVis=null;
+      ST.vis=ST.vis.filter(v=>v!==id);
+      ST.collapsed=(ST.collapsed||[]).filter(v=>v!==id);
+      save();renderToday();
+    },false);
+  }
+
+  // divider
+  const dv=document.createElement('div');dv.className='div-line';tb.appendChild(dv);
+
+  const smList=document.createElement('div');smList.className='sm-list';smList.id=`sl-${id}`;
+  getSmalls(k,id).forEach((sm,i)=>smList.appendChild(makeSmWrap(id,i,sm,secColor)));
+  tb.appendChild(smList);
+
+  // inline sm ghost — attach section swipe
+  const smGhost=makeSmInlineGhost(id,secColor);
+  tb.appendChild(smGhost);
+  if(ts){
+    attachHdSwipe(smGhost,ts,()=>{
+      beforeSave();
+      ST.preset=null;ST.prevVis=null;
+      ST.vis=ST.vis.filter(v=>v!==id);
+      ST.collapsed=(ST.collapsed||[]).filter(v=>v!==id);
+      save();renderToday();
+    },false);
+  }
+}
+
+// ═══════ SWIPE-TO-DELETE / SWIPE-TO-COMPLETE ═══════
+function makeSwipeWrap(innerEl, onDelete, onComplete){
+  const wrap=document.createElement('div');wrap.className='swipe-wrap';
+
+  // left underlay — delete (red)
+  const delUnder=document.createElement('div');delUnder.className='del-underlay';
+  delUnder.innerHTML=`<svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2 3.5h10M5 3.5V2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 .5.5v1M11.5 3.5l-.7 7.5a.5.5 0 0 1-.5.5H3.7a.5.5 0 0 1-.5-.5l-.7-7.5"/>
+    <line x1="5.5" y1="6" x2="5.5" y2="9.5"/><line x1="8.5" y1="6" x2="8.5" y2="9.5"/>
+  </svg>`;
+
+  // right underlay — complete (monochrome check)
+  const chkUnder=document.createElement('div');chkUnder.className='chk-underlay';
+  chkUnder.innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3,8 6.5,12 13,4"/>
+  </svg>`;
+
+  wrap.append(chkUnder, delUnder, innerEl);
+
+  let startX=0,startY=0,curX=0,dir=0,swiping=false,confirmed=false,touchId=null;
+  const THRESHOLD=SWIPE_THRESHOLD;
+
+  let touchOnInput=false;
+
+  function onTouchStart(e){
+    if(DR.active)return;
+    // If the touch starts on the text input itself, this is the user
+    // placing/dragging the text cursor — never treat it as a swipe.
+    touchOnInput=!!e.target.closest('input,textarea');
+    if(touchOnInput)return;
+    const t=e.touches[0];
+    touchId=t.identifier;startX=t.clientX;startY=t.clientY;
+    curX=0;dir=0;swiping=false;confirmed=false;
+    delUnder.style.opacity='0';chkUnder.style.opacity='0';
+  }
+  function onTouchMove(e){
+    if(touchOnInput)return; // cursor-placement drag inside the input — ignore entirely
+    if(DR.active)return; // long-press drag took over
+    let t=null;
+    for(let i=0;i<e.touches.length;i++){if(e.touches[i].identifier===touchId){t=e.touches[i];break;}}
+    if(!t)return;
+    const dx=t.clientX-startX,dy=t.clientY-startY;
+
+    // Single source of truth for "has the finger moved enough to mean
+    // this is a swipe, not a long-press": cancel the row's long-press
+    // timer using this SAME (dx,dy) sample, rather than letting
+    // attachDrag track movement independently with its own coordinates
+    // (that duplication was the root cause of left/right swipe
+    // misfiring unpredictably).
+    if((Math.abs(dx)>8||Math.abs(dy)>8)&&innerEl._cancelPressTimer){
+      innerEl._cancelPressTimer();
+    }
+
+    if(!swiping){
+      if(Math.abs(dy)>Math.abs(dx)+4)return;
+      if(Math.abs(dx)>16){swiping=true;dir=dx>0?1:-1;}else return;
+    }
+    // lock direction
+    if(dir===1&&dx<0)return;
+    if(dir===-1&&dx>0){innerEl.style.transform='';delUnder.style.opacity='0';return;}
+    e.preventDefault();
+    if(dir===1){
+      // right → complete
+      curX=Math.min(dx,THRESHOLD*1.3);
+      innerEl.style.transform=`translateX(${curX}px)`;
+      const prog=Math.min(curX/THRESHOLD,1);
+      chkUnder.style.opacity=String(prog);
+      confirmed=curX>=THRESHOLD;
+    } else {
+      // left → delete
+      curX=Math.max(dx,-THRESHOLD*1.3);
+      innerEl.style.transform=`translateX(${curX}px)`;
+      const prog=Math.min(Math.abs(curX)/THRESHOLD,1);
+      delUnder.style.opacity=String(prog);
+      confirmed=Math.abs(curX)>=THRESHOLD;
+    }
+  }
+  function onTouchEnd(e){
+    if(innerEl._cancelPressTimer)innerEl._cancelPressTimer();
+    if(!swiping){
+      innerEl.style.transform='';delUnder.style.opacity='0';chkUnder.style.opacity='0';return;
+    }
+    if(confirmed){
+      if(dir===1){
+        // complete: flash then callback
+        innerEl.style.transition='transform .15s,opacity .15s';
+        innerEl.style.transform=`translateX(${THRESHOLD*1.3}px)`;
+        innerEl.style.opacity='0.3';
+        setTimeout(()=>{
+          innerEl.style.transition='';innerEl.style.transform='';innerEl.style.opacity='';
+          chkUnder.style.opacity='0';
+          onComplete();
+        },150);
+      } else {
+        // delete: slide out
+        innerEl.style.transition='transform .18s';
+        innerEl.style.transform=`translateX(-100%)`;
+        delUnder.style.opacity='1';
+        setTimeout(()=>{innerEl.style.transition='';onDelete();},180);
+      }
+    } else {
+      innerEl.style.transition='transform .2s';
+      innerEl.style.transform='';
+      delUnder.style.opacity='0';chkUnder.style.opacity='0';
+      setTimeout(()=>innerEl.style.transition='',200);
+    }
+    swiping=false;curX=0;confirmed=false;dir=0;touchOnInput=false;
+  }
+
+  innerEl.addEventListener('touchstart',onTouchStart,{passive:true});
+  innerEl.addEventListener('touchmove',onTouchMove,{passive:false});
+  innerEl.addEventListener('touchend',onTouchEnd,{passive:true});
+  innerEl.addEventListener('touchcancel',()=>{
+    if(innerEl._cancelPressTimer)innerEl._cancelPressTimer();
+    swiping=false;curX=0;confirmed=false;dir=0;touchOnInput=false;
+    innerEl.style.transform='';delUnder.style.opacity='0';chkUnder.style.opacity='0';
+  },{passive:true});
+
+  return wrap;
+}
+
+// ═══════ BIG BLOCK ═══════
+function makeBigWrap(id,i,b,secColor){
+  const item=makeBigItem(id,i,b,secColor);
+  const wrap=makeSwipeWrap(
+    item,
+    ()=>{ // left → delete
+      const k=tKey();beforeSave();const removed=getBigs(k,id).splice(i,1)[0];
+      sendToTrash(k,'big',id,removed);save();renderSecBody(id);updateTotal();
+    },
+    ()=>{ // right → toggle done
+      const k=tKey();const arr=getBigs(k,id);
+      if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();updateTotal();renderSecBody(id);}
+    }
+  );
+  return wrap;
+}
+
+// Resize a text input to fit its current content (so the rest of the
+// row stays a separate click/drag/right-click zone, never the input).
+let _measureCtx=null;
+function autoSizeInput(inp){
+  if(!_measureCtx){
+    const c=document.createElement('canvas');
+    _measureCtx=c.getContext('2d');
+  }
+  const cs=getComputedStyle(inp);
+  // canvas.measureText() reports the same width the browser's text
+  // renderer will actually use — far more reliable than measuring a
+  // hidden <span>, which was producing inconsistent (often too-narrow)
+  // results across browsers and caused the last character to clip,
+  // especially noticeable on desktop.
+  _measureCtx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const text=inp.value||inp.placeholder||'';
+  const w=_measureCtx.measureText(text).width;
+  // Still keep a buffer for the blinking caret (only needed while
+  // focused) plus a little general safety margin.
+  const isFocused=document.activeElement===inp;
+  const buffer=isFocused?16:8;
+  inp.style.width=Math.max(20,Math.ceil(w)+buffer)+'px';
+}
+
+function makeBigItem(id,i,b,secColor){
+  const k=tKey();const tot=totalBigCount(k);
+  const isOver=(tot>6)&&!b.done;
+  const div=document.createElement('div');
+  div.className=`big-item${b.done?' done-st':''}${isOver?' over':''}`;
+  div.dataset.id=id;div.dataset.i=i;
+  if(secColor)div.style.setProperty('--sec-color',secColor);
+
+  // CHECK — leftmost
+  const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
+  chk.onclick=e=>{e.stopPropagation();const arr=getBigs(tKey(),id);beforeSave();arr[i].done=!arr[i].done;save();updateTotal();renderSecBody(id);};
+
+  const dh=document.createElement('span');dh.className='bi-dh';dh.textContent='⠿';
+
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=b.text||'';inp.className='bi-inp';
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.placeholder='빅 블럭';
+  autoSizeInput(inp);
+
+  let navigating=false; // flag: entering to move focus, don't delete on blur
+
+  inp.oninput=()=>{getBigs(tKey(),id)[i].text=inp.value;saveText();updateTotal();autoSizeInput(inp);};
+  inp.onfocus=()=>{autoSizeInput(inp);clearActive();};
+  inp.onblur=()=>{
+    if(navigating){navigating=false;return;}
+    const arr=getBigs(tKey(),id);
+    if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
+    if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSecBody(id);updateTotal();}
+    autoSizeInput(inp);
+  };
+  inp.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();
+      const arr=getBigs(tKey(),id);
+      if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
+      navigating=true;
+      const allBigInps=[...document.querySelectorAll(`#bl-${id} .bi-inp`)];
+      const idx=allBigInps.indexOf(inp);
+      if(idx>=0&&allBigInps[idx+1]){allBigInps[idx+1].focus();}
+      else{
+        // move to ghost — on iOS this triggers blur, which is fine since navigating=true
+        const ghost=document.querySelector(`#ba-${id} .ba-inp`);
+        if(ghost){ghost.focus();}
+        else{navigating=false;}
+      }
+    }
+  };
+  inp.onclick=e=>e.stopPropagation();
+
+  // Spacer fills the rest of the row — this is the drag/right-click zone,
+  // separate from the input so clicking it never enters text-edit mode.
+  const spacer=document.createElement('div');spacer.className='row-spacer';
+
+  // desktop hover delete — rightmost before chk was moved; now after inp
+  const del=document.createElement('button');del.className='blk-del';del.textContent='×';
+  del.title='삭제';
+  del.onclick=e=>{
+    e.stopPropagation();
+    const kk=tKey();beforeSave();const removed=getBigs(kk,id).splice(i,1)[0];
+    sendToTrash(kk,'big',id,removed);save();renderSecBody(id);updateTotal();
+  };
+
+  div.append(chk,dh,inp,spacer,del);
+  attachDrag(div,'big',i,id);
+  wireActivateClick(div,'big',id,i);
+  return div;
+}
+
+function makeBigGhost(id,secColor){
+  const ba=document.createElement('div');ba.className='big-add';ba.id=`ba-${id}`;
+  if(secColor)ba.style.setProperty('--sec-color',secColor);
+  const icon=document.createElement('span');icon.className='ba-icon';icon.textContent='';
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='ba-inp';
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  let buf='';
+  let justEntered=false; // flag: entered via Enter key, skip blur re-render
+  inp.oninput=()=>{buf=inp.value;};
+  inp.onblur=()=>{
+    if(justEntered){justEntered=false;return;} // iOS fires blur after enter — skip
+    const v=(buf||inp.value).trim();
+    if(v){
+      beforeSave();getBigs(tKey(),id).push({text:v,done:false});
+      save();inp.value='';buf='';
+      renderSecBody(id);updateTotal();
+      setTimeout(()=>document.querySelector(`#ba-${id} .ba-inp`)?.focus(),30);
+    }
+  };
+  inp.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();
+      const v=inp.value.trim();if(!v)return;
+      buf=''; // clear buf FIRST to prevent onblur from re-adding
+      inp.value='';
+      justEntered=true;
+      beforeSave();getBigs(tKey(),id).push({text:v,done:false});
+      save();updateTotal();updateSecSummary(id);
+      const bigList=document.getElementById(`bl-${id}`);
+      if(bigList){
+        const k=tKey();
+        bigList.innerHTML='';
+        const sec=SECS.find(s=>s.id===id);
+        const sc=sec?.color||'var(--ac)';
+        getBigs(k,id).forEach((b,ii)=>bigList.appendChild(makeBigWrap(id,ii,b,sc)));
+      }
+      // Focus ghost input (this element is still in DOM)
+      setTimeout(()=>inp.focus(),20);
+      justEntered=false; // reset flag after focus
+    }
+  };
+  inp.onclick=e=>e.stopPropagation();
+  ba.append(icon,inp);
+  return ba;
+}
+
+function updateTotal(){
+  const k=tKey();
+  const all=SECS.flatMap(s=>getBigs(k,s.id)).filter(b=>b.text?.trim());
+  const tot=all.length,done=all.filter(b=>b.done).length;
+  const ov=tot>6;
+  const fill=document.getElementById('tFill');const lbl=document.getElementById('tLbl');
+  if(fill)fill.style.width=tot?`${done/Math.max(tot,6)*100}%`:'0%';
+  if(lbl){lbl.textContent=`${done} / ${tot}`;lbl.className='total-lbl'+(ov?' ov':'');}
+  // update all collapsed section summaries
+  SECS.forEach(s=>updateSecSummary(s.id));
+}
+
+// ═══════ SMALL BLOCK ═══════
+function makeSmWrap(id,i,sm,secColor){
+  const item=makeSmItem(id,i,sm,secColor);
+  const wrap=makeSwipeWrap(
+    item,
+    ()=>{ // left → delete
+      const k=tKey();beforeSave();const removed=getSmalls(k,id).splice(i,1)[0];
+      sendToTrash(k,'small',id,removed);save();renderSmList(id,secColor);updateSmCnt(id);
+    },
+    ()=>{ // right → toggle done
+      const k=tKey();const arr=getSmalls(k,id);
+      if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();renderSmList(id,secColor);}
+    }
+  );
+  return wrap;
+}
+
+function makeSmItem(id,i,sm,secColor){
+  const ov=i>=2;
+  const div=document.createElement('div');
+  div.className=`sm-item${sm.done?' done-st':''}${ov?' over':''}`;
+  div.dataset.id=id;div.dataset.i=i;
+  if(secColor)div.style.setProperty('--sec-color',secColor);
+
+  // CHECK — leftmost
+  const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
+  chk.onclick=e=>{e.stopPropagation();const arr=getSmalls(tKey(),id);beforeSave();arr[i].done=!arr[i].done;save();renderSmList(id,secColor);};
+
+  const dh=document.createElement('span');dh.className='si-dh';dh.textContent='⠿';
+
+  const inp=document.createElement('input');
+  inp.type='text';inp.value=sm.text||'';inp.className='si-inp';
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.placeholder='할 일';
+  autoSizeInput(inp);
+
+  let navigating=false;
+  inp.oninput=()=>{getSmalls(tKey(),id)[i].text=inp.value;saveText();autoSizeInput(inp);};
+  inp.onfocus=()=>{autoSizeInput(inp);clearActive();};
+  inp.onblur=()=>{
+    if(navigating){navigating=false;return;}
+    const arr=getSmalls(tKey(),id);
+    if(arr[i]){arr[i].text=inp.value;rawSave();}
+    if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSmList(id,secColor);updateSmCnt(id);}
+    autoSizeInput(inp);
+  };
+  inp.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();
+      const arr=getSmalls(tKey(),id);
+      if(arr[i]){arr[i].text=inp.value;rawSave();}
+      navigating=true;
+      const allSmInps=[...document.querySelectorAll(`#sl-${id} .si-inp`)];
+      const idx=allSmInps.indexOf(inp);
+      if(idx>=0&&allSmInps[idx+1]){allSmInps[idx+1].focus();}
+      else{
+        const ghost=document.querySelector(`#sgi-${id}`);
+        if(ghost){ghost.focus();}else{navigating=false;}
+      }
+    }
+  };
+  inp.onclick=e=>e.stopPropagation();
+
+  const spacer=document.createElement('div');spacer.className='row-spacer';
+
+  if(ov){
+    const op=document.createElement('span');op.className='over-pip';
+    div.append(chk,dh,inp,spacer,op);
+  } else {
+    div.append(chk,dh,inp,spacer);
+  }
+
+  // desktop hover delete
+  const del=document.createElement('button');del.className='blk-del';del.textContent='×';
+  del.onclick=e=>{
+    e.stopPropagation();
+    const kk=tKey();beforeSave();const removed=getSmalls(kk,id).splice(i,1)[0];
+    sendToTrash(kk,'small',id,removed);save();renderSmList(id,secColor);updateSmCnt(id);
+  };
+  div.appendChild(del);
+
+  attachDrag(div,'small',i,id);
+  wireActivateClick(div,'small',id,i);
+  return div;
+}
+
+function makeSmInlineGhost(id,secColor){
+  const gh=document.createElement('div');gh.className='sm-ghost-inline';gh.id=`sgi-wrap-${id}`;
+  if(secColor)gh.style.setProperty('--sec-color',secColor);
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='sgi-inp';inp.id=`sgi-${id}`;
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  let buf='';
+  inp.oninput=()=>{buf=inp.value;};
+  inp.onblur=()=>{
+    const v=(buf||inp.value).trim();
+    if(v){
+      beforeSave();getSmalls(tKey(),id).push({text:v,done:false});
+      save();inp.value='';buf='';
+      renderSmList(id,secColor);updateSmCnt(id);
+      setTimeout(()=>document.querySelector(`#sgi-${id}`)?.focus(),20);
+    }
+  };
+  inp.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();
+      const v=(buf||inp.value).trim();if(!v)return;
+      beforeSave();getSmalls(tKey(),id).push({text:v,done:false});
+      save();inp.value='';buf='';
+      renderSmList(id,secColor);updateSmCnt(id);
+      setTimeout(()=>document.querySelector(`#sgi-${id}`)?.focus(),20);
+    }
+  };
+  inp.onclick=e=>e.stopPropagation();
+  gh.appendChild(inp);
+  return gh;
+}
+
+function openSmGhost(){}
+function closeSmGhost(){}
+
+function renderSmList(id,secColor){
+  const sl=document.getElementById(`sl-${id}`);if(!sl)return;
+  if(!secColor){const tb=document.getElementById(`tb-${id}`);secColor=tb?.style.getPropertyValue('--sec-color')||undefined;}
+  sl.innerHTML='';
+  getSmalls(tKey(),id).forEach((sm,i)=>sl.appendChild(makeSmWrap(id,i,sm,secColor)));
+  updateSmCnt(id);
+  updateSecSummary(id);
+}
+function updateSmCnt(id){
+  const n=getSmalls(tKey(),id).length;
+  const el=document.getElementById(`sc-${id}`);
+  if(el){el.textContent=n>0?n:'';el.className='sm-cnt-lbl'+(n>2?' ov':'');}
+  updateSecSummary(id);
+}
+
+// ═══════ DRAG (cross-section) ═══════
+const DR={active:false,type:null,fromId:null,fromI:null,el:null,wrap:null,offX:0,offY:0};
+
+function attachDrag(el,type,i,id){
+  const dh=el.querySelector('.bi-dh,.si-dh');
+  const LONG_PRESS_MOUSE=100; // desktop mouse long-press
+  const LONG_PRESS_TOUCH=280; // mobile touch long-press — needs more headroom
+                                // to avoid racing iOS's native callout gesture
+
+  // Reinforce callout/selection blocking inline (belt-and-suspenders vs CSS
+  // specificity issues, and to guarantee it applies even if classes change)
+  el.style.webkitTouchCallout='none';
+  el.style.webkitUserSelect='none';
+
+  function start(cx,cy){
+    const r=el.getBoundingClientRect();
+    Object.assign(DR,{active:true,type,fromId:id,fromI:i,el,offX:cx-r.left,offY:cy-r.top,_moved:false,_frozen:false,_freezeX:undefined,_freezeY:undefined});
+    const g=document.getElementById('dg');g.innerHTML='';
+    const cl=el.cloneNode(true);
+    // Read the section color BEFORE overwriting cssText below — setting
+    // cssText wholesale wipes any inline custom properties (like
+    // --sec-color) that the row relies on for its left color bar.
+    const secColorVal=el.style.getPropertyValue('--sec-color')||getComputedStyle(el).getPropertyValue('--sec-color');
+    // Ensure the dragged row reads clearly against whatever is behind it:
+    // boost its own background opacity and add a subtle top highlight so
+    // it looks like a lifted glass card rather than a half-transparent
+    // ghost bleeding into the rows underneath.
+    cl.style.cssText=`width:${r.width}px;pointer-events:none;margin:0;`+
+      `background:rgba(36,40,54,.85);`+
+      `box-shadow:inset 0 1px 0 rgba(255,255,255,.06);`;
+    if(secColorVal)cl.style.setProperty('--sec-color',secColorVal.trim());
+    g.appendChild(cl);
+    g.style.cssText=`display:block;width:${r.width}px;left:${cx-DR.offX}px;top:${cy-DR.offY}px;`+
+      `opacity:.96;box-shadow:0 12px 36px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);`;
+    el.classList.add('drag-active');
+    document.body.style.userSelect='none';document.body.style.webkitUserSelect='none';
+    // haptic feedback if available
+    if(navigator.vibrate)navigator.vibrate(30);
+  }
+
+  // ── Desktop: drag handle mousedown (instant drag — power users) ──
+  if(dh){
+    dh.addEventListener('mousedown',e=>{e.preventDefault();start(e.clientX,e.clientY);});
+  }
+
+  // ── Desktop: long-press anywhere on the row (mirrors mobile touch UX) ──
+  let mousePressTimer=null;
+  let mousePressX=0,mousePressY=0;
+  let mouseDownActive=false;
+
+  el.addEventListener('mousedown',e=>{
+    // Skip if starting on the handle itself (already handled above) or
+    // on an interactive control — those should keep their normal behavior.
+    if(e.target.closest('.bi-dh,.si-dh,input,textarea,.blk-chk,.blk-del'))return;
+    if(e.button!==0)return; // left click only
+    mousePressX=e.clientX;mousePressY=e.clientY;
+    mouseDownActive=true;
+    el.classList.add('pressing');
+
+    mousePressTimer=setTimeout(()=>{
+      mousePressTimer=null;
+      el.classList.remove('pressing');
+      if(document.activeElement&&el.contains(document.activeElement)){
+        document.activeElement.blur();
+      }
+      start(mousePressX,mousePressY);
+    },LONG_PRESS_MOUSE);
+  });
+
+  function cancelMousePress(){
+    if(mousePressTimer){clearTimeout(mousePressTimer);mousePressTimer=null;}
+    el.classList.remove('pressing');
+    mouseDownActive=false;
+  }
+
+  el.addEventListener('mousemove',e=>{
+    if(mousePressTimer&&mouseDownActive){
+      const dx=e.clientX-mousePressX,dy=e.clientY-mousePressY;
+      if(Math.abs(dx)>6||Math.abs(dy)>6)cancelMousePress();
+    }
+  });
+  el.addEventListener('mouseup',()=>cancelMousePress());
+  el.addEventListener('mouseleave',()=>{ if(mousePressTimer)cancelMousePress(); });
+
+  // ── Desktop: right-click → task move context menu ──
+  el.addEventListener('contextmenu',e=>{
+    if(e.target.closest('input,textarea'))return; // allow native text-field context menu
+    e.preventDefault();
+    openTaskMenu(type, id, i, el, {x:e.clientX, y:e.clientY});
+  });
+
+  // ── Mobile: long-press anywhere on element (including input/button areas) ──
+  // NOTE: touchmove/touchend for THIS gesture are intentionally not
+  // registered here. Having both this and makeSwipeWrap independently
+  // track touchmove/touchend on the very same DOM node caused the two
+  // systems' coordinate tracking to drift out of sync under real finger
+  // movement, making left/right swipe misfire unpredictably. Movement
+  // tracking now lives in one place — see registerPressTimer() below,
+  // which makeSwipeWrap calls directly from its single touchmove handler.
+  let pressTimer=null;
+  let pressStartX=0,pressStartY=0;
+
+  function cancelPressTimer(){
+    if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}
+    DR._pressPending=false;
+    el.classList.remove('pressing');
+  }
+  // Exposed so makeSwipeWrap's single touchmove/touchend can cancel the
+  // long-press timer using the SAME movement sample as its own swipe
+  // detection, instead of tracking movement a second time independently.
+  el._cancelPressTimer=cancelPressTimer;
+
+  el.addEventListener('touchstart',e=>{
+    // A-zone (input/textarea) is for text editing only — never starts a
+    // long-press drag. This also means we don't fight iOS's native
+    // text-selection callout there since we simply don't intervene.
+    // B-zone (everything else in the row) is the drag/menu trigger area.
+    const onControl=e.target.closest('input,textarea,.blk-chk,.blk-del');
+    if(onControl)return; // let native input behavior proceed untouched
+
+    if(e.cancelable)e.preventDefault();
+
+    const t=e.touches[0];
+    pressStartX=t.clientX;pressStartY=t.clientY;
+    el.classList.add('pressing');
+    DR._pressPending=true; // block left/right swipe in this row while we count down
+    DR._pressPendingSince=Date.now();
+
+    pressTimer=setTimeout(()=>{
+      pressTimer=null;
+      DR._pressPending=false;
+      el.classList.remove('pressing');
+      // blur any focused input so keyboard dismisses
+      if(document.activeElement&&el.contains(document.activeElement)){
+        document.activeElement.blur();
+      }
+      // Explicitly collapse any selection iOS may have started forming
+      try{
+        const sel=window.getSelection&&window.getSelection();
+        if(sel&&sel.removeAllRanges)sel.removeAllRanges();
+      }catch(err){}
+      start(pressStartX,pressStartY);
+      DR._suppressSwipe=true;
+
+      // Drag mode is now active and STAYS active — moving the finger
+      // reorders/moves the item as before. The task-move menu is a
+      // SEPARATE trigger: it only appears if the finger stays put
+      // (no movement) for an additional hold period after the drag
+      // started. Any movement before that cancels the menu timer but
+      // leaves the drag itself fully intact.
+      DR._menuTimer=setTimeout(()=>{
+        DR._menuTimer=null;
+        if(DR.active&&!DR._moved){
+          // Fully end the drag — don't just "freeze" it. Keeping DR.active
+          // true while the menu is open was the root cause of a whole
+          // class of bugs: any subsequent tap (closing the menu, picking
+          // a menu item, tapping empty space) kept getting captured by
+          // the global drag touchmove/touchend listeners and replayed as
+          // a reorder. Ending the drag here means the menu is the only
+          // thing listening to touches once it's open.
+          cancelDragKeepingItem();
+          openTaskMenu(type, id, i, el);
+        }
+      },350);
+    },LONG_PRESS_TOUCH);
+  },{passive:false});
+}
+
+function getSecColor(id){
+  const sec=SECS.find(s=>s.id===id);
+  const map={'var(--c0)':'#9490fa','var(--c1)':'#f0b030','var(--c2)':'#22e080',
+    'var(--c3)':'#38b0fa','var(--c4)':'#f060a8','var(--c5)':'#b088fa'};
+  return map[sec?.color]||'#5a70f8';
+}
+
+function clearDropIndicators(){
+  document.querySelectorAll('.drop-ind').forEach(el=>el.remove());
+}
+
+function showDropIndicator(beforeEl, parentEl, color){
+  clearDropIndicators();
+  if(!parentEl)return;
+  try{
+    const ind=document.createElement('div');
+    ind.className='drop-ind show';
+    ind.style.background=color;
+    if(beforeEl&&parentEl.contains(beforeEl)){
+      parentEl.insertBefore(ind,beforeEl);
+    } else {
+      // append at end — but skip if last child is already a ghost/indicator
+      parentEl.appendChild(ind);
+    }
+  }catch(e){}
+}
+
+// ─── Drop target: closest-item snap (no fallback flicker) ───
+let _stableDt=null;
+let _stableY=0;
+const HYST=14;
+
+function getDropTarget(cx,cy){
+  try{
+    const k=tKey();
+
+    // Find which ts-body we're over first
+    let targetTb=null;
+    for(const tb of document.querySelectorAll('.ts-body')){
+      const r=tb.getBoundingClientRect();
+      if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){targetTb=tb;break;}
+    }
+    if(!targetTb)return null;
+
+    const toId=targetTb.id.replace('tb-','');
+    const color=getSecColor(toId);
+    const bigList=document.getElementById(`bl-${toId}`);
+    const smList=document.getElementById(`sl-${toId}`);
+
+    // Gather all candidate items (big + small) with their rects, sorted by Y
+    const candidates=[];
+
+    if(bigList){
+      for(const bigItem of bigList.querySelectorAll('.big-item')){
+        if(bigItem.classList.contains('drag-active'))continue; // check item, not wrap
+        const wrap=bigItem.closest('.swipe-wrap')||bigItem;
+        const r=wrap.getBoundingClientRect();
+        candidates.push({type:'big',item:bigItem,wrap,r,
+          idx:parseInt(bigItem.dataset.i)||0,list:bigList});
+      }
+    }
+    if(smList){
+      for(const smItem of smList.querySelectorAll('.sm-item')){
+        if(smItem.classList.contains('drag-active'))continue; // check item, not wrap
+        const wrap=smItem.closest('.swipe-wrap')||smItem;
+        const r=wrap.getBoundingClientRect();
+        candidates.push({type:'small',item:smItem,wrap,r,
+          idx:parseInt(smItem.dataset.i)||0,list:smList});
+      }
+    }
+
+    // ── Zone split: use div-line top as big/small boundary ──
+    // div-line is always rendered between big-add and sm-list
+    const divLineEl=targetTb.querySelector('.div-line');
+    const inSmallZone=divLineEl ? cy > divLineEl.getBoundingClientRect().top : false;
+
+    // ── Big zone (cursor above div-line) ──
+    if(!inSmallZone&&bigList){
+      const bigCandidates=candidates.filter(c=>c.type==='big');
+      if(bigCandidates.length===0){
+        // Empty big list — drop at index 0
+        return{toId,type:'big',toI:0,beforeEl:null,parent:bigList,color};
+      }
+      // Find closest big candidate
+      let bestI=0,bestD=Infinity;
+      for(let i=0;i<bigCandidates.length;i++){
+        const mid=bigCandidates[i].r.top+bigCandidates[i].r.height/2;
+        const d=Math.abs(cy-mid);
+        if(d<bestD){bestD=d;bestI=i;}
+      }
+      const best=bigCandidates[bestI];
+      const after=cy>best.r.top+best.r.height/2;
+      const toI=best.idx+(after?1:0);
+      let beforeEl=null;
+      if(!after){
+        if(best.list.contains(best.wrap))beforeEl=best.wrap;
+      } else {
+        for(let i=bestI+1;i<bigCandidates.length;i++){
+          if(bigCandidates[i].list===best.list){
+            if(best.list.contains(bigCandidates[i].wrap))beforeEl=bigCandidates[i].wrap;
+            break;
+          }
+        }
+      }
+      return{toId,type:'big',toI,beforeEl,parent:bigList,color};
+    }
+
+    if(inSmallZone&&smList){
+      // Build small-only candidates
+      const smCandidates=candidates.filter(c=>c.type==='small');
+      if(smCandidates.length===0){
+        // Empty small list — drop at index 0
+        return{toId,type:'small',toI:0,beforeEl:null,parent:smList,color};
+      }
+      // Find closest small candidate
+      let bestI=0,bestD=Infinity;
+      for(let i=0;i<smCandidates.length;i++){
+        const mid=smCandidates[i].r.top+smCandidates[i].r.height/2;
+        const d=Math.abs(cy-mid);
+        if(d<bestD){bestD=d;bestI=i;}
+      }
+      const best=smCandidates[bestI];
+      const after=cy>best.r.top+best.r.height/2;
+      const toI=best.idx+(after?1:0);
+      let beforeEl=null;
+      if(!after){
+        if(best.list.contains(best.wrap))beforeEl=best.wrap;
+      } else {
+        for(let i=bestI+1;i<smCandidates.length;i++){
+          if(smCandidates[i].list===best.list){
+            if(best.list.contains(smCandidates[i].wrap))beforeEl=smCandidates[i].wrap;
+            break;
+          }
+        }
+      }
+      return{toId,type:'small',toI,beforeEl,parent:smList,color};
+    }
+
+    if(candidates.length===0){
+      if(smList)return{toId,type:'small',toI:0,beforeEl:null,parent:smList,color};
+      if(bigList)return{toId,type:'big',toI:0,beforeEl:null,parent:bigList,color};
+      return null;
+    }
+
+    // Sort by vertical position
+    candidates.sort((a,b)=>a.r.top-b.r.top);
+
+    // Find closest candidate by vertical distance to item center
+    // — but also check if cursor is clearly below all candidates → drop at end
+    const lastC=candidates[candidates.length-1];
+    const firstC=candidates[0];
+
+    // If cursor is well below the last item, snap to end of its list
+    if(cy>lastC.r.bottom+4){
+      return{toId,type:lastC.type,toI:lastC.idx+1,
+        beforeEl:null,parent:lastC.list,color};
+    }
+    // If cursor is well above the first item, snap to start of its list
+    if(cy<firstC.r.top-4){
+      return{toId,type:firstC.type,toI:0,
+        beforeEl:firstC.list.contains(firstC.wrap)?firstC.wrap:null,
+        parent:firstC.list,color};
+    }
+
+    // Find closest candidate by vertical distance to item center
+    let bestIdx=0,bestDist=Infinity;
+    for(let ci=0;ci<candidates.length;ci++){
+      const c=candidates[ci];
+      const mid=c.r.top+c.r.height/2;
+      const dist=Math.abs(cy-mid);
+      if(dist<bestDist){bestDist=dist;bestIdx=ci;}
+    }
+    const best=candidates[bestIdx];
+
+    // Snap above or below best candidate
+    const after=cy>best.r.top+best.r.height/2;
+    const toI=best.idx+(after?1:0);
+
+    // beforeEl: use the wrap of the NEXT candidate in sorted order (same list),
+    // not nextElementSibling (which may be drop-ind or other elements)
+    let beforeEl=null;
+    if(!after){
+      // Insert before best → beforeEl = best.wrap (if in same list)
+      if(best.list.contains(best.wrap))beforeEl=best.wrap;
+    } else {
+      // Insert after best → find next candidate in same list
+      let nextWrap=null;
+      for(let ci=bestIdx+1;ci<candidates.length;ci++){
+        if(candidates[ci].list===best.list){
+          nextWrap=candidates[ci].wrap;break;
+        }
+      }
+      // nextWrap is null → insert at end of list (appendChild), that's fine
+      if(nextWrap&&best.list.contains(nextWrap))beforeEl=nextWrap;
+    }
+
+    return{toId,type:best.type,toI,beforeEl,parent:best.list,color};
+
+  }catch(e){return null;}
+}
+
+function getStableDt(cx,cy){
+  const dt=getDropTarget(cx,cy);
+  if(!dt){_stableDt=null;return null;}
+  if(_stableDt&&
+     _stableDt.toId===dt.toId&&
+     _stableDt.type===dt.type&&
+     _stableDt.toI===dt.toI&&
+     Math.abs(cy-_stableY)<HYST){
+    return _stableDt;
+  }
+  _stableDt=dt;_stableY=cy;
+  return dt;
+}
+
+function moveG(cx,cy){
+  try{
+    // Real movement happened — this is a drag/reorder, not a "hold still
+    // for the menu" gesture. Cancel any pending menu timer permanently.
+    if(!DR._moved){
+      DR._moved=true;
+      if(DR._menuTimer){clearTimeout(DR._menuTimer);DR._menuTimer=null;}
+    }
+    const g=document.getElementById('dg');
+    if(g){g.style.left=(cx-DR.offX)+'px';g.style.top=(cy-DR.offY)+'px';}
+    const dt=getStableDt(cx,cy);
+    if(dt&&dt.parent){showDropIndicator(dt.beforeEl,dt.parent,dt.color);}
+    else clearDropIndicators();
+  }catch(e){clearDropIndicators();}
+}
+
+// Cancel drag mode WITHOUT performing a move and WITHOUT triggering
+// a re-render — used right before opening the task move menu, so the
+// global touchmove/touchend listeners go quiet and don't interfere
+// with subsequent native UI (like the iOS date picker).
+function cancelDragKeepingItem(){
+  if(!DR.active)return;
+  if(DR._menuTimer){clearTimeout(DR._menuTimer);DR._menuTimer=null;}
+  document.getElementById('dg').style.display='none';
+  DR.el?.classList.remove('drag-active');
+  document.querySelectorAll('.dov,.drop-target').forEach(e=>{
+    e.classList.remove('dov');e.classList.remove('drop-target');
+  });
+  clearDropIndicators();
+  document.body.style.userSelect='';
+  document.body.style.webkitUserSelect='';
+  _stableDt=null;_stableY=0;
+  DR.active=false;
+  DR._suppressSwipe=false;
+}
+
+function endDrag(cx,cy){
+  if(!DR.active)return;
+  if(DR._menuTimer){clearTimeout(DR._menuTimer);DR._menuTimer=null;}
+  _stableDt=null;_stableY=0;
+  try{
+    document.getElementById('dg').style.display='none';
+    DR.el?.classList.remove('drag-active');
+    document.querySelectorAll('.dov,.drop-target').forEach(e=>{e.classList.remove('dov');e.classList.remove('drop-target');});
+    clearDropIndicators();
+    document.body.style.userSelect='';document.body.style.webkitUserSelect='';
+
+    // Use non-stabilized target for drop (most accurate at finger-up position)
+    const dt=getDropTarget(cx,cy);
+    if(dt){
+      const k=tKey();beforeSave();
+      let item;
+      if(DR.type==='big'){item={...getBigs(k,DR.fromId).splice(DR.fromI,1)[0]};}
+      else{item={...getSmalls(k,DR.fromId).splice(DR.fromI,1)[0]};}
+      let toI=dt.toI;
+      if(dt.type==='big'){
+        const arr=getBigs(k,dt.toId);
+        // Only adjust index if moving within same section of same type
+        if(DR.fromId===dt.toId&&DR.type==='big'&&toI>DR.fromI)toI--;
+        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,{text:item.text||'',done:!!item.done});
+      } else {
+        const arr=getSmalls(k,dt.toId);
+        // Only adjust index if moving within same section of same type
+        if(DR.fromId===dt.toId&&DR.type==='small'&&toI>DR.fromI)toI--;
+        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,{text:item.text||'',done:!!item.done});
+      }
+      save();
+      new Set([DR.fromId,dt.toId]).forEach(id=>renderSecBody(id));
+      updateTotal();
+    }
+  }catch(e){
+    document.body.style.userSelect='';document.body.style.webkitUserSelect='';
+    clearDropIndicators();try{renderSecBody(DR.fromId);}catch(e2){}
+  }
+  DR.active=false;
+}
+
+document.addEventListener('mousemove',e=>{
+  if(!DR.active)return;moveG(e.clientX,e.clientY);
+});
+document.addEventListener('mouseup',e=>endDrag(e.clientX,e.clientY));
+
+document.addEventListener('touchmove',e=>{
+  if(!DR.active)return;
+  // Defensive: DR._frozen is no longer set anywhere (drag fully ends
+  // before the menu opens), but guard against it just in case some
+  // future code path reintroduces it.
+  if(DR._frozen)return;
+  e.preventDefault();
+  const t=e.touches[0];moveG(t.clientX,t.clientY);
+},{passive:false});
+
+document.addEventListener('touchend',e=>{
+  if(!DR.active)return;
+
+  if(DR._menuTimer){
+    // Finger lifted before the "hold still" timer fired. Same handling
+    // as the timer firing: end the drag completely and open the menu —
+    // never let endDrag() commit a move based on wherever the ghost
+    // happened to be hovering.
+    clearTimeout(DR._menuTimer);
+    DR._menuTimer=null;
+    if(!DR._moved){
+      const t=e.changedTouches[0];
+      const savedType=DR.type,savedId=DR.fromId,savedI=DR.fromI,savedEl=DR.el;
+      cancelDragKeepingItem();
+      openTaskMenu(savedType, savedId, savedI, savedEl, {x:t.clientX,y:t.clientY});
+      return;
+    }
+  }
+
+  const t=e.changedTouches[0];endDrag(t.clientX,t.clientY);
+  DR._suppressSwipe=false;
+});
+
+// ═══════ AI ═══════
+let aiOpen=false;
+function toggleAI(){aiOpen=!aiOpen;document.getElementById('aiDr').classList.toggle('op',aiOpen);if(aiOpen)setTimeout(()=>document.getElementById('aiIn')?.focus(),240);}
+async function askAI(){
+  const v=document.getElementById('aiIn').value.trim();if(!v)return;
+  const res=document.getElementById('aiRes'),chips=document.getElementById('aiChips'),btn=document.getElementById('aiBtn');
+  res.textContent='...';chips.innerHTML='';btn.disabled=true;
+  const vis=SECS.filter(s=>ST.vis.includes(s.id));
+  const prompt=`BLOCK7 코치. 시간대별 빅블럭 키워드(2~5글자 한국어) 제안. 시간대: ${vis.map(s=>s.name).join(',')}. 오늘: "${v}". JSON만: {"blocks":{"${vis.map(s=>s.id).join('":"k","')}":"k"}}`;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:prompt}]})});
+    const data=await r.json();
+    const txt=data.content?.map(c=>c.text||'').join('').replace(/```json|```/g,'').trim();
+    const blocks=JSON.parse(txt).blocks||{};
+    res.textContent='탭해서 적용';chips.innerHTML='';
+    const all=document.createElement('button');all.className='ai-chip';
+    all.style.cssText='border-color:rgba(81,101,246,.4);color:var(--ac)';all.textContent='전체';
+    all.onclick=()=>{const k=tKey();Object.entries(blocks).forEach(([id,kw])=>{if(kw?.trim())getBigs(k,id).push({text:kw,done:false});});beforeSave();save();renderToday();chips.querySelectorAll('.ai-chip').forEach(c=>c.className='ai-chip ap');};
+    chips.appendChild(all);
+    Object.entries(blocks).forEach(([id,kw])=>{
+      if(!kw?.trim())return;const sec=SECS.find(s=>s.id===id);if(!sec)return;
+      const c=document.createElement('button');c.className='ai-chip';c.textContent=`${sec.name}: ${kw}`;
+      c.onclick=()=>{getBigs(tKey(),id).beforeSave();push({text:kw,done:false});save();renderSecBody(id);updateTotal();c.className='ai-chip ap';};
+      chips.appendChild(c);
+    });
+  }catch(e){res.textContent='오류가 발생했어요.';}
+  btn.disabled=false;
+}
+
+// ═══════ WEEKLY ═══════
+
+
+// ═══════ MONTHLY ═══════
+
+
+// ═══════ DATE NAVIGATION ═══════
+function navigateDate(delta){
+  if(delta===0){viewDate=new Date();}
+  else{viewDate=addDays(viewDate,delta);}
+
+  const pc=document.getElementById('pageContent');
+  // out direction: going forward = slide left, going back = slide right
+  const outCls=delta>=0?'nav-out-left':'nav-out-right';
+  const inCls=delta>=0?'nav-in-left':'nav-in-right';
+
+  // 1. slide out current
+  pc.classList.add('sliding',outCls);
+
+  setTimeout(()=>{
+    // 2. update content instantly (invisible)
+    pc.classList.remove('sliding',outCls);
+    pc.classList.add(inCls); // position incoming off-screen
+    updateHeaderDate();
+    renderToday();
+    updateTrashBadge();
+
+    // 3. force reflow then slide in
+    pc.offsetWidth; // eslint-disable-line
+    pc.classList.add('sliding');
+    pc.classList.remove(inCls);
+
+    setTimeout(()=>{
+      pc.classList.remove('sliding');
+    },220);
+  },150);
+}
+
+function updateHeaderDate(){
+  const d=viewDate;
+  const today=new Date();
+  const isT=tKey(d)===tKey(today);
+  const label=`${d.getMonth()+1}${z(d.getDate())} ${DOW[d.getDay()]}`;
+  const el=document.getElementById('hDate');
+  el.textContent=label;
+  el.style.color=isT?'var(--ac)':'var(--tx2)';
+  el.title=isT?'오늘':'탭하면 오늘로';
+  document.getElementById('dateBack').style.display='flex';
+  document.getElementById('dateFwd').style.display='flex';
+}
+
+// ─ D-view page swipe (left=tomorrow, right=yesterday) ─
+function initDateSwipe(){
+  const COMMIT=80;
+  let sx=0,sy=0,dx=0,tracking=false,committed=false,blocked=false,active=false;
+
+  function isSwipeZone(target){
+    // Any touch within the D-view page (todayView) counts as a swipe zone
+    // candidate — isExcluded() below filters out interactive elements.
+    return target.closest('#todayView')!==null;
+  }
+  function isExcluded(target){
+    const hit=target.closest(
+      '.add-btn,.preset-btn,.preset-sep,.ur-btn,.trash-btn,.ai-b,'+
+      '.task-menu,.ts,.big-item,.sm-item,.swipe-wrap,.ts-hd,'+
+      '.big-add,.sm-ghost-inline,#addRow button,#addRow .preset-btn'
+    );
+    return hit!==null;
+  }
+
+  function onStart(e){
+    const target=e.target;
+    // Always hard-reset state at the very start of every touch,
+    // regardless of any previous (possibly stuck) state.
+    active=false;tracking=false;committed=false;blocked=false;dx=0;
+
+    if(!isSwipeZone(target))return;
+    active=true;
+    if(isExcluded(target)){blocked=true;return;}
+    const t=e.touches[0];
+    sx=t.clientX;sy=t.clientY;
+  }
+  function onMove(e){
+    if(!active||blocked||committed)return;
+    const pc=document.getElementById('pageContent');
+    const t=e.touches[0];
+    const ddx=t.clientX-sx,ddy=t.clientY-sy;
+    if(!tracking){
+      if(Math.abs(ddx)<6&&Math.abs(ddy)<6)return;
+      if(Math.abs(ddy)>Math.abs(ddx)*1.3){blocked=true;return;}
+      tracking=true;
+      pc.style.transition='none';
+    }
+    e.preventDefault();
+    dx=ddx;
+    pc.style.transform=`translateX(${dx}px)`;
+    pc.style.opacity=String(1-Math.min(Math.abs(dx)/200,0.3));
+  }
+  function onEnd(){
+    if(!active){return;}
+    active=false;
+    if(blocked){blocked=false;return;}
+    const pc=document.getElementById('pageContent');
+    if(!tracking){
+      pc.style.transition='';pc.style.transform='';pc.style.opacity='';
+      return;
+    }
+    pc.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
+    if(Math.abs(dx)>=COMMIT){
+      committed=true;
+      const dir=dx<0?1:-1;
+      pc.style.transform=`translateX(${dx<0?'-100%':'100%'})`;
+      pc.style.opacity='0';
+      setTimeout(()=>{
+        pc.style.transition='none';
+        pc.style.transform=`translateX(${dx<0?'100%':'-100%'})`;
+        pc.style.opacity='0';
+        viewDate=addDays(viewDate,dir);
+        updateHeaderDate();renderToday();updateTrashBadge();
+        pc.offsetWidth;
+        pc.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
+        pc.style.transform='translateX(0)';
+        pc.style.opacity='1';
+        setTimeout(()=>{
+          pc.style.transition='';pc.style.transform='';pc.style.opacity='';
+          committed=false;tracking=false;
+        },230);
+      },180);
+    } else {
+      pc.style.transform='translateX(0)';
+      pc.style.opacity='1';
+      setTimeout(()=>{pc.style.transition='';pc.style.transform='';pc.style.opacity='';},240);
+      tracking=false;
+    }
+  }
+  function onCancel(){
+    active=false;blocked=false;tracking=false;committed=false;
+    const pc=document.getElementById('pageContent');
+    pc.style.transition='';pc.style.transform='';pc.style.opacity='';
+  }
+
+  // Event delegation on document — survives DOM re-renders from renderToday()
+  document.addEventListener('touchstart',onStart,{passive:true});
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('touchend',onEnd,{passive:true});
+  document.addEventListener('touchcancel',onCancel,{passive:true});
+}
+
+// ═══════ TASK MOVE MINI MENU ═══════
+let _taskMenuCtx=null; // {type, secId, idx}
+
+const IS_TOUCH=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+
+// ═══════════════════════════════════════════════════════════
+//  DESKTOP KEYBOARD NAVIGATION (activation, arrow-key movement,
+//  multi-select, and keyboard-driven reordering)
+// ═══════════════════════════════════════════════════════════
+//
+// "Active" items are a selection concept SEPARATE from text-edit focus.
+// Clicking the non-text area of a row (the row-spacer / B-zone) selects
+// it without entering edit mode. Arrow keys then move the selection up/
+// down through a single FLAT list that treats every big+small item
+// across every currently-expanded section as one continuous sequence —
+// this is what lets selection/movement cross the big/small boundary and
+// section boundaries seamlessly, exactly like a Finder list.
+
+const ACTIVE=new Set(); // Set of "type:secId:idx" keys, e.g. "big:am:0"
+let _anchorKey=null;    // anchor item for shift-range extension
+let _focusFlatIdx=null; // the "moving end" of a shift-extended range — tracked independently so extend/shrink happens one step at a time, Finder-style
+
+function itemKey(type,secId,idx){return `${type}:${secId}:${idx}`;}
+function parseItemKey(k){const [type,secId,idxStr]=k.split(':');return{type,secId,idx:parseInt(idxStr)};}
+
+// Build the single flat ordering: for each currently-visible (expanded)
+// section in display order, all big items first, then all small items.
+function buildFlatList(){
+  const k=tKey();
+  const list=[];
+  SECS.filter(s=>ST.vis.includes(s.id)).forEach(sec=>{
+    const bigs=getBigs(k,sec.id);
+    bigs.forEach((b,i)=>list.push({type:'big',secId:sec.id,idx:i}));
+    const smalls=getSmalls(k,sec.id);
+    smalls.forEach((s,i)=>list.push({type:'small',secId:sec.id,idx:i}));
+  });
+  return list;
+}
+
+function findFlatIndex(list,type,secId,idx){
+  return list.findIndex(it=>it.type===type&&it.secId===secId&&it.idx===idx);
+}
+
+function getRowEl(type,secId,idx){
+  const listSel=type==='big'?`#bl-${secId}`:`#sl-${secId}`;
+  const cls=type==='big'?'.big-item':'.sm-item';
+  const rows=[...document.querySelectorAll(`${listSel} ${cls}`)];
+  return rows.find(r=>parseInt(r.dataset.i)===idx);
+}
+
+function refreshActiveVisuals(){
+  document.querySelectorAll('.big-item.kb-active,.sm-item.kb-active').forEach(el=>el.classList.remove('kb-active'));
+  ACTIVE.forEach(k=>{
+    const{type,secId,idx}=parseItemKey(k);
+    const el=getRowEl(type,secId,idx);
+    if(el)el.classList.add('kb-active');
+  });
+}
+
+function clearActive(){ACTIVE.clear();_anchorKey=null;_focusFlatIdx=null;refreshActiveVisuals();}
+
+function setActiveSingle(type,secId,idx){
+  ACTIVE.clear();
+  const k=itemKey(type,secId,idx);
+  ACTIVE.add(k);
+  _anchorKey=k;
+  _focusFlatIdx=null; // reset — next shift-extend will re-seed from this new single selection
+  refreshActiveVisuals();
+}
+
+function isAnyInputFocused(){
+  const a=document.activeElement;
+  return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');
+}
+
+// Activate an item by clicking its row-spacer (B-zone). Desktop only.
+function activateItem(type,secId,idx,shiftKey){
+  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+
+  if(shiftKey&&_anchorKey){
+    // Shift-click: select the contiguous range between the current
+    // anchor and the clicked item, inclusive — same behavior as
+    // Finder/Explorer range-select.
+    const list=buildFlatList();
+    const anchor=parseItemKey(_anchorKey);
+    const anchorIdx=findFlatIndex(list,anchor.type,anchor.secId,anchor.idx);
+    const clickIdx=findFlatIndex(list,type,secId,idx);
+    if(anchorIdx>=0&&clickIdx>=0){
+      const lo=Math.min(anchorIdx,clickIdx),hi=Math.max(anchorIdx,clickIdx);
+      ACTIVE.clear();
+      for(let i2=lo;i2<=hi;i2++){
+        const it=list[i2];
+        ACTIVE.add(itemKey(it.type,it.secId,it.idx));
+      }
+      _focusFlatIdx=clickIdx; // clicked item becomes the new "moving end"
+      refreshActiveVisuals();
+      return;
+    }
+  }
+
+  setActiveSingle(type,secId,idx);
+}
+
+function focusItemInput(type,secId,idx){
+  const el=getRowEl(type,secId,idx);
+  if(!el)return;
+  const inp=el.querySelector('input.bi-inp,input.si-inp');
+  if(inp){inp.focus();inp.select?.();}
+}
+
+// Move the active selection by `delta` positions in the flat list
+// (delta = -1 for up, +1 for down). If extend=true, grows/shrinks a
+// contiguous range from the anchor instead of replacing the selection.
+function moveActiveSelection(delta,extend){
+  const list=buildFlatList();
+  if(list.length===0)return;
+
+  if(ACTIVE.size===0){
+    // nothing active yet — activate the first or last item
+    const it=delta<0?list[list.length-1]:list[0];
+    setActiveSingle(it.type,it.secId,it.idx);
+    _focusFlatIdx=findFlatIndex(list,it.type,it.secId,it.idx);
+    return;
+  }
+
+  if(!extend){
+    const anchor=_anchorKey?parseItemKey(_anchorKey):parseItemKey([...ACTIVE][0]);
+    let i=findFlatIndex(list,anchor.type,anchor.secId,anchor.idx);
+    if(i<0)i=0;
+    let ni=i+delta;
+    ni=Math.max(0,Math.min(list.length-1,ni));
+    const it=list[ni];
+    setActiveSingle(it.type,it.secId,it.idx);
+    _focusFlatIdx=ni;
+  } else {
+    if(!_anchorKey)_anchorKey=[...ACTIVE][0];
+    const anchor=parseItemKey(_anchorKey);
+    const anchorIdx=findFlatIndex(list,anchor.type,anchor.secId,anchor.idx);
+
+    // The focus point is the "moving end" of the range — it advances
+    // one step per keypress, exactly like Finder/Explorer multi-select.
+    // If we don't have one yet (first shift-extend after a plain click/
+    // move), seed it from the current selection's edge in the direction
+    // of travel so the very first extend still feels correct.
+    if(_focusFlatIdx===null){
+      let edge=anchorIdx;
+      ACTIVE.forEach(k=>{
+        const p=parseItemKey(k);
+        const fi=findFlatIndex(list,p.type,p.secId,p.idx);
+        if(fi>=0){
+          if(delta<0&&fi<edge)edge=fi;
+          if(delta>0&&fi>edge)edge=fi;
+        }
+      });
+      _focusFlatIdx=edge;
+    }
+
+    let newFocus=_focusFlatIdx+delta;
+    newFocus=Math.max(0,Math.min(list.length-1,newFocus));
+    _focusFlatIdx=newFocus;
+
+    const lo=Math.min(anchorIdx,newFocus),hi=Math.max(anchorIdx,newFocus);
+    ACTIVE.clear();
+    for(let idx2=lo;idx2<=hi;idx2++){
+      const it=list[idx2];
+      ACTIVE.add(itemKey(it.type,it.secId,it.idx));
+    }
+    refreshActiveVisuals();
+    scrollFlatIdxIntoView(list,newFocus);
+    return;
+  }
+  refreshActiveVisuals();
+  scrollActiveIntoView();
+}
+
+function scrollFlatIdxIntoView(list,flatIdx){
+  const it=list[flatIdx];
+  if(!it)return;
+  const el=getRowEl(it.type,it.secId,it.idx);
+  el?.scrollIntoView({block:'nearest'});
+}
+
+function scrollActiveIntoView(){
+  if(!_anchorKey)return;
+  const{type,secId,idx}=parseItemKey(_anchorKey);
+  const el=getRowEl(type,secId,idx);
+  el?.scrollIntoView({block:'nearest'});
+}
+
+// Move every currently-active item by one slot within the SAME flat
+// list (delta=-1 up, +1 down). Crossing the big/small boundary within
+// a section, and crossing into an adjacent section, both work because
+// everything operates on the single flat ordering.
+// ── Lane model for ⇧⌘↑/↓ reordering ──
+// Unlike buildFlatList() (which only lists items that exist, used for
+// plain up/down selection), reordering needs to treat each section's
+// big-lane and small-lane as real "slots" even when empty — otherwise
+// movement skips straight over an empty lane/section instead of landing
+// in it, and skips the very last slot of a lane before crossing out of
+// it. buildLanes() returns one entry per (section, type) pair, in
+// display order, regardless of how many items it currently holds.
+function buildLanes(){
+  const k=tKey();
+  const lanes=[];
+  SECS.filter(s=>ST.vis.includes(s.id)).forEach(sec=>{
+    lanes.push({secId:sec.id,type:'big',items:getBigs(k,sec.id)});
+    lanes.push({secId:sec.id,type:'small',items:getSmalls(k,sec.id)});
+  });
+  return lanes;
+}
+
+function findLaneIndex(lanes,type,secId){
+  return lanes.findIndex(l=>l.type===type&&l.secId===secId);
+}
+
+// Move every currently-active item by one step (delta=-1 up, +1 down)
+// through the lane sequence. Within a lane, this swaps with the
+// adjacent item. At a lane's edge, the NEXT step moves into the
+// adjacent lane (even if empty) rather than skipping it — and crossing
+// out of a lane always lands on the first/last slot of the next lane
+// first, never jumping past it.
+function moveActiveItems(delta){
+  if(ACTIVE.size===0)return;
+  const k=tKey();
+  const lanes=buildLanes(); // [{secId,type,items:[...]}] fixed-length, in display order
+
+  // Each lane keeps its own live array (laneArr[li]) of {active,data}.
+  const laneArr=lanes.map((lane,li)=>
+    lane.items.map((item,idx)=>({active:ACTIVE.has(itemKey(lane.type,lane.secId,idx)),data:item}))
+  );
+
+  // Build ONE flat list covering every lane, INCLUDING a placeholder
+  // entry for empty lanes. Without this, an empty lane has zero
+  // entries in the flat view, so there is nothing to anchor it to —
+  // which was the root cause of active groups "teleporting" past
+  // every empty lane straight to the first/last lane that happened to
+  // have real items. Each placeholder is tagged with its lane index
+  // directly and is never active, never moves, never gets written
+  // back as data — it only exists so every lane has a stable anchor
+  // point in flat order.
+  const flat=[];
+  laneArr.forEach((arr,li)=>{
+    if(arr.length===0){
+      flat.push({li,placeholder:true});
+    } else {
+      arr.forEach(e=>flat.push({li,e}));
+    }
+  });
+
+  const activeFlatIdxs=flat.map((f,fi)=>(f.e&&f.e.active)?fi:-1).filter(fi=>fi>=0);
+  if(activeFlatIdxs.length===0)return;
+
+  // Bounds: can the whole active group still move one more step?
+  // (Placeholders don't count as "ends" to stop at — only real edges
+  // of the entire flat sequence matter.)
+  if(delta<0&&activeFlatIdxs[0]===0)return;
+  if(delta>0&&activeFlatIdxs[activeFlatIdxs.length-1]===flat.length-1)return;
+
+  beforeSave();
+
+  // ── Move the entire active group by exactly one flat step ──
+  // Pull every active entry out (preserving relative order), and
+  // every OTHER entry (non-active items AND lane placeholders) stays
+  // in its existing relative order untouched. Then re-insert the
+  // active group shifted by one position among the "others" sequence.
+  const activeRefs=activeFlatIdxs.map(fi=>flat[fi].e);
+  const others=flat.filter(f=>!(f.e&&f.e.active)); // non-active items + all placeholders, in original order
+
+  // How many "others" entries sit strictly before the active group
+  // right now? That count, shifted by one in the travel direction,
+  // tells us where to re-insert the group.
+  const othersBeforeOld=flat.slice(0,activeFlatIdxs[0]).filter(f=>!(f.e&&f.e.active)).length;
+  let othersBeforeNew = delta<0 ? Math.max(0,othersBeforeOld-1) : Math.min(others.length,othersBeforeOld+1);
+
+  const newFlat=[
+    ...others.slice(0,othersBeforeNew),
+    ...activeRefs.map(e=>({e})), // wrap back into flat-entry shape (li unknown yet)
+    ...others.slice(othersBeforeNew)
+  ];
+
+  // Now assign each entry in newFlat to a lane. Non-active items and
+  // placeholders carry their ORIGINAL lane (li) — those never change.
+  // For the active group: it just hopped over exactly one anchor in
+  // the direction of travel, so it must take ON that anchor's lane —
+  // not the lane of whatever anchor happens to precede it positionally
+  // in newFlat (which, for upward moves, is actually the anchor it's
+  // hopping AWAY from). Concretely:
+  //   - moving up (delta<0): the group takes the lane of the anchor
+  //     immediately AFTER it in newFlat (the one it just hopped over).
+  //   - moving down (delta>0): the group takes the lane of the anchor
+  //     immediately BEFORE it in newFlat.
+  const newLaneArr=lanes.map(()=>[]);
+
+  if(delta<0){
+    // Walk backward so we always know the "next anchor's lane" already.
+    let nextAnchorLane=null;
+    for(let idx2=newFlat.length-1;idx2>=0;idx2--){
+      const f=newFlat[idx2];
+      if(f.placeholder){nextAnchorLane=f.li;continue;}
+      if(f.li!==undefined){nextAnchorLane=f.li;newLaneArr[f.li].push(f.e);continue;}
+      // active entry — use the next (upcoming, i.e. below it) anchor's lane
+      if(nextAnchorLane===null)nextAnchorLane=0;
+      newLaneArr[nextAnchorLane].push(f.e);
+    }
+    // reverse each lane back to correct order (we filled bottom-up)
+    newLaneArr.forEach(arr=>arr.reverse());
+  } else {
+    let lastAnchorLane=0;
+    newFlat.forEach(f=>{
+      if(f.placeholder){lastAnchorLane=f.li;return;}
+      if(f.li!==undefined){lastAnchorLane=f.li;newLaneArr[f.li].push(f.e);return;}
+      newLaneArr[lastAnchorLane].push(f.e);
+    });
+  }
+
+  // Write back.
+  const touchedSecIds=new Set();
+  lanes.forEach((lane,li)=>{
+    const target=lane.type==='big'?getBigs(k,lane.secId):getSmalls(k,lane.secId);
+    target.length=0;
+    newLaneArr[li].forEach(e=>target.push(e.data));
+    touchedSecIds.add(lane.secId);
+  });
+
+  save();
+  touchedSecIds.forEach(sid=>renderSecBody(sid));
+  updateTotal();
+
+  const newActiveKeys=[];
+  lanes.forEach((lane,li)=>{
+    newLaneArr[li].forEach((e,idx)=>{
+      if(e.active)newActiveKeys.push(itemKey(lane.type,lane.secId,idx));
+    });
+  });
+  ACTIVE.clear();
+  newActiveKeys.forEach(k2=>ACTIVE.add(k2));
+  _anchorKey=newActiveKeys[0]||null;
+  _focusFlatIdx=null;
+  refreshActiveVisuals();
+  scrollActiveIntoView();
+}
+
+function moveActiveItemsAcrossSection(delta){
+  if(ACTIVE.size===0)return;
+  const visibleSecs=SECS.filter(s=>ST.vis.includes(s.id)).map(s=>s.id);
+  if(visibleSecs.length<2)return;
+  const k=tKey();
+
+  beforeSave();
+  const positions=[...ACTIVE].map(parseItemKey);
+  const touchedSecIds=new Set();
+  const newActiveKeys=[];
+
+  // Group by source section so each section's removals use correct,
+  // still-valid indices (sorted descending to remove safely).
+  const bySec={};
+  positions.forEach(p=>{(bySec[p.secId]=bySec[p.secId]||[]).push(p);});
+
+  Object.entries(bySec).forEach(([secId,items])=>{
+    const curPos=visibleSecs.indexOf(secId);
+    let destPos=curPos+delta;
+    destPos=Math.max(0,Math.min(visibleSecs.length-1,destPos));
+    const destSecId=visibleSecs[destPos];
+    if(destSecId===secId){
+      // already at the boundary — nothing to do for this group
+      items.forEach(p=>newActiveKeys.push(itemKey(p.type,p.secId,p.idx)));
+      touchedSecIds.add(secId);
+      return;
+    }
+    // Remove from source (descending idx to stay valid), preserving
+    // each item's original relative order for re-insertion.
+    const sorted=[...items].sort((a,b)=>b.idx-a.idx);
+    const extracted=sorted.map(p=>{
+      const arr=p.type==='big'?getBigs(k,p.secId):getSmalls(k,p.secId);
+      return{...p,data:arr.splice(p.idx,1)[0]};
+    }).reverse(); // back to ascending original order
+
+    extracted.forEach(p=>{
+      const destArr=p.type==='big'?getBigs(k,destSecId):getSmalls(k,destSecId);
+      const insertAt=destArr.length;
+      destArr.push(p.data);
+      newActiveKeys.push(itemKey(p.type,destSecId,insertAt));
+    });
+    touchedSecIds.add(secId);
+    touchedSecIds.add(destSecId);
+  });
+
+  save();
+  touchedSecIds.forEach(sid=>renderSecBody(sid));
+  updateTotal();
+
+  ACTIVE.clear();
+  newActiveKeys.forEach(k2=>ACTIVE.add(k2));
+  _anchorKey=newActiveKeys[0]||null;
+  refreshActiveVisuals();
+  scrollActiveIntoView();
+}
+
+// Master keydown handler — only meaningful on desktop, and behaves
+// differently depending on whether a text input currently has focus.
+document.addEventListener('keydown',e=>{
+  if(IS_TOUCH)return;
+  // Ignore when a menu/picker/AI drawer is open, to avoid double-handling.
+  if(document.getElementById('taskMenu')?.style.display==='block')return;
+
+  const editing=isAnyInputFocused();
+  const inTaskInput=editing&&document.activeElement.closest('.big-item,.sm-item');
+
+  // ── While editing a big/small task's text ──
+  if(inTaskInput){
+    const row=document.activeElement.closest('.big-item,.sm-item');
+    const type=row.classList.contains('big-item')?'big':'small';
+    const secId=row.dataset.id;
+    const idx=parseInt(row.dataset.i);
+
+    if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.shiftKey&&!e.metaKey&&!e.altKey){
+      e.preventDefault();
+      const list=buildFlatList();
+      const i=findFlatIndex(list,type,secId,idx);
+      if(i<0)return;
+      const ni=e.key==='ArrowUp'?i-1:i+1;
+      if(ni<0||ni>=list.length)return;
+      const it=list[ni];
+      focusItemInput(it.type,it.secId,it.idx);
+    }
+    // Enter/Tab already handled by each input's own onkeydown (unchanged).
+    return;
+  }
+
+  // ── Not editing text: arrow-key driven selection ──
+  if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+    const delta=e.key==='ArrowUp'?-1:1;
+
+    if(e.shiftKey&&e.metaKey&&e.altKey){
+      e.preventDefault();
+      moveActiveItemsAcrossSection(delta);
+      return;
+    }
+    if(e.shiftKey&&e.metaKey){
+      e.preventDefault();
+      moveActiveItems(delta);
+      return;
+    }
+    if(e.shiftKey){
+      e.preventDefault();
+      moveActiveSelection(delta,true);
+      return;
+    }
+    e.preventDefault();
+    moveActiveSelection(delta,false);
+    return;
+  }
+
+  if(e.key==='Enter'&&ACTIVE.size>0&&!e.shiftKey&&!e.metaKey&&!e.altKey){
+    e.preventDefault();
+    const k=_anchorKey||[...ACTIVE][0];
+    const{type,secId,idx}=parseItemKey(k);
+    focusItemInput(type,secId,idx);
+  }
+});
+
+// Click the row-spacer (B-zone) to activate a row without entering
+// text-edit mode. Wired up from attachDrag below via a tiny helper so
+// it lives alongside the rest of the row's interaction setup.
+function wireActivateClick(el,type,secId,idx){
+  if(IS_TOUCH)return;
+  const spacer=el.querySelector('.row-spacer');
+  if(!spacer)return;
+  spacer.addEventListener('click',e=>{
+    e.stopPropagation();
+    activateItem(type,secId,idx,e.shiftKey);
+  });
+}
+
+function openTaskMenu(type, secId, idx, anchorEl, atPoint){
+  _taskMenuCtx={type,secId,idx};
+  const menu=document.getElementById('taskMenu');
+  const overlay=document.getElementById('taskMenuOverlay');
+  menu.style.display='block';
+  overlay.style.display='block';
+  menu.style.transform='';
+
+  // On desktop, make the date input visible inline so the native
+  // calendar-icon click target is real and reliably opens the picker.
+  // On mobile, keep it as an invisible full-row overlay under the label
+  // (iOS opens the picker from any tap on the associated label).
+  //
+  // The input is recreated from scratch every time the menu opens rather
+  // than reusing the same node. iOS Safari was found to silently auto-
+  // dismiss the native date picker on every *other* open of a reused
+  // <input type="date"> (a reproducible odd/even pattern) — recreating
+  // the element clears whatever internal picker state was causing it.
+  const oldInp=document.getElementById('datePickerInput');
+  const inp=document.createElement('input');
+  inp.type='date';
+  inp.id='datePickerInput';
+  inp.setAttribute('onchange','moveTaskToPickedDate(this.value)');
+  inp.onchange=function(){moveTaskToPickedDate(this.value);};
+  inp.onfocus=()=>prepDatePicker();
+  oldInp.replaceWith(inp);
+
+  const labelRow=document.getElementById('dateLabelRow');
+  if(!IS_TOUCH){
+    inp.style.cssText='position:static;opacity:1;width:auto;height:auto;'+
+      'margin-left:auto;background:var(--s2);color:var(--tx2);'+
+      'border:1px solid var(--bd2);border-radius:6px;padding:3px 6px;'+
+      'font-size:12px;-webkit-appearance:none;cursor:pointer;';
+    labelRow.style.cursor='default';
+  } else {
+    inp.style.cssText='position:absolute;inset:0;width:100%;height:100%;'+
+      'opacity:0;border:none;font-size:16px;-webkit-appearance:none;cursor:pointer;';
+  }
+
+  const mw=180,mh=170;
+  let left,top;
+
+  if(atPoint){
+    left=atPoint.x;top=atPoint.y;
+  } else if(anchorEl){
+    const r=anchorEl.getBoundingClientRect();
+    left=r.left;top=r.bottom+6;
+  } else {
+    left=window.innerWidth/2-mw/2;top=window.innerHeight/2-mh/2;
+  }
+
+  if(left+mw>window.innerWidth)left=window.innerWidth-mw-8;
+  if(left<8)left=8;
+  if(top+mh>window.innerHeight)top=(atPoint?atPoint.y:top)-mh-6;
+  if(top<8)top=8;
+
+  menu.style.left=left+'px';
+  menu.style.top=top+'px';
+}
+
+function closeTaskMenu(){
+  document.getElementById('taskMenu').style.display='none';
+  document.getElementById('taskMenuOverlay').style.display='none';
+  document.getElementById('taskMenu').style.transform='';
+  _taskMenuCtx=null;
+  // If a drag was frozen in place to show this menu, release it now —
+  // there's no pending move to commit, so just clear the drag state.
+  if(DR.active&&DR._frozen)cancelDragKeepingItem();
+}
+
+function moveTaskTo(days){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const fromKey=tKey();
+  const toDate=addDays(viewDate,days);
+  const toKey=tKey(toDate);
+  beforeSave();
+  let item;
+  if(type==='big'){
+    item={...getBigs(fromKey,secId).splice(idx,1)[0]};
+    getBigs(toKey,secId).push({text:item.text,done:false});
+  } else {
+    item={...getSmalls(fromKey,secId).splice(idx,1)[0]};
+    getSmalls(toKey,secId).push({text:item.text,done:false});
+  }
+  save();
+  renderSecBody(secId);
+  updateTotal();
+  closeTaskMenu();
+  // brief flash to confirm
+  const label=days===1?'내일로':'다음 주로';
+  showToast(`${label} 이동했어요`);
+}
+
+function prepDatePicker(){
+  const tomorrow=addDays(viewDate,1);
+  const inp=document.getElementById('datePickerInput');
+  inp.min=tKey(tomorrow);
+  inp.value='';
+  // Don't touch menu visibility here — closing/hiding elements while the
+  // native picker is opening can dismiss it on iOS. Menu will be closed
+  // naturally once a date is chosen (onchange) or left as-is otherwise.
+}
+
+function closeTaskMenu_keepCtx(){
+  document.getElementById('taskMenu').style.display='none';
+  document.getElementById('taskMenuOverlay').style.display='none';
+  document.getElementById('taskMenu').style.transform='';
+  if(DR.active&&DR._frozen)cancelDragKeepingItem();
+}
+
+function closeDatePicker(){}
+function confirmDatePicker(){}
+
+function moveTaskToPickedDate(dateStr){
+  if(!dateStr||!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const fromKey=tKey();
+  beforeSave();
+  let item;
+  if(type==='big'){
+    item={...getBigs(fromKey,secId).splice(idx,1)[0]};
+    getBigs(dateStr,secId).push({text:item.text,done:false});
+  } else {
+    item={...getSmalls(fromKey,secId).splice(idx,1)[0]};
+    getSmalls(dateStr,secId).push({text:item.text,done:false});
+  }
+  save();renderSecBody(secId);updateTotal();
+  _taskMenuCtx=null;
+  closeTaskMenu_keepCtx();
+  showToast('날짜로 이동했어요');
+}
+
+// ─ Toast ─
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){
+    t=document.createElement('div');t.id='toast';
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'+
+      'background:var(--s2);border:1px solid var(--bd2);color:var(--tx2);'+
+      'font-size:12px;padding:8px 16px;border-radius:20px;z-index:300;'+
+      'pointer-events:none;transition:opacity .3s;white-space:nowrap;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.opacity='0',1800);
+}
+
+// ═══════ WEEKLY updated: click date → D view ═══════
+function renderWeekly(){
+  const el=document.getElementById('weeklyView');
+  const today=new Date(),dow=today.getDay();
+  const dates=Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()-dow+i);return d;});
+  const vis=SECS.filter(s=>ST.vis.includes(s.id));
+  let h=`<div class="view-ttl">이번 주</div><div class="wscr"><div class="wkg">
+    <div class="wh"></div>
+    ${dates.map((d,i)=>{
+      const dk=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+      return`<div class="wh${i===dow?' tc':''}" style="cursor:pointer" onclick="goToDate('${dk}')">${DOW[d.getDay()]} ${d.getDate()}</div>`;
+    }).join('')}`;
+  vis.forEach(sec=>{
+    h+=`<div class="wlbl" style="color:${sec.color}">${sec.name}</div>`;
+    dates.forEach((d,di)=>{
+      const k=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+      const bigs=ST.days[k]?.big?.[sec.id]||[];const sms=ST.days[k]?.small?.[sec.id]||[];
+      h+=`<div class="wc${di===dow?' tc':''}" style="cursor:pointer" onclick="goToDate('${k}')">`;
+      bigs.slice(0,2).forEach(b=>{if(b.text)h+=`<div class="wbig${b.done?' done':''}">${esc(b.text)}</div>`;});
+      sms.slice(0,2).forEach(s=>h+=`<div class="wsm${s.done?' done':''}">${esc(s.text)}</div>`);
+      const more=(bigs.length>2?bigs.length-2:0)+(sms.length>2?sms.length-2:0);
+      if(more)h+=`<div class="wmore">+${more}</div>`;
+      h+='</div>';
+    });
+  });
+  h+='</div></div>';el.innerHTML=h;
+}
+
+// ═══════ MONTHLY updated: click day → D view ═══════
+function renderMonthly(){
+  const el=document.getElementById('monthlyView');const{y,m}=mCur;const today=new Date();
+  const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();
+  let h=`<div class="mnav"><button class="mnb" onclick="chM(-1)">‹</button><div class="mttl">${y}년 ${MONS[m]}</div><button class="mnb" onclick="chM(1)">›</button></div>
+  <div class="mcg">${DOW.map(d=>`<div class="mcdow">${d}</div>`).join('')}${Array(fd).fill('<div class="mcc empty"></div>').join('')}`;
+  for(let d=1;d<=dim;d++){
+    const k=`${y}-${z(m+1)}-${z(d)}`;const day=ST.days[k];
+    const isT=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const bigs=SECS.flatMap(s=>day?.big?.[s.id]||[]).filter(b=>b.text?.trim());
+    const smt=SECS.reduce((a,s)=>a+(day?.small?.[s.id]?.length||0),0);
+    h+=`<div class="mcc${isT?' mct':''}" style="cursor:pointer" onclick="goToDate('${k}')">
+      <div class="mcd">${d}</div>
+      <div class="mcdots">${bigs.map((b,i)=>`<div class="mcdot${i>=6?' ov':''}${b.done?' dn':''}"></div>`).join('')}</div>
+      ${smt?`<div class="mcsc">${smt}</div>`:''}
+    </div>`;
+  }
+  h+='</div>';el.innerHTML=h;
+}
+function chM(dir){mCur.m+=dir;if(mCur.m<0){mCur.m=11;mCur.y--;}if(mCur.m>11){mCur.m=0;mCur.y++;}renderMonthly();}
+
+function goToDate(dateStr){
+  const [y,m,d]=dateStr.split('-').map(Number);
+  viewDate=new Date(y,m-1,d);
+  sw('today',document.querySelector('.tab.on')||document.querySelector('.tab'));
+}
+
+// ═══════ INIT ═══════
+// Re-measure every visible input's width — used after the webfont
+// finishes loading (initial paint may have used a fallback font) and
+// after full day re-renders, since freshly created inputs always need
+// at least one accurate measurement against the real font.
+function resizeAllInputs(){
+  document.querySelectorAll('.bi-inp,.si-inp').forEach(autoSizeInput);
+}
+
+function initAppUI(){
+  updateHeaderDate();
+  renderToday();
+  updateUrBtns();
+  initDateSwipe();
+
+  // The Pretendard webfont loads asynchronously (display:swap). If the
+  // very first render happens before it's ready, autoSizeInput() measures
+  // against the fallback system font — which is narrower for Korean text
+  // — leaving every input a few px too tight once Pretendard swaps in.
+  // Re-measure everything once the real font is confirmed loaded.
+  if(document.fonts&&document.fonts.ready){
+    document.fonts.ready.then(resizeAllInputs);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FIREBASE SYNC (cross-device data sync via Firestore)
+// ═══════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE",
+  authDomain: "block7-8f24e.firebaseapp.com",
+  projectId: "block7-8f24e",
+  storageBucket: "block7-8f24e.firebasestorage.app",
+  messagingSenderId: "517626689480",
+  appId: "1:517626689480:web:92ea52eeebc24277ef72fd"
+};
+firebase.initializeApp(firebaseConfig);
+const fbAuth = firebase.auth();
+const fbDB = firebase.firestore();
+// Allow Firestore to work offline and queue writes until reconnect —
+// this means the app still feels instant and usable without a network
+// connection, syncing automatically once back online.
+fbDB.enablePersistence({synchronizeTabs:true}).catch(()=>{/* unsupported in this browser — fine, just no offline cache */});
+
+let _fbUser=null;
+let _fbUnsub=null;       // Firestore realtime listener unsubscribe fn
+let _fbApplyingRemote=false; // guard against write-triggered echo loops
+let _authMode='login';   // 'login' | 'signup'
+
+function authToggleMode(){
+  _authMode=_authMode==='login'?'signup':'login';
+  document.getElementById('authSubmitBtn').textContent=_authMode==='login'?'로그인':'회원가입';
+  document.getElementById('authSwitchRow').innerHTML=_authMode==='login'
+    ? '계정이 없으신가요? <button onclick="authToggleMode()">회원가입</button>'
+    : '이미 계정이 있으신가요? <button onclick="authToggleMode()">로그인</button>';
+  document.getElementById('authError').textContent='';
+}
+
+function authSetLoading(on){
+  document.getElementById('authLoading').style.display=on?'block':'none';
+  document.getElementById('authSubmitBtn').disabled=on;
+}
+
+async function authSubmit(){
+  const email=document.getElementById('authEmail').value.trim();
+  const pw=document.getElementById('authPassword').value;
+  const errEl=document.getElementById('authError');
+  errEl.textContent='';
+  if(!email||!pw){errEl.textContent='이메일과 비밀번호를 입력해주세요.';return;}
+
+  authSetLoading(true);
+  try{
+    if(_authMode==='login'){
+      await fbAuth.signInWithEmailAndPassword(email,pw);
+    } else {
+      await fbAuth.createUserWithEmailAndPassword(email,pw);
+    }
+    // onAuthStateChanged below handles the rest (hiding auth screen, loading data)
+  }catch(e){
+    errEl.textContent=authErrorMessage(e);
+  }
+  authSetLoading(false);
+}
+
+function authErrorMessage(e){
+  const code=e.code||'';
+  if(code.includes('invalid-email'))return'이메일 형식이 올바르지 않아요.';
+  if(code.includes('user-not-found')||code.includes('wrong-password')||code.includes('invalid-credential'))return'이메일 또는 비밀번호가 올바르지 않아요.';
+  if(code.includes('email-already-in-use'))return'이미 가입된 이메일이에요. 로그인해주세요.';
+  if(code.includes('weak-password'))return'비밀번호는 6자 이상이어야 해요.';
+  if(code.includes('network'))return'네트워크 연결을 확인해주세요.';
+  return'문제가 발생했어요. 다시 시도해주세요.';
+}
+
+function authSignOut(){
+  if(!confirm('로그아웃 하시겠어요?'))return;
+  if(_fbUnsub){_fbUnsub();_fbUnsub=null;}
+  fbAuth.signOut();
+}
+
+// ── Firestore doc path: one document per user, holding their entire ST ──
+function userDocRef(uid){
+  return fbDB.collection('users').doc(uid).collection('data').doc('state');
+}
+
+// Push the current ST to Firestore. Called from rawSave() so every
+// existing save-path in the app (big/small edits, drag reorders,
+// trash, view-state changes, etc.) automatically syncs with zero
+// changes needed anywhere else in the codebase.
+let _fbWriteTimer=null;
+function fbPushState(){
+  if(!_fbUser||_fbApplyingRemote)return;
+  // Debounce rapid-fire writes (e.g. fast typing) into one Firestore
+  // write every 600ms instead of one per keystroke.
+  clearTimeout(_fbWriteTimer);
+  _fbWriteTimer=setTimeout(()=>{
+    userDocRef(_fbUser.uid).set({
+      json: JSON.stringify(ST),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(err=>console.warn('Firestore write failed (will retry via offline queue):',err));
+  },600);
+}
+
+// Start listening for realtime changes to this user's data — so edits
+// made on another device (iPad, Mac mini, etc.) appear here too.
+function fbStartListening(uid){
+  if(_fbUnsub)_fbUnsub();
+  _fbUnsub=userDocRef(uid).onSnapshot(doc=>{
+    if(!doc.exists)return; // first-ever login, nothing remote yet — local ST stands
+    const data=doc.data();
+    if(!data||!data.json)return;
+    let remote;
+    try{remote=JSON.parse(data.json);}catch(e){return;}
+
+    // Apply the remote state without re-triggering a write (which would
+    // otherwise create an infinite local-write -> remote-update -> local-write loop).
+    _fbApplyingRemote=true;
+    ST.vis=remote.vis||ST.vis;
+    ST.prevVis=remote.prevVis??ST.prevVis;
+    ST.preset=remote.preset??ST.preset;
+    ST.collapsed=remote.collapsed||[];
+    ST.days=remote.days||{};
+    rawSave(); // keep localStorage mirror in sync as an offline cache
+    _fbApplyingRemote=false;
+
+    // Re-render whatever's currently on screen so the change shows up
+    // immediately, without disrupting things like open menus/drags.
+    if(!DR || !DR.active){
+      const activeTab=document.querySelector('.tab.on')?.textContent;
+      if(activeTab==='W')renderWeekly();
+      else if(activeTab==='M')renderMonthly();
+      else renderToday();
+      updateTrashBadge?.();
+    }
+  },err=>console.warn('Firestore listener error:',err));
+}
+
+fbAuth.onAuthStateChanged(async user=>{
+  if(user){
+    _fbUser=user;
+    document.getElementById('authScreen').classList.add('hidden');
+
+    // On first login on THIS device, pull any existing remote data
+    // before starting the UI — so we don't briefly show an empty/local
+    // state and then have it jarringly replaced a moment later.
+    try{
+      const doc=await userDocRef(user.uid).get();
+      if(doc.exists){
+        const data=doc.data();
+        if(data&&data.json){
+          const remote=JSON.parse(data.json);
+          _fbApplyingRemote=true;
+          ST.vis=remote.vis||ST.vis;
+          ST.prevVis=remote.prevVis??ST.prevVis;
+          ST.preset=remote.preset??ST.preset;
+          ST.collapsed=remote.collapsed||[];
+          ST.days=remote.days||{};
+          rawSave();
+          _fbApplyingRemote=false;
+        }
+      } else {
+        // No remote data yet for this account — push whatever's local
+        // (e.g. data from before they logged in) so it isn't lost.
+        fbPushState();
+      }
+    }catch(e){console.warn('Initial Firestore fetch failed, using local data:',e);}
+
+    initAppUI();
+    fbStartListening(user.uid);
+  } else {
+    _fbUser=null;
+    if(_fbUnsub){_fbUnsub();_fbUnsub=null;}
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('authEmail').value='';
+    document.getElementById('authPassword').value='';
+  }
+});
+</script>
+</body>
+</html>
