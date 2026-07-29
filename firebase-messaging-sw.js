@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-3)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-4)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
@@ -11,7 +11,7 @@ firebase.initializeApp({
   appId: "1:517626689480:web:92ea52eeebc24277ef72fd"
 });
 
-var SW_VER = 'v. 26-0730-3';
+var SW_VER = 'v. 26-0730-4';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
