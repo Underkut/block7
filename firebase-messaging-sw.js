@@ -54,14 +54,22 @@ self.addEventListener('notificationclick', function (event) {
       return clients.matchAll({ type: 'window', includeUncontrolled: true });
     }).then(function (list) {
       // 이미 열려 있는 창이 있으면 그 창에 알려주고 앞으로 가져온다
+      // 브로드캐스트로도 한 번 더 알린다 (창을 못 찾는 경우 대비)
+      try {
+        if (self.BroadcastChannel) {
+          new BroadcastChannel('block7').postMessage({ type: 'block7-open-verse', ref: ref });
+        }
+      } catch (e) {}
+
       for (var i = 0; i < list.length; i++) {
         var c = list[i];
-        if (c.url.indexOf('/block7') !== -1) {
-          try { c.postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
-          if (c.focus) return c.focus();
-          return null;
-        }
+        try { c.postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
       }
+      for (var j = 0; j < list.length; j++) {
+        var w = list[j];
+        if (w.url.indexOf('/block7') !== -1 && w.focus) return w.focus();
+      }
+      if (list.length) return null;
       // 열린 창이 없으면 새로 연다
       return clients.openWindow(url);
     });
