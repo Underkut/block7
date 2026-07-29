@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-1)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-2)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
@@ -11,14 +11,13 @@ firebase.initializeApp({
   appId: "1:517626689480:web:92ea52eeebc24277ef72fd"
 });
 
-var SW_VER = 'v. 26-0730-1';
+var SW_VER = 'v. 26-0730-2';
 var APP_URL = 'https://underkut.github.io/block7/';
 var LOG_URL = '/__notif_log';
 
 // ── 알림 진단 기록 ──
 // 서비스워커와 앱이 같은 캐시(block7-msg)에 시간순으로 짧은 기록을 남긴다.
 // 앱의 말씀 설정 → 알림 탭 → "알림 진단 기록"에서 볼 수 있다.
-// "알림을 눌렀는데 전체화면이 안 열린다"의 원인을 기기에서 직접 확인하는 용도.
 function swLog(msg) {
   return caches.open('block7-msg').then(function (c) {
     return c.match(LOG_URL).then(function (r) {
@@ -42,11 +41,6 @@ self.addEventListener('activate', function (e) {
     swLog('서비스워커 활성화 ' + SW_VER)   // 이 줄이 보이면 새 SW가 실제로 적용된 것
   ]));
 });
-
-// 중요: onBackgroundMessage 안에서 showNotification() 을 부르면
-// 브라우저가 자동으로 띄우는 알림과 겹쳐 "빈 알림"이 하나 더 생긴다.
-// 그래서 여기서는 아무것도 띄우지 않는다.
-firebase.messaging();
 
 // push 도착 자체를 기록만 한다 (알림 표시는 브라우저 자동 표시에 맡김)
 self.addEventListener('push', function (e) {
@@ -77,7 +71,17 @@ function savePending(ref) {
   });
 }
 
+// ⚠️⚠️ 등록 순서가 핵심 ⚠️⚠️
+// 이 notificationclick 은 반드시 아래의 firebase.messaging() 호출보다
+// "먼저" 등록해야 한다. FCM 은 자기 클릭 처리기 안에서
+// stopImmediatePropagation() 을 불러 뒤에 등록된 처리기를 전부 차단한다.
+// (v0730-1 까지 "알림 탭됨" 기록이 한 번도 안 남던 원인이 바로 이것.
+//  앱이 닫혀 있을 땐 FCM 이 click_action 주소로 새 창을 열어 우연히 됐고,
+//  앱이 열려 있을 땐 FCM 이 주소 이동 없이 포커스만 해서 아무 일도 없었다)
+// 우리가 먼저 받고, 우리도 stopImmediatePropagation() 으로 FCM 쪽을 막아
+// 열기 동작을 한 군데(여기)서만 결정한다.
 self.addEventListener('notificationclick', function (event) {
+  event.stopImmediatePropagation();   // FCM 의 클릭 처리기가 겹치지 않게
   event.notification.close();
 
   var ref = pickRef(event.notification);
@@ -111,7 +115,6 @@ self.addEventListener('notificationclick', function (event) {
       }
 
       // 앞으로 가져올 창 고르기 — /block7 창 우선, 없으면 아무 창이나
-      // (예전 코드는 /block7 이 아닌 창만 있으면 아무것도 안 했음)
       var target = null;
       for (var j = 0; j < list.length; j++) {
         if ((list[j].url || '').indexOf('/block7') !== -1 && list[j].focus) { target = list[j]; break; }
@@ -139,3 +142,10 @@ self.addEventListener('notificationclick', function (event) {
     });
   })());
 });
+
+// 중요 1: onBackgroundMessage 안에서 showNotification() 을 부르면
+// 브라우저가 자동으로 띄우는 알림과 겹쳐 "빈 알림"이 하나 더 생긴다.
+// 그래서 여기서는 아무것도 띄우지 않는다.
+// 중요 2: 이 호출은 반드시 위의 notificationclick 등록보다 "뒤"에 있어야
+// 한다 (위의 등록 순서 주석 참고).
+firebase.messaging();
