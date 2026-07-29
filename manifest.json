@@ -1,8 +1,9 @@
 {
   "name": "BLOCK7",
   "short_name": "BLOCK7",
-  "description": "하루를 여섯 블럭으로",
-  "start_url": "/block7/",
+  "description": "하루를 일곱 블럭으로",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0d0e10",
   "theme_color": "#0d0e10",
