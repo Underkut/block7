@@ -1,7 +1,7 @@
 {
   "name": "BLOCK7",
   "short_name": "BLOCK7",
-  "description": "하루를 일곱 블럭으로",
+  "description": "아름다운 하루 · 일곱 블럭",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
