@@ -1,23 +1,54 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-4)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-13)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: "AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE",
-  authDomain: "block7-8f24e.firebaseapp.com",
-  projectId: "block7-8f24e",
-  messagingSenderId: "517626689480",
-  appId: "1:517626689480:web:92ea52eeebc24277ef72fd"
-});
+// ══════════════════════════════════════════════════════════════
+// ⚠️ 이 파일은 "순서"가 곧 기능이다. 아래 두 가지를 바꾸지 말 것.
+//
+//  ① notificationclick 등록은 importScripts 보다 반드시 "먼저".
+//     - FCM 은 자기 클릭 처리기에서 stopImmediatePropagation() 을 불러
+//       뒤에 등록된 처리기를 전부 막는다. 우리가 먼저 잡아야 한다.
+//     - 게다가 importScripts 는 gstatic 에서 파일을 받아온다. 네트워크가
+//       나쁘거나 캐시가 비워진 순간 이 줄에서 스크립트 실행이 통째로
+//       멈춘다. 그러면 뒤에 있던 등록이 하나도 안 되고, 알림을 눌러도
+//       앱만 앞으로 나오고 아무 일도 안 일어난다.
+//       (아이폰·아이패드에서 "한동안 되다가 어느 순간부터 안 되는" 증상)
+//     - 위쪽 var 값들과 함수 선언은 이 시점에 이미 준비돼 있으므로
+//       Firebase 가 못 올라와도 클릭 처리는 정상 동작한다.
+//
+//  ② 클릭 처리 안에서는 "전달용 기록 저장"이 제일 먼저, 진단 로그는 맨 뒤.
+//     - iOS 는 서비스워커에 짧은 실행 시간만 준다. 예전엔 로그를 먼저
+//       남기느라 캐시를 네 번 오가고 나서야 기록을 저장했는데, 그 사이
+//       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
+// ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0730-4';
+var SW_VER = 'v. 26-0730-13';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
-// ── 알림 진단 기록 ──
-// 서비스워커와 앱이 같은 캐시(block7-msg)에 시간순으로 짧은 기록을 남긴다.
-// 앱의 말씀 설정 → 알림 탭 → "알림 진단 기록"에서 볼 수 있다.
+// 알림에 들어 있는 장절을 꺼낸다 (FCM 이 감싸는 모양이 상황마다 다름)
+function pickRef(n) {
+  var d = (n && n.data) || {};
+  if (d.ref) return d.ref;
+  if (d.FCM_MSG && d.FCM_MSG.data && d.FCM_MSG.data.ref) return d.FCM_MSG.data.ref;
+  if (d.FCM_MSG && d.FCM_MSG.notification && d.FCM_MSG.notification.data)
+    return d.FCM_MSG.notification.data.ref || '';
+  return '';
+}
+
+// 앱이 꺼져 있다 열릴 때를 대비해 장절을 잠깐 남겨 둔다.
+// 아이폰 PWA 는 알림에서 열 때 주소(?verse=)를 무시하는 경우가 많아서,
+// 앱이 시작하며(또는 앞으로 나오며) 이 기록을 읽어 전체화면을 띄운다.
+// 이 기록은 앱이 실제로 전체화면을 띄운 뒤에 앱이 지운다.
+function savePending(ref) {
+  return caches.open('block7-msg').then(function (c) {
+    return c.put('/__pending_verse',
+      new Response(JSON.stringify({ ref: ref, ts: Date.now() }),
+        { headers: { 'Content-Type': 'application/json' } }));
+  });
+}
+
+// ── 알림 진단 기록 ── (앱: 말씀 설정 → 알림 탭 → 알림 진단 기록)
+// 어디까지나 보조 수단이다. 절대 알림 처리보다 먼저 실행하지 말 것.
 function swLog(msg) {
   return caches.open('block7-msg').then(function (c) {
     return c.match(LOG_URL).then(function (r) {
@@ -32,6 +63,77 @@ function swLog(msg) {
     });
   }).catch(function () {});
 }
+
+// 창 목록을 짧게 적어 둔다 (어느 창이 살아 있었는지 확인용)
+function describeClients(list) {
+  return list.map(function (c) {
+    return (c.url || '?').replace(APP_URL, '~/') +
+      '(' + (c.visibilityState || '?') + (c.focused ? '·focus' : '') + ')';
+  }).join(' ');
+}
+
+// ── 알림 탭 처리 (importScripts 보다 먼저 등록) ──
+self.addEventListener('notificationclick', function (event) {
+  event.stopImmediatePropagation();   // FCM 의 클릭 처리기가 겹치지 않게
+  event.notification.close();
+
+  var ref = pickRef(event.notification);
+  var url = ref ? (APP_URL + '?verse=' + encodeURIComponent(ref)) : APP_URL;
+  var notes = [];   // 진단 기록은 모아 두었다가 맨 마지막에 한 번에 남긴다
+
+  event.waitUntil(
+    // ① 가장 중요한 것부터: 전달용 기록 저장
+    savePending(ref).then(function () {
+      notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 완료');
+    }).catch(function (e) {
+      notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 실패: ' + (e && e.message || e));
+    })
+    // ② 열려 있는 창에 알리기
+    .then(function () {
+      return clients.matchAll({ type: 'window', includeUncontrolled: true });
+    }).then(function (list) {
+      notes.push('열린 창 ' + list.length + '개' + (list.length ? ': ' + describeClients(list) : ''));
+      try {
+        if (self.BroadcastChannel) {
+          new BroadcastChannel('block7').postMessage({ type: 'block7-open-verse', ref: ref });
+        }
+      } catch (e) {}
+      for (var i = 0; i < list.length; i++) {
+        try { list[i].postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
+      }
+
+      // ③ 창을 앞으로 가져오기 — /block7 또는 block7.my 창 우선
+      var target = null;
+      for (var j = 0; j < list.length; j++) {
+        var u = list[j].url || '';
+        if ((u.indexOf('block7.my') !== -1 || u.indexOf('/block7') !== -1) && list[j].focus) {
+          target = list[j]; break;
+        }
+      }
+      if (!target && list.length && list[0].focus) target = list[0];
+
+      if (target) {
+        return target.focus().then(function (fc) {
+          // 잠들어 있던 앱은 focus 이전의 메시지를 놓칠 수 있어 깨운 뒤 한 번 더
+          var cl = fc || target;
+          try { cl.postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
+          notes.push('기존 창을 앞으로 가져옴 + 재전달');
+        }).catch(function (e) {
+          notes.push('창 포커스 실패: ' + (e && e.message || e));
+          return clients.openWindow(url);
+        });
+      }
+      return clients.openWindow(url).then(function () {
+        notes.push('열린 창이 없어 새 창을 엶');
+      }).catch(function (e) {
+        notes.push('새 창 열기 실패: ' + (e && e.message || e));
+      });
+    })
+    // ④ 다 끝난 뒤에야 진단 기록
+    .then(function () { return swLog(notes.join(' | ')); })
+    .catch(function (e) { return swLog('알림 처리 중 오류: ' + (e && e.message || e)); })
+  );
+});
 
 // 새 서비스워커를 바로 쓰게 한다 (교체가 잘 안 먹는 문제 방지)
 self.addEventListener('install', function (e) { self.skipWaiting(); });
@@ -50,102 +152,19 @@ self.addEventListener('push', function (e) {
   e.waitUntil(swLog('push 도착: ' + (txt || '(내용 없음)')));
 });
 
-// 알림에 들어 있는 장절을 꺼낸다 (FCM 이 감싸는 모양이 상황마다 다름)
-function pickRef(n) {
-  var d = (n && n.data) || {};
-  if (d.ref) return d.ref;
-  if (d.FCM_MSG && d.FCM_MSG.data && d.FCM_MSG.data.ref) return d.FCM_MSG.data.ref;
-  if (d.FCM_MSG && d.FCM_MSG.notification && d.FCM_MSG.notification.data)
-    return d.FCM_MSG.notification.data.ref || '';
-  return '';
-}
+// ── 여기서부터 Firebase (위 등록이 끝난 뒤에 불러온다) ──
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
-// 앱이 꺼져 있다 열릴 때를 대비해 장절을 잠깐 남겨 둔다.
-// 아이폰 PWA 는 알림에서 열 때 주소(?verse=)를 무시하는 경우가 많아서,
-// 앱이 시작하며(또는 1.5초 폴링으로) 이 기록을 읽어 전체화면을 띄운다.
-function savePending(ref) {
-  return caches.open('block7-msg').then(function (c) {
-    return c.put('/__pending_verse',
-      new Response(JSON.stringify({ ref: ref, ts: Date.now() }),
-        { headers: { 'Content-Type': 'application/json' } }));
-  });
-}
-
-// ⚠️⚠️ 등록 순서가 핵심 ⚠️⚠️
-// 이 notificationclick 은 반드시 아래의 firebase.messaging() 호출보다
-// "먼저" 등록해야 한다. FCM 은 자기 클릭 처리기 안에서
-// stopImmediatePropagation() 을 불러 뒤에 등록된 처리기를 전부 차단한다.
-// (v0730-1 까지 "알림 탭됨" 기록이 한 번도 안 남던 원인이 바로 이것.
-//  앱이 닫혀 있을 땐 FCM 이 click_action 주소로 새 창을 열어 우연히 됐고,
-//  앱이 열려 있을 땐 FCM 이 주소 이동 없이 포커스만 해서 아무 일도 없었다)
-// 우리가 먼저 받고, 우리도 stopImmediatePropagation() 으로 FCM 쪽을 막아
-// 열기 동작을 한 군데(여기)서만 결정한다.
-self.addEventListener('notificationclick', function (event) {
-  event.stopImmediatePropagation();   // FCM 의 클릭 처리기가 겹치지 않게
-  event.notification.close();
-
-  var ref = pickRef(event.notification);
-  var url = ref ? (APP_URL + '?verse=' + encodeURIComponent(ref)) : APP_URL;
-
-  event.waitUntil((function () {
-    return swLog('알림 탭됨: ' + (ref || '(장절 없음)')).then(function () {
-      return savePending(ref).then(function () {
-        return swLog('전달용 기록 저장 완료');
-      }).catch(function (e) {
-        return swLog('전달용 기록 저장 실패: ' + (e && e.message || e));
-      });
-    }).then(function () {
-      return clients.matchAll({ type: 'window', includeUncontrolled: true });
-    }).then(function (list) {
-      var desc = list.map(function (c) {
-        return (c.url || '?').replace(APP_URL, '~/') +
-          '(' + (c.visibilityState || '?') + (c.focused ? '·focus' : '') + ')';
-      }).join(' ');
-      return swLog('열린 창 ' + list.length + '개' + (desc ? ': ' + desc : ''))
-        .then(function () { return list; });
-    }).then(function (list) {
-      // 브로드캐스트 + 창별 메시지 (앱이 이미 열려 있는 경우)
-      try {
-        if (self.BroadcastChannel) {
-          new BroadcastChannel('block7').postMessage({ type: 'block7-open-verse', ref: ref });
-        }
-      } catch (e) {}
-      for (var i = 0; i < list.length; i++) {
-        try { list[i].postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
-      }
-
-      // 앞으로 가져올 창 고르기 — /block7 창 우선, 없으면 아무 창이나
-      var target = null;
-      for (var j = 0; j < list.length; j++) {
-        if ((list[j].url || '').indexOf('/block7') !== -1 && list[j].focus) { target = list[j]; break; }
-      }
-      if (!target && list.length && list[0].focus) target = list[0];
-
-      if (target) {
-        return target.focus().then(function (fc) {
-          // 잠들어 있던 앱은 focus 이전의 postMessage 를 놓칠 수 있어
-          // 깨어난 "뒤에" 한 번 더 보낸다.
-          var cl = fc || target;
-          try { cl.postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
-          return swLog('기존 창을 앞으로 가져옴 + 재전달');
-        }).catch(function (e) {
-          return swLog('창 포커스 실패: ' + (e && e.message || e)).then(function () {
-            return clients.openWindow(url);
-          });
-        });
-      }
-      return clients.openWindow(url).then(function () {
-        return swLog('열린 창이 없어 새 창을 엶');
-      }).catch(function (e) {
-        return swLog('새 창 열기 실패: ' + (e && e.message || e));
-      });
-    });
-  })());
+firebase.initializeApp({
+  apiKey: "AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE",
+  authDomain: "block7-8f24e.firebaseapp.com",
+  projectId: "block7-8f24e",
+  messagingSenderId: "517626689480",
+  appId: "1:517626689480:web:92ea52eeebc24277ef72fd"
 });
 
-// 중요 1: onBackgroundMessage 안에서 showNotification() 을 부르면
-// 브라우저가 자동으로 띄우는 알림과 겹쳐 "빈 알림"이 하나 더 생긴다.
-// 그래서 여기서는 아무것도 띄우지 않는다.
-// 중요 2: 이 호출은 반드시 위의 notificationclick 등록보다 "뒤"에 있어야
-// 한다 (위의 등록 순서 주석 참고).
+// onBackgroundMessage 안에서 showNotification() 을 부르면 브라우저가
+// 자동으로 띄우는 알림과 겹쳐 "빈 알림"이 하나 더 생긴다. 그래서 아무것도
+// 띄우지 않고, 표시는 브라우저에, 클릭 처리는 위 처리기에 맡긴다.
 firebase.messaging();
