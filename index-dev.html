@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0802-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -541,23 +541,41 @@ header{
 #verseBarFirstWord{
   display:none;
 }
+/* 묶음 div 는 전체 모드에서 없는 셈 친다 → 그리드 레이아웃이 그대로 유지된다 */
+#verseBarLine{display:contents;}
 /* Sneak-peek mode: all items on one baseline row, same size */
 #verseBarInner.sneak-mode{
-  display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;
-  justify-content:center;gap:0;
+  display:flex;justify-content:center;
   padding:8px 13px 9px;
-  /* 가로 최대 폭 — 설정에서 조절(기본 1000px). 넓은 화면에서 한 줄이 너무
-     길어지지 않게 잡아준다. 기기 폭이 이보다 좁으면 기기 폭을 따른다. */
-  max-width:var(--sneak-maxw,1000px);
-  margin-left:auto;margin-right:auto;
 }
-/* 본문은 남는 폭만큼만 보여주고 넘치면 … 로 자른다.
-   display:inline 으로는 말줄임이 안 걸려서 이 항목만 inline-block 으로 둔다. */
+/* ── 스닉픽 한 줄 ──
+   켜진 항목들 + 본문 + '…' 이 "한 줄 안에" 들어가야 한다.
+   그래서 줄바꿈을 막고(nowrap), 본문만 줄어들게(flex:1 1 auto + min-width:0)
+   한 뒤 남는 폭에서 넘치는 부분을 … 로 자른다.
+   max-width 는 상자가 아니라 **이 한 줄 텍스트**의 최대 가로 폭이다
+   (설정값, 기본 1000px). 기기 폭이 더 좁으면 기기 폭을 따른다. */
+#verseBarInner.sneak-mode #verseBarLine{
+  display:flex;flex-direction:row;align-items:baseline;flex-wrap:nowrap;
+  justify-content:center;gap:0;
+  max-width:var(--sneak-maxw,1000px);
+  min-width:0;width:100%;
+}
+/* 본문 외의 항목은 줄어들지 않는다 — 먼저 자리를 잡고, 남는 폭을 본문이 쓴다 */
+#verseBarInner.sneak-mode #verseBarCat,
+#verseBarInner.sneak-mode #verseBarTopic,
+#verseBarInner.sneak-mode #verseBarRef,
+#verseBarInner.sneak-mode #verseBarTag,
+#verseBarInner.sneak-mode .verse-sneak-sep{
+  flex:0 0 auto;white-space:nowrap;
+}
+/* 본문만 남는 폭까지 늘었다 줄었다 하며 넘치면 … 로 잘린다.
+   display:inline 으로는 말줄임이 안 걸려서 이 항목만 block 으로 둔다. */
 #verseBarInner.sneak-mode #verseBarFirstWord{
-  display:inline-block!important;
-  max-width:100%;min-width:0;
+  display:block!important;
+  /* 늘어나지는 않고(0) 줄어들기만 한다(1). 짧은 구절에서는 한 줄이 가운데에
+     오밀조밀 모이고, 긴 구절에서만 본문이 줄면서 … 가 붙는다. */
+  flex:0 1 auto;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  vertical-align:bottom;
 }
 /* Kill full-mode individual margins so everything sits on the same line */
 #verseBarInner.sneak-mode #verseBarCat,
@@ -2274,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-5";
+const APP_VERSION = "v. 26-0802-6";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2931,9 +2949,9 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">구절</button>
           <button class="preset-btn on" id="setVerseSneakTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTag',this.classList.toggle('on'))">태그</button>
         </div>
-        <div class="settings-row-desc" style="margin:10px 0 6px;">본문은 기기 가로 폭 안에서 보이는 만큼만 나오고 나머지는 …으로 줄여요. 아래에서 한 줄의 최대 가로 폭을 정할 수 있어요.</div>
+        <div class="settings-row-desc" style="margin:10px 0 6px;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요. 아래는 그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요.</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--tx2);flex-shrink:0;">최대 가로 폭</span>
+          <span style="font-size:12px;color:var(--tx2);flex-shrink:0;">한 줄 최대 가로 폭</span>
           <input type="number" id="setVerseSneakMaxW" class="event-modal-text" min="200" max="4000" step="20"
             style="width:auto;flex:1;margin:0;padding:6px 10px;font-size:12px;"
             onchange="setVerseSneakMaxW(this.value)">
@@ -3051,7 +3069,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- ── Deeper·Even Deeper 링크를 열 브라우저 ── -->
       <div class="settings-section">
         <div class="settings-section-title">링크 열기</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">Deeper·Even Deeper 를 눌렀을 때 성경 사이트를 어디서 열지 정해요. 홈 화면에 설치한 앱에서만 적용돼요. 고른 브라우저가 없으면 앱 안에서 열려요.</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">Deeper 를 눌렀을 때 성경 사이트를 어디서 열지 정해요. 홈 화면에 설치한 앱에서만 적용되고, 고른 브라우저가 없으면 앱 안에서 열려요. (Even Deeper 는 ChatGPT 앱으로 이어져야 해서 이 설정을 따르지 않아요)</div>
         <div style="display:flex;gap:8px;">
           <button id="lnkModeSafari" class="settings-btn on" style="flex:1;" onclick="setLinkOpenMode('safari')">사파리</button>
           <button id="lnkModeChrome" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('chrome')">크롬</button>
@@ -3201,12 +3219,17 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="vb-top"><button class="vb-shuffle" onclick="event.stopPropagation();vbShuffleVerse()" aria-label="말씀 뽑기" title="말씀 뽑기"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4l8 10h4"/><path d="M4 15h4l2.5-3.1"/><path d="M13.5 7.1 16 4h4"/><path d="M17 2l3 2-3 2"/><path d="M17 18l3-2-3-2"/></svg></button></div>
 <div id="verseBar" style="display:none;" onclick="onVerseBarClick(event)">
   <div id="verseBarInner">
-    <div id="verseBarCat"></div>
-    <div id="verseBarTopic"></div>
-    <div id="verseBarText"></div>
-    <div id="verseBarFirstWord"></div>
-    <div id="verseBarRef"></div>
-    <div id="verseBarTag"></div>
+    <!-- 스닉픽에서 "한 줄"이 되는 묶음. 전체 모드에서는 display:contents 라
+         레이아웃에서 사라지고, 아래 항목들이 그대로 #verseBarInner 의
+         그리드 칸에 놓인다(= 전체 모드 동작은 그대로). -->
+    <div id="verseBarLine">
+      <div id="verseBarCat"></div>
+      <div id="verseBarTopic"></div>
+      <div id="verseBarText"></div>
+      <div id="verseBarFirstWord"></div>
+      <div id="verseBarRef"></div>
+      <div id="verseBarTag"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -5796,9 +5819,11 @@ function _fillVerseBarDOM(v){
     // 풀 모드에서 남긴 float/display/max-width 등 인라인 스타일이 남아있으면
     // 스닉픽 모드의 CSS 클래스 레이아웃을 깨뜨리므로 전부 초기화한다.
     [catEl,topicEl,firstEl,refEl,tagEl].forEach(el=>{el.style.cssText='';});
-    // 가로 최대 폭 (설정값, 기본 1000px)
+    // 한 줄 텍스트의 가로 최대 폭 (설정값, 기본 1000px).
+    // ⚠️ 말씀영역 상자(#verseBarInner)가 아니라 그 안의 한 줄(#verseBarLine)에 건다.
     const maxW=parseInt(s.verseSneakMaxW,10);
-    inner.style.setProperty('--sneak-maxw',(maxW>0?maxW:1000)+'px');
+    (document.getElementById('verseBarLine')||inner)
+      .style.setProperty('--sneak-maxw',(maxW>0?maxW:1000)+'px');
     // Build ordered list of [element, value, enabled] pairs — 태그는 장절 다음
     // 본문: 예전에는 '첫 단어'만 잘라 보여줬는데, 이제 본문 전체를 넣고
     // 남는 가로 폭만큼만 보이도록 CSS(text-overflow)가 … 로 잘라준다.
@@ -5812,8 +5837,11 @@ function _fillVerseBarDOM(v){
       [refEl,   abbrevRef(v.ref), s.verseSneakRef!==false],
       [tagEl,   tagListSneak,  s.verseSneakTag!==false&&tagListSneak.length>0],
     ];
+    // 구분자는 한 줄 묶음(#verseBarLine) 안에 넣는다 — 그래야 본문이 줄어드는
+    // 계산에 구분자 폭까지 함께 잡힌다.
+    const line=document.getElementById('verseBarLine')||inner;
     // Remove old separators
-    inner.querySelectorAll('.verse-sneak-sep').forEach(el=>el.remove());
+    line.querySelectorAll('.verse-sneak-sep').forEach(el=>el.remove());
     // Set content & visibility; collect visible items for separator insertion
     const visible=[];
     items.forEach(([el,val,show])=>{
@@ -5827,7 +5855,7 @@ function _fillVerseBarDOM(v){
       const sep=document.createElement('span');
       sep.className='verse-sneak-sep';
       sep.textContent='·';
-      inner.insertBefore(sep,el);
+      line.insertBefore(sep,el);
     });
   }
 }
@@ -6651,7 +6679,11 @@ function openEvenDeeperFromRef(ref){
   // navigator.clipboard.writeText()는 비동기라 곧바로 새 탭이 열리면
   // 문서가 포커스를 잃어 NotAllowedError로 실패하고, 게다가 Promise
   // 거부라 try/catch에도 안 잡혀 조용히 실패했다(이전 버전의 버그).
-  const go=()=>BibleLinkProvider.open(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
+  // ⚠️ Even Deeper 는 '링크 열기' 설정을 따르지 않는다 (v26-0802-6 에서 되돌림).
+  //    이 주소는 ChatGPT 커스텀 GPTs 라, 브라우저로 넘기면 웹 화면이 열려서
+  //    설치된 ChatGPT 앱으로 이어지던 흐름이 끊긴다. 예전처럼 그대로 넘겨
+  //    OS 가 ChatGPT 앱을 잡도록 둔다. (설정은 Deeper 에만 적용)
+  const go=()=>BibleLinkProvider._openInApp(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
   const okMsg=()=>showToast(`'${q}' 복사했어요 — ChatGPT에 붙여넣기 하세요`);
   const noMsg=()=>showToast(`ChatGPT에 '${q}' 를 입력하세요`);
   // iOS(특히 PWA)에서는 execCommand('copy') 가 true 를 돌려주고도 실제로는
