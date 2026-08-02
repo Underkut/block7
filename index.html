@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-8  [production]  -->
+<!-- BLOCK7  v. 26-0803-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2292,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-8";
+const APP_VERSION = "v. 26-0803-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7196,7 +7196,40 @@ function openVerseFull(keepOverride){
   // 웹폰트가 늦게 붙으면 폭이 달라지므로 로드 후 한 번 더 맞춘다
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(_verseFullIsOpen())_vfLayoutText();});
 }
+// ── 알림으로 연 전체화면이 덮었던 화면들 (닫을 때 복원) ──
+// 알림을 눌러 전체화면을 열 때, 그 위에 떠 있던 화면(타일뷰·설정·대시보드…)을
+// "닫지 않고" 숨겨 두는 명단. 전체화면을 닫는 순간 그대로 되살린다.
+let _vfNotifRestore=null;
+function _vfNotifHideCovers(){
+  const jobs=[];
+  // 타일뷰 — display 로만 숨긴다 (closeVerseGrid() 는 대시보드 복귀 훅까지 돌므로 금지)
+  const gd=document.getElementById('verseGrid');
+  if(gd&&gd.style.display==='flex'){gd.style.display='none';jobs.push(()=>{gd.style.display='flex';});}
+  // 설정창 두 종류 (말씀 설정·앱 설정) — 'open' 클래스로 열려 있다
+  ['verseSettingsOverlay','settingsOverlay'].forEach(id=>{
+    const o=document.getElementById(id);
+    if(o&&o.classList.contains('open')){o.classList.remove('open');jobs.push(()=>o.classList.add('open'));}
+  });
+  // 전체화면보다 위(z-index)에 뜨는 주요 팝업들 — 짝(오버레이+본체)으로 숨긴다
+  [['vDashDetailOverlay','vDashDetailModal'],['vDashOverlay','vDashModal'],
+   ['verseListOverlay','verseListModal'],['collEditPage',null]].forEach(([aId,bId])=>{
+    [aId,bId].forEach(id=>{
+      if(!id)return;
+      const el=document.getElementById(id);
+      if(el&&el.style.display&&el.style.display!=='none'){
+        const d=el.style.display;el.style.display='none';
+        jobs.push(()=>{el.style.display=d;});
+      }
+    });
+  });
+  return jobs.length?jobs:null;
+}
 function closeVerseFull(){
+  // 알림으로 열 때 숨겨 뒀던 화면들을 먼저 되살린다.
+  // ⚠️ 아래 대시보드 훅(setTimeout)보다 "먼저, 동기적으로" 되살려야 한다 —
+  //    타일뷰가 되살아나면 _vgIsOpen() 이 true 가 되어 대시보드가 겹쳐 뜨지 않는다.
+  const restore=_vfNotifRestore;_vfNotifRestore=null;
+  if(restore)restore.forEach(f=>{try{f();}catch(e){}});
   // 대시보드에서 넘어온 경우 그 화면으로 되돌린다 (그리드가 위에 없을 때만)
   setTimeout(()=>{ if(!_vgIsOpen())_vDashMaybeReturn(); },0);
   const el=document.getElementById('verseFull');
@@ -18420,13 +18453,15 @@ function _openVerseByRef(ref,src){
     _notifLog(`[${src}] ${ref} 전체화면 열기`);
     setTimeout(()=>{
       try{
+        // 전체화면(z-index 190)을 덮는 화면(타일뷰 195, 설정 4000, 대시보드 4601…)이
+        // 떠 있으면 잠시 숨겨 두고, 전체화면을 닫을 때 그대로 되살린다.
+        // ⚠️ 예전엔 타일뷰를 closeVerseGrid()로 "닫아"버렸다 → 알림 전체화면을
+        //    닫으면 보던 화면이 사라져 있었다. 닫지 말고 숨겼다 복원할 것.
+        // 알림 전체화면이 이미 떠 있는데 또 다른 알림을 누른 경우:
+        // 먼저 숨겨 둔 명단을 잃어버리지 않도록 이어 붙인다
+        const cov=_vfNotifHideCovers();
+        if(cov)_vfNotifRestore=(_vfNotifRestore||[]).concat(cov);
         openVerseFull(true);            // 위에서 지정한 구절을 유지한 채 연다
-        // 타일뷰(z-index 195)가 떠 있으면 전체화면(190)이 그 아래 깔려 안 보인다.
-        // 알림으로 들어온 구절은 항상 맨 위여야 하므로 타일뷰를 닫는다.
-        // ⚠️ 반드시 전체화면을 띄운 "뒤에" 닫을 것 — closeVerseGrid()는 전체화면이
-        //    없을 때 대시보드로 되돌아가는데(z-index 4601), 그러면 대시보드가
-        //    알림으로 연 구절을 다시 덮어버린다.
-        if(_vgIsOpen())closeVerseGrid();
         // 실제로 떴는지 확인한다. 조용히 실패하면 원인을 알 길이 없었다.
         if(_verseFullIsOpen())_clearPendingVerse();
         else{_lastNotifRef='';_notifLog(`[${src}] ${ref} — 열기를 시도했지만 화면이 뜨지 않음`);}
@@ -18516,13 +18551,27 @@ function _initVerseNotifBridge(){
     }
   }catch(e){}
   // 앱이 이미 화면에 떠 있는 상태로 알림을 누르면 화면전환·포커스 이벤트가
-  // 하나도 생기지 않는다. 그래서 보이는 동안에는 짧은 주기로 직접 확인한다.
+  // 하나도 생기지 않는다. 그래서 짧은 주기로 직접 확인한다.
   // (남겨둔 기록을 읽는 아주 가벼운 작업이라 부담이 없다)
   // ⚠️ 예전엔 전체화면이 열려 있으면 확인을 건너뛰었는데, 그러면 말씀을 보던
   // 중에 새 알림을 눌러도 아무 일이 안 생긴다. 기록은 알림을 실제로 누른
   // 순간에만 생기므로, 항상 확인해도 부작용이 없다.
+  // ⚠️⚠️ visibilityState==='visible' 조건을 걸지 말 것 (v26-0803-1 에서 제거).
+  //    iOS PWA 는 오래 잠들었다 깨어나면 visibilitychange 가 안 오거나
+  //    visibilityState 가 'hidden' 에 멈춰 있는 일이 있다. 그 조건 때문에
+  //    "오랜만에 열면 알림을 눌러도 앱만 뜨고 전체화면이 안 나오는" 재발이
+  //    있었다 (짧게 다녀오면 정상 = 이벤트가 제대로 오는 경우만 동작했던 것).
+  //    숨어 있는 동안엔 어차피 iOS 가 타이머를 얼리므로 비용 걱정은 없다.
+  let _lastTick=Date.now();
   setInterval(()=>{
-    if(document.visibilityState!=='visible')return;
+    const now=Date.now();
+    const frozen=now-_lastTick>5000;   // 타이머가 5초 넘게 얼었었다 = 방금 깨어남
+    _lastTick=now;
+    if(frozen){
+      // 깨어난 직후는 워커의 기록 저장과 경쟁하므로 여러 번 확인한다
+      recheckBurst();
+      return;
+    }
     recheck();
   },1500);
   _notifLog('앱 수신 준비 완료 ('+APP_VERSION+')');
