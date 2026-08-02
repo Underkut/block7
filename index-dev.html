@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0803-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2292,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-1";
+const APP_VERSION = "v. 26-0803-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18714,6 +18714,38 @@ function initAppUI(){
   }
 }
 
+// ── 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) ──
+// 로그인 사용자는 "SDK 로드 → 인증 확인 → 클라우드 fetch"가 다 끝나야
+// 본문이 그려져서, 네트워크가 느린 날은 GNB·달성바만 한참 보였다.
+// 직전 세션과 같은 계정이 확실한 기기(_localOwner 있음 + 로컬 데이터 있음)는
+// localStorage 의 ST 로 즉시 그려 두고, 클라우드가 도착하면 기존 병합·적용
+// 경로(onAuthStateChanged)가 다시 그린다.
+// - 이 함수는 "그리기만" 한다. 쓰기(이월·반복 생성·알람 예약·시트 동기화)는
+//   지금처럼 클라우드 도착 후 initAppUI 에서만 돈다. ⚠️ 쓰기를 이쪽으로
+//   옮기지 말 것 — fetch 전의 쓰기는 7장의 덮어쓰기 사고를 재발시킨다.
+// - 그리는 동안 사용자가 편집하면? fetch 후 부팅 병합(3자)이 살린다.
+//   그 전제는 tests/test_boot.js 가 고정한다.
+// - 리스너 등록은 하나도 하지 않는다 (전부 initAppUI 몫 — 두 번 등록 방지)
+function paintAppUIFromLocal(){
+  try{
+    if(!_localOwner())return;                  // 이 기기에서 로그인한 적 없음 → 로그인 화면 유지
+    let hasData=false;try{hasData=!!localStorage.getItem(LS_KEY);}catch(e){}
+    if(!hasData)return;                        // 그릴 로컬 데이터가 없음
+    // 자동 로그인이 예정된 기기 — 로그인 막을 미리 걷고 로컬로 그린다.
+    // 만약 세션이 정말 만료됐다면 onAuthStateChanged(null) 이 다시 띄운다.
+    document.getElementById('authScreen').classList.add('hidden');
+    applyTheme(ST.settings.theme||'dark');
+    applyUiScale();
+    try{_applySneakMaxW();}catch(e){}
+    try{applyVfTheme();}catch(e){}
+    document.body.classList.add('split-d');
+    _layInitDividers();                        // _dragAttached 가드가 있어 두 번 불려도 안전
+    updateHeaderDate();
+    renderToday();
+    updateUrBtns();
+  }catch(e){console.warn('빠른 첫 그리기 실패(치명 아님):',e);}
+}
+
 // ═══════════════════════════════════════════════════════════
 //  FIREBASE SYNC (cross-device data sync via Firestore)
 // ═══════════════════════════════════════════════════════════
@@ -19141,6 +19173,10 @@ async function sendTestPush(){
 
 if(!DEV_MODE){
 (async function(){
+  // ⚠️ 반드시 아래 await "앞에서" — SDK 로드·인증·fetch 를 하나도 기다리지 않고
+  //    로컬 데이터로 화면부터 그린다 (인계문서 5-3). 클라우드가 도착하면
+  //    onAuthStateChanged 가 병합·적용 후 initAppUI 로 다시 그린다.
+  paintAppUIFromLocal();
   // Wait for all 3 Firebase SDK scripts to finish loading (they're
   // deferred so they don't block initial page render — seenas the fix
   // for the slow startup — but that means we must explicitly wait
