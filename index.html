@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-3  [production]  -->
+<!-- BLOCK7  v. 26-0802-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -541,11 +541,41 @@ header{
 #verseBarFirstWord{
   display:none;
 }
+/* 묶음 div 는 전체 모드에서 없는 셈 친다 → 그리드 레이아웃이 그대로 유지된다 */
+#verseBarLine{display:contents;}
 /* Sneak-peek mode: all items on one baseline row, same size */
 #verseBarInner.sneak-mode{
-  display:flex;flex-direction:row;align-items:baseline;flex-wrap:wrap;
-  justify-content:center;gap:0;
+  display:flex;justify-content:center;
   padding:8px 13px 9px;
+}
+/* ── 스닉픽 한 줄 ──
+   켜진 항목들 + 본문 + '…' 이 "한 줄 안에" 들어가야 한다.
+   그래서 줄바꿈을 막고(nowrap), 본문만 줄어들게(flex:1 1 auto + min-width:0)
+   한 뒤 남는 폭에서 넘치는 부분을 … 로 자른다.
+   max-width 는 상자가 아니라 **이 한 줄 텍스트**의 최대 가로 폭이다
+   (설정값, 기본 1000px). 기기 폭이 더 좁으면 기기 폭을 따른다. */
+#verseBarInner.sneak-mode #verseBarLine{
+  display:flex;flex-direction:row;align-items:baseline;flex-wrap:nowrap;
+  justify-content:center;gap:0;
+  max-width:var(--sneak-maxw,1000px);
+  min-width:0;width:100%;
+}
+/* 본문 외의 항목은 줄어들지 않는다 — 먼저 자리를 잡고, 남는 폭을 본문이 쓴다 */
+#verseBarInner.sneak-mode #verseBarCat,
+#verseBarInner.sneak-mode #verseBarTopic,
+#verseBarInner.sneak-mode #verseBarRef,
+#verseBarInner.sneak-mode #verseBarTag,
+#verseBarInner.sneak-mode .verse-sneak-sep{
+  flex:0 0 auto;white-space:nowrap;
+}
+/* 본문만 남는 폭까지 늘었다 줄었다 하며 넘치면 … 로 잘린다.
+   display:inline 으로는 말줄임이 안 걸려서 이 항목만 block 으로 둔다. */
+#verseBarInner.sneak-mode #verseBarFirstWord{
+  display:block!important;
+  /* 늘어나지는 않고(0) 줄어들기만 한다(1). 짧은 구절에서는 한 줄이 가운데에
+     오밀조밀 모이고, 긴 구절에서만 본문이 줄면서 … 가 붙는다. */
+  flex:0 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 /* Kill full-mode individual margins so everything sits on the same line */
 #verseBarInner.sneak-mode #verseBarCat,
@@ -1424,6 +1454,14 @@ body.split-d #todayView.animating{overflow:hidden;}
 .modal-x-inline{
   position:static;flex-shrink:0;padding:4px;width:28px;
 }
+/* 팝업 전체가 스크롤되는 경우(.contacts-modal 처럼) 제목줄을 위에 붙여 둔다.
+   안 그러면 목록을 내릴 때 × 가 화면 밖으로 밀려 닫을 방법이 사라진다. */
+.modal-head{
+  display:flex;align-items:center;gap:8px;
+  position:sticky;top:0;z-index:2;background:var(--s1);
+  margin:-20px -20px 14px;padding:20px 20px 10px;
+}
+.modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:10px 12px;color:var(--tx);
@@ -2254,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-3";
+const APP_VERSION = "v. 26-0802-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2907,9 +2945,18 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="preset-btn on" id="setVerseSneakCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseSneakTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTopic',this.classList.toggle('on'))">소주제</button>
-          <button class="preset-btn on" id="setVerseSneakFirstWord" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakFirstWord',this.classList.toggle('on'))">첫 단어</button>
+          <button class="preset-btn on" id="setVerseSneakFirstWord" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakFirstWord',this.classList.toggle('on'))">본문</button>
           <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">구절</button>
           <button class="preset-btn on" id="setVerseSneakTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTag',this.classList.toggle('on'))">태그</button>
+        </div>
+        <div class="settings-row-desc" style="margin:10px 0 6px;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요. 아래는 그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--tx2);flex:1;">한 줄 최대 가로 폭</span>
+          <div class="event-roll-wrap" style="width:78px;height:34px;">
+            <select id="setVerseSneakMaxW" class="event-roll-select" onchange="setVerseSneakMaxW(this.value)"></select>
+            <span class="event-roll-display" id="setVerseSneakMaxWDisplay" style="font-size:12px;">700</span>
+          </div>
+          <span style="font-size:12px;color:var(--tx3);flex-shrink:0;">px</span>
         </div>
         <!-- 위젯(암송/좋아요/Deeper/Even Deeper 목록) 행에 표시할 항목 -->
         <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">위젯 말씀 목록에 보여줄 항목</div>
@@ -3017,6 +3064,17 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;gap:8px;">
           <button id="vcntScopeMine" class="settings-btn" style="flex:1;" onclick="setVerseCountScope('mine')">내 것만</button>
           <button id="vcntScopeAll" class="settings-btn on" style="flex:1;" onclick="setVerseCountScope('all')">구독자 전체</button>
+        </div>
+      </div>
+
+      <!-- ── Deeper·Even Deeper 링크를 열 브라우저 ── -->
+      <div class="settings-section">
+        <div class="settings-section-title">링크 열기</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">Deeper 를 눌렀을 때 성경 사이트를 어디서 열지 정해요. 홈 화면에 설치한 앱에서만 적용되고, 고른 브라우저가 없으면 앱 안에서 열려요. (Even Deeper 는 ChatGPT 앱으로 이어져야 해서 이 설정을 따르지 않아요)</div>
+        <div style="display:flex;gap:8px;">
+          <button id="lnkModeSafari" class="settings-btn on" style="flex:1;" onclick="setLinkOpenMode('safari')">사파리</button>
+          <button id="lnkModeChrome" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('chrome')">크롬</button>
+          <button id="lnkModeInApp" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('inapp')">앱 안에서</button>
         </div>
       </div>
 
@@ -3162,12 +3220,17 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="vb-top"><button class="vb-shuffle" onclick="event.stopPropagation();vbShuffleVerse()" aria-label="말씀 뽑기" title="말씀 뽑기"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4l8 10h4"/><path d="M4 15h4l2.5-3.1"/><path d="M13.5 7.1 16 4h4"/><path d="M17 2l3 2-3 2"/><path d="M17 18l3-2-3-2"/></svg></button></div>
 <div id="verseBar" style="display:none;" onclick="onVerseBarClick(event)">
   <div id="verseBarInner">
-    <div id="verseBarCat"></div>
-    <div id="verseBarTopic"></div>
-    <div id="verseBarText"></div>
-    <div id="verseBarFirstWord"></div>
-    <div id="verseBarRef"></div>
-    <div id="verseBarTag"></div>
+    <!-- 스닉픽에서 "한 줄"이 되는 묶음. 전체 모드에서는 display:contents 라
+         레이아웃에서 사라지고, 아래 항목들이 그대로 #verseBarInner 의
+         그리드 칸에 놓인다(= 전체 모드 동작은 그대로). -->
+    <div id="verseBarLine">
+      <div id="verseBarCat"></div>
+      <div id="verseBarTopic"></div>
+      <div id="verseBarText"></div>
+      <div id="verseBarFirstWord"></div>
+      <div id="verseBarRef"></div>
+      <div id="verseBarTag"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -3261,7 +3324,13 @@ window._fbScriptsReady=new Promise(resolve=>{
      form is filled in manually. -->
 <div class="event-modal-overlay" id="contactsOverlay" style="display:none;z-index:5000;" onclick="closeContactsModal()"></div>
 <div class="event-modal contacts-modal" id="contactsModal" style="display:none;z-index:5001;">
-  <div class="event-modal-title">연락처 관리</div>
+  <div class="modal-head">
+    <span class="modal-head-gap"></span>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">연락처 관리</div>
+    <button class="modal-x modal-x-inline" onclick="closeContactsModal()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
   <div class="contacts-list" id="contactsList"></div>
   <div class="contacts-form" id="contactsForm">
     <input type="text" class="auth-input" id="cNick" placeholder="닉네임 (예: GD)" autocomplete="off">
@@ -3271,8 +3340,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     <button class="settings-btn" id="cPickBtn" style="display:none;width:100%;" onclick="pickFromDeviceContacts()">기기 연락처에서 가져오기</button>
   </div>
   <div class="event-modal-actions">
-    <button class="settings-btn" onclick="closeContactsModal()">닫기</button>
-    <button class="auth-btn" id="cSubmitBtn" onclick="submitContact()">추가</button>
+    <button class="auth-btn" id="cSubmitBtn" style="width:100%;" onclick="submitContact()">추가</button>
   </div>
 </div>
 
@@ -3419,6 +3487,14 @@ window._fbScriptsReady=new Promise(resolve=>{
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정
   </div>
 </div>
+
+<!-- 암송 기록 팝업 (달력·구간에서 열림) — 전용 상자.
+     ⚠️ 예전에는 아래 versePopupModal 을 빌려 쓰면서 innerHTML='' 로 비웠는데,
+        그때 말씀 알림 팝업이 쓰는 칸(vpopCat/vpopTopic/vpopText/vpopRef)까지
+        같이 지워져서, 암송 기록을 한 번 보면 그 뒤로 말씀 알림 팝업이 뜨지
+        않았다(앱을 새로고침해야 복구). 그래서 상자를 따로 뒀다. (v26-0802-5) -->
+<div class="event-modal-overlay" id="memRecOverlay" style="display:none" onclick="closeMemRecPopup()"></div>
+<div class="event-modal" id="memRecModal" style="display:none;max-width:420px;width:92vw;max-height:80vh;flex-direction:column;padding:32px 28px 28px;"></div>
 
 <!-- In-app verse alarm popup -->
 
@@ -3824,7 +3900,10 @@ window._fbScriptsReady=new Promise(resolve=>{
 </div>
 
 <div class="event-modal-overlay" id="verseListOverlay" style="display:none" onclick="closeVerseListModal()"></div>
-<div class="event-modal" id="verseListModal" style="display:none;width:320px;max-height:80vh;flex-direction:column;">
+<!-- ⚠️ height 를 고정한다(max-height 아님). 팝업은 화면 정중앙에 놓이므로
+     목록 개수에 따라 높이가 변하면 그만큼 헤더가 위아래로 흔들린다.
+     필터를 바꿔도 제목·햄버거·× 는 늘 같은 자리에 있어야 한다. (v26-0802-5) -->
+<div class="event-modal" id="verseListModal" style="display:none;width:320px;height:80vh;flex-direction:column;">
   <!-- 헤더: 좌상단 햄버거(모음 설정) · 중앙 제목 · 우상단 닫기(×) -->
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
     <span class="modal-x modal-x-inline" onclick="openVerseCollSettings()" title="말씀 모음 설정">
@@ -5741,8 +5820,14 @@ function _fillVerseBarDOM(v){
     // 풀 모드에서 남긴 float/display/max-width 등 인라인 스타일이 남아있으면
     // 스닉픽 모드의 CSS 클래스 레이아웃을 깨뜨리므로 전부 초기화한다.
     [catEl,topicEl,firstEl,refEl,tagEl].forEach(el=>{el.style.cssText='';});
+    // 한 줄 텍스트의 가로 최대 폭 (기기별 저장값).
+    // ⚠️ 말씀영역 상자(#verseBarInner)가 아니라 그 안의 한 줄(#verseBarLine)에 건다.
+    _applySneakMaxW();
     // Build ordered list of [element, value, enabled] pairs — 태그는 장절 다음
-    const fw=v.krText.split(/[\s,。.]/)[0]+'…';
+    // 본문: 예전에는 '첫 단어'만 잘라 보여줬는데, 이제 본문 전체를 넣고
+    // 남는 가로 폭만큼만 보이도록 CSS(text-overflow)가 … 로 잘라준다.
+    // (설정 키 이름 verseSneakFirstWord 는 이미 저장·동기화된 값이라 그대로 둔다)
+    const fw=v.krText;
     const tagListSneak=(v.tags||[]).filter(Boolean).join(' ');
     const items=[
       [catEl,   v.cat,         s.verseSneakCat!==false],
@@ -5751,8 +5836,11 @@ function _fillVerseBarDOM(v){
       [refEl,   abbrevRef(v.ref), s.verseSneakRef!==false],
       [tagEl,   tagListSneak,  s.verseSneakTag!==false&&tagListSneak.length>0],
     ];
+    // 구분자는 한 줄 묶음(#verseBarLine) 안에 넣는다 — 그래야 본문이 줄어드는
+    // 계산에 구분자 폭까지 함께 잡힌다.
+    const line=document.getElementById('verseBarLine')||inner;
     // Remove old separators
-    inner.querySelectorAll('.verse-sneak-sep').forEach(el=>el.remove());
+    line.querySelectorAll('.verse-sneak-sep').forEach(el=>el.remove());
     // Set content & visibility; collect visible items for separator insertion
     const visible=[];
     items.forEach(([el,val,show])=>{
@@ -5766,7 +5854,7 @@ function _fillVerseBarDOM(v){
       const sep=document.createElement('span');
       sep.className='verse-sneak-sep';
       sep.textContent='·';
-      inner.insertBefore(sep,el);
+      line.insertBefore(sep,el);
     });
   }
 }
@@ -6102,12 +6190,14 @@ function renderVerseSettingsModal(){
   if(el('setVerseSneakRef'))el('setVerseSneakRef').checked=s.verseSneakRef!==false;
   if(el('setVerseSneakFirstWord'))el('setVerseSneakFirstWord').checked=s.verseSneakFirstWord!==false;
   if(el('setVerseSneakTag'))el('setVerseSneakTag').checked=s.verseSneakTag!==false;
+  _initSneakMaxWPicker();   // 기기별 저장값이라 ST.settings 가 아니라 localStorage 에서 읽는다
   const mMode=s.mviewMemMode||'cross';
   el('mviewMemCross')?.classList.toggle('on',mMode==='cross');
   el('mviewMemAbbr')?.classList.toggle('on',mMode==='abbr');
   const cScope=s.verseCountScope||'all';
   el('vcntScopeMine')?.classList.toggle('on',cScope==='mine');
   el('vcntScopeAll')?.classList.toggle('on',cScope==='all');
+  _syncLinkOpenModeUI();
   _syncVersePushUI();
   _syncVfTextScaleUI();
   _renderVfThemeChips();
@@ -6588,7 +6678,11 @@ function openEvenDeeperFromRef(ref){
   // navigator.clipboard.writeText()는 비동기라 곧바로 새 탭이 열리면
   // 문서가 포커스를 잃어 NotAllowedError로 실패하고, 게다가 Promise
   // 거부라 try/catch에도 안 잡혀 조용히 실패했다(이전 버전의 버그).
-  const go=()=>BibleLinkProvider.open(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
+  // ⚠️ Even Deeper 는 '링크 열기' 설정을 따르지 않는다 (v26-0802-6 에서 되돌림).
+  //    이 주소는 ChatGPT 커스텀 GPTs 라, 브라우저로 넘기면 웹 화면이 열려서
+  //    설치된 ChatGPT 앱으로 이어지던 흐름이 끊긴다. 예전처럼 그대로 넘겨
+  //    OS 가 ChatGPT 앱을 잡도록 둔다. (설정은 Deeper 에만 적용)
+  const go=()=>BibleLinkProvider._openInApp(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
   const okMsg=()=>showToast(`'${q}' 복사했어요 — ChatGPT에 붙여넣기 하세요`);
   const noMsg=()=>showToast(`ChatGPT에 '${q}' 를 입력하세요`);
   // iOS(특히 PWA)에서는 execCommand('copy') 가 true 를 돌려주고도 실제로는
@@ -6781,23 +6875,35 @@ const BibleLinkProvider = {
     document.body.removeChild(a);
   },
 
+  // 설정 '링크 열기' 값 → 밖으로 내보낼 주소. 못 만들면 null(=앱 안에서 연다).
+  // ⚠️ 아이폰은 "사용자의 기본 브라우저가 무엇인지"를 웹페이지에 알려주지 않는다.
+  //    그래서 '알아서 기본 브라우저로'는 만들 수 없고, 어느 브라우저인지
+  //    이름을 콕 집어야만 한다. 그래서 설정으로 고르게 한다. (v26-0802-5)
+  _externalUrl(url,mode){
+    if(mode==='chrome')return url.replace(/^https:/,'googlechromes:').replace(/^http:/,'googlechrome:');
+    if(mode==='safari')return 'x-safari-'+url;
+    return null;
+  },
+
   open(url){
     if(!url){ showToast('대한성서공회 사이트 링크를 열지 못했어요. 구절 형식을 확인해주세요'); return; }
+    const mode = ST.settings.linkOpenMode || 'safari';
     const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent||'')
       || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);  // iPadOS
     const standalone = navigator.standalone===true
       || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-    if(!(isIOS && standalone)){ this._openInApp(url); return; }
-    // 사파리로 넘어가면 이 화면은 숨겨진다 → 그 신호로 성공을 판정한다.
+    const ext = (isIOS && standalone) ? this._externalUrl(url,mode) : null;
+    if(!ext){ this._openInApp(url); return; }
+    // 밖으로 넘어가면 이 화면은 숨겨진다 → 그 신호로 성공을 판정한다.
     let handed=false;
     const mark=()=>{handed=true;};
     document.addEventListener('visibilitychange',mark);
     window.addEventListener('pagehide',mark);
-    try{ location.href = 'x-safari-' + url; }catch(e){}
+    try{ location.href = ext; }catch(e){}
     setTimeout(()=>{
       document.removeEventListener('visibilitychange',mark);
       window.removeEventListener('pagehide',mark);
-      // 화면이 그대로면 스킴이 안 먹은 것 → 기존 방식으로 연다
+      // 화면이 그대로면 그 브라우저가 없거나 스킴이 안 먹은 것 → 앱 안에서 연다
       if(!handed && !document.hidden) this._openInApp(url);
     },900);
   },
@@ -6817,20 +6923,23 @@ function showMemorizationPopup(dateKey,secId){
     entries.sort((a,b)=>a.time.localeCompare(b.time));
   }
   if(entries.length===0)return;
-  const ov=document.getElementById('versePopupOverlay');
-  const modal=document.getElementById('versePopupModal');
+  const ov=document.getElementById('memRecOverlay');
+  const modal=document.getElementById('memRecModal');
   modal.innerHTML='';
-  // 우상단 닫기(×) — innerHTML 을 비우면 정적으로 놓인 × 도 같이 지워지므로 다시 만든다
+  // 우상단 닫기(×) — 내용을 매번 새로 그리므로 × 도 함께 만든다
   const xBtn=document.createElement('button');
   xBtn.className='modal-x';
   xBtn.setAttribute('aria-label','닫기');
   xBtn.innerHTML='<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>';
-  xBtn.onclick=closeVersePopup;
+  xBtn.onclick=closeMemRecPopup;
   modal.appendChild(xBtn);
   const title=document.createElement('div');
-  title.style.cssText='font-size:11px;color:var(--tx3);margin-bottom:10px;text-align:center;';
+  title.style.cssText='font-size:11px;color:var(--tx3);margin-bottom:10px;text-align:center;flex-shrink:0;padding:0 28px;';
   title.textContent=`${dateKey} 암송 기록`;
   modal.appendChild(title);
+  const listWrap=document.createElement('div');
+  listWrap.style.cssText='overflow-y:auto;flex:1;min-height:0;';
+  modal.appendChild(listWrap);
   entries.forEach(e=>{
     const v=verseForEntry(e);
     const row=document.createElement('div');
@@ -6847,10 +6956,15 @@ function showMemorizationPopup(dateKey,secId){
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:2px 7px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">Even Deeper…</button>
         </span>
       </div>`;
-    modal.appendChild(row);
+    listWrap.appendChild(row);
   });
   if(ov)ov.style.display='block';
-  modal.style.display='block';
+  modal.style.display='flex';
+}
+function closeMemRecPopup(){
+  const o=document.getElementById('memRecOverlay'),m=document.getElementById('memRecModal');
+  if(o)o.style.display='none';
+  if(m)m.style.display='none';
 }
 
 // 토스트: 문구 안에서 종류(성공/실패/진행중)를 자동으로 판별해
@@ -7247,8 +7361,16 @@ function _vfLayoutText(){
 function _statRefKey(ref){return (ref||'').replace(/\//g,'∕');} // Firestore 문서 id에 '/' 금지
 function _bumpVerseStat(kind,ref){
   if(!ref||!_fbReady()||!window._fbDB)return;
-  // 낙관적 갱신: 이미 캐시된 합계가 있으면 즉시 +1 (버튼 눌렀을 때 바로 반영)
-  if(_verseStatCache[ref])_verseStatCache[ref][kind]=(_verseStatCache[ref][kind]||0)+1;
+  // 낙관적 갱신: 눌렀을 때 바로 +1 이 보이게 한다.
+  // ⚠️ 아직 캐시가 없으면 그냥 넘기면 안 된다. 곧바로 _fetchVerseStat 이
+  //    "증가 전" 값을 읽어 캐시에 박아버려서, 눌렀는데 숫자가 안 오르는 것처럼
+  //    보였다(서버 반영과 읽기가 경쟁). 캐시를 먼저 채운 뒤 +1 한다.
+  const bump=()=>{
+    const c=_verseStatCache[ref];
+    if(c)c[kind]=(c[kind]||0)+1;
+  };
+  if(_verseStatCache[ref])bump();
+  else _fetchVerseStat(ref).then(bump);
   try{
     window._fbDB.collection('verseStats').doc(_statRefKey(ref))
       .set({[kind]:firebase.firestore.FieldValue.increment(1)},{merge:true})
@@ -7269,6 +7391,65 @@ function _fetchVerseStat(ref){
       return v;
     }).catch(()=>null);
 }
+// ── 스닉픽 한 줄 최대 가로 폭 (px) ──
+// ⚠️ 계정에 동기화하지 않고 **기기별로** 저장한다 (localStorage, dev/prod 공유).
+//    폰과 데스크탑은 화면 폭이 완전히 달라서 같은 값을 쓰면 한쪽이 늘 어색하다.
+//    화면 크기(b7v1_uiscale)를 기기별로 두는 것과 같은 이유.
+const SNEAK_MAXW_KEY='b7v1_sneakmaxw';
+const SNEAK_MAXW_MIN=300, SNEAK_MAXW_MAX=1000, SNEAK_MAXW_STEP=100;
+// 기기 종류별 기본값. 폭은 screen.width 가 아니라 clientWidth 로 잰다(안드로이드).
+function _sneakMaxWDefault(){
+  const w=document.documentElement.clientWidth||window.innerWidth||0;
+  if(w<768)return 300;        // 폰
+  if(w<=1024)return 500;      // 태블릿
+  return 700;                 // 데스크탑
+}
+function _sneakMaxW(){
+  let n=parseInt(localStorage.getItem(SNEAK_MAXW_KEY),10);
+  if(!(n>0))n=_sneakMaxWDefault();
+  return Math.max(SNEAK_MAXW_MIN,Math.min(SNEAK_MAXW_MAX,n));
+}
+// 한 줄 묶음에 폭을 흘려보낸다. 설정에서 고르는 즉시 반영되도록 따로 뺐다
+// (예전에는 다음 구절로 넘어가야 적용됐다).
+function _applySneakMaxW(){
+  const line=document.getElementById('verseBarLine');
+  if(line)line.style.setProperty('--sneak-maxw',_sneakMaxW()+'px');
+}
+function _initSneakMaxWPicker(){
+  const sel=document.getElementById('setVerseSneakMaxW');
+  if(!sel)return;
+  if(!sel._inited){
+    sel._inited=true;
+    let html='';
+    for(let n=SNEAK_MAXW_MIN;n<=SNEAK_MAXW_MAX;n+=SNEAK_MAXW_STEP)html+=`<option value="${n}">${n}</option>`;
+    sel.innerHTML=html;
+  }
+  const cur=_sneakMaxW();
+  sel.value=String(cur);
+  const disp=document.getElementById('setVerseSneakMaxWDisplay');
+  if(disp)disp.textContent=cur;
+}
+function setVerseSneakMaxW(val){
+  let n=parseInt(val,10);
+  if(!(n>0))n=_sneakMaxWDefault();
+  n=Math.max(SNEAK_MAXW_MIN,Math.min(SNEAK_MAXW_MAX,n));
+  try{localStorage.setItem(SNEAK_MAXW_KEY,String(n));}catch(e){}
+  const disp=document.getElementById('setVerseSneakMaxWDisplay');
+  if(disp)disp.textContent=n;
+  _applySneakMaxW();           // 설정창을 닫지 않아도 바로 반영
+}
+// 설정 → 말씀 설정 → 링크 열기: 사파리 / 크롬 / 앱 안에서
+function _syncLinkOpenModeUI(){
+  const m=ST.settings.linkOpenMode||'safari';
+  document.getElementById('lnkModeSafari')?.classList.toggle('on',m==='safari');
+  document.getElementById('lnkModeChrome')?.classList.toggle('on',m==='chrome');
+  document.getElementById('lnkModeInApp')?.classList.toggle('on',m==='inapp');
+}
+function setLinkOpenMode(mode){
+  ST.settings.linkOpenMode=(mode==='chrome'||mode==='inapp')?mode:'safari';
+  save();
+  _syncLinkOpenModeUI();
+}
 // 설정 → 말씀 설정 → 반응 카운터: 내 것만 / 구독자 전체
 function setVerseCountScope(scope){
   ST.settings.verseCountScope=(scope==='mine')?'mine':'all';
@@ -7278,21 +7459,27 @@ function setVerseCountScope(scope){
   if(_verseFullIsOpen())_vfSyncCounts();
 }
 // 이 구절(ref)에 대한 누적 기록 수 — 릴스의 좋아요/댓글 숫자 자리
+// ⚠️ 장절 문자열을 그대로 비교하면 안 된다. 로그는 누른 시점의 표기를 그대로
+//    저장하는데, 같은 구절이라도 '요1:18' / '요한복음 1:18' / 공백이 두 칸인
+//    표기가 섞인다. 정규화(_refNorm)해서 대조해야 카운터가 0으로 보이지 않는다.
 function _verseEventCount(kind,ref){
   if(!ref)return 0;
+  const want=_refNorm(ref);
+  if(!want)return 0;
+  const same=en=>en&&en.ref&&(en.ref===ref||_refNorm(en.ref)===want);
   let n=0;
   if(kind==='mem'){
     const log=getMemLog();
     Object.values(log||{}).forEach(day=>{
       Object.values(day||{}).forEach(arr=>{
-        (arr||[]).forEach(en=>{if(en&&en.ref===ref)n++;});
+        (arr||[]).forEach(en=>{if(same(en))n++;});
       });
     });
     return n;
   }
   const log=kind==='like'?getLikeLog():(kind==='even'?getEvenDeeperLog():(kind==='share'?getShareLog():getDeeperLog()));
   Object.values(log||{}).forEach(arr=>{
-    (arr||[]).forEach(en=>{if(en&&en.ref===ref)n++;});
+    (arr||[]).forEach(en=>{if(same(en))n++;});
   });
   return n;
 }
@@ -8983,7 +9170,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:false,showEventFilterBtn:true,dowFormat:'letter-lord',sundayRed:true,carryBadgeMode:'number',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:true,verseWidgetTopic:true,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:true,periodBaseMode:'calendar',monthTitleFormat:'kr',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:false,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:false,showEventFilterBtn:true,dowFormat:'letter-lord',sundayRed:true,carryBadgeMode:'number',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:true,verseWidgetTopic:true,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:true,periodBaseMode:'calendar',monthTitleFormat:'kr',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:false,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -12608,6 +12795,10 @@ function _openGhostInput(secId, type, pos){
     const inp=document.createElement('input');
     inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:Pretendard,sans-serif;font-size:14px;font-weight:500;';
     inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
+    // ⚠️ 쓰기 시작한 "그 날짜"를 붙잡아 둔다. 커밋은 blur 후 100ms 뒤에 도는데,
+    //    그 사이에 날짜가 넘어가면(←/→ 키·‹› 버튼·자정) tKey() 가 다른 날을
+    //    가리켜 쓰던 할일이 엉뚱한 날짜에 저장됐다 (v26-0802-5).
+    const dayKey=tKey();
     let committed=false;
     const commit=()=>{
       if(committed)return;committed=true;
@@ -12615,10 +12806,12 @@ function _openGhostInput(secId, type, pos){
       ghost.remove();
       if(!v)return;
       beforeSave();
-      if(pos==='C')getBigs(tKey(),secId).unshift({text:v,done:false});
-      else getBigs(tKey(),secId).push({text:v,done:false});
+      if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
+      else getBigs(dayKey,secId).push({text:v,done:false});
       save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
-      bigList.innerHTML='';getBigs(tKey(),secId).forEach((b,ii)=>bigList.appendChild(makeBigWrap(secId,ii,b,secColor)));
+      // 날짜가 넘어간 뒤라면 지금 화면은 다른 날이므로 목록을 다시 그리지 않는다
+      if(dayKey!==tKey())return;
+      bigList.innerHTML='';getBigs(dayKey,secId).forEach((b,ii)=>bigList.appendChild(makeBigWrap(secId,ii,b,secColor)));
     };
     // blur 후 100ms 뒤 커밋(빈 값이면 고스트 제거). 단 그 사이에 다시
     // 포커스를 얻으면 예약을 취소한다.
@@ -12679,6 +12872,8 @@ function _openGhostInput(secId, type, pos){
     const inp=document.createElement('input');
     inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx2);font-family:Pretendard,sans-serif;font-size:13px;';
     inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
+    // ⚠️ 큰 할일 고스트와 같은 이유로 쓰기 시작한 날짜를 붙잡아 둔다 (v26-0802-5)
+    const dayKey=tKey();
     let committed=false;
     const commit=()=>{
       if(committed)return;committed=true;
@@ -12686,9 +12881,11 @@ function _openGhostInput(secId, type, pos){
       ghost.remove();
       if(!v)return;
       beforeSave();
-      if(pos==='C')getSmalls(tKey(),secId).unshift({text:v,done:false});
-      else getSmalls(tKey(),secId).push({text:v,done:false});
-      save();renderSmList(secId,secColor);updateSmCnt(secId);refreshTaskViewsLive();
+      if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
+      else getSmalls(dayKey,secId).push({text:v,done:false});
+      save();
+      if(dayKey!==tKey())return;   // 날짜가 넘어갔으면 지금 화면은 다른 날이다
+      renderSmList(secId,secColor);updateSmCnt(secId);refreshTaskViewsLive();
     };
     // blur 후 100ms 뒤 커밋(빈 값이면 고스트 제거). 단 그 사이에 다시
     // 포커스를 얻으면 예약을 취소한다.
@@ -14736,6 +14933,14 @@ document.addEventListener('keydown',e=>{
     return;
   }
 
+  // ⚠️ 다른 입력창에 글자를 쓰는 중이면 아래 전역 단축키를 태우지 않는다.
+  //    새 할일 고스트 입력·셀 할일·검색창 등은 .big-item/.sm-item 안에 있지
+  //    않아서 위 분기를 빠져나왔고, 그 결과 ←/→ 가 커서 이동 대신 "날짜 이동"
+  //    으로 새어나갔다. 날짜가 바뀐 뒤 blur 커밋이 돌면서 쓰던 할일이
+  //    어제 할일로 저장되는 사고가 있었다 (v26-0802-5).
+  //    ⌘⇧ 조합(뷰 전환)은 아래에서 따로 처리하므로 여기서 막지 않는다.
+  if(editing&&!e.metaKey&&!e.ctrlKey)return;
+
   // ── Not editing text: arrow-key driven selection ──
   if(e.key==='ArrowUp'||e.key==='ArrowDown'){
     const delta=e.key==='ArrowUp'?-1:1;
@@ -15100,10 +15305,22 @@ function showContactTasksPopup(c){
   const modal=document.getElementById('taggedTasksModal');
   const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   modal.innerHTML='';
+  // 제목줄(고정) + 우상단 닫기(×) — 이 팝업은 내용을 매번 새로 그리므로 함께 만든다
+  const head=document.createElement('div');
+  head.className='modal-head';
+  const gap=document.createElement('span');
+  gap.className='modal-head-gap';
   const title=document.createElement('div');
   title.className='event-modal-title';
+  title.style.cssText='margin:0;flex:1;min-width:0;';
   title.textContent=`@${c.nick} 태그된 할일`+(c.name?` · ${c.name}`:'');
-  modal.appendChild(title);
+  const xBtn=document.createElement('button');
+  xBtn.className='modal-x modal-x-inline';
+  xBtn.setAttribute('aria-label','닫기');
+  xBtn.innerHTML='<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>';
+  xBtn.onclick=closeContactTasksPopup;
+  head.appendChild(gap);head.appendChild(title);head.appendChild(xBtn);
+  modal.appendChild(head);
   if(!tasks.length){
     const empty=document.createElement('div');
     empty.style.cssText='padding:18px 2px;text-align:center;color:var(--tx3);font-size:13px;';
@@ -15126,12 +15343,6 @@ function showContactTasksPopup(c){
     });
     modal.appendChild(list);
   }
-  const closeBtn=document.createElement('button');
-  closeBtn.className='settings-btn';
-  closeBtn.style.cssText='width:100%;margin-top:12px;';
-  closeBtn.textContent='닫기';
-  closeBtn.onclick=closeContactTasksPopup;
-  modal.appendChild(closeBtn);
   ov.style.display='block';modal.style.display='block';
 }
 function closeContactTasksPopup(){
@@ -17142,6 +17353,7 @@ function renderSettingsPanel(){
   document.getElementById('setVerseSneakRef')?.classList.toggle('on',s.verseSneakRef!==false);
   document.getElementById('setVerseSneakFirstWord')?.classList.toggle('on',s.verseSneakFirstWord!==false);
   document.getElementById('setVerseSneakTag')?.classList.toggle('on',s.verseSneakTag!==false);
+  _initSneakMaxWPicker();
   document.getElementById('setVerseWidgetCat')?.classList.toggle('on',s.verseWidgetCat!==false);
   document.getElementById('setVerseWidgetTopic')?.classList.toggle('on',s.verseWidgetTopic!==false);
   document.getElementById('setVerseWidgetText')?.classList.toggle('on',s.verseWidgetText!==false);
@@ -18389,6 +18601,7 @@ function _vpDiagCopyFallback(){
 function initAppUI(){
   applyTheme(ST.settings.theme||'dark');
   applyUiScale(); // 저장된 화면 크기(뷰포트 스케일) 적용
+  try{_applySneakMaxW();}catch(e){}  // 스닉픽 한 줄 폭 (기기별 저장값)
   try{applyVfTheme();}catch(e){} // 말씀 전체화면 테마 (세리프면 폰트도 미리 준비)
   try{_initVerseNotifBridge();_openVerseFromLink();}catch(e){}  // 푸시 알림으로 들어온 경우
   // D뷰가 기본 뷰이므로 시작 시 분할 클래스 활성 (600px 미만에선 CSS가 무시)
@@ -18827,6 +19040,17 @@ function initForegroundPush(){
     if(typeof firebase==='undefined')return;
     if(_notifySupport()!=='ok')return;
     if(!firebase.messaging.isSupported||!firebase.messaging.isSupported())return;
+    // ── 서비스워커 자기 복구 (v26-0802-5) ──
+    // 워커는 "알림 켜기"를 누를 때(_ensurePushToken)만 등록됐다. 그래서 워커가
+    // 한 번 죽거나 설치에 실패하면(importScripts 가 gstatic 에서 멈추는 일이
+    // 있다 — 인계문서 '서비스워커' 장) 앱을 아무리 다시 열어도 되살아나지 않아
+    // 그 기기만 알림이 조용히 끊겼다.
+    // 실제 진단 기록에서도 앱은 여러 번 "수신 준비 완료"였는데 워커 활성화는
+    // 한 번도 없다가, 워커가 활성화된 직후부터 푸시가 도착했다.
+    // register() 는 여러 번 불러도 안전하고, 새 워커가 있는지도 함께 확인해준다.
+    if(typeof Notification!=='undefined'&&Notification.permission==='granted'&&navigator.serviceWorker){
+      navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
+    }
     firebase.messaging().onMessage(payload=>{
       const d=payload.data||payload.notification||{};
       showToast((d.title?d.title+' — ':'')+(d.body||'알림'));
