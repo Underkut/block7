@@ -49,10 +49,17 @@
 ### 3-1. 항상 2개 파일을 함께 전달
 - `index.html` — **운영본** (`DEV_MODE = false`)
 - `index-dev.html` — **개발본** (`DEV_MODE = true`, Firebase 미연결)
-- (`404.html`, `firebase-messaging-sw.js`, `manifest.json`, `og-image.png` 은 건드렸을 때만)
+- (`404.html`, `firebase-messaging-sw.js`, `manifest.json`, `manifest-dev.json`, `og-image.png` 은 건드렸을 때만)
 
-만드는 법: `index.html` 완성 후 복사 → `DEV_MODE` false→true,
-2번째 줄 주석 `[production]` → `[DEV — no Firebase]`
+만드는 법: **`./tools/make-dev.sh`** (손으로 고치지 말 것). 네 곳을 바꾼다 —
+`DEV_MODE` false→true / 2번째 줄 `[production]`→`[DEV — no Firebase]` /
+`manifest.json`→`manifest-dev.json` / 앱 이름 `BLOCK7`→`BLOCK7 DEV`
+
+**개발본도 저장소에 함께 커밋한다.** 그래야 `https://block7.my/index-dev.html` 로
+PC·아이폰 어디서나 바로 열린다. 아이폰에서 그 주소를 "홈 화면에 추가" 하면
+`manifest-dev.json` 의 `start_url` 덕분에 **BLOCK7 DEV** 아이콘이 운영본과 따로 생긴다.
+- ⚠️ 개발본은 Firebase 미연결 → **푸시 알림은 개발본에서 확인 불가.** 운영본에서만 된다
+- ⚠️ 홈화면 앱으로 켰을 때만 도는 코드(`navigator.standalone`)는 브라우저 탭에서 확인 불가
 
 ### 3-2. 버전 번호 = `v. YY-MMDD-N`
 - **반드시 실제 현재 날짜로** (반복 지적받은 실수. 이전 세션 날짜를 그대로 쓰지 말 것)
