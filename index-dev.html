@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0802-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2292,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-7";
+const APP_VERSION = "v. 26-0802-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7396,7 +7396,7 @@ function _fetchVerseStat(ref){
 //    폰과 데스크탑은 화면 폭이 완전히 달라서 같은 값을 쓰면 한쪽이 늘 어색하다.
 //    화면 크기(b7v1_uiscale)를 기기별로 두는 것과 같은 이유.
 const SNEAK_MAXW_KEY='b7v1_sneakmaxw';
-const SNEAK_MAXW_MIN=200, SNEAK_MAXW_MAX=1000, SNEAK_MAXW_STEP=50;
+const SNEAK_MAXW_MIN=300, SNEAK_MAXW_MAX=1000, SNEAK_MAXW_STEP=100;
 // 기기 종류별 기본값. 폭은 screen.width 가 아니라 clientWidth 로 잰다(안드로이드).
 function _sneakMaxWDefault(){
   const w=document.documentElement.clientWidth||window.innerWidth||0;
