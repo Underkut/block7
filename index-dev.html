@@ -18972,6 +18972,17 @@ function initForegroundPush(){
     if(typeof firebase==='undefined')return;
     if(_notifySupport()!=='ok')return;
     if(!firebase.messaging.isSupported||!firebase.messaging.isSupported())return;
+    // ── 서비스워커 자기 복구 (v26-0802-5) ──
+    // 워커는 "알림 켜기"를 누를 때(_ensurePushToken)만 등록됐다. 그래서 워커가
+    // 한 번 죽거나 설치에 실패하면(importScripts 가 gstatic 에서 멈추는 일이
+    // 있다 — 인계문서 '서비스워커' 장) 앱을 아무리 다시 열어도 되살아나지 않아
+    // 그 기기만 알림이 조용히 끊겼다.
+    // 실제 진단 기록에서도 앱은 여러 번 "수신 준비 완료"였는데 워커 활성화는
+    // 한 번도 없다가, 워커가 활성화된 직후부터 푸시가 도착했다.
+    // register() 는 여러 번 불러도 안전하고, 새 워커가 있는지도 함께 확인해준다.
+    if(typeof Notification!=='undefined'&&Notification.permission==='granted'&&navigator.serviceWorker){
+      navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
+    }
     firebase.messaging().onMessage(payload=>{
       const d=payload.data||payload.notification||{};
       showToast((d.title?d.title+' — ':'')+(d.body||'알림'));
