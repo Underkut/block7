@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0802-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1424,6 +1424,14 @@ body.split-d #todayView.animating{overflow:hidden;}
 .modal-x-inline{
   position:static;flex-shrink:0;padding:4px;width:28px;
 }
+/* 팝업 전체가 스크롤되는 경우(.contacts-modal 처럼) 제목줄을 위에 붙여 둔다.
+   안 그러면 목록을 내릴 때 × 가 화면 밖으로 밀려 닫을 방법이 사라진다. */
+.modal-head{
+  display:flex;align-items:center;gap:8px;
+  position:sticky;top:0;z-index:2;background:var(--s1);
+  margin:-20px -20px 14px;padding:20px 20px 10px;
+}
+.modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:10px 12px;color:var(--tx);
@@ -2254,7 +2262,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-3";
+const APP_VERSION = "v. 26-0802-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3261,7 +3269,13 @@ window._fbScriptsReady=new Promise(resolve=>{
      form is filled in manually. -->
 <div class="event-modal-overlay" id="contactsOverlay" style="display:none;z-index:5000;" onclick="closeContactsModal()"></div>
 <div class="event-modal contacts-modal" id="contactsModal" style="display:none;z-index:5001;">
-  <div class="event-modal-title">연락처 관리</div>
+  <div class="modal-head">
+    <span class="modal-head-gap"></span>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">연락처 관리</div>
+    <button class="modal-x modal-x-inline" onclick="closeContactsModal()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
   <div class="contacts-list" id="contactsList"></div>
   <div class="contacts-form" id="contactsForm">
     <input type="text" class="auth-input" id="cNick" placeholder="닉네임 (예: GD)" autocomplete="off">
@@ -3271,8 +3285,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     <button class="settings-btn" id="cPickBtn" style="display:none;width:100%;" onclick="pickFromDeviceContacts()">기기 연락처에서 가져오기</button>
   </div>
   <div class="event-modal-actions">
-    <button class="settings-btn" onclick="closeContactsModal()">닫기</button>
-    <button class="auth-btn" id="cSubmitBtn" onclick="submitContact()">추가</button>
+    <button class="auth-btn" id="cSubmitBtn" style="width:100%;" onclick="submitContact()">추가</button>
   </div>
 </div>
 
@@ -15100,10 +15113,22 @@ function showContactTasksPopup(c){
   const modal=document.getElementById('taggedTasksModal');
   const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   modal.innerHTML='';
+  // 제목줄(고정) + 우상단 닫기(×) — 이 팝업은 내용을 매번 새로 그리므로 함께 만든다
+  const head=document.createElement('div');
+  head.className='modal-head';
+  const gap=document.createElement('span');
+  gap.className='modal-head-gap';
   const title=document.createElement('div');
   title.className='event-modal-title';
+  title.style.cssText='margin:0;flex:1;min-width:0;';
   title.textContent=`@${c.nick} 태그된 할일`+(c.name?` · ${c.name}`:'');
-  modal.appendChild(title);
+  const xBtn=document.createElement('button');
+  xBtn.className='modal-x modal-x-inline';
+  xBtn.setAttribute('aria-label','닫기');
+  xBtn.innerHTML='<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>';
+  xBtn.onclick=closeContactTasksPopup;
+  head.appendChild(gap);head.appendChild(title);head.appendChild(xBtn);
+  modal.appendChild(head);
   if(!tasks.length){
     const empty=document.createElement('div');
     empty.style.cssText='padding:18px 2px;text-align:center;color:var(--tx3);font-size:13px;';
@@ -15126,12 +15151,6 @@ function showContactTasksPopup(c){
     });
     modal.appendChild(list);
   }
-  const closeBtn=document.createElement('button');
-  closeBtn.className='settings-btn';
-  closeBtn.style.cssText='width:100%;margin-top:12px;';
-  closeBtn.textContent='닫기';
-  closeBtn.onclick=closeContactTasksPopup;
-  modal.appendChild(closeBtn);
   ov.style.display='block';modal.style.display='block';
 }
 function closeContactTasksPopup(){
