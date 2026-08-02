@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0802-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0802-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2292,7 +2292,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0802-6";
+const APP_VERSION = "v. 26-0802-7";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2949,12 +2949,13 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">구절</button>
           <button class="preset-btn on" id="setVerseSneakTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTag',this.classList.toggle('on'))">태그</button>
         </div>
-        <div class="settings-row-desc" style="margin:10px 0 6px;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요. 아래는 그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요.</div>
+        <div class="settings-row-desc" style="margin:10px 0 6px;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요. 아래는 그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--tx2);flex-shrink:0;">한 줄 최대 가로 폭</span>
-          <input type="number" id="setVerseSneakMaxW" class="event-modal-text" min="200" max="4000" step="20"
-            style="width:auto;flex:1;margin:0;padding:6px 10px;font-size:12px;"
-            onchange="setVerseSneakMaxW(this.value)">
+          <span style="font-size:12px;color:var(--tx2);flex:1;">한 줄 최대 가로 폭</span>
+          <div class="event-roll-wrap" style="width:78px;height:34px;">
+            <select id="setVerseSneakMaxW" class="event-roll-select" onchange="setVerseSneakMaxW(this.value)"></select>
+            <span class="event-roll-display" id="setVerseSneakMaxWDisplay" style="font-size:12px;">700</span>
+          </div>
           <span style="font-size:12px;color:var(--tx3);flex-shrink:0;">px</span>
         </div>
         <!-- 위젯(암송/좋아요/Deeper/Even Deeper 목록) 행에 표시할 항목 -->
@@ -5819,11 +5820,9 @@ function _fillVerseBarDOM(v){
     // 풀 모드에서 남긴 float/display/max-width 등 인라인 스타일이 남아있으면
     // 스닉픽 모드의 CSS 클래스 레이아웃을 깨뜨리므로 전부 초기화한다.
     [catEl,topicEl,firstEl,refEl,tagEl].forEach(el=>{el.style.cssText='';});
-    // 한 줄 텍스트의 가로 최대 폭 (설정값, 기본 1000px).
+    // 한 줄 텍스트의 가로 최대 폭 (기기별 저장값).
     // ⚠️ 말씀영역 상자(#verseBarInner)가 아니라 그 안의 한 줄(#verseBarLine)에 건다.
-    const maxW=parseInt(s.verseSneakMaxW,10);
-    (document.getElementById('verseBarLine')||inner)
-      .style.setProperty('--sneak-maxw',(maxW>0?maxW:1000)+'px');
+    _applySneakMaxW();
     // Build ordered list of [element, value, enabled] pairs — 태그는 장절 다음
     // 본문: 예전에는 '첫 단어'만 잘라 보여줬는데, 이제 본문 전체를 넣고
     // 남는 가로 폭만큼만 보이도록 CSS(text-overflow)가 … 로 잘라준다.
@@ -6191,7 +6190,7 @@ function renderVerseSettingsModal(){
   if(el('setVerseSneakRef'))el('setVerseSneakRef').checked=s.verseSneakRef!==false;
   if(el('setVerseSneakFirstWord'))el('setVerseSneakFirstWord').checked=s.verseSneakFirstWord!==false;
   if(el('setVerseSneakTag'))el('setVerseSneakTag').checked=s.verseSneakTag!==false;
-  {const mw=el('setVerseSneakMaxW');if(mw)mw.value=parseInt(s.verseSneakMaxW,10)>0?parseInt(s.verseSneakMaxW,10):1000;}
+  _initSneakMaxWPicker();   // 기기별 저장값이라 ST.settings 가 아니라 localStorage 에서 읽는다
   const mMode=s.mviewMemMode||'cross';
   el('mviewMemCross')?.classList.toggle('on',mMode==='cross');
   el('mviewMemAbbr')?.classList.toggle('on',mMode==='abbr');
@@ -7392,16 +7391,52 @@ function _fetchVerseStat(ref){
       return v;
     }).catch(()=>null);
 }
-// 설정 → 말씀 설정 → 뷰 → 스닉픽 본문 최대 가로 폭 (px)
+// ── 스닉픽 한 줄 최대 가로 폭 (px) ──
+// ⚠️ 계정에 동기화하지 않고 **기기별로** 저장한다 (localStorage, dev/prod 공유).
+//    폰과 데스크탑은 화면 폭이 완전히 달라서 같은 값을 쓰면 한쪽이 늘 어색하다.
+//    화면 크기(b7v1_uiscale)를 기기별로 두는 것과 같은 이유.
+const SNEAK_MAXW_KEY='b7v1_sneakmaxw';
+const SNEAK_MAXW_MIN=200, SNEAK_MAXW_MAX=1000, SNEAK_MAXW_STEP=50;
+// 기기 종류별 기본값. 폭은 screen.width 가 아니라 clientWidth 로 잰다(안드로이드).
+function _sneakMaxWDefault(){
+  const w=document.documentElement.clientWidth||window.innerWidth||0;
+  if(w<768)return 300;        // 폰
+  if(w<=1024)return 500;      // 태블릿
+  return 700;                 // 데스크탑
+}
+function _sneakMaxW(){
+  let n=parseInt(localStorage.getItem(SNEAK_MAXW_KEY),10);
+  if(!(n>0))n=_sneakMaxWDefault();
+  return Math.max(SNEAK_MAXW_MIN,Math.min(SNEAK_MAXW_MAX,n));
+}
+// 한 줄 묶음에 폭을 흘려보낸다. 설정에서 고르는 즉시 반영되도록 따로 뺐다
+// (예전에는 다음 구절로 넘어가야 적용됐다).
+function _applySneakMaxW(){
+  const line=document.getElementById('verseBarLine');
+  if(line)line.style.setProperty('--sneak-maxw',_sneakMaxW()+'px');
+}
+function _initSneakMaxWPicker(){
+  const sel=document.getElementById('setVerseSneakMaxW');
+  if(!sel)return;
+  if(!sel._inited){
+    sel._inited=true;
+    let html='';
+    for(let n=SNEAK_MAXW_MIN;n<=SNEAK_MAXW_MAX;n+=SNEAK_MAXW_STEP)html+=`<option value="${n}">${n}</option>`;
+    sel.innerHTML=html;
+  }
+  const cur=_sneakMaxW();
+  sel.value=String(cur);
+  const disp=document.getElementById('setVerseSneakMaxWDisplay');
+  if(disp)disp.textContent=cur;
+}
 function setVerseSneakMaxW(val){
   let n=parseInt(val,10);
-  if(!(n>0))n=1000;
-  n=Math.max(200,Math.min(4000,n));
-  ST.settings.verseSneakMaxW=n;
-  save();
-  const inp=document.getElementById('setVerseSneakMaxW');
-  if(inp)inp.value=n;          // 범위를 벗어나게 적었으면 되돌려 보여준다
-  updateVerseBar();
+  if(!(n>0))n=_sneakMaxWDefault();
+  n=Math.max(SNEAK_MAXW_MIN,Math.min(SNEAK_MAXW_MAX,n));
+  try{localStorage.setItem(SNEAK_MAXW_KEY,String(n));}catch(e){}
+  const disp=document.getElementById('setVerseSneakMaxWDisplay');
+  if(disp)disp.textContent=n;
+  _applySneakMaxW();           // 설정창을 닫지 않아도 바로 반영
 }
 // 설정 → 말씀 설정 → 링크 열기: 사파리 / 크롬 / 앱 안에서
 function _syncLinkOpenModeUI(){
@@ -9135,7 +9170,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:false,showEventFilterBtn:true,dowFormat:'letter-lord',sundayRed:true,carryBadgeMode:'number',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:true,verseWidgetTopic:true,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:true,periodBaseMode:'calendar',monthTitleFormat:'kr',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',verseSneakMaxW:1000,linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:false,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:false,showEventFilterBtn:true,dowFormat:'letter-lord',sundayRed:true,carryBadgeMode:'number',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:true,verseWidgetTopic:true,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:true,periodBaseMode:'calendar',monthTitleFormat:'kr',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:false,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -17318,7 +17353,7 @@ function renderSettingsPanel(){
   document.getElementById('setVerseSneakRef')?.classList.toggle('on',s.verseSneakRef!==false);
   document.getElementById('setVerseSneakFirstWord')?.classList.toggle('on',s.verseSneakFirstWord!==false);
   document.getElementById('setVerseSneakTag')?.classList.toggle('on',s.verseSneakTag!==false);
-  {const mw=document.getElementById('setVerseSneakMaxW');if(mw)mw.value=parseInt(s.verseSneakMaxW,10)>0?parseInt(s.verseSneakMaxW,10):1000;}
+  _initSneakMaxWPicker();
   document.getElementById('setVerseWidgetCat')?.classList.toggle('on',s.verseWidgetCat!==false);
   document.getElementById('setVerseWidgetTopic')?.classList.toggle('on',s.verseWidgetTopic!==false);
   document.getElementById('setVerseWidgetText')?.classList.toggle('on',s.verseWidgetText!==false);
@@ -18566,6 +18601,7 @@ function _vpDiagCopyFallback(){
 function initAppUI(){
   applyTheme(ST.settings.theme||'dark');
   applyUiScale(); // 저장된 화면 크기(뷰포트 스케일) 적용
+  try{_applySneakMaxW();}catch(e){}  // 스닉픽 한 줄 폭 (기기별 저장값)
   try{applyVfTheme();}catch(e){} // 말씀 전체화면 테마 (세리프면 폰트도 미리 준비)
   try{_initVerseNotifBridge();_openVerseFromLink();}catch(e){}  // 푸시 알림으로 들어온 경우
   // D뷰가 기본 뷰이므로 시작 시 분할 클래스 활성 (600px 미만에선 CSS가 무시)
