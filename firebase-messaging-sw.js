@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-8)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-9)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 
 // ══════════════════════════════════════════════════════════════
@@ -15,13 +15,18 @@
 //     - 위쪽 var 값들과 함수 선언은 이 시점에 이미 준비돼 있으므로
 //       Firebase 가 못 올라와도 클릭 처리는 정상 동작한다.
 //
-//  ② 클릭 처리 안에서는 "전달용 기록 저장"이 제일 먼저, 진단 로그는 맨 뒤.
-//     - iOS 는 서비스워커에 짧은 실행 시간만 준다. 예전엔 로그를 먼저
-//       남기느라 캐시를 네 번 오가고 나서야 기록을 저장했는데, 그 사이
-//       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
+//  ② 클릭 처리에서 **저장을 기다린 뒤에** 다른 일을 하지 말 것. (v0803-9에서 변경)
+//     - 예전 규칙은 "전달용 기록 저장이 제일 먼저"였다. 저장이 빠르다는 전제였는데,
+//       iOS 는 페이지가 같은 IndexedDB 를 쥐고 있으면 워커 쪽 open 이 응답하지
+//       않고 멈춘다. 그러면 waitUntil 이 안 끝나고 뒤에 매달린 "창에 알리기 ·
+//       창 앞으로 · 진단 기록"이 하나도 실행되지 않는다 → 알림을 눌렀는데
+//       아무 일도 없고 기록조차 안 남는다.
+//     - 지금은: 저장은 시간 제한(withTimeout)을 걸어 **따로** 돌리고,
+//       창에 알리는 일은 즉시 한다. 모든 저장소 호출에 시간 제한을 유지할 것.
+//     - 진단 로그는 여전히 맨 뒤 (iOS 는 워커에 짧은 실행 시간만 준다).
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0803-8';
+var SW_VER = 'v. 26-0803-9';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
@@ -47,6 +52,17 @@ function pickRef(n) {
 //    "아이폰은 이 경로가 핵심"이라 적어 둔 그 기록이 정작 아이폰에서
 //    불안정했다는 뜻이다. IndexedDB 는 아이폰 PWA 에서도 남으므로
 //    그쪽을 주 저장소로 쓰고, 캐시는 구버전 호환용으로만 함께 쓴다. (v26-0803-8)
+// ⚠️ 저장소 작업은 **절대 알림 처리를 붙잡아 둘 수 없어야 한다.**
+//    iOS 는 페이지가 같은 IndexedDB 를 쥐고 있을 때 서비스워커 쪽 open 이
+//    응답하지 않고 멈추는 일이 있다. 그러면 waitUntil 이 영영 안 끝나고,
+//    뒤에 매달린 "창에 알리기 · 창 앞으로 · 기록 남기기"가 하나도 실행되지
+//    않는다 → 알림을 눌렀는데 아무 일도 없고 진단 기록도 안 남는다. (v26-0803-9)
+function withTimeout(p, ms, label) {
+  return Promise.race([
+    Promise.resolve(p).catch(function (e) { return 'err:' + label + ':' + (e && e.message || e); }),
+    new Promise(function (res) { setTimeout(function () { res('timeout:' + label); }, ms); })
+  ]);
+}
 function idbOpen() {
   return new Promise(function (res, rej) {
     var r = indexedDB.open('block7', 1);
@@ -80,13 +96,13 @@ function idbGet(k) {
 
 function savePending(ref, ts) {
   var rec = { ref: ref, ts: ts };
-  // IndexedDB 가 주 — 실패해도 캐시 쪽은 계속 시도한다
-  var a = idbSet('__pending_verse', rec).catch(function () {});
-  var b = caches.open('block7-msg').then(function (c) {
+  // 둘 다 시간 제한 — 어느 한쪽이 멈춰도 알림 처리가 멈추지 않는다
+  var a = withTimeout(idbSet('__pending_verse', rec), 1500, 'idb');
+  var b = withTimeout(caches.open('block7-msg').then(function (c) {
     return c.put('/__pending_verse',
       new Response(JSON.stringify(rec),
         { headers: { 'Content-Type': 'application/json' } }));
-  }).catch(function () {});
+  }), 1500, 'cache');
   return Promise.all([a, b]);
 }
 
@@ -105,11 +121,11 @@ function swLog(msg) {
   } catch (e) {}
   // 알림이 도착하는 순간엔 열려 있는 창이 없어 위 전달이 아무데도 못 간다.
   // 아이폰에서 'push 도착' 줄이 통째로 사라지던 이유다 → IndexedDB 에도 남긴다.
-  idbGet('__notif_log').then(function (list) {
+  withTimeout(idbGet('__notif_log'), 1500, 'idbGet').then(function (list) {
     if (!Array.isArray(list)) list = [];
     list.push(entry);
     if (list.length > 80) list = list.slice(list.length - 80);
-    return idbSet('__notif_log', list);
+    return withTimeout(idbSet('__notif_log', list), 1500, 'idbSet');
   }).catch(function () {});
   return caches.open('block7-msg').then(function (c) {
     return c.match(LOG_URL).then(function (r) {
@@ -143,17 +159,18 @@ self.addEventListener('notificationclick', function (event) {
   var url = ref ? (APP_URL + '?verse=' + encodeURIComponent(ref) + '&vt=' + tok) : APP_URL;
   var notes = [];   // 진단 기록은 모아 두었다가 맨 마지막에 한 번에 남긴다
 
+  // ⚠️ 저장을 먼저 "기다리지" 않는다 (v26-0803-9에서 순서 변경).
+  //    예전에는 savePending → 창에 알리기 → 창 앞으로 → 기록 순으로 사슬이었다.
+  //    저장이 한 번 멈추면(iOS IndexedDB 멈춤) 그 뒤가 통째로 실행되지 않아
+  //    "알림을 눌렀는데 아무 일도 없고 진단 기록조차 안 남던" 상태가 됐다.
+  //    이제 저장은 시간 제한을 걸어 **따로** 돌리고, 창에 알리는 일은 즉시 한다.
+  var saved = withTimeout(savePending(ref, tok), 2000, 'savePending').then(function (r) {
+    notes.push('기록 저장 ' + (typeof r === 'string' ? r : '완료'));
+  });
+
   event.waitUntil(
-    // ① 가장 중요한 것부터: 전달용 기록 저장
-    savePending(ref, tok).then(function () {
-      notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 완료');
-    }).catch(function (e) {
-      notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 실패: ' + (e && e.message || e));
-    })
-    // ② 열려 있는 창에 알리기
-    .then(function () {
-      return clients.matchAll({ type: 'window', includeUncontrolled: true });
-    }).then(function (list) {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      notes.push('알림 탭됨: ' + (ref || '(장절 없음)'));
       notes.push('열린 창 ' + list.length + '개' + (list.length ? ': ' + describeClients(list) : ''));
       var msg = { type: 'block7-open-verse', ref: ref, ts: tok };
       try {
@@ -195,7 +212,8 @@ self.addEventListener('notificationclick', function (event) {
         notes.push('새 창 열기 실패: ' + (e && e.message || e));
       });
     })
-    // ④ 다 끝난 뒤에야 진단 기록
+    // ④ 저장 결과까지 합쳐 마지막에 진단 기록 (저장이 늦어도 최대 2초)
+    .then(function () { return saved; })
     .then(function () { return swLog(notes.join(' | ')); })
     .catch(function (e) { return swLog('알림 처리 중 오류: ' + (e && e.message || e)); })
   );
