@@ -342,14 +342,18 @@ HB가 기기에서 직접 보고 판단할 항목. 답이 오면 바로 반영�
     (`_vfNotifHideCovers`/`_vfNotifRestore`, closeVerseFull 이 복원) — 닫아버리면
     전체화면을 닫았을 때 보던 화면이 사라져 있다 (v0803-1)
 
-### ⚠️ 말씀 푸시 발송 서버는 이 저장소에 없다
-`versepush-517626689480.asia-northeast3.run.app` (Cloud Run) 이 따로 발송한다.
-저장소의 `functions/index.js` 는 **할일 알림**과 테스트 발송만 담당한다.
-- **알림이 5~8분 늦게 오는 문제(8-3)는 이쪽에서만 고칠 수 있다.**
-  진단 기록의 push 원문에 `"priority":"normal"` 이 찍힌다 → 애플/구글이 배달을 미룬다.
-  발송 payload 에 아래를 넣어야 즉시 배달된다:
-  `apns:{headers:{'apns-priority':'10','apns-push-type':'alert'}}`,
-  `android:{priority:'high'}`, `webpush:{headers:{Urgency:'high'}}`
+### 말씀 푸시 발송 서버 (`versepush/`)
+**Cloud Run 서비스**로 따로 배포된다 (Firebase Functions 아님 — 콘솔에 "Cloud Run"으로 표시).
+- 소스: 저장소의 **`versepush/`** (2026-08-03에 Cloud Run 콘솔에서 받아와 저장소에 넣었다)
+- 배포: Cloud Run 콘솔 → `versepush` → **소스 → 소스 수정** → 붙여넣고 **저장 후 다시 배포**
+  (`gcloud run deploy versepush --source versepush/ --region asia-northeast3` 도 가능)
+- 저장소의 `functions/index.js` 는 **할일 알림**과 테스트 발송만 담당한다 (별개)
+- ⚠️ **웹 푸시라서 `apns` 가 아니라 `webpush.headers` 가 맞는 자리다.**
+  아이폰 홈화면 앱·맥 크롬 모두 웹 푸시 토큰을 쓴다.
+  `Urgency:'high'` 가 없으면 FCM 이 normal 로 보내고 애플·구글이 배달을 미뤄
+  5~8분, 심하면 1시간 늦게 도착한다. `TTL` 로 늦어진 알림은 버려지게 한다
+- ⚠️ 암송 기록 키는 **`memorizationLog`** 다. 예전엔 `verseMemLog` 로 되어 있어
+  **'암송순'이 한 번도 동작하지 않았다** (전부 0 → 목록 첫 구절만 계속 선택)
 
 ### 서비스워커 (`firebase-messaging-sw.js`) — 순서가 곧 기능
 ```
