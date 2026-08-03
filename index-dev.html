@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0803-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1943,7 +1943,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:.12em;
   text-align:center;margin-bottom:6px;color:var(--tx);
 }
-.auth-logo b{font-style:normal;color:var(--ac);}
+.auth-logo b{font-style:normal;color:var(--ac);transition:color .15s;}
+/* 회원가입 화면에서는 로고의 7도 버건디로 (제출 버튼과 같은 색) */
+.auth-logo.auth-signup b{color:var(--bgd-tx);}
 .auth-sub{
   text-align:center;font-size:12px;color:var(--tx3);margin-bottom:28px;
 }
@@ -2333,7 +2335,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-9";
+const APP_VERSION = "v. 26-0803-10";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2370,7 +2372,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- ── AUTH SCREEN (shown before the app until login) ── -->
 <div id="authScreen">
   <div class="auth-box">
-    <div class="auth-logo">BLOCK<b>7</b></div>
+    <div class="auth-logo" id="authLogo">BLOCK<b>7</b></div>
     <div class="auth-sub" id="authSub">One beautiful day. Seven simple blocks.</div>
 
     <div class="auth-field">
@@ -6192,6 +6194,79 @@ function _verseSettingsOpen(){
   const o=document.getElementById('verseSettingsOverlay');
   return!!(o&&o.classList.contains('open'));
 }
+// ═══ 데스크탑 ESC = 우상단 × (닫기 / 이전 화면) ═══════════════════
+// 어떤 화면이 열려 있든 ESC 하나로 "지금 가장 위에 떠 있는 것"만 닫는다.
+// 여러 개가 겹쳐 있으면 위엣것부터 한 번에 하나씩 — 그래서 ESC 를 계속 누르면
+// 들어온 길을 그대로 되돌아 나온다.
+//
+// ⚠️ 새 팝업/전체화면을 만들면 아래 표에 [id, 닫기함수] 한 줄만 추가한다.
+//    표의 순서는 참고용일 뿐이고, 실제로는 화면의 z-index 를 재서 위엣것을
+//    고르므로 z-index 를 바꿔도 이 표를 다시 정렬할 필요가 없다.
+//    (opacity 로 여닫는 화면은 세 번째 자리에 '열림 판정'을 직접 준다)
+const _ESC_CLOSERS=[
+  // 작은 메뉴류 (가장 위)
+  ['eventEditMenu',   ()=>closeEventEditMenu()],
+  ['taskMenu',        ()=>closeTaskMenu()],
+  ['contactMenu',     ()=>closeContactMenu()],
+  ['collAddMenu',     ()=>closeCollAddMenu()],
+  ['collMenu',        ()=>closeCollMenu()],
+  ['sfxMenu',         ()=>closeSfxMenu()],
+  ['vliMenu',         ()=>closeVliMenu()],
+  ['verseMemMenu',    ()=>closeVerseMemMenu()],
+  ['logoMenu',        ()=>closeLogoMenu()],
+  ['repeatSubPicker', ()=>closeRepeatSubPicker()],
+  // 팝업류
+  ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
+  ['contactsModal',   ()=>closeContactsModal()],
+  ['cellTodoModal',   ()=>closeCellTodo()],
+  ['subscribeDialog', ()=>closeSubscribeDialog()],
+  ['shareDialog',     ()=>closeShareDialog()],
+  ['hdrCalModal',     ()=>closeHdrCalendar()],
+  ['vDashDetailModal',()=>closeVDashDetail()],
+  ['vDashModal',      ()=>closeVerseDashboard()],
+  ['vAggModal',       ()=>closeVerseAggPopup()],
+  ['rpConfigModal',   ()=>closeRpConfig()],
+  ['collEditPage',    ()=>closeCollEdit()],
+  ['vfShareOverlay',  ()=>closeVfShare()],
+  ['memHistoryModal', ()=>closeMemorizationHistory()],
+  ['memRecModal',     ()=>closeMemRecPopup()],
+  ['versePopupModal', ()=>closeVersePopup()],
+  ['taggedTasksModal',()=>closeContactTasksPopup()],
+  ['eventModal',      ()=>closeEventModal()],
+  ['verseSettingsOverlay',()=>document.getElementById('verseSettingsOverlay').classList.remove('open')],
+  ['settingsOverlay', ()=>closeSettings()],
+  ['verseListModal',  ()=>closeVerseListModal()],
+  ['trashPanel',      ()=>closeTrash(), el=>el.classList.contains('op')],
+  // 전체화면류 (가장 아래)
+  ['verseGrid',       ()=>closeVerseGrid()],
+  ['verseFull',       ()=>closeVerseFull()],
+];
+function _escShown(el){
+  return el.getClientRects().length>0 && getComputedStyle(el).visibility!=='hidden';
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape'||e.defaultPrevented)return;
+  // 글자를 입력하는 중이면 그 칸의 ESC(편집 취소)가 우선이다
+  const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  // 로그인 화면이 떠 있으면 ESC 로 뒤 화면을 건드리지 않는다
+  const auth=document.getElementById('authScreen');
+  if(auth&&_escShown(auth))return;
+  let top=null,topZ=-1;
+  for(const[id,fn,test]of _ESC_CLOSERS){
+    const el=document.getElementById(id);
+    if(!el)continue;
+    if(test?!test(el):!_escShown(el))continue;
+    const z=parseInt(getComputedStyle(el).zIndex,10);
+    const zz=isNaN(z)?0:z;
+    if(zz>topZ){topZ=zz;top=fn;}   // 같은 높이면 표에서 위에 있는 쪽(먼저 만난 쪽)
+  }
+  if(!top)return;
+  e.preventDefault();
+  e.stopImmediatePropagation();   // 아래에 남아 있는 옛 ESC 처리가 겹쳐 닫지 않도록
+  try{top();}catch(err){}
+});
+// (아래는 위 표가 어떤 이유로 못 잡았을 때를 위한 예전 처리 — 그대로 둔다)
 // 데스크탑에서 ESC = [x] 와 동일하게 닫기
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||!_verseSettingsOpen())return;
@@ -7225,6 +7300,9 @@ function openVerseFull(keepOverride){
   const el=document.getElementById('verseFull');
   if(!el)return;
   if(!keepOverride)_vfOverrideVerse=null;   // 로고 메뉴로 여는 건 항상 현재 구절부터
+  // 전체화면은 "위에 뜨는 팝업"이다 — 덮게 되는 화면은 닫지 말고 숨겨 뒀다가
+  // closeVerseFull 에서 되살린다. (어느 경로로 열든 동일하게)
+  _vfHideCoversNow();
   _vfClearNav();
   if(!ST.settings.verseBarOn)toggleVerseBarOn();
   el.style.display='flex';        // 먼저 띄워야 폭을 잴 수 있다
@@ -7244,15 +7322,30 @@ function openVerseFull(keepOverride){
   // 웹폰트가 늦게 붙으면 폭이 달라지므로 로드 후 한 번 더 맞춘다
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(_verseFullIsOpen())_vfLayoutText();});
 }
-// ── 알림으로 연 전체화면이 덮었던 화면들 (닫을 때 복원) ──
-// 알림을 눌러 전체화면을 열 때, 그 위에 떠 있던 화면(타일뷰·설정·대시보드…)을
-// "닫지 않고" 숨겨 두는 명단. 전체화면을 닫는 순간 그대로 되살린다.
+// ── 전체화면이 덮은 화면들 (닫을 때 복원) ──
+// 사용자 입장에서 전체화면은 "위에 떴다 닫히는 팝업"이다. 그러니 그 아래 있던
+// 화면(현재 말씀 모음·타일뷰·설정·대시보드…)은 닫지 말고 **숨겼다가 되살린다.**
+// ⚠️ 예전에는 알림으로 열 때만 이렇게 했고, 목록에서 눌러 연 경우엔 목록을
+//    아예 닫아버려서 전체화면을 닫으면 기본 화면만 남았다. (v26-0803-10)
 let _vfNotifRestore=null;
-function _vfNotifHideCovers(){
+// 지금 숨길 것들을 찾아 숨기고, 되살리는 일을 명단에 이어 붙인다
+function _vfHideCoversNow(){
+  const cov=_vfHideCovers();
+  if(cov)_vfNotifRestore=(_vfNotifRestore||[]).concat(cov);
+}
+function _vfHideCovers(){
   const jobs=[];
   // 타일뷰 — display 로만 숨긴다 (closeVerseGrid() 는 대시보드 복귀 훅까지 돌므로 금지)
   const gd=document.getElementById('verseGrid');
   if(gd&&gd.style.display==='flex'){gd.style.display='none';jobs.push(()=>{gd.style.display='flex';});}
+  // 말씀 메뉴가 열린 채로 전체화면이 뜨면 붕 떠 보인다 — 같이 숨긴다
+  ['vliMenuOverlay','vliMenu','verseMemMenuOverlay','verseMemMenu'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.style.display&&el.style.display!=='none'){
+      const d=el.style.display;el.style.display='none';
+      jobs.push(()=>{el.style.display=d;});
+    }
+  });
   // 설정창 두 종류 (말씀 설정·앱 설정) — 'open' 클래스로 열려 있다
   ['verseSettingsOverlay','settingsOverlay'].forEach(id=>{
     const o=document.getElementById(id);
@@ -8807,42 +8900,66 @@ function _vgFilterLabelText(){
   if(_vgState.kind==='tag')return'#'+_vgState.val;
   return _vgState.val||'';
 }
-// ── 태그 필터일 때의 좌상단 제목 ──
-// 위아래에 ㄱㄴㄷ 순으로 이웃 태그를 흐리게 얹고, 제목을 누르면 롤링피커로 고른다.
-// 목록은 지금 타일뷰가 보고 있는 말씀 뭉치(_vgRawPool)에서 뽑는다.
-function _vgAllTags(){
-  const set=new Set();
-  (_vgRawPool()||[]).forEach(v=>(v.tags||[]).forEach(t=>{
-    const s=String(t||'').trim();
-    if(s)set.add(s);
-  }));
-  return [...set].sort((a,b)=>a.localeCompare(b,'ko'));
+// ── 태그·성경 필터일 때의 좌상단 제목 ──
+// 위아래에 이웃 항목을 흐리게 얹고, 제목을 누르면 롤링피커로 고른다.
+// 목록은 지금 타일뷰가 보고 있는 말씀 뭉치(_vgRawPool)에서 뽑고, 개수도 함께 센다.
+//  · 태그  → ㄱㄴㄷ 순
+//  · 성경  → 창세기~요한계시록 66권 순서 (BibleLinkProvider._BSK_CODES 의 키 순서)
+function _vgAxisItems(kind){
+  const pool=_vgRawPool()||[];
+  const cnt=new Map();
+  if(kind==='tag'){
+    pool.forEach(v=>(v.tags||[]).forEach(t=>{
+      const s=String(t||'').trim();
+      if(s)cnt.set(s,(cnt.get(s)||0)+1);
+    }));
+    return [...cnt.keys()].sort((a,b)=>a.localeCompare(b,'ko')).map(k=>({key:k,n:cnt.get(k)}));
+  }
+  if(kind==='book'){
+    pool.forEach(v=>{
+      const b=_bookOfRef(v.ref);
+      if(b)cnt.set(b,(cnt.get(b)||0)+1);
+    });
+    // 성경 순서대로. 목록에 없는 책은 빼고, 순서표에 없는 이름은 뒤에 붙인다.
+    const order=Object.keys(BibleLinkProvider._BSK_CODES);
+    const out=[];
+    order.forEach(b=>{ if(cnt.has(b))out.push({key:b,n:cnt.get(b)}); });
+    [...cnt.keys()].forEach(b=>{ if(order.indexOf(b)<0)out.push({key:b,n:cnt.get(b)}); });
+    return out;
+  }
+  return [];
 }
+// 화면에 보일 이름 (태그는 앞에 # 을 붙인다)
+function _vgAxisLabel(kind,key){return kind==='tag'?('#'+key):key;}
 function _vgSyncFilterLabel(){
   const lbl=document.getElementById('vgFilterLabel');
   if(!lbl)return;
-  if(_vgState.kind!=='tag'){                 // 태그가 아니면 예전처럼 글자만
+  const kind=_vgState.kind;
+  if(kind!=='tag'&&kind!=='book'){            // 그 밖에는 예전처럼 글자만
     lbl.classList.remove('vg-filter-roll');
     lbl.textContent=_vgFilterLabelText();
     return;
   }
-  const tags=_vgAllTags();
+  const items=_vgAxisItems(kind);
   const cur=_vgState.val;
-  const i=tags.indexOf(cur);
-  const prev=(i>0)?tags[i-1]:'';
-  const next=(i>=0&&i<tags.length-1)?tags[i+1]:'';
+  const i=items.findIndex(x=>x.key===cur);
+  const prev=(i>0)?items[i-1].key:'';
+  const next=(i>=0&&i<items.length-1)?items[i+1].key:'';
   lbl.classList.add('vg-filter-roll');
   lbl.innerHTML=
-    `<span class="vg-tag-near">${prev?esc('#'+prev):''}</span>`+
-    `<span class="vg-tag-cur">${esc('#'+cur)}</span>`+
-    `<span class="vg-tag-near">${next?esc('#'+next):''}</span>`+
-    `<select class="vg-tag-select" aria-label="태그 고르기" onchange="vgPickTag(this.value)">`+
-      tags.map(t=>`<option value="${_vgEscAttr(t)}"${t===cur?' selected':''}>#${esc(t)}</option>`).join('')+
+    `<span class="vg-tag-near">${prev?esc(_vgAxisLabel(kind,prev)):''}</span>`+
+    `<span class="vg-tag-cur">${esc(_vgAxisLabel(kind,cur))}</span>`+
+    `<span class="vg-tag-near">${next?esc(_vgAxisLabel(kind,next)):''}</span>`+
+    `<select class="vg-tag-select" aria-label="${kind==='tag'?'태그':'성경'} 고르기" onchange="vgPickAxis(this.value)">`+
+      // 개수는 이름 뒤에 붙인다 — 기본 선택창이라 글꼴·색을 따로 못 주므로
+      // 가운뎃점으로 한 칸 떼어 눈에 덜 걸리게 한다
+      items.map(x=>`<option value="${_vgEscAttr(x.key)}"${x.key===cur?' selected':''}>`+
+        `${esc(_vgAxisLabel(kind,x.key))} · ${x.n}</option>`).join('')+
     `</select>`;
 }
-function vgPickTag(t){
-  if(!t||t===_vgState.val)return;
-  openVerseGrid('tag',t);
+function vgPickAxis(v){
+  if(!v||v===_vgState.val)return;
+  openVerseGrid(_vgState.kind,v);
 }
 // 릴스 좌하단 대분류/소주제 터치 진입 (태그는 각 칩이 openVerseGrid를 직접 호출)
 function _vgOpenFromReels(kind){
@@ -9200,8 +9317,7 @@ function renderVerseListResults(){
       if(!ST.settings.verseBarOn)toggleVerseBarOn();
       _vfOverrideVerse=null;
       setVerseIdx(v.idx);
-      closeVerseListModal();     // 팝업(z 300)이 전체화면(190)을 덮으므로 먼저 닫는다
-      openVerseFull(true);
+      openVerseFull(true);       // 목록은 닫지 않는다 — 숨겼다가 닫을 때 되살아난다
     };
     results.appendChild(row);
   });
@@ -10719,7 +10835,6 @@ function vliAction(act){
   else if(act==='mem')recordMemorizationByRef(ref);
   else if(act==='del')deleteLatestVerseEvent(kind,ref);
   else if(act==='full'){                       // 그 구절을 전체화면으로
-    closeVerseListModal();                     // 목록 팝업(z 300)이 전체화면(190)을 덮는다
     const all=ACTIVE_VERSES(),hit=all.find(x=>x.ref===ref);
     if(hit)setVerseIdx(hit.idx);
     else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
@@ -18723,11 +18838,7 @@ function _notifStep(){
       return;
     }
     _vfOverrideVerse=hit;
-    // 전체화면을 덮는 화면(타일뷰 195·설정 4000·대시보드 4601…)은 닫지 말고
-    // 숨겼다가 전체화면을 닫을 때 되살린다. 여러 번 와도 명단을 잃지 않게 이어 붙인다.
-    const cov=_vfNotifHideCovers();
-    if(cov)_vfNotifRestore=(_vfNotifRestore||[]).concat(cov);
-    openVerseFull(true);
+    openVerseFull(true);   // 덮인 화면 숨기기는 openVerseFull 안에서 처리된다
     _verseFullRender();               // 이미 떠 있던 경우에도 새 말씀으로 다시 그린다
   }catch(e){
     _notifLog(`[${t.src}] ${t.ref} 열기 오류: ${e&&e.message||e}`);
@@ -19552,6 +19663,7 @@ window.authToggleMode = function(){
   btn.textContent=_authMode==='login'?'로그인':'회원가입';
   // '회원가입'인 쪽을 버건디로 — 제출 버튼이면 바탕색, 전환 링크면 글자색
   btn.classList.toggle('auth-signup',_authMode==='signup');
+  document.getElementById('authLogo')?.classList.toggle('auth-signup',_authMode==='signup');
   document.getElementById('authSwitchRow').innerHTML=_authMode==='login'
     ? '계정이 없으신가요? <button class="auth-signup" onclick="authToggleMode()">회원가입</button>'
     : '이미 계정이 있으신가요? <button onclick="authToggleMode()">로그인</button>';
