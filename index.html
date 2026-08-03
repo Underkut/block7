@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-8  [production]  -->
+<!-- BLOCK7  v. 26-0803-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2333,7 +2333,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-8";
+const APP_VERSION = "v. 26-0803-9";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18580,6 +18580,15 @@ async function _notifLog(msg){
 // ── IndexedDB (서비스워커와 같은 저장소) ──
 // ⚠️ 아이폰 홈화면 앱은 캐시 저장소(caches)에 쓴 것이 남지 않는다. 전달용
 //    기록·진단 기록이 거기 있었다 → 아이폰에서 통째로 사라졌다. (v26-0803-8)
+// ⚠️ 저장소 작업에는 반드시 시간 제한을 건다. iOS 는 서비스워커와 페이지가
+//    같은 IndexedDB 를 동시에 열면 한쪽이 응답하지 않고 멈추는 일이 있다.
+//    그대로 두면 1.5초 폴링이 앞의 것을 기다리다 줄줄이 밀린다. (v26-0803-9)
+function _withTimeout(p,ms,fallback){
+  return Promise.race([
+    Promise.resolve(p).catch(()=>fallback),
+    new Promise(res=>setTimeout(()=>res(fallback),ms))
+  ]);
+}
 function _idbOpen(){
   return new Promise((res,rej)=>{
     const r=indexedDB.open('block7',1);
@@ -18589,25 +18598,25 @@ function _idbOpen(){
   });
 }
 function _idbGet(k){
-  return _idbOpen().then(db=>new Promise((res,rej)=>{
+  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
     const tx=db.transaction('kv','readonly');
     const q=tx.objectStore('kv').get(k);
     q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);
-  })).catch(()=>undefined);
+  })),1500,undefined);
 }
 function _idbSet(k,v){
-  return _idbOpen().then(db=>new Promise((res,rej)=>{
+  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
     const tx=db.transaction('kv','readwrite');
     tx.objectStore('kv').put(v,k);
     tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })).catch(()=>{});
+  })),1500,undefined);
 }
 function _idbDel(k){
-  return _idbOpen().then(db=>new Promise((res,rej)=>{
+  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
     const tx=db.transaction('kv','readwrite');
     tx.objectStore('kv').delete(k);
     tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })).catch(()=>{});
+  })),1500,undefined);
 }
 const NOTIF_LS_KEY='b7v1_notiflog';
 function _notifLogLSRead(){
