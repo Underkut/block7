@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-4  [production]  -->
+<!-- BLOCK7  v. 26-0803-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2333,7 +2333,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-4";
+const APP_VERSION = "v. 26-0803-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18550,7 +18550,7 @@ function runCarryNow(){
 // 아이폰 PWA 는 알림에서 앱을 열 때 주소(?verse=)를 무시하고 시작 주소로 여는
 // 경우가 많다. 그래서 세 갈래로 받는다:
 //   ① 주소의 ?verse=  ② 서비스워커가 보낸 메시지  ③ 서비스워커가 남긴 기록(캐시)
-let _lastNotifRef='',_lastNotifAt=0;
+// (옛 _lastNotifRef/_lastNotifAt 장절 기반 중복막기는 제거됨 — 토큰 방식으로 대체)
 // ── 알림 진단 기록 (서비스워커와 같은 캐시를 공유) ──
 // 말씀 설정 → 알림 탭 → "알림 진단 기록"에서 확인.
 async function _notifLog(msg){
@@ -18577,44 +18577,99 @@ async function _notifLogRead(){
     return Array.isArray(list)?list:[];
   }catch(e){return[];}
 }
-function _openVerseByRef(ref,src){
+// ══════════════════════════════════════════════════════════════
+//  알림 → 전체화면 (v26-0803-5 전면 재작성)
+//
+//  예전 방식은 "한 번 쏘고 끝"이라 조금만 어긋나면 조용히 실패했다.
+//  실제로 확인된 실패 원인 네 가지:
+//   ① 같은 장절이면 5초간 무시(_lastNotifRef) → 같은 말씀 알림을 다시 눌러도 안 열림
+//   ② 250ms 뒤 딱 한 번만 시도 → 그 순간 앱이 뒤에 있거나 준비 전이면 영영 실패
+//   ③ "전체화면이 떠 있으면" 성공으로 보고 전달용 기록을 지움 → 이미 다른 말씀이
+//      떠 있던 경우, 새 말씀은 안 떴는데 기록만 사라져 재시도 기회까지 잃었다
+//      (8-4-2 → 8-4-3 → 8-4-5 로 이어지던 그 경로)
+//   ④ setVerseIdx() 로 현재 인덱스를 바꿔 여는데, 그 값은 계정 동기화 대상이라
+//      리스너가 클라우드 값으로 덮어써 원래 말씀으로 되돌아갔다
+//
+//  그래서 지금은:
+//   · 알림 하나 = 토큰(기록의 ts) 하나. 토큰으로 중복을 막으므로 같은 장절을
+//     다시 눌러도 새 알림이면 반드시 열린다
+//   · 목표 말씀은 _vfOverrideVerse 로 고정 — 동기화가 건드릴 수 없다
+//   · 연 뒤에 "정말 그 말씀이 떠 있는지" 확인하고, 확인될 때까지 재시도한다
+//   · 확인된 뒤에만 전달용 기록을 지운다
+// ══════════════════════════════════════════════════════════════
+let _notifTarget=null;      // {ref, tok, src, tries}
+let _notifTimer=null;
+let _notifDoneTok=0;        // 이미 처리 완료한 토큰 (같은 알림 두 번 열지 않게)
+const _NOTIF_TRY_MS=[0,120,300,600,1000,1600,2400,3500,5000];  // 확인될 때까지 이 간격으로
+
+function _notifSameRef(a,b){
+  if(!a||!b)return false;
+  if(a===b)return true;
+  try{return _refNorm(a)===_refNorm(b);}catch(e){return false;}
+}
+// 지금 전체화면에 "그 말씀"이 실제로 떠 있는가
+function _notifShowing(ref){
+  if(!_verseFullIsOpen())return false;
+  const cur=_vfCurrentVerse();
+  return !!(cur&&_notifSameRef(cur.ref,ref));
+}
+function _notifStop(){
+  if(_notifTimer){clearTimeout(_notifTimer);_notifTimer=null;}
+  _notifTarget=null;
+}
+function _notifStep(){
+  _notifTimer=null;
+  const t=_notifTarget;
+  if(!t)return;
+  try{
+    // 이미 그 말씀이 떠 있으면 끝 — 이때만 전달용 기록을 지운다
+    if(_notifShowing(t.ref)){
+      if(t.tok)_notifDoneTok=t.tok;
+      _clearPendingVerse();
+      _notifLog(`[${t.src}] ${t.ref} 전체화면 확인됨 (${t.tries}번째)`);
+      _notifStop();
+      return;
+    }
+    // 목표 말씀을 override 로 고정한다. 동기화(verseCurrentIdx)가 못 건드린다.
+    const hit=_findVerseByRefLoose(t.ref);
+    if(!hit){
+      _notifLog(`[${t.src}] ${t.ref} — 말씀 목록에서 못 찾아 못 엶`);
+      _notifStop();
+      return;
+    }
+    _vfOverrideVerse=hit;
+    // 전체화면을 덮는 화면(타일뷰 195·설정 4000·대시보드 4601…)은 닫지 말고
+    // 숨겼다가 전체화면을 닫을 때 되살린다. 여러 번 와도 명단을 잃지 않게 이어 붙인다.
+    const cov=_vfNotifHideCovers();
+    if(cov)_vfNotifRestore=(_vfNotifRestore||[]).concat(cov);
+    openVerseFull(true);
+    _verseFullRender();               // 이미 떠 있던 경우에도 새 말씀으로 다시 그린다
+  }catch(e){
+    _notifLog(`[${t.src}] ${t.ref} 열기 오류: ${e&&e.message||e}`);
+  }
+  // 떴는지 다음 차례에 확인한다 (렌더가 한 박자 늦는 기기가 있다)
+  t.tries++;
+  if(t.tries>=_NOTIF_TRY_MS.length){
+    _notifLog(`[${t.src}] ${t.ref} — ${t.tries}번 시도했지만 확인 실패. 기록은 남겨 둔다`);
+    _notifStop();                     // 기록을 남겨 두면 다음 폴링이 다시 집어간다
+    return;
+  }
+  _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
+}
+// ref: 장절 / src: 어느 경로로 들어왔는지 / tok: 알림 1건을 가리키는 토큰(기록의 ts)
+function _openVerseByRef(ref,src,tok){
   if(!ref)return false;
   src=src||'?';
-  // 같은 알림이 여러 경로(메시지·기록·포커스)로 들어와도 한 번만 연다
-  const now=Date.now();
-  if(ref===_lastNotifRef&&now-_lastNotifAt<5000)return false;
-  _lastNotifRef=ref;_lastNotifAt=now;
-  try{
-    const act=ACTIVE_VERSES()||[];
-    const inAct=act.find(v=>v.ref===ref);
-    if(inAct){_vfOverrideVerse=null;setVerseIdx(inAct.idx);}
-    else{
-      const hit=(ALL_VERSES()||[]).find(v=>v.ref===ref);
-      if(!hit){_notifLog(`[${src}] ${ref} — 말씀 목록에서 못 찾아 못 엶`);return false;}
-      _vfOverrideVerse=hit;
-    }
-    _notifLog(`[${src}] ${ref} 전체화면 열기`);
-    setTimeout(()=>{
-      try{
-        // 전체화면(z-index 190)을 덮는 화면(타일뷰 195, 설정 4000, 대시보드 4601…)이
-        // 떠 있으면 잠시 숨겨 두고, 전체화면을 닫을 때 그대로 되살린다.
-        // ⚠️ 예전엔 타일뷰를 closeVerseGrid()로 "닫아"버렸다 → 알림 전체화면을
-        //    닫으면 보던 화면이 사라져 있었다. 닫지 말고 숨겼다 복원할 것.
-        // 알림 전체화면이 이미 떠 있는데 또 다른 알림을 누른 경우:
-        // 먼저 숨겨 둔 명단을 잃어버리지 않도록 이어 붙인다
-        const cov=_vfNotifHideCovers();
-        if(cov)_vfNotifRestore=(_vfNotifRestore||[]).concat(cov);
-        openVerseFull(true);            // 위에서 지정한 구절을 유지한 채 연다
-        // 실제로 떴는지 확인한다. 조용히 실패하면 원인을 알 길이 없었다.
-        if(_verseFullIsOpen())_clearPendingVerse();
-        else{_lastNotifRef='';_notifLog(`[${src}] ${ref} — 열기를 시도했지만 화면이 뜨지 않음`);}
-      }catch(e){
-        _lastNotifRef='';               // 다음 시도를 막지 않도록 되돌린다
-        _notifLog(`[${src}] ${ref} 열기 오류: ${e&&e.message||e}`);
-      }
-    },250);
-    return true;
-  }catch(e){console.warn('말씀 열기 실패:',e);_notifLog(`[${src}] ${ref} 열기 오류: ${e&&e.message||e}`);return false;}
+  tok=tok||0;
+  if(tok&&tok===_notifDoneTok)return false;            // 이미 처리한 알림
+  // 지금 몰고 있는 것과 같은 알림이면 그대로 둔다 (여러 경로로 동시에 들어옴)
+  if(_notifTarget&&_notifTarget.ref===ref&&(!tok||_notifTarget.tok===tok))return false;
+  if(_notifShowing(ref)&&tok&&tok===_notifDoneTok)return false;
+  _notifStop();
+  _notifTarget={ref,tok,src,tries:0};
+  _notifLog(`[${src}] ${ref} 전체화면 열기 시작`);
+  _notifStep();
+  return true;
 }
 // ③ 서비스워커가 남긴 기록 읽기 (앱이 꺼져 있다 열린 경우)
 // 남겨둔 기록을 "읽기만" 한다. 지우는 건 실제로 전체화면이 열린 뒤에.
@@ -18622,6 +18677,9 @@ function _openVerseByRef(ref,src){
 //    않은 순간에 읽히면 기록만 사라지고 전체화면은 안 떠서, 그 알림은
 //    영영 열 수 없었다. 폴링이 다시 시도할 수 있게 남겨 둔다.
 //    (2분 지나면 어차피 무시되므로 계속 쌓이지 않는다)
+// {ref, ts} 를 그대로 돌려준다 — ts 가 곧 "이 알림 1건"을 가리키는 토큰이다.
+// ⚠️ 유효시간을 2분에서 5분으로 늘렸다. 앱이 뒤에 오래 있다 나오는 경우
+//    2분은 너무 짧아, 앞으로 나왔을 땐 이미 기록이 버려져 있었다.
 async function _readPendingVerse(){
   try{
     if(!('caches'in window))return null;
@@ -18630,8 +18688,8 @@ async function _readPendingVerse(){
     if(!r)return null;
     const d=await r.json();
     if(!d||!d.ref)return null;
-    if(Date.now()-(d.ts||0)>120000){await c.delete('/__pending_verse');return null;}
-    return d.ref;
+    if(Date.now()-(d.ts||0)>300000){await c.delete('/__pending_verse');return null;}
+    return d;
   }catch(e){return null;}
 }
 async function _clearPendingVerse(){
@@ -18646,15 +18704,16 @@ function _verseRefFromUrl(){
   try{
     const q=new URLSearchParams(location.search);
     const ref=q.get('verse');
+    const vt=parseInt(q.get('vt'),10)||0;   // 서비스워커가 실어 보낸 토큰
     if(ref)history.replaceState(null,'',location.pathname+location.hash);
-    return ref||null;
+    return ref?{ref,ts:vt}:null;
   }catch(e){return null;}
 }
 async function _openVerseFromLink(){
-  const uref=_verseRefFromUrl();
-  if(uref)return _openVerseByRef(uref,'주소');
-  const pref=await _readPendingVerse();
-  if(pref)_openVerseByRef(pref,'남긴 기록');
+  const u=_verseRefFromUrl();
+  if(u&&u.ref)return _openVerseByRef(u.ref,'주소',u.ts||0);
+  const p=await _readPendingVerse();
+  if(p&&p.ref)_openVerseByRef(p.ref,'남긴 기록',p.ts||0);
 }
 // ② 서비스워커 메시지 (앱이 이미 열려 있는 경우)
 function _initVerseNotifBridge(){
@@ -18662,7 +18721,7 @@ function _initVerseNotifBridge(){
     if(navigator.serviceWorker){
       const onMsg=e=>{
         const d=(e&&e.data)||{};
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'SW 메시지');
+        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'SW 메시지',d.ts||0);
       };
       // addEventListener 만 쓰면 메시지 큐가 열리지 않아 조용히 버려진다.
       // onmessage 로 붙이면 큐가 자동으로 열리고, 혹시 몰라 startMessages 도 부른다.
@@ -18689,7 +18748,7 @@ function _initVerseNotifBridge(){
       const bc=new BroadcastChannel('block7');
       bc.onmessage=e=>{
         const d=(e&&e.data)||{};
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'브로드캐스트');
+        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'브로드캐스트',d.ts||0);
       };
     }
   }catch(e){}
@@ -19275,9 +19334,33 @@ function initForegroundPush(){
     if(typeof Notification!=='undefined'&&Notification.permission==='granted'&&navigator.serviceWorker){
       navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
     }
-    firebase.messaging().onMessage(payload=>{
-      const d=payload.data||payload.notification||{};
-      showToast((d.title?d.title+' — ':'')+(d.body||'알림'));
+    // ── 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) ──
+    // ⚠️ 이때 브라우저는 알림을 자동으로 띄우지 않는다. 그래서 데스크탑 크롬에서
+    //    탭을 열어 두면 "알림이 아예 안 오는" 것처럼 보였다. (v26-0803-5)
+    // ⚠️ 게다가 예전 코드는 payload.data 를 먼저 봤는데, 말씀 푸시의 data 에는
+    //    {type, ref} 만 있고 title/body 가 없다 → 토스트에 그냥 "알림"만 떴다.
+    //    (HB가 겪은 "크롬알림 말고 토스트로 '알림'이라고 옴"이 정확히 이것)
+    // 이제 알림 본문은 notification 에서 읽고, 우리가 직접 알림을 띄운다.
+    // 그 알림을 누르면 서비스워커의 notificationclick 이 받아 전체화면까지 이어진다.
+    firebase.messaging().onMessage(async payload=>{
+      const n=payload.notification||{},d=payload.data||{};
+      const title=n.title||d.title||'BLOCK7';
+      const body=n.body||d.body||'';
+      try{
+        const reg=await navigator.serviceWorker.getRegistration('firebase-messaging-sw.js')
+                 ||await navigator.serviceWorker.ready;
+        if(reg&&Notification.permission==='granted'){
+          await reg.showNotification(title,{
+            body,icon:'icon.png',badge:'icon.png',
+            tag:d.tag||('block7-'+(d.ref||'verse')),
+            renotify:true,
+            data:{ref:d.ref||'',type:d.type||''}
+          });
+          return;
+        }
+      }catch(e){}
+      // 알림을 못 띄우는 환경이면 최소한 내용이 보이게 (예전엔 "알림"만 떴다)
+      showToast(body?`${title} — ${body}`:title);
     });
   }catch(e){/* messaging unsupported here */}
 }
