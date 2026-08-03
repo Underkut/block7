@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0803-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -104,6 +104,9 @@
   --tx:#eef0fa; --tx2:#9aa4c8; --tx3:#7a84a8;
   --ac:#5a70f8; --ov:#e84040; --ok:#22c46e; --so:#e08830;
   --del:#e84040;
+  /* 회원가입 전용 버건디 — 배경용(bgd)과 글자용(bgd-tx)을 나눈다.
+     어두운 배경 위에서는 진한 버건디 글자가 안 읽혀서 글자용을 밝게 잡는다. */
+  --bgd:#8c2f3f; --bgd-tx:#c46b7c;
   --c0:#9490fa; --c1:#f0b030; --c2:#22e080;
   --c3:#38b0fa; --c4:#f060a8; --c5:#b088fa;
   --header-bg:rgba(13,14,16,.97);
@@ -121,6 +124,7 @@ html[data-theme="light"] {
   --tx:#1c2030; --tx2:#5b6378; --tx3:#9aa1b4;
   --ac:#4458e8; --ov:#d23c3c; --ok:#1ea860; --so:#cc7320;
   --del:#d23c3c;
+  --bgd:#7d2634; --bgd-tx:#8c2f3f;
   --c0:#7b6ef0; --c1:#dd9818; --c2:#1bbf6e;
   --c3:#2a8edd; --c4:#dd4f92; --c5:#9670e0;
   --header-bg:rgba(255,255,255,.97);
@@ -345,6 +349,29 @@ header{
   padding:2px 6px 2px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .vg-filter{flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 태그 필터일 때 — 위아래로 이웃 태그를 흐리게 얹고, 누르면 롤링피커가 열린다.
+   이웃은 자리만 차지하고 클릭은 통째로 아래 select 가 받는다. */
+.vg-filter.vg-filter-roll{
+  position:relative;display:flex;flex-direction:column;justify-content:center;
+  line-height:1.15;overflow:visible;cursor:pointer;
+}
+.vg-filter.vg-filter-roll .vg-tag-cur{
+  font-size:14px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.vg-filter.vg-filter-roll .vg-tag-near{
+  font-size:10px;font-weight:500;opacity:.3;      /* 멀어질수록 흐리게 */
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  min-height:12px;                                 /* 이웃이 없어도 자리는 유지 → 제목이 안 흔들린다 */
+}
+/* 클릭·터치를 통째로 받는 투명 select — 보이는 글자는 위의 span 들이 그린다
+   (Safari 가 select 안 글자 정렬을 못 맞추는 문제를 피하는 앱의 기존 방식) */
+.vg-filter.vg-filter-roll .vg-tag-select{
+  position:absolute;inset:0;width:100%;height:100%;
+  opacity:0;border:none;margin:0;padding:0;background:none;
+  -webkit-appearance:none;appearance:none;
+  cursor:pointer;outline:none;
+}
 .vg-sort{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .vg-eq{background:none;border:none;color:var(--tx3);font-size:15px;font-weight:400;
   line-height:1;padding:2px 3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -1935,6 +1962,10 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   cursor:pointer;margin-top:4px;
 }
 .auth-btn:disabled{opacity:.5;cursor:default;}
+/* 회원가입은 버건디로 구분한다.
+   - 로그인 화면(제출 버튼이 '로그인')  → 아래 전환 링크의 '회원가입' 글자색
+   - 회원가입 화면(제출 버튼이 '회원가입') → 그 버튼의 바탕색 */
+.auth-btn.auth-signup{background:var(--bgd);}
 .auth-switch{
   text-align:center;margin-top:16px;font-size:12px;color:var(--tx3);
 }
@@ -1943,6 +1974,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-size:12px;cursor:pointer;padding:0 4px;
   font-family:'Pretendard',sans-serif;
 }
+.auth-switch button.auth-signup{color:var(--bgd-tx);}
 .auth-error{
   color:var(--ov);font-size:12px;margin-top:10px;text-align:center;
   min-height:16px;
@@ -2301,7 +2333,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-3";
+const APP_VERSION = "v. 26-0803-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2352,7 +2384,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     <button class="auth-btn" id="authSubmitBtn" onclick="authSubmit()">로그인</button>
 
     <div class="auth-switch" id="authSwitchRow">
-      계정이 없으신가요? <button onclick="authToggleMode()">회원가입</button>
+      계정이 없으신가요? <button class="auth-signup" onclick="authToggleMode()">회원가입</button>
     </div>
     <div class="auth-error" id="authError"></div>
     <div class="auth-loading" id="authLoading" style="display:none">처리 중...</div>
@@ -8775,6 +8807,43 @@ function _vgFilterLabelText(){
   if(_vgState.kind==='tag')return'#'+_vgState.val;
   return _vgState.val||'';
 }
+// ── 태그 필터일 때의 좌상단 제목 ──
+// 위아래에 ㄱㄴㄷ 순으로 이웃 태그를 흐리게 얹고, 제목을 누르면 롤링피커로 고른다.
+// 목록은 지금 타일뷰가 보고 있는 말씀 뭉치(_vgRawPool)에서 뽑는다.
+function _vgAllTags(){
+  const set=new Set();
+  (_vgRawPool()||[]).forEach(v=>(v.tags||[]).forEach(t=>{
+    const s=String(t||'').trim();
+    if(s)set.add(s);
+  }));
+  return [...set].sort((a,b)=>a.localeCompare(b,'ko'));
+}
+function _vgSyncFilterLabel(){
+  const lbl=document.getElementById('vgFilterLabel');
+  if(!lbl)return;
+  if(_vgState.kind!=='tag'){                 // 태그가 아니면 예전처럼 글자만
+    lbl.classList.remove('vg-filter-roll');
+    lbl.textContent=_vgFilterLabelText();
+    return;
+  }
+  const tags=_vgAllTags();
+  const cur=_vgState.val;
+  const i=tags.indexOf(cur);
+  const prev=(i>0)?tags[i-1]:'';
+  const next=(i>=0&&i<tags.length-1)?tags[i+1]:'';
+  lbl.classList.add('vg-filter-roll');
+  lbl.innerHTML=
+    `<span class="vg-tag-near">${prev?esc('#'+prev):''}</span>`+
+    `<span class="vg-tag-cur">${esc('#'+cur)}</span>`+
+    `<span class="vg-tag-near">${next?esc('#'+next):''}</span>`+
+    `<select class="vg-tag-select" aria-label="태그 고르기" onchange="vgPickTag(this.value)">`+
+      tags.map(t=>`<option value="${_vgEscAttr(t)}"${t===cur?' selected':''}>#${esc(t)}</option>`).join('')+
+    `</select>`;
+}
+function vgPickTag(t){
+  if(!t||t===_vgState.val)return;
+  openVerseGrid('tag',t);
+}
 // 릴스 좌하단 대분류/소주제 터치 진입 (태그는 각 칩이 openVerseGrid를 직접 호출)
 function _vgOpenFromReels(kind){
   const v=_vfCurrentVerse();if(!v)return;
@@ -8789,7 +8858,7 @@ function openVerseGrid(kind,val){
   _vgState.kind=kind;_vgState.val=val;_vgState.group=false;
   if(!_vgState.cols)_vgState.cols=3;
   const gd=document.getElementById('verseGrid');if(!gd)return;
-  const lbl=document.getElementById('vgFilterLabel');if(lbl)lbl.textContent=_vgFilterLabelText();
+  _vgSyncFilterLabel();
   gd.style.display='flex';
   _vgSalt=(Math.random()*1e9)|0;  // 열 때마다 타일 색 배치를 섞는다
   // 전체화면에서 보던 구절은 그 디자인 그대로 (배경 테마도 이어받아 전환이 끊기지 않게)
@@ -19300,9 +19369,12 @@ let _authMode='login';   // 'login' | 'signup'
 
 window.authToggleMode = function(){
   _authMode=_authMode==='login'?'signup':'login';
-  document.getElementById('authSubmitBtn').textContent=_authMode==='login'?'로그인':'회원가입';
+  const btn=document.getElementById('authSubmitBtn');
+  btn.textContent=_authMode==='login'?'로그인':'회원가입';
+  // '회원가입'인 쪽을 버건디로 — 제출 버튼이면 바탕색, 전환 링크면 글자색
+  btn.classList.toggle('auth-signup',_authMode==='signup');
   document.getElementById('authSwitchRow').innerHTML=_authMode==='login'
-    ? '계정이 없으신가요? <button onclick="authToggleMode()">회원가입</button>'
+    ? '계정이 없으신가요? <button class="auth-signup" onclick="authToggleMode()">회원가입</button>'
     : '이미 계정이 있으신가요? <button onclick="authToggleMode()">로그인</button>';
   document.getElementById('authError').textContent='';
 }
