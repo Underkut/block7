@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-7)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-8)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 
 // ══════════════════════════════════════════════════════════════
@@ -21,7 +21,7 @@
 //       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0803-7';
+var SW_VER = 'v. 26-0803-8';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
@@ -41,12 +41,53 @@ function pickRef(n) {
 // 이 기록은 앱이 실제로 전체화면을 띄운 뒤에 앱이 지운다.
 // ts 는 "이 알림 1건"을 가리키는 토큰이기도 하다. 앱은 이 값으로 중복을 막으므로
 // 같은 장절이 다시 와도(= 새 ts) 반드시 다시 열린다.
-function savePending(ref, ts) {
-  return caches.open('block7-msg').then(function (c) {
-    return c.put('/__pending_verse',
-      new Response(JSON.stringify({ ref: ref, ts: ts }),
-        { headers: { 'Content-Type': 'application/json' } }));
+// ── 저장소: IndexedDB 우선, 캐시는 보조 ──
+// ⚠️ 아이폰 홈화면 앱에서는 캐시 저장소(caches)에 쓴 것이 남지 않는다.
+//    전달용 기록(__pending_verse)이 바로 그 캐시에 있었다 — 인계문서가
+//    "아이폰은 이 경로가 핵심"이라 적어 둔 그 기록이 정작 아이폰에서
+//    불안정했다는 뜻이다. IndexedDB 는 아이폰 PWA 에서도 남으므로
+//    그쪽을 주 저장소로 쓰고, 캐시는 구버전 호환용으로만 함께 쓴다. (v26-0803-8)
+function idbOpen() {
+  return new Promise(function (res, rej) {
+    var r = indexedDB.open('block7', 1);
+    r.onupgradeneeded = function () {
+      if (!r.result.objectStoreNames.contains('kv')) r.result.createObjectStore('kv');
+    };
+    r.onsuccess = function () { res(r.result); };
+    r.onerror = function () { rej(r.error); };
   });
+}
+function idbSet(k, v) {
+  return idbOpen().then(function (db) {
+    return new Promise(function (res, rej) {
+      var tx = db.transaction('kv', 'readwrite');
+      tx.objectStore('kv').put(v, k);
+      tx.oncomplete = function () { res(); };
+      tx.onerror = function () { rej(tx.error); };
+    });
+  });
+}
+function idbGet(k) {
+  return idbOpen().then(function (db) {
+    return new Promise(function (res, rej) {
+      var tx = db.transaction('kv', 'readonly');
+      var q = tx.objectStore('kv').get(k);
+      q.onsuccess = function () { res(q.result); };
+      q.onerror = function () { rej(q.error); };
+    });
+  });
+}
+
+function savePending(ref, ts) {
+  var rec = { ref: ref, ts: ts };
+  // IndexedDB 가 주 — 실패해도 캐시 쪽은 계속 시도한다
+  var a = idbSet('__pending_verse', rec).catch(function () {});
+  var b = caches.open('block7-msg').then(function (c) {
+    return c.put('/__pending_verse',
+      new Response(JSON.stringify(rec),
+        { headers: { 'Content-Type': 'application/json' } }));
+  }).catch(function () {});
+  return Promise.all([a, b]);
 }
 
 // ── 알림 진단 기록 ── (앱: 말씀 설정 → 알림 탭 → 알림 진단 기록)
@@ -62,6 +103,14 @@ function swLog(msg) {
       }
     }).catch(function () {});
   } catch (e) {}
+  // 알림이 도착하는 순간엔 열려 있는 창이 없어 위 전달이 아무데도 못 간다.
+  // 아이폰에서 'push 도착' 줄이 통째로 사라지던 이유다 → IndexedDB 에도 남긴다.
+  idbGet('__notif_log').then(function (list) {
+    if (!Array.isArray(list)) list = [];
+    list.push(entry);
+    if (list.length > 80) list = list.slice(list.length - 80);
+    return idbSet('__notif_log', list);
+  }).catch(function () {});
   return caches.open('block7-msg').then(function (c) {
     return c.match(LOG_URL).then(function (r) {
       if (!r) return [];
