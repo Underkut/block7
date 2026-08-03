@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0803-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2335,7 +2335,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-10";
+const APP_VERSION = "v. 26-0803-11";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4161,10 +4161,43 @@ function _collRawVerses(id){
   const c=findColl(id);
   return c?(c.verses||[]).filter(v=>!v.del):[];
 }
-function _bookOfRef(ref){
-  const m=(ref||'').match(/^(.*?)\s*\d/);
-  return m?m[1].trim():(ref||'').trim();
+// ── 성경책 이름 하나로 모으기 ──
+// 같은 책이라도 저장된 글자가 다를 수 있다.
+//   · 약칭      '삼상 7:12'   → 사무엘상   (_REF_ABBR2FULL 표를 그대로 쓴다)
+//   · 한글 숫자 '요한일서 5:14' → 요한1서
+// ⚠️ 이걸 안 하면 순서표(BIBLE_ORDER_OT/NT, _BSK_CODES)에 없는 이름이 되어
+//    "순서를 모르는 책"으로 취급돼 목록 맨 뒤 — 즉 요한계시록 뒤 — 로 밀린다.
+//    (2026-08-03 '요한일서가 요한계시록 뒤에 있다' 신고)
+// 표에 없는 이름은 손대지 않는다.
+let _BOOK_CANON_MAP=null;
+function _bookCanon(name){
+  const s=String(name||'').replace(/\s+/g,'');
+  if(!s)return'';
+  if(!_BOOK_CANON_MAP){
+    // 약칭 표는 이 함수보다 아래에서 만들어진다. 아주 이른 호출이면 아직
+    // 없을 수 있으므로, 그때는 표를 기억해 두지 않고 다음에 다시 만든다.
+    let ab=null; try{ab=_REF_ABBR2FULL;}catch(e){}
+    const m=Object.assign({},ab||{},{
+      '요한일서':'요한1서','요한이서':'요한2서','요한삼서':'요한3서'
+    });
+    if(!ab)return m[s]||String(name||'').trim();
+    _BOOK_CANON_MAP=m;
+  }
+  return _BOOK_CANON_MAP[s]||String(name||'').trim();
 }
+// ⚠️ 책 이름은 "장:절" 앞까지다. 예전 규칙(`^(.*?)\s*\d`)은 **첫 숫자**에서 끊어서
+//    '요한1서 5:14' 의 책 이름을 '요한' 으로 잘라 버렸다. 그래서 요한1·2·3서가
+//    순서표에 없는 이름이 되어 목록 맨 뒤(요한계시록 뒤)로 밀렸다. (2026-08-03)
+//    ':' 까지 확인해야 '요한1서' 의 1 을 장 번호로 오해하지 않는다.
+function _bookOfRef(ref){
+  const s=String(ref||'').trim();
+  let m=s.match(/^(.+?)\s*\d+\s*:/);   // 정상 표기: 책 + 장:절
+  if(!m)m=s.match(/^(.*?)\s*\d/);      // 절 표기가 없는 옛 자료 (예: '시편 119')
+  return _bookCanon(m?m[1].trim():s);
+}
+// 저장해 둔 성경책 필터(f.books)에는 옛 표기가 남아 있을 수 있으므로
+// 고를 때도 펴서 견준다.
+function _bookSel(f,key){return (f.books||[]).some(b=>_bookCanon(b)===key);}
 // 구약 다음 신약 순서로 이어붙인 전체 성경 순서 — '성경순' 정렬 기준
 let _BIBLE_WHOLE=null;
 function _bibleRankOfRef(ref){
@@ -4233,7 +4266,7 @@ function _collVersePassesFilter(v,f,exceptKind){
     if(!tags.some(t=>f.tags.includes(t)))return false;
   }
   if(exceptKind!=='book'&&f.books&&f.books.length){
-    if(!f.books.includes(_bookOfRef(v.ref)))return false;
+    if(!_bookSel(f,_bookOfRef(v.ref)))return false;
   }
   return true;
 }
@@ -4602,7 +4635,7 @@ function _renderBookList(listWrap,raw,f,cfId){
   groups.forEach(g=>{g.count=counts.get(g.key)||0;});
   const sorted=_sortGroups(groups,f.sortBook||'count');
   sorted.forEach(g=>{
-    const on=(f.books||[]).includes(g.key);
+    const on=_bookSel(f,g.key);
     // 교집합 결과 0개인 칩은 숨김 — 단, 이미 선택된 칩은 해제할 수 있게 남김
     if(g.count===0&&!on)return;
     const btn=document.createElement('button');
@@ -4611,10 +4644,11 @@ function _renderBookList(listWrap,raw,f,cfId){
     btn.innerHTML=`${g.key}<span style="margin-left:3px;opacity:.55;font-size:9px;">${g.count}</span>`;
     btn.onclick=()=>{
       if(!f.books)f.books=[];
-      const i=f.books.indexOf(g.key);
-      if(i>=0)f.books.splice(i,1);else f.books.push(g.key);
+      // 옛 표기('요한일서')로 저장돼 있어도 같은 책이면 함께 지운다
+      if(_bookSel(f,g.key))f.books=f.books.filter(b=>_bookCanon(b)!==g.key);
+      else f.books.push(g.key);
       rawSave();
-      btn.classList.toggle('on',f.books.includes(g.key));
+      btn.classList.toggle('on',_bookSel(f,g.key));
       _updateCfAllCount(cfId);
       _afterActiveVersesChanged();
     };
