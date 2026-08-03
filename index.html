@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-7  [production]  -->
+<!-- BLOCK7  v. 26-0803-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2333,7 +2333,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-7";
+const APP_VERSION = "v. 26-0803-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18577,6 +18577,38 @@ async function _notifLog(msg){
 // ⚠️ 아이폰 홈화면 앱에서는 캐시 저장소(caches)에 쓴 진단 기록이 남지 않는다.
 //    그래서 "알림도 오고 전체화면도 뜨는데 진단 기록만 계속 비어 있는" 상태가
 //    됐다. 기기별 저장이라 동기화도 안 되고 용량도 작아 안전하다. (v26-0803-7)
+// ── IndexedDB (서비스워커와 같은 저장소) ──
+// ⚠️ 아이폰 홈화면 앱은 캐시 저장소(caches)에 쓴 것이 남지 않는다. 전달용
+//    기록·진단 기록이 거기 있었다 → 아이폰에서 통째로 사라졌다. (v26-0803-8)
+function _idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('block7',1);
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv');};
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+function _idbGet(k){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction('kv','readonly');
+    const q=tx.objectStore('kv').get(k);
+    q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);
+  })).catch(()=>undefined);
+}
+function _idbSet(k,v){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction('kv','readwrite');
+    tx.objectStore('kv').put(v,k);
+    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
+  })).catch(()=>{});
+}
+function _idbDel(k){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction('kv','readwrite');
+    tx.objectStore('kv').delete(k);
+    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
+  })).catch(()=>{});
+}
 const NOTIF_LS_KEY='b7v1_notiflog';
 function _notifLogLSRead(){
   try{const v=JSON.parse(localStorage.getItem(NOTIF_LS_KEY)||'[]');return Array.isArray(v)?v:[];}
@@ -18585,27 +18617,31 @@ function _notifLogLSRead(){
 function _notifLogLSPush(entry){
   try{
     const list=_notifLogLSRead();
+    // 같은 줄이 두 경로(워커 메시지 · 저장소 병합)로 들어와 두 번 보이던 문제 방지
+    const k=`${entry.t}|${entry.s}|${entry.m}`;
+    if(list.some(e=>`${e.t}|${e.s}|${e.m}`===k))return;
     list.push(entry);
     localStorage.setItem(NOTIF_LS_KEY,JSON.stringify(list.slice(-80)));
   }catch(e){}
 }
 // 캐시 + localStorage 를 합쳐서 시간순으로 (같은 줄은 한 번만)
 async function _notifLogRead(){
-  let fromCache=[];
+  const outside=[];
+  // ① IndexedDB — 알림이 도착하는 순간엔 열린 창이 없어 워커가 여기에만 남긴다
+  try{
+    const l=await _idbGet('__notif_log');
+    if(Array.isArray(l))outside.push(...l);
+  }catch(e){}
+  // ② 캐시 — 예전 방식(기기에 따라 남기도 하고 안 남기도 한다)
   try{
     if('caches'in window){
       const c=await caches.open('block7-msg');
       const r=await c.match('/__notif_log');
-      if(r){const list=await r.json();if(Array.isArray(list))fromCache=list;}
+      if(r){const list=await r.json();if(Array.isArray(list))outside.push(...list);}
     }
   }catch(e){}
-  // 캐시에만 있던 줄(주로 서비스워커 기록)을 보조 저장소로 옮겨 둔다 —
-  // 캐시가 비워져도 기록이 살아남는다
-  const seen=new Set(_notifLogLSRead().map(e=>`${e.t}|${e.s}|${e.m}`));
-  fromCache.forEach(e=>{
-    const k=`${e.t}|${e.s}|${e.m}`;
-    if(!seen.has(k)){seen.add(k);_notifLogLSPush(e);}
-  });
+  // 바깥 저장소의 줄을 이 기기 저장소로 옮겨 둔다 — 저장소가 비워져도 살아남는다
+  outside.forEach(e=>_notifLogLSPush(e));
   return _notifLogLSRead().sort((a,b)=>(a.t||0)-(b.t||0));
 }
 // ══════════════════════════════════════════════════════════════
@@ -18721,22 +18757,28 @@ function _openVerseByRef(ref,src,tok){
 // ⚠️ 유효시간을 2분에서 5분으로 늘렸다. 앱이 뒤에 오래 있다 나오는 경우
 //    2분은 너무 짧아, 앞으로 나왔을 땐 이미 기록이 버려져 있었다.
 async function _readPendingVerse(){
-  try{
-    if(!('caches'in window))return null;
-    const c=await caches.open('block7-msg');
-    const r=await c.match('/__pending_verse');
-    if(!r)return null;
-    const d=await r.json();
-    if(!d||!d.ref)return null;
-    if(Date.now()-(d.ts||0)>300000){await c.delete('/__pending_verse');return null;}
-    return d;
-  }catch(e){return null;}
+  // ⚠️ IndexedDB 를 먼저 본다. 캐시는 아이폰 홈화면 앱에서 안 남는다. (v26-0803-8)
+  let d=null;
+  try{const v=await _idbGet('__pending_verse');if(v&&v.ref)d=v;}catch(e){}
+  if(!d){
+    try{
+      if('caches'in window){
+        const c=await caches.open('block7-msg');
+        const r=await c.match('/__pending_verse');
+        if(r){const j=await r.json();if(j&&j.ref)d=j;}
+      }
+    }catch(e){}
+  }
+  if(!d)return null;
+  if(Date.now()-(d.ts||0)>300000){_clearPendingVerse();return null;}
+  return d;
 }
 async function _clearPendingVerse(){
+  _idbDel('__pending_verse');            // 주 저장소
   try{
     if(!('caches'in window))return;
     const c=await caches.open('block7-msg');
-    await c.delete('/__pending_verse');
+    await c.delete('/__pending_verse');  // 보조(구버전 호환)
   }catch(e){}
 }
 // ① 주소에서 읽기
@@ -18854,7 +18896,8 @@ function vpDiagToggle(){
   if(opening){vpDiagRender();_vpDiagTimer=setInterval(vpDiagRender,2500);}
 }
 async function vpDiagClear(){
-  try{localStorage.removeItem(NOTIF_LS_KEY);}catch(e){}   // 보조 저장소도 함께
+  try{localStorage.removeItem(NOTIF_LS_KEY);}catch(e){}   // 이 기기 저장소
+  await _idbSet('__notif_log',[]);                        // IndexedDB
   try{
     const c=await caches.open('block7-msg');
     await c.put('/__notif_log',new Response('[]',{headers:{'Content-Type':'application/json'}}));
