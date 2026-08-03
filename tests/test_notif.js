@@ -189,4 +189,36 @@ console.log('\n시나리오 9 — 목록에 없는 장절');
   sc.eq('못 찾았다고 기록에 남긴다', LOG.some(m => m.indexOf('못 찾아') >= 0), true);
 }
 
+// ═══ 10. 앱이 알림으로 "막 켜지는" 중 — 말씀 목록이 아직 없다 ═══
+// 종료 상태에서 알림을 눌러 앱이 시작되면, 클라우드에서 말씀을 받아오기 전이라
+// 그 순간엔 목록이 비어 있다. 한 번 만에 포기하면 "앱만 뜨고 전체화면은 안 뜸"이 된다.
+console.log('\n시나리오 10 — 앱이 막 켜지는 중이라 말씀 목록이 아직 없음');
+{
+  reset([]);                                   // 아직 말씀 목록이 비어 있다
+  const tok = tapNotification('요한복음 1:18');
+  _openVerseByRef('요한복음 1:18', '남긴 기록', tok);
+  // 몇 차례 시도하는 동안 목록이 뒤늦게 준비된다
+  const t = timers.filter(x => !x.done).sort((a, b) => a.at - b.at)[0];
+  if (t) { t.done = true; NOW = t.at; t.fn(); }        // 1차 시도 — 아직 없음
+  sc.eq('아직 안 열렸다', SCREEN.open, false);
+  sc.eq('여기서 포기하지 않는다', timers.some(x => !x.done), true);
+  VERSES = [{ ref: '요한복음 1:18' }];                  // 이제 목록이 도착
+  runTimers();
+  sc.eq('목록이 준비되자 열린다', SCREEN.ref, '요한복음 1:18');
+  sc.eq('확인 후 기록을 지운다', PENDING, null);
+}
+
+// ═══ 11. 끝까지 목록에 없으면 그때는 포기한다 (무한 재시도 방지) ═══
+console.log('\n시나리오 11 — 끝까지 없으면 포기');
+{
+  reset([]);
+  const tok = tapNotification('창세기 1:1');
+  _openVerseByRef('창세기 1:1', '남긴 기록', tok);
+  runTimers();
+  sc.eq('전체화면은 열리지 않는다', SCREEN.open, false);
+  sc.eq('여러 번 시도한 뒤 포기했다고 남긴다',
+    LOG.some(m => m.indexOf('못 찾아') >= 0 && m.indexOf('번 시도') >= 0), true);
+  sc.eq('남은 타이머가 없다 (무한 재시도 아님)', timers.some(x => !x.done), false);
+}
+
 sc.done();
