@@ -21,7 +21,7 @@
 //       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0730-13';
+var SW_VER = 'v. 26-0803-5';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
@@ -39,10 +39,12 @@ function pickRef(n) {
 // 아이폰 PWA 는 알림에서 열 때 주소(?verse=)를 무시하는 경우가 많아서,
 // 앱이 시작하며(또는 앞으로 나오며) 이 기록을 읽어 전체화면을 띄운다.
 // 이 기록은 앱이 실제로 전체화면을 띄운 뒤에 앱이 지운다.
-function savePending(ref) {
+// ts 는 "이 알림 1건"을 가리키는 토큰이기도 하다. 앱은 이 값으로 중복을 막으므로
+// 같은 장절이 다시 와도(= 새 ts) 반드시 다시 열린다.
+function savePending(ref, ts) {
   return caches.open('block7-msg').then(function (c) {
     return c.put('/__pending_verse',
-      new Response(JSON.stringify({ ref: ref, ts: Date.now() }),
+      new Response(JSON.stringify({ ref: ref, ts: ts }),
         { headers: { 'Content-Type': 'application/json' } }));
   });
 }
@@ -78,12 +80,13 @@ self.addEventListener('notificationclick', function (event) {
   event.notification.close();
 
   var ref = pickRef(event.notification);
-  var url = ref ? (APP_URL + '?verse=' + encodeURIComponent(ref)) : APP_URL;
+  var tok = Date.now();
+  var url = ref ? (APP_URL + '?verse=' + encodeURIComponent(ref) + '&vt=' + tok) : APP_URL;
   var notes = [];   // 진단 기록은 모아 두었다가 맨 마지막에 한 번에 남긴다
 
   event.waitUntil(
     // ① 가장 중요한 것부터: 전달용 기록 저장
-    savePending(ref).then(function () {
+    savePending(ref, tok).then(function () {
       notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 완료');
     }).catch(function (e) {
       notes.push('알림 탭됨: ' + (ref || '(장절 없음)') + ' · 기록 저장 실패: ' + (e && e.message || e));
@@ -93,13 +96,12 @@ self.addEventListener('notificationclick', function (event) {
       return clients.matchAll({ type: 'window', includeUncontrolled: true });
     }).then(function (list) {
       notes.push('열린 창 ' + list.length + '개' + (list.length ? ': ' + describeClients(list) : ''));
+      var msg = { type: 'block7-open-verse', ref: ref, ts: tok };
       try {
-        if (self.BroadcastChannel) {
-          new BroadcastChannel('block7').postMessage({ type: 'block7-open-verse', ref: ref });
-        }
+        if (self.BroadcastChannel) new BroadcastChannel('block7').postMessage(msg);
       } catch (e) {}
       for (var i = 0; i < list.length; i++) {
-        try { list[i].postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
+        try { list[i].postMessage(msg); } catch (e) {}
       }
 
       // ③ 창을 앞으로 가져오기 — /block7 또는 block7.my 창 우선
@@ -116,8 +118,18 @@ self.addEventListener('notificationclick', function (event) {
         return target.focus().then(function (fc) {
           // 잠들어 있던 앱은 focus 이전의 메시지를 놓칠 수 있어 깨운 뒤 한 번 더
           var cl = fc || target;
-          try { cl.postMessage({ type: 'block7-open-verse', ref: ref }); } catch (e) {}
+          try { cl.postMessage(msg); } catch (e) {}
           notes.push('기존 창을 앞으로 가져옴 + 재전달');
+          // ⚠️ 데스크탑 크롬에서 "탭만 앞으로 오고 전체화면은 안 열리던" 경우가 있었다
+          //    (메시지가 유실되거나 앱이 아직 수신 준비 전). 주소에 ?verse= 를 실어
+          //    한 번 더 확실한 통로를 만든다. navigate() 가 막힌 환경이면 조용히 넘긴다.
+          if (ref && cl && cl.navigate) {
+            return cl.navigate(url).then(function () {
+              notes.push('주소로도 전달(navigate)');
+            }).catch(function (e) {
+              notes.push('navigate 불가(무시): ' + (e && e.message || e));
+            });
+          }
         }).catch(function (e) {
           notes.push('창 포커스 실패: ' + (e && e.message || e));
           return clients.openWindow(url);
@@ -144,12 +156,44 @@ self.addEventListener('activate', function (e) {
   ]));
 });
 
-// push 도착 자체를 기록만 한다 (알림 표시는 브라우저 자동 표시에 맡김)
+// ── push 도착 → 알림 표시까지 우리가 직접 한다 ──
+// ⚠️ 예전에는 기록만 남기고 표시는 FCM/브라우저에 맡겼다. 그런데 브라우저 규칙상
+//    push 를 받고도 알림을 안 띄우면 크롬이 **"이 사이트는 백그라운드에서
+//    업데이트되었습니다"** 라는 가짜 알림을 대신 띄운다. importScripts 가
+//    gstatic 에서 막히면 FCM 처리기가 아예 등록되지 않으므로 그 상황이 실제로
+//    일어났다(HB가 겪은 8-1C). 그래서 우리가 먼저 잡아 직접 띄운다.
+// stopImmediatePropagation 으로 FCM 처리기를 막아 알림이 두 번 뜨지 않게 한다.
+// 이 처리기는 importScripts 앞에 등록돼 있어 Firebase 가 못 올라와도 동작한다.
 self.addEventListener('push', function (e) {
-  var txt = '';
-  try { txt = e.data ? e.data.text() : ''; } catch (err) {}
+  e.stopImmediatePropagation();
+  var payload = null, txt = '';
+  try { payload = e.data ? e.data.json() : null; } catch (err) {
+    try { txt = e.data ? e.data.text() : ''; } catch (e2) {}
+  }
+  if (!txt) { try { txt = JSON.stringify(payload || {}); } catch (e3) { txt = '(파싱 실패)'; } }
   if (txt.length > 100) txt = txt.slice(0, 100) + '…';
-  e.waitUntil(swLog('push 도착: ' + (txt || '(내용 없음)')));
+
+  var p = payload || {};
+  var n = p.notification || (p.FCM_MSG && p.FCM_MSG.notification) || {};
+  var d = p.data || (p.FCM_MSG && p.FCM_MSG.data) || {};
+  var title = n.title || d.title || 'BLOCK7';
+  var body = n.body || d.body || '';
+  var ref = d.ref || '';
+
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: body,
+      icon: 'icon.png',
+      badge: 'icon.png',
+      tag: d.tag || ('block7-' + (ref || 'verse')),
+      renotify: true,
+      data: { ref: ref, type: d.type || '' }
+    }).then(function () {
+      return swLog('push 도착 → 알림 표시: ' + (ref || '(장절 없음)') + ' | ' + txt);
+    }).catch(function (err) {
+      return swLog('push 도착했으나 알림 표시 실패: ' + (err && err.message || err) + ' | ' + txt);
+    })
+  );
 });
 
 // ── 여기서부터 Firebase (위 등록이 끝난 뒤에 불러온다) ──
