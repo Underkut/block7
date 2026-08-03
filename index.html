@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-5  [production]  -->
+<!-- BLOCK7  v. 26-0803-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2333,7 +2333,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-5";
+const APP_VERSION = "v. 26-0803-6";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18561,7 +18561,11 @@ async function _notifLog(msg){
     let list=[];
     if(r){try{list=await r.json();}catch(e){}}
     if(!Array.isArray(list))list=[];
-    list.push({t:Date.now(),s:'APP',m:String(msg)});
+    // ⚠️ 진단 기록(캐시 block7-msg)은 운영본과 개발본이 **같은 것을 공유**한다.
+    //    개발본 탭이 열려 있으면 그 탭의 기록도 섞여 들어와, 운영본이 실패한
+    //    것처럼 오해하기 쉽다(개발본은 말씀 목록이 달라 '못 찾아 못 엶'이 뜬다).
+    //    그래서 어느 쪽이 남긴 줄인지 표시한다. (v26-0803-6)
+    list.push({t:Date.now(),s:'APP',m:(DEV_MODE?'(개발본) ':'')+String(msg)});
     if(list.length>60)list=list.slice(-60);
     await c.put('/__notif_log',new Response(JSON.stringify(list),
       {headers:{'Content-Type':'application/json'}}));
@@ -18633,8 +18637,17 @@ function _notifStep(){
     // 목표 말씀을 override 로 고정한다. 동기화(verseCurrentIdx)가 못 건드린다.
     const hit=_findVerseByRefLoose(t.ref);
     if(!hit){
-      _notifLog(`[${t.src}] ${t.ref} — 말씀 목록에서 못 찾아 못 엶`);
-      _notifStop();
+      // ⚠️ 여기서 포기하면 안 된다. 앱이 알림으로 "막 켜지는" 중이면 말씀 목록이
+      //    아직 안 만들어져 있어 못 찾는다(클라우드에서 받아오기 전).
+      //    한 번 만에 포기해서 "종료 상태에서 알림 누르면 앱만 뜨던" 문제가 있었다.
+      //    재시도 차례를 다 쓴 뒤에만 포기한다. (v26-0803-6)
+      t.tries++;
+      if(t.tries>=_NOTIF_TRY_MS.length){
+        _notifLog(`[${t.src}] ${t.ref} — 말씀 목록에서 못 찾아 못 엶 (${t.tries}번 시도)`);
+        _notifStop();
+        return;
+      }
+      _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
       return;
     }
     _vfOverrideVerse=hit;

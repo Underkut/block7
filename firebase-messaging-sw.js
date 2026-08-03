@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0730-13)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-6)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 
 // ══════════════════════════════════════════════════════════════
@@ -21,7 +21,7 @@
 //       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0803-5';
+var SW_VER = 'v. 26-0803-6';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
@@ -120,16 +120,11 @@ self.addEventListener('notificationclick', function (event) {
           var cl = fc || target;
           try { cl.postMessage(msg); } catch (e) {}
           notes.push('기존 창을 앞으로 가져옴 + 재전달');
-          // ⚠️ 데스크탑 크롬에서 "탭만 앞으로 오고 전체화면은 안 열리던" 경우가 있었다
-          //    (메시지가 유실되거나 앱이 아직 수신 준비 전). 주소에 ?verse= 를 실어
-          //    한 번 더 확실한 통로를 만든다. navigate() 가 막힌 환경이면 조용히 넘긴다.
-          if (ref && cl && cl.navigate) {
-            return cl.navigate(url).then(function () {
-              notes.push('주소로도 전달(navigate)');
-            }).catch(function (e) {
-              notes.push('navigate 불가(무시): ' + (e && e.message || e));
-            });
-          }
+          // ⚠️ 여기서 cl.navigate(?verse=) 를 부르지 말 것 (v0803-6에서 제거).
+          //    페이지가 통째로 새로고침돼서 ① 알림 전체화면을 닫았을 때 보던
+          //    화면으로 돌아가는 기능이 무력화되고 ② 매번 앱이 다시 뜬다.
+          //    메시지가 유실돼도 앱이 전달용 기록을 1.5초마다 확인하고,
+          //    열릴 때까지 재시도하므로 이 통로는 필요 없다.
         }).catch(function (e) {
           notes.push('창 포커스 실패: ' + (e && e.message || e));
           return clients.openWindow(url);
