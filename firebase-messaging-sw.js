@@ -1,4 +1,4 @@
-// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-6)
+// BLOCK7 푸시 알림 서비스워커  (v. 26-0803-7)
 // 이 파일은 index.html 과 같은 위치(저장소 최상위)에 있어야 합니다.
 
 // ══════════════════════════════════════════════════════════════
@@ -21,7 +21,7 @@
 //       워커가 끊기면 정작 필요한 기록이 없어 전체화면이 안 떴다.
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0803-6';
+var SW_VER = 'v. 26-0803-7';
 var APP_URL = 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
@@ -52,13 +52,23 @@ function savePending(ref, ts) {
 // ── 알림 진단 기록 ── (앱: 말씀 설정 → 알림 탭 → 알림 진단 기록)
 // 어디까지나 보조 수단이다. 절대 알림 처리보다 먼저 실행하지 말 것.
 function swLog(msg) {
+  // ⚠️ 아이폰 홈화면 앱에서는 캐시에 쓴 기록이 남지 않는다. 그래서 열려 있는
+  //    창에도 같은 줄을 보내 앱이 localStorage 에 남기게 한다. (v26-0803-7)
+  var entry = { t: Date.now(), s: 'SW', m: String(msg) };
+  try {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+      for (var i = 0; i < list.length; i++) {
+        try { list[i].postMessage({ type: 'block7-swlog', entry: entry }); } catch (e) {}
+      }
+    }).catch(function () {});
+  } catch (e) {}
   return caches.open('block7-msg').then(function (c) {
     return c.match(LOG_URL).then(function (r) {
       if (!r) return [];
       return r.json().catch(function () { return []; });
     }).then(function (list) {
       if (!Array.isArray(list)) list = [];
-      list.push({ t: Date.now(), s: 'SW', m: String(msg) });
+      list.push(entry);   // 창에 보낸 것과 "같은 줄" — 시각이 달라지면 합칠 때 중복된다
       if (list.length > 60) list = list.slice(list.length - 60);
       return c.put(LOG_URL, new Response(JSON.stringify(list),
         { headers: { 'Content-Type': 'application/json' } }));
