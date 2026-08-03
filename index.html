@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0803-2  [production]  -->
+<!-- BLOCK7  v. 26-0803-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1398,6 +1398,15 @@ body.split-d #todayView.animating{overflow:hidden;}
   transition:background .1s,color .1s;
 }
 .task-menu-item:hover,.task-menu-item:active{background:var(--s2);color:var(--tx);}
+/* 메뉴 행 오른쪽 끝의 보조 동작 (예: '현재 말씀 모음' 의 동기화).
+   테두리·박스 없이 아이콘만 — 행 전체 클릭과 겹치지 않게 stopPropagation 을 쓴다. */
+.task-menu-side{
+  display:flex;align-items:center;justify-content:center;
+  margin-left:10px;padding:3px;flex-shrink:0;line-height:0;
+  color:var(--tx3);border-radius:6px;
+  -webkit-tap-highlight-color:transparent;
+}
+.task-menu-side:hover,.task-menu-side:active{color:var(--tx);background:var(--s1);}
 .task-menu-item.on{color:var(--ac);}
 .task-menu-item.on .task-menu-icon{color:var(--ac);}
 .task-menu-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;}
@@ -2292,7 +2301,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0803-2";
+const APP_VERSION = "v. 26-0803-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3362,7 +3371,11 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 2-1: filled left triangle for prev -->
   <!-- 2-1: filled right triangle for next -->
   <div class="task-menu-item" onclick="openVerseListModal()">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12M4 10h12M4 15h8"/></svg></span>현재 말씀 모음
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12M4 10h12M4 15h8"/></svg></span><span style="flex:1;">현재 말씀 모음</span>
+    <!-- 우측 동기화 — 로고 롱터치/우클릭과 같은 기능 (전체 업데이트) -->
+    <span class="task-menu-side" onclick="event.stopPropagation();closeLogoMenu();verseSyncAllNow();" title="말씀 모음 전체 업데이트" aria-label="말씀 모음 전체 업데이트">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 10a6.5 6.5 0 1 1-1.9-4.6"/><path d="M16.8 3.2v3.4h-3.4"/></svg>
+    </span>
   </div>
   <!-- 2-2: rising graph for history -->
   <div class="task-menu-item" onclick="closeLogoMenu();openVerseDashboard()">
@@ -7183,6 +7196,9 @@ function openVerseFull(keepOverride){
   _vfClearNav();
   if(!ST.settings.verseBarOn)toggleVerseBarOn();
   el.style.display='flex';        // 먼저 띄워야 폭을 잴 수 있다
+  // 스와이프가 남긴 흔적이 있으면 지우고 연다 (몇십 px 밀린 채 열리는 것 방지)
+  el.style.transition='';el.style.transform='';el.style.opacity='';
+  if(el._edgeBackReset)el._edgeBackReset();
   _vfRollVariant();               // 열 때마다 패턴 안에서 색 변형을 새로 뽑는다
   applyVfTheme();                 // 테마(배경·폰트·색) 반영
   _verseStatCache={};             // 열 때마다 전체 집계는 새로 받는다
@@ -8368,37 +8384,75 @@ function verseFullNav(d){
 // 스와이프(좌우 전환) + 롱터치/우클릭(말씀 메뉴) + ESC(닫기)
 // 왼쪽 가장자리에서 오른쪽으로 미는 '뒤로가기' 제스처 (Safari 스와이프백과 같은 감각).
 // 전체화면 → 닫기, 타일뷰 → 전체화면으로 복귀.
+// 왼쪽 가장자리 → 오른쪽 스와이프 = 뒤로/닫기.
+// ⚠️ 화면에 칠한 이동값(transform/opacity)은 **어떤 경로로 끝나든** 반드시 지운다.
+//    예전에는 도중에 세로로 틀어지면 active=false 로 두고 그냥 return 했는데,
+//    그때 이미 칠해 둔 transform 이 그대로 남았다. touchend 의 정리도
+//    `if(!active) return` 에 걸려 실행되지 않아, 화면이 몇십 px 오른쪽으로
+//    밀린 채 굳었다 — 왼쪽에 뒷화면이 비치고, 오른쪽은 잘려서 닫기 버튼이
+//    사라지고, 스크롤도 먹지 않던 그 상태. (v26-0803-3)
 function _initEdgeBack(el,onBack){
   if(!el||el._edgeBack)return;
   el._edgeBack=true;
   const EDGE=28,COMMIT=70;
-  let sx=0,sy=0,active=false,moved=false;
+  let sx=0,sy=0,active=false,moved=false,painted=false;
+  const paint=(dx)=>{
+    painted=true;
+    el.style.transform=`translateX(${Math.min(dx,window.innerWidth)}px)`;
+    // 살짝만 흐려지게 — 조금 끌었는데 확 어두워지면 손에 안 붙는 느낌이 난다
+    el.style.opacity=String(Math.max(.55,1-dx/(window.innerWidth*1.6)));
+  };
+  const clearPaint=(animate)=>{
+    if(!painted){el.style.transition='';el.style.transform='';el.style.opacity='';return;}
+    painted=false;
+    if(animate){
+      el.style.transition='transform .2s cubic-bezier(.4,0,.2,1),opacity .2s';
+      el.style.transform='';el.style.opacity='';
+      setTimeout(()=>{el.style.transition='';},220);
+    }else{
+      el.style.transition='';el.style.transform='';el.style.opacity='';
+    }
+  };
+  el._edgeBackReset=()=>{active=false;moved=false;clearPaint(false);};
   el.addEventListener('touchstart',e=>{
+    if(painted)clearPaint(false);      // 혹시 남아 있던 흔적이 있으면 만지는 즉시 원상복구
+    if(e.touches.length>1){active=false;return;}   // 두 손가락 = 핀치 등, 스와이프 아님
     const t=e.touches[0];
     active=(t.clientX<=EDGE);moved=false;
     sx=t.clientX;sy=t.clientY;
+    if(active)el.style.transition='';
   },{passive:true});
   el.addEventListener('touchmove',e=>{
     if(!active)return;
-    const t=e.touches&&e.touches[0];if(!t)return;
+    if(e.touches.length>1){active=false;clearPaint(true);return;}
+    const t=e.touches&&e.touches[0];if(!t){active=false;clearPaint(true);return;}
     const dx=t.clientX-sx,dy=t.clientY-sy;
-    if(dx<0||Math.abs(dy)>Math.abs(dx)){active=false;return;}  // 가로 우측 이동만
+    if(dx<0||Math.abs(dy)>Math.abs(dx)){active=false;clearPaint(true);return;}  // 가로 우측 이동만
     if(dx>10){moved=true;e.preventDefault();}
-    el.style.transform=`translateX(${Math.min(dx,window.innerWidth)}px)`;
-    el.style.opacity=String(Math.max(.35,1-dx/(window.innerWidth*0.9)));
+    paint(dx);
   },{passive:false});
   const settle=e=>{
-    if(!active){return;}
+    if(!active){clearPaint(true);return;}   // active 가 아니어도 흔적은 반드시 지운다
+    active=false;
     const t=(e.changedTouches&&e.changedTouches[0]);
     const dx=t?(t.clientX-sx):0;
-    el.style.transition='transform .2s cubic-bezier(.4,0,.2,1),opacity .2s';
-    el.style.transform='';el.style.opacity='';
-    setTimeout(()=>{el.style.transition='';},220);
-    active=false;
-    if(moved&&dx>=COMMIT)setTimeout(()=>onBack(),10);
+    if(moved&&dx>=COMMIT){
+      // 닫기 확정 — 제자리로 튕겼다가 사라지지 말고 그대로 오른쪽으로 밀려 나간다
+      el.style.transition='transform .22s cubic-bezier(.3,0,.3,1),opacity .22s';
+      el.style.transform=`translateX(${window.innerWidth}px)`;
+      el.style.opacity='0';
+      setTimeout(()=>{
+        try{onBack();}finally{
+          painted=false;
+          el.style.transition='';el.style.transform='';el.style.opacity='';
+        }
+      },200);
+      return;
+    }
+    clearPaint(true);
   };
   el.addEventListener('touchend',settle,{passive:true});
-  el.addEventListener('touchcancel',()=>{ if(active){el.style.transition='transform .2s,opacity .2s';el.style.transform='';el.style.opacity='';setTimeout(()=>{el.style.transition='';},220);} active=false;},{passive:true});
+  el.addEventListener('touchcancel',()=>{active=false;clearPaint(true);},{passive:true});
 }
 // 더블탭/더블클릭 = 좋아요 (유튜브 쇼츠와 같은 감각)
 function _vfHeartBurst(x,y){
@@ -9065,16 +9119,24 @@ function renderVerseListResults(){
   list.forEach(v=>{
     const row=document.createElement('div');
     row.style.cssText='padding:9px 4px;border-bottom:1px solid var(--bd2);cursor:pointer;-webkit-tap-highlight-color:transparent;';
+    // 롱터치·우클릭 → 말씀 메뉴 (data-vli-ref 를 달아두면 _attachVliMenus 가 붙여준다)
+    row.setAttribute('data-vli-ref',v.ref||'');
     row.innerHTML=`<div style="font-size:10px;color:var(--ac);font-weight:700;margin-bottom:2px;">${v.cat} · ${v.topic}</div>
       <div style="font-size:12px;color:var(--tx);line-height:1.4;">${v.krText.length>60?v.krText.slice(0,60)+'…':v.krText}</div>
       <div style="font-size:10px;color:var(--tx3);margin-top:2px;">${v.ref}</div>`;
+    // 탭·클릭 → 그 말씀 전체화면
     row.onclick=()=>{
+      // 롱터치로 메뉴가 떠 있으면 뒤따라 오는 click 은 무시한다
+      if(document.getElementById('vliMenu')?.style.display==='block')return;
       if(!ST.settings.verseBarOn)toggleVerseBarOn();
+      _vfOverrideVerse=null;
       setVerseIdx(v.idx);
-      closeVerseListModal();
+      closeVerseListModal();     // 팝업(z 300)이 전체화면(190)을 덮으므로 먼저 닫는다
+      openVerseFull(true);
     };
     results.appendChild(row);
   });
+  _attachVliMenus(results);
 }
 function syncSecsFromState(){
   if(ST.secs&&Array.isArray(ST.secs)&&ST.secs.length>0){
@@ -10588,6 +10650,7 @@ function vliAction(act){
   else if(act==='mem')recordMemorizationByRef(ref);
   else if(act==='del')deleteLatestVerseEvent(kind,ref);
   else if(act==='full'){                       // 그 구절을 전체화면으로
+    closeVerseListModal();                     // 목록 팝업(z 300)이 전체화면(190)을 덮는다
     const all=ACTIVE_VERSES(),hit=all.find(x=>x.ref===ref);
     if(hit)setVerseIdx(hit.idx);
     else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
@@ -12863,26 +12926,33 @@ function _openGhostInput(secId, type, pos){
     };
     inp.onfocus=()=>{if(_blurT){clearTimeout(_blurT);_blurT=null;}};
     inp.onkeydown=e=>{
+      // Enter = 등록하고 입력 모드 끝 / Tab = 등록하고 다음 입력칸 이어가기
       if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing){
         e.preventDefault();
+        const keepGoing=(e.key==='Tab');
         const v=inp.value.trim();
-        if(v){
-          committed=true;
-          inp.value='';committed=false;
-          beforeSave();
-          if(pos==='C')getBigs(tKey(),secId).unshift({text:v,done:false});
-          else getBigs(tKey(),secId).push({text:v,done:false});
-          save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
-          // 빅리스트 재빌드 (ghost는 유지)
-          const existItems=bigList.querySelectorAll('.swipe-wrap,.big-item');
-          existItems.forEach(el=>el.remove());
-          getBigs(tKey(),secId).forEach((b,ii)=>bigList.insertBefore(makeBigWrap(secId,ii,b,secColor), ghost));
-          // [목록 위] 설정이면 다음 고스트도 방금 입력한 항목 "위"에 있어야 한다
-          if(pos==='C')bigList.insertBefore(ghost,bigList.firstChild);
-          inp.focus();
-        } else {
+        if(!v){committed=true;ghost.remove();return;}
+        committed=true;
+        inp.value='';committed=false;
+        beforeSave();
+        if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
+        else getBigs(dayKey,secId).push({text:v,done:false});
+        save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
+        if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
           committed=true;ghost.remove();
+          if(dayKey===tKey()){
+            bigList.innerHTML='';
+            getBigs(dayKey,secId).forEach((b,ii)=>bigList.appendChild(makeBigWrap(secId,ii,b,secColor)));
+          }
+          return;
         }
+        // 빅리스트 재빌드 (ghost는 유지)
+        const existItems=bigList.querySelectorAll('.swipe-wrap,.big-item');
+        existItems.forEach(el=>el.remove());
+        getBigs(dayKey,secId).forEach((b,ii)=>bigList.insertBefore(makeBigWrap(secId,ii,b,secColor), ghost));
+        // [목록 위] 설정이면 다음 고스트도 방금 입력한 항목 "위"에 있어야 한다
+        if(pos==='C')bigList.insertBefore(ghost,bigList.firstChild);
+        inp.focus();
         return;
       }
       if(e.key==='Escape'){committed=true;ghost.remove();}
@@ -12937,25 +13007,29 @@ function _openGhostInput(secId, type, pos){
     };
     inp.onfocus=()=>{if(_blurT){clearTimeout(_blurT);_blurT=null;}};
     inp.onkeydown=e=>{
+      // Enter = 등록하고 입력 모드 끝 / Tab = 등록하고 다음 입력칸 이어가기
       if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing){
         e.preventDefault();
+        const keepGoing=(e.key==='Tab');
         const v=inp.value.trim();
-        if(v){
-          inp.value='';committed=false;
-          beforeSave();
-          if(pos==='C')getSmalls(tKey(),secId).unshift({text:v,done:false});
-          else getSmalls(tKey(),secId).push({text:v,done:false});
-          save();
-          // 스몰 목록 재빌드 (ghost는 유지)
-          const existSm=smList.querySelectorAll('.swipe-wrap,.sm-item');
-          existSm.forEach(el=>el.remove());
-          getSmalls(tKey(),secId).forEach((sm,ii)=>smList.insertBefore(makeSmWrap(secId,ii,sm,secColor), ghost));
-          if(pos==='C')smList.insertBefore(ghost,smList.firstChild);
-          updateSmCnt(secId);refreshTaskViewsLive();
-          inp.focus();
-        } else {
+        if(!v){committed=true;ghost.remove();return;}
+        inp.value='';committed=false;
+        beforeSave();
+        if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
+        else getSmalls(dayKey,secId).push({text:v,done:false});
+        save();
+        if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
           committed=true;ghost.remove();
+          if(dayKey===tKey()){renderSmList(secId,secColor);updateSmCnt(secId);refreshTaskViewsLive();}
+          return;
         }
+        // 스몰 목록 재빌드 (ghost는 유지)
+        const existSm=smList.querySelectorAll('.swipe-wrap,.sm-item');
+        existSm.forEach(el=>el.remove());
+        getSmalls(dayKey,secId).forEach((sm,ii)=>smList.insertBefore(makeSmWrap(secId,ii,sm,secColor), ghost));
+        if(pos==='C')smList.insertBefore(ghost,smList.firstChild);
+        updateSmCnt(secId);refreshTaskViewsLive();
+        inp.focus();
         return;
       }
       if(e.key==='Escape'){committed=true;ghost.remove();}
