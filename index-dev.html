@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0805-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0806-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2383,7 +2383,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0805-4";
+const APP_VERSION = "v. 26-0806-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3004,13 +3004,26 @@ window._fbScriptsReady=new Promise(resolve=>{
 
       <!-- 네비게이토 180 말씀 표시 -->
       <div class="settings-section" id="verseSettingsAnchor">
+        <div class="settings-row-text" style="margin-bottom:8px;">
+          <div class="settings-row-label">자동으로 다음 구절</div>
+          <div class="settings-row-desc">둘 다 꺼두면 직접 넘기거나 뽑은 구절이 그대로 유지돼요.</div>
+        </div>
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">매일 자동으로 다음 구절</div>
-            <div class="settings-row-desc">꺼두면 직접 넘기거나 뽑은 구절이 유지돼요.</div>
+            <div class="settings-row-label" style="font-size:13px;">매일</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="setVerseBarAutoRotate" onchange="updateSetting('verseBarAutoRotate',this.checked)">
+            <span class="settings-toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <div class="settings-row-label" style="font-size:13px;">매 시간구간</div>
+            <div class="settings-row-desc">예: 새벽 오전 점심 오후 저녁 밤</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setVerseRotateBySec" onchange="updateSetting('verseRotateBySec',this.checked)">
             <span class="settings-toggle-track"></span>
           </label>
         </div>
@@ -3019,7 +3032,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="preset-btn on" id="setVerseFullCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseFullTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTopic',this.classList.toggle('on'))">소주제</button>
-          <button class="preset-btn on" id="setVerseFullRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullRef',this.classList.toggle('on'))">구절</button>
+          <button class="preset-btn on" id="setVerseFullRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseFullTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTag',this.classList.toggle('on'))">태그</button>
         </div>
 
@@ -3042,7 +3055,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="preset-btn on" id="setVerseSneakCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseSneakTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseSneakFirstWord" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakFirstWord',this.classList.toggle('on'))">본문</button>
-          <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">구절</button>
+          <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseSneakTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTag',this.classList.toggle('on'))">태그</button>
         </div>
         <div class="settings-row-desc" style="margin:10px 0 6px;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요. 아래는 그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
@@ -3055,13 +3068,32 @@ window._fbScriptsReady=new Promise(resolve=>{
           <span style="font-size:12px;color:var(--tx3);flex-shrink:0;">px</span>
         </div>
         <!-- 위젯(암송/좋아요/Deeper/Even Deeper 목록) 행에 표시할 항목 -->
-        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">위젯 말씀 목록에 보여줄 항목</div>
+        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">말씀 위젯에서 보여줄 항목</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="preset-btn on" id="setVerseWidgetCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseWidgetTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseWidgetText" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetText',this.classList.toggle('on'))">본문</button>
-          <button class="preset-btn on" id="setVerseWidgetRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetRef',this.classList.toggle('on'))">구절</button>
+          <button class="preset-btn on" id="setVerseWidgetRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseWidgetTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTag',this.classList.toggle('on'))">태그</button>
+        </div>
+
+        <!-- 말씀 위젯 글자 크기 — 1이 지금까지의 크기(기본) -->
+        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">말씀 위젯 글자 크기</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--tx2);flex:1;">본문</span>
+          <div style="display:flex;gap:6px;">
+            <button class="preset-btn on" id="setVWTextSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',1)">1</button>
+            <button class="preset-btn" id="setVWTextSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',2)">2</button>
+            <button class="preset-btn" id="setVWTextSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',3)">3</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--tx2);flex:1;">장절</span>
+          <div style="display:flex;gap:6px;">
+            <button class="preset-btn on" id="setVWRefSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',1)">1</button>
+            <button class="preset-btn" id="setVWRefSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',2)">2</button>
+            <button class="preset-btn" id="setVWRefSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',3)">3</button>
+          </div>
         </div>
 
       </div>
@@ -5877,6 +5909,12 @@ function getVerseByIdx(idx){
 // the same verse shows all day and a different (but predictable, not
 // random) one appears each new day — cycling through all 180 before
 // repeating.
+// 그날의 구절(base, 1부터) 에서 시간구간 순번(off, 0부터) 만큼 더 나간 자리.
+// 1..total 안에서 돌아가며, 하루가 끝나면 다시 그날의 구절로 돌아온다.
+function _verseIdxForSec(base,off,total){
+  const n=Math.max(1,total|0);
+  return((((base-1+off)%n)+n)%n)+1;
+}
 function dayOfYearVerseIdx(){
   const now=logicalNow();
   const start=new Date(now.getFullYear(),0,1);
@@ -5891,12 +5929,27 @@ function renderVerseBar(){
     bar.classList.remove('verse-open');
     return;
   }
-  // Auto-rotate: advance to today's deterministic verse when date changes.
+  // ── 자동으로 다음 구절 ──
+  //  · 매일        : 날짜가 바뀌면 그날의 구절로 (예전부터 있던 동작)
+  //  · 매 시간구간 : 시간구간이 바뀔 때마다 한 칸씩 더 (그날 기준 + 구간 순번)
+  // 둘 다 "계산해서 정하는" 방식이라 기기가 여럿이어도 같은 구절이 나온다.
+  // '시간 개념 없음' 구간은 순번에서 빠진다 — 시각으로 판정하는 자리가 아니다.
   const todayStr=todayKey();
   if(ST.settings.verseBarAutoRotate&&ST.settings.verseLastShownDate!==todayStr){
     ST.settings.verseCurrentIdx=dayOfYearVerseIdx();
     ST.settings.verseLastShownDate=todayStr;
     save();
+  }
+  if(ST.settings.verseRotateBySec){
+    const secId=_secIdNowAll();
+    const stamp=todayStr+'@'+(secId||'');
+    if(ST.settings.verseLastShownSec!==stamp){
+      const timed=(SECS||[]).filter(x=>!_secNoTime(x));
+      const off=Math.max(0,timed.findIndex(x=>x.id===secId));
+      ST.settings.verseCurrentIdx=_verseIdxForSec(dayOfYearVerseIdx(),off,ACTIVE_TOTAL()||1);
+      ST.settings.verseLastShownSec=stamp;
+      save();
+    }
   }
   const v=getVerseByIdx(ST.settings.verseCurrentIdx);
   _fillVerseBarDOM(v);
@@ -9568,7 +9621,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:true,verseWidgetTopic:true,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -10887,8 +10940,17 @@ const _VLI_COUNT_ICON={
   deeper:'<svg width="9" height="8" viewBox="0 0 20 16" fill="currentColor" stroke="none"><path d="M2 3 L2 13 Q6 12 10 13 L10 3 Q6 2 2 3 Z"/><path d="M18 3 L18 13 Q14 12 10 13 L10 3 Q14 2 18 3 Z"/></svg>',
   even:'<svg width="9" height="8" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 L10 8 L16 3"/><path d="M4 9 L10 14 L16 9"/></svg>',
 };
+// 말씀 위젯 글자 크기 — 1 이 지금까지 쓰던 크기(기본)
+const _VW_TEXT_PX={1:12,2:13.5,3:15};
+const _VW_REF_PX={1:9,2:10.5,3:12};
+function _vwSize(key){
+  const n=parseInt((ST.settings||{})[key],10);
+  return [1,2,3].includes(n)?n:1;
+}
 function _vListRowsHTML(items,limit,kind){
   const s=ST.settings;
+  const textPx=_VW_TEXT_PX[_vwSize('verseWidgetTextSize')];
+  const refPx=_VW_REF_PX[_vwSize('verseWidgetRefSize')];
   const showCat=s.verseWidgetCat!==false,showTopic=s.verseWidgetTopic!==false,
         showText=s.verseWidgetText!==false,showRef=s.verseWidgetRef!==false,
         showTag=s.verseWidgetTag!==false;
@@ -10901,18 +10963,18 @@ function _vListRowsHTML(items,limit,kind){
     let mainLine='';
     if(showText&&v&&v.krText){
       const t=v.krText.length>72?v.krText.slice(0,72)+'…':v.krText;
-      mainLine=`<div style="font-size:12px;line-height:1.45;color:var(--tx);margin-bottom:2px;">${t}</div>`;
+      mainLine=`<div style="font-size:${textPx}px;line-height:1.45;color:var(--tx);margin-bottom:2px;">${t}</div>`;
     }
     // 보조 줄: 구절(파랑) + 대분류·소주제·태그
     const sub=[];
-    if(showRef)sub.push(`<span style="color:var(--ac);font-weight:700;">${g.ref}</span>`);
+    if(showRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${g.ref}</span>`);
     if(v){
       if(showCat&&v.cat)sub.push(v.cat);
       if(showTopic&&v.topic)sub.push(v.topic);
       if(showTag&&Array.isArray(v.tags)&&v.tags.filter(Boolean).length)sub.push(v.tags.filter(Boolean).join(' '));
     }
     // 본문/보조 둘 다 비면 최소한 장절이라도
-    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac);font-weight:700;">${g.ref}</span>`);
+    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${g.ref}</span>`);
     // 날짜: 7/11 형식 (앞자리 0 없이)
     const[dy,dm,dd]=g.lastDate.split('-');
     const dateLabel=`${parseInt(dm,10)}/${parseInt(dd,10)}`;
@@ -10934,13 +10996,26 @@ function _attachVliMenus(container){
     row._vliMenuBound=true;
     const ref=row.getAttribute('data-vli-ref');
     const kind=row.getAttribute('data-vli-kind')||null;
-    row.addEventListener('contextmenu',ev=>{ev.preventDefault();openVliMenu(ev.clientX,ev.clientY,row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);});
-    let t=null;
+    row.style.cursor='pointer';
+    let longFired=false;                       // 롱터치로 메뉴가 떴으면 탭으로 열지 않는다
+    row.addEventListener('contextmenu',ev=>{ev.preventDefault();longFired=true;openVliMenu(ev.clientX,ev.clientY,row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);});
+    let t=null,sx=0,sy=0,moved=false;
     row.addEventListener('touchstart',ev=>{
       const x=ev.touches[0].clientX,y=ev.touches[0].clientY;
-      t=setTimeout(()=>{openVliMenu(x,y,row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);},500);
+      sx=x;sy=y;moved=false;longFired=false;
+      t=setTimeout(()=>{longFired=true;openVliMenu(x,y,row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);},500);
+    },{passive:true});
+    row.addEventListener('touchmove',ev=>{
+      const tt=ev.touches[0];
+      if(Math.abs(tt.clientX-sx)>8||Math.abs(tt.clientY-sy)>8)moved=true;   // 스크롤이면 탭이 아니다
     },{passive:true});
     ['touchend','touchmove','touchcancel'].forEach(evn=>row.addEventListener(evn,()=>{if(t){clearTimeout(t);t=null;}},{passive:true}));
+    // 탭(또는 PC 클릭) → 그 장절의 전체화면
+    row.addEventListener('click',ev=>{
+      if(longFired||moved){longFired=false;return;}
+      ev.preventDefault();
+      _vliOpenFull(row.getAttribute('data-vli-ref'));
+    });
   });
 }
 let _vliRef=null,_vliKind=null;
@@ -10957,6 +11032,14 @@ function closeVliMenu(){
   document.getElementById('vliMenuOverlay').style.display='none';
   document.getElementById('vliMenu').style.display='none';
 }
+// 그 장절의 전체화면을 연다 (목록 행 탭 · 롱터치 메뉴의 '전체화면' 공통)
+function _vliOpenFull(ref){
+  if(!ref)return;
+  const hit=(ACTIVE_VERSES()||[]).find(x=>x.ref===ref);
+  if(hit)setVerseIdx(hit.idx);
+  else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
+  openVerseFull(true);                         // 위에서 지정한 구절을 유지
+}
 function vliAction(act){
   const ref=_vliRef,kind=_vliKind;closeVliMenu();
   if(!ref)return;
@@ -10965,12 +11048,7 @@ function vliAction(act){
   else if(act==='like')recordVerseLike(ref);
   else if(act==='mem')recordMemorizationByRef(ref);
   else if(act==='del')deleteLatestVerseEvent(kind,ref);
-  else if(act==='full'){                       // 그 구절을 전체화면으로
-    const all=ACTIVE_VERSES(),hit=all.find(x=>x.ref===ref);
-    if(hit)setVerseIdx(hit.idx);
-    else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
-    openVerseFull(true);                       // 위에서 지정한 구절을 유지
-  }
+  else if(act==='full')_vliOpenFull(ref);
   else if(act==='share'){
     const all=ALL_VERSES()||[];
     openVfShareFor(all.find(x=>x.ref===ref)||{ref});
@@ -17783,6 +17861,12 @@ function renderSettingsPanel(){
   document.getElementById('setVerseWidgetText')?.classList.toggle('on',s.verseWidgetText!==false);
   document.getElementById('setVerseWidgetRef')?.classList.toggle('on',s.verseWidgetRef!==false);
   document.getElementById('setVerseWidgetTag')?.classList.toggle('on',s.verseWidgetTag!==false);
+  const vwT=_vwSize('verseWidgetTextSize'),vwR=_vwSize('verseWidgetRefSize');
+  [1,2,3].forEach(n=>{
+    document.getElementById('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
+    document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
+  });
+  document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
   document.getElementById('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
@@ -17947,7 +18031,12 @@ function updateSetting(key,value){
     document.getElementById('vlh-1')?.classList.toggle('on',vlh===1);
     if(typeof renderRightPanel==='function')renderRightPanel();
   }
-  if(key==='verseWidgetCat'||key==='verseWidgetTopic'||key==='verseWidgetText'||key==='verseWidgetRef'||key==='verseWidgetTag'){
+  if(key==='verseWidgetTextSize'||key==='verseWidgetRefSize'){
+    // 고른 숫자만 켜 보이게
+    const grp=key==='verseWidgetTextSize'?'setVWTextSize':'setVWRefSize';
+    [1,2,3].forEach(n=>document.getElementById(grp+n)?.classList.toggle('on',n===value));
+  }
+  if(key==='verseWidgetCat'||key==='verseWidgetTopic'||key==='verseWidgetText'||key==='verseWidgetRef'||key==='verseWidgetTag'||key==='verseWidgetTextSize'||key==='verseWidgetRefSize'){
     if(typeof renderRightPanel==='function')renderRightPanel();
   }
   if(key==='verseBarOn'||key==='verseBarAutoRotate'||
