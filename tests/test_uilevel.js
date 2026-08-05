@@ -68,6 +68,22 @@ console.log('\n시나리오 4 — 탭 목록');
   sc.eq('이지에서 계정탭은 다섯 번째(0부터 4)', _stabList().indexOf('account'), 4);
 }
 
+// ═══ 4-2. 유저 모드 — 아이콘 두 벌 ═══
+console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
+{
+  const art = SRC.slice(SRC.indexOf('const _UILV_ART='), SRC.indexOf('function uiLevelIconSet('));
+  sc.eq('두 벌이 다 있다', art.includes('animal:') && art.includes('square:'), true);
+  sc.eq('사각은 10×10', /square:\s*\{\s*box:10/.test(art.replace(/\s+/g, ' ').replace('square: {', 'square:{')), true);
+  sc.eq('동물은 18×18', /animal:\s*\{\s*box:18/.test(art.replace(/\s+/g, ' ').replace('animal: {', 'animal:{')), true);
+  sc.eq('선 굵기는 둘 다 .75', (art.match(/sw:'\.75'/g) || []).length, 2);
+  sc.eq('세 등급이 두 벌 모두에 있다',
+        (art.match(/easy:/g) || []).length === 2 &&
+        (art.match(/mid:/g) || []).length === 2 &&
+        (art.match(/power:/g) || []).length === 2, true);
+  sc.eq('설정창 뷰탭 첫 항목이 유저 모드', SRC.includes('<div class="settings-section-title">유저 모드</div>'), true);
+  sc.eq('아이콘 간격은 두 벌 같게 (10.5px)', (SRC.match(/gap:10\.5px/g) || []).length >= 2, true);
+}
+
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
 console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
 {
