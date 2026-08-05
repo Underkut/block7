@@ -82,6 +82,11 @@ console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
         (art.match(/power:/g) || []).length === 2, true);
   sc.eq('설정창 뷰탭 첫 항목이 유저 모드', SRC.includes('<div class="settings-section-title">유저 모드</div>'), true);
   sc.eq('아이콘 간격은 두 벌 같게 (10.5px)', (SRC.match(/gap:10\.5px/g) || []).length >= 2, true);
+  // 고르는 자리는 파워에서만 보인다
+  const sec = SRC.slice(SRC.indexOf('유저 모드 — 설정창 헤더'), SRC.indexOf('유저 모드</div>'));
+  sc.eq('유저 모드 항목은 파워 전용', sec.includes('data-lv="p"'), true);
+  sc.eq('기본값은 동물', /uiLevelIconSet:'animal'/.test(SRC), true);
+  sc.eq("'square' 를 고른 것만 사각", SRC.includes("uiLevelIconSet==='square')?'square':'animal'"), true);
 }
 
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
