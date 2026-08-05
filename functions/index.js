@@ -109,6 +109,8 @@ exports.block7Notify = onSchedule(
         if (notify.sections) {
           for (const sec of secs) {
             if (!visIds.includes(sec.id)) continue;
+            // '시간 개념 없음' 으로 표시한 구간은 시작 알림을 보내지 않는다
+            if (sec.noTime) continue;
             if (sec.startTime !== slot) continue;
             const stamp = `${todayK}@${sec.id}`;
             if (meta[`lastSec_${sec.id}`] === stamp) continue;

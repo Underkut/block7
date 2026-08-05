@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0805-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0805-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2034,6 +2034,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 @media(min-width:720px){#verseSettingsPanel{height:80vh;}}
 @keyframes settingsIn{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 .settings-hd{
+  position:relative;
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 18px;border-bottom:1px solid var(--bd);
   flex-shrink:0;
@@ -2042,8 +2043,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 /* ── 설정 등급(이지·미드·파워) 고르기 ──
    글자 없이 아이콘만. 한 칸 / 두 칸 / 네 칸 으로 "얼마나 펼쳐 보이나"를 나타낸다.
    이름은 PC 에서 마우스를 올렸을 때만 뜬다 (손가락으로는 hover 가 없다). */
-.settings-hd-left{display:flex;align-items:center;gap:12px;min-width:0;}
-.uilv-row{display:flex;align-items:center;gap:7px;}
+/* 등급 아이콘은 헤더 정중앙. 제목(왼쪽)·×(오른쪽) 과 겹치지 않게 띄운다 */
+.uilv-row{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:flex;align-items:center;gap:7px;
+}
 .uilv-btn{
   position:relative;display:flex;align-items:center;justify-content:center;
   width:20px;height:20px;padding:0;border:none;background:none;
@@ -2238,6 +2242,15 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sec-edit-star input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
 .sec-edit-star-glyph{font-size:15px;color:var(--bd2);transition:color .12s;}
 .sec-edit-star input:checked + .sec-edit-star-glyph{color:#f0b030;}
+/* 시간 개념 없음 — 시각 픽커 오른쪽의 작은 체크. PC 에서만 이름이 뜬다 */
+.sec-edit-notime{
+  position:relative;width:20px;height:20px;flex-shrink:0;margin-left:auto;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.sec-edit-notime input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
+.sec-edit-notime-glyph{display:flex;color:var(--bd2);transition:color .12s;}
+.sec-edit-notime input:checked + .sec-edit-notime-glyph{color:var(--ac);}
+.sec-edit-notime-note{font-size:10px;color:var(--tx3);}
 .settings-tab-bar{
   display:flex;gap:0;border-bottom:1px solid var(--bd);
   padding:0 18px;
@@ -2366,7 +2379,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0805-1";
+const APP_VERSION = "v. 26-0805-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2429,13 +2442,11 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="settings-overlay" id="settingsOverlay" style="display:none" onclick="closeSettingsOnBg(event)">
   <div class="settings-panel" id="settingsPanel">
     <div class="settings-hd">
-      <div class="settings-hd-left">
-        <div class="settings-title">설정</div>
-        <div class="uilv-row" id="uiLevelRow">
+      <div class="settings-title">설정</div>
+      <div class="uilv-row" id="uiLevelRow">
           <button class="uilv-btn" id="uiLvEasy" data-tip="이지" aria-label="이지" onclick="setUiLevel('easy')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.8" y="2.8" width="14.4" height="12.4"/></svg></button>
           <button class="uilv-btn" id="uiLvMid" data-tip="미드" aria-label="미드" onclick="setUiLevel('mid')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.8" y="2.8" width="14.4" height="12.4"/><path d="M1.8 9h14.4"/></svg></button>
           <button class="uilv-btn" id="uiLvPower" data-tip="파워" aria-label="파워" onclick="setUiLevel('power')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.8" y="2.8" width="14.4" height="12.4"/><path d="M1.8 9h14.4M9 2.8v12.4"/></svg></button>
-        </div>
       </div>
       <button class="settings-close" onclick="closeSettings()">×</button>
     </div>
@@ -2517,6 +2528,16 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
+      <!-- 할일 입력 위치 (표에는 없던 항목 — 기능은 그대로 두고 파워에서만 보인다) -->
+      <div class="settings-section" data-lv="p">
+        <div class="settings-section-title">할일 입력 위치</div>
+        <div class="settings-row-desc" style="margin-bottom:10px;">+ 버튼을 눌렀을 때 입력창이 나타나는 위치예요</div>
+        <div style="display:flex;gap:8px;">
+          <button id="addPosC" class="settings-btn" onclick="updateSetting('addInputPosition','C')" style="flex:1;">목록 위</button>
+          <button id="addPosA" class="settings-btn" onclick="updateSetting('addInputPosition','A')" style="flex:1;">목록 아래</button>
+        </div>
+      </div>
+
       <!-- 연락처 -->
       <div class="settings-section" data-lv="p">
         <div class="settings-row">
@@ -2525,16 +2546,6 @@ window._fbScriptsReady=new Promise(resolve=>{
             <div class="settings-row-desc">닉네임을 등록하면 할일 텍스트에 @닉네임으로 전화·문자·이메일·카톡을 연결할 수 있어요</div>
           </div>
           <button class="settings-btn" onclick="openContactsModal()" style="flex-shrink:0;">관리</button>
-        </div>
-      </div>
-
-      <!-- 할일 입력 위치 (표에는 없던 항목 — 기능은 그대로 두고 파워에서만 보인다) -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">할일 입력 위치</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">+ 버튼을 눌렀을 때 입력창이 나타나는 위치예요</div>
-        <div style="display:flex;gap:8px;">
-          <button id="addPosC" class="settings-btn" onclick="updateSetting('addInputPosition','C')" style="flex:1;">목록 위</button>
-          <button id="addPosA" class="settings-btn" onclick="updateSetting('addInputPosition','A')" style="flex:1;">목록 아래</button>
         </div>
       </div>
 
@@ -6730,7 +6741,7 @@ function checkVerseAlarm(){
   let fire=false;
   if(a.secTimes){
     SECS.forEach(sec=>{
-      if(a.secTimes[sec.id]&&sec.startTime){
+      if(a.secTimes[sec.id]&&sec.startTime&&!_secNoTime(sec)){
         const t=sec.startTime.substring(0,5);
         if(t===nowStr)fire=true;
       }
@@ -6916,10 +6927,12 @@ function openEvenDeeperFromRef(ref){
 // 보이는 첫 구간으로 폴백한다. — 암송 책갈피가 무조건 최상단 구간에
 // 찍히던 8-1 버그 수정용.
 function _currentSecId(){
-  const visSecs=SECS.filter(s=>ST.vis.includes(s.id));
+  // 시간 개념 없는 구간은 "지금 이 구간" 이 될 수 없다 — 대타로도 뽑지 않는다
+  const visSecs=SECS.filter(s=>ST.vis.includes(s.id)&&!_secNoTime(s));
   const cur=visSecs.find(s=>isNowWithinSection(s));
   if(cur)return cur.id;
-  return visSecs[0]?.id||ST.vis[0]||SECS[0]?.id||'am';
+  const timed=SECS.filter(s=>!_secNoTime(s));
+  return visSecs[0]?.id||timed[0]?.id||SECS[0]?.id||'am';
 }
 // ref 기준 암송 완료 기록 (목록 위젯/팝업의 롱터치 메뉴에서 사용)
 function recordMemorizationByRef(ref){
@@ -8492,7 +8505,7 @@ function _renderVfSecAssign(){
     return `<div style="padding:9px 0;border-top:1px solid var(--bd2);">
       <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
         <span style="font-size:12px;color:${s.id===nowSec?'var(--ac)':'var(--tx)'};font-weight:${s.id===nowSec?600:400};">${esc(s.name)}</span>
-        <span style="font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;">${esc(s.startTime)}–${esc(s.endTime)}</span>
+        ${_secNoTime(s)?'':`<span style="font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;">${esc(s.startTime)}–${esc(s.endTime)}</span>`}
         ${hidden?'<span style="font-size:10px;color:var(--tx3);opacity:.7;">숨김</span>':''}
         ${cur.length?'':'<span style="font-size:10px;color:var(--tx3);margin-left:auto;">전체 랜덤</span>'}
       </div>
@@ -10068,6 +10081,7 @@ function _secIdForTime(hhmm){
   if(!m)return null;
   const t=(+m[1])*60+(+m[2]);
   const hit=(SECS||[]).find(s=>{
+    if(_secNoTime(s))return false;      // 시간 개념 없는 구간으로는 되찾지 않는다
     if(!s.startTime||!s.endTime)return false;
     const[sh,sm]=s.startTime.split(':').map(Number);
     const[eh,em]=s.endTime.split(':').map(Number);
@@ -10078,7 +10092,7 @@ function _secIdForTime(hhmm){
 }
 // 지금 시각이 속한 구간 — 숨긴 구간까지 포함해 하루에 구멍이 없게 한다
 function _secIdNowAll(){
-  const cur=(SECS||[]).find(s=>isNowWithinSection(s));
+  const cur=(SECS||[]).find(s=>!_secNoTime(s)&&isNowWithinSection(s));
   return cur?cur.id:_currentSecId();
 }
 // 로그 항목의 소속 구간: 저장된 sec 우선, 없으면 기록 시각으로 되찾는다
@@ -10086,7 +10100,19 @@ function _entrySecId(en){
   if(!en)return null;
   return en.sec||_secIdForTime(en.time);
 }
+// ── '시간 개념 없음' 구간 ──
+// 커스텀으로 추가한 구간에 한해 켤 수 있다. 켜면 그 구간은 시각을 갖지 않고,
+// "몇 시에 한 일이냐"로 따지는 모든 판정에서 빠진다 — 시간구간 시작 알림,
+// 일정 자동 배치, 그리고 말씀 반응(좋아요·암송·Deeper·Even) 기록의 소속 구간.
+// ⚠️ startTime/endTime 값 자체는 지우지 않는다. 체크를 풀면 쓰던 시각이 그대로 돌아온다.
+function _secNoTime(sec){return !!(sec&&sec.noTime);}
+// 기본 6개 구간은 시각이 뜻을 갖는 구간이라 이 체크박스를 주지 않는다
+function _secIsCustom(sec){
+  if(!sec)return false;
+  return !DEFAULT_SECS.some(d=>d.id===sec.id);
+}
 function isNowWithinSection(sec){
+  if(_secNoTime(sec))return false;
   if(!sec||!sec.startTime||!sec.endTime)return false;
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
@@ -18152,6 +18178,31 @@ function renderSectionEditor(){
     timeSep.className='sec-edit-time-sep';timeSep.textContent='–';
     const endRoll=_makeTimeRollPair(sec.endTime||'18:00',v=>updateSectionField(i,'endTime',v),true);
     timeRow.append(timeLabel,startRoll,timeSep,endRoll);
+    // '시간 개념 없음' — 직접 추가한 구간에만 준다. 켜면 시각 픽커가 사라지고
+    // 그 구간은 시각으로 판정하는 모든 곳(알림·일정 배치·말씀 반응 기록)에서 빠진다.
+    if(_secIsCustom(sec)){
+      const noTimeLbl=document.createElement('label');
+      noTimeLbl.className='sec-edit-notime';
+      noTimeLbl.title='시간 개념 없음';
+      const noTimeInp=document.createElement('input');
+      noTimeInp.type='checkbox';
+      noTimeInp.checked=_secNoTime(sec);
+      noTimeInp.onchange=()=>updateSectionField(i,'noTime',noTimeInp.checked);
+      const noTimeGlyph=document.createElement('span');
+      noTimeGlyph.className='sec-edit-notime-glyph';
+      noTimeGlyph.innerHTML='<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M5 15 15 5"/></svg>';
+      noTimeLbl.append(noTimeInp,noTimeGlyph);
+      timeRow.appendChild(noTimeLbl);
+      // 켜져 있으면 시각 픽커는 감춘다 (값은 그대로 남아 되돌릴 수 있다)
+      const off=_secNoTime(sec);
+      [startRoll,timeSep,endRoll].forEach(el=>{el.style.display=off?'none':'';});
+      if(off){
+        const note=document.createElement('span');
+        note.className='sec-edit-notime-note';
+        note.textContent='시간 개념 없음';
+        timeRow.insertBefore(note,noTimeLbl);
+      }
+    }
     wrap.appendChild(timeRow);
 
     // Fourth row: per-section notification title phrase. Empty → the
