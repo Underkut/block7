@@ -598,6 +598,32 @@ HB가 기기에서 직접 보고 판단할 항목. 답이 오면 바로 반영�
 | G | `versepush` 의 `APP_URL` → `https://block7.my/` | ✅ 완료 (2026-08-02 확인) |
 | H | Firebase 승인 도메인에 `block7.my` 추가 | ✅ 완료 (2026-08-02 확인) |
 
+### 서버 코드 배포 방법 (2026-08-05 확립)
+
+서버 쪽은 **두 군데가 서로 다른 방식**이라 헷갈리기 쉽다.
+
+| 무엇 | 어디 | 어떻게 |
+|---|---|---|
+| `functions/index.js` (`block7Notify`, `block7TestPush`) | Firebase Functions v2 · **asia-northeast3** | 아래 Cloud Shell 절차 |
+| `versepush/index.js` (말씀 푸시) | **Cloud Run 별도 서비스** | 콘솔에서 `소스 수정` → 붙여넣기 → `저장 후 다시 배포` |
+
+**Firebase Functions — 구글 Cloud Shell (설치할 것 없음)**
+
+```
+git clone https://github.com/Underkut/block7.git
+cd block7/functions
+npm install            # ⚠️ 이걸 빼먹으면 "Couldn't find firebase-functions package" 로 죽는다
+cd ..
+firebase login --no-localhost
+firebase deploy --only functions
+```
+
+- `firebase.json` · `.firebaserc` 가 저장소에 있어 프로젝트 지정이 필요 없다 (2026-08-05 추가)
+- 자세히 볼 때는 `--debug` (`--info` 라는 옵션은 없다)
+- `npm warn` · `EBADENGINE` · `deprecated` 는 전부 무시해도 된다
+- 성공 표시: `✔ functions[block7Notify(asia-northeast3)] Successful update operation.`
+- ⚠️ 배포 도중 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
+
 ### D — 유일하게 남은 것 (마감 있음)
 
 할일 알림을 보내는 `block7Notify` 함수가 **Node.js 20** 위에서 도는데,
