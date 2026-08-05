@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0805-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0805-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2014,7 +2014,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .settings-overlay.open{display:flex!important;}
 @media(min-width:720px){
-  .settings-overlay{align-items:center;}
+  /* ⚠️ 세로 가운데 정렬(align-items:center) 금지.
+     설정 등급(이지/미드/파워)에 따라 내용 길이가 크게 달라지는데, 가운데로 맞추면
+     팝업이 짧아질 때 위쪽도 같이 내려와 헤더가 화면에서 껑충껑충 움직인다.
+     위에서 10vh 자리에 고정하고 아래쪽 끝만 늘었다 줄었다 하게 둔다. */
+  .settings-overlay{align-items:flex-start;padding-top:10vh;}
 }
 .settings-panel{
   width:100%;max-width:480px;
@@ -2046,7 +2050,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 /* 등급 아이콘은 헤더 정중앙. 제목(왼쪽)·×(오른쪽) 과 겹치지 않게 띄운다 */
 .uilv-row{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  display:flex;align-items:center;gap:7px;
+  display:flex;align-items:center;gap:10.5px;
 }
 .uilv-btn{
   position:relative;display:flex;align-items:center;justify-content:center;
@@ -2379,7 +2383,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0805-3";
+const APP_VERSION = "v. 26-0805-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
