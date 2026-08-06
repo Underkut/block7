@@ -22,7 +22,7 @@ global.SECS = [];
 global.showToast = () => {};
 
 eval(slice('// ══════ 시간 구간 = 경계선 모델', '// ══════ 경계선 모델 끝 ══════') +
-  ';Object.assign(globalThis,{_t2m,_m2t,_secOffsets,_secNormalizeTimes,_secLenMin,' +
+  ';Object.assign(globalThis,{_t2m,_m2t,_secOffsets,_secNormalizeTimes,_secLenMin,_secMoveTo,' +
   '_secBoundaryChoices,_secTimeChoices,_secIdForTime,_secNoTime,_secIsCustom,isNowWithinSection,' +
   '_sortEventsKeepingTimeless,_reassignTimedEvents,_secArchiveCapture,_secArchiveApply,_secStripData});');
 
@@ -167,6 +167,50 @@ console.log('\n시나리오 5 — 픽커는 앞뒤 경계 사이만');
     sc.eq(`경계 ${i} — 어떤 값을 골라도 시간 있는 구간이 남는다`, ok, true);
   });
   sc.eq('고를 값은 늘 남아 있다', _secBoundaryChoices(tight, 2, 60).length > 0, true);
+}
+
+// ═══ 5-1. 구간을 끌어 옮기기 — 옆 구간의 시각을 흔들지 않는다 ═══
+console.log('\n시나리오 5-1 — 순서 바꾸기');
+{
+  const fmt = s => s.map(x => `${x.id} ${x.startTime}-${x.endTime}${x.noTime ? '[무]' : ''}`);
+  // 맨 아래에 0분으로 태어난 커스텀 구간을 오전과 점심 사이로 끌어 올린다
+  const s = _secNormalizeTimes(defs().concat([{ id: 'C', startTime: '03:00' }]));
+  sc.eq('옮기기 전', fmt(s).slice(0, 3),
+    ['dawn 03:00-06:00', 'am 06:00-12:00', 'morn 12:00-13:00']);
+  _secMoveTo(s, 6, 2);   // C 를 점심 자리(위)로
+  sc.eq('C 는 그 틈의 시각을 복제해 0분으로 들어간다', fmt(s)[2], 'C 12:00-12:00[무]');
+  sc.eq('기존 구간들의 시작·마침이 하나도 안 흔들린다', fmt(s).filter(x => !x.startsWith('C ')),
+    ['dawn 03:00-06:00', 'am 06:00-12:00', 'morn 12:00-13:00',
+      'pm 13:00-18:00', 'eve 18:00-20:00', 'night 20:00-03:00']);
+
+  // 맨 위로 올려도 마찬가지
+  const s2 = _secNormalizeTimes(defs().concat([{ id: 'C', startTime: '03:00' }]));
+  _secMoveTo(s2, 6, 0);
+  sc.eq('맨 위로 — C 는 첫 경계를 복제한다', fmt(s2)[0], 'C 03:00-03:00[무]');
+  sc.eq('맨 위로 — 나머지는 그대로', fmt(s2).slice(1),
+    ['dawn 03:00-06:00', 'am 06:00-12:00', 'morn 12:00-13:00',
+      'pm 13:00-18:00', 'eve 18:00-20:00', 'night 20:00-03:00']);
+
+  // 시간을 가진 구간을 옮기면, 비운 자리는 바로 위 구간이 이어받는다
+  const s3 = _secNormalizeTimes([
+    { id: 'a', startTime: '06:00' }, { id: 'C', startTime: '12:00' },
+    { id: 'b', startTime: '14:00' }, { id: 'c', startTime: '18:00' },
+  ]);
+  _secMoveTo(s3, 1, 3);
+  // 맨 아래 자리의 '틈' 은 하루의 끝 = 첫 경계(06:00) 다
+  sc.eq('옮긴 구간은 새 자리에서 0분', fmt(s3)[3], 'C 06:00-06:00[무]');
+  sc.eq('비운 자리는 바로 위 구간이 이어받는다', fmt(s3)[0], 'a 06:00-14:00');
+  sc.eq('아래 구간들은 그대로', fmt(s3).slice(1, 3), ['b 14:00-18:00', 'c 18:00-06:00']);
+
+  // 제자리에 놓으면 아무것도 바뀌지 않는다 (0분으로 만들어 버리면 안 된다)
+  const s4 = _secNormalizeTimes(defs());
+  const before4 = fmt(s4);
+  sc.eq('제자리는 그대로', (_secMoveTo(s4, 2, 2), fmt(s4)), before4);
+  sc.eq('제자리면 옮기지 않았다고 알린다', _secMoveTo(s4, 2, 2), false);
+  sc.eq('말도 안 되는 자리는 무시한다', _secMoveTo(s4, 0, 99), false);
+
+  sc.eq('길이의 합은 여전히 하루', _secOffsets(s).pop(), 1440);
+  sc.eq('끌어 옮기기는 _secMoveTo 한 곳에서만', SRC.includes('_secMoveTo(SECS,from,to)'), true);
 }
 
 // ═══ 5-2. 일정 등록창의 시·분 목록은 그 구간 안에서만 ═══
