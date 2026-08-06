@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0806-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0806-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2390,7 +2390,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0806-4";
+const APP_VERSION = "v. 26-0806-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18715,10 +18715,18 @@ function addNewSection(){
   renderToday();
 }
 
+// ⚠️ 확인창은 반드시 appConfirm 을 쓴다. 네이티브 confirm() 은 아이폰 홈 화면 앱에서
+//    조용히 무시돼 false 를 돌려준다 — 그래서 아이폰에서는 구간 삭제가 아예 되지 않았다.
 function deleteSection(i){
   if(SECS.length<=1)return;
   const sec=SECS[i];
-  if(!confirm(`"${sec.name}" 구간을 삭제할까요? 이 구간에 있는 할일은 휴지통으로 이동해요.`))return;
+  appConfirm(`"${sec.name}" 구간을 삭제할까요? 이 구간에 있는 할일은 휴지통으로 이동해요.`,
+    ()=>_deleteSectionNow(i));
+}
+function _deleteSectionNow(i){
+  if(SECS.length<=1)return;
+  const sec=SECS[i];
+  if(!sec)return;
   beforeSave();
 
   // Move any existing tasks (across all days) for this section into
@@ -18828,11 +18836,13 @@ function applySectionConfig(name){
 }
 
 function deleteSectionConfig(name){
-  if(!confirm(`"${name}" 구성을 삭제할까요?`))return;
-  beforeSave();
-  delete ST.settings.sectionConfigs[name];
-  save();
-  renderSectionConfigList();
+  // 여기도 네이티브 confirm 은 아이폰에서 무시된다 (위 deleteSection 주석 참고)
+  appConfirm(`"${name}" 구성을 삭제할까요?`,()=>{
+    beforeSave();
+    delete ST.settings.sectionConfigs[name];
+    save();
+    renderSectionConfigList();
+  });
 }
 
 // ── Backup / restore ──
