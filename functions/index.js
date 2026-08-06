@@ -106,16 +106,26 @@ exports.block7Notify = onSchedule(
         }
 
         // 2) 시간구간 시작 알림
+        //
+        // ⚠️ 안전장치 ③ (v26-0806-7 경계선 모델) — 0분 구간은 이웃과 시작
+        //    시각이 같다. 그대로 두면 같은 시각에 두 번 울린다. 두 겹으로 막는다:
+        //    ① 0분(시작=마침) 구간은 아예 건너뛴다 — 시간 없는 구간이니 알릴 것도 없다
+        //    ② 그래도 같은 시각에 걸린 구간이 둘 이상이면 첫 하나만 보낸다
+        //    구간이 하나뿐일 때는 시작=마침이 '하루 전체' 라는 뜻이라 예외로 둔다.
         if (notify.sections) {
+          let firedSlot = false;
           for (const sec of secs) {
+            if (firedSlot) break;
             if (!visIds.includes(sec.id)) continue;
-            // '시간 개념 없음' 으로 표시한 구간은 시작 알림을 보내지 않는다
+            // '시간 없음' 으로 표시된 구간은 시작 알림을 보내지 않는다
             if (sec.noTime) continue;
+            if (secs.length > 1 && sec.startTime === sec.endTime) continue;
             if (sec.startTime !== slot) continue;
             const stamp = `${todayK}@${sec.id}`;
             if (meta[`lastSec_${sec.id}`] === stamp) continue;
             const items = [...eventsLine(day, sec.id), ...tasksLine(day, sec.id)];
             if (!items.length) continue; // 빈 구간은 조용히 넘어감
+            firedSlot = true;
             sends.push({
               title: `${sec.name} 시작`,
               body: items.join("\n"),
