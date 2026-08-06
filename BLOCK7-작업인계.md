@@ -185,7 +185,7 @@ publicKey: RBOsbdkZDO793ovQq / 수신: denartist@gmail.com
 
 ## 5. 남아 있는 과제
 
-### 5-0. 시간구간 개편 (0806-4) — **설계 확정, 구현 대기** ⬅ 다음 작업
+### 5-0. 시간구간 개편 — **v26-0806-7 개발본에 구현됨** (HB 확인 대기)
 
 HB와 2026-08-06에 합의한 내용. 제안서: `claude.ai/code/artifact/7a059eaf-945d-4396-8e47-ef19dae1e391`
 
@@ -218,6 +218,40 @@ HB와 2026-08-06에 합의한 내용. 제안서: `claude.ai/code/artifact/7a059e
 
 **만드는 순서** — ① 경계선 모델 + `tests/` 시나리오 ② 일정 재배치 ③ 삭제 선택.
 데이터가 실제로 이동하므로 **시나리오를 먼저 넣고** 시작할 것.
+
+#### 구현 결과 (v26-0806-7)
+
+시나리오는 `tests/test_secs.js` 에 먼저 넣고 시작했다 (93개). 코드는 `index.html` 의
+`// ══════ 시간 구간 = 경계선 모델` ~ `// ══════ 경계선 모델 끝 ══════` 한 덩어리에 모여 있다.
+테스트가 그 표시 문자열로 잘라 쓰므로 **표시를 지우거나 바꾸지 말 것.**
+
+| 만든 것 | 어디에 |
+|---|---|
+| 경계 펴기·정규화 | `_secOffsets` / `_secNormalizeTimes` — 구간 목록이 바뀔 때마다 부른다 |
+| 픽커 범위 | `_secBoundaryChoices`(경계) · `_secTimeChoices`(일정 등록창) |
+| 일정 재배치 | `_reassignTimedEvents` · 정렬은 `_sortEventsKeepingTimeless` |
+| 마무리 묶음 | `_secsCommit()` = 정규화 → 재배치 → 저장. 구간을 건드린 뒤엔 이것만 부르면 된다 |
+| 보관·되살리기 | `_secArchiveCapture` / `_secStripData` / `_secArchiveApply`, 저장 자리는 `ST.secArchive` (최대 20개) |
+| 화면 | `_makeBoundaryRow` / `_makeBoundaryRoll` / `updateSectionBoundary` / `renderSecArchive` |
+
+**저장 형태는 그대로 `startTime`/`endTime` 두 값이다.** 앱 곳곳과 클라우드 함수가 이 둘을
+읽기 때문에 바꾸지 않았다. 다만 `endTime` 은 이제 **다음 구간의 `startTime` 을 베낀 값**일
+뿐이고 `_secNormalizeTimes()` 가 늘 다시 맞춘다. **`endTime` 을 손으로 넣지 말 것.**
+
+정리해야 할 지점 — 옛 데이터(겹침·손으로 켠 '시간 개념 없음')는 세 곳에서 자동으로 눕는다:
+`syncSecsFromState()`(로컬 로드) · `applyRemoteState()`(다른 기기가 보낸 것) · `importBackup()`(백업 불러오기).
+
+안전장치가 실제로 어떻게 지켜지는지:
+- ① 구간이 하나뿐이면 시작=마침이어도 `noTime` 을 붙이지 않는다 (하루 전체라는 뜻)
+- ② 경계 길이의 합이 늘 1440이 되게 펴기 때문에 **시간 있는 구간이 0개가 되는 상태는 구조적으로 생기지 않는다.**
+  그래도 규칙이 바뀌면 바로 걸리도록 `_secWouldEmptyDay()` 로 후보에서 걸러 낸다
+- ③ `functions/index.js` 에 0분 구간 건너뛰기 + 같은 시각 한 번만(`firedSlot`) 을 넣었다.
+  ⚠️ **클라우드 함수는 따로 배포해야 적용된다** (`firebase deploy --only functions`)
+
+⚠️ 새 구간은 맨 아래에 **첫 경계와 같은 값(0분)** 으로 태어난다. 하루의 끝에 붙기 때문에
+다른 구간의 시간을 뺏지 않는다. 이걸 가능하게 하는 것이 `_secOffsets()` 의
+"앞 경계보다 이른 값은 한 바퀴 돌아온 자리로 읽는다" 한 줄이다. 그 줄을 지우면
+새 구간이 **바로 위 구간의 시간을 통째로 가져간다.**
 
 
 ### ✅ 해결됨 (참고용 이력)
