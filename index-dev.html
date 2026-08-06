@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0806-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0806-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2390,7 +2390,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0806-3";
+const APP_VERSION = "v. 26-0806-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -18298,7 +18298,9 @@ function renderSectionEditor(){
       const noTimeInp=document.createElement('input');
       noTimeInp.type='checkbox';
       noTimeInp.checked=_secNoTime(sec);
-      noTimeInp.onchange=()=>updateSectionField(i,'noTime',noTimeInp.checked);
+      // 체크를 껐다 켜면 시각 픽커가 그 자리에서 사라지고 다시 나와야 한다.
+      // updateSectionField 는 다시 그리지 않으므로 여기서 직접 부른다.
+      noTimeInp.onchange=()=>{updateSectionField(i,'noTime',noTimeInp.checked);renderSectionEditor();};
       const noTimeGlyph=document.createElement('span');
       noTimeGlyph.className='sec-edit-notime-glyph';
       noTimeGlyph.innerHTML='<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M5 15 15 5"/></svg>';
