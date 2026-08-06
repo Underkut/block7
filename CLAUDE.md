@@ -18,6 +18,9 @@
 - **산출물 2개**: `index.html`(운영, `DEV_MODE=false`)와
   `index-dev.html`(`DEV_MODE=true`, 2번째 줄 `[DEV — no Firebase]`).
   개발본은 **손으로 만들지 말고 `./tools/make-dev.sh`** 로 만든다 (네 곳을 바꾼다).
+  반대 방향은 **`./tools/make-prod.sh`** — 개발본에서 운영본을 되살린다.
+  운영본은 확인을 기다리는 동안 커밋되지 않은 채 작업 폴더에만 남는데, 세션이 끝나면
+  그 폴더가 사라진다. **새 세션에서는 `./tools/make-prod.sh` 로 되살리면 된다** (손실 없음).
   개발본도 저장소에 함께 커밋한다 → `https://block7.my/index-dev.html` 로 어느 기기에서나 열린다.
   아이폰은 그 주소에서 "홈 화면에 추가" 하면 **BLOCK7 DEV** 아이콘이 운영본과 따로 생긴다.
   ⚠️ 개발본은 Firebase 가 꺼져 있어 **푸시 알림은 개발본에서 확인할 수 없다** (운영본에서만).
