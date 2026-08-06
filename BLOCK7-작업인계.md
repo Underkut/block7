@@ -185,7 +185,7 @@ publicKey: RBOsbdkZDO793ovQq / 수신: denartist@gmail.com
 
 ## 5. 남아 있는 과제
 
-### 5-0. 시간구간 개편 — **v26-0806-7 개발본에 구현됨** (HB 확인 대기)
+### 5-0. 시간구간 개편 — **v26-0806-8 개발본에 구현됨** (HB 확인 대기)
 
 HB와 2026-08-06에 합의한 내용. 제안서: `claude.ai/code/artifact/7a059eaf-945d-4396-8e47-ef19dae1e391`
 
@@ -232,7 +232,18 @@ HB와 2026-08-06에 합의한 내용. 제안서: `claude.ai/code/artifact/7a059e
 | 일정 재배치 | `_reassignTimedEvents` · 정렬은 `_sortEventsKeepingTimeless` |
 | 마무리 묶음 | `_secsCommit()` = 정규화 → 재배치 → 저장. 구간을 건드린 뒤엔 이것만 부르면 된다 |
 | 보관·되살리기 | `_secArchiveCapture` / `_secStripData` / `_secArchiveApply`, 저장 자리는 `ST.secArchive` (최대 20개) |
+| 순서 바꾸기 | `_secMoveTo(secs,from,to)` — ⠿ 드래그가 하는 일은 전부 여기 모여 있다 |
 | 화면 | `_makeBoundaryRow` / `_makeBoundaryRoll` / `updateSectionBoundary` / `renderSecArchive` |
+
+⚠️ **구간을 끌어 옮길 때 시각이 바뀌는 것은 옮긴 구간 하나뿐이다** (v26-0806-8에 고침).
+끼어들어 간 '틈'의 경계 값을 복제해 자기 위·아래 경계로 삼으므로, 그 자리에서 0분으로
+들어가고 틈 양옆 구간의 시작·마침은 하나도 흔들리지 않는다. 0806-7에서는 경계를 '자리'에
+붙박아 둬서, 구간 하나가 끼어들면 아래쪽 구간들이 남의 시각을 하나씩 넘겨받으며 통째로
+밀렸다. 원래 있던 자리에 남는 시간은 바로 위 구간이 이어받는다 (구간을 지울 때와 같은 규칙).
+
+설정 화면의 한 줄은 **⠿ · 이름 · 색 · ★ · ×** 순서다. ⠿ 와 × 는 커스텀 구간에만 주되,
+기본 구간에는 같은 크기의 **숨긴 자리**를 둬서 색·★ 가 모든 줄에서 같은 세로줄에 선다.
+지우면 줄마다 어긋난다.
 
 **저장 형태는 그대로 `startTime`/`endTime` 두 값이다.** 앱 곳곳과 클라우드 함수가 이 둘을
 읽기 때문에 바꾸지 않았다. 다만 `endTime` 은 이제 **다음 구간의 `startTime` 을 베낀 값**일

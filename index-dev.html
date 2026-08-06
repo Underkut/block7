@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0806-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0806-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2183,7 +2183,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .sec-edit-exclude-row{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:0 0 8px 93px; /* align with where the name input starts in the row above */
+  padding:0 0 8px 30px; /* 위 줄의 이름칸이 시작하는 자리(⠿ 다음)에 맞춘다 */
 }
 .sec-edit-exclude-label{
   display:flex;align-items:center;justify-content:center;
@@ -2200,7 +2200,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .sec-edit-time-row{
   display:flex;align-items:center;gap:6px;
-  padding:0 0 10px 93px; /* same alignment as the exclude row above */
+  padding:0 0 10px 30px; /* 위 자물쇠 줄과 같은 자리 */
 }
 .sec-edit-time-label{
   display:flex;align-items:center;justify-content:center;
@@ -2407,7 +2407,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0806-7";
+const APP_VERSION = "v. 26-0806-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10261,7 +10261,7 @@ function _secNormalizeTimes(secs){
   for(let i=0;i<n;i++){
     secs[i].startTime=_m2t(base+off[i]);
     secs[i].endTime=_m2t(base+off[i+1]);
-    // 0분 구간은 '시간 없음' 으로 자동 표시한다. 화면에서 체크박스는 없앴지만
+    // 0분 구간은 '시간 개념 없음' 으로 자동 표시한다. 화면에서 체크박스는 없앴지만
     // 데이터에는 남긴다 — 클라우드 알림 함수와 옛 기기가 이 표시를 본다.
     // 안전장치 ① 구간이 하나뿐이면 시작=마침이어도 '하루 전체' 라는 뜻이므로
     // 표시하지 않는다 (0분과 하루 전체가 구분 안 되는 유일한 순간).
@@ -10269,6 +10269,27 @@ function _secNormalizeTimes(secs){
     else delete secs[i].noTime;
   }
   return secs;
+}
+// 구간을 from 자리에서 to 자리로 옮긴다 (⠿ 로 끌어 옮겼을 때).
+//
+// ⚠️ 옮긴 구간만 시각이 바뀐다. 끼어들어 간 '틈'의 경계 값을 복제해 자기
+//    위·아래 경계로 삼으므로, 그 자리에서 0분('시간 개념 없음')으로 들어가고
+//    틈 양옆의 기존 구간들은 시작·마침이 하나도 흔들리지 않는다.
+//    (예전에는 경계를 '자리'에 붙박아 둬서, 구간 하나가 끼어들면 아래쪽
+//     구간들이 남의 시각을 하나씩 넘겨받으며 통째로 밀렸다)
+// 원래 있던 자리에 남는 시간은 바로 위 구간이 이어받는다 — 구간을 지울 때와
+// 같은 규칙이다. 하루에 구멍을 낼 수는 없기 때문.
+function _secMoveTo(secs,from,to){
+  const n=(secs||[]).length;
+  if(!(from>=0&&from<n&&to>=0&&to<n)||from===to)return false;
+  const moving=secs[from];
+  const rest=secs.filter((s,i)=>i!==from);
+  const gap=rest[to]||rest[0];         // 맨 아래로 옮겼으면 첫 경계로 돌아간다
+  if(gap&&gap.startTime)moving.startTime=gap.startTime;
+  rest.splice(to,0,moving);
+  secs.length=0;secs.push(...rest);
+  _secNormalizeTimes(secs);
+  return true;
 }
 // 구간 하나의 길이(분). 구간이 하나뿐이면 하루 전체(1440).
 function _secLenMin(secs,i){
@@ -10292,7 +10313,7 @@ function _secWouldEmptyDay(secs,i,mins){
 }
 // i번째 경계에 넣을 수 있는 값들(분, 0~1439). 앞뒤 경계 사이만 채우기 때문에
 // 겹치게 넣는 것 자체가 불가능하다. 앞 경계·뒤 경계 값 자체는 남겨 둔다 —
-// 그 값을 고르는 것이 곧 "0분 구간(시간 없음)으로 만들기" 이기 때문.
+// 그 값을 고르는 것이 곧 "0분 구간(시간 개념 없음)으로 만들기" 이기 때문.
 function _secBoundaryChoices(secs,i,step){
   const n=(secs||[]).length;
   if(!n)return[0];
@@ -10321,7 +10342,7 @@ function _secBoundaryChoices(secs,i,step){
 }
 // 한 구간 안에서 고를 수 있는 시각들(분). 시작은 포함, 마침은 제외 —
 // 마침 시각은 이미 아래 구간의 것이기 때문이다. 일정 등록창의 시·분 목록이
-// 이 값을 쓴다. 0분('시간 없음') 구간이면 null (붙일 시각이 없다).
+// 이 값을 쓴다. 0분('시간 개념 없음') 구간이면 null (붙일 시각이 없다).
 function _secTimeChoices(sec,step){
   if(!sec||_secNoTime(sec))return null;
   const a=_t2m(sec.startTime),b=_t2m(sec.endTime);
@@ -10343,7 +10364,7 @@ function _secIdForTime(hhmm){
   const t=_t2m(hhmm);
   if(t===null)return null;
   const hit=(SECS||[]).find(s=>{
-    if(_secNoTime(s))return false;      // 0분(시간 없음) 구간으로는 되찾지 않는다
+    if(_secNoTime(s))return false;      // 0분(시간 개념 없음) 구간으로는 되찾지 않는다
     const a=_t2m(s.startTime),b=_t2m(s.endTime);
     if(a===null||b===null)return false;
     if(a===b)return true;               // 구간이 하나뿐 = 하루 전체
@@ -10361,7 +10382,7 @@ function _entrySecId(en){
   if(!en)return null;
   return en.sec||_secIdForTime(en.time);
 }
-// ── '시간 없음' 구간 ──
+// ── '시간 개념 없음' 구간 ──
 // 위아래 경계가 같은 값(0분)이면 자동으로 붙는 표시다. 사람이 켜고 끄는
 // 체크박스는 없앴다 (v26-0806-7). 그 구간은 "몇 시에 한 일이냐"로 따지는
 // 모든 곳에서 빠진다 — 시간구간 시작 알림, 일정 자동 배치, 말씀 반응 기록.
@@ -16426,7 +16447,7 @@ function openEventModal(secId,editIdx,dateKey){
     _eventRepeat={daily:false,daysOfWeek:[0,1,2,3,4,5,6],weekly:false,weeksOfMonth:[1,2,3,4,5]};
 
     const sec=SECS.find(s=>s.id===secId);
-    // 0분('시간 없음') 구간에는 시각을 붙일 자리가 없다 — 시각 없이 시작한다
+    // 0분('시간 개념 없음') 구간에는 시각을 붙일 자리가 없다 — 시각 없이 시작한다
     setEventTimeToggle(!_secNoTime(sec));
 
     let want=null;
@@ -18648,21 +18669,32 @@ function renderSectionEditor(){
     // 삭제 × 는 직접 추가한 구간에만 준다.
     // 기본 6개(새벽·오전·점심·오후·저녁·밤)는 지울 수 없다 — 지우면 하루의
     // 시간 축에 구멍이 생기고, 되돌릴 방법도 마땅치 않다.
-    row.append(dragHandle,starLabel,colorWrap,nameInp);
-    // 0분 구간이면 회색으로 '시간 없음' 만 적는다 (체크박스는 없앴다 — 자동이다)
+    // 줄 배치 — ⠿(커스텀만) · 이름 · 색 · ★ · ×(커스텀만).
+    // 이름을 맨 왼쪽으로 보내고 색·★ 를 오른쪽으로 모았다. 왼쪽에 작은 것들이
+    // 몰려 있으면 눈이 먼저 그쪽에 걸려서, 정작 읽어야 할 이름이 뒤로 밀린다.
+    row.append(dragHandle,nameInp);
+    // 0분 구간이면 회색으로 '시간 개념 없음' 만 적는다 (체크박스는 없앴다 — 자동이다)
     if(_secNoTime(sec)){
       const nt=document.createElement('span');
       nt.className='sec-edit-notime-note';
-      nt.textContent='시간 없음';
+      nt.textContent='시간 개념 없음';
       row.appendChild(nt);
     }
+    row.append(colorWrap,starLabel);
+    // 삭제 × 도 커스텀 구간에만 준다. 기본 구간에는 ⠿ 와 같은 방식으로 같은
+    // 크기의 빈 자리를 둬서, 색·★ 가 모든 줄에서 같은 세로줄에 서게 한다.
+    const delBtn=document.createElement('button');
+    delBtn.className='sec-edit-btn danger';delBtn.textContent='×';
     if(_secIsCustom(sec)){
-      const delBtn=document.createElement('button');
-      delBtn.className='sec-edit-btn danger';delBtn.textContent='×';delBtn.title='삭제';
+      delBtn.title='삭제';
       delBtn.onclick=()=>deleteSection(i);
       if(SECS.length<=1){delBtn.style.opacity='.25';delBtn.disabled=true;}
-      row.appendChild(delBtn);
+    }else{
+      delBtn.classList.add('sec-edit-del-off');
+      delBtn.style.visibility='hidden';
+      delBtn.disabled=true;
     }
+    row.appendChild(delBtn);
     wrap.appendChild(row);
 
     // Second row: lock icon + A/★/+- checkboxes — when checked, this
@@ -18739,7 +18771,7 @@ function renderSectionEditor(){
   const hint=document.createElement('div');
   hint.className='sec-bound-hint';
   hint.setAttribute('data-lv','mp');
-  hint.textContent='시각은 구간 사이의 경계선 하나로 정해요. 위 경계가 시작, 아래 경계가 마침이에요. 경계는 자리가 가지고 있어서, 구간을 끌어 옮기면 그 자리의 시각을 받아요. 위아래 경계가 같아지면 그 구간은 ‘시간 없음’ 이 돼요.';
+  hint.textContent='시각은 구간 사이의 경계선 하나로 정해요. 위 경계가 시작, 아래 경계가 마침이에요. 구간을 끌어 옮기면 그 틈의 시각을 받아 ‘시간 개념 없음’ 으로 들어가요 — 옆 구간들의 시각은 그대로예요. 위아래 경계가 같아지면 그 구간은 ‘시간 개념 없음’ 이 돼요.';
   list.appendChild(hint);
 
   _lvApplyIn(list);
@@ -19159,20 +19191,19 @@ function attachSecRowDrag(wrap,handle,listEl){
 
     const finalWraps=getWraps();
     const newOrder=finalWraps.map(w=>parseInt(w.querySelector('.sec-edit-row').dataset.idx));
-    // newOrder currently references OLD indices in NEW order — reorder SECS accordingly
-    const reordered=newOrder.map(oldIdx=>SECS[oldIdx]);
+    // newOrder 는 '옛 자리 번호를 새 순서대로' 늘어놓은 것 — 여기서 옮긴 구간이
+    // 어디에서 어디로 갔는지만 뽑아 _secMoveTo() 에 넘긴다. 시각을 어떻게
+    // 다루는지는 그 함수 한 곳에 모여 있다 (틈의 경계를 복제 = 0분으로 들어감).
+    const from=parseInt(wrap.querySelector('.sec-edit-row').dataset.idx,10);
+    const to=newOrder.indexOf(from);
+    if(to<0||to===from){renderSectionEditor();return;}   // 제자리에 놓았으면 아무것도 건드리지 않는다
     beforeSave();
-    // 경계는 구간이 아니라 '자리'가 가진다 — 자리의 시각을 먼저 떠 두고,
-    // 순서를 바꾼 뒤 그대로 다시 얹는다. 옮긴 구간은 새 자리의 시각을 받는다.
-    const slotTimes=SECS.map(s=>s.startTime);
-    SECS.length=0;SECS.push(...reordered);
-    SECS.forEach((s,i)=>{s.startTime=slotTimes[i];});
+    _secMoveTo(SECS,from,to);
     const moved=_secsCommit();
     renderSectionEditor();
     renderToday();
     if(moved)showToast(`시각에 맞춰 일정 ${moved}개를 옮겼어요`);
   }
-
   handle.addEventListener('mousedown',e=>{e.preventDefault();onDown(e.clientY);
     const mm=ev=>onMove(ev.clientY);
     const mu=()=>{onUp();document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
