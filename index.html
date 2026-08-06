@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0806-3  [production]  -->
+<!-- BLOCK7  v. 26-0806-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2173,17 +2173,17 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .settings-btn-danger:hover{border-color:var(--ov);background:rgba(232,72,58,.08);}
 
 /* section editor rows */
+/* 구간 사이는 이제 경계선(.sec-bound-row)이 나누므로 아래 테두리는 두지 않는다 */
 .sec-edit-wrap{
-  border-bottom:1px solid var(--bd);
+  border-bottom:none;
 }
-.sec-edit-wrap:last-of-type{border-bottom:none;}
 .sec-edit-row{
   display:flex;align-items:center;gap:8px;
   padding:8px 0 4px;
 }
 .sec-edit-exclude-row{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:0 0 8px 93px; /* align with where the name input starts in the row above */
+  padding:0 0 8px 30px; /* 위 줄의 이름칸이 시작하는 자리(⠿ 다음)에 맞춘다 */
 }
 .sec-edit-exclude-label{
   display:flex;align-items:center;justify-content:center;
@@ -2200,7 +2200,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .sec-edit-time-row{
   display:flex;align-items:center;gap:6px;
-  padding:0 0 10px 93px; /* same alignment as the exclude row above */
+  padding:0 0 10px 30px; /* 위 자물쇠 줄과 같은 자리 */
 }
 .sec-edit-time-label{
   display:flex;align-items:center;justify-content:center;
@@ -2253,15 +2253,32 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sec-edit-star input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
 .sec-edit-star-glyph{font-size:15px;color:var(--bd2);transition:color .12s;}
 .sec-edit-star input:checked + .sec-edit-star-glyph{color:#f0b030;}
-/* 시간 개념 없음 — 시각 픽커 오른쪽의 작은 체크. PC 에서만 이름이 뜬다 */
-.sec-edit-notime{
-  position:relative;width:20px;height:20px;flex-shrink:0;margin-left:auto;
-  display:flex;align-items:center;justify-content:center;cursor:pointer;
+/* 0분 구간에 붙는 회색 글씨. 체크박스는 없앴다 — 0분이면 자동이다 */
+.sec-edit-notime-note{font-size:10px;color:var(--tx3);flex-shrink:0;}
+/* ── 시간 구간 경계선 ──
+   구간과 구간 사이에 하나. 위 구간의 마침이자 아래 구간의 시작이다.
+   경계는 구간이 아니라 '자리'가 가지므로 구간을 끌어 옮겨도 여기 남는다. */
+.sec-bound-row{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 0;
 }
-.sec-edit-notime input{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;}
-.sec-edit-notime-glyph{display:flex;color:var(--bd2);transition:color .12s;}
-.sec-edit-notime input:checked + .sec-edit-notime-glyph{color:var(--ac);}
-.sec-edit-notime-note{font-size:10px;color:var(--tx3);}
+.sec-bound-rule{flex:1;height:1px;background:var(--bd2);opacity:.55;}
+.sec-bound-pick{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;}
+.sec-bound-back{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 0 2px;
+}
+.sec-bound-back-note{
+  font-size:10px;color:var(--tx3);flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace;
+}
+.sec-bound-hint{
+  font-size:11px;color:var(--tx3);line-height:1.55;
+  padding:2px 0 10px;
+}
+/* 보관해 둔 구간 되살리기 */
+.sec-arc-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.sec-arc-head{font-size:11px;color:var(--tx3);width:100%;margin-bottom:-2px;}
 .settings-tab-bar{
   display:flex;gap:0;border-bottom:1px solid var(--bd);
   padding:0 18px;
@@ -2390,7 +2407,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0806-3";
+const APP_VERSION = "v. 26-0806-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2907,9 +2924,10 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 시간구간 커스터마이징 -->
       <div class="settings-section">
         <div class="settings-section-title">시간 구간</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">이름·색상을 바꾸거나, ⠿를 드래그해서 순서를 바꿀 수 있어요. ★는 별표 버튼에 포함될 구간이에요.</div>
+        <div class="settings-row-desc" style="margin-bottom:10px;">이름·색상을 바꾸거나, 구간 사이의 경계선에서 시각을 정할 수 있어요. ★는 별표 버튼에 포함될 구간이에요. ⠿는 직접 추가한 구간만 순서를 옮길 수 있어요.</div>
         <div id="secEditorList"></div>
         <button class="settings-add-sec-btn" data-lv="mp" onclick="addNewSection()">+ 시간 구간 추가</button>
+        <div id="secArchiveList" class="sec-arc-list" data-lv="mp"></div>
 
         <div class="settings-row-desc" data-lv="p" style="margin:16px 0 8px;">전체 구성 저장 — 이름·색·순서·개수·★ 여부를 통째로 저장해두고 나중에 불러올 수 있어요</div>
         <div id="sectionConfigList" class="preset-chip-row" data-lv="p"></div>
@@ -3863,6 +3881,20 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div style="display:flex;gap:8px;">
     <button class="settings-btn" onclick="_appConfirmResolve(false)">취소</button>
     <button class="settings-btn" id="appConfirmOk" onclick="_appConfirmResolve(true)" style="border-color:var(--ac);color:var(--tx);">확인</button>
+  </div>
+</div>
+
+<!-- 시간 구간 지우기 — 보관 / 깨끗이 지우기 중에서 고른다.
+     확인창이 셋으로 갈라지므로 공용 appConfirm 대신 따로 둔다. -->
+<div class="event-modal-overlay" id="secDelOverlay" style="display:none;z-index:4440;" onclick="closeSecDelModal()"></div>
+<div class="event-modal" id="secDelModal" style="display:none;z-index:4450;width:300px;">
+  <div id="secDelName" style="font-size:14px;line-height:1.6;color:var(--tx);text-align:center;"></div>
+  <div id="secDelDesc" style="font-size:12px;line-height:1.6;color:var(--tx3);text-align:center;margin-top:8px;"></div>
+  <div style="font-size:11px;line-height:1.6;color:var(--tx3);text-align:center;margin:12px 0 16px;">보관하면 나중에 그대로 되살릴 수 있어요.<br>깨끗이 지우면 할일만 휴지통으로 가요.</div>
+  <div style="display:flex;gap:8px;">
+    <button class="settings-btn" onclick="closeSecDelModal()">취소</button>
+    <button class="settings-btn" onclick="secDelDo('archive')" style="border-color:var(--ac);color:var(--tx);">보관</button>
+    <button class="settings-btn" onclick="secDelDo('purge')">깨끗이</button>
   </div>
 </div>
 
@@ -6412,6 +6444,7 @@ const _ESC_CLOSERS=[
   ['versePopupModal', ()=>closeVersePopup()],
   ['taggedTasksModal',()=>closeContactTasksPopup()],
   ['eventModal',      ()=>closeEventModal()],
+  ['secDelModal',     ()=>closeSecDelModal()],
   ['verseSettingsOverlay',()=>document.getElementById('verseSettingsOverlay').classList.remove('open')],
   ['settingsOverlay', ()=>closeSettings()],
   ['verseListModal',  ()=>closeVerseListModal()],
@@ -9525,6 +9558,22 @@ function syncSecsFromState(){
       if(!sec.startTime){sec.startTime=dStart;backfilled=true;}
       if(!sec.endTime){sec.endTime=dEnd;backfilled=true;}
     });
+    // ── 경계선 모델로 옮기기 (v26-0806-7) ──
+    // ① 예전에 손으로 켜 둔 '시간 개념 없음' 체크는 0분 구간으로 옮긴다.
+    //    자기 경계를 아래 경계에 붙이면 0분이 되고, 그 시간은 위 구간이 받는다.
+    let migrated=false;
+    for(let i=SECS.length-1;i>=0;i--){
+      if(!SECS[i].noTime)continue;
+      const nxt=SECS[(i+1)%SECS.length];
+      if(nxt&&nxt.startTime&&SECS[i].startTime!==nxt.startTime){
+        SECS[i].startTime=nxt.startTime;migrated=true;
+      }
+    }
+    // ② 겹치거나 비어 있던 옛 시각을 경계선 하나짜리로 정리한다.
+    //    (마침은 늘 다음 구간의 시작이 된다 — 겹칠 자리가 없어진다)
+    const _secsBefore=SECS.map(s=>s.startTime+'>'+s.endTime+'>'+(s.noTime?1:0)).join('|');
+    _secNormalizeTimes(SECS);
+    if(migrated||_secsBefore!==SECS.map(s=>s.startTime+'>'+s.endTime+'>'+(s.noTime?1:0)).join('|'))backfilled=true;
     if(backfilled)ST.secs=SECS;
     // 말씀 모음 백필 + 구버전(0706-4) 평면 customVerses 마이그레이션
     if(!Array.isArray(ST.verseCollections))ST.verseCollections=[];
@@ -9967,6 +10016,14 @@ function attachEventChipInteraction(chip,secId,i,ev){
 
   function startDrag(clientX,clientY){
     if(isVirtual)return; // virtual (repeated-from-another-day) chips can't be reordered here — only the real stored event on its origin day can
+    // 시각 있는 일정은 시간순으로 고정이라 끌어 옮기지 않는다 (v26-0806-7).
+    // 자리를 옮길 수 있는 것은 시각 없는 일정뿐이고, 그것은 시각 있는 일정들
+    // 사이 어디로든 들어갈 수 있다. 순서를 바꾸고 싶으면 시각을 바꾸면 된다.
+    if(ev.time){
+      showToast('시각이 있는 일정은 시간순으로 놓여요');
+      openMenuForThis();   // 옮기는 방법은 시각을 바꾸는 것 — 바로 그 창을 연다
+      return;
+    }
     dragging=true;
     chip.classList.add('ev-chip-dragging');
     placeholder=document.createElement('span');
@@ -10036,7 +10093,9 @@ function attachEventChipInteraction(chip,secId,i,ev){
       const newValuesInOrder=visibleOldIndices.map(idx=>events[idx]).filter(Boolean);
       const reordered=[...events];
       sortedPositions.forEach((pos,i)=>{reordered[pos]=newValuesInOrder[i];});
-      ST.days[k].events[secId]=reordered;
+      // 끌어 옮긴 것은 시각 없는 일정뿐이다. 시각 있는 일정은 다시 시간순으로
+      // 줄을 세워, 어디에 떨어뜨렸든 시간 순서가 흐트러지지 않게 한다.
+      ST.days[k].events[secId]=_sortEventsKeepingTimeless(reordered);
       save();
     }
     renderSecEvents(secId);
@@ -10145,23 +10204,171 @@ function addDays(d, n){
 }
 function isToday(d){return tKey(d)===todayKey();}
 
-// Checks whether the CURRENT real-world clock time (not viewDate) falls
-// within a section's configured start–end range, correctly handling
-// overnight ranges where endTime is numerically less than startTime
-// (e.g. night: 20:00 → 03:00 the next day).
+// ══════ 시간 구간 = 경계선 모델 (v26-0806-7) ══════
+// 예전에는 구간마다 시작·마침을 따로 넣었다. 그래서 겹치거나(오전 09–12,
+// 점심 11–13 → 11:30 이 양쪽에 속함) 빈 시간이 생길 수 있었다.
+// 이제 구간과 구간 사이에는 경계선이 하나씩만 있다.
+//   · 구간의 시작 = 자기 위 경계, 마침 = 자기 아래 경계
+//   · 맨 아래 구간의 마침은 첫 경계로 돌아간다 (하루는 동그라미)
+//   · 경계는 구간이 아니라 '자리'가 가진다 — 순서를 바꾸면 그 자리의 시각을 받는다
+//
+// ⚠️ 저장 형태는 예전 그대로 startTime/endTime 두 값을 쓴다. 앱 곳곳과
+//    클라우드 알림 함수가 이 두 값을 읽기 때문이다. 다만 endTime 은 이제
+//    '다음 구간의 startTime' 을 베낀 값일 뿐이고, 구간 목록이 바뀔 때마다
+//    _secNormalizeTimes() 가 다시 맞춘다. endTime 을 손으로 넣지 말 것.
+function _t2m(hhmm){
+  const m=/^(\d{1,2}):(\d{2})$/.exec(String(hhmm||'').trim());
+  if(!m)return null;
+  const h=+m[1],mi=+m[2];
+  if(h>23||mi>59)return null;
+  return h*60+mi;
+}
+function _m2t(mins){
+  const v=((Math.round(mins)%1440)+1440)%1440;
+  return z(Math.floor(v/60))+':'+z(v%60);
+}
+// 경계들을 "첫 경계에서 앞으로 몇 분" 으로 편다. 길이는 구간 수+1 이고
+// 마지막 값은 늘 1440 이다 (하루는 24시간, 마지막 구간은 첫 경계로 돌아간다).
+// 앞 경계보다 뒤로 간 값은 앞 경계에 붙여 0분으로 만든다 — 옛 데이터에
+// 겹침이 남아 있어도 이 한 줄로 정리된다.
+function _secOffsets(secs){
+  const n=(secs||[]).length;
+  if(!n)return[1440];
+  const b0=_t2m(secs[0].startTime);
+  const base=(b0===null)?540:b0;
+  const off=[];let prev=0;
+  for(let i=0;i<n;i++){
+    const t=(i===0)?null:_t2m(secs[i].startTime);
+    let raw=(i===0||t===null)?prev:((((t-base)%1440)+1440)%1440);
+    // 앞 경계보다 이른 값은 "한 바퀴 돌아온 자리" 로 읽는다. 맨 아래에 0분
+    // 구간을 새로 만들면 그 시작이 첫 경계와 같은 값이 되는데, 그것을 0분이
+    // 아니라 하루의 끝으로 알아보게 하는 것이 이 줄이다.
+    if(raw<prev)raw+=1440;
+    if(raw>1440)raw=prev;   // 그래도 넘치면 앞 경계에 붙여 0분으로
+    off.push(raw);prev=raw;
+  }
+  off.push(1440);
+  return off;
+}
+// 경계 → 각 구간의 startTime/endTime/noTime 을 다시 맞춘다.
+// 구간 목록이 바뀔 때마다(추가·삭제·순서변경·경계이동·불러오기) 반드시 부른다.
+function _secNormalizeTimes(secs){
+  const n=(secs||[]).length;
+  if(!n)return secs;
+  const b0=_t2m(secs[0].startTime);
+  const base=(b0===null)?540:b0;
+  const off=_secOffsets(secs);
+  for(let i=0;i<n;i++){
+    secs[i].startTime=_m2t(base+off[i]);
+    secs[i].endTime=_m2t(base+off[i+1]);
+    // 0분 구간은 '시간 개념 없음' 으로 자동 표시한다. 화면에서 체크박스는 없앴지만
+    // 데이터에는 남긴다 — 클라우드 알림 함수와 옛 기기가 이 표시를 본다.
+    // 안전장치 ① 구간이 하나뿐이면 시작=마침이어도 '하루 전체' 라는 뜻이므로
+    // 표시하지 않는다 (0분과 하루 전체가 구분 안 되는 유일한 순간).
+    if(n>1&&off[i+1]===off[i])secs[i].noTime=true;
+    else delete secs[i].noTime;
+  }
+  return secs;
+}
+// 구간을 from 자리에서 to 자리로 옮긴다 (⠿ 로 끌어 옮겼을 때).
+//
+// ⚠️ 옮긴 구간만 시각이 바뀐다. 끼어들어 간 '틈'의 경계 값을 복제해 자기
+//    위·아래 경계로 삼으므로, 그 자리에서 0분('시간 개념 없음')으로 들어가고
+//    틈 양옆의 기존 구간들은 시작·마침이 하나도 흔들리지 않는다.
+//    (예전에는 경계를 '자리'에 붙박아 둬서, 구간 하나가 끼어들면 아래쪽
+//     구간들이 남의 시각을 하나씩 넘겨받으며 통째로 밀렸다)
+// 원래 있던 자리에 남는 시간은 바로 위 구간이 이어받는다 — 구간을 지울 때와
+// 같은 규칙이다. 하루에 구멍을 낼 수는 없기 때문.
+function _secMoveTo(secs,from,to){
+  const n=(secs||[]).length;
+  if(!(from>=0&&from<n&&to>=0&&to<n)||from===to)return false;
+  const moving=secs[from];
+  const rest=secs.filter((s,i)=>i!==from);
+  const gap=rest[to]||rest[0];         // 맨 아래로 옮겼으면 첫 경계로 돌아간다
+  if(gap&&gap.startTime)moving.startTime=gap.startTime;
+  rest.splice(to,0,moving);
+  secs.length=0;secs.push(...rest);
+  _secNormalizeTimes(secs);
+  return true;
+}
+// 구간 하나의 길이(분). 구간이 하나뿐이면 하루 전체(1440).
+function _secLenMin(secs,i){
+  const off=_secOffsets(secs);
+  return off[i+1]-off[i];
+}
+// 첫 경계(=첫 구간의 시작). 새로 만드는 구간은 여기서 시작해 0분으로 태어난다.
+function _secFirstBoundary(){
+  return (SECS&&SECS[0]&&SECS[0].startTime)||'09:00';
+}
+// 안전장치 ② — 그 값을 i번째 경계에 넣으면 시간 있는 구간이 하나도 안 남는가.
+// 하루에 갈 곳이 없어지면 안 되므로 그런 값은 픽커에서 아예 뺀다.
+// (지금 모델에서는 마지막 구간이 늘 남는 시간을 받게 되어 있어 이 일이
+//  구조적으로 일어나지 않는다. 그래도 규칙이 바뀌면 바로 걸리도록 남겨 둔다)
+function _secWouldEmptyDay(secs,i,mins){
+  const n=(secs||[]).length;
+  if(n<2)return false;
+  const trial=secs.map((s,j)=>({startTime:(j===i)?_m2t(mins):s.startTime}));
+  const off=_secOffsets(trial);
+  return !trial.some((s,j)=>off[j+1]>off[j]);
+}
+// i번째 경계에 넣을 수 있는 값들(분, 0~1439). 앞뒤 경계 사이만 채우기 때문에
+// 겹치게 넣는 것 자체가 불가능하다. 앞 경계·뒤 경계 값 자체는 남겨 둔다 —
+// 그 값을 고르는 것이 곧 "0분 구간(시간 개념 없음)으로 만들기" 이기 때문.
+function _secBoundaryChoices(secs,i,step){
+  const n=(secs||[]).length;
+  if(!n)return[0];
+  const st=[60,30,15,10,1].includes(step)?step:15;
+  const off=_secOffsets(secs);
+  const b0=_t2m(secs[0].startTime);
+  const base=(b0===null)?540:b0;
+  const cur=(((base+off[i])%1440)+1440)%1440;
+  // 이 경계가 움직일 수 있는 폭 — 앞 경계에서 뒤 경계까지
+  const prevOff=(i===0)?(off[n-1]-1440):off[i-1];
+  const span=off[i+1]-prevOff;
+  const lo=(((base+prevOff)%1440)+1440)%1440;
+  const full=span>=1440;
+  const lim=full?1439:span;
+  const seen=new Set(),out=[];
+  for(let d=0;d<=lim;d++){
+    const t=(((lo+d)%1440)+1440)%1440;
+    const edge=!full&&(d===0||d===span);
+    if(!(t%st===0||edge||t===cur))continue;
+    if(seen.has(t))continue;
+    if(_secWouldEmptyDay(secs,i,t))continue;
+    seen.add(t);out.push(t);
+  }
+  if(!out.length)out.push(cur);
+  return out;
+}
+// 한 구간 안에서 고를 수 있는 시각들(분). 시작은 포함, 마침은 제외 —
+// 마침 시각은 이미 아래 구간의 것이기 때문이다. 일정 등록창의 시·분 목록이
+// 이 값을 쓴다. 0분('시간 개념 없음') 구간이면 null (붙일 시각이 없다).
+function _secTimeChoices(sec,step){
+  if(!sec||_secNoTime(sec))return null;
+  const a=_t2m(sec.startTime),b=_t2m(sec.endTime);
+  if(a===null||b===null)return null;
+  const st=[60,30,15,10,1].includes(step)?step:15;
+  let span=(((b-a)%1440)+1440)%1440;
+  if(span===0)span=1440;                // 구간이 하나뿐 = 하루 전체
+  const out=[];
+  for(let d=0;d<span;d++){
+    const t=(a+d)%1440;
+    if(d===0||t%st===0)out.push(t);     // 구간의 시작 시각은 늘 고를 수 있다
+  }
+  return out.length?out:[a];
+}
 // "HH:MM" 이 어느 시간구간에 속하는지 (자정 넘는 구간도 처리).
 // 좋아요·Deeper·Even 은 날짜 단위 로그라 소속 구간을 이 함수로 되찾는다.
+// 일정도 이 함수로 자기 구간을 찾는다 — 시각이 구간을 정한다.
 function _secIdForTime(hhmm){
-  const m=/^(\d{1,2}):(\d{2})/.exec(String(hhmm||''));
-  if(!m)return null;
-  const t=(+m[1])*60+(+m[2]);
+  const t=_t2m(hhmm);
+  if(t===null)return null;
   const hit=(SECS||[]).find(s=>{
-    if(_secNoTime(s))return false;      // 시간 개념 없는 구간으로는 되찾지 않는다
-    if(!s.startTime||!s.endTime)return false;
-    const[sh,sm]=s.startTime.split(':').map(Number);
-    const[eh,em]=s.endTime.split(':').map(Number);
-    const a=sh*60+sm,b=eh*60+em;
-    return(a<=b)?(t>=a&&t<b):(t>=a||t<b);
+    if(_secNoTime(s))return false;      // 0분(시간 개념 없음) 구간으로는 되찾지 않는다
+    const a=_t2m(s.startTime),b=_t2m(s.endTime);
+    if(a===null||b===null)return false;
+    if(a===b)return true;               // 구간이 하나뿐 = 하루 전체
+    return(a<b)?(t>=a&&t<b):(t>=a||t<b);
   });
   return hit?hit.id:null;
 }
@@ -10176,33 +10383,191 @@ function _entrySecId(en){
   return en.sec||_secIdForTime(en.time);
 }
 // ── '시간 개념 없음' 구간 ──
-// 커스텀으로 추가한 구간에 한해 켤 수 있다. 켜면 그 구간은 시각을 갖지 않고,
-// "몇 시에 한 일이냐"로 따지는 모든 판정에서 빠진다 — 시간구간 시작 알림,
-// 일정 자동 배치, 그리고 말씀 반응(좋아요·암송·Deeper·Even) 기록의 소속 구간.
-// ⚠️ startTime/endTime 값 자체는 지우지 않는다. 체크를 풀면 쓰던 시각이 그대로 돌아온다.
+// 위아래 경계가 같은 값(0분)이면 자동으로 붙는 표시다. 사람이 켜고 끄는
+// 체크박스는 없앴다 (v26-0806-7). 그 구간은 "몇 시에 한 일이냐"로 따지는
+// 모든 곳에서 빠진다 — 시간구간 시작 알림, 일정 자동 배치, 말씀 반응 기록.
 function _secNoTime(sec){return !!(sec&&sec.noTime);}
-// 기본 6개 구간은 시각이 뜻을 갖는 구간이라 이 체크박스를 주지 않는다
+// 기본 6개 구간은 지우거나 순서를 옮길 수 없다 (⠿ 손잡이·삭제 × 는 커스텀만)
 function _secIsCustom(sec){
   if(!sec)return false;
   return !DEFAULT_SECS.some(d=>d.id===sec.id);
 }
 function isNowWithinSection(sec){
   if(_secNoTime(sec))return false;
-  if(!sec||!sec.startTime||!sec.endTime)return false;
+  if(!sec)return false;
+  const a=_t2m(sec.startTime),b=_t2m(sec.endTime);
+  if(a===null||b===null)return false;
+  if(a===b)return true;                 // 구간이 하나뿐 = 하루 전체
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
-  const[sh,sm]=sec.startTime.split(':').map(Number);
-  const[eh,em]=sec.endTime.split(':').map(Number);
-  const startMin=sh*60+sm, endMin=eh*60+em;
-  if(startMin<=endMin){
-    return nowMin>=startMin&&nowMin<endMin;
-  } else {
-    // Overnight range (e.g. 20:00–03:00): "within" means at/after start
-    // OR before end, on either side of midnight.
-    return nowMin>=startMin||nowMin<endMin;
-  }
+  // 자정을 넘는 구간(예: 20:00–03:00)은 시작 뒤이거나 마침 앞이면 안쪽이다
+  return(a<b)?(nowMin>=a&&nowMin<b):(nowMin>=a||nowMin<b);
 }
 
+// ── 일정 정렬 ──
+// 시각 있는 일정은 시간순으로 고정한다. 시각 없는 일정은 지금 자리에 그대로
+// 둔다 — 끌어서 시각 있는 일정들 사이 어디로든 넣을 수 있어야 하기 때문.
+function _sortEventsKeepingTimeless(list){
+  if(!Array.isArray(list)||list.length<2)return list||[];
+  const timed=list.map((e,i)=>({e,i}))
+    .filter(x=>x.e&&x.e.time)
+    .sort((a,b)=>(a.e.time<b.e.time)?-1:(a.e.time>b.e.time)?1:(a.i-b.i))
+    .map(x=>x.e);
+  let t=0;
+  return list.map(e=>(e&&e.time)?timed[t++]:e);
+}
+// ── 일정 재배치 ──
+// 시각이 구간을 정하므로, 경계를 옮기거나 구간을 지우면 시각 있는 일정을
+// 전부 다시 놓아야 한다. 시각 없는 일정은 계산 근거가 없으니 등록한 구간에
+// 그대로 머문다.
+// ⚠️ 갈 곳을 못 찾은 일정은 절대 버리지 않는다. 시각이 이상하면 있던 자리에
+//    그대로 두고, 있던 구간마저 사라졌으면 첫 구간으로 옮긴다.
+function _reassignTimedEvents(){
+  const secIds=new Set((SECS||[]).map(s=>s.id));
+  const home=(SECS&&SECS[0]&&SECS[0].id)||null;
+  let moved=0;
+  Object.keys(ST.days||{}).forEach(k=>{
+    const day=ST.days[k];
+    if(!day||!day.events)return;
+    const pending=[];
+    Object.keys(day.events).forEach(secId=>{
+      const list=day.events[secId];
+      if(!Array.isArray(list))return;
+      const gone=!secIds.has(secId);
+      for(let i=list.length-1;i>=0;i--){
+        const ev=list[i];
+        if(!ev)continue;
+        let to=ev.time?_secIdForTime(ev.time):null;
+        if(!to||!secIds.has(to))to=gone?home:null;   // 구간이 사라졌으면 첫 구간으로
+        if(!to||to===secId)continue;
+        list.splice(i,1);
+        pending.push({ev,to});
+        moved++;
+      }
+    });
+    pending.forEach(p=>{
+      if(!Array.isArray(day.events[p.to]))day.events[p.to]=[];
+      day.events[p.to].push(p.ev);
+    });
+    Object.keys(day.events).forEach(secId=>{
+      if(!Array.isArray(day.events[secId]))return;
+      // 사라진 구간에 빈 배열만 남았으면 껍데기를 치운다 (데이터는 이미 옮겼다)
+      if(!secIds.has(secId)&&day.events[secId].length===0){delete day.events[secId];return;}
+      day.events[secId]=_sortEventsKeepingTimeless(day.events[secId]);
+    });
+  });
+  return moved;
+}
+// 구간 목록이 바뀐 뒤의 마무리 한 번 — 경계 정규화 → 일정 재배치 → 저장.
+// 돌려주는 값은 옮겨진 일정 수(안내 문구용). 부르기 전에 beforeSave() 를 할 것.
+function _secsCommit(rebalance){
+  _secNormalizeTimes(SECS);
+  ST.secs=SECS;
+  const moved=(rebalance===false)?0:_reassignTimedEvents();
+  save();
+  return moved;
+}
+
+// ── 지운 구간 보관 ──
+// 커스텀 구간을 지울 때 '보관' 을 고르면 그 구간에 있던 것들을 통째로 떠서
+// ST.secArchive 에 넣는다. '+ 시간 구간 추가' 아래에서 되살릴 수 있다.
+// 담는 것: 할일(빅·스몰) · 시각 없는 일정 · 암송 기록 · 말씀 반응
+// 담지 않는 것: 시각 있는 일정 — 시각이 구간을 정하므로 자동 재배치된다.
+const _SEC_MARK_LOGS=['verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog'];
+function _secArchiveCapture(secId,secObj){
+  const cp=v=>JSON.parse(JSON.stringify(v));
+  const entry={id:'arc'+Date.now(),ts:Date.now(),sec:cp(secObj||{}),big:{},small:{},events:{},memo:{},marks:{}};
+  Object.keys(ST.days||{}).forEach(k=>{
+    const day=ST.days[k];if(!day)return;
+    const bigs=(day.big&&day.big[secId])||[];
+    const smalls=(day.small&&day.small[secId])||[];
+    const evs=((day.events&&day.events[secId])||[]).filter(e=>e&&!e.time);
+    if(bigs.length)entry.big[k]=cp(bigs);
+    if(smalls.length)entry.small[k]=cp(smalls);
+    if(evs.length)entry.events[k]=cp(evs);
+  });
+  Object.keys(ST.memorizationLog||{}).forEach(k=>{
+    const arr=ST.memorizationLog[k]&&ST.memorizationLog[k][secId];
+    if(arr&&arr.length)entry.memo[k]=cp(arr);
+  });
+  _SEC_MARK_LOGS.forEach(name=>{
+    const log=ST[name];if(!log)return;
+    const box={};
+    Object.keys(log).forEach(k=>{
+      const hits=(log[k]||[]).filter(en=>en&&en.sec===secId);
+      if(hits.length)box[k]=cp(hits);
+    });
+    if(Object.keys(box).length)entry.marks[name]=box;
+  });
+  return entry;
+}
+// 구간에 딸린 것들을 원본에서 뺀다. toTrash 면 할일은 휴지통으로 보낸다.
+// 시각 있는 일정은 손대지 않는다 — 뒤이어 _reassignTimedEvents() 가 옮긴다.
+function _secStripData(secId,toTrash,secName){
+  Object.keys(ST.days||{}).forEach(k=>{
+    const day=ST.days[k];if(!day)return;
+    if(toTrash){
+      const bigs=(day.big&&day.big[secId])||[];
+      const smalls=(day.small&&day.small[secId])||[];
+      if(bigs.length||smalls.length){
+        if(!Array.isArray(day.trash))day.trash=[];
+        bigs.forEach(b=>{if(b&&b.text&&b.text.trim())day.trash.unshift({type:'big',secId,secName:secName||'',text:b.text,done:b.done,ts:Date.now()});});
+        smalls.forEach(s=>{if(s&&s.text&&s.text.trim())day.trash.unshift({type:'small',secId,secName:secName||'',text:s.text,done:s.done,ts:Date.now()});});
+      }
+    }
+    if(day.big)delete day.big[secId];
+    if(day.small)delete day.small[secId];
+    if(day.events&&Array.isArray(day.events[secId])){
+      day.events[secId]=day.events[secId].filter(e=>e&&e.time);
+    }
+  });
+  Object.keys(ST.memorizationLog||{}).forEach(k=>{
+    if(ST.memorizationLog[k])delete ST.memorizationLog[k][secId];
+  });
+  _SEC_MARK_LOGS.forEach(name=>{
+    const log=ST[name];if(!log)return;
+    Object.keys(log).forEach(k=>{
+      if(Array.isArray(log[k]))log[k]=log[k].filter(en=>!(en&&en.sec===secId));
+    });
+  });
+}
+// 보관본을 되살린다. 같은 id 가 이미 있으면 덧붙이지 않는다(두 번 눌러도 안전).
+function _secArchiveApply(entry){
+  if(!entry||!entry.sec||!entry.sec.id)return null;
+  const secId=entry.sec.id;
+  const put=(box,pick)=>{
+    Object.keys(box||{}).forEach(k=>{
+      if(!ST.days[k])ST.days[k]={big:{},small:{},trash:[],events:{}};
+      const day=ST.days[k];
+      if(!day.big)day.big={};if(!day.small)day.small={};if(!day.events)day.events={};
+      const tgt=pick(day);
+      const have=new Set(tgt.map(x=>x&&(x.id||x.text)));
+      (box[k]||[]).forEach(x=>{if(!have.has(x&&(x.id||x.text)))tgt.push(x);});
+    });
+  };
+  put(entry.big,day=>{if(!Array.isArray(day.big[secId]))day.big[secId]=[];return day.big[secId];});
+  put(entry.small,day=>{if(!Array.isArray(day.small[secId]))day.small[secId]=[];return day.small[secId];});
+  put(entry.events,day=>{if(!Array.isArray(day.events[secId]))day.events[secId]=[];return day.events[secId];});
+  Object.keys(entry.memo||{}).forEach(k=>{
+    if(!ST.memorizationLog)ST.memorizationLog={};
+    if(!ST.memorizationLog[k])ST.memorizationLog[k]={};
+    if(!Array.isArray(ST.memorizationLog[k][secId]))ST.memorizationLog[k][secId]=[];
+    const tgt=ST.memorizationLog[k][secId];
+    if(tgt.length===0)entry.memo[k].forEach(x=>tgt.push(x));
+  });
+  Object.keys(entry.marks||{}).forEach(name=>{
+    if(!ST[name])ST[name]={};
+    Object.keys(entry.marks[name]||{}).forEach(k=>{
+      if(!Array.isArray(ST[name][k]))ST[name][k]=[];
+      const tgt=ST[name][k];
+      entry.marks[name][k].forEach(en=>{
+        if(!tgt.some(x=>x&&x.sec===secId&&x.ref===en.ref&&x.time===en.time))tgt.push(en);
+      });
+    });
+  });
+  return entry.sec;
+}
+// ══════ 경계선 모델 끝 ══════
 
 let mCur={y:new Date().getFullYear(),m:new Date().getMonth()};
 let wOffset=0; // weeks away from the current real week (0 = this week, -1 = last week, 1 = next week, etc.)
@@ -15995,6 +16360,49 @@ function syncRollDisplays(){
   if(minSel&&minDisp)minDisp.textContent=minSel.value;
 }
 
+// ── 일정 등록창의 시·분 목록 ──
+// 구간에서 + 로 새로 등록할 때는 그 구간의 범위 안에서만 고르게 한다.
+// 기본값은 구간 시작(오늘 그 구간 안이면 지금 시각). 등록하자마자 다른
+// 구간으로 튀어 가는 일이 없어진다.
+// 이미 있는 일정을 고칠 때는 24시간 전부 열어 둔다 — 시각을 바꾸면 그 시각의
+// 구간으로 옮겨 가는 것이 이 앱의 규칙이기 때문(시각이 구간을 정한다).
+let _evRange=null;
+function _evFillMins(cur){
+  const minSel=document.getElementById('eventMinSelect');
+  if(!minSel)return;
+  if(!_evRange){_fillMinOptions(minSel,cur);return;}
+  const hourSel=document.getElementById('eventHourSelect');
+  const h=parseInt(hourSel.value,10)||0;
+  minSel.innerHTML='';
+  _evRange.filter(t=>Math.floor(t/60)===h).map(t=>t%60).sort((a,b)=>a-b)
+    .forEach(m=>{const o=document.createElement('option');o.value=z(m);o.textContent=z(m);minSel.appendChild(o);});
+}
+// prefer: 붙이고 싶은 시각(분). 범위 밖이면 범위 안에서 가장 가까운 값으로.
+function _evSyncRange(prefer){
+  const hourSel=document.getElementById('eventHourSelect');
+  const minSel=document.getElementById('eventMinSelect');
+  if(!hourSel||!minSel)return;
+  const sec=(SECS||[]).find(s=>s.id===_eventModalSecId);
+  _evRange=(_eventModalEditIdx!==null)?null:_secTimeChoices(sec,_timeStep());
+  const keep=(prefer!==null&&prefer!==undefined)
+    ?prefer
+    :((parseInt(hourSel.value,10)||0)*60+(parseInt(minSel.value,10)||0));
+  hourSel.innerHTML='';
+  const hs=_evRange?[...new Set(_evRange.map(t=>Math.floor(t/60)))].sort((a,b)=>a-b)
+                   :[...Array(24).keys()];
+  hs.forEach(h=>{const o=document.createElement('option');o.value=z(h);o.textContent=z(h);hourSel.appendChild(o);});
+  let pick=keep;
+  if(_evRange&&!_evRange.includes(pick)){
+    // 시계는 동그라미라 앞뒤 어느 쪽으로든 가까운 값을 고른다
+    const dist=t=>{const d=(((t-keep)%1440)+1440)%1440;return Math.min(d,1440-d);};
+    pick=_evRange.reduce((b,t)=>dist(t)<dist(b)?t:b,_evRange[0]);
+  }
+  hourSel.value=z(Math.floor(pick/60));
+  _evFillMins(pick%60);
+  minSel.value=z(pick%60);
+  syncRollDisplays();
+}
+
 function openEventModal(secId,editIdx,dateKey){
   const _sp=document.getElementById('eventSecPick');
   if(_sp){_sp.style.display='none';_sp.innerHTML='';}  // 구간 칩은 셀에서 열 때만 쓴다
@@ -16008,16 +16416,13 @@ function openEventModal(secId,editIdx,dateKey){
 
   const hourSel=document.getElementById('eventHourSelect');
   const minSel=document.getElementById('eventMinSelect');
-  hourSel.innerHTML='';
-  for(let h=0;h<24;h++){
-    const opt=document.createElement('option');
-    opt.value=z(h);opt.textContent=z(h);
-    hourSel.appendChild(opt);
-  }
-  // 분 옵션은 설정된 시간 단위(_timeStep)를 따른다. 수정 모드에서 기존
-  // 값이 단위에 안 맞으면 아래 프리필 시점에 그 값을 옵션으로 끼워 넣는다.
-  _fillMinOptions(minSel,null);
-  hourSel.onchange=syncRollDisplays;
+  _evSyncRange(null);
+  hourSel.onchange=()=>{
+    const keep=minSel.value;
+    _evFillMins(null);
+    if([...minSel.options].some(o=>o.value===keep))minSel.value=keep;
+    syncRollDisplays();
+  };
   minSel.onchange=syncRollDisplays;
 
   const timeBtn=document.getElementById('eventTimeToggleBtn');
@@ -16040,9 +16445,12 @@ function openEventModal(secId,editIdx,dateKey){
   } else {
     document.getElementById('eventTextInput').value='';
     _eventRepeat={daily:false,daysOfWeek:[0,1,2,3,4,5,6],weekly:false,weeksOfMonth:[1,2,3,4,5]};
-    setEventTimeToggle(true);
 
     const sec=SECS.find(s=>s.id===secId);
+    // 0분('시간 개념 없음') 구간에는 시각을 붙일 자리가 없다 — 시각 없이 시작한다
+    setEventTimeToggle(!_secNoTime(sec));
+
+    let want=null;
     if(isToday(viewDate)&&isNowWithinSection(sec)){
       // Current moment falls inside THIS section's time range, on
       // today's view — default to "now", rounded up to the next
@@ -16052,18 +16460,14 @@ function openEventModal(secId,editIdx,dateKey){
       const _rst=_timeStep();
       const roundedM=Math.ceil(m/_rst)*_rst;
       if(roundedM===60){h=(h+1)%24;m=0;}else{m=roundedM;}
-      hourSel.value=z(h);
-      minSel.value=z(m);
+      want=h*60+m;
     } else if(sec&&sec.startTime){
       // Any other case (today but a different section, or any other
-      // day entirely) — default to this section's own configured
-      // start time instead. (설정 단위에 없는 분이라도 그대로 보여준다)
-      let[h,m]=sec.startTime.split(':').map(Number);
-      if(_timeStep()===60)m=0; // 1시간 단위: 분 숨김과 일관되게 정시로
-      _fillMinOptions(minSel,m);
-      hourSel.value=z(h);
-      minSel.value=z(m);
+      // day entirely) — default to this section's own start boundary.
+      const a=_t2m(sec.startTime);
+      if(a!==null)want=(_timeStep()===60)?(Math.floor(a/60)*60):a;
     }
+    if(want!==null)_evSyncRange(want);
   }
   // 1시간 단위면 분 칸을 숨기되, 기존 저장값에 분이 남아있으면(수정 모드)
   // 예외적으로 보여줘 값이 사용자 모르게 바뀌는 일을 막는다.
@@ -16148,7 +16552,10 @@ function submitEventModal(){
   const repeat=(dailyOn||weeklyOn)?JSON.parse(JSON.stringify(_eventRepeat)):null;
 
   beforeSave();
-  const secId=_eventModalSecId; // capture before closeEventModal() nulls these out
+  const fromSec=_eventModalSecId; // capture before closeEventModal() nulls these out
+  // 시각이 구간을 정한다 — 시각을 넣거나 바꾸면 그 시각의 구간으로 간다.
+  // 시각이 없으면 계산 근거가 없으니 등록한 구간에 그대로 머문다.
+  const secId=(time&&_secIdForTime(time))||fromSec;
   const editIdx=_eventModalEditIdx;
   // New events are created on whatever date is currently being
   // viewed. Edits write back to the event's actual origin date
@@ -16156,10 +16563,11 @@ function submitEventModal(){
   // NOT necessarily the date currently being viewed.
   const k=_eventModalDateKey||tKey();   // 모달이 연 날짜에 저장 (주간·월간에서 누른 칸)
   const origK=_eventModalOrigDateKey||k;
-  // 수정 중 날짜를 바꿨으면 원래 날짜에서 빼고 새 날짜로 옮긴다
+  // 수정 중에 날짜를 바꿨거나(origK≠k) 시각을 바꿔 구간이 달라졌으면
+  // (fromSec≠secId) 원래 자리에서 빼고 새 자리로 옮긴다.
   let moved=null;
-  if(editIdx!==null&&origK!==k){
-    const src=getEvents(origK,secId);
+  if(editIdx!==null&&(origK!==k||fromSec!==secId)){
+    const src=getEvents(origK,fromSec);
     if(src[editIdx])moved=src.splice(editIdx,1)[0];
   }
   const events=getEvents(k,secId);
@@ -16167,30 +16575,37 @@ function submitEventModal(){
     moved.time=time;moved.text=text;
     if(repeat)moved.repeat=repeat;else delete moved.repeat;
     events.push(moved);
-    ST.days[k].events[secId]=sortEventsByTime(events);
+    ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
     save();closeEventModal();
-    renderSecEvents(secId);refreshTaskViewsLive();
-    showToast('일정을 옮겼어요');
+    renderSecEvents(secId);
+    if(fromSec!==secId)renderSecEvents(fromSec);
+    refreshTaskViewsLive();
+    showToast(origK!==k?'일정을 옮겼어요':'시각에 맞는 구간으로 옮겼어요');
     return;
   }
 
   if(editIdx!==null&&events[editIdx]){
-    // Editing in place — keep its position (no re-sort), just update fields.
+    // Editing in place — 시각 있는 일정은 시간순으로 다시 줄을 세우고,
+    // 시각 없는 일정은 지금 자리를 그대로 지킨다.
     events[editIdx].time=time;
     events[editIdx].text=text;
     if(repeat)events[editIdx].repeat=repeat;else delete events[editIdx].repeat;
+    ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
   } else {
     const newEvent={id:'ev'+Date.now(),time,text};
     if(repeat)newEvent.repeat=repeat;
     events.push(newEvent);
-    ST.days[k].events[secId]=sortEventsByTime(events);
+    ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
   }
   save();
   closeEventModal();
   renderSecEvents(secId);
+  if(fromSec!==secId){
+    renderSecEvents(fromSec);
+    showToast('시각에 맞는 구간에 넣었어요');
+  }
   refreshTaskViewsLive();   // 2·3단의 주간/월간 위젯에도 즉시 반영
 }
-
 // ── 매일/매주 repeat buttons ──
 const DOW_LABELS=['일','월','화','수','목','금','토'];
 const WOM_LABELS=['1st','2nd','3rd','4th','5th'];
@@ -17172,6 +17587,10 @@ function _openCellEventRepaint(){
   _renderSecPick('eventSecPick',ctx.secId,x=>{
     ctx.secId=x;
     _eventModalSecId=x;              // 저장 대상 구간 변경
+    // 구간을 바꾸면 고를 수 있는 시각도 그 구간의 범위로 바뀐다
+    const sx=(SECS||[]).find(s=>s.id===x);
+    setEventTimeToggle(!_secNoTime(sx));
+    _evSyncRange(sx&&sx.startTime?_t2m(sx.startTime):null);
     _openCellEventRepaint();
   });
 }
@@ -18185,6 +18604,11 @@ function renderSectionEditor(){
   const starSet=new Set(ST.settings.starSecs||['am','pm','night']);
 
   SECS.forEach((sec,i)=>{
+    // ── 이 구간 위의 경계선 ──
+    // 위 구간의 마침이자 이 구간의 시작. 고를 수 있는 값이 앞뒤 경계 사이로
+    // 묶여 있어서 겹치게 넣는 것 자체가 불가능하다.
+    list.appendChild(_makeBoundaryRow(i));
+
     const wrap=document.createElement('div');
     wrap.className='sec-edit-wrap';
 
@@ -18192,12 +18616,22 @@ function renderSectionEditor(){
     row.className='sec-edit-row';
     row.dataset.idx=i;
 
-    // drag handle — reorders the whole list via mouse OR touch
+    // ⠿ 손잡이 — 직접 추가한 구간만 순서를 옮길 수 있다. 기본 6개는 자리를
+    // 지킨다. 경계는 '자리'가 가지므로, 옮긴 구간은 그 자리의 시각을 받는다.
+    // 기본 구간에는 같은 크기의 빈 자리를 둬서 아래 줄들과 세로줄이 맞게 한다.
     const dragHandle=document.createElement('span');
     dragHandle.className='sec-edit-btn sec-edit-drag';
-    dragHandle.textContent='⠿';dragHandle.title='드래그해서 순서 변경';
-    dragHandle.style.cursor='grab';
+    dragHandle.textContent='⠿';
     dragHandle.setAttribute('data-lv','mp');   // 이지: 순서 바꾸기 없음
+    const canDrag=_secIsCustom(sec);
+    if(canDrag){
+      dragHandle.title='드래그해서 순서 변경';
+      dragHandle.style.cursor='grab';
+    }else{
+      dragHandle.classList.add('sec-edit-drag-off');
+      dragHandle.style.visibility='hidden';
+      dragHandle.style.cursor='default';
+    }
 
     // ★ checkbox — whether this section is included in the ★ preset
     const starLabel=document.createElement('label');
@@ -18232,13 +18666,35 @@ function renderSectionEditor(){
     nameInp.maxLength=6;
     nameInp.onchange=()=>updateSectionField(i,'name',nameInp.value.trim()||sec.name);
 
-    // delete (only if more than 1 section remains)
+    // 삭제 × 는 직접 추가한 구간에만 준다.
+    // 기본 6개(새벽·오전·점심·오후·저녁·밤)는 지울 수 없다 — 지우면 하루의
+    // 시간 축에 구멍이 생기고, 되돌릴 방법도 마땅치 않다.
+    // 줄 배치 — ⠿(커스텀만) · 이름 · 색 · ★ · ×(커스텀만).
+    // 이름을 맨 왼쪽으로 보내고 색·★ 를 오른쪽으로 모았다. 왼쪽에 작은 것들이
+    // 몰려 있으면 눈이 먼저 그쪽에 걸려서, 정작 읽어야 할 이름이 뒤로 밀린다.
+    row.append(dragHandle,nameInp);
+    // 0분 구간이면 회색으로 '시간 개념 없음' 만 적는다 (체크박스는 없앴다 — 자동이다)
+    if(_secNoTime(sec)){
+      const nt=document.createElement('span');
+      nt.className='sec-edit-notime-note';
+      nt.textContent='시간 개념 없음';
+      row.appendChild(nt);
+    }
+    row.append(colorWrap,starLabel);
+    // 삭제 × 도 커스텀 구간에만 준다. 기본 구간에는 ⠿ 와 같은 방식으로 같은
+    // 크기의 빈 자리를 둬서, 색·★ 가 모든 줄에서 같은 세로줄에 서게 한다.
     const delBtn=document.createElement('button');
-    delBtn.className='sec-edit-btn danger';delBtn.textContent='×';delBtn.title='삭제';
-    delBtn.onclick=()=>deleteSection(i);
-    if(SECS.length<=1){delBtn.style.opacity='.25';delBtn.disabled=true;}
-
-    row.append(dragHandle,starLabel,colorWrap,nameInp,delBtn);
+    delBtn.className='sec-edit-btn danger';delBtn.textContent='×';
+    if(_secIsCustom(sec)){
+      delBtn.title='삭제';
+      delBtn.onclick=()=>deleteSection(i);
+      if(SECS.length<=1){delBtn.style.opacity='.25';delBtn.disabled=true;}
+    }else{
+      delBtn.classList.add('sec-edit-del-off');
+      delBtn.style.visibility='hidden';
+      delBtn.disabled=true;
+    }
+    row.appendChild(delBtn);
     wrap.appendChild(row);
 
     // Second row: lock icon + A/★/+- checkboxes — when checked, this
@@ -18275,47 +18731,8 @@ function renderSectionEditor(){
     excludeRow.appendChild(makeExcludeChk('event','<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>',true));
     wrap.appendChild(excludeRow);
 
-    // Third row: start/end time range for this section. Used to match
-    // calendar events to a section, and shown next to the section name
-    // on the D view.
-    const timeRow=document.createElement('div');
-    timeRow.className='sec-edit-time-row';
-    const timeLabel=document.createElement('span');
-    timeLabel.className='sec-edit-time-label';
-    timeLabel.innerHTML=`<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>`;
-    // 시간 설정 단위(_timeStep)를 따르는 롤링 픽커 — 1시간 단위면 분 칸이 숨는다
-    const startRoll=_makeTimeRollPair(sec.startTime||'09:00',v=>updateSectionField(i,'startTime',v),true);
-    const timeSep=document.createElement('span');
-    timeSep.className='sec-edit-time-sep';timeSep.textContent='–';
-    const endRoll=_makeTimeRollPair(sec.endTime||'18:00',v=>updateSectionField(i,'endTime',v),true);
-    timeRow.append(timeLabel,startRoll,timeSep,endRoll);
-    // '시간 개념 없음' — 직접 추가한 구간에만 준다. 켜면 시각 픽커가 사라지고
-    // 그 구간은 시각으로 판정하는 모든 곳(알림·일정 배치·말씀 반응 기록)에서 빠진다.
-    if(_secIsCustom(sec)){
-      const noTimeLbl=document.createElement('label');
-      noTimeLbl.className='sec-edit-notime';
-      noTimeLbl.title='시간 개념 없음';
-      const noTimeInp=document.createElement('input');
-      noTimeInp.type='checkbox';
-      noTimeInp.checked=_secNoTime(sec);
-      noTimeInp.onchange=()=>updateSectionField(i,'noTime',noTimeInp.checked);
-      const noTimeGlyph=document.createElement('span');
-      noTimeGlyph.className='sec-edit-notime-glyph';
-      noTimeGlyph.innerHTML='<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M5 15 15 5"/></svg>';
-      noTimeLbl.append(noTimeInp,noTimeGlyph);
-      timeRow.appendChild(noTimeLbl);
-      // 켜져 있으면 시각 픽커는 감춘다 (값은 그대로 남아 되돌릴 수 있다)
-      const off=_secNoTime(sec);
-      [startRoll,timeSep,endRoll].forEach(el=>{el.style.display=off?'none':'';});
-      if(off){
-        const note=document.createElement('span');
-        note.className='sec-edit-notime-note';
-        note.textContent='시간 개념 없음';
-        timeRow.insertBefore(note,noTimeLbl);
-      }
-    }
-    wrap.appendChild(timeRow);
-
+    // 시각은 이 구간 안에 두지 않는다 — 구간과 구간 사이의 경계선(위에서
+    // 그린 .sec-bound-row)이 위 구간의 마침이자 아래 구간의 시작이다.
     // Fourth row: per-section notification title phrase. Empty → the
     // shared 구간 알림 제목 문구 (settings.notify.sectionSuffix) is used;
     // filled → this phrase wins for this section only.
@@ -18338,9 +18755,107 @@ function renderSectionEditor(){
 
     list.appendChild(wrap);
 
-    attachSecRowDrag(wrap,dragHandle,list);
+    if(canDrag)attachSecRowDrag(wrap,dragHandle,list);
   });
+
+  // 맨 아래 — 마지막 구간의 마침은 첫 경계로 돌아간다 (하루는 동그라미)
+  const back=document.createElement('div');
+  back.className='sec-bound-back';
+  const backRule=document.createElement('span');backRule.className='sec-bound-rule';
+  const backNote=document.createElement('span');
+  backNote.className='sec-bound-back-note';
+  backNote.textContent='↑ '+_secFirstBoundary()+' 로 돌아가요';
+  back.append(backRule,backNote);
+  list.appendChild(back);
+
+  const hint=document.createElement('div');
+  hint.className='sec-bound-hint';
+  hint.setAttribute('data-lv','mp');
+  hint.textContent='시각은 구간 사이의 경계선 하나로 정해요. 위 경계가 시작, 아래 경계가 마침이에요. 구간을 끌어 옮기면 그 틈의 시각을 받아 ‘시간 개념 없음’ 으로 들어가요 — 옆 구간들의 시각은 그대로예요. 위아래 경계가 같아지면 그 구간은 ‘시간 개념 없음’ 이 돼요.';
+  list.appendChild(hint);
+
   _lvApplyIn(list);
+  renderSecArchive();
+}
+
+// 경계선 한 줄 — 얇은 선 위에 시각 픽커 하나.
+function _makeBoundaryRow(i){
+  const row=document.createElement('div');
+  row.className='sec-bound-row';
+  const pick=_makeBoundaryRoll(i);
+  const rule=document.createElement('span');rule.className='sec-bound-rule';
+  row.append(pick,rule);
+  return row;
+}
+
+// 경계 하나짜리 시·분 픽커. 목록이 앞뒤 경계 사이 값으로만 채워지기 때문에
+// 겹치거나 순서가 뒤집히게 넣는 것이 애초에 불가능하다.
+// (일반 _makeTimeRollPair 와 달리 시 목록도 범위 안의 시간만 담는다)
+function _makeBoundaryRoll(i){
+  const outer=document.createElement('span');
+  outer.className='sec-bound-pick';
+  const allow=_secBoundaryChoices(SECS,i,_timeStep());
+  const cur=_t2m(SECS[i].startTime);
+  let sel=(cur!==null&&allow.includes(cur))?cur:allow[0];
+
+  const mk=()=>{
+    const w=document.createElement('span');w.className='event-roll-wrap';
+    w.style.cssText='width:46px;height:30px;';
+    const s=document.createElement('select');s.className='event-roll-select';
+    const d=document.createElement('span');d.className='event-roll-display';
+    d.style.fontSize='13px';
+    w.append(s,d);return{w,s,d};
+  };
+  const H=mk(),M=mk();
+  const colon=document.createElement('span');
+  colon.className='event-roll-colon';colon.textContent=':';colon.style.fontSize='13px';
+
+  const hours=[...new Set(allow.map(t=>Math.floor(t/60)))].sort((a,b)=>a-b);
+  hours.forEach(h=>{const o=document.createElement('option');o.value=z(h);o.textContent=z(h);H.s.appendChild(o);});
+  const fillMin=h=>{
+    M.s.innerHTML='';
+    allow.filter(t=>Math.floor(t/60)===h).map(t=>t%60).sort((a,b)=>a-b)
+      .forEach(m=>{const o=document.createElement('option');o.value=z(m);o.textContent=z(m);M.s.appendChild(o);});
+  };
+  const paint=()=>{
+    H.s.value=z(Math.floor(sel/60));
+    fillMin(Math.floor(sel/60));
+    M.s.value=z(sel%60);
+    H.d.textContent=H.s.value;M.d.textContent=M.s.value;
+    // 1시간 단위이고 분이 00이면 분 칸을 숨긴다 (다른 픽커와 같은 규칙)
+    const hide=_timeStep()===60&&M.s.value==='00';
+    M.w.style.display=hide?'none':'';
+    colon.style.display=hide?'none':'';
+  };
+  paint();
+
+  H.s.onchange=()=>{
+    const h=parseInt(H.s.value,10);
+    const mins=allow.filter(t=>Math.floor(t/60)===h);
+    // 시를 바꾸면 그 시간대에서 지금 분과 가장 가까운 값으로 붙인다
+    const want=sel%60;
+    sel=mins.reduce((best,t)=>Math.abs((t%60)-want)<Math.abs((best%60)-want)?t:best,mins[0]);
+    paint();
+    updateSectionBoundary(i,_m2t(sel));
+  };
+  M.s.onchange=()=>{
+    sel=parseInt(H.s.value,10)*60+parseInt(M.s.value,10);
+    paint();
+    updateSectionBoundary(i,_m2t(sel));
+  };
+  outer.append(H.w,colon,M.w);
+  return outer;
+}
+
+// 경계를 옮긴다 — 정규화 → 시각 있는 일정 재배치 → 다시 그리기.
+function updateSectionBoundary(i,hhmm){
+  if(!SECS[i])return;
+  beforeSave();
+  SECS[i].startTime=hhmm;
+  const moved=_secsCommit();
+  renderSectionEditor();
+  renderToday();
+  if(moved)showToast(`시각에 맞춰 일정 ${moved}개를 옮겼어요`);
 }
 
 function toggleStarSection(secId,checked){
@@ -18676,16 +19191,19 @@ function attachSecRowDrag(wrap,handle,listEl){
 
     const finalWraps=getWraps();
     const newOrder=finalWraps.map(w=>parseInt(w.querySelector('.sec-edit-row').dataset.idx));
-    // newOrder currently references OLD indices in NEW order — reorder SECS accordingly
-    const reordered=newOrder.map(oldIdx=>SECS[oldIdx]);
+    // newOrder 는 '옛 자리 번호를 새 순서대로' 늘어놓은 것 — 여기서 옮긴 구간이
+    // 어디에서 어디로 갔는지만 뽑아 _secMoveTo() 에 넘긴다. 시각을 어떻게
+    // 다루는지는 그 함수 한 곳에 모여 있다 (틈의 경계를 복제 = 0분으로 들어감).
+    const from=parseInt(wrap.querySelector('.sec-edit-row').dataset.idx,10);
+    const to=newOrder.indexOf(from);
+    if(to<0||to===from){renderSectionEditor();return;}   // 제자리에 놓았으면 아무것도 건드리지 않는다
     beforeSave();
-    SECS.length=0;SECS.push(...reordered);
-    ST.secs=SECS;
-    save();
+    _secMoveTo(SECS,from,to);
+    const moved=_secsCommit();
     renderSectionEditor();
     renderToday();
+    if(moved)showToast(`시각에 맞춰 일정 ${moved}개를 옮겼어요`);
   }
-
   handle.addEventListener('mousedown',e=>{e.preventDefault();onDown(e.clientY);
     const mm=ev=>onMove(ev.clientY);
     const mu=()=>{onUp();document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
@@ -18706,44 +19224,151 @@ function addNewSection(){
   const usedColors=new Set(SECS.map(s=>s.color));
   const color=SEC_COLOR_PRESETS.find(c=>!usedColors.has(c))||SEC_COLOR_PRESETS[SECS.length%SEC_COLOR_PRESETS.length];
   const newId='sec'+Date.now();
-  SECS.push({id:newId,name:'새 구간',color,def:false,startTime:'09:00',endTime:'18:00'});
-  ST.secs=SECS;
-  save();
+  // 새 구간은 맨 아래에, 위아래 경계가 같은 값(0분)으로 태어난다 — 하루의
+  // 끝에 붙으므로 다른 구간의 시간을 뺏지 않는다. 경계 하나를 위로 끌어
+  // 올리면 그때부터 시간을 가진다.
+  // 다만 구간이 하나뿐이면 모든 경계가 같아져 '0분'과 '하루 전체'를 구분할
+  // 수 없다(안전장치 ①). 그때만 예외로 한 칸(시간 단위)을 떼어 준다.
+  const first=_secFirstBoundary();
+  const lone=SECS.length<=1;
+  const start=lone?_m2t((_t2m(first)||540)-_timeStep()):first;
+  SECS.push({id:newId,name:'새 구간',color,def:false,startTime:start,endTime:start});
+  _secsCommit(false);
   renderSectionEditor();
   renderToday();
+  if(lone)showToast('구간이 하나뿐이라 새 구간에 시간을 조금 떼어 줬어요');
 }
 
+// ── 커스텀 구간 지우기 ──
+// 지울 때 '보관' 과 '깨끗이 지우기' 중에서 고른다.
+//   보관       → 그 구간에 있던 것들을 통째로 떠서 두었다가 나중에 되살린다
+//   깨끗이     → 할일은 휴지통으로(되돌릴 그물), 나머지는 지운다
+// 시각 있는 일정은 어느 쪽이든 시각에 맞는 구간으로 자동 재배치된다.
+let _secDelIdx=null;
 function deleteSection(i){
-  if(SECS.length<=1)return;
   const sec=SECS[i];
-  if(!confirm(`"${sec.name}" 구간을 삭제할까요? 이 구간에 있는 할일은 휴지통으로 이동해요.`))return;
-  beforeSave();
-
-  // Move any existing tasks (across all days) for this section into
-  // that day's trash, so nothing is silently lost.
-  Object.keys(ST.days).forEach(dayKey=>{
-    const day=ST.days[dayKey];
-    if(!day)return;
-    const bigs=day.big?.[sec.id]||[];
-    const smalls=day.small?.[sec.id]||[];
-    if(bigs.length||smalls.length){
-      if(!day.trash)day.trash=[];
-      bigs.forEach(b=>{if(b.text?.trim())day.trash.unshift({type:'big',secId:sec.id,secName:sec.name,text:b.text,done:b.done,ts:Date.now()});});
-      smalls.forEach(s=>{if(s.text?.trim())day.trash.unshift({type:'small',secId:sec.id,secName:sec.name,text:s.text,done:s.done,ts:Date.now()});});
-    }
-    if(day.big)delete day.big[sec.id];
-    if(day.small)delete day.small[sec.id];
+  if(!sec)return;
+  if(SECS.length<=1){showToast('구간이 하나뿐이라 지울 수 없어요');return;}
+  if(!_secIsCustom(sec)){showToast('기본 구간은 지울 수 없어요');return;}
+  _secDelIdx=i;
+  const c=_secDataCount(sec.id);
+  const parts=[];
+  if(c.todo)parts.push(`할일 ${c.todo}개`);
+  if(c.event)parts.push(`시각 없는 일정 ${c.event}개`);
+  if(c.mark)parts.push(`말씀 반응 ${c.mark}개`);
+  document.getElementById('secDelName').textContent=`"${sec.name}" 구간을 지울까요?`;
+  document.getElementById('secDelDesc').textContent=
+    parts.length?`이 구간에 ${parts.join(' · ')} 이 있어요.`:'이 구간에는 담긴 것이 없어요.';
+  document.getElementById('secDelOverlay').style.display='block';
+  document.getElementById('secDelModal').style.display='block';
+}
+function closeSecDelModal(){
+  document.getElementById('secDelOverlay').style.display='none';
+  document.getElementById('secDelModal').style.display='none';
+  _secDelIdx=null;
+}
+// 구간에 담긴 것의 개수 — 확인창에 무엇이 없어지는지 그대로 보여주기 위해서다
+function _secDataCount(secId){
+  let todo=0,event=0,mark=0;
+  Object.keys(ST.days||{}).forEach(k=>{
+    const day=ST.days[k];if(!day)return;
+    todo+=((day.big&&day.big[secId])||[]).filter(b=>b&&b.text&&b.text.trim()).length;
+    todo+=((day.small&&day.small[secId])||[]).filter(b=>b&&b.text&&b.text.trim()).length;
+    event+=((day.events&&day.events[secId])||[]).filter(e=>e&&!e.time).length;
   });
-
+  Object.keys(ST.memorizationLog||{}).forEach(k=>{
+    mark+=((ST.memorizationLog[k]||{})[secId]||[]).length;
+  });
+  _SEC_MARK_LOGS.forEach(name=>{
+    const log=ST[name];if(!log)return;
+    Object.keys(log).forEach(k=>{mark+=(log[k]||[]).filter(en=>en&&en.sec===secId).length;});
+  });
+  return{todo,event,mark};
+}
+function secDelDo(mode){
+  const i=_secDelIdx;
+  const sec=(i!==null)?SECS[i]:null;
+  if(!sec){closeSecDelModal();return;}
+  beforeSave();
+  if(mode==='archive'){
+    const entry=_secArchiveCapture(sec.id,sec);
+    if(!Array.isArray(ST.secArchive))ST.secArchive=[];
+    ST.secArchive.unshift(entry);
+    // 보관함은 무한정 쌓지 않는다 — 오래된 것부터 밀려난다
+    if(ST.secArchive.length>20)ST.secArchive.length=20;
+    _secStripData(sec.id,false);
+  }else{
+    _secStripData(sec.id,true,sec.name);   // 할일은 휴지통으로
+  }
   SECS.splice(i,1);
-  ST.secs=SECS;
   ST.vis=(ST.vis||[]).filter(id=>id!==sec.id);
   ST.collapsed=(ST.collapsed||[]).filter(id=>id!==sec.id);
-
-  save();
+  ST.settings.starSecs=(ST.settings.starSecs||[]).filter(id=>id!==sec.id);
+  const moved=_secsCommit();
+  closeSecDelModal();
   renderSectionEditor();
   renderToday();
   updateTrashBadge();
+  showToast(mode==='archive'
+    ?`"${sec.name}" 구간을 보관했어요`
+    :`"${sec.name}" 구간을 지웠어요${moved?` (일정 ${moved}개는 시각에 맞는 구간으로)`:''}`);
+}
+
+// ── 보관해 둔 구간 되살리기 ──
+function renderSecArchive(){
+  const box=document.getElementById('secArchiveList');
+  if(!box)return;
+  box.innerHTML='';
+  const arc=Array.isArray(ST.secArchive)?ST.secArchive:[];
+  if(!arc.length)return;
+  const head=document.createElement('div');
+  head.className='sec-arc-head';head.textContent='보관해 둔 구간 되살리기';
+  box.appendChild(head);
+  arc.forEach(entry=>{
+    const chip=document.createElement('button');
+    chip.className='preset-chip';chip.type='button';
+    chip.onclick=()=>restoreSecArchive(entry.id);
+    const dot=document.createElement('span');dot.className='preset-chip-dots';
+    const d=document.createElement('span');d.className='preset-chip-dot';
+    d.style.background=(entry.sec&&entry.sec.color)||'var(--tx3)';
+    dot.appendChild(d);
+    const lab=document.createElement('span');
+    lab.textContent=(entry.sec&&entry.sec.name)||'구간';
+    chip.append(dot,lab);
+    const del=document.createElement('span');del.className='preset-chip-del';del.textContent='×';
+    del.onclick=e=>{e.stopPropagation();dropSecArchive(entry.id);};
+    chip.appendChild(del);
+    box.appendChild(chip);
+  });
+}
+function restoreSecArchive(id){
+  const arc=Array.isArray(ST.secArchive)?ST.secArchive:[];
+  const at=arc.findIndex(e=>e&&e.id===id);
+  if(at<0)return;
+  const entry=arc[at];
+  if(SECS.some(s=>s.id===entry.sec.id)){showToast('같은 구간이 이미 있어요');return;}
+  beforeSave();
+  // 되살린 구간은 맨 아래에 0분으로 돌아온다 — 다른 구간의 시간을 뺏지 않는다.
+  const sec=JSON.parse(JSON.stringify(entry.sec));
+  sec.startTime=_secFirstBoundary();sec.endTime=sec.startTime;
+  SECS.push(sec);
+  _secArchiveApply(entry);
+  ST.secArchive.splice(at,1);
+  _secsCommit();
+  renderSectionEditor();
+  renderToday();
+  showToast(`"${sec.name}" 구간을 되살렸어요 (시간은 아직 없어요)`);
+}
+function dropSecArchive(id){
+  const arc=Array.isArray(ST.secArchive)?ST.secArchive:[];
+  const entry=arc.find(e=>e&&e.id===id);
+  if(!entry)return;
+  appConfirm(`보관해 둔 "${(entry.sec&&entry.sec.name)||'구간'}" 을 영구 삭제할까요? 되돌릴 수 없어요.`,()=>{
+    beforeSave();
+    ST.secArchive=arc.filter(e=>e&&e.id!==id);
+    save();
+    renderSecArchive();
+  });
 }
 
 // ── Full section-configuration presets (name + color + order + count
@@ -18819,10 +19444,12 @@ function applySectionConfig(name){
   ST.collapsed=(ST.collapsed||[]).filter(id=>validIds.has(id));
   if(ST.vis.length===0)ST.vis=SECS.slice(0,Math.min(3,SECS.length)).map(s=>s.id);
 
-  save();
+  // 예전 구성에는 겹치는 시각이 들어 있을 수 있다 — 경계선 하나짜리로 정리하고
+  // 시각 있는 일정을 새 구간에 다시 놓는다.
+  const moved=_secsCommit();
   renderSettingsPanel();
   renderToday();
-  showToast(`"${name}" 구성을 적용했어요`);
+  showToast(`"${name}" 구성을 적용했어요${moved?` (일정 ${moved}개 재배치)`:''}`);
 }
 
 function deleteSectionConfig(name){
@@ -18839,6 +19466,7 @@ function exportBackup(){
     exportedAt:new Date().toISOString(),
     app:'BLOCK7',
     secs:SECS,
+    secArchive:ST.secArchive||[],   // 보관해 둔 구간도 함께 (되살릴 수 있게)
     settings:ST.settings,
     days:ST.days,
     vis:ST.vis,
@@ -18902,11 +19530,14 @@ function importBackup(file){
       if(data.secs&&Array.isArray(data.secs)&&data.secs.length>0){
         SECS=data.secs;ST.secs=SECS;
       }
+      if(Array.isArray(data.secArchive))ST.secArchive=data.secArchive;
       if(data.settings)Object.assign(ST.settings,data.settings);
       if(data.days)ST.days=data.days;
       if(data.vis)ST.vis=data.vis;
       if(data.collapsed)ST.collapsed=data.collapsed;
-      save();
+      // 옛 백업에는 겹치는 시각이 들어 있을 수 있다 — 경계선 하나짜리로
+      // 정리하고, 시각 있는 일정을 그 시각의 구간에 다시 놓는다.
+      _secsCommit();
 
       renderSettingsPanel();
       renderToday();
@@ -20648,8 +21279,12 @@ function applyRemoteState(remote){
   ST.contacts=Array.isArray(remote.contacts)?remote.contacts:[];
   if(remote.secs&&Array.isArray(remote.secs)&&remote.secs.length>0){
     SECS=remote.secs;
+    // 옛 버전 기기가 보낸 구간에는 겹치는 시각이 남아 있을 수 있다 —
+    // 받자마자 경계선 하나짜리로 정리한다 (마침은 늘 다음 구간의 시작).
+    _secNormalizeTimes(SECS);
     ST.secs=SECS;
   }
+  if(Array.isArray(remote.secArchive))ST.secArchive=remote.secArchive;
   if(remote.settings){
     ST.settings=Object.assign({},ST.settings,remote.settings);
   }
