@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0807-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0810-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -183,7 +183,7 @@ header{
    pointer-events:none 이라 제스처를 막지 않는다. */
 /* 그레인 = 미세 노이즈(overlay) + 거친 종이결(soft-light) 2겹.
    ::before 는 비네트라 가장자리가 살짝 가라앉아 본문이 떠 보인다. */
-#verseFull::after,#verseGrid::after{
+#verseFull::after,#verseGrid::after,.vc-body::after{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:9;
   opacity:var(--vf-grain,0);mix-blend-mode:overlay;
   background-image:
@@ -191,7 +191,7 @@ header{
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.14' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23b)' opacity='.7'/%3E%3C/svg%3E");
   background-size:140px 140px,300px 300px;
 }
-#verseFull::before,#verseGrid::before{
+#verseFull::before,#verseGrid::before,.vc-body::before{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:8;
   opacity:var(--vf-vig,0);
   background:radial-gradient(120% 85% at 50% 42%,transparent 42%,rgba(0,0,0,.55) 100%);
@@ -261,7 +261,8 @@ header{
 .vf-home:active{opacity:.5;}
 .vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);
   z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;}
+  overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;
+  align-items:center;justify-content:center;}
 /* 반응 토스트(좋아요·암송) — 심장이 뛰듯 두 번 두근거린 뒤 자리를 잡는다.
    가운데 정렬을 translate 로 잡고 있어서 keyframe 마다 translate 를 같이 써야
    한다 — scale 만 쓰면 애니메이션 도중 화면 중앙에서 벗어난다. */
@@ -1935,6 +1936,67 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .rp-mgrid-sized .rp-mcg .mcc{min-height:0;}
 /* 말씀 목록 위젯: 높이 제한 + 내부 스크롤 */
 .vl-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+/* ══ 말씀카드 위젯 — 전체화면 카드를 위젯 안에 그대로 옮겨 놓은 것 ══
+   테마 값(--vf-*)은 카드마다 자기 요소에 직접 갖는다. 전체화면은 화면 전체에
+   한 벌만 칠하면 되지만, 카드는 여러 개가 서로 다른 테마로 동시에 떠 있다. */
+.vc-head{cursor:grab;touch-action:none;}
+.vc-head-slot{width:22px;flex-shrink:0;display:flex;align-items:center;}
+.vc-head-slot.right{justify-content:flex-end;}
+.vc-head-ic{display:flex;align-items:center;justify-content:center;color:var(--tx2);}
+.vc-icbtn{background:none;border:none;padding:2px;margin:0;cursor:pointer;color:var(--tx3);
+  line-height:0;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;}
+.vc-icbtn:hover{color:var(--ac);}
+.vc-body{
+  position:relative;border-radius:8px;overflow:hidden;
+  background:var(--vf-bgimg,var(--bg));
+  display:flex;flex-direction:column;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+  transition:opacity .16s;
+}
+.vc-body.vc-fade{opacity:0;}
+.vc-inner{
+  flex:1;min-height:0;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:center;
+  padding:14px 14px 4px;text-align:center;overflow:hidden;
+}
+.vc-text{width:100%;color:var(--vf-tx,var(--tx));line-height:1.85;font-weight:var(--vf-fw,300);
+  letter-spacing:var(--vf-ls,0);font-family:var(--vf-font,inherit);word-break:keep-all;}
+.vc-ref{margin:9px auto 0;width:fit-content;font-size:10px;color:var(--vf-tx3,var(--tx3));
+  font-family:var(--vf-reffont,'IBM Plex Mono',monospace);letter-spacing:.06em;flex-shrink:0;cursor:pointer;}
+.vc-bottom{
+  position:relative;z-index:3;box-sizing:border-box;
+  display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 12px 10px;
+}
+.vc-meta{flex:1;min-width:0;text-align:left;}
+.vc-cat{font-size:11px;font-weight:700;color:var(--vf-tx,var(--tx));font-family:var(--vf-font,inherit);
+  margin-bottom:2px;width:fit-content;max-width:100%;cursor:pointer;}
+.vc-topic{font-size:10px;font-weight:300;color:var(--vf-tx2,var(--tx2));font-family:var(--vf-font,inherit);
+  line-height:1.5;margin-bottom:3px;width:fit-content;max-width:100%;cursor:pointer;}
+.vc-tag{font-size:10px;color:var(--vf-ac,var(--ac));line-height:1.45;word-break:keep-all;}
+.vc-cat:active,.vc-topic:active,.vc-tagchip:active{opacity:.5;}
+.vc-tagchip{cursor:pointer;}
+/* 전체화면은 반응 버튼을 세로로 쌓지만, 위젯에서는 그러면 카드 높이의 3/4을
+   버튼이 먹어 본문이 한 줄만 남는다. 카드에서는 가로로 눕힌다 (자리는 그대로 우하단). */
+.vc-actions{display:flex;flex-direction:row;gap:9px;align-items:flex-end;flex-shrink:0;}
+.vc-act{background:none;border:none;padding:0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  color:var(--vf-tx2,var(--tx2));-webkit-tap-highlight-color:transparent;transition:transform .12s;}
+.vc-act:active{transform:scale(.88);}
+.vc-act.pop{animation:vfPop .32s ease;}
+.vc-act svg{width:16px;height:16px;display:block;}
+.vc-act .ic-fill{display:none;}
+.vc-act.on .ic-out{display:none;}
+.vc-act.on .ic-fill{display:block;}
+.vc-cnt{font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--vf-tx3,var(--tx3));line-height:1;}
+.vc-act-like{color:var(--sun-red);}
+.vc-empty{font-size:11px;color:var(--vf-tx3,var(--tx3));text-align:center;padding:26px 10px;}
+/* 카드 설정 팝업의 테마 칩 */
+.vc-theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+/* sticky 제목줄은 "팝업 안쪽 여백의 위 끝"에 달라붙는다. 팝업에 위쪽 여백이
+   있으면 제목줄이 그만큼 아래로 내려가 붙는데, 뒤따르는 내용은 원래 자리에
+   그대로 있어서 제목 아래로 파고든다. 위쪽 여백을 제목줄에 넘겨 어긋남을 없앤다. */
+#vcSetModal{padding-top:0;}
+#vcSetModal .modal-head{margin-top:0;padding-top:20px;}
 
 
 ::-webkit-scrollbar{width:0;height:0;}
@@ -2418,7 +2480,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0807-4";
+const APP_VERSION = "v. 26-0810-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3140,6 +3202,22 @@ window._fbScriptsReady=new Promise(resolve=>{
             <button class="preset-btn" id="setVWRefSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',2)">2</button>
             <button class="preset-btn" id="setVWRefSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',3)">3</button>
           </div>
+        </div>
+
+        <!-- 말씀카드 위젯 하단 좌·우에 무엇을 보여줄지 -->
+        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">말씀카드에서 보여줄 항목</div>
+        <div class="settings-row-desc" style="margin-bottom:6px;">좌하단 — 누르면 그 갈래의 타일뷰로 들어가요.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="preset-btn on" id="setVerseCardCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardCat',this.classList.toggle('on'))">대분류</button>
+          <button class="preset-btn on" id="setVerseCardTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardTopic',this.classList.toggle('on'))">소주제</button>
+          <button class="preset-btn on" id="setVerseCardTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardTag',this.classList.toggle('on'))">태그</button>
+        </div>
+        <div class="settings-row-desc" style="margin:10px 0 6px;">우하단 — 전체화면과 같은 반응 버튼이에요. 공유는 늘 보여요.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="preset-btn on" id="setVerseCardLike" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardLike',this.classList.toggle('on'))">좋아요</button>
+          <button class="preset-btn on" id="setVerseCardMem" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardMem',this.classList.toggle('on'))">암송</button>
+          <button class="preset-btn on" id="setVerseCardDeeper" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardDeeper',this.classList.toggle('on'))">Deeper</button>
+          <button class="preset-btn on" id="setVerseCardEven" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardEven',this.classList.toggle('on'))">Even</button>
         </div>
 
       </div>
@@ -3873,6 +3951,30 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div id="rpConfigList"></div>
 </div>
 
+<!-- 위젯 추가 + 버튼 메뉴 -->
+<div class="task-menu-overlay" id="rpAddMenuOverlay" style="display:none;z-index:4290;" onclick="closeRpAddMenu()"></div>
+<div class="task-menu" id="rpAddMenu" style="display:none;z-index:4295;">
+  <div class="task-menu-item" onclick="rpAddMenuPick('card')">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/><line x1="6.5" y1="8" x2="13.5" y2="8"/><line x1="6.5" y1="12" x2="11" y2="12"/></svg></span>말씀카드
+  </div>
+  <div class="task-menu-item" onclick="rpAddMenuPick('config')">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg></span>다른 위젯…
+  </div>
+</div>
+
+<!-- 말씀카드 설정 (위젯 하나하나마다 따로) -->
+<div class="event-modal-overlay" id="vcSetOverlay" style="display:none;z-index:4320;" onclick="closeVcSettings()"></div>
+<div class="event-modal" id="vcSetModal" style="display:none;z-index:4330;width:380px;max-width:92vw;max-height:84vh;overflow-y:auto;">
+  <div class="modal-head">
+    <span class="modal-head-gap"></span>
+    <div class="event-modal-title" style="margin:0;flex:1;">말씀카드 설정</div>
+    <button class="modal-x modal-x-inline" onclick="closeVcSettings()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+  <div id="vcSetBody"></div>
+</div>
+
 <!-- 알림 제목 커스텀 문구 칩 롱터치/우클릭 메뉴 (수정/삭제) -->
 <div class="task-menu-overlay" id="sfxMenuOverlay" style="display:none;z-index:4420;" onclick="closeSfxMenu()"></div>
 <div class="task-menu" id="sfxMenu" style="display:none;z-index:4430;">
@@ -3912,7 +4014,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 말씀 전체 화면 보기 — 릴스형 레이아웃
      중앙: 본문 / 하단 좌측: 대분류·소주제·태그 / 하단 우측: 세로 액션 스택 -->
 <div id="verseFull" style="display:none;">
-  <button class="vf-home" id="vfHomeBtn" style="display:none;" onclick="openVerseGridHome()" aria-label="전체 목록">
+  <button class="vf-home" id="vfHomeBtn" style="display:none;" onclick="vfHomeAction()" aria-label="전체 목록">
     <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>
   </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
@@ -6434,6 +6536,7 @@ const _ESC_CLOSERS=[
   ['collMenu',        ()=>closeCollMenu()],
   ['sfxMenu',         ()=>closeSfxMenu()],
   ['vliMenu',         ()=>closeVliMenu()],
+  ['rpAddMenu',       ()=>closeRpAddMenu()],
   ['verseMemMenu',    ()=>closeVerseMemMenu()],
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
@@ -6447,6 +6550,7 @@ const _ESC_CLOSERS=[
   ['vDashDetailModal',()=>closeVDashDetail()],
   ['vDashModal',      ()=>closeVerseDashboard()],
   ['vAggModal',       ()=>closeVerseAggPopup()],
+  ['vcSetModal',      ()=>closeVcSettings()],
   ['rpConfigModal',   ()=>closeRpConfig()],
   ['collEditPage',    ()=>closeCollEdit()],
   ['vfShareOverlay',  ()=>closeVfShare()],
@@ -8723,18 +8827,37 @@ function vfAct(kind){
 let _vfOverrideVerse=null;
 // 타일뷰에서 들어온 경우, 그 타일 목록 안에서만 이전/다음으로 넘긴다.
 // (말씀설정의 기본 목록이 아니라 방금 보던 필터 결과를 따라간다)
-let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='';
-function _vfSetNav(list,idx,label){
+// kind 가 있으면 "반응 목록에서 들어온 것" — 상단 중앙에 그 반응 아이콘을 달고,
+// 좌상단 버튼은 타일뷰 홈이 아니라 **목록으로 돌아가기**(= 전체화면 닫기)가 된다.
+// 전체화면은 목록을 닫지 않고 숨겨 뒀다가 되살리므로, 닫는 것이 곧 목록 복귀다.
+let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
+const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
+const _VF_BACKLIST_SVG='<svg width="17" height="14" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="3" y1="13" x2="17" y2="13"/></svg>';
+function _vfSetNav(list,idx,label,kind){
   _vfNavList=(list&&list.length)?list.slice():null;
   _vfNavIdx=idx||0;_vfNavLabel=label||'';
+  _vfNavKind=(kind&&_VLIST_KIND_TITLE[kind])?kind:null;
   _vfSyncTopBar();
 }
-function _vfClearNav(){_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfSyncTopBar();}
+function _vfClearNav(){_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfSyncTopBar();}
+function vfHomeAction(){
+  if(_vfNavKind)closeVerseFull();   // 목록으로 복귀 (숨겨 둔 목록이 되살아난다)
+  else openVerseGridHome();
+}
 function _vfSyncTopBar(){
   const on=!!(_vfNavList&&_vfNavList.length&&_vfNavLabel);
   const lb=document.getElementById('vfTopLabel'),hb=document.getElementById('vfHomeBtn');
-  if(lb){lb.style.display=on?'block':'none';lb.textContent=on?_vfNavLabel:'';}
-  if(hb)hb.style.display=on?'block':'none';
+  if(lb){
+    lb.style.display=on?'flex':'none';
+    lb.innerHTML=on
+      ?`<span style="display:inline-flex;align-items:center;gap:5px;">${_vfNavKind?_VLIST_KIND_TITLE[_vfNavKind]:''}<span>${esc(_vfNavLabel)}</span></span>`
+      :'';
+  }
+  if(hb){
+    hb.style.display=on?'block':'none';
+    hb.innerHTML=_vfNavKind?_VF_BACKLIST_SVG:_VF_HOME_SVG;
+    hb.setAttribute('aria-label',_vfNavKind?'목록으로 돌아가기':'전체 목록');
+  }
 }
 function _vfCurrentVerse(){return _vfOverrideVerse||getVerseByIdx(ST.settings.verseCurrentIdx);}
 function _verseFullRender(){
@@ -9774,7 +9897,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -10813,9 +10936,12 @@ function _lay(){
   }
   delete L.todoCol;
   // 정의에 없는 타입/weekly 제거 + 중복 제거 (weekly는 cols가 아니라 L.weekly로 관리)
+  // ⚠️ 중복 제거(seen)는 **타입 위젯에만** 적용한다. 말씀카드('card#<id>')는
+  //    개수 제한이 없어야 하므로 인스턴스마다 따로 살아 있어야 한다.
   const seen=new Set();
   ['left','center','right'].forEach(c=>{
     L.cols[c]=L.cols[c].filter(t=>{
+      if(_vcIs(t))return !!_vcGet(_vcIdOf(t));   // 설정이 사라진 카드만 걸러 낸다
       if(!RP_WIDGET_DEFS[t]||t==='weekly'||seen.has(t))return false;
       seen.add(t);return true;
     });
@@ -11192,11 +11318,25 @@ function _rpAttachVResize(host){
     if(hd._vr)return;hd._vr=true;
     const type=hd.getAttribute('data-vrtype');
     const isList=type==='memList'||type==='likeList'||type==='deeperList'||type==='evenList';
+    const isCard=_vcIs(type);
     const perGrid=type==='monthTriple'?3:1; // 트리플: 위젯 델타를 그리드 3개가 나눠 가짐
     const start=(y0)=>{
       const wEl=hd.closest('.rp-widget');
       let mv,commit;
-      if(isList){
+      if(isCard){
+        // 말씀카드: 카드 몸통(.vc-body)의 높이를 직접 조절한다.
+        // 높이가 바뀌면 본문이 들어갈 자리도 달라지므로 끌면서 바로 다시 앉힌다.
+        const bd=wEl?wEl.querySelector('.vc-body'):null;
+        if(!bd)return;
+        const h0=bd.getBoundingClientRect().height;
+        mv=y=>{
+          const nh=Math.max(VC_H_MIN,Math.min(h0+(y-y0),VC_H_MAX));
+          bd.style.height=nh+'px';
+          _vcLayoutOne(wEl);
+          return nh;
+        };
+        commit=px=>_rpSetVCardH(_vcIdOf(type),px);
+      }else if(isList){
         const sc=wEl?wEl.querySelector('.vl-scroll'):null;
         if(!sc)return;
         const h0=sc.getBoundingClientRect().height;
@@ -11351,7 +11491,8 @@ const _VL_PERIODS=[['week','주간'],['month','월간'],['year','연간'],['all'
 const _vlCtrlOpen={mem:false,like:false,deeper:false,even:false};
 function vlToggleCtrl(kind){_vlCtrlOpen[kind]=!_vlCtrlOpen[kind];renderRightPanel();}
 // 정렬·기간 컨트롤 줄 HTML (위젯·팝업 공용)
-function _vListControlsHTML(kind){
+// inWidget=true 면 맨 우측에 톱니 — 그 목록의 말씀카드 설정으로 들어간다.
+function _vListControlsHTML(kind,inWidget){
   const pref=_vlPref(kind);
   // 정렬: 말씀설정 하단 필터의 [많은순 성경순 …]과 동일한 글자 버튼 스타일
   const sortBtn=(key,label)=>{
@@ -11363,6 +11504,7 @@ function _vListControlsHTML(kind){
     ${sortBtn('recent','최신순')}${sortBtn('count','많은순')}
     <span style="width:1px;height:12px;background:var(--bd);"></span>
     <span style="display:flex;gap:4px;">${_VL_PERIODS.map(perBtn).join('')}</span>
+    ${inWidget?`<button class="vl-sort-toggle" style="margin-left:auto;" onclick="openVlCardSettings('${kind}')" title="말씀카드 설정">${_VC_ICON_GEAR}</button>`:''}
   </div>`;
   if((pref.period||'all')==='custom'){
     h+=`<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px;">
@@ -11483,7 +11625,7 @@ function _attachVliMenus(container){
     row.addEventListener('click',ev=>{
       if(longFired||moved){longFired=false;return;}
       ev.preventDefault();
-      _vliOpenFull(row.getAttribute('data-vli-ref'));
+      _vliOpenFull(row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);
     });
   });
 }
@@ -11502,12 +11644,20 @@ function closeVliMenu(){
   document.getElementById('vliMenu').style.display='none';
 }
 // 그 장절의 전체화면을 연다 (목록 행 탭 · 롱터치 메뉴의 '전체화면' 공통)
-function _vliOpenFull(ref){
+// kind 를 함께 받으면 **그 반응 목록 안에서만** 이전/다음으로 넘어간다.
+// (좌상단 메뉴 LIST → 목록 → 말씀 을 눌러 들어온 경우가 이것이다)
+function _vliOpenFull(ref,kind){
   if(!ref)return;
   const hit=(ACTIVE_VERSES()||[]).find(x=>x.ref===ref);
   if(hit)setVerseIdx(hit.idx);
   else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
   openVerseFull(true);                         // 위에서 지정한 구절을 유지
+  if(kind&&_VLIST_KIND_TITLE[kind]){
+    const list=_aggEntriesForKind(kind)
+      .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+    const i=list.findIndex(x=>x.ref===ref);
+    if(list.length)_vfSetNav(list,Math.max(0,i),_VLIST_KIND_LABEL[kind]||'',kind);
+  }
 }
 function vliAction(act){
   const ref=_vliRef,kind=_vliKind;closeVliMenu();
@@ -11517,7 +11667,7 @@ function vliAction(act){
   else if(act==='like')recordVerseLike(ref);
   else if(act==='mem')recordMemorizationByRef(ref);
   else if(act==='del')deleteLatestVerseEvent(kind,ref);
-  else if(act==='full')_vliOpenFull(ref);
+  else if(act==='full')_vliOpenFull(ref,kind);
   else if(act==='share'){
     const all=ALL_VERSES()||[];
     openVfShareFor(all.find(x=>x.ref===ref)||{ref});
@@ -11994,7 +12144,495 @@ function closeVerseAggPopup(){
   document.getElementById('vAggOverlay').style.display='none';
   document.getElementById('vAggModal').style.display='none';
 }
+// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════
+// 다른 위젯은 "타입 하나 = 위젯 하나"다 (_lay() 가 seen Set 으로 중복을 지운다).
+// 말씀카드는 개수 제한이 없어야 하므로 cols 항목으로 'card#<id>' 를 함께 받는다.
+// 카드마다의 설정은 ST.settings.verseCards[<id>] 에 따로 산다.
+//   kind      : null 이면 일반카드(말씀모음 전체에서 돈다),
+//               'like'|'mem'|'deeper'|'even' 이면 그 반응 목록 안에서 돈다
+//   theme     : null 이면 '말씀 설정 → 전체화면' 테마를 따른다
+//   textScale : null 이면 전체화면 글자 크기를 따른다
+//   off       : 지금 자리에서 몇 칸 옮겼는지 (좌우로 밀면 바뀐다)
+//   from      : 목록 위젯에서 전환해 온 경우 그 위젯 타입 (햄버거로 되돌아갈 자리)
+// ⚠️ 아래 표시 문자열(시작·끝)로 tests/test_verse_card.js 가 코드를 잘라 쓴다.
+const VC_KINDS=['like','mem','deeper','even'];
+const _VC_KIND_NAME={like:'좋아요',mem:'암송',deeper:'Deeper',even:'Even Deeper'};
+const _VC_LIST_TYPE={like:'likeList',mem:'memList',deeper:'deeperList',even:'evenList'};
+function _vcIs(t){return typeof t==='string'&&t.indexOf('card#')===0;}
+function _vcIdOf(t){return _vcIs(t)?t.slice(5):'';}
+function _vcAll(){
+  const s=ST.settings;
+  if(!s.verseCards||typeof s.verseCards!=='object'||Array.isArray(s.verseCards))s.verseCards={};
+  return s.verseCards;
+}
+function _vcGet(id){
+  const c=_vcAll()[id];
+  if(!c||typeof c!=='object')return null;
+  if(!VC_KINDS.includes(c.kind))c.kind=null;
+  return c;
+}
+function _vcNewId(){
+  const all=_vcAll();
+  let n=1;while(all['c'+n])n++;
+  return'c'+n;
+}
+function _vcCreate(kind,from){
+  const id=_vcNewId();
+  _vcAll()[id]={kind:VC_KINDS.includes(kind)?kind:null,theme:null,textScale:null,off:0,from:from||null};
+  return id;
+}
+function _vcRemove(id){
+  delete _vcAll()[id];
+  const hh=ST.settings.rpWidgetHeights;
+  if(hh)delete hh['card#'+id];
+}
+// 위젯 이름 — 토스트·설정 팝업 칩에서 쓴다 (카드는 RP_WIDGET_DEFS 에 없다)
+function _rpWidgetName(t){
+  if(_vcIs(t)){
+    const c=_vcGet(_vcIdOf(t));
+    return(c&&c.kind)?`말씀카드 · ${_VC_KIND_NAME[c.kind]}`:'말씀카드';
+  }
+  return RP_WIDGET_DEFS[t]?RP_WIDGET_DEFS[t].name:t;
+}
+function _rpTypeOk(t){return _vcIs(t)?!!_vcGet(_vcIdOf(t)):!!RP_WIDGET_DEFS[t];}
+// ── 카드가 도는 범위 ──
+function _vcVerses(cfg){
+  if(!cfg)return[];
+  if(!cfg.kind)return ACTIVE_VERSES()||[];
+  return _aggEntriesForKind(cfg.kind)
+    .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+}
+// 지금 보여줄 구절. 일반카드는 "오늘의 구절"에서 off 칸, 목록카드는 목록 맨 앞에서 off 칸.
+// (일반카드가 오늘의 구절을 기준으로 삼기 때문에 '매일·매 시간구간 자동 넘김'이 그대로 산다)
+function _vcCurrent(cfg){
+  const list=_vcVerses(cfg);
+  if(!list.length)return null;
+  const off=Math.round(Number(cfg&&cfg.off)||0);
+  let base=0;
+  if(!cfg.kind){
+    const i=list.findIndex(v=>v.idx===ST.settings.verseCurrentIdx);
+    if(i>=0)base=i;
+  }
+  const n=list.length;
+  return list[(((base+off)%n)+n)%n];
+}
+// ── 카드 테마 ──
+// 정하지 않았으면 '말씀 설정 → 전체화면' 에서 고른 패턴 풀을 따른다.
+// 색 변형은 무작위로 뽑으면 다시 그릴 때마다 깜빡이므로 장절에서 계산해
+// 늘 같은 값이 나오게 한다 (구절이 바뀌면 색도 자연히 바뀐다).
+function _vcHash(s){
+  let h=0;
+  for(let i=0;i<(s||'').length;i++)h=(h*31+s.charCodeAt(i))|0;
+  return Math.abs(h);
+}
+function _vcPatternKey(cfg,ref){
+  if(cfg&&cfg.theme&&VF_PATTERNS[cfg.theme])return cfg.theme;
+  const pool=_vfPatternPool();
+  return pool[_vcHash('p|'+(ref||''))%pool.length];
+}
+function _vcThemeVars(cfg,ref){
+  const key=_vcPatternKey(cfg,ref);
+  const p=VF_PATTERNS[key]||VF_PATTERNS[VF_THEME_ORDER[0]];
+  const v=p.variants[_vcHash(key+'|'+(ref||''))%p.variants.length];
+  const fam=(p.font==='serif')?VF_SERIF:VF_SANS;
+  return{font:p.font,vars:{
+    '--vf-bgimg':_vfBgCss({bg:v.bg,ang:p.ang}),'--vf-tx':v.tx,
+    '--vf-tx2':_rgba(v.tx,.60),'--vf-tx3':_rgba(v.tx,.42),
+    '--vf-ac':v.ac,'--vf-font':fam,'--vf-fw':String(p.fw),
+    '--vf-ls':p.ls||'0','--vf-grain':String(p.grain||0),'--vf-vig':String(p.vig||0),
+    '--vf-reffont':(p.font==='serif')?fam:"'IBM Plex Mono',monospace"
+  }};
+}
+function _vcTextScale(cfg){
+  const v=parseFloat(cfg&&cfg.textScale);
+  return(v&&v>=0.45&&v<=1)?v:_vfTextScale();
+}
+// ── 카드 높이 (드래그로 조절, 위젯마다 따로) ──
+const VC_H_MIN=130,VC_H_MAX=700,VC_H_DEF=220;
+function _rpVCardH(id){
+  const hh=(ST.settings.rpWidgetHeights||{})['card#'+id];
+  return(typeof hh==='number'&&hh>=VC_H_MIN)?Math.min(hh,VC_H_MAX):VC_H_DEF;
+}
+function _rpSetVCardH(id,px){
+  if(!ST.settings.rpWidgetHeights)ST.settings.rpWidgetHeights={};
+  ST.settings.rpWidgetHeights['card#'+id]=Math.max(VC_H_MIN,Math.min(Math.round(px),VC_H_MAX));
+  save();
+}
+// ── 표시 항목 (말씀설정 '뷰' 탭의 알약버튼) ──
+function _vcShow(key){return ST.settings[key]!==false;}
+// ── 카드 한 장 HTML ──
+const _VC_ICON_GEAR='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 2.6v2M10 15.4v2M17.4 10h-2M4.6 10h-2M15.2 4.8l-1.4 1.4M6.2 13.8l-1.4 1.4M15.2 15.2l-1.4-1.4M6.2 6.2 4.8 4.8"/></svg>';
+const _VC_ICON_BACK='<svg width="14" height="12" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="3" y1="13" x2="17" y2="13"/></svg>';
+const _VC_ACT_SVG={
+  like:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>',
+  mem:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>',
+  deeper:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z"/><path d="M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>',
+  even:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>'
+};
+const _VC_ACT_KEY={like:'verseCardLike',mem:'verseCardMem',deeper:'verseCardDeeper',even:'verseCardEven'};
+function _vcCardHTML(id){
+  const cfg=_vcGet(id);
+  if(!cfg)return'';
+  const v=_vcCurrent(cfg);
+  const th=_vcThemeVars(cfg,v?v.ref:'');
+  const styleVars=Object.keys(th.vars).map(k=>`${k}:${th.vars[k]}`).join(';');
+  // 헤더: 좌=톱니(카드 설정) · 중앙=반응 아이콘 · 우=햄버거(목록 위젯으로 복귀)
+  // 일반카드는 중앙·우측이 비지만 자리는 남겨 톱니가 늘 같은 세로줄에 선다.
+  const head=`<div class="rp-widget-title vc-head" data-vchead="${id}">
+      <span class="vc-head-slot"><button class="vc-icbtn" onclick="openVcSettings('${id}')" title="말씀카드 설정">${_VC_ICON_GEAR}</button></span>
+      <span class="vc-head-ic">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}</span>
+      <span class="vc-head-slot right">${cfg.kind?`<button class="vc-icbtn" onclick="vcBackToList('${id}')" title="목록으로 돌아가기">${_VC_ICON_BACK}</button>`:''}</span>
+    </div>`;
+  let body;
+  if(!v){
+    body=`<div class="vc-empty">${cfg.kind?'아직 기록이 없어요':'말씀 모음이 비어 있어요'}</div>`;
+  }else{
+    const tags=(v.tags||[]).filter(Boolean);
+    const meta=[];
+    if(_vcShow('verseCardCat')&&v.cat)meta.push(`<div class="vc-cat" onclick="event.stopPropagation();vcOpenFilter('${id}','cat')">${esc(v.cat)}</div>`);
+    if(_vcShow('verseCardTopic')&&v.topic)meta.push(`<div class="vc-topic" onclick="event.stopPropagation();vcOpenFilter('${id}','topic')">${esc(v.topic)}</div>`);
+    if(_vcShow('verseCardTag')&&tags.length)meta.push(`<div class="vc-tag">${tags.map(t=>`<span class="vc-tagchip" data-tag="${_vgEscAttr(t)}" onclick="event.stopPropagation();openVerseGrid('tag',this.dataset.tag)">#${esc(t)}</span>`).join('  ')}</div>`);
+    const acts=['like','mem','deeper','even'].filter(k=>_vcShow(_VC_ACT_KEY[k])).concat(['share']);
+    const actHTML=acts.map(k=>`<button class="vc-act vc-act-${k}" data-vcact="${k}" onclick="event.stopPropagation();vcAct('${id}','${k}')" aria-label="${k}">
+        ${_VC_ACT_SVG[k]}<span class="vc-cnt">0</span>
+      </button>`).join('');
+    body=`<div class="vc-inner">
+        <div class="vc-text" data-raw="${_vgEscAttr(v.krText||'')}"></div>
+        <div class="vc-ref"${v.ref?'':' style="display:none;"'} onclick="event.stopPropagation();vcOpenFilter('${id}','book')">${esc(v.ref||'')}</div>
+      </div>
+      <div class="vc-bottom">
+        <div class="vc-meta">${meta.join('')}</div>
+        <div class="vc-actions">${actHTML}</div>
+      </div>`;
+  }
+  return`<div class="rp-widget vc-widget" data-wtype="card#${id}" data-vcid="${id}">
+    ${head}
+    <div class="vc-body" data-vcbody="${id}" data-vcref="${_vgEscAttr(v?(v.ref||''):'')}" style="height:${_rpVCardH(id)}px;${styleVars}">${body}</div>
+    <div class="rp-vresize" data-vrtype="card#${id}" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
+  </div>`;
+}
+// ── 본문 줄바꿈·크기 맞춤 ──
+// 전체화면과 같은 엔진(_vfWrapFit)을 쓰되, 폭·높이는 반드시 **그 카드의
+// 컨테이너**에서 잰다. 카드는 전체화면보다 훨씬 좁아서 전체화면 기준 크기를
+// 그대로 쓰면 두세 글자마다 줄이 끊긴다.
+function _vcLayoutOne(wEl){
+  const el=wEl.querySelector('.vc-text');
+  const inner=wEl.querySelector('.vc-inner');
+  if(!el||!inner)return;
+  const raw=(el.getAttribute('data-raw')||'').trim();
+  if(!raw){el.innerHTML='';return;}
+  const cs=getComputedStyle(inner);
+  const padH=(parseFloat(cs.paddingLeft)||0)+(parseFloat(cs.paddingRight)||0);
+  const availW=Math.max(0,inner.clientWidth-padH);
+  if(availW<40){el.innerHTML=esc(raw);return;}   // 아직 못 잼(숨김 상태)
+  const padV=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
+  const refEl=wEl.querySelector('.vc-ref');
+  const refH=(refEl&&refEl.style.display!=='none')?(refEl.offsetHeight+9):0;
+  const availH=Math.max(30,inner.clientHeight-padV-refH);
+  const est=getComputedStyle(el);
+  const family=est.fontFamily||'sans-serif';
+  const weight=est.fontWeight||'300';
+  _vfCanvas=_vfCanvas||document.createElement('canvas');
+  const ctx=_vfCanvas.getContext('2d');
+  const words=raw.split(/\s+/);
+  const cfg=_vcGet(wEl.getAttribute('data-vcid'));
+  const tScale=_vcTextScale(cfg);
+  const LHe=_VF_LH*(1+(1-tScale)*0.72);
+  const maxS=Math.max(9,Math.round(Math.max(11,Math.min(20,availW/15))*tScale));
+  const minS=Math.max(8,Math.round(maxS*0.6));
+  let pick=null;
+  for(let size=maxS;size>=minS;size--){
+    ctx.font=`${weight} ${size}px ${family}`;
+    const lines=_vfWrapFit(words,ctx,availW);
+    pick={size,lines};
+    if(lines.length*size*LHe<=availH)break;      // 세로로 들어가면 그 크기로 확정
+  }
+  if(!pick)return;
+  // 가장 작은 크기로도 넘치면 들어가는 줄까지만 두고 …으로 줄인다
+  let lines=pick.lines;
+  const fit=Math.max(1,Math.floor(availH/(pick.size*LHe)));
+  if(lines.length>fit){
+    lines=lines.slice(0,fit);
+    lines[fit-1]=lines[fit-1]+'…';
+  }
+  el.style.fontSize=pick.size+'px';
+  el.style.lineHeight=String(LHe);
+  el.innerHTML=lines.map(esc).join('<br>');
+}
+function _vcLayoutAll(host){
+  (host||document).querySelectorAll('.vc-widget').forEach(w=>{
+    _vcLayoutOne(w);
+    _vcSyncCounts(w);
+  });
+}
+// 반응 횟수 — 전체화면과 같은 규칙(내 것만 / 구독자 전체)을 따른다
+function _vcSyncCounts(wEl){
+  const body=wEl.querySelector('.vc-body');
+  if(!body)return;
+  const ref=body.getAttribute('data-vcref')||'';
+  const put=(kind,val)=>{
+    const btn=wEl.querySelector(`[data-vcact="${kind}"]`);
+    if(!btn)return;
+    const c=btn.querySelector('.vc-cnt');
+    if(c)c.textContent=val;
+    btn.classList.toggle('on',(+val)>0);
+  };
+  ['like','mem','deeper','even','share'].forEach(k=>put(k,_verseEventCount(k,ref)));
+  if((ST.settings.verseCountScope||'all')==='all'&&ref){
+    _fetchVerseStat(ref).then(st=>{
+      if(!st||!body.isConnected)return;
+      if((body.getAttribute('data-vcref')||'')!==ref)return;
+      ['like','mem','deeper','even','share'].forEach(k=>put(k,st[k]||0));
+    });
+  }
+}
+// ── 카드 동작 ──
+function vcAct(id,kind){
+  const cfg=_vcGet(id);const v=_vcCurrent(cfg);
+  if(!v)return;
+  if(kind==='share'){openVfShareFor(v);return;}
+  if(kind==='like'){
+    _suppressTextToastOnce=true;recordVerseLike(v.ref);_suppressTextToastOnce=false;
+    showReactionToast(_REACT_ICON_LIKE);
+  }else if(kind==='mem'){
+    _suppressTextToastOnce=true;recordMemorizationByRef(v.ref);_suppressTextToastOnce=false;
+    showReactionToast(_REACT_ICON_MEM);
+  }else if(kind==='deeper')openDeeperFromRef(v.ref);
+  else if(kind==='even')openEvenDeeperFromRef(v.ref);
+  const btn=document.querySelector(`.vc-widget[data-vcid="${id}"] [data-vcact="${kind}"]`);
+  if(btn){btn.classList.remove('pop');void btn.offsetWidth;btn.classList.add('pop');}
+}
+// 좌하단(대분류·소주제)·장절 → 그 필터의 타일뷰. 전체화면과 같은 동작이다.
+function vcOpenFilter(id,which){
+  const cfg=_vcGet(id);const v=_vcCurrent(cfg);
+  if(!v)return;
+  const val=which==='cat'?((v.cat||'').trim())
+          :which==='book'?_bookOfRef(v.ref)
+          :((v.topic||'').trim());
+  if(!val)return;
+  const prev=_vfOverrideVerse;
+  _vfOverrideVerse=v;            // 타일뷰가 "보던 자리"로 스크롤할 수 있게
+  openVerseGrid(which,val);
+  _vfOverrideVerse=prev;
+}
+// 좌우로 밀어 다음/이전 (그 카드가 도는 범위 안에서만)
+function vcNav(id,d){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  const n=_vcVerses(cfg).length;
+  if(n<2)return;
+  cfg.off=Math.round(Number(cfg.off)||0)+(d>0?1:-1);
+  save();
+  const body=document.querySelector(`.vc-widget[data-vcid="${id}"] .vc-body`);
+  if(!body){renderRightPanel();return;}
+  body.classList.add('vc-fade');
+  setTimeout(()=>{renderRightPanel();},170);
+}
+// 카드를 눌러 전체화면으로 — 그 카드가 도는 목록을 그대로 들고 간다
+function vcOpenFull(id){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  const list=_vcVerses(cfg);
+  const v=_vcCurrent(cfg);
+  if(!v)return;
+  const i=Math.max(0,list.findIndex(x=>x.ref===v.ref));
+  _vfOverrideVerse=v;
+  openVerseFull(true);
+  if(cfg.kind)_vfSetNav(list,i,_VC_KIND_NAME[cfg.kind],cfg.kind);
+}
+// 어느 컬럼에도 놓여 있지 않은 그 반응의 카드 설정을 찾는다.
+// 목록 ↔ 카드를 오갈 때 배경·글자 크기 설정이 사라지지 않게, 설정은 카드가
+// 화면에서 빠져도 그대로 남겨 두고 다시 넣을 때 그걸 다시 쓴다.
+function _vcUnplacedForKind(kind,exceptId){
+  const L=_lay();
+  const placed=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
+  const all=_vcAll();
+  return Object.keys(all).find(id=>{
+    if(id===exceptId)return false;
+    const c=_vcGet(id);
+    return c&&c.kind===kind&&!placed.has('card#'+id);
+  })||null;
+}
+// 목록 위젯으로 되돌리기 (헤더 우상단 햄버거)
+function vcBackToList(id){
+  const cfg=_vcGet(id);
+  if(!cfg||!cfg.kind)return;
+  const back=cfg.from||_VC_LIST_TYPE[cfg.kind];
+  const L=_lay();
+  const key='card#'+id;
+  let done=false;
+  ['left','center','right'].forEach(c=>{
+    const i=L.cols[c].indexOf(key);
+    if(i<0)return;
+    // 이미 그 목록 위젯이 다른 자리에 있으면 카드만 빼낸다 (중복 금지 타입이라)
+    const dup=['left','center','right'].some(c2=>L.cols[c2].includes(back));
+    L.cols[c].splice(i,1,...(dup?[]:[back]));
+    done=true;
+  });
+  if(!done)return;
+  // 설정(배경·글자 크기)은 남겨 둔다 — 다시 카드로 바꿀 때 그대로 되살아난다.
+  // 다만 같은 반응의 안 쓰는 설정이 이미 따로 있으면 이번 것은 버린다 (쌓이지 않게).
+  if(_vcUnplacedForKind(cfg.kind,id))_vcRemove(id);
+  _lay();save();renderLayout();
+}
+// 목록 위젯 → 카드로 전환 (목록 위젯 헤더 맨 우측 정사각형 버튼)
+function vlToCard(kind){
+  const type=_VC_LIST_TYPE[kind];
+  if(!type)return;
+  const L=_lay();
+  const id=_vcUnplacedForKind(kind)||_vcCreate(kind,type);
+  const cfg=_vcGet(id);
+  if(cfg)cfg.from=type;
+  let placed=false;
+  ['left','center','right'].forEach(c=>{
+    const i=L.cols[c].indexOf(type);
+    if(i<0||placed)return;
+    L.cols[c].splice(i,1,'card#'+id);
+    placed=true;
+  });
+  if(!placed)return;
+  _lay();save();renderLayout();
+}
+// 목록 위젯의 필터 행 톱니 → 그 목록이 카드로 바뀌었을 때 쓸 설정을 미리 손본다
+function openVlCardSettings(kind){
+  openVcSettings(_vcUnplacedForKind(kind)||_vcCreate(kind,_VC_LIST_TYPE[kind]));
+}
+// 컬럼 하단 + 버튼 → 새 일반카드위젯 (개수 제한 없음)
+function vcAddCard(col){
+  const L=_lay();
+  const key=['left','center','right'].includes(col)?col:'left';
+  const id=_vcCreate(null,null);
+  // 2단에서는 우측이 center+right 로 합쳐 보이므로, 저장은 실제 보이는 쪽에 맞춘다
+  const target=(_layMode()===2&&key==='right'&&!L.cols.right.length&&L.cols.center.length)?'center':key;
+  L.cols[target].push('card#'+id);
+  _lay();save();renderLayout();
+}
+// 카드 몸통 제스처 — 탭=전체화면 / 좌우 밀기=다음·이전 / 롱터치·우클릭=말씀 메뉴
+function _vcAttachGestures(host){
+  host.querySelectorAll('.vc-body').forEach(body=>{
+    if(body._vcBound)return;body._vcBound=true;
+    const id=body.getAttribute('data-vcbody');
+    const refOf=()=>body.getAttribute('data-vcref')||'';
+    const kindOf=()=>{const c=_vcGet(id);return c?c.kind:null;};
+    const isCtl=t=>!!(t&&t.closest&&t.closest('button,.vc-cat,.vc-topic,.vc-tagchip,.vc-ref'));
+    body.addEventListener('contextmenu',e=>{
+      if(isCtl(e.target))return;
+      e.preventDefault();
+      if(refOf())openVliMenu(e.clientX,e.clientY,refOf(),kindOf());
+    });
+    let sx=0,sy=0,moved=false,longFired=false,t=null;
+    body.addEventListener('touchstart',e=>{
+      if(isCtl(e.target))return;
+      window._rpLastTouchTs=Date.now();     // 뒤따라오는 가짜 click 을 막는다
+      sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false;longFired=false;
+      const x=sx,y=sy;
+      t=setTimeout(()=>{t=null;longFired=true;if(refOf())openVliMenu(x,y,refOf(),kindOf());},500);
+    },{passive:true});
+    body.addEventListener('touchmove',e=>{
+      const tt=e.touches[0];if(!tt)return;
+      if(Math.abs(tt.clientX-sx)>8||Math.abs(tt.clientY-sy)>8){
+        moved=true;if(t){clearTimeout(t);t=null;}
+      }
+    },{passive:true});
+    body.addEventListener('touchend',e=>{
+      if(t){clearTimeout(t);t=null;}
+      if(longFired)return;
+      const tt=e.changedTouches[0];
+      const dx=tt?tt.clientX-sx:0,dy=tt?tt.clientY-sy:0;
+      if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.5){vcNav(id,dx<0?1:-1);return;}
+      if(!moved&&!isCtl(e.target))vcOpenFull(id);
+    },{passive:true});
+    body.addEventListener('click',e=>{
+      if(isCtl(e.target))return;
+      if(Date.now()-(window._rpLastTouchTs||0)<700)return;   // 터치가 만든 가짜 클릭
+      vcOpenFull(id);
+    });
+  });
+}
+// ── 카드 설정 팝업 (위젯 하나하나마다 따로) ──
+// '전체화면' 탭과 같은 구성 중 **글자 크기·테마** 둘만 둔다.
+// 반응 카운터·링크 열기는 전체화면 설정을 그대로 따라가므로 지금 값만 알려 준다.
+let _vcSetId=null;
+function openVcSettings(id){
+  if(!_vcGet(id))return;
+  _vcSetId=id;
+  const ov=document.getElementById('vcSetOverlay'),md=document.getElementById('vcSetModal');
+  if(!ov||!md)return;
+  ov.style.display='block';md.style.display='block';
+  renderVcSettings();
+}
+function closeVcSettings(){
+  _vcSetId=null;
+  const ov=document.getElementById('vcSetOverlay'),md=document.getElementById('vcSetModal');
+  if(ov)ov.style.display='none';
+  if(md)md.style.display='none';
+}
+function renderVcSettings(){
+  const box=document.getElementById('vcSetBody');
+  const cfg=_vcGet(_vcSetId);
+  if(!box||!cfg)return;
+  const id=_vcSetId;
+  const cur=parseFloat(cfg.textScale);
+  const tsBtn=(v,label)=>{
+    const on=v==null?!(cur>=0.45&&cur<=1):Math.abs(cur-v)<0.001;
+    return`<button class="settings-btn${on?' on':''}" style="flex:1;" onclick="setVcTextScale('${id}',${v==null?'null':v})">${label}</button>`;
+  };
+  const themeChip=(key)=>{
+    const on=key==null?!cfg.theme:cfg.theme===key;
+    if(key==null){
+      return`<div onclick="setVcTheme('${id}',null)" style="cursor:pointer;border-radius:9px;overflow:hidden;-webkit-tap-highlight-color:transparent;outline:${on?'2px solid var(--ac)':'none'};outline-offset:1px;opacity:${on?1:.45};">
+        <div style="background:var(--s2);height:46px;display:flex;align-items:center;justify-content:center;border:1px dashed var(--bd2);box-sizing:border-box;">
+          <span style="color:var(--tx3);font-size:11px;">기본</span>
+        </div>
+        <div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px 0 2px;">전체화면</div>
+      </div>`;
+    }
+    const p=VF_PATTERNS[key],v=p.variants[0];
+    return`<div onclick="setVcTheme('${id}','${key}')" style="cursor:pointer;border-radius:9px;overflow:hidden;-webkit-tap-highlight-color:transparent;outline:${on?'2px solid var(--ac)':'none'};outline-offset:1px;opacity:${on?1:.45};">
+      <div style="background:${_vfBgCss({bg:v.bg,ang:p.ang})};height:46px;display:flex;align-items:center;justify-content:center;">
+        <span style="color:${v.tx};font-size:11px;font-weight:${p.fw};font-family:${p.font==='serif'?VF_SERIF:VF_SANS};">가나다</span>
+      </div>
+      <div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px 0 2px;">${p.label}</div>
+    </div>`;
+  };
+  const scopeTxt=(ST.settings.verseCountScope||'all')==='all'?'구독자 전체':'내 것만';
+  const lnk=ST.settings.linkOpenMode||'safari';
+  const lnkTxt=lnk==='chrome'?'크롬':(lnk==='inapp'?'앱 안에서':'사파리');
+  box.innerHTML=`
+    <div class="settings-row-desc" style="margin-bottom:12px;">${cfg.kind?`${_VC_KIND_NAME[cfg.kind]} 목록 안에서 도는 카드예요.`:'말씀 모음에서 고른 말씀 전체에서 도는 카드예요.'} 여기서 고른 값은 <b>이 카드 하나에만</b> 적용돼요.</div>
+    <div class="settings-section">
+      <div class="settings-section-title">말씀카드 글자 크기</div>
+      <div class="settings-row-desc" style="margin-bottom:8px;">'기본'은 말씀 설정 → 전체화면에서 고른 크기를 따라가요.</div>
+      <div style="display:flex;gap:6px;">
+        ${tsBtn(null,'기본')}${tsBtn(1,'100')}${tsBtn(0.8,'80')}${tsBtn(0.6,'60')}${tsBtn(0.5,'50')}
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-section-title">말씀카드 테마</div>
+      <div class="settings-row-desc" style="margin-bottom:8px;">'기본'을 고르면 말씀 설정 → 전체화면에서 고른 패턴을 따라가요. 색은 말씀마다 달라져요.</div>
+      <div class="vc-theme-grid">${themeChip(null)}${VF_THEME_ORDER.map(themeChip).join('')}</div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-row-desc">반응 카운터와 링크 열기는 <b>전체화면 설정을 그대로 따라가요.</b><br>
+        지금은 반응 카운터 <b>${scopeTxt}</b> · 링크 열기 <b>${lnkTxt}</b> 예요.</div>
+    </div>`;
+}
+function setVcTextScale(id,v){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  cfg.textScale=(v&&v>=0.45&&v<=1)?v:null;
+  save();renderVcSettings();renderRightPanel();
+}
+function setVcTheme(id,key){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  cfg.theme=(key&&VF_PATTERNS[key])?key:null;
+  save();renderVcSettings();renderRightPanel();
+}
+// ══════ 말씀카드 위젯 끝 ══════
 function _rpWidgetHTML(w){
+  if(_vcIs(w.type))return _vcCardHTML(_vcIdOf(w.type));
   if(w.type==='todo'){
     // 실제 #todayView DOM은 renderLayout이 .rp-todo-slot에 옮겨 넣는다.
     // 테두리·배경 없는 프레임리스 위젯 (기존 할일뷰 영역 디자인 유지)
@@ -12051,9 +12689,12 @@ function _rpWidgetHTML(w){
             <svg width="13" height="11" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="2" y1="2.5" x2="18" y2="2.5"/><line x1="8" y1="8" x2="18" y2="8"/><line x1="13" y1="13.5" x2="18" y2="13.5"/></svg>
           </button>
           <span style="font-weight:400;">${items.length}개</span>
+          <button class="vl-sort-toggle" onclick="vlToCard('${kind}')" title="말씀카드로 보기">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/><line x1="6.5" y1="8" x2="13.5" y2="8"/><line x1="6.5" y1="12" x2="11" y2="12"/></svg>
+          </button>
         </span>
       </div>
-      ${ctrlOpen?_vListControlsHTML(kind):''}
+      ${ctrlOpen?_vListControlsHTML(kind,true):''}
       ${(()=>{
         // 우선순위: ① 하단 핸들로 드래그한 높이(px, 위젯별 저장)
         //          ② 설정의 목록 높이 비율  ③ 자동(최대 10행)
@@ -12129,7 +12770,7 @@ function renderLayout(){
       return;
     }
     // 위젯 스택 + 하단 + 버튼 (빈 컬럼이면 + 버튼만)
-    wHost.innerHTML=(types.map(t=>_rpWidgetHTML({type:t})).join(''))+_rpAddBtnHTML(types.length?'tail':'empty');
+    wHost.innerHTML=(types.map(t=>_rpWidgetHTML({type:t})).join(''))+_rpAddBtnHTML(types.length?'tail':'empty',cname);
   });
 
   // ── todayView 실제 DOM 이동: todo placeholder 슬롯 or 1단은 colL 직속 ──
@@ -12185,15 +12826,44 @@ function renderLayout(){
   _rpAttachHeaderDrag(pc);
   _rpAttachVResize(pc);
   _attachWeeklyPaneDrag();
+  // 말씀카드: 제스처를 붙이고 본문을 컨테이너 폭에 맞춰 앉힌다.
+  // 폭은 붙인 다음에야 잴 수 있으므로 반드시 여기(마지막)에서 한다.
+  _vcAttachGestures(pc);
+  _vcLayoutAll(pc);
 }
 window.renderRightPanel=renderLayout; // 기존 호출부 호환 별칭
 // 위젯 추가 + 버튼 (미니멀: 테두리·원 없이 + 만)
-function _rpAddBtnHTML(kind){
+// 누르면 작은 메뉴가 뜬다 — '말씀카드'(그 컬럼에 새 카드) / '위젯 설정'(기존 팝업)
+function _rpAddBtnHTML(kind,col){
   return`<div class="rp-add-wrap${kind==='tail'?' tail':''}">
-    <button class="rp-add-btn" onclick="openRpConfig()" title="위젯 추가">
+    <button class="rp-add-btn" onclick="openRpAddMenu(event,'${col||'left'}')" title="위젯 추가">
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
     </button>
   </div>`;
+}
+// + 버튼 메뉴 (말씀카드는 개수 제한이 없어 목록 팝업이 아니라 여기서 바로 만든다)
+let _rpAddCol='left';
+function openRpAddMenu(ev,col){
+  _rpAddCol=col||'left';
+  const menu=document.getElementById('rpAddMenu'),ov=document.getElementById('rpAddMenuOverlay');
+  if(!menu||!ov){openRpConfig();return;}
+  ov.style.display='block';menu.style.display='block';
+  const r=(ev&&ev.currentTarget&&ev.currentTarget.getBoundingClientRect)?ev.currentTarget.getBoundingClientRect():null;
+  const mw=menu.offsetWidth||150,mh=menu.offsetHeight||80;
+  const x=r?r.left:(window.innerWidth/2),y=r?r.bottom+6:(window.innerHeight/2);
+  menu.style.left=Math.max(8,Math.min(x,window.innerWidth-mw-8))+'px';
+  menu.style.top=Math.max(8,Math.min(y,window.innerHeight-mh-8))+'px';
+}
+function closeRpAddMenu(){
+  const menu=document.getElementById('rpAddMenu'),ov=document.getElementById('rpAddMenuOverlay');
+  if(menu)menu.style.display='none';
+  if(ov)ov.style.display='none';
+}
+function rpAddMenuPick(what){
+  const col=_rpAddCol;
+  closeRpAddMenu();
+  if(what==='card')vcAddCard(col);
+  else openRpConfig();
 }
 // 위젯 안에서 좌우 스와이프로 달 넘기기
 function _rpAttachSwipes(host){
@@ -12234,7 +12904,7 @@ function renderRpConfigList(){
   });
   const COLN={left:'좌',center:'중',right:'우'};
   const chip=t=>`<div class="rp-chip" data-wtype="${t}">
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${RP_WIDGET_DEFS[t].name}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_rpWidgetName(t)}</span>
       <span class="rp-cfg-drag"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="16" y2="7"/><line x1="4" y1="13" x2="16" y2="13"/></svg></span>
     </div>`;
   // 주간뷰 칩: lc면 좌 박스 맨 위, cr이면 우 박스 맨 위에 표시 (두 단 상단 차지라
@@ -12290,6 +12960,12 @@ function _rpAttachChipDrag(list){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
+          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 그대로 없앤다
+          if(_vcIs(type)&&(!key||key==='pool')){
+            _vcRemove(_vcIdOf(type));
+            _lay();save();renderRpConfigList();renderLayout();
+            return;
+          }
           if(key&&key!=='pool'){
             // 대상 박스 맨 위에 주간뷰 칩이 표기 중이면 그만큼 idx 보정
             const wkOffset=((L.weekly==='lc'&&key==='left')||(L.weekly==='cr'&&key==='right'))?1:0;
@@ -12538,11 +13214,12 @@ function _rpAttachHeaderDrag(host){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
+          if(_vcIs(type))_vcRemove(_vcIdOf(type));   // 카드는 인스턴스라 설정도 함께 지운다
           _lay();save();renderLayout();
-          showToast(`${RP_WIDGET_DEFS[type].name} 위젯을 껐어요`);
+          showToast(`${_rpWidgetName(type)} 위젯을 껐어요`);
         }:undefined,
         onCommit:(key,idx)=>{
-          if(!type||!RP_WIDGET_DEFS[type])return;
+          if(!type||!_rpTypeOk(type))return;
           if(mode===3){
             ['left','center','right'].forEach(c=>{
               const i=L.cols[c].indexOf(type);
@@ -18389,6 +19066,9 @@ function renderSettingsPanel(){
     document.getElementById('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
     document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
   });
+  ['Cat','Topic','Tag','Like','Mem','Deeper','Even'].forEach(k=>{
+    document.getElementById('setVerseCard'+k)?.classList.toggle('on',s['verseCard'+k]!==false);
+  });
   document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
@@ -18559,7 +19239,8 @@ function updateSetting(key,value){
     const grp=key==='verseWidgetTextSize'?'setVWTextSize':'setVWRefSize';
     [1,2,3].forEach(n=>document.getElementById(grp+n)?.classList.toggle('on',n===value));
   }
-  if(key==='verseWidgetCat'||key==='verseWidgetTopic'||key==='verseWidgetText'||key==='verseWidgetRef'||key==='verseWidgetTag'||key==='verseWidgetTextSize'||key==='verseWidgetRefSize'){
+  if(key==='verseWidgetCat'||key==='verseWidgetTopic'||key==='verseWidgetText'||key==='verseWidgetRef'||key==='verseWidgetTag'||key==='verseWidgetTextSize'||key==='verseWidgetRefSize'||
+     key.indexOf('verseCard')===0){
     if(typeof renderRightPanel==='function')renderRightPanel();
   }
   if(key==='verseBarOn'||key==='verseBarAutoRotate'||
