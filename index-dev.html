@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0807-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0807-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -262,6 +262,17 @@ header{
 .vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);
   z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;}
+/* 반응 토스트(좋아요·암송) — 심장이 뛰듯 두 번 두근거린 뒤 자리를 잡는다.
+   가운데 정렬을 translate 로 잡고 있어서 keyframe 마다 translate 를 같이 써야
+   한다 — scale 만 쓰면 애니메이션 도중 화면 중앙에서 벗어난다. */
+@keyframes reactToastBeat{
+  0%{transform:translate(-50%,-50%) scale(.55);opacity:0;}
+  18%{transform:translate(-50%,-50%) scale(1.18);opacity:.8;}
+  34%{transform:translate(-50%,-50%) scale(.96);}
+  50%{transform:translate(-50%,-50%) scale(1.10);}
+  68%{transform:translate(-50%,-50%) scale(.99);}
+  100%{transform:translate(-50%,-50%) scale(1);opacity:.8;}
+}
 /* 더블탭 좋아요 — 누른 자리에서 하트가 튀어오른다 */
 .vf-heart-pop{position:fixed;z-index:60;pointer-events:none;transform:translate(-50%,-50%) scale(.3);
   opacity:0;animation:vfHeartPop .75s cubic-bezier(.22,1.2,.36,1) forwards;}
@@ -2407,7 +2418,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0807-2";
+const APP_VERSION = "v. 26-0807-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7373,15 +7384,23 @@ function showToast(msg){
   t._tid=setTimeout(()=>{_dismissToast(false);},4500);  // 표시 4.5s + 페이드 0.5s
 }
 
-// ── 아이콘 전용 토스트 (말씀 전체 화면의 좋아요·암송 버튼) ──
+// ── 아이콘 전용 토스트 (말씀 반응: 좋아요·암송) ──
 // 문구·박스·테두리 없이 채워진 아이콘 하나만 화면 중앙에 잠깐 띄운다.
+// 100px, 불투명도 80%, 뜰 때 심장이 뛰듯 두 번 두근거린다(reactToastBeat).
 // 문구 토스트(showToast)보다 유지 시간을 1초 줄였다 — 표시 3.5s + 페이드 0.5s
 // (문구 토스트는 4.5s + 0.5s).
+// 쓰는 곳 세 군데: 우하단 좋아요·암송 버튼, 그리고 화면 더블탭 좋아요.
+// 아이콘은 반응 바(.vf-act)에 쓰는 채움 아이콘과 같은 path 다.
+const _REACT_TOAST_PX=100;
+const _REACT_ICON_LIKE='<svg width="'+_REACT_TOAST_PX+'" height="'+_REACT_TOAST_PX+'" viewBox="0 0 24 24"><path fill="var(--sun-red)" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>';
+// 암송은 파랑(--ac)이 아니라 앱 기본 연회색을 쓴다
+const _REACT_ICON_MEM='<svg width="'+_REACT_TOAST_PX+'" height="'+_REACT_TOAST_PX+'" viewBox="0 0 24 24"><path fill="var(--tx2)" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>';
 let _reactToastDismissBound=false;
 function _dismissReactToast(fast){
   const t=document.getElementById('_reactToast');
   if(!t||t.style.opacity==='0')return;
   clearTimeout(t._tid);
+  t.style.animation='none';   // 두근거림이 남아 있으면 사라지는 동작과 싸운다
   t.style.transition=fast?'opacity .25s,transform .25s':'opacity .5s,transform .5s';
   t.style.opacity='0';
   t.style.transform='translate(-50%,-50%) scale(.8)';
@@ -7396,12 +7415,14 @@ function showReactionToast(svgHtml){
     _reactToastDismissBound=true;
     document.addEventListener('pointerdown',()=>{_dismissReactToast(true);},true);
   }
-  t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.7);'+
-    'z-index:10050;opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;'+
+  // 애니메이션이 끝나면 여기 적힌 값(불투명도 .8 · scale 1)으로 돌아온다
+  t.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);'+
+    'z-index:10050;opacity:.8;pointer-events:none;'+
     'display:flex;align-items:center;justify-content:center;';
   t.innerHTML=svgHtml;
-  t.style.opacity='1';
-  t.style.transform='translate(-50%,-50%) scale(1)';
+  // 연달아 눌러도 매번 두근거리게 — 애니메이션을 끊고 리플로우 뒤 다시 건다
+  t.style.animation='none';void t.offsetWidth;
+  t.style.animation='reactToastBeat .9s cubic-bezier(.22,1.2,.36,1)';
   clearTimeout(t._tid);
   t._tid=setTimeout(()=>{_dismissReactToast(false);},3500);  // 문구 토스트(4.5s)보다 1초 짧게
 }
@@ -8675,13 +8696,13 @@ function vfAct(kind){
     _suppressTextToastOnce=true;
     recordVerseLike(v.ref);
     _suppressTextToastOnce=false;
-    showReactionToast('<svg width="40" height="40" viewBox="0 0 24 24"><path fill="var(--sun-red)" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>');
+    showReactionToast(_REACT_ICON_LIKE);
   }
   else if(kind==='mem'){
     _suppressTextToastOnce=true;
     recordMemorizationByRef(v.ref);
     _suppressTextToastOnce=false;
-    showReactionToast('<svg width="40" height="40" viewBox="0 0 24 24"><path fill="var(--ac)" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>');
+    showReactionToast(_REACT_ICON_MEM);
   }
   else if(kind==='deeper')openDeeperFromRef(v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
@@ -8859,7 +8880,12 @@ function _vfHeartBurst(x,y){
 function _vfDoubleLike(x,y){
   const v=_vfCurrentVerse();
   if(!v||!v.ref)return;
+  // 우하단 좋아요 버튼과 같은 반응 — 문구 토스트 대신 두근거리는 하트 하나.
+  // 누른 자리에서 튀어오르는 하트(_vfHeartBurst)는 더블탭만의 표시라 그대로 둔다.
+  _suppressTextToastOnce=true;
   recordVerseLike(v.ref);
+  _suppressTextToastOnce=false;
+  showReactionToast(_REACT_ICON_LIKE);
   _vfSyncCounts();
   _vfHeartBurst(x,y);
 }
