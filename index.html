@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0810-4  [production]  -->
+<!-- BLOCK7  v. 26-0810-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2521,7 +2521,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0810-4";
+const APP_VERSION = "v. 26-0810-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10965,6 +10965,11 @@ function _rpGetWidgets(){
 //   c3         — [좌 비율, 중 비율]
 // }
 // 제약: 할일뷰-주간뷰 강제 결합은 폐지. 'todo'는 항상 정확히 한 곳에 존재.
+// 이 버전이 "아는" 위젯인가. 모르는 것은 **더 새 버전이 넣어 둔 것**이므로
+// 지우지 말고 보관한다 (_lay 의 L.unknown).
+function _layIsKnownType(t){
+  return typeof t==='string'&&(_vcIs(t)||!!RP_WIDGET_DEFS[t]);
+}
 function _lay(){
   if(!ST.settings.layout){
     const olds=_rpGetWidgets().filter(w=>w.on).map(w=>w.type);
@@ -10984,12 +10989,26 @@ function _lay(){
     L.cols[tc].unshift('todo');
   }
   delete L.todoCol;
-  // 정의에 없는 타입/weekly 제거 + 중복 제거 (weekly는 cols가 아니라 L.weekly로 관리)
-  // ⚠️ 중복 제거(seen)는 **타입 위젯에만** 적용한다. 말씀카드('card#<id>')는
+  // ⚠️⚠️ 내가 **모르는** 위젯은 절대 지우지 않는다 — 따로 보관했다가 되돌린다.
+  // 이것을 안 지켜서 실제로 사고가 났다: 0810 이전 버전의 _lay() 는 cols 안의
+  // 'card#…'(말씀카드)를 "정의에 없는 타입"으로 보고 조용히 지웠다. 그 기기가
+  // 화면을 한 번 그리기만 해도 지워진 상태가 저장·전송됐고, 3자 병합은 그것을
+  // **정상적인 삭제**로 받아들여 모든 기기에서 말씀카드가 사라졌다.
+  // (사람은 아무것도 바꾸지 않았다 — 배경에 열려 있던 창을 눌러 앞으로
+  //  불러왔을 뿐이다.) 그러니 모르는 항목은 지우지 말고 L.unknown 에 담아 둔다.
+  if(!Array.isArray(L.unknown))L.unknown=[];
+  // ① 이제 알게 된 것은 원래 자리로 되돌린다
+  L.unknown=L.unknown.filter(u=>{
+    if(!u||typeof u.t!=='string'||!_layIsKnownType(u.t))return true;
+    const arr=L.cols[u.c]||L.cols.left;
+    if(!arr.includes(u.t))arr.splice(Math.max(0,Math.min(u.i|0,arr.length)),0,u.t);
+    return false;
+  });
+  // ② 중복 제거(seen)는 **타입 위젯에만** 적용한다. 말씀카드('card#<id>')는
   //    개수 제한이 없어야 하므로 인스턴스마다 따로 살아 있어야 한다.
-  const seen=new Set();
+  const seen=new Set(),stash=[];
   ['left','center','right'].forEach(c=>{
-    L.cols[c]=L.cols[c].filter(t=>{
+    L.cols[c]=L.cols[c].filter((t,i)=>{
       // 카드는 인스턴스라 종류가 겹쳐도 괜찮다. 다만 **같은 id 가 두 번**
       // 들어가면 한 장을 넘겼을 때 다른 한 장이 함께 넘어가므로(같은 설정을
       // 보고 있다) 그건 막는다. 설정이 사라진 카드도 여기서 걸러 낸다.
@@ -10998,10 +11017,19 @@ function _lay(){
         if(!_vcGet(_vcIdOf(t)))return false;
         seen.add(t);return true;
       }
-      if(!RP_WIDGET_DEFS[t]||t==='weekly'||seen.has(t))return false;
+      if(!RP_WIDGET_DEFS[t]){
+        if(typeof t==='string'&&t)stash.push({c,i,t});   // 모르는 것 = 더 새 버전의 위젯
+        return false;
+      }
+      if(t==='weekly'||seen.has(t))return false;
       seen.add(t);return true;
     });
   });
+  if(stash.length){
+    const have=new Set(L.unknown.map(u=>u&&u.t));
+    stash.forEach(u=>{if(!have.has(u.t)){L.unknown.push(u);have.add(u.t);}});
+  }
+  if(L.unknown.length>40)L.unknown=L.unknown.slice(-40);   // 무한정 쌓이지 않게
   // todo는 반드시 정확히 한 곳에 존재
   if(!seen.has('todo'))L.cols.left.unshift('todo');
   if(typeof L.bp2!=='number')L.bp2=600;
@@ -21847,13 +21875,46 @@ function _fbBaseObj(){
 // 그게 "로컬 우선"을 타면 지금 실제로 쓰고 있는 폰의 작업을 밀어냈다.
 // 사람이 최근에 만진 기기가 이긴다 — 이게 실제 의도에 가장 가깝다.
 let _fbLastTouchTs=Date.now();
-const _FB_IDLE_MS=120000; // 2분
+// 마지막으로 창이 **뒤에 있다가 앞으로 나온** 시각.
+// ⚠️ 처음 켤 때는 0 으로 둔다 — 방금 연 앱은 "오래 열어만 뒀던 창"이 아니다.
+// (여기에 Date.now() 를 넣었더니, 앱을 켜고 20초 안에 하는 편집이 전부
+//  '아직 보고만 있는 기기'로 취급돼 충돌에서 밀렸다)
+let _fbVisibleSince=0;
+let _fbLastEditTs=0;              // 마지막으로 이 기기에서 무언가를 고친 시각
+const _FB_IDLE_MS=120000;         // 2분
+const _FB_WAKE_MS=20000;          // 앞으로 불러온 뒤 "아직 보고만 있는" 시간
 ['pointerdown','keydown','touchstart','wheel'].forEach(ev=>{
   document.addEventListener(ev,()=>{_fbLastTouchTs=Date.now();},{passive:true,capture:true});
 });
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')_fbVisibleSince=Date.now();
+},{capture:true});
 function _fbDeviceIdle(){
   if(document.visibilityState!=='visible')return true;
+  // ⚠️ 창을 앞으로 불러온 **직후**는 아직 "쓰고 있는 기기"가 아니다.
+  //    탭을 눌러 활성화한 그 클릭이 곧바로 '사람이 만졌다'로 잡히는 바람에,
+  //    하루 종일 열어만 뒀던 창이 충돌에서 이겨 버렸다. 실제로 무언가를
+  //    고치기 전까지는 잠깐 양보한다.
+  if(_fbLastEditTs<=_fbVisibleSince&&(Date.now()-_fbVisibleSince)<_FB_WAKE_MS)return true;
   return (Date.now()-_fbLastTouchTs)>_FB_IDLE_MS;
+}
+// ── 앱 버전 비교 ("v. YY-MMDD-N") ──
+// 마지막 자리는 숫자로 비교해야 한다 (문자열이면 "-10" < "-4" 가 되어 뒤집힌다).
+function _verNums(s){
+  const m=/(\d{2})-(\d{4})-(\d+)/.exec(String(s==null?'':s));
+  return m?[+m[1],+m[2],+m[3]]:null;
+}
+function _verCmp(a,b){
+  const x=_verNums(a),y=_verNums(b);
+  if(!x||!y)return null;                       // 못 읽으면 판단하지 않는다
+  for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]<y[i]?-1:1;}
+  return 0;
+}
+// 클라우드 문서를 **나보다 낮은 버전**이 썼는가?
+// appVer 자체가 없으면 그것을 기록하기 전(≤v26-0802-0) 기기다 = 낡았다.
+function _fbVerIsOlder(cloudVer){
+  if(cloudVer===undefined||cloudVer===null||cloudVer==='')return true;
+  return _verCmp(cloudVer,APP_VERSION)===-1;
 }
 let _mgPreferCloud=false;
 const _mgJ=v=>JSON.stringify(v===undefined?null:v);
@@ -21984,6 +22045,20 @@ function _fbApplyStateToApp(stateObj){
     else if(activeTab==='M')renderMonthly();
     else renderToday();
     updateTrashBadge?.();
+    // ⚠️ 열려 있는 설정창의 버튼 상태도 같이 맞춘다.
+    //    예전엔 원격 내용을 반영해도 설정창 안은 옛 표시 그대로여서,
+    //    '기준날짜 / 만 기간' 처럼 둘 중 하나가 켜져 있어야 할 버튼이
+    //    둘 다 꺼진 것처럼 보였다 (5-3 으로 보고된 증상).
+    try{
+      if(document.getElementById('settingsOverlay')?.classList.contains('open')){
+        renderSettingsPanel();
+        if(typeof applyUiLevel==='function')applyUiLevel();
+      }
+      if(document.getElementById('verseSettingsOverlay')?.classList.contains('open')&&
+         typeof renderVerseSettingsModal==='function'){
+        renderVerseSettingsModal();
+      }
+    }catch(e){console.warn('설정창 갱신 실패(동기화에는 영향 없음):',e);}
   }
 }
 
@@ -22002,6 +22077,7 @@ function _fbWriteBackup(json,rev){
 window.fbPushState=function(){
   if(!_fbUser||_fbApplyingRemote||!_fbInitLoaded)return;
   _fbDirtySeq++;
+  _fbLastEditTs=Date.now();   // "이 기기에서 실제로 고쳤다" — 유휴 판정에 쓴다
   // 연타 편집(빠른 타이핑 등)을 600ms에 한 번의 커밋으로 모은다.
   clearTimeout(_fbWriteTimer);
   _fbWriteTimer=setTimeout(()=>{_fbWriteTimer=null;_fbCommit();},600);
@@ -22013,10 +22089,10 @@ async function _fbCommit(){
   if(_fbCommitBusy){_fbCommitAgain=true;return;}
   _fbCommitBusy=true;
   const uid=_fbUser.uid;
-  let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0;
+  let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null;
   try{
     await fbDB.runTransaction(async tx=>{
-      mergedApply=null;backupJson=null;      // 트랜잭션 재시도 대비 초기화
+      mergedApply=null;backupJson=null;legacyVer=null; // 트랜잭션 재시도 대비 초기화
       const snap=await tx.get(userDocRef(uid));
       const data=snap.exists?(snap.data()||{}):{};
       const cloudRev=(typeof data.rev==='number')?data.rev:0;
@@ -22030,9 +22106,16 @@ async function _fbCommit(){
         let cloudState=null;try{cloudState=JSON.parse(data.json);}catch(e){}
         if(!cloudState){outState=ST;}
         else{
-          outState=_fbMerge(_fbBaseObj(),ST,cloudState);
+          // ⚠️ 그 문서를 **나보다 낮은 버전**이 썼다면 base 를 넘기면 안 된다.
+          //    낮은 버전은 자기가 모르는 것을 "정리"하며 지웠을 수 있는데,
+          //    base 를 주면 그것이 정상적인 삭제로 통과해 버린다.
+          //    rev 없는 문서와 같은 규칙 — base 없이(합집합) 로컬 우선.
+          const legacy=_fbVerIsOlder(data.appVer);
+          outState=legacy?_fbMerge(null,ST,cloudState,false)
+                         :_fbMerge(_fbBaseObj(),ST,cloudState);
           mergedApply=outState;
           backupJson=data.json;backupRev=cloudRev;
+          if(legacy)legacyVer=data.appVer||'(표시 없음)';
         }
       }
       outRev=cloudRev+1;
@@ -22048,6 +22131,7 @@ async function _fbCommit(){
     if(mergedApply){
       _fbApplyStateToApp(mergedApply);       // 병합 결과(상대 변경 포함)를 화면에
       _fbWriteBackup(backupJson,backupRev);
+      if(legacyVer)_fbWarnLegacyWriter(null,legacyVer);
     }
   }catch(err){
     // 오프라인이면 트랜잭션은 즉시 실패한다(오프라인 큐에 안 들어감).
@@ -22085,7 +22169,7 @@ async function _fbForceWrite(stateObj){
     const snap=await tx.get(userDocRef(uid));
     const cur=snap.exists?(snap.data()||{}):{};
     rev=((typeof cur.rev==='number')?cur.rev:0)+1;
-    tx.set(userDocRef(uid),{json,rev,dev:_deviceId(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    tx.set(userDocRef(uid),{json,rev,dev:_deviceId(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
   _fbSetBase(json,rev,uid);
   _fbCleanSeq=_fbDirtySeq; // 방금 올린 것이 곧 최신 — 미전송 표시 해제
@@ -22314,11 +22398,32 @@ function applyRemoteState(remote){
 // 옛 버전 기기가 덮어쓴 것을 감지했을 때 한 번만 알린다.
 // (매번 띄우면 그 기기가 저장할 때마다 토스트가 쏟아진다)
 let _fbLegacyWarned=false;
-function _fbWarnLegacyWriter(dev){
-  console.warn('구버전 기기의 덮어쓰기를 감지해 복구했습니다. 기기ID:',dev||'(알 수 없음)');
+function _fbWarnLegacyWriter(dev,ver){
+  console.warn('구버전 기기의 덮어쓰기를 감지해 복구했습니다. 기기ID:',dev||'(알 수 없음)','버전:',ver||'(없음)');
   if(_fbLegacyWarned)return;
   _fbLegacyWarned=true;
-  try{showToast('옛 버전으로 열려 있는 기기가 있어요 — 그 기기에서 앱을 새로고침해주세요');}catch(e){}
+  try{showToast(`옛 버전(${ver||'구버전'})으로 열려 있는 기기가 있어요 — 그 기기에서 새로고침해주세요`);}catch(e){}
+}
+// 낮은 버전이 쓴 문서를 되살린 뒤 다시 올린다.
+// 낡은 탭이 계속 열려 있으면 서로 되돌리기가 반복될 수 있어 간격을 둔다
+// (그 탭은 곧 _fbMaybeSelfUpdate 로 스스로 새로고침된다).
+let _fbHealTs=0;
+const _FB_HEAL_MIN_MS=15000;
+function _fbHealFromLegacy(remote,rawJson,rev,dev,ver){
+  _fbWriteBackup(rawJson,rev||0);
+  const healed=_fbMerge(null,ST,remote,false);   // base 없음 → 합집합 + 로컬 우선
+  _fbApplyStateToApp(healed);
+  _fbWarnLegacyWriter(dev,ver);
+  // 되살린 내용은 **반드시** 다시 올린다 (안 올리면 클라우드는 지워진 채 남는다).
+  // 다만 낡은 탭이 계속 열려 있으면 서로 되돌리기가 반복되므로, 연달아 일어날
+  // 때는 간격을 벌린다. 그 탭은 곧 _fbMaybeSelfUpdate 로 스스로 새로고침된다.
+  const now=Date.now();
+  const first=(now-_fbHealTs)>=_FB_HEAL_MIN_MS;
+  _fbHealTs=now;
+  _fbDirtySeq++;_fbLastEditTs=now;
+  if(!_fbWriteTimer&&!_fbCommitBusy){
+    _fbWriteTimer=setTimeout(()=>{_fbWriteTimer=null;_fbCommit();},first?250:_FB_HEAL_MIN_MS);
+  }
 }
 // 클라우드에 더 새 버전이 기록돼 있으면 이 기기가 낡은 것 → 조용히 새로고침.
 // 앞으로 "오래 열어둔 탭"이 다시 문제를 일으키지 않게 하는 예방책.
@@ -22326,9 +22431,16 @@ function _fbWarnLegacyWriter(dev){
 let _fbReloading=false;
 function _fbMaybeSelfUpdate(cloudVer){
   if(_fbReloading||!cloudVer||typeof APP_VERSION!=='string')return;
-  if(String(cloudVer)<=APP_VERSION)return;
-  if(!_fbDeviceIdle())return;
+  if(_verCmp(cloudVer,APP_VERSION)!==1)return;      // 내가 최신이거나 같다
+  // ⚠️ 예전엔 "유휴일 때만" 새로고침했다. 그런데 정작 사고를 내는 것은
+  //    **사람이 방금 앞으로 불러온 낡은 탭**이라 유휴가 아니어서 갱신되지
+  //    않았다. 이제는 못 올린 편집이 없고 글자를 치는 중이 아니면 바로 갱신한다
+  //    (그것이 그 탭이 남의 데이터를 지우는 것을 막는 가장 확실한 길이다).
+  if(_fbCleanSeq!==_fbDirtySeq||_fbWriteTimer||_fbCommitBusy)return;
+  const ae=document.activeElement;
+  if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable))return;
   _fbReloading=true;
+  try{showToast('새 버전이 있어 화면을 새로 불러올게요');}catch(e){}
   setTimeout(()=>{try{location.reload();}catch(e){}},1500);
 }
 window.fbStartListening=function(uid){
@@ -22360,17 +22472,27 @@ window.fbStartListening=function(uid){
     // 사라졌다. 이제는 믿지 않고, 원본을 백업한 뒤 합집합으로 복구해
     // 곧바로 정상 rev로 다시 올린다(옛 기기가 새로 넣은 것도 살린다).
     if(rev===null){
-      _fbWriteBackup(data.json,0);
-      const healed=_fbMerge(null,ST,remote,false); // baseKnown=false → 합집합·로컬 우선
       _fbLastSeenRev=Math.max(_fbLastSeenRev,0);
-      _fbApplyStateToApp(healed);
-      _fbDirtySeq++;
-      if(!_fbWriteTimer&&!_fbCommitBusy){_fbWriteTimer=setTimeout(()=>{_fbWriteTimer=null;_fbCommit();},250);}
-      _fbWarnLegacyWriter(data.dev);
+      _fbHealFromLegacy(remote,data.json,0,data.dev,data.appVer);
       return;
     }
     const seenRev=rev;
     _fbMaybeSelfUpdate(data.appVer);
+    // ⚠️⚠️ rev 는 제대로 붙어 있지만 **나보다 낮은 버전**이 쓴 문서.
+    // 그 기기는 이 버전이 아는 것을 모른다 → 자기가 모르는 데이터를 "정리"하며
+    // 지웠을 수 있다. 실제로 0810 말씀카드가 이렇게 통째로 사라졌다:
+    // 구버전 _lay() 가 cols 의 'card#…' 를 지운 뒤 그 상태를 그대로 올렸고,
+    // 3자 병합은 그것을 **사람이 지운 것**으로 받아들여 모든 기기에 퍼뜨렸다.
+    // rev 없는 문서와 똑같이 다룬다 — 원본을 백업하고 합집합으로 되살린다.
+    // (⚠️ 여기서도 base 를 넘기면 안 된다. 7-2 의 경고와 같은 이유다)
+    if(_fbVerIsOlder(data.appVer)){
+      // rev 만 본 것으로 올린다(같은 문서를 되풀이 처리하지 않게).
+      // ⚠️ base(_fbBaseJson)는 **건드리지 않는다** — 내가 동의하지 않은 상태를
+      //    기준점으로 삼으면, 바로 다음 병합에서 그 삭제가 정상으로 통과한다.
+      _fbLastSeenRev=Math.max(_fbLastSeenRev,seenRev);
+      _fbHealFromLegacy(remote,data.json,seenRev,data.dev,data.appVer);
+      return;
+    }
 
     const hasLocalEdits=(_fbCleanSeq!==_fbDirtySeq)||!!_fbWriteTimer||_fbCommitBusy;
     if(hasLocalEdits){

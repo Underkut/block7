@@ -41,7 +41,7 @@ global.renderRightPanel = () => {};
 
 eval(
   slice('const RP_WIDGET_DEFS={', 'function _rpGetWidgets(') +
-  slice('function _lay(){', 'function _colKey(') +
+  slice('// 이 버전이 "아는" 위젯인가.', 'function _colKey(') +
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
