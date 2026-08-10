@@ -31,12 +31,12 @@ global.ACTIVE_VERSES = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, k
 global._aggEntriesForKind = kind => (kind === 'like'
   ? [{ ref: 'R4' }, { ref: 'R2' }, { ref: 'R5' }]
   : []);
-global.verseByRef = ref => ({ idx: +ref.slice(1), ref, krText: 't' + ref, cat: '', topic: '', tags: [] });
+global.verseByRef = ref => ({ idx: +ref.slice(1), ref, krText: 't' + ref, cat: +ref.slice(1) <= 2 ? '가' : '나', topic: '', tags: [] });
 // 갈래(필터) pool — 타일뷰와 같은 원천을 쓴다
 global._vgRawPool = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, krText: 't' + i, cat: i <= 2 ? '가' : '나', topic: '', tags: [] }));
 global._vgMatch = (v, kind, val) => (kind === 'cat' ? v.cat === val : true);
-// vcNav 가 화면을 다시 그리려 할 때 조용히 넘어가게
-global.document = { querySelector: () => null };
+// 화면을 다시 그리려 할 때 조용히 넘어가게
+global.document = { querySelector: () => null, getElementById: () => null };
 global.renderRightPanel = () => {};
 
 eval(
@@ -45,7 +45,7 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,VC_NEW,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,VC_NEW,VC_KINDS});'
 );
 
 const reset = () => {
@@ -113,7 +113,7 @@ console.log('\n시나리오 3 — 카드는 여러 개 놓을 수 있다');
 }
 
 // ═══ 4. 카드가 도는 범위 ═══
-console.log('\n시나리오 4 — 그 카드가 도는 범위');
+console.log('\n시나리오 4 — 그 카드가 도는 범위 (필터는 덜어낸다)');
 {
   reset();
   ST.settings.verseCurrentIdx = 3;
@@ -131,13 +131,18 @@ console.log('\n시나리오 4 — 그 카드가 도는 범위');
   sc.eq('기록이 없으면 보여줄 것이 없다', _vcCurrent({ kind: 'mem', ref: null }), null);
   sc.eq('설정이 없으면 빈 목록', _vcVerses(null), []);
 
-  // 갈래(필터)가 걸리면 그것이 가장 우선한다
+  // ⚠️ 필터는 원래 범위를 **덜어낸다** (갈아치우지 않는다)
+  // 좋아요 목록 = R4,R2,R5 이고 '가' 는 R1,R2 뿐이므로 교집합은 R2 하나
   const flt = { kind: 'like', filter: { kind: 'cat', val: '가' }, ref: null };
-  sc.eq('갈래가 걸리면 그 안에서만', _vcVerses(flt).map(v => v.ref), ['R1', 'R2']);
-  sc.eq('갈래 카드는 자동이면 맨 앞', _vcCurrent(flt).ref, 'R1');
-  sc.eq('갈래 이름', _vcFilterLabel(flt), '가');
-  sc.eq('태그 갈래는 # 을 붙인다', _vcFilterLabel({ filter: { kind: 'tag', val: '사랑' } }), '#사랑');
-  sc.eq('갈래가 없으면 이름도 없다', _vcFilterLabel({ filter: null }), '');
+  sc.eq('목록카드 + 필터 = 교집합', _vcVerses(flt).map(v => v.ref), ['R2']);
+  sc.eq('교집합 카드는 자동이면 맨 앞', _vcCurrent(flt).ref, 'R2');
+  // 일반카드는 말씀 모음 전체에서 그 필터만
+  const gf = { kind: null, filter: { kind: 'cat', val: '가' }, ref: null };
+  sc.eq('일반카드 + 필터', _vcVerses(gf).map(v => v.ref), ['R1', 'R2']);
+  sc.eq('필터가 비면 걸린 게 없는 것', _vcVerses({ kind: 'like', filter: { kind: 'cat', val: '' } }).length, 3);
+  sc.eq('필터 이름', _vcFilterLabel(flt), '가');
+  sc.eq('태그 필터는 # 을 붙인다', _vcFilterLabel({ filter: { kind: 'tag', val: '사랑' } }), '#사랑');
+  sc.eq('필터가 없으면 이름도 없다', _vcFilterLabel({ filter: null }), '');
 }
 
 // ═══ 4-B. ⚠️ 한 카드를 넘겨도 다른 카드는 꿈쩍하지 않는다 ═══
@@ -167,7 +172,7 @@ console.log('\n시나리오 4-B — 카드끼리 서로를 건드리지 않는�
   const c = _vcCreate(null, null);
   _vcGet(c).filter = { kind: 'cat', val: '가' }; _vcGet(c).ref = 'R2';
   vcClearFilter(c);
-  sc.eq('갈래를 풀면 갈래도 자리도 지워진다', [_vcGet(c).filter, _vcGet(c).ref], [null, null]);
+  sc.eq('필터를 풀면 필터도 자리도 지워진다', [_vcGet(c).filter, _vcGet(c).ref], [null, null]);
   sc.eq('풀고 나면 다시 오늘의 구절', _vcCurrent(_vcGet(c)).ref, 'R3');
 }
 
@@ -302,8 +307,9 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('+ 버튼 메뉴는 없앴다', SRC.includes('rpAddMenu'), false);
   sc.eq('카드 설정 팝업', SRC.includes('id="vcSetModal"'), true);
   sc.eq('ESC 표에 카드 설정 팝업', SRC.includes("['vcSetModal'"), true);
-  sc.eq('말씀설정 뷰 탭 — 좌하단 알약', SRC.includes('setVerseCardCat') && SRC.includes('setVerseCardTopic') && SRC.includes('setVerseCardTag'), true);
-  sc.eq('말씀설정 뷰 탭 — 우하단 알약', SRC.includes('setVerseCardLike') && SRC.includes('setVerseCardMem') && SRC.includes('setVerseCardDeeper') && SRC.includes('setVerseCardEven'), true);
+  // 표시 항목은 카드마다 따로 있으므로 말씀설정에서는 뺐다 (0810-4)
+  sc.eq('말씀설정 뷰 탭에는 카드 항목이 없다',
+        SRC.includes('setVerseCardCat') || SRC.includes('setVerseCardShare') || SRC.includes('말씀카드에서 보여줄 항목'), false);
   sc.eq('그레인(종이결)이 카드에도 걸린다', SRC.includes('.vc-body::after'), true);
   // 세로로 쌓으면 220px 카드에서 버튼이 높이의 3/4을 먹어 본문이 한 줄만 남았다
   sc.eq('카드 반응 버튼은 가로로 눕힌다', /\.vc-actions\{display:flex;flex-direction:row/.test(SRC), true);
@@ -340,7 +346,7 @@ console.log('\n시나리오 9 — 화면 연결');
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');
   const seg = SRC.slice(b, b + 5000);
-  const order = ['말씀카드 테마', '말씀카드 글자 크기', '왼쪽 아래 — 갈래', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
+  const order = ['말씀카드 테마', '말씀카드 글자 크기', '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
     .map(t => seg.indexOf(t));
   sc.eq('설정 팝업 다섯 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
   sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
@@ -362,6 +368,55 @@ console.log('\n시나리오 9 — 화면 연결');
         /const poolRows=\[\s*\[VC_NEW\],\s*\['weekly','monthSingle','monthTriple'\][\s\S]*?\['likeList','memList','deeperList','evenList'\]/.test(SRC), true);
   sc.eq('칩을 끌어다 놓으면 새 카드', SRC.includes('if(type===VC_NEW){'), true);
   sc.eq('사용 안 함은 세로로 쌓고 줄만 가로', /\.rp-cfg-col\.pool\{flex-direction:column/.test(SRC), true);
+
+  // ── 0810-4 ──
+  // 헤더는 위젯 순서 이동 손잡이라, button 이 아니면 PC 클릭이 죽는다
+  sc.eq('헤더의 필터 이름은 button', SRC.includes('<button class="vc-filter"'), true);
+  // 카드 밖까지 밀고 놓으면 되돌아왔다가 사라지던 것
+  sc.eq('넘김 목적지는 늘 지금보다 바깥', SRC.includes('const to=(d>0)?Math.min(-base,cur-30):Math.max(base,cur+30);'), true);
+  sc.eq('지금 칠해진 위치를 읽는다', SRC.includes('function _vcCurX(el)'), true);
+  // 필터는 반응 목록과의 교집합 — 타일뷰도 같은 교집합을 보여야 고른 말씀이 안 사라진다
+  sc.eq('타일뷰도 그 반응 목록과 교집합', SRC.includes('if(_vgState.limitKind){'), true);
+  sc.eq('다른 경로로 열면 교집합을 푼다', SRC.includes('_vgState.limitKind=(_tc&&_tc.kind)?_tc.kind:null;'), true);
+  sc.eq('타일뷰를 닫을 때도 푼다', SRC.includes('_vgCardTarget=null;_vgState.limitKind=null;'), true);
+  // 구역 제목 옆 전체 스위치
+  sc.eq('구역 전체 스위치', SRC.includes('function setVcShowAll(id,which,on)'), true);
+  sc.eq('구역 목록', /_VC_SHOW_GROUP=\{\s*meta:\[/.test(SRC), true);
+  sc.eq('제목 옆에 스위치를 단다', SRC.includes('const swTitle=(label,which)=>{'), true);
+}
+
+// ═══ 9-B. 구역 전체 스위치 ═══
+console.log('\n시나리오 9-B — 구역 전체 켜고 끄기');
+{
+  reset();
+  const id = _vcCreate(null, null);
+  const cfg = _vcGet(id);
+  sc.eq('구역이 둘', Object.keys(_VC_SHOW_GROUP), ['meta', 'react']);
+  sc.eq('처음엔 다 켜져 있다', _VC_SHOW_GROUP.react.every(k => _vcShowFor(cfg, k)), true);
+
+  setVcShowAll(id, 'react', false);
+  sc.eq('오른쪽 아래를 통째로 끈다', _VC_SHOW_GROUP.react.some(k => _vcShowFor(cfg, k)), false);
+  sc.eq('왼쪽 아래는 그대로', _VC_SHOW_GROUP.meta.every(k => _vcShowFor(cfg, k)), true);
+
+  setVcShowAll(id, 'react', true);
+  sc.eq('다시 통째로 켠다', _VC_SHOW_GROUP.react.every(k => _vcShowFor(cfg, k)), true);
+  setVcShow(id, 'verseCardLike', false);
+  sc.eq('하나만 꺼도 나머지는 그대로', _vcShowFor(cfg, 'verseCardMem'), true);
+  sc.eq('없는 구역은 조용히 넘어간다', (setVcShowAll(id, '없음', false), true), true);
+}
+
+// ═══ 9-C. 밀어낸 자리에서 이어서 넘어간다 ═══
+console.log('\n시나리오 9-C — 카드 밖까지 밀고 놓아도 되돌아오지 않는다');
+{
+  const fake = t => ({ style: { transform: t } });
+  sc.eq('칠해진 위치를 읽는다', _vcCurX(fake('translateX(-372.3px)')), -372.3);
+  sc.eq('아무것도 없으면 0', _vcCurX(fake('')), 0);
+  sc.eq('이상한 값도 0', _vcCurX(fake('scale(1.2)')), 0);
+  // 카드 폭 424 → 기본 목적지는 -169.6. 이미 -372 까지 밀렸다면 더 바깥으로 가야 한다
+  const to = (cur, base, d) => (d > 0 ? Math.min(-base, cur - 30) : Math.max(base, cur + 30));
+  sc.eq('덜 밀었으면 기본 목적지', to(-40, 169.6, 1), -169.6);
+  sc.eq('많이 밀었으면 더 바깥으로', to(-372.3, 169.6, 1), -402.3);
+  sc.eq('반대 방향도 마찬가지', to(372.3, 169.6, -1), 402.3);
 }
 
 // ═══ 10. 새 사용자 기본값 ═══
@@ -372,7 +427,6 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
   ['verseCardCat', 'verseCardTopic', 'verseCardTag',
    'verseCardLike', 'verseCardMem', 'verseCardDeeper', 'verseCardEven', 'verseCardShare']
     .forEach(k => sc.eq(k + ' 켜짐', pick(k), 'true'));
-  sc.eq("말씀설정 뷰 탭에 '공유' 알약", SRC.includes('setVerseCardShare'), true);
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
 }
 

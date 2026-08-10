@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0810-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0810-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2005,8 +2005,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-cnt{font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vc-act-like{color:var(--sun-red);}
 .vc-empty{font-size:11px;color:var(--vf-tx3,var(--tx3));text-align:center;padding:26px 10px;}
-/* 헤더 가운데 — 지금 걸려 있는 필터. 누르면 필터가 풀린다. */
+/* 헤더 가운데 — 지금 걸려 있는 필터. 누르면 필터가 풀린다.
+   ⚠️ 반드시 button 요소로 둘 것. 헤더는 위젯 순서 이동 손잡이라 mousedown 에서
+   preventDefault 를 하는데, button 이 아니면 PC 에서 클릭이 통째로 죽는다. */
 .vc-filter{display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;
+  background:none;border:none;padding:0;
   font-size:10px;font-weight:400;letter-spacing:0;color:var(--tx2);cursor:pointer;
   font-family:'Pretendard',sans-serif;-webkit-tap-highlight-color:transparent;}
 .vc-filter span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -2518,7 +2521,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0810-3";
+const APP_VERSION = "v. 26-0810-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3242,22 +3245,6 @@ window._fbScriptsReady=new Promise(resolve=>{
           </div>
         </div>
 
-        <!-- 말씀카드 위젯 하단 좌·우에 무엇을 보여줄지 -->
-        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">말씀카드에서 보여줄 항목</div>
-        <div class="settings-row-desc" style="margin-bottom:6px;">좌하단 — 누르면 그 갈래의 타일뷰로 들어가요.</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="preset-btn on" id="setVerseCardCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardCat',this.classList.toggle('on'))">대분류</button>
-          <button class="preset-btn on" id="setVerseCardTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardTopic',this.classList.toggle('on'))">소주제</button>
-          <button class="preset-btn on" id="setVerseCardTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardTag',this.classList.toggle('on'))">태그</button>
-        </div>
-        <div class="settings-row-desc" style="margin:10px 0 6px;">우하단 — 전체화면과 같은 반응 버튼이에요. 공유는 늘 보여요.</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="preset-btn on" id="setVerseCardLike" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardLike',this.classList.toggle('on'))">좋아요</button>
-          <button class="preset-btn on" id="setVerseCardMem" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardMem',this.classList.toggle('on'))">암송</button>
-          <button class="preset-btn on" id="setVerseCardDeeper" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardDeeper',this.classList.toggle('on'))">Deeper</button>
-          <button class="preset-btn on" id="setVerseCardEven" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardEven',this.classList.toggle('on'))">Even</button>
-          <button class="preset-btn on" id="setVerseCardShare" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseCardShare',this.classList.toggle('on'))">공유</button>
-        </div>
 
       </div>
 
@@ -9143,7 +9130,7 @@ function _initVerseFullGestures(){
 //  2·3열=본문(릴스와 같은 _vfWrapFit 줄바꿈), 4·5열=장절(약어)
 //  핀치로 열 수(2~5) 손 제스처 추종, 우상단 정렬(최신/등록/성경)+'=' 그룹
 // ═══════════════════════════════════════════════════════════════
-let _vgState={kind:null,val:null,cols:3,sortMode:'date',dateOrder:'recent',group:false};
+let _vgState={kind:null,val:null,cols:3,sortMode:'date',dateOrder:'recent',group:false,limitKind:null};
 let _vgLastSorted=[];
 let _vgCanvas=null;
 function _vgEscAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
@@ -9169,8 +9156,16 @@ function _vgMatch(v,kind,val){
   return true;
 }
 function _vgFilteredPool(){
-  if(_vgState.kind==='home')return ACTIVE_VERSES();   // 말씀설정에 맞춰진 기본 목록
-  return _vgRawPool().filter(v=>_vgMatch(v,_vgState.kind,_vgState.val));
+  let pool=(_vgState.kind==='home')
+    ? ACTIVE_VERSES()                                  // 말씀설정에 맞춰진 기본 목록
+    : _vgRawPool().filter(v=>_vgMatch(v,_vgState.kind,_vgState.val));
+  // 반응 목록카드에서 들어온 경우 그 목록과의 **교집합**만 보여준다.
+  // (안 그러면 여기서 고른 말씀이 카드로 돌아갔을 때 목록에 없어 사라진다)
+  if(_vgState.limitKind){
+    const ok=new Set(_aggEntriesForKind(_vgState.limitKind).map(g=>g.ref));
+    pool=pool.filter(v=>ok.has(v.ref));
+  }
+  return pool;
 }
 // 기본 목록이 무엇인지 한 줄로 정리 (켜둔 모음 이름)
 function _vgHomeLabel(){
@@ -9432,6 +9427,9 @@ let _vgCardTarget=null;
 function openVerseGrid(kind,val,cardId){
   if(!val)return;
   _vgCardTarget=(cardId&&_vcGet(cardId))?cardId:null;
+  // 반응 목록카드에서 들어왔으면 그 목록과의 교집합만 (다른 경로면 반드시 해제)
+  const _tc=_vgCardTarget?_vcGet(_vgCardTarget):null;
+  _vgState.limitKind=(_tc&&_tc.kind)?_tc.kind:null;
   const cur=_vfCurrentVerse();               // 전체화면에 떠 있던 말씀 — 이 위치로 스크롤
   _vgState.kind=kind;_vgState.val=val;_vgState.group=false;
   if(!_vgState.cols)_vgState.cols=3;
@@ -9495,7 +9493,7 @@ function _vgRestoreHighlight(){
 }
 function closeVerseGrid(){
   const gd=document.getElementById('verseGrid');if(gd)gd.style.display='none';
-  _vgCardTarget=null;
+  _vgCardTarget=null;_vgState.limitKind=null;
   // 대시보드에서 넘어온 경우 그 화면으로 되돌린다
   if(!_verseFullIsOpen())_vDashMaybeReturn();
 }
@@ -12266,15 +12264,21 @@ function _rpChipName(t){
   return _RP_CHIP_NAME[t]||_rpWidgetName(t);
 }
 // ── 카드가 도는 범위 ──
-// 갈래(필터)가 걸려 있으면 그것이 가장 우선한다 — 타일뷰에서 고른 말씀을
-// 카드에 띄운 뒤로는 그 갈래 안에서만 돈다.
+// 필터는 **원래 범위를 덜어내는** 것이지 갈아치우는 것이 아니다.
+// 목록카드에 필터가 걸리면 "그 반응 목록 ∩ 그 필터"(교집합)가 된다.
+// 예: 좋아요 목록 카드에서 '히브리서' 를 고르면 → 좋아요 한 히브리서 말씀만.
 function _vcVerses(cfg){
   if(!cfg)return[];
-  if(cfg.filter&&cfg.filter.val)
-    return _vgRawPool().filter(v=>_vgMatch(v,cfg.filter.kind,cfg.filter.val));
-  if(!cfg.kind)return ACTIVE_VERSES()||[];
-  return _aggEntriesForKind(cfg.kind)
-    .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+  const hasF=!!(cfg.filter&&cfg.filter.val);
+  let base;
+  if(cfg.kind){
+    base=_aggEntriesForKind(cfg.kind)
+      .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+  }else{
+    // 일반카드에 필터가 걸리면 타일뷰와 똑같은 원천을 써야 고른 말씀이 그대로 뜬다
+    base=hasF?_vgRawPool():(ACTIVE_VERSES()||[]);
+  }
+  return hasF?base.filter(v=>_vgMatch(v,cfg.filter.kind,cfg.filter.val)):base;
 }
 // 지금 보여줄 구절.
 // ⚠️ 자리를 **장절 그대로**(cfg.ref) 들고 있는다. 예전엔 "몇 칸 옮겼는지"로
@@ -12348,6 +12352,11 @@ function _vcShowFor(cfg,key){
   const own=cfg&&cfg.show&&typeof cfg.show==='object'?cfg.show[key]:undefined;
   return(own===true||own===false)?own:_vcShow(key);
 }
+// 카드 설정 팝업의 두 구역 — 제목 옆 전체 스위치가 이 목록을 통째로 켜고 끈다
+const _VC_SHOW_GROUP={
+  meta:['verseCardCat','verseCardTopic','verseCardTag'],
+  react:['verseCardLike','verseCardMem','verseCardDeeper','verseCardEven','verseCardShare'],
+};
 // ── 카드 한 장 HTML ──
 // 설정 진입은 점 세 개 (톱니는 작게 그리면 해 모양으로 보인다)
 const _VC_ICON_MORE='<svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" stroke="none"><circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>';
@@ -12373,7 +12382,7 @@ function _vcCardHTML(id){
   // 일반카드는 중앙·우측이 비지만 자리는 남겨 점 세 개가 늘 같은 세로줄에 선다.
   const fl=_vcFilterLabel(cfg);
   const center=fl
-    ? `<span class="vc-filter" onclick="vcClearFilter('${id}')" title="갈래 풀기">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}<span>${esc(fl)}</span></span>`
+    ? `<button class="vc-filter" onclick="vcClearFilter('${id}')" title="필터 풀기">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}<span>${esc(fl)}</span></button>`
     : `<span class="vc-head-ic">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}</span>`;
   const head=`<div class="rp-widget-title vc-head" data-vchead="${id}">
       <span class="vc-head-slot"><button class="vc-icbtn" onclick="openVcSettings('${id}')" title="말씀카드 설정">${_VC_ICON_MORE}</button></span>
@@ -12382,7 +12391,7 @@ function _vcCardHTML(id){
     </div>`;
   let body;
   if(!v){
-    const why=fl?'이 갈래에 말씀이 없어요':(cfg.kind?'아직 기록이 없어요':'말씀 모음이 비어 있어요');
+    const why=fl?'이 필터에 해당하는 말씀이 없어요':(cfg.kind?'아직 기록이 없어요':'말씀 모음이 비어 있어요');
     body=`<div class="vc-empty">${why}</div>`;
   }else{
     const tags=(v.tags||[]).filter(Boolean);
@@ -12516,7 +12525,7 @@ function vcOpenFilter(id,which,tagVal){
   openVerseGrid(which,val,id);
   _vfOverrideVerse=prev;
 }
-// 헤더의 갈래 이름을 누르면 갈래를 푼다 (원래 도는 범위로 돌아간다)
+// 헤더의 필터 이름을 누르면 필터를 푼다 (원래 도는 범위로 돌아간다)
 function vcClearFilter(id){
   const cfg=_vcGet(id);
   if(!cfg||!cfg.filter)return;
@@ -12544,14 +12553,24 @@ function _vcSlideEl(id){
   if(typeof document==='undefined'||!document.querySelector)return null;
   return document.querySelector(`.vc-widget[data-vcid="${id}"] .vc-slide`);
 }
-// 지금 위치(손끝을 따라와 있을 수도 있다)에서 이어서 밀어내고, 다시 그린 뒤
-// 반대편에서 들어오게 한다. 전체화면 넘김(_vfNavCommit)과 같은 문법.
+// 지금 칠해져 있는 가로 위치 (손끝을 따라와 있을 수 있다)
+function _vcCurX(el){
+  const m=/translateX\((-?[\d.]+)px\)/.exec((el&&el.style.transform)||'');
+  return m?parseFloat(m[1]):0;
+}
+// 지금 위치에서 **이어서** 밀어내고, 다시 그린 뒤 반대편에서 들어오게 한다.
+// 전체화면 넘김(_vfNavCommit)과 같은 문법.
+// ⚠️ 목적지는 늘 지금보다 **더 바깥**이어야 한다. 예전엔 화면폭의 40% 로 고정했는데,
+//    손가락이 카드 밖까지 나가 그보다 더 밀린 상태에서 놓으면 목적지가 뒤에 있어
+//    카드가 되돌아왔다 — 사라지는 동안 튕기듯 보이던 것이 이것이다.
 function _vcSlideCommit(id,slide,d){
   if(slide._vcBusy)return;
   slide._vcBusy=true;
   const w=slide.getBoundingClientRect().width||220;
+  const cur=_vcCurX(slide),base=w*0.4;
+  const to=(d>0)?Math.min(-base,cur-30):Math.max(base,cur+30);
   slide.style.transition=_VC_SLIDE_TR;
-  slide.style.transform=`translateX(${d>0?-w*0.4:w*0.4}px)`;
+  slide.style.transform=`translateX(${to}px)`;
   slide.style.opacity='0';
   setTimeout(()=>{
     if(!_vcApplyNav(id,d)){
@@ -12796,7 +12815,19 @@ function renderVcSettings(){
       <div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px 0 2px;">${p.label}</div>
     </div>`;
   };
-  // 좌·우 하단 버튼 — 이 카드에서만 켜고 끈다 (기본값은 말씀설정 '뷰' 탭)
+  // 좌·우 하단 버튼 — 이 카드에서만 켜고 끈다
+  // 구역 제목 오른쪽의 전체 스위치: 다 켜져 있을 때만 켜짐으로 보이고,
+  // 누르면 그 구역을 통째로 켜거나 끈다.
+  const swTitle=(label,which)=>{
+    const all=_VC_SHOW_GROUP[which].every(k=>_vcShowFor(cfg,k));
+    return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+      <div class="settings-section-title" style="margin:0;flex:1;">${label}</div>
+      <label class="settings-toggle">
+        <input type="checkbox"${all?' checked':''} onchange="setVcShowAll('${id}','${which}',this.checked)">
+        <span class="settings-toggle-track"></span>
+      </label>
+    </div>`;
+  };
   const swRow=(key,label)=>`<div class="settings-row">
       <div class="settings-row-text"><div class="settings-row-label" style="font-size:13px;">${label}</div></div>
       <label class="settings-toggle">
@@ -12808,7 +12839,7 @@ function renderVcSettings(){
   const lnk=ST.settings.linkOpenMode||'safari';
   const lnkTxt=lnk==='chrome'?'크롬':(lnk==='inapp'?'앱 안에서':'사파리');
   const where=cfg.filter&&cfg.filter.val
-    ? `지금은 <b>${esc(_vcFilterLabel(cfg))}</b> 안에서 도는 카드예요. 헤더의 그 이름을 누르면 풀려요.`
+    ? `지금은 <b>${esc(_vcFilterLabel(cfg))}</b> 필터 안에서 도는 카드예요. 헤더의 그 이름을 누르면 풀려요.`
     : (cfg.kind?`${_VC_KIND_NAME[cfg.kind]} 목록 안에서 도는 카드예요.`:'말씀 모음에서 고른 말씀 전체에서 도는 카드예요.');
   box.innerHTML=`
     <div class="settings-row-desc" style="margin-bottom:12px;">${where} 여기서 고른 값은 <b>이 카드 하나에만</b> 적용돼요.</div>
@@ -12825,12 +12856,12 @@ function renderVcSettings(){
       </div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">왼쪽 아래 — 갈래</div>
-      <div class="settings-row-desc" style="margin-bottom:4px;">누르면 그 갈래의 타일뷰로 들어가고, 거기서 말씀을 고르면 이 카드가 그 갈래 안에서 돌아요.</div>
+      ${swTitle("왼쪽 아래 — 필터","meta")}
+      <div class="settings-row-desc" style="margin-bottom:4px;">누르면 그 필터의 타일뷰로 들어가고, 거기서 말씀을 고르면 이 카드가 그 필터 안에서 돌아요.</div>
       ${swRow('verseCardCat','대분류')}${swRow('verseCardTopic','소주제')}${swRow('verseCardTag','태그')}
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">오른쪽 아래 — 말씀 반응</div>
+      ${swTitle("오른쪽 아래 — 말씀 반응","react")}
       ${swRow('verseCardLike','좋아요')}${swRow('verseCardMem','암송')}${swRow('verseCardDeeper','Deeper')}${swRow('verseCardEven','Even Deeper')}${swRow('verseCardShare','공유')}
     </div>
     <div class="settings-section">
@@ -12843,7 +12874,14 @@ function setVcShow(id,key,on){
   if(!cfg)return;
   if(!cfg.show||typeof cfg.show!=='object')cfg.show={};
   cfg.show[key]=!!on;
-  save();renderRightPanel();
+  save();renderVcSettings();renderRightPanel();
+}
+function setVcShowAll(id,which,on){
+  const cfg=_vcGet(id);
+  if(!cfg||!_VC_SHOW_GROUP[which])return;
+  if(!cfg.show||typeof cfg.show!=='object')cfg.show={};
+  _VC_SHOW_GROUP[which].forEach(k=>{cfg.show[k]=!!on;});
+  save();renderVcSettings();renderRightPanel();
 }
 function setVcTextScale(id,v){
   const cfg=_vcGet(id);
@@ -19281,9 +19319,6 @@ function renderSettingsPanel(){
   [1,2,3].forEach(n=>{
     document.getElementById('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
     document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
-  });
-  ['Cat','Topic','Tag','Like','Mem','Deeper','Even','Share'].forEach(k=>{
-    document.getElementById('setVerseCard'+k)?.classList.toggle('on',s['verseCard'+k]!==false);
   });
   document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
   const pbm=s.periodBaseMode||'calendar';
