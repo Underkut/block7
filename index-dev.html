@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0807-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0807-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2418,7 +2418,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0807-3";
+const APP_VERSION = "v. 26-0807-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7627,9 +7627,16 @@ function _vfHideCovers(){
     const o=document.getElementById(id);
     if(o&&o.classList.contains('open')){o.classList.remove('open');jobs.push(()=>o.classList.add('open'));}
   });
-  // 전체화면보다 위(z-index)에 뜨는 주요 팝업들 — 짝(오버레이+본체)으로 숨긴다
+  // 전체화면보다 위(z-index)에 뜨는 주요 팝업들 — 짝(오버레이+본체)으로 숨긴다.
+  // ⚠️ 여기 빠뜨리면 그 팝업에서 전체화면을 열었을 때 전체화면(z-index 190)이
+  //    팝업(4000번대) 아래에 깔려 "아무 반응 없는" 것처럼 보인다.
+  //    말씀 반응별 목록(vAggModal)이 빠져 있어 실제로 그랬다 — 좌상단 메뉴
+  //    LIST 에서 목록에 들어가 말씀을 누르면 전체화면이 목록 뒤에 숨었다.
   [['vDashDetailOverlay','vDashDetailModal'],['vDashOverlay','vDashModal'],
-   ['verseListOverlay','verseListModal'],['collEditPage',null]].forEach(([aId,bId])=>{
+   ['verseListOverlay','verseListModal'],
+   ['vAggOverlay','vAggModal'],['memRecOverlay','memRecModal'],
+   ['versePopupOverlay','versePopupModal'],['memHistoryOverlay','memHistoryModal'],
+   ['collEditPage',null]].forEach(([aId,bId])=>{
     [aId,bId].forEach(id=>{
       if(!id)return;
       const el=document.getElementById(id);
