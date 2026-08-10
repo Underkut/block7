@@ -32,6 +32,12 @@ global._aggEntriesForKind = kind => (kind === 'like'
   ? [{ ref: 'R4' }, { ref: 'R2' }, { ref: 'R5' }]
   : []);
 global.verseByRef = ref => ({ idx: +ref.slice(1), ref, krText: 't' + ref, cat: '', topic: '', tags: [] });
+// 갈래(필터) pool — 타일뷰와 같은 원천을 쓴다
+global._vgRawPool = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, krText: 't' + i, cat: i <= 2 ? '가' : '나', topic: '', tags: [] }));
+global._vgMatch = (v, kind, val) => (kind === 'cat' ? v.cat === val : true);
+// vcNav 가 화면을 다시 그리려 할 때 조용히 넘어가게
+global.document = { querySelector: () => null };
+global.renderRightPanel = () => {};
 
 eval(
   slice('const RP_WIDGET_DEFS={', 'function _rpGetWidgets(') +
@@ -39,7 +45,7 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcUnplacedForKind,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,vcClearFilter,VC_KINDS});'
 );
 
 const reset = () => {
@@ -66,7 +72,8 @@ console.log('\n시나리오 2 — 카드 설정 만들기·지우기');
   sc.eq('반응 카드', _vcGet(a).kind, 'like');
   sc.eq('일반 카드는 kind 가 없다', _vcGet(b).kind, null);
   sc.eq('모르는 반응은 일반 카드로', _vcGet(_vcCreate('없는것')).kind, null);
-  sc.eq('처음 자리(off)는 0', _vcGet(a).off, 0);
+  sc.eq('처음엔 자리를 지정하지 않는다(자동)', _vcGet(a).ref, null);
+  sc.eq('처음엔 갈래가 없다', _vcGet(a).filter, null);
   sc.eq('배경·글자 크기는 처음엔 안 정해져 있다',
         [_vcGet(a).theme, _vcGet(a).textScale], [null, null]);
 
@@ -110,22 +117,75 @@ console.log('\n시나리오 4 — 그 카드가 도는 범위');
 {
   reset();
   ST.settings.verseCurrentIdx = 3;
-  const gen = { kind: null, off: 0 }, lst = { kind: 'like', off: 0 };
+  const gen = { kind: null, ref: null }, lst = { kind: 'like', ref: null };
 
   sc.eq('일반 카드는 말씀 모음 전체', _vcVerses(gen).length, 5);
   sc.eq('목록 카드는 그 반응 목록 안', _vcVerses(lst).map(v => v.ref), ['R4', 'R2', 'R5']);
 
-  sc.eq('일반 카드는 오늘의 구절부터', _vcCurrent(gen).ref, 'R3');
-  sc.eq('한 칸 밀면 다음 구절', _vcCurrent({ kind: null, off: 1 }).ref, 'R4');
-  sc.eq('끝에서 넘어가면 처음으로', _vcCurrent({ kind: null, off: 3 }).ref, 'R1');
-  sc.eq('뒤로도 돌아간다', _vcCurrent({ kind: null, off: -1 }).ref, 'R2');
+  sc.eq('일반 카드는 자동이면 오늘의 구절', _vcCurrent(gen).ref, 'R3');
+  sc.eq('목록 카드는 자동이면 목록 맨 앞', _vcCurrent(lst).ref, 'R4');
+  sc.eq('자리를 적어 두면 그 말씀', _vcCurrent({ kind: null, ref: 'R5' }).ref, 'R5');
+  sc.eq('목록에서 사라진 자리는 다시 자동으로',
+        _vcCurrent({ kind: 'like', ref: 'R1' }).ref, 'R4');
 
-  sc.eq('목록 카드는 목록 맨 앞부터', _vcCurrent(lst).ref, 'R4');
-  sc.eq('목록 안에서 한 칸', _vcCurrent({ kind: 'like', off: 1 }).ref, 'R2');
-  sc.eq('목록 끝에서 처음으로', _vcCurrent({ kind: 'like', off: 3 }).ref, 'R4');
-
-  sc.eq('기록이 없으면 보여줄 것이 없다', _vcCurrent({ kind: 'mem', off: 0 }), null);
+  sc.eq('기록이 없으면 보여줄 것이 없다', _vcCurrent({ kind: 'mem', ref: null }), null);
   sc.eq('설정이 없으면 빈 목록', _vcVerses(null), []);
+
+  // 갈래(필터)가 걸리면 그것이 가장 우선한다
+  const flt = { kind: 'like', filter: { kind: 'cat', val: '가' }, ref: null };
+  sc.eq('갈래가 걸리면 그 안에서만', _vcVerses(flt).map(v => v.ref), ['R1', 'R2']);
+  sc.eq('갈래 카드는 자동이면 맨 앞', _vcCurrent(flt).ref, 'R1');
+  sc.eq('갈래 이름', _vcFilterLabel(flt), '가');
+  sc.eq('태그 갈래는 # 을 붙인다', _vcFilterLabel({ filter: { kind: 'tag', val: '사랑' } }), '#사랑');
+  sc.eq('갈래가 없으면 이름도 없다', _vcFilterLabel({ filter: null }), '');
+}
+
+// ═══ 4-B. ⚠️ 한 카드를 넘겨도 다른 카드는 꿈쩍하지 않는다 ═══
+console.log('\n시나리오 4-B — 카드끼리 서로를 건드리지 않는다');
+{
+  reset();
+  ST.settings.verseCurrentIdx = 3;
+  const a = _vcCreate(null, null), b = _vcCreate(null, null);
+  sc.eq('둘 다 같은 말씀에서 시작', [_vcCurrent(_vcGet(a)).ref, _vcCurrent(_vcGet(b)).ref], ['R3', 'R3']);
+
+  vcNav(a, 1);
+  sc.eq('넘긴 카드만 다음 말씀', _vcCurrent(_vcGet(a)).ref, 'R4');
+  sc.eq('손대지 않은 카드는 그대로', _vcCurrent(_vcGet(b)).ref, 'R3');
+  sc.eq('자리는 장절로 적어 둔다', _vcGet(a).ref, 'R4');
+
+  vcNav(a, -1); vcNav(a, -1);
+  sc.eq('뒤로 넘기면 앞의 말씀', _vcCurrent(_vcGet(a)).ref, 'R2');
+  sc.eq('여전히 다른 카드는 그대로', _vcCurrent(_vcGet(b)).ref, 'R3');
+
+  // 끝에서 한 바퀴
+  _vcGet(a).ref = 'R5'; vcNav(a, 1);
+  sc.eq('마지막에서 넘기면 처음으로', _vcGet(a).ref, 'R1');
+  _vcGet(a).ref = 'R1'; vcNav(a, -1);
+  sc.eq('처음에서 뒤로 넘기면 마지막으로', _vcGet(a).ref, 'R5');
+
+  // 갈래를 풀면 자동으로 돌아온다
+  const c = _vcCreate(null, null);
+  _vcGet(c).filter = { kind: 'cat', val: '가' }; _vcGet(c).ref = 'R2';
+  vcClearFilter(c);
+  sc.eq('갈래를 풀면 갈래도 자리도 지워진다', [_vcGet(c).filter, _vcGet(c).ref], [null, null]);
+  sc.eq('풀고 나면 다시 오늘의 구절', _vcCurrent(_vcGet(c)).ref, 'R3');
+}
+
+// ═══ 4-C. ⚠️ 같은 카드가 두 번 놓이지 않는다 ═══
+console.log('\n시나리오 4-C — 같은 카드가 두 번 놓이면 함께 넘어간다');
+{
+  reset();
+  const a = _vcCreate(null, null);
+  ST.settings.layout.cols.center = ['card#' + a];
+  ST.settings.layout.cols.right = ['card#' + a];
+  const L = _lay();
+  sc.eq('같은 id 는 한 자리만 남긴다',
+        [L.cols.center, L.cols.right], [['card#' + a], []]);
+
+  reset();
+  const b = _vcCreate(null, null);
+  ST.settings.layout.cols.right = ['card#' + b, 'card#' + b];
+  sc.eq('한 컬럼 안에서도 마찬가지', _lay().cols.right, ['card#' + b]);
 }
 
 // ═══ 5. 배경·글자 크기는 카드마다 따로 ═══
@@ -186,6 +246,14 @@ console.log('\n시나리오 8 — 표시 항목과 이름');
   ST.settings.verseCardCat = false;
   sc.eq('끄면 안 보여준다', _vcShow('verseCardCat'), false);
 
+  // 카드마다 따로 켜고 끌 수 있다 (말씀설정이 기본값)
+  sc.eq('카드가 따로 안 정하면 말씀설정을 따른다', _vcShowFor({ show: {} }, 'verseCardCat'), false);
+  sc.eq('카드에서 켜면 켜진다', _vcShowFor({ show: { verseCardCat: true } }, 'verseCardCat'), true);
+  ST.settings.verseCardCat = true;
+  sc.eq('카드에서 끄면 꺼진다', _vcShowFor({ show: { verseCardCat: false } }, 'verseCardCat'), false);
+  sc.eq('show 가 없어도 안전', _vcShowFor({}, 'verseCardCat'), true);
+  ST.settings.verseCardCat = true;
+
   const a = _vcCreate('deeper', 'deeperList'), b = _vcCreate(null, null);
   sc.eq('목록카드 이름', _rpWidgetName('card#' + a), '말씀카드 · Deeper');
   sc.eq('일반카드 이름', _rpWidgetName('card#' + b), '말씀카드');
@@ -214,6 +282,40 @@ console.log('\n시나리오 9 — 화면 연결');
   // 목록에서 연 전체화면은 그 목록 안에서 돌고 상단에 반응 아이콘이 붙는다
   sc.eq('목록 → 전체화면에 반응 종류를 넘긴다', SRC.includes('_vfSetNav(list,Math.max(0,i),_VLIST_KIND_LABEL[kind]||\'\',kind)'), true);
   sc.eq('좌상단 버튼이 목록 복귀로 바뀐다', SRC.includes('function vfHomeAction()'), true);
+
+  // ── 0810-2 에서 손본 것들 ──
+  sc.eq('설정 진입은 점 세 개 (톱니가 해처럼 보였다)',
+        SRC.includes('const _VC_ICON_MORE=') && !SRC.includes('_VC_ICON_GEAR'), true);
+  sc.eq('목록 헤더의 카드 버튼은 빈 정사각형',
+        /vlToCard\('\$\{kind\}'\)[\s\S]{0,220}<rect x="3" y="3" width="14" height="14" rx="2\.5"\/><\/svg>/.test(SRC), true);
+  // 손가락 화면에서 :hover 가 남아 버튼이 파랗게 굳던 것
+  sc.eq('목록 헤더 버튼의 hover 는 마우스 기기에서만',
+        SRC.includes('@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac);}}'), true);
+  sc.eq('카드 헤더 버튼의 hover 도 마우스 기기에서만',
+        SRC.includes('@media (hover:hover){.vc-icbtn:hover{color:var(--ac);}}'), true);
+  // 본문이 길면 장절이 '다음 말씀' 버튼(z-index 2) 밑에 깔려 눌리지 않았다
+  sc.eq('전체화면 장절을 넘김 버튼 위로', /#vfRef\{[\s\S]*?position:relative;z-index:3;/.test(SRC), true);
+  // 타일뷰에서 고른 말씀이 전체화면이 아니라 그 카드로 온다
+  sc.eq('타일뷰가 어느 카드에서 왔는지 기억한다', SRC.includes('let _vgCardTarget=null;'), true);
+  sc.eq('타일을 고르면 그 카드에 띄운다', SRC.includes('if(_vgCardTarget){'), true);
+  sc.eq('나가면 기억을 지운다', /function closeVerseGrid\(\)\{[\s\S]*?_vgCardTarget=null;/.test(SRC), true);
+  // 손가락에서 좌우로 밀기 / 마우스에서 화살표
+  sc.eq('마우스 기기에만 좌우 화살표', SRC.includes('.vc-arrow{display:none;}'), true);
+  sc.eq('화살표가 그 카드만 넘긴다', SRC.includes("vcNav('${id}',-1)") && SRC.includes("vcNav('${id}',1)"), true);
+  // 장절을 톡 눌렀을 뿐인데 지난 손가락 위치로 "밀었다"고 본 것
+  sc.eq('제스처는 이 카드에서 시작한 것만 센다', SRC.includes('let sx=0,sy=0,moved=false,longFired=false,active=false,t=null;'), true);
+  // 좋아요·암송 토스트는 어디서 눌러도 한 곳을 지난다
+  sc.eq('반응 토스트 한 곳으로', SRC.includes('function _reactWithToast(kind,ref)'), true);
+  sc.eq('말씀 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',ref)") && SRC.includes("_reactWithToast('mem',ref)"), true);
+  sc.eq('말씀영역 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',_vfCurrentVerse().ref)"), true);
+  sc.eq('반응 토스트는 2.5초', SRC.includes('_dismissReactToast(false);},2500)'), true);
+  // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
+  const b = SRC.indexOf('function renderVcSettings()');
+  const seg = SRC.slice(b, b + 5000);
+  const order = ['말씀카드 테마', '말씀카드 글자 크기', '왼쪽 아래 — 갈래', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
+    .map(t => seg.indexOf(t));
+  sc.eq('설정 팝업 다섯 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
+  sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
 }
 
 // ═══ 10. 새 사용자 기본값 ═══
@@ -222,8 +324,9 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
   const d = SRC.slice(SRC.indexOf('const _settingsDefaults='));
   const pick = k => new RegExp(k + ':(true|false)').exec(d)[1];
   ['verseCardCat', 'verseCardTopic', 'verseCardTag',
-   'verseCardLike', 'verseCardMem', 'verseCardDeeper', 'verseCardEven']
+   'verseCardLike', 'verseCardMem', 'verseCardDeeper', 'verseCardEven', 'verseCardShare']
     .forEach(k => sc.eq(k + ' 켜짐', pick(k), 'true'));
+  sc.eq("말씀설정 뷰 탭에 '공유' 알약", SRC.includes('setVerseCardShare'), true);
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
 }
 
