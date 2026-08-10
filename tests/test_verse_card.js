@@ -45,7 +45,7 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,vcClearFilter,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,VC_NEW,VC_KINDS});'
 );
 
 const reset = () => {
@@ -188,6 +188,34 @@ console.log('\n시나리오 4-C — 같은 카드가 두 번 놓이면 함께 �
   sc.eq('한 컬럼 안에서도 마찬가지', _lay().cols.right, ['card#' + b]);
 }
 
+// ═══ 4-D. '사용 안 함'의 말씀카드 칩 = 만들기 버튼 ═══
+console.log("\n시나리오 4-D — '말씀카드' 칩은 끌어다 놓아도 그 자리에 남는다");
+{
+  reset();
+  sc.eq('칩은 설정이 없는 카드 표식', [_vcIs(VC_NEW), _vcGet(_vcIdOf(VC_NEW))], [true, null]);
+  sc.eq('칩 이름', _rpChipName(VC_NEW), '말씀카드');
+
+  // 끌어다 놓으면 진짜 카드가 하나 생긴다
+  const id1 = vcAddCard('right');
+  sc.eq('컬럼에 새 카드', ST.settings.layout.cols.right, ['card#' + id1]);
+  const id2 = vcAddCard('right', 0);
+  sc.eq('개수 제한이 없다 — 자리를 골라 또 넣는다',
+        ST.settings.layout.cols.right, ['card#' + id2, 'card#' + id1]);
+  sc.eq('둘은 서로 다른 카드', id1 !== id2, true);
+
+  // 칩 자체가 실수로 cols 에 남아도 화면에 나오지 않는다
+  reset();
+  ST.settings.layout.cols.right = [VC_NEW];
+  sc.eq('만들기 칩은 배치로 남지 않는다', _lay().cols.right, []);
+
+  // 목록 위젯 칩은 '목록'을 뺀 짧은 이름
+  sc.eq('좋아요 목록 → 좋아요', _rpChipName('likeList'), '좋아요');
+  sc.eq('암송 목록 → 암송', _rpChipName('memList'), '암송');
+  sc.eq('Deeper 목록 → Deeper', _rpChipName('deeperList'), 'Deeper');
+  sc.eq('Even Deeper 목록 → Even Deeper', _rpChipName('evenList'), 'Even Deeper');
+  sc.eq('그 밖은 그대로', _rpChipName('monthSingle'), '월간 싱글뷰');
+}
+
 // ═══ 5. 배경·글자 크기는 카드마다 따로 ═══
 console.log('\n시나리오 5 — 위젯 하나하나마다의 배경·글자 크기');
 {
@@ -270,10 +298,10 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('카드 헤더 우상단 = 목록 복귀', SRC.includes('vcBackToList('), true);
   sc.eq('필터 행 맨 우측 톱니 = 카드 설정', SRC.includes('openVlCardSettings('), true);
   sc.eq('필터 행은 위젯에서만 톱니를 단다', SRC.includes('_vListControlsHTML(kind,true)'), true);
-  sc.eq('+ 버튼 메뉴에 말씀카드', SRC.includes(">rpAddMenuPick('card')") || SRC.includes("rpAddMenuPick('card')"), true);
+  sc.eq('+ 버튼은 위젯 설정 팝업을 연다', SRC.includes('class="rp-add-btn" onclick="openRpConfig()"'), true);
+  sc.eq('+ 버튼 메뉴는 없앴다', SRC.includes('rpAddMenu'), false);
   sc.eq('카드 설정 팝업', SRC.includes('id="vcSetModal"'), true);
   sc.eq('ESC 표에 카드 설정 팝업', SRC.includes("['vcSetModal'"), true);
-  sc.eq('ESC 표에 + 버튼 메뉴', SRC.includes("['rpAddMenu'"), true);
   sc.eq('말씀설정 뷰 탭 — 좌하단 알약', SRC.includes('setVerseCardCat') && SRC.includes('setVerseCardTopic') && SRC.includes('setVerseCardTag'), true);
   sc.eq('말씀설정 뷰 탭 — 우하단 알약', SRC.includes('setVerseCardLike') && SRC.includes('setVerseCardMem') && SRC.includes('setVerseCardDeeper') && SRC.includes('setVerseCardEven'), true);
   sc.eq('그레인(종이결)이 카드에도 걸린다', SRC.includes('.vc-body::after'), true);
@@ -303,7 +331,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('마우스 기기에만 좌우 화살표', SRC.includes('.vc-arrow{display:none;}'), true);
   sc.eq('화살표가 그 카드만 넘긴다', SRC.includes("vcNav('${id}',-1)") && SRC.includes("vcNav('${id}',1)"), true);
   // 장절을 톡 눌렀을 뿐인데 지난 손가락 위치로 "밀었다"고 본 것
-  sc.eq('제스처는 이 카드에서 시작한 것만 센다', SRC.includes('let sx=0,sy=0,moved=false,longFired=false,active=false,t=null;'), true);
+  sc.eq('제스처는 이 카드에서 시작한 것만 센다', SRC.includes('let sx=0,sy=0,moved=false,longFired=false,active=false,dragging=false,axis=0,t=null;'), true);
   // 좋아요·암송 토스트는 어디서 눌러도 한 곳을 지난다
   sc.eq('반응 토스트 한 곳으로', SRC.includes('function _reactWithToast(kind,ref)'), true);
   sc.eq('말씀 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',ref)") && SRC.includes("_reactWithToast('mem',ref)"), true);
@@ -316,6 +344,24 @@ console.log('\n시나리오 9 — 화면 연결');
     .map(t => seg.indexOf(t));
   sc.eq('설정 팝업 다섯 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
   sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
+
+  // ── 0810-3 ──
+  // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
+  sc.eq('밀 때 따라 움직이는 층', SRC.includes('<div class="vc-slide">'), true);
+  sc.eq('그 층의 CSS', /\.vc-slide\{display:flex;flex-direction:column;flex:1/.test(SRC), true);
+  sc.eq('미는 동안 손끝을 따라 칠한다', SRC.includes('paint(dx*0.85)'), true);
+  sc.eq('가로로 밀 때만 페이지를 붙잡는다', SRC.includes("e.preventDefault();                  // 가로로 미는 동안은"), true);
+  sc.eq('덜 밀면 제자리로 돌아온다', SRC.includes('const snapBack=()=>{'), true);
+  sc.eq('밀던 자리에서 이어서 넘긴다', SRC.includes('function _vcSlideCommit(id,slide,d)'), true);
+  // '사용 안 함' 세 줄 + 늘 남아 있는 말씀카드 칩
+  sc.eq('만들기 칩 표식', SRC.includes("const VC_NEW='card#+';"), true);
+  sc.eq('사용 안 함을 줄로 나눈다', SRC.includes('const poolRows=[') && SRC.includes('class="rp-pool-row"'), true);
+  // .rp-cfg-row 는 이미 다른 뜻(테두리 붙는 설정 행)이라 이름을 따로 쓴다
+  sc.eq('줄 클래스 이름이 겹치지 않는다', SRC.includes('.rp-pool-row{display:flex'), true);
+  sc.eq('1행 말씀카드 · 2행 뷰 · 3행 말씀 목록',
+        /const poolRows=\[\s*\[VC_NEW\],\s*\['weekly','monthSingle','monthTriple'\][\s\S]*?\['likeList','memList','deeperList','evenList'\]/.test(SRC), true);
+  sc.eq('칩을 끌어다 놓으면 새 카드', SRC.includes('if(type===VC_NEW){'), true);
+  sc.eq('사용 안 함은 세로로 쌓고 줄만 가로', /\.rp-cfg-col\.pool\{flex-direction:column/.test(SRC), true);
 }
 
 // ═══ 10. 새 사용자 기본값 ═══

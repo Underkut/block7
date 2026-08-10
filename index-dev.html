@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0810-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0810-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1865,7 +1865,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   min-height:44px;border:1px dashed var(--bd2);border-radius:8px;
   padding:5px;display:flex;flex-direction:column;gap:4px;
 }
-.rp-cfg-col.pool{flex-direction:row;flex-wrap:wrap;}
+/* '사용 안 함' — 갈래별로 줄을 나눈다 (말씀카드 / 뷰 / 말씀 목록).
+   드롭 대상은 여전히 이 상자 하나(data-col="pool")다. */
+.rp-cfg-col.pool{flex-direction:column;gap:5px;}
+/* ⚠️ .rp-cfg-row 는 이미 다른 뜻으로 쓰이고 있다 (테두리·여백이 붙는다) */
+.rp-pool-row{display:flex;flex-wrap:wrap;gap:4px;}
 .rp-chip{
   display:flex;align-items:center;gap:4px;
   background:var(--s2);border:1px solid var(--bd2);border-radius:7px;
@@ -1962,6 +1966,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   transition:opacity .16s;
 }
 .vc-body.vc-fade{opacity:0;}
+/* 좌우로 밀 때 손끝을 따라 움직이는 층. 배경(.vc-body)은 제자리에 두고
+   글·버튼만 함께 움직인다 — 전체화면의 위아래 넘김과 같은 감각. */
+.vc-slide{display:flex;flex-direction:column;flex:1;min-height:0;will-change:transform;}
 .vc-inner{
   flex:1;min-height:0;box-sizing:border-box;
   display:flex;flex-direction:column;align-items:stretch;justify-content:center;
@@ -2511,7 +2518,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0810-2";
+const APP_VERSION = "v. 26-0810-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3981,17 +3988,6 @@ window._fbScriptsReady=new Promise(resolve=>{
     </button>
   </div>
   <div id="rpConfigList"></div>
-</div>
-
-<!-- 위젯 추가 + 버튼 메뉴 -->
-<div class="task-menu-overlay" id="rpAddMenuOverlay" style="display:none;z-index:4290;" onclick="closeRpAddMenu()"></div>
-<div class="task-menu" id="rpAddMenu" style="display:none;z-index:4295;">
-  <div class="task-menu-item" onclick="rpAddMenuPick('card')">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/></svg></span>말씀카드
-  </div>
-  <div class="task-menu-item" onclick="rpAddMenuPick('config')">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg></span>다른 위젯…
-  </div>
 </div>
 
 <!-- 말씀카드 설정 (위젯 하나하나마다 따로) -->
@@ -6572,7 +6568,6 @@ const _ESC_CLOSERS=[
   ['collMenu',        ()=>closeCollMenu()],
   ['sfxMenu',         ()=>closeSfxMenu()],
   ['vliMenu',         ()=>closeVliMenu()],
-  ['rpAddMenu',       ()=>closeRpAddMenu()],
   ['verseMemMenu',    ()=>closeVerseMemMenu()],
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
@@ -12264,6 +12259,12 @@ function _rpWidgetName(t){
   return RP_WIDGET_DEFS[t]?RP_WIDGET_DEFS[t].name:t;
 }
 function _rpTypeOk(t){return _vcIs(t)?!!_vcGet(_vcIdOf(t)):!!RP_WIDGET_DEFS[t];}
+// 위젯 설정 팝업의 칩 이름 — 좁은 칸이라 '목록'은 뺀다 (좋아요 목록 → 좋아요)
+const _RP_CHIP_NAME={likeList:'좋아요',memList:'암송',deeperList:'Deeper',evenList:'Even Deeper'};
+function _rpChipName(t){
+  if(t===VC_NEW)return'말씀카드';
+  return _RP_CHIP_NAME[t]||_rpWidgetName(t);
+}
 // ── 카드가 도는 범위 ──
 // 갈래(필터)가 걸려 있으면 그것이 가장 우선한다 — 타일뷰에서 고른 말씀을
 // 카드에 띄운 뒤로는 그 갈래 안에서만 돈다.
@@ -12397,13 +12398,15 @@ function _vcCardHTML(id){
     const arrows=`<button class="vc-arrow vc-arrow-l" onclick="event.stopPropagation();vcNav('${id}',-1)" aria-label="이전 말씀">${_VC_ARROW_L}</button>
       <button class="vc-arrow vc-arrow-r" onclick="event.stopPropagation();vcNav('${id}',1)" aria-label="다음 말씀">${_VC_ARROW_R}</button>`;
     body=`${arrows}
-      <div class="vc-inner">
-        <div class="vc-text" data-raw="${_vgEscAttr(v.krText||'')}"></div>
-        <div class="vc-ref"${v.ref?'':' style="display:none;"'} onclick="event.stopPropagation();vcOpenFilter('${id}','book')">${esc(v.ref||'')}</div>
-      </div>
-      <div class="vc-bottom">
-        <div class="vc-meta">${meta.join('')}</div>
-        <div class="vc-actions">${actHTML}</div>
+      <div class="vc-slide">
+        <div class="vc-inner">
+          <div class="vc-text" data-raw="${_vgEscAttr(v.krText||'')}"></div>
+          <div class="vc-ref"${v.ref?'':' style="display:none;"'} onclick="event.stopPropagation();vcOpenFilter('${id}','book')">${esc(v.ref||'')}</div>
+        </div>
+        <div class="vc-bottom">
+          <div class="vc-meta">${meta.join('')}</div>
+          <div class="vc-actions">${actHTML}</div>
+        </div>
       </div>`;
   }
   return`<div class="rp-widget vc-widget" data-wtype="card#${id}" data-vcid="${id}">
@@ -12523,21 +12526,58 @@ function vcClearFilter(id){
 // 다음/이전 (그 카드가 도는 범위 안에서만)
 // ⚠️ 자리는 장절로 적어 둔다 — 다른 카드와 나눠 쓰는 값을 건드리지 않으므로
 //    한 카드를 넘겨도 다른 카드는 꿈쩍하지 않는다.
-function vcNav(id,d){
+function _vcApplyNav(id,d){
   const cfg=_vcGet(id);
-  if(!cfg)return;
+  if(!cfg)return false;
   const list=_vcVerses(cfg);
-  if(list.length<2)return;
+  if(list.length<2)return false;
   const cur=_vcCurrent(cfg);
   let i=cur?list.findIndex(v=>v.ref===cur.ref):0;
   if(i<0)i=0;
   const n=list.length;
   cfg.ref=list[(((i+(d>0?1:-1))%n)+n)%n].ref;
   save();
-  const body=document.querySelector(`.vc-widget[data-vcid="${id}"] .vc-body`);
-  if(!body){renderRightPanel();return;}
-  body.classList.add('vc-fade');
-  setTimeout(()=>{renderRightPanel();},170);
+  return true;
+}
+const _VC_SLIDE_TR='transform .2s cubic-bezier(.4,0,.2,1),opacity .18s';
+function _vcSlideEl(id){
+  if(typeof document==='undefined'||!document.querySelector)return null;
+  return document.querySelector(`.vc-widget[data-vcid="${id}"] .vc-slide`);
+}
+// 지금 위치(손끝을 따라와 있을 수도 있다)에서 이어서 밀어내고, 다시 그린 뒤
+// 반대편에서 들어오게 한다. 전체화면 넘김(_vfNavCommit)과 같은 문법.
+function _vcSlideCommit(id,slide,d){
+  if(slide._vcBusy)return;
+  slide._vcBusy=true;
+  const w=slide.getBoundingClientRect().width||220;
+  slide.style.transition=_VC_SLIDE_TR;
+  slide.style.transform=`translateX(${d>0?-w*0.4:w*0.4}px)`;
+  slide.style.opacity='0';
+  setTimeout(()=>{
+    if(!_vcApplyNav(id,d)){
+      slide.style.transition=_VC_SLIDE_TR;slide.style.transform='';slide.style.opacity='';
+      slide._vcBusy=false;return;
+    }
+    renderRightPanel();
+    const ns=_vcSlideEl(id);
+    if(!ns)return;
+    ns.style.transition='none';
+    ns.style.transform=`translateX(${d>0?w*0.4:-w*0.4}px)`;
+    ns.style.opacity='0';
+    ns.offsetWidth;                       // 강제 리플로우 — 시작값을 굳힌다
+    ns.style.transition=_VC_SLIDE_TR;
+    ns.style.transform='translateX(0)';
+    ns.style.opacity='1';
+    setTimeout(()=>{ns.style.transition='';ns.style.transform='';ns.style.opacity='';},210);
+  },190);
+}
+function vcNav(id,d){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  if(_vcVerses(cfg).length<2)return;
+  const slide=_vcSlideEl(id);
+  if(!slide){if(_vcApplyNav(id,d))renderRightPanel();return;}
+  _vcSlideCommit(id,slide,d);
 }
 // 카드를 눌러 전체화면으로 — 그 카드가 도는 목록을 그대로 들고 간다
 function vcOpenFull(id){
@@ -12608,15 +12648,19 @@ function vlToCard(kind){
 function openVlCardSettings(kind){
   openVcSettings(_vcUnplacedForKind(kind)||_vcCreate(kind,_VC_LIST_TYPE[kind]));
 }
-// 컬럼 하단 + 버튼 → 새 일반카드위젯 (개수 제한 없음)
-function vcAddCard(col){
+// 위젯 설정 팝업의 '사용 안 함'에 늘 놓여 있는 **새 말씀카드 만들기** 칩.
+// 개수 제한이 없으므로 하나를 끌어다 놓아도 그 자리에 다시 나타난다.
+// 'card#' 로 시작하지만 설정이 없는 id 라, 실수로 cols 에 남아도 _lay() 가 지운다.
+const VC_NEW='card#+';
+// 컬럼에 새 일반카드위젯을 넣는다 (칩을 끌어다 놓았을 때)
+function vcAddCard(col,at){
   const L=_lay();
   const key=['left','center','right'].includes(col)?col:'left';
   const id=_vcCreate(null,null);
-  // 2단에서는 우측이 center+right 로 합쳐 보이므로, 저장은 실제 보이는 쪽에 맞춘다
-  const target=(_layMode()===2&&key==='right'&&!L.cols.right.length&&L.cols.center.length)?'center':key;
-  L.cols[target].push('card#'+id);
-  _lay();save();renderLayout();
+  const arr=L.cols[key];
+  arr.splice(Math.max(0,Math.min(at==null?arr.length:at,arr.length)),0,'card#'+id);
+  _lay();save();
+  return id;
 }
 // 카드 몸통 제스처 — 탭=전체화면 / 좌우 밀기=다음·이전 / 롱터치·우클릭=말씀 메뉴
 function _vcAttachGestures(host){
@@ -12636,12 +12680,28 @@ function _vcAttachGestures(host){
     //    이동거리를 계산했다. 그래서 장절을 톡 눌렀을 뿐인데 "밀었다"고 보고
     //    말씀이 다음으로 넘어갔고, 곧이어 실행된 장절 누름이 **넘어간 뒤의**
     //    말씀으로 걸러 줘서 엉뚱한 성경의 타일뷰가 열렸다.
-    let sx=0,sy=0,moved=false,longFired=false,active=false,t=null;
+    // 좌우로 밀면 손끝을 따라 카드가 움직이고(paint), 놓을 때 넘기거나 되돌아온다.
+    // 세로로 그으면 페이지 스크롤이므로 손대지 않는다.
+    const slideOf=()=>body.querySelector('.vc-slide');
+    const SWIPE_COMMIT=44;
+    let sx=0,sy=0,moved=false,longFired=false,active=false,dragging=false,axis=0,t=null;
     const stopHold=()=>{if(t){clearTimeout(t);t=null;}};
+    const paint=dx=>{
+      const s=slideOf();if(!s)return;
+      s.style.transition='none';
+      s.style.transform=`translateX(${dx}px)`;
+      // 끝까지 지워지진 않게 — 조금 밀었는데 확 사라지면 손에 안 붙는다
+      s.style.opacity=String(Math.max(.35,1-Math.abs(dx)/((s.getBoundingClientRect().width||220)*1.1)));
+    };
+    const snapBack=()=>{
+      const s=slideOf();if(!s)return;
+      s.style.transition=_VC_SLIDE_TR;s.style.transform='translateX(0)';s.style.opacity='1';
+      setTimeout(()=>{s.style.transition='';s.style.transform='';s.style.opacity='';},210);
+    };
     body.addEventListener('touchstart',e=>{
       stopHold();
       if(isCtl(e.target)||e.touches.length!==1){active=false;return;}
-      active=true;
+      active=true;dragging=false;axis=0;
       window._rpLastTouchTs=Date.now();     // 뒤따라오는 가짜 click 을 막는다
       sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false;longFired=false;
       const x=sx,y=sy;
@@ -12650,19 +12710,37 @@ function _vcAttachGestures(host){
     body.addEventListener('touchmove',e=>{
       if(!active)return;
       const tt=e.touches[0];if(!tt)return;
-      if(Math.abs(tt.clientX-sx)>8||Math.abs(tt.clientY-sy)>8){
-        moved=true;stopHold();
-      }
+      const dx=tt.clientX-sx,dy=tt.clientY-sy;
+      if(Math.abs(dx)>8||Math.abs(dy)>8){moved=true;stopHold();}
+      // 방향을 한 번 정하면 그 제스처 동안 바꾸지 않는다 (가로/세로가 싸우지 않게)
+      if(!axis&&(Math.abs(dx)>10||Math.abs(dy)>10))axis=Math.abs(dx)>Math.abs(dy)?1:2;
+      if(axis!==1)return;
+      if(longFired)return;
+      const cfg=_vcGet(id);
+      if(!cfg||_vcVerses(cfg).length<2)return;
+      dragging=true;
+      e.preventDefault();                  // 가로로 미는 동안은 페이지가 흔들리지 않게
+      paint(dx*0.85);                      // 살짝 무겁게 — 손가락보다 조금 덜 간다
+    },{passive:false});
+    body.addEventListener('touchcancel',()=>{
+      stopHold();
+      if(dragging)snapBack();
+      active=false;dragging=false;
     },{passive:true});
-    body.addEventListener('touchcancel',()=>{stopHold();active=false;},{passive:true});
     body.addEventListener('touchend',e=>{
       stopHold();
       if(!active)return;
       active=false;
-      if(longFired)return;
+      const wasDragging=dragging;dragging=false;
+      if(longFired){if(wasDragging)snapBack();return;}
       const tt=e.changedTouches[0];
       const dx=tt?tt.clientX-sx:0,dy=tt?tt.clientY-sy:0;
-      if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.5){vcNav(id,dx<0?1:-1);return;}
+      if(Math.abs(dx)>SWIPE_COMMIT&&Math.abs(dx)>Math.abs(dy)*1.5){
+        const s=slideOf();
+        if(s)_vcSlideCommit(id,s,dx<0?1:-1);else vcNav(id,dx<0?1:-1);
+        return;
+      }
+      if(wasDragging){snapBack();return;}
       if(!moved&&!isCtl(e.target))vcOpenFull(id);
     },{passive:true});
     body.addEventListener('click',e=>{
@@ -12919,7 +12997,7 @@ function renderLayout(){
       return;
     }
     // 위젯 스택 + 하단 + 버튼 (빈 컬럼이면 + 버튼만)
-    wHost.innerHTML=(types.map(t=>_rpWidgetHTML({type:t})).join(''))+_rpAddBtnHTML(types.length?'tail':'empty',cname);
+    wHost.innerHTML=(types.map(t=>_rpWidgetHTML({type:t})).join(''))+_rpAddBtnHTML(types.length?'tail':'empty');
   });
 
   // ── todayView 실제 DOM 이동: todo placeholder 슬롯 or 1단은 colL 직속 ──
@@ -12981,38 +13059,13 @@ function renderLayout(){
   _vcLayoutAll(pc);
 }
 window.renderRightPanel=renderLayout; // 기존 호출부 호환 별칭
-// 위젯 추가 + 버튼 (미니멀: 테두리·원 없이 + 만)
-// 누르면 작은 메뉴가 뜬다 — '말씀카드'(그 컬럼에 새 카드) / '위젯 설정'(기존 팝업)
-function _rpAddBtnHTML(kind,col){
+// 위젯 추가 + 버튼 (미니멀: 테두리·원 없이 + 만) — 누르면 위젯 설정 팝업
+function _rpAddBtnHTML(kind){
   return`<div class="rp-add-wrap${kind==='tail'?' tail':''}">
-    <button class="rp-add-btn" onclick="openRpAddMenu(event,'${col||'left'}')" title="위젯 추가">
+    <button class="rp-add-btn" onclick="openRpConfig()" title="위젯 추가">
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>
     </button>
   </div>`;
-}
-// + 버튼 메뉴 (말씀카드는 개수 제한이 없어 목록 팝업이 아니라 여기서 바로 만든다)
-let _rpAddCol='left';
-function openRpAddMenu(ev,col){
-  _rpAddCol=col||'left';
-  const menu=document.getElementById('rpAddMenu'),ov=document.getElementById('rpAddMenuOverlay');
-  if(!menu||!ov){openRpConfig();return;}
-  ov.style.display='block';menu.style.display='block';
-  const r=(ev&&ev.currentTarget&&ev.currentTarget.getBoundingClientRect)?ev.currentTarget.getBoundingClientRect():null;
-  const mw=menu.offsetWidth||150,mh=menu.offsetHeight||80;
-  const x=r?r.left:(window.innerWidth/2),y=r?r.bottom+6:(window.innerHeight/2);
-  menu.style.left=Math.max(8,Math.min(x,window.innerWidth-mw-8))+'px';
-  menu.style.top=Math.max(8,Math.min(y,window.innerHeight-mh-8))+'px';
-}
-function closeRpAddMenu(){
-  const menu=document.getElementById('rpAddMenu'),ov=document.getElementById('rpAddMenuOverlay');
-  if(menu)menu.style.display='none';
-  if(ov)ov.style.display='none';
-}
-function rpAddMenuPick(what){
-  const col=_rpAddCol;
-  closeRpAddMenu();
-  if(what==='card')vcAddCard(col);
-  else openRpConfig();
 }
 // 위젯 안에서 좌우 스와이프로 달 넘기기
 function _rpAttachSwipes(host){
@@ -13046,14 +13099,17 @@ function renderRpConfigList(){
   const inCols=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
   // 사용 안 함: 어느 컬럼에도 없는 타입. todo는 항상 배치되어 있으므로 제외.
   // weekly는 L.weekly==='none'일 때 풀에 나타난다.
-  const pool=Object.keys(RP_WIDGET_DEFS).filter(t=>{
-    if(t==='todo')return false;
-    if(t==='weekly')return L.weekly==='none';
-    return !inCols.has(t);
-  });
+  // '사용 안 함' 은 세 줄로 묶어 보여준다 (말씀카드 / 뷰 / 말씀 목록).
+  // 말씀카드는 개수 제한이 없어 **늘 맨 앞 줄에 남아 있다** — 끌어다 놓으면
+  // 새 카드가 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다.
+  const poolRows=[
+    [VC_NEW],
+    ['weekly','monthSingle','monthTriple'].filter(t=>t==='weekly'?L.weekly==='none':!inCols.has(t)),
+    ['likeList','memList','deeperList','evenList'].filter(t=>!inCols.has(t)),
+  ];
   const COLN={left:'좌',center:'중',right:'우'};
   const chip=t=>`<div class="rp-chip" data-wtype="${t}">
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_rpWidgetName(t)}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_rpChipName(t)}</span>
       <span class="rp-cfg-drag"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="16" y2="7"/><line x1="4" y1="13" x2="16" y2="13"/></svg></span>
     </div>`;
   // 주간뷰 칩: lc면 좌 박스 맨 위, cr이면 우 박스 맨 위에 표시 (두 단 상단 차지라
@@ -13069,7 +13125,9 @@ function renderRpConfigList(){
     <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">위젯 배치 <span style="font-weight:400;color:var(--tx3);">${mode===2?'(2단에선 중·우가 우측에 합쳐 보여요 · 주간뷰는 3단에서만)':'(주간뷰: 좌=좌+중 차지, 우=중+우 차지)'}</span></div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">${colBox('left')}${colBox('center')}${colBox('right')}</div>
     <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">사용 안 함</div>
-    <div class="rp-cfg-col pool" data-col="pool">${pool.map(chip).join('')||'<div style="font-size:10px;color:var(--tx3);text-align:center;padding:8px;">없음</div>'}</div>
+    <div class="rp-cfg-col pool" data-col="pool">${
+      poolRows.filter(r=>r.length).map(r=>`<div class="rp-pool-row">${r.map(chip).join('')}</div>`).join('')
+    }</div>
   `;
   _rpAttachChipDrag(list);
 }
@@ -13099,6 +13157,15 @@ function _rpAttachChipDrag(list){
         }:undefined,
         onCommit:(key,idx)=>{
           const L=_lay();
+          // '말씀카드' 칩은 만들기 버튼이다 — 끌어다 놓으면 새 카드가 하나 생기고
+          // 칩은 '사용 안 함' 맨 앞 줄에 그대로 다시 나타난다 (개수 제한 없음).
+          if(type===VC_NEW){
+            if(!key||key==='pool'){renderRpConfigList();return;}
+            const wkOff=((L.weekly==='lc'&&key==='left')||(L.weekly==='cr'&&key==='right'))?1:0;
+            vcAddCard(key,idx-wkOff);
+            renderRpConfigList();renderLayout();
+            return;
+          }
           if(type==='weekly'){
             laySetWeekly(key==='left'?'lc':key==='right'?'cr':'none');
             return;
