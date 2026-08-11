@@ -45,7 +45,7 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_NEW,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_TS_MIN,VC_TS_MAX,VC_NEW,VC_KINDS});'
 );
 
 const reset = () => {
@@ -238,14 +238,20 @@ console.log('\n시나리오 5 — 위젯 하나하나마다의 배경·글자 �
   sc.eq('해시는 늘 같은 값', _vcHash('요한복음 1:1'), _vcHash('요한복음 1:1'));
   sc.eq('해시는 음수가 아니다', _vcHash('창세기 1:1') >= 0, true);
 
-  // '기본'(전체화면 따라가기)은 없앴다 — 네 단계 중 하나를 늘 갖는다
-  sc.eq('안 정했으면 두 번째로 큰 것', _vcTextScale({ textScale: null }), 0.8);
+  // '기본'(전체화면 따라가기)은 없앴다 — 다섯 단계 중 하나를 늘 갖는다
+  sc.eq('안 정했으면 가운데', _vcTextScale({ textScale: null }), 0.8);
   sc.eq('정하면 그 값', _vcTextScale({ textScale: 0.6 }), 0.6);
   sc.eq('범위 밖이면 기본값으로', _vcTextScale({ textScale: 9 }), 0.8);
-  sc.eq('네 단계가 작은 것부터', VC_TS_STEPS, [0.5, 0.6, 0.8, 1]);
-  sc.eq('버튼 글자 크기도 네 단계로 다르다',
-        VC_TS_STEPS.map(v => VC_TS_PX[v]), [9, 11, 13.5, 16]);
-  sc.eq('기본값은 두 번째로 큰 것', VC_TS_DEFAULT, VC_TS_STEPS[VC_TS_STEPS.length - 2]);
+  sc.eq('다섯 단계가 작은 것부터', VC_TS_STEPS, [0.5, 0.6, 0.8, 1, 1.25]);
+  sc.eq('버튼 글자 크기도 다섯 단계로 다르다',
+        VC_TS_STEPS.map(v => VC_TS_PX[v]), [9, 11, 13.5, 16, 19.5]);
+  sc.eq('기본값은 가운데', VC_TS_DEFAULT, VC_TS_STEPS[2]);
+  // ⚠️ 0811-5: 상·하한을 숫자로 박아 두면 새 단계가 걸러져 저장이 안 된다
+  sc.eq('가장 큰 단계도 그대로 통과', _vcTextScale({ textScale: 1.25 }), 1.25);
+  sc.eq('가장 작은 단계도 그대로 통과', _vcTextScale({ textScale: 0.5 }), 0.5);
+  sc.eq('상한은 표에서 뽑는다', VC_TS_MAX, VC_TS_STEPS[VC_TS_STEPS.length - 1]);
+  sc.eq('하한도 표에서', VC_TS_MIN < VC_TS_STEPS[0], true);
+  sc.eq('상한 위는 기본값으로', _vcTextScale({ textScale: 1.5 }), 0.8);
 }
 
 // ═══ 6. 카드 높이 ═══
