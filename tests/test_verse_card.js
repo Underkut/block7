@@ -314,8 +314,9 @@ console.log('\n시나리오 9 — 화면 연결');
 {
   sc.eq('목록 위젯 헤더의 카드 전환 버튼', SRC.includes('onclick="vlToCard('), true);
   sc.eq('카드 헤더 우상단 = 목록 복귀', SRC.includes('vcBackToList('), true);
-  sc.eq('필터 행 맨 우측 톱니 = 카드 설정', SRC.includes('openVlCardSettings('), true);
-  sc.eq('필터 행은 위젯에서만 톱니를 단다', SRC.includes('_vListControlsHTML(kind,true)'), true);
+  // 0811-3: 필터 행 우측의 … 버튼은 없앴다 (카드 설정은 카드 헤더의 ⋯ 로만)
+  sc.eq('필터 행에 … 버튼 없음',
+        SRC.includes('openVlCardSettings(') || SRC.includes('_vListControlsHTML(kind,true)'), false);
   sc.eq('+ 버튼은 위젯 설정 팝업을 연다', SRC.includes('class="rp-add-btn" onclick="openRpConfig()"'), true);
   sc.eq('+ 버튼 메뉴는 없앴다', SRC.includes('rpAddMenu'), false);
   sc.eq('카드 설정 팝업', SRC.includes('id="vcSetModal"'), true);
@@ -355,7 +356,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('반응 토스트 한 곳으로', SRC.includes('function _reactWithToast(kind,ref)'), true);
   sc.eq('말씀 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',ref)") && SRC.includes("_reactWithToast('mem',ref)"), true);
   sc.eq('말씀영역 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',_vfCurrentVerse().ref)"), true);
-  sc.eq('반응 토스트는 1.5초', SRC.includes('_dismissReactToast(false);},1500)'), true);
+  sc.eq('반응 토스트는 0.5초', SRC.includes('_dismissReactToast(false);},500)'), true);
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');
   const seg = SRC.slice(b, b + 7000);
@@ -423,6 +424,28 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('검색창 안내도 바뀜', SRC.includes('구절, 본문, 소주제, 태그 검색'), true);
   // Even Deeper 는 성공 안내를 띄우지 않는다 (바로 다른 앱으로 넘어간다)
   sc.eq('Even 성공 토스트 없음', SRC.includes('const okMsg=()=>{};'), true);
+
+  // ── 0811-3 ──
+  // ⚠️ 좌우 넘김 영역이 카드 몸통 전체를 덮어 우하단 맨 오른쪽 반응 버튼을 가렸다
+  sc.eq('넘김 영역은 본문 안에만', SRC.includes('${arrows}\n          <div class="vc-text"'), true);
+  sc.eq('본문이 그 기준 상자', /\.vc-inner\{\s*position:relative;/.test(SRC), true);
+  sc.eq('가로는 카드의 1/4', SRC.includes('position:absolute;top:0;bottom:0;width:25%;z-index:4;'), true);
+  sc.eq('장절이 화살표에 눌림을 안 뺏긴다', SRC.includes('.vc-ref{position:relative;z-index:5;}'), true);
+  // 뜰 때의 두근거림이 사라지는 시각보다 길면 도중에 잘린다
+  sc.eq('두근거림도 함께 짧게', SRC.includes("reactToastBeat .45s"), true);
+  // −, +, 3줄 을 같은 상자·같은 선 굵기로
+  sc.eq('−/+ 를 그림으로', SRC.includes('const _VC_ICON_MINUS=') && SRC.includes('const _VC_ICON_PLUS='), true);
+  sc.eq('세 버튼이 같은 상자', SRC.includes('.vc-head-right>button{\n  width:20px;height:18px;'), true);
+  sc.eq('계단형 3줄도 얇게',
+        SRC.includes('viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2.5" x2="18" y2="2.5"/>'), true);
+  // 등급 설명 말풍선이 밝은 테마에서 안 보이던 것 (어두운 배경 + 어두운 글자)
+  sc.eq('말풍선은 늘 읽히는 색', SRC.includes('background:rgba(20,20,24,.92);color:#fff;'), true);
+  sc.eq('정의 없는 --s3 를 쓰지 않는다', SRC.includes('var(--s3,'), false);
+  // 시트는 되도록 구글 스프레드시트 앱으로
+  sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url)'), true);
+  sc.eq('안드로이드는 앱을 콕 집어', SRC.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
+  sc.eq('앱이 없으면 웹으로', SRC.includes('S.browser_fallback_url='), true);
+  sc.eq('아이폰은 사파리로 넘겨 앱이 받게', /isIOS\)\{BibleLinkProvider\.open\(url\);return;\}/.test(SRC), true);
 
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
