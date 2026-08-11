@@ -393,13 +393,10 @@ console.log('\n시나리오 9 — 화면 연결');
         (SRC.match(/rIcon\('(like|mem|deeper|even|share)'\)/g) || []).length, 5);
 
   // ── 0811-2 ──
-  // 카드 헤더 우측: 글자 크기 −/+ (늘) · 목록카드면 그 오른쪽에 햄버거
-  sc.eq('헤더에 글자 크기 −/+', SRC.includes("vcStepTextScale('${id}',-1)") && SRC.includes("vcStepTextScale('${id}',1)"), true);
+  // 글자 크기 −/+ (0811-4 에서 헤더 → 카드 안 우상단으로 옮겼다)
+  sc.eq('글자 크기 −/+ 가 있다', SRC.includes("vcStepTextScale('${id}',-1)") && SRC.includes("vcStepTextScale('${id}',1)"), true);
   sc.eq('한 칸씩 옮기는 함수', SRC.includes('function vcStepTextScale(id,d)'), true);
-  // 우측 묶음 안에서 −/+ 가 먼저, 그 오른쪽에 햄버거
-  sc.eq('햄버거는 −/+ 오른쪽에',
-        /<span class="vc-head-right">\$\{zoom\}\$\{cfg\.kind\?`<button class="vc-icbtn" onclick="vcBackToList/.test(SRC), true);
-  sc.eq('끝에 닿으면 눌리지 않게', SRC.includes(".vc-zbtn:disabled{opacity:.28;cursor:default;}"), true);
+  sc.eq('끝에 닿으면 눌리지 않게', SRC.includes(".vc-zbtn:disabled{opacity:.15;cursor:default;}"), true);
   // 롱터치로 연 메뉴가 손을 떼는 동작으로 닫히던 것
   sc.eq('메뉴는 새로 누를 때까지 안 닫힌다', SRC.includes('function _menuArmOnNextPress(setter)'), true);
   sc.eq('말씀 메뉴에 적용', SRC.includes('_menuArmOnNextPress(v=>{_vmmArmed=v;})'), true);
@@ -429,13 +426,14 @@ console.log('\n시나리오 9 — 화면 연결');
   // ⚠️ 좌우 넘김 영역이 카드 몸통 전체를 덮어 우하단 맨 오른쪽 반응 버튼을 가렸다
   sc.eq('넘김 영역은 본문 안에만', SRC.includes('${arrows}\n          <div class="vc-text"'), true);
   sc.eq('본문이 그 기준 상자', /\.vc-inner\{\s*position:relative;/.test(SRC), true);
-  sc.eq('가로는 카드의 1/4', SRC.includes('position:absolute;top:0;bottom:0;width:25%;z-index:4;'), true);
+  sc.eq('가로는 카드의 1/4 · 위쪽은 −/+ 자리로 비운다',
+        SRC.includes('position:absolute;top:26px;bottom:0;width:25%;z-index:4;'), true);
   sc.eq('장절이 화살표에 눌림을 안 뺏긴다', SRC.includes('.vc-ref{position:relative;z-index:5;}'), true);
   // 뜰 때의 두근거림이 사라지는 시각보다 길면 도중에 잘린다
   sc.eq('두근거림도 함께 짧게', SRC.includes("reactToastBeat .45s"), true);
   // −, +, 3줄 을 같은 상자·같은 선 굵기로
   sc.eq('−/+ 를 그림으로', SRC.includes('const _VC_ICON_MINUS=') && SRC.includes('const _VC_ICON_PLUS='), true);
-  sc.eq('세 버튼이 같은 상자', SRC.includes('.vc-head-right>button{\n  width:20px;height:18px;'), true);
+  sc.eq('−/+ 는 16×16 한 상자', SRC.includes('.vc-zbtn{\n  width:16px;height:16px;'), true);
   sc.eq('계단형 3줄도 얇게',
         SRC.includes('viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2.5" x2="18" y2="2.5"/>'), true);
   // 등급 설명 말풍선이 밝은 테마에서 안 보이던 것 (어두운 배경 + 어두운 글자)
@@ -445,7 +443,22 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url)'), true);
   sc.eq('안드로이드는 앱을 콕 집어', SRC.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
   sc.eq('앱이 없으면 웹으로', SRC.includes('S.browser_fallback_url='), true);
-  sc.eq('아이폰은 사파리로 넘겨 앱이 받게', /isIOS\)\{BibleLinkProvider\.open\(url\);return;\}/.test(SRC), true);
+
+  // ── 0811-4 ──
+  // 글자 크기 −/+ 를 헤더에서 빼내 카드 안 우상단으로. 헤더는 좌·가운데·우 셋뿐이라
+  // 목록카드(오른쪽 햄버거 있음)와 일반카드(없음) 모두 가운데 아이콘이 한가운데 온다.
+  sc.eq('헤더에는 −/+ 가 없다', SRC.includes('vc-head-right'), false);
+  sc.eq('좌우 자리 폭이 같다', SRC.includes('.vc-head-slot{width:22px;'), true);
+  sc.eq('오른쪽 자리는 늘 있다(비어 있어도)',
+        /<span class="vc-head-slot right">\$\{cfg\.kind\?`<button class="vc-icbtn" onclick="vcBackToList/.test(SRC), true);
+  // 밀어 넘길 때 같이 따라가면 안 되므로 슬라이드 층(.vc-slide) 밖, .vc-body 바로 아래에 둔다
+  sc.eq('−/+ 는 미는 층 밖에', SRC.includes('body=`${zoom}<div class="vc-slide">'), true);
+  sc.eq('카드 안 우상단', SRC.includes('.vc-zoom{\n  position:absolute;top:5px;right:5px;z-index:6;'), true);
+  // 아이폰: 앱이 있으면 사파리를 거치지 않고 바로 구글 스프레드시트 앱으로
+  sc.eq('아이폰도 앱을 먼저 부른다', SRC.includes("const appUrl='googlesheets://'+url.replace("), true);
+  sc.eq('넘어갔는지 지켜본다',
+        SRC.includes("document.addEventListener('visibilitychange',mark)") && SRC.includes("window.addEventListener('pagehide',mark)"), true);
+  sc.eq('안 넘어가면 웹으로', SRC.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), true);
 
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
