@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0810-5  [production]  -->
+<!-- BLOCK7  v. 26-0811-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2283,6 +2283,17 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .settings-btn:hover{border-color:var(--ac);color:var(--tx);}
 .settings-btn.on{border-color:var(--ac);background:rgba(90,112,248,.14);color:var(--tx);}
+/* 글자 크기 고르기 — 숫자 대신 실제 크기로 보여준다 (네 단계가 눈에 보이게) */
+.ts-btn{
+  flex:1;min-width:0;padding:9px 2px;border-radius:8px;
+  border:1px solid var(--bd2);background:var(--s2);
+  color:var(--tx2);font-family:'Pretendard',sans-serif;font-weight:400;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.3;
+  display:flex;align-items:center;justify-content:center;
+}
+@media (hover:hover){.ts-btn:hover{border-color:var(--ac);color:var(--tx);}}
+.ts-btn.on{border-color:var(--ac);background:rgba(90,112,248,.14);color:var(--tx);}
 .settings-btn-danger{color:var(--ov);border-color:rgba(232,72,58,.3);}
 .settings-btn-danger:hover{border-color:var(--ov);background:rgba(232,72,58,.08);}
 
@@ -2521,7 +2532,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0810-5";
+const APP_VERSION = "v. 26-0811-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3339,19 +3350,19 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="vsettings-tab-content" id="vstab-full" style="display:none;">
 <!-- ── 전체화면 본문 크기 ── -->
       <div class="settings-section">
-        <div class="settings-section-title">전체화면 글자 크기</div>
+        <div class="settings-section-title">글자 크기</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀 전체화면 본문에만 적용돼요. 작게 할수록 줄 간격이 넓어져 여백이 살아나요.</div>
         <div style="display:flex;gap:6px;">
-          <button id="vfTs100" class="settings-btn on" style="flex:1;" onclick="setVfTextScale(1)">100</button>
-          <button id="vfTs80" class="settings-btn" style="flex:1;" onclick="setVfTextScale(0.8)">80</button>
-          <button id="vfTs60" class="settings-btn" style="flex:1;" onclick="setVfTextScale(0.6)">60</button>
-          <button id="vfTs50" class="settings-btn" style="flex:1;" onclick="setVfTextScale(0.5)">50</button>
+          <button id="vfTs50" class="ts-btn" style="font-size:9px;" onclick="setVfTextScale(0.5)">태초에…</button>
+          <button id="vfTs60" class="ts-btn" style="font-size:11px;" onclick="setVfTextScale(0.6)">태초에…</button>
+          <button id="vfTs80" class="ts-btn" style="font-size:13.5px;" onclick="setVfTextScale(0.8)">태초에…</button>
+          <button id="vfTs100" class="ts-btn on" style="font-size:16px;" onclick="setVfTextScale(1)">태초에…</button>
         </div>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
       <div class="settings-section">
-        <div class="settings-section-title">전체화면 테마</div>
+        <div class="settings-section-title">테마</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">전체화면·타일뷰·공유 이미지에 함께 적용돼요. 하나만 고르면 하루 종일 그 패턴, 둘 이상 고르면 아래에서 시간구간마다 배정할 수 있어요.</div>
         <div id="vfThemeChips" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
         <div id="vfSecAssign" style="margin-top:12px;"></div>
@@ -12237,7 +12248,7 @@ function closeVerseAggPopup(){
 //   filter    : {kind,val} — 좌하단 갈래를 눌러 들어간 타일뷰에서 말씀을 고르면
 //               그때부터 이 카드는 그 갈래 안에서만 돈다 (헤더에 이름이 뜬다)
 //   theme     : null 이면 '말씀 설정 → 전체화면' 테마를 따른다
-//   textScale : null 이면 전체화면 글자 크기를 따른다
+//   textScale : 글자 크기 네 단계(VC_TS_STEPS) 중 하나. 기본은 두 번째로 큰 것
 //   ref       : 지금 보여 주는 장절. null 이면 자동(오늘의 구절 / 목록 맨 앞).
 //               ⚠️ "몇 칸 옮겼는지"(off)로 두면 안 된다 — 기준이 여러 카드에
 //               공유되는 값이라, 한 카드를 넘겼는데 다른 카드가 함께 넘어갔다.
@@ -12258,6 +12269,10 @@ function _vcGet(id){
   const c=_vcAll()[id];
   if(!c||typeof c!=='object')return null;
   if(!VC_KINDS.includes(c.kind))c.kind=null;
+  // v26-0811-1 이전에 만든 카드에는 '전체 스위치'라는 개념이 없었다 = 늘 켜져
+  // 있던 셈이다. 지금 화면에 보이는 대로 유지되도록 켜 둔 상태로 옮긴다.
+  // (새로 만드는 카드는 _vcCreate 에서 꺼진 채로 태어난다)
+  if(!c.showGroup||typeof c.showGroup!=='object')c.showGroup={meta:true,react:true};
   return c;
 }
 function _vcNewId(){
@@ -12265,10 +12280,13 @@ function _vcNewId(){
   let n=1;while(all['c'+n])n++;
   return'c'+n;
 }
+// 새 카드의 처음 모습 — 테마는 전체화면을 따르고, 글자 크기는 두 번째로 큰 것,
+// 좌·우 하단 버튼은 둘 다 꺼진 채로 시작한다 (깔끔한 카드부터 보고 필요한 것만 켠다).
 function _vcCreate(kind,from){
   const id=_vcNewId();
-  _vcAll()[id]={kind:VC_KINDS.includes(kind)?kind:null,filter:null,theme:null,textScale:null,
-                ref:null,show:{},from:from||null};
+  _vcAll()[id]={kind:VC_KINDS.includes(kind)?kind:null,filter:null,theme:null,
+                textScale:VC_TS_DEFAULT,ref:null,show:{},
+                showGroup:{meta:false,react:false},from:from||null};
   return id;
 }
 function _vcRemove(id){
@@ -12358,9 +12376,13 @@ function _vcThemeVars(cfg,ref){
     '--vf-reffont':(p.font==='serif')?fam:"'IBM Plex Mono',monospace"
   }};
 }
+// 글자 크기 네 단계. 고르는 버튼에는 숫자 대신 **그 크기의 글자**를 보여준다.
+const VC_TS_STEPS=[0.5,0.6,0.8,1];
+const VC_TS_PX={0.5:9,0.6:11,0.8:13.5,1:16};
+const VC_TS_DEFAULT=0.8;          // 가장 큰 것 바로 아래
 function _vcTextScale(cfg){
   const v=parseFloat(cfg&&cfg.textScale);
-  return(v&&v>=0.45&&v<=1)?v:_vfTextScale();
+  return(v&&v>=0.45&&v<=1)?v:VC_TS_DEFAULT;
 }
 // ── 카드 높이 (드래그로 조절, 위젯마다 따로) ──
 const VC_H_MIN=130,VC_H_MAX=700,VC_H_DEF=220;
@@ -12376,15 +12398,24 @@ function _rpSetVCardH(id,px){
 // ── 표시 항목 ──
 // 기본값은 말씀설정 '뷰' 탭의 알약버튼, 카드 설정에서 켜고 끄면 그 카드만 따로 간다.
 function _vcShow(key){return ST.settings[key]!==false;}
-function _vcShowFor(cfg,key){
-  const own=cfg&&cfg.show&&typeof cfg.show==='object'?cfg.show[key]:undefined;
-  return(own===true||own===false)?own:_vcShow(key);
-}
-// 카드 설정 팝업의 두 구역 — 제목 옆 전체 스위치가 이 목록을 통째로 켜고 끈다
+// 카드 설정 팝업의 두 구역. 제목 옆 **전체 스위치**는 그 구역 자체를 켜고 끄는
+// 상위 스위치다 — ⚠️ 아래 개별 스위치들의 값은 건드리지 않는다.
+// 전체를 껐다가 다시 켜면 하나하나 정해 둔 값이 그대로 되살아난다.
 const _VC_SHOW_GROUP={
   meta:['verseCardCat','verseCardTopic','verseCardTag'],
   react:['verseCardLike','verseCardMem','verseCardDeeper','verseCardEven','verseCardShare'],
 };
+function _vcGroupOf(key){return _VC_SHOW_GROUP.meta.indexOf(key)>=0?'meta':'react';}
+function _vcGroupOn(cfg,which){
+  const g=cfg&&cfg.showGroup;
+  const v=(g&&typeof g==='object')?g[which]:undefined;
+  return(v===true||v===false)?v:false;   // 정해 두지 않았으면 꺼짐
+}
+function _vcShowFor(cfg,key){
+  if(!_vcGroupOn(cfg,_vcGroupOf(key)))return false;   // 구역이 꺼져 있으면 끝
+  const own=cfg&&cfg.show&&typeof cfg.show==='object'?cfg.show[key]:undefined;
+  return(own===true||own===false)?own:_vcShow(key);
+}
 // ── 카드 한 장 HTML ──
 // 설정 진입은 점 세 개 (톱니는 작게 그리면 해 모양으로 보인다)
 const _VC_ICON_MORE='<svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" stroke="none"><circle cx="4" cy="10" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/></svg>';
@@ -12820,11 +12851,8 @@ function renderVcSettings(){
   const cfg=_vcGet(_vcSetId);
   if(!box||!cfg)return;
   const id=_vcSetId;
-  const cur=parseFloat(cfg.textScale);
-  const tsBtn=(v,label)=>{
-    const on=v==null?!(cur>=0.45&&cur<=1):Math.abs(cur-v)<0.001;
-    return`<button class="settings-btn${on?' on':''}" style="flex:1;" onclick="setVcTextScale('${id}',${v==null?'null':v})">${label}</button>`;
-  };
+  const cur=_vcTextScale(cfg);
+  const tsBtn=v=>`<button class="ts-btn${Math.abs(cur-v)<0.001?' on':''}" style="font-size:${VC_TS_PX[v]}px;" onclick="setVcTextScale('${id}',${v})">태초에…</button>`;
   const themeChip=(key)=>{
     const on=key==null?!cfg.theme:cfg.theme===key;
     if(key==null){
@@ -12843,26 +12871,34 @@ function renderVcSettings(){
       <div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px 0 2px;">${p.label}</div>
     </div>`;
   };
-  // 좌·우 하단 버튼 — 이 카드에서만 켜고 끈다
-  // 구역 제목 오른쪽의 전체 스위치: 다 켜져 있을 때만 켜짐으로 보이고,
-  // 누르면 그 구역을 통째로 켜거나 끈다.
+  // 좌·우 하단 버튼 — 이 카드에서만 켜고 끈다.
+  // ⚠️ 구역 제목 옆 스위치는 **그 구역 자체**를 켜고 끄는 상위 스위치다.
+  //    아래 개별 스위치의 값은 건드리지 않으므로, 껐다 켜면 그대로 되살아난다.
   const swTitle=(label,which)=>{
-    const all=_VC_SHOW_GROUP[which].every(k=>_vcShowFor(cfg,k));
+    const on=_vcGroupOn(cfg,which);
     return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
       <div class="settings-section-title" style="margin:0;flex:1;">${label}</div>
       <label class="settings-toggle">
-        <input type="checkbox"${all?' checked':''} onchange="setVcShowAll('${id}','${which}',this.checked)">
+        <input type="checkbox"${on?' checked':''} onchange="setVcShowAll('${id}','${which}',this.checked)">
         <span class="settings-toggle-track"></span>
       </label>
     </div>`;
   };
-  const swRow=(key,label)=>`<div class="settings-row">
-      <div class="settings-row-text"><div class="settings-row-label" style="font-size:13px;">${label}</div></div>
+  // 구역이 꺼져 있으면 아래 줄들은 흐리게 — 값은 그대로 살아 있다는 뜻
+  const swRow=(key,label,icon)=>{
+    const own=(cfg.show&&cfg.show[key]===false)?false:(cfg.show&&cfg.show[key]===true?true:_vcShow(key));
+    const dim=!_vcGroupOn(cfg,_vcGroupOf(key));
+    return`<div class="settings-row"${dim?' style="opacity:.45;"':''}>
+      <div class="settings-row-text"><div class="settings-row-label" style="font-size:13px;display:flex;align-items:center;gap:7px;">${icon||''}${label}</div></div>
       <label class="settings-toggle">
-        <input type="checkbox"${_vcShowFor(cfg,key)?' checked':''} onchange="setVcShow('${id}','${key}',this.checked)">
+        <input type="checkbox"${own?' checked':''} onchange="setVcShow('${id}','${key}',this.checked)">
         <span class="settings-toggle-track"></span>
       </label>
     </div>`;
+  };
+  // 반응 줄 앞에 붙일 아이콘. 목록 위젯 제목에 쓰는 것과 같은 그림을 그대로 쓴다
+  // (_VC_ACT_SVG 는 아웃라인·채움 두 벌이라 여기에 바로 쓸 수 없다).
+  const rIcon=k=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:15px;flex-shrink:0;color:${k==='like'?'var(--sun-red)':'var(--tx2)'};">${_VLIST_KIND_TITLE[k]||_VC_ACT_SVG.share}</span>`;
   const scopeTxt=(ST.settings.verseCountScope||'all')==='all'?'구독자 전체':'내 것만';
   const lnk=ST.settings.linkOpenMode||'safari';
   const lnkTxt=lnk==='chrome'?'크롬':(lnk==='inapp'?'앱 안에서':'사파리');
@@ -12872,16 +12908,13 @@ function renderVcSettings(){
   box.innerHTML=`
     <div class="settings-row-desc" style="margin-bottom:12px;">${where} 여기서 고른 값은 <b>이 카드 하나에만</b> 적용돼요.</div>
     <div class="settings-section">
-      <div class="settings-section-title">말씀카드 테마</div>
+      <div class="settings-section-title">테마</div>
       <div class="settings-row-desc" style="margin-bottom:8px;">'기본'을 고르면 말씀 설정 → 전체화면에서 고른 패턴을 따라가요. 색은 말씀마다 달라져요.</div>
       <div class="vc-theme-grid">${themeChip(null)}${VF_THEME_ORDER.map(themeChip).join('')}</div>
     </div>
     <div class="settings-section">
-      <div class="settings-section-title">말씀카드 글자 크기</div>
-      <div class="settings-row-desc" style="margin-bottom:8px;">'기본'은 말씀 설정 → 전체화면에서 고른 크기를 따라가요.</div>
-      <div style="display:flex;gap:6px;">
-        ${tsBtn(null,'기본')}${tsBtn(1,'100')}${tsBtn(0.8,'80')}${tsBtn(0.6,'60')}${tsBtn(0.5,'50')}
-      </div>
+      <div class="settings-section-title">글자 크기</div>
+      <div style="display:flex;gap:6px;">${VC_TS_STEPS.map(tsBtn).join('')}</div>
     </div>
     <div class="settings-section">
       ${swTitle("왼쪽 아래 — 필터","meta")}
@@ -12890,7 +12923,7 @@ function renderVcSettings(){
     </div>
     <div class="settings-section">
       ${swTitle("오른쪽 아래 — 말씀 반응","react")}
-      ${swRow('verseCardLike','좋아요')}${swRow('verseCardMem','암송')}${swRow('verseCardDeeper','Deeper')}${swRow('verseCardEven','Even Deeper')}${swRow('verseCardShare','공유')}
+      ${swRow('verseCardLike','좋아요',rIcon('like'))}${swRow('verseCardMem','암송',rIcon('mem'))}${swRow('verseCardDeeper','Deeper',rIcon('deeper'))}${swRow('verseCardEven','Even Deeper',rIcon('even'))}${swRow('verseCardShare','공유',rIcon('share'))}
     </div>
     <div class="settings-section">
       <div class="settings-row-desc">반응 카운터와 링크 열기는 <b>전체화면 설정을 그대로 따라가요.</b><br>
@@ -12904,17 +12937,19 @@ function setVcShow(id,key,on){
   cfg.show[key]=!!on;
   save();renderVcSettings();renderRightPanel();
 }
+// 구역 전체 스위치 — ⚠️ 아래 개별 스위치의 값은 건드리지 않는다.
+// 껐다가 다시 켜면 하나하나 정해 둔 값이 그대로 되살아난다.
 function setVcShowAll(id,which,on){
   const cfg=_vcGet(id);
   if(!cfg||!_VC_SHOW_GROUP[which])return;
-  if(!cfg.show||typeof cfg.show!=='object')cfg.show={};
-  _VC_SHOW_GROUP[which].forEach(k=>{cfg.show[k]=!!on;});
+  if(!cfg.showGroup||typeof cfg.showGroup!=='object')cfg.showGroup={};
+  cfg.showGroup[which]=!!on;
   save();renderVcSettings();renderRightPanel();
 }
 function setVcTextScale(id,v){
   const cfg=_vcGet(id);
   if(!cfg)return;
-  cfg.textScale=(v&&v>=0.45&&v<=1)?v:null;
+  cfg.textScale=(v&&v>=0.45&&v<=1)?v:VC_TS_DEFAULT;
   save();renderVcSettings();renderRightPanel();
 }
 function setVcTheme(id,key){

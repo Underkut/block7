@@ -45,7 +45,7 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,VC_NEW,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_NEW,VC_KINDS});'
 );
 
 const reset = () => {
@@ -74,8 +74,10 @@ console.log('\n시나리오 2 — 카드 설정 만들기·지우기');
   sc.eq('모르는 반응은 일반 카드로', _vcGet(_vcCreate('없는것')).kind, null);
   sc.eq('처음엔 자리를 지정하지 않는다(자동)', _vcGet(a).ref, null);
   sc.eq('처음엔 갈래가 없다', _vcGet(a).filter, null);
-  sc.eq('배경·글자 크기는 처음엔 안 정해져 있다',
-        [_vcGet(a).theme, _vcGet(a).textScale], [null, null]);
+  sc.eq('테마는 전체화면을 따른다', _vcGet(a).theme, null);
+  sc.eq('글자 크기는 두 번째로 큰 것', _vcGet(a).textScale, 0.8);
+  sc.eq('좌·우 하단은 둘 다 꺼진 채로 시작',
+        [_vcGroupOn(_vcGet(a), 'meta'), _vcGroupOn(_vcGet(a), 'react')], [false, false]);
 
   ST.settings.rpWidgetHeights = { ['card#' + a]: 300 };
   _vcRemove(a);
@@ -236,9 +238,14 @@ console.log('\n시나리오 5 — 위젯 하나하나마다의 배경·글자 �
   sc.eq('해시는 늘 같은 값', _vcHash('요한복음 1:1'), _vcHash('요한복음 1:1'));
   sc.eq('해시는 음수가 아니다', _vcHash('창세기 1:1') >= 0, true);
 
-  sc.eq('글자 크기를 안 정하면 전체화면 값', _vcTextScale({ textScale: null }), 1);
+  // '기본'(전체화면 따라가기)은 없앴다 — 네 단계 중 하나를 늘 갖는다
+  sc.eq('안 정했으면 두 번째로 큰 것', _vcTextScale({ textScale: null }), 0.8);
   sc.eq('정하면 그 값', _vcTextScale({ textScale: 0.6 }), 0.6);
-  sc.eq('범위 밖이면 전체화면 값으로', _vcTextScale({ textScale: 9 }), 1);
+  sc.eq('범위 밖이면 기본값으로', _vcTextScale({ textScale: 9 }), 0.8);
+  sc.eq('네 단계가 작은 것부터', VC_TS_STEPS, [0.5, 0.6, 0.8, 1]);
+  sc.eq('버튼 글자 크기도 네 단계로 다르다',
+        VC_TS_STEPS.map(v => VC_TS_PX[v]), [9, 11, 13.5, 16]);
+  sc.eq('기본값은 두 번째로 큰 것', VC_TS_DEFAULT, VC_TS_STEPS[VC_TS_STEPS.length - 2]);
 }
 
 // ═══ 6. 카드 높이 ═══
@@ -279,12 +286,18 @@ console.log('\n시나리오 8 — 표시 항목과 이름');
   ST.settings.verseCardCat = false;
   sc.eq('끄면 안 보여준다', _vcShow('verseCardCat'), false);
 
-  // 카드마다 따로 켜고 끌 수 있다 (말씀설정이 기본값)
-  sc.eq('카드가 따로 안 정하면 말씀설정을 따른다', _vcShowFor({ show: {} }, 'verseCardCat'), false);
-  sc.eq('카드에서 켜면 켜진다', _vcShowFor({ show: { verseCardCat: true } }, 'verseCardCat'), true);
+  // 카드마다 따로 켜고 끌 수 있다 (구역이 켜져 있을 때만 보인다)
+  const on = { showGroup: { meta: true, react: true } };
+  sc.eq('카드가 따로 안 정하면 말씀설정을 따른다',
+        _vcShowFor(Object.assign({ show: {} }, on), 'verseCardCat'), false);
+  sc.eq('카드에서 켜면 켜진다',
+        _vcShowFor(Object.assign({ show: { verseCardCat: true } }, on), 'verseCardCat'), true);
   ST.settings.verseCardCat = true;
-  sc.eq('카드에서 끄면 꺼진다', _vcShowFor({ show: { verseCardCat: false } }, 'verseCardCat'), false);
-  sc.eq('show 가 없어도 안전', _vcShowFor({}, 'verseCardCat'), true);
+  sc.eq('카드에서 끄면 꺼진다',
+        _vcShowFor(Object.assign({ show: { verseCardCat: false } }, on), 'verseCardCat'), false);
+  sc.eq('show 가 없어도 안전', _vcShowFor(on, 'verseCardCat'), true);
+  sc.eq('구역이 꺼져 있으면 켜 뒀어도 안 보인다',
+        _vcShowFor({ show: { verseCardCat: true }, showGroup: { meta: false } }, 'verseCardCat'), false);
   ST.settings.verseCardCat = true;
 
   const a = _vcCreate('deeper', 'deeperList'), b = _vcCreate(null, null);
@@ -345,11 +358,38 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('반응 토스트는 2.5초', SRC.includes('_dismissReactToast(false);},2500)'), true);
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');
-  const seg = SRC.slice(b, b + 5000);
-  const order = ['말씀카드 테마', '말씀카드 글자 크기', '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
+  const seg = SRC.slice(b, b + 7000);
+  const order = ['>테마<', '>글자 크기<', '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
     .map(t => seg.indexOf(t));
   sc.eq('설정 팝업 다섯 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
   sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
+
+  // ── 0811-1 ──
+  // 제목에서 '말씀카드'·'전체화면'을 뺐다 (어느 화면인지는 이미 안다)
+  sc.eq('말씀설정 전체화면 탭도 짧은 제목',
+        SRC.includes('<div class="settings-section-title">글자 크기</div>') &&
+        SRC.includes('<div class="settings-section-title">테마</div>'), true);
+  sc.eq("긴 제목은 화면에 남아 있지 않다",
+        SRC.includes('>말씀카드 테마<') || SRC.includes('>말씀카드 글자 크기<') ||
+        SRC.includes('>전체화면 글자 크기<') || SRC.includes('>전체화면 테마<'), false);
+  // 글자 크기 버튼: 작은 것부터, 모두 '태초에…', 크기가 실제로 다르다
+  sc.eq('전체화면 탭 버튼 순서 50·60·80·100',
+        /vfTs50[\s\S]{0,120}vfTs60[\s\S]{0,120}vfTs80[\s\S]{0,120}vfTs100/.test(SRC), true);
+  sc.eq('버튼 글자는 모두 태초에…',
+        (SRC.match(/onclick="setVfTextScale\([\d.]+\)">태초에…<\/button>/g) || []).length, 4);
+  sc.eq('버튼마다 글자 크기가 다르다',
+        /vfTs50" class="ts-btn" style="font-size:9px;/.test(SRC) &&
+        /vfTs100" class="ts-btn on" style="font-size:16px;/.test(SRC), true);
+  sc.eq("'기본' 버튼은 없앴다", SRC.includes("tsBtn(null,'기본')"), false);
+  // 전체 스위치는 상위 개념 — 하위 값을 건드리지 않는다
+  sc.eq('전체 스위치는 showGroup 만 만진다',
+        SRC.includes("cfg.showGroup[which]=!!on;"), true);
+  sc.eq('구역이 꺼져 있으면 아래는 흐리게',
+        SRC.includes("const dim=!_vcGroupOn(cfg,_vcGroupOf(key));"), true);
+  // 반응 줄 앞 아이콘
+  sc.eq('반응 줄 앞에 아이콘', SRC.includes('const rIcon=k=>'), true);
+  sc.eq('다섯 줄 모두 아이콘',
+        (SRC.match(/rIcon\('(like|mem|deeper|even|share)'\)/g) || []).length, 5);
 
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
@@ -385,24 +425,51 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('제목 옆에 스위치를 단다', SRC.includes('const swTitle=(label,which)=>{'), true);
 }
 
-// ═══ 9-B. 구역 전체 스위치 ═══
-console.log('\n시나리오 9-B — 구역 전체 켜고 끄기');
+// ═══ 9-B. ⚠️ 구역 전체 스위치는 **상위** 스위치다 ═══
+// 아래 개별 스위치의 값을 바꾸지 않는다 — 껐다 켜면 정해 둔 값이 그대로 살아난다.
+console.log('\n시나리오 9-B — 전체 스위치는 하위 값을 건드리지 않는다');
 {
   reset();
   const id = _vcCreate(null, null);
   const cfg = _vcGet(id);
   sc.eq('구역이 둘', Object.keys(_VC_SHOW_GROUP), ['meta', 'react']);
-  sc.eq('처음엔 다 켜져 있다', _VC_SHOW_GROUP.react.every(k => _vcShowFor(cfg, k)), true);
+  sc.eq('어느 구역에 속하는지', [_vcGroupOf('verseCardTag'), _vcGroupOf('verseCardShare')], ['meta', 'react']);
 
-  setVcShowAll(id, 'react', false);
-  sc.eq('오른쪽 아래를 통째로 끈다', _VC_SHOW_GROUP.react.some(k => _vcShowFor(cfg, k)), false);
-  sc.eq('왼쪽 아래는 그대로', _VC_SHOW_GROUP.meta.every(k => _vcShowFor(cfg, k)), true);
+  // 새 카드는 두 구역 모두 꺼진 채로 시작 (3-3 / 3-4)
+  sc.eq('처음엔 좌하단이 안 보인다', _VC_SHOW_GROUP.meta.some(k => _vcShowFor(cfg, k)), false);
+  sc.eq('처음엔 우하단도 안 보인다', _VC_SHOW_GROUP.react.some(k => _vcShowFor(cfg, k)), false);
 
+  // 구역을 켜면 개별 값(기본 켜짐)대로 보인다
   setVcShowAll(id, 'react', true);
-  sc.eq('다시 통째로 켠다', _VC_SHOW_GROUP.react.every(k => _vcShowFor(cfg, k)), true);
+  sc.eq('구역을 켜면 다 보인다', _VC_SHOW_GROUP.react.every(k => _vcShowFor(cfg, k)), true);
+  sc.eq('다른 구역은 그대로 꺼짐', _VC_SHOW_GROUP.meta.some(k => _vcShowFor(cfg, k)), false);
+
+  // 개별로 두 개를 꺼 둔다
   setVcShow(id, 'verseCardLike', false);
-  sc.eq('하나만 꺼도 나머지는 그대로', _vcShowFor(cfg, 'verseCardMem'), true);
+  setVcShow(id, 'verseCardShare', false);
+  sc.eq('개별로 끈 것은 안 보이고', _vcShowFor(cfg, 'verseCardLike'), false);
+  sc.eq('나머지는 보인다', _vcShowFor(cfg, 'verseCardMem'), true);
+
+  // ⚠️ 여기가 핵심 — 전체를 껐다 켜도 개별 값은 그대로
+  setVcShowAll(id, 'react', false);
+  sc.eq('전체를 끄면 다 안 보이지만', _VC_SHOW_GROUP.react.some(k => _vcShowFor(cfg, k)), false);
+  sc.eq('개별 값은 저장돼 있다',
+        [cfg.show.verseCardLike, cfg.show.verseCardShare, cfg.show.verseCardMem],
+        [false, false, undefined]);
+  setVcShowAll(id, 'react', true);
+  sc.eq('다시 켜면 껐던 것은 여전히 꺼져 있고', _vcShowFor(cfg, 'verseCardLike'), false);
+  sc.eq('공유도 여전히 꺼져 있고', _vcShowFor(cfg, 'verseCardShare'), false);
+  sc.eq('켜 뒀던 것만 돌아온다', _vcShowFor(cfg, 'verseCardMem'), true);
+
   sc.eq('없는 구역은 조용히 넘어간다', (setVcShowAll(id, '없음', false), true), true);
+
+  // 0811-1 이전에 만든 카드는 전체 스위치 개념이 없었다 = 켜져 있던 셈
+  reset();
+  _vcAll()['old1'] = { kind: null, theme: null, textScale: 0.8, ref: null, show: {} };
+  const old = _vcGet('old1');
+  sc.eq('옛 카드는 켜진 채로 옮겨진다',
+        [_vcGroupOn(old, 'meta'), _vcGroupOn(old, 'react')], [true, true]);
+  sc.eq('그래서 지금 보이는 대로 유지된다', _vcShowFor(old, 'verseCardLike'), true);
 }
 
 // ═══ 9-C. 밀어낸 자리에서 이어서 넘어간다 ═══
