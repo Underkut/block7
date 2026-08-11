@@ -355,7 +355,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('반응 토스트 한 곳으로', SRC.includes('function _reactWithToast(kind,ref)'), true);
   sc.eq('말씀 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',ref)") && SRC.includes("_reactWithToast('mem',ref)"), true);
   sc.eq('말씀영역 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',_vfCurrentVerse().ref)"), true);
-  sc.eq('반응 토스트는 2.5초', SRC.includes('_dismissReactToast(false);},2500)'), true);
+  sc.eq('반응 토스트는 1.5초', SRC.includes('_dismissReactToast(false);},1500)'), true);
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');
   const seg = SRC.slice(b, b + 7000);
@@ -390,6 +390,39 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('반응 줄 앞에 아이콘', SRC.includes('const rIcon=k=>'), true);
   sc.eq('다섯 줄 모두 아이콘',
         (SRC.match(/rIcon\('(like|mem|deeper|even|share)'\)/g) || []).length, 5);
+
+  // ── 0811-2 ──
+  // 카드 헤더 우측: 글자 크기 −/+ (늘) · 목록카드면 그 오른쪽에 햄버거
+  sc.eq('헤더에 글자 크기 −/+', SRC.includes("vcStepTextScale('${id}',-1)") && SRC.includes("vcStepTextScale('${id}',1)"), true);
+  sc.eq('한 칸씩 옮기는 함수', SRC.includes('function vcStepTextScale(id,d)'), true);
+  // 우측 묶음 안에서 −/+ 가 먼저, 그 오른쪽에 햄버거
+  sc.eq('햄버거는 −/+ 오른쪽에',
+        /<span class="vc-head-right">\$\{zoom\}\$\{cfg\.kind\?`<button class="vc-icbtn" onclick="vcBackToList/.test(SRC), true);
+  sc.eq('끝에 닿으면 눌리지 않게', SRC.includes(".vc-zbtn:disabled{opacity:.28;cursor:default;}"), true);
+  // 롱터치로 연 메뉴가 손을 떼는 동작으로 닫히던 것
+  sc.eq('메뉴는 새로 누를 때까지 안 닫힌다', SRC.includes('function _menuArmOnNextPress(setter)'), true);
+  sc.eq('말씀 메뉴에 적용', SRC.includes('_menuArmOnNextPress(v=>{_vmmArmed=v;})'), true);
+  sc.eq('목록 메뉴에도 적용', SRC.includes('_menuArmOnNextPress(v=>{_vliArmed=v;})'), true);
+  // 타일뷰는 늘 '=' 켜진 최신순으로 시작
+  sc.eq('타일뷰 기본 정렬', SRC.includes("_vgState.sortMode='date';_vgState.dateOrder='recent';"), true);
+  sc.eq("'=' 켜진 채로", SRC.includes('_vgState.kind=kind;_vgState.val=val;_vgState.group=true;'), true);
+  // 개발자 전용 — 대분류 롱터치로 그 말씀의 구글 시트 셀 열기
+  sc.eq('시트 링크 만들기', SRC.includes('function _sheetUrlForVerse(v)'), true);
+  sc.eq('개발자만', /function vfOpenSheetForCat\(\)\{\s*if\(!_isDevAccount\(\)\)return;/.test(SRC), true);
+  sc.eq('그 줄을 골라 준다', SRC.includes('&range=A${hit.row}:F${hit.row}'), true);
+  sc.eq('시트에서 가져올 때 행 번호를 적어 둔다', SRC.includes('d:_parseVDate(r[5]),row:i+1'), true);
+  // 설정 등급을 바꿔도 보던 탭에 머문다
+  sc.eq('등급 바꾸기 전에 지금 탭을 붙잡는다',
+        SRC.includes('const curId=_stabList()[_currentSettingsTabIdx]||\'\';'), true);
+  sc.eq('전체 목록을 그대로 쓰지 않는다',
+        SRC.includes('switchSettingsTab(SETTINGS_TABS[_currentSettingsTabIdx],null,\'direct\')'), false);
+  // 등급 아이콘 설명이 탭바에 가리지 않게
+  sc.eq('헤더를 탭바 위로', /\.settings-hd\{[\s\S]*?position:relative;z-index:30;/.test(SRC), true);
+  // '현재 말씀 모음' 검색에 태그도
+  sc.eq('모음 검색에 태그 포함', SRC.includes("(v.tags||[]).some(t=>String(t).includes(q))"), true);
+  sc.eq('검색창 안내도 바뀜', SRC.includes('구절, 본문, 소주제, 태그 검색'), true);
+  // Even Deeper 는 성공 안내를 띄우지 않는다 (바로 다른 앱으로 넘어간다)
+  sc.eq('Even 성공 토스트 없음', SRC.includes('const okMsg=()=>{};'), true);
 
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)

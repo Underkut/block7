@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0811-1  [production]  -->
+<!-- BLOCK7  v. 26-0811-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1954,6 +1954,15 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-head{cursor:grab;touch-action:none;}
 .vc-head-slot{width:22px;flex-shrink:0;display:flex;align-items:center;}
 .vc-head-slot.right{justify-content:flex-end;}
+/* 헤더 우측 묶음 — 글자 크기 −/+ (늘) + 햄버거(목록카드만) */
+.vc-head-right{display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.vc-zbtn{
+  background:none;border:none;padding:0 3px;margin:0;cursor:pointer;
+  color:var(--tx3);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  line-height:1;-webkit-tap-highlight-color:transparent;
+}
+.vc-zbtn:disabled{opacity:.28;cursor:default;}
+@media (hover:hover){.vc-zbtn:not(:disabled):hover{color:var(--ac);}}
 .vc-head-ic{display:flex;align-items:center;justify-content:center;color:var(--tx2);}
 .vc-icbtn{background:none;border:none;padding:2px;margin:0;cursor:pointer;color:var(--tx3);
   line-height:0;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;}
@@ -2152,7 +2161,8 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 @media(min-width:720px){#verseSettingsPanel{height:80vh;}}
 @keyframes settingsIn{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 .settings-hd{
-  position:relative;
+  /* 등급 아이콘의 설명 말풍선이 아래 탭바(z-index:10) 위에 뜨도록 헤더를 올린다 */
+  position:relative;z-index:30;
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 18px;border-bottom:1px solid var(--bd);
   flex-shrink:0;
@@ -2532,7 +2542,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0811-1";
+const APP_VERSION = "v. 26-0811-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4057,7 +4067,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
   <div class="vf-bottom">
     <div class="vf-meta">
-      <div id="vfCat" onclick="_vgOpenFromReels('cat')"></div>
+      <div id="vfCat" onclick="vfCatTap()"></div>
       <div id="vfTopic" onclick="_vgOpenFromReels('topic')"></div>
       <div id="vfTag"></div>
     </div>
@@ -4164,7 +4174,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 </div>
 
 <!-- 말씀 목록 행 롱터치/우클릭 메뉴 (암송/좋아요/Deeper 목록 공용) -->
-<div class="task-menu-overlay" id="vliMenuOverlay" style="display:none;z-index:4400;" onclick="closeVliMenu()"></div>
+<div class="task-menu-overlay" id="vliMenuOverlay" style="display:none;z-index:4400;" onclick="closeVliMenuFromOverlay()"></div>
 <div class="task-menu" id="vliMenu" style="display:none;z-index:4410;">
   <div class="task-menu-item" onclick="vliAction('full')">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V3h4.5"/><path d="M17 7.5V3h-4.5"/><path d="M3 12.5V17h4.5"/><path d="M17 12.5V17h-4.5"/></svg></span>전체 화면
@@ -4256,7 +4266,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
     </button>
   </div>
-  <input type="text" id="verseListSearch" class="event-modal-text" placeholder="구절, 본문, 소주제 검색" oninput="renderVerseListResults()">
+  <input type="text" id="verseListSearch" class="event-modal-text" placeholder="구절, 본문, 소주제, 태그 검색" oninput="renderVerseListResults()">
   <div id="verseListCatRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
   <div id="verseListResults" style="overflow-y:auto;flex:1;min-height:0;border-top:1px solid var(--bd2);padding-top:8px;"></div>
 </div>
@@ -5476,6 +5486,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       claimed.add(ex);
       if(ex.del==='simple'){delete ex.del;restored++;} // 삭제 심플만 되살림
       if(gid&&ex.gid!==gid)ex.gid=gid;                 // 출처 표시 (변경으로 세지 않음)
+      if(it.row&&ex.row!==it.row)ex.row=it.row;        // 시트에서의 행 번호 (변경으로 세지 않음)
       const dChanged=!!it.d&&ex.d!==it.d; // 시트에 날짜열이 있을 때만 갱신
       const changed=ex.krText!==it.krText||ex.cat!==newCat||ex.topic!==newTopic||
         JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||dChanged;
@@ -5483,6 +5494,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
     }else{
       const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,src:'google',d:it.d||_calKey()};
       if(gid)nv.gid=gid;
+      if(it.row)nv.row=it.row;
       coll.verses.push(nv);claimed.add(nv);byKey.set(key,nv);
       const r=String(it.ref).trim();
       if(!byRef.has(r))byRef.set(r,[]);
@@ -5641,9 +5653,10 @@ function _rowsToItems(rows){
     if(ref&&!_looksLikeRef(ref))continue; // 깨진 행은 통째로 버린다
     const tagsRaw=String(r[4]||'').trim();
     const tags=tagsRaw?tagsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
+    // row = 실제 시트의 행 번호(1부터). 나중에 '그 셀로 열기'에 쓴다.
     items.push({cat:String(r[0]||'').trim()||'나의 암송',topic:String(r[1]||'').trim(),
                 krText:String(r[2]||'').trim(),ref,tags,
-                d:_parseVDate(r[5])});
+                d:_parseVDate(r[5]),row:i+1});
   }
   return items;
 }
@@ -6261,12 +6274,27 @@ let _verseMemMenuSec=null; // which secId to record against
 // 롱터치로 메뉴가 뜬 직후 손을 떼면 그 자리에서 click 이 한 번 발생해
 // 오버레이에 떨어지면서 메뉴가 바로 닫혔다 → 연 직후 잠깐은 무시한다.
 let _vmmOpenedAt=0;
+// ⚠️ 롱터치로 연 메뉴는 **손을 떼는 그 동작**으로 닫히면 안 된다.
+// 예전엔 "연 지 450ms 안이면 무시"로 막았는데, 롱터치 판정이 500ms 라
+// 조금만 더 붙잡고 있다 떼면 그 시간을 넘겨 곧바로 닫혔다.
+// 이제는 시간이 아니라 **새로 누른 적이 있는지**로 본다 — 메뉴를 연 그 손가락이
+// 떨어지는 것은 '새로 누른 것'이 아니므로 닫지 않는다.
+let _vmmArmed=true;
+function _menuArmOnNextPress(setter){
+  setter(false);
+  const on=()=>{setter(true);
+    document.removeEventListener('pointerdown',on,true);
+    document.removeEventListener('touchstart',on,true);};
+  document.addEventListener('pointerdown',on,true);
+  document.addEventListener('touchstart',on,true);
+}
 function closeVerseMemMenuFromOverlay(){
-  if(Date.now()-_vmmOpenedAt<450)return;
+  if(!_vmmArmed)return;
   closeVerseMemMenu();
 }
 function openVerseMemMenu(anchorEl,secId,atPoint){
   _vmmOpenedAt=Date.now();
+  _menuArmOnNextPress(v=>{_vmmArmed=v;});   // 지금 눌려 있는 손가락이 떨어져도 안 닫힌다
   _verseMemMenuSec=secId;
   const ov=document.getElementById('verseMemMenuOverlay');
   const menu=document.getElementById('verseMemMenu');
@@ -7159,7 +7187,9 @@ function openEvenDeeperFromRef(ref){
   //    설치된 ChatGPT 앱으로 이어지던 흐름이 끊긴다. 예전처럼 그대로 넘겨
   //    OS 가 ChatGPT 앱을 잡도록 둔다. (설정은 Deeper 에만 적용)
   const go=()=>BibleLinkProvider._openInApp(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
-  const okMsg=()=>showToast(`'${q}' 복사했어요 — ChatGPT에 붙여넣기 하세요`);
+  // ⚠️ 성공했을 때는 알리지 않는다 — 곧바로 ChatGPT 로 넘어가 토스트를 볼 겨를이 없다.
+  //    실패했을 때만 알린다 (그때는 사용자가 직접 입력해야 하므로 알려야 한다).
+  const okMsg=()=>{};
   const noMsg=()=>showToast(`ChatGPT에 '${q}' 를 입력하세요`);
   // iOS(특히 PWA)에서는 execCommand('copy') 가 true 를 돌려주고도 실제로는
   // 클립보드에 안 들어가는 경우가 있어(복사 실패 감지 불가) 비동기
@@ -7557,7 +7587,7 @@ function showReactionToast(svgHtml){
   t.style.animation='none';void t.offsetWidth;
   t.style.animation='reactToastBeat .9s cubic-bezier(.22,1.2,.36,1)';
   clearTimeout(t._tid);
-  t._tid=setTimeout(()=>{_dismissReactToast(false);},2500);  // 문구 토스트(4.5s)보다 2초 짧게
+  t._tid=setTimeout(()=>{_dismissReactToast(false);},1500);  // 아이콘 하나뿐이라 짧게 (문구 토스트는 4.5s)
 }
 // 좋아요·암송을 기록하고 **아이콘 토스트 하나만** 띄운다.
 // 기록 함수 자체의 문구 토스트는 이번 호출에 한해 건너뛴다.
@@ -7741,6 +7771,7 @@ function openVerseFull(keepOverride){
   if(bt0){bt0.style.transition='';bt0.style.opacity='';}
   _verseFullRender();
   _initVerseFullGestures();
+  _initVfCatSheet();
   // 웹폰트가 늦게 붙으면 폭이 달라지므로 로드 후 한 번 더 맞춘다
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(_verseFullIsOpen())_vfLayoutText();});
 }
@@ -9425,6 +9456,70 @@ function vgPickAxis(v){
   openVerseGrid(_vgState.kind,v);
 }
 // 릴스 좌하단 대분류/소주제 터치 진입 (태그는 각 칩이 openVerseGrid를 직접 호출)
+// ── 개발자 전용: 지금 말씀이 온 구글 시트를 그 셀로 열기 ──
+// 대분류를 롱터치/우클릭하면 열린다. 시트에서 가져온 말씀에만 쓸 수 있다.
+// row(시트 행 번호)는 v26-0811-2 부터 가져올 때 함께 기록된다 —
+// 그전에 가져온 말씀은 행을 모르므로 그 시트 탭까지만 열린다.
+function _sheetUrlForVerse(v){
+  if(!v||!v.ref)return null;
+  const colls=getVerseCollections()||[];
+  for(const c of colls){
+    const hit=(c.verses||[]).find(x=>x.ref===v.ref&&(x.cat||'')===(v.cat||'')&&(x.topic||'')===(v.topic||''))
+           ||(c.verses||[]).find(x=>x.ref===v.ref);
+    if(!hit||hit.src!=='google')continue;
+    const links=Array.isArray(c.google)?c.google:[];
+    // 여러 시트를 붙여 둔 모음이면 gid 로 어느 시트인지 가린다
+    const link=links.find(g=>{
+      const m=(g.url||'').match(/[#&?]gid=(\d+)/);
+      return hit.gid?((m?m[1]:'0')===String(hit.gid)):true;
+    })||links[0];
+    if(!link||!link.url)continue;
+    const idM=link.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if(!idM)continue;
+    const gid=hit.gid||((link.url.match(/[#&?]gid=(\d+)/)||[])[1])||'0';
+    let u=`https://docs.google.com/spreadsheets/d/${idM[1]}/edit#gid=${gid}`;
+    if(hit.row)u+=`&range=A${hit.row}:F${hit.row}`;   // 그 줄을 통째로 골라 준다
+    return{url:u,row:hit.row||0,coll:c.name||''};
+  }
+  return null;
+}
+// 대분류 탭 — 롱터치로 시트를 연 직후의 클릭은 무시한다 (전체화면 넘김과 같은 문법)
+let _vfCatLongFired=false;
+function vfCatTap(){
+  if(_vfCatLongFired){_vfCatLongFired=false;return;}
+  _vgOpenFromReels('cat');
+}
+// 개발자 계정에서만 대분류에 롱터치/우클릭을 붙인다.
+// 일반 사용자에게는 아무것도 달지 않아 지금 동작이 그대로 유지된다.
+function _initVfCatSheet(){
+  const cat=document.getElementById('vfCat');
+  if(!cat||cat._sheetBound)return;
+  cat._sheetBound=true;
+  let t=null;
+  const stop=()=>{if(t){clearTimeout(t);t=null;}};
+  cat.addEventListener('contextmenu',e=>{
+    if(!_isDevAccount())return;
+    e.preventDefault();e.stopPropagation();
+    _vfCatLongFired=true;vfOpenSheetForCat();
+  });
+  cat.addEventListener('touchstart',e=>{
+    if(!_isDevAccount())return;
+    e.stopPropagation();          // 전체화면의 공용 롱터치 메뉴가 뜨지 않게
+    _vfCatLongFired=false;
+    stop();
+    t=setTimeout(()=>{t=null;_vfCatLongFired=true;vfOpenSheetForCat();},500);
+  },{passive:true});
+  ['touchend','touchmove','touchcancel'].forEach(ev=>
+    cat.addEventListener(ev,stop,{passive:true}));
+}
+function vfOpenSheetForCat(){
+  if(!_isDevAccount())return;
+  const v=_vfCurrentVerse();
+  const t=_sheetUrlForVerse(v);
+  if(!t){showToast('이 말씀은 구글 시트에서 가져온 것이 아니에요');return;}
+  if(!t.row)showToast('시트를 열어요 — 행 위치는 한 번 동기화한 뒤부터 정확해져요');
+  BibleLinkProvider._openInApp(t.url);
+}
 function _vgOpenFromReels(kind){
   const v=_vfCurrentVerse();if(!v)return;
   const val=kind==='cat'?((v.cat||'').trim())
@@ -9442,7 +9537,9 @@ function openVerseGrid(kind,val,cardId){
   const _tc=_vgCardTarget?_vcGet(_vgCardTarget):null;
   _vgState.limitKind=(_tc&&_tc.kind)?_tc.kind:null;
   const cur=_vfCurrentVerse();               // 전체화면에 떠 있던 말씀 — 이 위치로 스크롤
-  _vgState.kind=kind;_vgState.val=val;_vgState.group=false;
+  // 들어올 때마다 기본 정렬로 되돌린다 — '=' 켜진 최신순
+  _vgState.kind=kind;_vgState.val=val;_vgState.group=true;
+  _vgState.sortMode='date';_vgState.dateOrder='recent';
   if(!_vgState.cols)_vgState.cols=3;
   const gd=document.getElementById('verseGrid');if(!gd)return;
   _vgSyncFilterLabel();
@@ -9779,7 +9876,8 @@ function renderVerseListResults(){
   let list=ACTIVE_VERSES();
   if(_verseListCatFilter!==null)list=list.filter(v=>v.catNo===_verseListCatFilter);
   if(q){
-    list=list.filter(v=>v.krText.includes(q)||v.ref.includes(q)||v.topic.includes(q)||v.cat.includes(q));
+    list=list.filter(v=>v.krText.includes(q)||v.ref.includes(q)||v.topic.includes(q)||v.cat.includes(q)||
+      (v.tags||[]).some(t=>String(t).includes(q)));
   }
   results.innerHTML='';
   if(list.length===0){
@@ -11724,9 +11822,14 @@ function _attachVliMenus(container){
     });
   });
 }
-let _vliRef=null,_vliKind=null;
+let _vliRef=null,_vliKind=null,_vliArmed=true;
+function closeVliMenuFromOverlay(){
+  if(!_vliArmed)return;
+  closeVliMenu();
+}
 function openVliMenu(x,y,ref,kind){
   _vliRef=ref;_vliKind=kind;
+  _menuArmOnNextPress(v=>{_vliArmed=v;});   // 롱터치한 손가락이 떨어져도 안 닫힌다
   const ov=document.getElementById('vliMenuOverlay');
   const menu=document.getElementById('vliMenu');
   ov.style.display='block';menu.style.display='block';
@@ -12443,10 +12546,14 @@ function _vcCardHTML(id){
   const center=fl
     ? `<button class="vc-filter" onclick="vcClearFilter('${id}')" title="필터 풀기">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}<span>${esc(fl)}</span></button>`
     : `<span class="vc-head-ic">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}</span>`;
+  // 우측: 글자 크기 −/+ (늘 있다) · 목록카드면 그 오른쪽에 햄버거(목록 복귀)
+  const ts=_vcTextScale(cfg);
+  const zoom=`<button class="vc-zbtn" onclick="vcStepTextScale('${id}',-1)" title="글자 작게"${ts<=VC_TS_STEPS[0]?' disabled':''}>−</button>`
+            +`<button class="vc-zbtn" onclick="vcStepTextScale('${id}',1)" title="글자 크게"${ts>=VC_TS_STEPS[VC_TS_STEPS.length-1]?' disabled':''}>＋</button>`;
   const head=`<div class="rp-widget-title vc-head" data-vchead="${id}">
       <span class="vc-head-slot"><button class="vc-icbtn" onclick="openVcSettings('${id}')" title="말씀카드 설정">${_VC_ICON_MORE}</button></span>
       ${center}
-      <span class="vc-head-slot right">${cfg.kind?`<button class="vc-icbtn" onclick="vcBackToList('${id}')" title="목록으로 돌아가기">${_VC_ICON_BACK}</button>`:''}</span>
+      <span class="vc-head-right">${zoom}${cfg.kind?`<button class="vc-icbtn" onclick="vcBackToList('${id}')" title="목록으로 돌아가기">${_VC_ICON_BACK}</button>`:''}</span>
     </div>`;
   let body;
   if(!v){
@@ -12951,6 +13058,16 @@ function setVcTextScale(id,v){
   if(!cfg)return;
   cfg.textScale=(v&&v>=0.45&&v<=1)?v:VC_TS_DEFAULT;
   save();renderVcSettings();renderRightPanel();
+}
+// 카드 헤더의 −/+ — 네 단계 안에서 한 칸씩 (설정 팝업을 열지 않고 바로)
+function vcStepTextScale(id,d){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  const i=VC_TS_STEPS.indexOf(_vcTextScale(cfg));
+  const next=Math.max(0,Math.min((i<0?VC_TS_STEPS.indexOf(VC_TS_DEFAULT):i)+d,VC_TS_STEPS.length-1));
+  if(VC_TS_STEPS[next]===cfg.textScale)return;
+  cfg.textScale=VC_TS_STEPS[next];
+  save();renderRightPanel();
 }
 function setVcTheme(id,key){
   const cfg=_vcGet(id);
@@ -20025,13 +20142,18 @@ function uiLevel(){
 }
 function setUiLevel(v){
   if(!UI_LEVELS.includes(v)||v===uiLevel())return;
+  // ⚠️ _currentSettingsTabIdx 는 **보이는 탭 목록**(_stabList)의 자리다.
+  //    그걸 전체 목록(SETTINGS_TABS)에 그대로 넣으면 엉뚱한 탭이 나온다 —
+  //    이지에서는 '버튼'이 빠져 있어 '구간'이 보이는 목록의 3번인데,
+  //    전체 목록의 3번은 '버튼'이라 등급을 올리면 버튼탭으로 튀었다.
+  //    등급을 바꾸기 **전에** 지금 탭 이름을 붙잡아 둔다.
+  const curId=_stabList()[_currentSettingsTabIdx]||'';
   ST.settings.uiLevel=v;
   rawSave();
   applyUiLevel();
-  // 지금 보고 있던 탭이 사라졌으면(이지에서 버튼탭) 첫 탭으로 옮긴다
+  // 보고 있던 탭이 사라졌으면(이지에서 버튼탭) 첫 탭으로 옮긴다
   const list=_stabList();
-  if(!list.includes(SETTINGS_TABS[_currentSettingsTabIdx]||''))switchSettingsTab(list[0],null,'direct');
-  else switchSettingsTab(SETTINGS_TABS[_currentSettingsTabIdx],null,'direct');
+  switchSettingsTab(list.includes(curId)?curId:list[0],null,'direct');
 }
 // 이 등급에서 보이는 탭들 (이지는 '버튼' 탭 자체를 감춘다)
 function _stabList(){

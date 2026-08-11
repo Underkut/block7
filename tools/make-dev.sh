@@ -40,6 +40,8 @@ out=sub_once(out,'<link rel="manifest" href="manifest.json">',
 # ④ 홈화면 아이콘 이름
 out=sub_once(out,'<meta name="apple-mobile-web-app-title" content="BLOCK7">',
                  '<meta name="apple-mobile-web-app-title" content="BLOCK7 DEV">','앱 이름')
+# ⑤ 브라우저 탭 제목 — 어느 것이 개발본인지 탭만 보고도 알 수 있게
+out=sub_once(out,'<title>BLOCK 7</title>','<title>BLOCK7 DEV</title>','탭 제목')
 
 io.open('index-dev.html','w',encoding='utf-8').write(out)
 print('index-dev.html 생성 완료 — %s'%ver)
