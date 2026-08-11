@@ -462,9 +462,22 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('카드 안 우상단', SRC.includes('.vc-zoom{\n  position:absolute;top:5px;right:5px;z-index:6;'), true);
   // 아이폰: 앱이 있으면 사파리를 거치지 않고 바로 구글 스프레드시트 앱으로
   sc.eq('아이폰도 앱을 먼저 부른다', SRC.includes("const appUrl='googlesheets://'+url.replace("), true);
-  sc.eq('넘어갔는지 지켜본다',
-        SRC.includes("document.addEventListener('visibilitychange',mark)") && SRC.includes("window.addEventListener('pagehide',mark)"), true);
-  sc.eq('안 넘어가면 웹으로', SRC.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), true);
+
+  // ── 0811-6 ──
+  // ⚠️ 앱과 사파리가 **둘 다** 열리던 것. 시간을 재서 "안 열렸다"고 판정한 뒤
+  //    x-safari- 를 걸었는데, 아이폰은 앱으로 넘어가는 데 시간이 걸린다.
+  //    → 사파리는 사람이 한 번 더 누를 때만 연다.
+  sc.eq('시간을 재서 사파리를 열지 않는다',
+        SRC.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), false);
+  sc.eq('한 번 더 누르면 그때 사파리', SRC.includes("if(_sheetAppMiss===url){_sheetAppMiss='';BibleLinkProvider.open(url);return;}"), true);
+  sc.eq('그 주소를 기억해 둔다', SRC.includes("let _sheetAppMiss='';"), true);
+  sc.eq('안 열렸을 때만 안내', SRC.includes("showToast('시트 앱이 열리지 않았어요. 한 번 더 누르면 사파리로 열게요');"), true);
+  // 벗어난 낌새를 네 가지로 넓게 본다 — 하나라도 걸리면 사파리를 열지 않는다
+  sc.eq('벗어남 신호 네 가지',
+        SRC.includes("const evs=[[document,'visibilitychange'],[window,'pagehide'],[window,'blur'],[window,'freeze']];"), true);
+  sc.eq('포커스까지 본다',
+        SRC.includes('if(left||document.hidden||(document.hasFocus&&!document.hasFocus()))return;'), true);
+  sc.eq('기다리는 시간도 넉넉히', SRC.includes('},2500);'), true);
 
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
