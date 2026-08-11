@@ -35,6 +35,7 @@ out=sub_once(out,'<link rel="manifest" href="manifest-dev.json">',
                  '<link rel="manifest" href="manifest.json">','manifest 링크')
 out=sub_once(out,'<meta name="apple-mobile-web-app-title" content="BLOCK7 DEV">',
                  '<meta name="apple-mobile-web-app-title" content="BLOCK7">','앱 이름')
+out=sub_once(out,'<title>BLOCK7 DEV</title>','<title>BLOCK 7</title>','탭 제목')
 
 io.open('index.html','w',encoding='utf-8').write(out)
 print('index.html 생성 완료 — %s'%ver)
