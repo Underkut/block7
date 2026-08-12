@@ -1,4 +1,4 @@
-// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-7)
+// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-8)
 //
 // 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
 // 그래야 나중에 보기 방식을 바꿀 때 시트를 통째로 고치지 않아도 된다.
@@ -173,21 +173,58 @@ console.log('\n시나리오 8 — 시트 열 읽기');
   sc.eq('시트 셀 링크도 G열까지', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
 }
 
-// ═══ 9. 설정창 ═══
-console.log('\n시나리오 9 — 설정창');
+// ═══ 9. 설정창 — 말씀 설정 → 전체화면 탭 ═══
+console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
 {
-  sc.eq('굵게 스위치', SRC.includes(`id="setHiBold" onchange="setHiMark('hiBold',this.checked)"`), true);
-  sc.eq('형광펜 스위치', SRC.includes(`id="setHiPen" onchange="setHiMark('hiPen',this.checked)"`), true);
-  // 형광펜은 곁다리라 미드·파워에서만 보인다 (설정창 등급 규칙)
-  sc.eq('형광펜은 미드·파워만', /<div class="settings-row" data-lv="mp">\s*\n\s*<div class="settings-row-text">\s*\n\s*<div class="settings-row-label" style="font-size:13px;">형광펜<\/div>/.test(SRC), true);
-  // 누르면 바로 두 화면에 반영된다
-  sc.eq('바로 반영', SRC.includes('function setHiMark(key,on){'), true);
-  sc.eq('전체화면 다시 그리기', /function setHiMark[\s\S]*?if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);/.test(SRC), true);
-  sc.eq('말씀카드 다시 그리기', /function setHiMark[\s\S]*?renderRightPanel\(\);/.test(SRC), true);
-  // 설정창을 열 때 스위치 상태가 맞춰진다
-  sc.eq('스위치 상태 맞추기', SRC.includes("document.getElementById('setHiBold').checked=s.hiBold!==false"), true);
-  // 새 사용자 기본값
+  // ⚠️ 0812-8: 뷰 탭 → 전체화면 탭으로 옮겼다. 차례는 글자 크기 → 강조 표시 → 테마.
+  const full = SRC.slice(SRC.indexOf('id="vstab-full"'), SRC.indexOf('id="vstab-share"'));
+  sc.eq('전체화면 탭에 있다', full.includes('>강조 표시</div>'), true);
+  sc.eq('뷰 탭에는 없다',
+        SRC.slice(SRC.indexOf('id="vstab-general"'), SRC.indexOf('id="vstab-alarm"')).includes('setHiBold'), false);
+  sc.eq('차례는 글자 크기 → 강조 표시 → 테마',
+        [...full.matchAll(/<div class="settings-section-title">([^<]+)</g)].map(m => m[1]).slice(0, 3),
+        ['글자 크기', '강조 표시', '테마']);
+  // 제목은 소제목이 아니라 구역 제목(굵게)
+  sc.eq('구역 제목으로', full.includes('<div class="settings-section-title">강조 표시</div>'), true);
+  sc.eq('소제목이 아니다', /font-weight:600;color:var\(--tx2\);">강조 표시</.test(SRC), false);
+  // 토글이 아니라 사각 테두리 버튼 · 복수 선택
+  sc.eq('굵게 버튼', SRC.includes(`id="setHiBold" class="settings-btn on" style="flex:1;" onclick="toggleHiMark('hiBold','setHiBold')"`), true);
+  sc.eq('형광펜 버튼', SRC.includes(`id="setHiPen" class="settings-btn" style="flex:1;" onclick="toggleHiMark('hiPen','setHiPen')"`), true);
+  sc.eq('토글은 안 쓴다', full.includes('setHiBold" onchange'), false);
+  // 누르면 바로 반영 — 화면 둘 + 공유 미리보기
+  sc.eq('바로 반영', SRC.includes('function toggleHiMark(key,btnId){'), true);
+  sc.eq('전체화면 다시 그리기', /function toggleHiMark[\s\S]*?if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);/.test(SRC), true);
+  sc.eq('말씀카드 다시 그리기', /function toggleHiMark[\s\S]*?renderRightPanel\(\);/.test(SRC), true);
+  sc.eq('버튼 상태 맞추기', SRC.includes("document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false)"), true);
   sc.eq('새 사용자 기본값', SRC.includes('hiBold:true,hiPen:false,'), true);
+}
+
+// ═══ 10. 공유 이미지 — 화면과 따로 정한다 ═══
+console.log('\n시나리오 10 — 공유 이미지의 강조');
+{
+  const share = SRC.slice(SRC.indexOf('id="vstab-share"'), SRC.indexOf('공유 이미지 크기'));
+  // 3열 두 줄 — 1행 굵게강조·형광펜·BLOCK7 / 2행 좌하단·(빈칸)·우하단
+  sc.eq('3열 격자', share.includes('grid-template-columns:repeat(3,1fr)'), true);
+  sc.eq('버튼 차례',
+        [...share.matchAll(/<button id="(img\w+)"/g)].map(m => m[1]),
+        ['imgHiBold', 'imgHiPen', 'imgBlock7', 'imgLeft', 'imgActions']);
+  sc.eq('가운데 칸을 비운다', /<button id="imgLeft"[^>]*>[^<]*<\/button>\s*\n\s*<div><\/div>/.test(share), true);
+  // 공유 전용 값 — 화면 설정(hiBold/hiPen)과 섞이지 않는다
+  sc.eq('공유 전용 기본값', SRC.includes('imgHiBold:true,imgHiPen:false,'), true);
+  sc.eq('공유 값을 따로 읽는다', SRC.includes('const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);'), true);
+  sc.eq('형광펜도 따로', SRC.includes('const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);'), true);
+  // ⚠️ toggleImgIncl 은 "값이 없으면 켜짐"으로 읽는다 — 기본 꺼짐인 것은 따로 적어 둬야 한다
+  sc.eq('기본 꺼짐 목록', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen'];"), true);
+  sc.eq('그 목록을 실제로 쓴다', SRC.includes('_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true)'), true);
+  sc.eq('설정창에서 상태 맞추기', SRC.includes("set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);"), true);
+  // 그리는 쪽 — 줄을 조각으로 나눠 굵기·형광펜을 입힌다
+  sc.eq('조각으로 나눠 그린다', SRC.includes('segs.push({t:ln.slice(st-a,en-a),hi:true});'), true);
+  sc.eq('조각마다 글꼴을 바꾼다', SRC.includes('const fontOf=b=>`${b?600:cs.fontWeight} ${fs}px ${cs.fontFamily}`;'), true);
+  sc.eq('줄 전체를 가운데에 놓는다', SRC.includes('let x=cx-tot/2;'), true);
+  sc.eq('형광펜 띠를 먼저 칠한다', SRC.includes('ctx.fillRect(x,y+fs*0.072,w,fs*0.528);'), true);
+  sc.eq('강조가 없으면 예전 그대로', SRC.includes("ctx.font=fontOf(false);ctx.textAlign='center';"), true);
+  // 설정 미리보기에서도 보이게 예시 구절에 강조를 넣어 뒀다
+  sc.eq('미리보기 예시에 강조', SRC.includes("hi:'나의 목자시니'"), true);
 }
 
 sc.done();
