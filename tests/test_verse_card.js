@@ -25,6 +25,7 @@ global._vfBgCss = t => (t.bg && t.bg.length === 1) ? t.bg[0] : 'grad';
 global._rgba = (c, a) => `rgba(${c},${a})`;
 global._vfPatternPool = () => ['night'];
 global._vfTextScale = () => 1;
+global._hiFw = kind => (kind === 'serif' ? 600 : 700);   // 강조 굵기 (테마 변수에 쓰인다)
 // 말씀 모음 전체 = 5개, 지금 보고 있는 것은 3번
 global.ACTIVE_VERSES = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, krText: 't' + i, cat: '', topic: '', tags: [] }));
 // 좋아요 목록 = 3개 (최신순)
