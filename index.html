@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-11  [production]  -->
+<!-- BLOCK7  v. 26-0812-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2587,7 +2587,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-11";
+const APP_VERSION = "v. 26-0812-12";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3424,13 +3424,16 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button id="setHiBold" class="settings-btn on" style="flex:1;" onclick="toggleHiMark('hiBold','setHiBold')">굵게</button>
           <button id="setHiPen" class="settings-btn" style="flex:1;" onclick="toggleHiMark('hiPen','setHiPen')">형광펜</button>
         </div>
-        <label class="settings-row" id="setHiMixRow" style="cursor:pointer;">
+        <div class="settings-row" id="setHiMixRow">
           <div class="settings-row-text">
             <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
             <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
           </div>
-          <input type="checkbox" id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')" style="width:18px;height:18px;accent-color:var(--ac);flex-shrink:0;">
-        </label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')">
+            <span class="settings-toggle-track"></span>
+          </label>
+        </div>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
@@ -3478,13 +3481,16 @@ window._fbScriptsReady=new Promise(resolve=>{
           <div></div>
           <button id="imgActions" class="settings-btn on" onclick="toggleImgIncl('imgInclActions','imgActions')">우하단 버튼</button>
         </div>
-        <label class="settings-row" id="imgHiMixRow" style="cursor:pointer;">
+        <div class="settings-row" id="imgHiMixRow">
           <div class="settings-row-text">
             <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
             <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
           </div>
-          <input type="checkbox" id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')" style="width:18px;height:18px;accent-color:var(--ac);flex-shrink:0;">
-        </label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')">
+            <span class="settings-toggle-track"></span>
+          </label>
+        </div>
         <img id="imgSharePreview" alt="공유 이미지 미리보기" style="display:block;width:150px;border-radius:9px;margin:12px auto 0;">
       </div>
 

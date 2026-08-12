@@ -1,4 +1,4 @@
-// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-11)
+// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-12)
 //
 // 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
 // 그래야 나중에 보기 방식을 바꿀 때 시트를 통째로 고치지 않아도 된다.
@@ -295,8 +295,21 @@ console.log('\n시나리오 12 — 굵게와 형광펜을 문구마다 나눠 �
         SRC.includes("r.setAttribute('data-himix',(_hiBold()&&_hiPen()&&_hiMix())?'1':'0');"), true);
 
   // 설정 — 화면·공유 각각 체크박스. 둘 다 켰을 때만 보인다
-  sc.eq('화면 체크박스', SRC.includes(`id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')"`), true);
-  sc.eq('공유 체크박스', SRC.includes(`id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')"`), true);
+  // 0812-12: 체크박스 → 앱의 표준 토글 스위치 (다른 설정 줄과 같은 모양)
+  sc.eq('화면 토글', SRC.includes(`id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')"`), true);
+  sc.eq('공유 토글', SRC.includes(`id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')"`), true);
+  const mixRow = id => {
+    const i = SRC.indexOf(`class="settings-row" id="${id}Row"`);
+    return i < 0 ? '' : SRC.slice(i, SRC.indexOf('</div>', SRC.indexOf('settings-toggle-track', i)));
+  };
+  sc.eq('화면은 토글 껍데기 안에', mixRow('setHiMix').includes('<label class="settings-toggle">'), true);
+  sc.eq('공유도 토글 껍데기 안에', mixRow('imgHiMix').includes('<label class="settings-toggle">'), true);
+  sc.eq('둘 다 트랙이 있다',
+        [mixRow('setHiMix'), mixRow('imgHiMix')].every(x => x.includes('settings-toggle-track')), true);
+  // 맨몸 체크박스는 남기지 않는다 (그 모양이 낡아 보였다).
+  // ⚠️ 이 줄들만 본다 — 앱 다른 곳(.sec-edit-exclude-chk)에는 원래 맨몸 체크박스가 있다
+  sc.eq('맨몸 체크박스 없음',
+        [mixRow('setHiMix'), mixRow('imgHiMix')].some(x => x.includes('accent-color')), false);
   sc.eq('둘 다 켰을 때만 보이게', SRC.includes('function _syncHiMixRows()'), true);
   sc.eq('화면 조건', SRC.includes("set('setHiMixRow','setHiMix',_hiBold()&&_hiPen(),s.hiMix===true);"), true);
   sc.eq('공유 조건',
