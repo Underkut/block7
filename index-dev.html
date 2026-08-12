@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0812-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2563,7 +2563,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-2";
+const APP_VERSION = "v. 26-0812-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4510,6 +4510,22 @@ function _bookCanon(name){
     _BOOK_CANON_MAP=m;
   }
   return _BOOK_CANON_MAP[s]||String(name||'').trim();
+}
+// 성경책 → **공식 약어** (창세기 → 창 · 사무엘상 → 삼상 · 요한1서 → 요일).
+// 새 표를 만들지 않고 _REF_ABBR2FULL(약어→정식)을 뒤집어 쓴다 — 표가 둘이면
+// 언젠가 어긋난다. 표에 없는 이름은 줄이지 않고 그대로 돌려준다.
+let _BOOK_ABBR_MAP=null;
+function _bookAbbr(name){
+  const full=_bookCanon(name);
+  if(!full)return'';
+  if(!_BOOK_ABBR_MAP){
+    // _REF_ABBR2FULL 은 이 함수보다 아래에서 만들어진다 (_bookCanon 과 같은 사정)
+    let ab=null; try{ab=_REF_ABBR2FULL;}catch(e){}
+    if(!ab)return full;
+    const m={}; Object.keys(ab).forEach(k=>{if(!m[ab[k]])m[ab[k]]=k;});
+    _BOOK_ABBR_MAP=m;
+  }
+  return _BOOK_ABBR_MAP[full]||full;
 }
 // ⚠️ 책 이름은 "장:절" 앞까지다. 예전 규칙(`^(.*?)\s*\d`)은 **첫 숫자**에서 끊어서
 //    '요한1서 5:14' 의 책 이름을 '요한' 으로 잘라 버렸다. 그래서 요한1·2·3서가
@@ -8513,14 +8529,17 @@ function _refDigitsPad(ref){
   const verses=m[3].replace(/\s+/g,'').replace(/\d+/g,d=>pad(parseInt(d,10),vw));
   return{book,num:pad(ch,isPs?3:2)+verses};
 }
-// 저장 파일명 — 장절과 날짜를 넣어 여러 장을 받아도 구분된다
+// 저장 파일명 — 장절과 날짜를 넣어 여러 장을 받아도 구분된다.
+// 이름이 길어지지 않게 앞머리는 B7, 성경책은 공식 약어로 적는다.
+//   B7_창_0406_260812.png · B7_삼상_1529_260812.png · B7_시_119176_260812.png
 function _shareFileName(v){
   const ref=(v&&v.ref)?String(v.ref):'';
   const t=_refDigitsPad(ref);
-  const safe=(t?`${t.book} ${t.num}`:ref).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_');
+  // 장:절 꼴이 아니면(옛 자료의 '시편 119') 줄이지 않고 적힌 대로 쓴다
+  const safe=(t?`${_bookAbbr(t.book)} ${t.num}`:ref).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_');
   const d=new Date(),p=n=>String(n).padStart(2,'0');
   const stamp=`${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}`;
-  return`BLOCK7_${safe||'verse'}_${stamp}.png`;
+  return`B7_${safe||'verse'}_${stamp}.png`;
 }
 function _vfShareImage(v,size){
   const opt=v?{verse:v}:{};
