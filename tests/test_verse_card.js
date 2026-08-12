@@ -459,7 +459,15 @@ console.log('\n시나리오 9 — 화면 연결');
         /<span class="vc-head-slot right">\$\{cfg\.kind\?`<button class="vc-icbtn" onclick="vcBackToList/.test(SRC), true);
   // 밀어 넘길 때 같이 따라가면 안 되므로 슬라이드 층(.vc-slide) 밖, .vc-body 바로 아래에 둔다
   sc.eq('−/+ 는 미는 층 밖에', SRC.includes('body=`${zoom}<div class="vc-slide">'), true);
-  sc.eq('카드 안 우상단', SRC.includes('.vc-zoom{\n  position:absolute;top:5px;right:5px;z-index:6;'), true);
+  sc.eq('카드 안 우상단',
+        SRC.includes('.vc-zoom{\n    position:absolute;top:5px;right:5px;z-index:6;'), true);
+  // ── 0812-6 ──
+  // 핀치가 자리를 대신하므로 손가락 기기에서는 −/+ 를 감춘다 (마우스 기기에만)
+  sc.eq('손가락 기기에서는 감춘다', SRC.includes('.vc-zoom{display:none;}'), true);
+  sc.eq('마우스가 있을 때만 보인다',
+        /\.vc-zoom\{display:none;\}\n@media \(hover:hover\)\{\n  \.vc-zoom\{/.test(SRC), true);
+  sc.eq('버튼 자체는 늘 그린다(잠금 상태를 그대로 쓴다)',
+        SRC.includes("const zoom=`<div class=\"vc-zoom\">"), true);
   // 아이폰: 앱이 있으면 사파리를 거치지 않고 바로 구글 스프레드시트 앱으로
   sc.eq('아이폰도 앱을 먼저 부른다', SRC.includes("const appUrl='googlesheets://'+url.replace("), true);
 
