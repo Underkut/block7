@@ -219,6 +219,33 @@ header{
 }
 #vfText{width:100%;color:var(--vf-tx,var(--tx));line-height:1.85;font-weight:var(--vf-fw,300);
   letter-spacing:var(--vf-ls,0);font-family:var(--vf-font,inherit);word-break:keep-all;}
+/* ══ 강조 표시 (.hi-mark) — 시트 '강조 문구' 열을 본문에 칠한 자리 ══
+   보기 방식은 뿌리 요소의 data-histyle 하나로 갈아끼운다 (전체화면·말씀카드 공용).
+   ⚠️ 밑줄·형광펜은 **글자 폭을 바꾸지 않아** 줄바꿈 계산이 그대로 맞는다.
+      볼드는 폭이 달라져 줄이 넘칠 수 있어, 쓰려면 잴 때도 굵게 재야 한다. */
+.hi-mark{}
+html[data-histyle="u1"] .hi-mark{   /* 밑줄 얇게 — 강조색 */
+  text-decoration:underline;text-decoration-skip-ink:none;
+  text-decoration-thickness:1px;text-underline-offset:.24em;
+  text-decoration-color:var(--vf-ac,var(--ac));
+}
+html[data-histyle="u2"] .hi-mark{   /* 밑줄 도톰 */
+  text-decoration:underline;text-decoration-skip-ink:none;
+  text-decoration-thickness:2px;text-underline-offset:.22em;
+  text-decoration-color:var(--vf-ac,var(--ac));
+}
+html[data-histyle="u3"] .hi-mark{   /* 밑줄 흐리게 — 본문색 그대로 */
+  text-decoration:underline;text-decoration-skip-ink:none;
+  text-decoration-thickness:1px;text-underline-offset:.26em;
+  text-decoration-color:currentColor;
+}
+html[data-histyle="pen"] .hi-mark{  /* 형광펜 */
+  background:linear-gradient(transparent 56%,
+    color-mix(in srgb,var(--vf-ac,var(--ac)) 32%,transparent) 56%);
+  /* ⚠️ 좌우 여백을 주면 그만큼 글자 폭이 늘어 줄이 밀려난다 (실측 60구절 중 11번) */
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+}
+html[data-histyle="bold"] .hi-mark{font-weight:600;}
 #vfRef{
   margin-top:18px;font-size:13px;color:var(--vf-tx3,var(--tx3));
   font-family:var(--vf-reffont,'IBM Plex Mono',monospace);letter-spacing:.06em;flex-shrink:0;
@@ -4652,7 +4679,10 @@ function ACTIVE_VERSES(){
     const cat=(v.cat||'나의 암송').trim()||'나의 암송';
     let catNo=(v.catNo!==undefined)?v.catNo:builtinCats.get(cat);
     if(catNo===undefined){ if(!extra.has(cat))extra.set(cat,next++); catNo=extra.get(cat); }
-    return{idx:i+1,catNo,cat,no:i+1,topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',enText:v.enText||'',tags:v.tags||[]};
+    // ⚠️ 여기서 구절을 **정해진 항목만 골라 새로 조립**한다. 새 항목을 만들면
+    //    이 줄에 넣어야 화면까지 온다. (강조 문구 hi 가 실제로 여기서 막혔다)
+    return{idx:i+1,catNo,cat,no:i+1,topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
+           enText:v.enText||'',tags:v.tags||[],hi:v.hi||''};
   });
 }
 function ACTIVE_TOTAL(){return ACTIVE_VERSES().length;}
@@ -7979,6 +8009,89 @@ function _vfWrapFit(words,ctx,maxW){
   while(j>0){const i=prev[j];lines.unshift(words.slice(i,j).join(' '));j=i;}
   return lines;
 }
+// ══════ 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 ══════
+// 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
+// 그래야 나중에 보기 방식을 바꿀 때 시트를 통째로 고치지 않아도 된다.
+//
+// 한 칸에 여러 곳을 강조하려면 '/' 로 나눈다. 실제 성경 본문(180구절)에
+// '/' 는 한 번도 나오지 않아 안전하다. '|' 나 줄바꿈으로 적어도 알아듣는다.
+const HI_SPLIT=/[\/|\n\r]+/;
+function _hiPhrases(v){
+  const raw=(v&&v.hi)?String(v.hi):'';
+  return raw.split(HI_SPLIT).map(x=>x.trim()).filter(Boolean);
+}
+// ⚠️ 시트에 손으로 적은 문구는 본문과 **띄어쓰기·문장부호가 다를 수 있다.**
+//    그래서 양쪽에서 글자만 남겨 견주고, 찾은 자리를 원문 위치로 되돌린다.
+//    (장절 비교에 쓰는 _refNorm 과 같은 발상)
+const _HI_SKIP=/[\s.,;:!?'"()\[\]<>·…‘’“”\-–—]/;
+function _hiSquash(str){
+  const map=[];let out='';
+  const t=String(str||'');
+  for(let i=0;i<t.length;i++){
+    if(_HI_SKIP.test(t[i]))continue;
+    out+=t[i];map.push(i);
+  }
+  return{s:out,map};
+}
+// flat(단어를 한 칸씩 띄어 이은 본문) 안에서 문구들이 차지하는 구간 [시작,끝)
+function _hiRanges(flat,phrases){
+  if(!flat||!phrases||!phrases.length)return[];
+  const F=_hiSquash(flat);
+  if(!F.s)return[];
+  const found=[];
+  phrases.forEach(p=>{
+    const P=_hiSquash(p);
+    if(!P.s)return;
+    let from=0,i;
+    while((i=F.s.indexOf(P.s,from))>=0){
+      found.push([F.map[i],F.map[i+P.s.length-1]+1]);
+      from=i+P.s.length;
+    }
+  });
+  found.sort((a,b)=>a[0]-b[0]);
+  const merged=[];                                  // 겹치거나 잇닿은 구간은 하나로
+  found.forEach(r=>{
+    const last=merged[merged.length-1];
+    if(last&&r[0]<=last[1])last[1]=Math.max(last[1],r[1]);
+    else merged.push([r[0],r[1]]);
+  });
+  return merged;
+}
+// 줄 배열 → HTML. ⚠️ 강조가 **줄바꿈에 걸칠 수 있으므로** 줄마다 잘라서 칠한다.
+//    줄은 words.slice(i,j).join(' ') 이라 줄 사이는 늘 빈칸 한 칸이다.
+function _hiLinesHTML(lines,ranges){
+  if(!ranges||!ranges.length)return lines.map(esc).join('<br>');
+  let off=0;
+  return lines.map(line=>{
+    const a=off,b=off+line.length;
+    off=b+1;
+    let html='',pos=0;
+    ranges.forEach(r=>{
+      const st=Math.max(r[0],a),en=Math.min(r[1],b);
+      if(st>=en)return;
+      html+=esc(line.slice(pos,st-a));
+      html+='<span class="hi-mark">'+esc(line.slice(st-a,en-a))+'</span>';
+      pos=en-a;
+    });
+    return html+esc(line.slice(pos));
+  }).join('<br>');
+}
+// 화면에 그릴 때 쓰는 한 줄짜리 입구 — 꺼져 있으면 아무것도 칠하지 않는다
+function _hiOn(){return (ST.settings||{}).hiOn!==false;}
+const HI_STYLES=['u1','u2','u3','pen','bold'];
+function _hiStyle(){const v=(ST.settings||{}).hiStyle;return HI_STYLES.includes(v)?v:'u1';}
+// 보기 방식은 CSS 한 곳(뿌리 요소의 data-histyle)에서 갈아끼운다
+function _hiApply(){
+  try{document.documentElement.setAttribute('data-histyle',_hiOn()?_hiStyle():'off');}catch(e){}
+}
+function _hiHTML(el,lines){
+  _hiApply();
+  if(!_hiOn())return lines.map(esc).join('<br>');
+  const phr=_hiPhrases({hi:el.getAttribute('data-hi')||''});
+  if(!phr.length)return lines.map(esc).join('<br>');
+  return _hiLinesHTML(lines,_hiRanges(lines.join(' '),phr));
+}
+// ══════ 강조 표시 끝 ══════
 function _vfLayoutText(){
   const el=document.getElementById('vfText');
   const inner=document.getElementById('verseFullInner');
@@ -8027,7 +8140,7 @@ function _vfLayoutText(){
   }
   el.style.fontSize=pick.size+'px';
   el.style.lineHeight=String(LHe);
-  el.innerHTML=pick.lines.map(esc).join('<br>');
+  el.innerHTML=_hiHTML(el,pick.lines);
   el._lines=pick.lines;      // 공유 이미지가 화면과 똑같이 그리려면 이 줄 배열이 필요하다
 }
 // ── 구독자 전체 집계 카운터 (verseStats/{ref}) ──
@@ -9071,6 +9184,7 @@ function _verseFullRender(){
   }else{tag.textContent='';tag.style.display='none';}
   // 중앙 — 본문. 길이에 따라 글자 크기를 단계적으로 맞춘다
   text.setAttribute('data-raw',v.krText||'');
+  text.setAttribute('data-hi',v.hi||'');      // 시트 '강조 문구' 열
   ref.textContent=v.ref||'';ref.style.display=v.ref?'':'none';
   _vfLayoutText();
   _vfSyncCounts();
@@ -12784,7 +12898,7 @@ function _vcCardHTML(id){
     body=`${zoom}<div class="vc-slide">
         <div class="vc-inner">
           ${arrows}
-          <div class="vc-text" data-raw="${_vgEscAttr(v.krText||'')}"></div>
+          <div class="vc-text" data-raw="${_vgEscAttr(v.krText||'')}" data-hi="${_vgEscAttr(v.hi||'')}"></div>
           <div class="vc-ref"${v.ref?'':' style="display:none;"'} onclick="event.stopPropagation();vcOpenFilter('${id}','book')">${esc(v.ref||'')}</div>
         </div>
         <div class="vc-bottom">
@@ -12847,7 +12961,7 @@ function _vcLayoutOne(wEl){
   }
   el.style.fontSize=pick.size+'px';
   el.style.lineHeight=String(LHe);
-  el.innerHTML=lines.map(esc).join('<br>');
+  el.innerHTML=_hiHTML(el,lines);
 }
 function _vcLayoutAll(host){
   (host||document).querySelectorAll('.vc-widget').forEach(w=>{
