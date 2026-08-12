@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0812-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2563,7 +2563,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-1";
+const APP_VERSION = "v. 26-0812-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8492,23 +8492,31 @@ function _syncShareSizeUI(){
 }
 const _IMG_TOAST='이미지를 저장, 복사 했어요. 원하는 곳에서 붙여넣으세요';
 const _TXT_TOAST='말씀을 복사 했어요. 원하는 곳에서 붙여넣으세요';
-// 장절 숫자를 모두 **세 자리**로 편다 — 파일을 이름순으로 늘어놓아도 순서가 맞는다.
-//   4장 6절 → 004006 · 15장 29절 → 015029 · 119장 176절 → 119176
+// 장절 숫자의 자리수를 맞춘다 — 파일을 이름순으로 늘어놓아도 장절 순서와 맞는다.
+// 자리수는 "그 자리에 올 수 있는 가장 큰 수"에 맞춘다. 더 늘리면 0 만 길어진다.
+//   장 : 시편만 3자리(150장까지) · 나머지 성경은 2자리(가장 긴 이사야가 66장)
+//   절 : **시편 119장만** 3자리(176절까지) · 나머지는 모두 2자리
+//        (100절을 넘는 장은 시편 119장 하나뿐이다. 그다음이 민수기 7장 89절)
+//   창세기 4:6 → 0406 · 사무엘상 15:29 → 1529
+//   시편 23:1 → 02301 · 시편 119:176 → 119176
 // ⚠️ 책 이름에도 숫자가 들어간다('요한1서 5:14'). 그래서 _bookOfRef 와 같은 방식으로
 //    **':' 까지 확인**해야 '요한1서' 의 1 을 장 번호로 오해하지 않는다.
-function _refDigits3(ref){
+function _refDigitsPad(ref){
   const s=String(ref||'').trim();
   const m=s.match(/^(.+?)\s*(\d+)\s*:\s*(.+)$/);
   if(!m)return null;
-  const p3=n=>String(n).padStart(3,'0');
+  const book=m[1].trim(),ch=parseInt(m[2],10);
+  const isPs=_bookCanon(book)==='시편';   // '시' 같은 약칭도 펴서 견준다
+  const pad=(n,w)=>String(n).padStart(w,'0');
+  const vw=(isPs&&ch===119)?3:2;
   // 절은 '1,14' '3-5' 처럼 여럿일 수 있다 — 숫자 덩어리마다 따로 편다
-  const verses=m[3].replace(/\s+/g,'').replace(/\d+/g,p3);
-  return{book:m[1].trim(),num:p3(m[2])+verses};
+  const verses=m[3].replace(/\s+/g,'').replace(/\d+/g,d=>pad(parseInt(d,10),vw));
+  return{book,num:pad(ch,isPs?3:2)+verses};
 }
 // 저장 파일명 — 장절과 날짜를 넣어 여러 장을 받아도 구분된다
 function _shareFileName(v){
   const ref=(v&&v.ref)?String(v.ref):'';
-  const t=_refDigits3(ref);
+  const t=_refDigitsPad(ref);
   const safe=(t?`${t.book} ${t.num}`:ref).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_');
   const d=new Date(),p=n=>String(n).padStart(2,'0');
   const stamp=`${String(d.getFullYear()).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}`;

@@ -18,7 +18,7 @@ const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 global.document = { visibilityState: 'visible', addEventListener: () => {} };
-global.APP_VERSION = 'v. 26-0812-1';
+global.APP_VERSION = 'v. 26-0812-2';
 eval(slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면') +
   // eval 안의 let 은 바깥으로 새지 않는다 → 값을 넣어 볼 통로를 하나 뚫는다
   ';Object.assign(globalThis,{_probeIdle:(vis,edit,touch)=>{' +
@@ -38,17 +38,17 @@ const layout = cols => ({ bp2: 600, bp3: 900, weekly: 'none', cols, c3: [.34, .3
 // ═══ 1. 버전 비교 ═══
 console.log('시나리오 1 — 앱 버전 비교');
 {
-  sc.eq('같으면 0', _verCmp('v. 26-0812-1', 'v. 26-0812-1'), 0);
+  sc.eq('같으면 0', _verCmp('v. 26-0812-2', 'v. 26-0812-2'), 0);
   sc.eq('날짜가 앞서면 -1', _verCmp('v. 26-0807-4', 'v. 26-0810-1'), -1);
   sc.eq('날짜가 뒤면 1', _verCmp('v. 26-0810-1', 'v. 26-0807-4'), 1);
   sc.eq('해가 앞서면 -1', _verCmp('v. 25-1231-9', 'v. 26-0101-1'), -1);
   // ⚠️ 문자열로 비교하면 "-10" < "-4" 가 되어 뒤집힌다 — 숫자로 봐야 한다
   sc.eq('같은 날 10번째가 4번째보다 뒤', _verCmp('v. 26-0810-10', 'v. 26-0810-4'), 1);
-  sc.eq('못 읽으면 판단하지 않는다', _verCmp('알 수 없음', 'v. 26-0812-1'), null);
+  sc.eq('못 읽으면 판단하지 않는다', _verCmp('알 수 없음', 'v. 26-0812-2'), null);
 
   sc.eq('낮은 버전이 쓴 문서', _fbVerIsOlder('v. 26-0807-4'), true);
-  sc.eq('같은 버전은 낡지 않았다', _fbVerIsOlder('v. 26-0812-1'), false);
-  sc.eq('더 새 버전도 낡지 않았다', _fbVerIsOlder('v. 26-0812-1'), false);
+  sc.eq('같은 버전은 낡지 않았다', _fbVerIsOlder('v. 26-0812-2'), false);
+  sc.eq('더 새 버전도 낡지 않았다', _fbVerIsOlder('v. 26-0812-2'), false);
   // appVer 를 기록하기 전(≤26-0802-0) 기기 = 낡았다
   sc.eq('버전 표시가 없으면 낡았다', _fbVerIsOlder(undefined), true);
   sc.eq('빈 문자열도 낡았다', _fbVerIsOlder(''), true);
