@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0812-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2592,7 +2592,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-13";
+const APP_VERSION = "v. 26-0812-14";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8159,14 +8159,16 @@ function _hiKindAt(seed,i,bold,pen,mix){
   if(!(bold&&pen&&mix))return'both';
   return((_hiHash(seed)+i)%2===0)?'b':'p';
 }
-// ══ 손글씨 물결 밑줄 · 별 (v26-0812-13) ══
+// ══ 손글씨 물결 밑줄 · 별 (v26-0812-13, 종류는 v26-0812-14 에 물결1·별1 로 확정) ══
 // 굵게·형광펜과 달리 **글자 위에 따로 덮어 그린다.** 그래서 글자 폭이 1px도
 // 늘지 않아 줄이 밀려나지 않는다 (형광펜이 좌우 여백 때문에 겪던 문제가 없다).
 // ⚠️ 숫자는 전부 **글자 크기에 대한 비율**이다. 픽셀로 박으면 큰 전체화면과
-//    작은 말씀카드에서 서로 다른 느낌이 된다. HB 확인값(19px 기준)을 환산한 것:
-//    굵기 1.25 / 물결높이 0.735 / 간격 30 / 흔들림 2.0 / 별 13 / 진하기 0.44
+//    작은 말씀카드에서 서로 다른 느낌이 된다. HB 확인값(19px 기준, 물결1·별1)을
+//    환산한 것 — 굵기 1.0 / 물결높이 0.7 / 간격 30 / 흔들림 2.0 / 별 13 / 진하기 0.44
+//    이 값들은 **원래 슬라이더 값**이다. 물결1·별1 각각의 배율(가늘고 낮게·
+//    한붓그리기 굵기)은 _hiWavePoly·_hiStarPoly 안에서 곱해진다.
 // ⚠️ 화면(SVG)과 공유 이미지(캔버스)가 **같은 점열**을 쓴다. 한쪽만 고치지 말 것.
-const HI_ART={base:.0658,amp:.0387,per:1.579,jit:2,star:.6842,opa:.44,taper:.42};
+const HI_ART={base:.0526,amp:.0368,per:1.579,jit:2,star:.6842,opa:.44};
 // 물결을 글자 상자 어디에 놓을지 (상자 높이·글자 크기에 대한 비율)
 const HI_POS={wave:.92,starUp:.20,starRight:.12,boxH:1.16};
 // 씨앗 난수 — 같은 문구는 언제 열어도 같은 물결이 그려진다 (다시 그릴 때 깜빡이지 않게)
@@ -8213,10 +8215,11 @@ function _hiWob(R,amt,k){
     return p+(q-p)*f;
   };
 }
-// 물결 밑줄 — 폭 w, 글자 크기 fs. 시작점(0,0)은 **밑줄의 중심선 왼쪽 끝**.
+// 물결 밑줄 (물결1 · 가는 선) — 폭 w, 글자 크기 fs. 시작점(0,0)은 **밑줄의 중심선 왼쪽 끝**.
+// ⚠️ 배율(*.72 등)은 미리보기에서 물결1을 고르면 걸리던 것과 같다 — 임의로 다시 곱하지 말 것.
 function _hiWavePoly(w,fs,seed){
   const R=_hiRng(seed),A=HI_ART;
-  const base=fs*A.base,amp=fs*A.amp,per=fs*A.per,jit=A.jit;
+  const base=fs*A.base*.72,amp=fs*A.amp*.85,per=fs*A.per*.85,jit=A.jit,taper=.5;
   const ov=base*(1.2+R()*1.6);                       // 양 끝을 살짝 넘겨 긋는다
   const n=Math.max(2,Math.round(w/per));
   const tilt=(R()-.5)*1.3*jit;                       // 전체가 한쪽으로 살짝 기운다
@@ -8230,18 +8233,33 @@ function _hiWavePoly(w,fs,seed){
   pts[0].x=-ov;pts[n].x=w+ov;
   const wob=_hiWob(R,.5*jit,5);
   return _hiRibbon(_hiSmooth(pts,10),
-    u=>base*(A.taper+(1-A.taper)*Math.pow(Math.sin(Math.PI*u),.45))*wob(u));
+    u=>base*(taper+(1-taper)*Math.pow(Math.sin(Math.PI*u),.45))*wob(u));
 }
-// 별 — 손으로 그린 통통한 오각별. 시작점(0,0)은 **별의 한가운데**.
+// 별 (별1 · 한붓그리기 오각별) — 시작점(0,0)은 **별의 한가운데**.
+// 채운 도형이 아니라 **선 하나로 이어 그린 별** — 별2(통통한 채운 별)와는 다른 모양이다.
 function _hiStarPoly(fs,seed){
   const R=_hiRng(seed),A=HI_ART,r=fs*A.star/2,jit=A.jit;
-  const rot=(R()-.5)*.5*jit,pts=[];
-  for(let k=0;k<10;k++){
-    const rr=(k%2?r*.45:r)*(1-.1*jit+R()*.2*jit);
-    const a=-Math.PI/2+rot+k*Math.PI/5+(R()-.5)*.16*jit;
-    pts.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});
+  const rot=(R()-.5)*.5*jit,V=[];
+  for(let k=0;k<5;k++){
+    const a=-Math.PI/2+rot+k*2*Math.PI/5;
+    const rr=r*(1-.12*jit+R()*.24*jit);
+    V.push({x:Math.cos(a)*rr,y:Math.sin(a)*rr});
   }
-  return _hiSmooth(pts.concat([pts[0],pts[1]]),8);
+  // 오각별의 꼭짓점을 0→2→4→1→3→0 순서로 이으면 한붓그리기가 된다
+  const ord=[0,2,4,1,3,0],pts=[];
+  for(let i=0;i<ord.length-1;i++){
+    const p=V[ord[i]],q=V[ord[i+1]];
+    let dx=q.x-p.x,dy=q.y-p.y;const m=Math.hypot(dx,dy)||1;
+    const bow=(R()-.5)*m*.16*jit;                     // 직선 대신 살짝 휘게
+    pts.push(p,{x:(p.x+q.x)/2-dy/m*bow,y:(p.y+q.y)/2+dx/m*bow});
+  }
+  pts.push(V[0]);
+  const g=V[2];let dx=g.x-V[0].x,dy=g.y-V[0].y;const m=Math.hypot(dx,dy)||1;
+  pts.push({x:V[0].x+dx/m*r*.22,y:V[0].y+dy/m*r*.22});   // 마무리 삐침
+  const wob=_hiWob(R,.55*jit,4);
+  // ⚠️ 획이 두꺼우면 별 속의 오각형 구멍이 메워져 덩어리로 보인다 → 크기에 맞춰 가늘게
+  const bw=Math.min(fs*A.base,r*.30);
+  return _hiRibbon(_hiSmooth(pts,9),u=>bw*(.45+.55*Math.pow(Math.sin(Math.PI*u),.4))*wob(u));
 }
 // CSS 는 뿌리 요소의 표식 두 개만 본다
 function _hiApply(){
