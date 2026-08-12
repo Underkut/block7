@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-3  [production]  -->
+<!-- BLOCK7  v. 26-0812-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2563,7 +2563,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-3";
+const APP_VERSION = "v. 26-0812-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8815,6 +8815,44 @@ function setVfTextScale(v){
   if(_verseFullIsOpen())_vfLayoutText();
   _renderSharePreview();
 }
+// ══════ 핀치(두 손가락)로 글자 크기 옮기기 — 전체화면·말씀카드 공용 ══════
+// 크기가 몇 단계로 딱딱 끊겨 있으므로, 미리보기로 늘였다가 놓을 때 맞추지 않고
+// **미는 동안 바로 그 단계로 바꾼다.** 실제로 보이는 그대로라 손에 잘 붙는다.
+function _tsTouchDist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);}
+// 벌린 배율 k → 몇 칸 옮길지. 한 칸이 대략 1.35배라 1.17배부터 한 칸 움직인다
+// (살짝 벌어진 정도로는 안 바뀐다). 오므리면 음수 = 작게.
+function _tsPinchSteps(k){
+  if(!(k>0)||!isFinite(k))return 0;
+  return Math.round(Math.log(k)/Math.log(1.35));
+}
+// el 에 핀치를 붙인다.
+//   get()      지금 배율            steps()  고를 수 있는 배율(작은 것부터)
+//   set(v)     그 배율로 바꾸기      onStart() 롱터치 대기·드래그를 끊는 자리
+// ⚠️ onStart 에서 **반드시 롱터치 타이머를 끊어야** 한다. 안 끊으면 크기를
+//    바꾸는 도중에 말씀 메뉴가 떠서 제스처가 통째로 끊긴다.
+function _attachTextPinch(el,opt){
+  let base=0,d0=0,on=false,last=0;
+  const idxOf=v=>{const a=opt.steps();let bi=0,bd=Infinity;
+    a.forEach((x,i)=>{const d=Math.abs(x-v);if(d<bd){bd=d;bi=i;}});return bi;};
+  el.addEventListener('touchstart',e=>{
+    if(e.touches.length!==2)return;
+    on=true;last=0;d0=_tsTouchDist(e.touches)||1;base=idxOf(opt.get());
+    window._rpLastTouchTs=Date.now();        // 뒤따라오는 가짜 click 을 막는다
+    if(opt.onStart)opt.onStart();
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!on||e.touches.length!==2)return;
+    e.preventDefault();                      // 브라우저 확대가 끼어들지 않게
+    const n=_tsPinchSteps(_tsTouchDist(e.touches)/d0);
+    if(n===last)return;
+    last=n;
+    const a=opt.steps(),i=Math.max(0,Math.min(base+n,a.length-1));
+    if(Math.abs(a[i]-opt.get())>0.001)opt.set(a[i]);
+  },{passive:false});
+  const end=e=>{if(!on)return;if(e&&e.touches&&e.touches.length>=2)return;on=false;};
+  el.addEventListener('touchend',end,{passive:true});
+  el.addEventListener('touchcancel',end,{passive:true});
+}
 function _syncVfTextScaleUI(){
   const cur=_vfTextScale();
   VF_TEXT_STEPS.forEach(v=>{
@@ -9182,12 +9220,21 @@ function _initVerseFullGestures(){
     if(bt){bt.style.transition='opacity .18s';bt.style.opacity='';}
     if(iv)setTimeout(()=>{if(iv&&!iv._busy)iv.style.transition='';},220);
   };
+  const stopLt=()=>{if(lt){clearTimeout(lt);lt=null;}};
   el.addEventListener('touchstart',e=>{
     const iv=inner0();if(iv&&iv._busy)return;        // 커밋 애니 중엔 새 드래그 금지
+    // ⚠️ 두 손가락 = 글자 크기 핀치. 롱터치 대기와 세로 드래그를 여기서 끊는다.
+    //    (안 끊으면 크기를 바꾸는 도중에 말씀 메뉴가 떠서 제스처가 끊긴다)
+    if(e.touches.length>=2){
+      stopLt();_vfLongFired=false;
+      if(dragging){snapBack();dragging=false;}
+      dir=null;return;
+    }
     const t=e.touches[0];sx=t.clientX;sy=t.clientY;dy=0;dir=null;dragging=false;_vfLongFired=false;
     lt=setTimeout(()=>{lt=null;_vfLongFired=true;openVerseMemMenu(el,null,{x:sx,y:sy});},500);
   },{passive:true});
   el.addEventListener('touchmove',e=>{
+    if(e.touches.length>=2){stopLt();if(dragging){snapBack();dragging=false;}dir=null;return;}
     const t=e.touches&&e.touches[0];if(!t)return;
     const ddx=t.clientX-sx,ddy=t.clientY-sy;
     if(dir===null){
@@ -9216,6 +9263,13 @@ function _initVerseFullGestures(){
   el.addEventListener('contextmenu',e=>{
     e.preventDefault();
     openVerseMemMenu(el,null,{x:e.clientX,y:e.clientY});
+  });
+  // 두 손가락으로 벌리면 글자가 커지고 오므리면 작아진다 (설정의 네 단계 안에서)
+  _attachTextPinch(el,{
+    get:()=>_vfTextScale(),
+    steps:()=>[...VF_TEXT_STEPS].sort((a,b)=>a-b),
+    set:v=>setVfTextScale(v),
+    onStart:()=>{stopLt();_vfLongFired=false;if(dragging){snapBack();dragging=false;}dir=null;},
   });
   window.addEventListener('resize',()=>{if(_verseFullIsOpen())_vfLayoutText();});
   window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(_verseFullIsOpen())_vfLayoutText();},250);});
@@ -13046,6 +13100,15 @@ function _vcAttachGestures(host){
       if(Date.now()-(window._rpLastTouchTs||0)<700)return;   // 터치가 만든 가짜 클릭
       vcOpenFull(id);
     });
+    // 두 손가락으로 벌리면 글자가 커지고 오므리면 작아진다.
+    // 위 touchstart 가 손가락이 둘이면 이미 active=false 로 두고 stopHold() 로
+    // 롱터치를 끊지만, 밀던 중에 손가락이 하나 더 얹히는 경우까지 여기서 마저 끊는다.
+    _attachTextPinch(body,{
+      get:()=>_vcTextScale(_vcGet(id)),
+      steps:()=>VC_TS_STEPS,
+      set:v=>vcSetTextScaleLive(id,v),
+      onStart:()=>{stopHold();longFired=false;if(dragging)snapBack();active=false;dragging=false;},
+    });
   });
 }
 // ── 카드 설정 팝업 (위젯 하나하나마다 따로) ──
@@ -13171,6 +13234,24 @@ function setVcTextScale(id,v){
   if(!cfg)return;
   cfg.textScale=(v&&v>=VC_TS_MIN&&v<=VC_TS_MAX)?v:VC_TS_DEFAULT;
   save();renderVcSettings();renderRightPanel();
+}
+// 손가락으로 미는 **중에** 크기를 바꿀 때 쓰는 가벼운 길.
+// ⚠️ renderRightPanel() 을 부르면 지금 만지고 있는 카드가 통째로 새로 그려져
+//    손가락이 붙잡고 있던 요소가 사라진다 → 제스처가 도중에 끊긴다.
+//    그래서 그 카드 하나만 다시 앉히고, −/+ 의 끝단 잠금만 손으로 맞춘다.
+function vcSetTextScaleLive(id,v){
+  const cfg=_vcGet(id);
+  if(!cfg||Math.abs(_vcTextScale(cfg)-v)<0.001)return;
+  cfg.textScale=v;save();
+  const body=document.querySelector(`.vc-body[data-vcbody="${id}"]`);
+  const w=body?body.closest('.vc-widget'):null;
+  if(w)_vcLayoutOne(w);
+  if(body){
+    const zb=body.querySelectorAll('.vc-zbtn');
+    if(zb[0])zb[0].disabled=v<=VC_TS_STEPS[0];
+    if(zb[1])zb[1].disabled=v>=VC_TS_STEPS[VC_TS_STEPS.length-1];
+  }
+  if(_vcSetId===id)renderVcSettings();      // 설정 팝업이 열려 있으면 거기도
 }
 // 카드 안 −/+ — 단계 표 안에서 한 칸씩 (설정 팝업을 열지 않고 바로)
 function vcStepTextScale(id,d){
