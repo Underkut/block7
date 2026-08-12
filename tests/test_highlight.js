@@ -1,4 +1,4 @@
-// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-8)
+// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-9)
 //
 // 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
 // 그래야 나중에 보기 방식을 바꿀 때 시트를 통째로 고치지 않아도 된다.
@@ -19,7 +19,7 @@ eval(
   slice("// ══════ 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 ══════",
         '// ══════ 강조 표시 끝 ══════') +
   ';Object.assign(globalThis,{HI_SPLIT,_hiPhrases,_hiSquash,_hiRanges,' +
-  '_hiLinesHTML,_hiOn,_hiBold,_hiPen});'
+  '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw});'
 );
 
 const TEXT = '태초에 말씀이 계시니라 이 말씀이 하나님과 함께 계셨으니 이 말씀은 곧 하나님이시니라';
@@ -150,7 +150,7 @@ console.log('\n시나리오 7 — 새 항목이 걸러지지 않는가');
   sc.eq('형광펜에 좌우 여백을 주지 않는다',
         /html\[data-hipen="1"\] \.hi-mark\{[^}]*padding:/.test(SRC), false);
   // 두 스위치가 각각 걸린다
-  sc.eq('굵게 CSS', SRC.includes('html[data-hibold="1"] .hi-mark{font-weight:600;}'), true);
+  sc.eq('굵게 CSS', SRC.includes('html[data-hibold="1"] .hi-mark{font-weight:var(--hi-fw,700);}'), true);
   sc.eq('형광펜 CSS', SRC.includes('html[data-hipen="1"] .hi-mark{'), true);
   // ⚠️ 밑줄은 만들었다가 없앴다 — 되살아나지 않았는지 본다
   sc.eq('밑줄은 없앴다', SRC.includes('data-histyle'), false);
@@ -219,12 +219,34 @@ console.log('\n시나리오 10 — 공유 이미지의 강조');
   sc.eq('설정창에서 상태 맞추기', SRC.includes("set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);"), true);
   // 그리는 쪽 — 줄을 조각으로 나눠 굵기·형광펜을 입힌다
   sc.eq('조각으로 나눠 그린다', SRC.includes('segs.push({t:ln.slice(st-a,en-a),hi:true});'), true);
-  sc.eq('조각마다 글꼴을 바꾼다', SRC.includes('const fontOf=b=>`${b?600:cs.fontWeight} ${fs}px ${cs.fontFamily}`;'), true);
+  sc.eq('조각 폭을 각자의 글꼴로 잰다',
+        SRC.includes('segs.forEach(sg=>{ctx.font=fontOf(sg.hi&&hb);tot+=ctx.measureText(sg.t).width;});'), true);
   sc.eq('줄 전체를 가운데에 놓는다', SRC.includes('let x=cx-tot/2;'), true);
   sc.eq('형광펜 띠를 먼저 칠한다', SRC.includes('ctx.fillRect(x,y+fs*0.072,w,fs*0.528);'), true);
   sc.eq('강조가 없으면 예전 그대로', SRC.includes("ctx.font=fontOf(false);ctx.textAlign='center';"), true);
   // 설정 미리보기에서도 보이게 예시 구절에 강조를 넣어 뒀다
   sc.eq('미리보기 예시에 강조', SRC.includes("hi:'나의 목자시니'"), true);
+}
+
+// ═══ 11. 서체마다 다른 굵기 ═══
+console.log('\n시나리오 11 — 고딕은 한 단계 더 굵게');
+{
+  // ⚠️ 고딕(Pretendard)은 본문이 300 이라 600 으로는 굵어진 티가 잘 안 난다.
+  //    명조(고운바탕)는 400/700 두 벌뿐이라 600 이 이미 700 으로 그려진다.
+  //    (HB 확인 2026-08-12 — 명조는 그대로, 고딕만 한 단계 더)
+  sc.eq('고딕은 700', _hiFw('sans'), 700);
+  sc.eq('명조는 600', _hiFw('serif'), 600);
+  sc.eq('모르는 값은 고딕 쪽으로', _hiFw(''), 700);
+  sc.eq('고딕이 더 굵다', _hiFw('sans') > _hiFw('serif'), true);
+  // 굵기는 CSS 변수 하나로 흘려보낸다 — 전체화면·말씀카드가 각자 자기 테마로
+  sc.eq('전체화면이 변수를 넣는다', SRC.includes("'--hi-fw':String(_hiFw(t.font)),"), true);
+  sc.eq('말씀카드도 넣는다', SRC.includes("'--hi-fw':String(_hiFw(p.font)),"), true);
+  // 공유 이미지도 같은 굵기로 그린다 (화면과 달라 보이면 안 된다)
+  sc.eq('공유 이미지도 같은 굵기', SRC.includes('const hiFw=_hiFw(th.font);'), true);
+  sc.eq('조각 글꼴이 그 값을 쓴다',
+        SRC.includes('const fontOf=b=>`${b?hiFw:cs.fontWeight} ${fs}px ${cs.fontFamily}`;'), true);
+  // 굵기를 숫자로 박아 두지 않는다 (테마마다 달라야 한다)
+  sc.eq('600 을 박아 두지 않는다', SRC.includes('.hi-mark{font-weight:600;}'), false);
 }
 
 sc.done();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-8  [production]  -->
+<!-- BLOCK7  v. 26-0812-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -226,7 +226,7 @@ header{
    ⚠️ 폭이 늘면 줄이 밀려난다. 실측(구절 전체를 강조하는 최악 조건 60구절)에서
       볼드·형광펜 모두 밀림 0개였지만, **여백을 주면 바로 밀려난다.** */
 .hi-mark{}
-html[data-hibold="1"] .hi-mark{font-weight:600;}
+html[data-hibold="1"] .hi-mark{font-weight:var(--hi-fw,700);}
 html[data-hipen="1"] .hi-mark{
   background:linear-gradient(transparent 56%,
     color-mix(in srgb,var(--vf-ac,var(--ac)) 32%,transparent) 56%);
@@ -2583,7 +2583,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-8";
+const APP_VERSION = "v. 26-0812-9";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8091,6 +8091,11 @@ function _hiLinesHTML(lines,ranges){
 // 화면에 그릴 때 쓰는 한 줄짜리 입구 — 꺼져 있으면 아무것도 칠하지 않는다
 // 보기 방식은 **볼드**와 **형광펜** 두 개의 독립 스위치다 (둘 다 켜면 함께 걸린다).
 // 둘 다 끄면 강조 자체가 없는 것과 같아, 따로 전체 스위치를 두지 않는다.
+// 강조 굵기는 그 테마의 서체에 따라 다르다.
+// ⚠️ 고딕(Pretendard)은 본문이 300 이라 600 으로는 굵어진 티가 잘 안 난다 → **700**.
+//    명조(고운바탕)는 400/700 두 벌뿐이라 600 이 이미 700 으로 그려진다 → 그대로 600.
+//    (HB 확인 2026-08-12: 명조는 지금이 좋고 고딕만 한 단계 더)
+function _hiFw(fontKind){return fontKind==='serif'?600:700;}
 function _hiBold(){return (ST.settings||{}).hiBold!==false;}   // 기본 켬
 function _hiPen(){return (ST.settings||{}).hiPen===true;}      // 기본 끔
 function _hiOn(){return _hiBold()||_hiPen();}
@@ -8516,7 +8521,8 @@ function _shotDraw(o){
     const r=tEl.getBoundingClientRect();
     const lines=tEl._lines||[(tEl.getAttribute('data-raw')||'').trim()];
     const fs=f.size*SC;
-    const fontOf=b=>`${b?600:cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+    const hiFw=_hiFw(th.font);                 // 고딕은 700, 명조는 600
+    const fontOf=b=>`${b?hiFw:cs.fontWeight} ${fs}px ${cs.fontFamily}`;
     ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const cx=X(r.left+r.width/2);
     // 공유 이미지의 강조는 **화면 설정과 따로** 정한다 (공유 탭)
@@ -9097,6 +9103,7 @@ function applyVfTheme(){
   const vars={
     '--vf-bgimg':_vfBgCss(t),'--vf-tx':t.tx,'--vf-tx2':t.tx2,'--vf-tx3':t.tx3,
     '--vf-ac':t.ac,'--vf-tile':t.tile,'--vf-font':fam,'--vf-fw':String(t.fw),
+    '--hi-fw':String(_hiFw(t.font)),
     '--vf-ls':t.ls||'0','--vf-grain':String(t.grain||0),'--vf-vig':String(t.vig||0),
     '--vf-reffont':(t.font==='serif')?fam:"'IBM Plex Mono',monospace"
   };
@@ -12854,6 +12861,7 @@ function _vcThemeVars(cfg,ref){
     '--vf-bgimg':_vfBgCss({bg:v.bg,ang:p.ang}),'--vf-tx':v.tx,
     '--vf-tx2':_rgba(v.tx,.60),'--vf-tx3':_rgba(v.tx,.42),
     '--vf-ac':v.ac,'--vf-font':fam,'--vf-fw':String(p.fw),
+    '--hi-fw':String(_hiFw(p.font)),
     '--vf-ls':p.ls||'0','--vf-grain':String(p.grain||0),'--vf-vig':String(p.vig||0),
     '--vf-reffont':(p.font==='serif')?fam:"'IBM Plex Mono',monospace"
   }};
