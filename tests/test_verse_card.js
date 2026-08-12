@@ -413,7 +413,7 @@ console.log('\n시나리오 9 — 화면 연결');
   // 개발자 전용 — 대분류 롱터치로 그 말씀의 구글 시트 셀 열기
   sc.eq('시트 링크 만들기', SRC.includes('function _sheetUrlForVerse(v)'), true);
   sc.eq('개발자만', /function vfOpenSheetForCat\(\)\{\s*if\(!_isDevAccount\(\)\)return;/.test(SRC), true);
-  sc.eq('그 줄을 골라 준다', SRC.includes('&range=A${hit.row}:F${hit.row}'), true);
+  sc.eq('그 줄을 골라 준다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);   // 0812-7: '강조 문구' G열까지
   sc.eq('시트에서 가져올 때 행 번호를 적어 둔다', SRC.includes('d:_parseVDate(r[5]),row:i+1'), true);
   // 설정 등급을 바꿔도 보던 탭에 머문다
   sc.eq('등급 바꾸기 전에 지금 탭을 붙잡는다',
