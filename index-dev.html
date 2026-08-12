@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0812-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -226,7 +226,11 @@ header{
    ⚠️ 폭이 늘면 줄이 밀려난다. 실측(구절 전체를 강조하는 최악 조건 60구절)에서
       볼드·형광펜 모두 밀림 0개였지만, **여백을 주면 바로 밀려난다.** */
 .hi-mark{}
+.cond-hide{display:none!important;}
 html[data-hibold="1"] .hi-mark{font-weight:var(--hi-fw,700);}
+/* 섞어 쓰기 — 문구마다 하나씩만. 형광펜 몫은 굵기를 되돌리고, 굵게 몫은 띠를 뺀다 */
+html[data-himix="1"] .hi-mark.hi-p{font-weight:inherit;}
+html[data-himix="1"] .hi-mark.hi-b{background:none;}
 html[data-hipen="1"] .hi-mark{
   background:linear-gradient(transparent 56%,
     color-mix(in srgb,var(--vf-ac,var(--ac)) 32%,transparent) 56%);
@@ -2583,7 +2587,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-10";
+const APP_VERSION = "v. 26-0812-11";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3420,6 +3424,13 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button id="setHiBold" class="settings-btn on" style="flex:1;" onclick="toggleHiMark('hiBold','setHiBold')">굵게</button>
           <button id="setHiPen" class="settings-btn" style="flex:1;" onclick="toggleHiMark('hiPen','setHiPen')">형광펜</button>
         </div>
+        <label class="settings-row" id="setHiMixRow" style="cursor:pointer;">
+          <div class="settings-row-text">
+            <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
+            <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
+          </div>
+          <input type="checkbox" id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')" style="width:18px;height:18px;accent-color:var(--ac);flex-shrink:0;">
+        </label>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
@@ -3467,6 +3478,13 @@ window._fbScriptsReady=new Promise(resolve=>{
           <div></div>
           <button id="imgActions" class="settings-btn on" onclick="toggleImgIncl('imgInclActions','imgActions')">우하단 버튼</button>
         </div>
+        <label class="settings-row" id="imgHiMixRow" style="cursor:pointer;">
+          <div class="settings-row-text">
+            <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
+            <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
+          </div>
+          <input type="checkbox" id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')" style="width:18px;height:18px;accent-color:var(--ac);flex-shrink:0;">
+        </label>
         <img id="imgSharePreview" alt="공유 이미지 미리보기" style="display:block;width:150px;border-radius:9px;margin:12px auto 0;">
       </div>
 
@@ -4500,8 +4518,13 @@ function ALL_VERSES(){
       if(!extraCats.has(catName))extraCats.set(catName,nextCatNo++);
       catNo=extraCats.get(catName);
     }
+    // ⚠️ ACTIVE_VERSES() 와 마찬가지로 **정해진 항목만 골라 새로 조립**한다.
+    //    새 항목을 만들면 여기에도 넣어야 한다 — 안 넣으면 이 길로 오는 화면에서만
+    //    조용히 빠진다. 알림을 눌러 들어올 때 강조 문구가 실제로 여기서 막혔다.
+    //    (_findVerseByRefLoose → ALL_VERSES → 여기)
     return{idx:NAVIGATOR_VERSES.length+1+i,catNo,cat:catName,no:i+1,
-           topic:c.topic||'',krText:c.krText||'',ref:c.ref||'',enText:c.enText||'',tags:c.tags||[]};
+           topic:c.topic||'',krText:c.krText||'',ref:c.ref||'',enText:c.enText||'',
+           tags:c.tags||[],hi:c.hi||''};
   });
   return NAVIGATOR_VERSES.concat(mapped);
 }
@@ -8071,18 +8094,19 @@ function _hiRanges(flat,phrases){
 }
 // 줄 배열 → HTML. ⚠️ 강조가 **줄바꿈에 걸칠 수 있으므로** 줄마다 잘라서 칠한다.
 //    줄은 words.slice(i,j).join(' ') 이라 줄 사이는 늘 빈칸 한 칸이다.
-function _hiLinesHTML(lines,ranges){
+function _hiLinesHTML(lines,ranges,kindOf){
   if(!ranges||!ranges.length)return lines.map(esc).join('<br>');
+  const cls=i=>{const k=kindOf?kindOf(i):'both';return k==='both'?'hi-mark':('hi-mark hi-'+k);};
   let off=0;
   return lines.map(line=>{
     const a=off,b=off+line.length;
     off=b+1;
     let html='',pos=0;
-    ranges.forEach(r=>{
+    ranges.forEach((r,i)=>{
       const st=Math.max(r[0],a),en=Math.min(r[1],b);
       if(st>=en)return;
       html+=esc(line.slice(pos,st-a));
-      html+='<span class="hi-mark">'+esc(line.slice(st-a,en-a))+'</span>';
+      html+='<span class="'+cls(i)+'">'+esc(line.slice(st-a,en-a))+'</span>';
       pos=en-a;
     });
     return html+esc(line.slice(pos));
@@ -8098,13 +8122,29 @@ function _hiLinesHTML(lines,ranges){
 function _hiFw(fontKind){return fontKind==='serif'?600:700;}
 function _hiBold(){return (ST.settings||{}).hiBold!==false;}   // 기본 켬
 function _hiPen(){return (ST.settings||{}).hiPen===true;}      // 기본 끔
+function _hiMix(){return (ST.settings||{}).hiMix===true;}      // 기본 끔
 function _hiOn(){return _hiBold()||_hiPen();}
+// ── 섞어 쓰기 ──
+// 둘 다 켰을 때 문구마다 **하나씩만** 걸리게 나눈다 (겹쳐 쓰지 않는다).
+// ⚠️ 진짜 무작위면 다시 그릴 때마다 바뀌어 깜빡인다. 본문에서 뽑은 값으로
+//    시작점을 정하고 번갈아 준다 — 구절마다 다르지만 **늘 같게** 나온다.
+function _hiHash(str){
+  let h=0;const t=String(str||'');
+  for(let i=0;i<t.length;i++){h=(h*31+t.charCodeAt(i))|0;}
+  return Math.abs(h);
+}
+// i 번째 문구에 걸 것: 'b'=굵게 · 'p'=형광펜 · 'both'=둘 다
+function _hiKindAt(seed,i,bold,pen,mix){
+  if(!(bold&&pen&&mix))return'both';
+  return((_hiHash(seed)+i)%2===0)?'b':'p';
+}
 // CSS 는 뿌리 요소의 표식 두 개만 본다
 function _hiApply(){
   try{
     const r=document.documentElement;
     r.setAttribute('data-hibold',_hiBold()?'1':'0');
     r.setAttribute('data-hipen',_hiPen()?'1':'0');
+    r.setAttribute('data-himix',(_hiBold()&&_hiPen()&&_hiMix())?'1':'0');
   }catch(e){}
 }
 function _hiHTML(el,lines){
@@ -8112,7 +8152,9 @@ function _hiHTML(el,lines){
   if(!_hiOn())return lines.map(esc).join('<br>');
   const phr=_hiPhrases({hi:el.getAttribute('data-hi')||''});
   if(!phr.length)return lines.map(esc).join('<br>');
-  return _hiLinesHTML(lines,_hiRanges(lines.join(' '),phr));
+  const flat=lines.join(' ');
+  return _hiLinesHTML(lines,_hiRanges(flat,phr),
+    i=>_hiKindAt(flat,i,_hiBold(),_hiPen(),_hiMix()));
 }
 // ══════ 강조 표시 끝 ══════
 function _vfLayoutText(){
@@ -8472,7 +8514,8 @@ function _vfRenderCard(opt){
   const needTemp=(!!opt.verse&&!sameAsScreen)||!_verseFullIsOpen()||!!size;
   const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);
   const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);
-  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,hiBold,hiPen,theme:opt.theme,counts:opt.counts,size});
+  const hiMix=opt.hiMix!==undefined?opt.hiMix:(s.imgHiMix===true);
+  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,hiBold,hiPen,hiMix,theme:opt.theme,counts:opt.counts,size});
   const cv=needTemp?_withFullscreenLayout(opt.verse||null,draw,size):draw();
   if(!cv)throw new Error('레이아웃을 읽지 못했어요');
   return cv;
@@ -8526,8 +8569,11 @@ function _shotDraw(o){
     ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const cx=X(r.left+r.width/2);
     // 공유 이미지의 강조는 **화면 설정과 따로** 정한다 (공유 탭)
-    const hb=o.hiBold!==false,hp=o.hiPen===true;
-    const ranges=(hb||hp)?_hiRanges(lines.join(' '),_hiPhrases({hi:tEl.getAttribute('data-hi')||''})):[];
+    const hb=o.hiBold!==false,hp=o.hiPen===true,hm=o.hiMix===true;
+    const flat=lines.join(' ');
+    const ranges=(hb||hp)?_hiRanges(flat,_hiPhrases({hi:tEl.getAttribute('data-hi')||''})):[];
+    // 섞어 쓸 때는 문구마다 하나씩만 — 화면과 같은 방식으로 나눈다
+    const kindAt=i=>_hiKindAt(flat,i,hb,hp,hm);
     if(!ranges.length){
       ctx.font=fontOf(false);ctx.textAlign='center';
       lines.forEach((ln,i)=>ctx.fillText(ln,cx,Y(r.top+lh*(i+0.5))));
@@ -8538,24 +8584,26 @@ function _shotDraw(o){
       lines.forEach((ln,i)=>{
         const a=off,b=off+ln.length;off=b+1;
         const segs=[];let pos=0;
-        ranges.forEach(g=>{
+        ranges.forEach((g,gi)=>{
           const st=Math.max(g[0],a),en=Math.min(g[1],b);
           if(st>=en)return;
           if(st-a>pos)segs.push({t:ln.slice(pos,st-a),hi:false});
-          segs.push({t:ln.slice(st-a,en-a),hi:true});
+          const k=kindAt(gi);
+          segs.push({t:ln.slice(st-a,en-a),hi:true,
+                     b:hb&&(k!=='p'),p:hp&&(k!=='b')});
           pos=en-a;
         });
         if(pos<ln.length)segs.push({t:ln.slice(pos),hi:false});
         // 조각 폭을 각자의 글꼴로 재서 줄 전체를 가운데에 놓는다
         let tot=0;
-        segs.forEach(sg=>{ctx.font=fontOf(sg.hi&&hb);tot+=ctx.measureText(sg.t).width;});
+        segs.forEach(sg=>{ctx.font=fontOf(!!sg.b);tot+=ctx.measureText(sg.t).width;});
         let x=cx-tot/2;
         const y=Y(r.top+lh*(i+0.5));
         segs.forEach(sg=>{
-          ctx.font=fontOf(sg.hi&&hb);
+          ctx.font=fontOf(!!sg.b);
           const w=ctx.measureText(sg.t).width;
           // 형광펜 — CSS 의 linear-gradient(transparent 56%, ...) 와 같은 띠
-          if(sg.hi&&hp&&w>0){
+          if(sg.p&&w>0){
             const prev=ctx.fillStyle;ctx.fillStyle=pen;
             ctx.fillRect(x,y+fs*0.072,w,fs*0.528);
             ctx.fillStyle=prev;
@@ -8809,11 +8857,29 @@ function _copyTextFallback(text){
 // ── 공유 설정 (말씀 설정창) : 칩 on/off · 장절 형식 · 미리보기 ──
 // ⚠️ 이 함수는 값이 없으면 **켜진 것**으로 읽는다(imgIncl* 는 다 기본 켬).
 //    공유 형광펜만 기본이 꺼짐이라 따로 적어 둔다 — 안 그러면 첫 클릭에 꺼진다.
-const _IMG_OFF_BY_DEFAULT=['imgHiPen'];
+const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix'];
 function toggleImgIncl(key,btnId){
-  const cur=_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true):(ST.settings[key]!==false);
-  ST.settings[key]=!cur;save();
-  document.getElementById(btnId)?.classList.toggle('on',!cur);_renderSharePreview();
+  const el=document.getElementById(btnId);
+  if(el&&el.tagName==='INPUT'){            // 체크박스는 스스로 값을 바꾼다
+    ST.settings[key]=!!el.checked;save();
+  }else{
+    const cur=_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true):(ST.settings[key]!==false);
+    ST.settings[key]=!cur;save();
+    el&&el.classList.toggle('on',!cur);
+  }
+  _syncHiMixRows();_renderSharePreview();
+}
+// '섞어서 쓰기' 는 **굵게와 형광펜을 둘 다 켰을 때만** 뜻이 있다 → 그때만 보여 준다.
+// ⚠️ style.display 를 건드리지 않는다 (설정창 등급이 .lv-hide 로 감추는 것과 싸운다)
+function _syncHiMixRows(){
+  const s=ST.settings||{};
+  const set=(rowId,boxId,both,on)=>{
+    document.getElementById(rowId)?.classList.toggle('cond-hide',!both);
+    const b=document.getElementById(boxId);
+    if(b)b.checked=!!on;
+  };
+  set('setHiMixRow','setHiMix',_hiBold()&&_hiPen(),s.hiMix===true);
+  set('imgHiMixRow','imgHiMix',(s.imgHiBold!==false)&&(s.imgHiPen===true),s.imgHiMix===true);
 }
 function toggleTxtIncl(key,btnId){
   const cur=!!ST.settings[key];ST.settings[key]=!cur;save();
@@ -8839,6 +8905,7 @@ function _syncShareSettingsUI(){
   const s=ST.settings||{},set=(id,on)=>document.getElementById(id)?.classList.toggle('on',!!on);
   set('imgLeft',s.imgInclLeft!==false);set('imgActions',s.imgInclActions!==false);set('imgBlock7',s.imgInclBlock7!==false);
   set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);   // 공유 이미지 전용 강조
+  _syncHiMixRows();
   set('txtCat',!!s.txtInclCat);set('txtTopic',!!s.txtInclTopic);set('txtTag',!!s.txtInclTag);
   const st=s.txtRefStyle||'short';set('txtRefShort',st==='short');set('txtRefLong',st==='long');
   const br=s.txtRefBracket||'none';set('txtBrNone',br==='none');set('txtBrParen',br==='paren');set('txtBrSquare',br==='square');
@@ -10443,7 +10510,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,imgHiBold:true,imgHiPen:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiMix:false,imgHiBold:true,imgHiPen:false,imgHiMix:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -19938,6 +20005,7 @@ function renderSettingsPanel(){
   document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
   document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false);
   document.getElementById('setHiPen')?.classList.toggle('on',s.hiPen===true);
+  _syncHiMixRows();
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
   document.getElementById('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
@@ -20041,9 +20109,14 @@ function _renderMonthTitleFormatBtns(){
 }
 // 강조 표시 버튼 — 굵게·형광펜을 따로 켜고 끈다(복수 선택). 누르는 즉시 반영.
 function toggleHiMark(key,btnId){
-  const on=!(key==='hiBold'?_hiBold():_hiPen());
-  updateSetting(key,on);
-  document.getElementById(btnId)?.classList.toggle('on',on);
+  if(key==='hiMix'){                       // 체크박스는 스스로 값을 바꾼다
+    updateSetting('hiMix',!!document.getElementById(btnId)?.checked);
+  }else{
+    const on=!(key==='hiBold'?_hiBold():_hiPen());
+    updateSetting(key,on);
+    document.getElementById(btnId)?.classList.toggle('on',on);
+  }
+  _syncHiMixRows();
   _hiApply();
   if(_verseFullIsOpen())_vfLayoutText();
   renderRightPanel();

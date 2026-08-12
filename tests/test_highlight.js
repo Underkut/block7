@@ -1,4 +1,4 @@
-// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-9)
+// 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 (v26-0812-11)
 //
 // 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
 // 그래야 나중에 보기 방식을 바꿀 때 시트를 통째로 고치지 않아도 된다.
@@ -19,7 +19,7 @@ eval(
   slice("// ══════ 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 ══════",
         '// ══════ 강조 표시 끝 ══════') +
   ';Object.assign(globalThis,{HI_SPLIT,_hiPhrases,_hiSquash,_hiRanges,' +
-  '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw});'
+  '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw,_hiMix,_hiHash,_hiKindAt});'
 );
 
 const TEXT = '태초에 말씀이 계시니라 이 말씀이 하나님과 함께 계셨으니 이 말씀은 곧 하나님이시니라';
@@ -214,13 +214,13 @@ console.log('\n시나리오 10 — 공유 이미지의 강조');
   sc.eq('공유 값을 따로 읽는다', SRC.includes('const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);'), true);
   sc.eq('형광펜도 따로', SRC.includes('const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);'), true);
   // ⚠️ toggleImgIncl 은 "값이 없으면 켜짐"으로 읽는다 — 기본 꺼짐인 것은 따로 적어 둬야 한다
-  sc.eq('기본 꺼짐 목록', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen'];"), true);
+  sc.eq('기본 꺼짐 목록', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix'];"), true);
   sc.eq('그 목록을 실제로 쓴다', SRC.includes('_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true)'), true);
   sc.eq('설정창에서 상태 맞추기', SRC.includes("set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);"), true);
   // 그리는 쪽 — 줄을 조각으로 나눠 굵기·형광펜을 입힌다
-  sc.eq('조각으로 나눠 그린다', SRC.includes('segs.push({t:ln.slice(st-a,en-a),hi:true});'), true);
+  sc.eq('조각으로 나눠 그린다', SRC.includes('segs.push({t:ln.slice(st-a,en-a),hi:true,'), true);
   sc.eq('조각 폭을 각자의 글꼴로 잰다',
-        SRC.includes('segs.forEach(sg=>{ctx.font=fontOf(sg.hi&&hb);tot+=ctx.measureText(sg.t).width;});'), true);
+        SRC.includes('segs.forEach(sg=>{ctx.font=fontOf(!!sg.b);tot+=ctx.measureText(sg.t).width;});'), true);
   sc.eq('줄 전체를 가운데에 놓는다', SRC.includes('let x=cx-tot/2;'), true);
   sc.eq('형광펜 띠를 먼저 칠한다', SRC.includes('ctx.fillRect(x,y+fs*0.072,w,fs*0.528);'), true);
   sc.eq('강조가 없으면 예전 그대로', SRC.includes("ctx.font=fontOf(false);ctx.textAlign='center';"), true);
@@ -247,6 +247,83 @@ console.log('\n시나리오 11 — 고딕은 한 단계 더 굵게');
         SRC.includes('const fontOf=b=>`${b?hiFw:cs.fontWeight} ${fs}px ${cs.fontFamily}`;'), true);
   // 굵기를 숫자로 박아 두지 않는다 (테마마다 달라야 한다)
   sc.eq('600 을 박아 두지 않는다', SRC.includes('.hi-mark{font-weight:600;}'), false);
+}
+
+// ═══ 12. 섞어서 쓰기 ═══
+console.log('\n시나리오 12 — 굵게와 형광펜을 문구마다 나눠 걸기');
+{
+  ST.settings = {};
+  sc.eq('처음엔 꺼짐', _hiMix(), false);
+  ST.settings.hiMix = true;
+  sc.eq('켜면 켜짐', _hiMix(), true);
+  ST.settings = {};
+
+  // 둘 다 켜고 섞기를 켰을 때만 나뉜다
+  sc.eq('굵게만이면 안 나눈다', _hiKindAt('씨앗', 0, true, false, true), 'both');
+  sc.eq('형광펜만이면 안 나눈다', _hiKindAt('씨앗', 0, false, true, true), 'both');
+  sc.eq('섞기를 끄면 겹쳐 쓴다', _hiKindAt('씨앗', 0, true, true, false), 'both');
+  // ⚠️ 문구마다 하나씩 — 이웃끼리는 늘 다르다
+  const seed = '태초에 말씀이 계시니라';
+  const kinds = [0, 1, 2, 3].map(i => _hiKindAt(seed, i, true, true, true));
+  sc.eq('둘 중 하나씩만', kinds.every(k => k === 'b' || k === 'p'), true);
+  sc.eq('이웃끼리 번갈아', kinds.every((k, i) => i === 0 || k !== kinds[i - 1]), true);
+  sc.eq('굵게도 형광펜도 나온다', new Set(kinds).size, 2);
+  // ⚠️ 다시 그릴 때마다 바뀌면 깜빡인다 — 같은 본문이면 늘 같아야 한다
+  sc.eq('같은 본문이면 늘 같다',
+        [0, 1, 2, 3].map(i => _hiKindAt(seed, i, true, true, true)), kinds);
+  sc.eq('해시는 늘 같은 값', _hiHash(seed), _hiHash(seed));
+  sc.eq('해시는 음수가 아니다', _hiHash(seed) >= 0, true);
+  // 구절이 다르면 시작점도 달라질 수 있다 (그래서 '무작위'로 느껴진다)
+  const other = ['씨앗A', '씨앗B', '씨앗C', '씨앗D', '씨앗E', '씨앗F']
+    .map(x => _hiKindAt(x, 0, true, true, true));
+  sc.eq('구절마다 시작이 다르다', new Set(other).size, 2);
+
+  // 줄 그리기 — 문구마다 표식을 단다
+  const lines = ['가나다 라마바', '사아자 차카타'];
+  const html = _hiLinesHTML(lines, [[0, 3], [8, 11]], i => (i === 0 ? 'b' : 'p'));
+  sc.eq('굵게 몫에 hi-b', html.includes('<span class="hi-mark hi-b">가나다</span>'), true);
+  sc.eq('형광펜 몫에 hi-p', html.includes('<span class="hi-mark hi-p">사아자</span>'), true);
+  sc.eq('안 나누면 표식 없음',
+        _hiLinesHTML(lines, [[0, 3]]).includes('<span class="hi-mark">가나다</span>'), true);
+
+  // CSS — 섞을 때 형광펜 몫은 굵기를 되돌리고, 굵게 몫은 띠를 뺀다
+  sc.eq('형광펜 몫은 굵기 되돌림',
+        SRC.includes('html[data-himix="1"] .hi-mark.hi-p{font-weight:inherit;}'), true);
+  sc.eq('굵게 몫은 띠 없음',
+        SRC.includes('html[data-himix="1"] .hi-mark.hi-b{background:none;}'), true);
+  sc.eq('뿌리 표식은 둘 다 켰을 때만',
+        SRC.includes("r.setAttribute('data-himix',(_hiBold()&&_hiPen()&&_hiMix())?'1':'0');"), true);
+
+  // 설정 — 화면·공유 각각 체크박스. 둘 다 켰을 때만 보인다
+  sc.eq('화면 체크박스', SRC.includes(`id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')"`), true);
+  sc.eq('공유 체크박스', SRC.includes(`id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')"`), true);
+  sc.eq('둘 다 켰을 때만 보이게', SRC.includes('function _syncHiMixRows()'), true);
+  sc.eq('화면 조건', SRC.includes("set('setHiMixRow','setHiMix',_hiBold()&&_hiPen(),s.hiMix===true);"), true);
+  sc.eq('공유 조건',
+        SRC.includes("set('imgHiMixRow','imgHiMix',(s.imgHiBold!==false)&&(s.imgHiPen===true),s.imgHiMix===true);"), true);
+  // ⚠️ 설정창 등급이 .lv-hide 로 감추는 것과 싸우지 않게 style.display 를 안 쓴다
+  const mixFn = SRC.slice(SRC.indexOf('function _syncHiMixRows()'));
+  sc.eq('클래스로만 감춘다', mixFn.slice(0, mixFn.indexOf('\n}')).includes('style.display'), false);
+  sc.eq('기본값 둘 다 꺼짐', SRC.includes('hiMix:false,') && SRC.includes('imgHiMix:false,'), true);
+  sc.eq('공유 기본 꺼짐 목록에 있다', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix'];"), true);
+  // 공유 이미지도 같은 방식으로 나눈다
+  sc.eq('공유 이미지도 나눈다', SRC.includes('const kindAt=i=>_hiKindAt(flat,i,hb,hp,hm);'), true);
+  sc.eq('조각마다 굵게·띠를 따로 정한다',
+        SRC.includes("b:hb&&(k!=='p'),p:hp&&(k!=='b')"), true);
+}
+
+// ═══ 13. ⚠️ 알림으로 들어올 때도 강조가 온다 ═══
+console.log('\n시나리오 13 — 알림 경로');
+{
+  // ⚠️ ALL_VERSES() 도 ACTIVE_VERSES() 처럼 '정해진 항목만 골라 새로 조립'한다.
+  //    알림은 _findVerseByRefLoose → ALL_VERSES 를 타므로, 여기에 hi 가 없으면
+  //    알림으로 들어왔을 때만 강조가 조용히 빠진다 (2026-08-12 신고).
+  sc.eq('ALL_VERSES 가 강조 문구를 넘겨준다',
+        SRC.includes("tags:c.tags||[],hi:c.hi||''};"), true);
+  sc.eq('ACTIVE_VERSES 도 그대로',
+        SRC.includes("enText:v.enText||'',tags:v.tags||[],hi:v.hi||''};"), true);
+  // 구절을 새로 조립하는 곳은 이 둘뿐이어야 한다 (또 생기면 같은 사고가 난다)
+  sc.eq('재조립하는 곳은 두 곳뿐', (SRC.match(/enText:\w+\.enText\|\|''/g) || []).length, 2);
 }
 
 sc.done();
