@@ -1,4 +1,4 @@
-// 공유 이미지 저장 파일명 (v26-0812-2)
+// 공유 이미지 저장 파일명 (v26-0812-3)
 //
 // 파일명 가운데 장절 숫자의 **자리수**를 맞춘다. 자리수는 "그 자리에 올 수 있는
 // 가장 큰 수"에 맞춘다 — 더 늘리면 0 만 길어지고, 모자라면 이름순 정렬이 어긋난다.
@@ -21,7 +21,7 @@ eval(
   slice('const _REF_ABBR2FULL=', 'function _refNorm(') +
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('// 장절 숫자의 자리수를 맞춘다', 'function _vfShareImage(') +
-  ';Object.assign(globalThis,{_bookCanon,_refDigitsPad,_shareFileName});'
+  ';Object.assign(globalThis,{_REF_ABBR2FULL,_bookCanon,_bookAbbr,_refDigitsPad,_shareFileName});'
 );
 
 // 오늘 날짜는 파일명 뒤에 붙으므로, 검사할 때는 그 부분을 떼고 본다
@@ -30,7 +30,7 @@ const stamp = (() => {
   return `${String(d.getFullYear()).slice(2)}${p(d.getMonth() + 1)}${p(d.getDate())}`;
 })();
 const nameOf = ref => _shareFileName({ ref });
-const midOf = ref => nameOf(ref).replace(/^BLOCK7_/, '').replace(new RegExp(`_${stamp}\\.png$`), '');
+const midOf = ref => nameOf(ref).replace(/^B7_/, '').replace(new RegExp(`_${stamp}\\.png$`), '');
 const numOf = ref => _refDigitsPad(ref).num;
 
 // ═══ 1. 장 자리수 ═══
@@ -87,30 +87,60 @@ console.log('\n시나리오 4 — 절이 하나가 아닐 때');
   sc.eq('빈칸이 섞여도', numOf('시편 23 : 1, 6'), '02301,06');
 }
 
-// ═══ 5. 파일명 전체 ═══
-console.log('\n시나리오 5 — 실제로 저장되는 이름');
+// ═══ 5. 성경책은 공식 약어로 ═══
+console.log('\n시나리오 5 — 성경책 이름을 공식 약어로');
 {
-  sc.eq('창세기 4:6', midOf('창세기 4:6'), '창세기_0406');
-  sc.eq('시편 119:176', midOf('시편 119:176'), '시편_119176');
-  sc.eq('요한복음 1:1,14', midOf('요한복음 1:1,14'), '요한복음_0101,14');
-  sc.eq('앞뒤에 BLOCK7 과 날짜', /^BLOCK7_.+_\d{6}\.png$/.test(nameOf('창세기 4:6')), true);
+  // 새 표를 만들지 않고 _REF_ABBR2FULL(약어→정식)을 뒤집어 쓴다
+  sc.eq('창세기 → 창', _bookAbbr('창세기'), '창');
+  sc.eq('사무엘상 → 삼상', _bookAbbr('사무엘상'), '삼상');
+  sc.eq('시편 → 시', _bookAbbr('시편'), '시');
+  sc.eq('요한복음 → 요', _bookAbbr('요한복음'), '요');
+  sc.eq('요한1서 → 요일', _bookAbbr('요한1서'), '요일');
+  sc.eq('요한계시록 → 계', _bookAbbr('요한계시록'), '계');
+  sc.eq('데살로니가전서 → 살전', _bookAbbr('데살로니가전서'), '살전');
+  sc.eq('예레미야애가 → 애', _bookAbbr('예레미야애가'), '애');
+  // 다른 표기로 저장돼 있어도 편 다음 줄인다
+  sc.eq('요한일서 → 요일', _bookAbbr('요한일서'), '요일');
+  sc.eq('이미 약어면 그대로', _bookAbbr('삼상'), '삼상');
+  // 66권이 빠짐없이 줄어드는지 (표를 뒤집었으니 정식 이름 그대로 남으면 안 된다)
+  const abbrs = Object.keys(_REF_ABBR2FULL);
+  sc.eq('표가 66권', abbrs.length, 66);
+  sc.eq('66권 모두 줄어든다',
+        abbrs.filter(a => _bookAbbr(_REF_ABBR2FULL[a]) === _REF_ABBR2FULL[a]).length, 0);
+  sc.eq('줄인 것이 그 약어와 같다',
+        abbrs.filter(a => _bookAbbr(_REF_ABBR2FULL[a]) !== a).length, 0);
+  sc.eq('모르는 이름은 그대로 둔다', _bookAbbr('없는책'), '없는책');
+  sc.eq('빈 값도 안전', _bookAbbr(''), '');
+}
+
+// ═══ 6. 파일명 전체 ═══
+console.log('\n시나리오 6 — 실제로 저장되는 이름');
+{
+  sc.eq('창세기 4:6', midOf('창세기 4:6'), '창_0406');
+  sc.eq('사무엘상 15:29', midOf('사무엘상 15:29'), '삼상_1529');
+  sc.eq('시편 119:176', midOf('시편 119:176'), '시_119176');
+  sc.eq('요한복음 1:1,14', midOf('요한복음 1:1,14'), '요_0101,14');
+  sc.eq('요한1서 5:14', midOf('요한1서 5:14'), '요일_0514');
+  sc.eq('앞머리는 B7', /^B7_.+_\d{6}\.png$/.test(nameOf('창세기 4:6')), true);
+  sc.eq('BLOCK7 은 더 이상 안 쓴다', nameOf('창세기 4:6').includes('BLOCK7'), false);
+  sc.eq('전체 이름 한 벌', /^B7_창_0406_\d{6}\.png$/.test(nameOf('창세기 4:6')), true);
   // 이름순 정렬이 장절 순서와 맞아야 한다 — 이게 이 작업의 목적이다
   sc.eq('시편이 아닌 책: 이름순 = 장절순',
         ['창세기 11:9', '창세기 4:6', '창세기 15:29', '창세기 4:26'].map(midOf).sort(),
-        ['창세기_0406', '창세기_0426', '창세기_1109', '창세기_1529']);
+        ['창_0406', '창_0426', '창_1109', '창_1529']);
   sc.eq('시편: 이름순 = 장절순',
         ['시편 119:176', '시편 4:6', '시편 23:1', '시편 119:11', '시편 100:5'].map(midOf).sort(),
-        ['시편_00406', '시편_02301', '시편_10005', '시편_119011', '시편_119176']);
+        ['시_00406', '시_02301', '시_10005', '시_119011', '시_119176']);
 }
 
-// ═══ 6. 알아볼 수 없는 표기는 그대로 둔다 ═══
-console.log('\n시나리오 6 — 장:절 꼴이 아닐 때');
+// ═══ 7. 알아볼 수 없는 표기는 그대로 둔다 ═══
+console.log('\n시나리오 7 — 장:절 꼴이 아닐 때');
 {
   sc.eq('절이 없으면 못 편다', _refDigitsPad('시편 119'), null);
   sc.eq('그래도 파일명은 만든다', midOf('시편 119'), '시편_119');
   sc.eq('빈 장절도 안전', _refDigitsPad(''), null);
   sc.eq('ref 가 없으면 verse', midOf(''), 'verse');
-  sc.eq('구절 자체가 없어도 안전', /^BLOCK7_verse_/.test(_shareFileName(null)), true);
+  sc.eq('구절 자체가 없어도 안전', /^B7_verse_/.test(_shareFileName(null)), true);
   // 파일명에 못 쓰는 글자는 빼고, 빈칸은 밑줄로
   sc.eq("':' 는 남지 않는다", midOf('창세기 4:6').includes(':'), false);
   sc.eq('빈칸은 밑줄', midOf('창세기 4:6').includes(' '), false);
