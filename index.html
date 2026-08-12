@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-7  [production]  -->
+<!-- BLOCK7  v. 26-0812-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2583,7 +2583,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-7";
+const APP_VERSION = "v. 26-0812-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3239,28 +3239,6 @@ window._fbScriptsReady=new Promise(resolve=>{
           </label>
         </div>
 
-        <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">강조 표시</div>
-        <div class="settings-row-desc" style="margin-bottom:6px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. 전체화면과 말씀카드에 함께 적용돼요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">굵게</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setHiBold" onchange="setHiMark('hiBold',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="settings-row" data-lv="mp">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">형광펜</div>
-            <div class="settings-row-desc">굵게와 함께 켜도 돼요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setHiPen" onchange="setHiMark('hiPen',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-
         <div class="settings-row-desc" style="margin:14px 0 6px;font-weight:600;color:var(--tx2);">풀 모드에서 표시할 항목</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="preset-btn on" id="setVerseFullCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullCat',this.classList.toggle('on'))">대분류</button>
@@ -3433,6 +3411,17 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
+      <!-- ── 강조 표시 ── -->
+      <!-- 자리: 글자 크기 → 강조 표시 → 테마 (본문을 어떻게 보여줄지끼리 모은다) -->
+      <div class="settings-section">
+        <div class="settings-section-title">강조 표시</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. 전체화면과 말씀카드에 함께 적용돼요. 둘 다 골라도 되고, 둘 다 끄면 강조가 없어요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
+        <div style="display:flex;gap:8px;">
+          <button id="setHiBold" class="settings-btn on" style="flex:1;" onclick="toggleHiMark('hiBold','setHiBold')">굵게</button>
+          <button id="setHiPen" class="settings-btn" style="flex:1;" onclick="toggleHiMark('hiPen','setHiPen')">형광펜</button>
+        </div>
+      </div>
+
       <!-- ── 전체화면 테마 ── -->
       <div class="settings-section">
         <div class="settings-section-title">테마</div>
@@ -3468,11 +3457,15 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- ── 공유 이미지 ── -->
       <div class="settings-section">
         <div class="settings-section-title">공유 이미지</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">이미지 카드에 넣을 항목을 골라요.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button id="imgLeft" class="settings-btn on" style="flex:1;" onclick="toggleImgIncl('imgInclLeft','imgLeft')">좌하단 정보</button>
-          <button id="imgActions" class="settings-btn on" style="flex:1;" onclick="toggleImgIncl('imgInclActions','imgActions')">우하단 버튼</button>
-          <button id="imgBlock7" class="settings-btn on" style="flex:1;" onclick="toggleImgIncl('imgInclBlock7','imgBlock7')">BLOCK7</button>
+        <div class="settings-row-desc" style="margin-bottom:8px;">이미지 카드에 넣을 항목을 골라요. 강조는 화면 설정과 따로 정해요.</div>
+        <!-- 3열 두 줄. 아랫줄은 가운데를 비우고 좌·우로 벌린다 -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          <button id="imgHiBold" class="settings-btn on" onclick="toggleImgIncl('imgHiBold','imgHiBold')">굵게 강조</button>
+          <button id="imgHiPen" class="settings-btn" onclick="toggleImgIncl('imgHiPen','imgHiPen')">형광펜</button>
+          <button id="imgBlock7" class="settings-btn on" onclick="toggleImgIncl('imgInclBlock7','imgBlock7')">BLOCK7</button>
+          <button id="imgLeft" class="settings-btn on" onclick="toggleImgIncl('imgInclLeft','imgLeft')">좌하단 정보</button>
+          <div></div>
+          <button id="imgActions" class="settings-btn on" onclick="toggleImgIncl('imgInclActions','imgActions')">우하단 버튼</button>
         </div>
         <img id="imgSharePreview" alt="공유 이미지 미리보기" style="display:block;width:150px;border-radius:9px;margin:12px auto 0;">
       </div>
@@ -8472,7 +8465,9 @@ function _vfRenderCard(opt){
   const sameAsScreen=opt.verse&&curV&&opt.verse.ref===curV.ref&&(opt.verse.krText||'')===(curV.krText||'');
   const size=opt.size||null;                       // [W,H] 고정 크기 (없으면 화면 그대로)
   const needTemp=(!!opt.verse&&!sameAsScreen)||!_verseFullIsOpen()||!!size;
-  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,theme:opt.theme,counts:opt.counts,size});
+  const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);
+  const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);
+  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,hiBold,hiPen,theme:opt.theme,counts:opt.counts,size});
   const cv=needTemp?_withFullscreenLayout(opt.verse||null,draw,size):draw();
   if(!cv)throw new Error('레이아웃을 읽지 못했어요');
   return cv;
@@ -8512,17 +8507,59 @@ function _shotDraw(o){
   }
   ctx.fillRect(0,0,W,H);
   if(th.grain||th.vig)_cardGrain(ctx,W,H,th.grain||0,th.vig||0);
-  // 본문 — 화면에 그려진 줄 배열을 같은 줄 높이·같은 중앙선에 찍는다
+  // 본문 — 화면에 그려진 줄 배열을 같은 줄 높이·같은 중앙선에 찍는다.
+  // 강조가 있으면 한 줄을 조각으로 나눠 굵기·형광펜을 따로 입힌다.
   const tEl=document.getElementById('vfText');
   if(tEl){
     const cs=getComputedStyle(tEl),f=_shotFont(cs);
     const lh=parseFloat(cs.lineHeight)||f.size*_VF_LH;
     const r=tEl.getBoundingClientRect();
     const lines=tEl._lines||[(tEl.getAttribute('data-raw')||'').trim()];
-    ctx.font=`${cs.fontWeight} ${f.size*SC}px ${cs.fontFamily}`;
-    ctx.fillStyle=cs.color;ctx.textAlign='center';ctx.textBaseline='middle';
+    const fs=f.size*SC;
+    const fontOf=b=>`${b?600:cs.fontWeight} ${fs}px ${cs.fontFamily}`;
+    ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const cx=X(r.left+r.width/2);
-    lines.forEach((ln,i)=>ctx.fillText(ln,cx,Y(r.top+lh*(i+0.5))));
+    // 공유 이미지의 강조는 **화면 설정과 따로** 정한다 (공유 탭)
+    const hb=o.hiBold!==false,hp=o.hiPen===true;
+    const ranges=(hb||hp)?_hiRanges(lines.join(' '),_hiPhrases({hi:tEl.getAttribute('data-hi')||''})):[];
+    if(!ranges.length){
+      ctx.font=fontOf(false);ctx.textAlign='center';
+      lines.forEach((ln,i)=>ctx.fillText(ln,cx,Y(r.top+lh*(i+0.5))));
+    }else{
+      const pen=_rgba(th.ac,.32);
+      ctx.textAlign='left';
+      let off=0;
+      lines.forEach((ln,i)=>{
+        const a=off,b=off+ln.length;off=b+1;
+        const segs=[];let pos=0;
+        ranges.forEach(g=>{
+          const st=Math.max(g[0],a),en=Math.min(g[1],b);
+          if(st>=en)return;
+          if(st-a>pos)segs.push({t:ln.slice(pos,st-a),hi:false});
+          segs.push({t:ln.slice(st-a,en-a),hi:true});
+          pos=en-a;
+        });
+        if(pos<ln.length)segs.push({t:ln.slice(pos),hi:false});
+        // 조각 폭을 각자의 글꼴로 재서 줄 전체를 가운데에 놓는다
+        let tot=0;
+        segs.forEach(sg=>{ctx.font=fontOf(sg.hi&&hb);tot+=ctx.measureText(sg.t).width;});
+        let x=cx-tot/2;
+        const y=Y(r.top+lh*(i+0.5));
+        segs.forEach(sg=>{
+          ctx.font=fontOf(sg.hi&&hb);
+          const w=ctx.measureText(sg.t).width;
+          // 형광펜 — CSS 의 linear-gradient(transparent 56%, ...) 와 같은 띠
+          if(sg.hi&&hp&&w>0){
+            const prev=ctx.fillStyle;ctx.fillStyle=pen;
+            ctx.fillRect(x,y+fs*0.072,w,fs*0.528);
+            ctx.fillStyle=prev;
+          }
+          ctx.fillText(sg.t,x,y);
+          x+=w;
+        });
+      });
+      ctx.textAlign='center';
+    }
   }
   // 장절
   const rf=document.getElementById('vfRef');
@@ -8764,8 +8801,12 @@ function _copyTextFallback(text){
   }catch(e){showToast('복사를 지원하지 않는 환경이에요');}
 }
 // ── 공유 설정 (말씀 설정창) : 칩 on/off · 장절 형식 · 미리보기 ──
+// ⚠️ 이 함수는 값이 없으면 **켜진 것**으로 읽는다(imgIncl* 는 다 기본 켬).
+//    공유 형광펜만 기본이 꺼짐이라 따로 적어 둔다 — 안 그러면 첫 클릭에 꺼진다.
+const _IMG_OFF_BY_DEFAULT=['imgHiPen'];
 function toggleImgIncl(key,btnId){
-  const cur=(ST.settings[key]!==false);ST.settings[key]=!cur;save();
+  const cur=_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true):(ST.settings[key]!==false);
+  ST.settings[key]=!cur;save();
   document.getElementById(btnId)?.classList.toggle('on',!cur);_renderSharePreview();
 }
 function toggleTxtIncl(key,btnId){
@@ -8777,7 +8818,8 @@ function setTxtRefBracket(v){ST.settings.txtRefBracket=v;save();_syncShareSettin
 function setTxtRefPos(v){ST.settings.txtRefPos=v;save();_syncShareSettingsUI();}
 function _renderSharePreview(){
   const img=document.getElementById('imgSharePreview');if(!img)return;
-  const ex={krText:'여호와는 나의 목자시니 내게 부족함이 없으리로다',ref:'시편 23:1',cat:'다윗의 노래',topic:'선한 목자',tags:['목자','평안']};
+  // 강조 문구도 넣어 둔다 — 설정 미리보기에서 굵게·형광펜이 바로 보이게
+  const ex={krText:'여호와는 나의 목자시니 내게 부족함이 없으리로다',ref:'시편 23:1',cat:'다윗의 노래',topic:'선한 목자',tags:['목자','평안'],hi:'나의 목자시니'};
   try{
     const cv=_vfRenderCard({verse:ex,
       inclLeft:(ST.settings.imgInclLeft!==false),
@@ -8790,6 +8832,7 @@ function _renderSharePreview(){
 function _syncShareSettingsUI(){
   const s=ST.settings||{},set=(id,on)=>document.getElementById(id)?.classList.toggle('on',!!on);
   set('imgLeft',s.imgInclLeft!==false);set('imgActions',s.imgInclActions!==false);set('imgBlock7',s.imgInclBlock7!==false);
+  set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);   // 공유 이미지 전용 강조
   set('txtCat',!!s.txtInclCat);set('txtTopic',!!s.txtInclTopic);set('txtTag',!!s.txtInclTag);
   const st=s.txtRefStyle||'short';set('txtRefShort',st==='short');set('txtRefLong',st==='long');
   const br=s.txtRefBracket||'none';set('txtBrNone',br==='none');set('txtBrParen',br==='paren');set('txtBrSquare',br==='square');
@@ -10393,7 +10436,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,imgHiBold:true,imgHiPen:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -19885,8 +19928,8 @@ function renderSettingsPanel(){
     document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
   });
   document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
-  document.getElementById('setHiBold')&&(document.getElementById('setHiBold').checked=s.hiBold!==false);
-  document.getElementById('setHiPen')&&(document.getElementById('setHiPen').checked=s.hiPen===true);
+  document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false);
+  document.getElementById('setHiPen')?.classList.toggle('on',s.hiPen===true);
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
   document.getElementById('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
@@ -19988,12 +20031,15 @@ function _renderMonthTitleFormatBtns(){
     `<button class="preset-btn${f===k?' on':''}" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('monthTitleFormat','${k}')">${label}</button>`
   ).join('');
 }
-// 강조 표시 스위치 — 바꾸는 즉시 전체화면·말씀카드에 반영한다
-function setHiMark(key,on){
-  updateSetting(key,!!on);
+// 강조 표시 버튼 — 굵게·형광펜을 따로 켜고 끈다(복수 선택). 누르는 즉시 반영.
+function toggleHiMark(key,btnId){
+  const on=!(key==='hiBold'?_hiBold():_hiPen());
+  updateSetting(key,on);
+  document.getElementById(btnId)?.classList.toggle('on',on);
   _hiApply();
   if(_verseFullIsOpen())_vfLayoutText();
   renderRightPanel();
+  _renderSharePreview();
 }
 function updateSetting(key,value){
   beforeSave();
