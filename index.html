@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-4  [production]  -->
+<!-- BLOCK7  v. 26-0812-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2563,7 +2563,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-4";
+const APP_VERSION = "v. 26-0812-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8816,48 +8816,74 @@ function setVfTextScale(v){
   _renderSharePreview();
 }
 // ══════ 핀치(두 손가락)로 글자 크기 옮기기 — 전체화면·말씀카드 공용 ══════
-// 크기가 몇 단계로 딱딱 끊겨 있으므로, 미리보기로 늘였다가 놓을 때 맞추지 않고
-// **미는 동안 바로 그 단계로 바꾼다.** 실제로 보이는 그대로라 손에 잘 붙는다.
+// 손가락을 두 배로 벌리면 글자도 대략 두 배 — **벌린 만큼 그대로** 따라간다.
+// (칸을 세는 방식은 손가락을 한참 벌려야 한 칸이 움직여서 굼떴다)
 function _tsTouchDist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);}
-// 벌린 배율 k → 몇 칸 옮길지. 한 칸이 대략 1.35배라 1.17배부터 한 칸 움직인다
-// (살짝 벌어진 정도로는 안 바뀐다). 오므리면 음수 = 작게.
-function _tsPinchSteps(k){
-  if(!(k>0)||!isFinite(k))return 0;
-  return Math.round(Math.log(k)/Math.log(1.35));
+// 핀치 전용 촘촘한 단계. 설정 버튼의 단계 **사이사이**를 메운다.
+// ⚠️ 양 끝(가장 작은 것·가장 큰 것)은 설정과 똑같이 두고 넘지 않는다.
+const TS_FINE_ALL=[0.5,0.55,0.6,0.7,0.8,0.9,1,1.12,1.25];
+function _tsFine(steps){
+  if(!steps||!steps.length)return[1];
+  const lo=Math.min.apply(null,steps),hi=Math.max.apply(null,steps);
+  const a=TS_FINE_ALL.filter(v=>v>=lo-0.001&&v<=hi+0.001);
+  steps.forEach(v=>{if(!a.some(x=>Math.abs(x-v)<0.001))a.push(v);});   // 설정 단계는 반드시 포함
+  return a.sort((x,y)=>x-y);
 }
+function _tsNearest(a,v){
+  let bi=0,bd=Infinity;
+  a.forEach((x,i)=>{const d=Math.abs(x-v);if(d<bd){bd=d;bi=i;}});
+  return a[bi];
+}
+// ⚠️ 손가락이 **동시에 떨어지지 않는다.** 하나가 먼저 떨어지면 남은 하나가
+//    "새로 미는 손가락"으로 읽혀 말씀이 넘어가거나 화면이 튄다. 그래서
+//    핀치 중 + 손가락이 다 떨어지고 잠깐 동안은 다른 제스처를 모두 막는다.
+let _tsPinchOn=false,_tsPinchUntil=0;
+const TS_PINCH_TAIL=450;                     // 다 뗀 뒤 막아 두는 시간
+const TS_SNAP_HYST=0.06;                     // 옆 칸으로 옮기는 문턱(로그, ≈6%)
+function _tsPinchBusy(){return _tsPinchOn||Date.now()<_tsPinchUntil;}
+function _tsPinchArm(){_tsPinchUntil=Date.now()+TS_PINCH_TAIL;window._rpLastTouchTs=Date.now();}
 // el 에 핀치를 붙인다.
-//   get()      지금 배율            steps()  고를 수 있는 배율(작은 것부터)
+//   get()      지금 배율            steps()  설정에 있는 단계(작은 것부터)
 //   set(v)     그 배율로 바꾸기      onStart() 롱터치 대기·드래그를 끊는 자리
 // ⚠️ onStart 에서 **반드시 롱터치 타이머를 끊어야** 한다. 안 끊으면 크기를
 //    바꾸는 도중에 말씀 메뉴가 떠서 제스처가 통째로 끊긴다.
 function _attachTextPinch(el,opt){
-  let base=0,d0=0,on=false,last=0;
-  const idxOf=v=>{const a=opt.steps();let bi=0,bd=Infinity;
-    a.forEach((x,i)=>{const d=Math.abs(x-v);if(d<bd){bd=d;bi=i;}});return bi;};
+  let d0=0,v0=1,on=false;
   el.addEventListener('touchstart',e=>{
     if(e.touches.length!==2)return;
-    on=true;last=0;d0=_tsTouchDist(e.touches)||1;base=idxOf(opt.get());
-    window._rpLastTouchTs=Date.now();        // 뒤따라오는 가짜 click 을 막는다
+    on=true;_tsPinchOn=true;_tsPinchArm();
+    d0=_tsTouchDist(e.touches)||1;
+    v0=_tsNearest(_tsFine(opt.steps()),opt.get());   // 이 손짓의 기준점
     if(opt.onStart)opt.onStart();
   },{passive:true});
   el.addEventListener('touchmove',e=>{
-    if(!on||e.touches.length!==2)return;
+    if(!on)return;
+    _tsPinchArm();
+    if(e.touches.length!==2)return;
     e.preventDefault();                      // 브라우저 확대가 끼어들지 않게
-    const n=_tsPinchSteps(_tsTouchDist(e.touches)/d0);
-    if(n===last)return;
-    last=n;
-    const a=opt.steps(),i=Math.max(0,Math.min(base+n,a.length-1));
-    if(Math.abs(a[i]-opt.get())>0.001)opt.set(a[i]);
+    const k=_tsTouchDist(e.touches)/d0;
+    if(!(k>0)||!isFinite(k))return;
+    const t=v0*k,cur=opt.get();
+    // 손 떨림에 값이 깜빡이지 않게, 옆 칸으로 옮길 때는 지금 값에서 6% 는 벗어나야 한다
+    if(Math.abs(Math.log(t/cur))<TS_SNAP_HYST)return;
+    const want=_tsNearest(_tsFine(opt.steps()),t);
+    if(Math.abs(want-cur)>0.001)opt.set(want);
   },{passive:false});
-  const end=e=>{if(!on)return;if(e&&e.touches&&e.touches.length>=2)return;on=false;};
+  const end=e=>{
+    if(!on)return;
+    _tsPinchArm();
+    if(e&&e.touches&&e.touches.length>0)return;   // 아직 손가락이 남아 있다 — 계속 막는다
+    on=false;_tsPinchOn=false;
+  };
   el.addEventListener('touchend',end,{passive:true});
   el.addEventListener('touchcancel',end,{passive:true});
 }
 function _syncVfTextScaleUI(){
-  const cur=_vfTextScale();
+  // 핀치는 사이값에 멈출 수 있다 → 가장 가까운 버튼에 불을 켠다
+  const onV=_tsNearest(VF_TEXT_STEPS,_vfTextScale());
   VF_TEXT_STEPS.forEach(v=>{
     const el=document.getElementById('vfTs'+Math.round(v*100));
-    if(el)el.classList.toggle('on',Math.abs(v-cur)<0.001);
+    if(el)el.classList.toggle('on',Math.abs(v-onV)<0.001);
   });
 }
 function _vfBgCss(t){
@@ -9122,6 +9148,7 @@ function _initEdgeBack(el,onBack){
   el._edgeBackReset=()=>{active=false;moved=false;clearPaint(false);};
   el.addEventListener('touchstart',e=>{
     if(painted)clearPaint(false);      // 혹시 남아 있던 흔적이 있으면 만지는 즉시 원상복구
+    if(_tsPinchBusy()){active=false;return;}       // 핀치 중·직후엔 가장자리 스와이프도 없다
     if(e.touches.length>1){active=false;return;}   // 두 손가락 = 핀치 등, 스와이프 아님
     const t=e.touches[0];
     active=(t.clientX<=EDGE);moved=false;
@@ -9190,6 +9217,8 @@ function _initVerseFullGestures(){
   let tapT=null,lastTap=0;
   _initEdgeBack(el,()=>closeVerseFull());   // 왼쪽 가장자리 → 오른쪽 = 닫기
   el.addEventListener('click',e=>{
+    // 핀치 끝자락에 딸려 오는 가짜 클릭 — 이걸 막지 않으면 말씀이 넘어간다
+    if(_tsPinchBusy()){e.preventDefault();e.stopPropagation();return;}
     if(e.target.closest('.vf-act,.vf-meta,#vfRef,.vf-tagchip,#vfClose'))return; // 버튼·필터는 그대로
     const now=Date.now();
     if(now-lastTap<300){                       // 두 번째 탭 → 좋아요
@@ -9221,8 +9250,12 @@ function _initVerseFullGestures(){
     if(iv)setTimeout(()=>{if(iv&&!iv._busy)iv.style.transition='';},220);
   };
   const stopLt=()=>{if(lt){clearTimeout(lt);lt=null;}};
+  const dropDrag=()=>{stopLt();_vfLongFired=false;if(dragging){snapBack();dragging=false;}dir=null;};
   el.addEventListener('touchstart',e=>{
     const iv=inner0();if(iv&&iv._busy)return;        // 커밋 애니 중엔 새 드래그 금지
+    // ⚠️ 핀치 중이거나 방금 끝났으면 손대지 않는다. 두 손가락은 동시에 떨어지지
+    //    않아서, 남은 한 손가락이 "새로 미는 손가락"으로 읽히면 말씀이 넘어간다.
+    if(_tsPinchBusy()){dropDrag();return;}
     // ⚠️ 두 손가락 = 글자 크기 핀치. 롱터치 대기와 세로 드래그를 여기서 끊는다.
     //    (안 끊으면 크기를 바꾸는 도중에 말씀 메뉴가 떠서 제스처가 끊긴다)
     if(e.touches.length>=2){
@@ -9234,7 +9267,7 @@ function _initVerseFullGestures(){
     lt=setTimeout(()=>{lt=null;_vfLongFired=true;openVerseMemMenu(el,null,{x:sx,y:sy});},500);
   },{passive:true});
   el.addEventListener('touchmove',e=>{
-    if(e.touches.length>=2){stopLt();if(dragging){snapBack();dragging=false;}dir=null;return;}
+    if(_tsPinchBusy()||e.touches.length>=2){dropDrag();return;}
     const t=e.touches&&e.touches[0];if(!t)return;
     const ddx=t.clientX-sx,ddy=t.clientY-sy;
     if(dir===null){
@@ -9252,6 +9285,7 @@ function _initVerseFullGestures(){
   },{passive:false});
   el.addEventListener('touchend',e=>{
     if(lt){clearTimeout(lt);lt=null;}
+    if(_tsPinchBusy()){dropDrag();return;}     // 핀치 끝자락의 손 떼기 — 넘기지 않는다
     if(_vfLongFired){e.preventDefault();setTimeout(()=>{_vfLongFired=false;},400);snapBack();dragging=false;dir=null;return;}
     if(!dragging){dir=null;return;}                   // 순수 탭 — 버튼 onclick이 처리
     e.preventDefault();
@@ -9269,7 +9303,7 @@ function _initVerseFullGestures(){
     get:()=>_vfTextScale(),
     steps:()=>[...VF_TEXT_STEPS].sort((a,b)=>a-b),
     set:v=>setVfTextScale(v),
-    onStart:()=>{stopLt();_vfLongFired=false;if(dragging){snapBack();dragging=false;}dir=null;},
+    onStart:dropDrag,
   });
   window.addEventListener('resize',()=>{if(_verseFullIsOpen())_vfLayoutText();});
   window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(_verseFullIsOpen())_vfLayoutText();},250);});
@@ -13052,6 +13086,8 @@ function _vcAttachGestures(host){
     };
     body.addEventListener('touchstart',e=>{
       stopHold();
+      // ⚠️ 핀치 중이거나 방금 끝났으면 손대지 않는다 (손가락이 동시에 안 떨어진다)
+      if(_tsPinchBusy()){if(dragging)snapBack();active=false;dragging=false;return;}
       if(isCtl(e.target)||e.touches.length!==1){active=false;return;}
       active=true;dragging=false;axis=0;
       window._rpLastTouchTs=Date.now();     // 뒤따라오는 가짜 click 을 막는다
@@ -13060,6 +13096,7 @@ function _vcAttachGestures(host){
       t=setTimeout(()=>{t=null;longFired=true;if(refOf())openVliMenu(x,y,refOf(),kindOf());},500);
     },{passive:true});
     body.addEventListener('touchmove',e=>{
+      if(_tsPinchBusy()){if(dragging)snapBack();active=false;dragging=false;return;}
       if(!active)return;
       const tt=e.touches[0];if(!tt)return;
       const dx=tt.clientX-sx,dy=tt.clientY-sy;
@@ -13081,6 +13118,7 @@ function _vcAttachGestures(host){
     },{passive:true});
     body.addEventListener('touchend',e=>{
       stopHold();
+      if(_tsPinchBusy()){if(dragging)snapBack();active=false;dragging=false;return;}
       if(!active)return;
       active=false;
       const wasDragging=dragging;dragging=false;
@@ -13097,6 +13135,7 @@ function _vcAttachGestures(host){
     },{passive:true});
     body.addEventListener('click',e=>{
       if(isCtl(e.target))return;
+      if(_tsPinchBusy())return;                             // 핀치 끝자락의 가짜 클릭
       if(Date.now()-(window._rpLastTouchTs||0)<700)return;   // 터치가 만든 가짜 클릭
       vcOpenFull(id);
     });
@@ -13135,7 +13174,9 @@ function renderVcSettings(){
   if(!box||!cfg)return;
   const id=_vcSetId;
   const cur=_vcTextScale(cfg);
-  const tsBtn=v=>`<button class="ts-btn${Math.abs(cur-v)<0.001?' on':''}" style="font-size:${VC_TS_PX[v]}px;" onclick="setVcTextScale('${id}',${v})">태초에…</button>`;
+  // 핀치는 사이값에 멈출 수 있다 → 딱 맞는 것이 없으면 **가장 가까운** 버튼에 불을 켠다
+  const onV=_tsNearest(VC_TS_STEPS,cur);
+  const tsBtn=v=>`<button class="ts-btn${Math.abs(onV-v)<0.001?' on':''}" style="font-size:${VC_TS_PX[v]}px;" onclick="setVcTextScale('${id}',${v})">태초에…</button>`;
   const themeChip=(key)=>{
     const on=key==null?!cfg.theme:cfg.theme===key;
     if(key==null){
@@ -13253,14 +13294,18 @@ function vcSetTextScaleLive(id,v){
   }
   if(_vcSetId===id)renderVcSettings();      // 설정 팝업이 열려 있으면 거기도
 }
-// 카드 안 −/+ — 단계 표 안에서 한 칸씩 (설정 팝업을 열지 않고 바로)
+// 카드 안 −/+ — 설정에 있는 단계로 한 칸씩 (설정 팝업을 열지 않고 바로).
+// ⚠️ 핀치는 사이값(0.7 같은 것)에 멈출 수 있다. 그래서 "몇 번째 칸"으로 세지 않고
+//    **지금 값보다 큰/작은 첫 설정 단계**를 찾는다 — 사이값에서도 한 칸만 움직인다.
 function vcStepTextScale(id,d){
   const cfg=_vcGet(id);
   if(!cfg)return;
-  const i=VC_TS_STEPS.indexOf(_vcTextScale(cfg));
-  const next=Math.max(0,Math.min((i<0?VC_TS_STEPS.indexOf(VC_TS_DEFAULT):i)+d,VC_TS_STEPS.length-1));
-  if(VC_TS_STEPS[next]===cfg.textScale)return;
-  cfg.textScale=VC_TS_STEPS[next];
+  const cur=_vcTextScale(cfg);
+  const next=(d>0)
+    ? VC_TS_STEPS.find(v=>v>cur+0.001)
+    : VC_TS_STEPS.filter(v=>v<cur-0.001).pop();
+  if(next==null)return;
+  cfg.textScale=next;
   save();renderRightPanel();
 }
 function setVcTheme(id,key){
