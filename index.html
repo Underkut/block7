@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-14  [production]  -->
+<!-- BLOCK7  v. 26-0812-15  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -221,8 +221,10 @@ header{
   letter-spacing:var(--vf-ls,0);font-family:var(--vf-font,inherit);word-break:keep-all;
   position:relative;}   /* 물결·별 덮개(.hi-ov)를 놓는 기준 상자 */
 /* ══ 강조 표시 (.hi-mark) — 시트 '강조 문구' 열을 본문에 칠한 자리 ══
-   전체화면·말씀카드 공용. **볼드와 형광펜은 서로 다른 스위치**라 따로 켜고 끄고,
-   둘 다 켜면 함께 걸린다. 뿌리 요소의 표식 두 개로 갈아끼운다.
+   전체화면·말씀카드 공용. 효과는 네 가지 — 굵게·형광펜·물결·별 — 이고 따로 켜고 끈다.
+   ⚠️ **효과는 조각마다 다르다** (겹쳐쓰기). 그래서 뿌리 요소의 표식이 아니라
+      조각에 붙은 hi-b / hi-p / hi-w / hi-s 를 본다. 뿌리 표식으로 되돌리지 말 것 —
+      그러면 한 구절의 모든 문구가 똑같은 효과가 되어 겹쳐쓰기가 뜻을 잃는다.
    ⚠️ **곧은** 밑줄은 만들었다가 없앴다 (2026-08-12, 보기에 별로였다). 되살리지 말 것.
       손글씨 물결 밑줄은 그것과 다른 것이고, HB 확인 후 v26-0812-13 에 들어왔다.
    ⚠️ 폭이 늘면 줄이 밀려난다. 실측(구절 전체를 강조하는 최악 조건 60구절)에서
@@ -232,11 +234,8 @@ header{
    ⚠️ 자리를 차지하지 않으므로 줄이 밀려나지 않는다. 여기에 폭·여백을 주지 말 것. */
 .hi-ov{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;}
 .cond-hide{display:none!important;}
-html[data-hibold="1"] .hi-mark{font-weight:var(--hi-fw,700);}
-/* 섞어 쓰기 — 문구마다 하나씩만. 형광펜 몫은 굵기를 되돌리고, 굵게 몫은 띠를 뺀다 */
-html[data-himix="1"] .hi-mark.hi-p{font-weight:inherit;}
-html[data-himix="1"] .hi-mark.hi-b{background:none;}
-html[data-hipen="1"] .hi-mark{
+.hi-mark.hi-b{font-weight:var(--hi-fw,700);}
+.hi-mark.hi-p{
   background:linear-gradient(transparent 56%,
     color-mix(in srgb,var(--vf-ac,var(--ac)) 32%,transparent) 56%);
   /* ⚠️ 좌우 여백 금지 — 여백만큼 글자 폭이 늘어 줄이 밀려난다 (실측 60구절 중 11번) */
@@ -2326,6 +2325,65 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 
 .settings-btn-row{display:flex;gap:8px;}
+/* ── 강조 표시 고르는 줄 (v26-0812-15) ──
+   왼쪽에 네 가지 종류(붙여 놓은 한 덩어리), 오른쪽에 겹쳐쓰기 스테퍼.
+   ⚠️ flex-wrap 이 "자리가 있으면 우측, 없으면 하방"을 그대로 해 준다.
+      hi-seg 의 flex-basis(196px)가 접히는 시점을 정한다 — 함부로 줄이지 말 것. */
+.hi-ctl-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.hi-seg{
+  flex:1 1 196px;display:flex;min-width:0;
+  border:1px solid var(--bd2);border-radius:10px;background:var(--s2);overflow:hidden;
+}
+.hi-seg button{
+  flex:1;min-width:0;height:38px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border:0;border-left:1px solid var(--bd2);background:transparent;
+  color:var(--tx2);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .13s,color .13s;
+}
+.hi-seg button:first-child{border-left:0;}
+.hi-seg button.on{background:rgba(90,112,248,.16);color:var(--tx);}
+.hi-seg button svg{width:22px;height:auto;display:block;}
+.hi-seg-b{font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;line-height:1;}
+/* ── 공유 이미지 설정 — 미리보기를 가운데 두고 네 귀퉁이에 버튼 (v26-0812-15) ──
+   버튼이 놓인 자리 = 그 항목이 이미지에서 나오는 자리. 이름표 대신 배치로 알려 준다. */
+.img-corners{
+  display:grid;gap:8px;
+  grid-template-columns:1fr auto 1fr;
+  grid-template-areas:"tl mid tr" "bl mid br";
+  align-items:center;
+}
+/* ⚠️ 가로세로 비는 실제 화면 비를 따른다 → 세로가 길면 설정창이 통째로 길어진다.
+   폭·높이를 둘 다 가둬 두면 어떤 비가 와도 자리가 흔들리지 않는다. */
+.img-corners > img{
+  grid-area:mid;display:block;align-self:center;border-radius:9px;
+  width:auto;height:auto;max-width:118px;max-height:186px;
+}
+.img-corners > .settings-btn{
+  flex:initial;width:100%;padding:9px 4px;font-size:12px;
+  display:flex;align-items:center;justify-content:center;min-height:38px;
+}
+.img-corners > [style*="tl"],.img-corners > [style*="tr"]{align-self:start;}
+.img-corners > [style*="bl"],.img-corners > [style*="br"]{align-self:end;}
+.img-ic-row{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;}
+.img-ic-row svg{width:13px;height:13px;flex-shrink:0;}
+.hi-step-wrap{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.hi-step-lbl{font-size:12px;color:var(--tx2);white-space:nowrap;}
+.hi-step{
+  display:flex;align-items:center;
+  border:1px solid var(--bd2);border-radius:10px;background:var(--s2);overflow:hidden;
+}
+.hi-step button{
+  width:32px;height:34px;padding:0;border:0;background:transparent;
+  color:var(--tx2);font-size:16px;line-height:1;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.hi-step button:disabled{opacity:.3;cursor:default;}
+.hi-step span{
+  min-width:26px;text-align:center;font-size:13px;color:var(--tx);
+  border-left:1px solid var(--bd2);border-right:1px solid var(--bd2);
+  line-height:34px;font-variant-numeric:tabular-nums;
+}
 .settings-btn{
   flex:1;padding:10px;border-radius:8px;
   border:1px solid var(--bd2);background:var(--s2);
@@ -2592,7 +2650,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-14";
+const APP_VERSION = "v. 26-0812-15";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3425,22 +3483,38 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section">
         <div class="settings-section-title">강조 표시</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. 전체화면과 말씀카드에 함께 적용돼요. 여러 개를 골라도 되고, 전부 끄면 강조가 없어요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-          <button id="setHiBold" class="settings-btn on" onclick="toggleHiMark('hiBold','setHiBold')">굵게</button>
-          <button id="setHiPen" class="settings-btn" onclick="toggleHiMark('hiPen','setHiPen')">형광펜</button>
-          <button id="setHiWave" class="settings-btn" onclick="toggleHiMark('hiWave','setHiWave')">물결 밑줄</button>
-          <button id="setHiStar" class="settings-btn" onclick="toggleHiMark('hiStar','setHiStar')">별 표시</button>
-        </div>
-        <div class="settings-row" id="setHiMixRow">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
-            <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
+        <!-- 네 가지를 붙여 놓은 한 덩어리. 복수 선택이라 라디오가 아니다.
+             두 개 이상 켜면 오른쪽에 '겹쳐쓰기'가 나타난다 (자리가 좁으면 아래로 접힌다) -->
+        <div class="hi-ctl-row">
+          <div class="hi-seg" role="group" aria-label="강조 표시 종류">
+            <button id="setHiBold" class="on" onclick="toggleHiMark('hiBold','setHiBold')" aria-label="굵게">
+              <span class="hi-seg-b">B</span>
+            </button>
+            <button id="setHiPen" onclick="toggleHiMark('hiPen','setHiPen')" aria-label="형광펜">
+              <svg viewBox="0 0 26 14"><rect x="2" y="4" width="22" height="6.5" rx="1.6" fill="var(--ac)" opacity=".62"/></svg>
+            </button>
+            <button id="setHiWave" onclick="toggleHiMark('hiWave','setHiWave')" aria-label="물결 밑줄">
+              <svg viewBox="0 0 26 18" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 2v5.4a4 4 0 0 0 8 0V2" stroke-width="1.7"/>
+                <path d="M3.5 14.4q2.6-2.4 5.2 0t5.2 0 5.2 0 3.9-1" stroke-width="1.5"/>
+              </svg>
+            </button>
+            <button id="setHiStar" onclick="toggleHiMark('hiStar','setHiStar')" aria-label="별 표시">
+              <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 2.6 3.2 16.4 19.4 7.6 2.9 7.9 18.3 16.8Z"/>
+              </svg>
+            </button>
           </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')">
-            <span class="settings-toggle-track"></span>
-          </label>
+          <div class="hi-step-wrap" id="setHiOverlapWrap">
+            <span class="hi-step-lbl">겹쳐쓰기</span>
+            <div class="hi-step">
+              <button id="setHiOvMinus" onclick="stepHiOverlap(-1)" aria-label="겹쳐쓰기 줄이기">−</button>
+              <span id="setHiOvVal">1</span>
+              <button id="setHiOvPlus" onclick="stepHiOverlap(1)" aria-label="겹쳐쓰기 늘리기">+</button>
+            </div>
+          </div>
         </div>
+        <div class="settings-row-desc" id="setHiOverlapDesc" style="margin-top:8px;"></div>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
@@ -3478,30 +3552,23 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- ── 공유 이미지 ── -->
       <div class="settings-section">
         <div class="settings-section-title">공유 이미지</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">이미지 카드에 넣을 항목을 골라요. 강조는 화면 설정과 따로 정해요.</div>
-        <!-- 3열 두 줄. 아랫줄은 가운데를 비우고 좌·우로 벌린다 -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-          <button id="imgHiBold" class="settings-btn on" onclick="toggleImgIncl('imgHiBold','imgHiBold')">굵게 강조</button>
-          <button id="imgHiPen" class="settings-btn" onclick="toggleImgIncl('imgHiPen','imgHiPen')">형광펜</button>
-          <button id="imgHiWave" class="settings-btn" onclick="toggleImgIncl('imgHiWave','imgHiWave')">물결 밑줄</button>
-          <button id="imgHiStar" class="settings-btn" onclick="toggleImgIncl('imgHiStar','imgHiStar')">별 표시</button>
-          <div></div>
-          <button id="imgBlock7" class="settings-btn on" onclick="toggleImgIncl('imgInclBlock7','imgBlock7')">BLOCK7</button>
-          <button id="imgLeft" class="settings-btn on" onclick="toggleImgIncl('imgInclLeft','imgLeft')">좌하단 정보</button>
-          <div></div>
-          <button id="imgActions" class="settings-btn on" onclick="toggleImgIncl('imgInclActions','imgActions')">우하단 버튼</button>
+        <div class="settings-row-desc" style="margin-bottom:10px;">이미지 카드에 넣을 항목을 골라요. 버튼이 놓인 자리가 이미지에서 그것이 나오는 자리예요. 강조는 '전체화면' 탭에서 정한 그대로 들어가요.</div>
+        <!-- 미리보기를 가운데 두고 네 귀퉁이에 버튼 — 어디에 나오는지 눈으로 알 수 있게 -->
+        <div class="img-corners">
+          <button id="imgHi" class="settings-btn on" style="grid-area:tl;" onclick="toggleImgIncl('imgHi','imgHi')">강조 표시</button>
+          <img id="imgSharePreview" alt="공유 이미지 미리보기" style="grid-area:mid;">
+          <button id="imgBlock7" class="settings-btn on" style="grid-area:tr;" onclick="toggleImgIncl('imgInclBlock7','imgBlock7')">BLOCK7</button>
+          <button id="imgLeft" class="settings-btn on" style="grid-area:bl;" onclick="toggleImgIncl('imgInclLeft','imgLeft')">주제, 태그</button>
+          <button id="imgActions" class="settings-btn on" style="grid-area:br;" onclick="toggleImgIncl('imgInclActions','imgActions')" aria-label="우하단 버튼">
+            <span class="img-ic-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z"/><path d="M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
+            </span>
+          </button>
         </div>
-        <div class="settings-row" id="imgHiMixRow">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">섞어서 쓰기</div>
-            <div class="settings-row-desc">둘 다 켰을 때, 겹쳐 쓰지 않고 문구마다 하나씩 나눠서 걸어요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <img id="imgSharePreview" alt="공유 이미지 미리보기" style="display:block;width:150px;border-radius:9px;margin:12px auto 0;">
       </div>
 
       <!-- ── 공유 이미지 크기 ── -->
@@ -8112,7 +8179,12 @@ function _hiRanges(flat,phrases){
 //    줄은 words.slice(i,j).join(' ') 이라 줄 사이는 늘 빈칸 한 칸이다.
 function _hiLinesHTML(lines,ranges,kindOf){
   if(!ranges||!ranges.length)return lines.map(esc).join('<br>');
-  const cls=i=>{const k=kindOf?kindOf(i):'both';return k==='both'?'hi-mark':('hi-mark hi-'+k);};
+  // 조각마다 걸린 효과를 클래스로 붙인다 — hi-b(굵게) hi-p(형광펜) hi-w(물결) hi-s(별).
+  // kindOf 가 없으면(테스트 등) 네 가지를 다 건 것으로 본다.
+  const cls=i=>{
+    const k=kindOf?kindOf(i):HI_KINDS;
+    return 'hi-mark'+(k&&k.length?' '+k.map(x=>'hi-'+x).join(' '):'');
+  };
   let off=0;
   return lines.map(line=>{
     const a=off,b=off+line.length;
@@ -8140,24 +8212,56 @@ function _hiLinesHTML(lines,ranges,kindOf){
 function _hiFw(fontKind){return fontKind==='serif'?600:700;}
 function _hiBold(){return (ST.settings||{}).hiBold!==false;}   // 기본 켬
 function _hiPen(){return (ST.settings||{}).hiPen===true;}      // 기본 끔
-function _hiMix(){return (ST.settings||{}).hiMix===true;}      // 기본 끔
 function _hiWave(){return (ST.settings||{}).hiWave===true;}    // 기본 끔 (손글씨 물결)
 function _hiStar(){return (ST.settings||{}).hiStar===true;}    // 기본 끔 (손글씨 별)
 // ⚠️ 물결·별만 켜도 강조 조각(.hi-mark)을 만들어야 한다 — 그게 덮개를 놓을 자리다
-function _hiOn(){return _hiBold()||_hiPen()||_hiWave()||_hiStar();}
-// ── 섞어 쓰기 ──
-// 둘 다 켰을 때 문구마다 **하나씩만** 걸리게 나눈다 (겹쳐 쓰지 않는다).
+function _hiOn(){return _hiKindsOn().length>0;}
+// 켜 둔 효과들 — 차례는 **항상 이 순서**다 (겹쳐쓰기 배정이 기기마다 같게 나오려면 고정이어야 한다)
+const HI_KINDS=['b','p','w','s'];        // 굵게 · 형광펜 · 물결 · 별
+function _hiKindsOn(){
+  const s=ST.settings||{};
+  return HI_KINDS.filter(k=>k==='b'?(s.hiBold!==false)
+                          :k==='p'?(s.hiPen===true)
+                          :k==='w'?(s.hiWave===true)
+                                  :(s.hiStar===true));
+}
+// ── 겹쳐쓰기 (v26-0812-15, 옛 '섞어서 쓰기'를 대신한다) ──
+// 문구 하나에 효과를 **몇 개까지 겹칠지** 정한다 (1~4).
+//   1 = 문구마다 하나씩만, 여러 문구에 골고루 나눠 건다
+//   n = 문구마다 n 개를 겹쳐 건다
+//   켠 효과 수보다 크면 그 수만큼만 걸린다 (4 를 골라도 두 개만 켰으면 둘 다)
+function _hiOverlap(){
+  const n=parseInt((ST.settings||{}).hiOverlap,10);
+  return (n>=1&&n<=4)?n:1;
+}
 // ⚠️ 진짜 무작위면 다시 그릴 때마다 바뀌어 깜빡인다. 본문에서 뽑은 값으로
-//    시작점을 정하고 번갈아 준다 — 구절마다 다르지만 **늘 같게** 나온다.
+//    자리를 정한다 — 구절마다 다르지만 **늘 같게** 나온다.
 function _hiHash(str){
   let h=0;const t=String(str||'');
   for(let i=0;i<t.length;i++){h=(h*31+t.charCodeAt(i))|0;}
   return Math.abs(h);
 }
-// i 번째 문구에 걸 것: 'b'=굵게 · 'p'=형광펜 · 'both'=둘 다
-function _hiKindAt(seed,i,bold,pen,mix){
-  if(!(bold&&pen&&mix))return'both';
-  return((_hiHash(seed)+i)%2===0)?'b':'p';
+// 켠 효과들을 구절마다 다른 차례로 섞는다 (구절이 같으면 늘 같은 차례)
+function _hiShuffle(kinds,seed){
+  const a=kinds.slice(),R=_hiRng(_hiHash(seed)+0x9e37);
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(R()*(i+1));
+    const t=a[i];a[i]=a[j];a[j]=t;
+  }
+  return a;
+}
+// i 번째 문구에 걸 효과들. 섞은 차례에서 **i 칸씩 밀며 n 개**를 집는다.
+// ⚠️ 순수 무작위로 뽑으면 한 구절의 문구들이 죄다 같은 효과가 되기도 한다.
+//    밀어 가며 집으면 이웃한 문구끼리 반드시 달라져 보기에 고르다.
+function _hiPickAt(seed,i,kinds,n){
+  const k=kinds.length;
+  if(k<=1)return kinds.slice();
+  n=Math.max(1,Math.min(n|0||1,k));
+  if(n>=k)return kinds.slice();
+  const a=_hiShuffle(kinds,seed),out=[];
+  for(let j=0;j<n;j++)out.push(a[(i*n+j)%k]);
+  // 화면과 공유 이미지가 같은 차례로 그리도록 늘 HI_KINDS 순으로 되돌린다
+  return HI_KINDS.filter(x=>out.indexOf(x)>=0);
 }
 // ══ 손글씨 물결 밑줄 · 별 (v26-0812-13, 종류는 v26-0812-14 에 물결1·별1 로 확정) ══
 // 굵게·형광펜과 달리 **글자 위에 따로 덮어 그린다.** 그래서 글자 폭이 1px도
@@ -8261,23 +8365,15 @@ function _hiStarPoly(fs,seed){
   const bw=Math.min(fs*A.base,r*.30);
   return _hiRibbon(_hiSmooth(pts,9),u=>bw*(.45+.55*Math.pow(Math.sin(Math.PI*u),.4))*wob(u));
 }
-// CSS 는 뿌리 요소의 표식 두 개만 본다
-function _hiApply(){
-  try{
-    const r=document.documentElement;
-    r.setAttribute('data-hibold',_hiBold()?'1':'0');
-    r.setAttribute('data-hipen',_hiPen()?'1':'0');
-    r.setAttribute('data-himix',(_hiBold()&&_hiPen()&&_hiMix())?'1':'0');
-  }catch(e){}
-}
+// ⚠️ 효과는 **조각마다 다르다**(겹쳐쓰기). 그래서 뿌리 요소의 표식이 아니라
+//    조각에 붙은 hi-b / hi-p / hi-w / hi-s 클래스를 CSS·JS 가 함께 본다.
 function _hiHTML(el,lines){
-  _hiApply();
   if(!_hiOn())return lines.map(esc).join('<br>');
   const phr=_hiPhrases({hi:el.getAttribute('data-hi')||''});
   if(!phr.length)return lines.map(esc).join('<br>');
   const flat=lines.join(' ');
-  return _hiLinesHTML(lines,_hiRanges(flat,phr),
-    i=>_hiKindAt(flat,i,_hiBold(),_hiPen(),_hiMix()));
+  const kinds=_hiKindsOn(),n=_hiOverlap();
+  return _hiLinesHTML(lines,_hiRanges(flat,phr),i=>_hiPickAt(flat,i,kinds,n));
 }
 // 물결·별을 글자 위에 덮어 그린다. innerHTML 을 넣은 **직후**에 부른다.
 // ⚠️ innerHTML 을 다시 넣으면 덮개도 같이 지워진다 → 다시 그릴 때마다 불러야 한다.
@@ -8309,15 +8405,18 @@ function _hiOverlay(el){
     svg.appendChild(p);
   };
   marks.forEach((m,mi)=>{
+    // ⚠️ 겹쳐쓰기 때문에 조각마다 걸린 효과가 다르다 → 전체 설정이 아니라 **클래스**를 본다
+    const wantW=m.classList.contains('hi-w'),wantS=m.classList.contains('hi-s');
+    if(!wantW&&!wantS)return;
     const seed=_hiHash(m.textContent+'|'+mi);
     const rects=m.getClientRects();
     for(let i=0;i<rects.length;i++){
       const r=rects[i];
       const x=r.left-ox,y=r.top-oy,w=r.width,h=r.height;
       if(w<=0)continue;
-      if(_hiWave())put(_hiWavePoly(w,fs,seed+i*7919),x,y+h*HI_POS.wave);
+      if(wantW)put(_hiWavePoly(w,fs,seed+i*7919),x,y+h*HI_POS.wave);
       // 별은 문구 **끝 글자 위쪽**에 하나만. 낱말 사이 빈칸에 놓으면 뒤 글자와 겹친다.
-      if(_hiStar()&&m.classList.contains('hi-end')&&i===rects.length-1)
+      if(wantS&&m.classList.contains('hi-end')&&i===rects.length-1)
         put(_hiStarPoly(fs,seed+i*7919),
             x+w-fs*HI_ART.star*HI_POS.starRight,y-fs*HI_ART.star*HI_POS.starUp);
     }
@@ -8681,12 +8780,9 @@ function _vfRenderCard(opt){
   const sameAsScreen=opt.verse&&curV&&opt.verse.ref===curV.ref&&(opt.verse.krText||'')===(curV.krText||'');
   const size=opt.size||null;                       // [W,H] 고정 크기 (없으면 화면 그대로)
   const needTemp=(!!opt.verse&&!sameAsScreen)||!_verseFullIsOpen()||!!size;
-  const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);
-  const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);
-  const hiMix=opt.hiMix!==undefined?opt.hiMix:(s.imgHiMix===true);
-  const hiWave=opt.hiWave!==undefined?opt.hiWave:(s.imgHiWave===true);
-  const hiStar=opt.hiStar!==undefined?opt.hiStar:(s.imgHiStar===true);
-  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,hiBold,hiPen,hiMix,hiWave,hiStar,theme:opt.theme,counts:opt.counts,size});
+  // 강조는 **화면에서 정한 그대로** 쓴다. 공유 탭은 통째로 켜고 끄기만 한다 (v26-0812-15)
+  const hiOn=opt.hiOn!==undefined?opt.hiOn:(s.imgHi!==false);
+  const draw=()=>_shotDraw({inclLeft,inclActions,inclBlock7,hiOn,theme:opt.theme,counts:opt.counts,size});
   const cv=needTemp?_withFullscreenLayout(opt.verse||null,draw,size):draw();
   if(!cv)throw new Error('레이아웃을 읽지 못했어요');
   return cv;
@@ -8739,13 +8835,13 @@ function _shotDraw(o){
     const fontOf=b=>`${b?hiFw:cs.fontWeight} ${fs}px ${cs.fontFamily}`;
     ctx.fillStyle=cs.color;ctx.textBaseline='middle';
     const cx=X(r.left+r.width/2);
-    // 공유 이미지의 강조는 **화면 설정과 따로** 정한다 (공유 탭)
-    const hb=o.hiBold!==false,hp=o.hiPen===true,hm=o.hiMix===true;
-    const hw=o.hiWave===true,hs=o.hiStar===true;
+    // 공유 이미지의 강조는 **화면에서 정한 그대로** 쓴다 (공유 탭은 켜고 끄기만, v26-0812-15).
+    const kindsOn=o.hiOn===false?[]:_hiKindsOn();
+    const ovl=_hiOverlap();
     const flat=lines.join(' ');
-    const ranges=(hb||hp||hw||hs)?_hiRanges(flat,_hiPhrases({hi:tEl.getAttribute('data-hi')||''})):[];
-    // 섞어 쓸 때는 문구마다 하나씩만 — 화면과 같은 방식으로 나눈다
-    const kindAt=i=>_hiKindAt(flat,i,hb,hp,hm);
+    const ranges=kindsOn.length?_hiRanges(flat,_hiPhrases({hi:tEl.getAttribute('data-hi')||''})):[];
+    // 겹쳐쓰기 배정 — 화면과 **같은 함수·같은 씨앗**이라 그림이 어긋나지 않는다
+    const kindAt=i=>_hiPickAt(flat,i,kindsOn,ovl);
     if(!ranges.length){
       ctx.font=fontOf(false);ctx.textAlign='center';
       lines.forEach((ln,i)=>ctx.fillText(ln,cx,Y(r.top+lh*(i+0.5))));
@@ -8763,9 +8859,10 @@ function _shotDraw(o){
           const st=Math.max(g[0],a),en=Math.min(g[1],b);
           if(st>=en)return;
           if(st-a>pos)segs.push({t:ln.slice(pos,st-a),hi:false});
-          const k=kindAt(gi);
+          const k=kindAt(gi);                   // 이 문구에 걸린 효과들
           segs.push({t:ln.slice(st-a,en-a),hi:true,
-                     b:hb&&(k!=='p'),p:hp&&(k!=='b'),
+                     b:k.indexOf('b')>=0,p:k.indexOf('p')>=0,
+                     w:k.indexOf('w')>=0,s:k.indexOf('s')>=0,
                      last:en===g[1]});          // 그 문구의 마지막 조각 (별은 여기에만)
           pos=en-a;
         });
@@ -8785,13 +8882,13 @@ function _shotDraw(o){
             ctx.fillStyle=prev;
           }
           ctx.fillText(sg.t,x,y);
-          if(sg.hi&&w>0&&(hw||hs)){
+          if(sg.hi&&w>0&&(sg.w||sg.s)){
             // 여기 y 는 글자의 **한가운데**다(textBaseline='middle').
             // 화면은 글자 상자의 위/아래를 재서 놓으므로, 상자 높이를 fs*1.16 으로 보고 맞춘다.
             const seed=_hiHash(sg.t+'|'+mi);
             const top=y-fs*HI_POS.boxH/2;
-            if(hw)art.push({pts:_hiWavePoly(w,fs,seed),dx:x,dy:top+fs*HI_POS.boxH*HI_POS.wave});
-            if(hs&&sg.last)art.push({pts:_hiStarPoly(fs,seed),
+            if(sg.w)art.push({pts:_hiWavePoly(w,fs,seed),dx:x,dy:top+fs*HI_POS.boxH*HI_POS.wave});
+            if(sg.s&&sg.last)art.push({pts:_hiStarPoly(fs,seed),
               dx:x+w-fs*HI_ART.star*HI_POS.starRight,dy:top-fs*HI_ART.star*HI_POS.starUp});
           }
           if(sg.hi)mi++;
@@ -9055,31 +9152,43 @@ function _copyTextFallback(text){
   }catch(e){showToast('복사를 지원하지 않는 환경이에요');}
 }
 // ── 공유 설정 (말씀 설정창) : 칩 on/off · 장절 형식 · 미리보기 ──
-// ⚠️ 이 함수는 값이 없으면 **켜진 것**으로 읽는다(imgIncl* 는 다 기본 켬).
-//    공유 형광펜만 기본이 꺼짐이라 따로 적어 둔다 — 안 그러면 첫 클릭에 꺼진다.
-const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix','imgHiWave','imgHiStar'];
+// ⚠️ 이 함수는 값이 없으면 **켜진 것**으로 읽는다 — 공유 탭 버튼은 다 기본 켬이다.
 function toggleImgIncl(key,btnId){
   const el=document.getElementById(btnId);
-  if(el&&el.tagName==='INPUT'){            // 체크박스는 스스로 값을 바꾼다
-    ST.settings[key]=!!el.checked;save();
-  }else{
-    const cur=_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true):(ST.settings[key]!==false);
-    ST.settings[key]=!cur;save();
-    el&&el.classList.toggle('on',!cur);
-  }
-  _syncHiMixRows();_renderSharePreview();
+  const cur=ST.settings[key]!==false;
+  ST.settings[key]=!cur;save();
+  el&&el.classList.toggle('on',!cur);
+  _renderSharePreview();
 }
-// '섞어서 쓰기' 는 **굵게와 형광펜을 둘 다 켰을 때만** 뜻이 있다 → 그때만 보여 준다.
+// '겹쳐쓰기' 는 **두 가지 이상 켰을 때만** 뜻이 있다 → 그때만 보여 준다.
 // ⚠️ style.display 를 건드리지 않는다 (설정창 등급이 .lv-hide 로 감추는 것과 싸운다)
-function _syncHiMixRows(){
+const _HI_OVL_DESC=['','문구마다 한 가지씩만, 여러 문구에 골고루 나눠 걸어요',
+  '문구마다 두 가지를 겹쳐 걸어요','문구마다 세 가지를 겹쳐 걸어요',
+  '모든 문구에 네 가지를 한꺼번에 걸어요'];
+// 강조 표시 칸 네 개 + 겹쳐쓰기 줄을 저장값에 맞춘다.
+// ⚠️ 이 UI 는 **말씀 설정창**(전체화면 탭)에 있다. 일반 설정창만 맞춰 주면
+//    말씀 설정창을 바로 열었을 때 켜진 표시가 실제와 어긋난다 (0812-15 이전의 버그).
+//    그래서 두 설정창이 모두 이 함수를 부른다.
+function _syncHiUI(){
   const s=ST.settings||{};
-  const set=(rowId,boxId,both,on)=>{
-    document.getElementById(rowId)?.classList.toggle('cond-hide',!both);
-    const b=document.getElementById(boxId);
-    if(b)b.checked=!!on;
-  };
-  set('setHiMixRow','setHiMix',_hiBold()&&_hiPen(),s.hiMix===true);
-  set('imgHiMixRow','imgHiMix',(s.imgHiBold!==false)&&(s.imgHiPen===true),s.imgHiMix===true);
+  document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false);
+  document.getElementById('setHiPen')?.classList.toggle('on',s.hiPen===true);
+  document.getElementById('setHiWave')?.classList.toggle('on',s.hiWave===true);
+  document.getElementById('setHiStar')?.classList.toggle('on',s.hiStar===true);
+  _syncHiOverlapRow();
+}
+function _syncHiOverlapRow(){
+  const kinds=_hiKindsOn(),max=Math.max(1,kinds.length);
+  // 고른 종류가 줄면 겹쳐쓰기 값도 따라 줄인다 (2 만 켰는데 3 이 남아 있으면 안 된다)
+  let n=Math.min(max,_hiOverlap());
+  if(n!==_hiOverlap()){ST.settings.hiOverlap=n;save();}
+  document.getElementById('setHiOverlapWrap')?.classList.toggle('cond-hide',kinds.length<2);
+  document.getElementById('setHiOverlapDesc')?.classList.toggle('cond-hide',kinds.length<2);
+  const v=document.getElementById('setHiOvVal');if(v)v.textContent=String(n);
+  const mi=document.getElementById('setHiOvMinus');if(mi)mi.disabled=(n<=1);
+  const pl=document.getElementById('setHiOvPlus');if(pl)pl.disabled=(n>=max);
+  const d=document.getElementById('setHiOverlapDesc');
+  if(d)d.textContent=kinds.length<2?'':(_HI_OVL_DESC[n]||'');
 }
 function toggleTxtIncl(key,btnId){
   const cur=!!ST.settings[key];ST.settings[key]=!cur;save();
@@ -9104,9 +9213,8 @@ function _renderSharePreview(){
 function _syncShareSettingsUI(){
   const s=ST.settings||{},set=(id,on)=>document.getElementById(id)?.classList.toggle('on',!!on);
   set('imgLeft',s.imgInclLeft!==false);set('imgActions',s.imgInclActions!==false);set('imgBlock7',s.imgInclBlock7!==false);
-  set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);   // 공유 이미지 전용 강조
-  set('imgHiWave',s.imgHiWave===true);set('imgHiStar',s.imgHiStar===true);
-  _syncHiMixRows();
+  set('imgHi',s.imgHi!==false);            // 강조를 이미지에 넣을지 (종류는 화면 설정 그대로)
+  _syncHiUI();                             // 전체화면 탭의 강조 칸도 같은 창에 있다
   set('txtCat',!!s.txtInclCat);set('txtTopic',!!s.txtInclTopic);set('txtTag',!!s.txtInclTag);
   const st=s.txtRefStyle||'short';set('txtRefShort',st==='short');set('txtRefLong',st==='long');
   const br=s.txtRefBracket||'none';set('txtBrNone',br==='none');set('txtBrParen',br==='paren');set('txtBrSquare',br==='square');
@@ -10711,7 +10819,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiMix:false,hiWave:false,hiStar:false,imgHiBold:true,imgHiPen:false,imgHiMix:false,imgHiWave:false,imgHiStar:false,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,imgHi:true,uiLevelIconSet:'animal',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -20205,11 +20313,7 @@ function renderSettingsPanel(){
     document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
   });
   document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
-  document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false);
-  document.getElementById('setHiPen')?.classList.toggle('on',s.hiPen===true);
-  document.getElementById('setHiWave')?.classList.toggle('on',s.hiWave===true);
-  document.getElementById('setHiStar')?.classList.toggle('on',s.hiStar===true);
-  _syncHiMixRows();
+  _syncHiUI();
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
   document.getElementById('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
@@ -20311,18 +20415,24 @@ function _renderMonthTitleFormatBtns(){
     `<button class="preset-btn${f===k?' on':''}" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('monthTitleFormat','${k}')">${label}</button>`
   ).join('');
 }
-// 강조 표시 버튼 — 굵게·형광펜을 따로 켜고 끈다(복수 선택). 누르는 즉시 반영.
+// 강조 표시 — 네 가지를 따로 켜고 끈다(복수 선택). 누르는 즉시 반영.
 function toggleHiMark(key,btnId){
-  if(key==='hiMix'){                       // 체크박스는 스스로 값을 바꾼다
-    updateSetting('hiMix',!!document.getElementById(btnId)?.checked);
-  }else{
-    const cur=key==='hiBold'?_hiBold():key==='hiPen'?_hiPen():key==='hiWave'?_hiWave():_hiStar();
-    const on=!cur;
-    updateSetting(key,on);
-    document.getElementById(btnId)?.classList.toggle('on',on);
-  }
-  _syncHiMixRows();
-  _hiApply();
+  const cur=key==='hiBold'?_hiBold():key==='hiPen'?_hiPen():key==='hiWave'?_hiWave():_hiStar();
+  const on=!cur;
+  updateSetting(key,on);
+  document.getElementById(btnId)?.classList.toggle('on',on);
+  _hiRefreshAll();
+}
+// 겹쳐쓰기 스테퍼 — 켠 종류 수를 넘지 않게 가둔다 (두 개만 켰는데 3 은 뜻이 없다)
+function stepHiOverlap(d){
+  const max=Math.max(1,_hiKindsOn().length);
+  const n=Math.min(max,Math.max(1,_hiOverlap()+d));
+  updateSetting('hiOverlap',n);
+  _hiRefreshAll();
+}
+// 강조를 건드린 뒤 화면 세 곳을 다시 그린다 (전체화면 · 말씀카드 · 공유 미리보기)
+function _hiRefreshAll(){
+  _syncHiOverlapRow();
   if(_verseFullIsOpen())_vfLayoutText();
   renderRightPanel();
   _renderSharePreview();
