@@ -19,12 +19,13 @@ eval(
   slice("// ══════ 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 ══════",
         '// ══════ 강조 표시 끝 ══════') +
   ';Object.assign(globalThis,{HI_SPLIT,_hiPhrases,_hiSquash,_hiRanges,' +
-  '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw,_hiMix,_hiHash,_hiKindAt,_hiWave,_hiStar,'+
+  '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw,_hiHash,_hiWave,_hiStar,'+
+  '_hiKindsOn,_hiOverlap,_hiShuffle,_hiPickAt,HI_KINDS,'+
   '_hiRng,_hiSmooth,_hiRibbon,_hiWob,_hiWavePoly,_hiStarPoly,HI_ART,HI_POS});'
 );
 
 const TEXT = '태초에 말씀이 계시니라 이 말씀이 하나님과 함께 계셨으니 이 말씀은 곧 하나님이시니라';
-const marks = html => (html.match(/<span class="hi-mark(?: hi-end)?">(.*?)<\/span>/g) || [])
+const marks = html => (html.match(/<span class="hi-mark[^"]*">(.*?)<\/span>/g) || [])
   .map(s => s.replace(/<[^>]+>/g, ''));
 
 // ═══ 1. 한 칸에 여러 문구 ═══
@@ -149,10 +150,12 @@ console.log('\n시나리오 7 — 새 항목이 걸러지지 않는가');
   // ⚠️ 형광펜에 좌우 여백을 주면 그만큼 폭이 늘어 줄이 밀려난다 (실측 60구절 중 11번)
   // ⚠️ 규칙 **한 덩어리 안**만 본다 ([^}] — 다음 규칙까지 넘어가면 늘 걸린다)
   sc.eq('형광펜에 좌우 여백을 주지 않는다',
-        /html\[data-hipen="1"\] \.hi-mark\{[^}]*padding:/.test(SRC), false);
-  // 두 스위치가 각각 걸린다
-  sc.eq('굵게 CSS', SRC.includes('html[data-hibold="1"] .hi-mark{font-weight:var(--hi-fw,700);}'), true);
-  sc.eq('형광펜 CSS', SRC.includes('html[data-hipen="1"] .hi-mark{'), true);
+        /\.hi-mark\.hi-p\{[^}]*padding:/.test(SRC), false);
+  // 네 효과가 각각 걸린다 — **조각에 붙은 클래스**로 (겹쳐쓰기 때문에 조각마다 다르다)
+  sc.eq('굵게 CSS', SRC.includes('.hi-mark.hi-b{font-weight:var(--hi-fw,700);}'), true);
+  sc.eq('형광펜 CSS', SRC.includes('.hi-mark.hi-p{'), true);
+  // ⚠️ 뿌리 표식으로 되돌리면 한 구절의 모든 문구가 같은 효과가 되어 겹쳐쓰기가 뜻을 잃는다
+  sc.eq('뿌리 표식으로 걸지 않는다', /html\[data-hi(bold|pen|mix)=/.test(SRC), false);
   // ⚠️ 밑줄은 만들었다가 없앴다 — 되살아나지 않았는지 본다
   sc.eq('밑줄은 없앴다', SRC.includes('data-histyle'), false);
   sc.eq('밑줄 CSS 도 없다', /\.hi-mark\{[^}]*text-decoration:underline/.test(SRC), false);
@@ -188,39 +191,66 @@ console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
   // 제목은 소제목이 아니라 구역 제목(굵게)
   sc.eq('구역 제목으로', full.includes('<div class="settings-section-title">강조 표시</div>'), true);
   sc.eq('소제목이 아니다', /font-weight:600;color:var\(--tx2\);">강조 표시</.test(SRC), false);
-  // 토글이 아니라 사각 테두리 버튼 · 복수 선택
-  sc.eq('굵게 버튼', SRC.includes(`id="setHiBold" class="settings-btn on" onclick="toggleHiMark('hiBold','setHiBold')"`), true);
-  sc.eq('형광펜 버튼', SRC.includes(`id="setHiPen" class="settings-btn" onclick="toggleHiMark('hiPen','setHiPen')"`), true);
-  sc.eq('물결 버튼', SRC.includes(`id="setHiWave" class="settings-btn" onclick="toggleHiMark('hiWave','setHiWave')"`), true);
-  sc.eq('별 버튼', SRC.includes(`id="setHiStar" class="settings-btn" onclick="toggleHiMark('hiStar','setHiStar')"`), true);
-  sc.eq('네 개가 2×2 격자', /강조 표시<\/div>[\s\S]{0,400}?grid-template-columns:repeat\(2,1fr\)/.test(SRC), true);
+  // 0812-15: 붙여 놓은 한 덩어리(세그먼티드) · 복수 선택 · 아이콘
+  const seg = full.slice(full.indexOf('class="hi-seg"'), full.indexOf('hi-step-wrap'));
+  sc.eq('한 덩어리로 묶었다', full.includes('<div class="hi-seg"'), true);
+  sc.eq('네 칸 차례', [...seg.matchAll(/<button id="(setHi\w+)"/g)].map(m => m[1]),
+        ['setHiBold', 'setHiPen', 'setHiWave', 'setHiStar']);
+  sc.eq('굵게 칸', seg.includes(`id="setHiBold" class="on" onclick="toggleHiMark('hiBold','setHiBold')"`), true);
+  sc.eq('형광펜 칸', seg.includes(`id="setHiPen" onclick="toggleHiMark('hiPen','setHiPen')"`), true);
+  sc.eq('물결 칸', seg.includes(`id="setHiWave" onclick="toggleHiMark('hiWave','setHiWave')"`), true);
+  sc.eq('별 칸', seg.includes(`id="setHiStar" onclick="toggleHiMark('hiStar','setHiStar')"`), true);
+  // 글자 대신 그림이라 읽어 줄 이름이 따로 있어야 한다
+  sc.eq('네 칸 모두 이름표', (seg.match(/<button [^>]*aria-label="/g) || []).length, 4);
   sc.eq('토글은 안 쓴다', full.includes('setHiBold" onchange'), false);
+  // 칸끼리 맞붙는다 — 칸 사이 선 하나로 나눈다 (칸마다 테두리를 두르지 않는다)
+  sc.eq('칸을 맞붙인다', SRC.includes('.hi-seg{'), true);
+  sc.eq('칸 사이는 선 하나', SRC.includes('.hi-seg button:first-child{border-left:0;}'), true);
+  // 겹쳐쓰기 스테퍼 — 자리가 있으면 우측, 없으면 아래로 (flex-wrap 이 해 준다)
+  sc.eq('스테퍼가 있다', full.includes('<div class="hi-step">'), true);
+  sc.eq('빼기·더하기', full.includes('stepHiOverlap(-1)') && full.includes('stepHiOverlap(1)'), true);
+  sc.eq('우측 아니면 하방', /\.hi-ctl-row\{[^}]*flex-wrap:wrap/.test(SRC), true);
   // 누르면 바로 반영 — 화면 둘 + 공유 미리보기
   sc.eq('바로 반영', SRC.includes('function toggleHiMark(key,btnId){'), true);
-  sc.eq('전체화면 다시 그리기', /function toggleHiMark[\s\S]*?if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);/.test(SRC), true);
-  sc.eq('말씀카드 다시 그리기', /function toggleHiMark[\s\S]*?renderRightPanel\(\);/.test(SRC), true);
+  sc.eq('전체화면 다시 그리기', /function _hiRefreshAll[\s\S]*?if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);/.test(SRC), true);
+  sc.eq('말씀카드 다시 그리기', /function _hiRefreshAll[\s\S]*?renderRightPanel\(\);/.test(SRC), true);
+  sc.eq('공유 미리보기도', /function _hiRefreshAll[\s\S]*?_renderSharePreview\(\);/.test(SRC), true);
   sc.eq('버튼 상태 맞추기', SRC.includes("document.getElementById('setHiBold')?.classList.toggle('on',s.hiBold!==false)"), true);
-  sc.eq('새 사용자 기본값', SRC.includes('hiBold:true,hiPen:false,'), true);
+  // ⚠️ 이 UI 는 **말씀 설정창**에 있다 — 일반 설정창만 맞춰 주면 켜진 표시가 어긋난다
+  sc.eq('맞추는 함수가 하나', SRC.includes('function _syncHiUI()'), true);
+  sc.eq('말씀 설정창도 부른다',
+        /function _syncShareSettingsUI\(\)[\s\S]*?_syncHiUI\(\);/.test(SRC), true);
+  sc.eq('일반 설정창도 부른다',
+        /function renderSettingsPanel\(\)[\s\S]*?_syncHiUI\(\);/.test(SRC), true);
+  // ⚠️ 첫 사용자는 **볼드만** 켜져 있어야 한다
+  sc.eq('새 사용자 기본값', SRC.includes('hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,'), true);
 }
 
 // ═══ 10. 공유 이미지 — 화면과 따로 정한다 ═══
 console.log('\n시나리오 10 — 공유 이미지의 강조');
 {
   const share = SRC.slice(SRC.indexOf('id="vstab-share"'), SRC.indexOf('공유 이미지 크기'));
-  // 3열 두 줄 — 1행 굵게강조·형광펜·BLOCK7 / 2행 좌하단·(빈칸)·우하단
-  sc.eq('3열 격자', share.includes('grid-template-columns:repeat(3,1fr)'), true);
+  // 0812-15: 미리보기를 가운데 두고 네 귀퉁이에 버튼 — 자리가 곧 설명이다
+  sc.eq('네 귀퉁이 배치', share.includes('class="img-corners"'), true);
+  sc.eq('가운데가 미리보기',
+        /\.img-corners\{[^}]*grid-template-areas:"tl mid tr" "bl mid br"/.test(SRC), true);
   sc.eq('버튼 차례',
         [...share.matchAll(/<button id="(img\w+)"/g)].map(m => m[1]),
-        ['imgHiBold', 'imgHiPen', 'imgHiWave', 'imgHiStar', 'imgBlock7', 'imgLeft', 'imgActions']);
-  sc.eq('가운데 칸을 비운다', /<button id="imgLeft"[^>]*>[^<]*<\/button>\s*\n\s*<div><\/div>/.test(share), true);
-  // 공유 전용 값 — 화면 설정(hiBold/hiPen)과 섞이지 않는다
-  sc.eq('공유 전용 기본값', SRC.includes('imgHiBold:true,imgHiPen:false,'), true);
-  sc.eq('공유 값을 따로 읽는다', SRC.includes('const hiBold=opt.hiBold!==undefined?opt.hiBold:(s.imgHiBold!==false);'), true);
-  sc.eq('형광펜도 따로', SRC.includes('const hiPen=opt.hiPen!==undefined?opt.hiPen:(s.imgHiPen===true);'), true);
-  // ⚠️ toggleImgIncl 은 "값이 없으면 켜짐"으로 읽는다 — 기본 꺼짐인 것은 따로 적어 둬야 한다
-  sc.eq('기본 꺼짐 목록', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix','imgHiWave','imgHiStar'];"), true);
-  sc.eq('그 목록을 실제로 쓴다', SRC.includes('_IMG_OFF_BY_DEFAULT.includes(key)?(ST.settings[key]===true)'), true);
-  sc.eq('설정창에서 상태 맞추기', SRC.includes("set('imgHiBold',s.imgHiBold!==false);set('imgHiPen',s.imgHiPen===true);"), true);
+        ['imgHi', 'imgBlock7', 'imgLeft', 'imgActions']);
+  sc.eq('좌상단은 강조', share.includes('style="grid-area:tl;" onclick="toggleImgIncl(\'imgHi\',\'imgHi\')">강조 표시<'), true);
+  sc.eq('우상단은 BLOCK7', share.includes('style="grid-area:tr;"') && share.includes('>BLOCK7<'), true);
+  sc.eq('좌하단은 주제·태그', share.includes('style="grid-area:bl;"') && share.includes('>주제, 태그<'), true);
+  sc.eq('우하단은 아이콘만', share.includes('style="grid-area:br;"') && share.includes('class="img-ic-row"'), true);
+  sc.eq('아이콘 다섯 개',
+        (share.slice(share.indexOf('img-ic-row')).match(/<svg /g) || []).length, 5);
+  sc.eq('우하단에 글자를 넣지 않는다',
+        /[가-힣]/.test(share.slice(share.indexOf('img-ic-row'), share.indexOf('</button>', share.indexOf('img-ic-row')))), false);
+  // 종류별 버튼과 '섞어서 쓰기' 는 공유 탭에서 없앴다 (화면 설정 하나만 따른다)
+  sc.eq('종류별 버튼 없음', /id="imgHi(Bold|Pen|Wave|Star|Mix)"/.test(SRC), false);
+  sc.eq('공유 기본값은 켬', SRC.includes('imgHi:true,'), true);
+  sc.eq('공유는 켜고 끄기만', SRC.includes('const hiOn=opt.hiOn!==undefined?opt.hiOn:(s.imgHi!==false);'), true);
+  sc.eq('종류는 화면 설정 그대로', SRC.includes('const kindsOn=o.hiOn===false?[]:_hiKindsOn();'), true);
+  sc.eq('설정창에서 상태 맞추기', SRC.includes("set('imgHi',s.imgHi!==false);"), true);
   // 그리는 쪽 — 줄을 조각으로 나눠 굵기·형광펜을 입힌다
   sc.eq('조각으로 나눠 그린다', SRC.includes('segs.push({t:ln.slice(st-a,en-a),hi:true,'), true);
   sc.eq('조각 폭을 각자의 글꼴로 잰다',
@@ -253,80 +283,107 @@ console.log('\n시나리오 11 — 고딕은 한 단계 더 굵게');
   sc.eq('600 을 박아 두지 않는다', SRC.includes('.hi-mark{font-weight:600;}'), false);
 }
 
-// ═══ 12. 섞어서 쓰기 ═══
-console.log('\n시나리오 12 — 굵게와 형광펜을 문구마다 나눠 걸기');
+// ═══ 12. 겹쳐쓰기 (0812-15, 옛 '섞어서 쓰기'를 대신한다) ═══
+console.log('\n시나리오 12 — 문구마다 효과 몇 개를 겹칠지');
 {
+  // ⚠️ 여기서 미끄러지기 쉬운 것:
+  //   ① 켠 종류보다 큰 수를 고를 수 있으면 안 된다 (둘만 켰는데 3 은 뜻이 없다)
+  //   ② 순수 무작위로 뽑으면 한 구절의 문구가 죄다 같은 효과가 되기도 한다
+  //   ③ 다시 그릴 때마다 바뀌면 깜빡인다
   ST.settings = {};
-  sc.eq('처음엔 꺼짐', _hiMix(), false);
-  ST.settings.hiMix = true;
-  sc.eq('켜면 켜짐', _hiMix(), true);
+  sc.eq('처음엔 1', _hiOverlap(), 1);
+  ST.settings.hiOverlap = 3;
+  sc.eq('고른 값을 읽는다', _hiOverlap(), 3);
+  ST.settings.hiOverlap = 9;
+  sc.eq('범위 밖은 1 로', _hiOverlap(), 1);
   ST.settings = {};
 
-  // 둘 다 켜고 섞기를 켰을 때만 나뉜다
-  sc.eq('굵게만이면 안 나눈다', _hiKindAt('씨앗', 0, true, false, true), 'both');
-  sc.eq('형광펜만이면 안 나눈다', _hiKindAt('씨앗', 0, false, true, true), 'both');
-  sc.eq('섞기를 끄면 겹쳐 쓴다', _hiKindAt('씨앗', 0, true, true, false), 'both');
-  // ⚠️ 문구마다 하나씩 — 이웃끼리는 늘 다르다
+  // 켠 종류 모으기 — 차례는 늘 굵게·형광펜·물결·별
+  sc.eq('종류 차례가 고정', HI_KINDS, ['b', 'p', 'w', 's']);
+  ST.settings = {};
+  sc.eq('기본은 굵게만', _hiKindsOn(), ['b']);
+  ST.settings = { hiBold: true, hiPen: true, hiWave: true, hiStar: true };
+  sc.eq('넷 다 켜면 넷', _hiKindsOn(), ['b', 'p', 'w', 's']);
+  ST.settings = { hiBold: false, hiPen: true, hiStar: true };
+  sc.eq('켠 것만, 차례대로', _hiKindsOn(), ['p', 's']);
+  ST.settings = {};
+
   const seed = '태초에 말씀이 계시니라';
-  const kinds = [0, 1, 2, 3].map(i => _hiKindAt(seed, i, true, true, true));
-  sc.eq('둘 중 하나씩만', kinds.every(k => k === 'b' || k === 'p'), true);
-  sc.eq('이웃끼리 번갈아', kinds.every((k, i) => i === 0 || k !== kinds[i - 1]), true);
-  sc.eq('굵게도 형광펜도 나온다', new Set(kinds).size, 2);
-  // ⚠️ 다시 그릴 때마다 바뀌면 깜빡인다 — 같은 본문이면 늘 같아야 한다
+  const K4 = ['b', 'p', 'w', 's'];
+
+  // ① 한 가지만 켰으면 겹쳐쓰기와 무관하게 그 하나
+  sc.eq('하나만 켜면 그 하나', _hiPickAt(seed, 0, ['b'], 3), ['b']);
+  sc.eq('아무것도 없으면 빈 손', _hiPickAt(seed, 0, [], 2), []);
+
+  // ② 겹쳐쓰기 1 — 문구마다 하나씩, 이웃끼리는 다르다
+  const one = [0, 1, 2, 3].map(i => _hiPickAt(seed, i, K4, 1));
+  sc.eq('1 이면 하나씩', one.every(k => k.length === 1), true);
+  sc.eq('이웃끼리 다르다', one.every((k, i) => i === 0 || k[0] !== one[i - 1][0]), true);
+  sc.eq('네 문구에 네 가지가 골고루', new Set(one.map(k => k[0])).size, 4);
+
+  // ③ 겹쳐쓰기 2·3 — 그 수만큼 겹친다
+  const two = [0, 1, 2, 3].map(i => _hiPickAt(seed, i, K4, 2));
+  sc.eq('2 면 두 개씩', two.every(k => k.length === 2), true);
+  sc.eq('같은 것을 두 번 넣지 않는다', two.every(k => new Set(k).size === 2), true);
+  sc.eq('3 이면 세 개씩',
+        [0, 1, 2].map(i => _hiPickAt(seed, i, K4, 3)).every(k => k.length === 3), true);
+
+  // ④ 겹쳐쓰기 4 — 모든 문구에 네 가지 한꺼번에
+  const four = [0, 1, 2, 3].map(i => _hiPickAt(seed, i, K4, 4));
+  sc.eq('4 면 전부', four.every(k => k.length === 4), true);
+  sc.eq('4 면 문구마다 똑같다', four.every(k => JSON.stringify(k) === JSON.stringify(K4)), true);
+
+  // ⑤ 켠 종류보다 크게 고르면 켠 만큼만
+  sc.eq('둘만 켰는데 4 를 고르면 둘', _hiPickAt(seed, 0, ['b', 'p'], 4), ['b', 'p']);
+  sc.eq('0 이나 음수는 1 로', _hiPickAt(seed, 0, K4, 0).length, 1);
+
+  // ⑥ 결과 차례는 늘 HI_KINDS 순 — 화면과 공유 이미지가 어긋나지 않게
+  sc.eq('늘 정해진 차례로 준다',
+        [0, 1, 2, 3, 4, 5].every(i => {
+          const k = _hiPickAt(seed, i, K4, 3);
+          return JSON.stringify(k) === JSON.stringify(K4.filter(x => k.indexOf(x) >= 0));
+        }), true);
+
+  // ⑦ 같은 본문이면 늘 같다 (다시 그려도 안 깜빡인다)
   sc.eq('같은 본문이면 늘 같다',
-        [0, 1, 2, 3].map(i => _hiKindAt(seed, i, true, true, true)), kinds);
+        JSON.stringify([0, 1, 2, 3].map(i => _hiPickAt(seed, i, K4, 2))), JSON.stringify(two));
   sc.eq('해시는 늘 같은 값', _hiHash(seed), _hiHash(seed));
   sc.eq('해시는 음수가 아니다', _hiHash(seed) >= 0, true);
-  // 구절이 다르면 시작점도 달라질 수 있다 (그래서 '무작위'로 느껴진다)
-  const other = ['씨앗A', '씨앗B', '씨앗C', '씨앗D', '씨앗E', '씨앗F']
-    .map(x => _hiKindAt(x, 0, true, true, true));
-  sc.eq('구절마다 시작이 다르다', new Set(other).size, 2);
+  // 구절이 다르면 차례도 달라진다 (그래서 '무작위'로 느껴진다)
+  const firsts = ['씨앗A', '씨앗B', '씨앗C', '씨앗D', '씨앗E', '씨앗F']
+    .map(x => _hiPickAt(x, 0, K4, 1)[0]);
+  sc.eq('구절마다 시작이 다르다', new Set(firsts).size > 1, true);
+  // 섞기 자체도 늘 같은 결과여야 한다
+  sc.eq('섞기도 늘 같다',
+        JSON.stringify(_hiShuffle(K4, seed)), JSON.stringify(_hiShuffle(K4, seed)));
+  sc.eq('섞어도 네 개 그대로',
+        JSON.stringify(_hiShuffle(K4, seed).slice().sort()), JSON.stringify(K4.slice().sort()));
 
-  // 줄 그리기 — 문구마다 표식을 단다
+  // 줄 그리기 — 조각마다 걸린 효과를 클래스로 단다
   const lines = ['가나다 라마바', '사아자 차카타'];
-  const html = _hiLinesHTML(lines, [[0, 3], [8, 11]], i => (i === 0 ? 'b' : 'p'));
+  const html = _hiLinesHTML(lines, [[0, 3], [8, 11]], i => (i === 0 ? ['b'] : ['p', 'w']));
   sc.eq('굵게 몫에 hi-b', html.includes('<span class="hi-mark hi-b hi-end">가나다</span>'), true);
-  sc.eq('형광펜 몫에 hi-p', html.includes('<span class="hi-mark hi-p hi-end">사아자</span>'), true);
-  sc.eq('안 나누면 표식 없음',
-        _hiLinesHTML(lines, [[0, 3]]).includes('<span class="hi-mark hi-end">가나다</span>'), true);
+  sc.eq('겹친 몫에 둘 다', html.includes('<span class="hi-mark hi-p hi-w hi-end">사아자</span>'), true);
 
-  // CSS — 섞을 때 형광펜 몫은 굵기를 되돌리고, 굵게 몫은 띠를 뺀다
-  sc.eq('형광펜 몫은 굵기 되돌림',
-        SRC.includes('html[data-himix="1"] .hi-mark.hi-p{font-weight:inherit;}'), true);
-  sc.eq('굵게 몫은 띠 없음',
-        SRC.includes('html[data-himix="1"] .hi-mark.hi-b{background:none;}'), true);
-  sc.eq('뿌리 표식은 둘 다 켰을 때만',
-        SRC.includes("r.setAttribute('data-himix',(_hiBold()&&_hiPen()&&_hiMix())?'1':'0');"), true);
-
-  // 설정 — 화면·공유 각각 체크박스. 둘 다 켰을 때만 보인다
-  // 0812-12: 체크박스 → 앱의 표준 토글 스위치 (다른 설정 줄과 같은 모양)
-  sc.eq('화면 토글', SRC.includes(`id="setHiMix" onchange="toggleHiMark('hiMix','setHiMix')"`), true);
-  sc.eq('공유 토글', SRC.includes(`id="imgHiMix" onchange="toggleImgIncl('imgHiMix','imgHiMix')"`), true);
-  const mixRow = id => {
-    const i = SRC.indexOf(`class="settings-row" id="${id}Row"`);
-    return i < 0 ? '' : SRC.slice(i, SRC.indexOf('</div>', SRC.indexOf('settings-toggle-track', i)));
-  };
-  sc.eq('화면은 토글 껍데기 안에', mixRow('setHiMix').includes('<label class="settings-toggle">'), true);
-  sc.eq('공유도 토글 껍데기 안에', mixRow('imgHiMix').includes('<label class="settings-toggle">'), true);
-  sc.eq('둘 다 트랙이 있다',
-        [mixRow('setHiMix'), mixRow('imgHiMix')].every(x => x.includes('settings-toggle-track')), true);
-  // 맨몸 체크박스는 남기지 않는다 (그 모양이 낡아 보였다).
-  // ⚠️ 이 줄들만 본다 — 앱 다른 곳(.sec-edit-exclude-chk)에는 원래 맨몸 체크박스가 있다
-  sc.eq('맨몸 체크박스 없음',
-        [mixRow('setHiMix'), mixRow('imgHiMix')].some(x => x.includes('accent-color')), false);
-  sc.eq('둘 다 켰을 때만 보이게', SRC.includes('function _syncHiMixRows()'), true);
-  sc.eq('화면 조건', SRC.includes("set('setHiMixRow','setHiMix',_hiBold()&&_hiPen(),s.hiMix===true);"), true);
-  sc.eq('공유 조건',
-        SRC.includes("set('imgHiMixRow','imgHiMix',(s.imgHiBold!==false)&&(s.imgHiPen===true),s.imgHiMix===true);"), true);
+  // 설정 — 두 가지 이상 켰을 때만 보인다
+  sc.eq('두 개 이상일 때만 보이게', SRC.includes('function _syncHiOverlapRow()'), true);
+  sc.eq('조건은 켠 종류 두 개',
+        SRC.includes("document.getElementById('setHiOverlapWrap')?.classList.toggle('cond-hide',kinds.length<2);"), true);
   // ⚠️ 설정창 등급이 .lv-hide 로 감추는 것과 싸우지 않게 style.display 를 안 쓴다
-  const mixFn = SRC.slice(SRC.indexOf('function _syncHiMixRows()'));
-  sc.eq('클래스로만 감춘다', mixFn.slice(0, mixFn.indexOf('\n}')).includes('style.display'), false);
-  sc.eq('기본값 둘 다 꺼짐', SRC.includes('hiMix:false,') && SRC.includes('imgHiMix:false,'), true);
-  sc.eq('공유 기본 꺼짐 목록에 있다', SRC.includes("const _IMG_OFF_BY_DEFAULT=['imgHiPen','imgHiMix','imgHiWave','imgHiStar'];"), true);
-  // 공유 이미지도 같은 방식으로 나눈다
-  sc.eq('공유 이미지도 나눈다', SRC.includes('const kindAt=i=>_hiKindAt(flat,i,hb,hp,hm);'), true);
-  sc.eq('조각마다 굵게·띠를 따로 정한다',
-        SRC.includes("b:hb&&(k!=='p'),p:hp&&(k!=='b')"), true);
+  const ovFn = SRC.slice(SRC.indexOf('function _syncHiOverlapRow()'));
+  sc.eq('클래스로만 감춘다', ovFn.slice(0, ovFn.indexOf('\n}')).includes('style.display'), false);
+  // 켠 종류가 줄면 값도 따라 줄어야 한다 (둘만 켰는데 3 이 남아 있으면 안 된다)
+  sc.eq('종류가 줄면 값도 줄인다', ovFn.includes('let n=Math.min(max,_hiOverlap());'), true);
+  sc.eq('더 못 올리면 막는다', ovFn.includes('pl.disabled=(n>=max);'), true);
+  sc.eq('스테퍼도 가둔다',
+        SRC.includes('const n=Math.min(max,Math.max(1,_hiOverlap()+d));'), true);
+  sc.eq('기본값 1', SRC.includes('hiOverlap:1,'), true);
+  // 옛 '섞어서 쓰기' 는 걷어냈다
+  sc.eq('섞어서 쓰기 흔적 없음', /hiMix|_hiKindAt/.test(SRC), false);
+  sc.eq('옛 이름은 주석에만', (SRC.match(/섞어서 쓰기/g) || []).length, 1);
+  // 공유 이미지도 같은 함수로 배정한다
+  sc.eq('공유 이미지도 같은 배정', SRC.includes('const kindAt=i=>_hiPickAt(flat,i,kindsOn,ovl);'), true);
+  ST.settings = {};
 }
 
 // ═══ 13. ⚠️ 알림으로 들어올 때도 강조가 온다 ═══
@@ -407,8 +464,11 @@ console.log('\n시나리오 14 — 손글씨 물결·별');
         (_hiLinesHTML(lines, [[0, 15]]).match(/hi-end/g) || []).length, 1);
   // 한 줄 안에서 끝나는 문구는 그 자리에서 바로 끝 조각이다
   sc.eq('한 줄짜리도 끝 표시', _hiLinesHTML(lines, [[0, 3]]).includes('hi-end">가나다</span>'), true);
-  sc.eq('화면은 hi-end 일 때만 별', SRC.includes("_hiStar()&&m.classList.contains('hi-end')"), true);
-  sc.eq('공유도 마지막 조각만 별', SRC.includes('if(hs&&sg.last)'), true);
+  sc.eq('화면은 hi-end 일 때만 별', SRC.includes("wantS&&m.classList.contains('hi-end')"), true);
+  sc.eq('공유도 마지막 조각만 별', SRC.includes('if(sg.s&&sg.last)'), true);
+  // ⚠️ 겹쳐쓰기 때문에 조각마다 효과가 다르다 → 덮개는 전체 설정이 아니라 클래스를 본다
+  sc.eq('덮개는 조각 클래스를 본다',
+        SRC.includes("const wantW=m.classList.contains('hi-w'),wantS=m.classList.contains('hi-s');"), true);
 
   // 스위치 — 물결·별만 켜도 강조 조각이 만들어져야 한다 (덮개를 놓을 자리)
   ST.settings = {};
@@ -421,9 +481,6 @@ console.log('\n시나리오 14 — 손글씨 물결·별');
   sc.eq('전부 끄면 강조가 없다', _hiOn(), false);
   ST.settings = {};
   sc.eq('새 사용자 기본값', SRC.includes('hiWave:false,hiStar:false,'), true);
-  sc.eq('공유 전용 기본값', SRC.includes('imgHiWave:false,imgHiStar:false'), true);
-  sc.eq('공유 값을 따로 읽는다',
-        SRC.includes('const hiWave=opt.hiWave!==undefined?opt.hiWave:(s.imgHiWave===true);'), true);
   sc.eq('버튼 상태 맞추기',
         SRC.includes("document.getElementById('setHiWave')?.classList.toggle('on',s.hiWave===true)"), true);
 
