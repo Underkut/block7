@@ -616,7 +616,8 @@ console.log('\n시나리오 15 — 별 개수 제한');
   sc.eq('4 위로 못 올린다', SRC.includes('spl.disabled=(sm>=4);'), true);
   sc.eq('스테퍼도 가둔다',
         SRC.includes("updateSetting('hiStarMax',Math.min(4,Math.max(1,_hiStarMax()+d)));"), true);
-  sc.eq('기본값 4', SRC.includes('hiStarMax:4,'), true);
+  // 0813-7: 첫 사용자 기본값을 4 → 1 로 바꿨다 (HB 요청 — 별을 과하게 켜지 않게)
+  sc.eq('기본값 1', SRC.includes('hiStarMax:1,'), true);
   ST.settings = {};
 }
 
