@@ -122,4 +122,107 @@ console.log('시나리오 8 — 로그 감소분');
   sc.eq('무관 항목 유지(요1:1)',bag['요 1:1'],1);
 }
 
+// ═══ 시나리오 8: 클라우드를 아직 못 받은 기기가 빈 상태로 덮어쓰던 사고 (0813-2) ═══
+// ⚠️ 네 번째 재발. 지금까지의 방어는 "누가 낡았는가"만 봤고 "내 손에 든 것이
+//    믿을 만한가"는 보지 않았다. 초기 fetch 가 실패한 기기는 ST 가 기본값인데
+//    리스너로 스냅샷이 오면 쓰기가 열리고 곧바로 복구 경로(로컬 우선)를 타서
+//    빈 로컬이 충돌에서 이겼다. 합집합인 로그만 살고 할일·설정·배치가 사라졌다.
+console.log('\n시나리오 8 — 빈 기기가 남의 데이터를 지우던 것');
+{
+  // HB 가 아이패드 미니에서 만들어 둔 상태
+  const cloud={
+    days:{'2026-08-13':{big:{night:[
+      {text:'2구간 구매',done:false},{text:'중등 진도표',done:false},
+      {text:'블레이즈 요금',done:false},{text:'부산 재정 마무리',done:false}]},small:{},trash:[]}},
+    settings:{hiBold:true,hiPen:true,hiWave:true,hiStar:true,hiOverlap:2,
+              layout:{cols:{left:['todo'],center:['card#c1'],right:['card#c2','likeList']}}},
+    verseLikeLog:{'2026-08-13':[{ref:'시 23:1',time:'09:00',sec:'am'}]},
+    verseCollections:[]
+  };
+  // 갓 열린 기기 — 아직 아무것도 못 받아 기본값뿐
+  const fresh={
+    // ⚠️ 갓 열린 앱도 '오늘'을 그리면서 날짜 칸을 만든다. 칸이 아예 없으면
+    //    합집합이 클라우드를 그대로 두지만, **빈 칸이 있으면** 충돌이 되어 진다.
+    days:{'2026-08-13':{big:{night:[]},small:{},trash:[]}},
+    settings:{hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,
+              layout:{cols:{left:['todo'],center:[],right:[]}}},
+    verseLikeLog:{},verseCollections:[]
+  };
+
+  global._fbBaseJson=null;              // 이 계정 클라우드를 한 번도 받은 적 없다
+  const m=_fbMergeGuarded(null,clone(fresh),clone(cloud),false);
+  sc.eq('할일이 살아남는다',(m.days['2026-08-13']||{}).big.night.length,4);
+  sc.eq('첫 할일 그대로',m.days['2026-08-13'].big.night[0].text,'2구간 구매');
+  sc.eq('강조 설정이 살아남는다',[m.settings.hiPen,m.settings.hiWave,m.settings.hiStar],[true,true,true]);
+  sc.eq('겹쳐쓰기 값도',m.settings.hiOverlap,2);
+  sc.eq('말씀카드 위젯이 살아남는다',m.settings.layout.cols.right,['card#c2','likeList']);
+  sc.eq('가운데 칸 위젯도',m.settings.layout.cols.center,['card#c1']);
+  sc.eq('로그는 원래도 합집합이라 무사',m.verseLikeLog['2026-08-13'].length,1);
+
+  // ⚠️ 고치기 전 동작 — 빈 로컬이 이겨 전부 사라졌다 (이 단언이 사고를 고정한다)
+  const before=_fbMerge(null,clone(fresh),clone(cloud),false);
+  sc.eq('고치기 전에는 할일이 사라졌다',before.days['2026-08-13'].big.night.length,0);
+  sc.eq('고치기 전에는 강조도 꺼졌다',before.settings.hiPen,false);
+  sc.eq('고치기 전에도 로그는 살았다',before.verseLikeLog['2026-08-13'].length,1);
+}
+
+// ═══ 시나리오 9: 제대로 받아 둔 기기는 예전처럼 로컬이 이겨야 한다 ═══
+// (구버전 기기가 지운 것을 되살리는 7-2-2 의 정상 동작 — 깨뜨리면 안 된다)
+console.log('\n시나리오 9 — 받아 둔 기기는 그대로 복구한다');
+{
+  const good={
+    days:{'2026-08-13':{big:{night:[{text:'2구간 구매',done:false},{text:'중등 진도표',done:false},
+                                     {text:'블레이즈 요금',done:false},{text:'부산 재정 마무리',done:false}]},small:{},trash:[]}},
+    settings:{hiPen:true,layout:{cols:{left:['todo'],center:['card#c1'],right:['card#c2']}}},
+    verseCollections:[]
+  };
+  // 구버전 기기가 모르는 위젯을 지우고 올린 상태
+  const legacyCloud=clone(good);
+  legacyCloud.settings.layout.cols.center=[];
+  legacyCloud.settings.layout.cols.right=[];
+
+  global._fbBaseJson=JSON.stringify(good);   // 이 기기는 클라우드를 받아 봤다
+  const m=_fbMergeGuarded(null,clone(good),legacyCloud,false);
+  sc.eq('지워진 위젯을 되살린다',m.settings.layout.cols.center,['card#c1']);
+  sc.eq('오른쪽 위젯도 되살린다',m.settings.layout.cols.right,['card#c2']);
+  sc.eq('할일은 그대로',m.days['2026-08-13'].big.night.length,4);
+}
+
+// ═══ 시나리오 10: 대량 손실 방어 ═══
+console.log('\n시나리오 10 — 절반 넘게 사라지면 클라우드를 채택한다');
+{
+  const many={text:'x',done:false};
+  const cloud={
+    days:{'2026-08-13':{big:{night:Array.from({length:10},(_,i)=>({text:'할일'+i,done:false}))},small:{},trash:[]}},
+    settings:{layout:{cols:{left:['todo'],center:[],right:[]}}},verseCollections:[]
+  };
+  const almostEmpty={
+    days:{'2026-08-13':{big:{night:[{text:'할일0',done:false}]},small:{},trash:[]}},
+    settings:{layout:{cols:{left:['todo'],center:[],right:[]}}},verseCollections:[]
+  };
+  global._fbBaseJson=JSON.stringify({});     // 받아 본 적은 있다고 두고
+  const m=_fbMergeGuarded(null,almostEmpty,clone(cloud),false);
+  sc.eq('대량 손실이면 클라우드 채택',m.days['2026-08-13'].big.night.length,10);
+
+  // 세는 방식 — 할일·위젯·모음·연락처를 모두 센다
+  sc.eq('할일을 센다',_fbCountItems(cloud),10+1);
+  sc.eq('세 겹 구조를 제대로 센다',
+        _fbCountItems({days:{d1:{big:{am:[1,2],pm:[3]},small:{night:[4]},trash:[5]}}}),5);
+  sc.eq('위젯도 센다',
+        _fbCountItems({settings:{layout:{cols:{left:['a','b'],right:['c']}}}}),3);
+  sc.eq('모음·연락처도 센다',
+        _fbCountItems({verseCollections:['a','b'],contacts:['c']}),3);
+  sc.eq('빈 상태는 0',_fbCountItems({}),0);
+
+  // 자료가 적으면(신규 계정 등) 방어가 끼어들지 않는다
+  const tiny={days:{'2026-08-13':{big:{night:[{text:'하나',done:false}]},small:{},trash:[]}}};
+  sc.eq('적은 자료에는 안 끼어든다',_fbBulkLoss(tiny,{days:{}}),false);
+  // base 를 아는 평소 편집 경로는 방어가 손대지 않는다 (사람의 실제 삭제를 막지 않게)
+  global._fbBaseJson=JSON.stringify(cloud);
+  const del=clone(cloud);del.days['2026-08-13'].big.night=[];
+  const m2=_fbMergeGuarded(cloud,del,clone(cloud),false);
+  sc.eq('사람이 지운 것은 그대로 지워진다',m2.days['2026-08-13'].big.night.length,0);
+  global._fbBaseJson=null;
+}
+
 sc.done();

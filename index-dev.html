@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2650,7 +2650,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-1";
+const APP_VERSION = "v. 26-0813-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -23065,6 +23065,58 @@ function _mgById(b,l,c,baseKnown){
   (c||[]).forEach(o=>{const k=key(o);if(merged[k]!==undefined&&!used.has(k)){out.push(merged[k]);used.add(k);}});
   return out;
 }
+// ══ 빈 로컬이 남의 데이터를 지우는 것을 막는다 (v26-0813-2) ══════════════
+// ⚠️ 네 번째 재발의 진짜 원인. 지금까지의 방어는 전부 "누가 낡았는가"만 봤고,
+//    **"내 손에 든 것이 믿을 만한가"** 는 보지 않았다.
+//    _fbHealFromLegacy 는 늘 _fbMerge(null, ST, remote, false) — 즉 **로컬 우선** 이다.
+//    이 기기가 클라우드를 한 번이라도 받아 봤다면 로컬은 제대로 된 전체 상태라
+//    그게 맞다. 그런데 **초기 fetch 가 실패한 기기**는 ST 가 그냥 기본값(빈 할일·
+//    기본 설정·빈 배치)인데, 리스너로 스냅샷이 도착하면 쓰기가 열리고(_fbInitLoaded)
+//    곧바로 이 경로를 타서 **빈 로컬이 충돌에서 이겨** 클라우드를 지운다.
+//    (합집합으로 병합되는 좋아요·암송 로그만 살아남고 할일·설정·위젯배치가
+//     사라지던 0813-2 증상이 정확히 이것이다)
+// base 를 받은 적 있는가 = 이 계정의 클라우드 상태를 한 번이라도 받아들였는가.
+function _fbHasAdoptedCloud(){return !!_fbBaseJson;}
+// 대량 손실 방어 — "한쪽이 비어 있는데 그쪽이 이겼다" 는 세 번 되풀이된 모양이다.
+// ⚠️ base 를 모르는 **복구 경로에서만** 쓴다. 평소 편집(base 있음)은 건드리지 않으므로
+//    사람이 실제로 많이 지우는 것을 막지 않는다.
+const _FB_LOSS_MIN=4;        // 이보다 적으면 세지 않는다 (새 계정·빈 상태)
+const _FB_LOSS_KEEP=0.5;     // 절반 넘게 사라지면 대량 손실
+// ⚠️ days 는 날짜 → big/small → 구간id → 배열 로 세 겹이다. 겹 수를 손으로 적으면
+//    구조가 조금만 바뀌어도 0 을 세고 방어가 조용히 꺼진다 → 배열을 훑어 센다.
+function _fbCountArrays(v,depth){
+  if(v==null||depth>6)return 0;
+  if(Array.isArray(v))return v.length;
+  if(typeof v!=='object')return 0;
+  let t=0;for(const k in v)t+=_fbCountArrays(v[k],depth+1);
+  return t;
+}
+function _fbCountItems(o){
+  let n=_fbCountArrays((o&&o.days)||{},0);
+  n+=_fbCountArrays((((o&&o.settings)||{}).layout||{}).cols||{},0);
+  // 말씀 모음·연락처는 배열이다 (id 단위 병합) — 객체로 와도 세지도록 둘 다 본다
+  const cnt=v=>Array.isArray(v)?v.length:Object.keys(v||{}).length;
+  n+=cnt(o&&o.verseCollections);
+  n+=cnt(o&&o.contacts);
+  return n;
+}
+function _fbBulkLoss(cloud,out){
+  const before=_fbCountItems(cloud);
+  if(before<_FB_LOSS_MIN)return false;
+  return _fbCountItems(out)<before*_FB_LOSS_KEEP;
+}
+// 복구 경로에서 쓰는 병합. 두 가지를 더 본다:
+//  ① 클라우드를 아직 한 번도 못 받았으면 로컬은 '기본값'일 뿐 → 클라우드 우선
+//  ② 그래도 결과가 클라우드 것을 절반 넘게 지우면 → 클라우드 우선으로 다시
+function _fbMergeGuarded(base,local,cloud,preferCloud){
+  const pc=_fbHasAdoptedCloud()?preferCloud:true;
+  let out=_fbMerge(base,local,cloud,pc);
+  if(!base&&_fbBulkLoss(cloud,out)){
+    try{console.warn('[BLOCK7] 대량 손실을 감지해 클라우드 쪽을 채택했습니다');}catch(e){}
+    out=_fbMerge(base,local,cloud,true);
+  }
+  return out;
+}
 function _fbMerge(base,local,cloud,preferCloud){
   const prev=_mgPreferCloud;
   _mgPreferCloud=(preferCloud===undefined)?_fbDeviceIdle():!!preferCloud;
@@ -23169,9 +23221,11 @@ async function _fbCommit(){
           //    낮은 버전은 자기가 모르는 것을 "정리"하며 지웠을 수 있는데,
           //    base 를 주면 그것이 정상적인 삭제로 통과해 버린다.
           //    rev 없는 문서와 같은 규칙 — base 없이(합집합) 로컬 우선.
+          //    ⚠️ 여기도 0813-2 의 구멍이 있었다 — 클라우드를 한 번도 못 받은
+          //    기기(초기 fetch 실패)가 이 경로를 타면 빈 로컬이 이겨 지운다.
           const legacy=_fbVerIsOlder(data.appVer);
-          outState=legacy?_fbMerge(null,ST,cloudState,false)
-                         :_fbMerge(_fbBaseObj(),ST,cloudState);
+          outState=legacy?_fbMergeGuarded(null,ST,cloudState,false)
+                         :_fbMergeGuarded(_fbBaseObj(),ST,cloudState);
           mergedApply=outState;
           backupJson=data.json;backupRev=cloudRev;
           if(legacy)legacyVer=data.appVer||'(표시 없음)';
@@ -23470,7 +23524,9 @@ let _fbHealTs=0;
 const _FB_HEAL_MIN_MS=15000;
 function _fbHealFromLegacy(remote,rawJson,rev,dev,ver){
   _fbWriteBackup(rawJson,rev||0);
-  const healed=_fbMerge(null,ST,remote,false);   // base 없음 → 합집합 + 로컬 우선
+  // base 없음 → 합집합. 로컬 우선이 원칙이지만, 이 기기가 클라우드를 아직
+  // 한 번도 못 받았거나 결과가 대량 손실이면 클라우드를 채택한다 (0813-2)
+  const healed=_fbMergeGuarded(null,ST,remote,false);
   _fbApplyStateToApp(healed);
   _fbWarnLegacyWriter(dev,ver);
   // 되살린 내용은 **반드시** 다시 올린다 (안 올리면 클라우드는 지워진 채 남는다).
@@ -23559,7 +23615,9 @@ window.fbStartListening=function(uid){
       // 3자 병합으로 양쪽을 다 살리고, 병합본을 다시 올린다.
       // ("필터 선택이 되돌아가는" 원래 문제도 이렇게 해결 — 내 편집이
       //  병합에서 보존되므로 원격을 버릴 이유가 없다)
-      const merged=_fbMerge(_fbBaseObj(),ST,remote);
+      // ⚠️ base 가 없으면 이 기기는 이 계정의 클라우드를 아직 못 받은 상태다
+      //    (초기 fetch 실패 등). 그때의 로컬은 기본값이라 이기면 안 된다 (0813-2)
+      const merged=_fbMergeGuarded(_fbBaseObj(),ST,remote);
       _fbSetBase(data.json,seenRev,uid);
       _fbApplyStateToApp(merged);
       _fbDirtySeq++; // 병합본 전송 필요
