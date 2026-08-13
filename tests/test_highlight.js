@@ -20,7 +20,7 @@ eval(
         '// ══════ 강조 표시 끝 ══════') +
   ';Object.assign(globalThis,{HI_SPLIT,_hiPhrases,_hiSquash,_hiRanges,' +
   '_hiLinesHTML,_hiOn,_hiBold,_hiPen,_hiFw,_hiHash,_hiWave,_hiStar,'+
-  '_hiKindsOn,_hiOverlap,_hiShuffle,_hiPickAt,HI_KINDS,'+
+  '_hiKindsOn,_hiOverlap,_hiShuffle,_hiPickAt,HI_KINDS,_hiStarMax,_hiAssign,'+
   '_hiRng,_hiSmooth,_hiRibbon,_hiWob,_hiWavePoly,_hiStarPoly,HI_ART,HI_POS});'
 );
 
@@ -368,7 +368,8 @@ console.log('\n시나리오 12 — 문구마다 효과 몇 개를 겹칠지');
   // 설정 — 두 가지 이상 켰을 때만 보인다
   sc.eq('두 개 이상일 때만 보이게', SRC.includes('function _syncHiOverlapRow()'), true);
   sc.eq('조건은 켠 종류 두 개',
-        SRC.includes("document.getElementById('setHiOverlapWrap')?.classList.toggle('cond-hide',kinds.length<2);"), true);
+        SRC.includes("document.getElementById('setHiOverlapWrap')?.classList.toggle('cond-hide',!showOvl);")
+        && SRC.includes('const showOvl=kinds.length>=2;'), true);
   // ⚠️ 설정창 등급이 .lv-hide 로 감추는 것과 싸우지 않게 style.display 를 안 쓴다
   const ovFn = SRC.slice(SRC.indexOf('function _syncHiOverlapRow()'));
   sc.eq('클래스로만 감춘다', ovFn.slice(0, ovFn.indexOf('\n}')).includes('style.display'), false);
@@ -382,7 +383,10 @@ console.log('\n시나리오 12 — 문구마다 효과 몇 개를 겹칠지');
   sc.eq('섞어서 쓰기 흔적 없음', /hiMix|_hiKindAt/.test(SRC), false);
   sc.eq('옛 이름은 주석에만', (SRC.match(/섞어서 쓰기/g) || []).length, 1);
   // 공유 이미지도 같은 함수로 배정한다
-  sc.eq('공유 이미지도 같은 배정', SRC.includes('const kindAt=i=>_hiPickAt(flat,i,kindsOn,ovl);'), true);
+  sc.eq('공유 이미지도 같은 배정',
+        SRC.includes('const assigned=_hiAssign(flat,ranges.length,kindsOn,_hiOverlap(),_hiStarMax());'), true);
+  sc.eq('화면도 같은 배정',
+        SRC.includes('const kinds=_hiAssign(flat,ranges.length,_hiKindsOn(),_hiOverlap(),_hiStarMax());'), true);
   ST.settings = {};
 }
 
@@ -486,6 +490,88 @@ console.log('\n시나리오 14 — 손글씨 물결·별');
 
   // 곧은 밑줄은 되살리지 않았다 (2026-08-12 에 걷어낸 것)
   sc.eq('곧은 밑줄 CSS 없음', /\.hi-mark\{[^}]*text-decoration/.test(SRC), false);
+}
+
+// ═══ 15. 한 본문에 별 몇 개까지 (0812-16) ═══
+console.log('\n시나리오 15 — 별 개수 제한');
+{
+  // ⚠️ 별 개수는 **구절 전체**를 봐야 정할 수 있다 (문구 하나만 봐서는 못 센다).
+  //    그래서 _hiPickAt(문구별) 위에 _hiAssign(구절 전체)이 한 겹 더 있다.
+  ST.settings = {};
+  sc.eq('기본은 4', _hiStarMax(), 4);
+  ST.settings.hiStarMax = 2;
+  sc.eq('고른 값을 읽는다', _hiStarMax(), 2);
+  ST.settings.hiStarMax = 7;
+  sc.eq('범위 밖은 4 로', _hiStarMax(), 4);
+  ST.settings.hiStarMax = 0;
+  sc.eq('0 도 4 로', _hiStarMax(), 4);
+  ST.settings = {};
+
+  const seed = '태초에 말씀이 계시니라 이 말씀이';
+  const countStars = a => a.filter(k => k.indexOf('s') >= 0).length;
+
+  // 별만 켜고 문구 8개 — 제한이 그대로 지켜진다
+  const only = ['s'];
+  [1, 2, 3, 4].forEach(m => {
+    sc.eq('별만 켜고 제한 ' + m, countStars(_hiAssign(seed, 8, only, 1, m)), m);
+  });
+  // 문구가 제한보다 적으면 있는 만큼만 (억지로 늘리지 않는다)
+  sc.eq('문구가 적으면 그만큼', countStars(_hiAssign(seed, 2, only, 1, 4)), 2);
+  sc.eq('문구가 없으면 0', _hiAssign(seed, 0, only, 1, 4).length, 0);
+
+  // 넷 다 켜고 전부 겹칠 때 — 모든 문구가 별을 받지만 제한이 걸린다
+  const K4 = ['b', 'p', 'w', 's'];
+  sc.eq('전부 겹쳐도 제한이 이긴다', countStars(_hiAssign(seed, 9, K4, 4, 3)), 3);
+  // 별을 뺀 자리에 다른 효과는 그대로 남는다
+  const cut = _hiAssign(seed, 9, K4, 4, 2);
+  sc.eq('별만 덜어낸다', cut.every(k => ['b', 'p', 'w'].every(x => k.indexOf(x) >= 0)), true);
+
+  // ⚠️ 앞에서부터 자르면 별이 구절 앞쪽에만 몰린다
+  const idx = [];
+  _hiAssign(seed, 10, only, 1, 3).forEach((k, i) => { if (k.indexOf('s') >= 0) idx.push(i); });
+  sc.eq('세 개가 남는다', idx.length, 3);
+  sc.eq('앞쪽에 몰리지 않는다', JSON.stringify(idx) === JSON.stringify([0, 1, 2]), false);
+
+  // 같은 구절이면 늘 같은 자리 (다시 그려도 안 깜빡인다)
+  sc.eq('같은 구절이면 늘 같다',
+        JSON.stringify(_hiAssign(seed, 10, only, 1, 3)),
+        JSON.stringify(_hiAssign(seed, 10, only, 1, 3)));
+  // 구절이 다르면 남는 자리도 달라진다
+  const pos = t => JSON.stringify(_hiAssign(t, 10, only, 1, 3));
+  sc.eq('구절마다 다르다', pos('구절가') === pos('구절나'), false);
+
+  // 제한이 안 걸리면 _hiPickAt 결과 그대로여야 한다
+  sc.eq('제한이 넉넉하면 그대로',
+        JSON.stringify(_hiAssign(seed, 3, K4, 2, 4)),
+        JSON.stringify([0, 1, 2].map(i => _hiPickAt(seed, i, K4, 2))));
+
+  // 설정 UI — 별을 켰을 때만 보인다
+  sc.eq('스테퍼가 있다', SRC.includes('<div class="hi-step-wrap" id="setHiStarMaxWrap">'), true);
+  sc.eq('빼기·더하기', SRC.includes('stepHiStarMax(-1)') && SRC.includes('stepHiStarMax(1)'), true);
+  sc.eq('별을 켰을 때만',
+        SRC.includes("document.getElementById('setHiStarMaxWrap')?.classList.toggle('cond-hide',!showStar);")
+        && SRC.includes('const showStar=_hiStar(),sm=_hiStarMax();'), true);
+  sc.eq('1 아래로 못 내린다', SRC.includes('smi.disabled=(sm<=1);'), true);
+  sc.eq('4 위로 못 올린다', SRC.includes('spl.disabled=(sm>=4);'), true);
+  sc.eq('스테퍼도 가둔다',
+        SRC.includes("updateSetting('hiStarMax',Math.min(4,Math.max(1,_hiStarMax()+d)));"), true);
+  sc.eq('기본값 4', SRC.includes('hiStarMax:4,'), true);
+  ST.settings = {};
+}
+
+// ═══ 16. 공유 설정 미리보기 비율 (0812-16) ═══
+console.log('\n시나리오 16 — 미리보기 여백');
+{
+  // ⚠️ 크기를 안 주면 지금 화면 비로 그려진다. 폰은 세로로 길어 미리보기가
+  //    가늘고 길어지고, 네 귀퉁이 요소가 너무 작아 켜졌는지 안 보였다 (HB 신고).
+  sc.eq('미리보기 전용 크기가 있다', SRC.includes('const _SHARE_PREVIEW_SIZE=[880,900];'), true);
+  sc.eq('미리보기가 그 크기를 쓴다',
+        SRC.includes('_vfRenderCard({verse:ex,size:_SHARE_PREVIEW_SIZE,'), true);
+  // 네모에 가까워야 여백이 준다 (세로가 가로의 1.2배를 넘지 않게)
+  const m = /_SHARE_PREVIEW_SIZE=\[(\d+),(\d+)\]/.exec(SRC);
+  sc.eq('네모에 가깝다', (+m[2]) / (+m[1]) < 1.2, true);
+  // 실제 저장 크기와는 상관없다 — 그쪽은 설정에서 따로 고른다
+  sc.eq('저장 크기는 따로', SRC.includes("function setShareSize("), true);
 }
 
 sc.done();
