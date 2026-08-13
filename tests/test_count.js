@@ -78,4 +78,36 @@ console.log('\n시나리오 4 — 약칭이 겹치는 책 구분');
   sc.eq('사무엘하만 1건', _verseEventCount('mem', '사무엘하 7:12'), 1);
 }
 
+// ═══ 채운 아이콘은 항상 '나 자신'의 반응만 본다 (v26-0813-6) ═══
+// ⚠️ 숫자 표시는 '구독자 전체' 설정이면 전체 합계로 바뀔 수 있지만, 채운 아이콘은
+//    그 값으로 다시 갱신되면 안 된다 — 로그인한 나 자신이 반응했는지만 본다.
+//    (전체 사용자 카운트 1 이상 → 로그인 사용자 당사자 카운트 1 이상, HB 요청)
+console.log('\n시나리오 — 채운 아이콘은 개인 카운트만 본다');
+{
+  const { SRC } = require('./_load');
+
+  // 전체화면 (_vfSyncCounts)
+  const vf = SRC.slice(SRC.indexOf('function _vfSyncCounts()'), SRC.indexOf('// ── 말씀 공유'));
+  sc.eq('전체화면: 로컬값으로 아이콘을 채운다',
+        vf.includes("setCnt(id,_verseEventCount(kind,ref));"), true);
+  sc.eq('전체화면: 전체 집계는 글자만 바꾼다',
+        vf.includes("setText('like',st.like);setText('mem',st.mem);setText('deeper',st.deeper);setText('even',st.even);setText('share',st.share);"),
+        true);
+  sc.eq('전체화면: 전체 집계 경로에 setCnt 가 없다',
+        /_fetchVerseStat\(ref\)\.then\(st=>\{[\s\S]*?setCnt\(/.test(vf), false);
+  sc.eq('전체화면: setText 는 아이콘을 안 건드린다',
+        SRC.includes("const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;};"),
+        true);
+
+  // 말씀카드 위젯 (_vcSyncCounts)
+  const vc = SRC.slice(SRC.indexOf('function _vcSyncCounts(wEl){'), SRC.indexOf('// ── 카드 동작 ──'));
+  sc.eq('위젯: 로컬값으로 아이콘을 채운다',
+        vc.includes("['like','mem','deeper','even','share'].forEach(k=>put(k,_verseEventCount(k,ref)));"), true);
+  sc.eq('위젯: 전체 집계는 글자만 바꾼다',
+        vc.includes("['like','mem','deeper','even','share'].forEach(k=>putText(k,st[k]||0));"), true);
+  const putTextBody = vc.slice(vc.indexOf('const putText='), vc.indexOf('};', vc.indexOf('const putText=')) + 2);
+  sc.eq('위젯: putText 는 on 클래스를 안 건드린다', putTextBody.includes('classList'), false);
+}
+
+
 sc.done();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2661,7 +2661,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-5";
+const APP_VERSION = "v. 26-0813-6";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8686,12 +8686,18 @@ function _verseEventCount(kind,ref){
 function _vfSyncCounts(){
   const v=_vfCurrentVerse();
   const ref=v?v.ref:'';
+  // ⚠️ 채운 아이콘은 **숫자 표시와 다른 기준**을 쓴다 (v26-0813-6).
+  //    숫자는 '구독자 전체' 설정이면 전체 합계를 보여줄 수 있지만, 채운
+  //    아이콘은 항상 **로그인한 나 자신이 그 반응을 했는지**만 본다.
+  //    그래서 전체 집계를 받아와도 아이콘(on 클래스)은 건드리지 않는다.
   const setCnt=(id,val)=>{
     const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;
     const btn=document.getElementById('vfAct'+id);if(btn)btn.classList.toggle('on',(+val)>0); // 1+ → 채움 아이콘
   };
+  const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;};
   // 내 로컬 집계를 먼저 즉시 표시 — '구독자 전체'일 때도 원격 응답 전까지의
   // 폴백이 되고, 오프라인/규칙 미설정 시엔 이 값이 그대로 유지된다.
+  // 이 값이 곧 채운 아이콘의 기준이기도 하다 — 아래 전체 집계로는 다시 안 바뀐다.
   [['like','like'],['mem','mem'],['deeper','deeper'],['even','even'],['share','share']].forEach(([id,kind])=>{
     setCnt(id,_verseEventCount(kind,ref));
   });
@@ -8701,7 +8707,7 @@ function _vfSyncCounts(){
       if(!st||!_verseFullIsOpen())return;
       const cur=_vfCurrentVerse();
       if(!cur||cur.ref!==token)return;
-      setCnt('like',st.like);setCnt('mem',st.mem);setCnt('deeper',st.deeper);setCnt('even',st.even);setCnt('share',st.share);
+      setText('like',st.like);setText('mem',st.mem);setText('deeper',st.deeper);setText('even',st.even);setText('share',st.share);
     });
   }
 }
@@ -13521,6 +13527,9 @@ function _vcSyncCounts(wEl){
   const body=wEl.querySelector('.vc-body');
   if(!body)return;
   const ref=body.getAttribute('data-vcref')||'';
+  // ⚠️ 채운 아이콘은 항상 **로그인한 나 자신의 반응**만 본다. 숫자 표시는
+  //    '구독자 전체' 설정이면 전체 합계로 바뀔 수 있지만 아이콘은 안 바뀐다
+  //    (v26-0813-6, _vfSyncCounts 와 같은 규칙).
   const put=(kind,val)=>{
     const btn=wEl.querySelector(`[data-vcact="${kind}"]`);
     if(!btn)return;
@@ -13528,12 +13537,17 @@ function _vcSyncCounts(wEl){
     if(c)c.textContent=val;
     btn.classList.toggle('on',(+val)>0);
   };
+  const putText=(kind,val)=>{
+    const btn=wEl.querySelector(`[data-vcact="${kind}"]`);
+    const c=btn&&btn.querySelector('.vc-cnt');
+    if(c)c.textContent=val;
+  };
   ['like','mem','deeper','even','share'].forEach(k=>put(k,_verseEventCount(k,ref)));
   if((ST.settings.verseCountScope||'all')==='all'&&ref){
     _fetchVerseStat(ref).then(st=>{
       if(!st||!body.isConnected)return;
       if((body.getAttribute('data-vcref')||'')!==ref)return;
-      ['like','mem','deeper','even','share'].forEach(k=>put(k,st[k]||0));
+      ['like','mem','deeper','even','share'].forEach(k=>putText(k,st[k]||0));
     });
   }
 }
