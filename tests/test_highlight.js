@@ -421,6 +421,18 @@ console.log('\n시나리오 13 — 알림 경로');
         SRC.includes("_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'})"), true);
   sc.eq('갱신이 강조를 넣는다', SRC.includes("hi:String(it.hi||'')"), true);
   sc.eq('갱신이 강조를 고친다', SRC.includes('ex.tags=newTags;ex.hi=newHi;'), true);
+
+  // ⚠️ 0813-4 — 받는 쪽만 고쳐서는 소용이 없었다. 게시가 **편집창을 닫거나
+  //    공유창을 열 때만** 일어나서, 시트에 나중에 적은 강조 문구가 구독자에게
+  //    영영 가지 않았다 (구독자는 아무리 동기화해도 "새로운 내용이 없어요").
+  //    소유자가 동기화할 때도 다시 게시해야 한다.
+  sc.eq('동기화할 때도 다시 게시한다',
+        SRC.includes('if(c.shareCode&&_fbReady()){try{await _publishSharedColl(c);}catch(e){}}'), true);
+  // 시트를 다 받은 **뒤에** 게시해야 최신 내용이 올라간다
+  const loop = SRC.slice(SRC.indexOf('for(const g of (c.google||[])){'),
+                         SRC.indexOf('if(c.importCode&&_fbReady()){'));
+  sc.eq('시트를 받은 뒤에 게시',
+        loop.indexOf('_syncSheetVersesIntoColl(c,items') < loop.indexOf('_publishSharedColl(c)'), true);
 }
 
 // ═══ 14. 손글씨 물결 밑줄 · 별 (v26-0812-13) ═══
