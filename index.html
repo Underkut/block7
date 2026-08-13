@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-7  [production]  -->
+<!-- BLOCK7  v. 26-0813-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2666,7 +2666,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-7";
+const APP_VERSION = "v. 26-0813-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10294,15 +10294,18 @@ function _sheetUrlForVerse(v){
            ||(c.verses||[]).find(x=>x.ref===v.ref);
     if(!hit||hit.src!=='google')continue;
     const links=Array.isArray(c.google)?c.google:[];
-    // 여러 시트를 붙여 둔 모음이면 gid 로 어느 시트인지 가린다
-    const link=links.find(g=>{
-      const m=(g.url||'').match(/[#&?]gid=(\d+)/);
-      return hit.gid?((m?m[1]:'0')===String(hit.gid)):true;
-    })||links[0];
+    // ⚠️ hit.gid 는 구글 시트의 실제 탭 번호가 **아니다** — _gSrcId() 가 매긴
+    //    우리 앱 내부용 식별자(예: 'g1a2b3c4d5')다. 5737번 줄처럼 링크 객체의
+    //    g.id 와 맞대야 한다. 예전엔 이 값을 URL 의 진짜 gid 자리에 그대로
+    //    박아 넣어서, 구글 시트가 그 값을 못 알아듣고 기본 탭(gid=0)으로
+    //    떨어졌다 — 그 탭의 아무 자리(주로 900행 근처 빈 자리)가 열리던 원인
+    //    이었다 (v26-0813-8 HB 신고).
+    const link=links.find(g=>hit.gid?g.id===hit.gid:true)||links[0];
     if(!link||!link.url)continue;
     const idM=link.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
     if(!idM)continue;
-    const gid=hit.gid||((link.url.match(/[#&?]gid=(\d+)/)||[])[1])||'0';
+    // 실제 탭 번호는 그 링크의 URL 에서 뽑는다(없으면 첫 탭 0).
+    const gid=(link.url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
     let u=`https://docs.google.com/spreadsheets/d/${idM[1]}/edit#gid=${gid}`;
     if(hit.row)u+=`&range=A${hit.row}:G${hit.row}`;   // 그 줄을 통째로 골라 준다('강조 문구' G열까지)
     return{url:u,row:hit.row||0,coll:c.name||''};
