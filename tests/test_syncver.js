@@ -166,13 +166,19 @@ console.log('\n시나리오 6 — 방어가 실제로 연결돼 있는지');
   sc.eq('리스너에 버전 가드', SRC.includes('if(_fbVerIsOlder(data.appVer)){'), true);
   sc.eq('되살리기 한 곳으로', SRC.includes('function _fbHealFromLegacy(remote,rawJson,rev,dev,ver)'), true);
   // ⚠️ 되살릴 때 base 를 넘기면 삭제가 그대로 통과한다 (7-2 의 경고)
-  sc.eq('되살릴 때 base 는 넘기지 않는다', SRC.includes('_fbMerge(null,ST,remote,false)'), true);
+  // ⚠️ base 는 여전히 null 이어야 한다. 다만 0813-2 부터 _fbMergeGuarded 를 거친다
+  //    (클라우드를 한 번도 못 받은 기기가 빈 로컬로 이기는 것을 막는 겹)
+  sc.eq('되살릴 때 base 는 넘기지 않는다',
+        SRC.includes('_fbMergeGuarded(null,ST,remote,false)'), true);
+  sc.eq('빈 기기 방어를 거친다', SRC.includes('function _fbMergeGuarded('), true);
   sc.eq('믿지 않은 문서를 기준점으로 삼지 않는다',
         SRC.includes('_fbLastSeenRev=Math.max(_fbLastSeenRev,seenRev);\n      _fbHealFromLegacy('), true);
   // 커밋 경로에도 같은 가드
   sc.eq('커밋에도 버전 가드', SRC.includes('const legacy=_fbVerIsOlder(data.appVer);'), true);
   sc.eq('낡은 문서면 base 없이 합집합',
-        SRC.includes('outState=legacy?_fbMerge(null,ST,cloudState,false)'), true);
+        SRC.includes('outState=legacy?_fbMergeGuarded(null,ST,cloudState,false)'), true);
+  sc.eq('커밋 쪽도 방어를 거친다',
+        SRC.includes(':_fbMergeGuarded(_fbBaseObj(),ST,cloudState);'), true);
   // 강제 업로드도 버전을 남겨야 남들이 "낡은 기기"로 오해하지 않는다
   sc.eq('강제 업로드도 버전을 남긴다',
         /_fbForceWrite[\s\S]*?tx\.set\(userDocRef\(uid\),\{json,rev,dev:_deviceId\(\),appVer:APP_VERSION/.test(SRC), true);
