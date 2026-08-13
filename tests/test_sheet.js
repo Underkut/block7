@@ -4,7 +4,9 @@ const sc = makeScorer();
 global._calKey = () => '2026-08-02';
 global.z = n => String(n).padStart(2, '0');
 eval(slice('function _verseIdentity(', 'function addCustomVerseFromForm('));
-eval(slice('function _parseCsv(', '// \ud30c\uc77c/\uc9c1\uc811\uc6a9 \uc784\ud3ec\ud2b8'));
+eval(slice('function _parseCsv(', '// \ud30c\uc77c/\uc9c1\uc811\uc6a9 \uc784\ud3ec\ud2b8'))
+global.getVerseCollections = () => COLLS;
+eval(slice('function _sheetUrlForVerse(v){', '\n// 대분류 탭'));;
 
 // 정상 시트 흉내 — 구글 시트에서 온 구절 n개를 가진 말씀 모음
 function makeColl(n){
@@ -107,6 +109,43 @@ console.log('시나리오 7 — CSV 파싱');
   sc.eq('헤더 제외 2구절',items.length,2);
   sc.eq('태그 분리',items[0].tags,['팔복','박해','복']);
   sc.eq('날짜 정규화',items[1].d,'2026-07-11');
+}
+
+// ═══ '그 셀로 열기' — 실제 탭(gid)으로 정확히 이동한다 (v26-0813-8) ═══
+// ⚠️ HB 신고 — 롱터치로 시트를 열면 데이터가 없는 900행 근처 같은 엉뚱한
+//    자리가 열렸다. 원인은 hit.gid 를 진짜 구글 시트 탭 번호로 착각해 URL 에
+//    그대로 박아 넣은 것 — hit.gid 는 우리 앱이 매긴 내부 식별자(g.id)일 뿐이다.
+//    구글 시트가 그 값을 못 알아듣고 기본 탭(gid=0)으로 떨어져, 그 탭의
+//    아무 자리가 열렸다.
+console.log('\n시나리오 — 시트 셀 열기가 실제 탭 번호를 쓴다');
+{
+  // 시트 하나, gid=987654321 인 탭. 항목의 hit.gid 는 내부 id 'g1'.
+  COLLS = [{
+    id: 'c1', name: 'TLC',
+    google: [{ id: 'g1', url: 'https://docs.google.com/spreadsheets/d/ABC123/edit#gid=987654321' }],
+    verses: [{ cat: '주일예배', topic: '주제1', krText: '본문1', ref: '마태복음 1:1',
+               tags: [], src: 'google', gid: 'g1', row: 42 }]
+  }];
+  const r = _sheetUrlForVerse({ ref: '마태복음 1:1', cat: '주일예배', topic: '주제1' });
+  sc.eq('링크를 찾는다', !!r, true);
+  sc.eq('내부 id 가 아니라 실제 탭 번호를 쓴다', r.url.includes('#gid=987654321'), true);
+  sc.eq('내부 id(g1)를 그대로 박지 않는다', r.url.includes('gid=g1'), false);
+  sc.eq('행 범위도 붙는다', r.url.includes('&range=A42:G42'), true);
+
+  // 시트 여러 개를 붙여 둔 모음 — hit.gid(내부 id)로 어느 링크인지 정확히 가린다
+  COLLS = [{
+    id: 'c2', name: '두 시트',
+    google: [
+      { id: 'gA', url: 'https://docs.google.com/spreadsheets/d/AAA/edit#gid=111' },
+      { id: 'gB', url: 'https://docs.google.com/spreadsheets/d/BBB/edit#gid=222' }
+    ],
+    verses: [
+      { cat: '', topic: '', krText: 'x', ref: '요한복음 1:1', tags: [], src: 'google', gid: 'gB', row: 5 }
+    ]
+  }];
+  const r2 = _sheetUrlForVerse({ ref: '요한복음 1:1' });
+  sc.eq('두 번째 시트(BBB)를 정확히 고른다', r2.url.includes('/d/BBB/'), true);
+  sc.eq('그 시트의 실제 탭 번호(222)를 쓴다', r2.url.includes('#gid=222'), true);
 }
 
 sc.done();
