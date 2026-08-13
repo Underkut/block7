@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2650,7 +2650,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-2";
+const APP_VERSION = "v. 26-0813-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -5195,7 +5195,9 @@ async function doSubscribe(){
     if(!doc.exists){showToast('해당 코드의 말씀 모음을 찾을 수 없어요');return;}
     data=doc.data();
   }catch(e){showToast('불러오기 실패 — 네트워크를 확인해주세요');return;}
-  const verses=(data.verses||[]).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],src:'shared',d:v.d||''}));
+  // ⚠️ 게시(_publishSharedColl)와 **항목이 같아야 한다.** 한쪽만 고치면 구독자에게서
+  //    조용히 빠진다 — 강조 문구(hi)가 실제로 그랬다 (0813-3 HB 신고)
+  const verses=(data.verses||[]).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],hi:String(v.hi||''),src:'shared',d:v.d||''}));
   const id=_genCollId();
   beforeSave();
   if(!Array.isArray(ST.verseCollections))ST.verseCollections=[];
@@ -6154,7 +6156,10 @@ async function _publishSharedColl(coll){
     await window._fbDB.collection('shared').doc(coll.shareCode).set({
       code:coll.shareCode,
       name:coll.name||'말씀 모음',
-      verses:(coll.verses||[]).filter(v=>!v.del).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],d:v.d||''})),
+      // ⚠️ 여기 빠뜨린 항목은 **구독자에게만** 조용히 사라진다. 소유자 화면은 멀쩡해서
+      //    한참 모른다. 실제로 강조 문구(hi)가 이렇게 빠져 있었다 (0813-3 HB 신고).
+      //    구절에 항목을 더하면 여기와 아래 '구독 받기' 두 곳을 같이 고칠 것.
+      verses:(coll.verses||[]).filter(v=>!v.del).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],hi:v.hi||'',d:v.d||''})),
       ownerUid:window._fbUser.uid,
       ownerIdPrefix:((window._fbUser.email||window._fbUser.uid||'').slice(0,3)), // 발행자 식별용 앞 3글자(전체 이메일 노출 안 함)
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
