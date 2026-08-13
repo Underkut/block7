@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2650,7 +2650,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-3";
+const APP_VERSION = "v. 26-0813-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -6070,6 +6070,11 @@ async function verseSyncAllNow(){
         blocked+=r.blocked||0;
         g.lastSync=today;sheets++;
       }
+      // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
+      // ⚠️ 예전엔 **모음 편집창을 닫거나 공유창을 열 때만** 게시했다. 그래서 시트에
+      //    나중에 적은 강조 문구가 구독자에게 영영 가지 않았고, 구독자가 아무리
+      //    동기화해도 "새로운 내용이 없어요"만 떴다 (0813-4 HB 신고).
+      if(c.shareCode&&_fbReady()){try{await _publishSharedColl(c);}catch(e){}}
       if(c.importCode&&_fbReady()){
         try{
           const doc=await window._fbDB.collection('shared').doc(c.importCode).get();
@@ -22953,6 +22958,10 @@ const _FB_WAKE_MS=20000;          // 앞으로 불러온 뒤 "아직 보고만 �
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')_fbVisibleSince=Date.now();
 },{capture:true});
+// 사람이 실제로 만진 **직후**의 저장인가. 화면을 그리며 값을 다듬는 저장과
+// 사람이 눌러서 생긴 저장을 가르는 기준이다 (0813-4).
+const _FB_EDIT_GRACE_MS=3000;
+function _fbIsUserEdit(){return (Date.now()-_fbLastTouchTs)<_FB_EDIT_GRACE_MS;}
 function _fbDeviceIdle(){
   if(document.visibilityState!=='visible')return true;
   // ⚠️ 창을 앞으로 불러온 **직후**는 아직 "쓰고 있는 기기"가 아니다.
@@ -23151,7 +23160,14 @@ function _fbApplyStateToApp(stateObj){
   try{
     applyRemoteState(stateObj);
     try{localStorage.setItem(LS_KEY,JSON.stringify(ST));}catch(e){}
+  _fbApplyRenders(stateObj);
   }finally{_fbApplyingRemote=false;}
+}
+// ⚠️ 원격을 받은 뒤의 **화면 다시 그리기까지** 가드 안에 있어야 한다 (0813-4).
+//    예전엔 여기가 가드 밖이라, 그리는 도중의 값 다듬기(save)가 전부 '이 기기의
+//    편집'으로 잡혔다. 그러면 방금 받기만 한 기기가 다음 충돌에서 이겨 상대의
+//    작업을 도로 밀어낸다 — 두 기기가 서로에게 이러면 데이터가 왔다갔다 한다.
+function _fbApplyRenders(stateObj){
   const activeEl=document.activeElement;
   const isTyping=activeEl&&(activeEl.tagName==='INPUT'||activeEl.tagName==='TEXTAREA');
   if(!isTyping&&(!DR||!DR.active)){
@@ -23193,7 +23209,13 @@ function _fbWriteBackup(json,rev){
 window.fbPushState=function(){
   if(!_fbUser||_fbApplyingRemote||!_fbInitLoaded)return;
   _fbDirtySeq++;
-  _fbLastEditTs=Date.now();   // "이 기기에서 실제로 고쳤다" — 유휴 판정에 쓴다
+  // ⚠️ save() 는 **사람이 고쳤을 때만** 오는 것이 아니다. 화면을 그리며 값을
+  //    다듬는 코드(설정 기본값 채우기·범위 가두기·목록 다시 계산 등)도 부른다.
+  //    그것까지 '편집'으로 세면, 방금 열어 화면만 그린 기기가 유휴에서 빠져나와
+  //    **충돌에서 이겨** 다른 기기의 진짜 작업을 밀어낸다 (0813-4 사고).
+  //    실제 입력 직후의 저장만 편집으로 센다. 올려 보내는 것(_fbDirtySeq)은
+  //    그대로라 다듬은 값이 유실되지는 않는다.
+  if(_fbIsUserEdit())_fbLastEditTs=Date.now();
   // 연타 편집(빠른 타이핑 등)을 600ms에 한 번의 커밋으로 모은다.
   clearTimeout(_fbWriteTimer);
   _fbWriteTimer=setTimeout(()=>{_fbWriteTimer=null;_fbCommit();},600);
