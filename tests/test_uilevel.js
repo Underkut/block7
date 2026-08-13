@@ -155,4 +155,34 @@ console.log('\n시나리오 — 스닉픽이 영역을 넘지 않는다');
   sc.eq('넘치면 잘라 낸다', SRC.includes('#verseBarInner.sneak-mode{overflow:hidden;}'), true);
 }
 
+// ═══ 전체화면 탭 — 글자 크기 버튼 4등분 · 첫 사용자 기본값 (0813-7) ═══
+console.log('\n시나리오 — 글자 크기 버튼 4등분 · 테마 기본 8개');
+{
+  // 글자 크기 네 버튼만 4등분 격자로 바꾼다 — 말씀카드 위젯의 5단계 줄은 그대로 둔다
+  sc.eq('전용 클래스로만 바꾼다', SRC.includes('<div class="ts-row ts-row-eq">'), true);
+  sc.eq('4등분 격자', /\.ts-row-eq\{[^}]*grid-template-columns:repeat\(4,1fr\)/.test(SRC), true);
+  sc.eq('칸은 같은 폭', SRC.includes('.ts-row-eq .ts-btn{flex:none;width:100%;}'), true);
+  // 버튼 안 글자 크기(9~16px)는 그대로 남아 있어야 한다
+  ['9px','11px','13.5px','16px'].forEach(px=>
+    sc.eq(px+' 유지', SRC.includes('style="font-size:'+px+';"'), true));
+  // 위젯 쪽 5단계 글자 크기 줄(.ts-row, ts-row-eq 없음)은 영향 없다
+  sc.eq('위젯 줄은 그대로', SRC.includes('<div class="ts-row">${VC_TS_STEPS.map(tsBtn).join(\'\')}</div>'), true);
+
+  // 첫 사용자 기본값
+  sc.eq('별 개수 기본 1', SRC.includes('hiStarMax:1,'), true);
+  sc.eq('테마 8개 기본 켬',
+        SRC.includes("vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],"), true);
+  // 테마 8개가 실제 VF_PATTERNS 키와 일치하는지 (하나라도 오탈자면 그 테마가 안 켜진다)
+  const keys = [...SRC.matchAll(/^\s*([a-z]+):\{label:'/gm)]
+    .map(m => m[1]);
+  const patStart = SRC.indexOf('const VF_PATTERNS={');
+  const patEnd = SRC.indexOf('\n};', patStart);
+  const patKeys = [...SRC.slice(patStart, patEnd).matchAll(/^\s*([a-z]+):\{label/gm)].map(m => m[1]);
+  const m = /vfThemes:\[('[a-z]+',?)+\]/.exec(SRC);
+  const defaultThemes = m[0].match(/'([a-z]+)'/g).map(x => x.slice(1, -1));
+  sc.eq('기본 테마 8개', defaultThemes.length, 8);
+  sc.eq('전부 실재하는 테마 키', defaultThemes.every(k => patKeys.indexOf(k) >= 0), true);
+  sc.eq('실재 테마도 8개뿐', patKeys.length, 8);
+}
+
 sc.done();
