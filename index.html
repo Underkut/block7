@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0812-16  [production]  -->
+<!-- BLOCK7  v. 26-0813-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2650,7 +2650,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0812-16";
+const APP_VERSION = "v. 26-0813-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8288,10 +8288,21 @@ function _hiAssign(seed,count,kinds,n,starMax){
   const withStar=[];
   out.forEach((k,i)=>{if(k.indexOf('s')>=0)withStar.push(i);});
   if(withStar.length>starMax){
+    const rest=kinds.filter(x=>x!=='s');          // 별을 뺀 나머지 효과들
     // 앞에서부터 자르면 별이 구절 앞쪽에만 몰린다 → 씨앗으로 고르게 남긴다
     const keep=_hiShuffle(withStar,seed+'★').slice(0,starMax);
     withStar.forEach(i=>{
-      if(keep.indexOf(i)<0)out[i]=out[i].filter(x=>x!=='s');
+      if(keep.indexOf(i)>=0)return;
+      // ⚠️ 별만 빼고 끝내면 그 문구는 겹쳐쓰기 수보다 **하나 모자라게** 된다
+      //    (겹쳐쓰기 2 인데 한 가지만 걸린 문구가 섞여 보였다 — 0813-1 HB 신고).
+      //    뺀 자리를 아직 안 걸린 효과로 **채워** 수를 그대로 지킨다.
+      const cur=out[i].filter(x=>x!=='s');
+      const want=Math.min(n,rest.length);          // 별을 뺀 뒤 채울 수 있는 최대
+      if(cur.length<want){
+        const spare=_hiShuffle(rest.filter(x=>cur.indexOf(x)<0),seed+'☆'+i);
+        while(cur.length<want&&spare.length)cur.push(spare.shift());
+      }
+      out[i]=HI_KINDS.filter(x=>cur.indexOf(x)>=0);
     });
   }
   return out;

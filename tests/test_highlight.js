@@ -526,6 +526,36 @@ console.log('\n시나리오 15 — 별 개수 제한');
   const cut = _hiAssign(seed, 9, K4, 4, 2);
   sc.eq('별만 덜어낸다', cut.every(k => ['b', 'p', 'w'].every(x => k.indexOf(x) >= 0)), true);
 
+  // ⚠️ 0813-1 HB 신고 — 별만 빼고 끝내면 그 문구는 겹쳐쓰기 수보다 하나 모자라진다.
+  //    (별 1개 제한 + 겹쳐쓰기 2 인데 한 가지만 걸린 문구가 섞여 보였다)
+  //    뺀 자리를 다른 효과로 **채워** 수를 그대로 지켜야 한다.
+  [1, 2, 3].forEach(m => {
+    [2, 3].forEach(ovl => {
+      const a = _hiAssign(seed, 9, K4, ovl, m);
+      sc.eq(`별 ${m}개 제한 · 겹쳐쓰기 ${ovl} — 수가 안 줄어든다`,
+            a.every(k => k.length === ovl), true);
+      sc.eq(`별 ${m}개 제한 · 겹쳐쓰기 ${ovl} — 별은 그 수만큼`, countStars(a), m);
+    });
+  });
+  // 채운 뒤에도 같은 효과를 두 번 넣지 않는다
+  sc.eq('중복 없이 채운다',
+        _hiAssign(seed, 9, K4, 3, 1).every(k => new Set(k).size === k.length), true);
+  // 채운 결과도 늘 HI_KINDS 차례 (화면과 공유 이미지가 어긋나지 않게)
+  sc.eq('채운 뒤에도 차례가 같다',
+        _hiAssign(seed, 9, K4, 2, 1)
+          .every(k => JSON.stringify(k) === JSON.stringify(K4.filter(x => k.indexOf(x) >= 0))), true);
+  // 채울 것이 없으면(별 말고 켠 게 없으면) 그 문구는 비는 게 맞다
+  sc.eq('채울 게 없으면 빈다',
+        _hiAssign(seed, 5, ['s'], 2, 1).filter(k => k.length === 0).length, 4);
+  // 별을 뺀 나머지가 겹쳐쓰기 수보다 적으면 있는 만큼만
+  sc.eq('나머지가 모자라면 그만큼',
+        _hiAssign(seed, 6, ['b', 's'], 2, 1).filter(k => k.indexOf('s') < 0)
+          .every(k => JSON.stringify(k) === JSON.stringify(['b'])), true);
+  // 채우기도 늘 같은 결과여야 한다 (다시 그려도 안 깜빡인다)
+  sc.eq('채우기도 늘 같다',
+        JSON.stringify(_hiAssign(seed, 9, K4, 2, 1)),
+        JSON.stringify(_hiAssign(seed, 9, K4, 2, 1)));
+
   // ⚠️ 앞에서부터 자르면 별이 구절 앞쪽에만 몰린다
   const idx = [];
   _hiAssign(seed, 10, only, 1, 3).forEach((k, i) => { if (k.indexOf('s') >= 0) idx.push(i); });
