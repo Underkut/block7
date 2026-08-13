@@ -109,4 +109,50 @@ console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
   sc.eq('스몰 블럭 보이기 → 스몰 블럭 사용', SRC.includes('>스몰 블럭 사용<'), true);
 }
 
+// ═══ 말씀 설정창 '보여줄 항목' 버튼 (0813-5) ═══
+// ⚠️ 이 항목들은 <input type=checkbox> 가 아니라 **버튼**(.preset-btn)이다.
+//    켜짐은 .on 클래스로 보인다 — .checked 를 넣으면 아무 일도 일어나지 않아
+//    설정창을 열 때마다 저장값과 무관하게 '다 켜진 것'처럼 보였고, 그 상태에서
+//    누르면 의도와 정반대로 저장됐다 (HB: 본문·장절만 켜 놨는데 다 나옴).
+console.log('\n시나리오 — 보여줄 항목 버튼이 저장값을 비춘다');
+{
+  // 표가 있고, 세 묶음(전체화면·스닉픽·위젯)을 모두 덮는다
+  sc.eq('표가 있다', SRC.includes('const _VSET_ITEM_BTNS=['), true);
+  const tbl = SRC.slice(SRC.indexOf('const _VSET_ITEM_BTNS=['), SRC.indexOf('function renderVerseSettingsModal()'));
+  const ids = [...tbl.matchAll(/'(set\w+)'/g)].map(m => m[1]);
+  ['setVerseFullCat','setVerseFullTopic','setVerseFullRef','setVerseFullTag',
+   'setVerseSneakCat','setVerseSneakTopic','setVerseSneakRef','setVerseSneakFirstWord','setVerseSneakTag',
+   'setVerseWidgetCat','setVerseWidgetTopic','setVerseWidgetText','setVerseWidgetRef','setVerseWidgetTag']
+    .forEach(id => sc.eq('표에 ' + id, ids.indexOf(id) >= 0, true));
+  // 그 버튼들이 정말 <button> 인지 (input 이면 .checked 가 맞다)
+  ids.forEach(id => {
+    const m = new RegExp('<(\\w+)[^>]*id="' + id + '"').exec(SRC);
+    sc.eq(id + ' 는 버튼', m && m[1], 'button');
+  });
+  // ⚠️ .checked 로 되돌리면 안 된다
+  sc.eq('checked 로 맞추지 않는다', /set(VerseFull|VerseSneak|VerseWidget)\w+'\)\)el\('set\w+'\)\.checked/.test(SRC), false);
+  sc.eq('클래스로 맞춘다',
+        SRC.includes("_VSET_ITEM_BTNS.forEach(([id,key])=>el(id)?.classList.toggle('on',s[key]!==false));"), true);
+  // 두 설정창이 같은 표를 쓴다 (한쪽만 고치면 다른 창에서 어긋난다)
+  sc.eq('두 창이 같은 표를 쓴다', (SRC.match(/_VSET_ITEM_BTNS\.forEach/g) || []).length, 2);
+}
+
+// ═══ 스닉픽 한 줄이 말씀 영역을 넘지 않는다 (0813-5) ═══
+// ⚠️ 예전엔 본문만 줄어들 수 있어서, 항목을 다 켜고 태그가 긴 구절을 만나면
+//    줄이 통째로 영역 밖으로 넘쳤다 (실측: 영역 362px 에 글자 567px, 좌우 103px 씩).
+console.log('\n시나리오 — 스닉픽이 영역을 넘지 않는다');
+{
+  const css = SRC.slice(SRC.indexOf('#verseBarInner.sneak-mode{'), SRC.indexOf('#verseBarInner.sneak-mode #verseBarFirstWord'));
+  // 소주제·태그도 줄어들 수 있어야 한다
+  sc.eq('소주제·태그가 줄어든다',
+        /#verseBarInner\.sneak-mode #verseBarTopic,\s*\n#verseBarInner\.sneak-mode #verseBarTag\{[^}]*flex:0 1 auto/.test(SRC), true);
+  sc.eq('말줄임이 걸린다', /#verseBarTag\{[\s\S]{0,120}text-overflow:ellipsis/.test(css), true);
+  sc.eq('태그부터 줄인다', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), true);
+  // 대분류·장절은 그대로 (짧고, 구절을 알아보는 데 필요하다)
+  sc.eq('대분류·장절은 안 줄어든다',
+        /#verseBarInner\.sneak-mode #verseBarCat,\s*\n#verseBarInner\.sneak-mode #verseBarRef,[\s\S]{0,80}flex:0 0 auto/.test(SRC), true);
+  // 마지막 안전장치 — 그래도 넘치면 잘라 낸다
+  sc.eq('넘치면 잘라 낸다', SRC.includes('#verseBarInner.sneak-mode{overflow:hidden;}'), true);
+}
+
 sc.done();

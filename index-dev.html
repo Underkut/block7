@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -625,14 +625,25 @@ header{
   max-width:var(--sneak-maxw,1000px);
   min-width:0;width:100%;
 }
-/* 본문 외의 항목은 줄어들지 않는다 — 먼저 자리를 잡고, 남는 폭을 본문이 쓴다 */
+/* 대분류·장절·구분점은 줄어들지 않는다 — 짧고, 구절을 알아보는 데 꼭 필요하다 */
 #verseBarInner.sneak-mode #verseBarCat,
-#verseBarInner.sneak-mode #verseBarTopic,
 #verseBarInner.sneak-mode #verseBarRef,
-#verseBarInner.sneak-mode #verseBarTag,
 #verseBarInner.sneak-mode .verse-sneak-sep{
   flex:0 0 auto;white-space:nowrap;
 }
+/* ⚠️ 소주제·태그도 줄어들 수 있어야 한다. 예전엔 본문만 줄어들어서, 항목을 다 켜고
+   태그가 긴 구절을 만나면 **줄이 통째로 말씀 영역 밖으로 넘쳤다** (0813-5 HB 신고).
+   자를 순서는 본문 → 태그 → 소주제 (뒤로 갈수록 구절을 알아보는 데 더 필요하다). */
+#verseBarInner.sneak-mode #verseBarTopic,
+#verseBarInner.sneak-mode #verseBarTag{
+  flex:0 1 auto;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}   /* 태그부터 줄인다 */
+#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}
+/* 그래도 못 줄이는 경우(대분류+장절만으로 이미 넘칠 때)를 위한 마지막 안전장치.
+   ⚠️ 이게 없으면 넘친 글자가 말씀 영역 밖으로 그려진다. */
+#verseBarInner.sneak-mode{overflow:hidden;}
 /* 본문만 남는 폭까지 늘었다 줄었다 하며 넘치면 … 로 잘린다.
    display:inline 으로는 말줄임이 안 걸려서 이 항목만 block 으로 둔다. */
 #verseBarInner.sneak-mode #verseBarFirstWord{
@@ -2650,7 +2661,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-4";
+const APP_VERSION = "v. 26-0813-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -6890,20 +6901,31 @@ function setVerseSneakStyle(style){
   if(bEl)bEl.style.borderColor=style==='mono'?'var(--ac)':'var(--bd2)';
   renderVerseBar();
 }
+// 말씀 설정창의 '보여줄 항목' 버튼들 — [버튼id, 설정키].
+// 전체화면 · 스닉픽 · 말씀카드 위젯 세 묶음이 모두 이 창 안에 있다.
+// ⚠️ 위젯 쪽은 일반 설정창(renderSettingsPanel)에서만 맞춰 주고 있었다 —
+//    이 창을 바로 열면 맞지 않는다. 두 곳 다 이 표를 쓴다.
+const _VSET_ITEM_BTNS=[
+  ['setVerseFullCat','verseFullCat'],['setVerseFullTopic','verseFullTopic'],
+  ['setVerseFullRef','verseFullRef'],['setVerseFullTag','verseFullTag'],
+  ['setVerseSneakCat','verseSneakCat'],['setVerseSneakTopic','verseSneakTopic'],
+  ['setVerseSneakRef','verseSneakRef'],['setVerseSneakFirstWord','verseSneakFirstWord'],
+  ['setVerseSneakTag','verseSneakTag'],
+  ['setVerseWidgetCat','verseWidgetCat'],['setVerseWidgetTopic','verseWidgetTopic'],
+  ['setVerseWidgetText','verseWidgetText'],['setVerseWidgetRef','verseWidgetRef'],
+  ['setVerseWidgetTag','verseWidgetTag']
+];
 function renderVerseSettingsModal(){
   const s=ST.settings;
   const el=id=>document.getElementById(id);
   if(el('setVerseBarOn'))el('setVerseBarOn').checked=!!s.verseBarOn;
   if(el('setVerseBarAutoRotate'))el('setVerseBarAutoRotate').checked=s.verseBarAutoRotate!==false;
-  if(el('setVerseFullCat'))el('setVerseFullCat').checked=s.verseFullCat!==false;
-  if(el('setVerseFullTopic'))el('setVerseFullTopic').checked=s.verseFullTopic!==false;
-  if(el('setVerseFullRef'))el('setVerseFullRef').checked=s.verseFullRef!==false;
-  if(el('setVerseFullTag'))el('setVerseFullTag').checked=s.verseFullTag!==false;
-  if(el('setVerseSneakCat'))el('setVerseSneakCat').checked=s.verseSneakCat!==false;
-  if(el('setVerseSneakTopic'))el('setVerseSneakTopic').checked=s.verseSneakTopic!==false;
-  if(el('setVerseSneakRef'))el('setVerseSneakRef').checked=s.verseSneakRef!==false;
-  if(el('setVerseSneakFirstWord'))el('setVerseSneakFirstWord').checked=s.verseSneakFirstWord!==false;
-  if(el('setVerseSneakTag'))el('setVerseSneakTag').checked=s.verseSneakTag!==false;
+  // ⚠️ 이 항목들은 <input type=checkbox> 가 아니라 **버튼**(.preset-btn)이다.
+  //    켜짐은 `.on` **클래스**로 보인다 → `.checked` 를 넣으면 아무 일도 일어나지
+  //    않는다. 그래서 설정창을 열 때마다 저장값과 무관하게 **다 켜진 것처럼** 보였고,
+  //    그 상태에서 누르면 의도와 정반대로 저장됐다 (0813-5 HB 신고).
+  //    ⚠️ 새 항목을 더하면 이 표에도 넣을 것. 안 넣으면 그 버튼만 조용히 거짓말한다.
+  _VSET_ITEM_BTNS.forEach(([id,key])=>el(id)?.classList.toggle('on',s[key]!==false));
   _initSneakMaxWPicker();   // 기기별 저장값이라 ST.settings 가 아니라 localStorage 에서 읽는다
   const mMode=s.mviewMemMode||'cross';
   el('mviewMemCross')?.classList.toggle('on',mMode==='cross');
@@ -20364,21 +20386,9 @@ function renderSettingsPanel(){
   refreshNotifyUI();
   _chk('setVerseBarOn',!!s.verseBarOn);
   _chk('setVerseBarAutoRotate',s.verseBarAutoRotate!==false);
-  document.getElementById('setVerseFullCat')?.classList.toggle('on',s.verseFullCat!==false);
-  document.getElementById('setVerseFullTopic')?.classList.toggle('on',s.verseFullTopic!==false);
-  document.getElementById('setVerseFullRef')?.classList.toggle('on',s.verseFullRef!==false);
-  document.getElementById('setVerseFullTag')?.classList.toggle('on',s.verseFullTag!==false);
-  document.getElementById('setVerseSneakCat')?.classList.toggle('on',s.verseSneakCat!==false);
-  document.getElementById('setVerseSneakTopic')?.classList.toggle('on',s.verseSneakTopic!==false);
-  document.getElementById('setVerseSneakRef')?.classList.toggle('on',s.verseSneakRef!==false);
-  document.getElementById('setVerseSneakFirstWord')?.classList.toggle('on',s.verseSneakFirstWord!==false);
-  document.getElementById('setVerseSneakTag')?.classList.toggle('on',s.verseSneakTag!==false);
+  // 같은 표를 말씀 설정창과 함께 쓴다 (한쪽만 고치면 다른 창에서 어긋난다)
+  _VSET_ITEM_BTNS.forEach(([id,key])=>document.getElementById(id)?.classList.toggle('on',s[key]!==false));
   _initSneakMaxWPicker();
-  document.getElementById('setVerseWidgetCat')?.classList.toggle('on',s.verseWidgetCat!==false);
-  document.getElementById('setVerseWidgetTopic')?.classList.toggle('on',s.verseWidgetTopic!==false);
-  document.getElementById('setVerseWidgetText')?.classList.toggle('on',s.verseWidgetText!==false);
-  document.getElementById('setVerseWidgetRef')?.classList.toggle('on',s.verseWidgetRef!==false);
-  document.getElementById('setVerseWidgetTag')?.classList.toggle('on',s.verseWidgetTag!==false);
   const vwT=_vwSize('verseWidgetTextSize'),vwR=_vwSize('verseWidgetRefSize');
   [1,2,3].forEach(n=>{
     document.getElementById('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
