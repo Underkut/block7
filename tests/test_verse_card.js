@@ -446,10 +446,8 @@ console.log('\n시나리오 9 — 화면 연결');
   // 등급 설명 말풍선이 밝은 테마에서 안 보이던 것 (어두운 배경 + 어두운 글자)
   sc.eq('말풍선은 늘 읽히는 색', SRC.includes('background:rgba(20,20,24,.92);color:#fff;'), true);
   sc.eq('정의 없는 --s3 를 쓰지 않는다', SRC.includes('var(--s3,'), false);
-  // 시트는 되도록 구글 스프레드시트 앱으로
+  // ⚠️ 0813-9: 시트는 **절대 네이티브 앱으로 넘기지 않는다** (아래 시나리오에서 자세히)
   sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url)'), true);
-  sc.eq('안드로이드는 앱을 콕 집어', SRC.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
-  sc.eq('앱이 없으면 웹으로', SRC.includes('S.browser_fallback_url='), true);
 
   // ── 0811-4 ──
   // 글자 크기 −/+ 를 헤더에서 빼내 카드 안 우상단으로. 헤더는 좌·가운데·우 셋뿐이라
@@ -469,25 +467,6 @@ console.log('\n시나리오 9 — 화면 연결');
         /\.vc-zoom\{display:none;\}\n@media \(hover:hover\)\{\n  \.vc-zoom\{/.test(SRC), true);
   sc.eq('버튼 자체는 늘 그린다(잠금 상태를 그대로 쓴다)',
         SRC.includes("const zoom=`<div class=\"vc-zoom\">"), true);
-  // 아이폰: 앱이 있으면 사파리를 거치지 않고 바로 구글 스프레드시트 앱으로
-  sc.eq('아이폰도 앱을 먼저 부른다', SRC.includes("const appUrl='googlesheets://'+url.replace("), true);
-
-  // ── 0811-6 ──
-  // ⚠️ 앱과 사파리가 **둘 다** 열리던 것. 시간을 재서 "안 열렸다"고 판정한 뒤
-  //    x-safari- 를 걸었는데, 아이폰은 앱으로 넘어가는 데 시간이 걸린다.
-  //    → 사파리는 사람이 한 번 더 누를 때만 연다.
-  sc.eq('시간을 재서 사파리를 열지 않는다',
-        SRC.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), false);
-  sc.eq('한 번 더 누르면 그때 사파리', SRC.includes("if(_sheetAppMiss===url){_sheetAppMiss='';BibleLinkProvider.open(url);return;}"), true);
-  sc.eq('그 주소를 기억해 둔다', SRC.includes("let _sheetAppMiss='';"), true);
-  sc.eq('안 열렸을 때만 안내', SRC.includes("showToast('시트 앱이 열리지 않았어요. 한 번 더 누르면 사파리로 열게요');"), true);
-  // 벗어난 낌새를 네 가지로 넓게 본다 — 하나라도 걸리면 사파리를 열지 않는다
-  sc.eq('벗어남 신호 네 가지',
-        SRC.includes("const evs=[[document,'visibilitychange'],[window,'pagehide'],[window,'blur'],[window,'freeze']];"), true);
-  sc.eq('포커스까지 본다',
-        SRC.includes('if(left||document.hidden||(document.hasFocus&&!document.hasFocus()))return;'), true);
-  sc.eq('기다리는 시간도 넉넉히', SRC.includes('},2500);'), true);
-
   // ── 0810-3 ──
   // 손끝을 따라 움직이는 층 (배경은 제자리, 글·버튼만 움직인다)
   sc.eq('밀 때 따라 움직이는 층', SRC.includes('<div class="vc-slide">'), true);
@@ -592,6 +571,40 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
    'verseCardLike', 'verseCardMem', 'verseCardDeeper', 'verseCardEven', 'verseCardShare']
     .forEach(k => sc.eq(k + ' 켜짐', pick(k), 'true'));
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
+}
+
+// ═══ 시트 셀 열기는 늘 '웹'으로 (v26-0813-9) ═══
+// ⚠️ HB 신고 — 0813-8 에서 URL(#gid=…&range=…)을 바로잡았는데도 여전히
+//    "구글 시트의 이전에 열었던 셀 위치"만 열렸다.
+//    원인은 URL 이 아니라 **여는 방법** 이었다. 예전 코드는 "가능하면 앱으로"
+//    라며 안드로이드는 intent://(package=…sheets), 아이폰은 googlesheets:// 로
+//    **네이티브 앱**을 불렀다. 그런데 시트 앱은 gid·range 프래그먼트를 무시하고
+//    그 문서를 **마지막으로 보던 자리** 그대로 연다. gid·range 는 구글 시트
+//    **웹**만 지킨다.
+//    → 이 기능은 정확한 셀을 짚는 것이 핵심이므로 앱 UX 보다 정확함을 택한다.
+console.log('\n시나리오 — 시트는 앱이 아니라 웹으로 연다');
+{
+  const fn = SRC.slice(SRC.indexOf('function _openSheetUrl(url){'),
+                       SRC.indexOf('function _vgOpenFromReels('));
+
+  // ⚠️ 이 셋 중 하나라도 되살아나면 같은 증상이 그대로 재현된다
+  sc.eq('안드로이드 앱 스킴을 쓰지 않는다', fn.includes('intent://'), false);
+  sc.eq('시트 앱 패키지를 콕 집지 않는다',
+        fn.includes('package=com.google.android.apps.docs.editors.sheets'), false);
+  sc.eq('아이폰 앱 스킴을 쓰지 않는다', fn.includes('googlesheets://'), false);
+
+  // 홈화면 앱(PWA) 안에서는 내부 브라우저가 전체화면을 덮으므로 사파리로 넘긴다
+  sc.eq('PWA 는 사파리로', fn.includes("location.href='x-safari-'+url;"), true);
+  sc.eq('PWA 판정을 한다', fn.includes('display-mode: standalone'), true);
+  // 그 밖에는 그냥 새 탭
+  sc.eq('나머지는 새 탭', fn.includes('BibleLinkProvider._openInApp(url)'), true);
+
+  // 앱이 안 열렸을 때를 재던 장치는 이제 필요 없다 (앱을 아예 안 부르므로)
+  sc.eq('앱 실패 감지 장치가 없다', SRC.includes('_sheetAppMiss'), false);
+  sc.eq('앱 실패 안내도 없다', SRC.includes('시트 앱이 열리지 않았어요'), false);
+
+  // URL 쪽(0813-8)은 그대로 유지돼야 한다 — 둘 다 맞아야 셀이 잡힌다
+  sc.eq('행 범위는 그대로 붙인다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
 }
 
 sc.done();
