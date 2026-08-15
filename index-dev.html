@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2666,7 +2666,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-8";
+const APP_VERSION = "v. 26-0813-9";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10349,48 +10349,29 @@ function vfOpenSheetForCat(){
   if(!t.row)showToast('시트를 열어요 — 행 위치는 한 번 동기화한 뒤부터 정확해져요');
   _openSheetUrl(t.url);
 }
-// 시트는 **가능하면 구글 스프레드시트 앱**으로 넘긴다.
-//  · 안드로이드: intent:// 로 앱을 콕 집어 부른다. 앱이 없으면 browser_fallback_url 로 웹.
-//  · 아이폰: 앱 안 브라우저로 열면 앱으로 넘어갈 길이 없다 → 사파리로 넘겨
-//    유니버설 링크가 시트 앱을 잡게 한다 (BibleLinkProvider.open 이 그 일을 한다).
-//  · PC: 어차피 브라우저 → 브라우저라 지금대로 새 탭.
-// 앱으로 안 열렸던 주소. 같은 것을 한 번 더 부르면 그때 사파리로 넘긴다.
-let _sheetAppMiss='';
+// ⚠️ 시트는 **절대 네이티브 앱으로 넘기지 않는다** (v26-0813-9, HB 신고로 뒤집음).
+//    예전엔 "가능하면 구글 스프레드시트 앱으로" 넘겼는데, 안드로이드 intent://
+//    (package=…sheets)도 아이폰 googlesheets:// 스킴도 **네이티브 앱**을 불러서,
+//    앱이 열려도 이 함수가 만든 #gid=…&range=… 를 무시하고 **그 문서를 마지막으로
+//    보던 자리 그대로** 보여줬다 — "구글 시트의 이전에 열었던 셀 위치로만
+//    보내준다"는 증상이 정확히 이것이다. gid·range 는 **구글 시트 웹**만 지킨다.
+//    이 기능은 정확한 셀을 짚는 것이 핵심이라 앱 UX 보다 정확함이 우선이다
+//    → 늘 브라우저(웹)로 연다.
 function _openSheetUrl(url){
-  const ua=navigator.userAgent||'';
-  if(/Android/i.test(ua)){
-    const noScheme=url.replace(/^https?:\/\//,'');
-    location.href='intent://'+noScheme+'#Intent;scheme=https;'+
-      'package=com.google.android.apps.docs.editors.sheets;'+
-      'S.browser_fallback_url='+encodeURIComponent(url)+';end';
+  const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent||'')
+    ||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  const standalone=navigator.standalone===true
+    ||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  if(isIOS&&standalone){
+    // 홈화면 앱 안에서 target=_blank 로 열면 "앱 속 내부 브라우저"가 떠서
+    // 지금 보고 있는 전체화면 말씀을 덮어버린다 → 사파리로 넘긴다
+    // (BibleLinkProvider._externalUrl 과 같은 기법. 사파리도 구글 계정에
+    //  로그인돼 있으면 시트 앱으로 넘어가자고 물어볼 수 있는데, 그때도
+    //  "웹에서 계속 보기"를 고르면 gid·range 가 지켜진다).
+    try{location.href='x-safari-'+url;}catch(e){}
     return;
   }
-  const isIOS=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  if(isIOS){
-    // 두 번째로 같은 주소를 부르면 사파리로 — 앱이 없을 때의 탈출구다.
-    if(_sheetAppMiss===url){_sheetAppMiss='';BibleLinkProvider.open(url);return;}
-    // ⚠️ "얼마쯤 기다렸는데 안 열렸으면 사파리로" 를 자동으로 하지 않는다.
-    //    0811-5 에서 그렇게 했다가 **앱과 사파리가 둘 다** 열렸다. 아이폰은
-    //    앱으로 넘어가는 데 시간이 걸리고 그 사이 확인 창이 뜨기도 해서,
-    //    기다리는 시간을 아무리 잡아도 "아직 안 넘어갔다"로 잘못 볼 수 있다.
-    //    그 판정으로 x-safari- 를 걸면 앱 위에 사파리가 겹쳐 뜬다.
-    //    → 사파리는 **사람이 한 번 더 누를 때만** 연다.
-    const appUrl='googlesheets://'+url.replace(/^https?:\/\//,'');
-    let left=false;
-    const mark=()=>{left=true;};
-    const evs=[[document,'visibilitychange'],[window,'pagehide'],[window,'blur'],[window,'freeze']];
-    evs.forEach(([t,n])=>t.addEventListener(n,mark));
-    try{location.href=appUrl;}catch(e){}
-    setTimeout(()=>{
-      evs.forEach(([t,n])=>t.removeEventListener(n,mark));
-      // 화면을 벗어난 낌새가 조금이라도 있으면 넘어간 것으로 본다(사파리 안 염)
-      if(left||document.hidden||(document.hasFocus&&!document.hasFocus()))return;
-      _sheetAppMiss=url;
-      showToast('시트 앱이 열리지 않았어요. 한 번 더 누르면 사파리로 열게요');
-    },2500);
-    return;
-  }
-  BibleLinkProvider._openInApp(url);
+  BibleLinkProvider._openInApp(url);   // 새 탭(브라우저)으로 — 네이티브 앱 스킴을 쓰지 않는다
 }
 function _vgOpenFromReels(kind){
   const v=_vfCurrentVerse();if(!v)return;
