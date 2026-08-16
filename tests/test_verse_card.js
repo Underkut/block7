@@ -585,10 +585,19 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
 console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복사, 토스트 없음');
 {
   sc.eq('여는 함수와 복사 함수가 갈라져 있다',
-        SRC.includes('function _sheetGo(url){') && SRC.includes('function _sheetCopyPending(){'), true);
+        SRC.includes('function _sheetGo(url){') && SRC.includes('function _sheetCopyPending(keep){'), true);
   sc.eq('vfOpenSheetForCat 이 복사할 본문을 미리 적어 둔다',
         SRC.includes("_sheetPendingCopyText=(v&&v.krText)||'';"), true);
   sc.eq('그리고 곧장 연다', SRC.includes('_sheetGo(t.url);'), true);
+
+  // ⚠️ v26-0817-4 — **복사가 먼저, 전환이 나중**이어야 한다.
+  //    0817-2 는 복사를 click 에만 맡겼는데, 타이머에서 앱으로 넘어가면 그 click
+  //    자체가 오지 않아(touchcancel) "전환은 되는데 복사는 안 되는" 상태가 됐다.
+  const openFn = SRC.slice(SRC.indexOf('function vfOpenSheetForCat(){'),
+                           SRC.indexOf('// 시트 열기는 **기기에 따라'));
+  sc.eq('붙잡고 있는 동안 한 번 복사한다', openFn.includes('_sheetCopyPending(true);'), true);
+  sc.eq('복사가 화면 전환보다 먼저 온다',
+        openFn.indexOf('_sheetCopyPending(true);') < openFn.indexOf('_sheetGo(t.url);'), true);
 
   const goFn = SRC.slice(SRC.indexOf('function _sheetGo(url){'), SRC.indexOf('function _sheetCopyPending('));
   // 모바일 — 여전히 네이티브 앱을 부른다
@@ -600,10 +609,13 @@ console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복�
   // _sheetGo 안에는 클립보드 코드가 없어야 한다(복사는 별도 함수로 완전히 분리)
   sc.eq('여는 함수엔 클립보드가 없다', /clipboard|_fallbackCopy/.test(goFn), false);
 
-  const copyFn = SRC.slice(SRC.indexOf('function _sheetCopyPending(){'), SRC.indexOf('function _vgOpenFromReels('));
+  const copyFn = SRC.slice(SRC.indexOf('function _sheetCopyPending(keep){'), SRC.indexOf('function _vgOpenFromReels('));
   sc.eq('PC 는 복사를 건너뛴다', copyFn.includes('if(!isAndroid&&!isIOS)return;'), true);
   sc.eq('클립보드로 시도한다', copyFn.includes('navigator.clipboard.writeText(txt)'), true);
-  sc.eq('실패하면 대체 수단으로', copyFn.includes('.catch(()=>_fallbackCopy(txt));'), true);
+  // keep=true(붙잡고 있는 동안)면 본문을 지우지 않는다 — click 이 오면 한 번 더 시도한다
+  sc.eq('keep 면 본문을 남겨 둔다', copyFn.includes("if(!keep)_sheetPendingCopyText='';"), true);
+  // 손가락이 닿아 있는 동안에는 execCommand 쪽이 더 잘 통한다 — 둘 다 건다
+  sc.eq('붙잡은 동안엔 대체 수단도 같이', copyFn.includes('if(keep)_fallbackCopy(txt);'), true);
 
   // 토스트가 전부 빠졌는지
   sc.eq('여는 함수에 토스트 없음', /showToast/.test(goFn), false);
@@ -615,6 +627,46 @@ console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복�
 
   // URL 쪽(0813-8)은 그대로 유지돼야 한다 — PC 에서 셀을 잡는 데 필요하다
   sc.eq('행 범위는 그대로 붙인다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
+}
+
+// ═══ 공유 이미지 BLOCK7 로고 자리 (v26-0817-4) ═══
+// ⚠️ 실측으로 세 번 헛짚은 자리다. 숫자로 남겨 둔다.
+//    · 0817-2: 우측 여백을 pad(위쪽 여백)에 맞춤 → 모바일 65/65 로 대칭은 맞았다.
+//    · 0817-3: 우측 여백을 액션 열의 실제 우측 여백에 맞춤 → 모바일 65/55 로 개선.
+//      그런데 **PC(가로 화면)에서는 이 줄이 아예 실행되지 않았다** — 가로 화면은
+//      액션 열이 화면 높이를 거의 다 써서 fitsRight 가 항상 false 였고,
+//      그때 lx=pad 로 떨어져 로고가 **좌상단**에 찍혔다(실측 3840×2160:
+//      액션 윗선 207 < 로고 아랫선 249 → 세로로 겹침 판정).
+//    · 0817-4: 겹칠 때 좌상단으로 도망가지 말고 **액션 열 바로 왼쪽**으로만 비켜선다.
+console.log('\n시나리오 — 공유 이미지 로고가 가로 화면에서도 우상단에 남는다');
+{
+  // ⚠️ 'return cv;' 는 앞의 _vfRenderCard 에도 있다 — 반드시 시작점 뒤에서 찾는다
+  const lgFrom = SRC.indexOf('  if(o.inclBlock7){');
+  const lg = SRC.slice(lgFrom, SRC.indexOf('  return cv;\n}', lgFrom));
+  sc.eq('액션 열의 좌·우 끝을 모두 잰다',
+        lg.includes('actLeft=Math.min(actLeft,X(rr.left));') &&
+        lg.includes('actRight=Math.max(actRight,X(rr.right));'), true);
+  sc.eq('안 겹치면 액션 열의 우측 여백에 맞춰 모서리에',
+        lg.includes('lx=W-actRightMargin-wAll;'), true);
+  sc.eq('겹치면 좌상단이 아니라 액션 열 왼쪽으로 비켜선다',
+        lg.includes('lx=actLeft-fs*0.9-wAll;'), true);
+  sc.eq('좌상단은 그래도 자리가 없을 때만',
+        lg.includes('if(lx<pad)lx=pad;'), true);
+  // 0817-2 에서 지운 '무조건 밀어내기'가 되살아나면 모바일 여백이 다시 벌어진다.
+  // → fitsRight(안 겹침) 갈래 안에서는 actLeft 를 쳐다보지도 않아야 한다.
+  const yes = lg.slice(lg.indexOf('if(fitsRight){'), lg.indexOf('}else{'));
+  sc.eq('안 겹칠 때 갈래엔 밀어내기가 없다', yes.includes('actLeft'), false);
+}
+
+// ═══ 드래그 유령의 진하기 (v26-0817-4) ═══
+// ⚠️ 손에 붙어 다니는 것은 #dg(유령)이고, .drag-active 는 제자리에 남는 원래 줄이다.
+//    0817-3 에서 .drag-active 만 낮췄더니 "티가 안 난다"는 신고를 받았다 —
+//    드롭 표시선을 가리던 것은 #dg 쪽이었다.
+console.log('\n시나리오 — 드래그 중 표시선이 유령에 가리지 않는다');
+{
+  const dg = SRC.slice(SRC.indexOf('#dg{'), SRC.indexOf('/* ── TRASH PANEL ── */'));
+  sc.eq('유령을 절반으로 낮췄다', dg.includes('opacity:.48;'), true);
+  sc.eq('예전의 .96 은 없다', dg.includes('opacity:.96;'), false);
 }
 
 // ═══ Deeper · Even Deeper 도 토스트 없음 (v26-0813-11) ═══
