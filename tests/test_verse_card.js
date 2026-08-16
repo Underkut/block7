@@ -427,7 +427,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('모음 검색에 태그 포함', SRC.includes("(v.tags||[]).some(t=>String(t).includes(q))"), true);
   sc.eq('검색창 안내도 바뀜', SRC.includes('구절, 본문, 소주제, 태그 검색'), true);
   // Even Deeper 는 성공 안내를 띄우지 않는다 (바로 다른 앱으로 넘어간다)
-  sc.eq('Even 성공 토스트 없음', SRC.includes('const okMsg=()=>{};'), true);
+  // 0813-11: okMsg 자체를 없앴다 (성공·실패 모두 토스트 없음) — 아래 새 시나리오에서 확인
 
   // ── 0811-3 ──
   // ⚠️ 좌우 넘김 영역이 카드 몸통 전체를 덮어 우하단 맨 오른쪽 반응 버튼을 가렸다
@@ -447,7 +447,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('말풍선은 늘 읽히는 색', SRC.includes('background:rgba(20,20,24,.92);color:#fff;'), true);
   sc.eq('정의 없는 --s3 를 쓰지 않는다', SRC.includes('var(--s3,'), false);
   // ⚠️ 0813-9: 시트는 **절대 네이티브 앱으로 넘기지 않는다** (아래 시나리오에서 자세히)
-  sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url)'), true);
+  sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url,copyText)'), true);
 
   // ── 0811-4 ──
   // 글자 크기 −/+ 를 헤더에서 빼내 카드 안 우상단으로. 헤더는 좌·가운데·우 셋뿐이라
@@ -573,37 +573,55 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
 }
 
-// ═══ 시트 셀 열기 — PC 는 웹, 모바일은 무조건 앱 (v26-0813-10) ═══
-// ⚠️ 0813-9 에서 "정확한 셀을 짚으려면 웹이어야 한다"며 전부 웹으로 바꿨는데,
-//    HB 의 시트는 커서 **모바일 웹 브라우저로는 아예 열어 볼 수가 없었다.**
-//    PC 는 웹이 잘 맞고(0813-9 그대로 유지), 모바일은 셀을 못 짚더라도
-//    "일단 앱에서 읽을 수 있는 것" 이 우선이라 도로 앱으로 보낸다.
-//    ⚠️ 이 갈림을 다시 하나로 합치면(둘 다 웹 또는 둘 다 앱) 한쪽이 못 쓰게 된다.
-console.log('\n시나리오 — 시트 열기, PC 는 웹 모바일은 앱');
+// ═══ 시트 셀 열기 — PC 는 웹, 모바일은 앱 + 본문 복사, 토스트 없음 (v26-0813-11) ═══
+// ⚠️ 모바일은 시트 앱이 gid·range 를 무시해 셀을 못 짚는다(0813-9 에서 확인).
+//    그렇다고 웹으로 보내면 HB 의 시트는 커서 모바일 브라우저로는 열어 볼
+//    수조차 없다(0813-10). → 앱으로 보내되, **본문을 클립보드에 복사**해
+//    앱의 찾기에 붙여넣으면 그 구절로 갈 수 있게 한다.
+//    다른 화면으로 곧장 넘어가는 동작이라 토스트는 전부 뺐다.
+console.log('\n시나리오 — 시트 열기: 모바일은 앱+복사, PC 는 웹, 토스트 없음');
 {
-  const fn = SRC.slice(SRC.indexOf('function _openSheetUrl(url){'),
+  const fn = SRC.slice(SRC.indexOf('function _openSheetUrl(url,copyText){'),
                        SRC.indexOf('function _vgOpenFromReels('));
 
-  // 모바일 — 예전처럼 네이티브 앱을 부른다
+  sc.eq('본문도 함께 받는다', SRC.includes('function _openSheetUrl(url,copyText){'), true);
+  sc.eq('전체화면에서 본문을 넘긴다', SRC.includes('_openSheetUrl(t.url,v&&v.krText);'), true);
+
+  // 모바일 — 여전히 네이티브 앱을 부른다
   sc.eq('안드로이드는 앱을 콕 집어', fn.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
-  sc.eq('앱이 없으면 웹으로', fn.includes('S.browser_fallback_url='), true);
-  sc.eq('아이폰도 앱을 먼저 부른다', fn.includes("const appUrl='googlesheets://'+url.replace("), true);
-  sc.eq('앱과 사파리가 둘 다 뜨지 않게 시간을 재지 않는다',
-        fn.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), false);
-  sc.eq('한 번 더 누르면 그때 사파리', fn.includes("if(_sheetAppMiss===url){_sheetAppMiss='';BibleLinkProvider.open(url);return;}"), true);
-  sc.eq('그 주소를 기억해 둔다', SRC.includes("let _sheetAppMiss='';"), true);
-  sc.eq('안 열렸을 때만 안내', fn.includes("showToast('시트 앱이 열리지 않았어요. 한 번 더 누르면 사파리로 열게요');"), true);
-  sc.eq('벗어남 신호 네 가지',
-        fn.includes("const evs=[[document,'visibilitychange'],[window,'pagehide'],[window,'blur'],[window,'freeze']];"), true);
-  sc.eq('포커스까지 본다',
-        fn.includes('if(left||document.hidden||(document.hasFocus&&!document.hasFocus()))return;'), true);
-  sc.eq('기다리는 시간도 넉넉히', fn.includes('},2500);'), true);
+  sc.eq('앱이 없으면 웹으로(안드로이드 OS 폴백)', fn.includes('S.browser_fallback_url='), true);
+  sc.eq('아이폰도 앱으로', fn.includes("const appUrl='googlesheets://'+url.replace("), true);
 
   // PC — 0813-9 에서 확인된 웹 경로는 그대로 남아 있어야 한다
   sc.eq('PC 는 새 탭(웹)으로', fn.includes('BibleLinkProvider._openInApp(url);'), true);
 
+  // 모바일에서만, 새 화면을 열기 전에 동기적으로 복사부터 한다
+  sc.eq('모바일에서만 복사', fn.includes('if((isAndroid||isIOS)&&copyText){'), true);
+  sc.eq('복사가 끝난 뒤에 연다', fn.includes('.finally(go);'), true);
+  sc.eq('복사 실패해도 대체 수단으로', fn.includes('.catch(()=>_fallbackCopy(copyText))'), true);
+
+  // 토스트가 전부 빠졌는지 — 이 함수 안에는 하나도 없어야 한다
+  sc.eq('시트 열기에 토스트 없음', /showToast/.test(fn), false);
+  sc.eq('행 위치 안내도 뺐다', SRC.includes('행 위치는 한 번 동기화한 뒤부터 정확해져요'), false);
+  // 시트에서 온 게 아닐 때의 안내는 남아 있다 (화면이 안 바뀌는 경우라 여전히 필요)
+  sc.eq('시트 출처가 아닐 때 안내는 남는다',
+        SRC.includes("if(!t){showToast('이 말씀은 구글 시트에서 가져온 것이 아니에요');return;}"), true);
+
   // URL 쪽(0813-8)은 그대로 유지돼야 한다 — PC 에서 셀을 잡는 데 필요하다
   sc.eq('행 범위는 그대로 붙인다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
+}
+
+// ═══ Deeper · Even Deeper 도 토스트 없음 (v26-0813-11) ═══
+// ⚠️ 둘 다 곧장 다른 앱/사이트로 넘어가는 동작이라 성공·실패 알림 모두 뺐다.
+console.log('\n시나리오 — Deeper·Even Deeper 토스트 없음');
+{
+  sc.eq('BibleLinkProvider.open 에 토스트 없음',
+        /open\(url\)\{[\s\S]*?if\(!url\)return;/.test(SRC), true);
+  sc.eq('링크 실패 안내를 없앴다', SRC.includes('대한성서공회 사이트 링크를 열지 못했어요'), false);
+  sc.eq('Even Deeper 복사 실패 안내를 없앴다', SRC.includes("ChatGPT에 '"), false);
+  const ed = SRC.slice(SRC.indexOf('function openEvenDeeperFromRef(ref){'),
+                       SRC.indexOf('// 지금 시각이 속한'));
+  sc.eq('Even Deeper 는 여전히 복사 먼저, 열기는 나중', ed.includes('.finally(go);'), true);
 }
 
 sc.done();
