@@ -447,7 +447,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('말풍선은 늘 읽히는 색', SRC.includes('background:rgba(20,20,24,.92);color:#fff;'), true);
   sc.eq('정의 없는 --s3 를 쓰지 않는다', SRC.includes('var(--s3,'), false);
   // ⚠️ 0813-9: 시트는 **절대 네이티브 앱으로 넘기지 않는다** (아래 시나리오에서 자세히)
-  sc.eq('시트 열기 한 곳으로', SRC.includes('function _openSheetUrl(url,copyText)'), true);
+  sc.eq('시트 열기 함수가 있다', SRC.includes('function _sheetGo(url){'), true);
 
   // ── 0811-4 ──
   // 글자 크기 −/+ 를 헤더에서 빼내 카드 안 우상단으로. 헤더는 좌·가운데·우 셋뿐이라
@@ -573,35 +573,41 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
 }
 
-// ═══ 시트 셀 열기 — PC 는 웹, 모바일은 앱 + 본문 복사, 토스트 없음 (v26-0813-11) ═══
-// ⚠️ 모바일은 시트 앱이 gid·range 를 무시해 셀을 못 짚는다(0813-9 에서 확인).
-//    그렇다고 웹으로 보내면 HB 의 시트는 커서 모바일 브라우저로는 열어 볼
-//    수조차 없다(0813-10). → 앱으로 보내되, **본문을 클립보드에 복사**해
-//    앱의 찾기에 붙여넣으면 그 구절로 갈 수 있게 한다.
-//    다른 화면으로 곧장 넘어가는 동작이라 토스트는 전부 뺐다.
-console.log('\n시나리오 — 시트 열기: 모바일은 앱+복사, PC 는 웹, 토스트 없음');
+// ═══ 시트 셀 열기 — 여는 것은 즉시(타이머), 복사는 손 뗄 때(click) (v26-0817-2) ═══
+// ⚠️ 0813-11 에서는 여는 것과 복사가 한 함수(_openSheetUrl)에 붙어 있었는데,
+//    실기기에서 모바일 클립보드 복사가 계속 실패했다(0813-12, 0817-1).
+//    원인은 아이폰이 click(터치 뒤 오는 합성 이벤트)만 클립보드의 "진짜 사용자
+//    조작"으로 인정하는 것 — 그런데 복사를 click 까지 미루면 화면 전환도 같이
+//    미뤄져서, "붙잡고 있으면 바로 앱으로 넘어가던" 예전 느낌이 사라졌다
+//    (HB 재신고). location.href 로 앱을 부르는 것 자체는 제스처 제약이 없으므로,
+//    **여는 것(_sheetGo)은 타이머(붙잡은 채로)에서 즉시, 복사(_sheetCopyPending)는
+//    click(뗀 뒤)에서** 하도록 완전히 갈랐다.
+console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복사, 토스트 없음');
 {
-  const fn = SRC.slice(SRC.indexOf('function _openSheetUrl(url,copyText){'),
-                       SRC.indexOf('function _vgOpenFromReels('));
+  sc.eq('여는 함수와 복사 함수가 갈라져 있다',
+        SRC.includes('function _sheetGo(url){') && SRC.includes('function _sheetCopyPending(){'), true);
+  sc.eq('vfOpenSheetForCat 이 복사할 본문을 미리 적어 둔다',
+        SRC.includes("_sheetPendingCopyText=(v&&v.krText)||'';"), true);
+  sc.eq('그리고 곧장 연다', SRC.includes('_sheetGo(t.url);'), true);
 
-  sc.eq('본문도 함께 받는다', SRC.includes('function _openSheetUrl(url,copyText){'), true);
-  sc.eq('전체화면에서 본문을 넘긴다', SRC.includes('_openSheetUrl(t.url,v&&v.krText);'), true);
-
+  const goFn = SRC.slice(SRC.indexOf('function _sheetGo(url){'), SRC.indexOf('function _sheetCopyPending('));
   // 모바일 — 여전히 네이티브 앱을 부른다
-  sc.eq('안드로이드는 앱을 콕 집어', fn.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
-  sc.eq('앱이 없으면 웹으로(안드로이드 OS 폴백)', fn.includes('S.browser_fallback_url='), true);
-  sc.eq('아이폰도 앱으로', fn.includes("const appUrl='googlesheets://'+url.replace("), true);
-
+  sc.eq('안드로이드는 앱을 콕 집어', goFn.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
+  sc.eq('앱이 없으면 웹으로(안드로이드 OS 폴백)', goFn.includes('S.browser_fallback_url='), true);
+  sc.eq('아이폰도 앱으로', goFn.includes("const appUrl='googlesheets://'+url.replace("), true);
   // PC — 0813-9 에서 확인된 웹 경로는 그대로 남아 있어야 한다
-  sc.eq('PC 는 새 탭(웹)으로', fn.includes('BibleLinkProvider._openInApp(url);'), true);
+  sc.eq('PC 는 새 탭(웹)으로', goFn.includes('BibleLinkProvider._openInApp(url);'), true);
+  // _sheetGo 안에는 클립보드 코드가 없어야 한다(복사는 별도 함수로 완전히 분리)
+  sc.eq('여는 함수엔 클립보드가 없다', /clipboard|_fallbackCopy/.test(goFn), false);
 
-  // 모바일에서만, 새 화면을 열기 전에 동기적으로 복사부터 한다
-  sc.eq('모바일에서만 복사', fn.includes('if((isAndroid||isIOS)&&copyText){'), true);
-  sc.eq('복사가 끝난 뒤에 연다', fn.includes('.finally(go);'), true);
-  sc.eq('복사 실패해도 대체 수단으로', fn.includes('.catch(()=>_fallbackCopy(copyText))'), true);
+  const copyFn = SRC.slice(SRC.indexOf('function _sheetCopyPending(){'), SRC.indexOf('function _vgOpenFromReels('));
+  sc.eq('PC 는 복사를 건너뛴다', copyFn.includes('if(!isAndroid&&!isIOS)return;'), true);
+  sc.eq('클립보드로 시도한다', copyFn.includes('navigator.clipboard.writeText(txt)'), true);
+  sc.eq('실패하면 대체 수단으로', copyFn.includes('.catch(()=>_fallbackCopy(txt));'), true);
 
-  // 토스트가 전부 빠졌는지 — 이 함수 안에는 하나도 없어야 한다
-  sc.eq('시트 열기에 토스트 없음', /showToast/.test(fn), false);
+  // 토스트가 전부 빠졌는지
+  sc.eq('여는 함수에 토스트 없음', /showToast/.test(goFn), false);
+  sc.eq('복사 함수에도 토스트 없음', /showToast/.test(copyFn), false);
   sc.eq('행 위치 안내도 뺐다', SRC.includes('행 위치는 한 번 동기화한 뒤부터 정확해져요'), false);
   // 시트에서 온 게 아닐 때의 안내는 남아 있다 (화면이 안 바뀌는 경우라 여전히 필요)
   sc.eq('시트 출처가 아닐 때 안내는 남는다',
@@ -624,38 +630,31 @@ console.log('\n시나리오 — Deeper·Even Deeper 토스트 없음');
   sc.eq('Even Deeper 는 여전히 복사 먼저, 열기는 나중', ed.includes('.finally(go);'), true);
 }
 
-// ═══ 롱터치의 실제 열기는 click 에서 (v26-0817-1) ═══
-// ⚠️ 0813-12 에서 touchend 로 옮겼는데도 실기기에서 여전히 클립보드 복사가
-//    안 됐다 — 아이폰은 raw 터치 이벤트가 아니라 **click**(터치 뒤 브라우저가
-//    만드는 합성 이벤트)만 클립보드 API 의 "진짜 사용자 조작"으로 확실히 쳐준다.
-//    그래서 여는 동작(따라서 복사도)을 click 으로 한 번 더 옮겼다.
-// ⚠️ 그런데 억제용 표시(_vfCatLongFired)는 **click 이 아니라 여전히 타이머
-//    안에서** 미리 세워야 한다 — HTML onclick="vfCatTap()" 이 addEventListener
-//    보다 먼저 등록되어 같은 click 에서 먼저 실행되므로, 그 판정 시점에
-//    이미 표시가 서 있어야 롱터치인데 타일뷰로도 같이 넘어가는 사고가 안 난다.
-console.log('\n시나리오 — 롱터치 억제 표시는 미리, 여는 것은 click 에서');
+// ═══ 롱터치 — 화면은 즉시(타이머), 억제 표시도 그때 같이 (v26-0817-2) ═══
+// ⚠️ 0817-1 에서는 여는 것 자체를 click(뗀 뒤)으로 미뤘는데, 그러면 "붙잡고
+//    있으면 바로 앱으로 넘어가던" 예전 느낌이 사라진다며 HB 가 재신고했다.
+//    화면 전환(location.href)은 클립보드와 달리 제스처 제약이 없으므로,
+//    타이머 콜백(붙잡은 채로) 안에서 곧장 vfOpenSheetForCat() 을 부른다 —
+//    억제 표시(_vfCatLongFired)도 자연히 같은 자리에서 같이 선다.
+//    복사만 click(뗀 뒤)으로 남겨 둔다.
+console.log('\n시나리오 — 롱터치는 타이머에서 곧장 연다');
 {
   const fn = SRC.slice(SRC.indexOf('function _initVfCatSheet(){'),
                        SRC.indexOf('function vfOpenSheetForCat('));
-  // 억제 표시는 타이머 안에서 미리 선다 (vfCatTap 의 판정보다 먼저 서야 한다)
-  sc.eq('타이머가 억제 표시를 미리 세운다',
-        fn.includes('t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;},500);'), true);
-  // 실제로 여는 것(따라서 클립보드 복사도)은 타이머 콜백 안에 없다
-  sc.eq('타이머 콜백에 vfOpenSheetForCat 이 없다',
-        /setTimeout\([^)]*vfOpenSheetForCat/.test(fn), false);
-  // touchend 안에도 없다 (0813-12 에서 옮겼다가 또 실패했다)
-  sc.eq('touchend 콜백에도 없다',
-        /addEventListener\('touchend'[\s\S]{0,80}vfOpenSheetForCat/.test(fn), false);
-  // click 에서만 연다
-  sc.eq("click 리스너가 있다", fn.includes("cat.addEventListener('click',()=>{"), true);
-  sc.eq('click 에서 연다',
-        /addEventListener\('click',\(\)=>\{[\s\S]{0,80}vfOpenSheetForCat\(\);/.test(fn), true);
+  // 타이머 콜백 안에서 억제 표시와 함께 곧장 연다
+  sc.eq('타이머가 억제 표시와 함께 곧장 연다',
+        fn.includes('t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;vfOpenSheetForCat();},500);'),
+        true);
+  // click 은 이제 복사만 한다 — vfOpenSheetForCat 을 다시 부르지 않는다
+  sc.eq('click 은 복사만 한다',
+        /addEventListener\('click',\(\)=>\{[\s\S]{0,80}_sheetCopyPending\(\);/.test(fn), true);
+  sc.eq('click 이 vfOpenSheetForCat 을 다시 부르지 않는다',
+        /addEventListener\('click',\(\)=>\{[\s\S]{0,120}vfOpenSheetForCat/.test(fn), false);
   sc.eq('다 채우지 못했으면 아무 일도 안 한다', fn.includes('if(!held)return;'), true);
   // vfCatTap 은 여전히 HTML onclick 으로 먼저 등록된다 (등록 순서가 곧 억제 순서다)
   sc.eq('vfCatTap 은 inline onclick', SRC.includes('<div id="vfCat" onclick="vfCatTap()">'), true);
   // 우클릭(contextmenu)은 그 자체가 즉시 발생하는 제스처라 그대로 둔다
   sc.eq('우클릭은 그대로 즉시', fn.includes("cat.addEventListener('contextmenu',e=>{"), true);
 }
-
 
 sc.done();
