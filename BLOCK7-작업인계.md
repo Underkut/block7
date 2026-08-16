@@ -834,6 +834,25 @@ PC 도 앱으로 바꾸면 그 반대(PC 에 시트 데스크톱 앱이 없으�
 콜백 안에서 바로 하지 말고 `touchend` 로 미룰 것.** `setTimeout` 은 몇 ms 든
 관계없이 제스처 사슬을 끊는다.
 
+**⚠️⚠️⚠️⚠️⚠️⚠️ touchend 로도 부족했다 — 아이폰은 click 만 확실히 인정한다**
+(v26-0817-1). 실기기로 다시 신고됨: touchend 안에서 불러도 여전히 복사가 안
+됐다. 아이폰 사파리는 raw 터치 이벤트가 아니라 **click**(터치 뒤 브라우저가
+만드는 합성 이벤트)만 클립보드 API 의 "진짜 사용자 조작"으로 확실히 쳐준다.
+
+**최종 구조** (`_initVfCatSheet`):
+- 억제 표시(`_vfCatLongFired`)는 **여전히 타이머 안에서 미리** 세운다 — HTML
+  `onclick="vfCatTap()"` 이 `addEventListener` 보다 먼저 등록되어 같은 click
+  에서 먼저 실행되므로, 그 판정 시점에 이미 서 있어야 롱터치인데 타일뷰로도
+  같이 넘어가는 사고가 안 난다.
+- 실제로 여는 것(따라서 클립보드 복사도)은 **click 리스너 하나에서만** 한다.
+
+⚠️ **위 두 가지를 다시 합치지 말 것.** 억제 표시를 click 으로 옮기면 등록
+순서 때문에 vfCatTap() 이 먼저 타일뷰로 새 버리고, 여는 동작을 touchend 나
+setTimeout 으로 되돌리면 클립보드 복사가 다시 조용히 실패한다.
+Playwright 로 touchstart→(650ms)→touchend→click 순서를 그대로 재현해
+확인했다 — 롱터치는 복사되고 타일뷰로 새지 않으며, 500ms 못 채운 짧은
+탭은 정상적으로 타일뷰가 열린다.
+
 **같이 뺀 것 — 시트 열기·Deeper·Even Deeper 의 토스트 전부** (HB 요청: "다른
 화면으로 넘어가는 동작이라 토스트가 무의미하다"). `vfOpenSheetForCat` 의 행
 위치 안내, `_openSheetUrl` 의 iOS 앱-미착륙 안내(`_sheetAppMiss` 재시도
