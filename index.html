@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-5  [production]  -->
+<!-- BLOCK7  v. 26-0817-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2721,7 +2721,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-5";
+const APP_VERSION = "v. 26-0817-6";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -15329,9 +15329,21 @@ function renderSecs(){
           // 제스처 안인 touchend에서 focus를 다시 걸어 키보드가 바로 뜨게 한다.
           e.preventDefault(); // 이어지는 합성 click(빅 열기) 억제
           const g=document.getElementById(`tmp-sm-ghost-${sec.id}`);
-          _dlog('[+] touchend 에서 focus 다시걺  고스트있음='+!!g);
-          g?.querySelector('input')?.focus();
-          _dlog('[+] focus 건 뒤  scroll='+_dlogScroll());
+          const gi=g&&g.querySelector('input');
+          // ⚠️ 실기기 로그(v26-0817-5)로 확인 — 이미 포커스가 있는 입력창에
+          //    focus() 를 또 부르면 아이폰이 137ms 멈췄다가 곧바로 blur 를 냈다.
+          //    그 blur 가 100ms 뒤 커밋을 돌려 빈 고스트를 지워 버렸다.
+          //    → 포커스가 없을 때만 부른다. preventScroll 로 화면 튐도 줄인다.
+          if(gi){
+            gi._lpAt=Date.now();          // 롱터치로 막 열렸다는 표시
+            if(document.activeElement!==gi){
+              _dlog('[+] touchend 에서 focus 다시걺');
+              gi.focus({preventScroll:true});
+            }else{
+              _dlog('[+] 이미 포커스 있음 — focus 다시 안 걺');
+            }
+          }
+          _dlog('[+] touchend 처리 뒤  scroll='+_dlogScroll());
           setTimeout(()=>{_atFired=false;
             _dlog('[+] +400ms  고스트있음='+!!document.getElementById(`tmp-sm-ghost-${sec.id}`)+
                   '  scroll='+_dlogScroll());},400);
@@ -16035,7 +16047,21 @@ function _openGhostInput(secId, type, pos){
     // 다시 focus되는데, 예약된 commit이 취소되지 않아 100ms 뒤 빈 값으로
     // 커밋되며 고스트가 사라졌다(간헐적으로만 재현되던 원인).
     let _blurT=null;
+    let _lpRetried=false;
     inp.onblur=()=>{
+      // ⚠️ 롱터치로 막 연 직후(600ms 안)에 아이폰이 제멋대로 내는 blur 가 있다.
+      //    그대로 커밋하면 아직 한 글자도 못 친 고스트가 사라진다(실기기 확인,
+      //    v26-0817-5 로그: touchend 141ms 뒤 blur → 100ms 뒤 커밋 → 사라짐).
+      //    비어 있고 롱터치 직후면 커밋하지 말고 포커스를 한 번만 되돌린다.
+      if(!inp.value.trim() && inp._lpAt && Date.now()-inp._lpAt<600 && !_lpRetried){
+        _lpRetried=true;
+        _dlog('[고스트] 롱터치 직후 가짜 blur — 커밋 대신 focus 되돌림');
+        setTimeout(()=>{
+          if(document.activeElement!==inp)inp.focus({preventScroll:true});
+          _dlog('[고스트] 되돌린 뒤 포커스='+(document.activeElement===inp));
+        },0);
+        return;
+      }
       _dlog('[고스트] blur → 100ms 뒤 커밋 예약  scroll='+_dlogScroll());
       if(_blurT)clearTimeout(_blurT);
       _blurT=setTimeout(()=>{
@@ -16081,7 +16107,7 @@ function _openGhostInput(secId, type, pos){
     if(pos==='C')smList.insertBefore(ghost,smList.firstChild);
     else smList.appendChild(ghost);
     _dlog('[고스트] DOM 에 붙임(focus 직전)  scroll='+_dlogScroll());
-    inp.focus();
+    inp.focus({preventScroll:true});
     _dlog('[고스트] focus() 호출 직후  scroll='+_dlogScroll());
   }
 }
