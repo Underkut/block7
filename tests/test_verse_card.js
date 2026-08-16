@@ -573,37 +573,36 @@ console.log('\n시나리오 10 — 새 사용자 기본값');
   sc.eq('카드 목록은 빈 채로 시작', /verseCards:\{\}/.test(d), true);
 }
 
-// ═══ 시트 셀 열기는 늘 '웹'으로 (v26-0813-9) ═══
-// ⚠️ HB 신고 — 0813-8 에서 URL(#gid=…&range=…)을 바로잡았는데도 여전히
-//    "구글 시트의 이전에 열었던 셀 위치"만 열렸다.
-//    원인은 URL 이 아니라 **여는 방법** 이었다. 예전 코드는 "가능하면 앱으로"
-//    라며 안드로이드는 intent://(package=…sheets), 아이폰은 googlesheets:// 로
-//    **네이티브 앱**을 불렀다. 그런데 시트 앱은 gid·range 프래그먼트를 무시하고
-//    그 문서를 **마지막으로 보던 자리** 그대로 연다. gid·range 는 구글 시트
-//    **웹**만 지킨다.
-//    → 이 기능은 정확한 셀을 짚는 것이 핵심이므로 앱 UX 보다 정확함을 택한다.
-console.log('\n시나리오 — 시트는 앱이 아니라 웹으로 연다');
+// ═══ 시트 셀 열기 — PC 는 웹, 모바일은 무조건 앱 (v26-0813-10) ═══
+// ⚠️ 0813-9 에서 "정확한 셀을 짚으려면 웹이어야 한다"며 전부 웹으로 바꿨는데,
+//    HB 의 시트는 커서 **모바일 웹 브라우저로는 아예 열어 볼 수가 없었다.**
+//    PC 는 웹이 잘 맞고(0813-9 그대로 유지), 모바일은 셀을 못 짚더라도
+//    "일단 앱에서 읽을 수 있는 것" 이 우선이라 도로 앱으로 보낸다.
+//    ⚠️ 이 갈림을 다시 하나로 합치면(둘 다 웹 또는 둘 다 앱) 한쪽이 못 쓰게 된다.
+console.log('\n시나리오 — 시트 열기, PC 는 웹 모바일은 앱');
 {
   const fn = SRC.slice(SRC.indexOf('function _openSheetUrl(url){'),
                        SRC.indexOf('function _vgOpenFromReels('));
 
-  // ⚠️ 이 셋 중 하나라도 되살아나면 같은 증상이 그대로 재현된다
-  sc.eq('안드로이드 앱 스킴을 쓰지 않는다', fn.includes('intent://'), false);
-  sc.eq('시트 앱 패키지를 콕 집지 않는다',
-        fn.includes('package=com.google.android.apps.docs.editors.sheets'), false);
-  sc.eq('아이폰 앱 스킴을 쓰지 않는다', fn.includes('googlesheets://'), false);
+  // 모바일 — 예전처럼 네이티브 앱을 부른다
+  sc.eq('안드로이드는 앱을 콕 집어', fn.includes('package=com.google.android.apps.docs.editors.sheets;'), true);
+  sc.eq('앱이 없으면 웹으로', fn.includes('S.browser_fallback_url='), true);
+  sc.eq('아이폰도 앱을 먼저 부른다', fn.includes("const appUrl='googlesheets://'+url.replace("), true);
+  sc.eq('앱과 사파리가 둘 다 뜨지 않게 시간을 재지 않는다',
+        fn.includes('if(!handed&&!document.hidden)BibleLinkProvider.open(url);'), false);
+  sc.eq('한 번 더 누르면 그때 사파리', fn.includes("if(_sheetAppMiss===url){_sheetAppMiss='';BibleLinkProvider.open(url);return;}"), true);
+  sc.eq('그 주소를 기억해 둔다', SRC.includes("let _sheetAppMiss='';"), true);
+  sc.eq('안 열렸을 때만 안내', fn.includes("showToast('시트 앱이 열리지 않았어요. 한 번 더 누르면 사파리로 열게요');"), true);
+  sc.eq('벗어남 신호 네 가지',
+        fn.includes("const evs=[[document,'visibilitychange'],[window,'pagehide'],[window,'blur'],[window,'freeze']];"), true);
+  sc.eq('포커스까지 본다',
+        fn.includes('if(left||document.hidden||(document.hasFocus&&!document.hasFocus()))return;'), true);
+  sc.eq('기다리는 시간도 넉넉히', fn.includes('},2500);'), true);
 
-  // 홈화면 앱(PWA) 안에서는 내부 브라우저가 전체화면을 덮으므로 사파리로 넘긴다
-  sc.eq('PWA 는 사파리로', fn.includes("location.href='x-safari-'+url;"), true);
-  sc.eq('PWA 판정을 한다', fn.includes('display-mode: standalone'), true);
-  // 그 밖에는 그냥 새 탭
-  sc.eq('나머지는 새 탭', fn.includes('BibleLinkProvider._openInApp(url)'), true);
+  // PC — 0813-9 에서 확인된 웹 경로는 그대로 남아 있어야 한다
+  sc.eq('PC 는 새 탭(웹)으로', fn.includes('BibleLinkProvider._openInApp(url);'), true);
 
-  // 앱이 안 열렸을 때를 재던 장치는 이제 필요 없다 (앱을 아예 안 부르므로)
-  sc.eq('앱 실패 감지 장치가 없다', SRC.includes('_sheetAppMiss'), false);
-  sc.eq('앱 실패 안내도 없다', SRC.includes('시트 앱이 열리지 않았어요'), false);
-
-  // URL 쪽(0813-8)은 그대로 유지돼야 한다 — 둘 다 맞아야 셀이 잡힌다
+  // URL 쪽(0813-8)은 그대로 유지돼야 한다 — PC 에서 셀을 잡는 데 필요하다
   sc.eq('행 범위는 그대로 붙인다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
 }
 
