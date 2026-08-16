@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0817-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1066,7 +1066,7 @@ header{
   background:rgba(90,112,248,.16);
 }
 .big-item.drag-active{
-  opacity:.55;cursor:grabbing;
+  opacity:.275;cursor:grabbing;
   transform:scale(1.03) translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
   border-color:rgba(90,112,248,.55);
@@ -1166,7 +1166,7 @@ header{
 .sm-item.done-st{opacity:.32;}
 .sm-item.over{border-left-color:var(--so);background:rgba(224,136,48,.06);}
 .sm-item.drag-active{
-  opacity:.55;cursor:grabbing;
+  opacity:.275;cursor:grabbing;
   transform:scale(1.03) translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
   border-color:var(--bd2);
@@ -2672,7 +2672,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-2";
+const APP_VERSION = "v. 26-0817-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -9084,26 +9084,32 @@ function _shotDraw(o){
     const LS=fs*0.18;
     let wAll=0;[...'BLOCK7'].forEach(c=>{wAll+=ctx.measureText(c).width+LS;});wAll-=LS;
     // 우상단 액션 스택의 맨 위 지점 — 그보다 위에 자리가 있어야 우상단에 놓는다
-    let actTop=H;
+    // 우측 여백 기준도 액션 스택 자체의 우측 여백에 맞춘다(PC 는 화면 비율이 달라
+    // 위쪽 여백(pad)과 액션 열의 실제 우측 여백이 서로 다르다 — v26-0817-3, HB 확인).
+    let actTop=H,actRightMargin=pad;
     if(o.inclActions){
+      let actRight=0,any=false;
       host.querySelectorAll('.vf-act').forEach(b=>{
         const rr=b.getBoundingClientRect();
         if(rr.width<1)return;
+        any=true;
         actTop=Math.min(actTop,Y(rr.top));
+        actRight=Math.max(actRight,X(rr.right));
       });
+      if(any)actRightMargin=W-actRight;
     }
     let lx,fy=pad;
-    // ⚠️ 우측 여백은 위쪽 여백(pad)과 같아야 대칭으로 보인다(v26-0817-2, HB 확인).
+    // ⚠️ 우측 여백은 액션 스택의 실제 우측 여백과 같아야 대칭으로 보인다
+    //    (v26-0817-2 에서는 위쪽 여백(pad)에 맞췄는데, PC 화면에서는 그게
+    //    액션 열의 우측 여백보다 커서 로고가 왼쪽으로 들어와 보였다).
     //    예전엔 fitsRight(=세로로 충분히 떨어져 있을 때)에도 액션 스택의
     //    왼쪽 끝(actLeft)을 기준으로 한 번 더 왼쪽으로 밀어내는 방어 코드가
     //    있었다. fitsRight 판정 자체가 "로고 줄과 액션 줄이 세로로 안 겹친다"
-    //    는 뜻이라, 그 아래서 가로 겹침을 또 막을 필요가 없었다 — 실측
-    //    (900×1200 캔버스)으로 우측 여백이 88px 까지 벌어지는 것을 확인했다
-    //    (위쪽 41px · 액션 열 자체의 우측 여백 35px 과 비교해 두 배 넘게 컸다).
+    //    는 뜻이라, 그 아래서 가로 겹침을 또 막을 필요가 없었다.
     //    fitsRight 가 아닌 경우(자리가 좁을 때)는 원래대로 좌상단으로 피한다.
     const fitsRight=(actTop-pad)>fs*1.6||!o.inclActions;
     if(fitsRight){
-      lx=W-pad-wAll;
+      lx=W-actRightMargin-wAll;
     }else{
       lx=pad;                       // 자리가 없으면 좌상단으로 피한다
     }

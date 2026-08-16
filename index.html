@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-1  [production]  -->
+<!-- BLOCK7  v. 26-0817-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -958,6 +958,11 @@ header{
   opacity:.9;
 }
 .drop-ind.show{display:block;}
+/* 빅은 좌측 절반만, 스몰은 우측 절반만 — 선의 길이·자리 자체가 구분 표시다
+   (v26-0817-2). width:50% 만으로는 부모 폭 기준 절반이라 그대로 좌측에
+   붙는데, 스몰 쪽은 margin-left:auto 로 오른쪽에 붙인다. */
+.drop-ind-big{width:50%;}
+.drop-ind-sm{width:50%;margin-left:auto;}
 
 /* 드래그 중 빅/스몰 힌트 — 좌/우 고정 레이블
    top/height는 JS에서 헤더(BLOCK7 D W M 날짜)와 첫 시간구간 헤더 행의
@@ -989,8 +994,9 @@ header{
 #drag-zone-hint.big-side{left:12px;}
 #drag-zone-hint.sm-side{left:auto;right:12px;}
 
-/* 스몰 드롭 인디케이터 — 들여쓰기 맞춤 */
-.sm-list .drop-ind{margin-left:12px;}
+/* ⚠️ 예전엔 여기서 스몰 쪽 들여쓰기(margin-left:12px)를 줬는데, 이제 스몰은
+   우측 절반(.drop-ind-sm, margin-left:auto)으로 붙기 때문에 지웠다 —
+   남겨 두면 detail 이 더 높아 .drop-ind-sm 을 도로 왼쪽에 눌러 버린다. */
 
 /* block long-press "press" state before drag activates */
 .big-item.pressing,.sm-item.pressing{
@@ -1060,7 +1066,7 @@ header{
   background:rgba(90,112,248,.16);
 }
 .big-item.drag-active{
-  opacity:.55;cursor:grabbing;
+  opacity:.275;cursor:grabbing;
   transform:scale(1.03) translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
   border-color:rgba(90,112,248,.55);
@@ -1160,7 +1166,7 @@ header{
 .sm-item.done-st{opacity:.32;}
 .sm-item.over{border-left-color:var(--so);background:rgba(224,136,48,.06);}
 .sm-item.drag-active{
-  opacity:.55;cursor:grabbing;
+  opacity:.275;cursor:grabbing;
   transform:scale(1.03) translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
   border-color:var(--bd2);
@@ -2666,7 +2672,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-1";
+const APP_VERSION = "v. 26-0817-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -9078,19 +9084,32 @@ function _shotDraw(o){
     const LS=fs*0.18;
     let wAll=0;[...'BLOCK7'].forEach(c=>{wAll+=ctx.measureText(c).width+LS;});wAll-=LS;
     // 우상단 액션 스택의 맨 위 지점 — 그보다 위에 자리가 있어야 우상단에 놓는다
-    let actTop=H,actLeft=W;
+    // 우측 여백 기준도 액션 스택 자체의 우측 여백에 맞춘다(PC 는 화면 비율이 달라
+    // 위쪽 여백(pad)과 액션 열의 실제 우측 여백이 서로 다르다 — v26-0817-3, HB 확인).
+    let actTop=H,actRightMargin=pad;
     if(o.inclActions){
+      let actRight=0,any=false;
       host.querySelectorAll('.vf-act').forEach(b=>{
         const rr=b.getBoundingClientRect();
         if(rr.width<1)return;
-        actTop=Math.min(actTop,Y(rr.top));actLeft=Math.min(actLeft,X(rr.left));
+        any=true;
+        actTop=Math.min(actTop,Y(rr.top));
+        actRight=Math.max(actRight,X(rr.right));
       });
+      if(any)actRightMargin=W-actRight;
     }
     let lx,fy=pad;
+    // ⚠️ 우측 여백은 액션 스택의 실제 우측 여백과 같아야 대칭으로 보인다
+    //    (v26-0817-2 에서는 위쪽 여백(pad)에 맞췄는데, PC 화면에서는 그게
+    //    액션 열의 우측 여백보다 커서 로고가 왼쪽으로 들어와 보였다).
+    //    예전엔 fitsRight(=세로로 충분히 떨어져 있을 때)에도 액션 스택의
+    //    왼쪽 끝(actLeft)을 기준으로 한 번 더 왼쪽으로 밀어내는 방어 코드가
+    //    있었다. fitsRight 판정 자체가 "로고 줄과 액션 줄이 세로로 안 겹친다"
+    //    는 뜻이라, 그 아래서 가로 겹침을 또 막을 필요가 없었다.
+    //    fitsRight 가 아닌 경우(자리가 좁을 때)는 원래대로 좌상단으로 피한다.
     const fitsRight=(actTop-pad)>fs*1.6||!o.inclActions;
     if(fitsRight){
-      lx=W-pad-wAll;
-      if(o.inclActions&&lx+wAll>actLeft-fs*0.4)lx=Math.max(pad,actLeft-fs*0.4-wAll);
+      lx=W-actRightMargin-wAll;
     }else{
       lx=pad;                       // 자리가 없으면 좌상단으로 피한다
     }
@@ -10339,22 +10358,23 @@ function _initVfCatSheet(){
     e.stopPropagation();          // 전체화면의 공용 롱터치 메뉴가 뜨지 않게
     _vfCatLongFired=false;held=false;
     stopTimer();
-    // ⚠️ touchend 안에서 열어도 여전히 거부됐다(실기기 확인, v26-0817-1) —
-    //    아이폰은 raw 터치 이벤트가 아니라 **click**(터치 뒤 브라우저가 만드는
-    //    합성 이벤트)만 클립보드 API 의 "진짜 사용자 조작"으로 확실히 쳐준다.
-    //    그래서 여는 동작은 아래 click 리스너로 미루고, 여기서는 **억제용
-    //    표시만 미리** 해 둔다 — _vfCatLongFired 를 늦게 세우면 곧이어 같은
-    //    click 에서 먼저 실행되는 vfCatTap()(HTML onclick, 등록이 더 이르다)이
-    //    이미 지나가 버려 롱터치인데도 타일뷰로 이동해 버린다.
-    t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;},500);
+    // ⚠️ 화면 전환은 **여기서 곧장** 한다 — HB 가 원한 느낌은 "붙잡고 있으면
+    //    500ms 뒤 바로 앱으로 넘어간다"이다(v26-0817-2). 위치 이동
+    //    자체(location.href)는 제스처 제약이 없어 타이머 안에서도 잘 된다 —
+    //    문제는 그 안에서 **클립보드까지** 같이 하려던 것이었다.
+    //    복사는 아래 click 리스너로 따로 미룬다(0817-1 에서 확인한 대로,
+    //    아이폰은 touchend 가 아니라 click 만 클립보드를 허락한다).
+    //    location.href 로 앱 스킴을 불러도 이 페이지는 백그라운드로 갈 뿐
+    //    살아있어서, 손을 뗄 때 오는 click 이 여전히 정상적으로 발생한다.
+    t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;vfOpenSheetForCat();},500);
   },{passive:true});
   ['touchend','touchmove','touchcancel'].forEach(ev=>
     cat.addEventListener(ev,stopTimer,{passive:true}));
-  // 실제로 열고 복사하는 것은 여기, **click** 에서만 한다.
+  // 클립보드 복사만 여기, **click** 에서 한다 (화면은 이미 타이머에서 넘어갔다).
   cat.addEventListener('click',()=>{
     if(!held)return;
     held=false;
-    vfOpenSheetForCat();
+    _sheetCopyPending();
   });
 }
 function vfOpenSheetForCat(){
@@ -10366,7 +10386,8 @@ function vfOpenSheetForCat(){
   //    HB 요청). "행 위치가 아직 정확하지 않다"는 안내도 마찬가지로 뺐다 —
   //    모바일은 애초에 행을 못 짚어 본문을 복사해 주는 쪽으로 바뀌었고
   //    (아래), PC 는 새 탭이 뜨자마자 바로 보이므로 안내가 필요 없다.
-  _openSheetUrl(t.url,v&&v.krText);
+  _sheetPendingCopyText=(v&&v.krText)||'';   // click 에서 복사할 본문을 기억해 둔다
+  _sheetGo(t.url);
 }
 // 시트 열기는 **기기에 따라 정반대로** 간다 (v26-0813-10/11, HB 확인).
 //
@@ -10380,36 +10401,48 @@ function vfOpenSheetForCat(){
 //    ⚠️ 0813-9 에서 이 경로를 웹으로 바꿨다가 모바일이 못 쓰게 됐다. 되돌리지 말 것.
 //    대신 앱이 셀을 못 짚는 것을 메우려고, 본문을 클립보드에 복사해 둔다
 //    (0813-11) — 시트 앱의 찾기에 붙여넣으면 그 구절로 바로 간다.
-function _openSheetUrl(url,copyText){
+//
+// ⚠️ 여는 것(_sheetGo)과 복사하는 것(_sheetCopyPending)이 **왜 갈라져 있는가**
+//    (v26-0817-2). 붙어 있던 때(0813-11)는 모바일에서 복사가 실기기에서
+//    조용히 실패했다 — 클립보드는 touchend 안에서도(0813-12) 안 됐고, 아이폰이
+//    "진짜 click" 을 요구했다(0817-1). 그런데 click 은 손을 뗀 **뒤에만** 오므로,
+//    복사까지 거기서 하면 화면 전환도 손을 뗄 때까지 미뤄져 "붙잡고 있으면
+//    바로 넘어가던" 예전 느낌이 사라졌다(HB 재신고). location.href 로 앱을
+//    부르는 것 자체는 제스처 제약이 없으므로, **여는 것은 타이머(붙잡은 채로)
+//    에서 즉시, 복사만 click(뗀 뒤)에서** 하도록 갈랐다. 둘을 다시 합치면
+//    둘 중 하나가 반드시 재발한다.
+function _sheetGo(url){
+  const ua=navigator.userAgent||'';
+  if(/Android/i.test(ua)){
+    const noScheme=url.replace(/^https?:\/\//,'');
+    location.href='intent://'+noScheme+'#Intent;scheme=https;'+
+      'package=com.google.android.apps.docs.editors.sheets;'+
+      'S.browser_fallback_url='+encodeURIComponent(url)+';end';
+    return;
+  }
+  const isIOS=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isIOS){
+    const appUrl='googlesheets://'+url.replace(/^https?:\/\//,'');
+    try{location.href=appUrl;}catch(e){}
+    return;
+  }
+  BibleLinkProvider._openInApp(url);   // PC — 웹 새 탭이라야 그 셀로 정확히 간다
+}
+// _sheetGo() 가 부른 뒤 기억해 둔 본문. click 에서 소비한다.
+let _sheetPendingCopyText='';
+function _sheetCopyPending(){
+  const txt=_sheetPendingCopyText;
+  _sheetPendingCopyText='';
+  if(!txt)return;
   const ua=navigator.userAgent||'';
   const isAndroid=/Android/i.test(ua);
   const isIOS=/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  const go=()=>{
-    if(isAndroid){
-      const noScheme=url.replace(/^https?:\/\//,'');
-      location.href='intent://'+noScheme+'#Intent;scheme=https;'+
-        'package=com.google.android.apps.docs.editors.sheets;'+
-        'S.browser_fallback_url='+encodeURIComponent(url)+';end';
-      return;
-    }
-    if(isIOS){
-      const appUrl='googlesheets://'+url.replace(/^https?:\/\//,'');
-      try{location.href=appUrl;}catch(e){}
-      return;
-    }
-    BibleLinkProvider._openInApp(url);   // PC — 웹 새 탭이라야 그 셀로 정확히 간다
-  };
-  // ⚠️ 복사는 새 화면을 열기 **전에, 동기적으로** 시작해야 한다 — Even Deeper
-  //    복사와 같은 이유다. navigator.clipboard.writeText() 는 비동기라, 곧바로
-  //    다른 화면이 열려 포커스를 잃으면 NotAllowedError 로 조용히 실패한다.
-  if((isAndroid||isIOS)&&copyText){
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(copyText).catch(()=>_fallbackCopy(copyText)).finally(go);
-      return;
-    }
-    _fallbackCopy(copyText);
+  if(!isAndroid&&!isIOS)return;   // PC 는 이미 정확한 셀로 가므로 복사가 필요 없다
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).catch(()=>_fallbackCopy(txt));
+  }else{
+    _fallbackCopy(txt);
   }
-  go();   // PC — 웹 새 탭이라야 그 셀로 정확히 간다
 }
 function _vgOpenFromReels(kind){
   const v=_vfCurrentVerse();if(!v)return;
@@ -17001,12 +17034,16 @@ function clearDropIndicators(){
   document.querySelectorAll('.drop-ind').forEach(el=>el.remove());
 }
 
-function showDropIndicator(beforeEl, parentEl, color){
+function showDropIndicator(beforeEl, parentEl, color, type){
   clearDropIndicators();
   if(!parentEl)return;
   try{
     const ind=document.createElement('div');
-    ind.className='drop-ind show';
+    // 빅은 좌측 절반만, 스몰은 우측 절반만 — 가로선만 봐도 어디로 떨어질지
+    // 구분되게(v26-0817-2, HB 요청). type 이 없으면(예전 호출부·스몰블럭
+    // 꺼짐 등) 전체 폭 그대로 둔다.
+    const half=type==='big'?' drop-ind-big':(type==='small'?' drop-ind-sm':'');
+    ind.className='drop-ind show'+half;
     ind.style.background=color;
     if(beforeEl&&parentEl.contains(beforeEl)){
       parentEl.insertBefore(ind,beforeEl);
@@ -17149,7 +17186,7 @@ function moveG(cx,cy){
     const g=document.getElementById('dg');
     if(g){g.style.left=(cx-DR.offX)+'px';g.style.top=(cy-DR.offY)+'px';}
     const dt=getStableDt(cx,cy);
-    if(dt&&dt.parent){showDropIndicator(dt.beforeEl,dt.parent,dt.color);}
+    if(dt&&dt.parent){showDropIndicator(dt.beforeEl,dt.parent,dt.color,dt.type);}
     else clearDropIndicators();
     // 빅/스몰 힌트 레이블 — 스몰블럭이 꺼져 있으면 구분이 없으므로 표시하지 않는다
     const hint=document.getElementById('drag-zone-hint');
