@@ -624,28 +624,38 @@ console.log('\n시나리오 — Deeper·Even Deeper 토스트 없음');
   sc.eq('Even Deeper 는 여전히 복사 먼저, 열기는 나중', ed.includes('.finally(go);'), true);
 }
 
-// ═══ 롱터치의 실제 열기는 touchend 에서 (v26-0813-12) ═══
-// ⚠️ HB 신고 — 모바일에서 시트 앱으로 넘어갈 때 본문이 복사돼 있지 않았다.
-//    원인: vfOpenSheetForCat() 이 500ms setTimeout **안**에서 곧장 불렸다.
-//    타이머 콜백은 "사용자 제스처가 끊긴" 자리라, 아이폰이 클립보드 쓰기를
-//    조용히 거부한다(NotAllowedError) — 그런데 토스트마저 없애 놓아서
-//    아무 표시도 없이 넘어간 것처럼 보였다.
-//    실측(Playwright, 클립보드 권한 있음): setTimeout 안에서 부른
-//    navigator.clipboard.writeText() 는 NotAllowedError 로 실패했다.
-console.log('\n시나리오 — 롱터치는 손을 뗄 때(touchend) 연다');
+// ═══ 롱터치의 실제 열기는 click 에서 (v26-0817-1) ═══
+// ⚠️ 0813-12 에서 touchend 로 옮겼는데도 실기기에서 여전히 클립보드 복사가
+//    안 됐다 — 아이폰은 raw 터치 이벤트가 아니라 **click**(터치 뒤 브라우저가
+//    만드는 합성 이벤트)만 클립보드 API 의 "진짜 사용자 조작"으로 확실히 쳐준다.
+//    그래서 여는 동작(따라서 복사도)을 click 으로 한 번 더 옮겼다.
+// ⚠️ 그런데 억제용 표시(_vfCatLongFired)는 **click 이 아니라 여전히 타이머
+//    안에서** 미리 세워야 한다 — HTML onclick="vfCatTap()" 이 addEventListener
+//    보다 먼저 등록되어 같은 click 에서 먼저 실행되므로, 그 판정 시점에
+//    이미 표시가 서 있어야 롱터치인데 타일뷰로도 같이 넘어가는 사고가 안 난다.
+console.log('\n시나리오 — 롱터치 억제 표시는 미리, 여는 것은 click 에서');
 {
   const fn = SRC.slice(SRC.indexOf('function _initVfCatSheet(){'),
                        SRC.indexOf('function vfOpenSheetForCat('));
-  // 타이머는 "다 채웠다"는 표시만 하고, 여는 것은 touchend 로 미룬다
-  sc.eq('타이머 콜백은 열지 않는다', /t=setTimeout\(\(\)=>\{t=null;held=true;\},500\);/.test(fn), true);
+  // 억제 표시는 타이머 안에서 미리 선다 (vfCatTap 의 판정보다 먼저 서야 한다)
+  sc.eq('타이머가 억제 표시를 미리 세운다',
+        fn.includes('t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;},500);'), true);
+  // 실제로 여는 것(따라서 클립보드 복사도)은 타이머 콜백 안에 없다
   sc.eq('타이머 콜백에 vfOpenSheetForCat 이 없다',
         /setTimeout\([^)]*vfOpenSheetForCat/.test(fn), false);
-  sc.eq('touchend 에서 연다',
-        fn.includes("cat.addEventListener('touchend',()=>{") &&
-        /addEventListener\('touchend'[\s\S]{0,120}vfOpenSheetForCat\(\);/.test(fn), true);
+  // touchend 안에도 없다 (0813-12 에서 옮겼다가 또 실패했다)
+  sc.eq('touchend 콜백에도 없다',
+        /addEventListener\('touchend'[\s\S]{0,80}vfOpenSheetForCat/.test(fn), false);
+  // click 에서만 연다
+  sc.eq("click 리스너가 있다", fn.includes("cat.addEventListener('click',()=>{"), true);
+  sc.eq('click 에서 연다',
+        /addEventListener\('click',\(\)=>\{[\s\S]{0,80}vfOpenSheetForCat\(\);/.test(fn), true);
   sc.eq('다 채우지 못했으면 아무 일도 안 한다', fn.includes('if(!held)return;'), true);
+  // vfCatTap 은 여전히 HTML onclick 으로 먼저 등록된다 (등록 순서가 곧 억제 순서다)
+  sc.eq('vfCatTap 은 inline onclick', SRC.includes('<div id="vfCat" onclick="vfCatTap()">'), true);
   // 우클릭(contextmenu)은 그 자체가 즉시 발생하는 제스처라 그대로 둔다
   sc.eq('우클릭은 그대로 즉시', fn.includes("cat.addEventListener('contextmenu',e=>{"), true);
 }
+
 
 sc.done();

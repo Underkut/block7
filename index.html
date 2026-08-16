@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-12  [production]  -->
+<!-- BLOCK7  v. 26-0817-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2666,7 +2666,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-12";
+const APP_VERSION = "v. 26-0817-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7779,7 +7779,12 @@ function showToast(msg){
   t.style.opacity='.94';
   t.style.transform='translate(-50%,-50%) scale(1)';
   clearTimeout(t._tid);
-  t._tid=setTimeout(()=>{_dismissToast(false);},4500);  // 표시 4.5s + 페이드 0.5s
+  // 글자 수에 비례해 유지 시간을 늘린다(v26-0817-1, HB 요청). 글자당 300ms —
+  // 예전 짧은 문구(9자 안팎, "날짜로 이동했어요")는 4.5s 그대로고, 날짜·구간
+  // 이름까지 붙는 긴 안내는 다 읽을 시간을 준다. 너무 오래 떠 있으면 다음
+  // 조작을 방해하므로 9s 를 넘기지 않는다.
+  const dur=Math.min(9000,Math.max(4500,s.length*300));
+  t._tid=setTimeout(()=>{_dismissToast(false);},dur);
 }
 
 // ── 아이콘 전용 토스트 (말씀 반응: 좋아요·암송) ──
@@ -10334,22 +10339,23 @@ function _initVfCatSheet(){
     e.stopPropagation();          // 전체화면의 공용 롱터치 메뉴가 뜨지 않게
     _vfCatLongFired=false;held=false;
     stopTimer();
-    // ⚠️ 500ms 를 채운 그 순간(setTimeout 안)에는 **손가락을 아직 떼지 않았다.**
-    //    거기서 바로 열면(옛 방식) 클립보드 복사가 "사용자 제스처 밖"에서 실행돼
-    //    아이폰이 조용히 거부한다(v26-0813-12 HB 신고 — 본문이 복사 안 됨).
-    //    그래서 여기서는 **다 채웠다는 표시만** 해 두고, 실제로 여는 것은
-    //    손을 떼는 touchend 에서 한다 — touchend 는 그 자체가 진짜 사용자
-    //    제스처라 클립보드 API 가 이때는 허용한다.
-    t=setTimeout(()=>{t=null;held=true;},500);
+    // ⚠️ touchend 안에서 열어도 여전히 거부됐다(실기기 확인, v26-0817-1) —
+    //    아이폰은 raw 터치 이벤트가 아니라 **click**(터치 뒤 브라우저가 만드는
+    //    합성 이벤트)만 클립보드 API 의 "진짜 사용자 조작"으로 확실히 쳐준다.
+    //    그래서 여는 동작은 아래 click 리스너로 미루고, 여기서는 **억제용
+    //    표시만 미리** 해 둔다 — _vfCatLongFired 를 늦게 세우면 곧이어 같은
+    //    click 에서 먼저 실행되는 vfCatTap()(HTML onclick, 등록이 더 이르다)이
+    //    이미 지나가 버려 롱터치인데도 타일뷰로 이동해 버린다.
+    t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;},500);
   },{passive:true});
-  cat.addEventListener('touchend',()=>{
-    stopTimer();
+  ['touchend','touchmove','touchcancel'].forEach(ev=>
+    cat.addEventListener(ev,stopTimer,{passive:true}));
+  // 실제로 열고 복사하는 것은 여기, **click** 에서만 한다.
+  cat.addEventListener('click',()=>{
     if(!held)return;
     held=false;
-    _vfCatLongFired=true;vfOpenSheetForCat();
-  },{passive:true});
-  ['touchmove','touchcancel'].forEach(ev=>
-    cat.addEventListener(ev,()=>{stopTimer();held=false;},{passive:true}));
+    vfOpenSheetForCat();
+  });
 }
 function vfOpenSheetForCat(){
   if(!_isDevAccount())return;
@@ -19225,7 +19231,20 @@ function moveTaskToPickedDate(dateStr){
   save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  showToast('날짜로 이동했어요');
+  showToast(_moveDateToastMsg(dateStr,secId));
+}
+// "8월 17일 월요일 오전 날짜로 이동했어요" — 어느 날짜·구간으로 옮겼는지
+// 바로 알 수 있게 (v26-0817-1, HB 요청). 요일은 설정과 무관하게 항상 이
+// 형식(한글 + '요일')을 쓴다 — DOW 는 사용자가 L/M/T 같은 다른 표기로
+// 바꿔 둘 수 있어 이 문구에는 안 맞는다.
+const _KDOW=['일','월','화','수','목','금','토'];
+function _moveDateToastMsg(dateStr,secId){
+  const [y,m,d]=dateStr.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  const dow=isNaN(dt.getTime())?'':_KDOW[dt.getDay()]+'요일';
+  const secName=(SECS.find(s=>s.id===secId)||{}).name||'';
+  const parts=[m+'월',d+'일',dow,secName].filter(Boolean);
+  return parts.join(' ')+' 날짜로 이동했어요';
 }
 
 // ─ Toast ─
