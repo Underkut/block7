@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-4  [production]  -->
+<!-- BLOCK7  v. 26-0817-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2671,11 +2671,57 @@ const DEV_MODE = false;
 const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 
 // ═══════════════════════════════════════════════════════════
+//  진단 로그 (개발본 전용) — v26-0817-5
+// ═══════════════════════════════════════════════════════════
+// 아이폰에서만 나는 오류(롱터치 화면 튐·백업 흰 화면·시트 복사 실패)는
+// PC 브라우저로 재현이 안 된다. 짐작으로 고치다 여러 번 실패해서,
+// **실기기에서 무슨 일이 일어나는지 눈으로 보고** 고치려고 만든 것이다.
+// HB 는 개발본(block7.my/index-dev.html)에서 문제를 재현한 뒤
+// 화면 위쪽 검은 칸을 스크린샷으로 찍어 주면 된다.
+// ⚠️ 운영본에서는 DEV_MODE 가 false 라 아래 함수가 전부 그냥 빠져나간다.
+let _dlogBox=null, _dlogT0=0;
+function _dlog(msg){
+  if(!DEV_MODE)return;
+  try{
+    if(!_dlogBox){
+      _dlogT0=Date.now();
+      _dlogBox=document.createElement('div');
+      _dlogBox.id='devLogBox';
+      _dlogBox.style.cssText='position:fixed;left:0;right:0;top:0;z-index:2147483647;'+
+        'max-height:38vh;overflow:auto;background:rgba(0,0,0,.86);color:#8f8;'+
+        "font:11px/1.35 ui-monospace,Menlo,monospace;padding:4px 6px;white-space:pre-wrap;"+
+        '-webkit-user-select:text;user-select:text;';
+      const bar=document.createElement('div');
+      bar.style.cssText='display:flex;gap:6px;position:sticky;top:0;background:#000;padding:2px 0;';
+      const mk=(t,fn)=>{const b=document.createElement('button');b.textContent=t;
+        b.style.cssText='background:#333;color:#fff;border:0;border-radius:4px;padding:2px 8px;font-size:11px;';
+        b.onclick=e=>{e.stopPropagation();fn();};return b;};
+      bar.appendChild(mk('지우기',()=>{[..._dlogBox.querySelectorAll('.dl')].forEach(e=>e.remove());_dlogT0=Date.now();}));
+      bar.appendChild(mk('숨기기',()=>{_dlogBox.style.display='none';}));
+      _dlogBox.appendChild(bar);
+      (document.body||document.documentElement).appendChild(_dlogBox);
+    }
+    const ms=Date.now()-_dlogT0;
+    const line=document.createElement('div');
+    line.className='dl';
+    line.textContent=String(ms).padStart(5,' ')+'ms  '+msg;
+    _dlogBox.appendChild(line);
+    _dlogBox.scrollTop=_dlogBox.scrollHeight;
+  }catch(e){}
+}
+// 지금 화면이 세로로 얼마나 밀려 있는지 — "화면이 위로 튄다" 를 숫자로 잡는다
+function _dlogScroll(){
+  if(!DEV_MODE)return 0;
+  const se=document.scrollingElement||document.documentElement;
+  return Math.round((se&&se.scrollTop)||0)+(window.visualViewport?('/vv'+Math.round(window.visualViewport.offsetTop)):'');
+}
+
+// ═══════════════════════════════════════════════════════════
 //  APP VERSION
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-4";
+const APP_VERSION = "v. 26-0817-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10459,9 +10505,16 @@ function _sheetCopyPending(keep){
   if(!isAndroid&&!isIOS)return;   // PC 는 이미 정확한 셀로 가므로 복사가 필요 없다
   // 손가락이 닿아 있는 동안(keep)에는 execCommand 쪽이 더 잘 통한다 —
   // 비동기 클립보드는 제스처 판정이 더 깐깐해 조용히 거절당한다. 둘 다 건다.
-  if(keep)_fallbackCopy(txt);
+  _dlog('[시트복사] 시도 keep='+!!keep+'  글자수='+txt.length);
+  if(keep){
+    const ok=_fallbackCopy(txt);
+    _dlog('[시트복사] execCommand 결과='+ok);
+  }
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).catch(()=>{if(!keep)_fallbackCopy(txt);});
+    navigator.clipboard.writeText(txt)
+      .then(()=>_dlog('[시트복사] clipboard 성공'))
+      .catch(err=>{_dlog('[시트복사] clipboard 실패: '+((err&&err.name)||err));
+                   if(!keep)_fallbackCopy(txt);});
   }else if(!keep){
     _fallbackCopy(txt);
   }
@@ -15261,17 +15314,27 @@ function renderSecs(){
       addTaskBtn.addEventListener('touchstart',e=>{
         e.stopPropagation();
         _atFired=false;
-        _at=setTimeout(()=>{_at=null;_atFired=true;openInlineInput(sec.id,'small');},500);
+        _dlog('[+] touchstart  scroll='+_dlogScroll());
+        _at=setTimeout(()=>{_at=null;_atFired=true;
+          _dlog('[+] 타이머500 → 스몰 고스트 열기  scroll='+_dlogScroll());
+          openInlineInput(sec.id,'small');
+          _dlog('[+] 고스트 연 직후  scroll='+_dlogScroll());
+        },500);
       },{passive:true});
       addTaskBtn.addEventListener('touchend',e=>{
         if(_at){clearTimeout(_at);_at=null;}
+        _dlog('[+] touchend  롱터치='+_atFired+'  scroll='+_dlogScroll());
         if(_atFired){
           // iOS는 타이머 콜백(제스처 밖)의 focus()를 무시해 커서가 안 들어감.
           // 제스처 안인 touchend에서 focus를 다시 걸어 키보드가 바로 뜨게 한다.
           e.preventDefault(); // 이어지는 합성 click(빅 열기) 억제
           const g=document.getElementById(`tmp-sm-ghost-${sec.id}`);
+          _dlog('[+] touchend 에서 focus 다시걺  고스트있음='+!!g);
           g?.querySelector('input')?.focus();
-          setTimeout(()=>{_atFired=false;},400);
+          _dlog('[+] focus 건 뒤  scroll='+_dlogScroll());
+          setTimeout(()=>{_atFired=false;
+            _dlog('[+] +400ms  고스트있음='+!!document.getElementById(`tmp-sm-ghost-${sec.id}`)+
+                  '  scroll='+_dlogScroll());},400);
         }
       },{passive:false});
       addTaskBtn.addEventListener('touchcancel',()=>{if(_at){clearTimeout(_at);_at=null;}_atFired=false;},{passive:true});
@@ -15973,14 +16036,18 @@ function _openGhostInput(secId, type, pos){
     // 커밋되며 고스트가 사라졌다(간헐적으로만 재현되던 원인).
     let _blurT=null;
     inp.onblur=()=>{
+      _dlog('[고스트] blur → 100ms 뒤 커밋 예약  scroll='+_dlogScroll());
       if(_blurT)clearTimeout(_blurT);
       _blurT=setTimeout(()=>{
         _blurT=null;
         if(document.activeElement===inp)return; // 다시 포커스됨 — 유지
+        _dlog('[고스트] 커밋 실행 → 고스트 사라짐  scroll='+_dlogScroll());
         commit();
+        _dlog('[고스트] 커밋 뒤  scroll='+_dlogScroll());
       },100);
     };
-    inp.onfocus=()=>{if(_blurT){clearTimeout(_blurT);_blurT=null;}};
+    inp.onfocus=()=>{_dlog('[고스트] focus  scroll='+_dlogScroll());
+      if(_blurT){clearTimeout(_blurT);_blurT=null;_dlog('[고스트] 예약된 커밋 취소됨');}};
     inp.onkeydown=e=>{
       // Enter = 등록하고 입력 모드 끝 / Tab = 등록하고 다음 입력칸 이어가기
       if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing){
@@ -16013,7 +16080,9 @@ function _openGhostInput(secId, type, pos){
     ghost.appendChild(inp);
     if(pos==='C')smList.insertBefore(ghost,smList.firstChild);
     else smList.appendChild(ghost);
+    _dlog('[고스트] DOM 에 붙임(focus 직전)  scroll='+_dlogScroll());
     inp.focus();
+    _dlog('[고스트] focus() 호출 직후  scroll='+_dlogScroll());
   }
 }
 
@@ -21717,8 +21786,18 @@ function exportBackup(){
   a.href=url;
   a.download=buildBackupFilename();
   document.body.appendChild(a);
+  _dlog('[백업] a.click() 직전  url='+location.href.slice(-40)+
+        '  standalone='+(navigator.standalone===true));
   a.click();
+  _dlog('[백업] a.click() 직후  url='+location.href.slice(-40));
   document.body.removeChild(a);
+  // 흰 화면이 "웹뷰가 blob: 으로 실제 이동한 것"인지 확인하는 표시
+  if(DEV_MODE){
+    ['pagehide','visibilitychange','blur','focus'].forEach(ev=>
+      window.addEventListener(ev,()=>_dlog('[백업] window.'+ev+
+        '  hidden='+document.hidden+'  url='+location.href.slice(-40)),{once:true}));
+    setTimeout(()=>_dlog('[백업] +1500ms  url='+location.href.slice(-40)),1500);
+  }
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('백업 파일을 다운로드했어요');
 }
