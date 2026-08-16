@@ -615,7 +615,7 @@ console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복�
   // keep=true(붙잡고 있는 동안)면 본문을 지우지 않는다 — click 이 오면 한 번 더 시도한다
   sc.eq('keep 면 본문을 남겨 둔다', copyFn.includes("if(!keep)_sheetPendingCopyText='';"), true);
   // 손가락이 닿아 있는 동안에는 execCommand 쪽이 더 잘 통한다 — 둘 다 건다
-  sc.eq('붙잡은 동안엔 대체 수단도 같이', copyFn.includes('if(keep)_fallbackCopy(txt);'), true);
+  sc.eq('붙잡은 동안엔 대체 수단도 같이', /if\(keep\)\{[\s\S]{0,120}_fallbackCopy\(txt\)/.test(copyFn), true);
 
   // 토스트가 전부 빠졌는지
   sc.eq('여는 함수에 토스트 없음', /showToast/.test(goFn), false);
