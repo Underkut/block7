@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0813-11  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0813-12  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2666,7 +2666,7 @@ const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0813-11";
+const APP_VERSION = "v. 26-0813-12";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -10322,8 +10322,8 @@ function _initVfCatSheet(){
   const cat=document.getElementById('vfCat');
   if(!cat||cat._sheetBound)return;
   cat._sheetBound=true;
-  let t=null;
-  const stop=()=>{if(t){clearTimeout(t);t=null;}};
+  let t=null,held=false;
+  const stopTimer=()=>{if(t){clearTimeout(t);t=null;}};
   cat.addEventListener('contextmenu',e=>{
     if(!_isDevAccount())return;
     e.preventDefault();e.stopPropagation();
@@ -10332,12 +10332,24 @@ function _initVfCatSheet(){
   cat.addEventListener('touchstart',e=>{
     if(!_isDevAccount())return;
     e.stopPropagation();          // 전체화면의 공용 롱터치 메뉴가 뜨지 않게
-    _vfCatLongFired=false;
-    stop();
-    t=setTimeout(()=>{t=null;_vfCatLongFired=true;vfOpenSheetForCat();},500);
+    _vfCatLongFired=false;held=false;
+    stopTimer();
+    // ⚠️ 500ms 를 채운 그 순간(setTimeout 안)에는 **손가락을 아직 떼지 않았다.**
+    //    거기서 바로 열면(옛 방식) 클립보드 복사가 "사용자 제스처 밖"에서 실행돼
+    //    아이폰이 조용히 거부한다(v26-0813-12 HB 신고 — 본문이 복사 안 됨).
+    //    그래서 여기서는 **다 채웠다는 표시만** 해 두고, 실제로 여는 것은
+    //    손을 떼는 touchend 에서 한다 — touchend 는 그 자체가 진짜 사용자
+    //    제스처라 클립보드 API 가 이때는 허용한다.
+    t=setTimeout(()=>{t=null;held=true;},500);
   },{passive:true});
-  ['touchend','touchmove','touchcancel'].forEach(ev=>
-    cat.addEventListener(ev,stop,{passive:true}));
+  cat.addEventListener('touchend',()=>{
+    stopTimer();
+    if(!held)return;
+    held=false;
+    _vfCatLongFired=true;vfOpenSheetForCat();
+  },{passive:true});
+  ['touchmove','touchcancel'].forEach(ev=>
+    cat.addEventListener(ev,()=>{stopTimer();held=false;},{passive:true}));
 }
 function vfOpenSheetForCat(){
   if(!_isDevAccount())return;

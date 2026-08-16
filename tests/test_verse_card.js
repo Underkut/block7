@@ -624,4 +624,28 @@ console.log('\n시나리오 — Deeper·Even Deeper 토스트 없음');
   sc.eq('Even Deeper 는 여전히 복사 먼저, 열기는 나중', ed.includes('.finally(go);'), true);
 }
 
+// ═══ 롱터치의 실제 열기는 touchend 에서 (v26-0813-12) ═══
+// ⚠️ HB 신고 — 모바일에서 시트 앱으로 넘어갈 때 본문이 복사돼 있지 않았다.
+//    원인: vfOpenSheetForCat() 이 500ms setTimeout **안**에서 곧장 불렸다.
+//    타이머 콜백은 "사용자 제스처가 끊긴" 자리라, 아이폰이 클립보드 쓰기를
+//    조용히 거부한다(NotAllowedError) — 그런데 토스트마저 없애 놓아서
+//    아무 표시도 없이 넘어간 것처럼 보였다.
+//    실측(Playwright, 클립보드 권한 있음): setTimeout 안에서 부른
+//    navigator.clipboard.writeText() 는 NotAllowedError 로 실패했다.
+console.log('\n시나리오 — 롱터치는 손을 뗄 때(touchend) 연다');
+{
+  const fn = SRC.slice(SRC.indexOf('function _initVfCatSheet(){'),
+                       SRC.indexOf('function vfOpenSheetForCat('));
+  // 타이머는 "다 채웠다"는 표시만 하고, 여는 것은 touchend 로 미룬다
+  sc.eq('타이머 콜백은 열지 않는다', /t=setTimeout\(\(\)=>\{t=null;held=true;\},500\);/.test(fn), true);
+  sc.eq('타이머 콜백에 vfOpenSheetForCat 이 없다',
+        /setTimeout\([^)]*vfOpenSheetForCat/.test(fn), false);
+  sc.eq('touchend 에서 연다',
+        fn.includes("cat.addEventListener('touchend',()=>{") &&
+        /addEventListener\('touchend'[\s\S]{0,120}vfOpenSheetForCat\(\);/.test(fn), true);
+  sc.eq('다 채우지 못했으면 아무 일도 안 한다', fn.includes('if(!held)return;'), true);
+  // 우클릭(contextmenu)은 그 자체가 즉시 발생하는 제스처라 그대로 둔다
+  sc.eq('우클릭은 그대로 즉시', fn.includes("cat.addEventListener('contextmenu',e=>{"), true);
+}
+
 sc.done();

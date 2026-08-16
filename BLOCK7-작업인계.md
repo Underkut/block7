@@ -819,6 +819,21 @@ PC 도 앱으로 바꾸면 그 반대(PC 에 시트 데스크톱 앱이 없으�
 - PC 는 복사를 건너뛴다(`copyText` 를 봐도 `isAndroid||isIOS` 가 아니면 무시) —
   이미 gid·range 로 정확히 가므로 필요 없다.
 
+**⚠️⚠️⚠️⚠️⚠️ 그런데 그 복사가 실제로는 안 됐다 — 타이밍 문제** (v26-0813-12).
+`vfOpenSheetForCat()` 을 롱터치 감지용 `setTimeout(500ms)` **안에서 곧장** 불렀다.
+타이머 콜백은 "사용자 제스처가 끊긴" 자리라, 아이폰이 `navigator.clipboard.writeText()`
+를 조용히 거부한다(`NotAllowedError`) — 실측(Playwright)으로 확인. 하필 토스트도
+막 없앤 뒤라(0813-11) 실패가 티도 안 났다.
+
+**고친 방식** — 타이머는 "500ms 를 채웠다"는 **표시만** 하고, 실제로 여는 것(따라서
+클립보드 복사도)은 **손을 떼는 `touchend`** 에서 한다. `touchend` 는 그 자체가
+진짜 사용자 제스처라 이때는 클립보드 API 가 허용한다. 우클릭(`contextmenu`)은
+원래도 즉시 발생하는 제스처라 손대지 않았다.
+
+⚠️ 이 패턴은 일반화할 만하다 — **롱터치로 클립보드에 뭔가를 담아야 하면, 타이머
+콜백 안에서 바로 하지 말고 `touchend` 로 미룰 것.** `setTimeout` 은 몇 ms 든
+관계없이 제스처 사슬을 끊는다.
+
 **같이 뺀 것 — 시트 열기·Deeper·Even Deeper 의 토스트 전부** (HB 요청: "다른
 화면으로 넘어가는 동작이라 토스트가 무의미하다"). `vfOpenSheetForCat` 의 행
 위치 안내, `_openSheetUrl` 의 iOS 앱-미착륙 안내(`_sheetAppMiss` 재시도
