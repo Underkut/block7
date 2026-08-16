@@ -853,6 +853,32 @@ Playwright 로 touchstart→(650ms)→touchend→click 순서를 그대로 재�
 확인했다 — 롱터치는 복사되고 타일뷰로 새지 않으며, 500ms 못 채운 짧은
 탭은 정상적으로 타일뷰가 열린다.
 
+**⚠️⚠️⚠️⚠️⚠️⚠️⚠️ click 으로 몰아넣으니 이번엔 "붙잡고 있어도 안 넘어간다"가
+재발** (v26-0817-2). 0817-1 은 여는 것까지 click(뗀 뒤)으로 옮겼는데, 그러면
+화면 전환도 손을 뗄 때까지 미뤄져 HB 가 기대하던 "붙잡고 있으면 500ms 뒤
+바로 넘어가는" 느낌이 사라졌다.
+
+**여는 것과 복사하는 것은 서로 다른 제약을 받는다** — 이 둘을 분리한 것이
+최종 구조다.
+
+| 동작 | 제약 | 트리거 |
+|---|---|---|
+| 화면 전환(`_sheetGo`, `location.href`) | 제스처 제약 없음 | 타이머(붙잡은 채로, 500ms) |
+| 클립보드 복사(`_sheetCopyPending`) | click 만 인정 | click(뗀 뒤) |
+
+`location.href` 로 앱 스킴을 불러도 이 페이지 자체는 살아 있어(백그라운드로
+갈 뿐) 손을 뗄 때 오는 click 이 정상적으로 발생한다 — 그래서 복사만 따로
+미뤄도 문제가 없다.
+
+`vfOpenSheetForCat()` 은 `_sheetPendingCopyText` 에 본문을 적어 두고
+`_sheetGo(url)` 을 곧장 부른다. `click` 리스너는 더 이상 `vfOpenSheetForCat()`
+을 다시 부르지 않고 `_sheetCopyPending()` 만 불러 그 본문을 소비한다.
+
+⚠️ **셋을 다시 합치지 말 것.** 여는 것을 click 으로 다시 밀면 "안 넘어간다"가,
+복사를 타이머로 다시 밀면 "복사가 안 된다"가 재발한다. Playwright 로
+touchstart 후 아직 손을 떼지 않은 시점(520ms)에 화면 전환이, 손을 뗀 뒤
+click 시점에 클립보드 쓰기가 각각 도착하는 것을 확인했다.
+
 **같이 뺀 것 — 시트 열기·Deeper·Even Deeper 의 토스트 전부** (HB 요청: "다른
 화면으로 넘어가는 동작이라 토스트가 무의미하다"). `vfOpenSheetForCat` 의 행
 위치 안내, `_openSheetUrl` 의 iOS 앱-미착륙 안내(`_sheetAppMiss` 재시도
