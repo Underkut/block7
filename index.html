@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-6  [production]  -->
+<!-- BLOCK7  v. 26-0817-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2721,7 +2721,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-6";
+const APP_VERSION = "v. 26-0817-7";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -6993,6 +6993,14 @@ function renderVerseSettingsModal(){
   const cScope=s.verseCountScope||'all';
   el('vcntScopeMine')?.classList.toggle('on',cScope==='mine');
   el('vcntScopeAll')?.classList.toggle('on',cScope==='all');
+  // ⚠️ '기간 기준' 버튼은 말씀설정의 말씀모음 탭에 있는데, 켜짐 표시를 맞추는
+  //    코드가 **일반 설정창(renderSettingsPanel)에만** 있었다. 그래서 앱을 새로
+  //    켜고 말씀설정을 열면 저장값과 무관하게 **둘 다 꺼진 것처럼** 보였다
+  //    (HB 재신고 21번 — 예전에 고쳤다고 기록된 것이 여기서 되살아난 이유).
+  //    바로 위 주석의 경고와 같은 함정이다. (v26-0817-7)
+  const pbm=s.periodBaseMode||'calendar';
+  el('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
+  el('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
   _syncLinkOpenModeUI();
   _syncVersePushUI();
   _syncVfTextScaleUI();
@@ -17186,6 +17194,22 @@ function getDropTarget(cx,cy){
       const r=tb.getBoundingClientRect();
       if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){targetTb=tb;break;}
     }
+    // ── 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) ──
+    // 예전엔 본문(.ts-body) 안에서만 목표를 찾아, 헤더 위에서는 null 이 나와
+    // "어디로 떨어진다"는 표시가 아예 없었다.
+    // 헤더는 그 구간의 목록보다 **위**에 있으므로, 아래의 Y 거리 계산이
+    // 저절로 첫 번째 항목을 골라 그 앞에 넣는다 — 따로 분기할 필요가 없다.
+    if(!targetTb){
+      for(const hd of document.querySelectorAll('.ts-hd')){
+        const r=hd.getBoundingClientRect();
+        if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){
+          const ts=hd.closest('.ts');
+          if(ts&&ts.id.indexOf('ts-')===0)
+            targetTb=document.getElementById('tb-'+ts.id.slice(3));
+          break;
+        }
+      }
+    }
     if(!targetTb)return null;
 
     const toId=targetTb.id.replace('tb-','');
@@ -21806,28 +21830,55 @@ function exportBackup(){
     vis:ST.vis,
     collapsed:ST.collapsed
   };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const json=JSON.stringify(payload,null,2);
+  const name=buildBackupFilename();
+  // ⚠️ 아이폰은 <a download> 를 누르면 내려받은 파일을 **전체화면 미리보기**로
+  //    띄운다. 그게 HB 가 신고한 "흰 화면 번쩍" 이다 (v26-0817-5 실기기 로그:
+  //    pagehide 만 뜨고 URL 은 index-dev.html 그대로였다 — 페이지가 어디로
+  //    간 게 아니라 아이폰이 미리보기를 덮은 것).
+  //    → 아이폰에서는 공유 시트로 넘긴다. '파일에 저장' 위치도 고를 수 있다.
+  //    ⚠️ navigator.share 는 사용자 조작 안에서 **동기적으로** 불러야 한다.
+  //       await 를 앞에 두면 제스처가 풀려 거절당한다.
+  const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)
+    ||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isIOS&&navigator.canShare&&navigator.share){
+    try{
+      const file=new File([json],name,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        _dlog('[백업] 공유 시트로 넘김');
+        navigator.share({files:[file]})
+          .then(()=>{_dlog('[백업] 공유 시트 완료');showToast('백업 파일을 저장했어요');})
+          .catch(err=>{
+            const n=(err&&err.name)||'';
+            _dlog('[백업] 공유 시트 실패: '+n);
+            if(n==='AbortError')return;          // 사용자가 취소한 것 — 그냥 둔다
+            _backupDownload(json,name);          // 그 밖의 실패는 예전 방식으로
+          });
+        return;
+      }
+    }catch(e){_dlog('[백업] 공유 시트 준비 실패: '+e);}
+  }
+  _backupDownload(json,name);
+}
+// 예전(그리고 PC·안드로이드) 방식 — blob 을 만들어 <a download> 로 내려받는다
+function _backupDownload(json,name){
+  const blob=new Blob([json],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;
-  a.download=buildBackupFilename();
+  a.download=name;
   document.body.appendChild(a);
-  _dlog('[백업] a.click() 직전  url='+location.href.slice(-40)+
-        '  standalone='+(navigator.standalone===true));
+  _dlog('[백업] a.click() 직전  standalone='+(navigator.standalone===true));
   a.click();
-  _dlog('[백업] a.click() 직후  url='+location.href.slice(-40));
   document.body.removeChild(a);
-  // 흰 화면이 "웹뷰가 blob: 으로 실제 이동한 것"인지 확인하는 표시
   if(DEV_MODE){
-    ['pagehide','visibilitychange','blur','focus'].forEach(ev=>
+    ['pagehide','visibilitychange'].forEach(ev=>
       window.addEventListener(ev,()=>_dlog('[백업] window.'+ev+
         '  hidden='+document.hidden+'  url='+location.href.slice(-40)),{once:true}));
-    setTimeout(()=>_dlog('[백업] +1500ms  url='+location.href.slice(-40)),1500);
   }
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('백업 파일을 다운로드했어요');
 }
-
 // Filename format: B7bak-{이메일 앞 3글자}-{YY}-{MMDD}-{그날의 백업번호}
 // e.g. B7bak-hbk-26-0627-1.json
 function buildBackupFilename(){
