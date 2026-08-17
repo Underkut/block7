@@ -31,12 +31,20 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   const fn = slice('function _vfSyncCycleIcon(){', 'function _vfSetNav');
   sc.eq('셔플이면 셔플 아이콘', fn.includes('btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;'), true);
   sc.eq('셔플이면 강조색 클래스', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
+  // v26-0817-17 — HB 재조정: 아이콘 더 작게(15px), 선도 더 얇게(1.4)
   sc.eq('아이콘은 사각 테두리 없이 선만',
-        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"'), true);
+        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
   sc.eq('셔플 아이콘도 같은 스타일',
-        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"'), true);
-  // ⚠️ 위·아래 절반짜리 화살촉(한 줄)만 쓴다 — HB 가 두 번 다시 그려달라고 한 부분
-  sc.eq('셔플 화살촉은 완결된 삼각형(V자)이 아니라 한 줄씩', SRC.includes("<path d=\"M18 15l2 2\"/><path d=\"M18 5l2 2\"/>"), true);
+        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+  // ⚠️ 0817-16 에선 화살촉을 한 줄(상단 절반)만 썼는데, HB 가 "위아래 둘 다
+  //    완성해 달라"고 다시 요청해 작은 V 로 되돌렸다 — 다리 길이(2,2)는 그대로.
+  sc.eq('셔플 화살촉은 위아래 다 있는 작은 V',
+        SRC.includes('<path d="M18 15l2 2-2 2"/><path d="M18 5l2 2-2 2"/>'), true);
+  // 순환 아이콘 오른쪽 아래 코너 — 예전엔 path 를 둘로 쪼개 그 코너에
+  // linejoin 이 안 걸렸다. 한 path 로 이어 그려 stroke-linejoin:round 가
+  // 그 코너도 감싸게 했다.
+  sc.eq('순환 오른쪽 아래까지 한 path 로 이어 그린다',
+        SRC.includes('<path d="M4 15V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v7h-9"/>'), true);
 }
 
 console.log('\n시나리오 4 — 필터 이름이 있으면 그 아래로 내려간다');
@@ -83,7 +91,9 @@ console.log('\n시나리오 6 — randomVerseManual 은 활성 모음(말씀설�
 console.log('\n시나리오 7 — PC 말씀영역(vb-shuffle) 아이콘도 같은 디자인으로 교체');
 {
   sc.eq('vb-shuffle 버튼이 새 셔플 아이콘을 쓴다',
-        /class="vb-shuffle"[\s\S]{0,220}<svg width="15" height="15" viewBox="0 0 24 24"[\s\S]{0,220}<path d="M3 7h5c4 0 4 10 8 10h4"\/>/.test(SRC), true);
+        /class="vb-shuffle"[\s\S]{0,220}<svg width="13" height="13" viewBox="0 0 24 24"[\s\S]{0,220}<path d="M3 7h5c4 0 4 10 8 10h4"\/>/.test(SRC), true);
+  sc.eq('vb-shuffle 화살촉도 위아래 다 있는 작은 V',
+        SRC.includes('<path d="M18 15l2 2-2 2"/><path d="M18 5l2 2-2 2"/></svg></button></div>'), true);
   sc.eq('예전 두 줄짜리 갈매기형 아이콘은 없앴다',
         SRC.includes('<path d="M4 5h4l8 10h4"/><path d="M4 15h4l2.5-3.1"/>'), false);
   // 로직(vbShuffleVerse) 자체는 안 건드렸다 — 아이콘만 바꾼 것
