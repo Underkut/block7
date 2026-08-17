@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-15  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0817-16  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -300,6 +300,20 @@ header{
   z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;
   align-items:center;justify-content:center;}
+/* ── 순환·셔플 전환 (v26-0817-16, HB 3) ──
+   상단 중앙. 필터 이름(vfTopLabel)이 떠 있을 때는 그 바로 아래로 내려간다
+   (.vf-cycle-below — _vfSyncTopBar() 가 붙이고 뗀다). 사각 테두리 없이
+   아이콘 하나만 — HB 가 스케치로 확정한 모양 그대로. */
+.vf-cycle{
+  position:absolute;left:50%;transform:translateX(-50%);
+  top:calc(env(safe-area-inset-top,0px) + 14px);
+  z-index:11;background:none;border:none;padding:5px;margin:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--vf-tx2,var(--tx2));cursor:pointer;transition:top .15s,color .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.vf-cycle.vf-cycle-below{top:calc(env(safe-area-inset-top,0px) + 34px);}
+.vf-cycle.vf-cycle-shuffle{color:var(--vf-ac,var(--ac));}
 /* 반응 토스트(좋아요·암송) — 심장이 뛰듯 두 번 두근거린 뒤 자리를 잡는다.
    가운데 정렬을 translate 로 잡고 있어서 keyframe 마다 translate 를 같이 써야
    한다 — scale 만 쓰면 애니메이션 도중 화면 중앙에서 벗어난다. */
@@ -2778,7 +2792,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-15";
+const APP_VERSION = "v. 26-0817-16";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3856,7 +3870,8 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div id="verseBarWrap">
   <button class="vb-nav vb-nav-l" onclick="event.stopPropagation();_verseBarSlideNav(-1)" aria-label="이전 말씀"><i>‹</i></button>
   <button class="vb-nav vb-nav-r" onclick="event.stopPropagation();_verseBarSlideNav(1)" aria-label="다음 말씀"><i>›</i></button>
-  <div class="vb-top"><button class="vb-shuffle" onclick="event.stopPropagation();vbShuffleVerse()" aria-label="말씀 뽑기" title="말씀 뽑기"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h4l8 10h4"/><path d="M4 15h4l2.5-3.1"/><path d="M13.5 7.1 16 4h4"/><path d="M17 2l3 2-3 2"/><path d="M17 18l3-2-3-2"/></svg></button></div>
+  <!-- v26-0817-16 — HB 가 스케치로 확정한 셔플 아이콘(교차 곡선 + 위·아래 절반 화살촉)으로 통일 -->
+  <div class="vb-top"><button class="vb-shuffle" onclick="event.stopPropagation();vbShuffleVerse()" aria-label="말씀 뽑기" title="말씀 뽑기"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5c4 0 4 10 8 10h4"/><path d="M3 17h5c4 0 4-10 8-10h4"/><path d="M18 15l2 2"/><path d="M18 5l2 2"/></svg></button></div>
 <div id="verseBar" style="display:none;" onclick="onVerseBarClick(event)">
   <div id="verseBarInner">
     <!-- 스닉픽에서 "한 줄"이 되는 묶음. 전체 모드에서는 display:contents 라
@@ -4374,6 +4389,9 @@ window._fbScriptsReady=new Promise(resolve=>{
     <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>
   </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
+  <!-- 순환·셔플 전환 (v26-0817-16, HB 3). 필터 이름(vfTopLabel)이 떠 있으면
+       그 아래로, 없으면 같은 자리에 온다 — _vfSyncTopBar()가 위치를 맞춘다. -->
+  <button class="vf-cycle" id="vfCycleBtn" onclick="event.stopPropagation();vfToggleCycleMode()"></button>
   <button class="vf-close" onclick="closeVerseFull()" aria-label="닫기">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
@@ -9924,6 +9942,29 @@ let _vfOverrideVerse=null;
 let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
 const _VF_BACKLIST_SVG='<svg width="17" height="14" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="3" y1="13" x2="17" y2="13"/></svg>';
+// ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
+// '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
+// 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
+// 말씀모음 설정에서 정해 둔 활성 목록 전체에서 무작위로 고른다.
+// 아이콘은 HB 가 스케치로 확정한 모양 — 사각 테두리 없이 선만.
+const _VF_CYCLE_SVG='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v7"/><path d="M21 15h-9"/><path d="M14.5 11.5L11 15"/></svg>';
+const _VF_SHUFFLE_SVG='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5c4 0 4 10 8 10h4"/><path d="M3 17h5c4 0 4-10 8-10h4"/><path d="M18 15l2 2"/><path d="M18 5l2 2"/></svg>';
+function _vfCycleMode(){return ST.settings.vfCycleMode==='shuffle'?'shuffle':'repeat';}
+function vfToggleCycleMode(){
+  beforeSave();
+  ST.settings.vfCycleMode=(_vfCycleMode()==='shuffle')?'repeat':'shuffle';
+  save();
+  _vfSyncCycleIcon();
+}
+function _vfSyncCycleIcon(){
+  const btn=document.getElementById('vfCycleBtn');
+  if(!btn)return;
+  const shuffle=_vfCycleMode()==='shuffle';
+  btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;
+  btn.classList.toggle('vf-cycle-shuffle',shuffle);
+  const lbl=shuffle?'셔플 — 눌러서 순환으로':'순환 — 눌러서 셔플로';
+  btn.setAttribute('aria-label',lbl);btn.setAttribute('title',lbl);
+}
 function _vfSetNav(list,idx,label,kind){
   _vfNavList=(list&&list.length)?list.slice():null;
   _vfNavIdx=idx||0;_vfNavLabel=label||'';
@@ -9949,6 +9990,10 @@ function _vfSyncTopBar(){
     hb.innerHTML=_vfNavKind?_VF_BACKLIST_SVG:_VF_HOME_SVG;
     hb.setAttribute('aria-label',_vfNavKind?'목록으로 돌아가기':'전체 목록');
   }
+  // 필터 이름이 함께 떠 있으면 순환·셔플 버튼을 그 아래로 내린다 (HB 3)
+  const cb=document.getElementById('vfCycleBtn');
+  if(cb)cb.classList.toggle('vf-cycle-below',on);
+  _vfSyncCycleIcon();
 }
 function _vfCurrentVerse(){return _vfOverrideVerse||getVerseByIdx(ST.settings.verseCurrentIdx);}
 function _verseFullRender(){
@@ -9990,12 +10035,22 @@ function _vfNavCommit(d){          // d>0 = 위로 밀어 다음, d<0 = 이전
   inner.style.opacity='0';
   if(bt){bt.style.transition='opacity .16s';bt.style.opacity='0';}
   setTimeout(()=>{
-    if(_vfNavList&&_vfNavList.length){       // 타일뷰 목록 안에서 순환
-      _vfNavIdx=(_vfNavIdx+(d>0?1:-1)+_vfNavList.length)%_vfNavList.length;
+    // 순환·셔플 (v26-0817-16, HB 3) — 필터(타일뷰 목록)가 있으면 그 안에서,
+    // 없으면 말씀모음 설정의 활성 목록 전체에서. 셔플은 위/아래 어느 쪽으로
+    // 밀었든 그냥 다음 무작위 하나를 고른다 — d 는 화면 넘기는 방향에만 쓴다.
+    const shuffle=_vfCycleMode()==='shuffle';
+    if(_vfNavList&&_vfNavList.length){       // 타일뷰 목록 안
+      if(shuffle&&_vfNavList.length>1){
+        let ni;do{ni=Math.floor(Math.random()*_vfNavList.length);}while(ni===_vfNavIdx);
+        _vfNavIdx=ni;
+      }else{
+        _vfNavIdx=(_vfNavIdx+(d>0?1:-1)+_vfNavList.length)%_vfNavList.length;
+      }
       _vfOverrideVerse=_vfNavList[_vfNavIdx];
     }else{
       _vfOverrideVerse=null;                 // 본 시퀀스로 복귀
-      if(d>0)nextVerseManual();else prevVerseManual();
+      if(shuffle)randomVerseManual();        // 활성 모음 전체에서 무작위(직전과 안 겹침)
+      else if(d>0)nextVerseManual();else prevVerseManual();
     }
     _vfRollVariant();applyVfTheme();        // 구절이 바뀔 때마다 패턴 안에서 새 색
     _verseFullRender();
@@ -11336,7 +11391,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagExcludeOn:true,vgTagExcludeMax:1,vgBookExcludeOn:true,vgBookExcludeMax:1,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagExcludeOn:true,vgTagExcludeMax:1,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
