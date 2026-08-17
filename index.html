@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-1  [production]  -->
+<!-- BLOCK7  v. 26-0818-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2397,6 +2397,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .settings-row-text{flex:1;min-width:0;}
 /* 항목 이름도 제목과 헷갈리지 않게 톤을 낮췄다(700→500, tx→tx2) */
 .settings-row-label{font-size:13px;font-weight:500;color:var(--tx2);}
+/* v26-0818-2, HB 3 재조정 — 몇몇 줄은 토글·버튼이 딸린 '행'이지만 실은 그
+   섹션의 1뎁스 제목 역할이다(예: '연락처', '하루 할일 보고'). settings-row-label
+   기본값(2뎁스, 회색 중간 크기)이 아니라 settings-section-title과 같은
+   1뎁스 서식(흰색 큰 글자)을 준다. */
+.settings-row-label.lv1{font-size:15px;font-weight:800;color:var(--tx);letter-spacing:-.01em;}
 .settings-row-desc{font-size:11px;color:var(--tx3);line-height:1.5;margin-top:2px;}
 
 .settings-toggle{position:relative;width:42px;height:25px;flex-shrink:0;cursor:pointer;}
@@ -2805,7 +2810,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-1";
+const APP_VERSION = "v. 26-0818-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2969,7 +2974,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="p">
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">연락처</div>
+            <div class="settings-row-label lv1">연락처</div>
             <div class="settings-row-desc">닉네임을 등록하면 할일 텍스트에 @닉네임으로 전화·문자·이메일·카톡을 연결할 수 있어요</div>
           </div>
           <button class="settings-btn" onclick="openContactsModal()" style="flex-shrink:0;">관리</button>
@@ -2983,7 +2988,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section">
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">하루 할일 보고</div>
+            <div class="settings-row-label lv1">하루 할일 보고</div>
             <div class="settings-row-desc" id="notifyStatusDesc">아이폰은 홈 화면에 추가된 상태에서만 알림을 받을 수 있어요</div>
           </div>
           <label class="settings-toggle">
@@ -3009,7 +3014,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
         <div class="settings-row" data-notif-sub="on" data-lv="mp">
           <div class="settings-row-text">
-            <div class="settings-row-label">시간 구간 할일 보고</div>
+            <div class="settings-row-label lv1">시간 구간 할일 보고</div>
             <div class="settings-row-desc">각 시간구간이 시작될 때 그 구간의 할일·일정을 알려줘요. 미완료 할일이나 일정이 있는 구간만 알려요.</div>
           </div>
           <label class="settings-toggle">
@@ -3029,7 +3034,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
         <div class="settings-row" data-notif-sub="on" data-lv="mp">
           <div class="settings-row-text">
-            <div class="settings-row-label">알림에 스몰 블럭 포함</div>
+            <div class="settings-row-label lv1">알림에 스몰 블럭 포함</div>
             <div class="settings-row-desc">끄면 알림 내용에 빅 블럭·일정만 나와요</div>
           </div>
           <label class="settings-toggle">
@@ -3040,7 +3045,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
         <div class="settings-row" id="notifyTestRow" style="display:none;">
           <div class="settings-row-text">
-            <div class="settings-row-label">알림 테스트</div>
+            <div class="settings-row-label lv1">알림 테스트</div>
             <div class="settings-row-desc">기기: 이 기기의 알림 표시만 확인. 서버: 실제 푸시 발송 전체 경로 확인 — 누르고 8초 안에 홈으로 나가면 배너로 볼 수 있어요.</div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -3067,7 +3072,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 화면 크기 (뷰포트 스케일 — 모바일·태블릿 전용) -->
       <div class="settings-section">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label">글자 크기</div>
+          <div class="settings-row-label lv1">글자 크기</div>
           <div class="settings-row-desc">글자가 작아 보이면 전체 화면을 키워보세요. 누르는 즉시 적용되고, 이 설정은 기기마다 따로 저장돼요. 휴대폰·태블릿 전용이고, 데스크탑에서는 브라우저 확대(Cmd/Ctrl +)를 사용하세요.</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
@@ -3080,7 +3085,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 테마 -->
       <div class="settings-section">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label">테마</div>
+          <div class="settings-row-label lv1">테마</div>
           <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정을 따라가게 할 수 있어요</div>
         </div>
         <div class="theme-pick-row">
@@ -3093,7 +3098,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 요일 표기 -->
       <div class="settings-section" data-lv="mp">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label">요일 표기</div>
+          <div class="settings-row-label lv1">요일 표기</div>
           <div class="settings-row-desc">주간·월간 보기에서 요일을 어떻게 표시할지 골라요</div>
         </div>
         <div class="theme-pick-row">
@@ -3133,7 +3138,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 이월 횟수 표시 -->
       <div class="settings-section" data-lv="p">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label">이월 횟수 표시</div>
+          <div class="settings-row-label lv1">이월 횟수 표시</div>
           <div class="settings-row-desc">할 일이 며칠째 이어지고 있는지 옆에 표시해요. 늘어날수록 색이 진해져요.</div>
         </div>
         <div class="theme-pick-row">
@@ -3199,7 +3204,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="p">
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">레이아웃 분할 기준</div>
+            <div class="settings-row-label lv1">레이아웃 분할 기준</div>
             <div class="settings-row-desc">화면 가로폭이 이 값 이상이면 2단(할일+위젯), 3단(컬럼 3개) 레이아웃으로 바뀌어요. 3단 값은 항상 2단 값보다 100 이상 커야 해요.</div>
           </div>
         </div>
