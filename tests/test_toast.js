@@ -1,5 +1,5 @@
 // 토스트 개선 (v26-0817-1, HB 요청)
-// ① 유지 시간을 글자 수에 비례하게 — 짧은 문구는 예전과 같은 4.5s
+// ① 유지 시간을 글자 수에 비례하게 — 글자당 200ms, 최소 3.0s, 최대 9.0s
 // ② 날짜 이동 안내에 실제 날짜·요일·구간을 담는다
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -29,14 +29,14 @@ console.log('시나리오 1 — 날짜 이동 안내 문구');
 console.log('\n시나리오 2 — 토스트 유지 시간이 글자 수에 비례한다');
 {
   const { SRC } = require('./_load');
-  sc.eq('글자당 300ms', SRC.includes('const dur=Math.min(9000,Math.max(4500,s.length*300));'), true);
+  sc.eq('글자당 200ms', SRC.includes('const dur=Math.min(9000,Math.max(3000,s.length*200));'), true);
   sc.eq('예전 문구 길이는 최소값 그대로',
-        Math.min(9000, Math.max(4500, '날짜로 이동했어요'.length * 300)), 4500);
+        Math.min(9000, Math.max(3000, '날짜로 이동했어요'.length * 200)), 3000);
   const longMsg = _moveDateToastMsg('2026-08-17', 'am');
-  const longDur = Math.min(9000, Math.max(4500, longMsg.length * 300));
-  sc.eq('긴 문구는 더 오래 떠 있는다', longDur > 4500, true);
+  const longDur = Math.min(9000, Math.max(3000, longMsg.length * 200));
+  sc.eq('긴 문구는 더 오래 떠 있는다', longDur > 3000, true);
   sc.eq('9초를 넘지 않는다',
-        Math.min(9000, Math.max(4500, 'x'.repeat(100).length * 300)), 9000);
+        Math.min(9000, Math.max(3000, 'x'.repeat(100).length * 200)), 9000);
 }
 
 sc.done();
