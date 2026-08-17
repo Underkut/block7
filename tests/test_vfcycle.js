@@ -30,7 +30,7 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
 {
   const fn = slice('function _vfSyncCycleIcon(){', 'function _vfSetNav');
   sc.eq('셔플이면 셔플 아이콘', fn.includes('btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;'), true);
-  sc.eq('셔플이면 강조색 클래스', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
+  sc.eq('상태를 클래스로도 표시해 둔다(색과는 무관)', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
   // v26-0817-17 — HB 재조정: 아이콘 더 작게(15px), 선도 더 얇게(1.4)
   sc.eq('아이콘은 사각 테두리 없이 선만',
         SRC.includes('const _VF_CYCLE_SVG=\'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
@@ -40,11 +40,22 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   //    완성해 달라"고 다시 요청해 작은 V 로 되돌렸다 — 다리 길이(2,2)는 그대로.
   sc.eq('셔플 화살촉은 위아래 다 있는 작은 V',
         SRC.includes('<path d="M18 15l2 2-2 2"/><path d="M18 5l2 2-2 2"/>'), true);
-  // 순환 아이콘 오른쪽 아래 코너 — 예전엔 path 를 둘로 쪼개 그 코너에
-  // linejoin 이 안 걸렸다. 한 path 로 이어 그려 stroke-linejoin:round 가
-  // 그 코너도 감싸게 했다.
-  sc.eq('순환 오른쪽 아래까지 한 path 로 이어 그린다',
-        SRC.includes('<path d="M4 15V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v7h-9"/>'), true);
+  // v26-0817-18 — 순환 아이콘: 아래 두 코너 모두 안 둥글었다(오른쪽 아래는
+  // 0817-17 에서 한 번 고쳤지만 반경이 너무 작아 눈에 안 띄었고, 왼쪽 아래는
+  // 아예 손대지 않았었다). 네 코너 전부 같은 반경(4)의 아크로 그린다 —
+  // gap 은 아래 가운데로 옮기고 화살촉이 그 자리에 들어간다.
+  sc.eq('순환 — 네 코너 모두 라운딩된 한 path',
+        SRC.includes('<path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3"/>'), true);
+}
+
+console.log('\n시나리오 3-1 — 순환·셔플을 색으로 구분하지 않는다 (v26-0817-18, HB 재요청)');
+{
+  // ⚠️ 예전엔 셔플일 때 --ac(강조색)를 썼다. HB 가 "굳이 진하게 할 필요
+  //    없이 위 필터 글자와 같은 색으로 통일해 달라"고 다시 요청했다.
+  sc.eq('셔플 전용 강조색 규칙이 없다', SRC.includes('.vf-cycle.vf-cycle-shuffle{color:'), false);
+  // 필터 이름(vf-toplabel)과 기본 버튼(vf-cycle)이 같은 색 변수를 쓴다
+  sc.eq('vf-toplabel 색', SRC.includes('.vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);\n  z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));'), true);
+  sc.eq('vf-cycle 도 같은 색 변수', /\.vf-cycle\{[\s\S]{0,260}color:var\(--vf-tx2,var\(--tx2\)\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 4 — 필터 이름이 있으면 그 아래로 내려간다');
