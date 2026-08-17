@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-9  [production]  -->
+<!-- BLOCK7  v. 26-0817-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2721,7 +2721,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-9";
+const APP_VERSION = "v. 26-0817-10";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4240,7 +4240,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="event-modal" id="vcSetModal" style="display:none;z-index:4330;width:380px;max-width:92vw;max-height:84vh;overflow-y:auto;">
   <div class="modal-head">
     <span class="modal-x modal-x-inline" onclick="openVcCollSettings()" title="말씀 모음 설정">
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none"><rect x="2.6" y="13.4" width="14.8" height="3.6" rx="1.1"/><rect x="3.3" y="8.9" width="13.4" height="3.9" rx="1.1"/><rect x="4" y="3.2" width="12" height="4.6" rx="1.1"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
     </span>
     <div class="event-modal-title" style="margin:0;flex:1;">말씀카드 설정</div>
     <button class="modal-x modal-x-inline" onclick="closeVcSettings()" aria-label="닫기">
@@ -4498,7 +4498,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 헤더: 좌상단 햄버거(모음 설정) · 중앙 제목 · 우상단 닫기(×) -->
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
     <span class="modal-x modal-x-inline" onclick="openVerseCollSettings()" title="말씀 모음 설정">
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none"><rect x="2.6" y="13.4" width="14.8" height="3.6" rx="1.1"/><rect x="3.3" y="8.9" width="13.4" height="3.9" rx="1.1"/><rect x="4" y="3.2" width="12" height="4.6" rx="1.1"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
     </span>
     <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">현재 말씀 모음</div>
     <button class="modal-x modal-x-inline" onclick="closeVerseListModal()" aria-label="닫기">
@@ -15371,18 +15371,19 @@ function renderSecs(){
           e.preventDefault(); // 이어지는 합성 click(빅 열기) 억제
           const g=document.getElementById(`tmp-sm-ghost-${sec.id}`);
           const gi=g&&g.querySelector('input');
-          // ⚠️ 실기기 로그(v26-0817-5)로 확인 — 이미 포커스가 있는 입력창에
-          //    focus() 를 또 부르면 아이폰이 137ms 멈췄다가 곧바로 blur 를 냈다.
-          //    그 blur 가 100ms 뒤 커밋을 돌려 빈 고스트를 지워 버렸다.
-          //    → 포커스가 없을 때만 부른다. preventScroll 로 화면 튐도 줄인다.
+          // ⚠️ 여기서 focus() 를 **반드시, 조건 없이** 불러야 한다 (v26-0817-10).
+          //    타이머(500ms) 안의 focus() 는 제스처 밖이라 document.activeElement
+          //    만 바꿀 뿐 **아이폰 키보드를 못 올린다**. 커서가 실제로 들어가는 건
+          //    제스처 안인 이 touchend 의 focus() 덕분이다.
+          //    0817-6 에서 "이미 포커스가 있으면 건너뛰기"로 바꿨다가 커서가
+          //    아예 안 들어가게 만들었다(HB 신고). 되돌린다.
+          //    ⚠️ 이 focus() 가 아이폰의 되받아치는 blur 를 부르기도 하는데,
+          //       그건 아래 고스트의 blur 가드(_lpAt, 600ms)가 막는다. 그쪽이
+          //       담당이므로 여기서 focus 를 아끼지 말 것.
           if(gi){
             gi._lpAt=Date.now();          // 롱터치로 막 열렸다는 표시
-            if(document.activeElement!==gi){
-              _dlog('[+] touchend 에서 focus 다시걺');
-              gi.focus({preventScroll:true});
-            }else{
-              _dlog('[+] 이미 포커스 있음 — focus 다시 안 걺');
-            }
+            _dlog('[+] touchend 에서 focus (조건 없이)');
+            gi.focus({preventScroll:true});
           }
           _dlog('[+] touchend 처리 뒤  scroll='+_dlogScroll());
           setTimeout(()=>{_atFired=false;
