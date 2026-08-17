@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-12  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0817-13  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -199,6 +199,15 @@ header{
 #verseGrid .vg-filter,#verseGrid .vg-sortbtn.on{color:var(--vf-tx,var(--tx));}
 #verseGrid .vg-sortbtn,#verseGrid .vg-eq,#verseGrid .vg-back{color:var(--vf-tx3,var(--tx3));}
 #verseGrid .vg-eq.on{color:var(--vf-ac,var(--ac));}
+/* ⚠️ 타일뷰는 앱 기본색이 아니라 **말씀 전체화면 테마**(--vf-*)를 쓴다.
+   여기서 var(--tx) 를 그냥 쓰면 어두운 테마에서 글자가 배경에 묻힌다
+   (0817-13 에서 스테퍼 숫자가 안 보였다). 제외 버튼·스테퍼도 테마를 따른다. */
+#verseGrid .vg-excl-btn{color:var(--vf-tx3,var(--tx3));}
+#verseGrid .vg-excl-btn.on{color:var(--vf-ac,var(--ac));}
+#verseGrid .vg-excl-step{border-color:var(--vf-tx3,var(--tx3));}
+#verseGrid .vg-excl-step button{color:var(--vf-tx2,var(--tx2));}
+#verseGrid .vg-excl-step span{color:var(--vf-tx,var(--tx));
+  border-left-color:var(--vf-tx3,var(--tx3));border-right-color:var(--vf-tx3,var(--tx3));}
 #verseGrid .vg-tile{background:var(--vf-tile,var(--s2));color:var(--vf-tx,var(--tx));
   font-family:var(--vf-font,inherit);}
 #verseGrid .vg-tb-ref,#verseGrid .vg-tile-ref{color:var(--vf-tx3,var(--tx3));}
@@ -385,8 +394,12 @@ header{
 }
 .vg-back{background:none;border:none;color:var(--tx2);font-size:22px;line-height:1;
   padding:2px 6px 2px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
-.vg-filter{flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--tx);
+/* ⚠️ flex:1 이면 제목이 남는 자리를 통째로 먹어, 바로 뒤에 둔 '제외' 버튼이
+   오른쪽 정렬 버튼들 옆까지 밀려난다 (0817-12 에서 그렇게 나갔다).
+   내용만큼만 차지하게 하고 남는 자리는 .vg-sp 가 먹는다. */
+.vg-filter{flex:0 1 auto;min-width:0;font-size:14px;font-weight:700;color:var(--tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vg-sp{flex:1;min-width:6px;}
 /* 태그 필터일 때 — 위아래로 이웃 태그를 흐리게 얹고, 누르면 롤링피커가 열린다.
    이웃은 자리만 차지하고 클릭은 통째로 아래 select 가 받는다. */
 .vg-filter.vg-filter-roll{
@@ -410,23 +423,33 @@ header{
   -webkit-appearance:none;appearance:none;
   cursor:pointer;outline:none;
 }
-/* ── '1 제외' 미니 스위치 (v26-0817-12, HB 14-2) ──
-   태그 롤링피커 바로 우측. 테두리·박스 없이 아주 작은 스위치와 회색 글씨만.
-   설정창의 같은 항목과 한 값을 본다. */
-.vg-singles{display:flex;align-items:center;gap:4px;flex-shrink:0;margin:0 8px 0 6px;}
-.vg-mini-toggle{position:relative;width:22px;height:12px;flex-shrink:0;cursor:pointer;}
-.vg-mini-toggle input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;}
-.vg-mini-track{
-  display:block;width:100%;height:100%;border-radius:6px;
-  background:var(--bd2);transition:background .15s;pointer-events:none;
+/* ── '제외' 글자 버튼 + 스테퍼 (v26-0817-13, HB 14-2) ──
+   태그 롤링피커 **바로 우측**. 평소엔 글자 하나만 있고, 눌러 켜야 스테퍼가
+   붙는다. UI 원칙대로 테두리·박스 없이 글자만 (스테퍼 테두리는 숫자를
+   읽으려면 있어야 해서 아주 얇게만 남겼다). */
+.vg-excl{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;}
+.vg-excl-btn{
+  background:none;border:none;padding:2px 1px;
+  font-family:inherit;font-size:12px;color:var(--tx3);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;transition:color .15s;
 }
-.vg-mini-track::after{
-  content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;
-  border-radius:50%;background:var(--tx3);transition:transform .15s,background .15s;
+.vg-excl-btn.on{color:var(--ac);font-weight:700;}
+.vg-excl-step{
+  display:flex;align-items:center;
+  border:1px solid var(--bd2);border-radius:7px;overflow:hidden;
 }
-.vg-mini-toggle input:checked + .vg-mini-track{background:var(--ac);}
-.vg-mini-toggle input:checked + .vg-mini-track::after{transform:translateX(10px);background:#fff;}
-.vg-singles-lbl{font-size:10px;color:var(--tx3);white-space:nowrap;letter-spacing:-.02em;}
+.vg-excl-step button{
+  width:20px;height:18px;padding:0;border:0;background:transparent;
+  color:var(--tx2);font-size:12px;line-height:1;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.vg-excl-step button:disabled{opacity:.3;cursor:default;}
+.vg-excl-step span{
+  min-width:16px;text-align:center;font-size:11px;color:var(--tx);
+  border-left:1px solid var(--bd2);border-right:1px solid var(--bd2);
+  line-height:18px;font-variant-numeric:tabular-nums;
+}
 .vg-sort{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .vg-eq{background:none;border:none;color:var(--tx3);font-size:15px;font-weight:400;
   line-height:1;padding:2px 3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -2749,7 +2772,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-12";
+const APP_VERSION = "v. 26-0817-13";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3509,15 +3532,27 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
-      <!-- ── 태그 목록 간추리기 (HB 14-1) — 타일뷰 좌상단 '1 제외' 와 같은 값 ── -->
+      <!-- ── 태그 목록 간추리기 (HB 14-1) — 타일뷰 좌상단 '제외' 와 같은 값 ── -->
       <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">태그 목록</div>
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">구절 1개뿐인 태그 빼기</div>
-            <div class="settings-row-desc">타일뷰 좌상단 태그 목록에서 구절이 하나뿐인 태그를 빼요. 네비게이토 180 은 태그 400개 중 240개가 구절 하나뿐이라, 켜 두면 목록이 훨씬 짧아져요. 타일뷰의 '1 제외' 스위치와 같은 값이에요.</div>
+            <div class="settings-row-label">구절 적은 태그 빼기</div>
+            <div class="settings-row-desc">타일뷰 좌상단 태그 목록에서 구절 수가 기준 이하인 태그를 빼요. 네비게이토 180 은 태그 400개 중 240개가 구절 하나뿐이라, 켜 두면 목록이 훨씬 짧아져요. 타일뷰의 '제외' 버튼과 같은 값이에요.</div>
           </div>
-          <label class="settings-toggle"><input type="checkbox" id="setVgTagHideSingles" onchange="updateSetting('vgTagHideSingles',this.checked)"><span class="settings-toggle-track"></span></label>
+          <label class="settings-toggle"><input type="checkbox" id="setVgTagExclOn" onchange="updateSetting('vgTagExcludeOn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <!-- 켰을 때만 나오는 줄 — 기준 개수 -->
+        <div class="settings-row" id="setVgExclStepWrap">
+          <div class="settings-row-text">
+            <div class="settings-row-label">기준 개수</div>
+            <div class="settings-row-desc">구절이 이 개수 <b>이하</b>인 태그를 빼요. 1이면 구절 하나뿐인 태그만 빠져요.</div>
+          </div>
+          <div class="hi-step">
+            <button id="setVgExclMinus" onclick="vgStepTagExcl(-1)" aria-label="기준 줄이기">−</button>
+            <span id="setVgExclVal">1</span>
+            <button id="setVgExclPlus" onclick="vgStepTagExcl(1)" aria-label="기준 늘리기">+</button>
+          </div>
         </div>
       </div>
 
@@ -4390,14 +4425,19 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="vg-top">
     <button class="vg-back" onclick="closeVerseGrid()" aria-label="닫기">‹</button>
     <div class="vg-filter" id="vgFilterLabel"></div>
-    <!-- '구절 1개뿐인 태그' 빼기 — 말씀설정 뷰탭의 같은 항목과 연동 (HB 14-2) -->
-    <div class="vg-singles" id="vgSinglesBox" style="display:none;">
-      <label class="vg-mini-toggle" title="구절이 1개뿐인 태그를 목록에서 빼요">
-        <input type="checkbox" id="vgSinglesChk" onchange="vgToggleTagSingles(this.checked)">
-        <span class="vg-mini-track"></span>
-      </label>
-      <span class="vg-singles-lbl">1 제외</span>
+    <!-- 롤링피커 바로 우측 — '제외' 글자 버튼, 켜면 스테퍼가 붙는다 (HB 14-2).
+         말씀설정 뷰탭의 같은 항목과 연동. -->
+    <div class="vg-excl" id="vgExclBox" style="display:none;">
+      <button class="vg-excl-btn" id="vgExclBtn" aria-pressed="false"
+              onclick="vgToggleTagExcl()" title="구절이 적은 태그를 목록에서 빼요">제외</button>
+      <div class="vg-excl-step" id="vgExclStep" style="display:none;">
+        <button id="vgExclMinus" onclick="vgStepTagExcl(-1)" aria-label="기준 줄이기">−</button>
+        <span id="vgExclVal">1</span>
+        <button id="vgExclPlus" onclick="vgStepTagExcl(1)" aria-label="기준 늘리기">+</button>
+      </div>
     </div>
+    <!-- 남는 자리를 먹어 좌·우 묶음을 갈라 놓는다 (제목이 flex:1 이면 안 된다) -->
+    <span class="vg-sp"></span>
     <div class="vg-sort">
       <button class="vg-eq" id="vgEq" onclick="vgToggleGroup()" aria-label="그룹 구분선">=</button>
       <button class="vg-sortbtn on" id="vgSortDate" onclick="vgTapDateSort()">최신순</button>
@@ -10371,10 +10411,21 @@ function _vgFilterLabelText(){
 // 목록은 지금 타일뷰가 보고 있는 말씀 뭉치(_vgRawPool)에서 뽑고, 개수도 함께 센다.
 //  · 태그  → ㄱㄴㄷ 순
 //  · 성경  → 창세기~요한계시록 66권 순서 (BibleLinkProvider._BSK_CODES 의 키 순서)
-// 태그 목록에서 '구절이 1개뿐인 태그'를 뺄지 (v26-0817-12, HB 14). 기본은 뺀다.
-// 네비게이토 180 만 해도 태그 400개 중 240개가 구절 하나뿐이라, 켜 두지 않으면
+// ── 태그 목록에서 '구절이 적은 태그' 빼기 (v26-0817-13, HB 14) ──
+// 네비게이토 180 만 해도 태그 400개 중 240개가 구절 하나뿐이라, 빼 두지 않으면
 // 롤링피커를 아무리 굴려도 원하는 태그가 안 나온다.
-function _vgHideSingles(){return ST.settings.vgTagHideSingles!==false;}
+//
+// 0817-12 에서는 '1개짜리만' 빼는 켬/끔 스위치였는데, 0817-13 에서 기준을
+// 스테퍼로 고를 수 있게 바꿨다(HB 14-0). 기준 N 은 **N개 이하를 뺀다**는 뜻이다
+// — N=1 이면 예전과 똑같이 1개짜리만 빠지고, 올릴수록 목록이 더 짧아진다.
+// ('정확히 N개'로 하면 N=3 일 때 1·2개짜리가 되살아나 목록이 오히려 늘어난다)
+const VG_TAG_EXCL_MIN=1, VG_TAG_EXCL_MAX=9;
+function _vgExclOn(){return ST.settings.vgTagExcludeOn!==false;}
+function _vgExclMax(){
+  const n=parseInt(ST.settings.vgTagExcludeMax,10);
+  if(isNaN(n))return VG_TAG_EXCL_MIN;
+  return Math.max(VG_TAG_EXCL_MIN,Math.min(VG_TAG_EXCL_MAX,n));
+}
 function _vgAxisItems(kind){
   const pool=_vgRawPool()||[];
   const cnt=new Map();
@@ -10384,9 +10435,12 @@ function _vgAxisItems(kind){
       if(s)cnt.set(s,(cnt.get(s)||0)+1);
     }));
     let keys=[...cnt.keys()];
-    // ⚠️ 지금 보고 있는 태그는 구절이 하나뿐이어도 반드시 남긴다.
+    // ⚠️ 지금 보고 있는 태그는 기준에 걸려도 반드시 남긴다.
     //    빼 버리면 제목이 빈칸이 되고 롤링피커에서 현재 위치를 잃는다.
-    if(_vgHideSingles())keys=keys.filter(k=>cnt.get(k)>1||k===_vgState.val);
+    if(_vgExclOn()){
+      const mx=_vgExclMax();
+      keys=keys.filter(k=>cnt.get(k)>mx||k===_vgState.val);
+    }
     return keys.sort((a,b)=>a.localeCompare(b,'ko')).map(k=>({key:k,n:cnt.get(k)}));
   }
   if(kind==='book'){
@@ -10430,32 +10484,65 @@ function _vgSyncFilterLabel(){
       items.map(x=>`<option value="${_vgEscAttr(x.key)}"${x.key===cur?' selected':''}>`+
         `${esc(_vgAxisLabel(kind,x.key))} · ${x.n}</option>`).join('')+
     `</select>`;
-  _vgSyncSinglesToggle();
+  _vgSyncExcl();
 }
-// ── 롤링피커 우측의 '1 제외' 미니 스위치 (v26-0817-12, HB 14-2) ──
+// ── 롤링피커 바로 우측의 '제외' 글자 버튼 + 스테퍼 (v26-0817-13, HB 14-2) ──
 // 태그 필터일 때만 보인다. 성경 필터에는 뜻이 없다.
-// ⚠️ 제목(#vgFilterLabel)은 innerHTML 로 통째로 다시 그려지므로 스위치를 그
+// '제외'를 눌러 켜야 스테퍼가 나온다 — 평소엔 글자 하나만 있어 조용하다.
+// ⚠️ 제목(#vgFilterLabel)은 innerHTML 로 통째로 다시 그려지므로 버튼을 그
 //    안에 넣으면 같이 지워진다. 헤더에 형제로 두고 보이기/감추기만 한다.
-function _vgSyncSinglesToggle(){
-  const box=document.getElementById('vgSinglesBox');
+// ⚠️ 자리는 '롤링피커 바로 우측'이다. .vg-filter 가 flex:1 이면 이 버튼이
+//    오른쪽 정렬 버튼들 옆까지 밀려난다 — 0817-12 에서 그렇게 나갔다.
+//    제목은 내용만큼만 차지하게 하고, 남는 자리는 .vg-sp 가 먹는다.
+function _vgSyncExcl(){
+  const box=document.getElementById('vgExclBox');
   if(!box)return;
-  const on=_vgState.kind==='tag';
-  box.style.display=on?'':'none';
-  if(!on)return;
-  const inp=document.getElementById('vgSinglesChk');
-  if(inp)inp.checked=_vgHideSingles();
+  const show=_vgState.kind==='tag';
+  box.style.display=show?'':'none';
+  if(!show)return;
+  const on=_vgExclOn();
+  const btn=document.getElementById('vgExclBtn');
+  if(btn){btn.classList.toggle('on',on);btn.setAttribute('aria-pressed',on?'true':'false');}
+  const st=document.getElementById('vgExclStep');
+  if(st)st.style.display=on?'':'none';
+  const n=_vgExclMax();
+  const val=document.getElementById('vgExclVal');
+  if(val)val.textContent=String(n);
+  const mi=document.getElementById('vgExclMinus'),pl=document.getElementById('vgExclPlus');
+  if(mi)mi.disabled=n<=VG_TAG_EXCL_MIN;
+  if(pl)pl.disabled=n>=VG_TAG_EXCL_MAX;
 }
-// 두 자리(설정창·타일뷰)가 같은 값을 본다 — 어느 쪽을 눌러도 반대쪽이 따라온다.
-function vgToggleTagSingles(on){
+// 켬/끔. 두 자리(설정창·타일뷰)가 같은 값을 본다.
+function vgToggleTagExcl(){
+  const on=!_vgExclOn();
   beforeSave();
-  ST.settings.vgTagHideSingles=!!on;
+  ST.settings.vgTagExcludeOn=on;
   save();
-  // 설정창이 열려 있으면 그쪽 스위치도 맞춘다
-  const s=document.getElementById('setVgTagHideSingles');
-  if(s)s.checked=!!on;
-  _vgSyncSinglesToggle();
+  _vgSyncExclEverywhere();
+}
+// 기준 N 을 올리고 내린다.
+function vgStepTagExcl(d){
+  const n=Math.max(VG_TAG_EXCL_MIN,Math.min(VG_TAG_EXCL_MAX,_vgExclMax()+d));
+  if(n===_vgExclMax())return;
+  beforeSave();
+  ST.settings.vgTagExcludeMax=n;
+  save();
+  _vgSyncExclEverywhere();
+}
+// 두 자리를 한꺼번에 맞추고, 목록이 달라졌으니 제목도 다시 그린다.
+function _vgSyncExclEverywhere(){
+  const s=document.getElementById('setVgTagExclOn');
+  if(s)s.checked=_vgExclOn();
+  const sv=document.getElementById('setVgExclVal');
+  if(sv)sv.textContent=String(_vgExclMax());
+  const sw=document.getElementById('setVgExclStepWrap');
+  if(sw)sw.style.display=_vgExclOn()?'':'none';
+  const smi=document.getElementById('setVgExclMinus'),spl=document.getElementById('setVgExclPlus');
+  if(smi)smi.disabled=_vgExclMax()<=VG_TAG_EXCL_MIN;
+  if(spl)spl.disabled=_vgExclMax()>=VG_TAG_EXCL_MAX;
   // 지금 보던 태그가 목록에서 빠질 수 있다 — 제목을 다시 그려 자리를 맞춘다
   if(_vgState.kind==='tag')_vgSyncFilterLabel();
+  else _vgSyncExcl();
 }
 function vgPickAxis(v){
   if(!v||v===_vgState.val)return;
@@ -11156,7 +11243,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagHideSingles:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagExcludeOn:true,vgTagExcludeMax:1,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -20825,8 +20912,9 @@ function renderSettingsPanel(){
   [['setDviewMarkLike','dviewMarkLike'],['setDviewMarkMem','dviewMarkMem'],['setDviewMarkDeeper','dviewMarkDeeper'],['setDviewMarkEven','dviewMarkEven']].forEach(([id,key])=>{
     const e=document.getElementById(id);if(e)e.checked=!!s[key];
   });
-  // 태그 목록 간추리기 — 기본이 '켬'이라 undefined 도 켠 것으로 본다 (HB 14-1)
-  {const e=document.getElementById('setVgTagHideSingles');if(e)e.checked=s.vgTagHideSingles!==false;}
+  // 태그 목록 간추리기 — 기본이 '켬'이라 undefined 도 켠 것으로 본다 (HB 14-1).
+  // 켬/끔·기준 개수·'켰을 때만' 줄까지 한 함수가 다 맞춘다.
+  if(typeof _vgSyncExclEverywhere==='function')_vgSyncExclEverywhere();
   const _el=id=>document.getElementById(id);
   const _chk=(id,val)=>{const e=_el(id);if(e)e.checked=val;};
   _chk('setLoopViews',s.loopViews===true);
@@ -20980,12 +21068,10 @@ function updateSetting(key,value){
     renderToday();
   }
   if(key==='showSmallBlocks')_syncCondRows();   // 스몰 블럭 초과 기준 줄 보이기/감추기
-  // 태그 목록 간추리기 — 타일뷰의 '1 제외' 스위치와 한 값을 본다 (HB 14).
+  // 태그 목록 간추리기 — 타일뷰의 '제외' 버튼과 한 값을 본다 (HB 14).
   // 타일뷰가 열려 있으면 목록과 제목을 바로 다시 그린다.
-  if(key==='vgTagHideSingles'){
-    const m=document.getElementById('vgSinglesChk');
-    if(m)m.checked=!!value;
-    if(typeof _vgSyncFilterLabel==='function'&&_vgState&&_vgState.kind==='tag')_vgSyncFilterLabel();
+  if(key==='vgTagExcludeOn'||key==='vgTagExcludeMax'){
+    if(typeof _vgSyncExclEverywhere==='function')_vgSyncExclEverywhere();
   }
   if(key==='addInputPosition'){
     ['A','C'].forEach(p=>{
