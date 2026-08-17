@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0817-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0817-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2772,7 +2772,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0817-13";
+const APP_VERSION = "v. 26-0817-14";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4425,15 +4425,16 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="vg-top">
     <button class="vg-back" onclick="closeVerseGrid()" aria-label="닫기">‹</button>
     <div class="vg-filter" id="vgFilterLabel"></div>
-    <!-- 롤링피커 바로 우측 — '제외' 글자 버튼, 켜면 스테퍼가 붙는다 (HB 14-2).
-         말씀설정 뷰탭의 같은 항목과 연동. -->
+    <!-- 롤링피커 바로 우측 — '제외' 글자 버튼, 켜면 스테퍼가 붙는다 (HB 14-2·14B).
+         태그·성경 필터에서만 보인다. 태그는 말씀설정 뷰탭의 같은 항목과 연동,
+         성경은 이 미니 버튼이 유일한 자리다. -->
     <div class="vg-excl" id="vgExclBox" style="display:none;">
       <button class="vg-excl-btn" id="vgExclBtn" aria-pressed="false"
-              onclick="vgToggleTagExcl()" title="구절이 적은 태그를 목록에서 빼요">제외</button>
+              onclick="vgToggleTileExcl()" title="구절 수가 적은 항목을 목록에서 빼요">제외</button>
       <div class="vg-excl-step" id="vgExclStep" style="display:none;">
-        <button id="vgExclMinus" onclick="vgStepTagExcl(-1)" aria-label="기준 줄이기">−</button>
+        <button id="vgExclMinus" onclick="vgStepTileExcl(-1)" aria-label="기준 줄이기">−</button>
         <span id="vgExclVal">1</span>
-        <button id="vgExclPlus" onclick="vgStepTagExcl(1)" aria-label="기준 늘리기">+</button>
+        <button id="vgExclPlus" onclick="vgStepTileExcl(1)" aria-label="기준 늘리기">+</button>
       </div>
     </div>
     <!-- 남는 자리를 먹어 좌·우 묶음을 갈라 놓는다 (제목이 flex:1 이면 안 된다) -->
@@ -10419,12 +10420,29 @@ function _vgFilterLabelText(){
 // 스테퍼로 고를 수 있게 바꿨다(HB 14-0). 기준 N 은 **N개 이하를 뺀다**는 뜻이다
 // — N=1 이면 예전과 똑같이 1개짜리만 빠지고, 올릴수록 목록이 더 짧아진다.
 // ('정확히 N개'로 하면 N=3 일 때 1·2개짜리가 되살아나 목록이 오히려 늘어난다)
-const VG_TAG_EXCL_MIN=1, VG_TAG_EXCL_MAX=9;
-function _vgExclOn(){return ST.settings.vgTagExcludeOn!==false;}
-function _vgExclMax(){
-  const n=parseInt(ST.settings.vgTagExcludeMax,10);
-  if(isNaN(n))return VG_TAG_EXCL_MIN;
-  return Math.max(VG_TAG_EXCL_MIN,Math.min(VG_TAG_EXCL_MAX,n));
+//
+// 0817-14 에서 성경 필터(HB 14B)에도 같은 시스템을 넣었다. 태그·성경은 서로
+// 값이 다르므로(태그는 400개짜리 목록, 성경은 66권뿐) **켬·기준을 축마다
+// 따로 저장한다.** 설정창(14-1)은 태그 전용으로 그대로 두고, 성경 쪽은
+// 타일뷰 미니 버튼에만 있다 — HB 가 14B 에서 타일뷰만 요청했다.
+const VG_EXCL_MIN=1, VG_EXCL_MAX=9;
+function _vgExclKeys(axis){
+  return axis==='book'?{on:'vgBookExcludeOn',max:'vgBookExcludeMax'}:{on:'vgTagExcludeOn',max:'vgTagExcludeMax'};
+}
+function _vgExclOn(axis){
+  axis=(axis==='book')?'book':'tag';
+  return ST.settings[_vgExclKeys(axis).on]!==false;
+}
+function _vgExclMax(axis){
+  axis=(axis==='book')?'book':'tag';
+  const n=parseInt(ST.settings[_vgExclKeys(axis).max],10);
+  if(isNaN(n))return VG_EXCL_MIN;
+  return Math.max(VG_EXCL_MIN,Math.min(VG_EXCL_MAX,n));
+}
+// 지금 타일뷰가 보고 있는 축. 제외 시스템이 있는 축(태그·성경)이 아니면 null —
+// 대분류·소주제 타일뷰는 이 시스템과 무관하다(HB 14-2, 없앰).
+function _vgExclAxisNow(){
+  return (_vgState.kind==='tag'||_vgState.kind==='book')?_vgState.kind:null;
 }
 function _vgAxisItems(kind){
   const pool=_vgRawPool()||[];
@@ -10437,8 +10455,8 @@ function _vgAxisItems(kind){
     let keys=[...cnt.keys()];
     // ⚠️ 지금 보고 있는 태그는 기준에 걸려도 반드시 남긴다.
     //    빼 버리면 제목이 빈칸이 되고 롤링피커에서 현재 위치를 잃는다.
-    if(_vgExclOn()){
-      const mx=_vgExclMax();
+    if(_vgExclOn('tag')){
+      const mx=_vgExclMax('tag');
       keys=keys.filter(k=>cnt.get(k)>mx||k===_vgState.val);
     }
     return keys.sort((a,b)=>a.localeCompare(b,'ko')).map(k=>({key:k,n:cnt.get(k)}));
@@ -10453,6 +10471,11 @@ function _vgAxisItems(kind){
     const out=[];
     order.forEach(b=>{ if(cnt.has(b))out.push({key:b,n:cnt.get(b)}); });
     [...cnt.keys()].forEach(b=>{ if(order.indexOf(b)<0)out.push({key:b,n:cnt.get(b)}); });
+    // ⚠️ 여기도 지금 보고 있는 책은 기준에 걸려도 반드시 남긴다 (태그와 동일 이유)
+    if(_vgExclOn('book')){
+      const mx=_vgExclMax('book');
+      return out.filter(x=>x.n>mx||x.key===_vgState.val);
+    }
     return out;
   }
   return [];
@@ -10466,6 +10489,10 @@ function _vgSyncFilterLabel(){
   if(kind!=='tag'&&kind!=='book'){            // 그 밖에는 예전처럼 글자만
     lbl.classList.remove('vg-filter-roll');
     lbl.textContent=_vgFilterLabelText();
+    // ⚠️ 여기서 그냥 return 하면 '제외' 박스가 이전 화면(태그·성경)에서 켜져
+    //    있던 display 값 그대로 남는다 — 대분류·소주제로 넘어가도 안 사라지던
+    //    버그가 이거였다. 이 갈래에서도 반드시 다시 맞춰야 한다.
+    _vgSyncExcl();
     return;
   }
   const items=_vgAxisItems(kind);
@@ -10486,8 +10513,9 @@ function _vgSyncFilterLabel(){
     `</select>`;
   _vgSyncExcl();
 }
-// ── 롤링피커 바로 우측의 '제외' 글자 버튼 + 스테퍼 (v26-0817-13, HB 14-2) ──
-// 태그 필터일 때만 보인다. 성경 필터에는 뜻이 없다.
+// ── 롤링피커 바로 우측의 '제외' 글자 버튼 + 스테퍼 (v26-0817-13/14, HB 14-2·14B) ──
+// 태그·성경 필터일 때만 보인다 — **대분류·소주제로 넘어가면 반드시 사라진다**
+// (HB 14-2 재요청). 축이 바뀌면 그 축의 켬/기준을 따로 보여준다.
 // '제외'를 눌러 켜야 스테퍼가 나온다 — 평소엔 글자 하나만 있어 조용하다.
 // ⚠️ 제목(#vgFilterLabel)은 innerHTML 로 통째로 다시 그려지므로 버튼을 그
 //    안에 넣으면 같이 지워진다. 헤더에 형제로 두고 보이기/감추기만 한다.
@@ -10497,52 +10525,76 @@ function _vgSyncFilterLabel(){
 function _vgSyncExcl(){
   const box=document.getElementById('vgExclBox');
   if(!box)return;
-  const show=_vgState.kind==='tag';
-  box.style.display=show?'':'none';
-  if(!show)return;
-  const on=_vgExclOn();
+  const axis=_vgExclAxisNow();
+  box.style.display=axis?'':'none';
+  if(!axis)return;
+  const on=_vgExclOn(axis);
   const btn=document.getElementById('vgExclBtn');
   if(btn){btn.classList.toggle('on',on);btn.setAttribute('aria-pressed',on?'true':'false');}
   const st=document.getElementById('vgExclStep');
   if(st)st.style.display=on?'':'none';
-  const n=_vgExclMax();
+  const n=_vgExclMax(axis);
   const val=document.getElementById('vgExclVal');
   if(val)val.textContent=String(n);
   const mi=document.getElementById('vgExclMinus'),pl=document.getElementById('vgExclPlus');
-  if(mi)mi.disabled=n<=VG_TAG_EXCL_MIN;
-  if(pl)pl.disabled=n>=VG_TAG_EXCL_MAX;
+  if(mi)mi.disabled=n<=VG_EXCL_MIN;
+  if(pl)pl.disabled=n>=VG_EXCL_MAX;
 }
-// 켬/끔. 두 자리(설정창·타일뷰)가 같은 값을 본다.
+// ── 타일뷰의 '제외' 버튼 — 지금 보고 있는 축(태그 또는 성경)을 켜고 끈다 ──
+// 태그는 설정창(14-1)과 값을 공유하므로 그쪽 UI 도 함께 맞춘다.
+// 성경은 설정창이 없어 타일뷰만 맞추면 된다.
+function vgToggleTileExcl(){
+  const axis=_vgExclAxisNow();
+  if(!axis)return;
+  const on=!_vgExclOn(axis);
+  beforeSave();
+  ST.settings[_vgExclKeys(axis).on]=on;
+  save();
+  if(axis==='tag')_vgSyncTagSettingsUI();
+  _vgSyncFilterLabel();   // 목록이 달라지므로 제목까지 다시 그린다 (안에서 _vgSyncExcl 도 돈다)
+}
+function vgStepTileExcl(d){
+  const axis=_vgExclAxisNow();
+  if(!axis)return;
+  const n=Math.max(VG_EXCL_MIN,Math.min(VG_EXCL_MAX,_vgExclMax(axis)+d));
+  if(n===_vgExclMax(axis))return;
+  beforeSave();
+  ST.settings[_vgExclKeys(axis).max]=n;
+  save();
+  if(axis==='tag')_vgSyncTagSettingsUI();
+  _vgSyncFilterLabel();
+}
+// ── 말씀 설정 → 뷰 탭의 '태그 목록' 항목 (14-1, 태그 전용) ──
+// 타일뷰가 지금 태그 필터가 아니어도(성경·대분류든, 닫혀 있든) 항상 태그
+// 값을 놓고 켜고 내린다 — 설정창은 축이 없으니 '태그'로 고정한다.
 function vgToggleTagExcl(){
-  const on=!_vgExclOn();
+  const on=!_vgExclOn('tag');
   beforeSave();
   ST.settings.vgTagExcludeOn=on;
   save();
-  _vgSyncExclEverywhere();
+  _vgSyncTagSettingsUI();
+  if(_vgState.kind==='tag')_vgSyncFilterLabel(); else _vgSyncExcl();
 }
-// 기준 N 을 올리고 내린다.
 function vgStepTagExcl(d){
-  const n=Math.max(VG_TAG_EXCL_MIN,Math.min(VG_TAG_EXCL_MAX,_vgExclMax()+d));
-  if(n===_vgExclMax())return;
+  const n=Math.max(VG_EXCL_MIN,Math.min(VG_EXCL_MAX,_vgExclMax('tag')+d));
+  if(n===_vgExclMax('tag'))return;
   beforeSave();
   ST.settings.vgTagExcludeMax=n;
   save();
-  _vgSyncExclEverywhere();
+  _vgSyncTagSettingsUI();
+  if(_vgState.kind==='tag')_vgSyncFilterLabel(); else _vgSyncExcl();
 }
-// 두 자리를 한꺼번에 맞추고, 목록이 달라졌으니 제목도 다시 그린다.
-function _vgSyncExclEverywhere(){
+// 설정창의 켬/끔·기준·'켰을 때만' 줄을 태그 값에 맞춘다.
+function _vgSyncTagSettingsUI(){
   const s=document.getElementById('setVgTagExclOn');
-  if(s)s.checked=_vgExclOn();
+  if(s)s.checked=_vgExclOn('tag');
   const sv=document.getElementById('setVgExclVal');
-  if(sv)sv.textContent=String(_vgExclMax());
+  if(sv)sv.textContent=String(_vgExclMax('tag'));
   const sw=document.getElementById('setVgExclStepWrap');
-  if(sw)sw.style.display=_vgExclOn()?'':'none';
+  if(sw)sw.style.display=_vgExclOn('tag')?'':'none';
   const smi=document.getElementById('setVgExclMinus'),spl=document.getElementById('setVgExclPlus');
-  if(smi)smi.disabled=_vgExclMax()<=VG_TAG_EXCL_MIN;
-  if(spl)spl.disabled=_vgExclMax()>=VG_TAG_EXCL_MAX;
-  // 지금 보던 태그가 목록에서 빠질 수 있다 — 제목을 다시 그려 자리를 맞춘다
-  if(_vgState.kind==='tag')_vgSyncFilterLabel();
-  else _vgSyncExcl();
+  if(smi)smi.disabled=_vgExclMax('tag')<=VG_EXCL_MIN;
+  if(spl)spl.disabled=_vgExclMax('tag')>=VG_EXCL_MAX;
 }
 function vgPickAxis(v){
   if(!v||v===_vgState.val)return;
@@ -11243,7 +11295,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagExcludeOn:true,vgTagExcludeMax:1,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',vgTagExcludeOn:true,vgTagExcludeMax:1,vgBookExcludeOn:true,vgBookExcludeMax:1,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -20914,7 +20966,7 @@ function renderSettingsPanel(){
   });
   // 태그 목록 간추리기 — 기본이 '켬'이라 undefined 도 켠 것으로 본다 (HB 14-1).
   // 켬/끔·기준 개수·'켰을 때만' 줄까지 한 함수가 다 맞춘다.
-  if(typeof _vgSyncExclEverywhere==='function')_vgSyncExclEverywhere();
+  if(typeof _vgSyncTagSettingsUI==='function')_vgSyncTagSettingsUI();
   const _el=id=>document.getElementById(id);
   const _chk=(id,val)=>{const e=_el(id);if(e)e.checked=val;};
   _chk('setLoopViews',s.loopViews===true);
@@ -21071,7 +21123,9 @@ function updateSetting(key,value){
   // 태그 목록 간추리기 — 타일뷰의 '제외' 버튼과 한 값을 본다 (HB 14).
   // 타일뷰가 열려 있으면 목록과 제목을 바로 다시 그린다.
   if(key==='vgTagExcludeOn'||key==='vgTagExcludeMax'){
-    if(typeof _vgSyncExclEverywhere==='function')_vgSyncExclEverywhere();
+    if(typeof _vgSyncTagSettingsUI==='function')_vgSyncTagSettingsUI();
+    if(typeof _vgState!=='undefined'&&_vgState.kind==='tag'&&typeof _vgSyncFilterLabel==='function')_vgSyncFilterLabel();
+    else if(typeof _vgSyncExcl==='function')_vgSyncExcl();
   }
   if(key==='addInputPosition'){
     ['A','C'].forEach(p=>{
