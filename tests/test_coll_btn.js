@@ -8,14 +8,17 @@ const sc = makeScorer();
 
 console.log('시나리오 1 — 두 곳 모두 같은 책 아이콘을 쓴다');
 {
-  // v26-0817-9 — HB 가 첨부한 이미지대로 꽉 찬 실루엣(둥근 사각 3권)으로 교체
-  const books = (SRC.match(/<rect x="2\.6" y="13\.4" width="14\.8" height="3\.6" rx="1\.1"\/>/g)||[]).length;
+  // ⚠️ 이 모양이 **HB 가 캡쳐해서 직접 고른 최종본**이다 (v26-0817-10).
+  //    이 대화에서 실루엣 사각·회전 직사각형·계단형 등 여러 판을 그렸다가
+  //    전부 퇴짜맞았다. 꽉 찬 평행사변형 3장이 비스듬히 쌓인 이 모양으로 확정.
+  //    **다시 그리지 말 것.**
+  const books = (SRC.match(/M3\.8 8\.2 L12\.6 2\.6 L20\.2 6 L20\.2 7\.5 L11\.4 13\.1 L3\.8 9\.7 Z/g)||[]).length;
   sc.eq('책 아이콘이 두 곳에 있다', books, 2);
-  // 한 아이콘은 책 3권 = rect 3개
-  const slabs = (SRC.match(/<rect x="(2\.6" y="13\.4"|3\.3" y="8\.9"|4" y="3\.2")/g)||[]).length;
+  // 한 아이콘은 책 3권 = path 3개
+  const slabs = (SRC.match(/<path d="M3\.8 (8\.2|12\.2|16\.2) /g)||[]).length;
   sc.eq('한 벌에 책 3권씩, 두 벌', slabs, 6);
-  sc.eq('실루엣으로 채운다(윤곽선 아이콘 아님)',
-        (SRC.match(/<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" stroke="none">/g)||[]).length, 2);
+  sc.eq('꽉 찬 실루엣으로 그린다',
+        (SRC.match(/viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0\.7" stroke-linejoin="round"/g)||[]).length, 2);
   // 예전 햄버거(가로줄 3개)는 사라져야 한다
   sc.eq('햄버거 가로줄은 없앴다',
         SRC.includes('<line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/>'), false);
