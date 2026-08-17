@@ -134,6 +134,8 @@ console.log('\n시나리오 6 — 14-2·14B 자리와 모양');
   // UI 원칙 — 테두리·박스 금지
   sc.eq('버튼에 테두리·바탕이 없다', /\.vg-excl-btn\{[^}]*background:none;border:none/.test(SRC), true);
   sc.eq('켜지면 강조색', SRC.includes('.vg-excl-btn.on{color:var(--ac);'), true);
+  // v26-0817-17 — HB: 색만 바뀌고 볼드는 넣지 말 것
+  sc.eq('켜져도 볼드는 안 준다', SRC.includes('.vg-excl-btn.on{color:var(--ac);font-weight:700;}'), false);
 
   // ⚠️ 제목은 innerHTML 로 통째로 다시 그려진다 — 버튼을 그 안에 넣으면 같이 지워진다
   sc.eq('제목을 다시 그릴 때마다 맞춘다',
