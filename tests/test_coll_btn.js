@@ -40,16 +40,18 @@ console.log('시나리오 1 — 세 곳 모두 같은 책 실루엣을 쓴다');
         /<span class="modal-head-gap"><\/span>\s*<div class="event-modal-title" style="margin:0;flex:1;">말씀카드 설정/.test(SRC), false);
 }
 
-console.log('\n시나리오 1-1 — 커버 컷아웃 모양 (십자가 vs 4줄)');
+console.log('\n시나리오 1-1 — 커버 컷아웃 모양 (십자가 vs 3줄)');
 {
+  // v26-0818-10, HB — 십자가는 각도(H4) 그대로 두고 중심 기준 10% 확대 후
+  // 테두리를 바깥으로 균일 오프셋해서 두께만 키웠다. 4줄은 3줄로 줄이고 굵게.
   // 십자가 컷아웃 — '현재 말씀 모음' 팝업, 말씀카드 설정 두 곳
-  const crossCount = (SRC.match(/M15\.07 4\.36 L16\.53 5\.01 L14\.47 6\.32 L16\.66 7\.30 L15\.31 8\.16 L13\.12 7\.18 L8\.93 9\.84 L7\.47 9\.19 L11\.66 6\.53 L9\.47 5\.55 L10\.82 4\.69 L13\.01 5\.67 Z/g)||[]).length;
+  const crossCount = (SRC.match(/M15\.3 3\.98 L17\.19 4\.83 L14\.92 6\.27 L17\.33 7\.34 L15\.58 8\.46 L13\.17 7\.38 L8\.56 10\.31 L6\.67 9\.46 L11\.28 6\.54 L8\.87 5\.46 L10\.62 4\.35 L13\.03 5\.42 Z/g)||[]).length;
   sc.eq('십자가 컷아웃이 두 곳', crossCount, 2);
-  // 4줄(마지막 절반) 컷아웃 — 좌상단 말씀메뉴의 '현재 말씀 모음' 항목
-  const linesCount = (SRC.match(/M5\.53 7\.95 L11\.55 10\.65 L12\.65 9\.95 L6\.63 7\.26 Z/g)||[]).length;
-  sc.eq('4줄 컷아웃이 한 곳(좌상단 말씀메뉴)', linesCount, 1);
+  // 3줄(마지막 절반) 컷아웃 — 좌상단 말씀메뉴의 '현재 말씀 모음' 항목
+  const linesCount = (SRC.match(/M5\.53 7\.95 L11\.55 10\.65 L13\.31 9\.53 L7\.29 6\.83 Z/g)||[]).length;
+  sc.eq('3줄 컷아웃이 한 곳(좌상단 말씀메뉴)', linesCount, 1);
   const menuIcon = SRC.slice(SRC.indexOf('onclick="openVerseListModal()"'), SRC.indexOf('onclick="openVerseListModal()"')+600);
-  sc.eq('좌상단 말씀메뉴 항목이 4줄 아이콘을 쓴다', menuIcon.includes('M5.53 7.95'), true);
+  sc.eq('좌상단 말씀메뉴 항목이 3줄 아이콘을 쓴다', menuIcon.includes('M5.53 7.95'), true);
 }
 
 console.log('\n시나리오 1-2 — 좌상단 말씀메뉴 가운데 구분선 제거 (v26-0818-6, HB)');
