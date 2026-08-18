@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-11  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0818-12  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2821,7 +2821,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-11";
+const APP_VERSION = "v. 26-0818-12";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -7292,6 +7292,21 @@ function renderVerseSettingsModal(){
   const sneakStyle=s.verseSneakStyle||'color';
   el('vsneak-style-a')?.style.setProperty('border-color',sneakStyle==='color'?'var(--ac)':'var(--bd2)');
   el('vsneak-style-b')?.style.setProperty('border-color',sneakStyle==='mono'?'var(--ac)':'var(--bd2)');
+  // ⚠️ 이 아래 세 묶음(할일뷰 말씀 표시·태그 목록 간추리기·말씀 위젯 글자 크기)은
+  //    예전엔 일반 설정창(renderSettingsPanel)에서만 맞춰 줬다. 두 창이 문서에
+  //    같이 떠 있어서 일반 설정창을 먼저 한 번이라도 열면 여기도 우연히 맞았지만,
+  //    말씀 설정을 먼저(또는 그것만) 열면 저장값과 무관하게 기본 HTML 그대로
+  //    보였다(PC 에서 재신고, v26-0818-12). 여기서도 직접 맞춘다.
+  [['setDviewMarkLike','dviewMarkLike'],['setDviewMarkMem','dviewMarkMem'],
+   ['setDviewMarkDeeper','dviewMarkDeeper'],['setDviewMarkEven','dviewMarkEven']].forEach(([id,key])=>{
+    const e=el(id);if(e)e.checked=!!s[key];
+  });
+  if(typeof _vgSyncTagSettingsUI==='function')_vgSyncTagSettingsUI();
+  const vwT=_vwSize('verseWidgetTextSize'),vwR=_vwSize('verseWidgetRefSize');
+  [1,2,3].forEach(n=>{
+    el('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
+    el('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
+  });
   renderVerseAlarmSettings();
 }
 
