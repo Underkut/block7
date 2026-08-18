@@ -29,8 +29,12 @@ console.log('\n시나리오 2 — 지정된 10곳에만 .lv1 이 붙었다');
 
 console.log('\n시나리오 3 — 옆에 있던 진짜 소제목·항목 이름은 그대로 2뎁스');
 {
-  // '언제부터 가져올지'(옛 '가져올 대상', 소제목)는 여전히 settings-subtitle — .lv1 을 잘못 옮겨 붙이지 않았다
-  sc.eq("'언제부터 가져올지'는 여전히 소제목 클래스", SRC.includes('<div class="settings-subtitle">언제부터 가져올지</div>'), true);
+  // '언제부터 가져올지'(옛 '가져올 대상') — HB 재지시로 소제목이 아니라
+  // 바로 아래 '자동'·'지금'과 같은 항목 이름 서식(2뎁스, lv1 아님)을 쓴다.
+  sc.eq("'언제부터 가져올지'는 항목 이름 서식(settings-row-label)",
+        SRC.includes('<div class="settings-row-label" style="margin-bottom:6px;">언제부터 가져올지</div>'), true);
+  sc.eq("'언제부터 가져올지'에는 lv1 을 안 붙였다(제목이 아니다)",
+        SRC.includes('<div class="settings-row-label lv1" style="margin-bottom:6px;">언제부터 가져올지</div>'), false);
   // '하루 시작 시각'은 이번에 새로 1뎁스로 올렸다
   sc.eq("'하루 시작 시각'에 lv1 이 붙었다",
         SRC.includes('<div class="settings-row-label lv1">하루 시작 시각</div>'), true);
