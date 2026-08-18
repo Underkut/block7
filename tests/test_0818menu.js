@@ -19,7 +19,9 @@ console.log('\n시나리오 1-2 — LIST 항목을 하위 뎁스로');
         SRC.includes('onclick="logoMenuOpenListSub()"') && SRC.includes('말씀 목록'), true);
   // 메인/서브 두 뎁스로 나뉘어 있다
   sc.eq('메인 뎁스 컨테이너', SRC.includes('<div id="logoMenuMain">'), true);
-  sc.eq('서브 뎁스 컨테이너(처음엔 숨김)', SRC.includes('<div id="logoMenuListSub" style="display:none">'), true);
+  // v26-0818-9, HB — PC 에서 hover 로 열고 닫으려고 mouseenter/leave 핸들러가 붙었다
+  sc.eq('서브 뎁스 컨테이너(처음엔 숨김)',
+        SRC.includes('<div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">'), true);
   // 서브 안에 네 항목(아이콘 포함)이 그대로 있다
   const sub = slice('<div id="logoMenuListSub"', '</div>\n</div>');
   ['좋아요','암송','Deeper','Even Deeper'].forEach(label=>{
@@ -31,12 +33,15 @@ console.log('\n시나리오 1-2 — LIST 항목을 하위 뎁스로');
 
 console.log('\n시나리오 1-2 — 뎁스 전환 로직');
 {
-  const openFn = slice('function logoMenuOpenListSub(){', 'function logoMenuBackToMain');
-  sc.eq('메인을 숨긴다', openFn.includes("m.style.display='none';"), true);
-  sc.eq('서브를 보인다', openFn.includes("s.style.display='';"), true);
-  const backFn = slice('function logoMenuBackToMain(){', '}');
+  const openFn = slice('function logoMenuOpenListSub(){', 'function _logoMenuSubScheduleClose');
+  sc.eq('터치 기기는 메인을 숨긴다', openFn.includes("m.style.display='none';"), true);
+  sc.eq('PC(마우스)는 메인을 그대로 두고 오른쪽에 띄운다(v26-0818-9, HB)',
+        openFn.includes("s.classList.add('task-menu-sub-float');"), true);
+  const backFn = slice('function logoMenuBackToMain(){', 'function _tryCloseLogoMenu');
   sc.eq('서브를 숨긴다', backFn.includes("s.style.display='none';"), true);
   sc.eq('메인을 보인다', backFn.includes("m.style.display='';"), true);
+  sc.eq('닫을 때 뜬 위치·float 상태도 함께 지운다',
+        backFn.includes("s.classList.remove('task-menu-sub-float');"), true);
   const closeFn = slice('function closeLogoMenu(){', 'function logoMenuOpenListSub');
   sc.eq('닫을 때 메인 뎁스로 되돌린다(다음에 열 때 항상 메인부터)',
         closeFn.includes('logoMenuBackToMain();'), true);

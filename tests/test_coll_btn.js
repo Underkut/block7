@@ -61,11 +61,15 @@ console.log('\n시나리오 1-2 — 좌상단 말씀메뉴 가운데 구분선 �
   sc.eq('하위 뎁스 헤더 아래 구분선은 그대로', sub.includes('task-menu-sep'), true);
 }
 
-console.log('\n시나리오 1-3 — PC 는 말씀 목록에 마우스만 올려도 하위 뎁스가 열린다 (v26-0818-8, HB)');
+console.log('\n시나리오 1-3 — PC 는 말씀 목록에 마우스만 올려도 하위 뎁스가 열린다 (v26-0818-8/9, HB)');
 {
-  const item = SRC.slice(SRC.indexOf('onclick="logoMenuOpenListSub()"')-40, SRC.indexOf('onclick="logoMenuOpenListSub()"')+120);
+  const item = SRC.slice(SRC.indexOf('onclick="logoMenuOpenListSub()"')-40, SRC.indexOf('onclick="logoMenuOpenListSub()"')+150);
+  // v26-0818-9 — 터치/PC 갈림은 이제 logoMenuOpenListSub() 함수 안에서 처리한다
+  // (PC 는 1뎁스를 가리지 않고 오른쪽에 띄운다). 항목 자체는 무조건 부르기만 하면 된다.
   sc.eq('말씀 목록 항목에 hover 진입 핸들러가 있다',
-        item.includes(`onmouseenter="if(!_isTouchDevice())logoMenuOpenListSub();"`), true);
+        item.includes(`onmouseenter="logoMenuOpenListSub();"`), true);
+  sc.eq('마우스가 벗어나면 (PC 는) 닫히도록 예약한다',
+        item.includes(`onmouseleave="_logoMenuSubScheduleClose();"`), true);
 }
 
 console.log('\n시나리오 2 — 둘 다 말씀모음 탭으로 간다');
