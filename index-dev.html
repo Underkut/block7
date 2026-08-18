@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0818-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2810,7 +2810,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-4";
+const APP_VERSION = "v. 26-0818-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2896,7 +2896,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
       <div class="settings-tab-content" id="stab-general">
 
-      <!-- 미완료 할일 가져오기 (순서: 가져올 대상 → 자동 → 지금) -->
+      <!-- 미완료 할일 가져오기 (순서: 언제부터 가져올지 → 지금 → 자동) -->
       <div class="settings-section">
         <!-- v26-0818-1, HB 3: 예전엔 이 제목이 settings-row-label(=항목 이름과 같은 굵기)이라
              다른 탭 제목들과 스텝이 안 맞았다. settings-section-title 로 통일. -->
@@ -2916,6 +2916,13 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
         <div class="settings-row" style="margin-top:12px;">
           <div class="settings-row-text">
+            <div class="settings-row-label" style="font-size:13px;">지금</div>
+            <div class="settings-row-desc">위에서 고른 기간의 미완료 할일을 지금 바로 오늘로 가져와요</div>
+          </div>
+          <button class="settings-btn" onclick="runCarryNow()" style="flex-shrink:0;">가져오기</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-text">
             <div class="settings-row-label" style="font-size:13px;">자동</div>
             <div class="settings-row-desc">하루가 끝날 때 완료하지 못한 할일을 다음날로 자동으로 넘겨요</div>
           </div>
@@ -2923,13 +2930,6 @@ window._fbScriptsReady=new Promise(resolve=>{
             <input type="checkbox" id="setAutoCarry" onchange="updateSetting('autoCarryOver',this.checked)">
             <span class="settings-toggle-track"></span>
           </label>
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">지금</div>
-            <div class="settings-row-desc">위에서 고른 기간의 미완료 할일을 지금 바로 오늘로 가져와요</div>
-          </div>
-          <button class="settings-btn" onclick="runCarryNow()" style="flex-shrink:0;">가져오기</button>
         </div>
         <div class="settings-row-desc" id="carryDebugInfo" style="margin-top:6px;"></div>
       </div>
