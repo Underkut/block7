@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0818-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1567,6 +1567,14 @@ body.split-d #todayView.animating{overflow:hidden;}
 .task-menu-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;}
 .task-menu-icon svg{display:block;}
 .task-menu-sep{height:1px;background:var(--bd);margin:3px 4px;}
+/* PC 에서 '말씀 목록' 하위 뎁스를 1뎁스를 가리지 않고 오른쪽에 띄운다 (v26-0818-9, HB) */
+.task-menu-sub-float{
+  position:fixed;z-index:201;
+  background:var(--s1);border:1px solid var(--bd2);
+  border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.6);
+  padding:4px;min-width:180px;
+  animation:menuIn .12s ease;
+}
 .task-menu-label{font-size:9.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;
   color:var(--tx3);padding:5px 10px 3px;user-select:none;}
 /* ── 받은 쪽지: 미확인 뱃지 · 접기 · 스와이프 삭제 ── */
@@ -2810,7 +2818,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-8";
+const APP_VERSION = "v. 26-0818-9";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3441,9 +3449,10 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="settings-tab" onclick="switchVerseSettingsTab('share',this)">공유</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)">말씀 모음</button>
     </div>
-    <div class="settings-body" style="overflow-y:auto;padding:0 18px 32px;flex:1;min-height:0;">
+    <div class="settings-body">
+      <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:5;">
 
-      <div class="vsettings-tab-content" id="vstab-general">
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-general">
 
       <!-- 네비게이토 180 말씀 표시 -->
       <div class="settings-section" id="verseSettingsAnchor">
@@ -3601,7 +3610,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
             </div>
 
-      <div class="vsettings-tab-content" id="vstab-alarm" style="display:none;">
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-alarm">
 
 <!-- ── 말씀 푸시 알림 ── -->
       <div class="settings-section">
@@ -3654,7 +3663,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
             </div>
 
-      <div class="vsettings-tab-content" id="vstab-full" style="display:none;">
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-full">
 <!-- ── 전체화면 본문 크기 ── -->
       <div class="settings-section">
         <div class="settings-section-title">글자 크기</div>
@@ -3746,7 +3755,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
             </div>
 
-      <div class="vsettings-tab-content" id="vstab-share" style="display:none;">
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-share">
 <!-- ── 공유 이미지 ── -->
       <div class="settings-section">
         <div class="settings-section-title">공유 이미지</div>
@@ -3820,7 +3829,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
       </div><!-- /vstab-general -->
 
-      <div class="vsettings-tab-content" id="vstab-coll" style="display:none;">
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-coll">
         <!-- 말씀 모음 -->
         <div class="settings-section">
         <div class="settings-subtitle">말씀 모음 (어느 구절에서 뽑을지)</div>
@@ -3846,6 +3855,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div><!-- /vstab-coll -->
 
+      </div><!-- /verseSettingsTabTrack -->
     </div>
   </div>
 </div>
@@ -4053,7 +4063,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <!-- 가운데 가로 구분선은 HB 요청으로 없앴다(v26-0818-6) -->
   <!-- '좋아요/암송/Deeper/Even Deeper' 는 하위 뎁스로 옮겼다(HB 1-2) — 눌러야 펼쳐진다 -->
-  <div class="task-menu-item" onclick="logoMenuOpenListSub()" onmouseenter="if(!_isTouchDevice())logoMenuOpenListSub();">
+  <div class="task-menu-item" onclick="logoMenuOpenListSub()" onmouseenter="logoMenuOpenListSub();" onmouseleave="_logoMenuSubScheduleClose();">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">말씀 목록</span>
     <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
@@ -4064,7 +4074,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   </div>
   <!-- 하위 뎁스: 말씀 목록 (HB 1-2) — 뒤로가기 한 줄 + 좋아요/암송/Deeper/Even Deeper -->
-  <div id="logoMenuListSub" style="display:none">
+  <div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">
     <div class="task-menu-item" onclick="logoMenuBackToMain()">
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 목록</span>
     </div>
@@ -7025,8 +7035,9 @@ function toggleVerseBarOn(){
 
 function openVerseSettingsModal(){
   renderVerseSettingsModal();
-  switchVerseSettingsTab('general');
+  switchVerseSettingsTab('general',null,'direct');
   document.getElementById('verseSettingsOverlay').classList.add('open');
+  _initVerseSettingsSwipe();
 }
 function closeVerseSettingsModal(e){
   if(e&&e.target!==document.getElementById('verseSettingsOverlay'))return;
@@ -7120,17 +7131,104 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();
   document.getElementById('verseSettingsOverlay').classList.remove('open');
 });
-function switchVerseSettingsTab(id,btn){
+const VERSE_SETTINGS_TABS=['general','alarm','full','share','coll'];
+let _currentVerseSettingsTabIdx=0;
+function switchVerseSettingsTab(id,btn,direction){
+  const idx=VERSE_SETTINGS_TABS.indexOf(id);
+  if(idx<0)return;
+  _currentVerseSettingsTabIdx=idx;
+
+  const track=document.getElementById('verseSettingsTabTrack');
+  if(track){
+    track.style.transition=(direction!==undefined&&direction!=='direct')
+      ? 'transform .22s cubic-bezier(.4,0,.2,1)' : 'none';
+    track.style.transform=`translateX(${-idx*(100/VERSE_SETTINGS_TABS.length)}%)`;
+    const panel=document.getElementById('vstab-'+id);
+    if(panel)setTimeout(()=>{ panel.scrollTop=0; },10);
+  }
+
   const bar=document.getElementById('verseSettingsTabBar');
   if(bar)bar.querySelectorAll('.settings-tab').forEach(b=>{
     b.classList.toggle('on',btn?b===btn:b.getAttribute('onclick')?.includes(`'${id}'`));
   });
-  ['general','alarm','full','share','coll'].forEach(t=>{
-    const el=document.getElementById('vstab-'+t);
-    if(el)el.style.display=(t===id)?'':'none';
-  });
+}
+// PC 마우스 드래그·터치 스와이프로 탭 넘기기. 양끝 순환 여부는
+// 일반설정창과 같은 값을 쓴다(ST.settings.loopViews) — 뷰탭 '뷰 전환'.
+function _initVerseSettingsSwipe(){
   const body=document.querySelector('#verseSettingsPanel .settings-body');
-  if(body)body.scrollTop=0;
+  if(!body||body._swipeAttached)return;
+  body._swipeAttached=true;
+  const N=()=>VERSE_SETTINGS_TABS.length;
+  const COMMIT=70;
+  let sx=0,sy=0,dx=0,tracking=false,active=false,dir=0;
+  const getTrack=()=>document.getElementById('verseSettingsTabTrack');
+
+  function resolveTarget(d){
+    const n=N();
+    let idx=_currentVerseSettingsTabIdx+d;
+    if(idx<0||idx>n-1){
+      if(ST.settings.loopViews===true)return{idx:(idx+n)%n,wrap:true};
+      return null;
+    }
+    return{idx,wrap:false};
+  }
+
+  body.addEventListener('touchstart',e=>{
+    active=false;tracking=false;dx=0;dir=0;
+    if(e.target.closest('input,textarea,select'))return;
+    active=true;
+    const t=e.touches[0];sx=t.clientX;sy=t.clientY;
+  },{passive:true});
+
+  body.addEventListener('touchmove',e=>{
+    if(!active)return;
+    const tr=getTrack();if(!tr)return;
+    const t=e.touches[0];
+    const ddx=t.clientX-sx,ddy=t.clientY-sy;
+    if(!tracking){
+      if(Math.abs(ddx)<10&&Math.abs(ddy)<10)return;
+      if(Math.abs(ddy)>Math.abs(ddx)*1.3){active=false;return;}
+      tracking=true;
+      tr.style.transition='none';
+    }
+    e.preventDefault();
+    dx=ddx;
+    dir=dx<0?1:-1;
+    const can=resolveTarget(dir)!==null;
+    const eff=can?dx:dx*0.25;
+    tr.style.transform=`translateX(calc(${-_currentVerseSettingsTabIdx*(100/N())}% + ${eff}px))`;
+  },{passive:false});
+
+  body.addEventListener('touchend',()=>{
+    if(!active)return;active=false;
+    const tr=getTrack();if(!tr)return;
+    if(!tracking)return;
+    const target=resolveTarget(dir);
+    const commit=target!==null&&Math.abs(dx)>=COMMIT;
+    if(commit&&!target.wrap){
+      switchVerseSettingsTab(VERSE_SETTINGS_TABS[target.idx],null,dir);
+    }else if(commit&&target.wrap){
+      const d=dir;
+      body.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
+      body.style.transform=`translateX(${d>0?'-100%':'100%'})`;
+      body.style.opacity='0';
+      setTimeout(()=>{
+        switchVerseSettingsTab(VERSE_SETTINGS_TABS[target.idx],null,'direct');
+        body.style.transition='none';
+        body.style.transform=`translateX(${d>0?'100%':'-100%'})`;
+        body.offsetWidth;
+        body.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
+        body.style.transform='translateX(0)';
+        body.style.opacity='1';
+        setTimeout(()=>{body.style.transition='';body.style.transform='';body.style.opacity='';},240);
+      },180);
+    }else{
+      tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
+      tr.style.transform=`translateX(${-_currentVerseSettingsTabIdx*(100/N())}%)`;
+      setTimeout(()=>{tr.style.transition='';},240);
+    }
+    tracking=false;dx=0;dir=0;
+  },{passive:true});
 }
 
 function setVerseSneakStyle(style){
@@ -11244,15 +11342,50 @@ function closeLogoMenu(){
   document.getElementById('logoMenu').style.display='none';
   logoMenuBackToMain();   // 다음에 열 때는 항상 메인 뎁스부터 (HB 1-2)
 }
-// '말씀 목록' 하위 뎁스 — 같은 팝업 안에서 화면만 바꿔 보여준다(HB 1-2)
+// '말씀 목록' 하위 뎁스.
+// 터치 기기 — 예전처럼 메인 뎁스를 가리고 같은 자리에 바꿔 보여준다(HB 1-2).
+// PC(마우스) — 메인 뎁스는 그대로 두고, 오른쪽에 따로 띄운다(v26-0818-9, HB).
+let _logoMenuSubCloseTimer=null;
 function logoMenuOpenListSub(){
   const m=document.getElementById('logoMenuMain'),s=document.getElementById('logoMenuListSub');
-  if(m)m.style.display='none';
-  if(s)s.style.display='';
+  if(!s)return;
+  clearTimeout(_logoMenuSubCloseTimer);
+  if(_isTouchDevice()){
+    s.classList.remove('task-menu-sub-float');
+    s.style.left='';s.style.top='';
+    if(m)m.style.display='none';
+    s.style.display='';
+  }else{
+    const box=document.getElementById('logoMenu');
+    const r=box.getBoundingClientRect();
+    s.classList.add('task-menu-sub-float');
+    s.style.display='';
+    let left=r.right+6, top=r.top;
+    const mw=s.offsetWidth||180;
+    if(left+mw>window.innerWidth)left=r.left-mw-6;   // 화면 오른쪽에 붙어 있으면 왼쪽으로
+    s.style.left=left+'px';s.style.top=top+'px';
+  }
+}
+function _logoMenuSubScheduleClose(){
+  if(_isTouchDevice())return;
+  clearTimeout(_logoMenuSubCloseTimer);
+  _logoMenuSubCloseTimer=setTimeout(()=>{
+    const s=document.getElementById('logoMenuListSub');
+    if(s&&s.classList.contains('task-menu-sub-float'))_logoMenuSubHideFloat();
+  },160);
+}
+function _logoMenuSubCancelClose(){ clearTimeout(_logoMenuSubCloseTimer); }
+function _logoMenuSubHideFloat(){
+  const s=document.getElementById('logoMenuListSub');
+  if(!s)return;
+  s.style.display='none';
+  s.classList.remove('task-menu-sub-float');
+  s.style.left='';s.style.top='';
 }
 function logoMenuBackToMain(){
   const m=document.getElementById('logoMenuMain'),s=document.getElementById('logoMenuListSub');
-  if(s)s.style.display='none';
+  clearTimeout(_logoMenuSubCloseTimer);
+  if(s){s.style.display='none';s.classList.remove('task-menu-sub-float');s.style.left='';s.style.top='';}
   if(m)m.style.display='';
 }
 function _tryCloseLogoMenu(){
