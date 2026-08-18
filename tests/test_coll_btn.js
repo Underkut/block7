@@ -23,8 +23,10 @@ console.log('시나리오 1 — 세 곳 모두 같은 책 실루엣을 쓴다');
   sc.eq('세 곳 모두 아래 두 권은 그대로', slabs, 6);
   sc.eq('세 곳 모두 컷아웃 방식(evenodd)',
         (SRC.match(/fill-rule="evenodd"/g)||[]).length, 3);
+  // v26-0818-7, HB — 메뉴의 다른 아이콘들에 비해 여백이 커 보인다는 지적으로
+  // viewBox 를 도형 실제 bbox 에 바짝 맞춰 크롭했다(디자인·각도는 그대로, 여백만 축소).
   sc.eq('꽉 찬 실루엣으로 그린다',
-        (SRC.match(/viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0\.7" stroke-linejoin="round"/g)||[]).length, 3);
+        (SRC.match(/viewBox="3\.2 2 17\.6 19\.7" fill="currentColor" stroke="currentColor" stroke-width="0\.7" stroke-linejoin="round"/g)||[]).length, 3);
   // 예전 햄버거(가로줄 3개)는 사라져야 한다
   sc.eq('햄버거 가로줄은 없앴다',
         SRC.includes('<line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/>'), false);
