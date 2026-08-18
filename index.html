@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-10  [production]  -->
+<!-- BLOCK7  v. 26-0818-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1575,6 +1575,9 @@ body.split-d #todayView.animating{overflow:hidden;}
   padding:4px;min-width:180px;
   animation:menuIn .12s ease;
 }
+/* 오른쪽에 띄운 상태에선 1뎁스가 그대로 보이므로 '< 말씀 목록' 되돌아가기
+   첫 줄이 필요 없다 (v26-0818-11, HB). 터치 기기(그 자리에서 바뀌는 방식)는 그대로 둔다. */
+.task-menu-sub-float #logoMenuSubBack,.task-menu-sub-float #logoMenuSubSep{display:none;}
 .task-menu-label{font-size:9.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;
   color:var(--tx3);padding:5px 10px 3px;user-select:none;}
 /* ── 받은 쪽지: 미확인 뱃지 · 접기 · 스와이프 삭제 ── */
@@ -2818,7 +2821,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-10";
+const APP_VERSION = "v. 26-0818-11";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4075,10 +4078,10 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <!-- 하위 뎁스: 말씀 목록 (HB 1-2) — 뒤로가기 한 줄 + 좋아요/암송/Deeper/Even Deeper -->
   <div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">
-    <div class="task-menu-item" onclick="logoMenuBackToMain()">
+    <div class="task-menu-item" id="logoMenuSubBack" onclick="logoMenuBackToMain()">
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 목록</span>
     </div>
-    <div class="task-menu-sep"></div>
+    <div class="task-menu-sep" id="logoMenuSubSep"></div>
     <div class="task-menu-item" onclick="openVerseAggPopup('like')">
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg></span>좋아요
     </div>

@@ -47,6 +47,14 @@ console.log('\n시나리오 1-2 — 뎁스 전환 로직');
         closeFn.includes('logoMenuBackToMain();'), true);
 }
 
+console.log('\n시나리오 1-3 — PC 로 오른쪽에 띄웠을 땐 되돌아가기 첫 줄이 필요 없다 (v26-0818-11, HB)');
+{
+  sc.eq('되돌아가기 줄에 id 를 달았다', SRC.includes('<div class="task-menu-item" id="logoMenuSubBack"'), true);
+  sc.eq('그 아래 구분선에도 id 를 달았다', SRC.includes('<div class="task-menu-sep" id="logoMenuSubSep"></div>'), true);
+  sc.eq('float(PC) 모드에서만 감춘다',
+        SRC.includes('.task-menu-sub-float #logoMenuSubBack,.task-menu-sub-float #logoMenuSubSep{display:none;}'), true);
+}
+
 console.log('\n시나리오 2-1 — 시간 구간 할일 보고 (이름+구분선)');
 {
   sc.eq("'시간구간 시작 알림' 이름은 사라졌다", SRC.includes('>시간구간 시작 알림<'), false);
