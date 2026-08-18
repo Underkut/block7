@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0818-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2810,7 +2810,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-7";
+const APP_VERSION = "v. 26-0818-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -4053,7 +4053,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <!-- 가운데 가로 구분선은 HB 요청으로 없앴다(v26-0818-6) -->
   <!-- '좋아요/암송/Deeper/Even Deeper' 는 하위 뎁스로 옮겼다(HB 1-2) — 눌러야 펼쳐진다 -->
-  <div class="task-menu-item" onclick="logoMenuOpenListSub()">
+  <div class="task-menu-item" onclick="logoMenuOpenListSub()" onmouseenter="if(!_isTouchDevice())logoMenuOpenListSub();">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">말씀 목록</span>
     <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>

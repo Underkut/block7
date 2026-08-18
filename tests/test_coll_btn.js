@@ -61,6 +61,13 @@ console.log('\n시나리오 1-2 — 좌상단 말씀메뉴 가운데 구분선 �
   sc.eq('하위 뎁스 헤더 아래 구분선은 그대로', sub.includes('task-menu-sep'), true);
 }
 
+console.log('\n시나리오 1-3 — PC 는 말씀 목록에 마우스만 올려도 하위 뎁스가 열린다 (v26-0818-8, HB)');
+{
+  const item = SRC.slice(SRC.indexOf('onclick="logoMenuOpenListSub()"')-40, SRC.indexOf('onclick="logoMenuOpenListSub()"')+120);
+  sc.eq('말씀 목록 항목에 hover 진입 핸들러가 있다',
+        item.includes(`onmouseenter="if(!_isTouchDevice())logoMenuOpenListSub();"`), true);
+}
+
 console.log('\n시나리오 2 — 둘 다 말씀모음 탭으로 간다');
 {
   const go = SRC.slice(SRC.indexOf('function _vsetGoColl(){'), SRC.indexOf('function openVcCollSettings(){'));
