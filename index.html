@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0818-2  [production]  -->
+<!-- BLOCK7  v. 26-0818-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2810,7 +2810,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0818-2";
+const APP_VERSION = "v. 26-0818-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -2901,7 +2901,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <!-- v26-0818-1, HB 3: 예전엔 이 제목이 settings-row-label(=항목 이름과 같은 굵기)이라
              다른 탭 제목들과 스텝이 안 맞았다. settings-section-title 로 통일. -->
         <div class="settings-section-title">미완료 할일 가져오기</div>
-        <div class="settings-subtitle">가져올 대상</div>
+        <div class="settings-subtitle">언제부터 가져올지</div>
         <div class="theme-pick-row" id="carryScopeRow">
           <button class="theme-pick-btn" id="carryScopeYesterday" onclick="setCarryScope('yesterday')">어제</button>
           <button class="theme-pick-btn" id="carryScopeWeek" onclick="setCarryScope('week')">이번주</button>
@@ -2938,7 +2938,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="mp">
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">하루 시작 시각</div>
+            <div class="settings-row-label lv1">하루 시작 시각</div>
             <div class="settings-row-desc">이 시각 이전은 전날로 취급해요 (예: 새벽 3시까지 작업하면 어제 할일로 기록)</div>
           </div>
         </div>

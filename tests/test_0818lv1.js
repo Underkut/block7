@@ -29,8 +29,11 @@ console.log('\n시나리오 2 — 지정된 10곳에만 .lv1 이 붙었다');
 
 console.log('\n시나리오 3 — 옆에 있던 진짜 소제목·항목 이름은 그대로 2뎁스');
 {
-  // '가져올 대상'(소제목)은 여전히 settings-subtitle — .lv1 을 잘못 옮겨 붙이지 않았다
-  sc.eq("'가져올 대상'은 여전히 소제목 클래스", SRC.includes('<div class="settings-subtitle">가져올 대상</div>'), true);
+  // '언제부터 가져올지'(옛 '가져올 대상', 소제목)는 여전히 settings-subtitle — .lv1 을 잘못 옮겨 붙이지 않았다
+  sc.eq("'언제부터 가져올지'는 여전히 소제목 클래스", SRC.includes('<div class="settings-subtitle">언제부터 가져올지</div>'), true);
+  // '하루 시작 시각'은 이번에 새로 1뎁스로 올렸다
+  sc.eq("'하루 시작 시각'에 lv1 이 붙었다",
+        SRC.includes('<div class="settings-row-label lv1">하루 시작 시각</div>'), true);
   // '자동'(진짜 항목 이름, 미완료 할일 가져오기 섹션의 하위 토글)은 기본 스타일 그대로
   sc.eq("'자동'에는 lv1 을 안 붙였다", SRC.includes('<div class="settings-row-label lv1">자동</div>'), false);
   // '알림 시각'도 '하루 할일 보고' 아래 하위 항목이라 기본 스타일 그대로
