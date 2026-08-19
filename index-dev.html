@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0819-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-10";
+const APP_VERSION = "v. 26-0819-11";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8573,16 +8573,19 @@ const _VF_AUX_NEXT=/^(못|아니|말고|말라|말며|하|버리|주|지|오|가
 // 전성어미(관형형·명사형) + 조사 — 뒤 말과 붙여 써야 함 → 금지
 const _VF_NO_TRANS=/(한|는|할|함|은|을|를|음|던|기|의|이|가|과|와|에|에게|에서|로|으로|께|께서|도|만|부터|까지|처럼|같이|라도|조차|마저|밖에|보다)$/;
 // 관형사 — 낱말 전체로 판정 (끝글자만 보면 '부족함이'의 '이'까지 잡힌다)
-const _VF_NOEND_WORD=/^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧)$/;
+// v26-0819-11, HB 2 — "HB 줄바꿈 S2" 금지 목록에 '가장·매우' 추가(온전한 낱말 판정)
+const _VF_NOEND_WORD=/^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
 // 형용사 어간 — 형용사 뒤에는 절대 줄바꿈하지 않는다
 const _VF_ADJ_STEM=/^(좋|나쁘|아름답|기쁘|슬프|높|낮|넓|좁|깊|얕|길|짧|많|적|크|작|밝|어둡|강하|약하|귀하|선하|악하|의롭|거룩하|영원하|온전하|완전하|충만하|풍성하|가난하|부요하|연약하|담대하|정직하|진실하|신실하|새롭|놀랍|두렵|즐겁|평안하|고요하|든든하|어리석|지혜롭|무겁|가볍|뜨겁|차갑|달|쓰)/;
-// ══════ "HB 줄바꿈 S2" — 확장 필수 행갈이 규칙, 최상위 우선순위 (v26-0819-6/7/8/9, HB) ══════
-// HB 요청 — 니·라·사·여·요·즉·고 로 끝나면 반드시 행갈이, 길이 제한 없음.
+// ══════ "HB 줄바꿈 S2" — 확장 필수 행갈이 규칙, 최상위 우선순위 (v26-0819-6~11, HB) ══════
+// HB 요청 — 니·라·사·여·요·즉·고·서·며 로 끝나면 반드시 행갈이, 길이 제한 없음.
 // '라·요'는 원래 종결어미로도 필수였지만 그쪽은 길이 3글자 이상 조건이 있어
 // "하라" 처럼 짧은 낱말은 안 걸렸다 → HB 재지시로 S2 가 다루는 글자는 길이
 // 제한을 아예 안 둔다(v26-0819-7). '고' 추가, "따라"는 예외로 뺀다(v26-0819-8).
+// '서·며' 추가(v26-0819-11).
 // (금지 쪽 '한·의·지·게'는 이미 기존 규칙에 다 있어 손댈 게 없었다 —
-// _VF_NO_TRANS·_VF_NO_AUX 참고)
+// _VF_NO_TRANS·_VF_NO_AUX 참고. '가장·매우'는 v26-0819-11 에 _VF_NOEND_WORD
+// 에 더했다.)
 // ⚠️ v26-0819-9 — 위 'must' 는 DP 비용에서 **선호**될 뿐이라, 폭이 좁아지면
 //    (모바일 세로) 다른 비용이 더 커져서 실제로는 안 끊기는 경우가 있었다.
 //    같은 이유로 회전(가로↔세로) 도중 resize·orientationchange 두 이벤트가
@@ -8591,14 +8594,24 @@ const _VF_ADJ_STEM=/^(좋|나쁘|아름답|기쁘|슬프|높|낮|넓|좁|깊|얕
 //    HB 재지시로 S2 는 이제 **폭과 무관하게 항상** 강제 행갈이한다 — 'no'
 //    (금지)처럼 하드 규칙이고, 예외는 두지 않는다(단, "따라"는 원래도 S2 가
 //    다루는 글자에 안 걸리게 뺀 것뿐, S2 규칙 자체의 예외가 아니다).
+// ⚠️ v26-0819-11, HB — "이 규칙은 모든 규칙 위에 최상위 규칙" 이라는 재확인.
+//    붙어 다녀야 하는 낱말 쌍(_VF_PAIR_KEEP)과 외톨이 줄 보정(_vfFixWidow)도
+//    이 이름 아래 함께 관리한다 — 다 같은 "HB 줄바꿈 S2" 다.
 const _VF_EXP_BREAK_RULES=true;   // "HB 줄바꿈 S2" 켬/끔
-const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고)$/;   // "HB 줄바꿈 S2" 가 다루는 글자들 — 길이 제한 없음
+const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고|서|며)$/;   // "HB 줄바꿈 S2" 가 다루는 글자들 — 길이 제한 없음
 const _VF_EXP_EXCEPT=/^(따라)$/;   // "HB 줄바꿈 S2" 예외 — '라'로 끝나도 필수로 안 올린다
+// v26-0819-11, HB 3 — 이 두 낱말이 이웃해 있으면 그 사이는 절대 끊지 않는다.
+const _VF_PAIR_KEEP=[['것','같이'],['하려','함이니라']];
+function _vfPairKeep(w,next){return _VF_PAIR_KEEP.some(([a,b])=>w===a&&next===b);}
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'forced' 무조건(S2, 폭 무관 하드 규칙) / 'must' 필수(선호) /
 // 'ok' 권장 / 'soft' 중립 / 'no' 금지
 function _vfBreakClass(w,next){
   if(!w)return 'no';
+  // ⚠️ v26-0819-11, HB — "이 규칙은 모든 규칙 위에 최상위 규칙" 이라는 재확인으로
+  //    S2 를 맨 앞으로 옮겼다. '~께서·~에서'처럼 원래 no 였던 낱말도 '서'로
+  //    끝나면 이제 forced 가 이긴다 — "따라"만 여전히 예외.
+  if(_VF_EXP_BREAK_RULES&&!_VF_EXP_EXCEPT.test(w)&&_VF_EXP_END_MUST.test(w))return 'forced'; // "HB 줄바꿈 S2" — 폭 무관 하드 규칙, 최상위
   if(_VF_CONJ_HEAD.test(w))return 'must';                    // 문두 접속사
   if(_VF_QUOTE.test(w))return 'must';                        // 인용 동사
   if(_VF_NOEND_WORD.test(w))return 'no';                     // 관형사
@@ -8606,7 +8619,6 @@ function _vfBreakClass(w,next){
   if(_VF_NO_AUX.test(w))return 'no';                         // 보조적 연결어미
   if(/[어아]$/.test(w)&&next&&_VF_AUX_NEXT.test(next))return 'no'; // ~어 + 보조용언
   if(_VF_ADJ_STEM.test(w)&&_VF_CONN_OK.test(w))return 'no';  // 형용사 뒤
-  if(_VF_EXP_BREAK_RULES&&!_VF_EXP_EXCEPT.test(w)&&_VF_EXP_END_MUST.test(w))return 'forced'; // "HB 줄바꿈 S2" — 폭 무관 하드 규칙
   if(w.length>=3&&_VF_END_MUST.test(w))return 'must';        // 종결어미 (한 글자 부사 '다' 오인 방지)
   if(w.length>=2&&_VF_CONN_OK.test(w))return 'ok';           // 연결어미(일반)
   if(/[,;]$/.test(w))return 'ok';
@@ -8651,6 +8663,7 @@ function _vfWrapFit(words,ctx,maxW){
         const lw=W(i,j);
         if(strict&&lw>maxW&&wc>1)continue;                // 폭 초과 (한 단어면 어쩔 수 없이 허용)
         if(!isLast&&(cls[last]==='no'))continue;          // 끊으면 안 되는 자리
+        if(!isLast&&_vfPairKeep(words[last],words[last+1]))continue; // "HB 줄바꿈 S2" 낱말 쌍은 붙여 둔다
         // "HB 줄바꿈 S2"(forced)는 폭·비용과 무관한 하드 규칙이다 — 후보 줄 안에
         // forced 지점이 있는데 바로 거기서 끝나는 게 아니면 그 후보 자체가 무효.
         // isLast 도 봐주지 않는다(마지막 줄이어도 강제 지점을 그냥 지나칠 수 없다).
@@ -8682,11 +8695,55 @@ function _vfWrapFit(words,ctx,maxW){
     for(let i=0;i<n;i++){cur.push(words[i]);
       if(ctx.measureText(cur.join(' ')).width>maxW&&cur.length>1){out.push(cur.slice(0,-1).join(' '));cur=[words[i]];}}
     if(cur.length)out.push(cur.join(' '));
-    return out.length?out:[words.join(' ')];
+    return _vfFixWidow(out.length?out:[words.join(' ')]);
   }
   const lines=[];let j=n;
   while(j>0){const i=prev[j];lines.unshift(words.slice(i,j).join(' '));j=i;}
-  return lines;
+  return _vfFixWidow(lines);
+}
+// v26-0819-11, HB 4 — "HB 줄바꿈 S2" 외톨이 줄 보정.
+// 마지막 줄(줄B)이 1단어뿐이면, 그 위 줄(줄A) 안에서 주어(이/가/은/는/께서로
+// 끝나는 첫 낱말)를 찾아 균형을 맞춘다.
+//  · (주어까지 글자수) / (줄A 나머지 글자수 + 줄B 글자수) > 0.5
+//    → 주어 바로 뒤에서 끊는다(줄A=주어까지, 나머지+줄B=새 줄B) — 4-1
+//  · 0.5 이하면 주어 다음 의미 덩어리(조사로 끝나는 다음 낱말)까지만 줄A에
+//    남기고, 그 뒤 전부를 줄B와 합친다 — 4-2
+// 주어를 못 찾으면 손대지 않는다. 위든 아래든 한 번만 보정한다(재귀 없음).
+function _vfFixWidow(lines){
+  if(lines.length<2)return lines;
+  const out=lines.slice();
+  for(let bi=1;bi<out.length;bi++){
+    const wordsB=out[bi].split(' ');
+    if(wordsB.length!==1)continue;                    // 줄B가 1단어일 때만
+    const wordsA=out[bi-1].split(' ');
+    if(wordsA.length<2)continue;                       // 줄A가 한 단어뿐이면 더 뺄 게 없다
+    let subjIdx=-1;
+    for(let k=0;k<wordsA.length;k++){
+      if(/(이|가|은|는|께서)$/.test(wordsA[k])){subjIdx=k;break;}
+    }
+    if(subjIdx<0||subjIdx>=wordsA.length-1)continue;   // 주어가 없거나 이미 줄A 끝이면 손대지 않는다
+    const clen=s=>s.replace(/\s/g,'').length;
+    const subjPart=wordsA.slice(0,subjIdx+1).join(' ');
+    const restPart=wordsA.slice(subjIdx+1).join(' ');
+    const lenSubj=clen(subjPart);
+    const lenRestB=clen(restPart)+clen(out[bi]);
+    if(lenRestB<=0)continue;
+    const ratio=lenSubj/lenRestB;
+    if(ratio>0.5){                                      // 4-1 — 주어 뒤에서 끊는다
+      out[bi-1]=subjPart;
+      out[bi]=restPart+' '+out[bi];
+    }else{                                               // 4-2 — 주어 다음 의미 덩어리 뒤에서 끊는다
+      let chunkEnd=subjIdx+1;
+      for(let k=subjIdx+1;k<wordsA.length;k++){
+        chunkEnd=k;
+        if(_VF_NO_TRANS.test(wordsA[k])||_VF_NO_AUX.test(wordsA[k]))break;
+      }
+      if(chunkEnd>=wordsA.length-1)continue;            // 이미 줄A 끝까지 왔으면 보정할 게 없다
+      out[bi-1]=wordsA.slice(0,chunkEnd+1).join(' ');
+      out[bi]=wordsA.slice(chunkEnd+1).join(' ')+' '+out[bi];
+    }
+  }
+  return out;
 }
 // ══════ 강조 표시 — 구글 시트 '강조 문구' 열을 본문에 칠한다 ══════
 // 시트에는 **무엇을** 강조할지(문구)만 적고, **어떻게** 보일지는 앱이 정한다.
