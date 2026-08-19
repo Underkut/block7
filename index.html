@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-9  [production]  -->
+<!-- BLOCK7  v. 26-0819-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-9";
+const APP_VERSION = "v. 26-0819-10";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -9047,7 +9047,10 @@ function _vfLayoutText(){
   const words=raw.split(/\s+/);
   // 한 줄 4단어를 기준으로 줄 수 상한을 정하고, 그 안에 들어오는 가장 큰
   // 글자 크기를 고른다. 크기 편차는 좁게(상한의 68%까지만) 유지한다.
-  const maxLines=Math.max(1,Math.ceil(words.length/_VF_MINW));
+  // ⚠️ v26-0819-10, HB — "HB 줄바꿈 S2"(forced)가 폭과 무관하게 끊다 보니
+  //    줄 수가 예전보다 쉽게 늘어, 여백이 남는데도 글자가 작아지는 경우가
+  //    생겼다. 줄이는 경계를 한 줄 더 관대하게(+1) 잡아 그 상황을 줄인다.
+  const maxLines=Math.max(1,Math.ceil(words.length/_VF_MINW))+1;
   // 설정한 본문 배율(전체화면 전용). 글자가 작아질수록 줄간격을 상대적으로
   // 넓혀, 면적이 배율 그대로 쪼그라들지 않고 여백의 미가 생기게 한다.
   const tScale=_vfTextScale();
