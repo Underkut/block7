@@ -1,6 +1,7 @@
 // v26-0819-6, HB — 전체화면 줄바꿈 규칙에 실험적으로 확장 필수 행갈이를 추가.
-// 이름 붙여 따로 관리(_VF_EXP_BREAK_RULES) — 운영에서 일정 기간 실사용해보고
-// 문제가 있으면 상수 하나만 false 로 바꿔 즉시 롤백한다.
+// HB 가 이 규칙을 "HB 줄바꿈 S2" 라는 이름으로 부르기로 했다 — 나중에
+// "HB 줄바꿈 S2 취소해" 라고 하면 _VF_EXP_BREAK_RULES 를 찾으면 된다.
+// 운영에서 일정 기간 실사용해보고 문제가 있으면 상수 하나만 false 로 바꿔 롤백한다.
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
