@@ -31,14 +31,29 @@
 //  4. 마지막 줄이 1단어만 남는 '외톨이 줄'을 주어 기준으로 재분배한다.
 // "최상위"를 문자 그대로 반영해 S2 판정을 _vfBreakClass 맨 앞으로 옮겼다 —
 // '~께서·~에서'처럼 원래 no 였던 낱말도 '서'로 끝나면 이제 forced 가 이긴다.
+//
+// v26-0819-12 — HB 가 "모든 줄바꿈 규칙 위에 최상위" 를 재확인하며 다섯 개를
+// 더 요청했다.
+//  1. 필수 글자에서 홑 '서' 를 빼고 '면서' 로 좁혔다(~께서·~에서까지 강제로
+//     끊기는 게 너무 셌다). '며' 는 유지.
+//  2. 금지 낱말은 그대로(가장·매우·한·의·지·게·내·모든), 예외로 '~게' 뒤가
+//     "하려 함이니라" 로 바로 이어지면 금지를 풀어준다(안 풀면 그 앞의 '~게'
+//     때문에 하려·함이니라 쌍이 못 끊겨 밀린다).
+//  3. 낱말 쌍은 그대로.
+//  4. 외톨이 줄 보정에 전제 조건 추가 — (줄A 글자수)/(줄B 글자수) 가 3
+//     미만이면 손대지 않는다(예시 4-0).
+//  5. (신규) 위·아래·오른·왼 으로 시작하는 낱말 앞은 끊지 않는다. 단, 바로
+//     앞이 forced 지점이면 forced 가 이긴다 — 안 그러면 "믿으며 위에" 처럼
+//     두 하드 규칙이 같은 자리에서 충돌해 DP 가 실패하고, 규칙을 통째로
+//     무시하는 안전망으로 떨어져 결국 5번도 못 지켜지는 역설이 생긴다.
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
 console.log('시나리오 1 — 이름 붙은 실험 플래그로 감싸져 있다(롤백 쉬움)');
 {
   sc.eq('실험 플래그가 있다', SRC.includes('const _VF_EXP_BREAK_RULES=true;'), true);
-  sc.eq('니·라·사·여·요·즉·고·서·며 확장 필수 규칙(v26-0819-11: 서·며 추가)',
-        SRC.includes('const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고|서|며)$/;'), true);
+  sc.eq('니·라·사·여·요·즉·고·면서·며 확장 필수 규칙(v26-0819-12: 홑 서 → 면서)',
+        SRC.includes('const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고|면서|며)$/;'), true);
   sc.eq("'따라' 예외", SRC.includes('const _VF_EXP_EXCEPT=/^(따라)$/;'), true);
   sc.eq("금지 낱말에 '가장·매우' 추가(v26-0819-11)",
         SRC.includes('|또|또한|곧|가장|매우)$/;'), true);
@@ -86,7 +101,8 @@ console.log('\n시나리오 3 — 실제 판정 결과 (직접 로드해서 확�
   sc.eq("'~여'는 forced(예: 사랑하여)", _vfBreakClass('사랑하여'), 'forced');
   sc.eq("'~즉'은 forced(예: 진리즉)", _vfBreakClass('진리즉'), 'forced');
   sc.eq("'~고'는 forced(예: 거스르고)", _vfBreakClass('거스르고'), 'forced');
-  sc.eq("'~서'는 forced, v26-0819-11 추가(예: 여호와께서 — 예전엔 no 였다)", _vfBreakClass('여호와께서'), 'forced');
+  sc.eq("'~면서'는 forced(예: 걸으면서)", _vfBreakClass('걸으면서'), 'forced');
+  sc.eq("홑 '~서'는 다시 금지, v26-0819-12(예: 여호와께서 — 너무 세서 좁혔다)", _vfBreakClass('여호와께서'), 'no');
   sc.eq("'~며'는 forced, v26-0819-11 추가(예: 가며)", _vfBreakClass('가며'), 'forced');
   sc.eq("'~한'은 여전히 금지(예: 거룩한)", _vfBreakClass('거룩한'), 'no');
   sc.eq("'~의'는 여전히 금지(예: 하나님의)", _vfBreakClass('하나님의'), 'no');
@@ -115,7 +131,7 @@ console.log('\n시나리오 3-1 — 붙어 다녀야 하는 낱말 쌍은 그 �
   });
 }
 
-console.log('\n시나리오 3-2 — 외톨이 줄(1단어) 보정 — 실제 예시 그대로 검증 (v26-0819-11, HB 4)');
+console.log('\n시나리오 3-2 — 외톨이 줄(1단어) 보정 — 실제 예시 그대로 검증 (v26-0819-11/12, HB 4)');
 {
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n\}\n/);
   eval(m[0]);
@@ -127,12 +143,47 @@ console.log('\n시나리오 3-2 — 외톨이 줄(1단어) 보정 — 실제 예
   sc.eq('4-2 예시 — 곧 내가 내 평생에 / 여호와의 집에 살면서',
         JSON.stringify(_vfFixWidow(['곧 내가 내 평생에 여호와의 집에','살면서'])),
         JSON.stringify(['곧 내가 내 평생에','여호와의 집에 살면서']));
+  // 4-0 예시(v26-0819-12) — (줄A 글자수)/(줄B 글자수) < 3 이면 아무리 주어가 있어도 그대로 둔다
+  sc.eq('4-0 예시 — 글자수 비율 3 미만이면 손대지 않는다',
+        JSON.stringify(_vfFixWidow(['너희는 성령을 따라 행하라','그리하면'])),
+        JSON.stringify(['너희는 성령을 따라 행하라','그리하면']));
   // 주어를 못 찾으면 손대지 않는다 (이/가/은/는/께서 로 끝나는 낱말이 전혀 없을 때)
   sc.eq('주어(이/가/은/는/께서)가 없으면 그대로 둔다',
         JSON.stringify(_vfFixWidow(['맑고 아름다운 하늘 아래로','걸어갔다'])),
         JSON.stringify(['맑고 아름다운 하늘 아래로','걸어갔다']));
   // 줄이 1개뿐이면 손대지 않는다
   sc.eq('줄이 하나뿐이면 그대로', JSON.stringify(_vfFixWidow(['한 줄뿐'])), JSON.stringify(['한 줄뿐']));
+}
+
+console.log('\n시나리오 3-3 — 2-2 예외: "~게" 뒤가 "하려 함이니라" 로 이어지면 금지를 풀어준다 (v26-0819-12, HB 2-2)');
+{
+  const fn = slice('function _vfWrapFit(words,ctx,maxW){', '\n  const lines=[];let j=n;');
+  sc.eq('_vfGeException 을 no 판정 예외로 쓴다',
+        fn.includes("if(!isLast&&cls[last]==='no'&&!_vfGeException(words[last],words[last+1],words[last+2]))continue;"), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n\}\n/);
+  eval(m[0]);
+  const ctx={measureText:(t)=>({width:t.length*12})};
+  const raw='구원을 얻게 하려 함이니라';
+  [10,15,20,30,60].forEach(w=>{
+    const lines=_vfWrapFit(raw.split(' '),ctx,w);
+    sc.eq(`maxW=${w}: '얻게' 뒤에서 끊길 수 있다(하려·함이니라 는 항상 함께)`,
+          lines.some(l=>l.includes('하려 함이니라')), true);
+  });
+}
+
+console.log('\n시나리오 3-4 — 5번(신규): 위·아래·오른·왼 앞은 끊지 않는다 (v26-0819-12, HB 5)');
+{
+  sc.eq('_VF_NO_BEFORE 정의', SRC.includes('const _VF_NO_BEFORE=/^(위|아래|오른|왼)/;'), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n\}\n/);
+  eval(m[0]);
+  const ctx={measureText:(t)=>({width:t.length*12})};
+  // forced(믿으며) 바로 뒤가 '위에' — forced 가 이겨서 '위에'는 다음 줄 첫머리로 밀려도
+  // 어차피 forced 지점 자체는 지켜지고, DP 는 항상 답을 찾는다(안전망으로 안 떨어진다)
+  const raw='믿으며 위에 있는 것을 바라보라';
+  [10,30,60,100].forEach(w=>{
+    const lines=_vfWrapFit(raw.split(' '),ctx,w);
+    sc.eq(`maxW=${w}: forced('믿으며')는 여전히 지켜진다`, lines[0], '믿으며');
+  });
 }
 
 console.log('\n시나리오 4 — 폭이 달라져도 forced 지점은 항상 같은 자리에서 끊긴다 (v26-0819-9 재신고 수정)');
