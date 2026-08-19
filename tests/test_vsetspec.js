@@ -187,4 +187,17 @@ console.log('\n시나리오 8 — 시트가 정한 기본값');
   sc.eq('장절 형식 3가지 모두 옵션1', D.includes("txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',"), true);
 }
 
+console.log('\n시나리오 9 — 말씀설정창 뎁스2는 항목 이름과 같은 가늘고 수수한 서식으로 통일 (v26-0819-5, HB)');
+{
+  // '풀 모드'류(subtitle-lg)만이 아니라 '요일'·'어떤 순서로'(plain settings-subtitle)까지
+  // #verseSettingsPanel 범위로 한 규칙이 전부 덮어써야 "모든 탭"이 통일된다.
+  const rule = slice('#verseSettingsPanel .settings-subtitle{', '}');
+  sc.eq('13px — settings-row-label 과 같은 크기', rule.includes('font-size:13px;'), true);
+  sc.eq('굵기 500 — 항목 이름과 같다(일반 소제목의 700이 아니다)', rule.includes('font-weight:500;'), true);
+  sc.eq('자간 없앤다(일반 소제목의 .07em 을 지운다)', rule.includes('letter-spacing:0;'), true);
+  sc.eq('색 tx2 — 항목 이름과 같다(일반 소제목의 tx3이 아니다)', rule.includes('color:var(--tx2);'), true);
+  // 일반설정창(#settingsPanel)의 소제목은 이 규칙 밖이라 기존 3단 스텝 그대로 유지된다
+  sc.eq('일반설정창은 이 규칙 밖(3단 스텝 유지)', SRC.includes('#settingsPanel .settings-subtitle{'), false);
+}
+
 sc.done();
