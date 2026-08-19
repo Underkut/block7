@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0819-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-5";
+const APP_VERSION = "v. 26-0819-6";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8576,6 +8576,15 @@ const _VF_NO_TRANS=/(한|는|할|함|은|을|를|음|던|기|의|이|가|과|와
 const _VF_NOEND_WORD=/^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧)$/;
 // 형용사 어간 — 형용사 뒤에는 절대 줄바꿈하지 않는다
 const _VF_ADJ_STEM=/^(좋|나쁘|아름답|기쁘|슬프|높|낮|넓|좁|깊|얕|길|짧|많|적|크|작|밝|어둡|강하|약하|귀하|선하|악하|의롭|거룩하|영원하|온전하|완전하|충만하|풍성하|가난하|부요하|연약하|담대하|정직하|진실하|신실하|새롭|놀랍|두렵|즐겁|평안하|고요하|든든하|어리석|지혜롭|무겁|가볍|뜨겁|차갑|달|쓰)/;
+// ══════ 실험: 확장 필수 행갈이 규칙 (v26-0819-6, HB) ══════
+// HB 요청 — 아래 글자로 끝나면 반드시 행갈이. '라·요'는 이미 종결어미로 필수
+// 처리 중이라 뺐고, '니·사·여'는 예전엔 "권장(ok)"이었던 걸 "필수(must)"로
+// 올린다. '즉'은 새로 추가. (금지 쪽 '한·의·지·게'는 이미 기존 규칙에
+// 다 있어 손댈 게 없었다 — _VF_NO_TRANS·_VF_NO_AUX 참고)
+// ⚠️ 운영에서 일정 기간 실사용해보고 판단하는 실험이다. 문제가 있으면
+//    이 상수 하나만 false 로 바꾸면 즉시 이전 규칙으로 롤백된다.
+const _VF_EXP_BREAK_RULES=true;
+const _VF_EXP_END_MUST=/(니|사|여|즉)$/;
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'must' 필수 / 'ok' 권장 / 'soft' 중립 / 'no' 금지
 function _vfBreakClass(w,next){
@@ -8587,6 +8596,7 @@ function _vfBreakClass(w,next){
   if(_VF_NO_AUX.test(w))return 'no';                         // 보조적 연결어미
   if(/[어아]$/.test(w)&&next&&_VF_AUX_NEXT.test(next))return 'no'; // ~어 + 보조용언
   if(_VF_ADJ_STEM.test(w)&&_VF_CONN_OK.test(w))return 'no';  // 형용사 뒤
+  if(_VF_EXP_BREAK_RULES&&w.length>=2&&_VF_EXP_END_MUST.test(w))return 'must'; // 실험: 니·사·여·즉
   if(w.length>=3&&_VF_END_MUST.test(w))return 'must';        // 종결어미 (한 글자 부사 '다' 오인 방지)
   if(w.length>=2&&_VF_CONN_OK.test(w))return 'ok';           // 연결어미(일반)
   if(/[,;]$/.test(w))return 'ok';
