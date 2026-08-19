@@ -62,12 +62,12 @@ console.log('\n시나리오 3 — 상단 말씀 탭 (뎁스1 두 덩어리)');
   sc.eq('뎁스1: 자동으로 다음 구절', p.includes('<div class="settings-section-title">자동으로 다음 구절</div>'), true);
   sc.eq('뎁스1: 보여줄 항목(신규)', p.includes('<div class="settings-section-title">보여줄 항목</div>'), true);
   // 이름 교체 — '풀 모드에서 표시할 항목' > '풀 모드', '스닉픽 모드에서 표시할 항목' > '스닉픽 모드'
-  sc.eq("뎁스2: '풀 모드'", p.includes('<div class="settings-subtitle" data-lv="mp">풀 모드</div>'), true);
-  sc.eq("뎁스2: '스닉픽 모드'", p.includes('<div class="settings-subtitle" data-lv="mp">스닉픽 모드</div>'), true);
+  sc.eq("뎁스2: '풀 모드'", p.includes('<div class="settings-subtitle subtitle-lg" data-lv="mp">풀 모드</div>'), true);
+  sc.eq("뎁스2: '스닉픽 모드'", p.includes('<div class="settings-subtitle subtitle-lg" data-lv="mp">스닉픽 모드</div>'), true);
   sc.eq('옛 긴 이름은 안 남았다',
         SRC.includes('풀 모드에서 표시할 항목') || SRC.includes('스닉픽 모드에서 표시할 항목'), false);
-  sc.eq('스닉픽 서식은 파워만', p.includes('<div class="settings-subtitle" data-lv="p">스닉픽 서식</div>'), true);
-  sc.eq('한 줄 최대 가로 폭은 파워만', p.includes('<div class="settings-subtitle" data-lv="p">한 줄 최대 가로 폭</div>'), true);
+  sc.eq('스닉픽 서식은 파워만', p.includes('<div class="settings-subtitle subtitle-lg" data-lv="p">스닉픽 서식</div>'), true);
+  sc.eq('한 줄 최대 가로 폭은 파워만', p.includes('<div class="settings-subtitle subtitle-lg" data-lv="p">한 줄 최대 가로 폭</div>'), true);
   sc.eq('매일·매 시간구간은 모든 등급(등급 표시 없음)',
         /<div class="settings-row">\s*<div class="settings-row-text">\s*<div class="settings-row-label">매일<\/div>/.test(p), true);
 }
@@ -101,7 +101,7 @@ console.log('\n시나리오 5 — 뷰탭 (순서변경: 할일뷰 → 월간뷰 
   // v26-0819-3, HB 3-3 — 전체 스위치 줄이 항목 이름(row-label) 대신 소제목(subtitle)
   // 서식으로 바뀌었고, 이지/미드에서는 그 오른쪽에 아이콘 미리보기가 함께 나온다.
   sc.eq('전체 스위치는 모든 등급, 소제목 서식',
-        /<div class="settings-subtitle" style="margin:0;flex:1;">할일뷰에 표시<\/div>/.test(p), true);
+        /<div class="settings-subtitle subtitle-lg" style="margin:0;flex:1;">할일뷰에 표시<\/div>/.test(p), true);
   sc.eq('전체 스위치 줄에 아이콘 미리보기(이지·미드 전용)',
         /<span data-lv="em"[^>]*>(<svg[\s\S]*?<\/svg>){4}<\/span>/.test(p), true);
   sc.eq('하위 네 줄은 파워 전용 + 전체 스위치에 딸린 줄',
@@ -159,10 +159,10 @@ console.log('\n시나리오 7 — 전체화면·공유·말씀 모음 탭');
         sh.includes('<div class="settings-section-title">공유 이미지 요소</div>'), true);
   sc.eq('공유 이미지 크기는 파워만',
         /<div class="settings-section" data-lv="p">\s*<div class="settings-section-title">공유 이미지 크기/.test(sh), true);
-  sc.eq("'추가 항목' 소제목 신규", sh.includes('<div class="settings-subtitle">추가 항목</div>'), true);
-  sc.eq("'장절 형식'도 소제목 서식으로", sh.includes('<div class="settings-subtitle">장절 형식</div>'), true);
+  sc.eq("'추가 항목' 소제목 신규", sh.includes('<div class="settings-subtitle subtitle-lg">추가 항목</div>'), true);
+  sc.eq("'장절 형식'도 소제목 서식으로", sh.includes('<div class="settings-subtitle subtitle-lg">장절 형식</div>'), true);
   sc.eq('모바일/PC/SNS 도 소제목 서식으로',
-        (sh.match(/<div class="settings-subtitle">(모바일|PC|SNS \(정사각\))<\/div>/g) || []).length, 3);
+        (sh.match(/<div class="settings-subtitle subtitle-lg">(모바일|PC|SNS \(정사각\))<\/div>/g) || []).length, 3);
 
   const c = panel('coll');
   sc.eq("'말씀 모음 (어느 구절에서 뽑을지)' > '말씀 모음' (뎁스1 제목, 탭 이름은 '말씀모음'으로 붙여씀)",
