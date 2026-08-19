@@ -42,8 +42,10 @@ console.log('\n시나리오 2 — 자리마다 제각각이던 소제목을 공�
                     // 뎁스1 제목(settings-section-title)이 되어 여기서 빠진다.
                     '풀 모드','스닉픽 서식','스닉픽 모드','한 줄 최대 가로 폭','2단 시작','3단 시작'];
   targets.forEach(t=>{
+    // v26-0819-4 — 버튼 여러 개를 묶는 자리는 subtitle-lg 를 덧붙여 한 스텝 키웠다.
+    // 그래도 바탕은 settings-subtitle 이라 색·자간·여백 규칙은 그대로 물려받는다.
     sc.eq(`'${t}' 는 settings-subtitle 클래스를 쓴다`,
-          new RegExp(`class="settings-subtitle"[^>]*>${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}<`).test(SRC), true);
+          new RegExp(`class="settings-subtitle( subtitle-lg)?"[^>]*>${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}<`).test(SRC), true);
   });
   // 예전에 자리마다 다르게 박혀 있던 인라인 스타일들은 사라졌다
   sc.eq('예전 인라인 소제목 스타일(11px+tx2+600, margin 제각각)은 안 남았다',
