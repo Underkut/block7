@@ -21,7 +21,8 @@ const sc = makeScorer();
 console.log('시나리오 1 — 기본값과 값 읽기 (두 축 모두)');
 {
   sc.eq('태그 기본은 켬', SRC.includes('vgTagExcludeOn:true'), true);
-  sc.eq('태그 기본 기준은 1', SRC.includes('vgTagExcludeMax:1'), true);
+  // v26-0819-2 — 구글시트 '말씀설정창' 스펙에서 기준 개수 기본이 1 > 3 으로 바뀌었다
+  sc.eq('태그 기본 기준은 3', SRC.includes('vgTagExcludeMax:3'), true);
   sc.eq('성경 기본은 켬', SRC.includes('vgBookExcludeOn:true'), true);
   sc.eq('성경 기본 기준은 1', SRC.includes('vgBookExcludeMax:1'), true);
   sc.eq('범위는 1~9', SRC.includes('const VG_EXCL_MIN=1, VG_EXCL_MAX=9;'), true);
@@ -154,16 +155,18 @@ console.log('\n시나리오 7 — 타일뷰 테마 색을 따른다 (기존 확�
 
 console.log('\n시나리오 8 — 14-1 설정창 항목 (태그 전용, 그대로)');
 {
+  // v26-0819-2 — 구글시트 스펙대로 '태그 목록' > '태그 타일뷰' 로 이름이 바뀌었다
   sc.eq('말씀설정 뷰탭에 있다',
-        /<div class="settings-section" data-lv="mp">\s*<div class="settings-section-title">태그 목록<\/div>/.test(SRC), true);
+        /<div class="settings-section" data-lv="mp">\s*<div class="settings-section-title">태그 타일뷰<\/div>/.test(SRC), true);
   sc.eq('켬/끔 스위치', SRC.includes(`id="setVgTagExclOn" onchange="updateSetting('vgTagExcludeOn',this.checked)"`), true);
   sc.eq('기준 스테퍼도 있다', SRC.includes('id="setVgExclVal"'), true);
   sc.eq('설정창 스테퍼는 설정창 전용 함수를 부른다',
         SRC.includes('onclick="vgStepTagExcl(-1)"') && SRC.includes('onclick="vgStepTagExcl(1)"'), true);
   sc.eq('스테퍼는 기존 .hi-step 을 쓴다',
         /<div class="hi-step">\s*<button id="setVgExclMinus"/.test(SRC), true);
-  sc.eq('뷰탭(vstab-general) 안이다',
-        SRC.indexOf('<div class="settings-section-title">태그 목록') < SRC.indexOf('id="vstab-alarm"'), true);
+  sc.eq('뷰탭(vstab-view) 안이다',
+        SRC.indexOf('id="vstab-view"') < SRC.indexOf('<div class="settings-section-title">태그 타일뷰')
+        && SRC.indexOf('<div class="settings-section-title">태그 타일뷰') < SRC.indexOf('id="vstab-alarm"'), true);
   // 성경 축은 설정창에 없다 — HB 14B 는 타일뷰만 요청했다
   sc.eq('성경 전용 설정창 UI 는 없다', SRC.includes('id="setVgBookExclOn"'), false);
 }

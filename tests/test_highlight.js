@@ -184,7 +184,7 @@ console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
   const full = SRC.slice(SRC.indexOf('id="vstab-full"'), SRC.indexOf('id="vstab-share"'));
   sc.eq('전체화면 탭에 있다', full.includes('>강조 표시</div>'), true);
   sc.eq('뷰 탭에는 없다',
-        SRC.slice(SRC.indexOf('id="vstab-general"'), SRC.indexOf('id="vstab-alarm"')).includes('setHiBold'), false);
+        SRC.slice(SRC.indexOf('id="vstab-top"'), SRC.indexOf('id="vstab-alarm"')).includes('setHiBold'), false);
   sc.eq('차례는 글자 크기 → 강조 표시 → 테마',
         [...full.matchAll(/<div class="settings-section-title">([^<]+)</g)].map(m => m[1]).slice(0, 3),
         ['글자 크기', '강조 표시', '테마']);
@@ -223,7 +223,8 @@ console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
   sc.eq('일반 설정창도 부른다',
         /function renderSettingsPanel\(\)[\s\S]*?_syncHiUI\(\);/.test(SRC), true);
   // ⚠️ 첫 사용자는 **볼드만** 켜져 있어야 한다
-  sc.eq('새 사용자 기본값', SRC.includes('hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,'), true);
+  // v26-0819-2 — 구글시트 '말씀설정창' 스펙에서 겹쳐쓰기 기본이 1 > 2 로 바뀌었다
+  sc.eq('새 사용자 기본값', SRC.includes('hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,'), true);
 }
 
 // ═══ 10. 공유 이미지 — 화면과 따로 정한다 ═══
@@ -378,7 +379,7 @@ console.log('\n시나리오 12 — 문구마다 효과 몇 개를 겹칠지');
   sc.eq('더 못 올리면 막는다', ovFn.includes('pl.disabled=(n>=max);'), true);
   sc.eq('스테퍼도 가둔다',
         SRC.includes('const n=Math.min(max,Math.max(1,_hiOverlap()+d));'), true);
-  sc.eq('기본값 1', SRC.includes('hiOverlap:1,'), true);
+  sc.eq('기본값 2 (v26-0819-2, 시트 스펙)', SRC.includes('hiOverlap:2,'), true);
   // 옛 '섞어서 쓰기' 는 걷어냈다
   sc.eq('섞어서 쓰기 흔적 없음', /hiMix|_hiKindAt/.test(SRC), false);
   sc.eq('옛 이름은 주석에만', (SRC.match(/섞어서 쓰기/g) || []).length, 1);

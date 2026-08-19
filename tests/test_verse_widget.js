@@ -57,8 +57,11 @@ console.log('\n시나리오 3 — 바뀐 문구');
 {
   sc.eq("'구절' 칩이 '장절' 로",
         SRC.includes(">장절</button>") && !SRC.includes("verseWidgetRef',this.classList.toggle('on'))\">구절"), true);
-  sc.eq('말씀 위젯에서 보여줄 항목', SRC.includes('말씀 위젯에서 보여줄 항목'), true);
-  sc.eq('말씀 위젯 글자 크기', SRC.includes('말씀 위젯 글자 크기'), true);
+  // v26-0819-2 — 둘 다 신설된 '말씀 위젯' 탭으로 옮겨 가면서 '말씀 위젯' 접두사가 빠졌다
+  // (탭 이름이 이미 '말씀 위젯'이라 제목에 반복할 필요가 없다)
+  const wtab = SRC.slice(SRC.indexOf('id="vstab-widget"'), SRC.indexOf('id="vstab-view"'));
+  sc.eq('말씀 위젯 탭에 보여줄 항목', /<div class="settings-section-title">보여줄 항목<\/div>/.test(wtab), true);
+  sc.eq('말씀 위젯 탭에 글자 크기', /<div class="settings-section-title">글자 크기<\/div>/.test(wtab), true);
   sc.eq('자동으로 다음 구절', SRC.includes('>자동으로 다음 구절<'), true);
   sc.eq("'매일 자동으로' 는 사라졌다", SRC.includes('매일 자동으로 다음 구절'), false);
   sc.eq('매 시간구간 토글', SRC.includes('setVerseRotateBySec'), true);

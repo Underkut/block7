@@ -95,7 +95,8 @@ console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
   const notifyTab = SRC.slice(SRC.indexOf('id="stab-notify"'), SRC.indexOf('id="stab-view"'));
   const secTab = SRC.slice(SRC.indexOf('id="stab-sections"'), SRC.indexOf('id="stab-account"'));
   const btnTab = SRC.slice(SRC.indexOf('id="stab-buttons"'), SRC.indexOf('id="stab-sections"'));
-  const vsGeneral = SRC.slice(SRC.indexOf('id="vstab-general"'), SRC.indexOf('id="vstab-alarm"'));
+  // v26-0819-2 — 뷰탭이 vstab-general 에서 vstab-view 로 갈라져 나왔다
+  const vsGeneral = SRC.slice(SRC.indexOf('id="vstab-view"'), SRC.indexOf('id="vstab-alarm"'));
 
   sc.eq('구간 알림 제목 문구 → 알림탭으로', notifyTab.includes('sectionSfxRow'), true);
   sc.eq('구간탭에는 더 이상 없다', secTab.includes('sectionSfxRow'), false);

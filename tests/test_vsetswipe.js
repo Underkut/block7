@@ -6,7 +6,7 @@ const sc = makeScorer();
 console.log('시나리오 1 — 말씀설정창도 트랙 구조(settings-tab-track)를 쓴다');
 {
   sc.eq('트랙 컨테이너가 있다', SRC.includes('<div class="settings-tab-track" id="verseSettingsTabTrack"'), true);
-  ['general','alarm','full','share','coll'].forEach(t=>{
+  ['top','widget','view','alarm','full','share','coll'].forEach(t=>{
     sc.eq(`vstab-${t} 가 settings-tab-content 클래스를 쓴다(트랙 한 칸)`,
           new RegExp(`class="vsettings-tab-content settings-tab-content" id="vstab-${t}"`).test(SRC), true);
   });
@@ -18,7 +18,7 @@ console.log('시나리오 1 — 말씀설정창도 트랙 구조(settings-tab-tr
 console.log('\n시나리오 2 — switchVerseSettingsTab 이 트랙을 슬라이드한다');
 {
   const fn = slice('function switchVerseSettingsTab(id,btn,direction){', 'function _initVerseSettingsSwipe');
-  sc.eq('보이는 탭 목록에서 자리를 찾는다', fn.includes('VERSE_SETTINGS_TABS.indexOf(id)'), true);
+  sc.eq('보이는 탭 목록에서 자리를 찾는다', fn.includes('const list=_vstabList();') && fn.includes('list.indexOf(id)'), true);
   sc.eq('트랙을 옮긴다', fn.includes('track.style.transform=`translateX('), true);
   sc.eq("direction 이 'direct' 면 애니메이션 없이", fn.includes("direction!=='direct'"), true);
 }
@@ -35,7 +35,7 @@ console.log('\n시나리오 4 — 여는 곳에서 스와이프를 붙이고 트
 {
   const fn = slice('function openVerseSettingsModal(){', '}');
   sc.eq("첫 탭으로 애니메이션 없이 되돌린다('direct')",
-        fn.includes("switchVerseSettingsTab('general',null,'direct');"), true);
+        fn.includes("switchVerseSettingsTab('top',null,'direct');"), true);
   sc.eq('스와이프 핸들러를 붙인다', fn.includes('_initVerseSettingsSwipe();'), true);
 }
 
