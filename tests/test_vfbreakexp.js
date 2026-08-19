@@ -95,4 +95,14 @@ console.log('\n시나리오 4 — 폭이 달라져도 forced 지점은 항상 �
   });
 }
 
+console.log('\n시나리오 5 — 글자 크기 축소 경계를 한 줄 더 관대하게 (v26-0819-10, HB)');
+{
+  // S2(forced)가 폭과 무관하게 끊다 보니 줄 수가 예전보다 쉽게 늘어, 여백이
+  // 남는데도 글자가 작아지는 문제가 생겼다. 줄이는 경계(maxLines)를 +1 해서
+  // 완화한다 — S2 자체의 위치·우선순위는 건드리지 않는다.
+  const fn = slice('function _vfLayoutText(){', '\n  el.style.fontSize');
+  sc.eq('maxLines 에 +1 이 붙었다',
+        fn.includes("const maxLines=Math.max(1,Math.ceil(words.length/_VF_MINW))+1;"), true);
+}
+
 sc.done();
