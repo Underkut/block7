@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-3  [production]  -->
+<!-- BLOCK7  v. 26-0819-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2404,6 +2404,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--tx3);margin:16px 0 7px;
 }
 .settings-subtitle:first-child{margin-top:0;}
+/* v26-0819-4, HB — 버튼 여러 개를 묶는 자리(뎁스2)는 이 정도로는 잘 안 나뉘어
+   보였다. 색·자간·여백은 그대로 두고 크기만 한 스텝 키운다. */
+.settings-subtitle.subtitle-lg{font-size:12.5px;}
 .settings-row{
   display:flex;align-items:center;gap:14px;
   padding:6px 0;
@@ -2824,7 +2827,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-3";
+const APP_VERSION = "v. 26-0819-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3498,7 +3501,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">보여줄 항목</div>
 
-        <div class="settings-subtitle" data-lv="mp">풀 모드</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="mp">풀 모드</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
           <button class="preset-btn on" id="setVerseFullCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseFullTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTopic',this.classList.toggle('on'))">소주제</button>
@@ -3506,7 +3509,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="preset-btn on" id="setVerseFullTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTag',this.classList.toggle('on'))">태그</button>
         </div>
 
-        <div class="settings-subtitle" data-lv="p">스닉픽 서식</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="p">스닉픽 서식</div>
         <div style="display:flex;gap:8px;" data-lv="p">
           <div id="vsneak-style-a" onclick="setVerseSneakStyle('color')"
             style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--bd2);cursor:pointer;background:var(--s2);text-align:center;">
@@ -3519,7 +3522,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           </div>
         </div>
 
-        <div class="settings-subtitle" data-lv="mp">스닉픽 모드</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="mp">스닉픽 모드</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
           <button class="preset-btn on" id="setVerseSneakCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseSneakTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTopic',this.classList.toggle('on'))">소주제</button>
@@ -3529,7 +3532,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
         <div class="settings-row-desc" data-lv="mp" style="margin:6px 0 0;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요.</div>
 
-        <div class="settings-subtitle" data-lv="p">한 줄 최대 가로 폭</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="p">한 줄 최대 가로 폭</div>
         <div style="display:flex;align-items:center;gap:12px;" data-lv="p">
           <input type="range" class="uiscale-slider" id="setVerseSneakMaxW" min="300" max="1000" step="100" value="700"
             oninput="setVerseSneakMaxW(this.value)">
@@ -3588,7 +3591,7 @@ window._fbScriptsReady=new Promise(resolve=>{
              이지/미드는 아래 네 줄 자체가 안 보이니(data-lv="p"), 대신 이 소제목 오른쪽에
              무엇이 있는지 작은 아이콘으로만 미리 보여준다(v26-0819-3, HB 3-3). -->
         <div style="display:flex;align-items:center;gap:8px;margin:16px 0 7px;">
-          <div class="settings-subtitle" style="margin:0;flex:1;">할일뷰에 표시</div>
+          <div class="settings-subtitle subtitle-lg" style="margin:0;flex:1;">할일뷰에 표시</div>
           <span data-lv="em" style="display:flex;gap:5px;color:var(--tx3);"><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg><svg width="8" height="9" viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" style="display:block;"><path d="M3 2h10a1 1 0 0 1 1 1v13l-6-4-6 4V3a1 1 0 0 1 1-1z"/></svg><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkOn" onchange="updateSetting('dviewMarkOn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
@@ -3821,19 +3824,19 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="p">
         <div class="settings-section-title">공유 이미지 크기</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀영역·위젯에서 공유할 때 쓰는 크기예요. 전체화면·타일뷰에서는 보던 화면 그대로 저장돼요.</div>
-        <div class="settings-subtitle">모바일</div>
+        <div class="settings-subtitle subtitle-lg">모바일</div>
         <div style="display:flex;gap:6px;">
           <button id="ssM_fhd" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','fhd')">FHD+</button>
           <button id="ssM_qhd" class="settings-btn on" style="flex:1;" onclick="setShareSize('mobile','qhd')">QHD+</button>
           <button id="ssM_4k" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','4k')">4K+</button>
         </div>
-        <div class="settings-subtitle">PC</div>
+        <div class="settings-subtitle subtitle-lg">PC</div>
         <div style="display:flex;gap:6px;">
           <button id="ssP_qhd" class="settings-btn" style="flex:1;" onclick="setShareSize('pc','qhd')">QHD</button>
           <button id="ssP_4k" class="settings-btn on" style="flex:1;" onclick="setShareSize('pc','4k')">4K</button>
           <button id="ssP_5k" class="settings-btn" style="flex:1;" onclick="setShareSize('pc','5k')">5K</button>
         </div>
-        <div class="settings-subtitle">SNS (정사각)</div>
+        <div class="settings-subtitle subtitle-lg">SNS (정사각)</div>
         <div style="display:flex;gap:6px;">
           <button id="ssS_1080" class="settings-btn" style="flex:1;" onclick="setShareSize('sns','1080')">1080</button>
           <button id="ssS_1920" class="settings-btn on" style="flex:1;" onclick="setShareSize('sns','1920')">1920</button>
@@ -3845,13 +3848,13 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">공유 텍스트</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">본문·장절은 항상 포함돼요.</div>
-        <div class="settings-subtitle">추가 항목</div>
+        <div class="settings-subtitle subtitle-lg">추가 항목</div>
         <div style="display:flex;gap:8px;">
           <button id="txtCat" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclCat','txtCat')">대분류</button>
           <button id="txtTopic" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTopic','txtTopic')">소주제</button>
           <button id="txtTag" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTag','txtTag')">태그</button>
         </div>
-        <div class="settings-subtitle">장절 형식</div>
+        <div class="settings-subtitle subtitle-lg">장절 형식</div>
         <div style="display:flex;gap:8px;">
           <button id="txtRefShort" class="settings-btn on" style="flex:1;" onclick="setTxtRefStyle('short')">시 23:1</button>
           <button id="txtRefLong" class="settings-btn" style="flex:1;" onclick="setTxtRefStyle('long')">시편 23편 1절</button>
