@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0819-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-7";
+const APP_VERSION = "v. 26-0819-8";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8576,17 +8576,19 @@ const _VF_NO_TRANS=/(한|는|할|함|은|을|를|음|던|기|의|이|가|과|와
 const _VF_NOEND_WORD=/^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧)$/;
 // 형용사 어간 — 형용사 뒤에는 절대 줄바꿈하지 않는다
 const _VF_ADJ_STEM=/^(좋|나쁘|아름답|기쁘|슬프|높|낮|넓|좁|깊|얕|길|짧|많|적|크|작|밝|어둡|강하|약하|귀하|선하|악하|의롭|거룩하|영원하|온전하|완전하|충만하|풍성하|가난하|부요하|연약하|담대하|정직하|진실하|신실하|새롭|놀랍|두렵|즐겁|평안하|고요하|든든하|어리석|지혜롭|무겁|가볍|뜨겁|차갑|달|쓰)/;
-// ══════ "HB 줄바꿈 S2" — 실험: 확장 필수 행갈이 규칙 (v26-0819-6/7, HB) ══════
-// HB 요청 — 니·라·사·여·요·즉 으로 끝나면 반드시 행갈이. '라·요'는 원래
-// 종결어미로도 필수였지만 그쪽은 길이 3글자 이상 조건이 있어 "하라" 처럼
-// 짧은 낱말은 안 걸렸다 → HB 재지시로 S2 가 다루는 여섯 글자는 **길이 제한
-// 없이** 적용한다(v26-0819-7). (금지 쪽 '한·의·지·게'는 이미 기존 규칙에
-// 다 있어 손댈 게 없었다 — _VF_NO_TRANS·_VF_NO_AUX 참고)
+// ══════ "HB 줄바꿈 S2" — 실험: 확장 필수 행갈이 규칙 (v26-0819-6/7/8, HB) ══════
+// HB 요청 — 니·라·사·여·요·즉·고 로 끝나면 반드시 행갈이, 길이 제한 없음.
+// '라·요'는 원래 종결어미로도 필수였지만 그쪽은 길이 3글자 이상 조건이 있어
+// "하라" 처럼 짧은 낱말은 안 걸렸다 → HB 재지시로 S2 가 다루는 글자는 길이
+// 제한을 아예 안 둔다(v26-0819-7). '고' 추가, "따라"는 예외로 뺀다(v26-0819-8).
+// (금지 쪽 '한·의·지·게'는 이미 기존 규칙에 다 있어 손댈 게 없었다 —
+// _VF_NO_TRANS·_VF_NO_AUX 참고)
 // ⚠️ 운영에서 일정 기간 실사용해보고 판단하는 실험이다. HB 가 나중에
 //    "HB 줄바꿈 S2 취소해" 또는 "HB 줄바꿈 S2 이렇게 고쳐줘" 라고 하면 이
 //    블록을 찾으면 된다 — 취소는 아래 상수 하나만 false 로 바꾸면 즉시 된다.
 const _VF_EXP_BREAK_RULES=true;   // "HB 줄바꿈 S2" 켬/끔
-const _VF_EXP_END_MUST=/(니|라|사|여|요|즉)$/;   // "HB 줄바꿈 S2" 가 다루는 글자들 — 길이 제한 없음
+const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고)$/;   // "HB 줄바꿈 S2" 가 다루는 글자들 — 길이 제한 없음
+const _VF_EXP_EXCEPT=/^(따라)$/;   // "HB 줄바꿈 S2" 예외 — '라'로 끝나도 필수로 안 올린다
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'must' 필수 / 'ok' 권장 / 'soft' 중립 / 'no' 금지
 function _vfBreakClass(w,next){
@@ -8598,7 +8600,7 @@ function _vfBreakClass(w,next){
   if(_VF_NO_AUX.test(w))return 'no';                         // 보조적 연결어미
   if(/[어아]$/.test(w)&&next&&_VF_AUX_NEXT.test(next))return 'no'; // ~어 + 보조용언
   if(_VF_ADJ_STEM.test(w)&&_VF_CONN_OK.test(w))return 'no';  // 형용사 뒤
-  if(_VF_EXP_BREAK_RULES&&_VF_EXP_END_MUST.test(w))return 'must'; // "HB 줄바꿈 S2" — 길이 제한 없음
+  if(_VF_EXP_BREAK_RULES&&!_VF_EXP_EXCEPT.test(w)&&_VF_EXP_END_MUST.test(w))return 'must'; // "HB 줄바꿈 S2" — 길이 제한 없음, "따라" 예외
   if(w.length>=3&&_VF_END_MUST.test(w))return 'must';        // 종결어미 (한 글자 부사 '다' 오인 방지)
   if(w.length>=2&&_VF_CONN_OK.test(w))return 'ok';           // 연결어미(일반)
   if(/[,;]$/.test(w))return 'ok';
@@ -8617,8 +8619,16 @@ function _vfWrapFit(words,ctx,maxW){
   const INF=1e15;
   const best=new Array(n+1).fill(INF),prev=new Array(n+1).fill(-1);
   best[0]=0;
+  // ⚠️ v26-0819-8, HB 재신고 — i 의 시작을 j-_VF_MAXW 로 잘라내던 것을 없앴다.
+  //    '전성어미·조사·보조적 연결어미(no)'가 8단어 넘게 연달아 나오면(흔하다:
+  //    "이 둘이 서로 대적함으로 너희가 원하는 것을 하지 못하게 하려"처럼) 그 구간
+  //    안에는 끊을 자리가 아예 없어서, 예전엔 이 하드컷 때문에 DP 가 답을
+  //    못 찾고(best[n]=INF) must/no 규칙을 통째로 무시하는 안전망(폭 기준
+  //    단순 줄바꿈)으로 떨어졌다 — "니"가 필수인데도 안 끊긴 원인이 이거였다.
+  //    이제 단어 수 상한은 폭 검사(lw>maxW)에게 맡기고, _VF_MAXW 는 페널티로만
+  //    쓴다 — 진짜 못 끊는 구간에서도 DP 가 항상 답을 찾는다.
   for(let j=1;j<=n;j++){
-    for(let i=Math.max(0,j-_VF_MAXW);i<j;i++){
+    for(let i=0;i<j;i++){
       if(best[i]===INF)continue;
       const wc=j-i,last=j-1,isLast=(j===n);
       const lw=W(i,j);
@@ -8627,6 +8637,7 @@ function _vfWrapFit(words,ctx,maxW){
       let c=best[i];
       if(wc<_VF_MINW&&!isLast&&!shortOK[last])c+=400;  // 4단어 미만 (예외 자리는 무료)
       if(wc<_VF_MINW&&isLast)c+=90;                    // 마지막 줄은 관대하게
+      if(wc>_VF_MAXW)c+=(wc-_VF_MAXW)*140;              // 8단어 초과는 페널티(하드 컷 아님)
       if(!isLast){
         if(cls[last]==='must')c-=60;                   // 종결어미·인용동사 뒤에서 끊기를 선호
         else if(cls[last]==='ok')c+=15;
