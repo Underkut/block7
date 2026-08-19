@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0819-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2821,7 +2821,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-1";
+const APP_VERSION = "v. 26-0819-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3452,26 +3452,27 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="settings-close" onclick="closeVerseSettingsModal()">×</button>
     </div>
     <div class="settings-tab-bar" id="verseSettingsTabBar">
-      <button class="settings-tab on" onclick="switchVerseSettingsTab('general',this)">뷰</button>
+      <button class="settings-tab on" onclick="switchVerseSettingsTab('top',this)">상단 말씀</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('widget',this)">말씀 위젯</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('view',this)">뷰</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('alarm',this)">알림</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)">전체화면</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('share',this)">공유</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)">말씀 모음</button>
     </div>
     <div class="settings-body">
-      <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:5;">
+      <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:7;">
 
-      <div class="vsettings-tab-content settings-tab-content" id="vstab-general">
+      <!-- ═══ 상단 말씀 (v26-0819-2, 구글시트 '말씀설정창' 탭 기준 신설) ═══ -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-top">
 
-      <!-- 네비게이토 180 말씀 표시 -->
+      <!-- 뎁스1 -->
       <div class="settings-section" id="verseSettingsAnchor">
-        <div class="settings-row-text" style="margin-bottom:8px;">
-          <div class="settings-row-label">자동으로 다음 구절</div>
-          <div class="settings-row-desc">둘 다 꺼두면 직접 넘기거나 뽑은 구절이 그대로 유지돼요.</div>
-        </div>
+        <div class="settings-section-title">자동으로 다음 구절</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">둘 다 꺼두면 직접 넘기거나 뽑은 구절이 그대로 유지돼요.</div>
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">매일</div>
+            <div class="settings-row-label">매일</div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="setVerseBarAutoRotate" onchange="updateSetting('verseBarAutoRotate',this.checked)">
@@ -3480,7 +3481,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">매 시간구간</div>
+            <div class="settings-row-label">매 시간구간</div>
             <div class="settings-row-desc">예: 새벽 오전 점심 오후 저녁 밤</div>
           </div>
           <label class="settings-toggle">
@@ -3488,17 +3489,22 @@ window._fbScriptsReady=new Promise(resolve=>{
             <span class="settings-toggle-track"></span>
           </label>
         </div>
+      </div>
 
-        <div class="settings-subtitle">풀 모드에서 표시할 항목</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <!-- 뎁스1 (신규) — 풀/스닉픽 표시 항목을 한 제목 아래로 묶었다 -->
+      <div class="settings-section" data-lv="mp">
+        <div class="settings-section-title">보여줄 항목</div>
+
+        <div class="settings-subtitle" data-lv="mp">풀 모드</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
           <button class="preset-btn on" id="setVerseFullCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseFullTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseFullRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseFullTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTag',this.classList.toggle('on'))">태그</button>
         </div>
 
-        <div class="settings-subtitle">스닉픽 서식</div>
-        <div style="display:flex;gap:8px;">
+        <div class="settings-subtitle" data-lv="p">스닉픽 서식</div>
+        <div style="display:flex;gap:8px;" data-lv="p">
           <div id="vsneak-style-a" onclick="setVerseSneakStyle('color')"
             style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--bd2);cursor:pointer;background:var(--s2);text-align:center;">
             <span style="font-size:11px;font-weight:700;color:var(--ac);">하나님을 알아감</span><span style="font-size:11px;color:var(--tx3);"> · 예수님의 신성</span><br>
@@ -3510,27 +3516,33 @@ window._fbScriptsReady=new Promise(resolve=>{
           </div>
         </div>
 
-        <!-- 2-2: reordered 대분류/소주제/첫단어/구절 -->
-        <div class="settings-subtitle">스닉픽 모드에서 표시할 항목</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="settings-subtitle" data-lv="mp">스닉픽 모드</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
           <button class="preset-btn on" id="setVerseSneakCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseSneakTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseSneakFirstWord" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakFirstWord',this.classList.toggle('on'))">본문</button>
           <button class="preset-btn on" id="setVerseSneakRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseSneakTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTag',this.classList.toggle('on'))">태그</button>
         </div>
-        <div class="settings-row-desc" style="margin:6px 0 0;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요.</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:14px;">
-          <span style="font-size:12px;color:var(--tx2);flex:1;">한 줄 최대 가로 폭</span>
-          <div class="event-roll-wrap" style="width:78px;height:34px;">
-            <select id="setVerseSneakMaxW" class="event-roll-select" onchange="setVerseSneakMaxW(this.value)"></select>
-            <span class="event-roll-display" id="setVerseSneakMaxWDisplay" style="font-size:12px;">700</span>
-          </div>
-          <span style="font-size:12px;color:var(--tx3);flex-shrink:0;">px</span>
+        <div class="settings-row-desc" data-lv="mp" style="margin:6px 0 0;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요.</div>
+
+        <div class="settings-subtitle" data-lv="p">한 줄 최대 가로 폭</div>
+        <div style="display:flex;align-items:center;gap:12px;" data-lv="p">
+          <input type="range" class="uiscale-slider" id="setVerseSneakMaxW" min="300" max="1000" step="100" value="700"
+            oninput="setVerseSneakMaxW(this.value)">
+          <span id="setVerseSneakMaxWDisplay" style="font-size:12px;color:var(--tx2);min-width:52px;text-align:right;font-family:'IBM Plex Mono',monospace;">700px</span>
         </div>
-        <div class="settings-row-desc" style="margin:6px 0 0;">그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
-        <!-- 위젯(암송/좋아요/Deeper/Even Deeper 목록) 행에 표시할 항목 -->
-        <div class="settings-subtitle">말씀 위젯에서 보여줄 항목</div>
+        <div class="settings-row-desc" data-lv="p" style="margin:6px 0 0;">그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
+      </div>
+
+      </div><!-- /vstab-top -->
+
+      <!-- ═══ 말씀 위젯 (v26-0819-2 신설 — 뷰탭에서 옮겨 왔다) ═══ -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-widget">
+
+      <div class="settings-section" data-lv="mp">
+        <div class="settings-section-title">보여줄 항목</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">좋아요·암송·Deeper·Even Deeper 목록의 각 줄에 무엇을 보여줄지 골라요.</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="preset-btn on" id="setVerseWidgetCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseWidgetTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTopic',this.classList.toggle('on'))">소주제</button>
@@ -3538,68 +3550,76 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="preset-btn on" id="setVerseWidgetRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseWidgetTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTag',this.classList.toggle('on'))">태그</button>
         </div>
+      </div>
 
-        <!-- 말씀 위젯 글자 크기 — 1이 지금까지의 크기(기본) -->
-        <div class="settings-subtitle">말씀 위젯 글자 크기</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span style="font-size:12px;color:var(--tx2);flex:1;">본문</span>
-          <div style="display:flex;gap:6px;">
+      <div class="settings-section" data-lv="p">
+        <div class="settings-section-title">글자 크기</div>
+        <div class="settings-row">
+          <div class="settings-row-text"><div class="settings-row-label">본문</div></div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
             <button class="preset-btn on" id="setVWTextSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',1)">1</button>
             <button class="preset-btn" id="setVWTextSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',2)">2</button>
             <button class="preset-btn" id="setVWTextSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',3)">3</button>
           </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:12px;color:var(--tx2);flex:1;">장절</span>
-          <div style="display:flex;gap:6px;">
+        <div class="settings-row">
+          <div class="settings-row-text"><div class="settings-row-label">장절</div></div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
             <button class="preset-btn on" id="setVWRefSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',1)">1</button>
             <button class="preset-btn" id="setVWRefSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',2)">2</button>
             <button class="preset-btn" id="setVWRefSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',3)">3</button>
           </div>
         </div>
-
-
       </div>
 
-      <!-- ── M뷰 암송 표시 방식 ── -->
-      <div class="settings-section">
-        <div class="settings-section-title">월간 뷰 암송 표시</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰 날짜 칸에 암송 기록을 어떻게 표시할지 선택해요.</div>
-        <div style="display:flex;gap:8px;">
-          <!-- 2-1: bookmark icon instead of cross -->
-          <button id="mviewMemCross" class="settings-btn on" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;" onclick="updateSetting('mviewMemMode','cross')"><svg width="9" height="11" viewBox="0 0 14 18" fill="currentColor" stroke="none"><path d="M2 1h10a1 1 0 0 1 1 1v14l-6-4-6 4V2a1 1 0 0 1 1-1z"/></svg></button>
-          <button id="mviewMemAbbr" class="settings-btn" style="flex:1;" onclick="updateSetting('mviewMemMode','abbr')">약어</button>
-        </div>
-      </div>
+      </div><!-- /vstab-widget -->
+
+      <!-- ═══ 뷰 (순서: 할일뷰 → 월간뷰 → 태그 타일뷰) ═══ -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-view">
 
       <!-- ── 할일뷰 말씀 표시 (버튼탭에서 옮겨 옴 — 말씀 관련이라 여기가 맞다) ── -->
       <div class="settings-section">
         <div class="settings-section-title">할일뷰 말씀 표시</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">구간 제목 옆에 표시할 말씀 기록을 골라요. 암송은 구간별로, 나머지는 그날 첫 구간에 표시돼요.</div>
+        <!-- 전체 스위치(신규) — 아래 네 개의 켬/끔은 그대로 둔 채 통째로 보일지만 정한다 -->
         <div class="settings-row">
+          <div class="settings-row-text"><div class="settings-row-label">할일뷰에 표시</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="setDviewMarkOn" onchange="updateSetting('dviewMarkOn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div class="settings-row" data-lv="p" data-cond="dviewMark">
           <div class="settings-row-text"><div class="settings-row-label">좋아요</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkLike" onchange="updateSetting('dviewMarkLike',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
-        <div class="settings-row">
+        <div class="settings-row" data-lv="p" data-cond="dviewMark">
           <div class="settings-row-text"><div class="settings-row-label">암송</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkMem" onchange="updateSetting('dviewMarkMem',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
-        <div class="settings-row">
+        <div class="settings-row" data-lv="p" data-cond="dviewMark">
           <div class="settings-row-text"><div class="settings-row-label">Deeper</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkDeeper" onchange="updateSetting('dviewMarkDeeper',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
-        <div class="settings-row">
+        <div class="settings-row" data-lv="p" data-cond="dviewMark">
           <div class="settings-row-text"><div class="settings-row-label">Even Deeper</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkEven" onchange="updateSetting('dviewMarkEven',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
       </div>
 
-      <!-- ── 태그 목록 간추리기 (HB 14-1) — 타일뷰 좌상단 '제외' 와 같은 값 ── -->
+      <!-- ── M뷰 암송 표시 방식 ── -->
+      <div class="settings-section" data-lv="p">
+        <div class="settings-section-title">월간 뷰 암송 표시</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰 날짜 칸에 암송 기록을 어떻게 표시할지 선택해요.</div>
+        <div style="display:flex;gap:8px;">
+          <button id="mviewMemCross" class="settings-btn on" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;" onclick="updateSetting('mviewMemMode','cross')"><svg width="9" height="11" viewBox="0 0 14 18" fill="currentColor" stroke="none"><path d="M2 1h10a1 1 0 0 1 1 1v14l-6-4-6 4V2a1 1 0 0 1 1-1z"/></svg></button>
+          <button id="mviewMemAbbr" class="settings-btn" style="flex:1;" onclick="updateSetting('mviewMemMode','abbr')">약어</button>
+        </div>
+      </div>
+
+      <!-- ── 태그 타일뷰 간추리기 (HB 14-1) — 타일뷰 좌상단 '제외' 와 같은 값 ── -->
       <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">태그 목록</div>
+        <div class="settings-section-title">태그 타일뷰</div>
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">구절 적은 태그 빼기</div>
+            <div class="settings-row-label">구절 수량 적은 태그 감추기</div>
             <div class="settings-row-desc">타일뷰 좌상단 태그 목록에서 구절 수가 기준 이하인 태그를 빼요. 네비게이토 180 은 태그 400개 중 240개가 구절 하나뿐이라, 켜 두면 목록이 훨씬 짧아져요. 타일뷰의 '제외' 버튼과 같은 값이에요.</div>
           </div>
           <label class="settings-toggle"><input type="checkbox" id="setVgTagExclOn" onchange="updateSetting('vgTagExcludeOn',this.checked)"><span class="settings-toggle-track"></span></label>
@@ -3618,7 +3638,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
-            </div>
+      </div><!-- /vstab-view -->
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-alarm">
 
@@ -3627,10 +3647,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div class="settings-section-title">말씀 푸시 알림</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">앱을 닫아둬도 정해진 시각에 말씀이 도착해요. 홈 화면에 설치하고 알림을 허용해야 해요.</div>
 
-        <div class="settings-subtitle">어떤 순서로</div>
-        <div id="vpOrderRow" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
-
-        <div class="settings-row" style="margin-top:14px;">
+        <div class="settings-row">
           <div class="settings-row-text"><div class="settings-row-label">정해진 시각에 알림</div></div>
           <label class="settings-toggle"><input type="checkbox" id="vpTimesOn" onchange="setVersePush('timesOn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
@@ -3654,11 +3671,15 @@ window._fbScriptsReady=new Promise(resolve=>{
           <span style="font-size:11px;color:var(--tx3);">마다</span>
         </div>
 
-        <div class="settings-subtitle">요일</div>
-        <div id="vpDayRow" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
+        <div class="settings-subtitle" data-lv="mp">요일</div>
+        <div id="vpDayRow" data-lv="mp" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
         <div class="settings-row-desc" id="vpSummary" style="margin-top:10px;font-size:10px;font-family:'IBM Plex Mono',monospace;"></div>
 
-        <div class="settings-row" style="margin-top:14px;">
+        <!-- v26-0819-2 — 시트 '순서변경': 시각·간격·요일을 정한 뒤 맨 마지막에 고른다 -->
+        <div class="settings-subtitle" data-lv="p">어떤 순서로</div>
+        <div id="vpOrderRow" data-lv="p" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+
+        <div class="settings-row" id="vpDiagRow" style="margin-top:14px;">
           <div class="settings-row-text">
             <div class="settings-row-label">알림 진단 기록</div>
             <div class="settings-row-desc">알림을 눌렀는데 말씀 전체화면이 안 열릴 때, 그 순간 무슨 일이 있었는지 확인해요. 열어두면 저절로 새로고침돼요.</div>
@@ -3743,7 +3764,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- ── 전체화면 우측 카운터 집계 범위 ── -->
-      <div class="settings-section">
+      <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">반응 카운터</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀 전체화면 오른쪽의 좋아요·암송·Deeper·Even 횟수를 내 기록만 볼지, 모든 구독자 합계로 볼지 정해요.</div>
         <div style="display:flex;gap:8px;">
@@ -3753,7 +3774,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- ── Deeper·Even Deeper 링크를 열 브라우저 ── -->
-      <div class="settings-section">
+      <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">링크 열기</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">Deeper 를 눌렀을 때 성경 사이트를 어디서 열지 정해요. 홈 화면에 설치한 앱에서만 적용되고, 고른 브라우저가 없으면 앱 안에서 열려요. (Even Deeper 는 ChatGPT 앱으로 이어져야 해서 이 설정을 따르지 않아요)</div>
         <div style="display:flex;gap:8px;">
@@ -3767,8 +3788,8 @@ window._fbScriptsReady=new Promise(resolve=>{
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-share">
 <!-- ── 공유 이미지 ── -->
-      <div class="settings-section">
-        <div class="settings-section-title">공유 이미지</div>
+      <div class="settings-section" data-lv="mp">
+        <div class="settings-section-title">공유 이미지 요소</div>
         <div class="settings-row-desc" style="margin-bottom:10px;">이미지 카드에 넣을 항목을 골라요. 버튼이 놓인 자리가 이미지에서 그것이 나오는 자리예요. 강조는 '전체화면' 탭에서 정한 그대로 들어가요.</div>
         <!-- 미리보기를 가운데 두고 네 귀퉁이에 버튼 — 어디에 나오는지 눈으로 알 수 있게 -->
         <div class="img-corners">
@@ -3789,22 +3810,22 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- ── 공유 이미지 크기 ── -->
-      <div class="settings-section">
+      <div class="settings-section" data-lv="p">
         <div class="settings-section-title">공유 이미지 크기</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀영역·위젯에서 공유할 때 쓰는 크기예요. 전체화면·타일뷰에서는 보던 화면 그대로 저장돼요.</div>
-        <div class="settings-row-desc" style="margin:6px 0 5px;">모바일</div>
+        <div class="settings-subtitle">모바일</div>
         <div style="display:flex;gap:6px;">
           <button id="ssM_fhd" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','fhd')">FHD+</button>
           <button id="ssM_qhd" class="settings-btn on" style="flex:1;" onclick="setShareSize('mobile','qhd')">QHD+</button>
           <button id="ssM_4k" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','4k')">4K+</button>
         </div>
-        <div class="settings-row-desc" style="margin:12px 0 5px;">PC</div>
+        <div class="settings-subtitle">PC</div>
         <div style="display:flex;gap:6px;">
           <button id="ssP_qhd" class="settings-btn" style="flex:1;" onclick="setShareSize('pc','qhd')">QHD</button>
           <button id="ssP_4k" class="settings-btn on" style="flex:1;" onclick="setShareSize('pc','4k')">4K</button>
           <button id="ssP_5k" class="settings-btn" style="flex:1;" onclick="setShareSize('pc','5k')">5K</button>
         </div>
-        <div class="settings-row-desc" style="margin:12px 0 5px;">SNS (정사각)</div>
+        <div class="settings-subtitle">SNS (정사각)</div>
         <div style="display:flex;gap:6px;">
           <button id="ssS_1080" class="settings-btn" style="flex:1;" onclick="setShareSize('sns','1080')">1080</button>
           <button id="ssS_1920" class="settings-btn on" style="flex:1;" onclick="setShareSize('sns','1920')">1920</button>
@@ -3813,15 +3834,16 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- ── 공유 텍스트 ── -->
-      <div class="settings-section">
+      <div class="settings-section" data-lv="mp">
         <div class="settings-section-title">공유 텍스트</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">본문·장절은 항상 포함돼요. 추가로 넣을 항목을 골라요.</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">본문·장절은 항상 포함돼요.</div>
+        <div class="settings-subtitle">추가 항목</div>
         <div style="display:flex;gap:8px;">
           <button id="txtCat" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclCat','txtCat')">대분류</button>
           <button id="txtTopic" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTopic','txtTopic')">소주제</button>
           <button id="txtTag" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTag','txtTag')">태그</button>
         </div>
-        <div class="settings-row-desc" style="margin:12px 0 6px;">장절 형식</div>
+        <div class="settings-subtitle">장절 형식</div>
         <div style="display:flex;gap:8px;">
           <button id="txtRefShort" class="settings-btn on" style="flex:1;" onclick="setTxtRefStyle('short')">시 23:1</button>
           <button id="txtRefLong" class="settings-btn" style="flex:1;" onclick="setTxtRefStyle('long')">시편 23편 1절</button>
@@ -3837,12 +3859,13 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
-      </div><!-- /vstab-general -->
+      </div><!-- /vstab-share -->
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-coll">
         <!-- 말씀 모음 -->
         <div class="settings-section">
-        <div class="settings-subtitle">말씀 모음 (어느 구절에서 뽑을지)</div>
+        <div class="settings-section-title">말씀 모음</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">선택한 말씀 모음에서 성경 구절을 뽑아서 알림, 말씀카드, 상단말씀에 사용합니다.</div>
         <div id="collBtnRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
 
         <!-- 말씀 목록 기간 기준 (말씀 모음 필터의 주간/월간/연간에도 적용) -->
@@ -7046,7 +7069,7 @@ function toggleVerseBarOn(){
 function openVerseSettingsModal(){
   renderVerseSettingsModal();
   applyVerseUiLevel();
-  switchVerseSettingsTab('general',null,'direct');
+  switchVerseSettingsTab('top',null,'direct');
   document.getElementById('verseSettingsOverlay').classList.add('open');
   _initVerseSettingsSwipe();
 }
@@ -7142,10 +7165,18 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();
   document.getElementById('verseSettingsOverlay').classList.remove('open');
 });
-const VERSE_SETTINGS_TABS=['general','alarm','full','share','coll'];
+const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll'];
+// 이 등급에서 보이는 탭들. 이지는 '말씀 위젯'·'공유' 탭 자체를 감춘다
+// (구글시트 '말씀설정창' 탭의 "(이지유저에는 안 보임)").
+// ⚠️ 일반설정창의 _stabList() 와 같은 함정 — 자리(idx)는 항상 **보이는 목록** 기준이다.
+function _vstabList(){
+  const lv=verseUiLevel();
+  return VERSE_SETTINGS_TABS.filter(id=>!((id==='widget'||id==='share')&&lv==='easy'));
+}
 let _currentVerseSettingsTabIdx=0;
 function switchVerseSettingsTab(id,btn,direction){
-  const idx=VERSE_SETTINGS_TABS.indexOf(id);
+  const list=_vstabList();
+  const idx=list.indexOf(id);
   if(idx<0)return;
   _currentVerseSettingsTabIdx=idx;
 
@@ -7153,7 +7184,8 @@ function switchVerseSettingsTab(id,btn,direction){
   if(track){
     track.style.transition=(direction!==undefined&&direction!=='direct')
       ? 'transform .22s cubic-bezier(.4,0,.2,1)' : 'none';
-    track.style.transform=`translateX(${-idx*(100/VERSE_SETTINGS_TABS.length)}%)`;
+    track.style.setProperty('--stab-count',list.length);
+    track.style.transform=`translateX(${-idx*(100/list.length)}%)`;
     const panel=document.getElementById('vstab-'+id);
     if(panel)setTimeout(()=>{ panel.scrollTop=0; },10);
   }
@@ -7169,7 +7201,7 @@ function _initVerseSettingsSwipe(){
   const body=document.querySelector('#verseSettingsPanel .settings-body');
   if(!body||body._swipeAttached)return;
   body._swipeAttached=true;
-  const N=()=>VERSE_SETTINGS_TABS.length;
+  const N=()=>_vstabList().length;   // 등급에 따라 탭 수가 달라진다
   const COMMIT=70;
   let sx=0,sy=0,dx=0,tracking=false,active=false,dir=0;
   const getTrack=()=>document.getElementById('verseSettingsTabTrack');
@@ -7217,14 +7249,14 @@ function _initVerseSettingsSwipe(){
     const target=resolveTarget(dir);
     const commit=target!==null&&Math.abs(dx)>=COMMIT;
     if(commit&&!target.wrap){
-      switchVerseSettingsTab(VERSE_SETTINGS_TABS[target.idx],null,dir);
+      switchVerseSettingsTab(_vstabList()[target.idx],null,dir);
     }else if(commit&&target.wrap){
       const d=dir;
       body.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
       body.style.transform=`translateX(${d>0?'-100%':'100%'})`;
       body.style.opacity='0';
       setTimeout(()=>{
-        switchVerseSettingsTab(VERSE_SETTINGS_TABS[target.idx],null,'direct');
+        switchVerseSettingsTab(_vstabList()[target.idx],null,'direct');
         body.style.transition='none';
         body.style.transform=`translateX(${d>0?'100%':'-100%'})`;
         body.offsetWidth;
@@ -7305,10 +7337,12 @@ function renderVerseSettingsModal(){
   //    같이 떠 있어서 일반 설정창을 먼저 한 번이라도 열면 여기도 우연히 맞았지만,
   //    말씀 설정을 먼저(또는 그것만) 열면 저장값과 무관하게 기본 HTML 그대로
   //    보였다(PC 에서 재신고, v26-0818-12). 여기서도 직접 맞춘다.
-  [['setDviewMarkLike','dviewMarkLike'],['setDviewMarkMem','dviewMarkMem'],
+  [['setDviewMarkOn','dviewMarkOn'],
+   ['setDviewMarkLike','dviewMarkLike'],['setDviewMarkMem','dviewMarkMem'],
    ['setDviewMarkDeeper','dviewMarkDeeper'],['setDviewMarkEven','dviewMarkEven']].forEach(([id,key])=>{
-    const e=el(id);if(e)e.checked=!!s[key];
+    const e=el(id);if(e)e.checked=(key==='dviewMarkOn')?(s[key]!==false):!!s[key];
   });
+  _syncVerseCondRows();
   if(typeof _vgSyncTagSettingsUI==='function')_vgSyncTagSettingsUI();
   const vwT=_vwSize('verseWidgetTextSize'),vwR=_vwSize('verseWidgetRefSize');
   [1,2,3].forEach(n=>{
@@ -7325,12 +7359,15 @@ let _verseAlarmTimer=null;
 // ── 말씀 푸시 알림 설정 ──
 // 실제 발송은 서버(Cloud Function)가 맡는다. 여기서는 설정만 저장하고,
 // 그 설정은 ST.settings 와 함께 users/{uid}/data/state 로 동기화된다.
+// ⚠️ 'bible'(성경순)은 v26-0819-2 에 더한 신규 옵션이다. 실제 정렬은 서버가 하므로
+//    서버(Cloud Function)가 이 값을 알아야 실제로 성경 순서대로 나간다.
 const VP_ORDERS=[
-  {v:'random',l:'랜덤'},{v:'recent',l:'최신순'},{v:'added',l:'등록순'},
+  {v:'random',l:'랜덤'},{v:'recent',l:'최신순'},{v:'added',l:'등록순'},{v:'bible',l:'성경순'},
   {v:'like',l:'좋아요순'},{v:'mem',l:'암송순'},{v:'deeper',l:'Deeper순'},{v:'even',l:'Even순'}
 ];
+// 시트 기본값 — 오전 6시부터 오후 6시까지 1시간마다
 const VP_DEFAULTS={enabled:false,order:'random',timesOn:false,times:['08:00'],
-  interval:{on:false,from:'09:00',to:'21:00',everyMin:180},days:[0,1,2,3,4,5,6]};
+  interval:{on:false,from:'06:00',to:'18:00',everyMin:60},days:[0,1,2,3,4,5,6]};
 // 간격 옵션 (분)
 const VP_EVERY=[10,15,20,30,60,120,180,240,360];
 function _vpEveryLabel(m){return m<60?m+'분':(m/60)+'시간';}
@@ -9011,7 +9048,7 @@ const SNEAK_MAXW_MIN=300, SNEAK_MAXW_MAX=1000, SNEAK_MAXW_STEP=100;
 // 기기 종류별 기본값. 폭은 screen.width 가 아니라 clientWidth 로 잰다(안드로이드).
 function _sneakMaxWDefault(){
   const w=document.documentElement.clientWidth||window.innerWidth||0;
-  if(w<768)return 300;        // 폰
+  if(w<768)return 400;        // 폰
   if(w<=1024)return 500;      // 태블릿
   return 700;                 // 데스크탑
 }
@@ -9026,19 +9063,15 @@ function _applySneakMaxW(){
   const line=document.getElementById('verseBarLine');
   if(line)line.style.setProperty('--sneak-maxw',_sneakMaxW()+'px');
 }
+// v26-0819-2 — 롤 피커에서 슬라이더로 바꿨다(구글시트 '방식: 슬라이더(변경)')
 function _initSneakMaxWPicker(){
-  const sel=document.getElementById('setVerseSneakMaxW');
-  if(!sel)return;
-  if(!sel._inited){
-    sel._inited=true;
-    let html='';
-    for(let n=SNEAK_MAXW_MIN;n<=SNEAK_MAXW_MAX;n+=SNEAK_MAXW_STEP)html+=`<option value="${n}">${n}</option>`;
-    sel.innerHTML=html;
-  }
+  const sl=document.getElementById('setVerseSneakMaxW');
+  if(!sl)return;
+  sl.min=SNEAK_MAXW_MIN;sl.max=SNEAK_MAXW_MAX;sl.step=SNEAK_MAXW_STEP;
   const cur=_sneakMaxW();
-  sel.value=String(cur);
+  sl.value=String(cur);
   const disp=document.getElementById('setVerseSneakMaxWDisplay');
-  if(disp)disp.textContent=cur;
+  if(disp)disp.textContent=cur+'px';
 }
 function setVerseSneakMaxW(val){
   let n=parseInt(val,10);
@@ -9046,7 +9079,7 @@ function setVerseSneakMaxW(val){
   n=Math.max(SNEAK_MAXW_MIN,Math.min(SNEAK_MAXW_MAX,n));
   try{localStorage.setItem(SNEAK_MAXW_KEY,String(n));}catch(e){}
   const disp=document.getElementById('setVerseSneakMaxWDisplay');
-  if(disp)disp.textContent=n;
+  if(disp)disp.textContent=n+'px';
   _applySneakMaxW();           // 설정창을 닫지 않아도 바로 반영
 }
 // 설정 → 말씀 설정 → 링크 열기: 사파리 / 크롬 / 앱 안에서
@@ -11638,7 +11671,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:true,verseSneakTopic:true,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:true,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:1,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'none',txtRefPos:'after',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:1,verseWidgetRefSize:1,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:1,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:1,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'color',linkOpenMode:'safari',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkLike:false,dviewMarkMem:true,dviewMarkDeeper:false,dviewMarkEven:false,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -16075,6 +16108,8 @@ function renderSecs(){
     const memBadgeWrap=document.createElement('span');
     memBadgeWrap.style.cssText='display:flex;align-items:center;gap:2px;flex-shrink:0;position:relative;top:1px;';
     const _s=ST.settings||{};
+    // 전체 스위치(신규 v26-0819-2) — 넷 각각의 켬/끔은 그대로 둔 채 통째로 감춘다
+    const _dvOn=_s.dviewMarkOn!==false;
     const _dk=tKey();
     const _cntFor=log=>((log[_dk]||[]).filter(en=>_entrySecId(en)===sec.id).length);
     const _addBadge=(svg,title,onClick)=>{
@@ -16084,18 +16119,18 @@ function renderSecs(){
       b.onclick=e=>{e.stopPropagation();onClick();};
       memBadgeWrap.appendChild(b);
     };
-    if(_s.dviewMarkLike!==false){
+    if(_dvOn&&_s.dviewMarkLike!==false){
       const n=_cntFor(getLikeLog());
       for(let i=0;i<n;i++)_addBadge('<svg width="9" height="9" viewBox="0 0 20 20" fill="var(--sun-red)" stroke="none"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg>','좋아요 기록 보기',()=>openVerseAggPopup('like'));
     }
-    if(_s.dviewMarkMem!==false){
+    if(_dvOn&&_s.dviewMarkMem!==false){
       memEntries.forEach(()=>_addBadge('<svg width="6" height="10" viewBox="0 0 14 18" fill="var(--tx3)" stroke="none"><path d="M2 1h10a1 1 0 0 1 1 1v14l-6-4-6 4V2a1 1 0 0 1 1-1z"/></svg>','암송 기록 보기',()=>showMemorizationPopup(tKey(),sec.id)));
     }
-    if(_s.dviewMarkDeeper!==false){
+    if(_dvOn&&_s.dviewMarkDeeper!==false){
       const n=_cntFor(getDeeperLog());
       for(let i=0;i<n;i++)_addBadge('<svg width="10" height="9" viewBox="0 0 20 20" fill="var(--tx3)" stroke="none"><path d="M2 5 L2 17 Q6 15.5 9.3 16.9 L9.3 4.9 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10.7 16.9 L10.7 4.9 Q14 3 18 5 Z"/></svg>','Deeper 기록 보기',()=>openVerseAggPopup('deeper'));
     }
-    if(_s.dviewMarkEven!==false){
+    if(_dvOn&&_s.dviewMarkEven!==false){
       const n=_cntFor(getEvenDeeperLog());
       for(let i=0;i<n;i++)_addBadge('<svg width="9" height="9" viewBox="0 0 20 20" fill="var(--tx3)" stroke="none"><path d="M4 4 L16 4 L10 10 Z"/><path d="M4 11 L16 11 L10 17 Z"/></svg>','Even Deeper 기록 보기',()=>openVerseAggPopup('even'));
     }
@@ -16193,7 +16228,7 @@ function _isDevAccount(){
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
   // 관리자 계정에서만 보이는 항목들 (일반 사용자에게는 필요 없거나 혼란만 줌)
-  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection']].forEach(([id])=>{
+  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody']].forEach(([id])=>{
     const el=document.getElementById(id);
     if(el)el.style.display=dev?'':'none';
   });
@@ -21459,6 +21494,7 @@ function updateSetting(key,value){
   ST.settings[key]=value;
   save();
   // Some settings need an immediate visual refresh
+  if(key==='dviewMarkOn')_syncVerseCondRows();
   if(key==='bigLimit'||key==='smallLimit'||key==='showSmallBlocks'||key.indexOf('dviewMark')===0){
     renderToday();
   }
@@ -22069,9 +22105,13 @@ function verseUiLevel(){
 }
 function setVerseUiLevel(v){
   if(!UI_LEVELS.includes(v)||v===verseUiLevel())return;
+  // ⚠️ 자리(idx)는 **보이는 탭 목록** 기준이라, 등급을 바꾸기 전에 탭 이름을 붙잡아 둔다
+  const curId=_vstabList()[_currentVerseSettingsTabIdx]||'';
   ST.settings.verseUiLevel=v;
   rawSave();
   applyVerseUiLevel();
+  const list=_vstabList();
+  switchVerseSettingsTab(list.includes(curId)?curId:list[0],null,'direct');
 }
 function applyVerseUiLevel(){
   _renderVerseUiLevelIcons();
@@ -22081,6 +22121,26 @@ function applyVerseUiLevel(){
     const b=document.getElementById(id);
     if(b)b.classList.toggle('on',lv===verseUiLevel());
   });
+  // 탭 바 — 감춘 탭은 버튼도 내용도 함께 빠져야 폭 계산이 맞는다
+  const vis=_vstabList();
+  const bar=document.getElementById('verseSettingsTabBar');
+  if(bar)[...bar.querySelectorAll('.settings-tab')].forEach((b,i)=>{
+    b.classList.toggle('lv-hide',!vis.includes(VERSE_SETTINGS_TABS[i]));
+  });
+  VERSE_SETTINGS_TABS.forEach(id=>{
+    const el=document.getElementById('vstab-'+id);
+    if(el)el.classList.toggle('lv-hide',!vis.includes(id));
+  });
+  const track=document.getElementById('verseSettingsTabTrack');
+  if(track)track.style.setProperty('--stab-count',vis.length);
+  _syncVerseCondRows();
+}
+// 말씀설정창의 조건부 줄 — data-cond="dviewMark" 는 '할일뷰에 표시'가 켜졌을 때만.
+// ⚠️ 등급(.lv-hide)과는 **다른 클래스**(.cond-hide)를 써야 둘 중 하나만 풀려도 안 보인다.
+function _syncVerseCondRows(){
+  const on=(ST.settings||{}).dviewMarkOn!==false;
+  document.querySelectorAll('#verseSettingsPanel [data-cond="dviewMark"]')
+    .forEach(el=>el.classList.toggle('cond-hide',!on));
 }
 // ── "앞의 스위치를 켰을 때만 나오는" 줄들 ──
 //   data-notif-sub="on"       → 하루 할일 보고를 켰을 때만
