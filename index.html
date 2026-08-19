@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0819-4  [production]  -->
+<!-- BLOCK7  v. 26-0819-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2405,8 +2405,17 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 .settings-subtitle:first-child{margin-top:0;}
 /* v26-0819-4, HB — 버튼 여러 개를 묶는 자리(뎁스2)는 이 정도로는 잘 안 나뉘어
-   보였다. 색·자간·여백은 그대로 두고 크기만 한 스텝 키운다. */
+   보였다. 색·자간·여백은 그대로 두고 크기만 한 스텝 키운다.
+   ⚠️ v26-0819-5 로 말씀설정창은 아래 규칙에 덮여 사실상 안 쓰인다 — 그래도
+   subtitle-lg 클래스 자체는 지우지 않는다(마크업 재사용 대비). */
 .settings-subtitle.subtitle-lg{font-size:12.5px;}
+/* v26-0819-5, HB — 말씀설정창의 뎁스2 소제목은 일반 소제목(굵고 자간 넓은
+   라벨 서식)이 아니라, 항목 이름과 같은 가늘고 수수한 서식으로 통일한다
+   ('매일'·'매 시간구간' 처럼). #verseSettingsPanel 로 범위를 좁혀 일반설정창의
+   소제목 서식(제목>항목 이름>소제목 3단 스텝, test_0818hier.js)은 그대로 둔다. */
+#verseSettingsPanel .settings-subtitle{
+  font-size:13px;font-weight:500;letter-spacing:0;color:var(--tx2);
+}
 .settings-row{
   display:flex;align-items:center;gap:14px;
   padding:6px 0;
@@ -2827,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0819-4";
+const APP_VERSION = "v. 26-0819-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
