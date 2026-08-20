@@ -55,7 +55,7 @@ console.log('시나리오 1 — 이름 붙은 실험 플래그로 감싸져 있�
 
 console.log('\n시나리오 2 — DP: forced 지점은 폭·비용과 무관하게 무조건 끊는다(v26-0819-9)');
 {
-  const fn = slice('function _vfWrapFit(words,ctx,maxW){', '\n  let {best,prev}=solve(true,false);');
+  const fn = slice('function _vfWrapFit(words,ctx,maxW){', '\n  // 시도 순서');
   sc.eq("금지(no) 판정 뒤에 forced 하드 블록이 있다 — 지나치는 후보 자체를 무효화",
         fn.includes("for(let k=i;k<last;k++)if(cls[k]==='forced'){hasForced=true;break;}") &&
         fn.includes('if(hasForced)continue;'), true);
@@ -66,20 +66,25 @@ console.log('\n시나리오 2 — DP: forced 지점은 폭·비용과 무관하�
         fn.includes('for(let i=0;i<j;i++){') && fn.includes('if(wc>_VF_MAXW)c+=(wc-_VF_MAXW)*140;'), true);
 }
 
-console.log('\n시나리오 2-1 — 폭·no 검사는 3단계(strict → 폭 페널티 → no 도 페널티)로 재시도한다(v26-0820-1)');
+console.log('\n시나리오 2-1 — 시도 순서: 폭을 넘기느니 옛 엔진 선호를 먼저 푼다 (v26-0820-4)');
 {
   const fn = slice('function _vfWrapFit(words,ctx,maxW){', '\n  const lines=[],lineForced=[];let j=n;');
-  sc.eq('strict·relaxNo 두 매개변수를 받는다', fn.includes('function solve(strict,relaxNo){'), true);
-  sc.eq('strict 일 때만 폭을 하드 컷한다', fn.includes('if(strict&&lw>maxW&&wc>1)continue;'), true);
-  sc.eq('relaxNo 가 아니면 no 자리는 여전히 하드 금지',
-        fn.includes('if(isNoSpot&&!relaxNo)continue;'), true);
-  sc.eq('relaxNo 이면 no 자리는 무거운 페널티로만 낮춘다',
-        fn.includes('if(isNoSpot&&relaxNo)c+=5000;'), true);
-  sc.eq('1차 실패하면 폭 페널티로 2차 시도',
-        fn.includes('if(best[n]===INF)({best,prev}=solve(false,false));'), true);
-  sc.eq('2차도 실패하면 no 까지 페널티로 낮춰 3차 시도',
-        fn.includes('if(best[n]===INF)({best,prev}=solve(false,true));'), true);
-  sc.eq('세 시도 모두 같은 solve 함수를 재사용한다(hasForced 하드 블록은 한 곳)',
+  sc.eq('solve 가 strict·relaxNo·relaxExp 세 가지를 받는다',
+        fn.includes('function solve(strict,relaxNo,relaxExp){'), true);
+  sc.eq("'끊지 말라'를 HB 2-1(hardNo)와 옛 엔진 선호(softNo)로 나눠 둔다",
+        fn.includes('const isHardNo=!isLast&&hardNo[last];') && fn.includes('const isNoSpot=!isLast&&softNo[last];'), true);
+  sc.eq('① 전부 지키는 시도가 먼저', fn.includes('let {best,prev}=solve(true,false,false);'), true);
+  sc.eq('② 폭은 지킨 채 옛 엔진 선호만 푼다 (폭 넘김보다 낫다)',
+        fn.includes('if(best[n]===INF)({best,prev}=solve(true,true,false));'), true);
+  sc.eq('③ 그래도 안 되면 폭을 푼다',
+        fn.includes('if(best[n]===INF)({best,prev}=solve(false,true,false));'), true);
+  sc.eq('④ HB 2-1 은 맨 마지막에만 푼다',
+        fn.includes('if(best[n]===INF)({best,prev}=solve(false,true,true));'), true);
+  sc.eq('②가 ③보다 먼저 온다(순서가 핵심)',
+        fn.indexOf('solve(true,true,false)') < fn.indexOf('solve(false,true,false)'), true);
+  sc.eq('HB 2-1 을 어기는 값이 옛 엔진 선호를 어기는 값보다 훨씬 크다',
+        fn.includes('c+=200000;') && fn.includes('c+=5000;'), true);
+  sc.eq('네 시도 모두 같은 solve 함수를 재사용한다(forced 하드 블록은 한 곳)',
         fn.match(/if\(hasForced\)continue;/g).length===1, true);
 }
 
@@ -163,8 +168,8 @@ console.log('\n시나리오 3-2 — 외톨이 줄(1·2단어) 보정 — 실제 
 console.log('\n시나리오 3-3 — 2-2 예외: "~게" 뒤가 "하려 함이니라" 로 이어지면 금지를 풀어준다 (v26-0819-12, HB 2-2)');
 {
   const fn = slice('function _vfWrapFit(words,ctx,maxW){', '\n  const lines=[],lineForced=[];let j=n;');
-  sc.eq('_vfGeException 을 no 판정 예외로 쓴다',
-        fn.includes('const isNoSpot=!isLast&&cls[last]===\'no\'&&!_vfGeException(words[last],words[last+1],words[last+2]);'), true);
+  sc.eq('_vfGeException 을 2-1(hardNo) 예외로 쓴다',
+        SRC.includes('&&!_vfGeException(words[i],words[i+1],words[i+2]));'), true);
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
   eval(m[0]);
   const ctx={measureText:(t)=>({width:t.length*12})};
@@ -201,16 +206,22 @@ console.log('\n시나리오 3-5 — 1-2-2: 필수 줄바꿈으로 생긴 두 줄
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
   eval(m[0]);
   sc.eq('두 줄 합이 14자 이하면 합친다',
-        JSON.stringify(_vfDemoteShortForced(['오늘 하였으니','감사하라'],[true,false])),
+        JSON.stringify(_vfDemoteShortForced(['오늘 하였으니','감사하라'],['letter',''])),
         JSON.stringify(['오늘 하였으니 감사하라']));
   sc.eq('14자를 넘으면 그대로 둔다',
-        JSON.stringify(_vfDemoteShortForced(['오늘 우리가 여기 모여서 하였으니','다함께 감사하며 찬양하라'],[true,false])),
+        JSON.stringify(_vfDemoteShortForced(['오늘 우리가 여기 모여서 하였으니','다함께 감사하며 찬양하라'],['letter',''])),
         JSON.stringify(['오늘 우리가 여기 모여서 하였으니','다함께 감사하며 찬양하라']));
   sc.eq('"헛되고"+"헛되며" 는 14자 이하여도 예외로 항상 나눈다(1-2-2-0)',
-        JSON.stringify(_vfDemoteShortForced(['모든 것이 헛되고','헛되며'],[true,false])),
+        JSON.stringify(_vfDemoteShortForced(['모든 것이 헛되고','헛되며'],['letter',''])),
         JSON.stringify(['모든 것이 헛되고','헛되며']));
+  sc.eq('1-2(부사구)가 세운 줄은 14자 이하여도 되돌리지 않는다 — 1-2-2-1 은 1-1 전용',
+        JSON.stringify(_vfDemoteShortForced(['은혜로 말미암아','우리가 받았다'],['phrase',''])),
+        JSON.stringify(['은혜로 말미암아','우리가 받았다']));
+  sc.eq('1-3(부사절)이 세운 줄도 되돌리지 않는다',
+        JSON.stringify(_vfDemoteShortForced(['그가 말함으로','내가 들었다'],['clause',''])),
+        JSON.stringify(['그가 말함으로','내가 들었다']));
   sc.eq('forced 로 끝난 줄이 아니면 손대지 않는다',
-        JSON.stringify(_vfDemoteShortForced(['짧은 줄','짧은 줄2'],[false,false])),
+        JSON.stringify(_vfDemoteShortForced(['짧은 줄','짧은 줄2'],['',''])),
         JSON.stringify(['짧은 줄','짧은 줄2']));
 }
 
@@ -265,9 +276,9 @@ console.log('\n시나리오 6 — 4번(외톨이 보정)은 1·2·3·5번 하드
 {
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
   eval(m[0]);
-  sc.eq('_vfCanBreakAt 로 자리 검사를 한다', SRC.includes('function _vfCanBreakAt(words,cls,p){'), true);
-  sc.eq('_vfFixWidow 가 words·cls 를 넘겨받는다',
-        SRC.includes('return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls);'), true);
+  sc.eq('_vfCanBreakAt 로 자리 검사를 한다', SRC.includes('function _vfCanBreakAt(words,cls,p,hardNo){'), true);
+  sc.eq('_vfFixWidow 가 words·cls·hardNo 를 넘겨받는다',
+        SRC.includes('return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls,hardNo);'), true);
   sc.eq('관형형을 주어에서 걸러내는 _vfIsSubject 가 있다', SRC.includes('function _vfIsSubject(w){'), true);
   sc.eq("'있는'은 주어가 아니다(관형형)", _vfIsSubject('있는'), false);
   sc.eq("'지은'도 주어가 아니다(관형형)", _vfIsSubject('지은'), false);
@@ -301,7 +312,8 @@ console.log('\n시나리오 7 — 6번(신규): 부사구가 공백 제외 10자
 {
   sc.eq('_VF_ADV_END 종료 표현 목록', SRC.includes('const _VF_ADV_END=/(안에서는|안에서|'), true);
   sc.eq('기준 글자수 10', SRC.includes('const _VF_ADV_MIN=10;'), true);
-  sc.eq('cls 계산 뒤에 6번을 덮어쓴다', SRC.includes('_vfApplyAdvRule(words,cls);'), true);
+  sc.eq('cls 계산 뒤에 1-2 를 덮어쓴다', SRC.includes('_vfApplyAdvRule(words,cls,fk);'), true);
+  sc.eq('1-3(부사절)도 이어서 적용한다', SRC.includes('_vfApplyClauseRule(words,cls,fk);'), true);
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
   eval(m[0]);
   const ctx={measureText:(t)=>({width:t.length*14})};
@@ -321,10 +333,47 @@ console.log('\n시나리오 7 — 6번(신규): 부사구가 공백 제외 10자
         JSON.stringify(run('주 안에서 항상 기뻐하라')),
         JSON.stringify(['주 안에서 항상 기뻐하라']));
   // 폭과 무관하게 항상 같은 자리(하드 규칙이므로)
+  // 1-2 가 요구하는 건 "부사구 **뒤**에서 끊는다" 하나다. 폭이 아주 좁으면 부사구
+  // 안이 갈라질 수는 있지만(폭을 넘겨 브라우저에 맡기는 것보다 낫다), '말미암아'가
+  // 줄 끝에 온다는 것만은 폭과 무관하게 항상 지켜져야 한다.
   [200,300,400,700,1200].forEach(w=>{
-    sc.eq(`maxW=${w}: 6번은 폭과 무관하게 같은 자리에서 끊는다`,
-          run('그의 풍성한 은혜로 말미암아 우리가 구속을 받았으니',w)[0], '그의 풍성한 은혜로 말미암아');
+    const ls=run('그의 풍성한 은혜로 말미암아 우리가 구속을 받았으니',w);
+    sc.eq(`maxW=${w}: 1-2 — '말미암아'가 줄 끝에 온다(폭과 무관)`,
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('말미암아')), true);
   });
+  // 넉넉한 폭에서는 부사구가 통째로 첫 줄이 된다
+  sc.eq('넉넉한 폭에서는 부사구가 통째로 한 줄',
+        run('그의 풍성한 은혜로 말미암아 우리가 구속을 받았으니',400)[0], '그의 풍성한 은혜로 말미암아');
+}
+
+console.log('\n시나리오 8 — 1-3(신규): 자체 주어를 가진 부사절(10자 이상)은 통째로 묶는다 (v26-0820-4, HB 1-3)');
+{
+  sc.eq('_VF_CLAUSE_END 종료 표현(함으로·으므로·므로)',
+        SRC.includes('const _VF_CLAUSE_END=/(함으로|으므로|므로)$/;'), true);
+  sc.eq('기준 글자수 10', SRC.includes('const _VF_CLAUSE_MIN=10;'), true);
+  sc.eq('자체 주어가 없으면 대상이 아니다(-1 반환)', SRC.includes('if(!seen)return -1;'), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  // HB 예시 그대로 — "이 둘이 서로 대적함으로"(10자)는 갈라지지 않고, 그 뒤에서 끊긴다
+  const raw='육체의 소욕은 성령을 거스르고 성령은 육체를 거스르나니 이 둘이 서로 대적함으로 너희가 원하는 것을 하지 못하게 하려 함이니라';
+  const words=raw.split(' ');
+  [12,14,16,18,20].forEach(cw=>{
+    const ctx={measureText:t=>({width:[...t].reduce((a,c)=>a+(/\s/.test(c)?cw*0.4:cw),0)})};
+    const lines=_vfWrapFit(words,ctx,360);
+    sc.eq(`글자폭 ${cw}: "이 둘이 서로 대적함으로"가 한 줄에 통째로 있다`,
+          lines.some(l=>l.includes('이 둘이 서로 대적함으로')), true);
+    sc.eq(`글자폭 ${cw}: 그 부사절 뒤에서 끊긴다`,
+          lines.some((l,i)=>i<lines.length-1&&l.endsWith('대적함으로')), true);
+  });
+  // 주어를 꾸미는 관형어('이')까지 끌어와야 10자가 된다 — 그게 HB 예시의 핵심
+  sc.eq('주어 앞 관형어까지 포함해서 센다', SRC.includes('_VF_NOEND_WORD.test(words[s-1])||/의$/.test(words[s-1])'), true);
+  // 자체 주어가 없으면 1-3 이 아니다 (10자가 넘어도 강제하지 않는다)
+  {
+    const ctx={measureText:t=>({width:t.length*14})};
+    const ls=_vfWrapFit('사랑하고 섬기며 수고하므로 상을 받으리라'.split(' '),ctx,400);
+    sc.eq('자체 주어가 없으면 1-3 을 적용하지 않는다',
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('수고하므로')), false);
+  }
 }
 
 sc.done();

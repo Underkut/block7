@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0820-3  [production]  -->
+<!-- BLOCK7  v. 26-0820-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0820-3";
+const APP_VERSION = "v. 26-0820-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8627,9 +8627,10 @@ function _vfGeException(w,next,next2){return /게$/.test(w)&&next==='하려'&&ne
 const _VF_EXP_NO_END=/(한|의|지|게|가장|매우|내|모든)$/;
 // v26-0820-1, HB 5 — '때·만한' 추가.
 const _VF_NO_BEFORE=/^(위|아래|오른|왼|때|만한)/;
-// ══ v26-0820-2, HB 6 — 부사구가 공백 제외 10자 이상이면 그 뒤에서 반드시 끊는다 ══
+// ══ HB 1-2 — 부사구가 공백 제외 10자 이상이면 그 뒤에서 반드시 끊는다 ══
+// (v26-0820-2 에 '6번'으로 넣었고, v26-0820-4 에 HB 가 번호를 1-2 로 정리했다)
 // 부사구의 "끝"은 낱말 하나로 알아볼 수 있다(안에서, 말미암아, 위하여, 때에 …).
-// 시작은 거기서 앞으로 거슬러 올라가며 찾는다 — 주어(6-3)나 앞 절의 경계를
+// 시작은 거기서 앞으로 거슬러 올라가며 찾는다 — 주어(1-2-3)나 앞 절의 경계를
 // 만나면 멈춘다. 이 판정은 낱말 하나만 보는 _vfBreakClass 로는 할 수 없어서
 // (앞뒤 문맥이 필요하다) _vfWrapFit 에서 cls 를 계산한 뒤 덮어쓴다.
 const _VF_ADV_END=/(안에서는|안에서|가운데서|가운데에서|중에서|앞에서|뒤에서|위에서|아래에서|말미암아|위하여|인하여|힘입어|때에|후에|전에|동안에|향하여|대하여|관하여)$/;
@@ -8652,8 +8653,11 @@ function _vfAdvStart(words,cls,i){
   }
   return s;
 }
-// 6번을 적용해 cls 를 덮어쓴다 — 10자 이상인 부사구 뒤는 forced.
-function _vfApplyAdvRule(words,cls){
+// 1-2 를 적용해 cls 를 덮어쓴다 — 10자 이상인 부사구 뒤는 forced.
+// fk[i] 에는 그 자리가 **왜** forced 인지를 남긴다. 1-2-2-1(두 줄 합 14자 이하면
+// 합친다)은 HB 규칙상 **1-1 에만** 적용되는 예외라, 1-2·1-3 이 세운 줄바꿈까지
+// 되돌리면 안 되기 때문이다 (v26-0820-4 에 실제로 그 버그가 있었다).
+function _vfApplyAdvRule(words,cls,fk){
   if(!_VF_EXP_BREAK_RULES)return cls;
   for(let i=0;i<words.length-1;i++){
     if(cls[i]==='forced')continue;
@@ -8661,9 +8665,47 @@ function _vfApplyAdvRule(words,cls){
     const s=_vfAdvStart(words,cls,i);
     let len=0;
     for(let k=s;k<=i;k++)len+=words[k].replace(/\s/g,'').length;
-    if(len>=_VF_ADV_MIN)cls[i]='forced';
+    if(len>=_VF_ADV_MIN){cls[i]='forced';if(fk)fk[i]='phrase';}
   }
   return cls;
+}
+// ══ v26-0820-4, HB 1-3 — 자체 주어를 가진 부사절(10자 이상)은 통째로 묶는다 ══
+// 부사구(1-2)와 다른 점 두 가지:
+//  · 주어를 **포함**해서 센다 (1-2 는 주어를 뺀다)
+//  · 뒤에서 끊을 뿐 아니라 **안에서는 끊지 않는다**
+// 예) "이 둘이 서로 대적함으로" = 10자 → 통째로 한 줄에 두고 그 뒤에서 끊는다
+//     (예전엔 "이 둘이 / 서로 대적함으로 …" 처럼 주어만 떨어져 나왔다)
+const _VF_CLAUSE_END=/(함으로|으므로|므로)$/;
+const _VF_CLAUSE_MIN=10;
+// 부사절 끝 낱말 i 에 대해 시작 자리를 찾는다. 자체 주어가 없으면 -1(대상 아님).
+function _vfClauseStart(words,cls,i){
+  let s=i,seen=false;
+  while(s>0){
+    if(cls[s-1]==='forced')break;                 // 앞 절의 경계
+    s--;
+    if(_vfIsSubject(words[s])){seen=true;break;}   // 주어까지 포함하고 멈춘다
+  }
+  if(!seen)return -1;
+  // 주어를 꾸미는 관형어("이 둘이"의 '이', "그 사람의 마음이"의 '그')까지 끌어온다
+  while(s>0&&cls[s-1]!=='forced'&&(_VF_NOEND_WORD.test(words[s-1])||/의$/.test(words[s-1])))s--;
+  return s;
+}
+// 1-3 을 적용한다 — 끝은 forced 로, 내부는 '끊지 말 것'으로 표시해서 돌려준다.
+function _vfApplyClauseRule(words,cls,fk){
+  const block=new Array(words.length).fill(false);
+  if(!_VF_EXP_BREAK_RULES)return block;
+  for(let i=0;i<words.length-1;i++){
+    if(!_VF_CLAUSE_END.test(words[i]))continue;
+    const s=_vfClauseStart(words,cls,i);
+    if(s<0)continue;                               // 자체 주어가 없으면 부사절이 아니다
+    let len=0;
+    for(let k=s;k<=i;k++)len+=words[k].replace(/\s/g,'').length;
+    if(len<_VF_CLAUSE_MIN)continue;
+    for(let k=s;k<i;k++)if(cls[k]!=='forced')block[k]=true; // 안에서는 끊지 않는다
+    cls[i]='forced';                                        // 뒤에서 반드시 끊는다
+    if(fk)fk[i]='clause';
+  }
+  return block;
 }
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'forced' 무조건(S2, 폭 무관 하드 규칙) / 'must' 필수(선호) /
@@ -8693,9 +8735,24 @@ function _vfWrapFit(words,ctx,maxW){
   const n=words.length;
   if(!n)return[''];
   if(n===1)return[words[0]];
-  const cls=[],shortOK=[];
-  for(let i=0;i<n;i++){cls[i]=_vfBreakClass(words[i],words[i+1]);shortOK[i]=_vfShortOK(words[i]);}
-  _vfApplyAdvRule(words,cls);        // v26-0820-2, HB 6 — 긴 부사구 뒤를 forced 로 올린다
+  const cls=[],shortOK=[],fk=[];
+  for(let i=0;i<n;i++){
+    cls[i]=_vfBreakClass(words[i],words[i+1]);shortOK[i]=_vfShortOK(words[i]);
+    fk[i]=cls[i]==='forced'?'letter':'';   // 1-1 이 세운 자리
+  }
+  _vfApplyAdvRule(words,cls,fk);        // HB 1-2 — 긴 부사구 뒤를 forced 로 올린다
+  const clauseNo=_vfApplyClauseRule(words,cls,fk); // HB 1-3 — 긴 부사절: 뒤는 forced, 안은 금지
+  // ⚠️ v26-0820-4 — '끊지 말라'는 판정에는 두 종류가 섞여 있다.
+  //    ① HB 2-1 (한·의·지·게·가장·매우·내·모든) — S2 규칙이라 반드시 지킨다
+  //    ② 옛 엔진의 선호 (조사 '로/를/부터', 관형사 '우리' 등) — 어디까지나 선호다
+  //    S2 는 모든 줄바꿈 규칙 위의 최상위이므로, 둘이 부딪히면 ②가 먼저 물러난다.
+  //    (0820-3 에서 4번에 적용한 원칙을 DP 에도 똑같이 적용)
+  const hardNo=[],softNo=[];
+  for(let i=0;i<n;i++){
+    hardNo[i]=clauseNo[i]||(_VF_EXP_BREAK_RULES&&_VF_EXP_NO_END.test(words[i])
+              &&!_vfGeException(words[i],words[i+1],words[i+2]));
+    softNo[i]=cls[i]==='no'&&!hardNo[i];
+  }
   const wCache={};
   const W=(i,j)=>{const k=i+'_'+j;if(wCache[k]==null)wCache[k]=ctx.measureText(words.slice(i,j).join(' ')).width;return wCache[k];};
   const INF=1e15;
@@ -8723,7 +8780,12 @@ function _vfWrapFit(words,ctx,maxW){
   //    없어져 규칙을 통째로 버리는 안전망으로 떨어짐), 3차 시도로 'no' 도 하드
   //    금지 대신 무거운 페널티로 낮춰서 한 번 더 풀어본다. forced·pair-keep·5번은
   //    그대로 하드 유지 — 정말 최후에만 'no' 를 넘긴다.
-  function solve(strict,relaxNo){
+  // ⚠️ v26-0820-4, HB 재신고("간절히") — 시도 순서를 바꿨다. 예전엔 폭을 먼저
+  //    풀어줬는데(2차), 그러면 그 줄이 화면 밖으로 넘쳐 **브라우저가 규칙과 무관한
+  //    자리에서 다시 접는다**. 우리가 스스로 고르는 게 언제나 낫다. 그래서 이제
+  //    "옛 엔진의 선호(softNo)를 먼저 풀고, 그래도 안 되면 폭을 푼다" 순서다.
+  //    HB 2-1(hardNo)·1-1(forced)·2-2(쌍)·2-3(앞 금지)은 마지막 시도까지 하드로 지킨다.
+  function solve(strict,relaxNo,relaxExp){
     const best=new Array(n+1).fill(INF),prev=new Array(n+1).fill(-1);
     best[0]=0;
     for(let j=1;j<=n;j++){
@@ -8732,11 +8794,14 @@ function _vfWrapFit(words,ctx,maxW){
         const wc=j-i,last=j-1,isLast=(j===n);
         const lw=W(i,j);
         if(strict&&lw>maxW&&wc>1)continue;                // 폭 초과 (한 단어면 어쩔 수 없이 허용)
-        // v26-0819-12, HB 2-2 — '~게' 뒤가 "하려 함이니라" 로 바로 이어지면 금지를 풀어준다
-        const isNoSpot=!isLast&&cls[last]==='no'&&!_vfGeException(words[last],words[last+1],words[last+2]);
-        if(isNoSpot&&!relaxNo)continue;                    // 끊으면 안 되는 자리
-        if(!isLast&&_vfPairKeep(words[last],words[last+1]))continue; // "HB 줄바꿈 S2" 낱말 쌍은 붙여 둔다
-        // v26-0819-12, HB 5 — 위·아래·오른·왼 로 시작하는 낱말 앞은 끊지 않는다.
+        // HB 2-1 — S2 규칙이라 맨 마지막 시도에서만 푼다
+        const isHardNo=!isLast&&hardNo[last];
+        if(isHardNo&&!relaxExp)continue;
+        // 옛 엔진의 선호 — 폭을 넘기느니 이쪽을 먼저 푼다
+        const isNoSpot=!isLast&&softNo[last];
+        if(isNoSpot&&!relaxNo)continue;
+        if(!isLast&&_vfPairKeep(words[last],words[last+1]))continue; // HB 2-2 낱말 쌍은 붙여 둔다
+        // HB 2-3 — 위·아래·오른·왼·때·만한 로 시작하는 낱말 앞은 끊지 않는다.
         // ⚠️ 단, 바로 앞 낱말이 forced(S2 필수)이면 강제 쪽이 이긴다 — 안 그러면
         // "믿으며 위에" 처럼 forced 지점 바로 뒤가 위/아래/오른/왼 낱말인 문장은
         // 두 하드 규칙이 같은 자리를 놓고 충돌해 DP 가 아예 답을 못 찾고, 규칙을
@@ -8749,8 +8814,9 @@ function _vfWrapFit(words,ctx,maxW){
         for(let k=i;k<last;k++)if(cls[k]==='forced'){hasForced=true;break;}
         if(hasForced)continue;
         let c=best[i];
-        if(!strict&&lw>maxW&&wc>1)c+=(lw-maxW)*80;        // 2차 시도: 폭 초과는 페널티로만
-        if(isNoSpot&&relaxNo)c+=5000;                     // 3차 시도: 금지 자리를 최후 수단으로만
+        if(!strict&&lw>maxW&&wc>1)c+=(lw-maxW)*80;        // 폭 초과를 푼 시도에서는 페널티로
+        if(isNoSpot&&relaxNo)c+=5000;                     // 옛 엔진 선호를 어기는 값
+        if(isHardNo&&relaxExp)c+=200000;                  // HB 2-1 을 어기는 값 — 정말 최후에만
         if(wc<_VF_MINW&&!isLast&&!shortOK[last])c+=400;   // 4단어 미만 (예외 자리는 무료)
         if(wc<_VF_MINW&&isLast)c+=90;                     // 마지막 줄은 관대하게
         if(wc>_VF_MAXW)c+=(wc-_VF_MAXW)*140;               // 8단어 초과는 페널티(하드 컷 아님)
@@ -8767,9 +8833,12 @@ function _vfWrapFit(words,ctx,maxW){
     }
     return{best,prev};
   }
-  let {best,prev}=solve(true,false);
-  if(best[n]===INF)({best,prev}=solve(false,false));
-  if(best[n]===INF)({best,prev}=solve(false,true));
+  // 시도 순서 — 위로 갈수록 좋다. "폭을 넘겨 브라우저에 맡기는 것"보다
+  // "옛 엔진의 선호를 우리가 스스로 어기는 것"이 낫다(v26-0820-4).
+  let {best,prev}=solve(true,false,false);   // ① 전부 지킨다
+  if(best[n]===INF)({best,prev}=solve(true,true,false));  // ② 옛 엔진 선호만 푼다 (폭은 지킨다)
+  if(best[n]===INF)({best,prev}=solve(false,true,false)); // ③ 폭도 푼다
+  if(best[n]===INF)({best,prev}=solve(false,true,true));  // ④ HB 2-1 까지 푼다 (최후)
   if(best[n]===INF){                                   // 안전망: 폭 기준 단순 줄바꿈 (이론상 도달 안 함)
     const out=[];let cur=[];
     for(let i=0;i<n;i++){cur.push(words[i]);
@@ -8778,18 +8847,21 @@ function _vfWrapFit(words,ctx,maxW){
     return _vfFixWidow(out.length?out:[words.join(' ')]);
   }
   const lines=[],lineForced=[];let j=n;
-  while(j>0){const i=prev[j];lines.unshift(words.slice(i,j).join(' '));lineForced.unshift(cls[j-1]==='forced');j=i;}
-  return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls);
+  while(j>0){const i=prev[j];lines.unshift(words.slice(i,j).join(' '));lineForced.unshift(cls[j-1]==='forced'?fk[j-1]:'');j=i;}
+  return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls,hardNo);
 }
-// v26-0820-1, HB 1-2-2 — 필수(forced) 줄바꿈이 만든 두 줄의 글자 수 합이
-// _VF_EXP_SHORT_MERGE_MAX(14) 이하면 굳이 나누지 않고 도로 합친다.
-// "헛되고"+"헛되며" 는 예외로 글자 수와 무관하게 항상 나눈다(1-2-2-0).
+// HB 1-2-2-1 — **1-1** 이 만든 두 줄의 글자 수 합이 _VF_EXP_SHORT_MERGE_MAX(14)
+// 이하면 굳이 나누지 않고 도로 합친다. "헛되고"+"헛되며" 는 예외로 글자 수와
+// 무관하게 항상 나눈다(1-2-2-1-0).
+// ⚠️ v26-0820-4 — 이 예외는 HB 규칙상 **1-1 에만** 걸린다. 예전엔 forced 면 무조건
+//    되돌려서, 1-2(부사구)가 세운 "…은혜로 말미암아 /" 까지 도로 합쳐 버렸다.
+//    그래서 lineForced 에 참·거짓이 아니라 **'왜 forced 인지'**를 담아 구분한다.
 function _vfDemoteShortForced(lines,lineForced){
   if(lines.length<2)return lines;
   const out=lines.slice(),forced=lineForced.slice();
   const clen=s=>s.replace(/\s/g,'').length;
   for(let k=out.length-2;k>=0;k--){
-    if(!forced[k])continue;
+    if(forced[k]!=='letter')continue;                 // 1-1 이 세운 줄만 되돌린다
     if(clen(out[k])+clen(out[k+1])>_VF_EXP_SHORT_MERGE_MAX)continue;
     const wordsK=out[k].split(' '),wordsK1=out[k+1].split(' ');
     if(_vfIsHeotdoeException(wordsK[wordsK.length-1],wordsK1[0]))continue; // 1-2-2-0 예외
@@ -8826,9 +8898,10 @@ function _vfDemoteShortForced(lines,lineForced){
 //    자리(4-2-1 이 고른 주어 "집이" 뒤)까지 막혀 "아느니라"가 혼자 남았다.
 //    S2 는 모든 줄바꿈 규칙 위의 최상위 규칙이고 4번도 그 일부이므로, 4번을 막을 수
 //    있는 건 S2 자신의 1-1·2-1·3·5번뿐이다 — 옛 엔진의 선호는 4번을 못 이긴다.
-function _vfCanBreakAt(words,cls,p){
+function _vfCanBreakAt(words,cls,p,hardNo){
   if(!words||!cls)return true;                       // 검사할 재료가 없으면 통과
   if(p<0||p>=words.length-1)return false;
+  if(hardNo&&hardNo[p])return false;                 // 1-3 부사절 안 (또는 2-1)
   // 2-1 (2-2 예외는 풀어준다) — HB 목록: 한·의·지·게·가장·매우·내·모든
   if(_VF_EXP_NO_END.test(words[p])&&!_vfGeException(words[p],words[p+1],words[p+2]))return false;
   if(_vfPairKeep(words[p],words[p+1]))return false;                 // 3
@@ -8841,7 +8914,7 @@ function _vfSkipsForced(cls,from,to){
   for(let k=from;k<to;k++)if(cls[k]==='forced')return true;
   return false;
 }
-function _vfFixWidow(lines,words,cls){
+function _vfFixWidow(lines,words,cls,hardNo){
   if(lines.length<2)return lines;
   const out=lines.slice();
   const clen=s=>s.replace(/\s/g,'').length;
@@ -8886,7 +8959,7 @@ function _vfFixWidow(lines,words,cls){
       if(cut>=wordsA.length-1)continue;                // 이미 줄A 끝까지 왔으면 보정할 게 없다
     }
     // ⚠️ v26-0820-2/3 — 고른 자리가 S2 의 1-1·2-1·3·5번에 걸리면 보정하지 않는다.
-    if(!_vfCanBreakAt(words,cls,a0+cut))continue;
+    if(!_vfCanBreakAt(words,cls,a0+cut,hardNo))continue;
     // 새 줄A 안에서 forced 를 지나치게 되면(1-1 위반) 그것도 안 된다
     if(_vfSkipsForced(cls,a0,a0+cut))continue;
     // 새 줄B 안으로 forced 지점이 빨려들어가도 1-1 위반이다 (끝자리는 원래 경계라 제외)
@@ -9266,15 +9339,24 @@ function _vfLayoutText(){
   const LHe=_VF_LH*(1+(1-tScale)*0.72);
   const maxS=Math.max(9,Math.round(Math.max(22,Math.min(36,availW/11))*tScale));
   const minS=Math.max(8,Math.round(maxS*0.68));
-  let pick=null,smallest=null;
+  // ⚠️ v26-0820-4, HB 재신고("간절히") — 예전엔 **세로**만 봤다. 그런데 줄바꿈 계산의
+  //    2차 시도는 폭을 하드 컷이 아니라 페널티로만 쓰기 때문에(정말 못 끊는 구간이
+  //    있으면 그 한 줄은 폭을 넘긴다), 넘친 줄이 그대로 화면에 올라가면 **브라우저가
+  //    제 마음대로 다시 접는다**. 그때 접히는 자리는 우리 규칙과 아무 상관이 없다 —
+  //    고린도후서 5:2 에서 "…덧입기를 간절히" 줄이 넘쳐 "간절히"가 혼자 떨어진 게
+  //    이 경우였다. 이제 **가로로 넘치는 크기는 아예 고르지 않고** 한 단계씩 줄인다.
+  let pick=null,smallest=null,anyFit=null;
+  const overflows=(lines)=>lines.some(l=>ctx.measureText(l).width>availW+0.5);
   for(let size=maxS;size>=minS;size-=2){
     ctx.font=`${weight} ${size}px ${family}`;
     const lines=_vfWrapFit(words,ctx,availW);
     if(lines.length*size*LHe>availH)continue;      // 세로로 안 들어감
+    anyFit={size,lines};                            // 가로가 넘치더라도 세로는 들어간 것
+    if(overflows(lines))continue;                   // 가로로 넘침 — 더 작은 크기로
     smallest={size,lines};                          // 갱신하며 마지막이 가장 작은 것
     if(lines.length<=maxLines){pick={size,lines};break;}
   }
-  if(!pick)pick=smallest;
+  if(!pick)pick=smallest||anyFit;                   // 어떤 크기로도 가로가 안 맞으면 예전처럼
   if(!pick){                                        // 어느 크기도 세로로 안 들어갈 때
     ctx.font=`${weight} ${minS}px ${family}`;
     pick={size:minS,lines:_vfWrapFit(words,ctx,availW)};
@@ -14650,12 +14732,15 @@ function _vcLayoutOne(wEl){
   const LHe=_VF_LH*(1+Math.max(0,1-tScale)*0.72);
   const maxS=Math.max(9,Math.round(Math.max(11,Math.min(20,availW/15))*tScale));
   const minS=Math.max(8,Math.round(maxS*0.6));
+  // v26-0820-4 — 전체화면과 같은 이유로 **가로 넘침**도 함께 본다. 넘친 줄을
+  // 그대로 두면 브라우저가 규칙과 무관한 자리에서 다시 접는다.
   let pick=null;
   for(let size=maxS;size>=minS;size--){
     ctx.font=`${weight} ${size}px ${family}`;
     const lines=_vfWrapFit(words,ctx,availW);
     pick={size,lines};
-    if(lines.length*size*LHe<=availH)break;      // 세로로 들어가면 그 크기로 확정
+    const over=lines.some(l=>ctx.measureText(l).width>availW+0.5);
+    if(!over&&lines.length*size*LHe<=availH)break; // 가로·세로 다 들어가면 확정
   }
   if(!pick)return;
   // 가장 작은 크기로도 넘치면 들어가는 줄까지만 두고 …으로 줄인다
