@@ -40,8 +40,8 @@ console.log('시나리오 1 — 이름 붙은 실험 플래그로 감싸져 있�
   sc.eq('필수 규칙 글자 확장(v26-0820-1: 되·니와·랴·든지 추가)',
         SRC.includes('const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고|면서|며|되|니와|랴|든지)$/;'), true);
   sc.eq("'따라' 예외", SRC.includes('const _VF_EXP_EXCEPT=/^(따라)$/;'), true);
-  sc.eq("2-1 목록 전체를 한 곳에(_VF_EXP_NO_END: 한·의·지·게·가장·매우·내·모든)",
-        SRC.includes('const _VF_EXP_NO_END=/(한|의|지|게|가장|매우|내|모든)$/;'), true);
+  sc.eq("2-1 목록 전체를 한 곳에(v26-0820-6: '힌' 추가)",
+        SRC.includes('const _VF_EXP_NO_END=/(한|힌|의|지|게|가장|매우|내|모든)$/;'), true);
   sc.eq('1-2-2 짧은 합치기 상한(14) 상수', SRC.includes('const _VF_EXP_SHORT_MERGE_MAX=14;'), true);
   sc.eq('1-2-2-0 헛되고/헛되며 예외 함수', SRC.includes('function _vfIsHeotdoeException(w,next)'), true);
   const fn = slice('function _vfBreakClass(w,next){', '\n}');
@@ -413,6 +413,48 @@ console.log('\n시나리오 9 — 1-4(신규): 긴 목적어구(7자 이상) 뒤
     sc.eq(`글자폭 ${cw}: "너희가 원하는 것을" 뒤에서는 끊는다`,
           ls.some((l,i)=>i<ls.length-1&&l.endsWith('너희가 원하는 것을')), true);
   });
+}
+
+console.log('\n시나리오 10 — 2-4 · 3-1(신규): 과/와 로 이어지는 병렬항 (v26-0820-6)');
+{
+  sc.eq("'힌'이 2-1 금지 목록에 있다", true, /힌/.test(SRC.match(/const _VF_EXP_NO_END=[^;]+;/)[0]));
+  sc.eq('_VF_PAR_END 정의', SRC.includes('const _VF_PAR_END=/(과|와)$/;'), true);
+  sc.eq('3-1-1 결합 표현 제외 목록', SRC.includes('const _VF_PAR_NOT_NEXT=/^(같은|같이|같게|함께|더불어)/;'), true);
+  sc.eq('3개 이상부터 병렬로 본다', SRC.includes('const _VF_PAR_MIN_ITEMS=3;'), true);
+  sc.eq("병렬항 끝은 'par'(우선) 등급 — forced 가 아니다",
+        SRC.includes("cls[end]='par';"), true);
+  sc.eq("DP 에 'par' 비용이 있다(must 보다 약하게)", SRC.includes("cls[last]==='par')c-=25;"), true);
+  sc.eq("'par' 를 지나쳐도 벌점이 없다(매 항마다 끊지 않기 위해)",
+        /for\(let k=i;k<last;k\+\+\)if\(cls\[k\]==='must'\)c\+=280;/.test(SRC), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  const ctx=cw=>({measureText:t=>({width:[...t].reduce((a,c)=>a+(/\s/.test(c)?cw*0.4:cw),0)})});
+
+  // 3-1-1 — 결합 표현의 과/와 는 병렬항으로 세지 않는다
+  ['그와','이와','나와','주와'].forEach(w=>{
+    sc.eq(`3-1-1: '${w} 같은/함께' 는 병렬항이 아니다`, _vfIsParallelWord([w,'같은','것'],0), false);
+  });
+  sc.eq("'사랑과' 는 병렬항이다", _vfIsParallelWord(['사랑과','희락과','화평과'],0), true);
+
+  // 2-4 예시 — "술 취함과" 를 "술 / 취함과" 로 쪼개지 않는다
+  const t1='투기와 술 취함과 방탕함과 또 그와 같은 것들이라'.split(' ');
+  [80,110,140,180,220].forEach(w=>{
+    const ls=_vfWrapFit(t1,ctx(14),w);
+    sc.eq(`2-4 maxW=${w}: '술' 뒤에서 끊지 않는다(병렬항 내부)`,
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('술')), false);
+  });
+
+  // 3-1 예시 — 줄바꿈이 항상 병렬항 경계에 떨어진다
+  const t2='사랑과 희락과 화평과 오래 참음과 자비와 양선과 충성과 온유와 절제니';
+  const items=['사랑과','희락과','화평과','오래 참음과','자비와','양선과','충성과','온유와'];
+  [120,160,200,260,320,400,600].forEach(w=>{
+    const ls=_vfWrapFit(t2.split(' '),ctx(14),w);
+    sc.eq(`3-1 maxW=${w}: 모든 줄바꿈이 병렬항 경계에 떨어진다`,
+          ls.every((l,i)=>i===ls.length-1||items.some(it=>l.endsWith(it))), true);
+  });
+  // 매 항마다 강제로 끊지는 않는다 (넉넉한 폭에서는 여러 항이 한 줄에 모인다)
+  sc.eq('3-1: 넉넉한 폭에서는 여러 병렬항이 한 줄에 모인다(강제가 아니라 우선)',
+        _vfWrapFit(t2.split(' '),ctx(14),600).length < 9, true);
 }
 
 sc.done();
