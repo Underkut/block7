@@ -40,8 +40,8 @@ console.log('시나리오 1 — 이름 붙은 실험 플래그로 감싸져 있�
   sc.eq('필수 규칙 글자 확장(v26-0820-1: 되·니와·랴·든지 추가)',
         SRC.includes('const _VF_EXP_END_MUST=/(니|라|사|여|요|즉|고|면서|며|되|니와|랴|든지)$/;'), true);
   sc.eq("'따라' 예외", SRC.includes('const _VF_EXP_EXCEPT=/^(따라)$/;'), true);
-  sc.eq("2-1 접미사 금지 규칙(_VF_EXP_NO_END: 가장·매우·내·모든)",
-        SRC.includes('const _VF_EXP_NO_END=/(가장|매우|내|모든)$/;'), true);
+  sc.eq("2-1 목록 전체를 한 곳에(_VF_EXP_NO_END: 한·의·지·게·가장·매우·내·모든)",
+        SRC.includes('const _VF_EXP_NO_END=/(한|의|지|게|가장|매우|내|모든)$/;'), true);
   sc.eq('1-2-2 짧은 합치기 상한(14) 상수', SRC.includes('const _VF_EXP_SHORT_MERGE_MAX=14;'), true);
   sc.eq('1-2-2-0 헛되고/헛되며 예외 함수', SRC.includes('function _vfIsHeotdoeException(w,next)'), true);
   const fn = slice('function _vfBreakClass(w,next){', '\n}');
@@ -245,6 +245,9 @@ console.log('\n시나리오 4-1 — 실사용 재신고 문장(고린도후서 5
     const lines=_vfWrapFit(words,ctx,360);
     sc.eq(`글자폭 ${cw}: '영원한' 뒤에서 끊기지 않는다(2-1)`,
           lines.some((l,i)=>i<lines.length-1&&l.endsWith('영원한')), false);
+    // v26-0820-3 — "아느니라"가 혼자 남으면 안 된다(4-2-1 이 걸려야 한다)
+    sc.eq(`글자폭 ${cw}: 마지막 줄에 1단어만 남지 않는다(4-2-1)`,
+          lines[lines.length-1].split(' ').length===1, false);
   });
 }
 
@@ -272,12 +275,19 @@ console.log('\n시나리오 6 — 4번(외톨이 보정)은 1·2·3·5번 하드
   sc.eq("'너희는'은 주어다", _vfIsSubject('너희는'), true);
   sc.eq("'집이'는 주어다", _vfIsSubject('집이'), true);
 
-  // 실제 재신고 상황 그대로 — 4번이 "영원한" 뒤를 고르려 해도 2-1 에 막혀 물러난다
+  // 실제 재신고 상황 그대로.
+  //  · 0820-2 — 4번이 "영원한"(2-1 금지) 뒤를 고르던 걸 막았다.
+  //  · 0820-3 — 그런데 너무 넓게 막아서 4-2-1 이 고른 "집이" 뒤까지 막혔고,
+  //    "아느니라"가 혼자 남았다. 이제 S2 규칙만 따지므로 제대로 4-2-1 이 걸린다.
   const wordsAll='하늘에 있는 영원한 집이 우리에게 있는 줄 아느니라'.split(' ');
   const cls=wordsAll.map((w,i)=>_vfBreakClass(w,wordsAll[i+1]));
-  sc.eq('재신고 재현 — 4번이 2-1 을 어기지 않고 그대로 둔다',
+  sc.eq('재신고 재현 — 2-1("영원한")은 피하고 4-2-1("집이" 뒤)은 제대로 적용한다',
         JSON.stringify(_vfFixWidow(['하늘에 있는 영원한 집이 우리에게 있는 줄','아느니라'],wordsAll,cls)),
-        JSON.stringify(['하늘에 있는 영원한 집이 우리에게 있는 줄','아느니라']));
+        JSON.stringify(['하늘에 있는 영원한 집이','우리에게 있는 줄 아느니라']));
+  sc.eq("옛 엔진의 금지(조사 '이/가')는 4번을 못 막는다 — S2 가 최상위",
+        _vfCanBreakAt(wordsAll,cls,3), true);
+  sc.eq("S2 2-1('영원한')은 4번을 막는다",
+        _vfCanBreakAt(wordsAll,cls,2), false);
   // words·cls 를 안 넘기면 예전처럼(자리 검사 없이) 동작한다 — 4-2-1 예시는 그대로 통과
   sc.eq('4-2-1 예시는 여전히 정상 동작(자리 검사에 안 걸린다)',
         JSON.stringify(_vfFixWidow(['그리스도께서 우리를 자유롭게','하려고'])),

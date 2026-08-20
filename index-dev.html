@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0820-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0820-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0820-2";
+const APP_VERSION = "v. 26-0820-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8620,7 +8620,11 @@ function _vfGeException(w,next,next2){return /게$/.test(w)&&next==='하려'&&ne
 // 잡고 있지만 '가장·매우·내·모든'은 예전엔 낱말 전체가 일치할 때만(_VF_NOEND_WORD)
 // 걸렸다. "영원한"(한 자체가 아니라 한으로 "끝나는" 낱말)처럼 접미사로 걸려야
 // 하는데 안 걸리던 게 있었던 걸 계기로, S2 전용 접미사 규칙을 따로 둔다.
-const _VF_EXP_NO_END=/(가장|매우|내|모든)$/;
+// ⚠️ v26-0820-3 — 2-1 목록 전체를 여기 한 곳에 적는다. '한·의·지·게'는 옛 엔진
+//    (_VF_NO_TRANS/_VF_NO_AUX)도 마침 금지로 보고 있어서 예전엔 적지 않았는데,
+//    4번이 "S2 의 2-1 에 걸리나?"를 따져야 해서 목록이 명시적으로 필요해졌다.
+//    (_vfBreakClass 의 판정 결과는 예전과 똑같다 — 순서만 앞당겨졌다)
+const _VF_EXP_NO_END=/(한|의|지|게|가장|매우|내|모든)$/;
 // v26-0820-1, HB 5 — '때·만한' 추가.
 const _VF_NO_BEFORE=/^(위|아래|오른|왼|때|만한)/;
 // ══ v26-0820-2, HB 6 — 부사구가 공백 제외 10자 이상이면 그 뒤에서 반드시 끊는다 ══
@@ -8816,10 +8820,17 @@ function _vfDemoteShortForced(lines,lineForced){
 //
 // words·cls 는 DP 가 쓰던 것 그대로 넘겨받는다(자리 검사를 위해 필요).
 // 못 받으면(옛 호출부) 자리 검사 없이 예전처럼 동작한다.
+// ⚠️ v26-0820-3, HB 재신고 — 여기서 **S2 규칙만** 따진다. 0820-2 에서는 옛 엔진의
+//    금지 판정(cls==='no')을 통째로 봤는데, 그건 너무 넓었다. 옛 엔진은 조사 '이/가'
+//    로 끝나는 낱말도 금지로 보기 때문에, "…영원한 집이 / 우리에게…" 로 끊어야 할
+//    자리(4-2-1 이 고른 주어 "집이" 뒤)까지 막혀 "아느니라"가 혼자 남았다.
+//    S2 는 모든 줄바꿈 규칙 위의 최상위 규칙이고 4번도 그 일부이므로, 4번을 막을 수
+//    있는 건 S2 자신의 1-1·2-1·3·5번뿐이다 — 옛 엔진의 선호는 4번을 못 이긴다.
 function _vfCanBreakAt(words,cls,p){
   if(!words||!cls)return true;                       // 검사할 재료가 없으면 통과
   if(p<0||p>=words.length-1)return false;
-  if(cls[p]==='no')return false;                                    // 2-1
+  // 2-1 (2-2 예외는 풀어준다) — HB 목록: 한·의·지·게·가장·매우·내·모든
+  if(_VF_EXP_NO_END.test(words[p])&&!_vfGeException(words[p],words[p+1],words[p+2]))return false;
   if(_vfPairKeep(words[p],words[p+1]))return false;                 // 3
   if(_VF_NO_BEFORE.test(words[p+1])&&cls[p]!=='forced')return false; // 5
   return true;
@@ -8874,10 +8885,12 @@ function _vfFixWidow(lines,words,cls){
       }
       if(cut>=wordsA.length-1)continue;                // 이미 줄A 끝까지 왔으면 보정할 게 없다
     }
-    // ⚠️ 여기가 v26-0820-2 의 핵심 — 고른 자리가 1·2·3·5번에 걸리면 보정하지 않는다.
+    // ⚠️ v26-0820-2/3 — 고른 자리가 S2 의 1-1·2-1·3·5번에 걸리면 보정하지 않는다.
     if(!_vfCanBreakAt(words,cls,a0+cut))continue;
     // 새 줄A 안에서 forced 를 지나치게 되면(1-1 위반) 그것도 안 된다
     if(_vfSkipsForced(cls,a0,a0+cut))continue;
+    // 새 줄B 안으로 forced 지점이 빨려들어가도 1-1 위반이다 (끝자리는 원래 경계라 제외)
+    if(_vfSkipsForced(cls,a0+cut+1,a0+wordsA.length+wordsB.length-1))continue;
     out[bi-1]=wordsA.slice(0,cut+1).join(' ');
     out[bi]=wordsA.slice(cut+1).join(' ')+' '+out[bi];
     base[bi]=a0+cut+1;
