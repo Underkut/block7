@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0820-4  [production]  -->
+<!-- BLOCK7  v. 26-0820-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0820-4";
+const APP_VERSION = "v. 26-0820-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8707,6 +8707,53 @@ function _vfApplyClauseRule(words,cls,fk){
   }
   return block;
 }
+// ══ v26-0820-5, HB 1-4 — 긴 목적어구(7자 이상) 뒤에서 끊는다 ══
+// 조건 두 가지를 모두 만족해야 한다:
+//  · 목적어구가 공백 제외 7자 이상 (1-4-1 — 을/를 붙은 낱말만이 아니라 그 앞의
+//    관형어·주어까지 함께 묶어서 센다)
+//  · 그 뒤에 서술부가 3단어 이상 이어진다 (짧은 꼬리만 남는 걸 막는다)
+// 예) "너희가 원하는 것을"(8자) + "하지 못하게 하려 함이니라"(4단어) → '것을' 뒤에서 끊는다
+const _VF_OBJ_END=/(을|를)$/;
+const _VF_OBJ_MIN=7;          // 목적어구 최소 글자 수(공백 제외)
+const _VF_OBJ_TAIL_MIN=3;     // 뒤에 이어져야 할 서술부 최소 단어 수
+// 목적어 i 에 딸린 서술부의 길이(단어 수). 문장 끝까지가 아니라 **그 절 끝까지**만
+// 센다 — 다음 forced 자리가 절의 경계다.
+// ⚠️ 이걸 문장 끝까지 세면 "육체의 소욕은 성령을 / 거스르고" 처럼, 서술부가 한 단어
+//    뿐인데도 뒤 절의 단어들까지 세어져 1-4 가 잘못 걸린다.
+function _vfObjTailLen(cls,i,n){
+  for(let k=i+1;k<n;k++)if(cls[k]==='forced')return k-i;
+  return n-1-i;
+}
+// 목적어구 끝 낱말 i 에 대해 시작 자리를 찾는다(1-4-1).
+function _vfObjStart(words,cls,i){
+  let s=i;
+  while(s>0){
+    if(cls[s-1]==='forced')break;                  // 앞 절의 경계
+    if(_VF_ADV_END.test(words[s-1]))break;         // 앞의 부사구는 목적어구가 아니다
+    if(_VF_OBJ_END.test(words[s-1]))break;         // 앞의 다른 목적어구
+    s--;
+    if(_vfIsSubject(words[s]))break;               // 주어까지 포함하고 멈춘다(1-4-1)
+  }
+  // 주어(또는 첫 낱말)를 꾸미는 관형어까지 끌어온다
+  while(s>0&&cls[s-1]!=='forced'&&(_VF_NOEND_WORD.test(words[s-1])||/의$/.test(words[s-1])))s--;
+  return s;
+}
+// 1-4 를 적용해 cls 를 덮어쓴다 — 조건을 만족한 목적어구 뒤는 forced.
+function _vfApplyObjRule(words,cls,fk){
+  if(!_VF_EXP_BREAK_RULES)return cls;
+  for(let i=0;i<words.length-1;i++){
+    if(cls[i]==='forced')continue;
+    if(!_VF_OBJ_END.test(words[i]))continue;
+    if(_vfObjTailLen(cls,i,words.length)<_VF_OBJ_TAIL_MIN)continue; // 서술부가 3단어 미만이면 그대로
+    const s=_vfObjStart(words,cls,i);
+    let len=0;
+    for(let k=s;k<=i;k++)len+=words[k].replace(/\s/g,'').length;
+    if(len<_VF_OBJ_MIN)continue;
+    cls[i]='forced';
+    if(fk)fk[i]='object';
+  }
+  return cls;
+}
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'forced' 무조건(S2, 폭 무관 하드 규칙) / 'must' 필수(선호) /
 // 'ok' 권장 / 'soft' 중립 / 'no' 금지
@@ -8741,6 +8788,10 @@ function _vfWrapFit(words,ctx,maxW){
     fk[i]=cls[i]==='forced'?'letter':'';   // 1-1 이 세운 자리
   }
   _vfApplyAdvRule(words,cls,fk);        // HB 1-2 — 긴 부사구 뒤를 forced 로 올린다
+  _vfApplyObjRule(words,cls,fk);        // HB 1-4 — 긴 목적어구 뒤를 forced 로 올린다
+  // ⚠️ 1-3 은 **맨 나중에** 돈다. 1-3 은 절 안쪽을 '끊지 말 것'으로 막는데, 이미
+  //    forced 인 자리는 건드리지 않으므로(cls[k]!=='forced' 검사) 앞선 규칙이 세운
+  //    줄바꿈과 부딪혀 DP 가 답을 못 찾는 상황을 피할 수 있다.
   const clauseNo=_vfApplyClauseRule(words,cls,fk); // HB 1-3 — 긴 부사절: 뒤는 forced, 안은 금지
   // ⚠️ v26-0820-4 — '끊지 말라'는 판정에는 두 종류가 섞여 있다.
   //    ① HB 2-1 (한·의·지·게·가장·매우·내·모든) — S2 규칙이라 반드시 지킨다
