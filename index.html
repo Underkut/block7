@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0820-1  [production]  -->
+<!-- BLOCK7  v. 26-0820-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2836,7 +2836,7 @@ function _dlogScroll(){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0820-1";
+const APP_VERSION = "v. 26-0820-2";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -8623,6 +8623,44 @@ function _vfGeException(w,next,next2){return /게$/.test(w)&&next==='하려'&&ne
 const _VF_EXP_NO_END=/(가장|매우|내|모든)$/;
 // v26-0820-1, HB 5 — '때·만한' 추가.
 const _VF_NO_BEFORE=/^(위|아래|오른|왼|때|만한)/;
+// ══ v26-0820-2, HB 6 — 부사구가 공백 제외 10자 이상이면 그 뒤에서 반드시 끊는다 ══
+// 부사구의 "끝"은 낱말 하나로 알아볼 수 있다(안에서, 말미암아, 위하여, 때에 …).
+// 시작은 거기서 앞으로 거슬러 올라가며 찾는다 — 주어(6-3)나 앞 절의 경계를
+// 만나면 멈춘다. 이 판정은 낱말 하나만 보는 _vfBreakClass 로는 할 수 없어서
+// (앞뒤 문맥이 필요하다) _vfWrapFit 에서 cls 를 계산한 뒤 덮어쓴다.
+const _VF_ADV_END=/(안에서는|안에서|가운데서|가운데에서|중에서|앞에서|뒤에서|위에서|아래에서|말미암아|위하여|인하여|힘입어|때에|후에|전에|동안에|향하여|대하여|관하여)$/;
+const _VF_ADV_MIN=10;              // 공백 제외 글자 수 기준
+// 주어 표시(이/가/은/는/께서)로 끝나는가 — 6-3(부사구에 주어는 넣지 않는다)과
+// 4번(외톨이 줄 보정)이 함께 쓴다.
+// ⚠️ v26-0820-2 — '있는·하는·지은' 같은 관형형도 은/는 으로 끝나 주어로 오인됐다.
+//    고린도후서 5:1 에서 "있는"을 주어로 잡는 바람에 4번이 "영원한" 뒤를 끊었다.
+const _VF_NOT_SUBJ=/(있는|없는|하는|되는|가는|오는|주는|보는|사는|아는|믿는|같은|지은|얻은|받은|만든|이룬|많은|적은|높은|낮은|작은|좋은|밝은)$/;
+function _vfIsSubject(w){return /(이|가|은|는|께서)$/.test(w)&&!_VF_NOT_SUBJ.test(w);}
+// 부사구 끝 낱말 i 에 대해, 그 부사구의 시작 낱말 자리를 찾는다(6-2·6-3).
+function _vfAdvStart(words,cls,i){
+  let s=i;
+  while(s>0){
+    const p=words[s-1];
+    if(_vfIsSubject(p))break;                       // 6-3 — 주어는 부사구에 넣지 않는다
+    if(cls[s-1]==='forced'||cls[s-1]==='must')break; // 앞 절의 경계
+    if(_VF_ADV_END.test(p))break;                   // 앞의 다른 부사구
+    s--;
+  }
+  return s;
+}
+// 6번을 적용해 cls 를 덮어쓴다 — 10자 이상인 부사구 뒤는 forced.
+function _vfApplyAdvRule(words,cls){
+  if(!_VF_EXP_BREAK_RULES)return cls;
+  for(let i=0;i<words.length-1;i++){
+    if(cls[i]==='forced')continue;
+    if(!_VF_ADV_END.test(words[i]))continue;
+    const s=_vfAdvStart(words,cls,i);
+    let len=0;
+    for(let k=s;k<=i;k++)len+=words[k].replace(/\s/g,'').length;
+    if(len>=_VF_ADV_MIN)cls[i]='forced';
+  }
+  return cls;
+}
 let _vfCanvas=null;
 // 낱말 뒤에서 끊어도 되는지: 'forced' 무조건(S2, 폭 무관 하드 규칙) / 'must' 필수(선호) /
 // 'ok' 권장 / 'soft' 중립 / 'no' 금지
@@ -8653,6 +8691,7 @@ function _vfWrapFit(words,ctx,maxW){
   if(n===1)return[words[0]];
   const cls=[],shortOK=[];
   for(let i=0;i<n;i++){cls[i]=_vfBreakClass(words[i],words[i+1]);shortOK[i]=_vfShortOK(words[i]);}
+  _vfApplyAdvRule(words,cls);        // v26-0820-2, HB 6 — 긴 부사구 뒤를 forced 로 올린다
   const wCache={};
   const W=(i,j)=>{const k=i+'_'+j;if(wCache[k]==null)wCache[k]=ctx.measureText(words.slice(i,j).join(' ')).width;return wCache[k];};
   const INF=1e15;
@@ -8736,7 +8775,7 @@ function _vfWrapFit(words,ctx,maxW){
   }
   const lines=[],lineForced=[];let j=n;
   while(j>0){const i=prev[j];lines.unshift(words.slice(i,j).join(' '));lineForced.unshift(cls[j-1]==='forced');j=i;}
-  return _vfFixWidow(_vfDemoteShortForced(lines,lineForced));
+  return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls);
 }
 // v26-0820-1, HB 1-2-2 — 필수(forced) 줄바꿈이 만든 두 줄의 글자 수 합이
 // _VF_EXP_SHORT_MERGE_MAX(14) 이하면 굳이 나누지 않고 도로 합친다.
@@ -8757,60 +8796,91 @@ function _vfDemoteShortForced(lines,lineForced){
   }
   return out;
 }
-// v26-0819-11/12, HB 4 — "HB 줄바꿈 S2" 외톨이 줄 보정.
-// 마지막 줄(줄B)이 1단어뿐이면, 그 위 줄(줄A) 안에서 주어(이/가/은/는/께서로
-// 끝나는 첫 낱말)를 찾아 균형을 맞춘다.
-//  ⚠️ v26-0819-12 — (줄A 글자수)/(줄B 글자수) 가 3 미만이면 아예 손대지 않는다
-//     (예시 4-0: "너희는 성령을 따라 행하라" / "그리하면" 은 11/4≈2.75 라 그대로 둔다).
-//  · (주어까지 글자수) / (줄A 나머지 글자수 + 줄B 글자수) > 0.5
-//    → 주어 바로 뒤에서 끊는다(줄A=주어까지, 나머지+줄B=새 줄B) — 4-1
-//  · 0.5 이하면 주어 다음 의미 덩어리(조사로 끝나는 다음 낱말)까지만 줄A에
-//    남기고, 그 뒤 전부를 줄B와 합친다 — 4-2
-// 주어를 못 찾으면 손대지 않는다. 위든 아래든 한 번만 보정한다(재귀 없음).
-function _vfFixWidow(lines){
+// v26-0819-11/12 · v26-0820-1/2, HB 4 — "HB 줄바꿈 S2" 외톨이 줄 보정.
+// 줄B가 1~2단어만 남고 끊긴 경우, 그 위 줄(줄A)에서 균형을 다시 맞춘다.
+//  · 두 줄 글자수 합이 8 이하 → 그냥 한 줄로 합친다 (4-1)
+//  · 9 이상이면서 (줄A 글자수)/(줄B 글자수) >= 3 이고 줄A에 주어가 있을 때만 (4-2)
+//     - (주어까지 글자수)/(줄A 나머지 + 줄B) > 0.5  → 주어 바로 뒤에서 끊는다 (4-2-1)
+//     - 0.5 이하 → 주어 다음 의미 덩어리 뒤에서 끊는다 (4-2-2)
+//  · 그 외에는 손대지 않는다 (4-2-0)
+//
+// ⚠️ v26-0820-2, HB 재신고(고린도후서 5:1) — 여기가 진짜 원인이었다.
+//    DP 는 규칙 2-1 을 정확히 지켜 "…영원한 집이 우리에게 있는 줄 / 아느니라"
+//    로 끊었는데, 4번이 그걸 받아 "…있는 영원한 / 집이 …" 로 다시 나눴다.
+//    두 가지가 겹쳤다:
+//     ① 주어를 "있는"(관형형)으로 오인했다 → _vfIsSubject 로 걸러낸다.
+//     ② 4번이 고른 자리를 1·2·3·5번(하드 규칙)에 비춰보지 않았다 → 이제
+//        _vfCanBreakAt 로 검사하고, 못 끊는 자리면 아예 보정하지 않는다.
+//    4번은 어디까지나 "보기 좋게 다듬는" 규칙이라, 반드시 지켜야 하는
+//    1·2·3·5번과 부딪히면 언제나 4번이 물러난다.
+//
+// words·cls 는 DP 가 쓰던 것 그대로 넘겨받는다(자리 검사를 위해 필요).
+// 못 받으면(옛 호출부) 자리 검사 없이 예전처럼 동작한다.
+function _vfCanBreakAt(words,cls,p){
+  if(!words||!cls)return true;                       // 검사할 재료가 없으면 통과
+  if(p<0||p>=words.length-1)return false;
+  if(cls[p]==='no')return false;                                    // 2-1
+  if(_vfPairKeep(words[p],words[p+1]))return false;                 // 3
+  if(_VF_NO_BEFORE.test(words[p+1])&&cls[p]!=='forced')return false; // 5
+  return true;
+}
+// [from,to] 구간 안(끝자리 to 는 제외)에 forced 지점이 있으면 그 줄은 만들 수 없다 — 1-1
+function _vfSkipsForced(cls,from,to){
+  if(!cls)return false;
+  for(let k=from;k<to;k++)if(cls[k]==='forced')return true;
+  return false;
+}
+function _vfFixWidow(lines,words,cls){
   if(lines.length<2)return lines;
   const out=lines.slice();
-  const clen0=s=>s.replace(/\s/g,'').length;
+  const clen=s=>s.replace(/\s/g,'').length;
+  // 각 줄이 words 의 몇 번째 낱말에서 시작하는지 — 자리 검사에 쓴다
+  const base=[];{let acc=0;for(let k=0;k<out.length;k++){base[k]=acc;acc+=out[k].split(' ').length;}}
   for(let bi=1;bi<out.length;bi++){
     const wordsB=out[bi].split(' ');
     if(wordsB.length!==1&&wordsB.length!==2)continue;  // v26-0820-1 — 줄B가 1·2단어일 때만
     const wordsA=out[bi-1].split(' ');
-    const lenA=clen0(out[bi-1]),lenB=clen0(out[bi]);
-    // v26-0820-1, HB 4-1 — 두 줄 합쳐 8자 이하면 그냥 한 줄로 합친다 (줄A가 한
-    // 단어뿐이어도 적용된다 — 예시 4-1 "그런즉/형제들아"가 그 경우다)
+    const lenA=clen(out[bi-1]),lenB=clen(out[bi]);
+    const a0=base[bi-1];                               // 줄A 첫 낱말의 전체 인덱스
+    // 4-1 — 두 줄 합쳐 8자 이하면 그냥 한 줄로 합친다 (줄A가 한 단어뿐이어도 적용된다.
+    // 예시 4-1 "그런즉/형제들아"가 그 경우다). 단 "헛되고 헛되며"는 1-2-2-0 예외라 안 합친다.
     if(lenA+lenB<=8){
+      if(_vfIsHeotdoeException(wordsA[wordsA.length-1],wordsB[0]))continue;
       out[bi-1]=out[bi-1]+' '+out[bi];
       out.splice(bi,1);
+      base.splice(bi,1);
       bi--;
       continue;
     }
-    if(wordsA.length<2)continue;                       // 줄A가 한 단어뿐이면 더 뺄 게 없다(4-2 이하)
-    if(lenA/lenB<3)continue;                            // v26-0819-12(4-2-0) — 비율 3 미만이면 그대로
+    if(wordsA.length<2)continue;                       // 줄A가 한 단어뿐이면 더 뺄 게 없다
+    if(lenA/lenB<3)continue;                            // 4-2-0 — 비율 3 미만이면 그대로
     let subjIdx=-1;
     for(let k=0;k<wordsA.length;k++){
-      if(/(이|가|은|는|께서)$/.test(wordsA[k])){subjIdx=k;break;}
+      if(_vfIsSubject(wordsA[k])){subjIdx=k;break;}     // v26-0820-2 — 관형형('있는' 등) 제외
     }
     if(subjIdx<0||subjIdx>=wordsA.length-1)continue;   // 주어가 없거나 이미 줄A 끝이면 손대지 않는다
-    const clen=s=>s.replace(/\s/g,'').length;
     const subjPart=wordsA.slice(0,subjIdx+1).join(' ');
     const restPart=wordsA.slice(subjIdx+1).join(' ');
-    const lenSubj=clen(subjPart);
-    const lenRestB=clen(restPart)+clen(out[bi]);
+    const lenRestB=clen(restPart)+lenB;
     if(lenRestB<=0)continue;
-    const ratio=lenSubj/lenRestB;
-    if(ratio>0.5){                                      // 4-1 — 주어 뒤에서 끊는다
-      out[bi-1]=subjPart;
-      out[bi]=restPart+' '+out[bi];
-    }else{                                               // 4-2 — 주어 다음 의미 덩어리 뒤에서 끊는다
-      let chunkEnd=subjIdx+1;
+    let cut;                                           // 줄A 안에서 새로 끊을 자리(줄A 기준 인덱스)
+    if(clen(subjPart)/lenRestB>0.5){
+      cut=subjIdx;                                     // 4-2-1 — 주어 바로 뒤
+    }else{                                             // 4-2-2 — 주어 다음 의미 덩어리 뒤
+      cut=subjIdx+1;
       for(let k=subjIdx+1;k<wordsA.length;k++){
-        chunkEnd=k;
+        cut=k;
         if(_VF_NO_TRANS.test(wordsA[k])||_VF_NO_AUX.test(wordsA[k]))break;
       }
-      if(chunkEnd>=wordsA.length-1)continue;            // 이미 줄A 끝까지 왔으면 보정할 게 없다
-      out[bi-1]=wordsA.slice(0,chunkEnd+1).join(' ');
-      out[bi]=wordsA.slice(chunkEnd+1).join(' ')+' '+out[bi];
+      if(cut>=wordsA.length-1)continue;                // 이미 줄A 끝까지 왔으면 보정할 게 없다
     }
+    // ⚠️ 여기가 v26-0820-2 의 핵심 — 고른 자리가 1·2·3·5번에 걸리면 보정하지 않는다.
+    if(!_vfCanBreakAt(words,cls,a0+cut))continue;
+    // 새 줄A 안에서 forced 를 지나치게 되면(1-1 위반) 그것도 안 된다
+    if(_vfSkipsForced(cls,a0,a0+cut))continue;
+    out[bi-1]=wordsA.slice(0,cut+1).join(' ');
+    out[bi]=wordsA.slice(cut+1).join(' ')+' '+out[bi];
+    base[bi]=a0+cut+1;
   }
   return out;
 }
