@@ -25,6 +25,12 @@
 //  6. 부사구 10자 이상 규칙은 보류 — "부사구"의 경계를 낱말 목록만으로
 //     안정적으로 판정할 방법이 없어(잘못 적용하면 거의 모든 구절 첫머리에
 //     불필요한 강제 줄바꿈이 생길 위험), 이번 라운드에서는 넣지 않았다.
+//
+// v26-0820-2 — HB 가 같은 구절(고린도후서 5:1)로 재신고. 이번엔 원인을 정확히
+// 찾았다: DP 는 2-1 을 지켜 "…영원한 집이 우리에게 있는 줄 / 아느니라" 로 끊었는데,
+// 그 뒤에 도는 4번(외톨이 줄 보정)이 그걸 받아 "…있는 영원한 / 집이 …" 로 다시
+// 나눴다. 두 가지가 겹쳤다 — ① 주어를 "있는"(관형형)으로 오인, ② 4번이 고른 자리를
+// 1·2·3·5번 하드 규칙에 비춰보지 않았다. 둘 다 고쳤고, 6번(긴 부사구)도 새로 넣었다.
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
@@ -231,14 +237,14 @@ console.log('\n시나리오 4-1 — 실사용 재신고 문장(고린도후서 5
   eval(m[0]);
   const raw='만일 땅에 있는 우리의 장막 집이 무너지면 하나님께서 지으신 집 곧 손으로 지은 것이 아니요 하늘에 있는 영원한 집이 우리에게 있는 줄 아느니라';
   const words=raw.split(/\s+/);
-  const ctx={measureText:(t)=>({width:t.length*10})};
-  // ⚠️ maxW=200 처럼 극단적으로 좁은 폭(5줄짜리 구절엔 비현실적)은 뺐다 — 그 정도로
-  // 좁으면 다른 하드 규칙(forced 벽 등)과 겹쳐 3차 시도까지 가는 경우가 실제로
-  // 있고, 그건 "정말 안 풀리는 경우에만 최후 수단" 설계상 허용된 트레이드오프다.
-  [280,320,400,600,900].forEach(w=>{
-    const lines=_vfWrapFit(words,ctx,w);
-    sc.eq(`maxW=${w}: '영원한' 뒤에서 끊기지 않는다`,
-          lines.some(l=>l!==lines[lines.length-1]&&l.endsWith('영원한')), false);
+  // ⚠️ v26-0820-2 — 예전 테스트는 글자폭 10 으로만 재서 통과했는데, 실제 화면
+  //    (글자폭 16 근처)에서는 재현됐다. 폰트 크기가 커질수록 같은 폭에 덜 들어가니
+  //    글자폭을 여러 값으로 훑어야 한다. 글자폭 16 이 HB 스크린샷과 같은 5줄이다.
+  [12,14,15,16,17,18,20].forEach(cw=>{
+    const ctx={measureText:(t)=>({width:[...t].reduce((a,c)=>a+(/\s/.test(c)?cw*0.4:cw),0)})};
+    const lines=_vfWrapFit(words,ctx,360);
+    sc.eq(`글자폭 ${cw}: '영원한' 뒤에서 끊기지 않는다(2-1)`,
+          lines.some((l,i)=>i<lines.length-1&&l.endsWith('영원한')), false);
   });
 }
 
@@ -250,6 +256,65 @@ console.log('\n시나리오 5 — 글자 크기 축소 경계를 한 줄 더 관
   const fn = slice('function _vfLayoutText(){', '\n  el.style.fontSize');
   sc.eq('maxLines 에 +1 이 붙었다',
         fn.includes("const maxLines=Math.max(1,Math.ceil(words.length/_VF_MINW))+1;"), true);
+}
+
+console.log('\n시나리오 6 — 4번(외톨이 보정)은 1·2·3·5번 하드 규칙에 지면 물러난다 (v26-0820-2, 실사용 재신고 원인)');
+{
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  sc.eq('_vfCanBreakAt 로 자리 검사를 한다', SRC.includes('function _vfCanBreakAt(words,cls,p){'), true);
+  sc.eq('_vfFixWidow 가 words·cls 를 넘겨받는다',
+        SRC.includes('return _vfFixWidow(_vfDemoteShortForced(lines,lineForced),words,cls);'), true);
+  sc.eq('관형형을 주어에서 걸러내는 _vfIsSubject 가 있다', SRC.includes('function _vfIsSubject(w){'), true);
+  sc.eq("'있는'은 주어가 아니다(관형형)", _vfIsSubject('있는'), false);
+  sc.eq("'지은'도 주어가 아니다(관형형)", _vfIsSubject('지은'), false);
+  sc.eq("'하나님께서'는 주어다", _vfIsSubject('하나님께서'), true);
+  sc.eq("'너희는'은 주어다", _vfIsSubject('너희는'), true);
+  sc.eq("'집이'는 주어다", _vfIsSubject('집이'), true);
+
+  // 실제 재신고 상황 그대로 — 4번이 "영원한" 뒤를 고르려 해도 2-1 에 막혀 물러난다
+  const wordsAll='하늘에 있는 영원한 집이 우리에게 있는 줄 아느니라'.split(' ');
+  const cls=wordsAll.map((w,i)=>_vfBreakClass(w,wordsAll[i+1]));
+  sc.eq('재신고 재현 — 4번이 2-1 을 어기지 않고 그대로 둔다',
+        JSON.stringify(_vfFixWidow(['하늘에 있는 영원한 집이 우리에게 있는 줄','아느니라'],wordsAll,cls)),
+        JSON.stringify(['하늘에 있는 영원한 집이 우리에게 있는 줄','아느니라']));
+  // words·cls 를 안 넘기면 예전처럼(자리 검사 없이) 동작한다 — 4-2-1 예시는 그대로 통과
+  sc.eq('4-2-1 예시는 여전히 정상 동작(자리 검사에 안 걸린다)',
+        JSON.stringify(_vfFixWidow(['그리스도께서 우리를 자유롭게','하려고'])),
+        JSON.stringify(['그리스도께서','우리를 자유롭게 하려고']));
+  sc.eq('4-1 합치기도 1-2-2-0("헛되고 헛되며") 예외를 지킨다',
+        JSON.stringify(_vfFixWidow(['헛되고','헛되며'])),
+        JSON.stringify(['헛되고','헛되며']));
+}
+
+console.log('\n시나리오 7 — 6번(신규): 부사구가 공백 제외 10자 이상이면 그 뒤에서 끊는다 (v26-0820-2, HB 6)');
+{
+  sc.eq('_VF_ADV_END 종료 표현 목록', SRC.includes('const _VF_ADV_END=/(안에서는|안에서|'), true);
+  sc.eq('기준 글자수 10', SRC.includes('const _VF_ADV_MIN=10;'), true);
+  sc.eq('cls 계산 뒤에 6번을 덮어쓴다', SRC.includes('_vfApplyAdvRule(words,cls);'), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  const ctx={measureText:(t)=>({width:t.length*14})};
+  const run=(raw,maxW)=>_vfWrapFit(raw.split(' '),ctx,maxW||360);
+  // HB 예시 그대로
+  sc.eq('6 예시 — 그리스도 예수 안에서는(10자) 뒤에서 끊는다',
+        JSON.stringify(run('그리스도 예수 안에서는 할례나 무할례나')),
+        JSON.stringify(['그리스도 예수 안에서는','할례나 무할례나']));
+  sc.eq('6-2 예시 — 그의 풍성한 은혜로 말미암아(11자) 뒤에서 끊는다',
+        JSON.stringify(run('그의 풍성한 은혜로 말미암아 우리가 구속을 받았으니')),
+        JSON.stringify(['그의 풍성한 은혜로 말미암아','우리가 구속을 받았으니']));
+  sc.eq('6-3 예시 — 주어(내가)는 부사구 글자수에서 빼되, 주어만 따로 떼지는 않는다',
+        JSON.stringify(run('내가 그리스도 예수 안에서는 자유함을 얻었으니')),
+        JSON.stringify(['내가 그리스도 예수 안에서는','자유함을 얻었으니']));
+  // 10자 미만이면 6번이 안 걸린다
+  sc.eq('10자 미만 부사구("주 안에서" 4자)는 강제로 안 끊는다',
+        JSON.stringify(run('주 안에서 항상 기뻐하라')),
+        JSON.stringify(['주 안에서 항상 기뻐하라']));
+  // 폭과 무관하게 항상 같은 자리(하드 규칙이므로)
+  [200,300,400,700,1200].forEach(w=>{
+    sc.eq(`maxW=${w}: 6번은 폭과 무관하게 같은 자리에서 끊는다`,
+          run('그의 풍성한 은혜로 말미암아 우리가 구속을 받았으니',w)[0], '그의 풍성한 은혜로 말미암아');
+  });
 }
 
 sc.done();
