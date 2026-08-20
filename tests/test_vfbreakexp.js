@@ -376,4 +376,43 @@ console.log('\n시나리오 8 — 1-3(신규): 자체 주어를 가진 부사절
   }
 }
 
+console.log('\n시나리오 9 — 1-4(신규): 긴 목적어구(7자 이상) 뒤에서 끊는다 (v26-0820-5, HB 1-4)');
+{
+  sc.eq('_VF_OBJ_END 목적격 조사(을/를)', SRC.includes('const _VF_OBJ_END=/(을|를)$/;'), true);
+  sc.eq('목적어구 최소 7자', SRC.includes('const _VF_OBJ_MIN=7;'), true);
+  sc.eq('서술부 최소 3단어', SRC.includes('const _VF_OBJ_TAIL_MIN=3;'), true);
+  sc.eq('1-4 를 1-3 보다 먼저 적용한다', SRC.indexOf('_vfApplyObjRule(words,cls,fk);') < SRC.indexOf('_vfApplyClauseRule(words,cls,fk);'), true);
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  const ctx=cw=>({measureText:t=>({width:[...t].reduce((a,c)=>a+(/\s/.test(c)?cw*0.4:cw),0)})});
+  // HB 예시 그대로
+  sc.eq('1-4 예시 — 너희가 원하는 것을 / 하지 못하게 하려 함이니라',
+        JSON.stringify(_vfWrapFit('너희가 원하는 것을 하지 못하게 하려 함이니라'.split(' '),ctx(14),400)),
+        JSON.stringify(['너희가 원하는 것을','하지 못하게 하려 함이니라']));
+  // 1-4-1 — 을/를 붙은 낱말만이 아니라 앞의 관형어·주어까지 묶어서 센다
+  //   ('것을' 만 보면 2자라 7자에 못 미친다 — 묶어야 8자가 된다)
+  sc.eq('1-4-1 — 주어·관형어까지 묶어서 세지 않으면 걸리지 않는다',
+        SRC.includes('function _vfObjStart(words,cls,i){'), true);
+  // 목적어구가 짧으면 안 걸린다
+  sc.eq("짧은 목적어구('구원을' 3자)는 1-4 대상이 아니다",
+        JSON.stringify(_vfWrapFit('구원을 얻게 하려 함이니라'.split(' '),ctx(14),400)),
+        JSON.stringify(['구원을 얻게 하려 함이니라']));
+  // 서술부가 3단어 미만이면 안 걸린다
+  sc.eq('서술부가 3단어 미만이면 1-4 를 적용하지 않는다',
+        JSON.stringify(_vfWrapFit('너희가 원하는 것을 주시리라'.split(' '),ctx(14),400)),
+        JSON.stringify(['너희가 원하는 것을 주시리라']));
+  // ⚠️ 서술부는 문장 끝이 아니라 **그 절 끝까지** 센다.
+  //    안 그러면 "육체의 소욕은 성령을 / 거스르고" 처럼 서술부가 한 단어뿐인데도
+  //    뒤 절의 단어까지 세어져 1-4 가 잘못 걸린다.
+  sc.eq('서술부는 절 끝까지만 센다(_vfObjTailLen)', SRC.includes('function _vfObjTailLen(cls,i,n){'), true);
+  const raw='육체의 소욕은 성령을 거스르고 성령은 육체를 거스르나니 이 둘이 서로 대적함으로 너희가 원하는 것을 하지 못하게 하려 함이니라';
+  [12,14,16,18,20].forEach(cw=>{
+    const ls=_vfWrapFit(raw.split(' '),ctx(cw),360);
+    sc.eq(`글자폭 ${cw}: "성령을" 뒤에서는 끊지 않는다(서술부가 '거스르고' 한 단어뿐)`,
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('성령을')), false);
+    sc.eq(`글자폭 ${cw}: "너희가 원하는 것을" 뒤에서는 끊는다`,
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('너희가 원하는 것을')), true);
+  });
+}
+
 sc.done();
