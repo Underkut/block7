@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0820-6  [production]  -->
+<!-- BLOCK7  v. 26-0822-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -80,9 +80,16 @@
     }
     if(effective==='light'){
       document.documentElement.dataset.theme='light';
-      const m=document.querySelector('meta[name="theme-color"]');
-      if(m)m.setAttribute('content','#f5f6fa');
     }
+    // 화면 스타일(디자인 프리셋) 조기 적용 — 본문의 UI_THEME_PRESETS/
+    // applyTheme() 과 같은 해석 규칙(알 수 없는 id → 기본, 저장값은 안 건드림)
+    // 을 이 시점에서도 그대로 따르도록 theme-color 만 작게 복제해둔다.
+    const rawPreset=st&&st.settings&&st.settings.uiThemePreset;
+    const _earlyPresetColors={classic:{dark:'#0d0e10',light:'#f5f6fa'},'fiery-ocean':{dark:'#001F2D',light:'#FDF0D5'}};
+    const presetId=(rawPreset&&_earlyPresetColors[rawPreset])?rawPreset:'classic';
+    if(presetId!=='classic')document.documentElement.dataset.preset=presetId;
+    const m=document.querySelector('meta[name="theme-color"]');
+    if(m)m.setAttribute('content',_earlyPresetColors[presetId][effective]);
   }catch(e){/* default dark theme if anything goes wrong */}
 })();
 </script>
@@ -91,11 +98,20 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600;700&display=swap');
 @import url('https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css');
-/* Force monospace numbers to use IBM Plex Mono — zero has no diagonal slash */
-.logo,.date-l,.total-lbl,.total-prog,.tab,.wh,.wlbl,.wmore,.wmem,.mcdow,.mcd,.mcsc,
+/* 숫자가 없는 순수 문자 라벨(D/W/M 탭, 요일 머리글)만 모노스페이스로 남긴다.
+   가운데 점 있는 0 이 나오던 나머지는 전부 --font-number 로 갈랐다
+   (HB 요청, 26-0822-2 — "앱의 모든 숫자를 점 없는 Pretendard 숫자로"). */
+.tab,.wh,.mcdow,.wlbl{
+  font-family:var(--font-mono);
+}
+/* 숫자를 표시하는 요소 — 점 없는 Pretendard 숫자로 통일.
+   (.logo 는 "BLOCK" 워드마크 자체는 그대로 두고 숫자 7 만 .logo b 에서 바꾼다) */
+.date-l,.total-lbl,.wmore,.wmem,.mcd,.mcsc,
 .sm-cnt,.sm-cnt-lbl,.big-cnt,.trash-item-meta,
-#hDate,#tLbl,#tFill{
-  font-family:'IBM Plex Mono',ui-monospace,monospace;
+#hDate,#tLbl{
+  font-family:var(--font-number);
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum' 1;
 }
 
 :root {
@@ -104,6 +120,7 @@
   --tx:#eef0fa; --tx2:#9aa4c8; --tx3:#7a84a8;
   --ac:#5a70f8; --ov:#e84040; --ok:#22c46e; --so:#e08830;
   --del:#e84040;
+  --ac-rgb:90,112,248; /* --ac 의 R,G,B — rgba(var(--ac-rgb),X) 형태의 반투명 배경에 쓴다 */
   /* 회원가입 전용 버건디 — 배경용(bgd)과 글자용(bgd-tx)을 나눈다.
      어두운 배경 위에서는 진한 버건디 글자가 안 읽혀서 글자용을 밝게 잡는다. */
   --bgd:#8c2f3f; --bgd-tx:#c46b7c;
@@ -115,9 +132,16 @@
   --today-cell-border:rgba(90,112,248,.85);
   --today-cell-border-faded:rgba(90,112,248,.18);
   --fade-start-border:var(--bd);
+  /* 화면 스타일(디자인 프리셋)별 글꼴 — html[data-preset="..."] 이 갈아끼운다 */
+  --font-ui:'Pretendard',-apple-system,sans-serif;
+  --font-display:'Pretendard',-apple-system,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  /* 숫자 전용 — 모든 프리셋 공통, 가운데 점 있는 0(IBM Plex Mono)을 안 쓴다.
+     html[data-preset="..."] 블록에서 절대 덮어쓰지 않는다(HB 요청, 26-0822-2). */
+  --font-number:'Pretendard',-apple-system,sans-serif;
 }
 /* Light theme — applied via document.documentElement.dataset.theme,
-   set by applyTheme() based on the Settings → 테마 choice. */
+   set by applyTheme() based on the Settings → 밝기 choice. */
 html[data-theme="light"] {
   --bg:#f5f6fa; --s1:#ffffff; --s2:#eef0f6;
   --bd:#dde1ea; --bd2:#cbd0dc;
@@ -134,12 +158,57 @@ html[data-theme="light"] {
   --today-cell-border-faded:rgba(68,88,232,.18);
   --fade-start-border:#a4abbf;
 }
+
+/* ── 화면 스타일(디자인 프리셋) "Fiery Ocean" ──
+   html[data-preset="fiery-ocean"] = 다크(기본), 거기에 [data-theme="light"]
+   가 겹치면 라이트. :root/html[data-theme="light"] 블록과 같은 방식이라
+   밝기(다크/라이트/시스템)와 화면 스타일(프리셋)이 서로 독립적으로 조합된다.
+   글꼴만 SUIT 로 바뀌고 모노스페이스(IBM Plex Mono)는 :root 값을 그대로 쓴다. */
+html[data-preset="fiery-ocean"] {
+  --bg:#001F2D; --s1:#003049; --s2:#0A4057;
+  --bd:rgba(102,155,188,.30); --bd2:rgba(102,155,188,.55);
+  --tx:#FDF0D5; --tx2:#C9DDEA; --tx3:#94BED3;
+  --ac:#669BBC; --ac-rgb:102,155,188;
+  --ov:#FF7377; --ok:#3FBE7A; --so:#E3A73B; --del:#FF7377;
+  --bgd:#780000; --bgd-tx:#FFADA6;
+  --c0:#FF8A7A; --c1:#E3A73B; --c2:#3FBE7A;
+  --c3:#669BBC; --c4:#F09AC0; --c5:#C9A6E0;
+  --header-bg:rgba(0,31,45,.94);
+  --drag-ghost-bg:rgba(10,64,87,.85);
+  --sun-red:#FF8A8E;
+  --today-cell-border:rgba(102,155,188,.85);
+  --today-cell-border-faded:rgba(102,155,188,.18);
+  --fade-start-border:rgba(102,155,188,.30);
+  --font-ui:'SUIT','Pretendard',-apple-system,sans-serif;
+  --font-display:'SUIT','Pretendard',-apple-system,sans-serif;
+}
+html[data-preset="fiery-ocean"][data-theme="light"] {
+  --bg:#FDF0D5; --s1:#FFF8E8; --s2:#F4E2BF;
+  --bd:rgba(0,48,73,.18); --bd2:rgba(0,48,73,.32);
+  --tx:#003049; --tx2:#315A6D; --tx3:#476A78;
+  --ac:#C1121F; --ac-rgb:193,18,31;
+  --ov:#780000; --ok:#1F7A44; --so:#A85D0A; --del:#780000;
+  --bgd:#780000; --bgd-tx:#9A1420;
+  --c0:#9A3B2E; --c1:#A85D0A; --c2:#1F7A44;
+  --c3:#2B6E8C; --c4:#8C2F3F; --c5:#5B4636;
+  --header-bg:rgba(253,240,213,.94);
+  --drag-ghost-bg:rgba(244,226,191,.92);
+  --sun-red:#A8433D;
+  --today-cell-border:rgba(193,18,31,.85);
+  --today-cell-border-faded:rgba(193,18,31,.18);
+  --fade-start-border:rgba(0,48,73,.30);
+}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-text-size-adjust:100%;background:var(--bg);}
 body{
-  font-family:'Pretendard',-apple-system,sans-serif;
+  font-family:var(--font-ui),-apple-system,sans-serif;
   background:var(--bg) !important;color:var(--tx);
   font-size:14px;min-height:100vh;
+  /* 숫자 정렬 폭 고정 — 어느 글꼴이 쓰이든(모노스페이스는 원래부터 고정폭이라
+     영향 없음) 자릿수가 바뀌어도 숫자 폭이 흔들리지 않게 전역으로 켠다. */
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:'tnum' 1;
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
   /* iOS home indicator safe area */
@@ -166,8 +235,8 @@ header{
   border-bottom:1px solid var(--bd);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
 }
-.logo{font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.15em;color:var(--tx2);}
-.logo b{color:var(--ac);font-weight:500;}
+.logo{font-family:var(--font-mono);font-size:13px;letter-spacing:.15em;color:var(--tx2);}
+.logo b{color:var(--ac);font-weight:500;font-family:var(--font-number);}
 
 /* ── Verse bar (네비게이토 180) ── */
 /* ── Verse bar outer wrapper ── */
@@ -257,7 +326,7 @@ header{
 }
 #vfRef{
   margin-top:18px;font-size:13px;color:var(--vf-tx3,var(--tx3));
-  font-family:var(--vf-reffont,'IBM Plex Mono',monospace);letter-spacing:.06em;flex-shrink:0;
+  font-family:var(--vf-reffont,var(--font-number));letter-spacing:.06em;flex-shrink:0;
   cursor:pointer;width:fit-content;margin-left:auto;margin-right:auto;
   /* ⚠️ 화면 아래쪽 절반은 '다음 말씀' 버튼(.vf-nav-d, z-index 2)이 덮고 있다.
      본문이 길어 장절이 화면 중간 아래로 내려가면 그 버튼에 눌림을 뺏겨
@@ -292,7 +361,7 @@ header{
 .vf-act:active{transform:scale(.88);}
 .vf-act.pop{animation:vfPop .32s ease;}
 @keyframes vfPop{0%{transform:scale(1);}40%{transform:scale(1.28);}100%{transform:scale(1);}}
-.vf-cnt{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--vf-tx3,var(--tx3));line-height:1;}
+.vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
 /* 좌상단 홈 버튼 · 상단 중앙 필터 라벨 (타일뷰에서 들어온 경우에만) */
 .vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;z-index:12;
@@ -529,16 +598,16 @@ header{
 /* 4열 18자 미리보기: 잘린 꼬리를 페이드 */
 .vg-cap .vg-tb-clip{-webkit-mask-image:linear-gradient(180deg,#000 60%,transparent);
   mask-image:linear-gradient(180deg,#000 60%,transparent);}
-.vg-tb-ref{margin-top:7px;font-family:'IBM Plex Mono',monospace;color:var(--tx3);
+.vg-tb-ref{margin-top:7px;font-family:var(--font-number);color:var(--tx3);
   letter-spacing:.01em;line-height:1.2;}
 .vg-tile-ref{
-  font-family:'IBM Plex Mono',monospace;color:var(--tx2);font-size:11px;
+  font-family:var(--font-number);color:var(--tx2);font-size:11px;
   display:flex;align-items:center;justify-content:center;
   min-height:50px;letter-spacing:.01em;line-height:1.4;
 }
 .vg-divider{
   display:flex;align-items:center;gap:10px;
-  color:var(--tx3);font-size:11px;font-family:'IBM Plex Mono',monospace;
+  color:var(--tx3);font-size:11px;font-family:var(--font-mono);
   letter-spacing:.02em;padding:16px 2px 5px;
 }
 .vg-divider::before,.vg-divider::after{content:'';height:1px;background:var(--bd2);flex:1;}
@@ -636,33 +705,33 @@ header{
 #verseBarCat{
   grid-column:1;grid-row:1;
   font-size:10px;font-weight:700;color:var(--ac);
-  font-family:'Pretendard',sans-serif;letter-spacing:.02em;
+  font-family:var(--font-ui),sans-serif;letter-spacing:.02em;
   margin:0;
 }
 #verseBarTag{
   grid-column:2;grid-row:1;
   font-size:9px;color:var(--tx3);
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   text-align:right;
   margin:0;
 }
 #verseBarTopic{
   grid-column:1;grid-row:2;
   font-size:10px;color:var(--tx3);
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   margin:0;
 }
 #verseBarRef{
   grid-column:2;grid-row:2;
   font-size:9px;color:var(--tx3);
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   text-align:right;
   margin:0;
 }
 #verseBarText{
   grid-column:1/-1;grid-row:3;
   font-size:13px;line-height:1.55;color:var(--tx);
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   margin-top:8px;
 }
 #verseBarFirstWord{
@@ -722,7 +791,7 @@ header{
 #verseBarInner.sneak-mode #verseBarRef,
 #verseBarInner.sneak-mode #verseBarTag{
   font-size:12px;line-height:1.4;
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   font-weight:400;
   margin:0!important;padding:0;
   display:inline;
@@ -745,7 +814,7 @@ header{
 .tab{
   padding:4px 11px;border-radius:6px;border:none;
   background:transparent;color:var(--tx2);
-  font-family:'Pretendard',sans-serif;font-size:12px;font-weight:500;
+  font-family:var(--font-ui),sans-serif;font-size:12px;font-weight:500;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .tab.on{color:var(--tx);background:var(--s2);}
@@ -763,7 +832,9 @@ header{
   .trash-btn{width:26px;}
   .ur-btn{padding:4px 2px;font-size:15px;}
 }
-.date-l{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);}
+/* (여기 있던 두 번째 .date-l 규칙은 지웠다 — 아래 'DATE NAV' 절의 .date-l 이
+   같은 특이도로 더 뒤에 있어서 네 속성이 전부 덮여 쓰이지 않는 죽은 규칙이었다.
+   규칙이 두 군데로 나뉘어 있으면 어느 쪽이 실제로 먹는지 알기 어렵다.) */
 
 /* 휴지통 버튼 */
 .trash-btn{
@@ -791,7 +862,7 @@ header{
   padding:4px 9px;border-radius:6px;
   border:1px solid var(--bd2);background:transparent;color:var(--tx2);
   font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
 }
 .settings-btn-icon{
   width:32px;height:24px;padding:0;position:relative;overflow:visible;
@@ -803,7 +874,7 @@ header{
   color:var(--tx3);font-size:17px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;
   padding:4px 4px;line-height:1;
-  font-family:'IBM Plex Mono',monospace;
+  font-family:var(--font-mono);
   transition:color .12s;
   -webkit-appearance:none;appearance:none;
 }
@@ -819,12 +890,37 @@ header{
   transition:color .12s;line-height:1;
 }
 .date-nav-btn:hover{color:var(--tx);}
+/* ⚠️ 위의 .date-nav / .date-nav-btn 은 지금 화면 어디에서도 쓰이지 않는다.
+   GNB 의 "‹ 날짜 요일 ›" 은 #hdrDateNav > .date-nav-hint / .date-l 이다.
+   여기를 고치면 화면이 안 바뀌므로 착각하지 말 것 (v26-0822-4). */
+
+/* GNB 의 "‹ 날짜 요일 ›" 세 항목이 **같은 24px 정렬 상자**를 공유하게 한다.
+   (바깥 span 의 인라인 style 에는 display:flex;align-items:center 만 있고
+    높이가 없어서, 예전엔 자식들의 줄상자 높이에 끌려다녔다.) */
+#hdrDateNav{height:24px;}
+
+/* ── GNB 날짜 (#hDate) ──
+   화살표(.date-nav-hint)와 **같은 24px 정렬 상자**를 쓴다. 다만 상자만 맞춰서는
+   안 맞는다 — v26-0822-3 에서 line-height 만 바꿨다가 전혀 안 고쳐졌다.
+   line-height 는 줄상자의 '높이'를 바꿀 뿐, 그 상자 안에서 글자 획이 어디에
+   찍히는지는 못 바꾼다. 실제로 재보니 DOM 상자 중심은 셋 다 같은데(22.50)
+   획 중심만 어긋나 있었다. 그래서 안쪽 #hDateText 를 따로 광학 보정한다. */
 .date-l{
-  font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--tx3);
+  font-family:var(--font-number);font-size:12px;color:var(--tx3);
   min-width:44px;text-align:center;cursor:pointer;
+  height:24px;display:flex;align-items:center;justify-content:center;
+  box-sizing:border-box;
   -webkit-tap-highlight-color:transparent;
 }
 .date-l:hover{color:var(--tx2);}
+/* 숫자와 대문자에는 baseline 아래로 내려가는 획이 없는데 줄상자는 그 자리를 늘
+   비워 두므로, 줄상자를 중앙에 놓으면 눈에 보이는 획은 위로 뜬다. 얼마나 뜨는지는
+   실제로 잡힌 글꼴의 metric 에 달려 있어 기기마다 다르다(HB 실측: 모바일 ~1.5px,
+   PC ~3px). 그래서 숫자를 박지 않고 _syncHdrDateOptical() 이 재서 넣는다. */
+#hDateText{
+  display:block;line-height:1;
+  transform:translateY(var(--hdr-date-optical,0px));
+}
 
 /* ── DATE SWIPE OVERLAY ── */
 
@@ -863,20 +959,20 @@ header{
 .datepick-input{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:10px 12px;color:var(--tx);
-  font-family:'Pretendard',sans-serif;font-size:16px;
+  font-family:var(--font-ui),sans-serif;font-size:16px;
   outline:none;-webkit-appearance:none;
 }
 .datepick-btns{display:flex;gap:8px;margin-top:14px;}
 .datepick-ok{
   flex:1;padding:10px;border-radius:8px;border:none;
   background:var(--ac);color:#fff;
-  font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:600;
   cursor:pointer;
 }
 .datepick-cancel{
   padding:10px 16px;border-radius:8px;
   border:1px solid var(--bd2);background:transparent;
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:13px;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;
   cursor:pointer;
 }
 #weeklyView,#monthlyView{display:none;padding:14px;}
@@ -885,7 +981,7 @@ header{
 .total-row{display:flex;align-items:center;gap:10px;margin-top:5px;margin-bottom:5px;padding:0 2px;}
 .total-prog{flex:1;height:2px;background:var(--bd2);border-radius:1px;}
 .total-fill{height:100%;border-radius:1px;background:var(--ac);transition:width .3s;}
-.total-lbl{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--tx3);white-space:nowrap;}
+.total-lbl{font-family:var(--font-number);font-size:10px;color:var(--tx3);white-space:nowrap;}
 .total-lbl.ov{color:var(--ov);}
 
 /* add hidden section */
@@ -895,7 +991,7 @@ header{
   padding:4px 10px;border-radius:20px;
   border:1px solid var(--bd2);background:transparent;color:var(--tx2);
   font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
-  font-family:'Pretendard',sans-serif;transition:color .12s,border-color .12s;
+  font-family:var(--font-ui),sans-serif;transition:color .12s,border-color .12s;
 }
 .add-btn:hover{color:var(--tx);border-color:var(--bd2);}
 .add-dot{width:5px;height:5px;border-radius:50%;}
@@ -906,7 +1002,7 @@ header{
   border:1px solid var(--bd2);background:transparent;
   color:var(--tx3);font-size:12px;font-weight:700;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
-  font-family:'IBM Plex Mono',monospace;transition:all .15s;flex-shrink:0;
+  font-family:var(--font-mono);transition:all .15s;flex-shrink:0;
 }
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
@@ -917,7 +1013,7 @@ header{
 
 /* add-btn count — matches section color via inline style */
 .add-btn-cnt{
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-family:var(--font-number);font-size:10px;
   margin-left:1px;font-weight:600;
 }
 
@@ -956,7 +1052,7 @@ header{
       name — not as rows in the body) ── */
 .ev-chip{
   display:inline-flex;align-items:center;flex-shrink:0;
-  font-family:'SUIT','Pretendard',sans-serif;font-size:10px;font-weight:500;
+  font-family:'SUIT',var(--font-ui),sans-serif;font-size:10px;font-weight:500;
   letter-spacing:-.02em;
   color:var(--tx2);background:var(--s2);
   border:1px solid var(--bd2);border-radius:6px;
@@ -1010,7 +1106,7 @@ header{
 .ts-summary{
   display:none;
   align-items:center;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  font-family:var(--font-number);font-size:10px;
   color:var(--tx2);letter-spacing:.02em;
 }
 .ts.cl .ts-summary{display:flex;}
@@ -1056,7 +1152,7 @@ header{
   border-radius:17px;
   display:flex;align-items:center;justify-content:center;
   color:rgba(255,255,255,.95);
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   font-size:26px;font-weight:600;
   letter-spacing:.15em;
   line-height:1;
@@ -1107,8 +1203,8 @@ header{
 .big-item{
   display:flex;align-items:center;gap:0;
   padding:9px 10px 9px 10px;
-  background:rgba(90,112,248,.10);
-  border:1px solid rgba(90,112,248,.28);
+  background:rgba(var(--ac-rgb),.10);
+  border:1px solid rgba(var(--ac-rgb),.28);
   border-left:3px solid var(--sec-color, var(--ac));
   border-radius:8px;
   touch-action:pan-y;
@@ -1136,13 +1232,13 @@ header{
 .big-item.kb-active,.sm-item.kb-active{
   outline:2px solid var(--ac);
   outline-offset:-1px;
-  background:rgba(90,112,248,.16);
+  background:rgba(var(--ac-rgb),.16);
 }
 .big-item.drag-active{
   opacity:.275;cursor:grabbing;
   transform:scale(1.03) translateY(-2px);
   box-shadow:0 8px 24px rgba(0,0,0,.55),0 2px 6px rgba(0,0,0,.4);
-  border-color:rgba(90,112,248,.55);
+  border-color:rgba(var(--ac-rgb),.55);
   z-index:10;
   /* The original row stays in place while the floating ghost (#dg) shows
      the item being dragged — desaturate/grey its text so it reads as
@@ -1173,7 +1269,7 @@ header{
 .bi-dh{display:none;color:var(--tx3);font-size:11px;flex-shrink:0;cursor:grab;}
 .bi-inp{
   flex:0 0 auto;background:transparent;border:none;outline:none;
-  color:var(--tx);font-family:'Pretendard',sans-serif;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;
   font-size:16px;font-weight:600;min-width:24px;-webkit-appearance:none;
   cursor:text;
 }
@@ -1202,10 +1298,10 @@ header{
   padding:8px 10px 8px 14px;margin-bottom:6px;
   border:1px dashed var(--bd2);border-radius:8px;
 }
-.big-add:focus-within{border-color:rgba(90,112,248,.4);border-style:solid;}
+.big-add:focus-within{border-color:rgba(var(--ac-rgb),.4);border-style:solid;}
 .ba-inp{
   flex:1;background:transparent;border:none;outline:none;
-  color:var(--tx);font-family:'Pretendard',sans-serif;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;
   font-size:16px;font-weight:600;min-width:0;-webkit-appearance:none;
 }
 .ba-inp::placeholder{color:var(--tx3);font-weight:400;font-size:14px;}
@@ -1216,7 +1312,7 @@ header{
 /* ── SMALL BLOCK (E method: 1px left bar, indented, smaller text) ── */
 .sm-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;padding-left:12px;}
 .sm-lbl{font-size:9px;font-weight:700;letter-spacing:.07em;color:var(--tx3);text-transform:uppercase;}
-.sm-cnt-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--tx3);}
+.sm-cnt-lbl{font-family:var(--font-number);font-size:9px;color:var(--tx3);}
 .sm-cnt-lbl.ov{color:var(--so);}
 .sm-list{display:flex;flex-direction:column;}
 
@@ -1253,7 +1349,7 @@ header{
 .si-inp{
   flex:0 0 auto;background:transparent;border:none;outline:none;
   color:var(--tx2); /* slightly dimmer than big */
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
   font-size:13px;font-weight:500;min-width:20px;-webkit-appearance:none;
   cursor:text;
 }
@@ -1302,7 +1398,7 @@ header{
 }
 .contact-row:last-child{border-bottom:none;}
 .contact-row-nick{
-  font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+  font-family:var(--font-mono);font-size:12px;font-weight:600;
   color:var(--ac);flex-shrink:0;
 }
 .contact-row-info{
@@ -1343,7 +1439,7 @@ header{
    darkening as the count rises. Populated via populateCarryBadge(). */
 .blk-carry-badge{
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  margin-left:4px;font-family:'IBM Plex Mono',monospace;
+  margin-left:4px;font-family:var(--font-number);
   font-size:10px;font-weight:700;line-height:1;
   flex-direction:column;gap:2px;
 }
@@ -1387,7 +1483,7 @@ header{
 }
 .ts-inline-inp{
   flex:1;background:transparent;border:none;outline:none;
-  color:var(--tx);font-family:'Pretendard',sans-serif;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;
   font-size:14px;font-weight:500;min-width:0;-webkit-appearance:none;
 }
 .ts-inline-inp::placeholder{color:var(--tx3);font-size:13px;font-weight:400;}
@@ -1425,7 +1521,7 @@ header{
 
 .sgi-inp{
   flex:1;background:transparent;border:none;outline:none;
-  color:var(--tx2);font-family:'Pretendard',sans-serif;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;
   font-size:13px;font-weight:500;min-width:0;-webkit-appearance:none;
 }
 .sgi-inp::placeholder{color:var(--tx3);font-weight:400;font-size:12px;}
@@ -1469,7 +1565,7 @@ header{
 .trash-clear{
   background:none;border:none;
   color:var(--ov);font-size:11px;cursor:pointer;
-  font-family:'Pretendard',sans-serif;-webkit-tap-highlight-color:transparent;
+  font-family:var(--font-ui),sans-serif;-webkit-tap-highlight-color:transparent;
   opacity:.7;
 }
 .trash-clear:hover{opacity:1;}
@@ -1483,25 +1579,34 @@ header{
 }
 .trash-item-info{flex:1;}
 .trash-item-text{font-size:13px;font-weight:600;color:var(--tx2);}
-.trash-item-meta{font-size:10px;color:var(--tx3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
+.trash-item-meta{font-size:10px;color:var(--tx3);margin-top:2px;font-family:var(--font-number);}
 .trash-type{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bd2);color:var(--tx3);flex-shrink:0;}
 .trash-restore{
   background:none;border:none;
   color:var(--tx3);font-size:11px;padding:3px 4px;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;font-family:'Pretendard',sans-serif;flex-shrink:0;
+  -webkit-tap-highlight-color:transparent;font-family:var(--font-ui),sans-serif;flex-shrink:0;
 }
 .trash-restore:hover{color:var(--tx);}
 
 /* ── DATE NAV ── */
 .date-nav-hint{
-  display:flex;align-items:center;gap:4px;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  display:flex;align-items:center;justify-content:center;
+  height:24px;box-sizing:border-box;
   color:var(--tx3);cursor:pointer;
   -webkit-tap-highlight-color:transparent;
   transition:color .12s;
 }
 .date-nav-hint:hover{color:var(--tx2);}
-.date-arrow{font-size:16px;}
+/* 화살표는 글꼴 문자(‹ ›)가 아니라 SVG 다. 문자 글리프는 글꼴마다 줄상자 안에서
+   찍히는 높이가 달라서 — IBM Plex Mono 의 ‹ 는 상자 중심보다 0.67px 아래에
+   그려진다 — 옆의 날짜와 세로로 어긋났다. SVG 는 path 의 세로 범위(4.5~11.5)가
+   viewBox 세로 중앙(16/2=8)에 정확히 놓여 있어 어느 기기에서나 상자 중앙이다. */
+.date-arrow{display:flex;align-items:center;justify-content:center;}
+.date-arrow svg{
+  display:block;width:10px;height:16px;
+  fill:none;stroke:currentColor;stroke-width:1.4;
+  stroke-linecap:round;stroke-linejoin:round;
+}
 
 /* D view swipe transition */
 #pageContent{
@@ -1581,12 +1686,12 @@ body.split-d #todayView.animating{overflow:hidden;}
 /* 오른쪽에 띄운 상태에선 1뎁스가 그대로 보이므로 '< 말씀 목록' 되돌아가기
    첫 줄이 필요 없다 (v26-0818-11, HB). 터치 기기(그 자리에서 바뀌는 방식)는 그대로 둔다. */
 .task-menu-sub-float #logoMenuSubBack,.task-menu-sub-float #logoMenuSubSep{display:none;}
-.task-menu-label{font-size:9.5px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;
+.task-menu-label{font-size:9.5px;font-family:var(--font-mono);letter-spacing:.14em;
   color:var(--tx3);padding:5px 10px 3px;user-select:none;}
 /* ── 받은 쪽지: 미확인 뱃지 · 접기 · 스와이프 삭제 ── */
 .dev-badge{display:none;min-width:16px;height:16px;padding:0 4px;border-radius:8px;
   background:var(--danger,#e5484d);color:#fff;font-size:10px;font-weight:700;
-  font-family:'IBM Plex Mono',monospace;line-height:16px;text-align:center;box-sizing:border-box;}
+  font-family:var(--font-number);line-height:16px;text-align:center;box-sizing:border-box;}
 .dev-badge.on{display:inline-block;}
 #gnbSettingsBadge{position:absolute;top:-3px;right:-3px;z-index:2;pointer-events:none;}
 .dev-head{display:flex;align-items:center;gap:7px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -1600,7 +1705,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   justify-content:center;color:#fff;font-size:12px;font-weight:600;pointer-events:none;}
 .dev-note-hd{display:flex;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .dev-note-dot{width:6px;height:6px;border-radius:50%;background:var(--ac);flex-shrink:0;}
-.dev-note-when{font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.dev-note-when{font-size:10px;color:var(--tx3);font-family:var(--font-number);}
 .dev-note-prev{flex:1;min-width:0;font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dev-note-body{margin-top:7px;}
 .dev-note-body.hide{display:none;}
@@ -1643,7 +1748,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .event-modal-text{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:10px 12px;color:var(--tx);
-  font-family:'Pretendard',sans-serif;font-size:13px;outline:none;
+  font-family:var(--font-ui),sans-serif;font-size:13px;outline:none;
   margin-bottom:14px;box-sizing:border-box;
 }
 .event-modal-text::placeholder{color:var(--tx3);}
@@ -1662,7 +1767,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   transition:background .12s,border-color .12s,color .12s;
 }
 .event-time-toggle-btn.on{
-  background:rgba(90,112,248,.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
 }
 .event-modal-pickers{
   display:flex;align-items:center;justify-content:center;gap:6px;
@@ -1689,7 +1794,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
   background:var(--s2);border:1px solid var(--bd2);border-radius:8px;
-  color:var(--tx);font-family:'Pretendard',sans-serif;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;
   font-size:17px;font-weight:700;letter-spacing:.01em;
   font-variant-numeric:tabular-nums;
   pointer-events:none; /* clicks pass through to the real <select> beneath */
@@ -1703,13 +1808,13 @@ body.split-d #todayView.animating{overflow:hidden;}
 .event-repeat-btn{
   flex:1;padding:9px;border-radius:8px;
   background:var(--s2);border:1px solid var(--bd2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:600;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:600;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   transition:background .12s,border-color .12s,color .12s;
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-btn.on{
-  background:rgba(90,112,248,.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
 }
 /* Sub-picker grid: day-of-week (7 cells) or week-of-month (5 cells) —
    same shaded on/off button language throughout. */
@@ -1720,13 +1825,13 @@ body.split-d #todayView.animating{overflow:hidden;}
 .event-repeat-sub-cell{
   padding:9px 4px;border-radius:8px;text-align:center;
   background:var(--s2);border:1px solid var(--bd2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:12px;font-weight:600;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:12px;font-weight:600;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   transition:background .12s,border-color .12s,color .12s;
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-sub-cell.on{
-  background:rgba(90,112,248,.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
 }
 .event-modal-actions{display:flex;gap:8px;}
 .event-modal-actions .settings-btn{flex:1;}
@@ -1736,11 +1841,12 @@ body.split-d #todayView.animating{overflow:hidden;}
 .view-ttl{font-size:16px;font-weight:700;margin-bottom:14px;}
 .wscr{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .wkg{display:grid;grid-template-columns:48px repeat(7,minmax(68px,1fr));gap:2px;min-width:540px;}
-.wh{padding:4px;text-align:center;font-size:9px;font-weight:700;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.wh{padding:4px;text-align:center;font-size:9px;font-weight:700;color:var(--tx3);font-family:var(--font-mono);}
+.wh .num{font-family:var(--font-number);}
 .wh:first-child{position:sticky;left:0;z-index:3;background:var(--bg);}
 .wh.tc{color:var(--ac);}
 .wh.tc.sun-red,.wh.sun-red{color:var(--sun-red);}
-.wlbl{padding:4px;font-size:9px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;
+.wlbl{padding:4px;font-size:9px;color:var(--tx3);font-family:var(--font-mono);display:flex;align-items:center;
   position:sticky;left:0;z-index:2;background:var(--bg);}
 .wc{background:var(--s1);border:1px solid var(--bd);border-radius:5px;padding:4px 6px;min-height:36px;}
 /* (3-1-1) Today's column, the row matching the CURRENT time-section —
@@ -1786,8 +1892,8 @@ body.split-d #todayView.animating{overflow:hidden;}
 .wmview-btn.on{color:var(--ac);}
 .wmview-btn:hover{color:var(--tx2);}
 .wmview-btn.on:hover{color:var(--ac);}
-.wmore{font-size:9px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
-.wmem{font-size:9px;color:var(--ac);font-family:'IBM Plex Mono',monospace;margin-top:1px;cursor:pointer;opacity:.85;}
+.wmore{font-size:9px;color:var(--tx3);font-family:var(--font-number);}
+.wmem{font-size:9px;color:var(--ac);font-family:var(--font-number);margin-top:1px;cursor:pointer;opacity:.85;}
 .mnav{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
 
 .nav-btn{
@@ -1799,7 +1905,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .nav-btn:hover{color:var(--ac);}
 .mttl{font-size:16px;font-weight:700;flex:1;text-align:center;}
 .mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:-2px;}
-.mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:'IBM Plex Mono',monospace;}
+.mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:var(--font-mono);}
 .mcdow.sun-red{color:var(--sun-red);}
 .mcc{background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:5px;min-height:50px;}
 .mcc.empty{background:transparent;border-color:transparent;}
@@ -1823,8 +1929,8 @@ body.split-d #todayView.animating{overflow:hidden;}
 .mcdot{width:4px;height:4px;border-radius:50%;background:var(--ac);}
 .mcdot.ov{background:var(--ov);}.mcdot.dn{opacity:.25;}
 .mcdot.flag{background:var(--sun-red);}
-.mcsc{font-size:8px;color:var(--tx3);margin-top:2px;font-family:'IBM Plex Mono',monospace;}
-.mcmem{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px;cursor:pointer;font-size:8px;color:var(--ac);font-family:'IBM Plex Mono',monospace;line-height:1.2;}
+.mcsc{font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--font-number);}
+.mcmem{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px;cursor:pointer;font-size:8px;color:var(--ac);font-family:var(--font-number);line-height:1.2;}
 
 /* ── D뷰 좌우 분할 (넓은 화면) ──
    900px 이상에서 D뷰가 활성일 때 좌: 기존 할일, 우: 위젯 패널.
@@ -1964,11 +2070,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .rp-off-zone.hot{background:rgba(229,72,77,.5);width:140px;height:140px;}
 .rp-widget-title{
   font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.06em;
-  font-family:'IBM Plex Mono',monospace;margin-bottom:7px;
+  font-family:var(--font-mono);margin-bottom:7px;
   display:flex;align-items:center;justify-content:space-between;
 }
 .rp-mnav{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px;}
-.rp-mnav .rp-mttl{font-size:11px;font-weight:700;color:var(--tx);font-family:'Pretendard',sans-serif;}
+.rp-mnav .rp-mttl{font-size:11px;font-weight:700;color:var(--tx);font-family:var(--font-ui),sans-serif;}
 .rp-mnav button{
   background:none;border:none;color:var(--tx3);cursor:pointer;font-size:14px;
   padding:2px 8px;-webkit-tap-highlight-color:transparent;border-radius:6px;
@@ -2014,7 +2120,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vl-pill{
   background:transparent;border:1px solid var(--bd2);border-radius:6px;
   color:var(--tx3);font-size:9px;padding:2px 6px;cursor:pointer;
-  font-family:'Pretendard',sans-serif;-webkit-tap-highlight-color:transparent;
+  font-family:var(--font-ui),sans-serif;-webkit-tap-highlight-color:transparent;
   transition:all .15s;line-height:1.4;
 }
 .vl-pill:hover{border-color:var(--ac);color:var(--ac);}
@@ -2031,7 +2137,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vl-date{
   background:var(--s2);border:1px solid var(--bd2);border-radius:6px;
   color:var(--tx);font-size:9px;padding:3px 4px;outline:none;
-  font-family:'Pretendard',sans-serif;flex:1;min-width:0;
+  font-family:var(--font-ui),sans-serif;flex:1;min-width:0;
   -webkit-appearance:none;appearance:none;min-height:22px;box-sizing:border-box;
 }
 /* 위젯 월간 그리드 슬라이드 애니메이션 (본 M뷰와 동일한 감각) */
@@ -2124,7 +2230,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-text{width:100%;color:var(--vf-tx,var(--tx));line-height:1.85;font-weight:var(--vf-fw,300);
   letter-spacing:var(--vf-ls,0);font-family:var(--vf-font,inherit);word-break:keep-all;}
 .vc-ref{margin:9px auto 0;width:fit-content;font-size:10px;color:var(--vf-tx3,var(--tx3));
-  font-family:var(--vf-reffont,'IBM Plex Mono',monospace);letter-spacing:.06em;flex-shrink:0;cursor:pointer;}
+  font-family:var(--vf-reffont,var(--font-number));letter-spacing:.06em;flex-shrink:0;cursor:pointer;}
 .vc-bottom{
   position:relative;z-index:3;box-sizing:border-box;
   display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 12px 10px;
@@ -2149,7 +2255,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-act .ic-fill{display:none;}
 .vc-act.on .ic-out{display:none;}
 .vc-act.on .ic-fill{display:block;}
-.vc-cnt{font-size:9px;font-family:'IBM Plex Mono',monospace;color:var(--vf-tx3,var(--tx3));line-height:1;}
+.vc-cnt{font-size:9px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vc-act-like{color:var(--sun-red);}
 .vc-empty{font-size:11px;color:var(--vf-tx3,var(--tx3));text-align:center;padding:26px 10px;}
 /* 헤더 가운데 — 지금 걸려 있는 필터. 누르면 필터가 풀린다.
@@ -2158,7 +2264,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-filter{display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;
   background:none;border:none;padding:0;
   font-size:10px;font-weight:400;letter-spacing:0;color:var(--tx2);cursor:pointer;
-  font-family:'Pretendard',sans-serif;-webkit-tap-highlight-color:transparent;}
+  font-family:var(--font-ui),sans-serif;-webkit-tap-highlight-color:transparent;}
 .vc-filter span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .vc-filter:active{opacity:.5;}
 /* 마우스가 있는 기기에서만 나오는 좌우 넘김 (손가락에서는 좌우로 밀면 된다).
@@ -2207,10 +2313,10 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   width:100%;max-width:340px;
 }
 .auth-logo{
-  font-family:'IBM Plex Mono',monospace;font-size:20px;letter-spacing:.12em;
+  font-family:var(--font-mono);font-size:20px;letter-spacing:.12em;
   text-align:center;margin-bottom:6px;color:var(--tx);
 }
-.auth-logo b{font-style:normal;color:var(--ac);transition:color .15s;}
+.auth-logo b{font-style:normal;color:var(--ac);transition:color .15s;font-family:var(--font-number);}
 /* 회원가입 화면에서는 로고의 7도 버건디로 (제출 버튼과 같은 색) */
 .auth-logo.auth-signup b{color:var(--bgd-tx);}
 .auth-sub{
@@ -2220,14 +2326,14 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .auth-input{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:11px 14px;
-  color:var(--tx);font-family:'Pretendard',sans-serif;font-size:15px;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:15px;
   outline:none;-webkit-appearance:none;box-sizing:border-box;
 }
-.auth-input:focus{border-color:rgba(90,112,248,.5);}
+.auth-input:focus{border-color:rgba(var(--ac-rgb),.5);}
 .auth-btn{
   width:100%;padding:11px;border-radius:8px;border:none;
   background:var(--ac);color:#fff;
-  font-family:'Pretendard',sans-serif;font-size:14px;font-weight:600;
+  font-family:var(--font-ui),sans-serif;font-size:14px;font-weight:600;
   cursor:pointer;margin-top:4px;
 }
 .auth-btn:disabled{opacity:.5;cursor:default;}
@@ -2241,7 +2347,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .auth-switch button{
   background:none;border:none;color:var(--ac);
   font-size:12px;cursor:pointer;padding:0 4px;
-  font-family:'Pretendard',sans-serif;
+  font-family:var(--font-ui),sans-serif;
 }
 .auth-switch button.auth-signup{color:var(--bgd-tx);}
 .auth-error{
@@ -2254,12 +2360,12 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .auth-version{
   position:absolute;left:0;right:0;bottom:18px;
   text-align:center;font-size:10px;color:var(--tx3);opacity:.55;
-  font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;
+  font-family:var(--font-number);letter-spacing:.02em;
   pointer-events:none;
 }
 .settings-version{
   text-align:center;font-size:13px;color:var(--tx2);
-  font-family:'IBM Plex Mono',monospace;
+  font-family:var(--font-number);
   padding:18px 0 4px;
 }
 #userBadge{
@@ -2447,13 +2553,13 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .settings-select{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:9px 12px;margin-top:6px;
-  color:var(--tx);font-family:'Pretendard',sans-serif;font-size:13px;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;
   outline:none;-webkit-appearance:none;
 }
 .settings-number{
   width:56px;background:var(--s2);border:1px solid var(--bd2);
   border-radius:8px;padding:8px 10px;text-align:center;
-  color:var(--tx);font-family:'IBM Plex Mono',monospace;font-size:14px;
+  color:var(--tx);font-family:var(--font-number);font-size:14px;
   outline:none;-webkit-appearance:none;flex-shrink:0;
 }
 
@@ -2475,9 +2581,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   transition:background .13s,color .13s;
 }
 .hi-seg button:first-child{border-left:0;}
-.hi-seg button.on{background:rgba(90,112,248,.16);color:var(--tx);}
+.hi-seg button.on{background:rgba(var(--ac-rgb),.16);color:var(--tx);}
 .hi-seg button svg{width:22px;height:auto;display:block;}
-.hi-seg-b{font-family:'Pretendard',sans-serif;font-weight:800;font-size:15px;line-height:1;}
+.hi-seg-b{font-family:var(--font-ui),sans-serif;font-weight:800;font-size:15px;line-height:1;}
 /* ── 공유 이미지 설정 — 미리보기를 가운데 두고 네 귀퉁이에 버튼 (v26-0812-15) ──
    버튼이 놓인 자리 = 그 항목이 이미지에서 나오는 자리. 이름표 대신 배치로 알려 준다. */
 .img-corners{
@@ -2522,11 +2628,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .settings-btn{
   flex:1;padding:10px;border-radius:8px;
   border:1px solid var(--bd2);background:var(--s2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:500;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .settings-btn:hover{border-color:var(--ac);color:var(--tx);}
-.settings-btn.on{border-color:var(--ac);background:rgba(90,112,248,.14);color:var(--tx);}
+.settings-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
 /* 글자 크기 고르기 — 숫자 대신 실제 크기로 보여준다 (네 단계가 눈에 보이게) */
 /* 글자 크기 고르는 줄. 버튼은 글자 폭 그대로 두고(늘리지도 줄이지도 않는다)
    남는 자리는 사이 간격으로 흘린다. 좁으면 아랫줄로 넘어간다 — 넘어간 버튼이
@@ -2540,13 +2646,13 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
      아랫줄로 넘어간다. 글자 크기를 보여주는 버튼이라 잘리면 뜻이 없다. */
   flex:0 0 auto;min-width:0;padding:9px 1px;border-radius:8px;
   border:1px solid var(--bd2);background:var(--s2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-weight:400;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-weight:400;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   white-space:nowrap;overflow:hidden;text-overflow:clip;line-height:1.3;
   display:flex;align-items:center;justify-content:center;
 }
 @media (hover:hover){.ts-btn:hover{border-color:var(--ac);color:var(--tx);}}
-.ts-btn.on{border-color:var(--ac);background:rgba(90,112,248,.14);color:var(--tx);}
+.ts-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
 /* 전체화면 탭의 글자 크기 네 버튼만 — 가로를 4등분해 균일한 크기로.
    (말씀카드 위젯의 글자 크기 줄은 그대로 .ts-row 를 쓰므로 영향 없다)
    버튼 안 글자의 font-size 는 그대로 두고, 버튼 자체(칸)만 같은 폭으로 만든다. */
@@ -2593,7 +2699,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .sec-edit-time-inp{
   background:var(--s2);border:1px solid var(--bd2);
   border-radius:6px;padding:3px 6px;
-  color:var(--tx2);font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:var(--tx2);font-family:var(--font-number);font-size:11px;
   outline:none;cursor:pointer;-webkit-appearance:none;
   color-scheme:dark;
 }
@@ -2606,7 +2712,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sec-edit-name{
   flex:1;background:var(--s2);border:1px solid var(--bd2);
   border-radius:7px;padding:7px 10px;
-  color:var(--tx);font-family:'Pretendard',sans-serif;font-size:13px;
+  color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;
   outline:none;min-width:0;
 }
 .sec-edit-btn{
@@ -2653,7 +2759,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 }
 .sec-bound-back-note{
   font-size:10px;color:var(--tx3);flex-shrink:0;
-  font-family:'IBM Plex Mono',monospace;
+  font-family:var(--font-number);
 }
 .sec-bound-hint{
   font-size:11px;color:var(--tx3);line-height:1.55;
@@ -2688,7 +2794,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vdash-top{font-size:10px;color:var(--tx2);text-align:center;line-height:1.35;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .vdash-top b{color:var(--ac);font-weight:600;}
-.vdash-ref{font-size:9.5px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;text-align:center;}
+.vdash-ref{font-size:9.5px;color:var(--tx3);font-family:var(--font-number);text-align:center;}
 .vdash-empty{font-size:10px;color:var(--tx3);opacity:.6;padding:16px 0;}
 .vdash-pie{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
 .vdash-pie:hover{opacity:.82;}
@@ -2699,7 +2805,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vdd-tbl th{font-size:10px;font-weight:600;color:var(--tx3);text-align:right;padding:5px 6px;border-bottom:1px solid var(--bd2);}
 .vdd-tbl th:nth-child(1),.vdd-tbl th:nth-child(2){text-align:left;}
 .vdd-tbl td{padding:6px;border-bottom:1px solid var(--bd2);color:var(--tx2);text-align:right;}
-.vdd-tbl td:nth-child(1){width:22px;text-align:left;color:var(--tx3);font-family:'IBM Plex Mono',monospace;}
+.vdd-tbl td:nth-child(1){width:22px;text-align:left;color:var(--tx3);font-family:var(--font-number);}
 .vdd-tbl td:nth-child(2){text-align:left;color:var(--tx);}
 .vdd-sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 .vdd-tbl tr:last-child td{border-bottom:none;}
@@ -2708,7 +2814,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .settings-add-sec-btn{
   width:100%;margin-top:10px;padding:9px;border-radius:8px;
   border:1px dashed var(--bd2);background:transparent;
-  color:var(--tx3);font-family:'Pretendard',sans-serif;font-size:12px;
+  color:var(--tx3);font-family:var(--font-ui),sans-serif;font-size:12px;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .settings-add-sec-btn:hover{color:var(--tx2);border-color:var(--bd2);}
@@ -2719,11 +2825,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   display:flex;align-items:center;gap:6px;
   padding:7px 12px;border-radius:20px;
   border:1px solid var(--bd2);background:var(--s2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:12px;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:12px;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .preset-chip:hover{border-color:var(--ac);}
-.preset-chip.active{border-color:var(--ac);color:var(--tx);background:rgba(90,112,248,.12);}
+.preset-chip.active{border-color:var(--ac);color:var(--tx);background:rgba(var(--ac-rgb),.12);}
 .preset-chip-dots{display:flex;gap:2px;}
 .preset-chip-dot{width:7px;height:7px;border-radius:50%;}
 .preset-chip-del{
@@ -2737,7 +2843,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .theme-pick-btn{
   flex:1;padding:10px;border-radius:8px;
   border:1px solid var(--bd2);background:var(--s2);
-  color:var(--tx2);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:500;
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:500;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .theme-pick-btn:hover{border-color:var(--ac);color:var(--tx);}
@@ -2757,7 +2863,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   width:20px;height:20px;border-radius:50%;
   background:var(--ac);border:none;cursor:pointer;
 }
-.theme-pick-btn.active{border-color:var(--ac);background:rgba(90,112,248,.14);color:var(--tx);}
+.theme-pick-btn.active{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
 .theme-pick-btn .carry-preview-dot{
   display:inline-block;width:6px;height:6px;border-radius:50%;
   background:currentColor;margin-right:8px;vertical-align:middle;
@@ -2766,6 +2872,24 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   display:inline-block;width:5px;height:5px;
   background:currentColor;transform:rotate(45deg);vertical-align:middle;
 }
+
+/* 화면 스타일(디자인 프리셋) 카드 — 프리셋이 늘어나도 자동으로 줄바꿈된다 */
+.ui-preset-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;
+}
+.ui-preset-card{
+  display:flex;flex-direction:column;align-items:flex-start;gap:8px;
+  min-height:64px;padding:11px 12px;border-radius:10px;
+  border:1px solid var(--bd2);background:var(--s2);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;
+  transition:border-color .15s,background .15s;
+}
+.ui-preset-card:hover{border-color:var(--ac);}
+.ui-preset-card.active{border-color:var(--ac);background:rgba(var(--ac-rgb),.12);}
+.ui-preset-name{font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:500;color:var(--tx);}
+.ui-preset-swatches{display:flex;gap:3px;}
+.ui-preset-swatch{width:14px;height:6px;border-radius:2px;flex-shrink:0;}
+.ui-preset-sample{font-size:13px;color:var(--tx2);}
 </style>
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -2830,13 +2954,39 @@ function _dlogScroll(){
   const se=document.scrollingElement||document.documentElement;
   return Math.round((se&&se.scrollTop)||0)+(window.visualViewport?('/vv'+Math.round(window.visualViewport.offsetTop)):'');
 }
+// 숫자 글꼴 점검 화면 — 개발본에서만 뜬다. 실기기(특히 아이폰)에서 --font-number
+// 가 실제로 로드돼 가운데 점 있는 0 이 안 나오는지 눈으로 확인하는 용도.
+// HB 요청, 26-0822-2. 닫기를 누르면 사라지고, 운영본에는 아예 안 뜬다.
+if(DEV_MODE){
+  document.addEventListener('DOMContentLoaded',()=>{
+    const box=document.createElement('div');
+    box.id='numFontCheckBox';
+    box.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:2147483647;'+
+      'background:rgba(0,0,0,.88);color:#fff;border-radius:10px;padding:10px 12px;'+
+      "font-family:var(--font-number);font-size:15px;line-height:1.7;white-space:pre-wrap;"+
+      '-webkit-user-select:text;user-select:text;box-shadow:0 4px 20px rgba(0,0,0,.4);';
+    const lines=[
+      '0 10 20 30 40 50 60 70 80 90 100',
+      '2026.08.20',
+      '00:00 08:00 10:30 20:00',
+      '0/7 10/20 100%',
+      '요한복음 10:10',
+      '시편 100:1'
+    ].join('\n');
+    box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-family:var(--font-ui),sans-serif;">'+
+      '<span style="font-size:11px;opacity:.7;">숫자 글꼴 점검 (개발본 전용) — 0 에 가운데 점이 없어야 정상</span>'+
+      '<button onclick="this.closest(\'#numFontCheckBox\').remove()" style="flex-shrink:0;margin-left:8px;background:#333;color:#fff;border:0;border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--font-ui),sans-serif;">닫기</button>'+
+      '</div>'+esc(lines).replace(/\n/g,'<br>');
+    (document.body||document.documentElement).appendChild(box);
+  });
+}
 
 // ═══════════════════════════════════════════════════════════
 //  APP VERSION
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0820-6";
+const APP_VERSION = "v. 26-0822-4";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3104,15 +3254,24 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;align-items:center;gap:12px;">
           <input type="range" class="uiscale-slider" id="uiScaleSlider" min="0" max="25" step="1" value="0"
             oninput="uiScaleSlideInput(this)" onchange="uiScaleSlideCommit(this)">
-          <span id="uiScaleLabel" style="font-size:12px;color:var(--tx2);min-width:44px;text-align:right;font-family:'IBM Plex Mono',monospace;">기본</span>
+          <span id="uiScaleLabel" style="font-size:12px;color:var(--tx2);min-width:44px;text-align:right;font-family:var(--font-number);">기본</span>
         </div>
       </div>
 
-      <!-- 테마 -->
+      <!-- 화면 스타일(디자인 프리셋) -->
       <div class="settings-section">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">테마</div>
-          <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정을 따라가게 할 수 있어요</div>
+          <div class="settings-row-label lv1">화면 스타일</div>
+          <div class="settings-row-desc">앱 전체의 색상과 글꼴을 한 번에 바꿔요.</div>
+        </div>
+        <div class="ui-preset-grid" id="uiThemePresetCards"></div>
+      </div>
+
+      <!-- 밝기 -->
+      <div class="settings-section">
+        <div class="settings-row-text" style="margin-bottom:10px;">
+          <div class="settings-row-label lv1">밝기</div>
+          <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정에 맞춰요.</div>
         </div>
         <div class="theme-pick-row">
           <button class="theme-pick-btn" id="themeBtnDark" onclick="updateSetting('theme','dark')">다크</button>
@@ -3239,7 +3398,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button id="layFormPhone" class="settings-btn" style="flex:1;" onclick="setLayFormMode('phone')">항상 1단</button>
           <button id="layFormWide" class="settings-btn" style="flex:1;" onclick="setLayFormMode('wide')">넓게 허용</button>
         </div>
-        <div class="settings-row-desc" id="layFormInfo" style="margin-top:6px;font-family:'IBM Plex Mono',monospace;font-size:10px;"></div>
+        <div class="settings-row-desc" id="layFormInfo" style="margin-top:6px;font-family:var(--font-number);font-size:10px;"></div>
         <div style="display:flex;gap:14px;margin-top:8px;align-items:flex-end;">
           <div>
             <div class="settings-subtitle" style="margin:0 0 4px;">2단 시작</div>
@@ -3428,10 +3587,10 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section">
         <div class="settings-section-title">개발자에게 쪽지 보내기</div>
         <input type="email" id="devNoteEmail" placeholder="회신받을 이메일 (선택)"
-          style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
+          style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
           onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
         <textarea id="devNoteText" placeholder="남기고 싶은 말을 적어주세요"
-          style="width:100%;height:88px;resize:none;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:'Pretendard',sans-serif;font-size:13px;font-weight:300;line-height:1.6;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
+          style="width:100%;height:88px;resize:none;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;line-height:1.6;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
           onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'"></textarea>
         <div style="margin-bottom:8px;">
           <button class="settings-btn" onclick="document.getElementById('devNoteFile').click()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:5px;">
@@ -3545,7 +3704,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;align-items:center;gap:12px;" data-lv="p">
           <input type="range" class="uiscale-slider" id="setVerseSneakMaxW" min="300" max="1000" step="100" value="700"
             oninput="setVerseSneakMaxW(this.value)">
-          <span id="setVerseSneakMaxWDisplay" style="font-size:12px;color:var(--tx2);min-width:52px;text-align:right;font-family:'IBM Plex Mono',monospace;">700px</span>
+          <span id="setVerseSneakMaxWDisplay" style="font-size:12px;color:var(--tx2);min-width:52px;text-align:right;font-family:var(--font-number);">700px</span>
         </div>
         <div class="settings-row-desc" data-lv="p" style="margin:6px 0 0;">그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
       </div>
@@ -3693,7 +3852,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 
         <div class="settings-subtitle" data-lv="mp">요일</div>
         <div id="vpDayRow" data-lv="mp" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
-        <div class="settings-row-desc" id="vpSummary" style="margin-top:10px;font-size:10px;font-family:'IBM Plex Mono',monospace;"></div>
+        <div class="settings-row-desc" id="vpSummary" style="margin-top:10px;font-size:10px;font-family:var(--font-number);"></div>
 
         <!-- v26-0819-2 — 시트 '순서변경': 시각·간격·요일을 정한 뒤 맨 마지막에 고른다 -->
         <div class="settings-subtitle" data-lv="p">어떤 순서로</div>
@@ -3709,7 +3868,7 @@ window._fbScriptsReady=new Promise(resolve=>{
             <button class="settings-btn" onclick="vpDiagCopy()">복사</button>
           </div>
         </div>
-        <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.55;color:var(--tx2);"></div>
+        <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:var(--font-number);font-size:10px;line-height:1.55;color:var(--tx2);"></div>
       </div>
 
             </div>
@@ -3850,7 +4009,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button id="ssS_1080" class="settings-btn" style="flex:1;" onclick="setShareSize('sns','1080')">1080</button>
           <button id="ssS_1920" class="settings-btn on" style="flex:1;" onclick="setShareSize('sns','1920')">1920</button>
         </div>
-        <div class="settings-row-desc" id="shareSizeInfo" style="margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:10px;"></div>
+        <div class="settings-row-desc" id="shareSizeInfo" style="margin-top:8px;font-family:var(--font-number);font-size:10px;"></div>
       </div>
 
       <!-- ── 공유 텍스트 ── -->
@@ -3926,12 +4085,12 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="hdr-r">
     <span id="hdrDateNav" style="display:flex;align-items:center;gap:inherit;">
-    <div class="date-nav-hint" onclick="navigateDate(-1)" id="dateBack" style="display:none">
-      <span class="date-arrow">‹</span>
+    <div class="date-nav-hint" onclick="navigateDate(-1)" id="dateBack" style="display:none" aria-label="이전 날짜" title="이전 날짜">
+      <span class="date-arrow" aria-hidden="true"><svg viewBox="0 0 10 16"><path d="M6.5 4.5 3.5 8 6.5 11.5"/></svg></span>
     </div>
-    <div class="date-l" id="hDate" onclick="navigateDate(0)" style="cursor:pointer;min-width:36px;text-align:center;font-family:'IBM Plex Mono',monospace;"></div>
-    <div class="date-nav-hint" onclick="navigateDate(1)" id="dateFwd" style="display:none">
-      <span class="date-arrow">›</span>
+    <div class="date-l" id="hDate" onclick="navigateDate(0)" style="cursor:pointer;min-width:36px;text-align:center;font-family:var(--font-number);"><span id="hDateText"></span></div>
+    <div class="date-nav-hint" onclick="navigateDate(1)" id="dateFwd" style="display:none" aria-label="다음 날짜" title="다음 날짜">
+      <span class="date-arrow" aria-hidden="true"><svg viewBox="0 0 10 16"><path d="M3.5 4.5 6.5 8 3.5 11.5"/></svg></span>
     </div>
     </span>
     <button class="ur-btn" id="undoBtn" onclick="doUndo()" title="실행취소" disabled>↩</button>
@@ -4014,8 +4173,8 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
     <input type="date" id="eventDateInput" onchange="onEventDateChange(this.value)"
       style="background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:6px 9px;
-      color:var(--tx);font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;">
-    <span id="eventDateDow" style="font-size:11px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;"></span>
+      color:var(--tx);font-family:var(--font-number);font-size:12px;outline:none;">
+    <span id="eventDateDow" style="font-size:11px;color:var(--tx3);font-family:var(--font-mono);"></span>
   </div>
   <div id="eventSecPick" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
   <input type="text" id="eventTextInput" class="event-modal-text" placeholder="일정 내용을 이곳에 적어요" maxlength="60" onkeydown="if(event.key==='Enter'){event.preventDefault();submitEventModal();}">
@@ -4598,7 +4757,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="settings-btn" style="flex:1;" onclick="vfShareDo('image','pc')">PC</button>
       <button class="settings-btn" style="flex:1;" onclick="vfShareDo('image','sns')">SNS</button>
     </div>
-    <div class="settings-row-desc" id="vfShareSizeHint" style="display:none;margin-top:6px;font-size:10px;font-family:'IBM Plex Mono',monospace;text-align:center;"></div>
+    <div class="settings-row-desc" id="vfShareSizeHint" style="display:none;margin-top:6px;font-size:10px;font-family:var(--font-number);text-align:center;"></div>
   </div>
 </div>
 
@@ -4606,7 +4765,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="task-menu-overlay" id="cellTodoOverlay" style="display:none" onclick="closeCellTodo()"></div>
 <div id="cellTodoModal" style="display:none;position:fixed;z-index:4520;left:50%;top:38%;transform:translate(-50%,-50%);
   background:var(--s2);border:1px solid var(--bd2);border-radius:14px;padding:16px;width:min(320px,86vw);box-shadow:0 12px 40px rgba(0,0,0,.35);">
-  <div id="cellTodoTitle" style="font-size:12px;color:var(--tx3);margin-bottom:8px;font-family:'IBM Plex Mono',monospace;"></div>
+  <div id="cellTodoTitle" style="font-size:12px;color:var(--tx3);margin-bottom:8px;font-family:var(--font-number);"></div>
   <div id="cellTodoSecPick" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
   <input id="cellTodoInput" type="text" placeholder="할일을 입력하세요" onkeydown="if(event.key==='Enter'){event.preventDefault();cellTodoSave();}else if(event.key==='Escape'){event.preventDefault();closeCellTodo();}"
     style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--bd2);border-radius:9px;
@@ -9977,9 +10136,16 @@ function _shotDraw(o){
     if(!baseFs){const rEl=document.getElementById('vfRef');
       if(rEl){const c2=getComputedStyle(rEl);baseFs=(parseFloat(c2.fontSize)||0)*SC;}}
     const fs=Math.max(11,Math.round(baseFs||15*SC));
-    ctx.font=`400 ${fs}px 'IBM Plex Mono',monospace`;
+    // "BLOCK" 워드마크는 IBM Plex Mono 그대로, 숫자 7 만 점 없는 --font-number 로
+    // (HB 요청, 26-0822-2). wAll 도 같은 두 글꼴로 재야 우측 정렬이 안 밀린다.
+    const _blk7NumFont=getComputedStyle(document.documentElement).getPropertyValue('--font-number').trim()||"'Pretendard',-apple-system,sans-serif";
+    const _blk7MonoFont=`400 ${fs}px 'IBM Plex Mono',monospace`;
+    const _blk7NumFontFull=`400 ${fs}px ${_blk7NumFont}`;
     const LS=fs*0.18;
-    let wAll=0;[...'BLOCK7'].forEach(c=>{wAll+=ctx.measureText(c).width+LS;});wAll-=LS;
+    let wAll=0;[...'BLOCK7'].forEach(c=>{
+      ctx.font=/\d/.test(c)?_blk7NumFontFull:_blk7MonoFont;
+      wAll+=ctx.measureText(c).width+LS;
+    });wAll-=LS;
     // 우상단 액션 스택의 맨 위 지점 — 그보다 위에 자리가 있어야 우상단에 놓는다
     // 우측 여백 기준도 액션 스택 자체의 우측 여백에 맞춘다(PC 는 화면 비율이 달라
     // 위쪽 여백(pad)과 액션 열의 실제 우측 여백이 서로 다르다 — v26-0817-3, HB 확인).
@@ -10018,7 +10184,9 @@ function _shotDraw(o){
       if(lx<pad)lx=pad;             // 그래도 자리가 없을 때만 좌상단
     }
     ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.font=_blk7MonoFont;
     ctx.fillStyle=th.tx2;lx+=_cardTextLS(ctx,'BLOCK',lx,fy,LS,'left')+LS;
+    ctx.font=_blk7NumFontFull;
     ctx.fillStyle=th.ac;_cardTextLS(ctx,'7',lx,fy,LS,'left');
   }
   return cv;
@@ -10527,7 +10695,9 @@ function applyVfTheme(){
     '--vf-ac':t.ac,'--vf-tile':t.tile,'--vf-font':fam,'--vf-fw':String(t.fw),
     '--hi-fw':String(_hiFw(t.font)),
     '--vf-ls':t.ls||'0','--vf-grain':String(t.grain||0),'--vf-vig':String(t.vig||0),
-    '--vf-reffont':(t.font==='serif')?fam:"'IBM Plex Mono',monospace"
+    // 장절 숫자 — 명조 테마는 본문(명조) 그대로, 그 외엔 점 없는 --font-number로
+    // (예전엔 여기 IBM Plex Mono가 고정이었다. HB 요청, 26-0822-2)
+    '--vf-reffont':(t.font==='serif')?fam:'var(--font-number)'
   };
   ['verseFull','verseGrid'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
@@ -10601,7 +10771,7 @@ function _renderVfSecAssign(){
     return `<div style="padding:9px 0;border-top:1px solid var(--bd2);">
       <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
         <span style="font-size:12px;color:${s.id===nowSec?'var(--ac)':'var(--tx)'};font-weight:${s.id===nowSec?600:400};">${esc(s.name)}</span>
-        ${_secNoTime(s)?'':`<span style="font-size:10px;color:var(--tx3);font-family:'IBM Plex Mono',monospace;">${esc(s.startTime)}–${esc(s.endTime)}</span>`}
+        ${_secNoTime(s)?'':`<span style="font-size:10px;color:var(--tx3);font-family:var(--font-number);">${esc(s.startTime)}–${esc(s.endTime)}</span>`}
         ${hidden?'<span style="font-size:10px;color:var(--tx3);opacity:.7;">숨김</span>':''}
         ${cur.length?'':'<span style="font-size:10px;color:var(--tx3);margin-left:auto;">전체 랜덤</span>'}
       </div>
@@ -12138,7 +12308,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',uiThemePreset:'classic',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -14676,7 +14846,7 @@ function _vcThemeVars(cfg,ref){
     '--vf-ac':v.ac,'--vf-font':fam,'--vf-fw':String(p.fw),
     '--hi-fw':String(_hiFw(p.font)),
     '--vf-ls':p.ls||'0','--vf-grain':String(p.grain||0),'--vf-vig':String(p.vig||0),
-    '--vf-reffont':(p.font==='serif')?fam:"'IBM Plex Mono',monospace"
+    '--vf-reffont':(p.font==='serif')?fam:'var(--font-number)'
   }};
 }
 // 글자 크기 다섯 단계. 고르는 버튼에는 숫자 대신 **그 크기의 글자**를 보여준다.
@@ -15374,7 +15544,7 @@ function _rpWidgetHTML(w){
         <div style="display:flex;justify-content:center;margin-bottom:6px;">${_makeWMViewBtnsHTML()}</div>
         <div class="rp-triple-row">
           ${months.map(s=>`<div>
-            <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:4px;font-family:'Pretendard',sans-serif;">${monthLabel(s.m)}</div>
+            <div style="font-size:10px;font-weight:700;color:var(--tx3);margin-bottom:4px;font-family:var(--font-ui),sans-serif;">${monthLabel(s.m)}</div>
             ${_rpMonthGridHTML(s.y,s.m,_rpMGridH('monthTriple'))}
           </div>`).join('')}
         </div>
@@ -17145,9 +17315,9 @@ function _openGhostInput(secId, type, pos){
     if(old){old.querySelector('input')?.focus();return;}
     const ghost=document.createElement('div');
     ghost.id=`tmp-big-ghost-${secId}`;
-    ghost.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;background:rgba(90,112,248,.08);border:1px dashed var(--bd2);border-radius:8px;margin-bottom:4px;';
+    ghost.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;background:rgba(var(--ac-rgb),.08);border:1px dashed var(--bd2);border-radius:8px;margin-bottom:4px;';
     const inp=document.createElement('input');
-    inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:Pretendard,sans-serif;font-size:14px;font-weight:500;';
+    inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:14px;font-weight:500;';
     inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
     // ⚠️ 쓰기 시작한 "그 날짜"를 붙잡아 둔다. 커밋은 blur 후 100ms 뒤에 도는데,
     //    그 사이에 날짜가 넘어가면(←/→ 키·‹› 버튼·자정) tKey() 가 다른 날을
@@ -17231,7 +17401,7 @@ function _openGhostInput(secId, type, pos){
     ghost.id=`tmp-sm-ghost-${secId}`;
     ghost.style.cssText='display:flex;align-items:center;padding:7px 9px 7px 12px;margin-left:12px;background:var(--s2);border:1px dashed var(--bd2);border-radius:7px;margin-top:4px;';
     const inp=document.createElement('input');
-    inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx2);font-family:Pretendard,sans-serif;font-size:13px;';
+    inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;';
     inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
     // ⚠️ 큰 할일 고스트와 같은 이유로 쓰기 시작한 날짜를 붙잡아 둔다 (v26-0802-5)
     const dayKey=tKey();
@@ -18793,11 +18963,52 @@ function updateHeaderDate(){
   const isT=tKey(d)===tKey(today);
   const label=`${d.getMonth()+1}${z(d.getDate())} ${DOW[d.getDay()]}`;
   const el=document.getElementById('hDate');
-  el.textContent=label;
+  // ⚠️ #hDate 자체의 textContent 를 갈아끼우면 안쪽 #hDateText 가 통째로 날아간다
+  //    (광학 보정이 걸린 요소다). 글자는 안쪽 span 에만 넣는다.
+  const txt=document.getElementById('hDateText');
+  if(txt)txt.textContent=label; else el.textContent=label;
   el.style.color=isT?'var(--ac)':'var(--tx2)';
   el.title=isT?'오늘':'탭하면 오늘로';
   document.getElementById('dateBack').style.display='flex';
   document.getElementById('dateFwd').style.display='flex';
+  _syncHdrDateOptical();
+}
+
+// ── GNB 날짜의 광학 보정 ──
+// 숫자와 대문자에는 baseline 아래로 내려가는 획이 없는데 줄상자는 그 자리를 늘
+// 비워 둔다. 그래서 줄상자를 세로 중앙에 놓아도 **눈에 보이는 획**은 위로 뜬다.
+// (v26-0822-3 에서 line-height 만 만졌다가 전혀 안 고쳐진 이유가 이것이다 —
+//  line-height 는 상자 높이를 바꿀 뿐 상자 안 획의 자리를 못 바꾼다.)
+// 뜨는 양은 그 기기에서 실제로 잡힌 글꼴의 metric 에 달려 있어서(HB 실측:
+// 모바일 ~1.5px, PC ~3px) 숫자를 하드코딩하면 한쪽 기기만 맞는다. 여기서 재서
+// --hdr-date-optical 로 넘긴다. 화살표 쪽은 SVG 라 언제나 상자 정중앙이다.
+let _hdrDateOpticalKey='';
+function _syncHdrDateOptical(){
+  try{
+    const el=document.getElementById('hDateText');
+    if(!el||!el.textContent)return;
+    const cs=getComputedStyle(el);
+    const key=cs.fontFamily+'|'+cs.fontSize+'|'+cs.fontWeight+'|'+el.textContent;
+    if(key===_hdrDateOpticalKey)return;   // 날짜를 넘길 때마다 다시 재지 않는다
+    const ctx=document.createElement('canvas').getContext('2d');
+    if(!ctx)return;
+    ctx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const m=ctx.measureText(el.textContent);
+    const fbA=m.fontBoundingBoxAscent,fbD=m.fontBoundingBoxDescent;
+    const aA=m.actualBoundingBoxAscent,aD=m.actualBoundingBoxDescent;
+    if(![fbA,fbD,aA,aD].every(v=>typeof v==='number'&&isFinite(v)))return; // 옛 브라우저 — 보정 없이 둔다
+    const L=parseFloat(cs.lineHeight)||parseFloat(cs.fontSize)||12; // line-height:1 이라 줄상자 = font-size
+    const baseline=(L-(fbA+fbD))/2+fbA;   // CSS 가 half-leading 을 나누는 방식 그대로
+    const inkCenter=baseline+(aD-aA)/2;   // 실제 획의 세로 중심
+    let dy=L/2-inkCenter;                 // 상자 정중앙까지 끌어내릴 거리
+    dy=Math.max(-3,Math.min(3,dy));       // 이상값 방어 — 3px 넘게 밀지 않는다
+    _hdrDateOpticalKey=key;
+    document.documentElement.style.setProperty('--hdr-date-optical',dy.toFixed(2)+'px');
+  }catch(e){/* 보정을 못 하면 그냥 보정 없이 둔다 */}
+}
+// 웹폰트가 늦게 swap 되면 metric 이 달라지므로 캐시를 비우고 한 번 더 잰다.
+if(document.fonts&&document.fonts.ready){
+  document.fonts.ready.then(()=>{_hdrDateOpticalKey='';_syncHdrDateOptical();});
 }
 
 // 분할(2/3단)에서는 할일뷰 내부만, 아니면 페이지 전체를 슬라이드
@@ -20729,7 +20940,7 @@ function renderWeekly(hostEl){
       const dk=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
       const isSun=d.getDay()===0&&ST.settings.sundayRed!==false;
       const isToday=dk===todayKeyStr;
-      return`<div class="wh${isToday?' tc':''}${isSun?' sun-red':''}" style="cursor:pointer" onclick="goToDate('${dk}')">${d.getDate()} ${DOW[d.getDay()]}</div>`;
+      return`<div class="wh${isToday?' tc':''}${isSun?' sun-red':''}" style="cursor:pointer" onclick="goToDate('${dk}')"><span class="num">${d.getDate()}</span> ${DOW[d.getDay()]}</div>`;
     }).join('')}`;
   const wmMode=ST.settings.wmViewMode||'todo';
   vis.forEach(sec=>{
@@ -21698,6 +21909,43 @@ function goToDate(dateStr){
 // ── Theme (dark / light / system) ──
 const _systemThemeQuery=window.matchMedia?window.matchMedia('(prefers-color-scheme: light)'):null;
 
+// ── 화면 스타일(디자인 프리셋) 레지스트리 ──
+// 밝기(다크/라이트/시스템)와는 별개인 두 번째 축. 프리셋 하나를 늘릴 때
+// 여기 한 항목만 추가하면 되도록, 설정창 카드·적용 함수·조기 적용 스크립트가
+// 전부 이 객체 하나를 읽는다. 실제 색상값은 CSS의 html[data-preset="..."]
+// 블록에 있고, 여기 preview 는 그 블록 내용을 손으로 옮겨 적은 미리보기용
+// 값이다(설정 카드에 CSS 를 파싱해 넣을 수는 없으므로 둘을 나란히 관리한다).
+// 사진에서 색을 뽑는 커스텀 프리셋을 붙일 때도 같은 모양(id/label/preview/
+// modes[light|dark].themeColor)을 쓰면 된다.
+const UI_THEME_PRESETS={
+  classic:{
+    id:'classic',
+    label:'기본',
+    preview:['#5a70f8','#0b0c0f','#1e2028','#eef0fa','#22c46e'],
+    fontLabel:'Pretendard',
+    fontFamily:"'Pretendard',-apple-system,sans-serif",
+    modes:{dark:{themeColor:'#0d0e10'},light:{themeColor:'#f5f6fa'}}
+  },
+  'fiery-ocean':{
+    id:'fiery-ocean',
+    label:'Fiery Ocean',
+    preview:['#780000','#C1121F','#FDF0D5','#003049','#669BBC'],
+    fontLabel:'SUIT',
+    fontFamily:"'SUIT','Pretendard',-apple-system,sans-serif",
+    modes:{dark:{themeColor:'#001F2D'},light:{themeColor:'#FDF0D5'}}
+  }
+};
+// 알 수 없는(구버전이 모르는, 혹은 나중에 지워진) 프리셋 id 가 저장돼 있어도
+// 화면에는 안전하게 기본을 보여준다 — 저장값 자체는 여기서 건드리지 않는다.
+function _resolveUiThemePreset(id){
+  return (id&&UI_THEME_PRESETS[id])?id:'classic';
+}
+
+// 밝기와 화면 스타일을 한 곳에서 함께 해석해 <html> 속성·theme-color 를
+// 갱신한다. 조기 적용 스크립트(<head> 최상단)도 같은 두 값을 같은 규칙으로
+// 미리 계산해두므로, 첫 프레임부터 이 함수가 나중에 내는 것과 같은 결과가
+// 보인다. 인라인 스타일은 전혀 쓰지 않고 data-theme/data-preset 두 속성만
+// 갈아끼우므로 프리셋을 바꿔도 이전 프리셋의 흔적이 남지 않는다.
 function applyTheme(theme){
   let effective=theme;
   if(theme==='system'){
@@ -21708,6 +21956,12 @@ function applyTheme(theme){
   } else {
     delete document.documentElement.dataset.theme;
   }
+  const presetId=_resolveUiThemePreset(ST.settings&&ST.settings.uiThemePreset);
+  if(presetId==='classic'){
+    delete document.documentElement.dataset.preset;
+  } else {
+    document.documentElement.dataset.preset=presetId;
+  }
   // Keep the browser/PWA chrome (status bar tint, address bar color,
   // and — most relevant to the "background stays dark" symptom — the
   // color shown during iOS overscroll/rubber-banding and before any
@@ -21715,8 +21969,28 @@ function applyTheme(theme){
   // manifest.json's background_color/theme_color are static and can't
   // be changed at runtime, but this <meta> tag can be, and is what
   // most browsers actually honor once the page has loaded.
+  const preset=UI_THEME_PRESETS[presetId]||UI_THEME_PRESETS.classic;
+  const themeColor=(preset.modes[effective]||preset.modes.dark).themeColor;
   const themeColorMeta=document.querySelector('meta[name="theme-color"]');
-  if(themeColorMeta)themeColorMeta.setAttribute('content',effective==='light'?'#f5f6fa':'#0d0e10');
+  if(themeColorMeta)themeColorMeta.setAttribute('content',themeColor);
+}
+
+// 일반 설정 → 뷰 탭의 "화면 스타일" 카드 목록. UI_THEME_PRESETS 를 읽어서
+// 그리므로 프리셋을 늘려도 이 함수는 그대로다. 매번 innerHTML 을 통째로
+// 새로 그려서(다른 renderXxx 들과 같은 방식) 다시 불러도 카드나 클릭
+// 리스너가 중복되지 않는다.
+function _renderUiThemePresetCards(){
+  const host=document.getElementById('uiThemePresetCards');
+  if(!host)return;
+  const cur=_resolveUiThemePreset(ST.settings.uiThemePreset);
+  host.innerHTML=Object.values(UI_THEME_PRESETS).map(p=>{
+    const dots=p.preview.map(c=>`<span class="ui-preset-swatch" style="background:${c};"></span>`).join('');
+    return `<button type="button" class="ui-preset-card${p.id===cur?' active':''}" onclick="updateSetting('uiThemePreset','${p.id}')">
+      <span class="ui-preset-name">${p.label}</span>
+      <span class="ui-preset-swatches">${dots}</span>
+      <span class="ui-preset-sample" style="font-family:${p.fontFamily};">Aa 가</span>
+    </button>`;
+  }).join('');
 }
 
 // If the user picked "시스템" and the OS theme changes while the app
@@ -21878,6 +22152,7 @@ function renderSettingsPanel(){
   document.getElementById('themeBtnDark').classList.toggle('active',theme==='dark');
   document.getElementById('themeBtnLight').classList.toggle('active',theme==='light');
   document.getElementById('themeBtnSystem').classList.toggle('active',theme==='system');
+  _renderUiThemePresetCards();
 
   // day-of-week format buttons active state
   const dowFmt=s.dowFormat||'letter-lord';
@@ -21993,6 +22268,10 @@ function updateSetting(key,value){
     document.getElementById('themeBtnDark').classList.toggle('active',value==='dark');
     document.getElementById('themeBtnLight').classList.toggle('active',value==='light');
     document.getElementById('themeBtnSystem').classList.toggle('active',value==='system');
+  }
+  if(key==='uiThemePreset'){
+    applyTheme(ST.settings.theme);
+    _renderUiThemePresetCards();
   }
   if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'){
     renderAddRow();
@@ -24966,7 +25245,7 @@ window.checkDataRecovery=async function(){
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);">
         <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;">특정 날짜의 원본 데이터를 필터 없이 그대로 보기 (직접 눈으로 확인)</div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <input type="date" id="recoveryInspectDate" value="2026-07-10" style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:7px 8px;color:var(--tx);font-family:'Pretendard',sans-serif;font-size:12px;outline:none;">
+          <input type="date" id="recoveryInspectDate" value="2026-07-10" style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:7px 8px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:12px;outline:none;">
           <button class="settings-btn" style="width:auto;padding:0 14px;" onclick="inspectRecoveryDate()">보기</button>
         </div>
         <div id="recoveryInspectOut"></div>
