@@ -148,11 +148,13 @@ console.log('\n시나리오 7 — 미리보기는 저장하지 않는다');
   sc.eq('누를 때 저장(save/updateSetting)이 없다', /save\(|updateSetting/.test(pick), false);
 
   const render = slice('function _renderThemePicker(){', '// 미리보기 안에 넣을 가짜 앱 화면');
-  sc.eq('미리보기는 그 요소에만 색을 얹는다',
-        render.includes("applyThemeVars(_themePreviewId,_themePickerMode,prev)"), true);
+  sc.eq('미리보기는 그 상자에만 색을 얹는다(앱 화면은 안 건드린다)',
+        render.includes('applyThemeVars(_themePreviewId,mode,box);'), true);
+  sc.eq('라이트·다크 두 벌을 동시에 그린다',
+        render.includes("[['light','themePreviewLight'],['dark','themePreviewDark']]"), true);
   sc.eq('미리보기를 그릴 때 저장하지 않는다', /save\(|updateSetting/.test(render), false);
   sc.eq('매번 통째로 다시 그려 리스너·카드가 겹치지 않는다',
-        render.includes('list.innerHTML=') && render.includes('prev.innerHTML='), true);
+        render.includes('list.innerHTML=') && render.includes('inner.innerHTML='), true);
 
   const apply = slice('function themePickerApply(){', 'function themePickerPick(id){');
   sc.eq('적용에서만 저장한다', (apply.match(/updateSetting\(/g) || []).length, 1);
@@ -194,6 +196,18 @@ console.log('\n시나리오 9 — 설정 화면 구조');
   sc.eq('요약에 원본 팔레트 색상띠', SRC.includes('theme-strip-cell'), true);
   sc.eq('밝기(다크/라이트/시스템)는 그대로 남아 있다',
         SRC.includes('id="themeBtnDark"') && SRC.includes('id="themeBtnSystem"'), true);
+  // v26-0823-1 (HB) — 뷰 탭 순서와 밝기 버튼 순서
+  sc.eq('밝기 버튼은 라이트 → 다크 → 시스템 순',
+        SRC.indexOf('id="themeBtnLight"') < SRC.indexOf('id="themeBtnDark"') &&
+        SRC.indexOf('id="themeBtnDark"') < SRC.indexOf('id="themeBtnSystem"'), true);
+  sc.eq('뷰 탭에서 밝기가 색상 테마보다 먼저 온다',
+        SRC.indexOf('<div class="settings-row-label lv1">밝기</div>') <
+        SRC.indexOf('<div class="settings-row-label lv1">색상 테마</div>'), true);
+  // '기본' 미리보기가 라이트·다크를 제대로 보여주려면 기본값 선언을 재사용해야 한다
+  sc.eq('기본값 토큰을 재사용하는 선택자가 있다',
+        SRC.includes(':root,.theme-defaults-dark {') && SRC.includes('html[data-theme="light"],.theme-defaults-light {'), true);
+  sc.eq("'기본' 일 때 미리보기 두 칸에 그 클래스를 붙인다",
+        SRC.includes("box.classList.toggle('theme-defaults-light',_themePreviewId==null&&mode==='light');"), true);
   // 등급(이지/미드/파워)에서 감추지 않는다
   const sec = SRC.slice(SRC.indexOf('<!-- 색상 테마'), SRC.indexOf('id="themeSummary"'));
   sc.eq('색상 테마 항목엔 data-lv 가 없다(모든 등급에 보임)', /data-lv=/.test(sec), false);
@@ -202,12 +216,30 @@ console.log('\n시나리오 9 — 설정 화면 구조');
         SRC.includes('<div class="theme-picker" id="themePicker">'), true);
   sc.eq('SPARK·BREATH 탭', SRC.includes('id="themeGroupTab_spark"') && SRC.includes('id="themeGroupTab_breath"'), true);
   sc.eq('그룹 탭에 aria-selected', /id="themeGroupTab_spark"[^>]*aria-selected/.test(SRC), true);
-  sc.eq('밝기 미리보기 토글에 aria-pressed', /id="themeModeBtn_light"[^>]*aria-pressed/.test(SRC), true);
+  // 라이트/다크를 따로 고르는 토글은 없어졌다 — 두 벌을 한꺼번에 보여준다
+  sc.eq('밝기 토글 버튼이 없다', /themeModeBtn_|themePickerMode\(/.test(SRC), false);
+  sc.eq('라이트·다크 미리보기 상자가 둘 다 있다',
+        SRC.includes('id="themePreviewLight"') && SRC.includes('id="themePreviewDark"'), true);
+  sc.eq('미리보기 두 칸에 라벨', /class="theme-preview-label">라이트</.test(SRC) && /class="theme-preview-label">다크</.test(SRC), true);
+  sc.eq('미리보기는 2열', /\.theme-preview-wrap\{display:grid;grid-template-columns:1fr 1fr/.test(SRC), true);
   sc.eq('테마 항목에도 aria-pressed', SRC.includes('aria-pressed="${on?\'true\':\'false\'}"'), true);
   sc.eq('하단에 취소·적용', SRC.includes('>취소</button>') && SRC.includes('>적용</button>'), true);
   sc.eq('ESC 표에 등록(PC 에서 × 와 같은 동작)', SRC.includes("['themePicker',     ()=>closeThemePicker()],"), true);
   sc.eq('PC 는 좌우 분할', /@media \(min-width:860px\)\{[\s\S]{0,200}\.theme-picker-body\{flex-direction:row;\}/.test(SRC), true);
-  sc.eq('가로 스크롤을 쓰지 않는다(목록은 세로)', /\.theme-list\{overflow-y:auto/.test(SRC), true);
+  sc.eq('목록은 세로 스크롤(가로 스크롤 안 씀)', /\.theme-list\{\s*overflow-y:auto/.test(SRC), true);
+  sc.eq('모바일 목록은 2열', /\.theme-list\{[^}]*grid-template-columns:1fr 1fr/.test(SRC), true);
+  sc.eq('PC 목록은 1열', /@media \(min-width:860px\)\{[\s\S]*?\.theme-list\{grid-template-columns:1fr;\}/.test(SRC), true);
+  // 모바일에서만 목업을 절반으로 줄인다. 기본 규칙이 PC 미디어쿼리보다 앞에 와야
+  // PC 에서 zoom:1 이 이긴다(같은 특이도라 순서가 곧 우선순위다).
+  sc.eq('모바일 미리보기는 절반 크기', /\.tp-scale\{zoom:\.5;\}/.test(SRC), true);
+  sc.eq('PC 미리보기는 줄이지 않는다', /@media \(min-width:860px\)\{[\s\S]*?\.tp-scale\{zoom:1;\}/.test(SRC), true);
+  sc.eq('기본 .tp-scale 이 PC 미디어쿼리보다 앞에 있다',
+        SRC.indexOf('.tp-scale{zoom:.5;}') < SRC.indexOf('@media (min-width:860px)'), true);
+  // 하단 버튼 — 기본 / 취소 / 적용
+  sc.eq("'기본' 버튼이 '취소' 왼쪽에 있다",
+        SRC.indexOf('id="themeDefaultBtn"') < SRC.indexOf('>취소</button>'), true);
+  sc.eq("'기본' 은 테마 없음(null)을 고른다", SRC.includes('onclick="themePickerPick(null)"'), true);
+  sc.eq("'기본' 도 눌린 상태를 표시한다", SRC.includes("defBtn.classList.toggle('on',isDef);"), true);
 }
 
 // ═══ 10. 미리보기 목업이 실제 화면 요소를 담는다 ═══
