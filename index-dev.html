@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0822-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0823-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -292,7 +292,11 @@ function applyThemeVars(id,mode,el){
   font-feature-settings:'tnum' 1;
 }
 
-:root {
+/* .theme-defaults-dark / -light 는 **같은 선언을 재사용**하기 위한 선택자다.
+   테마 선택 화면에서 '기본(테마 없음)' 을 고르면 미리보기 두 칸에 이 클래스를
+   붙여 지금 앱의 기본 색을 라이트·다크로 각각 보여준다. 값을 JS 로 베껴 두면
+   :root 를 고칠 때 조용히 어긋나므로 선택자만 하나 더 붙였다. */
+:root,.theme-defaults-dark {
   --bg:#0b0c0f; --s1:#14161b; --s2:#1e2028;
   --bd:#3b4258; --bd2:#4a5270;
   --tx:#eef0fa; --tx2:#9aa4c8; --tx3:#7a84a8;
@@ -334,7 +338,7 @@ function applyThemeVars(id,mode,el){
 }
 /* Light theme — applied via document.documentElement.dataset.theme,
    set by applyTheme() based on the Settings → 밝기 choice. */
-html[data-theme="light"] {
+html[data-theme="light"],.theme-defaults-light {
   --bg:#f5f6fa; --s1:#ffffff; --s2:#eef0f6;
   --bd:#dde1ea; --bd2:#cbd0dc;
   --tx:#1c2030; --tx2:#5b6378; --tx3:#9aa1b4;
@@ -3078,7 +3082,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .theme-group-tab.on{border-color:var(--ac);background:var(--ac-soft);color:var(--tx);}
 .theme-group-tab:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
 .theme-group-desc{font-size:11px;color:var(--tx3);padding:8px 2px 6px;flex-shrink:0;}
-.theme-list{overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px;padding-bottom:4px;}
+/* 모바일은 2열로 세로 공간을 아낀다. PC 왼쪽 칸(340px)은 1열이 읽기 좋다. */
+.theme-list{
+  overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;
+  display:grid;grid-template-columns:1fr 1fr;gap:6px;align-content:start;
+}
 .theme-item{
   display:flex;flex-direction:column;gap:7px;width:100%;
   padding:10px 12px;border-radius:9px;
@@ -3093,29 +3101,33 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .theme-item-head{display:flex;align-items:center;gap:7px;}
 .theme-item-id{
   font-family:var(--font-number);font-size:11px;color:var(--tx3);
-  min-width:18px;font-variant-numeric:tabular-nums;
+  min-width:16px;font-variant-numeric:tabular-nums;flex-shrink:0;
 }
-.theme-item-name{font-size:13px;font-weight:500;color:var(--tx);flex:1;min-width:0;}
+/* 2열이라 폭이 좁다 — 이름이 길면 두 줄까지 흘리고 그 아래 팔레트를 둔다 */
+.theme-item-name{font-size:12.5px;font-weight:500;color:var(--tx);flex:1;min-width:0;line-height:1.3;}
 .theme-item-mark{font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0;}
 .theme-preview-bar{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:6px 2px 8px;flex-shrink:0;
 }
 .theme-preview-name{font-size:12px;color:var(--tx2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.theme-mode-toggle{display:flex;gap:4px;flex-shrink:0;}
-.theme-mode-btn{
-  padding:5px 11px;border-radius:7px;
-  border:1px solid var(--bd2);background:transparent;
-  color:var(--tx3);font-family:var(--font-ui),sans-serif;font-size:11px;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
-}
-.theme-mode-btn.on{border-color:var(--ac);background:var(--ac-soft);color:var(--tx);}
-.theme-mode-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+/* 라이트·다크를 따로 고르지 않고 두 벌을 나란히 (v26-0823-1, HB) */
+.theme-preview-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-height:0;}
+.theme-preview-col{display:flex;flex-direction:column;min-height:0;}
+.theme-preview-label{font-size:10px;color:var(--tx3);padding:0 2px 4px;flex-shrink:0;}
+/* 모바일은 두 벌이 나란히 들어가야 하므로 목업을 절반 크기로 줄인다.
+   transform:scale() 은 자리 높이가 안 줄어 빈 스크롤이 생기므로 zoom 을 쓴다
+   (레이아웃까지 함께 줄어든다). 지원 안 되는 브라우저는 원래 크기로 보일 뿐이다.
+   ⚠️ 이 줄은 아래 PC 미디어쿼리보다 **앞**에 있어야 한다 — 뒤에 두면 특이도가
+      같아서 PC 에서도 .5 가 이겨 미리보기가 잘게 나온다. */
+.tp-scale{zoom:.5;}
 .theme-picker-foot{
   display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--bd);flex-shrink:0;
   padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
 }
 .theme-picker-foot .settings-btn{flex:1;}
+/* '기본'(테마 없음)도 하나의 선택지라 눌린 상태를 표시한다 */
+#themeDefaultBtn.on{border-color:var(--ac);background:var(--ac-soft);color:var(--tx);}
 .theme-apply-btn{background:var(--ac);color:var(--on-accent);border-color:var(--ac);}
 
 /* PC — 목록과 미리보기를 나란히 두고 가로 폭을 넉넉히 쓴다 */
@@ -3125,6 +3137,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   .theme-picker-right{flex:1;min-width:0;padding:12px 18px;}
   .theme-picker-foot{justify-content:flex-end;}
   .theme-picker-foot .settings-btn{flex:0 0 130px;}
+  /* PC 는 왼쪽 칸이 좁아 1열이 읽기 좋고, 미리보기는 줄이지 않는다 */
+  .theme-list{grid-template-columns:1fr;}
+  .tp-scale{zoom:1;}
+  .theme-item-name{font-size:13px;}
 }
 
 /* ── 미리보기 목업 ──
@@ -3288,7 +3304,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0822-5";
+const APP_VERSION = "v. 26-0823-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3560,6 +3576,19 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
+      <!-- 밝기 — 색상 테마보다 먼저 온다 (v26-0823-1, HB). 버튼은 라이트·다크·시스템 순 -->
+      <div class="settings-section">
+        <div class="settings-row-text" style="margin-bottom:10px;">
+          <div class="settings-row-label lv1">밝기</div>
+          <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정에 맞춰요.</div>
+        </div>
+        <div class="theme-pick-row">
+          <button class="theme-pick-btn" id="themeBtnLight" onclick="updateSetting('theme','light')">라이트</button>
+          <button class="theme-pick-btn" id="themeBtnDark" onclick="updateSetting('theme','dark')">다크</button>
+          <button class="theme-pick-btn" id="themeBtnSystem" onclick="updateSetting('theme','system')">시스템</button>
+        </div>
+      </div>
+
       <!-- 색상 테마 — 15개를 여기 다 펼치지 않는다. 요약만 보이고 전용 화면에서 고른다 -->
       <div class="settings-section">
         <div class="settings-row-text" style="margin-bottom:10px;">
@@ -3568,19 +3597,6 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
         <div class="theme-summary" id="themeSummary"></div>
         <button class="settings-btn" style="width:100%;margin-top:10px;" onclick="openThemePicker()">테마 선택</button>
-      </div>
-
-      <!-- 밝기 -->
-      <div class="settings-section">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">밝기</div>
-          <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정에 맞춰요.</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="themeBtnDark" onclick="updateSetting('theme','dark')">다크</button>
-          <button class="theme-pick-btn" id="themeBtnLight" onclick="updateSetting('theme','light')">라이트</button>
-          <button class="theme-pick-btn" id="themeBtnSystem" onclick="updateSetting('theme','system')">시스템</button>
-        </div>
       </div>
 
       <!-- 요일 표기 -->
@@ -3940,15 +3956,23 @@ window._fbScriptsReady=new Promise(resolve=>{
     <div class="theme-picker-right">
       <div class="theme-preview-bar">
         <span class="theme-preview-name" id="themePickerCurrent"></span>
-        <span class="theme-mode-toggle">
-          <button class="theme-mode-btn" id="themeModeBtn_light" aria-pressed="false" onclick="themePickerMode('light')">라이트</button>
-          <button class="theme-mode-btn" id="themeModeBtn_dark" aria-pressed="false" onclick="themePickerMode('dark')">다크</button>
-        </span>
       </div>
-      <div class="theme-preview" id="themePreview"></div>
+      <!-- 라이트·다크를 따로 고르지 않고 두 벌을 나란히 보여준다 (v26-0823-1, HB).
+           모바일에서는 .tp-scale 이 절반 크기로 줄여 두 칸이 들어간다. -->
+      <div class="theme-preview-wrap">
+        <div class="theme-preview-col">
+          <div class="theme-preview-label">라이트</div>
+          <div class="theme-preview" id="themePreviewLight"><div class="tp-scale"></div></div>
+        </div>
+        <div class="theme-preview-col">
+          <div class="theme-preview-label">다크</div>
+          <div class="theme-preview" id="themePreviewDark"><div class="tp-scale"></div></div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="theme-picker-foot">
+    <button class="settings-btn" id="themeDefaultBtn" onclick="themePickerPick(null)">기본</button>
     <button class="settings-btn" onclick="closeThemePicker()">취소</button>
     <button class="settings-btn theme-apply-btn" onclick="themePickerApply()">적용</button>
   </div>
@@ -22282,7 +22306,6 @@ function applyTheme(theme){
 // _themePreviewId 가 null 이 아니면 "아직 적용 안 한 임시 선택"이라는 뜻이고,
 // '적용'을 눌러야 그때 한 번 updateSetting() 으로 저장·동기화된다.
 let _themePreviewId=null;      // 임시 선택 (저장 안 됨)
-let _themePickerMode='light';  // 미리보기에서 보고 있는 밝기
 let _themePickerGroup='spark';
 
 function _themeSummaryText(id){
@@ -22306,7 +22329,6 @@ function openThemePicker(){
   _themePreviewId=ST.settings.themePresetId||null;
   const cur=themeById(_themePreviewId);
   _themePickerGroup=cur?cur.group:'spark';
-  _themePickerMode=_effectiveMode(ST.settings.theme);
   document.getElementById('themePicker').classList.add('open');
   _renderThemePicker();
 }
@@ -22332,26 +22354,24 @@ function themePickerGroup(g){
   _themePickerGroup=g;
   _renderThemePicker();
 }
-function themePickerMode(m){
-  _themePickerMode=m;
-  _renderThemePicker();
-}
 // 목록 + 미리보기를 통째로 다시 그린다. 매번 innerHTML 을 갈아끼우므로
 // 아무리 빨리 눌러도 카드나 리스너가 겹치지 않는다.
 function _renderThemePicker(){
   const list=document.getElementById('themePickerList');
-  const prev=document.getElementById('themePreview');
-  if(!list||!prev)return;
+  if(!list)return;
   ['spark','breath'].forEach(g=>{
     const b=document.getElementById('themeGroupTab_'+g);
     if(b){b.classList.toggle('on',g===_themePickerGroup);b.setAttribute('aria-selected',g===_themePickerGroup?'true':'false');}
   });
   const desc=document.getElementById('themeGroupDesc');
   if(desc)desc.textContent=THEME_GROUPS[_themePickerGroup].desc;
-  ['light','dark'].forEach(m=>{
-    const b=document.getElementById('themeModeBtn_'+m);
-    if(b){b.classList.toggle('on',m===_themePickerMode);b.setAttribute('aria-pressed',m===_themePickerMode?'true':'false');}
-  });
+  // '기본'(테마 없음)도 고를 수 있는 하나의 선택지다 — 눌린 상태를 표시한다
+  const defBtn=document.getElementById('themeDefaultBtn');
+  if(defBtn){
+    const isDef=(_themePreviewId==null);
+    defBtn.classList.toggle('on',isDef);
+    defBtn.setAttribute('aria-pressed',isDef?'true':'false');
+  }
 
   list.innerHTML=THEME_PRESETS.filter(p=>p.group===_themePickerGroup).map(p=>{
     const on=(p.id===_themePreviewId);
@@ -22368,10 +22388,20 @@ function _renderThemePicker(){
     </button>`;
   }).join('');
 
-  // 미리보기 — 토큰을 이 요소에만 얹는다. 앱 화면은 건드리지 않는다.
-  applyThemeVars(_themePreviewId,_themePickerMode,prev);
-  prev.classList.toggle('preview-light',_themePickerMode==='light');
-  prev.innerHTML=_themePreviewHTML();
+  // 미리보기 — 라이트·다크 두 벌을 동시에. 토큰은 각 상자에만 얹으므로
+  // 앱 화면은 그대로다(누르는 동안 저장도, 앱 색 변경도 없다).
+  [['light','themePreviewLight'],['dark','themePreviewDark']].forEach(([mode,boxId])=>{
+    const box=document.getElementById(boxId);
+    if(!box)return;
+    applyThemeVars(_themePreviewId,mode,box);
+    // '기본(테마 없음)' 이면 얹을 토큰이 없다. 그대로 두면 미리보기가 지금 앱의
+    // 밝기를 그대로 물려받아 라이트·다크 두 칸이 똑같이 나온다 — 실제로 그랬다.
+    // 기본값 선언을 그대로 쓰는 클래스를 붙여 두 밝기를 제대로 보여 준다.
+    box.classList.toggle('theme-defaults-light',_themePreviewId==null&&mode==='light');
+    box.classList.toggle('theme-defaults-dark' ,_themePreviewId==null&&mode==='dark');
+    const inner=box.querySelector('.tp-scale');
+    if(inner)inner.innerHTML=_themePreviewHTML();
+  });
   const nm=document.getElementById('themePickerCurrent');
   if(nm)nm.textContent=_themeSummaryText(_themePreviewId);
 }
