@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0822-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0822-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -61,14 +61,200 @@
 <meta name="twitter:description" content="아름다운 하루 · 일곱 블럭">
 <meta name="twitter:image" content="https://block7.my/og-image.png?v=260730d">
 <script>
-// Apply the saved theme to <html> as early as possible — before any
-// CSS has even finished loading — so the page never paints in the
-// wrong theme first and then flips. Without this, the very first
-// frame always renders with the :root (dark) variables since
-// data-theme isn't set until our main script runs much later, which
-// is what made the background look "stuck dark" while elements that
-// get explicit inline styles later (header, section cards) updated
-// correctly once JS caught up.
+// ═══════════════════════════════════════════════════════════
+//  색상 테마 엔진 (BB1 1단계)
+// ═══════════════════════════════════════════════════════════
+// ⚠️ 이 블록은 **CSS 보다 먼저** 놓여 있어야 한다. 저장된 테마를 첫 페인트
+//    전에 <html> 에 얹어야 화면이 기본색으로 한 번 그려졌다 바뀌지 않는다.
+//    본문 스크립트(applyTheme 등)도 여기 정의된 같은 함수를 그대로 부른다 —
+//    조기 적용과 런타임 적용이 규칙을 복제하면 반드시 어긋난다.
+//
+// 테마 하나는 **다섯 색**만 갖는다:
+//   [background, surface, primaryText, accent, secondary]
+// 나머지 20여 개 토큰은 _themeTokens() 가 그 다섯에서 계산한다. 컴포넌트마다
+// 색을 새로 정하지 않는다 — 색을 늘리고 싶으면 여기 파생 규칙을 고친다.
+//
+// 저장값은 안정적인 ID 문자열 하나(ST.settings.themePresetId)뿐이다.
+// 배열 위치를 ID 로 쓰지 않는다(순서가 바뀌면 남의 테마가 된다).
+// 값이 없거나 모르는 ID 면 아무 토큰도 얹지 않아 :root 의 기존 색이 그대로
+// 보인다 — 업데이트만으로 기존 사용자 외형이 바뀌지 않게 하는 장치다.
+const THEME_GROUPS={
+  spark :{id:'spark' ,label:'SPARK' ,desc:'선명하고 생동감 있는 테마'},
+  breath:{id:'breath',label:'BREATH',desc:'부드럽고 차분한 테마'}
+};
+const THEME_PRESETS=[
+  {id:'11',group:'spark',name:'Bold Berry',
+   source:['#F9DBBD','#FFA5AB','#DA627D','#A53860','#450920'],
+   light:['#FFF1E5','#FFF8F2','#450920','#A53860','#DA627D'],
+   dark :['#260611','#450920','#F9DBBD','#FFA5AB','#DA627D']},
+  {id:'12',group:'spark',name:'Sunset Deep',
+   source:['#335C67','#FFF3B0','#E09F3E','#9E2A2B','#540B0E'],
+   light:['#FFF5C9','#FFF9DD','#335C67','#8C2022','#C47B13'],
+   dark :['#2B0609','#540B0E','#FFF3B0','#E09F3E','#6F9DA7']},
+  {id:'13',group:'spark',name:'Chocolate Delight',
+   source:['#210F04','#452103','#690500','#934B00','#BB6B00'],
+   light:['#FFF1D8','#FFF8EC','#210F04','#690500','#934B00'],
+   dark :['#160A03','#210F04','#FFE8B8','#E19925','#B74B36']},
+  {id:'14',group:'spark',name:'Olive Garden Feast',
+   source:['#606C38','#283618','#FEFAE0','#DDA15E','#BC6C25'],
+   light:['#FEFAE0','#FFFFF3','#283618','#606C38','#BC6C25'],
+   dark :['#19220F','#283618','#FEFAE0','#DDA15E','#87964F']},
+  {id:'15',group:'spark',name:'Mulberry Forest',
+   source:['#134742','#611C35','#FEFFEA','#A5BDA5','#B6CBE2'],
+   light:['#FEFFEA','#FFFFF5','#134742','#611C35','#A5BDA5'],
+   dark :['#0C2A27','#134742','#FEFFEA','#D184A0','#B6CBE2']},
+  {id:'16',group:'spark',name:'Fiery Ocean',
+   source:['#780000','#C1121F','#FDF0D5','#003049','#669BBC'],
+   light:['#FDF0D5','#FFF8E8','#003049','#C1121F','#669BBC'],
+   dark :['#001F2D','#003049','#FDF0D5','#669BBC','#C1121F']},
+  {id:'17',group:'spark',name:'Black Cherry',
+   source:['#F3F1EF','#E0DBD8','#6C6A68','#9C0030','#0D0D0D'],
+   light:['#F3F1EF','#FFFFFF','#0D0D0D','#9C0030','#6C6A68'],
+   dark :['#0D0D0D','#242322','#F3F1EF','#D95A82','#A9A6A4']},
+  {id:'21',group:'breath',name:'Soft Whisper',
+   source:['#D5C5C8','#9DA3A4','#604D53','#DB7F8E','#FFDBDA'],
+   light:['#FFF3F4','#FFFAFA','#604D53','#B64B61','#9DA3A4'],
+   dark :['#372D30','#604D53','#FFDBDA','#E99AAA','#AEB8B9']},
+  {id:'22',group:'breath',name:'Mint Chocolate',
+   source:['#562C2C','#F2542D','#F5DFBB','#0E9594','#127475'],
+   light:['#FBF2E3','#FFFAF2','#562C2C','#127475','#F2542D'],
+   dark :['#28191A','#562C2C','#F5DFBB','#45BDBC','#F2542D']},
+  {id:'23',group:'breath',name:'Chestnut Gentleman',
+   source:['#5C7476','#BC641C','#632401','#C5B884','#000000'],
+   light:['#F2ECD9','#FBF8F0','#253436','#98470F','#5C7476'],
+   dark :['#12100E','#29241F','#E9DFC1','#D17A37','#87A0A2']},
+  {id:'24',group:'breath',name:'Sunny Beach Day',
+   source:['#264653','#2A9D8F','#E9C46A','#F4A261','#E76F51'],
+   light:['#FFF6E4','#FFFBF2','#264653','#1E7D73','#E76F51'],
+   dark :['#1A323A','#264653','#FFF1CA','#E9C46A','#2A9D8F']},
+  {id:'25',group:'breath',name:'Dusk Horizon',
+   source:['#001B2E','#294C60','#ADB6C4','#FFEFD3','#FFC49B'],
+   light:['#FFEFD3','#FFF8EA','#001B2E','#294C60','#E18E61'],
+   dark :['#001B2E','#294C60','#FFEFD3','#FFC49B','#ADB6C4']},
+  {id:'26',group:'breath',name:'Sunset Breeze',
+   source:['#355070','#6D597A','#B56576','#E56B6F','#EAAC8B'],
+   light:['#FFF0E7','#FFF8F4','#355070','#9A4053','#E56B6F'],
+   dark :['#24384F','#355070','#F8D2BD','#EAAC8B','#C96A74']},
+  {id:'27',group:'breath',name:'Charcoal Orange',
+   source:['#2D3142','#4F5D75','#BFC0C0','#FFFFFF','#EF8354'],
+   light:['#FFFFFF','#F3F3F2','#2D3142','#4F5D75','#D85E32'],
+   dark :['#20232F','#2D3142','#FFFFFF','#EF8354','#BFC0C0']},
+  {id:'28',group:'breath',name:'Winter Blanket',
+   source:['#383F51','#DDDBF1','#3C4F76','#D1BEB0','#AB9F9D'],
+   light:['#F2F0FA','#FBFAFD','#383F51','#3C4F76','#AB9F9D'],
+   dark :['#272C39','#383F51','#F1EFFA','#DDDBF1','#D1BEB0']}
+];
+function themeById(id){
+  if(id==null)return null;
+  const s=String(id);
+  for(let i=0;i<THEME_PRESETS.length;i++)if(THEME_PRESETS[i].id===s)return THEME_PRESETS[i];
+  return null;  // 모르는 ID — 저장값은 그대로 두고 화면만 기본으로
+}
+// ── 색 계산 도구 ──
+function _thRgb(h){h=String(h).replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function _thHex(c){return '#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function _thMix(a,b,t){return [0,1,2].map(i=>a[i]+(b[i]-a[i])*t);}   // t=0 → a, t=1 → b
+function _thLin(c){c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function _thLum(c){return 0.2126*_thLin(c[0])+0.7152*_thLin(c[1])+0.0722*_thLin(c[2]);}
+function _thContrast(a,b){const x=_thLum(a),y=_thLum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);}
+function _thRound(c){return [Math.round(c[0]),Math.round(c[1]),Math.round(c[2])];}
+// 이 색이 놓일 수 있는 여러 면 중 **가장 안 읽히는** 쪽의 대비
+function _thWorst(c,surfaces){
+  let m=99;for(let i=0;i<surfaces.length;i++)m=Math.min(m,_thContrast(c,surfaces[i]));
+  return m;
+}
+// 글자색을 배경 쪽으로 최대한 흐리게 밀되, 목표 대비는 지키는 지점을 찾는다.
+// (고정 비율로 섞으면 배경이 밝은 테마에서 보조 글자가 AA 밑으로 떨어진다)
+// ⚠️ 두 가지를 꼭 지켜야 한다 — 계산해 보고 알았다:
+//   ① 배경(bg) 하나만 보고 맞추면 **패널 위(s1/s2)** 에서 기준이 깨진다.
+//      보조 글자는 카드 안에도 올라가므로 놓일 수 있는 면을 전부 넣고 잰다.
+//   ② 정수로 반올림한 **뒤의** 색으로 재야 한다. 경계값까지 이분 탐색해 놓고
+//      나중에 반올림하면 4.50 이 4.49 로 떨어져 기준을 못 넘는다.
+function _thFade(text,toward,surfaces,target,maxT){
+  if(_thWorst(_thRound(text),surfaces)<target)return _thRound(text); // 원래 글자도 못 미치면 그대로
+  let lo=0,hi=maxT;
+  for(let i=0;i<16;i++){
+    const mid=(lo+hi)/2;
+    if(_thWorst(_thRound(_thMix(text,toward,mid)),surfaces)>=target)lo=mid; else hi=mid;
+  }
+  return _thRound(_thMix(text,toward,lo));
+}
+// 어떤 면 위에 글자를 얹을 때 흰색과 검정 중 더 잘 읽히는 쪽
+function _thOn(bg){
+  return _thContrast(bg,[255,255,255])>=_thContrast(bg,[17,17,17])?[255,255,255]:[17,17,17];
+}
+function _thRgba(c,a){return 'rgba('+c.map(v=>Math.round(v)).join(',')+','+a+')';}
+// 다섯 색 → 앱이 쓰는 토큰 전부
+function _themeTokens(preset,mode){
+  const p=(mode==='light')?preset.light:preset.dark;
+  const isDark=(mode!=='light');
+  const bg=_thRgb(p[0]),sf=_thRgb(p[1]),tx=_thRgb(p[2]),ac=_thRgb(p[3]),sec=_thRgb(p[4]);
+  // 보조 패널 — 기본 패널에서 글자색 쪽으로 아주 조금
+  const s2=_thRound(_thMix(sf,tx,isDark?0.10:0.07));
+  // 글자가 놓일 수 있는 세 면. 이 중 가장 안 읽히는 쪽을 기준으로 맞춘다.
+  const faces=[bg,sf,s2];
+  // 보조·비활성 글자: 배경 쪽으로 흐리게 하되 AA(4.5) / 3:1 은 지킨다
+  const tx2=_thFade(tx,bg,faces,4.5,0.62);
+  const tx3=_thFade(tx,bg,faces,3.0,0.82);
+  // 경계선 — 글자색을 배경에 거의 녹인 것. 강한 경계선은 3:1 을 지켜
+  // 패널과 배경이 거의 같은 색인 테마에서도 카드 윤곽이 보이게 한다.
+  const bd =_thRound(_thMix(tx,bg,isDark?0.80:0.84));
+  const bd2=_thFade(tx,bg,[bg,sf],3.0,0.72);
+  const onAc=_thOn(ac);
+  // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
+  // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
+  let danger=isDark?[255,138,133]:[196,43,33];
+  for(let i=0;i<40&&_thWorst(_thRound(danger),faces)<4.5;i++){
+    danger=_thMix(danger,isDark?[255,255,255]:[0,0,0],0.05);
+  }
+  danger=_thRound(danger);
+  let warn=isDark?[240,176,72]:[176,104,16];
+  for(let i=0;i<40&&_thWorst(_thRound(warn),faces)<4.5;i++){
+    warn=_thMix(warn,isDark?[255,255,255]:[0,0,0],0.05);
+  }
+  warn=_thRound(warn);
+  const hx=_thHex;
+  return {
+    '--bg':hx(bg),'--s1':hx(sf),'--s2':hx(s2),
+    '--tx':hx(tx),'--tx2':hx(tx2),'--tx3':hx(tx3),
+    '--bd':hx(bd),'--bd2':hx(bd2),
+    '--ac':hx(ac),'--ac-rgb':ac.map(v=>Math.round(v)).join(','),
+    '--on-accent':hx(onAc),
+    '--ac-soft':_thRgba(ac,isDark?0.20:0.14),
+    '--sec':hx(sec),'--sec-rgb':sec.map(v=>Math.round(v)).join(','),
+    '--chip-bg':_thRgba(sec,isDark?0.22:0.16),
+    '--tab-on-bg':hx(_thMix(sf,ac,isDark?0.22:0.14)),
+    '--focus-ring':_thRgba(ac,0.55),
+    '--shadow-color':isDark?'rgba(0,0,0,.55)':'rgba(0,0,0,.16)',
+    '--header-bg':_thRgba(sf,0.94),
+    '--drag-ghost-bg':_thRgba(s2,0.88),
+    '--danger':hx(danger),'--del':hx(danger),'--ov':hx(danger),
+    '--so':hx(warn),
+    '--sun-red':hx(_thFade(danger,bg,faces,3.0,0.40)),
+    '--today-cell-border':_thRgba(ac,0.85),
+    '--today-cell-border-faded':_thRgba(ac,0.18),
+    '--fade-start-border':hx(bd),
+    '--bgd':hx(_thMix(danger,bg,isDark?0.55:0.30)),
+    '--bgd-tx':hx(_thFade(danger,bg,faces,4.5,0.20)),
+    '--theme-color':hx(bg)
+  };
+}
+// 계산한 토큰을 실제로 얹는다. el 을 주면 그 안에서만 바뀐다(미리보기용).
+// id 가 없거나 모르는 값이면 전부 걷어내 :root 의 기존 색으로 되돌린다.
+function applyThemeVars(id,mode,el){
+  const host=el||document.documentElement;
+  const preset=themeById(id);
+  const keys=['--bg','--s1','--s2','--tx','--tx2','--tx3','--bd','--bd2','--ac','--ac-rgb',
+    '--on-accent','--ac-soft','--sec','--sec-rgb','--chip-bg','--tab-on-bg','--focus-ring',
+    '--shadow-color','--header-bg','--drag-ghost-bg','--danger','--del','--ov','--so',
+    '--sun-red','--today-cell-border','--today-cell-border-faded','--fade-start-border',
+    '--bgd','--bgd-tx','--theme-color'];
+  if(!preset){keys.forEach(k=>host.style.removeProperty(k));return null;}
+  const t=_themeTokens(preset,mode);
+  keys.forEach(k=>host.style.setProperty(k,t[k]));
+  return t;
+}
+// ── 조기 적용 (첫 페인트 전) ──
 (function(){
   try{
     const raw=localStorage.getItem('b7v1');
@@ -78,19 +264,11 @@
     if(effective==='system'){
       effective=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
     }
-    if(effective==='light'){
-      document.documentElement.dataset.theme='light';
-    }
-    // 화면 스타일(디자인 프리셋) 조기 적용 — 본문의 UI_THEME_PRESETS/
-    // applyTheme() 과 같은 해석 규칙(알 수 없는 id → 기본, 저장값은 안 건드림)
-    // 을 이 시점에서도 그대로 따르도록 theme-color 만 작게 복제해둔다.
-    const rawPreset=st&&st.settings&&st.settings.uiThemePreset;
-    const _earlyPresetColors={classic:{dark:'#0d0e10',light:'#f5f6fa'},'fiery-ocean':{dark:'#001F2D',light:'#FDF0D5'}};
-    const presetId=(rawPreset&&_earlyPresetColors[rawPreset])?rawPreset:'classic';
-    if(presetId!=='classic')document.documentElement.dataset.preset=presetId;
+    if(effective==='light')document.documentElement.dataset.theme='light';
+    const t=applyThemeVars(st&&st.settings&&st.settings.themePresetId,effective,null);
     const m=document.querySelector('meta[name="theme-color"]');
-    if(m)m.setAttribute('content',_earlyPresetColors[presetId][effective]);
-  }catch(e){/* default dark theme if anything goes wrong */}
+    if(m)m.setAttribute('content',t?t['--theme-color']:(effective==='light'?'#f5f6fa':'#0d0e10'));
+  }catch(e){/* 무슨 일이 있어도 기본 테마로는 떠야 한다 */}
 })();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,6 +310,20 @@
   --today-cell-border:rgba(90,112,248,.85);
   --today-cell-border-faded:rgba(90,112,248,.18);
   --fade-start-border:var(--bd);
+  /* ── 색상 테마 토큰의 기본값 (테마를 안 고른 상태 = 지금까지의 BLOCK7 색) ──
+     ⚠️ 여기 값은 **지금 화면과 똑같아야 한다.** 테마를 고르지 않은 기존 사용자는
+        업데이트만으로 외형이 달라지면 안 된다. 그래서 --danger 는 지금까지
+        var(--danger,#e5484d) 의 fallback 으로 쓰이던 값을 그대로 적어 둔다
+        (라이트 블록에서 덮어쓰면 라이트 사용자의 빨강이 바뀌므로 덮지 않는다). */
+  --on-accent:#fff;                      /* 강조색 위에 얹는 글자 */
+  --ac-soft:rgba(90,112,248,.20);        /* 강조색의 옅은 배경 */
+  --sec:#7c8cf9;                         /* 보조 강조색 */
+  --sec-rgb:124,140,249;
+  --chip-bg:rgba(124,140,249,.22);       /* 칩 배경 */
+  --tab-on-bg:#262a35;                   /* 선택된 탭 배경 */
+  --focus-ring:rgba(90,112,248,.55);     /* 키보드 포커스 표시 */
+  --shadow-color:rgba(0,0,0,.55);
+  --danger:#e5484d;                      /* 위험·삭제 — 테마와 무관한 의미색 */
   /* 화면 스타일(디자인 프리셋)별 글꼴 — html[data-preset="..."] 이 갈아끼운다 */
   --font-ui:'Pretendard',-apple-system,sans-serif;
   --font-display:'Pretendard',-apple-system,sans-serif;
@@ -157,47 +349,23 @@ html[data-theme="light"] {
   --today-cell-border:rgba(16,45,249,.85);
   --today-cell-border-faded:rgba(68,88,232,.18);
   --fade-start-border:#a4abbf;
+  /* 새 토큰의 라이트 짝. 아직 이 토큰들을 쓰는 기존 컴포넌트가 없어서 지금
+     화면은 달라지지 않는다 — 테마를 안 고른 사람의 기준값을 맞춰 두는 것이다.
+     (--danger 는 일부러 안 덮는다. 덮으면 라이트 사용자의 빨강이 바뀐다.) */
+  --on-accent:#fff;
+  --ac-soft:rgba(68,88,232,.14);
+  --sec:#7b6ef0;
+  --sec-rgb:123,110,240;
+  --chip-bg:rgba(123,110,240,.16);
+  --tab-on-bg:#e4e8f5;
+  --focus-ring:rgba(68,88,232,.55);
+  --shadow-color:rgba(0,0,0,.16);
 }
 
-/* ── 화면 스타일(디자인 프리셋) "Fiery Ocean" ──
-   html[data-preset="fiery-ocean"] = 다크(기본), 거기에 [data-theme="light"]
-   가 겹치면 라이트. :root/html[data-theme="light"] 블록과 같은 방식이라
-   밝기(다크/라이트/시스템)와 화면 스타일(프리셋)이 서로 독립적으로 조합된다.
-   글꼴만 SUIT 로 바뀌고 모노스페이스(IBM Plex Mono)는 :root 값을 그대로 쓴다. */
-html[data-preset="fiery-ocean"] {
-  --bg:#001F2D; --s1:#003049; --s2:#0A4057;
-  --bd:rgba(102,155,188,.30); --bd2:rgba(102,155,188,.55);
-  --tx:#FDF0D5; --tx2:#C9DDEA; --tx3:#94BED3;
-  --ac:#669BBC; --ac-rgb:102,155,188;
-  --ov:#FF7377; --ok:#3FBE7A; --so:#E3A73B; --del:#FF7377;
-  --bgd:#780000; --bgd-tx:#FFADA6;
-  --c0:#FF8A7A; --c1:#E3A73B; --c2:#3FBE7A;
-  --c3:#669BBC; --c4:#F09AC0; --c5:#C9A6E0;
-  --header-bg:rgba(0,31,45,.94);
-  --drag-ghost-bg:rgba(10,64,87,.85);
-  --sun-red:#FF8A8E;
-  --today-cell-border:rgba(102,155,188,.85);
-  --today-cell-border-faded:rgba(102,155,188,.18);
-  --fade-start-border:rgba(102,155,188,.30);
-  --font-ui:'SUIT','Pretendard',-apple-system,sans-serif;
-  --font-display:'SUIT','Pretendard',-apple-system,sans-serif;
-}
-html[data-preset="fiery-ocean"][data-theme="light"] {
-  --bg:#FDF0D5; --s1:#FFF8E8; --s2:#F4E2BF;
-  --bd:rgba(0,48,73,.18); --bd2:rgba(0,48,73,.32);
-  --tx:#003049; --tx2:#315A6D; --tx3:#476A78;
-  --ac:#C1121F; --ac-rgb:193,18,31;
-  --ov:#780000; --ok:#1F7A44; --so:#A85D0A; --del:#780000;
-  --bgd:#780000; --bgd-tx:#9A1420;
-  --c0:#9A3B2E; --c1:#A85D0A; --c2:#1F7A44;
-  --c3:#2B6E8C; --c4:#8C2F3F; --c5:#5B4636;
-  --header-bg:rgba(253,240,213,.94);
-  --drag-ghost-bg:rgba(244,226,191,.92);
-  --sun-red:#A8433D;
-  --today-cell-border:rgba(193,18,31,.85);
-  --today-cell-border-faded:rgba(193,18,31,.18);
-  --fade-start-border:rgba(0,48,73,.30);
-}
+/* 색상 테마(15개 프리셋)는 CSS 블록이 아니라 JS 가 계산해 넣는다.
+   다섯 색에서 20여 개 토큰을 파생하므로 테마마다 블록을 손으로 쓰면
+   30벌(15 × 라이트/다크)을 관리하게 된다. head 의 _themeTokens() 참고.
+   저장된 테마가 없으면 아무 것도 안 얹혀 위의 :root 색이 그대로 보인다. */
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-text-size-adjust:100%;background:var(--bg);}
@@ -965,7 +1133,7 @@ header{
 .datepick-btns{display:flex;gap:8px;margin-top:14px;}
 .datepick-ok{
   flex:1;padding:10px;border-radius:8px;border:none;
-  background:var(--ac);color:#fff;
+  background:var(--ac);color:var(--on-accent);
   font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:600;
   cursor:pointer;
 }
@@ -1007,7 +1175,7 @@ header{
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
 .preset-btn:hover{border-color:var(--ac);color:var(--ac);}
-.preset-btn.on{background:var(--ac);border-color:var(--ac);color:#fff;}
+.preset-btn.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent);}
 .preset-btn.on:hover{background:var(--ac);}
 .preset-sep{width:1px;height:16px;background:var(--bd2);flex-shrink:0;margin:0 2px;}
 
@@ -2124,7 +2292,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   transition:all .15s;line-height:1.4;
 }
 .vl-pill:hover{border-color:var(--ac);color:var(--ac);}
-.vl-pill.on{background:var(--ac);border-color:var(--ac);color:#fff;}
+.vl-pill.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent);}
 .vl-sort-toggle{
   background:none;border:none;padding:2px;cursor:pointer;color:var(--tx3);
   display:flex;align-items:center;-webkit-tap-highlight-color:transparent;border-radius:4px;
@@ -2332,7 +2500,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .auth-input:focus{border-color:rgba(var(--ac-rgb),.5);}
 .auth-btn{
   width:100%;padding:11px;border-radius:8px;border:none;
-  background:var(--ac);color:#fff;
+  background:var(--ac);color:var(--on-accent);
   font-family:var(--font-ui),sans-serif;font-size:14px;font-weight:600;
   cursor:pointer;margin-top:4px;
 }
@@ -2873,23 +3041,157 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   background:currentColor;transform:rotate(45deg);vertical-align:middle;
 }
 
-/* 화면 스타일(디자인 프리셋) 카드 — 프리셋이 늘어나도 자동으로 줄바꿈된다 */
-.ui-preset-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;
+/* ── 색상 테마: 뷰 탭 요약 줄 ── */
+.theme-summary{
+  border:1px solid var(--bd2);border-radius:10px;background:var(--s2);
+  padding:11px 12px;display:flex;flex-direction:column;gap:9px;
 }
-.ui-preset-card{
-  display:flex;flex-direction:column;align-items:flex-start;gap:8px;
-  min-height:64px;padding:11px 12px;border-radius:10px;
+.theme-summary-name{font-size:13px;font-weight:500;color:var(--tx);}
+.theme-strip{display:flex;gap:0;border-radius:4px;overflow:hidden;height:10px;}
+.theme-strip-cell{flex:1;min-width:0;}
+
+/* ── 색상 테마 선택 화면 ──
+   설정창(z-index 300대) 위를 통째로 덮는다. 작은 팝업을 겹치지 않는다. */
+.theme-picker{
+  /* 설정창(.settings-overlay = 4000) 을 통째로 덮어야 한다. 4000 보다 낮으면
+     설정 패널 뒤에 깔려 아무것도 안 보인다 — 실제로 그렇게 났었다. */
+  position:fixed;inset:0;z-index:4200;display:none;
+  flex-direction:column;background:var(--bg);
+}
+.theme-picker.open{display:flex;}
+.theme-picker-head{
+  position:relative;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;
+  padding-top:calc(14px + env(safe-area-inset-top,0px));
+}
+.theme-picker-title{font-size:15px;font-weight:800;color:var(--tx);text-align:center;flex:1;}
+.theme-picker-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+.theme-picker-left{display:flex;flex-direction:column;min-height:0;padding:12px 14px 0;}
+.theme-picker-right{display:flex;flex-direction:column;min-height:0;padding:6px 14px 12px;}
+.theme-group-tabs{display:flex;gap:8px;flex-shrink:0;}
+.theme-group-tab{
+  flex:1;padding:9px;border-radius:8px;
   border:1px solid var(--bd2);background:var(--s2);
+  color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.theme-group-tab.on{border-color:var(--ac);background:var(--ac-soft);color:var(--tx);}
+.theme-group-tab:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.theme-group-desc{font-size:11px;color:var(--tx3);padding:8px 2px 6px;flex-shrink:0;}
+.theme-list{overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px;padding-bottom:4px;}
+.theme-item{
+  display:flex;flex-direction:column;gap:7px;width:100%;
+  padding:10px 12px;border-radius:9px;
+  border:1px solid var(--bd2);background:var(--s1);
   cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;
   transition:border-color .15s,background .15s;
 }
-.ui-preset-card:hover{border-color:var(--ac);}
-.ui-preset-card.active{border-color:var(--ac);background:rgba(var(--ac-rgb),.12);}
-.ui-preset-name{font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:500;color:var(--tx);}
-.ui-preset-swatches{display:flex;gap:3px;}
-.ui-preset-swatch{width:14px;height:6px;border-radius:2px;flex-shrink:0;}
-.ui-preset-sample{font-size:13px;color:var(--tx2);}
+.theme-item:hover{border-color:var(--ac);}
+/* 선택 표시는 색만으로 하지 않는다 — 굵은 테두리 + '선택됨' 글자를 함께 쓴다 */
+.theme-item.on{border-color:var(--ac);border-width:2px;padding:9px 11px;background:var(--ac-soft);}
+.theme-item:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.theme-item-head{display:flex;align-items:center;gap:7px;}
+.theme-item-id{
+  font-family:var(--font-number);font-size:11px;color:var(--tx3);
+  min-width:18px;font-variant-numeric:tabular-nums;
+}
+.theme-item-name{font-size:13px;font-weight:500;color:var(--tx);flex:1;min-width:0;}
+.theme-item-mark{font-size:10px;font-weight:700;color:var(--ac);flex-shrink:0;}
+.theme-preview-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 2px 8px;flex-shrink:0;
+}
+.theme-preview-name{font-size:12px;color:var(--tx2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.theme-mode-toggle{display:flex;gap:4px;flex-shrink:0;}
+.theme-mode-btn{
+  padding:5px 11px;border-radius:7px;
+  border:1px solid var(--bd2);background:transparent;
+  color:var(--tx3);font-family:var(--font-ui),sans-serif;font-size:11px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.theme-mode-btn.on{border-color:var(--ac);background:var(--ac-soft);color:var(--tx);}
+.theme-mode-btn:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px;}
+.theme-picker-foot{
+  display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--bd);flex-shrink:0;
+  padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));
+}
+.theme-picker-foot .settings-btn{flex:1;}
+.theme-apply-btn{background:var(--ac);color:var(--on-accent);border-color:var(--ac);}
+
+/* PC — 목록과 미리보기를 나란히 두고 가로 폭을 넉넉히 쓴다 */
+@media (min-width:860px){
+  .theme-picker-body{flex-direction:row;}
+  .theme-picker-left{flex:0 0 340px;border-right:1px solid var(--bd);padding-bottom:12px;}
+  .theme-picker-right{flex:1;min-width:0;padding:12px 18px;}
+  .theme-picker-foot{justify-content:flex-end;}
+  .theme-picker-foot .settings-btn{flex:0 0 130px;}
+}
+
+/* ── 미리보기 목업 ──
+   ⚠️ 진짜 앱 클래스(.ts/.tab/…)를 쓰지 않는다. 물려받으면 미리보기가 앱 색을
+      따라가 버려서 "고르는 테마"를 못 보여준다. 전용 .tp-* 클래스로 그린다.
+      색은 미리보기 요소에 얹힌 토큰(applyThemeVars 의 el 인자)만 쓴다. */
+.theme-preview{
+  flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  border:1px solid var(--bd2);border-radius:12px;
+  background:var(--bg);color:var(--tx);
+}
+.tp-gnb{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 12px;background:var(--header-bg);border-bottom:1px solid var(--bd);
+  position:sticky;top:0;
+}
+.tp-logo{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--tx2);}
+.tp-logo b{color:var(--ac);font-weight:500;font-family:var(--font-number);}
+.tp-tabs{display:flex;gap:3px;}
+.tp-tabs i{
+  font-style:normal;font-family:var(--font-mono);font-size:11px;
+  padding:3px 9px;border-radius:6px;color:var(--tx2);
+}
+.tp-tabs i.on{background:var(--tab-on-bg);color:var(--tx);}
+.tp-date{font-family:var(--font-number);font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;}
+.tp-body{padding:11px 12px 14px;display:flex;flex-direction:column;gap:10px;}
+.tp-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tp-chip{
+  padding:3px 10px;border-radius:20px;font-size:10px;
+  background:var(--chip-bg);color:var(--tx2);border:1px solid var(--bd);
+}
+.tp-card{border:1px solid var(--bd);border-radius:11px;background:var(--s1);padding:10px 11px;}
+.tp-card-hd{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--tx);margin-bottom:8px;}
+.tp-dot{width:6px;height:6px;border-radius:50%;background:var(--ac);flex-shrink:0;}
+.tp-count{
+  margin-left:auto;font-family:var(--font-number);font-size:10px;color:var(--tx3);
+  font-variant-numeric:tabular-nums;
+}
+.tp-task{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--tx);padding:4px 0;}
+.tp-check{width:12px;height:12px;border-radius:3px;border:1.4px solid var(--bd2);flex-shrink:0;}
+.tp-check.on{background:var(--ac);border-color:var(--ac);}
+.tp-input{
+  margin-top:7px;padding:7px 9px;border-radius:7px;
+  border:1px solid var(--bd2);background:var(--s2);color:var(--tx3);font-size:11px;
+}
+.tp-verse{border:1px solid var(--bd);border-radius:11px;background:var(--s2);padding:11px 12px;}
+.tp-verse-tx{font-size:12px;line-height:1.7;color:var(--tx);}
+.tp-verse-ref{
+  margin-top:6px;font-family:var(--font-number);font-size:10px;color:var(--tx3);
+  letter-spacing:.05em;font-variant-numeric:tabular-nums;
+}
+.tp-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.tp-cal-h{text-align:center;font-family:var(--font-mono);font-size:8px;font-weight:700;color:var(--tx3);padding:2px 0;}
+.tp-cal-d{
+  text-align:center;font-family:var(--font-number);font-size:10px;color:var(--tx2);
+  padding:7px 0;border:1px solid var(--bd);border-radius:6px;background:var(--s1);
+  font-variant-numeric:tabular-nums;
+}
+.tp-cal-d.today{border-color:var(--today-cell-border);color:var(--ac);font-weight:700;}
+.tp-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.tp-btn{
+  padding:6px 14px;border-radius:8px;font-size:11px;
+  border:1px solid var(--bd2);background:var(--s2);color:var(--tx2);
+}
+.tp-btn.primary{background:var(--ac);border-color:var(--ac);color:var(--on-accent);font-weight:600;}
+.tp-btn.danger{color:var(--danger);border-color:var(--danger);background:transparent;}
+
 </style>
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -2986,7 +3288,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0822-4";
+const APP_VERSION = "v. 26-0822-5";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3258,13 +3560,14 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
-      <!-- 화면 스타일(디자인 프리셋) -->
+      <!-- 색상 테마 — 15개를 여기 다 펼치지 않는다. 요약만 보이고 전용 화면에서 고른다 -->
       <div class="settings-section">
         <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">화면 스타일</div>
-          <div class="settings-row-desc">앱 전체의 색상과 글꼴을 한 번에 바꿔요.</div>
+          <div class="settings-row-label lv1">색상 테마</div>
+          <div class="settings-row-desc">앱 전체의 색을 한 번에 바꿔요. 밝기(다크·라이트)는 그대로 따라가요.</div>
         </div>
-        <div class="ui-preset-grid" id="uiThemePresetCards"></div>
+        <div class="theme-summary" id="themeSummary"></div>
+        <button class="settings-btn" style="width:100%;margin-top:10px;" onclick="openThemePicker()">테마 선택</button>
       </div>
 
       <!-- 밝기 -->
@@ -3600,7 +3903,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
         <input type="file" id="devNoteFile" multiple style="display:none" onchange="devNoteHandleFile(this)">
         <div id="devNoteFileList" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
-        <button class="settings-btn" id="devNoteSendBtn" onclick="devNoteSend()" style="width:100%;background:var(--ac);color:#fff;border-color:var(--ac);">보내기</button>
+        <button class="settings-btn" id="devNoteSendBtn" onclick="devNoteSend()" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">보내기</button>
         <div id="devNoteStatus" style="font-size:11px;color:var(--tx3);text-align:center;margin-top:6px;min-height:16px;"></div>
       </div>
 
@@ -3609,6 +3912,45 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
       </div><!-- /settings-tab-track -->
     </div><!-- /settings-body -->
+  </div>
+</div>
+
+<!-- 색상 테마 선택 화면 (BB1 1단계)
+     설정창 위에 작은 팝업을 또 겹치지 않는다 — 설정창을 통째로 덮는 전용
+     화면이다. PC 는 왼쪽 목록 + 오른쪽 미리보기, 모바일은 위아래로 쌓인다.
+     ⚠️ 여기서 테마를 누르는 동안에는 **저장하지 않는다.** 미리보기 영역에만
+        색을 얹고, '적용'을 눌러야 그때 한 번 저장된다. -->
+<div class="theme-picker" id="themePicker">
+  <div class="theme-picker-head">
+    <div class="modal-head-gap"></div>
+    <div class="theme-picker-title">색상 테마</div>
+    <button class="modal-x modal-x-inline" onclick="closeThemePicker()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>
+    </button>
+  </div>
+  <div class="theme-picker-body">
+    <div class="theme-picker-left">
+      <div class="theme-group-tabs" role="tablist">
+        <button class="theme-group-tab" id="themeGroupTab_spark" role="tab" aria-selected="false" onclick="themePickerGroup('spark')">SPARK</button>
+        <button class="theme-group-tab" id="themeGroupTab_breath" role="tab" aria-selected="false" onclick="themePickerGroup('breath')">BREATH</button>
+      </div>
+      <div class="theme-group-desc" id="themeGroupDesc"></div>
+      <div class="theme-list" id="themePickerList"></div>
+    </div>
+    <div class="theme-picker-right">
+      <div class="theme-preview-bar">
+        <span class="theme-preview-name" id="themePickerCurrent"></span>
+        <span class="theme-mode-toggle">
+          <button class="theme-mode-btn" id="themeModeBtn_light" aria-pressed="false" onclick="themePickerMode('light')">라이트</button>
+          <button class="theme-mode-btn" id="themeModeBtn_dark" aria-pressed="false" onclick="themePickerMode('dark')">다크</button>
+        </span>
+      </div>
+      <div class="theme-preview" id="themePreview"></div>
+    </div>
+  </div>
+  <div class="theme-picker-foot">
+    <button class="settings-btn" onclick="closeThemePicker()">취소</button>
+    <button class="settings-btn theme-apply-btn" onclick="themePickerApply()">적용</button>
   </div>
 </div>
 
@@ -4497,7 +4839,7 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="settings-btn" id="ceDeleteBtn" onclick="ceOpenDeletePopup()" style="opacity:.5;white-space:nowrap;flex-shrink:0;" disabled>삭제</button>
           <button class="settings-btn" onclick="ceOpenTrash()" title="삭제된 말씀" style="position:relative;">
             <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M7.3 5.5V4a1 1 0 0 1 1-1h3.4a1 1 0 0 1 1 1v1.5M15.3 5.5l-.9 10.3a1 1 0 0 1-1 .9H6.6a1 1 0 0 1-1-.9l-.9-10.3"/></svg>
-            <span id="ceTrashBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--ac);color:#fff;font-size:9px;min-width:15px;height:15px;border-radius:8px;padding:0 3px;line-height:15px;text-align:center;"></span>
+            <span id="ceTrashBadge" style="display:none;position:absolute;top:-5px;right:-5px;background:var(--ac);color:var(--on-accent);font-size:9px;min-width:15px;height:15px;border-radius:8px;padding:0 3px;line-height:15px;text-align:center;"></span>
           </button>
         </div>
       </div>
@@ -4839,7 +5181,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <input type="text" id="subCodeInput" class="auth-input" inputmode="numeric" maxlength="6" placeholder="예: 123456" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:16px;letter-spacing:4px;text-align:center;margin-bottom:12px;">
   <div style="display:flex;gap:8px;">
     <button class="settings-btn" onclick="closeSubscribeDialog()" style="flex:1;">취소</button>
-    <button class="settings-btn" onclick="doSubscribe()" style="flex:1;background:var(--ac);color:#fff;border-color:var(--ac);">받기</button>
+    <button class="settings-btn" onclick="doSubscribe()" style="flex:1;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">받기</button>
   </div>
 </div>
 
@@ -7304,6 +7646,7 @@ const _ESC_CLOSERS=[
   ['eventModal',      ()=>closeEventModal()],
   ['secDelModal',     ()=>closeSecDelModal()],
   ['verseSettingsOverlay',()=>document.getElementById('verseSettingsOverlay').classList.remove('open')],
+  ['themePicker',     ()=>closeThemePicker()],
   ['settingsOverlay', ()=>closeSettings()],
   ['verseListModal',  ()=>closeVerseListModal()],
   ['trashPanel',      ()=>closeTrash(), el=>el.classList.contains('op')],
@@ -12308,7 +12651,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',uiThemePreset:'classic',showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -21909,59 +22252,20 @@ function goToDate(dateStr){
 // ── Theme (dark / light / system) ──
 const _systemThemeQuery=window.matchMedia?window.matchMedia('(prefers-color-scheme: light)'):null;
 
-// ── 화면 스타일(디자인 프리셋) 레지스트리 ──
-// 밝기(다크/라이트/시스템)와는 별개인 두 번째 축. 프리셋 하나를 늘릴 때
-// 여기 한 항목만 추가하면 되도록, 설정창 카드·적용 함수·조기 적용 스크립트가
-// 전부 이 객체 하나를 읽는다. 실제 색상값은 CSS의 html[data-preset="..."]
-// 블록에 있고, 여기 preview 는 그 블록 내용을 손으로 옮겨 적은 미리보기용
-// 값이다(설정 카드에 CSS 를 파싱해 넣을 수는 없으므로 둘을 나란히 관리한다).
-// 사진에서 색을 뽑는 커스텀 프리셋을 붙일 때도 같은 모양(id/label/preview/
-// modes[light|dark].themeColor)을 쓰면 된다.
-const UI_THEME_PRESETS={
-  classic:{
-    id:'classic',
-    label:'기본',
-    preview:['#5a70f8','#0b0c0f','#1e2028','#eef0fa','#22c46e'],
-    fontLabel:'Pretendard',
-    fontFamily:"'Pretendard',-apple-system,sans-serif",
-    modes:{dark:{themeColor:'#0d0e10'},light:{themeColor:'#f5f6fa'}}
-  },
-  'fiery-ocean':{
-    id:'fiery-ocean',
-    label:'Fiery Ocean',
-    preview:['#780000','#C1121F','#FDF0D5','#003049','#669BBC'],
-    fontLabel:'SUIT',
-    fontFamily:"'SUIT','Pretendard',-apple-system,sans-serif",
-    modes:{dark:{themeColor:'#001F2D'},light:{themeColor:'#FDF0D5'}}
-  }
-};
-// 알 수 없는(구버전이 모르는, 혹은 나중에 지워진) 프리셋 id 가 저장돼 있어도
-// 화면에는 안전하게 기본을 보여준다 — 저장값 자체는 여기서 건드리지 않는다.
-function _resolveUiThemePreset(id){
-  return (id&&UI_THEME_PRESETS[id])?id:'classic';
+// 밝기(다크/라이트/시스템)와 색상 테마를 한 곳에서 함께 해석한다.
+// 테마 데이터·색 파생 함수는 <head> 최상단 블록에 있다 — 조기 적용(첫 페인트
+// 전)과 여기가 **같은 함수**를 부르므로 둘이 어긋날 일이 없다.
+function _effectiveMode(theme){
+  if(theme==='system')return (_systemThemeQuery&&_systemThemeQuery.matches)?'light':'dark';
+  return theme==='light'?'light':'dark';
 }
-
-// 밝기와 화면 스타일을 한 곳에서 함께 해석해 <html> 속성·theme-color 를
-// 갱신한다. 조기 적용 스크립트(<head> 최상단)도 같은 두 값을 같은 규칙으로
-// 미리 계산해두므로, 첫 프레임부터 이 함수가 나중에 내는 것과 같은 결과가
-// 보인다. 인라인 스타일은 전혀 쓰지 않고 data-theme/data-preset 두 속성만
-// 갈아끼우므로 프리셋을 바꿔도 이전 프리셋의 흔적이 남지 않는다.
 function applyTheme(theme){
-  let effective=theme;
-  if(theme==='system'){
-    effective=(_systemThemeQuery&&_systemThemeQuery.matches)?'light':'dark';
-  }
-  if(effective==='light'){
-    document.documentElement.dataset.theme='light';
-  } else {
-    delete document.documentElement.dataset.theme;
-  }
-  const presetId=_resolveUiThemePreset(ST.settings&&ST.settings.uiThemePreset);
-  if(presetId==='classic'){
-    delete document.documentElement.dataset.preset;
-  } else {
-    document.documentElement.dataset.preset=presetId;
-  }
+  const effective=_effectiveMode(theme);
+  if(effective==='light')document.documentElement.dataset.theme='light';
+  else delete document.documentElement.dataset.theme;
+  // 미리보기 중에는 화면에 보여 줄 테마가 저장값과 다르다(아직 적용 전이다).
+  const shown=(_themePreviewId!==null)?_themePreviewId:(ST.settings&&ST.settings.themePresetId);
+  const t=applyThemeVars(shown,effective,null);
   // Keep the browser/PWA chrome (status bar tint, address bar color,
   // and — most relevant to the "background stays dark" symptom — the
   // color shown during iOS overscroll/rubber-banding and before any
@@ -21969,28 +22273,139 @@ function applyTheme(theme){
   // manifest.json's background_color/theme_color are static and can't
   // be changed at runtime, but this <meta> tag can be, and is what
   // most browsers actually honor once the page has loaded.
-  const preset=UI_THEME_PRESETS[presetId]||UI_THEME_PRESETS.classic;
-  const themeColor=(preset.modes[effective]||preset.modes.dark).themeColor;
-  const themeColorMeta=document.querySelector('meta[name="theme-color"]');
-  if(themeColorMeta)themeColorMeta.setAttribute('content',themeColor);
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.setAttribute('content',t?t['--theme-color']:(effective==='light'?'#f5f6fa':'#0d0e10'));
 }
 
-// 일반 설정 → 뷰 탭의 "화면 스타일" 카드 목록. UI_THEME_PRESETS 를 읽어서
-// 그리므로 프리셋을 늘려도 이 함수는 그대로다. 매번 innerHTML 을 통째로
-// 새로 그려서(다른 renderXxx 들과 같은 방식) 다시 불러도 카드나 클릭
-// 리스너가 중복되지 않는다.
-function _renderUiThemePresetCards(){
-  const host=document.getElementById('uiThemePresetCards');
+// ═══════ 색상 테마 고르기 ═══════
+// 규칙 하나만 기억하면 된다: **누르는 동안에는 저장하지 않는다.**
+// _themePreviewId 가 null 이 아니면 "아직 적용 안 한 임시 선택"이라는 뜻이고,
+// '적용'을 눌러야 그때 한 번 updateSetting() 으로 저장·동기화된다.
+let _themePreviewId=null;      // 임시 선택 (저장 안 됨)
+let _themePickerMode='light';  // 미리보기에서 보고 있는 밝기
+let _themePickerGroup='spark';
+
+function _themeSummaryText(id){
+  const p=themeById(id);
+  if(!p)return '기본 (테마 없음)';
+  return THEME_GROUPS[p.group].label+' · '+p.id+' '+p.name;
+}
+// 뷰 탭의 요약 줄 — 지금 테마의 이름과 원본 팔레트 띠
+function _renderThemeSummary(){
+  const host=document.getElementById('themeSummary');
   if(!host)return;
-  const cur=_resolveUiThemePreset(ST.settings.uiThemePreset);
-  host.innerHTML=Object.values(UI_THEME_PRESETS).map(p=>{
-    const dots=p.preview.map(c=>`<span class="ui-preset-swatch" style="background:${c};"></span>`).join('');
-    return `<button type="button" class="ui-preset-card${p.id===cur?' active':''}" onclick="updateSetting('uiThemePreset','${p.id}')">
-      <span class="ui-preset-name">${p.label}</span>
-      <span class="ui-preset-swatches">${dots}</span>
-      <span class="ui-preset-sample" style="font-family:${p.fontFamily};">Aa 가</span>
+  const id=ST.settings.themePresetId;
+  const p=themeById(id);
+  const strip=(p?p.source:['#5a70f8','#0b0c0f','#1e2028','#eef0fa','#22c46e'])
+    .map(c=>`<span class="theme-strip-cell" style="background:${c};"></span>`).join('');
+  host.innerHTML=`<div class="theme-summary-name">${esc(_themeSummaryText(id))}</div>
+    <div class="theme-strip">${strip}</div>`;
+}
+
+function openThemePicker(){
+  _themePreviewId=ST.settings.themePresetId||null;
+  const cur=themeById(_themePreviewId);
+  _themePickerGroup=cur?cur.group:'spark';
+  _themePickerMode=_effectiveMode(ST.settings.theme);
+  document.getElementById('themePicker').classList.add('open');
+  _renderThemePicker();
+}
+function closeThemePicker(){
+  // 취소 — 임시 선택을 버리고 저장돼 있던 테마로 되돌린다
+  _themePreviewId=null;
+  document.getElementById('themePicker').classList.remove('open');
+  applyTheme(ST.settings.theme);
+}
+function themePickerApply(){
+  const id=_themePreviewId;
+  _themePreviewId=null;   // 먼저 지워야 applyTheme 이 저장값을 본다
+  document.getElementById('themePicker').classList.remove('open');
+  // 저장은 여기 한 번뿐이다. 누르는 동안에는 저장하지 않았다.
+  updateSetting('themePresetId',id||null);
+  _renderThemeSummary();
+}
+function themePickerPick(id){
+  _themePreviewId=id;
+  _renderThemePicker();
+}
+function themePickerGroup(g){
+  _themePickerGroup=g;
+  _renderThemePicker();
+}
+function themePickerMode(m){
+  _themePickerMode=m;
+  _renderThemePicker();
+}
+// 목록 + 미리보기를 통째로 다시 그린다. 매번 innerHTML 을 갈아끼우므로
+// 아무리 빨리 눌러도 카드나 리스너가 겹치지 않는다.
+function _renderThemePicker(){
+  const list=document.getElementById('themePickerList');
+  const prev=document.getElementById('themePreview');
+  if(!list||!prev)return;
+  ['spark','breath'].forEach(g=>{
+    const b=document.getElementById('themeGroupTab_'+g);
+    if(b){b.classList.toggle('on',g===_themePickerGroup);b.setAttribute('aria-selected',g===_themePickerGroup?'true':'false');}
+  });
+  const desc=document.getElementById('themeGroupDesc');
+  if(desc)desc.textContent=THEME_GROUPS[_themePickerGroup].desc;
+  ['light','dark'].forEach(m=>{
+    const b=document.getElementById('themeModeBtn_'+m);
+    if(b){b.classList.toggle('on',m===_themePickerMode);b.setAttribute('aria-pressed',m===_themePickerMode?'true':'false');}
+  });
+
+  list.innerHTML=THEME_PRESETS.filter(p=>p.group===_themePickerGroup).map(p=>{
+    const on=(p.id===_themePreviewId);
+    const strip=p.source.map(c=>`<span class="theme-strip-cell" style="background:${c};"></span>`).join('');
+    // 선택 표시를 색으로만 하지 않는다 — 테두리와 '선택됨' 글자를 함께 쓴다
+    return `<button type="button" class="theme-item${on?' on':''}" aria-pressed="${on?'true':'false'}"
+      onclick="themePickerPick('${p.id}')">
+      <span class="theme-item-head">
+        <span class="theme-item-id">${p.id}</span>
+        <span class="theme-item-name">${esc(p.name)}</span>
+        ${on?'<span class="theme-item-mark">선택됨</span>':''}
+      </span>
+      <span class="theme-strip">${strip}</span>
     </button>`;
   }).join('');
+
+  // 미리보기 — 토큰을 이 요소에만 얹는다. 앱 화면은 건드리지 않는다.
+  applyThemeVars(_themePreviewId,_themePickerMode,prev);
+  prev.classList.toggle('preview-light',_themePickerMode==='light');
+  prev.innerHTML=_themePreviewHTML();
+  const nm=document.getElementById('themePickerCurrent');
+  if(nm)nm.textContent=_themeSummaryText(_themePreviewId);
+}
+// 미리보기 안에 넣을 가짜 앱 화면. 실제 클래스를 쓰지 않고 전용 클래스로
+// 그린다 — 진짜 앱 스타일을 물려받으면 미리보기가 앱을 따라 바뀌어 버린다.
+function _themePreviewHTML(){
+  return `
+  <div class="tp-gnb">
+    <span class="tp-logo">BLOCK<b>7</b></span>
+    <span class="tp-tabs"><i class="on">D</i><i>W</i><i>M</i></span>
+    <span class="tp-date">‹ 822 S ›</span>
+  </div>
+  <div class="tp-body">
+    <div class="tp-row"><span class="tp-chip">새벽</span><span class="tp-chip">점심</span><span class="tp-chip">저녁</span></div>
+    <div class="tp-card">
+      <div class="tp-card-hd"><span class="tp-dot"></span>오전<span class="tp-count">3 / 7</span></div>
+      <div class="tp-task"><span class="tp-check on"></span>말씀 읽기</div>
+      <div class="tp-task"><span class="tp-check"></span>운동 30분</div>
+      <div class="tp-input">할 일을 입력하세요</div>
+    </div>
+    <div class="tp-verse">
+      <div class="tp-verse-tx">주는 나의 목자시니 내게 부족함이 없으리로다</div>
+      <div class="tp-verse-ref">시편 23:1</div>
+    </div>
+    <div class="tp-cal">
+      ${['일','월','화','수','목','금','토'].map(d=>`<span class="tp-cal-h">${d}</span>`).join('')}
+      ${[10,11,12,13,14,15,16].map(d=>`<span class="tp-cal-d${d===13?' today':''}">${d}</span>`).join('')}
+    </div>
+    <div class="tp-btns">
+      <span class="tp-btn primary">적용</span>
+      <span class="tp-btn">취소</span>
+      <span class="tp-btn danger">삭제</span>
+    </div>
+  </div>`;
 }
 
 // If the user picked "시스템" and the OS theme changes while the app
@@ -22152,7 +22567,7 @@ function renderSettingsPanel(){
   document.getElementById('themeBtnDark').classList.toggle('active',theme==='dark');
   document.getElementById('themeBtnLight').classList.toggle('active',theme==='light');
   document.getElementById('themeBtnSystem').classList.toggle('active',theme==='system');
-  _renderUiThemePresetCards();
+  _renderThemeSummary();
 
   // day-of-week format buttons active state
   const dowFmt=s.dowFormat||'letter-lord';
@@ -22269,9 +22684,9 @@ function updateSetting(key,value){
     document.getElementById('themeBtnLight').classList.toggle('active',value==='light');
     document.getElementById('themeBtnSystem').classList.toggle('active',value==='system');
   }
-  if(key==='uiThemePreset'){
+  if(key==='themePresetId'){
     applyTheme(ST.settings.theme);
-    _renderUiThemePresetCards();
+    _renderThemeSummary();
   }
   if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'){
     renderAddRow();
@@ -25240,7 +25655,7 @@ window.checkDataRecovery=async function(){
         </div>
       </div>
       ${localNewer?'<div style="font-size:11px;color:var(--ac);margin-bottom:8px;">로컬이 클라우드보다 최신 날짜를 갖고 있어요.</div>':''}
-      <button class="settings-btn" style="width:100%;background:var(--ac);color:#fff;border-color:var(--ac);" onclick="fbForceUploadLocal()" ${local?'':'disabled'}>이 기기의 로컬 데이터로 클라우드 덮어쓰기</button>
+      <button class="settings-btn" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="fbForceUploadLocal()" ${local?'':'disabled'}>이 기기의 로컬 데이터로 클라우드 덮어쓰기</button>
       <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cleanupEmptyDays()">빈 날짜 항목 정리하기 (데이터 없는 날짜 삭제)</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);">
         <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;">특정 날짜의 원본 데이터를 필터 없이 그대로 보기 (직접 눈으로 확인)</div>

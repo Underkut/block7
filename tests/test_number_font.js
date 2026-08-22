@@ -13,12 +13,16 @@ console.log('시나리오 1 — --font-number 변수');
   const rootBlock = SRC.slice(SRC.indexOf(':root {'), SRC.indexOf('html[data-theme="light"]'));
   sc.eq(':root 안의 --font-number 에 IBM Plex Mono 없음',
         /--font-number:[^;]*IBM Plex Mono/.test(rootBlock), false);
-  // 프리셋이 --font-number 를 임의로 덮어쓰지 못하게 — Fiery Ocean 두 블록 다 재정의 안 함
-  const foDark = slice('html[data-preset="fiery-ocean"] {', 'html[data-preset="fiery-ocean"][data-theme="light"] {');
-  const foLight = SRC.slice(SRC.indexOf('html[data-preset="fiery-ocean"][data-theme="light"] {'),
-                             SRC.indexOf('*,*::before,*::after{box-sizing:border-box;'));
-  sc.eq('Fiery Ocean 다크 블록은 --font-number 재정의 안 함', foDark.includes('--font-number'), false);
-  sc.eq('Fiery Ocean 라이트 블록도 --font-number 재정의 안 함', foLight.includes('--font-number'), false);
+  // 색상 테마는 **색만** 바꾼다. 26-0822-5 에서 테마가 CSS 블록이 아니라
+  // JS 계산(_themeTokens)으로 바뀌었으므로, 그 함수가 글꼴 토큰을 아예 내지
+  // 않는지로 확인한다 — 하나라도 내면 테마마다 글꼴이 달라진다.
+  const tokenFn = slice('function _themeTokens(preset,mode){', '// 계산한 토큰을 실제로 얹는다');
+  ['--font-number', '--font-ui', '--font-display', '--font-mono'].forEach(v => {
+    sc.eq(`_themeTokens() 는 ${v} 를 건드리지 않는다`, tokenFn.includes(v), false);
+  });
+  // 적용 함수가 지우고 다시 얹는 키 목록에도 글꼴이 없어야 한다
+  const applyFn = slice('function applyThemeVars(id,mode,el){', '// ── 조기 적용 (첫 페인트 전) ──');
+  sc.eq('applyThemeVars() 의 키 목록에도 글꼴 토큰 없음', /--font-/.test(applyFn), false);
 }
 
 // ═══ 2. 숫자 정렬(tabular-nums) 전역 적용 ═══
