@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0822-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0822-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -832,7 +832,7 @@ header{
   .trash-btn{width:26px;}
   .ur-btn{padding:4px 2px;font-size:15px;}
 }
-.date-l{font-family:var(--font-number);font-size:10px;color:var(--tx3);}
+.date-l{font-family:var(--font-number);font-size:10px;color:var(--tx3);line-height:1;}
 
 /* 휴지통 버튼 */
 .trash-btn{
@@ -890,7 +890,7 @@ header{
 .date-nav-btn:hover{color:var(--tx);}
 .date-l{
   font-family:var(--font-number);font-size:12px;color:var(--tx3);
-  min-width:44px;text-align:center;cursor:pointer;
+  min-width:44px;text-align:center;cursor:pointer;line-height:1;
   -webkit-tap-highlight-color:transparent;
 }
 .date-l:hover{color:var(--tx2);}
@@ -1806,6 +1806,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .wscr{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .wkg{display:grid;grid-template-columns:48px repeat(7,minmax(68px,1fr));gap:2px;min-width:540px;}
 .wh{padding:4px;text-align:center;font-size:9px;font-weight:700;color:var(--tx3);font-family:var(--font-mono);}
+.wh .num{font-family:var(--font-number);}
 .wh:first-child{position:sticky;left:0;z-index:3;background:var(--bg);}
 .wh.tc{color:var(--ac);}
 .wh.tc.sun-red,.wh.sun-red{color:var(--sun-red);}
@@ -2949,7 +2950,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0822-2";
+const APP_VERSION = "v. 26-0822-3";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -20862,7 +20863,7 @@ function renderWeekly(hostEl){
       const dk=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
       const isSun=d.getDay()===0&&ST.settings.sundayRed!==false;
       const isToday=dk===todayKeyStr;
-      return`<div class="wh${isToday?' tc':''}${isSun?' sun-red':''}" style="cursor:pointer" onclick="goToDate('${dk}')">${d.getDate()} ${DOW[d.getDay()]}</div>`;
+      return`<div class="wh${isToday?' tc':''}${isSun?' sun-red':''}" style="cursor:pointer" onclick="goToDate('${dk}')"><span class="num">${d.getDate()}</span> ${DOW[d.getDay()]}</div>`;
     }).join('')}`;
   const wmMode=ST.settings.wmViewMode||'todo';
   vis.forEach(sec=>{

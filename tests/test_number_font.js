@@ -178,4 +178,25 @@ console.log('\n시나리오 10 — 개발본 전용 숫자 점검 화면');
   sc.eq('닫기 버튼이 있다(테스트 후 치우기 쉽게)', SRC.includes("this.closest(\\'#numFontCheckBox\\').remove()"), true);
 }
 
+// ═══ 11. HB 확인 후 추가 수정(26-0822-3) — 주간뷰 날짜, GNB 세로 정렬 ═══
+console.log('\n시나리오 11 — 주간뷰 날짜+요일 혼합 표기 / GNB 세로 정렬');
+{
+  // .wh 는 "18 T" 처럼 날짜 숫자와 요일 글자가 한 요소에 섞여 있어서,
+  // 처음엔 통째로 --font-mono 로 남겨뒀다가 HB가 "날짜가 아직 안 바뀌었다"고
+  // 신고해 숫자만 <span class="num"> 으로 감쌌다.
+  sc.eq('.wh 날짜 숫자는 <span class="num"> 로 분리',
+        SRC.includes('<span class="num">${d.getDate()}</span> ${DOW[d.getDay()]}'), true);
+  sc.eq('.wh .num 은 --font-number', /\.wh \.num\{font-family:var\(--font-number\);\}/.test(SRC), true);
+  sc.eq('.wh 자체(요일 글자)는 여전히 --font-mono',
+        /\.wh\{[^}]*font-family:var\(--font-mono\);\}/.test(SRC), true);
+
+  // GNB 의 "‹ 날짜 요일 ›" 이 화살표 버튼보다 위로 떠 보인 것 — Pretendard 와
+  // IBM Plex Mono 의 줄 높이(line-height:normal)가 달라서 flex 세로 중앙이
+  // 폰트마다 다르게 잡힌 게 원인이었다. line-height 를 고정해서 잡는다.
+  sc.eq('#hDate 가 쓰는 .date-l(12px, 헤더용)에 line-height:1',
+        /\.date-l\{\s*font-family:var\(--font-number\);font-size:12px;color:var\(--tx3\);\s*min-width:44px;text-align:center;cursor:pointer;line-height:1;/.test(SRC), true);
+  sc.eq('.date-l 의 남은(구버전) 10px 규칙에도 line-height:1',
+        /\.date-l\{font-family:var\(--font-number\);font-size:10px;color:var\(--tx3\);line-height:1;\}/.test(SRC), true);
+}
+
 sc.done();
