@@ -240,6 +240,31 @@ console.log('\n시나리오 9 — 설정 화면 구조');
         SRC.indexOf('id="themeDefaultBtn"') < SRC.indexOf('>취소</button>'), true);
   sc.eq("'기본' 은 테마 없음(null)을 고른다", SRC.includes('onclick="themePickerPick(null)"'), true);
   sc.eq("'기본' 도 눌린 상태를 표시한다", SRC.includes("defBtn.classList.toggle('on',isDef);"), true);
+
+  // ── v26-0823-2 (HB 실기기 신고) ──
+  // 아이폰에서만 팔레트 띠가 안 보였다. 버튼을 flex 컨테이너로 쓰면 iOS Safari 가
+  // 세로 배치를 무시하고 자식을 가로로 눕혀, 폭을 1fr 로 나누던 띠가 0 이 된다.
+  sc.eq('테마 버튼 자체는 flex 컨테이너가 아니다',
+        /\.theme-item\{\s*display:block;/.test(SRC), true);
+  sc.eq('안쪽 span 이 세로 flex 를 맡는다',
+        /\.theme-item-in\{display:flex;flex-direction:column;/.test(SRC), true);
+  sc.eq('버튼 안에 .theme-item-in 래퍼가 실제로 들어간다',
+        SRC.includes('<span class="theme-item-in">'), true);
+  sc.eq('팔레트 띠는 grid 로 칸을 명시한다(1fr flex 붕괴 방지)',
+        /\.theme-strip\{[\s\S]{0,200}display:grid;grid-auto-flow:column;grid-auto-columns:1fr;/.test(SRC), true);
+  sc.eq('팔레트 띠가 눌려서 사라지지 않게 flex-shrink 를 막는다',
+        /\.theme-strip\{[\s\S]{0,200}flex-shrink:0;/.test(SRC), true);
+  sc.eq('팔레트 띠에 명시적 높이', /\.theme-strip\{[\s\S]{0,200}height:10px;min-height:10px;/.test(SRC), true);
+
+  // '선택됨' 글자는 뺐다 — 활성 표시(테두리 굵기 + 강조 배경 + aria-pressed)로 충분
+  sc.eq("'선택됨' 글자를 쓰지 않는다", /선택됨/.test(SRC.replace(/\/\/[^\n]*/g, '')), false);
+  sc.eq('.theme-item-mark 클래스도 사라졌다', /theme-item-mark/.test(SRC), false);
+  sc.eq('선택은 테두리 굵기로도 구분된다(색만 쓰지 않는다)',
+        /\.theme-item\.on\{border-color:var\(--ac\);border-width:2px;/.test(SRC), true);
+
+  // 뷰 탭 요약 — '기본' 뒤에 '(테마 없음)' 을 붙이지 않는다
+  sc.eq("테마가 없으면 요약은 그냥 '기본'", SRC.includes("if(!p)return '기본';"), true);
+  sc.eq("'기본 (테마 없음)' 문구를 쓰지 않는다", SRC.includes('기본 (테마 없음)'), false);
 }
 
 // ═══ 10. 미리보기 목업이 실제 화면 요소를 담는다 ═══
