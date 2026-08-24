@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0823-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0824-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3316,7 +3316,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0823-2";
+const APP_VERSION = "v. 26-0824-1";
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -25398,19 +25398,39 @@ function _fbCountArrays(v,depth){
   let t=0;for(const k in v)t+=_fbCountArrays(v[k],depth+1);
   return t;
 }
-function _fbCountItems(o){
-  let n=_fbCountArrays((o&&o.days)||{},0);
-  n+=_fbCountArrays((((o&&o.settings)||{}).layout||{}).cols||{},0);
+// 항목 수를 **갈래별로** 센다 (v26-0824-1). 예전엔 전부 더해 숫자 하나로 봤는데
+// 그 방식엔 구멍이 둘 있었다:
+//  ① 말씀 기록(암송·좋아요·공유·Deeper)을 아예 세지 않았다. 말씀만 쓰는 사람은
+//     기록이 통째로 날아가도 방어가 조용히 지나갔다. Sweeter 사용자가 정확히
+//     그런 사람이라, 그대로 두면 새 제품의 첫 사고가 여기서 난다.
+//  ② 합계 하나로 보면 한 갈래가 전멸해도 다른 갈래가 많으면 절반 선에 안 걸린다
+//     (할일 200개인 사람은 말씀 기록 전부를 잃어도 통과된다).
+// 그래서 갈래마다 따로 세고, **한 갈래라도** 절반 아래로 떨어지면 대량 손실로 본다.
+function _fbCountByKind(o){
+  o=o||{};
   // 말씀 모음·연락처는 배열이다 (id 단위 병합) — 객체로 와도 세지도록 둘 다 본다
   const cnt=v=>Array.isArray(v)?v.length:Object.keys(v||{}).length;
-  n+=cnt(o&&o.verseCollections);
-  n+=cnt(o&&o.contacts);
-  return n;
+  return {
+    days:_fbCountArrays(o.days||{},0),
+    layout:_fbCountArrays(((o.settings||{}).layout||{}).cols||{},0),
+    verseCollections:cnt(o.verseCollections),
+    contacts:cnt(o.contacts),
+    memorizationLog:_fbCountArrays(o.memorizationLog||{},0),
+    verseLogs:_fbCountArrays(o.verseLikeLog||{},0)+_fbCountArrays(o.verseShareLog||{},0)
+             +_fbCountArrays(o.verseDeeperLog||{},0)+_fbCountArrays(o.verseEvenDeeperLog||{},0)
+  };
+}
+// 예전 이름 — 전체 개수가 필요한 곳을 위해 남겨 둔다
+function _fbCountItems(o){
+  const k=_fbCountByKind(o);let n=0;for(const x in k)n+=k[x];return n;
 }
 function _fbBulkLoss(cloud,out){
-  const before=_fbCountItems(cloud);
-  if(before<_FB_LOSS_MIN)return false;
-  return _fbCountItems(out)<before*_FB_LOSS_KEEP;
+  const before=_fbCountByKind(cloud),after=_fbCountByKind(out);
+  for(const k in before){
+    if(before[k]<_FB_LOSS_MIN)continue;              // 원래 적으면 세지 않는다
+    if(after[k]<before[k]*_FB_LOSS_KEEP)return true; // 한 갈래라도 절반 아래
+  }
+  return false;
 }
 // 복구 경로에서 쓰는 병합. 두 가지를 더 본다:
 //  ① 클라우드를 아직 한 번도 못 받았으면 로컬은 '기본값'일 뿐 → 클라우드 우선
