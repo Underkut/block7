@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0824-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0824-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3316,7 +3316,58 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0824-1";
+const APP_VERSION = "v. 26-0824-2";
+
+// ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
+// 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
+// tools/make-sweeter.sh 가 이 한 줄을 바꿔 Sweeter 산출물을 만든다.
+// ⚠️ APP_PRODUCT 가 기본값('block7')인 동안 아래 장치는 **아무 일도 하지 않는다.**
+//    지금 쓰는 사람들의 데이터는 한 글자도 움직이지 않는다는 뜻이다.
+const APP_PRODUCT = "block7";
+const APP_PRODUCT_DEFAULT = "block7";   // 설정을 settings 에 그대로 두는 제품
+
+// 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
+// ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
+//    저쪽은 그대로"인 혼란이 늘고, 공유가 자연스러운 것(말씀 모음 필터·제외
+//    기준 등)까지 갈라지면 사용자가 같은 설정을 두 번 하게 된다.
+const _PRODUCT_SCOPED=[
+  'uiLevel','verseUiLevel','uiLevelIconSet',                    // 유저 등급 · 아이콘
+  'theme','themePresetId',                                      // 화면 스타일
+  'notify','verseAlarm',                                        // 알림 (두 앱이 같이 울리면 안 된다)
+  'vfTextScale','vListHeightRatio','vfThemes','vfThemeBySec',   // 전체화면 표시
+  'verseBarOn','verseMode','verseSneakStyle',                   // 상단 말씀 표시 방식
+  'verseWidgetCat','verseWidgetTopic','verseWidgetText','verseWidgetRef',
+  'verseWidgetTag','verseWidgetTextSize','verseWidgetRefSize'   // 말씀 위젯
+];
+function _psIsDefault(){return APP_PRODUCT===APP_PRODUCT_DEFAULT;}
+
+// 읽기 쪽 — 클라우드에서 받은 설정 위에 이 제품 몫을 덮어씌운다.
+function _psOverlay(settings,productSettings){
+  if(_psIsDefault())return settings;
+  const mine=(productSettings||{})[APP_PRODUCT];
+  if(!mine)return settings;
+  const out=Object.assign({},settings);
+  _PRODUCT_SCOPED.forEach(k=>{if(mine[k]!==undefined)out[k]=mine[k];});
+  return out;
+}
+// 쓰기 쪽 — 클라우드에 올릴 모양으로 되돌린다.
+// 이 제품의 개인 설정은 productSettings 로 빼고, settings 의 그 자리에는
+// **원래 있던 값**(prior = base 또는 클라우드)을 되돌려 놓는다.
+// 안 그러면 Sweeter 에서 키운 글자 크기가 BLOCK7 의 글자 크기를 덮어쓴다.
+function _psProject(state,prior){
+  if(_psIsDefault()||!state)return state;
+  const out=Object.assign({},state);
+  const src=(prior&&prior.settings)||{};
+  const mine={},shared=Object.assign({},state.settings||{});
+  _PRODUCT_SCOPED.forEach(k=>{
+    if(shared[k]!==undefined)mine[k]=shared[k];
+    if(src[k]!==undefined)shared[k]=src[k];else delete shared[k];
+  });
+  out.settings=shared;
+  out.productSettings=Object.assign({},state.productSettings||{});
+  out.productSettings[APP_PRODUCT]=mine;
+  return out;
+}
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -12602,6 +12653,10 @@ const SWIPE_THRESHOLD=72; // px to trigger delete
 function defaultState(){
   return{
     vis:['am','pm','night'],prevVis:null,preset:null,collapsed:[],days:{},verseCollections:[],
+    // 다른 제품(Sweeter 등)의 개인 설정 보관함. BLOCK7 은 읽지도 쓰지도 않지만
+    // **모양은 반드시 들고 있어야 한다** — 키가 없으면 병합이 "사용자가 지웠다"로
+    // 읽어 상대 제품의 설정을 날린다 (tests/test_product.js 시나리오 3-2).
+    productSettings:{},
     secs:null,
     memorizationLog:{}, // { "YYYY-MM-DD": { secId: [{verseIdx, time:"HH:MM"}] } }
     settings:{
@@ -25459,6 +25514,8 @@ function _fbMerge(base,local,cloud,preferCloud){
     else if(k==='memorizationLog')v=_mgLogNested(bv,lv,cv,baseKnown);
     else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+    else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
+      _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
     else if(k==='verseCollections'||k==='contacts')v=_mgById(bv,lv,cv,baseKnown);
     else v=_mgWhole(bv,lv,cv,baseKnown);
     if(v!==undefined)out[k]=v;
@@ -25541,9 +25598,11 @@ async function _fbCommit(){
   _fbCommitBusy=true;
   const uid=_fbUser.uid;
   let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null;
+  // 제품 분리용 — 클라우드에 원래 있던 설정을 되돌려 놓을 때 쓴다 (_psProject)
+  let priorState=null;
   try{
     await fbDB.runTransaction(async tx=>{
-      mergedApply=null;backupJson=null;legacyVer=null; // 트랜잭션 재시도 대비 초기화
+      mergedApply=null;backupJson=null;legacyVer=null;priorState=null; // 트랜잭션 재시도 대비 초기화
       const snap=await tx.get(userDocRef(uid));
       const data=snap.exists?(snap.data()||{}):{};
       const cloudRev=(typeof data.rev==='number')?data.rev:0;
@@ -25555,6 +25614,7 @@ async function _fbCommit(){
         // 클라우드가 내가 본 것보다 앞서 있음 = 다른 기기가 먼저 썼음.
         // 예전엔 여기서 그냥 덮어써서 상대 작업이 통째로 사라졌다.
         let cloudState=null;try{cloudState=JSON.parse(data.json);}catch(e){}
+        priorState=cloudState;
         if(!cloudState){outState=ST;}
         else{
           // ⚠️ 그 문서를 **나보다 낮은 버전**이 썼다면 base 를 넘기면 안 된다.
@@ -25572,7 +25632,9 @@ async function _fbCommit(){
         }
       }
       outRev=cloudRev+1;
-      outJson=JSON.stringify(outState);
+      // ⚠️ 기본 제품(BLOCK7)에서는 _psProject 가 outState 를 그대로 돌려준다 —
+      //    이 줄이 지금 쓰는 사람들의 저장 내용을 바꾸는 일은 없다.
+      outJson=JSON.stringify(_psProject(outState,priorState||_fbBaseObj()));
       tx.set(userDocRef(uid),{
         json:outJson,rev:outRev,dev:_deviceId(),appVer:APP_VERSION,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -25841,8 +25903,12 @@ function applyRemoteState(remote){
     ST.secs=SECS;
   }
   if(Array.isArray(remote.secArchive))ST.secArchive=remote.secArchive;
+  // 다른 제품의 개인 설정 — 이 앱이 안 쓰더라도 그대로 지고 가야 한다.
+  // 안 그러면 다음 저장 때 "내가 지웠다"로 읽혀 상대 제품 설정이 사라진다.
+  if(remote.productSettings)ST.productSettings=remote.productSettings;
   if(remote.settings){
     ST.settings=Object.assign({},ST.settings,remote.settings);
+    ST.settings=_psOverlay(ST.settings,remote.productSettings||ST.productSettings);
   }
 }
 
