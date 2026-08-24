@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0823-2  [production]  -->
+<!-- BLOCK7  v. 26-0824-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3316,7 +3316,58 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0823-2";
+const APP_VERSION = "v. 26-0824-3";
+
+// ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
+// 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
+// tools/make-sweeter.sh 가 이 한 줄을 바꿔 Sweeter 산출물을 만든다.
+// ⚠️ APP_PRODUCT 가 기본값('block7')인 동안 아래 장치는 **아무 일도 하지 않는다.**
+//    지금 쓰는 사람들의 데이터는 한 글자도 움직이지 않는다는 뜻이다.
+const APP_PRODUCT = "block7";
+const APP_PRODUCT_DEFAULT = "block7";   // 설정을 settings 에 그대로 두는 제품
+
+// 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
+// ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
+//    저쪽은 그대로"인 혼란이 늘고, 공유가 자연스러운 것(말씀 모음 필터·제외
+//    기준 등)까지 갈라지면 사용자가 같은 설정을 두 번 하게 된다.
+const _PRODUCT_SCOPED=[
+  'uiLevel','verseUiLevel','uiLevelIconSet',                    // 유저 등급 · 아이콘
+  'theme','themePresetId',                                      // 화면 스타일
+  'notify','verseAlarm',                                        // 알림 (두 앱이 같이 울리면 안 된다)
+  'vfTextScale','vListHeightRatio','vfThemes','vfThemeBySec',   // 전체화면 표시
+  'verseBarOn','verseMode','verseSneakStyle',                   // 상단 말씀 표시 방식
+  'verseWidgetCat','verseWidgetTopic','verseWidgetText','verseWidgetRef',
+  'verseWidgetTag','verseWidgetTextSize','verseWidgetRefSize'   // 말씀 위젯
+];
+function _psIsDefault(){return APP_PRODUCT===APP_PRODUCT_DEFAULT;}
+
+// 읽기 쪽 — 클라우드에서 받은 설정 위에 이 제품 몫을 덮어씌운다.
+function _psOverlay(settings,productSettings){
+  if(_psIsDefault())return settings;
+  const mine=(productSettings||{})[APP_PRODUCT];
+  if(!mine)return settings;
+  const out=Object.assign({},settings);
+  _PRODUCT_SCOPED.forEach(k=>{if(mine[k]!==undefined)out[k]=mine[k];});
+  return out;
+}
+// 쓰기 쪽 — 클라우드에 올릴 모양으로 되돌린다.
+// 이 제품의 개인 설정은 productSettings 로 빼고, settings 의 그 자리에는
+// **원래 있던 값**(prior = base 또는 클라우드)을 되돌려 놓는다.
+// 안 그러면 Sweeter 에서 키운 글자 크기가 BLOCK7 의 글자 크기를 덮어쓴다.
+function _psProject(state,prior){
+  if(_psIsDefault()||!state)return state;
+  const out=Object.assign({},state);
+  const src=(prior&&prior.settings)||{};
+  const mine={},shared=Object.assign({},state.settings||{});
+  _PRODUCT_SCOPED.forEach(k=>{
+    if(shared[k]!==undefined)mine[k]=shared[k];
+    if(src[k]!==undefined)shared[k]=src[k];else delete shared[k];
+  });
+  out.settings=shared;
+  out.productSettings=Object.assign({},state.productSettings||{});
+  out.productSettings[APP_PRODUCT]=mine;
+  return out;
+}
 
 // Auth screen's version label needs to show regardless of login state
 // or DEV_MODE, so set it as soon as the DOM is parsed rather than
@@ -3901,10 +3952,10 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div id="devInboxWrap">
           <div class="settings-row-desc" style="margin-bottom:8px;">사용자가 보낸 쪽지와 첨부를 확인해요. 쪽지를 옆으로 밀면 삭제돼요. (개발자 계정에서만 보여요)</div>
           <div style="display:flex;gap:8px;">
-            <button class="settings-btn" onclick="devInboxLoad()" style="flex:1;">불러오기</button>
+            <button class="settings-btn" id="devInboxLoadBtn" onclick="devInboxLoad()" style="flex:1;">불러오기</button>
             <button class="settings-btn" onclick="devTrashToggle()" style="flex:1;">휴지통</button>
           </div>
-          <div id="devInboxList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+          <div id="devInboxList" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
           <div id="devTrashWrap" style="display:none;margin-top:12px;">
             <div class="settings-row-desc" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
               <span style="font-weight:600;color:var(--tx2);">휴지통</span>
@@ -12602,6 +12653,10 @@ const SWIPE_THRESHOLD=72; // px to trigger delete
 function defaultState(){
   return{
     vis:['am','pm','night'],prevVis:null,preset:null,collapsed:[],days:{},verseCollections:[],
+    // 다른 제품(Sweeter 등)의 개인 설정 보관함. BLOCK7 은 읽지도 쓰지도 않지만
+    // **모양은 반드시 들고 있어야 한다** — 키가 없으면 병합이 "사용자가 지웠다"로
+    // 읽어 상대 제품의 설정을 날린다 (tests/test_product.js 시나리오 3-2).
+    productSettings:{},
     secs:null,
     memorizationLog:{}, // { "YYYY-MM-DD": { secId: [{verseIdx, time:"HH:MM"}] } }
     settings:{
@@ -17353,9 +17408,28 @@ function _devFilesHTML(files){
       : `<a href="${f.data}" download="${nm}" style="font-size:12px;color:var(--ac);">${nm} 내려받기</a>`;
   }).join('<div style="height:6px;"></div>');
 }
-async function devInboxLoad(){
+let _devInboxOpen=false;
+let _devInboxLoading=false;
+function _devInboxButton(text,disabled){
+  const btn=document.getElementById('devInboxLoadBtn');
+  if(!btn)return;
+  btn.textContent=text;
+  btn.disabled=!!disabled;
+}
+async function devInboxLoad(forceReload=false){
   const box=document.getElementById('devInboxList');
-  if(!box)return;
+  if(!box||_devInboxLoading)return;
+  if(_devInboxOpen&&!forceReload){
+    _devInboxOpen=false;
+    box.style.display='none';
+    box.innerHTML='';
+    _devInboxButton('불러오기',false);
+    return;
+  }
+  _devInboxLoading=true;
+  _devInboxOpen=false;
+  _devInboxButton('불러오는 중…',true);
+  box.style.display='flex';
   box.innerHTML='<div style="font-size:12px;color:var(--tx3);">불러오는 중…</div>';
   try{
     const db=window._fbDB;
@@ -17367,6 +17441,8 @@ async function devInboxLoad(){
     snap.forEach(doc=>{const d=doc.data()||{};_devNotesCache.push({id:doc.id,...d,_ms:_devWhen(d)});});
     _devNotesCache.sort((a,b)=>b._ms-a._ms);
     devInboxUpdateBadge();
+    _devInboxOpen=true;
+    _devInboxButton('목록 닫기',false);
     if(!_devNotesCache.length){box.innerHTML='<div style="font-size:12px;color:var(--tx3);">받은 쪽지가 없어요</div>';return;}
     const read=_devReadIds();
     box.innerHTML=_devNotesCache.map(d=>{
@@ -17393,7 +17469,11 @@ async function devInboxLoad(){
     _devNotesCache.forEach(d=>_devAttachSwipe(d.id));
   }catch(e){
     console.warn('받은 쪽지 불러오기 실패:',e);
+    _devInboxOpen=false;
+    _devInboxButton('불러오기',false);
     box.innerHTML=`<div style="font-size:12px;color:var(--danger,#e5484d);">불러오지 못했어요 — ${esc(e&&e.message?e.message:'알 수 없는 오류')}</div>`;
+  }finally{
+    _devInboxLoading=false;
   }
 }
 // 좌우로 밀어 삭제
@@ -17440,12 +17520,12 @@ function devInboxDelete(id,skipConfirm){
       _devNotesCache=_devNotesCache.filter(x=>x.id!==id);
       showToast('쪽지를 휴지통으로 옮겼어요');
       devInboxUpdateBadge();
-      devInboxLoad();
+      devInboxLoad(true);
       if(document.getElementById('devTrashWrap')?.style.display!=='none')devTrashRender();
     }catch(e){
       console.warn('쪽지 삭제 실패:',e);
       showToast('삭제하지 못했어요');
-      devInboxLoad();
+      devInboxLoad(true);
     }
   };
   if(skipConfirm)go();else appConfirm('이 쪽지를 휴지통으로 옮길까요?',go);
@@ -25398,19 +25478,39 @@ function _fbCountArrays(v,depth){
   let t=0;for(const k in v)t+=_fbCountArrays(v[k],depth+1);
   return t;
 }
-function _fbCountItems(o){
-  let n=_fbCountArrays((o&&o.days)||{},0);
-  n+=_fbCountArrays((((o&&o.settings)||{}).layout||{}).cols||{},0);
+// 항목 수를 **갈래별로** 센다 (v26-0824-1). 예전엔 전부 더해 숫자 하나로 봤는데
+// 그 방식엔 구멍이 둘 있었다:
+//  ① 말씀 기록(암송·좋아요·공유·Deeper)을 아예 세지 않았다. 말씀만 쓰는 사람은
+//     기록이 통째로 날아가도 방어가 조용히 지나갔다. Sweeter 사용자가 정확히
+//     그런 사람이라, 그대로 두면 새 제품의 첫 사고가 여기서 난다.
+//  ② 합계 하나로 보면 한 갈래가 전멸해도 다른 갈래가 많으면 절반 선에 안 걸린다
+//     (할일 200개인 사람은 말씀 기록 전부를 잃어도 통과된다).
+// 그래서 갈래마다 따로 세고, **한 갈래라도** 절반 아래로 떨어지면 대량 손실로 본다.
+function _fbCountByKind(o){
+  o=o||{};
   // 말씀 모음·연락처는 배열이다 (id 단위 병합) — 객체로 와도 세지도록 둘 다 본다
   const cnt=v=>Array.isArray(v)?v.length:Object.keys(v||{}).length;
-  n+=cnt(o&&o.verseCollections);
-  n+=cnt(o&&o.contacts);
-  return n;
+  return {
+    days:_fbCountArrays(o.days||{},0),
+    layout:_fbCountArrays(((o.settings||{}).layout||{}).cols||{},0),
+    verseCollections:cnt(o.verseCollections),
+    contacts:cnt(o.contacts),
+    memorizationLog:_fbCountArrays(o.memorizationLog||{},0),
+    verseLogs:_fbCountArrays(o.verseLikeLog||{},0)+_fbCountArrays(o.verseShareLog||{},0)
+             +_fbCountArrays(o.verseDeeperLog||{},0)+_fbCountArrays(o.verseEvenDeeperLog||{},0)
+  };
+}
+// 예전 이름 — 전체 개수가 필요한 곳을 위해 남겨 둔다
+function _fbCountItems(o){
+  const k=_fbCountByKind(o);let n=0;for(const x in k)n+=k[x];return n;
 }
 function _fbBulkLoss(cloud,out){
-  const before=_fbCountItems(cloud);
-  if(before<_FB_LOSS_MIN)return false;
-  return _fbCountItems(out)<before*_FB_LOSS_KEEP;
+  const before=_fbCountByKind(cloud),after=_fbCountByKind(out);
+  for(const k in before){
+    if(before[k]<_FB_LOSS_MIN)continue;              // 원래 적으면 세지 않는다
+    if(after[k]<before[k]*_FB_LOSS_KEEP)return true; // 한 갈래라도 절반 아래
+  }
+  return false;
 }
 // 복구 경로에서 쓰는 병합. 두 가지를 더 본다:
 //  ① 클라우드를 아직 한 번도 못 받았으면 로컬은 '기본값'일 뿐 → 클라우드 우선
@@ -25439,6 +25539,8 @@ function _fbMerge(base,local,cloud,preferCloud){
     else if(k==='memorizationLog')v=_mgLogNested(bv,lv,cv,baseKnown);
     else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+    else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
+      _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
     else if(k==='verseCollections'||k==='contacts')v=_mgById(bv,lv,cv,baseKnown);
     else v=_mgWhole(bv,lv,cv,baseKnown);
     if(v!==undefined)out[k]=v;
@@ -25521,9 +25623,11 @@ async function _fbCommit(){
   _fbCommitBusy=true;
   const uid=_fbUser.uid;
   let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null;
+  // 제품 분리용 — 클라우드에 원래 있던 설정을 되돌려 놓을 때 쓴다 (_psProject)
+  let priorState=null;
   try{
     await fbDB.runTransaction(async tx=>{
-      mergedApply=null;backupJson=null;legacyVer=null; // 트랜잭션 재시도 대비 초기화
+      mergedApply=null;backupJson=null;legacyVer=null;priorState=null; // 트랜잭션 재시도 대비 초기화
       const snap=await tx.get(userDocRef(uid));
       const data=snap.exists?(snap.data()||{}):{};
       const cloudRev=(typeof data.rev==='number')?data.rev:0;
@@ -25535,6 +25639,7 @@ async function _fbCommit(){
         // 클라우드가 내가 본 것보다 앞서 있음 = 다른 기기가 먼저 썼음.
         // 예전엔 여기서 그냥 덮어써서 상대 작업이 통째로 사라졌다.
         let cloudState=null;try{cloudState=JSON.parse(data.json);}catch(e){}
+        priorState=cloudState;
         if(!cloudState){outState=ST;}
         else{
           // ⚠️ 그 문서를 **나보다 낮은 버전**이 썼다면 base 를 넘기면 안 된다.
@@ -25552,7 +25657,9 @@ async function _fbCommit(){
         }
       }
       outRev=cloudRev+1;
-      outJson=JSON.stringify(outState);
+      // ⚠️ 기본 제품(BLOCK7)에서는 _psProject 가 outState 를 그대로 돌려준다 —
+      //    이 줄이 지금 쓰는 사람들의 저장 내용을 바꾸는 일은 없다.
+      outJson=JSON.stringify(_psProject(outState,priorState||_fbBaseObj()));
       tx.set(userDocRef(uid),{
         json:outJson,rev:outRev,dev:_deviceId(),appVer:APP_VERSION,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -25821,8 +25928,12 @@ function applyRemoteState(remote){
     ST.secs=SECS;
   }
   if(Array.isArray(remote.secArchive))ST.secArchive=remote.secArchive;
+  // 다른 제품의 개인 설정 — 이 앱이 안 쓰더라도 그대로 지고 가야 한다.
+  // 안 그러면 다음 저장 때 "내가 지웠다"로 읽혀 상대 제품 설정이 사라진다.
+  if(remote.productSettings)ST.productSettings=remote.productSettings;
   if(remote.settings){
     ST.settings=Object.assign({},ST.settings,remote.settings);
+    ST.settings=_psOverlay(ST.settings,remote.productSettings||ST.productSettings);
   }
 }
 
