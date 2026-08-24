@@ -25,6 +25,45 @@ for f in tests/test_*.js; do
 done
 
 echo
+echo "━━━ 3. 공유 문서 동기화 ━━━"
+
+# AGENTS.md 는 CLAUDE.md 에서 만든다. 한쪽만 고치면 두 도구가 다른 규칙으로
+# 일하게 된다 — 그게 이 검사가 있는 유일한 이유다. 생성물을 임시로 다시 만들어
+# 지금 커밋된 것과 같은지만 본다 (작업 폴더의 AGENTS.md 는 건드리지 않는다).
+if [ ! -f AGENTS.md ]; then
+  echo "AGENTS.md 가 없습니다 ✗  → ./tools/make-agents.sh 를 돌리세요"
+  fail=1
+else
+  _tmp=$(mktemp)
+  cp AGENTS.md "$_tmp"
+  ./tools/make-agents.sh >/dev/null
+  if diff -q "$_tmp" AGENTS.md >/dev/null; then
+    echo "AGENTS.md ↔ CLAUDE.md 동기화됨 ✓"
+  else
+    echo "AGENTS.md 가 CLAUDE.md 와 어긋났습니다 ✗"
+    echo "   → ./tools/make-agents.sh 로 다시 만들고 함께 커밋하세요"
+    fail=1
+  fi
+  rm -f "$_tmp"
+fi
+
+# 구역 지도는 문서일 뿐이라 낡았다고 배포를 막지는 않는다 — 알림만 둔다.
+if [ ! -f docs/MAP.md ]; then
+  echo "docs/MAP.md 가 없습니다 (경고)  → ./tools/make-map.sh"
+else
+  _tmp2=$(mktemp)
+  cp docs/MAP.md "$_tmp2"
+  ./tools/make-map.sh >/dev/null
+  if diff -q "$_tmp2" docs/MAP.md >/dev/null; then
+    echo "docs/MAP.md 최신 ✓"
+  else
+    echo "docs/MAP.md 가 index.html 보다 낡았습니다 (경고, 배포는 막지 않음)"
+    echo "   → ./tools/make-map.sh 로 다시 만들어 함께 커밋하세요"
+  fi
+  rm -f "$_tmp2"
+fi
+
+echo
 if [ "$fail" -ne 0 ]; then
   echo "✗ 점검 실패 — 배포하지 마세요"
   exit 1
