@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0824-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0824-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3316,7 +3316,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0824-2";
+const APP_VERSION = "v. 26-0824-3";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
@@ -3952,10 +3952,10 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div id="devInboxWrap">
           <div class="settings-row-desc" style="margin-bottom:8px;">사용자가 보낸 쪽지와 첨부를 확인해요. 쪽지를 옆으로 밀면 삭제돼요. (개발자 계정에서만 보여요)</div>
           <div style="display:flex;gap:8px;">
-            <button class="settings-btn" onclick="devInboxLoad()" style="flex:1;">불러오기</button>
+            <button class="settings-btn" id="devInboxLoadBtn" onclick="devInboxLoad()" style="flex:1;">불러오기</button>
             <button class="settings-btn" onclick="devTrashToggle()" style="flex:1;">휴지통</button>
           </div>
-          <div id="devInboxList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;"></div>
+          <div id="devInboxList" style="display:none;flex-direction:column;gap:8px;margin-top:10px;"></div>
           <div id="devTrashWrap" style="display:none;margin-top:12px;">
             <div class="settings-row-desc" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
               <span style="font-weight:600;color:var(--tx2);">휴지통</span>
@@ -17408,9 +17408,28 @@ function _devFilesHTML(files){
       : `<a href="${f.data}" download="${nm}" style="font-size:12px;color:var(--ac);">${nm} 내려받기</a>`;
   }).join('<div style="height:6px;"></div>');
 }
-async function devInboxLoad(){
+let _devInboxOpen=false;
+let _devInboxLoading=false;
+function _devInboxButton(text,disabled){
+  const btn=document.getElementById('devInboxLoadBtn');
+  if(!btn)return;
+  btn.textContent=text;
+  btn.disabled=!!disabled;
+}
+async function devInboxLoad(forceReload=false){
   const box=document.getElementById('devInboxList');
-  if(!box)return;
+  if(!box||_devInboxLoading)return;
+  if(_devInboxOpen&&!forceReload){
+    _devInboxOpen=false;
+    box.style.display='none';
+    box.innerHTML='';
+    _devInboxButton('불러오기',false);
+    return;
+  }
+  _devInboxLoading=true;
+  _devInboxOpen=false;
+  _devInboxButton('불러오는 중…',true);
+  box.style.display='flex';
   box.innerHTML='<div style="font-size:12px;color:var(--tx3);">불러오는 중…</div>';
   try{
     const db=window._fbDB;
@@ -17422,6 +17441,8 @@ async function devInboxLoad(){
     snap.forEach(doc=>{const d=doc.data()||{};_devNotesCache.push({id:doc.id,...d,_ms:_devWhen(d)});});
     _devNotesCache.sort((a,b)=>b._ms-a._ms);
     devInboxUpdateBadge();
+    _devInboxOpen=true;
+    _devInboxButton('목록 닫기',false);
     if(!_devNotesCache.length){box.innerHTML='<div style="font-size:12px;color:var(--tx3);">받은 쪽지가 없어요</div>';return;}
     const read=_devReadIds();
     box.innerHTML=_devNotesCache.map(d=>{
@@ -17448,7 +17469,11 @@ async function devInboxLoad(){
     _devNotesCache.forEach(d=>_devAttachSwipe(d.id));
   }catch(e){
     console.warn('받은 쪽지 불러오기 실패:',e);
+    _devInboxOpen=false;
+    _devInboxButton('불러오기',false);
     box.innerHTML=`<div style="font-size:12px;color:var(--danger,#e5484d);">불러오지 못했어요 — ${esc(e&&e.message?e.message:'알 수 없는 오류')}</div>`;
+  }finally{
+    _devInboxLoading=false;
   }
 }
 // 좌우로 밀어 삭제
@@ -17495,12 +17520,12 @@ function devInboxDelete(id,skipConfirm){
       _devNotesCache=_devNotesCache.filter(x=>x.id!==id);
       showToast('쪽지를 휴지통으로 옮겼어요');
       devInboxUpdateBadge();
-      devInboxLoad();
+      devInboxLoad(true);
       if(document.getElementById('devTrashWrap')?.style.display!=='none')devTrashRender();
     }catch(e){
       console.warn('쪽지 삭제 실패:',e);
       showToast('삭제하지 못했어요');
-      devInboxLoad();
+      devInboxLoad(true);
     }
   };
   if(skipConfirm)go();else appConfirm('이 쪽지를 휴지통으로 옮길까요?',go);
