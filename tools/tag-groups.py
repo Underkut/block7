@@ -75,6 +75,29 @@ G = {
 }
 
 
+# 묶음 이름 → docs/tag-art-marks.html 의 도안 id.
+# 여기 없는 묶음은 **아직 안 그린 것**이다 → 그림 없이 둔다.
+MARK = {
+ "성령":   ["m-wind", "m-flame", "m-water"],   # 본문 낱말로 고른다 (아래 PICK)
+ "은혜":   ["m-rain"],     "사랑":   ["m-embrace"], "계시":   ["m-word"],
+ "순종":   ["m-bow"],      "겸손":   ["m-lower"],   "회개":   ["m-turn"],
+ "평안":   ["m-calm"],     "신뢰":   ["m-lean"],    "소망":   ["m-dawn"],
+ "빛":     ["m-light"],    "열매":   ["m-fruit"],   "교회":   ["m-church"],
+ "임재":   ["m-with"],     "예배":   ["m-offer"],   "십자가": ["m-cross"],
+ "그리스도":["m-cross"],   # 따로 그리지 않고 십자가를 함께 쓴다
+ "언약":   ["m-bond"],     "마음":   ["m-core"],    "주권":   ["m-reign"],
+ "자녀":   ["m-child"],
+}
+
+# 도안이 여럿인 묶음에서 말씀 본문에 이 낱말이 있으면 그 도안을 쓴다.
+# 맞는 게 없으면 후보 중 랜덤. 자세한 규칙은 docs/TAG-ART.md.
+PICK = {
+ "m-flame": ["불", "뜨겁", "사르", "태우"],
+ "m-water": ["물", "생수", "샘", "강", "부어"],
+ "m-wind":  ["바람", "숨", "호흡", "영"],
+}
+
+
 if __name__ == '__main__':
     import sys, collections
     if len(sys.argv) < 2:
@@ -90,7 +113,8 @@ if __name__ == '__main__':
                 print(f'⚠ 중복 배정: {t} → {alias[t]} / {mark}')
             alias[t] = mark
     cov = sum(1 for v in verses if any(t in alias for t in v))
-    print(f'도안 {len(G)}개 · 별칭 {len(alias)}개')
+    drawn = sum(1 for m in G if m in MARK)
+    print(f'묶음 {len(G)}개 (그린 것 {drawn}개) · 별칭 {len(alias)}개')
     print(f'그림이 붙는 말씀: {cov}/{len(verses)} ({cov*100//len(verses)}%)')
     miss = collections.Counter(t for v in verses if not any(t in alias for t in v) for t in v)
     if miss:
