@@ -87,6 +87,10 @@ MARK = {
  "그리스도":["m-cross"],   # 따로 그리지 않고 십자가를 함께 쓴다
  "언약":   ["m-bond"],     "마음":   ["m-core"],    "주권":   ["m-reign"],
  "자녀":   ["m-child"],
+ "영광":   ["m-proclaim"], "헌신":  ["m-altar"],   "기도":   ["m-open"],
+ "자비":   ["m-stoop"],    "승리":  ["m-break"],   "복":     ["m-fill"],
+ "고난":   ["m-narrow"],   "피난처":["m-shelter"], "능력":   ["m-power"],
+ "공급":   ["m-provide"],  "용서":  ["m-cover"],   "부흥":   ["m-revive"],
 }
 
 # 도안이 여럿인 묶음에서 말씀 본문에 이 낱말이 있으면 그 도안을 쓴다.
