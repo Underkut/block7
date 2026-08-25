@@ -46,6 +46,11 @@ node tools/icon-shot.js 작업.html 결과.png     # PNG 로 뽑아서 직접 �
 | 순종 = 길 위의 발자국 | **밀 이삭** |
 | 순종 = 양 | 구름 옆에 붙은 **소용돌이** |
 | 은혜 = 구름에서 내리는 빛 | 그냥 **비구름(날씨)** |
+| 성령 = 정면에서 본 비둘기 | **비행기·나방** (새는 정면에 실루엣이 없다) |
+| 은혜 = 측면으로 편 손 | **초승달·뿔**, 엄지는 소용돌이 |
+| 은혜 = 받쳐 든 두 손 | 또 **구름** |
+| 순종 = 삼각형 옷자락 | **텐트·산** |
+| 은혜 = 잔 + 바깥으로 휘는 넘침 곡선 | 손잡이가 달린 **트로피** |
 
 ## 규칙 3 — 세 가지 조건에서 확인한다
 
@@ -68,6 +73,23 @@ node tools/icon-shot.js 작업.html 결과.png     # PNG 로 뽑아서 직접 �
   윤곽에 넣으면 부리가 몸통만큼 두꺼워져서 새가 아니라 원뿔이 된다.
 - 사람은 **머리(원) + 몸통 곡선 + 팔다리**로 나눠 그린다. 자세가 곧 뜻이므로
   자세가 읽히는 게 형태보다 중요하다.
+- **새·짐승은 반드시 옆모습.** 정면에서 그리면 알아볼 실루엣이 없어 비행기·나방이 된다.
+  움직임(내려온다·달린다)은 **몸 전체를 기울여서** 낸다. 화살표나 빛줄기를 덧붙이지 않는다.
+- **손은 그리지 않는 편이 낫다.** 정면 손바닥은 'STOP' 과 타 종교의 손 문양으로 먼저 읽히고,
+  측면으로 돌리면 초승달·뿔이 된다. 손으로 표현하고 싶은 뜻은 **그릇·잔** 쪽으로 바꾼다.
+- 그릇 옆에 **바깥으로 휘는 곡선**을 붙이면 손잡이가 되어 트로피로 보인다.
+  넘침·채워짐은 **위에서 떨어지는 방울**로 낸다.
+- 사람의 옷자락을 곧은 삼각형으로 그리면 텐트·산이 된다. **목과 어깨선을 반드시 드러낸다.**
+
+## 규칙 5 — 진지한 그림체 (귀여워지지 않기)
+
+단순하게만 그리면 자동으로 귀여워진다. 세 가지가 원인이다.
+
+| 원인 | 기준 |
+|---|---|
+| 선이 굵다 | viewBox 200 기준 **2.4**. 4 는 만화가 된다 |
+| 머리가 크다 | 사람 머리는 전체 높이의 **1/5 이하**. 1/3 이면 데포르메(귀여움)다 |
+| 내부가 비었다 | 깃털·옷주름 같은 **내부선 2~3개**(굵기 1.3~1.9)가 밀도를 만든다 |
 
 ---
 
@@ -78,28 +100,28 @@ node tools/icon-shot.js 작업.html 결과.png     # PNG 로 뽑아서 직접 �
 
 **minimal** — 깔끔하고 상징적인 드로잉라인
 ```
-fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"
+fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
 ```
+내부 디테일선은 `stroke-width="1.3"~"1.9"` 로 따로 준다.
 
 **organic** — 아날로그·빈티지 펜슬 드로잉
-같은 도안에 필터 두 개를 겹치고, 얇은 선을 살짝 어긋나게 한 번 더 덧그린다.
+같은 도안에 필터 두 개를 겹쳐 쓴다.
 ```html
 <filter id="wb">  <!-- 손떨림: 저주파로 선을 굽힌다 -->
-  <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" result="n"/>
-  <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+  <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
 </filter>
 <filter id="gr">  <!-- 연필 결: 고주파로 선을 거칠게 -->
   <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="n"/>
-  <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6"/>
 </filter>
 ```
 ```html
-<g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <g stroke-width="3.3" opacity=".95"><use href="#도안"/></g>
-  <g stroke-width="1.7" opacity=".45" transform="translate(1.4,-1)"><use href="#도안"/></g>
-</g></g>
+<g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke-width="2.2"
+   stroke-linecap="round" stroke-linejoin="round"><use href="#도안"/></g></g>
 ```
 `baseFrequency` 를 낮추면 흐물흐물해지고, 올리면 지저분해진다. 위 값이 기준선이다.
+**선을 얇게 할수록 흔들림(scale)도 같이 줄여야 한다.** 안 그러면 선이 끊어져 보인다.
 
 ---
 

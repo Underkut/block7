@@ -3,188 +3,322 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BLOCK7 — 태그 그림 샘플</title>
+<title>BLOCK7 — 태그 그림 2차 시안</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
 <style>
+:root{
+  --ground:#f7f6f2; --surface:#fffefb; --ink:#23231f; --muted:#7c7a6e;
+  --rule:#e4e2d8; --accent:#5c6b52; --flag:#a8503f;
+  --serif:'Nanum Myeongjo',serif;
+  --sans:'Noto Sans KR',-apple-system,'Pretendard',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#171815; --surface:#1f201c; --ink:#e8e6de; --muted:#9c9a8c;
+    --rule:#33342d; --accent:#9db08c; --flag:#d18b78;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#171815; --surface:#1f201c; --ink:#e8e6de; --muted:#9c9a8c;
+  --rule:#33342d; --accent:#9db08c; --flag:#d18b78;
+}
 *,*::before,*::after{box-sizing:border-box}
-body{margin:0}
-:root{--bg:#faf9f6;--card:#fff;--ink:#2a2a28;--sub:#8a8578;--line:#e6e2d8;--accent:#6b7a5e}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1a17;--card:#232220;--ink:#eae7df;--sub:#a39c8c;--line:#3a372f;--accent:#9aab8a}}
-:root[data-theme="dark"]{--bg:#1b1a17;--card:#232220;--ink:#eae7df;--sub:#a39c8c;--line:#3a372f;--accent:#9aab8a}
-*{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Pretendard','Noto Sans KR',sans-serif;margin:0;padding:36px 20px 64px;line-height:1.65}
-.wrap{max-width:940px;margin:0 auto}
-h1{font-size:21px;font-weight:600;text-align:center;margin:0 0 6px}
-p.sub{text-align:center;color:var(--sub);font-size:13px;margin:0 0 40px}
-h2{font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.04em;margin:44px 0 4px;text-transform:uppercase}
-p.lead{color:var(--sub);font-size:13px;margin:0 0 18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 12px 13px;text-align:center}
-.card .art{width:100%;aspect-ratio:1/1;display:block}
-.nm{font-size:15px;font-weight:600;margin-top:8px}
-.why{font-size:11.5px;color:var(--sub);margin-top:3px;line-height:1.5}
-.demo{position:relative;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:linear-gradient(165deg,#40503f,#20261f)}
+body{
+  background:var(--ground); color:var(--ink); font-family:var(--sans);
+  font-weight:300; margin:0; padding:56px 22px 88px; line-height:1.7;
+  -webkit-font-smoothing:antialiased; word-break:keep-all;
+}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:64px}
+
+header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+h1{font-family:var(--serif);font-size:26px;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{color:var(--muted);font-size:13.5px;margin:0;max-width:46ch}
+
+section{display:flex;flex-direction:column;gap:18px}
+.eyebrow{
+  font-size:11px;font-weight:500;color:var(--accent);
+  letter-spacing:.16em;text-transform:uppercase;margin:0;
+}
+h2{font-family:var(--serif);font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
+.note{color:var(--muted);font-size:13px;margin:-8px 0 0;max-width:60ch}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:22px}
+.card{display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center}
+.plate{
+  width:100%;aspect-ratio:1/1;background:var(--surface);border-radius:3px;
+  display:flex;align-items:center;justify-content:center;padding:8%;
+}
+.plate svg{width:100%;height:100%;display:block}
+.nm{font-family:var(--serif);font-size:16px;font-weight:700;margin-top:12px}
+.why{font-size:11.5px;color:var(--muted);line-height:1.6;max-width:32ch;margin:0}
+
+.demo{position:relative;aspect-ratio:9/16;border-radius:3px;overflow:hidden;background:linear-gradient(168deg,#3d4c3c,#1d231d)}
 .demo .ic{position:absolute;width:40%;opacity:.3}
 .tl{top:5%;left:5%}.tr{top:5%;right:5%}.bl{bottom:5%;left:5%}.br{bottom:5%;right:5%}
-.demo .tx{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f0eee6;font-size:12.5px;padding:0 26px;text-align:center;line-height:1.9}
-.demo .tx em{font-style:normal;color:#b9c2ac;font-size:11px;margin-top:12px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--sub);font-weight:600;font-size:11.5px;letter-spacing:.03em}
-td:first-child{white-space:nowrap;font-weight:600}
-.fail{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:10px}
-.fail .card{padding:12px 8px 10px}
-.fail .nm{font-size:13px;color:#c2503f}
+.demo .tx{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:#f1efe7;
+  font-family:var(--serif);font-size:12.5px;padding:0 28px;text-align:center;line-height:2;
+}
+.demo .tx em{font-family:var(--sans);font-style:normal;color:#aeb9a4;font-size:10.5px;margin-top:14px;letter-spacing:.02em}
+
+.sizes{background:var(--surface);border-radius:3px;padding:26px 28px;display:flex;gap:30px;flex-wrap:wrap;align-items:flex-end}
+.sizes .s{display:flex;flex-direction:column;align-items:center;gap:6px}
+.sizes .s svg{width:82px;height:82px}
+.sizes .s span{font-size:11px;color:var(--muted)}
+
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+th,td{text-align:left;padding:12px 14px 12px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+td:first-child,th:first-child{padding-left:0}
+td:first-child{white-space:nowrap;font-weight:500;color:var(--flag)}
+td b{font-weight:700}
+
+.fail{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px}
+.fail .plate{padding:12%}
+.fail .nm{font-size:12.5px;color:var(--flag);margin-top:10px;font-family:var(--sans);font-weight:500}
+.fail .why{font-size:11px;max-width:22ch}
+.round{font-size:10.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin:0 0 -6px}
 </style>
+
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
-<defs>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <filter id="wb" x="-25%" y="-25%" width="150%" height="150%">
-  <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="3" result="n"/>
-  <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+  <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
 </filter>
 <filter id="gr" x="-25%" y="-25%" width="150%" height="150%">
   <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="n"/>
-  <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
 </filter>
 
-<g id="dove"><g transform="rotate(10 100 100)">
-  <path d="M54 74C58 62 76 58 84 70C88 78 86 86 82 90C96 96 110 104 126 108C138 110 150 110 160 106L150 122L160 136C148 134 138 132 130 128C112 122 92 116 76 106C66 100 58 92 56 84Z"/>
-  <path d="M54 74L34 80L56 86"/>
-  <path d="M90 98C88 70 104 40 138 26C144 56 134 92 112 106Z"/>
+<g id="dove"><g transform="translate(8,15) rotate(-55 100 100)">
+  <path d="M84 102 C80 76 92 48 118 34 C126 30 133 36 129 46 C122 70 114 90 102 104 Z" stroke-width="1.9"/>
+  <path d="M54 74 C58 62 76 58 84 70 C88 78 86 86 82 90 C96 96 110 104 126 108 C138 110 150 110 160 106 C156 116 156 126 160 136 C148 134 138 132 130 128 C112 122 92 116 76 106 C66 100 58 92 56 84 Z" fill="var(--fillbg,#fff)"/>
+  <path d="M54 74 L34 80 L56 86"/>
+  <circle cx="67" cy="74" r="2" fill="currentColor" stroke="none"/>
+  <path d="M90 98 C88 72 100 44 126 30 C134 26 142 32 138 42 C130 68 122 92 108 106 Z" fill="var(--fillbg,#fff)"/>
+  <g stroke-width="1.4">
+    <path d="M97 96 C99 76 109 54 127 40"/><path d="M104 101 C108 82 117 64 133 50"/>
+    <path d="M133 112 C142 111 150 110 156 108"/><path d="M134 121 C143 122 151 124 157 126"/>
+  </g>
 </g></g>
 
-<g id="hand">
-  <path d="M100 22C110 38 110 48 100 48C90 48 90 38 100 22Z"/>
-  <path d="M66 38C74 50 74 58 66 58C58 58 58 50 66 38Z"/>
-  <path d="M136 38C144 50 144 58 136 58C128 58 128 50 136 38Z"/>
-  <path d="M70 122V96C70 86 86 86 86 96V118H90V86C90 76 106 76 106 86V118H110V90C110 80 126 80 126 90V120H130V104C130 94 144 94 144 104V140C144 160 128 172 106 172H94C76 172 62 160 58 144L44 124C39 116 49 108 56 114L70 126Z"/>
+<g id="cup">
+  <path d="M64 70 L136 70 C136 108 120 128 100 128 C80 128 64 108 64 70 Z"/>
+  <path d="M64 70 C64 60 78 54 100 54 C122 54 136 60 136 70" stroke-width="2"/>
+  <path d="M100 128 L100 144"/><path d="M92 144 L108 144" stroke-width="3"/>
+  <path d="M72 160 C72 150 84 146 100 146 C116 146 128 150 128 160 Z"/>
+  <g stroke-width="2">
+    <path d="M100 22 C106 32 106 39 100 39 C94 39 94 32 100 22 Z"/>
+    <path d="M80 32 C85 40 85 46 80 46 C75 46 75 40 80 32 Z"/>
+    <path d="M120 32 C125 40 125 46 120 46 C115 46 115 40 120 32 Z"/>
+  </g>
 </g>
 
 <g id="kneel">
-  <circle cx="76" cy="44" r="17"/>
-  <path d="M86 58C102 70 116 90 119 112"/>
-  <path d="M119 112C116 130 98 142 74 142"/>
-  <path d="M74 142L126 146"/>
-  <path d="M126 146C134 146 138 140 136 134"/>
-  <path d="M84 66C73 84 69 108 76 130"/>
-  <path d="M54 154H146"/>
+  <path d="M74 62 C66 56 68 44 78 42 C88 40 94 48 92 58 C91 64 88 68 84 70"/>
+  <path d="M84 70 C102 78 116 96 119 116 C121 130 119 142 111 146 L72 146 C64 146 62 138 66 128 C68 118 70 104 72 92 C74 82 78 74 82 70 Z"/>
+  <path d="M88 78 C80 94 74 112 76 128 C77 136 84 139 90 136" stroke-width="1.8"/>
+  <g stroke-width="1.3"><path d="M99 96 C95 116 91 134 91 145"/><path d="M110 110 C108 124 108 136 110 145"/></g>
+  <path d="M58 152 L142 152" stroke-width="1.3"/>
 </g>
-</defs>
-</svg>
+</defs></svg>
 
 <div class="wrap">
-<h1>태그 이미지 샘플 — 성령 · 은혜 · 순종</h1>
-<p class="sub">그린 뒤 이미지로 렌더링해서 눈으로 확인하고 4번 고쳐 만든 결과입니다</p>
 
-<h2>Minimal</h2>
-<p class="lead">깔끔하고 상징적인 드로잉라인. 균일한 굵기, 장식 없음.</p>
-<div class="grid">
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><use href="#dove"/></svg>
-    <div class="nm">성령</div><div class="why">비둘기 — 예수 세례 때 “비둘기같이 내려오심” (마 3:16)</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><use href="#hand"/></svg>
-    <div class="nm">은혜</div><div class="why">위에서 내리는 것을 받는 손 — 값없이 거저 받음 (엡 2:8)</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></svg>
-    <div class="nm">순종</div><div class="why">무릎 꿇고 머리 숙인 사람 — 복종의 자세 (빌 2:8)</div>
-  </div>
-</div>
+<header>
+  <h1>태그 그림 2차 시안</h1>
+  <p>선을 얇게, 인체 비율을 정상으로, 옷주름과 깃털 같은 내부 디테일을 넣어 다시 그렸습니다. 은혜는 상징 자체를 바꿨습니다.</p>
+</header>
 
-<h2>Organic</h2>
-<p class="lead">같은 도안에 손떨림과 연필 결을 얹은 아날로그·빈티지 펜슬 드로잉.</p>
-<div class="grid">
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <g stroke-width="3.3" opacity=".95"><use href="#dove"/></g>
-      <g stroke-width="1.7" opacity=".45" transform="translate(1.4,-1)"><use href="#dove"/></g>
-    </g></g></svg>
-    <div class="nm">성령</div><div class="why">비둘기 — 예수 세례 때 “비둘기같이 내려오심” (마 3:16)</div>
+<section>
+  <p class="eyebrow">Minimal</p>
+  <h2>깔끔하고 상징적인 드로잉라인</h2>
+  <p class="note">선 굵기를 4에서 2.4로 낮췄습니다. 굵은 선과 큰 머리가 만화 느낌을 만들던 원인이었습니다.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="--fillbg:var(--surface)"><use href="#dove"/></svg></div>
+      <div class="nm">성령</div>
+      <p class="why">위에서 <b>내려오는</b> 비둘기 — 예수 세례 때 “비둘기같이 내려오심” (마 3:16)</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#cup"/></svg></div>
+      <div class="nm">은혜</div>
+      <p class="why">위에서 부어져 채워지는 잔 — “내 잔이 넘치나이다” (시 23:5)</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></svg></div>
+      <div class="nm">순종</div>
+      <p class="why">무릎 꿇고 머리 숙인 사람 — 복종의 자세 (빌 2:8)</p>
+    </div>
   </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <g stroke-width="3.3" opacity=".95"><use href="#hand"/></g>
-      <g stroke-width="1.7" opacity=".45" transform="translate(1.4,-1)"><use href="#hand"/></g>
-    </g></g></svg>
-    <div class="nm">은혜</div><div class="why">위에서 내리는 것을 받는 손 — 값없이 거저 받음 (엡 2:8)</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <g stroke-width="3.3" opacity=".95"><use href="#kneel"/></g>
-      <g stroke-width="1.7" opacity=".45" transform="translate(1.4,-1)"><use href="#kneel"/></g>
-    </g></g></svg>
-    <div class="nm">순종</div><div class="why">무릎 꿇고 머리 숙인 사람 — 복종의 자세 (빌 2:8)</div>
-  </div>
-</div>
+</section>
 
-<h2>전체화면에 얹었을 때</h2>
-<p class="lead">네 모서리 중 랜덤 · 오패시티 30%. 글을 읽는 데 방해되지 않는지 보는 자리입니다.</p>
-<div class="grid">
-  <div class="card" style="padding:8px">
+<section>
+  <p class="eyebrow">Organic</p>
+  <h2>아날로그·빈티지 펜슬 드로잉</h2>
+  <p class="note">도안은 위와 같은 것을 씁니다. 선이 얇아진 만큼 손떨림 폭도 함께 줄였습니다.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" style="--fillbg:var(--surface)"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#dove"/></g></g></svg></div>
+      <div class="nm">성령</div>
+      <p class="why">같은 비둘기, 연필 결</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#cup"/></g></g></svg></div>
+      <div class="nm">은혜</div>
+      <p class="why">같은 잔, 연필 결</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></g></g></svg></div>
+      <div class="nm">순종</div>
+      <p class="why">같은 사람, 연필 결</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">작은 크기</p>
+  <h2>얇은 선이 버티는지</h2>
+  <p class="note">선을 얇게 하면 작을 때 사라질 위험이 생깁니다. 실제 표시 크기에서 확인한 결과입니다.</p>
+  <div class="sizes">
+    <div class="s"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="--fillbg:var(--surface)"><use href="#dove"/></svg><span>성령</span></div>
+    <div class="s"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><use href="#cup"/></svg><span>은혜</span></div>
+    <div class="s"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></svg><span>순종</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">실제 사용 조건</p>
+  <h2>전체화면에 얹었을 때</h2>
+  <p class="note">네 모서리 중 랜덤, 오패시티 30%. 글 읽는 것을 방해하지 않는지 보는 자리입니다.</p>
+  <div class="grid">
     <div class="demo">
-      <svg class="ic tr" viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><use href="#dove"/></svg>
+      <svg class="ic tr" viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="--fillbg:none"><use href="#dove"/></svg>
       <div class="tx">오직 성령이 너희에게<br>임하시면 너희가 권능을 받고<em>사도행전 1:8 · #성령 · minimal</em></div>
     </div>
-  </div>
-  <div class="card" style="padding:8px">
     <div class="demo">
-      <svg class="ic bl" viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><g stroke-width="4"><use href="#hand"/></g></g></g></svg>
+      <svg class="ic bl" viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><use href="#cup"/></g></g></svg>
       <div class="tx">내 은혜가 네게 족하도다<br>이는 내 능력이 약한 데서<br>온전하여짐이라<em>고린도후서 12:9 · #은혜 · organic</em></div>
     </div>
-  </div>
-  <div class="card" style="padding:8px">
     <div class="demo">
-      <svg class="ic tl" viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></svg>
+      <svg class="ic tl" viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><use href="#kneel"/></svg>
       <div class="tx">순종이 제사보다 낫고<br>듣는 것이 숫양의 기름보다<br>나으니<em>사무엘상 15:22 · #순종 · minimal</em></div>
     </div>
   </div>
+</section>
+
+<section>
+  <p class="eyebrow">1차 → 2차</p>
+  <h2>지적하신 것을 어떻게 고쳤나</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>지적</th><th>원인</th><th>고친 것</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>귀엽다</td>
+        <td>선 굵기 4에 머리가 몸 높이의 1/3 — 데포르메 비율이었습니다</td>
+        <td>선을 2.4로 낮추고 머리를 정상 비율로 줄였습니다. 깃털·옷주름 내부선을 넣어 밀도를 올렸습니다</td>
+      </tr>
+      <tr>
+        <td>비둘기가 안 내려온다</td>
+        <td>수평으로 나는 자세였습니다</td>
+        <td>−55°로 기울여 급강하 자세로 바꿨습니다. 날개 끝도 뾰족한 제비형에서 둥근 비둘기형으로 고쳤습니다</td>
+      </tr>
+      <tr>
+        <td>정면 손이 STOP·이교도 상징</td>
+        <td>정면 손바닥은 그 의미가 먼저 읽힙니다. 측면으로 돌려도 초승달·뿔이 됐습니다</td>
+        <td>손을 <b>버리고</b> 위에서 부어져 채워지는 <b>잔</b>으로 바꿨습니다 (시 23:5)</td>
+      </tr>
+      <tr>
+        <td>순종은 좋은데 그림체만</td>
+        <td>같은 데포르메 문제였습니다</td>
+        <td>자세는 그대로 두고 옷 입은 형태 + 얇은 선 + 옷주름으로만 다시 그렸습니다</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">버린 것들</p>
+  <h2>그려놓고 봤더니 딴 게 보인 것들</h2>
+  <p class="note">그린 뒤 PNG로 뽑아 직접 보는 절차가 잡아낸 실패들입니다. 코드만 봤을 때는 전부 멀쩡해 보였습니다.</p>
+
+  <p class="round">1차</p>
+  <div class="fail">
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M42 106C36 132 54 156 100 156C146 156 164 132 158 106C142 112 120 118 100 118C80 118 58 112 42 106Z"/>
+        <path d="M42 106C34 98 26 104 28 116" stroke-width="3.5"/><path d="M158 106C166 98 174 104 172 116" stroke-width="3.5"/>
+        <g stroke-width="2.5"><path d="M56 110L61 126"/><path d="M70 114L74 130"/><path d="M84 117L87 132"/><path d="M144 110L139 126"/><path d="M130 114L126 130"/><path d="M116 117L113 132"/></g>
+      </svg></div>
+      <div class="nm">은혜 = 오목한 두 손</div><p class="why">이빨 드러낸 <b>웃는 입</b></p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M60 168C70 140 88 118 112 104C130 94 146 88 158 86"/>
+        <g stroke-width="3.5"><ellipse cx="78" cy="150" rx="9" ry="13" transform="rotate(-24 78 150)"/><ellipse cx="100" cy="126" rx="9" ry="13" transform="rotate(-30 100 126)"/><ellipse cx="124" cy="106" rx="9" ry="13" transform="rotate(-40 124 106)"/></g>
+      </svg></div>
+      <div class="nm">순종 = 길 위의 발자국</div><p class="why"><b>밀 이삭</b></p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M76 86C68 76 76 66 86 68C90 58 104 58 108 66C120 62 130 70 128 80C140 82 142 96 132 102C132 114 118 118 110 112C100 118 86 116 82 108C70 108 66 94 76 86Z"/>
+        <path d="M132 102C144 100 152 106 152 114C152 122 144 126 136 124"/><path d="M140 100C148 96 154 98 154 104"/>
+        <path d="M92 116L90 142"/><path d="M104 118V142"/><path d="M120 116L124 142"/>
+      </svg></div>
+      <div class="nm">순종 = 양</div><p class="why">구름 옆 <b>소용돌이</b></p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 74C36 60 48 44 64 50C70 32 96 30 106 46C124 40 142 54 138 72C150 76 152 92 138 96H58C44 94 40 82 44 74Z"/>
+        <path d="M66 116L58 158"/><path d="M92 114L86 166"/><path d="M118 114L124 166"/><path d="M144 116L152 158"/>
+      </svg></div>
+      <div class="nm">은혜 = 구름에서 내리는 빛</div><p class="why">그냥 <b>비구름(날씨)</b></p>
+    </div>
+  </div>
+
+  <p class="round" style="margin-top:14px">2차</p>
+  <div class="fail">
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M92 66 C90 50 88 34 87 22 L94 36 L100 24 L106 36 L113 22 C112 34 110 50 108 66 Z"/>
+        <path d="M100 56 C113 64 118 87 112 104 C109 108 108 110 108 114 C117 119 118 133 109 140 C106 144 103 146 100 146 C97 146 94 144 91 140 C82 133 83 119 92 114 C92 110 91 108 88 104 C82 87 87 64 100 56 Z"/>
+        <path d="M94 143 L100 157 L106 143"/>
+        <path d="M92 100 C74 94 50 80 30 56 C25 50 17 54 21 62 C32 80 54 100 78 112 C84 115 89 117 92 116 Z"/>
+        <path d="M108 100 C126 94 150 80 170 56 C175 50 183 54 179 62 C168 80 146 100 122 112 C116 115 111 117 108 116 Z"/>
+      </svg></div>
+      <div class="nm">성령 = 정면에서 본 비둘기</div><p class="why"><b>비행기·나방</b>. 새는 정면에 실루엣이 없습니다</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 108 C58 122 74 132 96 134 C118 136 140 128 156 112 C161 107 167 112 162 119 C146 138 120 150 94 148 C68 146 48 134 38 120 Z"/>
+        <path d="M56 120 C52 104 60 92 72 96 C80 99 80 112 72 118"/>
+      </svg></div>
+      <div class="nm">은혜 = 측면으로 편 손</div><p class="why"><b>초승달·뿔</b>, 엄지는 소용돌이</p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M52 116 C56 100 62 92 74 90 C86 88 96 96 100 106 C104 96 114 88 126 90 C138 92 144 100 148 116 C150 128 142 140 128 142 L72 142 C58 140 50 128 52 116 Z"/>
+        <path d="M74 90 C74 78 80 70 90 68" stroke-width="1.6"/><path d="M126 90 C126 78 120 70 110 68" stroke-width="1.6"/>
+      </svg></div>
+      <div class="nm">은혜 = 받쳐 든 두 손</div><p class="why">또 <b>구름</b></p>
+    </div>
+    <div class="card">
+      <div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="80" cy="52" r="10"/>
+        <path d="M89 66 C104 76 114 94 116 114 C118 128 114 140 104 144 L72 144 C64 144 62 136 66 126 C70 114 72 100 74 90 C76 80 81 70 85 66 Z"/>
+      </svg></div>
+      <div class="nm">순종 = 삼각형 옷자락</div><p class="why"><b>텐트·산</b>. 어깨선과 목이 없으면 사람이 안 됩니다</p>
+    </div>
+  </div>
+</section>
+
 </div>
 
-<h2>왜 이 그림인가 — 고른 기준</h2>
-<table>
-<tr><th>태그</th><th>그림</th><th>고른 이유</th></tr>
-<tr><td>성령</td><td>비둘기</td><td>성경에 직접 나오는 표준 상징. 설명 없이 통하는 유일한 경우 — 1순위 규칙</td></tr>
-<tr><td>은혜</td><td>받는 손 + 방울</td><td>표준 상징이 없어 <b>몸짓</b>으로 감. 은혜의 정의가 “내가 한 게 아니라 위에서 받은 것”</td></tr>
-<tr><td>순종</td><td>무릎 꿇은 사람</td><td>표준 상징이 없어 <b>몸짓</b>으로 감. 무릎 꿇음은 복종의 만국 공통 자세</td></tr>
-</table>
-
-<h2>버린 것들 — 그려놓고 봤더니 딴 게 보임</h2>
-<p class="lead">이번에 만든 자체 검증 루프(그린다 → PNG로 뽑는다 → 직접 본다)가 잡아낸 실패들입니다.</p>
-<div class="fail">
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M42 106C36 132 54 156 100 156C146 156 164 132 158 106C142 112 120 118 100 118C80 118 58 112 42 106Z"/>
-      <path d="M42 106C34 98 26 104 28 116" stroke-width="3.5"/><path d="M158 106C166 98 174 104 172 116" stroke-width="3.5"/>
-      <g stroke-width="2.5"><path d="M56 110L61 126"/><path d="M70 114L74 130"/><path d="M84 117L87 132"/><path d="M144 110L139 126"/><path d="M130 114L126 130"/><path d="M116 117L113 132"/></g>
-    </svg>
-    <div class="nm">은혜 = 오목한 두 손</div><div class="why">이빨 드러낸 <b>웃는 입</b>으로 보임</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M60 168C70 140 88 118 112 104C130 94 146 88 158 86"/>
-      <g stroke-width="3.5"><ellipse cx="78" cy="150" rx="9" ry="13" transform="rotate(-24 78 150)"/><ellipse cx="100" cy="126" rx="9" ry="13" transform="rotate(-30 100 126)"/><ellipse cx="124" cy="106" rx="9" ry="13" transform="rotate(-40 124 106)"/></g>
-    </svg>
-    <div class="nm">순종 = 길 위의 발자국</div><div class="why"><b>밀 이삭</b>으로 보임</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M76 86C68 76 76 66 86 68C90 58 104 58 108 66C120 62 130 70 128 80C140 82 142 96 132 102C132 114 118 118 110 112C100 118 86 116 82 108C70 108 66 94 76 86Z"/>
-      <path d="M132 102C144 100 152 106 152 114C152 122 144 126 136 124"/><path d="M140 100C148 96 154 98 154 104"/>
-      <path d="M92 116L90 142"/><path d="M104 118V142"/><path d="M120 116L124 142"/>
-    </svg>
-    <div class="nm">순종 = 양</div><div class="why"><b>구름 옆 소용돌이</b>로 보임</div>
-  </div>
-  <div class="card">
-    <svg class="art" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M44 74C36 60 48 44 64 50C70 32 96 30 106 46C124 40 142 54 138 72C150 76 152 92 138 96H58C44 94 40 82 44 74Z"/>
-      <path d="M66 116L58 158"/><path d="M92 114L86 166"/><path d="M118 114L124 166"/><path d="M144 116L152 158"/>
-    </svg>
-    <div class="nm">은혜 = 구름에서 내리는 빛</div><div class="why">그냥 <b>비구름(날씨)</b>으로 보임</div>
-  </div>
-</div>
-</div>
 </body>
 </html>
