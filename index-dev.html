@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0825-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0825-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3316,7 +3316,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0825-1";
+const APP_VERSION = "v. 26-0825-2";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
@@ -3848,6 +3848,15 @@ window._fbScriptsReady=new Promise(resolve=>{
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="setShowEventFilterBtn" onchange="updateSetting('showEventFilterBtn',this.checked)">
+            <span class="settings-toggle-track"></span>
+          </label>
+        </div>
+        <div class="settings-row" data-lv="mp">
+          <div class="settings-row-text">
+            <div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,11 8,16 17,5"/></svg></span> 완료한 할일 버튼</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setShowCompletedBtn" onchange="updateSetting('showCompletedBtn',this.checked)">
             <span class="settings-toggle-track"></span>
           </label>
         </div>
@@ -12676,6 +12685,8 @@ function defaultState(){
       showExpandAllBtn:false,  // show/hide the "+/-" (expand/collapse-all) button
       showTodoFilterBtn:false, // show/hide the filled/empty-circle (할일 유/무 필터) button pair
       showEventFilterBtn:false,// show/hide the clock-icon (일정 유/무 필터) toggle button
+      showCompletedBtn:true,   // show/hide the completed-todo visibility button
+      showCompletedTasks:true, // true = show completed todos dimmed; false = hide them
       dowFormat:'letter-lord', // 'letter-lord' (L M T W T F S) | 'letter-sun' (S M T W T F S) | 'korean' (일 월...)
       sundayRed:true,           // highlight Sunday's date/label in red across weekly/monthly views
       carryBadgeMode:'number',  // 'number' (plain digit) | 'icon' (dot for 1-6 days, diamond for 7+)
@@ -12745,7 +12756,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showCompletedTasks:true,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -16946,9 +16957,23 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
     row.appendChild(btnEventFilter);
   }
 
+  // 완료한 할일 표시 — 켜면 기존처럼 흐리게 남기고, 끄면 목록에서 가린다.
+  if(includeExpandBtn&&ST.settings.showCompletedBtn!==false){
+    const showing=ST.settings.showCompletedTasks!==false;
+    const btnCompleted=document.createElement('button');
+    btnCompleted.className='preset-btn'+(showing?' on':'');
+    btnCompleted.title=showing?'완료한 할일 숨기기':'완료한 할일 보기';
+    btnCompleted.setAttribute('aria-pressed',showing?'true':'false');
+    btnCompleted.innerHTML='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,11 8,16 17,5"/></svg>';
+    attachFastTap(btnCompleted,()=>{
+      beforeSave();ST.settings.showCompletedTasks=!showing;save();refreshFn();
+    });
+    row.appendChild(btnCompleted);
+  }
+
   // separator — only meaningful if at least one of A/★/+-/할일/일정 is showing;
   // otherwise it's a stray line with nothing on its left to separate.
-  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false;
+  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false||ST.settings.showCompletedBtn!==false;
   if(anyPresetBtnShown){
     const sep=document.createElement('div');sep.className='preset-sep';row.appendChild(sep);
   }
@@ -18178,6 +18203,7 @@ function makeBigWrap(id,i,b,secColor){
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();updateTotal();renderSecBody(id);refreshTaskViewsLive();}
     }
   );
+  if(b.done&&ST.settings.showCompletedTasks===false)wrap.hidden=true;
   return wrap;
 }
 
@@ -18461,6 +18487,7 @@ function makeSmWrap(id,i,sm,secColor){
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();renderSmList(id,secColor);refreshTaskViewsLive();}
     }
   );
+  if(sm.done&&ST.settings.showCompletedTasks===false)wrap.hidden=true;
   return wrap;
 }
 
@@ -22618,6 +22645,7 @@ function renderSettingsPanel(){
   document.getElementById('setShowExpandAllBtn').checked=s.showExpandAllBtn!==false;
   document.getElementById('setShowTodoFilterBtn').checked=s.showTodoFilterBtn!==false;
   document.getElementById('setShowEventFilterBtn').checked=s.showEventFilterBtn!==false;
+  document.getElementById('setShowCompletedBtn').checked=s.showCompletedBtn!==false;
   const wmBtns=['setShowWMTodoBtn','setShowWMEventBtn','setShowWMMemBtn'];
   wmBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.checked=s[id.replace('setShow','').replace('Btn','').replace(/^WM/,'showWM').replace(/./,c=>c.toLowerCase())]!==false;});
   if(document.getElementById('setShowWMTodoBtn'))document.getElementById('setShowWMTodoBtn').checked=s.showWMTodoBtn!==false;
@@ -22813,7 +22841,7 @@ function updateSetting(key,value){
     applyTheme(ST.settings.theme);
     _renderThemeSummary();
   }
-  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'){
+  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'||key==='showCompletedBtn'){
     renderAddRow();
   }
   if(key==='mviewMemMode'){
