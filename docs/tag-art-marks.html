@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BLOCK7 — 태그 그림 도안집</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
+<style>
+:root{
+  --ground:#f7f6f2; --surface:#fffefb; --ink:#23231f; --muted:#7c7a6e;
+  --rule:#e4e2d8; --accent:#5c6b52; --flag:#a8503f;
+  --serif:'Nanum Myeongjo',serif; --sans:'Noto Sans KR',-apple-system,'Pretendard',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#171815; --surface:#1f201c; --ink:#e8e6de; --muted:#9c9a8c; --rule:#33342d; --accent:#9db08c; --flag:#d18b78;}}
+:root[data-theme="dark"]{
+  --ground:#171815; --surface:#1f201c; --ink:#e8e6de; --muted:#9c9a8c; --rule:#33342d; --accent:#9db08c; --flag:#d18b78;}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-weight:300;
+  margin:0;padding:56px 22px 88px;line-height:1.7;word-break:keep-all;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+header{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+h1{font-family:var(--serif);font-size:26px;font-weight:700;margin:0;text-wrap:balance}
+header p{color:var(--muted);font-size:13.5px;margin:0;max-width:50ch}
+section{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-size:11px;font-weight:500;color:var(--accent);letter-spacing:.16em;text-transform:uppercase;margin:0}
+h2{font-family:var(--serif);font-size:19px;font-weight:700;margin:0}
+.note{color:var(--muted);font-size:13px;margin:-6px 0 0;max-width:62ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px}
+.card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.plate{width:100%;aspect-ratio:1/1;background:var(--surface);border-radius:3px;display:flex;
+  align-items:center;justify-content:center;padding:9%}
+.plate svg{width:100%;height:100%;display:block}
+.nm{font-family:var(--serif);font-size:15px;font-weight:700;margin-top:10px}
+.why{font-size:11px;color:var(--muted);line-height:1.55;max-width:24ch;margin:0}
+.dark{background:linear-gradient(168deg,#3d4c3c,#1d231d);border-radius:3px;padding:22px;
+  display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:center}
+.dark svg{width:74px;height:74px;opacity:.3}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:540px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+td:first-child{white-space:nowrap;font-weight:500;font-family:var(--serif);font-size:14px}
+.dir{color:var(--accent);font-family:var(--serif)}
+.todo{color:var(--flag);font-size:12.5px}
+</style>
+
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<filter id="wb" x="-25%" y="-25%" width="150%" height="150%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="gr" x="-25%" y="-25%" width="150%" height="150%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/></filter>
+
+<g id="m-wind" stroke-linecap="round">
+  <path d="M34 74 C68 60 112 60 140 70 C152 74 150 90 139 87 C133 85 133 78 139 76"/>
+  <path d="M30 102 C70 88 122 88 156 98"/>
+  <path d="M42 130 C74 118 110 118 132 126 C144 130 142 144 132 142 C126 141 126 134 132 132"/></g>
+<g id="m-flame" stroke-linejoin="round">
+  <path d="M92 156 C84 136 90 118 101 104 C111 92 113 80 107 64 C117 84 119 108 112 126 C109 139 102 152 92 156 Z"/>
+  <path d="M64 152 C58 138 62 124 70 114 C77 105 78 96 74 86 C81 99 83 116 78 129 C76 138 71 148 64 152 Z"/>
+  <path d="M132 150 C126 134 131 120 139 110 C146 101 147 92 143 82 C150 96 152 114 147 127 C144 136 139 146 132 150 Z"/></g>
+<g id="m-water" stroke-linecap="round">
+  <path d="M36 60 C56 46 74 74 94 60 C114 46 132 74 152 60"/>
+  <path d="M32 92 C52 78 70 106 90 92 C110 78 128 106 148 92"/>
+  <path d="M38 124 C58 110 76 138 96 124 C116 110 134 138 154 124"/>
+  <path d="M44 154 C62 142 78 166 96 154"/></g>
+<g id="m-rain" stroke-linecap="butt">
+  <path d="M56 32 V148" stroke-dasharray="30 16"/><path d="M78 22 V152" stroke-dasharray="22 18" stroke-dashoffset="10"/>
+  <path d="M100 28 V150" stroke-dasharray="36 14" stroke-dashoffset="5"/><path d="M122 20 V154" stroke-dasharray="26 17" stroke-dashoffset="15"/>
+  <path d="M144 34 V146" stroke-dasharray="30 15" stroke-dashoffset="8"/></g>
+<g id="m-bow" stroke-linecap="butt">
+  <path d="M58 34 C58 96 58 118 82 132"/><path d="M82 26 C82 92 82 116 106 132"/>
+  <path d="M106 30 C106 96 106 118 130 132"/><path d="M130 24 C130 92 130 116 154 132"/>
+  <path d="M40 150 H166" stroke-width="1.6"/></g>
+<g id="m-calm" stroke-linecap="round">
+  <path d="M38 68 C72 60 128 60 162 68"/><path d="M38 92 C72 84 128 84 162 92"/>
+  <path d="M38 116 C72 108 128 108 162 116"/><path d="M38 140 C72 132 128 132 162 140"/></g>
+<g id="m-dawn" stroke-linecap="butt">
+  <path d="M100 150 V96" stroke-dasharray="34 12"/><path d="M74 150 C74 118 80 100 92 86" stroke-dasharray="30 12"/>
+  <path d="M126 150 C126 118 120 100 108 86" stroke-dasharray="30 12"/><path d="M100 76 V26" stroke-dasharray="26 12"/></g>
+
+<g id="m-bond"><ellipse cx="80" cy="100" rx="36" ry="30"/><ellipse cx="120" cy="100" rx="36" ry="30"/></g>
+<g id="m-with" stroke-linecap="round">
+  <path d="M24 138 C56 92 84 74 116 68 C142 63 164 66 178 72"/>
+  <path d="M32 158 C64 112 92 94 124 88 C150 83 172 86 186 92"/></g>
+<g id="m-lean" stroke-linecap="round">
+  <path d="M62 24 V172" stroke-width="3.8"/>
+  <path d="M152 170 L68 86"/><path d="M132 170 L67 106"/><path d="M112 170 L66 124"/></g>
+<g id="m-reign" stroke-linecap="round">
+  <path d="M100 32 L36 162"/><path d="M100 32 L68 168"/><path d="M100 32 V172"/>
+  <path d="M100 32 L132 168"/><path d="M100 32 L164 162"/></g>
+<g id="m-cross" stroke-linecap="round"><path d="M100 26 V172"/><path d="M56 76 H144"/></g>
+<g id="m-fruit" stroke-linecap="round">
+  <path d="M100 164 C100 132 98 110 96 78"/><path d="M97 140 C84 134 76 126 72 116"/>
+  <path d="M97 116 C112 110 122 100 128 90"/><path d="M96 94 C84 88 76 80 72 70"/>
+  <circle cx="69" cy="112" r="6"/><circle cx="131" cy="86" r="6"/><circle cx="69" cy="66" r="6"/><circle cx="96" cy="72" r="6"/></g>
+<g id="m-offer" stroke-linecap="round">
+  <path d="M52 156 H148" stroke-width="3"/>
+  <path d="M82 148 C88 118 82 96 92 62"/><path d="M100 148 C106 114 98 90 104 52"/><path d="M118 148 C120 120 112 98 118 68"/></g>
+<g id="m-embrace" stroke-linecap="round">
+  <circle cx="112" cy="112" r="15"/>
+  <path d="M106 158 C68 156 38 126 40 88 C42 52 74 26 110 30 C140 33 162 56 162 84"/></g>
+<g id="m-word" stroke-linecap="round">
+  <path d="M100 24 V84" stroke-width="3.2"/>
+  <path d="M46 104 H154"/><path d="M46 132 H128"/><path d="M46 158 H154"/></g>
+<g id="m-child" stroke-linecap="round">
+  <path d="M34 152 C34 66 166 66 166 152"/><path d="M74 152 C74 108 126 108 126 152"/></g>
+<g id="m-core" stroke-linecap="round">
+  <circle cx="100" cy="100" r="62" stroke-dasharray="18 16"/>
+  <circle cx="100" cy="100" r="13" fill="currentColor" stroke="none"/></g>
+<g id="m-light" stroke-linecap="round">
+  <circle cx="100" cy="100" r="22"/>
+  <path d="M100 66 V26"/><path d="M100 134 V174"/><path d="M66 100 H30"/><path d="M134 100 H170"/>
+  <path d="M76 76 L50 50"/><path d="M124 76 L152 48"/><path d="M76 124 L48 152"/><path d="M124 124 L150 150"/></g>
+<g id="m-church" stroke-linecap="round">
+  <path d="M34 154 H80"/><path d="M92 154 H138"/><path d="M150 154 H176"/>
+  <path d="M52 122 H98"/><path d="M110 122 H156"/>
+  <path d="M72 90 H118"/><path d="M130 90 H160"/><path d="M88 58 H134"/></g>
+<g id="m-lower" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M28 46 H66 V84 H104 V122 H142 V158 H176"/></g>
+<g id="m-turn" stroke-linecap="round">
+  <path d="M34 128 C74 128 116 122 144 104 C164 92 164 66 138 60 C112 54 84 64 62 80"/>
+  <path d="M62 80 L58 62"/><path d="M62 80 L80 78"/></g>
+<g id="m-proclaim" stroke-linecap="round">
+  <circle cx="40" cy="100" r="6" fill="currentColor" stroke="none"/>
+  <path d="M52 96 L172 40"/><path d="M52 100 H176"/><path d="M52 104 L172 160"/>
+  <path d="M52 92 L166 22"/><path d="M52 108 L166 178"/></g>
+<g id="m-break" stroke-linecap="round">
+  <path d="M100 24 V70"/><path d="M100 130 V176"/>
+  <path d="M26 100 H172"/><path d="M150 82 L172 100 L150 118"/></g>
+<g id="m-power" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M118 22 L76 98 H110 L72 178"/></g>
+<g id="m-revive" stroke-linecap="round">
+  <path d="M26 62 C58 132 78 160 98 160 C128 160 148 96 170 40"/>
+  <path d="M170 40 L152 44"/><path d="M170 40 L166 58"/></g>
+<g id="m-stoop" stroke-linecap="round">
+  <path d="M36 30 C36 104 58 140 96 150" stroke-width="3.4"/>
+  <path d="M96 150 H164" stroke-width="1.8"/>
+  <path d="M112 138 V150"/><path d="M134 132 V150"/><path d="M154 138 V150"/></g>
+<g id="m-fill" stroke-linecap="round">
+  <path d="M46 116 C46 154 154 154 154 116" stroke-width="3"/>
+  <path d="M56 100 C74 84 126 84 144 100"/>
+  <path d="M70 76 C84 64 116 64 130 76"/>
+  <path d="M86 56 C94 48 106 48 114 56"/></g>
+<g id="m-provide" stroke-linecap="round">
+  <path d="M56 108 C56 150 144 150 144 108" stroke-width="3"/>
+  <path d="M56 108 H144" stroke-width="1.8"/>
+  <path d="M78 30 V88" stroke-dasharray="16 12"/><path d="M100 22 V88" stroke-dasharray="16 12"/>
+  <path d="M122 30 V88" stroke-dasharray="16 12"/></g>
+<g id="m-cover" stroke-linecap="round">
+  <path d="M52 78 V140"/><path d="M78 70 V148"/><path d="M104 74 V144"/><path d="M130 80 V138"/><path d="M154 86 V132"/>
+  <path d="M30 108 H172" stroke-width="6"/></g>
+<g id="m-altar" stroke-linecap="round">
+  <path d="M28 158 H172" stroke-width="4"/><path d="M52 122 H148"/>
+  <path d="M70 122 V158"/><path d="M130 122 V158"/><path d="M100 122 V90"/></g>
+<g id="m-open" stroke-linecap="round">
+  <path d="M58 164 C58 104 64 68 82 34"/><path d="M142 164 C142 104 136 68 118 34"/></g>
+<g id="m-shelter" stroke-linecap="round">
+  <path d="M28 116 C28 62 172 62 172 116" stroke-width="3.6"/><path d="M100 126 V162"/>
+  <path d="M24 44 L36 62" stroke-width="1.6"/><path d="M62 32 L70 52" stroke-width="1.6"/>
+  <path d="M138 32 L130 52" stroke-width="1.6"/><path d="M176 44 L164 62" stroke-width="1.6"/></g>
+<g id="m-narrow" stroke-linecap="round">
+  <path d="M24 40 C80 74 120 74 176 40"/><path d="M24 160 C80 126 120 126 176 160"/>
+  <path d="M18 100 H182" stroke-width="3"/></g>
+</defs></svg>
+
+<div class="wrap">
+
+<header>
+  <h1>태그 그림 도안집</h1>
+  <p>말씀 전체화면에 띄우는 태그 그림입니다. 태그 430개를 뜻으로 묶어 도안 33개로 그립니다. <b>33개 전부 그렸습니다.</b></p>
+</header>
+
+<section>
+  <p class="eyebrow">3차 · 새로 그림</p>
+  <h2>나머지 열둘</h2>
+  <p class="note">이것으로 도안 33개가 다 찼습니다.</p>
+  <div class="grid">
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-proclaim"/></svg></div>
+      <div class="nm">영광</div><p class="why">한 점에서 퍼져 나가 선포됨 (19)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-altar"/></svg></div>
+      <div class="nm">헌신</div><p class="why">제단에 올려 놓음 (18)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-open"/></svg></div>
+      <div class="nm">기도</div><p class="why">위를 향해 열림 (17)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-stoop"/></svg></div>
+      <div class="nm">자비</div><p class="why">굽어 내려가 낮은 것에 닿음 (16)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-break"/></svg></div>
+      <div class="nm">승리</div><p class="why">막힌 것을 뚫고 나감 (13)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-fill"/></svg></div>
+      <div class="nm">복</div><p class="why">담긴 것이 겹겹이 쌓임 (13)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-narrow"/></svg></div>
+      <div class="nm">고난</div><p class="why">좁은 데를 지나감 (11)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-shelter"/></svg></div>
+      <div class="nm">피난처</div><p class="why">덮개 아래로 들어감 (10)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="3.2"><use href="#m-power"/></svg></div>
+      <div class="nm">능력</div><p class="why">번개 (9)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-provide"/></svg></div>
+      <div class="nm">공급</div><p class="why">끊이지 않고 부어져 담김 (8)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-cover"/></svg></div>
+      <div class="nm">용서</div><p class="why">덮여 가려짐 (7)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.8"><use href="#m-revive"/></svg></div>
+      <div class="nm">부흥</div><p class="why">꺾였다 더 높이 (7)</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">2차 · 새로 그림</p>
+  <h2>그다음으로 많이 쓰이는 것들</h2>
+  <div class="grid">
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-child"/></svg></div>
+      <div class="nm">자녀</div><p class="why">아버지가 덮은 작은 것 (27)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-light"/></svg></div>
+      <div class="nm">빛</div><p class="why">한 점에서 사방으로 (26)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-church"/></svg></div>
+      <div class="nm">교회</div><p class="why">산 돌이 쌓여 세워짐 (26)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-core"/></svg></div>
+      <div class="nm">마음</div><p class="why">성긴 겉, 단단한 속 (25)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-embrace"/></svg></div>
+      <div class="nm">사랑</div><p class="why">먼저 다가와 감싸 안음 (24)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-word"/></svg></div>
+      <div class="nm">계시</div><p class="why">위에서 내려와 적힘 (23)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.8"><use href="#m-lower"/></svg></div>
+      <div class="nm">겸손</div><p class="why">스스로 낮아짐 (23)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-turn"/></svg></div>
+      <div class="nm">회개</div><p class="why">가던 길에서 돌이킴 (22)</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">1차 · 새로 그림</p>
+  <h2>가장 많이 쓰이는 것들</h2>
+  <p class="note">괄호 안은 그 도안이 붙는 말씀 수입니다 (전체 240개 중).</p>
+  <div class="grid">
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-bond"/></svg></div>
+      <div class="nm">언약</div><p class="why">두 고리가 맞물림 (38)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-with"/></svg></div>
+      <div class="nm">임재</div><p class="why">둘이 나란히 감 (36)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-lean"/></svg></div>
+      <div class="nm">신뢰</div><p class="why">기둥에 기대어 섬 (35)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-reign"/></svg></div>
+      <div class="nm">주권</div><p class="why">한 점에서 아래로 미침 (35)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.8"><use href="#m-cross"/></svg></div>
+      <div class="nm">십자가</div><p class="why">대속 (34) · <b>그리스도</b>(31)도 이 그림을 씁니다</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-fruit"/></svg></div>
+      <div class="nm">열매</div><p class="why">거하여 맺힘 (32)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-offer"/></svg></div>
+      <div class="nm">예배</div><p class="why">올려 드림 (31)</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">먼저 그렸던 것</p>
+  <h2>성령 · 은혜 · 순종 · 평안 · 소망</h2>
+  <p class="note">성령은 셋을 다 두고 말씀 본문에 맞춰 고릅니다 — ‘불’이 있으면 불꽃, ‘물·생수·샘’이면 물, 없으면 랜덤.</p>
+  <div class="grid">
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-wind"/></svg></div>
+      <div class="nm">성령 · 바람</div><p class="why">요 3:8 (33)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.2"><use href="#m-flame"/></svg></div>
+      <div class="nm">성령 · 불꽃</div><p class="why">행 2:3</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-water"/></svg></div>
+      <div class="nm">성령 · 물</div><p class="why">요 7:38</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-rain"/></svg></div>
+      <div class="nm">은혜</div><p class="why">하늘에서 내림 (26)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-bow"/></svg></div>
+      <div class="nm">순종</div><p class="why">굽어 바닥에 닿음 (35)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-calm"/></svg></div>
+      <div class="nm">평안</div><p class="why">잔잔함 (12)</p></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="2.6"><use href="#m-dawn"/></svg></div>
+      <div class="nm">소망</div><p class="why">아래에서 퍼져 오름 (8)</p></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Organic</p>
+  <h2>연필 결을 얹으면</h2>
+  <div class="grid">
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.4"><use href="#m-bond"/></g></g></svg></div><div class="nm">언약</div></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.4"><use href="#m-lean"/></g></g></svg></div><div class="nm">신뢰</div></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.4"><use href="#m-reign"/></g></g></svg></div><div class="nm">주권</div></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.4"><use href="#m-fruit"/></g></g></svg></div><div class="nm">열매</div></div>
+    <div class="card"><div class="plate"><svg viewBox="0 0 200 200"><g filter="url(#wb)"><g filter="url(#gr)" fill="none" stroke="currentColor" stroke-width="2.4"><use href="#m-offer"/></g></g></svg></div><div class="nm">예배</div></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">실제 사용 조건</p>
+  <h2>어두운 배경 · 오패시티 30% · 작은 크기</h2>
+  <div class="dark">
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-bond"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-with"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-lean"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-reign"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.8"><use href="#m-cross"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-fruit"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-offer"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-wind"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.2"><use href="#m-flame"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-water"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-rain"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-bow"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-calm"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-dawn"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-embrace"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-word"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-child"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-core"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-light"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-church"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-lower"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-turn"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-proclaim"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-altar"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-open"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-stoop"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-break"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-fill"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-narrow"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-shelter"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-power"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-provide"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-cover"/></svg>
+    <svg viewBox="0 0 200 200" fill="none" stroke="#fff" stroke-width="3.6"><use href="#m-revive"/></svg>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">다 됐습니다</p>
+  <h2>도안 33개 · 태그 430개 · 말씀 240개 전부</h2>
+  <p class="note">태그가 어느 도안을 쓰는지는 <code>tools/tag-groups.py</code> 에 있습니다. 새 태그가 생기면 거기 한 줄만 더하면 되고, 어느 도안에도 안 맞으면 방향(솟음·내림·굽음·고요·퍼짐·모임)을 먼저 정하고 새로 그립니다.</p>
+</section>
+
+</div>
+
+</body>
+</html>
