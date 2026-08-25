@@ -193,9 +193,20 @@ fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
 
 ---
 
-## 지금까지 그린 것
+## 파일 세 개
 
-`docs/tag-art-samples.html` — 성령(바람)·은혜(비)·순종(굽음) 확정 후보와
-성령 대안(불꽃), 어휘표를 넓혀 그려본 평안·소망, 그리고 위 실패 사례들.
-휴대폰에서는 **`https://block7.my/docs/tag-art-samples.html`** 로 열린다.
-새 태그를 그리면 이 파일에 함께 넣어 두고 같이 확인한다.
+| 파일 | 무엇 |
+|---|---|
+| `docs/tag-art-marks.html` | **도안집.** 그린 도안이 다 여기 있다. 새로 그리면 여기 넣는다 |
+| `tools/tag-groups.py` | **태그 → 도안 묶음표.** 새 태그가 생기면 여기 한 줄 추가 |
+| `docs/tag-art-samples.html` | 1~3차 시안과 실패 기록 (남겨 둔 것) |
+
+휴대폰에서는 **`https://block7.my/docs/tag-art-marks.html`** 로 열린다.
+
+묶음표를 고쳤으면 커버리지를 다시 잰다:
+```
+python3 tools/tag-groups.py <태그목록파일>
+```
+
+**2026-08-25 기준** — 태그 430개, 말씀 240개. 도안 33개로 묶어 **240개 전부**에
+그림이 붙는다. 12개 그렸고 20개 남았다 (도안집 맨 아래에 목록이 있다).
