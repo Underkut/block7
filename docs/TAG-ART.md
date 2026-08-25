@@ -193,13 +193,36 @@ fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
 
 ---
 
-## 파일 세 개
+## 파일
 
 | 파일 | 무엇 |
 |---|---|
 | `docs/tag-art-marks.html` | **도안집.** 그린 도안이 다 여기 있다. 새로 그리면 여기 넣는다 |
-| `tools/tag-groups.py` | **태그 → 도안 묶음표.** 새 태그가 생기면 여기 한 줄 추가 |
+| `tools/tag-groups.py` | **태그 → 도안 묶음표** + 본문 낱말표. 새 태그는 여기 한 줄 추가 |
+| `tools/make-tagart.py` | 위 둘에서 `index.html` 에 심을 JS 를 만든다 |
+| `tests/test_tagart.js` | 시나리오 테스트 |
 | `docs/tag-art-samples.html` | 1~3차 시안과 실패 기록 (남겨 둔 것) |
+
+### 도안이나 묶음을 고쳤을 때
+
+`index.html` 안의 `_TAGART_*` 는 **손으로 고치지 말 것.** 도안집이나 묶음표를
+고친 다음 아래를 돌려 다시 심는다.
+
+```
+python3 tools/make-tagart.py > /tmp/tagart.js   # 만들어 보고
+python3 tools/tag-groups.py <태그목록파일>       # 커버리지 확인
+node tests/test_tagart.js                       # 테스트
+```
+그리고 `/tmp/tagart.js` 의 내용으로 `index.html` 의 `_TAGART_MARKS` ~
+`_TAGART_GROUPSRC` 구간을 통째로 바꾼다.
+
+### 본문 낱말은 길고 뚜렷하게
+
+도안이 여럿인 묶음(성령)에서 본문 낱말로 고를 때, **한국어는 부분일치가 잘
+터진다.** `'불'` 하나만 두었더니 요 3:8 "바람이 임의로 **불**매" 가 불꽃으로
+뽑혔다. `'물'`(재**물**·만**물**), `'숨'`(**숨**기다), `'영'`(**영**원)도 같은 함정이다.
+틀려도 같은 묶음 안의 다른 그림이 나올 뿐 사고는 아니지만, 뜻이 어긋난다.
+`tests/test_tagart.js` 시나리오 3에 회귀 테스트가 있다.
 
 휴대폰에서는 **`https://block7.my/docs/tag-art-marks.html`** 로 열린다.
 

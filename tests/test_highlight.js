@@ -235,9 +235,14 @@ console.log('\n시나리오 10 — 공유 이미지의 강조');
   sc.eq('네 귀퉁이 배치', share.includes('class="img-corners"'), true);
   sc.eq('가운데가 미리보기',
         /\.img-corners\{[^}]*grid-template-areas:"tl mid tr" "bl mid br"/.test(SRC), true);
+  // ⚠️ 차례는 **네 귀퉁이 그리드 안**에서만 본다. 그리드 밖에 줄로 붙는 항목이
+  //    따로 있다 (태그 그림 = 자리가 랜덤이라 귀퉁이에 못 박는다, v26-0825-3).
+  const corners = share.slice(share.indexOf('class="img-corners"'), share.indexOf('</div>', share.indexOf('img-ic-row')));
   sc.eq('버튼 차례',
-        [...share.matchAll(/<button id="(img\w+)"/g)].map(m => m[1]),
+        [...corners.matchAll(/<button id="(img\w+)"/g)].map(m => m[1]),
         ['imgHi', 'imgBlock7', 'imgLeft', 'imgActions']);
+  sc.eq('태그 그림은 그리드 밖 한 줄',
+        share.indexOf('id="imgArt"') > share.indexOf('class="img-corners"'), true);
   sc.eq('좌상단은 강조', share.includes('style="grid-area:tl;" onclick="toggleImgIncl(\'imgHi\',\'imgHi\')">강조 표시<'), true);
   sc.eq('우상단은 BLOCK7', share.includes('style="grid-area:tr;"') && share.includes('>BLOCK7<'), true);
   sc.eq('좌하단은 주제·태그', share.includes('style="grid-area:bl;"') && share.includes('>주제, 태그<'), true);
