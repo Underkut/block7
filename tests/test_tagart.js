@@ -104,15 +104,18 @@ console.log('\n시나리오 5 — 그림체 두 벌이 같은 도안을 쓴다')
   const dOf = s => (s.match(/ d="[^"]+"/g) || []).join('|');
   sc.eq('두 그림체의 선(path)은 완전히 같다', dOf(mn), dOf(og));
   sc.eq('없는 도안을 부르면 빈 문자열', box.svg('m-없는것', 'minimal'), '');
+  // 설정창 미리보기 — 획 하나만 확대하는 swatch 모드
+  const sw = box.svg('m-wind', 'minimal', true);
+  sc.eq('swatch 는 확대된 viewBox 를 쓴다', sw.includes('viewBox="50 60 40 40"'), true);
+  sc.eq('swatch 는 굵게 그린다', /stroke-width="18\.2"/.test(sw), true);
 }
 
 console.log('\n시나리오 6 — 기본값과 저장 키');
 {
-  sc.eq('전체화면 그림은 기본 꺼짐', SRC.includes('vfArtOn:false'), true);
-  sc.eq('그림체 기본은 minimal', SRC.includes("vfArtStyle:'minimal'"), true);
+  sc.eq('전체화면 그림은 기본 켜짐', SRC.includes('vfArtOn:true'), true);
+  sc.eq('그림체 기본은 organic', SRC.includes("vfArtStyle:'organic'"), true);
   sc.eq('공유 이미지에는 기본 켜짐', SRC.includes('imgInclArt:true'), true);
-  // ⚠️ 기본이 꺼짐이므로 판정은 !! 여야 한다 (!==false 로 두면 켜진 것으로 읽힌다)
-  sc.eq('꺼짐 기본에 맞는 판정', SRC.includes('function _tagartOn(){return !!(ST.settings||{}).vfArtOn;}'), true);
+  sc.eq('켜짐 판정 함수가 있다', SRC.includes('function _tagartOn(){return !!(ST.settings||{}).vfArtOn;}'), true);
   sc.eq('공유는 켬 기본에 맞는 판정', SRC.includes('s.imgInclArt!==false'), true);
 }
 
@@ -121,7 +124,7 @@ console.log('\n시나리오 7 — 화면에서 본문을 가리지 않는다');
   const css = slice('.vf-art{', '.vfart-pv{');
   sc.eq('본문 아래로 깔린다', css.includes('z-index:0'), true);
   sc.eq('제스처를 막지 않는다', css.includes('pointer-events:none'), true);
-  sc.eq('오패시티 30%', css.includes('opacity:.3'), true);
+  sc.eq('오패시티 15%', css.includes('opacity:.15'), true);
   sc.eq('네 모서리 자리가 다 있다',
     ['.vf-art.tl{', '.vf-art.tr{', '.vf-art.bl{', '.vf-art.br{'].every(k => css.includes(k)), true);
   // DOM 에서 본문보다 앞에 있어야 아래로 깔린다
@@ -139,7 +142,7 @@ console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그
   // 공유 이미지는 화면이 고른 것(_vfArtCur)을 그대로 쓴다 — 다시 뽑으면 화면과 달라진다
   const shot = slice('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){', '// 본문 — 화면에 그려진');
   sc.eq('공유는 화면이 고른 도안을 그대로 그린다', shot.includes('_tagartDrawOn(ctx,_vfArtCur.id'), true);
-  sc.eq('공유도 오패시티 30%', shot.includes(',.3,_tagartStyle())'), true);
+  sc.eq('공유도 오패시티 15%', shot.includes(',.15,_tagartStyle())'), true);
   sc.eq('배경 바로 위·본문 아래에 그린다',
     SRC.indexOf('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){') < SRC.indexOf("const tEl=document.getElementById('vfText');"), true);
   sc.eq('공유 켬/끔 값을 넘긴다', SRC.includes('const inclArt=opt.inclArt!==undefined?opt.inclArt:(s.imgInclArt!==false);'), true);
@@ -151,7 +154,7 @@ console.log('\n시나리오 9 — 설정창');
     SRC.indexOf('id="vstab-full"') < SRC.indexOf('<div class="settings-section-title">이미지 삽입')
     && SRC.indexOf('<div class="settings-section-title">이미지 삽입') < SRC.indexOf('id="vstab-share"'), true);
   sc.eq('그림체 줄은 켰을 때만 나온다', SRC.includes('data-cond="vfArt"'), true);
-  sc.eq('등급은 미드·파워', /data-lv="mp">\s*<div class="settings-section-title">이미지 삽입/.test(SRC), true);
+  sc.eq('등급은 파워 전용', /data-lv="p">\s*<div class="settings-section-title">이미지 삽입/.test(SRC), true);
   // ⚠️ 설정창을 다시 열 때 버튼이 저장값과 어긋나면 안 된다 (0813-5 와 같은 함정)
   sc.eq('설정창을 그릴 때 버튼 상태를 맞춘다',
     slice('function renderVerseSettingsModal(){', '_renderVfThemeChips();').includes('_vfArtSyncUI();'), true);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0825-3  [production]  -->
+<!-- BLOCK7  v. 26-0826-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -428,16 +428,16 @@ header{
    도안과 고르는 규칙은 docs/TAG-ART.md. */
 .vf-art{
   position:absolute;z-index:0;pointer-events:none;
-  width:40%;max-width:280px;aspect-ratio:1/1;
-  color:var(--vf-tx,var(--tx));opacity:.3;
+  width:20%;max-width:140px;aspect-ratio:1/1;
+  color:var(--vf-tx,var(--tx));opacity:.15;
 }
 .vf-art svg{width:100%;height:100%;display:block}
 .vf-art.tl{top:5%;left:5%}
 .vf-art.tr{top:5%;right:5%}
 .vf-art.bl{bottom:5%;left:5%}
 .vf-art.br{bottom:5%;right:5%}
-/* 설정창 '그림체' 버튼 안의 작은 미리보기 */
-.vfart-pv{display:block;width:42px;height:42px;margin:0 auto 6px;opacity:.85}
+/* 설정창 '그림체' 버튼 안의 작은 미리보기 — 획 하나를 확대해서 질감만 보여준다 */
+.vfart-pv{display:block;width:42px;height:42px;margin:0 auto 6px;opacity:.85;overflow:hidden}
 .vfart-pv svg{width:100%;height:100%;display:block}
 /* 테마 배경 + 종이결(그레인). 그레인은 SVG 노이즈 data-URI 라 용량 0,
    pointer-events:none 이라 제스처를 막지 않는다. */
@@ -3335,7 +3335,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0825-3";
+const APP_VERSION = "v. 26-0826-1";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
@@ -4402,7 +4402,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- ── 태그 그림 (v26-0825-3) ──
            그림체 고르는 줄은 켰을 때만 나온다 → data-cond="vfArt" + _vfArtSyncUI().
            ⚠️ style.display 를 건드리지 않는다 (설정창 등급의 .lv-hide 와 싸운다). -->
-      <div class="settings-section" data-lv="mp">
+      <div class="settings-section" data-lv="p">
         <div class="settings-section-title">이미지 삽입</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀에 붙은 태그 하나를 골라 전체화면 네 모서리 중 한 곳에 옅게 띄워요. 열 때마다 다른 태그·다른 자리로 바뀌어요. 그림이 없는 태그만 붙은 말씀에는 아무것도 안 나와요.</div>
         <button id="vfArtOnBtn" class="settings-btn" style="width:100%;" onclick="toggleVfArt()">태그 그림 넣기</button>
@@ -10473,7 +10473,7 @@ function _shotDraw(o){
     const ae=document.getElementById('vfArt'),ar=ae&&ae.getBoundingClientRect();
     if(ar&&ar.width>2&&inView(ar))
       _tagartDrawOn(ctx,_vfArtCur.id,X(ar.left),Y(ar.top),ar.width*SC,
-                    getComputedStyle(ae).color||'#888',.3,_tagartStyle());
+                    getComputedStyle(ae).color||'#888',.15,_tagartStyle());
   }
   // 본문 — 화면에 그려진 줄 배열을 같은 줄 높이·같은 중앙선에 찍는다.
   // 강조가 있으면 한 줄을 조각으로 나눠 굵기·형광펜을 따로 입힌다.
@@ -11459,9 +11459,9 @@ function _tagartPick(v){
 // 도안 하나를 SVG 로. organic 은 같은 도안에 손떨림·연필결 필터를 얹는다.
 // ⚠️ 필터를 이 svg 안에 같이 넣는다 — 화면에 .vf-art 는 언제나 하나뿐이라
 //    id 가 겹치지 않고, 바깥에 전역으로 심어 둘 필요가 없다.
-function _tagartSvg(id,style){
+function _tagartSvg(id,style,swatch){
   const m=_TAGART_MARKS[id];if(!m)return '';
-  const org=(style==='organic'),sw=org?2.2:2.6;
+  const org=(style==='organic'),sw=(swatch?7:1)*(org?2.2:2.6);
   const body=m.p.map(function(pp){
     const d=pp[0],o=pp[1]||{},a=['d="'+d+'"'];
     if(o.fill)a.push('fill="currentColor"','stroke="none"');
@@ -11481,7 +11481,8 @@ function _tagartSvg(id,style){
     '<feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="n"/>'+
     '<feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/></filter>'+
     '</defs>'):'';
-  return '<svg viewBox="0 0 200 200" aria-hidden="true">'+defs+
+  const vb=swatch?'50 60 40 40':'0 0 200 200';
+  return '<svg viewBox="'+vb+'" aria-hidden="true">'+defs+
          (org?'<g filter="url(#tagartWb)"><g filter="url(#tagartGr)">'+g+'</g></g>':g)+'</svg>';
 }
 
@@ -11548,8 +11549,9 @@ function _vfArtSyncUI(){
   document.getElementById('vfArtStMin')?.classList.toggle('on',st==='minimal');
   document.getElementById('vfArtStOrg')?.classList.toggle('on',st==='organic');
   const pm=document.getElementById('vfArtPvMin'),po=document.getElementById('vfArtPvOrg');
-  if(pm)pm.innerHTML=_tagartSvg('m-wind','minimal');   // 미리보기는 '성령·바람'으로
-  if(po)po.innerHTML=_tagartSvg('m-wind','organic');
+  // 획 하나만 확대해서 질감(깔끔한 선 vs 손떨림+연필결)을 비교하도록 swatch 모드로 그린다
+  if(pm)pm.innerHTML=_tagartSvg('m-wind','minimal',true);
+  if(po)po.innerHTML=_tagartSvg('m-wind','organic',true);
 }
 
 function _verseFullRender(){
@@ -13001,7 +13003,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:false,vfArtStyle:'minimal',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
