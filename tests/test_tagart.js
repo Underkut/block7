@@ -31,9 +31,13 @@ const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 {
   const marks = Object.keys(box._TAGART_MARKS);
-  sc.eq('도안 34개 (성령이 바람·불꽃·물 셋이라 묶음보다 하나 많다)', marks.length, 34);
-  sc.eq('묶음 33개', Object.keys(box._TAGART_MARKOF).length, 33);
+  sc.eq('도안 45개 (성령이 바람·불꽃·물 셋이라 묶음보다 하나 많다)', marks.length, 45);
+  sc.eq('묶음 44개', Object.keys(box._TAGART_MARKOF).length, 44);
   sc.eq('별칭 369개', Object.keys(box.alias()).length, 369);
+  // v26-0826-6 에 큰 묶음을 쪼개며 새로 그린 열하나
+  sc.eq('4차 도안 11개가 다 있다',
+    ['m-holy','m-onefold','m-idol','m-newman','m-mature','m-create',
+     'm-just','m-rise','m-sin','m-sift','m-path'].filter(i => !marks.includes(i)), []);
 
   const need = new Set();
   Object.values(box._TAGART_MARKOF).forEach(a => a.forEach(i => need.add(i)));
@@ -64,6 +68,26 @@ console.log('\n시나리오 2 — 그림이 있는 태그만 후보로 삼는다
   sc.eq('없는 태그에 걸려 빈손으로 돌아오지 않는다', [...got], ['m-bow']);
 
   sc.eq('앞뒤 공백이 있어도 찾는다', box.pick(V('본문', ['  순종  '])).id, 'm-bow');
+}
+
+console.log('\n시나리오 2-1 — 띄어쓰기 있는 태그도 찾는다 (v26-0826-6 회귀)');
+{
+  // ⚠️ _TAGART_GROUPSRC 는 묶음마다 태그를 이어 붙여 두고 처음 쓸 때 편다.
+  //    그 구분자가 **공백**이면 '성령 충만'·'하나님의 뜻' 같은 태그가 조각나서
+  //    영영 안 걸린다. 369개 중 101개(27%)가 그랬고, 말씀 240개 중 104개(43%)가
+  //    표가 정한 것과 다른 그림을 받고 있었다. 구분자는 반드시 '|' 여야 한다.
+  const a = box.alias();
+  [['하나님의 의', '공의'], ['성령 충만', '성령'], ['새 언약', '언약'],
+   ['일용할 양식', '공급'], ['하나님의 뜻', '주권'], ['왕 같은 제사장', '언약'],
+   ['City On A Hill', '빛']].forEach(([t, g]) => sc.eq('"' + t + '" → ' + g, a[t], g));
+  sc.eq('묶음 원본을 공백으로 잇지 않는다',
+    Object.values(box._TAGART_GROUPSRC).some(v => / /.test(v.replace(/\|/g, ''))
+      && v.split('|').every(t => !/ /.test(t))), false);
+  // 표에 있는 태그는 하나도 빠짐없이 찾아져야 한다
+  const miss = [];
+  Object.entries(box._TAGART_GROUPSRC).forEach(([g, v]) =>
+    v.split('|').forEach(t => { if (a[t] === undefined) miss.push(t); }));
+  sc.eq('표에 적힌 태그가 모두 찾아진다', miss, []);
 }
 
 console.log('\n시나리오 3 — 본문 낱말로 성령 그림을 고른다 (부분일치 사고 방지)');

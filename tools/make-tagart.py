@@ -125,10 +125,11 @@ def main():
         f'{js_str(k)}:[' + ','.join(js_str(w) for w in v) + ']'
         for k, v in tg.PICK.items()) + '};')
 
-    L.append('// 태그 → 묶음. 자리를 아끼려고 묶음마다 태그를 공백으로 이어 두고')
-    L.append('// 처음 쓸 때 표로 편다.')
+    L.append('// 태그 → 묶음. 자리를 아끼려고 묶음마다 태그를 이어 두고 처음 쓸 때 표로 편다.')
+    L.append("// ⚠️ 구분자는 반드시 '|' 다. 공백으로 이으면 '성령 충만'·'하나님의 뜻'처럼")
+    L.append('//    띄어쓰기 있는 태그가 조각나서 영영 안 걸린다 (369개 중 101개가 그렇다).')
     L.append('const _TAGART_GROUPSRC={' + ','.join(
-        f'{js_str(k)}:{js_str(" ".join(v))}' for k, v in tg.G.items()) + '};')
+        f'{js_str(k)}:{js_str("|".join(v))}' for k, v in tg.G.items()) + '};')
 
     print('\n'.join(L))
 
