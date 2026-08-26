@@ -124,7 +124,7 @@ console.log('\n시나리오 7 — 화면에서 본문을 가리지 않는다');
   const css = slice('.vf-art{', '.vfart-pv{');
   sc.eq('본문 아래로 깔린다', css.includes('z-index:0'), true);
   sc.eq('제스처를 막지 않는다', css.includes('pointer-events:none'), true);
-  sc.eq('오패시티 15%', css.includes('opacity:.15'), true);
+  sc.eq('오패시티 20%', css.includes('opacity:.2'), true);
   sc.eq('네 모서리 자리가 다 있다',
     ['.vf-art.tl{', '.vf-art.tr{', '.vf-art.bl{', '.vf-art.br{'].every(k => css.includes(k)), true);
   // DOM 에서 본문보다 앞에 있어야 아래로 깔린다
@@ -142,7 +142,7 @@ console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그
   // 공유 이미지는 화면이 고른 것(_vfArtCur)을 그대로 쓴다 — 다시 뽑으면 화면과 달라진다
   const shot = slice('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){', '// 본문 — 화면에 그려진');
   sc.eq('공유는 화면이 고른 도안을 그대로 그린다', shot.includes('_tagartDrawOn(ctx,_vfArtCur.id'), true);
-  sc.eq('공유도 오패시티 15%', shot.includes(',.15,_tagartStyle())'), true);
+  sc.eq('공유도 오패시티 20%', shot.includes(',.2,_tagartStyle())'), true);
   sc.eq('배경 바로 위·본문 아래에 그린다',
     SRC.indexOf('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){') < SRC.indexOf("const tEl=document.getElementById('vfText');"), true);
   sc.eq('공유 켬/끔 값을 넘긴다', SRC.includes('const inclArt=opt.inclArt!==undefined?opt.inclArt:(s.imgInclArt!==false);'), true);

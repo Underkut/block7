@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0826-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0826-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -428,8 +428,8 @@ header{
    도안과 고르는 규칙은 docs/TAG-ART.md. */
 .vf-art{
   position:absolute;z-index:0;pointer-events:none;
-  width:20%;max-width:140px;aspect-ratio:1/1;
-  color:var(--vf-tx,var(--tx));opacity:.15;
+  width:20%;max-width:100px;aspect-ratio:1/1;
+  color:var(--vf-tx,var(--tx));opacity:.2;
 }
 .vf-art svg{width:100%;height:100%;display:block}
 .vf-art.tl{top:5%;left:5%}
@@ -3335,7 +3335,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0826-1";
+const APP_VERSION = "v. 26-0826-2";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
@@ -10473,7 +10473,7 @@ function _shotDraw(o){
     const ae=document.getElementById('vfArt'),ar=ae&&ae.getBoundingClientRect();
     if(ar&&ar.width>2&&inView(ar))
       _tagartDrawOn(ctx,_vfArtCur.id,X(ar.left),Y(ar.top),ar.width*SC,
-                    getComputedStyle(ae).color||'#888',.15,_tagartStyle());
+                    getComputedStyle(ae).color||'#888',.2,_tagartStyle());
   }
   // 본문 — 화면에 그려진 줄 배열을 같은 줄 높이·같은 중앙선에 찍는다.
   // 강조가 있으면 한 줄을 조각으로 나눠 굵기·형광펜을 따로 입힌다.
