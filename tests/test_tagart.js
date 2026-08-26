@@ -96,11 +96,23 @@ console.log('\n시나리오 4 — 자리는 본문 바로 위·가운데 (v26-08
   sc.eq('고른 결과에 모서리가 없다', 'corner' in box.pick(V('본문', ['순종'])), false);
   const fn = slice('function _vfPlaceTagArt(){', '// 공유 이미지(캔버스)에');
   sc.eq('본문(#vfText) 을 기준으로 잰다', fn.includes("getElementById('vfText')"), true);
-  sc.eq('본문 위쪽에 놓는다', fn.includes('(tr.top-rr.top)-gap-size'), true);
+  sc.eq('본문 위쪽에 놓는다', fn.includes('(txTop-gap-size)'), true);
   sc.eq('크기 규칙은 CSS 하나뿐 — 인라인 폭을 비우고 다시 읽는다',
     fn.includes("el.style.width='';") && fn.includes('el.offsetWidth'), true);
-  sc.eq('자리가 모자라면 줄인다', fn.includes('Math.min(base,avail)'), true);
+  sc.eq('자리가 모자라면 줄인다', fn.includes('Math.min(base,txTop-topMin-gap)'), true);
   sc.eq('그래도 안 되면 안 그린다', fn.includes("el.style.visibility='hidden'"), true);
+  // ⚠️ 회귀 (v26-0826-3) — 첫 화면만 뜨고 그 다음 말씀부터 안 뜬 사고.
+  //    말씀을 넘기는 동안 #verseFullInner 는 translateY 로 화면 밖에 나가 있는데
+  //    _verseFullRender() 가 바로 그때 돈다. getBoundingClientRect 로 재면 본문이
+  //    화면 밖으로 나와 "자리 없음"이 되고 그 상태로 굳는다.
+  //    offsetTop 은 transform 을 타지 않으므로 넘기는 중에도 참값이 나온다.
+  sc.eq('본문 자리를 transform 안 타는 offsetTop 으로 잰다',
+    fn.includes('tx.offsetTop+inner.offsetTop-inner.scrollTop'), true);
+  sc.eq('넘기는 중에 흔들리는 getBoundingClientRect 를 안 쓴다',
+    /\.getBoundingClientRect\(/.test(fn), false);
+  // 넘기기는 _verseFullRender() 뒤에 scrollTop 을 0 으로 돌린다 → 그 뒤에 다시 재야 맞는다
+  sc.eq('넘긴 뒤 스크롤을 되돌리고 다시 잡는다',
+    /inner\.scrollTop=0;\s*\n\s*_vfPlaceTagArt\(\);/.test(SRC), true);
   // 본문 크기가 정해진 뒤라야 잴 수 있다 → _vfLayoutText() 끝에서 부른다
   sc.eq('본문 배치가 끝난 뒤에 자리를 잡는다',
     slice('function _vfLayoutText(){', '// ── 구독자 전체 집계 카운터').includes('_vfPlaceTagArt();'), true);
