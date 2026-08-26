@@ -107,12 +107,14 @@ console.log('\n시나리오 4 — 자리는 본문 바로 위·가운데 (v26-08
   //    화면 밖으로 나와 "자리 없음"이 되고 그 상태로 굳는다.
   //    offsetTop 은 transform 을 타지 않으므로 넘기는 중에도 참값이 나온다.
   sc.eq('본문 자리를 transform 안 타는 offsetTop 으로 잰다',
-    fn.includes('tx.offsetTop+inner.offsetTop-inner.scrollTop'), true);
+    fn.includes('const txTop=tx.offsetTop;'), true);
   sc.eq('넘기는 중에 흔들리는 getBoundingClientRect 를 안 쓴다',
     /\.getBoundingClientRect\(/.test(fn), false);
-  // 넘기기는 _verseFullRender() 뒤에 scrollTop 을 0 으로 돌린다 → 그 뒤에 다시 재야 맞는다
-  sc.eq('넘긴 뒤 스크롤을 되돌리고 다시 잡는다',
-    /inner\.scrollTop=0;\s*\n\s*_vfPlaceTagArt\(\);/.test(SRC), true);
+  // ⚠️ 회귀 (v26-0826-5) — 말씀을 넘길 때 본문만 밀려가고 그림은 제자리에 남던 문제.
+  //    넘기기 애니메이션은 #verseFullInner 를 통째로 옮기므로, 그림이 그 **안에**
+  //    있어야 본문과 함께 움직인다. 밖으로 빼면 다시 어긋난다.
+  sc.eq('그림이 본문과 같은 #verseFullInner 안에 있다',
+    SRC.indexOf('id="verseFullInner"') < SRC.indexOf('id="vfArt"'), true);
   // 본문 크기가 정해진 뒤라야 잴 수 있다 → _vfLayoutText() 끝에서 부른다
   sc.eq('본문 배치가 끝난 뒤에 자리를 잡는다',
     slice('function _vfLayoutText(){', '// ── 구독자 전체 집계 카운터').includes('_vfPlaceTagArt();'), true);
@@ -161,13 +163,15 @@ console.log('\n시나리오 7 — 화면에서 본문을 가리지 않는다');
   const css = slice('.vf-art{', '.vfart-pv{');
   sc.eq('본문 아래로 깔린다', css.includes('z-index:0'), true);
   sc.eq('제스처를 막지 않는다', css.includes('pointer-events:none'), true);
-  sc.eq('오패시티 20%', css.includes('opacity:.2'), true);
+  sc.eq('오패시티 20%', css.includes('opacity:.2;'), true);
+  // 모바일은 같은 값이라도 더 옅게 느껴진다 (HB 확인) → 한 단계 진하게
+  sc.eq('모바일만 30%', /@media\(hover:none\)\{\.vf-art\{opacity:\.3;\}\}/.test(SRC), true);
   sc.eq('가로는 가운데 고정', css.includes('left:50%') && css.includes('translateX(-50%)'), true);
   sc.eq('옛 모서리 자리는 없앴다',
     ['.vf-art.tl{', '.vf-art.tr{', '.vf-art.bl{', '.vf-art.br{'].some(k => css.includes(k)), false);
   // DOM 에서 본문보다 앞에 있어야 아래로 깔린다
-  sc.eq('#vfArt 가 #verseFullInner 보다 앞에 있다',
-    SRC.indexOf('id="vfArt"') < SRC.indexOf('id="verseFullInner"'), true);
+  sc.eq('#vfArt 가 #vfText 보다 앞에 있다',
+    SRC.indexOf('id="vfArt"') < SRC.indexOf('id="vfText"'), true);
 }
 
 console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그림을 쓴다');
@@ -180,7 +184,11 @@ console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그
   // 공유 이미지는 화면이 고른 것(_vfArtCur)을 그대로 쓴다 — 다시 뽑으면 화면과 달라진다
   const shot = slice('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){', '// 본문 — 화면에 그려진');
   sc.eq('공유는 화면이 고른 도안을 그대로 그린다', shot.includes('_tagartDrawOn(ctx,_vfArtCur.id'), true);
-  sc.eq('공유도 오패시티 20%', shot.includes(',.2,_tagartStyle())'), true);
+  // 공유는 숫자를 또 적지 않고 **화면에 적용된 값**을 읽는다 —
+  // 안 그러면 모바일만 30% 같은 규칙이 생길 때 화면과 어긋난다
+  sc.eq('공유 오패시티는 화면 값을 그대로 읽는다',
+    shot.includes("parseFloat(getComputedStyle(ae).opacity)")
+    && shot.includes('aop>0?aop:.2'), true);
   sc.eq('배경 바로 위·본문 아래에 그린다',
     SRC.indexOf('if(o.inclArt!==false&&_tagartOn()&&_vfArtCur){') < SRC.indexOf("const tEl=document.getElementById('vfText');"), true);
   sc.eq('공유 켬/끔 값을 넘긴다', SRC.includes('const inclArt=opt.inclArt!==undefined?opt.inclArt:(s.imgInclArt!==false);'), true);
