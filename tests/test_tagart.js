@@ -23,7 +23,8 @@ const CODE = slice('const _TAGART_MARKS={', '// ── 설정창 (말씀설정 �
 const box = {};
 new Function('box', CODE + '\nbox._TAGART_MARKS=_TAGART_MARKS;box._TAGART_MARKOF=_TAGART_MARKOF;'
   + 'box._TAGART_PICK=_TAGART_PICK;box._TAGART_GROUPSRC=_TAGART_GROUPSRC;'
-  + 'box.alias=_tagartAliasMap;box.pick=_tagartPick;box.svg=_tagartSvg;')(box);
+  + 'box.alias=_tagartAliasMap;box.pick=_tagartPick;box.svg=_tagartSvg;'
+  + 'box.swatch=_tagartSwatchSvg;')(box);
 
 const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 
@@ -89,11 +90,20 @@ console.log('\n시나리오 3 — 본문 낱말로 성령 그림을 고른다 (�
   sc.eq('"숨기다" 가 바람으로 고정되지 않는다', many('숨기어 둔 것이 드러나지 않을 것이 없나니', 300), ALL3);
 }
 
-console.log('\n시나리오 4 — 자리는 네 모서리 중 무작위');
+console.log('\n시나리오 4 — 자리는 본문 바로 위·가운데 (v26-0826-3)');
 {
-  const c = new Set();
-  for (let i = 0; i < 400; i++) c.add(box.pick(V('본문', ['순종'])).corner);
-  sc.eq('네 모서리가 다 나온다', [...c].sort(), ['bl', 'br', 'tl', 'tr']);
+  // 고르기는 이제 도안만 돌려준다. 자리는 _vfPlaceTagArt() 가 본문을 재서 잡는다.
+  sc.eq('고른 결과에 모서리가 없다', 'corner' in box.pick(V('본문', ['순종'])), false);
+  const fn = slice('function _vfPlaceTagArt(){', '// 공유 이미지(캔버스)에');
+  sc.eq('본문(#vfText) 을 기준으로 잰다', fn.includes("getElementById('vfText')"), true);
+  sc.eq('본문 위쪽에 놓는다', fn.includes('(tr.top-rr.top)-gap-size'), true);
+  sc.eq('크기 규칙은 CSS 하나뿐 — 인라인 폭을 비우고 다시 읽는다',
+    fn.includes("el.style.width='';") && fn.includes('el.offsetWidth'), true);
+  sc.eq('자리가 모자라면 줄인다', fn.includes('Math.min(base,avail)'), true);
+  sc.eq('그래도 안 되면 안 그린다', fn.includes("el.style.visibility='hidden'"), true);
+  // 본문 크기가 정해진 뒤라야 잴 수 있다 → _vfLayoutText() 끝에서 부른다
+  sc.eq('본문 배치가 끝난 뒤에 자리를 잡는다',
+    slice('function _vfLayoutText(){', '// ── 구독자 전체 집계 카운터').includes('_vfPlaceTagArt();'), true);
 }
 
 console.log('\n시나리오 5 — 그림체 두 벌이 같은 도안을 쓴다');
@@ -104,10 +114,25 @@ console.log('\n시나리오 5 — 그림체 두 벌이 같은 도안을 쓴다')
   const dOf = s => (s.match(/ d="[^"]+"/g) || []).join('|');
   sc.eq('두 그림체의 선(path)은 완전히 같다', dOf(mn), dOf(og));
   sc.eq('없는 도안을 부르면 빈 문자열', box.svg('m-없는것', 'minimal'), '');
-  // 설정창 미리보기 — 획 하나만 확대하는 swatch 모드
-  const sw = box.svg('m-wind', 'minimal', true);
-  sc.eq('swatch 는 확대된 viewBox 를 쓴다', sw.includes('viewBox="50 60 40 40"'), true);
-  sc.eq('swatch 는 굵게 그린다', /stroke-width="18\.2"/.test(sw), true);
+}
+
+console.log('\n시나리오 5-1 — 설정창 미리보기는 획 하나 (v26-0826-3)');
+{
+  // v26-0826-2 는 도안을 확대해서 잘라 썼는데, 옆 획까지 걸려 위아래가 칠해진 것처럼
+  // 보였다. 이제 미리보기 전용 획을 따로 그린다 — 도안과 아무 상관이 없어야 한다.
+  const mn = box.swatch('minimal'), og = box.swatch('organic');
+  sc.eq('획이 하나뿐이다', (mn.match(/<path /g) || []).length, 1);
+  sc.eq('도안을 잘라 쓰지 않는다 — 자체 viewBox', mn.includes('viewBox="0 0 140 20"'), true);
+  sc.eq('minimal 은 필터를 안 쓴다', mn.includes('filter='), false);
+  sc.eq('organic 은 손떨림·연필결 두 겹',
+    og.includes('url(#tagartSwWb)') && og.includes('url(#tagartSwGr)'), true);
+  // 도안 필터와 id 가 겹치면 문서에 둘 다 떴을 때 서로 잡아먹는다
+  sc.eq('도안 필터와 id 가 겹치지 않는다',
+    og.includes('id="tagartWb"') || og.includes('id="tagartGr"'), false);
+  sc.eq('두 그림체의 획은 완전히 같다',
+    (mn.match(/ d="[^"]+"/g) || []).join('|'), (og.match(/ d="[^"]+"/g) || []).join('|'));
+  sc.eq('설정창이 이 함수를 쓴다',
+    SRC.includes("_tagartSwatchSvg('minimal')") && SRC.includes("_tagartSwatchSvg('organic')"), true);
 }
 
 console.log('\n시나리오 6 — 기본값과 저장 키');
@@ -125,8 +150,9 @@ console.log('\n시나리오 7 — 화면에서 본문을 가리지 않는다');
   sc.eq('본문 아래로 깔린다', css.includes('z-index:0'), true);
   sc.eq('제스처를 막지 않는다', css.includes('pointer-events:none'), true);
   sc.eq('오패시티 20%', css.includes('opacity:.2'), true);
-  sc.eq('네 모서리 자리가 다 있다',
-    ['.vf-art.tl{', '.vf-art.tr{', '.vf-art.bl{', '.vf-art.br{'].every(k => css.includes(k)), true);
+  sc.eq('가로는 가운데 고정', css.includes('left:50%') && css.includes('translateX(-50%)'), true);
+  sc.eq('옛 모서리 자리는 없앴다',
+    ['.vf-art.tl{', '.vf-art.tr{', '.vf-art.bl{', '.vf-art.br{'].some(k => css.includes(k)), false);
   // DOM 에서 본문보다 앞에 있어야 아래로 깔린다
   sc.eq('#vfArt 가 #verseFullInner 보다 앞에 있다',
     SRC.indexOf('id="vfArt"') < SRC.indexOf('id="verseFullInner"'), true);
