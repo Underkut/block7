@@ -65,9 +65,9 @@ console.log('\n시나리오 4 — 필터 이름이 있으면 그 아래로 내�
         sync.includes("cb.classList.toggle('vf-cycle-below',on);"), true);
   sc.eq('맞출 때마다 아이콘도 같이 맞춘다', sync.includes('_vfSyncCycleIcon();'), true);
 
-  sc.eq('CSS — 기본 자리', /\.vf-cycle\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 14px\)/.test(SRC), true);
+  sc.eq('CSS — 위 화살표와 겹치지 않는 기본 자리', /\.vf-cycle\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 44px\)/.test(SRC), true);
   sc.eq('CSS — 라벨 있을 때 더 내려간다',
-        /\.vf-cycle\.vf-cycle-below\{top:calc\(env\(safe-area-inset-top,0px\) \+ 34px\)/.test(SRC), true);
+        /\.vf-cycle\.vf-cycle-below\{top:calc\(env\(safe-area-inset-top,0px\) \+ 64px\)/.test(SRC), true);
   sc.eq('테두리·박스 없다', /\.vf-cycle\{[^}]*background:none;border:none/.test(SRC), true);
 }
 
@@ -87,6 +87,17 @@ console.log('\n시나리오 5 — 넘길 때 순환/셔플이 갈린다 (핵심 
         fn.includes('if(shuffle)randomVerseManual();')||/if\(shuffle\)randomVerseManual\(\);/.test(fn), true);
   sc.eq('필터 없고 순환이면 예전 그대로 성경순 다음/이전',
         fn.includes('else if(d>0)nextVerseManual();else prevVerseManual();'), true);
+}
+
+console.log('\n시나리오 4-1 — 위아래 이동 영역과 화살표가 대칭이다');
+{
+  sc.eq('위아래 버튼은 각각 화면 높이 1/4',
+        /\.vf-nav\{[\s\S]{0,100}height:25%;/.test(SRC), true);
+  sc.eq('두 화살표는 같은 크기와 선으로 그린다',
+        /\.vf-nav i\{[\s\S]{0,180}width:14px;height:14px;[\s\S]{0,180}border-top:1\.5px solid/.test(SRC), true);
+  sc.eq('위 화살표 각도', SRC.includes('.vf-nav-u i{transform:rotate(-45deg);}'), true);
+  sc.eq('아래 화살표 각도', SRC.includes('.vf-nav-d i{transform:rotate(135deg);}'), true);
+  sc.eq('버튼 영역 호버가 화살표를 밝힌다', SRC.includes('.vf-nav:hover i{opacity:.8;}'), true);
 }
 
 console.log('\n시나리오 6 — randomVerseManual 은 활성 모음(말씀설정) 전체를 쓴다');
