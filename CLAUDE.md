@@ -34,8 +34,10 @@
 - **버전**: `v. YY-MMDD-N` (N = 그날 몇 번째 빌드). **반드시 실제 오늘 날짜로.**
   두 군데를 같은 값으로 — 2번째 줄 주석과 `const APP_VERSION`.
   이 값은 클라우드에도 기록되어 낡은 탭 자동 갱신 판정에 쓰이므로 형식을 바꾸지 말 것.
-- **산출물 2개**: `index.html`(운영, `DEV_MODE=false`)와
-  `index-dev.html`(`DEV_MODE=true`, 2번째 줄 `[DEV — no Firebase]`).
+- **산출물 3개**: `index.html`(운영, `DEV_MODE=false`),
+  `index-dev.html`(`DEV_MODE=true`, 2번째 줄 `[DEV — no Firebase]`),
+  그리고 `sweeter-dev.html`(말씀 전용 제품 Sweeter 의 개발본 — `./tools/make-sweeter.sh`).
+  셋 다 `index.html` 하나에서 만든다. **손으로 만들지 말 것.**
   개발본은 **손으로 만들지 말고 `./tools/make-dev.sh`** 로 만든다 (네 곳을 바꾼다).
   반대 방향은 **`./tools/make-prod.sh`** — 개발본에서 운영본을 되살린다.
   운영본은 확인을 기다리는 동안 커밋되지 않은 채 작업 폴더에만 남는데, 세션이 끝나면
@@ -64,6 +66,25 @@
 - 한 번에 하나씩 고치고 그때마다 점검한다. 몰아서 고치면 어디서 깨졌는지 못 찾는다.
 - HTML 블록을 지울 때는 `<div>` 균형을 반드시 다시 센다.
   (2026-07-31에 범위가 넘쳐 알림 탭 전체가 통째로 지워진 적이 있다)
+
+## Sweeter (말씀 전용 제품) — 같은 코드에서 뽑아낸다
+
+`sweeter-dev.html` 은 BLOCK7 과 **같은 `index.html`** 에서 나온다.
+`./tools/make-sweeter.sh` 가 여섯 곳을 바꾸는데, 핵심은 `const APP_PRODUCT` 한 줄이다.
+그 한 줄로 저장 키가 갈리고 설정 칸막이가 깨어난다.
+
+- **상태를 다루는 계층은 두 제품이 똑같은 것을 쓴다.** `defaultState()`·`applyRemoteState()`
+  를 제품별로 깎지 말 것 — 키가 없거나 비어 있으면 병합이 "사용자가 지웠다"로 읽어
+  **상대 제품의 데이터를 지운다.** 달라도 되는 것은 화면뿐이다.
+  (증거: `tests/test_product.js` 시나리오 3·3-2)
+- **제품마다 따로 둘 설정은 `_PRODUCT_SCOPED` 배열 한 곳**에서 정한다.
+  여기 없는 것은 두 제품이 공유한다. 공유가 **명백히 틀린 것만** 넣는다 —
+  목록이 길어지면 사용자가 같은 설정을 두 번 하게 된다.
+  새 설정을 만들 때 화면 표시에 관한 것이면 여기 넣을지 한 번 생각한다.
+- `APP_PRODUCT` 가 기본값(`block7`)인 동안 이 장치는 **잠들어 있다.** BLOCK7 의
+  동작·저장 키·클라우드 문서는 예전과 한 글자도 다르지 않다. 그 성질을 깨지 말 것.
+- `check.sh` 가 `sweeter-dev.html` 이 낡았는지 검사한다. `index.html` 을 고쳤으면
+  `./tools/make-sweeter.sh` 도 함께 돌려 커밋한다.
 
 ## 절대 하지 말 것
 

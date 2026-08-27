@@ -186,7 +186,10 @@ w('## 5. 함수 이름 색인')
 w('')
 w('찾는 기능의 함수 이름이 기억날 때 여기서 확인하고 바로 grep 하세요.')
 w('')
-by_name = sorted(set(n for _, n in funcs), key=lambda s: s.lower())
+# ⚠️ 정렬 기준이 소문자뿐이면 'N' 과 'n' 이 동점이 되고, set 의 순회 순서는
+# 실행할 때마다 달라져(파이썬 문자열 해시 무작위화) **같은 입력인데 결과가 바뀐다.**
+# 그러면 check.sh 가 매번 "지도가 낡았다" 고 알린다. 원래 이름까지 함께 본다.
+by_name = sorted(set(n for _, n in funcs), key=lambda s: (s.lower(), s))
 per_line = 6
 for i in range(0, len(by_name), per_line):
     w('  '.join('`%s`' % n for n in by_name[i:i + per_line]))

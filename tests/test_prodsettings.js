@@ -109,4 +109,36 @@ console.log('시나리오 6 — 남의 제품 칸을 안 들고 가면 지워진
   sc.eq('들고 가면 보존된다',good.productSettings.sweeter.uiLevel,'easy');
 }
 
+// ═══ 7. 저장 키가 제품마다 갈리는가 ═══
+// 같은 도메인에서 BLOCK7 과 Sweeter 가 나란히 열릴 수 있다
+// (block7.my/index.html 과 block7.my/sweeter-dev.html). 저장 키가 같으면
+// 서로의 데이터를 덮어쓴다.
+// ⚠️ 기본 제품의 키는 예전 그대로여야 한다 — 바뀌면 지금 쓰는 기기의
+//    저장 내용이 통째로 안 보이게 된다.
+console.log('시나리오 7 — 저장 키(localStorage)가 제품마다 갈린다');
+{
+  const KEY=(prod,dev)=>(prod==='block7'?'b7v1':'b7v1_'+prod)+(dev?'_dev':'');
+  sc.eq('BLOCK7 운영본 키는 예전 그대로',KEY('block7',false),'b7v1');
+  sc.eq('BLOCK7 개발본 키도 예전 그대로',KEY('block7',true),'b7v1_dev');
+  sc.eq('Sweeter 는 따로',KEY('sweeter',false),'b7v1_sweeter');
+  sc.eq('Sweeter 개발본도 따로',KEY('sweeter',true),'b7v1_sweeter_dev');
+  const all=[KEY('block7',false),KEY('block7',true),KEY('sweeter',false),KEY('sweeter',true)];
+  sc.eq('네 가지가 전부 다른 키',new Set(all).size,4);
+
+  // 실제 index.html 의 식이 위와 같은 답을 내는지 (식이 바뀌면 여기서 걸린다)
+  const expr=slice('const LS_KEY = (APP_PRODUCT',';');  // 식이 두 줄이라 세미콜론까지 뜬다
+  const real=(prod,dev)=>new Function('APP_PRODUCT','APP_PRODUCT_DEFAULT','DEV_MODE',
+    expr.replace('const LS_KEY =','return')+';')(prod,'block7',dev);
+  sc.eq('index.html 의 식도 BLOCK7 은 b7v1',real('block7',false),'b7v1');
+  sc.eq('index.html 의 식도 Sweeter 는 갈린다',real('sweeter',true),'b7v1_sweeter_dev');
+}
+
+// ═══ 8. 새로 생긴 설정이 목록에 반영됐는가 ═══
+// 태그 그림(v26-0826~0827)은 전체화면 표시 설정이라 제품별로 가야 한다.
+console.log('시나리오 8 — 태그 그림 설정은 제품별');
+{
+  sc.eq('태그 그림 켬/끔은 제품별',B7._PRODUCT_SCOPED.includes('vfArtOn'),true);
+  sc.eq('태그 그림 종류도 제품별',B7._PRODUCT_SCOPED.includes('vfArtStyle'),true);
+}
+
 sc.done();

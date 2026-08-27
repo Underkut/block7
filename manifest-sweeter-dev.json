@@ -1,0 +1,23 @@
+{
+  "name": "Sweeter 개발본",
+  "short_name": "Sweeter DEV",
+  "description": "말씀과 함께하는 하루 (개발본 — 실제 데이터와 분리)",
+  "start_url": "/sweeter-dev.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0e10",
+  "theme_color": "#0d0e10",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

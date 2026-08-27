@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0827-6  [production]  -->
+<!-- BLOCK7  v. 26-0827-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3264,7 +3264,20 @@ const DEV_MODE = false;
 // DEV 빌드와 배포 빌드가 같은 origin에서 localStorage를 공유하면, DEV에서
 // 만든(클라우드에 없는) 데이터가 배포 빌드의 클라우드 동기화로 덮여 사라질 수
 // 있다. 그래서 저장 키를 분리한다.
-const LS_KEY = DEV_MODE ? 'b7v1_dev' : 'b7v1';
+// ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
+// 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
+// tools/make-sweeter.sh 가 이 한 줄을 바꿔 Sweeter 산출물을 만든다.
+// ⚠️ APP_PRODUCT 가 기본값('block7')인 동안 아래 장치는 **아무 일도 하지 않는다.**
+//    지금 쓰는 사람들의 데이터는 한 글자도 움직이지 않는다는 뜻이다.
+const APP_PRODUCT = "block7";
+const APP_PRODUCT_DEFAULT = "block7";   // 설정을 settings 에 그대로 두는 제품
+
+// 같은 origin 에서 두 제품이 나란히 열릴 수 있다 (block7.my/sweeter-dev.html).
+// 저장 키가 같으면 서로의 데이터를 덮어쓰므로 제품마다 가른다.
+// ⚠️ 기본 제품(block7)의 키는 예전 그대로 'b7v1' / 'b7v1_dev' 다 —
+//    지금 쓰는 기기의 저장 내용이 사라지지 않게 하려면 이 값이 변하면 안 된다.
+const LS_KEY = (APP_PRODUCT === APP_PRODUCT_DEFAULT ? 'b7v1' : 'b7v1_' + APP_PRODUCT)
+             + (DEV_MODE ? '_dev' : '');
 
 // ═══════════════════════════════════════════════════════════
 //  진단 로그 (개발본 전용) — v26-0817-5
@@ -3343,15 +3356,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0827-6";
-
-// ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
-// 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
-// tools/make-sweeter.sh 가 이 한 줄을 바꿔 Sweeter 산출물을 만든다.
-// ⚠️ APP_PRODUCT 가 기본값('block7')인 동안 아래 장치는 **아무 일도 하지 않는다.**
-//    지금 쓰는 사람들의 데이터는 한 글자도 움직이지 않는다는 뜻이다.
-const APP_PRODUCT = "block7";
-const APP_PRODUCT_DEFAULT = "block7";   // 설정을 settings 에 그대로 두는 제품
+const APP_VERSION = "v. 26-0827-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -3362,6 +3367,7 @@ const _PRODUCT_SCOPED=[
   'theme','themePresetId',                                      // 화면 스타일
   'notify','verseAlarm',                                        // 알림 (두 앱이 같이 울리면 안 된다)
   'vfTextScale','vListHeightRatio','vfThemes','vfThemeBySec',   // 전체화면 표시
+  'vfArtOn','vfArtStyle',                                       // 태그 그림 (v26-0826~0827 신설)
   'verseBarOn','verseMode','verseSneakStyle',                   // 상단 말씀 표시 방식
   'verseWidgetCat','verseWidgetTopic','verseWidgetText','verseWidgetRef',
   'verseWidgetTag','verseWidgetTextSize','verseWidgetRefSize'   // 말씀 위젯
