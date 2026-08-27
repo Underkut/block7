@@ -47,6 +47,25 @@ else
   rm -f "$_tmp"
 fi
 
+# Sweeter 개발본도 index.html 에서 만든다. 어긋나면 block7.my/sweeter-dev.html
+# 이 옛 코드를 보여 주므로, AGENTS.md 와 같은 급으로 배포를 막는다.
+if [ ! -f sweeter-dev.html ]; then
+  echo "sweeter-dev.html 이 없습니다 ✗  → ./tools/make-sweeter.sh 를 돌리세요"
+  fail=1
+else
+  _tmp3=$(mktemp)
+  cp sweeter-dev.html "$_tmp3"
+  ./tools/make-sweeter.sh >/dev/null
+  if diff -q "$_tmp3" sweeter-dev.html >/dev/null; then
+    echo "sweeter-dev.html ↔ index.html 동기화됨 ✓"
+  else
+    echo "sweeter-dev.html 이 index.html 보다 낡았습니다 ✗"
+    echo "   → ./tools/make-sweeter.sh 로 다시 만들고 함께 커밋하세요"
+    fail=1
+  fi
+  rm -f "$_tmp3"
+fi
+
 # 구역 지도는 문서일 뿐이라 낡았다고 배포를 막지는 않는다 — 알림만 둔다.
 if [ ! -f docs/MAP.md ]; then
   echo "docs/MAP.md 가 없습니다 (경고)  → ./tools/make-map.sh"
