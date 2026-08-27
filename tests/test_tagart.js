@@ -31,8 +31,8 @@ const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 {
   const marks = Object.keys(box._TAGART_MARKS);
-  sc.eq('도안 48개 (성령 3종·고난 3종이라 묶음보다 셋 많다)', marks.length, 48);
-  sc.eq('묶음 45개', Object.keys(box._TAGART_MARKOF).length, 45);
+  sc.eq('도안 49개 (성령 3종·고난 3종이라 묶음보다 셋 많다)', marks.length, 49);
+  sc.eq('묶음 46개', Object.keys(box._TAGART_MARKOF).length, 46);
   sc.eq('별칭 369개', Object.keys(box.alias()).length, 369);
   // v26-0826-6 에 큰 묶음을 쪼개며 새로 그린 열하나
   sc.eq('4차 도안 11개가 다 있다',
@@ -100,7 +100,9 @@ console.log('\n시나리오 2-2 — HB 가 지시한 묶음 재편 (v26-0826-7)'
 {
   const a = box.alias(), of = t => box._TAGART_MARKOF[a[t]];
   // ① 복 계열은 '공급'이 채워 주시는 것 → 공급으로. 상 계열만 따로 '상급'.
-  ['복', '팔복', '신령한 복', '행복'].forEach(t => sc.eq('"' + t + '" 은 공급', a[t], '공급'));
+  ['복', '팔복', '신령한 복'].forEach(t => sc.eq('"' + t + '" 은 공급', a[t], '공급'));
+  ['기쁨', '희락', '즐거움', '행복'].forEach(t => sc.eq('"' + t + '" 은 기쁨', a[t], '기쁨'));
+  sc.eq('기쁨은 반짝이는 별 도안', box._TAGART_MARKOF['기쁨'], ['m-spark']);
   ['상', '상급', '기업', '유업', '상속'].forEach(t => sc.eq('"' + t + '" 은 상급', a[t], '상급'));
   sc.eq('공급은 원래 그림 그대로', of('복'), ['m-provide']);
   sc.eq('상급은 새 그림(메달)', of('상급'), ['m-medal']);
