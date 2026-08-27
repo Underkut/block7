@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-0827-2** · 전체 26,513줄 · 구역 214개 · 함수 1277개
+기준 버전 **v. 26-0827-3** · 전체 26,513줄 · 구역 214개 · 함수 1277개
 
 ---
 
@@ -410,7 +410,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 `measure`  `mergeDuplicateVerses`  `mine`  `mk`  `mkBtn`  `mkDate`
 `mode`  `monthLabel`  `monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`  `moveActiveSelection`
 `moved`  `moveDrag`  `moveG`  `moveTaskTo`  `moveTaskToPickedDate`  `ms`
-`N`  `n`  `name`  `navigateDate`  `navigateWeek`  `needTemp`
+`n`  `N`  `name`  `navigateDate`  `navigateWeek`  `needTemp`
 `next`  `nextVerseManual`  `now`  `offTest`  `on`  `onCancel`
 `onDown`  `onEnd`  `onEventDateChange`  `onEventTimeToggle`  `onMove`  `onNotifyMasterToggle`
 `onStart`  `onTouchEnd`  `onTouchMove`  `onTouchStart`  `onUp`  `onVerseAlarmToggle`
