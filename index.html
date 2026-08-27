@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0827-5  [production]  -->
+<!-- BLOCK7  v. 26-0827-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -574,13 +574,13 @@ header{
    아이콘 하나만 — HB 가 스케치로 확정한 모양 그대로. */
 .vf-cycle{
   position:absolute;left:50%;transform:translateX(-50%);
-  top:calc(env(safe-area-inset-top,0px) + 14px);
+  top:calc(env(safe-area-inset-top,0px) + 44px);
   z-index:11;background:none;border:none;padding:5px;margin:0;
   display:flex;align-items:center;justify-content:center;
   color:var(--vf-tx2,var(--tx2));cursor:pointer;transition:top .15s,color .15s;
   -webkit-tap-highlight-color:transparent;
 }
-.vf-cycle.vf-cycle-below{top:calc(env(safe-area-inset-top,0px) + 34px);}
+.vf-cycle.vf-cycle-below{top:calc(env(safe-area-inset-top,0px) + 64px);}
 /* v26-0817-18 — HB: 순환/셔플을 색으로 구분하지 않는다. 위 필터 글자
    (.vf-toplabel, --vf-tx2)와 같은 색으로 통일 — 아이콘 모양 차이만으로 상태를 안다. */
 /* 반응 토스트(좋아요·암송) — 심장이 뛰듯 두 번 두근거린 뒤 자리를 잡는다.
@@ -651,18 +651,21 @@ header{
   -webkit-tap-highlight-color:transparent;
 }
 .vf-close:hover{color:var(--tx);}
-/* 위/아래 1/3 = 이전/다음 (릴스처럼 세로 이동) */
+/* 위/아래 1/4 = 이전/다음 (릴스처럼 세로 이동) */
 .vf-nav{
-  position:absolute;left:0;right:0;height:33.333%;
+  position:absolute;left:0;right:0;height:25%;
   border:none;background:none;padding:0;margin:0;cursor:pointer;z-index:2;
   display:flex;justify-content:center;-webkit-tap-highlight-color:transparent;
 }
 .vf-nav-u{top:0;align-items:flex-start;}
 .vf-nav-d{bottom:0;align-items:flex-end;}
 .vf-nav i{
-  font-style:normal;font-size:26px;line-height:1;color:var(--tx);
-  padding:14px 0;opacity:.14;transition:opacity .15s;
+  width:14px;height:14px;margin:18px 0;
+  border-top:1.5px solid var(--tx);border-right:1.5px solid var(--tx);
+  font-size:0;line-height:0;opacity:.14;transition:opacity .15s;
 }
+.vf-nav-u i{transform:rotate(-45deg);}
+.vf-nav-d i{transform:rotate(135deg);}
 @media (hover:hover) and (pointer:fine){
   .vf-nav:hover i{opacity:.8;}
 }
@@ -3340,7 +3343,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0827-5";
+const APP_VERSION = "v. 26-0827-6";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
