@@ -112,7 +112,7 @@ MARK = {
  "자녀":   ["m-child"],
  "영광":   ["m-proclaim"], "헌신":  ["m-altar"],   "기도":   ["m-open"],
  "자비":   ["m-stoop"],    "승리":  ["m-break"],
- "고난":   ["m-narrow"],   "피난처":["m-shelter"], "능력":   ["m-power"],
+ "고난":   ["m-narrow","m-narrowb","m-narrowc"],   "피난처":["m-shelter"], "능력":   ["m-power"],
  "공급":   ["m-provide"],  "용서":  ["m-cover"],   "부흥":   ["m-revive"],
  "상급":   ["m-medal"],    "연합":  ["m-unite"],
  # ── 4차 (v26-0826-6) 큰 묶음을 쪼개며 새로 그린 것들 ──
