@@ -31,13 +31,16 @@ const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 {
   const marks = Object.keys(box._TAGART_MARKS);
-  sc.eq('도안 45개 (성령이 바람·불꽃·물 셋이라 묶음보다 하나 많다)', marks.length, 45);
-  sc.eq('묶음 44개', Object.keys(box._TAGART_MARKOF).length, 44);
+  sc.eq('도안 50개 (성령 3종·고난 4종이라 묶음보다 넷 많다)', marks.length, 50);
+  sc.eq('묶음 46개', Object.keys(box._TAGART_MARKOF).length, 46);
   sc.eq('별칭 369개', Object.keys(box.alias()).length, 369);
   // v26-0826-6 에 큰 묶음을 쪼개며 새로 그린 열하나
   sc.eq('4차 도안 11개가 다 있다',
     ['m-holy','m-onefold','m-idol','m-newman','m-mature','m-create',
      'm-just','m-rise','m-sin','m-sift','m-path'].filter(i => !marks.includes(i)), []);
+  // 5차 — HB 가 손으로 그려 준 도안 둘 (v26-0826-7)
+  sc.eq('HB 손그림 도안 둘이 있다', ['m-unite','m-medal'].filter(i => !marks.includes(i)), []);
+  sc.eq("'복' 묶음이 공급에 흡수돼 m-fill 은 없앴다", marks.includes('m-fill'), false);
 
   const need = new Set();
   Object.values(box._TAGART_MARKOF).forEach(a => a.forEach(i => need.add(i)));
@@ -46,8 +49,11 @@ console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 
   sc.eq('그리스도는 십자가 도안을 함께 쓴다',
     box._TAGART_MARKOF['그리스도'], box._TAGART_MARKOF['십자가']);
-  sc.eq('성령만 도안이 여럿이다',
-    Object.entries(box._TAGART_MARKOF).filter(([, v]) => v.length > 1).map(([k]) => k), ['성령']);
+  sc.eq('도안이 여럿인 묶음은 성령·고난 둘뿐이다',
+    Object.entries(box._TAGART_MARKOF).filter(([, v]) => v.length > 1).map(([k]) => k).sort(),
+    ['고난', '성령'].sort());
+  sc.eq('고난은 도안 4종을 랜덤으로 쓴다',
+    box._TAGART_MARKOF['고난'], ['m-narrow', 'm-narrowb', 'm-narrowc', 'm-narrowd']);
   sc.eq('모든 도안에 그릴 선이 있다',
     marks.filter(i => !(box._TAGART_MARKS[i].p || []).length), []);
 }
@@ -88,6 +94,25 @@ console.log('\n시나리오 2-1 — 띄어쓰기 있는 태그도 찾는다 (v26
   Object.entries(box._TAGART_GROUPSRC).forEach(([g, v]) =>
     v.split('|').forEach(t => { if (a[t] === undefined) miss.push(t); }));
   sc.eq('표에 적힌 태그가 모두 찾아진다', miss, []);
+}
+
+console.log('\n시나리오 2-2 — HB 가 지시한 묶음 재편 (v26-0826-7)');
+{
+  const a = box.alias(), of = t => box._TAGART_MARKOF[a[t]];
+  // ① 복 계열은 '공급'이 채워 주시는 것 → 공급으로. 상 계열만 따로 '상급'.
+  ['복', '팔복', '신령한 복'].forEach(t => sc.eq('"' + t + '" 은 공급', a[t], '공급'));
+  ['기쁨', '희락', '즐거움', '행복'].forEach(t => sc.eq('"' + t + '" 은 기쁨', a[t], '기쁨'));
+  sc.eq('기쁨은 반짝이는 별 도안', box._TAGART_MARKOF['기쁨'], ['m-spark']);
+  ['상', '상급', '기업', '유업', '상속'].forEach(t => sc.eq('"' + t + '" 은 상급', a[t], '상급'));
+  sc.eq('공급은 원래 그림 그대로', of('복'), ['m-provide']);
+  sc.eq('상급은 새 그림(메달)', of('상급'), ['m-medal']);
+  // ② 한마음 쪼개기 — 우선순위 / 연합(퍼즐) / 예수 중심은 십자가로
+  ['우선순위', '가치', '한 가지', '정렬'].forEach(t => sc.eq('"' + t + '" 은 우선순위', a[t], '우선순위'));
+  sc.eq('우선순위는 쓰던 그림 그대로', of('우선순위'), ['m-onefold']);
+  ['연합', '그리스도와의 연합'].forEach(t => sc.eq('"' + t + '" 은 연합', a[t], '연합'));
+  sc.eq('연합은 퍼즐 한 조각', of('연합'), ['m-unite']);
+  ['예수 중심', '그리스도 중심'].forEach(t => sc.eq('"' + t + '" 은 십자가', a[t], '십자가'));
+  sc.eq('예수 중심은 십자가 그림', of('예수 중심'), ['m-cross']);
 }
 
 console.log('\n시나리오 3 — 본문 낱말로 성령 그림을 고른다 (부분일치 사고 방지)');
