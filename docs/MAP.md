@@ -410,7 +410,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 `measure`  `mergeDuplicateVerses`  `mine`  `mk`  `mkBtn`  `mkDate`
 `mode`  `monthLabel`  `monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`  `moveActiveSelection`
 `moved`  `moveDrag`  `moveG`  `moveTaskTo`  `moveTaskToPickedDate`  `ms`
-`N`  `n`  `name`  `navigateDate`  `navigateWeek`  `needTemp`
+`n`  `N`  `name`  `navigateDate`  `navigateWeek`  `needTemp`
 `next`  `nextVerseManual`  `now`  `offTest`  `on`  `onCancel`
 `onDown`  `onEnd`  `onEventDateChange`  `onEventTimeToggle`  `onMove`  `onNotifyMasterToggle`
 `onStart`  `onTouchEnd`  `onTouchMove`  `onTouchStart`  `onUp`  `onVerseAlarmToggle`
