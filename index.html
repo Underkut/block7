@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0827-4  [production]  -->
+<!-- BLOCK7  v. 26-0827-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3340,7 +3340,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0827-4";
+const APP_VERSION = "v. 26-0827-5";
 
 // ══ 제품 구분 (BLOCK7 / Sweeter) ═════════════════════════════════════════
 // 같은 코드에서 두 제품을 뽑아낸다. index.html 은 늘 'block7' 이고,
@@ -11465,16 +11465,56 @@ function _tagartStyle(){return (ST.settings||{}).vfArtStyle==='organic'?'organic
 //    HB 의 말씀은 태그가 평균 4.5개인데 그중 그림 있는 게 보통 2~3개다.
 // 도안이 여럿인 묶음(성령=바람/불꽃/물)은 본문 낱말로 고르고, 맞는 게
 // 없으면 그중 무작위. 자리는 네 모서리 중 무작위 — 열 때마다 새로 고른다.
+// ⚠️ 강조 문구와 그림이 따로 놀면 안 된다 (v26-0827-5).
+//    한 말씀에 태그가 평균 4.5개인데 그중 그림 있는 게 보통 2~3개라, 예전에는
+//    그중 하나를 그냥 랜덤으로 집었다. 그러다 보니 시트 '강조 문구' 열에서
+//    "순종"을 짚어 놓은 말씀에 엉뚱하게 '평안' 그림이 뜨는 일이 생겼다.
+//    이제 후보 묶음마다 점수를 매겨 **강조 문구와 가까운 쪽**을 고른다.
+//      · 강조 문구 안에 그 묶음의 태그가 보이면 → 글자 수 × 3 점
+//      · 강조가 없거나 안 걸리면 본문에서 찾아 → 글자 수 × 1 점
+//      · 말씀에 실제로 달린 태그면 +2 점 (묶음의 다른 별칭보다 앞선다)
+//    점수가 같으면 예전처럼 그중에서 랜덤이다.
+//    같은 묶음의 **다른 별칭**도 같이 본다 — 태그는 '순종'인데 강조에는
+//    '청종'이라 적혀 있어도 이어진다.
+// ⚠️ 한 글자 태그(빛·죄·복·상·길·덕…)에는 부분일치를 쓰지 않는다. '회복'의 '복',
+//    '형상'의 '상'처럼 아무 데나 걸린다. 두 글자부터만 파묻힌 자리를 찾고,
+//    한 글자는 낱말이 통째로 그것일 때만 인정한다.
+function _tagartHay(str){ return String(str||'').replace(/[\s.,;:!?'"()\[\]<>·…‘’“”\-–—]/g,''); }
+function _tagartHit(word,hay,raw){
+  const w=_tagartHay(word);
+  if(!w||!hay)return 0;
+  if(w.length>=2)return hay.indexOf(w)>=0?w.length:0;
+  return (String(raw||'').split(/\s+/).some(t=>_tagartHay(t)===w))?1:0;
+}
 function _tagartPick(v){
   if(!v)return null;
-  const A=_tagartAliasMap(),cands=[];
+  const A=_tagartAliasMap(),seen={};let cands=[];
   (v.tags||[]).forEach(t=>{
-    const g=A[String(t).trim()];if(!g)return;
+    const tag=String(t).trim(),g=A[tag];if(!g||seen[g])return;
     const ids=_TAGART_MARKOF[g];
-    if(ids&&ids.length)cands.push(ids);
+    if(!ids||!ids.length)return;
+    seen[g]=1;cands.push({g:g,tag:tag,ids:ids});
   });
   if(!cands.length)return null;
-  const ids=cands[Math.floor(Math.random()*cands.length)];
+  if(cands.length>1){
+    // 강조 문구 — 시트 G열. 설정에서 강조를 꺼 두어도 뜻은 그대로라 그냥 쓴다.
+    // (_hiPhrases 와 같은 규칙 — 여기서는 태그 그림 묶음만으로 돌아가도록 직접 나눈다)
+    const hiRaw=String(v.hi||'').split(/[\/|\n\r]+/).join(' ');
+    const hi=_tagartHay(hiRaw),body=_tagartHay(v.krText),bodyRaw=String(v.krText||'');
+    cands.forEach(c=>{
+      let best=0;
+      String(_TAGART_GROUPSRC[c.g]||'').split('|').forEach(a=>{
+        const own=(a===c.tag)?2:0;
+        const h=hi?_tagartHit(a,hi,hiRaw):0;
+        const n=h?h*3+own:_tagartHit(a,body,bodyRaw)+own;
+        if(n>best)best=n;
+      });
+      c.score=best;
+    });
+    const top=Math.max.apply(null,cands.map(c=>c.score));
+    cands=cands.filter(c=>c.score===top);
+  }
+  const ids=cands[Math.floor(Math.random()*cands.length)].ids;
   let id=ids[0];
   if(ids.length>1){
     const body=String(v.krText||'');
