@@ -31,7 +31,7 @@ const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 {
   const marks = Object.keys(box._TAGART_MARKS);
-  sc.eq('도안 49개 (성령 3종·고난 3종이라 묶음보다 셋 많다)', marks.length, 49);
+  sc.eq('도안 50개 (성령 3종·고난 4종이라 묶음보다 넷 많다)', marks.length, 50);
   sc.eq('묶음 46개', Object.keys(box._TAGART_MARKOF).length, 46);
   sc.eq('별칭 369개', Object.keys(box.alias()).length, 369);
   // v26-0826-6 에 큰 묶음을 쪼개며 새로 그린 열하나
@@ -52,8 +52,8 @@ console.log('시나리오 1 — 도안과 표가 서로 맞는다');
   sc.eq('도안이 여럿인 묶음은 성령·고난 둘뿐이다',
     Object.entries(box._TAGART_MARKOF).filter(([, v]) => v.length > 1).map(([k]) => k).sort(),
     ['고난', '성령'].sort());
-  sc.eq('고난은 도안 3종을 랜덤으로 쓴다',
-    box._TAGART_MARKOF['고난'], ['m-narrow', 'm-narrowb', 'm-narrowc']);
+  sc.eq('고난은 도안 4종을 랜덤으로 쓴다',
+    box._TAGART_MARKOF['고난'], ['m-narrow', 'm-narrowb', 'm-narrowc', 'm-narrowd']);
   sc.eq('모든 도안에 그릴 선이 있다',
     marks.filter(i => !(box._TAGART_MARKS[i].p || []).length), []);
 }
