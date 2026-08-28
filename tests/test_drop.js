@@ -31,4 +31,15 @@ console.log('\n시나리오 2 — 첫 자리 계산은 기존 Y 로직에 맡긴
   sc.eq('좌우 절반으로 빅/스몰 가르는 규칙도 그대로',
         fn.includes('const wantSmall=smallEnabled&&cx>screenMid;'), true);
 }
+
+console.log('\n시나리오 3 — 순서 변경 뒤에도 할일의 모든 상태를 보존한다');
+{
+  const endDragStart = SRC.indexOf('function endDrag(cx,cy){');
+  const endDrag = SRC.slice(endDragStart,
+                            SRC.indexOf("document.addEventListener('mousemove'", endDragStart));
+  sc.eq('드래그한 원본 객체를 그대로 새 위치에 넣는다',
+        endDrag.includes('arr.splice(Math.max(0,Math.min(toI,arr.length)),0,item);'), true);
+  sc.eq('텍스트와 완료 여부만으로 객체를 다시 만들지 않는다',
+        endDrag.includes("{text:item.text||'',done:!!item.done}"), false);
+}
 sc.done();
