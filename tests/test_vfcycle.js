@@ -5,9 +5,8 @@
 // '셔플' = 필터가 있으면 그 필터 안에서, 없으면 말씀모음 설정의 활성 목록
 // 전체(randomVerseManual, ACTIVE_VERSES 기준)에서 무작위.
 //
-// 아이콘은 HB 가 스케치로 확정한 모양 그대로(사각 테두리 없음, 화살촉은
-// 위·아래 절반 선 하나씩). 필터 이름(vfTopLabel)이 떠 있으면 그 아래로,
-// 없으면 원래 자리 그대로.
+// 아이콘은 HB 가 스케치로 확정한 모양 그대로다. 닫기와 함께 30×30이며,
+// 태그 그림과 같은 색·투명도로 좌우 대칭인 상단 자리에 놓인다.
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
@@ -31,11 +30,11 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   const fn = slice('function _vfSyncCycleIcon(){', 'function _vfSetNav');
   sc.eq('셔플이면 셔플 아이콘', fn.includes('btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;'), true);
   sc.eq('상태를 클래스로도 표시해 둔다(색과는 무관)', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
-  // v26-0817-17 — HB 재조정: 아이콘 더 작게(15px), 선도 더 얇게(1.4)
+  // 선 굵기(1.4)는 유지하고 아이콘·버튼 크기를 30px로 통일한다.
   sc.eq('아이콘은 사각 테두리 없이 선만',
-        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
   sc.eq('셔플 아이콘도 같은 스타일',
-        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
   // ⚠️ 0817-16 에선 화살촉을 한 줄(상단 절반)만 썼는데, HB 가 "위아래 둘 다
   //    완성해 달라"고 다시 요청해 작은 V 로 되돌렸다 — 다리 길이(2,2)는 그대로.
   sc.eq('셔플 화살촉은 위아래 다 있는 작은 V',
@@ -48,26 +47,23 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
         SRC.includes('<path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3"/>'), true);
 }
 
-console.log('\n시나리오 3-1 — 순환·셔플을 색으로 구분하지 않는다 (v26-0817-18, HB 재요청)');
+console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 통일한다');
 {
-  // ⚠️ 예전엔 셔플일 때 --ac(강조색)를 썼다. HB 가 "굳이 진하게 할 필요
-  //    없이 위 필터 글자와 같은 색으로 통일해 달라"고 다시 요청했다.
-  sc.eq('셔플 전용 강조색 규칙이 없다', SRC.includes('.vf-cycle.vf-cycle-shuffle{color:'), false);
-  // 필터 이름(vf-toplabel)과 기본 버튼(vf-cycle)이 같은 색 변수를 쓴다
-  sc.eq('vf-toplabel 색', SRC.includes('.vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);\n  z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));'), true);
-  sc.eq('vf-cycle 도 같은 색 변수', /\.vf-cycle\{[\s\S]{0,260}color:var\(--vf-tx2,var\(--tx2\)\);/.test(SRC), true);
+  sc.eq('순환·셔플 버튼은 좌상단 30×30',
+        /\.vf-cycle\{[\s\S]{0,180}left:14px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);[\s\S]{0,100}width:30px;height:30px/.test(SRC), true);
+  sc.eq('닫기 버튼은 우상단 30×30',
+        /\.vf-close\{[\s\S]{0,180}top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);right:14px;[\s\S]{0,120}width:30px;height:30px/.test(SRC), true);
+  sc.eq('두 버튼은 태그 그림과 같은 색·기본 투명도',
+        (SRC.match(/color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/g)||[]).length >= 3, true);
+  sc.eq('모바일도 태그 그림과 같은 투명도',
+        SRC.includes('@media(hover:none){.vf-cycle,.vf-close{opacity:.3;}}'), true);
+  sc.eq('필터가 있어도 버튼을 아래로 내리지 않는다', SRC.includes('vf-cycle-below'), false);
+  sc.eq('전체 목록 버튼은 좌측 버튼과 겹치지 않는다', SRC.includes('.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;'), true);
 }
 
-console.log('\n시나리오 4 — 필터 이름이 있으면 그 아래로 내려간다');
+console.log('\n시나리오 4 — 아이콘과 버튼이 모두 30×30이다');
 {
-  const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  sc.eq('필터 표시 여부(on)로 below 클래스를 정한다',
-        sync.includes("cb.classList.toggle('vf-cycle-below',on);"), true);
-  sc.eq('맞출 때마다 아이콘도 같이 맞춘다', sync.includes('_vfSyncCycleIcon();'), true);
-
-  sc.eq('CSS — 위 화살표와 겹치지 않는 기본 자리', /\.vf-cycle\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 44px\)/.test(SRC), true);
-  sc.eq('CSS — 라벨 있을 때 더 내려간다',
-        /\.vf-cycle\.vf-cycle-below\{top:calc\(env\(safe-area-inset-top,0px\) \+ 64px\)/.test(SRC), true);
+  sc.eq('닫기 X 아이콘 30×30', SRC.includes('<svg width="30" height="30" viewBox="0 0 20 20"'), true);
   sc.eq('테두리·박스 없다', /\.vf-cycle\{[^}]*background:none;border:none/.test(SRC), true);
 }
 
