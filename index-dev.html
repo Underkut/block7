@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0828-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0828-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3353,7 +3353,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0828-4";
+const APP_VERSION = "v. 26-0828-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26130,9 +26130,52 @@ function _mgLogNested(b,l,c,baseKnown){ // memorizationLog: {날짜:{구간:[항
   return _mgContainerKeys(b,l,c,baseKnown,(b2,l2,c2)=>
     _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgEntryArray(b3,l3,c3,baseKnown)));
 }
-// 하루 안: big/small/events 는 구간(secId) 배열 단위로 3자,
-// trash·기타 키는 통째로 3자. 같은 날 같은 구간을 두 기기가 동시에
-// 고친 경우만 로컬 우선이 되고, 서로 다른 구간·다른 날짜는 전부 공존.
+// ══ 같은 구간 배열을 **항목 단위**로 합친다 (v26-0828-5) ══════════════
+// ⚠️ HB가 매일 겪던 그 증상의 정체다 — "아이폰에서 오전에 하나, 맥에서도 오전에
+//    하나 넣었는데 둘 중 하나만 남는다."
+//    예전에는 구간 배열을 **통째로** 3자 병합해서, 양쪽이 각각 새 할일을 더하면
+//    "둘 다 바꿨다 → 손에 든 쪽" 으로 판정돼 상대 기기의 그 구간이 통째로 버려졌다.
+//    그런데 서로 다른 항목을 하나씩 더한 것은 **충돌이 아니다.** 합쳐야 맞다.
+//
+// ⚠️⚠️ 항목에는 아직 고유번호가 없다(그건 Sync V2 의 몫 — docs/SYNC-V2.md).
+//    그래서 여기서는 **줄 수와 자리**로만 판단한다:
+//      · 양쪽 다 base 보다 짧지 않다 → 앞의 base 길이만큼은 자리끼리 3자,
+//        그 뒤에 붙은 것은 양쪽 다 새로 넣은 것이므로 둘 다 살린다
+//      · 한쪽이라도 짧아졌다(삭제·재정렬) → **예전 규칙 그대로** 통째로 간다
+//        (고유번호 없이 그것까지 자동으로 정하려 들면 지운 할일이 되살아난다)
+//    이 물러섬이 이 함수의 안전장치다. 없애지 말 것.
+function _mgTaskArray(b,l,c,baseKnown){
+  if(l===undefined)return c;
+  if(c===undefined)return l;
+  if(!Array.isArray(l)||!Array.isArray(c))return _mgWhole(b,l,c,baseKnown);
+  const lj=_mgJ(l),cj=_mgJ(c);
+  if(lj===cj)return l;
+  if(!baseKnown||!Array.isArray(b))return _mgWhole(b,l,c,baseKnown);
+  const bj=_mgJ(b);
+  if(lj===bj)return c;                       // 나는 안 바꿈 → 상대 것
+  if(cj===bj)return l;                       // 상대는 안 바꿈 → 내 것
+  const n=b.length;
+  if(l.length<n||c.length<n)return _mgWhole(b,l,c,baseKnown);   // 줄었다 → 옛 규칙
+  const out=[];
+  for(let i=0;i<n;i++)out.push(_mgTaskOne(b[i],l[i],c[i]));
+  for(let i=n;i<l.length;i++)out.push(l[i]);  // 이 기기가 새로 넣은 것
+  for(let i=n;i<c.length;i++)out.push(c[i]);  // 다른 기기가 새로 넣은 것
+  return out;
+}
+// 같은 자리의 한 항목. **제목이 같을 때만** 칸 단위로 합친다 — 그래야
+// "한쪽은 완료 체크, 한쪽은 중요 표시" 가 둘 다 산다.
+// ⚠️ 제목이 다르면 순서가 바뀐 것일 수 있다. 그때 칸 단위로 섞으면 제목은 이쪽,
+//    완료는 저쪽인 **없던 할일**이 만들어진다 → 예전처럼 통째로 고른다.
+function _mgTaskOne(b,l,c){
+  if(_mgJ(l)===_mgJ(c))return l;
+  const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  if(isObj(b)&&isObj(l)&&isObj(c)&&String(l.text||'')===String(c.text||'')){
+    return _mgContainerKeys(b,l,c,true,(b2,l2,c2)=>_mgWhole(b2,l2,c2,true));
+  }
+  return _mgWhole(b,l,c,true);
+}
+// 하루 안: big/small/events 는 구간(secId)마다 **항목 단위**로 3자,
+// trash·기타 키는 통째로 3자. 서로 다른 구간·다른 날짜는 전부 공존.
 function _mgDay(b,l,c,baseKnown){
   const out={};
   const keys=new Set([...Object.keys(l||{}),...Object.keys(c||{})]);
@@ -26140,7 +26183,7 @@ function _mgDay(b,l,c,baseKnown){
     const bv=b?b[k]:undefined, lv=l?l[k]:undefined, cv=c?c[k]:undefined;
     let v;
     if(k==='big'||k==='small'||k==='events'){
-      v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+      v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgTaskArray(b2,l2,c2,baseKnown));
     }else{
       v=_mgWhole(bv,lv,cv,baseKnown);
     }
