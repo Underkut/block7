@@ -6,10 +6,13 @@
 // 이 설계의 전제다. 부팅 코드(19880줄 근처)와 같은 결정 규칙을 그대로 재현해
 // 그 전제를 시나리오로 고정한다. 이 테스트가 깨지면 이른 그리기(paint-first)를
 // 되돌리거나 병합 경로부터 고쳐야 한다.
-const { slice, makeScorer } = require('./_load');
+// ⚠️ 병합 엔진은 **개발본(index-dev.html)** 에서 떠온다. 운영본(index.html)은
+//    HB 가 개발본으로 확인하기 전까지 커밋되지 않기 때문이다 (CLAUDE.md 규칙).
+//    두 산출물의 앱 코드는 글자 하나까지 같다.
+const { sliceDev, makeScorer } = require('./_load');
 const sc = makeScorer();
 global.document = { visibilityState: 'visible', addEventListener: () => {} };
-eval(slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면'));
+eval(sliceDev('let _fbLastTouchTs=', '// 원격/병합 상태를 화면'));
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 
@@ -58,12 +61,16 @@ console.log('\n시나리오 2 — 이른 편집이 없으면 클라우드 우선
   sc.eq('클라우드 상태를 그대로 적용',m.days['2026-08-02'].big.am[0].text,'설교 준비 (수정됨)');
 }
 
-// ═══ 3. 같은 날짜를 양쪽에서 편집한 충돌 — 병합 엔진의 기존 규칙 그대로 ═══
-// 날짜(day) 단위로 판정한다: 양쪽 다 base 에서 그 날짜를 바꿨으면 로컬(지금
-// 만지는 기기) 쪽 날짜가 통째로 이긴다. 이건 이른 그리기가 새로 만든 규칙이
-// 아니라 실시간 리스너가 매일 쓰는 기존 규칙이며, 오프라인 편집도 동일하다.
-// (항목 단위 합집합으로 "개선"하려는 시도는 이 테스트를 바꾸는 것부터 시작할 것)
-console.log('\n시나리오 3 — 같은 날짜 동시 편집은 날짜 단위로 로컬 우선 (기존 규칙)');
+// ═══ 3. 같은 날짜·같은 구간을 양쪽에서 편집 — **둘 다 산다** (v26-0828-5에서 바뀜) ═══
+//
+// ⚠️ 이 시나리오는 v26-0828-4 까지 "충돌 난 날짜는 로컬 판이 통째로 이긴다" 를
+//    **정답으로** 못 박고 있었다. 즉 다른 기기가 같은 구간에 넣은 할일이 사라지는
+//    것이 설계상 의도였다. 그것이 HB가 매일 겪던 동기화 손실의 정체였다.
+//
+//    v26-0828-5 부터 구간 배열을 **항목 단위**로 합친다. 서로 다른 항목을 하나씩
+//    더한 것은 충돌이 아니므로 둘 다 살린다. 삭제·재정렬이 섞이면 예전 규칙으로
+//    물러선다 — 그 경계는 tests/test_taskmerge.js 가 지킨다.
+console.log('\n시나리오 3 — 같은 날짜·같은 구간 동시 추가는 둘 다 산다');
 {
   const base={days:{'2026-08-03':{big:{am:[{text:'원래 할일',done:false}]},small:{},trash:[]}},settings:{theme:'dark'}};
   const local=clone(base);
@@ -74,8 +81,8 @@ console.log('\n시나리오 3 — 같은 날짜 동시 편집은 날짜 단위�
   const texts=m.days['2026-08-03'].big.am.map(t=>t.text);
   sc.eq('원래 할일 생존',texts.includes('원래 할일'),true);
   sc.eq('이 기기의 이른 편집 생존',texts.includes('이 기기의 이른 편집'),true);
-  sc.eq('충돌 난 날짜는 로컬 판이 통째로 이긴다',texts.includes('다른 기기의 할일'),false);
-  sc.eq('다른 날짜가 아니라면 항목 수는 로컬 판 그대로',texts.length,2);
+  sc.eq('다른 기기의 할일도 생존',texts.includes('다른 기기의 할일'),true);
+  sc.eq('셋이 된다',texts.length,3);
 }
 
 // ═══ 4. base 없는 첫 부팅(새 기기)은 이른 편집이 있어도 규칙대로 ═══
