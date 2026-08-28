@@ -19,6 +19,25 @@ function slice(startMark, endMark) {
   return SRC.slice(a, b);
 }
 
+// ── 개발본에서 떠오기 ──
+// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인하기 전에는 커밋되지 않는다
+//    (CLAUDE.md 규칙). 그래서 아직 운영본에 없는 코드를 검사하는 테스트는
+//    **개발본(index-dev.html)** 에서 떠와야 한다 — 둘은 5줄(DEV_MODE 등)만
+//    다르고 앱 코드는 글자 하나까지 같다.
+const DEV_FILE = path.join(__dirname, '..', 'index-dev.html');
+const SRC_DEV = fs.existsSync(DEV_FILE) ? fs.readFileSync(DEV_FILE, 'utf-8') : SRC;
+
+function sliceFrom(text, startMark, endMark, whose) {
+  const a = text.indexOf(startMark);
+  if (a < 0) throw new Error(`[로더] 시작 표시를 찾지 못했어요(${whose}): ${startMark}`);
+  const b = text.indexOf(endMark, a);
+  if (b < 0) throw new Error(`[로더] 끝 표시를 찾지 못했어요(${whose}): ${endMark}`);
+  return text.slice(a, b);
+}
+function sliceDev(startMark, endMark) {
+  return sliceFrom(SRC_DEV, startMark, endMark, 'index-dev.html');
+}
+
 // 채점기
 function makeScorer() {
   const s = { pass: 0, fail: 0 };
@@ -34,4 +53,4 @@ function makeScorer() {
   return s;
 }
 
-module.exports = { SRC, slice, makeScorer };
+module.exports = { SRC, SRC_DEV, slice, sliceDev, makeScorer };

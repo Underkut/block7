@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0828-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0828-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3353,7 +3353,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0828-3";
+const APP_VERSION = "v. 26-0828-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4334,6 +4334,15 @@ window._fbScriptsReady=new Promise(resolve=>{
           <div style="display:flex;gap:6px;flex-shrink:0;">
             <button class="settings-btn" onclick="vpDiagToggle()">보기</button>
             <button class="settings-btn" onclick="vpDiagCopy()">복사</button>
+          </div>
+        </div>
+        <div class="settings-row" id="vpClickTestRow" style="margin-top:8px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">말씀 클릭 경로 테스트</div>
+            <div class="settings-row-desc">지금 목록에 있는 말씀 하나로 진짜와 같은 알림을 띄워요. 그 알림을 <b>직접 눌러</b> 전체화면까지 가는지 봅니다. ('기기' 테스트는 표시만 확인해요)</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="testVerseClickPath()">시작</button>
           </div>
         </div>
         <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:var(--font-number);font-size:10px;line-height:1.55;color:var(--tx2);"></div>
@@ -17700,7 +17709,7 @@ function _isDevAccount(){
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
   // 관리자 계정에서만 보이는 항목들 (일반 사용자에게는 필요 없거나 혼란만 줌)
-  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody']].forEach(([id])=>{
+  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow']].forEach(([id])=>{
     const el=document.getElementById(id);
     if(el)el.style.display=dev?'':'none';
   });
@@ -24627,35 +24636,74 @@ function _withTimeout(p,ms,fallback){
     new Promise(res=>setTimeout(()=>res(fallback),ms))
   ]);
 }
+// 시간 제한 + **결과의 정체**를 함께 돌려준다 (v26-0828-4).
+// ⚠️ _withTimeout 은 "성공했는데 값이 undefined" · "오류" · "시간 초과" 를 전부
+//    똑같은 값으로 돌려준다. 그래서 진단 기록에 시간 초과가 '완료'로 남았고,
+//    한 알림이 **어느 단계에서 끊겼는지** 아무도 알 수 없었다.
+//    진단에 쓰는 자리에는 반드시 이쪽을 쓴다 — {how:'ok'|'error'|'timeout', value, err, ms}
+function _withOutcome(p,ms,label){
+  const t0=Date.now();
+  const stamp=o=>{o.label=label;o.ms=Date.now()-t0;return o;};
+  return Promise.race([
+    Promise.resolve(p).then(v=>stamp({how:'ok',value:v}),
+                            e=>stamp({how:'error',err:(e&&e.message)||String(e)})),
+    new Promise(res=>setTimeout(()=>res(stamp({how:'timeout'})),ms))
+  ]);
+}
+// 결과 객체를 진단 기록에 넣을 짧은 글자로 (timeout 을 절대 '완료'로 적지 않는다)
+function _outcomeText(o){
+  if(!o||!o.how)return '알수없음';
+  if(o.how==='ok')return '성공('+o.ms+'ms)';
+  if(o.how==='timeout')return '시간초과('+o.ms+'ms)';
+  return '오류:'+(o.err||'?')+'('+o.ms+'ms)';
+}
+// ⚠️ 연결은 **하나만 열어 두고 다시 쓴다** (v26-0828-4).
+//    예전에는 읽기·쓰기 한 번마다 새로 열고 한 번도 닫지 않았다. 앱은 1.5초마다
+//    전달용 기록을 확인하므로 1분에 마흔 개씩 연결이 쌓였다.
+//    iOS 에서 멈추는 자리는 언제나 **open** 이다(페이지와 워커가 같은 DB 를 붙들면
+//    한쪽 open 이 응답하지 않는다). 그러니 매번 닫았다 여는 방식은 open 횟수를
+//    오히려 늘려 위험을 키운다 — "한 번 열고 계속 쓰기" 가 iOS 에서 더 안전하다.
+//    끊김(versionchange·close·오류)이 보이면 보관을 버려 다음 호출이 새로 연다.
+let _idbConn=null;
+function _idbForget(){_idbConn=null;}
 function _idbOpen(){
-  return new Promise((res,rej)=>{
-    const r=indexedDB.open('block7',1);
+  if(_idbConn)return _idbConn;
+  _idbConn=new Promise((res,rej)=>{
+    let r;
+    try{r=indexedDB.open('block7',1);}catch(e){rej(e);return;}
     r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv');};
-    r.onsuccess=()=>res(r.result);
-    r.onerror=()=>rej(r.error);
+    r.onsuccess=()=>{
+      const db=r.result;
+      try{
+        db.onversionchange=()=>{try{db.close();}catch(e){}_idbForget();};
+        db.onclose=()=>_idbForget();
+      }catch(e){}
+      res(db);
+    };
+    r.onerror=()=>{_idbForget();rej(r.error);};
   });
+  _idbConn.catch(()=>_idbForget());
+  return _idbConn;
 }
-function _idbGet(k){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readonly');
-    const q=tx.objectStore('kv').get(k);
-    q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);
-  })),1500,undefined);
+// 실제 저장소 작업 (시간 제한은 부르는 쪽에서 씌운다)
+function _idbRaw(mode,fn){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    let tx;
+    try{tx=db.transaction('kv',mode);}catch(e){_idbForget();rej(e);return;}
+    tx.onabort=()=>{_idbForget();rej(tx.error||new Error('abort'));};
+    fn(tx.objectStore('kv'),res,rej,tx);
+  }));
 }
-function _idbSet(k,v){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readwrite');
-    tx.objectStore('kv').put(v,k);
-    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })),1500,undefined);
-}
-function _idbDel(k){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readwrite');
-    tx.objectStore('kv').delete(k);
-    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })),1500,undefined);
-}
+function _idbGetRaw(k){return _idbRaw('readonly',(st,res,rej)=>{const q=st.get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+function _idbSetRaw(k,v){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+function _idbDelRaw(k){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.delete(k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+function _idbGet(k){return _withTimeout(_idbGetRaw(k),1500,undefined);}
+function _idbSet(k,v){return _withTimeout(_idbSetRaw(k,v),1500,undefined);}
+function _idbDel(k){return _withTimeout(_idbDelRaw(k),1500,undefined);}
+// 진단용 — 성공·시간초과·오류를 구분해서 돌려준다
+function _idbGetOutcome(k){return _withOutcome(_idbGetRaw(k),1500,'idbGet');}
+function _idbSetOutcome(k,v){return _withOutcome(_idbSetRaw(k,v),1500,'idbSet');}
+function _idbDelOutcome(k){return _withOutcome(_idbDelRaw(k),1500,'idbDel');}
 const NOTIF_LS_KEY='b7v1_notiflog';
 function _notifLogLSRead(){
   try{const v=JSON.parse(localStorage.getItem(NOTIF_LS_KEY)||'[]');return Array.isArray(v)?v:[];}
@@ -24692,6 +24740,72 @@ async function _notifLogRead(){
   return _notifLogLSRead().sort((a,b)=>(a.t||0)-(b.t||0));
 }
 // ══════════════════════════════════════════════════════════════
+//  알림 클릭 의도(intent) — 한 알림을 끝까지 따라가기 위한 표 (v26-0828-4)
+//
+//  그동안 "알림을 눌렀는데 앱 기본 화면만 뜬다" 를 짐작으로 고쳐 왔다.
+//  재시도와 대체 경로만 늘리다 보니, 정작 **어느 단계에서 끊겼는지**를
+//  아무도 증명하지 못했다. 그래서 알림 1건에 고유번호(intentId)를 붙이고
+//  워커→앱의 모든 단계를 그 번호로 이어 적는다.
+//
+//  ⚠️ Date.now() 만으로 중복을 가르지 말 것 — 같은 밀리초에 두 번 눌리거나
+//     기기 시계가 되돌아가면 서로 다른 알림이 같은 번호를 갖는다.
+// ══════════════════════════════════════════════════════════════
+const _NOTIF_INTENT_KEY='b7v1_notifintent';   // 기기 전용 (클라우드 동기화 대상 아님)
+const _NOTIF_INTENT_TTL=600000;               // 10분
+function _notifNewId(){
+  try{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();}catch(e){}
+  return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+}
+function _notifShortId(id){id=String(id||'');return id.length>8?id.slice(-8):id;}
+// 여러 통로(주소·워커 메시지·저장소)에서 오는 모양을 하나로 맞춘다.
+// 옛 서비스워커가 남긴 기록에는 intentId 가 없다 → ts 로 만들어 준다.
+function _notifIntentFrom(rec,source){
+  if(!rec||!rec.ref)return null;
+  const created=rec.createdAt||rec.ts||Date.now();
+  return {
+    intentId: rec.intentId||('ts:'+created),
+    ref: rec.ref,
+    createdAt: created,
+    source: rec.source||source||'?',
+    swVersion: rec.swVersion||'',
+    appVersion: APP_VERSION,
+    stage: rec.stage||'received',
+    retryCount: rec.retryCount||0,
+    expiresAt: rec.expiresAt||(created+_NOTIF_INTENT_TTL)
+  };
+}
+// ⚠️ 메시지로만 받은 의도는 지금까지 **어디에도 남지 않았다.** 앱이 막 켜지는
+//    중이라 말씀 목록이 없으면 재시도 차례를 다 쓰고 그대로 사라졌다.
+//    (아이폰에서 워커의 IndexedDB 저장이 시간초과된 경우가 정확히 이것이다)
+//    이제 받은 즉시 이 기기 저장소에 적어 두고, 전체화면이 확인된 뒤에만 지운다.
+function _notifIntentSave(it){
+  try{
+    if(!it||!it.ref)return;
+    localStorage.setItem(_NOTIF_INTENT_KEY,JSON.stringify(it));
+  }catch(e){}
+}
+function _notifIntentLoad(){
+  try{
+    const raw=localStorage.getItem(_NOTIF_INTENT_KEY);
+    if(!raw)return null;
+    const it=JSON.parse(raw);
+    if(!it||!it.ref)return null;
+    if(Date.now()>(it.expiresAt||0)){_notifIntentClear();return null;}
+    return it;
+  }catch(e){return null;}
+}
+function _notifIntentClear(){try{localStorage.removeItem(_NOTIF_INTENT_KEY);}catch(e){}}
+// 단계 기록 — 하나의 알림을 워커부터 화면까지 한 줄로 잇는다.
+function _notifStage(intent,stage,detail){
+  const id=intent&&intent.intentId;
+  _notifLog((id?('#'+_notifShortId(id)+' '):'')+stage+(detail?' — '+detail:''));
+}
+// 서비스워커 쪽 정보 (진단 화면에 앱 버전과 **따로** 보여준다).
+// 워커는 앱과 독립적으로 갱신되므로 둘이 다를 수 있고, 그 차이가 곧 단서다.
+let _swVerSeen='';
+let _swPingAt=0;
+
+// ══════════════════════════════════════════════════════════════
 //  알림 → 전체화면 (v26-0803-5 전면 재작성)
 //
 //  예전 방식은 "한 번 쏘고 끝"이라 조금만 어긋나면 조용히 실패했다.
@@ -24711,10 +24825,15 @@ async function _notifLogRead(){
 //   · 연 뒤에 "정말 그 말씀이 떠 있는지" 확인하고, 확인될 때까지 재시도한다
 //   · 확인된 뒤에만 전달용 기록을 지운다
 // ══════════════════════════════════════════════════════════════
-let _notifTarget=null;      // {ref, tok, src, tries}
+let _notifTarget=null;      // {ref, tok, src, tries, intent}
 let _notifTimer=null;
 let _notifDoneTok=0;        // 이미 처리 완료한 토큰 (같은 알림 두 번 열지 않게)
+const _notifDoneIds=new Set();   // 이미 처리 완료한 intentId
 const _NOTIF_TRY_MS=[0,120,300,600,1000,1600,2400,3500,5000];  // 확인될 때까지 이 간격으로
+// 단계 기록. ⚠️ 엔진만 떠서 돌리는 테스트에는 _notifStage 가 없다 — 없으면 조용히 넘어간다.
+function _notifMark(t,stage,detail){
+  try{if(typeof _notifStage==='function')_notifStage(t&&t.intent,stage,detail);}catch(e){}
+}
 
 function _notifSameRef(a,b){
   if(!a||!b)return false;
@@ -24739,7 +24858,10 @@ function _notifStep(){
     // 이미 그 말씀이 떠 있으면 끝 — 이때만 전달용 기록을 지운다
     if(_notifShowing(t.ref)){
       if(t.tok)_notifDoneTok=t.tok;
-      _clearPendingVerse();
+      if(t.intent&&t.intent.intentId)_notifDoneIds.add(t.intent.intentId);
+      _notifMark(t,'목표 말씀 표시 확인',`${t.tries}번째`);
+      _clearPendingVerse();            // ⚠️ 확인된 뒤에만 지운다
+      _notifMark(t,'pending 삭제·ack');
       _notifLog(`[${t.src}] ${t.ref} 전체화면 확인됨 (${t.tries}번째)`);
       _notifStop();
       return;
@@ -24752,7 +24874,9 @@ function _notifStep(){
       //    한 번 만에 포기해서 "종료 상태에서 알림 누르면 앱만 뜨던" 문제가 있었다.
       //    재시도 차례를 다 쓴 뒤에만 포기한다. (v26-0803-6)
       t.tries++;
+      if(t.intent)t.intent.retryCount=t.tries;
       if(t.tries>=_NOTIF_TRY_MS.length){
+        _notifMark(t,'말씀 목록 준비 안 됨',`${t.tries}번 시도 후 중단 — 의도는 남겨 둔다`);
         _notifLog(`[${t.src}] ${t.ref} — 말씀 목록에서 못 찾아 못 엶 (${t.tries}번 시도)`);
         _notifStop();
         return;
@@ -24760,15 +24884,19 @@ function _notifStep(){
       _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
       return;
     }
+    _notifMark(t,'목표 말씀 검색 성공',hit.ref||t.ref);
     _vfOverrideVerse=hit;
     openVerseFull(true);   // 덮인 화면 숨기기는 openVerseFull 안에서 처리된다
     _verseFullRender();               // 이미 떠 있던 경우에도 새 말씀으로 다시 그린다
+    _notifMark(t,'전체화면 render 호출');
   }catch(e){
     _notifLog(`[${t.src}] ${t.ref} 열기 오류: ${e&&e.message||e}`);
   }
   // 떴는지 다음 차례에 확인한다 (렌더가 한 박자 늦는 기기가 있다)
   t.tries++;
+  if(t.intent)t.intent.retryCount=t.tries;
   if(t.tries>=_NOTIF_TRY_MS.length){
+    _notifMark(t,'표시 확인 실패',`${t.tries}번 시도 — 기록·의도는 남겨 둔다`);
     _notifLog(`[${t.src}] ${t.ref} — ${t.tries}번 시도했지만 확인 실패. 기록은 남겨 둔다`);
     _notifStop();                     // 기록을 남겨 두면 다음 폴링이 다시 집어간다
     return;
@@ -24776,16 +24904,20 @@ function _notifStep(){
   _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
 }
 // ref: 장절 / src: 어느 경로로 들어왔는지 / tok: 알림 1건을 가리키는 토큰(기록의 ts)
-function _openVerseByRef(ref,src,tok){
+function _openVerseByRef(ref,src,tok,intent){
   if(!ref)return false;
   src=src||'?';
   tok=tok||0;
-  if(tok&&tok===_notifDoneTok)return false;            // 이미 처리한 알림
+  const iid=intent&&intent.intentId;
+  if(iid&&_notifDoneIds.has(iid))return false;         // 이미 처리한 알림 (고유번호 기준)
+  if(tok&&tok===_notifDoneTok)return false;            // 이미 처리한 알림 (옛 토큰 기준)
   // 지금 몰고 있는 것과 같은 알림이면 그대로 둔다 (여러 경로로 동시에 들어옴)
+  if(_notifTarget&&iid&&_notifTarget.intent&&_notifTarget.intent.intentId===iid)return false;
   if(_notifTarget&&_notifTarget.ref===ref&&(!tok||_notifTarget.tok===tok))return false;
   if(_notifShowing(ref)&&tok&&tok===_notifDoneTok)return false;
   _notifStop();
-  _notifTarget={ref,tok,src,tries:0};
+  _notifTarget={ref,tok,src,tries:0,intent:intent||null};
+  _notifMark(_notifTarget,'앱: 전체화면 열기 시작',`경로=${src}`);
   _notifLog(`[${src}] ${ref} 전체화면 열기 시작`);
   _notifStep();
   return true;
@@ -24799,10 +24931,18 @@ function _openVerseByRef(ref,src,tok){
 // {ref, ts} 를 그대로 돌려준다 — ts 가 곧 "이 알림 1건"을 가리키는 토큰이다.
 // ⚠️ 유효시간을 2분에서 5분으로 늘렸다. 앱이 뒤에 오래 있다 나오는 경우
 //    2분은 너무 짧아, 앞으로 나왔을 땐 이미 기록이 버려져 있었다.
+// ⚠️ 1.5초마다 불린다. 여기서 나는 시간초과를 매번 적으면 기록이 그것만으로
+//    가득 차므로 30초에 한 줄만 남긴다 — 대신 **성공으로 적지는 않는다.**
+let _pendReadWarnAt=0;
 async function _readPendingVerse(){
   // ⚠️ IndexedDB 를 먼저 본다. 캐시는 아이폰 홈화면 앱에서 안 남는다. (v26-0803-8)
   let d=null;
-  try{const v=await _idbGet('__pending_verse');if(v&&v.ref)d=v;}catch(e){}
+  const o=await _idbGetOutcome('__pending_verse');
+  if(o.how==='ok'&&o.value&&o.value.ref)d=o.value;
+  else if(o.how!=='ok'&&(Date.now()-_pendReadWarnAt)>30000){
+    _pendReadWarnAt=Date.now();
+    _notifLog('pending 읽기 '+_outcomeText(o));
+  }
   if(!d){
     try{
       if('caches'in window){
@@ -24813,11 +24953,13 @@ async function _readPendingVerse(){
     }catch(e){}
   }
   if(!d)return null;
-  if(Date.now()-(d.ts||0)>300000){_clearPendingVerse();return null;}
+  if(Date.now()-(d.ts||d.createdAt||0)>300000){_clearPendingVerse();return null;}
   return d;
 }
 async function _clearPendingVerse(){
+  _notifIntentClear();                   // 이 기기에 적어 둔 클릭 의도도 함께
   _idbDel('__pending_verse');            // 주 저장소
+  _notifAckToSW();                       // 워커에게 "다 받았다" 고 알린다
   try{
     if(!('caches'in window))return;
     const c=await caches.open('block7-msg');
@@ -24830,18 +24972,97 @@ function _verseRefFromUrl(){
     const q=new URLSearchParams(location.search);
     const ref=q.get('verse');
     const vt=parseInt(q.get('vt'),10)||0;   // 서비스워커가 실어 보낸 토큰
+    const vi=q.get('vi')||'';               // 서비스워커가 실어 보낸 고유번호
     if(ref)history.replaceState(null,'',location.pathname+location.hash);
-    return ref?{ref,ts:vt}:null;
+    return ref?{ref,ts:vt,intentId:vi||undefined,source:'주소'}:null;
   }catch(e){return null;}
+}
+// 로그인 화면이 떠 있으면 아직 열 때가 아니다.
+// ⚠️ 다리를 로그인보다 먼저 놓았기 때문에 생긴 새 경우다. 의도는 **버리지 않고**
+//    남겨 둔 채 기다린다 — 로그인이 끝나면 1.5초 폴링이 곧바로 집어간다.
+function _notifAuthBlocking(){
+  try{
+    const el=document.getElementById&&document.getElementById('authScreen');
+    return !!(el&&el.classList&&!el.classList.contains('hidden'));
+  }catch(e){return false;}
+}
+const _notifWaitLogged=new Set();      // 대기 중이라고 한 번만 적기 위한 것
+// 들어온 클릭 의도를 하나로 받아 처리한다 (주소·메시지·저장소·보관분 공통 입구)
+function _notifTakeIntent(rec,source){
+  const it=_notifIntentFrom(rec,source);
+  if(!it)return false;
+  if(_notifDoneIds.has(it.intentId))return false;
+  _notifIntentSave(it);                  // ⚠️ 화면에 띄우기 **전에** 남긴다
+  if(_notifAuthBlocking()){
+    if(!_notifWaitLogged.has(it.intentId)){
+      _notifWaitLogged.add(it.intentId);
+      _notifStage(it,'로그인 화면이라 대기','로그인 뒤 폴링이 다시 집는다');
+    }
+    return false;
+  }
+  return _openVerseByRef(it.ref,it.source,it.createdAt||0,it);
 }
 async function _openVerseFromLink(){
   const u=_verseRefFromUrl();
-  if(u&&u.ref)return _openVerseByRef(u.ref,'주소',u.ts||0);
+  if(u&&u.ref)return _notifTakeIntent(u,'주소');
   const p=await _readPendingVerse();
-  if(p&&p.ref)_openVerseByRef(p.ref,'남긴 기록',p.ts||0);
+  if(p&&p.ref)return _notifTakeIntent(p,'남긴 기록');
+  // ⚠️ 마지막 그물 — 메시지로만 받아 이 기기에 적어 둔 의도.
+  //    아이폰에서 워커의 IndexedDB 저장이 시간초과되면 위 두 통로가 모두 비어 있다.
+  const k=_notifIntentLoad();
+  if(k&&k.ref)return _notifTakeIntent(k,'보관된 의도');
+  return false;
 }
 // ② 서비스워커 메시지 (앱이 이미 열려 있는 경우)
+// ══════════════════════════════════════════════════════════════
+//  ⚠️⚠️ 이 다리는 **파이어베이스보다 먼저** 놓아야 한다 (v26-0828-4).
+//
+//  예전에는 _initVerseNotifBridge() 를 initAppUI() 안에서 불렀다. initAppUI 는
+//  ① Firebase SDK 로드 → ② 로그인 확인 → ③ 첫 Firestore 읽기 가 **모두 끝난 뒤에만**
+//  불린다. 그래서 종료 상태에서 알림을 눌러 앱이 새로 뜨는 동안 도착한
+//  브로드캐스트·focus·pageshow 를 받을 자리가 아예 없었다.
+//  더 나쁜 것은 SDK 가 못 올라온 경우다 — 그때는 부팅 코드가 initAppUI 앞에서
+//  return 해 버리므로 **다리가 영영 놓이지 않는다.** 로컬 그리기(paintAppUIFromLocal)
+//  는 이미 끝나 할일 화면이 떠 있으니, 사람 눈에는 정확히
+//  "알림을 눌렀는데 앱 기본 화면만 멀뚱멀뚱" 으로 보인다.
+//
+//  이제 이 함수는 스크립트가 읽히는 즉시 한 번 불린다. 여러 번 불려도
+//  리스너·타이머가 하나만 남도록 스스로 막는다.
+// ══════════════════════════════════════════════════════════════
+let _notifBridgeReady=false;
+let _notifPollTimer=null;
+// 워커에게 "이 알림 다 처리했다" 고 알린다 (워커가 들고 있는 pending 을 지운다)
+function _notifAckToSW(){
+  try{
+    const msg={type:'block7-intent-ack',at:Date.now()};
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
+      navigator.serviceWorker.controller.postMessage(msg);
+  }catch(e){}
+}
+// 앱이 받을 준비가 됐다고 워커에 알린다 (handshake).
+// ⚠️ 워커는 언제든 잠들 수 있어 메모리를 믿을 수 없다 — 워커의 주 통로는 여전히
+//    IndexedDB 의 pending 이고, 이 신호는 그것을 **한 번 더** 밀어 주는 보조다.
+let _notifReadySentAt=0;
+function _notifAnnounceReady(force){
+  const now=Date.now();
+  if(!force&&(now-_notifReadySentAt)<3000)return;   // 너무 자주 보내지 않는다
+  _notifReadySentAt=now;
+  const msg={type:'block7-app-ready',appVersion:APP_VERSION,at:now,
+             dev:(typeof DEV_MODE!=='undefined'&&DEV_MODE)?1:0};
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
+      navigator.serviceWorker.controller.postMessage(msg);
+  }catch(e){}
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready)
+      navigator.serviceWorker.ready.then(reg=>{
+        try{if(reg&&reg.active)reg.active.postMessage(msg);}catch(e){}
+      }).catch(()=>{});
+  }catch(e){}
+}
 function _initVerseNotifBridge(){
+  if(_notifBridgeReady)return;          // ⚠️ 두 번 불려도 리스너·타이머는 하나
+  _notifBridgeReady=true;
   try{
     if(navigator.serviceWorker){
       const onMsg=e=>{
@@ -24849,13 +25070,26 @@ function _initVerseNotifBridge(){
         // 서비스워커가 보내온 진단 기록을 이 기기 저장소에 남긴다
         // (아이폰은 캐시에 남지 않아 앱이 받아 적어야 기록이 보인다)
         if(d.type==='block7-swlog'&&d.entry){_notifLogLSPush(d.entry);return;}
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'SW 메시지',d.ts||0);
+        if(d.type==='block7-sw-pong'){_swVerSeen=d.swVersion||'';return;}
+        if(d.type==='block7-open-verse'&&d.ref){
+          _notifTakeIntent({ref:d.ref,ts:d.ts,createdAt:d.createdAt||d.ts,
+                            intentId:d.intentId,swVersion:d.swVersion,source:'SW 메시지'},'SW 메시지');
+        }
       };
       // addEventListener 만 쓰면 메시지 큐가 열리지 않아 조용히 버려진다.
       // onmessage 로 붙이면 큐가 자동으로 열리고, 혹시 몰라 startMessages 도 부른다.
       navigator.serviceWorker.onmessage=onMsg;
       navigator.serviceWorker.addEventListener('message',onMsg);
       if(navigator.serviceWorker.startMessages)navigator.serviceWorker.startMessages();
+      // 워커 버전 물어보기 — 앱 버전과 따로 보여줘야 어느 쪽이 낡았는지 보인다
+      try{
+        _swPingAt=Date.now();
+        if(navigator.serviceWorker.controller)
+          navigator.serviceWorker.controller.postMessage({type:'block7-sw-ping'});
+        navigator.serviceWorker.ready.then(reg=>{
+          try{if(reg&&reg.active)reg.active.postMessage({type:'block7-sw-ping'});}catch(e){}
+        }).catch(()=>{});
+      }catch(e){}
     }
   }catch(e){}
   // 앱이 이미 떠 있는 상태로 알림을 누르면 화면 전환 이벤트가 안 생길 수 있다.
@@ -24864,7 +25098,7 @@ function _initVerseNotifBridge(){
   // ⚠️ 앱이 앞으로 나오는 순간과 서비스워커가 기록을 저장하는 순간은 경쟁한다.
   //    한 번만 확인하면 아직 저장 전이라 놓치고, 그 뒤로는 1.5초 폴링에만
   //    기대야 했다. 앞으로 나올 때 짧게 여러 번 확인해 이 틈을 메운다.
-  const recheckBurst=()=>{[0,250,600,1200,2000].forEach(ms=>setTimeout(recheck,ms));};
+  const recheckBurst=()=>{_notifAnnounceReady();[0,250,600,1200,2000].forEach(ms=>setTimeout(recheck,ms));};
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible')recheckBurst();
   });
@@ -24876,7 +25110,10 @@ function _initVerseNotifBridge(){
       const bc=new BroadcastChannel('block7');
       bc.onmessage=e=>{
         const d=(e&&e.data)||{};
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'브로드캐스트',d.ts||0);
+        if(d.type==='block7-open-verse'&&d.ref){
+          _notifTakeIntent({ref:d.ref,ts:d.ts,createdAt:d.createdAt||d.ts,
+                            intentId:d.intentId,swVersion:d.swVersion,source:'브로드캐스트'},'브로드캐스트');
+        }
       };
     }
   }catch(e){}
@@ -24893,31 +25130,86 @@ function _initVerseNotifBridge(){
   //    있었다 (짧게 다녀오면 정상 = 이벤트가 제대로 오는 경우만 동작했던 것).
   //    숨어 있는 동안엔 어차피 iOS 가 타이머를 얼리므로 비용 걱정은 없다.
   let _lastTick=Date.now();
-  setInterval(()=>{
+  if(_notifPollTimer)clearInterval(_notifPollTimer);
+  _notifPollTimer=setInterval(()=>{
     const now=Date.now();
     const frozen=now-_lastTick>5000;   // 타이머가 5초 넘게 얼었었다 = 방금 깨어남
     _lastTick=now;
     if(frozen){
       // 깨어난 직후는 워커의 기록 저장과 경쟁하므로 여러 번 확인한다
+      _notifLog('앱이 오래 멈췄다 깨어남 — 다시 확인');
       recheckBurst();
       return;
     }
     recheck();
   },1500);
-  _notifLog('앱 수신 준비 완료 ('+APP_VERSION+')');
+  _notifAnnounceReady(true);
+  _notifLog('앱 조기 브리지 준비 완료 ('+APP_VERSION+')');
+  // 주소·저장소에 이미 들어와 있는 의도를 곧바로 집는다.
+  // ⚠️ 한 박자 미룬다 — 지금은 아직 첫 그리기(paintAppUIFromLocal) 전이라,
+  //    여기서 곧장 전체화면을 열면 '덮인 화면 숨겼다 되살리기'가 빈 화면을 기억한다.
+  setTimeout(recheck,0);
 }
+// ⚠️⚠️ **여기서 곧바로 한 번 놓는다.** Firebase·로그인·Firestore 를 하나도
+//    기다리지 않는다. initAppUI 에서 부르던 것이 이 문제의 절반이었다.
+//    (initAppUI 는 SDK 가 못 올라오면 아예 불리지 않는다 — 위 설명 참고)
+try{_initVerseNotifBridge();}catch(e){console.warn('알림 다리 설치 실패:',e);}
+
+// ── 말씀 클릭 경로 테스트 ──
+// ⚠️ '기기 알림 테스트' 는 **표시만** 확인한다 (ref 가 없어 눌러도 열 말씀이 없다).
+//    이것은 지금 목록에 실제로 있는 말씀 하나를 골라 진짜 푸시와 **같은 모양**의
+//    알림을 띄운다. 그 알림을 직접 누르면 notificationclick → 워커 → 앱 →
+//    전체화면 까지 실제 경로를 그대로 지나간다.
+async function testVerseClickPath(){
+  try{
+    if(_notifySupport()!=='ok'){showToast('이 환경에선 알림을 지원하지 않아요');return;}
+    const pool=(typeof ACTIVE_VERSES==='function'?ACTIVE_VERSES():[])||[];
+    const list=pool.length?pool:((typeof ALL_VERSES==='function'?ALL_VERSES():[])||[]);
+    const v=list.find(x=>x&&x.ref);
+    if(!v){showToast('목록에 말씀이 없어 테스트할 수 없어요');return;}
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){showToast('알림 권한이 없어요');return;}
+    let reg=await navigator.serviceWorker.getRegistration('firebase-messaging-sw.js');
+    if(!reg)reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const id=_notifNewId();
+    _notifLog('#'+_notifShortId(id)+' 클릭 경로 테스트 알림 표시 — '+v.ref);
+    await reg.showNotification('BLOCK7 클릭 경로 테스트',{
+      body:((v.krText||'').trim().slice(0,60)+'\n'+v.ref).trim(),
+      icon:'icon.png',badge:'icon.png',
+      tag:'block7-clickpath',renotify:true,
+      data:{ref:v.ref,intentId:id,type:'verse',test:1}
+    });
+    showToast('알림을 띄웠어요 — 알림센터에서 **그 알림을 직접 눌러** 주세요');
+  }catch(e){
+    console.warn('클릭 경로 테스트 실패:',e);
+    showToast('클릭 경로 테스트에 실패했어요. 알림 권한을 확인해주세요');
+  }
+}
+
 // ── 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) ──
 let _vpDiagTimer=null,_vpDiagLastText='';
 function _vpDiagFmt(e){
   const d=new Date(e.t),p=n=>String(n).padStart(2,'0');
   return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} [${e.s==='SW'?'워커':'앱'}] ${e.m}`;
 }
+// 진단 머리줄 — 앱과 서비스워커는 **따로** 갱신된다. 어느 쪽이 낡았는지가 곧 단서다.
+function _vpDiagHead(){
+  let ctl='없음';
+  try{ctl=(navigator.serviceWorker&&navigator.serviceWorker.controller)?'있음':'없음';}catch(e){}
+  const sw=_swVerSeen||(_swPingAt?'(응답 없음 — 옛 워커)':'(확인 중)');
+  return `앱 ${APP_VERSION} · 워커 ${sw} · controller ${ctl}`;
+}
 async function vpDiagRender(){
   const b=document.getElementById('vpDiagBody');
   if(!b||b.style.display!=='block')return;
   const list=await _notifLogRead();
-  _vpDiagLastText=list.length?list.map(_vpDiagFmt).join('\n'):'';
+  _vpDiagLastText=(list.length?list.map(_vpDiagFmt).join('\n'):'')+'\n— '+_vpDiagHead();
   b.textContent='';
+  const head=document.createElement('div');
+  head.textContent=_vpDiagHead();
+  head.style.cssText='color:var(--tx3);margin-bottom:4px;';
+  b.appendChild(head);
   const clr=document.createElement('div');
   clr.textContent='기록 지우기';
   clr.style.cssText='cursor:pointer;color:var(--tx3);text-decoration:underline;margin-bottom:6px;';
@@ -24984,6 +25276,8 @@ function initAppUI(){
   applyUiScale(); // 저장된 화면 크기(뷰포트 스케일) 적용
   try{_applySneakMaxW();}catch(e){}  // 스닉픽 한 줄 폭 (기기별 저장값)
   try{applyVfTheme();}catch(e){} // 말씀 전체화면 테마 (세리프면 폰트도 미리 준비)
+  // 알림 다리는 이미 스크립트 첫머리에서 놓였다(idempotent — 여기선 아무 일도 안 한다).
+  // 목록이 이제 막 준비됐을 수 있으니 들어와 있는 의도를 한 번 더 확인한다.
   try{_initVerseNotifBridge();_openVerseFromLink();}catch(e){}  // 푸시 알림으로 들어온 경우
   // D뷰가 기본 뷰이므로 시작 시 분할 클래스 활성 (600px 미만에선 CSS가 무시)
   document.body.classList.add('split-d');
