@@ -23084,6 +23084,9 @@ function renderSettingsPanel(){
   _syncCarryScopeBtns();
   _syncTimeStepBtns();
   _syncDevInboxVisibility();
+  // 동기화 충돌 칸은 **열린 충돌이 있을 때만** 보인다.
+  // (동기화 코드는 if(!DEV_MODE) 안에 있어 창구를 통해 부른다)
+  if(typeof window._cfSyncVisibility==='function')window._cfSyncVisibility();
   if(document.getElementById('setMonthTitleYear'))document.getElementById('setMonthTitleYear').checked=s.monthTitleYear!==false;
   const mMode=s.mviewMemMode||'cross';
   document.getElementById('mviewMemCross')?.classList.toggle('on',mMode==='cross');
@@ -26712,6 +26715,7 @@ async function _cfFetchCloud(){
     _cfSaveLocal();_cfSyncVisibility();
   }catch(e){console.warn('충돌 기록 조회 실패:',(e&&e.code)||e);}
 }
+window._cfSyncVisibility=_cfSyncVisibility;   // 설정창을 다시 그릴 때 부르는 창구
 function _cfSyncVisibility(){
   const sec=document.getElementById('syncConflictSection');
   if(!sec)return;
