@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0827-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0828-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3356,7 +3356,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0827-7";
+const APP_VERSION = "v. 26-0828-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19672,11 +19672,12 @@ function endDrag(cx,cy){
         const arr=getBigs(k,dt.toId);
         // cross-type moves don't need index adjustment (came from different array)
         if(DR.fromId===dt.toId&&DR.type==='big'&&toI>DR.fromI)toI--;
-        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,{text:item.text||'',done:!!item.done});
+        // 원본 객체를 그대로 옮겨 중요 표시·반복·이월 횟수 같은 상태도 보존한다.
+        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,item);
       } else {
         const arr=getSmalls(k,dt.toId);
         if(DR.fromId===dt.toId&&DR.type==='small'&&toI>DR.fromI)toI--;
-        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,{text:item.text||'',done:!!item.done});
+        arr.splice(Math.max(0,Math.min(toI,arr.length)),0,item);
       }
       save();
       new Set([DR.fromId,dt.toId]).forEach(id=>renderSecBody(id));
