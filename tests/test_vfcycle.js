@@ -5,8 +5,8 @@
 // '셔플' = 필터가 있으면 그 필터 안에서, 없으면 말씀모음 설정의 활성 목록
 // 전체(randomVerseManual, ACTIVE_VERSES 기준)에서 무작위.
 //
-// 아이콘은 HB 가 스케치로 확정한 모양 그대로다. 닫기와 함께 30×30이며,
-// 태그 그림과 같은 색·투명도로 좌우 대칭인 상단 자리에 놓인다.
+// 아이콘은 HB 가 스케치로 확정한 모양 그대로다. 보이는 크기는 17×17이고,
+// 30×30 버튼 안에서 태그 그림과 같은 색·투명도로 좌우 대칭인 상단 자리에 놓인다.
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
@@ -30,11 +30,11 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   const fn = slice('function _vfSyncCycleIcon(){', 'function _vfSetNav');
   sc.eq('셔플이면 셔플 아이콘', fn.includes('btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;'), true);
   sc.eq('상태를 클래스로도 표시해 둔다(색과는 무관)', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
-  // 선 굵기(1.4)는 유지하고 아이콘·버튼 크기를 30px로 통일한다.
+  // 선 굵기(1.4)는 유지하고 보이는 아이콘 크기만 17px로 맞춘다.
   sc.eq('아이콘은 사각 테두리 없이 선만',
-        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
   sc.eq('셔플 아이콘도 같은 스타일',
-        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
   // ⚠️ 0817-16 에선 화살촉을 한 줄(상단 절반)만 썼는데, HB 가 "위아래 둘 다
   //    완성해 달라"고 다시 요청해 작은 V 로 되돌렸다 — 다리 길이(2,2)는 그대로.
   sc.eq('셔플 화살촉은 위아래 다 있는 작은 V',
@@ -61,9 +61,9 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
   sc.eq('전체 목록 버튼은 좌측 버튼과 겹치지 않는다', SRC.includes('.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;'), true);
 }
 
-console.log('\n시나리오 4 — 아이콘과 버튼이 모두 30×30이다');
+console.log('\n시나리오 4 — 보이는 아이콘은 17×17, 버튼은 30×30이다');
 {
-  sc.eq('닫기 X 아이콘 30×30', SRC.includes('<svg width="30" height="30" viewBox="0 0 20 20"'), true);
+  sc.eq('닫기 X 아이콘 17×17', SRC.includes('<svg width="17" height="17" viewBox="0 0 20 20"'), true);
   sc.eq('테두리·박스 없다', /\.vf-cycle\{[^}]*background:none;border:none/.test(SRC), true);
 }
 
