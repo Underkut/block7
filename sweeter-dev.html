@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0828-3  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0828-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3353,7 +3353,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0828-3";
+const APP_VERSION = "v. 26-0828-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -3964,6 +3964,13 @@ window._fbScriptsReady=new Promise(resolve=>{
         <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
       </div>
 
+      <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
+      <div class="settings-section" id="syncConflictSection" style="display:none;">
+        <div class="settings-section-title">동기화 충돌</div>
+        <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">다른 기기와 같은 것을 동시에 고쳐서 자동으로 정할 수 없는 것이 있어요. 어느 쪽도 지워지지 않았고, 양쪽 다 보관돼 있어요.</div>
+        <button class="settings-btn" onclick="openSyncConflicts()">충돌 확인하고 정하기</button>
+      </div>
+
       <!-- 데이터 복구 (로컬 ↔ 클라우드 비교) — 개발자 계정에서만 보임 -->
       <div class="settings-section" id="dataRecoverySection" data-lv="p" style="display:none;">
         <div class="settings-section-title">데이터 복구</div>
@@ -4334,6 +4341,15 @@ window._fbScriptsReady=new Promise(resolve=>{
           <div style="display:flex;gap:6px;flex-shrink:0;">
             <button class="settings-btn" onclick="vpDiagToggle()">보기</button>
             <button class="settings-btn" onclick="vpDiagCopy()">복사</button>
+          </div>
+        </div>
+        <div class="settings-row" id="vpClickTestRow" style="margin-top:8px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">말씀 클릭 경로 테스트</div>
+            <div class="settings-row-desc">지금 목록에 있는 말씀 하나로 진짜와 같은 알림을 띄워요. 그 알림을 <b>직접 눌러</b> 전체화면까지 가는지 봅니다. ('기기' 테스트는 표시만 확인해요)</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="testVerseClickPath()">시작</button>
           </div>
         </div>
         <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:var(--font-number);font-size:10px;line-height:1.55;color:var(--tx2);"></div>
@@ -4737,6 +4753,20 @@ window._fbScriptsReady=new Promise(resolve=>{
 
 <!-- @닉네임으로 태그된 할일 모아보기 -->
 <div class="event-modal-overlay" id="taggedTasksOverlay" style="display:none" onclick="closeContactTasksPopup()"></div>
+<!-- 동기화 충돌 해결 (v26-0828-6) — 진짜 충돌이 있을 때만 연다.
+     기기를 바꿨다는 이유만으로는 절대 뜨지 않는다. -->
+<div class="event-modal-overlay" id="syncConflictOverlay" style="display:none;z-index:5200;" onclick="closeSyncConflicts()"></div>
+<div class="event-modal contacts-modal" id="syncConflictModal" style="display:none;z-index:5201;width:340px;">
+  <div class="modal-head">
+    <span class="modal-head-gap"></span>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">동기화 충돌 해결</div>
+    <button class="modal-x modal-x-inline" onclick="closeSyncConflicts()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+  <div id="syncConflictBody"></div>
+</div>
+
 <div class="event-modal contacts-modal" id="taggedTasksModal" style="display:none"></div>
 
 <!-- @닉네임 배지 탭 시 뜨는 액션 메뉴 (전화/문자/이메일/카톡) -->
@@ -7783,6 +7813,7 @@ const _ESC_CLOSERS=[
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   // 팝업류
+  ['syncConflictModal',()=>closeSyncConflicts()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
   ['cellTodoModal',   ()=>closeCellTodo()],
@@ -17700,7 +17731,7 @@ function _isDevAccount(){
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
   // 관리자 계정에서만 보이는 항목들 (일반 사용자에게는 필요 없거나 혼란만 줌)
-  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody']].forEach(([id])=>{
+  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow']].forEach(([id])=>{
     const el=document.getElementById(id);
     if(el)el.style.display=dev?'':'none';
   });
@@ -23053,6 +23084,9 @@ function renderSettingsPanel(){
   _syncCarryScopeBtns();
   _syncTimeStepBtns();
   _syncDevInboxVisibility();
+  // 동기화 충돌 칸은 **열린 충돌이 있을 때만** 보인다.
+  // (동기화 코드는 if(!DEV_MODE) 안에 있어 창구를 통해 부른다)
+  if(typeof window._cfSyncVisibility==='function')window._cfSyncVisibility();
   if(document.getElementById('setMonthTitleYear'))document.getElementById('setMonthTitleYear').checked=s.monthTitleYear!==false;
   const mMode=s.mviewMemMode||'cross';
   document.getElementById('mviewMemCross')?.classList.toggle('on',mMode==='cross');
@@ -24627,35 +24661,74 @@ function _withTimeout(p,ms,fallback){
     new Promise(res=>setTimeout(()=>res(fallback),ms))
   ]);
 }
+// 시간 제한 + **결과의 정체**를 함께 돌려준다 (v26-0828-4).
+// ⚠️ _withTimeout 은 "성공했는데 값이 undefined" · "오류" · "시간 초과" 를 전부
+//    똑같은 값으로 돌려준다. 그래서 진단 기록에 시간 초과가 '완료'로 남았고,
+//    한 알림이 **어느 단계에서 끊겼는지** 아무도 알 수 없었다.
+//    진단에 쓰는 자리에는 반드시 이쪽을 쓴다 — {how:'ok'|'error'|'timeout', value, err, ms}
+function _withOutcome(p,ms,label){
+  const t0=Date.now();
+  const stamp=o=>{o.label=label;o.ms=Date.now()-t0;return o;};
+  return Promise.race([
+    Promise.resolve(p).then(v=>stamp({how:'ok',value:v}),
+                            e=>stamp({how:'error',err:(e&&e.message)||String(e)})),
+    new Promise(res=>setTimeout(()=>res(stamp({how:'timeout'})),ms))
+  ]);
+}
+// 결과 객체를 진단 기록에 넣을 짧은 글자로 (timeout 을 절대 '완료'로 적지 않는다)
+function _outcomeText(o){
+  if(!o||!o.how)return '알수없음';
+  if(o.how==='ok')return '성공('+o.ms+'ms)';
+  if(o.how==='timeout')return '시간초과('+o.ms+'ms)';
+  return '오류:'+(o.err||'?')+'('+o.ms+'ms)';
+}
+// ⚠️ 연결은 **하나만 열어 두고 다시 쓴다** (v26-0828-4).
+//    예전에는 읽기·쓰기 한 번마다 새로 열고 한 번도 닫지 않았다. 앱은 1.5초마다
+//    전달용 기록을 확인하므로 1분에 마흔 개씩 연결이 쌓였다.
+//    iOS 에서 멈추는 자리는 언제나 **open** 이다(페이지와 워커가 같은 DB 를 붙들면
+//    한쪽 open 이 응답하지 않는다). 그러니 매번 닫았다 여는 방식은 open 횟수를
+//    오히려 늘려 위험을 키운다 — "한 번 열고 계속 쓰기" 가 iOS 에서 더 안전하다.
+//    끊김(versionchange·close·오류)이 보이면 보관을 버려 다음 호출이 새로 연다.
+let _idbConn=null;
+function _idbForget(){_idbConn=null;}
 function _idbOpen(){
-  return new Promise((res,rej)=>{
-    const r=indexedDB.open('block7',1);
+  if(_idbConn)return _idbConn;
+  _idbConn=new Promise((res,rej)=>{
+    let r;
+    try{r=indexedDB.open('block7',1);}catch(e){rej(e);return;}
     r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv');};
-    r.onsuccess=()=>res(r.result);
-    r.onerror=()=>rej(r.error);
+    r.onsuccess=()=>{
+      const db=r.result;
+      try{
+        db.onversionchange=()=>{try{db.close();}catch(e){}_idbForget();};
+        db.onclose=()=>_idbForget();
+      }catch(e){}
+      res(db);
+    };
+    r.onerror=()=>{_idbForget();rej(r.error);};
   });
+  _idbConn.catch(()=>_idbForget());
+  return _idbConn;
 }
-function _idbGet(k){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readonly');
-    const q=tx.objectStore('kv').get(k);
-    q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);
-  })),1500,undefined);
+// 실제 저장소 작업 (시간 제한은 부르는 쪽에서 씌운다)
+function _idbRaw(mode,fn){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    let tx;
+    try{tx=db.transaction('kv',mode);}catch(e){_idbForget();rej(e);return;}
+    tx.onabort=()=>{_idbForget();rej(tx.error||new Error('abort'));};
+    fn(tx.objectStore('kv'),res,rej,tx);
+  }));
 }
-function _idbSet(k,v){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readwrite');
-    tx.objectStore('kv').put(v,k);
-    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })),1500,undefined);
-}
-function _idbDel(k){
-  return _withTimeout(_idbOpen().then(db=>new Promise((res,rej)=>{
-    const tx=db.transaction('kv','readwrite');
-    tx.objectStore('kv').delete(k);
-    tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);
-  })),1500,undefined);
-}
+function _idbGetRaw(k){return _idbRaw('readonly',(st,res,rej)=>{const q=st.get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+function _idbSetRaw(k,v){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+function _idbDelRaw(k){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.delete(k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+function _idbGet(k){return _withTimeout(_idbGetRaw(k),1500,undefined);}
+function _idbSet(k,v){return _withTimeout(_idbSetRaw(k,v),1500,undefined);}
+function _idbDel(k){return _withTimeout(_idbDelRaw(k),1500,undefined);}
+// 진단용 — 성공·시간초과·오류를 구분해서 돌려준다
+function _idbGetOutcome(k){return _withOutcome(_idbGetRaw(k),1500,'idbGet');}
+function _idbSetOutcome(k,v){return _withOutcome(_idbSetRaw(k,v),1500,'idbSet');}
+function _idbDelOutcome(k){return _withOutcome(_idbDelRaw(k),1500,'idbDel');}
 const NOTIF_LS_KEY='b7v1_notiflog';
 function _notifLogLSRead(){
   try{const v=JSON.parse(localStorage.getItem(NOTIF_LS_KEY)||'[]');return Array.isArray(v)?v:[];}
@@ -24692,6 +24765,72 @@ async function _notifLogRead(){
   return _notifLogLSRead().sort((a,b)=>(a.t||0)-(b.t||0));
 }
 // ══════════════════════════════════════════════════════════════
+//  알림 클릭 의도(intent) — 한 알림을 끝까지 따라가기 위한 표 (v26-0828-4)
+//
+//  그동안 "알림을 눌렀는데 앱 기본 화면만 뜬다" 를 짐작으로 고쳐 왔다.
+//  재시도와 대체 경로만 늘리다 보니, 정작 **어느 단계에서 끊겼는지**를
+//  아무도 증명하지 못했다. 그래서 알림 1건에 고유번호(intentId)를 붙이고
+//  워커→앱의 모든 단계를 그 번호로 이어 적는다.
+//
+//  ⚠️ Date.now() 만으로 중복을 가르지 말 것 — 같은 밀리초에 두 번 눌리거나
+//     기기 시계가 되돌아가면 서로 다른 알림이 같은 번호를 갖는다.
+// ══════════════════════════════════════════════════════════════
+const _NOTIF_INTENT_KEY='b7v1_notifintent';   // 기기 전용 (클라우드 동기화 대상 아님)
+const _NOTIF_INTENT_TTL=600000;               // 10분
+function _notifNewId(){
+  try{if(window.crypto&&crypto.randomUUID)return crypto.randomUUID();}catch(e){}
+  return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+}
+function _notifShortId(id){id=String(id||'');return id.length>8?id.slice(-8):id;}
+// 여러 통로(주소·워커 메시지·저장소)에서 오는 모양을 하나로 맞춘다.
+// 옛 서비스워커가 남긴 기록에는 intentId 가 없다 → ts 로 만들어 준다.
+function _notifIntentFrom(rec,source){
+  if(!rec||!rec.ref)return null;
+  const created=rec.createdAt||rec.ts||Date.now();
+  return {
+    intentId: rec.intentId||('ts:'+created),
+    ref: rec.ref,
+    createdAt: created,
+    source: rec.source||source||'?',
+    swVersion: rec.swVersion||'',
+    appVersion: APP_VERSION,
+    stage: rec.stage||'received',
+    retryCount: rec.retryCount||0,
+    expiresAt: rec.expiresAt||(created+_NOTIF_INTENT_TTL)
+  };
+}
+// ⚠️ 메시지로만 받은 의도는 지금까지 **어디에도 남지 않았다.** 앱이 막 켜지는
+//    중이라 말씀 목록이 없으면 재시도 차례를 다 쓰고 그대로 사라졌다.
+//    (아이폰에서 워커의 IndexedDB 저장이 시간초과된 경우가 정확히 이것이다)
+//    이제 받은 즉시 이 기기 저장소에 적어 두고, 전체화면이 확인된 뒤에만 지운다.
+function _notifIntentSave(it){
+  try{
+    if(!it||!it.ref)return;
+    localStorage.setItem(_NOTIF_INTENT_KEY,JSON.stringify(it));
+  }catch(e){}
+}
+function _notifIntentLoad(){
+  try{
+    const raw=localStorage.getItem(_NOTIF_INTENT_KEY);
+    if(!raw)return null;
+    const it=JSON.parse(raw);
+    if(!it||!it.ref)return null;
+    if(Date.now()>(it.expiresAt||0)){_notifIntentClear();return null;}
+    return it;
+  }catch(e){return null;}
+}
+function _notifIntentClear(){try{localStorage.removeItem(_NOTIF_INTENT_KEY);}catch(e){}}
+// 단계 기록 — 하나의 알림을 워커부터 화면까지 한 줄로 잇는다.
+function _notifStage(intent,stage,detail){
+  const id=intent&&intent.intentId;
+  _notifLog((id?('#'+_notifShortId(id)+' '):'')+stage+(detail?' — '+detail:''));
+}
+// 서비스워커 쪽 정보 (진단 화면에 앱 버전과 **따로** 보여준다).
+// 워커는 앱과 독립적으로 갱신되므로 둘이 다를 수 있고, 그 차이가 곧 단서다.
+let _swVerSeen='';
+let _swPingAt=0;
+
+// ══════════════════════════════════════════════════════════════
 //  알림 → 전체화면 (v26-0803-5 전면 재작성)
 //
 //  예전 방식은 "한 번 쏘고 끝"이라 조금만 어긋나면 조용히 실패했다.
@@ -24711,10 +24850,15 @@ async function _notifLogRead(){
 //   · 연 뒤에 "정말 그 말씀이 떠 있는지" 확인하고, 확인될 때까지 재시도한다
 //   · 확인된 뒤에만 전달용 기록을 지운다
 // ══════════════════════════════════════════════════════════════
-let _notifTarget=null;      // {ref, tok, src, tries}
+let _notifTarget=null;      // {ref, tok, src, tries, intent}
 let _notifTimer=null;
 let _notifDoneTok=0;        // 이미 처리 완료한 토큰 (같은 알림 두 번 열지 않게)
+const _notifDoneIds=new Set();   // 이미 처리 완료한 intentId
 const _NOTIF_TRY_MS=[0,120,300,600,1000,1600,2400,3500,5000];  // 확인될 때까지 이 간격으로
+// 단계 기록. ⚠️ 엔진만 떠서 돌리는 테스트에는 _notifStage 가 없다 — 없으면 조용히 넘어간다.
+function _notifMark(t,stage,detail){
+  try{if(typeof _notifStage==='function')_notifStage(t&&t.intent,stage,detail);}catch(e){}
+}
 
 function _notifSameRef(a,b){
   if(!a||!b)return false;
@@ -24739,7 +24883,10 @@ function _notifStep(){
     // 이미 그 말씀이 떠 있으면 끝 — 이때만 전달용 기록을 지운다
     if(_notifShowing(t.ref)){
       if(t.tok)_notifDoneTok=t.tok;
-      _clearPendingVerse();
+      if(t.intent&&t.intent.intentId)_notifDoneIds.add(t.intent.intentId);
+      _notifMark(t,'목표 말씀 표시 확인',`${t.tries}번째`);
+      _clearPendingVerse();            // ⚠️ 확인된 뒤에만 지운다
+      _notifMark(t,'pending 삭제·ack');
       _notifLog(`[${t.src}] ${t.ref} 전체화면 확인됨 (${t.tries}번째)`);
       _notifStop();
       return;
@@ -24752,7 +24899,9 @@ function _notifStep(){
       //    한 번 만에 포기해서 "종료 상태에서 알림 누르면 앱만 뜨던" 문제가 있었다.
       //    재시도 차례를 다 쓴 뒤에만 포기한다. (v26-0803-6)
       t.tries++;
+      if(t.intent)t.intent.retryCount=t.tries;
       if(t.tries>=_NOTIF_TRY_MS.length){
+        _notifMark(t,'말씀 목록 준비 안 됨',`${t.tries}번 시도 후 중단 — 의도는 남겨 둔다`);
         _notifLog(`[${t.src}] ${t.ref} — 말씀 목록에서 못 찾아 못 엶 (${t.tries}번 시도)`);
         _notifStop();
         return;
@@ -24760,15 +24909,19 @@ function _notifStep(){
       _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
       return;
     }
+    _notifMark(t,'목표 말씀 검색 성공',hit.ref||t.ref);
     _vfOverrideVerse=hit;
     openVerseFull(true);   // 덮인 화면 숨기기는 openVerseFull 안에서 처리된다
     _verseFullRender();               // 이미 떠 있던 경우에도 새 말씀으로 다시 그린다
+    _notifMark(t,'전체화면 render 호출');
   }catch(e){
     _notifLog(`[${t.src}] ${t.ref} 열기 오류: ${e&&e.message||e}`);
   }
   // 떴는지 다음 차례에 확인한다 (렌더가 한 박자 늦는 기기가 있다)
   t.tries++;
+  if(t.intent)t.intent.retryCount=t.tries;
   if(t.tries>=_NOTIF_TRY_MS.length){
+    _notifMark(t,'표시 확인 실패',`${t.tries}번 시도 — 기록·의도는 남겨 둔다`);
     _notifLog(`[${t.src}] ${t.ref} — ${t.tries}번 시도했지만 확인 실패. 기록은 남겨 둔다`);
     _notifStop();                     // 기록을 남겨 두면 다음 폴링이 다시 집어간다
     return;
@@ -24776,16 +24929,20 @@ function _notifStep(){
   _notifTimer=setTimeout(_notifStep,_NOTIF_TRY_MS[t.tries]);
 }
 // ref: 장절 / src: 어느 경로로 들어왔는지 / tok: 알림 1건을 가리키는 토큰(기록의 ts)
-function _openVerseByRef(ref,src,tok){
+function _openVerseByRef(ref,src,tok,intent){
   if(!ref)return false;
   src=src||'?';
   tok=tok||0;
-  if(tok&&tok===_notifDoneTok)return false;            // 이미 처리한 알림
+  const iid=intent&&intent.intentId;
+  if(iid&&_notifDoneIds.has(iid))return false;         // 이미 처리한 알림 (고유번호 기준)
+  if(tok&&tok===_notifDoneTok)return false;            // 이미 처리한 알림 (옛 토큰 기준)
   // 지금 몰고 있는 것과 같은 알림이면 그대로 둔다 (여러 경로로 동시에 들어옴)
+  if(_notifTarget&&iid&&_notifTarget.intent&&_notifTarget.intent.intentId===iid)return false;
   if(_notifTarget&&_notifTarget.ref===ref&&(!tok||_notifTarget.tok===tok))return false;
   if(_notifShowing(ref)&&tok&&tok===_notifDoneTok)return false;
   _notifStop();
-  _notifTarget={ref,tok,src,tries:0};
+  _notifTarget={ref,tok,src,tries:0,intent:intent||null};
+  _notifMark(_notifTarget,'앱: 전체화면 열기 시작',`경로=${src}`);
   _notifLog(`[${src}] ${ref} 전체화면 열기 시작`);
   _notifStep();
   return true;
@@ -24799,10 +24956,18 @@ function _openVerseByRef(ref,src,tok){
 // {ref, ts} 를 그대로 돌려준다 — ts 가 곧 "이 알림 1건"을 가리키는 토큰이다.
 // ⚠️ 유효시간을 2분에서 5분으로 늘렸다. 앱이 뒤에 오래 있다 나오는 경우
 //    2분은 너무 짧아, 앞으로 나왔을 땐 이미 기록이 버려져 있었다.
+// ⚠️ 1.5초마다 불린다. 여기서 나는 시간초과를 매번 적으면 기록이 그것만으로
+//    가득 차므로 30초에 한 줄만 남긴다 — 대신 **성공으로 적지는 않는다.**
+let _pendReadWarnAt=0;
 async function _readPendingVerse(){
   // ⚠️ IndexedDB 를 먼저 본다. 캐시는 아이폰 홈화면 앱에서 안 남는다. (v26-0803-8)
   let d=null;
-  try{const v=await _idbGet('__pending_verse');if(v&&v.ref)d=v;}catch(e){}
+  const o=await _idbGetOutcome('__pending_verse');
+  if(o.how==='ok'&&o.value&&o.value.ref)d=o.value;
+  else if(o.how!=='ok'&&(Date.now()-_pendReadWarnAt)>30000){
+    _pendReadWarnAt=Date.now();
+    _notifLog('pending 읽기 '+_outcomeText(o));
+  }
   if(!d){
     try{
       if('caches'in window){
@@ -24813,11 +24978,25 @@ async function _readPendingVerse(){
     }catch(e){}
   }
   if(!d)return null;
-  if(Date.now()-(d.ts||0)>300000){_clearPendingVerse();return null;}
+  // ⚠️ 시간이 다 된 낡은 기록을 치울 때 **보관해 둔 의도까지 지우면 안 된다.**
+  //    워커의 저장이 시간초과된 새 알림은 메시지로만 들어와 보관분에만 있는데,
+  //    낡은 IndexedDB 기록 하나 때문에 그 새 의도가 같이 날아간다.
+  if(Date.now()-(d.ts||d.createdAt||0)>300000){_dropStalePending();return null;}
   return d;
 }
+// 낡은 전달용 기록만 치운다 (보관한 의도·워커의 살아 있는 의도는 건드리지 않는다)
+async function _dropStalePending(){
+  _idbDel('__pending_verse');
+  try{
+    if(!('caches'in window))return;
+    const c=await caches.open('block7-msg');
+    await c.delete('/__pending_verse');
+  }catch(e){}
+}
 async function _clearPendingVerse(){
+  _notifIntentClear();                   // 이 기기에 적어 둔 클릭 의도도 함께
   _idbDel('__pending_verse');            // 주 저장소
+  _notifAckToSW();                       // 워커에게 "다 받았다" 고 알린다
   try{
     if(!('caches'in window))return;
     const c=await caches.open('block7-msg');
@@ -24830,18 +25009,97 @@ function _verseRefFromUrl(){
     const q=new URLSearchParams(location.search);
     const ref=q.get('verse');
     const vt=parseInt(q.get('vt'),10)||0;   // 서비스워커가 실어 보낸 토큰
+    const vi=q.get('vi')||'';               // 서비스워커가 실어 보낸 고유번호
     if(ref)history.replaceState(null,'',location.pathname+location.hash);
-    return ref?{ref,ts:vt}:null;
+    return ref?{ref,ts:vt,intentId:vi||undefined,source:'주소'}:null;
   }catch(e){return null;}
+}
+// 로그인 화면이 떠 있으면 아직 열 때가 아니다.
+// ⚠️ 다리를 로그인보다 먼저 놓았기 때문에 생긴 새 경우다. 의도는 **버리지 않고**
+//    남겨 둔 채 기다린다 — 로그인이 끝나면 1.5초 폴링이 곧바로 집어간다.
+function _notifAuthBlocking(){
+  try{
+    const el=document.getElementById&&document.getElementById('authScreen');
+    return !!(el&&el.classList&&!el.classList.contains('hidden'));
+  }catch(e){return false;}
+}
+const _notifWaitLogged=new Set();      // 대기 중이라고 한 번만 적기 위한 것
+// 들어온 클릭 의도를 하나로 받아 처리한다 (주소·메시지·저장소·보관분 공통 입구)
+function _notifTakeIntent(rec,source){
+  const it=_notifIntentFrom(rec,source);
+  if(!it)return false;
+  if(_notifDoneIds.has(it.intentId))return false;
+  _notifIntentSave(it);                  // ⚠️ 화면에 띄우기 **전에** 남긴다
+  if(_notifAuthBlocking()){
+    if(!_notifWaitLogged.has(it.intentId)){
+      _notifWaitLogged.add(it.intentId);
+      _notifStage(it,'로그인 화면이라 대기','로그인 뒤 폴링이 다시 집는다');
+    }
+    return false;
+  }
+  return _openVerseByRef(it.ref,it.source,it.createdAt||0,it);
 }
 async function _openVerseFromLink(){
   const u=_verseRefFromUrl();
-  if(u&&u.ref)return _openVerseByRef(u.ref,'주소',u.ts||0);
+  if(u&&u.ref)return _notifTakeIntent(u,'주소');
   const p=await _readPendingVerse();
-  if(p&&p.ref)_openVerseByRef(p.ref,'남긴 기록',p.ts||0);
+  if(p&&p.ref)return _notifTakeIntent(p,'남긴 기록');
+  // ⚠️ 마지막 그물 — 메시지로만 받아 이 기기에 적어 둔 의도.
+  //    아이폰에서 워커의 IndexedDB 저장이 시간초과되면 위 두 통로가 모두 비어 있다.
+  const k=_notifIntentLoad();
+  if(k&&k.ref)return _notifTakeIntent(k,'보관된 의도');
+  return false;
 }
 // ② 서비스워커 메시지 (앱이 이미 열려 있는 경우)
+// ══════════════════════════════════════════════════════════════
+//  ⚠️⚠️ 이 다리는 **파이어베이스보다 먼저** 놓아야 한다 (v26-0828-4).
+//
+//  예전에는 _initVerseNotifBridge() 를 initAppUI() 안에서 불렀다. initAppUI 는
+//  ① Firebase SDK 로드 → ② 로그인 확인 → ③ 첫 Firestore 읽기 가 **모두 끝난 뒤에만**
+//  불린다. 그래서 종료 상태에서 알림을 눌러 앱이 새로 뜨는 동안 도착한
+//  브로드캐스트·focus·pageshow 를 받을 자리가 아예 없었다.
+//  더 나쁜 것은 SDK 가 못 올라온 경우다 — 그때는 부팅 코드가 initAppUI 앞에서
+//  return 해 버리므로 **다리가 영영 놓이지 않는다.** 로컬 그리기(paintAppUIFromLocal)
+//  는 이미 끝나 할일 화면이 떠 있으니, 사람 눈에는 정확히
+//  "알림을 눌렀는데 앱 기본 화면만 멀뚱멀뚱" 으로 보인다.
+//
+//  이제 이 함수는 스크립트가 읽히는 즉시 한 번 불린다. 여러 번 불려도
+//  리스너·타이머가 하나만 남도록 스스로 막는다.
+// ══════════════════════════════════════════════════════════════
+let _notifBridgeReady=false;
+let _notifPollTimer=null;
+// 워커에게 "이 알림 다 처리했다" 고 알린다 (워커가 들고 있는 pending 을 지운다)
+function _notifAckToSW(){
+  try{
+    const msg={type:'block7-intent-ack',at:Date.now()};
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
+      navigator.serviceWorker.controller.postMessage(msg);
+  }catch(e){}
+}
+// 앱이 받을 준비가 됐다고 워커에 알린다 (handshake).
+// ⚠️ 워커는 언제든 잠들 수 있어 메모리를 믿을 수 없다 — 워커의 주 통로는 여전히
+//    IndexedDB 의 pending 이고, 이 신호는 그것을 **한 번 더** 밀어 주는 보조다.
+let _notifReadySentAt=0;
+function _notifAnnounceReady(force){
+  const now=Date.now();
+  if(!force&&(now-_notifReadySentAt)<3000)return;   // 너무 자주 보내지 않는다
+  _notifReadySentAt=now;
+  const msg={type:'block7-app-ready',appVersion:APP_VERSION,at:now,
+             dev:(typeof DEV_MODE!=='undefined'&&DEV_MODE)?1:0};
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.controller)
+      navigator.serviceWorker.controller.postMessage(msg);
+  }catch(e){}
+  try{
+    if(navigator.serviceWorker&&navigator.serviceWorker.ready)
+      navigator.serviceWorker.ready.then(reg=>{
+        try{if(reg&&reg.active)reg.active.postMessage(msg);}catch(e){}
+      }).catch(()=>{});
+  }catch(e){}
+}
 function _initVerseNotifBridge(){
+  if(_notifBridgeReady)return;          // ⚠️ 두 번 불려도 리스너·타이머는 하나
+  _notifBridgeReady=true;
   try{
     if(navigator.serviceWorker){
       const onMsg=e=>{
@@ -24849,13 +25107,26 @@ function _initVerseNotifBridge(){
         // 서비스워커가 보내온 진단 기록을 이 기기 저장소에 남긴다
         // (아이폰은 캐시에 남지 않아 앱이 받아 적어야 기록이 보인다)
         if(d.type==='block7-swlog'&&d.entry){_notifLogLSPush(d.entry);return;}
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'SW 메시지',d.ts||0);
+        if(d.type==='block7-sw-pong'){_swVerSeen=d.swVersion||'';return;}
+        if(d.type==='block7-open-verse'&&d.ref){
+          _notifTakeIntent({ref:d.ref,ts:d.ts,createdAt:d.createdAt||d.ts,
+                            intentId:d.intentId,swVersion:d.swVersion,source:'SW 메시지'},'SW 메시지');
+        }
       };
       // addEventListener 만 쓰면 메시지 큐가 열리지 않아 조용히 버려진다.
       // onmessage 로 붙이면 큐가 자동으로 열리고, 혹시 몰라 startMessages 도 부른다.
       navigator.serviceWorker.onmessage=onMsg;
       navigator.serviceWorker.addEventListener('message',onMsg);
       if(navigator.serviceWorker.startMessages)navigator.serviceWorker.startMessages();
+      // 워커 버전 물어보기 — 앱 버전과 따로 보여줘야 어느 쪽이 낡았는지 보인다
+      try{
+        _swPingAt=Date.now();
+        if(navigator.serviceWorker.controller)
+          navigator.serviceWorker.controller.postMessage({type:'block7-sw-ping'});
+        navigator.serviceWorker.ready.then(reg=>{
+          try{if(reg&&reg.active)reg.active.postMessage({type:'block7-sw-ping'});}catch(e){}
+        }).catch(()=>{});
+      }catch(e){}
     }
   }catch(e){}
   // 앱이 이미 떠 있는 상태로 알림을 누르면 화면 전환 이벤트가 안 생길 수 있다.
@@ -24864,7 +25135,7 @@ function _initVerseNotifBridge(){
   // ⚠️ 앱이 앞으로 나오는 순간과 서비스워커가 기록을 저장하는 순간은 경쟁한다.
   //    한 번만 확인하면 아직 저장 전이라 놓치고, 그 뒤로는 1.5초 폴링에만
   //    기대야 했다. 앞으로 나올 때 짧게 여러 번 확인해 이 틈을 메운다.
-  const recheckBurst=()=>{[0,250,600,1200,2000].forEach(ms=>setTimeout(recheck,ms));};
+  const recheckBurst=()=>{_notifAnnounceReady();[0,250,600,1200,2000].forEach(ms=>setTimeout(recheck,ms));};
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible')recheckBurst();
   });
@@ -24876,7 +25147,10 @@ function _initVerseNotifBridge(){
       const bc=new BroadcastChannel('block7');
       bc.onmessage=e=>{
         const d=(e&&e.data)||{};
-        if(d.type==='block7-open-verse'&&d.ref)_openVerseByRef(d.ref,'브로드캐스트',d.ts||0);
+        if(d.type==='block7-open-verse'&&d.ref){
+          _notifTakeIntent({ref:d.ref,ts:d.ts,createdAt:d.createdAt||d.ts,
+                            intentId:d.intentId,swVersion:d.swVersion,source:'브로드캐스트'},'브로드캐스트');
+        }
       };
     }
   }catch(e){}
@@ -24893,31 +25167,86 @@ function _initVerseNotifBridge(){
   //    있었다 (짧게 다녀오면 정상 = 이벤트가 제대로 오는 경우만 동작했던 것).
   //    숨어 있는 동안엔 어차피 iOS 가 타이머를 얼리므로 비용 걱정은 없다.
   let _lastTick=Date.now();
-  setInterval(()=>{
+  if(_notifPollTimer)clearInterval(_notifPollTimer);
+  _notifPollTimer=setInterval(()=>{
     const now=Date.now();
     const frozen=now-_lastTick>5000;   // 타이머가 5초 넘게 얼었었다 = 방금 깨어남
     _lastTick=now;
     if(frozen){
       // 깨어난 직후는 워커의 기록 저장과 경쟁하므로 여러 번 확인한다
+      _notifLog('앱이 오래 멈췄다 깨어남 — 다시 확인');
       recheckBurst();
       return;
     }
     recheck();
   },1500);
-  _notifLog('앱 수신 준비 완료 ('+APP_VERSION+')');
+  _notifAnnounceReady(true);
+  _notifLog('앱 조기 브리지 준비 완료 ('+APP_VERSION+')');
+  // 주소·저장소에 이미 들어와 있는 의도를 곧바로 집는다.
+  // ⚠️ 한 박자 미룬다 — 지금은 아직 첫 그리기(paintAppUIFromLocal) 전이라,
+  //    여기서 곧장 전체화면을 열면 '덮인 화면 숨겼다 되살리기'가 빈 화면을 기억한다.
+  setTimeout(recheck,0);
 }
+// ⚠️⚠️ **여기서 곧바로 한 번 놓는다.** Firebase·로그인·Firestore 를 하나도
+//    기다리지 않는다. initAppUI 에서 부르던 것이 이 문제의 절반이었다.
+//    (initAppUI 는 SDK 가 못 올라오면 아예 불리지 않는다 — 위 설명 참고)
+try{_initVerseNotifBridge();}catch(e){console.warn('알림 다리 설치 실패:',e);}
+
+// ── 말씀 클릭 경로 테스트 ──
+// ⚠️ '기기 알림 테스트' 는 **표시만** 확인한다 (ref 가 없어 눌러도 열 말씀이 없다).
+//    이것은 지금 목록에 실제로 있는 말씀 하나를 골라 진짜 푸시와 **같은 모양**의
+//    알림을 띄운다. 그 알림을 직접 누르면 notificationclick → 워커 → 앱 →
+//    전체화면 까지 실제 경로를 그대로 지나간다.
+async function testVerseClickPath(){
+  try{
+    if(_notifySupport()!=='ok'){showToast('이 환경에선 알림을 지원하지 않아요');return;}
+    const pool=(typeof ACTIVE_VERSES==='function'?ACTIVE_VERSES():[])||[];
+    const list=pool.length?pool:((typeof ALL_VERSES==='function'?ALL_VERSES():[])||[]);
+    const v=list.find(x=>x&&x.ref);
+    if(!v){showToast('목록에 말씀이 없어 테스트할 수 없어요');return;}
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){showToast('알림 권한이 없어요');return;}
+    let reg=await navigator.serviceWorker.getRegistration('firebase-messaging-sw.js');
+    if(!reg)reg=await navigator.serviceWorker.register('firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+    const id=_notifNewId();
+    _notifLog('#'+_notifShortId(id)+' 클릭 경로 테스트 알림 표시 — '+v.ref);
+    await reg.showNotification('BLOCK7 클릭 경로 테스트',{
+      body:((v.krText||'').trim().slice(0,60)+'\n'+v.ref).trim(),
+      icon:'icon.png',badge:'icon.png',
+      tag:'block7-clickpath',renotify:true,
+      data:{ref:v.ref,intentId:id,type:'verse',test:1}
+    });
+    showToast('알림을 띄웠어요 — 알림센터에서 **그 알림을 직접 눌러** 주세요');
+  }catch(e){
+    console.warn('클릭 경로 테스트 실패:',e);
+    showToast('클릭 경로 테스트에 실패했어요. 알림 권한을 확인해주세요');
+  }
+}
+
 // ── 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) ──
 let _vpDiagTimer=null,_vpDiagLastText='';
 function _vpDiagFmt(e){
   const d=new Date(e.t),p=n=>String(n).padStart(2,'0');
   return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} [${e.s==='SW'?'워커':'앱'}] ${e.m}`;
 }
+// 진단 머리줄 — 앱과 서비스워커는 **따로** 갱신된다. 어느 쪽이 낡았는지가 곧 단서다.
+function _vpDiagHead(){
+  let ctl='없음';
+  try{ctl=(navigator.serviceWorker&&navigator.serviceWorker.controller)?'있음':'없음';}catch(e){}
+  const sw=_swVerSeen||(_swPingAt?'(응답 없음 — 옛 워커)':'(확인 중)');
+  return `앱 ${APP_VERSION} · 워커 ${sw} · controller ${ctl}`;
+}
 async function vpDiagRender(){
   const b=document.getElementById('vpDiagBody');
   if(!b||b.style.display!=='block')return;
   const list=await _notifLogRead();
-  _vpDiagLastText=list.length?list.map(_vpDiagFmt).join('\n'):'';
+  _vpDiagLastText=(list.length?list.map(_vpDiagFmt).join('\n'):'')+'\n— '+_vpDiagHead();
   b.textContent='';
+  const head=document.createElement('div');
+  head.textContent=_vpDiagHead();
+  head.style.cssText='color:var(--tx3);margin-bottom:4px;';
+  b.appendChild(head);
   const clr=document.createElement('div');
   clr.textContent='기록 지우기';
   clr.style.cssText='cursor:pointer;color:var(--tx3);text-decoration:underline;margin-bottom:6px;';
@@ -24984,6 +25313,8 @@ function initAppUI(){
   applyUiScale(); // 저장된 화면 크기(뷰포트 스케일) 적용
   try{_applySneakMaxW();}catch(e){}  // 스닉픽 한 줄 폭 (기기별 저장값)
   try{applyVfTheme();}catch(e){} // 말씀 전체화면 테마 (세리프면 폰트도 미리 준비)
+  // 알림 다리는 이미 스크립트 첫머리에서 놓였다(idempotent — 여기선 아무 일도 안 한다).
+  // 목록이 이제 막 준비됐을 수 있으니 들어와 있는 의도를 한 번 더 확인한다.
   try{_initVerseNotifBridge();_openVerseFromLink();}catch(e){}  // 푸시 알림으로 들어온 경우
   // D뷰가 기본 뷰이므로 시작 시 분할 클래스 활성 (600px 미만에선 CSS가 무시)
   document.body.classList.add('split-d');
@@ -25824,9 +26155,52 @@ function _mgLogNested(b,l,c,baseKnown){ // memorizationLog: {날짜:{구간:[항
   return _mgContainerKeys(b,l,c,baseKnown,(b2,l2,c2)=>
     _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgEntryArray(b3,l3,c3,baseKnown)));
 }
-// 하루 안: big/small/events 는 구간(secId) 배열 단위로 3자,
-// trash·기타 키는 통째로 3자. 같은 날 같은 구간을 두 기기가 동시에
-// 고친 경우만 로컬 우선이 되고, 서로 다른 구간·다른 날짜는 전부 공존.
+// ══ 같은 구간 배열을 **항목 단위**로 합친다 (v26-0828-5) ══════════════
+// ⚠️ HB가 매일 겪던 그 증상의 정체다 — "아이폰에서 오전에 하나, 맥에서도 오전에
+//    하나 넣었는데 둘 중 하나만 남는다."
+//    예전에는 구간 배열을 **통째로** 3자 병합해서, 양쪽이 각각 새 할일을 더하면
+//    "둘 다 바꿨다 → 손에 든 쪽" 으로 판정돼 상대 기기의 그 구간이 통째로 버려졌다.
+//    그런데 서로 다른 항목을 하나씩 더한 것은 **충돌이 아니다.** 합쳐야 맞다.
+//
+// ⚠️⚠️ 항목에는 아직 고유번호가 없다(그건 Sync V2 의 몫 — docs/SYNC-V2.md).
+//    그래서 여기서는 **줄 수와 자리**로만 판단한다:
+//      · 양쪽 다 base 보다 짧지 않다 → 앞의 base 길이만큼은 자리끼리 3자,
+//        그 뒤에 붙은 것은 양쪽 다 새로 넣은 것이므로 둘 다 살린다
+//      · 한쪽이라도 짧아졌다(삭제·재정렬) → **예전 규칙 그대로** 통째로 간다
+//        (고유번호 없이 그것까지 자동으로 정하려 들면 지운 할일이 되살아난다)
+//    이 물러섬이 이 함수의 안전장치다. 없애지 말 것.
+function _mgTaskArray(b,l,c,baseKnown){
+  if(l===undefined)return c;
+  if(c===undefined)return l;
+  if(!Array.isArray(l)||!Array.isArray(c))return _mgWhole(b,l,c,baseKnown);
+  const lj=_mgJ(l),cj=_mgJ(c);
+  if(lj===cj)return l;
+  if(!baseKnown||!Array.isArray(b))return _mgWhole(b,l,c,baseKnown);
+  const bj=_mgJ(b);
+  if(lj===bj)return c;                       // 나는 안 바꿈 → 상대 것
+  if(cj===bj)return l;                       // 상대는 안 바꿈 → 내 것
+  const n=b.length;
+  if(l.length<n||c.length<n)return _mgWhole(b,l,c,baseKnown);   // 줄었다 → 옛 규칙
+  const out=[];
+  for(let i=0;i<n;i++)out.push(_mgTaskOne(b[i],l[i],c[i]));
+  for(let i=n;i<l.length;i++)out.push(l[i]);  // 이 기기가 새로 넣은 것
+  for(let i=n;i<c.length;i++)out.push(c[i]);  // 다른 기기가 새로 넣은 것
+  return out;
+}
+// 같은 자리의 한 항목. **제목이 같을 때만** 칸 단위로 합친다 — 그래야
+// "한쪽은 완료 체크, 한쪽은 중요 표시" 가 둘 다 산다.
+// ⚠️ 제목이 다르면 순서가 바뀐 것일 수 있다. 그때 칸 단위로 섞으면 제목은 이쪽,
+//    완료는 저쪽인 **없던 할일**이 만들어진다 → 예전처럼 통째로 고른다.
+function _mgTaskOne(b,l,c){
+  if(_mgJ(l)===_mgJ(c))return l;
+  const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  if(isObj(b)&&isObj(l)&&isObj(c)&&String(l.text||'')===String(c.text||'')){
+    return _mgContainerKeys(b,l,c,true,(b2,l2,c2)=>_mgWhole(b2,l2,c2,true));
+  }
+  return _mgWhole(b,l,c,true);
+}
+// 하루 안: big/small/events 는 구간(secId)마다 **항목 단위**로 3자,
+// trash·기타 키는 통째로 3자. 서로 다른 구간·다른 날짜는 전부 공존.
 function _mgDay(b,l,c,baseKnown){
   const out={};
   const keys=new Set([...Object.keys(l||{}),...Object.keys(c||{})]);
@@ -25834,7 +26208,7 @@ function _mgDay(b,l,c,baseKnown){
     const bv=b?b[k]:undefined, lv=l?l[k]:undefined, cv=c?c[k]:undefined;
     let v;
     if(k==='big'||k==='small'||k==='events'){
-      v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+      v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgTaskArray(b2,l2,c2,baseKnown));
     }else{
       v=_mgWhole(bv,lv,cv,baseKnown);
     }
@@ -25951,6 +26325,268 @@ function _fbMerge(base,local,cloud,preferCloud){
   }finally{_mgPreferCloud=prev;}
 }
 
+// ══ 충돌 격리 (v26-0828-6) ═══════════════════════════════════════════════
+// ⚠️ 지금까지 병합은 **진짜 충돌**이 났을 때도 조용히 한쪽을 골라 버렸다.
+//    고른 순간 진 쪽은 backup_0~2 말고는 어디에도 남지 않는다 — 그 백업은
+//    상태 전체 스냅샷이라 "어느 할일이 사라졌는지" 를 사람이 찾을 수 없다.
+//
+//    이제 병합은 그대로 하되(동작을 바꾸지 않는다), **진 쪽을 항목 단위로
+//    따로 보관**하고 사람이 되살릴 수 있게 한다. 자동으로 합칠 수 있는 것은
+//    이미 _mgTaskArray 가 합치므로 여기 걸리지 않는다.
+//
+// ⚠️ 이 함수는 순수 함수다 — ST·화면·네트워크를 건드리지 않는다. 그래야
+//    테스트로 경계를 고정할 수 있다 (tests/test_conflict.js).
+const _CF_KINDS=['big','small','events'];
+const _CF_MAX=50;                       // 보관할 충돌 최대 개수
+function _cfJ(v){return JSON.stringify(v===undefined?null:v);}
+function _cfDiffer(a,b){return _cfJ(a)!==_cfJ(b);}
+function _cfId(type,path,field){return type+':'+path+(field?('#'+field):'');}
+function _cfSecLabel(sec){
+  try{
+    const s=(typeof SECS!=='undefined'&&SECS)?SECS.find(x=>x&&x.id===sec):null;
+    if(s&&s.name)return s.name;
+  }catch(e){}
+  return sec;
+}
+function _cfKindLabel(k){return k==='big'?'빅 블럭':(k==='small'?'스몰 블럭':'일정');}
+function _cfText(v){
+  if(v===undefined||v===null)return '(없음)';
+  if(typeof v==='object'){
+    if(Array.isArray(v))return v.map(x=>(x&&x.text!=null)?String(x.text):_cfJ(x)).join(' · ')||'(빈 목록)';
+    if(v.text!=null)return String(v.text);
+    return _cfJ(v);
+  }
+  return String(v);
+}
+// 한 건을 만든다
+function _cfMake(type,path,field,base,local,remote,label,opts){
+  return {
+    conflictId:_cfId(type,path,field),
+    entityType:type, entityId:path, field:field||null, label:label||path,
+    base:base===undefined?null:base,
+    local:local===undefined?null:local,
+    remote:remote===undefined?null:remote,
+    localDeviceId:opts.localDeviceId||null, remoteDeviceId:opts.remoteDeviceId||null,
+    localDeviceLabel:opts.localDeviceLabel||null, remoteDeviceLabel:opts.remoteDeviceLabel||null,
+    appVersion:opts.appVersion||null,
+    baseVersion:opts.baseVersion==null?null:opts.baseVersion,
+    localVersion:opts.localVersion==null?null:opts.localVersion,
+    remoteVersion:opts.remoteVersion==null?null:opts.remoteVersion,
+    clientEditedAt:opts.clientEditedAt||null,
+    serverObservedAt:opts.serverObservedAt||null,
+    detectedAt:opts.now||Date.now(),
+    summary:null, choice:null, resolvedAt:null,
+    restore:{local:local===undefined?null:local, remote:remote===undefined?null:remote}
+  };
+}
+// 하루 안 한 구간의 배열을 본다. _mgTaskArray 와 **같은 경계**를 써야 한다 —
+// 자동으로 합쳐지는 것은 충돌이 아니다.
+function _cfScanSection(dateKey,kind,sec,b,l,c,out,opts){
+  if(!Array.isArray(l)||!Array.isArray(c))return;
+  if(!_cfDiffer(l,c))return;
+  const path=`${dateKey}/${kind}/${sec}`;
+  const where=`${dateKey} · ${_cfKindLabel(kind)} · ${_cfSecLabel(sec)}`;
+  if(!Array.isArray(b)){
+    // 기준을 모르는 자리 — 한쪽이 통째로 밀린다
+    out.push(_cfMake('section',path,null,null,l,c,where,opts));
+    return;
+  }
+  if(!_cfDiffer(l,b)||!_cfDiffer(c,b))return;         // 한쪽만 바꿈 → 충돌 아님
+  if(l.length<b.length||c.length<b.length){
+    // 삭제·재정렬이 섞였다 → _mgTaskArray 가 통째로 한쪽을 고른다
+    const rec=_cfMake('section',path,null,b,l,c,where,opts);
+    rec.summary={
+      added:Math.max(0,l.length-b.length)+Math.max(0,c.length-b.length),
+      removed:Math.max(0,b.length-l.length)+Math.max(0,b.length-c.length),
+      changed:0
+    };
+    out.push(rec);
+    return;
+  }
+  for(let i=0;i<b.length;i++){
+    const bv=b[i],lv=l[i],cv=c[i];
+    if(!_cfDiffer(bv,lv)||!_cfDiffer(bv,cv)||!_cfDiffer(lv,cv))continue;
+    const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+    const same=isObj(bv)&&isObj(lv)&&isObj(cv)&&String(lv.text||'')===String(cv.text||'');
+    if(same){
+      // 제목이 같다 → 칸 단위로 합쳐진다. 같은 칸을 서로 다르게 고친 것만 충돌.
+      const keys=new Set([...Object.keys(lv),...Object.keys(cv),...Object.keys(bv)]);
+      keys.forEach(k=>{
+        if(!_cfDiffer(bv[k],lv[k])||!_cfDiffer(bv[k],cv[k])||!_cfDiffer(lv[k],cv[k]))return;
+        out.push(_cfMake('task-field',path+'/'+i,k,bv[k],lv[k],cv[k],
+          `${where} · ${String(lv.text||'')} · ${k}`,opts));
+      });
+    }else{
+      out.push(_cfMake('task',path+'/'+i,null,bv,lv,cv,where,opts));
+    }
+  }
+}
+// 키 단위 컨테이너(설정·날짜 등)에서 "삭제 대 수정" 과 "같은 키 다른 값" 을 본다
+function _cfScanKeys(type,prefix,b,l,c,out,opts,labelOf){
+  const keys=new Set([...Object.keys(l||{}),...Object.keys(c||{}),...Object.keys(b||{})]);
+  keys.forEach(k=>{
+    const bv=(b||{})[k],lv=(l||{})[k],cv=(c||{})[k];
+    if(!_cfDiffer(lv,cv))return;
+    if(bv===undefined){
+      // 기준에 없던 것을 양쪽이 서로 다르게 새로 만들었다
+      if(lv!==undefined&&cv!==undefined)
+        out.push(_cfMake(type,prefix+k,null,null,lv,cv,labelOf?labelOf(k):k,opts));
+      return;
+    }
+    if(lv===undefined||cv===undefined){
+      // 한쪽은 지웠고 한쪽은 고쳤다 → 지금 규칙은 "고친 쪽 유지"(보존 우선)
+      const other=(lv===undefined)?cv:lv;
+      if(!_cfDiffer(bv,other))return;               // 한쪽만 지움 → 충돌 아님
+      const rec=_cfMake(type,prefix+k,null,bv,lv,cv,labelOf?labelOf(k):k,opts);
+      rec.summary={added:0,changed:1,removed:1};
+      out.push(rec);
+      return;
+    }
+    if(!_cfDiffer(bv,lv)||!_cfDiffer(bv,cv))return; // 한쪽만 바꿈 → 충돌 아님
+    out.push(_cfMake(type,prefix+k,null,bv,lv,cv,labelOf?labelOf(k):k,opts));
+  });
+}
+// id 있는 배열(말씀 모음·연락처)
+function _cfScanById(type,prefix,b,l,c,out,opts){
+  const toMap=arr=>{const m={};(arr||[]).forEach(o=>{if(o&&o.id!=null)m[String(o.id)]=o;});return m;};
+  _cfScanKeys(type,prefix,toMap(b),toMap(l),toMap(c),out,opts,
+    id=>{const o=toMap(l)[id]||toMap(c)[id]||{};return String(o.name||o.nick||id);});
+}
+// 본체 — base 를 아는 평범한 병합에서만 판정한다.
+// ⚠️ base 를 모르는 복구 경로는 이미 _fbMergeGuarded 가 따로 지키고 있고,
+//    거기서 충돌을 세면 "처음 로그인" 같은 정상 상황이 전부 충돌로 보인다.
+function _cfDetect(base,local,cloud,merged,opts){
+  opts=opts||{};
+  const out=[];
+  if(!base||!local||!cloud)return out;
+  const b=base,l=local,c=cloud;
+  // ⚠️ 구버전 복구 경로는 **구조 축소만** 본다. 그 기기의 상태는 한참 전에
+  //    갈라져 나온 것이라 항목 단위로 세면 멀쩡한 차이가 전부 충돌로 보인다.
+  if(opts.onlyShrink)return _cfShrink(b,c,out,opts);
+  // ① 할일·일정
+  const days=new Set([...Object.keys(l.days||{}),...Object.keys(c.days||{})]);
+  days.forEach(dk=>{
+    const bd=(b.days||{})[dk],ld=(l.days||{})[dk],cd=(c.days||{})[dk];
+    if(!ld||!cd)return;
+    _CF_KINDS.forEach(kind=>{
+      const bk=(bd||{})[kind]||{},lk=ld[kind]||{},ck=cd[kind]||{};
+      const secs=new Set([...Object.keys(lk),...Object.keys(ck)]);
+      secs.forEach(sec=>_cfScanSection(dk,kind,sec,bk[sec],lk[sec],ck[sec],out,opts));
+    });
+  });
+  // ② 설정 (키 단위)
+  _cfScanKeys('setting','settings/',b.settings,l.settings,c.settings,out,opts,k=>'설정 · '+k);
+  // ③ 말씀 모음 · 연락처 (id 단위)
+  _cfScanById('collection','verseCollections/',b.verseCollections,l.verseCollections,c.verseCollections,out,opts);
+  _cfScanById('contact','contacts/',b.contacts,l.contacts,c.contacts,out,opts);
+  // ④ 대량 손실 — 병합 결과가 클라우드에 있던 것을 절반 넘게 지웠다
+  if(merged&&typeof _fbCountByKind==='function'){
+    const before=_fbCountByKind(c),after=_fbCountByKind(merged);
+    for(const k in before){
+      if(before[k]<_FB_LOSS_MIN)continue;
+      if(after[k]<before[k]*_FB_LOSS_KEEP){
+        const rec=_cfMake('bulk','bulk/'+k,null,before[k],after[k],before[k],
+          '대량 손실 · '+k,opts);
+        rec.summary={added:0,changed:0,removed:before[k]-after[k]};
+        out.push(rec);
+      }
+    }
+  }
+  // ⑤ 구버전·정체불명 기기가 구조를 줄였다
+  if(opts.legacy)_cfShrink(b,c,out,opts);
+  return out.slice(0,_CF_MAX);
+}
+function _cfShrink(b,c,out,opts){
+  if(typeof _fbCountByKind!=='function')return out;
+  const bb=_fbCountByKind(b),cc=_fbCountByKind(c);
+  for(const k in bb){
+    if(bb[k]<_FB_LOSS_MIN)continue;
+    if(cc[k]<bb[k]*_FB_LOSS_KEEP){
+      const rec=_cfMake('shrink','shrink/'+k,null,bb[k],bb[k],cc[k],'옛 기기가 줄임 · '+k,opts);
+      rec.summary={added:0,changed:0,removed:bb[k]-cc[k]};
+      out.push(rec);
+    }
+  }
+  return out;
+}
+// 배열 두 벌을 겹쳐 남긴다 — 이 기기 판을 그대로 두고, 상대에게만 있는 항목을 뒤에 붙인다.
+// (사람이 "양쪽 변경 합치기" 를 고를 때 쓴다)
+function _cfUnion(local,remote){
+  const out=Array.isArray(local)?local.slice():[];
+  const seen=new Set(out.map(_cfJ));
+  (Array.isArray(remote)?remote:[]).forEach(o=>{
+    const k=_cfJ(o);
+    if(!seen.has(k)){out.push(o);seen.add(k);}
+  });
+  return out;
+}
+// 사람이 고른 것을 상태에 적용한다. 경로는 _cfDetect 가 적어 둔 entityId 를 그대로 쓴다.
+// choice: 'merge' | 'local' | 'remote'
+function _cfApply(state,rec,choice){
+  if(!state||!rec)return false;
+  const pick=(choice==='remote')?rec.remote:rec.local;
+  const t=rec.entityType;
+  if(t==='section'||t==='task'||t==='task-field'){
+    const seg=String(rec.entityId).split('/');
+    const dk=seg[0],kind=seg[1],sec=seg[2];
+    if(!state.days||!state.days[dk]||!state.days[dk][kind])return false;
+    const arr=state.days[dk][kind][sec];
+    if(t==='section'){
+      state.days[dk][kind][sec]=(choice==='merge')?_cfUnion(rec.local,rec.remote):(pick||[]);
+      return true;
+    }
+    if(!Array.isArray(arr))return false;
+    const i=+seg[3];
+    if(t==='task'){
+      if(choice==='merge'){
+        // 둘 다 남긴다 — 자리 하나를 둘로 늘린다 (아무것도 잃지 않는 선택)
+        const both=[rec.local,rec.remote].filter(x=>x!=null);
+        arr.splice(i,1,...both);
+      }else if(pick!=null){arr[i]=pick;}
+      return true;
+    }
+    // task-field — 칸 하나
+    if(!arr[i]||typeof arr[i]!=='object')return false;
+    if(choice==='merge')return false;               // 칸 하나는 합칠 수 없다
+    if(pick===undefined||pick===null)delete arr[i][rec.field];
+    else arr[i][rec.field]=pick;
+    return true;
+  }
+  if(t==='setting'){
+    const key=String(rec.entityId).replace(/^settings\//,'');
+    if(!state.settings)state.settings={};
+    if(choice==='merge')return false;
+    if(pick===undefined||pick===null)delete state.settings[key];
+    else state.settings[key]=pick;
+    return true;
+  }
+  if(t==='collection'||t==='contact'){
+    const listKey=(t==='collection')?'verseCollections':'contacts';
+    const id=String(rec.entityId).split('/')[1];
+    const list=Array.isArray(state[listKey])?state[listKey]:(state[listKey]=[]);
+    const at=list.findIndex(o=>o&&String(o.id)===id);
+    if(choice==='merge'){
+      // 둘 다 남긴다 — 상대 것을 새 id 로 덧붙인다
+      if(rec.remote){
+        const copy=JSON.parse(_cfJ(rec.remote));
+        copy.id=String(copy.id||id)+'_dup'+Date.now().toString(36);
+        list.push(copy);
+      }
+      return true;
+    }
+    if(pick==null){if(at>=0)list.splice(at,1);return true;}
+    if(at>=0)list[at]=pick;else list.push(pick);
+    return true;
+  }
+  return false;                                     // bulk·shrink 는 자동 적용 대상이 아니다
+}
+// 합치기를 고를 수 있는 종류인가 (칸 하나·대량 손실은 고를 수 없다)
+function _cfCanMerge(rec){
+  return !!rec&&(rec.entityType==='section'||rec.entityType==='task'||
+                 rec.entityType==='collection'||rec.entityType==='contact');
+}
+
+
 // 원격/병합 상태를 화면·로컬 저장소에 반영 (리스너·커밋 공용)
 function _fbApplyStateToApp(stateObj){
   _fbApplyingRemote=true;
@@ -26003,6 +26639,203 @@ function _fbWriteBackup(json,rev){
   }catch(e){}
 }
 
+// ── 충돌 보관 · 화면 ────────────────────────────────────────────────
+// ⚠️ 보관은 **동기화를 절대 막지 않는다.** 실패해도 조용히 넘어간다
+//    (_fbWriteBackup 과 같은 규칙 — 인계문서 7-3 체크리스트).
+const _CF_LS_KEY='b7v1_conflicts';        // 기기 로컬 (클라우드 동기화 대상 아님)
+let _cfList=[];
+let _cfToastAt=0;
+function _cfLoadLocal(){
+  try{
+    const v=JSON.parse(localStorage.getItem(_CF_LS_KEY)||'[]');
+    return Array.isArray(v)?v:[];
+  }catch(e){return[];}
+}
+// ⚠️ 충돌 하나가 구간 배열 통째를 안고 있을 수 있다. 개수만 제한하면 문서가
+//    1MB 를 넘겨 **저장이 통째로 실패**한다 → 글자 수로도 자른다.
+//    버리는 순서는 "이미 정한 것 → 오래된 것" — 아직 안 정한 최신 것을 끝까지 지킨다.
+const _CF_MAX_CHARS=300000;
+function _cfTrimmed(){
+  let list=_cfList.slice(-_CF_MAX);
+  const fits=l=>{try{return JSON.stringify(l).length<=_CF_MAX_CHARS;}catch(e){return false;}};
+  while(list.length&&!fits(list)){
+    const at=list.findIndex(r=>r.resolvedAt);
+    list.splice(at>=0?at:0,1);
+  }
+  return list;
+}
+function _cfSaveLocal(){
+  try{localStorage.setItem(_CF_LS_KEY,JSON.stringify(_cfTrimmed()));}catch(e){}
+}
+function _cfOpenCount(){return _cfList.filter(r=>!r.resolvedAt).length;}
+// 같은 자리의 충돌은 번호가 같으므로 덮어쓴다 — 두 번 쌓이지 않는다.
+function _cfStore(list){
+  if(!list||!list.length)return 0;
+  let added=0;
+  list.forEach(rec=>{
+    const at=_cfList.findIndex(r=>r.conflictId===rec.conflictId);
+    if(at>=0){
+      if(_cfList[at].resolvedAt)return;    // 이미 사람이 정한 것은 다시 묻지 않는다
+      _cfList[at]=rec;
+    }else{_cfList.push(rec);added++;}
+  });
+  if(_cfList.length>_CF_MAX)_cfList=_cfList.slice(-_CF_MAX);
+  _cfSaveLocal();
+  _cfPushCloud();
+  _cfSyncVisibility();
+  // 사람에게 알리는 것은 **진짜 충돌이 새로 생겼을 때만.** 기기를 바꿨다는
+  // 이유만으로 팝업이 뜨면 아무도 안 본다.
+  if(added&&Date.now()-_cfToastAt>60000){
+    _cfToastAt=Date.now();
+    try{showToast(`다른 기기와 겹친 변경 ${_cfOpenCount()}건이 있어요 — 설정 → 계정에서 정할 수 있어요`);}catch(e){}
+  }
+  return added;
+}
+function _cfPushCloud(){
+  try{
+    if(!window._fbUser||typeof fbDB==='undefined')return;
+    fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('conflicts')
+      .set({list:_cfTrimmed(),ts:Date.now(),dev:_deviceId()})
+      .catch(e=>console.warn('충돌 기록 저장 실패(동기화에는 영향 없음):',(e&&e.code)||e));
+  }catch(e){}
+}
+async function _cfFetchCloud(){
+  try{
+    if(!window._fbUser||typeof fbDB==='undefined')return;
+    const s=await fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('conflicts').get();
+    const d=s.exists?(s.data()||{}):{};
+    if(!Array.isArray(d.list))return;
+    d.list.forEach(rec=>{
+      if(!rec||!rec.conflictId)return;
+      const at=_cfList.findIndex(r=>r.conflictId===rec.conflictId);
+      if(at<0)_cfList.push(rec);
+      else if(rec.resolvedAt&&!_cfList[at].resolvedAt)_cfList[at]=rec;  // 다른 기기가 이미 정함
+    });
+    if(_cfList.length>_CF_MAX)_cfList=_cfList.slice(-_CF_MAX);
+    _cfSaveLocal();_cfSyncVisibility();
+  }catch(e){console.warn('충돌 기록 조회 실패:',(e&&e.code)||e);}
+}
+window._cfSyncVisibility=_cfSyncVisibility;   // 설정창을 다시 그릴 때 부르는 창구
+function _cfSyncVisibility(){
+  const sec=document.getElementById('syncConflictSection');
+  if(!sec)return;
+  const n=_cfOpenCount();
+  sec.style.display=n?'':'none';
+  const d=document.getElementById('syncConflictDesc');
+  if(d&&n)d.textContent=`다른 기기와 같은 것을 동시에 고쳐서 자동으로 정할 수 없는 것이 ${n}건 있어요. 어느 쪽도 지워지지 않았고, 양쪽 다 보관돼 있어요.`;
+}
+// 병합에서 진짜 충돌이 나왔으면 진 쪽을 보관한다.
+// ⚠️ 병합 결과 자체는 건드리지 않는다 — 이 단계에서 동작을 바꾸면 7장의 사고가 재발한다.
+function _fbCollectConflicts(base,local,cloud,merged,extra){
+  try{
+    const opts=Object.assign({
+      localDeviceId:_deviceId(),
+      localDeviceLabel:(typeof _deviceLabel==='function')?_deviceLabel():null,
+      appVersion:APP_VERSION,
+      baseVersion:_fbLastSeenRev,
+      clientEditedAt:_fbLastEditTs||null,
+      serverObservedAt:Date.now(),
+      now:Date.now()
+    },extra||{});
+    return _cfDetect(base,local,cloud,merged,opts);
+  }catch(e){console.warn('충돌 판정 실패(동기화에는 영향 없음):',e);return [];}
+}
+// ⚠️ 트랜잭션 **안에서는** 부르지 말 것 (재실행될 수 있다). 판정만 하고 싶으면
+//    _fbCollectConflicts 로 목록만 받아 두었다가 커밋이 끝난 뒤 _cfStore 한다.
+function _fbNoteConflicts(base,local,cloud,merged,extra){
+  const list=_fbCollectConflicts(base,local,cloud,merged,extra);
+  if(list&&list.length)_cfStore(list);
+  return (list&&list.length)||0;
+}
+// ── 화면 ──
+function _cfWhoLabel(rec,side){
+  const l=(side==='local')?(rec.localDeviceLabel||'이 기기'):(rec.remoteDeviceLabel||'다른 기기');
+  return l;
+}
+function _cfEsc(s){
+  return String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+}
+function _cfCardHTML(rec){
+  const mine=_cfEsc(_cfText(rec.local)), theirs=_cfEsc(_cfText(rec.remote));
+  const baseTxt=_cfEsc(_cfText(rec.base));
+  const canMerge=_cfCanMerge(rec);
+  const auto=(rec.entityType==='bulk'||rec.entityType==='shrink');
+  const done=!!rec.resolvedAt;
+  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:var(--tx2);line-height:1.6;${done?'opacity:.5;':''}">
+    <div style="font-weight:700;color:var(--tx);margin-bottom:4px;">${_cfEsc(rec.label)}</div>
+    <div style="color:var(--tx3);">기준: ${baseTxt}</div>
+    <div>· ${_cfEsc(_cfWhoLabel(rec,'local'))}: <b style="color:var(--tx);">${mine}</b></div>
+    <div>· ${_cfEsc(_cfWhoLabel(rec,'remote'))}: <b style="color:var(--tx);">${theirs}</b></div>
+    ${done?`<div style="margin-top:6px;color:var(--tx3);">정함: ${_cfEsc(rec.choice)}</div>`
+      :(auto?`<div style="margin-top:6px;color:var(--tx3);">이건 알려만 드려요. 되돌리려면 계정 탭의 자동 백업을 쓰세요.</div>
+              <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','ack')">확인했어요</button>`
+      :`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          ${canMerge?`<button class="settings-btn" style="flex:1;min-width:88px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','merge')">양쪽 다 남기기</button>`:''}
+          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','local')">${_cfEsc(_cfWhoLabel(rec,'local'))} 것</button>
+          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','remote')">${_cfEsc(_cfWhoLabel(rec,'remote'))} 것</button>
+        </div>`)}
+  </div>`;
+}
+function cfRender(){
+  const b=document.getElementById('syncConflictBody');
+  if(!b)return;
+  const open=_cfList.filter(r=>!r.resolvedAt);
+  if(!open.length){
+    b.innerHTML='<div style="font-size:11px;color:var(--tx3);line-height:1.7;">정하지 않은 충돌이 없어요. 다른 기기와 겹친 변경은 자동으로 합쳐졌어요.</div>';
+    return;
+  }
+  const mergeable=open.filter(_cfCanMerge).length;
+  b.innerHTML=
+    `<div style="font-size:11px;color:var(--tx3);line-height:1.7;margin-bottom:10px;">
+       같은 것을 두 기기가 동시에 고쳐서 자동으로 정할 수 없는 것이 <b style="color:var(--tx);">${open.length}건</b> 있어요.
+       <b style="color:var(--tx);">어느 쪽도 지워지지 않았어요</b> — 양쪽 다 보관돼 있고, 고른 뒤에도 되돌릴 수 있어요.
+       지금 정하지 않으려면 오른쪽 위 × 를 누르세요.
+     </div>`+
+    (mergeable?`<button class="settings-btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfMergeAll()">양쪽 변경 합치기 — 권장 (${mergeable}건)</button>`:'')+
+    open.map(_cfCardHTML).join('');
+}
+window.openSyncConflicts=function(){
+  _cfList=_cfList.length?_cfList:_cfLoadLocal();
+  document.getElementById('syncConflictOverlay').style.display='block';
+  document.getElementById('syncConflictModal').style.display='block';
+  cfRender();
+  _cfFetchCloud().then(()=>cfRender());
+}
+window.closeSyncConflicts=function(){
+  const o=document.getElementById('syncConflictOverlay'),m=document.getElementById('syncConflictModal');
+  if(o)o.style.display='none';
+  if(m)m.style.display='none';
+}
+// 하나를 정한다. 'ack' 는 "알려만 준 것"을 확인 처리하는 것.
+window.cfChoose=function(id,choice){
+  const rec=_cfList.find(r=>r.conflictId===id);
+  if(!rec)return;
+  if(choice!=='ack'){
+    if(!_cfApply(ST,rec,choice)){showToast('이 항목은 지금 상태에서 적용할 수 없어요');return;}
+    try{syncSecsFromState();}catch(e){}
+    save();
+    try{renderToday();}catch(e){}
+  }
+  rec.choice=choice;rec.resolvedAt=Date.now();
+  _cfSaveLocal();_cfPushCloud();_cfSyncVisibility();cfRender();
+  showToast(choice==='ack'?'확인했어요':'정한 대로 반영했어요');
+}
+window.cfMergeAll=function(){
+  const open=_cfList.filter(r=>!r.resolvedAt&&_cfCanMerge(r));
+  if(!open.length)return;
+  let n=0;
+  open.forEach(rec=>{
+    if(_cfApply(ST,rec,'merge')){rec.choice='merge';rec.resolvedAt=Date.now();n++;}
+  });
+  if(n){
+    try{syncSecsFromState();}catch(e){}
+    save();
+    try{renderToday();}catch(e){}
+  }
+  _cfSaveLocal();_cfPushCloud();_cfSyncVisibility();cfRender();
+  showToast(`${n}건을 양쪽 다 남기는 쪽으로 합쳤어요`);
+}
+
 window.fbPushState=function(){
   if(!_fbUser||_fbApplyingRemote||!_fbInitLoaded)return;
   _fbDirtySeq++;
@@ -26025,11 +26858,13 @@ async function _fbCommit(){
   _fbCommitBusy=true;
   const uid=_fbUser.uid;
   let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null;
+  // ⚠️ 트랜잭션은 재실행될 수 있다 → 안에서는 판정만 하고 보관은 커밋 성공 뒤에.
+  let cfPending=null;
   // 제품 분리용 — 클라우드에 원래 있던 설정을 되돌려 놓을 때 쓴다 (_psProject)
   let priorState=null;
   try{
     await fbDB.runTransaction(async tx=>{
-      mergedApply=null;backupJson=null;legacyVer=null;priorState=null; // 트랜잭션 재시도 대비 초기화
+      mergedApply=null;backupJson=null;legacyVer=null;priorState=null;cfPending=null; // 트랜잭션 재시도 대비 초기화
       const snap=await tx.get(userDocRef(uid));
       const data=snap.exists?(snap.data()||{}):{};
       const cloudRev=(typeof data.rev==='number')?data.rev:0;
@@ -26054,6 +26889,9 @@ async function _fbCommit(){
           outState=legacy?_fbMergeGuarded(null,ST,cloudState,false)
                          :_fbMergeGuarded(_fbBaseObj(),ST,cloudState);
           mergedApply=outState;
+          // 판정만 한다 — 보관(_cfStore)은 트랜잭션 밖에서.
+          cfPending=_fbCollectConflicts(_fbBaseObj(),ST,cloudState,outState,
+            {remoteDeviceId:data.dev||null,remoteVersion:cloudRev,legacy,onlyShrink:legacy});
           backupJson=data.json;backupRev=cloudRev;
           if(legacy)legacyVer=data.appVer||'(표시 없음)';
         }
@@ -26071,6 +26909,7 @@ async function _fbCommit(){
     _fbSetBase(outJson,outRev,uid);
     if(seqAtWrite===_fbDirtySeq)_fbCleanSeq=_fbDirtySeq; // 도중 새 편집 없으면 클린
     if(mergedApply){
+      if(cfPending&&cfPending.length)_cfStore(cfPending);   // 진 쪽을 항목 단위로 보관
       _fbApplyStateToApp(mergedApply);       // 병합 결과(상대 변경 포함)를 화면에
       _fbWriteBackup(backupJson,backupRev);
       if(legacyVer)_fbWarnLegacyWriter(null,legacyVer);
@@ -26360,6 +27199,10 @@ function _fbHealFromLegacy(remote,rawJson,rev,dev,ver){
   // base 없음 → 합집합. 로컬 우선이 원칙이지만, 이 기기가 클라우드를 아직
   // 한 번도 못 받았거나 결과가 대량 손실이면 클라우드를 채택한다 (0813-2)
   const healed=_fbMergeGuarded(null,ST,remote,false);
+  // ⚠️ 여기서는 **구조 축소만** 본다. 옛 기기의 상태는 한참 전에 갈라져 나온 것이라
+  //    항목 단위로 세면 멀쩡한 차이가 전부 충돌로 보인다.
+  _fbNoteConflicts(_fbBaseObj(),ST,remote,healed,
+    {legacy:true,onlyShrink:true,remoteDeviceId:dev||null,remoteVersion:rev||0});
   _fbApplyStateToApp(healed);
   _fbWarnLegacyWriter(dev,ver);
   // 되살린 내용은 **반드시** 다시 올린다 (안 올리면 클라우드는 지워진 채 남는다).
@@ -26451,6 +27294,9 @@ window.fbStartListening=function(uid){
       // ⚠️ base 가 없으면 이 기기는 이 계정의 클라우드를 아직 못 받은 상태다
       //    (초기 fetch 실패 등). 그때의 로컬은 기본값이라 이기면 안 된다 (0813-2)
       const merged=_fbMergeGuarded(_fbBaseObj(),ST,remote);
+      // ⚠️ base 가 바뀌기 **전에**, ST 가 덮이기 **전에** 판정해야 한다.
+      _fbNoteConflicts(_fbBaseObj(),ST,remote,merged,
+        {remoteDeviceId:data.dev||null,remoteVersion:seenRev});
       _fbSetBase(data.json,seenRev,uid);
       _fbApplyStateToApp(merged);
       _fbDirtySeq++; // 병합본 전송 필요
@@ -26492,6 +27338,8 @@ fbAuth.onAuthStateChanged(async user=>{
             let baseObj=null;try{baseObj=JSON.parse(persisted.json);}catch(e2){}
             let cloudState=null;try{cloudState=JSON.parse(data.json);}catch(e2){}
             const merged=cloudState?_fbMerge(baseObj,ST,cloudState):ST;
+            if(cloudState)_fbNoteConflicts(baseObj,ST,cloudState,merged,
+              {remoteDeviceId:data.dev||null,remoteVersion:cloudRev});
             applyRemoteState(merged);
             if(JSON.stringify(merged)!==data.json)_fbDirtySeq++; // 병합본 전송 필요
           }else{
@@ -26515,6 +27363,8 @@ fbAuth.onAuthStateChanged(async user=>{
     initAppUI();
     fbStartListening(user.uid);
     _fbEnsureSync(); // 시작 시 병합으로 생긴 미전송분이 있으면 바로 올림
+    // 이 기기·다른 기기가 보관해 둔 충돌을 읽어 온다 (실패해도 동기화에는 영향 없음)
+    try{_cfList=_cfLoadLocal();_cfSyncVisibility();_cfFetchCloud();}catch(e){}
   } else {
     // 로그아웃: 다음 로그인에 이전 계정 데이터가 새지 않도록 로컬을 완전히 비움
     window._fbUser=null;
@@ -26547,6 +27397,10 @@ if(DEV_MODE){
   window.fbForceUploadLocal = function(){ alert('개발 모드에서는 클라우드 데이터 복구를 사용할 수 없어요.'); };
   window.showAutoBackups = function(){ alert('개발 모드에서는 클라우드 백업을 사용할 수 없어요.'); };
   window.restoreAutoBackup = function(){ alert('개발 모드에서는 클라우드 백업을 사용할 수 없어요.'); };
+  window.openSyncConflicts = function(){ alert('개발 모드에서는 클라우드 동기화가 없어 충돌도 생기지 않아요.'); };
+  window.closeSyncConflicts = function(){};
+  window.cfChoose = function(){};
+  window.cfMergeAll = function(){};
   document.getElementById('authScreen').classList.add('hidden');
   const ub=document.getElementById('userBadge'); if(ub)ub.style.display='none';
   document.getElementById('settingsUserEmail') && (document.getElementById('settingsUserEmail').textContent='개발 모드 — 로그인 없음');
