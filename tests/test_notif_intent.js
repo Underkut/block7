@@ -370,5 +370,25 @@ console.log('\n시나리오 16 — 로그인 화면이 떠 있는 동안 도착�
   sc.eq('로그인 뒤에 열린다', SCREEN.ref, '에베소서 2:8');
 }
 
+// ═══ 17. ⚠️ 낡은 전달용 기록이 **새 의도**를 데려가지 않는다 ═══
+//     워커의 저장이 시간초과된 새 알림은 메시지로만 들어와 '보관분'에만 있다.
+//     그때 IndexedDB 에 남아 있던 낡은 기록을 치우면서 새 의도까지 지우면
+//     그 알림은 영영 못 연다.
+console.log('\n시나리오 17 — 낡은 기록을 치우면서 새 의도를 지우지 않는다');
+{
+  reset(['골로새서 3:2']);
+  // 5분이 훨씬 지난 낡은 기록이 저장소에 남아 있다
+  PENDING = { ref: '아주오래된 1:1', ts: NOW - 400000, createdAt: NOW - 400000, intentId: 'stale-1' };
+  // 그 사이 새 알림이 메시지로만 도착했다 (워커의 저장은 시간초과)
+  X.takeIntent({ ref: '골로새서 3:2', ts: NOW, intentId: 'fresh-1' }, 'SW 메시지');
+  X.stop();                                  // 아직 못 열었다고 치고 엔진만 멈춘다
+  sc.eq('새 의도가 보관돼 있다', X.intentLoad().intentId, 'fresh-1');
+  await X.openFromLink();                    // 폴링이 낡은 기록을 만난다
+  runTimers();
+  sc.eq('낡은 기록은 치워졌다', PENDING, null);
+  sc.eq('새 의도는 살아 있다', !!X.intentLoad() || SCREEN.ref === '골로새서 3:2', true);
+  sc.eq('새 의도로 말씀이 열린다', SCREEN.ref, '골로새서 3:2');
+}
+
 sc.done();
 })();

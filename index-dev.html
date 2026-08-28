@@ -24953,8 +24953,20 @@ async function _readPendingVerse(){
     }catch(e){}
   }
   if(!d)return null;
-  if(Date.now()-(d.ts||d.createdAt||0)>300000){_clearPendingVerse();return null;}
+  // ⚠️ 시간이 다 된 낡은 기록을 치울 때 **보관해 둔 의도까지 지우면 안 된다.**
+  //    워커의 저장이 시간초과된 새 알림은 메시지로만 들어와 보관분에만 있는데,
+  //    낡은 IndexedDB 기록 하나 때문에 그 새 의도가 같이 날아간다.
+  if(Date.now()-(d.ts||d.createdAt||0)>300000){_dropStalePending();return null;}
   return d;
+}
+// 낡은 전달용 기록만 치운다 (보관한 의도·워커의 살아 있는 의도는 건드리지 않는다)
+async function _dropStalePending(){
+  _idbDel('__pending_verse');
+  try{
+    if(!('caches'in window))return;
+    const c=await caches.open('block7-msg');
+    await c.delete('/__pending_verse');
+  }catch(e){}
 }
 async function _clearPendingVerse(){
   _notifIntentClear();                   // 이 기기에 적어 둔 클릭 의도도 함께
