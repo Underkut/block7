@@ -47,6 +47,26 @@ else
   rm -f "$_tmp"
 fi
 
+# 개발본도 index.html 에서 만든다. 어긋나면 block7.my/index-dev.html 이 옛 코드를
+# 보여줄 뿐 아니라, **개발본에서 코드를 떠오는 테스트가 옛 코드를 검사하게 된다**
+# (tests/_load.js 의 sliceDev). 그래서 sweeter-dev.html 과 같은 급으로 배포를 막는다.
+if [ ! -f index-dev.html ]; then
+  echo "index-dev.html 이 없습니다 ✗  → ./tools/make-dev.sh 를 돌리세요"
+  fail=1
+else
+  _tmp4=$(mktemp)
+  cp index-dev.html "$_tmp4"
+  ./tools/make-dev.sh >/dev/null
+  if diff -q "$_tmp4" index-dev.html >/dev/null; then
+    echo "index-dev.html ↔ index.html 동기화됨 ✓"
+  else
+    echo "index-dev.html 이 index.html 보다 낡았습니다 ✗"
+    echo "   → ./tools/make-dev.sh 로 다시 만들고 함께 커밋하세요"
+    fail=1
+  fi
+  rm -f "$_tmp4"
+fi
+
 # Sweeter 개발본도 index.html 에서 만든다. 어긋나면 block7.my/sweeter-dev.html
 # 이 옛 코드를 보여 주므로, AGENTS.md 와 같은 급으로 배포를 막는다.
 if [ ! -f sweeter-dev.html ]; then

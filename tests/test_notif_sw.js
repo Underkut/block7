@@ -5,16 +5,16 @@
 //    끊기는 자리(notificationclick · openWindow 콜드 스타트 · 저장 시간초과)를
 //    한 번도 지나가지 않았다. 이 파일이 그 구간을 맡는다.
 //
-// 검사 대상은 **대기본** firebase-messaging-sw-next.js 다 (운영 배포 전).
-// importScripts 앞부분(우리 코드)만 떠서 가짜 워커 환경에서 돌린다.
+// ⚠️ 서비스워커는 **개발본이 없다.** 이 파일을 고치면 곧바로 운영이므로,
+//    importScripts 앞부분(우리 코드)만 떠서 가짜 워커 환경으로 여기서 먼저 검증한다.
 const fs = require('fs');
 const path = require('path');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
 
-const SW_FILE = path.join(__dirname, '..', 'firebase-messaging-sw-next.js');
+const SW_FILE = path.join(__dirname, '..', 'firebase-messaging-sw.js');
 if (!fs.existsSync(SW_FILE)) {
-  console.error('firebase-messaging-sw-next.js 를 찾지 못했어요.');
+  console.error('firebase-messaging-sw.js 를 찾지 못했어요.');
   process.exit(2);
 }
 const RAW = fs.readFileSync(SW_FILE, 'utf-8');
