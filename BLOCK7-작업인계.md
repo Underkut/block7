@@ -1799,6 +1799,48 @@ window.fbPushState=function(){
 판정이 도는 자리는 **네 곳** — 리스너의 미전송편집 병합 · `_fbCommit` 트랜잭션 병합 ·
 `_fbHealFromLegacy` · 부팅 병합. 검증은 `tests/test_conflict.js` 52건.
 
+### 7-2-8. 기기별로만 두는 설정 (v26-0828-7) — HB 결정 사항 두 가지
+
+**① '지금 보는 말씀'을 동기화에서 뺐다.**
+`settings.verseCurrentIdx` · `verseLastShownDate` 는 이제 이 기기 저장소
+(`localStorage.b7v1_devsettings`)에만 산다. 맥에서 말씀을 넘겨도 아이폰이 따라오지 않는다.
+
+장치는 `_PRODUCT_SCOPED`(제품 칸막이)와 **같은 모양, 다른 목적**이다 — 저건 BLOCK7 과
+Sweeter 를 가르고, 이건 아이폰과 맥을 가른다. **둘을 섞지 말 것.**
+
+| 방향 | 함수 | 하는 일 |
+|---|---|---|
+| 저장할 때 | `_dsCapture` (`rawSave` 안) | 이 기기 값을 따로 적어 둔다 |
+| 받을 때 | `_dsOverlay` (`applyRemoteState` **맨 끝**) | 클라우드 값 위에 이 기기 값을 덮는다 |
+| 올릴 때 | `_dsProject` (`_fbCommit` 의 `outJson`) | **원래 클라우드 값을 되돌려 놓는다** |
+
+⚠️ `_dsProject` 가 원래 값을 되돌리기 때문에 클라우드의 그 칸은 **멈춰 있다.**
+그래서 양쪽 모두 base 와 같아져 **병합에서 충돌이 날 수 없다** (`tests/test_devsettings.js`
+시나리오 7). 이 성질을 깨면 기기를 옮길 때마다 충돌 화면이 뜬다.
+
+⚠️ 이 기기에 값이 **없으면** 클라우드 것을 그대로 둔다 — 처음 쓰는 기기는 한 번 물려받는다.
+
+**② 알림 켜기/끄기를 기기별로.**
+`ST.settings.notify` · `versePush` 는 **한 글자도 바꾸지 않았다.** 대신
+`localStorage.b7v1_notifdev` 로 "이 기기에서 알림 받기" 스위치를 하나 만들고,
+끄면 **이 기기의 푸시 등록(`pushTokens`)만** 뺀다.
+
+⚠️ 서버(`versepush` · `block7Notify`)는 계정 설정과 `pushTokens` 만 본다. 그래서
+**서버를 한 줄도 고치지 않고** 기기별 끄기가 된다 — 등록이 없으면 그 기기엔 안 간다.
+
+- `_ensurePushToken()` 은 이 기기가 꺼져 있으면 등록을 건너뛰고 **`true` 를 돌려준다**
+  (계정 스위치가 되돌아가면 안 되므로).
+- `_releasePushTokenIfIdle(force)` — `force` 면 계정 스위치와 상관없이 이 기기만 뺀다.
+- 스위치는 **처음엔 켜져 있다.** 지금 쓰는 기기가 갑자기 조용해지면 안 되기 때문이다.
+- 같은 스위치가 두 알림 탭에 있다 (`setDevNotify` · `setDevNotifyV`) —
+  `_syncDeviceNotifyUI()` 가 둘을 맞춘다.
+
+⚠️ **한 기기에서만 할일 알림은 끄고 말씀 알림은 켜는 것은 아직 안 된다.**
+푸시 등록(토큰)이 기기마다 **하나**라서, 종류별로 가르려면 서버가 그 구분을 알아야 한다
+(`pushTokens/{tok}` 에 종류 표시를 넣고 서버가 걸러야 한다). 필요해지면 그때 서버를 고친다.
+
+검증: `tests/test_devsettings.js` 30건.
+
 ### 7-3. 이 영역을 고칠 때의 체크리스트
 
 - [ ] `_fbMerge`의 `preferCloud` 인자를 명시적으로 넘겼는가?
@@ -1820,6 +1862,9 @@ window.fbPushState=function(){
 - [ ] 병합 경로를 새로 만들었으면 **`_fbNoteConflicts` 도 지나가는가?** (7-2-7)
       안 지나가면 그 길로 사라진 데이터는 아무 데도 안 남는다
 - [ ] 자동으로 합쳐지는 것을 **충돌로 세고 있지 않은가?** (7-2-7)
+      매번 팝업이 뜨면 사람이 충돌 화면 자체를 안 보게 된다
+- [ ] 새 설정을 기기별로 두려면 `_DEVICE_SCOPED` 에 넣었는가? (7-2-8)
+      ⚠️ 제품 칸막이(`_PRODUCT_SCOPED`)와 헷갈리지 말 것 — 저건 BLOCK7↔Sweeter, 이건 기기↔기기
       매번 팝업이 뜨면 사람이 충돌 화면 자체를 안 보게 된다
       없애면 고유번호가 없는 상태에서 삭제를 자동 판정하게 되어 **지운 할일이 되살아난다**
 
