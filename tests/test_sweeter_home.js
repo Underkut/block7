@@ -193,6 +193,19 @@ console.log('\n시나리오 6 — 소스에 고정');
   // 비켜 주는 타일이 미끄러진다 (FLIP) · 놓을 자리에 불이 들어온다
   sc.eq('비켜 주는 타일이 미끄러진다', SRC_DEV.includes('function _swReorder(from,to,x,y){'), true);
   sc.eq('놓을 자리에 불', SRC_DEV.includes('function _swDragHole(r){'), true);
+  // ⚠️ 크기가 다른 두 타일이 자리를 바꾸면 손가락 밑에 곧바로 상대가 온다.
+  //    막지 않으면 매 프레임 되바꾸며 떨린다 — 실제로 24프레임 동안 16번
+  //    오갔다 (HB 신고 26-0830-12). 쉬는 시간 + 20px 이동, 둘 다 있어야 한다.
+  sc.eq('되바꿈을 막는다',
+        SRC_DEV.includes("if(_swG.lock&&(now<_swG.lock||"), true);
+  sc.eq('그 뒤에도 20px 은 더 가야 한다',
+        SRC_DEV.includes("Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;"), true);
+  sc.eq('쉬는 시간은 비켜 주는 움직임과 짝', SRC_DEV.includes('const _SW_SLIDE=280;'), true);
+  // 편집에서는 토스트를 띄우지 않는다 (길게 누른 손이 끊기는 느낌을 준다)
+  sc.eq('편집에 토스트를 띄우지 않는다',
+        /function swToggleEdit\(\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
+  sc.eq('타일을 켜고 끌 때도 조용히',
+        /function _swAddTile\(k\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
   // ⚠️ 끌리는 타일이 손가락을 가리면 elementFromPoint 가 자기 자신만 돌려주어
   //    "밑에 있는 타일"을 못 찾는다 → 순서가 영영 안 바뀐다 (HB 신고 26-0830-10).
   //    투명도만으로는 안 된다. pointer-events:none 이라야 한다.
