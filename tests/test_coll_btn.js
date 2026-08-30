@@ -21,8 +21,10 @@ console.log('시나리오 1 — 세 곳 모두 같은 책 실루엣을 쓴다');
   // 예전처럼 단독으로 시작하지 않는다 — 가운데·아래 두 조각(3권 중 나머지)만 센다
   const slabs = (SRC.match(/<path d="M3\.8 (12\.2|16\.2) /g)||[]).length;
   sc.eq('세 곳 모두 아래 두 권은 그대로', slabs, 6);
+  // ⚠️ 전체에서 evenodd 를 세면 안 된다 — 다른 아이콘도 컷아웃을 쓴다
+  //    (v26-0830-16 담아두기 주머니). 책 커버가 시작되는 path 만 센다.
   sc.eq('세 곳 모두 컷아웃 방식(evenodd)',
-        (SRC.match(/fill-rule="evenodd"/g)||[]).length, 3);
+        (SRC.match(/fill-rule="evenodd" d="M3\.8 8\.2 /g)||[]).length, 3);
   // v26-0818-7, HB — 메뉴의 다른 아이콘들에 비해 여백이 커 보인다는 지적으로
   // viewBox 를 도형 실제 bbox 에 바짝 맞춰 크롭했다(디자인·각도는 그대로, 여백만 축소).
   sc.eq('꽉 찬 실루엣으로 그린다',

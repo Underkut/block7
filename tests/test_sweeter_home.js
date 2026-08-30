@@ -476,4 +476,57 @@ console.log('\n시나리오 13 — 담아두기 기록의 자리');
   sc.eq('담긴 것은 켜져 보인다', h.includes('class="sw-keep on"'), true);
 }
 
+// ═══ 14. 전체화면 액션 줄의 담아두기 (v26-0830-16) ═══
+console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
+{
+  const SRC = require('fs').readFileSync(__dirname + '/../index.html', 'utf8');
+
+  sc.eq('액션 줄에 단추가 있다',
+        /<button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct\('keep'\)"/.test(SRC), true);
+  sc.eq('vfAct 가 담기/빼기를 부른다',
+        /else if\(kind==='keep'\)\{[\s\S]{0,200}swToggleKeep\(v\.ref\)/.test(SRC), true);
+  sc.eq('담아둔 것 타일을 다시 그린다', SRC.includes('_swRepaintKeepTiles()'), true);
+
+  // ⚠️ BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다 → 눌러도 갈 곳이 없다.
+  //    그래서 CSS 로 감춰 두고 Sweeter 일 때만 켠다.
+  sc.eq('기본은 감춰져 있다', SRC.includes('.vf-act-keep{display:none;}'), true);
+  sc.eq('Sweeter 일 때만 켠다',
+        /const show=\(typeof _swOn==='function'\)&&_swOn\(\);[\s\S]{0,120}kb\.style\.display=show\?'flex':'none';/.test(SRC), true);
+  sc.eq('담겼으면 채워 보인다',
+        SRC.includes("kb.classList.toggle('on',show&&_swIsKept(ref));"), true);
+
+  // ⚠️ 같은 줄의 '암송'이 이미 갈피표다. 담아두기까지 갈피표로 그리면
+  //    나란히 놓였을 때 둘을 구분할 수 없다. 담아두기는 주머니로 그린다.
+  const memD = 'M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z';
+  const keepD = 'M4 4.6h16v6.4a8 8 0 0 1-16 0z';
+  sc.eq('암송은 갈피표 그대로', SRC.includes(memD), true);
+  sc.eq('담아두기는 다른 그림', keepD !== memD, true);
+  sc.eq('갈피표 모양은 이제 안 쓴다', SRC.includes('M6 4h12v16l-6-4.5L6 20z'), false);
+  sc.eq('전체화면·타일이 같은 그림',
+        SRC.includes("const _KEEP_D='" + keepD + "';") && SRC.includes('<path d="' + keepD + '"/>'), true);
+  sc.eq('공유 이미지에도 그린다', /keep:\{out:\['M4 4\.6h16v6\.4a8 8 0 0 1-16 0z'/.test(SRC), true);
+  sc.eq('빈 문구도 주머니라고 말한다',
+        SRC.includes('말씀 왼쪽 위의 주머니를 누르면 담깁니다.'), true);
+}
+
+// ═══ 15. Sweeter 개발본이 Firebase 에 붙는가 (v26-0830-16) ═══
+console.log('\n시나리오 15 — Sweeter 개발본의 Firebase');
+{
+  // ⚠️ HB 가 실제로 쓰는 말씀모음은 클라우드에 있다. DEV_MODE 가 켜져 있으면
+  //    로그인 자체가 없어서 기본 네비게이토 180 절만 보인다.
+  const mk = require('fs').readFileSync(__dirname + '/../tools/make-sweeter.sh', 'utf8');
+  sc.eq('DEV_MODE 를 건드리지 않는다', /sub_once\(out,'const DEV_MODE/.test(mk), false);
+  sc.eq('제품 이름만 바꾼다',
+        mk.includes("sub_once(out,'const APP_PRODUCT = \"block7\";'"), true);
+
+  const sw = require('fs').readFileSync(__dirname + '/../sweeter-dev.html', 'utf8');
+  sc.eq('개발본에 Firebase 가 켜져 있다', sw.includes('const DEV_MODE = false;'), true);
+  sc.eq('제품은 sweeter 다', sw.includes('const APP_PRODUCT = "sweeter";'), true);
+  sc.eq('2번째 줄 표시가 맞다', /\[SWEETER DEV\]/.test(sw.split('\n')[1]), true);
+  // 저장 키는 이제 _dev 꼬리표가 없다 — BLOCK7 과 여전히 다른 통이다
+  const KEY = (prod, dev) => (prod === 'block7' ? 'b7v1' : 'b7v1_' + prod) + (dev ? '_dev' : '');
+  sc.eq('저장 키는 b7v1_sweeter', KEY('sweeter', false), 'b7v1_sweeter');
+  sc.eq('BLOCK7 것과 다르다', KEY('sweeter', false) !== KEY('block7', false), true);
+}
+
 sc.done();
