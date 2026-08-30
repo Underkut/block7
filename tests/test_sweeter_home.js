@@ -348,8 +348,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
 {
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
-  sc.eq('처음엔 기본 다섯', _swLoadTiles().map(t=>t.k),
-        ['last','recent','book','tag','react']);
+  sc.eq('처음엔 기본 여섯', _swLoadTiles().map(t=>t.k),
+        ['last','keep','recent','book','tag','react']);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -375,7 +375,7 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   _SW_TILES=_swLoadTiles();
   sc.eq('남은 종류가 없다', _swSpareKinds(), []);
   _SW_TILES=[{k:'last',s:0,p:0}];
-  sc.eq('남은 넷', _swSpareKinds().sort(), ['book','react','recent','tag']);
+  sc.eq('남은 다섯', _swSpareKinds().sort(), ['book','keep','react','recent','tag']);
 }
 
 // ═══ 10. BLOCK7 과 갈라져 있는가 ═══
@@ -391,6 +391,89 @@ console.log('\n시나리오 10 — 타일 구성은 Sweeter 것이다');
   // wide 는 표에서 읽는다 — 타일이 늘어도 하드코딩이 남지 않게
   sc.eq('넓은 타일은 표에서 정한다',
         SRC_DEV.includes("return 'sw-tile '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
+}
+
+// ═══ 11. 값을 누르면 그 말씀들이 열린다 ═══
+console.log('\n시나리오 11 — 어떤 타일을 눌러도 말씀이 열린다');
+{
+  // ⚠️ 예전엔 '설교(cat)'로만 걸렀다. 그래서 성경·태그·반응 타일은 값의 이름이
+  //    cat 과 맞지 않아 언제나 빈 목록이 나왔고 토스트만 떴다 (HB 신고 26-0830-15).
+  VERSES=[V('마태복음 5:13','언덕 위의 도시','2026-06-21'),
+          V('마태복음 5:14','언덕 위의 도시','2026-06-21'),
+          V('시편 119:105','꿀보다 더 다니이다','2026-07-01')];
+  VERSES[0].tags=['소금과 빛']; VERSES[1].tags=['소금과 빛','제자도']; VERSES[2].tags=['말씀'];
+  LIKE={'2026-08-20':[{ref:'시편 119:105',time:'09:10'}]};
+  MEM={}; DEEP={}; EVEN={}; SHARE={};
+
+  const at=(k,v)=>_swVersesFor({k},{v});
+  sc.eq('설교로 고른다', at('recent',{cat:'언덕 위의 도시'}).length, 2);
+  sc.eq('성경으로 고른다', at('book',{name:'마태복음'}).length, 2);
+  sc.eq('그 밖의 책', at('book',{name:'시편'}).map(v=>v.ref), ['시편 119:105']);
+  sc.eq('태그로 고른다', at('tag',{name:'소금과 빛'}).length, 2);
+  sc.eq('태그 하나만 붙은 것', at('tag',{name:'제자도'}).map(v=>v.ref), ['마태복음 5:14']);
+  sc.eq('반응으로 고른다', at('react',{kind:'like'}).map(v=>v.ref), ['시편 119:105']);
+  sc.eq('기록 없는 반응은 빈 목록', at('react',{kind:'mem'}).length, 0);
+  // 없는 이름을 물으면 빈 목록 (토스트로 알린다)
+  sc.eq('없는 태그', at('tag',{name:'없는태그'}).length, 0);
+}
+
+// ═══ 12. 담아두기 ═══
+console.log('\n시나리오 12 — 담아두기');
+{
+  VERSES=[V('마태복음 5:13','A','2026-06-21'),V('시편 119:105','B','2026-07-01')];
+  ST={settings:{},verseKeepLog:{}};
+  SAVED=0;
+
+  sc.eq('처음엔 담긴 게 없다', _swIsKept('마태복음 5:13'), false);
+  sc.eq('담으면 true 를 준다', swToggleKeep('마태복음 5:13'), true);
+  sc.eq('담겼다', _swIsKept('마태복음 5:13'), true);
+  sc.eq('저장이 불린다', SAVED, 1);
+  sc.eq('기록 모양이 좋아요와 같다',
+        Object.keys(ST.verseKeepLog).length===1&&
+        Array.isArray(ST.verseKeepLog['2026-08-30'])&&
+        ST.verseKeepLog['2026-08-30'][0].ref==='마태복음 5:13', true);
+
+  // ⚠️ 뺄 때는 그 장절의 기록을 **모두** 지운다. 하나라도 남으면 다시 담은
+  //    것처럼 되살아난다.
+  ST.verseKeepLog={'2026-08-28':[{ref:'마태복음 5:13',time:'10:00'}],
+                   '2026-08-30':[{ref:'마태복음 5:13',time:'11:00'},
+                                 {ref:'시편 119:105',time:'12:00'}]};
+  sc.eq('빼면 false 를 준다', swToggleKeep('마태복음 5:13'), false);
+  sc.eq('여러 날에 걸친 기록도 다 지운다', _swIsKept('마태복음 5:13'), false);
+  sc.eq('다른 말씀은 남는다', _swIsKept('시편 119:105'), true);
+  sc.eq('빈 날은 통째로 지운다', ST.verseKeepLog['2026-08-28'], undefined);
+
+  // 담아둔 것 목록 — 담은 때가 새로운 것부터
+  ST.verseKeepLog={'2026-08-20':[{ref:'마태복음 5:13',time:'09:00'}],
+                   '2026-08-29':[{ref:'시편 119:105',time:'09:00'}]};
+  sc.eq('새로운 것부터', _swKeeps(0).map(x=>x.ref), ['시편 119:105','마태복음 5:13']);
+  sc.eq('오래된 것부터', _swKeeps(1).map(x=>x.ref), ['마태복음 5:13','시편 119:105']);
+  // ⚠️ 지금 켜진 모음에 없는 말씀은 조용히 건너뛴다 (본문 없이 장절만 뜨면 빈 카드가 된다)
+  ST.verseKeepLog['2026-08-30']=[{ref:'없는 구절 1:1',time:'09:00'}];
+  sc.eq('찾지 못한 말씀은 건너뛴다', _swKeeps(0).length, 2);
+}
+
+// ═══ 13. 담아두기 기록이 병합에서 살아남는가 ═══
+console.log('\n시나리오 13 — 담아두기 기록의 자리');
+{
+  // ⚠️ 새 기록은 다섯 곳에 모두 이름을 올려야 한다. 하나라도 빠지면 기기 간에
+  //    사라지거나(병합), 시작할 때 비거나(기본값), 클라우드에서 안 온다.
+  sc.eq('① 기본 상태에 있다', /defaultState[\s\S]{0,900}verseKeepLog:\{\}/.test(SRC_DEV), true);
+  sc.eq('② 시작할 때 채운다',
+        SRC_DEV.includes('if(!ST.verseKeepLog)ST.verseKeepLog={};'), true);
+  sc.eq('③ 병합이 로그로 다룬다',
+        SRC_DEV.includes("||k==='verseKeepLog')v=_mgLogFlat(bv,lv,cv,baseKnown);"), true);
+  sc.eq('④ 대량 손실 방어가 센다',
+        SRC_DEV.includes('verseLogs:_fbCountArrays(o.verseKeepLog||{},0)'), true);
+  sc.eq('⑤ 클라우드에서 받아 반영한다',
+        SRC_DEV.includes('if(remote.verseKeepLog)ST.verseKeepLog=remote.verseKeepLog;'), true);
+  // 갈피표는 고정 세간이다 (흐르는 묶음 안에 있으면 넘길 때 같이 흐른다)
+  VERSES=[V('마태복음 5:13','A','2026-06-21')];
+  ST={settings:{},verseKeepLog:{'2026-08-20':[{ref:'마태복음 5:13',time:'09:00'}]}};
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const h=_swFace({k:'keep',p:1,s:0});
+  sc.eq('갈피표가 이름줄 안에 있다', /class="sw-lab"><button class="sw-keep/.test(h), true);
+  sc.eq('담긴 것은 켜져 보인다', h.includes('class="sw-keep on"'), true);
 }
 
 sc.done();
