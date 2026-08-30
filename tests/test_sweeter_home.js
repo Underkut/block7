@@ -172,6 +172,16 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('세로로 움직이면 몸짓을 포기한다',
         SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){'), true);
   sc.eq('70도까지는 옆쓸기로 본다', SRC_DEV.includes('const _SW_ANGLE=2.75;'), true);
+  // 넘기는 문턱 10px (HB 지시 26-0830-10 — 45px 은 너무 길다)
+  sc.eq('넘기는 문턱은 10px', SRC_DEV.includes('const _SW_COMMIT=10;'), true);
+  // ⚠️ 끌리는 타일이 손가락을 가리면 elementFromPoint 가 자기 자신만 돌려주어
+  //    "밑에 있는 타일"을 못 찾는다 → 순서가 영영 안 바뀐다 (HB 신고 26-0830-10).
+  //    투명도만으로는 안 된다. pointer-events:none 이라야 한다.
+  sc.eq('끌리는 타일은 손가락 밑을 비켜 준다',
+        /\.sw-tile\.sw-drag\{[^}]*pointer-events:none/.test(SRC_DEV), true);
+  // 편집 중에는 브라우저에게 세로를 넘기지 않는다 (pointercancel 로 끊긴다)
+  sc.eq('편집 중에는 몸짓을 브라우저에 뺏기지 않는다',
+        SRC_DEV.includes('.sw-board.edit .sw-tile{touch-action:none;}'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
