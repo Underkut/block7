@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-15  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-16  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -559,6 +559,10 @@ header{
 @keyframes vfPop{0%{transform:scale(1);}40%{transform:scale(1.28);}100%{transform:scale(1);}}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
+/* 담아두기(주머니) — Sweeter 에서만 보인다. BLOCK7 에는 담아둔 것을 꺼내
+   보여 줄 자리가 아직 없어서 눌러도 갈 곳이 없다. _vfSyncCounts() 가
+   Sweeter 일 때만 display 를 켠다 (v26-0830-16). */
+.vf-act-keep{display:none;}
 /* 좌상단 홈 버튼 · 상단 중앙 필터 라벨 (타일뷰에서 들어온 경우에만) */
 .vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;z-index:12;
   background:none;border:none;padding:6px;cursor:pointer;color:var(--vf-tx2,var(--tx2));
@@ -3296,7 +3300,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin:0 0 4px;flex:0 0 auto;
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
-/* 갈피표 — 지금 보이는 말씀을 담고 뺀다. 고정 세간이라 흐르지 않는다. */
+/* 주머니(담아두기) — 지금 보이는 말씀을 담고 뺀다. 고정 세간이라 흐르지 않는다. */
 .sw-keep{position:relative;flex:0 0 auto;background:none;border:0;padding:0;cursor:pointer;
   width:15px;height:15px;color:var(--tx3);line-height:0;}
 .sw-keep svg{width:15px;height:15px;display:block;}
@@ -3484,7 +3488,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-15";
+const APP_VERSION = "v. 26-0830-16";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5421,6 +5425,12 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div id="vfTag"></div>
     </div>
     <div class="vf-actions">
+    <button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct('keep')" aria-label="담아두기">
+      <span class="vf-ic">
+        <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.6h16v6.4a8 8 0 0 1-16 0z"/><path d="M8.7 9.8l3.3 3 3.3-3"/></svg>
+        <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M4 4.6h16v6.4a8 8 0 0 1-16 0zM8.7 9.1l3.3 3 3.3-3 .95 1.05-4.25 3.85-4.25-3.85z"/></svg>
+      </span><span class="vf-cnt" id="vfCntkeep">&nbsp;</span>
+    </button>
     <button class="vf-act vf-act-like" id="vfActlike" onclick="vfAct('like')" aria-label="좋아요">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
@@ -10618,6 +10628,15 @@ function _vfSyncCounts(){
   [['like','like'],['mem','mem'],['deeper','deeper'],['even','even'],['share','share']].forEach(([id,kind])=>{
     setCnt(id,_verseEventCount(kind,ref));
   });
+  // 담아두기는 숫자가 없다 — 담겼나 아닌가 하나뿐이다. 그리고 Sweeter 에서만
+  // 보인다 (BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다).
+  const kb=document.getElementById('vfActkeep');
+  if(kb){
+    const show=(typeof _swOn==='function')&&_swOn();
+    kb.style.display=show?'flex':'none';
+    kb.classList.toggle('on',show&&_swIsKept(ref));
+    kb.setAttribute('aria-pressed',(show&&_swIsKept(ref))?'true':'false');
+  }
   if((ST.settings.verseCountScope||'all')==='all'&&ref){
     const token=ref; // 비동기 도중 구절이 바뀌면 무시
     _fetchVerseStat(ref).then(st=>{
@@ -10681,7 +10700,9 @@ const _CARD_ICONS={
   mem:{p:['M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z']},
   deeper:{out:['M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z'],fill:['M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z']},
   even:{out:['M5 6l7 6 7-6','M5 13l7 6 7-6'],fill:['M5 5 L19 5 L12 12 Z','M5 13 L19 13 L12 20 Z']},
-  share:{out:['M22 2 11 13','M22 2 15 22 11 13 2 9 22 2Z']}
+  share:{out:['M22 2 11 13','M22 2 15 22 11 13 2 9 22 2Z']},
+  keep:{out:['M4 4.6h16v6.4a8 8 0 0 1-16 0z','M8.7 9.8l3.3 3 3.3-3'],
+        fill:['M4 4.6h16v6.4a8 8 0 0 1-16 0zM8.7 9.1l3.3 3 3.3-3 .95 1.05-4.25 3.85-4.25-3.85z']}
 };
 function _cardActionCount(kind,counts){
   if(counts&&counts[kind]!=null)return counts[kind]|0;
@@ -10974,7 +10995,7 @@ function _shotDraw(o){
       const ox=r.left+(r.width-side)/2,oy=r.top+(r.height-side)/2;
       ctx.save();ctx.translate(X(ox),Y(oy));ctx.scale(sc,sc);
       ctx.fillStyle=col;ctx.strokeStyle=col;ctx.lineWidth=1.7;ctx.lineCap='round';ctx.lineJoin='round';
-      paths.forEach(d=>{const P=new Path2D(d);filled?ctx.fill(P):ctx.stroke(P);});
+      paths.forEach(d=>{const P=new Path2D(d);filled?ctx.fill(P,'evenodd'):ctx.stroke(P);});
       ctx.restore();
       const cnt=btn.querySelector('.vf-cnt');
       if(cnt&&cnt.textContent){
@@ -11652,6 +11673,12 @@ function vfAct(kind){
   if(kind==='like'||kind==='mem')_reactWithToast(kind,v.ref);
   else if(kind==='deeper')openDeeperFromRef(v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
+  else if(kind==='keep'){
+    // 담기/빼기 (v26-0830-16). 문구 토스트 대신 아이콘이 채워지고 비워진다.
+    const on=swToggleKeep(v.ref);
+    showToast(on?'담아 뒀어요':'담아둔 것에서 뺐어요');
+    _swRepaintKeepTiles();
+  }
   _vfSyncCounts();
   const btn=document.getElementById('vfAct'+kind);
   if(btn){btn.classList.remove('pop');void btn.offsetWidth;btn.classList.add('pop');}
@@ -27789,7 +27816,7 @@ const _SW_TYPES={
   react:{n:'말씀 반응',sorts:['모두','이번 달'],
         empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
   keep:{n:'담아둔 것',wide:true,sorts:['담은 순','오래된 순'],
-        empty:'담아둔 말씀이 없어요. 말씀 왼쪽 위의 갈피표를 누르면 담깁니다.'}
+        empty:'담아둔 말씀이 없어요. 말씀 왼쪽 위의 주머니를 누르면 담깁니다.'}
 };
 // 처음 켰을 때 놓이는 차례
 const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
@@ -27799,6 +27826,12 @@ const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
 // (ST.verseKeepLog = {"YYYY-MM-DD":[{ref,time}]}) 이라 병합 장치를 그대로 쓴다.
 // ⚠️ 담기와 빼기를 한 자리에서 한다. 뺄 때는 그 장절의 기록을 모두 지운다 —
 //    남겨 두면 다시 담은 것처럼 되살아난다.
+// 주머니 그림 — 전체화면 액션 줄과 타일이 **같은 값**을 쓴다.
+// ⚠️ 갈피표 모양을 쓰면 안 된다. 전체화면의 '암송'이 이미 갈피표라 나란히
+//    두면 둘을 구분할 수 없다 (v26-0830-16).
+const _KEEP_D='M4 4.6h16v6.4a8 8 0 0 1-16 0z';
+const _KEEP_CHEV='M8.7 9.8l3.3 3 3.3-3';
+const _KEEP_FILL='M4 4.6h16v6.4a8 8 0 0 1-16 0zM8.7 9.1l3.3 3 3.3-3 .95 1.05-4.25 3.85-4.25-3.85z';
 function getKeepLog(){ if(!ST.verseKeepLog)ST.verseKeepLog={}; return ST.verseKeepLog; }
 function _swKeptRefs(){
   const set=new Set();
@@ -27825,6 +27858,17 @@ function swToggleKeep(ref){
   if(!log[d])log[d]=[];
   log[d].push({ref:r,time:hh+':'+mm});
   save();return true;
+}
+// 담아둔 것이 바뀌면 판 위의 '담아둔 것' 타일을 다시 그린다.
+// ⚠️ BLOCK7 에서도 불린다 (전체화면 액션 줄). 판이 없으면 조용히 나간다.
+function _swRepaintKeepTiles(except){
+  if(typeof _swOn!=='function'||!_swOn())return;
+  if(!Array.isArray(_SW_TILES))return;
+  _SW_TILES.forEach((x,j)=>{
+    if(x.k!=='keep'||j===except)return;
+    x.p=0;                       // 목록이 달라졌으니 처음 값부터
+    try{_swRepaint(j);}catch(_){}
+  });
 }
 // 담아둔 말씀 — 담은 때가 새로운 것부터 (또는 오래된 것부터)
 function _swKeeps(sortIdx){
@@ -28036,9 +28080,11 @@ function _swFace(t){
     const on=_swIsKept(cur0.v.verse.ref);
     mark='<button class="sw-keep'+(on?' on':'')+'" data-swkeep="1" '
       +'aria-pressed="'+(on?'true':'false')+'" title="담아두기">'
-      +'<svg viewBox="0 0 24 24" fill="'+(on?'currentColor':'none')+'" stroke="currentColor" '
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
       +'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
-      +'<path d="M6 4h12v16l-6-4.5L6 20z"/></svg></button>';
+      +(on?'<path fill="currentColor" fill-rule="evenodd" d="'+_KEEP_FILL+'"/>'
+          :'<path d="'+_KEEP_D+'"/><path d="'+_KEEP_CHEV+'"/>')
+      +'</svg></button>';
   }
   const lab='<div class="sw-lab">'+mark+'<span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
   if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
@@ -28326,8 +28372,7 @@ function _swInitGestures(){
       if(cur&&cur.kind==='val'&&cur.v&&cur.v.verse){
         swToggleKeep(cur.v.verse.ref);
         _swRepaint(i);
-        // '담아둔 것' 타일이 떠 있으면 그것도 새로 그린다
-        _SW_TILES.forEach((x,j)=>{if(x.k==='keep'&&j!==i){x.p=0;_swRepaint(j);}});
+        _swRepaintKeepTiles(i);   // '담아둔 것' 타일이 떠 있으면 그것도 새로
       }
       e.preventDefault();return;
     }
