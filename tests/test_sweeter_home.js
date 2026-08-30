@@ -26,11 +26,27 @@ function getShareLog(){return SHARE;}
 
 let VERSES=[];
 function ACTIVE_VERSES(){return VERSES;}
+let ST={settings:{}};
+let SAVED=0;
+function save(){SAVED++;}
+function _calKey(){return '2026-08-30';}
+// 성경 순서 도구 — 진짜를 떠온다 (책 이름 표준화·정경 순서가 여기 들어 있다)
+
 function _findVerseByRefLoose(ref){return VERSES.find(v=>v.ref===ref)||null;}
 function _tagartPick(){return null;} function _tagartSvg(){return '';}
 function _tagartStyle(){return 'minimal';}
 
-eval(sliceDev('function _swOn(){', '// ── DEV MODE BOOTSTRAP ──'));
+// ⚠️ 직접 eval 안의 const/let 은 **그 eval 안에만** 산다 (var 는 밖으로 나온다).
+//    순서표는 const 로 적혀 있으므로 var 로 바꿔 떠온다.
+eval((SRC_DEV.match(/^const BIBLE_ORDER_(?:OT|NT)=\[[^\]]*\];$/gm)||[])
+       .join('\n').replace(/^const /gm,'var '));   // 정경 순서표
+eval(sliceDev('// ── 성경책 이름 하나로 모으기 ──', 'function _bookSel'));
+eval(sliceDev('function _bibleRankOfRef(', '// verses를 keyFn 기준으로'));
+let _BIBLE_WHOLE=null;
+// 같은 까닭으로 Sweeter 블록의 맨 바깥 const/let 도 var 로 바꿔 떠온다.
+// (안 그러면 _SW_TILES 같은 것을 테스트에서 바꿔도 함수들은 딴 것을 본다)
+eval(sliceDev('function _swOn(){', '// ── DEV MODE BOOTSTRAP ──')
+       .replace(/^(?:const|let) /gm,'var '));
 
 const V=(ref,cat,d,txt)=>({idx:0,cat,topic:'',krText:txt||(cat+' 본문'),ref,tags:[],hi:'',d,pid:'',kind:''});
 
@@ -151,8 +167,12 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes("d:v.d||'',pid:v.pid||'',kind:v.kind||''"), true);
   // ⚠️ 세로 몸짓은 화면 스크롤의 것이다. 이 포기 규칙을 지우면 시안에서 겪은
   //    "상하 슬라이드가 잘 안 되는" 증상이 그대로 돌아온다.
+  // 각도 관용은 설정창 탭과 같은 1.3배 = 52.4도. 45도(dy>=dx)로 되돌리면
+  // 45도 언저리의 옆쓸기가 스크롤로 새 나간다 (HB 신고 26-0830-8).
   sc.eq('세로로 움직이면 몸짓을 포기한다',
-        SRC_DEV.includes('if(Math.abs(dy)>=Math.abs(dx)){'), true);
+        SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*1.3){'), true);
+  sc.eq('설정창 탭과 같은 각도 관용',
+        SRC_DEV.includes('if(Math.abs(ddy)>Math.abs(ddx)*1.3){'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
@@ -210,6 +230,97 @@ console.log('\n시나리오 7 — 트랙으로 넘긴다 (설정창 탭과 같�
   sc.eq('이름 줄은 트랙보다 앞', iLab<iTrack, true);
   sc.eq('점은 트랙보다 뒤', iPips>iTrack, true);
   sc.eq('이름 줄은 칸 안에 없다', /sw-cell[^>]*>[^<]*<div class="sw-lab"/.test(hv), false);
+}
+
+// ═══ 8. 새 타일 셋 — 성경 · 태그 · 말씀 반응 ═══
+console.log('\n시나리오 8 — 새 타일 셋');
+{
+  VERSES=[V('마태복음 5:13','A','2026-06-21'),V('마태복음 5:14','A','2026-06-21'),
+          V('시편 119:105','B','2026-07-01'),V('로마서 8:28','C','2026-07-05')];
+  VERSES[0].tags=['소금과 빛','제자도'];
+  VERSES[1].tags=['소금과 빛'];
+  VERSES[2].tags=['말씀'];
+  VERSES[3].tags=[];
+
+  const bk=_swBooks(0);
+  sc.eq('책 수', bk.length, 3);
+  sc.eq('많이 담긴 순 첫째', bk[0].name, '마태복음');
+  sc.eq('그 책의 말씀 수', bk[0].n, 2);
+  // ⚠️ 성경 순서는 이름순이 아니다 — 창세기→요한계시록. 시편이 마태복음보다 앞이다.
+  const ord=_swBooks(1);
+  sc.eq('성경 순서 첫째는 시편', ord[0].name, '시편');
+  sc.eq('성경 순서 끝은 로마서', ord[ord.length-1].name, '로마서');
+
+  const tg=_swTags(0);
+  sc.eq('태그 수', tg.length, 3);
+  sc.eq('많은 순 첫째', tg[0].name, '소금과 빛');
+  sc.eq('그 태그의 말씀 수', tg[0].n, 2);
+  // ⚠️ 한 말씀에 태그가 여럿이면 **각각** 세어야 한다. 하나만 세면 합계가 어긋난다.
+  sc.eq('태그 합계', tg.reduce((a,x)=>a+x.n,0), 4);
+  sc.eq('태그 없는 말씀은 안 센다', tg.some(x=>!x.name), false);
+
+  LIKE={'2026-08-20':[{ref:'마태복음 5:13',time:'09:10'}],
+        '2026-07-02':[{ref:'시편 119:105',time:'09:10'}]};
+  MEM ={'2026-08-28':{am:[{ref:'로마서 8:28',time:'07:30'}]}};
+  DEEP={}; EVEN={}; SHARE={};
+  const all=_swReacts(0);
+  sc.eq('0 인 갈래는 안 나온다', all.map(x=>x.name), ['좋아요','암송']);
+  sc.eq('좋아요 셈', all[0].n, 2);
+  sc.eq('암송 셈', all[1].n, 1);
+  // '이번 달' 은 2026-08 만
+  const mon=_swReacts(1);
+  sc.eq('이번 달 좋아요', mon.find(x=>x.name==='좋아요').n, 1);
+  sc.eq('이번 달 암송', mon.find(x=>x.name==='암송').n, 1);
+}
+
+// ═══ 9. 타일 더하기 — 저장과 되읽기 ═══
+console.log('\n시나리오 9 — 타일 구성을 저장한다');
+{
+  // 아직 손대지 않았으면 기본 차례
+  ST={settings:{}};
+  sc.eq('처음엔 기본 다섯', _swLoadTiles().map(t=>t.k),
+        ['last','recent','book','tag','react']);
+
+  // 저장 → 되읽기
+  _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
+  SAVED=0; _swSaveTiles();
+  sc.eq('저장이 실제로 불린다', SAVED, 1);
+  sc.eq('차례가 그대로', ST.settings.swTiles.map(t=>t.k), ['tag','last']);
+  sc.eq('정렬도 함께', ST.settings.swTiles[0].s, 1);
+  // ⚠️ p(지금 몇 번째 값을 보는가)는 담지 않는다. 담으면 기기마다 다른 값이
+  //    끊임없이 클라우드로 올라가 쓸데없는 충돌을 만든다.
+  sc.eq('보던 자리는 담지 않는다', ST.settings.swTiles[0].p, undefined);
+  sc.eq('되읽으면 처음부터', _swLoadTiles()[0].p, 0);
+
+  // ⚠️ 다 껐으면 **빈 채로** 둔다. 기본값으로 되살리면 사용자가 끈 것이 되돌아온다.
+  ST.settings.swTiles=[];
+  sc.eq('다 껐으면 빈 채로', _swLoadTiles().length, 0);
+
+  // 모르는 종류는 조용히 버린다 (뒤 버전에서 없앤 타일이 남아 있을 수 있다)
+  ST.settings.swTiles=[{k:'없는타일',s:0},{k:'book',s:0}];
+  sc.eq('모르는 종류는 버린다', _swLoadTiles().map(t=>t.k), ['book']);
+
+  // 더하기·끄기
+  ST={settings:{}};
+  _SW_TILES=_swLoadTiles();
+  sc.eq('남은 종류가 없다', _swSpareKinds(), []);
+  _SW_TILES=[{k:'last',s:0,p:0}];
+  sc.eq('남은 넷', _swSpareKinds().sort(), ['book','react','recent','tag']);
+}
+
+// ═══ 10. BLOCK7 과 갈라져 있는가 ═══
+console.log('\n시나리오 10 — 타일 구성은 Sweeter 것이다');
+{
+  // ⚠️ 이 목록이 두 제품 공용이면, BLOCK7 이 저장할 때마다 Sweeter 의 화면
+  //    구성이 오르내린다. _PRODUCT_SCOPED 에 들어 있어야 갈라진다.
+  sc.eq('제품별 칸막이에 들어 있다',
+        /_PRODUCT_SCOPED=[\s\S]*?'swTiles'[\s\S]*?\];/.test(SRC_DEV), true);
+  // 편집을 나갈 때 한 번만 저장한다 (끌 때마다 클라우드로 올리지 않는다)
+  sc.eq('나갈 때 저장한다',
+        SRC_DEV.includes('if(!_SW_EDIT)_swSaveTiles();'), true);
+  // wide 는 표에서 읽는다 — 타일이 늘어도 하드코딩이 남지 않게
+  sc.eq('넓은 타일은 표에서 정한다',
+        SRC_DEV.includes("return 'sw-tile '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
 }
 
 sc.done();
