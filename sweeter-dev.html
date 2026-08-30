@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3277,7 +3277,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   border:1px solid var(--bd);overflow:hidden;cursor:pointer;touch-action:pan-y;
   transition:transform .16s ease;}
 .sw-tile.wide{grid-column:span 2;}
-.sw-tile:active{transform:scale(.975);}
+/* 누름 축소는 **탭일 때만**이다.
+   ⚠️ 미는 동안에도 걸어 두었더니, 손을 뗄 때 타일이 0.975 → 1 로 되돌아오면서
+      그 위에서 흐려지고 있던 본문이 함께 **커지는 것처럼** 보였다. 그게 마지막까지
+      남아 있던 튕김의 정체다 (HB 신고 26-0830-5). 미는 중에는 .sw-dragging 이
+      붙어 축소가 걸리지 않는다. */
+.sw-tile:not(.sw-dragging):active{transform:scale(.975);}
+.sw-tile.sw-dragging{transform:none;}
 .sw-face{position:absolute;inset:0;padding:13px;display:flex;flex-direction:column;
   justify-content:flex-end;}
 .sw-art{position:absolute;left:0;right:0;top:0;height:64%;display:grid;place-items:center;
@@ -3434,7 +3440,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-4";
+const APP_VERSION = "v. 26-0830-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27872,7 +27878,7 @@ function _swRepaint(i,dir){
   const b=document.getElementById('swBoard');if(!b)return;
   const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
   const t=_SW_TILES[i],f=_swFace(t);
-  el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;
+  el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;   // sw-dragging 도 여기서 사라진다
   el.innerHTML=f.html;
   if(dir)_swFlow(el).forEach(x=>{
     x.style.setProperty('--sw-sx',(dir>0?34:-34)+'px');
@@ -27936,15 +27942,20 @@ function _swInitGestures(){
       // ⚠️ 세로로 움직이면 이 몸짓을 깨끗이 포기한다. 브라우저가 이미
       //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
       if(Math.abs(dy)>=Math.abs(dx)){
+        _swG.el.classList.remove('sw-dragging');
         _swFlowSet(_swG.el,'');
         _swG=null;return;
       }
       _swG.ax='x';
+      _swG.el.classList.add('sw-dragging');   // 누름 축소를 끈다 (위 CSS 주석 참고)
     }
     if(_swG.ax==='x')_swFlowSet(_swG.el,'translateX('+(dx*.34)+'px)');
   });
   // 손을 뗀 자리에서 제자리로 되돌릴 때 쓰는 짧은 전환
-  const _swEase=el=>_swFlowSet(el,'',undefined,'transform .16s ease-out');
+  const _swEase=el=>{
+    el.classList.remove('sw-dragging');
+    _swFlowSet(el,'',undefined,'transform .16s ease-out');
+  };
   const end=e=>{
     if(!_swG)return;
     const dx=e.clientX-_swG.x,i=_swG.i,el=_swG.el,t=_SW_TILES[i];
@@ -27953,19 +27964,26 @@ function _swInitGestures(){
       const can=dir>0?(t.p<n-1):(t.p>0);
       if(can){
         // 움직임을 줄여 달라고 한 기기에서는 애니메이션 없이 바로 갈아끼운다
-        if(_swNoMotion()){t.p+=dir;_swFlowSet(el,'','');_swRepaint(i,0);_swG=null;return;}
+        if(_swNoMotion()){t.p+=dir;el.classList.remove('sw-dragging');
+                          _swFlowSet(el,'','');_swRepaint(i,0);_swG=null;return;}
         // ⚠️ 여기서 바로 갈아끼우면 **튕겨 돌아오는 것처럼** 보인다 (HB 신고).
         //    손가락이 내용을 왼쪽으로 밀어 둔 상태인데, 새 내용은 오른쪽에서
         //    들어오도록 만들어 두었기 때문이다. 눈에는 왼쪽 → 오른쪽 → 가운데,
         //    즉 한 번 되튀는 것으로 보인다.
         //    그래서 밀던 방향으로 **끝까지 내보낸 뒤에** 새 내용을 들인다.
-        _swFlowSet(el,'translateX('+(dir>0?-46:46)+'px)','0',
+        // ⚠️ 예전엔 목적지를 ∓46px 로 **못 박아** 두었다. 그래서 손가락을 많이
+        //    밀어 이미 그보다 더 가 있으면, 흐려지는 동안 내용이 **뒤로 되돌아갔다.**
+        //    지금 있는 자리에서 가던 방향으로 더 보낸다 (HB — "가던 방향으로 보내버려").
+        const from=dx*.34, to=from+(dir>0?-70:70);
+        _swFlowSet(el,'translateX('+to+'px)','0',
                    'transform .12s ease-out,opacity .12s ease-out');
         t.p+=dir;
         el._swAnim=true;
-        setTimeout(()=>{el._swAnim=false;_swRepaint(i,dir);},120);
+        setTimeout(()=>{el._swAnim=false;el.classList.remove('sw-dragging');
+                        _swRepaint(i,dir);},120);
       }else _swEase(el);   // 끝이다 — 부드럽게 제자리로
     }else if(!_swG.moved&&Date.now()-_swG.t<600){
+      el.classList.remove('sw-dragging');
       _swFlowSet(el,'');
       _swTileOpen(i);
     }else _swEase(el);

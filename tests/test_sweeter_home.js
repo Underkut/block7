@@ -157,10 +157,18 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
   // ⚠️ 밀던 방향으로 내보낸 **뒤에** 갈아끼운다. 이 절차를 빼면 손가락이 왼쪽으로
   //    밀어 둔 내용이 오른쪽에서 다시 들어와 튕겨 돌아오는 것처럼 보인다 (HB 신고).
-  sc.eq('밀던 방향으로 먼저 내보낸다',
-        SRC_DEV.includes("_swFlowSet(el,'translateX('+(dir>0?-46:46)+'px)','0',"), true);
+  // ⚠️ 목적지를 못 박으면(∓46px) 손가락이 그보다 더 밀어 둔 경우 흐려지는 동안
+  //    내용이 **뒤로 되돌아간다.** 지금 자리에서 가던 방향으로 더 보내야 한다.
+  sc.eq('있던 자리에서 가던 방향으로 더 보낸다',
+        SRC_DEV.includes("const from=dx*.34, to=from+(dir>0?-70:70);"), true);
   sc.eq('내보낸 뒤에 갈아끼운다',
-        SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;_swRepaint(i,dir);},120);"), true);
+        SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;el.classList.remove('sw-dragging');"), true);
+  // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
+  //    그 위에서 흐려지던 본문이 커지는 것처럼 보인다 (HB 신고 26-0830-5).
+  sc.eq('미는 동안에는 누름 축소를 끈다',
+        SRC_DEV.includes('.sw-tile:not(.sw-dragging):active{transform:scale(.975);}'), true);
+  sc.eq('가로로 미는 것이 정해지면 표를 붙인다',
+        SRC_DEV.includes("_swG.el.classList.add('sw-dragging');"), true);
   sc.eq('넘어가는 중에는 새 몸짓을 받지 않는다',
         SRC_DEV.includes("if(el._swAnim)return;"), true);
   // 움직임 줄이기를 켠 기기는 애니메이션 없이 바로 바뀐다
