@@ -121,7 +121,7 @@ console.log('\n시나리오 4 — 띠·점·빈 상태');
 
   // 값이 없을 때 — 왜 비었는지 말해 준다
   const empty={k:'last',p:0,s:0};
-  sc.eq('빈 타일은 까닭을 적는다', _swFace(empty).html.includes('아직 기록이 없어요'), true);
+  sc.eq('빈 타일은 까닭을 적는다', _swFace(empty).includes('아직 기록이 없어요'), true);
 
   // p 가 범위를 벗어나도 조용히 되돌아온다
   const over={k:'recent',p:99,s:0};
@@ -134,7 +134,7 @@ console.log('\n시나리오 5 — 시트 글자가 화면을 깨지 않는다');
 {
   VERSES=[V('마 5:13','<b>굵게</b> & "따옴표"','2026-06-21')];
   const t={k:'recent',p:1,s:0};
-  const h=_swFace(t).html;
+  const h=_swFace(t);
   sc.eq('꺾쇠는 글자로 나온다', h.includes('&lt;b&gt;'), true);
   sc.eq('진짜 태그로 새지 않는다', h.includes('<b>굵게</b>'), false);
 }
@@ -155,56 +155,61 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes('if(Math.abs(dy)>=Math.abs(dx)){'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
-  // ⚠️ 밀던 방향으로 내보낸 **뒤에** 갈아끼운다. 이 절차를 빼면 손가락이 왼쪽으로
-  //    밀어 둔 내용이 오른쪽에서 다시 들어와 튕겨 돌아오는 것처럼 보인다 (HB 신고).
-  // ⚠️ 목적지를 못 박으면(∓46px) 손가락이 그보다 더 밀어 둔 경우 흐려지는 동안
-  //    내용이 **뒤로 되돌아간다.** 지금 자리에서 가던 방향으로 더 보내야 한다.
-  sc.eq('있던 자리에서 가던 방향으로 더 보낸다',
-        SRC_DEV.includes("const from=dx*.34, to=from+(dir>0?-1:1)*_swSweep(el);"), true);
-  // ⚠️ 거리를 픽셀로 못 박으면 방향에 따라 길이가 달라 보인다 (HB 신고 26-0830-6):
-  //    글이 왼쪽 정렬이라 오른쪽으로 밀 때만 길게 쓸고 간다. 타일 폭으로 잰다.
-  sc.eq('쓸고 가는 거리는 타일 폭으로 잰다', SRC_DEV.includes('function _swSweep(el){'), true);
-  sc.eq('나갈 때와 들어올 때가 같은 자',
-        SRC_DEV.includes("const d=_swSweep(el)*.55;"), true);
-  sc.eq('내보낸 뒤에 갈아끼운다',
-        SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;el.classList.remove('sw-dragging');"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
-  //    그 위에서 흐려지던 본문이 커지는 것처럼 보인다 (HB 신고 26-0830-5).
+  //    그 위의 본문이 커지는 것처럼 보인다 (HB 신고 26-0830-5).
   sc.eq('미는 동안에는 누름 축소를 끈다',
         SRC_DEV.includes('.sw-tile:not(.sw-dragging):active{transform:scale(.975);}'), true);
   sc.eq('가로로 미는 것이 정해지면 표를 붙인다',
         SRC_DEV.includes("_swG.el.classList.add('sw-dragging');"), true);
-  sc.eq('넘어가는 중에는 새 몸짓을 받지 않는다',
-        SRC_DEV.includes("if(el._swAnim)return;"), true);
   // 움직임 줄이기를 켠 기기는 애니메이션 없이 바로 바뀐다
   sc.eq('움직임 줄이기를 존중한다', SRC_DEV.includes("function _swNoMotion()"), true);
 }
 
-// ═══ 7. 흐르는 것과 붙어 있는 것 ═══
-console.log('\n시나리오 7 — 고정 세간은 흐르지 않는다');
+// ═══ 7. 넘기는 방식 — 설정창 탭과 같은 트랙 ═══
+console.log('\n시나리오 7 — 트랙으로 넘긴다 (설정창 탭과 같은 방식)');
 {
-  // ⚠️ 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단)까지 함께 흐르면
-  //    값이 바뀔 때 **튕겨 보인다** (HB 신고 26-0830-4).
-  //    흐르는 것은 .sw-flow 를 단 것 — 본문 묶음과 손그림뿐이다.
+  // ⚠️ 예전엔 "내보내고 → 갈아끼우고 → 들인다" 였다. 그 사이에 빈틈이 생겨
+  //    다음 값이 늦게 나타났다 (HB 신고 26-0830-7). 이전·지금·다음 세 칸을
+  //    한 줄에 붙여 놓고 통째로 밀면 빈틈도 페이드도 없다.
+  sc.eq('트랙이 있다', SRC_DEV.includes('.sw-track{position:absolute;inset:0;display:flex;width:300%;'), true);
+  sc.eq('가운데 칸을 보여 준다', SRC_DEV.includes('transform:translateX(-33.3333%);'), true);
+  sc.eq('설정창 탭과 같은 시간·가속도',
+        SRC_DEV.includes("tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';"), true);
+  sc.eq('손가락을 1:1 로 따라간다', SRC_DEV.includes('_swTrackTo(_swTrack(_swG.el),can?dx:dx*0.25,false);'), true);
+  sc.eq('끝에서는 고무줄', SRC_DEV.includes('dx*0.25'), true);
+  // 페이드로 갈아끼우던 옛 장치가 남아 있으면 안 된다
+  sc.eq('옛 페이드 장치는 없다', /sw-slidein|_swFlowSet|_swSweep/.test(SRC_DEV), false);
+
   VERSES=[V('마 5:13','언덕 위의 도시','2026-06-21'),
           V('시 1:1','꿀보다 더 다니이다','2026-07-01')];
   LIKE={'2026-08-20':[{ref:'마 5:13',time:'09:10'}]}; MEM={}; DEEP={}; EVEN={}; SHARE={};
 
-  const t={k:'recent',p:1,s:0};
-  const h=_swFace(t).html;
-  sc.eq('본문 묶음은 흐른다', /class="sw-slide sw-flow"/.test(h), true);
-  sc.eq('타일 이름 줄은 안 흐른다', /class="sw-lab"[^>]*sw-flow/.test(h), false);
-  sc.eq('점은 안 흐른다', /class="sw-pips"[^>]*sw-flow/.test(h), false);
-  // 값(본문·부제)은 흐르는 묶음 **안**에 있어야 한다
-  const inner=h.slice(h.indexOf('sw-slide'));
-  sc.eq('값이 흐르는 묶음 안에 있다', inner.indexOf('sw-val')<inner.indexOf('sw-pips'), true);
+  // 세 칸(이전·지금·다음)이 언제나 나온다 — 끝에서도 빈 칸으로 채운다
+  const t={k:'recent',p:0,s:0};
+  const h0=_swFace(t);
+  sc.eq('첫 자리에서도 세 칸', (h0.match(/class="sw-cell/g)||[]).length, 3);
+  sc.eq('첫 자리의 앞칸은 비어 있다', h0.includes('<div class="sw-cell"></div>'), true);
 
-  // 붙어 있는 것과 흐르는 것을 나누는 손잡이가 소스에 있어야 한다
-  sc.eq('흐르는 것만 고르는 함수', SRC_DEV.includes("function _swFlow(el){"), true);
-  sc.eq('.sw-flow 로 고른다', SRC_DEV.includes("el.querySelectorAll('.sw-flow')"), true);
-  // ⚠️ 손그림은 원래 흐릿하다(.17). 본문과 같은 애니메이션을 쓰면 다 들어온
-  //    순간 선명하게 번쩍인다 — 그림 전용 키프레임이 있어야 한다.
-  sc.eq('손그림은 자리만 옮긴다', SRC_DEV.includes('@keyframes swArtIn'), true);
+  t.p=1;
+  const h1=_swFace(t);
+  sc.eq('가운데 자리도 세 칸', (h1.match(/class="sw-cell/g)||[]).length, 3);
+  // 가운데 칸이 지금 값이어야 한다 (앞칸=타이틀, 가운데=첫 설교)
+  const cells=h1.split('class="sw-cell');
+  sc.eq('앞칸은 타이틀', cells[1].includes('최근 설교'), true);
+  sc.eq('가운데 칸이 지금 값', cells[2].includes('언덕 위의 도시')||cells[2].includes('꿀보다'), true);
+
+  // ⚠️ verse 는 타일이 아니라 **칸**에 붙는다. 이웃 칸이 제목일 수 있어서다.
+  LIKE={'2026-08-20':[{ref:'마 5:13',time:'09:10'}]};
+  const tv={k:'last',p:1,s:0};
+  const hv=_swFace(tv);
+  sc.eq('말씀 칸에만 verse 가 붙는다', hv.includes('class="sw-cell verse"'), true);
+  sc.eq('타일에는 안 붙는다', /class="sw-tile[^"]*verse/.test(hv), false);
+
+  // 고정 세간은 트랙 바깥에 있어야 한다
+  const iTrack=hv.indexOf('sw-track'), iLab=hv.indexOf('sw-lab'), iPips=hv.indexOf('sw-pips');
+  sc.eq('이름 줄은 트랙보다 앞', iLab<iTrack, true);
+  sc.eq('점은 트랙보다 뒤', iPips>iTrack, true);
+  sc.eq('이름 줄은 칸 안에 없다', /sw-cell[^>]*>[^<]*<div class="sw-lab"/.test(hv), false);
 }
 
 sc.done();

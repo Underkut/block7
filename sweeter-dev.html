@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3286,13 +3286,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sw-tile.sw-dragging{transform:none;}
 .sw-face{position:absolute;inset:0;padding:13px;display:flex;flex-direction:column;
   justify-content:flex-end;}
-.sw-art{position:absolute;left:0;right:0;top:0;height:64%;display:grid;place-items:center;
+.sw-art{position:absolute;left:0;right:0;top:0;bottom:0;display:grid;place-items:center;
   pointer-events:none;color:var(--tx);opacity:.17;}
-.sw-art svg{width:54%;height:80%;}
-.sw-tile.wide .sw-art{height:100%;justify-items:end;padding-right:7%;}
-.sw-tile.wide .sw-art svg{width:28%;height:60%;}
+.sw-art svg{width:52%;height:70%;}
+.sw-tile.wide .sw-art{justify-items:end;padding-right:7%;}
+.sw-tile.wide .sw-art svg{width:26%;height:64%;}
 .sw-lab{position:relative;font-family:var(--font-ui);font-size:10px;letter-spacing:.02em;
-  color:var(--tx3);margin:0 0 auto;
+  color:var(--tx3);margin:0 0 4px;flex:0 0 auto;
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 /* 정렬 칩 — 세로 슬라이드는 화면 스크롤의 것이라 탭으로 옮겼다.
@@ -3306,28 +3306,31 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sw-val{position:relative;font-size:16.5px;font-weight:500;line-height:1.3;letter-spacing:-.01em;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   word-break:keep-all;}
-.sw-tile.verse .sw-val{font-family:var(--font-display);font-size:13.5px;line-height:1.58;
+.sw-cell.verse .sw-val{font-family:var(--font-display);font-size:13.5px;line-height:1.58;
   font-weight:400;-webkit-line-clamp:3;}
 .sw-num{position:relative;font-size:10.5px;color:var(--tx2);margin-top:3px;
   font-variant-numeric:tabular-nums;font-family:var(--font-number);line-height:1.45;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .sw-pips{position:relative;display:flex;gap:3.5px;justify-content:flex-end;
-  margin-top:7px;align-items:center;height:4px;}
+  margin-top:7px;align-items:center;height:4px;flex:0 0 auto;}
 .sw-pips i{width:3.5px;height:3.5px;border-radius:50%;background:var(--tx3);opacity:.35;}
 .sw-pips i.on{opacity:1;background:var(--ac);}
 .sw-empty{position:relative;font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
-/* 값이 넘어갈 때 **흐르는 것**은 이 두 가지뿐이다 — 본문 묶음(.sw-slide)과
-   손그림(.sw-art). 타일 이름·정렬 칩·점은 제자리에 붙어 있는다.
-   ⚠️ 셋 다 함께 흐르게 두었더니 되튀는 것처럼 보였다 (HB 신고 26-0830-4). */
-.sw-slide{position:relative;min-width:0;}
-.sw-slidein{animation:swSlideIn .23s cubic-bezier(.16,1,.3,1);}
-@keyframes swSlideIn{from{opacity:0;transform:translateX(var(--sw-sx,34px))}to{opacity:1;transform:none}}
-/* 손그림은 원래 흐릿하다(.17). 위 애니메이션은 끝에서 opacity:1 로 두므로
-   그대로 쓰면 다 들어온 순간 **선명하게 번쩍인다.** 그림은 자리만 옮긴다. */
-.sw-art.sw-slidein{animation:swArtIn .23s cubic-bezier(.16,1,.3,1);}
-@keyframes swArtIn{from{transform:translateX(var(--sw-sx,34px))}to{transform:none}}
+/* ── 값 넘기기: 설정창 탭과 **같은 방식**이다 (v26-0830-7) ──────────
+   이전·지금·다음 세 칸을 한 줄(.sw-track)에 붙여 놓고 그 줄을 통째로 민다.
+   ⚠️ 예전엔 "내보내고 → 갈아끼우고 → 들인다" 였다. 그 사이에 빈틈이 생겨
+      다음 값이 늦게 나타났다 (HB 신고). 트랙은 두 칸이 **붙어서** 움직이므로
+      빈틈도, 페이드도, 늦게 나타나는 것도 없다.
+   원본은 .settings-tab-track — 시간·가속도까지 같은 값을 쓴다. */
+.sw-trackwrap{position:relative;flex:1 1 auto;min-height:0;
+  margin:0 -13px;overflow:hidden;}
+.sw-track{position:absolute;inset:0;display:flex;width:300%;
+  transform:translateX(-33.3333%);
+  transition:transform .22s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.sw-cell{width:33.3333%;flex-shrink:0;position:relative;box-sizing:border-box;
+  padding:0 13px;display:flex;flex-direction:column;justify-content:flex-end;}
 @media (prefers-reduced-motion:reduce){
-  .sw-slidein,.sw-art.sw-slidein{animation:none;}
+  .sw-track{transition:none;}
   .sw-tile{transition:none;}
 }
 
@@ -3440,7 +3443,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-6";
+const APP_VERSION = "v. 26-0830-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27786,7 +27789,7 @@ function _swArtHTML(v){
   if(!pick)return '';
   let svg='';
   try{svg=_tagartSvg(pick.id,_tagartStyle());}catch(e){svg='';}
-  return svg?'<div class="sw-art sw-flow">'+svg+'</div>':'';
+  return svg?'<div class="sw-art">'+svg+'</div>':'';
 }
 function _swPipsHTML(n,p){
   if(n<=1)return '';
@@ -27796,42 +27799,46 @@ function _swPipsHTML(n,p){
   for(let i=0;i<9;i++)o+='<i class="'+(i===k?'on':'')+'"></i>';
   return o;
 }
-function _swFace(t){
-  const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
-  t.p=Math.max(0,Math.min(n-1,t.p));
-  const cur=it[t.p],pips=_swPipsHTML(n,t.p);
-  const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
-    +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
-  // ⚠️ 여기서부터가 **고정 세간**이다 — 타일 이름(좌상단)·정렬 칩(우상단)·
-  //    점(우하단). 값이 넘어갈 때 이것들이 같이 흐르면 튕겨 보인다 (HB 신고).
-  //    흐르는 것은 .sw-flow 를 단 것들뿐이다 (본문 묶음과 손그림).
-  const lab='<div class="sw-lab"><span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
-  const dots='<div class="sw-pips">'+pips+'</div>';
-  const slide=(inner)=>'<div class="sw-slide sw-flow">'+inner+'</div>';
-  if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
-    return{cls:'',html:'<div class="sw-face">'+lab
-      +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>'};
-  }
+// 한 칸(이전·지금·다음 중 하나). 범위 밖이면 빈 칸을 둔다 — 그래야 끝에서
+// 밀어도 트랙이 같은 폭으로 움직인다.
+function _swCellHTML(t,it,i){
+  if(i<0||i>=it.length)return '<div class="sw-cell"></div>';
+  const T=_SW_TYPES[t.k],cur=it[i];
   if(cur.kind==='title'){
-    const sub=t.k==='last'?(n-1)+'개의 말씀':(n-1)+'편의 설교';
-    return{cls:'',html:'<div class="sw-face">'+lab
-      +slide('<div class="sw-val">'+_swEsc(T.n)+'</div>'
-            +'<div class="sw-num">'+_swEsc(sub)+'</div>')
-      +dots+'</div>'};
+    const sub=t.k==='last'?(it.length-1)+'개의 말씀':(it.length-1)+'편의 설교';
+    return '<div class="sw-cell"><div class="sw-val">'+_swEsc(T.n)+'</div>'
+      +'<div class="sw-num">'+_swEsc(sub)+'</div></div>';
   }
   if(t.k==='last'){
     const v=cur.v.verse;
-    return{cls:'verse',html:_swArtHTML(v)+'<div class="sw-face">'+lab
-      +slide('<div class="sw-val">'+_swEsc(v.krText)+'</div>'
-            +'<div class="sw-num">'+_swEsc(v.ref)
-              +(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div>')
-      +dots+'</div>'};
+    // ⚠️ verse 는 **칸**에 붙인다. 이웃 칸이 제목일 수 있어 타일에 붙이면 어긋난다.
+    return '<div class="sw-cell verse">'+_swArtHTML(v)
+      +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
+      +'<div class="sw-num">'+_swEsc(v.ref)
+        +(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div></div>';
   }
   const g=cur.v;
-  return{cls:'',html:'<div class="sw-face">'+lab
-    +slide('<div class="sw-val">'+_swEsc(g.cat)+'</div>'
-          +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div>')
-    +dots+'</div>'};
+  return '<div class="sw-cell"><div class="sw-val">'+_swEsc(g.cat)+'</div>'
+    +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div></div>';
+}
+function _swFace(t){
+  const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
+  t.p=Math.max(0,Math.min(n-1,t.p));
+  const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
+    +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
+  // ⚠️ 고정 세간 — 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단).
+  //    트랙 **바깥**에 두므로 값이 넘어가도 제자리에 있는다.
+  const lab='<div class="sw-lab"><span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
+  if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
+    return '<div class="sw-face">'+lab
+      +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>';
+  }
+  // 이전·지금·다음 세 칸. 트랙은 -33.3333% 에서 시작해 가운데 칸을 보여 준다.
+  return '<div class="sw-face">'+lab
+    +'<div class="sw-trackwrap"><div class="sw-track">'
+      +_swCellHTML(t,it,t.p-1)+_swCellHTML(t,it,t.p)+_swCellHTML(t,it,t.p+1)
+    +'</div></div>'
+    +'<div class="sw-pips">'+_swPipsHTML(n,t.p)+'</div></div>';
 }
 
 // ── 그리기 ───────────────────────────────────────────────
@@ -27840,10 +27847,10 @@ function _swRender(){
   if(!b)return;
   b.innerHTML='';
   _SW_TILES.forEach((t,i)=>{
-    const f=_swFace(t),el=document.createElement('div');
-    el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;
+    const el=document.createElement('div');
+    el.className='sw-tile '+(t.k==='last'?'wide':'');
     el.dataset.swi=i;
-    el.innerHTML=f.html;
+    el.innerHTML=_swFace(t);
     b.appendChild(el);
   });
   _swSizeCells();
@@ -27864,35 +27871,20 @@ function _swNoMotion(){
   try{return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}
   catch(e){return false;}
 }
-// 값이 넘어갈 때 쓸고 가는 거리. 타일 폭에 맞춘다 — 넓은 타일은 길게,
-// 좁은 타일은 짧게. 픽셀로 못 박으면 방향에 따라 길이가 달라 보인다(위 주석).
-function _swSweep(el){
-  const w=(el&&el.clientWidth)||200;
-  return Math.max(120,Math.min(w*.92,300));
+function _swTrack(el){return el?el.querySelector('.sw-track'):null;}
+// 트랙을 가운데(지금 칸)로. px 를 더하면 손가락을 따라 움직인다.
+function _swTrackTo(tr,px,anim){
+  if(!tr)return;
+  tr.style.transition=anim?'':'none';
+  tr.style.transform=px?'translateX(calc(-33.3333% + '+px+'px))':'translateX(-33.3333%)';
 }
-// 한 타일 안에서 **흐르는 것들**만 고른다 (본문 묶음 + 손그림).
-// 타일 이름·정렬 칩·점은 여기 들어오지 않는다 — 고정 세간이다.
-function _swFlow(el){return el?el.querySelectorAll('.sw-flow'):[];}
-function _swFlowSet(el,tx,op,tr){
-  _swFlow(el).forEach(f=>{
-    f.style.transition=tr||'';
-    f.style.transform=tx||'';
-    if(op!==undefined)f.style.opacity=op;
-  });
-}
-function _swRepaint(i,dir){
+// 다시 그리면 트랙은 저절로 가운데로 돌아온다 (CSS 기본값).
+function _swRepaint(i){
   const b=document.getElementById('swBoard');if(!b)return;
   const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
-  const t=_SW_TILES[i],f=_swFace(t);
-  el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;   // sw-dragging 도 여기서 사라진다
-  el.innerHTML=f.html;
-  if(dir){
-    const d=_swSweep(el)*.55;   // 들어올 때는 나갈 때의 절반쯤에서 (같은 자로 잰다)
-    _swFlow(el).forEach(x=>{
-      x.style.setProperty('--sw-sx',(dir>0?d:-d)+'px');
-      x.classList.add('sw-slidein');
-    });
-  }
+  const t=_SW_TILES[i];
+  el.className='sw-tile '+(t.k==='last'?'wide':'');   // sw-dragging 도 여기서 사라진다
+  el.innerHTML=_swFace(t);
 }
 
 // ── 누르면 전체화면 ──────────────────────────────────────
@@ -27924,7 +27916,11 @@ function _swTileOpen(i){
 }
 
 // ── 몸짓 (좌우만 — 세로는 스크롤에게 양보) ────────────────
+// 설정창 탭 넘기기(_initSettingsSwipe)와 같은 얼개다:
+// 손가락을 1:1 로 따라가고, 문턱을 넘으면 트랙이 있던 자리에서 이어서 미끄러진다.
+// 끝에서는 고무줄처럼 4분의 1만 따라간다.
 let _swG=null;
+const _SW_COMMIT=45;   // 설정창은 70px — 타일이 더 좁아 조금 줄였다
 function _swInitGestures(){
   const b=document.getElementById('swBoard');
   if(!b||b._swWired)return;
@@ -27935,12 +27931,10 @@ function _swInitGestures(){
     if(e.target.closest('[data-swsc]')){
       const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
       t.s=(t.s+1)%S.length;t.p=0;
-      _swRepaint(i,0);showToast('순서 — '+S[t.s%S.length]);
+      _swRepaint(i);showToast('순서 — '+S[t.s%S.length]);
       e.preventDefault();return;
     }
     if(el._swAnim)return;   // 넘어가는 중 — 새 몸짓을 받지 않는다
-    _swFlowSet(el,'',undefined,'none');   // 남아 있던 전환을 끈다 (손가락이 늦게 따라온다)
-    _swFlow(el).forEach(f=>{f.style.opacity='';});
     _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false};
   });
   b.addEventListener('pointermove',e=>{
@@ -27952,64 +27946,55 @@ function _swInitGestures(){
       //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
       if(Math.abs(dy)>=Math.abs(dx)){
         _swG.el.classList.remove('sw-dragging');
-        _swFlowSet(_swG.el,'');
+        _swTrackTo(_swTrack(_swG.el),0,true);
         _swG=null;return;
       }
       _swG.ax='x';
       _swG.el.classList.add('sw-dragging');   // 누름 축소를 끈다 (위 CSS 주석 참고)
     }
-    if(_swG.ax==='x')_swFlowSet(_swG.el,'translateX('+(dx*.34)+'px)');
+    if(_swG.ax!=='x')return;
+    const t=_SW_TILES[_swG.i],n=_swStrip(t).length;
+    const can=dx<0?(t.p<n-1):(t.p>0);
+    _swTrackTo(_swTrack(_swG.el),can?dx:dx*0.25,false);   // 끝에서는 고무줄
   });
-  // 손을 뗀 자리에서 제자리로 되돌릴 때 쓰는 짧은 전환
-  const _swEase=el=>{
-    el.classList.remove('sw-dragging');
-    _swFlowSet(el,'',undefined,'transform .16s ease-out');
-  };
   const end=e=>{
     if(!_swG)return;
     const dx=e.clientX-_swG.x,i=_swG.i,el=_swG.el,t=_SW_TILES[i];
-    if(_swG.ax==='x'&&Math.abs(dx)>38){
+    const tr=_swTrack(el);
+    if(_swG.ax==='x'&&Math.abs(dx)>=_SW_COMMIT){
       const n=_swStrip(t).length, dir=dx<0?1:-1;
       const can=dir>0?(t.p<n-1):(t.p>0);
       if(can){
-        // 움직임을 줄여 달라고 한 기기에서는 애니메이션 없이 바로 갈아끼운다
-        if(_swNoMotion()){t.p+=dir;el.classList.remove('sw-dragging');
-                          _swFlowSet(el,'','');_swRepaint(i,0);_swG=null;return;}
-        // ⚠️ 여기서 바로 갈아끼우면 **튕겨 돌아오는 것처럼** 보인다 (HB 신고).
-        //    손가락이 내용을 왼쪽으로 밀어 둔 상태인데, 새 내용은 오른쪽에서
-        //    들어오도록 만들어 두었기 때문이다. 눈에는 왼쪽 → 오른쪽 → 가운데,
-        //    즉 한 번 되튀는 것으로 보인다.
-        //    그래서 밀던 방향으로 **끝까지 내보낸 뒤에** 새 내용을 들인다.
-        // ⚠️ 예전엔 목적지를 ∓46px 로 **못 박아** 두었다. 그래서 손가락을 많이
-        //    밀어 이미 그보다 더 가 있으면, 흐려지는 동안 내용이 **뒤로 되돌아갔다.**
-        //    지금 있는 자리에서 가던 방향으로 더 보낸다 (HB — "가던 방향으로 보내버려").
-        //
-        // ⚠️ 거리를 픽셀로 못 박으면 **방향에 따라 길이가 달라 보인다** (HB 신고 26-0830-6).
-        //    글은 왼쪽 정렬이라 오른쪽에 여백이 남는다. 그래서
-        //      · 오른쪽으로 밀 때 — 글의 왼쪽 모서리가 빈 오른쪽을 가로질러 **길게** 쓸고 간다
-        //      · 왼쪽으로 밀 때  — 그 모서리가 13px(안여백)만에 잘려 **짧게** 끝난다
-        //    타일 폭에 맞춰 **완전히 비켜나게** 보내면 어느 쪽이든 끝까지 쓸고 간다.
-        const from=dx*.34, to=from+(dir>0?-1:1)*_swSweep(el);
-        _swFlowSet(el,'translateX('+to+'px)','0',
-                   'transform .15s cubic-bezier(.32,0,.67,0),opacity .15s ease-in');
+        el.classList.remove('sw-dragging');
+        if(_swNoMotion()){t.p+=dir;_swRepaint(i);_swG=null;return;}
+        // 트랙을 이웃 칸까지 마저 민다. 손가락이 놓고 간 자리에서 **이어서** 간다.
+        if(tr){tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
+               tr.style.transform='translateX('+(dir>0?-66.6667:0)+'%)';}
         t.p+=dir;
         el._swAnim=true;
-        setTimeout(()=>{el._swAnim=false;el.classList.remove('sw-dragging');
-                        _swRepaint(i,dir);},150);
-      }else _swEase(el);   // 끝이다 — 부드럽게 제자리로
+        setTimeout(()=>{el._swAnim=false;_swRepaint(i);},220);
+      }else{_swSnap(el,tr);}   // 끝이다 — 제자리로
     }else if(!_swG.moved&&Date.now()-_swG.t<600){
       el.classList.remove('sw-dragging');
-      _swFlowSet(el,'');
+      _swTrackTo(tr,0,false);
       _swTileOpen(i);
-    }else _swEase(el);
+    }else _swSnap(el,tr);
     _swG=null;
   };
   b.addEventListener('pointerup',end);
   b.addEventListener('pointercancel',()=>{
-    if(_swG)_swEase(_swG.el);
+    if(_swG)_swSnap(_swG.el,_swTrack(_swG.el));
     _swG=null;
   });
   window.addEventListener('resize',()=>{if(_swOn()&&!_swClassic)_swSizeCells();});
+}
+// 문턱을 못 넘었거나 끝이면 제자리로 (설정창과 같은 되돌림)
+function _swSnap(el,tr){
+  el.classList.remove('sw-dragging');
+  if(!tr)return;
+  tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
+  tr.style.transform='translateX(-33.3333%)';
+  setTimeout(()=>{if(tr)tr.style.transition='';},240);
 }
 
 // ── 켜고 끄기 ────────────────────────────────────────────
