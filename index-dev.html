@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3268,7 +3268,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin-top:1px;}
 .sw-barbtn{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;
   padding:5px 12px;font:400 11px/1 var(--font-ui);cursor:pointer;}
-.sw-board{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 14px 26px;
+.sw-board{position:relative;flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 14px 26px;
   display:grid;gap:9px;grid-template-columns:1fr 1fr;align-content:start;
   grid-auto-rows:var(--sw-cell,150px);
   scrollbar-width:none;touch-action:pan-y;}
@@ -3341,6 +3341,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   background:var(--bg);border:1px solid var(--bd);color:var(--tx2);
   display:grid;place-items:center;font-size:13px;line-height:1;z-index:3;cursor:pointer;
   padding:0;}
+/* 놓을 자리에 들어오는 불 (할일뷰의 드롭 표시와 같은 뜻) */
+.sw-hole{position:absolute;border-radius:15px;pointer-events:none;z-index:1;
+  border:1.5px dashed var(--ac);background:var(--ac-soft);opacity:.9;
+  transition:left .16s cubic-bezier(.4,0,.2,1),top .16s cubic-bezier(.4,0,.2,1);}
 .sw-tile.sw-add{border-style:dashed;background:transparent;}
 .sw-tile.sw-add .sw-face{align-items:center;justify-content:center;gap:6px;}
 .sw-addplus{font-size:22px;color:var(--tx3);line-height:1;}
@@ -3472,7 +3476,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-10";
+const APP_VERSION = "v. 26-0830-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27978,6 +27982,7 @@ function _swRender(){
     const el=document.createElement('div');
     el.className=_swTileClass(t);
     el.dataset.swi=i;
+    el.dataset.swk=t.k;   // FLIP 이 옛 자리와 짝지을 때 쓰는 이름표
     el.innerHTML=_swFace(t)
       +(_SW_EDIT?'<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>':'');
     b.appendChild(el);
@@ -28078,11 +28083,76 @@ function _swTileOpen(i){
 // 손가락을 1:1 로 따라가고, 문턱을 넘으면 트랙이 있던 자리에서 이어서 미끄러진다.
 // 끝에서는 고무줄처럼 4분의 1만 따라간다.
 let _swG=null;
-// 값이 넘어가는 문턱. HB 지시 26-0830-10 — 45px 은 너무 길다.
-// ⚠️ 10px 은 탭과 매우 가깝다 (몸짓으로 치는 문턱이 7px). 누르려다 손가락이
-//    조금만 밀려도 값이 넘어갈 수 있다. 그래도 넘기려는 뜻은 거의 놓치지 않는다.
-const _SW_COMMIT=10;
+// 값이 넘어가는 문턱. 45px → 10px → **5px** (HB 지시 26-0830-11).
+// ⚠️ 몸짓으로 치는 문턱이 7px 이므로 5px 은 그보다도 짧다. 곧 "조금이라도
+//    옆으로 갔으면 넘긴다"는 뜻이다. 탭은 7px 안에서만 탭이라 아직 갈린다.
+const _SW_COMMIT=5;
+// 가로냐 세로냐를 **정하는** 문턱. ⚠️ 이것도 함께 줄이지 않으면 _SW_COMMIT 을
+// 아무리 낮춰도 소용이 없다 — 10px 을 못 넘으면 방향이 정해지지 않아 넘길
+// 판단 자체를 안 한다 (5px 로 줄이고도 8px 까지 먹통이던 까닭).
+// 탭도 이 값 안에서만 탭이다. 즉 5px 안에서 떼면 전체화면, 넘으면 넘기기.
+const _SW_MOVE=5;
 const _SW_ANGLE=2.75;  // 옆쓸기로 볼 최대 기울기 = tan(70°). 아래 주석 참고
+
+// ── 편집: 끌어서 자리 바꾸기 ───────────────────────────────
+// 할일뷰의 드래그와 같은 느낌을 목표로 한다:
+//   ① 잡은 자리가 손가락에 딱 붙는다 (어긋나 끌려다니지 않는다)
+//   ② 비켜 주는 타일이 **미끄러져** 자리를 내준다 (FLIP)
+//   ③ 놓을 자리에 **불이 들어온다**
+function _swDragStart(el,i,x,y){
+  const r=el.getBoundingClientRect();
+  // ⚠️ 잡은 자리(gx,gy)를 기억해야 손가락에 붙는다. 이걸 안 두고 pointerdown
+  //    자리에서의 거리만 더하면, 다시 그릴 때마다 타일이 새 칸으로 옮겨 가는데
+  //    옛 거리를 계속 더해서 손에서 100px 쯤 떨어져 끌려다녔다 (HB 신고).
+  _swG={i,el,drag:true,gx:x-r.left,gy:y-r.top,x,y,moved:false,t:Date.now()};
+  el.classList.add('sw-drag');
+  _swDragMove(x,y);
+}
+// 지금 칸(변형을 뺀 자리)을 기준으로 손가락까지의 거리를 새로 잰다.
+function _swDragMove(x,y){
+  const el=_swG.el;
+  el.style.transform='';                    // 먼저 지우고 재야 '진짜 칸'이 나온다
+  const r=el.getBoundingClientRect();
+  el.style.transform='translate('+(x-r.left-_swG.gx)+'px,'+(y-r.top-_swG.gy)+'px)';
+  _swDragHole(r);
+}
+// 놓을 자리에 불을 켠다 — 지금 타일이 실제로 앉아 있는 칸
+function _swDragHole(r){
+  const b=document.getElementById('swBoard');if(!b)return;
+  let h=document.getElementById('swHole');
+  if(!h){h=document.createElement('div');h.id='swHole';h.className='sw-hole';b.appendChild(h);}
+  const br=b.getBoundingClientRect();
+  h.style.left=(r.left-br.left)+'px';h.style.top=(r.top-br.top+b.scrollTop)+'px';
+  h.style.width=r.width+'px';h.style.height=r.height+'px';
+}
+function _swDragHoleOff(){const h=document.getElementById('swHole');if(h)h.remove();}
+// 자리를 바꾸고 **비켜 주는 타일을 미끄러뜨린다** (FLIP — 옛 자리를 재 두었다가
+// 새로 그린 뒤 그 차이만큼 되돌려 놓고 0 으로 보낸다)
+function _swReorder(from,to,x,y){
+  const b=document.getElementById('swBoard');if(!b)return;
+  const was=new Map();
+  b.querySelectorAll('.sw-tile[data-swk]').forEach(el=>{
+    was.set(el.dataset.swk,el.getBoundingClientRect());
+  });
+  const[m]=_SW_TILES.splice(from,1);_SW_TILES.splice(to,0,m);
+  _swRender();
+  const ne=b.querySelector('[data-swi="'+to+'"]');
+  b.querySelectorAll('.sw-tile[data-swk]').forEach(el=>{
+    if(el===ne)return;                       // 끌리는 것은 손가락이 몬다
+    const o=was.get(el.dataset.swk);if(!o)return;
+    const n=el.getBoundingClientRect();
+    const dx=o.left-n.left,dy=o.top-n.top;
+    if(!dx&&!dy)return;
+    el.style.transition='none';
+    el.style.transform='translate('+dx+'px,'+dy+'px)';
+    requestAnimationFrame(()=>{
+      el.style.transition='transform .18s cubic-bezier(.4,0,.2,1)';
+      el.style.transform='';
+    });
+  });
+  if(ne){ne.classList.add('sw-drag');_swG.el=ne;_swG.i=to;_swDragMove(x,y);}
+}
+
 function _swInitGestures(){
   const b=document.getElementById('swBoard');
   if(!b||b._swWired)return;
@@ -28092,12 +28162,9 @@ function _swInitGestures(){
     if(el.dataset.swadd!==undefined){_swAddTile(el.dataset.swadd);return;}
     const i=+el.dataset.swi;
     if(e.target.closest('[data-swkill]')){_swKillTile(i);e.preventDefault();return;}
-    if(_SW_EDIT){   // 끌어서 자리 바꾸기
-      _swG={i,el,x:e.clientX,y:e.clientY,ax:'drag',t:Date.now(),moved:false};
-      el.classList.add('sw-drag');
-      try{el.setPointerCapture(e.pointerId);}catch(_){}
-      e.preventDefault();return;
-    }
+    // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
+    try{b.setPointerCapture(e.pointerId);}catch(_){}
+    if(_SW_EDIT){_swDragStart(el,i,e.clientX,e.clientY);e.preventDefault();return;}
     if(e.target.closest('[data-swsc]')){
       const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
       t.s=(t.s+1)%S.length;t.p=0;
@@ -28105,42 +28172,41 @@ function _swInitGestures(){
       e.preventDefault();return;
     }
     if(el._swAnim)return;   // 넘어가는 중 — 새 몸짓을 받지 않는다
-    _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false,lp:setTimeout(()=>{
-      // 길게 누르면 편집으로 (시안에서 정한 방식)
-      if(_swG&&!_swG.moved){swToggleEdit();_swG=null;}
+    _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false,dx:0,lp:setTimeout(()=>{
+      // 길게 누르면 편집으로. ⚠️ 그러고 나서 **손을 떼지 않고 바로** 끌 수 있어야
+      //    한다. 예전엔 여기서 몸짓을 버려서 뗐다가 다시 잡아야 했다 (HB 신고).
+      if(!_swG||_swG.moved)return;
+      const gi=_swG.i,gx=_swG.x,gy=_swG.y;
+      _SW_EDIT=true;
+      const btn=document.getElementById('swEditBtn');
+      if(btn){btn.textContent='완료';btn.setAttribute('aria-pressed','true');}
+      _swRender();
+      const ne=b.querySelector('[data-swi="'+gi+'"]');
+      if(ne)_swDragStart(ne,gi,gx,gy); else _swG=null;
+      showToast('끌어서 옮기고 × 로 끕니다');
     },480)};
   });
   b.addEventListener('pointermove',e=>{
     if(!_swG)return;
-    const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
-    if(Math.abs(dx)>7||Math.abs(dy)>7){_swG.moved=true;clearTimeout(_swG.lp);}
-    if(_swG.ax==='drag'){
-      _swG.el.style.transform='translate('+dx+'px,'+dy+'px)';
+    if(_swG.drag){
+      _swG.moved=true;
+      _swDragMove(e.clientX,e.clientY);
       const under=document.elementFromPoint(e.clientX,e.clientY);
       const tgt=under&&under.closest?under.closest('.sw-tile'):null;
-      if(tgt&&tgt!==_swG.el&&tgt.dataset.swi!==undefined){
-        const from=+_swG.el.dataset.swi,to=+tgt.dataset.swi;
-        const[m]=_SW_TILES.splice(from,1);_SW_TILES.splice(to,0,m);
-        const keep=_swG.el.style.transform;
-        _swRender();
-        const ne=b.querySelector('[data-swi="'+to+'"]');
-        if(ne){ne.classList.add('sw-drag');ne.style.transform=keep;_swG.el=ne;
-          try{ne.setPointerCapture(e.pointerId);}catch(_){}}
-      }
+      if(tgt&&tgt!==_swG.el&&tgt.dataset.swi!==undefined)
+        _swReorder(+_swG.el.dataset.swi,+tgt.dataset.swi,e.clientX,e.clientY);
       return;
     }
-    if(!_swG.ax&&(Math.abs(dx)>10||Math.abs(dy)>10)){
+    const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
+    _swG.dx=dx;
+    if(Math.abs(dx)>_SW_MOVE||Math.abs(dy)>_SW_MOVE){_swG.moved=true;clearTimeout(_swG.lp);}
+    if(!_swG.ax&&(Math.abs(dx)>_SW_MOVE||Math.abs(dy)>_SW_MOVE)){
       // ⚠️ 세로로 움직이면 이 몸짓을 깨끗이 포기한다. 브라우저가 이미
       //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
       //
       // 각도 관용 — **70도까지는 옆쓸기로 본다** (HB 지시 26-0830-9).
       //   tan(70°) = 2.75. 세로가 가로의 2.75배를 넘어야 비로소 포기한다.
       // 지나온 길: 45도(dy>=dx) → 52.4도(1.3배, 설정창 탭과 같은 값) → 70도.
-      //   45·52도 둘 다 옆으로 밀려는 몸짓을 종종 놓쳤다.
-      // ⚠️ 여기서 'x' 로 정해도 브라우저가 세로 스크롤을 시작하면 pointercancel
-      //    이 와서 몸짓이 취소된다 (타일의 touch-action:pan-y). 그래서 이 값을
-      //    키운다고 세로 스크롤이 막히지는 않는다 — 비스듬한 몸짓을 더 많이
-      //    건져 올릴 뿐이다.
       if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){
         _swG.el.classList.remove('sw-dragging');
         _swTrackTo(_swTrack(_swG.el),0,true);
@@ -28154,42 +28220,53 @@ function _swInitGestures(){
     const can=dx<0?(t.p<n-1):(t.p>0);
     _swTrackTo(_swTrack(_swG.el),can?dx:dx*0.25,false);   // 끝에서는 고무줄
   });
-  const end=e=>{
-    if(!_swG)return;
-    clearTimeout(_swG.lp);
-    if(_swG.ax==='drag'){
-      _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
-      _swG=null;_swRender();return;
-    }
-    const dx=e.clientX-_swG.x,i=_swG.i,el=_swG.el,t=_SW_TILES[i];
-    const tr=_swTrack(el);
+  // 넘기기를 마무리한다. cancel(브라우저가 스크롤로 가져감)에서도 같은 판단을 쓴다.
+  function _swFinishSwipe(dx){
+    const i=_swG.i,el=_swG.el,t=_SW_TILES[i],tr=_swTrack(el);
     if(_swG.ax==='x'&&Math.abs(dx)>=_SW_COMMIT){
       const n=_swStrip(t).length, dir=dx<0?1:-1;
       const can=dir>0?(t.p<n-1):(t.p>0);
       if(can){
         el.classList.remove('sw-dragging');
-        if(_swNoMotion()){t.p+=dir;_swRepaint(i);_swG=null;return;}
-        // 트랙을 이웃 칸까지 마저 민다. 손가락이 놓고 간 자리에서 **이어서** 간다.
+        if(_swNoMotion()){t.p+=dir;_swRepaint(i);return;}
         if(tr){tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
                tr.style.transform='translateX('+(dir>0?-66.6667:0)+'%)';}
         t.p+=dir;
         el._swAnim=true;
         setTimeout(()=>{el._swAnim=false;_swRepaint(i);},220);
-      }else{_swSnap(el,tr);}   // 끝이다 — 제자리로
-    }else if(!_swG.moved&&Date.now()-_swG.t<600){
+        return;
+      }
+    }
+    _swSnap(el,tr);
+  }
+  const end=e=>{
+    if(!_swG)return;
+    clearTimeout(_swG.lp);
+    if(_swG.drag){
+      _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
+      _swDragHoleOff();_swG=null;_swRender();return;
+    }
+    const dx=e.clientX-_swG.x,i=_swG.i,el=_swG.el;
+    if(!_swG.ax&&!_swG.moved&&Date.now()-_swG.t<600){
       el.classList.remove('sw-dragging');
-      _swTrackTo(tr,0,false);
-      _swTileOpen(i);
-    }else _swSnap(el,tr);
+      _swTrackTo(_swTrack(el),0,false);
+      _swG=null;_swTileOpen(i);return;
+    }
+    _swFinishSwipe(dx);
     _swG=null;
   };
   b.addEventListener('pointerup',end);
   b.addEventListener('pointercancel',()=>{
-    if(_swG){
-      clearTimeout(_swG.lp);
-      if(_swG.ax==='drag'){_swG.el.classList.remove('sw-drag');_swG.el.style.transform='';}
-      else _swSnap(_swG.el,_swTrack(_swG.el));
+    if(!_swG){return;}
+    clearTimeout(_swG.lp);
+    if(_swG.drag){
+      _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
+      _swDragHoleOff();_swG=null;_swRender();return;
     }
+    // ⚠️ 브라우저가 세로 스크롤로 가져가면 여기로 온다. 예전엔 무조건 제자리로
+    //    되돌려서, 이미 옆으로 충분히 민 몸짓까지 **끊겨** 버렸다 (HB 신고).
+    //    문턱을 넘었으면 놓은 것과 똑같이 마무리한다.
+    _swFinishSwipe(_swG.dx||0);
     _swG=null;
   });
   window.addEventListener('resize',()=>{if(_swOn()&&!_swClassic)_swSizeCells();});

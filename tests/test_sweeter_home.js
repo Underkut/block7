@@ -172,8 +172,27 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('세로로 움직이면 몸짓을 포기한다',
         SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){'), true);
   sc.eq('70도까지는 옆쓸기로 본다', SRC_DEV.includes('const _SW_ANGLE=2.75;'), true);
-  // 넘기는 문턱 10px (HB 지시 26-0830-10 — 45px 은 너무 길다)
-  sc.eq('넘기는 문턱은 10px', SRC_DEV.includes('const _SW_COMMIT=10;'), true);
+  // 넘기는 문턱 5px (45 → 10 → 5, HB 지시 26-0830-11)
+  sc.eq('넘기는 문턱은 5px', SRC_DEV.includes('const _SW_COMMIT=5;'), true);
+  // ⚠️ 방향을 정하는 문턱도 함께 줄여야 한다. 안 그러면 _SW_COMMIT 을 아무리
+  //    낮춰도 그 값 아래에서는 방향이 안 정해져 판단 자체를 안 한다.
+  sc.eq('방향 정하는 문턱도 같은 값', SRC_DEV.includes('const _SW_MOVE=5;'), true);
+  sc.eq('두 문턱이 한 값에서 나온다',
+        SRC_DEV.includes('if(!_swG.ax&&(Math.abs(dx)>_SW_MOVE||Math.abs(dy)>_SW_MOVE)){'), true);
+  // ⚠️ 브라우저가 세로 스크롤로 가져가도(pointercancel) 이미 문턱을 넘었으면
+  //    놓은 것과 똑같이 마무리한다. 예전엔 무조건 되돌려 몸짓이 끊겼다.
+  sc.eq('취소되어도 넘긴 것은 살린다',
+        SRC_DEV.includes('_swFinishSwipe(_swG.dx||0);'), true);
+  // 길게 눌러 편집에 들어가면 **손을 떼지 않고 바로** 끌 수 있어야 한다
+  sc.eq('길게 누른 그 손으로 바로 끈다',
+        SRC_DEV.includes('if(ne)_swDragStart(ne,gi,gx,gy); else _swG=null;'), true);
+  // 잡은 자리를 기억해야 손가락에 붙는다 (안 그러면 100px 쯤 떨어져 끌린다)
+  sc.eq('잡은 자리를 기억한다', SRC_DEV.includes('gx:x-r.left,gy:y-r.top'), true);
+  sc.eq('다시 그릴 때마다 거리를 새로 잰다',
+        SRC_DEV.includes("el.style.transform='';                    // 먼저 지우고 재야"), true);
+  // 비켜 주는 타일이 미끄러진다 (FLIP) · 놓을 자리에 불이 들어온다
+  sc.eq('비켜 주는 타일이 미끄러진다', SRC_DEV.includes('function _swReorder(from,to,x,y){'), true);
+  sc.eq('놓을 자리에 불', SRC_DEV.includes('function _swDragHole(r){'), true);
   // ⚠️ 끌리는 타일이 손가락을 가리면 elementFromPoint 가 자기 자신만 돌려주어
   //    "밑에 있는 타일"을 못 찾는다 → 순서가 영영 안 바뀐다 (HB 신고 26-0830-10).
   //    투명도만으로는 안 된다. pointer-events:none 이라야 한다.
