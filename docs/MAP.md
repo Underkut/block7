@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-0830-8** · 전체 28,238줄 · 구역 229개 · 함수 1392개
+기준 버전 **v. 26-0830-9** · 전체 28,242줄 · 구역 229개 · 함수 1392개
 
 ---
 
@@ -30,7 +30,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 276~3,357 | 3,082줄 (11%) | CSS | 화면 꾸미기 (색·크기·배치) |
 | 3,358~3,588 | 231줄 (1%) | JS | 동작 (자바스크립트) |
 | 3,606~5,695 | 2,090줄 (7%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
-| 5,696~28,235 | 22,540줄 (80%) | JS | 동작 (자바스크립트) |
+| 5,696~28,239 | 22,544줄 (80%) | JS | 동작 (자바스크립트) |
 
 ---
 
@@ -276,8 +276,8 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 27,987 | 편집 모드 | `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `_swNoMotion`, `_swTrack`, `_swTrackTo`, `_swRepaint` |
 | 28,039 | 누르면 전체화면 | `_swOpenVerse`, `_swTileOpen`, `list` |
 | 28,067 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | `_swInitGestures`, `_swSnap` |
-| 28,190 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
-| 28,213 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
+| 28,194 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
+| 28,217 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
 
 ---
 

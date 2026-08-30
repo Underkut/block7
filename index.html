@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-8  [production]  -->
+<!-- BLOCK7  v. 26-0830-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3463,7 +3463,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-8";
+const APP_VERSION = "v. 26-0830-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28070,6 +28070,7 @@ function _swTileOpen(i){
 // 끝에서는 고무줄처럼 4분의 1만 따라간다.
 let _swG=null;
 const _SW_COMMIT=45;   // 설정창은 70px — 타일이 더 좁아 조금 줄였다
+const _SW_ANGLE=2.75;  // 옆쓸기로 볼 최대 기울기 = tan(70°). 아래 주석 참고
 function _swInitGestures(){
   const b=document.getElementById('swBoard');
   if(!b||b._swWired)return;
@@ -28120,12 +28121,15 @@ function _swInitGestures(){
       // ⚠️ 세로로 움직이면 이 몸짓을 깨끗이 포기한다. 브라우저가 이미
       //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
       //
-      // 각도 관용 — 세로가 가로의 1.3배를 넘을 때만 포기한다 = **52.4도**.
-      // ⚠️ 예전엔 dy>=dx, 즉 45도였다. 손가락은 좀처럼 반듯하게 가지 않아
-      //    45도 언저리에서 옆으로 밀려는 몸짓이 종종 스크롤로 새 나갔다
-      //    (HB 신고 26-0830-8). 설정창 탭(_initSettingsSwipe)이 쓰는 값과
-      //    같은 1.3 을 쓴다 — 두 화면의 손맛이 어긋나지 않게.
-      if(Math.abs(dy)>Math.abs(dx)*1.3){
+      // 각도 관용 — **70도까지는 옆쓸기로 본다** (HB 지시 26-0830-9).
+      //   tan(70°) = 2.75. 세로가 가로의 2.75배를 넘어야 비로소 포기한다.
+      // 지나온 길: 45도(dy>=dx) → 52.4도(1.3배, 설정창 탭과 같은 값) → 70도.
+      //   45·52도 둘 다 옆으로 밀려는 몸짓을 종종 놓쳤다.
+      // ⚠️ 여기서 'x' 로 정해도 브라우저가 세로 스크롤을 시작하면 pointercancel
+      //    이 와서 몸짓이 취소된다 (타일의 touch-action:pan-y). 그래서 이 값을
+      //    키운다고 세로 스크롤이 막히지는 않는다 — 비스듬한 몸짓을 더 많이
+      //    건져 올릴 뿐이다.
+      if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){
         _swG.el.classList.remove('sw-dragging');
         _swTrackTo(_swTrack(_swG.el),0,true);
         _swG=null;return;
