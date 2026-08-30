@@ -160,7 +160,12 @@ console.log('\n시나리오 6 — 소스에 고정');
   // ⚠️ 목적지를 못 박으면(∓46px) 손가락이 그보다 더 밀어 둔 경우 흐려지는 동안
   //    내용이 **뒤로 되돌아간다.** 지금 자리에서 가던 방향으로 더 보내야 한다.
   sc.eq('있던 자리에서 가던 방향으로 더 보낸다',
-        SRC_DEV.includes("const from=dx*.34, to=from+(dir>0?-70:70);"), true);
+        SRC_DEV.includes("const from=dx*.34, to=from+(dir>0?-1:1)*_swSweep(el);"), true);
+  // ⚠️ 거리를 픽셀로 못 박으면 방향에 따라 길이가 달라 보인다 (HB 신고 26-0830-6):
+  //    글이 왼쪽 정렬이라 오른쪽으로 밀 때만 길게 쓸고 간다. 타일 폭으로 잰다.
+  sc.eq('쓸고 가는 거리는 타일 폭으로 잰다', SRC_DEV.includes('function _swSweep(el){'), true);
+  sc.eq('나갈 때와 들어올 때가 같은 자',
+        SRC_DEV.includes("const d=_swSweep(el)*.55;"), true);
   sc.eq('내보낸 뒤에 갈아끼운다',
         SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;el.classList.remove('sw-dragging');"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
