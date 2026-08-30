@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-11  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-12  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3344,7 +3344,8 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 놓을 자리에 들어오는 불 (할일뷰의 드롭 표시와 같은 뜻) */
 .sw-hole{position:absolute;border-radius:15px;pointer-events:none;z-index:1;
   border:1.5px dashed var(--ac);background:var(--ac-soft);opacity:.9;
-  transition:left .16s cubic-bezier(.4,0,.2,1),top .16s cubic-bezier(.4,0,.2,1);}
+  transition:left .28s cubic-bezier(.22,1,.36,1),top .28s cubic-bezier(.22,1,.36,1),
+             width .28s cubic-bezier(.22,1,.36,1),height .28s cubic-bezier(.22,1,.36,1);}
 .sw-tile.sw-add{border-style:dashed;background:transparent;}
 .sw-tile.sw-add .sw-face{align-items:center;justify-content:center;gap:6px;}
 .sw-addplus{font-size:22px;color:var(--tx3);line-height:1;}
@@ -3476,7 +3477,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-11";
+const APP_VERSION = "v. 26-0830-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27999,23 +28000,25 @@ function _swRender(){
   _swSizeCells();
 }
 // ── 편집 모드 ────────────────────────────────────────────
+// ⚠️ 편집에서는 **토스트를 띄우지 않는다** (HB 지시 26-0830-12).
+//    길게 누른 손 그대로 끌려는데 화면 한가운데 큰 알림이 튀어나와 몸짓이
+//    끊기는 것처럼 느껴졌다. 무엇이 켜지고 꺼졌는지는 화면이 이미 보여 준다.
 function swToggleEdit(){
   _SW_EDIT=!_SW_EDIT;
   const btn=document.getElementById('swEditBtn');
   if(btn){btn.textContent=_SW_EDIT?'완료':'편집';btn.setAttribute('aria-pressed',_SW_EDIT);}
   if(!_SW_EDIT)_swSaveTiles();          // 나갈 때 한 번만 저장한다
   _swRender();
-  if(_SW_EDIT)showToast('끌어서 옮기고 × 로 끕니다');
 }
 function _swAddTile(k){
   if(!_SW_TYPES[k]||_SW_TILES.some(t=>t.k===k))return;
   _SW_TILES.push({k,s:0,p:0});
-  _swRender();showToast(_SW_TYPES[k].n+' 켰어요');
+  _swRender();
 }
 function _swKillTile(i){
-  const t=_SW_TILES[i];if(!t)return;
+  if(!_SW_TILES[i])return;
   _SW_TILES.splice(i,1);
-  _swRender();showToast(_SW_TYPES[t.k].n+' 껐어요');
+  _swRender();
 }
 // 행 높이를 타일 하나의 실제 너비와 같게 맞춘다 (정사각).
 // 넓은 타일은 두 칸을 차지하므로 저절로 2:1 이 된다.
@@ -28126,6 +28129,9 @@ function _swDragHole(r){
   h.style.width=r.width+'px';h.style.height=r.height+'px';
 }
 function _swDragHoleOff(){const h=document.getElementById('swHole');if(h)h.remove();}
+// 비켜 주는 움직임의 길이. ⚠️ 이 값은 아래 '반동 막기'의 쉬는 시간과 짝이다 —
+// 애니메이션이 끝나기 전에 또 바꾸면 두 타일이 서로를 밀며 떨린다.
+const _SW_SLIDE=280;
 // 자리를 바꾸고 **비켜 주는 타일을 미끄러뜨린다** (FLIP — 옛 자리를 재 두었다가
 // 새로 그린 뒤 그 차이만큼 되돌려 놓고 0 으로 보낸다)
 function _swReorder(from,to,x,y){
@@ -28146,11 +28152,13 @@ function _swReorder(from,to,x,y){
     el.style.transition='none';
     el.style.transform='translate('+dx+'px,'+dy+'px)';
     requestAnimationFrame(()=>{
-      el.style.transition='transform .18s cubic-bezier(.4,0,.2,1)';
+      el.style.transition='transform '+(_SW_SLIDE/1000)+'s cubic-bezier(.22,1,.36,1)';
       el.style.transform='';
     });
   });
   if(ne){ne.classList.add('sw-drag');_swG.el=ne;_swG.i=to;_swDragMove(x,y);}
+  // 방금 바꾼 자리를 기억한다 — 아래 '반동 막기'가 쓴다
+  _swG.lock=Date.now()+_SW_SLIDE;_swG.lx=x;_swG.ly=y;
 }
 
 function _swInitGestures(){
@@ -28168,7 +28176,7 @@ function _swInitGestures(){
     if(e.target.closest('[data-swsc]')){
       const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
       t.s=(t.s+1)%S.length;t.p=0;
-      _swRepaint(i);showToast('순서 — '+S[t.s%S.length]);
+      _swRepaint(i);   // 바뀐 이름은 칩에 그대로 뜬다 — 토스트는 안 띄운다
       e.preventDefault();return;
     }
     if(el._swAnim)return;   // 넘어가는 중 — 새 몸짓을 받지 않는다
@@ -28183,7 +28191,6 @@ function _swInitGestures(){
       _swRender();
       const ne=b.querySelector('[data-swi="'+gi+'"]');
       if(ne)_swDragStart(ne,gi,gx,gy); else _swG=null;
-      showToast('끌어서 옮기고 × 로 끕니다');
     },480)};
   });
   b.addEventListener('pointermove',e=>{
@@ -28191,6 +28198,14 @@ function _swInitGestures(){
     if(_swG.drag){
       _swG.moved=true;
       _swDragMove(e.clientX,e.clientY);
+      // ⚠️ 반동 막기 — 크기가 다른 두 타일(넓은 것 ↔ 보통 것)이 자리를 바꾸면
+      //    판이 다시 짜여 손가락 밑에 곧바로 상대 타일이 온다. 그대로 두면
+      //    바꾸고 되바꾸기를 매 프레임 되풀이해 **떨리고 깜빡인다** (HB 신고).
+      //    ① 비켜 주는 움직임이 끝날 때까지 쉬고
+      //    ② 그 뒤에도 손가락이 20px 은 더 가야 다음 자리바꿈을 받는다.
+      const now=Date.now();
+      if(_swG.lock&&(now<_swG.lock||
+         Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;
       const under=document.elementFromPoint(e.clientX,e.clientY);
       const tgt=under&&under.closest?under.closest('.sw-tile'):null;
       if(tgt&&tgt!==_swG.el&&tgt.dataset.swi!==undefined)
