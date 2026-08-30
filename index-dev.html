@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-14  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-15  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3296,6 +3296,12 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin:0 0 4px;flex:0 0 auto;
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+/* 갈피표 — 지금 보이는 말씀을 담고 뺀다. 고정 세간이라 흐르지 않는다. */
+.sw-keep{position:relative;flex:0 0 auto;background:none;border:0;padding:0;cursor:pointer;
+  width:15px;height:15px;color:var(--tx3);line-height:0;}
+.sw-keep svg{width:15px;height:15px;display:block;}
+.sw-keep.on{color:var(--ac);}
+.sw-keep::after{content:"";position:absolute;inset:-12px -10px;}   /* 손가락 자리 */
 /* 정렬 칩 — 세로 슬라이드는 화면 스크롤의 것이라 탭으로 옮겼다.
    글자는 작지만 손가락 자리는 ::after 로 넓혀 둔다. */
 .sw-sc{position:relative;margin-left:auto;flex:0 0 auto;background:none;
@@ -3478,7 +3484,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-14";
+const APP_VERSION = "v. 26-0830-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13377,6 +13383,9 @@ function defaultState(){
     productSettings:{},
     secs:null,
     memorizationLog:{}, // { "YYYY-MM-DD": { secId: [{verseIdx, time:"HH:MM"}] } }
+    // 담아둔 말씀. 좋아요·공유와 **똑같은 모양**이라 병합 장치를 그대로 쓴다.
+    // ⚠️ 제품별로 가르지 않는다 — 두 제품이 같은 말씀을 본다.
+    verseKeepLog:{},    // { "YYYY-MM-DD": [{ref, time:"HH:MM"}] }
     settings:{
       autoCarryOver:false,   // carry unfinished tasks to next day automatically
       carryScopes:['yesterday'], // 가져올 대상 범위(단일 선택, 원소 1개): yesterday|week|month|custom
@@ -13432,6 +13441,7 @@ if(!ST.memorizationLog)ST.memorizationLog={};
 if(!ST.verseLikeLog)ST.verseLikeLog={};   // 좋아요 누적 이벤트 로그
 if(!ST.verseShareLog)ST.verseShareLog={}; // 공유 누적 이벤트 로그
 if(!ST.verseDeeperLog)ST.verseDeeperLog={}; // Deeper 열람 누적 이벤트 로그
+if(!ST.verseKeepLog)ST.verseKeepLog={};   // 담아두기 누적 이벤트 로그 (v26-0830-15)
 // ── 암송 기록 마이그레이션: verseIdx → ref ──
 // 예전 기록은 {verseIdx,time}만 저장했는데, verseIdx는 활성 모음 구성에
 // 따라 가리키는 구절이 바뀔 수 있는 불안정한 값이다. 네비게이토180 기준
@@ -26619,7 +26629,8 @@ function _fbCountByKind(o){
     verseCollections:cnt(o.verseCollections),
     contacts:cnt(o.contacts),
     memorizationLog:_fbCountArrays(o.memorizationLog||{},0),
-    verseLogs:_fbCountArrays(o.verseLikeLog||{},0)+_fbCountArrays(o.verseShareLog||{},0)
+    verseLogs:_fbCountArrays(o.verseKeepLog||{},0)
+             +_fbCountArrays(o.verseLikeLog||{},0)+_fbCountArrays(o.verseShareLog||{},0)
              +_fbCountArrays(o.verseDeeperLog||{},0)+_fbCountArrays(o.verseEvenDeeperLog||{},0)
   };
 }
@@ -26660,7 +26671,8 @@ function _fbMerge(base,local,cloud,preferCloud){
     let v;
     if(k==='days')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgDay(b2,l2,c2,baseKnown));
     else if(k==='memorizationLog')v=_mgLogNested(bv,lv,cv,baseKnown);
-    else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
+    else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog'
+            ||k==='verseKeepLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
     else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
       _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
@@ -27509,6 +27521,7 @@ function applyRemoteState(remote){
   if(remote.verseShareLog)ST.verseShareLog=remote.verseShareLog;
   if(remote.verseDeeperLog)ST.verseDeeperLog=remote.verseDeeperLog;
   if(remote.verseEvenDeeperLog)ST.verseEvenDeeperLog=remote.verseEvenDeeperLog; // v0731-5: 누락돼 있던 Even 기록 반영
+  if(remote.verseKeepLog)ST.verseKeepLog=remote.verseKeepLog;   // 담아두기 (v26-0830-15)
   ST.contacts=Array.isArray(remote.contacts)?remote.contacts:[];
   if(remote.secs&&Array.isArray(remote.secs)&&remote.secs.length>0){
     SECS=remote.secs;
@@ -27774,10 +27787,65 @@ const _SW_TYPES={
   tag:{n:'태그',sorts:['많은 순','이름'],
         empty:'태그가 붙은 말씀이 아직 없어요.'},
   react:{n:'말씀 반응',sorts:['모두','이번 달'],
-        empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'}
+        empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
+  keep:{n:'담아둔 것',wide:true,sorts:['담은 순','오래된 순'],
+        empty:'담아둔 말씀이 없어요. 말씀 왼쪽 위의 갈피표를 누르면 담깁니다.'}
 };
 // 처음 켰을 때 놓이는 차례
-const _SW_DEFAULT_TILES=['last','recent','book','tag','react'];
+const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
+
+// ── 담아두기 ─────────────────────────────────────────────
+// 다시 꺼내 읽고 싶은 말씀을 표시해 둔다. 기록은 좋아요·공유와 **똑같은 모양**
+// (ST.verseKeepLog = {"YYYY-MM-DD":[{ref,time}]}) 이라 병합 장치를 그대로 쓴다.
+// ⚠️ 담기와 빼기를 한 자리에서 한다. 뺄 때는 그 장절의 기록을 모두 지운다 —
+//    남겨 두면 다시 담은 것처럼 되살아난다.
+function getKeepLog(){ if(!ST.verseKeepLog)ST.verseKeepLog={}; return ST.verseKeepLog; }
+function _swKeptRefs(){
+  const set=new Set();
+  Object.values(getKeepLog()).forEach(arr=>(arr||[]).forEach(e=>{if(e&&e.ref)set.add(e.ref);}));
+  return set;
+}
+function _swIsKept(ref){
+  if(!ref)return false;
+  const r=String(ref);
+  return _swKeptRefs().has(r);
+}
+function swToggleKeep(ref){
+  if(!ref)return false;
+  const r=String(ref),log=getKeepLog();
+  if(_swIsKept(r)){
+    Object.keys(log).forEach(d=>{
+      const left=(log[d]||[]).filter(e=>!e||e.ref!==r);
+      if(left.length)log[d]=left; else delete log[d];
+    });
+    save();return false;
+  }
+  const d=_calKey(),now=new Date();
+  const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
+  if(!log[d])log[d]=[];
+  log[d].push({ref:r,time:hh+':'+mm});
+  save();return true;
+}
+// 담아둔 말씀 — 담은 때가 새로운 것부터 (또는 오래된 것부터)
+function _swKeeps(sortIdx){
+  const seen=new Map();
+  Object.entries(getKeepLog()).forEach(([d,arr])=>{
+    (arr||[]).forEach(e=>{
+      if(!e||!e.ref)return;
+      const when=d+' '+(e.time||'');
+      const prev=seen.get(e.ref);
+      if(!prev||when>prev.when)seen.set(e.ref,{ref:e.ref,when,d});
+    });
+  });
+  const rows=[...seen.values()].sort((a,b)=>
+    sortIdx===1?a.when.localeCompare(b.when):b.when.localeCompare(a.when));
+  const out=[];
+  rows.forEach(g=>{
+    const v=_findVerseByRefLoose(g.ref);
+    if(v)out.push({verse:v,ref:g.ref,when:g.d});   // 못 찾은 것은 조용히 건너뛴다
+  });
+  return out;
+}
 
 // ── 저장 ─────────────────────────────────────────────────
 // ⚠️ 이 목록은 **Sweeter 것**이다. _PRODUCT_SCOPED 에 들어 있어 저장할 때
@@ -27886,6 +27954,7 @@ function _swReacts(sortIdx){
 function _swValues(t){
   const i=t.s%_SW_TYPES[t.k].sorts.length;
   if(t.k==='last')return _swLastVerses(i);
+  if(t.k==='keep')return _swKeeps(i);
   if(t.k==='recent')return _swSermons(i);
   if(t.k==='book')return _swBooks(i);
   if(t.k==='tag')return _swTags(i);
@@ -27929,12 +27998,12 @@ function _swCellHTML(t,it,i){
     // 세는 단위는 종류마다 다르다. 하나로 뭉뚱그리면 '성경 400편의 설교' 같은
     // 말이 된다 (실제로 그랬다 — 26-0830-8 에서 고침).
     const n=it.length-1;
-    const sub={last:n+'개의 말씀',recent:n+'편의 설교',
+    const sub={last:n+'개의 말씀',keep:n+'개 담아둠',recent:n+'편의 설교',
                book:n+'권',tag:n+'가지 태그',react:n+'가지'}[t.k]||n;
     return '<div class="sw-cell"><div class="sw-val">'+_swEsc(T.n)+'</div>'
       +'<div class="sw-num">'+_swEsc(sub)+'</div></div>';
   }
-  if(t.k==='last'){
+  if(t.k==='last'||t.k==='keep'){
     const v=cur.v.verse;
     // ⚠️ verse 는 **칸**에 붙인다. 이웃 칸이 제목일 수 있어 타일에 붙이면 어긋난다.
     return '<div class="sw-cell verse">'+_swArtHTML(v)
@@ -27960,7 +28029,18 @@ function _swFace(t){
     +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
   // ⚠️ 고정 세간 — 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단).
   //    트랙 **바깥**에 두므로 값이 넘어가도 제자리에 있는다.
-  const lab='<div class="sw-lab"><span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
+  // 지금 보이는 칸이 말씀이면 갈피표를 단다 (담아두기)
+  let mark='';
+  const cur0=it[t.p];
+  if(cur0&&cur0.kind==='val'&&cur0.v&&cur0.v.verse){
+    const on=_swIsKept(cur0.v.verse.ref);
+    mark='<button class="sw-keep'+(on?' on':'')+'" data-swkeep="1" '
+      +'aria-pressed="'+(on?'true':'false')+'" title="담아두기">'
+      +'<svg viewBox="0 0 24 24" fill="'+(on?'currentColor':'none')+'" stroke="currentColor" '
+      +'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
+      +'<path d="M6 4h12v16l-6-4.5L6 20z"/></svg></button>';
+  }
+  const lab='<div class="sw-lab">'+mark+'<span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
   if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
     return '<div class="sw-face">'+lab
       +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>';
@@ -28090,20 +28170,48 @@ function _swOpenVerse(v,list,idx,label){
   openVerseFull(true);
   if(list&&list.length>1)_vfSetNav(list,idx||0,label||'');
 }
+// 어떤 값을 눌렀을 때 전체화면에서 돌 말씀 목록.
+// ⚠️ 예전엔 '설교(cat)'로만 걸렀다. 그래서 성경·태그·반응 타일은 값의 이름이
+//    cat 과 맞지 않아 **언제나 빈 목록**이 나왔고, "그 설교의 말씀을 찾지
+//    못했어요"만 떴다 (HB 신고 26-0830-15). 종류마다 제 방식으로 고른다.
+function _swVersesFor(t,cur){
+  const av=ACTIVE_VERSES()||[];
+  const g=cur.v;
+  if(t.k==='recent'){
+    const c=g.cat;
+    return av.filter(v=>(String(v.cat||'').trim()||'나의 암송')===c);
+  }
+  if(t.k==='book')return av.filter(v=>(_bookOfRef(v.ref)||'그 밖')===g.name);
+  if(t.k==='tag')
+    return av.filter(v=>(v.tags||[]).some(x=>String(x||'').trim()===g.name));
+  if(t.k==='react'){
+    let e;
+    if(g.kind==='mem')e=_flatMemEntries();
+    else if(g.kind==='like')e=_flatSimpleEntries(getLikeLog());
+    else if(g.kind==='deeper')e=_flatSimpleEntries(getDeeperLog());
+    else if(g.kind==='even')e=_flatSimpleEntries(getEvenDeeperLog());
+    else e=_flatSimpleEntries(getShareLog());
+    const out=[];
+    _aggByRef(e).forEach(x=>{const v=_findVerseByRefLoose(x.ref);if(v)out.push(v);});
+    return out;
+  }
+  return [];
+}
 function _swTileOpen(i){
   const t=_SW_TILES[i],it=_swStrip(t);
   if(it.length<=1){showToast(_SW_TYPES[t.k].empty);return;}
   const cur=it[t.p].kind==='val'?it[t.p]:it[1];
-  if(t.k==='last'){
+  // 말씀이 곧 값인 타일 — 띠 전체가 그대로 목록이 된다
+  if(t.k==='last'||t.k==='keep'){
     const list=it.slice(1).map(x=>x.v.verse);
     const idx=Math.max(0,list.indexOf(cur.v.verse));
-    _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES.last.n);
+    _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES[t.k].n);
     return;
   }
-  const cat=cur.v.cat;
-  const list=(ACTIVE_VERSES()||[]).filter(v=>(String(v.cat||'').trim()||'나의 암송')===cat);
-  if(!list.length){showToast('그 설교의 말씀을 찾지 못했어요');return;}
-  _swOpenVerse(list[0],list,0,cat);
+  const list=_swVersesFor(t,cur);
+  if(!list.length){showToast('그 말씀들을 찾지 못했어요');return;}
+  const label=cur.v.cat||cur.v.name||_SW_TYPES[t.k].n;
+  _swOpenVerse(list[0],list,0,label);
 }
 
 // ── 몸짓 (좌우만 — 세로는 스크롤에게 양보) ────────────────
@@ -28213,6 +28321,16 @@ function _swInitGestures(){
     // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
     try{b.setPointerCapture(e.pointerId);}catch(_){}
     if(_SW_EDIT){_swDragStart(el,i,e.clientX,e.clientY);e.preventDefault();return;}
+    if(e.target.closest('[data-swkeep]')){
+      const t=_SW_TILES[i],it=_swStrip(t),cur=it[t.p];
+      if(cur&&cur.kind==='val'&&cur.v&&cur.v.verse){
+        swToggleKeep(cur.v.verse.ref);
+        _swRepaint(i);
+        // '담아둔 것' 타일이 떠 있으면 그것도 새로 그린다
+        _SW_TILES.forEach((x,j)=>{if(x.k==='keep'&&j!==i){x.p=0;_swRepaint(j);}});
+      }
+      e.preventDefault();return;
+    }
     if(e.target.closest('[data-swsc]')){
       const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
       t.s=(t.s+1)%S.length;t.p=0;
