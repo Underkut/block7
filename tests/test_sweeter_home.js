@@ -175,7 +175,7 @@ console.log('\n시나리오 6 — 소스에 고정');
   // ⚠️ 붙잡는 것(_SW_MOVE)과 넘기는 것은 **다른 판단**이다 (HB 지시 26-0830-13).
   //    5px 만 가면 붙잡되, 넘기기는 손을 뗐을 때 거리 또는 속도로 정한다.
   sc.eq('붙잡는 보호선은 5px', SRC_DEV.includes('const _SW_MOVE=5;'), true);
-  sc.eq('넘기는 거리는 따로', SRC_DEV.includes('const _SW_COMMIT_DIST=38;'), true);
+  sc.eq('넘기는 거리는 따로', SRC_DEV.includes('const _SW_COMMIT_DIST=50;'), true);
   sc.eq('튕기면 짧아도 넘어간다', SRC_DEV.includes('const _SW_COMMIT_VEL=0.28;'), true);
   // ⚠️ 속도는 **마지막 순간**의 것이라야 한다. 몸짓 전체 시간으로 나누면 누른 뒤
   //    가만히 있던 시간까지 들어가 아무리 빨리 튕겨도 느리게 나온다.
@@ -222,7 +222,14 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes("Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;"), true);
   // 비켜 주는 움직임 — 출발도 도착도 느긋하게 (HB 지시 26-0830-13)
   sc.eq('쉬는 시간은 비켜 주는 움직임과 짝', SRC_DEV.includes('const _SW_SLIDE=420;'), true);
-  sc.eq('양끝이 완만한 곡선', SRC_DEV.includes("_SW_EASE='cubic-bezier(.65,0,.35,1)'"), true);
+  // ⚠️ y 가 0~1 을 벗어나야 '쫄깃'해진다 — 출발에서 반대로 뜸을 들이고(-0.05)
+  //    도착에서 제자리를 지나쳤다 돌아온다(1.22). 0~1 안에 가두면 밋밋해진다.
+  sc.eq('쫄깃한 곡선', SRC_DEV.includes("_SW_EASE='cubic-bezier(.45,-0.05,.3,1.22)'"), true);
+  // 타일 바깥을 누르면 편집을 마친다 (언젠가 편집/완료 단추를 없앨 자리)
+  sc.eq('바깥을 누르면 편집을 마친다',
+        SRC_DEV.includes('if(!el){if(_SW_EDIT)swToggleEdit();return;}'), true);
+  sc.eq('바깥을 누를 자리를 넉넉히 둔다',
+        SRC_DEV.includes('padding:6px 14px 120px;'), true);
   // 편집에서는 토스트를 띄우지 않는다 (길게 누른 손이 끊기는 느낌을 준다)
   sc.eq('편집에 토스트를 띄우지 않는다',
         /function _swEditOn\(\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
