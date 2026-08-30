@@ -172,20 +172,40 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('세로로 움직이면 몸짓을 포기한다',
         SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){'), true);
   sc.eq('70도까지는 옆쓸기로 본다', SRC_DEV.includes('const _SW_ANGLE=2.75;'), true);
-  // 넘기는 문턱 5px (45 → 10 → 5, HB 지시 26-0830-11)
-  sc.eq('넘기는 문턱은 5px', SRC_DEV.includes('const _SW_COMMIT=5;'), true);
-  // ⚠️ 방향을 정하는 문턱도 함께 줄여야 한다. 안 그러면 _SW_COMMIT 을 아무리
-  //    낮춰도 그 값 아래에서는 방향이 안 정해져 판단 자체를 안 한다.
-  sc.eq('방향 정하는 문턱도 같은 값', SRC_DEV.includes('const _SW_MOVE=5;'), true);
-  sc.eq('두 문턱이 한 값에서 나온다',
+  // ⚠️ 붙잡는 것(_SW_MOVE)과 넘기는 것은 **다른 판단**이다 (HB 지시 26-0830-13).
+  //    5px 만 가면 붙잡되, 넘기기는 손을 뗐을 때 거리 또는 속도로 정한다.
+  sc.eq('붙잡는 보호선은 5px', SRC_DEV.includes('const _SW_MOVE=5;'), true);
+  sc.eq('넘기는 거리는 따로', SRC_DEV.includes('const _SW_COMMIT_DIST=38;'), true);
+  sc.eq('튕기면 짧아도 넘어간다', SRC_DEV.includes('const _SW_COMMIT_VEL=0.28;'), true);
+  // ⚠️ 속도는 **마지막 순간**의 것이라야 한다. 몸짓 전체 시간으로 나누면 누른 뒤
+  //    가만히 있던 시간까지 들어가 아무리 빨리 튕겨도 느리게 나온다.
+  sc.eq('속도는 마지막 순간의 것',
+        SRC_DEV.includes('if(_swG.pt){const _dt=_now-_swG.pt;if(_dt>0)_swG.v=(dx-_swG.pdx)/_dt;}'), true);
+  sc.eq('되돌리다 뗀 것은 안 넘긴다', SRC_DEV.includes('v*dx>0'), true);
+  sc.eq('보호선 하나로 방향을 정한다',
         SRC_DEV.includes('if(!_swG.ax&&(Math.abs(dx)>_SW_MOVE||Math.abs(dy)>_SW_MOVE)){'), true);
+  // ⚠️ 터치는 손을 뗄 때까지 **처음 눌린 요소**로만 간다. 그 요소를 다시 그려
+  //    없애면 우리 손을 떠나고, 브라우저가 스크롤을 시작해 드래그가 5px 쯤에서
+  //    끊긴다 (HB 신고 26-0830-13). 그래서 편집도 자리바꿈도 **다시 그리지 않는다.**
+  sc.eq('편집은 있는 타일에 손만 댄다', SRC_DEV.includes('function _swEditOn(){'), true);
+  sc.eq('롱터치는 그 타일 그대로 끈다',
+        SRC_DEV.includes('_swDragStart(gel,gi,gx,gy);'), true);
+  sc.eq('자리바꿈은 요소를 옮긴다',
+        SRC_DEV.includes('if(to>from)ref.after(el); else ref.before(el);'), true);
+  sc.eq('다시 그리지 않으니 번호만 새로 매긴다',
+        SRC_DEV.includes("[...b.querySelectorAll('.sw-tile[data-swi]')].forEach((t,i)=>{t.dataset.swi=i;});"), true);
+  // 롱터치가 재는 동안·끄는 동안 브라우저의 스크롤 판단을 막는다 (할일뷰와 같은 방법)
+  sc.eq('재는 동안 스크롤을 막는다',
+        SRC_DEV.includes("if((_swG.lp||_swG.drag)&&e.cancelable)e.preventDefault();"), true);
+  sc.eq('막는 리스너는 passive 가 아니다',
+        SRC_DEV.includes("},{passive:false});\n  window.addEventListener('resize'"), true);
   // ⚠️ 브라우저가 세로 스크롤로 가져가도(pointercancel) 이미 문턱을 넘었으면
   //    놓은 것과 똑같이 마무리한다. 예전엔 무조건 되돌려 몸짓이 끊겼다.
   sc.eq('취소되어도 넘긴 것은 살린다',
         SRC_DEV.includes('_swFinishSwipe(_swG.dx||0);'), true);
   // 길게 눌러 편집에 들어가면 **손을 떼지 않고 바로** 끌 수 있어야 한다
   sc.eq('길게 누른 그 손으로 바로 끈다',
-        SRC_DEV.includes('if(ne)_swDragStart(ne,gi,gx,gy); else _swG=null;'), true);
+        SRC_DEV.includes('_swDragStart(gel,gi,gx,gy);  // 누르고 있던 **그 타일 그대로** 끈다'), true);
   // 잡은 자리를 기억해야 손가락에 붙는다 (안 그러면 100px 쯤 떨어져 끌린다)
   sc.eq('잡은 자리를 기억한다', SRC_DEV.includes('gx:x-r.left,gy:y-r.top'), true);
   sc.eq('다시 그릴 때마다 거리를 새로 잰다',
@@ -200,10 +220,12 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes("if(_swG.lock&&(now<_swG.lock||"), true);
   sc.eq('그 뒤에도 20px 은 더 가야 한다',
         SRC_DEV.includes("Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;"), true);
-  sc.eq('쉬는 시간은 비켜 주는 움직임과 짝', SRC_DEV.includes('const _SW_SLIDE=280;'), true);
+  // 비켜 주는 움직임 — 출발도 도착도 느긋하게 (HB 지시 26-0830-13)
+  sc.eq('쉬는 시간은 비켜 주는 움직임과 짝', SRC_DEV.includes('const _SW_SLIDE=420;'), true);
+  sc.eq('양끝이 완만한 곡선', SRC_DEV.includes("_SW_EASE='cubic-bezier(.65,0,.35,1)'"), true);
   // 편집에서는 토스트를 띄우지 않는다 (길게 누른 손이 끊기는 느낌을 준다)
   sc.eq('편집에 토스트를 띄우지 않는다',
-        /function swToggleEdit\(\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
+        /function _swEditOn\(\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
   sc.eq('타일을 켜고 끌 때도 조용히',
         /function _swAddTile\(k\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes('showToast'), false);
   // ⚠️ 끌리는 타일이 손가락을 가리면 elementFromPoint 가 자기 자신만 돌려주어
@@ -358,7 +380,7 @@ console.log('\n시나리오 10 — 타일 구성은 Sweeter 것이다');
         /_PRODUCT_SCOPED=[\s\S]*?'swTiles'[\s\S]*?\];/.test(SRC_DEV), true);
   // 편집을 나갈 때 한 번만 저장한다 (끌 때마다 클라우드로 올리지 않는다)
   sc.eq('나갈 때 저장한다',
-        SRC_DEV.includes('if(!_SW_EDIT)_swSaveTiles();'), true);
+        SRC_DEV.includes('_swSaveTiles();                       // 나갈 때 한 번만 저장한다'), true);
   // wide 는 표에서 읽는다 — 타일이 늘어도 하드코딩이 남지 않게
   sc.eq('넓은 타일은 표에서 정한다',
         SRC_DEV.includes("return 'sw-tile '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
