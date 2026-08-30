@@ -158,13 +158,40 @@ console.log('\n시나리오 6 — 소스에 고정');
   // ⚠️ 밀던 방향으로 내보낸 **뒤에** 갈아끼운다. 이 절차를 빼면 손가락이 왼쪽으로
   //    밀어 둔 내용이 오른쪽에서 다시 들어와 튕겨 돌아오는 것처럼 보인다 (HB 신고).
   sc.eq('밀던 방향으로 먼저 내보낸다',
-        SRC_DEV.includes("f.style.transform='translateX('+(dir>0?-46:46)+'px)';"), true);
+        SRC_DEV.includes("_swFlowSet(el,'translateX('+(dir>0?-46:46)+'px)','0',"), true);
   sc.eq('내보낸 뒤에 갈아끼운다',
         SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;_swRepaint(i,dir);},120);"), true);
   sc.eq('넘어가는 중에는 새 몸짓을 받지 않는다',
         SRC_DEV.includes("if(el._swAnim)return;"), true);
   // 움직임 줄이기를 켠 기기는 애니메이션 없이 바로 바뀐다
   sc.eq('움직임 줄이기를 존중한다', SRC_DEV.includes("function _swNoMotion()"), true);
+}
+
+// ═══ 7. 흐르는 것과 붙어 있는 것 ═══
+console.log('\n시나리오 7 — 고정 세간은 흐르지 않는다');
+{
+  // ⚠️ 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단)까지 함께 흐르면
+  //    값이 바뀔 때 **튕겨 보인다** (HB 신고 26-0830-4).
+  //    흐르는 것은 .sw-flow 를 단 것 — 본문 묶음과 손그림뿐이다.
+  VERSES=[V('마 5:13','언덕 위의 도시','2026-06-21'),
+          V('시 1:1','꿀보다 더 다니이다','2026-07-01')];
+  LIKE={'2026-08-20':[{ref:'마 5:13',time:'09:10'}]}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+
+  const t={k:'recent',p:1,s:0};
+  const h=_swFace(t).html;
+  sc.eq('본문 묶음은 흐른다', /class="sw-slide sw-flow"/.test(h), true);
+  sc.eq('타일 이름 줄은 안 흐른다', /class="sw-lab"[^>]*sw-flow/.test(h), false);
+  sc.eq('점은 안 흐른다', /class="sw-pips"[^>]*sw-flow/.test(h), false);
+  // 값(본문·부제)은 흐르는 묶음 **안**에 있어야 한다
+  const inner=h.slice(h.indexOf('sw-slide'));
+  sc.eq('값이 흐르는 묶음 안에 있다', inner.indexOf('sw-val')<inner.indexOf('sw-pips'), true);
+
+  // 붙어 있는 것과 흐르는 것을 나누는 손잡이가 소스에 있어야 한다
+  sc.eq('흐르는 것만 고르는 함수', SRC_DEV.includes("function _swFlow(el){"), true);
+  sc.eq('.sw-flow 로 고른다', SRC_DEV.includes("el.querySelectorAll('.sw-flow')"), true);
+  // ⚠️ 손그림은 원래 흐릿하다(.17). 본문과 같은 애니메이션을 쓰면 다 들어온
+  //    순간 선명하게 번쩍인다 — 그림 전용 키프레임이 있어야 한다.
+  sc.eq('손그림은 자리만 옮긴다', SRC_DEV.includes('@keyframes swArtIn'), true);
 }
 
 sc.done();
