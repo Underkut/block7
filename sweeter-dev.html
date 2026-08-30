@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3244,6 +3244,79 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .tp-btn.primary{background:var(--ac);border-color:var(--ac);color:var(--on-accent);font-weight:600;}
 .tp-btn.danger{color:var(--danger);border-color:var(--danger);background:transparent;}
 
+/* ══════════════════════════════════════════════════════════
+   Sweeter 홈 (타일 판) — v26-0830-2 · Sweeter 2단계
+   ──────────────────────────────────────────────────────────
+   ⚠️ 이 화면은 **Sweeter 에서만** 뜬다 (APP_PRODUCT==='sweeter').
+      BLOCK7 에서는 #swHome 이 display:none 인 채 그대로 있고
+      아래 규칙은 어느 것도 걸리지 않는다.
+   ⚠️ 행 높이는 --sw-cell 로 직접 준다. aspect-ratio 도 백분율 padding 도
+      그리드 행 높이 계산에 반영되지 않아 타일이 겹쳤다 (시안에서 겪음).
+      타일 하나의 실제 너비를 재서 _swSizeCells() 가 넣는다.
+   ══════════════════════════════════════════════════════════ */
+#swHome{
+  position:fixed;inset:0;z-index:150;background:var(--bg);color:var(--tx);
+  display:none;flex-direction:column;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+#swHome.on{display:flex;}
+.sw-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px 8px;flex:0 0 auto;}
+.sw-ttl{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.01em;}
+.sw-sub{font-family:var(--font-ui);font-size:10px;letter-spacing:.06em;
+  color:var(--tx3);margin-top:1px;}
+.sw-barbtn{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;
+  padding:5px 12px;font:400 11px/1 var(--font-ui);cursor:pointer;}
+.sw-board{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 14px 26px;
+  display:grid;gap:9px;grid-template-columns:1fr 1fr;align-content:start;
+  grid-auto-rows:var(--sw-cell,150px);
+  scrollbar-width:none;touch-action:pan-y;}
+.sw-board::-webkit-scrollbar{display:none;}
+.sw-tile{position:relative;height:100%;border-radius:15px;background:var(--s1);
+  border:1px solid var(--bd);overflow:hidden;cursor:pointer;touch-action:pan-y;
+  transition:transform .16s ease;}
+.sw-tile.wide{grid-column:span 2;}
+.sw-tile:active{transform:scale(.975);}
+.sw-face{position:absolute;inset:0;padding:13px;display:flex;flex-direction:column;
+  justify-content:flex-end;}
+.sw-art{position:absolute;left:0;right:0;top:0;height:64%;display:grid;place-items:center;
+  pointer-events:none;color:var(--tx);opacity:.17;}
+.sw-art svg{width:54%;height:80%;}
+.sw-tile.wide .sw-art{height:100%;justify-items:end;padding-right:7%;}
+.sw-tile.wide .sw-art svg{width:28%;height:60%;}
+.sw-lab{position:relative;font-family:var(--font-ui);font-size:10px;letter-spacing:.02em;
+  color:var(--tx3);margin:0 0 auto;
+  display:flex;align-items:center;gap:5px;max-width:100%;}
+.sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+/* 정렬 칩 — 세로 슬라이드는 화면 스크롤의 것이라 탭으로 옮겼다.
+   글자는 작지만 손가락 자리는 ::after 로 넓혀 둔다. */
+.sw-sc{position:relative;margin-left:auto;flex:0 0 auto;background:none;
+  border:1px solid var(--bd);border-radius:20px;color:var(--tx2);cursor:pointer;
+  font:500 9.5px/1 var(--font-ui);letter-spacing:.02em;padding:4px 8px;
+  max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sw-sc::after{content:"";position:absolute;inset:-12px -8px;}
+.sw-sc:active{border-color:var(--ac);color:var(--ac);}
+.sw-val{position:relative;font-size:16.5px;font-weight:500;line-height:1.3;letter-spacing:-.01em;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  word-break:keep-all;}
+.sw-tile.verse .sw-val{font-family:var(--font-display);font-size:13.5px;line-height:1.58;
+  font-weight:400;-webkit-line-clamp:3;}
+.sw-num{position:relative;font-size:10.5px;color:var(--tx2);margin-top:3px;
+  font-variant-numeric:tabular-nums;font-family:var(--font-number);line-height:1.45;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.sw-pips{position:relative;display:flex;gap:3.5px;justify-content:flex-end;
+  margin-top:7px;align-items:center;height:4px;}
+.sw-pips i{width:3.5px;height:3.5px;border-radius:50%;background:var(--tx3);opacity:.35;}
+.sw-pips i.on{opacity:1;background:var(--ac);}
+.sw-empty{position:relative;font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
+.sw-slidein{animation:swSlideIn .19s ease;}
+@keyframes swSlideIn{from{opacity:0;transform:translateX(var(--sw-sx,18px))}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .sw-slidein{animation:none;}
+  .sw-tile{transition:none;}
+}
+
 </style>
 <script>
 // ═══════════════════════════════════════════════════════════
@@ -3353,7 +3426,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-1";
+const APP_VERSION = "v. 26-0830-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5557,6 +5630,26 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
 </div>
 
+<!-- ── Sweeter 홈 (타일 판) ──────────────────────────────────
+     Sweeter 에서만 뜬다. BLOCK7 에서는 이 뼈대가 그대로 남아 있되
+     _swBoot() 가 아무 일도 하지 않아 화면에 나오지 않는다.
+     타일은 _swRender() 가 그린다 — HTML 에 타일을 박아 두지 말 것. -->
+<div id="swHome">
+  <div class="sw-bar">
+    <div>
+      <div class="sw-ttl">Sweeter</div>
+      <div class="sw-sub" id="swSub">말씀과 함께하는 하루</div>
+    </div>
+    <button class="sw-barbtn" id="swClassicBtn" onclick="swToggleHome()">기존 화면</button>
+  </div>
+  <div class="sw-board" id="swBoard"></div>
+</div>
+<!-- 기존 BLOCK7 화면을 보는 동안 Sweeter 홈으로 되돌아오는 단추.
+     Sweeter 가 제 모습을 갖추면 이 단추와 swToggleHome() 은 함께 없앤다. -->
+<button class="sw-barbtn" id="swBackBtn" onclick="swToggleHome()"
+  style="display:none;position:fixed;z-index:151;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--s1);">Sweeter 홈</button>
+
+
 <!-- AI Drawer -->
 
 <script>
@@ -5875,7 +5968,10 @@ function ACTIVE_VERSES(){
     // ⚠️ 여기서 구절을 **정해진 항목만 골라 새로 조립**한다. 새 항목을 만들면
     //    이 줄에 넣어야 화면까지 온다. (강조 문구 hi 가 실제로 여기서 막혔다)
     return{idx:i+1,catNo,cat,no:i+1,topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
-           enText:v.enText||'',tags:v.tags||[],hi:v.hi||''};
+           enText:v.enText||'',tags:v.tags||[],hi:v.hi||'',
+           // d = 시트의 날짜. Sweeter 의 '최근 설교' 타일이 최신순으로 세우는 데 쓴다.
+           // pid/kind = 명제집에서 온 항목 표시. 여기 없으면 화면까지 오지 않는다.
+           d:v.d||'',pid:v.pid||'',kind:v.kind||''};
   });
 }
 function ACTIVE_TOTAL(){return ACTIVE_VERSES().length;}
@@ -9327,6 +9423,12 @@ function _vfHideCoversNow(){
 }
 function _vfHideCovers(){
   const jobs=[];
+  // Sweeter 홈 — 타일에서 전체화면을 열면 홈이 위에 남아 가린다.
+  // 닫지 말고 숨겼다가 closeVerseFull() 이 되살린다 (CLAUDE.md 의 규칙).
+  const swh=document.getElementById('swHome');
+  if(swh&&swh.classList.contains('on')){
+    swh.classList.remove('on');jobs.push(()=>swh.classList.add('on'));
+  }
   // 타일뷰 — display 로만 숨긴다 (closeVerseGrid() 는 대시보드 복귀 훅까지 돌므로 금지)
   const gd=document.getElementById('verseGrid');
   if(gd&&gd.style.display==='flex'){gd.style.display='none';jobs.push(()=>{gd.style.display='flex';});}
@@ -25525,6 +25627,7 @@ function initAppUI(){
   if(document.fonts&&document.fonts.ready){
     document.fonts.ready.then(resizeAllInputs);
   }
+  try{_swBoot();}catch(e){}   // Sweeter 홈 (BLOCK7 에서는 즉시 돌아 나간다)
 }
 
 // ── 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) ──
@@ -27576,6 +27679,282 @@ fbAuth.onAuthStateChanged(async user=>{
 
 })(); // end IIFE
 } // end if(!DEV_MODE)
+
+// ═══════════════════════════════════════════════════════════
+//  Sweeter 홈 (타일 판) — v26-0830-2 · Sweeter 2단계
+//  ─────────────────────────────────────────────────────────
+//  ⚠️ **Sweeter 에서만 도는 코드다.** APP_PRODUCT 가 기본값(block7)이면
+//     _swOn() 이 false 라 _swBoot() 가 즉시 돌아 나가고, BLOCK7 의 화면·
+//     저장 키·클라우드 문서는 한 글자도 달라지지 않는다.
+//
+//  이 단계에서 만드는 것은 **타일 두 개**뿐이다 (시안의 열 개 중).
+//    ① 마지막에 만난 말씀 — 좋아요·암송·디퍼·공유 기록에서 최신순
+//    ② 최근 설교        — 켜진 말씀들을 대분류(설교 제목)로 묶어 최신순
+//  둘 다 **진짜 데이터**를 쓴다. 가짜 값은 하나도 없다.
+//
+//  ⚠️ 타일 순서·정렬은 아직 **저장하지 않는다** (화면을 벗어나면 처음으로).
+//     저장은 상태(ST)에 새 항목을 만드는 일이라 병합 시나리오를 먼저
+//     tests/ 에 써야 한다 — '타일 더하기' 단계에서 함께 한다.
+//
+//  ⚠️ 세로 몸짓은 **화면 스크롤의 것이다.** 시안에서 세로 슬라이드를 넣었더니
+//     브라우저가 이미 스크롤을 시작해 둘 다 어색해졌다. 값 넘기기는 좌우만,
+//     정렬 바꾸기는 칩 탭이다.
+// ═══════════════════════════════════════════════════════════
+function _swOn(){return APP_PRODUCT==='sweeter';}
+
+// 화면에만 두는 상태 (저장하지 않는다 — 위 주석 참고)
+let _SW_TILES=[{k:'last',p:0,s:0},{k:'recent',p:0,s:0}];
+let _swClassic=false;   // true 면 기존 BLOCK7 화면을 보고 있는 중
+
+const _SW_TYPES={
+  last:{n:'마지막에 만난 말씀',sorts:['모두','좋아요','암송'],verse:true,
+        empty:'아직 기록이 없어요. 말씀에 좋아요나 암송을 남기면 여기에 쌓입니다.'},
+  recent:{n:'최근 설교',sorts:['최근','말씀 많은','이름'],
+        empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'}
+};
+
+// ── 값 만들기 (진짜 데이터) ──────────────────────────────
+// 마지막에 만난 말씀: 반응 기록을 합쳐 최신순. _aggByRef 가 이미 최신순으로 준다.
+// ⚠️ '마지막에 **본**' 이 아니다. 지금 앱에는 "열어 봤다"는 기록이 없다.
+//    그 기록을 새로 만들면 상태(ST)에 새 항목이 생기므로 다음 단계에서
+//    테스트와 함께 한다. 지금은 있는 것으로 정직하게 만든다.
+function _swLastVerses(sortIdx){
+  let e;
+  if(sortIdx===1)e=_flatSimpleEntries(getLikeLog());
+  else if(sortIdx===2)e=_flatMemEntries();
+  else e=_flatSimpleEntries(getLikeLog())
+          .concat(_flatMemEntries(),
+                  _flatSimpleEntries(getDeeperLog()),
+                  _flatSimpleEntries(getEvenDeeperLog()),
+                  _flatSimpleEntries(getShareLog()));
+  const out=[];
+  _aggByRef(e).slice(0,12).forEach(g=>{
+    const v=_findVerseByRefLoose(g.ref);
+    if(v)out.push({verse:v,ref:g.ref,when:g.lastDate});
+  });
+  return out;
+}
+// 최근 설교: 켜진 말씀을 대분류(= 시트의 '설교 제목')로 묶는다.
+// 날짜는 구절의 d 항목 — ACTIVE_VERSES() 가 그대로 넘겨준다.
+function _swSermons(sortIdx){
+  const g=new Map();
+  (ACTIVE_VERSES()||[]).forEach(v=>{
+    const k=String(v.cat||'').trim()||'나의 암송';
+    if(!g.has(k))g.set(k,{cat:k,n:0,d:''});
+    const o=g.get(k);o.n++;
+    const d=String(v.d||'');if(d>o.d)o.d=d;
+  });
+  const a=[...g.values()];
+  if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
+  else if(sortIdx===2)a.sort((x,y)=>x.cat.localeCompare(y.cat,'ko'));
+  else a.sort((x,y)=>y.d.localeCompare(x.d)||y.n-x.n);
+  return a;
+}
+function _swValues(t){
+  return t.k==='last'?_swLastVerses(t.s%_SW_TYPES[t.k].sorts.length)
+                     :_swSermons(t.s%_SW_TYPES[t.k].sorts.length);
+}
+// 띠 = [타이틀] + 값들. 대시보드 칸은 아직 없다 (다음 단계).
+function _swStrip(t){
+  const vals=_swValues(t);
+  return [{kind:'title'}].concat(vals.map(v=>({kind:'val',v:v})));
+}
+
+// ── 한 타일의 얼굴 ───────────────────────────────────────
+function _swEsc(s){return String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+// 말씀에 붙는 손그림. 태그 그림은 **뜻**을 나타내므로 말씀이 있을 때만 쓴다.
+// (타일 자체를 가리키는 '구조 도안'은 아직 저장소에 없다 — docs/ICONS.md 참고)
+function _swArtHTML(v){
+  if(!v)return '';
+  let pick=null;
+  try{pick=_tagartPick(v);}catch(e){pick=null;}
+  if(!pick)return '';
+  let svg='';
+  try{svg=_tagartSvg(pick.id,_tagartStyle());}catch(e){svg='';}
+  return svg?'<div class="sw-art">'+svg+'</div>':'';
+}
+function _swPipsHTML(n,p){
+  if(n<=1)return '';
+  if(n<=9){let o='';for(let i=0;i<n;i++)o+='<i class="'+(i===p?'on':'')+'"></i>';return o;}
+  // 값이 많으면 점을 다 찍지 않는다 — 아홉 칸으로 줄이고 지금 자리를 비례로 표시
+  const k=Math.round(p/(n-1)*8);let o='';
+  for(let i=0;i<9;i++)o+='<i class="'+(i===k?'on':'')+'"></i>';
+  return o;
+}
+function _swFace(t){
+  const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
+  t.p=Math.max(0,Math.min(n-1,t.p));
+  const cur=it[t.p],pips=_swPipsHTML(n,t.p);
+  const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
+    +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
+  const lab='<div class="sw-lab"><span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
+  if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
+    return{cls:'',html:'<div class="sw-face">'+lab
+      +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>'};
+  }
+  if(cur.kind==='title'){
+    const sub=t.k==='last'?(n-1)+'개의 말씀':(n-1)+'편의 설교';
+    return{cls:'',html:'<div class="sw-face">'+lab
+      +'<div class="sw-val">'+_swEsc(T.n)+'</div>'
+      +'<div class="sw-num">'+_swEsc(sub)+'</div>'
+      +'<div class="sw-pips">'+pips+'</div></div>'};
+  }
+  if(t.k==='last'){
+    const v=cur.v.verse;
+    return{cls:'verse',html:_swArtHTML(v)+'<div class="sw-face">'+lab
+      +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
+      +'<div class="sw-num">'+_swEsc(v.ref)+(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div>'
+      +'<div class="sw-pips">'+pips+'</div></div>'};
+  }
+  const g=cur.v;
+  return{cls:'',html:'<div class="sw-face">'+lab
+    +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
+    +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div>'
+    +'<div class="sw-pips">'+pips+'</div></div>'};
+}
+
+// ── 그리기 ───────────────────────────────────────────────
+function _swRender(){
+  const b=document.getElementById('swBoard');
+  if(!b)return;
+  b.innerHTML='';
+  _SW_TILES.forEach((t,i)=>{
+    const f=_swFace(t),el=document.createElement('div');
+    el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;
+    el.dataset.swi=i;
+    el.innerHTML=f.html;
+    b.appendChild(el);
+  });
+  _swSizeCells();
+}
+// 행 높이를 타일 하나의 실제 너비와 같게 맞춘다 (정사각).
+// 넓은 타일은 두 칸을 차지하므로 저절로 2:1 이 된다.
+function _swSizeCells(){
+  const b=document.getElementById('swBoard');
+  if(!b)return;
+  const t=b.querySelector('.sw-tile:not(.wide)')||b.querySelector('.sw-tile');
+  if(!t)return;
+  let w=t.getBoundingClientRect().width;
+  if(t.classList.contains('wide'))w=(w-9)/2;   // gap 9px
+  if(w>10)b.style.setProperty('--sw-cell',Math.round(w)+'px');
+}
+function _swRepaint(i,dir){
+  const b=document.getElementById('swBoard');if(!b)return;
+  const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
+  const t=_SW_TILES[i],f=_swFace(t);
+  el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;
+  el.innerHTML=f.html;
+  const face=el.querySelector('.sw-face');
+  if(face&&dir){face.style.setProperty('--sw-sx',(dir>0?18:-18)+'px');
+    face.classList.add('sw-slidein');}
+}
+
+// ── 누르면 전체화면 ──────────────────────────────────────
+// 목록 안에서 이전/다음이 돌도록 _vfSetNav 로 명단을 넘긴다.
+// ⚠️ openVerseFull() 이 안에서 _vfClearNav() 를 부르므로 **연 뒤에** 준다.
+function _swOpenVerse(v,list,idx,label){
+  if(!v)return;
+  const act=ACTIVE_VERSES()||[];
+  const hit=act.find(x=>x.ref===v.ref&&x.krText===v.krText)||act.find(x=>x.ref===v.ref);
+  if(hit){_vfOverrideVerse=null;setVerseIdx(hit.idx);}
+  else _vfOverrideVerse=v;
+  openVerseFull(true);
+  if(list&&list.length>1)_vfSetNav(list,idx||0,label||'');
+}
+function _swTileOpen(i){
+  const t=_SW_TILES[i],it=_swStrip(t);
+  if(it.length<=1){showToast(_SW_TYPES[t.k].empty);return;}
+  const cur=it[t.p].kind==='val'?it[t.p]:it[1];
+  if(t.k==='last'){
+    const list=it.slice(1).map(x=>x.v.verse);
+    const idx=Math.max(0,list.indexOf(cur.v.verse));
+    _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES.last.n);
+    return;
+  }
+  const cat=cur.v.cat;
+  const list=(ACTIVE_VERSES()||[]).filter(v=>(String(v.cat||'').trim()||'나의 암송')===cat);
+  if(!list.length){showToast('그 설교의 말씀을 찾지 못했어요');return;}
+  _swOpenVerse(list[0],list,0,cat);
+}
+
+// ── 몸짓 (좌우만 — 세로는 스크롤에게 양보) ────────────────
+let _swG=null;
+function _swInitGestures(){
+  const b=document.getElementById('swBoard');
+  if(!b||b._swWired)return;
+  b._swWired=true;
+  b.addEventListener('pointerdown',e=>{
+    const el=e.target.closest('.sw-tile');if(!el)return;
+    const i=+el.dataset.swi;
+    if(e.target.closest('[data-swsc]')){
+      const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
+      t.s=(t.s+1)%S.length;t.p=0;
+      _swRepaint(i,0);showToast('순서 — '+S[t.s%S.length]);
+      e.preventDefault();return;
+    }
+    _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false};
+  });
+  b.addEventListener('pointermove',e=>{
+    if(!_swG)return;
+    const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
+    if(Math.abs(dx)>7||Math.abs(dy)>7)_swG.moved=true;
+    if(!_swG.ax&&(Math.abs(dx)>10||Math.abs(dy)>10)){
+      // ⚠️ 세로로 움직이면 이 몸짓을 깨끗이 포기한다. 브라우저가 이미
+      //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
+      if(Math.abs(dy)>=Math.abs(dx)){
+        const f=_swG.el.querySelector('.sw-face');if(f)f.style.transform='';
+        _swG=null;return;
+      }
+      _swG.ax='x';
+    }
+    if(_swG.ax==='x'){
+      const f=_swG.el.querySelector('.sw-face');
+      if(f)f.style.transform='translateX('+(dx*.34)+'px)';
+    }
+  });
+  const end=e=>{
+    if(!_swG)return;
+    const dx=e.clientX-_swG.x,i=_swG.i,t=_SW_TILES[i];
+    const f=_swG.el.querySelector('.sw-face');if(f)f.style.transform='';
+    if(_swG.ax==='x'&&Math.abs(dx)>38){
+      const n=_swStrip(t).length;
+      if(dx<0){if(t.p<n-1){t.p++;_swRepaint(i,1);}}
+      else{if(t.p>0){t.p--;_swRepaint(i,-1);}}
+    }else if(!_swG.moved&&Date.now()-_swG.t<600){
+      _swTileOpen(i);
+    }
+    _swG=null;
+  };
+  b.addEventListener('pointerup',end);
+  b.addEventListener('pointercancel',()=>{
+    if(_swG){const f=_swG.el.querySelector('.sw-face');if(f)f.style.transform='';}
+    _swG=null;
+  });
+  window.addEventListener('resize',()=>{if(_swOn()&&!_swClassic)_swSizeCells();});
+}
+
+// ── 켜고 끄기 ────────────────────────────────────────────
+// 개발 중에는 기존 BLOCK7 화면도 봐야 해서 우상단 단추로 오간다.
+// Sweeter 가 제 모습을 갖추면 이 단추는 없앤다.
+function swToggleHome(){
+  _swClassic=!_swClassic;
+  const el=document.getElementById('swHome');
+  if(el)el.classList.toggle('on',!_swClassic);
+  const back=document.getElementById('swBackBtn');
+  if(back)back.style.display=_swClassic?'block':'none';
+  if(!_swClassic)_swRender();
+}
+function _swBoot(){
+  if(!_swOn())return;            // BLOCK7 에서는 아무 일도 하지 않는다
+  const el=document.getElementById('swHome');
+  if(!el)return;
+  el.classList.add('on');
+  _swInitGestures();
+  _swRender();
+  // 폰트가 늦게 붙으면 폭이 달라지므로 한 번 더 잰다
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_swSizeCells);
+}
 
 // ── DEV MODE BOOTSTRAP ──
 // Skip the login screen entirely and boot straight into the app using
