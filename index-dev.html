@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0828-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0830-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3353,7 +3353,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0828-7";
+const APP_VERSION = "v. 26-0830-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6705,7 +6705,13 @@ function _addVersesToCurrentColl(items,src){
 // 가정해 짝지어서, 같은 장절의 시트 행들이 한 칸을 두고 서로 덮어썼다.
 // 그래서 시트에 변경이 없어도 매번 그 행 수만큼 '수정'으로 잡혔다.
 // → 장절+대분류+소주제로 짝짓고, 예전 데이터·소주제 변경은 장절로 한 번만 이어붙인다.
-function _verseIdentity(ref,cat,topic){
+// ⚠️ 명제집(설교 명제)은 **한 설교에서 여러 명제가 나온다.** 장절·설교 제목·
+//    핵심 주제가 셋 다 같은 명제가 흔하다 (실제로 275개가 87자리로 뭉친다).
+//    그래서 명제는 시트의 '명제 ID'(P0001) 하나로만 구별한다 — 그게 없으면
+//    226개가 서로 덮어써 사라진다.
+function _verseIdentity(ref,cat,topic,pid){
+  const p=String(pid||'').trim();
+  if(p)return'\u0002P\u0001'+p;
   return[String(ref||'').trim(),String(cat||'나의 암송').trim(),String(topic||'').trim()].join('\u0001');
 }
 // 구글 시트 소스마다 고정 id 를 붙인다 (어느 시트에서 온 구절인지 구분용)
@@ -6719,7 +6725,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   if(!Array.isArray(coll.verses))coll.verses=[];
   const byKey=new Map(),byRef=new Map(),claimed=new Set();
   coll.verses.forEach(v=>{
-    const k=_verseIdentity(v.ref,v.cat,v.topic);
+    const k=_verseIdentity(v.ref,v.cat,v.topic,v.pid);
     if(!byKey.has(k))byKey.set(k,v);
     const r=String(v.ref||'').trim();
     if(!byRef.has(r))byRef.set(r,[]);
@@ -6735,9 +6741,10 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   const gid=(srcInfo&&srcInfo.gid)||'';
   let added=0,restored=0,updated=0,removed=0;
   items.forEach(it=>{
-    if(!it.krText||!it.ref)return;
+    // 명제는 장절 칸이 비어 있어도 받는다 — 구별은 명제 ID 가 한다
+    if(!it.krText||(!it.ref&&!it.pid))return;
     const newCat=it.cat||'나의 암송',newTopic=it.topic||'',newTags=it.tags||[];
-    const key=_verseIdentity(it.ref,newCat,newTopic);
+    const key=_verseIdentity(it.ref,newCat,newTopic,it.pid);
     let ex=byKey.get(key);
     if(ex&&claimed.has(ex))ex=null;
     if(!ex){
@@ -6746,9 +6753,10 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       //    같은 구절이 여러 소주제에 쓰이는 시트(리트릿 1일/2일처럼)에서는
       //    엉뚱한 항목의 소주제가 통째로 바뀌어, 소주제별 개수가 실제와 어긋났다.
       //    시트에도 한 번, 앱에도 한 번만 있는 경우에만 이어받는다.
-      const r=String(it.ref).trim();
-      const cands=(byRef.get(r)||[]).filter(v=>!claimed.has(v));
-      if(sheetRefCount.get(r)===1&&cands.length===1)ex=cands[0];
+      // ⚠️ 명제는 장절이 겹치는 게 정상이라 장절로 이어받으면 엉뚱한 것을 집는다.
+      const r=String(it.ref||'').trim();
+      const cands=it.pid?[]:(byRef.get(r)||[]).filter(v=>!claimed.has(v));
+      if(!it.pid&&sheetRefCount.get(r)===1&&cands.length===1)ex=cands[0];
     }
     if(ex){
       claimed.add(ex);
@@ -6766,8 +6774,9 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,hi:String(it.hi||''),src:'google',d:it.d||_calKey()};
       if(gid)nv.gid=gid;
       if(it.row)nv.row=it.row;
+      if(it.pid){nv.pid=it.pid;nv.kind='prop';}   // 명제집에서 온 항목
       coll.verses.push(nv);claimed.add(nv);byKey.set(key,nv);
-      const r=String(it.ref).trim();
+      const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
       byRef.get(r).push(nv);
       added++;
@@ -6815,6 +6824,9 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   if(srcInfo&&srcInfo.kind==='google'){
     for(let i=coll.verses.length-1;i>=0;i--){
       const v=coll.verses[i];
+      // ⚠️ 명제는 장절 칸에 참조를 여러 개 적어 40자를 넘기는 일이 흔하다
+      //    (275개 중 130개). 여기서 걸러내면 그것들이 추가 직후 영영 사라진다.
+      if(v.kind==='prop'||v.pid)continue;
       if(v.src==='google'&&v.ref&&!_looksLikeRef(v.ref))coll.verses.splice(i,1);
     }
   }
@@ -6909,10 +6921,54 @@ function _sheetRowsSane(rows){
     return{ok:false,why:'시트를 제대로 읽지 못했어요 (칸이 뭉쳐서 들어옴). 잠시 후 다시 시도해주세요'};
   return{ok:true};
 }
+// ══ 명제집(설교 명제 DB) 시트 읽기 ═══════════════════════════════════
+// 말씀 모음 시트는 열이 7개(카테고리·주제·본문·장절·태그·날짜·강조 문구)인데
+// 명제 DB 는 30열이 넘고 이름도 다르다. 머리글로 어느 쪽인지 알아본다.
+//
+// ⚠️ 자리(열 번호)로 읽지 않고 **이름으로** 읽는다. HB 가 시트에 열을 더하는
+//    일이 잦아서(2026-08-30 에도 '영상 링크·영상 시각'이 들어왔다) 자리로
+//    읽으면 그때마다 앱이 깨진다.
+function _isPropSheet(h){
+  return h.includes('명제 ID')&&h.includes('명제');
+}
+function _propRowsToItems(rows){
+  const h=rows[0].map(c=>String(c||'').trim());
+  const at=n=>h.indexOf(n);
+  const iId=at('명제 ID'),iDate=at('날짜'),iTitle=at('설교 제목'),
+        iRef=at('장절/단락'),iText=at('명제'),iHi=at('대표 문구'),
+        iTopic=at('핵심 주제'),iTags=at('주제 태그'),iState=at('데이터 상태');
+  if(iId<0||iText<0)return[];
+  const items=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i]||[];
+    const pid=String(r[iId]||'').trim();
+    if(!/^P\d+$/.test(pid))continue;            // 명제 번호가 없는 줄은 데이터가 아니다
+    // '데이터 상태'가 있으면 '활성'인 것만 (시트 웹앱 설정의 ACTIVE_STATUS 규칙)
+    if(iState>=0){const st=String(r[iState]||'').trim();if(st&&st!=='활성')continue;}
+    const text=String(r[iText]||'').trim();
+    if(!text)continue;
+    const tagsRaw=iTags>=0?String(r[iTags]||'').trim():'';
+    items.push({
+      kind:'prop',pid,
+      // 설교 제목이 대분류 자리로 온다 (HB: "설교는 대분류의 종류로 들어간다")
+      cat:(iTitle>=0?String(r[iTitle]||'').trim():'')||'설교 명제',
+      topic:iTopic>=0?String(r[iTopic]||'').trim():'',
+      krText:text,
+      // 장절 칸에 참조가 여러 개 들어오기도 한다 — 자르지 않고 그대로 둔다
+      ref:iRef>=0?String(r[iRef]||'').trim():'',
+      tags:tagsRaw?tagsRaw.split(/[,;]/).map(t=>t.trim()).filter(Boolean):[],
+      hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 = 강조 문구 자리
+      d:iDate>=0?_parseVDate(r[iDate]):null,
+      row:i+1
+    });
+  }
+  return items;
+}
 function _rowsToItems(rows){
   if(!rows||!rows.length)return[];
   let start=0;
   const h=rows[0].map(c=>String(c||'').trim());
+  if(_isPropSheet(h))return _propRowsToItems(rows);
   // 정확히 일치뿐 아니라 포함도 인정한다 — 머리글이 다른 행과 합쳐져 들어오는
   // 경우에도 데이터로 오인해 유령 구절이 생기지 않도록.
   const HEAD=['카테고리','주제','본문','장절','태그','날짜','강조 문구'];
