@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-3  [production]  -->
+<!-- BLOCK7  v. 26-0830-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3310,10 +3310,18 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sw-pips i{width:3.5px;height:3.5px;border-radius:50%;background:var(--tx3);opacity:.35;}
 .sw-pips i.on{opacity:1;background:var(--ac);}
 .sw-empty{position:relative;font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
+/* 값이 넘어갈 때 **흐르는 것**은 이 두 가지뿐이다 — 본문 묶음(.sw-slide)과
+   손그림(.sw-art). 타일 이름·정렬 칩·점은 제자리에 붙어 있는다.
+   ⚠️ 셋 다 함께 흐르게 두었더니 되튀는 것처럼 보였다 (HB 신고 26-0830-4). */
+.sw-slide{position:relative;min-width:0;}
 .sw-slidein{animation:swSlideIn .17s ease-out;}
 @keyframes swSlideIn{from{opacity:0;transform:translateX(var(--sw-sx,34px))}to{opacity:1;transform:none}}
+/* 손그림은 원래 흐릿하다(.17). 위 애니메이션은 끝에서 opacity:1 로 두므로
+   그대로 쓰면 다 들어온 순간 **선명하게 번쩍인다.** 그림은 자리만 옮긴다. */
+.sw-art.sw-slidein{animation:swArtIn .17s ease-out;}
+@keyframes swArtIn{from{transform:translateX(var(--sw-sx,34px))}to{transform:none}}
 @media (prefers-reduced-motion:reduce){
-  .sw-slidein{animation:none;}
+  .sw-slidein,.sw-art.sw-slidein{animation:none;}
   .sw-tile{transition:none;}
 }
 
@@ -3426,7 +3434,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-3";
+const APP_VERSION = "v. 26-0830-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27772,7 +27780,7 @@ function _swArtHTML(v){
   if(!pick)return '';
   let svg='';
   try{svg=_tagartSvg(pick.id,_tagartStyle());}catch(e){svg='';}
-  return svg?'<div class="sw-art">'+svg+'</div>':'';
+  return svg?'<div class="sw-art sw-flow">'+svg+'</div>':'';
 }
 function _swPipsHTML(n,p){
   if(n<=1)return '';
@@ -27788,7 +27796,12 @@ function _swFace(t){
   const cur=it[t.p],pips=_swPipsHTML(n,t.p);
   const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
     +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
+  // ⚠️ 여기서부터가 **고정 세간**이다 — 타일 이름(좌상단)·정렬 칩(우상단)·
+  //    점(우하단). 값이 넘어갈 때 이것들이 같이 흐르면 튕겨 보인다 (HB 신고).
+  //    흐르는 것은 .sw-flow 를 단 것들뿐이다 (본문 묶음과 손그림).
   const lab='<div class="sw-lab"><span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
+  const dots='<div class="sw-pips">'+pips+'</div>';
+  const slide=(inner)=>'<div class="sw-slide sw-flow">'+inner+'</div>';
   if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
     return{cls:'',html:'<div class="sw-face">'+lab
       +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>'};
@@ -27796,22 +27809,23 @@ function _swFace(t){
   if(cur.kind==='title'){
     const sub=t.k==='last'?(n-1)+'개의 말씀':(n-1)+'편의 설교';
     return{cls:'',html:'<div class="sw-face">'+lab
-      +'<div class="sw-val">'+_swEsc(T.n)+'</div>'
-      +'<div class="sw-num">'+_swEsc(sub)+'</div>'
-      +'<div class="sw-pips">'+pips+'</div></div>'};
+      +slide('<div class="sw-val">'+_swEsc(T.n)+'</div>'
+            +'<div class="sw-num">'+_swEsc(sub)+'</div>')
+      +dots+'</div>'};
   }
   if(t.k==='last'){
     const v=cur.v.verse;
     return{cls:'verse',html:_swArtHTML(v)+'<div class="sw-face">'+lab
-      +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
-      +'<div class="sw-num">'+_swEsc(v.ref)+(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div>'
-      +'<div class="sw-pips">'+pips+'</div></div>'};
+      +slide('<div class="sw-val">'+_swEsc(v.krText)+'</div>'
+            +'<div class="sw-num">'+_swEsc(v.ref)
+              +(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div>')
+      +dots+'</div>'};
   }
   const g=cur.v;
   return{cls:'',html:'<div class="sw-face">'+lab
-    +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
-    +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div>'
-    +'<div class="sw-pips">'+pips+'</div></div>'};
+    +slide('<div class="sw-val">'+_swEsc(g.cat)+'</div>'
+          +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div>')
+    +dots+'</div>'};
 }
 
 // ── 그리기 ───────────────────────────────────────────────
@@ -27844,15 +27858,26 @@ function _swNoMotion(){
   try{return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);}
   catch(e){return false;}
 }
+// 한 타일 안에서 **흐르는 것들**만 고른다 (본문 묶음 + 손그림).
+// 타일 이름·정렬 칩·점은 여기 들어오지 않는다 — 고정 세간이다.
+function _swFlow(el){return el?el.querySelectorAll('.sw-flow'):[];}
+function _swFlowSet(el,tx,op,tr){
+  _swFlow(el).forEach(f=>{
+    f.style.transition=tr||'';
+    f.style.transform=tx||'';
+    if(op!==undefined)f.style.opacity=op;
+  });
+}
 function _swRepaint(i,dir){
   const b=document.getElementById('swBoard');if(!b)return;
   const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
   const t=_SW_TILES[i],f=_swFace(t);
   el.className='sw-tile '+(t.k==='last'?'wide ':'')+f.cls;
   el.innerHTML=f.html;
-  const face=el.querySelector('.sw-face');
-  if(face&&dir){face.style.setProperty('--sw-sx',(dir>0?34:-34)+'px');
-    face.classList.add('sw-slidein');}
+  if(dir)_swFlow(el).forEach(x=>{
+    x.style.setProperty('--sw-sx',(dir>0?34:-34)+'px');
+    x.classList.add('sw-slidein');
+  });
 }
 
 // ── 누르면 전체화면 ──────────────────────────────────────
@@ -27899,8 +27924,8 @@ function _swInitGestures(){
       e.preventDefault();return;
     }
     if(el._swAnim)return;   // 넘어가는 중 — 새 몸짓을 받지 않는다
-    const f0=el.querySelector('.sw-face');
-    if(f0){f0.style.transition='none';f0.style.opacity='';}
+    _swFlowSet(el,'',undefined,'none');   // 남아 있던 전환을 끈다 (손가락이 늦게 따라온다)
+    _swFlow(el).forEach(f=>{f.style.opacity='';});
     _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false};
   });
   b.addEventListener('pointermove',e=>{
@@ -27911,50 +27936,44 @@ function _swInitGestures(){
       // ⚠️ 세로로 움직이면 이 몸짓을 깨끗이 포기한다. 브라우저가 이미
       //    스크롤을 시작했기 때문에 여기서 다투면 둘 다 어색해진다.
       if(Math.abs(dy)>=Math.abs(dx)){
-        const f=_swG.el.querySelector('.sw-face');if(f)f.style.transform='';
+        _swFlowSet(_swG.el,'');
         _swG=null;return;
       }
       _swG.ax='x';
     }
-    if(_swG.ax==='x'){
-      const f=_swG.el.querySelector('.sw-face');
-      if(f)f.style.transform='translateX('+(dx*.34)+'px)';
-    }
+    if(_swG.ax==='x')_swFlowSet(_swG.el,'translateX('+(dx*.34)+'px)');
   });
   // 손을 뗀 자리에서 제자리로 되돌릴 때 쓰는 짧은 전환
-  const _swEase=f=>{if(f){f.style.transition='transform .16s ease-out';f.style.transform='';}};
+  const _swEase=el=>_swFlowSet(el,'',undefined,'transform .16s ease-out');
   const end=e=>{
     if(!_swG)return;
     const dx=e.clientX-_swG.x,i=_swG.i,el=_swG.el,t=_SW_TILES[i];
-    const f=el.querySelector('.sw-face');
     if(_swG.ax==='x'&&Math.abs(dx)>38){
       const n=_swStrip(t).length, dir=dx<0?1:-1;
       const can=dir>0?(t.p<n-1):(t.p>0);
       if(can){
         // 움직임을 줄여 달라고 한 기기에서는 애니메이션 없이 바로 갈아끼운다
-        if(_swNoMotion()){t.p+=dir;if(f){f.style.transition='';f.style.transform='';}
-                          _swRepaint(i,0);_swG=null;return;}
+        if(_swNoMotion()){t.p+=dir;_swFlowSet(el,'','');_swRepaint(i,0);_swG=null;return;}
         // ⚠️ 여기서 바로 갈아끼우면 **튕겨 돌아오는 것처럼** 보인다 (HB 신고).
         //    손가락이 내용을 왼쪽으로 밀어 둔 상태인데, 새 내용은 오른쪽에서
         //    들어오도록 만들어 두었기 때문이다. 눈에는 왼쪽 → 오른쪽 → 가운데,
         //    즉 한 번 되튀는 것으로 보인다.
         //    그래서 밀던 방향으로 **끝까지 내보낸 뒤에** 새 내용을 들인다.
-        if(f){f.style.transition='transform .12s ease-out,opacity .12s ease-out';
-              f.style.transform='translateX('+(dir>0?-46:46)+'px)';
-              f.style.opacity='0';}
+        _swFlowSet(el,'translateX('+(dir>0?-46:46)+'px)','0',
+                   'transform .12s ease-out,opacity .12s ease-out');
         t.p+=dir;
         el._swAnim=true;
         setTimeout(()=>{el._swAnim=false;_swRepaint(i,dir);},120);
-      }else _swEase(f);   // 끝이다 — 부드럽게 제자리로
+      }else _swEase(el);   // 끝이다 — 부드럽게 제자리로
     }else if(!_swG.moved&&Date.now()-_swG.t<600){
-      if(f)f.style.transform='';
+      _swFlowSet(el,'');
       _swTileOpen(i);
-    }else _swEase(f);
+    }else _swEase(el);
     _swG=null;
   };
   b.addEventListener('pointerup',end);
   b.addEventListener('pointercancel',()=>{
-    if(_swG)_swEase(_swG.el.querySelector('.sw-face'));
+    if(_swG)_swEase(_swG.el);
     _swG=null;
   });
   window.addEventListener('resize',()=>{if(_swOn()&&!_swClassic)_swSizeCells();});
