@@ -167,12 +167,11 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes("d:v.d||'',pid:v.pid||'',kind:v.kind||''"), true);
   // ⚠️ 세로 몸짓은 화면 스크롤의 것이다. 이 포기 규칙을 지우면 시안에서 겪은
   //    "상하 슬라이드가 잘 안 되는" 증상이 그대로 돌아온다.
-  // 각도 관용은 설정창 탭과 같은 1.3배 = 52.4도. 45도(dy>=dx)로 되돌리면
-  // 45도 언저리의 옆쓸기가 스크롤로 새 나간다 (HB 신고 26-0830-8).
+  // 각도 관용 70도 (HB 지시 26-0830-9). 45도·52도로 되돌리면 비스듬한
+  // 옆쓸기가 스크롤로 새 나간다.
   sc.eq('세로로 움직이면 몸짓을 포기한다',
-        SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*1.3){'), true);
-  sc.eq('설정창 탭과 같은 각도 관용',
-        SRC_DEV.includes('if(Math.abs(ddy)>Math.abs(ddx)*1.3){'), true);
+        SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){'), true);
+  sc.eq('70도까지는 옆쓸기로 본다', SRC_DEV.includes('const _SW_ANGLE=2.75;'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
