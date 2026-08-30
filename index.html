@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-9  [production]  -->
+<!-- BLOCK7  v. 26-0830-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3326,8 +3326,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* ⚠️ 정렬 칩과 × 가 같은 자리(우상단)라 겹쳤다. 편집 중에는 정렬을 바꿀 일이
    없으니 칩을 감춘다. */
 .sw-board.edit .sw-sc{display:none;}
+/* ⚠️ pointer-events:none 이 **핵심**이다. 끌리는 타일은 손가락을 따라다니므로
+   elementFromPoint 가 언제나 자기 자신을 돌려준다 → "밑에 있는 타일"을 영영
+   못 찾아 순서가 바뀌지 않았다 (HB 신고 26-0830-10).
+   투명도만 낮추는 것으로는 안 된다 — 눈에만 흐릴 뿐 여전히 손가락을 가린다. */
 .sw-tile.sw-drag{opacity:.6;z-index:5;box-shadow:0 12px 30px -8px var(--shadow-color);
-  transition:none;}
+  transition:none;pointer-events:none;}
+/* 편집 중에는 브라우저에게 세로를 넘기지 않는다. 안 그러면 위아래로 끌 때
+   브라우저가 스크롤을 시작하며 pointercancel 로 드래그를 끊는다.
+   ⚠️ 그래서 편집 중에는 판이 스크롤되지 않는다. 타일이 한 화면을 넘길 만큼
+      늘어나면 가장자리 자동 스크롤을 붙여야 한다. */
+.sw-board.edit .sw-tile{touch-action:none;}
 .sw-kill{position:absolute;top:7px;right:7px;width:21px;height:21px;border-radius:50%;
   background:var(--bg);border:1px solid var(--bd);color:var(--tx2);
   display:grid;place-items:center;font-size:13px;line-height:1;z-index:3;cursor:pointer;
@@ -3463,7 +3472,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-9";
+const APP_VERSION = "v. 26-0830-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28069,7 +28078,10 @@ function _swTileOpen(i){
 // 손가락을 1:1 로 따라가고, 문턱을 넘으면 트랙이 있던 자리에서 이어서 미끄러진다.
 // 끝에서는 고무줄처럼 4분의 1만 따라간다.
 let _swG=null;
-const _SW_COMMIT=45;   // 설정창은 70px — 타일이 더 좁아 조금 줄였다
+// 값이 넘어가는 문턱. HB 지시 26-0830-10 — 45px 은 너무 길다.
+// ⚠️ 10px 은 탭과 매우 가깝다 (몸짓으로 치는 문턱이 7px). 누르려다 손가락이
+//    조금만 밀려도 값이 넘어갈 수 있다. 그래도 넘기려는 뜻은 거의 놓치지 않는다.
+const _SW_COMMIT=10;
 const _SW_ANGLE=2.75;  // 옆쓸기로 볼 최대 기울기 = tan(70°). 아래 주석 참고
 function _swInitGestures(){
   const b=document.getElementById('swBoard');
