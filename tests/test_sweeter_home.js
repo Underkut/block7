@@ -155,6 +155,16 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes('if(Math.abs(dy)>=Math.abs(dx)){'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
+  // ⚠️ 밀던 방향으로 내보낸 **뒤에** 갈아끼운다. 이 절차를 빼면 손가락이 왼쪽으로
+  //    밀어 둔 내용이 오른쪽에서 다시 들어와 튕겨 돌아오는 것처럼 보인다 (HB 신고).
+  sc.eq('밀던 방향으로 먼저 내보낸다',
+        SRC_DEV.includes("f.style.transform='translateX('+(dir>0?-46:46)+'px)';"), true);
+  sc.eq('내보낸 뒤에 갈아끼운다',
+        SRC_DEV.includes("setTimeout(()=>{el._swAnim=false;_swRepaint(i,dir);},120);"), true);
+  sc.eq('넘어가는 중에는 새 몸짓을 받지 않는다',
+        SRC_DEV.includes("if(el._swAnim)return;"), true);
+  // 움직임 줄이기를 켠 기기는 애니메이션 없이 바로 바뀐다
+  sc.eq('움직임 줄이기를 존중한다', SRC_DEV.includes("function _swNoMotion()"), true);
 }
 
 sc.done();
