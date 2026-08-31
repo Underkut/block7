@@ -415,16 +415,24 @@ console.log('\n시나리오 13 — 알림 경로');
   // ⚠️ 0813-3 HB 신고 — 위 두 곳만 보고 있었는데, **공유 모음**을 주고받는 길에도
   //    구절을 새로 조립하는 곳이 둘 더 있었다. 거기에 hi 가 없어서 구독자에게만
   //    강조가 통째로 빠졌다. 소유자 화면은 멀쩡해서 한참 몰랐다.
-  sc.eq('공유 게시가 강조를 담는다',
-        SRC.includes("tags:v.tags||[],hi:v.hi||'',d:v.d||''"), true);
-  sc.eq('구독 받기가 강조를 담는다',
-        SRC.includes("tags:v.tags||[],hi:String(v.hi||''),src:'shared'"), true);
+  // v26-0831-2 — 그 두 곳의 항목 목록을 **함수 하나씩으로 모았다**
+  //    (_sharedVerseOut / _sharedVerseIn). 그래서 글자를 맞춰 보는 대신
+  //    **실제로 돌려서** 강조가 살아 나가고 살아 들어오는지 본다 —
+  //    항목을 더해도 안 깨지고, 정작 지키려는 것은 더 확실하게 지킨다.
+  //    (목록이 두 곳뿐인지는 tests/test_share_prop.js 가 지킨다)
+  eval(SRC.slice(SRC.indexOf('function _sharedVerseOut('),
+                 SRC.indexOf('// 소유자의 모음 내용을 shared'))
+          .replace(/^(?:const|let) /gm, 'var '));
+  const one = { cat:'나의 암송', topic:'', krText:'본문', ref:'요한복음 3:16',
+                tags:['사랑'], hi:'이처럼', d:'2026-08-01' };
+  sc.eq('공유 게시가 강조를 담는다', _sharedVerseOut(one).hi, '이처럼');
+  sc.eq('구독 받기가 강조를 담는다', _sharedVerseIn(_sharedVerseOut(one)).hi, '이처럼');
   // 게시와 구독은 항목이 같아야 한다 — 한쪽만 고치면 그대로 샌다
-  const pub = /verses:\(coll\.verses\|\|\[\]\)[^\n]*/.exec(SRC)[0];
-  const sub = /const verses=\(data\.verses\|\|\[\]\)[^\n]*/.exec(SRC)[0];
-  const fields = t => (t.match(/(\w+):/g) || []).map(x => x.slice(0, -1)).sort();
-  sc.eq('게시에 hi 가 있다', fields(pub).indexOf('hi') >= 0, true);
-  sc.eq('구독에 hi 가 있다', fields(sub).indexOf('hi') >= 0, true);
+  sc.eq('게시에 hi 가 있다', Object.keys(_sharedVerseOut(one)).indexOf('hi') >= 0, true);
+  sc.eq('구독에 hi 가 있다', Object.keys(_sharedVerseIn(one)).indexOf('hi') >= 0, true);
+  // 강조가 비어 있어도 항목 자체는 남는다 (빠지면 구독자에게서 조용히 사라진다)
+  sc.eq('강조가 비어도 항목은 남는다',
+        Object.prototype.hasOwnProperty.call(_sharedVerseOut({...one, hi:''}), 'hi'), true);
   // 구독 모음의 매일 갱신은 시트 동기화 함수를 그대로 쓴다 → 거기도 hi 를 다룬다
   sc.eq('갱신도 같은 길',
         SRC.includes("_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'})"), true);

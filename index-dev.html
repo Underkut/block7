@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3488,7 +3488,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-1";
+const APP_VERSION = "v. 26-0831-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6439,9 +6439,8 @@ async function doSubscribe(){
     if(!doc.exists){showToast('해당 코드의 말씀 모음을 찾을 수 없어요');return;}
     data=doc.data();
   }catch(e){showToast('불러오기 실패 — 네트워크를 확인해주세요');return;}
-  // ⚠️ 게시(_publishSharedColl)와 **항목이 같아야 한다.** 한쪽만 고치면 구독자에게서
-  //    조용히 빠진다 — 강조 문구(hi)가 실제로 그랬다 (0813-3 HB 신고)
-  const verses=(data.verses||[]).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],hi:String(v.hi||''),src:'shared',d:v.d||''}));
+  // 항목 목록은 _sharedVerseIn 한 곳에서 정한다 (_sharedVerseOut 과 짝)
+  const verses=(data.verses||[]).map(_sharedVerseIn);
   const id=_genCollId();
   beforeSave();
   if(!Array.isArray(ST.verseCollections))ST.verseCollections=[];
@@ -7454,6 +7453,32 @@ async function _generateUniqueShareCode(){
   }
   return null;
 }
+// ══ 발행 문서에 담기는 구절의 항목 — **여기 한 곳에서만 정한다** ══════════
+// ⚠️ 예전엔 발행(_publishSharedColl)과 구독 받기(doSubscribe)가 목록을 각자
+//    손으로 적고, 주석으로 "두 곳을 같이 고칠 것"이라 부탁했다. 사람은 빠뜨린다 —
+//    강조 문구(hi)가 0813-3 에 당했고, 명제 ID(pid)가 26-0831 에 또 당했다.
+//    pid 가 빠지면 구독자에게서 **명제집이 거의 통째로 사라진다**:
+//      ① 장절 칸이 빈 명제는 통째로 버려지고
+//      ② 장절·설교·주제가 같은 명제들이 _verseIdentity 에서 한 자리로 뭉쳐
+//         서로 덮어쓴다 (실제 시트에서 275개가 87자리로 뭉친다)
+//    → 항목을 더할 곳은 이제 아래 두 함수뿐이다. (tests/test_share_prop.js 가 지킨다)
+//
+// ⚠️ 발행자 사정(gid=어느 시트, row=몇 째 줄)은 **보내지 않는다.** 보내면
+//    구독자 쪽 시트 동기화가 남의 시트 id 를 물고 엉킨다.
+function _sharedVerseOut(v){
+  const o={cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
+           tags:v.tags||[],hi:String(v.hi||''),d:v.d||''};
+  if(v.pid){o.pid=v.pid;o.kind='prop';}   // 명제집에서 온 항목
+  return o;
+}
+// 받는 쪽. kind 는 pid 에서 **파생한다** — _syncSheetVersesIntoColl 과 같은
+// 규칙이라 첫 구독과 매일 갱신이 어긋날 수 없다.
+function _sharedVerseIn(v){
+  const o={cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
+           tags:v.tags||[],hi:String(v.hi||''),src:'shared',d:v.d||''};
+  if(v.pid){o.pid=v.pid;o.kind='prop';}
+  return o;
+}
 // 소유자의 모음 내용을 shared 문서에 게시(최신화). 삭제 안 된 구절만, 메타 제거.
 async function _publishSharedColl(coll){
   if(!_fbReady()||!coll||!coll.shareCode)return false;
@@ -7461,10 +7486,8 @@ async function _publishSharedColl(coll){
     await window._fbDB.collection('shared').doc(coll.shareCode).set({
       code:coll.shareCode,
       name:coll.name||'말씀 모음',
-      // ⚠️ 여기 빠뜨린 항목은 **구독자에게만** 조용히 사라진다. 소유자 화면은 멀쩡해서
-      //    한참 모른다. 실제로 강조 문구(hi)가 이렇게 빠져 있었다 (0813-3 HB 신고).
-      //    구절에 항목을 더하면 여기와 아래 '구독 받기' 두 곳을 같이 고칠 것.
-      verses:(coll.verses||[]).filter(v=>!v.del).map(v=>({cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',tags:v.tags||[],hi:v.hi||'',d:v.d||''})),
+      // 항목 목록은 _sharedVerseOut 한 곳에서 정한다 (위 주석 참고)
+      verses:(coll.verses||[]).filter(v=>!v.del).map(_sharedVerseOut),
       ownerUid:window._fbUser.uid,
       ownerIdPrefix:((window._fbUser.email||window._fbUser.uid||'').slice(0,3)), // 발행자 식별용 앞 3글자(전체 이메일 노출 안 함)
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
