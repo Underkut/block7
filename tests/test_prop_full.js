@@ -316,11 +316,14 @@ console.log('\n시나리오 14 — 성경권 여럿');
   // ⚠️ '명제 ID' 를 '명제' 보다 먼저 정한다 — 안 그러면 '명제' 가 그 열을 집어간다
   sc.eq('명제 ID 를 먼저 정한다',
         SRC_DEV.indexOf("const iId=col('명제 ID');")<SRC_DEV.indexOf("const iText=col('명제');"), true);
-  // v26-0831-12 — 성경권은 '성경권' 열과 **설교 본문에서 뽑은 것**을 합친다
-  //   (설교 본문이 최대 3개까지 들어오므로 그 셋이 모두 걸려야 한다)
-  sc.eq('여러 개로 나눈다', SRC_DEV.includes("function _propBooks(rawBooks,refs){"), true);
-  sc.eq('성경권 열과 설교 본문을 합친다',
-        SRC_DEV.includes("books:_propBooks(iBooks>=0?r[iBooks]:'',_propRefs(refCell(r)))"), true);
+  // ⚠️ v26-0831-21, HB — 성경권은 **설교 본문에서 뽑은 것이 전부**다.
+  //   시트의 '성경권' 열은 인용 본문까지 헤아려 적힌 값이라 읽지 않는다
+  //   (전도서 설교의 명제가 마태복음 필터에 걸리던 까닭).
+  sc.eq('여러 개로 나눈다', SRC_DEV.includes("function _propBooks(refs){"), true);
+  sc.eq('설교 본문에서만 뽑는다',
+        SRC_DEV.includes("books:_propBooks(_propRefs(refCell(r)))"), true);
+  sc.eq('인용 본문은 소속에 안 쓴다',
+        SRC_DEV.includes("const iRefCols=[iSermon,iOldRef].filter(x=>x>=0);"), true);
   sc.eq('구절에 실어 화면까지 보낸다', SRC_DEV.includes('books:v.books||[]'), true);
   sc.eq('발행·구독에도 실린다',
         SRC_DEV.includes('function _booksOf(v){'), true);

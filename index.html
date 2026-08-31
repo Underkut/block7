@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-20  [production]  -->
+<!-- BLOCK7  v. 26-0831-21  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3385,15 +3385,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-pick-new{color:var(--ac);}
 .keep-grip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   width:14px;color:var(--tx3);cursor:grab;touch-action:none;}
-/* 잡은 줄 — **제자리에 흐려진 채** 남는다 (다른 줄은 꿈쩍하지 않는다) */
-.keep-dragging{opacity:.28;}
-/* 떠다니는 그림자 — 손가락을 따라온다 */
-.keep-ghost{background:var(--s1);border:1px solid var(--bd2);border-radius:8px;
-  box-shadow:0 6px 20px rgba(0,0,0,.28);opacity:.96;}
-/* 도착지 — 밝은 선 하나 */
-.keep-dropline{position:absolute;left:4px;right:4px;height:2px;border-radius:2px;
-  background:var(--ac);box-shadow:0 0 6px var(--ac);pointer-events:none;
-  transition:top .12s cubic-bezier(.4,0,.2,1);}
+/* 잡은 줄 — 손가락을 따라 그 자리에서 **떠서** 움직인다 (스위터 방식).
+   ⚠️ 그림자 복제를 만들지 않는다. 진짜 줄이 그대로 따라와야 손과 어긋나지 않는다. */
+.keep-dragging{position:relative;z-index:30;background:var(--s2);border-radius:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,.30);}
 .keep-row-more{flex:0 0 auto;background:none;border:0;padding:2px 2px;margin:0;
   color:var(--tx3);cursor:pointer;line-height:0;}
 .keep-row-more:active{opacity:.5;}
@@ -3412,10 +3407,18 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-sort.on{color:var(--tx);font-weight:700;}
 .keep-sort:active{opacity:.6;}
 /* 팝업 안에서 제목줄 바로 아래로 미끄러져 내려오는 '목록 바꾸기' */
-#keepSwitchBox{flex-shrink:0;overflow:auto;max-height:0;opacity:0;margin-top:6px;
-  border-bottom:1px solid var(--bd);
-  transition:max-height .18s cubic-bezier(.4,0,.2,1),opacity .16s;}
-#keepSwitchBox.on{max-height:44vh;opacity:1;}
+/* ⚠️ v26-0831-21, HB — ① 더 부드럽게 여닫고 ② 아래 깔린 말씀 목록과 **색이 갈려야** 한다.
+   그래서 팝업 바탕(--s1)보다 한 단 밝은 --s2 를 깔고 테두리·그림자를 준다.
+   여는 움직임은 위에서 밀려 내려오듯 — 높이·투명도에 **살짝 위로 접힌 자세**를 더했다. */
+#keepSwitchBox{flex-shrink:0;overflow:auto;max-height:0;opacity:0;margin:0 -4px;
+  background:var(--s2);border:1px solid var(--bd);border-radius:10px;
+  box-shadow:0 6px 16px rgba(0,0,0,.22);padding:0 6px;
+  transform:translateY(-6px);transform-origin:top center;
+  transition:max-height .26s cubic-bezier(.33,1,.68,1),opacity .2s ease,
+             transform .26s cubic-bezier(.33,1,.68,1),
+             padding .26s cubic-bezier(.33,1,.68,1),margin-top .26s cubic-bezier(.33,1,.68,1);}
+#keepSwitchBox.on{max-height:44vh;opacity:1;transform:translateY(0);
+  padding:5px 6px;margin-top:6px;}
 .keep-switch-row{display:flex;align-items:center;gap:8px;padding:8px 6px;cursor:pointer;
   font-size:12px;color:var(--tx);border-radius:6px;}
 .keep-switch-row.on{background:var(--s2,rgba(127,127,127,.16));font-weight:700;}
@@ -3616,7 +3619,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-20";
+const APP_VERSION = "v. 26-0831-21";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7395,13 +7398,19 @@ function _propRefs(raw){
   });
   return out.slice(0,_PROP_REF_MAX);
 }
-// 성경권 — 시트에 적힌 '성경권' 열을 먼저 쓰고, 없으면 설교 본문에서 뽑는다.
-// 둘 다 있으면 합친다 (성경별 필터가 세 권 모두에 걸려야 한다).
-function _propBooks(rawBooks,refs){
+// 성경권 — **'설교 본문' 에서 뽑은 것만** 쓴다.
+// ⚠️⚠️ v26-0831-21, HB 신고 — "마태복음 필터링인데 왜 삼상이 나오고,
+//    히브리서 필터링인데 마가복음이 나오냐. '인용 본문'에 있는 성경 데이터는
+//    전체화면에서 성경 필터링 하는데 **절대** 사용하지 마라. 혼선이 온다."
+//    까닭 — 시트의 '성경권' 열은 **인용 본문까지 헤아려** 적힌 값이다.
+//    설교 본문은 전도서인데 성경권 열에는 인용된 마태복음·사무엘상이 함께 들어 있고,
+//    그것을 합쳐 쓰니 전도서 설교의 명제가 마태복음 필터에 걸렸다.
+//    → 성경권 열을 **더 이상 읽지 않는다.** 설교 본문에서 뽑은 것이 전부다.
+//    ('인용 본문'은 나중에 Sweeter 에서 교역자가 관련 명제를 잇는 데 쓸 값이지,
+//     지금 화면의 성경 필터에 쓸 값이 아니다)
+function _propBooks(refs){
   const out=[];
-  const push=n=>{const b=_bookNorm(n);if(b&&out.indexOf(b)<0)out.push(b);};
-  String(rawBooks==null?'':rawBooks).split(/[,;·/]/).forEach(x=>{if(x.trim())push(x.trim());});
-  (refs||[]).forEach(r=>{const b=_bookOfRef(r);if(b)push(b);});
+  (refs||[]).forEach(r=>{const b=_bookOfRef(r);if(b&&out.indexOf(b)<0)out.push(b);});
   return out;
 }
 function _propRowsToItems(rows){
@@ -7441,7 +7450,12 @@ function _propRowsToItems(rows){
   //    더해 설교에서 인용된 **모든** 본문이라 화면에 다 쓰면 너무 많다.
   //    '설교 본문' 이 없는 옛 시트를 위해 옛 이름 두 개를 뒤에 둔다.
   //    ⚠️ 열이 **있어도 비어 있을 수** 있다 → 줄마다 값이 있는 첫 열을 쓴다.
-  const iRefCols=[iSermon,iOldRef,iQuote].filter(x=>x>=0);
+  // ⚠️⚠️ v26-0831-21, HB — '인용 본문'은 **여기 넣지 않는다.** 설교 본문이 빈
+  //    줄에서 인용 본문으로 물러서면, 그 설교와 상관없는 성경들이 그 명제의
+  //    소속이 되어 엉뚱한 필터에 걸린다 (전도서 설교가 마태복음 필터에 나왔다).
+  //    설교 본문이 비면 성경 없는 명제로 둔다 — 잘못 걸리는 것보다 낫다.
+  //    (iQuote 는 열을 찾아 두기만 한다. 다른 자리가 그 열을 집어가지 않도록)
+  const iRefCols=[iSermon,iOldRef].filter(x=>x>=0);
   const refCell=r=>{
     for(const i of iRefCols){const t=String(r[i]==null?'':r[i]).trim();if(t)return t;}
     return '';
@@ -7474,10 +7488,10 @@ function _propRowsToItems(rows){
       ref:_propRefs(refCell(r)).join(' · '),
       tags:tagsRaw?tagsRaw.split(/[,;]/).map(t=>t.trim()).filter(Boolean):[],
       hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 = 강조 문구 자리
-      // ⚠️ 명제는 한 장절 칸에 여러 본문이 들어온다 ("롬 5:8; 엡 2:8-9").
-      //    장절 글자를 앱이 헤아리게 하지 말고, 시트의 '성경권' 열을 그대로 쓴다
-      //    (목사님이 이미 적어 두신 값이다). 여러 권이면 **그 권마다 다 걸린다**.
-      books:_propBooks(iBooks>=0?r[iBooks]:'',_propRefs(refCell(r))),
+      // ⚠️ 명제는 한 칸에 본문이 여럿 들어온다 ("롬 5:8; 엡 2:8-9").
+      //    여러 권이면 **그 권마다 다 걸린다**.
+      //    ⚠️ v26-0831-21 — 시트의 '성경권' 열은 **읽지 않는다** (_propBooks 참고).
+      books:_propBooks(_propRefs(refCell(r))),
       d:iDate>=0?_parseVDate(r[iDate]):null,
       row:i+1
     });
@@ -16491,47 +16505,66 @@ function _keepRepaintLists(){
        if(b&&b.style.display!=='none')_renderKeepSubMenu(); }catch(_){}
   try{ if(document.getElementById('keepSwitchBox').style.display!=='none')_renderKeepSwitch(); }catch(_){}
 }
-const _KEEP_GRIP='<svg width="11" height="14" viewBox="0 0 12 16" fill="currentColor" stroke="none">'
-  +'<circle cx="4" cy="3" r="1.2"/><circle cx="8" cy="3" r="1.2"/>'
-  +'<circle cx="4" cy="8" r="1.2"/><circle cx="8" cy="8" r="1.2"/>'
-  +'<circle cx="4" cy="13" r="1.2"/><circle cx="8" cy="13" r="1.2"/></svg>';
+// 끌 손잡이 — v26-0831-21, HB: ":: 는 너무 크다. = 두 줄로."
+const _KEEP_GRIP='<svg width="13" height="12" viewBox="0 0 14 12" fill="none" '
+  +'stroke="currentColor" stroke-width="1.5" stroke-linecap="round">'
+  +'<path d="M2.5 4.5h9"/><path d="M2.5 8.5h9"/></svg>';
 const _KEEP_DOTS='<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" stroke="none">'
   +'<circle cx="4" cy="10" r="1.4"/><circle cx="10" cy="10" r="1.4"/><circle cx="16" cy="10" r="1.4"/></svg>';
 function _keepAttr(n){ return esc(n).replace(/'/g,'&#39;'); }
 
-// ── 끌어서 차례 바꾸기 (v26-0831-20, HB) ──────────────────
-// HB — "할일뷰에서 할일 드래그하는 애니메이션처럼. 도착지에 밝은 선,
-//       잡은 것은 고스트로 떠다니고, 잡지 않은 것은 움직이지 않게."
-// ⚠️ 그래서 **줄을 실제로 옮기지 않는다.** 손을 뗄 때 한 번만 옮긴다 —
-//    끌리는 동안 줄이 서로 자리를 바꾸면 어디로 놓이는지 예측할 수 없다.
-// ⚠️ 손잡이(⠿)에서만 시작한다. 줄 아무 데나 잡으면 목록을 고를 수 없어진다
+// ── 끌어서 차례 바꾸기 (v26-0831-21, HB) ──────────────────
+// HB — "할일뷰 스타일보다 **스위터 방식**이 더 좋다. 손을 부드럽게 따라오고,
+//       나머지들이 탄력 있는 애니메이션으로 비켜 주게. 스위터에서 만들었던
+//       속도와 베지어 그대로."
+// → 스위터 타일판(_swReorder)과 **똑같은 방법**을 쓴다:
+//   ① 잡은 줄은 손가락을 따라 그 자리에서 옮겨 다닌다 (다시 그리지 않는다 —
+//      다시 그리면 잡고 있던 줄이 새것으로 바뀌어 터치가 손을 떠난다).
+//   ② 비켜 주는 줄은 FLIP — 옛 자리를 재 두었다가 자리를 바꾼 뒤 그 차이만큼
+//      되돌려 놓고 0 으로 보낸다. 시간·곡선은 _SW_SLIDE · _SW_EASE 그대로.
+// ⚠️ 어디에 놓일지 셀 때는 getBoundingClientRect 가 아니라 **offsetTop** 을 쓴다.
+//    화면 좌표는 비켜 주는 애니메이션이 도는 동안 계속 움직여서, 그 값으로 세면
+//    줄들이 서로 밀며 떨린다. offsetTop 은 애니메이션과 무관한 '진짜 자리'다.
+// ⚠️ 손잡이(=)에서만 시작한다. 줄 아무 데나 잡으면 목록을 고를 수 없어진다
 //    (HB 신고 — "'내순서'에서 선택이 안 된다").
 function _keepBindDrag(box){
   if(!box||box._keepDrag)return;
   box._keepDrag=true;
-  let el=null,name='',ghost=null,line=null,offY=0,moved=false;
+  let el=null,name='',grabY=0,lastY=0,moved=false;
   const rowsOf=()=>[...box.querySelectorAll('[data-keepname]')];
-  // 지금 손가락 자리면 몇 번째 앞에 놓이나 (+ 선을 그릴 화면 y)
-  const spot=y=>{
-    const rows=rowsOf();
-    for(let i=0;i<rows.length;i++){
-      const b=rows[i].getBoundingClientRect();
-      if(y<b.top+b.height/2)return{i,y:b.top};
-    }
-    const b=rows.length?rows[rows.length-1].getBoundingClientRect():box.getBoundingClientRect();
-    return{i:rows.length,y:b.bottom};
+  const put=()=>{ if(el)el.style.transform='translateY('+(lastY-grabY)+'px)'; };
+  // 지금 떠 있는 자리가 몇 번째인가 (잡은 줄을 뺀 나머지 사이에서)
+  const want=()=>{
+    const rows=rowsOf(),others=rows.filter(r=>r!==el);
+    const c=el.offsetTop+(lastY-grabY)+el.offsetHeight/2;
+    let to=0;
+    for(const r of others){ if(c>r.offsetTop+r.offsetHeight/2)to++; else break; }
+    return to;
   };
-  const paint=y=>{
-    if(ghost)ghost.style.top=(y-offY)+'px';
-    if(line){
-      const br=box.getBoundingClientRect();
-      line.style.top=Math.round(spot(y).y-br.top+box.scrollTop)+'px';
-    }
+  const move=to=>{
+    const others=rowsOf().filter(r=>r!==el);
+    const was=new Map(); others.forEach(r=>was.set(r,r.getBoundingClientRect()));
+    const oldTop=el.getBoundingClientRect().top;
+    const ref=others[to];
+    if(ref)box.insertBefore(el,ref); else box.appendChild(el);
+    // 잡은 줄의 '진짜 자리'가 옮겨졌다 → 손에 붙어 있도록 그만큼 되돌린다
+    grabY+=el.getBoundingClientRect().top-oldTop;
+    put();
+    others.forEach(r=>{
+      const o=was.get(r);if(!o)return;
+      const n=r.getBoundingClientRect();
+      const dy=o.top-n.top;
+      if(!dy)return;
+      r.style.transition='none';
+      r.style.transform='translateY('+dy+'px)';
+      requestAnimationFrame(()=>{
+        r.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+        r.style.transform='';
+      });
+    });
   };
   const clear=()=>{
-    if(ghost)ghost.remove();
-    if(line)line.remove();
-    ghost=line=null;
+    rowsOf().forEach(r=>{r.style.transition='';r.style.transform='';});
     if(el)el.classList.remove('keep-dragging');
     el=null;name='';
   };
@@ -16539,50 +16572,38 @@ function _keepBindDrag(box){
     const h=e.target.closest('[data-keepgrip]');
     if(!h)return;
     el=h.closest('[data-keepname]');
-    if(!el){return;}
+    if(!el)return;
     e.preventDefault();
-    moved=false;
-    name=el.getAttribute('data-keepname');
+    moved=false;name=el.getAttribute('data-keepname');
     try{box.setPointerCapture(e.pointerId);}catch(_){}
-    const r=el.getBoundingClientRect();
-    offY=e.clientY-r.top;
-    // 떠다니는 그림자 — 진짜 줄은 제자리에 흐려진 채 남는다
-    ghost=el.cloneNode(true);
-    ghost.classList.add('keep-ghost');
-    ghost.style.cssText='position:fixed;left:'+Math.round(r.left)+'px;top:'+Math.round(r.top)
-      +'px;width:'+Math.round(r.width)+'px;margin:0;pointer-events:none;z-index:5000;';
-    document.body.appendChild(ghost);
-    // 도착지 선
-    if(getComputedStyle(box).position==='static')box.style.position='relative';
-    line=document.createElement('div');
-    line.className='keep-dropline';
-    box.appendChild(line);
+    grabY=lastY=e.clientY;
+    el.style.transition='none';
     el.classList.add('keep-dragging');
-    paint(e.clientY);
   });
   box.addEventListener('pointermove',e=>{
     if(!el)return;
-    moved=true;
-    paint(e.clientY);
+    moved=true;lastY=e.clientY;
+    put();
+    const to=want(),now=rowsOf().indexOf(el);
+    if(to!==now)move(to);
   });
-  const done=e=>{
+  const done=()=>{
     if(!el)return;
-    const y=(e&&e.clientY)||0;
     const names=rowsOf().map(x=>x.getAttribute('data-keepname'));
-    const to0=spot(y).i,from=names.indexOf(name);
-    clear();
-    if(from<0){_keepRepaintLists();return;}
-    let to=to0; if(to>from)to--;
-    if(to!==from){
-      names.splice(from,1);names.splice(to,0,name);
-      _keepSetOrder(names);
-    }
+    const cur=el;
+    // 놓은 줄은 제자리로 미끄러져 들어간다 (같은 속도·곡선)
+    cur.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+    cur.style.transform='';
+    cur.classList.remove('keep-dragging');
+    el=null;name='';
+    _keepSetOrder(names);
     // 끌었으면 뒤이어 오는 클릭(=목록 고르기)은 삼킨다
-    if(moved){box._keepSwallow=Date.now();}
-    _keepRepaintLists();
+    if(moved)box._keepSwallow=Date.now();
+    // ⚠️ 다시 그리기는 **미끄러짐이 끝난 뒤**에. 도중에 그리면 뚝 끊긴다.
+    setTimeout(()=>{try{cur.style.transition='';}catch(_){} _keepRepaintLists();},_SW_SLIDE);
   };
   box.addEventListener('pointerup',done);
-  box.addEventListener('pointercancel',done);
+  box.addEventListener('pointercancel',()=>{ if(el){clear();} });
   // ⚠️ 손잡이를 놓은 직후의 클릭이 줄로 새면 엉뚱한 목록이 골라진다
   box.addEventListener('click',e=>{
     if(box._keepSwallow&&Date.now()-box._keepSwallow<400){
@@ -16638,7 +16659,8 @@ function _keepNameCommit(){
 function toggleKeepSwitch(){
   const box=document.getElementById('keepSwitchBox');
   if(!box)return;
-  if(box.style.display!=='none'){closeKeepSwitch();return;}
+  if(box.style.display!=='none'&&box.classList.contains('on')){closeKeepSwitch();return;}
+  clearTimeout(box._keepHide);
   _renderKeepSwitch();
   box.style.display='block';
   box.classList.remove('on');void box.offsetWidth;
@@ -16647,8 +16669,12 @@ function toggleKeepSwitch(){
 function closeKeepSwitch(){
   const box=document.getElementById('keepSwitchBox');
   if(!box)return;
+  if(box.style.display==='none')return;
+  // ⚠️ v26-0831-21 — display:none 을 그 자리에서 주면 **닫히는 움직임이 안 보인다.**
+  //    접히는 동안 남겨 두었다가 끝나고 감춘다. 그 사이에 다시 열면 취소한다.
   box.classList.remove('on');
-  box.style.display='none';
+  clearTimeout(box._keepHide);
+  box._keepHide=setTimeout(()=>{ if(!box.classList.contains('on'))box.style.display='none'; },280);
 }
 function _renderKeepSwitch(){
   const box=document.getElementById('keepSwitchBox');
@@ -16681,9 +16707,12 @@ function _renderKeepSubMenu(){
     // ⚠️ v26-0831-20, HB 신고 — '내순서' 일 때도 눌러서 그 목록으로 들어가야 한다
     `<div class="task-menu-item" data-keepname="${_keepAttr(L.n)}"`
     +` onclick="openKeepListPopup('${_keepAttr(L.n)}')">`
-    +`<span class="task-menu-icon keep-grip"${drag?' data-keepgrip="1"':''} style="${drag?'':'opacity:0;'}">${drag?_KEEP_GRIP:''}</span>`
+    // ⚠️ v26-0831-21, HB — 손잡이는 **맨 오른쪽**(개수 오른쪽)이다.
+    //    왼쪽에 두었더니 끌 때 손이 제목을 가렸다.
     +`<span style="flex:1;">${esc(L.n)}</span>`
-    +`<span class="task-menu-side" style="pointer-events:none;color:var(--tx3);font-size:10px;">${L.cnt}</span></div>`).join('')
+    +`<span class="task-menu-side" style="pointer-events:none;color:var(--tx3);font-size:10px;">${L.cnt}</span>`
+    +(drag?`<span class="keep-grip" data-keepgrip="1">${_KEEP_GRIP}</span>`:'')
+    +`</div>`).join('')
     +`</div>`;
   if(drag)_keepBindDrag(document.getElementById('keepSubRows'));
 }
@@ -16719,10 +16748,11 @@ function _renderKeepPicker(){
     const on=mine.has(L.n);
     return `<div class="keep-pick-row${on?' on':''}" data-keepname="${_keepAttr(L.n)}"`
       +` onclick="keepPickToggle('${_keepAttr(L.n)}')">`
-      +`<span class="keep-grip"${drag?' data-keepgrip="1"':''} style="${drag?'':'display:none;'}">${drag?_KEEP_GRIP:''}</span>`
+      // ⚠️ v26-0831-21, HB — 손잡이는 **⋯ 오른쪽**, 줄의 맨 끝이다
       +`<span class="keep-pick-nm">${esc(L.n)}</span>`
       +`<button class="keep-row-more" title="목록 손보기"`
       +` onclick="event.stopPropagation();openKeepRowMenu(event,'${_keepAttr(L.n)}')">${_KEEP_DOTS}</button>`
+      +(drag?`<span class="keep-grip" data-keepgrip="1">${_KEEP_GRIP}</span>`:'')
       +`</div>`;
   }).join('')+`</div>`
   +`<div class="keep-pick-row keep-pick-new" onclick="keepPickNew()">`

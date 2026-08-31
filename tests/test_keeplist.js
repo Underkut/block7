@@ -388,14 +388,24 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
   // '내순서' 를 켜야 손잡이가 나온다
   sc.eq('내순서일 때만 손잡이', SRC_DEV.includes("const drag=_keepSort()==='manual';"), true);
   sc.eq('끌어서 차례 바꾸기', SRC_DEV.includes('function _keepBindDrag(box){'), true);
-  // v26-0831-20, HB — 할일뷰처럼: 도착지에 밝은 선, 잡은 것은 고스트로 떠다니고,
-  //   **잡지 않은 줄은 꿈쩍하지 않는다.** 그래서 끌리는 동안 줄을 옮기지 않고
-  //   손을 뗄 때 한 번만 옮긴다 (끌면서 자리를 바꾸면 예측할 수 없다).
-  sc.eq('떠다니는 그림자', SRC_DEV.includes("ghost.classList.add('keep-ghost');"), true);
-  sc.eq('도착지 선', SRC_DEV.includes("line.className='keep-dropline';"), true);
-  sc.eq('잡은 줄은 제자리에 흐려진다', /\.keep-dragging\{opacity:\.28;\}/.test(SRC_DEV), true);
-  sc.eq('놓을 때 한 번만 옮긴다',
-        SRC_DEV.includes("names.splice(from,1);names.splice(to,0,name);"), true);
+  // v26-0831-21, HB — **스위터 방식**이다. 잡은 줄은 손가락을 따라 그 자리에서
+  //   떠서 움직이고(그림자 복제를 만들지 않는다), 나머지는 FLIP 으로 비켜 준다.
+  //   시간·곡선은 스위터 타일판과 **똑같은 값**(_SW_SLIDE · _SW_EASE)을 쓴다.
+  sc.eq('그림자 복제를 만들지 않는다', SRC_DEV.includes("keep-ghost"), false);
+  sc.eq('도착지 선도 없앴다', SRC_DEV.includes("keep-dropline"), false);
+  sc.eq('잡은 줄이 떠서 따라온다', /\.keep-dragging\{position:relative;z-index:30;/.test(SRC_DEV), true);
+  sc.eq('스위터의 속도·곡선 그대로',
+        SRC_DEV.includes("r.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;"), true);
+  // ⚠️ 자리 셈은 화면 좌표가 아니라 offsetTop 으로 — 애니메이션 중에 떨리지 않게
+  sc.eq('진짜 자리로 센다',
+        SRC_DEV.includes("const c=el.offsetTop+(lastY-grabY)+el.offsetHeight/2;"), true);
+  // 1-2 — 손잡이는 줄의 **맨 오른쪽**, 그림은 = 두 줄
+  sc.eq('손잡이가 맨 오른쪽(좌상단 메뉴)',
+        SRC_DEV.indexOf('<span class="task-menu-side" style="pointer-events:none;color:var(--tx3);font-size:10px;">${L.cnt}</span>`\n    +(drag?`<span class="keep-grip" data-keepgrip="1">')>=0, true);
+  sc.eq('손잡이가 ⋯ 오른쪽(고르기 창)',
+        SRC_DEV.indexOf('${_KEEP_DOTS}</button>`\n      +(drag?`<span class="keep-grip" data-keepgrip="1">')>=0, true);
+  sc.eq('= 두 줄 손잡이', SRC_DEV.includes("<path d=\"M2.5 4.5h9\"/><path d=\"M2.5 8.5h9\"/>"), true);
+  sc.eq('세 줄 점 손잡이는 없앴다', SRC_DEV.includes('<circle cx="4" cy="13" r="1.2"/>'), false);
   // ⚠️ '내순서' 에서도 목록을 고를 수 있어야 한다 (HB 신고)
   sc.eq('내순서에서도 고를 수 있다',
         SRC_DEV.includes("if(_keepSort()==='manual')return;      // 차례를 고치는 중에는 담기지 않는다"), false);
@@ -419,6 +429,14 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
   sc.eq('좌상단 햄버거', SRC_DEV.includes('id="vAggMenuBtn"')&&SRC_DEV.includes('onclick="toggleKeepSwitch()"'), true);
   sc.eq('저장 목록일 때만 보인다', SRC_DEV.includes("if(mb)mb.style.display='none';       // 활동 목록에는 바꿀 목록이 없다"), true);
   sc.eq('제목줄 아래로 미끄러진다', /#keepSwitchBox\{[^}]*transition:max-height/.test(SRC_DEV), true);
+  // ⚠️ v26-0831-21, HB — ① 아래 깔린 말씀 목록과 **색이 갈려야** 인지가 된다
+  //    ② 닫히는 움직임도 보여야 한다 (display:none 을 그 자리에서 주면 뚝 끊긴다)
+  sc.eq('배경이 갈린다', /#keepSwitchBox\{[^}]*background:var\(--s2\)/.test(SRC_DEV), true);
+  sc.eq('테두리와 그림자로 떠 보인다',
+        /#keepSwitchBox\{[^}]*box-shadow:0 6px 16px/.test(SRC_DEV), true);
+  sc.eq('접히는 자세까지 움직인다', /#keepSwitchBox\{[^}]*transform:translateY\(-6px\)/.test(SRC_DEV), true);
+  sc.eq('닫히는 움직임이 끝난 뒤 감춘다',
+        SRC_DEV.includes("box._keepHide=setTimeout(()=>{ if(!box.classList.contains('on'))box.style.display='none'; },280);"), true);
 }
 
 sc.done();
