@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-17  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-18  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1014,7 +1014,11 @@ header{
    이라, 줄이 넘칠 때 태그가 본문보다 세 배 빨리 줄어 먼저 사라졌다.
    (위 주석의 "본문 → 태그 → 소주제" 차례와 값이 거꾸로였다)
    → 본문이 가장 먼저·가장 많이 줄고, 태그는 그 다음, 소주제가 마지막이다. */
-#verseBarInner.sneak-mode #verseBarTag{flex-shrink:2;}
+/* ⚠️ v26-0831-18, HB — 태그는 **줄이지 않는다**. 한 개 + '..' 라 이미 짧은데,
+   조금이라도 줄면 CSS 말줄임이 태그 **글자 자체**를 잘라 "선.." 처럼 되어
+   무슨 태그인지 알 수 없었다. 줄어드는 몫은 본문이 다 가져간다
+   (본문은 길고, 줄어도 뜻이 남는다). */
+#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}
 #verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}
 /* 그래도 못 줄이는 경우(대분류+장절만으로 이미 넘칠 때)를 위한 마지막 안전장치.
    ⚠️ 이게 없으면 넘친 글자가 말씀 영역 밖으로 그려진다. */
@@ -3567,7 +3571,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-17";
+const APP_VERSION = "v. 26-0831-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7100,7 +7104,9 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       if(ex.del==='simple'){delete ex.del;restored++;} // 삭제 심플만 되살림
       if(gid&&ex.gid!==gid)ex.gid=gid;                 // 출처 표시 (변경으로 세지 않음)
       if(it.row&&ex.row!==it.row)ex.row=it.row;        // 시트에서의 행 번호 (변경으로 세지 않음)
-      const dChanged=!!it.d&&ex.d!==it.d; // 시트에 날짜열이 있을 때만 갱신
+      // 명제는 시트의 날짜가 **그대로 정답**이다 — 비면 비운다 (위 주석 참고).
+      // 말씀은 예전대로 "시트에 날짜가 있을 때만" 갱신한다.
+      const dChanged=it.pid?(String(ex.d||'')!==String(it.d||'')):(!!it.d&&ex.d!==it.d);
       // 강조 문구도 함께 본다 — 시트를 채워 나가는 중이라 나중에 적은 것도
       // 다시 동기화하면 반영돼야 한다
       const newHi=String(it.hi||'');
@@ -7120,14 +7126,21 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
         refChanged||refsChanged||booksChanged;
       if(changed){
         ex.krText=it.krText;ex.cat=newCat;ex.topic=newTopic;ex.tags=newTags;ex.hi=newHi;
-        if(dChanged)ex.d=it.d;
+        if(dChanged)ex.d=it.d||'';
         if(refChanged)ex.ref=newRef;
         if(refsChanged){ if(newRefs.length)ex.refs=newRefs.slice(); else delete ex.refs; }
         if(booksChanged){ if(newBooks.length)ex.books=newBooks.slice(); else delete ex.books; }
         updated++;
       }
     }else{
-      const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,hi:String(it.hi||''),src:'google',d:it.d||_calKey()};
+      // ⚠️ v26-0831-18, HB 신고 — "주간 필터에 160개가 나오는데 시트에는 30개다."
+      //    까닭: 시트의 날짜를 못 읽으면(빈 칸이거나 표기가 낯설면) **오늘 날짜**를
+      //    넣었다. 그래서 그날 받아온 명제가 전부 '이번 주'로 들어왔다.
+      //    → 명제는 시트의 날짜가 곧 설교 날짜다. 못 읽으면 **비워 둔다.**
+      //    (사용자가 손으로 넣은 말씀은 예전대로 '오늘'이 등록일이 된다)
+      const isProp=!!it.pid;
+      const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,
+                hi:String(it.hi||''),src:'google',d:isProp?(it.d||''):(it.d||_calKey())};
       if(gid)nv.gid=gid;
       if(it.row)nv.row=it.row;
       if(it.pid){nv.pid=it.pid;nv.kind='prop';}   // 명제집에서 온 항목
@@ -7255,7 +7268,15 @@ function _parseVDate(raw){
   }
   const s=String(raw).trim();
   if(!s)return'';
-  const m=s.match(/^(\d{4})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})/);
+  // 2026-08-30 · 2026. 8. 30. · 2026/8/30 · 2026년 8월 30일
+  let m=s.match(/^(\d{4})\s*[.\-\/년]\s*(\d{1,2})\s*[.\-\/월]\s*(\d{1,2})/);
+  // 26-08-30 (두 자리 연도) — 2000년대로 본다.
+  // ⚠️ 네 자리 수가 하나라도 있으면 여기로 오지 않는다 — '30/8/2026' 을
+  //    2030년으로 잘못 읽던 자리다. 잘못 읽느니 비워 두는 편이 낫다.
+  if(!m&&!/\d{4}/.test(s)){
+    const m2=s.match(/^(\d{2})\s*[.\-\/]\s*(\d{1,2})\s*[.\-\/]\s*(\d{1,2})/);
+    if(m2)m=[m2[0],'20'+m2[1],m2[2],m2[3]];
+  }
   if(m){
     const y=+m[1],mo=+m[2],d=+m[3];
     if(mo>=1&&mo<=12&&d>=1&&d<=31)return`${y}-${z(mo)}-${z(d)}`;
@@ -11924,53 +11945,88 @@ const _PT_FAMS={brush:'Nanum Brush Script',pen:'Nanum Pen Script'};
 //     ① **이미 받아졌으면 아예 기다리지 않는다** (평소엔 여기서 바로 나간다)
 //     ② 못 받는 망에서도 무한히 되풀이하지 않게 **시도 횟수를 막는다**
 //   ⚠️ 다시 그리기를 부르는 곳에서 되풀이를 막는 장치를 빼지 말 것.
-const _PT_TRY_MAX=3;
-let _ptFontWaiting=false,_ptFontTries=0;
+// ⚠️⚠️ v26-0831-18 — HB 신고: "첫 명제는 붓이 안 붙고, 다음으로 넘겼다가
+//   돌아오면 붙어 있다."
+//   까닭 — 한글 웹폰트는 Google 이 **쓰인 글자 조각(서브셋)만** 내려 준다.
+//   그런데 '받아졌나' 를 재는 자(_ptFontLoaded)는 늘 **고정 문구**('한글가나다ABC')
+//   로 쟀다. 첫 명제의 글자 조각만 받아진 상태에서는 그 고정 문구가 아직
+//   없어 "못 받았다" 가 나왔고 → 다시 그리지 않아 첫 명제는 명조로 남았다.
+//   다음 명제로 넘기며 조각이 더 쌓이면 그제야 통과해 붓이 붙었고,
+//   돌아오면 이미 통과한 뒤라 붙어 있었다. **정확히 신고 그대로다.**
+//   → 잴 때도 **그 문구 그대로** 잰다. 받았다는 기억도 문구별로 남긴다.
+const _PT_TRY_MAX=12;
+let _ptFontTries=0;
+const _ptLoadDone={};        // '글씨체|문구' → 받아 보기를 끝냈다 (성패 무관)
+const _ptLoadBusy={};        // 받는 중
+function _ptKey(fam,t){return fam+'\u0001'+t;}
+function _ptSample(text){return String(text||'').slice(0,80)||'한글';}
+// 그 문구가 아직 오는 중인가 (오는 중이면 명조로 되돌리지 않는다 — 깜빡임 방지)
+function _ptFontPending(fam,text){
+  const k=_ptKey(fam,_ptSample(text));
+  return !!_ptLoadBusy[k]||!_ptLoadDone[k];
+}
+// 명제집이 있으면 **미리** 받아 둔다 — 첫 전체화면에서 기다리지 않게.
+// 대표 문구들의 글자를 모아 한 번에 넘긴다 (조각을 한꺼번에 받는다).
+function _ptWarmup(){
+  try{
+    const seen=new Set();
+    (ACTIVE_VERSES()||[]).forEach(v=>{
+      if(!_vfIsProp(v))return;
+      String(v.hi||'').split('').forEach(c=>{if(c.trim())seen.add(c);});
+    });
+    if(!seen.size)return;
+    _ptEnsureFont([...seen].slice(0,80).join(''));
+  }catch(_){}
+}
 function _ptEnsureFont(text){
   if(!document.getElementById('ptHandLink')){
     const l=document.createElement('link');
     l.id='ptHandLink';l.rel='stylesheet';
-    l.href='https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&family=Nanum+Pen+Script&display=swap';
+    // ⚠️ display=block — 글꼴이 오는 동안 글자를 **잠깐 감춘다**(swap 은 딴
+    //    글씨체로 먼저 그렸다가 바꿔서 0.몇 초 깜빡였다, HB 26-0831 신고).
+    l.href='https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&family=Nanum+Pen+Script&display=block';
     document.head.appendChild(l);
   }
-  if(_ptFontWaiting||_ptFontTries>=_PT_TRY_MAX)return;
   if(!document.fonts||!document.fonts.load)return;
-  // ① 지금 쓰는 글씨체가 이미 와 있으면 기다릴 일이 없다 → 고리가 여기서 끊긴다
   const fam=_PT_FAMS[_ptFont()];
-  if(!fam||_ptFontLoaded(fam))return;
-  _ptFontWaiting=true;_ptFontTries++;        // ② 시도 횟수 제한
-  // ⚠️ 한글은 Google 이 **쓰인 글자 조각만** 내려 준다. 그래서 기다릴 때도
-  //    실제 문구를 함께 넘겨야 그 글자가 든 조각을 받아온다.
-  const t=String(text||'').slice(0,80)||'한글';
+  if(!fam)return;
+  // ⚠️ 한글은 Google 이 **쓰인 글자 조각만** 내려 준다. 그래서 받을 때도 잴 때도
+  //    실제 문구를 함께 쓴다.
+  const t=_ptSample(text),k=_ptKey(fam,t);
+  // ① 이 문구는 이미 받아 봤다(성패 무관) → 여기서 바로 나간다.
+  //    ⚠️ 이 한 줄이 무한 되풀이를 막는다 — 다시 그리기가 이리로 돌아와도
+  //       곧장 나가므로 그리기↔기다리기 고리가 생기지 않는다 (v26-0831-8 사고).
+  if(_ptLoadDone[k]||_ptLoadBusy[k])return;
+  if(_ptFontTries>=_PT_TRY_MAX)return;        // ② 못 받는 망에서 무한 시도 방지
+  _ptLoadBusy[k]=true;_ptFontTries++;
   // ⚠️ 느린 망에서는 이 기다림이 영영 안 끝날 수 있다 → 시간을 끊는다.
   const wait=Promise.all(Object.values(_PT_FAMS).map(f=>
     document.fonts.load("16px '"+f+"'",t).catch(()=>null)));
   const timeout=new Promise(r=>setTimeout(r,6000));
   Promise.race([wait,timeout]).then(()=>{
     _ptFontOkCache={};                       // 다시 재 본다
-    _ptFontWaiting=false;
-    // 받아졌을 때만 다시 그린다. 못 받았는데 다시 그리면 또 기다리기를
-    // 시작해(횟수 제한 안에서) 쓸데없이 화면을 흔든다.
-    if(fam&&_ptFontLoaded(fam)&&
-       typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();
-  }).catch(()=>{_ptFontWaiting=false;});
+    _ptLoadBusy[k]=false;_ptLoadDone[k]=true;
+    if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();
+  }).catch(()=>{_ptLoadBusy[k]=false;_ptLoadDone[k]=true;});
 }
 // ⚠️ 손글씨체는 크게 흘려 써서 배율(--pt-k)을 크게 준다. 그런데 **글씨체를 못
 //    받으면**(사내망·오프라인) 그 배율이 본문 글씨체에 그대로 걸려 타이틀만
 //    우스꽝스럽게 커진다. 그래서 실제로 받아졌는지 **재 본다** —
 //    같은 글자를 그 글씨체와 기본 글씨체로 그려 폭이 다르면 받아진 것이다.
+// ⚠️ 잴 때 **그 문구 그대로** 잰다. 고정 문구로 재면 첫 명제에서 늘 틀린다
+//    (위 v26-0831-18 주석 참고).
 let _ptFontOkCache={};
-function _ptFontLoaded(fam){
-  if(_ptFontOkCache[fam])return true;        // 받았다는 답만 기억한다
+function _ptFontLoaded(fam,text){
+  const probe=_ptSample(text),ck=_ptKey(fam,probe);
+  if(_ptFontOkCache[ck])return true;         // 받았다는 답만 기억한다
   let ok=false;
   try{
     const c=document.createElement('canvas').getContext('2d');
-    const probe='한글가나다ABC';
     c.font='72px monospace';const base=c.measureText(probe).width;
     c.font="72px '"+fam+"', monospace";const got=c.measureText(probe).width;
     ok=Math.abs(base-got)>0.5;
   }catch(e){ok=false;}
-  if(ok)_ptFontOkCache[fam]=true;            // ⚠️ 못 받았다는 답은 캐시하지 않는다
+  if(ok)_ptFontOkCache[ck]=true;             // ⚠️ 못 받았다는 답은 캐시하지 않는다
   return ok;
 }
 function _vfRollProp(){
@@ -12632,9 +12688,12 @@ function _vfRenderPropTitle(v){
   if(!t){el.className='vf-ptitle';el.innerHTML='';return;}
   _ptEnsureFont(t);          // 실제 문구를 넘긴다 — 한글은 쓰인 글자 조각만 온다
   let pf=_ptFont();
-  // 못 받아졌으면 본문 글씨체로 되돌린다 — 배율도 함께 1 이 된다.
-  // (글꼴이 도착하면 _ptEnsureFont 가 타이틀을 다시 그려 붓으로 바뀐다)
-  if(_PT_FAMS[pf]&&!_ptFontLoaded(_PT_FAMS[pf]))pf='plain';
+  const fam=_PT_FAMS[pf];
+  // ⚠️ **아직 오는 중이면 손글씨체 그대로 둔다.** 명조로 먼저 그렸다가 바꾸면
+  //    0.몇 초 딴 글씨체가 보인다 (HB 26-0831 신고). 글꼴 URL 이 display=block
+  //    이라 오는 동안에는 글자가 잠깐 비어 있을 뿐 깜빡이지 않는다.
+  //    **못 받은 것이 확실할 때만** 본문 글씨체로 되돌린다 (배율도 1 이 된다).
+  if(fam&&!_ptFontLoaded(fam,t)&&!_ptFontPending(fam,t))pf='plain';
   el.className='vf-ptitle on '+_vfPropAlign+' pf-'+pf;
   el.style.setProperty('--pt-ang',_vfPropAng+'deg');
   // ⚠️ 크기는 **본문이 쓸 수 있는 가장 큰 크기**를 기준으로 잡는다.
@@ -26503,6 +26562,10 @@ function initAppUI(){
   scheduleVerseAlarms();
   // 시트 자동 동기화 — 하루 시작 시간 이후 최초 실행 시 (하루 1회 스탬프)
   if(typeof runVerseSheetAutoSync==='function')setTimeout(()=>{runVerseSheetAutoSync();},1200);
+  // 명제 대표 문구의 손글씨체를 **미리** 받아 둔다 (v26-0831-18, HB).
+  // ⚠️ 첫 전체화면에서 받기 시작하면 그동안 글자가 비어 있다. 명제집이 없으면
+  //    아무 일도 하지 않으므로 BLOCK7 만 쓰는 사람에게는 값이 들지 않는다.
+  setTimeout(()=>{try{_ptWarmup();}catch(e){}},1800);
   // Foreground FCM handler — waits for the deferred SDK scripts.
   if(window._fbScriptsReady)window._fbScriptsReady.then(()=>{try{initForegroundPush();}catch(e){}});
 

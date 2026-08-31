@@ -321,8 +321,9 @@ console.log('\n시나리오 17 — 상단 말씀영역의 태그 (v26-0831-17, H
   //    태그의 flex-shrink 가 3, 본문이 1 이라 태그가 세 배 빨리 줄어 먼저 사라졌다.
   //    (주석의 "본문 → 태그 → 소주제" 차례와 값이 거꾸로였다)
   sc.eq('본문이 가장 많이 줄어든다', SRC_DEV.includes('flex:0 8 auto;min-width:0;'), true);
-  sc.eq('태그는 그 다음',
-        SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:2;}'), true);
+  // v26-0831-18, HB — 태그는 아예 줄이지 않는다 (말줄임이 태그 글자를 잘랐다)
+  sc.eq('태그는 안 줄인다',
+        SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}'), true);
   sc.eq('소주제가 마지막',
         SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
   sc.eq('태그가 세 배 빨리 줄던 값은 없앴다',
