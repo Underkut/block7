@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-12  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-13  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3539,7 +3539,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-12";
+const APP_VERSION = "v. 26-0831-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7897,6 +7897,13 @@ function _fillVerseBarDOM(v){
 
   const inner=document.getElementById('verseBarInner');
   if(!inner)return;
+  // 상단 말씀영역은 한 줄짜리 자리다. 명제의 설교 본문이 셋까지 오는데
+  // 다 쓰면 본문이 밀린다 → **첫 번째만 쓰고 나머지는 '..'** (HB 26-0831).
+  //   (전체화면에서는 셋을 다 쓰고 하나하나 눌러 걸러 볼 수 있다)
+  const barRef=(()=>{
+    const rs=Array.isArray(v.refs)?v.refs.filter(Boolean):[];
+    return rs.length>1?(rs[0]+'..'):(v.ref||'');
+  })();
 
   if(isFull){
     inner.classList.remove('sneak-mode');
@@ -7912,7 +7919,7 @@ function _fillVerseBarDOM(v){
     textEl.textContent = v.krText;
     textEl.style.display='block';
     firstEl.textContent='';firstEl.style.display='none';
-    refEl.textContent  = s.verseFullRef!==false ? v.ref : '';
+    refEl.textContent  = s.verseFullRef!==false ? barRef : '';
     refEl.style.display= s.verseFullRef!==false ? '' : 'none';
     const tagListFull=(v.tags||[]).filter(Boolean);
     const showTagFull=s.verseFullTag!==false&&tagListFull.length>0;
@@ -7963,7 +7970,7 @@ function _fillVerseBarDOM(v){
       [catEl,   v.cat,         s.verseSneakCat!==false],
       [topicEl, v.topic,       s.verseSneakTopic!==false],
       [firstEl, fw,            s.verseSneakFirstWord!==false],
-      [refEl,   abbrevRef(v.ref), s.verseSneakRef!==false],
+      [refEl,   abbrevRef(barRef), s.verseSneakRef!==false],
       [tagEl,   tagListSneak,  s.verseSneakTag!==false&&tagListSneak.length>0],
     ];
     // 구분자는 한 줄 묶음(#verseBarLine) 안에 넣는다 — 그래야 본문이 줄어드는
@@ -10991,7 +10998,6 @@ function _vfSyncCounts(){
     const on=_swIsKept(ref);
     kb.classList.toggle('on',on);
     kb.setAttribute('aria-pressed',on?'true':'false');
-    _bindKeepLongPress(kb);
   }
   if((ST.settings.verseCountScope||'all')==='all'&&ref){
     const token=ref; // 비동기 도중 구절이 바뀌면 무시
@@ -11002,18 +11008,6 @@ function _vfSyncCounts(){
       setText('like',st.like);setText('mem',st.mem);setText('deeper',st.deeper);setText('even',st.even);setText('share',st.share);
     });
   }
-}
-// 책갈피를 **길게** 누르면 목록 고르기 (탭은 기본 목록에 바로 저장).
-// UI 원칙 — 보조 동작은 롱터치/우클릭으로 일관되게.
-function _bindKeepLongPress(kb){
-  if(!kb||kb._keepLpBound)return;
-  kb._keepLpBound=true;
-  let lt=null;
-  const open=()=>{const cur=_vfCurrentVerse();if(cur)openKeepPicker(_reactKey(cur));};
-  const stop=()=>{if(lt){clearTimeout(lt);lt=null;}};
-  kb.addEventListener('touchstart',()=>{stop();lt=setTimeout(()=>{lt=null;_vfLongFired=true;open();},500);},{passive:true});
-  ['touchend','touchmove','touchcancel'].forEach(ev=>kb.addEventListener(ev,stop,{passive:true}));
-  kb.addEventListener('contextmenu',ev=>{ev.preventDefault();_vfLongFired=true;open();});
 }
 // ── 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) ──
 // 릴스 밖(말씀영역·위젯 메뉴)에서 특정 구절을 공유할 때 — 같은 팝업을 재사용한다
@@ -12136,10 +12130,10 @@ function vfAct(kind){
   else if(kind==='deeper')openDeeperFromRef(v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
   else if(kind==='keep'){
-    // 담기/빼기 (v26-0830-16). 문구 토스트 대신 아이콘이 채워지고 비워진다.
-    const on=swToggleKeep(_reactKey(v));
-    showToast(on?'저장했어요':'저장을 풀었어요');
-    _swRepaintKeepTiles();
+    // v26-0831-13, HB — 탭 한 번에 **목록 고르기** 창을 연다.
+    //   "어느 목록에 넣을까"가 이 단추의 본디 물음이다. 바로 저장해 버리면
+    //   목록을 고를 자리가 없어 롱터치를 알아야만 쓸 수 있었다.
+    openKeepPicker(_reactKey(v));
   }
   _vfSyncCounts();
   const btn=document.getElementById('vfAct'+kind);

@@ -485,8 +485,9 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
         /<button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct\('keep'\)"/.test(SRC), true);
   // v26-0831-6 — 장절이 아니라 **반응 키**로 담는다 (한 설교의 명제들이
   //    장절을 공유해서, 장절로 담으면 그 설교의 명제가 전부 담긴 것으로 보인다)
-  sc.eq('vfAct 가 담기/빼기를 부른다',
-        /else if\(kind==='keep'\)\{[\s\S]{0,200}swToggleKeep\(_reactKey\(v\)\)/.test(SRC), true);
+  // v26-0831-13, HB — 탭 한 번에 **목록 고르기** 창. 저장 여부는 그 창에서 정한다.
+  sc.eq('vfAct 가 목록 고르기를 연다',
+        /else if\(kind==='keep'\)\{[\s\S]{0,300}openKeepPicker\(_reactKey\(v\)\);/.test(SRC), true);
   sc.eq('저장 타일을 다시 그린다', SRC.includes('_swRepaintKeepTiles()'), true);
 
   // v26-0831-11, HB — 이제 **두 제품 모두, 말씀도 명제도** 늘 보인다.

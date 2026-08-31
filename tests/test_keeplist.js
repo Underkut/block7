@@ -191,9 +191,14 @@ console.log('\n시나리오 11 — 저장 단추는 공유 바로 위, 늘 보�
   sc.eq('제품·종류를 가리지 않는다',
         SRC_DEV.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), false);
   sc.eq('저장 여부만 본다', SRC_DEV.includes('const on=_swIsKept(ref);'), true);
-  // 길게 누르면 목록 고르기
+  // v26-0831-13, HB — **탭 한 번**에 목록 고르기 창. 롱터치를 알아야만 쓸 수
+  //   있으면 아무도 목록을 못 고른다. 저장 여부는 그 창의 체크로 정한다.
   sc.eq('고르기 창이 있다', SRC_DEV.includes('id="keepPickModal"'), true);
-  sc.eq('길게 누르면 열린다', SRC_DEV.includes('function _bindKeepLongPress('), true);
+  sc.eq('탭 한 번에 열린다',
+        /else if\(kind==='keep'\)\{[\s\S]{0,300}openKeepPicker\(_reactKey\(v\)\);/.test(SRC_DEV), true);
+  sc.eq('롱터치 장치는 없앴다', SRC_DEV.includes('_bindKeepLongPress'), false);
+  sc.eq('바로 저장해 버리지 않는다',
+        /else if\(kind==='keep'\)\{[\s\S]{0,300}swToggleKeep/.test(SRC_DEV), false);
   sc.eq('새 목록을 만들 수 있다', SRC_DEV.includes('function keepPickNew('), true);
   sc.eq('ESC 로도 닫힌다', /\['keepPickModal',\s*\(\)=>closeKeepPicker\(\)\]/.test(SRC_DEV), true);
   sc.eq('바깥을 눌러도 닫힌다', SRC_DEV.includes("['keepPickOverlay','keepPickModal']"), true);
@@ -213,6 +218,19 @@ console.log('\n시나리오 12 — 저장 기록은 예전과 **같은 자리**�
         SRC_DEV.includes('if(remote.verseKeepLog)ST.verseKeepLog=remote.verseKeepLog;'), true);
   // 새 저장 항목을 만들지 않았다는 증거
   sc.eq('목록 이름을 따로 저장하지 않는다', SRC_DEV.includes('ST.keepLists'), false);
+}
+
+console.log('\n시나리오 13 — 상단 말씀영역은 첫 성경만 (HB)');
+{
+  // 한 줄짜리 자리라 셋을 다 쓰면 본문이 밀린다 → 첫 번째 + '..'
+  sc.eq('첫 번째만 쓰고 .. 를 붙인다',
+        SRC_DEV.includes("return rs.length>1?(rs[0]+'..'):(v.ref||'');"), true);
+  sc.eq('풀 모드가 그 값을 쓴다',
+        SRC_DEV.includes('refEl.textContent  = s.verseFullRef!==false ? barRef : ;'.replace(' ;',` '';`)), true);
+  sc.eq('스닉 모드도 그 값을 쓴다',
+        SRC_DEV.includes('[refEl,   abbrevRef(barRef), s.verseSneakRef!==false],'), true);
+  // 전체화면은 그대로 셋을 다 쓴다 (거기서는 하나하나가 제 필터다)
+  sc.eq('전체화면은 셋을 다 쓴다', SRC_DEV.includes('function _vfRenderRef('), true);
 }
 
 sc.done();
