@@ -15,7 +15,8 @@ eval(slice('function _looksLikeRef(', 'function _sheetRowsSane'));
 eval(slice('// ══ 명제집(설교 명제 DB) 시트 읽기', 'function _rowsToItems'));
 eval(slice('function _verseIdentity(', '// 구글 시트 소스마다 고정 id'));
 eval(slice('function _syncSheetVersesIntoColl(', 'function addCustomVerseFromForm'));
-function _parseVDate(v){const s=String(v||'').trim();return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:null;}
+function z(n){return String(n).padStart(2,'0');}
+eval(slice('function _parseVDate(', 'function _looksLikeRef(').replace(/^const /gm,'var '));
 // 성경권 뽑기·펴기는 이 시험의 관심사가 아니다 — 최소한만 흉내낸다
 const _BOOK_ABBR={'마':'마태복음','막':'마가복음','눅':'누가복음','요':'요한복음',
   '롬':'로마서','엡':'에베소서','창':'창세기','갈':'갈라디아서','빌':'빌립보서'};
@@ -168,6 +169,36 @@ console.log('시나리오 3-C — 열 이름이 바뀐 시트를 다시 받으�
   // 세 번째로 받으면 이제 바뀐 것이 없다 (매번 '수정'으로 세면 안 된다)
   const r3=_syncSheetVersesIntoColl(coll,_propRowsToItems([H2,r]),{kind:'google',gid:'g1'});
   sc.eq('그 다음엔 조용하다',r3.updated,0);
+}
+
+// ═══ 3-D. ⚠️ 날짜를 못 읽었다고 '오늘' 을 넣지 않는다 ═══
+console.log('시나리오 3-D — 명제의 날짜는 시트가 정답');
+{
+  // HB 신고 (26-0831) — "'주간' 필터에 160개가 나오는데 시트에서 7일 내는 30개다."
+  // 까닭 — 날짜를 못 읽으면(빈 칸이거나 표기가 낯설면) **오늘 날짜**를 넣었다.
+  //   그래서 그날 받아온 명제가 전부 '이번 주'로 들어왔다.
+  //   → 명제는 시트의 날짜가 곧 설교 날짜다. 못 읽으면 **비워 둔다.**
+  sc.eq('여러 표기를 읽는다',
+        ['2026-08-30','2026. 8. 30.','2026/8/30','2026년 8월 30일','26-08-30']
+          .map(_parseVDate), ['2026-08-30','2026-08-30','2026-08-30','2026-08-30','2026-08-30']);
+  // ⚠️ 잘못 읽느니 비워 둔다 — '30/8/2026' 을 2030년으로 읽던 자리다
+  sc.eq('헷갈리면 비운다', _parseVDate('30/8/2026'), '');
+
+  const coll={verses:[],google:[{id:'g1'}]};
+  const rows=[HEAD,
+    P('P0501','날짜 있는 명제',{'날짜':'2026. 6. 21.'}),
+    P('P0502','날짜 빈 명제',{'날짜':''})];
+  _syncSheetVersesIntoColl(coll,_propRowsToItems(rows),{kind:'google',gid:'g1'});
+  const by=id=>coll.verses.find(v=>v.pid===id);
+  sc.eq('시트 날짜를 그대로', by('P0501').d, '2026-06-21');
+  sc.eq('빈 날짜는 비워 둔다', by('P0502').d, '');
+  sc.eq('오늘을 꾸며 넣지 않는다', by('P0502').d===_calKey(), false);
+
+  // 이미 '오늘'이 잘못 들어가 있던 것도 다시 받으면 고쳐진다
+  coll.verses.forEach(v=>{v.d=_calKey();});
+  const r=_syncSheetVersesIntoColl(coll,_propRowsToItems(rows),{kind:'google',gid:'g1'});
+  sc.eq('다시 받으면 고쳐진다', [by('P0501').d,by('P0502').d], ['2026-06-21','']);
+  sc.eq('고친 것으로 센다', r.updated, 2);
 }
 
 // ═══ 4. 같은 시트를 다시 불러도 늘지 않는다 ═══

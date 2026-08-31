@@ -156,7 +156,9 @@ console.log('\n시나리오 — 스닉픽이 영역을 넘지 않는다');
   //   태그가 본문보다 세 배 빨리 줄어 폭 0 이 되어 "켜도 안 보인다" 였다.
   //   차례는 주석대로 본문(8) → 태그(2) → 소주제(1).
   sc.eq('본문부터 줄인다', SRC.includes('flex:0 8 auto;min-width:0;'), true);
-  sc.eq('태그는 그 다음', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:2;}'), true);
+  // v26-0831-18, HB — 태그는 아예 줄이지 않는다. 조금이라도 줄면 말줄임이
+  //   태그 **글자 자체**를 잘라 "선.." 이 되어 무슨 태그인지 알 수 없었다.
+  sc.eq('태그는 안 줄인다', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}'), true);
   sc.eq('소주제가 마지막', SRC.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
   sc.eq('태그가 먼저 사라지던 값은 없앴다',
         SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), false);

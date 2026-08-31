@@ -181,7 +181,8 @@ console.log('\n시나리오 8 — 시트 열 읽기');
   // ⚠️ 시트를 채워 나가는 중이라, 다시 동기화하면 나중에 적은 것도 반영돼야 한다
   sc.eq('다시 동기화하면 갱신된다', SRC.includes("String(ex.hi||'')!==newHi"), true);
   sc.eq('갱신할 때 실제로 넣는다', SRC.includes('ex.tags=newTags;ex.hi=newHi;'), true);
-  sc.eq('새로 추가할 때도', SRC.includes("tags:newTags,hi:String(it.hi||''),src:'google'"), true);
+  // v26-0831-18 — 명제는 날짜를 꾸며 내지 않아서 이 줄이 두 줄로 나뉘었다
+  sc.eq('새로 추가할 때도', SRC.includes("tags:newTags,\n                hi:String(it.hi||''),src:'google'"), true);
   // 개발자용 '그 셀로 열기' 도 G열까지
   sc.eq('시트 셀 링크도 G열까지', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);
 }
