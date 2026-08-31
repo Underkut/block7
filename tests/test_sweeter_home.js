@@ -492,8 +492,13 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
   // ⚠️ BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다 → 눌러도 갈 곳이 없다.
   //    그래서 CSS 로 감춰 두고 Sweeter 일 때만 켠다.
   sc.eq('기본은 감춰져 있다', SRC.includes('.vf-act-keep{display:none;}'), true);
-  sc.eq('Sweeter 일 때만 켠다',
-        /const show=\(typeof _swOn==='function'\)&&_swOn\(\);[\s\S]{0,120}kb\.style\.display=show\?'flex':'none';/.test(SRC), true);
+  // v26-0831-9, HB — BLOCK7 에서도 **명제에서는** 보인다. 담아둔 것은 두 앱이
+  //   같은 기록을 쓰므로, BLOCK7 에서 담아도 Sweeter 의 타일에 그대로 뜬다.
+  //   (BLOCK7 의 암송 말씀에는 아직 꺼내 볼 자리가 없어 안 보인다)
+  sc.eq('Sweeter 이거나 명제일 때 켠다',
+        SRC.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), true);
+  sc.eq('그 값으로 보이고 감춘다',
+        SRC.includes("kb.style.display=show?'flex':'none';"), true);
   sc.eq('담겼으면 채워 보인다',
         SRC.includes("kb.classList.toggle('on',show&&_swIsKept(ref));"), true);
 
