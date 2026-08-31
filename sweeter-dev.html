@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -520,6 +520,30 @@ header{
   /* ⚠️ 좌우 여백 금지 — 여백만큼 글자 폭이 늘어 줄이 밀려난다 (실측 60구절 중 11번) */
   -webkit-box-decoration-break:clone;box-decoration-break:clone;
 }
+/* ══ 명제 전체화면 (v26-0831-3) ═══════════════════════════════════════════
+   명제집은 암송 말씀과 **같은 화면**을 쓰되 두 가지가 다르다:
+     ① 대표 문구가 화면 위쪽 **타이틀**로 선다 (암송 말씀의 강조 문구와는
+        다른 것이다 — 강조 문구는 본문 안을 칠하는 것, 대표 문구는 제목이다)
+     ② 명제 본문은 길어서 **좌정렬**이다 (말씀은 가운데)
+   ⚠️ 타이틀 자리(좌·중앙·우)는 명제마다 **무작위**다 — 한곳에 고정하지 않는다.
+      뽑는 곳은 _vfRollVariant() 한 곳뿐이라 넘길 때마다 새로 선다. */
+.vf-ptitle{
+  display:none;width:100%;flex-shrink:0;position:relative;
+  margin-bottom:clamp(22px,4.5vh,44px);
+  color:var(--vf-ac,var(--ac));font-family:var(--vf-font,inherit);
+  font-weight:500;line-height:1.34;letter-spacing:-.01em;word-break:keep-all;
+  /* 아날로그 — 종이에 손으로 얹은 듯 아주 살짝 기운다 (각도는 JS 가 준다) */
+  transform:rotate(var(--pt-ang,0deg));transform-origin:var(--pt-org,center);
+}
+.vf-ptitle.on{display:block;}
+.vf-ptitle.al-l{text-align:left;--pt-org:left center;}
+.vf-ptitle.al-c{text-align:center;--pt-org:center;}
+.vf-ptitle.al-r{text-align:right;--pt-org:right center;}
+/* 문구 아래 손으로 그은 획 — 앱의 손글씨 물결과 **같은 붓**(_hiWavePoly)이다.
+   ⚠️ 자리를 차지하지 않는다 (absolute). 폭·여백을 주면 문구가 밀려난다. */
+.vf-ptitle .pt-ink{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;}
+/* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다. */
+#vfText.prop{text-align:left;}
 #vfRef{
   margin-top:18px;font-size:13px;color:var(--vf-tx3,var(--tx3));
   font-family:var(--vf-reffont,var(--font-number));letter-spacing:.06em;flex-shrink:0;
@@ -3488,7 +3512,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-2";
+const APP_VERSION = "v. 26-0831-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5414,6 +5438,7 @@ window._fbScriptsReady=new Promise(resolve=>{
             밖으로 빼면 말씀을 넘길 때 본문만 밀려가고 그림은 제자리에 남는다.
             뒤로 옮기면 글자를 덮는다. -->
     <div class="vf-art" id="vfArt" aria-hidden="true"></div>
+    <div class="vf-ptitle" id="vfPTitle"></div>
     <div id="vfText"></div>
     <div id="vfRef" onclick="event.stopPropagation();_vgOpenFromReels('book')"></div>
   </div>
@@ -10455,8 +10480,27 @@ function _vfLayoutText(){
   const padV=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
   const refEl=document.getElementById('vfRef');
   const refH=(refEl&&refEl.style.display!=='none')?(refEl.offsetHeight+18):0;
-  const availH=Math.max(60,inner.clientHeight-padV-refH-6);
+  // ⚠️ 명제의 대표 문구 타이틀도 세로를 차지한다. 빼지 않으면 본문이 넘쳐
+  //    화면 밖으로 밀린다 (v26-0831-3). 여백(margin-bottom)까지 함께 센다.
+  const ptEl=document.getElementById('vfPTitle');
+  let ptH=0;
+  if(ptEl&&ptEl.classList.contains('on')){
+    const pcs=getComputedStyle(ptEl);
+    ptH=ptEl.offsetHeight+(parseFloat(pcs.marginBottom)||0);
+  }
+  const availH=Math.max(60,inner.clientHeight-padV-refH-ptH-6);
 
+  // ══ 명제는 여기서 갈린다 (v26-0831-3) ══
+  // 말씀의 줄바꿈(_vfWrapFit)은 **짧은 구절을 의미 단위로 끊기** 위한 것이다.
+  // 명제는 산문이라 그 규칙을 씌우면 "날마다" 같은 조각이 혼자 한 줄에 남는다.
+  // → 명제는 브라우저가 자연스럽게 흘리게 두고, **세로에 들어오는 가장 큰
+  //   크기**만 골라 준다. 줄간격도 산문에 맞게 좁힌다.
+  if(el.classList.contains('prop')){
+    _vfLayoutPropText(el,raw,availW,availH);
+    if(typeof _vfPlaceTagArt==='function')_vfPlaceTagArt();
+    _vfRedrawPropInk();
+    return;
+  }
   const est=getComputedStyle(el);
   const family=est.fontFamily||'sans-serif';
   const weight=est.fontWeight||'300';
@@ -10506,6 +10550,31 @@ function _vfLayoutText(){
   // 태그 그림은 본문 바로 위에 놓이므로 본문 크기가 정해진 **뒤에** 자리를 잡는다.
   // 여기 두면 회전·글자크기 변경 등 다시 그리는 모든 길에서 함께 따라온다.
   if(typeof _vfPlaceTagArt==='function')_vfPlaceTagArt();
+  _vfRedrawPropInk();
+}
+// 명제 본문 — 브라우저가 흘리게 두고 세로에 들어오는 가장 큰 크기를 고른다.
+// 실제로 그려 보고 재기 때문에 줄바꿈 규칙을 따로 흉내 낼 필요가 없다.
+const _VF_PROP_LH=1.62;      // 산문 줄간격 (말씀의 1.85+ 는 너무 성기다)
+function _vfLayoutPropText(el,raw,availW,availH){
+  el.style.lineHeight=String(_VF_PROP_LH);
+  el.innerHTML=esc(raw);
+  const maxS=Math.max(9,Math.round(Math.max(22,Math.min(36,availW/11))*_vfTextScale()));
+  const minS=Math.max(11,Math.round(maxS*0.62));
+  let size=minS;
+  for(let t=maxS;t>=minS;t-=1){
+    el.style.fontSize=t+'px';
+    if(el.scrollHeight<=availH){size=t;break;}
+  }
+  el.style.fontSize=size+'px';
+  el._lines=null;            // 공유 이미지는 줄 배열이 없으면 화면을 다시 잰다
+}
+// 타이틀 획은 문구의 **마지막 줄**을 따라 긋는다. 본문 크기가 바뀌면 타이틀
+// 자리도 밀리므로 본문을 앉힌 뒤 한 번 더 맞춘다.
+function _vfRedrawPropInk(){
+  const pt=document.getElementById('vfPTitle');
+  if(!pt||!pt.classList.contains('on'))return;
+  const old=pt.querySelector('.pt-ink');if(old)old.remove();
+  _vfPropInk(pt);
 }
 // ── 구독자 전체 집계 카운터 (verseStats/{ref}) ──
 // 좋아요·암송·Deeper·Even 을 누를 때마다 공유 문서의 해당 필드를 원자적으로
@@ -11481,7 +11550,20 @@ function _vfRollVariant(){
   _vfCurPattern=pool[Math.floor(Math.random()*pool.length)];
   const p=VF_PATTERNS[_vfCurPattern];
   _vfVariantIdx=Math.floor(Math.random()*p.variants.length);
+  _vfRollProp();
 }
+// ── 명제 대표 문구의 자리·기울기 (v26-0831-3) ──
+// ⚠️ 넘길 때마다 **여기 한 곳에서만** 뽑는다. 그리는 쪽에서 뽑으면 다시 그릴
+//    때(글자 크기 변경·회전 등)마다 자리가 튀어 어지럽다.
+const _VF_PT_ALIGN=['al-l','al-c','al-r'];
+let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
+function _vfRollProp(){
+  _vfPropAlign=_VF_PT_ALIGN[Math.floor(Math.random()*_VF_PT_ALIGN.length)];
+  _vfPropAng=((Math.random()-.5)*1.5).toFixed(2);   // -0.75°~+0.75° — 손으로 얹은 듯만
+  _vfPropSeed=Math.floor(Math.random()*1e9)||1;
+}
+// 이 구절이 명제인가. pid 가 있으면 명제다 (kind 는 pid 에서 파생된다)
+function _vfIsProp(v){return !!(v&&(v.pid||v.kind==='prop'));}
 function _vfTheme(){
   const key=_vfPatternKey(),p=VF_PATTERNS[key];
   if(_vfVariantIdx==null||_vfVariantIdx>=p.variants.length)_vfVariantIdx=Math.floor(Math.random()*p.variants.length);
@@ -12006,7 +12088,11 @@ function _vfPlaceTagArt(){
   //    (첫 화면만 뜨고 그 다음부터 안 뜨는 증상).
   //    offsetTop 은 transform 의 영향을 받지 않으므로 넘기는 중에도 참값이 나온다.
   //    그림도 본문과 같은 #verseFullInner 안에 있으니 둘의 기준이 같다 — 그대로 쓴다.
-  const txTop=tx.offsetTop;
+  // ⚠️ 명제는 본문 위에 **대표 문구 타이틀**이 선다 (v26-0831-3). 본문을 기준으로
+  //    잡으면 그림이 타이틀 위에 겹쳐 그어진다 → 위에 있는 쪽을 기준으로 잡는다.
+  const pt=document.getElementById('vfPTitle');
+  const anchor=(pt&&pt.classList.contains('on')&&pt.offsetHeight)?pt:tx;
+  const txTop=anchor.offsetTop;
   el.style.width='';                       // 크기 규칙은 CSS(.vf-art) 하나뿐 —
   const base=el.offsetWidth;               // 되돌려 놓고 그 값을 읽는다
   const gap=Math.max(10,rh*0.025);         // 본문과 띄울 간격
@@ -12084,13 +12170,81 @@ function _verseFullRender(){
     tag.innerHTML=tags.map(t=>`<span class="vf-tagchip" data-tag="${_vgEscAttr(t)}" onclick="openVerseGrid('tag',this.dataset.tag)">#${esc(t)}</span>`).join('  ');
     tag.style.display='';
   }else{tag.textContent='';tag.style.display='none';}
+  // 명제면 대표 문구를 화면 위쪽 타이틀로 세운다 (v26-0831-3)
+  _vfRenderPropTitle(v);
   // 중앙 — 본문. 길이에 따라 글자 크기를 단계적으로 맞춘다
   text.setAttribute('data-raw',v.krText||'');
-  text.setAttribute('data-hi',v.hi||'');      // 시트 '강조 문구' 열
+  // ⚠️ 명제는 강조를 칠하지 않는다. 시트의 '대표 문구'가 hi 칸에 담겨 오는데,
+  //    그것은 본문 안의 한 구절이 아니라 **제목**이라 본문에서 찾을 것이 없다.
+  //    (우연히 걸리면 엉뚱한 자리가 칠해진다)
+  text.setAttribute('data-hi',_vfIsProp(v)?'':(v.hi||''));   // 시트 '강조 문구' 열
+  text.classList.toggle('prop',_vfIsProp(v));   // 명제는 좌정렬
   ref.textContent=v.ref||'';ref.style.display=v.ref?'':'none';
   _vfRenderTagArt(v);        // 태그 그림 (꺼져 있으면 빈 채로 둔다)
   _vfLayoutText();
   _vfSyncCounts();
+}
+// ── 명제 대표 문구 타이틀 ──────────────────────────────────────────────
+// 크기는 본문처럼 글자 수에 따라 단계적으로 정한다 — 짧으면 크게, 길면 작게.
+// 자리(좌·중앙·우)와 기울기는 _vfRollProp() 이 이미 뽑아 뒀다.
+function _vfRenderPropTitle(v){
+  const el=document.getElementById('vfPTitle');
+  if(!el)return;
+  const t=_vfIsProp(v)?String(v.hi||'').trim():'';
+  if(!t){el.className='vf-ptitle';el.innerHTML='';return;}
+  el.className='vf-ptitle on '+_vfPropAlign;
+  el.style.setProperty('--pt-ang',_vfPropAng+'deg');
+  // ⚠️ 크기는 **본문이 쓸 수 있는 가장 큰 크기**를 기준으로 잡는다.
+  //    글자 수만 보고 정했더니 대표 문구가 길 때 본문보다 작아져 위계가
+  //    뒤집혔다 (실측: 타이틀 17px, 본문 19px). 아래 배수는 1.05 아래로
+  //    내려가지 않으므로 **타이틀이 본문보다 작아지는 일은 없다.**
+  const inner=document.getElementById('verseFullInner');
+  let bodyMax=22;
+  if(inner){
+    const ics=getComputedStyle(inner);
+    const ipad=(parseFloat(ics.paddingLeft)||0)+(parseFloat(ics.paddingRight)||0);
+    const aw=Math.max(40,inner.clientWidth-ipad);
+    bodyMax=Math.max(9,Math.round(Math.max(22,Math.min(36,aw/11))*_vfTextScale()));
+  }
+  const n=t.length;
+  const k=n<=12?1.62:n<=22?1.42:n<=34?1.26:n<=50?1.14:1.05;
+  el.style.fontSize=Math.round(bodyMax*k)+'px';
+  el.innerHTML='<span class="pt-w">'+esc(t)+'</span>';
+  _vfPropInk(el);
+}
+// 문구 아래 손으로 그은 획. 앱의 손글씨 물결과 **같은 붓**을 쓴다
+// (_hiWavePoly) — 새 그림체를 만들지 않아 화면 전체의 톤이 흐트러지지 않는다.
+// ⚠️ 마지막 줄만 긋는다. 여러 줄에 다 그으면 공책이 된다.
+function _vfPropInk(el){
+  const w=el.querySelector('.pt-w');
+  if(!w||typeof _hiWavePoly!=='function')return;
+  const rects=w.getClientRects();
+  if(!rects.length)return;
+  const last=rects[rects.length-1];
+  const box=el.getBoundingClientRect();
+  const fs=parseFloat(getComputedStyle(el).fontSize)||24;
+  // 문구 폭의 62~88% 만 긋는다 — 끝까지 그으면 밑줄이 되어 딱딱해진다
+  const frac=0.62+((_vfPropSeed%27)/27)*0.26;
+  const lw=Math.max(24,last.width*frac);
+  const x=(last.left-box.left)+(last.width-lw)*((_vfPropSeed>>5)%100)/100;
+  // 글자 상자의 어디에 긋는지는 앱이 이미 정해 뒀다 (HI_POS.wave) — 그 값을 쓴다
+  const y=(last.top-box.top)+last.height*HI_POS.wave;
+  // ⚠️ _hiWavePoly 는 **점 배열**을 준다 (path 문자열이 아니다).
+  //    앱의 물결 덮개(_hiOverlay 의 put)와 **똑같은 방식**으로 잇는다 —
+  //    한쪽만 바꾸면 같은 붓인데 다른 그림이 된다.
+  const pts=_hiWavePoly(lw,fs*0.92,_vfPropSeed);
+  if(!pts||!pts.length)return;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg');
+  svg.setAttribute('class','pt-ink');
+  svg.setAttribute('width',String(Math.ceil(box.width)));
+  svg.setAttribute('height',String(Math.ceil(box.height)+fs));
+  const path=document.createElementNS(NS,'path');
+  path.setAttribute('d','M'+pts.map(q=>(q.x+x).toFixed(2)+' '+(q.y+y).toFixed(2)).join('L')+'Z');
+  path.setAttribute('fill','currentColor');
+  path.setAttribute('fill-opacity',String(HI_ART.opa));
+  svg.appendChild(path);
+  el.appendChild(svg);
 }
 // 좌우 전환 — 말씀영역 슬라이드와 같은 감각
 // 본문(#verseFullInner)만 세로로 밀어내고 좌·우 하단 코너(.vf-bottom)는

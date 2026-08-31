@@ -182,8 +182,13 @@ console.log('\n시나리오 4 — 자리는 본문 바로 위·가운데 (v26-08
   //    _verseFullRender() 가 바로 그때 돈다. getBoundingClientRect 로 재면 본문이
   //    화면 밖으로 나와 "자리 없음"이 되고 그 상태로 굳는다.
   //    offsetTop 은 transform 을 타지 않으므로 넘기는 중에도 참값이 나온다.
+  //    v26-0831-3 — 재는 **대상**만 바뀌었다: 명제는 본문 위에 대표 문구
+  //    타이틀이 서므로 위에 있는 쪽(anchor)을 잰다. offsetTop 을 쓴다는
+  //    이 줄의 뜻은 그대로다 — 아래 getBoundingClientRect 금지와 한 쌍이다.
   sc.eq('본문 자리를 transform 안 타는 offsetTop 으로 잰다',
-    fn.includes('const txTop=tx.offsetTop;'), true);
+    fn.includes('const txTop=anchor.offsetTop;'), true);
+  sc.eq('명제면 타이틀을, 아니면 본문을 기준으로',
+    fn.includes("const anchor=(pt&&pt.classList.contains('on')&&pt.offsetHeight)?pt:tx;"), true);
   sc.eq('넘기는 중에 흔들리는 getBoundingClientRect 를 안 쓴다',
     /\.getBoundingClientRect\(/.test(fn), false);
   // ⚠️ 회귀 (v26-0826-5) — 말씀을 넘길 때 본문만 밀려가고 그림은 제자리에 남던 문제.
