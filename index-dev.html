@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-15  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-16  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3551,7 +3551,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-15";
+const APP_VERSION = "v. 26-0831-16";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28653,10 +28653,16 @@ function getKeepLog(){ if(!ST.verseKeepLog)ST.verseKeepLog={}; return ST.verseKe
 //
 // ⚠️ 목록은 **담을 때 생긴다** (인스타 방식). 빈 목록은 없다 — 마지막 항목을
 //    빼면 목록도 사라진다. 그래서 이름을 따로 저장할 자리가 필요 없다.
-const KEEP_DEFAULT_LIST='저장됨';
+// ⚠️ 기본 목록은 기록에 lst 를 **쓰지 않는다** (아래 swKeepSet 참고).
+//    그래서 이 이름을 바꿔도 이미 쌓인 기록은 그대로 따라온다.
+//    v26-0831-16, HB — '저장됨' → '기본'. 옛 이름이 적힌 기록(사용자가 손으로
+//    그 이름의 목록을 만들었을 수 있다)도 같은 목록으로 읽어 준다.
+const KEEP_DEFAULT_LIST='기본';
+const _KEEP_DEFAULT_ALIASES=['저장됨'];
 function _keepListOf(e){
   const n=(e&&e.lst!=null)?String(e.lst).trim():'';
-  return n||KEEP_DEFAULT_LIST;
+  if(!n||_KEEP_DEFAULT_ALIASES.includes(n))return KEEP_DEFAULT_LIST;
+  return n;
 }
 // 모든 저장 기록을 평평하게 — [{ref, list, when('날짜 시각'), d(날짜)}]
 function _keepEntries(){
@@ -28700,7 +28706,9 @@ function _swIsKept(ref,list){
 // 한 목록에 담기/빼기. 목록을 안 주면 기본 목록.
 function swKeepSet(ref,list,on){
   if(!ref)return false;
-  const r=String(ref),L=(list&&String(list).trim())||KEEP_DEFAULT_LIST,log=getKeepLog();
+  const l0=(list&&String(list).trim())||'';
+  const L=(!l0||_KEEP_DEFAULT_ALIASES.includes(l0))?KEEP_DEFAULT_LIST:l0;
+  const r=String(ref),log=getKeepLog();
   const has=_keepListsOf(r).has(L);
   if(on&&has)return true;                       // 겹쳐 담지 않는다
   if(!on&&!has)return false;
@@ -28737,8 +28745,9 @@ function swToggleKeep(ref,list){
 }
 // 목록 이름 바꾸기. 이미 있는 이름으로 바꾸면 **합쳐진다** (겹치는 것은 하나로).
 function _keepRenameList(from,to){
-  const A=(from&&String(from).trim())||KEEP_DEFAULT_LIST;
-  const B=(to&&String(to).trim())||KEEP_DEFAULT_LIST;
+  const norm=x=>{const t=(x&&String(x).trim())||'';
+    return (!t||_KEEP_DEFAULT_ALIASES.includes(t))?KEEP_DEFAULT_LIST:t;};
+  const A=norm(from),B=norm(to);
   if(A===B)return;
   const log=getKeepLog();
   Object.keys(log).forEach(d=>{
@@ -28762,7 +28771,9 @@ function _keepRenameList(from,to){
 }
 // 목록 지우기 = 그 목록의 항목만 뺀다. 다른 목록에도 담긴 것은 거기 남는다.
 function _keepDeleteList(name){
-  const L=(name&&String(name).trim())||KEEP_DEFAULT_LIST,log=getKeepLog();
+  const n0=(name&&String(name).trim())||'';
+  const L=(!n0||_KEEP_DEFAULT_ALIASES.includes(n0))?KEEP_DEFAULT_LIST:n0;
+  const log=getKeepLog();
   Object.keys(log).forEach(d=>{
     const left=(log[d]||[]).filter(e=>!(e&&_keepListOf(e)===L));
     if(left.length)log[d]=left; else delete log[d];
