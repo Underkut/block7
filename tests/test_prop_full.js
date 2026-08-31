@@ -166,9 +166,9 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
   //    **명제를 볼 때만** 받는다 (고운바탕 _vfEnsureFont 와 같은 방식).
   sc.eq('늘 받지는 않는다',
         /@import[^;]*Nanum\+Brush/.test(SRC_DEV), false);
-  sc.eq('볼 때 받는 함수가 있다', SRC_DEV.includes('function _ptEnsureFont(){'), true);
+  sc.eq('볼 때 받는 함수가 있다', SRC_DEV.includes('function _ptEnsureFont(text){'), true);
   sc.eq('그릴 때 부른다',
-        /function _vfRenderPropTitle\(v\)\{[\s\S]{0,600}_ptEnsureFont\(\);/.test(SRC_DEV), true);
+        /function _vfRenderPropTitle\(v\)\{[\s\S]{0,600}_ptEnsureFont\(t\);/.test(SRC_DEV), true);
 
   // 지금 글씨체(본문과 같은 것)는 없애지 않고 보관한다 (HB 지시)
   sc.eq('예전 글씨체를 보관한다', SRC_DEV.includes('.vf-ptitle.pf-plain{'), true);
@@ -181,10 +181,11 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
   //    커진다 → 실제로 받아졌는지 재 보고, 아니면 본문 글씨체로 되돌린다.
   sc.eq('받아졌는지 재 본다', SRC_DEV.includes('function _ptFontLoaded(fam){'), true);
   sc.eq('폭을 재서 판단한다', SRC_DEV.includes("c.font=\"72px '\"+fam+\"', monospace\";"), true);
-  sc.eq('못 받으면 붓 대신 본문 글씨체',
-        SRC_DEV.includes("if(pf==='brush'&&!_ptFontLoaded('Nanum Brush Script'))pf='plain';"), true);
-  sc.eq('못 받으면 펜도 마찬가지',
-        SRC_DEV.includes("else if(pf==='pen'&&!_ptFontLoaded('Nanum Pen Script'))pf='plain';"), true);
+  // 글씨체 이름은 한 표(_PT_FAMS)에서만 정한다 — 늘리기 쉽고 어긋날 자리가 없다
+  sc.eq('글씨체 이름표가 한 곳',
+        SRC_DEV.includes("const _PT_FAMS={brush:'Nanum Brush Script',pen:'Nanum Pen Script'};"), true);
+  sc.eq('못 받으면 본문 글씨체로 되돌린다',
+        SRC_DEV.includes("if(_PT_FAMS[pf]&&!_ptFontLoaded(_PT_FAMS[pf]))pf='plain';"), true);
   // 배율은 CSS 한 곳에서만 정한다 (글씨체를 더할 때 JS 를 안 고치게)
   sc.eq('배율을 CSS 에서 읽는다',
         SRC_DEV.includes("getComputedStyle(el).getPropertyValue('--pt-k')"), true);
@@ -222,6 +223,85 @@ console.log('\n시나리오 11 — 명제집의 켜고 끄는 칩 이름');
   sc.eq('명제집인지 보고 고른다', SRC_DEV.includes('const isP=_collIsProp(findColl(id));'), true);
   // 거르는 축 이름 자체는 안 바뀐다 (바뀌면 저장된 필터가 통째로 무효가 된다)
   sc.eq('축 이름은 그대로', /\['book','성경별'\]\]\s*:\s*\[\['all','전체'\]/.test(SRC_DEV), true);
+}
+
+// ═══ 12. 붓이 영영 안 나오던 것 (v26-0831-7 회귀) ═══
+console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다');
+{
+  // ⚠️⚠️ 진짜 까닭 — 처음 그릴 때는 <link> 를 막 붙인 참이라 글꼴이 **아직
+  //    안 와 있다.** 그때 "못 받았다"고 판정하고 그 답을 **영구히 캐시**해서,
+  //    뒤늦게 글꼴이 도착해도 다시는 붓으로 안 바뀌었다 (늘 본문 글씨체 =
+  //    명조 테마면 명조로 보였다 — HB 신고).
+  sc.eq('못 받았다는 답은 캐시하지 않는다',
+        SRC_DEV.includes('if(ok)_ptFontOkCache[fam]=true;'), true);
+  sc.eq('받았다는 답만 기억한다',
+        SRC_DEV.includes('if(_ptFontOkCache[fam])return true;'), true);
+  // 그리고 **적극적으로 기다렸다가** 도착하면 다시 그린다
+  sc.eq('글꼴을 기다린다', SRC_DEV.includes('document.fonts.load("16px \'"+f+"\'",t)'), true);
+  sc.eq('도착하면 다시 그린다',
+        SRC_DEV.includes("if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();"), true);
+  sc.eq('다시 재 보게 캐시를 비운다', SRC_DEV.includes('_ptFontOkCache={};'), true);
+  // ⚠️ 한글은 Google 이 쓰인 글자 조각만 준다 → 실제 문구를 함께 넘겨야 한다
+  sc.eq('실제 문구를 넘긴다', SRC_DEV.includes('_ptEnsureFont(t);'), true);
+  // ⚠️ 느린 망에서 기다림이 안 끝나면 다시 그리는 일이 한 번도 안 일어난다
+  sc.eq('기다림에 시간 제한이 있다',
+        SRC_DEV.includes('const timeout=new Promise(r=>setTimeout(r,6000));'), true);
+  sc.eq('끊기면 다음에 다시 시도한다',
+        SRC_DEV.includes('_ptFontWaiting=false;                    // 못 받았으면 다음에 또 해 본다'), true);
+
+  // 판정 함수를 **실제로 돌려 본다** — 못 받은 상태에서 두 번 물어도
+  // 두 번 다 새로 재야 한다 (한 번이라도 캐시하면 이 회귀가 되살아난다)
+  let measured = 0;
+  global.document = { createElement: () => ({ getContext: () => ({
+    set font(v){}, measureText(){ measured++; return { width: 100 }; } }) }) };
+  const fn = SRC_DEV.slice(SRC_DEV.indexOf('let _ptFontOkCache={};'),
+                           SRC_DEV.indexOf('function _vfRollProp(){'));
+  const box = {};
+  new Function('box', 'document', fn + ';box.f=_ptFontLoaded;box.c=()=>_ptFontOkCache;')(box, global.document);
+  sc.eq('못 받았으면 false', box.f('없는글꼴'), false);
+  const n1 = measured;
+  box.f('없는글꼴');
+  sc.eq('두 번째도 다시 잰다 (캐시 안 함)', measured > n1, true);
+  sc.eq('캐시가 비어 있다', Object.keys(box.c()).length, 0);
+}
+
+// ═══ 13. 명제에서 안 쓰는 단추를 감춘다 (v26-0831-7, HB 승인) ═══
+console.log('\n시나리오 13 — 명제 화면의 반응 단추');
+{
+  // 암송(책갈피)·Deeper·Even 은 **성경 본문**을 외우고 더 깊이 보는 도구다.
+  // 명제는 이미 해석된 글이라 갈 곳이 없다 → 담아두기·좋아요·공유 셋만 남는다.
+  sc.eq('셋을 감춘다',
+        SRC_DEV.includes("['mem','deeper','even'].forEach(k=>{"), true);
+  sc.eq('명제일 때만',
+        SRC_DEV.includes("if(b)b.classList.toggle('vf-act-off',isProp);"), true);
+  sc.eq('감춤 CSS', SRC_DEV.includes('.vf-act.vf-act-off{display:none!important;}'), true);
+  // ⚠️ style.display 를 직접 건드리면 등급(data-lv) 같은 다른 장치가 감춰 둔
+  //    것까지 되살아난다 (CLAUDE.md 의 lv-hide 와 같은 규칙)
+  const blk = SRC_DEV.slice(SRC_DEV.indexOf("['mem','deeper','even'].forEach(k=>{"),
+                            SRC_DEV.indexOf("['mem','deeper','even'].forEach(k=>{")+260);
+  sc.eq('display 를 직접 안 건드린다', /style\.display/.test(blk), false);
+  // 좋아요·공유는 남는다
+  sc.eq('좋아요는 안 감춘다', /\['mem','deeper','even'[^\]]*'like'/.test(SRC_DEV), false);
+}
+
+// ═══ 14. 한 명제가 여러 성경권에 걸린다 (v26-0831-7, HB 승인) ═══
+console.log('\n시나리오 14 — 성경권 여럿');
+{
+  // ⚠️ 장절 글자("롬 5:8; 엡 2:8-9")를 앱이 헤아리게 하지 않는다.
+  //    시트의 '성경권' 열을 그대로 쓴다 (목사님이 이미 적어 두신 값).
+  sc.eq('시트에서 성경권을 읽는다', SRC_DEV.includes("iBooks=at('성경권')"), true);
+  sc.eq('여러 개로 나눈다', SRC_DEV.includes("String(r[iBooks]||'').split(/[,;·/]/)"), true);
+  sc.eq('구절에 실어 화면까지 보낸다', SRC_DEV.includes('books:v.books||[]'), true);
+  sc.eq('발행·구독에도 실린다',
+        SRC_DEV.includes('function _booksOf(v){'), true);
+
+  // 세는 곳·거르는 곳이 모두 그 함수를 지나야 한다
+  sc.eq('거를 때 여러 권을 본다',
+        SRC_DEV.includes('if(!bs.length||!bs.some(b=>_bookSel(f,b)))return false;'), true);
+  sc.eq('셀 때도 여러 권으로',
+        SRC_DEV.includes('const groups=_groupVersesByMulti(inTab,_booksOf);'), true);
+  sc.eq('신구약 탭도 여러 권으로',
+        SRC_DEV.includes('const isOT=_booksOf(v).some(b=>BIBLE_ORDER_OT.includes(b));'), true);
 }
 
 sc.done();

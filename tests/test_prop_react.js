@@ -19,6 +19,7 @@ const asVar = s => s.replace(/^(?:const|let) /gm, 'var ');
 
 // 진짜 코드를 떠온다
 eval(asVar(sliceDev('const _REF_ABBR2FULL', 'function _findVerseByRefLoose(')));
+eval(asVar(sliceDev('function _statRefKey(', 'let _verseStatCache')));
 eval(asVar(sliceDev('// ══ 반응 키 (v26-0831-6)', 'function _vfSyncCounts(')));
 
 let ST = { verseLikeLog:{}, memorizationLog:{}, verseDeeperLog:{},
@@ -102,13 +103,42 @@ console.log('\n시나리오 4 — 기록을 남기는 자리가 모두 키를 �
   sc.eq('명제 키를 알아본다', SRC_DEV.includes('_REACT_PID_PREFIX'), true);
 }
 
-console.log('\n시나리오 5 — 구독자 전체 집계는 명제에서 끈다');
+console.log('\n시나리오 5 — 구독자 전체 집계를 교회별로 가른다 (v26-0831-7, HB)');
 {
-  // ⚠️ verseStats 는 **모든 사용자가 함께 쓰는 문서**를 장절 이름으로 만든다.
-  //    명제 ID(P0001)는 교회마다 겹친다 — 주님의교회 P0001 과 다른 교회 P0001 이
-  //    같은 칸을 쓰게 된다. 그래서 명제는 전체 집계를 하지 않는다 (내 기록만).
-  sc.eq('명제는 전체 집계를 건너뛴다',
-        /function _bumpVerseStat\(kind,ref\)\{[\s\S]{0,200}_isReactPid\(ref\)\)return;/.test(SRC_DEV), true);
+  // ⚠️ verseStats 는 **모든 사용자가 함께 쓰는** 칸이다. 명제 ID(P0001)만
+  //    쓰면 교회마다 겹쳐 남의 교회 명제와 한 칸을 쓰게 된다.
+  //    → 그 명제집의 **6자리 발행 코드**로 칸을 가른다. 발행자와 구독자가
+  //      같은 코드를 쓰므로 한 교회 안에서는 자연히 같은 칸에 모인다.
+  const A = { pid:'P0001', _code:'123456', ref:'로마서 1:17' };   // 우리 교회
+  const B = { pid:'P0001', _code:'999999', ref:'로마서 1:17' };   // 다른 교회
+  const C = { pid:'P0001', ref:'로마서 1:17' };                   // 발행·구독 안 한 내 시트
+
+  sc.eq('두 교회의 같은 번호가 안 섞인다', _reactKey(A) !== _reactKey(B), true);
+  sc.eq('전체 집계 칸도 갈린다', _statDocKey(_reactKey(A)) !== _statDocKey(_reactKey(B)), true);
+  sc.eq('우리 교회 칸 이름', _statDocKey(_reactKey(A)), 'p.123456.P0001');
+  // ⚠️ 코드가 없으면 함께 셀 상대가 없다 → 전체 집계를 하지 않는다 (내 기록만)
+  sc.eq('코드 없는 명제집은 전체 집계 안 함', _statDocKey(_reactKey(C)), '');
+  // 말씀은 예전 그대로 장절이 칸 이름 — 이게 바뀌면 기존 집계가 통째로 끊긴다
+  sc.eq('말씀은 장절이 칸 이름', _statDocKey('요한복음 3:16'), '요한복음 3:16');
+
+  // 키에서 코드와 명제 ID 를 도로 꺼낼 수 있어야 한다
+  sc.eq('코드를 꺼낸다', _reactKeyParts(_reactKey(A)).code, '123456');
+  sc.eq('명제 ID 를 꺼낸다', _reactKeyParts(_reactKey(A)).pid, 'P0001');
+  sc.eq('말씀 키는 조각이 없다', _reactKeyParts('요한복음 3:16'), null);
+  // 옛 모양(코드 없이 만든 키)도 읽어 준다 — 오늘 만든 기록이 깨지지 않게
+  sc.eq('옛 모양도 읽는다', _reactKeyParts('P\u0001P0009').pid, 'P0009');
+}
+
+console.log('\n시나리오 6 — 같은 교회 안에서는 함께 센다');
+{
+  // 발행자와 구독자는 같은 6자리 코드를 쓴다 → 같은 칸
+  const pub = { pid:'P0007', _code:'123456' };
+  const sub = { pid:'P0007', _code:'123456' };
+  sc.eq('발행자와 구독자가 같은 칸',
+        _statDocKey(_reactKey(pub)), _statDocKey(_reactKey(sub)));
+  sc.eq('내 기록 키도 같다', _reactKey(pub), _reactKey(sub));
+  sc.eq('다른 명제는 다른 칸',
+        _statDocKey(_reactKey({pid:'P0008',_code:'123456'})) !== _statDocKey(_reactKey(pub)), true);
 }
 
 sc.done();

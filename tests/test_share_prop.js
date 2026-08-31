@@ -175,4 +175,29 @@ console.log('\n시나리오 6 — 이미 구독 중인 성도의 모음');
   sc.eq('아무것도 잃지 않았다', r.removed, 0);
 }
 
+// ═══ 7. 성경권도 구독자에게 간다 (v26-0831-7) ═══
+console.log('\n시나리오 7 — 성경권(여러 권)이 살아 간다');
+{
+  // ⚠️ 한 명제가 여러 권에 걸린다. 안 실으면 구독자 쪽에서 '성경별'이 어긋난다
+  //    (pid 가 그랬던 것과 똑같은 종류의 누락이다).
+  const v = { cat:'주일예배', topic:'은혜', krText:'명제', ref:'롬 5:8; 엡 2:8-9',
+              tags:[], hi:'대표', d:'2026-08-10', pid:'P0001',
+              books:['로마서','에베소서'] };
+  const out = _sharedVerseOut(v);
+  sc.eq('발행에 실린다', out.books, ['로마서','에베소서']);
+  sc.eq('구독에 온다', _sharedVerseIn(out).books, ['로마서','에베소서']);
+  // 원본을 건드리지 않는다 (같은 배열을 물고 가면 한쪽 수정이 양쪽에 번진다)
+  out.books.push('망가뜨리기');
+  sc.eq('원본은 그대로', v.books, ['로마서','에베소서']);
+  // 없으면 항목 자체를 안 만든다 (말씀은 예전 그대로)
+  sc.eq('말씀에는 안 붙는다',
+        'books' in _sharedVerseOut({ref:'요한복음 3:16',krText:'말씀'}), false);
+
+  // 매일 갱신에서도 이어받는다
+  const mine = { id:'m', name:'명제집', verses:[] };
+  _syncSheetVersesIntoColl(mine, [out], { kind:'share' });
+  sc.eq('갱신에서도 이어받는다',
+        mine.verses[0].books, ['로마서','에베소서','망가뜨리기']);
+}
+
 sc.done();
