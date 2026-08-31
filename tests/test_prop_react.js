@@ -1,0 +1,114 @@
+// 명제의 반응은 명제마다 따로 쌓인다 (v26-0831-6)
+//
+// HB 신고 — "한 명제에서 누른 반응이 한 설교에 속한 명제들에게 공통으로 적용된다"
+//
+// 까닭 — 좋아요·암송·Deeper·공유·담아두기는 전부 **장절(ref)로 기록**한다.
+// 그런데 한 설교에서 나온 명제들은 **장절이 같다** (같은 본문을 여러 명제로 푼다).
+// 그래서 하나에 좋아요를 누르면 그 설교의 명제가 전부 좋아요로 보인다.
+//
+// ⚠️ _verseIdentity 가 이미 겪은 것과 **똑같은 문제**다. 거기서는 명제 ID(pid)로
+//    갈라서 풀었다. 반응도 같은 방법으로 푼다.
+//
+// ⚠️ **새 저장 항목을 만들지 않는다.** 기록의 ref 칸에 담는 값만 바꾼다
+//    (말씀은 장절 그대로, 명제는 명제 ID). 새 항목을 만들면 병합·백업 다섯 곳에
+//    등록해야 하고 그만큼 잃을 자리가 는다 (26-0831 사고).
+const { sliceDev, SRC_DEV, makeScorer } = require('./_load');
+const sc = makeScorer();
+
+const asVar = s => s.replace(/^(?:const|let) /gm, 'var ');
+
+// 진짜 코드를 떠온다
+eval(asVar(sliceDev('const _REF_ABBR2FULL', 'function _findVerseByRefLoose(')));
+eval(asVar(sliceDev('// ══ 반응 키 (v26-0831-6)', 'function _vfSyncCounts(')));
+
+let ST = { verseLikeLog:{}, memorizationLog:{}, verseDeeperLog:{},
+           verseEvenDeeperLog:{}, verseShareLog:{}, verseKeepLog:{}, settings:{} };
+function getLikeLog(){ return ST.verseLikeLog; }
+function getMemLog(){ return ST.memorizationLog; }
+function getDeeperLog(){ return ST.verseDeeperLog; }
+function getEvenDeeperLog(){ return ST.verseEvenDeeperLog; }
+function getShareLog(){ return ST.verseShareLog; }
+
+// 한 설교에서 나온 명제 셋 — **장절이 전부 같다** (실제 명제집이 이렇다)
+const P1 = { pid:'P0001', kind:'prop', ref:'로마서 1:17', krText:'명제 하나' };
+const P2 = { pid:'P0002', kind:'prop', ref:'로마서 1:17', krText:'명제 둘' };
+const P3 = { pid:'P0003', kind:'prop', ref:'',            krText:'장절 없는 명제' };
+const V1 = { ref:'요한복음 3:16', krText:'평범한 말씀' };
+
+console.log('시나리오 1 — 반응 키가 명제마다 다르다');
+{
+  sc.eq('명제는 명제 ID 로 갈린다', _reactKey(P1) !== _reactKey(P2), true);
+  sc.eq('같은 명제는 같은 키', _reactKey(P1), _reactKey({pid:'P0001',ref:'아무거나'}));
+  // ⚠️ 장절이 같아도 갈려야 한다 — 이게 이 시험의 전부다
+  sc.eq('장절이 같아도 안 묶인다', _reactKey(P1) === _reactKey(P2), false);
+  // 장절 없는 명제도 제 키를 갖는다 (예전엔 빈 문자열이라 기록이 아예 안 됐다)
+  sc.eq('장절 없는 명제도 키가 있다', !!_reactKey(P3), true);
+  sc.eq('장절 없는 명제도 따로', _reactKey(P3) !== _reactKey(P1), true);
+
+  // 말씀은 **예전 그대로** 장절이 키다 — 이게 깨지면 기존 기록이 통째로 안 보인다
+  sc.eq('말씀은 장절이 그대로 키', _reactKey(V1), '요한복음 3:16');
+  sc.eq('키가 장절과 부딪히지 않는다', /[]/.test(_reactKey(P1)), true);
+  sc.eq('구절이 없어도 안전', _reactKey(null), '');
+}
+
+console.log('\n시나리오 2 — 세는 것도 명제마다 따로');
+{
+  const day = '2026-08-31';
+  ST.verseLikeLog = { [day]: [
+    { ref:_reactKey(P1), time:'10:00' },
+    { ref:_reactKey(P1), time:'10:05' },
+    { ref:_reactKey(V1), time:'10:10' }
+  ]};
+  sc.eq('누른 명제만 센다', _verseEventCount('like', _reactKey(P1)), 2);
+  sc.eq('같은 설교의 다른 명제는 0', _verseEventCount('like', _reactKey(P2)), 0);
+  sc.eq('장절로 세도 명제는 안 걸린다', _verseEventCount('like', '로마서 1:17'), 0);
+  sc.eq('말씀은 예전처럼 센다', _verseEventCount('like', '요한복음 3:16'), 1);
+
+  // ⚠️ 말씀은 띄어쓰기·표기가 달라도 찾아야 한다 (예전 동작 — 깨뜨리면 안 된다)
+  ST.verseLikeLog = { [day]: [{ ref:'요한복음 3:16', time:'10:00' }] };
+  sc.eq('말씀은 표기가 달라도 찾는다', _verseEventCount('like', '요한복음3:16'), 1);
+  // 명제 키는 **정확히** 같아야 한다 (느슨하게 맞추면 다시 뭉친다)
+  ST.verseLikeLog = { [day]: [{ ref:_reactKey(P1), time:'10:00' }] };
+  sc.eq('명제 키는 정확히 맞을 때만', _verseEventCount('like', _reactKey(P2)), 0);
+}
+
+console.log('\n시나리오 3 — 암송(날짜→구간→배열)도 마찬가지');
+{
+  ST.memorizationLog = { '2026-08-31': { am: [
+    { ref:_reactKey(P1), time:'07:00' },
+    { ref:_reactKey(V1), time:'07:10' }
+  ]}};
+  sc.eq('누른 명제만', _verseEventCount('mem', _reactKey(P1)), 1);
+  sc.eq('다른 명제는 0', _verseEventCount('mem', _reactKey(P2)), 0);
+  sc.eq('말씀은 그대로', _verseEventCount('mem', '요한복음 3:16'), 1);
+}
+
+console.log('\n시나리오 4 — 기록을 남기는 자리가 모두 키를 쓴다');
+{
+  // ⚠️ 한 곳이라도 장절을 그대로 쓰면 거기서만 다시 뭉친다.
+  sc.eq('전체화면 좋아요·암송',
+        SRC_DEV.includes('_reactWithToast(kind,_reactKey(v));'), true);
+  sc.eq('더블탭 좋아요', SRC_DEV.includes('recordVerseLike(_reactKey(v));'), true);
+  sc.eq('공유', SRC_DEV.includes('recordVerseShare(_reactKey(v));'), true);
+  // 숫자는 키를 한 번 구해 두고 다섯 갈래가 함께 쓴다
+  sc.eq('전체화면 숫자가 키를 쓴다',
+        SRC_DEV.includes('const ref=_reactKey(v);   // 명제는 명제 ID, 말씀은 장절'), true);
+  sc.eq('담아두기', SRC_DEV.includes('swToggleKeep(_reactKey(v))'), true);
+
+  // 되돌아 찾기 — 키에서 그 명제를 다시 찾을 수 있어야 한다
+  //  (담아둔 것 타일·반응 목록이 이 길로 구절을 되찾는다)
+  sc.eq('키로 되찾는 길이 있다',
+        SRC_DEV.includes('function _findVerseByRefLoose(ref){'), true);
+  sc.eq('명제 키를 알아본다', SRC_DEV.includes('_REACT_PID_PREFIX'), true);
+}
+
+console.log('\n시나리오 5 — 구독자 전체 집계는 명제에서 끈다');
+{
+  // ⚠️ verseStats 는 **모든 사용자가 함께 쓰는 문서**를 장절 이름으로 만든다.
+  //    명제 ID(P0001)는 교회마다 겹친다 — 주님의교회 P0001 과 다른 교회 P0001 이
+  //    같은 칸을 쓰게 된다. 그래서 명제는 전체 집계를 하지 않는다 (내 기록만).
+  sc.eq('명제는 전체 집계를 건너뛴다',
+        /function _bumpVerseStat\(kind,ref\)\{[\s\S]{0,200}_isReactPid\(ref\)\)return;/.test(SRC_DEV), true);
+}
+
+sc.done();

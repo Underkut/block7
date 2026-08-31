@@ -9,8 +9,9 @@ const sc = makeScorer();
 
 // _REF_ABBR2FULL + _refNorm 을 통째로 떠온다
 eval(slice('const _REF_ABBR2FULL=', 'function _findVerseByRefLoose'));
-// 카운터 본체
-eval(slice('function _verseEventCount(', 'function _vfSyncCounts'));
+// 카운터 본체 — v26-0831-6 부터 **반응 키**(_reactKey/_isReactPid)를 함께 쓴다.
+// 명제는 명제 ID 로, 말씀은 장절로 센다. 그래서 그 위 블록부터 떠온다.
+eval(slice('// ══ 반응 키 (v26-0831-6)', 'function _vfSyncCounts'));
 
 // _verseEventCount 가 읽는 로그 접근자들을 테스트용으로 갈아끼운다
 let MEM = {}, LIKE = {}, DEEPER = {}, EVEN = {}, SHARE = {};
