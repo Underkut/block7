@@ -142,7 +142,16 @@ console.log('\n시나리오 7 — 새 항목이 걸러지지 않는가');
   sc.eq('ACTIVE_VERSES 가 강조 문구를 넘겨준다',
         SRC.includes("tags:v.tags||[],hi:v.hi||''"), true);
   // 두 화면 모두 그 값을 요소에 실어 둔다
-  sc.eq('전체화면이 실어 둔다', SRC.includes("text.setAttribute('data-hi',v.hi||'');"), true);
+  // v26-0831-3 — **명제는 빼고** 실어 둔다. 시트의 '대표 문구'가 hi 칸에 담겨
+  //    오는데, 명제에서 그것은 본문 안의 한 구절이 아니라 **제목**이라 본문에서
+  //    찾을 것이 없다 (우연히 걸리면 엉뚱한 자리가 칠해진다).
+  //    암송 말씀은 예전 그대로 — 이 줄이 지키려는 것은 그쪽이다.
+  sc.eq('전체화면이 실어 둔다',
+        SRC.includes("text.setAttribute('data-hi',_vfIsProp(v)?'':(v.hi||''));"), true);
+  sc.eq('명제는 본문에 칠하지 않는다',
+        /_vfIsProp\(v\)\?''/.test(SRC), true);
+  sc.eq('명제 판정은 pid 로 한다',
+        SRC.includes("function _vfIsProp(v){return !!(v&&(v.pid||v.kind==='prop'));}"), true);
   sc.eq('말씀카드가 실어 둔다', SRC.includes('data-hi="${_vgEscAttr(v.hi||\'\')}"'), true);
   // 두 화면의 본문 그리기가 같은 입구를 쓴다 (전체화면·말씀카드 각 한 번)
   sc.eq('전체화면이 그 입구로 그린다', SRC.includes('el.innerHTML=_hiHTML(el,pick.lines);'), true);
