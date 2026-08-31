@@ -487,20 +487,15 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
   //    장절을 공유해서, 장절로 담으면 그 설교의 명제가 전부 담긴 것으로 보인다)
   sc.eq('vfAct 가 담기/빼기를 부른다',
         /else if\(kind==='keep'\)\{[\s\S]{0,200}swToggleKeep\(_reactKey\(v\)\)/.test(SRC), true);
-  sc.eq('담아둔 것 타일을 다시 그린다', SRC.includes('_swRepaintKeepTiles()'), true);
+  sc.eq('저장 타일을 다시 그린다', SRC.includes('_swRepaintKeepTiles()'), true);
 
-  // ⚠️ BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다 → 눌러도 갈 곳이 없다.
-  //    그래서 CSS 로 감춰 두고 Sweeter 일 때만 켠다.
-  sc.eq('기본은 감춰져 있다', SRC.includes('.vf-act-keep{display:none;}'), true);
-  // v26-0831-9, HB — BLOCK7 에서도 **명제에서는** 보인다. 담아둔 것은 두 앱이
-  //   같은 기록을 쓰므로, BLOCK7 에서 담아도 Sweeter 의 타일에 그대로 뜬다.
-  //   (BLOCK7 의 암송 말씀에는 아직 꺼내 볼 자리가 없어 안 보인다)
-  sc.eq('Sweeter 이거나 명제일 때 켠다',
-        SRC.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), true);
-  sc.eq('그 값으로 보이고 감춘다',
-        SRC.includes("kb.style.display=show?'flex':'none';"), true);
-  sc.eq('담겼으면 채워 보인다',
-        SRC.includes("kb.classList.toggle('on',show&&_swIsKept(ref));"), true);
+  // v26-0831-11, HB — 이제 **두 제품 모두, 말씀도 명제도** 늘 보인다.
+  //   BLOCK7 에도 꺼내 볼 자리가 생겼다 (좌상단 말씀메뉴 → 말씀 저장 목록).
+  //   자리도 **공유(종이비행기) 바로 위**로 통일했다.
+  sc.eq('감추던 규칙을 없앴다', SRC.includes('.vf-act-keep{display:none;}'), false);
+  sc.eq('제품·종류를 가리지 않는다',
+        SRC.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), false);
+  sc.eq('저장 여부만 본다', SRC.includes('const on=_swIsKept(ref);'), true);
 
   // v26-0831-10, HB — 담아두기가 **책갈피**를 물려받았다. 유튜브·인스타가
   //    '저장'에 쓰는 그 모양이라 설명이 필요 없다. 암송은 책갈피를 내주고
@@ -519,7 +514,7 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
   // 체크는 칠하면 얇은 삼각형이 된다 → 공유 이미지에서도 획으로만 그린다
   sc.eq('체크는 획으로만 그린다', SRC.includes("mem:{p:['" + memD + "'],line:true"), true);
   sc.eq('빈 문구도 책갈피라고 말한다',
-        SRC.includes('말씀 왼쪽 위의 책갈피를 누르면 담깁니다.'), true);
+        SRC.includes('말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'), true);
 }
 
 // ═══ 15. Sweeter 개발본은 Firebase 에 붙지 않는다 (2026-08-31 사고) ═══

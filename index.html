@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-10  [production]  -->
+<!-- BLOCK7  v. 26-0831-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -594,10 +594,9 @@ header{
    ⚠️ 클래스로만 감춘다. style.display 를 직접 건드리면 다른 장치가 감춰 둔
       것까지 되살아난다 (등급 lv-hide 와 같은 규칙). */
 .vf-act.vf-act-off{display:none!important;}
-/* 담아두기(책갈피) — Sweeter 에서만 보인다. BLOCK7 에는 담아둔 것을 꺼내
-   보여 줄 자리가 아직 없어서 눌러도 갈 곳이 없다. _vfSyncCounts() 가
-   Sweeter 일 때만 display 를 켠다 (v26-0830-16). */
-.vf-act-keep{display:none;}
+/* 저장(책갈피) — v26-0831-11, HB: 두 제품 모두, 말씀도 명제도 늘 보인다.
+   BLOCK7 에도 꺼내 볼 자리가 생겼다 (좌상단 말씀메뉴 → 말씀 저장 목록).
+   자리는 **공유(종이비행기) 바로 위**로 통일했다. */
 /* 좌상단 홈 버튼 · 상단 중앙 필터 라벨 (타일뷰에서 들어온 경우에만) */
 .vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;z-index:12;
   background:none;border:none;padding:6px;cursor:pointer;color:var(--vf-tx2,var(--tx2));
@@ -3341,7 +3340,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin:0 0 4px;flex:0 0 auto;
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
-/* 책갈피(담아두기) — 지금 보이는 말씀을 담고 뺀다. 고정 세간이라 흐르지 않는다. */
+/* 저장 목록 고르기 한 줄 — 체크 자리 + 이름 */
+.keep-pick-row{display:flex;align-items:center;gap:9px;padding:9px 4px;cursor:pointer;
+  font-size:12.5px;color:var(--tx);border-bottom:1px solid var(--bd);}
+.keep-pick-row:last-child{border-bottom:0;}
+.keep-pick-ck{width:16px;flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--ac);}
+/* 책갈피(저장) — 지금 보이는 말씀을 저장하고 푼다. 고정 세간이라 흐르지 않는다. */
 .sw-keep{position:relative;flex:0 0 auto;background:none;border:0;padding:0;cursor:pointer;
   width:15px;height:15px;color:var(--tx3);line-height:0;}
 .sw-keep svg{width:15px;height:15px;display:block;}
@@ -3529,7 +3534,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-10";
+const APP_VERSION = "v. 26-0831-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5065,7 +5070,14 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 가운데 가로 구분선은 HB 요청으로 없앴다(v26-0818-6) -->
   <!-- '좋아요/암송/Deeper/Even Deeper' 는 하위 뎁스로 옮겼다(HB 1-2) — 눌러야 펼쳐진다 -->
   <div class="task-menu-item" onclick="logoMenuOpenListSub()" onmouseenter="logoMenuOpenListSub();" onmouseleave="_logoMenuSubScheduleClose();">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">말씀 목록</span>
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">말씀 활동 목록</span>
+    <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
+      <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
+    </span>
+  </div>
+  <!-- 저장 목록 — 하위 뎁스는 **만들어 둔 목록만큼** JS 가 그린다 (v26-0831-11, HB) -->
+  <div class="task-menu-item" onclick="logoMenuOpenKeepSub()" onmouseenter="logoMenuOpenKeepSub();" onmouseleave="_logoMenuSubScheduleClose();">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg></span><span style="flex:1;">말씀 저장 목록</span>
     <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
     </span>
@@ -5077,7 +5089,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 하위 뎁스: 말씀 목록 (HB 1-2) — 뒤로가기 한 줄 + 좋아요/암송/Deeper/Even Deeper -->
   <div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">
     <div class="task-menu-item" id="logoMenuSubBack" onclick="logoMenuBackToMain()">
-      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 목록</span>
+      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 활동 목록</span>
     </div>
     <div class="task-menu-sep" id="logoMenuSubSep"></div>
     <div class="task-menu-item" onclick="openVerseAggPopup('like')">
@@ -5093,6 +5105,8 @@ window._fbScriptsReady=new Promise(resolve=>{
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper
     </div>
   </div>
+  <!-- 하위 뎁스: 말씀 저장 목록 — 뒤로가기 한 줄 + 만들어 둔 목록들 (JS 가 그린다) -->
+  <div id="logoMenuKeepSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();"></div>
 </div>
 
 <!-- 대시보드 상세: 파이차트 하나를 크게 + 항목별 표 -->
@@ -5467,12 +5481,6 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div id="vfTag"></div>
     </div>
     <div class="vf-actions">
-    <button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct('keep')" aria-label="담아두기">
-      <span class="vf-ic">
-        <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
-        <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
-      </span><span class="vf-cnt" id="vfCntkeep">&nbsp;</span>
-    </button>
     <button class="vf-act vf-act-like" id="vfActlike" onclick="vfAct('like')" aria-label="좋아요">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
@@ -5496,6 +5504,12 @@ window._fbScriptsReady=new Promise(resolve=>{
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>
       </span><span class="vf-cnt" id="vfCnteven">0</span>
+    </button>
+    <button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct('keep')" aria-label="저장">
+      <span class="vf-ic">
+        <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
+        <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
+      </span><span class="vf-cnt" id="vfCntkeep">&nbsp;</span>
     </button>
     <button class="vf-act vf-act-share" id="vfActshare" onclick="openVfShare()" aria-label="공유">
       <span class="vf-ic">
@@ -5610,6 +5624,9 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="vliAction('share')">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V4"/><path d="M6 7.5L10 3.5l4 4"/><path d="M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13"/></svg></span>공유
   </div>
+  <div class="task-menu-item" onclick="vliAction('keep')">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg></span>저장 목록…
+  </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="closeVliMenu();openVerseSettingsModal()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정
@@ -5629,6 +5646,16 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="event-modal-title" id="vAggTitle" style="padding:0 28px;"></div>
   <div id="vAggControls" style="flex-shrink:0;"></div>
   <div id="vAggList" style="overflow-y:auto;flex:1;min-height:0;"></div>
+</div>
+
+<!-- 저장 목록 고르기 (책갈피 롱터치) — 유튜브·인스타의 '저장 위치' 창과 같은 얼개 -->
+<div class="event-modal-overlay" id="keepPickOverlay" style="display:none;z-index:4720;" onclick="closeKeepPicker()"></div>
+<div class="event-modal" id="keepPickModal" style="display:none;z-index:4730;width:280px;max-height:70vh;flex-direction:column;">
+  <button class="modal-x" onclick="closeKeepPicker()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="event-modal-title" style="padding:0 28px;">저장 목록</div>
+  <div id="keepPickBody" style="overflow-y:auto;flex:1;min-height:0;margin-top:8px;"></div>
 </div>
 
 <!-- 구독 받기 다이얼로그 -->
@@ -8273,6 +8300,7 @@ const _ESC_CLOSERS=[
   ['vDashDetailModal',()=>closeVDashDetail()],
   ['vDashModal',      ()=>closeVerseDashboard()],
   ['vAggModal',       ()=>closeVerseAggPopup()],
+  ['keepPickModal',   ()=>closeKeepPicker()],
   ['vcSetModal',      ()=>closeVcSettings()],
   ['rpConfigModal',   ()=>closeRpConfig()],
   ['collEditPage',    ()=>closeCollEdit()],
@@ -9660,7 +9688,7 @@ function _vfHideCovers(){
   //    LIST 에서 목록에 들어가 말씀을 누르면 전체화면이 목록 뒤에 숨었다.
   [['vDashDetailOverlay','vDashDetailModal'],['vDashOverlay','vDashModal'],
    ['verseListOverlay','verseListModal'],
-   ['vAggOverlay','vAggModal'],['memRecOverlay','memRecModal'],
+   ['vAggOverlay','vAggModal'],['keepPickOverlay','keepPickModal'],['memRecOverlay','memRecModal'],
    ['versePopupOverlay','versePopupModal'],['memHistoryOverlay','memHistoryModal'],
    ['collEditPage',null]].forEach(([aId,bId])=>{
     [aId,bId].forEach(id=>{
@@ -10907,20 +10935,16 @@ function _vfSyncCounts(){
     const b=document.getElementById('vfAct'+k);
     if(b)b.classList.toggle('vf-act-off',isProp);
   });
-  // 담아두기는 숫자가 없다 — 담겼나 아닌가 하나뿐이다. 그리고 Sweeter 에서만
-  // 보인다 (BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다).
+  // 저장은 숫자가 없다 — 저장했나 아닌가 하나뿐이다.
+  // v26-0831-11, HB — 두 제품 모두, 말씀도 명제도 **늘 보인다.** 저장한 것은
+  //   두 앱이 같은 기록을 쓰므로 어디서 저장해도 양쪽에서 꺼내 볼 수 있다
+  //   (BLOCK7 = 좌상단 말씀메뉴 → 말씀 저장 목록, Sweeter = '저장' 타일).
   const kb=document.getElementById('vfActkeep');
   if(kb){
-    // 언제 보이나 (v26-0831-9, HB) —
-    //  · Sweeter: 늘 보인다 (담아둔 것 타일이 그 자리에 있다)
-    //  · BLOCK7 : **명제에서만** 보인다. 명제집은 Sweeter 쪽 물건이고,
-    //             담아둔 것은 두 앱이 **같은 기록**을 쓰므로 BLOCK7 에서 담아도
-    //             Sweeter 의 '담아둔 것' 타일에 그대로 뜬다.
-    //             (BLOCK7 의 암송 말씀에는 아직 꺼내 볼 자리가 없어 안 보인다)
-    const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);
-    kb.style.display=show?'flex':'none';
-    kb.classList.toggle('on',show&&_swIsKept(ref));
-    kb.setAttribute('aria-pressed',(show&&_swIsKept(ref))?'true':'false');
+    const on=_swIsKept(ref);
+    kb.classList.toggle('on',on);
+    kb.setAttribute('aria-pressed',on?'true':'false');
+    _bindKeepLongPress(kb);
   }
   if((ST.settings.verseCountScope||'all')==='all'&&ref){
     const token=ref; // 비동기 도중 구절이 바뀌면 무시
@@ -10931,6 +10955,18 @@ function _vfSyncCounts(){
       setText('like',st.like);setText('mem',st.mem);setText('deeper',st.deeper);setText('even',st.even);setText('share',st.share);
     });
   }
+}
+// 책갈피를 **길게** 누르면 목록 고르기 (탭은 기본 목록에 바로 저장).
+// UI 원칙 — 보조 동작은 롱터치/우클릭으로 일관되게.
+function _bindKeepLongPress(kb){
+  if(!kb||kb._keepLpBound)return;
+  kb._keepLpBound=true;
+  let lt=null;
+  const open=()=>{const cur=_vfCurrentVerse();if(cur)openKeepPicker(_reactKey(cur));};
+  const stop=()=>{if(lt){clearTimeout(lt);lt=null;}};
+  kb.addEventListener('touchstart',()=>{stop();lt=setTimeout(()=>{lt=null;_vfLongFired=true;open();},500);},{passive:true});
+  ['touchend','touchmove','touchcancel'].forEach(ev=>kb.addEventListener(ev,stop,{passive:true}));
+  kb.addEventListener('contextmenu',ev=>{ev.preventDefault();_vfLongFired=true;open();});
 }
 // ── 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) ──
 // 릴스 밖(말씀영역·위젯 메뉴)에서 특정 구절을 공유할 때 — 같은 팝업을 재사용한다
@@ -12055,7 +12091,7 @@ function vfAct(kind){
   else if(kind==='keep'){
     // 담기/빼기 (v26-0830-16). 문구 토스트 대신 아이콘이 채워지고 비워진다.
     const on=swToggleKeep(_reactKey(v));
-    showToast(on?'담아 뒀어요':'담아둔 것에서 뺐어요');
+    showToast(on?'저장했어요':'저장을 풀었어요');
     _swRepaintKeepTiles();
   }
   _vfSyncCounts();
@@ -13681,9 +13717,15 @@ function closeLogoMenu(){
 // 터치 기기 — 예전처럼 메인 뎁스를 가리고 같은 자리에 바꿔 보여준다(HB 1-2).
 // PC(마우스) — 메인 뎁스는 그대로 두고, 오른쪽에 따로 띄운다(v26-0818-9, HB).
 let _logoMenuSubCloseTimer=null;
-function logoMenuOpenListSub(){
-  const m=document.getElementById('logoMenuMain'),s=document.getElementById('logoMenuListSub');
+function logoMenuOpenListSub(id){
+  const m=document.getElementById('logoMenuMain'),s=document.getElementById(id||'logoMenuListSub');
   if(!s)return;
+  // 다른 하위 뎁스가 떠 있으면 먼저 접는다 (PC 에서 둘이 겹쳐 뜨던 것)
+  ['logoMenuListSub','logoMenuKeepSub'].forEach(k=>{
+    if(k===(id||'logoMenuListSub'))return;
+    const o=document.getElementById(k);
+    if(o){o.style.display='none';o.classList.remove('task-menu-sub-float');o.style.left='';o.style.top='';}
+  });
   clearTimeout(_logoMenuSubCloseTimer);
   if(_isTouchDevice()){
     s.classList.remove('task-menu-sub-float');
@@ -13701,26 +13743,36 @@ function logoMenuOpenListSub(){
     s.style.left=left+'px';s.style.top=top+'px';
   }
 }
+// 저장 목록 하위 뎁스 — 열기 전에 목록을 새로 그린다 (그 사이 늘거나 줄 수 있다)
+function logoMenuOpenKeepSub(){
+  _renderKeepSubMenu();
+  logoMenuOpenListSub('logoMenuKeepSub');
+}
 function _logoMenuSubScheduleClose(){
   if(_isTouchDevice())return;
   clearTimeout(_logoMenuSubCloseTimer);
   _logoMenuSubCloseTimer=setTimeout(()=>{
-    const s=document.getElementById('logoMenuListSub');
-    if(s&&s.classList.contains('task-menu-sub-float'))_logoMenuSubHideFloat();
+    ['logoMenuListSub','logoMenuKeepSub'].forEach(k=>{
+      const s=document.getElementById(k);
+      if(s&&s.classList.contains('task-menu-sub-float'))_logoMenuSubHideFloat(k);
+    });
   },160);
 }
 function _logoMenuSubCancelClose(){ clearTimeout(_logoMenuSubCloseTimer); }
-function _logoMenuSubHideFloat(){
-  const s=document.getElementById('logoMenuListSub');
+function _logoMenuSubHideFloat(id){
+  const s=document.getElementById(id||'logoMenuListSub');
   if(!s)return;
   s.style.display='none';
   s.classList.remove('task-menu-sub-float');
   s.style.left='';s.style.top='';
 }
 function logoMenuBackToMain(){
-  const m=document.getElementById('logoMenuMain'),s=document.getElementById('logoMenuListSub');
+  const m=document.getElementById('logoMenuMain');
   clearTimeout(_logoMenuSubCloseTimer);
-  if(s){s.style.display='none';s.classList.remove('task-menu-sub-float');s.style.left='';s.style.top='';}
+  ['logoMenuListSub','logoMenuKeepSub'].forEach(k=>{
+    const s=document.getElementById(k);
+    if(s){s.style.display='none';s.classList.remove('task-menu-sub-float');s.style.left='';s.style.top='';}
+  });
   if(m)m.style.display='';
 }
 function _tryCloseLogoMenu(){
@@ -15622,7 +15674,14 @@ function _aggByRef(entries){
 }
 function _aggEntriesForKind(kind){
   let entries;
-  if(kind==='mem')entries=_flatMemEntries();
+  // 저장 목록 — 지금 열려 있는 목록(window._vAggKeepList)만 모은다.
+  // 기록 모양이 좋아요·암송과 똑같아서 그 뒤 길은 전부 공용이다.
+  if(kind==='keep'){
+    const L=window._vAggKeepList||null;
+    entries=_keepEntries().filter(x=>!L||x.list===L)
+      .map(x=>({ref:x.ref,date:x.d,time:(x.when.split(' ')[1]||'')}));
+  }
+  else if(kind==='mem')entries=_flatMemEntries();
   else if(kind==='like')entries=_flatSimpleEntries(getLikeLog());
   else if(kind==='even')entries=_flatSimpleEntries(getEvenDeeperLog());
   else entries=_flatSimpleEntries(getDeeperLog());
@@ -15632,12 +15691,7 @@ function _aggEntriesForKind(kind){
   if(range){
     entries=entries.filter(e=>(!range.from||e.date>=range.from)&&(!range.to||e.date<=range.to));
   }
-  const agg=_aggByRef(entries);
-  // 정렬: recent(기본)=최신순, count=많은순(동률이면 최신순)
-  if(pref.sort==='count'){
-    agg.sort((a,b)=>b.count-a.count||(b.lastDate+b.lastTime).localeCompare(a.lastDate+a.lastTime));
-  }
-  return agg;
+  return _vlApplySort(_aggByRef(entries),pref.sort||'recent');
 }
 // ── C단계: 목록별 정렬·기간 설정 ──
 // kind(mem/like/deeper)별로 {sort, period, customFrom, customTo}를 저장.
@@ -15674,6 +15728,40 @@ function _vListRange(pref){
   return{from,to};
 }
 const _VL_PERIODS=[['week','주간'],['month','월간'],['year','연간'],['all','전체'],['custom','직접']];
+// ── 정렬 (v26-0831-11, HB) ──────────────────────────────
+// 좌측 첫 칩은 **하나가 두 몫**을 한다 — 누를 때마다 최신순 ⇄ 등록순.
+//   (칩을 늘리지 않고 바꾼다 = UI 원칙 "나란히 늘리지 말고 교체한다")
+// 세 번째 칩은 목록 갈래마다 다르다: 활동 목록은 '많은순', 저장 목록은 '성경순'.
+const _VL_SORT_PAIR=[['recent','최신순'],['reg','등록순']];
+const _VL_SORT_EXTRA={mem:['count','많은순'],like:['count','많은순'],
+  deeper:['count','많은순'],even:['count','많은순'],keep:['bible','성경순']};
+// 등록순 = 말씀 모음에 실려 있는 차례. 명제도 같은 길로 찾는다(반응 키 그대로).
+let _vlRegIdxMap=null;
+function _vlRegIdx(ref){
+  if(!_vlRegIdxMap){
+    _vlRegIdxMap=new Map();
+    (ALL_VERSES()||[]).forEach((v,i)=>{
+      if(!_vlRegIdxMap.has(v.ref))_vlRegIdxMap.set(v.ref,i);
+      try{const k=_reactKey(v); if(k&&!_vlRegIdxMap.has(k))_vlRegIdxMap.set(k,i);}catch(_){}
+    });
+  }
+  const n=_vlRegIdxMap.get(String(ref||''));
+  return n==null?1e9:n;                       // 모음에 없는 것은 맨 뒤
+}
+function _vlClearRegIdx(){ _vlRegIdxMap=null; }
+// 정렬 한 가지를 집계 목록에 먹인다 (활동 목록·저장 목록 공용)
+function _vlApplySort(agg,sort){
+  if(sort==='count')agg.sort((a,b)=>b.count-a.count||(b.lastDate+b.lastTime).localeCompare(a.lastDate+a.lastTime));
+  else if(sort==='reg')agg.sort((a,b)=>_vlRegIdx(a.ref)-_vlRegIdx(b.ref));
+  else if(sort==='bible')agg.sort((a,b)=>_bibleRankOfRef(_vlDispRef(a.ref))-_bibleRankOfRef(_vlDispRef(b.ref)));
+  return agg;
+}
+// 기록의 ref 는 명제일 때 **반응 키**다. 보여 주거나 성경순으로 셀 때는
+// 그 명제의 진짜 장절을 쓴다.
+function _vlDispRef(ref){
+  const v=(typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(ref):null;
+  return (v&&v.ref)||ref;
+}
 // 위젯 헤더의 정렬 아이콘으로 컨트롤 줄 접기/펼치기 (세션 한정 상태)
 const _vlCtrlOpen={mem:false,like:false,deeper:false,even:false};
 function vlToggleCtrl(kind){_vlCtrlOpen[kind]=!_vlCtrlOpen[kind];renderRightPanel();}
@@ -15685,9 +15773,16 @@ function _vListControlsHTML(kind){
     const on=(pref.sort||'recent')===key;
     return`<span onclick="vlSetSort('${kind}','${key}')" style="font-size:11px;font-weight:${on?'700':'400'};color:${on?'var(--ac)':'var(--tx3)'};cursor:pointer;">${label}</span>`;
   };
+  // 첫 칩은 눌릴 때마다 최신순 ⇄ 등록순 (칩을 늘리지 않는다)
+  const cur=pref.sort||'recent';
+  const pairKey=(cur==='reg')?'reg':'recent';
+  const pairOn=(cur==='recent'||cur==='reg');
+  const pairLabel=_VL_SORT_PAIR.find(x=>x[0]===pairKey)[1];
+  const pairBtn=`<span onclick="vlTogglePairSort('${kind}')" title="누르면 ${pairKey==='recent'?'등록순':'최신순'}으로 바뀌어요" style="font-size:11px;font-weight:${pairOn?'700':'400'};color:${pairOn?'var(--ac)':'var(--tx3)'};cursor:pointer;">${pairLabel}</span>`;
+  const ex=_VL_SORT_EXTRA[kind]||_VL_SORT_EXTRA.mem;
   const perBtn=([key,label])=>`<button class="vl-pill${(pref.period||'all')===key?' on':''}" onclick="vlSetPeriod('${kind}','${key}')">${label}</button>`;
   let h=`<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:6px;">
-    ${sortBtn('recent','최신순')}${sortBtn('count','많은순')}
+    ${pairBtn}${sortBtn(ex[0],ex[1])}
     <span style="width:1px;height:12px;background:var(--bd);"></span>
     <span style="display:flex;gap:4px;">${_VL_PERIODS.map(perBtn).join('')}</span>
   </div>`;
@@ -15715,9 +15810,14 @@ function _vListRefresh(kind){
   }
 }
 function vlSetSort(kind,sort){_vlPref(kind).sort=sort;save();_vListRefresh(kind);}
+// 최신순 ⇄ 등록순. 다른 정렬에 가 있었으면 먼저 이 짝으로 돌아온다.
+function vlTogglePairSort(kind){
+  const p=_vlPref(kind),cur=p.sort||'recent';
+  vlSetSort(kind,(cur==='recent')?'reg':'recent');
+}
 function vlSetPeriod(kind,period){_vlPref(kind).period=period;save();_vListRefresh(kind);}
 function vlSetCustom(kind,which,val){_vlPref(kind)[which]=val;save();_vListRefresh(kind);}
-const _VLIST_KIND_LABEL={mem:'암송 목록',like:'좋아요 목록',deeper:'Deeper 목록',even:'Even Deeper 목록'};
+const _VLIST_KIND_LABEL={mem:'암송 목록',like:'좋아요 목록',deeper:'Deeper 목록',even:'Even Deeper 목록',keep:'저장 목록'};
 // 창 제목용 표시: 암송=책갈피 아이콘, 좋아요=하트 아이콘, Deeper=텍스트
 // (모두 앱에서 이미 쓰고 있는 아이콘/표기 그대로)
 const _VLIST_KIND_TITLE={
@@ -15725,6 +15825,7 @@ const _VLIST_KIND_TITLE={
   like:'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg>',
   deeper:'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg>',
   even:'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg>',
+  keep:'<svg width="11" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg>',
 };
 // 집계 목록 → 행 HTML. 행마다 data-vli-ref를 달아 롱터치/우클릭 메뉴 연결.
 // 표시 항목은 설정(위젯 말씀 목록에 보여줄 항목: 대분류/소주제/본문/구절/태그)을 따른다.
@@ -15735,6 +15836,7 @@ const _VLI_COUNT_ICON={
   mem:'<svg width="7" height="9" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 9.1l2.8 2.8L11.6 4.1"/></svg>',
   deeper:'<svg width="9" height="8" viewBox="0 0 20 16" fill="currentColor" stroke="none"><path d="M2 3 L2 13 Q6 12 10 13 L10 3 Q6 2 2 3 Z"/><path d="M18 3 L18 13 Q14 12 10 13 L10 3 Q14 2 18 3 Z"/></svg>',
   even:'<svg width="9" height="8" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 L10 8 L16 3"/><path d="M4 9 L10 14 L16 9"/></svg>',
+  keep:'<svg width="7" height="9" viewBox="0 0 14 18" fill="currentColor" stroke="none"><path d="M2 1h10a1 1 0 0 1 1 1v14l-6-4-6 4V2a1 1 0 0 1 1-1z"/></svg>',
 };
 // 말씀 위젯 글자 크기 — 1 이 지금까지 쓰던 크기(기본)
 const _VW_TEXT_PX={1:12,2:13.5,3:15};
@@ -15754,7 +15856,10 @@ function _vListRowsHTML(items,limit,kind){
   if(!shown.length)return'<div style="font-size:11px;color:var(--tx3);text-align:center;padding:14px 0;">아직 기록이 없어요</div>';
   const icon=_VLI_COUNT_ICON[kind]||_VLI_COUNT_ICON.mem;
   return shown.map(g=>{
-    const v=verseByRef(g.ref);
+    // ⚠️ g.ref 는 명제일 때 **반응 키**다. 화면에는 그 명제의 진짜 장절을 쓴다
+    //    (예전엔 키가 그대로 나와 알아볼 수 없었다).
+    const v=((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)||verseByRef(g.ref);
+    const dispRef=(v&&v.ref)||g.ref;
     // 메인 줄: 본문 (가장 잘 보이게)
     let mainLine='';
     if(showText&&v&&v.krText){
@@ -15763,14 +15868,14 @@ function _vListRowsHTML(items,limit,kind){
     }
     // 보조 줄: 구절(파랑) + 대분류·소주제·태그
     const sub=[];
-    if(showRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${g.ref}</span>`);
+    if(showRef&&dispRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     if(v){
       if(showCat&&v.cat)sub.push(v.cat);
       if(showTopic&&v.topic)sub.push(v.topic);
       if(showTag&&Array.isArray(v.tags)&&v.tags.filter(Boolean).length)sub.push(v.tags.filter(Boolean).join(' '));
     }
     // 본문/보조 둘 다 비면 최소한 장절이라도
-    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${g.ref}</span>`);
+    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     // 날짜: 7/11 형식 (앞자리 0 없이)
     const[dy,dm,dd]=g.lastDate.split('-');
     const dateLabel=`${parseInt(dm,10)}/${parseInt(dd,10)}`;
@@ -15779,7 +15884,7 @@ function _vListRowsHTML(items,limit,kind){
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
         <span style="font-size:9px;color:var(--tx3);min-width:0;">${sub.join(' · ')}</span>
         <span style="font-size:9px;color:var(--tx3);white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
-          <span style="display:inline-flex;align-items:center;color:var(--ac);">${icon}</span>${g.count} · ${dateLabel}
+          <span style="display:inline-flex;align-items:center;color:var(--ac);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
         </span>
       </div>
     </div>`;
@@ -15838,21 +15943,28 @@ function closeVliMenu(){
 // (좌상단 메뉴 LIST → 목록 → 말씀 을 눌러 들어온 경우가 이것이다)
 function _vliOpenFull(ref,kind){
   if(!ref)return;
-  const hit=(ACTIVE_VERSES()||[]).find(x=>x.ref===ref);
+  // ⚠️ ref 는 명제일 때 **반응 키**다. 장절로만 찾으면 한 설교의 다른 명제가
+  //    열리거나 아예 못 찾는다 → 반응 키로 먼저 찾는다.
+  const av=ACTIVE_VERSES()||[];
+  const loose=(typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(ref):null;
+  const hit=av.find(x=>{try{return _reactKey(x)===ref;}catch(_){return false;}})||av.find(x=>x.ref===ref);
   if(hit)setVerseIdx(hit.idx);
-  else _vfOverrideVerse=(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
+  else _vfOverrideVerse=loose||(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
   openVerseFull(true);                         // 위에서 지정한 구절을 유지
   if(kind&&_VLIST_KIND_TITLE[kind]){
     const list=_aggEntriesForKind(kind)
-      .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
-    const i=list.findIndex(x=>x.ref===ref);
-    if(list.length)_vfSetNav(list,Math.max(0,i),_VLIST_KIND_LABEL[kind]||'',kind);
+      .map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)
+              ||verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+    const keys=_aggEntriesForKind(kind).map(g=>g.ref);
+    const i=Math.max(0,keys.indexOf(ref));
+    if(list.length)_vfSetNav(list,i,_VLIST_KIND_LABEL[kind]||'',kind);
   }
 }
 function vliAction(act){
   const ref=_vliRef,kind=_vliKind;closeVliMenu();
   if(!ref)return;
-  if(act==='deeper')openDeeperFromRef(ref);
+  if(act==='keep')openKeepPicker(ref);
+  else if(act==='deeper')openDeeperFromRef(ref);
   else if(act==='even')openEvenDeeperFromRef(ref);
   else if(act==='like')_reactWithToast('like',ref);
   else if(act==='mem')_reactWithToast('mem',ref);
@@ -15913,6 +16025,7 @@ function deleteLatestVerseEvent(kind,ref){
 }
 // ── 로고 메뉴에서 여는 집계 목록 팝업 ──
 function _renderVAggBody(kind){
+  _vlClearRegIdx();          // 모음이 바뀌었을 수 있다 — 등록순 차례를 새로 잰다
   document.getElementById('vAggControls').innerHTML=_vListControlsHTML(kind);
   const list=document.getElementById('vAggList');
   list.innerHTML=_vListRowsHTML(_aggEntriesForKind(kind),0,kind);
@@ -15921,11 +16034,101 @@ function _renderVAggBody(kind){
 function openVerseAggPopup(kind){
   closeLogoMenu();
   window._vAggKind=kind;
+  window._vAggKeepList=null;
   document.getElementById('vAggTitle').innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px;justify-content:center;">${_VLIST_KIND_TITLE[kind]}</span>`;
   _renderVAggBody(kind);
   document.getElementById('vAggOverlay').style.display='block';
   document.getElementById('vAggModal').style.display='flex';
 }
+// ══════ 말씀 저장 목록 (v26-0831-11, HB) ══════════════════
+// 활동 목록(좋아요·암송·Deeper·Even)과 **같은 팝업·같은 필터**를 쓴다.
+// 다른 것은 좌측 세 번째 정렬 칩뿐이다 — 활동은 '많은순', 저장은 '성경순'.
+function openKeepListPopup(name){
+  closeLogoMenu();
+  window._vAggKind='keep';
+  window._vAggKeepList=name||KEEP_DEFAULT_LIST;
+  document.getElementById('vAggTitle').innerHTML=
+    `<span style="display:inline-flex;align-items:center;gap:5px;justify-content:center;">${_VLIST_KIND_TITLE.keep}${esc(window._vAggKeepList)}</span>`;
+  _renderVAggBody('keep');
+  document.getElementById('vAggOverlay').style.display='block';
+  document.getElementById('vAggModal').style.display='flex';
+}
+// 좌상단 말씀메뉴 → '말씀 저장 목록' 하위 뎁스. 만들어 둔 목록만큼 줄이 는다.
+function _renderKeepSubMenu(){
+  const box=document.getElementById('logoMenuKeepSub');
+  if(!box)return;
+  const back=`<div class="task-menu-item" onclick="logoMenuBackToMain()">
+      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 저장 목록</span>
+    </div>
+    <div class="task-menu-sep"></div>`;
+  const lists=_keepLists();
+  if(!lists.length){
+    box.innerHTML=back+`<div class="task-menu-item" style="color:var(--tx3);cursor:default;">아직 저장한 말씀이 없어요</div>`;
+    return;
+  }
+  const ic=`<span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg></span>`;
+  box.innerHTML=back+lists.map(L=>
+    `<div class="task-menu-item" onclick="openKeepListPopup('${esc(L.n).replace(/'/g,"&#39;")}')">`
+    +ic+`<span style="flex:1;">${esc(L.n)}</span>`
+    +`<span class="task-menu-side" style="pointer-events:none;color:var(--tx3);font-size:10px;">${L.cnt}</span></div>`).join('');
+}
+
+// ══════ 저장 목록 고르기 (책갈피를 길게 누르면) ══════════════
+// 유튜브·인스타와 같다 — 체크로 여러 목록에 동시에 담고, 맨 아래에서 새 목록을 만든다.
+let _keepPickRef=null;
+function openKeepPicker(ref){
+  if(!ref)return;
+  _keepPickRef=String(ref);
+  _renderKeepPicker();
+  document.getElementById('keepPickOverlay').style.display='block';
+  document.getElementById('keepPickModal').style.display='flex';
+}
+function closeKeepPicker(){
+  document.getElementById('keepPickOverlay').style.display='none';
+  document.getElementById('keepPickModal').style.display='none';
+  _keepPickRef=null;
+}
+function _renderKeepPicker(){
+  const box=document.getElementById('keepPickBody');
+  if(!box||!_keepPickRef)return;
+  const mine=_keepListsOf(_keepPickRef);
+  // 기본 목록은 아직 아무것도 없어도 늘 보여 준다 — 첫 저장이 갈 자리다
+  const names=_keepLists().map(x=>x.n);
+  if(!names.includes(KEEP_DEFAULT_LIST))names.unshift(KEEP_DEFAULT_LIST);
+  box.innerHTML=names.map(n=>{
+    const on=mine.has(n);
+    return `<div class="keep-pick-row" onclick="keepPickToggle('${esc(n).replace(/'/g,"&#39;")}')">
+      <span class="keep-pick-ck">${on?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>':''}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(n)}</span>
+    </div>`;
+  }).join('')
+  +`<div class="keep-pick-row" onclick="keepPickNew()" style="color:var(--ac);">
+      <span class="keep-pick-ck"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="3" x2="10" y2="17"/><line x1="3" y1="10" x2="17" y2="10"/></svg></span>
+      <span style="flex:1;">새 목록</span>
+    </div>`;
+}
+function keepPickToggle(name){
+  if(!_keepPickRef)return;
+  swKeepSet(_keepPickRef,name,!_swIsKept(_keepPickRef,name));
+  _renderKeepPicker();
+  _keepAfterChange();
+}
+function keepPickNew(){
+  if(!_keepPickRef)return;
+  const n=(prompt('새 목록 이름')||'').trim();
+  if(!n)return;
+  swKeepSet(_keepPickRef,n,true);
+  _renderKeepPicker();
+  _keepAfterChange();
+}
+// 저장한 것이 바뀌면 화면들을 맞춘다 (전체화면 아이콘 · Sweeter 타일 · 열려 있는 목록)
+function _keepAfterChange(){
+  try{_vfSyncCounts();}catch(_){}
+  try{_swRepaintKeepTiles();}catch(_){}
+  const m=document.getElementById('vAggModal');
+  if(m&&m.style.display!=='none'&&window._vAggKind==='keep')_renderVAggBody('keep');
+}
+
 // ══════ 말씀 대시보드 ══════
 // 좋아요·암송·Deeper·Even Deeper 를 행으로, 대분류·소주제·태그·성경 을 열로 두고
 // 16개 파이차트로 분포를 보여준다.
@@ -28279,8 +28482,8 @@ const _SW_TYPES={
         empty:'태그가 붙은 말씀이 아직 없어요.'},
   react:{n:'말씀 반응',sorts:['모두','이번 달'],
         empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
-  keep:{n:'담아둔 것',wide:true,sorts:['담은 순','오래된 순'],
-        empty:'담아둔 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 담깁니다.'}
+  keep:{n:'저장',wide:true,sorts:['저장한 순','오래된 순'],
+        empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'}
 };
 // 처음 켰을 때 놓이는 차례
 const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
@@ -28297,22 +28500,72 @@ const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
 const _KEEP_D='M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z';
 const _KEEP_FILL='M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z';
 function getKeepLog(){ if(!ST.verseKeepLog)ST.verseKeepLog={}; return ST.verseKeepLog; }
-function _swKeptRefs(){
-  const set=new Set();
-  Object.values(getKeepLog()).forEach(arr=>(arr||[]).forEach(e=>{if(e&&e.ref)set.add(e.ref);}));
+
+// ── 저장 목록 (v26-0831-11, HB) ──────────────────────────
+// 유튜브·인스타처럼 **여러 목록**에 나눠 담는다. 말씀도 명제도 같은 목록에.
+//
+// ⚠️⚠️ **새 저장 항목(ST.xxx)을 만들지 않았다.** 목록 이름은 이미 있는 기록의
+//    **항목 안**에 담는다 — {ref, time, lst}. lst 가 없으면 기본 목록이다.
+//    새 항목을 만들면 기본값·부팅·병합·대량손실·원격반영 다섯 곳에 등록해야
+//    하고, 한 곳만 빠지면 그 기기가 "사용자가 지웠다"로 읽어 통째로 날린다
+//    (26-0831 사고). 항목 안이면 병합기(_mgEntryArray)가 이미 하던 일 그대로다.
+//
+// ⚠️ 목록은 **담을 때 생긴다** (인스타 방식). 빈 목록은 없다 — 마지막 항목을
+//    빼면 목록도 사라진다. 그래서 이름을 따로 저장할 자리가 필요 없다.
+const KEEP_DEFAULT_LIST='저장됨';
+function _keepListOf(e){
+  const n=(e&&e.lst!=null)?String(e.lst).trim():'';
+  return n||KEEP_DEFAULT_LIST;
+}
+// 모든 저장 기록을 평평하게 — [{ref, list, when('날짜 시각'), d(날짜)}]
+function _keepEntries(){
+  const out=[];
+  Object.entries(getKeepLog()).forEach(([d,arr])=>{
+    (arr||[]).forEach(e=>{
+      if(!e||!e.ref)return;
+      out.push({ref:String(e.ref),list:_keepListOf(e),when:d+' '+(e.time||''),d});
+    });
+  });
+  return out;
+}
+// 목록들 — 기본 목록이 맨 앞, 그 뒤는 **최근 담은 순**
+function _keepLists(){
+  const m=new Map();
+  _keepEntries().forEach(x=>{
+    if(!m.has(x.list))m.set(x.list,{n:x.list,cnt:0,when:''});
+    const g=m.get(x.list);
+    g.cnt++;
+    if(x.when>g.when)g.when=x.when;
+  });
+  return[...m.values()].sort((a,b)=>{
+    if(a.n===KEEP_DEFAULT_LIST)return-1;
+    if(b.n===KEEP_DEFAULT_LIST)return 1;
+    return b.when.localeCompare(a.when);
+  });
+}
+// 이 구절(또는 명제)이 들어 있는 목록들
+function _keepListsOf(ref){
+  const r=String(ref||''),set=new Set();
+  if(!r)return set;
+  _keepEntries().forEach(x=>{ if(x.ref===r)set.add(x.list); });
   return set;
 }
-function _swIsKept(ref){
+// 목록을 주면 그 목록에 있는가, 안 주면 **어느 목록에든** 있는가
+function _swIsKept(ref,list){
   if(!ref)return false;
-  const r=String(ref);
-  return _swKeptRefs().has(r);
+  const s=_keepListsOf(ref);
+  return list?s.has(list):s.size>0;
 }
-function swToggleKeep(ref){
+// 한 목록에 담기/빼기. 목록을 안 주면 기본 목록.
+function swKeepSet(ref,list,on){
   if(!ref)return false;
-  const r=String(ref),log=getKeepLog();
-  if(_swIsKept(r)){
+  const r=String(ref),L=(list&&String(list).trim())||KEEP_DEFAULT_LIST,log=getKeepLog();
+  const has=_keepListsOf(r).has(L);
+  if(on&&has)return true;                       // 겹쳐 담지 않는다
+  if(!on&&!has)return false;
+  if(!on){
     Object.keys(log).forEach(d=>{
-      const left=(log[d]||[]).filter(e=>!e||e.ref!==r);
+      const left=(log[d]||[]).filter(e=>!(e&&String(e.ref)===r&&_keepListOf(e)===L));
       if(left.length)log[d]=left; else delete log[d];
     });
     save();return false;
@@ -28320,9 +28573,80 @@ function swToggleKeep(ref){
   const d=_calKey(),now=new Date();
   const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
   if(!log[d])log[d]=[];
-  log[d].push({ref:r,time:hh+':'+mm});
+  // ⚠️ 기본 목록은 lst 를 **쓰지 않는다** — 예전 기록과 글자 하나 다르지 않아야
+  //    구버전 기기와 병합해도 같은 것으로 읽힌다.
+  const ent={ref:r,time:hh+':'+mm};
+  if(L!==KEEP_DEFAULT_LIST)ent.lst=L;
+  log[d].push(ent);
   save();return true;
 }
+// 책갈피 한 번 누르기 — 목록을 안 주면 "어디든 담겨 있으면 전부 빼고,
+// 아니면 기본 목록에 담는다" (예전 동작 그대로)
+function swToggleKeep(ref,list){
+  if(!ref)return false;
+  if(list)return swKeepSet(ref,list,!_swIsKept(ref,list));
+  const r=String(ref);
+  if(!_swIsKept(r))return swKeepSet(r,KEEP_DEFAULT_LIST,true);
+  const log=getKeepLog();
+  Object.keys(log).forEach(d=>{
+    const left=(log[d]||[]).filter(e=>!e||String(e.ref)!==r);
+    if(left.length)log[d]=left; else delete log[d];
+  });
+  save();return false;
+}
+// 목록 이름 바꾸기. 이미 있는 이름으로 바꾸면 **합쳐진다** (겹치는 것은 하나로).
+function _keepRenameList(from,to){
+  const A=(from&&String(from).trim())||KEEP_DEFAULT_LIST;
+  const B=(to&&String(to).trim())||KEEP_DEFAULT_LIST;
+  if(A===B)return;
+  const log=getKeepLog();
+  Object.keys(log).forEach(d=>{
+    (log[d]||[]).forEach(e=>{
+      if(!e||_keepListOf(e)!==A)return;
+      if(B===KEEP_DEFAULT_LIST)delete e.lst; else e.lst=B;
+    });
+  });
+  // 합치면서 같은 구절이 겹칠 수 있다 — 한 목록 안에서는 하나만 남긴다
+  const seen=new Set();
+  Object.keys(log).sort().forEach(d=>{
+    const left=(log[d]||[]).filter(e=>{
+      if(!e||!e.ref)return false;
+      const k=_keepListOf(e)+'\u0001'+e.ref;
+      if(seen.has(k))return false;
+      seen.add(k);return true;
+    });
+    if(left.length)log[d]=left; else delete log[d];
+  });
+  save();
+}
+// 목록 지우기 = 그 목록의 항목만 뺀다. 다른 목록에도 담긴 것은 거기 남는다.
+function _keepDeleteList(name){
+  const L=(name&&String(name).trim())||KEEP_DEFAULT_LIST,log=getKeepLog();
+  Object.keys(log).forEach(d=>{
+    const left=(log[d]||[]).filter(e=>!(e&&_keepListOf(e)===L));
+    if(left.length)log[d]=left; else delete log[d];
+  });
+  save();
+}
+// 담아둔 것 — 담은 때가 새로운 것부터(0) 또는 오래된 것부터(1).
+// 목록을 주면 그 목록만, 안 주면 전부 (전부에서는 한 구절이 한 번만 나온다).
+function _swKeeps(sortIdx,list){
+  const seen=new Map();
+  _keepEntries().forEach(x=>{
+    if(list&&x.list!==list)return;
+    const prev=seen.get(x.ref);
+    if(!prev||x.when>prev.when)seen.set(x.ref,{ref:x.ref,when:x.when,d:x.d});
+  });
+  const rows=[...seen.values()].sort((a,b)=>
+    sortIdx===1?a.when.localeCompare(b.when):b.when.localeCompare(a.when));
+  const out=[];
+  rows.forEach(g=>{
+    const v=_findVerseByRefLoose(g.ref);
+    if(v)out.push({verse:v,ref:g.ref,when:g.d});   // 못 찾은 것은 조용히 건너뛴다
+  });
+  return out;
+}
+
 // 담아둔 것이 바뀌면 판 위의 '담아둔 것' 타일을 다시 그린다.
 // ⚠️ BLOCK7 에서도 불린다 (전체화면 액션 줄). 판이 없으면 조용히 나간다.
 function _swRepaintKeepTiles(except){
@@ -28335,25 +28659,7 @@ function _swRepaintKeepTiles(except){
   });
 }
 // 담아둔 말씀 — 담은 때가 새로운 것부터 (또는 오래된 것부터)
-function _swKeeps(sortIdx){
-  const seen=new Map();
-  Object.entries(getKeepLog()).forEach(([d,arr])=>{
-    (arr||[]).forEach(e=>{
-      if(!e||!e.ref)return;
-      const when=d+' '+(e.time||'');
-      const prev=seen.get(e.ref);
-      if(!prev||when>prev.when)seen.set(e.ref,{ref:e.ref,when,d});
-    });
-  });
-  const rows=[...seen.values()].sort((a,b)=>
-    sortIdx===1?a.when.localeCompare(b.when):b.when.localeCompare(a.when));
-  const out=[];
-  rows.forEach(g=>{
-    const v=_findVerseByRefLoose(g.ref);
-    if(v)out.push({verse:v,ref:g.ref,when:g.d});   // 못 찾은 것은 조용히 건너뛴다
-  });
-  return out;
-}
+
 
 // ── 저장 ─────────────────────────────────────────────────
 // ⚠️ 이 목록은 **Sweeter 것**이다. _PRODUCT_SCOPED 에 들어 있어 저장할 때
@@ -28543,7 +28849,7 @@ function _swFace(t){
   if(cur0&&cur0.kind==='val'&&cur0.v&&cur0.v.verse){
     const on=_swIsKept(cur0.v.verse.ref);
     mark='<button class="sw-keep'+(on?' on':'')+'" data-swkeep="1" '
-      +'aria-pressed="'+(on?'true':'false')+'" title="담아두기">'
+      +'aria-pressed="'+(on?'true':'false')+'" title="저장">'
       +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
       +'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'
       +(on?'<path fill="currentColor" d="'+_KEEP_FILL+'"/>'
