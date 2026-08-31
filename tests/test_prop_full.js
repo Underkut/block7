@@ -120,4 +120,41 @@ console.log('\n시나리오 7 — 손으로 그은 획은 앱의 붓을 그대�
   sc.eq('마지막 줄에만 긋는다', SRC_DEV.includes('const last=rects[rects.length-1];'), true);
 }
 
+// ═══ 8. 말씀 모음 목록에서 명제집을 알아본다 (v26-0831-4) ═══
+console.log('\n시나리오 8 — 목록의 명제집 표시');
+{
+  // ⚠️ 명제집은 **따로 저장하는 표시를 만들지 않는다.** 새 항목을 만들면
+  //    병합·백업 다섯 곳에 등록해야 하고 그만큼 잃을 자리가 는다 (26-0831 사고).
+  //    들어 있는 것을 보고 그때그때 판단하면 저장 구조가 한 글자도 안 바뀐다.
+  sc.eq('판정 함수가 있다', SRC_DEV.includes('function _collIsProp(c){'), true);
+  sc.eq('저장하는 표시를 새로 만들지 않았다',
+        /c\.isProp|coll\.isProp|kind:'propcoll'/.test(SRC_DEV), false);
+
+  // 실제로 돌려 본다
+  const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _collIsProp(c){'),
+                           SRC_DEV.indexOf('let _collLpTimer='));
+  const _collIsProp = new Function('c', fn.replace(/^function _collIsProp\(c\)\{/, '').replace(/\}\s*$/, ''));
+  sc.eq('명제가 있으면 명제집',
+        _collIsProp({verses:[{pid:'P0001',kind:'prop'}]}), true);
+  sc.eq('말씀만 있으면 아니다',
+        _collIsProp({verses:[{ref:'요한복음 1:1'}]}), false);
+  sc.eq('빈 모음은 아니다', _collIsProp({verses:[]}), false);
+  sc.eq('모음이 없어도 안전', _collIsProp(null), false);
+  sc.eq('verses 가 없어도 안전', _collIsProp({}), false);
+  // ⚠️ 지운(휴지통) 명제만 남았으면 명제집이 아니다 — 표시가 유령처럼 남는다
+  sc.eq('지운 명제만 있으면 아니다',
+        _collIsProp({verses:[{pid:'P1',kind:'prop',del:'simple'}]}), false);
+  sc.eq('섞여 있으면 명제집',
+        _collIsProp({verses:[{ref:'요 1:1'},{pid:'P1',kind:'prop'}]}), true);
+
+  // UI 원칙 — 테두리·박스 금지, 글자만
+  sc.eq('표시 CSS 가 있다', SRC_DEV.includes('.coll-propmark{'), true);
+  const css = SRC_DEV.slice(SRC_DEV.indexOf('.coll-propmark{'),
+                            SRC_DEV.indexOf('}', SRC_DEV.indexOf('.coll-propmark{')));
+  sc.eq('테두리를 두르지 않는다', /border:/.test(css), false);
+  sc.eq('박스를 만들지 않는다', /background:/.test(css), false);
+  sc.eq('목록이 그 판정을 쓴다',
+        SRC_DEV.includes("mkBtn(c.id,c.name||'말씀 모음',true,_collIsProp(c))"), true);
+}
+
 sc.done();
