@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-11  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-12  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -561,6 +561,11 @@ header{
   position:relative;z-index:3;
 }
 #vfRef:active{opacity:.5;}
+/* 설교 본문이 여럿인 명제 — 장절 하나하나가 제 필터를 가진 단추다.
+   ⚠️ 테두리·박스를 두르지 않는다 (UI 원칙). 눌린 표시는 흐려짐 하나로. */
+.vf-refchip{cursor:pointer;}
+.vf-refchip:active{opacity:.45;}
+.vf-refsep{opacity:.45;}   /* 공백은 글자로 넣는다 — 공유 이미지가 이 글자를 그대로 쓴다 */
 /* 하단 줄: 좌측 메타 + 우측 세로 액션 (인스타 릴스 배치) */
 .vf-bottom{
   position:absolute;left:0;right:0;
@@ -3534,7 +3539,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-11";
+const APP_VERSION = "v. 26-0831-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6145,7 +6150,8 @@ function ACTIVE_VERSES(){
            d:v.d||'',pid:v.pid||'',kind:v.kind||'',
            // books = 시트 '성경권'. 한 명제가 여러 권에 걸린다.
            // _code = 그 모음의 6자리 발행 코드 (명제의 전체 집계를 교회별로 가른다)
-           books:v.books||[],_code:v._code||''};
+           // refs = 설교 본문 여럿 (명제). 장절 줄에서 하나씩 눌러 걸러 볼 수 있다.
+           books:v.books||[],refs:v.refs||[],_code:v._code||''};
   });
 }
 function ACTIVE_TOTAL(){return ACTIVE_VERSES().length;}
@@ -7227,6 +7233,31 @@ function _sheetRowsSane(rows){
 function _isPropSheet(h){
   return h.includes('명제 ID')&&h.includes('명제');
 }
+// '설교 본문' 칸을 참조 여럿으로 가른다 (최대 3개).
+// ⚠️ 쉼표는 한 참조 **안에서도** 쓰인다 ("요한복음 1:1,14"). 그래서 쉼표는
+//    그 뒤가 **한글로 시작할 때만** 자른다. 세미콜론·가운뎃점·줄바꿈은 늘 자른다.
+const _PROP_REF_MAX=3;
+function _propRefs(raw){
+  const t=String(raw==null?'':raw).trim();
+  if(!t)return[];
+  const out=[];
+  t.split(/[;·\n\r]+|\s+\/\s+/).forEach(part=>{
+    part.split(/,(?=\s*[가-힣])/).forEach(x=>{
+      const r=x.trim().replace(/^[/,·;\s]+|[/,·;\s]+$/g,'');
+      if(r&&out.indexOf(r)<0)out.push(r);
+    });
+  });
+  return out.slice(0,_PROP_REF_MAX);
+}
+// 성경권 — 시트에 적힌 '성경권' 열을 먼저 쓰고, 없으면 설교 본문에서 뽑는다.
+// 둘 다 있으면 합친다 (성경별 필터가 세 권 모두에 걸려야 한다).
+function _propBooks(rawBooks,refs){
+  const out=[];
+  const push=n=>{const b=_bookNorm(n);if(b&&out.indexOf(b)<0)out.push(b);};
+  String(rawBooks==null?'':rawBooks).split(/[,;·/]/).forEach(x=>{if(x.trim())push(x.trim());});
+  (refs||[]).forEach(r=>{const b=_bookOfRef(r);if(b)push(b);});
+  return out;
+}
 function _propRowsToItems(rows){
   const h=rows[0].map(c=>String(c||'').trim());
   const at=n=>h.indexOf(n);
@@ -7234,8 +7265,18 @@ function _propRowsToItems(rows){
   //    예전엔 설교 제목이 대분류, 핵심 주제가 소주제였다.
   //    '핵심 주제' 는 이제 화면에 쓰지 않는다 (시트에 있어도 읽지 않는다).
   const iId=at('명제 ID'),iDate=at('날짜'),iCat=at('카테고리'),iTitle=at('설교 제목'),
-        iRef=at('장절/단락'),iText=at('명제'),iHi=at('대표 문구'),
+        iText=at('명제'),iHi=at('대표 문구'),
         iTags=at('주제 태그'),iState=at('데이터 상태'),iBooks=at('성경권');
+  // ⚠️ HB 정정 (26-0831): 전체화면에 쓸 성경은 **F열 '설교 본문'** 이다.
+  //    예전에 읽던 H열은 이름이 '인용 본문' 으로 바뀌었는데, 그것은 설교 본문에
+  //    더해 설교에서 인용된 **모든** 본문이라 화면에 다 쓰면 너무 많다.
+  //    '설교 본문' 이 없는 옛 시트를 위해 옛 이름 두 개를 뒤에 둔다.
+  //    ⚠️ 열이 **있어도 비어 있을 수** 있다 → 줄마다 값이 있는 첫 열을 쓴다.
+  const iRefCols=[at('설교 본문'),at('장절/단락'),at('인용 본문')].filter(x=>x>=0);
+  const refCell=r=>{
+    for(const i of iRefCols){const t=String(r[i]==null?'':r[i]).trim();if(t)return t;}
+    return '';
+  };
   if(iId<0||iText<0)return[];
   const items=[];
   for(let i=1;i<rows.length;i++){
@@ -7253,14 +7294,16 @@ function _propRowsToItems(rows){
       cat:(iCat>=0?String(r[iCat]||'').trim():'')||'설교 명제',
       topic:iTitle>=0?String(r[iTitle]||'').trim():'',
       krText:text,
-      // 장절 칸에 참조가 여러 개 들어오기도 한다 — 자르지 않고 그대로 둔다
-      ref:iRef>=0?String(r[iRef]||'').trim():'',
+      // 설교 본문은 **최대 세 개**까지 들어온다. 하나하나 따로 눌러 그 성경으로
+      // 걸러 볼 수 있어야 하므로 갈라서 담고(refs), 한 줄 표기(ref)도 함께 둔다.
+      refs:_propRefs(refCell(r)),
+      ref:_propRefs(refCell(r)).join(' · '),
       tags:tagsRaw?tagsRaw.split(/[,;]/).map(t=>t.trim()).filter(Boolean):[],
       hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 = 강조 문구 자리
       // ⚠️ 명제는 한 장절 칸에 여러 본문이 들어온다 ("롬 5:8; 엡 2:8-9").
       //    장절 글자를 앱이 헤아리게 하지 말고, 시트의 '성경권' 열을 그대로 쓴다
       //    (목사님이 이미 적어 두신 값이다). 여러 권이면 **그 권마다 다 걸린다**.
-      books:iBooks>=0?String(r[iBooks]||'').split(/[,;·/]/).map(x=>x.trim()).filter(Boolean):[],
+      books:_propBooks(iBooks>=0?r[iBooks]:'',_propRefs(refCell(r))),
       d:iDate>=0?_parseVDate(r[iDate]):null,
       row:i+1
     });
@@ -7607,6 +7650,8 @@ function _sharedVerseOut(v){
   if(v.pid){o.pid=v.pid;o.kind='prop';}   // 명제집에서 온 항목
   // 성경권 — 한 명제가 여러 권에 걸린다. 안 실으면 구독자에게서 성경별이 어긋난다.
   if(v.books&&v.books.length)o.books=v.books.slice();
+  // 설교 본문 여럿 — 안 실으면 구독자 화면에서 장절이 하나로 뭉친다
+  if(v.refs&&v.refs.length)o.refs=v.refs.slice();
   return o;
 }
 // 받는 쪽. kind 는 pid 에서 **파생한다** — _syncSheetVersesIntoColl 과 같은
@@ -7617,6 +7662,8 @@ function _sharedVerseIn(v){
   if(v.pid){o.pid=v.pid;o.kind='prop';}
   // 성경권 — 한 명제가 여러 권에 걸린다. 안 실으면 구독자에게서 성경별이 어긋난다.
   if(v.books&&v.books.length)o.books=v.books.slice();
+  // 설교 본문 여럿 — 안 실으면 구독자 화면에서 장절이 하나로 뭉친다
+  if(v.refs&&v.refs.length)o.refs=v.refs.slice();
   return o;
 }
 // 소유자의 모음 내용을 shared 문서에 게시(최신화). 삭제 안 된 구절만, 메타 제거.
@@ -12489,10 +12536,32 @@ function _verseFullRender(){
   //    (우연히 걸리면 엉뚱한 자리가 칠해진다)
   text.setAttribute('data-hi',_vfIsProp(v)?'':(v.hi||''));   // 시트 '강조 문구' 열
   text.classList.toggle('prop',_vfIsProp(v));   // 명제는 좌정렬
-  ref.textContent=v.ref||'';ref.style.display=v.ref?'':'none';
+  _vfRenderRef(v);
   _vfRenderTagArt(v);        // 태그 그림 (꺼져 있으면 빈 채로 둔다)
   _vfLayoutText();
   _vfSyncCounts();
+}
+// ── 장절 줄 ───────────────────────────────────────────────────────────
+// 말씀은 예전 그대로 한 줄. 명제는 **설교 본문이 셋까지** 들어오는데,
+// HB 요청(26-0831) — 셋을 다 쓰고 **하나하나 눌러 그 성경으로 걸러** 보게 한다.
+// (하나뿐이면 줄 전체가 하나의 단추다 — 예전 동작 그대로)
+function _vfRenderRef(v){
+  const ref=document.getElementById('vfRef');
+  if(!ref)return;
+  const rs=(v&&Array.isArray(v.refs))?v.refs.filter(Boolean):[];
+  if(rs.length>1){
+    ref.innerHTML=rs.map(r=>
+      `<span class="vf-refchip" data-ref="${_vgEscAttr(r)}" onclick="event.stopPropagation();_vgOpenFromRef(this.dataset.ref)">${esc(r)}</span>`
+    ).join('<span class="vf-refsep"> · </span>');
+    ref.style.display='';
+    return;
+  }
+  ref.textContent=v.ref||'';ref.style.display=v.ref?'':'none';
+}
+// 장절 하나를 눌렀을 때 — 그 성경으로 타일뷰를 연다
+function _vgOpenFromRef(r){
+  const b=_bookOfRef(r);
+  if(b)openVerseGrid('book',b);
 }
 // ── 명제 대표 문구 타이틀 ──────────────────────────────────────────────
 // 크기는 본문처럼 글자 수에 따라 단계적으로 정한다 — 짧으면 크게, 길면 작게.
