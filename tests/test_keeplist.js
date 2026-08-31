@@ -200,6 +200,12 @@ console.log('\n시나리오 11 — 저장 단추는 공유 바로 위, 늘 보�
   sc.eq('바로 저장해 버리지 않는다',
         /else if\(kind==='keep'\)\{[\s\S]{0,300}swToggleKeep/.test(SRC_DEV), false);
   sc.eq('새 목록을 만들 수 있다', SRC_DEV.includes('function keepPickNew('), true);
+  // v26-0831-14, HB — 하단 가운데에 작은 '확인'. 고른 것은 누르는 즉시
+  //   저장되므로 이 단추는 "다 골랐다"는 뜻이다 (하단엔 실행 버튼만: UI 원칙).
+  sc.eq('하단 가운데 확인 단추',
+        SRC_DEV.includes('<button class="keep-pick-ok" onclick="closeKeepPicker()">확인</button>'), true);
+  sc.eq('가운데에 놓는다',
+        /justify-content:center;padding-top:10px;">\s*<button class="keep-pick-ok"/.test(SRC_DEV), true);
   sc.eq('ESC 로도 닫힌다', /\['keepPickModal',\s*\(\)=>closeKeepPicker\(\)\]/.test(SRC_DEV), true);
   sc.eq('바깥을 눌러도 닫힌다', SRC_DEV.includes("['keepPickOverlay','keepPickModal']"), true);
 }
@@ -224,7 +230,7 @@ console.log('\n시나리오 13 — 상단 말씀영역은 첫 성경만 (HB)');
 {
   // 한 줄짜리 자리라 셋을 다 쓰면 본문이 밀린다 → 첫 번째 + '..'
   sc.eq('첫 번째만 쓰고 .. 를 붙인다',
-        SRC_DEV.includes("return rs.length>1?(rs[0]+'..'):(v.ref||'');"), true);
+        SRC_DEV.includes("return rs.length>1?(rs[0]+'..'):((v&&v.ref)||'');"), true);
   sc.eq('풀 모드가 그 값을 쓴다',
         SRC_DEV.includes('refEl.textContent  = s.verseFullRef!==false ? barRef : ;'.replace(' ;',` '';`)), true);
   sc.eq('스닉 모드도 그 값을 쓴다',

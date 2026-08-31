@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-13  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-14  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3351,6 +3351,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-pick-row:last-child{border-bottom:0;}
 .keep-pick-ck{width:16px;flex:0 0 auto;display:inline-flex;align-items:center;
   justify-content:center;color:var(--ac);}
+/* 하단 가운데 '확인' — 크지 않게, 테두리는 얇게 */
+.keep-pick-ok{background:none;border:1px solid var(--bd2);border-radius:999px;
+  color:var(--tx2);font-family:var(--font-ui);font-size:11.5px;letter-spacing:.02em;
+  padding:5px 20px;cursor:pointer;}
+.keep-pick-ok:active{opacity:.6;}
 /* 책갈피(저장) — 지금 보이는 말씀을 저장하고 푼다. 고정 세간이라 흐르지 않는다. */
 .sw-keep{position:relative;flex:0 0 auto;background:none;border:0;padding:0;cursor:pointer;
   width:15px;height:15px;color:var(--tx3);line-height:0;}
@@ -3539,7 +3544,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-13";
+const APP_VERSION = "v. 26-0831-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5661,6 +5666,11 @@ window._fbScriptsReady=new Promise(resolve=>{
   </button>
   <div class="event-modal-title" style="padding:0 28px;">저장 목록</div>
   <div id="keepPickBody" style="overflow-y:auto;flex:1;min-height:0;margin-top:8px;"></div>
+  <!-- 하단에는 **실행 버튼만** (UI 원칙). 닫기는 우상단 × 가 대신한다.
+       고른 것은 누르는 즉시 저장되므로 이 단추는 "다 골랐다"는 뜻이다. -->
+  <div style="flex-shrink:0;display:flex;justify-content:center;padding-top:10px;">
+    <button class="keep-pick-ok" onclick="closeKeepPicker()">확인</button>
+  </div>
 </div>
 
 <!-- 구독 받기 다이얼로그 -->
@@ -7068,15 +7078,35 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       // 강조 문구도 함께 본다 — 시트를 채워 나가는 중이라 나중에 적은 것도
       // 다시 동기화하면 반영돼야 한다
       const newHi=String(it.hi||'');
+      // ⚠️ v26-0831-14, HB 신고 — 장절·설교 본문·성경권을 **견주지 않아서**,
+      //    시트를 다시 받아도 이미 있던 항목의 장절이 예전 값 그대로 남았다.
+      //    (열이 '장절/단락' → '설교 본문' 으로 바뀌었는데 화면은 안 바뀌던 까닭)
+      //    ⚠️ 장절이 바뀌는 것은 **명제뿐**이다 — 말씀은 장절이 신원의 일부라
+      //       바뀌면 여기까지 오지 않고 새 항목으로 들어간다. 그래서 안전하다.
+      const newRef=String(it.ref||'');
+      const newRefs=Array.isArray(it.refs)?it.refs:[];
+      const newBooks=Array.isArray(it.books)?it.books:[];
+      const refChanged=String(ex.ref||'')!==newRef;
+      const refsChanged=JSON.stringify(ex.refs||[])!==JSON.stringify(newRefs);
+      const booksChanged=JSON.stringify(ex.books||[])!==JSON.stringify(newBooks);
       const changed=ex.krText!==it.krText||ex.cat!==newCat||ex.topic!==newTopic||
-        JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||String(ex.hi||'')!==newHi||dChanged;
-      if(changed){ex.krText=it.krText;ex.cat=newCat;ex.topic=newTopic;ex.tags=newTags;ex.hi=newHi;if(dChanged)ex.d=it.d;updated++;}
+        JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||String(ex.hi||'')!==newHi||dChanged||
+        refChanged||refsChanged||booksChanged;
+      if(changed){
+        ex.krText=it.krText;ex.cat=newCat;ex.topic=newTopic;ex.tags=newTags;ex.hi=newHi;
+        if(dChanged)ex.d=it.d;
+        if(refChanged)ex.ref=newRef;
+        if(refsChanged){ if(newRefs.length)ex.refs=newRefs.slice(); else delete ex.refs; }
+        if(booksChanged){ if(newBooks.length)ex.books=newBooks.slice(); else delete ex.books; }
+        updated++;
+      }
     }else{
       const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,hi:String(it.hi||''),src:'google',d:it.d||_calKey()};
       if(gid)nv.gid=gid;
       if(it.row)nv.row=it.row;
       if(it.pid){nv.pid=it.pid;nv.kind='prop';}   // 명제집에서 온 항목
       if(it.books&&it.books.length)nv.books=it.books.slice();   // 성경권(여러 권)
+      if(it.refs&&it.refs.length)nv.refs=it.refs.slice();       // 설교 본문(최대 3)
       coll.verses.push(nv);claimed.add(nv);byKey.set(key,nv);
       const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
@@ -7901,8 +7931,8 @@ function _fillVerseBarDOM(v){
   // 다 쓰면 본문이 밀린다 → **첫 번째만 쓰고 나머지는 '..'** (HB 26-0831).
   //   (전체화면에서는 셋을 다 쓰고 하나하나 눌러 걸러 볼 수 있다)
   const barRef=(()=>{
-    const rs=Array.isArray(v.refs)?v.refs.filter(Boolean):[];
-    return rs.length>1?(rs[0]+'..'):(v.ref||'');
+    const rs=(v&&Array.isArray(v.refs))?v.refs.filter(Boolean):[];
+    return rs.length>1?(rs[0]+'..'):((v&&v.ref)||'');
   })();
 
   if(isFull){
@@ -16380,10 +16410,17 @@ function _refNorm(ref){
 }
 function _findVerseByRefLoose(ref){
   // 명제 키(명제 ID)면 pid 로 찾는다 (v26-0831-6)
+  // ⚠️ v26-0831-14, HB 신고 — 키 모양이 v26-0831-7 에 바뀌어(코드가 가운데
+  //    들어왔다) 앞머리만 떼면 "<코드>\u0001<명제 ID>" 가 나온다. 그것을
+  //    pid 와 견주니 **언제나 못 찾았고**, 저장 목록에 명제 ID 만 떴다.
+  //    조각내는 일은 _reactKeyParts 한 곳에서만 한다.
   if(_isReactPid(ref)){
-    const want=ref.slice(_REACT_PID_PREFIX.length);
+    const pt=_reactKeyParts(ref);
+    const want=pt?pt.pid:'';
+    if(!want)return null;
     const av=ACTIVE_VERSES()||[];
-    return av.find(v=>v&&v.pid===want)||null;
+    // 켜져 있는 모음에서 먼저, 없으면 꺼 둔 모음까지 뒤진다 (저장한 뒤 껐을 수 있다)
+    return av.find(v=>v&&v.pid===want)||(ALL_VERSES()||[]).find(v=>v&&v.pid===want)||null;
   }
   const all=ALL_VERSES()||[];
   let v=all.find(x=>x.ref===ref);

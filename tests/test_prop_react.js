@@ -143,4 +143,26 @@ console.log('\n시나리오 6 — 같은 교회 안에서는 함께 센다');
         _statDocKey(_reactKey({pid:'P0008',_code:'123456'})) !== _statDocKey(_reactKey(pub)), true);
 }
 
+console.log('\n시나리오 7 — 키로 그 명제를 도로 찾는다 (v26-0831-14, HB 신고)');
+{
+  // HB — "저장된 명제가 명제 본문이 안 보이고 P로 시작하는 명제 ID만 보인다"
+  // 까닭 — _findVerseByRefLoose 가 키 앞머리(P\u0001)만 떼고 pid 와 견줬다.
+  //   그런데 v26-0831-7 부터 키 가운데에 **6자리 코드**가 들어간다:
+  //     P\u0001<코드>\u0001<명제 ID>
+  //   그래서 남는 값이 "123456\u0001P0001" 이 되어 **언제나 못 찾았고**,
+  //   못 찾으면 화면이 키를 그대로 쓴다 → 명제 ID 만 보였다.
+  sc.eq('조각내는 일은 한 곳에서만',
+        SRC_DEV.includes('const pt=_reactKeyParts(ref);'), true);
+  sc.eq('앞머리만 떼던 옛 길은 없앴다',
+        SRC_DEV.includes('const want=ref.slice(_REACT_PID_PREFIX.length);'), false);
+  // 꺼 둔 모음에 있어도 찾는다 (저장한 뒤 그 모음을 껐을 수 있다)
+  sc.eq('꺼 둔 모음까지 뒤진다',
+        SRC_DEV.includes("(ALL_VERSES()||[]).find(v=>v&&v.pid===want)"), true);
+  // 조각내기 자체는 이미 시나리오 5 가 지킨다 — 여기서 한 번 더 못 박는다
+  const k=_reactKey({pid:'P0001',_code:'123456'});
+  sc.eq('키에서 명제 ID 를 꺼낸다', _reactKeyParts(k).pid, 'P0001');
+  sc.eq('앞머리만 떼면 명제 ID 가 아니다',
+        k.slice(_REACT_PID_PREFIX.length)==='P0001', false);
+}
+
 sc.done();
