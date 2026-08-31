@@ -33,15 +33,21 @@ console.log('\n시나리오 1-2 — LIST 항목을 하위 뎁스로');
 
 console.log('\n시나리오 1-2 — 뎁스 전환 로직');
 {
-  const openFn = slice('function logoMenuOpenListSub(){', 'function _logoMenuSubScheduleClose');
+  // v26-0831-11 — 하위 뎁스가 둘이 됐다(활동 목록 · 저장 목록). 여는 함수가
+  //   id 를 받고, 다른 하나는 먼저 접는다. 로직 자체는 그대로다.
+  const openFn = slice('function logoMenuOpenListSub(id){', 'function logoMenuOpenKeepSub');
   sc.eq('터치 기기는 메인을 숨긴다', openFn.includes("m.style.display='none';"), true);
   sc.eq('PC(마우스)는 메인을 그대로 두고 오른쪽에 띄운다(v26-0818-9, HB)',
         openFn.includes("s.classList.add('task-menu-sub-float');"), true);
+  sc.eq('다른 하위 뎁스는 먼저 접는다(둘이 겹쳐 뜨지 않게)',
+        openFn.includes("['logoMenuListSub','logoMenuKeepSub']"), true);
   const backFn = slice('function logoMenuBackToMain(){', 'function _tryCloseLogoMenu');
   sc.eq('서브를 숨긴다', backFn.includes("s.style.display='none';"), true);
   sc.eq('메인을 보인다', backFn.includes("m.style.display='';"), true);
   sc.eq('닫을 때 뜬 위치·float 상태도 함께 지운다',
         backFn.includes("s.classList.remove('task-menu-sub-float');"), true);
+  sc.eq('되돌아갈 때 두 하위 뎁스를 모두 접는다',
+        backFn.includes("['logoMenuListSub','logoMenuKeepSub']"), true);
   const closeFn = slice('function closeLogoMenu(){', 'function logoMenuOpenListSub');
   sc.eq('닫을 때 메인 뎁스로 되돌린다(다음에 열 때 항상 메인부터)',
         closeFn.includes('logoMenuBackToMain();'), true);

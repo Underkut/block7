@@ -335,7 +335,9 @@ console.log('\n시나리오 9 — 화면 연결');
   // 세로로 쌓으면 220px 카드에서 버튼이 높이의 3/4을 먹어 본문이 한 줄만 남았다
   sc.eq('카드 반응 버튼은 가로로 눕힌다', /\.vc-actions\{display:flex;flex-direction:row/.test(SRC), true);
   // 목록에서 연 전체화면은 그 목록 안에서 돌고 상단에 반응 아이콘이 붙는다
-  sc.eq('목록 → 전체화면에 반응 종류를 넘긴다', SRC.includes('_vfSetNav(list,Math.max(0,i),_VLIST_KIND_LABEL[kind]||\'\',kind)'), true);
+  // v26-0831-11 — 자리를 **반응 키**로 찾는다 (명제는 장절이 같아 자리가 어긋났다)
+  sc.eq('목록 → 전체화면에 반응 종류를 넘긴다', SRC.includes("_vfSetNav(list,i,_VLIST_KIND_LABEL[kind]||'',kind)"), true);
+  sc.eq('자리는 반응 키로 찾는다', SRC.includes('const i=Math.max(0,keys.indexOf(ref));'), true);
   sc.eq('좌상단 버튼이 목록 복귀로 바뀐다', SRC.includes('function vfHomeAction()'), true);
 
   // ── 0810-2 에서 손본 것들 ──
