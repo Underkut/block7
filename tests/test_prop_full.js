@@ -238,16 +238,19 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
         SRC_DEV.includes('if(_ptFontOkCache[fam])return true;'), true);
   // 그리고 **적극적으로 기다렸다가** 도착하면 다시 그린다
   sc.eq('글꼴을 기다린다', SRC_DEV.includes('document.fonts.load("16px \'"+f+"\'",t)'), true);
+  // ⚠️ v26-0831-8 — 그냥 다시 그리면 **무한히 돈다** (시나리오 15).
+  //    받아졌을 때만 다시 그린다.
   sc.eq('도착하면 다시 그린다',
-        SRC_DEV.includes("if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();"), true);
+        SRC_DEV.includes("if(fam&&_ptFontLoaded(fam)&&"), true);
   sc.eq('다시 재 보게 캐시를 비운다', SRC_DEV.includes('_ptFontOkCache={};'), true);
   // ⚠️ 한글은 Google 이 쓰인 글자 조각만 준다 → 실제 문구를 함께 넘겨야 한다
   sc.eq('실제 문구를 넘긴다', SRC_DEV.includes('_ptEnsureFont(t);'), true);
   // ⚠️ 느린 망에서 기다림이 안 끝나면 다시 그리는 일이 한 번도 안 일어난다
   sc.eq('기다림에 시간 제한이 있다',
         SRC_DEV.includes('const timeout=new Promise(r=>setTimeout(r,6000));'), true);
-  sc.eq('끊기면 다음에 다시 시도한다',
-        SRC_DEV.includes('_ptFontWaiting=false;                    // 못 받았으면 다음에 또 해 본다'), true);
+  // ⚠️ v26-0831-8 — "다음에 또 해 본다"가 무한 반복의 문이었다.
+  //    이제 **횟수를 막아** 되풀이한다 (시나리오 15).
+  sc.eq('되풀이는 횟수로 막는다', SRC_DEV.includes('const _PT_TRY_MAX=3;'), true);
 
   // 판정 함수를 **실제로 돌려 본다** — 못 받은 상태에서 두 번 물어도
   // 두 번 다 새로 재야 한다 (한 번이라도 캐시하면 이 회귀가 되살아난다)
@@ -304,4 +307,49 @@ console.log('\n시나리오 14 — 성경권 여럿');
         SRC_DEV.includes('const isOT=_booksOf(v).some(b=>BIBLE_ORDER_OT.includes(b));'), true);
 }
 
-sc.done();
+// ═══ 15. 전체화면이 멈추던 사고 (v26-0831-8 회귀) ═══
+console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되지 않는다');
+{
+  // ⚠️⚠️ v26-0831-7 에서 "글꼴이 도착하면 다시 그린다"를 넣었는데, 다시
+  //    그리면 _ptEnsureFont 가 또 불리고 **또 기다리기를 시작**했다.
+  //    이미 받아진 글꼴은 즉시 끝나므로
+  //        그리기 → 기다리기 → 즉시 끝 → 그리기 → …
+  //    가 쉬지 않고 돌아 **PC·모바일 둘 다 화면이 멈췄다** (HB 신고).
+  sc.eq('이미 받아졌으면 안 기다린다',
+        SRC_DEV.includes('if(!fam||_ptFontLoaded(fam))return;'), true);
+  sc.eq('시도 횟수를 막는다',
+        SRC_DEV.includes('if(_ptFontWaiting||_ptFontTries>=_PT_TRY_MAX)return;'), true);
+  sc.eq('시도할 때마다 센다', SRC_DEV.includes('_ptFontWaiting=true;_ptFontTries++;'), true);
+  sc.eq('받아졌을 때만 다시 그린다',
+        SRC_DEV.includes('if(fam&&_ptFontLoaded(fam)&&'), true);
+
+  // ── 실제로 돌려 본다: 고리가 도는지 세어 본다 ──
+  let renders = 0, loaded = false;
+  const fonts = { load: () => Promise.resolve(null) };   // 이미 받아진 글꼴처럼 즉시 끝난다
+  const doc = {
+    getElementById: () => ({}),                          // <link> 는 이미 있다고 본다
+    createElement: () => ({ getContext: () => ({
+      set font(v){ this._f = v; },
+      measureText(){ return { width: (loaded && /Nanum/.test(this._f)) ? 200 : 100 }; } }) }),
+    fonts
+  };
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_TRY_MAX=3;'),
+                            SRC_DEV.indexOf('function _vfRollProp(){'));
+  const box = {};
+  new Function('box','document','setTimeout','_ptFont','_PT_FAMS','_verseFullIsOpen','_verseFullRender',
+    src + ';box.ensure=_ptEnsureFont;box.tries=()=>_ptFontTries;'
+  )(box, doc, (fn)=>{ /* 시간 끊기는 안 쓴다 */ },
+    ()=>'brush',
+    {brush:'Nanum Brush Script',pen:'Nanum Pen Script'},
+    ()=>true,
+    ()=>{ renders++; if(renders<50) box.ensure('문구'); });   // 다시 그리면 또 부른다
+
+  // 글꼴이 도착한 상태에서 그리기를 시작한다
+  loaded = true;
+  box.ensure('문구');
+  return new Promise(r=>setTimeout(r,60)).then(()=>{
+    sc.eq('이미 받아졌으면 기다리지도 않는다', box.tries(), 0);
+    sc.eq('다시 그리기가 안 돈다', renders, 0);
+    sc.done();
+  });
+}
