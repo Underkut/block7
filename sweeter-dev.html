@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-3  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-4  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1220,6 +1220,12 @@ header{
 .add-btn:hover{color:var(--tx);border-color:var(--bd2);}
 .add-dot{width:5px;height:5px;border-radius:50%;}
 /* preset buttons: A and ★ */
+/* 명제집 표시 — 말씀 모음 목록에서 명제집을 알아보게 한다 (v26-0831-4).
+   ⚠️ UI 원칙: 테두리·박스 금지. 글자만 작고 옅게, 이름 뒤에 붙인다. */
+.coll-propmark{
+  margin-left:5px;font-size:9px;font-weight:500;letter-spacing:.02em;
+  opacity:.55;font-family:inherit;
+}
 .preset-btn{
   display:flex;align-items:center;justify-content:center;
   width:26px;height:26px;border-radius:8px;
@@ -3512,7 +3518,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-3";
+const APP_VERSION = "v. 26-0831-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6082,17 +6088,32 @@ function _invalidateVerseCaches(){
 }
 
 // ── 말씀 모음 버튼 줄 렌더링 + 켜기/끄기 ──
+// 이 모음이 명제집인가 — 명제(pid 있는 항목)가 하나라도 들어 있으면 명제집이다.
+// ⚠️ 따로 저장하는 표시를 만들지 않는다. 새 항목을 만들면 병합·백업 다섯 곳에
+//    등록해야 하고 그만큼 잃을 자리가 는다 (26-0831 사고). 들어 있는 것을 보고
+//    그때그때 판단하면 저장 구조가 한 글자도 안 바뀐다.
+function _collIsProp(c){
+  if(!c||!Array.isArray(c.verses))return false;
+  return c.verses.some(v=>v&&!v.del&&(v.pid||v.kind==='prop'));
+}
 let _collLpTimer=null,_collLpId=null,_collLpFired=false;
 function renderCollButtons(){
   const row=document.getElementById('collBtnRow');
   if(!row)return;
   const active=getActiveColls();
   row.innerHTML='';
-  const mkBtn=(id,label,isCustom)=>{
+  const mkBtn=(id,label,isCustom,isProp)=>{
     const b=document.createElement('button');
     b.className='preset-btn'+(active.includes(id)?' on':'');
     b.style.cssText='width:auto;padding:0 10px;font-size:11px;';
     b.textContent=label;
+    // 명제집이면 이름 뒤에 작은 표시. 목록에서 말씀 모음과 구분이 안 되면
+    // "명제집을 어디에 등록하나" 를 계속 헤매게 된다 (HB 26-0831).
+    if(isProp){
+      const m=document.createElement('span');
+      m.className='coll-propmark';m.textContent='명제';m.title='명제집';
+      b.appendChild(m);
+    }
     b.onclick=()=>{ if(_collLpFired){_collLpFired=false;return;} toggleColl(id); };
     if(isCustom){
       b.addEventListener('touchstart',e=>{
@@ -6108,7 +6129,8 @@ function renderCollButtons(){
   };
   mkBtn('nav180','네비게이토 180',false);
   // 소유(직접 만든) 모음만 작은 버튼으로. 구독 모음은 아래 큰 버튼으로 분리.
-  getVerseCollections().filter(c=>!c.importCode).forEach(c=>mkBtn(c.id,c.name||'말씀 모음',true));
+  getVerseCollections().filter(c=>!c.importCode)
+    .forEach(c=>mkBtn(c.id,c.name||'말씀 모음',true,_collIsProp(c)));
   // [+] → 새로 만들기 / 구독 받기
   const plus=document.createElement('button');
   plus.className='preset-btn';
