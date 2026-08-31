@@ -374,6 +374,45 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
     // 한 번 받고, 한 번 다시 그리고, 거기서 **멈춘다**
     sc.eq('한 번만 받는다', box.tries(), 1);
     sc.eq('다시 그리기가 안 돈다', renders, 1);
-    sc.done();
+    console.log('\n시나리오 16 — 명제는 설교 본문의 성경 **전부**에 속한다 (v26-0831-19, HB)');
+{
+  // HB 신고 — "어떤 명제는 소속 성경이 없고, 대개 첫 성경에만 소속된다.
+  //   '설교 본문'에 창세기·요한복음·로마서가 있으면 **세 군데 다** 있어야 한다."
+  // 까닭 — 거르는 자가 _bookOfRef(v.ref) 로 **첫 성경 하나**만 봤다.
+  //   장절 칸이 비었으면 아예 아무 데도 안 걸렸다.
+  sc.eq('거를 때 여러 권을 다 본다',
+        SRC_DEV.includes("if(kind==='book') return _booksOf(v).includes(val);"), true);
+  sc.eq('첫 권만 보던 옛 길은 없앴다',
+        SRC_DEV.includes("if(kind==='book') return _bookOfRef(v.ref)===val;"), false);
+  // 성경별 칩의 개수도 걸린 권마다 다 센다
+  sc.eq('개수도 권마다 다 센다',
+        SRC_DEV.includes("_booksOf(v).forEach(b=>{ if(b)cnt.set(b,(cnt.get(b)||0)+1); });"), true);
+  // Sweeter '성경' 타일도 마찬가지
+  sc.eq('Sweeter 타일도 권마다',
+        SRC_DEV.includes("const bs=_booksOf(v);\n    (bs.length?bs:['그 밖']).forEach(k=>{"), true);
+  // ⚠️ **묶어 보일 때**는 한 타일이 한 묶음에만 놓일 수 있다 → 첫 권을 쓴다.
+  //    (거르기와 묶기는 다른 일이다. 헷갈리면 타일이 세 번 그려진다)
+  sc.eq('묶을 때는 첫 권', SRC_DEV.includes('function _vgBookOne(v){'), true);
+  sc.eq('묶음 열쇠가 그것을 쓴다',
+        SRC_DEV.includes("function _vgGroupKey(v){return _vgState.sortMode==='bible'?_vgBookOne(v):"), true);
+}
+
+console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26-0831-19, HB)');
+{
+  sc.eq('탭 줄이 있다', SRC_DEV.includes('<div class="vg-tabrow" id="vgTabRow"></div>'), true);
+  // 목록 팝업과 **같은 값**을 쓴다 (이름이 어긋나면 두 곳이 따로 논다)
+  sc.eq('같은 탭 표를 쓴다', SRC_DEV.includes('row.innerHTML=_VL_TABS.map('), true);
+  sc.eq('거르는 자리는 한 곳',
+        SRC_DEV.includes("if(_tab!=='all')pool=pool.filter(v=>_vfIsProp(v)===(_tab==='prop'));"), true);
+  // '명제' 표시는 목록 팝업과 같은 음영 칩, '전체' 탭에서만
+  sc.eq('같은 음영 칩을 쓴다',
+        SRC_DEV.includes("'<span class=\"vli-propmark vg-propmark\">명제</span>'"), true);
+  sc.eq('전체 탭에서만 단다', SRC_DEV.includes("const mk=(_vgTab()==='all'&&_vfIsProp(v))?"), true);
+  sc.eq('장절만 보이는 5열에도 단다', SRC_DEV.includes('onclick="vgPick(${i})">${mk}${esc(_vgShortRef(v.ref))}'), true);
+  // 탭 줄 높이는 최소로 (목록 팝업과 같은 .vl-tab 을 쓴다)
+  sc.eq('높이를 최소로', /\.vg-tabrow\{display:flex;gap:12px;align-items:center;\s*\n\s*padding:0 12px 4px;/.test(SRC_DEV), true);
+}
+
+sc.done();
   });
 }

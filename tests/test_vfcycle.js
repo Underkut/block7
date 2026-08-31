@@ -72,17 +72,66 @@ console.log('\n시나리오 5 — 넘길 때 순환/셔플이 갈린다 (핵심 
   const fn = slice('function _vfNavCommit(d){', 'function verseFullNav');
   sc.eq('지금 모드를 한 번만 읽어 둔다', fn.includes("const shuffle=_vfCycleMode()==='shuffle';"), true);
 
-  // 필터(타일뷰 목록) 있는 경우
-  sc.eq('필터+셔플이면 목록 안에서 무작위', fn.includes('if(shuffle&&_vfNavList.length>1){'), true);
-  sc.eq('직전과 같은 자리는 다시 안 뽑는다', /do\{ni=Math\.floor\(Math\.random\(\)\*_vfNavList\.length\);\}while\(ni===_vfNavIdx\);/.test(fn), true);
-  sc.eq('필터+순환이면 예전 그대로 순서대로',
-        fn.includes('_vfNavIdx=(_vfNavIdx+(d>0?1:-1)+_vfNavList.length)%_vfNavList.length;'), true);
+  // v26-0831-19, HB — 셔플의 '뒤로'는 **방금 본 말씀**이다. 그래서 무작위로
+  //   집는 일은 _vfShufPickRandom 한 곳으로 옮겼고, 넘기는 함수는 자취를
+  //   쌓고 되짚는 일만 한다.
+  const pick = slice('function _vfShufPickRandom(){', 'function verseFullNav');
+  sc.eq('무작위 집기는 한 곳에서', fn.includes('_vfShufPickRandom();'), true);
+  sc.eq('필터가 있으면 목록 안에서 무작위', pick.includes('if(_vfNavList.length>1){'), true);
+  sc.eq('직전과 같은 자리는 다시 안 뽑는다',
+        /do\{ni=Math\.floor\(Math\.random\(\)\*_vfNavList\.length\);\}while\(ni===_vfNavIdx\);/.test(pick), true);
+  sc.eq('필터가 없으면 활성 목록 전체에서 무작위(기존 함수 재사용)',
+        pick.includes('randomVerseManual();'), true);
 
-  // 필터 없는 경우 (else 갈래)
-  sc.eq('필터 없고 셔플이면 활성 목록 전체에서 무작위(기존 함수 재사용)',
-        fn.includes('if(shuffle)randomVerseManual();')||/if\(shuffle\)randomVerseManual\(\);/.test(fn), true);
+  // 순환(반복)은 예전 그대로다
+  sc.eq('필터+순환이면 순서대로',
+        fn.includes('_vfNavIdx=(_vfNavIdx+(d>0?1:-1)+_vfNavList.length)%_vfNavList.length;'), true);
   sc.eq('필터 없고 순환이면 예전 그대로 성경순 다음/이전',
-        fn.includes('else if(d>0)nextVerseManual();else prevVerseManual();'), true);
+        fn.includes('if(d>0)nextVerseManual();else prevVerseManual();'), true);
+}
+
+// ═══ 5-2. 셔플의 '뒤로' = 방금 본 말씀 (v26-0831-19, HB) ═══
+console.log('\n시나리오 5-2 — 셔플에서 뒤로 가면 방금 본 말씀');
+{
+  // HB — "다음말씀은 랜덤이지만, 이전말씀은 랜덤 말고 방금 봤던 말씀이 나오게"
+  const fn = slice('function _vfNavCommit(d){', 'function _vfShufPickRandom');
+  sc.eq('앞으로 갈 때 자취를 쌓는다', fn.includes('_vfShufPush(_vfShufBack,here);'), true);
+  sc.eq('뒤로 갈 때 자취를 되짚는다',
+        fn.includes('if(_vfShufBack.length&&_vfShufGo(_vfShufBack[_vfShufBack.length-1])){'), true);
+  sc.eq('되짚은 자리는 앞으로 자취에 쌓는다', fn.includes('_vfShufPush(_vfShufFwd,here);'), true);
+  sc.eq('다시 앞으로 가면 그 자리로', fn.includes('if(_vfShufFwd.length&&_vfShufGo(_vfShufFwd[_vfShufFwd.length-1])){'), true);
+  sc.eq('자취가 없으면 예전처럼 무작위', fn.includes('_vfShufPickRandom();'), true);
+
+  // ⚠️ 새 저장 항목을 만들지 않는다 — 화면을 닫으면 사라지는 값이다
+  sc.eq('저장 항목을 만들지 않는다', SRC.includes('ST.vfShufHist'), false);
+  sc.eq('걸음 수에 상한이 있다', SRC.includes('const _VF_SHUF_MAX=30;'), true);
+  sc.eq('상한을 넘으면 앞에서 버린다',
+        SRC.includes('if(stack.length>_VF_SHUF_MAX)stack.shift();'), true);
+  // ⚠️ 보던 목록이 바뀌면 자취를 버린다 (다른 목록의 자리를 쓰면 엉뚱해진다)
+  sc.eq('목록이 바뀌면 자취를 버린다',
+        /function _vfSetNav\(list,idx,label,kind\)\{\s*\n\s*_vfShufReset\(\);/.test(SRC), true);
+  sc.eq('목록을 지울 때도 버린다', SRC.includes('function _vfClearNav(){_vfShufReset();'), true);
+
+  // ── 실제로 돌려 본다 ──
+  const box = {};
+  const src = slice('const _VF_SHUF_MAX=30;', 'function _vfSetNav(');
+  new Function('box','ST','setVerseIdx',
+    src.replace(/^(?:const|let) /gm,'var ')
+    + ';box.pos=_vfShufPos;box.go=_vfShufGo;box.push=_vfShufPush;'
+    + 'box.back=()=>_vfShufBack;box.fwd=()=>_vfShufFwd;box.reset=_vfShufReset;'
+    + 'box.setNav=(l,i)=>{_vfNavList=l;_vfNavIdx=i;};box.idx=()=>_vfNavIdx;'
+    + 'var _vfNavList=null,_vfNavIdx=0,_vfOverrideVerse=null;'
+  )(box, {settings:{verseCurrentIdx:7}}, ()=>{});
+  box.setNav(['a','b','c'],1);
+  sc.eq('목록 안이면 자리를 적는다', box.pos(), {k:'nav',i:1});
+  box.push(box.back(), {k:'nav',i:0});
+  sc.eq('자취가 쌓인다', box.back().length, 1);
+  sc.eq('되짚으면 그 자리로', [box.go({k:'nav',i:2}), box.idx()], [true, 2]);
+  // 서른한 걸음을 밀어 넣으면 맨 앞이 밀려난다
+  box.reset();
+  for(let i=0;i<35;i++)box.push(box.back(),{k:'nav',i});
+  sc.eq('서른 걸음까지만 남는다', box.back().length, 30);
+  sc.eq('맨 오래된 것부터 버린다', box.back()[0], {k:'nav',i:5});
 }
 
 console.log('\n시나리오 4-1 — 위아래 이동 영역과 화살표가 대칭이다');
