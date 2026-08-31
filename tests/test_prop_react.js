@@ -94,7 +94,9 @@ console.log('\n시나리오 4 — 기록을 남기는 자리가 모두 키를 �
   // 숫자는 키를 한 번 구해 두고 다섯 갈래가 함께 쓴다
   sc.eq('전체화면 숫자가 키를 쓴다',
         SRC_DEV.includes('const ref=_reactKey(v);   // 명제는 명제 ID, 말씀은 장절'), true);
-  sc.eq('담아두기', SRC_DEV.includes('swToggleKeep(_reactKey(v))'), true);
+  // v26-0831-13 — 저장은 바로 담지 않고 **목록 고르기 창**을 연다. 그래도
+  //   구절을 가리키는 값은 그대로 반응 키다 (명제마다 따로 담기려면 그래야 한다).
+  sc.eq('저장(목록 고르기)', SRC_DEV.includes('openKeepPicker(_reactKey(v))'), true);
 
   // 되돌아 찾기 — 키에서 그 명제를 다시 찾을 수 있어야 한다
   //  (담아둔 것 타일·반응 목록이 이 길로 구절을 되찾는다)
