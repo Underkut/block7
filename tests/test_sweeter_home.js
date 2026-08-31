@@ -502,18 +502,24 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
   sc.eq('담겼으면 채워 보인다',
         SRC.includes("kb.classList.toggle('on',show&&_swIsKept(ref));"), true);
 
-  // ⚠️ 같은 줄의 '암송'이 이미 갈피표다. 담아두기까지 갈피표로 그리면
-  //    나란히 놓였을 때 둘을 구분할 수 없다. 담아두기는 주머니로 그린다.
-  const memD = 'M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z';
-  const keepD = 'M4 4.6h16v6.4a8 8 0 0 1-16 0z';
-  sc.eq('암송은 갈피표 그대로', SRC.includes(memD), true);
-  sc.eq('담아두기는 다른 그림', keepD !== memD, true);
-  sc.eq('갈피표 모양은 이제 안 쓴다', SRC.includes('M6 4h12v16l-6-4.5L6 20z'), false);
+  // v26-0831-10, HB — 담아두기가 **책갈피**를 물려받았다. 유튜브·인스타가
+  //    '저장'에 쓰는 그 모양이라 설명이 필요 없다. 암송은 책갈피를 내주고
+  //    **체크(√)** 로 갔으므로, 한 줄에 나란히 놓여도 둘이 안 겹친다.
+  const keepD = 'M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z';
+  const memD  = 'M5 12.6l4.6 4.6L19 6.4';
+  sc.eq('담아두기가 책갈피', SRC.includes("const _KEEP_D='" + keepD + "';"), true);
+  sc.eq('암송은 체크', SRC.includes(memD), true);
+  sc.eq('둘이 다른 그림', keepD !== memD, true);
+  // ⚠️ 예전 주머니 모양이 한 조각이라도 남아 있으면 어딘가에서 그대로 나온다
+  sc.eq('주머니는 이제 안 쓴다', SRC.includes('M4 4.6h16v6.4a8 8 0 0 1-16 0z'), false);
+  sc.eq('주머니 덮개도 없앴다', SRC.includes('_KEEP_CHEV'), false);
   sc.eq('전체화면·타일이 같은 그림',
         SRC.includes("const _KEEP_D='" + keepD + "';") && SRC.includes('<path d="' + keepD + '"/>'), true);
-  sc.eq('공유 이미지에도 그린다', /keep:\{out:\['M4 4\.6h16v6\.4a8 8 0 0 1-16 0z'/.test(SRC), true);
-  sc.eq('빈 문구도 주머니라고 말한다',
-        SRC.includes('말씀 왼쪽 위의 주머니를 누르면 담깁니다.'), true);
+  sc.eq('공유 이미지에도 그린다', SRC.includes("keep:{p:['" + keepD + "']}"), true);
+  // 체크는 칠하면 얇은 삼각형이 된다 → 공유 이미지에서도 획으로만 그린다
+  sc.eq('체크는 획으로만 그린다', SRC.includes("mem:{p:['" + memD + "'],line:true"), true);
+  sc.eq('빈 문구도 책갈피라고 말한다',
+        SRC.includes('말씀 왼쪽 위의 책갈피를 누르면 담깁니다.'), true);
 }
 
 // ═══ 15. Sweeter 개발본은 Firebase 에 붙지 않는다 (2026-08-31 사고) ═══
