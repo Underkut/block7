@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0831-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3525,7 +3525,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-5";
+const APP_VERSION = "v. 26-0831-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10649,6 +10649,10 @@ function _vfRedrawPropInk(){
 // '내 것만' 집계는 오프라인에서도 항상 정상 동작한다.
 function _statRefKey(ref){return (ref||'').replace(/\//g,'∕');} // Firestore 문서 id에 '/' 금지
 function _bumpVerseStat(kind,ref){
+  // ⚠️ verseStats 는 **모든 사용자가 함께 쓰는** 문서를 장절 이름으로 만든다.
+  //    명제 ID(P0001)는 교회마다 겹치므로 남의 교회 명제와 한 칸을 쓰게 된다.
+  //    → 명제는 전체 집계를 하지 않는다 (내 기록만 센다).
+  if(_isReactPid(ref))return;
   if(!ref||!_fbReady()||!window._fbDB)return;
   // 낙관적 갱신: 눌렀을 때 바로 +1 이 보이게 한다.
   // ⚠️ 아직 캐시가 없으면 그냥 넘기면 안 된다. 곧바로 _fetchVerseStat 이
@@ -10747,11 +10751,42 @@ function setVerseCountScope(scope){
 // ⚠️ 장절 문자열을 그대로 비교하면 안 된다. 로그는 누른 시점의 표기를 그대로
 //    저장하는데, 같은 구절이라도 '요1:18' / '요한복음 1:18' / 공백이 두 칸인
 //    표기가 섞인다. 정규화(_refNorm)해서 대조해야 카운터가 0으로 보이지 않는다.
+// ══ 반응 키 (v26-0831-6) ═══════════════════════════════════════════════
+// 좋아요·암송·Deeper·공유·담아두기는 기록의 ref 칸에 **이 값**을 담는다.
+//  · 말씀 → 장절 그대로 (예전과 한 글자도 다르지 않다)
+//  · 명제 → 명제 ID
+// ⚠️ 한 설교에서 나온 명제들은 **장절이 같다.** 장절로 기록하면 하나를 누를 때
+//    그 설교의 명제가 전부 함께 눌린 것으로 보인다 (HB 26-0831 신고).
+//    _verseIdentity 가 이미 겪은 것과 같은 문제이고, 같은 방법(pid)으로 푼다.
+// ⚠️ **새 저장 항목을 만들지 않는다** — 담는 값만 바뀐다. 새 항목을 만들면
+//    병합·백업 다섯 곳에 등록해야 하고 그만큼 잃을 자리가 는다 (26-0831 사고).
+// \u0001 은 장절에 절대 안 나오는 글자다 (_verseIdentity 와 같은 수를 쓴다).
+const _REACT_PID_PREFIX='P\u0001';
+function _isReactPid(k){return typeof k==='string'&&k.indexOf(_REACT_PID_PREFIX)===0;}
+function _reactKey(v){
+  if(!v)return '';
+  if(v.pid)return _REACT_PID_PREFIX+v.pid;
+  return v.ref||'';
+}
 function _verseEventCount(kind,ref){
   if(!ref)return 0;
+  // 명제 키는 **정확히** 맞을 때만 센다. 느슨하게 맞추면 다시 뭉친다.
+  if(_isReactPid(ref)){
+    const eq=en=>en&&en.ref===ref;
+    let m=0;
+    if(kind==='mem'){
+      Object.values(getMemLog()||{}).forEach(day=>
+        Object.values(day||{}).forEach(arr=>(arr||[]).forEach(en=>{if(eq(en))m++;})));
+      return m;
+    }
+    const lg=kind==='like'?getLikeLog():(kind==='even'?getEvenDeeperLog():(kind==='share'?getShareLog():getDeeperLog()));
+    Object.values(lg||{}).forEach(arr=>(arr||[]).forEach(en=>{if(eq(en))m++;}));
+    return m;
+  }
   const want=_refNorm(ref);
   if(!want)return 0;
-  const same=en=>en&&en.ref&&(en.ref===ref||_refNorm(en.ref)===want);
+  // ⚠️ 명제 기록은 장절로 세도 안 걸려야 한다 (그래야 안 뭉친다)
+  const same=en=>en&&en.ref&&!_isReactPid(en.ref)&&(en.ref===ref||_refNorm(en.ref)===want);
   let n=0;
   if(kind==='mem'){
     const log=getMemLog();
@@ -10770,7 +10805,7 @@ function _verseEventCount(kind,ref){
 }
 function _vfSyncCounts(){
   const v=_vfCurrentVerse();
-  const ref=v?v.ref:'';
+  const ref=_reactKey(v);   // 명제는 명제 ID, 말씀은 장절 (v26-0831-6)
   // ⚠️ 채운 아이콘은 **숫자 표시와 다른 기준**을 쓴다 (v26-0813-6).
   //    숫자는 '구독자 전체' 설정이면 전체 합계를 보여줄 수 있지만, 채운
   //    아이콘은 항상 **로그인한 나 자신이 그 반응을 했는지**만 본다.
@@ -10842,7 +10877,7 @@ function vfShareDo(kind,sizeGroup){
   const tgt=_vfShareTarget;              // 메뉴에서 지정한 구절 (없으면 현재 구절)
   closeVfShare();
   const v=tgt||_vfCurrentVerse();
-  if(v&&v.ref)recordVerseShare(v.ref);   // 공유 카운트 +1
+  if(v)recordVerseShare(_reactKey(v));   // 공유 카운트 +1
   if(kind==='text')_vfShareText(v);
   else _vfShareImage(v,sizeGroup?shareSizeOf(sizeGroup):null);
   _vfShareTarget=null;
@@ -11877,12 +11912,12 @@ function vfAct(kind){
   // 좋아요·암송은 문구 토스트 대신 채워진 아이콘 하나만 잠깐 띄운다
   // (기록 함수 자체의 문구 토스트는 이번 호출 한 번만 건너뛴다 — 다른
   // 화면의 롱터치 메뉴 등에서는 그대로 문구 토스트를 쓴다).
-  if(kind==='like'||kind==='mem')_reactWithToast(kind,v.ref);
+  if(kind==='like'||kind==='mem')_reactWithToast(kind,_reactKey(v));
   else if(kind==='deeper')openDeeperFromRef(v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
   else if(kind==='keep'){
     // 담기/빼기 (v26-0830-16). 문구 토스트 대신 아이콘이 채워지고 비워진다.
-    const on=swToggleKeep(v.ref);
+    const on=swToggleKeep(_reactKey(v));
     showToast(on?'담아 뒀어요':'담아둔 것에서 뺐어요');
     _swRepaintKeepTiles();
   }
@@ -12498,7 +12533,7 @@ function _vfDoubleLike(x,y){
   // 우하단 좋아요 버튼과 같은 반응 — 문구 토스트 대신 두근거리는 하트 하나.
   // 누른 자리에서 튀어오르는 하트(_vfHeartBurst)는 더블탭만의 표시라 그대로 둔다.
   _suppressTextToastOnce=true;
-  recordVerseLike(v.ref);
+  recordVerseLike(_reactKey(v));
   _suppressTextToastOnce=false;
   showReactionToast(_REACT_ICON_LIKE);
   _vfSyncCounts();
@@ -15941,6 +15976,12 @@ function _refNorm(ref){
   return r;
 }
 function _findVerseByRefLoose(ref){
+  // 명제 키(명제 ID)면 pid 로 찾는다 (v26-0831-6)
+  if(_isReactPid(ref)){
+    const want=ref.slice(_REACT_PID_PREFIX.length);
+    const av=ACTIVE_VERSES()||[];
+    return av.find(v=>v&&v.pid===want)||null;
+  }
   const all=ALL_VERSES()||[];
   let v=all.find(x=>x.ref===ref);
   if(v)return v;
@@ -16546,7 +16587,7 @@ function vcAct(id,kind){
   const cfg=_vcGet(id);const v=_vcCurrent(cfg);
   if(!v)return;
   if(kind==='share'){openVfShareFor(v);return;}
-  if(kind==='like'||kind==='mem')_reactWithToast(kind,v.ref);
+  if(kind==='like'||kind==='mem')_reactWithToast(kind,_reactKey(v));
   else if(kind==='deeper')openDeeperFromRef(v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
   const btn=document.querySelector(`.vc-widget[data-vcid="${id}"] [data-vcact="${kind}"]`);
@@ -28656,7 +28697,7 @@ function _swInitGestures(){
     if(e.target.closest('[data-swkeep]')){
       const t=_SW_TILES[i],it=_swStrip(t),cur=it[t.p];
       if(cur&&cur.kind==='val'&&cur.v&&cur.v.verse){
-        swToggleKeep(cur.v.verse.ref);
+        swToggleKeep(_reactKey(cur.v.verse));
         _swRepaint(i);
         _swRepaintKeepTiles(i);   // '담아둔 것' 타일이 떠 있으면 그것도 새로
       }
