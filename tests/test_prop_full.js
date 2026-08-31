@@ -310,7 +310,12 @@ console.log('\n시나리오 14 — 성경권 여럿');
 {
   // ⚠️ 장절 글자("롬 5:8; 엡 2:8-9")를 앱이 헤아리게 하지 않는다.
   //    시트의 '성경권' 열을 그대로 쓴다 (목사님이 이미 적어 두신 값).
-  sc.eq('시트에서 성경권을 읽는다', SRC_DEV.includes("iBooks=at('성경권')"), true);
+  // v26-0831-20 — 열 이름이 조금 달라도 찾도록 col() 로 바뀌었다
+  sc.eq('시트에서 성경권을 읽는다', SRC_DEV.includes("const iBooks=col('성경권');"), true);
+  sc.eq('이름이 달라도 찾는다', SRC_DEV.includes('const col=(...names)=>{'), true);
+  // ⚠️ '명제 ID' 를 '명제' 보다 먼저 정한다 — 안 그러면 '명제' 가 그 열을 집어간다
+  sc.eq('명제 ID 를 먼저 정한다',
+        SRC_DEV.indexOf("const iId=col('명제 ID');")<SRC_DEV.indexOf("const iText=col('명제');"), true);
   // v26-0831-12 — 성경권은 '성경권' 열과 **설교 본문에서 뽑은 것**을 합친다
   //   (설교 본문이 최대 3개까지 들어오므로 그 셋이 모두 걸려야 한다)
   sc.eq('여러 개로 나눈다', SRC_DEV.includes("function _propBooks(rawBooks,refs){"), true);
@@ -410,7 +415,9 @@ console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26
   sc.eq('전체 탭에서만 단다', SRC_DEV.includes("const mk=(_vgTab()==='all'&&_vfIsProp(v))?"), true);
   sc.eq('장절만 보이는 5열에도 단다', SRC_DEV.includes('onclick="vgPick(${i})">${mk}${esc(_vgShortRef(v.ref))}'), true);
   // 탭 줄 높이는 최소로 (목록 팝업과 같은 .vl-tab 을 쓴다)
-  sc.eq('높이를 최소로', /\.vg-tabrow\{display:flex;gap:12px;align-items:center;\s*\n\s*padding:0 12px 4px;/.test(SRC_DEV), true);
+  // v26-0831-20, HB — 탭은 **가운데**로
+  sc.eq('가운데 정렬', /\.vg-tabrow\{[^}]*justify-content:center;/.test(SRC_DEV), true);
+  sc.eq('높이를 최소로', /\.vg-tabrow\{[^}]*padding:0 12px 4px;/.test(SRC_DEV), true);
 }
 
 sc.done();

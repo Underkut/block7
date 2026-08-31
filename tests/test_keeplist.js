@@ -388,8 +388,21 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
   // '내순서' 를 켜야 손잡이가 나온다
   sc.eq('내순서일 때만 손잡이', SRC_DEV.includes("const drag=_keepSort()==='manual';"), true);
   sc.eq('끌어서 차례 바꾸기', SRC_DEV.includes('function _keepBindDrag(box){'), true);
-  sc.eq('놓을 때 화면 차례를 그대로 저장한다',
-        SRC_DEV.includes("const names=[...box.querySelectorAll('[data-keepname]')].map(x=>x.getAttribute('data-keepname'));"), true);
+  // v26-0831-20, HB — 할일뷰처럼: 도착지에 밝은 선, 잡은 것은 고스트로 떠다니고,
+  //   **잡지 않은 줄은 꿈쩍하지 않는다.** 그래서 끌리는 동안 줄을 옮기지 않고
+  //   손을 뗄 때 한 번만 옮긴다 (끌면서 자리를 바꾸면 예측할 수 없다).
+  sc.eq('떠다니는 그림자', SRC_DEV.includes("ghost.classList.add('keep-ghost');"), true);
+  sc.eq('도착지 선', SRC_DEV.includes("line.className='keep-dropline';"), true);
+  sc.eq('잡은 줄은 제자리에 흐려진다', /\.keep-dragging\{opacity:\.28;\}/.test(SRC_DEV), true);
+  sc.eq('놓을 때 한 번만 옮긴다',
+        SRC_DEV.includes("names.splice(from,1);names.splice(to,0,name);"), true);
+  // ⚠️ '내순서' 에서도 목록을 고를 수 있어야 한다 (HB 신고)
+  sc.eq('내순서에서도 고를 수 있다',
+        SRC_DEV.includes("if(_keepSort()==='manual')return;      // 차례를 고치는 중에는 담기지 않는다"), false);
+  sc.eq('메뉴에서도 들어갈 수 있다',
+        SRC_DEV.includes("+(drag?'':` onclick=\"openKeepListPopup("), false);
+  // 끌고 난 직후의 클릭은 삼킨다 (엉뚱한 목록이 골라지지 않게)
+  sc.eq('끌린 뒤 클릭은 삼킨다', SRC_DEV.includes('if(box._keepSwallow&&Date.now()-box._keepSwallow<400){'), true);
   // 4-1-3 — ⋯ 메뉴 (말씀 모음 롱터치 메뉴와 같은 디자인)
   sc.eq('⋯ 단추가 있다', SRC_DEV.includes('class="keep-row-more"'), true);
   sc.eq('같은 디자인의 메뉴', SRC_DEV.includes('<div class="task-menu" id="keepRowMenu"'), true);
