@@ -16,6 +16,15 @@ eval(slice('// ══ 명제집(설교 명제 DB) 시트 읽기', 'function _row
 eval(slice('function _verseIdentity(', '// 구글 시트 소스마다 고정 id'));
 eval(slice('function _syncSheetVersesIntoColl(', 'function addCustomVerseFromForm'));
 function _parseVDate(v){const s=String(v||'').trim();return /^\d{4}-\d{2}-\d{2}$/.test(s)?s:null;}
+// 성경권 뽑기·펴기는 이 시험의 관심사가 아니다 — 최소한만 흉내낸다
+const _BOOK_ABBR={'마':'마태복음','막':'마가복음','눅':'누가복음','요':'요한복음',
+  '롬':'로마서','엡':'에베소서','창':'창세기','갈':'갈라디아서','빌':'빌립보서'};
+function _bookOfRef(ref){
+  const m=String(ref||'').trim().match(/^([가-힣0-9\s]+?)\s*\d/);
+  if(!m)return '';
+  return _bookNorm(m[1].trim());
+}
+function _bookNorm(n){const t=String(n||'').trim();return _BOOK_ABBR[t]||t;}
 function _calKey(){return '2026-08-30';}
 
 // 실제 명제 DB 의 열 순서 (2026-08-30 시트 그대로, '영상 링크'가 들어온 뒤)
@@ -83,12 +92,48 @@ console.log('시나리오 3 — 장절 칸이 40자를 넘어도 살아남는다
   const items=_propRowsToItems([HEAD,
     P('P0112','교회는 그리스도 위에 세워진다',{'장절/단락':longRef})]);
   sc.eq('그래도 읽힌다',items.length,1);
-  sc.eq('장절을 자르지 않고 그대로 둔다',items[0].ref,longRef);
+  // v26-0831-12, HB — 장절은 이제 **갈라서** 담고 최대 세 개까지만 쓴다.
+  //   (셋을 화면에 다 쓰고 하나하나 눌러 그 성경으로 걸러 보기 위해서다)
+  sc.eq('세 개까지만',items[0].refs,['마 16:18','창 1:26-28','갈 5:5-6']);
+  sc.eq('한 줄 표기도 함께 둔다',items[0].ref,'마 16:18 · 창 1:26-28 · 갈 5:5-6');
 
   const coll={verses:[],google:[{id:'g1'}]};
   _syncSheetVersesIntoColl(coll,items,{kind:'google',gid:'g1'});
   sc.eq('추가 직후에도 지워지지 않는다',coll.verses.length,1);
   sc.eq('명제 표시가 남아 있다',coll.verses[0].kind,'prop');
+}
+
+// ═══ 3-B. 설교 본문(F열) 을 쓴다 — 인용 본문(H열)이 아니라 ═══
+console.log('시나리오 3-B — 전체화면 성경은 F열 설교 본문');
+{
+  // HB (26-0831) — "H열은 이름이 '인용 본문'으로 바뀌었다. 그것은 설교 본문에
+  //   더해 설교에서 인용되는 **모든** 본문이다. 전체화면에 쓸 성경은 F열
+  //   '설교 본문' 이고, 여기에는 앞으로 최대 3개까지 들어온다."
+  const H2=HEAD.map(h=>h==='장절/단락'?'인용 본문':h);
+  const r=new Array(H2.length).fill('');
+  const put=(n,v)=>r[H2.indexOf(n)]=v;
+  put('명제 ID','P0301'); put('명제','세 본문이 걸린 명제'); put('데이터 상태','활성');
+  put('설교 본문','마태복음 5:13; 로마서 8:28; 에베소서 2:8-9');
+  put('인용 본문','마 5:13; 롬 8:28; 엡 2:8; 창 1:1; 요 3:16; 시 23:1');
+  const it=_propRowsToItems([H2,r])[0];
+  sc.eq('설교 본문을 쓴다',it.refs,['마태복음 5:13','로마서 8:28','에베소서 2:8-9']);
+  sc.eq('인용 본문은 안 쓴다',it.ref.includes('창'),false);
+  // 성경권은 설교 본문에서 따라온다 → 성경별 필터가 세 권 모두에 걸린다
+  sc.eq('세 권 모두 걸린다',it.books,['마태복음','로마서','에베소서']);
+
+  // ⚠️ 쉼표는 한 참조 **안에서도** 쓰인다 ("요한복음 1:1,14") → 뒤가 한글일 때만 자른다
+  const r2=new Array(H2.length).fill('');
+  r2[H2.indexOf('명제 ID')]='P0302'; r2[H2.indexOf('명제')]='쉼표';
+  r2[H2.indexOf('데이터 상태')]='활성';
+  r2[H2.indexOf('설교 본문')]='요한복음 1:1,14, 로마서 8:28';
+  const it2=_propRowsToItems([H2,r2])[0];
+  sc.eq('참조 안의 쉼표는 안 자른다',it2.refs,['요한복음 1:1,14','로마서 8:28']);
+
+  // 설교 본문이 비어 있으면 옛 열('장절/단락')로 물러선다 — 옛 시트가 안 깨지게
+  const r3=new Array(HEAD.length).fill('');
+  r3[HEAD.indexOf('명제 ID')]='P0303'; r3[HEAD.indexOf('명제')]='옛 시트';
+  r3[HEAD.indexOf('데이터 상태')]='활성'; r3[HEAD.indexOf('장절/단락')]='마 5:13';
+  sc.eq('옛 시트도 읽힌다',_propRowsToItems([HEAD,r3])[0].refs,['마 5:13']);
 }
 
 // ═══ 4. 같은 시트를 다시 불러도 늘지 않는다 ═══

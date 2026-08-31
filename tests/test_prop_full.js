@@ -293,7 +293,11 @@ console.log('\n시나리오 14 — 성경권 여럿');
   // ⚠️ 장절 글자("롬 5:8; 엡 2:8-9")를 앱이 헤아리게 하지 않는다.
   //    시트의 '성경권' 열을 그대로 쓴다 (목사님이 이미 적어 두신 값).
   sc.eq('시트에서 성경권을 읽는다', SRC_DEV.includes("iBooks=at('성경권')"), true);
-  sc.eq('여러 개로 나눈다', SRC_DEV.includes("String(r[iBooks]||'').split(/[,;·/]/)"), true);
+  // v26-0831-12 — 성경권은 '성경권' 열과 **설교 본문에서 뽑은 것**을 합친다
+  //   (설교 본문이 최대 3개까지 들어오므로 그 셋이 모두 걸려야 한다)
+  sc.eq('여러 개로 나눈다', SRC_DEV.includes("function _propBooks(rawBooks,refs){"), true);
+  sc.eq('성경권 열과 설교 본문을 합친다',
+        SRC_DEV.includes("books:_propBooks(iBooks>=0?r[iBooks]:'',_propRefs(refCell(r)))"), true);
   sc.eq('구절에 실어 화면까지 보낸다', SRC_DEV.includes('books:v.books||[]'), true);
   sc.eq('발행·구독에도 실린다',
         SRC_DEV.includes('function _booksOf(v){'), true);
