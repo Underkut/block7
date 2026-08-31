@@ -23,6 +23,7 @@ const TODAY = '2026-08-31';
 function _calKey(){ return TODAY; }
 const WORLD = {};
 function _findVerseByRefLoose(ref){ return WORLD[ref] || null; }
+function _keepRepaintLists(){}   // 화면 다시 그리기는 이 시험의 관심사가 아니다
 eval(asVar(sliceDev('function getKeepLog(', 'function _swRepaintKeepTiles(')));
 
 const R1 = '요한복음 3:16';
@@ -80,15 +81,40 @@ console.log('\n시나리오 3 — 목록은 저장할 때 생기고 비면 사�
   sc.eq('기본 목록도 저장할 때 생긴다', _keepLists().map(x=>x.n), [KEEP_DEFAULT_LIST]);
 }
 
-console.log('\n시나리오 4 — 목록 차례: 기본 목록이 맨 앞, 그 뒤는 최근 저장 순');
+console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
 {
+  // ⚠️ '기본' 을 맨 앞에 못 박던 규칙은 없앴다 — 기본 목록을 만들지 않기로 했다.
+  //    차례는 사용자가 고른 정렬을 그대로 따른다.
   ST.verseKeepLog = {
     '2026-08-20':[{ref:R1,time:'09:00',lst:'오래된 것'}],
     '2026-08-29':[{ref:R2,time:'09:00',lst:'최근 것'}],
-    '2026-08-25':[{ref:P1,time:'09:00'}]
+    '2026-08-25':[{ref:P1,time:'09:00'}]      // lst 없음 → 옛 '기본' 기록
   };
-  sc.eq('기본이 맨 앞, 그 뒤 최근순',
-        _keepLists().map(x=>x.n), [KEEP_DEFAULT_LIST,'최근 것','오래된 것']);
+  ST.settings={};
+  sc.eq('기본값은 최근 저장 순',
+        _keepLists().map(x=>x.n), ['최근 것',KEEP_DEFAULT_LIST,'오래된 것']);
+  // 등록순 = 목록이 **처음 생긴** 때 (여기서는 한 항목뿐이라 저장 때와 같다)
+  keepSetSort('reg');
+  sc.eq('등록순', _keepLists().map(x=>x.n), ['오래된 것',KEEP_DEFAULT_LIST,'최근 것']);
+  keepSetSort('alpha');
+  sc.eq('ㄱㄴㄷ순', _keepLists().map(x=>x.n),
+        ['기본','오래된 것','최근 것'].sort((a,b)=>a.localeCompare(b,'ko')));
+  // 내순서 — 손으로 정한 차례. 표에 없는 목록은 뒤에 최근순으로 붙는다.
+  keepSetSort('manual');
+  _keepSetOrder(['오래된 것','최근 것']);
+  sc.eq('내순서', _keepLists().map(x=>x.n), ['오래된 것','최근 것',KEEP_DEFAULT_LIST]);
+  _keepSetOrder([]);
+  sc.eq('표가 비면 최근순으로', _keepLists().map(x=>x.n), ['최근 것',KEEP_DEFAULT_LIST,'오래된 것']);
+  // 최신순 ⇄ 등록순은 칩 하나가 두 몫 (활동 목록과 같은 방식)
+  keepSetSort('recent'); keepTogglePairSort();
+  sc.eq('누르면 등록순', _keepSort(), 'reg');
+  keepTogglePairSort();
+  sc.eq('다시 누르면 최신순', _keepSort(), 'recent');
+  // ⚠️ 차례·내순서는 **설정 안**에 둔다 (설정은 키마다 따로 병합된다)
+  sc.eq('설정에 담는다', typeof ST.settings.keepListSort, 'string');
+  keepSetSort('manual'); _keepSetOrder(['가']);
+  sc.eq('내순서도 설정에', ST.settings.keepListOrder, ['가']);
+  ST.settings={};
 }
 
 console.log('\n시나리오 5 — 말씀과 명제를 한 목록에 섞어 담는다 (HB)');
@@ -328,6 +354,58 @@ console.log('\n시나리오 17 — 상단 말씀영역의 태그 (v26-0831-17, H
         SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
   sc.eq('태그가 세 배 빨리 줄던 값은 없앴다',
         SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), false);
+}
+
+console.log('\n시나리오 18 — 기본 목록을 만들지 않는다 (v26-0831-19, HB)');
+{
+  // HB — "저장목록에 '기본' 없애자. 불필요하고 지저분해"
+  // ⚠️ 다만 예전에 기본으로 저장된 기록(lst 가 없는 항목)은 그대로 '기본' 이라는
+  //    이름으로 보인다 — 그러지 않으면 그 기록이 어디에도 안 보인다.
+  sc.eq('빈 기본을 미리 보여 주지 않는다',
+        SRC_DEV.includes("if(!names.includes(KEEP_DEFAULT_LIST))names.unshift(KEEP_DEFAULT_LIST);"), false);
+  sc.eq('기본을 맨 앞에 못 박지 않는다',
+        SRC_DEV.includes("if(a.n===KEEP_DEFAULT_LIST)return-1;"), false);
+  // Sweeter 타일의 책갈피도 목록을 고르게 한다 (기본에 몰래 담지 않는다)
+  sc.eq('타일도 목록을 고르게 한다', SRC_DEV.includes('}else openKeepPicker(rk);'), true);
+  // 실제로 — 목록이 하나도 없으면 아무 이름도 안 나온다
+  ST.verseKeepLog={}; ST.settings={};
+  sc.eq('목록이 없으면 비어 있다', _keepLists().length, 0);
+  // lst 없이 담긴 옛 기록은 '기본' 으로 보인다
+  ST.verseKeepLog={'2026-08-20':[{ref:R1,time:'09:00'}]};
+  sc.eq('옛 기록은 기본으로 보인다', _keepLists().map(x=>x.n), [KEEP_DEFAULT_LIST]);
+  ST.verseKeepLog={}; ST.settings={};
+}
+
+console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 메뉴 · 이름 (HB 4)');
+{
+  // 4-1-2 / 4-2-1 — 정렬 칩 줄 (두 자리가 **같은 것**을 쓴다)
+  sc.eq('정렬 칩 줄이 하나', SRC_DEV.includes('function _keepSortRowHTML(){'), true);
+  sc.eq('고르기 창이 쓴다', SRC_DEV.includes("srt.innerHTML=_keepSortRowHTML();"), true);
+  sc.eq('좌상단 메뉴도 쓴다', SRC_DEV.includes('</div>`+_keepSortRowHTML()+`<div class="task-menu-sep"></div>`'), true);
+  sc.eq('최신순 ⇄ 등록순', SRC_DEV.includes('function keepTogglePairSort(){'), true);
+  // 4-1-1 — 이름은 좌정렬
+  sc.eq('이름은 좌정렬', /\.keep-pick-nm\{flex:1;min-width:0;text-align:left;/.test(SRC_DEV), true);
+  // '내순서' 를 켜야 손잡이가 나온다
+  sc.eq('내순서일 때만 손잡이', SRC_DEV.includes("const drag=_keepSort()==='manual';"), true);
+  sc.eq('끌어서 차례 바꾸기', SRC_DEV.includes('function _keepBindDrag(box){'), true);
+  sc.eq('놓을 때 화면 차례를 그대로 저장한다',
+        SRC_DEV.includes("const names=[...box.querySelectorAll('[data-keepname]')].map(x=>x.getAttribute('data-keepname'));"), true);
+  // 4-1-3 — ⋯ 메뉴 (말씀 모음 롱터치 메뉴와 같은 디자인)
+  sc.eq('⋯ 단추가 있다', SRC_DEV.includes('class="keep-row-more"'), true);
+  sc.eq('같은 디자인의 메뉴', SRC_DEV.includes('<div class="task-menu" id="keepRowMenu"'), true);
+  sc.eq('수정과 삭제', SRC_DEV.includes('onclick="keepRowEdit()"')&&SRC_DEV.includes('onclick="keepRowDelete()"'), true);
+  sc.eq('삭제는 빨강', /onclick="keepRowDelete\(\)" style="color:var\(--danger/.test(SRC_DEV), true);
+  sc.eq('ESC 로도 닫힌다', /\['keepRowMenu',\s*\(\)=>closeKeepRowMenu\(\)\]/.test(SRC_DEV), true);
+  // 4-1-4 — 고른 것은 줄 전체의 음영으로
+  sc.eq('고른 줄은 음영', /\.keep-pick-row\.on\{background:var\(--s2/.test(SRC_DEV), true);
+  sc.eq('왼쪽 체크는 안 쓴다', SRC_DEV.includes('class="keep-pick-ck"'), false);
+  // 4-2-2 — 팝업 제목을 눌러 이름을 바로 고친다
+  sc.eq('제목이 고쳐 쓰는 자리', SRC_DEV.includes('id="vAggKeepName" class="keep-name-edit" contenteditable="true"'), true);
+  sc.eq('바깥을 누르면 저장', SRC_DEV.includes('onblur="_keepNameCommit()"'), true);
+  // 4-2-3 — 팝업 좌상단 햄버거 → 목록 바꾸기
+  sc.eq('좌상단 햄버거', SRC_DEV.includes('id="vAggMenuBtn"')&&SRC_DEV.includes('onclick="toggleKeepSwitch()"'), true);
+  sc.eq('저장 목록일 때만 보인다', SRC_DEV.includes("if(mb)mb.style.display='none';       // 활동 목록에는 바꿀 목록이 없다"), true);
+  sc.eq('제목줄 아래로 미끄러진다', /#keepSwitchBox\{[^}]*transition:max-height/.test(SRC_DEV), true);
 }
 
 sc.done();
