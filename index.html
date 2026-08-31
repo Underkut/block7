@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-14  [production]  -->
+<!-- BLOCK7  v. 26-0831-15  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3346,6 +3346,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 /* 저장 목록 고르기 한 줄 — 체크 자리 + 이름 */
+/* 갈래 탭 (전체·말씀·명제) — 줄이 하나 느는 자리라 **높이를 최소로**.
+   테두리·박스 없이 글자만, 고른 것은 색과 굵기로만 나타낸다 (UI 원칙). */
+.vl-tabrow{display:flex;gap:12px;align-items:center;margin:0 0 5px;}
+.vl-tab{background:none;border:0;padding:0;cursor:pointer;font-family:var(--font-ui);
+  font-size:10.5px;line-height:1.3;letter-spacing:.02em;color:var(--tx3);}
+.vl-tab.on{color:var(--tx);font-weight:700;}
+.vl-tab:active{opacity:.6;}
 .keep-pick-row{display:flex;align-items:center;gap:9px;padding:9px 4px;cursor:pointer;
   font-size:12.5px;color:var(--tx);border-bottom:1px solid var(--bd);}
 .keep-pick-row:last-child{border-bottom:0;}
@@ -3544,7 +3551,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-14";
+const APP_VERSION = "v. 26-0831-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5080,14 +5087,14 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 가운데 가로 구분선은 HB 요청으로 없앴다(v26-0818-6) -->
   <!-- '좋아요/암송/Deeper/Even Deeper' 는 하위 뎁스로 옮겼다(HB 1-2) — 눌러야 펼쳐진다 -->
   <div class="task-menu-item" onclick="logoMenuOpenListSub()" onmouseenter="logoMenuOpenListSub();" onmouseleave="_logoMenuSubScheduleClose();">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">말씀 활동 목록</span>
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="5.5" x2="16" y2="5.5"/><line x1="4" y1="10" x2="16" y2="10"/><line x1="4" y1="14.5" x2="16" y2="14.5"/></svg></span><span style="flex:1;">활동 목록</span>
     <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
     </span>
   </div>
   <!-- 저장 목록 — 하위 뎁스는 **만들어 둔 목록만큼** JS 가 그린다 (v26-0831-11, HB) -->
   <div class="task-menu-item" onclick="logoMenuOpenKeepSub()" onmouseenter="logoMenuOpenKeepSub();" onmouseleave="_logoMenuSubScheduleClose();">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg></span><span style="flex:1;">말씀 저장 목록</span>
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h8a1 1 0 0 1 1 1v14.5l-5-3.5-5 3.5V3.5a1 1 0 0 1 1-1z"/></svg></span><span style="flex:1;">저장 목록</span>
     <span class="task-menu-side" style="pointer-events:none;color:var(--tx3);">
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
     </span>
@@ -5099,7 +5106,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 하위 뎁스: 말씀 목록 (HB 1-2) — 뒤로가기 한 줄 + 좋아요/암송/Deeper/Even Deeper -->
   <div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">
     <div class="task-menu-item" id="logoMenuSubBack" onclick="logoMenuBackToMain()">
-      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 활동 목록</span>
+      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">활동 목록</span>
     </div>
     <div class="task-menu-sep" id="logoMenuSubSep"></div>
     <div class="task-menu-item" onclick="openVerseAggPopup('like')">
@@ -15765,7 +15772,7 @@ function _aggByRef(entries){
   });
   return[...map.values()].sort((a,b)=>(b.lastDate+b.lastTime).localeCompare(a.lastDate+a.lastTime));
 }
-function _aggEntriesForKind(kind){
+function _aggEntriesForKind(kind,tab){
   let entries;
   // 저장 목록 — 지금 열려 있는 목록(window._vAggKeepList)만 모은다.
   // 기록 모양이 좋아요·암송과 똑같아서 그 뒤 길은 전부 공용이다.
@@ -15784,7 +15791,11 @@ function _aggEntriesForKind(kind){
   if(range){
     entries=entries.filter(e=>(!range.from||e.date>=range.from)&&(!range.to||e.date<=range.to));
   }
-  return _vlApplySort(_aggByRef(entries),pref.sort||'recent');
+  const agg=_aggByRef(entries);
+  // 갈래 탭 — 팝업에서만 넘겨준다 (안 넘기면 예전처럼 전부)
+  const t=tab||'all';
+  const out=(t==='all')?agg:agg.filter(g=>_vlIsProp(g.ref)===(t==='prop'));
+  return _vlApplySort(out,pref.sort||'recent');
 }
 // ── C단계: 목록별 정렬·기간 설정 ──
 // kind(mem/like/deeper)별로 {sort, period, customFrom, customTo}를 저장.
@@ -15825,6 +15836,19 @@ const _VL_PERIODS=[['week','주간'],['month','월간'],['year','연간'],['all'
 // 좌측 첫 칩은 **하나가 두 몫**을 한다 — 누를 때마다 최신순 ⇄ 등록순.
 //   (칩을 늘리지 않고 바꾼다 = UI 원칙 "나란히 늘리지 말고 교체한다")
 // 세 번째 칩은 목록 갈래마다 다르다: 활동 목록은 '많은순', 저장 목록은 '성경순'.
+// ── 갈래 탭 (v26-0831-15, HB) ────────────────────────────
+// 목록 안에 말씀(성경 구절)과 명제가 섞여 있다. 탭으로 가른다.
+// ⚠️ 줄이 하나 느는 자리라 **높이를 최소로** 잡았다 (글자 10.5px, 위아래 4px).
+// ⚠️ '전체' 에서만 줄마다 작은 '명제' 표시를 단다 — 갈라 놓은 탭에서는
+//    모두 같은 갈래라 표시가 소음이 된다 (HB 지시).
+const _VL_TABS=[['all','전체'],['verse','말씀'],['prop','명제']];
+// 이 기록이 명제인가. 반응 키가 명제 모양이면 바로 알고, 아니면 구절을 찾아 본다
+// (v26-0831-6 이전에 쌓인 명제 기록은 장절로 남아 있다).
+function _vlIsProp(ref){
+  if(typeof _isReactPid==='function'&&_isReactPid(ref))return true;
+  const v=(typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(ref):null;
+  return !!(v&&v.pid);
+}
 const _VL_SORT_PAIR=[['recent','최신순'],['reg','등록순']];
 const _VL_SORT_EXTRA={mem:['count','많은순'],like:['count','많은순'],
   deeper:['count','많은순'],even:['count','많은순'],keep:['bible','성경순']};
@@ -15894,6 +15918,18 @@ function _vListControlsHTML(kind){
   }
   return h;
 }
+// 탭 줄 — 팝업에서만 쓴다 (오른쪽 판의 작은 위젯에는 넣지 않는다)
+function _vlTabsHTML(kind){
+  const cur=_vlTab(kind);
+  return '<div class="vl-tabrow">'+_VL_TABS.map(([k,label])=>
+    `<button class="vl-tab${cur===k?' on':''}" onclick="vlSetTab('${kind}','${k}')">${label}</button>`
+  ).join('')+'</div>';
+}
+function _vlTab(kind){
+  const t=_vlPref(kind).tab;
+  return _VL_TABS.some(x=>x[0]===t)?t:'all';
+}
+function vlSetTab(kind,tab){_vlPref(kind).tab=tab;save();_vListRefresh(kind);}
 function _vListRefresh(kind){
   renderRightPanel();
   // 팝업이 같은 kind로 열려있으면 팝업 내용도 갱신
@@ -15938,7 +15974,7 @@ function _vwSize(key){
   const n=parseInt((ST.settings||{})[key],10);
   return [1,2,3].includes(n)?n:1;
 }
-function _vListRowsHTML(items,limit,kind){
+function _vListRowsHTML(items,limit,kind,markProp){
   const s=ST.settings;
   const textPx=_VW_TEXT_PX[_vwSize('verseWidgetTextSize')];
   const refPx=_VW_REF_PX[_vwSize('verseWidgetRefSize')];
@@ -15961,6 +15997,8 @@ function _vListRowsHTML(items,limit,kind){
     }
     // 보조 줄: 구절(파랑) + 대분류·소주제·태그
     const sub=[];
+    // '전체' 탭에서만 — 명제 줄에 작은 '명제' 표시 (모음 목록의 표시와 같은 것)
+    if(markProp&&v&&v.pid)sub.push('<span class="coll-propmark" style="margin-left:0;">명제</span>');
     if(showRef&&dispRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     if(v){
       if(showCat&&v.cat)sub.push(v.cat);
@@ -16045,10 +16083,11 @@ function _vliOpenFull(ref,kind){
   else _vfOverrideVerse=loose||(ALL_VERSES()||[]).find(x=>x.ref===ref)||null;
   openVerseFull(true);                         // 위에서 지정한 구절을 유지
   if(kind&&_VLIST_KIND_TITLE[kind]){
-    const list=_aggEntriesForKind(kind)
+    const rows=_aggEntriesForKind(kind,_vlTab(kind));
+    const list=rows
       .map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)
               ||verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
-    const keys=_aggEntriesForKind(kind).map(g=>g.ref);
+    const keys=rows.map(g=>g.ref);
     const i=Math.max(0,keys.indexOf(ref));
     if(list.length)_vfSetNav(list,i,_VLIST_KIND_LABEL[kind]||'',kind);
   }
@@ -16119,9 +16158,11 @@ function deleteLatestVerseEvent(kind,ref){
 // ── 로고 메뉴에서 여는 집계 목록 팝업 ──
 function _renderVAggBody(kind){
   _vlClearRegIdx();          // 모음이 바뀌었을 수 있다 — 등록순 차례를 새로 잰다
-  document.getElementById('vAggControls').innerHTML=_vListControlsHTML(kind);
+  const tab=_vlTab(kind);
+  document.getElementById('vAggControls').innerHTML=_vlTabsHTML(kind)+_vListControlsHTML(kind);
   const list=document.getElementById('vAggList');
-  list.innerHTML=_vListRowsHTML(_aggEntriesForKind(kind),0,kind);
+  // '전체' 에서만 줄마다 '명제' 표시를 단다
+  list.innerHTML=_vListRowsHTML(_aggEntriesForKind(kind,tab),0,kind,tab==='all');
   _attachVliMenus(list);
 }
 function openVerseAggPopup(kind){
@@ -16151,7 +16192,7 @@ function _renderKeepSubMenu(){
   const box=document.getElementById('logoMenuKeepSub');
   if(!box)return;
   const back=`<div class="task-menu-item" onclick="logoMenuBackToMain()">
-      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">말씀 저장 목록</span>
+      <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4l-6 6 6 6"/></svg></span><span style="flex:1;font-weight:700;color:var(--tx);">저장 목록</span>
     </div>
     <div class="task-menu-sep"></div>`;
   const lists=_keepLists();

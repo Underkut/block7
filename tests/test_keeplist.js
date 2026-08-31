@@ -156,8 +156,12 @@ console.log('\n시나리오 8 — 기본 목록 이름을 쓴 기록도 같은 �
 
 console.log('\n시나리오 9 — 좌상단 말씀메뉴의 두 갈래 (HB)');
 {
-  // '말씀 목록' → '말씀 활동 목록', 그 아래 '말씀 저장 목록'
-  sc.eq('활동 목록으로 이름이 바뀌었다', SRC_DEV.includes('말씀 활동 목록'), true);
+  // '말씀 목록' → '활동 목록', 그 아래 '저장 목록' (v26-0831-15, HB)
+  // ⚠️ 용어 — '말씀' = 성경 구절 하나, '명제' = 설교 명제 하나.
+  //    둘을 아우르는 한 단어는 만들지 않는다. 아우를 자리에서는 이름을 짧게 둔다.
+  sc.eq('활동 목록', SRC_DEV.includes('<span style="flex:1;">활동 목록</span>'), true);
+  sc.eq('저장 목록', SRC_DEV.includes('<span style="flex:1;">저장 목록</span>'), true);
+  sc.eq('이름에서 말씀을 뗐다', SRC_DEV.includes('말씀 활동 목록'), false);
   sc.eq('옛 이름은 메뉴에 없다', /flex:1;">말씀 목록</.test(SRC_DEV), false);
   sc.eq('저장 목록 줄이 있다', SRC_DEV.includes('onclick="logoMenuOpenKeepSub()"'), true);
   sc.eq('하위 뎁스 상자가 있다', SRC_DEV.includes('id="logoMenuKeepSub"'), true);
@@ -237,6 +241,29 @@ console.log('\n시나리오 13 — 상단 말씀영역은 첫 성경만 (HB)');
         SRC_DEV.includes('[refEl,   abbrevRef(barRef), s.verseSneakRef!==false],'), true);
   // 전체화면은 그대로 셋을 다 쓴다 (거기서는 하나하나가 제 필터다)
   sc.eq('전체화면은 셋을 다 쓴다', SRC_DEV.includes('function _vfRenderRef('), true);
+}
+
+console.log('\n시나리오 14 — 갈래 탭: 전체 · 말씀 · 명제 (HB)');
+{
+  sc.eq('탭 셋', /_VL_TABS=\[\['all','전체'\],\['verse','말씀'\],\['prop','명제'\]\]/.test(SRC_DEV), true);
+  sc.eq('팝업이 탭 줄을 먼저 그린다',
+        SRC_DEV.includes("_vlTabsHTML(kind)+_vListControlsHTML(kind)"), true);
+  sc.eq('고른 갈래로 목록을 만든다',
+        SRC_DEV.includes("_vListRowsHTML(_aggEntriesForKind(kind,tab),0,kind,tab==='all')"), true);
+  sc.eq('명제인지 가린다', SRC_DEV.includes('function _vlIsProp('), true);
+  // ⚠️ '전체' 에서만 줄마다 '명제' 표시 — 갈라 놓은 탭에서는 소음이다
+  sc.eq('전체에서만 표시를 단다',
+        SRC_DEV.includes("if(markProp&&v&&v.pid)"), true);
+  sc.eq('모음 목록과 같은 표시를 쓴다',
+        SRC_DEV.includes('class="coll-propmark" style="margin-left:0;">명제</span>'), true);
+  // 줄이 하나 느는 자리라 높이를 최소로 (글자 10.5px)
+  sc.eq('탭 높이를 최소로', SRC_DEV.includes('font-size:10.5px;line-height:1.3;'), true);
+  sc.eq('테두리·박스 없이 글자만', /\.vl-tab\{background:none;border:0;padding:0;/.test(SRC_DEV), true);
+  // 전체화면 이전/다음도 같은 탭을 따른다 (보이는 것과 도는 것이 어긋나면 안 된다)
+  sc.eq('전체화면 명단도 같은 탭',
+        SRC_DEV.includes('const rows=_aggEntriesForKind(kind,_vlTab(kind));'), true);
+  // 오른쪽 판의 작은 위젯에는 탭을 넣지 않는다 (자리가 없다)
+  sc.eq('위젯은 예전 그대로', SRC_DEV.includes('function _vListControlsHTML(kind){'), true);
 }
 
 sc.done();
