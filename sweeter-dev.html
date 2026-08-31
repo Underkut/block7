@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0830-16  [SWEETER DEV]  -->
+<!-- BLOCK7  v. 26-0831-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3392,7 +3392,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 //
 // Before deploying to GitHub Pages for real cross-device sync, flip
 // this back to false (the only line that needs to change).
-const DEV_MODE = false;
+const DEV_MODE = true;
 // DEV 빌드와 배포 빌드가 같은 origin에서 localStorage를 공유하면, DEV에서
 // 만든(클라우드에 없는) 데이터가 배포 빌드의 클라우드 동기화로 덮여 사라질 수
 // 있다. 그래서 저장 키를 분리한다.
@@ -3488,7 +3488,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0830-16";
+const APP_VERSION = "v. 26-0831-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
