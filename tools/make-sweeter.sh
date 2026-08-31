@@ -4,23 +4,28 @@
 # Sweeter 는 BLOCK7 과 **같은 코드**에서 뽑아내는 말씀 전용 제품이다.
 # 손으로 만들면 빠뜨리기 쉬워서 make-dev.sh 와 같은 방식으로 고정한다.
 #
-# 바꾸는 곳 다섯 군데:
-#   ① 2번째 줄 주석          [production] → [SWEETER DEV]
-#   ② const APP_PRODUCT      block7 → sweeter (설정 칸막이가 여기서 깨어난다)
-#   ③ manifest.json          → manifest-sweeter-dev.json
-#   ④ apple-mobile-web-app-title  BLOCK7 → Sweeter DEV
-#   ⑤ <title>                → Sweeter DEV
+# 바꾸는 곳 여섯 군데:
+#   ① 2번째 줄 주석          [production] → [SWEETER DEV — no Firebase]
+#   ② const DEV_MODE         false → true
+#   ③ const APP_PRODUCT      block7 → sweeter (설정 칸막이가 여기서 깨어난다)
+#   ④ manifest.json          → manifest-sweeter-dev.json
+#   ⑤ apple-mobile-web-app-title  BLOCK7 → Sweeter DEV
+#   ⑥ <title>                → Sweeter DEV
 #
-# ② 가 핵심이다. 이 한 줄로 LS_KEY 가 'b7v1_sweeter' 로 갈리고,
+# ③ 이 핵심이다. 이 한 줄로 LS_KEY 가 'b7v1_sweeter_dev' 로 갈리고,
 # 설정 칸막이(_psOverlay·_psProject)가 깨어난다.
 #
-# ⚠️ DEV_MODE 는 **건드리지 않는다**(false 그대로) — 즉 Sweeter 개발본도
-#    Firebase 에 붙는다 (v26-0830-16, HB 승인). 로그인해야 HB 가 실제로 쓰는
-#    말씀모음이 보이기 때문이다. 클라우드 문서는 BLOCK7 과 **같은 한 통**
-#    (users/{uid}/data/state) 이고, 제품마다 갈라야 할 설정만
-#    _PRODUCT_SCOPED 가 productSettings 안으로 나눠 담는다.
-#    알림(notify·verseAlarm)은 제품별로 갈려 있어 기본이 꺼짐이다 —
-#    Sweeter 를 켰다고 푸시가 두 번 오지 않는다.
+# ⛔️ **DEV_MODE 를 false 로 두지 말 것 (Firebase 를 켜지 말 것).**
+#    v26-0830-16 에서 한 번 켰다가 계정 데이터를 통째로 날렸다 (2026-08-31 사고).
+#    까닭: 동기화 기준점(b7v1_syncbase)·소유자(b7v1_owner)가 **제품별로
+#    갈려 있지 않다.** 같은 도메인에 두 제품이 있으면 Sweeter 는
+#    저장 키(b7v1_sweeter)가 비어 ST 가 기본값인데, 기준점은 BLOCK7 의
+#    가득 찬 상태를 그대로 읽는다. 3자 병합이 그것을 "사용자가 전부 지웠다"
+#    로 읽고 빈 상태를 클라우드에 올려 모든 기기를 지운다.
+#    ⚠️ _fbBulkLoss 대량 손실 방어는 base 를 모를 때만 돈다 — 이 경로는
+#       base 가 있어서 방어가 아예 켜지지 않는다.
+#    → 기준점 세 키(b7v1_owner·b7v1_syncbase·b7v1_syncmeta)를 제품별로
+#      가르고 시나리오 시험을 먼저 쓴 뒤에야 다시 켤 수 있다.
 #
 # ⚠️ 운영본(sweeter.html)은 아직 만들지 않는다. sweeter.my 도메인이 준비되고
 #    HB 가 개발본으로 확인한 뒤에 이 스크립트에 더한다.
@@ -39,13 +44,14 @@ if not m:
     sys.exit('2번째 줄 버전 주석을 못 찾았습니다. 형식: <!-- BLOCK7  v. YY-MMDD-N  [production]  -->')
 ver=m.group(1)
 out=src.replace(m.group(0),
-    '<!-- BLOCK7  %s  [SWEETER DEV]  -->'%ver,1)
+    '<!-- BLOCK7  %s  [SWEETER DEV — no Firebase]  -->'%ver,1)
 
 def sub_once(text,a,b,what):
     if text.count(a)!=1:
         sys.exit('%s: %d곳 발견 (1곳이어야 함)'%(what,text.count(a)))
     return text.replace(a,b,1)
 
+out=sub_once(out,'const DEV_MODE = false;','const DEV_MODE = true;','DEV_MODE')
 out=sub_once(out,'const APP_PRODUCT = "block7";','const APP_PRODUCT = "sweeter";','APP_PRODUCT')
 out=sub_once(out,'<link rel="manifest" href="manifest.json">',
                  '<link rel="manifest" href="manifest-sweeter-dev.json">','manifest 링크')

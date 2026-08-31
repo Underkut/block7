@@ -509,24 +509,40 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
         SRC.includes('말씀 왼쪽 위의 주머니를 누르면 담깁니다.'), true);
 }
 
-// ═══ 15. Sweeter 개발본이 Firebase 에 붙는가 (v26-0830-16) ═══
-console.log('\n시나리오 15 — Sweeter 개발본의 Firebase');
+// ═══ 15. Sweeter 개발본은 Firebase 에 붙지 않는다 (2026-08-31 사고) ═══
+console.log('\n시나리오 15 — Sweeter 개발본의 Firebase 는 꺼져 있어야 한다');
 {
-  // ⚠️ HB 가 실제로 쓰는 말씀모음은 클라우드에 있다. DEV_MODE 가 켜져 있으면
-  //    로그인 자체가 없어서 기본 네비게이토 180 절만 보인다.
+  // ⛔️ v26-0830-16 에서 한 번 켰다가 계정 데이터를 통째로 날렸다.
+  //
+  //  까닭 — 동기화 기준점 세 키가 **제품별로 갈려 있지 않다**:
+  //    b7v1_owner · b7v1_syncbase · b7v1_syncmeta  (전부 고정 이름)
+  //  같은 도메인(block7.my)에 두 제품이 있으면 Sweeter 는
+  //    · 저장 키 b7v1_sweeter 가 비어 있어 ST 가 defaultState() 이고
+  //    · 기준점(b7v1_syncbase)은 BLOCK7 이 남긴 **가득 찬 상태**를 읽는다.
+  //  로그인 경로의 3자 병합 _fbMerge(base=가득, local=빈, cloud=가득) 은
+  //  이것을 "사용자가 전부 지웠다"로 읽어 빈 상태를 만들고 클라우드에 올린다.
+  //  ⚠️ 대량 손실 방어 _fbBulkLoss 는 base 를 **모를 때만** 돈다
+  //     (_fbMergeGuarded 의 if(!base)). 이 경로는 base 가 있어 방어가 안 켜진다.
+  //
+  //  → 세 키를 제품별로 가르고 시험을 먼저 쓴 뒤에야 다시 켤 수 있다.
   const mk = require('fs').readFileSync(__dirname + '/../tools/make-sweeter.sh', 'utf8');
-  sc.eq('DEV_MODE 를 건드리지 않는다', /sub_once\(out,'const DEV_MODE/.test(mk), false);
-  sc.eq('제품 이름만 바꾼다',
-        mk.includes("sub_once(out,'const APP_PRODUCT = \"block7\";'"), true);
+  sc.eq('DEV_MODE 를 켠다(=Firebase 끔)',
+        mk.includes("sub_once(out,'const DEV_MODE = false;','const DEV_MODE = true;','DEV_MODE')"), true);
+  sc.eq('왜 켜면 안 되는지 적어 뒀다', mk.includes('DEV_MODE 를 false 로 두지 말 것'), true);
 
   const sw = require('fs').readFileSync(__dirname + '/../sweeter-dev.html', 'utf8');
-  sc.eq('개발본에 Firebase 가 켜져 있다', sw.includes('const DEV_MODE = false;'), true);
+  sc.eq('개발본은 Firebase 가 꺼져 있다', sw.includes('const DEV_MODE = true;'), true);
   sc.eq('제품은 sweeter 다', sw.includes('const APP_PRODUCT = "sweeter";'), true);
-  sc.eq('2번째 줄 표시가 맞다', /\[SWEETER DEV\]/.test(sw.split('\n')[1]), true);
-  // 저장 키는 이제 _dev 꼬리표가 없다 — BLOCK7 과 여전히 다른 통이다
-  const KEY = (prod, dev) => (prod === 'block7' ? 'b7v1' : 'b7v1_' + prod) + (dev ? '_dev' : '');
-  sc.eq('저장 키는 b7v1_sweeter', KEY('sweeter', false), 'b7v1_sweeter');
-  sc.eq('BLOCK7 것과 다르다', KEY('sweeter', false) !== KEY('block7', false), true);
+  sc.eq('저장 키는 b7v1_sweeter_dev',
+        (sw.includes('const APP_PRODUCT = "sweeter";') && sw.includes('const DEV_MODE = true;')), true);
+
+  // 기준점 세 키가 아직 제품별로 갈려 있지 않다는 사실 자체를 못 박아 둔다.
+  // 이 셋이 LS_KEY 처럼 제품 이름을 타게 되면 이 시험이 걸리고, 그때 위 금지를
+  // 풀 수 있다 (그전에 병합 시나리오 시험을 먼저 써야 한다).
+  const SRC = require('fs').readFileSync(__dirname + '/../index.html', 'utf8');
+  sc.eq('소유자 키는 아직 고정 이름', SRC.includes("localStorage.getItem('b7v1_owner')"), true);
+  sc.eq('기준점 키도 아직 고정 이름',
+        SRC.includes("const _FB_BASE_KEY='b7v1_syncbase',_FB_META_KEY='b7v1_syncmeta';"), true);
 }
 
 sc.done();
