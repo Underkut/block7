@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-16  [production]  -->
+<!-- BLOCK7  v. 26-0831-17  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1009,7 +1009,12 @@ header{
   flex:0 1 auto;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}   /* 태그부터 줄인다 */
+/* ⚠️ v26-0831-17, HB 신고 — "스닉픽에서 태그를 켜도 안 보인다."
+   태그가 **폭 0** 으로 짜부라져 있었다. 태그의 flex-shrink 가 3 이고 본문이 1
+   이라, 줄이 넘칠 때 태그가 본문보다 세 배 빨리 줄어 먼저 사라졌다.
+   (위 주석의 "본문 → 태그 → 소주제" 차례와 값이 거꾸로였다)
+   → 본문이 가장 먼저·가장 많이 줄고, 태그는 그 다음, 소주제가 마지막이다. */
+#verseBarInner.sneak-mode #verseBarTag{flex-shrink:2;}
 #verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}
 /* 그래도 못 줄이는 경우(대분류+장절만으로 이미 넘칠 때)를 위한 마지막 안전장치.
    ⚠️ 이게 없으면 넘친 글자가 말씀 영역 밖으로 그려진다. */
@@ -1018,9 +1023,13 @@ header{
    display:inline 으로는 말줄임이 안 걸려서 이 항목만 block 으로 둔다. */
 #verseBarInner.sneak-mode #verseBarFirstWord{
   display:block!important;
-  /* 늘어나지는 않고(0) 줄어들기만 한다(1). 짧은 구절에서는 한 줄이 가운데에
-     오밀조밀 모이고, 긴 구절에서만 본문이 줄면서 … 가 붙는다. */
-  flex:0 1 auto;min-width:0;
+  /* 늘어나지는 않고(0) 줄어들기만 한다. 짧은 구절에서는 한 줄이 가운데에
+     오밀조밀 모이고, 긴 구절에서만 본문이 줄면서 … 가 붙는다.
+     ⚠️ 줄어드는 몫(8)은 태그(2)·소주제(1)보다 커야 한다 — 위 주석의
+        "본문 → 태그 → 소주제" 차례가 이 세 수로 정해진다. 축약(flex)이
+        뒤에 오므로 **여기서** 값을 준다. 밖에서 flex-shrink 만 따로 주면
+        이 줄이 그것을 1 로 되돌린다 (v26-0831-17 에 실제로 겪었다). */
+  flex:0 8 auto;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 /* Kill full-mode individual margins so everything sits on the same line */
@@ -3346,6 +3355,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
 /* 저장 목록 고르기 한 줄 — 체크 자리 + 이름 */
+/* '명제' 표시 — 오른쪽 묶음(개수·날짜)의 **맨 왼쪽**에 붙는다.
+   ⚠️ 장절 옆에 두었더니 줄마다 장절 시작 자리가 달라져 세로줄이 어긋났다
+      (HB 26-0831). 오른쪽은 원래 오른쪽 끝에 맞춰 흐르는 자리라 안 어긋난다.
+   ⚠️ 글자만으로는 눈에 안 들어와 **음영**을 깔았다. 크기는 그대로 9px. */
+.vli-propmark{font-size:9px;line-height:1.3;letter-spacing:.02em;color:var(--tx2);
+  background:var(--s2,rgba(127,127,127,.16));border-radius:3px;padding:1px 4px;
+  margin-right:5px;flex-shrink:0;}
 /* 갈래 탭 (전체·말씀·명제) — 줄이 하나 느는 자리라 **높이를 최소로**.
    테두리·박스 없이 글자만, 고른 것은 색과 굵기로만 나타낸다 (UI 원칙). */
 .vl-tabrow{display:flex;gap:12px;align-items:center;margin:0 0 5px;}
@@ -3551,7 +3567,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-16";
+const APP_VERSION = "v. 26-0831-17";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5656,7 +5672,10 @@ window._fbScriptsReady=new Promise(resolve=>{
 
 <!-- 암송/좋아요/Deeper 집계 목록 팝업 (로고 메뉴에서 열림) -->
 <div class="event-modal-overlay" id="vAggOverlay" style="display:none;z-index:4350;" onclick="closeVerseAggPopup()"></div>
-<div class="event-modal" id="vAggModal" style="display:none;z-index:4360;width:320px;max-height:80vh;flex-direction:column;">
+<!-- ⚠️ height 를 **고정**한다 (v26-0831-17, HB). max-height 만 두면 탭을 바꿀 때
+     줄 수에 따라 상자가 늘었다 줄었다 하고, 가운데 정렬이라 **제목이 위아래로
+     움직여** 눈이 따라다녀야 했다. 목록 칸(vAggList)이 남는 자리를 다 먹는다. -->
+<div class="event-modal" id="vAggModal" style="display:none;z-index:4360;width:320px;height:80vh;max-height:80vh;flex-direction:column;">
   <button class="modal-x" onclick="closeVerseAggPopup()" aria-label="닫기">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
@@ -7920,6 +7939,9 @@ function renderVerseBar(){
 // Fill the DOM elements from a verse object, respecting current mode
 // and per-field settings — called both from renderVerseBar and from
 // the animated mode-flip transition.
+// 상단 말씀영역에 쓸 태그 개수. 넘으면 '..' 하나로 줄인다 (HB 26-0831).
+const _VB_TAG_MAX_FULL=5;    // 여섯 번째 태그부터 '..'
+const _VB_TAG_MAX_SNEAK=1;   // 두 번째 태그부터 '..'
 function _fillVerseBarDOM(v){
   const s=ST.settings;
   const mode=s.verseMode||'full';
@@ -7937,6 +7959,12 @@ function _fillVerseBarDOM(v){
   // 상단 말씀영역은 한 줄짜리 자리다. 명제의 설교 본문이 셋까지 오는데
   // 다 쓰면 본문이 밀린다 → **첫 번째만 쓰고 나머지는 '..'** (HB 26-0831).
   //   (전체화면에서는 셋을 다 쓰고 하나하나 눌러 걸러 볼 수 있다)
+  // 태그도 한 줄짜리 자리다. 넘치면 '..' 로 줄인다 (HB 26-0831) —
+  //   풀 모드는 **여섯 번째부터**, 스닉픽은 **두 번째부터**.
+  const barTags=(list,max)=>{
+    const a=(list||[]).filter(Boolean);
+    return a.length>max?a.slice(0,max).join(' ')+' ..':a.join(' ');
+  };
   const barRef=(()=>{
     const rs=(v&&Array.isArray(v.refs))?v.refs.filter(Boolean):[];
     return rs.length>1?(rs[0]+'..'):((v&&v.ref)||'');
@@ -7958,9 +7986,9 @@ function _fillVerseBarDOM(v){
     firstEl.textContent='';firstEl.style.display='none';
     refEl.textContent  = s.verseFullRef!==false ? barRef : '';
     refEl.style.display= s.verseFullRef!==false ? '' : 'none';
-    const tagListFull=(v.tags||[]).filter(Boolean);
+    const tagListFull=((v&&v.tags)||[]).filter(Boolean);
     const showTagFull=s.verseFullTag!==false&&tagListFull.length>0;
-    tagEl.textContent=showTagFull?tagListFull.join(' '):'';
+    tagEl.textContent=showTagFull?barTags(tagListFull,_VB_TAG_MAX_FULL):'';
     tagEl.style.display=showTagFull?'':'none';
   } else {
     // Sneak mode — all visible items inline on one row with · between them
@@ -8002,7 +8030,7 @@ function _fillVerseBarDOM(v){
     // 남는 가로 폭만큼만 보이도록 CSS(text-overflow)가 … 로 잘라준다.
     // (설정 키 이름 verseSneakFirstWord 는 이미 저장·동기화된 값이라 그대로 둔다)
     const fw=v.krText;
-    const tagListSneak=(v.tags||[]).filter(Boolean).join(' ');
+    const tagListSneak=barTags(((v&&v.tags)||[]),_VB_TAG_MAX_SNEAK);
     const items=[
       [catEl,   v.cat,         s.verseSneakCat!==false],
       [topicEl, v.topic,       s.verseSneakTopic!==false],
@@ -15997,8 +16025,6 @@ function _vListRowsHTML(items,limit,kind,markProp){
     }
     // 보조 줄: 구절(파랑) + 대분류·소주제·태그
     const sub=[];
-    // '전체' 탭에서만 — 명제 줄에 작은 '명제' 표시 (모음 목록의 표시와 같은 것)
-    if(markProp&&v&&v.pid)sub.push('<span class="coll-propmark" style="margin-left:0;">명제</span>');
     if(showRef&&dispRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     if(v){
       if(showCat&&v.cat)sub.push(v.cat);
@@ -16015,7 +16041,7 @@ function _vListRowsHTML(items,limit,kind,markProp){
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
         <span style="font-size:9px;color:var(--tx3);min-width:0;">${sub.join(' · ')}</span>
         <span style="font-size:9px;color:var(--tx3);white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
-          <span style="display:inline-flex;align-items:center;color:var(--ac);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
+          ${(markProp&&v&&v.pid)?'<span class="vli-propmark">명제</span>':''}<span style="display:inline-flex;align-items:center;color:var(--ac);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
         </span>
       </div>
     </div>`;
