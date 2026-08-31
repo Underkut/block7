@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-8  [production]  -->
+<!-- BLOCK7  v. 26-0831-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3529,7 +3529,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-8";
+const APP_VERSION = "v. 26-0831-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10911,7 +10911,13 @@ function _vfSyncCounts(){
   // 보인다 (BLOCK7 에는 담아둔 것을 꺼내 볼 자리가 아직 없다).
   const kb=document.getElementById('vfActkeep');
   if(kb){
-    const show=(typeof _swOn==='function')&&_swOn();
+    // 언제 보이나 (v26-0831-9, HB) —
+    //  · Sweeter: 늘 보인다 (담아둔 것 타일이 그 자리에 있다)
+    //  · BLOCK7 : **명제에서만** 보인다. 명제집은 Sweeter 쪽 물건이고,
+    //             담아둔 것은 두 앱이 **같은 기록**을 쓰므로 BLOCK7 에서 담아도
+    //             Sweeter 의 '담아둔 것' 타일에 그대로 뜬다.
+    //             (BLOCK7 의 암송 말씀에는 아직 꺼내 볼 자리가 없어 안 보인다)
+    const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);
     kb.style.display=show?'flex':'none';
     kb.classList.toggle('on',show&&_swIsKept(ref));
     kb.setAttribute('aria-pressed',(show&&_swIsKept(ref))?'true':'false');
