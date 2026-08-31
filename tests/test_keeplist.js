@@ -152,6 +152,25 @@ console.log('\n시나리오 8 — 기본 목록 이름을 쓴 기록도 같은 �
   sc.eq('둘 다 들어 있다', _swKeeps(0,KEEP_DEFAULT_LIST).length, 2);
   ST.verseKeepLog['2026-08-22']=[{ref:P1,time:'09:00',lst:'  '}];
   sc.eq('빈 이름도 기본 목록', _keepLists().length, 1);
+
+  // v26-0831-16, HB — 기본 목록 이름이 '저장됨' → '기본' 으로 바뀌었다.
+  // ⚠️ 기본 목록은 기록에 lst 를 **안 쓰므로** 이미 쌓인 기록은 저절로 따라온다.
+  //    다만 옛 이름이 적힌 기록(그 이름으로 목록을 손수 만들었을 수 있다)이
+  //    남아 있으면 목록이 둘로 갈려 보인다 → 같은 것으로 읽어 준다.
+  sc.eq('기본 목록 이름', KEEP_DEFAULT_LIST, '기본');
+  ST.verseKeepLog = {
+    '2026-08-20':[{ref:R1,time:'09:00'}],
+    '2026-08-21':[{ref:R2,time:'09:00',lst:'저장됨'}]
+  };
+  sc.eq('옛 이름도 기본 목록', _keepLists().map(x=>x.n), ['기본']);
+  sc.eq('둘 다 기본에 들어 있다', _swKeeps(0,'기본').length, 2);
+  sc.eq('옛 이름으로 물어도 같다', _swIsKept(R2,'기본'), true);
+  // 옛 이름으로 담으면 기본에 담긴다 (목록이 새로 생기면 안 된다)
+  ST.verseKeepLog = {};
+  swKeepSet(P1,'저장됨',true);
+  sc.eq('옛 이름으로 담아도 기본', _keepLists().map(x=>x.n), ['기본']);
+  sc.eq('기록에는 lst 를 안 쓴다',
+        ST.verseKeepLog[TODAY][0].lst === undefined, true);
 }
 
 console.log('\n시나리오 9 — 좌상단 말씀메뉴의 두 갈래 (HB)');
