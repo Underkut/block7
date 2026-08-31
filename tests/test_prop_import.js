@@ -136,6 +136,40 @@ console.log('시나리오 3-B — 전체화면 성경은 F열 설교 본문');
   sc.eq('옛 시트도 읽힌다',_propRowsToItems([HEAD,r3])[0].refs,['마 5:13']);
 }
 
+// ═══ 3-C. ⚠️ 시트에서 장절이 바뀌면 이미 있던 명제도 따라 바뀐다 ═══
+console.log('시나리오 3-C — 열 이름이 바뀐 시트를 다시 받으면');
+{
+  // HB 신고 (26-0831) — "'설교 본문'이 들어와야 할 곳에 아직도 '인용 본문'이
+  //   들어오고 있어." 까닭: 다시 받을 때 **장절을 견주지 않아서** 이미 있던
+  //   항목이 예전 값 그대로 남았다. 본문·대분류·소주제·태그·강조만 봤다.
+  // ⚠️ 장절이 바뀌는 것은 **명제뿐**이다 — 말씀은 장절이 신원의 일부라
+  //    바뀌면 여기까지 오지 않고 새 항목으로 들어간다.
+  const OLD=[HEAD,P('P0401','명제 하나',{'장절/단락':'창세기 1:1'})];
+  const coll={verses:[],google:[{id:'g1'}]};
+  _syncSheetVersesIntoColl(coll,_propRowsToItems(OLD),{kind:'google',gid:'g1'});
+  sc.eq('처음엔 옛 장절',coll.verses[0].ref,'창세기 1:1');
+
+  // 시트에서 열 이름이 바뀌고 설교 본문이 들어왔다
+  const H2=HEAD.map(h=>h==='장절/단락'?'인용 본문':h);
+  const r=new Array(H2.length).fill('');
+  const put=(n,v)=>r[H2.indexOf(n)]=v;
+  put('명제 ID','P0401'); put('명제','명제 하나'); put('데이터 상태','활성');
+  put('카테고리','주일예배'); put('설교 제목','언덕 위의 도시: 소금과 빛이 되다');
+  put('대표 문구','명제 하나'); put('주제 태그','소금과 빛, 제자도');
+  put('설교 본문','마태복음 5:13; 로마서 8:28');
+  put('인용 본문','창세기 1:1; 요한복음 3:16');
+  const r2=_syncSheetVersesIntoColl(coll,_propRowsToItems([H2,r]),{kind:'google',gid:'g1'});
+  sc.eq('늘지 않는다',coll.verses.length,1);
+  sc.eq('바뀐 것으로 센다',r2.updated,1);
+  sc.eq('장절이 따라 바뀐다',coll.verses[0].ref,'마태복음 5:13 · 로마서 8:28');
+  sc.eq('설교 본문도 실린다',coll.verses[0].refs,['마태복음 5:13','로마서 8:28']);
+  sc.eq('성경권도 따라온다',coll.verses[0].books,['마태복음','로마서']);
+  sc.eq('인용 본문은 안 들어온다',coll.verses[0].ref.includes('창세기'),false);
+  // 세 번째로 받으면 이제 바뀐 것이 없다 (매번 '수정'으로 세면 안 된다)
+  const r3=_syncSheetVersesIntoColl(coll,_propRowsToItems([H2,r]),{kind:'google',gid:'g1'});
+  sc.eq('그 다음엔 조용하다',r3.updated,0);
+}
+
 // ═══ 4. 같은 시트를 다시 불러도 늘지 않는다 ═══
 console.log('시나리오 4 — 다시 불러오기');
 {
