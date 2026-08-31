@@ -30,15 +30,17 @@ console.log('\n시나리오 2 — 타이틀 자리·기울기는 넘길 때 한 
   sc.eq('뽑는 함수가 있다', SRC_DEV.includes('function _vfRollProp(){'), true);
   sc.eq('넘길 때마다 부른다',
         /function _vfRollVariant\(\)\{[\s\S]{0,400}_vfRollProp\(\);/.test(SRC_DEV), true);
-  sc.eq('세 자리 중에서 고른다',
-        SRC_DEV.includes("const _VF_PT_ALIGN=['al-l','al-c','al-r'];"), true);
+  // ⚠️ 우정렬은 뺐다 (HB 26-0831 — 좌·중앙만). 되살리지 말 것.
+  sc.eq('좌·중앙 둘 중에서 고른다',
+        SRC_DEV.includes("const _VF_PT_ALIGN=['al-l','al-c'];"), true);
+  sc.eq('우정렬은 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-r'/.test(SRC_DEV), false);
   // 그리는 함수 안에서 다시 뽑지 않는다
   const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
                              SRC_DEV.indexOf('function _vfPropInk('));
   sc.eq('그릴 때는 다시 안 뽑는다', draw.includes('_vfRollProp('), false);
   sc.eq('뽑아 둔 자리를 쓴다', draw.includes('_vfPropAlign'), true);
   // 세 자리 CSS 가 다 있다
-  ['al-l','al-c','al-r'].forEach(k=>{
+  ['al-l','al-c'].forEach(k=>{
     sc.eq(k+' 자리 CSS', SRC_DEV.includes('.vf-ptitle.'+k+'{'), true);
   });
 }
@@ -155,6 +157,71 @@ console.log('\n시나리오 8 — 목록의 명제집 표시');
   sc.eq('박스를 만들지 않는다', /background:/.test(css), false);
   sc.eq('목록이 그 판정을 쓴다',
         SRC_DEV.includes("mkBtn(c.id,c.name||'말씀 모음',true,_collIsProp(c))"), true);
+}
+
+// ═══ 9. 대표 문구 글씨체 (v26-0831-5, HB — "붓 느낌이 없는데?") ═══
+console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
+{
+  // ⚠️ 한글 완본은 수 MB다. 늘 받으면 첫 화면이 느려진다 →
+  //    **명제를 볼 때만** 받는다 (고운바탕 _vfEnsureFont 와 같은 방식).
+  sc.eq('늘 받지는 않는다',
+        /@import[^;]*Nanum\+Brush/.test(SRC_DEV), false);
+  sc.eq('볼 때 받는 함수가 있다', SRC_DEV.includes('function _ptEnsureFont(){'), true);
+  sc.eq('그릴 때 부른다',
+        /function _vfRenderPropTitle\(v\)\{[\s\S]{0,600}_ptEnsureFont\(\);/.test(SRC_DEV), true);
+
+  // 지금 글씨체(본문과 같은 것)는 없애지 않고 보관한다 (HB 지시)
+  sc.eq('예전 글씨체를 보관한다', SRC_DEV.includes('.vf-ptitle.pf-plain{'), true);
+  sc.eq('붓', SRC_DEV.includes(".vf-ptitle.pf-brush{font-family:'Nanum Brush Script'"), true);
+  sc.eq('펜', SRC_DEV.includes(".vf-ptitle.pf-pen{font-family:'Nanum Pen Script'"), true);
+  sc.eq('기본은 붓', SRC_DEV.includes("propTitleFont:'brush'"), true);
+
+  // ⚠️ 손글씨체는 크게 흘려 써서 배율을 크게 준다. 그런데 **글씨체를 못 받으면**
+  //    (사내망·오프라인) 그 배율이 본문 글씨체에 그대로 걸려 타이틀만 우스꽝스럽게
+  //    커진다 → 실제로 받아졌는지 재 보고, 아니면 본문 글씨체로 되돌린다.
+  sc.eq('받아졌는지 재 본다', SRC_DEV.includes('function _ptFontLoaded(fam){'), true);
+  sc.eq('폭을 재서 판단한다', SRC_DEV.includes("c.font=\"72px '\"+fam+\"', monospace\";"), true);
+  sc.eq('못 받으면 붓 대신 본문 글씨체',
+        SRC_DEV.includes("if(pf==='brush'&&!_ptFontLoaded('Nanum Brush Script'))pf='plain';"), true);
+  sc.eq('못 받으면 펜도 마찬가지',
+        SRC_DEV.includes("else if(pf==='pen'&&!_ptFontLoaded('Nanum Pen Script'))pf='plain';"), true);
+  // 배율은 CSS 한 곳에서만 정한다 (글씨체를 더할 때 JS 를 안 고치게)
+  sc.eq('배율을 CSS 에서 읽는다',
+        SRC_DEV.includes("getComputedStyle(el).getPropertyValue('--pt-k')"), true);
+}
+
+// ═══ 10. 공유 이미지가 화면과 같은 줄로 그린다 (v26-0831-5) ═══
+console.log('\n시나리오 10 — 공유 이미지 줄 배열');
+{
+  // ⚠️ v26-0831-3 에 명제 본문의 줄 배열을 **비워 뒀다.** 공유 이미지는
+  //    줄 배열이 없으면 글 전체를 **한 줄로** 그려 좌우로 넘친다 (HB 신고).
+  sc.eq('명제도 줄 배열을 채운다',
+        SRC_DEV.includes('el._lines=_vfReadWrappedLines(el);'), true);
+  sc.eq('비워 두지 않는다', SRC_DEV.includes('el._lines=null;'), false);
+  sc.eq('접힌 줄을 읽는 함수가 있다',
+        SRC_DEV.includes('function _vfReadWrappedLines(el){'), true);
+  // 브라우저가 접은 자리를 Range 로 읽는다 (줄바꿈 규칙을 흉내내지 않는다)
+  sc.eq('Range 로 읽는다', SRC_DEV.includes('const rg=document.createRange();'), true);
+  sc.eq('윗변이 바뀌는 자리가 줄이 바뀐 자리',
+        SRC_DEV.includes('if(prevTop!==null&&top!==prevTop){'), true);
+  // 못 읽어도 글이 사라지면 안 된다
+  sc.eq('실패해도 본문은 살린다', SRC_DEV.includes('catch(e){return[raw];}'), true);
+  sc.eq('공유가 그 배열을 쓴다',
+        SRC_DEV.includes("const lines=tEl._lines||[(tEl.getAttribute('data-raw')||'').trim()];"), true);
+}
+
+// ═══ 11. 명제집은 축 이름이 다르다 (v26-0831-5, HB) ═══
+console.log('\n시나리오 11 — 명제집의 켜고 끄는 칩 이름');
+{
+  // 대분류=예배 · 소주제=설교 제목. ⚠️ **이름표만** 갈린다 —
+  // 거르는 장치(cat/topic/tag/book)는 한 벌 그대로여야 한다.
+  sc.eq('명제집 칩 이름',
+        SRC_DEV.includes("[['all','전체'],['cat','예배별'],['topic','제목별'],['tag','태그별'],['book','성경별']]"), true);
+  sc.eq('말씀 모음은 예전 그대로',
+        SRC_DEV.includes("[['all','전체'],['cat','대분류별'],['topic','소주제별'],['tag','태그별'],['book','성경별']]"), true);
+  sc.eq('명제집인지 보고 고른다', SRC_DEV.includes('const isP=_collIsProp(findColl(id));'), true);
+  // 거르는 축 이름 자체는 안 바뀐다 (바뀌면 저장된 필터가 통째로 무효가 된다)
+  sc.eq('축 이름은 그대로', /\['book','성경별'\]\]\s*:\s*\[\['all','전체'\]/.test(SRC_DEV), true);
 }
 
 sc.done();
