@@ -152,7 +152,14 @@ console.log('\n시나리오 — 스닉픽이 영역을 넘지 않는다');
   sc.eq('소주제·태그가 줄어든다',
         /#verseBarInner\.sneak-mode #verseBarTopic,\s*\n#verseBarInner\.sneak-mode #verseBarTag\{[^}]*flex:0 1 auto/.test(SRC), true);
   sc.eq('말줄임이 걸린다', /#verseBarTag\{[\s\S]{0,120}text-overflow:ellipsis/.test(css), true);
-  sc.eq('태그부터 줄인다', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), true);
+  // v26-0831-17, HB 신고 — 예전 값(태그 3, 본문 1)은 **거꾸로**였다.
+  //   태그가 본문보다 세 배 빨리 줄어 폭 0 이 되어 "켜도 안 보인다" 였다.
+  //   차례는 주석대로 본문(8) → 태그(2) → 소주제(1).
+  sc.eq('본문부터 줄인다', SRC.includes('flex:0 8 auto;min-width:0;'), true);
+  sc.eq('태그는 그 다음', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:2;}'), true);
+  sc.eq('소주제가 마지막', SRC.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
+  sc.eq('태그가 먼저 사라지던 값은 없앴다',
+        SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), false);
   // 대분류·장절은 그대로 (짧고, 구절을 알아보는 데 필요하다)
   sc.eq('대분류·장절은 안 줄어든다',
         /#verseBarInner\.sneak-mode #verseBarCat,\s*\n#verseBarInner\.sneak-mode #verseBarRef,[\s\S]{0,80}flex:0 0 auto/.test(SRC), true);
