@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0901-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1265,6 +1265,22 @@ header{
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   font-family:var(--font-mono);transition:all .15s;flex-shrink:0;
 }
+/* 구독 모음은 제목과 부수정보를 한 터치 영역 안에서 두 줄로 온전히 보여준다. */
+.sub-coll-list{margin-top:18px;display:flex;flex-direction:column;gap:10px;}
+.sub-coll-btn.preset-btn{
+  width:100%;height:auto;min-height:54px;padding:9px 12px;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+  gap:4px;text-align:left;line-height:1.35;white-space:normal;
+}
+.sub-coll-name{width:100%;font-size:12px;font-weight:700;overflow-wrap:anywhere;}
+.sub-coll-meta{width:100%;font-size:10.5px;font-weight:500;opacity:.72;overflow-wrap:anywhere;}
+.coll-filter-panels{
+  display:flex;flex-direction:column;gap:0;margin-top:26px;
+  border-top:1px solid var(--bd1);
+}
+.coll-filter-panel{padding:22px 0 26px;}
+.coll-filter-panel+.coll-filter-panel{border-top:1px solid var(--bd1);}
+
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
 .preset-btn:hover{border-color:var(--ac);color:var(--ac);}
@@ -3622,7 +3638,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-1";
+const APP_VERSION = "v. 26-0901-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4928,10 +4944,10 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
 
         <!-- 구독한 말씀 모음 (큰 토글 버튼) -->
-        <div id="subCollList" style="margin-top:4px;"></div>
+        <div id="subCollList" class="sub-coll-list"></div>
 
         <!-- 켜진 각 모음의 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) -->
-        <div id="collFilterPanels" style="display:flex;flex-direction:column;gap:10px;"></div>
+        <div id="collFilterPanels" class="coll-filter-panels"></div>
         </div>
       </div><!-- /vstab-coll -->
 
@@ -6341,13 +6357,12 @@ function renderSubButtons(){
   subs.forEach(c=>{
     const b=document.createElement('button');
     const on=active.includes(c.id);
-    b.className='preset-btn'+(on?' on':'');
-    b.style.cssText='display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:6px;';
+    b.className='preset-btn sub-coll-btn'+(on?' on':'');
     const nm=document.createElement('div');
-    nm.style.cssText='font-weight:600;font-size:12px;';
+    nm.className='sub-coll-name';
     nm.textContent=c.importName||c.name||'말씀 모음';
     const meta=document.createElement('div');
-    meta.style.cssText='font-size:11px;opacity:.7;margin-top:2px;';
+    meta.className='sub-coll-meta';
     const owner=c.importOwner||'???';
     const date=c.importUpdatedAt?_fmtSubDate(c.importUpdatedAt):'—';
     meta.textContent=`${owner} · ${c.importCode} · ${date} 업데이트`;
@@ -6389,7 +6404,7 @@ function renderCollFilterPanels(){
 function _buildCollFilterPanel(id,raw){
   const f=_getCollFilter(id);
   const wrap=document.createElement('div');
-  wrap.style.cssText='border-top:1px solid var(--bd1);padding-top:8px;';
+  wrap.className='coll-filter-panel';
 
   // 제목 줄: 모음 이름 + (우측) 기간 글자버튼 주간 월간 연간 전체 직접
   const titleRow=document.createElement('div');
@@ -6457,7 +6472,7 @@ function _buildCollFilterPanel(id,raw){
     const b=document.createElement('button');
     b.className='preset-btn'+((f.mode||'all')===m?' on':'');
     b.style.cssText='width:auto;padding:0 10px;font-size:11px;';
-    b.textContent=label;
+    b.textContent=m==='all'?`전체 ${_collFilteredVerses(id).length}구절`:label;
     if(m==='all')b.id=`cfAllBtn-${id}`;
     b.onclick=()=>{
       f.mode=m;rawSave();
