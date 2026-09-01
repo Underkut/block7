@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0901-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -555,6 +555,7 @@ header{
 .vf-ptitle.pf-dokdo{font-family:'East Sea Dokdo',var(--vf-font,inherit);--pt-k:1.35;font-weight:400;}
 .vf-ptitle.pf-yeon{font-family:'Yeon Sung',var(--vf-font,inherit);--pt-k:1.12;font-weight:400;}
 .vf-ptitle.pf-song{font-family:'Song Myung',var(--vf-font,inherit);--pt-k:1.04;font-weight:400;}
+.vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.02;font-weight:400;}
 /* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다.
    ⚠️ v26-0901-4, HB — 대표 문구가 30자를 넘어 **줄을 가른 명제만** 가운데로 선다.
       그 판정은 _vfPropMid 한 곳에서 하고 여기 클래스로 내려온다. */
@@ -3652,7 +3653,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-7";
+const APP_VERSION = "v. 26-0901-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4814,7 +4815,8 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="p">
         <div class="settings-section-title">명제 타이틀</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">설교 명제 전체화면 위쪽에 서는 대표 문구의 글씨체예요. <b>여러 개를 켜면 명제마다 그중 하나가 무작위로 정해져요</b> — 같은 명제는 다시 열어도 같은 글씨체입니다. 손글씨체는 명제를 볼 때만 내려받아요. (말씀에는 대표 문구가 없어 이 설정이 쓰이지 않아요)</div>
-        <div id="ptFontRow" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+        <!-- ⚠️ 칸 수를 못 박지 않는다 — 글씨체가 늘면 저절로 다음 줄로 접힌다 -->
+        <div id="ptFontRow" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;"></div>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
@@ -12237,11 +12239,17 @@ let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
 //    다시 열어도 늘 같은 글씨체다. 열 때마다 바뀌면 화면이 산만해지고,
 //    다시 그릴 때마다(글자 크기 변경·화면 회전) 글씨체가 튄다.
 //    ⚠️ 그래서 자리·기울기와 달리 **뽑아 두지 않고 그때그때 계산한다.**
+// ⚠️ 글씨체를 더할 때 고치는 곳은 **이 표와 CSS(--pt-k) 두 곳뿐**이다.
+//    이름표·글꼴 주소·설정창 단추·미리 받아 두기가 전부 이 표에서 나온다.
+// ⚠️ 지금은 모두 구글 폰트다. 구글은 **쓰인 글자 조각만** 내려 주므로 가볍다.
+//    저장소에 직접 올린 글씨체를 더할 때는 그 성질이 없어진다 (한 벌을 통째로
+//    받는다) — 그때는 @font-face 를 CSS 에 함께 적어야 한다.
 const _PT_FACES=[
   {k:'brush', ko:'나눔붓',   fam:'Nanum Brush Script'},
   {k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'},
   {k:'yeon',  ko:'연성',     fam:'Yeon Sung'},
-  {k:'song',  ko:'송명',     fam:'Song Myung'}
+  {k:'song',  ko:'송명',     fam:'Song Myung'},
+  {k:'gowun', ko:'고운바탕', fam:'Gowun Batang'}   // HB 가 고름 (26-0901)
 ];
 const _PT_FONTS=_PT_FACES.map(f=>f.k).concat(['plain']);
 // 켜 둔 글씨체들. 하나도 안 켜져 있으면 붓 하나로 본다 (빈 화면이 되면 안 된다)
