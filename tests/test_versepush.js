@@ -109,6 +109,23 @@ console.log('\n시나리오 6 — 알림이 명제를 정확히 가리킨다 (v2
         PUSH.includes('const body = `${(verse.krText || \'\').trim()}\\n${verse.ref || \'\'}`.trim();'), true);
 }
 
+console.log('\n시나리오 6-2 — 앱을 켤 때 푸시 목록을 한 번 맞춘다 (v26-0901-4, HB)');
+{
+  // ⚠️ 이 목록은 여태 말씀 모음을 건드리거나 푸시 설정을 저장할 때만 다시
+  //    만들어졌다. 그래서 v26-0901-3 이 넣은 명제 열쇠가 클라우드에 영영
+  //    안 올라갈 수 있었다 (푸시 서버는 클라우드에 적힌 이 목록만 읽는다).
+  sc.eq('켤 때 맞춘다',
+        SRC.includes('if(_syncVersePushPool())save();\n    }catch(e){}\n  },2600);'), true);
+  // ⚠️ 클라우드에서 상태가 오기 전에는 손대지 않는다 — 빈 목록을 올려 두면
+  //    서버가 보낼 말씀을 잃는다.
+  sc.eq('비었으면 손대지 않는다',
+        SRC.includes('if(!(ACTIVE_VERSES()||[]).length)return;'), true);
+  // 바뀐 것이 없으면 저장하지 않는다 (켤 때마다 쓰기가 생기면 안 된다)
+  const pool2 = slice('function _syncVersePushPool(){', 'function _afterActiveVersesChanged');
+  sc.eq('바뀔 때만 저장한다',
+        pool2.includes('if(prev!==next){ST.settings.versePushPool=list;return true;}'), true);
+}
+
 console.log('\n시나리오 7 — 알림으로 연 말씀이 \'지금 자리\'가 된다 (v26-0901-3, HB)');
 {
   // 안 그러면 다음/이전으로 넘길 때 알림 이전에 보던 순번에서 이어진다

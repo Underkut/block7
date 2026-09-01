@@ -273,7 +273,10 @@ console.log('\n시나리오 10 — 공유 이미지의 강조');
         SRC.includes('segs.forEach(sg=>{ctx.font=fontOf(!!sg.b);tot+=ctx.measureText(sg.t).width;});'), true);
   sc.eq('줄 전체를 가운데에 놓는다', SRC.includes('let x=cx-tot/2;'), true);
   sc.eq('형광펜 띠를 먼저 칠한다', SRC.includes('ctx.fillRect(x,y+fs*0.072,w,fs*0.528);'), true);
-  sc.eq('강조가 없으면 예전 그대로', SRC.includes("ctx.font=fontOf(false);ctx.textAlign='center';"), true);
+  // v26-0901-4 — 명제 본문은 좌정렬일 수 있어 자리를 화면에서 읽어 온다.
+  //   말씀은 늘 가운데라 그림은 예전과 똑같다.
+  sc.eq('강조가 없으면 한 번에 찍는다', SRC.includes("ctx.font=fontOf(false);ctx.textAlign=bal;"), true);
+  sc.eq('자리는 화면에서 읽는다', SRC.includes("const bal=cs.textAlign==='left'?'left':'center';"), true);
   // 설정 미리보기에서도 보이게 예시 구절에 강조를 넣어 뒀다
   sc.eq('미리보기 예시에 강조', SRC.includes("hi:'나의 목자시니'"), true);
 }
