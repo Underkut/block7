@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0831-21  [production]  -->
+<!-- BLOCK7  v. 26-0901-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -572,6 +572,9 @@ header{
   bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
   display:flex;align-items:flex-end;justify-content:space-between;
   gap:14px;padding:0 20px;z-index:3;box-sizing:border-box;
+  /* 투명한 가운데가 긴 말씀의 장절을 덮어도 클릭을 가로채지 않는다.
+     실제 메타·반응 버튼만 아래에서 pointer-events 를 다시 켠다. */
+  pointer-events:none;
 }
 .vf-meta{flex:1;min-width:0;text-align:left;pointer-events:none;}
 #vfCat{font-size:15px;font-weight:700;color:var(--vf-tx,var(--tx));font-family:var(--vf-font,inherit);margin-bottom:5px;width:fit-content;max-width:100%;pointer-events:auto;cursor:pointer;}
@@ -582,7 +585,7 @@ header{
 /* 우측 세로 액션 스택 */
 .vf-actions{
   display:flex;flex-direction:column;gap:13px;align-items:center;
-  flex-shrink:0;z-index:4;
+  flex-shrink:0;z-index:4;pointer-events:auto;
 }
 .vf-act{
   background:none;border:none;padding:0;cursor:pointer;
@@ -3619,7 +3622,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0831-21";
+const APP_VERSION = "v. 26-0901-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
