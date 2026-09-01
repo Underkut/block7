@@ -134,6 +134,48 @@ console.log('\n시나리오 5-2 — 셔플에서 뒤로 가면 방금 본 말씀
   sc.eq('맨 오래된 것부터 버린다', box.back()[0], {k:'nav',i:5});
 }
 
+console.log('\n시나리오 5-3 — 알림으로 연 말씀도 자취에 담긴다 (v26-0901-3, HB)');
+{
+  // HB 신고 — "알림으로 연 전체화면은 다음으로 갔다가 이전으로 돌아오면
+  //   실제 이전 명제가 아니라 엉뚱한 것이 나온다."
+  // 까닭 — '지금 자리'가 목록 번호 아니면 순번(verseCurrentIdx)뿐이었다.
+  //   알림·구절메뉴로 연 화면은 둘 다 아닌 **지정 구절**을 보고 있다.
+  sc.eq('지정 구절도 자리로 적는다',
+        SRC.includes("if(_vfOverrideVerse)return{k:'ov',v:_vfOverrideVerse};"), true);
+  sc.eq('되짚을 때 그 구절로 돌아간다',
+        /if\(p\.k==='ov'\)\{[\s\S]{0,120}_vfOverrideVerse=p\.v;/.test(SRC), true);
+  // ⚠️ 새 저장 항목이 아니다 — 화면을 닫으면 사라지는 값이다
+  sc.eq('저장 항목을 만들지 않는다', SRC.includes('ST.vfShufOv'), false);
+
+  // ── 실제로 돌려 본다 ──
+  const box = {};
+  const src = slice('const _VF_SHUF_MAX=30;', 'function _vfSetNav(');
+  let setIdxCalls = [];
+  new Function('box','ST','setVerseIdx',
+    src.replace(/^(?:const|let) /gm,'var ')
+    + ';box.pos=_vfShufPos;box.go=_vfShufGo;'
+    + 'box.setOv=v=>{_vfOverrideVerse=v;};box.ov=()=>_vfOverrideVerse;'
+    + 'var _vfNavList=null,_vfNavIdx=0,_vfOverrideVerse=null;'
+  )(box, {settings:{verseCurrentIdx:7}}, i=>setIdxCalls.push(i));
+
+  // 알림으로 연 상황 — 목록은 없고 지정 구절만 있다
+  const prop = {pid:'P0007', ref:'전도서 3:1', hi:'때가 있다'};
+  box.setOv(prop);
+  const here = box.pos();
+  sc.eq('지정 구절이 자리가 된다', here.k, 'ov');
+  // 앞으로 넘겨 다른 것을 본 뒤…
+  box.setOv({pid:'P0099'});
+  // 뒤로 되짚으면 **그 명제 그대로** 돌아온다
+  sc.eq('되짚으면 성공', box.go(here), true);
+  sc.eq('바로 그 명제다', box.ov(), prop);
+  sc.eq('순번은 건드리지 않는다', setIdxCalls.length, 0);
+
+  // 지정 구절이 없으면 예전 그대로 순번을 쓴다 (말씀 화면은 안 달라진다)
+  box.setOv(null);
+  sc.eq('평소엔 예전 그대로', box.pos(), {k:'seq',idx:7});
+  sc.eq('되짚으면 순번으로', [box.go({k:'seq',idx:3}), setIdxCalls], [true,[3]]);
+}
+
 console.log('\n시나리오 4-1 — 위아래 이동 영역과 화살표가 대칭이다');
 {
   sc.eq('위아래 버튼은 각각 화면 높이 1/4',

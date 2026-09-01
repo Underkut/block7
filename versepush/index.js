@@ -58,8 +58,15 @@ functions.http('versePush', async (req, res) => {
     if (toks.empty) continue;
 
     const title = [verse.cat, verse.topic].filter(Boolean).join(' · ') || 'BLOCK7';
+    // ⚠️⚠️ 알림에 **보이는 글**은 예전 그대로 장절을 쓴다.
+    //    앱에 **되돌려 줄 값**만 열쇠로 바꾼다 (v26-0901-3, HB 신고).
+    //    까닭 — 설교 명제의 장절은 같은 장절의 말씀(기본 180 등)과 겹친다.
+    //    장절만 보내면 앱이 알림을 열 때 **말씀 쪽을 집어** 대표 문구가 없고
+    //    우하단 단추도 말씀용으로 나왔다. 앱이 담아 준 key 가 그 명제 하나만
+    //    가리킨다. (key 가 없는 말씀은 예전과 한 글자도 다르지 않다)
     const body = `${(verse.krText || '').trim()}\n${verse.ref || ''}`.trim();
-    const link = APP_URL + '?verse=' + encodeURIComponent(verse.ref || '');
+    const openKey = verse.key || verse.ref || '';
+    const link = APP_URL + '?verse=' + encodeURIComponent(openKey);
 
     // ⚠️ 지연 배달 방지 (2026-08-03)
     //  ① Urgency: 'high' — 이게 없으면 FCM 이 'normal' 로 보내고, 애플·구글이
@@ -76,7 +83,7 @@ functions.http('versePush', async (req, res) => {
       const out = await admin.messaging().sendEachForMulticast({
         tokens: toks.docs.map(d => d.id),
         notification: { title, body },
-        data: { type: 'verse', ref: verse.ref || '' },
+        data: { type: 'verse', ref: openKey },
         webpush: {
           headers: { Urgency: 'high', TTL: String(ttlSec) },
           fcmOptions: { link },                  // 알림을 누르면 이 주소로

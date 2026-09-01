@@ -148,4 +148,23 @@ console.log('\n시나리오 — 시트 셀 열기가 실제 탭 번호를 쓴다
   sc.eq('그 시트의 실제 탭 번호(222)를 쓴다', r2.url.includes('#gid=222'), true);
 }
 
+console.log('\n시나리오 — 여러 시트를 한꺼번에 받는다 (v26-0901-3, HB)');
+{
+  const { SRC } = require('./_load');
+  const fn = SRC.slice(SRC.indexOf('async function verseSyncAllNow(){'),
+                       SRC.indexOf('async function runVerseSheetAutoSync('));
+  // HB — "불러오기가 너무 오래 걸린다." 기다림의 거의 전부가 구글의 응답이었고,
+  //   예전에는 시트를 하나씩 차례로 기다렸다 (시트 셋이면 기다림도 세 배).
+  sc.eq('한꺼번에 받는다', fn.includes('const fetched=await Promise.all(jobs.map(j=>'), true);
+  sc.eq('차례로 기다리던 옛 길은 없앴다', fn.includes('const res=await _fetchSheetCsv(g.url);'), false);
+  // ⚠️⚠️ 받기만 함께 하고 **반영은 예전 그대로 차례대로** 한다.
+  //    같은 모음에 시트가 둘일 때 순서가 뒤바뀌면, 나중 시트가 앞 시트의
+  //    구절을 "시트에서 사라진 것"으로 보고 휴지통에 넣는다.
+  sc.eq('반영은 여전히 차례대로', /for\(const c of colls\)\{\s*\n\s*for\(const g of \(c\.google\|\|\[\]\)\)\{/.test(fn), true);
+  sc.eq('반영을 Promise.all 로 돌리지 않는다',
+        /Promise\.all\([^)]*_syncSheetVersesIntoColl/.test(fn), false);
+  // 하나가 실패해도 나머지는 받아진다
+  sc.eq('하나 실패해도 나머지는 산다', fn.includes(".then(r=>r,()=>({err:'실패'}))"), true);
+}
+
 sc.done();

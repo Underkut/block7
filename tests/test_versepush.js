@@ -74,4 +74,49 @@ console.log('\n시나리오 5 — 추가·삭제는 개수가 바뀌므로 정�
   sc.eq('추가는 배열에 실제로 늘린다', add.includes("v.times.push('12:00');_vpSave(v);"), true);
 }
 
+console.log('\n시나리오 6 — 알림이 명제를 정확히 가리킨다 (v26-0901-3, HB)');
+{
+  // HB 신고 — "아이폰에서 알림으로 온 명제를 열면 대표 문구가 빠져 있고,
+  //   우하단 버튼도 명제용이 아니라 말씀용이 나열되어 있다."
+  // 까닭 — 푸시에 실리는 것은 **장절 한 줄**뿐이다. 명제의 장절은 같은 장절의
+  //   말씀(기본 180 등)과 겹치므로, 앱이 그 장절로 되찾을 때 말씀 쪽을 집었다.
+  //   그래서 명제가 아닌 것으로 그려졌다 (대표 문구도 단추도 말씀 것).
+  const pool = slice('function _syncVersePushPool(){', 'function _afterActiveVersesChanged');
+  sc.eq('명제에는 열쇠를 함께 담는다',
+        pool.includes('const k=_pushKey(v);\n      if(k)e.key=k;'), true);
+  // ⚠️ 반응 키를 그대로 보내지 않는다 — 그것은 제어문자로 조각을 가르는데,
+  //    FCM 과 주소를 지나오는 동안 제어문자는 조용히 사라질 수 있다.
+  sc.eq('제어문자 없는 모양', SRC.includes("const _PUSH_PID_PREFIX='p7:';"), true);
+  sc.eq('반응 키를 그대로 보내지 않는다', pool.includes('_reactKey(v)'), false);
+  sc.eq('앱이 그 모양을 되읽는다', SRC.includes('function _pushKeyPid(k){'), true);
+  sc.eq('되읽은 명제 ID 로 찾는다',
+        SRC.includes('return (ACTIVE_VERSES()||[]).find(v=>v&&v.pid===pk)'), true);
+  // ⚠️ 알림에 **보이는 글**은 예전 그대로다 (열쇠는 되돌려 줄 값에만 쓴다)
+  sc.eq('보이는 글은 그대로', pool.includes("krText:v.krText||''"), true);
+  // 앱이 그 열쇠를 되받아 그 명제를 찾아낸다 (이미 있던 길)
+  sc.eq('열쇠로 찾는 길이 있다', SRC.includes('if(_isReactPid(ref)){'), true);
+
+  // 푸시 함수 쪽 — 같은 저장소의 versepush/index.js
+  const fs = require('fs'), path = require('path');
+  const PUSH = fs.readFileSync(path.join(__dirname, '..', 'versepush', 'index.js'), 'utf8');
+  sc.eq('열쇠가 있으면 그것을 보낸다',
+        PUSH.includes('const openKey = verse.key || verse.ref;')
+        || PUSH.includes("const openKey = verse.key || verse.ref || '';"), true);
+  sc.eq('알림 data 에 그 값이 실린다',
+        PUSH.includes("data: { type: 'verse', ref: openKey },"), true);
+  // ⚠️ 알림 본문은 장절 그대로 — 열쇠가 사람 눈에 보이면 안 된다
+  sc.eq('본문은 장절 그대로',
+        PUSH.includes('const body = `${(verse.krText || \'\').trim()}\\n${verse.ref || \'\'}`.trim();'), true);
+}
+
+console.log('\n시나리오 7 — 알림으로 연 말씀이 \'지금 자리\'가 된다 (v26-0901-3, HB)');
+{
+  // 안 그러면 다음/이전으로 넘길 때 알림 이전에 보던 순번에서 이어진다
+  sc.eq('찾은 말씀으로 자리를 맞춘다',
+        SRC.includes('try{ if(hit.idx&&getVerseByIdx(hit.idx)===hit)setVerseIdx(hit.idx); }catch(_){}'), true);
+  // ⚠️ 그래도 지정은 유지한다 — 목록에 없는 말씀이면 순번이 못 따라간다
+  sc.eq('지정도 그대로 둔다',
+        /setVerseIdx\(hit\.idx\); \}catch\(_\)\{\}\s*\n\s*_vfOverrideVerse=hit;/.test(SRC), true);
+}
+
 sc.done();
