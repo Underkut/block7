@@ -567,11 +567,15 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   // HB — "붓폰트 외에 펜폰트도 넣는다고 하지 않았어? 적용된 케이스가 안 보이던데"
   // 까닭 — 값(_PT_FONTS)과 CSS 는 있었는데 **고를 자리가 없었다.**
   // v26-0901-5, HB — 넷을 켜고 끌 수 있고, 켠 것들 안에서 명제마다 하나가 정해진다
-  sc.eq('네 가지가 있다',
+  sc.eq('다섯 가지가 있다',
         SRC_DEV.includes("{k:'brush', ko:'나눔붓',   fam:'Nanum Brush Script'}")
         && SRC_DEV.includes("{k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'}")
         && SRC_DEV.includes("{k:'yeon',  ko:'연성',     fam:'Yeon Sung'}")
-        && SRC_DEV.includes("{k:'song',  ko:'송명',     fam:'Song Myung'}"), true);
+        && SRC_DEV.includes("{k:'song',  ko:'송명',     fam:'Song Myung'},")
+        && SRC_DEV.includes("{k:'gowun', ko:'고운바탕', fam:'Gowun Batang'}"), true);
+  // ⚠️ 칸 수를 못 박지 않는다 — 글씨체가 늘면 저절로 다음 줄로 접힌다
+  sc.eq('단추 줄이 늘어난다',
+        SRC_DEV.includes('grid-template-columns:repeat(auto-fill,minmax(74px,1fr))'), true);
   sc.eq('켜고 끄는 함수', SRC_DEV.includes('function togglePropTitleFont(k){'), true);
   sc.eq('설정창에 자리가 있다', SRC_DEV.includes('id="ptFontRow"'), true);
   sc.eq('제목은 명제 타이틀',
