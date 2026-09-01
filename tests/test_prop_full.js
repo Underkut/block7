@@ -87,11 +87,14 @@ console.log('\n시나리오 3-2 — 본문 줄바꿈 규칙 (v26-0901-6, HB)');
   //   긴 줄을 또 1회." + "본문이 1줄로 끝나면 대표문구와 본문 모두 중앙정렬."
   const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _vfLayoutPropText('),
                            SRC_DEV.indexOf('function _vfApplyPropAlign('));
-  // ⚠️⚠️ 30자를 세는 것은 **본문 전체**다. 화면에 그려진 첫 줄로 재면 이 규칙은
-  //   영영 안 걸린다 — 폰 한 줄에는 한글이 열일곱 자쯤밖에 안 들어간다.
-  //   (그렇게 만들었다가 HB 가 "적용 안 되고 있다"고 두 번 신고했다)
-  sc.eq('본문 전체 글자로 잰다', fn.includes('_ptLen(raw)>_PT_LINE_MAX'), true);
-  sc.eq('그려진 첫 줄로 재지 않는다', fn.includes("_ptLen(lines[0]"), false);
+  // ⚠️⚠️ 30자를 세는 자리는 **화면에 실제로 그려진 첫 줄**이다 (HB 확인 26-0901).
+  //   HB 는 **PC 풀스크린**을 보며 이 규칙을 만들었다 — 넓은 화면은 한 줄에
+  //   마흔 자 넘게 들어가서 줄이 길어지면 읽기 힘들다.
+  //   ⚠️ 폰에서는 한 줄에 열일곱 자쯤이라 **안 걸리는 것이 정상**이다.
+  //      (v26-0901-6 에 '본문 전체 글자수'로 바꿨다가 폰에서 서른 자 남짓한
+  //       명제까지 억지로 갈라 되돌렸다)
+  sc.eq('그려진 첫 줄로 잰다', fn.includes("_ptLen(lines[0]||'')>_PT_LINE_MAX"), true);
+  sc.eq('본문 전체로 재지 않는다', fn.includes('_ptLen(raw)>_PT_LINE_MAX'), false);
   // '두 줄 이하' 는 조건 — 저절로 길게 흐르는 명제는 안 건드린다
   sc.eq('두 줄 이하일 때만', fn.includes('lines.length<=2&&'), true);
   // 가르는 규칙은 **한 벌**만 쓴다 (대표 문구와 같은 함수·같은 점수표)
