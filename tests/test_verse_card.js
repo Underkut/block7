@@ -352,6 +352,11 @@ console.log('\n시나리오 9 — 화면 연결');
         SRC.includes('@media (hover:hover){.vc-icbtn:hover{color:var(--ac);}}'), true);
   // 본문이 길면 장절이 '다음 말씀' 버튼(z-index 2) 밑에 깔려 눌리지 않았다
   sc.eq('전체화면 장절을 넘김 버튼 위로', /#vfRef\{[\s\S]*?position:relative;z-index:3;/.test(SRC), true);
+  // 하단 메타·반응 묶음의 투명한 가운데도 긴 말씀의 장절 위를 덮을 수 있다
+  sc.eq('전체화면 하단의 빈 영역은 장절 클릭을 가로채지 않는다',
+        /\.vf-bottom\{[\s\S]*?pointer-events:none;/.test(SRC), true);
+  sc.eq('전체화면 반응 버튼은 계속 누를 수 있다',
+        /\.vf-actions\{[\s\S]*?pointer-events:auto;/.test(SRC), true);
   // 타일뷰에서 고른 말씀이 전체화면이 아니라 그 카드로 온다
   sc.eq('타일뷰가 어느 카드에서 왔는지 기억한다', SRC.includes('let _vgCardTarget=null;'), true);
   sc.eq('타일을 고르면 그 카드에 띄운다', SRC.includes('if(_vgCardTarget){'), true);
