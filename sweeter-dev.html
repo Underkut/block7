@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0901-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -549,8 +549,9 @@ header{
 .vf-ptitle.pf-plain{--pt-k:1;}
 .vf-ptitle.pf-brush{font-family:'Nanum Brush Script',var(--vf-font,inherit);--pt-k:1.5;font-weight:400;}
 .vf-ptitle.pf-pen{font-family:'Nanum Pen Script',var(--vf-font,inherit);--pt-k:1.42;font-weight:400;}
-/* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다. */
-#vfText.prop{text-align:left;}
+/* 명제 본문 — v26-0901-3, HB 지시로 **가운데**로 바꿨다 (말씀과 같아졌다).
+   ⚠️ 이 규칙 자체는 남겨 둔다 — 명제만 달리 할 일이 또 생길 자리다. */
+#vfText.prop{text-align:center;}
 #vfRef{
   margin-top:18px;font-size:13px;color:var(--vf-tx3,var(--tx3));
   font-family:var(--vf-reffont,var(--font-number));letter-spacing:.06em;flex-shrink:0;
@@ -596,6 +597,11 @@ header{
 .vf-act:active{transform:scale(.88);}
 .vf-act.pop{animation:vfPop .32s ease;}
 @keyframes vfPop{0%{transform:scale(1);}40%{transform:scale(1.28);}100%{transform:scale(1);}}
+/* 진행 중 토스트의 '돌아가는' 표시 (v26-0901-3, HB — "미니멀하고 귀여운").
+   ⚠️ 테두리·박스 없이 선 하나다 (UI 원칙). 숨을 쉬듯 아주 살짝 커졌다 작아진다. */
+@keyframes toastSpin{to{transform:rotate(360deg);}}
+@keyframes toastBreathe{0%,100%{opacity:.85;}50%{opacity:1;}}
+.toast-spin{transform-origin:50% 50%;animation:toastSpin .9s linear infinite,toastBreathe 1.8s ease-in-out infinite;}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
 /* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Deeper·Even.
@@ -3638,7 +3644,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-2";
+const APP_VERSION = "v. 26-0901-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4819,6 +4825,19 @@ window._fbScriptsReady=new Promise(resolve=>{
               <span class="vfart-pv" id="vfArtPvOrg"></span>organic
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- ── 명제 대표 문구 글씨체 (v26-0901-3, HB — "펜폰트 적용된 케이스가 안 보인다") ──
+           만들어만 두고 고를 자리가 없었다. 여기서 고른다.
+           ⚠️ 명제집을 쓰는 사람만 보면 되는 것이라 파워 등급이다. -->
+      <div class="settings-section" data-lv="p">
+        <div class="settings-section-title">대표 문구 글씨체</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">설교 명제 전체화면 위쪽에 서는 대표 문구의 글씨체예요. 손글씨체는 명제를 볼 때만 내려받아요. (말씀에는 대표 문구가 없어서 이 설정이 보이지 않아요)</div>
+        <div style="display:flex;gap:8px;">
+          <button id="ptFontBrush" class="settings-btn" style="flex:1;font-family:'Nanum Brush Script',inherit;font-size:17px;" onclick="setPropTitleFont('brush')">붓</button>
+          <button id="ptFontPen" class="settings-btn" style="flex:1;font-family:'Nanum Pen Script',inherit;font-size:17px;" onclick="setPropTitleFont('pen')">펜</button>
+          <button id="ptFontPlain" class="settings-btn" style="flex:1;" onclick="setPropTitleFont('plain')">기본</button>
         </div>
       </div>
 
@@ -6742,9 +6761,21 @@ function toggleColl(id){
 // 어긋나기 쉬우므로, 앱이 계산한 결과(ACTIVE_VERSES)를 그대로 저장해 둔다.
 function _syncVersePushPool(){
   try{
-    const list=ACTIVE_VERSES().map(v=>({
-      ref:v.ref||'',krText:v.krText||'',cat:v.cat||'',topic:v.topic||''
-    })).filter(v=>v.krText);
+    // ⚠️⚠️ v26-0901-3, HB 신고 — "알림으로 명제를 열면 대표 문구가 없고
+    //    우하단 단추도 말씀용이 나온다."
+    //    까닭 — 푸시에 실리는 것은 **장절 한 줄**뿐이다. 명제의 장절은
+    //    같은 장절의 말씀(기본 180 등)과 겹치므로, 앱이 알림을 받아 그 장절로
+    //    되찾을 때 **말씀 쪽을 집었다.** 그래서 명제가 아닌 것으로 그려졌다.
+    //    → 명제에는 그 명제만 가리키는 **열쇠**(_reactKey)를 함께 담는다.
+    //      푸시 함수가 이 열쇠를 알림의 data.ref 로 보내면
+    //      _findVerseByRefLoose 가 그 명제를 정확히 찾아낸다.
+    //    ⚠️ 알림에 **보이는 글**에는 열쇠를 쓰지 않는다 (krText·ref 그대로).
+    const list=ACTIVE_VERSES().map(v=>{
+      const e={ref:v.ref||'',krText:v.krText||'',cat:v.cat||'',topic:v.topic||''};
+      const k=_pushKey(v);
+      if(k)e.key=k;
+      return e;
+    }).filter(v=>v.krText);
     const prev=JSON.stringify(ST.settings.versePushPool||[]);
     const next=JSON.stringify(list);
     if(prev!==next){ST.settings.versePushPool=list;return true;}
@@ -7700,7 +7731,9 @@ async function ceImportGoogleLink(i){
   const c=_currentColl();
   if(!c||!c.google||!c.google[i])return;
   const g=c.google[i];
-  showToast('시트를 불러오는 중…');
+  // ⚠️ v26-0901-3 — 이 토스트는 **결과가 나올 때까지 떠 있는다.** 아래의 모든
+  //    빠져나가는 길이 showToast 로 결과를 덮어쓰므로 저절로 내려간다.
+  showBusyToast('시트를 불러오고 있어요');
   const res=await _fetchSheetCsv(g.url);
   if(res.err){showToast(res.err);return;}
   const rows=_parseCsv(res.text);
@@ -7735,14 +7768,28 @@ let _verseSyncBusy=false;
 async function verseSyncAllNow(){
   if(_verseSyncBusy){showToast('업데이트하는 중이에요');return;}
   _verseSyncBusy=true;
-  showToast('말씀 모음을 업데이트하고 있어요…');
+  showBusyToast('말씀 모음을 업데이트하고 있어요');
   const colls=getVerseCollections();
   let added=0,restored=0,updated=0,removed=0,blocked=0,sheets=0,subs=0,fails=0;
   const today=todayKey();
   try{
+    // ⚠️⚠️ v26-0901-3, HB — "너무 오래 걸린다. 앞으로 자료는 훨씬 더 쌓일 텐데."
+    //    실측해 보니 앱이 하는 일(읽기·반영·저장)은 명제 300개에 **0.03초**다.
+    //    기다림의 거의 전부가 **구글이 시트를 내려 주는 시간**이었다.
+    //    그런데 예전에는 시트를 **하나씩 차례로** 기다렸다 — 시트가 셋이면
+    //    기다림도 세 배였다. 시트끼리는 서로 상관이 없으니 **한꺼번에** 받는다.
+    //    ⚠️ 받기만 함께 하고, **반영(_syncSheetVersesIntoColl)은 예전 그대로
+    //       차례대로** 한다. 같은 모음에 시트가 둘이면 순서가 뒤바뀔 때
+    //       나중 시트가 앞 시트의 구절을 "사라진 것"으로 볼 수 있다.
+    const jobs=[];
+    colls.forEach(c=>(c.google||[]).forEach(g=>jobs.push({c,g})));
+    const fetched=await Promise.all(jobs.map(j=>
+      _fetchSheetCsv(j.g.url).then(r=>r,()=>({err:'실패'}))));
+    const gotOf=new Map();
+    jobs.forEach((j,i)=>gotOf.set(j.g,fetched[i]));
     for(const c of colls){
       for(const g of (c.google||[])){
-        const res=await _fetchSheetCsv(g.url);
+        const res=gotOf.get(g)||{err:'실패'};
         if(res.err){fails++;continue;}
         const rows=_parseCsv(res.text);
         const sane=_sheetRowsSane(rows);
@@ -9626,15 +9673,31 @@ let _toastDismissBound=false;
 // (ref 가 비어 있어 showToast 가 아예 안 불리는 경우 대비) 쓰고 나면 바로
 // 되돌려 놓는다.
 let _suppressTextToastOnce=false;
-function _dismissToast(fast){
+// force=true 면 '진행 중' 토스트도 내린다 (결과 토스트가 부른다)
+function _dismissToast(fast,force){
   const t=document.getElementById('_toast');
   if(!t||t.style.opacity==='0')return;
+  // ⚠️ v26-0901-3, HB — 불러오는 동안 뜬 토스트는 **결과가 나올 때까지 안 내린다.**
+  //    화면을 눌렀다고 사라지면 "끝난 건가?" 하고 기다리게 된다.
+  if(t._busy&&!force)return;
+  t._busy=false;
   clearTimeout(t._tid);
   t.style.transition=fast?'opacity .3s,transform .3s':'opacity .5s,transform .5s';
   t.style.opacity='0';
   t.style.transform='translate(-50%,-50%) scale(.96)';
 }
-function showToast(msg){
+// ── 진행 중 토스트 (v26-0901-3, HB) ──────────────────────────────
+// HB — "불러오기 결과 요약을 보여주기까지 그 앞 토스트가 유지되면 되지 않을까?
+//       '불러오고 있습니다…' 대신에 뭔가 돌아가고 있는 애니메이션이 있으면 좋겠어."
+// 그래서 이 토스트는 **스스로 사라지지 않는다.** 다음 showToast 가 결과를
+// 덮어쓰거나 hideBusyToast() 가 내릴 때까지 돌면서 기다린다.
+// ⚠️ 부른 쪽이 실패로 빠져나가는 길에서도 반드시 내려야 한다 — 안 내리면
+//    화면에 영영 남는다. 그래서 부르는 자리마다 finally 로 감싼다.
+function showBusyToast(msg){
+  showToast(String(msg||'')+'…',true);
+}
+function hideBusyToast(){_dismissToast(true,true);}
+function showToast(msg,busy){
   if(_suppressTextToastOnce){_suppressTextToastOnce=false;return;}
   let t=document.getElementById('_toast');
   if(!t){
@@ -9674,7 +9737,7 @@ function showToast(msg){
   const long=s.length>24;
   t.style.whiteSpace=long?'normal':'nowrap';
   t.style.textAlign=long?'left':'center';
-  const icon=ICONS[kind];
+  const icon=busy?_TOAST_SPIN:ICONS[kind];
   t.innerHTML=(icon?`<span style="flex-shrink:0;display:flex;">${icon}</span>`:'')+`<span>${esc(s)}</span>`;
   t.style.opacity='.94';
   t.style.transform='translate(-50%,-50%) scale(1)';
@@ -9683,9 +9746,16 @@ function showToast(msg){
   // 예전 짧은 문구(9자 안팎, "날짜로 이동했어요")는 3.0s, 중간 문구(15자)는 3.0s
   // (최소값 적용), 긴 안내(30자)는 6.0s. 너무 오래 떠 있으면 다음
   // 조작을 방해하므로 9s 를 넘기지 않는다.
+  // 진행 중 토스트는 시간으로 내리지 않는다 — 결과가 대신 들어온다
+  t._busy=!!busy;
+  if(busy)return;
   const dur=Math.min(9000,Math.max(3000,s.length*200));
   t._tid=setTimeout(()=>{_dismissToast(false);},dur);
 }
+// 돌아가는 표시 — 얇은 호 하나. 테두리·박스 없이 선만 (UI 원칙).
+const _TOAST_SPIN='<svg class="toast-spin" width="15" height="15" viewBox="0 0 20 20" fill="none"'
+  +' stroke="var(--ac)" stroke-width="2.2" stroke-linecap="round">'
+  +'<circle cx="10" cy="10" r="7" opacity=".2"/><path d="M10 3a7 7 0 0 1 7 7"/></svg>';
 
 // ── 아이콘 전용 토스트 (말씀 반응: 좋아요·암송) ──
 // 문구·박스·테두리 없이 채워진 아이콘 하나만 화면 중앙에 잠깐 띄운다.
@@ -9910,6 +9980,10 @@ function openVerseFull(keepOverride){
   if(iv0){iv0.style.transition='';iv0.style.transform='';iv0.style.opacity='';iv0._busy=false;}
   const bt0=el.querySelector('.vf-bottom');
   if(bt0){bt0.style.transition='';bt0.style.opacity='';}
+  // ⚠️ v26-0901-3 — 손글씨체를 **여기서 한 번 더** 데운다. 앱이 켜질 때(1.8초 뒤)
+  //    데워 두지만, 그 뒤에 클라우드나 시트에서 명제가 들어오면 그 글자들은
+  //    아직 안 받아진 상태다. 이미 다 받아 뒀으면 곧바로 빠져나온다.
+  try{_ptWarmup();}catch(_){}
   _verseFullRender();
   _initVerseFullGestures();
   _initVfCatSheet();
@@ -11435,6 +11509,44 @@ function _shotDraw(o){
       _tagartDrawOn(ctx,_vfArtCur.id,X(ar.left),Y(ar.top),ar.width*SC,
                     getComputedStyle(ae).color||'#888',aop>0?aop:.2,_tagartStyle());
   }
+  // ── 명제 대표 문구 타이틀 (v26-0901-3, HB 신고 — "공유 이미지에 대표 문구가
+  //    빠져서 저장된다") ────────────────────────────────────────────────
+  // ⚠️ 여기 빠져 있었다. 화면에는 있는데 이미지에만 없었다 — 캔버스는 화면 요소를
+  //    자동으로 옮겨 주지 않는다. **화면에 그린 것마다 여기 한 줄씩** 있어야 한다.
+  // 줄 배열·기울기·획까지 화면과 같은 값을 그대로 쓴다.
+  const ptEl=document.getElementById('vfPTitle');
+  if(ptEl&&ptEl.classList.contains('on')&&(ptEl.textContent||'').trim()){
+    const cs=getComputedStyle(ptEl),f=_shotFont(cs);
+    const r=ptEl.getBoundingClientRect();
+    if(inView(r)){
+      const lh=parseFloat(cs.lineHeight)||f.size*1.34;
+      const lines=(ptEl._lines&&ptEl._lines.length)?ptEl._lines:[(ptEl.textContent||'').trim()];
+      const ang=(parseFloat(ptEl.style.getPropertyValue('--pt-ang'))||0)*Math.PI/180;
+      ctx.save();
+      // 손으로 얹은 듯한 기울기 — 상자 한가운데를 축으로 (화면의 transform-origin 과 같다)
+      if(ang){
+        const mx=X(r.left+r.width/2),my=Y(r.top+r.height/2);
+        ctx.translate(mx,my);ctx.rotate(ang);ctx.translate(-mx,-my);
+      }
+      ctx.font=`${cs.fontWeight} ${f.size*SC}px ${cs.fontFamily}`;
+      ctx.fillStyle=cs.color;ctx.textAlign='center';ctx.textBaseline='middle';
+      const pcx=X(r.left+r.width/2);
+      lines.forEach((ln,i)=>ctx.fillText(ln,pcx,Y(r.top+lh*(i+0.5))));
+      // 문구 아래 손으로 그은 획 — 화면에 이미 그려진 그 path 를 그대로 옮긴다
+      // (여기서 다시 계산하면 씨앗이 어긋나 이미지에만 다른 획이 그어진다)
+      try{
+        const ink=ptEl.querySelector('.pt-ink path');
+        if(ink&&window.Path2D){
+          ctx.save();
+          ctx.translate(X(r.left),Y(r.top));ctx.scale(SC,SC);
+          ctx.fillStyle=cs.color;ctx.globalAlpha=HI_ART.opa;
+          ctx.fill(new Path2D(ink.getAttribute('d')||''));
+          ctx.restore();
+        }
+      }catch(e){}
+      ctx.restore();
+    }
+  }
   // 본문 — 화면에 그려진 줄 배열을 같은 줄 높이·같은 중앙선에 찍는다.
   // 강조가 있으면 한 줄을 조각으로 나눠 굵기·형광펜을 따로 입힌다.
   const tEl=document.getElementById('vfText');
@@ -12044,7 +12156,10 @@ function _vfRollVariant(){
 // ⚠️ 넘길 때마다 **여기 한 곳에서만** 뽑는다. 그리는 쪽에서 뽑으면 다시 그릴
 //    때(글자 크기 변경·회전 등)마다 자리가 튀어 어지럽다.
 // ⚠️ 우정렬은 뺐다 (HB 26-0831 — 좌·중앙만). 되살리지 말 것.
-const _VF_PT_ALIGN=['al-l','al-c'];
+// ⚠️ v26-0901-3, HB — "대표문구와 명제본문 모두 중앙 정렬해라."
+//    좌정렬(al-l)은 뺐다. 뽑을 것이 하나뿐이라 무작위도 사라졌다.
+//    (되살리려면 여기 한 줄에 'al-l' 을 도로 넣으면 된다)
+const _VF_PT_ALIGN=['al-c'];
 let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
 // 대표 문구 글씨체 — 설정에서 고른다. 기본은 붓.
 //   plain = 본문과 같은 글씨체 (v26-0831-3 의 것, 보관)
@@ -12084,31 +12199,55 @@ const _PT_FAMS={brush:'Nanum Brush Script',pen:'Nanum Pen Script'};
 //   다음 명제로 넘기며 조각이 더 쌓이면 그제야 통과해 붓이 붙었고,
 //   돌아오면 이미 통과한 뒤라 붙어 있었다. **정확히 신고 그대로다.**
 //   → 잴 때도 **그 문구 그대로** 잰다. 받았다는 기억도 문구별로 남긴다.
+// ⚠️⚠️ v26-0901-3 — HB 신고: "첫 명제는 붓이 안 붙거나, 기본 폰트로 보였다가
+//   순간 바뀐다." v26-0831-18 에서 '문구 그대로 재기'로 고쳤는데도 남아 있었다.
+//   남은 까닭 — 받았다/안 받았다를 **문구 단위**로 기억했다. 명제마다 문구가
+//   다르니 **명제를 넘길 때마다 늘 "처음 보는 문구"** 였고, 그때마다
+//     ① '아직 오는 중' 으로 판정해 기다리다가
+//     ② document.fonts.load 가 끝나면 화면을 **한 번 더 그렸다**
+//   그 다시 그리기가 눈에 보이는 '순간 바뀜' 이었다. 글자 조각은 이미 다 와
+//   있는데도 매번 그랬다.
+//   → 기억을 **글자 단위**로 바꾼다. 그 글씨체로 이미 받아 둔 글자들을 모아
+//     두고, 새 문구의 글자가 전부 그 안에 있으면 **기다리지도 다시 그리지도
+//     않는다.** 없는 글자가 있을 때만 그것들만 받아 온다.
+//   ⚠️ 이 기억은 화면을 닫으면 사라지는 값이다 — 저장 항목이 아니다.
 const _PT_TRY_MAX=12;
 let _ptFontTries=0;
-const _ptLoadDone={};        // '글씨체|문구' → 받아 보기를 끝냈다 (성패 무관)
-const _ptLoadBusy={};        // 받는 중
-function _ptKey(fam,t){return fam+'\u0001'+t;}
+const _ptChars={};           // 글씨체 → 이미 받아 둔 글자들(Set)
+const _ptCharsBusy={};       // 글씨체 → 지금 받는 중인 글자들(Set)
+function _ptBag(map,fam){ if(!map[fam])map[fam]=new Set(); return map[fam]; }
 function _ptSample(text){return String(text||'').slice(0,80)||'한글';}
+// 이 문구에서 아직 안 받은 글자들 (공백은 글꼴이 필요 없다)
+function _ptMissing(fam,text){
+  const have=_ptBag(_ptChars,fam),busy=_ptBag(_ptCharsBusy,fam),out=[];
+  String(text||'').split('').forEach(c=>{
+    if(!c.trim())return;
+    if(have.has(c)||busy.has(c)||out.indexOf(c)>=0)return;
+    out.push(c);
+  });
+  return out;
+}
 // 그 문구가 아직 오는 중인가 (오는 중이면 명조로 되돌리지 않는다 — 깜빡임 방지)
 function _ptFontPending(fam,text){
-  const k=_ptKey(fam,_ptSample(text));
-  return !!_ptLoadBusy[k]||!_ptLoadDone[k];
+  const busy=_ptBag(_ptCharsBusy,fam);
+  return String(text||'').split('').some(c=>c.trim()&&busy.has(c));
 }
 // 명제집이 있으면 **미리** 받아 둔다 — 첫 전체화면에서 기다리지 않게.
-// 대표 문구들의 글자를 모아 한 번에 넘긴다 (조각을 한꺼번에 받는다).
+// ⚠️ 예전엔 80글자에서 잘랐다. 대표 문구 전체의 글자는 그보다 훨씬 많아서
+//    잘린 나머지가 첫 명제에서 그대로 '없는 글자'가 됐다. 이제 다 넘긴다.
 function _ptWarmup(){
   try{
     const seen=new Set();
-    (ACTIVE_VERSES()||[]).forEach(v=>{
+    (ALL_VERSES()||[]).forEach(v=>{
       if(!_vfIsProp(v))return;
       String(v.hi||'').split('').forEach(c=>{if(c.trim())seen.add(c);});
     });
     if(!seen.size)return;
-    _ptEnsureFont([...seen].slice(0,80).join(''));
+    _ptEnsureFont([...seen].join(''),true);
   }catch(_){}
 }
-function _ptEnsureFont(text){
+// quiet=true 면 다 받은 뒤에도 화면을 다시 그리지 않는다 (미리 받아 두기)
+function _ptEnsureFont(text,quiet){
   if(!document.getElementById('ptHandLink')){
     const l=document.createElement('link');
     l.id='ptHandLink';l.rel='stylesheet';
@@ -12121,23 +12260,31 @@ function _ptEnsureFont(text){
   const fam=_PT_FAMS[_ptFont()];
   if(!fam)return;
   // ⚠️ 한글은 Google 이 **쓰인 글자 조각만** 내려 준다. 그래서 받을 때도 잴 때도
-  //    실제 문구를 함께 쓴다.
-  const t=_ptSample(text),k=_ptKey(fam,t);
-  // ① 이 문구는 이미 받아 봤다(성패 무관) → 여기서 바로 나간다.
-  //    ⚠️ 이 한 줄이 무한 되풀이를 막는다 — 다시 그리기가 이리로 돌아와도
-  //       곧장 나가므로 그리기↔기다리기 고리가 생기지 않는다 (v26-0831-8 사고).
-  if(_ptLoadDone[k]||_ptLoadBusy[k])return;
+  //    실제 글자를 함께 쓴다.
+  const miss=_ptMissing(fam,text);
+  // ① 이 문구의 글자는 이미 다 받아 봤다 → **여기서 바로 나간다.**
+  //    ⚠️ 이 한 줄이 두 가지를 막는다 —
+  //       무한 되풀이(v26-0831-8 사고)와, 명제를 넘길 때마다의 다시 그리기
+  //       (= HB 가 본 '기본 폰트로 보였다가 순간 바뀜').
+  if(!miss.length)return;
   if(_ptFontTries>=_PT_TRY_MAX)return;        // ② 못 받는 망에서 무한 시도 방지
-  _ptLoadBusy[k]=true;_ptFontTries++;
+  const busy=_ptBag(_ptCharsBusy,fam);
+  miss.forEach(c=>busy.add(c));
+  _ptFontTries++;
+  const t=miss.join('');
+  const finish=()=>{
+    const have=_ptBag(_ptChars,fam);
+    miss.forEach(c=>{busy.delete(c);have.add(c);});
+  };
   // ⚠️ 느린 망에서는 이 기다림이 영영 안 끝날 수 있다 → 시간을 끊는다.
   const wait=Promise.all(Object.values(_PT_FAMS).map(f=>
     document.fonts.load("16px '"+f+"'",t).catch(()=>null)));
   const timeout=new Promise(r=>setTimeout(r,6000));
   Promise.race([wait,timeout]).then(()=>{
     _ptFontOkCache={};                       // 다시 재 본다
-    _ptLoadBusy[k]=false;_ptLoadDone[k]=true;
-    if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();
-  }).catch(()=>{_ptLoadBusy[k]=false;_ptLoadDone[k]=true;});
+    finish();
+    if(!quiet&&typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();
+  }).catch(()=>{finish();});
 }
 // ⚠️ 손글씨체는 크게 흘려 써서 배율(--pt-k)을 크게 준다. 그런데 **글씨체를 못
 //    받으면**(사내망·오프라인) 그 배율이 본문 글씨체에 그대로 걸려 타이틀만
@@ -12147,7 +12294,7 @@ function _ptEnsureFont(text){
 //    (위 v26-0831-18 주석 참고).
 let _ptFontOkCache={};
 function _ptFontLoaded(fam,text){
-  const probe=_ptSample(text),ck=_ptKey(fam,probe);
+  const probe=_ptSample(text),ck=fam+'\u0001'+probe;
   if(_ptFontOkCache[ck])return true;         // 받았다는 답만 기억한다
   let ok=false;
   try{
@@ -12441,8 +12588,17 @@ const _VF_SHUF_MAX=30;        // 서른 걸음까지 되돌아간다 (넉넉하�
 let _vfShufBack=[],_vfShufFwd=[];
 function _vfShufReset(){_vfShufBack=[];_vfShufFwd=[];}
 // 지금 어디를 보고 있나 — 목록 안이면 그 자리, 아니면 모음의 번호
+// ⚠️⚠️ v26-0901-3, HB 신고 — "알림으로 연 전체화면은 다음으로 갔다가 이전으로
+//   돌아오면 실제 이전 명제가 아니라 엉뚱한 것이 나온다."
+//   까닭 — 자취에 적는 '지금 자리'가 목록 번호(nav) 아니면 **순번(verseCurrentIdx)**
+//   뿐이었다. 그런데 알림·구절메뉴로 연 화면은 목록도 순번도 아닌
+//   **지정 구절(_vfOverrideVerse)** 을 보고 있다. 그래서 앞으로 갈 때
+//   "알림 이전에 보던 순번"이 적혔고, 뒤로 가니 그 엉뚱한 말씀이 나왔다.
+//   → 지정 구절이 있으면 **그 구절 자체를** 자취에 담는다.
+//   ⚠️ 저장 항목이 아니다 — 화면을 닫으면 사라지는 값이다.
 function _vfShufPos(){
   if(_vfNavList&&_vfNavList.length)return{k:'nav',i:_vfNavIdx};
+  if(_vfOverrideVerse)return{k:'ov',v:_vfOverrideVerse};
   return{k:'seq',idx:ST.settings.verseCurrentIdx};
 }
 function _vfShufGo(p){
@@ -12451,6 +12607,11 @@ function _vfShufGo(p){
     if(!(_vfNavList&&_vfNavList.length))return false;   // 그 사이 목록이 사라졌다
     _vfNavIdx=Math.max(0,Math.min(p.i,_vfNavList.length-1));
     _vfOverrideVerse=_vfNavList[_vfNavIdx];
+    return true;
+  }
+  if(p.k==='ov'){
+    if(!p.v)return false;
+    _vfOverrideVerse=p.v;
     return true;
   }
   _vfOverrideVerse=null;
@@ -12767,6 +12928,24 @@ function toggleVfArt(){
   if(_verseFullIsOpen()){_vfArtForce=true;_verseFullRender();}
   _renderSharePreview&&_renderSharePreview();
 }
+// 대표 문구 글씨체 고르기 (v26-0901-3, HB)
+// ⚠️ 글씨체를 바꾸면 **그 글씨체로는 아직 아무 글자도 안 받아 뒀다.**
+//    미리 받아 두지 않으면 첫 명제에서 또 기다린다 → 여기서 바로 데워 둔다.
+function setPropTitleFont(f){
+  ST.settings.propTitleFont=_PT_FONTS.includes(f)?f:'brush';
+  save();
+  _ptSyncFontUI();
+  try{_ptWarmup();}catch(_){}
+  if(_verseFullIsOpen())_verseFullRender();
+  _renderSharePreview&&_renderSharePreview();
+}
+function _ptSyncFontUI(){
+  const cur=_ptFont();
+  [['brush','ptFontBrush'],['pen','ptFontPen'],['plain','ptFontPlain']].forEach(([k,id])=>{
+    const b=document.getElementById(id);
+    if(b)b.classList.toggle('on',cur===k);
+  });
+}
 function setVfArtStyle(st){
   ST.settings.vfArtStyle=(st==='organic')?'organic':'minimal';save();
   _vfArtSyncUI();
@@ -12777,6 +12956,7 @@ function setVfArtStyle(st){
 // ⚠️ renderVerseSettingsModal() 에서 반드시 불러 준다 — 안 부르면 설정창을
 //    다시 열 때 버튼이 저장값과 다르게 보이고, 그 상태로 누르면 정반대로 저장된다.
 function _vfArtSyncUI(){
+  _ptSyncFontUI();            // 설정창을 다시 열 때 저장값과 어긋나지 않게
   const on=_tagartOn(),st=_tagartStyle();
   document.getElementById('vfArtOnBtn')?.classList.toggle('on',on);
   document.querySelectorAll('#verseSettingsPanel [data-cond="vfArt"]')
@@ -12840,6 +13020,54 @@ function _vgOpenFromRef(r){
   const b=_bookOfRef(r);
   if(b)openVerseGrid('book',b);
 }
+// ── 대표 문구 줄바꿈 (v26-0901-3, HB) ────────────────────────────────
+// HB — "첫줄 글자수가 스페이스 제외하고 30자가 넘으면, 기존 기본 줄바꿈 규칙에서
+//       가장 점수 높은 곳에서 1회 줄바꿈. 줄바꿈 후 한 줄이 또 30자를 넘거나
+//       두 줄의 차이가 10자를 넘으면 두 줄 중 긴 줄을 또 1회 줄바꿈."
+// ⚠️ '점수'는 본문 줄바꿈 엔진(_vfBreakClass)이 이미 매기고 있는 등급을 그대로
+//    쓴다. 여기서 새 규칙을 만들지 않는다 — 두 벌이 되면 서로 어긋난다.
+//    forced("HB 줄바꿈 S2") > must(종결·인용) > ok(연결어미·쉼표) > soft
+//    ⚠️ 'no'(끊지 말 것) 자리는 아예 고르지 않는다.
+const _PT_LINE_MAX=30;    // 한 줄 글자 수 상한 (공백 제외)
+const _PT_DIFF_MAX=10;    // 두 줄 길이 차이 상한
+const _PT_BREAK_SCORE={forced:4,must:3,ok:2,soft:1,no:0};
+function _ptLen(t){return String(t||'').replace(/\s+/g,'').length;}
+// 낱말 사이 한 자리를 골라 둘로 가른다.
+// 점수가 가장 높은 자리, 점수가 같으면 두 쪽이 가장 고르게 갈리는 자리.
+function _ptSplitOnce(text){
+  const w=String(text||'').trim().split(/\s+/).filter(Boolean);
+  if(w.length<2)return null;
+  const pick=(allowNo)=>{
+    let best=null;
+    for(let i=0;i<w.length-1;i++){
+      const cls=_vfBreakClass(w[i],w[i+1]);
+      const sc=_PT_BREAK_SCORE[cls]||0;
+      if(!sc&&!allowNo)continue;
+      const a=_ptLen(w.slice(0,i+1).join('')),b=_ptLen(w.slice(i+1).join(''));
+      const c={i,sc,diff:Math.abs(a-b)};
+      if(!best||c.sc>best.sc||(c.sc===best.sc&&c.diff<best.diff))best=c;
+    }
+    return best;
+  };
+  // 끊어도 되는 자리가 하나도 없으면(전부 '끊지 말 것') 그때만 가장 고른 자리로
+  const best=pick(false)||pick(true);
+  if(!best)return null;
+  return[w.slice(0,best.i+1).join(' '),w.slice(best.i+1).join(' ')];
+}
+function _ptWrapTitle(text){
+  const t=String(text||'').trim();
+  if(!t)return[];
+  if(_ptLen(t)<=_PT_LINE_MAX)return[t];        // 30자 이하는 한 줄 그대로
+  const two=_ptSplitOnce(t);
+  if(!two)return[t];                           // 낱말이 하나뿐이면 가를 수 없다
+  const la=_ptLen(two[0]),lb=_ptLen(two[1]);
+  if(la<=_PT_LINE_MAX&&lb<=_PT_LINE_MAX&&Math.abs(la-lb)<=_PT_DIFF_MAX)return two;
+  // 두 줄 중 **긴 쪽**을 한 번 더 가른다 (딱 한 번 — 세 줄까지다)
+  const k=(la>=lb)?0:1;
+  const more=_ptSplitOnce(two[k]);
+  if(!more)return two;
+  return k===0?[more[0],more[1],two[1]]:[two[0],more[0],more[1]];
+}
 // ── 명제 대표 문구 타이틀 ──────────────────────────────────────────────
 // 크기는 본문처럼 글자 수에 따라 단계적으로 정한다 — 짧으면 크게, 길면 작게.
 // 자리(좌·중앙·우)와 기울기는 _vfRollProp() 이 이미 뽑아 뒀다.
@@ -12875,7 +13103,11 @@ function _vfRenderPropTitle(v){
   // 글씨체 배율은 CSS 변수(--pt-k)에서 읽는다 — 글씨체를 더할 때 CSS 한 곳만 고치면 된다
   const fk=parseFloat(getComputedStyle(el).getPropertyValue('--pt-k'))||1;
   el.style.fontSize=Math.round(bodyMax*k*fk)+'px';
-  el.innerHTML='<span class="pt-w">'+esc(t)+'</span>';
+  // ⚠️ 줄 배열은 **공유 이미지도 그대로 쓴다** (_shotDraw). 비워 두면 이미지에
+  //    타이틀이 한 줄로 넘친다.
+  const lines=_ptWrapTitle(t);
+  el._lines=lines;
+  el.innerHTML='<span class="pt-w">'+lines.map(esc).join('<br>')+'</span>';
   _vfPropInk(el);
 }
 // 문구 아래 손으로 그은 획. 앱의 손글씨 물결과 **같은 붓**을 쓴다
@@ -17027,7 +17259,29 @@ function _refNorm(ref){
   }
   return r;
 }
+// ── 알림에 실어 보내는 명제 열쇠 (v26-0901-3, HB) ────────────────────
+// ⚠️ 반응 키(_reactKey)를 그대로 보내지 않는다. 그것은 제어문자(\u0001)로
+//    조각을 가르는데, FCM 의 data 와 주소(?verse=)를 지나오는 동안 제어문자는
+//    조용히 사라질 수 있다. 그러면 알림이 아무것도 못 찾는다.
+//    → 눈에 보이는 글자만으로 된 모양을 따로 쓴다.
+const _PUSH_PID_PREFIX='p7:';
+function _pushKey(v){
+  if(!_vfIsProp(v)||!v.pid)return '';
+  return _PUSH_PID_PREFIX+String(v._code||'')+':'+v.pid;
+}
+function _pushKeyPid(k){
+  const t=String(k||'');
+  if(t.indexOf(_PUSH_PID_PREFIX)!==0)return '';
+  const rest=t.slice(_PUSH_PID_PREFIX.length),i=rest.indexOf(':');
+  return i<0?rest:rest.slice(i+1);
+}
 function _findVerseByRefLoose(ref){
+  // 알림이 실어 온 명제 열쇠 (v26-0901-3) — 명제 ID 로 곧장 찾는다
+  const pk=_pushKeyPid(ref);
+  if(pk){
+    return (ACTIVE_VERSES()||[]).find(v=>v&&v.pid===pk)
+        || (ALL_VERSES()||[]).find(v=>v&&v.pid===pk) || null;
+  }
   // 명제 키(명제 ID)면 pid 로 찾는다 (v26-0831-6)
   // ⚠️ v26-0831-14, HB 신고 — 키 모양이 v26-0831-7 에 바뀌어(코드가 가운데
   //    들어왔다) 앞머리만 떼면 "<코드>\u0001<명제 ID>" 가 나온다. 그것을
@@ -26642,6 +26896,10 @@ function _notifStep(){
       return;
     }
     _notifMark(t,'목표 말씀 검색 성공',hit.ref||t.ref);
+    // ⚠️ v26-0901-3, HB — 알림으로 연 말씀을 **'지금 보고 있는 자리'로 맞춰 둔다.**
+    //    안 그러면 다음/이전으로 넘길 때 알림 이전에 보던 순번에서 이어져
+    //    "이전으로 갔는데 엉뚱한 것이 나온다"가 된다.
+    try{ if(hit.idx&&getVerseByIdx(hit.idx)===hit)setVerseIdx(hit.idx); }catch(_){}
     _vfOverrideVerse=hit;
     openVerseFull(true);   // 덮인 화면 숨기기는 openVerseFull 안에서 처리된다
     _verseFullRender();               // 이미 떠 있던 경우에도 새 말씀으로 다시 그린다

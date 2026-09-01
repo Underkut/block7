@@ -39,4 +39,26 @@ console.log('\n시나리오 2 — 토스트 유지 시간이 글자 수에 비�
         Math.min(9000, Math.max(3000, 'x'.repeat(100).length * 200)), 9000);
 }
 
+console.log('\n시나리오 3 — 진행 중 토스트는 결과가 나올 때까지 안 내려간다 (v26-0901-3, HB)');
+{
+  const { SRC } = require('./_load');
+  // HB — "불러오기 결과 요약을 보여주기까지 그 앞 토스트가 유지되면 되지 않을까?
+  //       '불러오고 있습니다…' 대신 뭔가 돌아가고 있는 애니메이션이 있으면 좋겠어."
+  sc.eq('진행 중 토스트가 있다', SRC.includes('function showBusyToast(msg){'), true);
+  sc.eq('내리는 길도 있다', SRC.includes('function hideBusyToast(){'), true);
+  // ⚠️ 시간으로 내리지 않는다 — 결과 토스트가 덮어써야만 내려간다
+  sc.eq('시간으로 안 내린다', SRC.includes('t._busy=!!busy;\n  if(busy)return;'), true);
+  // ⚠️ 화면을 눌러도 안 내려간다 (눌러 사라지면 "끝난 건가?" 하고 기다리게 된다)
+  sc.eq('눌러도 안 내려간다', SRC.includes('if(t._busy&&!force)return;'), true);
+  sc.eq('결과가 들어오면 자리를 내준다', SRC.includes('t._busy=false;'), true);
+  // 돌아가는 표시 — 테두리·박스 없이 선 하나 (UI 원칙)
+  sc.eq('도는 표시가 있다', SRC.includes("const _TOAST_SPIN='<svg class=\"toast-spin\""), true);
+  sc.eq('돌아간다', SRC.includes('@keyframes toastSpin{to{transform:rotate(360deg);}}'), true);
+  sc.eq('숨 쉬듯 살짝', SRC.includes('@keyframes toastBreathe'), true);
+  // 실제로 쓰는 자리 두 곳
+  sc.eq('시트 불러오기가 쓴다', SRC.includes("showBusyToast('시트를 불러오고 있어요');"), true);
+  sc.eq('전체 업데이트도 쓴다', SRC.includes("showBusyToast('말씀 모음을 업데이트하고 있어요');"), true);
+  sc.eq('옛 문구는 없앴다', SRC.includes("showToast('시트를 불러오는 중…');"), false);
+}
+
 sc.done();

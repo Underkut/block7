@@ -30,10 +30,11 @@ console.log('\n시나리오 2 — 타이틀 자리·기울기는 넘길 때 한 
   sc.eq('뽑는 함수가 있다', SRC_DEV.includes('function _vfRollProp(){'), true);
   sc.eq('넘길 때마다 부른다',
         /function _vfRollVariant\(\)\{[\s\S]{0,400}_vfRollProp\(\);/.test(SRC_DEV), true);
-  // ⚠️ 우정렬은 뺐다 (HB 26-0831 — 좌·중앙만). 되살리지 말 것.
-  sc.eq('좌·중앙 둘 중에서 고른다',
-        SRC_DEV.includes("const _VF_PT_ALIGN=['al-l','al-c'];"), true);
+  // ⚠️ v26-0901-3, HB — "대표문구와 명제본문 모두 중앙 정렬해라." 좌·우정렬 둘 다 뺐다.
+  sc.eq('가운데로만 선다',
+        SRC_DEV.includes("const _VF_PT_ALIGN=['al-c'];"), true);
   sc.eq('우정렬은 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-r'/.test(SRC_DEV), false);
+  sc.eq('좌정렬도 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-l'/.test(SRC_DEV), false);
   // 그리는 함수 안에서 다시 뽑지 않는다
   const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
                              SRC_DEV.indexOf('function _vfPropInk('));
@@ -49,7 +50,8 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
 {
   sc.eq('명제일 때만 prop 클래스',
         SRC_DEV.includes("text.classList.toggle('prop',_vfIsProp(v));"), true);
-  sc.eq('좌정렬 CSS', SRC_DEV.includes('#vfText.prop{text-align:left;}'), true);
+  // v26-0901-3, HB — 명제 본문도 **가운데**로 (말씀과 같아졌다)
+  sc.eq('가운데 정렬 CSS', SRC_DEV.includes('#vfText.prop{text-align:center;}'), true);
   // ⚠️ 말씀의 줄바꿈(_vfWrapFit)은 짧은 구절을 의미 단위로 끊기 위한 것이다.
   //    산문에 씌우면 낱말 하나가 혼자 한 줄에 남는다 → 명제는 그 앞에서 갈린다.
   sc.eq('명제는 말씀 줄바꿈을 안 쓴다',
@@ -166,7 +168,7 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
   //    **명제를 볼 때만** 받는다 (고운바탕 _vfEnsureFont 와 같은 방식).
   sc.eq('늘 받지는 않는다',
         /@import[^;]*Nanum\+Brush/.test(SRC_DEV), false);
-  sc.eq('볼 때 받는 함수가 있다', SRC_DEV.includes('function _ptEnsureFont(text){'), true);
+  sc.eq('볼 때 받는 함수가 있다', SRC_DEV.includes('function _ptEnsureFont(text,quiet){'), true);
   sc.eq('그릴 때 부른다',
         /function _vfRenderPropTitle\(v\)\{[\s\S]{0,600}_ptEnsureFont\(t\);/.test(SRC_DEV), true);
 
@@ -240,7 +242,7 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
   sc.eq('잴 때 그 문구로 잰다',
         SRC_DEV.includes('function _ptFontLoaded(fam,text){'), true);
   sc.eq('문구별로 기억한다',
-        SRC_DEV.includes('const probe=_ptSample(text),ck=_ptKey(fam,probe);'), true);
+        SRC_DEV.includes("const probe=_ptSample(text),ck=fam+'\\u0001'+probe;"), true);
   sc.eq('못 받았다는 답은 캐시하지 않는다',
         SRC_DEV.includes('if(ok)_ptFontOkCache[ck]=true;'), true);
   sc.eq('글씨체만으로 기억하던 옛 길은 없앴다',
@@ -248,7 +250,7 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
   // 그리고 **적극적으로 기다렸다가** 도착하면 다시 그린다
   sc.eq('글꼴을 기다린다', SRC_DEV.includes('document.fonts.load("16px \'"+f+"\'",t)'), true);
   sc.eq('도착하면 다시 그린다',
-        SRC_DEV.includes("if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();"), true);
+        SRC_DEV.includes("if(!quiet&&typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();"), true);
   sc.eq('다시 재 보게 캐시를 비운다', SRC_DEV.includes('_ptFontOkCache={};'), true);
   sc.eq('실제 문구를 넘긴다', SRC_DEV.includes('_ptEnsureFont(t);'), true);
   sc.eq('기다림에 시간 제한이 있다',
@@ -346,13 +348,15 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
   //    가 쉬지 않고 돌아 **PC·모바일 둘 다 화면이 멈췄다** (HB 신고).
   // v26-0831-18 — 고리를 끊는 자물쇠가 '문구별 표시'로 바뀌었다. 한 번 받아 본
   //    문구는 다시 받지 않으므로, 다시 그리기가 돌아와도 곧장 나간다.
-  sc.eq('받아 본 문구는 다시 안 받는다',
-        SRC_DEV.includes('if(_ptLoadDone[k]||_ptLoadBusy[k])return;'), true);
+  // v26-0901-3 — 자물쇠가 '문구별'에서 **'글자별'** 로 바뀌었다. 이미 받아 둔
+  //   글자만으로 된 문구는 아예 받으러 가지 않으므로 고리가 생기지 않는다.
+  sc.eq('받아 둔 글자뿐이면 안 받는다', SRC_DEV.includes('if(!miss.length)return;'), true);
+  sc.eq('글자 단위로 기억한다', SRC_DEV.includes('function _ptMissing(fam,text){'), true);
   sc.eq('시도 횟수도 막는다',
         SRC_DEV.includes('if(_ptFontTries>=_PT_TRY_MAX)return;'), true);
-  sc.eq('시도할 때마다 센다', SRC_DEV.includes('_ptLoadBusy[k]=true;_ptFontTries++;'), true);
-  sc.eq('끝나면 받아 봤다고 적는다',
-        SRC_DEV.includes('_ptLoadBusy[k]=false;_ptLoadDone[k]=true;'), true);
+  sc.eq('시도할 때마다 센다', SRC_DEV.includes('_ptFontTries++;'), true);
+  sc.eq('끝나면 받아 뒀다고 적는다',
+        SRC_DEV.includes('miss.forEach(c=>{busy.delete(c);have.add(c);});'), true);
 
   // ── 실제로 돌려 본다: 고리가 도는지 세어 본다 ──
   let renders = 0;
@@ -421,6 +425,89 @@ console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26
   // v26-0831-20, HB — 탭은 **가운데**로
   sc.eq('가운데 정렬', /\.vg-tabrow\{[^}]*justify-content:center;/.test(SRC_DEV), true);
   sc.eq('높이를 최소로', /\.vg-tabrow\{[^}]*padding:0 12px 4px;/.test(SRC_DEV), true);
+}
+
+console.log('\n시나리오 18 — 대표 문구 줄바꿈 규칙 (v26-0901-3, HB)');
+{
+  // HB — "첫줄 글자수가 스페이스 제외 30자가 넘으면 가장 점수 높은 곳에서 1회
+  //       줄바꿈. 그 뒤 한 줄이 또 30자를 넘거나 두 줄 차이가 10자를 넘으면
+  //       긴 줄을 또 1회 줄바꿈."
+  sc.eq('상한이 한 곳에 있다', SRC_DEV.includes('const _PT_LINE_MAX=30;'), true);
+  sc.eq('차이 상한도', SRC_DEV.includes('const _PT_DIFF_MAX=10;'), true);
+  // ⚠️ 점수는 본문 줄바꿈 엔진의 등급을 그대로 쓴다 — 두 벌이 되면 어긋난다
+  sc.eq('본문 엔진의 등급을 쓴다',
+        SRC_DEV.includes('const _PT_BREAK_SCORE={forced:4,must:3,ok:2,soft:1,no:0};'), true);
+  sc.eq('그 등급 함수를 부른다',
+        /function _ptSplitOnce\(text\)\{[\s\S]{0,600}_vfBreakClass\(/.test(SRC_DEV), true);
+  sc.eq('줄 배열을 이미지도 쓰게 남긴다', SRC_DEV.includes('el._lines=lines;'), true);
+  sc.eq('<br> 로 그린다',
+        SRC_DEV.includes("el.innerHTML='<span class=\"pt-w\">'+lines.map(esc).join('<br>')+'</span>';"), true);
+
+  // ── 실제로 돌려 본다 ──
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_LINE_MAX='),
+                            SRC_DEV.indexOf('// ── 명제 대표 문구 타이틀 ─'));
+  const box = {};
+  // 등급은 흉내만 낸다 — 이 시험의 관심사는 **자르는 규칙**이지 등급표가 아니다.
+  // '~하고/~하니' 로 끝나면 끊어도 되는 자리(ok), 그 밖은 soft.
+  const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
+  new Function('box','_vfBreakClass', src + ';box.wrap=_ptWrapTitle;box.len=_ptLen;')
+    (box, cls);
+
+  // ① 30자 이하는 한 줄 그대로
+  sc.eq('짧으면 안 자른다', box.wrap('주님은 나의 목자시니'), ['주님은 나의 목자시니']);
+  // ② 30자를 넘으면 한 번 자른다 — 점수 높은 자리(ok)에서
+  const t2 = '하나님은 오늘도 우리를 부르시고 우리를 세우시며 끝내 우리를 온전하게 하신다';
+  const r2 = box.wrap(t2);
+  sc.eq('길면 자른다', r2.length >= 2, true);
+  sc.eq('자른 자리가 점수 높은 곳', /(고|며)$/.test(r2[0].split(/\s+/).pop()), true);
+  sc.eq('글자는 하나도 안 잃는다', r2.join(' '), t2);
+  // ③ 자른 뒤에도 한 줄이 30자를 넘으면 긴 줄을 한 번 더 자른다 (세 줄까지)
+  const t3 = '우리가 함께 걸어가며 서로를 돌아보고 마침내 한 몸으로 자라나기까지 주께서 우리를 붙드시니 끝내 우리는 흔들리지 않는다';
+  const r3 = box.wrap(t3);
+  sc.eq('세 줄까지 간다', r3.length, 3);
+  sc.eq('세 줄도 글자를 안 잃는다', r3.join(' '), t3);
+  sc.eq('네 줄로는 안 간다', r3.length <= 3, true);
+  // ④ 낱말이 하나뿐이면 가를 수 없다 — 그대로 둔다
+  sc.eq('한 낱말은 그대로', box.wrap('가'.repeat(40)), ['가'.repeat(40)]);
+  // ⑤ 글자 수는 **공백을 뺀다**
+  sc.eq('공백은 안 센다', box.len('가 나 다'), 3);
+}
+
+console.log('\n시나리오 19 — 공유 이미지에도 대표 문구가 들어간다 (v26-0901-3, HB)');
+{
+  // HB 신고 — "명제집 공유 이미지에 대표 문구가 빠져서 저장되고 있어."
+  // ⚠️ 캔버스는 화면 요소를 자동으로 옮겨 주지 않는다. 화면에 그린 것마다
+  //    _shotDraw 안에 한 자리씩 있어야 한다.
+  const shot = SRC_DEV.slice(SRC_DEV.indexOf('function _shotDraw(o){'),
+                             SRC_DEV.indexOf('function _fmtRefForText('));
+  sc.eq('타이틀을 찾는다', shot.includes("document.getElementById('vfPTitle')"), true);
+  sc.eq('켜져 있을 때만', shot.includes("ptEl.classList.contains('on')"), true);
+  // 줄 배열은 화면이 정한 그대로 (여기서 다시 접으면 화면과 다른 그림이 된다)
+  sc.eq('화면의 줄 배열을 쓴다', shot.includes('ptEl._lines&&ptEl._lines.length'), true);
+  sc.eq('가운데에 찍는다', shot.includes("lines.forEach((ln,i)=>ctx.fillText(ln,pcx,Y(r.top+lh*(i+0.5))));"), true);
+  // 손으로 그은 획도 **화면에 그려진 그 path 그대로** 옮긴다 (씨앗을 다시 뽑지 않는다)
+  sc.eq('획도 옮긴다', shot.includes("ptEl.querySelector('.pt-ink path')"), true);
+  sc.eq('획을 다시 계산하지 않는다', shot.includes('_hiWavePoly(lw'), false);
+  // 본문보다 **먼저** 그린다 (화면에서도 타이틀이 위에 있다)
+  sc.eq('본문보다 먼저',
+        shot.indexOf("getElementById('vfPTitle')") < shot.indexOf("getElementById('vfText')"), true);
+}
+
+console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26-0901-3, HB)');
+{
+  // HB — "붓폰트 외에 펜폰트도 넣는다고 하지 않았어? 적용된 케이스가 안 보이던데"
+  // 까닭 — 값(_PT_FONTS)과 CSS 는 있었는데 **고를 자리가 없었다.**
+  sc.eq('세 가지가 있다', SRC_DEV.includes("const _PT_FONTS=['brush','pen','plain'];"), true);
+  sc.eq('고르는 함수', SRC_DEV.includes('function setPropTitleFont(f){'), true);
+  ['ptFontBrush','ptFontPen','ptFontPlain'].forEach(id=>
+    sc.eq(id+' 단추', SRC_DEV.includes('id="'+id+'"'), true));
+  sc.eq('저장값과 맞춘다', SRC_DEV.includes('function _ptSyncFontUI(){'), true);
+  // ⚠️ 설정창을 다시 열 때 반드시 맞춰 준다 (안 맞추면 정반대로 저장된다)
+  sc.eq('설정창을 열 때 맞춘다',
+        /function _vfArtSyncUI\(\)\{\s*_ptSyncFontUI\(\);/.test(SRC_DEV), true);
+  // 글씨체를 바꾸면 그 글씨체 글자는 아직 하나도 없다 → 바로 데운다
+  sc.eq('바꾸면 미리 받아 둔다',
+        /function setPropTitleFont\(f\)\{[\s\S]{0,300}_ptWarmup\(\)/.test(SRC_DEV), true);
 }
 
 sc.done();
