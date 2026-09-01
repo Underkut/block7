@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0901-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -549,9 +549,11 @@ header{
 .vf-ptitle.pf-plain{--pt-k:1;}
 .vf-ptitle.pf-brush{font-family:'Nanum Brush Script',var(--vf-font,inherit);--pt-k:1.5;font-weight:400;}
 .vf-ptitle.pf-pen{font-family:'Nanum Pen Script',var(--vf-font,inherit);--pt-k:1.42;font-weight:400;}
-/* 명제 본문 — v26-0901-3, HB 지시로 **가운데**로 바꿨다 (말씀과 같아졌다).
-   ⚠️ 이 규칙 자체는 남겨 둔다 — 명제만 달리 할 일이 또 생길 자리다. */
-#vfText.prop{text-align:center;}
+/* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다.
+   ⚠️ v26-0901-4, HB — 대표 문구가 30자를 넘어 **줄을 가른 명제만** 가운데로 선다.
+      그 판정은 _vfPropWide 한 곳에서 하고 여기 클래스로 내려온다. */
+#vfText.prop{text-align:left;}
+#vfText.prop.prop-mid{text-align:center;}
 #vfRef{
   margin-top:18px;font-size:13px;color:var(--vf-tx3,var(--tx3));
   font-family:var(--vf-reffont,var(--font-number));letter-spacing:.06em;flex-shrink:0;
@@ -3644,7 +3646,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-3";
+const APP_VERSION = "v. 26-0901-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4828,18 +4830,10 @@ window._fbScriptsReady=new Promise(resolve=>{
         </div>
       </div>
 
-      <!-- ── 명제 대표 문구 글씨체 (v26-0901-3, HB — "펜폰트 적용된 케이스가 안 보인다") ──
-           만들어만 두고 고를 자리가 없었다. 여기서 고른다.
-           ⚠️ 명제집을 쓰는 사람만 보면 되는 것이라 파워 등급이다. -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">대표 문구 글씨체</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">설교 명제 전체화면 위쪽에 서는 대표 문구의 글씨체예요. 손글씨체는 명제를 볼 때만 내려받아요. (말씀에는 대표 문구가 없어서 이 설정이 보이지 않아요)</div>
-        <div style="display:flex;gap:8px;">
-          <button id="ptFontBrush" class="settings-btn" style="flex:1;font-family:'Nanum Brush Script',inherit;font-size:17px;" onclick="setPropTitleFont('brush')">붓</button>
-          <button id="ptFontPen" class="settings-btn" style="flex:1;font-family:'Nanum Pen Script',inherit;font-size:17px;" onclick="setPropTitleFont('pen')">펜</button>
-          <button id="ptFontPlain" class="settings-btn" style="flex:1;" onclick="setPropTitleFont('plain')">기본</button>
-        </div>
-      </div>
+      <!-- ⚠️ v26-0901-4, HB — 대표 문구 글씨체를 **고르는 자리는 없앴다.**
+           "펜 폰트 너무 별로야. 가벼운 느낌이라서 명제랑 안 어울려. 일단 대표
+            문구는 모두 붓폰트를 디폴트로." → 늘 붓이다. 고를 것이 없으니 칸도 없다.
+           다시 만들 일이 생기면 setPropTitleFont() 가 그대로 남아 있다. -->
 
       <!-- ── 전체화면 우측 카운터 집계 범위 ── -->
       <div class="settings-section" data-lv="mp">
@@ -11529,8 +11523,12 @@ function _shotDraw(o){
         ctx.translate(mx,my);ctx.rotate(ang);ctx.translate(-mx,-my);
       }
       ctx.font=`${cs.fontWeight} ${f.size*SC}px ${cs.fontFamily}`;
-      ctx.fillStyle=cs.color;ctx.textAlign='center';ctx.textBaseline='middle';
-      const pcx=X(r.left+r.width/2);
+      ctx.fillStyle=cs.color;ctx.textBaseline='middle';
+      // ⚠️ v26-0901-4 — 자리(좌·가운데)는 **화면에서 정한 그대로** 따른다.
+      //    늘 가운데로 찍었더니 좌정렬 명제가 이미지에서만 가운데로 나왔다.
+      const pal=cs.textAlign==='left'?'left':'center';
+      ctx.textAlign=pal;
+      const pcx=pal==='left'?X(r.left):X(r.left+r.width/2);
       lines.forEach((ln,i)=>ctx.fillText(ln,pcx,Y(r.top+lh*(i+0.5))));
       // 문구 아래 손으로 그은 획 — 화면에 이미 그려진 그 path 를 그대로 옮긴다
       // (여기서 다시 계산하면 씨앗이 어긋나 이미지에만 다른 획이 그어진다)
@@ -11568,8 +11566,12 @@ function _shotDraw(o){
     const assigned=_hiAssign(flat,ranges.length,kindsOn,_hiOverlap(),_hiStarMax());
     const kindAt=i=>assigned[i]||[];
     if(!ranges.length){
-      ctx.font=fontOf(false);ctx.textAlign='center';
-      lines.forEach((ln,i)=>ctx.fillText(ln,cx,Y(r.top+lh*(i+0.5))));
+      // ⚠️ v26-0901-4 — 명제 본문은 좌정렬일 수 있다 (말씀은 늘 가운데).
+      //    화면이 정한 자리를 그대로 따른다 — 안 그러면 이미지만 가운데로 나온다.
+      const bal=cs.textAlign==='left'?'left':'center';
+      ctx.font=fontOf(false);ctx.textAlign=bal;
+      const bx=bal==='left'?X(r.left):cx;
+      lines.forEach((ln,i)=>ctx.fillText(ln,bx,Y(r.top+lh*(i+0.5))));
     }else{
       const pen=_rgba(th.ac,.32);
       ctx.textAlign='left';
@@ -12156,11 +12158,16 @@ function _vfRollVariant(){
 // ⚠️ 넘길 때마다 **여기 한 곳에서만** 뽑는다. 그리는 쪽에서 뽑으면 다시 그릴
 //    때(글자 크기 변경·회전 등)마다 자리가 튀어 어지럽다.
 // ⚠️ 우정렬은 뺐다 (HB 26-0831 — 좌·중앙만). 되살리지 말 것.
-// ⚠️ v26-0901-3, HB — "대표문구와 명제본문 모두 중앙 정렬해라."
-//    좌정렬(al-l)은 뺐다. 뽑을 것이 하나뿐이라 무작위도 사라졌다.
-//    (되살리려면 여기 한 줄에 'al-l' 을 도로 넣으면 된다)
-const _VF_PT_ALIGN=['al-c'];
+// ⚠️ v26-0901-4, HB 정정 — "모든 경우에 중앙 정렬하라는 것이 아니라, 30자가
+//    넘어서 줄을 가르는 그 경우에만. 다른 경우는 좌정렬 랜덤 살려놔."
+//    → 무작위(좌·중앙)는 그대로 두고, **줄을 가른 명제만** 가운데로 세운다.
+//    ⚠️ 우정렬은 예전에 뺐다 (HB 26-0831). 되살리지 말 것.
+const _VF_PT_ALIGN=['al-l','al-c'];
 let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
+// 지금 명제의 대표 문구가 30자를 넘어 **줄을 갈랐는가.**
+// 갈랐으면 대표 문구도 본문도 가운데로 선다 (HB 26-0901).
+// ⚠️ 그리는 곳이 둘(타이틀·본문)이라 값을 여기 한 곳에 둔다 — 각자 재면 어긋난다.
+let _vfPropWide=false;
 // 대표 문구 글씨체 — 설정에서 고른다. 기본은 붓.
 //   plain = 본문과 같은 글씨체 (v26-0831-3 의 것, 보관)
 //   brush = 나눔 붓 · pen = 나눔 펜
@@ -12272,13 +12279,23 @@ function _ptEnsureFont(text,quiet){
   miss.forEach(c=>busy.add(c));
   _ptFontTries++;
   const t=miss.join('');
+  // ⚠️⚠️ v26-0901-4, HB 신고 — "첫 전체화면 명제의 대표문구는 계속 기본폰트야."
+  //   v26-0901-3 이 만든 회귀다. 받아 본 글자를 **성패와 무관하게** '받아 뒀다'로
+  //   적었더니, 실제로는 못 받았는데도 '다 받았다'가 되어
+  //     ① 기다림(pending)이 사라지고 ② 다시 받으러 가지 않아
+  //   **명조로 굳었다.** 예전에는 명제를 넘길 때마다 다시 받으러 가서 늦게라도
+  //   붓이 붙었는데(HB 가 "다음으로 넘기면 적용된다"고 했던 그것), 그 길이 막혔다.
+  //   → **정말 받아졌을 때만** 기억한다. 못 받았으면 기억하지 않아 다음에 다시 받는다
+  //     (횟수는 _PT_TRY_MAX 가 막는다 — 무한 되풀이는 안 생긴다).
   const finish=()=>{
     const have=_ptBag(_ptChars,fam);
-    miss.forEach(c=>{busy.delete(c);have.add(c);});
+    const ok=_ptFontLoaded(fam,t);
+    miss.forEach(c=>{busy.delete(c); if(ok)have.add(c);});
+    return ok;
   };
   // ⚠️ 느린 망에서는 이 기다림이 영영 안 끝날 수 있다 → 시간을 끊는다.
-  const wait=Promise.all(Object.values(_PT_FAMS).map(f=>
-    document.fonts.load("16px '"+f+"'",t).catch(()=>null)));
+  // ⚠️ 지금 쓰는 글씨체 **하나만** 받는다 (예전엔 붓·펜을 늘 함께 받았다).
+  const wait=document.fonts.load("16px '"+fam+"'",t).catch(()=>null);
   const timeout=new Promise(r=>setTimeout(r,6000));
   Promise.race([wait,timeout]).then(()=>{
     _ptFontOkCache={};                       // 다시 재 본다
@@ -12297,7 +12314,12 @@ function _ptFontLoaded(fam,text){
   const probe=_ptSample(text),ck=fam+'\u0001'+probe;
   if(_ptFontOkCache[ck])return true;         // 받았다는 답만 기억한다
   let ok=false;
-  try{
+  // ① 브라우저에게 **직접 묻는다** — 그 글자들을 그 글씨체로 그릴 수 있나.
+  //    v26-0901-4 에 넣었다. 폭 재기는 같은 폭이 나오면 틀린 답을 내는데
+  //    (한글은 대개 고정폭에 가깝다) 이건 브라우저가 아는 그대로를 답한다.
+  try{ if(document.fonts&&document.fonts.check)ok=document.fonts.check("16px '"+fam+"'",probe); }catch(e){}
+  // ② 못 물으면 폭을 재서 가늠한다 (예전 방법 — 옛 브라우저용)
+  if(!ok)try{
     const c=document.createElement('canvas').getContext('2d');
     c.font='72px monospace';const base=c.measureText(probe).width;
     c.font="72px '"+fam+"', monospace";const got=c.measureText(probe).width;
@@ -12305,6 +12327,13 @@ function _ptFontLoaded(fam,text){
   }catch(e){ok=false;}
   if(ok)_ptFontOkCache[ck]=true;             // ⚠️ 못 받았다는 답은 캐시하지 않는다
   return ok;
+}
+// 아직 붓을 포기하지 않았나 — 포기하기 전에는 **명조로 되돌리지 않는다.**
+// ⚠️ HB 가 본 '기본 폰트'는 이 판정이 너무 일찍 포기해서 생겼다.
+//    받으러 갈 기회가 남아 있는 동안에는 손글씨체 그대로 둔다 (글자는
+//    display=block 덕에 잠깐 비어 있을 뿐 딴 글씨체로 깜빡이지 않는다).
+function _ptStillTrying(fam,text){
+  return _ptFontPending(fam,text)||_ptFontTries<_PT_TRY_MAX;
 }
 function _vfRollProp(){
   _vfPropAlign=_VF_PT_ALIGN[Math.floor(Math.random()*_VF_PT_ALIGN.length)];
@@ -12929,6 +12958,8 @@ function toggleVfArt(){
   _renderSharePreview&&_renderSharePreview();
 }
 // 대표 문구 글씨체 고르기 (v26-0901-3, HB)
+// ⚠️ v26-0901-4 — 지금은 설정창에 **고르는 자리가 없다** (HB 지시로 늘 붓).
+//    함수는 남겨 둔다 — 글씨체를 다시 고르게 할 때 이 자리를 그대로 쓴다.
 // ⚠️ 글씨체를 바꾸면 **그 글씨체로는 아직 아무 글자도 안 받아 뒀다.**
 //    미리 받아 두지 않으면 첫 명제에서 또 기다린다 → 여기서 바로 데워 둔다.
 function setPropTitleFont(f){
@@ -12993,6 +13024,9 @@ function _verseFullRender(){
   //    (우연히 걸리면 엉뚱한 자리가 칠해진다)
   text.setAttribute('data-hi',_vfIsProp(v)?'':(v.hi||''));   // 시트 '강조 문구' 열
   text.classList.toggle('prop',_vfIsProp(v));   // 명제는 좌정렬
+  // ⚠️ 대표 문구가 30자를 넘어 줄을 가른 명제만 본문도 가운데로 (HB 26-0901).
+  //    _vfRenderPropTitle 이 바로 위에서 정해 둔 값을 그대로 쓴다.
+  text.classList.toggle('prop-mid',_vfIsProp(v)&&_vfPropWide);
   _vfRenderRef(v);
   _vfRenderTagArt(v);        // 태그 그림 (꺼져 있으면 빈 채로 둔다)
   _vfLayoutText();
@@ -13075,7 +13109,10 @@ function _vfRenderPropTitle(v){
   const el=document.getElementById('vfPTitle');
   if(!el)return;
   const t=_vfIsProp(v)?String(v.hi||'').trim():'';
+  // ⚠️ 대표 문구가 없으면 '넓다' 판정도 없다 — 본문은 좌정렬 그대로다
+  _vfPropWide=false;
   if(!t){el.className='vf-ptitle';el.innerHTML='';return;}
+  _vfPropWide=_ptLen(t)>_PT_LINE_MAX;
   _ptEnsureFont(t);          // 실제 문구를 넘긴다 — 한글은 쓰인 글자 조각만 온다
   let pf=_ptFont();
   const fam=_PT_FAMS[pf];
@@ -13083,8 +13120,9 @@ function _vfRenderPropTitle(v){
   //    0.몇 초 딴 글씨체가 보인다 (HB 26-0831 신고). 글꼴 URL 이 display=block
   //    이라 오는 동안에는 글자가 잠깐 비어 있을 뿐 깜빡이지 않는다.
   //    **못 받은 것이 확실할 때만** 본문 글씨체로 되돌린다 (배율도 1 이 된다).
-  if(fam&&!_ptFontLoaded(fam,t)&&!_ptFontPending(fam,t))pf='plain';
-  el.className='vf-ptitle on '+_vfPropAlign+' pf-'+pf;
+  if(fam&&!_ptFontLoaded(fam,t)&&!_ptStillTrying(fam,t))pf='plain';
+  // 줄을 가른 명제만 가운데. 나머지는 뽑아 둔 자리(좌·중앙) 그대로.
+  el.className='vf-ptitle on '+(_vfPropWide?'al-c':_vfPropAlign)+' pf-'+pf;
   el.style.setProperty('--pt-ang',_vfPropAng+'deg');
   // ⚠️ 크기는 **본문이 쓸 수 있는 가장 큰 크기**를 기준으로 잡는다.
   //    글자 수만 보고 정했더니 대표 문구가 길 때 본문보다 작아져 위계가
@@ -27318,6 +27356,19 @@ function initAppUI(){
   // ⚠️ 첫 전체화면에서 받기 시작하면 그동안 글자가 비어 있다. 명제집이 없으면
   //    아무 일도 하지 않으므로 BLOCK7 만 쓰는 사람에게는 값이 들지 않는다.
   setTimeout(()=>{try{_ptWarmup();}catch(e){}},1800);
+  // ── 푸시 말씀 목록을 앱 켤 때 한 번 맞춘다 (v26-0901-4, HB) ──────────
+  // ⚠️ 이 목록은 여태 **말씀 모음을 건드리거나 푸시 설정을 저장할 때만** 다시
+  //    만들어졌다. 그래서 v26-0901-3 이 넣은 명제 열쇠가 클라우드에 영영
+  //    안 올라갈 수 있었다 — 알림이 명제를 못 찾는 것이 그대로 남는다.
+  //    (푸시 서버는 클라우드에 적힌 이 목록만 읽는다)
+  // ⚠️ 클라우드에서 상태가 오기 전(목록이 비었을 때)에는 손대지 않는다.
+  //    빈 목록을 올려 두면 서버가 보낼 말씀을 잃는다.
+  setTimeout(()=>{
+    try{
+      if(!(ACTIVE_VERSES()||[]).length)return;
+      if(_syncVersePushPool())save();
+    }catch(e){}
+  },2600);
   // Foreground FCM handler — waits for the deferred SDK scripts.
   if(window._fbScriptsReady)window._fbScriptsReady.then(()=>{try{initForegroundPush();}catch(e){}});
 

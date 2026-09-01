@@ -30,11 +30,16 @@ console.log('\n시나리오 2 — 타이틀 자리·기울기는 넘길 때 한 
   sc.eq('뽑는 함수가 있다', SRC_DEV.includes('function _vfRollProp(){'), true);
   sc.eq('넘길 때마다 부른다',
         /function _vfRollVariant\(\)\{[\s\S]{0,400}_vfRollProp\(\);/.test(SRC_DEV), true);
-  // ⚠️ v26-0901-3, HB — "대표문구와 명제본문 모두 중앙 정렬해라." 좌·우정렬 둘 다 뺐다.
-  sc.eq('가운데로만 선다',
-        SRC_DEV.includes("const _VF_PT_ALIGN=['al-c'];"), true);
+  // ⚠️ v26-0901-4, HB 정정 — "모든 경우에 중앙 정렬하라는 것이 아니라, 30자가
+  //    넘어서 줄을 가르는 그 경우에만. 다른 경우는 좌정렬 랜덤 살려놔."
+  sc.eq('좌·중앙 둘 중에서 뽑는다',
+        SRC_DEV.includes("const _VF_PT_ALIGN=['al-l','al-c'];"), true);
   sc.eq('우정렬은 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-r'/.test(SRC_DEV), false);
-  sc.eq('좌정렬도 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-l'/.test(SRC_DEV), false);
+  // 줄을 가른 명제만 가운데 — 판정은 한 곳(_vfPropWide)에서 한다
+  sc.eq('넓다는 판정이 한 곳에', SRC_DEV.includes('let _vfPropWide=false;'), true);
+  sc.eq('30자를 넘으면 넓다', SRC_DEV.includes('_vfPropWide=_ptLen(t)>_PT_LINE_MAX;'), true);
+  sc.eq('넓을 때만 가운데',
+        SRC_DEV.includes("el.className='vf-ptitle on '+(_vfPropWide?'al-c':_vfPropAlign)+' pf-'+pf;"), true);
   // 그리는 함수 안에서 다시 뽑지 않는다
   const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
                              SRC_DEV.indexOf('function _vfPropInk('));
@@ -50,8 +55,14 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
 {
   sc.eq('명제일 때만 prop 클래스',
         SRC_DEV.includes("text.classList.toggle('prop',_vfIsProp(v));"), true);
-  // v26-0901-3, HB — 명제 본문도 **가운데**로 (말씀과 같아졌다)
-  sc.eq('가운데 정렬 CSS', SRC_DEV.includes('#vfText.prop{text-align:center;}'), true);
+  // v26-0901-4, HB — 명제 본문은 좌정렬로 되돌리고, **줄을 가른 명제만** 가운데
+  sc.eq('좌정렬 CSS', SRC_DEV.includes('#vfText.prop{text-align:left;}'), true);
+  sc.eq('넓으면 가운데 CSS', SRC_DEV.includes('#vfText.prop.prop-mid{text-align:center;}'), true);
+  sc.eq('본문도 같은 판정을 쓴다',
+        SRC_DEV.includes("text.classList.toggle('prop-mid',_vfIsProp(v)&&_vfPropWide);"), true);
+  // ⚠️ 공유 이미지도 그 자리를 따라야 한다 (늘 가운데로 찍으면 이미지만 어긋난다)
+  sc.eq('이미지도 자리를 따른다',
+        SRC_DEV.includes("const pal=cs.textAlign==='left'?'left':'center';"), true);
   // ⚠️ 말씀의 줄바꿈(_vfWrapFit)은 짧은 구절을 의미 단위로 끊기 위한 것이다.
   //    산문에 씌우면 낱말 하나가 혼자 한 줄에 남는다 → 명제는 그 앞에서 갈린다.
   sc.eq('명제는 말씀 줄바꿈을 안 쓴다',
@@ -188,8 +199,12 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
         SRC_DEV.includes("const _PT_FAMS={brush:'Nanum Brush Script',pen:'Nanum Pen Script'};"), true);
   // v26-0831-18 — **못 받은 것이 확실할 때만** 되돌린다. 오는 중에 되돌리면
   //   명조가 0.몇 초 보였다가 붓으로 바뀌어 깜빡인다 (HB 신고, 시나리오 12).
-  sc.eq('못 받으면 본문 글씨체로 되돌린다',
-        SRC_DEV.includes("if(fam&&!_ptFontLoaded(fam,t)&&!_ptFontPending(fam,t))pf='plain';"), true);
+  // v26-0901-4 — **포기하기 전에는** 되돌리지 않는다 (HB: "계속 기본폰트야")
+  sc.eq('포기하기 전엔 안 되돌린다',
+        SRC_DEV.includes("if(fam&&!_ptFontLoaded(fam,t)&&!_ptStillTrying(fam,t))pf='plain';"), true);
+  sc.eq('아직 애쓰는 중인지 가리는 자', SRC_DEV.includes('function _ptStillTrying(fam,text){'), true);
+  sc.eq('받을 기회가 남았으면 손글씨 그대로',
+        SRC_DEV.includes('return _ptFontPending(fam,text)||_ptFontTries<_PT_TRY_MAX;'), true);
   // 배율은 CSS 한 곳에서만 정한다 (글씨체를 더할 때 JS 를 안 고치게)
   sc.eq('배율을 CSS 에서 읽는다',
         SRC_DEV.includes("getComputedStyle(el).getPropertyValue('--pt-k')"), true);
@@ -248,7 +263,10 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
   sc.eq('글씨체만으로 기억하던 옛 길은 없앴다',
         SRC_DEV.includes('if(_ptFontOkCache[fam])return true;'), false);
   // 그리고 **적극적으로 기다렸다가** 도착하면 다시 그린다
-  sc.eq('글꼴을 기다린다', SRC_DEV.includes('document.fonts.load("16px \'"+f+"\'",t)'), true);
+  // v26-0901-4 — 지금 쓰는 글씨체 **하나만** 받는다 (예전엔 붓·펜을 늘 함께 받았다)
+  sc.eq('글꼴을 기다린다', SRC_DEV.includes('document.fonts.load("16px \'"+fam+"\'",t)'), true);
+  sc.eq('안 쓰는 글씨체는 안 받는다',
+        SRC_DEV.includes("Promise.all(Object.values(_PT_FAMS).map(f=>"), false);
   sc.eq('도착하면 다시 그린다',
         SRC_DEV.includes("if(!quiet&&typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_verseFullRender();"), true);
   sc.eq('다시 재 보게 캐시를 비운다', SRC_DEV.includes('_ptFontOkCache={};'), true);
@@ -259,7 +277,7 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
   // ── 깜빡임 막기 (HB 신고: "미적용 폰트가 0.몇 초 보였다가 붓으로 바뀐다") ──
   // ⚠️ **오는 중에는 명조로 되돌리지 않는다.** 못 받은 것이 확실할 때만 되돌린다.
   sc.eq('오는 중이면 손글씨 그대로',
-        SRC_DEV.includes("if(fam&&!_ptFontLoaded(fam,t)&&!_ptFontPending(fam,t))pf='plain';"), true);
+        SRC_DEV.includes("if(fam&&!_ptFontLoaded(fam,t)&&!_ptStillTrying(fam,t))pf='plain';"), true);
   sc.eq('오는 중인지 가리는 자가 있다', SRC_DEV.includes('function _ptFontPending('), true);
   // 글꼴 URL 이 display=block 이라 오는 동안 글자가 **비어 있을 뿐** 안 깜빡인다
   sc.eq('display=block 으로 받는다', SRC_DEV.includes('&display=block'), true);
@@ -355,8 +373,15 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
   sc.eq('시도 횟수도 막는다',
         SRC_DEV.includes('if(_ptFontTries>=_PT_TRY_MAX)return;'), true);
   sc.eq('시도할 때마다 센다', SRC_DEV.includes('_ptFontTries++;'), true);
-  sc.eq('끝나면 받아 뒀다고 적는다',
-        SRC_DEV.includes('miss.forEach(c=>{busy.delete(c);have.add(c);});'), true);
+  // ⚠️⚠️ v26-0901-4 — **정말 받아졌을 때만** 기억한다. 성패와 무관하게 적었더니
+  //   못 받았는데도 '다 받았다'가 되어 기다림도 다시 받기도 사라져 명조로 굳었다.
+  sc.eq('정말 받았을 때만 적는다',
+        SRC_DEV.includes('miss.forEach(c=>{busy.delete(c); if(ok)have.add(c);});'), true);
+  sc.eq('받아졌는지 실제로 재 본다',
+        SRC_DEV.includes('const ok=_ptFontLoaded(fam,t);'), true);
+  // 재는 자는 브라우저에게 직접 묻는다 (폭 재기는 한글에서 같은 폭이 나와 틀린다)
+  sc.eq('브라우저에게 직접 묻는다',
+        SRC_DEV.includes('ok=document.fonts.check("16px \'"+fam+"\'",probe);'), true);
 
   // ── 실제로 돌려 본다: 고리가 도는지 세어 본다 ──
   let renders = 0;
@@ -498,9 +523,12 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   // HB — "붓폰트 외에 펜폰트도 넣는다고 하지 않았어? 적용된 케이스가 안 보이던데"
   // 까닭 — 값(_PT_FONTS)과 CSS 는 있었는데 **고를 자리가 없었다.**
   sc.eq('세 가지가 있다', SRC_DEV.includes("const _PT_FONTS=['brush','pen','plain'];"), true);
-  sc.eq('고르는 함수', SRC_DEV.includes('function setPropTitleFont(f){'), true);
+  sc.eq('고르는 함수는 남겨 둔다', SRC_DEV.includes('function setPropTitleFont(f){'), true);
+  // ⚠️ v26-0901-4, HB — "펜 폰트 너무 별로야. 설정창에 만든 것은 없애버려."
+  //    → **고르는 자리를 없앴다.** 늘 붓이다.
   ['ptFontBrush','ptFontPen','ptFontPlain'].forEach(id=>
-    sc.eq(id+' 단추', SRC_DEV.includes('id="'+id+'"'), true));
+    sc.eq(id+' 단추는 없앴다', SRC_DEV.includes('id="'+id+'"'), false));
+  sc.eq('기본값은 붓', SRC_DEV.includes("propTitleFont:'brush'"), true);
   sc.eq('저장값과 맞춘다', SRC_DEV.includes('function _ptSyncFontUI(){'), true);
   // ⚠️ 설정창을 다시 열 때 반드시 맞춰 준다 (안 맞추면 정반대로 저장된다)
   sc.eq('설정창을 열 때 맞춘다',
