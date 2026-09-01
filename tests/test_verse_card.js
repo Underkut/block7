@@ -369,7 +369,7 @@ console.log('\n시나리오 9 — 화면 연결');
   // 좋아요·암송 토스트는 어디서 눌러도 한 곳을 지난다
   sc.eq('반응 토스트 한 곳으로', SRC.includes('function _reactWithToast(kind,ref)'), true);
   sc.eq('말씀 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',ref)") && SRC.includes("_reactWithToast('mem',ref)"), true);
-  sc.eq('말씀영역 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',_vfCurrentVerse().ref)"), true);
+  sc.eq('말씀영역 메뉴도 아이콘 토스트', SRC.includes("_reactWithToast('like',_reactKey(_vfCurrentVerse()))"), true);
   sc.eq('반응 토스트는 0.5초', SRC.includes('_dismissReactToast(false);},500)'), true);
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-8  [production]  -->
+<!-- BLOCK7  v. 26-0901-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3653,7 +3653,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-8";
+const APP_VERSION = "v. 26-0901-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5315,8 +5315,11 @@ window._fbScriptsReady=new Promise(resolve=>{
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5V3h4.5"/><path d="M17 7.5V3h-4.5"/><path d="M3 12.5V17h4.5"/><path d="M17 12.5V17h-4.5"/></svg></span>전체 화면
   </div>
   <div class="task-menu-sep"></div>
-  <div class="task-menu-item" onclick="closeVerseMemMenu();_reactWithToast('like',_vfCurrentVerse().ref)">
+  <div class="task-menu-item" id="verseMemLikeItem" onclick="closeVerseMemMenu();_reactWithToast('like',_reactKey(_vfCurrentVerse()))">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg></span>좋아요
+  </div>
+  <div class="task-menu-item" id="verseMemKeepItem" style="display:none" onclick="closeVerseMemMenu();openKeepPicker(_reactKey(_vfCurrentVerse()))">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg></span>저장
   </div>
   <div class="task-menu-item" id="verseMemRecordItem" onclick="onVerseMemRecord()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.9 3.9L16 5.3"/></svg></span>암송 완료 체크
@@ -5332,8 +5335,8 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="closeVerseMemMenu();openEvenDeeperFromRef(_vfCurrentVerse().ref)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…
   </div>
-  <div class="task-menu-item" onclick="closeVerseMemMenu();openVfShareFor(_vfCurrentVerse())">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V4"/><path d="M6 7.5L10 3.5l4 4"/><path d="M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13"/></svg></span>공유
+  <div class="task-menu-item" id="verseMemShareItem" onclick="closeVerseMemMenu();openVfShareFor(_vfCurrentVerse())">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg></span>공유
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="closeVerseMemMenu();openVerseSettingsModal()">
@@ -8306,8 +8309,15 @@ function openVerseMemMenu(anchorEl,secId,atPoint,fromFull){
   _menuArmOnNextPress(v=>{_vmmArmed=v;});   // 지금 눌려 있는 손가락이 떨어져도 안 닫힌다
   _verseMemMenuSec=secId;
   _vmmSyncFirstItem(!!fromFull);
-  const ov=document.getElementById('verseMemMenuOverlay');
+  const prop=!!fromFull&&_vfIsProp(_vfCurrentVerse());
   const menu=document.getElementById('verseMemMenu');
+  if(menu){
+    [...menu.children].forEach(el=>{
+      const keep=el.id==='verseMemLikeItem'||el.id==='verseMemKeepItem'||el.id==='verseMemShareItem';
+      el.style.display=prop?(keep?'flex':'none'):(el.id==='verseMemKeepItem'?'none':'');
+    });
+  }
+  const ov=document.getElementById('verseMemMenuOverlay');
   if(!ov||!menu)return;
   ov.style.display='block';menu.style.display='block';
   const mw=menu.offsetWidth||200,mh=menu.offsetHeight||110;
@@ -11339,13 +11349,14 @@ function _vfSyncCounts(){
     const b=document.getElementById('vfAct'+k);
     if(b)b.classList.toggle('vf-act-off',isProp);
   });
-  // 저장은 숫자가 없다 — 저장했나 아닌가 하나뿐이다.
+  // 저장 숫자는 이 말씀·명제가 들어 있는 **서로 다른 목록 수**다.
   // v26-0831-11, HB — 두 제품 모두, 말씀도 명제도 **늘 보인다.** 저장한 것은
   //   두 앱이 같은 기록을 쓰므로 어디서 저장해도 양쪽에서 꺼내 볼 수 있다
   //   (BLOCK7 = 좌상단 말씀메뉴 → 말씀 저장 목록, Sweeter = '저장' 타일).
   const kb=document.getElementById('vfActkeep');
   if(kb){
     const on=_swIsKept(ref);
+    setText('keep',_keepListsOf(ref).size);
     kb.classList.toggle('on',on);
     kb.setAttribute('aria-pressed',on?'true':'false');
   }
@@ -17152,6 +17163,7 @@ function _renderKeepPicker(){
       +` onclick="keepPickToggle('${_keepAttr(L.n)}')">`
       // ⚠️ v26-0831-21, HB — 손잡이는 **⋯ 오른쪽**, 줄의 맨 끝이다
       +`<span class="keep-pick-nm">${esc(L.n)}</span>`
+      +`<span class="keep-pick-cnt" style="color:var(--tx3);font-size:10px;pointer-events:none;">${L.cnt}</span>`
       +`<button class="keep-row-more" title="목록 손보기"`
       +` onclick="event.stopPropagation();openKeepRowMenu(event,'${_keepAttr(L.n)}')">${_KEEP_DOTS}</button>`
       +(drag?`<span class="keep-grip" data-keepgrip="1">${_KEEP_GRIP}</span>`:'')
@@ -29734,8 +29746,8 @@ function _keepLists(){
 // ⚠️ 두 값은 **설정 안**에 둔다. 설정은 키마다 따로 병합되므로 새 키를 더해도
 //    기록 다섯 자리에 등록할 일이 없다 (26-0831 사고와 무관한 자리다).
 const _KEEP_SORT_PAIR=[['recent','최신순'],['reg','등록순']];
-const _KEEP_SORT_EXTRA=[['alpha','ㄱㄴㄷ순'],['manual','내순서']];
-const _KEEP_SORT_ALL=['recent','reg','alpha','manual'];
+const _KEEP_SORT_EXTRA=[['alpha','ㄱㄴㄷ순'],['count','많은순'],['manual','내순서']];
+const _KEEP_SORT_ALL=['recent','reg','alpha','count','manual'];
 function _keepSort(){
   const v=(ST.settings||{}).keepListSort;
   return _KEEP_SORT_ALL.includes(v)?v:'recent';
@@ -29759,6 +29771,7 @@ function _keepSortLists(arr){
   const m=_keepSort();
   const recent=(a,b)=>String(b.when||'').localeCompare(String(a.when||''));
   if(m==='alpha')return arr.sort((a,b)=>String(a.n).localeCompare(String(b.n),'ko'));
+  if(m==='count')return arr.sort((a,b)=>b.cnt-a.cnt||recent(a,b));
   if(m==='reg')return arr.sort((a,b)=>String(a.first||'').localeCompare(String(b.first||''))||recent(a,b));
   if(m==='manual'){
     // 손으로 정한 차례. 그 표에 없는 목록(새로 생긴 것)은 뒤에 최근순으로 붙는다.

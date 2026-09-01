@@ -87,7 +87,7 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
   //    차례는 사용자가 고른 정렬을 그대로 따른다.
   ST.verseKeepLog = {
     '2026-08-20':[{ref:R1,time:'09:00',lst:'오래된 것'}],
-    '2026-08-29':[{ref:R2,time:'09:00',lst:'최근 것'}],
+    '2026-08-29':[{ref:R2,time:'09:00',lst:'최근 것'},{ref:P2,time:'09:01',lst:'최근 것'}],
     '2026-08-25':[{ref:P1,time:'09:00'}]      // lst 없음 → 옛 '기본' 기록
   };
   ST.settings={};
@@ -99,6 +99,8 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
   keepSetSort('alpha');
   sc.eq('ㄱㄴㄷ순', _keepLists().map(x=>x.n),
         ['기본','오래된 것','최근 것'].sort((a,b)=>a.localeCompare(b,'ko')));
+  keepSetSort('count');
+  sc.eq('많은순', _keepLists().map(x=>x.n), ['최근 것',KEEP_DEFAULT_LIST,'오래된 것']);
   // 내순서 — 손으로 정한 차례. 표에 없는 목록은 뒤에 최근순으로 붙는다.
   keepSetSort('manual');
   _keepSetOrder(['오래된 것','최근 것']);
@@ -437,6 +439,14 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
   sc.eq('접히는 자세까지 움직인다', /#keepSwitchBox\{[^}]*transform:translateY\(-6px\)/.test(SRC_DEV), true);
   sc.eq('닫히는 움직임이 끝난 뒤 감춘다',
         SRC_DEV.includes("box._keepHide=setTimeout(()=>{ if(!box.classList.contains('on'))box.style.display='none'; },280);"), true);
+}
+
+console.log('\n시나리오 20 — 많은순 · 고르기 개수 · 전체화면 저장 개수 (HB 7·8)');
+{
+  sc.eq('많은순이 ㄱㄴㄷ순 다음',
+        SRC_DEV.includes("['alpha','ㄱㄴㄷ순'],['count','많은순'],['manual','내순서']"), true);
+  sc.eq('고르기 목록에도 개수', SRC_DEV.includes('class="keep-pick-cnt"'), true);
+  sc.eq('책갈피 아래는 저장 목록 수', SRC_DEV.includes("setText('keep',_keepListsOf(ref).size);"), true);
 }
 
 sc.done();
