@@ -35,11 +35,17 @@ console.log('\n시나리오 2 — 타이틀 자리·기울기는 넘길 때 한 
   sc.eq('좌·중앙 둘 중에서 뽑는다',
         SRC_DEV.includes("const _VF_PT_ALIGN=['al-l','al-c'];"), true);
   sc.eq('우정렬은 안 뽑는다', /_VF_PT_ALIGN=\[[^\]]*'al-r'/.test(SRC_DEV), false);
-  // 줄을 가른 명제만 가운데 — 판정은 한 곳(_vfPropWide)에서 한다
-  sc.eq('넓다는 판정이 한 곳에', SRC_DEV.includes('let _vfPropWide=false;'), true);
-  sc.eq('30자를 넘으면 넓다', SRC_DEV.includes('_vfPropWide=_ptLen(t)>_PT_LINE_MAX;'), true);
-  sc.eq('넓을 때만 가운데',
-        SRC_DEV.includes("el.className='vf-ptitle on '+(_vfPropWide?'al-c':_vfPropAlign)+' pf-'+pf;"), true);
+  // ⚠️ v26-0901-6, HB — "1번 규칙 적용 안 되고 있어." 규칙의 주어는 **본문**이다.
+  //    (‘기존 기본 줄바꿈 규칙’은 본문 엔진이고, 2번이 본문 줄 수를 말한다)
+  //    가운데로 세울지는 **본문이 몇 줄이 되는가**로 정한다 — 한 곳(_vfPropMid).
+  sc.eq('판정이 한 곳에', SRC_DEV.includes('let _vfPropMid=false;'), true);
+  sc.eq('대표 문구 길이로 정하던 옛 길은 없앴다', SRC_DEV.includes('_vfPropWide='), false);
+  sc.eq('본문이 한 줄이면 가운데',
+        SRC_DEV.includes('_vfPropMid=(lines.length<=1);'), true);
+  sc.eq('자리는 한 함수가 붙인다', SRC_DEV.includes('function _vfApplyPropAlign(){'), true);
+  // ⚠️ 본문을 앉혀 봐야 몇 줄인지 안다 → 앉힌 **뒤에** 자리를 붙인다
+  sc.eq('본문을 앉힌 뒤에 붙인다',
+        /_vfLayoutPropText\(el,raw,availW,availH\);[\s\S]{0,400}_vfApplyPropAlign\(\);/.test(SRC_DEV), true);
   // 그리는 함수 안에서 다시 뽑지 않는다
   const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
                              SRC_DEV.indexOf('function _vfPropInk('));
@@ -59,7 +65,7 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
   sc.eq('좌정렬 CSS', SRC_DEV.includes('#vfText.prop{text-align:left;}'), true);
   sc.eq('넓으면 가운데 CSS', SRC_DEV.includes('#vfText.prop.prop-mid{text-align:center;}'), true);
   sc.eq('본문도 같은 판정을 쓴다',
-        SRC_DEV.includes("text.classList.toggle('prop-mid',_vfIsProp(v)&&_vfPropWide);"), true);
+        SRC_DEV.includes("tx.classList.toggle('prop-mid',tx.classList.contains('prop')&&_vfPropMid);"), true);
   // ⚠️ 공유 이미지도 그 자리를 따라야 한다 (늘 가운데로 찍으면 이미지만 어긋난다)
   sc.eq('이미지도 자리를 따른다',
         SRC_DEV.includes("const pal=cs.textAlign==='left'?'left':'center';"), true);
@@ -71,6 +77,33 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
   const idxWrap = SRC_DEV.indexOf('_vfWrapFit(words,ctx,availW)');
   sc.eq('갈림길이 줄바꿈보다 앞에 있다', idxBranch > 0 && idxBranch < idxWrap, true);
   sc.eq('산문 줄간격을 따로 둔다', SRC_DEV.includes('const _VF_PROP_LH=1.62;'), true);
+}
+
+console.log('\n시나리오 3-2 — 본문 줄바꿈 규칙 (v26-0901-6, HB)');
+{
+  // HB 규칙 — "두 줄 이하로 줄이 형성 되는데, 첫줄에 글자수가 스페이스 제외
+  //   30자가 넘으면, 기존 기본 줄바꿈 규칙에서 가장 점수 높은 곳에서 1회
+  //   줄바꿈. 그 뒤 한 줄이 또 30자를 넘거나 두 줄 차이가 10자를 넘으면
+  //   긴 줄을 또 1회." + "본문이 1줄로 끝나면 대표문구와 본문 모두 중앙정렬."
+  const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _vfLayoutPropText('),
+                           SRC_DEV.indexOf('function _vfApplyPropAlign('));
+  // ⚠️⚠️ 30자를 세는 것은 **본문 전체**다. 화면에 그려진 첫 줄로 재면 이 규칙은
+  //   영영 안 걸린다 — 폰 한 줄에는 한글이 열일곱 자쯤밖에 안 들어간다.
+  //   (그렇게 만들었다가 HB 가 "적용 안 되고 있다"고 두 번 신고했다)
+  sc.eq('본문 전체 글자로 잰다', fn.includes('_ptLen(raw)>_PT_LINE_MAX'), true);
+  sc.eq('그려진 첫 줄로 재지 않는다', fn.includes("_ptLen(lines[0]"), false);
+  // '두 줄 이하' 는 조건 — 저절로 길게 흐르는 명제는 안 건드린다
+  sc.eq('두 줄 이하일 때만', fn.includes('lines.length<=2&&'), true);
+  // 가르는 규칙은 **한 벌**만 쓴다 (대표 문구와 같은 함수·같은 점수표)
+  sc.eq('같은 가르개를 쓴다', fn.includes('const cut=_ptWrapTitle(raw);'), true);
+  // 줄이 하나 늘면 예전 크기로는 넘칠 수 있다 → 크기를 다시 고른다
+  sc.eq('가른 뒤 크기를 다시 고른다',
+        /el\.innerHTML=cut\.map\(esc\)\.join\('<br>'\);\s*\n\s*fit\(\);/.test(fn), true);
+  // 공유 이미지는 이 줄 배열을 그대로 그린다 — 우리가 정한 줄이 곧 그 줄이다
+  sc.eq('가른 줄을 그대로 싣는다', fn.includes('lines=cut;'), true);
+  // 2번 규칙
+  sc.eq('한 줄이면 가운데', fn.includes('_vfPropMid=(lines.length<=1);'), true);
+  sc.eq('가른 명제도 가운데', /if\(cut\.length>1\)\{[\s\S]{0,300}_vfPropMid=true;/.test(fn), true);
 }
 
 console.log('\n시나리오 4 — 강조는 명제에서 끈다 (말씀은 그대로)');
@@ -223,7 +256,8 @@ console.log('\n시나리오 10 — 공유 이미지 줄 배열');
   // ⚠️ v26-0831-3 에 명제 본문의 줄 배열을 **비워 뒀다.** 공유 이미지는
   //    줄 배열이 없으면 글 전체를 **한 줄로** 그려 좌우로 넘친다 (HB 신고).
   sc.eq('명제도 줄 배열을 채운다',
-        SRC_DEV.includes('el._lines=_vfReadWrappedLines(el);'), true);
+        SRC_DEV.includes('let lines=_vfReadWrappedLines(el);')
+        && SRC_DEV.includes('el._lines=lines;'), true);
   sc.eq('비워 두지 않는다', SRC_DEV.includes('el._lines=null;'), false);
   sc.eq('접힌 줄을 읽는 함수가 있다',
         SRC_DEV.includes('function _vfReadWrappedLines(el){'), true);

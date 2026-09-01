@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0901-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -557,7 +557,7 @@ header{
 .vf-ptitle.pf-song{font-family:'Song Myung',var(--vf-font,inherit);--pt-k:1.04;font-weight:400;}
 /* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다.
    ⚠️ v26-0901-4, HB — 대표 문구가 30자를 넘어 **줄을 가른 명제만** 가운데로 선다.
-      그 판정은 _vfPropWide 한 곳에서 하고 여기 클래스로 내려온다. */
+      그 판정은 _vfPropMid 한 곳에서 하고 여기 클래스로 내려온다. */
 #vfText.prop{text-align:left;}
 #vfText.prop.prop-mid{text-align:center;}
 #vfRef{
@@ -3652,7 +3652,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-5";
+const APP_VERSION = "v. 26-0901-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10961,6 +10961,10 @@ function _vfLayoutText(){
   //   크기**만 골라 준다. 줄간격도 산문에 맞게 좁힌다.
   if(el.classList.contains('prop')){
     _vfLayoutPropText(el,raw,availW,availH);
+    // ⚠️ 가운데로 세울지는 **본문을 앉혀 봐야** 안다 (몇 줄이 되는지가 조건이다).
+    //    그래서 대표 문구의 자리도 여기서 함께 정한다 — 그리는 순서상
+    //    타이틀이 먼저 그려지기 때문이다.
+    _vfApplyPropAlign();
     if(typeof _vfPlaceTagArt==='function')_vfPlaceTagArt();
     _vfRedrawPropInk();
     return;
@@ -11019,21 +11023,69 @@ function _vfLayoutText(){
 // 명제 본문 — 브라우저가 흘리게 두고 세로에 들어오는 가장 큰 크기를 고른다.
 // 실제로 그려 보고 재기 때문에 줄바꿈 규칙을 따로 흉내 낼 필요가 없다.
 const _VF_PROP_LH=1.62;      // 산문 줄간격 (말씀의 1.85+ 는 너무 성기다)
+// ── 명제 본문 앉히기 + HB 줄바꿈 규칙 (v26-0901-6) ────────────────────
+// HB 규칙 —
+//   "두 줄 이하로 줄이 형성 되는데, 첫줄에 글자수가 스페이스 제외하고 30자가
+//    넘으면, 기존 기본 줄바꿈 규칙에서 가장 점수 높은 곳에서 1회 줄바꿈을 하고,
+//    줄바꿈 후 한 줄이 또 30자를 넘거나 두 줄의 차이가 10자를 넘으면
+//    두 줄 중 긴 줄을 또 1회 줄바꿈을 해라."
+//   "애초에 처음부터 본문이 화면에 1줄 안에 끝나는 경우, 대표문구와 본문을
+//    모두 중앙정렬."
+// ⚠️ v26-0901-3~5 에서 저는 이 규칙을 **대표 문구**에 걸었습니다. HB 가
+//    "적용 안 되고 있다" 고 한 것이 이것입니다 — 규칙의 주어는 **본문**입니다
+//    ('기존 기본 줄바꿈 규칙'은 본문 엔진이고, 2번이 본문 줄 수를 말한다).
+// ⚠️ '두 줄 이하' 는 **조건**이다. 저절로 세 줄 넘게 흐르는 긴 명제는 건드리지
+//    않는다 (산문을 의미 단위로 끊으면 조각이 혼자 남는다 — 아래 주석 참고).
+let _vfPropMid=false;        // 대표 문구·본문을 가운데로 세울 것인가
 function _vfLayoutPropText(el,raw,availW,availH){
   el.style.lineHeight=String(_VF_PROP_LH);
-  el.innerHTML=esc(raw);
   const maxS=Math.max(9,Math.round(Math.max(22,Math.min(36,availW/11))*_vfTextScale()));
   const minS=Math.max(11,Math.round(maxS*0.62));
-  let size=minS;
-  for(let t=maxS;t>=minS;t-=1){
-    el.style.fontSize=t+'px';
-    if(el.scrollHeight<=availH){size=t;break;}
-  }
-  el.style.fontSize=size+'px';
+  // 세로에 들어오는 가장 큰 크기를 고른다 (줄을 가른 뒤에도 다시 고른다 —
+  // 줄이 하나 늘면 예전 크기로는 넘칠 수 있다)
+  const fit=()=>{
+    let size=minS;
+    for(let t=maxS;t>=minS;t-=1){
+      el.style.fontSize=t+'px';
+      if(el.scrollHeight<=availH){size=t;break;}
+    }
+    el.style.fontSize=size+'px';
+  };
+  el.innerHTML=esc(raw);
+  fit();
   // ⚠️ 공유 이미지는 이 줄 배열을 그대로 그린다. 비워 두면 **글 전체를 한 줄로**
   //    그려 좌우로 넘친다 (v26-0831-3 에 그렇게 만들어 HB 가 신고).
-  //    명제는 브라우저가 접으므로, 접힌 자리를 **실제로 읽어** 채운다.
-  el._lines=_vfReadWrappedLines(el);
+  let lines=_vfReadWrappedLines(el);
+  _vfPropMid=(lines.length<=1);            // 2번 규칙 — 한 줄이면 가운데
+  // 1번 규칙 — 두 줄 이하로 흐르는데 글자가 30자를 넘으면 의미 단위로 가른다
+  // ⚠️⚠️ 30자를 세는 것은 **본문 전체**다. '첫 줄'을 화면에 그려진 첫 줄로 읽어
+  //    재면 이 규칙은 **영영 안 걸린다** — 폰 한 줄에는 한글이 열일곱 자쯤밖에
+  //    안 들어가서 그려진 첫 줄이 30자를 넘을 수가 없다. (v26-0901-6 에 그렇게
+  //    만들어 HB 가 "적용 안 되고 있다"고 다시 신고했다)
+  //    가르기 전의 본문은 **한 줄짜리 글**이고, 그 글이 30자를 넘느냐가 조건이다.
+  // ⚠️ '두 줄 이하' 는 그대로 조건이다 — 저절로 세 줄 넘게 흐르는 긴 명제는
+  //    건드리지 않는다 (산문을 의미 단위로 끊으면 조각이 혼자 남는다).
+  if(lines.length<=2&&_ptLen(raw)>_PT_LINE_MAX){
+    const cut=_ptWrapTitle(raw);
+    if(cut.length>1){
+      el.innerHTML=cut.map(esc).join('<br>');
+      fit();
+      lines=cut;                           // 우리가 정한 줄이 곧 그 줄이다
+      _vfPropMid=true;                     // 가른 명제는 가운데 (HB 26-0901-4)
+    }
+  }
+  el._lines=lines;
+}
+// 대표 문구·본문을 가운데로 세울지 한 곳에서 정한다 (_vfPropMid).
+// ⚠️ 두 곳이 각자 재면 어긋난다. 여기 한 곳만 고친다.
+function _vfApplyPropAlign(){
+  const tx=document.getElementById('vfText');
+  if(tx)tx.classList.toggle('prop-mid',tx.classList.contains('prop')&&_vfPropMid);
+  const pt=document.getElementById('vfPTitle');
+  if(pt&&pt.classList.contains('on')){
+    pt.classList.toggle('al-c',_vfPropMid||_vfPropAlign==='al-c');
+    pt.classList.toggle('al-l',!_vfPropMid&&_vfPropAlign==='al-l');
+  }
 }
 // 브라우저가 접은 줄을 그대로 읽어 온다.
 // 글자를 하나씩 늘려 가며 마지막 조각의 윗변이 바뀌는 자리가 줄이 바뀐 자리다.
@@ -12174,10 +12226,9 @@ function _vfRollVariant(){
 //    ⚠️ 우정렬은 예전에 뺐다 (HB 26-0831). 되살리지 말 것.
 const _VF_PT_ALIGN=['al-l','al-c'];
 let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
-// 지금 명제의 대표 문구가 30자를 넘어 **줄을 갈랐는가.**
-// 갈랐으면 대표 문구도 본문도 가운데로 선다 (HB 26-0901).
-// ⚠️ 그리는 곳이 둘(타이틀·본문)이라 값을 여기 한 곳에 둔다 — 각자 재면 어긋난다.
-let _vfPropWide=false;
+// ⚠️ v26-0901-6 — 가운데로 세울지는 **본문이 몇 줄이 되는가**로 정한다
+//    (_vfPropMid, _vfLayoutPropText 안에서 정해진다). 대표 문구 길이로 정하던
+//    옛 판정(_vfPropWide)은 없앴다 — HB 규칙의 주어는 본문이다.
 // ── 대표 문구 글씨체 (v26-0901-5, HB) ────────────────────────────────
 // 설정에서 **여럿을 켜 두면 명제마다 그 안에서 무작위로** 하나가 정해진다.
 // ⚠️⚠️ 무작위지만 **명제마다 고정**이다 — 명제 ID 에서 뽑으므로 같은 명제를
@@ -13079,9 +13130,7 @@ function _verseFullRender(){
   //    (우연히 걸리면 엉뚱한 자리가 칠해진다)
   text.setAttribute('data-hi',_vfIsProp(v)?'':(v.hi||''));   // 시트 '강조 문구' 열
   text.classList.toggle('prop',_vfIsProp(v));   // 명제는 좌정렬
-  // ⚠️ 대표 문구가 30자를 넘어 줄을 가른 명제만 본문도 가운데로 (HB 26-0901).
-  //    _vfRenderPropTitle 이 바로 위에서 정해 둔 값을 그대로 쓴다.
-  text.classList.toggle('prop-mid',_vfIsProp(v)&&_vfPropWide);
+  // ⚠️ 가운데로 세울지는 본문을 앉혀 봐야 안다 → _vfApplyPropAlign 이 나중에 붙인다
   _vfRenderRef(v);
   _vfRenderTagArt(v);        // 태그 그림 (꺼져 있으면 빈 채로 둔다)
   _vfLayoutText();
@@ -13164,10 +13213,7 @@ function _vfRenderPropTitle(v){
   const el=document.getElementById('vfPTitle');
   if(!el)return;
   const t=_vfIsProp(v)?String(v.hi||'').trim():'';
-  // ⚠️ 대표 문구가 없으면 '넓다' 판정도 없다 — 본문은 좌정렬 그대로다
-  _vfPropWide=false;
   if(!t){el.className='vf-ptitle';el.innerHTML='';return;}
-  _vfPropWide=_ptLen(t)>_PT_LINE_MAX;
   // ⚠️ 이 명제의 글씨체를 **먼저** 정한다 — 아래 받기·재기가 이 값을 본다
   _vfPropFont=_ptFontFor(v);
   _ptEnsureFont(t);          // 실제 문구를 넘긴다 — 한글은 쓰인 글자 조각만 온다
@@ -13178,8 +13224,9 @@ function _vfRenderPropTitle(v){
   //    이라 오는 동안에는 글자가 잠깐 비어 있을 뿐 깜빡이지 않는다.
   //    **못 받은 것이 확실할 때만** 본문 글씨체로 되돌린다 (배율도 1 이 된다).
   if(fam&&!_ptFontLoaded(fam,t)&&!_ptStillTrying(fam,t))pf='plain';
-  // 줄을 가른 명제만 가운데. 나머지는 뽑아 둔 자리(좌·중앙) 그대로.
-  el.className='vf-ptitle on '+(_vfPropWide?'al-c':_vfPropAlign)+' pf-'+pf;
+  // 자리는 뽑아 둔 것(좌·중앙)으로 일단 두고, 본문을 앉힌 뒤
+  // _vfApplyPropAlign 이 가운데로 바꿀 수도 있다 (본문이 한 줄이거나 가른 경우).
+  el.className='vf-ptitle on '+(_vfPropMid?'al-c':_vfPropAlign)+' pf-'+pf;
   el.style.setProperty('--pt-ang',_vfPropAng+'deg');
   // ⚠️ 크기는 **본문이 쓸 수 있는 가장 큰 크기**를 기준으로 잡는다.
   //    글자 수만 보고 정했더니 대표 문구가 길 때 본문보다 작아져 위계가
