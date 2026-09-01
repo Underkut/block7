@@ -190,14 +190,15 @@ console.log('\n시나리오 8 — 시트 열 읽기');
 // ═══ 9. 설정창 — 말씀 설정 → 전체화면 탭 ═══
 console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
 {
-  // ⚠️ 0812-8: 뷰 탭 → 전체화면 탭으로 옮겼다. 차례는 글자 크기 → 강조 표시 → 테마.
+  // ⚠️ 0812-8: 뷰 탭 → 전체화면 탭으로 옮겼다.
+  //    v26-0901-5, HB — 강조 표시와 테마 **사이**에 '명제 타이틀' 이 들어왔다.
   const full = SRC.slice(SRC.indexOf('id="vstab-full"'), SRC.indexOf('id="vstab-share"'));
   sc.eq('전체화면 탭에 있다', full.includes('>강조 표시</div>'), true);
   sc.eq('뷰 탭에는 없다',
         SRC.slice(SRC.indexOf('id="vstab-top"'), SRC.indexOf('id="vstab-alarm"')).includes('setHiBold'), false);
-  sc.eq('차례는 글자 크기 → 강조 표시 → 테마',
-        [...full.matchAll(/<div class="settings-section-title">([^<]+)</g)].map(m => m[1]).slice(0, 3),
-        ['글자 크기', '강조 표시', '테마']);
+  sc.eq('차례는 글자 크기 → 강조 표시 → 명제 타이틀 → 테마',
+        [...full.matchAll(/<div class="settings-section-title">([^<]+)</g)].map(m => m[1]).slice(0, 4),
+        ['글자 크기', '강조 표시', '명제 타이틀', '테마']);
   // 제목은 소제목이 아니라 구역 제목(굵게)
   sc.eq('구역 제목으로', full.includes('<div class="settings-section-title">강조 표시</div>'), true);
   sc.eq('소제목이 아니다', /font-weight:600;color:var\(--tx2\);">강조 표시</.test(SRC), false);
