@@ -79,6 +79,16 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
   sc.eq('산문 줄간격을 따로 둔다', SRC_DEV.includes('const _VF_PROP_LH=1.62;'), true);
 }
 
+console.log('\n시나리오 3-1 — 명제 전체화면 롱홀드 메뉴');
+{
+  sc.eq('명제는 좋아요·저장·공유만 남긴다',
+        SRC_DEV.includes("const keep=el.id==='verseMemLikeItem'||el.id==='verseMemKeepItem'||el.id==='verseMemShareItem';"), true);
+  sc.eq('저장은 현재 명제를 목록 고르기로 보낸다',
+        SRC_DEV.includes("id=\"verseMemKeepItem\" style=\"display:none\" onclick=\"closeVerseMemMenu();openKeepPicker(_reactKey(_vfCurrentVerse()))\""), true);
+  sc.eq('공유 메뉴도 종이비행기',
+        /id="verseMemShareItem"[\s\S]{0,500}M22 2 11 13[\s\S]{0,100}M22 2 15 22 11 13 2 9 22 2Z/.test(SRC_DEV), true);
+}
+
 console.log('\n시나리오 3-2 — 본문 줄바꿈 규칙 (v26-0901-6, HB)');
 {
   // HB 규칙 — "두 줄 이하로 줄이 형성 되는데, 첫줄에 글자수가 스페이스 제외
