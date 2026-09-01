@@ -186,17 +186,24 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
   // 지금 글씨체(본문과 같은 것)는 없애지 않고 보관한다 (HB 지시)
   sc.eq('예전 글씨체를 보관한다', SRC_DEV.includes('.vf-ptitle.pf-plain{'), true);
   sc.eq('붓', SRC_DEV.includes(".vf-ptitle.pf-brush{font-family:'Nanum Brush Script'"), true);
-  sc.eq('펜', SRC_DEV.includes(".vf-ptitle.pf-pen{font-family:'Nanum Pen Script'"), true);
-  sc.eq('기본은 붓', SRC_DEV.includes("propTitleFont:'brush'"), true);
+  // v26-0901-5, HB — 펜은 뺐고("너무 가볍다") 붓과 섞어 쓸 셋을 더했다
+  sc.eq('펜은 뺐다', SRC_DEV.includes(".vf-ptitle.pf-pen{"), false);
+  sc.eq('동해독도', SRC_DEV.includes(".vf-ptitle.pf-dokdo{font-family:'East Sea Dokdo'"), true);
+  sc.eq('연성', SRC_DEV.includes(".vf-ptitle.pf-yeon{font-family:'Yeon Sung'"), true);
+  sc.eq('송명', SRC_DEV.includes(".vf-ptitle.pf-song{font-family:'Song Myung'"), true);
+  sc.eq('처음 쓰는 사람은 붓 하나', SRC_DEV.includes("propTitleFonts:['brush']"), true);
 
   // ⚠️ 손글씨체는 크게 흘려 써서 배율을 크게 준다. 그런데 **글씨체를 못 받으면**
   //    (사내망·오프라인) 그 배율이 본문 글씨체에 그대로 걸려 타이틀만 우스꽝스럽게
   //    커진다 → 실제로 받아졌는지 재 보고, 아니면 본문 글씨체로 되돌린다.
   sc.eq('받아졌는지 재 본다', SRC_DEV.includes('function _ptFontLoaded(fam,text){'), true);
   sc.eq('폭을 재서 판단한다', SRC_DEV.includes("c.font=\"72px '\"+fam+\"', monospace\";"), true);
-  // 글씨체 이름은 한 표(_PT_FAMS)에서만 정한다 — 늘리기 쉽고 어긋날 자리가 없다
-  sc.eq('글씨체 이름표가 한 곳',
-        SRC_DEV.includes("const _PT_FAMS={brush:'Nanum Brush Script',pen:'Nanum Pen Script'};"), true);
+  // 글씨체 이름은 한 표(_PT_FACES)에서만 정한다 — 늘리기 쉽고 어긋날 자리가 없다.
+  // 나머지(_PT_FAMS·_PT_FONTS·설정창 단추·미리 받아 두기)가 전부 그 표에서 나온다.
+  sc.eq('글씨체 표가 한 곳', SRC_DEV.includes('const _PT_FACES=['), true);
+  sc.eq('이름표는 그 표에서 만든다',
+        SRC_DEV.includes("const _PT_FAMS=(function(){const m={};_PT_FACES.forEach(f=>{m[f.k]=f.fam;});return m;})();"), true);
+  sc.eq('글꼴 주소도 그 표에서', SRC_DEV.includes("_PT_FACES.map(f=>'family='+f.fam.replace(/ /g,'+')).join('&')"), true);
   // v26-0831-18 — **못 받은 것이 확실할 때만** 되돌린다. 오는 중에 되돌리면
   //   명조가 0.몇 초 보였다가 붓으로 바뀌어 깜빡인다 (HB 신고, 시나리오 12).
   // v26-0901-4 — **포기하기 전에는** 되돌리지 않는다 (HB: "계속 기본폰트야")
@@ -522,20 +529,68 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
 {
   // HB — "붓폰트 외에 펜폰트도 넣는다고 하지 않았어? 적용된 케이스가 안 보이던데"
   // 까닭 — 값(_PT_FONTS)과 CSS 는 있었는데 **고를 자리가 없었다.**
-  sc.eq('세 가지가 있다', SRC_DEV.includes("const _PT_FONTS=['brush','pen','plain'];"), true);
-  sc.eq('고르는 함수는 남겨 둔다', SRC_DEV.includes('function setPropTitleFont(f){'), true);
-  // ⚠️ v26-0901-4, HB — "펜 폰트 너무 별로야. 설정창에 만든 것은 없애버려."
-  //    → **고르는 자리를 없앴다.** 늘 붓이다.
-  ['ptFontBrush','ptFontPen','ptFontPlain'].forEach(id=>
-    sc.eq(id+' 단추는 없앴다', SRC_DEV.includes('id="'+id+'"'), false));
-  sc.eq('기본값은 붓', SRC_DEV.includes("propTitleFont:'brush'"), true);
+  // v26-0901-5, HB — 넷을 켜고 끌 수 있고, 켠 것들 안에서 명제마다 하나가 정해진다
+  sc.eq('네 가지가 있다',
+        SRC_DEV.includes("{k:'brush', ko:'나눔붓',   fam:'Nanum Brush Script'}")
+        && SRC_DEV.includes("{k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'}")
+        && SRC_DEV.includes("{k:'yeon',  ko:'연성',     fam:'Yeon Sung'}")
+        && SRC_DEV.includes("{k:'song',  ko:'송명',     fam:'Song Myung'}"), true);
+  sc.eq('켜고 끄는 함수', SRC_DEV.includes('function togglePropTitleFont(k){'), true);
+  sc.eq('설정창에 자리가 있다', SRC_DEV.includes('id="ptFontRow"'), true);
+  sc.eq('제목은 명제 타이틀',
+        SRC_DEV.includes('<div class="settings-section-title">명제 타이틀</div>'), true);
+  // ⚠️ HB — 파워 등급에만 보인다
+  sc.eq('파워 등급',
+        /data-lv="p">\s*<div class="settings-section-title">명제 타이틀</.test(SRC_DEV), true);
+  sc.eq('처음 쓰는 사람은 붓 하나', SRC_DEV.includes("propTitleFonts:['brush']"), true);
   sc.eq('저장값과 맞춘다', SRC_DEV.includes('function _ptSyncFontUI(){'), true);
   // ⚠️ 설정창을 다시 열 때 반드시 맞춰 준다 (안 맞추면 정반대로 저장된다)
   sc.eq('설정창을 열 때 맞춘다',
         /function _vfArtSyncUI\(\)\{\s*_ptSyncFontUI\(\);/.test(SRC_DEV), true);
-  // 글씨체를 바꾸면 그 글씨체 글자는 아직 하나도 없다 → 바로 데운다
-  sc.eq('바꾸면 미리 받아 둔다',
-        /function setPropTitleFont\(f\)\{[\s\S]{0,300}_ptWarmup\(\)/.test(SRC_DEV), true);
+  // ⚠️ 마지막 하나는 못 끈다 — 다 끄면 뽑을 것이 없어진다
+  sc.eq('마지막 하나는 못 끈다',
+        SRC_DEV.includes("if(on.length<=1){showToast('글씨체는 하나 이상 켜져 있어야 해요');return;}"), true);
+  sc.eq('하나도 없으면 붓으로 본다', SRC_DEV.includes("return list.length?list:['brush'];"), true);
+  // 새로 켠 글씨체로는 아직 글자가 하나도 없다 → 그 자리에서 데운다
+  sc.eq('켜면 미리 받아 둔다',
+        /function togglePropTitleFont\(k\)\{[\s\S]{0,700}_ptWarmup\(\)/.test(SRC_DEV), true);
+  sc.eq('켠 것을 모두 데운다',
+        SRC_DEV.includes("_ptFontsOn().forEach(k=>{_vfPropFont=k;try{_ptEnsureFont(txt,true);}catch(_){}});"), true);
+
+  // ⚠️⚠️ 무작위지만 **명제마다 고정**이다 — 같은 명제를 다시 열면 같은 글씨체.
+  //    열 때마다 바뀌면 산만하고, 다시 그릴 때마다 글씨체가 튄다.
+  sc.eq('명제 ID 에서 고른다', SRC_DEV.includes('function _ptFontFor(v){'), true);
+  sc.eq('그리기 전에 정한다', SRC_DEV.includes('_vfPropFont=_ptFontFor(v);'), true);
+  sc.eq('넘길 때 뽑지 않는다',
+        /function _vfRollProp\(\)\{[\s\S]{0,200}_vfPropFont=/.test(SRC_DEV), false);
+
+  // ── 실제로 돌려 본다 ──
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_FACES=['),
+                            SRC_DEV.indexOf('// 손글씨체는 **명제를 볼 때만**'));
+  const box = {};
+  const ST = { settings: {} };
+  new Function('box','ST','_hiHash',
+    src.replace(/^(?:const|let) /gm,'var ')
+    + ';box.on=_ptFontsOn;box.forV=_ptFontFor;box.faces=_PT_FACES;'
+  )(box, ST, function(x){ let h=0; for(let i=0;i<x.length;i++)h=(h*31+x.charCodeAt(i))|0; return h; });
+
+  sc.eq('아무것도 없으면 붓', box.on(), ['brush']);
+  ST.settings.propTitleFonts = [];
+  sc.eq('빈 배열이어도 붓', box.on(), ['brush']);
+  ST.settings.propTitleFonts = ['brush','dokdo','yeon'];
+  const a1 = box.forV({pid:'P0007'}), a2 = box.forV({pid:'P0007'});
+  sc.eq('같은 명제는 늘 같은 글씨체', a1, a2);
+  sc.eq('켠 것 중에서 고른다', ST.settings.propTitleFonts.includes(a1), true);
+  // 명제가 다르면 갈린다 (한 벌로만 몰리지 않는다)
+  const spread = new Set();
+  for(let i=0;i<60;i++)spread.add(box.forV({pid:'P'+String(i).padStart(4,'0')}));
+  sc.eq('명제마다 갈린다', spread.size >= 2, true);
+  // 하나만 켜면 늘 그것
+  ST.settings.propTitleFonts = ['song'];
+  sc.eq('하나만 켜면 늘 그것', box.forV({pid:'P0007'}), 'song');
+  // 없는 이름은 무시한다 (옛 저장값에 'pen' 이 남아 있어도 안 걸린다)
+  ST.settings.propTitleFonts = ['pen','plain'];
+  sc.eq('없는 이름은 걸러진다', box.on(), ['brush']);
 }
 
 sc.done();

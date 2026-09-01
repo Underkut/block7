@@ -122,6 +122,59 @@ console.log('\n시나리오 4 — 끝내 못 열면 기록을 남긴다');
   sc.eq('기록은 지우지 않고 남겨 둔다', PENDING && PENDING.ref, '요한복음 1:18');
 }
 
+// ═══ 4-2. ⚠️⚠️ 못 열어도 **끝없이** 되풀이하지는 않는다 (v26-0901-5, HB) ═══
+// HB 신고 — "알림을 열지도 않았는데 할일뷰에서 앱이 저절로 전체화면을 열고
+//   색을 바꿔가며 보여준다. 다음 명제로 넘겨도 알림 명제로 되돌아간다."
+// 까닭 — 확인이 실패하면 '처리했다'고 적지 않고 기록만 남겼다. 그래서
+//   1.5초마다 도는 폴링이 같은 기록을 다시 집어 **처음부터 또 열었다.**
+//   열 때마다 색을 새로 뽑으니 배경이 계속 바뀌었다.
+console.log('\n시나리오 4-2 — 못 열어도 같은 알림을 다시 열지는 않는다');
+{
+  reset(['요한복음 1:18']);
+  RENDER_LAG = 999;                      // 아무리 해도 안 그려지는 상황
+  const tok = tapNotification('요한복음 1:18');
+  _openVerseByRef('요한복음 1:18', '남긴 기록', tok);
+  runTimers();
+  sc.eq('끝내 못 열었다', SCREEN.ref, '');
+  // 사용자가 화면을 닫고 할일뷰로 돌아갔다. 폴링이 같은 기록을 다시 집어 온다 —
+  // 여기서 또 열면 그것이 HB 가 본 그 증상이다 ("할일뷰인데 저절로 열린다").
+  SCREEN = { open: false, ref: '' };
+  const again = _openVerseByRef('요한복음 1:18', '남긴 기록', tok);
+  runTimers();
+  sc.eq('폴링이 다시 집어와도 안 연다', again, false);
+  sc.eq('할일뷰를 덮지 않는다', SCREEN.open, false);
+  // 기록 자체는 남겨 둔다 — 앱을 새로 켜면 그때 한 번 더 해 볼 값어치가 있다
+  sc.eq('기록은 남아 있다', PENDING && PENDING.ref, '요한복음 1:18');
+}
+
+// ═══ 4-3. 명제 열쇠로 온 알림도 '떴다'를 알아본다 (v26-0901-5, HB) ═══
+// ⚠️⚠️ 이것이 위 되풀이의 **진짜 시작점**이었다. 알림이 실어 오는 값이
+//   명제 열쇠(p7:…)로 바뀌었는데(v26-0901-3) 확인하는 자리는 그것을 화면의
+//   **장절**과 견주고 있었다. 같을 수가 없으니 "아직 안 떴다"가 영원히 이어졌다.
+console.log('\n시나리오 4-3 — 명제 열쇠로 온 알림도 확인된다');
+{
+  reset([]);
+  VERSES = [{ ref: '전도서 3:1', pid: 'P0007', hi: '때가 있다' }];
+  // 화면은 명제를 들고 있다 (장절은 열쇠와 전혀 다르게 생겼다)
+  global._vfCurrentVerse = () => (SCREEN.open ? SCREEN.v : null);
+  const paint = openVerseFull;
+  global.openVerseFull = () => { SCREEN.open = true; pendingPaint = _vfOverrideVerse; };
+  global._verseFullRender = () => { if (pendingPaint) { SCREEN.ref = pendingPaint.ref; SCREEN.v = pendingPaint; } };
+  global._findVerseByRefLoose = ref => {
+    const pid = _pushKeyPid ? _pushKeyPid(ref) : '';
+    if (pid) return VERSES.find(v => v.pid === pid) || null;
+    return VERSES.find(v => _refNorm(v.ref) === _refNorm(ref)) || null;
+  };
+  const tok = tapNotification('p7::P0007');
+  _openVerseByRef('p7::P0007', '남긴 기록', tok);
+  runTimers();
+  sc.eq('그 명제가 떴다', SCREEN.ref, '전도서 3:1');
+  // ⚠️ 여기가 핵심 — 확인이 되어야 기록이 지워지고 되풀이가 멈춘다
+  sc.eq('확인되어 기록이 지워졌다', PENDING, null);
+  const again = _openVerseByRef('p7::P0007', '남긴 기록', tok);
+  sc.eq('다시 열지 않는다', again, false);
+}
+
 // ═══ 5. 같은 장절이 다시 와도 새 알림이면 열린다 (옛 5초 무시 버그) ═══
 console.log('\n시나리오 5 — 같은 장절 알림이 연속으로 와도 매번 연다');
 {
