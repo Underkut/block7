@@ -156,13 +156,19 @@ console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라
   // HB — "지금 잡은 기준이 본문이 3줄일 때 기준 같아. 한 줄 줄 때마다 일정 %로
   //       줄이고, 한 줄 늘 때마다 늘리자. 7% 어때?"
   sc.eq('기준은 세 줄', SRC_DEV.includes('const _PT_LINE_BASE=3;'), true);
-  sc.eq('한 줄에 7%', SRC_DEV.includes('const _PT_LINE_STEP=0.07;'), true);
-  sc.eq('줄마다 곱해 간다',
-        SRC_DEV.includes('Math.pow(1+_PT_LINE_STEP,(n||_PT_LINE_BASE)-_PT_LINE_BASE)'), true);
+  sc.eq('줄어들 때는 한 줄에 7%', SRC_DEV.includes('const _PT_LINE_STEP=0.07;'), true);
+  sc.eq('줄어들 때는 곱해 내려간다',
+        SRC_DEV.includes('k=Math.pow(1+_PT_LINE_STEP,L-_PT_LINE_BASE);'), true);
+  // v26-0902-14, HB — "늘어날 때는 %를 점점 줄여라" (7 · 6 · 5 · 4 …)
+  //   ⚠️ 같은 7%를 계속 곱하면 줄이 많은 명제에서 타이틀이 본문을 밀어낸다.
+  sc.eq('늘어날 때는 몫이 줄어든다',
+        SRC_DEV.includes('const _PT_LINE_UP=[0.07,0.06,0.05,0.04,0.03,0.02,0.01];'), true);
+  sc.eq('한 단씩 꺼내 곱한다',
+        SRC_DEV.includes('for(let i=0;i<L-_PT_LINE_BASE;i++)k*=1+(_PT_LINE_UP[i]||0);'), true);
   // ⚠️⚠️ 묶지 않으면 되먹임이 생긴다 — 타이틀이 커지면 본문 높이가 줄어 줄이
-  //    또 늘고, 그러면 타이틀이 또 커진다.
+  //    또 늘고, 그러면 타이틀이 또 커진다. (이제는 표가 먼저 0 이 되어 멎는다)
   sc.eq('위아래로 묶는다',
-        SRC_DEV.includes('return Math.max(0.85,Math.min(1.30,k));'), true);
+        SRC_DEV.includes('return Math.max(0.85,Math.min(1.35,k));'), true);
   // 그리는 차례상 타이틀이 먼저다 → 본문을 앉힌 **뒤** 다시 잡는다
   sc.eq('크기를 잡는 함수가 따로 있다', SRC_DEV.includes('function _vfSizePropTitle(n){'), true);
   sc.eq('처음엔 기준으로 잡는다', SRC_DEV.includes('_vfSizePropTitle(_PT_LINE_BASE);'), true);

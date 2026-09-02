@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-13  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-14  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3893,7 +3893,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-13";
+const APP_VERSION = "v. 26-0902-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13591,10 +13591,18 @@ function _ptWrapTitle(text){
 //    타이틀이 커지면 본문이 쓸 높이가 줄어 줄이 또 늘고, 그러면 타이틀이 또
 //    커진다. 여덟 줄짜리 명제에서 타이틀이 화면을 먹는다.
 const _PT_LINE_BASE=3;
-const _PT_LINE_STEP=0.07;
+const _PT_LINE_STEP=0.07;    // 줄어들 때 — 한 줄에 7% (HB: "줄어들 때는 기존대로")
+// 늘어날 때는 **몫이 점점 작아진다** (HB 26-0902) — 7% · 6% · 5% · 4% …
+// ⚠️ 같은 7%를 계속 곱하면 줄이 많은 명제에서 타이틀이 본문을 밀어낸다.
+//    여기서 더 줄 것이 없으면(여덟 줄 너머) 0 — 즉 더 커지지 않는다.
+//    자연스러운 천장이 1.31 이라 아래 상한(1.35)은 안전장치일 뿐이다.
+const _PT_LINE_UP=[0.07,0.06,0.05,0.04,0.03,0.02,0.01];
 function _ptLineK(n){
-  const k=Math.pow(1+_PT_LINE_STEP,(n||_PT_LINE_BASE)-_PT_LINE_BASE);
-  return Math.max(0.85,Math.min(1.30,k));
+  const L=n||_PT_LINE_BASE;
+  let k=1;
+  if(L<_PT_LINE_BASE)k=Math.pow(1+_PT_LINE_STEP,L-_PT_LINE_BASE);
+  else for(let i=0;i<L-_PT_LINE_BASE;i++)k*=1+(_PT_LINE_UP[i]||0);
+  return Math.max(0.85,Math.min(1.35,k));
 }
 // 타이틀 글자 크기를 잡는다. 바꿨으면 true (부른 쪽이 본문을 다시 앉힌다)
 // ⚠️ 크기의 기준은 **본문이 쓸 수 있는 가장 큰 크기**다. 글자 수만 보고
