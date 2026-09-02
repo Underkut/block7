@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0901-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3655,7 +3655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0901-10";
+const APP_VERSION = "v. 26-0902-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5643,7 +5643,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
-      </span><span class="vf-cnt" id="vfCntkeep">&nbsp;</span>
+      </span><span class="vf-cnt" id="vfCntkeep">0</span>
     </button>
     <button class="vf-act vf-act-share" id="vfActshare" onclick="openVfShare()" aria-label="공유">
       <span class="vf-ic">
@@ -11355,10 +11355,15 @@ function _vfSyncCounts(){
   // v26-0831-11, HB — 두 제품 모두, 말씀도 명제도 **늘 보인다.** 저장한 것은
   //   두 앱이 같은 기록을 쓰므로 어디서 저장해도 양쪽에서 꺼내 볼 수 있다
   //   (BLOCK7 = 좌상단 말씀메뉴 → 말씀 저장 목록, Sweeter = '저장' 타일).
+  // ⚠️ 좋아요·암송처럼 **누른 횟수가 아니다.** 한 목록에 열 번을 눌러도 1 이고,
+  //    다섯 목록에 담으면 5 다 (_keepEntries 가 목록마다 하나로 접는다).
+  // ⚠️ v26-0902-1, HB — 아무 데도 안 담겼으면 **0** 을 적는다. 빈칸으로 두면
+  //    다른 단추와 글자 줄이 어긋나고 "몇 군데 담겼나"를 읽을 수가 없다.
   const kb=document.getElementById('vfActkeep');
   if(kb){
-    const on=_swIsKept(ref);
-    setText('keep',_keepListsOf(ref).size);
+    const n=_keepListsOf(ref).size;   // 안 담겼으면 0
+    const on=n>0;
+    setText('keep',n);
     kb.classList.toggle('on',on);
     kb.setAttribute('aria-pressed',on?'true':'false');
   }
@@ -29715,16 +29720,37 @@ function _keepListOf(e){
   if(!n||_KEEP_DEFAULT_ALIASES.includes(n))return KEEP_DEFAULT_LIST;
   return n;
 }
-// 모든 저장 기록을 평평하게 — [{ref, list, when('날짜 시각'), d(날짜)}]
+// 모든 저장 기록을 평평하게 — [{ref, list, when('날짜 시각'), d(날짜), first}]
+//
+// ⚠️⚠️ **한 목록 안에서 같은 것은 하나로 친다** (v26-0902-1, HB).
+//    좋아요·암송은 누를 때마다 쌓이는 것이 맞다 — 여러 번 묵상한 자취다.
+//    저장은 다르다. "그 목록에 담겨 있다/아니다" 둘 중 하나뿐이라 둘이 될 수 없다.
+//    담을 때 swKeepSet 이 이미 겹쳐 담기를 막지만, 그것만으로는 모자랐다 —
+//    **기기 두 대에서 같은 말씀을 같은 목록에 담으면** 병합기(_mgEntryArray)가
+//    항목을 통째로 세므로 (날짜·시각이 달라) 서로 다른 항목으로 남는다.
+//    그러면 목록 옆 숫자만 2 로 늘고 열어 보면 하나였다.
+//    → 여기서 (목록, 구절) 한 쌍을 하나로 접는다. 목록이 다르면 그대로 둘이다.
+//
+// ⚠️ **기록 자체는 한 글자도 지우지 않는다** — 읽을 때만 하나로 본다.
+//    지워 버리면 병합이 그것을 "사용자가 뺐다"로 읽어 **다른 기기의 저장까지**
+//    지운다 (26-0831 대량 손실 사고와 같은 길이다).
+//
+//    when  = 마지막에 담은 때 (화면에 보이는 '담은 때' — 예전과 같다)
+//    first = 처음 담은 때 (목록 '등록순' 이 흔들리지 않게 따로 든다)
 function _keepEntries(){
-  const out=[];
+  const m=new Map();
   Object.entries(getKeepLog()).forEach(([d,arr])=>{
     (arr||[]).forEach(e=>{
       if(!e||!e.ref)return;
-      out.push({ref:String(e.ref),list:_keepListOf(e),when:d+' '+(e.time||''),d});
+      const ref=String(e.ref),list=_keepListOf(e),when=d+' '+(e.time||'');
+      const k=list+'\u0001'+ref;
+      const g=m.get(k);
+      if(!g){m.set(k,{ref,list,when,d,first:when});return;}
+      if(when>g.when){g.when=when;g.d=d;}
+      if(when<g.first)g.first=when;
     });
   });
-  return out;
+  return [...m.values()];
 }
 // 목록들 — 차례는 _keepSortLists 가 정한다 (기본값은 최근 저장 순).
 // ⚠️ v26-0831-19, HB — '기본' 목록을 **미리 만들어 두지 않는다.** 비어 있는
@@ -29736,9 +29762,9 @@ function _keepLists(){
   _keepEntries().forEach(x=>{
     if(!m.has(x.list))m.set(x.list,{n:x.list,cnt:0,when:'',first:''});
     const g=m.get(x.list);
-    g.cnt++;
+    g.cnt++;                                      // 겹친 것은 이미 하나로 접혔다
     if(x.when>g.when)g.when=x.when;
-    if(!g.first||x.when<g.first)g.first=x.when;   // 등록순 = 목록이 처음 생긴 때
+    if(!g.first||x.first<g.first)g.first=x.first;  // 등록순 = 목록이 처음 생긴 때
   });
   return _keepSortLists([...m.values()]);
 }
@@ -29796,13 +29822,18 @@ function _swIsKept(ref,list){
   return list?s.has(list):s.size>0;
 }
 // 한 목록에 담기/빼기. 목록을 안 주면 기본 목록.
+// ⚠️ 겹쳐 담기를 막는 자리는 **둘**이다 (v26-0902-1, HB) —
+//    ① 여기: 이미 그 목록에 있으면 새 기록을 아예 안 쓴다 (이 기기에서 막는다)
+//    ② _keepEntries: 그래도 들어온 겹침(다른 기기가 담은 것)을 읽을 때 하나로 접는다
+//    하나만으로는 모자란다. ① 은 다른 기기가 쓴 기록을 막을 수 없고,
+//    ② 만 두면 기록이 헛되이 불어난다. **둘 다 지킬 것 — 하나를 지우지 말 것.**
 function swKeepSet(ref,list,on){
   if(!ref)return false;
   const l0=(list&&String(list).trim())||'';
   const L=(!l0||_KEEP_DEFAULT_ALIASES.includes(l0))?KEEP_DEFAULT_LIST:l0;
   const r=String(ref),log=getKeepLog();
   const has=_keepListsOf(r).has(L);
-  if(on&&has)return true;                       // 겹쳐 담지 않는다
+  if(on&&has)return true;                       // 겹쳐 담지 않는다 (다른 목록은 자유롭다)
   if(!on&&!has)return false;
   if(!on){
     Object.keys(log).forEach(d=>{

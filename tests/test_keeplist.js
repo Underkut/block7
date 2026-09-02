@@ -241,7 +241,11 @@ console.log('\n시나리오 11 — 저장 단추는 공유 바로 위, 늘 보�
   sc.eq('감추던 규칙을 없앴다', SRC_DEV.includes('.vf-act-keep{display:none;}'), false);
   sc.eq('제품·종류를 가리지 않는다',
         SRC_DEV.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), false);
-  sc.eq('저장 여부만 본다', SRC_DEV.includes('const on=_swIsKept(ref);'), true);
+  // 채운 책갈피는 **담긴 데가 있는가**만 본다 (제품·종류를 안 본다).
+  // v26-0902-1 — 숫자를 0 으로도 적어야 해서 목록 수를 한 번만 세고 그것으로 판단한다
+  // (_swIsKept(ref) 와 같은 뜻이다 — 두 번 세지 않을 뿐).
+  sc.eq('저장 여부만 본다',
+        SRC_DEV.includes('const n=_keepListsOf(ref).size;')&&SRC_DEV.includes('const on=n>0;'), true);
   // v26-0831-13, HB — **탭 한 번**에 목록 고르기 창. 롱터치를 알아야만 쓸 수
   //   있으면 아무도 목록을 못 고른다. 저장 여부는 그 창의 체크로 정한다.
   sc.eq('고르기 창이 있다', SRC_DEV.includes('id="keepPickModal"'), true);
@@ -446,7 +450,63 @@ console.log('\n시나리오 20 — 많은순 · 고르기 개수 · 전체화면
   sc.eq('많은순이 ㄱㄴㄷ순 다음',
         SRC_DEV.includes("['alpha','ㄱㄴㄷ순'],['count','많은순'],['manual','내순서']"), true);
   sc.eq('고르기 목록에도 개수', SRC_DEV.includes('class="keep-pick-cnt"'), true);
-  sc.eq('책갈피 아래는 저장 목록 수', SRC_DEV.includes("setText('keep',_keepListsOf(ref).size);"), true);
+  sc.eq('책갈피 아래는 저장 목록 수', SRC_DEV.includes('const n=_keepListsOf(ref).size;'), true);
+}
+
+console.log('\n시나리오 21 — 한 목록에 겹쳐 담기지 않는다 · 안 담겼으면 0 (v26-0902-1, HB)');
+{
+  // HB — "좋아요·암송 같은 활동 단추는 여러 번 눌러 카운트가 올라가지만,
+  //       저장은 한 폴더(목록)에 중복으로 여러 번 저장되지 못하게 막아줘.
+  //       대신 각기 다른 폴더(목록)에 저장되는 건 얼마든지 가능하게."
+  //
+  // 21-1 이 기기에서 여러 번 눌러도 하나 — 담는 자리(swKeepSet)에서 막는다
+  ST.verseKeepLog = {};
+  swKeepSet(R1, '설교 준비', true);
+  swKeepSet(R1, '설교 준비', true);
+  swKeepSet(R1, '설교 준비', true);
+  sc.eq('세 번 담아도 기록은 하나', Object.values(ST.verseKeepLog).flat().length, 1);
+  sc.eq('목록 옆 숫자도 1', _keepLists()[0].cnt, 1);
+
+  // 21-2 다른 목록에는 얼마든지 담긴다 (막는 것은 **같은 목록**뿐이다)
+  swKeepSet(R1, '아이들과', true);
+  swKeepSet(R1, '저녁 묵상', true);
+  sc.eq('세 목록에 담긴다', _keepListsOf(R1).size, 3);
+  sc.eq('목록마다 하나씩', _keepLists().map(x=>x.cnt), [1,1,1]);
+
+  // 21-3 ⚠️ 기기 두 대가 각각 담은 것이 병합돼 들어온 모양.
+  //   담는 자리로는 못 막는다 (상대 기기가 쓴 기록이다) — 읽을 때 하나로 접는다.
+  ST.verseKeepLog = {
+    '2026-08-30': [{ ref:R1, time:'09:00' }],
+    '2026-08-31': [{ ref:R1, time:'21:30' }],
+  };
+  sc.eq('겹쳐 들어와도 목록 옆 숫자는 1', _keepLists()[0].cnt, 1);
+  sc.eq('들어 있는 목록도 하나', _keepListsOf(R1).size, 1);
+  sc.eq('열어 보면 한 줄', _swKeeps(0, KEEP_DEFAULT_LIST).length, 1);
+  sc.eq('담은 때는 마지막에 담은 때', _keepLists()[0].when, '2026-08-31 21:30');
+  sc.eq('등록순 기준은 처음 담은 때 그대로', _keepLists()[0].first, '2026-08-30 09:00');
+  // ⚠️⚠️ 기록 자체는 **한 글자도 지우지 않는다.** 지우면 병합이 그것을
+  //    "사용자가 뺐다"로 읽어 **다른 기기의 저장까지** 지운다 (26-0831 사고).
+  sc.eq('기록은 그대로 둔다', Object.values(ST.verseKeepLog).flat().length, 2);
+
+  // 21-4 목록이 다르면 겹침이 아니다 — 접지 않는다
+  ST.verseKeepLog = {
+    '2026-08-30': [{ ref:R1, time:'09:00' }],
+    '2026-08-31': [{ ref:R1, time:'21:30', lst:'설교 준비' }],
+  };
+  sc.eq('목록이 다르면 둘 다 남는다', _keepListsOf(R1).size, 2);
+  sc.eq('목록마다 하나씩 센다', _keepLists().map(x=>x.cnt), [1,1]);
+
+  // 21-5 전체화면 우하단 책갈피 아래 숫자 — 담긴 데가 없으면 0
+  ST.verseKeepLog = {};
+  sc.eq('안 담겼으면 0', _keepListsOf(R1).size, 0);
+  const vf = sliceDev('function _vfSyncCounts()', '// ── 말씀 공유');
+  sc.eq('숫자는 담긴 목록 수', vf.includes('const n=_keepListsOf(ref).size;'), true);
+  sc.eq('그 값을 그대로 적는다 (0 도)', vf.includes("setText('keep',n);"), true);
+  sc.eq('한 군데라도 담겼을 때만 채운 책갈피', vf.includes('const on=n>0;'), true);
+  // 처음 그려지기 전에도 빈칸이 아니라 0 이다
+  sc.eq('HTML 기본값도 0',
+        SRC_DEV.includes('<span class="vf-cnt" id="vfCntkeep">0</span>'), true);
+  sc.eq('빈칸을 안 쓴다', SRC_DEV.includes('id="vfCntkeep">&nbsp;'), false);
 }
 
 sc.done();
