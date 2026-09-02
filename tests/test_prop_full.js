@@ -621,7 +621,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   const _facesAt = SRC_DEV.indexOf('const _PT_FACES=[');
   const faceTbl = SRC_DEV.slice(_facesAt, SRC_DEV.indexOf('];', _facesAt));
   sc.eq('직접 올린 글씨체가 표에 있다',
-        (faceTbl.match(/self:1\}/g)||[]).length, 27);
+        (faceTbl.match(/self:1\}/g)||[]).length, 24);
   ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
     sc.eq(k+' 글꼴 파일',
       SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
@@ -639,10 +639,11 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('모든 글씨체에 무리가 있다',
         (faceTbl.match(/\{k:'/g)||[]).length, (faceTbl.match(/g:'[mgh]'/g)||[]).length);
   // 새로 더한 스물둘이 표와 글꼴 파일에 다 있다
-  [['chosunN','chosunnm'],['chosunS','chosunsg'],['nmyet','nmyet'],['sungkok','sungkok'],
+  // v26-0902-12, HB — 조선신명·넥슨B·드림8 은 뺐다 (파일은 남겨 둠)
+  [['chosunN','chosunnm'],['nmyet','nmyet'],['sungkok','sungkok'],
    ['mapogold','mapogold'],['mapoflower','mapoflower'],['gmarketL','gmarket_l'],
-   ['gmarketB','gmarket_b'],['nexonL','nexon_l'],['nexonR','nexon_r'],['nexonB','nexon_b'],
-   ['dream1','scdream1'],['dream8','scdream8'],['esamanL','esaman_l'],['esamanB','esaman_b'],
+   ['gmarketB','gmarket_b'],['nexonL','nexon_l'],['nexonR','nexon_r'],
+   ['dream1','scdream1'],['esamanL','esaman_l'],['esamanB','esaman_b'],
    ['yes24','yes24'],['barun','barun'],['uridal','uridal'],['incheon','incheon'],
    ['bombaram','bombaram'],['agape','mapoagape'],['sangjang','sangjang']].forEach(([k,f])=>{
     sc.eq(k+' 표에 있다', faceTbl.indexOf("{k:'"+k+"'") >= 0, true);
@@ -650,6 +651,22 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
       SRC_DEV.includes("src:url('fonts/"+f+".woff2')format('woff2');font-display:block;"), true);
     sc.eq(k+' 배율', new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:").test(SRC_DEV), true);
   });
+  ['chosunS','nexonB','dream8'].forEach(k=>
+    sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
+  // HB 가 정한 크기 (26-0902) — 많이 키움 / 중간 / 살짝 줄임
+  [['incheon','1.39'],['nexonL','1.27'],['dream1','1.26'],
+   ['uridal','1.28'],['gmarketL','1.18'],
+   ['mapogold','1.10'],['mapoflower','1.12'],['chosunN','1.11'],['nmyet','1.10']].forEach(([k,v])=>
+    sc.eq(k+' 배율 '+v,
+      new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true));
+  // 무리마다 전체 켜기/끄기 단추 (v26-0902-12, HB)
+  sc.eq('무리 전체 단추가 있다', SRC_DEV.includes('function togglePropTitleGroup(g){'), true);
+  sc.eq('이름줄에 붙는다', SRC_DEV.includes('class="pt-g-all${all?\' on\':\'\'}"'), true);
+  sc.eq('다 켜져 있으면 끄기로 보인다',
+        SRC_DEV.includes("const all=list.every(f=>on.includes(f.k));"), true);
+  // ⚠️ 다 꺼지면 뽑을 것이 없다 — 한 단추를 끌 때와 같은 규칙으로 막는다
+  sc.eq('마지막 하나는 못 끈다',
+        /togglePropTitleGroup[\s\S]{0,600}if\(!left\.length\)\{showToast/.test(SRC_DEV), true);
   // ⚠️⚠️ 설정창을 여는 것만으로 스물일곱 벌(9.7MB)을 받으면 안 된다.
   //    단추에는 **이름표 글자만 담은 1KB 글꼴**을 먼저 세운다 (합계 29KB).
   sc.eq('미리보기 글꼴을 먼저 세운다',
