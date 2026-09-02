@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-5  [production]  -->
+<!-- BLOCK7  v. 26-0902-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -556,6 +556,33 @@ header{
 .vf-ptitle.pf-yeon{font-family:'Yeon Sung',var(--vf-font,inherit);--pt-k:1.12;font-weight:400;}
 .vf-ptitle.pf-song{font-family:'Song Myung',var(--vf-font,inherit);--pt-k:1.04;font-weight:400;}
 .vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.02;font-weight:400;}
+/* ── 저장소에 직접 올린 글씨체 (v26-0901-9, HB 가 눈누에서 받아 줌) ──────────
+   ⚠️ 구글 폰트와 다른 점: 구글은 **쓰인 글자 조각만** 내려 주는데 이것들은
+      한 벌을 통째로 받는다. 그래서 —
+        ① 한글을 잘라 넣었다 (원본 1.5~14MB → 184~987KB)
+        ② font-display:block — 오는 동안 글자를 잠깐 감춘다 (딴 글씨체로
+           먼저 그렸다가 바뀌면 깜빡인다, HB 26-0831 신고)
+        ③ **미리 받아 두지 않는다** (_ptWarmup 이 건너뛴다). 여덟 벌을 앱 켤 때
+           다 받으면 3MB다 — 그 글씨체가 실제로 뽑힌 명제를 열 때만 받는다.
+   ⚠️ 한 번 받으면 기기에 남는다. 다음부터는 안 받는다.
+   ⚠️ 배율(--pt-k)은 눈대중이 아니라 **글자의 잉크 높이를 재서** 정했다
+      (나눔붓·송명·고운바탕이 이루는 가운뎃값 0.893 에 맞춤). */
+@font-face{font-family:'B7 Daegwang';src:url('fonts/daegwang.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Griun';src:url('fonts/griun.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Hakgyo';src:url('fonts/hakgyo.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Jaemin';src:url('fonts/jaemin.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Kotra';src:url('fonts/kotra.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Kyobo';src:url('fonts/kyobo.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Lxgw';src:url('fonts/lxgw.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Tvn';src:url('fonts/tvn.woff2')format('woff2');font-display:block;}
+.vf-ptitle.pf-daegwang{font-family:'B7 Daegwang',var(--vf-font,inherit);--pt-k:1.46;font-weight:400;}
+.vf-ptitle.pf-griun{font-family:'B7 Griun',var(--vf-font,inherit);--pt-k:1.05;font-weight:400;}
+.vf-ptitle.pf-hakgyo{font-family:'B7 Hakgyo',var(--vf-font,inherit);--pt-k:1.04;font-weight:400;}
+.vf-ptitle.pf-jaemin{font-family:'B7 Jaemin',var(--vf-font,inherit);--pt-k:0.93;font-weight:400;}
+.vf-ptitle.pf-kotra{font-family:'B7 Kotra',var(--vf-font,inherit);--pt-k:0.83;font-weight:400;}
+.vf-ptitle.pf-kyobo{font-family:'B7 Kyobo',var(--vf-font,inherit);--pt-k:0.97;font-weight:400;}
+.vf-ptitle.pf-lxgw{font-family:'B7 Lxgw',var(--vf-font,inherit);--pt-k:0.99;font-weight:400;}
+.vf-ptitle.pf-tvn{font-family:'B7 Tvn',var(--vf-font,inherit);--pt-k:1.54;font-weight:400;}
 /* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다.
    ⚠️ v26-0901-4, HB — 대표 문구가 30자를 넘어 **줄을 가른 명제만** 가운데로 선다.
       그 판정은 _vfPropMid 한 곳에서 하고 여기 클래스로 내려온다. */
@@ -3655,7 +3682,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-5";
+const APP_VERSION = "v. 26-0902-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12267,7 +12294,16 @@ const _PT_FACES=[
   {k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'},
   {k:'yeon',  ko:'연성',     fam:'Yeon Sung'},
   {k:'song',  ko:'송명',     fam:'Song Myung'},
-  {k:'gowun', ko:'고운바탕', fam:'Gowun Batang'}   // HB 가 고름 (26-0901)
+  {k:'gowun', ko:'고운바탕', fam:'Gowun Batang'},   // HB 가 고름 (26-0901)
+  // ── 저장소에 직접 올린 것 (self:true) — 구글 주소에 넣지 않는다 ──
+  {k:'daegwang',ko:'대광유리',full:'나눔손글씨 대광유리',        fam:'B7 Daegwang',self:1},
+  {k:'kyobo',   ko:'교보2020',full:'교보손글씨 2020 박도연',      fam:'B7 Kyobo',   self:1},
+  {k:'griun',   ko:'송글송글',full:'그리운 x 국한박 송글송글 감성 흘림체',fam:'B7 Griun',self:1},
+  {k:'kotra',   ko:'코트라',  full:'KOTRA 손글씨체',             fam:'B7 Kotra',   self:1},
+  {k:'tvn',     ko:'즐거운',  full:'tvN 즐거운이야기',            fam:'B7 Tvn',     self:1},
+  {k:'hakgyo',  ko:'받아쓰기',full:'학교안심 받아쓰기',           fam:'B7 Hakgyo',  self:1},
+  {k:'jaemin',  ko:'재민체',  full:'한글재민체 4.0',              fam:'B7 Jaemin',  self:1},
+  {k:'lxgw',    ko:'문해',    full:'LXGW 문해 KR',               fam:'B7 Lxgw',    self:1}
 ];
 const _PT_FONTS=_PT_FACES.map(f=>f.k).concat(['plain']);
 // 켜 둔 글씨체들. 하나도 안 켜져 있으면 붓 하나로 본다 (빈 화면이 되면 안 된다)
@@ -12335,8 +12371,10 @@ const _PT_FAMS=(function(){const m={};_PT_FACES.forEach(f=>{m[f.k]=f.fam;});retu
 //     두고, 새 문구의 글자가 전부 그 안에 있으면 **기다리지도 다시 그리지도
 //     않는다.** 없는 글자가 있을 때만 그것들만 받아 온다.
 //   ⚠️ 이 기억은 화면을 닫으면 사라지는 값이다 — 저장 항목이 아니다.
+// ⚠️ 시도 횟수는 **글씨체마다 따로** 센다. 하나로 세면 글씨체가 여럿일 때
+//    앞의 것들이 횟수를 다 써서 뒤의 것은 아예 못 받는다 (v26-0901-9).
 const _PT_TRY_MAX=12;
-let _ptFontTries=0;
+const _ptTries={};
 const _ptChars={};           // 글씨체 → 이미 받아 둔 글자들(Set)
 const _ptCharsBusy={};       // 글씨체 → 지금 받는 중인 글자들(Set)
 function _ptBag(map,fam){ if(!map[fam])map[fam]=new Set(); return map[fam]; }
@@ -12369,8 +12407,15 @@ function _ptWarmup(){
     if(!seen.size)return;
     // ⚠️ 켜 둔 글씨체를 **모두** 데운다. 하나만 데우면 다음 명제에서 다른
     //    글씨체가 뽑혔을 때 또 기다린다.
+    // ⚠️ 저장소에 직접 올린 글씨체는 **미리 받지 않는다.** 여덟 벌을 앱 켤 때
+    //    다 받으면 3MB다. 그 글씨체가 실제로 뽑힌 명제를 열 때만 받는다
+    //    (구글 것은 쓰인 글자 조각만 오므로 미리 받아도 가볍다).
     const txt=[...seen].join(''),keep=_vfPropFont;
-    _ptFontsOn().forEach(k=>{_vfPropFont=k;try{_ptEnsureFont(txt,true);}catch(_){}});
+    _ptFontsOn().forEach(k=>{
+      const f=_PT_FACES.find(x=>x.k===k);
+      if(f&&f.self)return;
+      _vfPropFont=k;try{_ptEnsureFont(txt,true);}catch(_){}
+    });
     _vfPropFont=keep;
   }catch(_){}
 }
@@ -12381,8 +12426,9 @@ function _ptEnsureFont(text,quiet){
     l.id='ptHandLink';l.rel='stylesheet';
     // ⚠️ display=block — 글꼴이 오는 동안 글자를 **잠깐 감춘다**(swap 은 딴
     //    글씨체로 먼저 그렸다가 바꿔서 0.몇 초 깜빡였다, HB 26-0831 신고).
+    // ⚠️ 저장소에 직접 올린 것(self)은 여기 넣지 않는다 — 구글에 없는 이름이다
     l.href='https://fonts.googleapis.com/css2?'
-      +_PT_FACES.map(f=>'family='+f.fam.replace(/ /g,'+')).join('&')
+      +_PT_FACES.filter(f=>!f.self).map(f=>'family='+f.fam.replace(/ /g,'+')).join('&')
       +'&display=block';
     document.head.appendChild(l);
   }
@@ -12397,10 +12443,10 @@ function _ptEnsureFont(text,quiet){
   //       무한 되풀이(v26-0831-8 사고)와, 명제를 넘길 때마다의 다시 그리기
   //       (= HB 가 본 '기본 폰트로 보였다가 순간 바뀜').
   if(!miss.length)return;
-  if(_ptFontTries>=_PT_TRY_MAX)return;        // ② 못 받는 망에서 무한 시도 방지
+  if((_ptTries[fam]||0)>=_PT_TRY_MAX)return;  // ② 못 받는 망에서 무한 시도 방지
   const busy=_ptBag(_ptCharsBusy,fam);
   miss.forEach(c=>busy.add(c));
-  _ptFontTries++;
+  _ptTries[fam]=(_ptTries[fam]||0)+1;
   const t=miss.join('');
   // ⚠️⚠️ v26-0901-4, HB 신고 — "첫 전체화면 명제의 대표문구는 계속 기본폰트야."
   //   v26-0901-3 이 만든 회귀다. 받아 본 글자를 **성패와 무관하게** '받아 뒀다'로
@@ -12456,7 +12502,7 @@ function _ptFontLoaded(fam,text){
 //    받으러 갈 기회가 남아 있는 동안에는 손글씨체 그대로 둔다 (글자는
 //    display=block 덕에 잠깐 비어 있을 뿐 딴 글씨체로 깜빡이지 않는다).
 function _ptStillTrying(fam,text){
-  return _ptFontPending(fam,text)||_ptFontTries<_PT_TRY_MAX;
+  return _ptFontPending(fam,text)||(_ptTries[fam]||0)<_PT_TRY_MAX;
 }
 function _vfRollProp(){
   _vfPropAlign=_VF_PT_ALIGN[Math.floor(Math.random()*_VF_PT_ALIGN.length)];
@@ -13109,6 +13155,7 @@ function _ptSyncFontUI(){
   row.innerHTML=_PT_FACES.map(f=>
     `<button class="settings-btn${on.includes(f.k)?' on':''}" style="padding:11px 4px;`
     +`font-family:'${f.fam}',var(--font-ui);font-size:18px;line-height:1.2;"`
+    +` title="${esc(f.full||f.ko)}"`
     +` onclick="togglePropTitleFont('${f.k}')">${f.ko}</button>`).join('');
 }
 function setVfArtStyle(st){
