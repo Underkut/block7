@@ -582,12 +582,13 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   // HB — "붓폰트 외에 펜폰트도 넣는다고 하지 않았어? 적용된 케이스가 안 보이던데"
   // 까닭 — 값(_PT_FONTS)과 CSS 는 있었는데 **고를 자리가 없었다.**
   // v26-0901-5, HB — 넷을 켜고 끌 수 있고, 켠 것들 안에서 명제마다 하나가 정해진다
-  sc.eq('다섯 가지가 있다',
-        SRC_DEV.includes("{k:'brush', ko:'나눔붓',   fam:'Nanum Brush Script'}")
-        && SRC_DEV.includes("{k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'}")
-        && SRC_DEV.includes("{k:'yeon',  ko:'연성',     fam:'Yeon Sung'}")
-        && SRC_DEV.includes("{k:'song',  ko:'송명',     fam:'Song Myung'},")
-        && SRC_DEV.includes("{k:'gowun', ko:'고운바탕', fam:'Gowun Batang'}"), true);
+  // v26-0902-8, HB — 스물둘을 더해 서른둘이 됐고, 무리(g)로 묶어 보여 준다
+  sc.eq('구글 다섯이 그대로 있다',
+        SRC_DEV.includes("{k:'brush', g:'h',ko:'나눔붓',   fam:'Nanum Brush Script'}")
+        && SRC_DEV.includes("{k:'dokdo', g:'h',ko:'동해독도', fam:'East Sea Dokdo'}")
+        && SRC_DEV.includes("{k:'yeon',  g:'h',ko:'연성',     fam:'Yeon Sung'}")
+        && SRC_DEV.includes("{k:'song',  g:'m',ko:'송명',     fam:'Song Myung'},")
+        && SRC_DEV.includes("{k:'gowun', g:'m',ko:'고운바탕', fam:'Gowun Batang'}"), true);
   // ⚠️ 칸 수를 못 박지 않는다 — 글씨체가 늘면 저절로 다음 줄로 접힌다
   sc.eq('단추 줄이 늘어난다',
         SRC_DEV.includes('grid-template-columns:repeat(auto-fill,minmax(74px,1fr))'), true);
@@ -620,13 +621,45 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   const _facesAt = SRC_DEV.indexOf('const _PT_FACES=[');
   const faceTbl = SRC_DEV.slice(_facesAt, SRC_DEV.indexOf('];', _facesAt));
   sc.eq('직접 올린 글씨체가 표에 있다',
-        (faceTbl.match(/self:1\}/g)||[]).length, 5);
+        (faceTbl.match(/self:1\}/g)||[]).length, 27);
   ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
     sc.eq(k+' 글꼴 파일',
       SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
   // ⚠️ 뺀 셋은 표에 없다 → 화면 어디에서도 안 쓰이므로 받아지지도 않는다
   ['hakgyo','jaemin','lxgw'].forEach(k=>
     sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
+  // ── v26-0902-8, HB — 스물둘을 더하고 무리로 나눠 배치 ──────────────────
+  // 무리는 표의 g 하나로 정해진다 (m 명조 · g 고딕 · h 손글씨)
+  sc.eq('무리 표가 있다',
+        SRC_DEV.includes("const _PT_GROUPS=[{g:'m',ko:'명조'},{g:'g',ko:'고딕'},{g:'h',ko:'손글씨'}];"), true);
+  sc.eq('무리마다 묶어 그린다',
+        SRC_DEV.includes("const list=_PT_FACES.filter(f=>(f.g||'h')===g.g);"), true);
+  sc.eq('무리 이름줄을 그린다', SRC_DEV.includes('<div class="pt-g-title">'), true);
+  // ⚠️ g 를 안 적은 글씨체가 있으면 설정창에서 사라진다 (기본값 h 가 받아 준다)
+  sc.eq('모든 글씨체에 무리가 있다',
+        (faceTbl.match(/\{k:'/g)||[]).length, (faceTbl.match(/g:'[mgh]'/g)||[]).length);
+  // 새로 더한 스물둘이 표와 글꼴 파일에 다 있다
+  [['chosunN','chosunnm'],['chosunS','chosunsg'],['nmyet','nmyet'],['sungkok','sungkok'],
+   ['mapogold','mapogold'],['mapoflower','mapoflower'],['gmarketL','gmarket_l'],
+   ['gmarketB','gmarket_b'],['nexonL','nexon_l'],['nexonR','nexon_r'],['nexonB','nexon_b'],
+   ['dream1','scdream1'],['dream8','scdream8'],['esamanL','esaman_l'],['esamanB','esaman_b'],
+   ['yes24','yes24'],['barun','barun'],['uridal','uridal'],['incheon','incheon'],
+   ['bombaram','bombaram'],['agape','mapoagape'],['sangjang','sangjang']].forEach(([k,f])=>{
+    sc.eq(k+' 표에 있다', faceTbl.indexOf("{k:'"+k+"'") >= 0, true);
+    sc.eq(k+' 글꼴 파일',
+      SRC_DEV.includes("src:url('fonts/"+f+".woff2')format('woff2');font-display:block;"), true);
+    sc.eq(k+' 배율', new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:").test(SRC_DEV), true);
+  });
+  // ⚠️⚠️ 설정창을 여는 것만으로 스물일곱 벌(9.7MB)을 받으면 안 된다.
+  //    단추에는 **이름표 글자만 담은 1KB 글꼴**을 먼저 세운다 (합계 29KB).
+  sc.eq('미리보기 글꼴을 먼저 세운다',
+        SRC_DEV.includes("const pfam=f=>f.self?`'${f.fam.replace('B7 ','B7P ')}',`:'';"), true);
+  sc.eq('단추가 그것을 쓴다',
+        SRC_DEV.includes("font-family:${pfam(f)}'${f.fam}',var(--font-ui);"), true);
+  sc.eq('미리보기 글꼴 자리',
+        SRC_DEV.includes("@font-face{font-family:'B7P Brush'"), false);   // 구글 것은 없다
+  sc.eq('직접 올린 것마다 미리보기가 있다',
+        (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 27);
   // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
   sc.eq('고운바탕은 크게',
         SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.30;"), true);

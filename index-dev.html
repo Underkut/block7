@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -696,6 +696,97 @@ header{
 .vf-ptitle.pf-kyobo{font-family:'B7 Kyobo',var(--vf-font,inherit);--pt-k:0.97;font-weight:400;}
 .vf-ptitle.pf-lxgw{font-family:'B7 Lxgw',var(--vf-font,inherit);--pt-k:0.99;font-weight:400;}
 .vf-ptitle.pf-tvn{font-family:'B7 Tvn',var(--vf-font,inherit);--pt-k:1.54;font-weight:400;}
+/* ── 글씨체 스물두 벌 더 (v26-0902-8, HB 가 눈누에서 받아 줌) ──────────────
+   설정창에서 **명조 · 고딕 · 손글씨** 세 무리로 나눠 보여 준다 (무리는 표의 g).
+   ⚠️ 명조 여섯은 배율에 고운바탕과 **같은 몫(×1.275)** 을 곱했다.
+      까닭은 고운바탕과 같다 — 명조는 본문 글씨체와 결이 가까워서 잉크 높이를
+      맞춘 크기로는 타이틀과 본문이 구분되지 않는다. **크기로 갈라 줘야** 한다.
+      고딕·손글씨는 생김새로 갈리므로 잰 값을 그대로 쓴다.
+   ⚠️ 저장소에 직접 올린 것이라 위와 같은 성질이다 — 미리 안 받고, block 이다. */
+@font-face{font-family:'B7 ChosunN';src:url('fonts/chosunnm.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 ChosunS';src:url('fonts/chosunsg.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Nmyet';src:url('fonts/nmyet.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Sungkok';src:url('fonts/sungkok.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Mapogold';src:url('fonts/mapogold.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Mapoflower';src:url('fonts/mapoflower.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 GmarketL';src:url('fonts/gmarket_l.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 GmarketB';src:url('fonts/gmarket_b.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 NexonL';src:url('fonts/nexon_l.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 NexonR';src:url('fonts/nexon_r.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 NexonB';src:url('fonts/nexon_b.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Dream1';src:url('fonts/scdream1.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Dream8';src:url('fonts/scdream8.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 EsamanL';src:url('fonts/esaman_l.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 EsamanB';src:url('fonts/esaman_b.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Yes24';src:url('fonts/yes24.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Barun';src:url('fonts/barun.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Uridal';src:url('fonts/uridal.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Incheon';src:url('fonts/incheon.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Bombaram';src:url('fonts/bombaram.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Agape';src:url('fonts/mapoagape.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7 Sangjang';src:url('fonts/sangjang.woff2')format('woff2');font-display:block;}
+.vf-ptitle.pf-chosunN{font-family:'B7 ChosunN',var(--vf-font,inherit);--pt-k:1.21;font-weight:400;}
+.vf-ptitle.pf-chosunS{font-family:'B7 ChosunS',var(--vf-font,inherit);--pt-k:1.24;font-weight:400;}
+.vf-ptitle.pf-nmyet{font-family:'B7 Nmyet',var(--vf-font,inherit);--pt-k:1.2;font-weight:400;}
+.vf-ptitle.pf-sungkok{font-family:'B7 Sungkok',var(--vf-font,inherit);--pt-k:1.21;font-weight:400;}
+.vf-ptitle.pf-mapogold{font-family:'B7 Mapogold',var(--vf-font,inherit);--pt-k:1.2;font-weight:400;}
+.vf-ptitle.pf-mapoflower{font-family:'B7 Mapoflower',var(--vf-font,inherit);--pt-k:1.22;font-weight:400;}
+.vf-ptitle.pf-gmarketL{font-family:'B7 GmarketL',var(--vf-font,inherit);--pt-k:1.03;font-weight:400;}
+.vf-ptitle.pf-gmarketB{font-family:'B7 GmarketB',var(--vf-font,inherit);--pt-k:1.01;font-weight:400;}
+.vf-ptitle.pf-nexonL{font-family:'B7 NexonL',var(--vf-font,inherit);--pt-k:0.98;font-weight:400;}
+.vf-ptitle.pf-nexonR{font-family:'B7 NexonR',var(--vf-font,inherit);--pt-k:0.97;font-weight:400;}
+.vf-ptitle.pf-nexonB{font-family:'B7 NexonB',var(--vf-font,inherit);--pt-k:0.95;font-weight:400;}
+.vf-ptitle.pf-dream1{font-family:'B7 Dream1',var(--vf-font,inherit);--pt-k:0.97;font-weight:400;}
+.vf-ptitle.pf-dream8{font-family:'B7 Dream8',var(--vf-font,inherit);--pt-k:0.91;font-weight:400;}
+.vf-ptitle.pf-esamanL{font-family:'B7 EsamanL',var(--vf-font,inherit);--pt-k:1.0;font-weight:400;}
+.vf-ptitle.pf-esamanB{font-family:'B7 EsamanB',var(--vf-font,inherit);--pt-k:0.96;font-weight:400;}
+.vf-ptitle.pf-yes24{font-family:'B7 Yes24',var(--vf-font,inherit);--pt-k:0.96;font-weight:400;}
+.vf-ptitle.pf-barun{font-family:'B7 Barun',var(--vf-font,inherit);--pt-k:1.08;font-weight:400;}
+.vf-ptitle.pf-uridal{font-family:'B7 Uridal',var(--vf-font,inherit);--pt-k:1.11;font-weight:400;}
+.vf-ptitle.pf-incheon{font-family:'B7 Incheon',var(--vf-font,inherit);--pt-k:1.07;font-weight:400;}
+.vf-ptitle.pf-bombaram{font-family:'B7 Bombaram',var(--vf-font,inherit);--pt-k:0.93;font-weight:400;}
+.vf-ptitle.pf-agape{font-family:'B7 Agape',var(--vf-font,inherit);--pt-k:0.99;font-weight:400;}
+.vf-ptitle.pf-sangjang{font-family:'B7 Sangjang',var(--vf-font,inherit);--pt-k:0.93;font-weight:400;}
+/* ── 설정창 단추 미리보기용 초소형 글꼴 (v26-0902-8) ────────────────────
+   ⚠️⚠️ 없으면 **설정창을 여는 것만으로 27벌 9.7MB를 다 받는다.**
+      @font-face 는 그 글씨체가 화면에 쓰이는 순간 받아지는데, 단추 스물일곱이
+      저마다 제 글씨체로 쓰여 있으니 전부 쓰이는 셈이다.
+   → 단추에는 **제 이름표 글자만 담은 1KB짜리** 글꼴을 쓴다 (합계 29KB).
+     진짜 글꼴은 그 글씨체가 뽑힌 명제를 열 때 받는다 — 예전 그대로다.
+   ⚠️ 이름표(_PT_FACES 의 ko)를 고치면 이 글꼴도 다시 잘라야 한다.
+      안 자르면 새 글자가 빠져 단추에서 그 글자만 기본 글씨체로 나온다
+      (만드는 명령은 fonts/README.md 에 있다). */
+@font-face{font-family:'B7P ChosunN';src:url('fonts/prev/chosunN.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P ChosunS';src:url('fonts/prev/chosunS.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Nmyet';src:url('fonts/prev/nmyet.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Sungkok';src:url('fonts/prev/sungkok.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Mapogold';src:url('fonts/prev/mapogold.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Mapoflower';src:url('fonts/prev/mapoflower.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P GmarketL';src:url('fonts/prev/gmarketL.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P GmarketB';src:url('fonts/prev/gmarketB.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P NexonL';src:url('fonts/prev/nexonL.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P NexonR';src:url('fonts/prev/nexonR.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P NexonB';src:url('fonts/prev/nexonB.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Dream1';src:url('fonts/prev/dream1.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Dream8';src:url('fonts/prev/dream8.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P EsamanL';src:url('fonts/prev/esamanL.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P EsamanB';src:url('fonts/prev/esamanB.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Yes24';src:url('fonts/prev/yes24.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Barun';src:url('fonts/prev/barun.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Uridal';src:url('fonts/prev/uridal.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Incheon';src:url('fonts/prev/incheon.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Bombaram';src:url('fonts/prev/bombaram.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Agape';src:url('fonts/prev/agape.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Sangjang';src:url('fonts/prev/sangjang.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Daegwang';src:url('fonts/prev/daegwang.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Kyobo';src:url('fonts/prev/kyobo.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Griun';src:url('fonts/prev/griun.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Kotra';src:url('fonts/prev/kotra.woff2')format('woff2');font-display:block;}
+@font-face{font-family:'B7P Tvn';src:url('fonts/prev/tvn.woff2')format('woff2');font-display:block;}
+/* 설정창의 무리 이름줄 — 단추 격자 위에 작게 선다 */
+.pt-g-title{font-size:11px;color:var(--tx3);letter-spacing:.04em;margin:14px 0 6px;}
+.pt-g-title:first-child{margin-top:0;}
+.pt-g-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;}
 /* 명제 본문 — 좌정렬. 말씀(가운데)과 갈리는 유일한 곳이다.
    ⚠️ v26-0901-4, HB — 대표 문구가 30자를 넘어 **줄을 가른 명제만** 가운데로 선다.
       그 판정은 _vfPropMid 한 곳에서 하고 여기 클래스로 내려온다. */
@@ -3796,7 +3887,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-10";
+const APP_VERSION = "v. 26-0902-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4958,8 +5049,9 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-section" data-lv="p">
         <div class="settings-section-title">명제 타이틀</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">설교 명제 전체화면 위쪽에 서는 대표 문구의 글씨체예요. <b>여러 개를 켜면 명제마다 그중 하나가 무작위로 정해져요</b> — 같은 명제는 다시 열어도 같은 글씨체입니다. 손글씨체는 명제를 볼 때만 내려받아요. (말씀에는 대표 문구가 없어 이 설정이 쓰이지 않아요)</div>
-        <!-- ⚠️ 칸 수를 못 박지 않는다 — 글씨체가 늘면 저절로 다음 줄로 접힌다 -->
-        <div id="ptFontRow" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;"></div>
+        <!-- ⚠️ 칸 수를 못 박지 않는다 — 글씨체가 늘면 저절로 다음 줄로 접힌다.
+             무리(명조·고딕·손글씨)로 묶는 것은 _ptSyncFontUI 가 한다 -->
+        <div id="ptFontRow"></div>
       </div>
 
       <!-- ── 전체화면 테마 ── -->
@@ -12403,19 +12495,47 @@ let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
 // ⚠️ 지금은 모두 구글 폰트다. 구글은 **쓰인 글자 조각만** 내려 주므로 가볍다.
 //    저장소에 직접 올린 글씨체를 더할 때는 그 성질이 없어진다 (한 벌을 통째로
 //    받는다) — 그때는 @font-face 를 CSS 에 함께 적어야 한다.
+// ⚠️ g 는 설정창에서 묶어 보여 줄 **무리**다 — m 명조 · g 고딕 · h 손글씨.
+//    무리 이름과 차례는 _PT_GROUPS 가 정한다. g 를 안 적으면 손글씨로 본다.
 const _PT_FACES=[
-  {k:'brush', ko:'나눔붓',   fam:'Nanum Brush Script'},
-  {k:'dokdo', ko:'동해독도', fam:'East Sea Dokdo'},
-  {k:'yeon',  ko:'연성',     fam:'Yeon Sung'},
-  {k:'song',  ko:'송명',     fam:'Song Myung'},
-  {k:'gowun', ko:'고운바탕', fam:'Gowun Batang'},   // HB 가 고름 (26-0901)
-  // ── 저장소에 직접 올린 것 (self:true) — 구글 주소에 넣지 않는다 ──
-  {k:'daegwang',ko:'대광유리',full:'나눔손글씨 대광유리',        fam:'B7 Daegwang',self:1},
-  {k:'kyobo',   ko:'교보2020',full:'교보손글씨 2020 박도연',      fam:'B7 Kyobo',   self:1},
-  {k:'griun',   ko:'송글송글',full:'그리운 x 국한박 송글송글 감성 흘림체',fam:'B7 Griun',self:1},
-  {k:'kotra',   ko:'코트라',  full:'KOTRA 손글씨체',             fam:'B7 Kotra',   self:1},
-  {k:'tvn',     ko:'즐거운',  full:'tvN 즐거운이야기',            fam:'B7 Tvn',     self:1}
+  // ── 명조 ──────────────────────────────────────────────────────────────
+  {k:'song',  g:'m',ko:'송명',     fam:'Song Myung'},
+  {k:'gowun', g:'m',ko:'고운바탕', fam:'Gowun Batang'},   // HB 가 고름 (26-0901)
+  {k:'chosunN',g:'m',ko:'조선명조',full:'조선일보명조',fam:'B7 ChosunN',self:1},
+  {k:'chosunS',g:'m',ko:'조선신명',full:'조선일보신명조',fam:'B7 ChosunS',self:1},
+  {k:'nmyet',g:'m',ko:'옛한글',full:'나눔명조 옛한글',fam:'B7 Nmyet',self:1},
+  {k:'sungkok',g:'m',ko:'성곡',full:'국민대 성곡 세리프',fam:'B7 Sungkok',self:1},
+  {k:'mapogold',g:'m',ko:'금빛나루',full:'마포금빛나루',fam:'B7 Mapogold',self:1},
+  {k:'mapoflower',g:'m',ko:'마포꽃섬',full:'마포꽃섬',fam:'B7 Mapoflower',self:1},
+  // ── 고딕 ──────────────────────────────────────────────────────────────
+  {k:'gmarketL',g:'g',ko:'지마켓L',full:'Gmarket Sans Light',fam:'B7 GmarketL',self:1},
+  {k:'gmarketB',g:'g',ko:'지마켓B',full:'Gmarket Sans Bold',fam:'B7 GmarketB',self:1},
+  {k:'nexonL',g:'g',ko:'넥슨L',full:'NEXON Lv1 Gothic Light',fam:'B7 NexonL',self:1},
+  {k:'nexonR',g:'g',ko:'넥슨R',full:'NEXON Lv1 Gothic',fam:'B7 NexonR',self:1},
+  {k:'nexonB',g:'g',ko:'넥슨B',full:'NEXON Lv1 Gothic Bold',fam:'B7 NexonB',self:1},
+  {k:'dream1',g:'g',ko:'드림1',full:'에스코어드림 1 Thin',fam:'B7 Dream1',self:1},
+  {k:'dream8',g:'g',ko:'드림8',full:'에스코어드림 8 Heavy',fam:'B7 Dream8',self:1},
+  {k:'esamanL',g:'g',ko:'이사만루L',full:'이사만루체 Light',fam:'B7 EsamanL',self:1},
+  {k:'esamanB',g:'g',ko:'이사만루B',full:'이사만루체 Bold',fam:'B7 EsamanB',self:1},
+  {k:'yes24',g:'g',ko:'예스24',full:'YES24체',fam:'B7 Yes24',self:1},
+  // ── 손글씨 ────────────────────────────────────────────────────────────
+  {k:'brush', g:'h',ko:'나눔붓',   fam:'Nanum Brush Script'},
+  {k:'dokdo', g:'h',ko:'동해독도', fam:'East Sea Dokdo'},
+  {k:'yeon',  g:'h',ko:'연성',     fam:'Yeon Sung'},
+  {k:'barun',g:'h',ko:'바른정신',full:'나눔손글씨 바른정신',fam:'B7 Barun',self:1},
+  {k:'uridal',g:'h',ko:'우리딸',full:'나눔손글씨 우리딸 손글씨',fam:'B7 Uridal',self:1},
+  {k:'incheon',g:'h',ko:'자람',full:'인천교육 자람',fam:'B7 Incheon',self:1},
+  {k:'bombaram',g:'h',ko:'봄바람',full:'HS봄바람체 2.0',fam:'B7 Bombaram',self:1},
+  {k:'agape',g:'h',ko:'아가페',full:'마포아가페',fam:'B7 Agape',self:1},
+  {k:'sangjang',g:'h',ko:'상장',full:'학교안심 상장',fam:'B7 Sangjang',self:1},
+  {k:'daegwang',g:'h',ko:'대광유리',full:'나눔손글씨 대광유리',        fam:'B7 Daegwang',self:1},
+  {k:'kyobo',   g:'h',ko:'교보2020',full:'교보손글씨 2020 박도연',      fam:'B7 Kyobo',   self:1},
+  {k:'griun',   g:'h',ko:'송글송글',full:'그리운 x 국한박 송글송글 감성 흘림체',fam:'B7 Griun',self:1},
+  {k:'kotra',   g:'h',ko:'코트라',  full:'KOTRA 손글씨체',             fam:'B7 Kotra',   self:1},
+  {k:'tvn',     g:'h',ko:'즐거운',  full:'tvN 즐거운이야기',            fam:'B7 Tvn',     self:1}
 ];
+// 설정창에서 보여 줄 차례와 이름. ⚠️ 여기 없는 무리의 글씨체는 안 보인다.
+const _PT_GROUPS=[{g:'m',ko:'명조'},{g:'g',ko:'고딕'},{g:'h',ko:'손글씨'}];
 // ⚠️ HB 가 뺀 셋 (26-0902) — 받아쓰기 · 재민체 · 문해.
 //    글꼴 파일(fonts/hakgyo·jaemin·lxgw.woff2)과 @font-face·CSS 는 **남겨 뒀다.**
 //    표에 없으면 화면 어디에서도 안 쓰이므로 **받아지지도 않는다** (사용자에게는
@@ -13271,11 +13391,21 @@ function _ptSyncFontUI(){
   const row=document.getElementById('ptFontRow');
   if(!row)return;
   const on=_ptFontsOn();
-  row.innerHTML=_PT_FACES.map(f=>
-    `<button class="settings-btn${on.includes(f.k)?' on':''}" style="padding:11px 4px;`
-    +`font-family:'${f.fam}',var(--font-ui);font-size:18px;line-height:1.2;"`
+  // ⚠️ 무리(명조·고딕·손글씨)로 묶어 보여 준다 — 서른 벌이 넘어 한 덩어리로
+  //    늘어놓으면 고를 수가 없다. 차례와 이름은 _PT_GROUPS 가 정한다.
+  // ⚠️ 직접 올린 글씨체는 **미리보기용 초소형 글꼴**을 먼저 세운다.
+  //    그것 없이 진짜 글꼴을 세우면 설정창을 여는 것만으로 27벌을 다 받는다.
+  const pfam=f=>f.self?`'${f.fam.replace('B7 ','B7P ')}',`:'';
+  const btn=f=>`<button class="settings-btn${on.includes(f.k)?' on':''}" style="padding:11px 4px;`
+    +`font-family:${pfam(f)}'${f.fam}',var(--font-ui);font-size:18px;line-height:1.2;"`
     +` title="${esc(f.full||f.ko)}"`
-    +` onclick="togglePropTitleFont('${f.k}')">${f.ko}</button>`).join('');
+    +` onclick="togglePropTitleFont('${f.k}')">${f.ko}</button>`;
+  row.innerHTML=_PT_GROUPS.map(g=>{
+    const list=_PT_FACES.filter(f=>(f.g||'h')===g.g);
+    if(!list.length)return '';
+    return `<div class="pt-g-title">${esc(g.ko)}</div>`
+          +`<div class="pt-g-grid">${list.map(btn).join('')}</div>`;
+  }).join('');
 }
 function setVfArtStyle(st){
   ST.settings.vfArtStyle=(st==='organic')?'organic':'minimal';save();
