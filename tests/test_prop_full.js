@@ -616,11 +616,20 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('직접 올린 것은 미리 안 받는다',
         SRC_DEV.includes('if(f&&f.self)return;'), true);
   // 직접 올린 글씨체 여덟이 표에 있고 @font-face 도 함께 있다
+  // v26-0902-7, HB — 받아쓰기·재민체·문해는 뺐다 (파일·@font-face 는 남겨 둠)
+  const _facesAt = SRC_DEV.indexOf('const _PT_FACES=[');
+  const faceTbl = SRC_DEV.slice(_facesAt, SRC_DEV.indexOf('];', _facesAt));
   sc.eq('직접 올린 글씨체가 표에 있다',
-        (SRC_DEV.match(/self:1/g)||[]).length, 8);
+        (faceTbl.match(/self:1\}/g)||[]).length, 5);
   ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
     sc.eq(k+' 글꼴 파일',
       SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
+  // ⚠️ 뺀 셋은 표에 없다 → 화면 어디에서도 안 쓰이므로 받아지지도 않는다
+  ['hakgyo','jaemin','lxgw'].forEach(k=>
+    sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
+  // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
+  sc.eq('고운바탕은 크게',
+        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.30;"), true);
   // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
   sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
 
