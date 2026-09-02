@@ -409,6 +409,10 @@ console.log('\n시나리오 19 — 목록 손보기: 정렬 · 내순서 · ⋯ 
   // '내순서' 를 켜야 손잡이가 나온다
   sc.eq('내순서일 때만 손잡이', SRC_DEV.includes("const drag=_keepSort()==='manual';"), true);
   sc.eq('끌어서 차례 바꾸기', SRC_DEV.includes('function _keepBindDrag(box){'), true);
+  sc.eq('내순서는 행 전체에서 끌기 시작',
+        SRC_DEV.includes("el=e.target.closest('[data-keepname]');"), true);
+  sc.eq('저장하는 목록의 ⋯ 버튼은 끌기에서 제외',
+        SRC_DEV.includes("if(e.target.closest('.keep-row-more'))return;"), true);
   // v26-0831-21, HB — **스위터 방식**이다. 잡은 줄은 손가락을 따라 그 자리에서
   //   떠서 움직이고(그림자 복제를 만들지 않는다), 나머지는 FLIP 으로 비켜 준다.
   //   시간·곡선은 스위터 타일판과 **똑같은 값**(_SW_SLIDE · _SW_EASE)을 쓴다.

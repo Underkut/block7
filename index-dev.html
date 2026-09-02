@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3447,6 +3447,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   font-size:12.5px;color:var(--tx);border-bottom:1px solid var(--bd);border-radius:7px;}
 .keep-pick-row:last-child{border-bottom:0;}
 .keep-pick-row.on{background:var(--s2,rgba(127,127,127,.16));}
+.keep-drag-zone [data-keepname]{touch-action:none;}
 .keep-pick-nm{flex:1;min-width:0;text-align:left;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .keep-pick-new{color:var(--ac);}
@@ -3686,7 +3687,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-7";
+const APP_VERSION = "v. 26-0902-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17039,11 +17040,13 @@ function _keepAttr(n){ return esc(n).replace(/'/g,'&#39;'); }
 // ⚠️ 어디에 놓일지 셀 때는 getBoundingClientRect 가 아니라 **offsetTop** 을 쓴다.
 //    화면 좌표는 비켜 주는 애니메이션이 도는 동안 계속 움직여서, 그 값으로 세면
 //    줄들이 서로 밀며 떨린다. offsetTop 은 애니메이션과 무관한 '진짜 자리'다.
-// ⚠️ 손잡이(=)에서만 시작한다. 줄 아무 데나 잡으면 목록을 고를 수 없어진다
-//    (HB 신고 — "'내순서'에서 선택이 안 된다").
+// ⚠️ '내순서'에서는 줄 전체가 끌기 시작 자리다. 다만 저장하는 목록의
+//    ⋯ 버튼은 목록 손보기를 열어야 하므로 끌기에서 뺀다. 탭만 하고 움직이지
+//    않으면 기존처럼 목록을 고르거나 연다.
 function _keepBindDrag(box){
   if(!box||box._keepDrag)return;
   box._keepDrag=true;
+  box.classList.add('keep-drag-zone');
   let el=null,name='',grabY=0,lastY=0,moved=false;
   const rowsOf=()=>[...box.querySelectorAll('[data-keepname]')];
   const put=()=>{ if(el)el.style.transform='translateY('+(lastY-grabY)+'px)'; };
@@ -17083,9 +17086,9 @@ function _keepBindDrag(box){
     el=null;name='';
   };
   box.addEventListener('pointerdown',e=>{
-    const h=e.target.closest('[data-keepgrip]');
-    if(!h)return;
-    el=h.closest('[data-keepname]');
+    if(e.target.closest('.keep-row-more'))return;
+    el=e.target.closest('[data-keepname]');
+    if(el&&!box.contains(el))el=null;
     if(!el)return;
     e.preventDefault();
     moved=false;name=el.getAttribute('data-keepname');
@@ -17096,7 +17099,10 @@ function _keepBindDrag(box){
   });
   box.addEventListener('pointermove',e=>{
     if(!el)return;
-    moved=true;lastY=e.clientY;
+    lastY=e.clientY;
+    // 행 전체가 입력 자리인 만큼 손가락 떨림은 탭으로 남겨 목록을 고를 수 있게 한다.
+    if(!moved&&Math.abs(lastY-grabY)<4)return;
+    moved=true;
     put();
     const to=want(),now=rowsOf().indexOf(el);
     if(to!==now)move(to);
