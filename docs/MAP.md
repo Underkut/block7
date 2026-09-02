@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-0902-3** · 전체 30,666줄 · 구역 254개 · 함수 1540개
+기준 버전 **v. 26-0902-4** · 전체 30,672줄 · 구역 254개 · 함수 1541개
 
 ---
 
@@ -30,7 +30,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 276~3,549 | 3,274줄 (11%) | CSS | 화면 꾸미기 (색·크기·배치) |
 | 3,550~3,780 | 231줄 (1%) | JS | 동작 (자바스크립트) |
 | 3,798~5,957 | 2,160줄 (7%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
-| 5,958~30,663 | 24,706줄 (81%) | JS | 동작 (자바스크립트) |
+| 5,958~30,669 | 24,712줄 (81%) | JS | 동작 (자바스크립트) |
 
 ---
 
@@ -292,17 +292,17 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 29,388 | 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) | `showAutoBackups`, `restoreAutoBackup`, `applyRemoteState`, `_fbWarnLegacyWriter`, `_fbHealFromLegacy`, `first`, `_fbMaybeSelfUpdate`, `fbStartListening`, `_swOn` |
 | 29,726 | 담아두기 | `getKeepLog` |
 | 29,739 | 저장 목록 (v26-0831-11, HB) | `_keepListOf`, `n`, `_keepEntries`, `_keepLists` |
-| 29,809 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `_keepListsOf`, `_swIsKept`, `swKeepSet`, `l0`, `L` … 외 7개 |
-| 29,977 | 저장 | `_swLoadTiles`, `raw`, `_swSaveTiles`, `_swSpareKinds` |
-| 29,998 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermons`, `_swBooks`, `_swTags`, `_swReacts`, `_swValues`, `_swStrip` |
-| 30,100 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swCellHTML`, `_swFace` |
-| 30,188 | 그리기 | `_swTileClass`, `_swRender` |
-| 30,215 | 편집 모드 | `_swEditOn`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `_swNoMotion`, `_swTrack`, `_swTrackTo`, `_swRepaint` |
-| 30,293 | 누르면 전체화면 | `_swOpenVerse`, `_swVersesFor`, `_swTileOpen` |
-| 30,349 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
-| 30,368 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap` |
-| 30,618 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
-| 30,641 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
+| 29,809 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `byName`, `_keepListsOf`, `_swIsKept`, `swKeepSet`, `l0` … 외 8개 |
+| 29,983 | 저장 | `_swLoadTiles`, `raw`, `_swSaveTiles`, `_swSpareKinds` |
+| 30,004 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermons`, `_swBooks`, `_swTags`, `_swReacts`, `_swValues`, `_swStrip` |
+| 30,106 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swCellHTML`, `_swFace` |
+| 30,194 | 그리기 | `_swTileClass`, `_swRender` |
+| 30,221 | 편집 모드 | `_swEditOn`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `_swNoMotion`, `_swTrack`, `_swTrackTo`, `_swRepaint` |
+| 30,299 | 누르면 전체화면 | `_swOpenVerse`, `_swVersesFor`, `_swTileOpen` |
+| 30,355 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
+| 30,374 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap` |
+| 30,624 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
+| 30,647 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
 
 ---
 
@@ -437,119 +437,119 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 `attachSecRowDrag`  `authErrorMessage`  `authSetLoading`  `authSignOut`  `authSubmit`  `authToggleMode`
 `auto`  `autoSizeInput`  `axisLabel`  `b`  `barRef`  `barTags`
 `base`  `beforeSave`  `begin`  `bindHold`  `body`  `book`
-`build`  `buildBackupFilename`  `buildFlatList`  `buildLanes`  `bump`  `c`
-`cancelDragKeepingItem`  `cancelMousePress`  `cancelPressTimer`  `ceAddGoogleLink`  `ceCloseDeletePopup`  `ceCloseTrash`
-`ceDeleteSelected`  `ceImportGoogleLink`  `cellTodoSave`  `ceMoveTrash`  `ceOpenDeletePopup`  `ceOpenTrash`
-`ceRemoveGoogleLink`  `ceRestoreSelected`  `ceSelectMethod`  `ceSetSort`  `ceToggleFilter`  `ceToggleGoogleAuto`
-`cfChoose`  `cfMergeAll`  `cfRender`  `chap`  `checkDataRecovery`  `checkVerseAlarm`
-`chM`  `clamp`  `cleanupEmptyDays`  `clear`  `clearActive`  `clearContactForm`
-`clearDropIndicators`  `clearPaint`  `clearTrash`  `closeAccountSensitiveModals`  `closeCellTodo`  `closeCollAddMenu`
-`closeCollEdit`  `closeCollMenu`  `closeContactMenu`  `closeContactsModal`  `closeContactTasksPopup`  `closeDatePicker`
-`closeEventEditMenu`  `closeEventModal`  `closeHdrCalendar`  `closeInlineInput`  `closeKeepPicker`  `closeKeepRowMenu`
-`closeKeepSwitch`  `closeLogoMenu`  `closeMemorizationHistory`  `closeMemRecPopup`  `closeRepeatSubPicker`  `closeRpConfig`
-`closeSecDelModal`  `closeSettings`  `closeSettingsOnBg`  `closeSfxMenu`  `closeShareDialog`  `closeSmGhost`
-`closeSubscribeDialog`  `closeSyncConflicts`  `closeTaskMenu`  `closeTaskMenu_keepCtx`  `closeThemePicker`  `closeTrash`
-`closeVcSettings`  `closeVDashDetail`  `closeVerseAggPopup`  `closeVerseAlarmCustomTimePopup`  `closeVerseDashboard`  `closeVerseFull`
-`closeVerseGrid`  `closeVerseListModal`  `closeVerseMemMenu`  `closeVerseMemMenuFromOverlay`  `closeVersePopup`  `closeVerseSettingsModal`
-`closeVfShare`  `closeVliMenu`  `closeVliMenuFromOverlay`  `cnt`  `code`  `col`
-`collAddAction`  `collMenuAction`  `color`  `commit`  `confirmDatePicker`  `CONTACT_PICKER_SUPPORTED`
-`contactAction`  `contactBadgeCountChanged`  `copy`  `core`  `cur`  `currentMatchingPresetName`
-`currentViewKey`  `curSecId`  `cx`  `damp`  `dayOfYearVerseIdx`  `daysFromToday`
-`deeperN`  `defaultState`  `defIds`  `deleteCollection`  `deleteEventFromMenu`  `deleteLatestVerseEvent`
-`deleteSection`  `deleteSectionConfig`  `devInboxDelete`  `devInboxLoad`  `devInboxRefreshBadge`  `devInboxToggleAll`
-`devInboxUpdateBadge`  `devNoteHandleFile`  `devNoteSend`  `devNoteToggle`  `devTrashDelete`  `devTrashEmpty`
-`devTrashRender`  `devTrashToggle`  `done`  `doRedo`  `doSubscribe`  `doUndo`
-`download`  `draw`  `dropDrag`  `dropSecArchive`  `dup`  `editContact`
-`editEventFromMenu`  `el`  `email`  `emailTag`  `endDrag`  `endPinch`
-`ensureDailyRepeats`  `esc`  `evenN`  `eventOccursOnOwnDate`  `eventRepeatsOnDate`  `exportBackup`
-`fam`  `fbForceUploadLocal`  `fbPushState`  `fbStartListening`  `fill`  `findColl`
-`findFlatIndex`  `findLaneIndex`  `findMentionedContacts`  `finish`  `first`  `fit`
-`focusItemInput`  `formatEventTime`  `getActiveColls`  `getBigs`  `getCarryCount`  `getChips`
-`getContainer`  `getCustomVerses`  `getDay`  `getDayFadeClass`  `getDeeperLog`  `getDisplayEvents`
-`getDOW`  `getDropTarget`  `getEvenDeeperLog`  `getEvents`  `getKeepLog`  `getLikeLog`
-`getMemLog`  `getMemorizationsForDate`  `getMemorizationsForSection`  `getRowEl`  `getSecColor`  `getShareLog`
-`getSmalls`  `getStableDt`  `getTasksTaggedWithContact`  `getTrack`  `getTrash`  `getVerseAlarm`
-`getVerseByIdx`  `getVerseCollections`  `getVersePoolVerses`  `getVersePush`  `getWeekFadeClass`  `getWraps`
-`gid`  `go`  `goToDate`  `hdrCalGoToday`  `hdrCalNav`  `hdrCalPick`
-`hh`  `hideBusyToast`  `hit`  `home`  `importBackup`  `importFromFile`
-`initAppUI`  `initCrossViewSwipe`  `initDateSwipe`  `initForegroundPush`  `initMonthlySwipe`  `initTopDateSwipe`
-`initWeeklySwipe`  `inner0`  `inspectRecoveryDate`  `IS_TOUCH`  `isAnyInputFocused`  `isCollActive`
-`isDark`  `isExcluded`  `isNowWithinSection`  `isOver`  `isSwipeZone`  `isToday`
-`isTouch`  `itemKey`  `K`  `k`  `keep`  `keepPickNew`
-`keepPickToggle`  `keepRowDelete`  `keepRowEdit`  `keepSetSort`  `keepTogglePairSort`  `key`
-`kindLabel`  `L`  `l`  `l0`  `laySetBp`  `laySetWeekly`
-`left`  `likeN`  `limit`  `list`  `lo`  `load`
-`logicalNow`  `logoMenuBackToMain`  `logoMenuNextVerse`  `logoMenuOpenKeepSub`  `logoMenuOpenListSub`  `logoMenuPrevVerse`
-`logoMenuRandomVerse`  `logoMenuToggleVerse`  `loose`  `LS_KEY`  `m`  `makeBigGhost`
-`makeBigItem`  `makeBigWrap`  `makeContactBadges`  `makePresetChip`  `makeSmInlineGhost`  `makeSmItem`
-`makeSmWrap`  `makeSwipeWrap`  `manuallyCollapsed`  `map`  `measure`  `mergeDuplicateVerses`
-`mine`  `mk`  `mkBtn`  `mkDate`  `mode`  `monthLabel`
-`monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`  `moveActiveSelection`  `moved`  `moveDrag`
-`moveG`  `moveTaskTo`  `moveTaskToPickedDate`  `ms`  `N`  `n`
-`n0`  `name`  `navigateDate`  `navigateWeek`  `needTemp`  `next`
-`nextVerseManual`  `now`  `offTest`  `on`  `onCancel`  `onDown`
-`onEnd`  `onEventDateChange`  `onEventTimeToggle`  `onMove`  `onNotifyMasterToggle`  `onStart`
-`onTouchEnd`  `onTouchMove`  `onTouchStart`  `onUp`  `onVerseAlarmToggle`  `onVerseBarClick`
-`onVerseMemRecord`  `openCellInput`  `openCollAddMenu`  `openCollEdit`  `openCollMenu`  `openContactMenu`
-`openContactsModal`  `openDeeperFromRef`  `openEvenDeeperFromRef`  `openEventEditMenu`  `openEventModal`  `openEventModalForDate`
-`openHdrCalendar`  `openInlineInput`  `openKeepListPopup`  `openKeepPicker`  `openKeepRowMenu`  `openLogoMenu`
-`openMemorizationHistory`  `openMenuForThis`  `openRepeatSubPicker`  `openRpConfig`  `openSettings`  `openSfxMenu`
-`openShareDialog`  `openSmGhost`  `openSubscribeDialog`  `openSyncConflicts`  `openTaskMenu`  `openThemePicker`
-`openTrash`  `openVcCollSettings`  `openVcSettings`  `openVerseAggPopup`  `openVerseAlarmCustomTimePopup`  `openVerseCollSettings`
-`openVerseDashboard`  `openVerseFull`  `openVerseGrid`  `openVerseGridHome`  `openVerseListModal`  `openVerseMemMenu`
-`openVerseSettingsModal`  `openVfShare`  `openVfShareFor`  `openVliMenu`  `org`  `out`
-`overflows`  `p`  `pad`  `padH`  `padV`  `paint`
-`paintAppUIFromLocal`  `pairKey`  `pairOn`  `parseItemKey`  `pcEl`  `perBtn`
-`phone`  `pick`  `pickContainer`  `pickFromDeviceContacts`  `place`  `pool`
-`populateCarryBadge`  `portrait`  `prepDatePicker`  `prev`  `prevOff`  `prevVerseManual`
-`put`  `putText`  `randomVerseManual`  `raw`  `rawSave`  `recent`
-`recheck`  `recheckBurst`  `recordMemorization`  `recordMemorizationByRef`  `recordVerseDeeper`  `recordVerseEvenDeeper`
-`recordVerseLike`  `recordVerseShare`  `ref`  `refH`  `refLine`  `refOnly`
-`refreshActiveVisuals`  `refreshNotifyUI`  `refreshTaskViewsLive`  `refreshVerseMarksLive`  `removeCustomSuffix`  `removeVerseAlarmCustomTime`
-`renameCurrentColl`  `renameCustomSuffix`  `renderAddRow`  `renderCeGoogleList`  `renderCeTrash`  `renderCeVerseList`
-`renderCollButtons`  `renderCollFilterPanels`  `renderContactsList`  `renderLayout`  `renderMonthly`  `renderPresetList`
-`renderRepeatButtons`  `renderRpConfigList`  `renderSecArchive`  `renderSecBody`  `renderSecEvents`  `renderSecs`
-`renderSectionConfigList`  `renderSectionEditor`  `renderSettingsPanel`  `renderSmList`  `renderSubButtons`  `renderSuffixPickers`
-`renderTaskTextHTML`  `renderToday`  `renderTrashList`  `renderVcSettings`  `renderVerseAlarmCustomList`  `renderVerseAlarmSettings`
-`renderVerseBar`  `renderVerseDashboard`  `renderVerseGrid`  `renderVerseListCatRow`  `renderVerseListResults`  `renderVerseSettingsModal`
-`renderWeekly`  `repeat`  `resetStateToDefaults`  `resizeAllInputs`  `resolveTarget`  `resolveTargetIdx`
-`restoreAutoBackup`  `restoreFromTrash`  `restoreSecArchive`  `rot`  `rowsOf`  `rpChMonth`
-`rs`  `runAutoCarryOver`  `runCarryNow`  `runSharedCollSync`  `runVerseSheetAutoSync`  `s`
-`safe`  `save`  `saveCurrentSectionConfig`  `saveText`  `SC`  `scheduleVerseAlarms`
-`scopeTxt`  `scrollActiveIntoView`  `scrollFlatIdxIntoView`  `sec`  `secDelDo`  `secHasEvent`
-`secHasPendingTodo`  `secId`  `secName`  `sel`  `sendTestPush`  `sendToTrash`
-`setActiveSingle`  `setCarryScope`  `setCnt`  `setDeviceNotify`  `setEventTimeToggle`  `setLayFormMode`
-`setLinkOpenMode`  `setNotifySuffix`  `setShareSize`  `setText`  `setTimeStep`  `settle`
-`setTxtRefBracket`  `setTxtRefPos`  `setTxtRefStyle`  `setUiLevel`  `setUiLevelIconSet`  `setupCrossViewSwipeZones`
-`setVcShow`  `setVcShowAll`  `setVcTextScale`  `setVcTheme`  `setVerseCountScope`  `setVerseIdx`
-`setVersePush`  `setVersePushInterval`  `setVerseSneakMaxW`  `setVerseSneakStyle`  `setVerseUiLevel`  `setVfArtStyle`
-`setVfTextScale`  `setWMViewMode`  `sfxMenuAction`  `shareCopyCode`  `shareSizeOf`  `shareVia`
-`showAutoBackups`  `showBusyToast`  `showContactTasksPopup`  `showDropIndicator`  `showMemorizationPopup`  `shown`
-`showReactionToast`  `showToast`  `showVersePopup`  `snapBack`  `snapshot`  `solve`
-`sortBtn`  `sortEventsByTime`  `span`  `src`  `start`  `startDrag`
-`startEditContact`  `stepHiOverlap`  `stepHiStarMax`  `stopLt`  `stopTimer`  `strip`
-`submitContact`  `submitEventModal`  `sw`  `switchSettingsTab`  `switchToViewIndex`  `switchVerseSettingsTab`
-`swKeepSet`  `swRow`  `swTitle`  `swToggleEdit`  `swToggleHome`  `swToggleKeep`
-`syncP`  `syncRollDisplays`  `syncSecsFromState`  `syncVis`  `tags`  `testAutoCarryOver`
-`testLocalNotification`  `testVerseClickPath`  `text`  `themeById`  `themeChip`  `themePickerApply`
-`themePickerGroup`  `themePickerPick`  `tilt`  `tKey`  `to`  `todayKey`
-`toggleColl`  `toggleDailyRepeat`  `toggleEventDaily`  `toggleEventWeekly`  `toggleHiMark`  `toggleImgIncl`
-`toggleKeepSwitch`  `togglePropTitleFont`  `toggleSectionExclude`  `toggleStarSection`  `toggleTaskFlag`  `toggleTxtIncl`
-`toggleVerseAlarmContent`  `toggleVerseBarOn`  `toggleVfArt`  `toggleVfPattern`  `toggleVfSecPattern`  `topic`
-`totalActive`  `totalBigCount`  `touch`  `trashBgClick`  `uiLevel`  `uiLevelIconSet`
-`uiScaleSet`  `uiScaleSlideCommit`  `uiScaleSlideInput`  `up`  `updateHeaderDate`  `updateNotifySub`
-`updateSecSummary`  `updateSectionBoundary`  `updateSectionField`  `updateSetting`  `updateSmCnt`  `updateTotal`
-`updateTrashBadge`  `updateUrBtns`  `url`  `userDocRef`  `v`  `vbShuffleVerse`
-`vcAct`  `vcAddCard`  `vcBackToList`  `vcClearFilter`  `vcNav`  `vcOpenFilter`
-`vcOpenFull`  `vcSetTextScaleLive`  `vcStepTextScale`  `vDashOpenDetail`  `vDashOpenFilter`  `vDashOpenVerse`
-`vDashSetCustom`  `vDashSetPeriod`  `VERSE_TOTAL`  `verseByRef`  `verseForEntry`  `verseFullNav`
-`verses`  `verseSyncAllNow`  `verseUiLevel`  `vfAct`  `vfCatTap`  `vfCopyBodyOnly`
-`vfHomeAction`  `vfOpenSheetForCat`  `vfShareBg`  `vfShareDo`  `vfToggleCycleMode`  `vgPick`
-`vgPickAxis`  `vgSetBibleSort`  `vgSetTab`  `vgStepTagExcl`  `vgStepTileExcl`  `vgTapDateSort`
-`vgToggleExpand`  `vgToggleGroup`  `vgToggleTagExcl`  `vgToggleTileExcl`  `vis`  `vliAction`
-`vlSetCustom`  `vlSetPeriod`  `vlSetSort`  `vlSetTab`  `vlToCard`  `vlToggleCtrl`
-`vlTogglePairSort`  `vpAddTime`  `vpDelTime`  `vpDiagClear`  `vpDiagCopy`  `vpDiagRender`
-`vpDiagToggle`  `vpSetTime`  `vpToggleDay`  `vrs`  `vw`  `W`
-`want`  `wasOpen`  `weekOffsetLabel`  `weekOfMonth`  `weeksFromToday`  `wireActivateClick`
-`words`  `x`  `y`  `z`
+`build`  `buildBackupFilename`  `buildFlatList`  `buildLanes`  `bump`  `byName`
+`c`  `cancelDragKeepingItem`  `cancelMousePress`  `cancelPressTimer`  `ceAddGoogleLink`  `ceCloseDeletePopup`
+`ceCloseTrash`  `ceDeleteSelected`  `ceImportGoogleLink`  `cellTodoSave`  `ceMoveTrash`  `ceOpenDeletePopup`
+`ceOpenTrash`  `ceRemoveGoogleLink`  `ceRestoreSelected`  `ceSelectMethod`  `ceSetSort`  `ceToggleFilter`
+`ceToggleGoogleAuto`  `cfChoose`  `cfMergeAll`  `cfRender`  `chap`  `checkDataRecovery`
+`checkVerseAlarm`  `chM`  `clamp`  `cleanupEmptyDays`  `clear`  `clearActive`
+`clearContactForm`  `clearDropIndicators`  `clearPaint`  `clearTrash`  `closeAccountSensitiveModals`  `closeCellTodo`
+`closeCollAddMenu`  `closeCollEdit`  `closeCollMenu`  `closeContactMenu`  `closeContactsModal`  `closeContactTasksPopup`
+`closeDatePicker`  `closeEventEditMenu`  `closeEventModal`  `closeHdrCalendar`  `closeInlineInput`  `closeKeepPicker`
+`closeKeepRowMenu`  `closeKeepSwitch`  `closeLogoMenu`  `closeMemorizationHistory`  `closeMemRecPopup`  `closeRepeatSubPicker`
+`closeRpConfig`  `closeSecDelModal`  `closeSettings`  `closeSettingsOnBg`  `closeSfxMenu`  `closeShareDialog`
+`closeSmGhost`  `closeSubscribeDialog`  `closeSyncConflicts`  `closeTaskMenu`  `closeTaskMenu_keepCtx`  `closeThemePicker`
+`closeTrash`  `closeVcSettings`  `closeVDashDetail`  `closeVerseAggPopup`  `closeVerseAlarmCustomTimePopup`  `closeVerseDashboard`
+`closeVerseFull`  `closeVerseGrid`  `closeVerseListModal`  `closeVerseMemMenu`  `closeVerseMemMenuFromOverlay`  `closeVersePopup`
+`closeVerseSettingsModal`  `closeVfShare`  `closeVliMenu`  `closeVliMenuFromOverlay`  `cnt`  `code`
+`col`  `collAddAction`  `collMenuAction`  `color`  `commit`  `confirmDatePicker`
+`CONTACT_PICKER_SUPPORTED`  `contactAction`  `contactBadgeCountChanged`  `copy`  `core`  `cur`
+`currentMatchingPresetName`  `currentViewKey`  `curSecId`  `cx`  `damp`  `dayOfYearVerseIdx`
+`daysFromToday`  `deeperN`  `defaultState`  `defIds`  `deleteCollection`  `deleteEventFromMenu`
+`deleteLatestVerseEvent`  `deleteSection`  `deleteSectionConfig`  `devInboxDelete`  `devInboxLoad`  `devInboxRefreshBadge`
+`devInboxToggleAll`  `devInboxUpdateBadge`  `devNoteHandleFile`  `devNoteSend`  `devNoteToggle`  `devTrashDelete`
+`devTrashEmpty`  `devTrashRender`  `devTrashToggle`  `done`  `doRedo`  `doSubscribe`
+`doUndo`  `download`  `draw`  `dropDrag`  `dropSecArchive`  `dup`
+`editContact`  `editEventFromMenu`  `el`  `email`  `emailTag`  `endDrag`
+`endPinch`  `ensureDailyRepeats`  `esc`  `evenN`  `eventOccursOnOwnDate`  `eventRepeatsOnDate`
+`exportBackup`  `fam`  `fbForceUploadLocal`  `fbPushState`  `fbStartListening`  `fill`
+`findColl`  `findFlatIndex`  `findLaneIndex`  `findMentionedContacts`  `finish`  `first`
+`fit`  `focusItemInput`  `formatEventTime`  `getActiveColls`  `getBigs`  `getCarryCount`
+`getChips`  `getContainer`  `getCustomVerses`  `getDay`  `getDayFadeClass`  `getDeeperLog`
+`getDisplayEvents`  `getDOW`  `getDropTarget`  `getEvenDeeperLog`  `getEvents`  `getKeepLog`
+`getLikeLog`  `getMemLog`  `getMemorizationsForDate`  `getMemorizationsForSection`  `getRowEl`  `getSecColor`
+`getShareLog`  `getSmalls`  `getStableDt`  `getTasksTaggedWithContact`  `getTrack`  `getTrash`
+`getVerseAlarm`  `getVerseByIdx`  `getVerseCollections`  `getVersePoolVerses`  `getVersePush`  `getWeekFadeClass`
+`getWraps`  `gid`  `go`  `goToDate`  `hdrCalGoToday`  `hdrCalNav`
+`hdrCalPick`  `hh`  `hideBusyToast`  `hit`  `home`  `importBackup`
+`importFromFile`  `initAppUI`  `initCrossViewSwipe`  `initDateSwipe`  `initForegroundPush`  `initMonthlySwipe`
+`initTopDateSwipe`  `initWeeklySwipe`  `inner0`  `inspectRecoveryDate`  `IS_TOUCH`  `isAnyInputFocused`
+`isCollActive`  `isDark`  `isExcluded`  `isNowWithinSection`  `isOver`  `isSwipeZone`
+`isToday`  `isTouch`  `itemKey`  `K`  `k`  `keep`
+`keepPickNew`  `keepPickToggle`  `keepRowDelete`  `keepRowEdit`  `keepSetSort`  `keepTogglePairSort`
+`key`  `kindLabel`  `L`  `l`  `l0`  `laySetBp`
+`laySetWeekly`  `left`  `likeN`  `limit`  `list`  `lo`
+`load`  `logicalNow`  `logoMenuBackToMain`  `logoMenuNextVerse`  `logoMenuOpenKeepSub`  `logoMenuOpenListSub`
+`logoMenuPrevVerse`  `logoMenuRandomVerse`  `logoMenuToggleVerse`  `loose`  `LS_KEY`  `m`
+`makeBigGhost`  `makeBigItem`  `makeBigWrap`  `makeContactBadges`  `makePresetChip`  `makeSmInlineGhost`
+`makeSmItem`  `makeSmWrap`  `makeSwipeWrap`  `manuallyCollapsed`  `map`  `measure`
+`mergeDuplicateVerses`  `mine`  `mk`  `mkBtn`  `mkDate`  `mode`
+`monthLabel`  `monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`  `moveActiveSelection`  `moved`
+`moveDrag`  `moveG`  `moveTaskTo`  `moveTaskToPickedDate`  `ms`  `N`
+`n`  `n0`  `name`  `navigateDate`  `navigateWeek`  `needTemp`
+`next`  `nextVerseManual`  `now`  `offTest`  `on`  `onCancel`
+`onDown`  `onEnd`  `onEventDateChange`  `onEventTimeToggle`  `onMove`  `onNotifyMasterToggle`
+`onStart`  `onTouchEnd`  `onTouchMove`  `onTouchStart`  `onUp`  `onVerseAlarmToggle`
+`onVerseBarClick`  `onVerseMemRecord`  `openCellInput`  `openCollAddMenu`  `openCollEdit`  `openCollMenu`
+`openContactMenu`  `openContactsModal`  `openDeeperFromRef`  `openEvenDeeperFromRef`  `openEventEditMenu`  `openEventModal`
+`openEventModalForDate`  `openHdrCalendar`  `openInlineInput`  `openKeepListPopup`  `openKeepPicker`  `openKeepRowMenu`
+`openLogoMenu`  `openMemorizationHistory`  `openMenuForThis`  `openRepeatSubPicker`  `openRpConfig`  `openSettings`
+`openSfxMenu`  `openShareDialog`  `openSmGhost`  `openSubscribeDialog`  `openSyncConflicts`  `openTaskMenu`
+`openThemePicker`  `openTrash`  `openVcCollSettings`  `openVcSettings`  `openVerseAggPopup`  `openVerseAlarmCustomTimePopup`
+`openVerseCollSettings`  `openVerseDashboard`  `openVerseFull`  `openVerseGrid`  `openVerseGridHome`  `openVerseListModal`
+`openVerseMemMenu`  `openVerseSettingsModal`  `openVfShare`  `openVfShareFor`  `openVliMenu`  `org`
+`out`  `overflows`  `p`  `pad`  `padH`  `padV`
+`paint`  `paintAppUIFromLocal`  `pairKey`  `pairOn`  `parseItemKey`  `pcEl`
+`perBtn`  `phone`  `pick`  `pickContainer`  `pickFromDeviceContacts`  `place`
+`pool`  `populateCarryBadge`  `portrait`  `prepDatePicker`  `prev`  `prevOff`
+`prevVerseManual`  `put`  `putText`  `randomVerseManual`  `raw`  `rawSave`
+`recent`  `recheck`  `recheckBurst`  `recordMemorization`  `recordMemorizationByRef`  `recordVerseDeeper`
+`recordVerseEvenDeeper`  `recordVerseLike`  `recordVerseShare`  `ref`  `refH`  `refLine`
+`refOnly`  `refreshActiveVisuals`  `refreshNotifyUI`  `refreshTaskViewsLive`  `refreshVerseMarksLive`  `removeCustomSuffix`
+`removeVerseAlarmCustomTime`  `renameCurrentColl`  `renameCustomSuffix`  `renderAddRow`  `renderCeGoogleList`  `renderCeTrash`
+`renderCeVerseList`  `renderCollButtons`  `renderCollFilterPanels`  `renderContactsList`  `renderLayout`  `renderMonthly`
+`renderPresetList`  `renderRepeatButtons`  `renderRpConfigList`  `renderSecArchive`  `renderSecBody`  `renderSecEvents`
+`renderSecs`  `renderSectionConfigList`  `renderSectionEditor`  `renderSettingsPanel`  `renderSmList`  `renderSubButtons`
+`renderSuffixPickers`  `renderTaskTextHTML`  `renderToday`  `renderTrashList`  `renderVcSettings`  `renderVerseAlarmCustomList`
+`renderVerseAlarmSettings`  `renderVerseBar`  `renderVerseDashboard`  `renderVerseGrid`  `renderVerseListCatRow`  `renderVerseListResults`
+`renderVerseSettingsModal`  `renderWeekly`  `repeat`  `resetStateToDefaults`  `resizeAllInputs`  `resolveTarget`
+`resolveTargetIdx`  `restoreAutoBackup`  `restoreFromTrash`  `restoreSecArchive`  `rot`  `rowsOf`
+`rpChMonth`  `rs`  `runAutoCarryOver`  `runCarryNow`  `runSharedCollSync`  `runVerseSheetAutoSync`
+`s`  `safe`  `save`  `saveCurrentSectionConfig`  `saveText`  `SC`
+`scheduleVerseAlarms`  `scopeTxt`  `scrollActiveIntoView`  `scrollFlatIdxIntoView`  `sec`  `secDelDo`
+`secHasEvent`  `secHasPendingTodo`  `secId`  `secName`  `sel`  `sendTestPush`
+`sendToTrash`  `setActiveSingle`  `setCarryScope`  `setCnt`  `setDeviceNotify`  `setEventTimeToggle`
+`setLayFormMode`  `setLinkOpenMode`  `setNotifySuffix`  `setShareSize`  `setText`  `setTimeStep`
+`settle`  `setTxtRefBracket`  `setTxtRefPos`  `setTxtRefStyle`  `setUiLevel`  `setUiLevelIconSet`
+`setupCrossViewSwipeZones`  `setVcShow`  `setVcShowAll`  `setVcTextScale`  `setVcTheme`  `setVerseCountScope`
+`setVerseIdx`  `setVersePush`  `setVersePushInterval`  `setVerseSneakMaxW`  `setVerseSneakStyle`  `setVerseUiLevel`
+`setVfArtStyle`  `setVfTextScale`  `setWMViewMode`  `sfxMenuAction`  `shareCopyCode`  `shareSizeOf`
+`shareVia`  `showAutoBackups`  `showBusyToast`  `showContactTasksPopup`  `showDropIndicator`  `showMemorizationPopup`
+`shown`  `showReactionToast`  `showToast`  `showVersePopup`  `snapBack`  `snapshot`
+`solve`  `sortBtn`  `sortEventsByTime`  `span`  `src`  `start`
+`startDrag`  `startEditContact`  `stepHiOverlap`  `stepHiStarMax`  `stopLt`  `stopTimer`
+`strip`  `submitContact`  `submitEventModal`  `sw`  `switchSettingsTab`  `switchToViewIndex`
+`switchVerseSettingsTab`  `swKeepSet`  `swRow`  `swTitle`  `swToggleEdit`  `swToggleHome`
+`swToggleKeep`  `syncP`  `syncRollDisplays`  `syncSecsFromState`  `syncVis`  `tags`
+`testAutoCarryOver`  `testLocalNotification`  `testVerseClickPath`  `text`  `themeById`  `themeChip`
+`themePickerApply`  `themePickerGroup`  `themePickerPick`  `tilt`  `tKey`  `to`
+`todayKey`  `toggleColl`  `toggleDailyRepeat`  `toggleEventDaily`  `toggleEventWeekly`  `toggleHiMark`
+`toggleImgIncl`  `toggleKeepSwitch`  `togglePropTitleFont`  `toggleSectionExclude`  `toggleStarSection`  `toggleTaskFlag`
+`toggleTxtIncl`  `toggleVerseAlarmContent`  `toggleVerseBarOn`  `toggleVfArt`  `toggleVfPattern`  `toggleVfSecPattern`
+`topic`  `totalActive`  `totalBigCount`  `touch`  `trashBgClick`  `uiLevel`
+`uiLevelIconSet`  `uiScaleSet`  `uiScaleSlideCommit`  `uiScaleSlideInput`  `up`  `updateHeaderDate`
+`updateNotifySub`  `updateSecSummary`  `updateSectionBoundary`  `updateSectionField`  `updateSetting`  `updateSmCnt`
+`updateTotal`  `updateTrashBadge`  `updateUrBtns`  `url`  `userDocRef`  `v`
+`vbShuffleVerse`  `vcAct`  `vcAddCard`  `vcBackToList`  `vcClearFilter`  `vcNav`
+`vcOpenFilter`  `vcOpenFull`  `vcSetTextScaleLive`  `vcStepTextScale`  `vDashOpenDetail`  `vDashOpenFilter`
+`vDashOpenVerse`  `vDashSetCustom`  `vDashSetPeriod`  `VERSE_TOTAL`  `verseByRef`  `verseForEntry`
+`verseFullNav`  `verses`  `verseSyncAllNow`  `verseUiLevel`  `vfAct`  `vfCatTap`
+`vfCopyBodyOnly`  `vfHomeAction`  `vfOpenSheetForCat`  `vfShareBg`  `vfShareDo`  `vfToggleCycleMode`
+`vgPick`  `vgPickAxis`  `vgSetBibleSort`  `vgSetTab`  `vgStepTagExcl`  `vgStepTileExcl`
+`vgTapDateSort`  `vgToggleExpand`  `vgToggleGroup`  `vgToggleTagExcl`  `vgToggleTileExcl`  `vis`
+`vliAction`  `vlSetCustom`  `vlSetPeriod`  `vlSetSort`  `vlSetTab`  `vlToCard`
+`vlToggleCtrl`  `vlTogglePairSort`  `vpAddTime`  `vpDelTime`  `vpDiagClear`  `vpDiagCopy`
+`vpDiagRender`  `vpDiagToggle`  `vpSetTime`  `vpToggleDay`  `vrs`  `vw`
+`W`  `want`  `wasOpen`  `weekOffsetLabel`  `weekOfMonth`  `weeksFromToday`
+`wireActivateClick`  `words`  `x`  `y`  `z`
 

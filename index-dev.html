@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3655,7 +3655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-3";
+const APP_VERSION = "v. 26-0902-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -29836,8 +29836,14 @@ function _keepSetOrder(names){
 function _keepSortLists(arr){
   const m=_keepSort();
   const recent=(a,b)=>String(b.when||'').localeCompare(String(a.when||''));
-  if(m==='alpha')return arr.sort((a,b)=>String(a.n).localeCompare(String(b.n),'ko'));
-  if(m==='count')return arr.sort((a,b)=>b.cnt-a.cnt||recent(a,b));
+  // 이름 정렬은 한글 목록을 영어 목록보다 먼저 놓고, 각 갈래 안에서 가나다/알파벳순.
+  const byName=(a,b)=>{
+    const an=String(a.n||''),bn=String(b.n||'');
+    const ak=/^[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(an)?0:1,bk=/^[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(bn)?0:1;
+    return ak-bk||an.localeCompare(bn,'ko',{sensitivity:'base'});
+  };
+  if(m==='alpha')return arr.sort(byName);
+  if(m==='count')return arr.sort((a,b)=>b.cnt-a.cnt||byName(a,b));
   if(m==='reg')return arr.sort((a,b)=>String(a.first||'').localeCompare(String(b.first||''))||recent(a,b));
   if(m==='manual'){
     // 손으로 정한 차례. 그 표에 없는 목록(새로 생긴 것)은 뒤에 최근순으로 붙는다.
