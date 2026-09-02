@@ -701,6 +701,21 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
         SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.03;"), true);
   // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
   sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
+  // ⚠️⚠️ v26-0902-18, HB — "구글 다섯 벌만 단추에 미리보기가 안 된다."
+  //    까닭: 구글 글꼴 주소를 **명제를 그릴 때만** 붙였다. 명제를 한 번도
+  //    안 열고 설정창을 열면 안 붙어 있어 기본 글씨체로 보였다.
+  //    (직접 올린 것은 미리보기 글꼴이 따로 있어 멀쩡했고 구글 것만 티가 났다)
+  sc.eq('주소 붙이는 일이 따로 떨어져 있다',
+        SRC_DEV.includes('function _ptLinkGoogle(){'), true);
+  sc.eq('설정창도 부른다',
+        /function _ptSyncFontUI\(\)\{[\s\S]{0,400}_ptLinkGoogle\(\);/.test(SRC_DEV), true);
+  sc.eq('명제 그릴 때도 부른다',
+        /function _ptEnsureFont\(text,quiet\)\{\s*_ptLinkGoogle\(\);/.test(SRC_DEV), true);
+  sc.eq('한 번만 붙인다',
+        SRC_DEV.includes("if(document.getElementById('ptHandLink'))return;"), true);
+  // ⚠️ 직접 올린 것은 구글 주소에 넣지 않는다 (구글에 없는 이름이다)
+  sc.eq('self 는 주소에 안 넣는다',
+        SRC_DEV.includes('_PT_FACES.filter(f=>!f.self).map('), true);
   // ⚠️⚠️ 설정창을 여는 것만으로 여덟 벌(2.6MB)을 받으면 안 된다.
   //    단추에는 **이름표 글자만 담은 1KB 글꼴**을 먼저 세운다 (합계 9KB).
   sc.eq('미리보기 글꼴을 먼저 세운다',
