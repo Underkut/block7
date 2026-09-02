@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-17  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-18  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1838,6 +1838,9 @@ header{
 }
 .blk-flag-badge:empty{display:none;}
 .blk-flag-badge svg{display:block;}
+.blk-contact-task-badge{display:flex;align-items:center;flex-shrink:0;color:#398bd7;margin-right:5px;}
+.blk-contact-task-badge:empty{display:none;}
+.blk-contact-task-badge svg{display:block;}
 
 /* Daily-repeat indicator — sits right after the input so it follows
    text length naturally instead of breaking left-alignment. */
@@ -3838,7 +3841,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-17";
+const APP_VERSION = "v. 26-0902-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4454,6 +4457,14 @@ window._fbScriptsReady=new Promise(resolve=>{
             <input type="checkbox" id="setShowCompletedBtn" onchange="updateSetting('showCompletedBtn',this.checked)">
             <span class="settings-toggle-track"></span>
           </label>
+        </div>
+        <div class="settings-row" data-lv="p">
+          <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 17V3.5"/><path d="M5 4h9.5L12 7.5l2.5 3.5H5Z" fill="currentColor" stroke="none"/></svg></span> 깃발 버튼</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="setShowFlagFilterBtn" onchange="updateSetting('showFlagFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div class="settings-row" data-lv="p">
+          <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev" style="color:#398bd7"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6.2 3.5 4.4 5.3c-.7.7.2 3.7 3.1 6.6s5.9 3.8 6.6 3.1l1.8-1.8-3.2-2.4-1.5 1.5c-1-.4-2.8-2.2-3.2-3.2l1.5-1.5Z"/></svg></span> 연락 버튼</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="setShowContactFilterBtn" onchange="updateSetting('showContactFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
       </div>
 
@@ -6064,6 +6075,9 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="task-menu" id="taskMenu" style="display:none">
   <div class="task-menu-item" id="flagToggleItem" onclick="toggleTaskFlag()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg></span><span id="flagToggleLabel">중요 표시</span>
+  </div>
+  <div class="task-menu-item" id="contactTaskToggleItem" onclick="toggleTaskContact()">
+    <span class="task-menu-icon" style="color:#398bd7"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5 4.4 5.3c-.7.7.2 3.7 3.1 6.6s5.9 3.8 6.6 3.1l1.8-1.8-3.2-2.4-1.5 1.5c-1-.4-2.8-2.2-3.2-3.2l1.5-1.5Z"/></svg></span><span id="contactTaskToggleLabel">연락할 일</span>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="moveTaskTo(1)">
@@ -15117,6 +15131,8 @@ function defaultState(){
       showTodoFilterBtn:false, // show/hide the filled/empty-circle (할일 유/무 필터) button pair
       showEventFilterBtn:false,// show/hide the clock-icon (일정 유/무 필터) toggle button
       showCompletedBtn:true,   // show/hide the completed-todo visibility button
+      showFlagFilterBtn:false, // show/hide the flagged-task filter button
+      showContactFilterBtn:false,// show/hide the contact-task filter button
       showCompletedTasks:false,// true = show completed todos dimmed; false = hide them
       dowFormat:'letter-lord', // 'letter-lord' (L M T W T F S) | 'letter-sun' (S M T W T F S) | 'korean' (일 월...)
       sundayRed:true,           // highlight Sunday's date/label in red across weekly/monthly views
@@ -15188,7 +15204,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]}};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -16173,6 +16189,7 @@ function sendToTrash(k,type,secId,item){
     text:item.text,done:item.done,
     daily:item.daily||false,
     flag:item.flag||false,
+    contactTask:item.contactTask||false,
     autoCarryCount:item.autoCarryCount||0,
     manualCarryCount:item.manualCarryCount||0,
     ts:Date.now()
@@ -16223,6 +16240,7 @@ function restoreFromTrash(i){
   const restored={text:item.text,done:item.done};
   if(item.daily)restored.daily=true;
   if(item.flag)restored.flag=true;
+  if(item.contactTask)restored.contactTask=true;
   if(item.autoCarryCount)restored.autoCarryCount=item.autoCarryCount;
   if(item.manualCarryCount)restored.manualCarryCount=item.manualCarryCount;
   if(item.type==='big'){
@@ -19939,9 +19957,27 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
     row.appendChild(btnCompleted);
   }
 
+  // 깃발/연락 필터 — 다시 누르면 모든 할일 보기로 돌아간다.
+  const appendMarkerFilterBtn=(kind,title,svg)=>{
+    const active=ST.preset===kind+'Filter';
+    const btn=document.createElement('button');
+    btn.className='preset-btn'+(active?' on':'');
+    btn.title=active?'모든 할일 보기':title;
+    btn.setAttribute('aria-pressed',active?'true':'false');
+    btn.innerHTML=svg;
+    attachFastTap(btn,()=>{beforeSave();ST.preset=active?null:kind+'Filter';ST.prevVis=null;save();refreshFn();});
+    row.appendChild(btn);
+  };
+  if(includeExpandBtn&&ST.settings.showFlagFilterBtn===true){
+    appendMarkerFilterBtn('flag','깃발 표시 할일만 보기','<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 17V3.5"/><path d="M5 4h9.5L12 7.5l2.5 3.5H5Z" fill="currentColor" stroke="none"/></svg>');
+  }
+  if(includeExpandBtn&&ST.settings.showContactFilterBtn===true){
+    appendMarkerFilterBtn('contact','연락할 일만 보기','<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#398bd7" stroke-width="1.7"><path d="M6.2 3.5 4.4 5.3c-.7.7.2 3.7 3.1 6.6s5.9 3.8 6.6 3.1l1.8-1.8-3.2-2.4-1.5 1.5c-1-.4-2.8-2.2-3.2-3.2l1.5-1.5Z"/></svg>');
+  }
+
   // separator — only meaningful if at least one of A/★/+-/할일/일정 is showing;
   // otherwise it's a stray line with nothing on its left to separate.
-  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false||ST.settings.showCompletedBtn!==false;
+  const anyPresetBtnShown=ST.settings.showAllBtn!==false||ST.settings.showStarBtn!==false||ST.settings.showExpandAllBtn!==false||ST.settings.showTodoFilterBtn!==false||ST.settings.showEventFilterBtn!==false||ST.settings.showCompletedBtn!==false||ST.settings.showFlagFilterBtn===true||ST.settings.showContactFilterBtn===true;
   if(anyPresetBtnShown){
     const sep=document.createElement('div');sep.className='preset-sep';row.appendChild(sep);
   }
@@ -21158,6 +21194,12 @@ function makeSwipeWrap(innerEl, onDelete, onComplete){
 }
 
 // ═══════ BIG BLOCK ═══════
+function taskMarkerFilterPass(item){
+  const markerFilter=ST.preset==='flagFilter'?'flag':ST.preset==='contactFilter'?'contact':null;
+  if(markerFilter==='flag')return !!item.flag;
+  if(markerFilter==='contact')return !!item.contactTask;
+  return true;
+}
 function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
   const wrap=makeSwipeWrap(
@@ -21171,7 +21213,7 @@ function makeBigWrap(id,i,b,secColor){
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();updateTotal();renderSecBody(id);refreshTaskViewsLive();}
     }
   );
-  if(b.done&&ST.settings.showCompletedTasks===false)wrap.hidden=true;
+  if((b.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(b))wrap.hidden=true;
   return wrap;
 }
 
@@ -21289,6 +21331,12 @@ function makeBigItem(id,i,b,secColor){
     flagBadge.innerHTML=`<svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg>`;
     flagBadge.title='중요 표시';
   }
+  const contactTaskBadge=document.createElement('span');
+  contactTaskBadge.className='blk-contact-task-badge';
+  if(b.contactTask){
+    contactTaskBadge.innerHTML=`<svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5 4.4 5.3c-.7.7.2 3.7 3.1 6.6s5.9 3.8 6.6 3.1l1.8-1.8-3.2-2.4-1.5 1.5c-1-.4-2.8-2.2-3.2-3.2l1.5-1.5Z"/></svg>`;
+    contactTaskBadge.title='연락할 일';
+  }
 
   const inp=document.createElement('input');
   inp.type='text';inp.value=b.text||'';inp.className='bi-inp';
@@ -21373,7 +21421,7 @@ function makeBigItem(id,i,b,secColor){
     sendToTrash(kk,'big',id,removed);save();renderSecBody(id);updateTotal();refreshTaskViewsLive();
   };
 
-  div.append(chk,dh,flagBadge,inp);
+  div.append(chk,dh,flagBadge,contactTaskBadge,inp);
   makeContactBadges(b.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge,del);
   attachDrag(div,'big',i,id);
@@ -21455,7 +21503,7 @@ function makeSmWrap(id,i,sm,secColor){
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();renderSmList(id,secColor);refreshTaskViewsLive();}
     }
   );
-  if(sm.done&&ST.settings.showCompletedTasks===false)wrap.hidden=true;
+  if((sm.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(sm))wrap.hidden=true;
   return wrap;
 }
 
@@ -21477,6 +21525,12 @@ function makeSmItem(id,i,sm,secColor){
   if(sm.flag){
     flagBadge.innerHTML=`<svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg>`;
     flagBadge.title='중요 표시';
+  }
+  const contactTaskBadge=document.createElement('span');
+  contactTaskBadge.className='blk-contact-task-badge';
+  if(sm.contactTask){
+    contactTaskBadge.innerHTML=`<svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.2 3.5 4.4 5.3c-.7.7.2 3.7 3.1 6.6s5.9 3.8 6.6 3.1l1.8-1.8-3.2-2.4-1.5 1.5c-1-.4-2.8-2.2-3.2-3.2l1.5-1.5Z"/></svg>`;
+    contactTaskBadge.title='연락할 일';
   }
 
   const inp=document.createElement('input');
@@ -21544,7 +21598,7 @@ function makeSmItem(id,i,sm,secColor){
   // slot is now used by the carry-count badge instead, and the
   // small-list-count badge (sc-${id}) already communicates the same
   // "too many" information elsewhere.
-  div.append(chk,dh,flagBadge,inp);
+  div.append(chk,dh,flagBadge,contactTaskBadge,inp);
   makeContactBadges(sm.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
 
@@ -23134,6 +23188,13 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   if(flagItem&&flagLabel){
     flagLabel.textContent=isFlagged?'중요 표시됨':'중요 표시';
   }
+  const isContactTask=!!(item&&item.contactTask);
+  const contactItem=document.getElementById('contactTaskToggleItem');
+  const contactLabel=document.getElementById('contactTaskToggleLabel');
+  if(contactItem&&contactLabel){
+    contactItem.classList.toggle('on',isContactTask);
+    contactLabel.textContent=isContactTask?'연락할 일로 표시됨':'연락할 일';
+  }
 
   // On desktop, make the date input visible inline so the native
   // calendar-icon click target is real and reliably opens the picker.
@@ -24122,6 +24183,20 @@ function toggleTaskFlag(){
   closeTaskMenu();
   renderSecBody(secId);
   showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
+}
+
+function toggleTaskContact(){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const arr=type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId);
+  const item=arr[idx];
+  if(!item)return;
+  beforeSave();
+  item.contactTask=!item.contactTask;
+  save();
+  closeTaskMenu();
+  renderSecBody(secId);
+  showToast(item.contactTask?'연락할 일로 표시했어요':'연락할 일 표시를 해제했어요');
 }
 
 function toggleDailyRepeat(){
@@ -25615,6 +25690,8 @@ function renderSettingsPanel(){
   document.getElementById('setShowTodoFilterBtn').checked=s.showTodoFilterBtn!==false;
   document.getElementById('setShowEventFilterBtn').checked=s.showEventFilterBtn!==false;
   document.getElementById('setShowCompletedBtn').checked=s.showCompletedBtn!==false;
+  document.getElementById('setShowFlagFilterBtn').checked=!!s.showFlagFilterBtn;
+  document.getElementById('setShowContactFilterBtn').checked=!!s.showContactFilterBtn;
   const wmBtns=['setShowWMTodoBtn','setShowWMEventBtn','setShowWMMemBtn'];
   wmBtns.forEach(id=>{const el=document.getElementById(id);if(el)el.checked=s[id.replace('setShow','').replace('Btn','').replace(/^WM/,'showWM').replace(/./,c=>c.toLowerCase())]!==false;});
   if(document.getElementById('setShowWMTodoBtn'))document.getElementById('setShowWMTodoBtn').checked=s.showWMTodoBtn!==false;
@@ -25813,7 +25890,7 @@ function updateSetting(key,value){
     applyTheme(ST.settings.theme);
     _renderThemeSummary();
   }
-  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'||key==='showCompletedBtn'){
+  if(key==='showAllBtn'||key==='showStarBtn'||key==='showExpandAllBtn'||key==='showTodoFilterBtn'||key==='showEventFilterBtn'||key==='showCompletedBtn'||key==='showFlagFilterBtn'||key==='showContactFilterBtn'){
     renderAddRow();
   }
   if(key==='mviewMemMode'){
@@ -27162,8 +27239,8 @@ function _doCarry(scopeFilter){
       if(day.big)day.big[sec.id]=bigs.filter(b=>b.done||!b.text?.trim());
       if(day.small)day.small[sec.id]=smalls.filter(s=>s.done||!s.text?.trim());
       const tB=getBigs(todayK,sec.id),tS=getSmalls(todayK,sec.id);
-      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.flag)it.flag=true;tB.push(it);});
-      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.flag)it.flag=true;tS.push(it);});
+      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.flag)it.flag=true;if(b.contactTask)it.contactTask=true;tB.push(it);});
+      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.flag)it.flag=true;if(s.contactTask)it.contactTask=true;tS.push(it);});
     });
   });
   return{movedCount,dayCount:pastKeys.length};
