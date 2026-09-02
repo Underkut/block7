@@ -127,6 +127,15 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
   sc.eq('누르면 등록순', _keepSort(), 'reg');
   keepTogglePairSort();
   sc.eq('다시 누르면 최신순', _keepSort(), 'recent');
+  // 짝 외의 정렬을 고르면 첫 짝은 비활성이지만, 글자는 마지막 선택을 기억한다.
+  keepSetSort('reg'); keepSetSort('alpha');
+  sc.eq('비활성이 되어도 등록순을 기억', _keepPairSort(), 'reg');
+  keepTogglePairSort();
+  sc.eq('비활 짝을 누르면 보이던 등록순으로', _keepSort(), 'reg');
+  keepSetSort('alpha'); keepTogglePairSort();
+  sc.eq('비활 등록순을 다시 눌러도 등록순', _keepSort(), 'reg');
+  keepTogglePairSort();
+  sc.eq('활성인 등록순을 누르면 최신순', _keepSort(), 'recent');
   // ⚠️ 차례·내순서는 **설정 안**에 둔다 (설정은 키마다 따로 병합된다)
   sc.eq('설정에 담는다', typeof ST.settings.keepListSort, 'string');
   keepSetSort('manual'); _keepSetOrder(['가']);
@@ -238,6 +247,8 @@ console.log('\n시나리오 10 — 좌측 정렬 칩: 최신순 ⇄ 등록순 (H
   // 칩을 늘리지 않고 **하나가 두 몫**을 한다 (UI 원칙: 나란히 늘리지 말고 교체)
   sc.eq('짝이 정해져 있다', /_VL_SORT_PAIR=\[\['recent','최신순'\],\['reg','등록순'\]\]/.test(SRC_DEV), true);
   sc.eq('누르면 뒤집힌다', SRC_DEV.includes('function vlTogglePairSort('), true);
+  sc.eq('비활이면 표시된 짝으로 돌아간다',
+        SRC_DEV.includes("vlSetSort(kind,pairOn?(pairKey==='recent'?'reg':'recent'):pairKey);"), true);
   sc.eq('활동 목록의 세 번째는 많은순', /mem:\['count','많은순'\]/.test(SRC_DEV), true);
   sc.eq('저장 목록의 세 번째는 성경순', /keep:\['bible','성경순'\]/.test(SRC_DEV), true);
   sc.eq('등록순은 모음에 실린 차례', SRC_DEV.includes('function _vlRegIdx('), true);
