@@ -509,4 +509,88 @@ console.log('\n시나리오 21 — 한 목록에 겹쳐 담기지 않는다 · �
   sc.eq('빈칸을 안 쓴다', SRC_DEV.includes('id="vfCntkeep">&nbsp;'), false);
 }
 
+console.log('\n시나리오 22 — 저장 목록의 삭제 (v26-0902-2, HB 신고)');
+{
+  // HB — "중복된 여분을 삭제하려는데 '삭제할 기록이 없어요' 라고 나와"
+  //
+  // 까닭 — deleteLatestVerseEvent 가 kind 를 like·even 만 가려내고 **나머지를
+  //   전부 Deeper 로** 봤다. 'keep' 이 그리로 떨어져 Deeper 기록을 뒤졌다.
+  //   못 찾으면 헛말이 뜨고, **찾으면 남의 기록(Deeper)이 지워진다.**
+  const DEEPER = {};
+  let TOASTS = [];
+  function showToast(m){ TOASTS.push(m); }
+  function rawSave(){}
+  function refreshVerseMarksLive(){}
+  function _keepAfterChange(){}
+  function getMemLog(){ return {}; }
+  function getLikeLog(){ return {}; }
+  function getEvenDeeperLog(){ return {}; }
+  function getDeeperLog(){ return DEEPER; }
+  function _renderVAggBody(){}
+  const window = { _vAggKeepList:null, _vAggKind:'keep' };
+  const document = { getElementById: () => null };
+  let CONFIRM_SAY = true, CONFIRM_MSG = '';
+  function confirm(m){ CONFIRM_MSG = m; return CONFIRM_SAY; }
+  eval(asVar(sliceDev('function deleteLatestVerseEvent(', '// ── 로고 메뉴에서 여는 집계 목록 팝업 ──')));
+
+  // 22-1 목록을 열고 지우면 그 목록에서만 빠진다
+  ST.verseKeepLog = {};
+  swKeepSet(R1, '설교 준비', true);
+  swKeepSet(R1, '아이들과', true);
+  TOASTS = []; window._vAggKeepList = '설교 준비';
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('그 목록에서 빠진다', _swIsKept(R1,'설교 준비'), false);
+  sc.eq('다른 목록은 그대로', _swIsKept(R1,'아이들과'), true);
+  sc.eq('헛말이 안 뜬다', TOASTS.includes('삭제할 기록이 없어요'), false);
+  sc.eq('무엇을 했는지 말해 준다', TOASTS[0], "'설교 준비' 에서 뺐어요");
+
+  // 22-2 ⚠️ 겹쳐 들어온 기록도 한 번에 같이 빠진다 (하나만 남지 않는다)
+  ST.verseKeepLog = {
+    '2026-08-30': [{ ref:R1, time:'09:00' }],
+    '2026-08-31': [{ ref:R1, time:'21:30' }],
+  };
+  TOASTS = []; window._vAggKeepList = KEEP_DEFAULT_LIST;
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('겹친 기록까지 전부 빠진다', Object.values(ST.verseKeepLog).flat().length, 0);
+
+  // 22-3 ⚠️⚠️ Deeper 기록은 건드리지 않는다 (이것이 진짜 위험했던 자리다)
+  ST.verseKeepLog = {};
+  swKeepSet(R1, '설교 준비', true);
+  DEEPER['2026-08-31'] = [{ ref:R1, time:'08:00' }];
+  TOASTS = []; window._vAggKeepList = '설교 준비';
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('Deeper 기록은 그대로', (DEEPER['2026-08-31']||[]).length, 1);
+  sc.eq('저장만 빠졌다', _swIsKept(R1), false);
+  delete DEEPER['2026-08-31'];
+
+  // 22-4 '전체' 로 볼 때는 담긴 데가 여럿이면 묻는다
+  ST.verseKeepLog = {};
+  swKeepSet(R1, '설교 준비', true);
+  swKeepSet(R1, '아이들과', true);
+  TOASTS = []; window._vAggKeepList = null; CONFIRM_SAY = false;
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('아니라고 하면 그대로', _keepListsOf(R1).size, 2);
+  sc.eq('몇 군데인지 묻는다', CONFIRM_MSG.includes('2개 목록'), true);
+  CONFIRM_SAY = true;
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('그렇다고 하면 전부 빠진다', _keepListsOf(R1).size, 0);
+
+  // 22-5 한 군데뿐이면 묻지 않는다
+  ST.verseKeepLog = {};
+  swKeepSet(R1, '설교 준비', true);
+  CONFIRM_MSG = ''; window._vAggKeepList = null;
+  deleteLatestVerseEvent('keep', R1);
+  sc.eq('한 군데면 그냥 뺀다', _keepListsOf(R1).size, 0);
+  sc.eq('묻지 않았다', CONFIRM_MSG, '');
+
+  // 22-6 담긴 데가 없으면 조용히 알려 준다 (엉뚱한 기록을 뒤지지 않는다)
+  TOASTS = [];
+  deleteLatestVerseEvent('keep', R2);
+  sc.eq('없다고 말해 준다', TOASTS[0], '저장한 데가 없어요');
+
+  // 22-7 메뉴 글자도 하는 일에 맞춘다 — '삭제' 는 말씀을 지우는 것으로 읽힌다
+  sc.eq('글자에 이름표가 있다', SRC_DEV.includes('<span id="vliDelLabel">삭제</span>'), true);
+  sc.eq('목록을 보는 중이면 빼기', SRC_DEV.includes("?(window._vAggKeepList?'이 목록에서 빼기':'저장 풀기')"), true);
+}
+
 sc.done();

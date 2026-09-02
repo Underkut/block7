@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3655,7 +3655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-1";
+const APP_VERSION = "v. 26-0902-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5770,7 +5770,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="vliAction('del')" style="color:var(--danger,#e5484d);">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M6 6l.7 10a1 1 0 0 0 1 1h4.6a1 1 0 0 0 1-1L14 6"/></svg></span>삭제
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M6 6l.7 10a1 1 0 0 0 1 1h4.6a1 1 0 0 0 1-1L14 6"/></svg></span><span id="vliDelLabel">삭제</span>
   </div>
 </div>
 
@@ -16780,6 +16780,12 @@ function closeVliMenuFromOverlay(){
 }
 function openVliMenu(x,y,ref,kind){
   _vliRef=ref;_vliKind=kind;
+  // ⚠️ 저장 목록에서는 '삭제' 가 **그 목록에서 빼기** 다 (v26-0902-2, HB).
+  //    말씀 자체를 지우는 것으로 읽히면 무서워서 못 누른다.
+  const _dl=document.getElementById('vliDelLabel');
+  if(_dl)_dl.textContent=(kind==='keep')
+    ?(window._vAggKeepList?'이 목록에서 빼기':'저장 풀기')
+    :'삭제';
   _menuArmOnNextPress(v=>{_vliArmed=v;});   // 롱터치한 손가락이 떨어져도 안 닫힌다
   const ov=document.getElementById('vliMenuOverlay');
   const menu=document.getElementById('vliMenu');
@@ -16832,8 +16838,40 @@ function vliAction(act){
 }
 // 해당 목록(kind)에서 ref 구절의 "가장 최근 이벤트 1건"을 삭제.
 // 누를 때마다 최신 → 과거 순으로 하나씩 지워지며 카운트에 즉시 반영된다.
+//
+// ⚠️⚠️ v26-0902-2, HB 신고 — 저장 목록에서 삭제를 누르면 늘 '삭제할 기록이
+//    없어요' 가 떴다. 까닭 — 아래 else 가 kind 를 like·even 만 가려내고
+//    **나머지를 전부 Deeper 로 본다.** 'keep' 이 그리로 떨어져 엉뚱한 기록을
+//    뒤졌다. 못 찾으면 헛말이 뜨고, **찾으면 남의 기록(Deeper)이 지워진다.**
+//    → 저장은 여기서 먼저 갈라낸다.
 function deleteLatestVerseEvent(kind,ref){
   if(!kind||!ref){showToast('이 화면에서는 삭제 기능을 지원하지 않아요');return;}
+  // ── 저장은 '한 건'이 없다 (v26-0902-2, HB) ────────────────────────
+  // 좋아요·암송은 누를 때마다 쌓이는 기록이라 "가장 최근 1건"을 뺄 수 있다.
+  // 저장은 "그 목록에 담겨 있다/아니다" 하나뿐이다 → **그 목록에서 뺀다.**
+  // ⚠️ swKeepSet(…,false) 는 그 목록의 기록을 **전부** 뺀다. 기기 두 대가
+  //    각각 담아 겹쳐 들어온 것도 이 한 번으로 같이 빠진다.
+  if(kind==='keep'){
+    const L=window._vAggKeepList||'';
+    if(L){
+      if(!_swIsKept(ref,L)){showToast('이 목록에 없어요');return;}
+      swKeepSet(ref,L,false);
+      showToast(`'${L}' 에서 뺐어요`);
+    }else{
+      // '전체' 로 보는 중이라 어느 목록인지 모른다 — 담긴 데가 여럿이면 묻는다
+      const n=_keepListsOf(ref).size;
+      if(!n){showToast('저장한 데가 없어요');return;}
+      if(n>1&&!confirm(`${n}개 목록에 담겨 있어요.\n전부 뺄까요?`))return;
+      swToggleKeep(ref);
+      showToast(n>1?`${n}개 목록에서 뺐어요`:'저장을 풀었어요');
+    }
+    try{refreshVerseMarksLive();}catch(_){}
+    try{_keepAfterChange();}catch(_){}
+    try{_keepRepaintLists();}catch(_){}
+    const m0=document.getElementById('vAggModal');
+    if(m0&&m0.style.display!=='none'&&window._vAggKind)_renderVAggBody(window._vAggKind);
+    return;
+  }
   let removed=false;
   if(kind==='mem'){
     const log=getMemLog();
