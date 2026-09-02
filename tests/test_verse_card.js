@@ -347,9 +347,9 @@ console.log('\n시나리오 9 — 화면 연결');
         /vlToCard\('\$\{kind\}'\)[\s\S]{0,220}<rect x="3" y="3" width="14" height="14" rx="2\.5"\/><\/svg>/.test(SRC), true);
   // 손가락 화면에서 :hover 가 남아 버튼이 파랗게 굳던 것
   sc.eq('목록 헤더 버튼의 hover 는 마우스 기기에서만',
-        SRC.includes('@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac);}}'), true);
+        SRC.includes('@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac-tx);}}'), true);
   sc.eq('카드 헤더 버튼의 hover 도 마우스 기기에서만',
-        SRC.includes('@media (hover:hover){.vc-icbtn:hover{color:var(--ac);}}'), true);
+        SRC.includes('@media (hover:hover){.vc-icbtn:hover{color:var(--ac-tx);}}'), true);
   // 본문이 길면 장절이 '다음 말씀' 버튼(z-index 2) 밑에 깔려 눌리지 않았다
   sc.eq('전체화면 장절을 넘김 버튼 위로', /#vfRef\{[\s\S]*?position:relative;z-index:3;/.test(SRC), true);
   // 하단 메타·반응 묶음의 투명한 가운데도 긴 말씀의 장절 위를 덮을 수 있다

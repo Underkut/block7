@@ -32,30 +32,86 @@ python3 -m fontTools.subset <원본>.ttf --flavor=woff2 --no-hinting \
   그렸다가 바뀌면 깜빡인다 (HB 26-0831 신고).
 - 한 번 받으면 기기에 남는다. 다음부터 다시 받지 않는다.
 
-## 목록
+## 목록 — 스물일곱 벌 (v26-0902-8)
 
-| 파일 | 이름 | 크기 | 자른 방식 | 출처·라이선스 |
+설정창에서는 **명조 · 고딕 · 손글씨** 세 무리로 나눠 보여 준다
+(무리는 `index.html` 의 `_PT_FACES` 표에 있는 `g` 한 글자가 정한다).
+표에 없는 다섯(나눔붓·동해독도·연성·송명·고운바탕)은 구글 폰트라 여기 없다.
+
+| 무리 | 파일 | 이름표 | 온이름 | 크기 |
 |---|---|---|---|---|
-| `daegwang.woff2` | 나눔손글씨 대광유리 | 602KB | 실용 2,780자 | 네이버 · 파일에 표기 없음 |
-| `griun.woff2` | 그리운 x 국한박 송글송글 감성 흘림체 | 964KB | 실용 2,780자 | https://www.griun.co.kr/license |
-| `hakgyo.woff2` | 학교안심 받아쓰기 | 300KB | 한글 전체 | KERIS https://www.keris.or.kr/ |
-| `jaemin.woff2` | 한글재민체 4.0 | 235KB | 한글 전체 | 파일에 표기 없음 |
-| `kotra.woff2` | KOTRA 손글씨체 | 260KB | 한글 전체 | 다온폰트 www.daonfont.com |
-| `kyobo.woff2` | 교보손글씨 2020 박도연 | 414KB | 한글 전체 | 교보문고 · 윤디자인 |
-| `lxgw.woff2` | LXGW 문해 KR Light | 317KB | 한글 전체 | **SIL Open Font License 1.1** |
-| `tvn.woff2` | tvN 즐거운이야기 Light | 184KB | 한글 전체 | CJ ENM · 파일에 표기 없음 |
+| 명조 | `chosunnm.woff2` | 조선명조 | 조선일보명조 | 534KB |
+| 명조 | `chosunsg.woff2` | 조선신명 | 조선일보신명조 | 172KB |
+| 명조 | `nmyet.woff2` | 옛한글 | 나눔명조 옛한글 | 308KB |
+| 명조 | `sungkok.woff2` | 성곡 | 국민대 성곡 세리프 | 201KB |
+| 명조 | `mapogold.woff2` | 금빛나루 | 마포금빛나루 | 416KB |
+| 명조 | `mapoflower.woff2` | 마포꽃섬 | 마포꽃섬 | 238KB |
+| 고딕 | `gmarket_l.woff2` | 지마켓L | Gmarket Sans Light | 276KB |
+| 고딕 | `gmarket_b.woff2` | 지마켓B | Gmarket Sans Bold | 311KB |
+| 고딕 | `nexon_l.woff2` | 넥슨L | NEXON Lv1 Gothic Light | 207KB |
+| 고딕 | `nexon_r.woff2` | 넥슨R | NEXON Lv1 Gothic | 211KB |
+| 고딕 | `nexon_b.woff2` | 넥슨B | NEXON Lv1 Gothic Bold | 210KB |
+| 고딕 | `scdream1.woff2` | 드림1 | 에스코어드림 1 Thin | 126KB |
+| 고딕 | `scdream8.woff2` | 드림8 | 에스코어드림 8 Heavy | 142KB |
+| 고딕 | `esaman_l.woff2` | 이사만루L | 이사만루체 Light | 259KB |
+| 고딕 | `esaman_b.woff2` | 이사만루B | 이사만루체 Bold | 278KB |
+| 고딕 | `yes24.woff2` | 예스24 | YES24체 | 112KB |
+| 손글씨 | `barun.woff2` | 바른정신 | 나눔손글씨 바른정신 | 678KB |
+| 손글씨 | `uridal.woff2` | 우리딸 | 나눔손글씨 우리딸 손글씨 | 590KB |
+| 손글씨 | `incheon.woff2` | 자람 | 인천교육 자람 | 749KB |
+| 손글씨 | `bombaram.woff2` | 봄바람 | HS봄바람체 2.0 | 81KB |
+| 손글씨 | `mapoagape.woff2` | 아가페 | 마포아가페 | 278KB |
+| 손글씨 | `sangjang.woff2` | 상장 | 학교안심 상장 | 131KB |
+| 손글씨 | `daegwang.woff2` | 대광유리 | 나눔손글씨 대광유리 | 602KB |
+| 손글씨 | `kyobo.woff2` | 교보2020 | 교보손글씨 2020 박도연 | 414KB |
+| 손글씨 | `griun.woff2` | 송글송글 | 그리운 x 국한박 송글송글 감성 흘림체 | 964KB |
+| 손글씨 | `kotra.woff2` | 코트라 | KOTRA 손글씨체 | 260KB |
+| 손글씨 | `tvn.woff2` | 즐거운 | tvN 즐거운이야기 | 184KB |
+
+⚠️ **`chosunnm` 만은 `vhea`·`vmtx` 를 함께 버려야 한다.**
+   안 버리면 브라우저가 파일을 통째로 물리친다 (`document.fonts` 상태가
+   `error`, 화면에는 기본 명조로 나온다 — 실측 26-0902).
+   ```
+   ... --drop-tables+=DSIG,vhea,vmtx ...
+   ```
+
+## `prev/` — 설정창 단추용 초소형 글꼴 (합계 29KB)
+
+⚠️⚠️ 이것이 없으면 **설정창을 여는 것만으로 스물일곱 벌 9.7MB를 다 받는다.**
+`@font-face` 는 그 글씨체가 화면에 쓰이는 순간 받아지는데, 설정창 단추
+스물일곱이 저마다 제 글씨체로 쓰여 있으니 전부 쓰이는 셈이다.
+
+→ 단추에는 **제 이름표 글자만 담은 1KB짜리** 글꼴(`B7P …`)을 먼저 세운다.
+   진짜 글꼴은 그 글씨체가 뽑힌 명제를 열 때 받는다.
+
+```
+python3 -m fontTools.subset fonts/<파일>.woff2 --flavor=woff2 --no-hinting \
+  --desubroutinize --drop-tables+=DSIG --text=<이름표> \
+  --output-file=fonts/prev/<열쇠>.woff2
+```
+
+⚠️ 이름표(`_PT_FACES` 의 `ko`)를 고치면 **이 글꼴도 다시 잘라야 한다.**
+   안 자르면 새 글자가 빠져 단추에서 그 글자만 기본 글씨체로 나온다.
+⚠️ 파일 이름은 진짜 글꼴과 달리 **열쇠(k)** 를 쓴다 (`chosunN.woff2`).
 
 ⚠️⚠️ **라이선스 확인은 끝난 것이 아니다.**
 글씨체 파일 안에 라이선스 글이 들어 있는 것은 **LXGW(SIL OFL)와 그리운** 둘뿐이다.
-나머지 여섯은 파일에 표기가 없어 **눈누 각 폰트 페이지의 '웹폰트' 칸**이
+나머지는 파일에 표기가 없어 **눈누 각 폰트 페이지의 '웹폰트' 칸**이
 허용인지가 유일한 근거다. 운영 배포 전에 반드시 다시 확인할 것.
 허용이 아닌 것이 있으면 그 줄을 표에서 빼고 파일을 지운다.
 
 ## 글씨체를 더할 때
 
-고칠 곳은 **세 군데**다.
+고칠 곳은 **네 군데**다.
 1. `fonts/` 에 잘라 낸 woff2 를 넣는다
-2. `index.html` 의 `@font-face` 와 `.vf-ptitle.pf-<열쇠>` (배율 `--pt-k`)
-3. `index.html` 의 `_PT_FACES` 표에 `{k, ko, full, fam, self:1}` 한 줄
+2. `fonts/prev/` 에 **이름표 글자만** 잘라 낸 woff2 를 넣는다 (위 참고)
+3. `index.html` 의 `@font-face` 두 줄(`B7 …` · `B7P …`)과
+   `.vf-ptitle.pf-<열쇠>` (배율 `--pt-k`)
+4. `index.html` 의 `_PT_FACES` 표에 `{k, g, ko, full, fam, self:1}` 한 줄
+   — `g` 는 무리다 (`m` 명조 · `g` 고딕 · `h` 손글씨). **안 적으면 손글씨로 간다.**
 
-나머지(설정창 단추·미리 받아 두기·무작위 배정)는 그 표에서 저절로 따라온다.
+나머지(설정창 단추·무리 나누기·무작위 배정)는 그 표에서 저절로 따라온다.
+
+⚠️ 배율(`--pt-k`)은 잉크 높이를 재서 정하되, **명조는 거기에 ×1.275 를 곱한다.**
+   명조는 본문 글씨체와 결이 가까워서 맞춘 크기로는 타이틀과 본문이 구분되지
+   않는다 (HB 26-0902, 고운바탕에서 확인). 고딕·손글씨는 잰 값 그대로.
