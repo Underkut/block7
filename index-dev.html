@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-12  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-13  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -668,7 +668,7 @@ header{
    까닭 — 고운바탕은 본문 글씨체(명조 테마)와 결이 가까워서, 잉크 높이를 맞춘
    크기로는 타이틀과 본문이 구분되지 않는다. 다른 글씨체는 생김새로 갈리지만
    이것은 **크기로 갈라 줘야** 한다. */
-.vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.30;font-weight:400;}
+.vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.19;font-weight:400;}
 /* ── 저장소에 직접 올린 글씨체 (v26-0901-9, HB 가 눈누에서 받아 줌) ──────────
    ⚠️ 구글 폰트와 다른 점: 구글은 **쓰인 글자 조각만** 내려 주는데 이것들은
       한 벌을 통째로 받는다. 그래서 —
@@ -727,13 +727,13 @@ header{
 @font-face{font-family:'B7 Sangjang';src:url('fonts/sangjang.woff2')format('woff2');font-display:block;}
 .vf-ptitle.pf-chosunN{font-family:'B7 ChosunN',var(--vf-font,inherit);--pt-k:1.11;font-weight:400;}
 .vf-ptitle.pf-chosunS{font-family:'B7 ChosunS',var(--vf-font,inherit);--pt-k:1.24;font-weight:400;}
-.vf-ptitle.pf-nmyet{font-family:'B7 Nmyet',var(--vf-font,inherit);--pt-k:1.10;font-weight:400;}
+.vf-ptitle.pf-nmyet{font-family:'B7 Nmyet',var(--vf-font,inherit);--pt-k:1.03;font-weight:400;}
 .vf-ptitle.pf-sungkok{font-family:'B7 Sungkok',var(--vf-font,inherit);--pt-k:1.21;font-weight:400;}
-.vf-ptitle.pf-mapogold{font-family:'B7 Mapogold',var(--vf-font,inherit);--pt-k:1.10;font-weight:400;}
+.vf-ptitle.pf-mapogold{font-family:'B7 Mapogold',var(--vf-font,inherit);--pt-k:1.03;font-weight:400;}
 .vf-ptitle.pf-mapoflower{font-family:'B7 Mapoflower',var(--vf-font,inherit);--pt-k:1.12;font-weight:400;}
-.vf-ptitle.pf-gmarketL{font-family:'B7 GmarketL',var(--vf-font,inherit);--pt-k:1.18;font-weight:400;}
+.vf-ptitle.pf-gmarketL{font-family:'B7 GmarketL',var(--vf-font,inherit);--pt-k:1.13;font-weight:400;}
 .vf-ptitle.pf-gmarketB{font-family:'B7 GmarketB',var(--vf-font,inherit);--pt-k:1.01;font-weight:400;}
-.vf-ptitle.pf-nexonL{font-family:'B7 NexonL',var(--vf-font,inherit);--pt-k:1.27;font-weight:400;}
+.vf-ptitle.pf-nexonL{font-family:'B7 NexonL',var(--vf-font,inherit);--pt-k:1.10;font-weight:400;}
 .vf-ptitle.pf-nexonR{font-family:'B7 NexonR',var(--vf-font,inherit);--pt-k:0.97;font-weight:400;}
 .vf-ptitle.pf-nexonB{font-family:'B7 NexonB',var(--vf-font,inherit);--pt-k:0.95;font-weight:400;}
 .vf-ptitle.pf-dream1{font-family:'B7 Dream1',var(--vf-font,inherit);--pt-k:1.26;font-weight:400;}
@@ -742,7 +742,7 @@ header{
 .vf-ptitle.pf-esamanB{font-family:'B7 EsamanB',var(--vf-font,inherit);--pt-k:0.96;font-weight:400;}
 .vf-ptitle.pf-yes24{font-family:'B7 Yes24',var(--vf-font,inherit);--pt-k:0.96;font-weight:400;}
 .vf-ptitle.pf-barun{font-family:'B7 Barun',var(--vf-font,inherit);--pt-k:1.08;font-weight:400;}
-.vf-ptitle.pf-uridal{font-family:'B7 Uridal',var(--vf-font,inherit);--pt-k:1.28;font-weight:400;}
+.vf-ptitle.pf-uridal{font-family:'B7 Uridal',var(--vf-font,inherit);--pt-k:1.40;font-weight:400;}
 .vf-ptitle.pf-incheon{font-family:'B7 Incheon',var(--vf-font,inherit);--pt-k:1.39;font-weight:400;}
 .vf-ptitle.pf-bombaram{font-family:'B7 Bombaram',var(--vf-font,inherit);--pt-k:0.93;font-weight:400;}
 .vf-ptitle.pf-agape{font-family:'B7 Agape',var(--vf-font,inherit);--pt-k:0.99;font-weight:400;}
@@ -3893,7 +3893,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-12";
+const APP_VERSION = "v. 26-0902-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -11214,6 +11214,20 @@ function _vfLayoutText(){
   //   크기**만 골라 준다. 줄간격도 산문에 맞게 좁힌다.
   if(el.classList.contains('prop')){
     _vfLayoutPropText(el,raw,availW,availH);
+    // ⚠️ 타이틀 크기는 **본문이 몇 줄이 되느냐**에 딸렸는데(v26-0902-13, HB),
+    //    그리는 차례는 타이틀이 먼저다. 그래서 여기서 다시 잡는다 —
+    //    앉혀 봐야 줄 수를 알기 때문이다.
+    // ⚠️ 다시 잡으면 타이틀 높이가 달라져 본문이 쓸 높이도 달라진다
+    //    → 본문을 **한 번만** 다시 앉힌다. 되풀이하면 오락가락한다
+    //      (묶어 둔 배율 0.85~1.30 이 그 폭을 막아 준다).
+    if(_vfSizePropTitle((el._lines||[]).length)){
+      let ptH2=0;
+      if(ptEl&&ptEl.classList.contains('on')){
+        const pcs2=getComputedStyle(ptEl);
+        ptH2=ptEl.offsetHeight+(parseFloat(pcs2.marginBottom)||0);
+      }
+      _vfLayoutPropText(el,raw,availW,Math.max(60,inner.clientHeight-padV-refH-ptH2-6));
+    }
     // ⚠️ 가운데로 세울지는 **본문을 앉혀 봐야** 안다 (몇 줄이 되는지가 조건이다).
     //    그래서 대표 문구의 자리도 여기서 함께 정한다 — 그리는 순서상
     //    타이틀이 먼저 그려지기 때문이다.
@@ -13568,6 +13582,44 @@ function _ptWrapTitle(text){
 // ── 명제 대표 문구 타이틀 ──────────────────────────────────────────────
 // 크기는 본문처럼 글자 수에 따라 단계적으로 정한다 — 짧으면 크게, 길면 작게.
 // 자리(좌·중앙·우)와 기울기는 _vfRollProp() 이 이미 뽑아 뒀다.
+// ── 대표 문구 크기는 **본문이 몇 줄이 되느냐**에 따라 달라진다 (v26-0902-13, HB)
+// ⚠️ 기준은 **본문 세 줄**이다. 지금 쓰는 글씨체 배율(--pt-k)은 전부 그 언저리를
+//    보면서 정해진 값이라, 기준을 바꾸면 스물아홉 벌을 다시 다 봐야 한다.
+// 한 줄 줄 때마다 7% 작게, 한 줄 늘 때마다 7% 크게 —
+//   본문이 짧으면 타이틀만 홀로 커서 허전하고, 본문이 길면 타이틀이 눌려 보인다.
+// ⚠️⚠️ 반드시 **묶어 둔다** (0.85~1.30). 안 묶으면 되먹임이 생긴다 —
+//    타이틀이 커지면 본문이 쓸 높이가 줄어 줄이 또 늘고, 그러면 타이틀이 또
+//    커진다. 여덟 줄짜리 명제에서 타이틀이 화면을 먹는다.
+const _PT_LINE_BASE=3;
+const _PT_LINE_STEP=0.07;
+function _ptLineK(n){
+  const k=Math.pow(1+_PT_LINE_STEP,(n||_PT_LINE_BASE)-_PT_LINE_BASE);
+  return Math.max(0.85,Math.min(1.30,k));
+}
+// 타이틀 글자 크기를 잡는다. 바꿨으면 true (부른 쪽이 본문을 다시 앉힌다)
+// ⚠️ 크기의 기준은 **본문이 쓸 수 있는 가장 큰 크기**다. 글자 수만 보고
+//    정했더니 대표 문구가 길 때 본문보다 작아져 위계가 뒤집혔다
+//    (실측: 타이틀 17px, 본문 19px). 아래 배수는 1.05 아래로 내려가지 않는다.
+function _vfSizePropTitle(n){
+  const el=document.getElementById('vfPTitle');
+  if(!el||!el.classList.contains('on'))return false;
+  const inner=document.getElementById('verseFullInner');
+  let bodyMax=22;
+  if(inner){
+    const ics=getComputedStyle(inner);
+    const ipad=(parseFloat(ics.paddingLeft)||0)+(parseFloat(ics.paddingRight)||0);
+    const aw=Math.max(40,inner.clientWidth-ipad);
+    bodyMax=Math.max(9,Math.round(Math.max(22,Math.min(36,aw/11))*_vfTextScale()));
+  }
+  const c=String(el._raw||'').length;
+  const k=c<=12?1.62:c<=22?1.42:c<=34?1.26:c<=50?1.14:1.05;
+  // 글씨체 배율은 CSS 변수(--pt-k)에서 읽는다 — 글씨체를 더할 때 CSS 한 곳만 고친다
+  const fk=parseFloat(getComputedStyle(el).getPropertyValue('--pt-k'))||1;
+  const px=Math.max(9,Math.round(bodyMax*k*fk*_ptLineK(n)));
+  if(px===Math.round(parseFloat(el.style.fontSize)||0))return false;
+  el.style.fontSize=px+'px';
+  return true;
+}
 function _vfRenderPropTitle(v){
   const el=document.getElementById('vfPTitle');
   if(!el)return;
@@ -13587,23 +13639,10 @@ function _vfRenderPropTitle(v){
   // _vfApplyPropAlign 이 가운데로 바꿀 수도 있다 (본문이 한 줄이거나 가른 경우).
   el.className='vf-ptitle on '+(_vfPropMid?'al-c':_vfPropAlign)+' pf-'+pf;
   el.style.setProperty('--pt-ang',_vfPropAng+'deg');
-  // ⚠️ 크기는 **본문이 쓸 수 있는 가장 큰 크기**를 기준으로 잡는다.
-  //    글자 수만 보고 정했더니 대표 문구가 길 때 본문보다 작아져 위계가
-  //    뒤집혔다 (실측: 타이틀 17px, 본문 19px). 아래 배수는 1.05 아래로
-  //    내려가지 않으므로 **타이틀이 본문보다 작아지는 일은 없다.**
-  const inner=document.getElementById('verseFullInner');
-  let bodyMax=22;
-  if(inner){
-    const ics=getComputedStyle(inner);
-    const ipad=(parseFloat(ics.paddingLeft)||0)+(parseFloat(ics.paddingRight)||0);
-    const aw=Math.max(40,inner.clientWidth-ipad);
-    bodyMax=Math.max(9,Math.round(Math.max(22,Math.min(36,aw/11))*_vfTextScale()));
-  }
-  const n=t.length;
-  const k=n<=12?1.62:n<=22?1.42:n<=34?1.26:n<=50?1.14:1.05;
-  // 글씨체 배율은 CSS 변수(--pt-k)에서 읽는다 — 글씨체를 더할 때 CSS 한 곳만 고치면 된다
-  const fk=parseFloat(getComputedStyle(el).getPropertyValue('--pt-k'))||1;
-  el.style.fontSize=Math.round(bodyMax*k*fk)+'px';
+  // 크기는 아래 _vfSizePropTitle 이 잡는다. 본문이 몇 줄이 되는지는 아직
+  // 모르므로 **기준(3줄)** 으로 한 번 잡고, 본문을 앉힌 뒤 다시 잡는다.
+  el._raw=t;
+  _vfSizePropTitle(_PT_LINE_BASE);
   // ⚠️ 줄 배열은 **공유 이미지도 그대로 쓴다** (_shotDraw). 비워 두면 이미지에
   //    타이틀이 한 줄로 넘친다.
   const lines=_ptWrapTitle(t);
