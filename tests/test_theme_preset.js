@@ -13,9 +13,9 @@ const sc = makeScorer();
 const engineSrc = slice('const THEME_GROUPS={', '// ── 조기 적용 (첫 페인트 전) ──');
 const engine = {};
 new Function('exports', engineSrc + `
-Object.assign(exports,{THEME_GROUPS,THEME_PRESETS,themeById,_themeTokens,_thRgb,_thContrast,_thHex});
+Object.assign(exports,{THEME_GROUPS,THEME_PRESETS,themeById,_themeTokens,_thRgb,_thContrast,_thHex,_thMix,_thDeltaE});
 `)(engine);
-const { THEME_GROUPS, THEME_PRESETS, themeById, _themeTokens, _thRgb, _thContrast } = engine;
+const { THEME_GROUPS, THEME_PRESETS, themeById, _themeTokens, _thRgb, _thContrast, _thMix, _thDeltaE } = engine;
 
 // ═══ 1. 15개 테마의 ID·이름·순서 ═══
 console.log('시나리오 1 — 테마 목록');
@@ -300,6 +300,55 @@ console.log('\n시나리오 11 — 토큰 구조');
         (SRC.match(/html\[data-theme-preset/g) || []).length, 0);
   sc.eq('!important 를 새로 뿌리지 않았다',
         (slice('.theme-picker{', '</style>').match(/!important/g) || []).length, 0);
+}
+
+// ═══ 12. 선택·활성 틴트가 눈에 보이는가 (--ac-tint-k) ═══
+// 고른 버튼은 강조색을 옅게 깐 배경으로 나타내는데, 강조색이 배경과 색조가
+// 비슷하면(크림 위 올리브 — '14 올리브 가든 피스트') 같은 알파로도 그냥
+// 배경으로 보인다. 밝기 대비로는 안 잡히는 차이라 CIELAB 색차(ΔE)로 잰다.
+console.log('\n시나리오 12 — 선택·활성 틴트의 세기');
+{
+  // 틴트가 놓일 수 있는 세 면(bg·s1·s2) 중 가장 안 보이는 쪽의 색차
+  const tintDE = (t, alpha) => {
+    const ac = _thRgb(t['--ac']);
+    return ['--bg', '--s1', '--s2'].reduce((m, k) => {
+      const f = _thRgb(t[k]);
+      return Math.min(m, _thDeltaE(_thMix(f, ac, Math.min(1, alpha)), f));
+    }, 99);
+  };
+  let worstBefore = 99, worstAfter = 99, kMin = 99, kMax = 0;
+  THEME_PRESETS.forEach(p => {
+    ['light', 'dark'].forEach(mode => {
+      const t = _themeTokens(p, mode);
+      const k = parseFloat(t['--ac-tint-k']);
+      const base = mode === 'dark' ? 0.16 : 0.14;
+      sc.eq(`${p.id} ${mode} — 배수가 1 이상 2.4 이하`, k >= 1 && k <= 2.4, true);
+      worstBefore = Math.min(worstBefore, tintDE(t, base));
+      worstAfter = Math.min(worstAfter, tintDE(t, base * k));
+      kMin = Math.min(kMin, k); kMax = Math.max(kMax, k);
+    });
+  });
+  // 기준: 기본 테마(테마 없음)의 틴트 색차가 라이트 13 · 다크 15 다.
+  // 캡(2.4)에 걸리는 테마가 하나 있어 12 를 하한으로 잡는다.
+  sc.eq('보정 전에는 기준에 못 미치는 테마가 있었다', worstBefore < 12, true);
+  sc.eq('보정 뒤에는 30벌 전부 색차 12 이상', worstAfter >= 12, true);
+  sc.eq('보정이 필요 없는 테마는 배수 1 그대로', kMin, 1);
+  sc.eq('가장 흐린 테마는 배수를 키운다', kMax > 1.5, true);
+
+  // 올리브 가든 피스트 — HB 가 실제로 겪은 테마
+  const olive = _themeTokens(themeById('14'), 'light');
+  sc.eq('14 라이트는 보정이 걸린다', parseFloat(olive['--ac-tint-k']) > 1.5, true);
+  sc.eq('14 라이트 보정 뒤 색차 13 이상',
+        tintDE(olive, 0.14 * parseFloat(olive['--ac-tint-k'])) >= 13, true);
+
+  // 테마를 안 고른 사용자는 예전 화면 그대로여야 한다
+  sc.eq(':root 기본 배수는 1', /--ac-tint-k:\s*1;/.test(SRC), true);
+  sc.eq('CSS 는 알파에 배수를 곱해 쓴다',
+        (SRC.match(/calc\(\.\d+\*var\(--ac-tint-k,1\)\)/g) || []).length >= 9, true);
+  sc.eq('틴트 알파를 손으로 테마별로 적어 두지 않았다',
+        (SRC.match(/html\[data-theme-preset/g) || []).length, 0);
+  sc.eq('--ac-tint-k 도 걷어내는 키 목록에 있다',
+        SRC.includes("'--ac-tint-k'"), true);
 }
 
 sc.done();
