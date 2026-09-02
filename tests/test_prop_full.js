@@ -162,7 +162,7 @@ console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라
   // v26-0902-14, HB — "늘어날 때는 %를 점점 줄여라" (7 · 6 · 5 · 4 …)
   //   ⚠️ 같은 7%를 계속 곱하면 줄이 많은 명제에서 타이틀이 본문을 밀어낸다.
   sc.eq('늘어날 때는 몫이 줄어든다',
-        SRC_DEV.includes('const _PT_LINE_UP=[0.07,0.06,0.05,0.04,0.03,0.02,0.01];'), true);
+        SRC_DEV.includes('const _PT_LINE_UP=[0.07,0.059,0.048,0.037,0.026,0.015,0.004];'), true);
   sc.eq('한 단씩 꺼내 곱한다',
         SRC_DEV.includes('for(let i=0;i<L-_PT_LINE_BASE;i++)k*=1+(_PT_LINE_UP[i]||0);'), true);
   // ⚠️⚠️ 묶지 않으면 되먹임이 생긴다 — 타이틀이 커지면 본문 높이가 줄어 줄이
@@ -637,7 +637,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('저장값과 맞춘다', SRC_DEV.includes('function _ptSyncFontUI(){'), true);
   // ⚠️ 설정창을 다시 열 때 반드시 맞춰 준다 (안 맞추면 정반대로 저장된다)
   sc.eq('설정창을 열 때 맞춘다',
-        /function _vfArtSyncUI\(\)\{\s*_ptSyncFontUI\(\);/.test(SRC_DEV), true);
+        /function _vfArtSyncUI\(\)\{[\s\S]{0,200}_ptSyncFontUI\(\);/.test(SRC_DEV), true);
   // ⚠️ 마지막 하나는 못 끈다 — 다 끄면 뽑을 것이 없어진다
   sc.eq('마지막 하나는 못 끈다',
         SRC_DEV.includes("if(on.length<=1){showToast('글씨체는 하나 이상 켜져 있어야 해요');return;}"), true);
@@ -655,7 +655,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   const _facesAt = SRC_DEV.indexOf('const _PT_FACES=[');
   const faceTbl = SRC_DEV.slice(_facesAt, SRC_DEV.indexOf('];', _facesAt));
   sc.eq('직접 올린 글씨체가 표에 있다',
-        (faceTbl.match(/self:1\}/g)||[]).length, 24);
+        (faceTbl.match(/self:1\}/g)||[]).length, 23);
   ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
     sc.eq(k+' 글꼴 파일',
       SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
@@ -665,10 +665,10 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   // ── v26-0902-8, HB — 스물둘을 더하고 무리로 나눠 배치 ──────────────────
   // 무리는 표의 g 하나로 정해진다 (m 명조 · g 고딕 · h 손글씨)
   sc.eq('무리 표가 있다',
-        SRC_DEV.includes("const _PT_GROUPS=[{g:'m',ko:'명조'},{g:'g',ko:'고딕'},{g:'h',ko:'손글씨'}];"), true);
+        SRC_DEV.includes("const _PT_GROUPS=[{g:'h',ko:'손글씨'},{g:'m',ko:'명조'},{g:'g',ko:'고딕'}];"), true);
   sc.eq('무리마다 묶어 그린다',
         SRC_DEV.includes("const list=_PT_FACES.filter(f=>(f.g||'h')===g.g);"), true);
-  sc.eq('무리 이름줄을 그린다', SRC_DEV.includes('<div class="pt-g-title">'), true);
+  sc.eq('무리 이름줄을 그린다', SRC_DEV.includes('<div class="pt-g-title${op?\' open\':\'\'}"'), true);
   // ⚠️ g 를 안 적은 글씨체가 있으면 설정창에서 사라진다 (기본값 h 가 받아 준다)
   sc.eq('모든 글씨체에 무리가 있다',
         (faceTbl.match(/\{k:'/g)||[]).length, (faceTbl.match(/g:'[mgh]'/g)||[]).length);
@@ -685,14 +685,41 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
       SRC_DEV.includes("src:url('fonts/"+f+".woff2')format('woff2');font-display:block;"), true);
     sc.eq(k+' 배율', new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:").test(SRC_DEV), true);
   });
-  ['chosunS','nexonB','dream8'].forEach(k=>
+  ['chosunS','nexonB','dream8','griun'].forEach(k=>
     sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
   // HB 가 정한 크기 (26-0902) — 많이 키움 / 중간 / 살짝 줄임
-  [['incheon','1.39'],['nexonL','1.10'],['dream1','1.26'],
-   ['uridal','1.40'],['gmarketL','1.13'],['gowun','1.19'],
-   ['mapogold','1.03'],['mapoflower','1.12'],['chosunN','1.11'],['nmyet','1.03']].forEach(([k,v])=>
+  [['incheon','1.36'],['nexonL','1.05'],['dream1','1.22'],['nexonR','0.91'],
+   ['uridal','1.20'],['gmarketL','1.13'],['gowun','1.10'],['sungkok','1.08'],
+   ['barun','1.20'],['agape','0.97'],['sangjang','0.91'],['daegwang','1.42'],
+   ['kyobo','0.95'],['tvn','1.52'],['yeon','1.09'],['esamanB','0.94'],
+   ['mapogold','1.00'],['mapoflower','1.09'],['chosunN','1.04'],['nmyet','1.03']].forEach(([k,v])=>
     sc.eq(k+' 배율 '+v,
       new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true));
+  // ── 무리 접었다 펴기 (v26-0902-15, HB) ────────────────────────────────
+  // ⚠️ 처음 펼쳐 두는 것은 **켜 둔 글씨체가 있는 무리뿐**이다. 처음 쓰는 사람은
+  //    나눔붓 하나뿐이라 손글씨만 열린다 — 스물아홉이 쏟아지지 않는다.
+  sc.eq('접힘을 켜 둔 것으로 잡는다',
+        SRC_DEV.includes("_ptGroupOpen[g.g]=_PT_FACES.some(f=>(f.g||'h')===g.g&&on.indexOf(f.k)>=0);"), true);
+  sc.eq('이름줄을 누르면 접힌다',
+        SRC_DEV.includes('function togglePropTitleGroupOpen(g){'), true);
+  sc.eq('접혀 있으면 단추를 안 그린다', SRC_DEV.includes("+(op?`<div class=\"pt-g-grid\">"), true);
+  // ⚠️ 저장하지 않는다 — 저장하면 글씨체를 바꿨는데 접힘만 옛날 것이라 어긋난다
+  sc.eq('설정창을 열 때 새로 잡는다', SRC_DEV.includes('_ptGroupOpen=null;'), true);
+  sc.eq('따로 저장하지 않는다', SRC_DEV.includes('ST.settings.ptGroupOpen'), false);
+  // ⚠️ '모두 켜기' 는 접힘을 건드리지 않아야 한다 → 이름줄로 눌림이 번지지 않게
+  sc.eq('단추 눌림이 이름줄로 안 번진다',
+        SRC_DEV.includes('onclick="event.stopPropagation();togglePropTitleGroup('), true);
+  sc.eq('켜면 펼쳐 준다', SRC_DEV.includes('if(!all)_ptGroupOpen[g]=true;'), true);
+  // 접혀 있어도 몇 개 켰는지는 보인다
+  sc.eq('켠 개수를 보여 준다', SRC_DEV.includes('<b class="pt-g-cnt">'), true);
+  // 꺾쇠는 CSS 로 돌린다 (그림을 두 벌 두지 않는다)
+  sc.eq('꺾쇠 하나로 돌린다',
+        SRC_DEV.includes('.pt-g-title.open .pt-g-chev{transform:rotate(90deg);}'), true);
+  // ── 대표 문구가 두 줄이면 10% 작게 (v26-0902-15, HB) ────────────────
+  sc.eq('타이틀 두 줄이면 줄인다',
+        SRC_DEV.includes("const tw=_ptWrapTitle(String(el._raw||'')).length>1?0.9:1;"), true);
+  sc.eq('크기 식에 함께 곱한다',
+        SRC_DEV.includes('bodyMax*k*fk*_ptLineK(n)*tw'), true);
   // 무리마다 전체 켜기/끄기 단추 (v26-0902-12, HB)
   sc.eq('무리 전체 단추가 있다', SRC_DEV.includes('function togglePropTitleGroup(g){'), true);
   sc.eq('이름줄에 붙는다', SRC_DEV.includes('class="pt-g-all${all?\' on\':\'\'}"'), true);
@@ -713,7 +740,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
         (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 27);
   // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
   sc.eq('고운바탕 배율 (26-0902 에 1.30 → 1.19 로 살짝 줄임)',
-        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.19;"), true);
+        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.10;"), true);
   // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
   sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
 
