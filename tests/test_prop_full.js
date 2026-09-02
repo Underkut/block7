@@ -657,13 +657,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   const _facesAt = SRC_DEV.indexOf('const _PT_FACES=[');
   const faceTbl = SRC_DEV.slice(_facesAt, SRC_DEV.indexOf('];', _facesAt));
   sc.eq('직접 올린 글씨체가 표에 있다',
-        (faceTbl.match(/self:1\}/g)||[]).length, 23);
-  ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
-    sc.eq(k+' 글꼴 파일',
-      SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
-  // ⚠️ 뺀 셋은 표에 없다 → 화면 어디에서도 안 쓰이므로 받아지지도 않는다
-  ['hakgyo','jaemin','lxgw'].forEach(k=>
-    sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
+        (faceTbl.match(/self:1\}/g)||[]).length, 8);
   // ── v26-0902-8, HB — 스물둘을 더하고 무리로 나눠 배치 ──────────────────
   // 무리는 표의 g 하나로 정해진다 (m 명조 · g 고딕 · h 손글씨)
   sc.eq('무리 표가 있다',
@@ -675,73 +669,40 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('모든 글씨체에 무리가 있다',
         (faceTbl.match(/\{k:'/g)||[]).length, (faceTbl.match(/g:'[mgh]'/g)||[]).length);
   // 새로 더한 스물둘이 표와 글꼴 파일에 다 있다
-  // v26-0902-12, HB — 조선신명·넥슨B·드림8 은 뺐다 (파일은 남겨 둠)
-  [['chosunN','chosunnm'],['nmyet','nmyet'],['sungkok','sungkok'],
-   ['mapogold','mapogold'],['mapoflower','mapoflower'],['gmarketL','gmarket_l'],
-   ['gmarketB','gmarket_b'],['nexonL','nexon_l'],['nexonR','nexon_r'],
-   ['dream1','scdream1'],['esamanL','esaman_l'],['esamanB','esaman_b'],
-   ['yes24','yes24'],['barun','barun'],['uridal','uridal'],['incheon','incheon'],
-   ['bombaram','bombaram'],['agape','mapoagape'],['sangjang','sangjang']].forEach(([k,f])=>{
+  // ⚠️⚠️ v26-0902-17, HB — **라이선스가 확인된 것만 남기고 나머지는 파일까지 지웠다.**
+  //    표에서 빼는 것으로 끝내면 저장소가 공개라 앱에서 안 써도 내려받을 수 있다.
+  //    남은 여덟은 전부 SIL Open Font License 로 확인된 것이다.
+  [['barun','barun','1.20'],['uridal','uridal','1.20'],['daegwang','daegwang','1.38'],
+   ['bombaram','bombaram','0.93'],['sangjang','sangjang','0.91'],['nmyet','nmyet','0.97'],
+   ['gmarketL','gmarket_l','1.06'],['gmarketB','gmarket_b','0.97']].forEach(([k,f,v])=>{
     sc.eq(k+' 표에 있다', faceTbl.indexOf("{k:'"+k+"'") >= 0, true);
     sc.eq(k+' 글꼴 파일',
       SRC_DEV.includes("src:url('fonts/"+f+".woff2')format('woff2');font-display:block;"), true);
-    sc.eq(k+' 배율', new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:").test(SRC_DEV), true);
-  });
-  ['chosunS','nexonB','dream8','griun'].forEach(k=>
-    sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
-  // HB 가 정한 크기 (26-0902) — 많이 키움 / 중간 / 살짝 줄임
-  [['incheon','1.36'],['nexonL','0.97'],['dream1','1.10'],['nexonR','0.87'],
-   ['uridal','1.20'],['gmarketL','1.06'],['gowun','1.03'],['sungkok','0.97'],
-   ['barun','1.20'],['agape','0.97'],['sangjang','0.91'],['daegwang','1.38'],
-   ['kyobo','0.95'],['tvn','1.52'],['yeon','1.50'],['esamanB','0.88'],
-   ['dokdo','1.32'],['gmarketB','0.97'],['esamanL','0.92'],['yes24','0.90'],
-   ['mapogold','0.95'],['mapoflower','1.02'],['chosunN','0.97'],['nmyet','0.97']].forEach(([k,v])=>
     sc.eq(k+' 배율 '+v,
-      new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true));
-  // ── 무리 접었다 펴기 (v26-0902-15, HB) ────────────────────────────────
-  // ⚠️ 처음 펼쳐 두는 것은 **켜 둔 글씨체가 있는 무리뿐**이다. 처음 쓰는 사람은
-  //    나눔붓 하나뿐이라 손글씨만 열린다 — 스물아홉이 쏟아지지 않는다.
-  sc.eq('접힘을 켜 둔 것으로 잡는다',
-        SRC_DEV.includes("_ptGroupOpen[g.g]=_PT_FACES.some(f=>(f.g||'h')===g.g&&on.indexOf(f.k)>=0);"), true);
-  sc.eq('이름줄을 누르면 접힌다',
-        SRC_DEV.includes('function togglePropTitleGroupOpen(g){'), true);
-  sc.eq('접혀 있으면 단추를 안 그린다', SRC_DEV.includes("+(op?`<div class=\"pt-g-grid\">"), true);
-  // ⚠️ 저장하지 않는다 — 저장하면 글씨체를 바꿨는데 접힘만 옛날 것이라 어긋난다
-  sc.eq('설정창을 열 때 새로 잡는다', SRC_DEV.includes('_ptGroupOpen=null;'), true);
-  sc.eq('따로 저장하지 않는다', SRC_DEV.includes('ST.settings.ptGroupOpen'), false);
-  // ⚠️ '모두 켜기' 는 접힘을 건드리지 않아야 한다 → 이름줄로 눌림이 번지지 않게
-  sc.eq('단추 눌림이 이름줄로 안 번진다',
-        SRC_DEV.includes('onclick="event.stopPropagation();togglePropTitleGroup('), true);
-  sc.eq('켜면 펼쳐 준다', SRC_DEV.includes('if(!all)_ptGroupOpen[g]=true;'), true);
-  // 접혀 있어도 몇 개 켰는지는 보인다
-  sc.eq('켠 개수를 보여 준다', SRC_DEV.includes('<b class="pt-g-cnt">'), true);
-  // 꺾쇠는 CSS 로 돌린다 (그림을 두 벌 두지 않는다)
-  sc.eq('꺾쇠 하나로 돌린다',
-        SRC_DEV.includes('.pt-g-title.open .pt-g-chev{transform:rotate(90deg);}'), true);
-  // ── 대표 문구가 두 줄이면 10% 작게 (v26-0902-15, HB) ────────────────
-  // ⚠️⚠️ v26-0902-16, HB 정정 — "대표 문구가 30자가 될 리가 없지. 일고여덟 자만
-  //    넘어도 두 줄 되는데?" 맞다. 세는 것은 **화면에 그려진 줄**이다.
-  //    글자 수(_ptWrapTitle, 30자)로 세면 영영 안 걸린다.
-  sc.eq('그려진 줄로 잰다', SRC_DEV.includes('function _ptDrawnLines(el){'), true);
-  sc.eq('높이를 줄간격으로 나눈다',
-        SRC_DEV.includes('return Math.max(1,Math.round(el.offsetHeight/lh));'), true);
-  sc.eq('줄간격은 CSS 에서 읽는다', SRC_DEV.includes('parseFloat(cs.lineHeight)||'), true);
-  sc.eq('두 줄이면 10% 줄인다',
-        SRC_DEV.includes("if(el.innerHTML&&_ptDrawnLines(el)>1){"), true);
-  sc.eq('글자 수로 재지 않는다', SRC_DEV.includes('_ptWrapTitle(String(el._raw'), false);
-  // ⚠️ 재려면 글자가 먼저 얹혀 있어야 한다 → 그리는 차례가 뒤집혔다
-  sc.eq('글자를 먼저 얹는다',
-        /el\.innerHTML='<span class="pt-w">'\+lines\.map\(esc\)\.join\('<br>'\)\+'<\/span>';[\s\S]{0,300}_vfSizePropTitle\(_PT_LINE_BASE\);/.test(SRC_DEV), true);
-  // 무리마다 전체 켜기/끄기 단추 (v26-0902-12, HB)
-  sc.eq('무리 전체 단추가 있다', SRC_DEV.includes('function togglePropTitleGroup(g){'), true);
-  sc.eq('이름줄에 붙는다', SRC_DEV.includes('class="pt-g-all${all?\' on\':\'\'}"'), true);
-  sc.eq('다 켜져 있으면 끄기로 보인다',
-        SRC_DEV.includes("const all=list.every(f=>on.includes(f.k));"), true);
-  // ⚠️ 다 꺼지면 뽑을 것이 없다 — 한 단추를 끌 때와 같은 규칙으로 막는다
-  sc.eq('마지막 하나는 못 끈다',
-        /togglePropTitleGroup[\s\S]{0,600}if\(!left\.length\)\{showToast/.test(SRC_DEV), true);
-  // ⚠️⚠️ 설정창을 여는 것만으로 스물일곱 벌(9.7MB)을 받으면 안 된다.
-  //    단추에는 **이름표 글자만 담은 1KB 글꼴**을 먼저 세운다 (합계 29KB).
+      new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true);
+  });
+  // 지운 것들은 표에도, @font-face 에도, CSS 에도 남아 있지 않다
+  ['chosunN','chosunS','sungkok','mapogold','mapoflower','agape','nexonL','nexonR','nexonB',
+   'dream1','dream8','esamanL','esamanB','yes24','incheon','kyobo','kotra','tvn','griun',
+   'hakgyo','jaemin','lxgw'].forEach(k=>{
+    sc.eq(k+' 는 표에서 지웠다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false);
+    sc.eq(k+' 는 CSS 에서도 지웠다',
+      new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{").test(SRC_DEV), false);
+  });
+  ['chosunnm','chosunsg','sungkok','mapogold','mapoflower','mapoagape','nexon_l','nexon_r',
+   'nexon_b','scdream1','scdream8','esaman_l','esaman_b','yes24','incheon','kyobo','kotra',
+   'tvn','griun','hakgyo','jaemin','lxgw'].forEach(f=>
+    sc.eq(f+' 글꼴 주소가 없다', SRC_DEV.includes("url('fonts/"+f+".woff2')"), false));
+  // 구글 다섯은 그대로 (전부 OFL)
+  sc.eq('구글 다섯은 남는다',
+        (faceTbl.match(/\{k:'/g)||[]).length, 13);
+  // ⚠️ 고운바탕 배율 — HB 가 화면을 보고 정한 값 (재서 나온 값이 아니다)
+  sc.eq('고운바탕 배율',
+        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.03;"), true);
+  // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
+  sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
+  // ⚠️⚠️ 설정창을 여는 것만으로 여덟 벌(2.6MB)을 받으면 안 된다.
+  //    단추에는 **이름표 글자만 담은 1KB 글꼴**을 먼저 세운다 (합계 9KB).
   sc.eq('미리보기 글꼴을 먼저 세운다',
         SRC_DEV.includes("const pfam=f=>f.self?`'${f.fam.replace('B7 ','B7P ')}',`:'';"), true);
   sc.eq('단추가 그것을 쓴다',
@@ -749,7 +710,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('미리보기 글꼴 자리',
         SRC_DEV.includes("@font-face{font-family:'B7P Brush'"), false);   // 구글 것은 없다
   sc.eq('직접 올린 것마다 미리보기가 있다',
-        (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 27);
+        (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 8);
   // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
   sc.eq('고운바탕 배율 (26-0902 에 1.30 → 1.19 로 살짝 줄임)',
         SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.03;"), true);
