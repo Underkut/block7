@@ -45,7 +45,7 @@ console.log('\n시나리오 2 — 타이틀 자리·기울기는 넘길 때 한 
   sc.eq('자리는 한 함수가 붙인다', SRC_DEV.includes('function _vfApplyPropAlign(){'), true);
   // ⚠️ 본문을 앉혀 봐야 몇 줄인지 안다 → 앉힌 **뒤에** 자리를 붙인다
   sc.eq('본문을 앉힌 뒤에 붙인다',
-        /_vfLayoutPropText\(el,raw,availW,availH\);[\s\S]{0,400}_vfApplyPropAlign\(\);/.test(SRC_DEV), true);
+        /_vfLayoutPropText\(el,raw,availW,availH\);[\s\S]{0,1400}_vfApplyPropAlign\(\);/.test(SRC_DEV), true);
   // 그리는 함수 안에서 다시 뽑지 않는다
   const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
                              SRC_DEV.indexOf('function _vfPropInk('));
@@ -135,8 +135,10 @@ console.log('\n시나리오 5 — 타이틀이 본문보다 작아지지 않는�
   // ⚠️ 처음엔 글자 수만 보고 크기를 정했더니 대표 문구가 길 때 본문보다
   //    작아져 위계가 뒤집혔다 (실측: 타이틀 17px, 본문 19px).
   //    이제 **본문이 쓸 수 있는 가장 큰 크기**에 배수를 곱한다.
-  const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle('),
-                             SRC_DEV.indexOf('function _vfPropInk('));
+  // v26-0902-13 — 크기 잡는 일은 _vfSizePropTitle 로 떨어져 나갔다
+  //   (본문을 앉힌 **뒤에** 줄 수를 알고 다시 잡아야 하기 때문이다)
+  const draw = SRC_DEV.slice(SRC_DEV.indexOf('function _vfSizePropTitle('),
+                             SRC_DEV.indexOf('function _vfRenderPropTitle('));
   sc.eq('본문 최대 크기를 기준으로 잡는다', draw.includes('bodyMax'), true);
   // 배수는 전부 1 이상이어야 한다 (하나라도 1 미만이면 뒤집힐 수 있다)
   const m = draw.match(/const k=([^;]+);/);
@@ -147,6 +149,32 @@ console.log('\n시나리오 5 — 타이틀이 본문보다 작아지지 않는�
     sc.eq('전부 1 이상', ks.every(k => k >= 1), true);
     sc.eq('짧을수록 크다', ks.join(',') === [...ks].sort((a,b)=>b-a).join(','), true);
   }
+}
+
+console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라간다 (v26-0902-13, HB)');
+{
+  // HB — "지금 잡은 기준이 본문이 3줄일 때 기준 같아. 한 줄 줄 때마다 일정 %로
+  //       줄이고, 한 줄 늘 때마다 늘리자. 7% 어때?"
+  sc.eq('기준은 세 줄', SRC_DEV.includes('const _PT_LINE_BASE=3;'), true);
+  sc.eq('한 줄에 7%', SRC_DEV.includes('const _PT_LINE_STEP=0.07;'), true);
+  sc.eq('줄마다 곱해 간다',
+        SRC_DEV.includes('Math.pow(1+_PT_LINE_STEP,(n||_PT_LINE_BASE)-_PT_LINE_BASE)'), true);
+  // ⚠️⚠️ 묶지 않으면 되먹임이 생긴다 — 타이틀이 커지면 본문 높이가 줄어 줄이
+  //    또 늘고, 그러면 타이틀이 또 커진다.
+  sc.eq('위아래로 묶는다',
+        SRC_DEV.includes('return Math.max(0.85,Math.min(1.30,k));'), true);
+  // 그리는 차례상 타이틀이 먼저다 → 본문을 앉힌 **뒤** 다시 잡는다
+  sc.eq('크기를 잡는 함수가 따로 있다', SRC_DEV.includes('function _vfSizePropTitle(n){'), true);
+  sc.eq('처음엔 기준으로 잡는다', SRC_DEV.includes('_vfSizePropTitle(_PT_LINE_BASE);'), true);
+  sc.eq('앉힌 뒤 줄 수로 다시 잡는다',
+        SRC_DEV.includes("if(_vfSizePropTitle((el._lines||[]).length)){"), true);
+  // ⚠️ 다시 앉히는 것은 **한 번만** — 되풀이하면 오락가락한다
+  const br = SRC_DEV.slice(SRC_DEV.indexOf("if(el.classList.contains('prop')){"),
+                           SRC_DEV.indexOf('_vfApplyPropAlign();'));
+  sc.eq('본문을 두 번까지만 앉힌다', (br.match(/_vfLayoutPropText\(/g)||[]).length, 2);
+  // 바뀌지 않았으면 다시 앉히지 않는다 (헛일을 안 한다)
+  sc.eq('안 바뀌면 그대로',
+        SRC_DEV.includes('if(px===Math.round(parseFloat(el.style.fontSize)||0))return false;'), true);
 }
 
 console.log('\n시나리오 6 — 타이틀이 차지하는 자리를 본문 계산이 안다');
@@ -654,9 +682,9 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   ['chosunS','nexonB','dream8'].forEach(k=>
     sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
   // HB 가 정한 크기 (26-0902) — 많이 키움 / 중간 / 살짝 줄임
-  [['incheon','1.39'],['nexonL','1.27'],['dream1','1.26'],
-   ['uridal','1.28'],['gmarketL','1.18'],
-   ['mapogold','1.10'],['mapoflower','1.12'],['chosunN','1.11'],['nmyet','1.10']].forEach(([k,v])=>
+  [['incheon','1.39'],['nexonL','1.10'],['dream1','1.26'],
+   ['uridal','1.40'],['gmarketL','1.13'],['gowun','1.19'],
+   ['mapogold','1.03'],['mapoflower','1.12'],['chosunN','1.11'],['nmyet','1.03']].forEach(([k,v])=>
     sc.eq(k+' 배율 '+v,
       new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true));
   // 무리마다 전체 켜기/끄기 단추 (v26-0902-12, HB)
@@ -678,8 +706,8 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('직접 올린 것마다 미리보기가 있다',
         (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 27);
   // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
-  sc.eq('고운바탕은 크게',
-        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.30;"), true);
+  sc.eq('고운바탕 배율 (26-0902 에 1.30 → 1.19 로 살짝 줄임)',
+        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.19;"), true);
   // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
   sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
 
