@@ -162,7 +162,7 @@ console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라
   // v26-0902-14, HB — "늘어날 때는 %를 점점 줄여라" (7 · 6 · 5 · 4 …)
   //   ⚠️ 같은 7%를 계속 곱하면 줄이 많은 명제에서 타이틀이 본문을 밀어낸다.
   sc.eq('늘어날 때는 몫이 줄어든다',
-        SRC_DEV.includes('const _PT_LINE_UP=[0.07,0.059,0.048,0.037,0.026,0.015,0.004];'), true);
+        SRC_DEV.includes('const _PT_LINE_UP=[0.07,0.057,0.044,0.031,0.018,0.005];'), true);
   sc.eq('한 단씩 꺼내 곱한다',
         SRC_DEV.includes('for(let i=0;i<L-_PT_LINE_BASE;i++)k*=1+(_PT_LINE_UP[i]||0);'), true);
   // ⚠️⚠️ 묶지 않으면 되먹임이 생긴다 — 타이틀이 커지면 본문 높이가 줄어 줄이
@@ -179,8 +179,10 @@ console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라
                            SRC_DEV.indexOf('_vfApplyPropAlign();'));
   sc.eq('본문을 두 번까지만 앉힌다', (br.match(/_vfLayoutPropText\(/g)||[]).length, 2);
   // 바뀌지 않았으면 다시 앉히지 않는다 (헛일을 안 한다)
-  sc.eq('안 바뀌면 그대로',
-        SRC_DEV.includes('if(px===Math.round(parseFloat(el.style.fontSize)||0))return false;'), true);
+  // 바뀌지 않았으면 다시 앉히지 않는다 (헛일을 안 한다)
+  sc.eq('안 바뀌면 그대로', SRC_DEV.includes('if(px===was)return false;'), true);
+  sc.eq('바꾸기 전 크기를 기억한다',
+        SRC_DEV.includes('const was=Math.round(parseFloat(el.style.fontSize)||0);'), true);
 }
 
 console.log('\n시나리오 6 — 타이틀이 차지하는 자리를 본문 계산이 안다');
@@ -688,11 +690,12 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   ['chosunS','nexonB','dream8','griun'].forEach(k=>
     sc.eq(k+' 는 표에서 뺐다', faceTbl.indexOf("{k:'"+k+"'") >= 0, false));
   // HB 가 정한 크기 (26-0902) — 많이 키움 / 중간 / 살짝 줄임
-  [['incheon','1.36'],['nexonL','1.05'],['dream1','1.22'],['nexonR','0.91'],
-   ['uridal','1.20'],['gmarketL','1.13'],['gowun','1.10'],['sungkok','1.08'],
-   ['barun','1.20'],['agape','0.97'],['sangjang','0.91'],['daegwang','1.42'],
-   ['kyobo','0.95'],['tvn','1.52'],['yeon','1.09'],['esamanB','0.94'],
-   ['mapogold','1.00'],['mapoflower','1.09'],['chosunN','1.04'],['nmyet','1.03']].forEach(([k,v])=>
+  [['incheon','1.36'],['nexonL','0.97'],['dream1','1.10'],['nexonR','0.87'],
+   ['uridal','1.20'],['gmarketL','1.06'],['gowun','1.03'],['sungkok','0.97'],
+   ['barun','1.20'],['agape','0.97'],['sangjang','0.91'],['daegwang','1.38'],
+   ['kyobo','0.95'],['tvn','1.52'],['yeon','1.50'],['esamanB','0.88'],
+   ['dokdo','1.32'],['gmarketB','0.97'],['esamanL','0.92'],['yes24','0.90'],
+   ['mapogold','0.95'],['mapoflower','1.02'],['chosunN','0.97'],['nmyet','0.97']].forEach(([k,v])=>
     sc.eq(k+' 배율 '+v,
       new RegExp("\\.vf-ptitle\\.pf-"+k+"\\{[^}]*--pt-k:"+v.replace('.','\\.')+";").test(SRC_DEV), true));
   // ── 무리 접었다 펴기 (v26-0902-15, HB) ────────────────────────────────
@@ -716,10 +719,19 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('꺾쇠 하나로 돌린다',
         SRC_DEV.includes('.pt-g-title.open .pt-g-chev{transform:rotate(90deg);}'), true);
   // ── 대표 문구가 두 줄이면 10% 작게 (v26-0902-15, HB) ────────────────
-  sc.eq('타이틀 두 줄이면 줄인다',
-        SRC_DEV.includes("const tw=_ptWrapTitle(String(el._raw||'')).length>1?0.9:1;"), true);
-  sc.eq('크기 식에 함께 곱한다',
-        SRC_DEV.includes('bodyMax*k*fk*_ptLineK(n)*tw'), true);
+  // ⚠️⚠️ v26-0902-16, HB 정정 — "대표 문구가 30자가 될 리가 없지. 일고여덟 자만
+  //    넘어도 두 줄 되는데?" 맞다. 세는 것은 **화면에 그려진 줄**이다.
+  //    글자 수(_ptWrapTitle, 30자)로 세면 영영 안 걸린다.
+  sc.eq('그려진 줄로 잰다', SRC_DEV.includes('function _ptDrawnLines(el){'), true);
+  sc.eq('높이를 줄간격으로 나눈다',
+        SRC_DEV.includes('return Math.max(1,Math.round(el.offsetHeight/lh));'), true);
+  sc.eq('줄간격은 CSS 에서 읽는다', SRC_DEV.includes('parseFloat(cs.lineHeight)||'), true);
+  sc.eq('두 줄이면 10% 줄인다',
+        SRC_DEV.includes("if(el.innerHTML&&_ptDrawnLines(el)>1){"), true);
+  sc.eq('글자 수로 재지 않는다', SRC_DEV.includes('_ptWrapTitle(String(el._raw'), false);
+  // ⚠️ 재려면 글자가 먼저 얹혀 있어야 한다 → 그리는 차례가 뒤집혔다
+  sc.eq('글자를 먼저 얹는다',
+        /el\.innerHTML='<span class="pt-w">'\+lines\.map\(esc\)\.join\('<br>'\)\+'<\/span>';[\s\S]{0,300}_vfSizePropTitle\(_PT_LINE_BASE\);/.test(SRC_DEV), true);
   // 무리마다 전체 켜기/끄기 단추 (v26-0902-12, HB)
   sc.eq('무리 전체 단추가 있다', SRC_DEV.includes('function togglePropTitleGroup(g){'), true);
   sc.eq('이름줄에 붙는다', SRC_DEV.includes('class="pt-g-all${all?\' on\':\'\'}"'), true);
@@ -740,7 +752,7 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
         (SRC_DEV.match(/@font-face\{font-family:'B7P /g)||[]).length, 27);
   // ⚠️ 고운바탕만 배율을 재서 나온 값보다 크게 준다 — 본문(명조)과 갈라야 한다
   sc.eq('고운바탕 배율 (26-0902 에 1.30 → 1.19 로 살짝 줄임)',
-        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.10;"), true);
+        SRC_DEV.includes(".vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.03;"), true);
   // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
   sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
 
