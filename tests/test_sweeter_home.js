@@ -479,7 +479,11 @@ console.log('\n시나리오 13 — 담아두기 기록의 자리');
 // ═══ 14. 전체화면 액션 줄의 담아두기 (v26-0830-16) ═══
 console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
 {
-  const SRC = require('fs').readFileSync(__dirname + '/../index.html', 'utf8');
+  // ⚠️ v26-0902-1 — 운영본(index.html)이 아니라 **개발본**에서 떠온다.
+  //    새 작업은 개발본만 담은 PR 로 먼저 올라가므로(CLAUDE.md), 운영본을 읽으면
+  //    아직 안 올라간 코드를 검사하게 되어 새 시험이 헛돈다. 둘은 다섯 줄
+  //    (DEV_MODE 등)만 다르고 앱 코드는 글자 하나까지 같다.
+  const SRC = SRC_DEV;
 
   sc.eq('액션 줄에 단추가 있다',
         /<button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct\('keep'\)"/.test(SRC), true);
@@ -496,7 +500,11 @@ console.log('\n시나리오 14 — 전체화면에서도 담을 수 있는가');
   sc.eq('감추던 규칙을 없앴다', SRC.includes('.vf-act-keep{display:none;}'), false);
   sc.eq('제품·종류를 가리지 않는다',
         SRC.includes("const show=((typeof _swOn==='function')&&_swOn())||_vfIsProp(v);"), false);
-  sc.eq('저장 여부만 본다', SRC.includes('const on=_swIsKept(ref);'), true);
+  // 채운 책갈피는 **담긴 데가 있는가**만 본다 (제품·종류를 안 본다).
+  // v26-0902-1 — 숫자를 0 으로도 적어야 해서 담긴 목록 수를 한 번만 세고
+  //   그것으로 판단한다 (_swIsKept(ref) 와 같은 뜻이다).
+  sc.eq('저장 여부만 본다',
+        SRC.includes('const n=_keepListsOf(ref).size;')&&SRC.includes('const on=n>0;'), true);
 
   // v26-0831-10, HB — 담아두기가 **책갈피**를 물려받았다. 유튜브·인스타가
   //    '저장'에 쓰는 그 모양이라 설명이 필요 없다. 암송은 책갈피를 내주고
