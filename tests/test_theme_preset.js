@@ -351,4 +351,69 @@ console.log('\n시나리오 12 — 선택·활성 틴트의 세기');
         SRC.includes("'--ac-tint-k'"), true);
 }
 
+// ═══ 13. 강조색 글자로 나타내는 '켜짐' 이 보이는가 (--ac-tx) ═══
+// 앱 곳곳이 '켜진 항목은 강조색 글자' 로 상태를 나타낸다(설정 탭·유저 모드·
+// 위젯 보기·정렬 토글…). 강조색이 본문/보조 글자색과 색조까지 비슷하면
+// (28 윈터 블랭킷 다크 — 강조 #dddbf1, 본문 #f1effa) 켜진 것이 안 보인다.
+console.log('\n시나리오 13 — 글자용 강조색');
+{
+  const near = (t, key) => ['--tx', '--tx2', '--tx3']
+    .reduce((m, k) => Math.min(m, _thDeltaE(_thRgb(t[key]), _thRgb(t[k]))), 99);
+  const con = (t, key) => ['--bg', '--s1', '--s2']
+    .reduce((m, k) => Math.min(m, _thContrast(_thRgb(t[key]), _thRgb(t[k]))), 99);
+
+  let worstBefore = 99, worstAfter = 99, changed = 0;
+  THEME_PRESETS.forEach(p => {
+    ['light', 'dark'].forEach(mode => {
+      const t = _themeTokens(p, mode);
+      worstBefore = Math.min(worstBefore, near(t, '--ac'));
+      worstAfter = Math.min(worstAfter, near(t, '--ac-tx'));
+      if (t['--ac-tx'] !== t['--ac']) changed++;
+      // 갈라 세우자고 **덜 읽히게** 만들지는 않는다
+      sc.eq(`${p.id} ${mode} — 글자용 강조색이 원래보다 안 읽히지 않는다`,
+            con(t, '--ac-tx') >= Math.min(4.0, con(t, '--ac')) - 0.001, true);
+    });
+  });
+  sc.eq('손보기 전에는 글자색과 거의 같은 테마가 있었다', worstBefore < 15, true);
+  sc.eq('손본 뒤에는 30벌 전부 글자색과 ΔE 24 이상', worstAfter >= 24, true);
+  sc.eq('멀쩡한 테마는 그대로 둔다(고친 것은 절반 미만)', changed < 15, true);
+
+  const w28 = _themeTokens(themeById('28'), 'dark');
+  sc.eq('28 다크는 강조색이 본문 글자와 거의 같았다',
+        _thDeltaE(_thRgb(w28['--ac']), _thRgb(w28['--tx'])) < 12, true);
+  sc.eq('28 다크 글자용 강조색은 갈라섰다', near(w28, '--ac-tx') >= 24, true);
+  sc.eq('강조색 자체(--ac)는 안 바꾼다 — 테두리·채운 배경은 그대로',
+        _themeTokens(themeById('28'), 'dark')['--ac'], '#dddbf1');
+
+  sc.eq(':root 기본 글자용 강조색은 --ac 와 같은 색',
+        SRC.includes('--ac-tx:#5a70f8;') && SRC.includes('--ac-tx:#4458e8;'), true);
+  sc.eq('글자 색만 --ac-tx 로 바꿨다(테두리·배경은 --ac 그대로)',
+        /(?:border|background|accent)-color:var\(--ac-tx\)/.test(SRC), false);
+  sc.eq('글자 자리에 --ac 가 남아 있지 않다',
+        (SRC.match(/(?<![-\w])color:var\(--ac\)/g) || []).length, 0);
+}
+
+// ═══ 14. 음영으로 나타내는 '고름' 이 보이는가 (--s2) ═══
+// 상단 탭(.tab.on)·저장 목록 줄(.keep-pick-row.on)은 **보조 패널색 하나로만**
+// 고른 것을 나타낸다. s1 과 s2 가 거의 같으면 무엇을 골랐는지 알 수 없다.
+console.log('\n시나리오 14 — 패널 음영');
+{
+  let worst = 99;
+  THEME_PRESETS.forEach(p => {
+    ['light', 'dark'].forEach(mode => {
+      const t = _themeTokens(p, mode);
+      const d = _thDeltaE(_thRgb(t['--s2']), _thRgb(t['--s1']));
+      worst = Math.min(worst, d);
+      sc.eq(`${p.id} ${mode} — s2 가 s1 과 구분된다`, d >= 5.99, true);
+    });
+  });
+  sc.eq('30벌 최저 색차가 기본 테마(6.1) 수준', worst >= 5.99, true);
+  // 음영이 너무 세면 패널이 얼룩덜룩해진다 — 위쪽도 막아 둔다
+  const maxD = THEME_PRESETS.reduce((m, p) => ['light', 'dark'].reduce((n, mode) => {
+    const t = _themeTokens(p, mode);
+    return Math.max(n, _thDeltaE(_thRgb(t['--s2']), _thRgb(t['--s1'])));
+  }, m), 0);
+  sc.eq('그렇다고 지나치게 진해지지도 않는다', maxD < 20, true);
+}
+
 sc.done();

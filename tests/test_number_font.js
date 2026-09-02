@@ -41,7 +41,7 @@ console.log('\n시나리오 3 — 날짜·시간·개수·퍼센트 요소');
     ['#hDate,#tLbl 묶음', /#hDate,#tLbl\{\s*font-family:var\(--font-number\)/],
     ['.total-lbl', /\.total-lbl\{font-family:var\(--font-number\)/],
     ['.wmore', /\.wmore\{font-size:9px;color:var\(--tx3\);font-family:var\(--font-number\)/],
-    ['.wmem', /\.wmem\{font-size:9px;color:var\(--ac\);font-family:var\(--font-number\)/],
+    ['.wmem', /\.wmem\{font-size:9px;color:var\(--ac-tx\);font-family:var\(--font-number\)/],
     ['.mcsc', /\.mcsc\{font-size:8px;color:var\(--tx3\);margin-top:2px;font-family:var\(--font-number\)/],
     ['.mcmem', /\.mcmem\{[^}]*font-family:var\(--font-number\)/],
     ['.sm-cnt-lbl', /\.sm-cnt-lbl\{font-family:var\(--font-number\)/],
@@ -60,7 +60,7 @@ console.log('\n시나리오 3 — 날짜·시간·개수·퍼센트 요소');
     ['.sec-bound-back-note', /\.sec-bound-back-note\{[^}]*font-family:var\(--font-number\)/],
     ['.auth-version', /\.auth-version\{[^}]*font-family:var\(--font-number\)/],
     ['.settings-version', /\.settings-version\{[^}]*font-family:var\(--font-number\)/],
-    ['.logo b (숫자 7)', /\.logo b\{color:var\(--ac\);font-weight:500;font-family:var\(--font-number\);\}/],
+    ['.logo b (숫자 7)', /\.logo b\{color:var\(--ac-tx\);font-weight:500;font-family:var\(--font-number\);\}/],
     ['.auth-logo b (숫자 7)', /\.auth-logo b\{[^}]*font-family:var\(--font-number\);\}/],
   ];
   numericSelectors.forEach(([name, re]) => sc.eq(name + ' → --font-number', re.test(SRC), true));
@@ -97,7 +97,7 @@ console.log('\n시나리오 5 — 숫자 없는 라벨은 --font-mono 유지');
     ['.vg-divider', /color:var\(--tx3\);font-size:11px;font-family:var\(--font-mono\);\s*letter-spacing:\.02em;padding:16px 2px 5px;/],
     ['.ur-btn', /font-family:var\(--font-mono\);\s*transition:color \.12s;/],
     ['.preset-btn', /font-family:var\(--font-mono\);transition:all \.15s;flex-shrink:0;/],
-    ['.contact-row-nick', /font-family:var\(--font-mono\);font-size:12px;font-weight:600;\s*color:var\(--ac\);flex-shrink:0;/],
+    ['.contact-row-nick', /font-family:var\(--font-mono\);font-size:12px;font-weight:600;\s*color:var\(--ac-tx\);flex-shrink:0;/],
     // (.date-nav-hint 은 26-0822-4 에서 글자를 아예 안 담게 됐다 — 화살표가 SVG 로
     //  바뀌어 안에 텍스트가 없으므로 font-family 지정 자체를 지웠다. 시나리오 12 참고)
     ['.task-menu-label', /\.task-menu-label\{font-size:9\.5px;font-family:var\(--font-mono\)/],

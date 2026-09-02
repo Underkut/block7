@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-9  [production]  -->
+<!-- BLOCK7  v. 26-0902-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -212,6 +212,59 @@ function _thTintDE(c,alpha,surfaces){
   for(let i=0;i<surfaces.length;i++)m=Math.min(m,_thDeltaE(_thMix(surfaces[i],c,Math.min(1,alpha)),surfaces[i]));
   return m;
 }
+// Lab → sRGB (채도를 올린 색을 다시 화면 색으로 되돌릴 때 쓴다)
+function _thLabFi(t){return t>0.20689655?t*t*t:(t-16/116)/7.787037;}
+function _thUnlin(c){return 255*(c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055);}
+function _thLabRgb(L){
+  const y=(L[0]+16)/116,x=y+L[1]/500,z=y-L[2]/200;
+  const X=_thLabFi(x)*0.95047,Y=_thLabFi(y),Z=_thLabFi(z)*1.08883;
+  return [_thUnlin( 3.2406*X-1.5372*Y-0.4986*Z),
+          _thUnlin(-0.9689*X+1.8758*Y+0.0415*Z),
+          _thUnlin( 0.0557*X-0.2040*Y+1.0570*Z)]
+         .map(v=>Math.max(0,Math.min(255,Math.round(v))));
+}
+// ── 글자용 강조색 (--ac-tx) ──
+// '켜진 항목은 강조색 글자' 로 나타내는 자리가 앱 곳곳에 있다(설정 탭·유저 모드·
+// 위젯 보기·정렬 토글…). 그런데 강조색이 본문/보조 글자색과 색조가 비슷하면
+// (28 윈터 블랭킷 다크: 강조 #dddbf1, 본문 #f1effa — 거의 같은 색)
+// 켜진 것과 꺼진 것이 구분되지 않는다.
+// 그래서 **채도를 올려**(같은 색조를 유지한 채) 글자색과 갈라 세우고,
+// 그래도 모자라면 밝기를 배경 쪽이 아니라 **글자색 반대쪽**으로 조금 민다.
+// ⚠️ 지금보다 안 읽히게 만들지는 않는다 — 후보의 최소 대비가 원래 강조색의
+//    대비(또는 4.0) 밑으로 내려가면 버린다.
+function _thAcText(ac,texts,faces,target){
+  const worst=c=>{let m=99;for(let i=0;i<texts.length;i++)m=Math.min(m,_thDeltaE(c,texts[i]));return m;};
+  const con  =c=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(c,faces[i]));return m;};
+  if(worst(ac)>=target)return _thRound(ac);
+  const floor=Math.min(4.0,con(ac));
+  const L0=_thLab(ac);
+  // 밝기를 미는 방향은 '글자색에서 멀어지는 쪽' — 글자색이 밝으면 어둡게, 그 반대면 밝게
+  let txL=0;for(let i=0;i<texts.length;i++)txL+=_thLab(texts[i])[0];
+  const away=(txL/texts.length>L0[0])?-1:1;
+  let best=_thRound(ac),bw=worst(ac);
+  for(let d=0;d<=34;d+=2){
+    const dirs=(d===0)?[0]:[away,-away];
+    for(let di=0;di<dirs.length;di++){
+      for(let k=1;k<=3.2+1e-9;k+=0.1){
+        const c=_thLabRgb([Math.max(2,Math.min(98,L0[0]+dirs[di]*d)),L0[1]*k,L0[2]*k]);
+        if(con(c)<floor)continue;
+        const w=worst(c);
+        if(w>bw){bw=w;best=c;}
+        if(w>=target)return c;
+      }
+    }
+  }
+  return best;
+}
+// 보조 패널(s2)이 기본 패널(s1)과 눈에 띄게 다른 최소 비율.
+// 선택된 탭·줄의 표시가 이 색 하나로만 이뤄지므로(.tab.on · .keep-pick-row.on)
+// 색차가 너무 작으면 무엇을 골랐는지 알 수 없다.
+function _thPanelMix(sf,tx,base,target,maxR){
+  let r=base;
+  if(_thDeltaE(_thRound(_thMix(sf,tx,r)),sf)>=target)return r;
+  while(r<maxR){r+=0.005;if(_thDeltaE(_thRound(_thMix(sf,tx,r)),sf)>=target)break;}
+  return Math.min(r,maxR);
+}
 // 기준 색차를 넘길 때까지 알파에 곱할 배수를 찾는다 (1 ~ maxK)
 function _thTintK(ac,alpha,surfaces,target,maxK){
   if(_thTintDE(ac,alpha,surfaces)>=target)return 1;
@@ -228,8 +281,9 @@ function _themeTokens(preset,mode){
   const p=(mode==='light')?preset.light:preset.dark;
   const isDark=(mode!=='light');
   const bg=_thRgb(p[0]),sf=_thRgb(p[1]),tx=_thRgb(p[2]),ac=_thRgb(p[3]),sec=_thRgb(p[4]);
-  // 보조 패널 — 기본 패널에서 글자색 쪽으로 아주 조금
-  const s2=_thRound(_thMix(sf,tx,isDark?0.10:0.07));
+  // 보조 패널 — 기본 패널에서 글자색 쪽으로 아주 조금.
+  // 다만 선택된 탭·줄은 이 색 하나로만 표시되므로 최소 색차(6)는 지킨다.
+  const s2=_thRound(_thMix(sf,tx,_thPanelMix(sf,tx,isDark?0.10:0.07,6.0,0.20)));
   // 글자가 놓일 수 있는 세 면. 이 중 가장 안 읽히는 쪽을 기준으로 맞춘다.
   const faces=[bg,sf,s2];
   // 보조·비활성 글자: 배경 쪽으로 흐리게 하되 AA(4.5) / 3:1 은 지킨다
@@ -242,7 +296,10 @@ function _themeTokens(preset,mode){
   const onAc=_thOn(ac);
   // 선택·활성 틴트의 세기. 기준 알파(.14 라이트 / .16 다크)에서 재고,
   // 그 결과 배수를 CSS 의 모든 틴트 알파에 똑같이 곱한다.
-  const tintK=Math.round(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100;
+  // 소수 둘째 자리에서 **올림** — 내림하면 방금 맞춘 기준을 한 끗 차이로 놓친다
+  const tintK=Math.min(2.4,Math.ceil(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100);
+  // 글자로 쓰는 강조색. 글자색들과 ΔE 24 이상 벌어지게 채도(필요하면 밝기)를 민다.
+  const acTx=_thAcText(ac,[tx,tx2,tx3],faces,24);
   // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
   // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
   let danger=isDark?[255,138,133]:[196,43,33];
@@ -261,6 +318,7 @@ function _themeTokens(preset,mode){
     '--tx':hx(tx),'--tx2':hx(tx2),'--tx3':hx(tx3),
     '--bd':hx(bd),'--bd2':hx(bd2),
     '--ac':hx(ac),'--ac-rgb':ac.map(v=>Math.round(v)).join(','),
+    '--ac-tx':hx(acTx),
     '--on-accent':hx(onAc),
     '--ac-soft':_thRgba(ac,Math.min(0.5,(isDark?0.20:0.14)*tintK)),
     '--ac-tint-k':String(tintK),
@@ -287,7 +345,7 @@ function _themeTokens(preset,mode){
 function applyThemeVars(id,mode,el){
   const host=el||document.documentElement;
   const preset=themeById(id);
-  const keys=['--bg','--s1','--s2','--tx','--tx2','--tx3','--bd','--bd2','--ac','--ac-rgb',
+  const keys=['--bg','--s1','--s2','--tx','--tx2','--tx3','--bd','--bd2','--ac','--ac-rgb','--ac-tx',
     '--on-accent','--ac-soft','--ac-tint-k','--sec','--sec-rgb','--chip-bg','--tab-on-bg','--focus-ring',
     '--shadow-color','--header-bg','--drag-ghost-bg','--danger','--del','--ov','--so',
     '--sun-red','--today-cell-border','--today-cell-border-faded','--fade-start-border',
@@ -346,6 +404,9 @@ function applyThemeVars(id,mode,el){
   --ac:#5a70f8; --ov:#e84040; --ok:#22c46e; --so:#e08830;
   --del:#e84040;
   --ac-rgb:90,112,248; /* --ac 의 R,G,B — rgba(var(--ac-rgb),X) 형태의 반투명 배경에 쓴다 */
+  /* 글자로 쓰는 강조색. 기본은 --ac 와 같은 색 — 테마를 안 고른 화면은 예전 그대로다.
+     색상 테마를 고르면 _themeTokens() 가 글자색과 갈라 세운 값을 넣는다. */
+  --ac-tx:#5a70f8;
   /* 회원가입 전용 버건디 — 배경용(bgd)과 글자용(bgd-tx)을 나눈다.
      어두운 배경 위에서는 진한 버건디 글자가 안 읽혀서 글자용을 밝게 잡는다. */
   --bgd:#8c2f3f; --bgd-tx:#c46b7c;
@@ -390,6 +451,7 @@ html[data-theme="light"],.theme-defaults-light {
   --bd:#dde1ea; --bd2:#cbd0dc;
   --tx:#1c2030; --tx2:#5b6378; --tx3:#9aa1b4;
   --ac:#4458e8; --ov:#d23c3c; --ok:#1ea860; --so:#cc7320;
+  --ac-tx:#4458e8;
   --del:#d23c3c;
   --bgd:#7d2634; --bgd-tx:#8c2f3f;
   --c0:#7b6ef0; --c1:#dd9818; --c2:#1bbf6e;
@@ -455,7 +517,7 @@ header{
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
 }
 .logo{font-family:var(--font-mono);font-size:13px;letter-spacing:.15em;color:var(--tx2);}
-.logo b{color:var(--ac);font-weight:500;font-family:var(--font-number);}
+.logo b{color:var(--ac-tx);font-weight:500;font-family:var(--font-number);}
 
 /* ── Verse bar (네비게이토 180) ── */
 /* ── Verse bar outer wrapper ── */
@@ -510,12 +572,12 @@ header{
 }
 #verseGrid .vg-filter,#verseGrid .vg-sortbtn.on{color:var(--vf-tx,var(--tx));}
 #verseGrid .vg-sortbtn,#verseGrid .vg-eq,#verseGrid .vg-back{color:var(--vf-tx3,var(--tx3));}
-#verseGrid .vg-eq.on{color:var(--vf-ac,var(--ac));}
+#verseGrid .vg-eq.on{color:var(--vf-ac,var(--ac-tx));}
 /* ⚠️ 타일뷰는 앱 기본색이 아니라 **말씀 전체화면 테마**(--vf-*)를 쓴다.
    여기서 var(--tx) 를 그냥 쓰면 어두운 테마에서 글자가 배경에 묻힌다
    (0817-13 에서 스테퍼 숫자가 안 보였다). 제외 버튼·스테퍼도 테마를 따른다. */
 #verseGrid .vg-excl-btn{color:var(--vf-tx3,var(--tx3));}
-#verseGrid .vg-excl-btn.on{color:var(--vf-ac,var(--ac));}
+#verseGrid .vg-excl-btn.on{color:var(--vf-ac,var(--ac-tx));}
 /* 테두리를 테마색 그대로 쓰면 또렷해 보인다 — 알파를 섞어 옅게 (HB 1) */
 #verseGrid .vg-excl-step{border-color:color-mix(in srgb,var(--vf-tx3,var(--tx3)) 40%,transparent);}
 #verseGrid .vg-excl-step button{color:var(--vf-tx2,var(--tx2));}
@@ -577,7 +639,7 @@ header{
 .vf-ptitle{
   display:none;width:100%;flex-shrink:0;position:relative;
   margin-bottom:clamp(22px,4.5vh,44px);
-  color:var(--vf-ac,var(--ac));font-family:var(--vf-font,inherit);
+  color:var(--vf-ac,var(--ac-tx));font-family:var(--vf-font,inherit);
   font-weight:500;line-height:1.34;letter-spacing:-.01em;word-break:keep-all;
   /* 아날로그 — 종이에 손으로 얹은 듯 아주 살짝 기운다 (각도는 JS 가 준다) */
   transform:rotate(var(--pt-ang,0deg));transform-origin:var(--pt-org,center);
@@ -667,7 +729,7 @@ header{
 .vf-meta{flex:1;min-width:0;text-align:left;pointer-events:none;}
 #vfCat{font-size:15px;font-weight:700;color:var(--vf-tx,var(--tx));font-family:var(--vf-font,inherit);margin-bottom:5px;width:fit-content;max-width:100%;pointer-events:auto;cursor:pointer;}
 #vfTopic{font-size:14px;font-weight:300;color:var(--vf-tx2,var(--tx2));font-family:var(--vf-font,inherit);line-height:1.55;margin-bottom:7px;width:fit-content;max-width:100%;pointer-events:auto;cursor:pointer;}
-#vfTag{font-size:13px;color:var(--vf-ac,var(--ac));line-height:1.5;word-break:keep-all;}
+#vfTag{font-size:13px;color:var(--vf-ac,var(--ac-tx));line-height:1.5;word-break:keep-all;}
 .vf-tagchip{pointer-events:auto;cursor:pointer;}
 #vfCat:active,#vfTopic:active,.vf-tagchip:active{opacity:.5;}
 /* 우측 세로 액션 스택 */
@@ -858,7 +920,7 @@ header{
   cursor:pointer;-webkit-tap-highlight-color:transparent;
   white-space:nowrap;transition:color .15s;
 }
-.vg-excl-btn.on{color:var(--ac);}
+.vg-excl-btn.on{color:var(--ac-tx);}
 .vg-excl-step{
   display:flex;align-items:center;
   /* 너무 또렷하던 테두리를 옅게 — --bd2(진함) → --bd(연함) (HB 1) */
@@ -879,7 +941,7 @@ header{
 .vg-sort{display:flex;align-items:center;gap:9px;flex-shrink:0;}
 .vg-eq{background:none;border:none;color:var(--tx3);font-size:15px;font-weight:400;
   line-height:1;padding:2px 3px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.vg-eq.on{color:var(--ac);}
+.vg-eq.on{color:var(--ac-tx);}
 .vg-sortbtn{background:none;border:none;color:var(--tx3);font-size:12px;
   cursor:pointer;padding:2px;-webkit-tap-highlight-color:transparent;transition:color .15s;}
 .vg-sortbtn.on{color:var(--tx);font-weight:700;}
@@ -1039,7 +1101,7 @@ header{
 /* Full-mode grid layout */
 #verseBarCat{
   grid-column:1;grid-row:1;
-  font-size:10px;font-weight:700;color:var(--ac);
+  font-size:10px;font-weight:700;color:var(--ac-tx);
   font-family:var(--font-ui),sans-serif;letter-spacing:.02em;
   margin:0;
 }
@@ -1146,7 +1208,7 @@ header{
   text-align:left;
 }
 /* Color mode: tiered colors only, no size difference */
-#verseBarInner.sneak-mode.mode-color #verseBarCat{color:var(--ac);font-weight:700;}
+#verseBarInner.sneak-mode.mode-color #verseBarCat{color:var(--ac-tx);font-weight:700;}
 #verseBarInner.sneak-mode.mode-color #verseBarTopic{color:var(--tx3);}
 #verseBarInner.sneak-mode.mode-color #verseBarFirstWord{color:var(--tx);}
 #verseBarInner.sneak-mode.mode-color #verseBarRef{color:var(--tx3);}
@@ -1376,7 +1438,7 @@ header{
 
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
-.preset-btn:hover{border-color:var(--ac);color:var(--ac);}
+.preset-btn:hover{border-color:var(--ac);color:var(--ac-tx);}
 .preset-btn.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent);}
 .preset-btn.on:hover{background:var(--ac);}
 .preset-sep{width:1px;height:16px;background:var(--bd2);flex-shrink:0;margin:0 2px;}
@@ -1413,7 +1475,7 @@ header{
   font-size:15px;font-weight:600;padding:0 5px;line-height:1;
   -webkit-tap-highlight-color:transparent;
 }
-.ts-add-event:hover{color:var(--ac);}
+.ts-add-event:hover{color:var(--ac-tx);}
 .ts-rm{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:16px;padding:0 3px;-webkit-tap-highlight-color:transparent;}
 .ts.cl .ts-body{display:none;}
 .ts-body{padding:0 10px 6px;}
@@ -1469,7 +1531,7 @@ header{
   padding:0 4px;flex-shrink:0;min-width:20px;-webkit-tap-highlight-color:transparent;
   -webkit-appearance:none;appearance:none;
 }
-.ts-sort-event:hover{color:var(--ac);}
+.ts-sort-event:hover{color:var(--ac-tx);}
 .ts-sort-event svg{display:block;}
 
 /* collapsed section summary */
@@ -1752,7 +1814,7 @@ header{
   padding:3px 2px; /* enlarge the touch target a bit without visual bulk */
 }
 .blk-contact-badge svg{display:block;}
-.blk-contact-badge:hover{color:var(--ac);}
+.blk-contact-badge:hover{color:var(--ac-tx);}
 /* ──@닉네임 텍스트 스타일 (할일 텍스트 내) ── */
 .blk-nick-text{
   font-weight:400;font-size:10px;color:var(--tx2);
@@ -1769,7 +1831,7 @@ header{
 .contact-row:last-child{border-bottom:none;}
 .contact-row-nick{
   font-family:var(--font-mono);font-size:12px;font-weight:600;
-  color:var(--ac);flex-shrink:0;
+  color:var(--ac-tx);flex-shrink:0;
 }
 .contact-row-info{
   flex:1;min-width:0;font-size:11px;color:var(--tx2);
@@ -1780,7 +1842,7 @@ header{
   font-size:13px;padding:2px 4px;flex-shrink:0;line-height:1;
   -webkit-tap-highlight-color:transparent;-webkit-appearance:none;appearance:none;
 }
-.contact-row-btn:hover{color:var(--ac);}
+.contact-row-btn:hover{color:var(--ac-tx);}
 .contacts-form{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
 .contacts-form .auth-input{font-size:14px;padding:9px 12px;}
 
@@ -1879,7 +1941,7 @@ header{
   content:'';position:absolute;
   top:-11px;bottom:-11px;left:-4px;right:-4px;
 }
-.ts-add-task:hover{color:var(--ac);}
+.ts-add-task:hover{color:var(--ac-tx);}
 /* ── ▲ 숨기기 버튼 ── */
 .ts-hide-sec{
   background:none;border:none;color:var(--tx3);cursor:pointer;
@@ -1887,7 +1949,7 @@ header{
   -webkit-tap-highlight-color:transparent;display:flex;align-items:center;
   -webkit-appearance:none;appearance:none;
 }
-.ts-hide-sec:hover{color:var(--ac);}
+.ts-hide-sec:hover{color:var(--ac-tx);}
 
 .sgi-inp{
   flex:1;background:transparent;border:none;outline:none;
@@ -2040,8 +2102,8 @@ body.split-d #todayView.animating{overflow:hidden;}
   -webkit-tap-highlight-color:transparent;
 }
 .task-menu-side:hover,.task-menu-side:active{color:var(--tx);background:var(--s1);}
-.task-menu-item.on{color:var(--ac);}
-.task-menu-item.on .task-menu-icon{color:var(--ac);}
+.task-menu-item.on{color:var(--ac-tx);}
+.task-menu-item.on .task-menu-icon{color:var(--ac-tx);}
 .task-menu-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;}
 .task-menu-icon svg{display:block;}
 .task-menu-sep{height:1px;background:var(--bd);margin:3px 4px;}
@@ -2137,7 +2199,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   transition:background .12s,border-color .12s,color .12s;
 }
 .event-time-toggle-btn.on{
-  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac-tx);
 }
 .event-modal-pickers{
   display:flex;align-items:center;justify-content:center;gap:6px;
@@ -2184,7 +2246,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-btn.on{
-  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac-tx);
 }
 /* Sub-picker grid: day-of-week (7 cells) or week-of-month (5 cells) —
    same shaded on/off button language throughout. */
@@ -2201,7 +2263,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-sub-cell.on{
-  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac-tx);
 }
 .event-modal-actions{display:flex;gap:8px;}
 .event-modal-actions .settings-btn{flex:1;}
@@ -2214,7 +2276,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .wh{padding:4px;text-align:center;font-size:9px;font-weight:700;color:var(--tx3);font-family:var(--font-mono);}
 .wh .num{font-family:var(--font-number);}
 .wh:first-child{position:sticky;left:0;z-index:3;background:var(--bg);}
-.wh.tc{color:var(--ac);}
+.wh.tc{color:var(--ac-tx);}
 .wh.tc.sun-red,.wh.sun-red{color:var(--sun-red);}
 .wlbl{padding:4px;font-size:9px;color:var(--tx3);font-family:var(--font-mono);display:flex;align-items:center;
   position:sticky;left:0;z-index:2;background:var(--bg);}
@@ -2244,7 +2306,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .wc.wc-grey-2{border-color:color-mix(in srgb, var(--fade-start-border) 60%, var(--bg));}
 .wc.wc-grey-3{border-color:color-mix(in srgb, var(--fade-start-border) 40%, var(--bg));}
 .wc.wc-grey-4{border-color:color-mix(in srgb, var(--fade-start-border) 20%, var(--bg));}
-.wbig{font-size:11px;font-weight:600;color:var(--ac);line-height:1.4;}
+.wbig{font-size:11px;font-weight:600;color:var(--ac-tx);line-height:1.4;}
 .wbig.wbig-flag{color:var(--sun-red);}
 .wbig.done{opacity:.25;}
 .wsm{font-size:10px;color:var(--tx2);line-height:1.4;}
@@ -2259,11 +2321,11 @@ body.split-d #todayView.animating{overflow:hidden;}
   color:var(--tx3);cursor:pointer;transition:color .12s;
   -webkit-tap-highlight-color:transparent;
 }
-.wmview-btn.on{color:var(--ac);}
+.wmview-btn.on{color:var(--ac-tx);}
 .wmview-btn:hover{color:var(--tx2);}
-.wmview-btn.on:hover{color:var(--ac);}
+.wmview-btn.on:hover{color:var(--ac-tx);}
 .wmore{font-size:9px;color:var(--tx3);font-family:var(--font-number);}
-.wmem{font-size:9px;color:var(--ac);font-family:var(--font-number);margin-top:1px;cursor:pointer;opacity:.85;}
+.wmem{font-size:9px;color:var(--ac-tx);font-family:var(--font-number);margin-top:1px;cursor:pointer;opacity:.85;}
 .mnav{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
 
 .nav-btn{
@@ -2272,7 +2334,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   padding:4px 8px;line-height:1;
   -webkit-tap-highlight-color:transparent;
 }
-.nav-btn:hover{color:var(--ac);}
+.nav-btn:hover{color:var(--ac-tx);}
 .mttl{font-size:16px;font-weight:700;flex:1;text-align:center;}
 .mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:-2px;}
 .mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:var(--font-mono);}
@@ -2294,13 +2356,13 @@ body.split-d #todayView.animating{overflow:hidden;}
 .mcc.mcc-grey-4{border-color:color-mix(in srgb, var(--fade-start-border) 20%, var(--bg));}
 .mcd{font-size:9px;font-weight:700;color:var(--tx2);margin-bottom:3px;}
 .mcd.sun-red{color:var(--sun-red);}
-.mcc.mct .mcd{color:var(--ac);}
+.mcc.mct .mcd{color:var(--ac-tx);}
 .mcdots{display:flex;flex-wrap:wrap;gap:2px;}
 .mcdot{width:4px;height:4px;border-radius:50%;background:var(--ac);}
 .mcdot.ov{background:var(--ov);}.mcdot.dn{opacity:.25;}
 .mcdot.flag{background:var(--sun-red);}
 .mcsc{font-size:8px;color:var(--tx3);margin-top:2px;font-family:var(--font-number);}
-.mcmem{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px;cursor:pointer;font-size:8px;color:var(--ac);font-family:var(--font-number);line-height:1.2;}
+.mcmem{display:flex;flex-wrap:wrap;gap:1px;margin-top:2px;cursor:pointer;font-size:8px;color:var(--ac-tx);font-family:var(--font-number);line-height:1.2;}
 
 /* ── D뷰 좌우 분할 (넓은 화면) ──
    900px 이상에서 D뷰가 활성일 때 좌: 기존 할일, 우: 위젯 패널.
@@ -2409,7 +2471,7 @@ header{position:relative;}
   padding:2px 12px;z-index:3;touch-action:none;
   -webkit-tap-highlight-color:transparent;
 }
-.rp-grab:hover{opacity:.9;color:var(--ac);}
+.rp-grab:hover{opacity:.9;color:var(--ac-tx);}
 #weeklyPane .rp-grab{top:2px;}
 /* 3-2: 데스크탑에서 달성바 호버 시 잡을 수 있음을 표시 */
 body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
@@ -2424,7 +2486,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   opacity:.55;transition:opacity .15s,color .15s;line-height:0;
   -webkit-tap-highlight-color:transparent;
 }
-.rp-add-btn:hover{opacity:1;color:var(--ac);}
+.rp-add-btn:hover{opacity:1;color:var(--ac-tx);}
 .rp-add-wrap.drop-dim .rp-add-btn{opacity:.15;}
 /* 드래그 중 위젯 끄기 드롭존: 우상단 1/4원 (GNB 위에 떠 있음) */
 .rp-off-zone{
@@ -2493,17 +2555,17 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-family:var(--font-ui),sans-serif;-webkit-tap-highlight-color:transparent;
   transition:all .15s;line-height:1.4;
 }
-.vl-pill:hover{border-color:var(--ac);color:var(--ac);}
+.vl-pill:hover{border-color:var(--ac);color:var(--ac-tx);}
 .vl-pill.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent);}
 .vl-sort-toggle{
   background:none;border:none;padding:2px;cursor:pointer;color:var(--tx3);
   display:flex;align-items:center;-webkit-tap-highlight-color:transparent;border-radius:4px;
 }
-.vl-sort-toggle.on{color:var(--ac);}
+.vl-sort-toggle.on{color:var(--ac-tx);}
 /* ⚠️ 손가락 화면에서는 :hover 를 주지 않는다. 한 번 누르면 그 색이 그대로
    남아서 "누른 버튼이 파랗게 굳은" 것처럼 보인다 (마우스가 없어 hover 가
    풀릴 일이 없다). 마우스가 있는 기기에서만 켠다. */
-@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac);}}
+@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac-tx);}}
 .vl-date{
   background:var(--s2);border:1px solid var(--bd2);border-radius:6px;
   color:var(--tx);font-size:9px;padding:3px 4px;outline:none;
@@ -2544,7 +2606,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   color:var(--tx3);opacity:.35;touch-action:none;
   -webkit-tap-highlight-color:transparent;
 }
-.rp-vresize:hover{opacity:.9;color:var(--ac);}
+.rp-vresize:hover{opacity:.9;color:var(--ac-tx);}
 /* 그리드가 지정 높이를 채우도록: 행을 균등 분배 */
 .rp-mgrid-sized .rp-mcg{height:var(--mgrid-h,auto);grid-template-rows:auto repeat(auto-fill,1fr);}
 .rp-mgrid-sized .rp-mcg .mcc{min-height:0;}
@@ -2579,7 +2641,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-head-ic{display:flex;align-items:center;justify-content:center;color:var(--tx2);}
 .vc-icbtn{background:none;border:none;padding:2px;margin:0;cursor:pointer;color:var(--tx3);
   line-height:0;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;}
-@media (hover:hover){.vc-icbtn:hover{color:var(--ac);}}
+@media (hover:hover){.vc-icbtn:hover{color:var(--ac-tx);}}
 .vc-body{
   position:relative;border-radius:8px;overflow:hidden;
   background:var(--vf-bgimg,var(--bg));
@@ -2610,7 +2672,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   margin-bottom:2px;width:fit-content;max-width:100%;cursor:pointer;}
 .vc-topic{font-size:10px;font-weight:300;color:var(--vf-tx2,var(--tx2));font-family:var(--vf-font,inherit);
   line-height:1.5;margin-bottom:3px;width:fit-content;max-width:100%;cursor:pointer;}
-.vc-tag{font-size:10px;color:var(--vf-ac,var(--ac));line-height:1.45;word-break:keep-all;}
+.vc-tag{font-size:10px;color:var(--vf-ac,var(--ac-tx));line-height:1.45;word-break:keep-all;}
 .vc-cat:active,.vc-topic:active,.vc-tagchip:active{opacity:.5;}
 .vc-tagchip{cursor:pointer;}
 /* 전체화면은 반응 버튼을 세로로 쌓지만, 위젯에서는 그러면 카드 높이의 3/4을
@@ -2686,7 +2748,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-family:var(--font-mono);font-size:20px;letter-spacing:.12em;
   text-align:center;margin-bottom:6px;color:var(--tx);
 }
-.auth-logo b{font-style:normal;color:var(--ac);transition:color .15s;font-family:var(--font-number);}
+.auth-logo b{font-style:normal;color:var(--ac-tx);transition:color .15s;font-family:var(--font-number);}
 /* 회원가입 화면에서는 로고의 7도 버건디로 (제출 버튼과 같은 색) */
 .auth-logo.auth-signup b{color:var(--bgd-tx);}
 .auth-sub{
@@ -2715,7 +2777,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   text-align:center;margin-top:16px;font-size:12px;color:var(--tx3);
 }
 .auth-switch button{
-  background:none;border:none;color:var(--ac);
+  background:none;border:none;color:var(--ac-tx);
   font-size:12px;cursor:pointer;padding:0 4px;
   font-family:var(--font-ui),sans-serif;
 }
@@ -2802,18 +2864,18 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   color:var(--tx3);cursor:pointer;transition:color .15s;
   -webkit-tap-highlight-color:transparent;
 }
-.uilv-btn.on{color:var(--ac);}
+.uilv-btn.on{color:var(--ac-tx);}
 /* 유저 모드 고르기 — 버튼 안에 그 세트의 아이콘 셋을 그대로 보여준다 */
 .uilv-set-btn{
   flex:1;display:flex;align-items:center;justify-content:center;
   gap:10.5px;height:40px;color:var(--tx3);
 }
-.uilv-set-btn.on{color:var(--ac);}
+.uilv-set-btn.on{color:var(--ac-tx);}
 .uilv-set-btn svg{display:block;}
 .uilv-btn svg{display:block;}
 @media(hover:hover){
   .uilv-btn:hover{color:var(--tx2);}
-  .uilv-btn.on:hover{color:var(--ac);}
+  .uilv-btn.on:hover{color:var(--ac-tx);}
   .uilv-btn:hover::after{
     content:attr(data-tip);position:absolute;top:calc(100% + 6px);left:50%;
     transform:translateX(-50%);white-space:nowrap;pointer-events:none;
@@ -3154,7 +3216,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   transition:color .15s,border-color .15s;
   -webkit-tap-highlight-color:transparent;
 }
-.settings-tab.on{color:var(--ac);border-bottom-color:var(--ac);}
+.settings-tab.on{color:var(--ac-tx);border-bottom-color:var(--ac);}
 .vsettings-tab-content{padding-top:16px;}
 /* ── 말씀 대시보드 ── */
 .vdash-grid{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));gap:8px;min-width:600px;}
@@ -3165,7 +3227,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   border-radius:9px;background:var(--s2,rgba(255,255,255,.02));}
 .vdash-top{font-size:10px;color:var(--tx2);text-align:center;line-height:1.35;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.vdash-top b{color:var(--ac);font-weight:600;}
+.vdash-top b{color:var(--ac-tx);font-weight:600;}
 .vdash-ref{font-size:9.5px;color:var(--tx3);font-family:var(--font-number);text-align:center;}
 .vdash-empty{font-size:10px;color:var(--tx3);opacity:.6;padding:16px 0;}
 .vdash-pie{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
@@ -3370,7 +3432,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   position:sticky;top:0;
 }
 .tp-logo{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;color:var(--tx2);}
-.tp-logo b{color:var(--ac);font-weight:500;font-family:var(--font-number);}
+.tp-logo b{color:var(--ac-tx);font-weight:500;font-family:var(--font-number);}
 .tp-tabs{display:flex;gap:3px;}
 .tp-tabs i{
   font-style:normal;font-family:var(--font-mono);font-size:11px;
@@ -3411,7 +3473,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   padding:7px 0;border:1px solid var(--bd);border-radius:6px;background:var(--s1);
   font-variant-numeric:tabular-nums;
 }
-.tp-cal-d.today{border-color:var(--today-cell-border);color:var(--ac);font-weight:700;}
+.tp-cal-d.today{border-color:var(--today-cell-border);color:var(--ac-tx);font-weight:700;}
 .tp-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .tp-btn{
   padding:6px 14px;border-radius:8px;font-size:11px;
@@ -3497,7 +3559,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-drag-zone [data-keepname]{touch-action:none;}
 .keep-pick-nm{flex:1;min-width:0;text-align:left;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.keep-pick-new{color:var(--ac);}
+.keep-pick-new{color:var(--ac-tx);}
 .keep-grip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   width:14px;color:var(--tx3);cursor:grab;touch-action:none;}
 /* 잡은 줄 — 손가락을 따라 그 자리에서 **떠서** 움직인다 (스위터 방식).
@@ -3550,7 +3612,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sw-keep{position:relative;flex:0 0 auto;background:none;border:0;padding:0;cursor:pointer;
   width:15px;height:15px;color:var(--tx3);line-height:0;}
 .sw-keep svg{width:15px;height:15px;display:block;}
-.sw-keep.on{color:var(--ac);}
+.sw-keep.on{color:var(--ac-tx);}
 .sw-keep::after{content:"";position:absolute;inset:-12px -10px;}   /* 손가락 자리 */
 /* 정렬 칩 — 세로 슬라이드는 화면 스크롤의 것이라 탭으로 옮겼다.
    글자는 작지만 손가락 자리는 ::after 로 넓혀 둔다. */
@@ -3559,7 +3621,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   font:500 9.5px/1 var(--font-ui);letter-spacing:.02em;padding:4px 8px;
   max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sw-sc::after{content:"";position:absolute;inset:-12px -8px;}
-.sw-sc:active{border-color:var(--ac);color:var(--ac);}
+.sw-sc:active{border-color:var(--ac);color:var(--ac-tx);}
 .sw-val{position:relative;font-size:16.5px;font-weight:500;line-height:1.3;letter-spacing:-.01em;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   word-break:keep-all;}
@@ -3734,7 +3796,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-9";
+const APP_VERSION = "v. 26-0902-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4484,7 +4546,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="margin-bottom:8px;">
           <button class="settings-btn" onclick="document.getElementById('devNoteFile').click()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:5px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            파일 첨부<span id="devNoteFileCount" style="color:var(--ac);font-size:10px;"></span>
+            파일 첨부<span id="devNoteFileCount" style="color:var(--ac-tx);font-size:10px;"></span>
           </button>
         </div>
         <input type="file" id="devNoteFile" multiple style="display:none" onchange="devNoteHandleFile(this)">
@@ -4617,7 +4679,7 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div style="display:flex;gap:8px;" data-lv="p">
           <div id="vsneak-style-a" onclick="setVerseSneakStyle('color')"
             style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--bd2);cursor:pointer;background:var(--s2);text-align:center;">
-            <span style="font-size:11px;font-weight:700;color:var(--ac);">하나님을 알아감</span><span style="font-size:11px;color:var(--tx3);"> · 예수님의 신성</span><br>
+            <span style="font-size:11px;font-weight:700;color:var(--ac-tx);">하나님을 알아감</span><span style="font-size:11px;color:var(--tx3);"> · 예수님의 신성</span><br>
             <span style="font-size:11px;color:var(--tx);">태초에…</span><span style="font-size:11px;color:var(--tx3);"> · 요 1:1</span>
           </div>
           <div id="vsneak-style-b" onclick="setVerseSneakStyle('mono')"
@@ -5440,7 +5502,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <button onclick="closeVersePopup()" aria-label="닫기" style="position:absolute;top:12px;right:12px;background:none;border:none;padding:6px;cursor:pointer;color:var(--tx2);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
-  <div id="vpopCat" style="font-size:13px;font-weight:700;color:var(--ac);margin-bottom:6px;"></div>
+  <div id="vpopCat" style="font-size:13px;font-weight:700;color:var(--ac-tx);margin-bottom:6px;"></div>
   <div id="vpopTopic" style="font-size:13px;color:var(--tx3);margin-bottom:20px;"></div>
   <div id="vpopText" data-vli-ref="" style="font-size:20px;line-height:1.75;color:var(--tx);margin-bottom:22px;cursor:default;user-select:none;-webkit-user-select:none;"></div>
   <div id="vpopRef" style="font-size:15px;color:var(--tx3);"></div>
@@ -9735,7 +9797,7 @@ function showMemorizationPopup(dateKey,secId){
     row.innerHTML=`<div style="font-size:9px;color:var(--tx3);margin-bottom:2px;">${e.time} · ${v.cat} · ${v.topic}</div>
       <div style="font-size:13px;line-height:1.5;color:var(--tx);">${v.krText}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">
-        <span style="font-size:11px;color:var(--ac);">${v.ref}</span>
+        <span style="font-size:11px;color:var(--ac-tx);">${v.ref}</span>
         <span style="display:flex;align-items:center;gap:4px;">
         ${bskUrl?`<button onclick="recordVerseDeeper('${v.ref}');BibleLinkProvider.open('${bskUrl}')"
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:2px 7px;cursor:pointer;-webkit-tap-highlight-color:transparent;">Deeper…</button>`:''}
@@ -9960,7 +10022,7 @@ function _renderMemHistoryDash(){
   stats.forEach(({label,value})=>{
     const card=document.createElement('div');
     card.style.cssText='flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 6px;text-align:center;';
-    card.innerHTML=`<div style="font-size:16px;font-weight:700;color:var(--ac);">${value}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px;">${label}</div>`;
+    card.innerHTML=`<div style="font-size:16px;font-weight:700;color:var(--ac-tx);">${value}</div><div style="font-size:9px;color:var(--tx3);margin-top:2px;">${label}</div>`;
     dash.appendChild(card);
   });
 }
@@ -9990,7 +10052,7 @@ function _renderMemHistoryList(){
       const row=document.createElement('div');
       row.style.cssText='padding:6px 0;border-bottom:1px solid var(--bd2);cursor:pointer;user-select:none;-webkit-user-select:none;';
       row.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <span style="font-size:10px;color:var(--ac);font-weight:700;">${v.ref}</span>
+        <span style="font-size:10px;color:var(--ac-tx);font-weight:700;">${v.ref}</span>
         <span style="font-size:9px;color:var(--tx3);">${e.time}</span>
       </div>
       <div style="font-size:11px;color:var(--tx);margin-top:2px;line-height:1.4;">${v.krText.length>60?v.krText.slice(0,60)+'…':v.krText}</div>
@@ -14758,7 +14820,7 @@ function renderVerseListResults(){
     row.style.cssText='padding:9px 4px;border-bottom:1px solid var(--bd2);cursor:pointer;-webkit-tap-highlight-color:transparent;';
     // 롱터치·우클릭 → 말씀 메뉴 (data-vli-ref 를 달아두면 _attachVliMenus 가 붙여준다)
     row.setAttribute('data-vli-ref',v.ref||'');
-    row.innerHTML=`<div style="font-size:10px;color:var(--ac);font-weight:700;margin-bottom:2px;">${v.cat} · ${v.topic}</div>
+    row.innerHTML=`<div style="font-size:10px;color:var(--ac-tx);font-weight:700;margin-bottom:2px;">${v.cat} · ${v.topic}</div>
       <div style="font-size:12px;color:var(--tx);line-height:1.4;">${v.krText.length>60?v.krText.slice(0,60)+'…':v.krText}</div>
       <div style="font-size:10px;color:var(--tx3);margin-top:2px;">${v.ref}</div>`;
     // 탭·클릭 → 그 말씀 전체화면
@@ -16445,7 +16507,7 @@ function _rpMonthGridHTML(y,m,fixedH){
       cellBody=`<div class="mcdots">${dotHtml}</div>${smt?`<div class="mcsc">${smt}</div>`:''}`;
     }else if(wmMode==='event'){
       const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id));
-      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:var(--ac);line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
+      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:var(--ac-tx);line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
     }else if(wmMode==='mem'){
       // 좋아요·암송·Deeper 이벤트를 메뉴 순서로 줄바꿈 표시 (0개 항목은 생략, 빈 줄 없이 압축)
       cellBody=_mviewEventCountsHTML(k);
@@ -16826,14 +16888,14 @@ function _vListRowsHTML(items,limit,kind,markProp){
     }
     // 보조 줄: 구절(파랑) + 대분류·소주제·태그
     const sub=[];
-    if(showRef&&dispRef)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
+    if(showRef&&dispRef)sub.push(`<span style="color:var(--ac-tx);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     if(v){
       if(showCat&&v.cat)sub.push(v.cat);
       if(showTopic&&v.topic)sub.push(v.topic);
       if(showTag&&Array.isArray(v.tags)&&v.tags.filter(Boolean).length)sub.push(v.tags.filter(Boolean).join(' '));
     }
     // 본문/보조 둘 다 비면 최소한 장절이라도
-    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
+    if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac-tx);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     // 날짜: 7/11 형식 (앞자리 0 없이)
     const[dy,dm,dd]=g.lastDate.split('-');
     const dateLabel=`${parseInt(dm,10)}/${parseInt(dd,10)}`;
@@ -16842,7 +16904,7 @@ function _vListRowsHTML(items,limit,kind,markProp){
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
         <span style="font-size:9px;color:var(--tx3);min-width:0;">${sub.join(' · ')}</span>
         <span style="font-size:9px;color:var(--tx3);white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
-          ${(markProp&&v&&v.pid)?'<span class="vli-propmark">명제</span>':''}<span style="display:inline-flex;align-items:center;color:var(--ac);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
+          ${(markProp&&v&&v.pid)?'<span class="vli-propmark">명제</span>':''}<span style="display:inline-flex;align-items:center;color:var(--ac-tx);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
         </span>
       </div>
     </div>`;
@@ -20138,7 +20200,7 @@ function _devFilesHTML(files){
     if(!f.data)return `<div style="font-size:12px;color:var(--tx3);">${nm} (본문 없음)</div>`;
     return /^image\//.test(f.type||'')
       ? `<img src="${f.data}" alt="${nm}" style="width:100%;border-radius:8px;border:1px solid var(--bd2);display:block;">`
-      : `<a href="${f.data}" download="${nm}" style="font-size:12px;color:var(--ac);">${nm} 내려받기</a>`;
+      : `<a href="${f.data}" download="${nm}" style="font-size:12px;color:var(--ac-tx);">${nm} 내려받기</a>`;
   }).join('<div style="height:6px;"></div>');
 }
 let _devInboxOpen=false;
@@ -24163,7 +24225,7 @@ function renderWeekly(hostEl){
         evs.slice(0,3).forEach(ev=>{
           const timePart=ev.time?formatEventTime(ev.time)+' ':'';
           const lbl=`${timePart}${ev.text||''}`;
-          h+=`<div class="wsm" style="color:var(--ac);">${esc(lbl.trim())}</div>`;
+          h+=`<div class="wsm" style="color:var(--ac-tx);">${esc(lbl.trim())}</div>`;
         });
         if(evs.length>3)h+=`<div class="wmore">+${evs.length-3}</div>`;
       } else if(wmMode==='mem'){
@@ -24846,7 +24908,7 @@ function renderMonthly(){
       cellBody=`<div class="mcdots">${dotHtml}</div>${smt?`<div class="mcsc">${smt}</div>`:''}`;
     } else if(wmMode==='event'){
       const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id));
-      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:var(--ac);line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
+      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:var(--ac-tx);line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
     } else if(wmMode==='mem'){
       // 좋아요·암송·Deeper 이벤트를 메뉴 순서(좋아요/암송/Deeper)로 줄바꿈 표시.
       // 상위 항목이 0개면 그 줄을 비우지 않고 아래 항목이 첫 줄을 채운다.
@@ -29443,7 +29505,7 @@ window.checkDataRecovery=async function(){
           연락처: ${rs?rs.contactCount:0}명
         </div>
       </div>
-      ${localNewer?'<div style="font-size:11px;color:var(--ac);margin-bottom:8px;">로컬이 클라우드보다 최신 날짜를 갖고 있어요.</div>':''}
+      ${localNewer?'<div style="font-size:11px;color:var(--ac-tx);margin-bottom:8px;">로컬이 클라우드보다 최신 날짜를 갖고 있어요.</div>':''}
       <button class="settings-btn" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="fbForceUploadLocal()" ${local?'':'disabled'}>이 기기의 로컬 데이터로 클라우드 덮어쓰기</button>
       <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cleanupEmptyDays()">빈 날짜 항목 정리하기 (데이터 없는 날짜 삭제)</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);">

@@ -134,9 +134,9 @@ console.log('\n시나리오 6 — 14-2·14B 자리와 모양');
   sc.eq("글자는 '제외'", /onclick="vgToggleTileExcl\(\)"[^>]*>제외<\/button>/.test(SRC), true);
   // UI 원칙 — 테두리·박스 금지
   sc.eq('버튼에 테두리·바탕이 없다', /\.vg-excl-btn\{[^}]*background:none;border:none/.test(SRC), true);
-  sc.eq('켜지면 강조색', SRC.includes('.vg-excl-btn.on{color:var(--ac);'), true);
+  sc.eq('켜지면 강조색', SRC.includes('.vg-excl-btn.on{color:var(--ac-tx);'), true);
   // v26-0817-17 — HB: 색만 바뀌고 볼드는 넣지 말 것
-  sc.eq('켜져도 볼드는 안 준다', SRC.includes('.vg-excl-btn.on{color:var(--ac);font-weight:700;}'), false);
+  sc.eq('켜져도 볼드는 안 준다', SRC.includes('.vg-excl-btn.on{color:var(--ac-tx);font-weight:700;}'), false);
 
   // ⚠️ 제목은 innerHTML 로 통째로 다시 그려진다 — 버튼을 그 안에 넣으면 같이 지워진다
   sc.eq('제목을 다시 그릴 때마다 맞춘다',
@@ -150,7 +150,7 @@ console.log('\n시나리오 7 — 타일뷰 테마 색을 따른다 (기존 확�
   sc.eq('숫자가 테마 본문색을 쓴다',
         SRC.includes('#verseGrid .vg-excl-step span{color:var(--vf-tx,var(--tx));'), true);
   sc.eq('꺼진 제외는 테마 흐린색', SRC.includes('#verseGrid .vg-excl-btn{color:var(--vf-tx3,var(--tx3));}'), true);
-  sc.eq('켜진 제외는 테마 강조색', SRC.includes('#verseGrid .vg-excl-btn.on{color:var(--vf-ac,var(--ac));}'), true);
+  sc.eq('켜진 제외는 테마 강조색', SRC.includes('#verseGrid .vg-excl-btn.on{color:var(--vf-ac,var(--ac-tx));}'), true);
 }
 
 console.log('\n시나리오 8 — 14-1 설정창 항목 (태그 전용, 그대로)');
