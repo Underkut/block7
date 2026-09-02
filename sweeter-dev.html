@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -555,7 +555,11 @@ header{
 .vf-ptitle.pf-dokdo{font-family:'East Sea Dokdo',var(--vf-font,inherit);--pt-k:1.35;font-weight:400;}
 .vf-ptitle.pf-yeon{font-family:'Yeon Sung',var(--vf-font,inherit);--pt-k:1.12;font-weight:400;}
 .vf-ptitle.pf-song{font-family:'Song Myung',var(--vf-font,inherit);--pt-k:1.04;font-weight:400;}
-.vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.02;font-weight:400;}
+/* ⚠️ 고운바탕만 배율을 **재서 나온 값보다 크게** 준다 (1.02 → 1.30, HB 26-0902).
+   까닭 — 고운바탕은 본문 글씨체(명조 테마)와 결이 가까워서, 잉크 높이를 맞춘
+   크기로는 타이틀과 본문이 구분되지 않는다. 다른 글씨체는 생김새로 갈리지만
+   이것은 **크기로 갈라 줘야** 한다. */
+.vf-ptitle.pf-gowun{font-family:'Gowun Batang',var(--vf-font,inherit);--pt-k:1.30;font-weight:400;}
 /* ── 저장소에 직접 올린 글씨체 (v26-0901-9, HB 가 눈누에서 받아 줌) ──────────
    ⚠️ 구글 폰트와 다른 점: 구글은 **쓰인 글자 조각만** 내려 주는데 이것들은
       한 벌을 통째로 받는다. 그래서 —
@@ -3682,7 +3686,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-6";
+const APP_VERSION = "v. 26-0902-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12300,11 +12304,16 @@ const _PT_FACES=[
   {k:'kyobo',   ko:'교보2020',full:'교보손글씨 2020 박도연',      fam:'B7 Kyobo',   self:1},
   {k:'griun',   ko:'송글송글',full:'그리운 x 국한박 송글송글 감성 흘림체',fam:'B7 Griun',self:1},
   {k:'kotra',   ko:'코트라',  full:'KOTRA 손글씨체',             fam:'B7 Kotra',   self:1},
-  {k:'tvn',     ko:'즐거운',  full:'tvN 즐거운이야기',            fam:'B7 Tvn',     self:1},
-  {k:'hakgyo',  ko:'받아쓰기',full:'학교안심 받아쓰기',           fam:'B7 Hakgyo',  self:1},
-  {k:'jaemin',  ko:'재민체',  full:'한글재민체 4.0',              fam:'B7 Jaemin',  self:1},
-  {k:'lxgw',    ko:'문해',    full:'LXGW 문해 KR',               fam:'B7 Lxgw',    self:1}
+  {k:'tvn',     ko:'즐거운',  full:'tvN 즐거운이야기',            fam:'B7 Tvn',     self:1}
 ];
+// ⚠️ HB 가 뺀 셋 (26-0902) — 받아쓰기 · 재민체 · 문해.
+//    글꼴 파일(fonts/hakgyo·jaemin·lxgw.woff2)과 @font-face·CSS 는 **남겨 뒀다.**
+//    표에 없으면 화면 어디에서도 안 쓰이므로 **받아지지도 않는다** (사용자에게는
+//    없는 것과 같다). 다시 쓰고 싶으면 위 표에 한 줄만 도로 넣으면 된다 —
+//    파일을 다시 받아 자르는 일을 되풀이하지 않으려고 남겼다.
+//      {k:'hakgyo', ko:'받아쓰기', full:'학교안심 받아쓰기', fam:'B7 Hakgyo', self:1},
+//      {k:'jaemin', ko:'재민체',  full:'한글재민체 4.0',    fam:'B7 Jaemin', self:1},
+//      {k:'lxgw',   ko:'문해',    full:'LXGW 문해 KR',      fam:'B7 Lxgw',   self:1}
 const _PT_FONTS=_PT_FACES.map(f=>f.k).concat(['plain']);
 // 켜 둔 글씨체들. 하나도 안 켜져 있으면 붓 하나로 본다 (빈 화면이 되면 안 된다)
 function _ptFontsOn(){
