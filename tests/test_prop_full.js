@@ -249,7 +249,9 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
   sc.eq('글씨체 표가 한 곳', SRC_DEV.includes('const _PT_FACES=['), true);
   sc.eq('이름표는 그 표에서 만든다',
         SRC_DEV.includes("const _PT_FAMS=(function(){const m={};_PT_FACES.forEach(f=>{m[f.k]=f.fam;});return m;})();"), true);
-  sc.eq('글꼴 주소도 그 표에서', SRC_DEV.includes("_PT_FACES.map(f=>'family='+f.fam.replace(/ /g,'+')).join('&')"), true);
+  // ⚠️ v26-0901-9 — 저장소에 직접 올린 것(self)은 구글 주소에 넣지 않는다
+  sc.eq('글꼴 주소도 그 표에서',
+        SRC_DEV.includes("_PT_FACES.filter(f=>!f.self).map(f=>'family='+f.fam.replace(/ /g,'+')).join('&')"), true);
   // v26-0831-18 — **못 받은 것이 확실할 때만** 되돌린다. 오는 중에 되돌리면
   //   명조가 0.몇 초 보였다가 붓으로 바뀌어 깜빡인다 (HB 신고, 시나리오 12).
   // v26-0901-4 — **포기하기 전에는** 되돌리지 않는다 (HB: "계속 기본폰트야")
@@ -257,7 +259,7 @@ console.log('\n시나리오 9 — 손글씨(붓) 글씨체');
         SRC_DEV.includes("if(fam&&!_ptFontLoaded(fam,t)&&!_ptStillTrying(fam,t))pf='plain';"), true);
   sc.eq('아직 애쓰는 중인지 가리는 자', SRC_DEV.includes('function _ptStillTrying(fam,text){'), true);
   sc.eq('받을 기회가 남았으면 손글씨 그대로',
-        SRC_DEV.includes('return _ptFontPending(fam,text)||_ptFontTries<_PT_TRY_MAX;'), true);
+        SRC_DEV.includes('return _ptFontPending(fam,text)||(_ptTries[fam]||0)<_PT_TRY_MAX;'), true);
   // 배율은 CSS 한 곳에서만 정한다 (글씨체를 더할 때 JS 를 안 고치게)
   sc.eq('배율을 CSS 에서 읽는다',
         SRC_DEV.includes("getComputedStyle(el).getPropertyValue('--pt-k')"), true);
@@ -424,9 +426,12 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
   //   글자만으로 된 문구는 아예 받으러 가지 않으므로 고리가 생기지 않는다.
   sc.eq('받아 둔 글자뿐이면 안 받는다', SRC_DEV.includes('if(!miss.length)return;'), true);
   sc.eq('글자 단위로 기억한다', SRC_DEV.includes('function _ptMissing(fam,text){'), true);
+  // ⚠️ v26-0901-9 — 시도 횟수는 **글씨체마다 따로** 센다. 하나로 세면 글씨체가
+  //   여럿일 때 앞의 것들이 횟수를 다 써서 뒤의 것은 아예 못 받는다.
   sc.eq('시도 횟수도 막는다',
-        SRC_DEV.includes('if(_ptFontTries>=_PT_TRY_MAX)return;'), true);
-  sc.eq('시도할 때마다 센다', SRC_DEV.includes('_ptFontTries++;'), true);
+        SRC_DEV.includes('if((_ptTries[fam]||0)>=_PT_TRY_MAX)return;'), true);
+  sc.eq('글씨체마다 따로 센다', SRC_DEV.includes('_ptTries[fam]=(_ptTries[fam]||0)+1;'), true);
+  sc.eq('하나로 세던 옛 길은 없앴다', SRC_DEV.includes('_ptFontTries'), false);
   // ⚠️⚠️ v26-0901-4 — **정말 받아졌을 때만** 기억한다. 성패와 무관하게 적었더니
   //   못 받았는데도 '다 받았다'가 되어 기다림도 다시 받기도 사라져 명조로 굳었다.
   sc.eq('정말 받았을 때만 적는다',
@@ -452,7 +457,7 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
   const box = {};
   new Function('box','document','setTimeout','_ptFont','_PT_FAMS','_verseFullIsOpen',
     '_verseFullRender','ACTIVE_VERSES','_vfIsProp',
-    src + ';box.ensure=_ptEnsureFont;box.tries=()=>_ptFontTries;'
+    src + ";box.ensure=_ptEnsureFont;box.tries=()=>(_ptTries['Nanum Brush Script']||0);"
   )(box, doc, (fn)=>{ /* 시간 끊기는 안 쓴다 */ },
     ()=>'brush',
     {brush:'Nanum Brush Script',pen:'Nanum Pen Script'},
@@ -605,8 +610,19 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   // 새로 켠 글씨체로는 아직 글자가 하나도 없다 → 그 자리에서 데운다
   sc.eq('켜면 미리 받아 둔다',
         /function togglePropTitleFont\(k\)\{[\s\S]{0,700}_ptWarmup\(\)/.test(SRC_DEV), true);
-  sc.eq('켠 것을 모두 데운다',
-        SRC_DEV.includes("_ptFontsOn().forEach(k=>{_vfPropFont=k;try{_ptEnsureFont(txt,true);}catch(_){}});"), true);
+  // ⚠️ v26-0901-9 — 켠 것을 미리 데우되, **저장소에 직접 올린 것은 건너뛴다.**
+  //   여덟 벌을 앱 켤 때 다 받으면 3MB다 (구글 것은 쓰인 글자 조각만 와서 가볍다).
+  sc.eq('켠 것을 모두 데운다', SRC_DEV.includes('_ptFontsOn().forEach(k=>{'), true);
+  sc.eq('직접 올린 것은 미리 안 받는다',
+        SRC_DEV.includes('if(f&&f.self)return;'), true);
+  // 직접 올린 글씨체 여덟이 표에 있고 @font-face 도 함께 있다
+  sc.eq('직접 올린 글씨체가 표에 있다',
+        (SRC_DEV.match(/self:1/g)||[]).length, 8);
+  ['daegwang','griun','hakgyo','jaemin','kotra','kyobo','lxgw','tvn'].forEach(k=>
+    sc.eq(k+' 글꼴 파일',
+      SRC_DEV.includes("src:url('fonts/"+k+".woff2')format('woff2');font-display:block;"), true));
+  // ⚠️ 오는 동안 딴 글씨체로 그리면 깜빡인다 → 반드시 block
+  sc.eq('오는 동안 감춘다', SRC_DEV.includes('font-display:swap') , false);
 
   // ⚠️⚠️ 무작위지만 **명제마다 고정**이다 — 같은 명제를 다시 열면 같은 글씨체.
   //    열 때마다 바뀌면 산만하고, 다시 그릴 때마다 글씨체가 튄다.
