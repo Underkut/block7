@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3655,7 +3655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-4";
+const APP_VERSION = "v. 26-0902-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7979,7 +7979,7 @@ function closeShareDialog(){
   document.getElementById('shareDialog').style.display='none';
 }
 function _shareMessage(){
-  return `'${_shareDialogName}' 말씀 모음을 나눠요.\nBLOCK7 앱 → 말씀 모음 → 공유 받기에 코드 입력:\n${_shareDialogCode}`;
+  return `'${_shareDialogName}' 말씀 모음을 나눠요.\nBLOCK7 앱 → 말씀 모음 → + → 공유 받기에 코드 입력:\n${_shareDialogCode}`;
 }
 function shareCopyCode(){
   const txt=_shareDialogCode;
