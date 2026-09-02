@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0902-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -183,7 +183,46 @@ function _thFade(text,toward,surfaces,target,maxT){
 function _thOn(bg){
   return _thContrast(bg,[255,255,255])>=_thContrast(bg,[17,17,17])?[255,255,255]:[17,17,17];
 }
-function _thRgba(c,a){return 'rgba('+c.map(v=>Math.round(v)).join(',')+','+a+')';}
+function _thRgba(c,a){return 'rgba('+c.map(v=>Math.round(v)).join(',')+','+(Math.round(a*1000)/1000)+')';}
+// ── 선택·활성 표시의 세기 (--ac-tint-k) ──
+// 고른 버튼·켜진 버튼은 대개 강조색을 아주 옅게(알파 .12~.16) 깐 배경으로 나타낸다.
+// 그런데 **같은 알파라도 강조색이 배경과 색조가 비슷하면**(크림색 위의 올리브 등)
+// 눈에는 그냥 배경으로 보여 고른 것과 안 고른 것이 구분되지 않는다.
+// 밝기 대비(_thContrast)로는 이 차이가 안 잡힌다 — 밝기는 거의 같고 '색'만 다르기
+// 때문이다. 그래서 여기서는 사람 눈에 가까운 CIELAB 색차(ΔE)로 재고,
+// 기본 테마가 내는 값(라이트 13 · 다크 15)에 못 미치면 **알파를 키운다.**
+// 색을 진하게 미는 방법은 못 쓴다 — 밀다 보면 0/255 에 걸려 색조가 날아간다.
+// 결과는 배수 하나(--ac-tint-k)로 내보내고 CSS 는 calc(.14*var(--ac-tint-k)) 로 쓴다.
+// 테마를 안 고른 사용자는 이 값이 1 이라 예전 화면과 한 픽셀도 다르지 않다.
+function _thLabF(t){return t>0.008856451679?Math.cbrt(t):(7.787037*t+16/116);}
+function _thLab(c){
+  const r=_thLin(c[0]),g=_thLin(c[1]),b=_thLin(c[2]);
+  const X=_thLabF((0.4124*r+0.3576*g+0.1805*b)/0.95047);
+  const Y=_thLabF(0.2126*r+0.7152*g+0.0722*b);
+  const Z=_thLabF((0.0193*r+0.1192*g+0.9505*b)/1.08883);
+  return [116*Y-16,500*(X-Y),200*(Y-Z)];
+}
+function _thDeltaE(a,b){
+  const A=_thLab(a),B=_thLab(b);
+  return Math.sqrt(Math.pow(A[0]-B[0],2)+Math.pow(A[1]-B[1],2)+Math.pow(A[2]-B[2],2));
+}
+// 틴트가 놓일 수 있는 여러 면 중 **가장 안 보이는** 쪽의 색차
+function _thTintDE(c,alpha,surfaces){
+  let m=99;
+  for(let i=0;i<surfaces.length;i++)m=Math.min(m,_thDeltaE(_thMix(surfaces[i],c,Math.min(1,alpha)),surfaces[i]));
+  return m;
+}
+// 기준 색차를 넘길 때까지 알파에 곱할 배수를 찾는다 (1 ~ maxK)
+function _thTintK(ac,alpha,surfaces,target,maxK){
+  if(_thTintDE(ac,alpha,surfaces)>=target)return 1;
+  if(_thTintDE(ac,alpha*maxK,surfaces)<target)return maxK;
+  let lo=1,hi=maxK;
+  for(let i=0;i<14;i++){
+    const mid=(lo+hi)/2;
+    if(_thTintDE(ac,alpha*mid,surfaces)>=target)hi=mid; else lo=mid;
+  }
+  return hi;
+}
 // 다섯 색 → 앱이 쓰는 토큰 전부
 function _themeTokens(preset,mode){
   const p=(mode==='light')?preset.light:preset.dark;
@@ -201,6 +240,9 @@ function _themeTokens(preset,mode){
   const bd =_thRound(_thMix(tx,bg,isDark?0.80:0.84));
   const bd2=_thFade(tx,bg,[bg,sf],3.0,0.72);
   const onAc=_thOn(ac);
+  // 선택·활성 틴트의 세기. 기준 알파(.14 라이트 / .16 다크)에서 재고,
+  // 그 결과 배수를 CSS 의 모든 틴트 알파에 똑같이 곱한다.
+  const tintK=Math.round(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100;
   // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
   // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
   let danger=isDark?[255,138,133]:[196,43,33];
@@ -220,10 +262,11 @@ function _themeTokens(preset,mode){
     '--bd':hx(bd),'--bd2':hx(bd2),
     '--ac':hx(ac),'--ac-rgb':ac.map(v=>Math.round(v)).join(','),
     '--on-accent':hx(onAc),
-    '--ac-soft':_thRgba(ac,isDark?0.20:0.14),
+    '--ac-soft':_thRgba(ac,Math.min(0.5,(isDark?0.20:0.14)*tintK)),
+    '--ac-tint-k':String(tintK),
     '--sec':hx(sec),'--sec-rgb':sec.map(v=>Math.round(v)).join(','),
     '--chip-bg':_thRgba(sec,isDark?0.22:0.16),
-    '--tab-on-bg':hx(_thMix(sf,ac,isDark?0.22:0.14)),
+    '--tab-on-bg':hx(_thMix(sf,ac,Math.min(0.5,(isDark?0.22:0.14)*tintK))),
     '--focus-ring':_thRgba(ac,0.55),
     '--shadow-color':isDark?'rgba(0,0,0,.55)':'rgba(0,0,0,.16)',
     '--header-bg':_thRgba(sf,0.94),
@@ -245,7 +288,7 @@ function applyThemeVars(id,mode,el){
   const host=el||document.documentElement;
   const preset=themeById(id);
   const keys=['--bg','--s1','--s2','--tx','--tx2','--tx3','--bd','--bd2','--ac','--ac-rgb',
-    '--on-accent','--ac-soft','--sec','--sec-rgb','--chip-bg','--tab-on-bg','--focus-ring',
+    '--on-accent','--ac-soft','--ac-tint-k','--sec','--sec-rgb','--chip-bg','--tab-on-bg','--focus-ring',
     '--shadow-color','--header-bg','--drag-ghost-bg','--danger','--del','--ov','--so',
     '--sun-red','--today-cell-border','--today-cell-border-faded','--fade-start-border',
     '--bgd','--bgd-tx','--theme-color'];
@@ -321,6 +364,10 @@ function applyThemeVars(id,mode,el){
         (라이트 블록에서 덮어쓰면 라이트 사용자의 빨강이 바뀌므로 덮지 않는다). */
   --on-accent:#fff;                      /* 강조색 위에 얹는 글자 */
   --ac-soft:rgba(90,112,248,.20);        /* 강조색의 옅은 배경 */
+  /* 선택·활성 틴트의 세기 배수. 기본은 1 — 테마를 안 고른 화면은 예전 그대로다.
+     색상 테마를 고르면 _themeTokens() 가 그 테마에 맞는 값(1~2.4)을 넣어
+     고른 버튼과 안 고른 버튼의 차이를 눈에 보이게 맞춘다. */
+  --ac-tint-k:1;
   --sec:#7c8cf9;                         /* 보조 강조색 */
   --sec-rgb:124,140,249;
   --chip-bg:rgba(124,140,249,.22);       /* 칩 배경 */
@@ -1555,7 +1602,7 @@ header{
 .big-item.kb-active,.sm-item.kb-active{
   outline:2px solid var(--ac);
   outline-offset:-1px;
-  background:rgba(var(--ac-rgb),.16);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));
 }
 .big-item.drag-active{
   opacity:.275;cursor:grabbing;
@@ -2090,7 +2137,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   transition:background .12s,border-color .12s,color .12s;
 }
 .event-time-toggle-btn.on{
-  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
 }
 .event-modal-pickers{
   display:flex;align-items:center;justify-content:center;gap:6px;
@@ -2137,7 +2184,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-btn.on{
-  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
 }
 /* Sub-picker grid: day-of-week (7 cells) or week-of-month (5 cells) —
    same shaded on/off button language throughout. */
@@ -2154,7 +2201,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   user-select:none;-webkit-user-select:none;
 }
 .event-repeat-sub-cell.on{
-  background:rgba(var(--ac-rgb),.16);border-color:var(--ac);color:var(--ac);
+  background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));border-color:var(--ac);color:var(--ac);
 }
 .event-modal-actions{display:flex;gap:8px;}
 .event-modal-actions .settings-btn{flex:1;}
@@ -2906,7 +2953,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   transition:background .13s,color .13s;
 }
 .hi-seg button:first-child{border-left:0;}
-.hi-seg button.on{background:rgba(var(--ac-rgb),.16);color:var(--tx);}
+.hi-seg button.on{background:rgba(var(--ac-rgb),calc(.16*var(--ac-tint-k,1)));color:var(--tx);}
 .hi-seg button svg{width:22px;height:auto;display:block;}
 .hi-seg-b{font-family:var(--font-ui),sans-serif;font-weight:800;font-size:15px;line-height:1;}
 /* ── 공유 이미지 설정 — 미리보기를 가운데 두고 네 귀퉁이에 버튼 (v26-0812-15) ──
@@ -2957,7 +3004,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .settings-btn:hover{border-color:var(--ac);color:var(--tx);}
-.settings-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
+.settings-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),calc(.14*var(--ac-tint-k,1)));color:var(--tx);}
 /* 글자 크기 고르기 — 숫자 대신 실제 크기로 보여준다 (네 단계가 눈에 보이게) */
 /* 글자 크기 고르는 줄. 버튼은 글자 폭 그대로 두고(늘리지도 줄이지도 않는다)
    남는 자리는 사이 간격으로 흘린다. 좁으면 아랫줄로 넘어간다 — 넘어간 버튼이
@@ -2977,7 +3024,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   display:flex;align-items:center;justify-content:center;
 }
 @media (hover:hover){.ts-btn:hover{border-color:var(--ac);color:var(--tx);}}
-.ts-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
+.ts-btn.on{border-color:var(--ac);background:rgba(var(--ac-rgb),calc(.14*var(--ac-tint-k,1)));color:var(--tx);}
 /* 전체화면 탭의 글자 크기 네 버튼만 — 가로를 4등분해 균일한 크기로.
    (말씀카드 위젯의 글자 크기 줄은 그대로 .ts-row 를 쓰므로 영향 없다)
    버튼 안 글자의 font-size 는 그대로 두고, 버튼 자체(칸)만 같은 폭으로 만든다. */
@@ -3154,7 +3201,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .preset-chip:hover{border-color:var(--ac);}
-.preset-chip.active{border-color:var(--ac);color:var(--tx);background:rgba(var(--ac-rgb),.12);}
+.preset-chip.active{border-color:var(--ac);color:var(--tx);background:rgba(var(--ac-rgb),calc(.12*var(--ac-tint-k,1)));}
 .preset-chip-dots{display:flex;gap:2px;}
 .preset-chip-dot{width:7px;height:7px;border-radius:50%;}
 .preset-chip-del{
@@ -3188,7 +3235,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   width:20px;height:20px;border-radius:50%;
   background:var(--ac);border:none;cursor:pointer;
 }
-.theme-pick-btn.active{border-color:var(--ac);background:rgba(var(--ac-rgb),.14);color:var(--tx);}
+.theme-pick-btn.active{border-color:var(--ac);background:rgba(var(--ac-rgb),calc(.14*var(--ac-tint-k,1)));color:var(--tx);}
 .theme-pick-btn .carry-preview-dot{
   display:inline-block;width:6px;height:6px;border-radius:50%;
   background:currentColor;margin-right:8px;vertical-align:middle;
@@ -3687,7 +3734,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-8";
+const APP_VERSION = "v. 26-0902-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
