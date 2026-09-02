@@ -93,6 +93,25 @@ console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
   sc.eq("'square' 를 고른 것만 사각", SRC.includes("uiLevelIconSet==='square')?'square':'animal'"), true);
 }
 
+// ═══ 4-3. 선 그림 토글은 색 말고 굵기로도 구분된다 ═══
+// 가는 선(.75) 그림에서 색만으로 켜짐/꺼짐을 나타내면, 색차가 넉넉한 테마에서도
+// 눈에 잡히지 않는다(칠해진 넓이가 없다). 켜진 쪽에 굵기를 같이 준다.
+console.log('\n시나리오 4-3 — 선 그림 토글의 두 번째 표시(굵기)');
+{
+  const css = SRC.replace(/\s+/g, ' ');
+  sc.eq('등급 아이콘: 켜지면 선이 굵어진다',
+        /\.uilv-btn\.on svg,\.uilv-set-btn\.on svg\{stroke-width:1\.5;\}/.test(css), true);
+  sc.eq('등급 아이콘: 굵기가 부드럽게 바뀐다',
+        /\.uilv-btn svg,\.uilv-set-btn svg\{transition:stroke-width \.15s;\}/.test(css), true);
+  sc.eq('정렬 토글: 켜지면 선이 굵어진다 (1.6 → 2.3)',
+        /\.vl-sort-toggle\.on svg\{stroke-width:2\.3;\}/.test(css), true);
+  // 색 표시는 그대로 남아 있어야 한다 — 굵기가 색을 **대신하는** 것이 아니다
+  sc.eq('색 표시도 그대로', /\.uilv-btn\.on\{color:var\(--ac-tx\);\}/.test(css) &&
+                            /\.vl-sort-toggle\.on\{color:var\(--ac-tx\);\}/.test(css), true);
+  // 켜진 쪽이 반드시 더 굵어야 뜻이 선다
+  sc.eq('켜진 굵기 1.5 > 기본 굵기 .75', 1.5 > 0.75, true);
+}
+
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
 console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
 {
