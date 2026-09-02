@@ -101,6 +101,21 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
         ['기본','오래된 것','최근 것'].sort((a,b)=>a.localeCompare(b,'ko')));
   keepSetSort('count');
   sc.eq('많은순', _keepLists().map(x=>x.n), ['최근 것',KEEP_DEFAULT_LIST,'오래된 것']);
+  ST.verseKeepLog = {
+    '2026-08-20':[
+      {ref:R1,time:'09:00',lst:'Zebra'}, {ref:R2,time:'09:01',lst:'Zebra'},
+      {ref:R1,time:'09:02',lst:'가나다'}, {ref:R2,time:'09:03',lst:'가나다'},
+      {ref:R1,time:'09:04',lst:'Apple'}, {ref:R2,time:'09:05',lst:'Apple'},
+      {ref:R1,time:'09:06',lst:'나다라'}, {ref:R2,time:'09:07',lst:'나다라'}
+    ]
+  };
+  sc.eq('많은순 동률은 한글 먼저 ㄱㄴㄷ·그 뒤 알파벳순',
+        _keepLists().map(x=>x.n), ['가나다','나다라','Apple','Zebra']);
+  ST.verseKeepLog = {
+    '2026-08-20':[{ref:R1,time:'09:00',lst:'오래된 것'}],
+    '2026-08-29':[{ref:R2,time:'09:00',lst:'최근 것'},{ref:P2,time:'09:01',lst:'최근 것'}],
+    '2026-08-25':[{ref:P1,time:'09:00'}]
+  };
   // 내순서 — 손으로 정한 차례. 표에 없는 목록은 뒤에 최근순으로 붙는다.
   keepSetSort('manual');
   _keepSetOrder(['오래된 것','최근 것']);
