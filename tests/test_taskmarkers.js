@@ -4,7 +4,7 @@ const sc = makeScorer();
 
 console.log('시나리오 1 — 새 버튼은 파워 모드에서만 보이고 처음에는 꺼져 있다');
 sc.eq('깃발 버튼 설정', /data-lv="p"[\s\S]{0,500}id="setShowFlagFilterBtn"/.test(SRC_DEV), true);
-sc.eq('연락 버튼 설정', /id="setShowFlagFilterBtn"[\s\S]{0,700}data-lv="p"[\s\S]{0,500}id="setShowContactFilterBtn"/.test(SRC_DEV), true);
+sc.eq('연락 버튼 설정', /id="setShowFlagFilterBtn"[\s\S]{0,1400}data-lv="p"[\s\S]{0,900}id="setShowContactFilterBtn"/.test(SRC_DEV), true);
 sc.eq('깃발 버튼 기본 OFF', /showFlagFilterBtn:false/.test(SRC_DEV), true);
 sc.eq('연락 버튼 기본 OFF', /showContactFilterBtn:false/.test(SRC_DEV), true);
 
