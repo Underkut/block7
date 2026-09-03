@@ -5,7 +5,9 @@
 //   data-lv="mp" → 미드·파워만            (표의 X/O/O)
 //   data-lv="p"  → 파워만                 (표의 X/X/O)
 // 빠뜨리면 "안 보여야 할 게 보이는" 쪽으로 틀리도록 일부러 이렇게 뒀다.
-const { SRC, slice, makeScorer } = require('./_load');
+// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인한 뒤에야 커밋된다(CLAUDE.md).
+//    그래서 **개발본**을 읽는다 — 둘은 5줄만 다르고 앱 코드는 같다.
+const { SRC_DEV: SRC, sliceDev: slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 global.ST = { settings: {} };
@@ -96,20 +98,24 @@ console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
 // ═══ 4-3. 선 그림 토글은 색 말고 굵기로도 구분된다 ═══
 // 가는 선(.75) 그림에서 색만으로 켜짐/꺼짐을 나타내면, 색차가 넉넉한 테마에서도
 // 눈에 잡히지 않는다(칠해진 넓이가 없다). 켜진 쪽에 굵기를 같이 준다.
+// ⚠️ 굵기 차이는 **아주 조금만**이다 (v26-0903-2, HB). 크게 주면 아이콘이
+//    뭉툭해 보인다. 갈라 세우는 일은 색(--ac-tx)이 하고, 굵기는 거들 뿐이다.
 console.log('\n시나리오 4-3 — 선 그림 토글의 두 번째 표시(굵기)');
 {
   const css = SRC.replace(/\s+/g, ' ');
   sc.eq('등급 아이콘: 켜지면 선이 굵어진다',
-        /\.uilv-btn\.on svg,\.uilv-set-btn\.on svg\{stroke-width:1\.5;\}/.test(css), true);
+        /\.uilv-btn\.on svg,\.uilv-set-btn\.on svg\{stroke-width:\.95;\}/.test(css), true);
   sc.eq('등급 아이콘: 굵기가 부드럽게 바뀐다',
         /\.uilv-btn svg,\.uilv-set-btn svg\{transition:stroke-width \.15s;\}/.test(css), true);
-  sc.eq('정렬 토글: 켜지면 선이 굵어진다 (1.6 → 2.3)',
-        /\.vl-sort-toggle\.on svg\{stroke-width:2\.3;\}/.test(css), true);
+  sc.eq('정렬 토글: 켜지면 선이 굵어진다 (1.6 → 1.8)',
+        /\.vl-sort-toggle\.on svg\{stroke-width:1\.8;\}/.test(css), true);
   // 색 표시는 그대로 남아 있어야 한다 — 굵기가 색을 **대신하는** 것이 아니다
   sc.eq('색 표시도 그대로', /\.uilv-btn\.on\{color:var\(--ac-tx\);\}/.test(css) &&
                             /\.vl-sort-toggle\.on\{color:var\(--ac-tx\);\}/.test(css), true);
   // 켜진 쪽이 반드시 더 굵어야 뜻이 선다
-  sc.eq('켜진 굵기 1.5 > 기본 굵기 .75', 1.5 > 0.75, true);
+  sc.eq('켜진 굵기 .95 > 기본 굵기 .75', 0.95 > 0.75, true);
+  // 그러나 눈에 띄게 뭉툭해지지는 않는다 — 기본의 1.5배를 넘지 않는다
+  sc.eq('굵기 차이는 최소한 (기본의 1.5배 이하)', 0.95 <= 0.75 * 1.5, true);
 }
 
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
