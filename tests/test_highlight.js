@@ -417,7 +417,7 @@ console.log('\n시나리오 13 — 알림 경로');
   //    알림은 _findVerseByRefLoose → ALL_VERSES 를 타므로, 여기에 hi 가 없으면
   //    알림으로 들어왔을 때만 강조가 조용히 빠진다 (2026-08-12 신고).
   sc.eq('ALL_VERSES 가 강조 문구를 넘겨준다',
-        SRC.includes("tags:c.tags||[],hi:c.hi||''};"), true);
+        SRC.includes("tags:c.tags||[],hi:c.hi||''"), true);
   // ⚠️ 끝의 '};' 까지 붙여 놓았더니 뒤에 항목 하나만 더해도 깨졌다 (26-0830-2 에
   //    Sweeter 가 쓸 d/pid/kind 를 더하면서 겪음). 이 줄이 지키려는 것은
   //    "hi 가 실려 나간다"이지 "이 항목이 마지막이다"가 아니다.
