@@ -770,6 +770,18 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
   sc.eq('없는 이름은 걸러진다', box.on(), ['brush']);
 }
 
+
+console.log('\n시나리오 21 — 명제의 장 단위 성경 연결');
+{
+  const start=SRC_DEV.indexOf('  _parseRef(ref){');
+  const end=SRC_DEV.indexOf('\n\n  // 대한성서공회 새 모바일 플랫폼 URL',start);
+  const method=SRC_DEV.slice(start,end).replace(/^  _parseRef\(ref\)\{/,'').replace(/\},?\s*$/,'');
+  const parse=new Function('ref',method);
+  sc.eq('시편의 편 표기를 1절로 연결',parse('시편 52편'),{bookName:'시편',chapter:52,verse:1});
+  sc.eq('일반 장 표기를 1절로 연결',parse('사무엘상 22장'),{bookName:'사무엘상',chapter:22,verse:1});
+  sc.eq('기존 장절은 그대로 연결',parse('요한복음 3:16'),{bookName:'요한복음',chapter:3,verse:16});
+}
+
 sc.done();
   });
 }
