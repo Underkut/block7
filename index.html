@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-2  [production]  -->
+<!-- BLOCK7  v. 26-0903-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -232,11 +232,14 @@ function _thLabRgb(L){
 // 그래도 모자라면 밝기를 배경 쪽이 아니라 **글자색 반대쪽**으로 조금 민다.
 // ⚠️ 지금보다 안 읽히게 만들지는 않는다 — 후보의 최소 대비가 원래 강조색의
 //    대비(또는 4.0) 밑으로 내려가면 버린다.
-// 기준값 34 는 HB 확인으로 정했다(v26-0903-2). 24 로는 '14 올리브 가든 피스트'
-// 라이트에서 강조색(#606c38 올리브)이 보조 글자색(#676f53)과 거의 같은 색으로
-// 보여 GNB 오늘 날짜·로고 '7' 이 강조로 읽히지 않았다. 밝기는 둘 다 45 언저리라
-// 대비로는 못 잡고, 채도를 밀어야 갈라진다. 더 올려도(36·40) 결과는 같다 —
-// 읽힘(대비 하한)이 먼저 걸려 후보가 더 안 나온다.
+// 기준값 45 는 HB 가 눈으로 확인해 가며 두 번 올려 정했다(24 → 34 → 45).
+// '14 올리브 가든 피스트' 라이트가 기준이 된 자리다. 강조색 #606c38 과 보조
+// 글자색 #676f53 은 **밝기가 거의 같은(L 43.5 / 45.5) 올리브 두 벌**이라,
+// 밝기 대비로는 영영 안 잡히고 채도만이 둘을 가른다. 24 로는 손도 안 댔고
+// (실측 26.2), 34 로도 HB 눈에는 아직 같은 색이었다. 45 에서 #387600 이 되어
+// 비로소 '초록'으로 읽힌다.
+// ⚠️ 50 이상은 올려도 소용없다 — 읽힘(대비 하한)이 먼저 걸려 후보가 안 나온다.
+//    30벌 중 20벌이 조정을 받고, 나머지는 원래 45 를 넘겨 그대로다.
 function _thAcText(ac,texts,faces,target){
   const worst=c=>{let m=99;for(let i=0;i<texts.length;i++)m=Math.min(m,_thDeltaE(c,texts[i]));return m;};
   const con  =c=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(c,faces[i]));return m;};
@@ -303,8 +306,8 @@ function _themeTokens(preset,mode){
   // 그 결과 배수를 CSS 의 모든 틴트 알파에 똑같이 곱한다.
   // 소수 둘째 자리에서 **올림** — 내림하면 방금 맞춘 기준을 한 끗 차이로 놓친다
   const tintK=Math.min(2.4,Math.ceil(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100);
-  // 글자로 쓰는 강조색. 글자색들과 ΔE 34 이상 벌어지게 채도(필요하면 밝기)를 민다.
-  const acTx=_thAcText(ac,[tx,tx2,tx3],faces,34);
+  // 글자로 쓰는 강조색. 글자색들과 ΔE 45 이상 벌어지게 채도(필요하면 밝기)를 민다.
+  const acTx=_thAcText(ac,[tx,tx2,tx3],faces,45);
   // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
   // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
   let danger=isDark?[255,138,133]:[196,43,33];
@@ -486,15 +489,16 @@ html[data-theme="light"],.theme-defaults-light {
    저장된 테마가 없으면 아무 것도 안 얹혀 위의 :root 색이 그대로 보인다. */
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-/* ⚠️ 가로 넘침을 자르는 자리는 **html 이어야 한다** (v26-0903-2).
-   body 에 overflow-x:hidden 을 주면(v26-0830-7 에 그렇게 들어갔다) body 가
-   스스로 스크롤 상자가 된다. 그러면 body 의 자식인 <header> 의 sticky 는
-   "절대 움직이지 않는 body 안"을 기준으로 삼아 **화면을 내릴 때 같이 밀려
-   올라가 사라진다.** html 에 주면 뷰포트로 전달되어 예전처럼 붙어 있는다.
-   overscroll-behavior-y:none 은 손가락으로 끝까지 당겼을 때 화면 전체가
-   출렁이던 것(HB '전체화면이 드래그로 흔들린다')을 멈춘다. */
+/* 가로 넘침은 body 가 아니라 **html 에서** 자른다.
+   body 에 주면 body 가 스스로 스크롤 상자가 되어, 그 자식인 <header> 의
+   sticky 가 어긋날 수 있다. html 에 주면 뷰포트로 전달되어 안전하다.
+   (GNB 가 사라지던 진짜 원인은 이게 아니라 저 아래 header{position:relative}
+    였다 — v26-0903-3 에서 지웠다. 그래도 이 자리는 html 이 맞다.)
+   ⚠️ overscroll-behavior-y:none 은 넣었다가 뺐다 (v26-0903-3). 화면 끝에서
+      출렁이던 것은 사실 위의 sticky 가 깨져 GNB 가 딸려 올라가던 탓이었고,
+      고무줄을 없애니 스크롤이 '딱딱하다'(HB). 되돌린다. */
 html{-webkit-text-size-adjust:100%;background:var(--bg);
-  overflow-x:hidden;overscroll-behavior-y:none;}
+  overflow-x:hidden;}
 body{
   font-family:var(--font-ui),-apple-system,sans-serif;
   background:var(--bg) !important;color:var(--tx);
@@ -1306,10 +1310,9 @@ header{
   position:relative;
   display:flex;align-items:center;justify-content:center;
   width:32px;height:24px;padding:0;border-radius:6px;
-  /* 테두리 없음 — 아이콘만 (v26-0903-2, HB). '아이콘에 테두리·박스 금지'
-     라는 UI 원칙에 맞추고, 옆의 실행취소/다시실행(.ur-btn)과도 결이 맞는다.
-     상자 크기(32×24)는 그대로 둔다 — 손가락이 닿는 넓이가 줄면 안 된다. */
-  border:none;background:transparent;
+  /* 네모는 있는 편이 낫다 (v26-0903-3, HB). 다만 **옅게** — 진한 --bd2 가
+     아니라 연한 --bd 를 쓴다. 한 번 없애 봤더니(v26-0903-2) 허전했다. */
+  border:1px solid var(--bd);background:transparent;
   color:var(--tx2);font-size:13px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:color .15s;
 }
@@ -1328,8 +1331,8 @@ header{
 .ai-b{
   display:flex;align-items:center;justify-content:center;
   padding:4px 9px;border-radius:6px;
-  /* 테두리 없음 — 까닭은 .trash-btn 쪽 주석 참고 (v26-0903-2, HB) */
-  border:none;background:transparent;color:var(--tx2);
+  /* 옅은 네모 — 까닭은 .trash-btn 쪽 주석 참고 (v26-0903-3, HB) */
+  border:1px solid var(--bd);background:transparent;color:var(--tx2);
   font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
   font-family:var(--font-ui),sans-serif;
 }
@@ -2517,7 +2520,14 @@ body.split-d.lay3.wk-cr #colL{grid-row:1/3;}
 /* GNB 날짜 클러스터: 2/3단에선 실행취소 버튼과 간격 확보 (3-4) */
 body.split-d.lay2 #hdrDateNav,body.split-d.lay3 #hdrDateNav{margin-right:26px;}
 /* GNB 햄버거: 로고에서 오른쪽으로 고정 오프셋 (로고 폭 + 10px) */
-header{position:relative;}
+/* ⚠️ 여기 있던 header{position:relative;} 를 지웠다 (v26-0903-3).
+   미디어쿼리 밖의 맨몸 규칙이라 **모든 화면에서** 위쪽 header{position:sticky}
+   를 덮고 있었다(특이도가 같고 뒤에 있다). 그래서 화면을 내리면 GNB 가 같이
+   밀려 올라가 사라졌다 — HB 가 여러 번 신고한 그것이다.
+   아래 #gnbLayoutBtn 의 position:absolute 는 그대로 잘 붙는다. sticky 도
+   '자리 잡힌(positioned)' 값이라 그 자체가 기준 상자가 되기 때문이다.
+   ⚠️ 다시 넣지 말 것. 넣어야 할 일이 생기면 sticky 를 지우는 것이 아니라
+      다른 방법을 찾는다. */
 #gnbLayoutBtn{
   position:absolute;left:0;top:50%;transform:translateY(-50%);
   z-index:5;
@@ -3891,7 +3901,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-2";
+const APP_VERSION = "v. 26-0903-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
