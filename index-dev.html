@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -860,7 +860,7 @@ header{
 .toast-spin{transform-origin:50% 50%;animation:toastSpin .9s linear infinite,toastBreathe 1.8s ease-in-out infinite;}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
-/* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Deeper·Even.
+/* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Even.
    ⚠️ 클래스로만 감춘다. style.display 를 직접 건드리면 다른 장치가 감춰 둔
       것까지 되살아난다 (등급 lv-hide 와 같은 규칙). */
 .vf-act.vf-act-off{display:none!important;}
@@ -3946,7 +3946,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-9";
+const APP_VERSION = "v. 26-0903-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5952,6 +5952,16 @@ window._fbScriptsReady=new Promise(resolve=>{
     </button>
     </div>
   </div>
+</div>
+
+<!-- 명제 Deeper — 연결된 설교 본문이 여럿일 때 어느 성경으로 갈지 고른다. -->
+<div class="event-modal-overlay" id="vfDeeperOverlay" style="display:none;z-index:4760;" onclick="closeVfDeeperPicker()"></div>
+<div class="event-modal" id="vfDeeperModal" style="display:none;z-index:4770;width:280px;max-height:70vh;flex-direction:column;">
+  <button class="modal-x" onclick="closeVfDeeperPicker()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="event-modal-title" style="padding:0 28px;">말씀 구절 선택</div>
+  <div id="vfDeeperBody" style="overflow-y:auto;flex:1;min-height:0;margin-top:12px;"></div>
 </div>
 
 <!-- 말씀 타일 그리드 — 좌하단 필터(대분류/소주제/#태그) 터치 시 진입.
@@ -8937,6 +8947,7 @@ const _ESC_CLOSERS=[
   ['vDashDetailModal',()=>closeVDashDetail()],
   ['vDashModal',      ()=>closeVerseDashboard()],
   ['vAggModal',       ()=>closeVerseAggPopup()],
+  ['vfDeeperModal', ()=>closeVfDeeperPicker()],
   ['keepPickModal',   ()=>closeKeepPicker()],
   ['keepRowMenu',     ()=>closeKeepRowMenu()],
   ['vcSetModal',      ()=>closeVcSettings()],
@@ -11657,14 +11668,13 @@ function _vfSyncCounts(){
   [['like','like'],['mem','mem'],['deeper','deeper'],['even','even'],['share','share']].forEach(([id,kind])=>{
     setCnt(id,_verseEventCount(kind,ref));
   });
-  // ── 명제에서는 안 쓰는 단추를 감춘다 (v26-0831-7, HB 승인) ──
-  // 암송(책갈피)·Deeper·Even Deeper 는 **성경 본문**을 외우고 더 깊이 보는
-  // 도구다. 명제는 이미 해석된 글이라 갈 곳이 없다 → 명제 화면은
-  // 담아두기 · 좋아요 · 공유 셋만 남는다.
+  // ── 명제에서는 안 쓰는 단추를 감춘다 (v26-0903-10) ──
+  // 암송·Even Deeper 는 말씀 전용이다. Deeper 는 연결된 설교 본문으로
+  // 들어가는 길이라 명제에도 다시 보인다 (본문이 여럿이면 먼저 고른다).
   // ⚠️ 감출 때 style.display 를 직접 건드리지 않는다 — 등급(data-lv) 같은
   //    다른 장치가 감춰 둔 것까지 되살아난다. 클래스만 붙였다 뗀다.
   const isProp=_vfIsProp(v);
-  ['mem','deeper','even'].forEach(k=>{
+  ['mem','even'].forEach(k=>{
     const b=document.getElementById('vfAct'+k);
     if(b)b.classList.toggle('vf-act-off',isProp);
   });
@@ -13027,6 +13037,39 @@ function _renderVfSecAssign(){
   }).join('');
   box.innerHTML=`<div class="settings-row-desc" style="margin-bottom:2px;">시간구간마다 쓸 패턴을 고르세요. 비워두면 전체 패턴에서 랜덤이에요.</div>${rows}`;
 }
+// 명제 Deeper 에서 갈 수 있는 연결 본문. 하나면 바로 열고, 여럿이면 고른다.
+function _vfDeeperRefs(v){
+  const refs=(v&&Array.isArray(v.refs)?v.refs:[]).map(r=>String(r||'').trim()).filter(Boolean);
+  if(!refs.length&&v&&v.ref)refs.push(String(v.ref).trim());
+  return refs.filter((r,i,a)=>a.indexOf(r)===i);
+}
+let _vfDeeperTarget=null,_vfDeeperChoices=[];
+function _openPropDeeper(v,ref){
+  recordVerseDeeper(_reactKey(v));
+  BibleLinkProvider.openBskFromRef(ref);
+}
+function openVfDeeper(v){
+  const refs=_vfDeeperRefs(v);
+  if(!refs.length){showToast('연결된 성경이 없어요');return;}
+  if(refs.length===1){_openPropDeeper(v,refs[0]);return;}
+  _vfDeeperTarget=v;_vfDeeperChoices=refs;
+  const body=document.getElementById('vfDeeperBody');
+  if(body)body.innerHTML=refs.map((r,i)=>`<div class="keep-pick-row" onclick="pickVfDeeper(${i})"><span class="keep-pick-nm">${esc(r)}</span></div>`).join('');
+  document.getElementById('vfDeeperOverlay').style.display='block';
+  document.getElementById('vfDeeperModal').style.display='flex';
+}
+function closeVfDeeperPicker(){
+  document.getElementById('vfDeeperOverlay').style.display='none';
+  document.getElementById('vfDeeperModal').style.display='none';
+  _vfDeeperTarget=null;_vfDeeperChoices=[];
+}
+function pickVfDeeper(i){
+  const v=_vfDeeperTarget,ref=_vfDeeperChoices[i];
+  closeVfDeeperPicker();
+  if(v&&ref)_openPropDeeper(v,ref);
+  if(_verseFullIsOpen())_vfSyncCounts();
+}
+
 // 우측 세로 액션 (좋아요 / 암송 / Deeper / Even Deeper)
 function vfAct(kind){
   if(_vfLongFired){_vfLongFired=false;return;}
@@ -13036,7 +13079,10 @@ function vfAct(kind){
   // (기록 함수 자체의 문구 토스트는 이번 호출 한 번만 건너뛴다 — 다른
   // 화면의 롱터치 메뉴 등에서는 그대로 문구 토스트를 쓴다).
   if(kind==='like'||kind==='mem')_reactWithToast(kind,_reactKey(v));
-  else if(kind==='deeper')openDeeperFromRef(v.ref);
+  else if(kind==='deeper'){
+    if(_vfIsProp(v))openVfDeeper(v);
+    else openDeeperFromRef(v.ref);
+  }
   else if(kind==='even')openEvenDeeperFromRef(v.ref);
   else if(kind==='keep'){
     // v26-0831-13, HB — 탭 한 번에 **목록 고르기** 창을 연다.
