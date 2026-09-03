@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-14  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-15  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -889,9 +889,8 @@ header{
   transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1),visibility 0s linear .28s;}
 .vf-keep-switch.open{opacity:1;transform:translateY(0) scale(1);visibility:visible;pointer-events:auto;
   transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1),visibility 0s;}
-.vf-keep-head{position:sticky;top:-5px;z-index:1;margin:-5px -6px 4px;padding:9px 9px 7px;
+.vf-keep-head{position:sticky;top:-5px;z-index:1;margin:-5px -6px 4px;padding:7px 9px;
   background:var(--vf-bgimg,var(--bg));border-bottom:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 22%,transparent);}
-.vf-keep-head-title{font-size:10px;color:var(--vf-tx3,var(--tx3));margin-bottom:7px;letter-spacing:.04em;}
 .vf-keep-sort{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
 .vf-keep-sort button{border:0;background:none;padding:3px 1px;color:var(--vf-tx3,var(--tx3));
   font:400 10px/1.2 var(--font-ui);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -3968,7 +3967,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-14";
+const APP_VERSION = "v. 26-0903-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5908,7 +5907,7 @@ window._fbScriptsReady=new Promise(resolve=>{
      중앙: 본문 / 하단 좌측: 대분류·소주제·태그 / 하단 우측: 세로 액션 스택 -->
 <div id="verseFull" style="display:none;">
   <button class="vf-home" id="vfHomeBtn" onclick="event.stopPropagation();vfHomeAction()" aria-label="저장 폴더 목록">
-    <svg width="17" height="24" viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10v18.2L10 18l-5 4.2z"/></svg>
+    <svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>
   </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
   <div class="vf-keep-switch" id="vfKeepSwitchBox" style="display:none;"></div>
@@ -13142,8 +13141,8 @@ let _vfOverrideVerse=null;
 // kind 가 있으면 "반응 목록에서 들어온 것" — 상단 중앙에 그 반응 아이콘을 단다.
 // 좌상단 책갈피는 진입 경로와 무관하게 저장 폴더 목록을 연다.
 let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
-// 가로폭은 그대로, 세로선은 약 1.4배 길게. 획은 순환·셔플과 같은 1.4다.
-const _VF_KEEP_MENU_SVG='<svg width="17" height="24" viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10v18.2L10 18l-5 4.2z"/></svg>';
+// 가로폭은 그대로, 세로선은 원래보다 약 1.2배 길게. 획은 한결 가는 1.2다.
+const _VF_KEEP_MENU_SVG='<svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
 // 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
@@ -13234,20 +13233,24 @@ function closeVfKeepSwitch(){
 function _vfKeepSortHead(){
   const cur=_keepSort(),pair=_keepPairSort(),pairOn=cur==='recent'||cur==='reg';
   const tab=(key,label,fn)=>`<button class="${(key===cur||(key==='pair'&&pairOn))?'on':''}" onclick="event.stopPropagation();${fn}">${label}</button>`;
-  return`<div class="vf-keep-head"><div class="vf-keep-head-title">저장 목록 정렬</div><div class="vf-keep-sort">
+  return`<div class="vf-keep-head"><div class="vf-keep-sort">
     ${tab('pair',pair==='reg'?'등록순':'최신순','keepTogglePairSort()')}
     ${tab('alpha','ㄱㄴㄷ순',"keepSetSort('alpha')")}
     ${tab('count','많은순',"keepSetSort('count')")}
     ${tab('manual','내순서',"keepSetSort('manual')")}
   </div></div>`;
 }
-function toggleVfKeepSwitch(){
-  const box=document.getElementById('vfKeepSwitchBox');if(!box)return;
-  if(box.classList.contains('open')){closeVfKeepSwitch();return;}
-  const lists=_keepLists();
+function _vfRenderKeepSwitch(box){
+  const lists=_keepLists(),top=box.scrollTop;
   box.innerHTML=_vfKeepSortHead()+(lists.length?lists.map(L=>`<div class="keep-switch-row${L.n===_vfNavLabel?' on':''}"
     onclick="event.stopPropagation();vfOpenKeepList('${_keepAttr(L.n)}')"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(L.n)}</span><span style="opacity:.65;font-size:10px;">${L.cnt}</span></div>`).join('')
     :'<div class="keep-switch-row" style="opacity:.65;">저장한 것이 없어요</div>');
+  box.scrollTop=top;
+}
+function toggleVfKeepSwitch(){
+  const box=document.getElementById('vfKeepSwitchBox');if(!box)return;
+  if(box.classList.contains('open')){closeVfKeepSwitch();return;}
+  _vfRenderKeepSwitch(box);
   box.style.display='block';requestAnimationFrame(()=>box.classList.add('open'));_menuLockScroll(box);
 }
 // 단추 재탭뿐 아니라 메뉴 밖의 어느 곳을 눌러도 닫는다.
@@ -15133,14 +15136,16 @@ function _menuLockScroll(el){
   if(!el||el._scrollLocked)return;
   el._scrollLocked=true;
   let y0=0;
-  el.addEventListener('touchstart',e=>{ y0=e.touches[0].clientY; },{passive:true});
+  el.addEventListener('touchstart',e=>{ y0=e.touches[0].clientY;e.stopPropagation(); },{passive:true});
   el.addEventListener('touchmove',e=>{
+    e.stopPropagation();
     if(e.touches.length>1)return;
     const dy=e.touches[0].clientY-y0;                       // 아래로 끌면 +
     const canUp  =el.scrollTop>0;                            // 위로 더 갈 데가 있나
     const canDown=el.scrollTop+el.clientHeight<el.scrollHeight-1;
     if(((dy>0&&!canUp)||(dy<0&&!canDown))&&e.cancelable)e.preventDefault();
   },{passive:false});
+  el.addEventListener('wheel',e=>e.stopPropagation(),{passive:true});
 }
 
 function openLogoMenu(anchorEl){
@@ -30603,7 +30608,7 @@ function keepSetSort(m){
   if(m==='recent'||m==='reg')ST.settings.keepListPairSort=m;
   save();_keepRepaintLists();
   const box=typeof document!=='undefined'?document.getElementById('vfKeepSwitchBox'):null;
-  if(box&&box.classList.contains('open')){box.classList.remove('open');requestAnimationFrame(()=>toggleVfKeepSwitch());}
+  if(box&&box.classList.contains('open'))_vfRenderKeepSwitch(box);
 }
 function keepTogglePairSort(){
   const cur=_keepSort(),pairKey=_keepPairSort();
