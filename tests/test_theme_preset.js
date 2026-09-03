@@ -5,7 +5,9 @@
 //  ② **색 계산 결과** — index.html 의 파생 함수를 실제로 돌려서 30벌
 //     (15테마 × 라이트/다크)의 대비가 접근성 기준을 넘는지 전부 확인한다.
 //     색을 눈으로 고르면 어느 한 테마에서 조용히 안 읽히게 되므로 기계로 잰다.
-const { SRC, slice, makeScorer } = require('./_load');
+// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인한 뒤에야 커밋된다(CLAUDE.md).
+//    그래서 **개발본**을 읽는다 — 둘은 5줄만 다르고 앱 코드는 같다.
+const { SRC_DEV: SRC, sliceDev: slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 // ── index.html 의 테마 엔진을 그대로 떼어 와 실행한다 ──
@@ -375,13 +377,24 @@ console.log('\n시나리오 13 — 글자용 강조색');
     });
   });
   sc.eq('손보기 전에는 글자색과 거의 같은 테마가 있었다', worstBefore < 15, true);
-  sc.eq('손본 뒤에는 30벌 전부 글자색과 ΔE 24 이상', worstAfter >= 24, true);
+  // 기준은 v26-0903-2 에 24 → 34 로 올렸다. '14 올리브 가든 피스트' 라이트에서
+  // 26 으로도 GNB 오늘 날짜·로고 '7' 이 강조로 안 읽혔다(HB). 밝기가 같고 색만
+  // 다른 자리라 대비로는 못 잡는다. 몇 벌은 읽힘(대비 하한)이 먼저 걸려 34 까지는
+  // 못 가는데, 그때도 예전(24)보다는 반드시 나아져야 한다.
+  sc.eq('손본 뒤에는 30벌 전부 글자색과 ΔE 28 이상', worstAfter >= 28, true);
+  sc.eq('기준값은 34', /_thAcText\(ac,\[tx,tx2,tx3\],faces,34\)/.test(SRC), true);
+  {
+    const olive = _themeTokens(themeById('14'), 'light');
+    sc.eq('14 라이트 강조색은 보조 글자색과 거의 같은 올리브였다',
+          _thDeltaE(_thRgb(olive['--ac']), _thRgb(olive['--tx2'])) < 16, true);
+    sc.eq('14 라이트 글자용 강조색은 34 이상 갈라섰다', near(olive, '--ac-tx') >= 34, true);
+  }
   sc.eq('멀쩡한 테마는 그대로 둔다(고친 것은 절반 미만)', changed < 15, true);
 
   const w28 = _themeTokens(themeById('28'), 'dark');
   sc.eq('28 다크는 강조색이 본문 글자와 거의 같았다',
         _thDeltaE(_thRgb(w28['--ac']), _thRgb(w28['--tx'])) < 12, true);
-  sc.eq('28 다크 글자용 강조색은 갈라섰다', near(w28, '--ac-tx') >= 24, true);
+  sc.eq('28 다크 글자용 강조색은 갈라섰다', near(w28, '--ac-tx') >= 28, true);
   sc.eq('강조색 자체(--ac)는 안 바꾼다 — 테두리·채운 배경은 그대로',
         _themeTokens(themeById('28'), 'dark')['--ac'], '#dddbf1');
 
@@ -391,6 +404,17 @@ console.log('\n시나리오 13 — 글자용 강조색');
         /(?:border|background|accent)-color:var\(--ac-tx\)/.test(SRC), false);
   sc.eq('글자 자리에 --ac 가 남아 있지 않다',
         (SRC.match(/(?<![-\w])color:var\(--ac\)/g) || []).length, 0);
+
+  // GNB 의 '오늘' 표시도 글자다 — 면을 칠하는 --ac 가 아니라 --ac-tx 를 쓴다.
+  // (v26-0903-2 HB: '14 올리브 가든 피스트' 라이트에서 오늘 날짜가 강조로 안 보인다)
+  sc.eq("오늘 날짜는 --ac-tx", SRC.includes("el.style.color=isT?'var(--ac-tx)':'var(--tx2)'"), true);
+  sc.eq("오늘 날짜에 --ac 를 쓰지 않는다", SRC.includes("el.style.color=isT?'var(--ac)'"), false);
+  // 30벌 전부에서 '오늘'과 '오늘 아님'이 갈라져 보이는가
+  THEME_PRESETS.forEach(p => ['light', 'dark'].forEach(mode => {
+    const t = _themeTokens(p, mode);
+    sc.eq(`${p.id} ${mode} — 오늘 날짜가 보통 날짜와 갈라진다`,
+          _thDeltaE(_thRgb(t['--ac-tx']), _thRgb(t['--tx2'])) >= 25, true);
+  }));
 }
 
 // ═══ 14. 음영으로 나타내는 '고름' 이 보이는가 (--s2) ═══
