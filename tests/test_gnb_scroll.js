@@ -81,10 +81,22 @@ console.log('\n시나리오 4 — GNB 높이와 내순서 끌기');
 {
   const c = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
   // 상태바(safe-area)는 못 줄인다. 줄일 수 있는 앞자리를 46 → 38 로 (HB)
-  sc.eq('GNB 앞자리 높이는 38px',
-        /height:calc\(38px \+ env\(safe-area-inset-top, 0px\)\)/.test(c), true);
-  sc.eq('46px 로 되돌아가 있지 않다', /height:calc\(46px \+ env\(safe-area/.test(c), false);
-  sc.eq('상태바 자리는 그대로 더한다', /calc\(38px \+ constant\(safe-area-inset-top/.test(c), true);
+  sc.eq('로고가 놓이는 칸은 38px', /height:calc\(38px \+ var\(--gnb-safe\)\)/.test(c), true);
+  sc.eq('46px 로 되돌아가 있지 않다', /height:calc\(46px \+/.test(c), false);
+
+  // ── 시계와 로고 사이 여백 (HB 스크린샷의 연두색 자리) ──
+  // env(safe-area-inset-top) 은 시계가 실제로 쓰는 높이보다 넉넉하다. 그 여유만
+  // 덜어낸다. 크로미움에서 같은 식을 값으로 검증한 결과(v26-0903-6):
+  //   inset  0 → 0 / 20 → 20 / 47 → 36.66 / 59 → 46.02
+  sc.eq('위 여백은 --gnb-safe 로 계산한다', /--gnb-safe:max\(min\(env\(safe-area-inset-top, 0px\), 20px\), calc\(env\(safe-area-inset-top, 0px\) \* \.78\)\)/.test(c), true);
+  sc.eq('그 값을 padding-top 으로 쓴다', /padding-top:var\(--gnb-safe\)/.test(c), true);
+  // ⚠️ 아래 둘이 깨지면 시계와 로고가 겹치거나, PC 에서 없던 여백이 생긴다
+  sc.eq('상태바가 없으면(PC) 여백도 0 — min() 으로 바닥을 잡는다',
+        /max\(min\(env\(safe-area-inset-top, 0px\), 20px\)/.test(c), true);
+  sc.eq('노치 없는 기기(20px)에서는 덜어내지 않는다 — 20 > 20*.78',
+        20 > 20 * 0.78, true);
+  sc.eq('다이내믹 아일랜드(59px)에서 약 13px 이 줄어든다',
+        Math.round(59 - 59 * 0.78), 13);
 
   // '내순서' 끌기 — 끄는 동안에는 손가락 밀기를 통째로 삼킨다.
   // pointermove 의 preventDefault 만으로는 늦는다(브라우저가 이미 스크롤을
