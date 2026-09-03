@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3946,7 +3946,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-10";
+const APP_VERSION = "v. 26-0903-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9856,9 +9856,13 @@ const BibleLinkProvider = {
   },
 
   _parseRef(ref){
-    const m = ref.match(/^(.+?)\s+(\d+):(\d+)/);
-    if(!m) return null;
-    return { bookName: m[1].trim(), chapter: parseInt(m[2]), verse: parseInt(m[3]) };
+    const text=String(ref||'').trim();
+    const verseRef=text.match(/^(.+?)\s+(\d+):(\d+)/);
+    if(verseRef)return {bookName:verseRef[1].trim(),chapter:parseInt(verseRef[2]),verse:parseInt(verseRef[3])};
+    // 명제의 연결 본문이 장(시편은 편)까지만 있으면 그 장의 첫 절로 연다.
+    const chapterRef=text.match(/^(.+?)\s+(\d+)\s*(?:장|편)?$/);
+    if(!chapterRef)return null;
+    return {bookName:chapterRef[1].trim(),chapter:parseInt(chapterRef[2]),verse:1};
   },
 
   // 대한성서공회 새 모바일 플랫폼 URL (bible.bskorea.or.kr)
