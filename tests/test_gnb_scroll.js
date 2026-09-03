@@ -1,6 +1,6 @@
 // GNB 모양과 화면 스크롤 (v26-0903-2, HB 신고 세 가지)
 //
-// ① GNB 우상단 휴지통·톱니바퀴를 둘러싼 둥근 네모 테두리를 없앴다
+// ① GNB 우상단 휴지통·톱니바퀴의 네모는 **옅게**(--bd). 없애 봤다가 되살렸다
 // ② 문서 스크롤 상자 — body 에 overflow-x:hidden 을 주면 body 가 스스로
 //    스크롤 상자가 되어 그 자식인 <header> 의 sticky 가 깨진다(스크롤할 때
 //    GNB 가 위로 밀려 사라진다). 자르는 자리는 html 이어야 한다.
@@ -16,12 +16,12 @@ const css = SRC.replace(/\s+/g, ' ');
 console.log('시나리오 1 — 휴지통·톱니바퀴의 테두리를 없앴다');
 {
   const trash = SRC.slice(SRC.indexOf('/* 휴지통 버튼 */'), SRC.indexOf('.trash-btn svg{'));
-  sc.eq('휴지통에 테두리가 없다', /border:none;background:transparent;/.test(trash.replace(/\s+/g, '')), true);
-  sc.eq('휴지통에 1px 테두리를 다시 넣지 않았다', /border:1pxsolidvar\(--bd2\)/.test(trash.replace(/\s+/g, '')), false);
+  sc.eq('휴지통에 옅은 네모', /border:1pxsolidvar\(--bd\);/.test(trash.replace(/\s+/g, '')), true);
+  sc.eq('휴지통에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(trash.replace(/\s+/g, '')), false);
 
   const aib = SRC.slice(SRC.indexOf('.ai-b{'), SRC.indexOf('.settings-btn-icon{'));
-  sc.eq('톱니바퀴에 테두리가 없다', /border:none;background:transparent;/.test(aib.replace(/\s+/g, '')), true);
-  sc.eq('톱니바퀴에 1px 테두리를 다시 넣지 않았다', /border:1pxsolidvar\(--bd2\)/.test(aib.replace(/\s+/g, '')), false);
+  sc.eq('톱니바퀴에 옅은 네모', /border:1pxsolidvar\(--bd\);/.test(aib.replace(/\s+/g, '')), true);
+  sc.eq('톱니바퀴에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(aib.replace(/\s+/g, '')), false);
 
   // 손가락이 닿는 넓이는 그대로 둔다 — 테두리만 없앤 것이지 버튼을 줄인 게 아니다
   sc.eq('휴지통 상자는 32×24 그대로', /width:32px;height:24px/.test(trash.replace(/\s+/g, '')), true);
@@ -31,15 +31,25 @@ console.log('시나리오 1 — 휴지통·톱니바퀴의 테두리를 없앴�
 // ═══ 2. 문서 스크롤 상자 — sticky 헤더가 살아 있는가 ═══
 console.log('\n시나리오 2 — 가로 자르기는 html 에서 (sticky GNB)');
 {
+  // ⚠️ 주석을 걷어내고 본다. 이 파일이 검사하는 규칙들은 하나같이 "예전에 이런
+  //    줄이 있었다" 를 주석으로 남겨 뒀어서, 그냥 찾으면 설명글이 걸린다.
+  const css = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
   sc.eq('html 이 가로 넘침을 자른다', /html\{[^}]*overflow-x:hidden/.test(css), true);
   // ⚠️ 이 줄이 되살아나면 스크롤할 때 GNB 가 사라진다
   // 주석은 걷어내고 본다 — "html 로 옮겼다" 는 설명글에도 같은 글자가 들어 있다
   const body = SRC.slice(SRC.indexOf('body{\n'), SRC.indexOf('input,textarea{'))
                   .replace(/\/\*[\s\S]*?\*\//g, '');
   sc.eq('body 에는 overflow-x:hidden 이 없다', /overflow-x:\s*hidden/.test(body), false);
-  sc.eq('헤더는 여전히 sticky', /header\{ position:sticky;top:0/.test(css), true);
-  // 화면 전체가 출렁이던 것(고무줄)을 멈춘다
-  sc.eq('세로 오버스크롤을 막는다', /html\{[^}]*overscroll-behavior-y:none/.test(css), true);
+  // ⚠️ 여기가 GNB 가 사라지던 **진짜 원인**이었다 (v26-0903-3).
+  //    미디어쿼리 밖의 맨몸 header{position:relative} 가, 위쪽의
+  //    header{position:sticky} 와 특이도가 같으면서 뒤에 있어 덮어 버렸다.
+  //    한 줄이면 되살아나는 종류의 버그라 여기서 못 박는다.
+  sc.eq('헤더는 sticky', /header\{ position:sticky;top:0/.test(css), true);
+  const stickyAt = css.indexOf('header{ position:sticky;top:0');
+  sc.eq('sticky 뒤에 header 의 position 을 다시 정하는 규칙이 없다',
+        /header\{ ?position:/.test(css.slice(stickyAt + 20)), false);
+  // 고무줄(오버스크롤)은 그대로 둔다 — 없애면 스크롤이 딱딱해진다 (HB)
+  sc.eq('세로 오버스크롤을 막지 않는다', /overscroll-behavior-y:none/.test(css), false);
 }
 
 // ═══ 3. 떠 있는 메뉴의 높이·스크롤 가둠 ═══
