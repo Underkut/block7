@@ -18,12 +18,16 @@ console.log('\n시나리오 2 — 전체화면이 아래의 폴더 메뉴까지 
   sc.eq('숨긴 display 값을 복원한다', hide.includes('jobs.push(()=>{el.style.display=d;});'), true);
 }
 
-console.log('\n시나리오 3 — 전체화면 햄버거에서 폴더를 바꾼다');
+console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더를 바꾼다');
 {
   const action = slice('function vfHomeAction(){', 'function _vfSyncTopBar');
-  sc.eq('저장 목록이면 뒤로 가지 않고 폴더 메뉴를 연다', action.includes("if(_vfNavKind==='keep'){toggleVfKeepSwitch();return;}"), true);
+  sc.eq('어느 진입 경로에서든 폴더 메뉴를 연다', action.includes('toggleVfKeepSwitch();'), true);
   sc.eq('폴더 선택은 해당 폴더 항목으로 내비게이션을 다시 만든다', action.includes("_vfSetNav(list,i,name,'keep')"), true);
-  sc.eq('햄버거 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
+  sc.eq('책갈피 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
+  sc.eq('책갈피는 순환·셔플 아래에 놓인다', /\.vf-home\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 50px\);left:14px/.test(SRC), true);
+  const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
+  sc.eq('진입 경로와 무관하게 책갈피를 표시한다', sync.includes("hb.style.display='flex';"), true);
+  sc.eq('햄버거 대신 아웃라인 책갈피를 그린다', SRC.includes("const _VF_KEEP_MENU_SVG='<svg width=\"17\" height=\"17\"")&&SRC.includes('l-5-3.2-5 3.2z'), true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
