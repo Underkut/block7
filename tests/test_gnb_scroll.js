@@ -81,22 +81,28 @@ console.log('\n시나리오 4 — GNB 높이와 내순서 끌기');
 {
   const c = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
   // 상태바(safe-area)는 못 줄인다. 줄일 수 있는 앞자리를 46 → 38 로 (HB)
-  sc.eq('로고가 놓이는 칸은 38px', /height:calc\(38px \+ var\(--gnb-safe\)\)/.test(c), true);
-  sc.eq('46px 로 되돌아가 있지 않다', /height:calc\(46px \+/.test(c), false);
+  sc.eq('로고가 놓이는 칸은 40px', /height:calc\(40px \+ var\(--gnb-safe\)\)/.test(c), true);
+  sc.eq('예전 값(46·38)으로 되돌아가 있지 않다', /height:calc\((46|38)px \+/.test(c), false);
 
   // ── 시계와 로고 사이 여백 (HB 스크린샷의 연두색 자리) ──
   // env(safe-area-inset-top) 은 시계가 실제로 쓰는 높이보다 넉넉하다. 그 여유만
-  // 덜어낸다. 크로미움에서 같은 식을 값으로 검증한 결과(v26-0903-6):
-  //   inset  0 → 0 / 20 → 20 / 47 → 36.66 / 59 → 46.02
-  sc.eq('위 여백은 --gnb-safe 로 계산한다', /--gnb-safe:max\(min\(env\(safe-area-inset-top, 0px\), 20px\), calc\(env\(safe-area-inset-top, 0px\) \* \.78\)\)/.test(c), true);
+  // 덜어낸다. 크로미움에서 같은 식을 값으로 검증한 결과(v26-0903-7):
+  //   inset  0 → 0 / 20 → 20 / 47 → 35.02 / 59 → 43.95
+  sc.eq('위 여백은 --gnb-safe 로 계산한다', /--gnb-safe:max\(min\(env\(safe-area-inset-top, 0px\), 20px\), calc\(env\(safe-area-inset-top, 0px\) \* \.745\)\)/.test(c), true);
   sc.eq('그 값을 padding-top 으로 쓴다', /padding-top:var\(--gnb-safe\)/.test(c), true);
   // ⚠️ 아래 둘이 깨지면 시계와 로고가 겹치거나, PC 에서 없던 여백이 생긴다
   sc.eq('상태바가 없으면(PC) 여백도 0 — min() 으로 바닥을 잡는다',
         /max\(min\(env\(safe-area-inset-top, 0px\), 20px\)/.test(c), true);
-  sc.eq('노치 없는 기기(20px)에서는 덜어내지 않는다 — 20 > 20*.78',
-        20 > 20 * 0.78, true);
-  sc.eq('다이내믹 아일랜드(59px)에서 약 13px 이 줄어든다',
-        Math.round(59 - 59 * 0.78), 13);
+  sc.eq('노치 없는 기기(20px)에서는 덜어내지 않는다 — 20 > 20*.745',
+        20 > 20 * 0.745, true);
+  sc.eq('다이내믹 아일랜드(59px)에서 위 여백은 44px', Math.round(59 * 0.745), 44);
+
+  // ── 위 여백과 로고 칸은 **짝** 이다 (v26-0903-7, HB) ──
+  // 로고 칸을 늘리면 로고가 아래로 내려가 시계와의 사이가 벌어진다. 그래서 위
+  // 여백을 같은 만큼 덜어 상쇄하고, 헤더 합계는 84px 로 묶어 둔다.
+  // 한쪽만 고치면 균형이 깨지므로 여기서 합을 못 박는다.
+  sc.eq('합계는 84px (44 + 40)', Math.round(59 * 0.745) + 40, 84);
+  sc.eq('로고(15px)는 칸 가운데 → 아래 여백 12.5px', (40 - 15) / 2, 12.5);
 
   // '내순서' 끌기 — 끄는 동안에는 손가락 밀기를 통째로 삼킨다.
   // pointermove 의 preventDefault 만으로는 늦는다(브라우저가 이미 스크롤을
