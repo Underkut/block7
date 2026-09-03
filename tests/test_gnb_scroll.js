@@ -1,6 +1,6 @@
 // GNB 모양과 화면 스크롤 (v26-0903-2, HB 신고 세 가지)
 //
-// ① GNB 우상단 휴지통·톱니바퀴의 네모는 **옅고 얇게**(--bd, .5px). 없애 봤다가 되살렸다
+// ① GNB 우상단 휴지통·톱니바퀴의 네모는 **옅고 얇게**(--bd, .8px). 없애 봤다가 되살렸다
 // ② 문서 스크롤 상자 — body 에 overflow-x:hidden 을 주면 body 가 스스로
 //    스크롤 상자가 되어 그 자식인 <header> 의 sticky 가 깨진다(스크롤할 때
 //    GNB 가 위로 밀려 사라진다). 자르는 자리는 html 이어야 한다.
@@ -16,11 +16,11 @@ const css = SRC.replace(/\s+/g, ' ');
 console.log('시나리오 1 — 휴지통·톱니바퀴의 테두리를 없앴다');
 {
   const trash = SRC.slice(SRC.indexOf('/* 휴지통 버튼 */'), SRC.indexOf('.trash-btn svg{'));
-  sc.eq('휴지통에 옅고 얇은 네모(.5px)', /border:\.5pxsolidvar\(--bd\);/.test(trash.replace(/\s+/g, '')), true);
+  sc.eq('휴지통에 옅고 얇은 네모(.8px)', /border:\.8pxsolidvar\(--bd\);/.test(trash.replace(/\s+/g, '')), true);
   sc.eq('휴지통에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(trash.replace(/\s+/g, '')), false);
 
   const aib = SRC.slice(SRC.indexOf('.ai-b{'), SRC.indexOf('.settings-btn-icon{'));
-  sc.eq('톱니바퀴에 옅고 얇은 네모(.5px)', /border:\.5pxsolidvar\(--bd\);/.test(aib.replace(/\s+/g, '')), true);
+  sc.eq('톱니바퀴에 옅고 얇은 네모(.8px)', /border:\.8pxsolidvar\(--bd\);/.test(aib.replace(/\s+/g, '')), true);
   sc.eq('톱니바퀴에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(aib.replace(/\s+/g, '')), false);
 
   // 손가락이 닿는 넓이는 그대로 둔다 — 테두리만 없앤 것이지 버튼을 줄인 게 아니다
