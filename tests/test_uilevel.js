@@ -5,9 +5,7 @@
 //   data-lv="mp" → 미드·파워만            (표의 X/O/O)
 //   data-lv="p"  → 파워만                 (표의 X/X/O)
 // 빠뜨리면 "안 보여야 할 게 보이는" 쪽으로 틀리도록 일부러 이렇게 뒀다.
-// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인한 뒤에야 커밋된다(CLAUDE.md).
-//    그래서 **개발본**을 읽는다 — 둘은 5줄만 다르고 앱 코드는 같다.
-const { SRC_DEV: SRC, sliceDev: slice, makeScorer } = require('./_load');
+const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 global.ST = { settings: {} };
