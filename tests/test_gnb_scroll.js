@@ -8,8 +8,7 @@
 //    화면 밖으로 흘러내리면 메뉴 안에 스크롤할 것이 없어, 손가락 밀기가
 //    뒤쪽 할일 뷰로 새어 나간다.
 //
-// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인한 뒤에야 커밋된다(CLAUDE.md).
-const { SRC_DEV: SRC, makeScorer } = require('./_load');
+const { SRC, makeScorer } = require('./_load');
 const sc = makeScorer();
 const css = SRC.replace(/\s+/g, ' ');
 

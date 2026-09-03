@@ -5,9 +5,7 @@
 //  ② **색 계산 결과** — index.html 의 파생 함수를 실제로 돌려서 30벌
 //     (15테마 × 라이트/다크)의 대비가 접근성 기준을 넘는지 전부 확인한다.
 //     색을 눈으로 고르면 어느 한 테마에서 조용히 안 읽히게 되므로 기계로 잰다.
-// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인한 뒤에야 커밋된다(CLAUDE.md).
-//    그래서 **개발본**을 읽는다 — 둘은 5줄만 다르고 앱 코드는 같다.
-const { SRC_DEV: SRC, sliceDev: slice, makeScorer } = require('./_load');
+const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 // ── index.html 의 테마 엔진을 그대로 떼어 와 실행한다 ──
