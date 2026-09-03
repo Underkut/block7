@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-13  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-14  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -868,7 +868,7 @@ header{
    BLOCK7 에도 꺼내 볼 자리가 생겼다 (좌상단 말씀메뉴 → 말씀 저장 목록).
    자리는 **공유(종이비행기) 바로 위**로 통일했다. */
 /* 저장 폴더 목록 — 순환·셔플 바로 아래에서 모든 전체화면에 보인다. */
-.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;z-index:12;
+.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;z-index:14;
   width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
@@ -883,7 +883,19 @@ header{
   width:min(230px,calc(100vw - 66px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
   padding:5px 6px;background:var(--vf-bgimg,var(--bg));color:var(--vf-tx,var(--tx));
   border:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 38%,transparent);
-  border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);}
+  border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
+  opacity:0;transform:translateY(-7px) scale(.985);transform-origin:top left;
+  visibility:hidden;pointer-events:none;
+  transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1),visibility 0s linear .28s;}
+.vf-keep-switch.open{opacity:1;transform:translateY(0) scale(1);visibility:visible;pointer-events:auto;
+  transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1),visibility 0s;}
+.vf-keep-head{position:sticky;top:-5px;z-index:1;margin:-5px -6px 4px;padding:9px 9px 7px;
+  background:var(--vf-bgimg,var(--bg));border-bottom:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 22%,transparent);}
+.vf-keep-head-title{font-size:10px;color:var(--vf-tx3,var(--tx3));margin-bottom:7px;letter-spacing:.04em;}
+.vf-keep-sort{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
+.vf-keep-sort button{border:0;background:none;padding:3px 1px;color:var(--vf-tx3,var(--tx3));
+  font:400 10px/1.2 var(--font-ui);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.vf-keep-sort button.on{color:var(--vf-tx,var(--tx));font-weight:700;}
 .vf-keep-switch .keep-switch-row{color:var(--vf-tx,var(--tx));}
 .vf-keep-switch .keep-switch-row.on{background:color-mix(in srgb,var(--vf-tx,var(--tx)) 12%,transparent);}
 /* ── 순환·셔플 전환 (v26-0817-16, HB 3) ──
@@ -3956,7 +3968,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-13";
+const APP_VERSION = "v. 26-0903-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5896,7 +5908,7 @@ window._fbScriptsReady=new Promise(resolve=>{
      중앙: 본문 / 하단 좌측: 대분류·소주제·태그 / 하단 우측: 세로 액션 스택 -->
 <div id="verseFull" style="display:none;">
   <button class="vf-home" id="vfHomeBtn" onclick="event.stopPropagation();vfHomeAction()" aria-label="저장 폴더 목록">
-    <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v13l-5-3.2-5 3.2z"/></svg>
+    <svg width="17" height="24" viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10v18.2L10 18l-5 4.2z"/></svg>
   </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
   <div class="vf-keep-switch" id="vfKeepSwitchBox" style="display:none;"></div>
@@ -6375,7 +6387,8 @@ function getCustomVerses(){
   // 이걸 기본 180 뒤에 붙이므로 말씀바·전체목록은 컬렉션 구절을 자동 포함.
   const out=[];
   (ST.verseCollections||[]).forEach(c=>{
-    (c.verses||[]).forEach(v=>{ if(!v.del) out.push(v); });
+    const code=c.shareCode||c.importCode||'';
+    (c.verses||[]).forEach(v=>{ if(!v.del) out.push(code?Object.assign({_code:code},v):v); });
   });
   return out;
 }
@@ -6412,7 +6425,8 @@ function ALL_VERSES(){
     //    (_findVerseByRefLoose → ALL_VERSES → 여기)
     return{idx:NAVIGATOR_VERSES.length+1+i,catNo,cat:catName,no:i+1,
            topic:c.topic||'',krText:c.krText||'',ref:c.ref||'',enText:c.enText||'',
-           tags:c.tags||[],hi:c.hi||''};
+           tags:c.tags||[],hi:c.hi||'',d:c.d||'',pid:c.pid||'',kind:c.kind||'',
+           books:c.books||[],refs:c.refs||[],_code:c._code||''};
   });
   return NAVIGATOR_VERSES.concat(mapped);
 }
@@ -13128,7 +13142,8 @@ let _vfOverrideVerse=null;
 // kind 가 있으면 "반응 목록에서 들어온 것" — 상단 중앙에 그 반응 아이콘을 단다.
 // 좌상단 책갈피는 진입 경로와 무관하게 저장 폴더 목록을 연다.
 let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
-const _VF_KEEP_MENU_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v13l-5-3.2-5 3.2z"/></svg>';
+// 가로폭은 그대로, 세로선은 약 1.4배 길게. 획은 순환·셔플과 같은 1.4다.
+const _VF_KEEP_MENU_SVG='<svg width="17" height="24" viewBox="0 0 20 28" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10v18.2L10 18l-5 4.2z"/></svg>';
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
 // 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
@@ -13214,17 +13229,32 @@ function vfHomeAction(){
   toggleVfKeepSwitch();
 }
 function closeVfKeepSwitch(){
-  const box=document.getElementById('vfKeepSwitchBox');if(box)box.style.display='none';
+  const box=document.getElementById('vfKeepSwitchBox');if(box)box.classList.remove('open');
+}
+function _vfKeepSortHead(){
+  const cur=_keepSort(),pair=_keepPairSort(),pairOn=cur==='recent'||cur==='reg';
+  const tab=(key,label,fn)=>`<button class="${(key===cur||(key==='pair'&&pairOn))?'on':''}" onclick="event.stopPropagation();${fn}">${label}</button>`;
+  return`<div class="vf-keep-head"><div class="vf-keep-head-title">저장 목록 정렬</div><div class="vf-keep-sort">
+    ${tab('pair',pair==='reg'?'등록순':'최신순','keepTogglePairSort()')}
+    ${tab('alpha','ㄱㄴㄷ순',"keepSetSort('alpha')")}
+    ${tab('count','많은순',"keepSetSort('count')")}
+    ${tab('manual','내순서',"keepSetSort('manual')")}
+  </div></div>`;
 }
 function toggleVfKeepSwitch(){
   const box=document.getElementById('vfKeepSwitchBox');if(!box)return;
-  if(box.style.display!=='none'){closeVfKeepSwitch();return;}
+  if(box.classList.contains('open')){closeVfKeepSwitch();return;}
   const lists=_keepLists();
-  box.innerHTML=lists.length?lists.map(L=>`<div class="keep-switch-row${L.n===_vfNavLabel?' on':''}"
+  box.innerHTML=_vfKeepSortHead()+(lists.length?lists.map(L=>`<div class="keep-switch-row${L.n===_vfNavLabel?' on':''}"
     onclick="event.stopPropagation();vfOpenKeepList('${_keepAttr(L.n)}')"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(L.n)}</span><span style="opacity:.65;font-size:10px;">${L.cnt}</span></div>`).join('')
-    :'<div class="keep-switch-row" style="opacity:.65;">저장한 것이 없어요</div>';
-  box.style.display='block';_menuLockScroll(box);
+    :'<div class="keep-switch-row" style="opacity:.65;">저장한 것이 없어요</div>');
+  box.style.display='block';requestAnimationFrame(()=>box.classList.add('open'));_menuLockScroll(box);
 }
+// 단추 재탭뿐 아니라 메뉴 밖의 어느 곳을 눌러도 닫는다.
+document.addEventListener('pointerdown',e=>{
+  const box=document.getElementById('vfKeepSwitchBox'),btn=document.getElementById('vfHomeBtn');
+  if(box&&box.classList.contains('open')&&!box.contains(e.target)&&!(btn&&btn.contains(e.target)))closeVfKeepSwitch();
+},{passive:true});
 function _vfKeepNav(name,preferredRef){
   const rows=_aggEntriesForKind('keep',_vlTab('keep'));
   const list=rows.map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)
@@ -30572,6 +30602,8 @@ function keepSetSort(m){
   ST.settings.keepListSort=_KEEP_SORT_ALL.includes(m)?m:'recent';
   if(m==='recent'||m==='reg')ST.settings.keepListPairSort=m;
   save();_keepRepaintLists();
+  const box=typeof document!=='undefined'?document.getElementById('vfKeepSwitchBox'):null;
+  if(box&&box.classList.contains('open')){box.classList.remove('open');requestAnimationFrame(()=>toggleVfKeepSwitch());}
 }
 function keepTogglePairSort(){
   const cur=_keepSort(),pairKey=_keepPairSort();

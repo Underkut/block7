@@ -27,7 +27,8 @@ console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더�
   sc.eq('책갈피는 순환·셔플 아래에 놓인다', /\.vf-home\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 50px\);left:14px/.test(SRC), true);
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
   sc.eq('진입 경로와 무관하게 책갈피를 표시한다', sync.includes("hb.style.display='flex';"), true);
-  sc.eq('햄버거 대신 아웃라인 책갈피를 그린다', SRC.includes("const _VF_KEEP_MENU_SVG='<svg width=\"17\" height=\"17\"")&&SRC.includes('l-5-3.2-5 3.2z'), true);
+  sc.eq('책갈피는 가로를 유지하고 세로를 약 1.4배 늘린다', SRC.includes("const _VF_KEEP_MENU_SVG='<svg width=\"17\" height=\"24\""), true);
+  sc.eq('책갈피 획은 순환·셔플과 같은 굵기다', /_VF_KEEP_MENU_SVG=.*stroke-width=\"1\.4\"/.test(SRC), true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
@@ -38,6 +39,24 @@ console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일�
   sc.eq('저장 폴더 기록만 타일 풀로 만든다', pool.includes("(_vgState.kind==='keep')"), true);
   const pick = slice('function vgPick(i){', 'function vgTapDateSort');
   sc.eq('타일 선택 뒤에도 저장 폴더 문맥을 유지한다', pick.includes("_vgState.kind==='keep'?'keep':null"), true);
+}
+
+console.log('\n시나리오 5 — 저장 폴더 메뉴는 차분히 열리고 바깥을 누르면 닫힌다');
+{
+  sc.eq('메뉴의 열린 상태에 투명도와 이동 전환이 있다', /\.vf-keep-switch\.open\{opacity:1;transform:translateY\(0\) scale\(1\)/.test(SRC), true);
+  const action = slice('function closeVfKeepSwitch(){', 'function _vfKeepNav');
+  sc.eq('메뉴 버튼 재탭은 열린 클래스를 닫는다', action.includes("box.classList.remove('open')"), true);
+  sc.eq('메뉴와 버튼 밖 pointerdown은 메뉴를 닫는다', action.includes("!box.contains(e.target)&&!(btn&&btn.contains(e.target))"), true);
+  sc.eq('메뉴 헤더에 정렬 탭 네 개를 그린다', action.includes('저장 목록 정렬')&&action.includes("tab('alpha'")&&action.includes("tab('count'")&&action.includes("tab('manual'"), true);
+}
+
+console.log('\n시나리오 6 — 저장 목록은 꺼진 모음과 하위 필터 밖의 명제도 찾는다');
+{
+  const all = slice('function getCustomVerses(){', 'function VERSE_TOTAL');
+  sc.eq('모든 등록 모음에서 삭제되지 않은 항목을 읽는다', all.includes('(ST.verseCollections||[]).forEach(c=>')&&all.includes('if(!v.del)'), true);
+  sc.eq('전체 등록 풀에도 명제 ID와 표시 정보를 보존한다', all.includes("pid:c.pid||''")&&all.includes('books:c.books||[]')&&all.includes('refs:c.refs||[]'), true);
+  const find = slice('function _findVerseByRefLoose(ref){', 'function _dupVerseScan');
+  sc.eq('활성 모음에서 못 찾으면 전체 등록 풀의 명제 ID를 찾는다', find.includes("(ALL_VERSES()||[]).find(v=>v&&v.pid===want)"), true);
 }
 
 sc.done();
