@@ -93,27 +93,20 @@ console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
   sc.eq("'square' 를 고른 것만 사각", SRC.includes("uiLevelIconSet==='square')?'square':'animal'"), true);
 }
 
-// ═══ 4-3. 선 그림 토글은 색 말고 굵기로도 구분된다 ═══
-// 가는 선(.75) 그림에서 색만으로 켜짐/꺼짐을 나타내면, 색차가 넉넉한 테마에서도
-// 눈에 잡히지 않는다(칠해진 넓이가 없다). 켜진 쪽에 굵기를 같이 준다.
-// ⚠️ 굵기 차이는 **아주 조금만**이다 (v26-0903-2, HB). 크게 주면 아이콘이
-//    뭉툭해 보인다. 갈라 세우는 일은 색(--ac-tx)이 하고, 굵기는 거들 뿐이다.
-console.log('\n시나리오 4-3 — 선 그림 토글의 두 번째 표시(굵기)');
+// ═══ 4-3. 선 그림 토글은 **색만으로** 구분한다 ═══
+// 한때 굵기를 두 번째 표시로 줬으나(v26-0902-20 ~ 0903-3) HB 확인 결과
+// 굵히면 아이콘이 뭉툭해 보인다. 색만으로 간다 — 다만 그 색이 팔레트 안의
+// 다른 색이어야 한다(--ac-tx 가 테마의 보조색을 고른다. test_theme_preset 참고).
+console.log('\n시나리오 4-3 — 선 그림 토글은 색만으로');
 {
-  const css = SRC.replace(/\s+/g, ' ');
-  sc.eq('등급 아이콘: 켜지면 선이 굵어진다',
-        /\.uilv-btn\.on svg,\.uilv-set-btn\.on svg\{stroke-width:\.95;\}/.test(css), true);
-  sc.eq('등급 아이콘: 굵기가 부드럽게 바뀐다',
-        /\.uilv-btn svg,\.uilv-set-btn svg\{transition:stroke-width \.15s;\}/.test(css), true);
-  sc.eq('정렬 토글: 켜지면 선이 굵어진다 (1.6 → 1.8)',
-        /\.vl-sort-toggle\.on svg\{stroke-width:1\.8;\}/.test(css), true);
-  // 색 표시는 그대로 남아 있어야 한다 — 굵기가 색을 **대신하는** 것이 아니다
-  sc.eq('색 표시도 그대로', /\.uilv-btn\.on\{color:var\(--ac-tx\);\}/.test(css) &&
-                            /\.vl-sort-toggle\.on\{color:var\(--ac-tx\);\}/.test(css), true);
-  // 켜진 쪽이 반드시 더 굵어야 뜻이 선다
-  sc.eq('켜진 굵기 .95 > 기본 굵기 .75', 0.95 > 0.75, true);
-  // 그러나 눈에 띄게 뭉툭해지지는 않는다 — 기본의 1.5배를 넘지 않는다
-  sc.eq('굵기 차이는 최소한 (기본의 1.5배 이하)', 0.95 <= 0.75 * 1.5, true);
+  const css = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
+  sc.eq('등급 아이콘은 색으로 갈린다', /\.uilv-btn\.on\{color:var\(--ac-tx\);\}/.test(css), true);
+  sc.eq('세트 고르기도 색으로', /\.uilv-set-btn\.on\{color:var\(--ac-tx\);\}/.test(css), true);
+  sc.eq('정렬 토글도 색으로', /\.vl-sort-toggle\.on\{color:var\(--ac-tx\);\}/.test(css), true);
+  // ⚠️ 굵기 규칙을 다시 넣지 말 것 (HB, v26-0903-4)
+  sc.eq('등급 아이콘에 굵기 규칙이 없다', /\.uilv-[a-z-]*\.?o?n? ?svg\{stroke-width/.test(css), false);
+  sc.eq('정렬 토글에도 굵기 규칙이 없다', /\.vl-sort-toggle[^{]*svg\{stroke-width/.test(css), false);
+  sc.eq('그림의 기본 굵기는 그대로 .75', /stroke-width="\$\{a\.sw\}"/.test(SRC), true);
 }
 
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
