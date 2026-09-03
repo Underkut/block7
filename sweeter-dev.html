@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -557,24 +557,25 @@ header{
      "여기까지는 안전하게 비워 두라"고 알려 주는 값이라 여유가 붙어 있다
      (HB 기기 실측: 시계 아래로 20px 넘게 빈 자리가 남았다). 그 여유만 덜어낸다.
 
-     max(min(inset,20px), inset*.745) 로 읽는다:
+     max(min(inset,20px), inset*.712) 로 읽는다:
        inset 0   (PC·브라우저 탭) → 0        그대로. 없는 자리를 만들지 않는다
        inset 20  (노치 없는 기기) → 20       그대로. 여기서 덜면 시계와 겹친다
-       inset 47  (노치)          → 35.0
-       inset 59  (다이내믹 아일랜드) → 44     ← HB 기기 기준값
+       inset 47  (노치)          → 33.5
+       inset 59  (다이내믹 아일랜드) → 42     ← HB 기기 기준값
      ⚠️ 더 깎지 말 것. 왼쪽 위는 시계가 그려지는 자리고 로고도 왼쪽이라,
-        모자라면 둘이 겹친다.
-     ⚠️ 아래 '로고 칸' 과 **짝으로** 정해진 값이다 (v26-0903-7, HB).
-        로고 칸을 40 으로 늘리면 로고가 그만큼 아래로 내려가 시계와의 사이가
-        벌어지므로, 여기서 같은 만큼(46→44) 덜어 상쇄한다. 합계는 84px 그대로.
+        모자라면 둘이 겹친다. 여기까지가 HB 가 눈으로 확인한 선이다
+        (46 → 44 → 42 세 걸음).
+     ⚠️ 아래 '로고 칸' 과 **짝으로** 정해진 값이다 (v26-0903-7·8, HB).
+        로고 칸을 늘리면 로고가 그만큼 아래로 내려가 시계와의 사이가 벌어지므로,
+        여기서 같은 만큼 덜어 상쇄한다. 합계는 언제나 84px 이다.
         한쪽만 고치면 균형이 깨진다. */
-  --gnb-safe:max(min(env(safe-area-inset-top, 0px), 20px), calc(env(safe-area-inset-top, 0px) * .745));
+  --gnb-safe:max(min(env(safe-area-inset-top, 0px), 20px), calc(env(safe-area-inset-top, 0px) * .712));
   padding-top:constant(safe-area-inset-top, 0px);
   padding-top:var(--gnb-safe);
-  /* 로고가 놓이는 칸. 로고(15px)가 가운데 오므로 위아래로 12.5px 씩 남는다.
-     38 → 40 (v26-0903-7, HB '로고 아래가 좁아 보인다'). 위 padding 과 짝이다. */
-  height:calc(40px + constant(safe-area-inset-top, 0px));
-  height:calc(40px + var(--gnb-safe));
+  /* 로고가 놓이는 칸. 로고(15px)가 가운데 오므로 위아래로 13.5px 씩 남는다.
+     38 → 40 → 42 (v26-0903-8, HB '로고 아래가 좁아 보인다'). 위 padding 과 짝이다. */
+  height:calc(42px + constant(safe-area-inset-top, 0px));
+  height:calc(42px + var(--gnb-safe));
   box-sizing:border-box;
   background:var(--header-bg);
   border-bottom:1px solid var(--bd);
@@ -3945,7 +3946,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-7";
+const APP_VERSION = "v. 26-0903-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
