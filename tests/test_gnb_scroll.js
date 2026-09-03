@@ -1,6 +1,6 @@
 // GNB 모양과 화면 스크롤 (v26-0903-2, HB 신고 세 가지)
 //
-// ① GNB 우상단 휴지통·톱니바퀴의 네모는 **옅게**(--bd). 없애 봤다가 되살렸다
+// ① GNB 우상단 휴지통·톱니바퀴의 네모는 **옅고 얇게**(--bd, .5px). 없애 봤다가 되살렸다
 // ② 문서 스크롤 상자 — body 에 overflow-x:hidden 을 주면 body 가 스스로
 //    스크롤 상자가 되어 그 자식인 <header> 의 sticky 가 깨진다(스크롤할 때
 //    GNB 가 위로 밀려 사라진다). 자르는 자리는 html 이어야 한다.
@@ -16,11 +16,11 @@ const css = SRC.replace(/\s+/g, ' ');
 console.log('시나리오 1 — 휴지통·톱니바퀴의 테두리를 없앴다');
 {
   const trash = SRC.slice(SRC.indexOf('/* 휴지통 버튼 */'), SRC.indexOf('.trash-btn svg{'));
-  sc.eq('휴지통에 옅은 네모', /border:1pxsolidvar\(--bd\);/.test(trash.replace(/\s+/g, '')), true);
+  sc.eq('휴지통에 옅고 얇은 네모(.5px)', /border:\.5pxsolidvar\(--bd\);/.test(trash.replace(/\s+/g, '')), true);
   sc.eq('휴지통에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(trash.replace(/\s+/g, '')), false);
 
   const aib = SRC.slice(SRC.indexOf('.ai-b{'), SRC.indexOf('.settings-btn-icon{'));
-  sc.eq('톱니바퀴에 옅은 네모', /border:1pxsolidvar\(--bd\);/.test(aib.replace(/\s+/g, '')), true);
+  sc.eq('톱니바퀴에 옅고 얇은 네모(.5px)', /border:\.5pxsolidvar\(--bd\);/.test(aib.replace(/\s+/g, '')), true);
   sc.eq('톱니바퀴에 진한 --bd2 를 쓰지 않는다', /border:1pxsolidvar\(--bd2\)/.test(aib.replace(/\s+/g, '')), false);
 
   // 손가락이 닿는 넓이는 그대로 둔다 — 테두리만 없앤 것이지 버튼을 줄인 게 아니다
@@ -74,6 +74,34 @@ console.log('\n시나리오 3 — 저장 목록 메뉴가 뒤쪽을 끌고 다�
         /#logoMenu,\.task-menu-sub-float\{[^}]*overflow-y:auto;overscroll-behavior:contain/.test(css), true);
   sc.eq('메뉴 바깥(어두운 자리)을 끌어도 뒤가 안 움직인다',
         /\.task-menu-overlay\{position:fixed;inset:0;z-index:199;touch-action:none;\}/.test(css), true);
+}
+
+// ═══ 4. GNB 높이 · 끌기 중 손가락 밀기 ═══
+console.log('\n시나리오 4 — GNB 높이와 내순서 끌기');
+{
+  const c = SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ');
+  // 상태바(safe-area)는 못 줄인다. 줄일 수 있는 앞자리를 46 → 38 로 (HB)
+  sc.eq('GNB 앞자리 높이는 38px',
+        /height:calc\(38px \+ env\(safe-area-inset-top, 0px\)\)/.test(c), true);
+  sc.eq('46px 로 되돌아가 있지 않다', /height:calc\(46px \+ env\(safe-area/.test(c), false);
+  sc.eq('상태바 자리는 그대로 더한다', /calc\(38px \+ constant\(safe-area-inset-top/.test(c), true);
+
+  // '내순서' 끌기 — 끄는 동안에는 손가락 밀기를 통째로 삼킨다.
+  // pointermove 의 preventDefault 만으로는 늦는다(브라우저가 이미 스크롤을
+  // 시작하면 그 이벤트가 cancelable 이 아니게 된다).
+  sc.eq('끌기 중 touchmove 를 수동으로 잡는다',
+        /box\.addEventListener\('touchmove',e=>\{\s*if\(el&&!holdTimer&&e\.cancelable\)e\.preventDefault\(\);\s*\},\{passive:false\}\)/.test(SRC), true);
+  // 홀드 전에는 흘려 보내야 목록 스크롤이 된다
+  sc.eq('홀드 전(=아직 끌기 전)에는 막지 않는다', SRC.includes('if(el&&!holdTimer&&e.cancelable)'), true);
+  sc.eq('줄에는 pan-y 가 그대로 (쓱 밀면 스크롤)',
+        /\.keep-drag-zone \[data-keepname\]\{touch-action:pan-y;\}/.test(c), true);
+
+  // 스크롤할 것이 없는 메뉴에서도 뒤로 새지 않게
+  sc.eq('메뉴 스크롤 잠금 함수가 있다', SRC.includes('function _menuLockScroll(el){'), true);
+  const lock = SRC.slice(SRC.indexOf('function _menuLockScroll(el){'), SRC.indexOf('function openLogoMenu(anchorEl){'));
+  sc.eq('touchmove 를 수동으로 잡는다', lock.includes('{passive:false}'), true);
+  sc.eq('양쪽 끝을 모두 본다', lock.includes('canUp') && lock.includes('canDown'), true);
+  sc.eq('높이를 잴 때 같이 걸어 준다', SRC.includes('_menuLockScroll(el);\n}'), true);
 }
 
 sc.done();
