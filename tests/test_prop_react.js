@@ -165,4 +165,22 @@ console.log('\n시나리오 7 — 키로 그 명제를 도로 찾는다 (v26-083
         k.slice(_REACT_PID_PREFIX.length)==='P0001', false);
 }
 
+console.log('\n시나리오 8 — 명제 Deeper 는 연결된 설교 본문을 고른다');
+{
+  sc.eq('명제 Deeper 단추를 숨기지 않는다',
+        SRC_DEV.includes("['mem','even'].forEach(k=>"), true);
+  sc.eq('명제의 연결 본문을 고르는 공용 함수가 있다',
+        SRC_DEV.includes('function _vfDeeperRefs(v){'), true);
+  sc.eq('본문 하나면 곧바로 연다',
+        SRC_DEV.includes('if(refs.length===1){_openPropDeeper(v,refs[0]);return;}'), true);
+  sc.eq('본문 여럿이면 선택 팝업을 연다',
+        SRC_DEV.includes("document.getElementById('vfDeeperModal').style.display='flex';"), true);
+  sc.eq('선택한 성경을 열되 반응은 명제에 기록한다',
+        SRC_DEV.includes("recordVerseDeeper(_reactKey(v));\n  BibleLinkProvider.openBskFromRef(ref);"), true);
+  sc.eq('말씀 Deeper 는 예전 길을 그대로 쓴다',
+        SRC_DEV.includes("else openDeeperFromRef(v.ref);"), true);
+  sc.eq('새 팝업은 ESC 로 닫힌다',
+        SRC_DEV.includes("['vfDeeperModal', ()=>closeVfDeeperPicker()]"), true);
+}
+
 sc.done();

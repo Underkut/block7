@@ -398,23 +398,25 @@ console.log('\n시나리오 12 — 글꼴이 늦게 와도 붓으로 바뀐다')
   sc.eq('캐시가 비어 있다', Object.keys(box.c()).length, 0);
 }
 
-// ═══ 13. 명제에서 안 쓰는 단추를 감춘다 (v26-0831-7, HB 승인) ═══
+// ═══ 13. 명제에서 안 쓰는 단추를 감춘다 (v26-0903-10) ═══
 console.log('\n시나리오 13 — 명제 화면의 반응 단추');
 {
-  // 암송(책갈피)·Deeper·Even 은 **성경 본문**을 외우고 더 깊이 보는 도구다.
-  // 명제는 이미 해석된 글이라 갈 곳이 없다 → 담아두기·좋아요·공유 셋만 남는다.
-  sc.eq('셋을 감춘다',
-        SRC_DEV.includes("['mem','deeper','even'].forEach(k=>{"), true);
+  // 암송·Even 은 말씀 전용으로 감추되, Deeper 는 명제와 연결된 설교 본문으로
+  // 들어가는 길이므로 다시 보인다.
+  sc.eq('말씀 전용 둘만 감춘다',
+        SRC_DEV.includes("['mem','even'].forEach(k=>{"), true);
+  sc.eq('Deeper 는 감추지 않는다',
+        SRC_DEV.includes("['mem','deeper','even'].forEach(k=>{"), false);
   sc.eq('명제일 때만',
         SRC_DEV.includes("if(b)b.classList.toggle('vf-act-off',isProp);"), true);
   sc.eq('감춤 CSS', SRC_DEV.includes('.vf-act.vf-act-off{display:none!important;}'), true);
   // ⚠️ style.display 를 직접 건드리면 등급(data-lv) 같은 다른 장치가 감춰 둔
   //    것까지 되살아난다 (CLAUDE.md 의 lv-hide 와 같은 규칙)
-  const blk = SRC_DEV.slice(SRC_DEV.indexOf("['mem','deeper','even'].forEach(k=>{"),
-                            SRC_DEV.indexOf("['mem','deeper','even'].forEach(k=>{")+260);
+  const blk = SRC_DEV.slice(SRC_DEV.indexOf("['mem','even'].forEach(k=>{"),
+                            SRC_DEV.indexOf("['mem','even'].forEach(k=>{")+260);
   sc.eq('display 를 직접 안 건드린다', /style\.display/.test(blk), false);
   // 좋아요·공유는 남는다
-  sc.eq('좋아요는 안 감춘다', /\['mem','deeper','even'[^\]]*'like'/.test(SRC_DEV), false);
+  sc.eq('좋아요는 안 감춘다', /\['mem','even'[^\]]*'like'/.test(SRC_DEV), false);
 }
 
 // ═══ 14. 한 명제가 여러 성경권에 걸린다 (v26-0831-7, HB 승인) ═══
