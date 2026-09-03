@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-8  [production]  -->
+<!-- BLOCK7  v. 26-0903-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3946,7 +3946,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-8";
+const APP_VERSION = "v. 26-0903-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -30487,11 +30487,15 @@ function _keepSetOrder(names){
 function _keepSortLists(arr){
   const m=_keepSort();
   const recent=(a,b)=>String(b.when||'').localeCompare(String(a.when||''));
-  // 이름 정렬은 한글 목록을 영어 목록보다 먼저 놓고, 각 갈래 안에서 가나다/알파벳순.
+  // 이름 정렬은 이모지를 제외한 이름으로 판단한다. 한글 목록을 영어 목록보다
+  // 먼저 놓고, 각 갈래 안에서 가나다/알파벳순으로 둔다.
+  const sortName=n=>String(n||'')
+    .replace(/[#*0-9]\uFE0F?\u20E3|[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}\uFE0F\u200D]/gu,'')
+    .trim();
   const byName=(a,b)=>{
-    const an=String(a.n||''),bn=String(b.n||'');
+    const an=sortName(a.n),bn=sortName(b.n);
     const ak=/^[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(an)?0:1,bk=/^[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(bn)?0:1;
-    return ak-bk||an.localeCompare(bn,'ko',{sensitivity:'base'});
+    return ak-bk||an.localeCompare(bn,'ko',{sensitivity:'base'})||String(a.n||'').localeCompare(String(b.n||''),'ko',{sensitivity:'base'});
   };
   if(m==='alpha')return arr.sort(byName);
   if(m==='count')return arr.sort((a,b)=>b.cnt-a.cnt||byName(a,b));
