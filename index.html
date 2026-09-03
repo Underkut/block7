@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-11  [production]  -->
+<!-- BLOCK7  v. 26-0903-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -869,13 +869,23 @@ header{
    자리는 **공유(종이비행기) 바로 위**로 통일했다. */
 /* 좌상단 홈 버튼 · 상단 중앙 필터 라벨 (타일뷰에서 들어온 경우에만) */
 .vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;z-index:12;
-  background:none;border:none;padding:6px;cursor:pointer;color:var(--vf-tx2,var(--tx2));
+  width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
 .vf-home:active{opacity:.5;}
+@media(hover:none){.vf-home{opacity:.3;}}
 .vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);
   z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;
   align-items:center;justify-content:center;}
+.vf-toplabel.vf-keep-title{pointer-events:auto;cursor:pointer;}
+.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 48px);left:52px;
+  width:min(230px,calc(100vw - 66px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
+  padding:5px 6px;background:var(--vf-bgimg,var(--bg));color:var(--vf-tx,var(--tx));
+  border:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 38%,transparent);
+  border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);}
+.vf-keep-switch .keep-switch-row{color:var(--vf-tx,var(--tx));}
+.vf-keep-switch .keep-switch-row.on{background:color-mix(in srgb,var(--vf-tx,var(--tx)) 12%,transparent);}
 /* ── 순환·셔플 전환 (v26-0817-16, HB 3) ──
    우상단 닫기와 대칭인 좌상단. 30×30 크기와 태그 그림의 색·투명도를
    그대로 쓴다. 사각 테두리 없이 아이콘 하나만 둔다. */
@@ -3946,7 +3956,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-11";
+const APP_VERSION = "v. 26-0903-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5889,6 +5899,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>
   </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
+  <div class="vf-keep-switch" id="vfKeepSwitchBox" style="display:none;"></div>
   <!-- 순환·셔플 전환. 닫기와 같은 높이의 좌상단 대칭 자리에 둔다. -->
   <button class="vf-cycle" id="vfCycleBtn" onclick="event.stopPropagation();vfToggleCycleMode()"></button>
   <button class="vf-close" onclick="closeVerseFull()" aria-label="닫기">
@@ -10356,6 +10367,15 @@ function _vfHideCovers(){
       jobs.push(()=>{el.style.display=d;});
     }
   });
+  // 좌상단 저장 목록 메뉴에서 연 경우, 폴더 팝업뿐 아니라 그 아래 남겨 둔
+  // 원래 폴더 메뉴까지 함께 숨긴다. 전체화면을 닫으면 같은 자리에 되살린다.
+  ['logoMenuOverlay','logoMenu'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.style.display&&el.style.display!=='none'){
+      const d=el.style.display;el.style.display='none';
+      jobs.push(()=>{el.style.display=d;});
+    }
+  });
   // 설정창 두 종류 (말씀 설정·앱 설정) — 'open' 클래스로 열려 있다
   ['verseSettingsOverlay','settingsOverlay'].forEach(id=>{
     const o=document.getElementById(id);
@@ -10383,6 +10403,7 @@ function _vfHideCovers(){
   return jobs.length?jobs:null;
 }
 function closeVerseFull(){
+  closeVfKeepSwitch();
   // 알림으로 열 때 숨겨 뒀던 화면들을 먼저 되살린다.
   // ⚠️ 아래 대시보드 훅(setTimeout)보다 "먼저, 동기적으로" 되살려야 한다 —
   //    타일뷰가 되살아나면 _vgIsOpen() 이 true 가 되어 대시보드가 겹쳐 뜨지 않는다.
@@ -13110,6 +13131,7 @@ let _vfOverrideVerse=null;
 let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
 const _VF_BACKLIST_SVG='<svg width="17" height="14" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="3" y1="13" x2="17" y2="13"/></svg>';
+const _VF_KEEP_MENU_SVG='<svg width="17" height="14" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="3" x2="17" y2="3"/><line x1="3" y1="8" x2="17" y2="8"/><line x1="3" y1="13" x2="17" y2="13"/></svg>';
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
 // 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
@@ -13192,22 +13214,54 @@ function _vfSetNav(list,idx,label,kind){
 }
 function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfSyncTopBar();}
 function vfHomeAction(){
+  if(_vfNavKind==='keep'){toggleVfKeepSwitch();return;}
   if(_vfNavKind)closeVerseFull();   // 목록으로 복귀 (숨겨 둔 목록이 되살아난다)
   else openVerseGridHome();
+}
+function closeVfKeepSwitch(){
+  const box=document.getElementById('vfKeepSwitchBox');if(box)box.style.display='none';
+}
+function toggleVfKeepSwitch(){
+  const box=document.getElementById('vfKeepSwitchBox');if(!box)return;
+  if(box.style.display!=='none'){closeVfKeepSwitch();return;}
+  const lists=_keepLists();
+  box.innerHTML=lists.length?lists.map(L=>`<div class="keep-switch-row${L.n===_vfNavLabel?' on':''}"
+    onclick="event.stopPropagation();vfOpenKeepList('${_keepAttr(L.n)}')"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(L.n)}</span><span style="opacity:.65;font-size:10px;">${L.cnt}</span></div>`).join('')
+    :'<div class="keep-switch-row" style="opacity:.65;">저장한 것이 없어요</div>';
+  box.style.display='block';_menuLockScroll(box);
+}
+function _vfKeepNav(name,preferredRef){
+  const rows=_aggEntriesForKind('keep',_vlTab('keep'));
+  const list=rows.map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)
+    ||verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
+  const keys=rows.map(g=>g.ref),i=Math.max(0,keys.indexOf(preferredRef));
+  if(list.length)_vfSetNav(list,i,name,'keep');
+  return list.length;
+}
+function vfOpenKeepList(name){
+  closeVfKeepSwitch();window._vAggKeepList=name||'';
+  if(!_vfKeepNav(window._vAggKeepList,'')){showToast('이 목록은 비어 있어요');return;}
+  _vfOverrideVerse=_vfNavList[_vfNavIdx];_verseFullRender();
+}
+function vfOpenKeepGrid(){
+  if(_vfNavKind!=='keep'||!_vfNavLabel)return;
+  closeVfKeepSwitch();openVerseGrid('keep',_vfNavLabel);
 }
 function _vfSyncTopBar(){
   const on=!!(_vfNavList&&_vfNavList.length&&_vfNavLabel);
   const lb=document.getElementById('vfTopLabel'),hb=document.getElementById('vfHomeBtn');
   if(lb){
     lb.style.display=on?'flex':'none';
+    lb.classList.toggle('vf-keep-title',on&&_vfNavKind==='keep');
+    lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;
     lb.innerHTML=on
-      ?`<span style="display:inline-flex;align-items:center;gap:5px;">${_vfNavKind?_VLIST_KIND_TITLE[_vfNavKind]:''}<span>${esc(_vfNavLabel)}</span></span>`
+      ?`<span style="display:inline-flex;align-items:center;gap:5px;">${_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:''}<span>${esc(_vfNavLabel)}</span></span>`
       :'';
   }
   if(hb){
-    hb.style.display=on?'block':'none';
-    hb.innerHTML=_vfNavKind?_VF_BACKLIST_SVG:_VF_HOME_SVG;
-    hb.setAttribute('aria-label',_vfNavKind?'목록으로 돌아가기':'전체 목록');
+    hb.style.display=on?'flex':'none';
+    hb.innerHTML=_vfNavKind==='keep'?_VF_KEEP_MENU_SVG:(_vfNavKind?_VF_BACKLIST_SVG:_VF_HOME_SVG);
+    hb.setAttribute('aria-label',_vfNavKind==='keep'?'저장 목록 바꾸기':(_vfNavKind?'목록으로 돌아가기':'전체 목록'));
   }
   // 순환·셔플은 닫기와 대칭인 좌상단 고정 자리에서 유지한다.
   _vfSyncCycleIcon();
@@ -14184,6 +14238,8 @@ function _vgMatch(v,kind,val){
 function _vgFilteredPool(){
   let pool=(_vgState.kind==='home')
     ? ACTIVE_VERSES()                                  // 말씀설정에 맞춰진 기본 목록
+    :(_vgState.kind==='keep')
+    ? _aggEntriesForKind('keep','all').map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)||verseByRef(g.ref)).filter(Boolean)
     : _vgRawPool().filter(v=>_vgMatch(v,_vgState.kind,_vgState.val));
   // 갈래 탭 (v26-0831-19, HB) — 여기 한 곳에서만 거른다.
   //   그래야 정렬·묶음·개수가 저절로 따라온다.
@@ -14872,7 +14928,7 @@ function vgPick(i){
   _vfCurPattern=_pr.pattern;_vfVariantIdx=_pr.variantIdx;
   // 이전/다음은 방금 보던 타일 목록 안에서 돈다 (홈 목록이면 본 시퀀스 그대로)
   if(_vgState.kind==='home')_vfClearNav();
-  else _vfSetNav(_vgLastSorted,i,_vgFilterLabelText());
+  else _vfSetNav(_vgLastSorted,i,_vgFilterLabelText(),_vgState.kind==='keep'?'keep':null);
   applyVfTheme();
   _verseFullRender();
 }
@@ -17406,7 +17462,10 @@ function _vliOpenFull(ref,kind){
               ||verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
     const keys=rows.map(g=>g.ref);
     const i=Math.max(0,keys.indexOf(ref));
-    if(list.length)_vfSetNav(list,i,_VLIST_KIND_LABEL[kind]||'',kind);
+    if(list.length){
+      if(kind==='keep')_vfSetNav(list,i,window._vAggKeepList||'',kind);
+      else _vfSetNav(list,i,_VLIST_KIND_LABEL[kind]||'',kind);
+    }
   }
 }
 function vliAction(act){
@@ -17712,8 +17771,7 @@ function openKeepListPopup(name){
 function _vAggSyncKeepTitle(){
   const el=document.getElementById('vAggTitle');
   if(!el)return;
-  el.innerHTML=`<span style="display:inline-flex;align-items:center;gap:5px;justify-content:center;">`
-    +_VLIST_KIND_TITLE.keep
+  el.innerHTML=`<span style="display:inline-flex;align-items:center;justify-content:center;">`
     +`<span id="vAggKeepName" class="keep-name-edit" contenteditable="true" spellcheck="false"`
     +` onkeydown="_keepNameKey(event)" onblur="_keepNameCommit()"`
     +` title="눌러서 이름을 고쳐요">${esc(window._vAggKeepList||'')}</span></span>`;
