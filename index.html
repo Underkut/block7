@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-1  [production]  -->
+<!-- BLOCK7  v. 26-0903-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -232,6 +232,11 @@ function _thLabRgb(L){
 // 그래도 모자라면 밝기를 배경 쪽이 아니라 **글자색 반대쪽**으로 조금 민다.
 // ⚠️ 지금보다 안 읽히게 만들지는 않는다 — 후보의 최소 대비가 원래 강조색의
 //    대비(또는 4.0) 밑으로 내려가면 버린다.
+// 기준값 34 는 HB 확인으로 정했다(v26-0903-2). 24 로는 '14 올리브 가든 피스트'
+// 라이트에서 강조색(#606c38 올리브)이 보조 글자색(#676f53)과 거의 같은 색으로
+// 보여 GNB 오늘 날짜·로고 '7' 이 강조로 읽히지 않았다. 밝기는 둘 다 45 언저리라
+// 대비로는 못 잡고, 채도를 밀어야 갈라진다. 더 올려도(36·40) 결과는 같다 —
+// 읽힘(대비 하한)이 먼저 걸려 후보가 더 안 나온다.
 function _thAcText(ac,texts,faces,target){
   const worst=c=>{let m=99;for(let i=0;i<texts.length;i++)m=Math.min(m,_thDeltaE(c,texts[i]));return m;};
   const con  =c=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(c,faces[i]));return m;};
@@ -298,8 +303,8 @@ function _themeTokens(preset,mode){
   // 그 결과 배수를 CSS 의 모든 틴트 알파에 똑같이 곱한다.
   // 소수 둘째 자리에서 **올림** — 내림하면 방금 맞춘 기준을 한 끗 차이로 놓친다
   const tintK=Math.min(2.4,Math.ceil(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100);
-  // 글자로 쓰는 강조색. 글자색들과 ΔE 24 이상 벌어지게 채도(필요하면 밝기)를 민다.
-  const acTx=_thAcText(ac,[tx,tx2,tx3],faces,24);
+  // 글자로 쓰는 강조색. 글자색들과 ΔE 34 이상 벌어지게 채도(필요하면 밝기)를 민다.
+  const acTx=_thAcText(ac,[tx,tx2,tx3],faces,34);
   // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
   // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
   let danger=isDark?[255,138,133]:[196,43,33];
@@ -481,7 +486,15 @@ html[data-theme="light"],.theme-defaults-light {
    저장된 테마가 없으면 아무 것도 안 얹혀 위의 :root 색이 그대로 보인다. */
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{-webkit-text-size-adjust:100%;background:var(--bg);}
+/* ⚠️ 가로 넘침을 자르는 자리는 **html 이어야 한다** (v26-0903-2).
+   body 에 overflow-x:hidden 을 주면(v26-0830-7 에 그렇게 들어갔다) body 가
+   스스로 스크롤 상자가 된다. 그러면 body 의 자식인 <header> 의 sticky 는
+   "절대 움직이지 않는 body 안"을 기준으로 삼아 **화면을 내릴 때 같이 밀려
+   올라가 사라진다.** html 에 주면 뷰포트로 전달되어 예전처럼 붙어 있는다.
+   overscroll-behavior-y:none 은 손가락으로 끝까지 당겼을 때 화면 전체가
+   출렁이던 것(HB '전체화면이 드래그로 흔들린다')을 멈춘다. */
+html{-webkit-text-size-adjust:100%;background:var(--bg);
+  overflow-x:hidden;overscroll-behavior-y:none;}
 body{
   font-family:var(--font-ui),-apple-system,sans-serif;
   background:var(--bg) !important;color:var(--tx);
@@ -491,7 +504,7 @@ body{
   font-variant-numeric:tabular-nums;
   font-feature-settings:'tnum' 1;
   -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
+  /* overflow-x:hidden 은 위 html 로 옮겼다 — 여기 두면 sticky 헤더가 깨진다 */
   /* iOS home indicator safe area */
   padding-bottom:env(safe-area-inset-bottom, 0px);
   -webkit-touch-callout:none;
@@ -1293,7 +1306,10 @@ header{
   position:relative;
   display:flex;align-items:center;justify-content:center;
   width:32px;height:24px;padding:0;border-radius:6px;
-  border:1px solid var(--bd2);background:transparent;
+  /* 테두리 없음 — 아이콘만 (v26-0903-2, HB). '아이콘에 테두리·박스 금지'
+     라는 UI 원칙에 맞추고, 옆의 실행취소/다시실행(.ur-btn)과도 결이 맞는다.
+     상자 크기(32×24)는 그대로 둔다 — 손가락이 닿는 넓이가 줄면 안 된다. */
+  border:none;background:transparent;
   color:var(--tx2);font-size:13px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:color .15s;
 }
@@ -1312,7 +1328,8 @@ header{
 .ai-b{
   display:flex;align-items:center;justify-content:center;
   padding:4px 9px;border-radius:6px;
-  border:1px solid var(--bd2);background:transparent;color:var(--tx2);
+  /* 테두리 없음 — 까닭은 .trash-btn 쪽 주석 참고 (v26-0903-2, HB) */
+  border:none;background:transparent;color:var(--tx2);
   font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
   font-family:var(--font-ui),sans-serif;
 }
@@ -2162,9 +2179,15 @@ body.split-d #todayView.animating{overflow:hidden;}
   animation:menuIn .12s ease;
 }
 /* 저장 목록이 화면보다 길어져도 스크롤은 메뉴 안에서 끝낸다.
-   가장자리의 스크롤이 뒤쪽 전체 할일 뷰로 이어지지 않게 한다. */
+   가장자리의 스크롤이 뒤쪽 전체 할일 뷰로 이어지지 않게 한다.
+   ⚠️ 여기 max-height 는 **못 미더운 보루**일 뿐이다. 메뉴는 position:fixed 라
+      "지금 놓인 자리에서 아래로 얼마나 남았는지"를 CSS 는 모른다. 100dvh 로
+      두면 목록이 길 때 메뉴가 화면 아래로 흘러내리고, 그러면 안에서 스크롤할
+      것이 없어 손가락 밀기가 뒤쪽 할일 뷰로 새어 나간다. 실제 높이는 자리를
+      정한 뒤 _menuFitHeight() 가 재서 넣는다. */
 #logoMenu,.task-menu-sub-float{
   max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
 /* 오른쪽에 띄운 상태에선 1뎁스가 그대로 보이므로 '< 말씀 목록' 되돌아가기
    첫 줄이 필요 없다 (v26-0818-11, HB). 터치 기기(그 자리에서 바뀌는 방식)는 그대로 둔다. */
@@ -2192,7 +2215,9 @@ body.split-d #todayView.animating{overflow:hidden;}
 .dev-note-prev{flex:1;min-width:0;font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .dev-note-body{margin-top:7px;}
 .dev-note-body.hide{display:none;}
-.task-menu-overlay{position:fixed;inset:0;z-index:199;}
+/* touch-action:none — 메뉴가 떠 있는 동안 바깥을 끌어도 뒤쪽 할일 뷰가
+   따라 스크롤되지 않게 한다 (설정창 오버레이와 같은 방식) */
+.task-menu-overlay{position:fixed;inset:0;z-index:199;touch-action:none;}
 
 /* ── Event add modal ── */
 .event-modal-overlay{position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.45);}
@@ -2612,11 +2637,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   background:none;border:none;padding:2px;cursor:pointer;color:var(--tx3);
   display:flex;align-items:center;-webkit-tap-highlight-color:transparent;border-radius:4px;
 }
-/* 여기도 선 그림 하나뿐이라 색만으로는 약하다 — 켜지면 선을 굵게 (1.6 → 2.3).
-   까닭은 .uilv-btn 쪽 주석 참고 */
+/* 여기도 선 그림 하나뿐이라 색만으로는 약하다 — 켜지면 선을 아주 조금 굵게
+   (1.6 → 1.8). 까닭과 "왜 조금만" 인지는 .uilv-btn 쪽 주석 참고 */
 .vl-sort-toggle.on{color:var(--ac-tx);}
 .vl-sort-toggle svg{transition:stroke-width .15s;}
-.vl-sort-toggle.on svg{stroke-width:2.3;}
+.vl-sort-toggle.on svg{stroke-width:1.8;}
 /* ⚠️ 손가락 화면에서는 :hover 를 주지 않는다. 한 번 누르면 그 색이 그대로
    남아서 "누른 버튼이 파랗게 굳은" 것처럼 보인다 (마우스가 없어 hover 가
    풀릴 일이 없다). 마우스가 있는 기기에서만 켠다. */
@@ -2936,10 +2961,13 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
    ('14 올리브 가든 피스트' 라이트에서 HB 가 겪은 자리)
    그래서 색 말고 **선 굵기**라는 두 번째 표시를 같이 준다. 켜진 것은 굵게.
    테두리·박스를 만들지 않으므로 미니멀 원칙은 그대로다.
+   ⚠️ 굵기 차이는 **아주 조금만** 준다 (v26-0903-2, HB). 1.5 까지 굵혔더니
+      아이콘이 뭉툭하고 촌스러워 보였다. 굵기는 "어느 쪽이 켜졌나"를 거드는
+      보조 표시일 뿐이고, 갈라 세우는 일은 색(--ac-tx)이 한다.
    ⚠️ 굵기는 CSS 로만 준다. _UILV_ART 의 sw(.75)는 그림의 기본값이라
       건드리지 않는다 — 설정창 미리보기 등 꺼진 자리는 그 값 그대로 쓴다. */
 .uilv-btn svg,.uilv-set-btn svg{transition:stroke-width .15s;}
-.uilv-btn.on svg,.uilv-set-btn.on svg{stroke-width:1.5;}
+.uilv-btn.on svg,.uilv-set-btn.on svg{stroke-width:.95;}
 @media(hover:hover){
   .uilv-btn:hover{color:var(--tx2);}
   .uilv-btn.on:hover{color:var(--ac-tx);}
@@ -3863,7 +3891,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-1";
+const APP_VERSION = "v. 26-0903-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14895,6 +14923,20 @@ function logoMenuRandomVerse(){
 }
 let _logoMenuOpenedAt=0;
 
+// ── 떠 있는 메뉴의 높이를 화면에 맞춘다 ──
+// 메뉴는 position:fixed 이고 자리(top)는 여기 JS 가 정한다. CSS 는 "그 자리에서
+// 아래로 얼마나 남았는지"를 알 수 없어 100dvh 같은 값밖에 못 쓰는데, 그러면
+// 목록이 길 때 메뉴가 화면 밖으로 흘러내린다. 흘러내린 메뉴는 **안에서 스크롤할
+// 것이 없어서**, 손가락으로 밀면 그 힘이 뒤쪽 할일 뷰로 새어 나간다.
+// (v26-0903-2 HB 신고 — '목록을 스크롤하면 뒤에 깔린 할일 뷰가 같이 스크롤된다')
+// 그래서 자리를 정한 **뒤에** 남은 높이를 재서 넣는다. 내용이 짧으면 max-height
+// 가 그냥 안 쓰이므로 메뉴가 억지로 늘어나지는 않는다.
+function _menuFitHeight(el){
+  if(!el||el.style.display==='none')return;
+  const top=el.getBoundingClientRect().top;
+  el.style.maxHeight=Math.max(120,Math.round(window.innerHeight-top-8))+'px';
+}
+
 function openLogoMenu(anchorEl){
   closeLogoMenu();
   document.getElementById('logoMenuToggleLabel').textContent=
@@ -14925,6 +14967,7 @@ function openLogoMenu(anchorEl){
   if(left+mw>window.innerWidth)left=window.innerWidth-mw-8;
   if(top+mh>window.innerHeight)top=r.top-mh-6;
   menu.style.left=left+'px';menu.style.top=top+'px';
+  _menuFitHeight(menu);
 
   // Enable the close overlay after a safe delay
   setTimeout(()=>{
@@ -14957,6 +15000,7 @@ function logoMenuOpenListSub(id){
     s.style.left='';s.style.top='';
     if(m)m.style.display='none';
     s.style.display='';
+    _menuFitHeight(document.getElementById('logoMenu'));  // 내용이 바뀌었으니 다시 잰다
   }else{
     const box=document.getElementById('logoMenu');
     const r=box.getBoundingClientRect();
@@ -14966,6 +15010,7 @@ function logoMenuOpenListSub(id){
     const mw=s.offsetWidth||180;
     if(left+mw>window.innerWidth)left=r.left-mw-6;   // 화면 오른쪽에 붙어 있으면 왼쪽으로
     s.style.left=left+'px';s.style.top=top+'px';
+    _menuFitHeight(s);
   }
 }
 // 저장 목록 하위 뎁스 — 열기 전에 목록을 새로 그린다 (그 사이 늘거나 줄 수 있다)
@@ -14999,6 +15044,7 @@ function logoMenuBackToMain(){
     if(s){s.style.display='none';s.classList.remove('task-menu-sub-float');s.style.left='';s.style.top='';}
   });
   if(m)m.style.display='';
+  _menuFitHeight(document.getElementById('logoMenu'));
 }
 function _tryCloseLogoMenu(){
   if(Date.now()-_logoMenuOpenedAt<500)return;
@@ -22533,7 +22579,12 @@ function updateHeaderDate(){
   //    (광학 보정이 걸린 요소다). 글자는 안쪽 span 에만 넣는다.
   const txt=document.getElementById('hDateText');
   if(txt)txt.textContent=label; else el.textContent=label;
-  el.style.color=isT?'var(--ac)':'var(--tx2)';
+  // ⚠️ 오늘 표시는 --ac 가 아니라 **--ac-tx**(글자용 강조색)를 쓴다.
+  //    --ac 는 면을 칠하려고 고른 색이라, 테마에 따라 보조 글자색과 거의
+  //    같은 색이 된다('14 올리브 가든 피스트' 라이트: --ac #606c38,
+  //    --tx2 #676f53). 그러면 오늘인지 아닌지가 구분되지 않는다.
+  //    --ac-tx 는 글자색들과 ΔE 34 이상 벌어지도록 계산된 값이다.
+  el.style.color=isT?'var(--ac-tx)':'var(--tx2)';
   el.title=isT?'오늘':'탭하면 오늘로';
   document.getElementById('dateBack').style.display='flex';
   document.getElementById('dateFwd').style.display='flex';
