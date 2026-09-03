@@ -103,6 +103,17 @@ console.log('\n시나리오 4 — 목록 차례 (v26-0831-19, HB)');
   sc.eq('많은순', _keepLists().map(x=>x.n), ['최근 것',KEEP_DEFAULT_LIST,'오래된 것']);
   ST.verseKeepLog = {
     '2026-08-20':[
+      {ref:R1,time:'09:00',lst:'🔥 나눔'},
+      {ref:R2,time:'09:01',lst:'🙏 가나다'},
+      {ref:P1,time:'09:02',lst:'Apple'}
+    ]
+  };
+  keepSetSort('alpha');
+  sc.eq('ㄱㄴㄷ순은 앞의 이모지를 빼고 목록 이름을 비교한다',
+        _keepLists().map(x=>x.n), ['🙏 가나다','🔥 나눔','Apple']);
+  keepSetSort('count');
+  ST.verseKeepLog = {
+    '2026-08-20':[
       {ref:R1,time:'09:00',lst:'Zebra'}, {ref:R2,time:'09:01',lst:'Zebra'},
       {ref:R1,time:'09:02',lst:'가나다'}, {ref:R2,time:'09:03',lst:'가나다'},
       {ref:R1,time:'09:04',lst:'Apple'}, {ref:R2,time:'09:05',lst:'Apple'},
