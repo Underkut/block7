@@ -19,4 +19,14 @@ const rowsAt = picker.indexOf('<div id="keepPickRows">');
 sc.eq('새 목록 행이 목록 묶음보다 먼저', addAt >= 0 && addAt < rowsAt, true);
 sc.eq('새 목록 행은 드래그 묶음 밖', picker.slice(rowsAt).includes('keep-pick-row keep-pick-new'), false);
 
+
+// v26-0903-1 — 좌상단 저장 목록은 독립적으로 스크롤하고, 팝업 뒤에서도 상태를 보존한다.
+console.log('\n시나리오 3 — 좌상단 저장 목록의 스크롤과 돌아갈 자리');
+const menuCss = SRC.slice(SRC.indexOf('#logoMenu,.task-menu-sub-float{'), SRC.indexOf('}', SRC.indexOf('#logoMenu,.task-menu-sub-float{')) + 1);
+const openPopup = SRC.slice(SRC.indexOf('function openKeepListPopup('), SRC.indexOf('// 제목 = 지금 보고 있는 목록 이름'));
+sc.eq('긴 목록은 메뉴 자체에서 스크롤', menuCss.includes('overflow-y:auto'), true);
+sc.eq('목록 끝의 스크롤이 할일 뷰로 번지지 않음', menuCss.includes('overscroll-behavior:contain'), true);
+sc.eq('좌상단 폴더 목록이 열려 있는지 확인', openPopup.includes("keepSub.style.display!=='none'"), true);
+sc.eq('좌상단에서 열었으면 뒤의 폴더 목록을 닫지 않음', openPopup.includes('if(!returnToKeepMenu)closeLogoMenu();'), true);
+
 sc.done();

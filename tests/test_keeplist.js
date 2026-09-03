@@ -239,7 +239,7 @@ console.log('\n시나리오 9 — 좌상단 말씀메뉴의 두 갈래 (HB)');
   sc.eq('만들어 둔 목록만큼 그린다', SRC_DEV.includes('function _renderKeepSubMenu('), true);
   sc.eq('목록을 누르면 팝업', SRC_DEV.includes('onclick="openKeepListPopup('), true);
   // 활동 목록과 **같은 팝업**을 쓴다 (필터 줄도 그대로 따라온다)
-  sc.eq('같은 팝업을 쓴다', /function openKeepListPopup[\s\S]{0,500}vAggModal/.test(SRC_DEV), true);
+  sc.eq('같은 팝업을 쓴다', /function openKeepListPopup[\s\S]{0,900}vAggModal/.test(SRC_DEV), true);
 }
 
 console.log('\n시나리오 10 — 좌측 정렬 칩: 최신순 ⇄ 등록순 (HB)');

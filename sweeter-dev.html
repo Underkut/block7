@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0902-21  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2161,6 +2161,11 @@ body.split-d #todayView.animating{overflow:hidden;}
   padding:4px;min-width:180px;
   animation:menuIn .12s ease;
 }
+/* 저장 목록이 화면보다 길어져도 스크롤은 메뉴 안에서 끝낸다.
+   가장자리의 스크롤이 뒤쪽 전체 할일 뷰로 이어지지 않게 한다. */
+#logoMenu,.task-menu-sub-float{
+  max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain;
+}
 /* 오른쪽에 띄운 상태에선 1뎁스가 그대로 보이므로 '< 말씀 목록' 되돌아가기
    첫 줄이 필요 없다 (v26-0818-11, HB). 터치 기기(그 자리에서 바뀌는 방식)는 그대로 둔다. */
 .task-menu-sub-float #logoMenuSubBack,.task-menu-sub-float #logoMenuSubSep{display:none;}
@@ -3858,7 +3863,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0902-21";
+const APP_VERSION = "v. 26-0903-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17505,7 +17510,12 @@ function _keepBindDrag(box){
 }
 
 function openKeepListPopup(name){
-  closeLogoMenu();
+  // 좌상단 저장 목록에서 들어왔으면 그 메뉴를 뒤에 그대로 둔다.
+  // 팝업을 닫는 순간 사용자가 보던 폴더 목록과 스크롤 자리가 다시 나타난다.
+  const keepSub=document.getElementById('logoMenuKeepSub');
+  const returnToKeepMenu=document.getElementById('logoMenu')?.style.display!=='none'
+    &&keepSub&&keepSub.style.display!=='none';
+  if(!returnToKeepMenu)closeLogoMenu();
   closeKeepSwitch();
   window._vAggKind='keep';
   window._vAggKeepList=name||'';
