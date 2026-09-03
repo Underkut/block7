@@ -58,7 +58,7 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
   sc.eq('모바일도 태그 그림과 같은 투명도',
         SRC.includes('@media(hover:none){.vf-cycle,.vf-close{opacity:.3;}}'), true);
   sc.eq('필터가 있어도 버튼을 아래로 내리지 않는다', SRC.includes('vf-cycle-below'), false);
-  sc.eq('전체 목록 버튼은 좌측 버튼과 겹치지 않는다', SRC.includes('.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:52px;'), true);
+  sc.eq('저장 폴더 버튼은 순환·셔플 바로 아래에 있어 겹치지 않는다', SRC.includes('.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;'), true);
 }
 
 console.log('\n시나리오 4 — 보이는 아이콘은 17×17, 버튼은 30×30이다');
