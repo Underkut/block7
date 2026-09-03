@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0903-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1338,9 +1338,9 @@ header{
   display:flex;align-items:center;justify-content:center;
   width:32px;height:24px;padding:0;border-radius:6px;
   /* 네모는 있는 편이 낫다 (v26-0903-3, HB). 다만 **옅고 얇게** — 진한 --bd2 가
-     아니라 연한 --bd 를 쓰고, 굵기도 .5px 로 (v26-0903-4, HB '라인이 두껍다').
-     레티나 화면에서는 .5px 이 실제로 반 픽셀 머리카락선으로 그려진다. */
-  border:.5px solid var(--bd);background:transparent;
+     아니라 연한 --bd 를 쓰고, 굵기도 .8px 로 (v26-0903-5, HB 가 눈으로 고른 값
+     — 1px 은 두껍고 .5px 은 너무 사라졌다). */
+  border:.8px solid var(--bd);background:transparent;
   color:var(--tx2);font-size:13px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;transition:color .15s;
 }
@@ -1359,8 +1359,8 @@ header{
 .ai-b{
   display:flex;align-items:center;justify-content:center;
   padding:4px 9px;border-radius:6px;
-  /* 옅고 얇은 네모 — 까닭은 .trash-btn 쪽 주석 참고 (v26-0903-4, HB) */
-  border:.5px solid var(--bd);background:transparent;color:var(--tx2);
+  /* 옅고 얇은 네모 — 까닭은 .trash-btn 쪽 주석 참고 (v26-0903-5, HB) */
+  border:.8px solid var(--bd);background:transparent;color:var(--tx2);
   font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent;
   font-family:var(--font-ui),sans-serif;
 }
@@ -3925,7 +3925,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-4";
+const APP_VERSION = "v. 26-0903-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
