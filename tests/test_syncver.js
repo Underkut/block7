@@ -115,13 +115,12 @@ console.log('\n시나리오 3 — 낡은 기기가 새로 넣은 것도 함께 �
 // ═══ 4. ⚠️ 모르는 위젯은 지우지 않는다 (같은 사고의 재발 방지) ═══
 console.log('\n시나리오 4 — 모르는 위젯은 지우지 말고 보관한다');
 {
-  ST.settings = { layout: layout({ left: ['todo'], center: ['앞으로생길위젯'], right: ['likeList'] }) };
+  ST.settings = { layout: layout({ left: ['todo'], center: ['앞으로생길위젯'], right: ['monthSingle'] }) };
   const L = _lay();
   sc.eq('모르는 것은 화면 배치에서 빠지지만', L.cols.center, []);
   sc.eq('지워지지 않고 보관된다', L.unknown.map(u => u.t), ['앞으로생길위젯']);
   sc.eq('어느 칸의 몇 번째였는지도 기억한다', [L.unknown[0].c, L.unknown[0].i], ['center', 0]);
-  sc.eq('아는 것은 그대로', L.cols.right, ['likeList']);
-
+  sc.eq('아는 것은 그대로', L.cols.right, ['monthSingle']);
   // 여러 번 돌려도 중복으로 쌓이지 않는다
   _lay(); _lay();
   sc.eq('여러 번 돌려도 하나만', L.unknown.length, 1);
@@ -141,6 +140,14 @@ console.log('\n시나리오 4 — 모르는 위젯은 지우지 말고 보관한
 
   sc.eq('아는 타입 판정', [_layIsKnownType('likeList'), _layIsKnownType('card#c1'), _layIsKnownType('모름')],
         [true, true, false]);
+
+  // v26-0904-7 — 옛 반응별 목록 위젯도 **지우지 않는다**. 말씀목록 인스턴스로
+  // 옮겨 담는다 (지우면 그것이 그대로 저장·전송되어 다른 기기에서도 사라진다).
+  ST.settings = { verseCards: {}, layout: layout({ left: ['todo'], center: [], right: ['likeList'] }) };
+  const Lm = _lay();
+  sc.eq('옛 목록 위젯은 자리에 남는다', Lm.cols.right.length, 1);
+  sc.eq('말씀 위젯 인스턴스로 바뀐다', Lm.cols.right[0].startsWith('card#'), true);
+  sc.eq('보관함으로 가지 않는다', Lm.unknown.length, 0);
 }
 
 // ═══ 5. 유휴 판정 — 창을 앞으로 불러온 직후는 아직 "쓰는 기기"가 아니다 ═══

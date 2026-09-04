@@ -34,13 +34,32 @@ global.ACTIVE_VERSES = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, k
 global._aggEntriesForKind = kind => (kind === 'like'
   ? [{ ref: 'R4' }, { ref: 'R2' }, { ref: 'R5' }]
   : []);
-global.verseByRef = ref => ({ idx: +ref.slice(1), ref, krText: 't' + ref, cat: +ref.slice(1) <= 2 ? '가' : '나', topic: '', tags: [] });
+// ⚠️ 명제의 반응 키('P!<id>')는 verseByRef 로 **절대 못 찾는다** — 그게
+//    v26-0904-7 에서 고친 버그의 씨앗이다. 느슨한 찾기만 찾아낸다.
+global.verseByRef = ref => (String(ref).startsWith('P!') ? null
+  : { idx: +ref.slice(1), ref, krText: 't' + ref, cat: +ref.slice(1) <= 2 ? '가' : '나', topic: '', tags: [] });
+global._findVerseByRefLoose = ref => (String(ref).startsWith('P!')
+  ? (ref === 'P!없음' ? null   // 모음에서 빠진 명제 — 못 찾는 경우
+     : { ref: '요 3:16', pid: String(ref).slice(2), krText: '명제 본문', cat: '나', topic: '', tags: [] })
+  : verseByRef(ref));
+global._reactKey = v => (v && v.pid ? 'P!' + v.pid : (v ? v.ref : ''));
+// 범위별 집계 — 좋아요 3개 / 저장 폴더 둘 / 나머지는 빈 목록
+global._vlEntriesForScope = sc => {
+  const KS = { like: ['R4', 'R2', 'R5'], mem: [], deeper: [], even: [] };
+  const LS = { '여행': ['R1', 'R2'], '주일': ['R2', 'R5'] };
+  const src = [...sc.ks.map(k => KS[k] || []), ...sc.ls.map(n => LS[n] || [])];
+  let refs = [];
+  if (sc.mode === 'and' && src.length > 1) refs = src[0].filter(r => src.every(a => a.includes(r)));
+  else src.forEach(a => a.forEach(r => { if (!refs.includes(r)) refs.push(r); }));
+  return refs.map(r => ({ ref: r, count: 1, lastDate: '', lastTime: '' }));
+};
 // 갈래(필터) pool — 타일뷰와 같은 원천을 쓴다
 global._vgRawPool = () => [1, 2, 3, 4, 5].map(i => ({ idx: i, ref: 'R' + i, krText: 't' + i, cat: i <= 2 ? '가' : '나', topic: '', tags: [] }));
 global._vgMatch = (v, kind, val) => (kind === 'cat' ? v.cat === val : true);
 // 화면을 다시 그리려 할 때 조용히 넘어가게
 global.document = { querySelector: () => null, getElementById: () => null };
 global.renderRightPanel = () => {};
+global.renderLayout = () => {};
 
 eval(
   slice('const RP_WIDGET_DEFS={', 'function _rpGetWidgets(') +
@@ -48,7 +67,9 @@ eval(
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
-  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_TS_MIN,VC_TS_MAX,VC_NEW,VC_KINDS});'
+  '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_TS_MIN,VC_TS_MAX,VC_NEW,VL_NEW,VC_KINDS,' +
+  '_vcScope,_vcScopeIsHome,_vcScopeCount,_vcScopeKey,_vcScopeLabel,_vcView,_vcSyncKind,' +
+  '_vcListItems,_vcKeyOf,_vcVerseOf,_vcReactKeyOf,vcSetView,vcToggleView,_VC_TYPE_KIND});'
 );
 
 const reset = () => {
@@ -98,17 +119,17 @@ console.log('\n시나리오 3 — 카드는 여러 개 놓을 수 있다');
   const L = _lay();
   sc.eq('좋아요 카드 2개 + 일반 카드가 모두 살아남는다', L.cols.right.length, 3);
 
-  // 반대로 타입 위젯은 여전히 하나만 남는다
+  // 반대로 타입 위젯(월간뷰 등)은 여전히 하나만 남는다
   reset();
-  ST.settings.layout.cols.right = ['likeList', 'likeList', 'memList'];
-  sc.eq('타입 위젯은 지금처럼 중복이 지워진다', _lay().cols.right, ['likeList', 'memList']);
+  ST.settings.layout.cols.right = ['monthSingle', 'monthSingle', 'monthTriple'];
+  sc.eq('타입 위젯은 지금처럼 중복이 지워진다', _lay().cols.right, ['monthSingle', 'monthTriple']);
 
   // 컬럼이 달라도 타입 위젯은 하나만
   reset();
-  ST.settings.layout.cols.center = ['likeList'];
-  ST.settings.layout.cols.right = ['likeList'];
+  ST.settings.layout.cols.center = ['monthSingle'];
+  ST.settings.layout.cols.right = ['monthSingle'];
   const L2 = _lay();
-  sc.eq('컬럼이 달라도 타입은 하나만', [L2.cols.center, L2.cols.right], [['likeList'], []]);
+  sc.eq('컬럼이 달라도 타입은 하나만', [L2.cols.center, L2.cols.right], [['monthSingle'], []]);
 
   // 설정이 없어진 카드는 걸러 낸다 (기기 간 동기화로 어긋날 수 있다)
   reset();
@@ -123,6 +144,7 @@ console.log('\n시나리오 4 — 그 카드가 도는 범위 (필터는 덜어�
   reset();
   ST.settings.verseCurrentIdx = 3;
   const gen = { kind: null, ref: null }, lst = { kind: 'like', ref: null };
+  // ⚠️ 옛 카드(scope 가 없는 것)는 kind 하나가 곧 범위였다 — 그대로 읽어 준다
 
   sc.eq('일반 카드는 말씀 모음 전체', _vcVerses(gen).length, 5);
   sc.eq('목록 카드는 그 반응 목록 안', _vcVerses(lst).map(v => v.ref), ['R4', 'R2', 'R5']);
@@ -134,6 +156,7 @@ console.log('\n시나리오 4 — 그 카드가 도는 범위 (필터는 덜어�
         _vcCurrent({ kind: 'like', ref: 'R1' }).ref, 'R4');
 
   sc.eq('기록이 없으면 보여줄 것이 없다', _vcCurrent({ kind: 'mem', ref: null }), null);
+  sc.eq('옛 카드의 kind 는 범위로 읽힌다', _vcScope({ kind: 'like' }).ks, ['like']);
   sc.eq('설정이 없으면 빈 목록', _vcVerses(null), []);
 
   // ⚠️ 필터는 원래 범위를 **덜어낸다** (갈아치우지 않는다)
@@ -203,7 +226,9 @@ console.log("\n시나리오 4-D — '말씀카드' 칩은 끌어다 놓아도 �
 {
   reset();
   sc.eq('칩은 설정이 없는 카드 표식', [_vcIs(VC_NEW), _vcGet(_vcIdOf(VC_NEW))], [true, null]);
-  sc.eq('칩 이름', _rpChipName(VC_NEW), '말씀카드');
+  sc.eq('목록 칩도 마찬가지', [_vcIs(VL_NEW), _vcGet(_vcIdOf(VL_NEW))], [true, null]);
+  sc.eq('칩 이름', _rpChipName(VC_NEW), '말씀 카드');
+  sc.eq('목록 칩 이름', _rpChipName(VL_NEW), '말씀 목록');
 
   // 끌어다 놓으면 진짜 카드가 하나 생긴다
   const id1 = vcAddCard('right');
@@ -215,14 +240,17 @@ console.log("\n시나리오 4-D — '말씀카드' 칩은 끌어다 놓아도 �
 
   // 칩 자체가 실수로 cols 에 남아도 화면에 나오지 않는다
   reset();
-  ST.settings.layout.cols.right = [VC_NEW];
+  ST.settings.layout.cols.right = [VC_NEW, VL_NEW];
   sc.eq('만들기 칩은 배치로 남지 않는다', _lay().cols.right, []);
 
-  // 목록 위젯 칩은 '목록'을 뺀 짧은 이름
-  sc.eq('좋아요 목록 → 좋아요', _rpChipName('likeList'), '좋아요');
-  sc.eq('암송 목록 → 암송', _rpChipName('memList'), '암송');
-  sc.eq('Deeper 목록 → Deeper', _rpChipName('deeperList'), 'Deeper');
-  sc.eq('Even Deeper 목록 → Even Deeper', _rpChipName('evenList'), 'Even Deeper');
+  // 목록 칩을 놓으면 **목록 모습**의 위젯이 난다
+  reset();
+  const lid = vcAddCard('right', 0, 'list');
+  sc.eq('목록 모습으로 태어난다', _vcView(_vcGet(lid)), 'list');
+  sc.eq('처음엔 말씀 모음 전체', _vcScopeIsHome(_vcScope(_vcGet(lid))), true);
+  const cid = vcAddCard('right', 0);
+  sc.eq('카드 칩은 카드 모습', _vcView(_vcGet(cid)), 'card');
+
   sc.eq('그 밖은 그대로', _rpChipName('monthSingle'), '월간 싱글뷰');
 }
 
@@ -271,20 +299,131 @@ console.log('\n시나리오 6 — 드래그로 정한 카드 높이');
   sc.eq('다른 카드는 영향 없음', _rpVCardH('c2'), 220);
 }
 
-// ═══ 7. 목록 ↔ 카드를 오가도 설정이 남는다 ═══
-console.log('\n시나리오 7 — 목록으로 돌아갔다 와도 설정이 살아 있다');
+// ═══ 7. ⚠️ 카드 ⇄ 목록 — 위젯은 하나, 모습만 뒤집힌다 (v26-0904-7) ═══
+// 예전에는 타입이 통째로 갈렸다(card#c1 ↔ likeList). 그래서 오갈 때마다
+// 범위·배경·글자 크기가 어긋났다. 이제는 **같은 인스턴스**가 두 모습을 갖는다.
+console.log('\n시나리오 7 — 카드 ⇄ 목록은 같은 위젯의 두 모습');
 {
   reset();
-  const a = _vcCreate('like', 'likeList');
+  const a = _vcCreate(null, null);
   _vcGet(a).theme = 'ink';
+  _vcScope(_vcGet(a)).ks = ['like'];
   ST.settings.layout.cols.right = ['card#' + a];
-  sc.eq('놓여 있으면 "안 쓰는 설정"이 아니다', _vcUnplacedForKind('like'), null);
 
-  ST.settings.layout.cols.right = ['likeList'];              // 목록으로 되돌린 상태
-  sc.eq('빠져 있으면 다시 쓸 설정으로 찾힌다', _vcUnplacedForKind('like'), a);
-  sc.eq('그 설정에 배경이 남아 있다', _vcGet(a).theme, 'ink');
-  sc.eq('자기 자신은 빼고 찾을 수도 있다', _vcUnplacedForKind('like', a), null);
-  sc.eq('다른 반응은 없다', _vcUnplacedForKind('mem'), null);
+  sc.eq('처음엔 카드 모습', _vcView(_vcGet(a)), 'card');
+  vcSetView(a, 'list');
+  sc.eq('목록으로 바꿔도 자리는 그대로', _lay().cols.right, ['card#' + a]);
+  sc.eq('배경도 그대로', _vcGet(a).theme, 'ink');
+  sc.eq('범위도 그대로', _vcScope(_vcGet(a)).ks, ['like']);
+  vcToggleView(a);
+  sc.eq('다시 뒤집으면 카드', _vcView(_vcGet(a)), 'card');
+  sc.eq('모르는 값은 카드로 본다', _vcView({ view: '엉뚱' }), 'card');
+
+  // 카드 높이와 목록 높이는 따로 기억한다 (서로의 높이를 물려받지 않게)
+  reset();
+  const b = _vcCreate(null, null);
+  ST.settings.rpWidgetHeights = { ['card#' + b]: 300, ['list#' + b]: 150 };
+  _vcRemove(b);
+  sc.eq('지우면 두 높이가 함께 사라진다',
+        [ST.settings.rpWidgetHeights['card#' + b], ST.settings.rpWidgetHeights['list#' + b]],
+        [undefined, undefined]);
+}
+
+// ═══ 7-B. ⚠️ 옛 목록 위젯은 지우지 않고 옮겨 담는다 ═══
+// 지우면 그 기기가 "사용자가 뺐다"로 읽어 다른 기기의 배치까지 함께 사라진다.
+console.log('\n시나리오 7-B — 옛 반응별 목록 위젯 자동 이전');
+{
+  reset();
+  ST.settings.layout.cols.right = ['likeList', 'memList'];
+  ST.settings.rpWidgetHeights = { likeList: 240 };
+  const L = _lay();
+  sc.eq('둘 다 남는다 (개수도 차례도 그대로)', L.cols.right.length, 2);
+  sc.eq('말씀 위젯 인스턴스가 됐다', L.cols.right.every(t => _vcIs(t)), true);
+  const ids = L.cols.right.map(_vcIdOf);
+  sc.eq('둘 다 목록 모습', ids.map(i => _vcView(_vcGet(i))), ['list', 'list']);
+  sc.eq('범위는 그 반응 그대로', ids.map(i => _vcScope(_vcGet(i)).ks), [['like'], ['mem']]);
+  sc.eq('끌어서 정해 둔 높이도 따라온다', ST.settings.rpWidgetHeights['list#' + ids[0]], 240);
+  sc.eq('한 번 옮기고 나면 다시 옮기지 않는다', _lay().cols.right, L.cols.right);
+
+  // 안 쓰고 남아 있던 그 반응의 카드 설정이 있으면 그것을 되살려 쓴다
+  reset();
+  const keep = _vcCreate('like', null);
+  _vcGet(keep).theme = 'ink';
+  ST.settings.layout.cols.right = ['likeList'];
+  sc.eq('남아 있던 설정을 되살린다', _lay().cols.right, ['card#' + keep]);
+  sc.eq('배경이 그대로 이어진다', _vcGet(keep).theme, 'ink');
+  sc.eq('모습만 목록으로 바뀐다', _vcView(_vcGet(keep)), 'list');
+}
+
+// ═══ 7-C. 범위 고르기 — 반응 넷 + 저장 폴더, 합치기 ⇄ 겹치는 것만 ═══
+console.log('\n시나리오 7-C — 위젯이 볼 범위');
+{
+  reset();
+  const id = _vcCreate(null, null);
+  const cfg = _vcGet(id);
+
+  sc.eq('새 위젯은 말씀 모음 전체', _vcScopeIsHome(_vcScope(cfg)), true);
+  sc.eq('말씀 모음 전체 이름', _vcScopeLabel(_vcScope(cfg)), '말씀 모음');
+  sc.eq('전체일 때 옛 kind 는 비어 있다', cfg.kind, null);
+
+  // 반응 하나 — 옛 카드와 한 글자도 다르지 않은 상태가 된다
+  _vcScope(cfg).ks = ['like']; _vcSyncKind(cfg);
+  sc.eq('하나만 고르면 옛 kind 로도 적힌다', cfg.kind, 'like');
+  sc.eq('설정 열쇠도 예전 그대로', _vcScopeKey(_vcScope(cfg)), 'like');
+  sc.eq('그 반응 목록 안을 돈다', _vcVerses(cfg).map(v => v.ref), ['R4', 'R2', 'R5']);
+  sc.eq('이름은 그 반응', _vcScopeLabel(_vcScope(cfg)), '좋아요');
+
+  // 반응 + 저장 폴더 — 합치기
+  _vcScope(cfg).ls = ['여행']; _vcSyncKind(cfg);
+  sc.eq('여럿 고르면 옛 kind 는 비운다', cfg.kind, null);
+  sc.eq('합치기 = 둘 다 모은다', _vcVerses(cfg).map(v => v.ref), ['R4', 'R2', 'R5', 'R1']);
+  sc.eq('이름은 첫째 + 외 N', _vcScopeLabel(_vcScope(cfg)), '좋아요 외 1');
+  sc.eq('몇 개 골랐는지', _vcScopeCount(_vcScope(cfg)), 2);
+
+  // 겹치는 것만
+  _vcScope(cfg).mode = 'and';
+  sc.eq('겹치는 것만 = 둘 다에 있는 것', _vcVerses(cfg).map(v => v.ref), ['R4', 'R2', 'R5'].filter(r => ['R1', 'R2'].includes(r)));
+  sc.eq('설정 열쇠가 갈린다', _vcScopeKey(_vcScope(cfg)).startsWith('and'), true);
+  // ⚠️ 열쇠는 클라우드 문서의 **칸 이름**이 된다 — 사람이 지은 폴더 이름을
+  //    그대로 넣지 않는다 (점·꺾쇠 같은 글자가 그대로 키로 들어간다).
+  sc.eq('열쇠에 폴더 이름이 들어가지 않는다',
+        _vcScopeKey({ ks: [], ls: ['가.나/다'], mode: 'or' }).includes('가.나'), false);
+  sc.eq('폴더 하나짜리 열쇠는 keep 으로 시작',
+        _vcScopeKey({ ks: [], ls: ['여행'], mode: 'or' }).startsWith('keep'), true);
+
+  // 아무것도 안 고르면 다시 말씀 모음 전체
+  _vcScope(cfg).ks = []; _vcScope(cfg).ls = []; _vcSyncKind(cfg);
+  sc.eq('다 풀면 말씀 모음 전체', _vcVerses(cfg).length, 5);
+  sc.eq('전체의 설정 열쇠', _vcScopeKey(_vcScope(cfg)), 'home');
+
+  // 이상한 값이 들어와도 안전 (기기 사이를 오가며 어긋날 수 있다)
+  const bad = { scope: { ks: ['like', 'like', '없는것'], ls: ['  ', '여행', '여행'], mode: '엉뚱' } };
+  const bsc = _vcScope(bad);
+  sc.eq('겹친 것·모르는 것은 걸러 낸다', [bsc.ks, bsc.ls, bsc.mode], [['like'], ['여행'], 'or']);
+  sc.eq('scope 가 없어도 안전', _vcScopeIsHome(_vcScope({})), true);
+  sc.eq('빈 값도 안전', _vcScopeIsHome(_vcScope(null)), true);
+}
+
+// ═══ 7-D. ⚠️ 명제 카드에 본문이 나온다 (v26-0904-7, HB 신고) ═══
+// "좋아요 카드에서 명제만 본문이 안 나오고 명제 ID 가 뜬다."
+// 까닭: 예전에는 장절 전용 verseByRef 하나로만 찾아서 명제의 반응 키는
+//       **언제나 못 찾았고** 빈 껍데기(ref=명제 ID, 본문 없음)가 만들어졌다.
+console.log('\n시나리오 7-D — 명제도 본문이 나온다');
+{
+  reset();
+  const v = _vcVerseOf('P!p9');
+  sc.eq('명제도 찾아낸다', v.krText, '명제 본문');
+  sc.eq('장절은 진짜 장절로 보여 준다', v.ref, '요 3:16');
+  sc.eq('명제 ID 가 그대로 뜨지 않는다', v.ref.includes('P!'), false);
+  // ⚠️ 반응을 세고 기록하는 열쇠는 장절이 아니라 **기록에 적힌 그 열쇠**다
+  //    (한 설교의 명제들은 장절이 서로 같아 장절로는 셀 수 없다)
+  sc.eq('반응 열쇠는 그대로 들고 다닌다', [v.k, _vcKeyOf(v), _vcReactKeyOf(v)], ['P!p9', 'P!p9', 'P!p9']);
+  // 말씀(명제가 아닌 것)은 예전과 똑같다
+  const w = _vcVerseOf('R2');
+  sc.eq('말씀은 예전 그대로', [w.ref, w.k], ['R2', 'R2']);
+  // 못 찾는 것은 빈 껍데기로 (화면이 죽지 않게)
+  const g = _vcVerseOf('P!없음');
+  sc.eq('못 찾아도 안전', [g.ref, g.krText], ['P!없음', '']);
 }
 
 // ═══ 8. 표시 항목 · 위젯 이름 ═══
@@ -309,20 +448,23 @@ console.log('\n시나리오 8 — 표시 항목과 이름');
         _vcShowFor({ show: { verseCardCat: true }, showGroup: { meta: false } }, 'verseCardCat'), false);
   ST.settings.verseCardCat = true;
 
-  const a = _vcCreate('deeper', 'deeperList'), b = _vcCreate(null, null);
-  sc.eq('목록카드 이름', _rpWidgetName('card#' + a), '말씀카드 · Deeper');
-  sc.eq('일반카드 이름', _rpWidgetName('card#' + b), '말씀카드');
-  sc.eq('기존 위젯 이름은 그대로', _rpWidgetName('likeList'), '좋아요 목록');
+  const a = _vcCreate('deeper', null), b = _vcCreate(null, null);
+  sc.eq('범위가 걸린 카드 이름', _rpWidgetName('card#' + a), '말씀 카드 · Deeper');
+  sc.eq('말씀 모음 전체 카드 이름', _rpWidgetName('card#' + b), '말씀 카드');
+  vcSetView(b, 'list');
+  sc.eq('목록 모습이면 이름도 목록', _rpWidgetName('card#' + b), '말씀 목록');
   sc.eq('있는 카드', _rpTypeOk('card#' + a), true);
   sc.eq('없는 카드', _rpTypeOk('card#유령'), false);
-  sc.eq('있는 타입', _rpTypeOk('memList'), true);
+  sc.eq('있는 타입', _rpTypeOk('monthSingle'), true);
 }
 
 // ═══ 9. 화면에 실제로 붙어 있는지 ═══
 console.log('\n시나리오 9 — 화면 연결');
 {
-  sc.eq('목록 위젯 헤더의 카드 전환 버튼', SRC.includes('onclick="vlToCard('), true);
-  sc.eq('카드 헤더 우상단 = 목록 복귀', SRC.includes('vcBackToList('), true);
+  sc.eq('목록 헤더의 카드 전환 버튼', SRC.includes("vcSetView('${id}','card')"), true);
+  sc.eq('카드 헤더 우상단 = 목록으로', SRC.includes("vcSetView('${id}','list')"), true);
+  sc.eq('타입을 갈아치우던 옛 길은 없앴다',
+        SRC.includes('function vlToCard(') || SRC.includes('function vcBackToList('), false);
   // 0811-3: 필터 행 우측의 … 버튼은 없앴다 (카드 설정은 카드 헤더의 ⋯ 로만)
   sc.eq('필터 행에 … 버튼 없음',
         SRC.includes('openVlCardSettings(') || SRC.includes('_vListControlsHTML(kind,true)'), false);
@@ -330,6 +472,21 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('+ 버튼 메뉴는 없앴다', SRC.includes('rpAddMenu'), false);
   sc.eq('카드 설정 팝업', SRC.includes('id="vcSetModal"'), true);
   sc.eq('ESC 표에 카드 설정 팝업', SRC.includes("['vcSetModal'"), true);
+  // ── v26-0904-7: 범위 고르는 팝업 ──
+  sc.eq('범위 고르는 팝업', SRC.includes('id="vsScopeModal"'), true);
+  sc.eq('ESC 표에도 넣었다', SRC.includes("['vsScopeModal'"), true);
+  sc.eq('닫기는 우상단 × 하나 (하단 닫기 버튼 없음)',
+        /id="vsScopeModal"[\s\S]*?<button class="modal-x modal-x-inline" onclick="closeVwScope\(\)"/.test(SRC), true);
+  sc.eq('좌상단은 합치기 ⇄ 겹치는 것만 (보조 메뉴 자리)',
+        SRC.includes('id="vsModeBtn" onclick="vwScopeToggleMode()"'), true);
+  sc.eq('두 동그라미를 겹쳐 그린다',
+        SRC.includes('const _VW_ICON_OR=') && SRC.includes('const _VW_ICON_AND='), true);
+  sc.eq('말씀 모음 전체는 집 모양 홈 아이콘', SRC.includes('const _VW_ICON_HOME='), true);
+  sc.eq('헤더 단추가 그 팝업을 연다', SRC.includes("openVwScope('${id}')"), true);
+  sc.eq('목록은 헤더 **왼쪽 끝**에 범위 단추',
+        /<div class="rp-widget-title">\s*\$\{_vcScopeBtnHTML\(id,cfg/.test(SRC), true);
+  sc.eq('폴더 이름을 onclick 에 적지 않는다 (따옴표가 들어갈 수 있다)',
+        SRC.includes('onclick="vwScopePick(${i})"'), true);
   // 표시 항목은 카드마다 따로 있으므로 말씀설정에서는 뺐다 (0810-4)
   sc.eq('말씀설정 뷰 탭에는 카드 항목이 없다',
         SRC.includes('setVerseCardCat') || SRC.includes('setVerseCardShare') || SRC.includes('말씀카드에서 보여줄 항목'), false);
@@ -346,7 +503,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('설정 진입은 점 세 개 (톱니가 해처럼 보였다)',
         SRC.includes('const _VC_ICON_MORE=') && !SRC.includes('_VC_ICON_GEAR'), true);
   sc.eq('목록 헤더의 카드 버튼은 빈 정사각형',
-        /vlToCard\('\$\{kind\}'\)[\s\S]{0,220}<rect x="3" y="3" width="14" height="14" rx="2\.5"\/><\/svg>/.test(SRC), true);
+        /vcSetView\('\$\{id\}','card'\)[\s\S]{0,220}<rect x="3" y="3" width="14" height="14" rx="2\.5"\/><\/svg>/.test(SRC), true);
   // 손가락 화면에서 :hover 가 남아 버튼이 파랗게 굳던 것
   sc.eq('목록 헤더 버튼의 hover 는 마우스 기기에서만',
         SRC.includes('@media (hover:hover){.vl-sort-toggle:hover{color:var(--ac-tx);}}'), true);
@@ -463,8 +620,8 @@ console.log('\n시나리오 9 — 화면 연결');
   // 목록카드(오른쪽 햄버거 있음)와 일반카드(없음) 모두 가운데 아이콘이 한가운데 온다.
   sc.eq('헤더에는 −/+ 가 없다', SRC.includes('vc-head-right'), false);
   sc.eq('좌우 자리 폭이 같다', SRC.includes('.vc-head-slot{width:22px;'), true);
-  sc.eq('오른쪽 자리는 늘 있다(비어 있어도)',
-        /<span class="vc-head-slot right">\$\{cfg\.kind\?`<button class="vc-icbtn" onclick="vcBackToList/.test(SRC), true);
+  sc.eq('오른쪽 자리에는 늘 목록 전환 버튼이 있다',
+        /<span class="vc-head-slot right"><button class="vc-icbtn" onclick="vcSetView/.test(SRC), true);
   // 밀어 넘길 때 같이 따라가면 안 되므로 슬라이드 층(.vc-slide) 밖, .vc-body 바로 아래에 둔다
   sc.eq('−/+ 는 미는 층 밖에', SRC.includes('body=`${zoom}<div class="vc-slide">'), true);
   sc.eq('카드 안 우상단',
@@ -489,14 +646,16 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('사용 안 함을 줄로 나눈다', SRC.includes('const poolRows=[') && SRC.includes('class="rp-pool-row"'), true);
   // .rp-cfg-row 는 이미 다른 뜻(테두리 붙는 설정 행)이라 이름을 따로 쓴다
   sc.eq('줄 클래스 이름이 겹치지 않는다', SRC.includes('.rp-pool-row{display:flex'), true);
-  sc.eq('1행 말씀카드 · 2행 뷰 · 3행 말씀 목록',
-        /const poolRows=\[\s*\[VC_NEW\],\s*\['weekly','monthSingle','monthTriple'\][\s\S]*?\['likeList','memList','deeperList','evenList'\]/.test(SRC), true);
-  sc.eq('칩을 끌어다 놓으면 새 카드', SRC.includes('if(type===VC_NEW){'), true);
+  sc.eq('1행 말씀 카드·말씀 목록 · 2행 뷰',
+        /const poolRows=\[\s*\[VC_NEW,VL_NEW\],\s*\['weekly','monthSingle','monthTriple'\]/.test(SRC), true);
+  sc.eq('반응별 목록 칩은 사라졌다',
+        /poolRows=\[[\s\S]{0,200}'likeList'/.test(SRC), false);
+  sc.eq('칩을 끌어다 놓으면 새 위젯', SRC.includes('if(type===VC_NEW||type===VL_NEW){'), true);
   sc.eq('사용 안 함은 세로로 쌓고 줄만 가로', /\.rp-cfg-col\.pool\{flex-direction:column/.test(SRC), true);
 
   // ── 0810-4 ──
   // 헤더는 위젯 순서 이동 손잡이라, button 이 아니면 PC 클릭이 죽는다
-  sc.eq('헤더의 필터 이름은 button', SRC.includes('<button class="vc-filter"'), true);
+  sc.eq('헤더의 범위 단추는 button', SRC.includes('<button class="vw-scope"'), true);
   // 카드 밖까지 밀고 놓으면 되돌아왔다가 사라지던 것
   sc.eq('넘김 목적지는 늘 지금보다 바깥', SRC.includes('const to=(d>0)?Math.min(-base,cur-30):Math.max(base,cur+30);'), true);
   sc.eq('지금 칠해진 위치를 읽는다', SRC.includes('function _vcCurX(el)'), true);

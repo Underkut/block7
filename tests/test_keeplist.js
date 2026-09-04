@@ -349,7 +349,11 @@ console.log('\n시나리오 14 — 갈래 탭: 전체 · 말씀 · 명제 (HB)')
   sc.eq('전체화면 명단도 같은 탭',
         SRC_DEV.includes('const rows=_aggEntriesForKind(kind,_vlTab(kind));'), true);
   // 오른쪽 판의 작은 위젯에는 탭을 넣지 않는다 (자리가 없다)
-  sc.eq('위젯은 예전 그대로', SRC_DEV.includes('function _vListControlsHTML(kind){'), true);
+  // v26-0904-7 — 컨트롤 줄은 팝업·위젯 공용이 됐다. 위젯에서 부를 때만
+  // argId(위젯 id)를 넘긴다 (저장 폴더 이름을 onclick 에 적지 않기 위해서다).
+  sc.eq('컨트롤 줄은 여전히 공용',
+        SRC_DEV.includes('function _vListControlsHTML(kind,extra,argId){'), true);
+  sc.eq('팝업은 예전처럼 갈래만 넘긴다', SRC_DEV.includes('_vListControlsHTML(kind)'), true);
 }
 
 console.log('\n시나리오 15 — 탭을 바꿔도 팝업이 움직이지 않는다 (v26-0831-17, HB)');
