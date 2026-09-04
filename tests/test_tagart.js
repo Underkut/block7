@@ -228,16 +228,30 @@ console.log('\n시나리오 4-1 — 자리를 못 잰 채로 그리지 않는다
     rc.indexOf('_vfPlaceTagArt();') < rc.indexOf('_vfArtAgain=false;'), true);
 }
 
-console.log('\n시나리오 4-2 — 화면 크기가 바뀌면 다시 앉힌다 (v26-0904-5)');
+console.log('\n시나리오 4-2 — 화면 크기가 바뀌었을 때만 다시 앉힌다 (v26-0904-5·6)');
 {
   const g = slice('function _initVerseFullGestures(){', '// ═══');
   sc.eq('돌아왔을 때 다시 앉힌다',
     /visibilitychange[\s\S]{0,220}_vfLayoutText\(\)/.test(g), true);
   sc.eq('안정된 뒤 한 번 더 (iOS 는 늦게 안정된다)',
-    /visibilitychange[\s\S]{0,320}setTimeout\(\(\)=>\{if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);\},300\)/.test(g), true);
+    /visibilitychange[\s\S]{0,320}setTimeout\(_vfLayoutIfResized,300\)/.test(g), true);
   // resize 가 안 오는 자리(분할 화면·주소창 접힘)를 상자 크기로 직접 본다
   sc.eq('상자 크기를 지켜본다', g.includes('new ResizeObserver('), true);
   sc.eq('한 프레임에 한 번만 돈다', /roRaf=requestAnimationFrame/.test(g), true);
+
+  // ⚠️ v26-0904-6, HB — "돌아올 때 화면 구성을 바꿔 가는 과정이 다 보인다".
+  //    상자 크기가 그대로면 다시 앉혀도 결과가 같은데, 본문을 다시 그리는 과정만
+  //    눈에 보였다. 크기가 달라졌을 때만 손댄다.
+  sc.eq('크기가 달라졌을 때만 다시 앉힌다',
+    slice('function _vfLayoutIfResized(){', '\n}\n')
+      .includes("if(inner.clientWidth+'x'+inner.clientHeight===_vfLastBox)return;"), true);
+  sc.eq('앉힌 뒤 그 크기를 기억한다',
+    slice('function _vfLayoutText(){', '// 명제 본문 — 브라우저가')
+      .includes("_vfLastBox=inner.clientWidth+'x'+inner.clientHeight;"), true);
+  ['resize','orientationchange','visibilitychange'].forEach(ev =>
+    sc.eq(ev + ' 는 크기 검사를 거친다',
+      new RegExp(ev + "[\\s\\S]{0,220}_vfLayoutIfResized").test(g), true));
+  sc.eq('상자 관찰도 크기 검사를 거친다', g.includes('roRaf=0;_vfLayoutIfResized();'), true);
 
   // 아직 못 재는 상태에서 그린 화면은 그대로 굳히지 않고 다음 프레임에 다시 앉힌다.
   // (숨겨진 사이에 다시 그려지면 본문은 줄바꿈 없이 흐르고 그림은 숨은 채 남는다)

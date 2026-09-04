@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0904-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -524,6 +524,19 @@ html[data-theme="light"],.theme-defaults-light {
       고무줄을 없애니 스크롤이 '딱딱하다'(HB). 되돌린다. */
 html{-webkit-text-size-adjust:100%;background:var(--bg);
   overflow-x:hidden;}
+/* ── 전체화면·타일뷰가 떠 있는 동안엔 **뒤 배경도 같은 색으로** 칠한다 ──
+   (v26-0904-6, HB '가장자리에 흰 픽셀 한 줄'. v26-0904-5 의 1px 넘겨 칠하기로는
+    안 잡혔다.)
+   전체화면은 화면을 꽉 덮는 상자지만, 그 상자가 못 칠하는 자리가 생길 때가 있다 —
+   고무줄 스크롤로 한 픽셀 밀리거나, 기기 화면 모서리에서 잘리거나, 브라우저가
+   상자를 합성하며 끝 한 줄을 남기거나. 그 틈으로 보이는 것은 **앱의 바탕**
+   (html·body = var(--bg)) 인데, 밝은 테마면 그게 흰색이라 흰 줄로 보였다.
+   그래서 위에 뜬 화면의 배경을 바탕에도 함께 깔아 둔다 — 틈이 생겨도 같은 색이다.
+   ⚠️ 변수 이름을 --vf-page-bg 로 따로 둔 까닭: --vf-bgimg 를 뿌리(:root)에 얹으면
+      말씀 카드(.vc-body 등 var(--vf-bgimg,var(--bg)) 를 쓰는 곳)가 할일 화면에서도
+      전체화면 배경을 물려받아 색이 바뀐다. 이 변수는 여기서만 쓴다. */
+html.vf-open{background:var(--vf-page-bg,var(--bg));}
+html.vf-open body{background:var(--vf-page-bg,var(--bg)) !important;}
 body{
   font-family:var(--font-ui),-apple-system,sans-serif;
   background:var(--bg) !important;color:var(--tx);
@@ -4069,7 +4082,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-5";
+const APP_VERSION = "v. 26-0904-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10497,6 +10510,7 @@ function openVerseFull(keepOverride){
   _vfRollVariant();               // 열 때마다 패턴 안에서 색 변형을 새로 뽑는다
   _vfArtForce=true;               // 태그 그림도 열 때마다 새로 (같은 구절이어도)
   applyVfTheme();                 // 테마(배경·폰트·색) 반영
+  _vfSyncPageBg();                // 뒤 바탕도 같은 배경으로 (가장자리 흰 줄 막기)
   _verseStatCache={};             // 열 때마다 전체 집계는 새로 받는다
   // 이전 세션에서 드래그가 남긴 인라인 스타일 초기화 (본문/하단 코너)
   const iv0=document.getElementById('verseFullInner');
@@ -10589,8 +10603,17 @@ function closeVerseFull(){
   setTimeout(()=>{ if(!_vgIsOpen())_vDashMaybeReturn(); },0);
   const el=document.getElementById('verseFull');
   if(el)el.style.display='none';
+  _vfSyncPageBg();                // 바탕을 앱 색으로 되돌린다 (타일뷰가 남았으면 그대로 둔다)
   _vfOverrideVerse=null;
   _vfClearNav();
+}
+// 전체화면·타일뷰가 떠 있는 동안에만 앱 바탕(html·body)을 같은 배경으로 칠한다
+// (가장자리 흰 줄 막기, v26-0904-6). 여는 자리·닫는 자리 네 곳에서 부른다.
+// ⚠️ 공유 이미지를 만드느라 잠깐 띄우는 길(_withFullscreenLayout)에서는 부르지
+//    않는다 — 화면 뒤가 잠깐 어두워졌다 돌아오는 깜빡임이 생긴다.
+function _vfSyncPageBg(){
+  const on=_verseFullIsOpen()||(typeof _vgIsOpen==='function'&&_vgIsOpen());
+  document.documentElement.classList.toggle('vf-open',on);
 }
 function _verseFullIsOpen(){
   const el=document.getElementById('verseFull');
@@ -11468,8 +11491,22 @@ function _vfRelayoutSoon(){
   _vfRelayoutTries++;_vfRelayoutAgain=true;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     _vfRelayoutAgain=false;
-    if(_verseFullIsOpen())_vfLayoutText();
+    if(_verseFullIsOpen())_vfLayoutText();      // 아직 한 번도 못 앉힌 화면이라 그대로 앉힌다
   }));
+}
+// 마지막으로 앉힌 상자 크기. 크기가 그대로면 다시 앉혀도 **결과가 똑같다**.
+// (본문 크기·줄바꿈은 상자 크기에서만 나온다 — 설정을 바꾸는 길은 _vfLayoutText 를
+//  곧바로 부르므로 이 검사를 타지 않는다)
+let _vfLastBox='';
+// 크기가 달라졌을 때만 다시 앉힌다 (v26-0904-6, HB — '다른 앱에서 돌아올 때
+// 화면 구성을 바꿔 가는 과정이 다 보인다'). 돌아올 때·창이 흔들릴 때마다 본문을
+// 다시 그리면 결과는 같은데 그 과정만 눈에 보인다. 크기가 같으면 손대지 않는다.
+function _vfLayoutIfResized(){
+  if(!_verseFullIsOpen())return;
+  const inner=document.getElementById('verseFullInner');
+  if(!inner)return;
+  if(inner.clientWidth+'x'+inner.clientHeight===_vfLastBox)return;
+  _vfLayoutText();
 }
 function _vfLayoutText(){
   const el=document.getElementById('vfText');
@@ -11487,6 +11524,7 @@ function _vfLayoutText(){
   // 그러지 않으면 본문은 줄바꿈 없이 흘러가고 태그 그림은 숨은 채로 남는다.
   if(availW<40){el.innerHTML=esc(raw);_vfRelayoutSoon();return;}   // 아직 측정 불가(숨김 상태)
   _vfRelayoutTries=0;                            // 잴 수 있었으니 되풀이 셈은 처음으로
+  _vfLastBox=inner.clientWidth+'x'+inner.clientHeight;   // 이 크기로 앉혔다
   const padV=(parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0);
   const refEl=document.getElementById('vfRef');
   const refH=(refEl&&refEl.style.display!=='none')?(refEl.offsetHeight+18):0;
@@ -13210,6 +13248,9 @@ function applyVfTheme(){
     const el=document.getElementById(id);if(!el)return;
     Object.keys(vars).forEach(k=>el.style.setProperty(k,vars[k]));
   });
+  // 앱 바탕(html·body)에도 같은 배경을 준비해 둔다 — 실제로 칠할지는
+  // .vf-open 클래스가 정한다 (_vfSyncPageBg). 가장자리 흰 줄 막기, v26-0904-6.
+  document.documentElement.style.setProperty('--vf-page-bg',vars['--vf-bgimg']);
   // 웹폰트가 늦게 오면 캔버스로 잰 줄바꿈이 기본 폰트 기준으로 굳는다 → 도착 후 재계산
   _vfEnsureFont(t.font).then(()=>{
     if(_verseFullIsOpen())_vfLayoutText();
@@ -14469,8 +14510,8 @@ function _initVerseFullGestures(){
     set:v=>setVfTextScale(v),
     onStart:dropDrag,
   });
-  window.addEventListener('resize',()=>{if(_verseFullIsOpen())_vfLayoutText();});
-  window.addEventListener('orientationchange',()=>{setTimeout(()=>{if(_verseFullIsOpen())_vfLayoutText();},250);});
+  window.addEventListener('resize',_vfLayoutIfResized);
+  window.addEventListener('orientationchange',()=>{setTimeout(_vfLayoutIfResized,250);});
   // ── 다른 앱에 갔다 돌아왔을 때 (v26-0904-5, HB '그림이 아래로 내려와 글자와 겹친다') ──
   // 뒤로 물러나 있는 동안 화면 크기가 바뀌어도(앱 전환 애니메이션·분할 화면·
   // 주소창 접힘) resize 가 참값으로 오지 않는 기기가 있다. 그 사이에 잰 값으로
@@ -14478,8 +14519,8 @@ function _initVerseFullGestures(){
   // 화면이 안정된 뒤 한 번 더 앉힌다 — iOS 는 늦게 안정된다.
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState!=='visible'||!_verseFullIsOpen())return;
-    _vfLayoutText();
-    setTimeout(()=>{if(_verseFullIsOpen())_vfLayoutText();},300);
+    _vfLayoutIfResized();
+    setTimeout(_vfLayoutIfResized,300);
   });
   // 화면 상자 크기가 바뀌면 resize 를 못 받아도 따라간다.
   // ⚠️ _vfLayoutText() 는 상자(#verseFullInner) 크기를 바꾸지 않는다 —
@@ -14490,7 +14531,7 @@ function _initVerseFullGestures(){
       let roRaf=0;
       new ResizeObserver(()=>{
         if(roRaf)return;
-        roRaf=requestAnimationFrame(()=>{roRaf=0;if(_verseFullIsOpen())_vfLayoutText();});
+        roRaf=requestAnimationFrame(()=>{roRaf=0;_vfLayoutIfResized();});
       }).observe(box);
     }
   }
@@ -15155,6 +15196,7 @@ function openVerseGrid(kind,val,cardId){
   _vfTheme();                     // _vfVariantIdx 확정
   _vgPinned=cur?{ref:cur.ref,pattern:_vfPatternKey(),variantIdx:_vfVariantIdx}:null;
   applyVfTheme();
+  _vfSyncPageBg();
   _vgSyncSortUI();
   renderVerseGrid();
   _initVerseGridGestures();
@@ -15207,6 +15249,7 @@ function _vgRestoreHighlight(){
 }
 function closeVerseGrid(){
   const gd=document.getElementById('verseGrid');if(gd)gd.style.display='none';
+  _vfSyncPageBg();
   _vgCardTarget=null;_vgState.limitKind=null;
   // 대시보드에서 넘어온 경우 그 화면으로 되돌린다
   if(!_verseFullIsOpen())_vDashMaybeReturn();
