@@ -22,6 +22,8 @@ global.VF_THEME_ORDER = ['ink', 'night'];
 global.VF_SERIF = "'Gowun Batang',serif";
 global.VF_SANS = 'Pretendard,sans-serif';
 global._vfBgCss = t => (t.bg && t.bg.length === 1) ? t.bg[0] : 'grad';
+// 배경의 첫 색 한 가지 (반투명하게 깔아야 하는 곳이 쓴다 — v26-0904-4)
+global._vfBg1Css = t => (t.bg && t.bg.length) ? t.bg[0] : 'var(--bg)';
 global._rgba = (c, a) => `rgba(${c},${a})`;
 global._vfPatternPool = () => ['night'];
 global._vfTextScale = () => 1;

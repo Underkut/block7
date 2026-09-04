@@ -24,7 +24,9 @@ console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더�
   sc.eq('어느 진입 경로에서든 폴더 메뉴를 연다', action.includes('toggleVfKeepSwitch();'), true);
   sc.eq('폴더 선택은 해당 폴더 항목으로 내비게이션을 다시 만든다', action.includes("_vfSetNav(list,i,name,'keep')"), true);
   sc.eq('책갈피 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
-  sc.eq('책갈피는 순환·셔플 아래에 놓인다', /\.vf-home\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 50px\);left:14px/.test(SRC), true);
+  // v26-0904-4, HB — 순환·셔플(12) 과 책갈피(88) 사이에 '말씀 모음 설정'(50) 이
+  // 들어왔다. 책갈피는 그만큼 아래로 내려갔다.
+  sc.eq('책갈피는 말씀 모음 설정 아래에 놓인다', /\.vf-home\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 88px\);left:14px/.test(SRC), true);
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
   sc.eq('진입 경로와 무관하게 책갈피를 표시한다', sync.includes("hb.style.display='flex';"), true);
   sc.eq('책갈피는 가로를 유지하고 세로를 약 1.2배 늘린다', SRC.includes("const _VF_KEEP_MENU_SVG='<svg width=\"17\" height=\"20\""), true);
