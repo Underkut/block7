@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-1  [production]  -->
+<!-- BLOCK7  v. 26-0904-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3972,7 +3972,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-1";
+const APP_VERSION = "v. 26-0904-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6243,10 +6243,18 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">복제</div>
   <div class="task-menu-item" onclick="duplicateTaskTo(1)">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="6" y="6" width="10" height="10" rx="1.5"/><path d="M4 14H3.5V4.5a1 1 0 0 1 1-1H14V4"/></svg></span>내일로
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M8 7.4v8.2l6.6-4.1z" fill="currentColor" stroke="none"/></svg></span>내일로
   </div>
   <div class="task-menu-item" onclick="duplicateTaskTo(7)">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="6" y="6" width="10" height="10" rx="1.5"/><path d="M4 14H3.5V4.5a1 1 0 0 1 1-1H14V4"/></svg></span>다음 주로
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M7.4 7.6v8l4.8-4z" fill="currentColor" stroke="none"/><path d="M11.8 7.6v8l4.8-4z" fill="currentColor" stroke="none"/></svg></span>다음 주로
+  </div>
+  <div class="task-menu-item" id="dupDateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><rect x="7.2" y="7.4" width="9.2" height="8.6" rx="1.4"/><path d="M7.2 10.2h9.2M9.9 6.1v2.6M13.7 6.1v2.6"/></svg></span><span id="dupDateLabelText">날짜 지정</span>
+    <input type="date" id="dupDatePickerInput"
+      style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;
+             font-size:16px;-webkit-appearance:none;cursor:pointer;"
+      onchange="duplicateTaskToPickedDate(this.value)"
+      onfocus="prepDupDatePicker()">
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
@@ -23548,37 +23556,14 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   // dismiss the native date picker on every *other* open of a reused
   // <input type="date"> (a reproducible odd/even pattern) — recreating
   // the element clears whatever internal picker state was causing it.
-  const oldInp=document.getElementById('datePickerInput');
-  const inp=document.createElement('input');
-  inp.type='date';
-  inp.id='datePickerInput';
-  inp.setAttribute('onchange','moveTaskToPickedDate(this.value)');
-  inp.onchange=function(){moveTaskToPickedDate(this.value);};
-  inp.onfocus=()=>prepDatePicker();
-  oldInp.replaceWith(inp);
 
-  const labelRow=document.getElementById('dateLabelRow');
-  // The row (no longer a <label for=...>) now has a single explicit
-  // click handler that both focuses the input and calls showPicker().
-  // Removing the native label/for association fixed desktop picker
-  // opening — having BOTH the browser's automatic label-click-focuses-
-  // input behavior AND our own explicit showPicker() call running on
-  // the same click was apparently consuming/conflicting over the
-  // "user activation" state that showPicker() requires, which is why
-  // it kept silently failing to open on desktop despite no errors.
-  labelRow.onclick=function(e){
-    e.stopPropagation();
-    inp.focus();
-    if(inp.showPicker){
-      try{inp.showPicker();}catch(err){/* already open, or blocked — ignore */}
-    }
-  };
-  // Invisible full-row overlay (only the "날짜 지정" text shows) on
-  // both desktop and mobile — clicking anywhere on the row opens the
-  // native picker via the handler above.
-  inp.style.cssText='position:absolute;inset:0;width:100%;height:100%;'+
-    'opacity:0;border:none;font-size:16px;-webkit-appearance:none;cursor:pointer;pointer-events:none;';
-  labelRow.style.cursor='pointer';
+  // 이동 칸의 '날짜 지정' 과 복제 칸의 '날짜 지정' 은 겉모습·동작이 같다.
+  // 한 함수로 묶어 둔다 — 따로 두면 한쪽만 고쳐져 아이폰에서 달력이 안 열리는
+  // 일이 되풀이된다 (아래 _wireTaskMenuDateRow 의 주석에 그 사연이 있다).
+  _wireTaskMenuDateRow('dateLabelRow','datePickerInput',
+    'moveTaskToPickedDate(this.value)',moveTaskToPickedDate);
+  _wireTaskMenuDateRow('dupDateLabelRow','dupDatePickerInput',
+    'duplicateTaskToPickedDate(this.value)',duplicateTaskToPickedDate);
 
   const mw=180,mh=menu.offsetHeight;
   let left,top;
@@ -24639,6 +24624,22 @@ function moveTaskTo(days){
   showToast(`${label} 이동했어요`);
 }
 
+// 복제된 할일은 "그 날 새로 만든 할일" 이다 (2026-09-04 HB).
+// 그래서 **진행 상태는 따라가지 않는다** — 완료 여부와 이월 횟수(자동·수동)를
+// 새 할일처럼 0 에서 다시 시작한다. 이월 횟수를 함께 복사하면 오늘 막 만든
+// 사본에 '3일째 미뤄지고 있어요' 배지가 붙어, 며칠 묵은 할일처럼 보인다.
+// 반대로 **성격 표시는 물려받는다** — 중요·연락할 일·매일 반복은 그 할일이
+// 무엇인지를 말해 주는 표시라 사본에도 그대로 있어야 한다.
+// 새 항목을 만들 때 쓰는 모양({text,done:false})과 자동 이월이 만드는 모양
+// (27600줄 근처)을 그대로 따른다 — 셋이 어긋나면 사본만 다르게 굴러간다.
+function _freshTaskCopy(item){
+  const copy={text:item.text,done:false};
+  if(item.daily)copy.daily=true;
+  if(item.flag)copy.flag=true;
+  if(item.contactTask)copy.contactTask=true;
+  return copy;
+}
+
 function duplicateTaskTo(days){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
@@ -24648,9 +24649,8 @@ function duplicateTaskTo(days){
   const item=source[idx];
   if(!item)return;
 
-  // 복제는 원본을 그대로 둔다. 완료·중요·연락·반복·이월 횟수 등
-  // 지금과 앞으로 추가될 할일 상태도 빠뜨리지 않도록 객체 전체를 복사한다.
-  const copy={...item};
+  // 복제는 원본을 그대로 둔다 (splice 하지 않는다).
+  const copy=_freshTaskCopy(item);
   beforeSave();
   if(type==='big')getBigs(toKey,secId).push(copy);
   else getSmalls(toKey,secId).push(copy);
@@ -24662,8 +24662,39 @@ function duplicateTaskTo(days){
   showToast(`${days===1?'내일로':'다음 주로'} 복제했어요`);
 }
 
-function prepDatePicker(){
-  const inp=document.getElementById('datePickerInput');
+// 메뉴가 열릴 때마다 '날짜 지정' 줄의 <input type=date> 를 새로 만들어 끼운다.
+// 같은 노드를 다시 쓰면 iOS 사파리가 **두 번에 한 번씩** 네이티브 달력을 저 혼자
+// 닫아 버렸다(홀·짝으로 재현됨). 새로 만들면 그 내부 상태가 지워진다.
+// 줄 전체를 덮는 투명 input + 줄 클릭 핸들러 한 개 조합인 까닭은,
+// <label for> 의 자동 포커스와 우리 showPicker() 가 서로 "사용자 조작" 판정을
+// 잡아먹어 PC 에서 달력이 안 열렸기 때문이다.
+function _wireTaskMenuDateRow(rowId,inpId,onchangeAttr,onPick){
+  const oldInp=document.getElementById(inpId);
+  const row=document.getElementById(rowId);
+  if(!oldInp||!row)return;
+  const inp=document.createElement('input');
+  inp.type='date';
+  inp.id=inpId;
+  inp.setAttribute('onchange',onchangeAttr);
+  inp.onchange=function(){onPick(this.value);};
+  inp.onfocus=()=>prepTaskMenuDatePicker(inpId);
+  oldInp.replaceWith(inp);
+  row.onclick=function(e){
+    e.stopPropagation();
+    inp.focus();
+    if(inp.showPicker){
+      try{inp.showPicker();}catch(err){/* already open, or blocked — ignore */}
+    }
+  };
+  inp.style.cssText='position:absolute;inset:0;width:100%;height:100%;'+
+    'opacity:0;border:none;font-size:16px;-webkit-appearance:none;cursor:pointer;pointer-events:none;';
+  row.style.cursor='pointer';
+}
+
+// 달력을 여는 순간 = 무장(arm). 아래 _datePickArmed() 가 그 시각을 본다.
+function prepTaskMenuDatePicker(inpId){
+  const inp=document.getElementById(inpId);
+  if(!inp)return;
   inp.removeAttribute('min'); // allow picking any date, past or future
   inp.value='';
   // Some mobile browsers fire a spurious 'change' event immediately
@@ -24682,6 +24713,15 @@ function prepDatePicker(){
   // real choice.
   inp.dataset.armedAt=String(Date.now());
 }
+function prepDatePicker(){prepTaskMenuDatePicker('datePickerInput');}
+function prepDupDatePicker(){prepTaskMenuDatePicker('dupDatePickerInput');}
+
+// 달력을 연 지 200ms 도 안 돼 날아온 change 는 사람이 고른 것이 아니다(위 주석).
+function _datePickArmed(inpId){
+  const inp=document.getElementById(inpId);
+  const armedAt=inp&&parseInt(inp.dataset.armedAt||'0',10);
+  return !(armedAt&&Date.now()-armedAt<200);
+}
 
 function closeTaskMenu_keepCtx(){
   document.getElementById('taskMenu').style.display='none';
@@ -24697,12 +24737,10 @@ function moveTaskToPickedDate(dateStr){
   if(!dateStr||!_taskMenuCtx)return;
   // Reject a 'change' that fires too soon after the input was focused
   // to plausibly be a real human picking a date through the native
-  // calendar UI — see the comment in prepDatePicker() for why this
+  // calendar UI — see the comment in prepTaskMenuDatePicker() for why this
   // exists. 200ms is generous; real picker interactions take at least
   // several hundred ms even for a fast tap.
-  const inp=document.getElementById('datePickerInput');
-  const armedAt=inp&&parseInt(inp.dataset.armedAt||'0',10);
-  if(armedAt&&Date.now()-armedAt<200)return;
+  if(!_datePickArmed('datePickerInput'))return;
 
   const {type,secId,idx}=_taskMenuCtx;
   const fromKey=tKey();
@@ -24720,18 +24758,39 @@ function moveTaskToPickedDate(dateStr){
   closeTaskMenu_keepCtx();
   showToast(_moveDateToastMsg(dateStr,secId));
 }
+
+// 복제 칸의 '날짜 지정' — 원본은 그대로 두고 고른 날짜에 새 할일로 하나 만든다.
+function duplicateTaskToPickedDate(dateStr){
+  if(!dateStr||!_taskMenuCtx)return;
+  if(!_datePickArmed('dupDatePickerInput'))return;
+
+  const {type,secId,idx}=_taskMenuCtx;
+  const fromKey=tKey();
+  const source=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
+  const item=source[idx];
+  if(!item)return;
+
+  beforeSave();
+  const copy=_freshTaskCopy(item);
+  if(type==='big')getBigs(dateStr,secId).push(copy);
+  else getSmalls(dateStr,secId).push(copy);
+  save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
+  _taskMenuCtx=null;
+  closeTaskMenu_keepCtx();
+  showToast(_moveDateToastMsg(dateStr,secId,'복제'));
+}
 // "8월 17일 월요일 오전 날짜로 이동했어요" — 어느 날짜·구간으로 옮겼는지
 // 바로 알 수 있게 (v26-0817-1, HB 요청). 요일은 설정과 무관하게 항상 이
 // 형식(한글 + '요일')을 쓴다 — DOW 는 사용자가 L/M/T 같은 다른 표기로
 // 바꿔 둘 수 있어 이 문구에는 안 맞는다.
 const _KDOW=['일','월','화','수','목','금','토'];
-function _moveDateToastMsg(dateStr,secId){
+function _moveDateToastMsg(dateStr,secId,verb){
   const [y,m,d]=dateStr.split('-').map(Number);
   const dt=new Date(y,m-1,d);
   const dow=isNaN(dt.getTime())?'':_KDOW[dt.getDay()]+'요일';
   const secName=(SECS.find(s=>s.id===secId)||{}).name||'';
   const parts=[m+'월',d+'일',dow,secName].filter(Boolean);
-  return parts.join(' ')+' 날짜로 이동했어요';
+  return parts.join(' ')+' 날짜로 '+(verb||'이동')+'했어요';
 }
 
 // ─ Toast ─
