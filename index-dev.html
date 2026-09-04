@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0904-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4178,7 +4178,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-10";
+const APP_VERSION = "v. 26-0904-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -30613,6 +30613,345 @@ function _fbMerge(base,local,cloud,preferCloud){
   }finally{_mgPreferCloud=prev;}
 }
 
+// ══ 변경 풀이 (v26-0904-11) ══════════════════════════════════════════════
+// 상태 두 벌을 견줘 "무엇이 어떻게 달라졌는지" 를 **한국어 문장**으로 만든다.
+//
+// ⚠️ 왜 만들었나 — 동기화 화면(충돌 해결·자동 백업·로컬↔클라우드 비교)이
+//    지금까지 JSON 을 통째로 뿌렸다. 그러면 사람은 두 덩어리가 다르다는 것만
+//    알 뿐 **어느 쪽이 최신인지 고를 수가 없다** (2026-09-04 HB 지적).
+//    이제는 "9월 4일 · 빅 블럭 · 오전 할일 「주일예배」 제목을 … 로 고침" 처럼
+//    자리와 내용을 짚어 준다.
+//
+// ⚠️ 여기 있는 것은 전부 **순수 함수**다 — ST·화면·네트워크를 건드리지 않고,
+//    병합 결과에도 일절 관여하지 않는다. 보여 주기만 한다.
+//    (경계는 tests/test_diffnarr.js 가 지킨다)
+const _DF_MAX=80;              // 한 번에 만들 줄 수 상한
+const _DF_CUT=24;              // 한 조각에 보여 줄 글자 수
+function _dfJ(v){return JSON.stringify(v===undefined?null:v);}
+function _dfSame(a,b){return _dfJ(a)===_dfJ(b);}
+function _dfCut(s,n){s=String(s==null?'':s);n=n||_DF_CUT;return s.length>n?(s.slice(0,n)+'…'):s;}
+function _dfQ(s){const t=_dfCut(s);return t?('「'+t+'」'):'(빈 칸)';}
+// '2026-09-04' → '9월 4일 (금)'
+function _dfDay(k){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k==null?'':k));
+  if(!m)return String(k==null?'':k);
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  const w=['일','월','화','수','목','금','토'][d.getDay()];
+  return `${+m[2]}월 ${+m[3]}일 (${w})`;
+}
+// 얼마나 지났는지 — "3시간 전"
+function _dfAgo(ts,now){
+  if(!ts)return '';
+  const s=Math.max(0,Math.floor(((now||Date.now())-ts)/1000));
+  if(s<60)return '방금';
+  if(s<3600)return Math.floor(s/60)+'분 전';
+  if(s<86400)return Math.floor(s/3600)+'시간 전';
+  return Math.floor(s/86400)+'일 전';
+}
+function _dfWhen(ts,now){
+  if(!ts)return '시각 미상';
+  let t='';
+  try{t=new Date(ts).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'});}
+  catch(e){try{t=new Date(ts).toLocaleString('ko-KR');}catch(e2){t=String(ts);}}
+  const ago=_dfAgo(ts,now);
+  return ago?`${t} · ${ago}`:t;
+}
+// 받침에 맞는 조사 — 「…」 같은 따옴표는 벗기고 마지막 글자를 본다.
+// 한글이 아니면 정하지 못하므로 '을(를)' 처럼 둘 다 적는다.
+// '…로 / …으로' — ㄹ 받침은 '로' 를 쓴다
+function _dfRo(word){
+  const t=String(word==null?'':word).replace(/[)\]」』”’"'\s]+$/,'');
+  const c=t.charCodeAt(t.length-1);
+  if(!(c>=0xAC00&&c<=0xD7A3))return '(으)로';
+  const j=(c-0xAC00)%28;
+  return (j===0||j===8)?'로':'으로';
+}
+function _dfJosa(word,withBat,without){
+  const t=String(word==null?'':word).replace(/[)\]」』”’"'\s]+$/,'');
+  const c=t.charCodeAt(t.length-1);
+  if(!(c>=0xAC00&&c<=0xD7A3))return withBat+'('+without+')';
+  return ((c-0xAC00)%28)?withBat:without;
+}
+// 할일 한 칸의 이름
+const _DF_FIELD={text:'제목',done:'완료 표시',color:'색',flag:'깃발',hi:'강조',tag:'태그',
+  memo:'메모',note:'메모',time:'시각',at:'시각',start:'시작',end:'마침',dur:'길이',
+  notif:'알림',rep:'반복',pin:'고정',icon:'아이콘',link:'링크',ref:'말씀',
+  contact:'연락처',sub:'하위 항목',src:'출처',from:'가져온 곳'};
+function _dfFieldLabel(k){return _DF_FIELD[k]||k;}
+// 설정 이름 — 영문 키를 사람 말로. 없으면 이름 생김새로 갈래만이라도 짚는다.
+const _DF_SET_LABEL={
+  autoCarryOver:'지난 할일 자동 넘김',dayStartHour:'하루 시작 시각',
+  bigLimit:'빅 블럭 개수',smallLimit:'스몰 블럭 개수',starSecs:'별 구간',
+  sectionConfigs:'구간 구성 저장본',theme:'색상 테마',themePresetId:'테마 프리셋',
+  layout:'화면 배치',rpWidgetHeights:'위젯 높이',verseCards:'말씀 카드 구성',
+  uiLevel:'설정 등급',uiLevelIconSet:'등급 아이콘',verseUiLevel:'말씀 설정 등급',
+  verseBarOn:'상단 말씀 켜기',verseBarAutoRotate:'말씀 자동 넘김',
+  verseCurrentIdx:'지금 보는 말씀',verseLastShownDate:'말씀 마지막 표시 날짜',
+  verseLastShownSec:'말씀 마지막 표시 구간',verseMode:'말씀 보기 방식',
+  verseRotateBySec:'구간마다 말씀 바꾸기',verseCountScope:'말씀 개수 범위',
+  vfThemes:'전체화면 테마 목록',vfThemeBySec:'구간별 전체화면 테마',
+  vfTextScale:'전체화면 글자 크기',vfArtOn:'전체화면 그림',vfArtStyle:'전체화면 그림 방식',
+  vfCycleMode:'전체화면 넘김 방식',vListHeightRatio:'목록 높이',
+  keepListSort:'저장 목록 정렬',propTitleFonts:'명제 글씨체',
+  notify:'할일 알림',verseAlarm:'말씀 알림',
+  showCompletedTasks:'완료한 할일 보이기',dowFormat:'요일 표기',sundayRed:'일요일 빨강',
+  carryBadgeMode:'넘어온 할일 표시',carryCountSource:'넘어온 할일 세는 기준',
+  periodBaseMode:'구간 기준',monthTitleFormat:'월 제목 표기',monthTitleYear:'월 제목에 연도',
+  mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',showSmallBlocks:'스몰 블럭 보이기',
+  addInputPosition:'입력칸 위치',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',
+  hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
+  hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
+  dviewMarkOn:'일간 표시 켜기'};
+function _dfSetLabel(k){
+  k=String(k==null?'':k);
+  if(_DF_SET_LABEL[k])return _DF_SET_LABEL[k];
+  if(/^verseCard/.test(k))return '말씀 카드 · '+k.replace(/^verseCard/,'');
+  if(/^verseWidget/.test(k))return '말씀 위젯 · '+k.replace(/^verseWidget/,'');
+  if(/^verseSneak/.test(k))return '살짝 보기 · '+k.replace(/^verseSneak/,'');
+  if(/^verseFull/.test(k))return '전체화면 · '+k.replace(/^verseFull/,'');
+  if(/^verse/.test(k))return '말씀 · '+k.replace(/^verse/,'');
+  if(/^vf/.test(k))return '전체화면 · '+k.replace(/^vf/,'');
+  if(/^vg/.test(k))return '말씀 고르기 · '+k.replace(/^vg/,'');
+  if(/^show/.test(k))return k.replace(/^show/,'')+' 보이기';
+  if(/^img/.test(k))return '이미지 · '+k.replace(/^img/,'');
+  if(/^txt/.test(k))return '글 · '+k.replace(/^txt/,'');
+  if(/^share/.test(k))return '나눔 · '+k.replace(/^share/,'');
+  if(/^dview/.test(k))return '일간 · '+k.replace(/^dview/,'');
+  return k;
+}
+// 값 하나를 사람 말로
+function _dfVal(v){
+  if(v===undefined||v===null)return '(없음)';
+  if(v===true)return '켬';
+  if(v===false)return '끔';
+  if(typeof v==='number')return String(v);
+  if(typeof v==='string')return v?_dfQ(v):'(빈 칸)';
+  if(Array.isArray(v)){
+    if(!v.length)return '(빈 목록)';
+    if(v.every(x=>x==null||typeof x!=='object'))return _dfCut(v.join(', '),36);
+    return `목록 ${v.length}개`;
+  }
+  if(typeof v==='object'){
+    if(v.text!=null)return _dfQ(v.text);
+    if(v.name!=null)return _dfQ(v.name);
+    if(v.ref!=null)return _dfQ(v.ref);
+    return `항목 ${Object.keys(v).length}개`;
+  }
+  return String(v);
+}
+// ── 값 두 벌에서 **다른 자리만** 뽑는다 ──
+// JSON 통짜를 두 번 보여 주는 대신 "c2 · view: (없음) → 「card」" 처럼 짚어 준다.
+function _dfDeep(a,b,path,out,depth){
+  depth=depth||0;
+  if(_dfSame(a,b))return;
+  if(out.length>=_DF_MAX)return;
+  const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  if(depth<3&&isObj(a)&&isObj(b)){
+    const keys=[...new Set([...Object.keys(a),...Object.keys(b)])];
+    keys.forEach(k=>_dfDeep(a[k],b[k],path?(path+' · '+k):String(k),out,depth+1));
+    return;
+  }
+  out.push({p:path,a:a,b:b});
+}
+function _dfDeepLines(label,a,b,limit){
+  limit=limit||8;
+  const raw=[];_dfDeep(a,b,'',raw,0);
+  const head=label?(label+' '):'';
+  const lines=raw.slice(0,limit).map(d=>`${head}${d.p?(d.p+': '):''}${_dfVal(d.a)} → ${_dfVal(d.b)}`);
+  if(raw.length>limit)lines.push(`${head}… 외 ${raw.length-limit}곳`);
+  return lines;
+}
+const _DF_KIND_NAME={days:'할일·일정',layout:'화면 배치 칸',verseCollections:'말씀 모음',
+  contacts:'연락처',memorizationLog:'암송 기록',verseLogs:'말씀 기록'};
+function _dfKindName(path){const k=String(path==null?'':path).split('/').pop();return _DF_KIND_NAME[k]||k;}
+function _dfToday(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+}
+function _dfPush(out,kind,text){if(out.length<_DF_MAX)out.push({k:kind,s:text});}
+// ── 할일 한 구간(배열) ──
+// 텍스트를 열쇠로 삼는다. 할일에는 id 가 없어서 그것 말고 기댈 것이 없다.
+function _dfTaskKey(t){return (t&&typeof t==='object')?String(t.text==null?'':t.text):String(t==null?'':t);}
+function _dfArr(where,a,b,out){
+  a=Array.isArray(a)?a:[];b=Array.isArray(b)?b:[];
+  if(_dfSame(a,b))return;
+  const W=where?(where+' '):'';
+  const ak=a.map(_dfTaskKey),bk=b.map(_dfTaskKey);
+  const ac={},bc={};
+  ak.forEach(k=>{ac[k]=(ac[k]||0)+1;});
+  bk.forEach(k=>{bc[k]=(bc[k]||0)+1;});
+  const gone=[],come=[];
+  Object.keys(ac).forEach(k=>{for(let i=0;i<ac[k]-(bc[k]||0);i++)gone.push(k);});
+  Object.keys(bc).forEach(k=>{for(let i=0;i<bc[k]-(ac[k]||0);i++)come.push(k);});
+  // 하나 빠지고 하나 들어왔으면 "제목을 고쳤다" 로 읽는 것이 사람 눈에 맞다
+  while(gone.length&&come.length){
+    const g=gone.shift(),c=come.shift();
+    const q2=_dfQ(c);_dfPush(out,'task',`${W}할일 제목을 ${_dfQ(g)} → ${q2}${_dfRo(q2)} 고침`);
+  }
+  gone.forEach(g=>{const q=_dfQ(g);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 지움`);});
+  come.forEach(c=>{const q=_dfQ(c);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 새로 넣음`);});
+  // 자리(순서) — 양쪽에 다 있는 것만 견준다
+  const aOrder=ak.filter(k=>bc[k]),bOrder=bk.filter(k=>ac[k]);
+  if(!_dfSame(aOrder,bOrder)){
+    for(let i=0;i<bOrder.length;i++){
+      if(bOrder[i]!==aOrder[i]){
+        const from=aOrder.indexOf(bOrder[i]);
+        const q=_dfQ(bOrder[i]);
+        _dfPush(out,'move',`${W}할일 ${q}${_dfJosa(q,'을','를')} ${from+1}번째 → ${i+1}번째로 옮김`);
+        break;
+      }
+    }
+  }
+  // 같은 제목인데 칸이 달라진 것
+  const amap={};a.forEach(t=>{const k=_dfTaskKey(t);if(!(k in amap))amap[k]=t;});
+  b.forEach(t=>{
+    const k=_dfTaskKey(t),prev=amap[k];
+    if(!prev||typeof prev!=='object'||typeof t!=='object')return;
+    const keys=[...new Set([...Object.keys(prev),...Object.keys(t)])];
+    keys.forEach(f=>{
+      if(f==='text'||_dfSame(prev[f],t[f]))return;
+      if(f==='done')_dfPush(out,'task',`${W}할일 ${_dfQ(t.text)} 완료 표시를 ${t[f]?'켬':'끔'}`);
+      else _dfPush(out,'task',`${W}할일 ${_dfQ(t.text)} ${_dfFieldLabel(f)}: ${_dfVal(prev[f])} → ${_dfVal(t[f])}`);
+    });
+  });
+}
+// ── 날짜별 할일·일정 ──
+function _dfDays(a,b,out){
+  const A=(a&&a.days)||{},B=(b&&b.days)||{};
+  const keys=[...new Set([...Object.keys(A),...Object.keys(B)])].sort().reverse();  // 최근 날짜부터
+  keys.forEach(dk=>{
+    const da=A[dk],db=B[dk];
+    if(_dfSame(da,db))return;
+    if(!db){_dfPush(out,'task',`${_dfDay(dk)} 하루치가 통째로 없어짐`);return;}
+    _CF_KINDS.forEach(kind=>{
+      const ka=(da||{})[kind]||{},kb=(db||{})[kind]||{};
+      const secs=[...new Set([...Object.keys(ka),...Object.keys(kb)])];
+      secs.forEach(sec=>_dfArr(`${_dfDay(dk)} · ${_cfKindLabel(kind)} · ${_cfSecLabel(sec)}`,ka[sec],kb[sec],out));
+    });
+    const ta=((da||{}).trash||[]).length,tb=((db||{}).trash||[]).length;
+    if(tb>ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에 ${tb-ta}건 들어감`);
+    else if(tb<ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에서 ${ta-tb}건 사라짐`);
+  });
+}
+// ── 말씀 모음 하나 ──
+function _dfVKey(v){return String((v&&(v.ref||v.krText||v.topic))||'');}
+function _dfColl1(a,b,out,name){
+  const nm=name||_dfQ((b&&b.name)||(a&&a.name));
+  if(_dfSame(a,b))return;
+  if(!a){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 새로 만듦 (말씀 ${((b||{}).verses||[]).length}개)`);return;}
+  if(!b){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 지움`);return;}
+  if(String(a.name||'')!==String(b.name||''))
+    {const qn=_dfQ(b.name);_dfPush(out,'verse',`말씀 모음 이름을 ${_dfQ(a.name)} → ${qn}${_dfRo(qn)} 고침`);}
+  const va=Array.isArray(a.verses)?a.verses:[],vb=Array.isArray(b.verses)?b.verses:[];
+  const sa=new Set(va.map(_dfVKey)),sb=new Set(vb.map(_dfVKey));
+  const add=[...sb].filter(k=>!sa.has(k)),del=[...sa].filter(k=>!sb.has(k));
+  const brief=arr=>arr.slice(0,3).map(x=>_dfCut(x,18)).join(' · ')+(arr.length>3?` 외 ${arr.length-3}건`:'');
+  if(add.length)_dfPush(out,'verse',`말씀 ${add.length}개를 ${nm} 에 담음 — ${brief(add)}`);
+  if(del.length)_dfPush(out,'verse',`말씀 ${del.length}개를 ${nm} 에서 뺌 — ${brief(del)}`);
+  if(!add.length&&!del.length&&va.length===vb.length&&!_dfSame(va,vb))
+    _dfPush(out,'verse',`말씀 모음 ${nm} 안의 말씀 내용·순서가 달라짐`);
+  ['google','shareCode'].forEach(k=>{
+    if(!_dfSame(a[k],b[k]))_dfPush(out,'verse',`말씀 모음 ${nm} · ${k==='google'?'구글 시트 연결':'공유 코드'} 가 달라짐`);
+  });
+}
+function _dfColls(a,b,out){
+  const toMap=arr=>{const m={};(Array.isArray(arr)?arr:[]).forEach(o=>{if(o&&o.id!=null)m[String(o.id)]=o;});return m;};
+  const A=toMap(a&&a.verseCollections),B=toMap(b&&b.verseCollections);
+  [...new Set([...Object.keys(A),...Object.keys(B)])].forEach(id=>_dfColl1(A[id],B[id],out));
+}
+// ── 연락처 하나 ──
+function _dfContact1(a,b,out){
+  if(_dfSame(a,b))return;
+  const nm=_dfQ((b&&(b.nick||b.name))||(a&&(a.nick||a.name)));
+  if(!a){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 새로 넣음`);return;}
+  if(!b){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 지움`);return;}
+  _dfDeepLines(`연락처 ${nm} ·`,a,b,4).forEach(s=>_dfPush(out,'contact',s));
+}
+function _dfContacts(a,b,out){
+  const toMap=arr=>{const m={};(Array.isArray(arr)?arr:[]).forEach(o=>{if(o&&o.id!=null)m[String(o.id)]=o;});return m;};
+  const A=toMap(a&&a.contacts),B=toMap(b&&b.contacts);
+  [...new Set([...Object.keys(A),...Object.keys(B)])].forEach(id=>_dfContact1(A[id],B[id],out));
+}
+// ── 기록(암송·좋아요·담아두기·나눔·Deeper) ──
+const _DF_LOGS=[['memorizationLog','암송',2],['verseKeepLog','담아두기',1],
+  ['verseLikeLog','좋아요',1],['verseShareLog','나눔',1],
+  ['verseDeeperLog','Deeper',1],['verseEvenDeeperLog','Even Deeper',1]];
+function _dfLogRefs(node,depth,acc){
+  if(!node)return acc;
+  if(Array.isArray(node)){node.forEach(x=>acc.push(_dfVKey(x)||'(이름 없음)'));return acc;}
+  if(typeof node==='object'&&depth>0)Object.keys(node).forEach(k=>_dfLogRefs(node[k],depth-1,acc));
+  return acc;
+}
+function _dfLogs(a,b,out){
+  _DF_LOGS.forEach(([key,label,depth])=>{
+    const A=(a||{})[key]||{},B=(b||{})[key]||{};
+    if(_dfSame(A,B))return;
+    const days=[...new Set([...Object.keys(A),...Object.keys(B)])].sort().reverse();
+    let add=0,del=0;const sample=[];
+    days.forEach(dk=>{
+      if(_dfSame(A[dk],B[dk]))return;
+      const ra=_dfLogRefs(A[dk],depth,[]),rb=_dfLogRefs(B[dk],depth,[]);
+      const sa=new Set(ra),sb=new Set(rb);
+      const plus=rb.filter(x=>!sa.has(x)),minus=ra.filter(x=>!sb.has(x));
+      add+=plus.length;del+=minus.length;
+      plus.slice(0,2).forEach(x=>{if(sample.length<3)sample.push(`${_dfDay(dk)} ${_dfCut(x,16)}`);});
+    });
+    if(add)_dfPush(out,'log',`${label} 기록 ${add}건 늘어남${sample.length?' — '+sample.join(' · '):''}`);
+    if(del)_dfPush(out,'log',`${label} 기록 ${del}건 사라짐`);
+    if(!add&&!del)_dfPush(out,'log',`${label} 기록 내용이 달라짐`);
+  });
+}
+// ── 설정 ──
+function _dfSettings(a,b,out){
+  const A=(a&&a.settings)||{},B=(b&&b.settings)||{};
+  [...new Set([...Object.keys(A),...Object.keys(B)])].forEach(k=>{
+    if(_dfSame(A[k],B[k]))return;
+    const label='설정 · '+_dfSetLabel(k);
+    const isObj=v=>v&&typeof v==='object';
+    if(isObj(A[k])&&isObj(B[k]))_dfDeepLines(label+' ·',A[k],B[k],4).forEach(s=>_dfPush(out,'setting',s));
+    else _dfPush(out,'setting',`${label}: ${_dfVal(A[k])} → ${_dfVal(B[k])}`);
+  });
+  if(!_dfSame((a||{}).secs,(b||{}).secs))_dfPush(out,'setting','하루 구간(시간표) 가 달라짐');
+}
+// ── 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 ──
+// 실패해도 화면이 죽지 않게 통째로 감싼다. 이건 보여 주기용이지 데이터가 아니다.
+function _dfDiff(a,b){
+  const out=[];
+  try{
+    if(!a||!b)return out;
+    _dfDays(a,b,out);
+    _dfColls(a,b,out);
+    _dfLogs(a,b,out);
+    _dfContacts(a,b,out);
+    _dfSettings(a,b,out);
+  }catch(e){console.warn('변경 풀이 실패(동작에는 영향 없음):',e);}
+  return out;
+}
+// 화면에 바로 쓰는 요약 — 줄 수를 자르고 남은 건수를 알려 준다
+function _dfBrief(a,b,limit){
+  limit=limit||6;
+  const all=_dfDiff(a,b);
+  return {total:all.length,lines:all.slice(0,limit).map(x=>x.s),more:Math.max(0,all.length-limit),all:all.map(x=>x.s)};
+}
+// 규모 — "얼마나 들어 있나" 를 사람 말로. 세 백업이 똑같아 보이던 것을 가른다.
+function _dfScale(o){
+  if(!o)return null;
+  const k=(typeof _fbCountByKind==='function')?_fbCountByKind(o):{};
+  const days=(o.days)||{};
+  const dayKeys=Object.keys(days).filter(x=>(typeof _dayHasContent==='function')?_dayHasContent(days[x]):true).sort();
+  let verses=0;(Array.isArray(o.verseCollections)?o.verseCollections:[]).forEach(c=>{verses+=((c&&c.verses)||[]).length;});
+  return {
+    tasks:k.days||0,latestDay:dayKeys.length?dayKeys[dayKeys.length-1]:null,dayCount:dayKeys.length,
+    colls:k.verseCollections||0,verses,mem:k.memorizationLog||0,logs:k.verseLogs||0,
+    contacts:k.contacts||0
+  };
+}
+function _dfScaleText(o){
+  const s=_dfScale(o);
+  if(!s)return '내용을 읽을 수 없어요';
+  return `할일·일정 ${s.tasks}개 · 말씀 모음 ${s.colls}개(말씀 ${s.verses}개) · 암송 ${s.mem}건 · 담아둔 기록 ${s.logs}건 · 연락처 ${s.contacts}명 · 데이터 있는 날짜 ${s.dayCount}개${s.latestDay?` (마지막 ${s.latestDay})`:''}`;
+}
+
 // ══ 충돌 격리 (v26-0828-6) ═══════════════════════════════════════════════
 // ⚠️ 지금까지 병합은 **진짜 충돌**이 났을 때도 조용히 한쪽을 골라 버렸다.
 //    고른 순간 진 쪽은 backup_0~2 말고는 어디에도 남지 않는다 — 그 백업은
@@ -30662,6 +31001,7 @@ function _cfMake(type,path,field,base,local,remote,label,opts){
     remoteVersion:opts.remoteVersion==null?null:opts.remoteVersion,
     clientEditedAt:opts.clientEditedAt||null,
     serverObservedAt:opts.serverObservedAt||null,
+    remoteWroteAt:opts.remoteWroteAt||null,          // 다른 기기가 클라우드에 올린 시각 (알 수 있을 때만)
     detectedAt:opts.now||Date.now(),
     summary:null, choice:null, resolvedAt:null,
     restore:{local:local===undefined?null:local, remote:remote===undefined?null:remote}
@@ -30763,7 +31103,7 @@ function _cfDetect(base,local,cloud,merged,opts){
     });
   });
   // ② 설정 (키 단위)
-  _cfScanKeys('setting','settings/',b.settings,l.settings,c.settings,out,opts,k=>'설정 · '+k);
+  _cfScanKeys('setting','settings/',b.settings,l.settings,c.settings,out,opts,k=>'설정 · '+_dfSetLabel(k));
   // ③ 말씀 모음 · 연락처 (id 단위)
   _cfScanById('collection','verseCollections/',b.verseCollections,l.verseCollections,c.verseCollections,out,opts);
   _cfScanById('contact','contacts/',b.contacts,l.contacts,c.contacts,out,opts);
@@ -30922,7 +31262,7 @@ function _fbWriteBackup(json,rev){
   try{
     const slot=Math.floor(Date.now()/60000)%3;
     fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('backup_'+slot)
-      .set({json,rev:rev||0,ts:Date.now(),dev:_deviceId(),kind:'auto-merge'})
+      .set({json,rev:rev||0,ts:Date.now(),dev:_deviceId(),devLabel:_deviceLabel(),kind:'auto-merge'})
       .catch(e=>console.warn('자동 백업 저장 실패(동기화에는 영향 없음):',(e&&e.code)||e));
   }catch(e){}
 }
@@ -30983,7 +31323,7 @@ function _cfPushCloud(){
   try{
     if(!window._fbUser||typeof fbDB==='undefined')return;
     fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('conflicts')
-      .set({list:_cfTrimmed(),ts:Date.now(),dev:_deviceId()})
+      .set({list:_cfTrimmed(),ts:Date.now(),dev:_deviceId(),devLabel:_deviceLabel()})
       .catch(e=>console.warn('충돌 기록 저장 실패(동기화에는 영향 없음):',(e&&e.code)||e));
   }catch(e){}
 }
@@ -31043,24 +31383,151 @@ function _cfWhoLabel(rec,side){
 function _cfEsc(s){
   return String(s==null?'':s).replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
 }
+// 자리 이름을 지금 말로 다시 읽는다 — 옛 기록에 영문 설정 키가 박혀 있어도 사람 말로 보인다
+function _cfNiceLabel(rec){
+  let L=String(rec.label||rec.entityId||'');
+  if(rec.entityType==='setting')
+    return '설정 · '+_dfSetLabel(String(rec.entityId||'').replace(/^settings\//,''));
+  if(rec.entityType==='task-field'&&rec.field){
+    const tail=' · '+rec.field;
+    if(L.slice(-tail.length)===tail)L=L.slice(0,-tail.length)+' · '+_dfFieldLabel(rec.field);
+  }
+  return L.replace(/^\d{4}-\d{2}-\d{2}/,m=>_dfDay(m));
+}
+function _cfGroupName(rec){
+  const t=rec.entityType;
+  if(t==='section'||t==='task'||t==='task-field')return '할일·일정';
+  if(t==='setting')return '설정';
+  if(t==='collection')return '말씀 모음';
+  if(t==='contact')return '연락처';
+  return '알려만 드리는 것';
+}
+function _cfChoiceLabel(rec){
+  const c=rec.choice;
+  if(c==='merge')return '양쪽 다 남김';
+  if(c==='ack')return '확인함';
+  if(c==='local')return _cfWhoLabel(rec,'local')+' 것';
+  if(c==='remote')return _cfWhoLabel(rec,'remote')+' 것';
+  return String(c==null?'':c);
+}
+function _cfCutRaw(v){
+  let t;try{t=JSON.stringify(v===undefined?null:v);}catch(e){t=String(v);}
+  return (t&&t.length>600)?(t.slice(0,600)+' …(줄임)'):t;
+}
+// ⚠️ 이 창의 핵심 — 두 기기가 **각각 무엇을 했는지** 를 한 줄씩 적는다.
+//    예전엔 값 두 벌을 JSON 통짜로 뿌려서, 다르다는 것만 알 뿐 고를 수가 없었다.
+function _cfExplain(rec){
+  const res={local:[],remote:[],note:''};
+  try{
+    const t=rec.entityType;
+    if(t==='bulk'){
+      res.note=`합친 결과에서 ${_dfKindName(rec.entityId)} 가 ${_dfVal(rec.base)}개 → ${_dfVal(rec.local)}개 로 줄었어요.`;
+      return res;
+    }
+    if(t==='shrink'){
+      res.note=`옛 버전 기기가 올린 것에서 ${_dfKindName(rec.entityId)} 가 ${_dfVal(rec.base)}개 → ${_dfVal(rec.remote)}개 로 줄어 있어요.`;
+      return res;
+    }
+    const run=fn=>{const o=[];fn(o);return o.map(x=>x.s);};
+    if(t==='section'){
+      // 기준(갈라지기 전)을 모르는 자리 — 무엇이 늘고 줄었는지 말할 수 없다.
+      // 그럴 땐 양쪽 목록을 통째로 늘어놓는 것이 고르는 데 훨씬 낫다.
+      if(rec.base==null){
+        const li=v=>(Array.isArray(v)?v:[]).map(x=>_dfQ(_dfTaskKey(x))+((x&&x.done)?' (완료)':''));
+        const one=v=>[`할일 ${(Array.isArray(v)?v:[]).length}개 — ${li(v).join(' · ')||'(없음)'}`];
+        res.local=one(rec.local);res.remote=one(rec.remote);
+        return res;
+      }
+      res.local=run(o=>_dfArr('',rec.base,rec.local,o));
+      res.remote=run(o=>_dfArr('',rec.base,rec.remote,o));
+      return res;
+    }
+    if(t==='task'){
+      // ⚠️ 이 기록은 **자리(몇 번째)** 단위다. 제목이 다르다고 곧바로 "제목을 고쳤다"
+      //    로 읽으면 안 된다 — 순서가 밀려 다른 할일이 그 자리에 온 것일 수도 있다.
+      const seg=String(rec.entityId||'').split('/');
+      const no=(+seg[3]+1)||null;
+      const at=no?`${no}번째 자리`:'그 자리';
+      const one=v=>{
+        const L=[];
+        const bt=String((rec.base&&rec.base.text)||''),vt=String((v&&v.text)||'');
+        const qv=_dfQ(vt);
+        if(bt!==vt)L.push(`${at}가 ${_dfQ(bt)} → ${qv}${_dfRo(qv)} 바뀜 (제목을 고쳤거나 순서가 밀린 것)`);
+        run(o=>_dfArr('',[rec.base],[v],o)).forEach(x=>{if(x.indexOf('제목을')<0)L.push(x);});
+        return L;
+      };
+      res.local=one(rec.local);res.remote=one(rec.remote);
+      return res;
+    }
+    if(t==='collection'){
+      res.local=run(o=>_dfColl1(rec.base,rec.local,o));
+      res.remote=run(o=>_dfColl1(rec.base,rec.remote,o));
+      return res;
+    }
+    if(t==='contact'){
+      res.local=run(o=>_dfContact1(rec.base,rec.local,o));
+      res.remote=run(o=>_dfContact1(rec.base,rec.remote,o));
+      return res;
+    }
+    res.local=_dfDeepLines('',rec.base,rec.local,6);
+    res.remote=_dfDeepLines('',rec.base,rec.remote,6);
+  }catch(e){console.warn('충돌 풀이 실패(고르는 데는 지장 없음):',e);}
+  return res;
+}
+window.cfToggleRaw=function(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display=(el.style.display==='none')?'block':'none';
+}
 function _cfCardHTML(rec){
-  const mine=_cfEsc(_cfText(rec.local)), theirs=_cfEsc(_cfText(rec.remote));
-  const baseTxt=_cfEsc(_cfText(rec.base));
+  const who={local:_cfEsc(_cfWhoLabel(rec,'local')),remote:_cfEsc(_cfWhoLabel(rec,'remote'))};
   const canMerge=_cfCanMerge(rec);
   const auto=(rec.entityType==='bulk'||rec.entityType==='shrink');
   const done=!!rec.resolvedAt;
-  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:var(--tx2);line-height:1.6;${done?'opacity:.5;':''}">
-    <div style="font-weight:700;color:var(--tx);margin-bottom:4px;">${_cfEsc(rec.label)}</div>
-    <div style="color:var(--tx3);">기준: ${baseTxt}</div>
-    <div>· ${_cfEsc(_cfWhoLabel(rec,'local'))}: <b style="color:var(--tx);">${mine}</b></div>
-    <div>· ${_cfEsc(_cfWhoLabel(rec,'remote'))}: <b style="color:var(--tx);">${theirs}</b></div>
-    ${done?`<div style="margin-top:6px;color:var(--tx3);">정함: ${_cfEsc(rec.choice)}</div>`
+  const ex=_cfExplain(rec);
+  // 자리 이름 — 저장돼 있던 옛 기록(영문 설정 키)도 지금 말로 다시 읽는다
+  const title=_cfEsc(_cfNiceLabel(rec));
+  const side=(key,lines)=>{
+    const body=lines.length
+      ?lines.map(s=>`<div style="margin:1px 0 1px 8px;">· ${_cfEsc(s)}</div>`).join('')
+      :'<div style="margin:1px 0 1px 8px;color:var(--tx3);">바뀐 것을 짚어 낼 수 없어요 (아래 원래 값을 보세요)</div>';
+    return `<div style="margin-top:6px;">
+      <div style="font-weight:700;color:var(--tx);">${who[key]}에서 한 일</div>${body}</div>`;
+  };
+  const rawId='cfraw_'+String(rec.conflictId).replace(/[^A-Za-z0-9]/g,'_');
+  const raw=`<div style="margin-top:8px;">
+      <button class="settings-btn" style="width:100%;font-size:10px;padding:5px 8px;" onclick="cfToggleRaw('${rawId}')">원래 값 그대로 보기 ▾</button>
+      <div id="${rawId}" style="display:none;margin-top:6px;font-size:10px;color:var(--tx3);line-height:1.6;word-break:break-all;overflow-wrap:anywhere;">
+        <div style="margin-bottom:3px;"><b>기준(두 기기가 갈라지기 전)</b><br>${_cfEsc(_cfCutRaw(rec.base))}</div>
+        <div style="margin-bottom:3px;"><b>${who.local}</b><br>${_cfEsc(_cfCutRaw(rec.local))}</div>
+        <div><b>${who.remote}</b><br>${_cfEsc(_cfCutRaw(rec.remote))}</div>
+      </div></div>`;
+  // 언제 생긴 충돌인지 · 어느 쪽이 더 나중에 손댄 것인지 (알 수 있을 때만)
+  const times=[];
+  if(rec.clientEditedAt)times.push(`${who.local}에서 마지막으로 고친 때 ${_dfWhen(rec.clientEditedAt)}`);
+  if(rec.remoteWroteAt)times.push(`${who.remote}에서 클라우드에 올린 때 ${_dfWhen(rec.remoteWroteAt)}`);
+  let newer='';
+  if(rec.clientEditedAt&&rec.remoteWroteAt)
+    newer=(rec.clientEditedAt>rec.remoteWroteAt)
+      ?` → <b style="color:var(--tx);">${who.local} 쪽이 더 나중이에요</b>`
+      :` → <b style="color:var(--tx);">${who.remote} 쪽이 더 나중이에요</b>`;
+  const when=`<div style="color:var(--tx3);font-size:10px;margin-top:2px;line-height:1.6;">`
+    +(rec.detectedAt?`${_cfEsc(_dfWhen(rec.detectedAt))}에 생긴 충돌`:'')
+    +(times.length?`<br>${_cfEsc(times.join(' · '))}${newer}`:'')
+    +`</div>`;
+  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:var(--tx2);line-height:1.6;word-break:break-word;overflow-wrap:anywhere;${done?'opacity:.5;':''}">
+    <div style="font-weight:700;color:var(--tx);margin-bottom:2px;">${title}</div>
+    ${when}
+    ${auto?`<div style="margin-top:6px;">${_cfEsc(ex.note||'')}</div>`
+          :side('local',ex.local)+side('remote',ex.remote)}
+    ${auto?'':raw}
+    ${done?`<div style="margin-top:6px;color:var(--tx3);">정함: ${_cfEsc(_cfChoiceLabel(rec))}</div>`
       :(auto?`<div style="margin-top:6px;color:var(--tx3);">이건 알려만 드려요. 되돌리려면 계정 탭의 자동 백업을 쓰세요.</div>
               <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','ack')">확인했어요</button>`
       :`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
           ${canMerge?`<button class="settings-btn" style="flex:1;min-width:88px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','merge')">양쪽 다 남기기</button>`:''}
-          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','local')">${_cfEsc(_cfWhoLabel(rec,'local'))} 것</button>
-          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','remote')">${_cfEsc(_cfWhoLabel(rec,'remote'))} 것</button>
+          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','local')">${who.local} 것으로</button>
+          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','remote')">${who.remote} 것으로</button>
         </div>`)}
   </div>`;
 }
@@ -31073,11 +31540,22 @@ function cfRender(){
     return;
   }
   const mergeable=open.filter(_cfCanMerge).length;
+  const last=open.reduce((m,r)=>Math.max(m,r.detectedAt||0),0);
+  const kinds={};
+  open.forEach(r=>{const n=_cfGroupName(r);kinds[n]=(kinds[n]||0)+1;});
+  const kindLine=Object.keys(kinds).map(k=>`${k} ${kinds[k]}건`).join(' · ');
   b.innerHTML=
-    `<div style="font-size:11px;color:var(--tx3);line-height:1.7;margin-bottom:10px;">
-       같은 것을 두 기기가 동시에 고쳐서 자동으로 정할 수 없는 것이 <b style="color:var(--tx);">${open.length}건</b> 있어요.
+    `<div style="font-size:11px;color:var(--tx3);line-height:1.75;margin-bottom:10px;">
+       같은 것을 두 기기가 동시에 고쳐서 자동으로 정할 수 없는 것이 <b style="color:var(--tx);">${open.length}건</b> 있어요 — ${_cfEsc(kindLine)}.<br>
        <b style="color:var(--tx);">어느 쪽도 지워지지 않았어요</b> — 양쪽 다 보관돼 있고, 고른 뒤에도 되돌릴 수 있어요.
-       지금 정하지 않으려면 오른쪽 위 × 를 누르세요.
+       ${last?`<br>가장 나중에 생긴 충돌: ${_cfEsc(_dfWhen(last))}`:''}
+     </div>
+     <div style="font-size:11px;color:var(--tx3);line-height:1.8;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
+       <b style="color:var(--tx);">어떻게 고르나요</b><br>
+       · 칸마다 <b style="color:var(--tx);">기기가 각각 무엇을 했는지</b>를 한 줄씩 적어 두었어요.<br>
+       · 둘 다 살리고 싶으면 <b style="color:var(--tx);">양쪽 다 남기기</b> — 아무것도 잃지 않아요. 헷갈리면 이걸 고르세요.<br>
+       · 한쪽만 맞다고 확신할 때에만 그 기기 것을 고르세요.<br>
+       · 지금 정하지 않아도 돼요. 오른쪽 위 × 로 닫으면 그대로 남아 있어요.
      </div>`+
     (mergeable?`<button class="settings-btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfMergeAll()">양쪽 변경 합치기 — 권장 (${mergeable}건)</button>`:'')+
     open.map(_cfCardHTML).join('');
@@ -31178,8 +31656,11 @@ async function _fbCommit(){
                          :_fbMergeGuarded(_fbBaseObj(),ST,cloudState);
           mergedApply=outState;
           // 판정만 한다 — 보관(_cfStore)은 트랜잭션 밖에서.
+          let remoteWroteAt=null;
+          try{if(data.updatedAt&&typeof data.updatedAt.toMillis==='function')remoteWroteAt=data.updatedAt.toMillis();}catch(e){}
           cfPending=_fbCollectConflicts(_fbBaseObj(),ST,cloudState,outState,
-            {remoteDeviceId:data.dev||null,remoteVersion:cloudRev,legacy,onlyShrink:legacy});
+            {remoteDeviceId:data.dev||null,remoteDeviceLabel:data.devLabel||null,
+             remoteWroteAt,remoteVersion:cloudRev,legacy,onlyShrink:legacy});
           backupJson=data.json;backupRev=cloudRev;
           if(legacy)legacyVer=data.appVer||'(표시 없음)';
         }
@@ -31191,7 +31672,7 @@ async function _fbCommit(){
       const _prior=priorState||_fbBaseObj();
       outJson=JSON.stringify(_dsProject(_psProject(outState,_prior),_prior));
       tx.set(userDocRef(uid),{
-        json:outJson,rev:outRev,dev:_deviceId(),appVer:APP_VERSION,
+        json:outJson,rev:outRev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       });
     });
@@ -31240,7 +31721,7 @@ async function _fbForceWrite(stateObj){
     const snap=await tx.get(userDocRef(uid));
     const cur=snap.exists?(snap.data()||{}):{};
     rev=((typeof cur.rev==='number')?cur.rev:0)+1;
-    tx.set(userDocRef(uid),{json,rev,dev:_deviceId(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    tx.set(userDocRef(uid),{json,rev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
   _fbSetBase(json,rev,uid);
   _fbCleanSeq=_fbDirtySeq; // 방금 올린 것이 곧 최신 — 미전송 표시 해제
@@ -31271,6 +31752,11 @@ function _recoverySummary(stateObj){
   const realKeys=allKeys.filter(k=>_dayHasContent(days[k]));
   const memLog=stateObj.memorizationLog||{};
   const memKeys=Object.keys(memLog).sort();
+  // ⚠️ 날짜 개수만으로는 백업 세 벌이 전부 똑같아 보인다 — 실제 알맹이도 센다
+  const colls=Array.isArray(stateObj.verseCollections)?stateObj.verseCollections:[];
+  let verseCount=0;colls.forEach(c=>{verseCount+=((c&&c.verses)||[]).length;});
+  let taskCount=0;
+  try{taskCount=(typeof _fbCountArrays==='function')?_fbCountArrays(days,0):0;}catch(e){}
   return{
     dayCount:allKeys.length,
     realDayCount:realKeys.length,
@@ -31278,6 +31764,7 @@ function _recoverySummary(stateObj){
     memCount:memKeys.length,
     latestMem:memKeys.length?memKeys[memKeys.length-1]:'없음',
     contactCount:(stateObj.contacts||[]).length,
+    taskCount,collCount:colls.length,verseCount,
   };
 }
 // 필터·요약 없이 특정 날짜의 원본 JSON을 그대로 보여준다.
@@ -31307,22 +31794,47 @@ window.checkDataRecovery=async function(){
   try{
     let local=null;
     try{const raw=localStorage.getItem(LS_KEY);if(raw)local=JSON.parse(raw);}catch(e){}
-    let remote=null;
+    let remote=null,meta={};
     try{
       const doc=await userDocRef(window._fbUser.uid).get();
-      if(doc.exists&&doc.data()&&doc.data().json)remote=JSON.parse(doc.data().json);
+      if(doc.exists&&doc.data()){
+        const d=doc.data();
+        if(d.json)remote=JSON.parse(d.json);
+        meta={dev:d.dev,devLabel:d.devLabel,rev:d.rev,appVer:d.appVer,
+              at:(d.updatedAt&&typeof d.updatedAt.toMillis==='function')?d.updatedAt.toMillis():null};
+      }
     }catch(e){showToast('클라우드 데이터를 불러오지 못했어요');btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
     const ls=_recoverySummary(local),rs=_recoverySummary(remote);
     window._recoveryLocal=local;window._recoveryRemote=remote; // 날짜별 원본 조회용으로 보관
     if(!ls&&!rs){out.style.display='block';out.innerHTML='<div style="font-size:12px;color:var(--tx3);">비교할 데이터가 없어요.</div>';btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
-    const localNewer=ls&&rs&&ls.latestDay>rs.latestDay;
+    // ⚠️ 여기가 이 화면의 핵심 — 숫자만 나란히 놓으면 "다르다" 만 알 뿐 고를 수가 없다.
+    //    양쪽이 서로에게 없는 것을 **이름을 대고** 적는다 (2026-09-04 HB 지적).
+    const onlyLocal=(local&&remote)?_dfBrief(remote,local,8):null;   // 클라우드 → 이 기기
+    const onlyCloud=(local&&remote)?_dfBrief(local,remote,8):null;   // 이 기기 → 클라우드
+    const myDev=(typeof _deviceId==='function')?_deviceId():null;
+    const writer=meta.devLabel?_cfEsc(meta.devLabel):(meta.dev?(meta.dev===myDev?'이 기기':'다른 기기'):'기록 없음');
+    const mine=(typeof _deviceLabel==='function')?_cfEsc(_deviceLabel()):'이 기기';
+    const block=(title,d,empty)=>`<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:8px;word-break:break-word;overflow-wrap:anywhere;">
+        <div style="font-weight:700;color:var(--tx);">${title}${d&&d.total?` (${d.total}군데)`:''}</div>
+        ${!d?'<div style="color:var(--tx3);">한쪽 데이터를 읽지 못해 견줄 수 없어요</div>'
+            :(d.total?d.lines.map(s=>`<div style="margin:1px 0 1px 8px;">· ${_cfEsc(s)}</div>`).join('')
+                      +(d.more?`<div style="margin-left:8px;color:var(--tx3);">… 외 ${d.more}군데</div>`:'')
+                    :`<div style="color:var(--tx3);">${empty}</div>`)}
+      </div>`;
     out.style.display='block';
     out.innerHTML=`
+      <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.8;margin-bottom:8px;">
+        <div style="font-weight:700;color:var(--tx);">클라우드에 마지막으로 쓴 기록</div>
+        기기: ${writer}${meta.appVer?` · 앱 ${_cfEsc(meta.appVer)}`:''}${typeof meta.rev==='number'?` · 클라우드 판 ${meta.rev}`:''}<br>
+        시각: ${_cfEsc(_dfWhen(meta.at))}
+      </div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <div style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx2);line-height:1.7;">
-          <div style="font-weight:700;color:var(--tx);margin-bottom:3px;">이 기기(로컬)</div>
+          <div style="font-weight:700;color:var(--tx);margin-bottom:3px;">이 기기 (${mine})</div>
           최근 날짜(실제 데이터): ${ls?ls.latestDay:'없음'}<br>
           데이터 있는 날짜 수: ${ls?ls.realDayCount:0} (전체 ${ls?ls.dayCount:0})<br>
+          할일·일정: ${ls?ls.taskCount:0}개<br>
+          말씀 모음: ${ls?ls.collCount:0}개 (말씀 ${ls?ls.verseCount:0}개)<br>
           암송 최근: ${ls?ls.latestMem:'없음'} (${ls?ls.memCount:0}건)<br>
           연락처: ${ls?ls.contactCount:0}명
         </div>
@@ -31330,17 +31842,21 @@ window.checkDataRecovery=async function(){
           <div style="font-weight:700;color:var(--tx);margin-bottom:3px;">클라우드</div>
           최근 날짜(실제 데이터): ${rs?rs.latestDay:'없음'}<br>
           데이터 있는 날짜 수: ${rs?rs.realDayCount:0} (전체 ${rs?rs.dayCount:0})<br>
+          할일·일정: ${rs?rs.taskCount:0}개<br>
+          말씀 모음: ${rs?rs.collCount:0}개 (말씀 ${rs?rs.verseCount:0}개)<br>
           암송 최근: ${rs?rs.latestMem:'없음'} (${rs?rs.memCount:0}건)<br>
           연락처: ${rs?rs.contactCount:0}명
         </div>
       </div>
-      ${localNewer?'<div style="font-size:11px;color:var(--ac-tx);margin-bottom:8px;">로컬이 클라우드보다 최신 날짜를 갖고 있어요.</div>':''}
+      ${block('이 기기에만 있는 것 — 덮어쓰면 클라우드에 올라가요',onlyLocal,'클라우드에 다 들어가 있어요')}
+      ${block('클라우드에만 있는 것 — 덮어쓰면 사라져요',onlyCloud,'클라우드에만 있는 것은 없어요')}
+      ${(onlyCloud&&onlyCloud.total)?'<div style="font-size:11px;color:var(--ac-tx);line-height:1.7;margin-bottom:8px;">⚠️ 클라우드에만 있는 것이 있어요. 덮어쓰기 전에 위 목록이 잃어도 되는 것인지 꼭 보세요.</div>':''}
       <button class="settings-btn" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="fbForceUploadLocal()" ${local?'':'disabled'}>이 기기의 로컬 데이터로 클라우드 덮어쓰기</button>
       <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cleanupEmptyDays()">빈 날짜 항목 정리하기 (데이터 없는 날짜 삭제)</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);">
         <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;">특정 날짜의 원본 데이터를 필터 없이 그대로 보기 (직접 눈으로 확인)</div>
         <div style="display:flex;gap:6px;margin-bottom:6px;">
-          <input type="date" id="recoveryInspectDate" value="2026-07-10" style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:7px 8px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:12px;outline:none;">
+          <input type="date" id="recoveryInspectDate" value="${_dfToday()}" style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:7px 8px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:12px;outline:none;">
           <button class="settings-btn" style="width:auto;padding:0 14px;" onclick="inspectRecoveryDate()">보기</button>
         </div>
         <div id="recoveryInspectOut"></div>
@@ -31386,6 +31902,17 @@ window.fbForceUploadLocal=function(){
 }
 
 // ── 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) ──
+// ⚠️ 예전에는 세 백업이 "날짜 60개 · 암송 11건 · 연락처 11명" 처럼 똑같은 줄로만
+//    보여서 **어느 것이 무엇인지 가릴 수가 없었다** (2026-09-04 HB 지적).
+//    이제는 ① 몇 번째로 최근인지 ② 얼마나 지났는지 ③ 어느 기기가 남겼는지
+//    ④ 규모 ⑤ **지금 이 기기와 무엇이 다른지**(되돌리면 무엇이 바뀌는지)를 적는다.
+function _abLocalState(){
+  try{const raw=localStorage.getItem(LS_KEY);if(raw)return JSON.parse(raw);}catch(e){}
+  try{return JSON.parse(JSON.stringify(ST));}catch(e){return null;}
+}
+function _abRankLabel(i){
+  return i===0?'가장 최근':(i===1?'두 번째로 최근':'세 번째로 최근');
+}
 window.showAutoBackups=async function(){
   const box=document.getElementById('autoBackupList');
   if(!window._fbUser){showToast('로그인 상태에서만 사용할 수 있어요');return;}
@@ -31395,20 +31922,39 @@ window.showAutoBackups=async function(){
     const dataCol=fbDB.collection('users').doc(_fbUser.uid).collection('data');
     const snaps=await Promise.all([0,1,2].map(i=>dataCol.doc('backup_'+i).get()));
     const items=[];
-    snaps.forEach((s,i)=>{if(s.exists){const d=s.data()||{};items.push({slot:i,json:d.json,rev:d.rev,ts:d.ts});}});
+    snaps.forEach((s,i)=>{if(s.exists){const d=s.data()||{};items.push({slot:i,json:d.json,rev:d.rev,ts:d.ts,dev:d.dev,devLabel:d.devLabel});}});
     if(!items.length){
-      box.innerHTML='<div style="font-size:11px;color:var(--tx3);">저장된 자동 백업이 없어요. 다른 기기의 변경과 겹쳐 병합이 일어날 때 자동으로 남아요.</div>';
+      box.innerHTML='<div style="font-size:11px;color:var(--tx3);line-height:1.7;">저장된 자동 백업이 없어요. 다른 기기의 변경과 겹쳐 병합이 일어날 때 자동으로 남아요.</div>';
       return;
     }
     items.sort((a,b)=>(b.ts||0)-(a.ts||0));
     window._autoBackups={};items.forEach(it=>{window._autoBackups[it.slot]=it;});
-    box.innerHTML=items.map(it=>{
-      let sum=null;try{sum=_recoverySummary(JSON.parse(it.json||'null'));}catch(e){}
-      const when=it.ts?new Date(it.ts).toLocaleString('ko-KR'):'시각 미상';
-      return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:6px;">
-        <div style="font-weight:700;color:var(--tx);">${when}</div>
-        ${sum?`최근 날짜(실제 데이터): ${sum.latestDay} · 데이터 있는 날짜 ${sum.realDayCount}개 · 암송 ${sum.memCount}건 · 연락처 ${sum.contactCount}명`:'요약을 만들 수 없어요'}
-        <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="restoreAutoBackup(${it.slot})">이 백업으로 클라우드·이 기기 복원</button>
+    const cur=_abLocalState();
+    const myDev=(typeof _deviceId==='function')?_deviceId():null;
+    const head=`<div style="font-size:11px;color:var(--tx3);line-height:1.8;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
+        <b style="color:var(--tx);">이 목록을 읽는 법</b><br>
+        · 다른 기기의 변경과 겹쳐 자동으로 합쳐질 때, <b style="color:var(--tx);">합치기 직전의 클라우드</b>가 여기 남아요.<br>
+        · <b style="color:var(--tx);">되돌리면 이렇게 돼요</b> 줄이 이 백업과 지금 이 기기의 차이예요. 그 줄이 없으면 지금과 같은 내용이에요.<br>
+        · 그러니 <b style="color:var(--tx);">지금 없어진 것이 적힌 백업</b>을 고르면 돼요.</div>`;
+    box.innerHTML=head+items.map((it,idx)=>{
+      let obj=null;try{obj=JSON.parse(it.json||'null');}catch(e){}
+      const when=_dfWhen(it.ts);
+      const dev=it.devLabel?_cfEsc(it.devLabel):(it.dev?(it.dev===myDev?'이 기기':'다른 기기'):'기기 기록 없음');
+      const same=(idx>0&&items[idx-1].json===it.json);
+      let diff=null;
+      if(obj&&cur)diff=_dfBrief(cur,obj,8);
+      const diffHTML=!obj?'<div style="color:var(--tx3);">내용을 읽을 수 없어요</div>'
+        :(!cur?'<div style="color:var(--tx3);">이 기기의 내용을 읽지 못해 견줄 수 없어요</div>'
+        :(diff.total===0?'<div style="color:var(--tx3);">지금 이 기기와 내용이 같아요 — 되돌려도 달라지는 것이 없어요</div>'
+        :`<div style="font-weight:700;color:var(--tx);margin-top:6px;">되돌리면 이렇게 돼요 (${diff.total}군데)</div>`
+          +diff.lines.map(s=>`<div style="margin:1px 0 1px 8px;">· ${_cfEsc(s)}</div>`).join('')
+          +(diff.more?`<div style="margin-left:8px;color:var(--tx3);">… 외 ${diff.more}군데</div>`:'')));
+      return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:8px;word-break:break-word;overflow-wrap:anywhere;">
+        <div style="font-weight:700;color:var(--tx);">${_abRankLabel(idx)} · ${_cfEsc(when)}</div>
+        <div style="color:var(--tx3);">남긴 기기: ${dev}${it.rev?` · 클라우드 판 ${it.rev}`:''}${same?' · 위 백업과 내용이 같아요':''}</div>
+        <div style="margin-top:4px;">${_cfEsc(_dfScaleText(obj))}</div>
+        ${diffHTML}
+        <button class="settings-btn" style="width:100%;margin-top:8px;" onclick="restoreAutoBackup(${it.slot})">이 백업으로 클라우드·이 기기 복원</button>
       </div>`;
     }).join('');
   }catch(e){
@@ -31419,7 +31965,18 @@ window.showAutoBackups=async function(){
 window.restoreAutoBackup=function(slot){
   const it=window._autoBackups&&window._autoBackups[slot];
   if(!it||!it.json){showToast('백업 데이터를 찾지 못했어요');return;}
-  appConfirm('이 자동 백업 시점으로 클라우드와 이 기기를 되돌려요. 백업 이후의 변경은 사라져요. 계속할까요?',async()=>{
+  // ⚠️ 무엇이 사라지는지 **이름을 대고** 묻는다. "백업 이후의 변경은 사라져요" 만으로는
+  //    무엇을 잃는지 알 수 없어 사람이 고를 수가 없다.
+  let msg='이 자동 백업 시점으로 클라우드와 이 기기를 되돌려요. 계속할까요?';
+  try{
+    const cur=_abLocalState(),obj=JSON.parse(it.json);
+    const d=_dfBrief(cur,obj,5);
+    if(d.total)msg=`이 백업으로 되돌리면 ${d.total}군데가 바뀌어요:\n\n`
+      +d.lines.map(s=>'· '+s).join('\n')+(d.more?`\n… 외 ${d.more}군데`:'')
+      +'\n\n계속할까요?';
+    else msg='이 백업은 지금 이 기기와 내용이 같아요. 그래도 되돌릴까요?';
+  }catch(e){}
+  appConfirm(msg,async()=>{
     try{
       const stateObj=JSON.parse(it.json);
       await _fbForceWrite(stateObj);

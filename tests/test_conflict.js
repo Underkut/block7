@@ -32,6 +32,9 @@ eval(sliceDev('let _fbLastTouchTs=', '// 원격/병합 상태를 화면')
         list: () => _cfList,
         setList: v => { _cfList = v; },
         openCount: _cfOpenCount,
+        explain: _cfExplain,
+        nice: _cfNiceLabel,
+        group: _cfGroupName,
         trimmed: _cfTrimmed,
         saveLocal: _cfSaveLocal,
         loadLocal: _cfLoadLocal,
@@ -307,6 +310,49 @@ console.log('\n시나리오 20 — 기기 저장소 왕복');
                base: 1, local: 2, remote: 3, choice: null, resolvedAt: null }]);
   S.saveLocal();
   sc.eq('다시 읽으면 그대로', S.loadLocal()[0].conflictId, 'z1');
+}
+
+// ═══ 21. 화면에 무엇이 적히나 — 값 통짜가 아니라 "무엇을 했는지" (v26-0904-11) ═══
+// ⚠️ 예전에는 값 두 벌을 JSON 으로 뿌려서, 사람이 다르다는 것만 알 뿐 고를 수가
+//    없었다 (2026-09-04 HB 지적). 이제는 기기마다 한 일을 한 줄씩 적는다.
+console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
+{
+  const has = (arr, ...f) => arr.some(l => f.every(x => l.includes(x)));
+
+  // 설정 덩어리 — 달라진 자리만 짚는다
+  const rec = { entityType: 'setting', entityId: 'settings/verseCards',
+    base: { c1: { view: 'list' }, c2: { view: 'list' } },
+    local: { c1: { view: 'list' }, c2: { view: 'card' } },
+    remote: { c1: { view: 'grid' }, c2: { view: 'list' } } };
+  const ex = S.explain(rec);
+  sc.eq('이 기기가 고친 자리', has(ex.local, 'c2', 'view', '「card」'), true);
+  sc.eq('다른 기기가 고친 자리', has(ex.remote, 'c1', 'view', '「grid」'), true);
+  sc.eq('안 달라진 자리는 안 적는다', ex.local.join('|').includes('c1'), false);
+  sc.eq('영문 설정 키를 사람 말로', S.nice(rec), '설정 · 말씀 카드 구성');
+  sc.eq('갈래 이름', S.group(rec), '설정');
+
+  // 할일 한 자리 — "제목을 고쳤다" 로 단정하지 않는다 (순서가 밀린 것일 수 있다)
+  const t = { entityType: 'task', entityId: '2026-09-04/big/am/1',
+    base: { text: '심방', done: false }, local: { text: '심방', done: true },
+    remote: { text: '주일예배', done: false } };
+  const et = S.explain(t);
+  sc.eq('완료 표시는 그대로 말한다', has(et.local, '「심방」', '완료 표시를 켬'), true);
+  sc.eq('자리 번호를 준다', has(et.remote, '2번째 자리'), true);
+  sc.eq('단정하지 않는다', has(et.remote, '순서가 밀린 것'), true);
+  sc.eq('날짜를 사람 말로', S.nice({ entityType: 'task', entityId: 'x',
+        label: '2026-09-04 · 빅 블럭 · 오전' }), '9월 4일 (금) · 빅 블럭 · 오전');
+
+  // 기준을 모르는 자리 — 늘고 줄었다고 말할 수 없으니 양쪽을 통째로 늘어놓는다
+  const u = { entityType: 'section', entityId: '2026-09-04/big/am', base: null,
+    local: [{ text: '가' }], remote: [{ text: '나' }, { text: '다' }] };
+  const eu = S.explain(u);
+  sc.eq('이 기기 목록', has(eu.local, '할일 1개', '「가」'), true);
+  sc.eq('다른 기기 목록', has(eu.remote, '할일 2개', '「나」', '「다」'), true);
+
+  // 알려만 주는 것 — 고르는 버튼 대신 설명 한 줄
+  const bulk = { entityType: 'bulk', entityId: 'bulk/days', base: 100, local: 30, remote: 100 };
+  sc.eq('대량 손실은 말로 알린다', S.explain(bulk).note.includes('할일·일정'), true);
+  sc.eq('고를 것이 없다', S.explain(bulk).local.length, 0);
 }
 
 sc.done();
