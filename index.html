@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0903-15  [production]  -->
+<!-- BLOCK7  v. 26-0904-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2243,6 +2243,11 @@ body.split-d #todayView.animating{overflow:hidden;}
 .task-menu-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;}
 .task-menu-icon svg{display:block;}
 .task-menu-sep{height:1px;background:var(--bd);margin:3px 4px;}
+.task-menu-title{
+  padding:7px 14px 3px 42px;
+  color:var(--tx3);font-size:10px;font-weight:600;letter-spacing:.04em;
+}
+#taskMenu{max-height:calc(100dvh - 16px);overflow-y:auto;}
 /* PC 에서 '말씀 목록' 하위 뎁스를 1뎁스를 가리지 않고 오른쪽에 띄운다 (v26-0818-9, HB) */
 .task-menu-sub-float{
   position:fixed;z-index:201;
@@ -3967,7 +3972,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0903-15";
+const APP_VERSION = "v. 26-0904-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6217,6 +6222,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span><span id="contactTaskToggleLabel">연락할 일</span>
   </div>
   <div class="task-menu-sep"></div>
+  <div class="task-menu-title">이동</div>
   <div class="task-menu-item" onclick="moveTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>내일로
   </div>
@@ -6226,11 +6232,6 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="moveTaskTo(-1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M14 4.5v11L5 10z"/></svg></span>어제로
   </div>
-  <div class="task-menu-sep"></div>
-  <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a6.5 6.5 0 1 0 6.5 6.5"/><path d="M7 3.3 10.3 4l-1 3.3"/></svg></span><span id="dailyToggleLabel">매일 반복</span>
-  </div>
-  <div class="task-menu-sep"></div>
   <div class="task-menu-item" id="dateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13M7 3v3M13 3v3"/></svg></span><span id="dateLabelText">날짜 지정</span>
     <input type="date" id="datePickerInput"
@@ -6238,6 +6239,18 @@ window._fbScriptsReady=new Promise(resolve=>{
              font-size:16px;-webkit-appearance:none;cursor:pointer;"
       onchange="moveTaskToPickedDate(this.value)"
       onfocus="prepDatePicker()">
+  </div>
+  <div class="task-menu-sep"></div>
+  <div class="task-menu-title">복제</div>
+  <div class="task-menu-item" onclick="duplicateTaskTo(1)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="6" y="6" width="10" height="10" rx="1.5"/><path d="M4 14H3.5V4.5a1 1 0 0 1 1-1H14V4"/></svg></span>내일로
+  </div>
+  <div class="task-menu-item" onclick="duplicateTaskTo(7)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="6" y="6" width="10" height="10" rx="1.5"/><path d="M4 14H3.5V4.5a1 1 0 0 1 1-1H14V4"/></svg></span>다음 주로
+  </div>
+  <div class="task-menu-sep"></div>
+  <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a6.5 6.5 0 1 0 6.5 6.5"/><path d="M7 3.3 10.3 4l-1 3.3"/></svg></span><span id="dailyToggleLabel">매일 반복</span>
   </div>
 </div>
 
@@ -23567,7 +23580,7 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
     'opacity:0;border:none;font-size:16px;-webkit-appearance:none;cursor:pointer;pointer-events:none;';
   labelRow.style.cursor='pointer';
 
-  const mw=180,mh=205;
+  const mw=180,mh=menu.offsetHeight;
   let left,top;
 
   if(atPoint&&(atPoint.x>0||atPoint.y>0)){
@@ -24624,6 +24637,29 @@ function moveTaskTo(days){
   // brief flash to confirm
   const label=days===-1?'어제로':days===1?'내일로':'다음 주로';
   showToast(`${label} 이동했어요`);
+}
+
+function duplicateTaskTo(days){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const fromKey=tKey();
+  const toKey=tKey(addDays(viewDate,days));
+  const source=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
+  const item=source[idx];
+  if(!item)return;
+
+  // 복제는 원본을 그대로 둔다. 완료·중요·연락·반복·이월 횟수 등
+  // 지금과 앞으로 추가될 할일 상태도 빠뜨리지 않도록 객체 전체를 복사한다.
+  const copy={...item};
+  beforeSave();
+  if(type==='big')getBigs(toKey,secId).push(copy);
+  else getSmalls(toKey,secId).push(copy);
+  save();
+  renderSecBody(secId);
+  updateTotal();
+  refreshTaskViewsLive();
+  closeTaskMenu();
+  showToast(`${days===1?'내일로':'다음 주로'} 복제했어요`);
 }
 
 function prepDatePicker(){
