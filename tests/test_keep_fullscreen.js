@@ -39,9 +39,19 @@ console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체
   sc.eq('지정 말씀도 비운다', action.includes('_vfOverrideVerse=null;'), true);
   sc.eq('전체화면을 곧바로 다시 그린다', action.includes('_verseFullRender();'), true);
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  sc.eq('필터나 지정 말씀이 있을 때만 홈을 보인다', sync.includes("hb.style.display=(_vfNavList||_vfOverrideVerse)?'flex':'none';"), true);
-  sc.eq('홈은 순환·셔플 바로 오른쪽이다', /\.vf-home\{[^}]*left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
+  sc.eq('필터·지정 말씀 또는 홈 복귀 상태일 때 홈을 보인다',
+        sync.includes("hb.style.display=(_vfNavList||_vfOverrideVerse||_vfHomeAtCollection)?'flex':'none';"), true);
+  sc.eq('필터 안에서는 선 홈, 말씀 모음 전체에서는 채운 홈',
+        sync.includes('hb.innerHTML=_vfHomeAtCollection?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;'), true);
+  sc.eq('홈을 누르면 채운 상태를 남긴다', action.includes('_vfHomeAtCollection=true;'), true);
+  sc.eq('홈은 좌상단 첫 자리다', /\.vf-home\{[^}]*left:14px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
+  sc.eq('순환·셔플은 홈 오른쪽 자리다', /\.vf-cycle\{[\s\S]{0,120}left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('홈 색은 순환·셔플과 같다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
+  sc.eq('말씀 모음 전체를 보는 위젯은 처음부터 채운 홈 상태를 넘긴다',
+        SRC.includes('_vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),\n              _vcScopeIsHome(sc)?null:(sc.ks[0]||\'keep\'),_vcScopeIsHome(sc));'), true);
+  const cardOpen = slice('function vcOpenFull(id){', 'function _vcUnplacedForKind');
+  sc.eq('카드 모습으로 연 위젯도 범위가 말씀 모음 전체면 채운 홈 상태를 넘긴다',
+        cardOpen.includes("_vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc)"), true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');

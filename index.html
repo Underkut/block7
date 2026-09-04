@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-8  [production]  -->
+<!-- BLOCK7  v. 26-0904-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -936,7 +936,7 @@ header{
    ⚠️ 좌상단 세로줄의 차례는 위에서부터 **말씀 모음 설정(50)
    → 저장 폴더 책갈피(88)** 이고, 책갈피가 여는 목록은 그 아래(122)에서 펼쳐진다
    (v26-0904-4, HB). 한 자리를 옮기면 아래 세 값을 함께 옮겨야 줄이 안 어긋난다. */
-.vf-home{position:absolute;left:52px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:14;
+.vf-home{position:absolute;left:14px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:14;
   width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
@@ -992,7 +992,7 @@ header{
    우상단 닫기와 대칭인 좌상단. 30×30 크기와 태그 그림의 색·투명도를
    그대로 쓴다. 사각 테두리 없이 아이콘 하나만 둔다. */
 .vf-cycle{
-  position:absolute;left:14px;top:calc(env(safe-area-inset-top,0px) + 12px);
+  position:absolute;left:52px;top:calc(env(safe-area-inset-top,0px) + 12px);
   width:30px;height:30px;z-index:11;background:none;border:none;padding:0;margin:0;
   display:flex;align-items:center;justify-content:center;
   color:var(--vf-tx,var(--tx));opacity:.2;cursor:pointer;
@@ -4121,7 +4121,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-8";
+const APP_VERSION = "v. 26-0904-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13452,6 +13452,8 @@ let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 // 가로폭은 그대로, 세로선은 원래보다 약 1.2배 길게. 획은 한결 가는 1.2다.
 const _VF_KEEP_MENU_SVG='<svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
 const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
+const _VF_HOME_FILLED_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.5 9.35 10 3.2l7.5 6.15-1.05 1.28-.75-.62V16a1.7 1.7 0 0 1-1.7 1.7H6A1.7 1.7 0 0 1 4.3 16v-5.99l-.75.62z"/></svg>';
+let _vfHomeAtCollection=false;
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
 // 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
@@ -13525,18 +13527,20 @@ function _vfShufPush(stack,p){
   stack.push(p);
   if(stack.length>_VF_SHUF_MAX)stack.shift();
 }
-function _vfSetNav(list,idx,label,kind){
+function _vfSetNav(list,idx,label,kind,atCollection){
   _vfShufReset();
+  _vfHomeAtCollection=!!atCollection;
   _vfNavList=(list&&list.length)?list.slice():null;
   _vfNavIdx=idx||0;_vfNavLabel=label||'';
   _vfNavKind=(kind&&_VLIST_KIND_TITLE[kind])?kind:null;
   _vfSyncTopBar();
 }
-function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfSyncTopBar();}
+function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfHomeAtCollection=false;_vfSyncTopBar();}
 function vfHomeAction(){
   closeVfKeepSwitch();
   _vfOverrideVerse=null;
   _vfClearNav();
+  _vfHomeAtCollection=true;
   _verseFullRender();
 }
 // 좌상단 '말씀 모음 설정' (v26-0904-4, HB) — 말씀설정 → 말씀 모음 탭.
@@ -13608,8 +13612,8 @@ function _vfSyncTopBar(){
       :'';
   }
   if(hb){
-    hb.style.display=(_vfNavList||_vfOverrideVerse)?'flex':'none';
-    hb.innerHTML=_VF_HOME_SVG;
+    hb.style.display=(_vfNavList||_vfOverrideVerse||_vfHomeAtCollection)?'flex':'none';
+    hb.innerHTML=_vfHomeAtCollection?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;
     hb.setAttribute('aria-label','말씀 모음 전체로 돌아가기');
   }
   // 순환·셔플과 저장 폴더 단추는 모든 전체화면에서 유지한다.
@@ -17950,7 +17954,7 @@ function _vliOpenFullForWidget(id,ref){
   if(list.length){
     const sc=_vcScope(cfg);
     _vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),
-              _vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'));
+              _vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc));
   }
 }
 let _vliRef=null,_vliKind=null,_vliArmed=true;
@@ -19576,7 +19580,8 @@ function vcOpenFull(id){
   const i=Math.max(0,list.findIndex(x=>x.ref===v.ref));
   _vfOverrideVerse=v;
   openVerseFull(true);
-  if(cfg.kind)_vfSetNav(list,i,_VC_KIND_NAME[cfg.kind],cfg.kind);
+  const sc=_vcScope(cfg);
+  _vfSetNav(list,i,_vcScopeLabel(sc),_vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc));
 }
 // 어느 컬럼에도 놓여 있지 않은 그 반응의 카드 설정을 찾는다.
 // 목록 ↔ 카드를 오갈 때 배경·글자 크기 설정이 사라지지 않게, 설정은 카드가
