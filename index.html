@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-6  [production]  -->
+<!-- BLOCK7  v. 26-0904-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2960,15 +2960,46 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vc-cnt{font-size:9px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vc-act-like{color:var(--sun-red);}
 .vc-empty{font-size:11px;color:var(--vf-tx3,var(--tx3));text-align:center;padding:26px 10px;}
-/* 헤더 가운데 — 지금 걸려 있는 필터. 누르면 필터가 풀린다.
+/* ══ 헤더의 범위 단추 (v26-0904-7) ══
+   말씀 목록은 헤더 **왼쪽 끝**, 말씀 카드는 헤더 **가운데**. 누르면 '무엇을
+   볼까요' 팝업이 열린다. 걸려 있는 갈래 필터 이름도 여기 함께 뜬다.
    ⚠️ 반드시 button 요소로 둘 것. 헤더는 위젯 순서 이동 손잡이라 mousedown 에서
    preventDefault 를 하는데, button 이 아니면 PC 에서 클릭이 통째로 죽는다. */
-.vc-filter{display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;
-  background:none;border:none;padding:0;
+.vw-scope{display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0;
+  background:none;border:none;padding:0;margin:0;line-height:1;
   font-size:10px;font-weight:400;letter-spacing:0;color:var(--tx2);cursor:pointer;
   font-family:var(--font-ui),sans-serif;-webkit-tap-highlight-color:transparent;}
-.vc-filter span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.vc-filter:active{opacity:.5;}
+.vw-scope .vw-ic{display:flex;align-items:center;color:var(--tx2);flex-shrink:0;}
+.vw-scope .vw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vw-scope .vw-more{font-size:9px;color:var(--tx3);font-family:var(--font-number);flex-shrink:0;}
+.vw-scope:active{opacity:.5;}
+@media (hover:hover){.vw-scope:hover{color:var(--ac-tx);}}
+/* ══ 범위 고르는 팝업 ══
+   고른 줄은 왼쪽 얇은 선과 글자 굵기로만 나타낸다 (체크 상자를 두면
+   미니멀한 다른 화면과 어긋난다). */
+.vs-row{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:8px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;border-left:2px solid transparent;}
+@media (hover:hover){.vs-row:hover{background:var(--s2);}}
+.vs-row:active{opacity:.6;}
+.vs-row.on{border-left-color:var(--ac);background:var(--s2);}
+.vs-row .vs-ic{width:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--tx3);}
+.vs-row.on .vs-ic{color:var(--ac-tx);}
+.vs-row .vs-nm{flex:1;min-width:0;font-size:12px;color:var(--tx);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--font-ui),sans-serif;}
+.vs-row.on .vs-nm{font-weight:700;color:var(--ac-tx);}
+.vs-row .vs-cnt{font-size:10px;color:var(--tx3);font-family:var(--font-number);flex-shrink:0;}
+.vs-sec{font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:.06em;
+  margin:13px 2px 4px;font-family:var(--font-ui),sans-serif;}
+.vs-hint{font-size:10px;color:var(--tx3);line-height:1.6;margin-top:14px;
+  padding-top:11px;border-top:1px solid var(--bd);font-family:var(--font-ui),sans-serif;}
+/* 합치기 ⇄ 겹치는 것만 — 팝업 좌상단(보조 메뉴 자리) */
+.vs-mode{background:none;border:none;padding:4px;width:28px;flex-shrink:0;
+  cursor:pointer;color:var(--tx3);display:flex;align-items:center;justify-content:center;
+  line-height:0;-webkit-tap-highlight-color:transparent;}
+.vs-mode.on{color:var(--ac-tx);}
+.vs-mode:disabled{opacity:.25;cursor:default;}
+@media (hover:hover){.vs-mode:not(:disabled):hover{color:var(--tx);}}
 /* 마우스가 있는 기기에서만 나오는 좌우 넘김 (손가락에서는 좌우로 밀면 된다).
    ⚠️ 누를 수 있는 자리는 **본문 영역(.vc-inner) 안**으로만 둔다. 예전에는
    카드 몸통 전체 높이를 덮어서, 우하단 반응 버튼 중 맨 오른쪽 것이 이 영역에
@@ -4082,7 +4113,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-6";
+const APP_VERSION = "v. 26-0904-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5980,6 +6011,20 @@ window._fbScriptsReady=new Promise(resolve=>{
     </button>
   </div>
   <div id="vcSetBody"></div>
+</div>
+
+<!-- 위젯이 볼 범위 고르기 (말씀 카드·말씀 목록 공용, v26-0904-7)
+     좌상단 = 합치기 ⇄ 겹치는 것만 (보조 메뉴 자리) · 우상단 = 닫기 × -->
+<div class="event-modal-overlay" id="vsScopeOverlay" style="display:none;z-index:4340;" onclick="closeVwScope()"></div>
+<div class="event-modal" id="vsScopeModal" style="display:none;z-index:4350;width:340px;max-width:92vw;max-height:84vh;overflow-y:auto;">
+  <div class="modal-head">
+    <button class="vs-mode" id="vsModeBtn" onclick="vwScopeToggleMode()"></button>
+    <div class="event-modal-title" style="margin:0;flex:1;">무엇을 볼까요</div>
+    <button class="modal-x modal-x-inline" onclick="closeVwScope()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+  <div id="vsScopeBody"></div>
 </div>
 
 <!-- 알림 제목 커스텀 문구 칩 롱터치/우클릭 메뉴 (수정/삭제) -->
@@ -9128,6 +9173,7 @@ const _ESC_CLOSERS=[
   ['keepPickModal',   ()=>closeKeepPicker()],
   ['keepRowMenu',     ()=>closeKeepRowMenu()],
   ['vcSetModal',      ()=>closeVcSettings()],
+  ['vsScopeModal',    ()=>closeVwScope()],
   ['rpConfigModal',   ()=>closeRpConfig()],
   ['collEditPage',    ()=>closeCollEdit()],
   ['vfShareOverlay',  ()=>closeVfShare()],
@@ -16971,6 +17017,29 @@ function _lay(){
     if(!arr.includes(u.t))arr.splice(Math.max(0,Math.min(u.i|0,arr.length)),0,u.t);
     return false;
   });
+  // ①-B 옛 반응별 목록 위젯 → 말씀목록 인스턴스 (v26-0904-7)
+  // 좋아요·암송·Deeper·Even 목록이 저마다 타입이던 시절의 배치를 **화면 그대로**
+  // 옮겨 담는다. 지우지 않는다 — 지우면 그 기기가 "사용자가 뺐다"로 읽어
+  // 다른 기기의 배치까지 함께 사라진다.
+  // 이미 안 쓰고 남아 있던 그 반응의 카드 설정이 있으면 그것을 되살려 쓴다
+  // (배경·글자 크기가 그대로 이어진다).
+  {
+    const placedNow=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
+    const hh=ST.settings.rpWidgetHeights;
+    ['left','center','right'].forEach(c=>{
+      L.cols[c]=L.cols[c].map(t=>{
+        const k=_VC_TYPE_KIND[t];
+        if(!k)return t;
+        let id=_vcUnplacedForKind(k,null,placedNow);
+        if(id){const cc=_vcGet(id);if(cc)cc.view='list';}
+        else id=_vcCreate(k,null,'list');
+        placedNow.add('card#'+id);
+        // 끌어서 정해 둔 목록 높이도 함께 옮긴다
+        if(hh&&typeof hh[t]==='number'&&hh['list#'+id]==null)hh['list#'+id]=hh[t];
+        return'card#'+id;
+      });
+    });
+  }
   // ② 중복 제거(seen)는 **타입 위젯에만** 적용한다. 말씀카드('card#<id>')는
   //    개수 제한이 없어야 하므로 인스턴스마다 따로 살아 있어야 한다.
   const seen=new Set(),stash=[];
@@ -17372,7 +17441,9 @@ function _rpAttachVResize(host){
   host.querySelectorAll('.rp-vresize').forEach(hd=>{
     if(hd._vr)return;hd._vr=true;
     const type=hd.getAttribute('data-vrtype');
-    const isList=type==='memList'||type==='likeList'||type==='deeperList'||type==='evenList';
+    // 같은 위젯이 카드일 때는 'card#<id>', 목록일 때는 'list#<id>' 로 온다 —
+    // 두 모습의 높이를 따로 기억하기 위해서다 (v26-0904-7).
+    const isList=type.indexOf('list#')===0;
     const isCard=_vcIs(type);
     const perGrid=type==='monthTriple'?3:1; // 트리플: 위젯 델타를 그리드 3개가 나눠 가짐
     const start=(y0)=>{
@@ -17513,6 +17584,62 @@ function _aggEntriesForKind(kind,tab){
   const out=(t==='all')?agg:agg.filter(g=>_vlIsProp(g.ref)===(t==='prop'));
   return _vlApplySort(out,pref.sort||'recent');
 }
+// ── 범위(scope)별 집계 (v26-0904-7, HB) ────────────────────
+// 말씀 위젯이 보는 범위는 이제 "반응 하나"가 아니다. 반응 여럿·저장 폴더
+// 여럿을 함께 고를 수 있고, 아무것도 안 고르면 **말씀 모음 전체**다.
+// 원천 하나하나를 [{ref,date,time}] 로 편 뒤 합치거나(or) 겹치는 것만(and)
+// 남기고, 그 다음 길(_aggByRef → 정렬)은 예전과 똑같다.
+function _vlKindEntries(k){
+  if(k==='mem')return _flatMemEntries();
+  if(k==='like')return _flatSimpleEntries(getLikeLog());
+  if(k==='even')return _flatSimpleEntries(getEvenDeeperLog());
+  if(k==='deeper')return _flatSimpleEntries(getDeeperLog());
+  return[];
+}
+function _vlKeepEntries(name){
+  return _keepEntries().filter(x=>!name||x.list===name)
+    .map(x=>({ref:x.ref,date:x.d,time:(x.when.split(' ')[1]||'')}));
+}
+// 말씀 모음 전체 — 이것만은 **기록이 아니라 모음 그 자체**다.
+// 날짜는 모음의 6번째 열(v.d), 개수는 그 말씀에 눌린 반응을 모두 합한 횟수.
+// (2026-09-04 HB — "날짜도 쓰고 개수도 두기")
+function _vlHomeEntries(){
+  return(ACTIVE_VERSES()||[]).map(v=>({
+    ref:(typeof _reactKey==='function'?_reactKey(v):'')||v.ref,
+    date:(v.d?String(v.d):'').trim(),time:''}));
+}
+function _vlReactTotals(){
+  const m=new Map();
+  const add=e=>{if(e&&e.ref)m.set(e.ref,(m.get(e.ref)||0)+1);};
+  VC_KINDS.forEach(k=>_vlKindEntries(k).forEach(add));
+  return m;
+}
+// 세 번째 정렬 칩은 범위에 따라 다르다 — 저장 폴더만 골랐으면 '성경순', 그 밖은 '많은순'
+function _vlExtraSortFor(sc){
+  return(!sc.ks.length&&sc.ls.length)?_VL_SORT_EXTRA.keep:_VL_SORT_EXTRA.mem;
+}
+function _vlEntriesForScope(sc,tab,prefKey){
+  const pref=_vlPref(prefKey||_vcScopeKey(sc));
+  const range=_vListRange(pref);
+  const home=_vcScopeIsHome(sc);
+  let sources=home?[_vlHomeEntries()]
+    :[...sc.ks.map(k=>_vlKindEntries(k)),...sc.ls.map(n=>_vlKeepEntries(n))];
+  // 기간은 **합치기 전에** 원천마다 건다 — 겹치는 것만 볼 때도 같은 기간 안에서 본다
+  if(range)sources=sources.map(a=>a.filter(e=>(!range.from||e.date>=range.from)&&(!range.to||e.date<=range.to)));
+  let entries=[].concat(...sources);
+  if(!home&&sc.mode==='and'&&sources.length>1){
+    const sets=sources.map(a=>new Set(a.map(e=>e.ref)));
+    entries=entries.filter(e=>sets.every(x=>x.has(e.ref)));
+  }
+  let agg=_aggByRef(entries);
+  if(home){
+    const tot=_vlReactTotals();
+    agg.forEach(g=>{g.count=tot.get(g.ref)||0;});
+  }
+  const t=tab||'all';
+  if(t!=='all')agg=agg.filter(g=>_vlIsProp(g.ref)===(t==='prop'));
+  return _vlApplySort(agg,pref.sort||'recent');
+}
 // ── C단계: 목록별 정렬·기간 설정 ──
 // kind(mem/like/deeper)별로 {sort, period, customFrom, customTo}를 저장.
 // 위젯과 로고 메뉴 팝업이 같은 설정을 공유한다.
@@ -17596,15 +17723,27 @@ function _vlDispRef(ref){
   return (v&&v.ref)||ref;
 }
 // 위젯 헤더의 정렬 아이콘으로 컨트롤 줄 접기/펼치기 (세션 한정 상태)
-const _vlCtrlOpen={mem:false,like:false,deeper:false,even:false};
-function vlToggleCtrl(kind){_vlCtrlOpen[kind]=!_vlCtrlOpen[kind];renderRightPanel();}
+// ⚠️ 열쇠는 이제 반응 갈래가 아니라 **위젯 하나하나**다 (같은 범위를 보는
+//    위젯이 둘 있어도 각자 펼쳤다 접을 수 있어야 한다).
+const _vlCtrlOpen={};
+function vlToggleCtrl(key){_vlCtrlOpen[key]=!_vlCtrlOpen[key];renderRightPanel();}
+// 위젯이 부르는 정렬·기간 — 위젯 id 만 넘긴다. 그 위젯의 범위에서 설정 열쇠를
+// 도로 뽑아 쓴다. ⚠️ 저장 폴더 이름에는 따옴표가 들어갈 수 있어 onclick 에
+// 이름을 직접 적으면 안 된다 (id 는 'c3' 같은 안전한 값이다).
+function _vlwKey(id){const c=_vcGet(id);return c?_vcScopeKey(_vcScope(c)):'home';}
+function vlwSetSort(id,s){vlSetSort(_vlwKey(id),s);}
+function vlwTogglePairSort(id){vlTogglePairSort(_vlwKey(id));}
+function vlwSetPeriod(id,p){vlSetPeriod(_vlwKey(id),p);}
+function vlwSetCustom(id,w,v){vlSetCustom(_vlwKey(id),w,v);}
 // 정렬·기간 컨트롤 줄 HTML (위젯·팝업 공용)
-function _vListControlsHTML(kind){
+// argId 를 주면 위젯용(vlw*(id)) 으로, 안 주면 예전처럼 팝업용(vl*(key)) 으로 그린다.
+function _vListControlsHTML(kind,extra,argId){
   const pref=_vlPref(kind);
+  const C=(name,rest)=>`${argId?'vlw':'vl'}${name}(${argId?`'${argId}'`:`'${kind}'`}${rest||''})`;
   // 정렬: 말씀설정 하단 필터의 [많은순 성경순 …]과 동일한 글자 버튼 스타일
   const sortBtn=(key,label)=>{
     const on=(pref.sort||'recent')===key;
-    return`<span onclick="vlSetSort('${kind}','${key}')" style="font-size:11px;font-weight:${on?'700':'400'};color:${on?'var(--ac)':'var(--tx3)'};cursor:pointer;">${label}</span>`;
+    return`<span onclick="${C('SetSort',`,'${key}'`)}" style="font-size:11px;font-weight:${on?'700':'400'};color:${on?'var(--ac)':'var(--tx3)'};cursor:pointer;">${label}</span>`;
   };
   // 첫 칩은 눌릴 때마다 최신순 ⇄ 등록순 (칩을 늘리지 않는다)
   const cur=pref.sort||'recent';
@@ -17612,9 +17751,9 @@ function _vListControlsHTML(kind){
     ((cur==='reg'||cur==='recent')?cur:'recent');
   const pairOn=(cur==='recent'||cur==='reg');
   const pairLabel=_VL_SORT_PAIR.find(x=>x[0]===pairKey)[1];
-  const pairBtn=`<span onclick="vlTogglePairSort('${kind}')" title="누르면 ${pairKey==='recent'?'등록순':'최신순'}으로 바뀌어요" style="font-size:11px;font-weight:${pairOn?'700':'400'};color:${pairOn?'var(--ac)':'var(--tx3)'};cursor:pointer;">${pairLabel}</span>`;
-  const ex=_VL_SORT_EXTRA[kind]||_VL_SORT_EXTRA.mem;
-  const perBtn=([key,label])=>`<button class="vl-pill${(pref.period||'all')===key?' on':''}" onclick="vlSetPeriod('${kind}','${key}')">${label}</button>`;
+  const pairBtn=`<span onclick="${C('TogglePairSort')}" title="누르면 ${pairKey==='recent'?'등록순':'최신순'}으로 바뀌어요" style="font-size:11px;font-weight:${pairOn?'700':'400'};color:${pairOn?'var(--ac)':'var(--tx3)'};cursor:pointer;">${pairLabel}</span>`;
+  const ex=extra||_VL_SORT_EXTRA[kind]||_VL_SORT_EXTRA.mem;
+  const perBtn=([key,label])=>`<button class="vl-pill${(pref.period||'all')===key?' on':''}" onclick="${C('SetPeriod',`,'${key}'`)}">${label}</button>`;
   let h=`<div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:6px;">
     ${pairBtn}${sortBtn(ex[0],ex[1])}
     <span style="width:1px;height:12px;background:var(--bd);"></span>
@@ -17624,12 +17763,12 @@ function _vListControlsHTML(kind){
     h+=`<div style="display:flex;gap:6px;align-items:flex-end;margin-bottom:6px;">
       <div style="flex:1;min-width:0;">
         <div style="font-size:8px;color:var(--tx3);margin-bottom:2px;">시작날짜</div>
-        <input type="date" class="vl-date" style="width:100%;" value="${pref.customFrom||''}" onchange="vlSetCustom('${kind}','customFrom',this.value)">
+        <input type="date" class="vl-date" style="width:100%;" value="${pref.customFrom||''}" onchange="${C('SetCustom',`,'customFrom',this.value`)}">
       </div>
       <span style="font-size:9px;color:var(--tx3);padding-bottom:5px;">~</span>
       <div style="flex:1;min-width:0;">
         <div style="font-size:8px;color:var(--tx3);margin-bottom:2px;">마침날짜</div>
-        <input type="date" class="vl-date" style="width:100%;" value="${pref.customTo||''}" onchange="vlSetCustom('${kind}','customTo',this.value)">
+        <input type="date" class="vl-date" style="width:100%;" value="${pref.customTo||''}" onchange="${C('SetCustom',`,'customTo',this.value`)}">
       </div>
     </div>`;
   }
@@ -17691,6 +17830,9 @@ const _VLI_COUNT_ICON={
   deeper:'<svg width="9" height="8" viewBox="0 0 20 16" fill="currentColor" stroke="none"><path d="M2 3 L2 13 Q6 12 10 13 L10 3 Q6 2 2 3 Z"/><path d="M18 3 L18 13 Q14 12 10 13 L10 3 Q14 2 18 3 Z"/></svg>',
   even:'<svg width="9" height="8" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3 L10 8 L16 3"/><path d="M4 9 L10 14 L16 9"/></svg>',
   keep:'<svg width="7" height="9" viewBox="0 0 14 18" fill="currentColor" stroke="none"><path d="M2 1h10a1 1 0 0 1 1 1v14l-6-4-6 4V2a1 1 0 0 1 1-1z"/></svg>',
+  // 말씀 모음 전체 목록의 숫자는 **반응을 모두 합한 횟수**라 갈래 아이콘이 없다.
+  // 어느 한 갈래의 아이콘을 쓰면 그 갈래 횟수로 잘못 읽힌다 (v26-0904-7).
+  home:'<svg width="8" height="8" viewBox="0 0 14 14" fill="currentColor" stroke="none"><path d="M7 0.8 8.4 5.6 13.2 7 8.4 8.4 7 13.2 5.6 8.4 0.8 7 5.6 5.6Z"/></svg>',
 };
 // 말씀 위젯 글자 크기 — 1 이 지금까지 쓰던 크기(기본)
 const _VW_TEXT_PX={1:12,2:13.5,3:15};
@@ -17699,7 +17841,7 @@ function _vwSize(key){
   const n=parseInt((ST.settings||{})[key],10);
   return [1,2,3].includes(n)?n:1;
 }
-function _vListRowsHTML(items,limit,kind,markProp){
+function _vListRowsHTML(items,limit,kind,markProp,wid){
   const s=ST.settings;
   const textPx=_VW_TEXT_PX[_vwSize('verseWidgetTextSize')];
   const refPx=_VW_REF_PX[_vwSize('verseWidgetRefSize')];
@@ -17731,14 +17873,17 @@ function _vListRowsHTML(items,limit,kind,markProp){
     // 본문/보조 둘 다 비면 최소한 장절이라도
     if(!mainLine&&!sub.length)sub.push(`<span style="color:var(--ac-tx);font-weight:700;font-size:${refPx}px;">${dispRef}</span>`);
     // 날짜: 7/11 형식 (앞자리 0 없이)
-    const[dy,dm,dd]=g.lastDate.split('-');
-    const dateLabel=`${parseInt(dm,10)}/${parseInt(dd,10)}`;
-    return`<div data-vli-ref="${g.ref.replace(/"/g,'&quot;')}" data-vli-kind="${kind||''}" style="padding:7px 2px;border-bottom:1px solid var(--bd);cursor:default;user-select:none;-webkit-user-select:none;">
+    // ⚠️ 날짜가 없을 수 있다 — 말씀 모음 전체 목록은 모음에 적힌 날짜(6번째 열)를
+    //    쓰는데, 네비게이토 180 처럼 날짜가 아예 없는 모음도 있다. 예전처럼
+    //    그냥 자르면 'NaN/NaN' 이 떴다 (v26-0904-7).
+    const[dy,dm,dd]=String(g.lastDate||'').split('-');
+    const dateLabel=(dm&&dd)?`${parseInt(dm,10)}/${parseInt(dd,10)}`:'';
+    return`<div data-vli-ref="${g.ref.replace(/"/g,'&quot;')}" data-vli-kind="${kind||''}"${wid?` data-vli-wid="${wid}"`:''} style="padding:7px 2px;border-bottom:1px solid var(--bd);cursor:default;user-select:none;-webkit-user-select:none;">
       ${mainLine}
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
         <span style="font-size:9px;color:var(--tx3);min-width:0;">${sub.join(' · ')}</span>
         <span style="font-size:9px;color:var(--tx3);white-space:nowrap;display:inline-flex;align-items:center;gap:3px;">
-          ${(markProp&&v&&v.pid)?'<span class="vli-propmark">명제</span>':''}<span style="display:inline-flex;align-items:center;color:var(--ac-tx);">${icon}</span>${kind==='keep'?'':g.count+' · '}${dateLabel}
+          ${(markProp&&v&&v.pid)?'<span class="vli-propmark">명제</span>':''}<span style="display:inline-flex;align-items:center;color:var(--ac-tx);">${icon}</span>${[kind==='keep'?'':String(g.count),dateLabel].filter(Boolean).join(' · ')}
         </span>
       </div>
     </div>`;
@@ -17769,9 +17914,31 @@ function _attachVliMenus(container){
     row.addEventListener('click',ev=>{
       if(longFired||moved){longFired=false;return;}
       ev.preventDefault();
-      _vliOpenFull(row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);
+      const wid=row.getAttribute('data-vli-wid')||'';
+      if(wid)_vliOpenFullForWidget(wid,row.getAttribute('data-vli-ref'));
+      else _vliOpenFull(row.getAttribute('data-vli-ref'),row.getAttribute('data-vli-kind')||null);
     });
   });
+}
+// 말씀 목록 위젯의 줄을 눌러 연 전체화면 — 넘김은 **그 위젯이 보는 목록** 안에서
+// 돈다. _vliOpenFull 은 반응 갈래 하나를 통째로 가져오므로, 범위를 여럿 골랐거나
+// 갈래 필터가 걸린 위젯에서는 엉뚱한 목록 안을 돌게 된다 (v26-0904-7).
+function _vliOpenFullForWidget(id,ref){
+  const cfg=_vcGet(id);
+  if(!cfg||!ref)return;
+  const rows=_vcListItems(cfg);
+  const keys=rows.map(g=>g.ref);
+  const list=rows.map(g=>_vcVerseOf(g.ref));
+  const av=ACTIVE_VERSES()||[];
+  const hit=av.find(x=>{try{return _reactKey(x)===ref;}catch(_){return false;}})||av.find(x=>x.ref===ref);
+  if(hit)setVerseIdx(hit.idx);
+  else _vfOverrideVerse=_vcVerseOf(ref);
+  openVerseFull(true);
+  if(list.length){
+    const sc=_vcScope(cfg);
+    _vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),
+              _vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'));
+  }
 }
 let _vliRef=null,_vliKind=null,_vliArmed=true;
 function closeVliMenuFromOverlay(){
@@ -18853,7 +19020,68 @@ function closeVerseAggPopup(){
 // ⚠️ 아래 표시 문자열(시작·끝)로 tests/test_verse_card.js 가 코드를 잘라 쓴다.
 const VC_KINDS=['like','mem','deeper','even'];
 const _VC_KIND_NAME={like:'좋아요',mem:'암송',deeper:'Deeper',even:'Even Deeper'};
-const _VC_LIST_TYPE={like:'likeList',mem:'memList',deeper:'deeperList',even:'evenList'};
+// 예전 목록 위젯 타입 → 반응 갈래. _lay() 가 이것을 보고 옛 위젯을
+// 말씀목록 인스턴스로 옮겨 담는다 (v26-0904-7).
+const _VC_TYPE_KIND={likeList:'like',memList:'mem',deeperList:'deeper',evenList:'even'};
+
+// ── 위젯이 보는 범위 (v26-0904-7, HB) ──────────────────────
+// 말씀카드와 말씀목록은 이제 **같은 위젯**이다. 보는 방식(cfg.view: 'card'|'list')
+// 만 다르고, 무엇을 보느냐는 헤더의 범위 단추로 언제든 바꾼다.
+//   cfg.scope = {ks:['like','mem',…], ls:['저장 폴더 이름',…], mode:'or'|'and'}
+//   둘 다 비어 있으면 **말씀 모음 전체**(홈, 집 모양 아이콘)다 — 새 위젯의 처음 모습.
+//   mode 는 두 개 이상 골랐을 때만 뜻이 있다 (or=합치기 / and=겹치는 것만).
+// ⚠️ cfg.kind 는 **지우지 않는다.** 옛 버전이 열려 있는 기기가 그 값으로 카드를
+//    그리기 때문이다. 범위를 바꿀 때마다 _vcSyncKind 로 맞춰 둔다.
+//    (하나만 골랐을 때는 예전과 한 글자도 다르지 않은 값이 된다)
+function _vcScope(cfg){
+  if(!cfg)return{ks:[],ls:[],mode:'or'};
+  let sc=cfg.scope;
+  if(!sc||typeof sc!=='object'||Array.isArray(sc)){
+    // 예전 카드: kind 하나가 곧 범위였다
+    sc=cfg.scope={ks:VC_KINDS.includes(cfg.kind)?[cfg.kind]:[],ls:[],mode:'or'};
+  }
+  if(!Array.isArray(sc.ks))sc.ks=[];
+  if(!Array.isArray(sc.ls))sc.ls=[];
+  sc.ks=sc.ks.filter((k,i)=>VC_KINDS.includes(k)&&sc.ks.indexOf(k)===i);
+  sc.ls=sc.ls.map(n=>String(n==null?'':n).trim()).filter((n,i)=>n&&sc.ls.indexOf(n)===i);
+  if(sc.mode!=='and')sc.mode='or';
+  return sc;
+}
+function _vcScopeIsHome(sc){return!sc.ks.length&&!sc.ls.length;}
+function _vcScopeCount(sc){return sc.ks.length+sc.ls.length;}
+function _vcSyncKind(cfg){
+  const sc=_vcScope(cfg);
+  cfg.kind=(sc.ks.length===1&&!sc.ls.length)?sc.ks[0]:null;
+}
+function _vcView(cfg){return(cfg&&cfg.view==='list')?'list':'card';}
+// 정렬·기간 설정을 담아 둘 열쇠. **하나만 고른 흔한 경우에는 예전 열쇠 그대로**라
+// 지금까지 쓰던 설정이 그대로 이어진다 (같은 범위를 보는 위젯끼리는 함께 쓴다).
+// ⚠️ 이 열쇠는 ST.settings.vListPrefs 의 **칸 이름**이 되어 클라우드 문서에
+//    그대로 실린다. 저장 폴더 이름(사람이 아무렇게나 짓는 글자)을 그대로 넣으면
+//    점·꺾쇠 같은 글자가 문서 키로 들어간다 → 이름 대신 **숫자로 접어** 넣는다.
+function _vcScopeKey(sc){
+  if(_vcScopeIsHome(sc))return'home';
+  if(sc.ks.length===1&&!sc.ls.length)return sc.ks[0];   // 흔한 경우는 예전 열쇠 그대로
+  const sig=sc.ks.slice().sort().join(',')+'|'+sc.ls.slice().sort().join(',');
+  if(!sc.ks.length&&sc.ls.length===1)return'keep'+_vcHash(sig);
+  return(sc.mode==='and'?'and':'or')+_vcHash(sig);
+}
+// 집 모양 홈 아이콘 — '말씀 모음 전체'를 뜻한다 (2026-09-04 HB 지정)
+const _VW_ICON_HOME='<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M2.8 8.8 10 3.2l7.2 5.6"/><path d="M4.6 10.1v6.7h10.8v-6.7"/></svg>';
+// 합치기 ⇄ 겹치는 것만 — 동그라미 두 개를 겹쳐 그린다 (HB 지정).
+// or 는 두 원이 다 칠해지고, and 는 겹친 자리만 칠해진다.
+const _VW_ICON_OR='<svg width="19" height="15" viewBox="0 0 26 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="6.4" fill="currentColor" fill-opacity=".3"/><circle cx="16" cy="10" r="6.4" fill="currentColor" fill-opacity=".3"/></svg>';
+const _VW_ICON_AND='<svg width="19" height="15" viewBox="0 0 26 20" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="10" cy="10" r="6.4"/><circle cx="16" cy="10" r="6.4"/><path d="M13 4.35A6.4 6.4 0 0 0 13 15.65 6.4 6.4 0 0 0 13 4.35Z" fill="currentColor" fill-opacity=".55" stroke="none"/></svg>';
+function _vcScopeIcon(sc){
+  if(_vcScopeIsHome(sc))return _VW_ICON_HOME;
+  if(sc.ks.length)return _VLIST_KIND_TITLE[sc.ks[0]]||_VW_ICON_HOME;
+  return _VLIST_KIND_TITLE.keep;
+}
+function _vcScopeLabel(sc){
+  if(_vcScopeIsHome(sc))return'말씀 모음';
+  const names=[...sc.ks.map(k=>_VC_KIND_NAME[k]),...sc.ls];
+  return names[0]+(names.length>1?` 외 ${names.length-1}`:'');
+}
 function _vcIs(t){return typeof t==='string'&&t.indexOf('card#')===0;}
 function _vcIdOf(t){return _vcIs(t)?t.slice(5):'';}
 function _vcAll(){
@@ -18878,9 +19106,12 @@ function _vcNewId(){
 }
 // 새 카드의 처음 모습 — 테마는 전체화면을 따르고, 글자 크기는 두 번째로 큰 것,
 // 좌·우 하단 버튼은 둘 다 꺼진 채로 시작한다 (깔끔한 카드부터 보고 필요한 것만 켠다).
-function _vcCreate(kind,from){
+function _vcCreate(kind,from,view){
   const id=_vcNewId();
-  _vcAll()[id]={kind:VC_KINDS.includes(kind)?kind:null,filter:null,theme:null,
+  const k=VC_KINDS.includes(kind)?kind:null;
+  _vcAll()[id]={kind:k,scope:{ks:k?[k]:[],ls:[],mode:'or'},
+                view:(view==='list')?'list':'card',
+                filter:null,theme:null,
                 textScale:VC_TS_DEFAULT,ref:null,show:{},
                 showGroup:{meta:false,react:false},from:from||null};
   return id;
@@ -18888,13 +19119,16 @@ function _vcCreate(kind,from){
 function _vcRemove(id){
   delete _vcAll()[id];
   const hh=ST.settings.rpWidgetHeights;
-  if(hh)delete hh['card#'+id];
+  if(hh){delete hh['card#'+id];delete hh['list#'+id];}   // 카드 높이·목록 높이 둘 다
 }
 // 위젯 이름 — 토스트·설정 팝업 칩에서 쓴다 (카드는 RP_WIDGET_DEFS 에 없다)
 function _rpWidgetName(t){
   if(_vcIs(t)){
     const c=_vcGet(_vcIdOf(t));
-    return(c&&c.kind)?`말씀카드 · ${_VC_KIND_NAME[c.kind]}`:'말씀카드';
+    if(!c)return'말씀카드';
+    const base=_vcView(c)==='list'?'말씀 목록':'말씀 카드';
+    const sc=_vcScope(c);
+    return _vcScopeIsHome(sc)?base:`${base} · ${_vcScopeLabel(sc)}`;
   }
   return RP_WIDGET_DEFS[t]?RP_WIDGET_DEFS[t].name:t;
 }
@@ -18902,25 +19136,53 @@ function _rpTypeOk(t){return _vcIs(t)?!!_vcGet(_vcIdOf(t)):!!RP_WIDGET_DEFS[t];}
 // 위젯 설정 팝업의 칩 이름 — 좁은 칸이라 '목록'은 뺀다 (좋아요 목록 → 좋아요)
 const _RP_CHIP_NAME={likeList:'좋아요',memList:'암송',deeperList:'Deeper',evenList:'Even Deeper'};
 function _rpChipName(t){
-  if(t===VC_NEW)return'말씀카드';
+  if(t===VC_NEW)return'말씀 카드';
+  if(t===VL_NEW)return'말씀 목록';
   return _RP_CHIP_NAME[t]||_rpWidgetName(t);
 }
 // ── 카드가 도는 범위 ──
 // 필터는 **원래 범위를 덜어내는** 것이지 갈아치우는 것이 아니다.
 // 목록카드에 필터가 걸리면 "그 반응 목록 ∩ 그 필터"(교집합)가 된다.
 // 예: 좋아요 목록 카드에서 '히브리서' 를 고르면 → 좋아요 한 히브리서 말씀만.
+// 목록 모습으로 보여 줄 줄들 (집계된 {ref,count,lastDate,…}).
+// 갈래 필터(대분류·소주제·태그·성경)는 여기서도 **덜어내는** 쪽으로 걸린다.
+function _vcListItems(cfg){
+  if(!cfg)return[];
+  let items=_vlEntriesForScope(_vcScope(cfg),'all');
+  const f=cfg.filter;
+  if(f&&f.val){
+    items=items.filter(g=>{
+      const v=((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)||verseByRef(g.ref);
+      return v?_vgMatch(v,f.kind,f.val):false;
+    });
+  }
+  return items;
+}
+// 기록의 열쇠(명제는 반응 키)를 그 말씀으로 바꾼다.
+// ⚠️ v26-0904-7, HB 신고 — "좋아요 카드에서 명제만 본문이 안 나오고 명제 ID 가
+//    뜬다." 까닭: 예전에는 verseByRef(장절 전용) 하나로만 찾아서, 명제의 반응
+//    키는 **언제나 못 찾았고** 빈 껍데기가 만들어졌다. 목록 위젯은 이미
+//    _findVerseByRefLoose 로 찾고 있었다 — 카드도 같은 길을 쓴다.
+// ⚠️ 찾은 뒤에도 **원래 열쇠(k)를 들고 다닌다.** 반응을 세고 기록하는 자리는
+//    장절이 아니라 그 열쇠라야 한다 (한 설교의 명제들은 장절이 서로 같다).
+function _vcVerseOf(key){
+  const hit=((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(key):null)||verseByRef(key);
+  return hit?Object.assign({},hit,{k:key})
+            :{ref:key,k:key,cat:'',topic:'',krText:'',tags:[]};
+}
+function _vcKeyOf(v){return(v&&(v.k||v.ref))||'';}
 function _vcVerses(cfg){
   if(!cfg)return[];
+  const sc=_vcScope(cfg);
   const hasF=!!(cfg.filter&&cfg.filter.val);
-  let base;
-  if(cfg.kind){
-    base=_aggEntriesForKind(cfg.kind)
-      .map(g=>verseByRef(g.ref)||{ref:g.ref,cat:'',topic:'',krText:'',tags:[]});
-  }else{
-    // 일반카드에 필터가 걸리면 타일뷰와 똑같은 원천을 써야 고른 말씀이 그대로 뜬다
-    base=hasF?_vgRawPool():(ACTIVE_VERSES()||[]);
+  if(_vcScopeIsHome(sc)){
+    // 말씀 모음 전체를 도는 카드는 예전 그대로다 — 오늘의 구절에서 시작해
+    // 모음 차례대로 넘어간다 (매일·매 시간구간 자동 넘김이 그대로 산다).
+    // 필터가 걸리면 타일뷰와 똑같은 원천을 써야 고른 말씀이 그대로 뜬다.
+    const base=hasF?_vgRawPool():(ACTIVE_VERSES()||[]);
+    return hasF?base.filter(v=>_vgMatch(v,cfg.filter.kind,cfg.filter.val)):base;
   }
-  return hasF?base.filter(v=>_vgMatch(v,cfg.filter.kind,cfg.filter.val)):base;
+  return _vcListItems(cfg).map(g=>_vcVerseOf(g.ref));
 }
 // 지금 보여줄 구절.
 // ⚠️ 자리를 **장절 그대로**(cfg.ref) 들고 있는다. 예전엔 "몇 칸 옮겼는지"로
@@ -18933,10 +19195,11 @@ function _vcCurrent(cfg){
   const list=_vcVerses(cfg);
   if(!list.length)return null;
   if(cfg&&cfg.ref){
-    const hit=list.find(v=>v.ref===cfg.ref);
+    const hit=list.find(v=>_vcKeyOf(v)===cfg.ref);
     if(hit)return hit;                      // 목록에서 사라졌으면 아래 자동으로
   }
-  if(cfg&&(cfg.kind||(cfg.filter&&cfg.filter.val)))return list[0];
+  const sc=_vcScope(cfg);
+  if(!_vcScopeIsHome(sc)||(cfg.filter&&cfg.filter.val))return list[0];
   const i=list.findIndex(v=>v.idx===ST.settings.verseCurrentIdx);
   return list[i>=0?i:0];
 }
@@ -19042,12 +19305,10 @@ function _vcCardHTML(id){
   const v=_vcCurrent(cfg);
   const th=_vcThemeVars(cfg,v?v.ref:'');
   const styleVars=Object.keys(th.vars).map(k=>`${k}:${th.vars[k]}`).join(';');
-  // 헤더: 좌=점 세 개(카드 설정) · 중앙=반응 아이콘/갈래 이름 · 우=햄버거(목록 복귀)
-  // 일반카드는 중앙·우측이 비지만 자리는 남겨 점 세 개가 늘 같은 세로줄에 선다.
+  // 헤더: 좌=점 세 개(카드 설정) · 중앙=범위 단추 · 우=햄버거(목록으로 보기)
+  // 가운데를 누르면 '무엇을 볼까요' 팝업이 열린다 (v26-0904-7).
   const fl=_vcFilterLabel(cfg);
-  const center=fl
-    ? `<button class="vc-filter" onclick="vcClearFilter('${id}')" title="필터 풀기">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}<span>${esc(fl)}</span></button>`
-    : `<span class="vc-head-ic">${cfg.kind?_VLIST_KIND_TITLE[cfg.kind]:''}</span>`;
+  const center=_vcScopeBtnHTML(id,cfg,fl);
   // 헤더는 좌=⋯ · 가운데=반응 아이콘/필터 · 우=햄버거(목록카드만) 셋뿐이다.
   // ⚠️ 좌우 자리 폭을 같게 둬야 가운데 아이콘이 정말 한가운데 온다.
   //    글자 크기 −/+ 는 헤더가 지저분해지고 가운데가 틀어져서 **카드 안 우상단**으로 옮겼다.
@@ -19059,11 +19320,12 @@ function _vcCardHTML(id){
   const head=`<div class="rp-widget-title vc-head" data-vchead="${id}">
       <span class="vc-head-slot"><button class="vc-icbtn" onclick="openVcSettings('${id}')" title="말씀카드 설정">${_VC_ICON_MORE}</button></span>
       ${center}
-      <span class="vc-head-slot right">${cfg.kind?`<button class="vc-icbtn" onclick="vcBackToList('${id}')" title="목록으로 돌아가기">${_VC_ICON_BACK}</button>`:''}</span>
+      <span class="vc-head-slot right"><button class="vc-icbtn" onclick="vcSetView('${id}','list')" title="목록으로 보기">${_VC_ICON_BACK}</button></span>
     </div>`;
   let body;
   if(!v){
-    const why=fl?'이 필터에 해당하는 말씀이 없어요':(cfg.kind?'아직 기록이 없어요':'말씀 모음이 비어 있어요');
+    const why=fl?'이 필터에 해당하는 말씀이 없어요'
+      :(_vcScopeIsHome(_vcScope(cfg))?'말씀 모음이 비어 있어요':'아직 기록이 없어요');
     body=`<div class="vc-empty">${why}</div>`;
   }else{
     const tags=(v.tags||[]).filter(Boolean);
@@ -19092,7 +19354,7 @@ function _vcCardHTML(id){
   }
   return`<div class="rp-widget vc-widget" data-wtype="card#${id}" data-vcid="${id}">
     ${head}
-    <div class="vc-body" data-vcbody="${id}" data-vcref="${_vgEscAttr(v?(v.ref||''):'')}" style="height:${_rpVCardH(id)}px;${styleVars}">${body}</div>
+    <div class="vc-body" data-vcbody="${id}" data-vcref="${_vgEscAttr(v?_vcReactKeyOf(v):'')}" style="height:${_rpVCardH(id)}px;${styleVars}">${body}</div>
     <div class="rp-vresize" data-vrtype="card#${id}" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
   </div>`;
 }
@@ -19186,13 +19448,20 @@ function _vcSyncCounts(wEl){
   }
 }
 // ── 카드 동작 ──
+// 반응을 세고 기록하는 열쇠. 목록에서 온 말씀은 **기록에 적힌 그 열쇠**를
+// 그대로 쓴다 (명제는 장절이 겹쳐 장절로는 셀 수 없다).
+function _vcReactKeyOf(v){
+  if(!v)return'';
+  if(v.k)return v.k;
+  return((typeof _reactKey==='function')?_reactKey(v):'')||v.ref||'';
+}
 function vcAct(id,kind){
   const cfg=_vcGet(id);const v=_vcCurrent(cfg);
   if(!v)return;
   if(kind==='share'){openVfShareFor(v);return;}
-  if(kind==='like'||kind==='mem')_reactWithToast(kind,_reactKey(v));
-  else if(kind==='deeper')openDeeperFromRef(v.ref);
-  else if(kind==='even')openEvenDeeperFromRef(v.ref);
+  if(kind==='like'||kind==='mem')_reactWithToast(kind,_vcReactKeyOf(v));
+  else if(kind==='deeper')openDeeperFromRef(v.k||v.ref);
+  else if(kind==='even')openEvenDeeperFromRef(v.k||v.ref);
   const btn=document.querySelector(`.vc-widget[data-vcid="${id}"] [data-vcact="${kind}"]`);
   if(btn){btn.classList.remove('pop');void btn.offsetWidth;btn.classList.add('pop');}
 }
@@ -19227,10 +19496,10 @@ function _vcApplyNav(id,d){
   const list=_vcVerses(cfg);
   if(list.length<2)return false;
   const cur=_vcCurrent(cfg);
-  let i=cur?list.findIndex(v=>v.ref===cur.ref):0;
+  let i=cur?list.findIndex(v=>_vcKeyOf(v)===_vcKeyOf(cur)):0;
   if(i<0)i=0;
   const n=list.length;
-  cfg.ref=list[(((i+(d>0?1:-1))%n)+n)%n].ref;
+  cfg.ref=_vcKeyOf(list[(((i+(d>0?1:-1))%n)+n)%n]);
   save();
   return true;
 }
@@ -19299,69 +19568,190 @@ function vcOpenFull(id){
 // 어느 컬럼에도 놓여 있지 않은 그 반응의 카드 설정을 찾는다.
 // 목록 ↔ 카드를 오갈 때 배경·글자 크기 설정이 사라지지 않게, 설정은 카드가
 // 화면에서 빠져도 그대로 남겨 두고 다시 넣을 때 그걸 다시 쓴다.
-function _vcUnplacedForKind(kind,exceptId){
-  const L=_lay();
-  const placed=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
+// placed 를 넘기면 그것을 쓴다 (_lay() 안에서 부를 땐 되돌이가 되므로 꼭 넘긴다).
+function _vcUnplacedForKind(kind,exceptId,placed){
+  const p=placed||(()=>{const L=_lay();
+    return new Set([...L.cols.left,...L.cols.center,...L.cols.right]);})();
   const all=_vcAll();
   return Object.keys(all).find(id=>{
     if(id===exceptId)return false;
     const c=_vcGet(id);
-    return c&&c.kind===kind&&!placed.has('card#'+id);
+    return c&&c.kind===kind&&!p.has('card#'+id);
   })||null;
 }
-// 목록 위젯으로 되돌리기 (헤더 우상단 햄버거)
-function vcBackToList(id){
+// ── 카드 ⇄ 목록 ──
+// ⚠️ 예전에는 위젯 **타입이 통째로 갈렸다** (card#c1 ↔ likeList). 그래서 오갈
+//    때마다 범위·배경·글자 크기가 어긋났고, 반응마다 목록 타입이 따로 있어야 했다.
+//    이제는 한 위젯이 두 모습을 갖는다 — 보는 방식만 뒤집는다 (v26-0904-7).
+function vcSetView(id,view){
   const cfg=_vcGet(id);
-  if(!cfg||!cfg.kind)return;
-  const back=cfg.from||_VC_LIST_TYPE[cfg.kind];
-  const L=_lay();
-  const key='card#'+id;
-  let done=false;
-  ['left','center','right'].forEach(c=>{
-    const i=L.cols[c].indexOf(key);
-    if(i<0)return;
-    // 이미 그 목록 위젯이 다른 자리에 있으면 카드만 빼낸다 (중복 금지 타입이라)
-    const dup=['left','center','right'].some(c2=>L.cols[c2].includes(back));
-    L.cols[c].splice(i,1,...(dup?[]:[back]));
-    done=true;
-  });
-  if(!done)return;
-  // 설정(배경·글자 크기)은 남겨 둔다 — 다시 카드로 바꿀 때 그대로 되살아난다.
-  // 다만 같은 반응의 안 쓰는 설정이 이미 따로 있으면 이번 것은 버린다 (쌓이지 않게).
-  if(_vcUnplacedForKind(cfg.kind,id))_vcRemove(id);
-  _lay();save();renderLayout();
+  if(!cfg)return;
+  cfg.view=(view==='list')?'list':'card';
+  save();renderLayout();
 }
-// 목록 위젯 → 카드로 전환 (목록 위젯 헤더 맨 우측 정사각형 버튼)
-function vlToCard(kind){
-  const type=_VC_LIST_TYPE[kind];
-  if(!type)return;
-  const L=_lay();
-  const id=_vcUnplacedForKind(kind)||_vcCreate(kind,type);
-  const cfg=_vcGet(id);
-  if(cfg)cfg.from=type;
-  let placed=false;
-  ['left','center','right'].forEach(c=>{
-    const i=L.cols[c].indexOf(type);
-    if(i<0||placed)return;
-    L.cols[c].splice(i,1,'card#'+id);
-    placed=true;
-  });
-  if(!placed)return;
-  _lay();save();renderLayout();
-}
-// 위젯 설정 팝업의 '사용 안 함'에 늘 놓여 있는 **새 말씀카드 만들기** 칩.
+function vcToggleView(id){vcSetView(id,_vcView(_vcGet(id))==='list'?'card':'list');}
+// 위젯 설정 팝업의 '사용 안 함'에 늘 놓여 있는 **만들기** 칩 둘.
 // 개수 제한이 없으므로 하나를 끌어다 놓아도 그 자리에 다시 나타난다.
 // 'card#' 로 시작하지만 설정이 없는 id 라, 실수로 cols 에 남아도 _lay() 가 지운다.
 const VC_NEW='card#+';
-// 컬럼에 새 일반카드위젯을 넣는다 (칩을 끌어다 놓았을 때)
-function vcAddCard(col,at){
+const VL_NEW='card#+l';
+// 컬럼에 새 위젯을 넣는다 (칩을 끌어다 놓았을 때).
+// 새로 나는 위젯은 언제나 **말씀 모음 전체**(홈)를 본다.
+function vcAddCard(col,at,view){
   const L=_lay();
   const key=['left','center','right'].includes(col)?col:'left';
-  const id=_vcCreate(null,null);
+  const id=_vcCreate(null,null,view);
   const arr=L.cols[key];
   arr.splice(Math.max(0,Math.min(at==null?arr.length:at,arr.length)),0,'card#'+id);
   _lay();save();
   return id;
+}
+
+// ══════ 범위 고르는 팝업 (말씀 카드·말씀 목록 공용) ══════
+// 헤더의 범위 단추를 누르면 열린다. 한 줄 누를 때마다 바로 켜지고 꺼진다.
+// ⚠️ 저장 폴더 이름에는 따옴표·꺾쇠가 들어갈 수 있다. onclick 에 이름을 적지
+//    말고 **차례 번호**만 넘긴다 (_vwScopeOpts 가 만든 그 순서).
+let _vwScopeId=null;
+function _vwScopeOpts(){
+  // ⚠️ 개수는 **목록에 실제로 뜨는 줄 수**와 같아야 한다. 목록은 같은 열쇠를
+  //    하나로 접으므로 모음 길이를 그냥 세면 팝업과 위젯의 숫자가 어긋난다.
+  const out=[{t:'home',v:'',nm:'말씀 모음 전체',ic:_VW_ICON_HOME,
+              cnt:new Set(_vlHomeEntries().map(e=>e.ref)).size}];
+  VC_KINDS.forEach(k=>out.push({t:'k',v:k,nm:_VC_KIND_NAME[k],
+    ic:_VLIST_KIND_TITLE[k],cnt:_aggByRef(_vlKindEntries(k)).length}));
+  (typeof _keepLists==='function'?_keepLists():[]).forEach(g=>
+    out.push({t:'l',v:g.n,nm:g.n,ic:_VLIST_KIND_TITLE.keep,cnt:g.cnt}));
+  return out;
+}
+function openVwScope(id){
+  if(!_vcGet(id))return;
+  _vwScopeId=id;
+  renderVwScope();
+  document.getElementById('vsScopeOverlay').style.display='block';
+  document.getElementById('vsScopeModal').style.display='block';
+}
+function closeVwScope(){
+  _vwScopeId=null;
+  const o=document.getElementById('vsScopeOverlay'),m=document.getElementById('vsScopeModal');
+  if(o)o.style.display='none';
+  if(m)m.style.display='none';
+}
+function renderVwScope(){
+  const body=document.getElementById('vsScopeBody');
+  const cfg=_vwScopeId?_vcGet(_vwScopeId):null;
+  if(!body||!cfg)return;
+  const sc=_vcScope(cfg);
+  const opts=_vwScopeOpts();
+  const on=o=>o.t==='home'?_vcScopeIsHome(sc)
+    :(o.t==='k'?sc.ks.includes(o.v):sc.ls.includes(o.v));
+  const row=(o,i)=>`<div class="vs-row${on(o)?' on':''}" onclick="vwScopePick(${i})">
+      <span class="vs-ic">${o.ic}</span>
+      <span class="vs-nm">${esc(o.nm)}</span>
+      <span class="vs-cnt">${o.cnt}</span>
+    </div>`;
+  let h=row(opts[0],0);
+  h+=`<div class="vs-sec">말씀 반응</div>`+opts.slice(1,5).map((o,i)=>row(o,i+1)).join('');
+  const folders=opts.slice(5);
+  if(folders.length)h+=`<div class="vs-sec">저장 폴더</div>`+folders.map((o,i)=>row(o,i+5)).join('');
+  const fl=_vcFilterLabel(cfg);
+  if(fl)h+=`<div class="vs-hint">이 위젯은 <b>${esc(fl)}</b> 안에서만 보고 있어요.
+    <button class="vl-pill" style="margin-left:6px;" onclick="vwScopeClearFilter()">좁힘 풀기</button></div>`;
+  else h+=`<div class="vs-hint">고르지 않으면 말씀 모음 전체를 봐요. 여럿 고르면 위쪽 두 동그라미로 <b>합치기</b>와 <b>겹치는 것만</b>을 바꿀 수 있어요.</div>`;
+  body.innerHTML=h;
+  const mb=document.getElementById('vsModeBtn');
+  if(mb){
+    const many=_vcScopeCount(sc)>1;
+    mb.innerHTML=sc.mode==='and'?_VW_ICON_AND:_VW_ICON_OR;
+    mb.disabled=!many;
+    mb.classList.toggle('on',many&&sc.mode==='and');
+    mb.title=many?(sc.mode==='and'?'지금은 겹치는 것만 — 누르면 합쳐서 봐요':'지금은 합쳐서 — 누르면 겹치는 것만 봐요')
+                 :'둘 이상 고르면 쓸 수 있어요';
+  }
+}
+function vwScopePick(i){
+  const cfg=_vwScopeId?_vcGet(_vwScopeId):null;
+  if(!cfg)return;
+  const o=_vwScopeOpts()[i];
+  if(!o)return;
+  const sc=_vcScope(cfg);
+  if(o.t==='home'){sc.ks=[];sc.ls=[];}
+  else if(o.t==='k'){
+    const j=sc.ks.indexOf(o.v);
+    if(j>=0)sc.ks.splice(j,1);else sc.ks.push(o.v);
+  }else{
+    const j=sc.ls.indexOf(o.v);
+    if(j>=0)sc.ls.splice(j,1);else sc.ls.push(o.v);
+  }
+  // 범위가 바뀌면 보고 있던 자리는 뜻을 잃는다 (그 목록에 없는 말씀일 수 있다)
+  cfg.ref=null;
+  _vcSyncKind(cfg);
+  save();renderVwScope();renderLayout();
+}
+function vwScopeToggleMode(){
+  const cfg=_vwScopeId?_vcGet(_vwScopeId):null;
+  if(!cfg)return;
+  const sc=_vcScope(cfg);
+  if(_vcScopeCount(sc)<2)return;
+  sc.mode=(sc.mode==='and')?'or':'and';
+  cfg.ref=null;
+  save();renderVwScope();renderLayout();
+}
+function vwScopeClearFilter(){
+  if(!_vwScopeId)return;
+  vcClearFilter(_vwScopeId);
+  renderVwScope();
+}
+// 헤더의 범위 단추 — 목록은 헤더 왼쪽 끝, 카드는 헤더 가운데.
+// ⚠️ 반드시 button 요소여야 한다 — 헤더가 드래그 손잡이라 mousedown 을 막는다.
+//    button 이 아니면 PC 에서 클릭이 통째로 죽는다.
+function _vcScopeBtnHTML(id,cfg,fl,withName){
+  const sc=_vcScope(cfg);
+  // 이름을 보여 주는 자리(목록)에는 '좋아요 외 1' 처럼 이미 개수가 들어 있다.
+  // 아이콘만 보여 주는 자리(카드)에서만 '+N' 을 덧붙인다.
+  const nm=fl||(withName?_vcScopeLabel(sc):'');
+  const extra=(withName&&!fl)?0:_vcScopeCount(sc)-1;
+  return`<button class="vw-scope" onclick="event.stopPropagation();openVwScope('${id}')" title="무엇을 볼지 고르기">
+      <span class="vw-ic">${_vcScopeIcon(sc)}</span>${nm?`<span class="vw-nm">${esc(nm)}</span>`:''}${extra>0?`<span class="vw-more">+${extra}</span>`:''}
+    </button>`;
+}
+// ── 말씀 목록 모습 한 벌 ──
+// 카드와 같은 인스턴스가 목록으로 보일 때의 HTML. 높이는 카드 높이와 따로
+// 기억한다 ('list#<id>') — 두 모습을 오갈 때 서로의 높이를 물려받지 않게.
+function _vcListHTML(id){
+  const cfg=_vcGet(id);
+  if(!cfg)return'';
+  const sc=_vcScope(cfg);
+  const items=_vcListItems(cfg);
+  const key=_vcScopeKey(sc);
+  const ctrlOpen=!!_vlCtrlOpen[id];
+  const hkey='list#'+id;
+  return`<div class="rp-widget" data-wtype="card#${id}" data-vcid="${id}">
+      <div class="rp-widget-title">
+        ${_vcScopeBtnHTML(id,cfg,_vcFilterLabel(cfg),true)}
+        <span style="display:flex;align-items:center;gap:7px;flex-shrink:0;">
+          <button class="vl-sort-toggle${ctrlOpen?' on':''}" onclick="vlToggleCtrl('${id}')" title="정렬·기간">
+            <svg width="13" height="11" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2.5" x2="18" y2="2.5"/><line x1="8" y1="8" x2="18" y2="8"/><line x1="13" y1="13.5" x2="18" y2="13.5"/></svg>
+          </button>
+          <span style="font-weight:400;">${items.length}개</span>
+          <button class="vl-sort-toggle" onclick="vcSetView('${id}','card')" title="말씀카드로 보기">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/></svg>
+          </button>
+        </span>
+      </div>
+      ${ctrlOpen?_vListControlsHTML(key,_vlExtraSortFor(sc),id):''}
+      ${(()=>{
+        // 우선순위: ① 하단 핸들로 드래그한 높이(px, 위젯별 저장)
+        //          ② 설정의 목록 높이 비율  ③ 자동(최대 10행)
+        const uh=_rpVListH(hkey);
+        const rk=_vcScopeIsHome(sc)?'home':(sc.ks[0]||'keep');
+        const rows=_vListRowsHTML(items,0,rk,false,id);
+        if(uh)return`<div class="vl-scroll" style="height:${uh}px;">${rows}</div>`;
+        const r=ST.settings.vListHeightRatio??0.75;
+        if(r==='auto')return`<div class="vl-scroll">${_vListRowsHTML(items,10,rk,false,id)}</div>`;
+        return`<div class="vl-scroll" style="max-height:calc((var(--rp-w,380px) - 38px) * ${r});">${rows}</div>`;
+      })()}
+      <div class="rp-vresize" data-vrtype="${hkey}" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
+    </div>`;
 }
 // 카드 몸통 제스처 — 탭=전체화면 / 좌우 밀기=다음·이전 / 롱터치·우클릭=말씀 메뉴
 function _vcAttachGestures(host){
@@ -19541,9 +19931,11 @@ function renderVcSettings(){
   const scopeTxt=(ST.settings.verseCountScope||'all')==='all'?'구독자 전체':'내 것만';
   const lnk=ST.settings.linkOpenMode||'safari';
   const lnkTxt=lnk==='chrome'?'크롬':(lnk==='inapp'?'앱 안에서':'사파리');
+  const _sc=_vcScope(cfg);
   const where=cfg.filter&&cfg.filter.val
-    ? `지금은 <b>${esc(_vcFilterLabel(cfg))}</b> 필터 안에서 도는 카드예요. 헤더의 그 이름을 누르면 풀려요.`
-    : (cfg.kind?`${_VC_KIND_NAME[cfg.kind]} 목록 안에서 도는 카드예요.`:'말씀 모음에서 고른 말씀 전체에서 도는 카드예요.');
+    ? `지금은 <b>${esc(_vcFilterLabel(cfg))}</b> 필터 안에서 도는 카드예요. 헤더 가운데를 눌러 풀 수 있어요.`
+    : (_vcScopeIsHome(_sc)?'말씀 모음에서 고른 말씀 전체에서 도는 카드예요. 헤더 가운데를 누르면 볼 범위를 바꿀 수 있어요.'
+                          :`<b>${esc(_vcScopeLabel(_sc))}</b> 안에서 도는 카드예요. 헤더 가운데를 누르면 범위를 바꿀 수 있어요.`);
   box.innerHTML=`
     <div class="settings-row-desc" style="margin-bottom:12px;">${where} 여기서 고른 값은 <b>이 카드 하나에만</b> 적용돼요.</div>
     <div class="settings-section">
@@ -19631,7 +20023,11 @@ function setVcTheme(id,key){
 }
 // ══════ 말씀카드 위젯 끝 ══════
 function _rpWidgetHTML(w){
-  if(_vcIs(w.type))return _vcCardHTML(_vcIdOf(w.type));
+  if(_vcIs(w.type)){
+    const id=_vcIdOf(w.type),cfg=_vcGet(id);
+    if(!cfg)return'';
+    return _vcView(cfg)==='list'?_vcListHTML(id):_vcCardHTML(id);
+  }
   if(w.type==='todo'){
     // 실제 #todayView DOM은 renderLayout이 .rp-todo-slot에 옮겨 넣는다.
     // 테두리·배경 없는 프레임리스 위젯 (기존 할일뷰 영역 디자인 유지)
@@ -19676,39 +20072,8 @@ function _rpWidgetHTML(w){
       <div class="rp-vresize" data-vrtype="monthTriple" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
     </div>`;
   }
-  if(w.type==='memList'||w.type==='likeList'||w.type==='deeperList'||w.type==='evenList'){
-    const kind=w.type==='memList'?'mem':(w.type==='likeList'?'like':(w.type==='evenList'?'even':'deeper'));
-    const items=_aggEntriesForKind(kind);
-    const ctrlOpen=!!_vlCtrlOpen[kind];
-    return`<div class="rp-widget" data-wtype="${w.type}">
-      <div class="rp-widget-title">
-        <span style="display:flex;align-items:center;gap:4px;">${_VLIST_KIND_TITLE[kind]}</span>
-        <span style="display:flex;align-items:center;gap:7px;">
-          <button class="vl-sort-toggle${ctrlOpen?' on':''}" onclick="vlToggleCtrl('${kind}')" title="정렬·기간">
-            <svg width="13" height="11" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="2.5" x2="18" y2="2.5"/><line x1="8" y1="8" x2="18" y2="8"/><line x1="13" y1="13.5" x2="18" y2="13.5"/></svg>
-          </button>
-          <span style="font-weight:400;">${items.length}개</span>
-          <button class="vl-sort-toggle" onclick="vlToCard('${kind}')" title="말씀카드로 보기">
-            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2.5"/></svg>
-          </button>
-        </span>
-      </div>
-      ${ctrlOpen?_vListControlsHTML(kind):''}
-      ${(()=>{
-        // 우선순위: ① 하단 핸들로 드래그한 높이(px, 위젯별 저장)
-        //          ② 설정의 목록 높이 비율  ③ 자동(최대 10행)
-        // 어느 경우든 .vl-scroll이 감싸므로, 상자가 목록보다 작아지면
-        // 자동으로 내부 스크롤이 생긴다.
-        const uh=_rpVListH(w.type);
-        if(uh)return`<div class="vl-scroll" style="height:${uh}px;">${_vListRowsHTML(items,0,kind)}</div>`;
-        const r=ST.settings.vListHeightRatio??0.75;   // 기본 4:3
-        if(r==='auto')return`<div class="vl-scroll">${_vListRowsHTML(items,10,kind)}</div>`;
-        // 높이 = (위젯 폭) * 비율. 위젯 폭 ≈ 패널 폭(--rp-w) - 우측여백 14 - 위젯 좌우패딩 24
-        return`<div class="vl-scroll" style="max-height:calc((var(--rp-w,380px) - 38px) * ${r});">${_vListRowsHTML(items,0,kind)}</div>`;
-      })()}
-      <div class="rp-vresize" data-vrtype="${w.type}" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
-    </div>`;
-  }
+  // 옛 반응별 목록 위젯(likeList…)은 _lay() 가 말씀목록 인스턴스로 옮겨 담으므로
+  // 여기까지 오지 않는다 (v26-0904-7).
   return'';
 }
 // ══ 레이아웃 오케스트레이터 ══
@@ -19871,13 +20236,13 @@ function renderRpConfigList(){
   const inCols=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
   // 사용 안 함: 어느 컬럼에도 없는 타입. todo는 항상 배치되어 있으므로 제외.
   // weekly는 L.weekly==='none'일 때 풀에 나타난다.
-  // '사용 안 함' 은 세 줄로 묶어 보여준다 (말씀카드 / 뷰 / 말씀 목록).
-  // 말씀카드는 개수 제한이 없어 **늘 맨 앞 줄에 남아 있다** — 끌어다 놓으면
-  // 새 카드가 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다.
+  // '사용 안 함' 은 두 줄로 묶어 보여준다 (말씀 카드·말씀 목록 / 뷰).
+  // 말씀 위젯 둘은 개수 제한이 없어 **늘 맨 앞 줄에 남아 있다** — 끌어다 놓으면
+  // 새 위젯이 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다.
+  // 반응·저장 폴더는 위젯을 만든 뒤 헤더의 범위 단추로 고른다 (v26-0904-7).
   const poolRows=[
-    [VC_NEW],
+    [VC_NEW,VL_NEW],
     ['weekly','monthSingle','monthTriple'].filter(t=>t==='weekly'?L.weekly==='none':!inCols.has(t)),
-    ['likeList','memList','deeperList','evenList'].filter(t=>!inCols.has(t)),
   ];
   const COLN={left:'좌',center:'중',right:'우'};
   const chip=t=>`<div class="rp-chip" data-wtype="${t}">
@@ -19931,10 +20296,10 @@ function _rpAttachChipDrag(list){
           const L=_lay();
           // '말씀카드' 칩은 만들기 버튼이다 — 끌어다 놓으면 새 카드가 하나 생기고
           // 칩은 '사용 안 함' 맨 앞 줄에 그대로 다시 나타난다 (개수 제한 없음).
-          if(type===VC_NEW){
+          if(type===VC_NEW||type===VL_NEW){
             if(!key||key==='pool'){renderRpConfigList();return;}
             const wkOff=((L.weekly==='lc'&&key==='left')||(L.weekly==='cr'&&key==='right'))?1:0;
-            vcAddCard(key,idx-wkOff);
+            vcAddCard(key,idx-wkOff,type===VL_NEW?'list':'card');
             renderRpConfigList();renderLayout();
             return;
           }
