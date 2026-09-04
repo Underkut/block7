@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-11  [production]  -->
+<!-- BLOCK7  v. 26-0904-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2442,18 +2442,24 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 /* 팝업 전체가 스크롤되는 경우(.contacts-modal 처럼) 제목줄을 위에 붙여 둔다.
    안 그러면 목록을 내릴 때 × 가 화면 밖으로 밀려 닫을 방법이 사라진다.
-   ⚠️⚠️ **음수 margin-top 과 sticky 는 서로 싸운다** (v26-0904-10, HB 신고 —
-      "첫 줄 위쪽이 살짝 잘려 있어"). sticky top:0 은 **margin 상자**를 붙이므로
-      margin-top:-20px 인 제목줄은 붙는 순간 20px **아래로 내려간다.** 그런데
-      뒤따르는 내용의 자리는 내려가기 전(원래 흐름) 기준으로 잡혀 있어서,
-      제목줄이 첫 줄 위를 그만큼 덮어 버린다 (배경이 불투명하니 잘려 보인다).
-      → 새 팝업을 만들 때는 `#내팝업 .modal-head{margin-top:0;padding-top:20px;}`
-        한 줄을 반드시 함께 둔다 (#vcSetModal · #vsScopeModal 이 그렇게 한다). */
+   ⚠️⚠️ **음수 margin-top 과 sticky 는 절대 같이 쓰지 말 것.** sticky top:0 은
+      **margin 상자**를 붙인다. 그래서 margin-top:-20px 인 제목줄은 붙는 순간
+      테두리 상자가 20px **아래로 내려가고**, 그 위에 20px 짜리 구멍이 생긴다.
+      → 스크롤해 올라온 내용이 제목줄 **위쪽 구멍으로 비쳐 보인다**
+        (v26-0904-11, HB 신고 — "위에가 구멍나서 팝업 내용이 헤더 뒤로 보여").
+      고침(v26-0904-12): 위쪽 여백을 **팝업이 아니라 제목줄이 직접 갖는다.**
+        ① `.modal-head{margin-top:0;padding-top:20px;}`  ← 아래 기본값
+        ② 그 팝업은 `padding-top:0`                      ← 바로 밑 목록
+      새 팝업을 만들 때 ②를 잊어도 `:has()` 줄이 대신 잡아 준다. */
 .modal-head{
   display:flex;align-items:center;gap:8px;
   position:sticky;top:0;z-index:2;background:var(--s1);
-  margin:-20px -20px 14px;padding:20px 20px 10px;
+  margin:0 -20px 14px;padding:20px 20px 10px;
 }
+/* ② 제목줄이 위쪽 여백을 가져갔으니 팝업 자신은 위 여백을 비운다.
+   (안 비우면 제목줄이 붙을 때 20px 만큼 위로 튀어 오른다) */
+#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal{padding-top:0;}
+.event-modal:has(> .modal-head){padding-top:0;}
 .modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
   width:100%;background:var(--s2);border:1px solid var(--bd2);
@@ -3089,12 +3095,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 /* 카드 설정 팝업의 테마 칩 */
 .vc-theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-/* sticky 제목줄은 "팝업 안쪽 여백의 위 끝"에 달라붙는다. 팝업에 위쪽 여백이
-   있으면 제목줄이 그만큼 아래로 내려가 붙는데, 뒤따르는 내용은 원래 자리에
-   그대로 있어서 제목 아래로 파고든다. 위쪽 여백을 제목줄에 넘겨 어긋남을 없앤다. */
-#vcSetModal{padding-top:0;}
-#vcSetModal .modal-head{margin-top:0;padding-top:20px;}
-#vsScopeModal .modal-head{margin-top:0;padding-top:20px;}
+/* (위쪽 여백 넘기기는 이제 .modal-head 기본값이다 — v26-0904-12) */
 
 
 ::-webkit-scrollbar{width:0;height:0;}
@@ -4178,7 +4179,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-11";
+const APP_VERSION = "v. 26-0904-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4879,9 +4880,9 @@ window._fbScriptsReady=new Promise(resolve=>{
 
       <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
       <div class="settings-section" id="syncConflictSection" style="display:none;">
-        <div class="settings-section-title">동기화 충돌</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">다른 기기와 같은 것을 동시에 고쳐서 자동으로 정할 수 없는 것이 있어요. 어느 쪽도 지워지지 않았고, 양쪽 다 보관돼 있어요.</div>
-        <button class="settings-btn" onclick="openSyncConflicts()">충돌 확인하고 정하기</button>
+        <div class="settings-section-title">두 기기가 다르게 고쳤어요</div>
+        <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">이 기기와 다른 기기에서 같은 것을 서로 다르게 고치셨어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.</div>
+        <button class="settings-btn" onclick="openSyncConflicts()">무엇이 다른지 보고 정하기</button>
       </div>
 
       <!-- 데이터 복구 (로컬 ↔ 클라우드 비교) — 개발자 계정에서만 보임 -->
@@ -5694,7 +5695,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="event-modal contacts-modal" id="syncConflictModal" style="display:none;z-index:5201;width:340px;">
   <div class="modal-head">
     <span class="modal-head-gap"></span>
-    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">동기화 충돌 해결</div>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">어느 것으로 할까요</div>
     <button class="modal-x modal-x-inline" onclick="closeSyncConflicts()" aria-label="닫기">
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
     </button>
@@ -30719,6 +30720,44 @@ function _dfSetLabel(k){
   if(/^dview/.test(k))return '일간 · '+k.replace(/^dview/,'');
   return k;
 }
+// ── 안쪽 이름표를 사람 말로 ──
+// ⚠️ 설정 안에는 c2·view·card 같은 **프로그램 이름표**가 들어 있다. 그대로 보여
+//    주면 사람에겐 암호다 (2026-09-04 HB — "아직도 나에겐 암호같아").
+//    아는 것만 우리말로 바꾸고, 모르는 것은 원래 글자를 그대로 둔다.
+const _DF_WIDGET={todo:'할일 목록',likeList:'좋아요 목록',memList:'암송 목록',
+  deeperList:'Deeper 목록',evenList:'Even Deeper 목록',keepList:'담아둔 목록',
+  monthSingle:'한 달 달력',weekly:'한 주 달력',propList:'명제 목록'};
+const _DF_SEG={cols:'칸 배치',left:'왼쪽 칸',center:'가운데 칸',right:'오른쪽 칸',
+  view:'보는 방식',kind:'무엇을 볼까',filter:'거르기',theme:'테마',
+  textScale:'글자 크기',ref:'지정한 구절',show:'보이기',showGroup:'묶어 보이기',
+  from:'가져온 곳',scope:'볼 범위',ks:'갈래',ls:'모음',mode:'모으는 방식',
+  meta:'맨 윗줄',react:'반응 단추',bp2:'화면 폭 기준(둘)',bp3:'화면 폭 기준(셋)'};
+const _DF_VALW={list:'목록',card:'카드',grid:'바둑판',or:'하나라도',and:'모두',
+  like:'좋아요',mem:'암송',deeper:'Deeper',even:'Even Deeper',keep:'담아두기',
+  prop:'명제',all:'전체',none:'없음',likeList:'좋아요 목록',memList:'암송 목록'};
+function _dfSeg(seg){
+  seg=String(seg==null?'':seg);
+  const m=/^c(\d+)$/.exec(seg);
+  if(m)return `말씀 카드 ${m[1]}번`;
+  return _DF_SEG[seg]||seg;
+}
+function _dfSegPath(path){
+  return String(path==null?'':path).split(' · ').map(_dfSeg).join(' · ');
+}
+// 설정 안쪽에서 쓰는 글자 하나 (자유 문장에는 쓰지 말 것 — 할일 제목까지 번역된다)
+function _dfWord(v){
+  if(typeof v!=='string')return null;
+  const m=/^card#c(\d+)$/.exec(v);
+  if(m)return `말씀 카드 ${m[1]}번`;
+  return _DF_WIDGET[v]||_DF_VALW[v]||null;
+}
+function _dfValS(v){
+  const w=_dfWord(v);
+  if(w)return '「'+w+'」';
+  if(Array.isArray(v)&&v.length&&v.every(x=>typeof x==='string'))
+    return '「'+_dfCut(v.map(x=>_dfWord(x)||x).join(', '),36)+'」';
+  return _dfVal(v);
+}
 // 값 하나를 사람 말로
 function _dfVal(v){
   if(v===undefined||v===null)return '(없음)';
@@ -30728,7 +30767,7 @@ function _dfVal(v){
   if(typeof v==='string')return v?_dfQ(v):'(빈 칸)';
   if(Array.isArray(v)){
     if(!v.length)return '(빈 목록)';
-    if(v.every(x=>x==null||typeof x!=='object'))return _dfCut(v.join(', '),36);
+    if(v.every(x=>x==null||typeof x!=='object'))return '「'+_dfCut(v.join(', '),36)+'」';
     return `목록 ${v.length}개`;
   }
   if(typeof v==='object'){
@@ -30753,12 +30792,19 @@ function _dfDeep(a,b,path,out,depth){
   }
   out.push({p:path,a:a,b:b});
 }
-function _dfDeepLines(label,a,b,limit){
+// nice=true 면 안쪽 이름표(c2·view·card…)까지 우리말로 바꾼다 (설정용)
+function _dfDeepLines(label,a,b,limit,nice){
   limit=limit||8;
   const raw=[];_dfDeep(a,b,'',raw,0);
   const head=label?(label+' '):'';
-  const lines=raw.slice(0,limit).map(d=>`${head}${d.p?(d.p+': '):''}${_dfVal(d.a)} → ${_dfVal(d.b)}`);
-  if(raw.length>limit)lines.push(`${head}… 외 ${raw.length-limit}곳`);
+  const V=nice?_dfValS:_dfVal;
+  const P=nice?_dfSegPath:(x=>x);
+  const lines=raw.slice(0,limit).map(d=>{
+    const to=V(d.b);
+    const where=d.p?(P(d.p)+_dfJosa(P(d.p),'을','를')+' '):'';
+    return `${head}${where}${V(d.a)}에서 ${to}${_dfRo(to)} 바꿨어요`;
+  });
+  if(raw.length>limit)lines.push(`${head}… 외 ${raw.length-limit}곳이 달라요`);
   return lines;
 }
 const _DF_KIND_NAME={days:'할일·일정',layout:'화면 배치 칸',verseCollections:'말씀 모음',
@@ -30786,10 +30832,10 @@ function _dfArr(where,a,b,out){
   // 하나 빠지고 하나 들어왔으면 "제목을 고쳤다" 로 읽는 것이 사람 눈에 맞다
   while(gone.length&&come.length){
     const g=gone.shift(),c=come.shift();
-    const q2=_dfQ(c);_dfPush(out,'task',`${W}할일 제목을 ${_dfQ(g)} → ${q2}${_dfRo(q2)} 고침`);
+    const q2=_dfQ(c);_dfPush(out,'task',`${W}할일 이름을 ${_dfQ(g)}에서 ${q2}${_dfRo(q2)} 고쳤어요`);
   }
-  gone.forEach(g=>{const q=_dfQ(g);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 지움`);});
-  come.forEach(c=>{const q=_dfQ(c);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 새로 넣음`);});
+  gone.forEach(g=>{const q=_dfQ(g);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 지웠어요`);});
+  come.forEach(c=>{const q=_dfQ(c);_dfPush(out,'task',`${W}할일 ${q}${_dfJosa(q,'을','를')} 새로 넣었어요`);});
   // 자리(순서) — 양쪽에 다 있는 것만 견준다
   const aOrder=ak.filter(k=>bc[k]),bOrder=bk.filter(k=>ac[k]);
   if(!_dfSame(aOrder,bOrder)){
@@ -30797,7 +30843,7 @@ function _dfArr(where,a,b,out){
       if(bOrder[i]!==aOrder[i]){
         const from=aOrder.indexOf(bOrder[i]);
         const q=_dfQ(bOrder[i]);
-        _dfPush(out,'move',`${W}할일 ${q}${_dfJosa(q,'을','를')} ${from+1}번째 → ${i+1}번째로 옮김`);
+        _dfPush(out,'move',`${W}할일 ${q}${_dfJosa(q,'을','를')} ${from+1}번째에서 ${i+1}번째로 옮겼어요`);
         break;
       }
     }
@@ -30810,8 +30856,11 @@ function _dfArr(where,a,b,out){
     const keys=[...new Set([...Object.keys(prev),...Object.keys(t)])];
     keys.forEach(f=>{
       if(f==='text'||_dfSame(prev[f],t[f]))return;
-      if(f==='done')_dfPush(out,'task',`${W}할일 ${_dfQ(t.text)} 완료 표시를 ${t[f]?'켬':'끔'}`);
-      else _dfPush(out,'task',`${W}할일 ${_dfQ(t.text)} ${_dfFieldLabel(f)}: ${_dfVal(prev[f])} → ${_dfVal(t[f])}`);
+      if(f==='done')_dfPush(out,'task',`${W}할일 ${_dfQ(t.text)}에 완료 표시를 ${t[f]?'했어요':'풀었어요'}`);
+      else{
+        const to=_dfVal(t[f]);
+        _dfPush(out,'task',`${W}할일 ${_dfQ(t.text)}의 ${_dfFieldLabel(f)}을(를) ${_dfVal(prev[f])}에서 ${to}${_dfRo(to)} 바꿨어요`);
+      }
     });
   });
 }
@@ -30822,15 +30871,15 @@ function _dfDays(a,b,out){
   keys.forEach(dk=>{
     const da=A[dk],db=B[dk];
     if(_dfSame(da,db))return;
-    if(!db){_dfPush(out,'task',`${_dfDay(dk)} 하루치가 통째로 없어짐`);return;}
+    if(!db){_dfPush(out,'task',`${_dfDay(dk)} 하루치가 통째로 없어졌어요`);return;}
     _CF_KINDS.forEach(kind=>{
       const ka=(da||{})[kind]||{},kb=(db||{})[kind]||{};
       const secs=[...new Set([...Object.keys(ka),...Object.keys(kb)])];
       secs.forEach(sec=>_dfArr(`${_dfDay(dk)} · ${_cfKindLabel(kind)} · ${_cfSecLabel(sec)}`,ka[sec],kb[sec],out));
     });
     const ta=((da||{}).trash||[]).length,tb=((db||{}).trash||[]).length;
-    if(tb>ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에 ${tb-ta}건 들어감`);
-    else if(tb<ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에서 ${ta-tb}건 사라짐`);
+    if(tb>ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에 ${tb-ta}건이 들어갔어요`);
+    else if(tb<ta)_dfPush(out,'trash',`${_dfDay(dk)} 휴지통에서 ${ta-tb}건이 사라졌어요`);
   });
 }
 // ── 말씀 모음 하나 ──
@@ -30838,20 +30887,20 @@ function _dfVKey(v){return String((v&&(v.ref||v.krText||v.topic))||'');}
 function _dfColl1(a,b,out,name){
   const nm=name||_dfQ((b&&b.name)||(a&&a.name));
   if(_dfSame(a,b))return;
-  if(!a){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 새로 만듦 (말씀 ${((b||{}).verses||[]).length}개)`);return;}
-  if(!b){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 지움`);return;}
+  if(!a){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 새로 만들었어요 (말씀 ${((b||{}).verses||[]).length}개)`);return;}
+  if(!b){_dfPush(out,'verse',`말씀 모음 ${nm}${_dfJosa(nm,'을','를')} 지웠어요`);return;}
   if(String(a.name||'')!==String(b.name||''))
-    {const qn=_dfQ(b.name);_dfPush(out,'verse',`말씀 모음 이름을 ${_dfQ(a.name)} → ${qn}${_dfRo(qn)} 고침`);}
+    {const qn=_dfQ(b.name);_dfPush(out,'verse',`말씀 모음 이름을 ${_dfQ(a.name)}에서 ${qn}${_dfRo(qn)} 고쳤어요`);}
   const va=Array.isArray(a.verses)?a.verses:[],vb=Array.isArray(b.verses)?b.verses:[];
   const sa=new Set(va.map(_dfVKey)),sb=new Set(vb.map(_dfVKey));
   const add=[...sb].filter(k=>!sa.has(k)),del=[...sa].filter(k=>!sb.has(k));
   const brief=arr=>arr.slice(0,3).map(x=>_dfCut(x,18)).join(' · ')+(arr.length>3?` 외 ${arr.length-3}건`:'');
-  if(add.length)_dfPush(out,'verse',`말씀 ${add.length}개를 ${nm} 에 담음 — ${brief(add)}`);
-  if(del.length)_dfPush(out,'verse',`말씀 ${del.length}개를 ${nm} 에서 뺌 — ${brief(del)}`);
+  if(add.length)_dfPush(out,'verse',`말씀 ${add.length}개를 ${nm}에 담았어요 — ${brief(add)}`);
+  if(del.length)_dfPush(out,'verse',`말씀 ${del.length}개를 ${nm}에서 뺐어요 — ${brief(del)}`);
   if(!add.length&&!del.length&&va.length===vb.length&&!_dfSame(va,vb))
-    _dfPush(out,'verse',`말씀 모음 ${nm} 안의 말씀 내용·순서가 달라짐`);
+    _dfPush(out,'verse',`말씀 모음 ${nm} 안의 말씀 내용이나 순서가 달라졌어요`);
   ['google','shareCode'].forEach(k=>{
-    if(!_dfSame(a[k],b[k]))_dfPush(out,'verse',`말씀 모음 ${nm} · ${k==='google'?'구글 시트 연결':'공유 코드'} 가 달라짐`);
+    if(!_dfSame(a[k],b[k]))_dfPush(out,'verse',`말씀 모음 ${nm}의 ${k==='google'?'구글 시트 연결':'공유 코드'}가 달라졌어요`);
   });
 }
 function _dfColls(a,b,out){
@@ -30863,9 +30912,9 @@ function _dfColls(a,b,out){
 function _dfContact1(a,b,out){
   if(_dfSame(a,b))return;
   const nm=_dfQ((b&&(b.nick||b.name))||(a&&(a.nick||a.name)));
-  if(!a){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 새로 넣음`);return;}
-  if(!b){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 지움`);return;}
-  _dfDeepLines(`연락처 ${nm} ·`,a,b,4).forEach(s=>_dfPush(out,'contact',s));
+  if(!a){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 새로 넣었어요`);return;}
+  if(!b){_dfPush(out,'contact',`연락처 ${nm}${_dfJosa(nm,'을','를')} 지웠어요`);return;}
+  _dfDeepLines(`연락처 ${nm}의`,a,b,4).forEach(s=>_dfPush(out,'contact',s));
 }
 function _dfContacts(a,b,out){
   const toMap=arr=>{const m={};(Array.isArray(arr)?arr:[]).forEach(o=>{if(o&&o.id!=null)m[String(o.id)]=o;});return m;};
@@ -30896,9 +30945,9 @@ function _dfLogs(a,b,out){
       add+=plus.length;del+=minus.length;
       plus.slice(0,2).forEach(x=>{if(sample.length<3)sample.push(`${_dfDay(dk)} ${_dfCut(x,16)}`);});
     });
-    if(add)_dfPush(out,'log',`${label} 기록 ${add}건 늘어남${sample.length?' — '+sample.join(' · '):''}`);
-    if(del)_dfPush(out,'log',`${label} 기록 ${del}건 사라짐`);
-    if(!add&&!del)_dfPush(out,'log',`${label} 기록 내용이 달라짐`);
+    if(add)_dfPush(out,'log',`${label} 기록이 ${add}건 늘었어요${sample.length?' — '+sample.join(' · '):''}`);
+    if(del)_dfPush(out,'log',`${label} 기록이 ${del}건 사라졌어요`);
+    if(!add&&!del)_dfPush(out,'log',`${label} 기록 내용이 달라졌어요`);
   });
 }
 // ── 설정 ──
@@ -30906,12 +30955,15 @@ function _dfSettings(a,b,out){
   const A=(a&&a.settings)||{},B=(b&&b.settings)||{};
   [...new Set([...Object.keys(A),...Object.keys(B)])].forEach(k=>{
     if(_dfSame(A[k],B[k]))return;
-    const label='설정 · '+_dfSetLabel(k);
+    const label='설정 「'+_dfSetLabel(k)+'」';
     const isObj=v=>v&&typeof v==='object';
-    if(isObj(A[k])&&isObj(B[k]))_dfDeepLines(label+' ·',A[k],B[k],4).forEach(s=>_dfPush(out,'setting',s));
-    else _dfPush(out,'setting',`${label}: ${_dfVal(A[k])} → ${_dfVal(B[k])}`);
+    if(isObj(A[k])&&isObj(B[k]))_dfDeepLines(label+' 중',A[k],B[k],4,true).forEach(s=>_dfPush(out,'setting',s));
+    else{
+      const to=_dfValS(B[k]);
+      _dfPush(out,'setting',`${label}을(를) ${_dfValS(A[k])}에서 ${to}${_dfRo(to)} 바꿨어요`);
+    }
   });
-  if(!_dfSame((a||{}).secs,(b||{}).secs))_dfPush(out,'setting','하루 구간(시간표) 가 달라짐');
+  if(!_dfSame((a||{}).secs,(b||{}).secs))_dfPush(out,'setting','하루 구간(시간표)이 달라졌어요');
 }
 // ── 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 ──
 // 실패해도 화면이 죽지 않게 통째로 감싼다. 이건 보여 주기용이지 데이터가 아니다.
@@ -31350,7 +31402,7 @@ function _cfSyncVisibility(){
   const n=_cfOpenCount();
   sec.style.display=n?'':'none';
   const d=document.getElementById('syncConflictDesc');
-  if(d&&n)d.textContent=`다른 기기와 같은 것을 동시에 고쳐서 자동으로 정할 수 없는 것이 ${n}건 있어요. 어느 쪽도 지워지지 않았고, 양쪽 다 보관돼 있어요.`;
+  if(d&&n)d.textContent=`이 기기와 다른 기기에서 같은 것을 서로 다르게 고치신 것이 ${n}건 있어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.`;
 }
 // 병합에서 진짜 충돌이 나왔으면 진 쪽을 보관한다.
 // ⚠️ 병합 결과 자체는 건드리지 않는다 — 이 단계에서 동작을 바꾸면 7장의 사고가 재발한다.
@@ -31400,12 +31452,12 @@ function _cfGroupName(rec){
   if(t==='setting')return '설정';
   if(t==='collection')return '말씀 모음';
   if(t==='contact')return '연락처';
-  return '알려만 드리는 것';
+  return '알림';
 }
 function _cfChoiceLabel(rec){
   const c=rec.choice;
-  if(c==='merge')return '양쪽 다 남김';
-  if(c==='ack')return '확인함';
+  if(c==='merge')return '둘 다 남기기';
+  if(c==='ack')return '읽음';
   if(c==='local')return _cfWhoLabel(rec,'local')+' 것';
   if(c==='remote')return _cfWhoLabel(rec,'remote')+' 것';
   return String(c==null?'':c);
@@ -31421,11 +31473,11 @@ function _cfExplain(rec){
   try{
     const t=rec.entityType;
     if(t==='bulk'){
-      res.note=`합친 결과에서 ${_dfKindName(rec.entityId)} 가 ${_dfVal(rec.base)}개 → ${_dfVal(rec.local)}개 로 줄었어요.`;
+      res.note=`합치고 나니 ${_dfKindName(rec.entityId)}가 ${_dfVal(rec.base)}개에서 ${_dfVal(rec.local)}개로 확 줄었어요. 지워진 것이 없는지 봐 주세요.`;
       return res;
     }
     if(t==='shrink'){
-      res.note=`옛 버전 기기가 올린 것에서 ${_dfKindName(rec.entityId)} 가 ${_dfVal(rec.base)}개 → ${_dfVal(rec.remote)}개 로 줄어 있어요.`;
+      res.note=`옛 버전이 깔린 기기가 올린 것에서 ${_dfKindName(rec.entityId)}가 ${_dfVal(rec.base)}개에서 ${_dfVal(rec.remote)}개로 줄어 있어요.`;
       return res;
     }
     const run=fn=>{const o=[];fn(o);return o.map(x=>x.s);};
@@ -31434,7 +31486,7 @@ function _cfExplain(rec){
       // 그럴 땐 양쪽 목록을 통째로 늘어놓는 것이 고르는 데 훨씬 낫다.
       if(rec.base==null){
         const li=v=>(Array.isArray(v)?v:[]).map(x=>_dfQ(_dfTaskKey(x))+((x&&x.done)?' (완료)':''));
-        const one=v=>[`할일 ${(Array.isArray(v)?v:[]).length}개 — ${li(v).join(' · ')||'(없음)'}`];
+        const one=v=>[`할일 ${(Array.isArray(v)?v:[]).length}개가 있어요 — ${li(v).join(' · ')||'(없음)'}`];
         res.local=one(rec.local);res.remote=one(rec.remote);
         return res;
       }
@@ -31452,8 +31504,8 @@ function _cfExplain(rec){
         const L=[];
         const bt=String((rec.base&&rec.base.text)||''),vt=String((v&&v.text)||'');
         const qv=_dfQ(vt);
-        if(bt!==vt)L.push(`${at}가 ${_dfQ(bt)} → ${qv}${_dfRo(qv)} 바뀜 (제목을 고쳤거나 순서가 밀린 것)`);
-        run(o=>_dfArr('',[rec.base],[v],o)).forEach(x=>{if(x.indexOf('제목을')<0)L.push(x);});
+        if(bt!==vt)L.push(`${at}에 ${qv}${_dfJosa(qv,'이','가')} 있어요 (이름을 고쳤거나, 순서가 밀려 다른 할일이 온 것이에요)`);
+        run(o=>_dfArr('',[rec.base],[v],o)).forEach(x=>{if(x.indexOf('이름을')<0)L.push(x);});
         return L;
       };
       res.local=one(rec.local);res.remote=one(rec.remote);
@@ -31469,8 +31521,9 @@ function _cfExplain(rec){
       res.remote=run(o=>_dfContact1(rec.base,rec.remote,o));
       return res;
     }
-    res.local=_dfDeepLines('',rec.base,rec.local,6);
-    res.remote=_dfDeepLines('',rec.base,rec.remote,6);
+    const nice=(t==='setting'||t==='task-field');
+    res.local=_dfDeepLines('',rec.base,rec.local,6,nice);
+    res.remote=_dfDeepLines('',rec.base,rec.remote,6,nice);
   }catch(e){console.warn('충돌 풀이 실패(고르는 데는 지장 없음):',e);}
   return res;
 }
@@ -31479,56 +31532,76 @@ window.cfToggleRaw=function(id){
   if(!el)return;
   el.style.display=(el.style.display==='none')?'block':'none';
 }
+// 이 기기 이름 뒤에는 "(지금 보고 있는 기기)" 를 붙인다 — 안 그러면 두 이름 중
+// 어느 쪽이 내 손에 있는 것인지 알 수가 없다 (2026-09-04 HB 지적).
+function _cfBaseLine(rec){
+  const t=rec.entityType;
+  if(rec.base===null||rec.base===undefined)return null;
+  if(t==='task')return _dfQ((rec.base&&rec.base.text)||'');
+  if(t==='task-field')return `${_dfFieldLabel(rec.field)}: ${_dfVal(rec.base)}`;
+  if(t==='section'){
+    const li=(Array.isArray(rec.base)?rec.base:[]).map(x=>_dfQ(_dfTaskKey(x)));
+    return li.length?`할일 ${li.length}개 — ${li.slice(0,4).join(' · ')}${li.length>4?' 외':''}`:'비어 있었어요';
+  }
+  if(t==='collection'||t==='contact')return null;      // 이름은 제목줄에 이미 있다
+  if(typeof rec.base==='object')return null;           // 덩어리는 옆의 설명이 대신한다
+  return _dfValS(rec.base);
+}
 function _cfCardHTML(rec){
   const who={local:_cfEsc(_cfWhoLabel(rec,'local')),remote:_cfEsc(_cfWhoLabel(rec,'remote'))};
   const canMerge=_cfCanMerge(rec);
   const auto=(rec.entityType==='bulk'||rec.entityType==='shrink');
   const done=!!rec.resolvedAt;
   const ex=_cfExplain(rec);
-  // 자리 이름 — 저장돼 있던 옛 기록(영문 설정 키)도 지금 말로 다시 읽는다
   const title=_cfEsc(_cfNiceLabel(rec));
+  const baseLine=_cfBaseLine(rec);
+  // 어느 쪽이 더 나중인지 (알 수 있을 때만) — 고를 때 가장 큰 실마리다
+  const laterLocal=(rec.clientEditedAt&&rec.remoteWroteAt)?(rec.clientEditedAt>rec.remoteWroteAt):null;
   const side=(key,lines)=>{
     const body=lines.length
-      ?lines.map(s=>`<div style="margin:1px 0 1px 8px;">· ${_cfEsc(s)}</div>`).join('')
-      :'<div style="margin:1px 0 1px 8px;color:var(--tx3);">바뀐 것을 짚어 낼 수 없어요 (아래 원래 값을 보세요)</div>';
-    return `<div style="margin-top:6px;">
-      <div style="font-weight:700;color:var(--tx);">${who[key]}에서 한 일</div>${body}</div>`;
+      ?lines.map(s=>`<div style="margin:1px 0 1px 10px;color:var(--tx);">${_cfEsc(s)}</div>`).join('')
+      :'<div style="margin:1px 0 1px 10px;color:var(--tx3);">무엇을 바꿨는지 짚어 내지 못했어요 (아래 「자세히 보기」 를 눌러 보세요)</div>';
+    const late=(laterLocal===null)?''
+      :((laterLocal===(key==='local'))?' <span style="color:var(--ac-tx);">← 이쪽이 더 나중</span>':'');
+    const meNote=(key==='local')?' <span style="font-weight:400;color:var(--tx3);">(지금 보고 있는 이 기기)</span>':'';
+    return `<div style="margin-top:8px;">
+      <div style="font-weight:700;color:var(--tx);">${who[key]}에서는${meNote}${late}</div>${body}</div>`;
   };
   const rawId='cfraw_'+String(rec.conflictId).replace(/[^A-Za-z0-9]/g,'_');
-  const raw=`<div style="margin-top:8px;">
-      <button class="settings-btn" style="width:100%;font-size:10px;padding:5px 8px;" onclick="cfToggleRaw('${rawId}')">원래 값 그대로 보기 ▾</button>
+  const raw=`<div style="margin-top:10px;">
+      <button class="settings-btn" style="width:100%;font-size:10px;padding:5px 8px;" onclick="cfToggleRaw('${rawId}')">자세히 보기 (앱이 저장한 값 그대로) ▾</button>
       <div id="${rawId}" style="display:none;margin-top:6px;font-size:10px;color:var(--tx3);line-height:1.6;word-break:break-all;overflow-wrap:anywhere;">
-        <div style="margin-bottom:3px;"><b>기준(두 기기가 갈라지기 전)</b><br>${_cfEsc(_cfCutRaw(rec.base))}</div>
+        <div style="margin-bottom:3px;"><b>갈라지기 전</b><br>${_cfEsc(_cfCutRaw(rec.base))}</div>
         <div style="margin-bottom:3px;"><b>${who.local}</b><br>${_cfEsc(_cfCutRaw(rec.local))}</div>
         <div><b>${who.remote}</b><br>${_cfEsc(_cfCutRaw(rec.remote))}</div>
       </div></div>`;
-  // 언제 생긴 충돌인지 · 어느 쪽이 더 나중에 손댄 것인지 (알 수 있을 때만)
-  const times=[];
-  if(rec.clientEditedAt)times.push(`${who.local}에서 마지막으로 고친 때 ${_dfWhen(rec.clientEditedAt)}`);
-  if(rec.remoteWroteAt)times.push(`${who.remote}에서 클라우드에 올린 때 ${_dfWhen(rec.remoteWroteAt)}`);
-  let newer='';
-  if(rec.clientEditedAt&&rec.remoteWroteAt)
-    newer=(rec.clientEditedAt>rec.remoteWroteAt)
-      ?` → <b style="color:var(--tx);">${who.local} 쪽이 더 나중이에요</b>`
-      :` → <b style="color:var(--tx);">${who.remote} 쪽이 더 나중이에요</b>`;
-  const when=`<div style="color:var(--tx3);font-size:10px;margin-top:2px;line-height:1.6;">`
-    +(rec.detectedAt?`${_cfEsc(_dfWhen(rec.detectedAt))}에 생긴 충돌`:'')
-    +(times.length?`<br>${_cfEsc(times.join(' · '))}${newer}`:'')
-    +`</div>`;
-  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:11px;color:var(--tx2);line-height:1.6;word-break:break-word;overflow-wrap:anywhere;${done?'opacity:.5;':''}">
-    <div style="font-weight:700;color:var(--tx);margin-bottom:2px;">${title}</div>
+  const when=rec.detectedAt
+    ?`<div style="color:var(--tx3);font-size:10px;margin-top:1px;">${_cfEsc(_dfAgo(rec.detectedAt))}에 생긴 일이에요</div>`:'';
+  const beforeBlock=(auto||!baseLine)?''
+    :`<div style="margin-top:8px;">
+        <div style="color:var(--tx3);">원래는 이랬어요</div>
+        <div style="margin:1px 0 1px 10px;color:var(--tx2);">${_cfEsc(baseLine)}</div>
+      </div>`;
+  const buttons=done
+    ?`<div style="margin-top:8px;color:var(--tx3);">이건 <b style="color:var(--tx);">${_cfEsc(_cfChoiceLabel(rec))}</b> 로 정했어요</div>`
+    :(auto
+      ?`<div style="margin-top:8px;color:var(--tx3);">이건 고르실 것이 없어요. 알려 드리기만 하는 거예요.
+          되돌리고 싶으시면 이 창을 닫고 <b style="color:var(--tx);">자동 백업 보기</b> 를 쓰세요.</div>
+        <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','ack')">읽었어요</button>`
+      :`${canMerge?`<button class="settings-btn" style="width:100%;margin-top:10px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfChoose('${_cfEsc(rec.conflictId)}','merge')">둘 다 남기기 — 아무것도 안 없어져요</button>`:''}
+         <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+           <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','local')">${who.local} 것만</button>
+           <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','remote')">${who.remote} 것만</button>
+         </div>
+         ${canMerge?'':'<div style="margin-top:5px;color:var(--tx3);font-size:10px;">이건 둘을 합칠 수 없어서 한쪽만 고를 수 있어요.</div>'}`);
+  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;margin-bottom:10px;font-size:11px;color:var(--tx2);line-height:1.7;word-break:break-word;overflow-wrap:anywhere;${done?'opacity:.5;':''}">
+    <div style="font-weight:700;color:var(--tx);">${title}</div>
     ${when}
-    ${auto?`<div style="margin-top:6px;">${_cfEsc(ex.note||'')}</div>`
+    ${beforeBlock}
+    ${auto?`<div style="margin-top:8px;color:var(--tx);">${_cfEsc(ex.note||'')}</div>`
           :side('local',ex.local)+side('remote',ex.remote)}
     ${auto?'':raw}
-    ${done?`<div style="margin-top:6px;color:var(--tx3);">정함: ${_cfEsc(_cfChoiceLabel(rec))}</div>`
-      :(auto?`<div style="margin-top:6px;color:var(--tx3);">이건 알려만 드려요. 되돌리려면 계정 탭의 자동 백업을 쓰세요.</div>
-              <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','ack')">확인했어요</button>`
-      :`<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          ${canMerge?`<button class="settings-btn" style="flex:1;min-width:88px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','merge')">양쪽 다 남기기</button>`:''}
-          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','local')">${who.local} 것으로</button>
-          <button class="settings-btn" style="flex:1;min-width:78px;" onclick="cfChoose('${_cfEsc(rec.conflictId)}','remote')">${who.remote} 것으로</button>
-        </div>`)}
+    ${buttons}
   </div>`;
 }
 function cfRender(){
@@ -31536,28 +31609,34 @@ function cfRender(){
   if(!b)return;
   const open=_cfList.filter(r=>!r.resolvedAt);
   if(!open.length){
-    b.innerHTML='<div style="font-size:11px;color:var(--tx3);line-height:1.7;">정하지 않은 충돌이 없어요. 다른 기기와 겹친 변경은 자동으로 합쳐졌어요.</div>';
+    b.innerHTML='<div style="font-size:11px;color:var(--tx3);line-height:1.8;">정할 것이 남아 있지 않아요. 두 기기에서 겹쳐 고친 것은 앱이 알아서 합쳐 두었어요.</div>';
     return;
   }
   const mergeable=open.filter(_cfCanMerge).length;
-  const last=open.reduce((m,r)=>Math.max(m,r.detectedAt||0),0);
   const kinds={};
   open.forEach(r=>{const n=_cfGroupName(r);kinds[n]=(kinds[n]||0)+1;});
   const kindLine=Object.keys(kinds).map(k=>`${k} ${kinds[k]}건`).join(' · ');
+  const me=(typeof _deviceLabel==='function')?_cfEsc(_deviceLabel()):'이 기기';
+  // ⚠️ 첫 화면은 **무슨 일이 일어났는지**부터 말한다. 앞 판(v26-0904-11)은
+  //    '충돌·병합' 같은 말로 시작해서 처음 보는 사람에겐 암호였다 (HB 지적).
   b.innerHTML=
-    `<div style="font-size:11px;color:var(--tx3);line-height:1.75;margin-bottom:10px;">
-       같은 것을 두 기기가 동시에 고쳐서 자동으로 정할 수 없는 것이 <b style="color:var(--tx);">${open.length}건</b> 있어요 — ${_cfEsc(kindLine)}.<br>
-       <b style="color:var(--tx);">어느 쪽도 지워지지 않았어요</b> — 양쪽 다 보관돼 있고, 고른 뒤에도 되돌릴 수 있어요.
-       ${last?`<br>가장 나중에 생긴 충돌: ${_cfEsc(_dfWhen(last))}`:''}
+    `<div style="font-size:11px;color:var(--tx2);line-height:1.85;margin-bottom:10px;">
+       ${me}와 다른 기기에서 <b style="color:var(--tx);">같은 것을 서로 다르게</b> 고치셨어요.
+       어느 쪽이 맞는지 앱이 혼자 정할 수 없어서 여쭤봐요. 모두 <b style="color:var(--tx);">${open.length}건</b>이에요
+       ${kindLine?`(${_cfEsc(kindLine)})`:''}.
      </div>
-     <div style="font-size:11px;color:var(--tx3);line-height:1.8;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
-       <b style="color:var(--tx);">어떻게 고르나요</b><br>
-       · 칸마다 <b style="color:var(--tx);">기기가 각각 무엇을 했는지</b>를 한 줄씩 적어 두었어요.<br>
-       · 둘 다 살리고 싶으면 <b style="color:var(--tx);">양쪽 다 남기기</b> — 아무것도 잃지 않아요. 헷갈리면 이걸 고르세요.<br>
-       · 한쪽만 맞다고 확신할 때에만 그 기기 것을 고르세요.<br>
-       · 지금 정하지 않아도 돼요. 오른쪽 위 × 로 닫으면 그대로 남아 있어요.
+     <div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
+       <div style="color:var(--tx);font-weight:700;margin-bottom:2px;">걱정 안 하셔도 돼요</div>
+       · <b style="color:var(--tx);">아무것도 지워지지 않았어요.</b> 양쪽 것을 다 갖고 있어요.<br>
+       · 고르신 뒤에도 되돌릴 수 있어요.<br>
+       · 지금 안 정하셔도 괜찮아요. 오른쪽 위 × 로 닫으면 그대로 남아 있어요.
+     </div>
+     <div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
+       <div style="color:var(--tx);font-weight:700;margin-bottom:2px;">읽는 법</div>
+       칸마다 <b style="color:var(--tx);">원래는 이랬어요</b> → <b style="color:var(--tx);">어느 기기에서 무엇을 했는지</b> 차례로 적혀 있어요.<br>
+       <b style="color:var(--tx);">잘 모르겠으면 「둘 다 남기기」</b> 를 누르세요. 두 가지가 나란히 남을 뿐, 없어지는 것은 없어요.
      </div>`+
-    (mergeable?`<button class="settings-btn" style="width:100%;margin-bottom:10px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfMergeAll()">양쪽 변경 합치기 — 권장 (${mergeable}건)</button>`:'')+
+    (mergeable?`<button class="settings-btn" style="width:100%;margin-bottom:12px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfMergeAll()">${mergeable}건을 한꺼번에 「둘 다 남기기」</button>`:'')+
     open.map(_cfCardHTML).join('');
 }
 window.openSyncConflicts=function(){
@@ -31577,14 +31656,14 @@ window.cfChoose=function(id,choice){
   const rec=_cfList.find(r=>r.conflictId===id);
   if(!rec)return;
   if(choice!=='ack'){
-    if(!_cfApply(ST,rec,choice)){showToast('이 항목은 지금 상태에서 적용할 수 없어요');return;}
+    if(!_cfApply(ST,rec,choice)){showToast('지금은 이걸 적용할 수 없어요. 앱을 새로 열고 다시 해 보세요');return;}
     try{syncSecsFromState();}catch(e){}
     save();
     try{renderToday();}catch(e){}
   }
   rec.choice=choice;rec.resolvedAt=Date.now();
   _cfSaveLocal();_cfPushCloud();_cfSyncVisibility();cfRender();
-  showToast(choice==='ack'?'확인했어요':'정한 대로 반영했어요');
+  showToast(choice==='ack'?'읽은 것으로 해 둘게요':'고르신 대로 해 두었어요');
 }
 window.cfMergeAll=function(){
   const open=_cfList.filter(r=>!r.resolvedAt&&_cfCanMerge(r));
@@ -31599,7 +31678,7 @@ window.cfMergeAll=function(){
     try{renderToday();}catch(e){}
   }
   _cfSaveLocal();_cfPushCloud();_cfSyncVisibility();cfRender();
-  showToast(`${n}건을 양쪽 다 남기는 쪽으로 합쳤어요`);
+  showToast(`${n}건을 둘 다 남겨 두었어요`);
 }
 
 window.fbPushState=function(){
@@ -31848,9 +31927,9 @@ window.checkDataRecovery=async function(){
           연락처: ${rs?rs.contactCount:0}명
         </div>
       </div>
-      ${block('이 기기에만 있는 것 — 덮어쓰면 클라우드에 올라가요',onlyLocal,'클라우드에 다 들어가 있어요')}
-      ${block('클라우드에만 있는 것 — 덮어쓰면 사라져요',onlyCloud,'클라우드에만 있는 것은 없어요')}
-      ${(onlyCloud&&onlyCloud.total)?'<div style="font-size:11px;color:var(--ac-tx);line-height:1.7;margin-bottom:8px;">⚠️ 클라우드에만 있는 것이 있어요. 덮어쓰기 전에 위 목록이 잃어도 되는 것인지 꼭 보세요.</div>':''}
+      ${block('이 기기에서 한 일 — 클라우드에는 아직 없어요',onlyLocal,'클라우드에 다 들어가 있어요')}
+      ${block('다른 기기에서 한 일 — 이 기기에는 없어요. 덮어쓰면 사라져요',onlyCloud,'클라우드에만 있는 것은 없어요')}
+      ${(onlyCloud&&onlyCloud.total)?'<div style="font-size:11px;color:var(--ac-tx);line-height:1.8;margin-bottom:8px;">⚠️ 위 두 번째 목록은 <b>덮어쓰면 사라져요.</b> 잃어도 되는 것인지 꼭 먼저 보세요.</div>':''}
       <button class="settings-btn" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="fbForceUploadLocal()" ${local?'':'disabled'}>이 기기의 로컬 데이터로 클라우드 덮어쓰기</button>
       <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="cleanupEmptyDays()">빈 날짜 항목 정리하기 (데이터 없는 날짜 삭제)</button>
       <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd);">
@@ -31931,24 +32010,26 @@ window.showAutoBackups=async function(){
     window._autoBackups={};items.forEach(it=>{window._autoBackups[it.slot]=it;});
     const cur=_abLocalState();
     const myDev=(typeof _deviceId==='function')?_deviceId():null;
-    const head=`<div style="font-size:11px;color:var(--tx3);line-height:1.8;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
+    const head=`<div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
         <b style="color:var(--tx);">이 목록을 읽는 법</b><br>
-        · 다른 기기의 변경과 겹쳐 자동으로 합쳐질 때, <b style="color:var(--tx);">합치기 직전의 클라우드</b>가 여기 남아요.<br>
-        · <b style="color:var(--tx);">되돌리면 이렇게 돼요</b> 줄이 이 백업과 지금 이 기기의 차이예요. 그 줄이 없으면 지금과 같은 내용이에요.<br>
-        · 그러니 <b style="color:var(--tx);">지금 없어진 것이 적힌 백업</b>을 고르면 돼요.</div>`;
+        · 두 기기의 고침이 겹쳐 앱이 합칠 때마다, <b style="color:var(--tx);">합치기 직전의 상태</b>를 여기에 몰래 저장해 둬요. 최근 세 개까지요.<br>
+        · 아래 <b style="color:var(--tx);">「이 백업을 남긴 뒤로 한 일」</b> 이 곧 되돌렸을 때 <b style="color:var(--tx);">없어지는 것</b>이에요.<br>
+        · 뭔가 사라졌다면, 그 사라진 것이 안 적혀 있는 백업을 고르시면 돼요.</div>`;
     box.innerHTML=head+items.map((it,idx)=>{
       let obj=null;try{obj=JSON.parse(it.json||'null');}catch(e){}
       const when=_dfWhen(it.ts);
       const dev=it.devLabel?_cfEsc(it.devLabel):(it.dev?(it.dev===myDev?'이 기기':'다른 기기'):'기기 기록 없음');
       const same=(idx>0&&items[idx-1].json===it.json);
+      // ⚠️ 백업 → 지금 방향으로 견준다. "이 백업 뒤로 무엇을 했는지" 가 곧
+      //    "되돌리면 무엇을 잃는지" 라, 사람이 고르는 데 가장 곧바로 쓰인다.
       let diff=null;
-      if(obj&&cur)diff=_dfBrief(cur,obj,8);
+      if(obj&&cur)diff=_dfBrief(obj,cur,8);
       const diffHTML=!obj?'<div style="color:var(--tx3);">내용을 읽을 수 없어요</div>'
         :(!cur?'<div style="color:var(--tx3);">이 기기의 내용을 읽지 못해 견줄 수 없어요</div>'
-        :(diff.total===0?'<div style="color:var(--tx3);">지금 이 기기와 내용이 같아요 — 되돌려도 달라지는 것이 없어요</div>'
-        :`<div style="font-weight:700;color:var(--tx);margin-top:6px;">되돌리면 이렇게 돼요 (${diff.total}군데)</div>`
+        :(diff.total===0?'<div style="color:var(--tx3);margin-top:6px;">지금 이 기기와 똑같아요 — 되돌려도 달라지는 것이 없어요</div>'
+        :`<div style="font-weight:700;color:var(--tx);margin-top:6px;">이 백업을 남긴 뒤로 한 일 (${diff.total}군데) — 되돌리면 이게 없어져요</div>`
           +diff.lines.map(s=>`<div style="margin:1px 0 1px 8px;">· ${_cfEsc(s)}</div>`).join('')
-          +(diff.more?`<div style="margin-left:8px;color:var(--tx3);">… 외 ${diff.more}군데</div>`:'')));
+          +(diff.more?`<div style="margin-left:8px;color:var(--tx3);">… 외 ${diff.more}가지</div>`:'')));
       return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:8px;word-break:break-word;overflow-wrap:anywhere;">
         <div style="font-weight:700;color:var(--tx);">${_abRankLabel(idx)} · ${_cfEsc(when)}</div>
         <div style="color:var(--tx3);">남긴 기기: ${dev}${it.rev?` · 클라우드 판 ${it.rev}`:''}${same?' · 위 백업과 내용이 같아요':''}</div>
@@ -31970,11 +32051,11 @@ window.restoreAutoBackup=function(slot){
   let msg='이 자동 백업 시점으로 클라우드와 이 기기를 되돌려요. 계속할까요?';
   try{
     const cur=_abLocalState(),obj=JSON.parse(it.json);
-    const d=_dfBrief(cur,obj,5);
-    if(d.total)msg=`이 백업으로 되돌리면 ${d.total}군데가 바뀌어요:\n\n`
-      +d.lines.map(s=>'· '+s).join('\n')+(d.more?`\n… 외 ${d.more}군데`:'')
+    const d=_dfBrief(obj,cur,5);
+    if(d.total)msg=`이 백업 때로 되돌리면 아래 ${d.total}가지가 없어져요:\n\n`
+      +d.lines.map(s=>'· '+s).join('\n')+(d.more?`\n… 외 ${d.more}가지`:'')
       +'\n\n계속할까요?';
-    else msg='이 백업은 지금 이 기기와 내용이 같아요. 그래도 되돌릴까요?';
+    else msg='이 백업은 지금 이 기기와 똑같아요. 그래도 되돌릴까요?';
   }catch(e){}
   appConfirm(msg,async()=>{
     try{
