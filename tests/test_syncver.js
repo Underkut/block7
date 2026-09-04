@@ -188,7 +188,7 @@ console.log('\n시나리오 6 — 방어가 실제로 연결돼 있는지');
         SRC.includes(':_fbMergeGuarded(_fbBaseObj(),ST,cloudState);'), true);
   // 강제 업로드도 버전을 남겨야 남들이 "낡은 기기"로 오해하지 않는다
   sc.eq('강제 업로드도 버전을 남긴다',
-        /_fbForceWrite[\s\S]*?tx\.set\(userDocRef\(uid\),\{json,rev,dev:_deviceId\(\),appVer:APP_VERSION/.test(SRC), true);
+        /_fbForceWrite[\s\S]*?tx\.set\(userDocRef\(uid\),\{json,rev,dev:_deviceId\(\),[^}]*appVer:APP_VERSION/.test(SRC), true);
   // 낡은 탭 자가 갱신 — 유휴가 아니어도 갱신한다 (사고를 내는 것이 바로 그 탭이다)
   sc.eq('낡은 탭은 유휴가 아니어도 새로고침', SRC.includes('if(_verCmp(cloudVer,APP_VERSION)!==1)return;'), true);
   sc.eq('못 올린 편집이 있으면 새로고침하지 않는다',
