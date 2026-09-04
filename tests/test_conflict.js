@@ -325,9 +325,11 @@ console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
     local: { c1: { view: 'list' }, c2: { view: 'card' } },
     remote: { c1: { view: 'grid' }, c2: { view: 'list' } } };
   const ex = S.explain(rec);
-  sc.eq('이 기기가 고친 자리', has(ex.local, 'c2', 'view', '「card」'), true);
-  sc.eq('다른 기기가 고친 자리', has(ex.remote, 'c1', 'view', '「grid」'), true);
-  sc.eq('안 달라진 자리는 안 적는다', ex.local.join('|').includes('c1'), false);
+  sc.eq('이 기기가 고친 자리', has(ex.local, '말씀 카드 2번', '보는 방식', '「카드」'), true);
+  sc.eq('다른 기기가 고친 자리', has(ex.remote, '말씀 카드 1번', '보는 방식', '「바둑판」'), true);
+  sc.eq('영문 이름표가 새어 나오지 않는다',
+        /c1|c2|view|list|card|grid/.test(ex.local.concat(ex.remote).join('|')), false);
+  sc.eq('안 달라진 자리는 안 적는다', ex.local.join('|').includes('말씀 카드 1번'), false);
   sc.eq('영문 설정 키를 사람 말로', S.nice(rec), '설정 · 말씀 카드 구성');
   sc.eq('갈래 이름', S.group(rec), '설정');
 
@@ -336,9 +338,9 @@ console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
     base: { text: '심방', done: false }, local: { text: '심방', done: true },
     remote: { text: '주일예배', done: false } };
   const et = S.explain(t);
-  sc.eq('완료 표시는 그대로 말한다', has(et.local, '「심방」', '완료 표시를 켬'), true);
+  sc.eq('완료 표시는 그대로 말한다', has(et.local, '「심방」에 완료 표시를 했어요'), true);
   sc.eq('자리 번호를 준다', has(et.remote, '2번째 자리'), true);
-  sc.eq('단정하지 않는다', has(et.remote, '순서가 밀린 것'), true);
+  sc.eq('단정하지 않는다', has(et.remote, '순서가 밀려'), true);
   sc.eq('날짜를 사람 말로', S.nice({ entityType: 'task', entityId: 'x',
         label: '2026-09-04 · 빅 블럭 · 오전' }), '9월 4일 (금) · 빅 블럭 · 오전');
 
@@ -348,6 +350,10 @@ console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
   const eu = S.explain(u);
   sc.eq('이 기기 목록', has(eu.local, '할일 1개', '「가」'), true);
   sc.eq('다른 기기 목록', has(eu.remote, '할일 2개', '「나」', '「다」'), true);
+  // 처음 보는 사람이 어느 쪽이 자기 손에 있는 기기인지 알 수 있어야 한다
+  sc.eq('이 기기임을 밝힌다', _cfCardHTML(u).includes('지금 보고 있는 이 기기'), true);
+  sc.eq('둘 다 남기기를 권한다', _cfCardHTML(u).includes('아무것도 안 없어져요'), true);
+  sc.eq('원래 모습을 먼저 보여 준다', _cfCardHTML(t).includes('원래는 이랬어요'), true);
 
   // 알려만 주는 것 — 고르는 버튼 대신 설명 한 줄
   const bulk = { entityType: 'bulk', entityId: 'bulk/days', base: 100, local: 30, remote: 100 };

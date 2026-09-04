@@ -42,8 +42,8 @@ console.log('\n[1] 할일 — 자리와 제목을 이름으로 짚는다');
   sc.eq('새 할일 한 줄', L.length, 1);
   sc.eq('날짜를 사람 말로', has(L, '9월 4일'), true);
   sc.eq('블럭·구간 이름', has(L, '빅 블럭', '오전'), true);
-  sc.eq('제목과 동작', has(L, '「심방」', '새로 넣음'), true);
-  sc.eq('지우는 쪽도 짚는다', has(say(b, a), '「심방」', '지움'), true);
+  sc.eq('제목과 동작', has(L, '「심방」', '새로 넣었어요'), true);
+  sc.eq('지우는 쪽도 짚는다', has(say(b, a), '「심방」을 지웠어요'), true);
 }
 
 console.log('\n[2] 제목 고침 — 지움+넣음이 아니라 "고침" 한 줄로');
@@ -52,7 +52,7 @@ console.log('\n[2] 제목 고침 — 지움+넣음이 아니라 "고침" 한 줄
   const b = st({ days: day([{ text: '주일 오전 예배', done: false }]) });
   const L = say(a, b);
   sc.eq('한 줄만', L.length, 1);
-  sc.eq('전 → 후를 함께 보여 준다', has(L, '「주일예배」', '「주일 오전 예배」', '고침'), true);
+  sc.eq('전 → 후를 함께 보여 준다', has(L, '「주일예배」에서', '「주일 오전 예배」로 고쳤어요'), true);
 }
 
 console.log('\n[3] 순서 이동 — 몇 번째에서 몇 번째로');
@@ -61,16 +61,16 @@ console.log('\n[3] 순서 이동 — 몇 번째에서 몇 번째로');
   const a = st({ days: day(three(['가', '나', '다'])) });
   const b = st({ days: day(three(['다', '가', '나'])) });
   const L = say(a, b);
-  sc.eq('옮김으로 읽는다', has(L, '옮김'), true);
-  sc.eq('자리 번호를 준다', has(L, '「다」', '3번째 → 1번째'), true);
+  sc.eq('옮겼다고 읽는다', has(L, '옮겼어요'), true);
+  sc.eq('자리 번호를 준다', has(L, '「다」', '3번째에서 1번째로'), true);
 }
 
 console.log('\n[4] 완료 표시·칸 하나');
 {
   const a = st({ days: day([{ text: '심방', done: false }]) });
   const b = st({ days: day([{ text: '심방', done: true }]) });
-  sc.eq('완료 켬', has(say(a, b), '「심방」', '완료 표시를 켬'), true);
-  sc.eq('완료 끔', has(say(b, a), '완료 표시를 끔'), true);
+  sc.eq('완료 켬', has(say(a, b), '「심방」에 완료 표시를 했어요'), true);
+  sc.eq('완료 끔', has(say(b, a), '완료 표시를 풀었어요'), true);
   const c = st({ days: day([{ text: '심방', done: false, flag: true }]) });
   sc.eq('칸 이름을 한국어로', has(say(a, c), '깃발'), true);
 }
@@ -81,11 +81,11 @@ console.log('\n[5] 말씀 모음 — 어느 말씀을 어느 모음에 담았나
   const a = st({ verseCollections: coll([{ ref: '마태복음 6:13' }]) });
   const b = st({ verseCollections: coll([{ ref: '마태복음 6:13' }, { ref: '로마서 8:28' }]) });
   const L = say(a, b);
-  sc.eq('담은 곳과 말씀', has(L, '「주일 말씀」', '로마서 8:28', '담음'), true);
-  sc.eq('뺀 것도 짚는다', has(say(b, a), '「주일 말씀」', '뺌'), true);
+  sc.eq('담은 곳과 말씀', has(L, '「주일 말씀」에 담았어요', '로마서 8:28'), true);
+  sc.eq('뺀 것도 짚는다', has(say(b, a), '「주일 말씀」에서 뺐어요'), true);
   const c = st({ verseCollections: [{ id: 'vc1', name: '새벽 말씀', verses: [{ ref: '마태복음 6:13' }] }] });
   sc.eq('이름 고침', has(say(a, c), '「주일 말씀」', '「새벽 말씀」'), true);
-  sc.eq('모음 새로 만듦', has(say(st({}), a), '새로 만듦'), true);
+  sc.eq('모음 새로 만듦', has(say(st({}), a), '새로 만들었어요'), true);
 }
 
 console.log('\n[6] 설정 — JSON 통짜가 아니라 다른 자리만');
@@ -95,9 +95,11 @@ console.log('\n[6] 설정 — JSON 통짜가 아니라 다른 자리만');
   const L = say(a, b);
   sc.eq('한 줄만 (달라진 자리 하나)', L.length, 1);
   sc.eq('설정 이름을 한국어로', has(L, '말씀 카드 구성'), true);
-  sc.eq('달라진 자리를 경로로', has(L, 'c2', 'view'), true);
-  sc.eq('값은 앞뒤를 함께', has(L, '「list」', '「card」'), true);
-  sc.eq('안 달라진 c1 은 안 나온다', L.join('|').includes('c1'), false);
+  // ⚠️ c2·view·card 같은 프로그램 이름표는 화면에 그대로 나오면 안 된다 (HB 지적)
+  sc.eq('자리 이름표를 사람 말로', has(L, '말씀 카드 2번', '보는 방식'), true);
+  sc.eq('값도 사람 말로', has(L, '「목록」에서', '「카드」로 바꿨어요'), true);
+  sc.eq('영문 이름표가 새어 나오지 않는다', /c2|view|list|card(?!\uFF5C)/.test(L.join('|')), false);
+  sc.eq('안 달라진 c1 은 안 나온다', L.join('|').includes('말씀 카드 1번'), false);
   sc.eq('모르는 키도 갈래는 짚는다', S.setLabel('verseWidgetTag'), '말씀 위젯 · Tag');
   sc.eq('아는 키는 그대로', S.setLabel('layout'), '화면 배치');
 }
@@ -106,13 +108,13 @@ console.log('\n[7] 기록·연락처');
 {
   const a = st({ verseKeepLog: { '2026-09-04': [{ ref: '요한복음 3:16' }] } });
   const b = st({ verseKeepLog: { '2026-09-04': [{ ref: '요한복음 3:16' }, { ref: '시편 23:1' }] } });
-  sc.eq('담아두기 늘어남', has(say(a, b), '담아두기', '1건 늘어남', '시편 23:1'), true);
+  sc.eq('담아두기 늘어남', has(say(a, b), '담아두기', '1건 늘었어요', '시편 23:1'), true);
   const c = st({ memorizationLog: { '2026-09-04': { am: [{ ref: '빌립보서 4:6' }] } } });
   sc.eq('암송은 구간 안까지 본다', has(say(st({}), c), '암송', '빌립보서 4:6'), true);
   const d = st({ contacts: [{ id: 'c1', nick: '동수', tel: '010' }] });
   const e = st({ contacts: [{ id: 'c1', nick: '동수', tel: '011' }] });
   sc.eq('연락처 고침', has(say(d, e), '연락처', '「동수」', 'tel'), true);
-  sc.eq('연락처 새로 넣음', has(say(st({}), d), '연락처', '새로 넣음'), true);
+  sc.eq('연락처 새로 넣음', has(say(st({}), d), '연락처', '새로 넣었어요'), true);
 }
 
 console.log('\n[8] 요약과 규모');
@@ -160,9 +162,9 @@ console.log('\n[11] 한국어 조사 — 읽었을 때 걸리지 않게');
   // 실제 문장에서 확인
   const a = st({ days: day([{ text: '심방' }]) });
   const b = st({ days: day([]) });
-  sc.eq('지움 문장', has(say(a, b), '「심방」을 지움'), true);
+  sc.eq('지움 문장', has(say(a, b), '「심방」을 지웠어요'), true);
   const c = st({ days: day([{ text: '예배' }]) });
-  sc.eq('바뀜 문장', has(say(a, c), '「예배」로 고침'), true);
+  sc.eq('바뀜 문장', has(say(a, c), '「예배」로 고쳤어요'), true);
 }
 
 console.log('\n[12] 시각 표기');
