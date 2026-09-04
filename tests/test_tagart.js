@@ -201,6 +201,55 @@ console.log('\n시나리오 4 — 자리는 본문 바로 위·가운데 (v26-08
     slice('function _vfLayoutText(){', '// ── 구독자 전체 집계 카운터').includes('_vfPlaceTagArt();'), true);
 }
 
+console.log('\n시나리오 4-1 — 자리를 못 잰 채로 그리지 않는다 (v26-0904-5 회귀)');
+{
+  // ⚠️ HB 신고 — "다른 앱 갔다가 돌아오면 태그 그림이 아래로 내려와 글자와 겹친다".
+  //    까닭 둘이 겹쳐 있었다:
+  //     ① top 이 비어 있는 절대배치 요소는 **정적 자리**로 떨어진다.
+  //        #verseFullInner 는 세로 가운데 정렬이라 그 자리가 하필 본문 한가운데다.
+  //     ② 못 재는 순간(뒤로 물러나 있는 동안·크기가 바뀌는 중)에 그냥 돌아가면
+  //        그림이 **옛 자리**에 남는다. 본문은 가운데 정렬이라 길이가 달라지면
+  //        함께 움직이므로, 남은 그림이 글자 위로 올라온다.
+  const rend = slice('function _vfRenderTagArt(v){', '// 그림을 **본문 바로 위');
+  sc.eq('자리를 잡기 전에는 숨겨 둔다', rend.includes("el.style.visibility='hidden';"), true);
+  sc.eq('숨기는 것이 도안을 넣은 **뒤**다',
+    rend.indexOf('el.innerHTML=_tagartSvg(') < rend.indexOf("el.style.visibility='hidden';"), true);
+
+  const fn = slice('function _vfPlaceTagArt(){', '// 공유 이미지(캔버스)에');
+  sc.eq('못 재면 옛 자리에 두지 않고 숨긴다',
+    fn.includes("if(!rh||!tx.offsetHeight){el.style.visibility='hidden';_vfArtRecheck();return;}"), true);
+  sc.eq('자리를 잡은 뒤 한 프레임 더 확인한다',
+    fn.includes("el.style.top=(txTop-gap-size)+'px';\n  _vfArtRecheck();"), true);
+  // ⚠️ 되풀이 금지 — 잠금을 자리 잡기가 끝난 뒤에 푼다. 먼저 풀면 안에서 부른
+  //    _vfArtRecheck 가 또 예약을 걸어 프레임마다 영원히 돈다.
+  const rc = slice('function _vfArtRecheck(){', '\n}\n');
+  sc.eq('한 번만 예약한다', rc.includes('if(_vfArtAgain||'), true);
+  sc.eq('잠금은 자리 잡기가 끝난 뒤에 푼다',
+    rc.indexOf('_vfPlaceTagArt();') < rc.indexOf('_vfArtAgain=false;'), true);
+}
+
+console.log('\n시나리오 4-2 — 화면 크기가 바뀌면 다시 앉힌다 (v26-0904-5)');
+{
+  const g = slice('function _initVerseFullGestures(){', '// ═══');
+  sc.eq('돌아왔을 때 다시 앉힌다',
+    /visibilitychange[\s\S]{0,220}_vfLayoutText\(\)/.test(g), true);
+  sc.eq('안정된 뒤 한 번 더 (iOS 는 늦게 안정된다)',
+    /visibilitychange[\s\S]{0,320}setTimeout\(\(\)=>\{if\(_verseFullIsOpen\(\)\)_vfLayoutText\(\);\},300\)/.test(g), true);
+  // resize 가 안 오는 자리(분할 화면·주소창 접힘)를 상자 크기로 직접 본다
+  sc.eq('상자 크기를 지켜본다', g.includes('new ResizeObserver('), true);
+  sc.eq('한 프레임에 한 번만 돈다', /roRaf=requestAnimationFrame/.test(g), true);
+
+  // 아직 못 재는 상태에서 그린 화면은 그대로 굳히지 않고 다음 프레임에 다시 앉힌다.
+  // (숨겨진 사이에 다시 그려지면 본문은 줄바꿈 없이 흐르고 그림은 숨은 채 남는다)
+  const lay = slice('function _vfLayoutText(){', '// 명제 본문 — 브라우저가');
+  sc.eq('못 재면 다음 프레임에 다시 앉힌다',
+    lay.includes("if(availW<40){el.innerHTML=esc(raw);_vfRelayoutSoon();return;}"), true);
+  sc.eq('잴 수 있었으면 되풀이 셈을 되돌린다', lay.includes('_vfRelayoutTries=0;'), true);
+  // ⚠️ 상한이 없으면 끝내 못 재는 상태에서 프레임마다 영원히 돈다
+  sc.eq('되풀이에 상한이 있다',
+    slice('function _vfRelayoutSoon(){', '\n}\n').includes('_vfRelayoutTries>=6'), true);
+}
+
 console.log('\n시나리오 5 — 그림체 두 벌이 같은 도안을 쓴다');
 {
   const mn = box.svg('m-wind', 'minimal'), og = box.svg('m-wind', 'organic');
@@ -267,6 +316,9 @@ console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그
   sc.eq('공유는 화면이 고른 도안을 그대로 그린다', shot.includes('_tagartDrawOn(ctx,_vfArtCur.id'), true);
   // 공유는 숫자를 또 적지 않고 **화면에 적용된 값**을 읽는다 —
   // 안 그러면 모바일만 30% 같은 규칙이 생길 때 화면과 어긋난다
+  // 자리가 없어 화면에서 숨긴 그림은 이미지에도 없어야 한다 (v26-0904-5)
+  sc.eq('숨긴 그림은 이미지에도 안 그린다',
+    shot.includes("visibility!=='hidden'") && shot.includes('&&avis&&'), true);
   sc.eq('공유 오패시티는 화면 값을 그대로 읽는다',
     shot.includes("parseFloat(getComputedStyle(ae).opacity)")
     && shot.includes('aop>0?aop:.2'), true);

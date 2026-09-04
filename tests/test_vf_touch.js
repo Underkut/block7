@@ -102,4 +102,21 @@ console.log('\n시나리오 4 — Deeper 아이콘의 가운데 선');
   sc.eq('채움 아이콘은 그대로', SRC.includes("fill:['M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z']"), true);
 }
 
+// ═══ 5. 가장자리 흰 줄 (v26-0904-5, HB 신고) ═══
+console.log('\n시나리오 5 — 화면 끝에 흰 줄이 생기지 않는다');
+{
+  // 왜 생겼나 — 기기에 따라 화면 폭·높이가 정수가 아니다(안드로이드 411.43px 같은
+  // 값). inset:0 으로 화면에 딱 맞춘 상자는 그 소수점 탓에 마지막 한 픽셀을
+  // 못 칠하는 때가 있고, 그 틈으로 아래 있던 앱 배경(밝은 테마면 흰색)이
+  // 오른쪽·아래 끝에 한 줄 비쳤다. 사방으로 1px 씩 넘겨 칠해 막는다.
+  sc.eq('전체화면은 1px 넘겨 칠한다',
+        SRC.includes('position:fixed;inset:-1px;z-index:190;background:var(--vf-bgimg,var(--bg));'), true);
+  sc.eq('타일뷰도 같다',
+        SRC.includes('position:fixed;inset:-1px;z-index:195;background:var(--vf-bgimg,var(--bg));'), true);
+  // ⚠️ 그림자(box-shadow)로 한 겹 덧칠하는 방법은 색이 하나뿐이라 그라디언트
+  //    테마에서 가장자리 색이 어긋난다. 배경 자체를 넓히는 것이 맞다.
+  sc.eq('전체화면 규칙 자체에는 그림자를 쓰지 않는다',
+        slice('#verseFull{', '\n}').replace(/\/\*[\s\S]*?\*\//g, '').includes('box-shadow'), false);
+}
+
 sc.done();
