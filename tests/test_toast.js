@@ -29,7 +29,9 @@ console.log('시나리오 1 — 날짜 이동 안내 문구');
 console.log('\n시나리오 2 — 토스트 유지 시간이 글자 수에 비례한다');
 {
   const { SRC } = require('./_load');
-  sc.eq('글자당 200ms', SRC.includes('const dur=Math.min(9000,Math.max(3000,s.length*200));'), true);
+  // 동작 줄('보러 가기')이 붙은 토스트는 읽고 누를 틈을 주려 최소 6초 (v26-0904-3)
+  sc.eq('글자당 200ms · 동작 줄이 붙으면 최소 6초',
+        SRC.includes('const dur=Math.min(9000,Math.max(act?6000:3000,s.length*200));'), true);
   sc.eq('예전 문구 길이는 최소값 그대로',
         Math.min(9000, Math.max(3000, '날짜로 이동했어요'.length * 200)), 3000);
   const longMsg = _moveDateToastMsg('2026-08-17', 'am');
