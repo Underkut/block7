@@ -60,6 +60,12 @@ global._vgMatch = (v, kind, val) => (kind === 'cat' ? v.cat === val : true);
 global.document = { querySelector: () => null, getElementById: () => null };
 global.renderRightPanel = () => {};
 global.renderLayout = () => {};
+// 강조 문구 도구 — 본문 안에 있는지만 가려내면 되므로 공백을 지우고 견준다
+global.HI_SPLIT = /[\/|\n\r]+/;
+global._hiPhrases = v => ((v && v.hi) ? String(v.hi) : '').split(HI_SPLIT).map(x => x.trim()).filter(Boolean);
+global._hiRanges = (flat, ps) => ps
+  .filter(p => String(flat).replace(/\s/g, '').includes(String(p).replace(/\s/g, '')))
+  .map(() => [0, 1]);
 
 eval(
   slice('const RP_WIDGET_DEFS={', 'function _rpGetWidgets(') +
@@ -69,7 +75,9 @@ eval(
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
   '_rpVCardH,_rpSetVCardH,_vcShow,_vcShowFor,_vcUnplacedForKind,_vcFilterLabel,vcNav,_vcApplyNav,vcClearFilter,vcAddCard,_rpChipName,_vcCurX,_VC_SHOW_GROUP,_vcGroupOn,_vcGroupOf,setVcShow,setVcShowAll,VC_TS_STEPS,VC_TS_PX,VC_TS_DEFAULT,VC_TS_MIN,VC_TS_MAX,VC_NEW,VL_NEW,VC_KINDS,' +
   '_vcScope,_vcScopeIsHome,_vcScopeCount,_vcScopeKey,_vcScopeLabel,_vcView,_vcSyncKind,' +
-  '_vcListItems,_vcKeyOf,_vcVerseOf,_vcReactKeyOf,vcSetView,vcToggleView,_VC_TYPE_KIND});'
+  '_vcListItems,_vcKeyOf,_vcVerseOf,_vcReactKeyOf,vcSetView,vcToggleView,_VC_TYPE_KIND,' +
+  '_vcScopeParts,_vcHeadMode,setVcHeadMode,_vcAutoOn,_vcAutoMin,_vcAutoOffset,_vcAutoSlot,' +
+  'setVcAuto,setVcAutoMin,VC_AUTO_STEPS,VC_AUTO_LABEL,VC_AUTO_DEFAULT,_vcHiSplit});'
 );
 
 const reset = () => {
@@ -426,6 +434,115 @@ console.log('\n시나리오 7-D — 명제도 본문이 나온다');
   sc.eq('못 찾아도 안전', [g.ref, g.krText], ['P!없음', '']);
 }
 
+// ═══ 7-E. 자동 넘김 (v26-0904-10, HB) ═══
+// ⚠️ 핵심은 "넘긴 자리를 저장하지 않는다" 이다. 카드마다 몇 분에 한 번씩
+//    클라우드에 글을 쓰면 (카드 수 × 기기 수)만큼 쓰기가 쌓인다.
+//    사람이 멈춘 자리(ref)와 그때의 칸 번호(autoAt) 둘만 두고 시계로 센다.
+console.log('\n시나리오 7-E — 말씀카드 자동 넘김');
+{
+  reset();
+  ST.settings.verseCurrentIdx = 1;
+  const id = _vcCreate(null, null);
+  const cfg = _vcGet(id);
+
+  sc.eq('처음엔 꺼져 있다', _vcAutoOn(cfg), false);
+  sc.eq('간격 기본값은 1시간', _vcAutoMin(cfg), 60);
+  sc.eq('이상한 간격은 기본값으로', _vcAutoMin({ autoMin: 7 }), 60);
+  sc.eq('고른 간격은 그대로', _vcAutoMin({ autoMin: 10 }), 10);
+  sc.eq('간격 여덟 단계', VC_AUTO_STEPS, [5, 10, 15, 20, 30, 60, 120, 180]);
+  sc.eq('모든 단계에 이름이 있다', VC_AUTO_STEPS.every(m => !!VC_AUTO_LABEL[m]), true);
+
+  // 켜면 지금 보고 있던 말씀에 자리를 못박는다
+  sc.eq('켜기 전 자리', _vcCurrent(cfg, id).ref, 'R1');
+  setVcAuto(id, true);
+  sc.eq('켜졌다', _vcAutoOn(cfg), true);
+  sc.eq('보던 자리를 적어 둔다', cfg.ref, 'R1');
+  sc.eq('그때가 몇 번째 칸인지도', typeof cfg.autoAt, 'number');
+
+  // 칸이 하나 지나면 다음 말씀 — **저장은 일어나지 않는다**
+  const at0 = cfg.autoAt;
+  cfg.autoAt = at0 - 1;
+  sc.eq('한 칸 지나면 다음 말씀', _vcCurrent(cfg, id).ref, 'R2');
+  cfg.autoAt = at0 - 4;
+  sc.eq('네 칸 지나면 네 번째 뒤', _vcCurrent(cfg, id).ref, 'R5');
+  cfg.autoAt = at0 - 5;
+  sc.eq('끝에 닿으면 한 바퀴 돌아 처음으로', _vcCurrent(cfg, id).ref, 'R1');
+  sc.eq('적어 둔 자리는 그대로다 (저장이 없다)', cfg.ref, 'R1');
+
+  // id 를 안 주면 자동을 셈에 넣지 않는다 (자리 그대로)
+  sc.eq('id 없이 물으면 적어 둔 자리', _vcCurrent(cfg).ref, 'R1');
+
+  // 손으로 넘기면 그 자리에서 다시 센다 — 손이 언제나 앞선다
+  cfg.autoAt = at0;
+  vcNav(id, 1);
+  sc.eq('손으로 넘긴 자리', cfg.ref, 'R2');
+  sc.eq('기준도 지금 칸으로 옮겼다', cfg.autoAt, _vcAutoSlot(id, cfg));
+  sc.eq('그래서 곧바로 또 넘어가지 않는다', _vcCurrent(cfg, id).ref, 'R2');
+
+  // 카드마다 시작점이 어긋난다 (여러 위젯이 한꺼번에 넘어가지 않게)
+  const b = _vcCreate(null, null);
+  const offA = _vcAutoOffset(id, 10), offB = _vcAutoOffset(b, 10);
+  sc.eq('오프셋은 간격 안에 있다', offA >= 0 && offA < 10 * 60000, true);
+  sc.eq('카드마다 다르다', offA !== offB, true);
+  sc.eq('같은 카드는 늘 같은 값', _vcAutoOffset(id, 10), offA);
+
+  // 끄면 그 자리에 그대로 선다
+  setVcAuto(id, false);
+  cfg.autoAt = _vcAutoSlot(id, cfg) - 9;
+  sc.eq('꺼져 있으면 시계를 보지 않는다', _vcCurrent(cfg, id).ref, 'R2');
+}
+
+// ═══ 7-F. 제목 표시 — 아이콘 ⇄ 텍스트 ═══
+console.log('\n시나리오 7-F — 헤더에 무엇을 보여줄까');
+{
+  reset();
+  const id = _vcCreate(null, null);
+  const cfg = _vcGet(id);
+  sc.eq('기본은 아이콘 (기존 방식)', _vcHeadMode(cfg), 'icon');
+  setVcHeadMode(id, 'text');
+  sc.eq('텍스트로 바꾼다', _vcHeadMode(cfg), 'text');
+  setVcHeadMode(id, '엉뚱');
+  sc.eq('모르는 값은 아이콘으로', _vcHeadMode(cfg), 'icon');
+
+  // 이름은 '외 N' 으로 접지 않고 **낱낱이** 준다 — 롤링이 한 줄씩 넘긴다
+  sc.eq('말씀 모음 전체', _vcScopeParts({ ks: [], ls: [], mode: 'or' }), ['말씀 모음 전체']);
+  sc.eq('반응과 폴더를 낱낱이',
+        _vcScopeParts({ ks: ['like', 'mem'], ls: ['여행'], mode: 'or' }),
+        ['좋아요', '암송', '여행']);
+  sc.eq('접은 이름은 따로 있다',
+        _vcScopeLabel({ ks: ['like', 'mem'], ls: ['여행'], mode: 'or' }), '좋아요 외 2');
+}
+
+// ═══ 7-G. 명제의 대표 문구 (v26-0904-10, HB) ═══
+// 본문 안에 있으면 예전처럼 본문을 칠하고, 본문에 없으면 칠할 자리가 없어
+// 그대로 사라졌다 — 그때만 카드 좌상단에 작은 글씨로 얹는다.
+console.log('\n시나리오 7-G — 대표 문구가 본문에 없을 때');
+{
+  const inBody = _vcHiSplit({ krText: '내가 주의 말씀을 마음에 두었나이다', hi: '주의 말씀을' });
+  sc.eq('본문에 있으면 칠할 것으로', inBody.inBody, ['주의 말씀을']);
+  sc.eq('좌상단에는 아무것도 없다', inBody.outside, []);
+
+  const out = _vcHiSplit({ krText: '내가 주의 말씀을 마음에 두었나이다', hi: '말씀을 품는 삶' });
+  sc.eq('본문에 없으면 좌상단으로', out.outside, ['말씀을 품는 삶']);
+  sc.eq('칠할 것은 없다', out.inBody, []);
+
+  // 대표 문구는 둘까지 있다 (hi, hi2) — 각자 따로 가린다
+  const two = _vcHiSplit({ krText: '내가 주의 말씀을 마음에 두었나이다',
+                           hi: '주의 말씀을', hi2: '두 번째 대표 문구' });
+  sc.eq('둘을 함께 본다', [two.inBody, two.outside], [['주의 말씀을'], ['두 번째 대표 문구']]);
+
+  // 한 칸에 여러 문구가 '/' 로 들어올 수 있다
+  const many = _vcHiSplit({ krText: '가나다 라마바', hi: '가나다 / 사아자' });
+  sc.eq('나눠 적은 것도 각자 가린다', [many.inBody, many.outside], [['가나다'], ['사아자']]);
+
+  // 띄어쓰기가 달라도 본문 안이면 찾아낸다
+  sc.eq('띄어쓰기 차이는 넘어간다',
+        _vcHiSplit({ krText: '주의 말씀을', hi: '주의말씀을' }).inBody, ['주의말씀을']);
+
+  sc.eq('대표 문구가 없으면 둘 다 빈 목록',
+        [_vcHiSplit({ krText: '가나다' }).inBody, _vcHiSplit({ krText: '가나다' }).outside], [[], []]);
+}
+
 // ═══ 8. 표시 항목 · 위젯 이름 ═══
 console.log('\n시나리오 8 — 표시 항목과 이름');
 {
@@ -487,6 +604,32 @@ console.log('\n시나리오 9 — 화면 연결');
         /<div class="rp-widget-title">\s*\$\{_vcScopeBtnHTML\(id,cfg/.test(SRC), true);
   sc.eq('폴더 이름을 onclick 에 적지 않는다 (따옴표가 들어갈 수 있다)',
         SRC.includes('onclick="vwScopePick(${i})"'), true);
+  // ── v26-0904-10 ──
+  sc.eq('저장 폴더 제목줄에 차례 네 가지', SRC.includes('function _vwKeepSortHTML()'), true);
+  sc.eq('저장 목록 화면과 같은 설정을 쓴다',
+        /_vwKeepSortHTML[\s\S]{0,700}keepTogglePairSort\(\)[\s\S]{0,300}keepSetSort\('manual'\)/.test(SRC), true);
+  sc.eq('차례를 바꾸면 이 팝업도 다시 그린다',
+        SRC.includes("if(sm&&sm.style.display!=='none'&&typeof renderVwScope==='function')renderVwScope();"), true);
+  sc.eq('말씀 모음 전체 줄을 길게 누르면 말씀 모음 설정',
+        SRC.includes('function vwScopeCollSettings()') && SRC.includes('function _vwScopeBindHold()'), true);
+  sc.eq('길게 눌러 연 뒤의 클릭 한 번은 흘려보낸다',
+        SRC.includes('if(Date.now()-_vwHoldAt<700)return;'), true);
+  sc.eq('줄 높이를 넉넉히', /\.vs-row\{[^}]*padding:11px 8px;/.test(SRC), true);
+  // 위젯 끄기 드롭존은 2단에서도
+  sc.eq('2단에서도 위젯을 끌 수 있다', SRC.includes("onOff:(mode>=2&&type!=='todo')?()=>{"), true);
+  // 이름 롤링
+  sc.eq('이름 롤링 부품', SRC.includes('function _rollHTML(parts,style)') && SRC.includes('function _rollFit(root)'), true);
+  sc.eq('시계는 앱 전체에 하나', SRC.includes('function _rollStart(){if(!_rollTimer)_rollTimer=setInterval(_rollTick,ROLL_MS);}'), true);
+  sc.eq('여럿이면 세로로 넘긴다', SRC.includes('class="roll-v"'), true);
+  sc.eq('하나인데 길면 가로로 흐른다', SRC.includes('class="roll-h"'), true);
+  sc.eq('전체화면 상단도 같은 부품을 쓴다', SRC.includes('${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel]'), true);
+  sc.eq('상단 이름을 말줄임으로 자르지 않는다',
+        /\.vf-toplabel\{[^}]*text-overflow:ellipsis/.test(SRC), false);
+  // 자동 넘김이 화면에 붙어 있나
+  sc.eq('자동 넘김 토글', SRC.includes("setVcAuto('${id}',this.checked)"), true);
+  sc.eq('간격은 롤링피커', SRC.includes("<select class=\"event-roll-select\" onchange=\"setVcAutoMin('${id}',this.value)\">"), true);
+  sc.eq('부팅 때 시계를 켠다', SRC.includes('_vcAutoStart();   // 말씀카드 자동 넘김 시계'), true);
+  sc.eq('넘김 때마다 저장하지 않는다', /function _vcAutoTick\(\)\{[\s\S]{0,600}save\(\)/.test(SRC), false);
   // 표시 항목은 카드마다 따로 있으므로 말씀설정에서는 뺐다 (0810-4)
   sc.eq('말씀설정 뷰 탭에는 카드 항목이 없다',
         SRC.includes('setVerseCardCat') || SRC.includes('setVerseCardShare') || SRC.includes('말씀카드에서 보여줄 항목'), false);
@@ -532,10 +675,12 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('반응 토스트는 0.5초', SRC.includes('_dismissReactToast(false);},500)'), true);
   // 카드 설정 팝업 — 테마 · 글자 크기 · 좌하단 · 우하단 · 안내 순서
   const b = SRC.indexOf('function renderVcSettings()');
-  const seg = SRC.slice(b, b + 7000);
-  const order = ['>테마<', '>글자 크기<', '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
+  const seg = SRC.slice(b, b + 12000);
+  // v26-0904-10 — 맨 위에 '자동 넘김'(첫 항목)과 '제목 표시'가 들어왔다
+  const order = ['>자동 넘김<', '>제목 표시<', '>테마<', '>글자 크기<',
+                 '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
     .map(t => seg.indexOf(t));
-  sc.eq('설정 팝업 다섯 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
+  sc.eq('설정 팝업 일곱 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
   sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
 
   // ── 0811-1 ──
@@ -655,7 +800,7 @@ console.log('\n시나리오 9 — 화면 연결');
 
   // ── 0810-4 ──
   // 헤더는 위젯 순서 이동 손잡이라, button 이 아니면 PC 클릭이 죽는다
-  sc.eq('헤더의 범위 단추는 button', SRC.includes('<button class="vw-scope"'), true);
+  sc.eq('헤더의 범위 단추는 button', SRC.includes('<button class="vw-scope${withName?\'\':\' vw-scope-c\'}"'), true);
   // 카드 밖까지 밀고 놓으면 되돌아왔다가 사라지던 것
   sc.eq('넘김 목적지는 늘 지금보다 바깥', SRC.includes('const to=(d>0)?Math.min(-base,cur-30):Math.max(base,cur+30);'), true);
   sc.eq('지금 칠해진 위치를 읽는다', SRC.includes('function _vcCurX(el)'), true);

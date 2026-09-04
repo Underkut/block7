@@ -152,7 +152,11 @@ console.log('\n시나리오 7 — 새 항목이 걸러지지 않는가');
         /_vfIsProp\(v\)\?''/.test(SRC), true);
   sc.eq('명제 판정은 pid 로 한다',
         SRC.includes("function _vfIsProp(v){return !!(v&&(v.pid||v.kind==='prop'));}"), true);
-  sc.eq('말씀카드가 실어 둔다', SRC.includes('data-hi="${_vgEscAttr(v.hi||\'\')}"'), true);
+  // v26-0904-10 — 명제는 대표 문구를 **가른다**. 본문 안에 있는 것만 칠하고,
+  // 없는 것은 카드 좌상단에 작은 글씨로 얹는다 (칠할 자리가 없어 사라지던 것).
+  sc.eq('말씀카드가 실어 둔다', SRC.includes('data-hi="${_vgEscAttr(hiAttr)}"'), true);
+  sc.eq('말씀은 예전 그대로', SRC.includes("const hiAttr=hiSp?hiSp.inBody.join(' / '):(v.hi||'');"), true);
+  sc.eq('본문에 없는 대표 문구를 가려낸다', SRC.includes('function _vcHiSplit(v){'), true);
   // 두 화면의 본문 그리기가 같은 입구를 쓴다 (전체화면·말씀카드 각 한 번)
   sc.eq('전체화면이 그 입구로 그린다', SRC.includes('el.innerHTML=_hiHTML(el,pick.lines);'), true);
   sc.eq('말씀카드도 그 입구로 그린다', SRC.includes('el.innerHTML=_hiHTML(el,lines);'), true);
