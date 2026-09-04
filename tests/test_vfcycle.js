@@ -49,8 +49,8 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
 
 console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 통일한다');
 {
-  sc.eq('순환·셔플 버튼은 좌상단 30×30',
-        /\.vf-cycle\{[\s\S]{0,180}left:14px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);[\s\S]{0,100}width:30px;height:30px/.test(SRC), true);
+  sc.eq('순환·셔플 버튼은 홈 오른쪽의 30×30',
+        /\.vf-cycle\{[\s\S]{0,180}left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);[\s\S]{0,100}width:30px;height:30px/.test(SRC), true);
   sc.eq('닫기 버튼은 우상단 30×30',
         /\.vf-close\{[\s\S]{0,180}top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);right:14px;[\s\S]{0,120}width:30px;height:30px/.test(SRC), true);
   sc.eq('두 버튼은 태그 그림과 같은 색·기본 투명도',
@@ -59,7 +59,7 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
         SRC.includes('@media(hover:none){.vf-cycle,.vf-close{opacity:.3;}}'), true);
   sc.eq('필터가 있어도 버튼을 아래로 내리지 않는다', SRC.includes('vf-cycle-below'), false);
   // ⚠️ v26-0904-4, HB — 좌상단 세로줄에 '말씀 모음 설정'이 끼어들었다.
-  //    위에서부터 순환·셔플(12) → 말씀 모음 설정(50) → 저장 폴더 책갈피(88),
+  //    위에서부터 홈·순환/셔플(12) → 말씀 모음 설정(50) → 저장 폴더 책갈피(88),
   //    그리고 책갈피가 여는 목록이 그 아래(122)에서 펼쳐진다.
   //    한 자리라도 어긋나면 버튼이 서로 겹쳐 아래 것이 안 눌린다.
   const topAt = (cls, px) =>
@@ -125,7 +125,7 @@ console.log('\n시나리오 5-2 — 셔플에서 뒤로 가면 방금 본 말씀
         SRC.includes('if(stack.length>_VF_SHUF_MAX)stack.shift();'), true);
   // ⚠️ 보던 목록이 바뀌면 자취를 버린다 (다른 목록의 자리를 쓰면 엉뚱해진다)
   sc.eq('목록이 바뀌면 자취를 버린다',
-        /function _vfSetNav\(list,idx,label,kind\)\{\s*\n\s*_vfShufReset\(\);/.test(SRC), true);
+        /function _vfSetNav\(list,idx,label,kind,atCollection\)\{\s*\n\s*_vfShufReset\(\);/.test(SRC), true);
   sc.eq('목록을 지울 때도 버린다', SRC.includes('function _vfClearNav(){_vfShufReset();'), true);
 
   // ── 실제로 돌려 본다 ──
