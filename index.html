@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-3  [production]  -->
+<!-- BLOCK7  v. 26-0904-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -849,7 +849,18 @@ header{
   display:flex;flex-direction:column;align-items:center;gap:3px;
   color:var(--vf-tx2,var(--tx2));   /* 기본 회색 */
   -webkit-tap-highlight-color:transparent;transition:transform .12s;
+  position:relative;                /* 아래 ::after(넓힌 누름 자리)의 기준 */
 }
+/* ── 누를 수 있는 자리를 손끝만큼 넓힌다 (v26-0904-4, HB — "저장 버튼이 종종
+   안 눌려") ──
+   ⚠️ 버튼 자체에 padding 을 주면 **안 된다.** 공유 이미지가 이 버튼들의 실제
+      상자(getBoundingClientRect)를 재서 BLOCK7 서명 자리를 잡기 때문에
+      (_shotDraw), 상자가 커지면 이미지 쪽 서명이 밀린다.
+      그래서 자리를 전혀 차지하지 않는 투명한 덧자리만 넓힌다.
+   ⚠️ 위아래로 넓히는 양은 버튼 사이 간격(.vf-actions 의 gap)의 **절반보다
+      작아야** 한다 — 그보다 크면 이웃 버튼의 자리를 덮어 위쪽 버튼이 오히려
+      안 눌린다. 화면이 낮아 gap 이 줄어드는 아래 media 들에서 함께 줄인다. */
+.vf-act::after{content:'';position:absolute;left:-12px;right:-14px;top:-6px;bottom:-6px;}
 .vf-act:active{transform:scale(.88);}
 .vf-act.pop{animation:vfPop .32s ease;}
 @keyframes vfPop{0%{transform:scale(1);}40%{transform:scale(1.28);}100%{transform:scale(1);}}
@@ -898,20 +909,38 @@ header{
    BLOCK7 에도 꺼내 볼 자리가 생겼다 (좌상단 말씀메뉴 → 말씀 저장 목록).
    자리는 **공유(종이비행기) 바로 위**로 통일했다. */
 /* 저장 폴더 목록 — 순환·셔플 바로 아래에서 모든 전체화면에 보인다. */
-.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;z-index:14;
+/* ⚠️ 좌상단 세로줄의 차례는 위에서부터 **순환·셔플(12) → 말씀 모음 설정(50)
+   → 저장 폴더 책갈피(88)** 이고, 책갈피가 여는 목록은 그 아래(122)에서 펼쳐진다
+   (v26-0904-4, HB). 한 자리를 옮기면 아래 세 값을 함께 옮겨야 줄이 안 어긋난다. */
+.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 88px);left:14px;z-index:14;
   width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
 .vf-home:active{opacity:.5;}
 @media(hover:none){.vf-home{opacity:.3;}}
+/* 말씀 모음 설정 (v26-0904-4, HB) — '현재 말씀 모음' 팝업 좌상단의 그 아이콘
+   그대로. 색·투명도는 순환·셔플·책갈피·닫기와 **똑같이** 둔다. */
+.vf-collset{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;z-index:14;
+  width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
+  -webkit-tap-highlight-color:transparent;}
+.vf-collset:active{opacity:.5;}
+@media(hover:none){.vf-collset{opacity:.3;}}
 .vf-toplabel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);
   z-index:11;max-width:56%;font-size:12px;color:var(--vf-tx2,var(--tx2));white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.02em;
   align-items:center;justify-content:center;}
 .vf-toplabel.vf-keep-title{pointer-events:auto;cursor:pointer;}
-.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 84px);left:14px;
+/* ⚠️ 배경은 **반투명 + 블러**다 (v26-0904-4, HB) — 뒤에 떠 있는 말씀·명제
+   글자가 어렴풋이 비쳐야 한다. 그래서 그라디언트(--vf-bgimg)를 그대로 쓰지
+   못한다. 그림에는 투명도를 줄 수 없어서, 테마의 **첫 색 한 가지**(--vf-bg1)를
+   따로 흘려보내 그것에 투명도를 준다 (applyVfTheme 참고).
+   머리줄(.vf-keep-head)은 목록이 그 아래로 지나가므로 더 진하게 둔다. */
+.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 122px);left:14px;
   width:min(230px,calc(100vw - 66px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
-  padding:5px 6px;background:var(--vf-bgimg,var(--bg));color:var(--vf-tx,var(--tx));
+  padding:5px 6px;color:var(--vf-tx,var(--tx));
+  background:color-mix(in srgb,var(--vf-bg1,var(--bg)) 52%,transparent);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
   border:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 38%,transparent);
   border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
   opacity:0;transform:translateY(-7px) scale(.985);transform-origin:top left;
@@ -920,7 +949,9 @@ header{
 .vf-keep-switch.open{opacity:1;transform:translateY(0) scale(1);visibility:visible;pointer-events:auto;
   transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1),visibility 0s;}
 .vf-keep-head{position:sticky;top:-5px;z-index:1;margin:-5px -6px 4px;padding:7px 9px;
-  background:var(--vf-bgimg,var(--bg));border-bottom:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 22%,transparent);}
+  background:color-mix(in srgb,var(--vf-bg1,var(--bg)) 78%,transparent);
+  -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);
+  border-bottom:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 22%,transparent);}
 .vf-keep-sort{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;}
 .vf-keep-sort button{border:0;background:none;padding:3px 1px;color:var(--vf-tx3,var(--tx3));
   font:400 10px/1.2 var(--font-ui);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -962,21 +993,25 @@ header{
    공유 이미지는 화면을 그대로 옮겨 그리므로 카드에도 같이 반영된다. */
 @media (max-height:760px){
   .vf-actions{gap:10px;}
+  .vf-act::after{top:-4px;bottom:-4px;}
   .vf-ic svg{width:22px;height:22px;}
   .vf-cnt{font-size:10px;}
 }
 @media (max-height:620px){
   .vf-actions{gap:7px;}
+  .vf-act::after{top:-3px;bottom:-3px;}
   .vf-ic svg{width:19px;height:19px;}
   .vf-cnt{font-size:9px;}
 }
 @media (max-height:500px){
   .vf-actions{gap:5px;}
+  .vf-act::after{top:-2px;bottom:-2px;}
   .vf-ic svg{width:16px;height:16px;}
   .vf-cnt{font-size:8px;}
 }
 @media (max-height:400px){
   .vf-actions{gap:3px;}
+  .vf-act::after{top:-1px;bottom:-1px;}
   .vf-ic svg{width:14px;height:14px;}
   .vf-cnt{font-size:7px;}
 }
@@ -1024,6 +1059,18 @@ header{
 .vf-nav-d i{transform:rotate(135deg);}
 @media (hover:hover) and (pointer:fine){
   .vf-nav:hover i{opacity:.8;}
+}
+/* ⚠️ v26-0904-4, HB — 위·아래 1/4 **탭**으로 넘기는 것은 **PC 에서만**이다.
+   폰·태블릿에서는 손가락으로 밀어 넘기면 되는데, 넘기려다 살짝 스친 것까지
+   탭으로 읽혀 말씀이 제멋대로 넘어갔다. 터치 기기에서는 이 영역을 아예
+   통과시킨다 (pointer-events:none) — 그러면 _initVerseFullGestures 의
+   `e.target.closest('.vf-nav')` 도 걸리지 않아 이동이 일어나지 않는다.
+   눌러도 아무 일이 없는 화살표는 남겨 둘 까닭이 없어 함께 감춘다.
+   ⚠️ 손가락 세로 드래그(밀어 넘기기)와 더블탭 좋아요는 #verseFull 이 직접
+      받으므로 그대로 살아 있다. */
+@media (hover:none) and (pointer:coarse){
+  .vf-nav{pointer-events:none;}
+  .vf-nav i{display:none;}
 }
 /* ── 말씀 타일 그리드 (필터 → 인스타형 타일뷰) ──
    z-index 195: 전체화면(190) 위, 말씀 메뉴(.task-menu 200) 아래 */
@@ -3766,7 +3813,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    ⚠️ v26-0831-19, HB — 고른 것은 **줄 전체의 음영**으로 나타낸다.
       왼쪽 체크 자리는 '내순서' 의 끌 손잡이가 쓴다. */
 .keep-pick-row{display:flex;align-items:center;gap:8px;padding:9px 8px;cursor:pointer;
-  font-size:12.5px;color:var(--tx);border-bottom:1px solid var(--bd);border-radius:7px;}
+  font-size:12.5px;color:var(--tx);border-bottom:1px solid var(--bd);border-radius:7px;
+  /* 고른 표시는 스르르 든다 — 자리를 옮기는 움직임(_keepFlipRender)과 함께
+     보이므로 딱 켜지면 두 움직임이 따로 논다 (v26-0904-4, HB) */
+  transition:background-color .22s ease;}
 .keep-pick-row:last-child{border-bottom:0;}
 .keep-pick-row.on{background:var(--s2,rgba(127,127,127,.16));}
 .keep-drag-zone [data-keepname]{touch-action:pan-y;}
@@ -4009,7 +4059,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-3";
+const APP_VERSION = "v. 26-0904-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5250,7 +5300,7 @@ window._fbScriptsReady=new Promise(resolve=>{
             <span class="img-ic-row">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z"/><path d="M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6Q16.5 17 21 18.5V5.5Q16.5 3.6 12 5.5Q7.5 3.6 3 5.5Z"/><path d="M12 5.5v13.1"/></svg>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
             </span>
@@ -5951,6 +6001,11 @@ window._fbScriptsReady=new Promise(resolve=>{
   <button class="vf-home" id="vfHomeBtn" onclick="event.stopPropagation();vfHomeAction()" aria-label="저장 폴더 목록">
     <svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>
   </button>
+  <!-- 말씀 모음 설정 — '현재 말씀 모음' 팝업 좌상단의 그 아이콘·그 자리 (v26-0904-4, HB).
+       순환·셔플 아래, 저장 폴더 책갈피 위. -->
+  <button class="vf-collset" id="vfCollSetBtn" onclick="event.stopPropagation();vfOpenCollSettings()" aria-label="말씀 모음 설정">
+    <svg width="18" height="18" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
+  </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
   <div class="vf-keep-switch" id="vfKeepSwitchBox" style="display:none;"></div>
   <!-- 순환·셔플 전환. 닫기와 같은 높이의 좌상단 대칭 자리에 둔다. -->
@@ -5993,7 +6048,7 @@ window._fbScriptsReady=new Promise(resolve=>{
     </button>
     <button class="vf-act vf-act-deeper" id="vfActdeeper" onclick="vfAct('deeper')" aria-label="Deeper">
       <span class="vf-ic">
-        <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z"/><path d="M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z"/></svg>
+        <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6Q16.5 17 21 18.5V5.5Q16.5 3.6 12 5.5Q7.5 3.6 3 5.5Z"/><path d="M12 5.5v13.1"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>
       </span><span class="vf-cnt" id="vfCntdeeper">0</span>
     </button>
@@ -6482,7 +6537,7 @@ function ALL_VERSES(){
     //    (_findVerseByRefLoose → ALL_VERSES → 여기)
     return{idx:NAVIGATOR_VERSES.length+1+i,catNo,cat:catName,no:i+1,
            topic:c.topic||'',krText:c.krText||'',ref:c.ref||'',enText:c.enText||'',
-           tags:c.tags||[],hi:c.hi||'',d:c.d||'',pid:c.pid||'',kind:c.kind||'',
+           tags:c.tags||[],hi:c.hi||'',hi2:c.hi2||'',d:c.d||'',pid:c.pid||'',kind:c.kind||'',
            books:c.books||[],refs:c.refs||[],_code:c._code||''};
   });
   return NAVIGATOR_VERSES.concat(mapped);
@@ -6696,7 +6751,7 @@ function ACTIVE_VERSES(){
     // ⚠️ 여기서 구절을 **정해진 항목만 골라 새로 조립**한다. 새 항목을 만들면
     //    이 줄에 넣어야 화면까지 온다. (강조 문구 hi 가 실제로 여기서 막혔다)
     return{idx:i+1,catNo,cat,no:i+1,topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
-           enText:v.enText||'',tags:v.tags||[],hi:v.hi||'',
+           enText:v.enText||'',tags:v.tags||[],hi:v.hi||'',hi2:v.hi2||'',
            // d = 시트의 날짜. Sweeter 의 '최근 설교' 타일이 최신순으로 세우는 데 쓴다.
            // pid/kind = 명제집에서 온 항목 표시. 여기 없으면 화면까지 오지 않는다.
            d:v.d||'',pid:v.pid||'',kind:v.kind||'',
@@ -7632,7 +7687,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const dChanged=it.pid?(String(ex.d||'')!==String(it.d||'')):(!!it.d&&ex.d!==it.d);
       // 강조 문구도 함께 본다 — 시트를 채워 나가는 중이라 나중에 적은 것도
       // 다시 동기화하면 반영돼야 한다
-      const newHi=String(it.hi||'');
+      const newHi=String(it.hi||''),newHi2=String(it.hi2||'');
       // ⚠️ v26-0831-14, HB 신고 — 장절·설교 본문·성경권을 **견주지 않아서**,
       //    시트를 다시 받아도 이미 있던 항목의 장절이 예전 값 그대로 남았다.
       //    (열이 '장절/단락' → '설교 본문' 으로 바뀌었는데 화면은 안 바뀌던 까닭)
@@ -7645,10 +7700,14 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const refsChanged=JSON.stringify(ex.refs||[])!==JSON.stringify(newRefs);
       const booksChanged=JSON.stringify(ex.books||[])!==JSON.stringify(newBooks);
       const changed=ex.krText!==it.krText||ex.cat!==newCat||ex.topic!==newTopic||
-        JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||String(ex.hi||'')!==newHi||dChanged||
+        JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||String(ex.hi||'')!==newHi||
+        String(ex.hi2||'')!==newHi2||dChanged||
         refChanged||refsChanged||booksChanged;
       if(changed){
         ex.krText=it.krText;ex.cat=newCat;ex.topic=newTopic;ex.tags=newTags;ex.hi=newHi;
+        // 대표 문구 2 는 **비면 지운다** — 시트에서 지웠는데 앱에 남아 있으면
+        // 그 명제만 계속 둘 중 하나가 무작위로 뜬다.
+        if(newHi2)ex.hi2=newHi2; else delete ex.hi2;
         if(dChanged)ex.d=it.d||'';
         if(refChanged)ex.ref=newRef;
         if(refsChanged){ if(newRefs.length)ex.refs=newRefs.slice(); else delete ex.refs; }
@@ -7664,6 +7723,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const isProp=!!it.pid;
       const nv={cat:newCat,topic:newTopic,krText:it.krText,ref:it.ref,tags:newTags,
                 hi:String(it.hi||''),src:'google',d:isProp?(it.d||''):(it.d||_calKey())};
+      if(it.hi2)nv.hi2=String(it.hi2);   // 대표 문구 2 (있는 명제만)
       if(gid)nv.gid=gid;
       if(it.row)nv.row=it.row;
       if(it.pid){nv.pid=it.pid;nv.kind='prop';}   // 명제집에서 온 항목
@@ -7895,7 +7955,15 @@ function _propRowsToItems(rows){
   const iDate=col('날짜');
   const iCat=col('카테고리','예배');
   const iTitle=col('설교 제목');
-  const iHi=col('대표 문구');
+  // ⚠️ v26-0904-4, HB — 대표 문구는 **둘까지** 적을 수 있다.
+  //    시트의 열이 '대표 문구' 하나에서 '대표 문구 1'·'대표 문구 2' 둘로 갈렸다.
+  //    ① 옛 시트('대표 문구' 하나)도 그대로 읽는다 — 첫째 자리로 들어온다.
+  //    ② 둘 다 있으면 전체화면에 띄울 때 그중 하나가 무작위로 선다 (_vfRollProp).
+  //    ⚠️ 이름을 견주는 차례가 중요하다. col() 은 정확히 같은 이름을 먼저 찾고
+  //       없으면 '포함' 으로 찾으므로, '대표 문구 1' 을 **먼저** 적어야
+  //       '대표 문구' 가 '대표 문구 2' 열을 집어가지 않는다.
+  const iHi=col('대표 문구 1','대표 문구');
+  const iHi2=col('대표 문구 2');
   const iTags=col('주제 태그','태그');
   const iBooks=col('성경권');
   const iSermon=col('설교 본문'),iOldRef=col('장절/단락'),iQuote=col('인용 본문');
@@ -7919,6 +7987,7 @@ function _propRowsToItems(rows){
   // 무엇을 어느 열에서 읽었는지 남겨 둔다 — 값이 이상할 때 콘솔에서 바로 본다
   try{ window.__propCols={명제ID:h[iId],명제:h[iText],날짜:h[iDate]||'(없음)',
     카테고리:h[iCat]||'(없음)',설교제목:h[iTitle]||'(없음)',대표문구:h[iHi]||'(없음)',
+    대표문구2:h[iHi2]||'(없음)',
     주제태그:h[iTags]||'(없음)',성경권:h[iBooks]||'(없음)',
     설교본문:h[iSermon]||h[iOldRef]||h[iQuote]||'(없음)'}; }catch(_){}
   const items=[];
@@ -7942,7 +8011,8 @@ function _propRowsToItems(rows){
       refs:_propRefs(refCell(r)),
       ref:_propRefs(refCell(r)).join(' · '),
       tags:tagsRaw?tagsRaw.split(/[,;]/).map(t=>t.trim()).filter(Boolean):[],
-      hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 = 강조 문구 자리
+      hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 1 (= 강조 문구 자리)
+      hi2:iHi2>=0?String(r[iHi2]||'').trim():'',// 대표 문구 2 (비면 하나만 쓰는 명제다)
       // ⚠️ 명제는 한 칸에 본문이 여럿 들어온다 ("롬 5:8; 엡 2:8-9").
       //    여러 권이면 **그 권마다 다 걸린다**.
       //    ⚠️ v26-0831-21 — 시트의 '성경권' 열은 **읽지 않는다** (_propBooks 참고).
@@ -8306,6 +8376,7 @@ async function _generateUniqueShareCode(){
 function _sharedVerseOut(v){
   const o={cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
            tags:v.tags||[],hi:String(v.hi||''),d:v.d||''};
+  if(v.hi2)o.hi2=String(v.hi2);           // 대표 문구 2 — 안 실으면 구독자에겐 늘 하나만 뜬다
   if(v.pid){o.pid=v.pid;o.kind='prop';}   // 명제집에서 온 항목
   // 성경권 — 한 명제가 여러 권에 걸린다. 안 실으면 구독자에게서 성경별이 어긋난다.
   if(v.books&&v.books.length)o.books=v.books.slice();
@@ -8318,6 +8389,7 @@ function _sharedVerseOut(v){
 function _sharedVerseIn(v){
   const o={cat:v.cat||'나의 암송',topic:v.topic||'',krText:v.krText||'',ref:v.ref||'',
            tags:v.tags||[],hi:String(v.hi||''),src:'shared',d:v.d||''};
+  if(v.hi2)o.hi2=String(v.hi2);           // 대표 문구 2
   if(v.pid){o.pid=v.pid;o.kind='prop';}
   // 성경권 — 한 명제가 여러 권에 걸린다. 안 실으면 구독자에게서 성경별이 어긋난다.
   if(v.books&&v.books.length)o.books=v.books.slice();
@@ -11876,7 +11948,11 @@ const _CARD_ICONS={
   // 체크는 획으로만 그린다 — 칠하면 얇은 삼각형이 되어 체크로 안 보인다.
   //   눌린 상태는 색을 채우는 대신 **획을 굵게** 해서 나타낸다.
   mem:{p:['M5 12.6l4.6 4.6L19 6.4'],line:true,sw:2,swOn:3.1},
-  deeper:{out:['M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z'],fill:['M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z']},
+  // ⚠️ v26-0904-4, HB 신고 — "책 가운데 선만 색이 더 진하다."
+  //    예전엔 좌·우 반쪽을 각각 **닫힌 도형**으로 그렸는데, 두 반쪽이 가운데
+  //    세로선(x=12)을 **똑같이 한 번씩** 그어서 그 한 줄만 두 겹이 됐다.
+  //    → 바깥 테두리 하나 + 가운데 세로선 하나로 가른다. 모양은 그대로다.
+  deeper:{out:['M3 5.5v13Q7.5 17 12 18.6Q16.5 17 21 18.5V5.5Q16.5 3.6 12 5.5Q7.5 3.6 3 5.5Z','M12 5.5v13.1'],fill:['M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z','M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z']},
   even:{out:['M5 6l7 6 7-6','M5 13l7 6 7-6'],fill:['M5 5 L19 5 L12 12 Z','M5 13 L19 13 L12 20 Z']},
   share:{out:['M22 2 11 13','M22 2 15 22 11 13 2 9 22 2Z']},
   keep:{p:['M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z']}
@@ -12693,7 +12769,8 @@ function _vfRollVariant(){
 //    → 무작위(좌·중앙)는 그대로 두고, **줄을 가른 명제만** 가운데로 세운다.
 //    ⚠️ 우정렬은 예전에 뺐다 (HB 26-0831). 되살리지 말 것.
 const _VF_PT_ALIGN=['al-l','al-c'];
-let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1;
+// _vfPropHiIdx = 대표 문구가 둘일 때 이번에 세울 쪽 (0 또는 1)
+let _vfPropAlign='al-c',_vfPropAng=0,_vfPropSeed=1,_vfPropHiIdx=0;
 // ⚠️ v26-0901-6 — 가운데로 세울지는 **본문이 몇 줄이 되는가**로 정한다
 //    (_vfPropMid, _vfLayoutPropText 안에서 정해진다). 대표 문구 길이로 정하던
 //    옛 판정(_vfPropWide)은 없앴다 — HB 규칙의 주어는 본문이다.
@@ -12837,7 +12914,11 @@ function _ptWarmup(){
     const seen=new Set();
     (ALL_VERSES()||[]).forEach(v=>{
       if(!_vfIsProp(v))return;
-      String(v.hi||'').split('').forEach(c=>{if(c.trim())seen.add(c);});
+      // ⚠️ 대표 문구 **둘 다** 데운다 (v26-0904-4). 하나만 데우면 둘째 문구가
+      //    뽑힌 명제에서 글자가 잠깐 비어 보인다.
+      _propHiList(v).forEach(t=>{
+        t.split('').forEach(c=>{if(c.trim())seen.add(c);});
+      });
     });
     if(!seen.size)return;
     // ⚠️ 켜 둔 글씨체를 **모두** 데운다. 하나만 데우면 다음 명제에서 다른
@@ -12950,6 +13031,20 @@ function _vfRollProp(){
   _vfPropAlign=_VF_PT_ALIGN[Math.floor(Math.random()*_VF_PT_ALIGN.length)];
   _vfPropAng=((Math.random()-.5)*1.5).toFixed(2);   // -0.75°~+0.75° — 손으로 얹은 듯만
   _vfPropSeed=Math.floor(Math.random()*1e9)||1;
+  _vfPropHiIdx=Math.floor(Math.random()*2);         // 대표 문구가 둘이면 그중 하나
+}
+// ── 대표 문구가 둘인 명제 (v26-0904-4, HB) ─────────────────────────
+// 시트의 '대표 문구 1'·'대표 문구 2' 두 열이 여기로 온다 (hi · hi2).
+// 하나만 적힌 명제는 예전과 한 글자도 다르지 않다 — 둘 다 있을 때만 갈린다.
+// ⚠️ 어느 쪽을 쓸지는 **_vfRollProp 한 곳에서만** 뽑는다. 그리는 쪽에서 뽑으면
+//    글자 크기를 다시 잡을 때마다 문구가 바뀌어 눈앞에서 글이 갈아엎어진다
+//    (자리·기울기를 여기서 뽑는 것과 같은 까닭이다).
+function _propHiList(v){
+  return[String((v&&v.hi)||'').trim(),String((v&&v.hi2)||'').trim()].filter(Boolean);
+}
+function _propHiPick(v){
+  const a=_propHiList(v);
+  return a.length>1?a[_vfPropHiIdx%a.length]:(a[0]||'');
 }
 // 이 구절이 명제인가. pid 가 있으면 명제다 (kind 는 pid 에서 파생된다)
 function _vfIsProp(v){return !!(v&&(v.pid||v.kind==='prop'));}
@@ -13050,6 +13145,11 @@ function _vfBgCss(t){
   if(t.bg.length===1)return t.bg[0];
   return`linear-gradient(${t.ang||165}deg,${t.bg.join(',')})`;
 }
+// 배경의 첫 색 한 가지 (그라디언트가 아니라 **색**). 반투명하게 깔아야 하는
+// 곳이 쓴다 — 그림(linear-gradient)에는 color-mix 로 투명도를 줄 수 없다.
+function _vfBg1Css(t){
+  return(t&&t.bg&&t.bg.length)?t.bg[0]:'var(--bg)';
+}
 // 세리프(고운바탕)는 선택했을 때만 내려받는다. 한글 폰트는 완본이 수 MB라
 // Google Fonts 동적 서브셋(실제 쓰인 글자 조각만)으로 받아야 한다.
 function _vfEnsureFont(kind){
@@ -13067,7 +13167,9 @@ function applyVfTheme(){
   const t=_vfTheme();
   const fam=(t.font==='serif')?VF_SERIF:VF_SANS;
   const vars={
-    '--vf-bgimg':_vfBgCss(t),'--vf-tx':t.tx,'--vf-tx2':t.tx2,'--vf-tx3':t.tx3,
+    // --vf-bg1 = 배경의 **첫 색 한 가지**. 그라디언트(--vf-bgimg)에는 투명도를
+    //   줄 수 없어서, 반투명 유리처럼 보여야 하는 곳(저장 폴더 목록)이 이 값을 쓴다.
+    '--vf-bgimg':_vfBgCss(t),'--vf-bg1':_vfBg1Css(t),'--vf-tx':t.tx,'--vf-tx2':t.tx2,'--vf-tx3':t.tx3,
     '--vf-ac':t.ac,'--vf-tile':t.tile,'--vf-font':fam,'--vf-fw':String(t.fw),
     '--hi-fw':String(_hiFw(t.font)),
     '--vf-ls':t.ls||'0','--vf-grain':String(t.grain||0),'--vf-vig':String(t.vig||0),
@@ -13307,6 +13409,15 @@ function _vfSetNav(list,idx,label,kind){
 function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfSyncTopBar();}
 function vfHomeAction(){
   toggleVfKeepSwitch();
+}
+// 좌상단 '말씀 모음 설정' (v26-0904-4, HB) — 말씀설정 → 말씀 모음 탭.
+// ⚠️ 되돌아갈 팝업(_vsetBackTo)을 **비워 둔다.** 전체화면은 닫히지 않고 설정창
+//    (z-index 4000) 아래에 그대로 있으므로, 설정을 닫으면 저절로 다시 보인다.
+//    여기에 'verseList' 같은 값을 넣으면 닫을 때 엉뚱한 목록이 위로 떠오른다.
+function vfOpenCollSettings(){
+  closeVfKeepSwitch();
+  _vsetBackTo=null;_vsetBackId=null;
+  _vsetGoColl();
 }
 function closeVfKeepSwitch(){
   const box=document.getElementById('vfKeepSwitchBox');if(box)box.classList.remove('open');
@@ -13951,7 +14062,7 @@ function _ptDrawnLines(el){
 function _vfRenderPropTitle(v){
   const el=document.getElementById('vfPTitle');
   if(!el)return;
-  const t=_vfIsProp(v)?String(v.hi||'').trim():'';
+  const t=_vfIsProp(v)?_propHiPick(v):'';
   if(!t){el.className='vf-ptitle';el.innerHTML='';return;}
   // ⚠️ 이 명제의 글씨체를 **먼저** 정한다 — 아래 받기·재기가 이 값을 본다
   _vfPropFont=_ptFontFor(v);
@@ -14227,7 +14338,8 @@ function _initVerseFullGestures(){
   // 70px 넘겨 놓으면 커밋(_vfNavCommit), 못 미치면 스냅백.
   const inner0=()=>document.getElementById('verseFullInner');
   const COMMIT=70;
-  let sx=0,sy=0,dy=0,dir=null,dragging=false,lt=null;
+  // onAct = 이 터치가 우하단 반응 단추 위에서 시작했는가 (아래 touchstart 참고)
+  let sx=0,sy=0,dy=0,dir=null,dragging=false,lt=null,onAct=false;
   const snapBack=()=>{
     const iv=inner0(),bt=_vfBottomEl();
     if(iv){iv.style.transition=_VF_TR;iv.style.transform='translateY(0)';}
@@ -14235,8 +14347,17 @@ function _initVerseFullGestures(){
     if(iv)setTimeout(()=>{if(iv&&!iv._busy)iv.style.transition='';},220);
   };
   const stopLt=()=>{if(lt){clearTimeout(lt);lt=null;}};
-  const dropDrag=()=>{stopLt();_vfLongFired=false;if(dragging){snapBack();dragging=false;}dir=null;};
+  const dropDrag=()=>{stopLt();_vfLongFired=false;if(dragging){snapBack();dragging=false;}dir=null;onAct=false;};
   el.addEventListener('touchstart',e=>{
+    // ⚠️ v26-0904-4, HB 신고 — "저장 버튼이 종종 안 눌려."
+    //    까닭은 이렇다: 손끝은 누르는 동안 10px 쯤 저절로 흔들린다. 그러면 아래
+    //    touchmove 가 그것을 **세로 드래그의 시작**으로 읽고, touchend 에서
+    //    preventDefault 를 하며 스냅백만 하고 끝난다 — 70px 에 못 미쳐 말씀도
+    //    안 넘어가고, 클릭도 안 생겨 단추가 아무 일도 하지 않는다.
+    //    → 우하단 반응 단추 위에서 시작한 터치는 **드래그로 키우지 않는다.**
+    //      (밀어서 넘기기는 화면의 나머지 온 데서 그대로 된다)
+    //    ⚠️ 아래 어느 갈래로 빠지든 값이 남지 않도록 **맨 첫 줄에서** 정한다.
+    onAct=!!(e.target&&e.target.closest&&e.target.closest('.vf-act'));
     const iv=inner0();if(iv&&iv._busy)return;        // 커밋 애니 중엔 새 드래그 금지
     // ⚠️ 핀치 중이거나 방금 끝났으면 손대지 않는다. 두 손가락은 동시에 떨어지지
     //    않아서, 남은 한 손가락이 "새로 미는 손가락"으로 읽히면 말씀이 넘어간다.
@@ -14258,6 +14379,7 @@ function _initVerseFullGestures(){
     if(dir===null){
       if(Math.abs(ddx)<10&&Math.abs(ddy)<10)return;
       if(lt){clearTimeout(lt);lt=null;}
+      if(onAct){dir='h';return;}                      // 반응 단추 위 — 흔들림은 탭이다
       dir=Math.abs(ddy)>=Math.abs(ddx)?'v':'h';       // 세로 우세면 드래그, 가로면 무시
       if(dir==='v'){const iv=inner0();if(iv)iv.style.transition='none';dragging=true;}
     }
@@ -17715,8 +17837,11 @@ function _keepSortRowHTML(){
   return '<div class="keep-sortrow">'+h+'</div>';
 }
 // 차례가 바뀌면 지금 떠 있는 자리를 모두 다시 그린다
+// ⚠️ 고르기 창은 **자리를 옮기는 움직임**으로 다시 그린다 (v26-0904-4, HB) —
+//    정렬 칩을 바꿀 때도 폴더를 고를 때와 같은 곡선으로 줄들이 미끄러진다.
 function _keepRepaintLists(){
-  try{ if(document.getElementById('keepPickModal').style.display!=='none')_renderKeepPicker(); }catch(_){}
+  try{ if(document.getElementById('keepPickModal').style.display!=='none')
+         _keepFlipRender(document.getElementById('keepPickBody'),_renderKeepPicker); }catch(_){}
   try{ const b=document.getElementById('logoMenuKeepSub');
        if(b&&b.style.display!=='none')_renderKeepSubMenu(); }catch(_){}
   try{ if(document.getElementById('keepSwitchBox').style.display!=='none')_renderKeepSwitch(); }catch(_){}
@@ -18013,12 +18138,49 @@ function _renderKeepPicker(){
   }).join('')+`</div>`;
   if(drag)_keepBindDrag(document.getElementById('keepPickRows'));
 }
+// ── 목록이 자리를 옮길 때의 움직임 (v26-0904-4, HB) ──
+// '최신순' 에서 폴더를 고르면 그 줄이 맨 위로 올라가고, 고르기를 풀면 제자리로
+// 돌아간다. 예전에는 다시 그리는 순간 **순간이동**해서 어느 줄이 어디로 갔는지
+// 눈으로 못 따라갔다.
+// → '내순서' 로 끌어 옮길 때(_keepBindDrag)와 **똑같은 방법·똑같은 곡선**을 쓴다:
+//   ① 옮기기 전 줄들의 자리를 재 둔다
+//   ② 다시 그린다 (차례는 이미 바뀌어 있다)
+//   ③ 각 줄을 옛 자리로 되돌려 놓고 0 으로 보낸다 — 그러면 고른 줄이 올라가는
+//      동안 나머지 줄들도 함께 밀려나며 따라온다 (FLIP).
+// ⚠️ 줄을 알아보는 열쇠는 data-keepname 이다. 목록 이름이 곧 그 줄의 신원이다.
+// ⚠️ innerHTML 을 갈아끼우면 스크롤이 맨 위로 튄다 — 재 둔 자리와 어긋나므로
+//    다시 그린 **직후, 재기 전에** 되돌려 놓는다.
+function _keepFlipRender(box,render){
+  if(typeof render!=='function')return;
+  if(!box){render();return;}                             // 창이 닫혀 있으면 그냥 그린다
+  const was=new Map();
+  box.querySelectorAll('[data-keepname]').forEach(r=>{
+    was.set(r.getAttribute('data-keepname'),r.getBoundingClientRect().top);
+  });
+  const top=box.scrollTop;
+  render();
+  box.scrollTop=top;
+  box.querySelectorAll('[data-keepname]').forEach(r=>{
+    const o=was.get(r.getAttribute('data-keepname'));
+    if(o==null)return;                                   // 방금 생긴 목록 — 그냥 나타난다
+    const dy=o-r.getBoundingClientRect().top;
+    if(!dy)return;
+    r.style.transition='none';
+    r.style.transform='translateY('+dy+'px)';
+    requestAnimationFrame(()=>{
+      r.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+      r.style.transform='';
+      // 끝나면 흔적을 지운다 — 남겨 두면 다음 끌기(_keepBindDrag)가 이 값을 물고 어긋난다
+      setTimeout(()=>{r.style.transition='';r.style.transform='';},_SW_SLIDE+80);
+    });
+  });
+}
 function keepPickToggle(name){
   if(!_keepPickRef)return;
   // ⚠️ v26-0831-20, HB 신고 — '내순서' 에서도 **고를 수 있어야** 한다.
   //    끌기는 손잡이(⠿)에서만 시작하므로 줄을 누르는 것과 겹치지 않는다.
   swKeepSet(_keepPickRef,name,!_swIsKept(_keepPickRef,name));
-  _renderKeepPicker();
+  _keepFlipRender(document.getElementById('keepPickBody'),_renderKeepPicker);
   _keepAfterChange();
 }
 function keepPickNew(){
@@ -18026,7 +18188,7 @@ function keepPickNew(){
   const n=(prompt('새 목록 이름')||'').trim();
   if(!n)return;
   swKeepSet(_keepPickRef,n,true);
-  _renderKeepPicker();
+  _keepFlipRender(document.getElementById('keepPickBody'),_renderKeepPicker);
   _keepAfterChange();
 }
 
@@ -18680,7 +18842,7 @@ function _vcThemeVars(cfg,ref){
   const v=p.variants[_vcHash(key+'|'+(ref||''))%p.variants.length];
   const fam=(p.font==='serif')?VF_SERIF:VF_SANS;
   return{font:p.font,vars:{
-    '--vf-bgimg':_vfBgCss({bg:v.bg,ang:p.ang}),'--vf-tx':v.tx,
+    '--vf-bgimg':_vfBgCss({bg:v.bg,ang:p.ang}),'--vf-bg1':_vfBg1Css({bg:v.bg}),'--vf-tx':v.tx,
     '--vf-tx2':_rgba(v.tx,.60),'--vf-tx3':_rgba(v.tx,.42),
     '--vf-ac':v.ac,'--vf-font':fam,'--vf-fw':String(p.fw),
     '--hi-fw':String(_hiFw(p.font)),
@@ -18745,7 +18907,7 @@ const _VC_ARROW_R='<svg width="15" height="15" viewBox="0 0 20 20" fill="none" s
 const _VC_ACT_SVG={
   like:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>',
   mem:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg><svg class="ic-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>',
-  deeper:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6V5.5Q7.5 3.6 3 5.5Z"/><path d="M21 5.5v13Q16.5 17 12 18.6V5.5Q16.5 3.6 21 5.5Z"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>',
+  deeper:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6Q16.5 17 21 18.5V5.5Q16.5 3.6 12 5.5Q7.5 3.6 3 5.5Z"/><path d="M12 5.5v13.1"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>',
   even:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>'
 };

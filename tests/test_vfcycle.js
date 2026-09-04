@@ -58,7 +58,23 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
   sc.eq('모바일도 태그 그림과 같은 투명도',
         SRC.includes('@media(hover:none){.vf-cycle,.vf-close{opacity:.3;}}'), true);
   sc.eq('필터가 있어도 버튼을 아래로 내리지 않는다', SRC.includes('vf-cycle-below'), false);
-  sc.eq('저장 폴더 버튼은 순환·셔플 바로 아래에 있어 겹치지 않는다', SRC.includes('.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;'), true);
+  // ⚠️ v26-0904-4, HB — 좌상단 세로줄에 '말씀 모음 설정'이 끼어들었다.
+  //    위에서부터 순환·셔플(12) → 말씀 모음 설정(50) → 저장 폴더 책갈피(88),
+  //    그리고 책갈피가 여는 목록이 그 아래(122)에서 펼쳐진다.
+  //    한 자리라도 어긋나면 버튼이 서로 겹쳐 아래 것이 안 눌린다.
+  const topAt = (cls, px) =>
+    SRC.includes(cls + '{position:absolute;top:calc(env(safe-area-inset-top,0px) + ' + px + 'px);left:14px;');
+  sc.eq('말씀 모음 설정은 순환·셔플 바로 아래', topAt('.vf-collset', 50), true);
+  sc.eq('저장 폴더 버튼은 그 아래', topAt('.vf-home', 88), true);
+  sc.eq('저장 폴더 목록은 다시 그 아래에서 펼쳐진다',
+        SRC.includes('.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 122px);left:14px;'), true);
+  sc.eq('말씀 모음 설정도 같은 색·투명도',
+        /\.vf-collset\{[\s\S]{0,300}color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
+  sc.eq('누르면 말씀설정의 말씀 모음 탭으로 간다',
+        SRC.includes('onclick="event.stopPropagation();vfOpenCollSettings()"'), true);
+  // 되돌아갈 팝업을 비워 둔다 — 설정을 닫으면 아래 깔린 전체화면이 그대로 보인다
+  sc.eq('되돌아갈 팝업을 비운다',
+        /function vfOpenCollSettings\(\)\{[\s\S]{0,200}?_vsetBackTo=null;_vsetBackId=null;[\s\S]{0,60}?_vsetGoColl\(\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 4 — 보이는 아이콘은 17×17, 버튼은 30×30이다');
