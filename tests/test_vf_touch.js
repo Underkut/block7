@@ -117,6 +117,26 @@ console.log('\n시나리오 5 — 화면 끝에 흰 줄이 생기지 않는다')
   //    테마에서 가장자리 색이 어긋난다. 배경 자체를 넓히는 것이 맞다.
   sc.eq('전체화면 규칙 자체에는 그림자를 쓰지 않는다',
         slice('#verseFull{', '\n}').replace(/\/\*[\s\S]*?\*\//g, '').includes('box-shadow'), false);
+
+  // ⚠️ v26-0904-6 — 위의 1px 넘겨 칠하기만으로는 HB 기기에서 안 잡혔다.
+  //    틈으로 보이는 것은 **앱 바탕**(html·body = var(--bg))인데 밝은 테마면
+  //    거의 흰색(#f5f6fa)이다. 그래서 전체화면이 떠 있는 동안엔 바탕도 같은
+  //    배경으로 칠해 둔다 — 어디서 한 줄이 새든 같은 색이 보인다.
+  sc.eq('전체화면이 떠 있으면 바탕(html)도 같은 배경',
+        SRC.includes('html.vf-open{background:var(--vf-page-bg,var(--bg));}'), true);
+  sc.eq('body 는 !important 라 같은 세기로 덮는다',
+        SRC.includes('html.vf-open body{background:var(--vf-page-bg,var(--bg)) !important;}'), true);
+  sc.eq('테마를 흘려보낼 때 바탕용 값도 함께',
+        SRC.includes("document.documentElement.style.setProperty('--vf-page-bg',vars['--vf-bgimg']);"), true);
+  // ⚠️ --vf-bgimg 를 뿌리에 얹으면 말씀 카드(.vc-body)가 할일 화면에서도 그 배경을
+  //    물려받아 색이 바뀐다. 그래서 바탕 전용 변수를 따로 둔다 — 합치지 말 것.
+  sc.eq('--vf-bgimg 를 뿌리에 얹지 않는다',
+        /documentElement\.style\.setProperty\('--vf-bgimg'/.test(SRC), false);
+  // 여닫는 네 곳에서 바탕을 맞춘다 (전체화면 열기·닫기, 타일뷰 열기·닫기)
+  sc.eq('네 곳에서 바탕을 맞춘다',
+        (SRC.match(/_vfSyncPageBg\(\);/g) || []).length, 4);
+  sc.eq('타일뷰가 남아 있으면 바탕을 되돌리지 않는다',
+        slice('function _vfSyncPageBg(){', '\n}').includes('_verseFullIsOpen()||(typeof _vgIsOpen'), true);
 }
 
 sc.done();
