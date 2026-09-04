@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-7  [production]  -->
+<!-- BLOCK7  v. 26-0904-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -930,16 +930,24 @@ header{
 /* 저장(책갈피) — v26-0831-11, HB: 두 제품 모두, 말씀도 명제도 늘 보인다.
    BLOCK7 에도 꺼내 볼 자리가 생겼다 (좌상단 말씀메뉴 → 말씀 저장 목록).
    자리는 **공유(종이비행기) 바로 위**로 통일했다. */
-/* 저장 폴더 목록 — 순환·셔플 바로 아래에서 모든 전체화면에 보인다. */
-/* ⚠️ 좌상단 세로줄의 차례는 위에서부터 **순환·셔플(12) → 말씀 모음 설정(50)
+/* 홈 — 필터·목록·지정 말씀에서 말씀 모음 전체로 돌아갈 때만 보인다.
+   순환·셔플 바로 오른쪽이며 색과 투명도도 같다. */
+/* 저장 폴더 목록은 모든 전체화면에 보인다.
+   ⚠️ 좌상단 세로줄의 차례는 위에서부터 **말씀 모음 설정(50)
    → 저장 폴더 책갈피(88)** 이고, 책갈피가 여는 목록은 그 아래(122)에서 펼쳐진다
    (v26-0904-4, HB). 한 자리를 옮기면 아래 세 값을 함께 옮겨야 줄이 안 어긋난다. */
-.vf-home{position:absolute;top:calc(env(safe-area-inset-top,0px) + 88px);left:14px;z-index:14;
+.vf-home{position:absolute;left:52px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:14;
   width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
 .vf-home:active{opacity:.5;}
 @media(hover:none){.vf-home{opacity:.3;}}
+.vf-keepmenu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 88px);left:14px;z-index:14;
+  width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
+  -webkit-tap-highlight-color:transparent;}
+.vf-keepmenu:active{opacity:.5;}
+@media(hover:none){.vf-keepmenu{opacity:.3;}}
 /* 말씀 모음 설정 (v26-0904-4, HB) — '현재 말씀 모음' 팝업 좌상단의 그 아이콘
    그대로. 색·투명도는 순환·셔플·책갈피·닫기와 **똑같이** 둔다. */
 .vf-collset{position:absolute;top:calc(env(safe-area-inset-top,0px) + 50px);left:14px;z-index:14;
@@ -4113,7 +4121,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-7";
+const APP_VERSION = "v. 26-0904-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6066,7 +6074,8 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 말씀 전체 화면 보기 — 릴스형 레이아웃
      중앙: 본문 / 하단 좌측: 대분류·소주제·태그 / 하단 우측: 세로 액션 스택 -->
 <div id="verseFull" style="display:none;">
-  <button class="vf-home" id="vfHomeBtn" onclick="event.stopPropagation();vfHomeAction()" aria-label="저장 폴더 목록">
+  <button class="vf-home" id="vfHomeBtn" style="display:none;" onclick="event.stopPropagation();vfHomeAction()" aria-label="말씀 모음 전체로 돌아가기"></button>
+  <button class="vf-keepmenu" id="vfKeepMenuBtn" onclick="event.stopPropagation();toggleVfKeepSwitch()" aria-label="저장 폴더 목록">
     <svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>
   </button>
   <!-- 말씀 모음 설정 — '현재 말씀 모음' 팝업 좌상단의 그 아이콘·그 자리 (v26-0904-4, HB).
@@ -13438,10 +13447,11 @@ let _vfOverrideVerse=null;
 // 타일뷰에서 들어온 경우, 그 타일 목록 안에서만 이전/다음으로 넘긴다.
 // (말씀설정의 기본 목록이 아니라 방금 보던 필터 결과를 따라간다)
 // kind 가 있으면 "반응 목록에서 들어온 것" — 상단 중앙에 그 반응 아이콘을 단다.
-// 좌상단 책갈피는 진입 경로와 무관하게 저장 폴더 목록을 연다.
+// 홈은 필터를 풀어 활성 말씀 모음 전체로 돌아가고, 책갈피는 별도 단추로 늘 보인다.
 let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 // 가로폭은 그대로, 세로선은 원래보다 약 1.2배 길게. 획은 한결 가는 1.2다.
 const _VF_KEEP_MENU_SVG='<svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
+const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
 // 성경순 다음/이전). '셔플' = 필터가 있으면 그 필터 안에서, 없으면
@@ -13524,7 +13534,10 @@ function _vfSetNav(list,idx,label,kind){
 }
 function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavKind=null;_vfSyncTopBar();}
 function vfHomeAction(){
-  toggleVfKeepSwitch();
+  closeVfKeepSwitch();
+  _vfOverrideVerse=null;
+  _vfClearNav();
+  _verseFullRender();
 }
 // 좌상단 '말씀 모음 설정' (v26-0904-4, HB) — 말씀설정 → 말씀 모음 탭.
 // ⚠️ 되돌아갈 팝업(_vsetBackTo)을 **비워 둔다.** 전체화면은 닫히지 않고 설정창
@@ -13563,7 +13576,7 @@ function toggleVfKeepSwitch(){
 }
 // 단추 재탭뿐 아니라 메뉴 밖의 어느 곳을 눌러도 닫는다.
 document.addEventListener('pointerdown',e=>{
-  const box=document.getElementById('vfKeepSwitchBox'),btn=document.getElementById('vfHomeBtn');
+  const box=document.getElementById('vfKeepSwitchBox'),btn=document.getElementById('vfKeepMenuBtn');
   if(box&&box.classList.contains('open')&&!box.contains(e.target)&&!(btn&&btn.contains(e.target)))closeVfKeepSwitch();
 },{passive:true});
 function _vfKeepNav(name,preferredRef){
@@ -13595,11 +13608,11 @@ function _vfSyncTopBar(){
       :'';
   }
   if(hb){
-    hb.style.display='flex';
-    hb.innerHTML=_VF_KEEP_MENU_SVG;
-    hb.setAttribute('aria-label','저장 폴더 목록');
+    hb.style.display=(_vfNavList||_vfOverrideVerse)?'flex':'none';
+    hb.innerHTML=_VF_HOME_SVG;
+    hb.setAttribute('aria-label','말씀 모음 전체로 돌아가기');
   }
-  // 순환·셔플과 그 아래 저장 폴더 단추는 모든 전체화면에서 유지한다.
+  // 순환·셔플과 저장 폴더 단추는 모든 전체화면에서 유지한다.
   _vfSyncCycleIcon();
 }
 function _vfCurrentVerse(){return _vfOverrideVerse||getVerseByIdx(ST.settings.verseCurrentIdx);}

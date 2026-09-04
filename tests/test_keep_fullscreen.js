@@ -20,17 +20,28 @@ console.log('\n시나리오 2 — 전체화면이 아래의 폴더 메뉴까지 
 
 console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더를 바꾼다');
 {
-  const action = slice('function vfHomeAction(){', 'function _vfSyncTopBar');
-  sc.eq('어느 진입 경로에서든 폴더 메뉴를 연다', action.includes('toggleVfKeepSwitch();'), true);
-  sc.eq('폴더 선택은 해당 폴더 항목으로 내비게이션을 다시 만든다', action.includes("_vfSetNav(list,i,name,'keep')"), true);
-  sc.eq('책갈피 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
+  const action = slice('function toggleVfKeepSwitch(){', 'function _vfKeepNav');
+  sc.eq('어느 진입 경로에서든 폴더 메뉴를 연다', SRC.includes('id="vfKeepMenuBtn" onclick="event.stopPropagation();toggleVfKeepSwitch()"'), true);
+  sc.eq('폴더 선택은 해당 폴더 항목으로 내비게이션을 다시 만든다', SRC.includes("_vfSetNav(list,i,name,'keep')"), true);
+  sc.eq('책갈피 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-keepmenu\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
   // v26-0904-4, HB — 순환·셔플(12) 과 책갈피(88) 사이에 '말씀 모음 설정'(50) 이
   // 들어왔다. 책갈피는 그만큼 아래로 내려갔다.
-  sc.eq('책갈피는 말씀 모음 설정 아래에 놓인다', /\.vf-home\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 88px\);left:14px/.test(SRC), true);
-  const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  sc.eq('진입 경로와 무관하게 책갈피를 표시한다', sync.includes("hb.style.display='flex';"), true);
+  sc.eq('책갈피는 말씀 모음 설정 아래에 놓인다', /\.vf-keepmenu\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 88px\);left:14px/.test(SRC), true);
+  sc.eq('진입 경로와 무관하게 책갈피를 표시한다', SRC.includes('id="vfKeepMenuBtn"'), true);
   sc.eq('책갈피는 가로를 유지하고 세로를 약 1.2배 늘린다', SRC.includes("const _VF_KEEP_MENU_SVG='<svg width=\"17\" height=\"20\""), true);
   sc.eq('책갈피 획은 이전보다 얇은 1.2다', /_VF_KEEP_MENU_SVG=.*stroke-width=\"1\.2\"/.test(SRC), true);
+}
+
+console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체로 돌아간다');
+{
+  const action = slice('function vfHomeAction(){', 'function vfOpenCollSettings');
+  sc.eq('필터 목록을 비운다', action.includes('_vfClearNav();'), true);
+  sc.eq('지정 말씀도 비운다', action.includes('_vfOverrideVerse=null;'), true);
+  sc.eq('전체화면을 곧바로 다시 그린다', action.includes('_verseFullRender();'), true);
+  const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
+  sc.eq('필터나 지정 말씀이 있을 때만 홈을 보인다', sync.includes("hb.style.display=(_vfNavList||_vfOverrideVerse)?'flex':'none';"), true);
+  sc.eq('홈은 순환·셔플 바로 오른쪽이다', /\.vf-home\{[^}]*left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
+  sc.eq('홈 색은 순환·셔플과 같다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');

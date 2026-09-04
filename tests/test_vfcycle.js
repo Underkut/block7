@@ -65,7 +65,7 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
   const topAt = (cls, px) =>
     SRC.includes(cls + '{position:absolute;top:calc(env(safe-area-inset-top,0px) + ' + px + 'px);left:14px;');
   sc.eq('말씀 모음 설정은 순환·셔플 바로 아래', topAt('.vf-collset', 50), true);
-  sc.eq('저장 폴더 버튼은 그 아래', topAt('.vf-home', 88), true);
+  sc.eq('저장 폴더 버튼은 그 아래', topAt('.vf-keepmenu', 88), true);
   sc.eq('저장 폴더 목록은 다시 그 아래에서 펼쳐진다',
         SRC.includes('.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 122px);left:14px;'), true);
   sc.eq('말씀 모음 설정도 같은 색·투명도',
