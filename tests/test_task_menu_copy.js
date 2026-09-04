@@ -73,10 +73,10 @@ console.log('\n시나리오 5 — 실제로 내일과 다음 주에 복제해 �
     const getBigs=(key)=>key==='today'?from:to;
     const getSmalls=(key)=>key==='today'?from:to;
     const make = new Function('_taskMenuCtx','tKey','addDays','viewDate','getBigs','getSmalls',
-      'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive','closeTaskMenu','showToast',
+      'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive','closeTaskMenu','_toastWithJump',
       `${DUP}; return duplicateTaskTo;`);
     const duplicate=make({type,secId:'am',idx:0},d=>d||'today',(_,d)=>d,
-      'today',getBigs,getSmalls,...['before','save','render','total','refresh','close','toast']
+      'today',getBigs,getSmalls,...['before','save','render','total','refresh','close','jump']
         .map(name=>(...args)=>calls.push([name,...args])));
     duplicate(days);
     return {from,to,calls};
@@ -89,11 +89,13 @@ console.log('\n시나리오 5 — 실제로 내일과 다음 주에 복제해 �
     {text:'전화하기',done:false,daily:true,flag:true,contactTask:true});
   sc.eq('사본에 이월 표시가 따라오지 않는다',
     'manualCarryCount' in tomorrow.to[0] || 'autoCarryCount' in tomorrow.to[0], false);
-  sc.eq('내일 복제 안내', tomorrow.calls.at(-1), ['toast','내일로 복제했어요']);
+  sc.eq('내일 복제 안내와 함께 갈 곳을 알려 준다', tomorrow.calls.at(-1),
+    ['jump','내일로 복제했어요',1,{key:1,secId:'am',type:'big',idx:0}]);
 
   const nextWeek=run('small',7);
   sc.eq('다음 주 작은 할일도 복제', nextWeek.to.length, 1);
-  sc.eq('다음 주 복제 안내', nextWeek.calls.at(-1), ['toast','다음 주로 복제했어요']);
+  sc.eq('다음 주 복제 안내', nextWeek.calls.at(-1),
+    ['jump','다음 주로 복제했어요',7,{key:7,secId:'am',type:'small',idx:0}]);
 }
 
 console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
@@ -104,19 +106,20 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
   const calls=[];
   const make = new Function('_taskMenuCtx','_datePickArmed','tKey','getBigs','getSmalls',
     'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive',
-    'closeTaskMenu_keepCtx','showToast','_moveDateToastMsg','_freshTaskCopy',
+    'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy',
     `${src}; return duplicateTaskToPickedDate;`);
   const rec=(name)=>(...args)=>{calls.push([name,...args]);};
   const freshCopy=new Function(`${DUP}; return _freshTaskCopy;`)();
   const dup=make({type:'big',secId:'am',idx:0},()=>true,()=>'today',
     (key)=>key==='today'?from:to,(key)=>key==='today'?from:to,
-    rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('toast'),
+    rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('jump'),
     (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy);
 
   dup('2026-09-20');
   sc.eq('원본은 그 자리에 남는다', from.length, 1);
   sc.eq('고른 날짜에 새 할일로 들어간다', to[0], {text:'세금 내기',done:false,flag:true});
-  sc.eq('복제라고 안내한다', calls.at(-1), ['toast','2026-09-20 am 복제']);
+  sc.eq('복제라고 안내하며 갈 곳도 알려 준다', calls.at(-1),
+    ['jump','2026-09-20 am 복제','2026-09-20',{key:'2026-09-20',secId:'am',type:'big',idx:0}]);
 
   // 달력을 연 지 200ms 안에 저 혼자 날아온 change 는 무시한다
   const to2=[];

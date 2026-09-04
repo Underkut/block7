@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0904-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -858,6 +858,36 @@ header{
 @keyframes toastSpin{to{transform:rotate(360deg);}}
 @keyframes toastBreathe{0%,100%{opacity:.85;}50%{opacity:1;}}
 .toast-spin{transform-origin:50% 50%;animation:toastSpin .9s linear infinite,toastBreathe 1.8s ease-in-out infinite;}
+/* 토스트 안의 동작 한 줄 — '보러 가기' / '돌아가기' (v26-0904-3, HB).
+   ⚠️ 토스트 자신은 pointer-events:none 이라 이 단추만 auto 로 되살린다.
+      테두리·박스 없이 글자와 화살표만 (UI 원칙). */
+.toast-act{
+  align-self:flex-end;background:none;border:none;padding:2px 0;margin:0;
+  /* 글자는 --ac 가 아니라 --ac-tx 다 — 어떤 테마에서는 --ac 가 배경과 붙어
+     글씨로는 안 읽힌다 (tests/test_theme_preset.js 가 지킨다). */
+  color:var(--ac-tx);font-family:inherit;font-size:13.5px;font-weight:600;line-height:1.2;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;
+  cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent;
+}
+.toast-act:active{opacity:.6;}
+/* 옮기거나 복제한 할일이 도착한 곳에서 한 번 반짝인다 (v26-0904-3, HB).
+   ⚠️ 바깥으로 번지는 빛(box-shadow)은 쓸 수 없다 — 할일 줄을 감싸는
+      .swipe-wrap 이 overflow:hidden 이라 **테두리 밖은 잘려서 아무것도 안 보인다.**
+      (실제로 그렇게 만들었다가 화면에서 확인하고 알았다.)
+   그래서 안쪽 테두리(inset)와, 원래 배경 위에 얹는 옅은 색만 쓴다.
+   배경색 자체는 건드리지 않는다 — 빅/스몰이 서로 다른 배경을 쓰고 있어서
+   배경을 바꾸면 한쪽에서만 표가 난다. */
+@keyframes taskFlashRing{
+  0%{box-shadow:inset 0 0 0 2px rgba(var(--ac-rgb),0);
+     background-image:linear-gradient(rgba(var(--ac-rgb),0),rgba(var(--ac-rgb),0));}
+  15%{box-shadow:inset 0 0 0 2px rgba(var(--ac-rgb),.8);
+     background-image:linear-gradient(rgba(var(--ac-rgb),.22),rgba(var(--ac-rgb),.22));}
+  55%{box-shadow:inset 0 0 0 2px rgba(var(--ac-rgb),.8);
+     background-image:linear-gradient(rgba(var(--ac-rgb),.22),rgba(var(--ac-rgb),.22));}
+  100%{box-shadow:inset 0 0 0 2px rgba(var(--ac-rgb),0);
+     background-image:linear-gradient(rgba(var(--ac-rgb),0),rgba(var(--ac-rgb),0));}
+}
+.task-flash{animation:taskFlashRing 1.6s ease-out 1;}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
 /* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Even.
@@ -2248,6 +2278,13 @@ body.split-d #todayView.animating{overflow:hidden;}
   color:var(--tx3);font-size:10px;font-weight:600;letter-spacing:.04em;
 }
 #taskMenu{max-height:calc(100dvh - 16px);overflow-y:auto;}
+/* 메뉴 줄 오른쪽 끝 — 그 날짜에 이미 있는 할일 개수 (v26-0904-3, HB).
+   옮기기 전에 그 날 사정을 알 수 있게. 0 인 날은 옅게 둔다. */
+.task-menu-cnt{
+  margin-left:auto;padding-left:12px;
+  color:var(--tx3);font-family:var(--font-number);font-size:11px;font-weight:400;
+}
+.task-menu-cnt.zero{opacity:.4;}
 /* PC 에서 '말씀 목록' 하위 뎁스를 1뎁스를 가리지 않고 오른쪽에 띄운다 (v26-0818-9, HB) */
 .task-menu-sub-float{
   position:fixed;z-index:201;
@@ -3972,7 +4009,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-2";
+const APP_VERSION = "v. 26-0904-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6223,13 +6260,13 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">이동</div>
-  <div class="task-menu-item" onclick="moveTaskTo(1)">
+  <div class="task-menu-item" data-cnt-days="1" onclick="moveTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>내일로
   </div>
-  <div class="task-menu-item" onclick="moveTaskTo(7)">
+  <div class="task-menu-item" data-cnt-days="7" onclick="moveTaskTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
   </div>
-  <div class="task-menu-item" onclick="moveTaskTo(-1)">
+  <div class="task-menu-item" data-cnt-days="-1" onclick="moveTaskTo(-1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M14 4.5v11L5 10z"/></svg></span>어제로
   </div>
   <div class="task-menu-item" id="dateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
@@ -6242,10 +6279,10 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">복제</div>
-  <div class="task-menu-item" onclick="duplicateTaskTo(1)">
+  <div class="task-menu-item" data-cnt-days="1" onclick="duplicateTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M8 7.4v8.2l6.6-4.1z" fill="currentColor" stroke="none"/></svg></span>내일로
   </div>
-  <div class="task-menu-item" onclick="duplicateTaskTo(7)">
+  <div class="task-menu-item" data-cnt-days="7" onclick="duplicateTaskTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M7.4 7.6v8l4.8-4z" fill="currentColor" stroke="none"/><path d="M11.8 7.6v8l4.8-4z" fill="currentColor" stroke="none"/></svg></span>다음 주로
   </div>
   <div class="task-menu-item" id="dupDateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
@@ -10078,7 +10115,11 @@ function showBusyToast(msg){
   showToast(String(msg||'')+'…',true);
 }
 function hideBusyToast(){_dismissToast(true,true);}
-function showToast(msg,busy){
+// 세 번째 인자 action = {label, onClick} 을 주면 문구 아래에 동작 한 줄이
+// 붙는다 ('보러 가기' 처럼). 안 누르면 평소처럼 시간이 지나 사라진다 —
+// **화면은 저 혼자 바뀌지 않는다** (v26-0904-3, HB: "머물지 전환할지 고를 수
+// 있어야 한다"). 동작이 붙은 토스트는 읽고 누를 틈을 주려 조금 더 오래 둔다.
+function showToast(msg,busy,action){
   if(_suppressTextToastOnce){_suppressTextToastOnce=false;return;}
   let t=document.getElementById('_toast');
   if(!t){
@@ -10090,7 +10131,13 @@ function showToast(msg,busy){
   // document 레벨 캡처 리스너로 "지금 토스트가 떠 있는지"만 판정한다.
   if(!_toastDismissBound){
     _toastDismissBound=true;
-    document.addEventListener('pointerdown',()=>{_dismissToast(true);},true);
+    document.addEventListener('pointerdown',e=>{
+      // 토스트 안의 동작 단추('보러 가기')를 누른 것은 "닫기"가 아니다.
+      // 여기서 걸러내지 않으면 누르는 순간 사라지기만 하고 아무 일도 안 난다.
+      const t0=e&&e.target;
+      if(t0&&t0.closest&&t0.closest('#_toastAct'))return;
+      _dismissToast(true);
+    },true);
   }
   const s=String(msg);
   let kind='info';
@@ -10119,7 +10166,20 @@ function showToast(msg,busy){
   t.style.whiteSpace=long?'normal':'nowrap';
   t.style.textAlign=long?'left':'center';
   const icon=busy?_TOAST_SPIN:ICONS[kind];
-  t.innerHTML=(icon?`<span style="flex-shrink:0;display:flex;">${icon}</span>`:'')+`<span>${esc(s)}</span>`;
+  const act=(!busy&&action&&action.label&&typeof action.onClick==='function')?action:null;
+  const body=(icon?`<span style="flex-shrink:0;display:flex;">${icon}</span>`:'')+`<span>${esc(s)}</span>`;
+  if(act){
+    t.style.flexDirection='column';t.style.alignItems='stretch';t.style.gap='9px';
+    t.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">${body}</div>`+
+      `<button type="button" id="_toastAct" class="toast-act">${esc(act.label)}`+
+      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor"`+
+      ` stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">`+
+      `<path d="M4 10h11M11 6l4 4-4 4"/></svg></button>`;
+    const btn=t.querySelector('#_toastAct');
+    if(btn)btn.onclick=e=>{e.stopPropagation();_dismissToast(true,true);act.onClick();};
+  }else{
+    t.innerHTML=body;
+  }
   t.style.opacity='.94';
   t.style.transform='translate(-50%,-50%) scale(1)';
   clearTimeout(t._tid);
@@ -10130,7 +10190,7 @@ function showToast(msg,busy){
   // 진행 중 토스트는 시간으로 내리지 않는다 — 결과가 대신 들어온다
   t._busy=!!busy;
   if(busy)return;
-  const dur=Math.min(9000,Math.max(3000,s.length*200));
+  const dur=Math.min(9000,Math.max(act?6000:3000,s.length*200));
   t._tid=setTimeout(()=>{_dismissToast(false);},dur);
 }
 // 돌아가는 표시 — 얇은 호 하나. 테두리·박스 없이 선만 (UI 원칙).
@@ -23565,6 +23625,10 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   _wireTaskMenuDateRow('dupDateLabelRow','dupDatePickerInput',
     'duplicateTaskToPickedDate(this.value)',duplicateTaskToPickedDate);
 
+  // 옮길 곳에 이미 할일이 몇 개 있는지 줄 오른쪽에 적어 둔다 (v26-0904-3, HB).
+  // 화면을 옮기지 않고도 그 날 사정을 알 수 있다.
+  _fillTaskMenuCounts();
+
   const mw=180,mh=menu.offsetHeight;
   let left,top;
 
@@ -24612,8 +24676,8 @@ function moveTaskTo(days){
     newItem.manualCarryCount=item.manualCarryCount||0;
     newItem.autoCarryCount=item.autoCarryCount||0;
   }
-  if(type==='big')getBigs(toKey,secId).push(newItem);
-  else getSmalls(toKey,secId).push(newItem);
+  const dest=type==='big'?getBigs(toKey,secId):getSmalls(toKey,secId);
+  dest.push(newItem);
   save();
   renderSecBody(secId);
   updateTotal();
@@ -24621,7 +24685,7 @@ function moveTaskTo(days){
   closeTaskMenu();
   // brief flash to confirm
   const label=days===-1?'어제로':days===1?'내일로':'다음 주로';
-  showToast(`${label} 이동했어요`);
+  _toastWithJump(`${label} 이동했어요`,toKey,{key:toKey,secId,type,idx:dest.length-1});
 }
 
 // 복제된 할일은 "그 날 새로 만든 할일" 이다 (2026-09-04 HB).
@@ -24652,14 +24716,15 @@ function duplicateTaskTo(days){
   // 복제는 원본을 그대로 둔다 (splice 하지 않는다).
   const copy=_freshTaskCopy(item);
   beforeSave();
-  if(type==='big')getBigs(toKey,secId).push(copy);
-  else getSmalls(toKey,secId).push(copy);
+  const dest=type==='big'?getBigs(toKey,secId):getSmalls(toKey,secId);
+  dest.push(copy);
   save();
   renderSecBody(secId);
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  showToast(`${days===1?'내일로':'다음 주로'} 복제했어요`);
+  _toastWithJump(`${days===1?'내일로':'다음 주로'} 복제했어요`,toKey,
+    {key:toKey,secId,type,idx:dest.length-1});
 }
 
 // 메뉴가 열릴 때마다 '날짜 지정' 줄의 <input type=date> 를 새로 만들어 끼운다.
@@ -24745,18 +24810,16 @@ function moveTaskToPickedDate(dateStr){
   const {type,secId,idx}=_taskMenuCtx;
   const fromKey=tKey();
   beforeSave();
-  let item;
-  if(type==='big'){
-    item={...getBigs(fromKey,secId).splice(idx,1)[0]};
-    getBigs(dateStr,secId).push({...item}); // 완료 상태 포함 그대로 이동
-  } else {
-    item={...getSmalls(fromKey,secId).splice(idx,1)[0]};
-    getSmalls(dateStr,secId).push({...item});
-  }
+  const dest=type==='big'?getBigs(dateStr,secId):getSmalls(dateStr,secId);
+  const item=type==='big'
+    ? {...getBigs(fromKey,secId).splice(idx,1)[0]}
+    : {...getSmalls(fromKey,secId).splice(idx,1)[0]};
+  dest.push({...item}); // 완료 상태 포함 그대로 이동
   save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  showToast(_moveDateToastMsg(dateStr,secId));
+  _toastWithJump(_moveDateToastMsg(dateStr,secId),dateStr,
+    {key:dateStr,secId,type,idx:dest.length-1});
 }
 
 // 복제 칸의 '날짜 지정' — 원본은 그대로 두고 고른 날짜에 새 할일로 하나 만든다.
@@ -24772,25 +24835,102 @@ function duplicateTaskToPickedDate(dateStr){
 
   beforeSave();
   const copy=_freshTaskCopy(item);
-  if(type==='big')getBigs(dateStr,secId).push(copy);
-  else getSmalls(dateStr,secId).push(copy);
+  const dest=type==='big'?getBigs(dateStr,secId):getSmalls(dateStr,secId);
+  dest.push(copy);
   save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  showToast(_moveDateToastMsg(dateStr,secId,'복제'));
+  _toastWithJump(_moveDateToastMsg(dateStr,secId,'복제'),dateStr,
+    {key:dateStr,secId,type,idx:dest.length-1});
 }
 // "8월 17일 월요일 오전 날짜로 이동했어요" — 어느 날짜·구간으로 옮겼는지
 // 바로 알 수 있게 (v26-0817-1, HB 요청). 요일은 설정과 무관하게 항상 이
 // 형식(한글 + '요일')을 쓴다 — DOW 는 사용자가 L/M/T 같은 다른 표기로
 // 바꿔 둘 수 있어 이 문구에는 안 맞는다.
 const _KDOW=['일','월','화','수','목','금','토'];
-function _moveDateToastMsg(dateStr,secId,verb){
-  const [y,m,d]=dateStr.split('-').map(Number);
+// '9월 20일 일요일' (short 이면 '9월 20일'). 안내 문구와 '돌아가기' 줄이
+// 같은 이름을 쓰도록 한 곳에서 만든다.
+function _dayLabel(dateStr,short){
+  const [y,m,d]=String(dateStr).split('-').map(Number);
   const dt=new Date(y,m-1,d);
   const dow=isNaN(dt.getTime())?'':_KDOW[dt.getDay()]+'요일';
+  return short?`${m}월 ${d}일`:[`${m}월 ${d}일`,dow].filter(Boolean).join(' ');
+}
+function _moveDateToastMsg(dateStr,secId,verb){
   const secName=(SECS.find(s=>s.id===secId)||{}).name||'';
-  const parts=[m+'월',d+'일',dow,secName].filter(Boolean);
+  const parts=[_dayLabel(dateStr),secName].filter(Boolean);
   return parts.join(' ')+' 날짜로 '+(verb||'이동')+'했어요';
+}
+
+// ── 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) ──────────────
+// 지금까지는 "내일로 옮겼어요" 안내만 뜨고 끝이라, 정말 그 날에 잘 들어갔는지
+// 보려면 손으로 날짜를 넘겨야 했다. 그렇다고 저 혼자 그 날짜로 넘어가 버리면
+// 여러 개를 연달아 옮길 때 매번 튕겨 나가 방해가 된다 — 그래서 **고르게** 한다.
+//   · 아무것도 안 누르면 지금 날짜에 그대로 머문다 (예전과 같다)
+//   · '보러 가기' 를 누를 때만 그 날짜로 넘어가고, 넘어가면 돌아오는 줄이 뜬다
+// mark 는 도착한 곳에서 반짝일 할일의 자리 {key,secId,type,idx}.
+function _toastWithJump(msg,toKey,mark){
+  const backKey=tKey();
+  if(!toKey||toKey===backKey){showToast(msg);return;}
+  showToast(msg,false,{label:'보러 가기',onClick:()=>{
+    _pendingTaskFlash=mark||null;
+    goToDate(toKey);
+    _flashPendingTask();
+    showToast(_dayLabel(toKey)+'로 왔어요',false,
+      {label:_dayLabel(backKey,true)+'로 돌아가기',onClick:()=>{goToDate(backKey);}});
+  }});
+}
+
+// 도착한 곳에서 그 할일이 한 번 반짝인다. 할일이 여럿인 날은 새로 들어온 줄이
+// 어디인지 눈으로 못 찾는다. 화면이 아직 안 그려졌을 수 있어 몇 번 다시 본다.
+let _pendingTaskFlash=null;
+function _flashPendingTask(tries){
+  const m=_pendingTaskFlash;
+  if(!m)return;
+  if(tKey()!==m.key){_pendingTaskFlash=null;return;} // 그새 다른 날짜로 갔다
+  const sel=(m.type==='big'?'.big-item':'.sm-item')+
+    `[data-id="${m.secId}"][data-i="${m.idx}"]`;
+  const el=document.querySelector(`#tb-${m.secId} ${sel}`)||document.querySelector(sel);
+  if(!el){
+    const n=(tries||0)+1;
+    if(n<6)setTimeout(()=>_flashPendingTask(n),140);
+    else _pendingTaskFlash=null;
+    return;
+  }
+  _pendingTaskFlash=null;
+  try{el.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){try{el.scrollIntoView();}catch(e2){}}
+  el.classList.remove('task-flash');
+  void el.offsetWidth; // 같은 줄을 다시 반짝이게 하려면 한 번 재계산이 필요하다
+  el.classList.add('task-flash');
+  setTimeout(()=>el.classList.remove('task-flash'),1800);
+}
+
+// 그 날짜에 이미 있는 할일 개수 (빅+스몰, 모든 구간, 완료한 것은 뺀다).
+// ⚠️ getBigs()/getSmalls() 를 쓰지 않는다 — 그 둘은 없는 날짜를 **만들어** 버려서,
+//    메뉴를 한 번 열 때마다 빈 날이 저장소에 쌓이고 동기화까지 따라 움직인다.
+//    여기서는 있는 것만 들여다본다.
+function _dayTaskCount(key){
+  const d=ST&&ST.days&&ST.days[key];
+  if(!d)return 0;
+  let n=0;
+  SECS.forEach(sec=>{
+    const bs=d.big&&d.big[sec.id], ss=d.small&&d.small[sec.id];
+    if(bs)bs.forEach(b=>{if(b&&b.text&&b.text.trim()&&!b.done)n++;});
+    if(ss)ss.forEach(x=>{if(x&&x.text&&x.text.trim()&&!x.done)n++;});
+  });
+  return n;
+}
+// 메뉴 줄 오른쪽 끝에 그 개수를 적는다 (data-cnt-days 가 붙은 줄만).
+function _fillTaskMenuCounts(){
+  document.querySelectorAll('#taskMenu [data-cnt-days]').forEach(row=>{
+    const days=parseInt(row.dataset.cntDays,10);
+    if(isNaN(days))return;
+    const n=_dayTaskCount(tKey(addDays(viewDate,days)));
+    let span=row.querySelector('.task-menu-cnt');
+    if(!span){span=document.createElement('span');span.className='task-menu-cnt';row.appendChild(span);}
+    span.textContent=String(n);
+    span.classList.toggle('zero',n===0);
+  });
 }
 
 // ─ Toast ─
