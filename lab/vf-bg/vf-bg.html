@@ -1,0 +1,73 @@
+<!-- ══════════════════════════════════════════════════════════════════════════
+     BLOCK7 — '내 배경' 화면 뼈대 (HTML)
+     ⚠️ 아직 index.html 에 없다. 붙이는 자리는 INTEGRATION.md 참고.
+     ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ═══ ① 말씀 설정 → 전체화면 탭, '테마' 구역 **바로 아래** ═══════════════
+     등급: 미드·파워 (data-lv="mp"). 이지 등급에서는 안 보인다 —
+     처음 쓰는 사람에게 사진 업로드까지 내밀 필요는 없다. -->
+<div class="settings-section" data-lv="mp">
+  <div class="settings-section-title">내 배경</div>
+  <div class="settings-row-desc" style="margin-bottom:8px;">사진을 골라 전체화면 배경으로 쓸 수 있어요. 사진 한 장에 <b>틀(템플릿)</b> 하나를 얹으면 배경 하나가 돼요. 만든 배경은 위 테마와 똑같이 켜고 끄고, 시간구간에도 배정할 수 있어요. <b>길게 누르면</b> 고치기·이름·지우기가 나와요.<br><span style="opacity:.75;">사진은 이 기기에만 담겨요 — 다른 기기에서는 사진에서 뽑은 색으로 보이고, 그 기기에서 사진을 다시 고르면 똑같아져요.</span></div>
+  <div id="vfbgChips"></div>
+</div>
+
+<!-- ═══ ② 아래 셋은 body 끝(다른 팝업들 옆)에 ═══════════════════════════ -->
+
+<!-- 사진 고르기 (화면에 안 보인다) -->
+<input type="file" id="vfbgFile" accept="image/*" style="display:none;"
+       onchange="_vfbgOnFile(this.files&&this.files[0])">
+
+<!-- 칩 롱터치 메뉴 -->
+<div id="vfbgMenu">
+  <div id="vfbgMenuName"></div>
+  <div class="vfbg-mi" onclick="vfbgMenuEdit()">고치기</div>
+  <div class="vfbg-mi" onclick="vfbgMenuRename()">이름 바꾸기</div>
+  <div class="vfbg-mi warn" onclick="vfbgMenuDelete()">지우기</div>
+  <div class="vfbg-mi" onclick="closeVfbgMenu()" style="color:var(--tx3);">닫기</div>
+</div>
+
+<!-- 배경 만들기 (전체화면 편집기) -->
+<div id="vfbgEdit">
+  <div class="vfbge-head">
+    <!-- 좌상단 = 그 화면의 보조 메뉴 자리 (앱 규칙) -->
+    <span class="vfbge-left" onclick="vfbgPickPhoto()">사진 바꾸기</span>
+    <span class="vfbge-title">배경 만들기</span>
+    <button class="modal-x" onclick="closeVfbgEdit()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+
+  <!-- 미리보기 = 전체화면과 같은 층 (사진 → 색온도 → 스크림 → 결·비네트 → 글자) -->
+  <div id="vfbgStage">
+    <div id="vfbgPhoto"></div>
+    <div id="vfbgTint"></div>
+    <div id="vfbgScrim"></div>
+    <div class="vfbge-sample">
+      <div id="vfbgSample">여호와는 나의 목자시니<br>내게 부족함이 없으리로다</div>
+      <div id="vfbgSampleRef">시편 23:1</div>
+    </div>
+    <div class="vfbge-hint">사진을 끌어 자리를 옮기고, 두 손가락으로 크기를 맞춰요</div>
+  </div>
+
+  <div class="vfbge-sheet">
+    <div class="vfbge-tplrow" id="vfbgTplRow"></div>
+    <div id="vfbgContrast"></div>
+    <div class="vfbge-row"><label>어둡게</label><input type="range" id="vfbgDark"   min="0" max="86"  oninput="vfbgSetNum('dark',this.value)"></div>
+    <div class="vfbge-row"><label>흐리게</label><input type="range" id="vfbgBlur"   min="0" max="100" oninput="vfbgSetNum('blur',this.value)"></div>
+    <div class="vfbge-row"><label>선명도</label><input type="range" id="vfbgSat"    min="0" max="180" oninput="vfbgSetNum('sat',this.value)"></div>
+    <div class="vfbge-row"><label>색온도</label><input type="range" id="vfbgWarm"   min="-60" max="60" oninput="vfbgSetNum('warm',this.value)"></div>
+    <div class="vfbge-row"><label>종이결</label><input type="range" id="vfbgGrain"  min="0" max="60"  oninput="vfbgSetNum('grain',this.value)"></div>
+    <div class="vfbge-row"><label>가장자리</label><input type="range" id="vfbgVig"  min="0" max="80"  oninput="vfbgSetNum('vig',this.value)"></div>
+    <div class="vfbge-row"><label>그림자</label><input type="range" id="vfbgShadow" min="0" max="100" oninput="vfbgSetNum('shadow',this.value)"></div>
+    <div class="vfbge-btns">
+      <button id="vfbgInkBtn"  onclick="vfbgToggleInk()">글씨 밝게</button>
+      <button id="vfbgFontBtn" onclick="vfbgToggleFont()">고딕</button>
+      <button onclick="vfbgScrimMode()">어둡게 방식</button>
+      <button onclick="vfbgAutoRead()">자동 가독성</button>
+    </div>
+  </div>
+
+  <!-- 하단에는 실행 버튼만 (취소·닫기는 우상단 × 가 대신한다 — 앱 규칙) -->
+  <div class="vfbge-foot"><button onclick="vfbgSave()">저장</button></div>
+</div>

@@ -74,7 +74,7 @@ const D = eval('(function(){' + SRC_DASH + ';return{' + [
   '_vDashKeysOf', '_vDashBuckets', '_vDashSlices', '_vDashRowHeadHTML',
   '_vDashKindLabel', '_vDashAxisLabel',
   '_vTrPref', '_vTrEntries', '_vTrBucketOf', '_vTrBucketList', '_vTrBucketLabel', '_vTrData',
-  '_vTrInsight', '_vTrChartSVG',
+  '_vTrInsightHTML', '_vTrRowsOf', '_vTrInsN', '_vTrChartSVG',
   '_vDashDetailDotsHTML',
   'setCtx:(k,a)=>{_vDashDetailCtx={kind:k,axis:a};}',
   // 말씀 표(_vDashVerseMap)는 한 번 만들면 캐시된다 — 앱은 그릴 때마다 비운다.
@@ -232,7 +232,7 @@ console.log('\n시나리오 4-2 — 흐름: 어느 성경이 늘고 줄었나');
     V('로마서 8:2', '나', '', [], '2026-07-17'),
     V('시편 23:1', '다', '', [], '2020-01-01')       // 구간 밖 — 세지 않는다
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [] };
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, v: 2 };
   const d = D._vTrData();
   sc.eq('칸이 8개', d.keys.length, 8);
   const mat = d.all.find(s => s.key === '마태복음');
@@ -242,14 +242,27 @@ console.log('\n시나리오 4-2 — 흐름: 어느 성경이 늘고 줄었나');
   sc.eq('구간 밖 시편은 아예 없다', d.all.some(s => s.key === '시편'), false);
   sc.eq('많은 것이 먼저', d.all[0].key, '마태복음');
 
-  const ins = D._vTrInsight(d);
-  sc.eq('절반씩 견준다 — 최근 4주', ins.half, 4);
-  const rMat = ins.rows.find(r => r.key === '마태복음');
-  const rRom = ins.rows.find(r => r.key === '로마서');
+  // 견주는 칸 수는 이제 인사이트 블럭의 슬라이더가 정한다 (v26-0906-1).
+  // 안 정했으면 예전처럼 구간의 절반이다.
+  const h = D._vTrInsN(ST.settings.vTrPref);
+  sc.eq('안 정했으면 절반 — 최근 4주', h, 4);
+  const rows = D._vTrRowsOf(d, h);
+  const rMat = rows.find(r => r.key === '마태복음');
+  const rRom = rows.find(r => r.key === '로마서');
   sc.eq('마태복음 최근 3 / 이전 1 → +2', [rMat.late, rMat.prev, rMat.diff], [3, 1, 2]);
   sc.eq('로마서 최근 0 / 이전 2 → -2', [rRom.late, rRom.prev, rRom.diff], [0, 2, -2]);
-  sc.eq('가장 많이 는 것을 짚어 준다', ins.html.includes('<b>마태복음</b>'), true);
-  sc.eq('가장 많이 준 것도 짚어 준다', ins.html.includes('<b>로마서</b>'), true);
+  const html = D._vTrInsightHTML(d, rows, h);
+  sc.eq('가장 많이 는 것을 짚어 준다', html.includes('<b>마태복음</b>'), true);
+  sc.eq('가장 많이 준 것도 짚어 준다', html.includes('<b>로마서</b>'), true);
+  sc.eq('견주는 기간을 거기서 바로 고른다', html.includes('vTrInsSet'), true);
+  // 슬라이더로 견주는 자리를 좁히면 셈도 함께 좁아진다.
+  // 8/31·9/1·9/2 는 모두 **같은 주 칸**에 들고 7/15 는 멀리 있다 → 1주만 견주면
+  // 그 옛 기록이 '이전' 에서 빠져 0 이 되고, 늘어난 폭이 커진다.
+  const h2 = D._vTrInsN({ span: 8, ins: 1 });
+  sc.eq('슬라이더 값이 그대로 쓰인다', h2, 1);
+  const rows2 = D._vTrRowsOf(d, h2);
+  const m2 = rows2.find(r => r.key === '마태복음');
+  sc.eq('1주만 견주면 최근 3 / 이전 0', [m2.late, m2.prev, m2.diff], [3, 0, 3]);
 }
 
 console.log('\n시나리오 4-3 — 흐름: 갈래(말씀/명제)로 가른다');
@@ -258,7 +271,7 @@ console.log('\n시나리오 4-3 — 흐름: 갈래(말씀/명제)로 가른다')
     V('마태복음 1:1', '가', '', [], '2026-09-01'),
     V('마태복음 5:3', '설교', '', [], '2026-09-01', { pid: 'P1', books: ['마태복음'] })
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [] };
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, v: 2 };
   sc.eq('전체는 둘 다', D._vTrData().all[0].total, 2);
   ST.settings.vTrPref.tab = 'verse';
   sc.eq('말씀만 하나', D._vTrData().all[0].total, 1);
@@ -270,7 +283,7 @@ console.log('\n시나리오 4-3 — 흐름: 갈래(말씀/명제)로 가른다')
 console.log('\n시나리오 4-4 — 흐름: 그래프가 실제로 그려진다');
 {
   const keys = ['2026-08-16', '2026-08-23', '2026-08-30'];
-  const ser = [{ key: '마태복음', vals: [1, 2, 3], total: 6 }, { key: '로마서', vals: [2, 0, 1], total: 3 }];
+  const ser = [{ key: '마태복음', vals: [1, 2, 3], total: 6, ci: 0 }, { key: '로마서', vals: [2, 0, 1], total: 3, ci: 1 }];
   const line = D._vTrChartSVG(keys, ser, 'week', 'line', 520);
   sc.eq('선 그래프는 polyline 두 줄', (line.match(/<polyline/g) || []).length, 2);
   sc.eq('점도 찍는다(칸이 적을 때)', line.includes('<circle'), true);
@@ -320,7 +333,11 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
 
   // 되돌아갈 화면을 통째로 적어 둔다
   sc.eq('대시보드가 떠 있었는지도 적는다', /_vDashMarkReturn[\s\S]{0,400}shown\('vDashModal'\)/.test(SRC), true);
-  sc.eq('목록 팝업도 적는다', /_vDashMarkReturn[\s\S]{0,400}shown\('verseListModal'\)/.test(SRC), true);
+  sc.eq('목록 팝업도 적는다', /_vDashMarkReturn[\s\S]{0,900}shown\('verseListModal'\)/.test(SRC), true);
+  // 상세는 **떠 있을 때만** 적는다 (v26-0906-1, HB 7-1 — 타일뷰를 닫으면 엉뚱한
+  // 팝업이 되살아나던 것). 이 한 줄이 그 회귀를 막는다.
+  sc.eq('상세는 떠 있을 때만 적는다',
+    /detail:\(shown\('vDashDetailModal'\)&&_vDashDetailCtx\)/.test(SRC), true);
   sc.eq('대시보드를 안 열었으면 다시 열지 않는다', /_vDashMaybeReturn[\s\S]{0,300}if\(r\.dash\)openVerseDashboard\(\);/.test(SRC), true);
 
   // 위쪽 전환과 흐름
