@@ -136,16 +136,24 @@ console.log('\n시나리오 5 — 화면 끝에 흰 줄이 생기지 않는다')
   //    물려받아 색이 바뀐다. 그래서 바탕 전용 변수를 따로 둔다 — 합치지 말 것.
   sc.eq('--vf-bgimg 를 뿌리에 얹지 않는다',
         /documentElement\.style\.setProperty\('--vf-bgimg'/.test(SRC), false);
-  // 여닫는 네 곳 + 밀어 닫기 시작(v26-0905-10)에서 바탕을 맞춘다
-  // (전체화면 열기·닫기, 타일뷰 열기·닫기, 가장자리 스와이프로 밀어내기 시작)
-  sc.eq('다섯 곳에서 바탕을 맞춘다',
-        (SRC.match(/_vfSyncPageBg\(\);/g) || []).length, 5);
-  // ⚠️ HB 신고 — 스와이프로 닫을 때 말씀 상단 언저리에 전체화면 배경이 남아
-  //    있다가 툭 사라졌다. 밀려 나가기 **시작할 때** 이미 닫힌 것으로 쳐야 한다.
+  // 여닫는 네 곳 + 밀기 시작·되돌아감(v26-0905-11)에서 바탕을 맞춘다
+  // (전체화면 열기·닫기, 타일뷰 열기·닫기, 가장자리 스와이프 시작·취소)
+  sc.eq('여섯 곳에서 바탕을 맞춘다',
+        (SRC.match(/_vfSyncPageBg\(\);/g) || []).length, 6);
+  // ⚠️⚠️ HB 신고 — 스와이프로 닫을 때 말씀 상단 언저리에 전체화면 배경이
+  //    남아 있었다. v26-0905-10 은 '놓은 뒤'만 고쳤는데, 사람이 보는 것은
+  //    **미는 그 순간**이다 (손끝을 따라 화면이 비켜나면 그 자리에 배경이
+  //    그대로 칠해져 있었다). 손이 움직이기 시작하는 즉시 되돌린다.
   sc.eq('밀어 닫는 동안은 닫힌 것으로 친다',
         SRC.includes('if(_vfClosing)return false;'), true);
-  sc.eq('밀려 나가기 시작할 때 바탕부터 되돌린다',
-        SRC.includes('()=>{_vfClosing=true;_vfSyncPageBg();}'), true);
+  sc.eq('손이 움직이기 시작하면 바탕부터 되돌린다',
+        SRC.includes("if(!painted&&typeof onBackStart==='function')"), true);
+  sc.eq('제자리로 돌아가면 다시 칠한다',
+        SRC.includes("if(typeof onBackCancel==='function'){try{onBackCancel();}catch(err){}}") &&
+        SRC.includes('()=>{_vfClosing=false;_vfSyncPageBg();}'), true);
+  // 놓은 뒤에만 되돌리던 옛 자리는 없앴다 (paint 첫 걸음이 이미 했다)
+  sc.eq('놓은 뒤에 또 부르지 않는다',
+        /if\(moved&&dx>=COMMIT\)\{[\s\S]{0,200}onBackStart/.test(SRC), false);
   sc.eq('타일뷰가 남아 있으면 바탕을 되돌리지 않는다',
         slice('function _vfSyncPageBg(){', '\n}').includes('_verseFullIsOpen()||(typeof _vgIsOpen'), true);
 }

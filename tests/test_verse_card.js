@@ -690,6 +690,20 @@ console.log('\n시나리오 9 — 화면 연결');
   // ⚠️ 디졸브 시간은 **되돌린 값**이다 — 0.9초로 늘렸더니 "길고 툭 끊긴다" 는
   //    신고를 받았다 (v26-0905-10). 다시 늘리지 말 것.
   sc.eq('디졸브는 0.6초 그대로', SRC.includes('transition:opacity var(--roll-fade,.6s) ease;'), true);
+  // ⚠️⚠️ v26-0905-11, HB 신고 — "말씀카드 헤더에서만 툭 끊긴다."
+  //    위젯 헤더는 renderLayout 이 innerHTML 을 갈아엎어 상자가 **통째로 새로
+  //    태어난다.** 아무 대비 없이 지금 줄을 앉히면 0 에서부터 떠올라, 넘어가던
+  //    도중이면 사라지던 글자가 툭 끊기고 빈칸이 한 번 스친다.
+  //    (실측: 다시 그리기 직전 62%/38% → 직후 2%/0%)
+  sc.eq('직전에 보여 주던 줄을 기억한다', SRC.includes('const _rollLast={};'), true);
+  sc.eq('새로 태어난 상자는 움직임 없이 앉힌다',
+        SRC.includes('function _rollNoTr(el,fn)') &&
+        SRC.includes("if(el.getAttribute('data-roll-i')==='-1'){"), true);
+  sc.eq('열쇠로 이어 붙인다 (위젯은 카드 id, 전체화면은 vf)',
+        SRC.includes("Object.assign({key:'w'+id},_vcRollOpt(cfg))") &&
+        SRC.includes("Object.assign({key:'vf'},_vfNavRoll||{})"), true);
+  sc.eq('시계가 넘길 때도 기억을 갱신한다',
+        /_rollShow\(el,n,i\);\s*\n\s*const key=el\.getAttribute\('data-roll-key'\);/.test(SRC), true);
   sc.eq('가운데 자리에서는 글자도 가운데로',
         /#vfTopLabel \.roll-h,#vfTopLabel \.roll-item,#vfTopLabel \.roll-v,\n\.vw-scope-c[^{]*\{text-align:center;\}/.test(SRC), true);
   // 자동 넘김도 손으로 민 것처럼 좌우로 밀린다
