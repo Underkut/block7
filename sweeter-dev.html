@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0905-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4182,7 +4182,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-1";
+const APP_VERSION = "v. 26-0905-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6137,7 +6137,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div id="verseFull" style="display:none;">
   <button class="vf-home" id="vfHomeBtn" style="display:none;" onclick="event.stopPropagation();vfHomeAction()" aria-label="말씀 모음 전체로 돌아가기"></button>
   <button class="vf-keepmenu" id="vfKeepMenuBtn" onclick="event.stopPropagation();toggleVfKeepSwitch()" aria-label="저장 폴더 목록">
-    <svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>
+    <svg width="19" height="23" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>
   </button>
   <!-- 말씀 모음 설정 — '현재 말씀 모음' 팝업 좌상단의 그 아이콘·그 자리 (v26-0904-4, HB).
        순환·셔플 아래, 저장 폴더 책갈피 위. -->
@@ -13516,9 +13516,20 @@ let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 //    지금 보고 있는 폴더를 가려내는 데(L.n===_vfNavLabel) 쓰이기 때문이다.
 let _vfNavParts=null;
 // 가로폭은 그대로, 세로선은 원래보다 약 1.2배 길게. 획은 한결 가는 1.2다.
-const _VF_KEEP_MENU_SVG='<svg width="17" height="20" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
-const _VF_HOME_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
-const _VF_HOME_FILLED_SVG='<svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.5 9.35 10 3.2l7.5 6.15-1.05 1.28-.75-.62V16a1.7 1.7 0 0 1-1.7 1.7H6A1.7 1.7 0 0 1 4.3 16v-5.99l-.75.62z"/></svg>';
+// ── 좌상단 아이콘 크기 (v26-0905-2, HB — "말씀 모음 설정에 비해 홈과 책갈피가
+//    살짝 작아 보인다") ──
+// ⚠️ 견줄 것은 width/height 숫자가 아니라 **화면에 실제로 찍히는 먹의 크기**다.
+//    말씀 모음 설정은 viewBox 가 도형에 바짝 붙어 있어(3.2 2 17.6 19.7) 18px 이
+//    거의 그대로 먹이 되지만, 홈과 책갈피는 viewBox 안에 여백이 넓어서 같은
+//    17px 라도 훨씬 작게 찍혔다. 재 보면 이랬다 —
+//      말씀 모음 설정 15.0 × 16.9 · 홈 13.3 × 12.8 · 책갈피 9.3 × 14.0
+//    → 홈 17→21, 책갈피 17×20→19×23 으로 올려 먹 높이를 16 안팎으로 맞췄다
+//      (말씀 모음 설정보다 크지 않게 두어 차례가 뒤집히지 않는다).
+//    ⚠️ 책갈피는 도형 자체가 좁아서(20 중 10) 가로는 여전히 가늘다. 그것은
+//       크기가 아니라 그림의 성질이다 — 억지로 늘리면 책갈피로 안 보인다.
+const _VF_KEEP_MENU_SVG='<svg width="19" height="23" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
+const _VF_HOME_SVG='<svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
+const _VF_HOME_FILLED_SVG='<svg width="21" height="21" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.5 9.35 10 3.2l7.5 6.15-1.05 1.28-.75-.62V16a1.7 1.7 0 0 1-1.7 1.7H6A1.7 1.7 0 0 1 4.3 16v-5.99l-.75.62z"/></svg>';
 let _vfHomeAtCollection=false;
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
@@ -13606,8 +13617,16 @@ function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel=''
 function vfHomeAction(){
   closeVfKeepSwitch();
   _vfOverrideVerse=null;
-  _vfClearNav();
-  _vfHomeAtCollection=true;
+  _vfClearNav();                 // 필터·목록을 놓는다 (_vfHomeAtCollection 도 false 로 돌아간다)
+  _vfHomeAtCollection=true;      // 지금 보는 것이 '말씀 모음 전체' 라는 표시
+  // ⚠️ v26-0905-2, HB 신고 — "필터가 꺼져 전체가 됐는데 홈 단추가 채워지지
+  //    않고 **사라진다.**" 까닭은 이렇다: 화면을 맞추는 곳은 _vfSyncTopBar 하나뿐인데,
+  //    바로 위 _vfClearNav() 안에서 그것이 이미 한 번 돌았다. 그때는 목록도
+  //    지정 구절도 없고 _vfHomeAtCollection 도 아직 false 라 단추를 감춘다.
+  //    그 다음 줄에서 값만 true 로 되돌리고 화면은 다시 안 맞춰서, 값은 맞는데
+  //    단추는 숨은 채로 남았다. (_verseFullRender 는 이 줄을 손대지 않는다)
+  //    → 값을 정한 **뒤에** 한 번 더 맞춘다.
+  _vfSyncTopBar();
   _verseFullRender();
 }
 // 좌상단 '말씀 모음 설정' (v26-0904-4, HB) — 말씀설정 → 말씀 모음 탭.
