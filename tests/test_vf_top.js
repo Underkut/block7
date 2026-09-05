@@ -55,7 +55,9 @@ const TAGS = {
 console.log('시나리오 1 — 네 아이콘의 선 굵기가 화면에서 같다');
 {
   const TARGET = 1.35;      // HB 와 맞춘 값 (넷의 중앙값)
-  ['홈(켜짐)','책갈피','순환','셔플'].forEach(k=>{
+  // ⚠️ v26-0905-7 — 켜진 홈은 **채운** 아이콘이라 획이 없다. 굵기를 견줄 것이
+  //    없으므로 이 줄에서 뺀다 (아래에서 따로 본다).
+  ['홈(꺼짐)','책갈피','순환','셔플'].forEach(k=>{
     const v = inkStroke(TAGS[k]);
     sc.eq(`${k} — 화면 굵기 ${v.toFixed(2)}px`, Math.abs(v - TARGET) < 0.02, true);
   });
@@ -82,23 +84,31 @@ console.log('시나리오 1 — 네 아이콘의 선 굵기가 화면에서 같�
   //    맞추려고 하면 도로 어긋난다.
   sc.eq('상자가 큰 순환·셔플은 숫자가 더 크다',
         num(TAGS['순환'],'stroke-width') > num(TAGS['홈(켜짐)'],'stroke-width'), true);
-  // ⚠️⚠️ v26-0905-6, HB — 채움은 없앴다. 켜짐은 지금까지의 선 그대로, 꺼짐은
-  //    **같은 선을 옅게**. 옅게 하는 방법으로 '얇은 선'이 아니라 '옅은 색'을
-  //    골랐다 — 굵기는 이 무리의 식구 표시라, 꺼졌다고 굵기를 바꾸면 혼자
-  //    딴 무리처럼 보인다.
-  sc.eq('꺼진 홈도 굵기는 같다',
-        num(TAGS['홈(꺼짐)'],'stroke-width'), num(TAGS['홈(켜짐)'],'stroke-width'));
-  sc.eq('꺼진 홈의 화면 굵기도 같다', Math.abs(inkStroke(TAGS['홈(꺼짐)']) - TARGET) < 0.02, true);
-  // 다른 것은 색뿐이다
+  // ── 홈 두 벌 (v26-0905-7, HB) ──
+  //   꺼짐 = 테두리(선) 홈, 옆의 것들과 **똑같은 진하기**
+  //   켜짐 = 채운 홈, 다만 아래 가운데를 출입문 모양으로 비운다
+  // ⚠️ 0905-6 에서 꺼짐을 옅게(stroke-opacity) 해 봤는데 HB 가 되돌리라 했다 —
+  //    눌러야 하는 쪽이 흐려지는 것이 오히려 불편했다. 되살리지 말 것.
   const so = t => { const m=t.match(/stroke-opacity="([0-9.]+)"/); return m?parseFloat(m[1]):1; };
-  sc.eq('켜진 홈은 옆의 것들과 같은 진하기', so(TAGS['홈(켜짐)']), 1);
-  sc.eq('꺼진 홈만 옅다', so(TAGS['홈(꺼짐)']) > 0.4 && so(TAGS['홈(꺼짐)']) < 0.8, true);
-  // ⚠️ 도안이 두 벌 사이에서 달라지면 필터를 풀 때 아이콘이 자리에서 튄다
-  const paths = t => (SRC.slice(SRC.indexOf(t)).match(/d="[^"]+"/g)||[]).slice(0,2).join('|');
-  sc.eq('두 벌의 도안이 같다',
-        paths("const _VF_HOME_ON_SVG="), paths("const _VF_HOME_OFF_SVG="));
+  sc.eq('꺼진 홈은 옅게 하지 않는다', so(TAGS['홈(꺼짐)']), 1);
+  sc.eq('꺼진 홈의 화면 굵기는 무리와 같다', Math.abs(inkStroke(TAGS['홈(꺼짐)']) - TARGET) < 0.02, true);
+  // 켜진 홈은 획이 아니라 채움으로 그린다
+  sc.eq('켜진 홈은 채움이다', /fill="currentColor"/.test(TAGS['홈(켜짐)']), true);
+  sc.eq('켜진 홈에는 획이 없다', num(TAGS['홈(켜짐)'],'stroke-width'), null);
+  // ⚠️ 0905-5 의 통짜 채움이 "답답·뭉툭" 했던 까닭은 비어 있는 자리가 하나도
+  //    없어서였다. 문을 뚫어 숨 쉴 틈을 만든 것이 이 아이콘의 전부다.
+  const onPath = (SRC.slice(SRC.indexOf("const _VF_HOME_ON_SVG=")).match(/d="([^"]+)"/)||[])[1]||'';
+  //    (문 위쪽은 둥근 아치 — 반지름 1.5 로 왼쪽으로 3 만큼, sweep 0 이라 위로 부푼다)
+  sc.eq('출입문을 뚫어 두었다', /a1\.5 1\.5 0 0 0\s*-3 0/.test(onPath), true);
+  sc.eq('문은 바닥까지 뚫려 있다', /V17\.7H5\.2/.test(onPath), true);
   sc.eq('통짜 실루엣으로 돌아가지 않았다', SRC.includes('M2.5 9.35 10 3.2l7.5 6.15'), false);
-  sc.eq('몸통 채움으로도 돌아가지 않았다', SRC.includes('fill-opacity=".55"'), false);
+  sc.eq('몸통 옅은 채움으로도 돌아가지 않았다', SRC.includes('fill-opacity=".55"'), false);
+  // ⚠️ 두 벌은 **같은 집**이어야 한다 — 먹 상자가 어긋나면 켜고 끌 때 자리에서 튄다.
+  //    (처마를 한쪽만 늘리면 여기서 걸린다)
+  const eaveOff = (SRC.match(/_VF_HOME_OFF_SVG=[\s\S]*?d="M([0-9.]+) /)||[])[1];
+  sc.eq('꺼짐의 왼쪽 처마 끝', parseFloat(eaveOff), 2.5);
+  sc.eq('켜짐의 왼쪽 처마 끝도 같은 자리', /H1\.8Z/.test(onPath), true);   // 2.5 - 획 절반 0.71 ≈ 1.8
+  sc.eq('처마가 예전보다 길다', parseFloat(eaveOff) < 3, true);            // 예전 3.0
 }
 
 console.log('\n시나리오 2 — 맨 윗줄 네 가지의 수직 중심이 맞는다');
@@ -122,8 +132,8 @@ console.log('\n시나리오 2 — 맨 윗줄 네 가지의 수직 중심이 맞�
   // ② 도안: 상자가 같아도 **그림이 상자 안에서 치우쳐 있으면** 어긋난다.
   //    (bbox 는 도안을 읽어 넘긴다 — 아래 숫자를 바꾸려면 path 를 다시 볼 것)
   const off = {
-    '홈(켜짐)':   inkOffsetY(TAGS['홈(켜짐)'],   3.5, 17),    // 지붕 꼭대기 ~ 바닥
-    '홈(꺼짐)': inkOffsetY(TAGS['홈(꺼짐)'], 3.5, 17),    // 켜짐과 같은 도안
+    '홈(꺼짐)': inkOffsetY(TAGS['홈(꺼짐)'], 3.5, 17),      // 지붕 꼭대기 ~ 바닥 (획 포함)
+    '홈(켜짐)': inkOffsetY(TAGS['홈(켜짐)'], 2.8, 17.7),    // 채움이라 획 없이 그대로
     '순환':     inkOffsetY(TAGS['순환'],      4, 15),      // 둥근 사각 + 화살촉
     '셔플':     inkOffsetY(TAGS['셔플'],      5, 19),      // 위·아래 화살촉까지
     '닫기 X':   inkOffsetY(TAGS['닫기 X'],    4, 16),

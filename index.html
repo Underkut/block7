@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-6  [production]  -->
+<!-- BLOCK7  v. 26-0905-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3628,7 +3628,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   63%{background-color:rgba(var(--ac-rgb),0);}
   80%{background-color:rgba(var(--ac-rgb),.28);}
 }
-.settings-tab.stab-flash{animation:stabFlash 2.4s ease-out 1;border-radius:0;}
+.settings-tab.stab-flash{animation:stabFlash 3s ease-out 1;border-radius:0;}
 @media (prefers-reduced-motion:reduce){.settings-tab.stab-flash{animation:none;}}
 .vsettings-tab-content{padding-top:16px;}
 /* ── 말씀 대시보드 ── */
@@ -4226,7 +4226,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-6";
+const APP_VERSION = "v. 26-0905-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13595,22 +13595,20 @@ let _vfNavParts=null;
 //    ⚠️ 책갈피는 도형 자체가 좁아서(20 중 10) 가로는 여전히 가늘다. 그것은
 //       크기가 아니라 그림의 성질이다 — 억지로 늘리면 책갈피로 안 보인다.
 const _VF_KEEP_MENU_SVG='<svg width="19" height="23" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
-// ── 홈 아이콘 두 벌 (v26-0905-6, HB) ─────────────────────────────
-// ⚠️⚠️ 켜짐/꺼짐을 나타내는 방법을 **뒤집었다.**
-//    0905-5 까지는 켜짐을 '채움'으로 그렸는데, HB — "채우기 별로다. 채움 대신
-//    지금 기존 테두리 상태를 쓰고, 기존 테두리 상태 대신 옅은 색이나 얇은 선을
-//    최적으로 판단해서 써 봐."
-//      켜짐(모음 전체)     = 지금까지의 **선 홈 그대로**
-//      꺼짐(필터 보는 중)  = **같은 선을 옅게**
-// ⚠️ 옅게 하는 방법으로 '얇은 선'이 아니라 **옅은 색(stroke-opacity)** 을 골랐다.
-//    까닭 — 굵기는 이 아이콘 무리의 '식구 표시'다 (넷 다 화면 1.35px 으로 맞춰
-//    두었다, 위 표 참고). 꺼졌다고 굵기를 바꾸면 혼자 딴 무리처럼 보인다.
-//    색만 옅어지면 '같은 식구인데 지금은 조용하다'로 읽힌다 — 앱이 조용함을
-//    나타내는 다른 자리들(태그 그림 .3, --vf-tx3 …)과도 같은 결이다.
-// ⚠️ 도안·굵기는 두 벌이 **한 글자도 다르지 않아야** 한다. 다르면 필터를 풀 때
-//    아이콘이 자리에서 튄다.
-const _VF_HOME_ON_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
-const _VF_HOME_OFF_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.42" stroke-opacity=".6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
+// ── 홈 아이콘 두 벌 (v26-0905-7, HB) ─────────────────────────────
+//   꺼짐(필터 보는 중) = **테두리(선) 홈**, 옆의 것들과 똑같은 진하기
+//   켜짐(모음 전체)    = **채운 홈**, 다만 아래 가운데를 **출입문 모양으로 비운다**
+// ⚠️ 0905-6 에서 꺼짐을 옅게(stroke-opacity .6) 해 봤는데 HB 가 되돌리라 했다.
+//    눌러야 하는 쪽이 흐려지는 것이 오히려 불편했다 — 되살리지 말 것.
+// ⚠️ 0905-5 의 통짜 채움이 "답답·뭉툭" 했던 까닭은 **비어 있는 자리가 하나도
+//    없어서**였다. 문을 뚫으면 같은 채움이라도 숨 쉴 틈이 생긴다 (HB 그림).
+//    문은 바닥까지 **뚫린 홈**이라 따로 도려내지 않고 테두리 한 줄로 그린다.
+// ⚠️ 처마(지붕이 몸통 밖으로 나온 길이)는 두 벌 모두 살짝 길다 —
+//    좌우 1.8 → 2.3 (HB, 0905-7). 두 벌이 **같은 집으로 보여야** 하므로
+//    한쪽만 고치지 말 것. 두 벌의 먹 상자는 x 1.8~18.2 · y 2.8~17.7 로 같고,
+//    그래서 켜고 끌 때 아이콘이 자리에서 튀지 않는다.
+const _VF_HOME_OFF_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9.61 10 3.5l7.5 6.11"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
+const _VF_HOME_ON_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2.8 18.2 10.1H15.8V16.7a1 1 0 0 1-1 1H11.5V14.5a1.5 1.5 0 0 0-3 0V17.7H5.2a1 1 0 0 1-1-1V10.1H1.8Z"/></svg>';
 let _vfHomeAtCollection=false;
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
@@ -13627,7 +13625,12 @@ let _vfHomeAtCollection=false;
 //    치우쳐 있었다. 그대로 두면 옆의 홈·제목·닫기와 높이가 안 맞는다.
 //    도안을 다시 그리는 대신 상자를 그만큼 올려 그림을 한가운데로 앉힌다.
 //    (셔플 도안은 y 5~19 로 이미 한가운데라 손대지 않는다)
-const _VF_CYCLE_SVG='<svg width="17" height="17" viewBox="0 -2.5 24 24" fill="none" stroke="currentColor" stroke-width="1.91" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3"/><path d="M14.5 11.5L11 15"/></svg>';
+// ⚠️ v26-0905-7, HB — 화살촉 반쪽(사선)이 테두리와 **떨어져 떠 있었다.**
+//    고리는 (14,15) 에서 끝나는데 사선은 (11,15) 에서 끝나 3 만큼 벌어졌다.
+//    → 사선을 고리 끝에 붙이고, 나아가 **한 획(path 하나)** 으로 이었다.
+//      두 획으로 두면 끝점이 겹치면서 그 한 점만 두 겹으로 그려진다.
+//    ⚠️ 고리의 아래쪽 틈(x 9~14)은 그대로다 — 그 틈이 '순환'의 표시다.
+const _VF_CYCLE_SVG='<svg width="17" height="17" viewBox="0 -2.5 24 24" fill="none" stroke="currentColor" stroke-width="1.91" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3l3.5-3.5"/></svg>';
 const _VF_SHUFFLE_SVG='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.91" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5c4 0 4 10 8 10h4"/><path d="M3 17h5c4 0 4-10 8-10h4"/><path d="M18 15l2 2-2 2"/><path d="M18 5l2 2-2 2"/></svg>';
 function _vfCycleMode(){return ST.settings.vfCycleMode==='shuffle'?'shuffle':'repeat';}
 function vfToggleCycleMode(){
@@ -19151,7 +19154,7 @@ function _vsetFlashTab(btn){
   btn.classList.remove('stab-flash');
   void btn.offsetWidth;
   btn.classList.add('stab-flash');
-  setTimeout(()=>btn.classList.remove('stab-flash'),2500);
+  setTimeout(()=>btn.classList.remove('stab-flash'),3100);
 }
 // 말씀영역·전체화면 롱터치 메뉴의 '말씀 설정' (v26-0905-4, HB)
 // ⚠️ 되돌아갈 팝업(_vsetBackTo)은 비워 둔다 — 이 메뉴는 팝업이 아니라 화면

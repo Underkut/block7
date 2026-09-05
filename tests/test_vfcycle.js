@@ -8,6 +8,8 @@
 // 아이콘은 HB 가 스케치로 확정한 모양 그대로다. 보이는 크기는 17×17이고,
 // 30×30 버튼 안에서 태그 그림과 같은 색·투명도로 좌우 대칭인 상단 자리에 놓인다.
 const { slice, makeScorer, SRC } = require('./_load');
+// 상수 한 줄의 값(따옴표 안)을 떠 온다
+const one_ = (src,mark) => { const i=src.indexOf(mark), a=src.indexOf("'",i)+1; return src.slice(a, src.indexOf("';",a)); };
 const sc = makeScorer();
 
 console.log('시나리오 1 — 기본값과 상태 읽기');
@@ -52,8 +54,14 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   // 0817-17 에서 한 번 고쳤지만 반경이 너무 작아 눈에 안 띄었고, 왼쪽 아래는
   // 아예 손대지 않았었다). 네 코너 전부 같은 반경(4)의 아크로 그린다 —
   // gap 은 아래 가운데로 옮기고 화살촉이 그 자리에 들어간다.
-  sc.eq('순환 — 네 코너 모두 라운딩된 한 path',
-        SRC.includes('<path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3"/>'), true);
+  // ⚠️ v26-0905-7, HB — 화살촉 반쪽(사선)이 테두리에서 떨어져 떠 있었다.
+  //    고리 끝(14,15)에 붙이고 **한 획**으로 이었다 (l3.5-3.5). 두 획으로 두면
+  //    끝점이 겹쳐 그 한 점만 두 겹으로 그려진다.
+  sc.eq('순환 — 네 코너 라운딩 + 화살촉까지 한 path',
+        SRC.includes('<path d="M9 15H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v3a4 4 0 0 1-4 4h-3l3.5-3.5"/>'), true);
+  sc.eq('떨어져 있던 옛 사선은 없앴다', SRC.includes('<path d="M14.5 11.5L11 15"/>'), false);
+  sc.eq('순환 아이콘은 획 하나뿐이다',
+        (one_(SRC,'const _VF_CYCLE_SVG=').match(/<path /g)||[]).length, 1);
 }
 
 console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 통일한다');
