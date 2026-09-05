@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0905-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3019,9 +3019,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
       다시 그릴 때마다 타이머가 새어 나와 쌓인다. */
 .roll-v{position:relative;overflow:hidden;display:inline-block;vertical-align:middle;
   min-width:0;max-width:100%;}
-/* 밀어 올리는 데 걸리는 시간 — 눈이 따라갈 만큼 여유 있게, 끝은 길게 눕는
-   곡선으로 (v26-0905-9, HB "조금 여유있고 차분하게"). */
-.roll-v .roll-track{display:block;transition:transform .7s cubic-bezier(.25,1,.3,1);}
+/* 밀어 올리는 데 걸리는 시간 — 눈이 따라갈 만큼 여유 있게, 끝은 아주 길게
+   눕는 곡선으로 (v26-0905-10, HB "도착 때 더 천천히 착지"). 0.42 → 0.7 → 0.85초. */
+.roll-v .roll-track{display:block;transition:transform .85s cubic-bezier(.16,1,.28,1);}
 /* 세로로 넘기는 줄 **하나하나**도 자리보다 길면 가로로 흐른다 (겹쳐 쓴다) */
 .roll-v .roll-item{display:block;}
 /* 디졸브(.rd) — 줄을 밀어 올리는 대신 **겹쳐 놓고 서로 스며들게** 한다.
@@ -3032,7 +3032,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
       → grid 한 칸에 모두 포갠다. 폭·높이는 가장 넓은 줄이 정해 주고
         겹치기는 그대로 된다 (흐름 안에 남는다). */
 .roll-v.rd .roll-track{display:grid;transform:none!important;transition:none;}
-.roll-v.rd .roll-item{grid-area:1/1;opacity:0;transition:opacity var(--roll-fade,.9s) ease;}
+/* ⚠️ 스미는 시간은 **0.6초 그대로 둔다** (v26-0905-10, HB — 0.9초로 늘렸더니
+   "길어지고 사라지는 글자가 끝에 가서 툭 끊긴다"). 원래 값이 가장 자연스럽다. */
+.roll-v.rd .roll-item{grid-area:1/1;opacity:0;transition:opacity var(--roll-fade,.6s) ease;}
 .roll-v.rd .roll-item.on{opacity:1;}
 .roll-h{display:block;overflow:hidden;min-width:0;max-width:100%;}
 .roll-h > span{display:inline-block;white-space:nowrap;}
@@ -3056,6 +3058,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vw-scope .vw-ic{display:flex;align-items:center;color:var(--tx2);flex-shrink:0;}
 .vw-scope .vw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .vw-scope .vw-more{font-size:9px;color:var(--tx3);font-family:var(--font-number);flex-shrink:0;}
+/* ⚠️ 가운데에 서는 자리에서는 **글자도 가운데**로 (v26-0905-10, HB — "짧은 두
+   글자짜리 제목이 중앙에서 왼쪽으로 벗어나 있다"). 상자 폭은 **가장 넓은 줄**이
+   정하므로, 짧은 줄은 그냥 두면 그 넓은 상자 안에서 왼쪽에 붙어 버린다. */
+#vfTopLabel .roll-h,#vfTopLabel .roll-item,#vfTopLabel .roll-v,
+.vw-scope-c .roll-h,.vw-scope-c .roll-item,.vw-scope-c .roll-v{text-align:center;}
 /* 카드의 범위 단추는 헤더 **한가운데**에 선다. 좌우 자리(22px)가 같으므로
    가운데를 flex:1 로 두면 이름이 길어져도 아이콘이 한가운데를 지킨다. */
 .vw-scope-c{flex:1;min-width:0;justify-content:center;}
@@ -4239,7 +4246,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-9";
+const APP_VERSION = "v. 26-0905-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10798,7 +10805,14 @@ function _vfSyncPageBg(){
   const on=_verseFullIsOpen()||(typeof _vgIsOpen==='function'&&_vgIsOpen());
   document.documentElement.classList.toggle('vf-open',on);
 }
+// ⚠️ 가장자리를 밀어 닫는 동안(0.22초)은 **이미 닫힌 것으로 친다** (v26-0905-10,
+//    HB 신고 — "스와이프로 할일뷰로 돌아올 때 말씀 상단 언저리에 전체화면
+//    배경이 남아 있다가 툭 사라진다"). 까닭: 닫기는 화면을 오른쪽으로 밀어낸
+//    **뒤에** closeVerseFull() 을 불렀는데, 그동안 html.vf-open 이 그대로 붙어
+//    있어 비워진 자리를 전체화면 배경색이 계속 칠하고 있었다.
+let _vfClosing=false;
 function _verseFullIsOpen(){
+  if(_vfClosing)return false;
   const el=document.getElementById('verseFull');
   return !!(el&&el.style.display==='flex');
 }
@@ -14617,7 +14631,9 @@ function verseFullNav(d){
 //    `if(!active) return` 에 걸려 실행되지 않아, 화면이 몇십 px 오른쪽으로
 //    밀린 채 굳었다 — 왼쪽에 뒷화면이 비치고, 오른쪽은 잘려서 닫기 버튼이
 //    사라지고, 스크롤도 먹지 않던 그 상태. (v26-0803-3)
-function _initEdgeBack(el,onBack){
+// onBackStart 를 주면 **밀려 나가기 시작할 때** 부른다 (닫힘을 미리 알려야
+// 하는 곳이 쓴다 — 전체화면 뒤 바탕 되돌리기).
+function _initEdgeBack(el,onBack,onBackStart){
   if(!el||el._edgeBack)return;
   el._edgeBack=true;
   const EDGE=28,COMMIT=70;
@@ -14665,6 +14681,7 @@ function _initEdgeBack(el,onBack){
     const dx=t?(t.clientX-sx):0;
     if(moved&&dx>=COMMIT){
       // 닫기 확정 — 제자리로 튕겼다가 사라지지 말고 그대로 오른쪽으로 밀려 나간다
+      if(typeof onBackStart==='function'){try{onBackStart();}catch(err){}}
       el.style.transition='transform .22s cubic-bezier(.3,0,.3,1),opacity .22s';
       el.style.transform=`translateX(${window.innerWidth}px)`;
       el.style.opacity='0';
@@ -14709,7 +14726,9 @@ function _initVerseFullGestures(){
   // 상·하 1/3 탭은 이전/다음 이동인데, 두 번째 탭이 오면 그 이동을 취소하고
   // 좋아요로 바꾼다. 그래서 첫 탭의 이동을 잠깐(280ms) 미뤄 둔다.
   let tapT=null,lastTap=0;
-  _initEdgeBack(el,()=>closeVerseFull());   // 왼쪽 가장자리 → 오른쪽 = 닫기
+  // 왼쪽 가장자리 → 오른쪽 = 닫기. 밀려 나가기 **시작할 때** 뒤 바탕부터 되돌린다.
+  _initEdgeBack(el,()=>{_vfClosing=false;closeVerseFull();},
+                   ()=>{_vfClosing=true;_vfSyncPageBg();});
   el.addEventListener('click',e=>{
     // 핀치 끝자락에 딸려 오는 가짜 클릭 — 이걸 막지 않으면 말씀이 넘어간다
     if(_tsPinchBusy()){e.preventDefault();e.stopPropagation();return;}
@@ -19489,6 +19508,40 @@ function _vcAutoSlot(id,cfg,now){
   const ms=_vcAutoMin(cfg)*60000;
   return Math.floor((((now==null)?Date.now():now)-_vcAutoOffset(id,_vcAutoMin(cfg)))/ms);
 }
+// ── 앱을 껐다 켤 때 (v26-0905-10, HB) ──────────────────────
+// ⚠️⚠️ 시계만 보고 계산하면, 앱이 꺼져 있던 동안 흘러간 몫을 **켜는 순간
+//    한꺼번에** 따라잡는다 — 카드가 전부 동시에 바뀐 것처럼 보인다
+//    (HB 신고: "앱을 다시 켜니 말씀카드가 전부 한꺼번에 바뀌더라").
+// → 이 기기에서 **마지막으로 보여 준 자리**를 localStorage 에 적어 두고,
+//   켤 때 그 자리에서 **다시 센다.** 그러면 켜는 순간에는 아무것도 안 바뀌고,
+//   카드마다 어긋난 시작점 덕에 그 뒤로는 따로따로 넘어간다.
+// ⚠️ 자리는 **기기 로컬**에만 둔다 (b7v1_layform·b7v1_uiscale 과 같은 자리).
+//    클라우드에 쓰면 카드마다 몇 분에 한 번씩 글이 올라가고, 기기끼리 서로
+//    다른 자리를 올려 병합이 계속 흔들린다.
+const VC_AUTO_LS='b7v1_vcauto';
+let _vcAutoAnchor=null;
+function _vcAutoAnchors(){
+  if(_vcAutoAnchor)return _vcAutoAnchor;
+  _vcAutoAnchor={};
+  try{
+    const o=JSON.parse(localStorage.getItem(VC_AUTO_LS)||'{}');
+    if(o&&typeof o==='object'&&!Array.isArray(o))Object.keys(o).forEach(k=>{
+      const e=o[k];
+      if(e&&typeof e.r==='string'&&typeof e.s==='number')_vcAutoAnchor[k]={r:e.r,s:e.s};
+    });
+  }catch(e){}
+  return _vcAutoAnchor;
+}
+function _vcAutoSaveAnchors(){
+  try{localStorage.setItem(VC_AUTO_LS,JSON.stringify(_vcAutoAnchors()));}catch(e){}
+}
+function _vcAutoSetAnchor(id,ref){
+  const A=_vcAutoAnchors(),cfg=_vcGet(id);
+  if(!ref||!cfg)delete A[id];
+  else A[id]={r:ref,s:_vcAutoSlot(id,cfg)};
+  _vcAutoSaveAnchors();
+}
+function _vcAutoResetAnchors(){_vcAutoAnchor=null;}   // 시험용 — 기억을 비운다
 function setVcAuto(id,on){
   const cfg=_vcGet(id);
   if(!cfg)return;
@@ -19497,7 +19550,8 @@ function setVcAuto(id,on){
     const v=_vcCurrent(cfg,id);           // 지금 보고 있는 말씀에서 이어서 넘어가게
     if(v)cfg.ref=_vcKeyOf(v);
     cfg.autoAt=_vcAutoSlot(id,cfg);
-  }
+    _vcAutoSetAnchor(id,cfg.ref);
+  }else _vcAutoSetAnchor(id,null);
   save();renderVcSettings();renderLayout();
 }
 function setVcAutoMin(id,m){
@@ -19507,6 +19561,7 @@ function setVcAutoMin(id,m){
   cfg.autoMin=VC_AUTO_STEPS.includes(+m)?+m:VC_AUTO_DEFAULT;   // 지금 자리에 못박고
   if(v)cfg.ref=_vcKeyOf(v);                                    // 새 간격으로 다시 센다
   cfg.autoAt=_vcAutoSlot(id,cfg);
+  if(cfg.auto)_vcAutoSetAnchor(id,cfg.ref);
   save();renderVcSettings();renderLayout();
 }
 // ── 이름 넘김 방식·간격 (v26-0905-8, HB) ──────────────────
@@ -19596,6 +19651,7 @@ function _vcRemove(id){
   delete _vcAll()[id];
   const hh=ST.settings.rpWidgetHeights;
   if(hh){delete hh['card#'+id];delete hh['list#'+id];}   // 카드 높이·목록 높이 둘 다
+  if(typeof _vcAutoSetAnchor==='function')_vcAutoSetAnchor(id,null);
 }
 // 위젯 이름 — 토스트·설정 팝업 칩에서 쓴다 (카드는 RP_WIDGET_DEFS 에 없다)
 function _rpWidgetName(t){
@@ -19692,38 +19748,89 @@ function _vcCurrent(cfg,id){
       base=i>=0?i:0;
     }
   }
-  // ② 자동 넘김이 켜져 있으면 그 자리에서 **시계만큼** 앞으로 (저장하지 않는다)
+  // ② 자동 넘김이 켜져 있으면 그 자리에서 **시계만큼** 앞으로 (저장하지 않는다).
+  //    이 기기에 적어 둔 자리(_vcAutoAnchors)가 있으면 그것을 먼저 본다 —
+  //    앱을 껐다 켜도 보던 말씀에서 이어지고, 한꺼번에 따라잡지 않는다.
   if(id&&_vcAutoOn(cfg)){
     const slot=_vcAutoSlot(id,cfg);
-    const from=(typeof cfg.autoAt==='number')?cfg.autoAt:slot;
+    let from=(typeof cfg.autoAt==='number')?cfg.autoAt:slot;
+    const a=_vcAutoAnchors()[id];
+    if(a){
+      const j=list.findIndex(v=>_vcKeyOf(v)===a.r);
+      if(j>=0){base=j;from=a.s;}
+    }
     return at(base+(slot-from));
   }
   return at(base);
 }
 // ── 자동 넘김 시계 ──
 // 앱 전체에 **하나**. 20초마다 "칸이 바뀐 카드가 있나"만 보고, 있을 때만 다시 그린다.
-let _vcAutoTimer=null,_vcAutoSig='';
-function _vcAutoSignature(){
-  const all=_vcAll();
-  return Object.keys(all).map(id=>{
+let _vcAutoTimer=null,_vcAutoSlots={};
+// 자리를 옮긴 카드들 (목록 모습은 자동 넘김이 보이지 않으므로 세지 않는다)
+function _vcAutoChanged(){
+  const out=[];
+  Object.keys(_vcAll()).forEach(id=>{
     const c=_vcGet(id);
-    return(c&&c.auto)?(id+':'+_vcAutoSlot(id,c)):'';
-  }).filter(Boolean).join('|');
+    if(!c||!c.auto||_vcView(c)==='list')return;
+    const s=_vcAutoSlot(id,c);
+    if(_vcAutoSlots[id]!==s){out.push(id);_vcAutoSlots[id]=s;}
+  });
+  return out;
+}
+// 자동으로 넘어갈 때도 **손으로 민 것처럼** 좌우로 밀린다 (v26-0905-10, HB —
+// "툭 하고 바뀌는데 좌우 슬라이드로 바뀌게 해줘"). 손으로 밀 때와 같은 길이·곡선.
+function _vcAutoSlide(ids){
+  const olds=ids.map(id=>_vcSlideEl(id)).filter(el=>el&&!el._vcBusy);
+  const finish=()=>{
+    renderLayout();
+    ids.forEach(id=>{
+      const c=_vcGet(id),v=c?_vcCurrent(c,id):null;
+      if(v)_vcAutoSetAnchor(id,_vcKeyOf(v));      // 지금 보이는 자리를 기기에 적어 둔다
+      const ns=_vcSlideEl(id);
+      if(!ns)return;
+      const w=ns.getBoundingClientRect().width||220;
+      ns.style.transition='none';
+      ns.style.transform=`translateX(${w*0.4}px)`;
+      ns.style.opacity='0';
+      ns.offsetWidth;                              // 강제 리플로우 — 시작값을 굳힌다
+      ns.style.transition=_VC_SLIDE_TR;
+      ns.style.transform='translateX(0)';
+      ns.style.opacity='1';
+      setTimeout(()=>{ns.style.transition='';ns.style.transform='';ns.style.opacity='';},210);
+    });
+  };
+  if(!olds.length){finish();return;}
+  olds.forEach(el=>{
+    el._vcBusy=true;
+    const w=el.getBoundingClientRect().width||220;
+    el.style.transition=_VC_SLIDE_TR;
+    el.style.transform=`translateX(${-w*0.4}px)`;
+    el.style.opacity='0';
+  });
+  setTimeout(finish,190);
 }
 function _vcAutoTick(){
   if(!document.body.classList.contains('split-d'))return;   // 위젯이 안 보이는 화면이면 그릴 것이 없다
   if(window._rpDragSession)return;                          // 위젯을 끌고 있는 중이면 손대지 않는다
-  const sig=_vcAutoSignature();
-  if(sig===_vcAutoSig)return;
   // 글자를 입력하는 중이면 미룬다 — 다시 그리면 입력이 끊긴다
   const t=document.activeElement;
-  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable)){_vcAutoSig='';return;}
-  _vcAutoSig=sig;
-  renderLayout();
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  const ids=_vcAutoChanged();
+  if(ids.length)_vcAutoSlide(ids);
 }
 function _vcAutoStart(){
   if(_vcAutoTimer)return;
-  _vcAutoSig=_vcAutoSignature();
+  // ⚠️ 켤 때는 **지금 칸에서 다시 센다** — 꺼져 있던 동안의 몫을 한꺼번에
+  //    따라잡지 않는다 (그러면 카드가 전부 동시에 바뀐 것처럼 보인다).
+  const A=_vcAutoAnchors();
+  Object.keys(A).forEach(id=>{
+    const c=_vcGet(id);
+    if(c&&c.auto)A[id].s=_vcAutoSlot(id,c);
+    else delete A[id];
+  });
+  _vcAutoSaveAnchors();
+  _vcAutoSlots={};
+  _vcAutoChanged();                       // 지금 칸을 기준으로 삼는다 (첫 시계에 안 튀게)
   _vcAutoTimer=setInterval(_vcAutoTick,20000);
 }
 // 헤더에 보여줄 갈래 이름 (#태그 는 # 를 붙인다)
@@ -20033,7 +20140,11 @@ function _vcApplyNav(id,d){
   const n=list.length;
   cfg.ref=_vcKeyOf(list[(((i+(d>0?1:-1))%n)+n)%n]);
   // 자동 넘김이 켜져 있으면 **여기서부터** 다시 센다 (손이 언제나 앞선다)
-  if(_vcAutoOn(cfg))cfg.autoAt=_vcAutoSlot(id,cfg);
+  if(_vcAutoOn(cfg)){
+    cfg.autoAt=_vcAutoSlot(id,cfg);
+    _vcAutoSetAnchor(id,cfg.ref);
+    _vcAutoSlots[id]=cfg.autoAt;          // 곧이어 시계가 또 넘기지 않게
+  }
   save();
   return true;
 }
