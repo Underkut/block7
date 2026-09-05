@@ -79,10 +79,11 @@ eval(
   '_vcScopeParts,_vcHeadMode,setVcHeadMode,_vcAutoOn,_vcAutoMin,_vcAutoOffset,_vcAutoSlot,' +
   'setVcAuto,setVcAutoMin,VC_AUTO_STEPS,VC_AUTO_LABEL,VC_AUTO_DEFAULT,_vcHiSplit,' +
   '_vcRollMode,_vcRollSec,_vcRollOpt,setVcRollMode,setVcRollSec,_rollSecLabel,' +
-  'VC_ROLL_SECS,VC_ROLL_DEFAULT});'
+  'VC_ROLL_SECS,VC_ROLL_DEFAULT,_vcAutoAnchors,_vcAutoSetAnchor,_vcAutoResetAnchors});'
 );
 
 const reset = () => {
+  if (typeof _vcAutoResetAnchors === 'function') _vcAutoResetAnchors();
   ST.settings = { layout: { bp2: 600, bp3: 900, weekly: 'none', cols: { left: ['todo'], center: [], right: [] }, c3: [.34, .3] } };
 };
 
@@ -462,23 +463,33 @@ console.log('\n시나리오 7-E — 말씀카드 자동 넘김');
   sc.eq('그때가 몇 번째 칸인지도', typeof cfg.autoAt, 'number');
 
   // 칸이 하나 지나면 다음 말씀 — **저장은 일어나지 않는다**
-  const at0 = cfg.autoAt;
-  cfg.autoAt = at0 - 1;
+  // (자리는 이 기기의 기억(_vcAutoAnchors)이 앞선다 — 앱을 껐다 켜도 이어지게)
+  const A = _vcAutoAnchors();
+  sc.eq('켤 때 이 기기의 자리도 함께 적는다', A[id].r, 'R1');
+  const at0 = A[id].s;
+  A[id].s = at0 - 1;
   sc.eq('한 칸 지나면 다음 말씀', _vcCurrent(cfg, id).ref, 'R2');
-  cfg.autoAt = at0 - 4;
+  A[id].s = at0 - 4;
   sc.eq('네 칸 지나면 네 번째 뒤', _vcCurrent(cfg, id).ref, 'R5');
-  cfg.autoAt = at0 - 5;
+  A[id].s = at0 - 5;
   sc.eq('끝에 닿으면 한 바퀴 돌아 처음으로', _vcCurrent(cfg, id).ref, 'R1');
   sc.eq('적어 둔 자리는 그대로다 (저장이 없다)', cfg.ref, 'R1');
+
+  // ⚠️ 앱을 껐다 켜면 **지금 칸에서 다시 센다** — 꺼져 있던 몫을 한꺼번에
+  //    따라잡으면 카드가 전부 동시에 바뀐 것처럼 보인다 (HB 신고).
+  A[id].s = at0 - 4;
+  sc.eq('켜기 전에는 네 칸 밀려 있지만', _vcCurrent(cfg, id).ref, 'R5');
+  A[id].s = _vcAutoSlot(id, cfg);          // _vcAutoStart 가 하는 일
+  sc.eq('켠 뒤에는 보던 자리 그대로', _vcCurrent(cfg, id).ref, 'R1');
 
   // id 를 안 주면 자동을 셈에 넣지 않는다 (자리 그대로)
   sc.eq('id 없이 물으면 적어 둔 자리', _vcCurrent(cfg).ref, 'R1');
 
   // 손으로 넘기면 그 자리에서 다시 센다 — 손이 언제나 앞선다
-  cfg.autoAt = at0;
   vcNav(id, 1);
   sc.eq('손으로 넘긴 자리', cfg.ref, 'R2');
   sc.eq('기준도 지금 칸으로 옮겼다', cfg.autoAt, _vcAutoSlot(id, cfg));
+  sc.eq('이 기기의 기억도 함께 옮긴다', _vcAutoAnchors()[id].r, 'R2');
   sc.eq('그래서 곧바로 또 넘어가지 않는다', _vcCurrent(cfg, id).ref, 'R2');
 
   // 카드마다 시작점이 어긋난다 (여러 위젯이 한꺼번에 넘어가지 않게)
@@ -488,8 +499,9 @@ console.log('\n시나리오 7-E — 말씀카드 자동 넘김');
   sc.eq('카드마다 다르다', offA !== offB, true);
   sc.eq('같은 카드는 늘 같은 값', _vcAutoOffset(id, 10), offA);
 
-  // 끄면 그 자리에 그대로 선다
+  // 끄면 그 자리에 그대로 선다 (기기의 기억도 지운다)
   setVcAuto(id, false);
+  sc.eq('끄면 기억도 지운다', _vcAutoAnchors()[id], undefined);
   cfg.autoAt = _vcAutoSlot(id, cfg) - 9;
   sc.eq('꺼져 있으면 시계를 보지 않는다', _vcCurrent(cfg, id).ref, 'R2');
 }
@@ -673,8 +685,23 @@ console.log('\n시나리오 9 — 화면 연결');
         /\.roll-v\.rd \.roll-item\{grid-area:1\/1;/.test(SRC), true);
   sc.eq('겹침 표식은 HTML 이 들고 나온다',
         SRC.includes("class=\"roll-v${mode==='dissolve'?' rd':''}\""), true);
-  sc.eq('플립은 여유 있게 0.7초',
-        /\.roll-v \.roll-track\{display:block;transition:transform \.7s cubic-bezier/.test(SRC), true);
+  sc.eq('플립은 여유 있게 0.85초 · 끝이 아주 길게 눕는 곡선',
+        /\.roll-v \.roll-track\{display:block;transition:transform \.85s cubic-bezier\(\.16,1,\.28,1\)/.test(SRC), true);
+  // ⚠️ 디졸브 시간은 **되돌린 값**이다 — 0.9초로 늘렸더니 "길고 툭 끊긴다" 는
+  //    신고를 받았다 (v26-0905-10). 다시 늘리지 말 것.
+  sc.eq('디졸브는 0.6초 그대로', SRC.includes('transition:opacity var(--roll-fade,.6s) ease;'), true);
+  sc.eq('가운데 자리에서는 글자도 가운데로',
+        /#vfTopLabel \.roll-h,#vfTopLabel \.roll-item,#vfTopLabel \.roll-v,\n\.vw-scope-c[^{]*\{text-align:center;\}/.test(SRC), true);
+  // 자동 넘김도 손으로 민 것처럼 좌우로 밀린다
+  sc.eq('자동 넘김도 좌우로 밀린다', SRC.includes('function _vcAutoSlide(ids)'), true);
+  sc.eq('손으로 밀 때와 같은 곡선을 쓴다',
+        /function _vcAutoSlide[\s\S]{0,1400}ns\.style\.transition=_VC_SLIDE_TR;/.test(SRC), true);
+  // 앱을 껐다 켤 때 한꺼번에 따라잡지 않는다
+  sc.eq('마지막 자리는 기기 로컬에만 적는다',
+        SRC.includes("const VC_AUTO_LS='b7v1_vcauto';") &&
+        /_vcAutoSaveAnchors[\s\S]{0,200}localStorage\.setItem\(VC_AUTO_LS/.test(SRC), true);
+  sc.eq('켤 때 지금 칸에서 다시 센다',
+        /function _vcAutoStart[\s\S]{0,700}A\[id\]\.s=_vcAutoSlot\(id,c\);/.test(SRC), true);
   sc.eq('전체화면 상단도 그 값을 받는다',
         SRC.includes("_vcScopeParts(sc),_vcRollOpt(cfg));"), true);
   sc.eq('텍스트를 골라야 한 겹 더 열린다',
