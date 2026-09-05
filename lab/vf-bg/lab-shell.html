@@ -1,0 +1,328 @@
+<title>내 배경 실험실</title>
+<meta name="color-scheme" content="dark light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#0f1012;--s1:#17181c;--s2:#1f2126;--bd2:#2c2f36;
+  --tx:#e8e9ec;--tx2:rgba(232,233,236,.62);--tx3:rgba(232,233,236,.42);
+  --ac:#7da2ff;--ac-tx:#7da2ff;--font-number:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);
+  font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+  -webkit-text-size-adjust:100%;overscroll-behavior:none;}
+
+/* ── 앱에서 그대로 옮겨 온 전체화면 뼈대 (배경 이음매 --vf-bgimg 를 보이려고) ── */
+#verseFull{position:fixed;inset:-1px;z-index:190;background:var(--vf-bgimg,var(--bg));
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+#verseFull::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:9;
+  opacity:var(--vf-grain,0);mix-blend-mode:overlay;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23a)' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.14' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23b)' opacity='.7'/%3E%3C/svg%3E");
+  background-size:140px 140px,300px 300px;}
+#verseFull::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:8;
+  opacity:var(--vf-vig,0);
+  background:radial-gradient(120% 85% at 50% 42%,transparent 42%,rgba(0,0,0,.55) 100%);}
+#verseFullInner{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:stretch;justify-content:center;
+  padding:clamp(104px,24vh,196px) clamp(24px,7vw,64px);text-align:center;}
+#vfText{width:100%;color:var(--vf-tx,var(--tx));line-height:1.85;
+  font-weight:var(--vf-fw,300);letter-spacing:var(--vf-ls,0);
+  font-family:var(--vf-font,inherit);word-break:keep-all;
+  font-size:clamp(17px,5vw,24px);text-shadow:var(--vf-tsh,none);}
+.vf-ref{margin-top:20px;font-size:12px;letter-spacing:.08em;
+  color:var(--vf-tx3,var(--tx3));font-family:var(--vf-reffont,var(--font-number));
+  text-shadow:var(--vf-tsh,none);}
+.vf-top{position:absolute;left:0;right:0;top:0;z-index:12;display:flex;
+  justify-content:space-between;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0;}
+.vf-top button{background:none;border:none;padding:8px;cursor:pointer;
+  color:var(--vf-tx3,var(--tx3));font-size:12px;text-shadow:var(--vf-tsh,none);}
+.vf-nav{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  z-index:12;display:flex;justify-content:center;gap:22px;}
+.vf-nav button{background:none;border:none;color:var(--vf-tx3,var(--tx3));
+  font-size:13px;padding:10px 14px;cursor:pointer;text-shadow:var(--vf-tsh,none);}
+
+/* ── 실험실 전용 (설정 시트) ── */
+#labSheet{position:fixed;left:0;right:0;bottom:0;z-index:220;max-height:82vh;overflow-y:auto;
+  background:var(--bg);border-top:1px solid var(--bd2);border-radius:16px 16px 0 0;
+  padding:14px 16px calc(20px + env(safe-area-inset-bottom,0px));display:none;}
+#labSheet.on{display:block}
+.settings-section{padding:12px 0;border-top:1px solid var(--bd2)}
+.settings-section:first-of-type{border-top:none}
+.settings-section-title{font-size:13px;color:var(--tx);margin-bottom:6px}
+.settings-row-desc{font-size:11px;color:var(--tx3);line-height:1.6}
+.settings-btn{padding:10px;border-radius:10px;background:transparent;color:var(--tx2);
+  border:1px solid var(--bd2);font-size:12px;cursor:pointer}
+.lab-note{font-size:11px;color:var(--tx3);line-height:1.7;background:var(--s1);
+  border-radius:10px;padding:11px 12px;margin-top:10px}
+#labToast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:400;
+  background:rgba(20,20,24,.94);color:#fff;font-size:12px;padding:10px 16px;
+  border-radius:999px;display:none;pointer-events:none;max-width:80vw;text-align:center}
+#labShot{position:fixed;inset:0;z-index:320;background:rgba(0,0,0,.9);display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px}
+#labShot img{max-width:100%;max-height:78vh;border-radius:10px}
+#labShot .t{color:#fff;font-size:12px;opacity:.75;text-align:center;line-height:1.7}
+.modal-x{background:none;border:none;color:var(--tx3);cursor:pointer;padding:6px;line-height:0}
+/*VFBG_CSS*/
+</style>
+
+<div id="verseFull">
+  <div class="vf-top">
+    <button onclick="labToggleSheet()">설정</button>
+    <button onclick="labShare()">공유 이미지</button>
+  </div>
+  <div id="verseFullInner">
+    <div id="vfText"></div>
+    <div class="vf-ref" id="vfRef"></div>
+  </div>
+  <div class="vf-nav">
+    <button onclick="labNav(-1)">← 이전</button>
+    <button onclick="labRoll()">색 바꾸기</button>
+    <button onclick="labNav(1)">다음 →</button>
+  </div>
+</div>
+
+<div id="labSheet">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+    <span style="font-size:13px;">말씀 설정 · 전체화면</span>
+    <button class="modal-x" onclick="labToggleSheet()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">테마</div>
+    <div class="settings-row-desc" style="margin-bottom:8px;">지금 앱에 있는 여덟 가지예요. 여기에 아래 '내 배경'이 같은 자격으로 붙습니다.</div>
+    <div id="vfThemeChips" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+  </div>
+
+<!--VFBG_HTML_SETTINGS-->
+
+  <div class="lab-note" id="labNote"></div>
+</div>
+
+<div id="labToast"></div>
+<div id="labShot" onclick="this.style.display='none'">
+  <img id="labShotImg" alt="공유 이미지 미리보기">
+  <div class="t">화면 그대로 그린 공유 이미지예요.<br>아이폰은 <b>사진을 길게 눌러</b> 저장할 수 있어요. (아무 데나 눌러 닫기)</div>
+</div>
+
+<!--VFBG_HTML_BODY-->
+
+<!--VFBG_JS-->
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   실험실 껍데기 — 앱의 '진짜' 조각과 흉내낸 조각을 섞어 둔 곳
+     · VF_PATTERNS · VF_THEME_ORDER · _rgba  → index.html 에서 그대로 떠 왔다
+     · _vfTheme · _vfBgCss · applyVfTheme    → INTEGRATION.md 가 말하는 **합친 뒤 모습**
+     · ST · save · showToast · appConfirm    → 앱 흉내 (여기서만)
+   ══════════════════════════════════════════════════════════════════════════ */
+/*VFBG_APPBITS*/
+
+// ── 앱 흉내 ────────────────────────────────────────────────────────────
+const LAB_KEY='vfbg_lab_v1';
+let ST={settings:{vfThemes:['night'],vfBgs:[]}};
+try{const v=JSON.parse(localStorage.getItem(LAB_KEY)||'null');if(v&&v.settings)ST=v;}catch(e){}
+function save(){try{localStorage.setItem(LAB_KEY,JSON.stringify(ST));}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let _toastT=null;
+function showToast(m){
+  const el=document.getElementById('labToast');
+  el.textContent=m;el.style.display='block';
+  if(_toastT)clearTimeout(_toastT);
+  _toastT=setTimeout(()=>el.style.display='none',2200);
+}
+function appConfirm(msg,onYes){if(confirm(msg)&&onYes)onYes();}
+function _verseFullIsOpen(){return true;}
+function _vfLayoutText(){}
+function _renderSharePreview(){}
+
+// ── 사진 보관소 (앱의 _idb* 와 같은 것) ────────────────────────────────
+let _idbConn=null;
+function _idbOpen(){
+  if(_idbConn)return _idbConn;
+  _idbConn=new Promise((res,rej)=>{
+    let r;try{r=indexedDB.open('block7lab',1);}catch(e){rej(e);return;}
+    r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('kv'))r.result.createObjectStore('kv');};
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>{_idbConn=null;rej(r.error);};
+  });
+  return _idbConn;
+}
+function _idbRaw(mode,fn){
+  return _idbOpen().then(db=>new Promise((res,rej)=>{
+    const tx=db.transaction('kv',mode);tx.onabort=()=>rej(tx.error);
+    fn(tx.objectStore('kv'),res,rej,tx);
+  }));
+}
+function _idbGet(k){return _idbRaw('readonly',(st,res,rej)=>{const q=st.get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error);});}
+function _idbSet(k,v){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.put(v,k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+function _idbDel(k){return _idbRaw('readwrite',(st,res,rej,tx)=>{st.delete(k);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error);});}
+
+// ── 테마 고르기 (앱과 같은 규칙, 사용자 프리셋을 섞을 수 있게 _vfPatOk 를 쓴다) ──
+function _vfSelectedPatterns(){
+  const s=ST.settings;
+  let sel=Array.isArray(s.vfThemes)?s.vfThemes.slice():null;
+  if(!sel){sel=['night'];s.vfThemes=sel;}
+  return sel.filter(k=>_vfPatOk(k));               // ← 합칠 때 바뀌는 한 곳
+}
+function _vfPatternPool(){
+  const sel=_vfSelectedPatterns();
+  return sel.length?sel:['night'];
+}
+let _vfCurPattern=null,_vfVariantIdx=null;
+function _vfPatternKey(){
+  if(!_vfCurPattern||!_vfPatOk(_vfCurPattern)){    // ← 합칠 때 바뀌는 한 곳
+    const pool=_vfPatternPool();
+    _vfCurPattern=pool[Math.floor(Math.random()*pool.length)];
+  }
+  return _vfCurPattern;
+}
+function _vfRollVariant(){
+  const pool=_vfPatternPool();
+  _vfCurPattern=pool[Math.floor(Math.random()*pool.length)];
+  const p=_vfPat(_vfCurPattern);
+  _vfVariantIdx=Math.floor(Math.random()*p.variants.length);
+}
+function _hiFw(font){return font==='serif'?700:600;}
+function _vfTheme(){
+  const key=_vfPatternKey();
+  if(_vfbgIsUserKey(key)){const t=_vfbgTheme(key);if(t)return t;}   // ← 더하는 두 줄
+  const p=_vfPat(key)||VF_PATTERNS.night;
+  if(_vfVariantIdx==null||_vfVariantIdx>=p.variants.length)_vfVariantIdx=Math.floor(Math.random()*p.variants.length);
+  const v=p.variants[_vfVariantIdx];
+  return{label:p.label,font:p.font,fw:p.fw,grain:p.grain,vig:p.vig||0,ls:p.ls,ang:p.ang,
+    bg:v.bg,tx:v.tx,ac:v.ac,
+    tx2:_rgba(v.tx,.60),tx3:_rgba(v.tx,.42),tile:_rgba(v.tx,.06)};
+}
+function _vfBgCss(t){
+  if(t&&t.photoCss)return t.photoCss;              // ← 더하는 한 줄
+  if(!t.bg||!t.bg.length)return'var(--bg)';
+  if(t.bg.length===1)return t.bg[0];
+  return`linear-gradient(${t.ang||165}deg,${t.bg.join(',')})`;
+}
+function _vfBg1Css(t){return(t&&t.bg&&t.bg.length)?t.bg[0]:'var(--bg)';}
+function applyVfTheme(){
+  const t=_vfTheme();
+  const fam=(t.font==='serif')?VF_SERIF:VF_SANS;
+  const vars={
+    '--vf-bgimg':_vfBgCss(t),'--vf-bg1':_vfBg1Css(t),'--vf-tx':t.tx,'--vf-tx2':t.tx2,
+    '--vf-tx3':t.tx3,'--vf-ac':t.ac,'--vf-tile':t.tile,'--vf-font':fam,
+    '--vf-fw':String(t.fw),'--hi-fw':String(_hiFw(t.font)),'--vf-ls':t.ls||'0',
+    '--vf-grain':String(t.grain||0),'--vf-vig':String(t.vig||0),
+    '--vf-tsh':t.tsh||'none',                      // ← 더하는 한 줄 (글씨 그림자)
+    '--vf-reffont':(t.font==='serif')?fam:'var(--font-number)'
+  };
+  const el=document.getElementById('verseFull');
+  Object.keys(vars).forEach(k=>el.style.setProperty(k,vars[k]));
+  document.documentElement.style.setProperty('--vf-page-bg',vars['--vf-bgimg']);
+  labNote();
+}
+function toggleVfPattern(key){
+  if(!_vfPatOk(key))return;                        // ← 합칠 때 바뀌는 한 곳
+  const sel=_vfSelectedPatterns();
+  const i=sel.indexOf(key);
+  if(i>=0){if(sel.length<=1)return;sel.splice(i,1);}
+  else sel.push(key);
+  ST.settings.vfThemes=sel;
+  _vfCurPattern=null;_vfVariantIdx=null;
+  save();applyVfTheme();_renderVfThemeChips();
+}
+function _renderVfThemeChips(){
+  const box=document.getElementById('vfThemeChips');if(!box)return;
+  const sel=_vfSelectedPatterns();
+  box.innerHTML=VF_THEME_ORDER.map(k=>{
+    const p=VF_PATTERNS[k],v=p.variants[0],on=sel.indexOf(k)>=0;
+    return`<div onclick="toggleVfPattern('${k}')" style="cursor:pointer;border-radius:9px;overflow:hidden;outline:${on?'2px solid var(--ac)':'none'};outline-offset:1px;opacity:${on?1:.45};">
+      <div style="background:${_vfBgCss({bg:v.bg,ang:p.ang})};height:46px;display:flex;align-items:center;justify-content:center;">
+        <span style="color:${v.tx};font-size:11px;font-weight:${p.fw};font-family:${p.font==='serif'?VF_SERIF:VF_SANS};">가나다</span>
+      </div>
+      <div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px 0 2px;">${p.label}</div>
+    </div>`;
+  }).join('');
+  _vfbgRenderChips();                              // ← 더하는 한 줄
+}
+
+// ── 실험실 화면 ────────────────────────────────────────────────────────
+const LAB_VERSES=[
+  {t:'여호와는 나의 목자시니<br>내게 부족함이 없으리로다',r:'시편 23:1'},
+  {t:'하나님이 세상을 이처럼 사랑하사<br>독생자를 주셨으니',r:'요한복음 3:16'},
+  {t:'주의 말씀은 내 발에 등이요<br>내 길에 빛이니이다',r:'시편 119:105'},
+  {t:'수고하고 무거운 짐 진 자들아<br>다 내게로 오라',r:'마태복음 11:28'},
+  {t:'너는 마음을 다하여 여호와를 신뢰하고<br>네 명철을 의지하지 말라',r:'잠언 3:5'}
+];
+let _labIdx=0;
+function labRender(){
+  const v=LAB_VERSES[_labIdx%LAB_VERSES.length];
+  document.getElementById('vfText').innerHTML=v.t;
+  document.getElementById('vfRef').textContent=v.r;
+}
+function labNav(d){
+  _labIdx=(_labIdx+d+LAB_VERSES.length)%LAB_VERSES.length;
+  _vfRollVariant();labRender();applyVfTheme();
+}
+function labRoll(){_vfRollVariant();applyVfTheme();}
+function labToggleSheet(){
+  const s=document.getElementById('labSheet');
+  s.classList.toggle('on');
+  if(s.classList.contains('on')){_renderVfThemeChips();}
+}
+function labNote(){
+  const t=_vfTheme(),el=document.getElementById('labNote');if(!el)return;
+  const 사진=t.photoSrc?(t.photoSrc.length>4000?'사진 (이 기기에 담김)':'작은 미리보기(1KB)로 그리는 중'):'없음 (색 테마)';
+  el.innerHTML=`지금 배경: <b>${esc(t.label)}</b> · 사진: ${사진}<br>
+    글씨 대비 기준 4.5:1 · 그림자 ${t.tsh?'켜짐':'꺼짐'}<br>
+    <span style="opacity:.7;">이 실험실은 사진을 이 브라우저(IndexedDB)에만 담아요. 앱·클라우드와 아무 상관이 없습니다.</span>`;
+}
+
+// ── 공유 이미지 — 앱의 _shotDraw 가 배경을 그리는 대목만 옮겨 왔다 ──────
+function labShare(){
+  const host=document.getElementById('verseFull');
+  const hr=host.getBoundingClientRect();
+  const dpr=Math.min(3,Math.max(1,window.devicePixelRatio||1));
+  const W=Math.round(hr.width*dpr),H=Math.round(hr.height*dpr),SC=W/hr.width;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  const th=_vfTheme();
+  // ① 색 배경 (지금 앱과 같다)
+  if(th.bg.length===1)ctx.fillStyle=th.bg[0];
+  else{
+    const rad=((th.ang||165)-90)*Math.PI/180;
+    const dx=Math.cos(rad),dy=Math.sin(rad),L=Math.max(W,H);
+    const g=ctx.createLinearGradient(W/2-dx*L/2,H/2-dy*L/2,W/2+dx*L/2,H/2+dy*L/2);
+    th.bg.forEach((c,i)=>g.addColorStop(i/(th.bg.length-1),c));
+    ctx.fillStyle=g;
+  }
+  ctx.fillRect(0,0,W,H);
+  // ② 사진 + 스크림 ← 더하는 한 줄
+  if(th.user)_vfbgDrawPhoto(ctx,th,W,H);
+  // ③ 글씨 (실험실은 줄 단위로 간단히)
+  _vfbgShadowOn(ctx,th,SC);
+  const tEl=document.getElementById('vfText'),cs=getComputedStyle(tEl);
+  const size=parseFloat(cs.fontSize)*SC,lh=size*1.85;
+  const lines=tEl.innerHTML.split(/<br\s*\/?>/i).map(s=>s.replace(/<[^>]+>/g,'').trim());
+  ctx.fillStyle=cs.color;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.font=`${cs.fontWeight} ${size}px ${cs.fontFamily}`;
+  const y0=H/2-(lines.length-1)*lh/2;
+  lines.forEach((ln,i)=>ctx.fillText(ln,W/2,y0+lh*i));
+  const rEl=document.getElementById('vfRef'),rcs=getComputedStyle(rEl);
+  ctx.fillStyle=rcs.color;ctx.font=`${parseFloat(rcs.fontSize)*SC}px ${rcs.fontFamily}`;
+  ctx.fillText(rEl.textContent,W/2,y0+lh*lines.length+18*SC);
+  _vfbgShadowOff(ctx);
+  document.getElementById('labShotImg').src=cv.toDataURL('image/png');
+  document.getElementById('labShot').style.display='flex';
+}
+
+// ── 시작 ──────────────────────────────────────────────────────────────
+labRender();applyVfTheme();_renderVfThemeChips();_vfbgInitDrag();
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(_vfbgEditIsOpen()){closeVfbgEdit();return;}   // ← _ESC_CLOSERS 에 더하는 줄
+  const s=document.getElementById('labSheet');
+  if(s.classList.contains('on'))s.classList.remove('on');
+});
+</script>

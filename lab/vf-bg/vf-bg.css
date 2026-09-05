@@ -1,0 +1,120 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   BLOCK7 — '내 배경' 스타일
+   ⚠️ 아직 index.html 에 없다. 붙이는 자리는 INTEGRATION.md 참고.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── ① 앱 CSS 에 더하는 것 (딱 세 군데) ─────────────────────────────────
+   사진 위에서는 글자가 배경에 묻힌다. 그림자는 사진 배경일 때만 값이 들어오고
+   (기본 테마는 --vf-tsh 가 비어 있어 none), 그래서 지금 화면은 한 픽셀도 안 바뀐다. */
+#vfText{text-shadow:var(--vf-tsh,none);}
+.vf-ptitle{text-shadow:var(--vf-tsh,none);}
+#vfRef{text-shadow:var(--vf-tsh,none);}
+/* 사진 위에서는 아래쪽 아이콘·글자도 함께 떠야 한다 (없으면 밝은 사진에서 사라진다) */
+.vf-meta,.vf-act,.vf-top{text-shadow:var(--vf-tsh,none);}
+
+/* ── ② 설정창 '내 배경' 칩 줄 ─────────────────────────────────────────── */
+#vfbgChips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+
+/* 칩 롱터치 메뉴 (앱의 .task-menu 와 같은 결) */
+#vfbgMenu{
+  display:none;position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  z-index:300;background:var(--s1);border:1px solid var(--bd2);border-radius:14px;
+  padding:6px;min-width:200px;box-shadow:0 10px 40px rgba(0,0,0,.28);
+}
+#vfbgMenu .vfbg-mi{
+  padding:11px 14px;font-size:13px;color:var(--tx);cursor:pointer;border-radius:9px;
+  -webkit-tap-highlight-color:transparent;
+}
+#vfbgMenu .vfbg-mi:active{background:var(--s2);}
+#vfbgMenu .vfbg-mi.warn{color:#e06a5a;}
+#vfbgMenuName{padding:9px 14px 5px;font-size:11px;color:var(--tx3);}
+
+/* ── ③ 배경 만들기 (전체화면 편집기) ──────────────────────────────────── */
+#vfbgEdit{
+  display:none;position:fixed;inset:0;z-index:260;background:var(--bg);
+  flex-direction:column;-webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;
+}
+.vfbge-head{
+  position:relative;flex-shrink:0;height:46px;display:flex;align-items:center;
+  justify-content:center;border-bottom:1px solid var(--bd2);
+}
+.vfbge-head .vfbge-title{font-size:14px;color:var(--tx);padding:0 44px;}
+.vfbge-head .vfbge-left{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:12px;color:var(--tx3);cursor:pointer;padding:6px;
+}
+/* 닫기는 우상단 × 하나 (앱 규칙). 하단에는 실행 버튼만 둔다. */
+.vfbge-head .modal-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);}
+
+/* 미리보기 — 전체화면과 같은 층을 그대로 쌓는다 */
+#vfbgStage{
+  position:relative;flex:1;min-height:0;overflow:hidden;background:#111;
+  touch-action:none;cursor:grab;
+}
+#vfbgStage:active{cursor:grabbing;}
+#vfbgPhoto{position:absolute;inset:0;background-repeat:no-repeat;will-change:transform;}
+#vfbgTint{position:absolute;inset:0;mix-blend-mode:overlay;pointer-events:none;}
+#vfbgScrim{position:absolute;inset:0;pointer-events:none;}
+/* 종이결·비네트 — 전체화면과 **같은 그림**이라야 한다.
+   ⚠️ 합칠 때는 이 두 덩이를 지우고, index.html 의
+      `#verseFull::after,#verseGrid::after,.vc-body::after` 선택자에
+      `,#vfbgStage::after` 만 덧붙이는 것이 맞다 (그림이 두 벌이 되면 어긋난다). */
+#vfbgStage::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:9;
+  opacity:var(--vf-grain,0);mix-blend-mode:overlay;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='a'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23a)' opacity='.9'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.14' numOctaves='2'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23b)' opacity='.7'/%3E%3C/svg%3E");
+  background-size:140px 140px,300px 300px;
+}
+#vfbgStage::before{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:8;
+  opacity:var(--vf-vig,0);
+  background:radial-gradient(120% 85% at 50% 42%,transparent 42%,rgba(0,0,0,.55) 100%);
+}
+.vfbge-sample{
+  position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:clamp(28px,9vw,56px);
+  text-align:center;pointer-events:none;
+}
+#vfbgSample{font-size:clamp(15px,4.4vw,21px);line-height:1.85;word-break:keep-all;}
+#vfbgSampleRef{margin-top:16px;font-size:11px;letter-spacing:.06em;}
+.vfbge-hint{
+  position:absolute;left:0;right:0;bottom:8px;z-index:11;text-align:center;
+  font-size:10px;color:rgba(255,255,255,.5);pointer-events:none;
+}
+
+/* 조절 자리 */
+.vfbge-sheet{
+  flex-shrink:0;max-height:46vh;overflow-y:auto;overscroll-behavior:contain;
+  padding:12px 14px 0;background:var(--bg);border-top:1px solid var(--bd2);
+}
+.vfbge-tplrow{display:flex;gap:7px;overflow-x:auto;padding-bottom:10px;}
+.vfbg-tpl{
+  flex:0 0 auto;padding:7px 13px;border-radius:999px;font-size:12px;
+  background:transparent;color:var(--tx3);border:1px solid var(--bd2);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.vfbg-tpl.on{background:var(--ac);border-color:var(--ac);color:#fff;}
+.vfbge-row{display:flex;align-items:center;gap:10px;padding:5px 0;}
+.vfbge-row label{flex:0 0 52px;font-size:11px;color:var(--tx3);}
+.vfbge-row input[type=range]{flex:1;accent-color:var(--ac);height:22px;}
+.vfbge-btns{display:flex;gap:7px;flex-wrap:wrap;padding:8px 0 2px;}
+.vfbge-btns button{
+  padding:8px 12px;border-radius:9px;font-size:12px;background:transparent;
+  color:var(--tx2);border:1px solid var(--bd2);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#vfbgContrast{font-size:11px;color:var(--tx3);padding:4px 0 2px;}
+.vfbge-foot{
+  flex-shrink:0;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+  background:var(--bg);
+}
+.vfbge-foot button{
+  width:100%;padding:14px;border-radius:12px;border:none;cursor:pointer;
+  background:var(--ac);color:#fff;font-size:14px;
+  -webkit-tap-highlight-color:transparent;
+}
+/* 편집 중에는 뒤 화면이 스크롤되지 않게 */
+body.vfbg-editing{overflow:hidden;}
