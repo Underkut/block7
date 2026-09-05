@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0905-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1084,6 +1084,7 @@ header{
   -webkit-tap-highlight-color:transparent;
 }
 .vf-close:hover{color:var(--tx);}
+.vf-close:active{opacity:.5;}   /* 눌린 표시를 홈·책갈피·말씀 모음 설정과 같게 */
 /* 위/아래 1/4 = 이전/다음 (릴스처럼 세로 이동) */
 .vf-nav{
   position:absolute;left:0;right:0;height:25%;
@@ -3610,13 +3611,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 어디서 왔는지에 따라 **저절로** 열린 탭 — 그 자리를 한 번 짚어 준다
    (v26-0905-4, HB). 테두리를 새로 두르지 않는다 (UI 원칙) — 강조색이 옅게
    들어왔다 빠지기를 두 번 하고 멈춘다. 계속 깜빡이면 눈이 붙잡힌다. */
+/* v26-0905-5, HB — 세 번 반짝인다. 모서리는 둥글리지 않고 **꽉 찬 네모**다
+   (background-clip 기본값이 border-box 라 아래 2px 선 자리까지 함께 찬다). */
 @keyframes stabFlash{
   0%,100%{background-color:rgba(var(--ac-rgb),0);}
-  20%{background-color:rgba(var(--ac-rgb),.28);}
-  45%{background-color:rgba(var(--ac-rgb),0);}
-  65%{background-color:rgba(var(--ac-rgb),.28);}
+  14%{background-color:rgba(var(--ac-rgb),.28);}
+  30%{background-color:rgba(var(--ac-rgb),0);}
+  47%{background-color:rgba(var(--ac-rgb),.28);}
+  63%{background-color:rgba(var(--ac-rgb),0);}
+  80%{background-color:rgba(var(--ac-rgb),.28);}
 }
-.settings-tab.stab-flash{animation:stabFlash 1.3s ease-out 1;border-radius:8px 8px 0 0;}
+.settings-tab.stab-flash{animation:stabFlash 1.6s ease-out 1;border-radius:0;}
 @media (prefers-reduced-motion:reduce){.settings-tab.stab-flash{animation:none;}}
 .vsettings-tab-content{padding-top:16px;}
 /* ── 말씀 대시보드 ── */
@@ -4214,7 +4219,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-4";
+const APP_VERSION = "v. 26-0905-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6183,7 +6188,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- 순환·셔플 전환. 닫기와 같은 높이의 좌상단 대칭 자리에 둔다. -->
   <button class="vf-cycle" id="vfCycleBtn" onclick="event.stopPropagation();vfToggleCycleMode()"></button>
   <button class="vf-close" onclick="closeVerseFull()" aria-label="닫기">
-    <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.59" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    <svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.56" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
   <button class="vf-nav vf-nav-u" onclick="verseFullNav(-1)" aria-label="이전 말씀"><i>⌃</i></button>
   <button class="vf-nav vf-nav-d" onclick="verseFullNav(1)" aria-label="다음 말씀"><i>⌄</i></button>
@@ -10659,6 +10664,7 @@ function openVerseFull(keepOverride){
   // closeVerseFull 에서 되살린다. (어느 경로로 열든 동일하게)
   _vfHideCoversNow();
   _vfClearNav();
+  _vfHomeBack=null;      // 새로 연 화면에는 되돌아갈 옛 필터가 없다
   if(!ST.settings.verseBarOn)toggleVerseBarOn();
   el.style.display='flex';        // 먼저 띄워야 폭을 잴 수 있다
   // 스와이프가 남긴 흔적이 있으면 지우고 연다 (몇십 px 밀린 채 열리는 것 방지)
@@ -13583,7 +13589,16 @@ let _vfNavParts=null;
 //       크기가 아니라 그림의 성질이다 — 억지로 늘리면 책갈피로 안 보인다.
 const _VF_KEEP_MENU_SVG='<svg width="19" height="23" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h10v15.6L10 15.3l-5 3.8z"/></svg>';
 const _VF_HOME_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.2 10 3.5l7 5.7"/><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6"/></svg>';
-const _VF_HOME_FILLED_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M2.5 9.35 10 3.2l7.5 6.15-1.05 1.28-.75-.62V16a1.7 1.7 0 0 1-1.7 1.7H6A1.7 1.7 0 0 1 4.3 16v-5.99l-.75.62z"/></svg>';
+// ⚠️ v26-0905-5, HB — "채워졌을 때 답답하고 뭉툭하다. 다른 것들과 통일감이 없다."
+//    까닭: 예전 채움본은 **통짜 실루엣**(집 모양 한 덩어리)이었다. 옆의 순환·
+//    책갈피·닫기는 전부 1.35px 짜리 가는 선인데 홈만 검은 덩어리라 혼자 무거웠다.
+//    → 도안을 **선 홈과 한 글자도 다르지 않게** 두고(같은 path·같은 굵기),
+//      몸통 안쪽만 옅게 채워 '켜짐'을 말한다. 지붕은 선 그대로라 처마 밑이
+//      비어 있어 답답하지 않다.
+//    ⚠️ 몸통 path 는 위가 열려 있는데, SVG 는 fill 할 때 시작점까지 곧게 이어
+//       닫은 것으로 친다 — 그래서 따로 z 를 붙이지 않아도 몸통만 정확히 찬다.
+//       (z 를 붙이면 **선**까지 위쪽에 한 줄 더 그어져 선 홈과 달라진다)
+const _VF_HOME_FILLED_SVG='<svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.42" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 8.6V16a1 1 0 0 0 1 1h8.4a1 1 0 0 0 1-1V8.6" fill="currentColor" fill-opacity=".55"/><path d="M3 9.2 10 3.5l7 5.7"/></svg>';
 let _vfHomeAtCollection=false;
 // ── 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) ──
 // '순환' = 지금까지의 기본 동작(필터 있으면 그 목록 순서대로, 없으면
@@ -13663,8 +13678,12 @@ function _vfShufPush(stack,p){
   stack.push(p);
   if(stack.length>_VF_SHUF_MAX)stack.shift();
 }
+// 홈을 눌러 놓아둔 직전 필터 — 뜻과 쓰임은 아래 vfHomeAction 에 적어 두었다.
+// (선언을 여기 두는 것은 아래 세 곳이 이 값을 건드리기 때문이다)
+let _vfHomeBack=null;
 function _vfSetNav(list,idx,label,kind,atCollection,parts){
   _vfShufReset();
+  _vfHomeBack=null;      // 새 필터가 들어왔다 — 홈으로 되돌아갈 옛 필터는 버린다
   _vfHomeAtCollection=!!atCollection;
   _vfNavList=(list&&list.length)?list.slice():null;
   _vfNavIdx=idx||0;_vfNavLabel=label||'';
@@ -13687,12 +13706,41 @@ function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel=''
 function _vfAtCollection(){
   return !!_vfHomeAtCollection || (!(_vfNavList&&_vfNavList.length) && !_vfOverrideVerse);
 }
+// 홈을 눌러 놓아둔 **직전 필터** (v26-0905-5, HB — "다시 누르면 직전 필터링을
+// 다시 적용해 줘"). 그래서 홈은 이제 켜고 끄는 스위치처럼 오간다:
+//   필터 보는 중 → 누르면 필터를 놓고 모음 전체 (채운 홈)
+//   모음 전체    → 누르면 놓아둔 그 필터로 되돌아간다 (선 홈)
+// ⚠️ 화면을 닫거나 다른 길로 새 필터가 들어오면 버린다 — 낡은 필터로 되돌아가면
+//    "왜 이게 나오지?" 가 된다. 버리는 자리는 openVerseFull 과 _vfSetNav 두 곳.
+//    (값 자체는 _vfSetNav 바로 위에서 선언한다 — 거기서도 건드리기 때문이다)
+function _vfHomeStash(){
+  return(_vfNavList||_vfOverrideVerse)?{
+    list:_vfNavList?_vfNavList.slice():null,idx:_vfNavIdx,label:_vfNavLabel,
+    parts:_vfNavParts?_vfNavParts.slice():null,kind:_vfNavKind,
+    atColl:!!_vfHomeAtCollection,ov:_vfOverrideVerse
+  }:null;
+}
 function vfHomeAction(){
   closeVfKeepSwitch();
+  // ① 이미 모음 전체인데 놓아둔 필터가 있다 → 그것으로 되돌아간다
+  if(_vfAtCollection()&&_vfHomeBack){
+    const b=_vfHomeBack;
+    // ⚠️ 지정 구절을 **먼저** 되살린다 — _vfSetNav 안에서 윗줄을 다시 그리는데,
+    //    그때 이 값이 없으면 선/채움 판정이 한 번 어긋난 채로 그려진다.
+    _vfOverrideVerse=b.ov||null;
+    _vfSetNav(b.list,b.idx,b.label,b.kind,b.atColl,b.parts);   // 여기서 _vfHomeBack 이 비워진다
+    _verseFullRender();
+    return;
+  }
+  // ② 필터를 놓는다. 무엇을 놓았는지 적어 두어 다시 누르면 되돌릴 수 있게.
+  //    ⚠️ 적는 것이 _vfClearNav() 보다 **먼저**여야 한다 — 그 안에서 다 지워진다.
+  const back=_vfHomeStash();
   _vfOverrideVerse=null;
   // 필터·목록을 놓는다. 그 안의 _vfSyncTopBar 가 상태를 **다시 보고** 채운 홈을
   // 그린다 — 여기서 표시를 손으로 켜 두지 않는다 (v26-0905-4, _vfAtCollection 참고).
   _vfClearNav();
+  _vfHomeBack=back;
+  _vfSyncTopBar();               // 되돌아갈 곳이 생겼으니 안내 문구를 다시 맞춘다
   _verseFullRender();
 }
 // 좌상단 '말씀 모음 설정' (v26-0904-4, HB) — 말씀설정 → 말씀 모음 탭.
@@ -13770,7 +13818,9 @@ function _vfSyncTopBar(){
     const atColl=_vfAtCollection();
     hb.style.display='flex';
     hb.innerHTML=atColl?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;
-    hb.setAttribute('aria-label',atColl?'말씀 모음 전체를 보고 있어요':'말씀 모음 전체로 돌아가기');
+    hb.setAttribute('aria-label',
+      atColl?(_vfHomeBack?'직전에 보던 목록으로 되돌아가기':'말씀 모음 전체를 보고 있어요')
+            :'말씀 모음 전체로 돌아가기');
   }
   // 순환·셔플과 저장 폴더 단추는 모든 전체화면에서 유지한다.
   _vfSyncCycleIcon();
@@ -19089,7 +19139,7 @@ function _vsetFlashTab(btn){
   btn.classList.remove('stab-flash');
   void btn.offsetWidth;
   btn.classList.add('stab-flash');
-  setTimeout(()=>btn.classList.remove('stab-flash'),1400);
+  setTimeout(()=>btn.classList.remove('stab-flash'),1700);
 }
 // 말씀영역·전체화면 롱터치 메뉴의 '말씀 설정' (v26-0905-4, HB)
 // ⚠️ 되돌아갈 팝업(_vsetBackTo)은 비워 둔다 — 이 메뉴는 팝업이 아니라 화면
