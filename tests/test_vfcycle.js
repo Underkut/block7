@@ -64,8 +64,11 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
         /\.vf-close\{[\s\S]{0,180}top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\);right:14px;[\s\S]{0,120}width:30px;height:30px/.test(SRC), true);
   sc.eq('두 버튼은 태그 그림과 같은 색·기본 투명도',
         (SRC.match(/color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/g)||[]).length >= 3, true);
+  // ⚠️ v26-0905-6, HB — 닫기 X 만 갈라져 나갔다. 색·투명도는 원래 같았는데
+  //    45° 대각선이라 화면에서 더 옅게 읽혀, 그만큼만 올려 두었다
+  //    (까닭은 index.html 의 .vf-close 주석, 값은 test_vf_top.js 가 지킨다).
   sc.eq('모바일도 태그 그림과 같은 투명도',
-        SRC.includes('@media(hover:none){.vf-cycle,.vf-close{opacity:.3;}}'), true);
+        SRC.includes('@media(hover:none){.vf-cycle{opacity:.3;}'), true);
   sc.eq('필터가 있어도 버튼을 아래로 내리지 않는다', SRC.includes('vf-cycle-below'), false);
   // ⚠️ v26-0904-4, HB — 좌상단 세로줄에 '말씀 모음 설정'이 끼어들었다.
   //    위에서부터 홈·순환/셔플(12) → 말씀 모음 설정(50) → 저장 폴더 책갈피(88),
