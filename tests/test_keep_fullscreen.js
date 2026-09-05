@@ -53,7 +53,7 @@ console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체
   sc.eq('홈은 늘 보인다', sync.includes("hb.style.display='flex';"), true);
   sc.eq('채움 여부는 그때그때 판정한다', sync.includes('const atColl=_vfAtCollection();'), true);
   sc.eq('필터 안에서는 선 홈, 말씀 모음 전체에서는 채운 홈',
-        sync.includes('hb.innerHTML=atColl?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;'), true);
+        sync.includes('hb.innerHTML=atColl?_VF_HOME_ON_SVG:_VF_HOME_OFF_SVG;'), true);
   // 판정은 "걸러 놓은 목록도 없고 지정 구절도 없다" 이다. 말씀카드처럼 '모음
   // 전체'를 목록으로 들고 들어오는 길만 _vfHomeAtCollection 으로 알려 준다.
   const at = slice('function _vfAtCollection(){', '\nfunction vfHomeAction(){');
@@ -64,9 +64,11 @@ console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체
   //    뿌리였다 (값만 켜고 화면은 안 맞춰서 단추가 숨은 채로 남았다).
   sc.eq('홈을 눌러도 표시를 손으로 켜지 않는다', action.includes('_vfHomeAtCollection=true;'), false);
   // 홈 아이콘 크기 — 0905-2 에서 21 로 키웠다가 HB 가 "그 사이 정도" 라 하여 19 (0905-4).
-  // ⚠️ 아웃라인과 채움이 **같은 크기**여야 한다 — 다르면 필터를 풀 때 아이콘이 튄다.
+  // ⚠️ 켜짐·꺼짐 두 벌이 **같은 크기**여야 한다 — 다르면 필터를 풀 때 아이콘이 튄다.
   sc.eq('홈 아이콘은 19 다',
-        (SRC.match(/_VF_HOME(?:_FILLED)?_SVG='<svg width="19" height="19" viewBox="0 0 20 20"/g)||[]).length, 2);
+        (SRC.match(/_VF_HOME_(?:ON|OFF)_SVG='<svg width="19" height="19" viewBox="0 0 20 20"/g)||[]).length, 2);
+  // ⚠️ v26-0905-6, HB — 채움은 없앴다. 켜짐은 지금까지의 선 그대로, 꺼짐은 그 선을 옅게.
+  sc.eq('채움으로 돌아가지 않았다', SRC.includes('fill-opacity=".55"'), false);
   sc.eq('홈은 좌상단 첫 자리다', /\.vf-home\{[^}]*left:14px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('순환·셔플은 홈 오른쪽 자리다', /\.vf-cycle\{[\s\S]{0,120}left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('홈 색은 순환·셔플과 같다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
@@ -102,8 +104,8 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   global._vfHomeBack=null;   // 실제 코드에서는 _vfSetNav 바로 위에서 선언된다
 
   const one = (mark) => SRC.slice(SRC.indexOf(mark), SRC.indexOf('\n', SRC.indexOf(mark))+1);
-  eval(asVar(one("const _VF_HOME_SVG=")));
-  eval(asVar(one("const _VF_HOME_FILLED_SVG=")));
+  eval(asVar(one("const _VF_HOME_ON_SVG=")));
+  eval(asVar(one("const _VF_HOME_OFF_SVG=")));
   eval(asVar(slice('function _vfSetNav(list,idx,label,kind,atCollection,parts){', 'function _vfClearNav')));
   eval(asVar(one('function _vfClearNav()')));
   eval(asVar(slice('function _vfAtCollection(){', 'function _vfHomeStash(){')));
@@ -113,7 +115,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   // ① 필터(목록) 안에 들어와 있다 — 선 홈이 보인다
   _vfSetNav([{ref:'요 3:16'}], 0, '좋아요', 'like', false);
   sc.eq('필터 안 — 홈이 보인다', hb.style.display, 'flex');
-  sc.eq('필터 안 — 선 홈이다', hb.innerHTML === _VF_HOME_SVG, true);
+  sc.eq('필터 안 — 옅은 홈이다', hb.innerHTML === _VF_HOME_OFF_SVG, true);
 
   // ② 홈을 누른다 → 필터가 풀리고 말씀 모음 전체가 된다
   vfHomeAction();
@@ -121,12 +123,12 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   //    _vfClearNav() 안에서 윗줄이 이미 한 번 맞춰지고, 그 뒤에 값만 true 로
   //    되돌렸기 때문이다.
   sc.eq('홈을 누른 뒤 — 단추가 사라지지 않는다', hb.style.display, 'flex');
-  sc.eq('홈을 누른 뒤 — 채운 홈이다', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('홈을 누른 뒤 — 진한 홈이다', hb.innerHTML === _VF_HOME_ON_SVG, true);
   sc.eq('홈을 누른 뒤 — 필터는 실제로 풀렸다', _vfNavList, null);
 
   // ③ 다시 필터로 들어가면 선 홈으로 돌아간다 (한쪽으로 굳지 않는다)
   _vfSetNav([{ref:'롬 5:8'}], 0, '저장함', 'keep', false);
-  sc.eq('다시 필터 안 — 선 홈으로 돌아온다', hb.innerHTML === _VF_HOME_SVG, true);
+  sc.eq('다시 필터 안 — 옅은 홈으로 돌아온다', hb.innerHTML === _VF_HOME_OFF_SVG, true);
 
   // ④ ⚠️⚠️ v26-0905-4, HB 신고 — "상단 말씀영역을 더블탭해 전체화면으로 들어오면
   //    설정한 모음 그대로인데도 홈이 사라져 있다." 그 길(openVerseFull)은
@@ -136,17 +138,17 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   _vfOverrideVerse=null;
   _vfClearNav();                      // openVerseFull() 이 하는 그대로
   sc.eq('더블탭으로 그냥 들어와도 — 단추가 보인다', hb.style.display, 'flex');
-  sc.eq('더블탭으로 그냥 들어와도 — 채운 홈이다', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('더블탭으로 그냥 들어와도 — 진한 홈이다', hb.innerHTML === _VF_HOME_ON_SVG, true);
 
   // ⑤ 지정 구절 하나만 띄운 경우는 '모음 그대로'가 아니다 → 선 홈
   _vfOverrideVerse={ref:'시 23:1'};
   _vfSyncTopBar();
-  sc.eq('지정 구절을 띄운 중 — 선 홈', hb.innerHTML === _VF_HOME_SVG, true);
+  sc.eq('지정 구절을 띄운 중 — 옅은 홈', hb.innerHTML === _VF_HOME_OFF_SVG, true);
 
   // ⑥ 말씀카드처럼 '모음 전체'를 목록으로 들고 들어온 경우 → 채운 홈
   _vfOverrideVerse=null;
   _vfSetNav([{ref:'요 3:16'},{ref:'롬 5:8'}], 0, '말씀 모음', null, true);
-  sc.eq('모음 전체를 목록으로 들고 와도 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('모음 전체를 목록으로 들고 와도 — 진한 홈', hb.innerHTML === _VF_HOME_ON_SVG, true);
 
 // ── 3-3. 홈은 스위치처럼 오간다 (v26-0905-5, HB) ──
 // HB — "홈버튼 눌러서 활성화되고 필터링이 해제됐을 때, 다시 누르면 직전
@@ -156,13 +158,13 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   _vfHomeBack=null;
   _vfOverrideVerse=LIST[1];
   _vfSetNav(LIST, 1, '좋아요', 'like', false);
-  sc.eq('필터 안 — 선 홈', hb.innerHTML === _VF_HOME_SVG, true);
+  sc.eq('필터 안 — 옅은 홈', hb.innerHTML === _VF_HOME_OFF_SVG, true);
 
   // ① 한 번 누른다 → 필터가 풀리고 채운 홈
   vfHomeAction();
   sc.eq('한 번 누름 — 필터가 풀렸다', _vfNavList, null);
   sc.eq('한 번 누름 — 지정 구절도 놓았다', _vfOverrideVerse, null);
-  sc.eq('한 번 누름 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('한 번 누름 — 진한 홈', hb.innerHTML === _VF_HOME_ON_SVG, true);
   sc.eq('한 번 누름 — 되돌아갈 곳을 적어 뒀다', !!_vfHomeBack, true);
 
   // ② 다시 누른다 → 놓아둔 그 필터로 정확히 되돌아간다
@@ -172,7 +174,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   sc.eq('다시 누름 — 목록 이름도 그대로', _vfNavLabel, '좋아요');
   sc.eq('다시 누름 — 갈래도 그대로', _vfNavKind, 'like');
   sc.eq('다시 누름 — 보던 구절 그대로', _vfOverrideVerse && _vfOverrideVerse.ref, '롬 5:8');
-  sc.eq('다시 누름 — 선 홈으로 돌아온다', hb.innerHTML === _VF_HOME_SVG, true);
+  sc.eq('다시 누름 — 옅은 홈으로 돌아온다', hb.innerHTML === _VF_HOME_OFF_SVG, true);
   // ⚠️ 되돌린 뒤에는 적어 둔 것을 버린다 — 안 버리면 다음 누름이 되돌리기와
   //    풀기 사이에서 헷갈린다. (한 번 더 누르면 다시 '풀기' 여야 한다)
   sc.eq('되돌린 뒤에는 적어 둔 것을 버린다', _vfHomeBack, null);
@@ -180,7 +182,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   // ③ 또 누르면 다시 풀린다 — 오가는 스위치가 된다
   vfHomeAction();
   sc.eq('또 누름 — 다시 풀린다', _vfNavList, null);
-  sc.eq('또 누름 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('또 누름 — 진한 홈', hb.innerHTML === _VF_HOME_ON_SVG, true);
 
   // ④ 그 사이에 **다른 길로** 새 필터가 들어오면 옛 필터는 버린다
   //    (낡은 필터로 되돌아가면 "왜 이게 나오지?" 가 된다)
@@ -194,7 +196,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   _vfHomeBack=null; _vfOverrideVerse=null; _vfClearNav();
   vfHomeAction();
   sc.eq('되돌아갈 것이 없으면 그대로', _vfNavList, null);
-  sc.eq('그때도 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('그때도 진한 홈', hb.innerHTML === _VF_HOME_ON_SVG, true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
