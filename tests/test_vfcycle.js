@@ -86,9 +86,11 @@ console.log('\n시나리오 3-1 — 닫기와 크기·높이·색·투명도를 
         /function vfOpenCollSettings\(\)\{[\s\S]{0,200}?_vsetBackTo=null;_vsetBackId=null;[\s\S]{0,60}?_vsetGoColl\(\);/.test(SRC), true);
 }
 
-console.log('\n시나리오 4 — 보이는 아이콘은 17×17, 버튼은 30×30이다');
+console.log('\n시나리오 4 — 보이는 아이콘 크기와 버튼 30×30');
 {
-  sc.eq('닫기 X 아이콘 17×17', SRC.includes('<svg width="17" height="17" viewBox="0 0 20 20"'), true);
+  // ⚠️ v26-0905-5, HB — 닫기 X 가 옆의 것들보다 작고 흐려 보여 17 → 19 (홈과 같은 크기).
+  //    크기·굵기는 test_vf_top.js 가 네 아이콘을 함께 재서 지킨다.
+  sc.eq('닫기 X 아이콘 19×19', SRC.includes('<svg width="19" height="19" viewBox="0 0 20 20"'), true);
   sc.eq('테두리·박스 없다', /\.vf-cycle\{[^}]*background:none;border:none/.test(SRC), true);
 }
 

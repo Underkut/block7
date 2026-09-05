@@ -99,14 +99,15 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   global.closeVfKeepSwitch=()=>{}; global._verseFullRender=()=>{}; global.showToast=()=>{};
   global._vfOverrideVerse=null; global._vfHomeAtCollection=false;
   global._vfNavList=null; global._vfNavIdx=0; global._vfNavLabel=''; global._vfNavParts=null; global._vfNavKind=null;
+  global._vfHomeBack=null;   // 실제 코드에서는 _vfSetNav 바로 위에서 선언된다
 
   const one = (mark) => SRC.slice(SRC.indexOf(mark), SRC.indexOf('\n', SRC.indexOf(mark))+1);
   eval(asVar(one("const _VF_HOME_SVG=")));
   eval(asVar(one("const _VF_HOME_FILLED_SVG=")));
   eval(asVar(slice('function _vfSetNav(list,idx,label,kind,atCollection,parts){', 'function _vfClearNav')));
   eval(asVar(one('function _vfClearNav()')));
-  eval(asVar(slice('function _vfAtCollection(){', 'function vfHomeAction(){')));
-  eval(asVar(slice('function vfHomeAction(){', 'function vfOpenCollSettings')));
+  eval(asVar(slice('function _vfAtCollection(){', 'function _vfHomeStash(){')));
+  eval(asVar(slice('function _vfHomeStash(){', 'function vfOpenCollSettings')));
   eval(asVar(slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse')));
 
   // ① 필터(목록) 안에 들어와 있다 — 선 홈이 보인다
@@ -146,6 +147,54 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   _vfOverrideVerse=null;
   _vfSetNav([{ref:'요 3:16'},{ref:'롬 5:8'}], 0, '말씀 모음', null, true);
   sc.eq('모음 전체를 목록으로 들고 와도 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+
+// ── 3-3. 홈은 스위치처럼 오간다 (v26-0905-5, HB) ──
+// HB — "홈버튼 눌러서 활성화되고 필터링이 해제됐을 때, 다시 누르면 직전
+//       필터링을 다시 적용해 줘."
+  console.log('\n시나리오 3-3 — 홈을 다시 누르면 직전 필터로 되돌아간다');
+  const LIST=[{ref:'요 3:16'},{ref:'롬 5:8'},{ref:'시 23:1'}];
+  _vfHomeBack=null;
+  _vfOverrideVerse=LIST[1];
+  _vfSetNav(LIST, 1, '좋아요', 'like', false);
+  sc.eq('필터 안 — 선 홈', hb.innerHTML === _VF_HOME_SVG, true);
+
+  // ① 한 번 누른다 → 필터가 풀리고 채운 홈
+  vfHomeAction();
+  sc.eq('한 번 누름 — 필터가 풀렸다', _vfNavList, null);
+  sc.eq('한 번 누름 — 지정 구절도 놓았다', _vfOverrideVerse, null);
+  sc.eq('한 번 누름 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+  sc.eq('한 번 누름 — 되돌아갈 곳을 적어 뒀다', !!_vfHomeBack, true);
+
+  // ② 다시 누른다 → 놓아둔 그 필터로 정확히 되돌아간다
+  vfHomeAction();
+  sc.eq('다시 누름 — 목록이 돌아왔다', (_vfNavList||[]).length, 3);
+  sc.eq('다시 누름 — 보던 자리까지 그대로', _vfNavIdx, 1);
+  sc.eq('다시 누름 — 목록 이름도 그대로', _vfNavLabel, '좋아요');
+  sc.eq('다시 누름 — 갈래도 그대로', _vfNavKind, 'like');
+  sc.eq('다시 누름 — 보던 구절 그대로', _vfOverrideVerse && _vfOverrideVerse.ref, '롬 5:8');
+  sc.eq('다시 누름 — 선 홈으로 돌아온다', hb.innerHTML === _VF_HOME_SVG, true);
+  // ⚠️ 되돌린 뒤에는 적어 둔 것을 버린다 — 안 버리면 다음 누름이 되돌리기와
+  //    풀기 사이에서 헷갈린다. (한 번 더 누르면 다시 '풀기' 여야 한다)
+  sc.eq('되돌린 뒤에는 적어 둔 것을 버린다', _vfHomeBack, null);
+
+  // ③ 또 누르면 다시 풀린다 — 오가는 스위치가 된다
+  vfHomeAction();
+  sc.eq('또 누름 — 다시 풀린다', _vfNavList, null);
+  sc.eq('또 누름 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+
+  // ④ 그 사이에 **다른 길로** 새 필터가 들어오면 옛 필터는 버린다
+  //    (낡은 필터로 되돌아가면 "왜 이게 나오지?" 가 된다)
+  _vfSetNav([{ref:'창 1:1'}], 0, '저장함', 'keep', false);
+  sc.eq('새 필터가 들어오면 옛 것을 버린다', _vfHomeBack, null);
+  vfHomeAction();                      // 풀기
+  vfHomeAction();                      // 되돌리기
+  sc.eq('되돌아간 곳은 방금 그 필터다', _vfNavLabel, '저장함');
+
+  // ⑤ 되돌아갈 것이 없는데 누르면 아무 일도 안 난다 (모음 전체 그대로)
+  _vfHomeBack=null; _vfOverrideVerse=null; _vfClearNav();
+  vfHomeAction();
+  sc.eq('되돌아갈 것이 없으면 그대로', _vfNavList, null);
+  sc.eq('그때도 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
