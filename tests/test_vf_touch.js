@@ -22,13 +22,17 @@ console.log('시나리오 1 — 저장 폴더 목록이 반투명 + 블러다');
   sc.eq('_vfBg1Css 는 첫 색 하나를 준다 (그라디언트가 아니다)',
         /function _vfBg1Css\(t\)\{[\s\S]{0,160}?t\.bg\[0\]/.test(SRC), true);
 
+  // v26-0905-1, HB — "더 비치고, 덜 뿌옇게" (52%→38% · 18px→10px)
   sc.eq('목록 배경이 반투명',
-        /\.vf-keep-switch\{[\s\S]{0,700}background:color-mix\(in srgb,var\(--vf-bg1,var\(--bg\)\) 52%,transparent\)/.test(SRC), true);
+        /\.vf-keep-switch\{[\s\S]{0,900}background:color-mix\(in srgb,var\(--vf-bg1,var\(--bg\)\) 38%,transparent\)/.test(SRC), true);
   sc.eq('목록에 블러가 걸린다',
-        /\.vf-keep-switch\{[\s\S]{0,800}backdrop-filter:blur\(18px\)/.test(SRC), true);
+        /\.vf-keep-switch\{[\s\S]{0,900}backdrop-filter:blur\(10px\)/.test(SRC), true);
   // 사파리(아이폰)는 아직 -webkit- 접두사가 있어야 한다 — 빠지면 폰에서만 안 흐려진다
   sc.eq('아이폰용 접두사도 함께',
-        /\.vf-keep-switch\{[\s\S]{0,800}-webkit-backdrop-filter:blur\(18px\)/.test(SRC), true);
+        /\.vf-keep-switch\{[\s\S]{0,900}-webkit-backdrop-filter:blur\(10px\)/.test(SRC), true);
+  // ⚠️ 머리줄은 본체보다 **진하고 덜 비쳐야** 한다 — 목록이 그 아래로 지나간다.
+  //    본체 값을 더 내릴 때 머리줄까지 따라 내리면 정렬 칩 글자가 겹쳐 읽힌다.
+  sc.eq('머리줄이 본체보다 진하다', 78 > 38, true);
   // 머리줄은 목록이 그 아래로 지나간다 — 더 진해야 글자가 겹쳐 읽힌다
   sc.eq('머리줄은 더 진하다',
         /\.vf-keep-head\{[\s\S]{0,320}var\(--vf-bg1,var\(--bg\)\) 78%/.test(SRC), true);
