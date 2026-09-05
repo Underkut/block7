@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0904-12  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0905-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -971,8 +971,11 @@ header{
 .vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 122px);left:14px;
   width:min(230px,calc(100vw - 66px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
   padding:5px 6px;color:var(--vf-tx,var(--tx));
-  background:color-mix(in srgb,var(--vf-bg1,var(--bg)) 52%,transparent);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+  /* v26-0905-1, HB — "더 비치고, 덜 뿌옇게". 52%→38% · 18px→10px.
+     ⚠️ 머리줄(.vf-keep-head)은 그대로 둔다 — 목록이 그 아래로 지나가므로
+        본체만큼 비치면 지나가는 글자와 정렬 칩 글자가 겹쳐 읽힌다. */
+  background:color-mix(in srgb,var(--vf-bg1,var(--bg)) 38%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
   border:1px solid color-mix(in srgb,var(--vf-tx3,var(--tx3)) 38%,transparent);
   border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
   opacity:0;transform:translateY(-7px) scale(.985);transform-origin:top left;
@@ -4179,7 +4182,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0904-12";
+const APP_VERSION = "v. 26-0905-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
