@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-0905-3** · 전체 33,379줄 · 구역 291개 · 함수 1722개
+기준 버전 **v. 26-0905-4** · 전체 33,459줄 · 구역 292개 · 함수 1726개
 
 ---
 
@@ -27,10 +27,10 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 7~35 | 29줄 (0%) | JS | 동작 (자바스크립트) |
 | 36~62 | 27줄 (0%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
 | 63~407 | 345줄 (1%) | JS | 동작 (자바스크립트) |
-| 410~4,090 | 3,681줄 (11%) | CSS | 화면 꾸미기 (색·크기·배치) |
-| 4,091~4,321 | 231줄 (1%) | JS | 동작 (자바스크립트) |
-| 4,339~6,557 | 2,219줄 (7%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
-| 6,558~33,376 | 26,819줄 (80%) | JS | 동작 (자바스크립트) |
+| 410~4,108 | 3,699줄 (11%) | CSS | 화면 꾸미기 (색·크기·배치) |
+| 4,109~4,339 | 231줄 (1%) | JS | 동작 (자바스크립트) |
+| 4,357~6,577 | 2,221줄 (7%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
+| 6,578~33,456 | 26,879줄 (80%) | JS | 동작 (자바스크립트) |
 
 ---
 
@@ -52,49 +52,49 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 772 | 글씨체 스물두 벌 더 (v26-0902-8, HB 가 눈누에서 받아 줌) |
 | 793 | 설정창 단추 미리보기용 초소형 글꼴 (v26-0902-8) |
 | 876 | 누를 수 있는 자리를 손끝만큼 넓힌다 (v26-0904-4, HB — "저장 버튼이 종종 |
-| 996 | 순환·셔플 전환 (v26-0817-16, HB 3) |
-| 1,110 | 말씀 타일 그리드 (필터 → 인스타형 타일뷰) |
-| 1,153 | '제외' 글자 버튼 + 스테퍼 (v26-0817-13, HB 14-2) |
-| 1,385 | 스닉픽 한 줄 |
-| 1,539 | DATE NAV |
-| 1,557 | GNB 날짜 (#hDate) |
-| 1,580 | DATE SWIPE OVERLAY |
-| 1,582 | MINI MOVE MENU |
-| 1,601 | DATE PICKER OVERLAY |
-| 1,697 | TIME SECTION |
-| 1,728 | Event chips (shown inline in the section header, next to the |
-| 1,854 | BLOCK SWIPE WRAPPER |
-| 1,877 | BIG BLOCK (E method: colored left bar, no indent) |
-| 1,989 | SMALL BLOCK (E method: 1px left bar, indented, smaller text) |
-| 2,067 | @닉네임 텍스트 스타일 (할일 텍스트 내) |
-| 2,072 | 연락처 관리 모달 |
-| 2,098 | @닉네임 태그 할일 모아보기 |
-| 2,149 | 헤더 슬라이드 입력창 (B안) |
-| 2,175 | 헤더 + 버튼 (할일 추가) |
-| 2,194 | ▲ 숨기기 버튼 |
-| 2,226 | TRASH PANEL |
-| 2,272 | DATE NAV |
-| 2,325 | TASK MOVE MINI MENU |
-| 2,395 | 받은 쪽지: 미확인 뱃지 · 접기 · 스와이프 삭제 |
-| 2,420 | Event add modal |
-| 2,559 | WEEKLY/MONTHLY |
-| 2,654 | D뷰 좌우 분할 (넓은 화면) |
-| 2,665 | 공통: 경계선(14px + 1px + 14px), 위젯 컬럼(sticky+자체 스크롤) |
-| 2,688 | 2단: flex — 좌(할일) \| 경계선2 \| 우(위젯 병합) |
-| 2,695 | 3단: grid — 주간뷰가 두 컬럼을 가로지를 수 있도록 |
-| 3,106 | LOGIN / AUTH SCREEN |
-| 3,182 | SETTINGS PANEL |
-| 3,223 | 설정 등급(이지·미드·파워) 고르기 |
-| 3,246 | 선 그림만으로 고른 것을 나타내는 자리 |
-| 3,384 | 강조 표시 고르는 줄 (v26-0812-15) |
-| 3,404 | 공유 이미지 설정 — 미리보기를 가운데 두고 네 귀퉁이에 버튼 (v26-0812-15) |
-| 3,564 | 시간 구간 경계선 |
-| 3,604 | 말씀 대시보드 |
-| 3,693 | 색상 테마: 뷰 탭 요약 줄 |
-| 3,710 | 색상 테마 선택 화면 |
-| 3,803 | 미리보기 목업 |
-| 4,039 | 편집 모드 |
-| 4,072 | 값 넘기기: 설정창 탭과 **같은 방식**이다 (v26-0830-7) |
+| 1,003 | 순환·셔플 전환 (v26-0817-16, HB 3) |
+| 1,117 | 말씀 타일 그리드 (필터 → 인스타형 타일뷰) |
+| 1,160 | '제외' 글자 버튼 + 스테퍼 (v26-0817-13, HB 14-2) |
+| 1,392 | 스닉픽 한 줄 |
+| 1,546 | DATE NAV |
+| 1,564 | GNB 날짜 (#hDate) |
+| 1,587 | DATE SWIPE OVERLAY |
+| 1,589 | MINI MOVE MENU |
+| 1,608 | DATE PICKER OVERLAY |
+| 1,704 | TIME SECTION |
+| 1,735 | Event chips (shown inline in the section header, next to the |
+| 1,861 | BLOCK SWIPE WRAPPER |
+| 1,884 | BIG BLOCK (E method: colored left bar, no indent) |
+| 1,996 | SMALL BLOCK (E method: 1px left bar, indented, smaller text) |
+| 2,074 | @닉네임 텍스트 스타일 (할일 텍스트 내) |
+| 2,079 | 연락처 관리 모달 |
+| 2,105 | @닉네임 태그 할일 모아보기 |
+| 2,156 | 헤더 슬라이드 입력창 (B안) |
+| 2,182 | 헤더 + 버튼 (할일 추가) |
+| 2,201 | ▲ 숨기기 버튼 |
+| 2,233 | TRASH PANEL |
+| 2,279 | DATE NAV |
+| 2,332 | TASK MOVE MINI MENU |
+| 2,402 | 받은 쪽지: 미확인 뱃지 · 접기 · 스와이프 삭제 |
+| 2,427 | Event add modal |
+| 2,566 | WEEKLY/MONTHLY |
+| 2,661 | D뷰 좌우 분할 (넓은 화면) |
+| 2,672 | 공통: 경계선(14px + 1px + 14px), 위젯 컬럼(sticky+자체 스크롤) |
+| 2,695 | 2단: flex — 좌(할일) \| 경계선2 \| 우(위젯 병합) |
+| 2,702 | 3단: grid — 주간뷰가 두 컬럼을 가로지를 수 있도록 |
+| 3,113 | LOGIN / AUTH SCREEN |
+| 3,189 | SETTINGS PANEL |
+| 3,230 | 설정 등급(이지·미드·파워) 고르기 |
+| 3,253 | 선 그림만으로 고른 것을 나타내는 자리 |
+| 3,391 | 강조 표시 고르는 줄 (v26-0812-15) |
+| 3,411 | 공유 이미지 설정 — 미리보기를 가운데 두고 네 귀퉁이에 버튼 (v26-0812-15) |
+| 3,571 | 시간 구간 경계선 |
+| 3,622 | 말씀 대시보드 |
+| 3,711 | 색상 테마: 뷰 탭 요약 줄 |
+| 3,728 | 색상 테마 선택 화면 |
+| 3,821 | 미리보기 목업 |
+| 4,057 | 편집 모드 |
+| 4,090 | 값 넘기기: 설정창 탭과 **같은 방식**이다 (v26-0830-7) |
 
 ---
 
@@ -108,238 +108,239 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 187 | 선택·활성 표시의 세기 (--ac-tint-k) | `_thLabF`, `_thLab`, `_thDeltaE`, `_thTintDE`, `_thLabFi`, `_thUnlin`, `_thLabRgb`, `y` |
 | 226 | 글자용 강조색 (--ac-tx) | `_thReadable`, `dir`, `_thAcText`, `_thAcPush`, `away`, `_thPanelMix`, `_thTintK`, `_themeTokens`, `p`, `isDark`, `applyThemeVars` |
 | 391 | 조기 적용 (첫 페인트 전) | – |
-| 4,271 | 이 기기에서 알림 받기 (기기별 스위치) | `_devNotifOn`, `_devNotifSet`, `_psIsDefault`, `_psOverlay`, `mine`, `_psProject`, `src`, `getDOW`, `monthLabel`, `monthTitleHTML` |
-| 6,597 | 네비게이토 180 암송성구 데이터 | – |
-| 6,624 | Color presets | – |
-| 6,642 | 네비게이토 180 verse bar | – |
-| 6,643 | 커스텀 구절 통합 계층 | `getCustomVerses` |
-| 6,659 | 말씀 모음(컬렉션) 헬퍼 | `getVerseCollections`, `getActiveColls`, `isCollActive`, `findColl`, `_genCollId`, `ALL_VERSES`, `VERSE_TOTAL` |
-| 6,699 | 모음별 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) | `_getCollFilter`, `_collRawVerses` |
-| 6,714 | 성경책 이름 하나로 모으기 | `_bookCanon`, `_bookAbbr`, `_booksOf`, `_bookNorm`, `_bookOfRef`, `_bookSel`, `_bibleRankOfRef`, `m`, `_groupVersesBy`, `_sortGroups`, `_groupVersesByMulti` |
-| 6,835 | 필터 적용 방식: 네 카테고리(대분류/소주제/태그/성경)의 "교집합" | `_collVersePassesFilter`, `_collPeriodPass`, `_collFilteredVerses` |
-| 6,882 | 현재 켜진 말씀 모음의 구절 집합 (말씀바·전체목록·선택이 따라감) | `ACTIVE_VERSES`, `ACTIVE_TOTAL` |
-| 6,920 | 커스텀 구절 관리 (설정 → 암송 말씀) | `_invalidateVerseCaches` |
-| 6,926 | 말씀 모음 버튼 줄 렌더링 + 켜기/끄기 | `_collIsProp`, `renderCollButtons`, `mkBtn`, `renderSubButtons` |
-| 7,014 | 켜진 각 모음의 하위 필터 패널 (전체/대분류별/소주제별/성경별) | `_collLabel`, `_updateCfAllCount`, `renderCollFilterPanels`, `_buildCollFilterPanel`, `mkDate`, `syncP`, `_renderPickerInto`, `_cfSortKey`, `_cfSelKey`, `_buildGroupPicker`, `_renderGroupList`, `_buildBookPicker`, `_renderBookList`, `openCollAddMenu` … 외 2개 |
-| 7,310 | 구독 받기 (상위 레벨) | `openSubscribeDialog`, `closeSubscribeDialog`, `doSubscribe`, `code`, `verses`, `toggleColl`, `_syncVersePushPool`, `_afterActiveVersesChanged`, `addNewCollection`, `name` |
-| 7,423 | 롱터치 액션 메뉴 ([수정][공유][삭제]) | `openCollMenu`, `closeCollMenu`, `collMenuAction`, `deleteCollection`, `n` |
-| 7,474 | 수정 페이지 | `_currentColl`, `openCollEdit`, `closeCollEdit`, `renameCurrentColl`, `name`, `_ceFillSelects`, `ceSelectMethod` |
-| 7,548 | 수정 페이지 목록 상태 | `ceSetSort`, `ceToggleFilter`, `_refKey`, `m`, `_ceSortedIdx`, `K`, `_ceMakeRow`, `renderCeVerseList`, `totalActive`, `_ceUpdateDeleteBtn`, `_ceUpdateTrashBadge`, `n`, `ceOpenDeletePopup`, `ceCloseDeletePopup` … 외 1개 |
-| 7,666 | 휴지통 뷰 | `ceOpenTrash`, `ceCloseTrash`, `_ceVerseSide`, `renderCeTrash`, `_ceToggleTrashSel`, `_ceUpdateRestoreBtn`, `ceRestoreSelected`, `ceMoveTrash` |
-| 7,748 | 현재 수정 중인 모음에 구절 추가 | `_addVersesToColl`, `_addVersesToCurrentColl`, `_verseIdentity`, `_gSrcId`, `_syncSheetVersesIntoColl`, `gid` |
-| 7,891 | 시트에서 사라진 구절 정리 | `addCustomVerseFromForm`, `chap`, `vrs`, `text`, `topic`, `_parseCsv`, `_parseVDate`, `_looksLikeRef`, `_sheetRowsSane`, `_isPropSheet`, `_propRefs`, `_propBooks`, `_propRowsToItems`, `col` … 외 6개 |
-| 8,289 | 구글 시트 다중 링크 (현재 수정 중인 모음) | `renderCeGoogleList`, `ceAddGoogleLink`, `url`, `name`, `ceRemoveGoogleLink`, `ceToggleGoogleAuto`, `ceImportGoogleLink` |
-| 8,392 | 수동 전체 업데이트 (로고 롱터치/우클릭) | `verseSyncAllNow` |
-| 8,465 | 하루 시작 시간 자동 동기화 | `runVerseSheetAutoSync` |
-| 8,504 | 공유 (Firestore shared/{code}) | `_fbReady`, `_generateUniqueShareCode`, `_sharedVerseOut`, `_sharedVerseIn`, `_publishSharedColl`, `openShareDialog`, `closeShareDialog`, `_shareMessage`, `shareCopyCode`, `done`, `_fallbackCopy`, `shareVia`, `_fmtSubDate`, `runSharedCollSync` … 외 4개 |
-| 8,736 | 자동으로 다음 구절 | `_fillVerseBarDOM`, `barTags`, `barRef`, `_menuArmOnNextPress`, `on`, `closeVerseMemMenuFromOverlay`, `_vmmSyncFirstItem`, `openVerseMemMenu`, `closeVerseMemMenu`, `onVerseMemRecord` |
-| 8,979 | Verse bar interaction | `_verseBarSlideNav`, `_initVerseBarSwipe`, `_verseBarModeFlip`, `onVerseBarClick`, `setVerseIdx`, `nextVerseManual`, `prevVerseManual`, `randomVerseManual`, `toggleVerseBarOn`, `openVerseSettingsModal`, `closeVerseSettingsModal`, `_verseSettingsOpen`, `_escShown`, `_vstabList` … 외 7개 |
-| 9,500 | 인앱 말씀 팝업 | – |
-| 9,504 | 말씀 푸시 알림 설정 | `_vpEveryLabel`, `getVersePush`, `_vpSave` |
-| 9,532 | 말씀 알림 스위치 | `_vpTurnOn`, `setVersePush`, `setVersePushInterval`, `vpToggleDay`, `vpAddTime`, `vpSetTime`, `vpDelTime`, `_syncVersePushUI` |
-| 9,621 | 정해진 시각 목록 (v26-0817-15, HB 2) | `_syncVpTimeList`, `_syncVpTimeField`, `_vpToMin`, `getVerseAlarm`, `renderVerseAlarmSettings`, `renderVerseAlarmCustomList`, `openVerseAlarmCustomTimePopup`, `_initVerseAlarmPicker`, `closeVerseAlarmCustomTimePopup`, `addVerseAlarmCustomTime`, `removeVerseAlarmCustomTime`, `onVerseAlarmToggle`, `toggleVerseAlarmContent` |
-| 9,812 | Alarm scheduler | `getVersePoolVerses`, `scheduleVerseAlarms` |
-| 9,823 | 말씀 인앱 팝업 기능은 v0731-1 에서 없앴다 | `checkVerseAlarm`, `showVersePopup`, `closeVersePopup` |
-| 9,888 | 암송 관리 | `getMemLog` |
-| 9,895 | ref 기반 헬퍼 | `verseByRef`, `verseForEntry`, `_nowHM` |
-| 9,918 | 좋아요 로그 (누적 이벤트형) | `getLikeLog`, `_calKey`, `recordVerseLike` |
-| 9,941 | 공유 로그 (누적 이벤트형) — ST.verseShareLog = {"YYYY-MM-DD":[{ref,time}]} | `getShareLog`, `recordVerseShare` |
-| 9,952 | Deeper 로그 (누적 이벤트형, 열람할 때마다) | `getDeeperLog`, `recordVerseDeeper`, `openDeeperFromRef` |
-| 9,972 | Even Deeper 로그 (Deeper와 동일한 누적 이벤트형) | `getEvenDeeperLog`, `recordVerseEvenDeeper`, `_evenDeeperShortRef`, `book`, `openEvenDeeperFromRef`, `go`, `_currentSecId`, `recordMemorizationByRef`, `recordMemorization`, `_wkVerseMarksHTML`, `_mviewRowHTML`, `_mviewEventCountsHTML`, `likeN`, `deeperN` … 외 3개 |
-| 10,140 | BibleLinkProvider | `showMemorizationPopup`, `closeMemRecPopup`, `_dismissToast` |
-| 10,332 | 진행 중 토스트 (v26-0901-3, HB) | `showBusyToast`, `hideBusyToast`, `showToast`, `act`, `body` |
-| 10,426 | 아이콘 전용 토스트 (말씀 반응: 좋아요·암송) | `_dismissReactToast`, `showReactionToast`, `_reactWithToast`, `openMemorizationHistory`, `closeMemorizationHistory`, `_renderMemHistoryDash`, `_renderMemHistoryList`, `logoMenuToggleVerse`, `logoMenuNextVerse`, `logoMenuPrevVerse`, `openVerseFull` |
-| 10,660 | 전체화면이 덮은 화면들 (닫을 때 복원) | `_vfHideCoversNow`, `_vfHideCovers`, `closeVerseFull`, `_vfSyncPageBg`, `_verseFullIsOpen` |
-| 10,752 | 본문 줄바꿈 + 글자 크기 자동 맞춤 | – |
-| 10,760 | 한국어 맥락 줄바꿈 (전체화면·타일뷰·공유카드 공용) | `_vfIsHeotdoeException`, `_vfPairKeep`, `_vfGeException`, `_vfIsSubject`, `_vfAdvStart`, `_vfApplyAdvRule`, `_vfClauseStart`, `_vfApplyClauseRule`, `_vfObjTailLen`, `_vfObjStart`, `_vfApplyObjRule`, `_vfIsParallelWord`, `_vfParallelRuns`, `_vfApplyParallelRule` … 외 21개 |
-| 11,379 | 겹쳐쓰기 (v26-0812-15, 옛 '섞어서 쓰기'를 대신한다) | `_hiOverlap`, `_hiHash`, `_hiShuffle`, `_hiPickAt` |
-| 11,417 | 한 본문에 별을 몇 개까지 (v26-0812-16) | `_hiStarMax`, `_hiAssign`, `_hiRng`, `s`, `_hiSmooth`, `_hiRibbon`, `_hiWob`, `_hiWavePoly`, `tilt`, `_hiStarPoly`, `rot`, `_hiHTML`, `_hiOverlay`, `put` … 외 8개 |
-| 11,754 | 명제 본문 앉히기 + HB 줄바꿈 규칙 (v26-0901-6) | `_vfLayoutPropText`, `fit`, `_vfApplyPropAlign`, `_vfReadWrappedLines`, `raw`, `_vfRedrawPropInk` |
-| 11,854 | 구독자 전체 집계 카운터 (verseStats/{ref}) | `_statRefKey` |
-| 11,860 | 명제의 '구독자 전체' 집계 칸 이름 (v26-0831-7, HB) | `_statDocKey`, `_bumpVerseStat`, `bump`, `_fetchVerseStat` |
-| 11,908 | 스닉픽 한 줄 최대 가로 폭 (px) | `_sneakMaxWDefault`, `_sneakMaxW`, `_applySneakMaxW`, `_initSneakMaxWPicker`, `setVerseSneakMaxW`, `_syncLinkOpenModeUI`, `setLinkOpenMode`, `setVerseCountScope`, `_isReactPid`, `_reactKey`, `_reactKeyParts`, `_verseEventCount`, `_vfSyncCounts`, `setCnt` … 외 1개 |
-| 12,057 | 명제에서는 안 쓰는 단추를 감춘다 (v26-0903-10) | – |
-| 12,093 | 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) | `_vfShareSizeRow`, `openVfShareFor`, `openVfShare`, `closeVfShare`, `vfShareBg`, `vfShareDo`, `_dataURLtoBlob`, `_cardActionCount`, `_cardTextLS`, `cx`, `_noiseTile`, `_cardGrain` |
-| 12,206 | 공유 이미지 = 전체화면을 "그대로" 옮겨 그리기 | `_shotFont`, `_withFullscreenLayout`, `wasOpen`, `_vfRenderCard`, `needTemp`, `draw`, `_shotDraw`, `SC` |
-| 12,309 | 명제 대표 문구 타이틀 (v26-0901-3, HB 신고 — "공유 이미지에 대표 문구가 | – |
-| 12,572 | 공유 이미지 고정 크기 | `_shareSizeKey`, `shareSizeOf`, `setShareSize`, `_syncShareSizeUI`, `_refDigitsPad`, `pad`, `vw`, `_shareFileName`, `ref`, `safe`, `_vfShareImage`, `isTouch`, `download`, `copy` … 외 6개 |
-| 12,714 | 전체화면 롱터치 메뉴의 '본문 복사' (v26-0818-1, HB 4) | `vfCopyBodyOnly`, `body` |
-| 12,729 | 공유 설정 (말씀 설정창) : 칩 on/off · 장절 형식 · 미리보기 | `toggleImgIncl`, `_syncHiUI`, `_syncHiOverlapRow`, `toggleTxtIncl`, `setTxtRefStyle`, `setTxtRefBracket`, `setTxtRefPos`, `_renderSharePreview`, `_syncShareSettingsUI`, `_rgba`, `_vfSelectedPatterns`, `_vfSecIdNow`, `_vfPatternPool`, `map` … 외 3개 |
-| 12,960 | 명제 대표 문구의 자리·기울기 (v26-0831-3) | – |
-| 12,974 | 대표 문구 글씨체 (v26-0901-5, HB) | – |
-| 12,988 | 명조 | – |
-| 12,992 | 고딕 | – |
-| 12,995 | 손글씨 | `_ptFontsOn`, `a`, `_ptFontFor`, `_ptFont`, `_PT_FAMS`, `_ptBag`, `_ptSample`, `_ptMissing`, `_ptFontPending`, `_ptWarmup`, `_ptLinkGoogle`, `_ptEnsureFont`, `finish`, `_ptFontLoaded` … 외 2개 |
-| 13,233 | 대표 문구가 둘인 명제 (v26-0904-4, HB) | `_propHiList`, `_propHiPick`, `_vfIsProp`, `_vfTheme`, `_vfTextScale`, `setVfTextScale`, `_tsTouchDist`, `_tsFine`, `_tsNearest`, `_tsPinchBusy`, `_tsPinchArm`, `_attachTextPinch`, `_syncVfTextScaleUI`, `_vfBgCss` … 외 16개 |
-| 13,533 | 좌상단 아이콘 크기 (v26-0905-2, HB — "말씀 모음 설정에 비해 홈과 책갈피가 | – |
-| 13,548 | 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) | `_vfCycleMode`, `vfToggleCycleMode`, `_vfSyncCycleIcon`, `_vfShufReset`, `_vfShufPos`, `_vfShufGo`, `_vfShufPush`, `_vfSetNav`, `_vfClearNav`, `vfHomeAction`, `vfOpenCollSettings`, `closeVfKeepSwitch`, `_vfKeepSortHead`, `tab` … 외 7개 |
-| 13,789 | 고르기 | `_tagartAliasMap`, `_tagartOn`, `_tagartStyle`, `_tagartHay`, `_tagartHit`, `_tagartPick`, `_tagartSvg`, `org`, `_tagartSwatchSvg`, `org`, `_vfRenderTagArt`, `clear`, `key`, `_vfPlaceTagArt` … 외 3개 |
-| 14,021 | 설정창 (말씀설정 → 전체화면 탭) | `toggleVfArt`, `togglePropTitleFont`, `_ptSyncFontUI` |
-| 14,083 | 무리를 접었다 편다 (v26-0902-15, HB) | `_ptGroupInit`, `togglePropTitleGroupOpen`, `togglePropTitleGroup`, `setVfArtStyle`, `_vfArtSyncUI`, `_verseFullRender`, `tags` |
-| 14,185 | 장절 줄 | `_vfRenderRef`, `rs`, `_vgOpenFromRef` |
-| 14,207 | 대표 문구 줄바꿈 (v26-0901-3, HB) | `_ptLen`, `_ptSplitOnce`, `pick`, `_ptWrapTitle`, `k` |
-| 14,255 | 명제 대표 문구 타이틀 | – |
-| 14,258 | 대표 문구 크기는 **본문이 몇 줄이 되느냐**에 따라 달라진다 (v26-0902-13, HB) | `_ptLineK`, `_vfSizePropTitle`, `_ptDrawnLines`, `_vfRenderPropTitle`, `_vfPropInk`, `x`, `y`, `_vfBottomEl`, `_vfNavCommit` |
-| 14,411 | 셔플의 '뒤로'는 무작위가 아니라 **방금 본 말씀** (v26-0831-19, HB) | `_vfShufPickRandom`, `verseFullNav`, `_initEdgeBack`, `paint`, `clearPaint`, `_vfHeartBurst`, `_vfDoubleLike`, `_initVerseFullGestures`, `inner0`, `snapBack`, `stopLt`, `dropDrag` |
-| 14,679 | 다른 앱에 갔다 돌아왔을 때 (v26-0904-5, HB '그림이 아래로 내려와 글자와 겹친다') | `_vgEscAttr`, `_vgRawPool`, `_vgMatch`, `_vgFilteredPool`, `pool`, `_vgHomeLabel`, `openVerseGridHome`, `_vgDate`, `_vgSort`, `_vgBookOne`, `_vgGroupKey`, `_vgGroupLabel`, `_vgShortRef`, `ab` … 외 20개 |
-| 14,981 | 태그·성경 필터일 때의 좌상단 제목 | – |
-| 14,986 | 태그 목록에서 '구절이 적은 태그' 빼기 (v26-0817-13, HB 14) | `_vgExclKeys`, `_vgExclOn`, `_vgExclMax`, `_vgExclAxisNow`, `_vgAxisItems`, `_vgAxisLabel`, `_vgSyncFilterLabel`, `prev`, `next` |
-| 15,087 | 롤링피커 바로 우측의 '제외' 글자 버튼 + 스테퍼 (v26-0817-13/14, HB 14-2·14B) | `_vgSyncExcl` |
-| 15,114 | 타일뷰의 '제외' 버튼 — 지금 보고 있는 축(태그 또는 성경)을 켜고 끈다 | `vgToggleTileExcl`, `vgStepTileExcl` |
-| 15,138 | 말씀 설정 → 뷰 탭의 '태그 목록' 항목 (14-1, 태그 전용) | `vgToggleTagExcl`, `vgStepTagExcl`, `_vgSyncTagSettingsUI`, `vgPickAxis` |
-| 15,175 | 개발자 전용: 지금 말씀이 온 구글 시트를 그 셀로 열기 | `_sheetUrlForVerse`, `vfCatTap`, `_initVfCatSheet`, `stopTimer`, `vfOpenSheetForCat`, `_sheetGo`, `_sheetCopyPending`, `_vgOpenFromReels`, `openVerseGrid`, `_vgScrollToVerse`, `_vgHighlightTile`, `_vgRestoreHighlight`, `closeVerseGrid`, `_vgIsOpen` … 외 10개 |
-| 15,605 | 떠 있는 메뉴의 높이를 화면에 맞춘다 | `_menuFitHeight` |
-| 15,619 | 메뉴 안의 밀기를 메뉴 안에서 끝낸다 | `_menuLockScroll`, `openLogoMenu`, `closeLogoMenu`, `logoMenuOpenListSub`, `logoMenuOpenKeepSub`, `_logoMenuSubScheduleClose`, `_logoMenuSubCancelClose`, `_logoMenuSubHideFloat`, `logoMenuBackToMain`, `_tryCloseLogoMenu` |
-| 15,755 | 네비게이토 180 전체 목록 (검색 + 대분류 필터) | `openVerseListModal`, `closeVerseListModal`, `renderVerseListCatRow`, `renderVerseListResults`, `syncSecsFromState` |
-| 15,845 | 경계선 모델로 옮기기 (v26-0806-7) | `defaultState`, `load`, `_localOwner`, `_setLocalOwner`, `resetStateToDefaults` |
-| 15,944 | 설정 등급(이지/미드/파워) 첫 값 | – |
-| 15,956 | 암송 기록 마이그레이션: verseIdx → ref | `rawSave`, `snapshot`, `beforeSave`, `save`, `applySnapshot`, `doUndo`, `doRedo`, `updateUrBtns`, `saveText`, `z` |
-| 16,079 | Event time display format | `formatEventTime`, `esc`, `getDay`, `getBigs`, `getSmalls`, `secHasPendingTodo`, `secHasEvent`, `getEvents`, `weekOfMonth`, `eventRepeatsOnDate`, `eventOccursOnOwnDate`, `getDisplayEvents`, `sortEventsByTime`, `renderSecEvents` |
-| 16,302 | 시각 없는 일정을 다른 시간구간으로 옮기기 (v26-0817-12, HB 9) | `_evSecAt`, `_evMarkDropSec`, `_evMoveToSec`, `attachEventChipInteraction`, `getContainer`, `getChips`, `openMenuForThis`, `startDrag`, `moveDrag` |
-| 16,414 | 다른 시간구간 위로 넘어가면 그 구간으로 옮겨 붙인다 (v26-0817-12, HB 9) | `endDrag` |
-| 16,454 | 다른 시간구간에 놓았으면 그 구간으로 옮긴다 (v26-0817-12, HB 9) | – |
-| 16,492 | Desktop: mouse press — click opens the edit/delete menu, a | – |
-| 16,526 | Mobile: touch long-press (same LONG_PRESS_TOUCH timing as tasks) | `getTrash`, `totalBigCount`, `logicalNow`, `tKey`, `todayKey`, `addDays`, `isToday`, `_t2m`, `_m2t`, `v`, `_secOffsets`, `n`, `base`, `_secNormalizeTimes` … 외 21개 |
-| 16,773 | '시간 개념 없음' 구간 | `_secNoTime`, `_secIsCustom`, `isNowWithinSection` |
-| 16,795 | 일정 정렬 | `_sortEventsKeepingTimeless` |
-| 16,807 | 일정 재배치 | `_reassignTimedEvents`, `home`, `_secsCommit`, `moved` |
-| 16,859 | 지운 구간 보관 | `_secArchiveCapture`, `_secStripData`, `_secArchiveApply`, `put`, `sendToTrash`, `updateTrashBadge`, `openTrash`, `closeTrash`, `trashBgClick`, `renderTrashList`, `restoreFromTrash`, `clearTrash`, `sw`, `renderToday` … 외 3개 |
-| 17,117 | 구버전(todoCol 소유 모델) 자동 이전: todo를 해당 컬럼 맨 위에 주입 | `_colKey` |
-| 17,197 | 기기 형태 판정 | `_devShortSide`, `b`, `_isTouchDevice`, `_layFormMode`, `_syncLayFormUI`, `setLayFormMode`, `_isPhoneForm`, `portrait`, `_layMode`, `applyUiScale`, `_timeStep`, `_fillMinOptions`, `_makeTimeRollPair`, `mk` … 외 14개 |
-| 17,432 | 부드러운 전환 (커튼 오버레이) | `laySetWeekly`, `_rpMonthOf`, `_rpNormMonth`, `_rpMonthGridHTML`, `_rpMGridH`, `hh`, `_rpSetMGridH`, `_rpVListH`, `hh`, `_rpSetVListH`, `_rpAttachVResize`, `rpChMonth` |
-| 17,649 | 암송/좋아요/Deeper 집계 | `_flatMemEntries`, `_flatSimpleEntries`, `_aggByRef`, `_aggEntriesForKind`, `out` |
-| 17,705 | 범위(scope)별 집계 (v26-0904-7, HB) | `_vlKindEntries`, `_vlKeepEntries`, `_vlHomeEntries`, `_vlReactTotals`, `_vlExtraSortFor`, `_vlEntriesForScope` |
-| 17,761 | C단계: 목록별 정렬·기간 설정 | `_vlPref`, `_vListRange` |
-| 17,796 | 정렬 (v26-0831-11, HB) | – |
-| 17,800 | 갈래 탭 (v26-0831-15, HB) | `_vlIsProp`, `v`, `_vlRegIdx`, `_vlClearRegIdx`, `_vlApplySort`, `_vlDispRef`, `v`, `vlToggleCtrl`, `_vlwKey`, `vlwSetSort`, `vlwTogglePairSort`, `vlwSetPeriod`, `vlwSetCustom`, `_vListControlsHTML` … 외 25개 |
-| 18,137 | 저장은 '한 건'이 없다 (v26-0902-2, HB) | – |
-| 18,207 | 로고 메뉴에서 여는 집계 목록 팝업 | `_renderVAggBody`, `openVerseAggPopup` |
-| 18,233 | 목록 차례 칩 줄 (고르기 창 · 좌상단 메뉴가 함께 쓴다) | `_keepSortRowHTML`, `pairOn`, `_keepRepaintLists`, `_keepAttr` |
-| 18,265 | 끌어서 차례 바꾸기 (v26-0831-21, HB) | `_keepBindDrag`, `rowsOf`, `put`, `want`, `clear`, `done`, `openKeepListPopup`, `_vAggSyncKeepTitle`, `_keepNameKey`, `_keepNameCommit` |
-| 18,442 | 팝업 좌상단 햄버거 → 목록 바꾸기 (4-2-3, HB) | `toggleKeepSwitch`, `closeKeepSwitch`, `_renderKeepSwitch` |
-| 18,477 | 좌상단 말씀메뉴 → '저장 목록' 하위 뎁스 | `_renderKeepSubMenu`, `openKeepPicker`, `closeKeepPicker`, `_renderKeepPicker` |
-| 18,562 | 목록이 자리를 옮길 때의 움직임 (v26-0904-4, HB) | `_keepFlipRender`, `keepPickToggle`, `keepPickNew`, `n` |
-| 18,616 | 목록 한 줄의 ⋯ 메뉴 (수정 · 삭제) | `openKeepRowMenu`, `x`, `closeKeepRowMenu`, `keepRowEdit`, `to`, `keepRowDelete`, `cnt`, `_keepAfterChange`, `_vDashPref`, `_vDashEntries`, `_vDashVerse`, `_vDashKeysOf`, `tags`, `_vDashSlices` … 외 6개 |
-| 18,812 | 장절 느슨한 대조 | `_refNorm` |
-| 18,849 | 알림에 실어 보내는 명제 열쇠 (v26-0901-3, HB) | `_pushKey`, `_pushKeyPid`, `_findVerseByRefLoose` |
-| 18,891 | 중복 구절 일회성 정리 (5-2) | `_dupVerseScan`, `_rewriteLogRefs`, `mergeDuplicateVerses` |
-| 18,974 | 셀에서 바깥으로 나가는 동작들 | `_vDashMarkReturn`, `_vDashMaybeReturn`, `vDashOpenFilter`, `vDashOpenVerse`, `_vsetGoColl`, `openVcCollSettings`, `_vsetRestoreBack`, `openVerseCollSettings` |
-| 19,049 | 파이차트 상세 팝업 | `_vDashPieDetailSVG`, `vDashOpenDetail`, `kindLabel`, `axisLabel`, `closeVDashDetail`, `openVerseDashboard`, `closeVerseDashboard`, `closeVerseAggPopup`, `_rollHTML`, `a`, `_rollFit`, `_rollTick`, `_rollStart` |
-| 19,213 | 위젯이 보는 범위 (v26-0904-7, HB) | `_vcScope`, `_vcScopeIsHome`, `_vcScopeCount`, `_vcSyncKind`, `_vcView`, `_vcScopeKey`, `_vcScopeIcon`, `_vcScopeLabel`, `_vcScopeParts` |
-| 19,276 | 자동 넘김 (v26-0904-10, HB) | `_vcAutoOn`, `_vcAutoMin`, `_vcAutoOffset`, `_vcAutoSlot`, `setVcAuto`, `setVcAutoMin`, `_vcHeadMode`, `setVcHeadMode`, `_vcIs`, `_vcIdOf`, `_vcAll`, `_vcGet`, `_vcNewId`, `_vcCreate` … 외 4개 |
-| 19,389 | 카드가 도는 범위 | `_vcListItems`, `_vcVerseOf`, `hit`, `_vcKeyOf` |
-| 19,420 | 명제의 대표 문구 (v26-0904-10, HB) | `_vcHiSplit`, `_vcVerses`, `_vcCurrent` |
-| 19,473 | 자동 넘김 시계 | `_vcAutoSignature`, `_vcAutoTick`, `_vcAutoStart`, `_vcFilterLabel` |
-| 19,504 | 카드 테마 | `_vcHash`, `_vcPatternKey`, `_vcThemeVars`, `fam`, `_vcTextScale` |
-| 19,544 | 카드 높이 (드래그로 조절, 위젯마다 따로) | `_rpVCardH`, `hh`, `_rpSetVCardH` |
-| 19,555 | 표시 항목 | `_vcShow`, `_vcGroupOf`, `_vcGroupOn`, `v`, `_vcShowFor` |
-| 19,576 | 카드 한 장 HTML | `_vcCardHTML` |
-| 19,659 | 본문 줄바꿈·크기 맞춤 | `_vcLayoutOne`, `raw`, `padH`, `padV`, `refH`, `_vcLayoutAll`, `_vcSyncCounts`, `put`, `putText` |
-| 19,752 | 카드 동작 | `_vcReactKeyOf`, `vcAct`, `vcOpenFilter`, `vcClearFilter`, `_vcApplyNav`, `_vcSlideEl`, `_vcCurX`, `_vcSlideCommit`, `to`, `vcNav`, `vcOpenFull`, `_vcUnplacedForKind` |
-| 19,887 | 카드 ⇄ 목록 | `vcSetView`, `vcToggleView`, `vcAddCard`, `_vwScopeOpts`, `openVwScope`, `closeVwScope`, `renderVwScope`, `row`, `_vwKeepSortHTML`, `chip`, `_vwScopeBindHold`, `go`, `vwScopeCollSettings`, `vwScopePick` … 외 3개 |
-| 20,061 | 말씀 목록 모습 한 벌 | `_vcListHTML`, `_vcAttachGestures` |
-| 20,202 | 카드 설정 팝업 (위젯 하나하나마다 따로) | `openVcSettings`, `closeVcSettings`, `renderVcSettings`, `themeChip`, `swTitle`, `swRow`, `scopeTxt`, `hmBtn`, `setVcShow`, `setVcShowAll`, `setVcTextScale`, `vcSetTextScaleLive`, `vcStepTextScale`, `next` … 외 3개 |
-| 20,481 | 컬럼별 위젯 스택 계산 (todo 포함) | – |
-| 20,501 | 각 컬럼 렌더링 | – |
-| 20,521 | todayView 실제 DOM 이동: todo placeholder 슬롯 or 1단은 colL 직속 | – |
-| 20,529 | 설정(햄버거) 버튼: GNB 로고 우측, 2단부터 표시 (3-3) | – |
-| 20,542 | 3단 주간뷰 패널 | – |
-| 20,566 | 폭 적용 + 인터랙션 연결 | `_rpAddBtnHTML`, `_rpAttachSwipes` |
-| 20,604 | 위젯 설정 팝업 | `openRpConfig`, `closeRpConfig`, `renderRpConfigList`, `_rpAttachChipDrag` |
-| 20,733 | 드래그 재정렬 공용 헬퍼 (고스트 이미지 + 타겟 라인) | `_ghostDragStart`, `offTest`, `pickContainer`, `place` |
-| 20,818 | 스팬 라인 모드 (opt.lineFor): 주간뷰처럼 두 단에 걸치는 위젯은 | `up`, `_rpAttachHeaderDrag`, `bindHold`, `_attachWeeklyPaneDrag`, `begin`, `_rpCurrentRatio`, `_layApplyWidths`, `_layInitDividers`, `attach`, `W`, `clamp`, `renderAddRow`, `defIds`, `appendMarkerFilterBtn` … 외 3개 |
-| 21,560 | 시계 버튼: 탭=일정추가, 롱터치=시간순정렬 | – |
-| 21,561 | 시계 버튼: 일정이 있을 때만 표시, 탭=시간순정렬 | – |
-| 21,584 | + 버튼: 탭=빅블럭추가, 롱터치=스몰블럭추가 | – |
-| 21,638 | ▲ 버튼: 섹션 숨기기 | `updateSecSummary`, `manuallyCollapsed` |
-| 21,766 | 받은 쪽지 뷰어 (개발자 계정 전용) | `_isDevAccount`, `_syncDevInboxVisibility`, `_devReadLocal`, `_devReadIds`, `_devMigrateRead`, `_devMarkRead`, `_devTrashGet`, `_devTrashSet`, `_devWhen`, `ms`, `_devWhenTxt`, `devInboxUpdateBadge`, `devInboxRefreshBadge`, `devInboxToggleAll` … 외 8개 |
-| 22,005 | 휴지통 | `devTrashToggle`, `devTrashRender`, `devTrashDelete`, `devTrashEmpty` |
-| 22,041 | 개발자 쪽지 (설정창 계정탭) | – |
-| 22,053 | 첨부 처리 방식 | `_devCompressFile`, `devNoteHandleFile`, `devNoteSend`, `openInlineInput`, `_openGhostInput`, `closeInlineInput`, `renderSecBody` |
-| 22,446 | 슬라이드 인라인 입력창 (헤더 바로 아래, B안) | `makeSwipeWrap`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `taskMarkerFilterPass`, `makeBigWrap`, `getCarryCount`, `populateCarryBadge`, `color`, `autoSizeInput`, `measure`, `makeBigItem`, `isOver`, `makeBigGhost` … 외 10개 |
-| 23,196 | Desktop: drag handle mousedown (instant drag — power users) | – |
-| 23,201 | Desktop: long-press anywhere on the row (mirrors mobile touch UX) | `cancelMousePress` |
-| 23,240 | Desktop: right-click → task move context menu | – |
-| 23,247 | Mobile: long-press anywhere on element (including input/button areas) | `cancelPressTimer` |
-| 23,445 | Hold off the browser's scroll gesture WHILE the long-press | `getSecColor`, `clearDropIndicators`, `showDropIndicator` |
-| 23,503 | Drop target: closest-item snap (no fallback flicker) | `getDropTarget` |
-| 23,518 | 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) | – |
-| 23,571 | 좌우 절반으로 빅/스몰 결정 | `getStableDt`, `moveG`, `_dragZoneMid`, `_updateDragHintBounds`, `cancelDragKeepingItem`, `endDrag`, `navigateDate`, `updateHeaderDate` |
-| 23,934 | GNB 날짜의 광학 보정 | `_syncHdrDateOptical`, `_dNavEl`, `initDateSwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd`, `onCancel`, `IS_TOUCH`, `itemKey`, `parseItemKey`, `buildFlatList`, `findFlatIndex` … 외 10개 |
-| 24,273 | Lane model for ⇧⌘↑/↓ reordering | `buildLanes`, `findLaneIndex`, `moveActiveItems` |
-| 24,340 | Move the entire active group by exactly one flat step | `moveActiveItemsAcrossSection` |
-| 24,488 | While editing a big/small task's text | – |
-| 24,517 | Not editing text: arrow-key driven selection | – |
-| 24,548 | View-switching and date-navigation shortcuts (desktop, D/W/M views) | `wireActivateClick`, `openTaskMenu`, `arr`, `CONTACT_PICKER_SUPPORTED`, `findMentionedContacts`, `renderTaskTextHTML`, `makeContactBadges`, `contactBadgeCountChanged` |
-| 24,763 | @배지 액션 메뉴 | `openContactMenu`, `phone`, `email`, `closeContactMenu`, `contactAction` |
-| 24,840 | @닉네임으로 태그된 할일 모아보기 | `getTasksTaggedWithContact`, `showContactTasksPopup`, `closeContactTasksPopup` |
-| 24,914 | 연락처 관리 모달 | `openContactsModal`, `closeContactsModal`, `clearContactForm`, `startEditContact`, `editContact`, `c`, `renderContactsList`, `submitContact`, `dup`, `pickFromDeviceContacts` |
-| 25,015 | Event add modal | `syncRollDisplays` |
-| 25,042 | 일정 등록창의 시·분 목록 | `_evFillMins`, `_evSyncRange`, `sec`, `keep`, `openEventModal`, `openEventModalForDate`, `setEventTimeToggle`, `_syncEventDateUI`, `onEventDateChange`, `closeEventModal`, `onEventTimeToggle`, `submitEventModal`, `repeat`, `secId` |
-| 25,288 | 매일/매주 repeat buttons | `renderRepeatButtons`, `toggleEventDaily`, `toggleEventWeekly`, `attachRepeatBtnInteraction` |
-| 25,355 | Touch | – |
-| 25,387 | Mouse (desktop only — skipped when a touch already handled it) | `_attachRepeatButtons`, `attachFastTap`, `openRepeatSubPicker`, `closeRepeatSubPicker`, `openEventEditMenu`, `closeEventEditMenu`, `editEventFromMenu`, `deleteEventFromMenu`, `closeTaskMenu`, `toggleTaskFlag`, `toggleTaskContact`, `toggleDailyRepeat`, `ensureDailyRepeats`, `moveTaskTo` … 외 15개 |
-| 25,900 | 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) | `_toastWithJump`, `_flashPendingTask`, `sel`, `_dayTaskCount`, `_fillTaskMenuCounts`, `weekOffsetLabel`, `setWMViewMode`, `_makeWMViewBtnsHTML`, `_wkPaneActive`, `renderWeekly`, `daysFromToday`, `getDayFadeClass`, `navigateWeek`, `attachPullToToday` … 외 9개 |
-| 26,422 | 주간/월간 블럭 우클릭/롱터치 → 바로 입력 | `_cellDefaultSec`, `now`, `vis`, `_renderSecPick`, `list`, `openCellInput`, `mode`, `_openCellEvent`, `_openCellEventRepaint`, `_openCellTodo`, `sec`, `closeCellTodo`, `cellTodoSave`, `text` … 외 24개 |
-| 26,937 | GNB 날짜 롱터치/우클릭 달력 | `openHdrCalendar`, `closeHdrCalendar`, `_closeHdrCalendarNow`, `hdrCalNav`, `hdrCalPick`, `hdrCalGoToday`, `_hdrCalRender`, `_initHdrDateLongPress`, `goToDate` |
-| 27,041 | Theme (dark / light / system) | `_effectiveMode`, `applyTheme`, `shown`, `_themeSummaryText`, `_renderThemeSummary`, `strip`, `openThemePicker`, `closeThemePicker`, `themePickerApply`, `themePickerPick`, `themePickerGroup`, `_renderThemePicker`, `_themePreviewHTML`, `resizeAllInputs` … 외 15개 |
-| 27,593 | Section editor (name / color / add / remove / drag-reorder / star-select) | – |
-| 27,594 | Color preset picker (built-in BASIC/SPR/SMR/AUT/WNT + user-saved) | `currentMatchingPresetName`, `renderPresetList`, `makePresetChip`, `applyPreset`, `renderSectionEditor` |
-| 27,666 | 이 구간 위의 경계선 | `_makeBoundaryRow`, `_makeBoundaryRoll`, `sel`, `mk`, `paint`, `updateSectionBoundary`, `toggleStarSection` |
-| 27,947 | 아이콘 두 벌 | `uiLevelIconSet`, `_uiLvIconSVG`, `_renderUiLevelIcons`, `_renderVerseUiLevelIcons`, `setUiLevelIconSet`, `uiLevel`, `v`, `setUiLevel`, `_stabList`, `_lvApplyIn`, `applyUiLevel`, `verseUiLevel`, `v`, `setVerseUiLevel` … 외 3개 |
-| 28,122 | "앞의 스위치를 켰을 때만 나오는" 줄들 | `_syncCondRows`, `n`, `switchSettingsTab`, `_initSettingsSwipe`, `N`, `getTrack`, `resolveTarget`, `toggleSectionExclude`, `updateSectionField` |
-| 28,276 | Drag-to-reorder for the section editor rows (mouse + touch) | `attachSecRowDrag`, `getWraps`, `onDown`, `onMove`, `onUp`, `addNewSection` |
-| 28,373 | 커스텀 구간 지우기 | `deleteSection`, `closeSecDelModal`, `_secDataCount`, `secDelDo`, `sec` |
-| 28,448 | 보관해 둔 구간 되살리기 | `renderSecArchive`, `restoreSecArchive`, `dropSecArchive` |
-| 28,505 | Full section-configuration presets (name + color + order + count | `renderSectionConfigList`, `saveCurrentSectionConfig`, `applySectionConfig`, `deleteSectionConfig` |
-| 28,594 | Backup / restore | `exportBackup`, `_backupDownload`, `buildBackupFilename`, `email`, `emailTag`, `n`, `importBackup` |
-| 28,722 | Auto carry-over of unfinished tasks | `runAutoCarryOver`, `testAutoCarryOver`, `_carryScope`, `setCarryScope`, `_syncCarryScopeBtns`, `_carryDateInScope`, `_carryPendingCount`, `_doCarry`, `runCarryNow` |
-| 28,864 | 푸시 알림을 눌러 들어왔을 때 그 말씀 전체화면 띄우기 | – |
-| 28,869 | 알림 진단 기록 (서비스워커와 같은 캐시를 공유) | `_notifLog` |
-| 28,891 | 진단 기록 보조 저장소 (localStorage) | – |
-| 28,895 | IndexedDB (서비스워커와 같은 저장소) | `_withTimeout`, `_withOutcome`, `_outcomeText`, `_idbForget`, `_idbOpen`, `_idbRaw`, `_idbGetRaw`, `_idbSetRaw`, `_idbDelRaw`, `_idbGet`, `_idbSet`, `_idbDel`, `_idbGetOutcome`, `_idbSetOutcome` … 외 30개 |
-| 29,473 | 말씀 클릭 경로 테스트 | `testVerseClickPath` |
-| 29,505 | 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) | `_vpDiagFmt`, `_vpDiagHead`, `vpDiagRender`, `vpDiagToggle`, `vpDiagClear`, `vpDiagCopy`, `build`, `_vpDiagCopyFallback`, `initAppUI` |
-| 29,611 | 푸시 말씀 목록을 앱 켤 때 한 번 맞춘다 (v26-0901-4, HB) | – |
-| 29,627 | Day-change catch-up on wake | – |
-| 29,678 | 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) | `paintAppUIFromLocal`, `_notifySupport`, `_notifyGet`, `renderSuffixPickers`, `setNotifySuffix`, `addCustomSuffix`, `appConfirm`, `_appConfirmResolve` |
-| 29,848 | 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) | `openSfxMenu`, `left`, `closeSfxMenu`, `sfxMenuAction`, `renameCustomSuffix`, `removeCustomSuffix`, `refreshNotifyUI` |
-| 29,943 | 푸시 배관(토큰) 공용 | – |
-| 29,954 | 기기 구분 | `_deviceId`, `_deviceLabel`, `touch`, `_ensurePushToken`, `_releasePushTokenIfIdle` |
-| 30,063 | 이 기기에서 알림 받기 (기기별 스위치, v26-0828-7) | `setDeviceNotify`, `_syncDeviceNotifyUI` |
-| 30,091 | 할일 알림 스위치 (일반설정 → 푸시 알림) | `onNotifyMasterToggle`, `updateNotifySub`, `initForegroundPush` |
-| 30,125 | 서비스워커 자기 복구 (v26-0802-5) | – |
-| 30,136 | 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) | – |
-| 30,167 | 알림 테스트 | `testLocalNotification`, `sendTestPush`, `authToggleMode`, `authSetLoading`, `authSubmit`, `authErrorMessage`, `authSignOut` |
-| 30,307 | Firestore doc path: one document per user, holding their entire ST | `userDocRef`, `_fbSetBase`, `_fbLoadPersistedBase`, `_fbClearBase`, `_fbBaseObj` |
-| 30,378 | 3자 병합 엔진 | `_fbIsUserEdit`, `_fbDeviceIdle` |
-| 30,416 | 앱 버전 비교 ("v. YY-MMDD-N") | `_verNums`, `_verCmp`, `_fbVerIsOlder`, `_mgWhole`, `_mgContainerKeys`, `_mgCountBag`, `_mgEntryArray`, `_mgLogFlat`, `_mgLogNested`, `_mgTaskArray`, `_mgTaskOne`, `_mgDay`, `_mgById`, `_fbHasAdoptedCloud` … 외 18개 |
-| 30,772 | 안쪽 이름표를 사람 말로 | `_dfSeg`, `_dfSegPath`, `_dfWord`, `_dfValS`, `_dfVal` |
-| 30,830 | 값 두 벌에서 **다른 자리만** 뽑는다 | `_dfDeep`, `_dfDeepLines`, `_dfKindName`, `_dfToday`, `_dfPush` |
-| 30,867 | 할일 한 구간(배열) | `_dfTaskKey`, `_dfArr` |
-| 30,916 | 날짜별 할일·일정 | `_dfDays`, `A` |
-| 30,934 | 말씀 모음 하나 | `_dfVKey`, `_dfColl1`, `_dfColls` |
-| 30,960 | 연락처 하나 | `_dfContact1`, `_dfContacts` |
-| 30,973 | 기록(암송·좋아요·담아두기·나눔·Deeper) | `_dfLogRefs`, `_dfLogs` |
-| 31,002 | 설정 | `_dfSettings`, `A` |
-| 31,017 | 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 | `_dfDiff`, `_dfBrief`, `_dfScale`, `k`, `days`, `_dfScaleText`, `_cfJ`, `_cfDiffer`, `_cfId`, `_cfSecLabel`, `_cfKindLabel`, `_cfText`, `_cfMake`, `_cfScanSection` … 외 11개 |
-| 31,371 | 충돌 보관 · 화면 | `_cfLoadLocal`, `_cfTrimmed`, `_cfSaveLocal`, `_cfOpenCount`, `_cfStore`, `_cfPushCloud`, `_cfFetchCloud`, `_cfSyncVisibility`, `_fbCollectConflicts`, `_fbNoteConflicts` |
-| 31,479 | 화면 | `_cfWhoLabel`, `l`, `_cfEsc`, `_cfNiceLabel`, `_cfGroupName`, `_cfChoiceLabel`, `_cfCutRaw`, `_cfExplain`, `cfToggleRaw`, `_cfBaseLine`, `_cfCardHTML`, `auto`, `laterLocal`, `side` … 외 12개 |
-| 31,858 | 데이터 복구: 로컬(localStorage) ↔ 클라우드(Firestore) 비교 | `_dayHasContent`, `_recoverySummary`, `inspectRecoveryDate`, `checkDataRecovery`, `cleanupEmptyDays`, `fbForceUploadLocal` |
-| 32,032 | 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) | `_abLocalState`, `_abRankLabel`, `showAutoBackups`, `restoreAutoBackup`, `applyRemoteState`, `_fbWarnLegacyWriter`, `_fbHealFromLegacy`, `first`, `_fbMaybeSelfUpdate`, `fbStartListening`, `_swOn` |
-| 32,413 | 담아두기 | `getKeepLog` |
-| 32,426 | 저장 목록 (v26-0831-11, HB) | `_keepListOf`, `n`, `_keepEntries`, `_keepLists` |
-| 32,496 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `_keepPairSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `byName`, `_keepListsOf`, `_swIsKept` … 외 10개 |
-| 32,690 | 저장 | `_swLoadTiles`, `raw`, `_swSaveTiles`, `_swSpareKinds` |
-| 32,711 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermons`, `_swBooks`, `_swTags`, `_swReacts`, `_swValues`, `_swStrip` |
-| 32,813 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swCellHTML`, `_swFace` |
-| 32,901 | 그리기 | `_swTileClass`, `_swRender` |
-| 32,928 | 편집 모드 | `_swEditOn`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `_swNoMotion`, `_swTrack`, `_swTrackTo`, `_swRepaint` |
-| 33,006 | 누르면 전체화면 | `_swOpenVerse`, `_swVersesFor`, `_swTileOpen` |
-| 33,062 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
-| 33,081 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap` |
-| 33,331 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
-| 33,354 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
+| 4,289 | 이 기기에서 알림 받기 (기기별 스위치) | `_devNotifOn`, `_devNotifSet`, `_psIsDefault`, `_psOverlay`, `mine`, `_psProject`, `src`, `getDOW`, `monthLabel`, `monthTitleHTML` |
+| 6,617 | 네비게이토 180 암송성구 데이터 | – |
+| 6,644 | Color presets | – |
+| 6,662 | 네비게이토 180 verse bar | – |
+| 6,663 | 커스텀 구절 통합 계층 | `getCustomVerses` |
+| 6,679 | 말씀 모음(컬렉션) 헬퍼 | `getVerseCollections`, `getActiveColls`, `isCollActive`, `findColl`, `_genCollId`, `ALL_VERSES`, `VERSE_TOTAL` |
+| 6,719 | 모음별 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) | `_getCollFilter`, `_collRawVerses` |
+| 6,734 | 성경책 이름 하나로 모으기 | `_bookCanon`, `_bookAbbr`, `_booksOf`, `_bookNorm`, `_bookOfRef`, `_bookSel`, `_bibleRankOfRef`, `m`, `_groupVersesBy`, `_sortGroups`, `_groupVersesByMulti` |
+| 6,855 | 필터 적용 방식: 네 카테고리(대분류/소주제/태그/성경)의 "교집합" | `_collVersePassesFilter`, `_collPeriodPass`, `_collFilteredVerses` |
+| 6,902 | 현재 켜진 말씀 모음의 구절 집합 (말씀바·전체목록·선택이 따라감) | `ACTIVE_VERSES`, `ACTIVE_TOTAL` |
+| 6,940 | 커스텀 구절 관리 (설정 → 암송 말씀) | `_invalidateVerseCaches` |
+| 6,946 | 말씀 모음 버튼 줄 렌더링 + 켜기/끄기 | `_collIsProp`, `renderCollButtons`, `mkBtn`, `renderSubButtons` |
+| 7,034 | 켜진 각 모음의 하위 필터 패널 (전체/대분류별/소주제별/성경별) | `_collLabel`, `_updateCfAllCount`, `renderCollFilterPanels`, `_buildCollFilterPanel`, `mkDate`, `syncP`, `_renderPickerInto`, `_cfSortKey`, `_cfSelKey`, `_buildGroupPicker`, `_renderGroupList`, `_buildBookPicker`, `_renderBookList`, `openCollAddMenu` … 외 2개 |
+| 7,330 | 구독 받기 (상위 레벨) | `openSubscribeDialog`, `closeSubscribeDialog`, `doSubscribe`, `code`, `verses`, `toggleColl`, `_syncVersePushPool`, `_afterActiveVersesChanged`, `addNewCollection`, `name` |
+| 7,443 | 롱터치 액션 메뉴 ([수정][공유][삭제]) | `openCollMenu`, `closeCollMenu`, `collMenuAction`, `deleteCollection`, `n` |
+| 7,494 | 수정 페이지 | `_currentColl`, `openCollEdit`, `closeCollEdit`, `renameCurrentColl`, `name`, `_ceFillSelects`, `ceSelectMethod` |
+| 7,568 | 수정 페이지 목록 상태 | `ceSetSort`, `ceToggleFilter`, `_refKey`, `m`, `_ceSortedIdx`, `K`, `_ceMakeRow`, `renderCeVerseList`, `totalActive`, `_ceUpdateDeleteBtn`, `_ceUpdateTrashBadge`, `n`, `ceOpenDeletePopup`, `ceCloseDeletePopup` … 외 1개 |
+| 7,686 | 휴지통 뷰 | `ceOpenTrash`, `ceCloseTrash`, `_ceVerseSide`, `renderCeTrash`, `_ceToggleTrashSel`, `_ceUpdateRestoreBtn`, `ceRestoreSelected`, `ceMoveTrash` |
+| 7,768 | 현재 수정 중인 모음에 구절 추가 | `_addVersesToColl`, `_addVersesToCurrentColl`, `_verseIdentity`, `_gSrcId`, `_syncSheetVersesIntoColl`, `gid` |
+| 7,911 | 시트에서 사라진 구절 정리 | `addCustomVerseFromForm`, `chap`, `vrs`, `text`, `topic`, `_parseCsv`, `_parseVDate`, `_looksLikeRef`, `_sheetRowsSane`, `_isPropSheet`, `_propRefs`, `_propBooks`, `_propRowsToItems`, `col` … 외 6개 |
+| 8,309 | 구글 시트 다중 링크 (현재 수정 중인 모음) | `renderCeGoogleList`, `ceAddGoogleLink`, `url`, `name`, `ceRemoveGoogleLink`, `ceToggleGoogleAuto`, `ceImportGoogleLink` |
+| 8,412 | 수동 전체 업데이트 (로고 롱터치/우클릭) | `verseSyncAllNow` |
+| 8,485 | 하루 시작 시간 자동 동기화 | `runVerseSheetAutoSync` |
+| 8,524 | 공유 (Firestore shared/{code}) | `_fbReady`, `_generateUniqueShareCode`, `_sharedVerseOut`, `_sharedVerseIn`, `_publishSharedColl`, `openShareDialog`, `closeShareDialog`, `_shareMessage`, `shareCopyCode`, `done`, `_fallbackCopy`, `shareVia`, `_fmtSubDate`, `runSharedCollSync` … 외 4개 |
+| 8,756 | 자동으로 다음 구절 | `_fillVerseBarDOM`, `barTags`, `barRef`, `_menuArmOnNextPress`, `on`, `closeVerseMemMenuFromOverlay`, `_vmmSyncFirstItem`, `openVerseMemMenu`, `closeVerseMemMenu`, `onVerseMemRecord` |
+| 9,006 | Verse bar interaction | `_verseBarSlideNav`, `_initVerseBarSwipe`, `_verseBarModeFlip`, `onVerseBarClick`, `setVerseIdx`, `nextVerseManual`, `prevVerseManual`, `randomVerseManual`, `toggleVerseBarOn`, `openVerseSettingsModal`, `closeVerseSettingsModal`, `_verseSettingsOpen`, `_escShown`, `_vstabList` … 외 7개 |
+| 9,527 | 인앱 말씀 팝업 | – |
+| 9,531 | 말씀 푸시 알림 설정 | `_vpEveryLabel`, `getVersePush`, `_vpSave` |
+| 9,559 | 말씀 알림 스위치 | `_vpTurnOn`, `setVersePush`, `setVersePushInterval`, `vpToggleDay`, `vpAddTime`, `vpSetTime`, `vpDelTime`, `_syncVersePushUI` |
+| 9,648 | 정해진 시각 목록 (v26-0817-15, HB 2) | `_syncVpTimeList`, `_syncVpTimeField`, `_vpToMin`, `getVerseAlarm`, `renderVerseAlarmSettings`, `renderVerseAlarmCustomList`, `openVerseAlarmCustomTimePopup`, `_initVerseAlarmPicker`, `closeVerseAlarmCustomTimePopup`, `addVerseAlarmCustomTime`, `removeVerseAlarmCustomTime`, `onVerseAlarmToggle`, `toggleVerseAlarmContent` |
+| 9,839 | Alarm scheduler | `getVersePoolVerses`, `scheduleVerseAlarms` |
+| 9,850 | 말씀 인앱 팝업 기능은 v0731-1 에서 없앴다 | `checkVerseAlarm`, `showVersePopup`, `closeVersePopup` |
+| 9,915 | 암송 관리 | `getMemLog` |
+| 9,922 | ref 기반 헬퍼 | `verseByRef`, `verseForEntry`, `_nowHM` |
+| 9,945 | 좋아요 로그 (누적 이벤트형) | `getLikeLog`, `_calKey`, `recordVerseLike` |
+| 9,968 | 공유 로그 (누적 이벤트형) — ST.verseShareLog = {"YYYY-MM-DD":[{ref,time}]} | `getShareLog`, `recordVerseShare` |
+| 9,979 | Deeper 로그 (누적 이벤트형, 열람할 때마다) | `getDeeperLog`, `recordVerseDeeper`, `openDeeperFromRef` |
+| 9,999 | Even Deeper 로그 (Deeper와 동일한 누적 이벤트형) | `getEvenDeeperLog`, `recordVerseEvenDeeper`, `_evenDeeperShortRef`, `book`, `openEvenDeeperFromRef`, `go`, `_currentSecId`, `recordMemorizationByRef`, `recordMemorization`, `_wkVerseMarksHTML`, `_mviewRowHTML`, `_mviewEventCountsHTML`, `likeN`, `deeperN` … 외 3개 |
+| 10,167 | BibleLinkProvider | `showMemorizationPopup`, `closeMemRecPopup`, `_dismissToast` |
+| 10,359 | 진행 중 토스트 (v26-0901-3, HB) | `showBusyToast`, `hideBusyToast`, `showToast`, `act`, `body` |
+| 10,453 | 아이콘 전용 토스트 (말씀 반응: 좋아요·암송) | `_dismissReactToast`, `showReactionToast`, `_reactWithToast`, `openMemorizationHistory`, `closeMemorizationHistory`, `_renderMemHistoryDash`, `_renderMemHistoryList`, `logoMenuToggleVerse`, `logoMenuNextVerse`, `logoMenuPrevVerse`, `openVerseFull` |
+| 10,687 | 전체화면이 덮은 화면들 (닫을 때 복원) | `_vfHideCoversNow`, `_vfHideCovers`, `closeVerseFull`, `_vfSyncPageBg`, `_verseFullIsOpen` |
+| 10,779 | 본문 줄바꿈 + 글자 크기 자동 맞춤 | – |
+| 10,787 | 한국어 맥락 줄바꿈 (전체화면·타일뷰·공유카드 공용) | `_vfIsHeotdoeException`, `_vfPairKeep`, `_vfGeException`, `_vfIsSubject`, `_vfAdvStart`, `_vfApplyAdvRule`, `_vfClauseStart`, `_vfApplyClauseRule`, `_vfObjTailLen`, `_vfObjStart`, `_vfApplyObjRule`, `_vfIsParallelWord`, `_vfParallelRuns`, `_vfApplyParallelRule` … 외 21개 |
+| 11,406 | 겹쳐쓰기 (v26-0812-15, 옛 '섞어서 쓰기'를 대신한다) | `_hiOverlap`, `_hiHash`, `_hiShuffle`, `_hiPickAt` |
+| 11,444 | 한 본문에 별을 몇 개까지 (v26-0812-16) | `_hiStarMax`, `_hiAssign`, `_hiRng`, `s`, `_hiSmooth`, `_hiRibbon`, `_hiWob`, `_hiWavePoly`, `tilt`, `_hiStarPoly`, `rot`, `_hiHTML`, `_hiOverlay`, `put` … 외 8개 |
+| 11,781 | 명제 본문 앉히기 + HB 줄바꿈 규칙 (v26-0901-6) | `_vfLayoutPropText`, `fit`, `_vfApplyPropAlign`, `_vfReadWrappedLines`, `raw`, `_vfRedrawPropInk` |
+| 11,881 | 구독자 전체 집계 카운터 (verseStats/{ref}) | `_statRefKey` |
+| 11,887 | 명제의 '구독자 전체' 집계 칸 이름 (v26-0831-7, HB) | `_statDocKey`, `_bumpVerseStat`, `bump`, `_fetchVerseStat` |
+| 11,935 | 스닉픽 한 줄 최대 가로 폭 (px) | `_sneakMaxWDefault`, `_sneakMaxW`, `_applySneakMaxW`, `_initSneakMaxWPicker`, `setVerseSneakMaxW`, `_syncLinkOpenModeUI`, `setLinkOpenMode`, `setVerseCountScope`, `_isReactPid`, `_reactKey`, `_reactKeyParts`, `_verseEventCount`, `_vfSyncCounts`, `setCnt` … 외 1개 |
+| 12,084 | 명제에서는 안 쓰는 단추를 감춘다 (v26-0903-10) | – |
+| 12,120 | 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) | `_vfShareSizeRow`, `openVfShareFor`, `openVfShare`, `closeVfShare`, `vfShareBg`, `vfShareDo`, `_dataURLtoBlob`, `_cardActionCount`, `_cardTextLS`, `cx`, `_noiseTile`, `_cardGrain` |
+| 12,233 | 공유 이미지 = 전체화면을 "그대로" 옮겨 그리기 | `_shotFont`, `_withFullscreenLayout`, `wasOpen`, `_vfRenderCard`, `needTemp`, `draw`, `_shotDraw`, `SC` |
+| 12,336 | 명제 대표 문구 타이틀 (v26-0901-3, HB 신고 — "공유 이미지에 대표 문구가 | – |
+| 12,599 | 공유 이미지 고정 크기 | `_shareSizeKey`, `shareSizeOf`, `setShareSize`, `_syncShareSizeUI`, `_refDigitsPad`, `pad`, `vw`, `_shareFileName`, `ref`, `safe`, `_vfShareImage`, `isTouch`, `download`, `copy` … 외 6개 |
+| 12,741 | 전체화면 롱터치 메뉴의 '본문 복사' (v26-0818-1, HB 4) | `vfCopyBodyOnly`, `body` |
+| 12,756 | 공유 설정 (말씀 설정창) : 칩 on/off · 장절 형식 · 미리보기 | `toggleImgIncl`, `_syncHiUI`, `_syncHiOverlapRow`, `toggleTxtIncl`, `setTxtRefStyle`, `setTxtRefBracket`, `setTxtRefPos`, `_renderSharePreview`, `_syncShareSettingsUI`, `_rgba`, `_vfSelectedPatterns`, `_vfSecIdNow`, `_vfPatternPool`, `map` … 외 3개 |
+| 12,987 | 명제 대표 문구의 자리·기울기 (v26-0831-3) | – |
+| 13,001 | 대표 문구 글씨체 (v26-0901-5, HB) | – |
+| 13,015 | 명조 | – |
+| 13,019 | 고딕 | – |
+| 13,022 | 손글씨 | `_ptFontsOn`, `a`, `_ptFontFor`, `_ptFont`, `_PT_FAMS`, `_ptBag`, `_ptSample`, `_ptMissing`, `_ptFontPending`, `_ptWarmup`, `_ptLinkGoogle`, `_ptEnsureFont`, `finish`, `_ptFontLoaded` … 외 2개 |
+| 13,260 | 대표 문구가 둘인 명제 (v26-0904-4, HB) | `_propHiList`, `_propHiPick`, `_vfIsProp`, `_vfTheme`, `_vfTextScale`, `setVfTextScale`, `_tsTouchDist`, `_tsFine`, `_tsNearest`, `_tsPinchBusy`, `_tsPinchArm`, `_attachTextPinch`, `_syncVfTextScaleUI`, `_vfBgCss` … 외 16개 |
+| 13,573 | 크기 (v26-0905-2, HB — "말씀 모음 설정에 비해 홈과 책갈피가 | – |
+| 13,588 | 전체화면 상단 중앙 순환·셔플 전환 (v26-0817-16, HB 3) | `_vfCycleMode`, `vfToggleCycleMode`, `_vfSyncCycleIcon`, `_vfShufReset`, `_vfShufPos`, `_vfShufGo`, `_vfShufPush`, `_vfSetNav`, `_vfClearNav` |
+| 13,676 | 지금 보는 것이 '말씀 설정에서 정한 그 모음' 그대로인가 | `_vfAtCollection`, `vfHomeAction`, `vfOpenCollSettings`, `closeVfKeepSwitch`, `_vfKeepSortHead`, `tab`, `_vfRenderKeepSwitch`, `toggleVfKeepSwitch`, `_vfKeepNav`, `vfOpenKeepList`, `vfOpenKeepGrid`, `_vfSyncTopBar`, `_vfCurrentVerse` |
+| 13,844 | 고르기 | `_tagartAliasMap`, `_tagartOn`, `_tagartStyle`, `_tagartHay`, `_tagartHit`, `_tagartPick`, `_tagartSvg`, `org`, `_tagartSwatchSvg`, `org`, `_vfRenderTagArt`, `clear`, `key`, `_vfPlaceTagArt` … 외 3개 |
+| 14,076 | 설정창 (말씀설정 → 전체화면 탭) | `toggleVfArt`, `togglePropTitleFont`, `_ptSyncFontUI` |
+| 14,138 | 무리를 접었다 편다 (v26-0902-15, HB) | `_ptGroupInit`, `togglePropTitleGroupOpen`, `togglePropTitleGroup`, `setVfArtStyle`, `_vfArtSyncUI`, `_verseFullRender`, `tags` |
+| 14,240 | 장절 줄 | `_vfRenderRef`, `rs`, `_vgOpenFromRef` |
+| 14,262 | 대표 문구 줄바꿈 (v26-0901-3, HB) | `_ptLen`, `_ptSplitOnce`, `pick`, `_ptWrapTitle`, `k` |
+| 14,310 | 명제 대표 문구 타이틀 | – |
+| 14,313 | 대표 문구 크기는 **본문이 몇 줄이 되느냐**에 따라 달라진다 (v26-0902-13, HB) | `_ptLineK`, `_vfSizePropTitle`, `_ptDrawnLines`, `_vfRenderPropTitle`, `_vfPropInk`, `x`, `y`, `_vfBottomEl`, `_vfNavCommit` |
+| 14,466 | 셔플의 '뒤로'는 무작위가 아니라 **방금 본 말씀** (v26-0831-19, HB) | `_vfShufPickRandom`, `verseFullNav`, `_initEdgeBack`, `paint`, `clearPaint`, `_vfHeartBurst`, `_vfDoubleLike`, `_initVerseFullGestures`, `inner0`, `snapBack`, `stopLt`, `dropDrag` |
+| 14,734 | 다른 앱에 갔다 돌아왔을 때 (v26-0904-5, HB '그림이 아래로 내려와 글자와 겹친다') | `_vgEscAttr`, `_vgRawPool`, `_vgMatch`, `_vgFilteredPool`, `pool`, `_vgHomeLabel`, `openVerseGridHome`, `_vgDate`, `_vgSort`, `_vgBookOne`, `_vgGroupKey`, `_vgGroupLabel`, `_vgShortRef`, `ab` … 외 20개 |
+| 15,036 | 태그·성경 필터일 때의 좌상단 제목 | – |
+| 15,041 | 태그 목록에서 '구절이 적은 태그' 빼기 (v26-0817-13, HB 14) | `_vgExclKeys`, `_vgExclOn`, `_vgExclMax`, `_vgExclAxisNow`, `_vgAxisItems`, `_vgAxisLabel`, `_vgSyncFilterLabel`, `prev`, `next` |
+| 15,142 | 롤링피커 바로 우측의 '제외' 글자 버튼 + 스테퍼 (v26-0817-13/14, HB 14-2·14B) | `_vgSyncExcl` |
+| 15,169 | 타일뷰의 '제외' 버튼 — 지금 보고 있는 축(태그 또는 성경)을 켜고 끈다 | `vgToggleTileExcl`, `vgStepTileExcl` |
+| 15,193 | 말씀 설정 → 뷰 탭의 '태그 목록' 항목 (14-1, 태그 전용) | `vgToggleTagExcl`, `vgStepTagExcl`, `_vgSyncTagSettingsUI`, `vgPickAxis` |
+| 15,230 | 개발자 전용: 지금 말씀이 온 구글 시트를 그 셀로 열기 | `_sheetUrlForVerse`, `vfCatTap`, `_initVfCatSheet`, `stopTimer`, `vfOpenSheetForCat`, `_sheetGo`, `_sheetCopyPending`, `_vgOpenFromReels`, `openVerseGrid`, `_vgScrollToVerse`, `_vgHighlightTile`, `_vgRestoreHighlight`, `closeVerseGrid`, `_vgIsOpen` … 외 10개 |
+| 15,660 | 떠 있는 메뉴의 높이를 화면에 맞춘다 | `_menuFitHeight` |
+| 15,674 | 메뉴 안의 밀기를 메뉴 안에서 끝낸다 | `_menuLockScroll`, `openLogoMenu`, `closeLogoMenu`, `logoMenuOpenListSub`, `logoMenuOpenKeepSub`, `_logoMenuSubScheduleClose`, `_logoMenuSubCancelClose`, `_logoMenuSubHideFloat`, `logoMenuBackToMain`, `_tryCloseLogoMenu` |
+| 15,810 | 네비게이토 180 전체 목록 (검색 + 대분류 필터) | `openVerseListModal`, `closeVerseListModal`, `renderVerseListCatRow`, `renderVerseListResults`, `syncSecsFromState` |
+| 15,900 | 경계선 모델로 옮기기 (v26-0806-7) | `defaultState`, `load`, `_localOwner`, `_setLocalOwner`, `resetStateToDefaults` |
+| 15,999 | 설정 등급(이지/미드/파워) 첫 값 | – |
+| 16,011 | 암송 기록 마이그레이션: verseIdx → ref | `rawSave`, `snapshot`, `beforeSave`, `save`, `applySnapshot`, `doUndo`, `doRedo`, `updateUrBtns`, `saveText`, `z` |
+| 16,134 | Event time display format | `formatEventTime`, `esc`, `getDay`, `getBigs`, `getSmalls`, `secHasPendingTodo`, `secHasEvent`, `getEvents`, `weekOfMonth`, `eventRepeatsOnDate`, `eventOccursOnOwnDate`, `getDisplayEvents`, `sortEventsByTime`, `renderSecEvents` |
+| 16,357 | 시각 없는 일정을 다른 시간구간으로 옮기기 (v26-0817-12, HB 9) | `_evSecAt`, `_evMarkDropSec`, `_evMoveToSec`, `attachEventChipInteraction`, `getContainer`, `getChips`, `openMenuForThis`, `startDrag`, `moveDrag` |
+| 16,469 | 다른 시간구간 위로 넘어가면 그 구간으로 옮겨 붙인다 (v26-0817-12, HB 9) | `endDrag` |
+| 16,509 | 다른 시간구간에 놓았으면 그 구간으로 옮긴다 (v26-0817-12, HB 9) | – |
+| 16,547 | Desktop: mouse press — click opens the edit/delete menu, a | – |
+| 16,581 | Mobile: touch long-press (same LONG_PRESS_TOUCH timing as tasks) | `getTrash`, `totalBigCount`, `logicalNow`, `tKey`, `todayKey`, `addDays`, `isToday`, `_t2m`, `_m2t`, `v`, `_secOffsets`, `n`, `base`, `_secNormalizeTimes` … 외 21개 |
+| 16,828 | '시간 개념 없음' 구간 | `_secNoTime`, `_secIsCustom`, `isNowWithinSection` |
+| 16,850 | 일정 정렬 | `_sortEventsKeepingTimeless` |
+| 16,862 | 일정 재배치 | `_reassignTimedEvents`, `home`, `_secsCommit`, `moved` |
+| 16,914 | 지운 구간 보관 | `_secArchiveCapture`, `_secStripData`, `_secArchiveApply`, `put`, `sendToTrash`, `updateTrashBadge`, `openTrash`, `closeTrash`, `trashBgClick`, `renderTrashList`, `restoreFromTrash`, `clearTrash`, `sw`, `renderToday` … 외 3개 |
+| 17,172 | 구버전(todoCol 소유 모델) 자동 이전: todo를 해당 컬럼 맨 위에 주입 | `_colKey` |
+| 17,252 | 기기 형태 판정 | `_devShortSide`, `b`, `_isTouchDevice`, `_layFormMode`, `_syncLayFormUI`, `setLayFormMode`, `_isPhoneForm`, `portrait`, `_layMode`, `applyUiScale`, `_timeStep`, `_fillMinOptions`, `_makeTimeRollPair`, `mk` … 외 14개 |
+| 17,487 | 부드러운 전환 (커튼 오버레이) | `laySetWeekly`, `_rpMonthOf`, `_rpNormMonth`, `_rpMonthGridHTML`, `_rpMGridH`, `hh`, `_rpSetMGridH`, `_rpVListH`, `hh`, `_rpSetVListH`, `_rpAttachVResize`, `rpChMonth` |
+| 17,704 | 암송/좋아요/Deeper 집계 | `_flatMemEntries`, `_flatSimpleEntries`, `_aggByRef`, `_aggEntriesForKind`, `out` |
+| 17,760 | 범위(scope)별 집계 (v26-0904-7, HB) | `_vlKindEntries`, `_vlKeepEntries`, `_vlHomeEntries`, `_vlReactTotals`, `_vlExtraSortFor`, `_vlEntriesForScope` |
+| 17,816 | C단계: 목록별 정렬·기간 설정 | `_vlPref`, `_vListRange` |
+| 17,851 | 정렬 (v26-0831-11, HB) | – |
+| 17,855 | 갈래 탭 (v26-0831-15, HB) | `_vlIsProp`, `v`, `_vlRegIdx`, `_vlClearRegIdx`, `_vlApplySort`, `_vlDispRef`, `v`, `vlToggleCtrl`, `_vlwKey`, `vlwSetSort`, `vlwTogglePairSort`, `vlwSetPeriod`, `vlwSetCustom`, `_vListControlsHTML` … 외 25개 |
+| 18,192 | 저장은 '한 건'이 없다 (v26-0902-2, HB) | – |
+| 18,262 | 로고 메뉴에서 여는 집계 목록 팝업 | `_renderVAggBody`, `openVerseAggPopup` |
+| 18,288 | 목록 차례 칩 줄 (고르기 창 · 좌상단 메뉴가 함께 쓴다) | `_keepSortRowHTML`, `pairOn`, `_keepRepaintLists`, `_keepAttr` |
+| 18,320 | 끌어서 차례 바꾸기 (v26-0831-21, HB) | `_keepBindDrag`, `rowsOf`, `put`, `want`, `clear`, `done`, `openKeepListPopup`, `_vAggSyncKeepTitle`, `_keepNameKey`, `_keepNameCommit` |
+| 18,497 | 팝업 좌상단 햄버거 → 목록 바꾸기 (4-2-3, HB) | `toggleKeepSwitch`, `closeKeepSwitch`, `_renderKeepSwitch` |
+| 18,532 | 좌상단 말씀메뉴 → '저장 목록' 하위 뎁스 | `_renderKeepSubMenu`, `openKeepPicker`, `closeKeepPicker`, `_renderKeepPicker` |
+| 18,617 | 목록이 자리를 옮길 때의 움직임 (v26-0904-4, HB) | `_keepFlipRender`, `keepPickToggle`, `keepPickNew`, `n` |
+| 18,671 | 목록 한 줄의 ⋯ 메뉴 (수정 · 삭제) | `openKeepRowMenu`, `x`, `closeKeepRowMenu`, `keepRowEdit`, `to`, `keepRowDelete`, `cnt`, `_keepAfterChange`, `_vDashPref`, `_vDashEntries`, `_vDashVerse`, `_vDashKeysOf`, `tags`, `_vDashSlices` … 외 6개 |
+| 18,867 | 장절 느슨한 대조 | `_refNorm` |
+| 18,904 | 알림에 실어 보내는 명제 열쇠 (v26-0901-3, HB) | `_pushKey`, `_pushKeyPid`, `_findVerseByRefLoose` |
+| 18,946 | 중복 구절 일회성 정리 (5-2) | `_dupVerseScan`, `_rewriteLogRefs`, `mergeDuplicateVerses` |
+| 19,029 | 셀에서 바깥으로 나가는 동작들 | `_vDashMarkReturn`, `_vDashMaybeReturn`, `vDashOpenFilter`, `vDashOpenVerse`, `_vsetGoTab`, `_vsetGoColl`, `_vsetFlashTab`, `openVerseSettingsFromMenu`, `openVcCollSettings`, `_vsetRestoreBack`, `openVerseCollSettings` |
+| 19,129 | 파이차트 상세 팝업 | `_vDashPieDetailSVG`, `vDashOpenDetail`, `kindLabel`, `axisLabel`, `closeVDashDetail`, `openVerseDashboard`, `closeVerseDashboard`, `closeVerseAggPopup`, `_rollHTML`, `a`, `_rollFit`, `_rollTick`, `_rollStart` |
+| 19,293 | 위젯이 보는 범위 (v26-0904-7, HB) | `_vcScope`, `_vcScopeIsHome`, `_vcScopeCount`, `_vcSyncKind`, `_vcView`, `_vcScopeKey`, `_vcScopeIcon`, `_vcScopeLabel`, `_vcScopeParts` |
+| 19,356 | 자동 넘김 (v26-0904-10, HB) | `_vcAutoOn`, `_vcAutoMin`, `_vcAutoOffset`, `_vcAutoSlot`, `setVcAuto`, `setVcAutoMin`, `_vcHeadMode`, `setVcHeadMode`, `_vcIs`, `_vcIdOf`, `_vcAll`, `_vcGet`, `_vcNewId`, `_vcCreate` … 외 4개 |
+| 19,469 | 카드가 도는 범위 | `_vcListItems`, `_vcVerseOf`, `hit`, `_vcKeyOf` |
+| 19,500 | 명제의 대표 문구 (v26-0904-10, HB) | `_vcHiSplit`, `_vcVerses`, `_vcCurrent` |
+| 19,553 | 자동 넘김 시계 | `_vcAutoSignature`, `_vcAutoTick`, `_vcAutoStart`, `_vcFilterLabel` |
+| 19,584 | 카드 테마 | `_vcHash`, `_vcPatternKey`, `_vcThemeVars`, `fam`, `_vcTextScale` |
+| 19,624 | 카드 높이 (드래그로 조절, 위젯마다 따로) | `_rpVCardH`, `hh`, `_rpSetVCardH` |
+| 19,635 | 표시 항목 | `_vcShow`, `_vcGroupOf`, `_vcGroupOn`, `v`, `_vcShowFor` |
+| 19,656 | 카드 한 장 HTML | `_vcCardHTML` |
+| 19,739 | 본문 줄바꿈·크기 맞춤 | `_vcLayoutOne`, `raw`, `padH`, `padV`, `refH`, `_vcLayoutAll`, `_vcSyncCounts`, `put`, `putText` |
+| 19,832 | 카드 동작 | `_vcReactKeyOf`, `vcAct`, `vcOpenFilter`, `vcClearFilter`, `_vcApplyNav`, `_vcSlideEl`, `_vcCurX`, `_vcSlideCommit`, `to`, `vcNav`, `vcOpenFull`, `_vcUnplacedForKind` |
+| 19,967 | 카드 ⇄ 목록 | `vcSetView`, `vcToggleView`, `vcAddCard`, `_vwScopeOpts`, `openVwScope`, `closeVwScope`, `renderVwScope`, `row`, `_vwKeepSortHTML`, `chip`, `_vwScopeBindHold`, `go`, `vwScopeCollSettings`, `vwScopePick` … 외 3개 |
+| 20,141 | 말씀 목록 모습 한 벌 | `_vcListHTML`, `_vcAttachGestures` |
+| 20,282 | 카드 설정 팝업 (위젯 하나하나마다 따로) | `openVcSettings`, `closeVcSettings`, `renderVcSettings`, `themeChip`, `swTitle`, `swRow`, `scopeTxt`, `hmBtn`, `setVcShow`, `setVcShowAll`, `setVcTextScale`, `vcSetTextScaleLive`, `vcStepTextScale`, `next` … 외 3개 |
+| 20,561 | 컬럼별 위젯 스택 계산 (todo 포함) | – |
+| 20,581 | 각 컬럼 렌더링 | – |
+| 20,601 | todayView 실제 DOM 이동: todo placeholder 슬롯 or 1단은 colL 직속 | – |
+| 20,609 | 설정(햄버거) 버튼: GNB 로고 우측, 2단부터 표시 (3-3) | – |
+| 20,622 | 3단 주간뷰 패널 | – |
+| 20,646 | 폭 적용 + 인터랙션 연결 | `_rpAddBtnHTML`, `_rpAttachSwipes` |
+| 20,684 | 위젯 설정 팝업 | `openRpConfig`, `closeRpConfig`, `renderRpConfigList`, `_rpAttachChipDrag` |
+| 20,813 | 드래그 재정렬 공용 헬퍼 (고스트 이미지 + 타겟 라인) | `_ghostDragStart`, `offTest`, `pickContainer`, `place` |
+| 20,898 | 스팬 라인 모드 (opt.lineFor): 주간뷰처럼 두 단에 걸치는 위젯은 | `up`, `_rpAttachHeaderDrag`, `bindHold`, `_attachWeeklyPaneDrag`, `begin`, `_rpCurrentRatio`, `_layApplyWidths`, `_layInitDividers`, `attach`, `W`, `clamp`, `renderAddRow`, `defIds`, `appendMarkerFilterBtn` … 외 3개 |
+| 21,640 | 시계 버튼: 탭=일정추가, 롱터치=시간순정렬 | – |
+| 21,641 | 시계 버튼: 일정이 있을 때만 표시, 탭=시간순정렬 | – |
+| 21,664 | + 버튼: 탭=빅블럭추가, 롱터치=스몰블럭추가 | – |
+| 21,718 | ▲ 버튼: 섹션 숨기기 | `updateSecSummary`, `manuallyCollapsed` |
+| 21,846 | 받은 쪽지 뷰어 (개발자 계정 전용) | `_isDevAccount`, `_syncDevInboxVisibility`, `_devReadLocal`, `_devReadIds`, `_devMigrateRead`, `_devMarkRead`, `_devTrashGet`, `_devTrashSet`, `_devWhen`, `ms`, `_devWhenTxt`, `devInboxUpdateBadge`, `devInboxRefreshBadge`, `devInboxToggleAll` … 외 8개 |
+| 22,085 | 휴지통 | `devTrashToggle`, `devTrashRender`, `devTrashDelete`, `devTrashEmpty` |
+| 22,121 | 개발자 쪽지 (설정창 계정탭) | – |
+| 22,133 | 첨부 처리 방식 | `_devCompressFile`, `devNoteHandleFile`, `devNoteSend`, `openInlineInput`, `_openGhostInput`, `closeInlineInput`, `renderSecBody` |
+| 22,526 | 슬라이드 인라인 입력창 (헤더 바로 아래, B안) | `makeSwipeWrap`, `onTouchStart`, `onTouchMove`, `onTouchEnd`, `taskMarkerFilterPass`, `makeBigWrap`, `getCarryCount`, `populateCarryBadge`, `color`, `autoSizeInput`, `measure`, `makeBigItem`, `isOver`, `makeBigGhost` … 외 10개 |
+| 23,276 | Desktop: drag handle mousedown (instant drag — power users) | – |
+| 23,281 | Desktop: long-press anywhere on the row (mirrors mobile touch UX) | `cancelMousePress` |
+| 23,320 | Desktop: right-click → task move context menu | – |
+| 23,327 | Mobile: long-press anywhere on element (including input/button areas) | `cancelPressTimer` |
+| 23,525 | Hold off the browser's scroll gesture WHILE the long-press | `getSecColor`, `clearDropIndicators`, `showDropIndicator` |
+| 23,583 | Drop target: closest-item snap (no fallback flicker) | `getDropTarget` |
+| 23,598 | 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) | – |
+| 23,651 | 좌우 절반으로 빅/스몰 결정 | `getStableDt`, `moveG`, `_dragZoneMid`, `_updateDragHintBounds`, `cancelDragKeepingItem`, `endDrag`, `navigateDate`, `updateHeaderDate` |
+| 24,014 | GNB 날짜의 광학 보정 | `_syncHdrDateOptical`, `_dNavEl`, `initDateSwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd`, `onCancel`, `IS_TOUCH`, `itemKey`, `parseItemKey`, `buildFlatList`, `findFlatIndex` … 외 10개 |
+| 24,353 | Lane model for ⇧⌘↑/↓ reordering | `buildLanes`, `findLaneIndex`, `moveActiveItems` |
+| 24,420 | Move the entire active group by exactly one flat step | `moveActiveItemsAcrossSection` |
+| 24,568 | While editing a big/small task's text | – |
+| 24,597 | Not editing text: arrow-key driven selection | – |
+| 24,628 | View-switching and date-navigation shortcuts (desktop, D/W/M views) | `wireActivateClick`, `openTaskMenu`, `arr`, `CONTACT_PICKER_SUPPORTED`, `findMentionedContacts`, `renderTaskTextHTML`, `makeContactBadges`, `contactBadgeCountChanged` |
+| 24,843 | @배지 액션 메뉴 | `openContactMenu`, `phone`, `email`, `closeContactMenu`, `contactAction` |
+| 24,920 | @닉네임으로 태그된 할일 모아보기 | `getTasksTaggedWithContact`, `showContactTasksPopup`, `closeContactTasksPopup` |
+| 24,994 | 연락처 관리 모달 | `openContactsModal`, `closeContactsModal`, `clearContactForm`, `startEditContact`, `editContact`, `c`, `renderContactsList`, `submitContact`, `dup`, `pickFromDeviceContacts` |
+| 25,095 | Event add modal | `syncRollDisplays` |
+| 25,122 | 일정 등록창의 시·분 목록 | `_evFillMins`, `_evSyncRange`, `sec`, `keep`, `openEventModal`, `openEventModalForDate`, `setEventTimeToggle`, `_syncEventDateUI`, `onEventDateChange`, `closeEventModal`, `onEventTimeToggle`, `submitEventModal`, `repeat`, `secId` |
+| 25,368 | 매일/매주 repeat buttons | `renderRepeatButtons`, `toggleEventDaily`, `toggleEventWeekly`, `attachRepeatBtnInteraction` |
+| 25,435 | Touch | – |
+| 25,467 | Mouse (desktop only — skipped when a touch already handled it) | `_attachRepeatButtons`, `attachFastTap`, `openRepeatSubPicker`, `closeRepeatSubPicker`, `openEventEditMenu`, `closeEventEditMenu`, `editEventFromMenu`, `deleteEventFromMenu`, `closeTaskMenu`, `toggleTaskFlag`, `toggleTaskContact`, `toggleDailyRepeat`, `ensureDailyRepeats`, `moveTaskTo` … 외 15개 |
+| 25,980 | 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) | `_toastWithJump`, `_flashPendingTask`, `sel`, `_dayTaskCount`, `_fillTaskMenuCounts`, `weekOffsetLabel`, `setWMViewMode`, `_makeWMViewBtnsHTML`, `_wkPaneActive`, `renderWeekly`, `daysFromToday`, `getDayFadeClass`, `navigateWeek`, `attachPullToToday` … 외 9개 |
+| 26,502 | 주간/월간 블럭 우클릭/롱터치 → 바로 입력 | `_cellDefaultSec`, `now`, `vis`, `_renderSecPick`, `list`, `openCellInput`, `mode`, `_openCellEvent`, `_openCellEventRepaint`, `_openCellTodo`, `sec`, `closeCellTodo`, `cellTodoSave`, `text` … 외 24개 |
+| 27,017 | GNB 날짜 롱터치/우클릭 달력 | `openHdrCalendar`, `closeHdrCalendar`, `_closeHdrCalendarNow`, `hdrCalNav`, `hdrCalPick`, `hdrCalGoToday`, `_hdrCalRender`, `_initHdrDateLongPress`, `goToDate` |
+| 27,121 | Theme (dark / light / system) | `_effectiveMode`, `applyTheme`, `shown`, `_themeSummaryText`, `_renderThemeSummary`, `strip`, `openThemePicker`, `closeThemePicker`, `themePickerApply`, `themePickerPick`, `themePickerGroup`, `_renderThemePicker`, `_themePreviewHTML`, `resizeAllInputs` … 외 15개 |
+| 27,673 | Section editor (name / color / add / remove / drag-reorder / star-select) | – |
+| 27,674 | Color preset picker (built-in BASIC/SPR/SMR/AUT/WNT + user-saved) | `currentMatchingPresetName`, `renderPresetList`, `makePresetChip`, `applyPreset`, `renderSectionEditor` |
+| 27,746 | 이 구간 위의 경계선 | `_makeBoundaryRow`, `_makeBoundaryRoll`, `sel`, `mk`, `paint`, `updateSectionBoundary`, `toggleStarSection` |
+| 28,027 | 아이콘 두 벌 | `uiLevelIconSet`, `_uiLvIconSVG`, `_renderUiLevelIcons`, `_renderVerseUiLevelIcons`, `setUiLevelIconSet`, `uiLevel`, `v`, `setUiLevel`, `_stabList`, `_lvApplyIn`, `applyUiLevel`, `verseUiLevel`, `v`, `setVerseUiLevel` … 외 3개 |
+| 28,202 | "앞의 스위치를 켰을 때만 나오는" 줄들 | `_syncCondRows`, `n`, `switchSettingsTab`, `_initSettingsSwipe`, `N`, `getTrack`, `resolveTarget`, `toggleSectionExclude`, `updateSectionField` |
+| 28,356 | Drag-to-reorder for the section editor rows (mouse + touch) | `attachSecRowDrag`, `getWraps`, `onDown`, `onMove`, `onUp`, `addNewSection` |
+| 28,453 | 커스텀 구간 지우기 | `deleteSection`, `closeSecDelModal`, `_secDataCount`, `secDelDo`, `sec` |
+| 28,528 | 보관해 둔 구간 되살리기 | `renderSecArchive`, `restoreSecArchive`, `dropSecArchive` |
+| 28,585 | Full section-configuration presets (name + color + order + count | `renderSectionConfigList`, `saveCurrentSectionConfig`, `applySectionConfig`, `deleteSectionConfig` |
+| 28,674 | Backup / restore | `exportBackup`, `_backupDownload`, `buildBackupFilename`, `email`, `emailTag`, `n`, `importBackup` |
+| 28,802 | Auto carry-over of unfinished tasks | `runAutoCarryOver`, `testAutoCarryOver`, `_carryScope`, `setCarryScope`, `_syncCarryScopeBtns`, `_carryDateInScope`, `_carryPendingCount`, `_doCarry`, `runCarryNow` |
+| 28,944 | 푸시 알림을 눌러 들어왔을 때 그 말씀 전체화면 띄우기 | – |
+| 28,949 | 알림 진단 기록 (서비스워커와 같은 캐시를 공유) | `_notifLog` |
+| 28,971 | 진단 기록 보조 저장소 (localStorage) | – |
+| 28,975 | IndexedDB (서비스워커와 같은 저장소) | `_withTimeout`, `_withOutcome`, `_outcomeText`, `_idbForget`, `_idbOpen`, `_idbRaw`, `_idbGetRaw`, `_idbSetRaw`, `_idbDelRaw`, `_idbGet`, `_idbSet`, `_idbDel`, `_idbGetOutcome`, `_idbSetOutcome` … 외 30개 |
+| 29,553 | 말씀 클릭 경로 테스트 | `testVerseClickPath` |
+| 29,585 | 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) | `_vpDiagFmt`, `_vpDiagHead`, `vpDiagRender`, `vpDiagToggle`, `vpDiagClear`, `vpDiagCopy`, `build`, `_vpDiagCopyFallback`, `initAppUI` |
+| 29,691 | 푸시 말씀 목록을 앱 켤 때 한 번 맞춘다 (v26-0901-4, HB) | – |
+| 29,707 | Day-change catch-up on wake | – |
+| 29,758 | 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) | `paintAppUIFromLocal`, `_notifySupport`, `_notifyGet`, `renderSuffixPickers`, `setNotifySuffix`, `addCustomSuffix`, `appConfirm`, `_appConfirmResolve` |
+| 29,928 | 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) | `openSfxMenu`, `left`, `closeSfxMenu`, `sfxMenuAction`, `renameCustomSuffix`, `removeCustomSuffix`, `refreshNotifyUI` |
+| 30,023 | 푸시 배관(토큰) 공용 | – |
+| 30,034 | 기기 구분 | `_deviceId`, `_deviceLabel`, `touch`, `_ensurePushToken`, `_releasePushTokenIfIdle` |
+| 30,143 | 이 기기에서 알림 받기 (기기별 스위치, v26-0828-7) | `setDeviceNotify`, `_syncDeviceNotifyUI` |
+| 30,171 | 할일 알림 스위치 (일반설정 → 푸시 알림) | `onNotifyMasterToggle`, `updateNotifySub`, `initForegroundPush` |
+| 30,205 | 서비스워커 자기 복구 (v26-0802-5) | – |
+| 30,216 | 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) | – |
+| 30,247 | 알림 테스트 | `testLocalNotification`, `sendTestPush`, `authToggleMode`, `authSetLoading`, `authSubmit`, `authErrorMessage`, `authSignOut` |
+| 30,387 | Firestore doc path: one document per user, holding their entire ST | `userDocRef`, `_fbSetBase`, `_fbLoadPersistedBase`, `_fbClearBase`, `_fbBaseObj` |
+| 30,458 | 3자 병합 엔진 | `_fbIsUserEdit`, `_fbDeviceIdle` |
+| 30,496 | 앱 버전 비교 ("v. YY-MMDD-N") | `_verNums`, `_verCmp`, `_fbVerIsOlder`, `_mgWhole`, `_mgContainerKeys`, `_mgCountBag`, `_mgEntryArray`, `_mgLogFlat`, `_mgLogNested`, `_mgTaskArray`, `_mgTaskOne`, `_mgDay`, `_mgById`, `_fbHasAdoptedCloud` … 외 18개 |
+| 30,852 | 안쪽 이름표를 사람 말로 | `_dfSeg`, `_dfSegPath`, `_dfWord`, `_dfValS`, `_dfVal` |
+| 30,910 | 값 두 벌에서 **다른 자리만** 뽑는다 | `_dfDeep`, `_dfDeepLines`, `_dfKindName`, `_dfToday`, `_dfPush` |
+| 30,947 | 할일 한 구간(배열) | `_dfTaskKey`, `_dfArr` |
+| 30,996 | 날짜별 할일·일정 | `_dfDays`, `A` |
+| 31,014 | 말씀 모음 하나 | `_dfVKey`, `_dfColl1`, `_dfColls` |
+| 31,040 | 연락처 하나 | `_dfContact1`, `_dfContacts` |
+| 31,053 | 기록(암송·좋아요·담아두기·나눔·Deeper) | `_dfLogRefs`, `_dfLogs` |
+| 31,082 | 설정 | `_dfSettings`, `A` |
+| 31,097 | 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 | `_dfDiff`, `_dfBrief`, `_dfScale`, `k`, `days`, `_dfScaleText`, `_cfJ`, `_cfDiffer`, `_cfId`, `_cfSecLabel`, `_cfKindLabel`, `_cfText`, `_cfMake`, `_cfScanSection` … 외 11개 |
+| 31,451 | 충돌 보관 · 화면 | `_cfLoadLocal`, `_cfTrimmed`, `_cfSaveLocal`, `_cfOpenCount`, `_cfStore`, `_cfPushCloud`, `_cfFetchCloud`, `_cfSyncVisibility`, `_fbCollectConflicts`, `_fbNoteConflicts` |
+| 31,559 | 화면 | `_cfWhoLabel`, `l`, `_cfEsc`, `_cfNiceLabel`, `_cfGroupName`, `_cfChoiceLabel`, `_cfCutRaw`, `_cfExplain`, `cfToggleRaw`, `_cfBaseLine`, `_cfCardHTML`, `auto`, `laterLocal`, `side` … 외 12개 |
+| 31,938 | 데이터 복구: 로컬(localStorage) ↔ 클라우드(Firestore) 비교 | `_dayHasContent`, `_recoverySummary`, `inspectRecoveryDate`, `checkDataRecovery`, `cleanupEmptyDays`, `fbForceUploadLocal` |
+| 32,112 | 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) | `_abLocalState`, `_abRankLabel`, `showAutoBackups`, `restoreAutoBackup`, `applyRemoteState`, `_fbWarnLegacyWriter`, `_fbHealFromLegacy`, `first`, `_fbMaybeSelfUpdate`, `fbStartListening`, `_swOn` |
+| 32,493 | 담아두기 | `getKeepLog` |
+| 32,506 | 저장 목록 (v26-0831-11, HB) | `_keepListOf`, `n`, `_keepEntries`, `_keepLists` |
+| 32,576 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `_keepPairSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `byName`, `_keepListsOf`, `_swIsKept` … 외 10개 |
+| 32,770 | 저장 | `_swLoadTiles`, `raw`, `_swSaveTiles`, `_swSpareKinds` |
+| 32,791 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermons`, `_swBooks`, `_swTags`, `_swReacts`, `_swValues`, `_swStrip` |
+| 32,893 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swCellHTML`, `_swFace` |
+| 32,981 | 그리기 | `_swTileClass`, `_swRender` |
+| 33,008 | 편집 모드 | `_swEditOn`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `_swNoMotion`, `_swTrack`, `_swTrackTo`, `_swRepaint` |
+| 33,086 | 누르면 전체화면 | `_swOpenVerse`, `_swVersesFor`, `_swTileOpen` |
+| 33,142 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
+| 33,161 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap` |
+| 33,411 | 켜고 끄기 | `swToggleHome`, `_swBoot` |
+| 33,434 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll` |
 
 ---
 
@@ -461,161 +462,162 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 `_vDashPref`  `_vDashSlices`  `_vDashVerse`  `_verCmp`  `_verNums`  `_verseBarModeFlip`
 `_verseBarSlideNav`  `_verseEventCount`  `_verseFullIsOpen`  `_verseFullRender`  `_verseIdentity`  `_verseIdxForSec`
 `_verseRefFromUrl`  `_verseSettingsOpen`  `_vfAdvStart`  `_vfApplyAdvRule`  `_vfApplyClauseRule`  `_vfApplyObjRule`
-`_vfApplyParallelRule`  `_vfApplyPropAlign`  `_vfArtRecheck`  `_vfArtSyncUI`  `_vfBg1Css`  `_vfBgCss`
-`_vfBottomEl`  `_vfBreakClass`  `_vfCanBreakAt`  `_vfClauseStart`  `_vfClearNav`  `_vfCurrentVerse`
-`_vfCycleMode`  `_vfDeeperRefs`  `_vfDemoteShortForced`  `_vfDoubleLike`  `_vfEnsureFont`  `_vfFixWidow`
-`_vfGeException`  `_vfHeartBurst`  `_vfHideCovers`  `_vfHideCoversNow`  `_vfIsHeotdoeException`  `_vfIsParallelWord`
-`_vfIsProp`  `_vfIsSubject`  `_vfKeepNav`  `_vfKeepSortHead`  `_vfLayoutIfResized`  `_vfLayoutPropText`
-`_vfLayoutText`  `_vfNavCommit`  `_vfObjStart`  `_vfObjTailLen`  `_vfPairKeep`  `_vfParallelRuns`
-`_vfPatternKey`  `_vfPatternPool`  `_vfPlaceTagArt`  `_vfPropInk`  `_vfReadWrappedLines`  `_vfRedrawPropInk`
-`_vfRelayoutSoon`  `_vfRenderCard`  `_vfRenderKeepSwitch`  `_vfRenderPropTitle`  `_vfRenderRef`  `_vfRenderTagArt`
-`_vfRollProp`  `_vfRollVariant`  `_vfSecIdNow`  `_vfSelectedPatterns`  `_vfSetNav`  `_vfShareImage`
-`_vfShareSizeRow`  `_vfShareText`  `_vfShortOK`  `_vfShufGo`  `_vfShufPickRandom`  `_vfShufPos`
-`_vfShufPush`  `_vfShufReset`  `_vfSizePropTitle`  `_vfSkipsForced`  `_vfSyncCounts`  `_vfSyncCycleIcon`
-`_vfSyncPageBg`  `_vfSyncTopBar`  `_vfTextScale`  `_vfTheme`  `_vfWrapFit`  `_vgAxisItems`
-`_vgAxisLabel`  `_vgBookOne`  `_vgDate`  `_vgEscAttr`  `_vgExclAxisNow`  `_vgExclKeys`
-`_vgExclMax`  `_vgExclOn`  `_vgFamily`  `_vgFilteredPool`  `_vgFilterLabelText`  `_vgFlatPresets`
-`_vgGroupKey`  `_vgGroupLabel`  `_vgHighlightTile`  `_vgHomeLabel`  `_vgIsOpen`  `_vgMatch`
-`_vgOpenFromReels`  `_vgOpenFromRef`  `_vgPinchSteps`  `_vgRawPool`  `_vgRenderTabs`  `_vgRestoreHighlight`
-`_vgScrollToVerse`  `_vgSetCols`  `_vgShortRef`  `_vgSort`  `_vgSyncExcl`  `_vgSyncFilterLabel`
-`_vgSyncSortUI`  `_vgSyncTagSettingsUI`  `_vgTab`  `_vgTileHtml`  `_vgTilePreset`  `_vgTileStyle`
-`_vlApplySort`  `_vlClearRegIdx`  `_vlDispRef`  `_vlEntriesForScope`  `_vlExtraSortFor`  `_vlHomeEntries`
-`_vliOpenFull`  `_vliOpenFullForWidget`  `_vlIsProp`  `_vListControlsHTML`  `_vListRange`  `_vListRefresh`
-`_vListRowsHTML`  `_vlKeepEntries`  `_vlKindEntries`  `_vlPref`  `_vlReactTotals`  `_vlRegIdx`
-`_vlTab`  `_vlTabsHTML`  `_vlwKey`  `_vmmSyncFirstItem`  `_vpDiagCopyFallback`  `_vpDiagFmt`
-`_vpDiagHead`  `_vpEveryLabel`  `_vpSave`  `_vpToMin`  `_vpTurnOn`  `_vsetGoColl`
-`_vsetRestoreBack`  `_vstabList`  `_vwKeepSortHTML`  `_vwScopeBindHold`  `_vwScopeOpts`  `_vwSize`
-`_wireTaskMenuDateRow`  `_withFullscreenLayout`  `_withOutcome`  `_withTimeout`  `_wkPaneActive`  `_wkVerseMarksHTML`
-`A`  `a`  `ab`  `act`  `activateItem`  `ACTIVE_TOTAL`
-`ACTIVE_VERSES`  `addCustomSuffix`  `addCustomVerseFromForm`  `addDays`  `addNewCollection`  `addNewSection`
-`addVerseAlarmCustomTime`  `ALL_VERSES`  `anchor`  `appConfirm`  `appendMarkerFilterBtn`  `applyPreset`
-`applyRemoteState`  `applySectionConfig`  `applySnapshot`  `applyTheme`  `applyThemeVars`  `applyUiLevel`
-`applyUiScale`  `applyUiScaleNow`  `applyVerseUiLevel`  `applyVfTheme`  `arr`  `assigned`
-`attach`  `attachDrag`  `attachEventChipInteraction`  `attachFastTap`  `attachHdSwipe`  `attachPullToToday`
-`attachRepeatBtnInteraction`  `attachSecRowDrag`  `authErrorMessage`  `authSetLoading`  `authSignOut`  `authSubmit`
-`authToggleMode`  `auto`  `autoSizeInput`  `away`  `axisLabel`  `b`
-`barRef`  `barTags`  `base`  `beforeBlock`  `beforeSave`  `begin`
-`bindHold`  `body`  `book`  `build`  `buildBackupFilename`  `buildFlatList`
-`buildLanes`  `bump`  `byName`  `C`  `c`  `cancelDragKeepingItem`
-`cancelMousePress`  `cancelPressTimer`  `ceAddGoogleLink`  `ceCloseDeletePopup`  `ceCloseTrash`  `ceDeleteSelected`
-`ceImportGoogleLink`  `cellTodoSave`  `ceMoveTrash`  `ceOpenDeletePopup`  `ceOpenTrash`  `ceRemoveGoogleLink`
-`ceRestoreSelected`  `ceSelectMethod`  `ceSetSort`  `ceToggleFilter`  `ceToggleGoogleAuto`  `cfChoose`
-`cfMergeAll`  `cfRender`  `cfToggleRaw`  `chap`  `checkDataRecovery`  `checkVerseAlarm`
-`chip`  `chM`  `clamp`  `cleanupEmptyDays`  `clear`  `clearActive`
-`clearContactForm`  `clearDropIndicators`  `clearPaint`  `clearTrash`  `closeAccountSensitiveModals`  `closeCellTodo`
-`closeCollAddMenu`  `closeCollEdit`  `closeCollMenu`  `closeContactMenu`  `closeContactsModal`  `closeContactTasksPopup`
-`closeDatePicker`  `closeEventEditMenu`  `closeEventModal`  `closeHdrCalendar`  `closeInlineInput`  `closeKeepPicker`
-`closeKeepRowMenu`  `closeKeepSwitch`  `closeLogoMenu`  `closeMemorizationHistory`  `closeMemRecPopup`  `closeRepeatSubPicker`
-`closeRpConfig`  `closeSecDelModal`  `closeSettings`  `closeSettingsOnBg`  `closeSfxMenu`  `closeShareDialog`
-`closeSmGhost`  `closeSubscribeDialog`  `closeSyncConflicts`  `closeTaskMenu`  `closeTaskMenu_keepCtx`  `closeThemePicker`
-`closeTrash`  `closeVcSettings`  `closeVDashDetail`  `closeVerseAggPopup`  `closeVerseAlarmCustomTimePopup`  `closeVerseDashboard`
-`closeVerseFull`  `closeVerseGrid`  `closeVerseListModal`  `closeVerseMemMenu`  `closeVerseMemMenuFromOverlay`  `closeVersePopup`
-`closeVerseSettingsModal`  `closeVfDeeperPicker`  `closeVfKeepSwitch`  `closeVfShare`  `closeVliMenu`  `closeVliMenuFromOverlay`
-`closeVwScope`  `cnt`  `code`  `col`  `collAddAction`  `collMenuAction`
-`color`  `commit`  `confirmDatePicker`  `CONTACT_PICKER_SUPPORTED`  `contactAction`  `contactBadgeCountChanged`
-`copy`  `core`  `cur`  `currentMatchingPresetName`  `currentViewKey`  `curSecId`
-`cx`  `damp`  `dayOfYearVerseIdx`  `days`  `daysFromToday`  `deeperN`
-`defaultState`  `defIds`  `deleteCollection`  `deleteEventFromMenu`  `deleteLatestVerseEvent`  `deleteSection`
-`deleteSectionConfig`  `devInboxDelete`  `devInboxLoad`  `devInboxRefreshBadge`  `devInboxToggleAll`  `devInboxUpdateBadge`
-`devNoteHandleFile`  `devNoteSend`  `devNoteToggle`  `devTrashDelete`  `devTrashEmpty`  `devTrashRender`
-`devTrashToggle`  `dir`  `done`  `doRedo`  `doSubscribe`  `doUndo`
-`download`  `draw`  `dropDrag`  `dropSecArchive`  `dup`  `duplicateTaskTo`
-`duplicateTaskToPickedDate`  `editContact`  `editEventFromMenu`  `el`  `email`  `emailTag`
-`endDrag`  `endPinch`  `ensureDailyRepeats`  `esc`  `evenN`  `eventOccursOnOwnDate`
-`eventRepeatsOnDate`  `exportBackup`  `fam`  `fbForceUploadLocal`  `fbPushState`  `fbStartListening`
-`fill`  `findColl`  `findFlatIndex`  `findLaneIndex`  `findMentionedContacts`  `finish`
-`first`  `fit`  `focusItemInput`  `formatEventTime`  `getActiveColls`  `getBigs`
-`getCarryCount`  `getChips`  `getContainer`  `getCustomVerses`  `getDay`  `getDayFadeClass`
-`getDeeperLog`  `getDisplayEvents`  `getDOW`  `getDropTarget`  `getEvenDeeperLog`  `getEvents`
-`getKeepLog`  `getLikeLog`  `getMemLog`  `getMemorizationsForDate`  `getMemorizationsForSection`  `getRowEl`
-`getSecColor`  `getShareLog`  `getSmalls`  `getStableDt`  `getTasksTaggedWithContact`  `getTrack`
-`getTrash`  `getVerseAlarm`  `getVerseByIdx`  `getVerseCollections`  `getVersePoolVerses`  `getVersePush`
-`getWeekFadeClass`  `getWraps`  `gid`  `go`  `goToDate`  `hdrCalGoToday`
-`hdrCalNav`  `hdrCalPick`  `hh`  `hideBusyToast`  `hit`  `hmBtn`
-`home`  `importBackup`  `importFromFile`  `initAppUI`  `initCrossViewSwipe`  `initDateSwipe`
-`initForegroundPush`  `initMonthlySwipe`  `initTopDateSwipe`  `initWeeklySwipe`  `inner0`  `inspectRecoveryDate`
-`IS_TOUCH`  `isAnyInputFocused`  `isCollActive`  `isDark`  `isExcluded`  `isNowWithinSection`
-`isOver`  `isSwipeZone`  `isToday`  `isTouch`  `itemKey`  `j`
-`K`  `k`  `keep`  `keepPickNew`  `keepPickToggle`  `keepRowDelete`
-`keepRowEdit`  `keepSetSort`  `keepTogglePairSort`  `key`  `kindLabel`  `L`
-`l`  `l0`  `laterLocal`  `laySetBp`  `laySetWeekly`  `left`
-`likeN`  `limit`  `list`  `lo`  `load`  `logicalNow`
-`logoMenuBackToMain`  `logoMenuNextVerse`  `logoMenuOpenKeepSub`  `logoMenuOpenListSub`  `logoMenuPrevVerse`  `logoMenuRandomVerse`
-`logoMenuToggleVerse`  `loose`  `LS_KEY`  `m`  `makeBigGhost`  `makeBigItem`
-`makeBigWrap`  `makeContactBadges`  `makePresetChip`  `makeSmInlineGhost`  `makeSmItem`  `makeSmWrap`
-`makeSwipeWrap`  `manuallyCollapsed`  `map`  `me`  `measure`  `mergeDuplicateVerses`
-`mine`  `mk`  `mkBtn`  `mkDate`  `mode`  `monthLabel`
-`monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`  `moveActiveSelection`  `moved`  `moveDrag`
-`moveG`  `moveTaskTo`  `moveTaskToPickedDate`  `ms`  `N`  `n`
-`n0`  `name`  `navigateDate`  `navigateWeek`  `needTemp`  `next`
-`nextVerseManual`  `now`  `offTest`  `on`  `onCancel`  `onDown`
-`onEnd`  `onEventDateChange`  `onEventTimeToggle`  `onMove`  `onNotifyMasterToggle`  `onStart`
-`onTouchEnd`  `onTouchMove`  `onTouchStart`  `onUp`  `onVerseAlarmToggle`  `onVerseBarClick`
-`onVerseMemRecord`  `openCellInput`  `openCollAddMenu`  `openCollEdit`  `openCollMenu`  `openContactMenu`
-`openContactsModal`  `openDeeperFromRef`  `openEvenDeeperFromRef`  `openEventEditMenu`  `openEventModal`  `openEventModalForDate`
-`openHdrCalendar`  `openInlineInput`  `openKeepListPopup`  `openKeepPicker`  `openKeepRowMenu`  `openLogoMenu`
-`openMemorizationHistory`  `openMenuForThis`  `openRepeatSubPicker`  `openRpConfig`  `openSettings`  `openSfxMenu`
-`openShareDialog`  `openSmGhost`  `openSubscribeDialog`  `openSyncConflicts`  `openTaskMenu`  `openThemePicker`
-`openTrash`  `openVcCollSettings`  `openVcSettings`  `openVerseAggPopup`  `openVerseAlarmCustomTimePopup`  `openVerseCollSettings`
-`openVerseDashboard`  `openVerseFull`  `openVerseGrid`  `openVerseGridHome`  `openVerseListModal`  `openVerseMemMenu`
-`openVerseSettingsModal`  `openVfDeeper`  `openVfShare`  `openVfShareFor`  `openVliMenu`  `openVwScope`
-`org`  `out`  `overflows`  `p`  `pad`  `padH`
-`padV`  `paint`  `paintAppUIFromLocal`  `pairKey`  `pairOn`  `parseItemKey`
-`pcEl`  `perBtn`  `phone`  `pick`  `pickContainer`  `pickFromDeviceContacts`
-`pickVfDeeper`  `place`  `pool`  `populateCarryBadge`  `portrait`  `prepDatePicker`
-`prepDupDatePicker`  `prepTaskMenuDatePicker`  `prev`  `prevOff`  `prevVerseManual`  `put`
-`putText`  `randomVerseManual`  `raw`  `rawSave`  `recent`  `recheck`
-`recheckBurst`  `recordMemorization`  `recordMemorizationByRef`  `recordVerseDeeper`  `recordVerseEvenDeeper`  `recordVerseLike`
-`recordVerseShare`  `ref`  `refH`  `refLine`  `refOnly`  `refreshActiveVisuals`
-`refreshNotifyUI`  `refreshTaskViewsLive`  `refreshVerseMarksLive`  `refs`  `removeCustomSuffix`  `removeVerseAlarmCustomTime`
-`renameCurrentColl`  `renameCustomSuffix`  `renderAddRow`  `renderCeGoogleList`  `renderCeTrash`  `renderCeVerseList`
-`renderCollButtons`  `renderCollFilterPanels`  `renderContactsList`  `renderLayout`  `renderMonthly`  `renderPresetList`
-`renderRepeatButtons`  `renderRpConfigList`  `renderSecArchive`  `renderSecBody`  `renderSecEvents`  `renderSecs`
-`renderSectionConfigList`  `renderSectionEditor`  `renderSettingsPanel`  `renderSmList`  `renderSubButtons`  `renderSuffixPickers`
-`renderTaskTextHTML`  `renderToday`  `renderTrashList`  `renderVcSettings`  `renderVerseAlarmCustomList`  `renderVerseAlarmSettings`
-`renderVerseBar`  `renderVerseDashboard`  `renderVerseGrid`  `renderVerseListCatRow`  `renderVerseListResults`  `renderVerseSettingsModal`
-`renderVwScope`  `renderWeekly`  `repeat`  `resetStateToDefaults`  `resizeAllInputs`  `resolveTarget`
-`resolveTargetIdx`  `restoreAutoBackup`  `restoreFromTrash`  `restoreSecArchive`  `rot`  `row`
-`rowsOf`  `rpChMonth`  `rs`  `runAutoCarryOver`  `runCarryNow`  `runSharedCollSync`
-`runVerseSheetAutoSync`  `s`  `safe`  `save`  `saveCurrentSectionConfig`  `saveText`
-`SC`  `scheduleVerseAlarms`  `scopeTxt`  `scrollActiveIntoView`  `scrollFlatIdxIntoView`  `sec`
-`secDelDo`  `secHasEvent`  `secHasPendingTodo`  `secId`  `secName`  `sel`
-`sendTestPush`  `sendToTrash`  `setActiveSingle`  `setCarryScope`  `setCnt`  `setDeviceNotify`
-`setEventTimeToggle`  `setLayFormMode`  `setLinkOpenMode`  `setNotifySuffix`  `setShareSize`  `setText`
-`setTimeStep`  `settle`  `setTxtRefBracket`  `setTxtRefPos`  `setTxtRefStyle`  `setUiLevel`
-`setUiLevelIconSet`  `setupCrossViewSwipeZones`  `setVcAuto`  `setVcAutoMin`  `setVcHeadMode`  `setVcShow`
-`setVcShowAll`  `setVcTextScale`  `setVcTheme`  `setVerseCountScope`  `setVerseIdx`  `setVersePush`
-`setVersePushInterval`  `setVerseSneakMaxW`  `setVerseSneakStyle`  `setVerseUiLevel`  `setVfArtStyle`  `setVfTextScale`
-`setWMViewMode`  `sfxMenuAction`  `shareCopyCode`  `shareSizeOf`  `shareVia`  `showAutoBackups`
-`showBusyToast`  `showContactTasksPopup`  `showDropIndicator`  `showMemorizationPopup`  `shown`  `showReactionToast`
-`showToast`  `showVersePopup`  `side`  `snapBack`  `snapshot`  `solve`
-`sortBtn`  `sortEventsByTime`  `span`  `src`  `start`  `startDrag`
-`startEditContact`  `stepHiOverlap`  `stepHiStarMax`  `stopLt`  `stopTimer`  `strip`
-`submitContact`  `submitEventModal`  `sw`  `switchSettingsTab`  `switchToViewIndex`  `switchVerseSettingsTab`
-`swKeepSet`  `swRow`  `swTitle`  `swToggleEdit`  `swToggleHome`  `swToggleKeep`
-`syncP`  `syncRollDisplays`  `syncSecsFromState`  `syncVis`  `tab`  `tags`
-`taskMarkerFilterPass`  `testAutoCarryOver`  `testLocalNotification`  `testVerseClickPath`  `text`  `themeById`
-`themeChip`  `themePickerApply`  `themePickerGroup`  `themePickerPick`  `tilt`  `tKey`
-`to`  `todayKey`  `toggleColl`  `toggleDailyRepeat`  `toggleEventDaily`  `toggleEventWeekly`
-`toggleHiMark`  `toggleImgIncl`  `toggleKeepSwitch`  `togglePropTitleFont`  `togglePropTitleGroup`  `togglePropTitleGroupOpen`
-`toggleSectionExclude`  `toggleStarSection`  `toggleTaskContact`  `toggleTaskFlag`  `toggleTxtIncl`  `toggleVerseAlarmContent`
-`toggleVerseBarOn`  `toggleVfArt`  `toggleVfKeepSwitch`  `toggleVfPattern`  `toggleVfSecPattern`  `topic`
-`totalActive`  `totalBigCount`  `touch`  `trashBgClick`  `uiLevel`  `uiLevelIconSet`
-`uiScaleSet`  `uiScaleSlideCommit`  `uiScaleSlideInput`  `up`  `updateHeaderDate`  `updateNotifySub`
-`updateSecSummary`  `updateSectionBoundary`  `updateSectionField`  `updateSetting`  `updateSmCnt`  `updateTotal`
-`updateTrashBadge`  `updateUrBtns`  `url`  `userDocRef`  `v`  `vbShuffleVerse`
-`vcAct`  `vcAddCard`  `vcClearFilter`  `vcNav`  `vcOpenFilter`  `vcOpenFull`
-`vcSetTextScaleLive`  `vcSetView`  `vcStepTextScale`  `vcToggleView`  `vDashOpenDetail`  `vDashOpenFilter`
-`vDashOpenVerse`  `vDashSetCustom`  `vDashSetPeriod`  `VERSE_TOTAL`  `verseByRef`  `verseForEntry`
-`verseFullNav`  `verses`  `verseSyncAllNow`  `verseUiLevel`  `vfAct`  `vfCatTap`
-`vfCopyBodyOnly`  `vfHomeAction`  `vfOpenCollSettings`  `vfOpenKeepGrid`  `vfOpenKeepList`  `vfOpenSheetForCat`
-`vfShareBg`  `vfShareDo`  `vfToggleCycleMode`  `vgPick`  `vgPickAxis`  `vgSetBibleSort`
-`vgSetTab`  `vgStepTagExcl`  `vgStepTileExcl`  `vgTapDateSort`  `vgToggleExpand`  `vgToggleGroup`
-`vgToggleTagExcl`  `vgToggleTileExcl`  `vis`  `vliAction`  `vlSetCustom`  `vlSetPeriod`
-`vlSetSort`  `vlSetTab`  `vlToggleCtrl`  `vlTogglePairSort`  `vlwSetCustom`  `vlwSetPeriod`
-`vlwSetSort`  `vlwTogglePairSort`  `vpAddTime`  `vpDelTime`  `vpDiagClear`  `vpDiagCopy`
-`vpDiagRender`  `vpDiagToggle`  `vpSetTime`  `vpToggleDay`  `vrs`  `vw`
-`vwScopeClearFilter`  `vwScopeCollSettings`  `vwScopePick`  `vwScopeToggleMode`  `W`  `want`
-`wasOpen`  `weekOffsetLabel`  `weekOfMonth`  `weeksFromToday`  `wireActivateClick`  `words`
-`x`  `y`  `z`
+`_vfApplyParallelRule`  `_vfApplyPropAlign`  `_vfArtRecheck`  `_vfArtSyncUI`  `_vfAtCollection`  `_vfBg1Css`
+`_vfBgCss`  `_vfBottomEl`  `_vfBreakClass`  `_vfCanBreakAt`  `_vfClauseStart`  `_vfClearNav`
+`_vfCurrentVerse`  `_vfCycleMode`  `_vfDeeperRefs`  `_vfDemoteShortForced`  `_vfDoubleLike`  `_vfEnsureFont`
+`_vfFixWidow`  `_vfGeException`  `_vfHeartBurst`  `_vfHideCovers`  `_vfHideCoversNow`  `_vfIsHeotdoeException`
+`_vfIsParallelWord`  `_vfIsProp`  `_vfIsSubject`  `_vfKeepNav`  `_vfKeepSortHead`  `_vfLayoutIfResized`
+`_vfLayoutPropText`  `_vfLayoutText`  `_vfNavCommit`  `_vfObjStart`  `_vfObjTailLen`  `_vfPairKeep`
+`_vfParallelRuns`  `_vfPatternKey`  `_vfPatternPool`  `_vfPlaceTagArt`  `_vfPropInk`  `_vfReadWrappedLines`
+`_vfRedrawPropInk`  `_vfRelayoutSoon`  `_vfRenderCard`  `_vfRenderKeepSwitch`  `_vfRenderPropTitle`  `_vfRenderRef`
+`_vfRenderTagArt`  `_vfRollProp`  `_vfRollVariant`  `_vfSecIdNow`  `_vfSelectedPatterns`  `_vfSetNav`
+`_vfShareImage`  `_vfShareSizeRow`  `_vfShareText`  `_vfShortOK`  `_vfShufGo`  `_vfShufPickRandom`
+`_vfShufPos`  `_vfShufPush`  `_vfShufReset`  `_vfSizePropTitle`  `_vfSkipsForced`  `_vfSyncCounts`
+`_vfSyncCycleIcon`  `_vfSyncPageBg`  `_vfSyncTopBar`  `_vfTextScale`  `_vfTheme`  `_vfWrapFit`
+`_vgAxisItems`  `_vgAxisLabel`  `_vgBookOne`  `_vgDate`  `_vgEscAttr`  `_vgExclAxisNow`
+`_vgExclKeys`  `_vgExclMax`  `_vgExclOn`  `_vgFamily`  `_vgFilteredPool`  `_vgFilterLabelText`
+`_vgFlatPresets`  `_vgGroupKey`  `_vgGroupLabel`  `_vgHighlightTile`  `_vgHomeLabel`  `_vgIsOpen`
+`_vgMatch`  `_vgOpenFromReels`  `_vgOpenFromRef`  `_vgPinchSteps`  `_vgRawPool`  `_vgRenderTabs`
+`_vgRestoreHighlight`  `_vgScrollToVerse`  `_vgSetCols`  `_vgShortRef`  `_vgSort`  `_vgSyncExcl`
+`_vgSyncFilterLabel`  `_vgSyncSortUI`  `_vgSyncTagSettingsUI`  `_vgTab`  `_vgTileHtml`  `_vgTilePreset`
+`_vgTileStyle`  `_vlApplySort`  `_vlClearRegIdx`  `_vlDispRef`  `_vlEntriesForScope`  `_vlExtraSortFor`
+`_vlHomeEntries`  `_vliOpenFull`  `_vliOpenFullForWidget`  `_vlIsProp`  `_vListControlsHTML`  `_vListRange`
+`_vListRefresh`  `_vListRowsHTML`  `_vlKeepEntries`  `_vlKindEntries`  `_vlPref`  `_vlReactTotals`
+`_vlRegIdx`  `_vlTab`  `_vlTabsHTML`  `_vlwKey`  `_vmmSyncFirstItem`  `_vpDiagCopyFallback`
+`_vpDiagFmt`  `_vpDiagHead`  `_vpEveryLabel`  `_vpSave`  `_vpToMin`  `_vpTurnOn`
+`_vsetFlashTab`  `_vsetGoColl`  `_vsetGoTab`  `_vsetRestoreBack`  `_vstabList`  `_vwKeepSortHTML`
+`_vwScopeBindHold`  `_vwScopeOpts`  `_vwSize`  `_wireTaskMenuDateRow`  `_withFullscreenLayout`  `_withOutcome`
+`_withTimeout`  `_wkPaneActive`  `_wkVerseMarksHTML`  `A`  `a`  `ab`
+`act`  `activateItem`  `ACTIVE_TOTAL`  `ACTIVE_VERSES`  `addCustomSuffix`  `addCustomVerseFromForm`
+`addDays`  `addNewCollection`  `addNewSection`  `addVerseAlarmCustomTime`  `ALL_VERSES`  `anchor`
+`appConfirm`  `appendMarkerFilterBtn`  `applyPreset`  `applyRemoteState`  `applySectionConfig`  `applySnapshot`
+`applyTheme`  `applyThemeVars`  `applyUiLevel`  `applyUiScale`  `applyUiScaleNow`  `applyVerseUiLevel`
+`applyVfTheme`  `arr`  `assigned`  `attach`  `attachDrag`  `attachEventChipInteraction`
+`attachFastTap`  `attachHdSwipe`  `attachPullToToday`  `attachRepeatBtnInteraction`  `attachSecRowDrag`  `authErrorMessage`
+`authSetLoading`  `authSignOut`  `authSubmit`  `authToggleMode`  `auto`  `autoSizeInput`
+`away`  `axisLabel`  `b`  `barRef`  `barTags`  `base`
+`beforeBlock`  `beforeSave`  `begin`  `bindHold`  `body`  `book`
+`build`  `buildBackupFilename`  `buildFlatList`  `buildLanes`  `bump`  `byName`
+`C`  `c`  `cancelDragKeepingItem`  `cancelMousePress`  `cancelPressTimer`  `ceAddGoogleLink`
+`ceCloseDeletePopup`  `ceCloseTrash`  `ceDeleteSelected`  `ceImportGoogleLink`  `cellTodoSave`  `ceMoveTrash`
+`ceOpenDeletePopup`  `ceOpenTrash`  `ceRemoveGoogleLink`  `ceRestoreSelected`  `ceSelectMethod`  `ceSetSort`
+`ceToggleFilter`  `ceToggleGoogleAuto`  `cfChoose`  `cfMergeAll`  `cfRender`  `cfToggleRaw`
+`chap`  `checkDataRecovery`  `checkVerseAlarm`  `chip`  `chM`  `clamp`
+`cleanupEmptyDays`  `clear`  `clearActive`  `clearContactForm`  `clearDropIndicators`  `clearPaint`
+`clearTrash`  `closeAccountSensitiveModals`  `closeCellTodo`  `closeCollAddMenu`  `closeCollEdit`  `closeCollMenu`
+`closeContactMenu`  `closeContactsModal`  `closeContactTasksPopup`  `closeDatePicker`  `closeEventEditMenu`  `closeEventModal`
+`closeHdrCalendar`  `closeInlineInput`  `closeKeepPicker`  `closeKeepRowMenu`  `closeKeepSwitch`  `closeLogoMenu`
+`closeMemorizationHistory`  `closeMemRecPopup`  `closeRepeatSubPicker`  `closeRpConfig`  `closeSecDelModal`  `closeSettings`
+`closeSettingsOnBg`  `closeSfxMenu`  `closeShareDialog`  `closeSmGhost`  `closeSubscribeDialog`  `closeSyncConflicts`
+`closeTaskMenu`  `closeTaskMenu_keepCtx`  `closeThemePicker`  `closeTrash`  `closeVcSettings`  `closeVDashDetail`
+`closeVerseAggPopup`  `closeVerseAlarmCustomTimePopup`  `closeVerseDashboard`  `closeVerseFull`  `closeVerseGrid`  `closeVerseListModal`
+`closeVerseMemMenu`  `closeVerseMemMenuFromOverlay`  `closeVersePopup`  `closeVerseSettingsModal`  `closeVfDeeperPicker`  `closeVfKeepSwitch`
+`closeVfShare`  `closeVliMenu`  `closeVliMenuFromOverlay`  `closeVwScope`  `cnt`  `code`
+`col`  `collAddAction`  `collMenuAction`  `color`  `commit`  `confirmDatePicker`
+`CONTACT_PICKER_SUPPORTED`  `contactAction`  `contactBadgeCountChanged`  `copy`  `core`  `cur`
+`currentMatchingPresetName`  `currentViewKey`  `curSecId`  `cx`  `damp`  `dayOfYearVerseIdx`
+`days`  `daysFromToday`  `deeperN`  `defaultState`  `defIds`  `deleteCollection`
+`deleteEventFromMenu`  `deleteLatestVerseEvent`  `deleteSection`  `deleteSectionConfig`  `devInboxDelete`  `devInboxLoad`
+`devInboxRefreshBadge`  `devInboxToggleAll`  `devInboxUpdateBadge`  `devNoteHandleFile`  `devNoteSend`  `devNoteToggle`
+`devTrashDelete`  `devTrashEmpty`  `devTrashRender`  `devTrashToggle`  `dir`  `done`
+`doRedo`  `doSubscribe`  `doUndo`  `download`  `draw`  `dropDrag`
+`dropSecArchive`  `dup`  `duplicateTaskTo`  `duplicateTaskToPickedDate`  `editContact`  `editEventFromMenu`
+`el`  `email`  `emailTag`  `endDrag`  `endPinch`  `ensureDailyRepeats`
+`esc`  `evenN`  `eventOccursOnOwnDate`  `eventRepeatsOnDate`  `exportBackup`  `fam`
+`fbForceUploadLocal`  `fbPushState`  `fbStartListening`  `fill`  `findColl`  `findFlatIndex`
+`findLaneIndex`  `findMentionedContacts`  `finish`  `first`  `fit`  `focusItemInput`
+`formatEventTime`  `getActiveColls`  `getBigs`  `getCarryCount`  `getChips`  `getContainer`
+`getCustomVerses`  `getDay`  `getDayFadeClass`  `getDeeperLog`  `getDisplayEvents`  `getDOW`
+`getDropTarget`  `getEvenDeeperLog`  `getEvents`  `getKeepLog`  `getLikeLog`  `getMemLog`
+`getMemorizationsForDate`  `getMemorizationsForSection`  `getRowEl`  `getSecColor`  `getShareLog`  `getSmalls`
+`getStableDt`  `getTasksTaggedWithContact`  `getTrack`  `getTrash`  `getVerseAlarm`  `getVerseByIdx`
+`getVerseCollections`  `getVersePoolVerses`  `getVersePush`  `getWeekFadeClass`  `getWraps`  `gid`
+`go`  `goToDate`  `hdrCalGoToday`  `hdrCalNav`  `hdrCalPick`  `hh`
+`hideBusyToast`  `hit`  `hmBtn`  `home`  `importBackup`  `importFromFile`
+`initAppUI`  `initCrossViewSwipe`  `initDateSwipe`  `initForegroundPush`  `initMonthlySwipe`  `initTopDateSwipe`
+`initWeeklySwipe`  `inner0`  `inspectRecoveryDate`  `IS_TOUCH`  `isAnyInputFocused`  `isCollActive`
+`isDark`  `isExcluded`  `isNowWithinSection`  `isOver`  `isSwipeZone`  `isToday`
+`isTouch`  `itemKey`  `j`  `K`  `k`  `keep`
+`keepPickNew`  `keepPickToggle`  `keepRowDelete`  `keepRowEdit`  `keepSetSort`  `keepTogglePairSort`
+`key`  `kindLabel`  `L`  `l`  `l0`  `laterLocal`
+`laySetBp`  `laySetWeekly`  `left`  `likeN`  `limit`  `list`
+`lo`  `load`  `logicalNow`  `logoMenuBackToMain`  `logoMenuNextVerse`  `logoMenuOpenKeepSub`
+`logoMenuOpenListSub`  `logoMenuPrevVerse`  `logoMenuRandomVerse`  `logoMenuToggleVerse`  `loose`  `LS_KEY`
+`m`  `makeBigGhost`  `makeBigItem`  `makeBigWrap`  `makeContactBadges`  `makePresetChip`
+`makeSmInlineGhost`  `makeSmItem`  `makeSmWrap`  `makeSwipeWrap`  `manuallyCollapsed`  `map`
+`me`  `measure`  `mergeDuplicateVerses`  `mine`  `mk`  `mkBtn`
+`mkDate`  `mode`  `monthLabel`  `monthTitleHTML`  `moveActiveItems`  `moveActiveItemsAcrossSection`
+`moveActiveSelection`  `moved`  `moveDrag`  `moveG`  `moveTaskTo`  `moveTaskToPickedDate`
+`ms`  `N`  `n`  `n0`  `name`  `navigateDate`
+`navigateWeek`  `needTemp`  `next`  `nextVerseManual`  `now`  `offTest`
+`on`  `onCancel`  `onDown`  `onEnd`  `onEventDateChange`  `onEventTimeToggle`
+`onMove`  `onNotifyMasterToggle`  `onStart`  `onTouchEnd`  `onTouchMove`  `onTouchStart`
+`onUp`  `onVerseAlarmToggle`  `onVerseBarClick`  `onVerseMemRecord`  `openCellInput`  `openCollAddMenu`
+`openCollEdit`  `openCollMenu`  `openContactMenu`  `openContactsModal`  `openDeeperFromRef`  `openEvenDeeperFromRef`
+`openEventEditMenu`  `openEventModal`  `openEventModalForDate`  `openHdrCalendar`  `openInlineInput`  `openKeepListPopup`
+`openKeepPicker`  `openKeepRowMenu`  `openLogoMenu`  `openMemorizationHistory`  `openMenuForThis`  `openRepeatSubPicker`
+`openRpConfig`  `openSettings`  `openSfxMenu`  `openShareDialog`  `openSmGhost`  `openSubscribeDialog`
+`openSyncConflicts`  `openTaskMenu`  `openThemePicker`  `openTrash`  `openVcCollSettings`  `openVcSettings`
+`openVerseAggPopup`  `openVerseAlarmCustomTimePopup`  `openVerseCollSettings`  `openVerseDashboard`  `openVerseFull`  `openVerseGrid`
+`openVerseGridHome`  `openVerseListModal`  `openVerseMemMenu`  `openVerseSettingsFromMenu`  `openVerseSettingsModal`  `openVfDeeper`
+`openVfShare`  `openVfShareFor`  `openVliMenu`  `openVwScope`  `org`  `out`
+`overflows`  `p`  `pad`  `padH`  `padV`  `paint`
+`paintAppUIFromLocal`  `pairKey`  `pairOn`  `parseItemKey`  `pcEl`  `perBtn`
+`phone`  `pick`  `pickContainer`  `pickFromDeviceContacts`  `pickVfDeeper`  `place`
+`pool`  `populateCarryBadge`  `portrait`  `prepDatePicker`  `prepDupDatePicker`  `prepTaskMenuDatePicker`
+`prev`  `prevOff`  `prevVerseManual`  `put`  `putText`  `randomVerseManual`
+`raw`  `rawSave`  `recent`  `recheck`  `recheckBurst`  `recordMemorization`
+`recordMemorizationByRef`  `recordVerseDeeper`  `recordVerseEvenDeeper`  `recordVerseLike`  `recordVerseShare`  `ref`
+`refH`  `refLine`  `refOnly`  `refreshActiveVisuals`  `refreshNotifyUI`  `refreshTaskViewsLive`
+`refreshVerseMarksLive`  `refs`  `removeCustomSuffix`  `removeVerseAlarmCustomTime`  `renameCurrentColl`  `renameCustomSuffix`
+`renderAddRow`  `renderCeGoogleList`  `renderCeTrash`  `renderCeVerseList`  `renderCollButtons`  `renderCollFilterPanels`
+`renderContactsList`  `renderLayout`  `renderMonthly`  `renderPresetList`  `renderRepeatButtons`  `renderRpConfigList`
+`renderSecArchive`  `renderSecBody`  `renderSecEvents`  `renderSecs`  `renderSectionConfigList`  `renderSectionEditor`
+`renderSettingsPanel`  `renderSmList`  `renderSubButtons`  `renderSuffixPickers`  `renderTaskTextHTML`  `renderToday`
+`renderTrashList`  `renderVcSettings`  `renderVerseAlarmCustomList`  `renderVerseAlarmSettings`  `renderVerseBar`  `renderVerseDashboard`
+`renderVerseGrid`  `renderVerseListCatRow`  `renderVerseListResults`  `renderVerseSettingsModal`  `renderVwScope`  `renderWeekly`
+`repeat`  `resetStateToDefaults`  `resizeAllInputs`  `resolveTarget`  `resolveTargetIdx`  `restoreAutoBackup`
+`restoreFromTrash`  `restoreSecArchive`  `rot`  `row`  `rowsOf`  `rpChMonth`
+`rs`  `runAutoCarryOver`  `runCarryNow`  `runSharedCollSync`  `runVerseSheetAutoSync`  `s`
+`safe`  `save`  `saveCurrentSectionConfig`  `saveText`  `SC`  `scheduleVerseAlarms`
+`scopeTxt`  `scrollActiveIntoView`  `scrollFlatIdxIntoView`  `sec`  `secDelDo`  `secHasEvent`
+`secHasPendingTodo`  `secId`  `secName`  `sel`  `sendTestPush`  `sendToTrash`
+`setActiveSingle`  `setCarryScope`  `setCnt`  `setDeviceNotify`  `setEventTimeToggle`  `setLayFormMode`
+`setLinkOpenMode`  `setNotifySuffix`  `setShareSize`  `setText`  `setTimeStep`  `settle`
+`setTxtRefBracket`  `setTxtRefPos`  `setTxtRefStyle`  `setUiLevel`  `setUiLevelIconSet`  `setupCrossViewSwipeZones`
+`setVcAuto`  `setVcAutoMin`  `setVcHeadMode`  `setVcShow`  `setVcShowAll`  `setVcTextScale`
+`setVcTheme`  `setVerseCountScope`  `setVerseIdx`  `setVersePush`  `setVersePushInterval`  `setVerseSneakMaxW`
+`setVerseSneakStyle`  `setVerseUiLevel`  `setVfArtStyle`  `setVfTextScale`  `setWMViewMode`  `sfxMenuAction`
+`shareCopyCode`  `shareSizeOf`  `shareVia`  `showAutoBackups`  `showBusyToast`  `showContactTasksPopup`
+`showDropIndicator`  `showMemorizationPopup`  `shown`  `showReactionToast`  `showToast`  `showVersePopup`
+`side`  `snapBack`  `snapshot`  `solve`  `sortBtn`  `sortEventsByTime`
+`span`  `src`  `start`  `startDrag`  `startEditContact`  `stepHiOverlap`
+`stepHiStarMax`  `stopLt`  `stopTimer`  `strip`  `submitContact`  `submitEventModal`
+`sw`  `switchSettingsTab`  `switchToViewIndex`  `switchVerseSettingsTab`  `swKeepSet`  `swRow`
+`swTitle`  `swToggleEdit`  `swToggleHome`  `swToggleKeep`  `syncP`  `syncRollDisplays`
+`syncSecsFromState`  `syncVis`  `tab`  `tags`  `taskMarkerFilterPass`  `testAutoCarryOver`
+`testLocalNotification`  `testVerseClickPath`  `text`  `themeById`  `themeChip`  `themePickerApply`
+`themePickerGroup`  `themePickerPick`  `tilt`  `tKey`  `to`  `todayKey`
+`toggleColl`  `toggleDailyRepeat`  `toggleEventDaily`  `toggleEventWeekly`  `toggleHiMark`  `toggleImgIncl`
+`toggleKeepSwitch`  `togglePropTitleFont`  `togglePropTitleGroup`  `togglePropTitleGroupOpen`  `toggleSectionExclude`  `toggleStarSection`
+`toggleTaskContact`  `toggleTaskFlag`  `toggleTxtIncl`  `toggleVerseAlarmContent`  `toggleVerseBarOn`  `toggleVfArt`
+`toggleVfKeepSwitch`  `toggleVfPattern`  `toggleVfSecPattern`  `topic`  `totalActive`  `totalBigCount`
+`touch`  `trashBgClick`  `uiLevel`  `uiLevelIconSet`  `uiScaleSet`  `uiScaleSlideCommit`
+`uiScaleSlideInput`  `up`  `updateHeaderDate`  `updateNotifySub`  `updateSecSummary`  `updateSectionBoundary`
+`updateSectionField`  `updateSetting`  `updateSmCnt`  `updateTotal`  `updateTrashBadge`  `updateUrBtns`
+`url`  `userDocRef`  `v`  `vbShuffleVerse`  `vcAct`  `vcAddCard`
+`vcClearFilter`  `vcNav`  `vcOpenFilter`  `vcOpenFull`  `vcSetTextScaleLive`  `vcSetView`
+`vcStepTextScale`  `vcToggleView`  `vDashOpenDetail`  `vDashOpenFilter`  `vDashOpenVerse`  `vDashSetCustom`
+`vDashSetPeriod`  `VERSE_TOTAL`  `verseByRef`  `verseForEntry`  `verseFullNav`  `verses`
+`verseSyncAllNow`  `verseUiLevel`  `vfAct`  `vfCatTap`  `vfCopyBodyOnly`  `vfHomeAction`
+`vfOpenCollSettings`  `vfOpenKeepGrid`  `vfOpenKeepList`  `vfOpenSheetForCat`  `vfShareBg`  `vfShareDo`
+`vfToggleCycleMode`  `vgPick`  `vgPickAxis`  `vgSetBibleSort`  `vgSetTab`  `vgStepTagExcl`
+`vgStepTileExcl`  `vgTapDateSort`  `vgToggleExpand`  `vgToggleGroup`  `vgToggleTagExcl`  `vgToggleTileExcl`
+`vis`  `vliAction`  `vlSetCustom`  `vlSetPeriod`  `vlSetSort`  `vlSetTab`
+`vlToggleCtrl`  `vlTogglePairSort`  `vlwSetCustom`  `vlwSetPeriod`  `vlwSetSort`  `vlwTogglePairSort`
+`vpAddTime`  `vpDelTime`  `vpDiagClear`  `vpDiagCopy`  `vpDiagRender`  `vpDiagToggle`
+`vpSetTime`  `vpToggleDay`  `vrs`  `vw`  `vwScopeClearFilter`  `vwScopeCollSettings`
+`vwScopePick`  `vwScopeToggleMode`  `W`  `want`  `wasOpen`  `weekOffsetLabel`
+`weekOfMonth`  `weeksFromToday`  `wireActivateClick`  `words`  `x`  `y`
+`z`
 

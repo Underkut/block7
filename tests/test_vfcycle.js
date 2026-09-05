@@ -30,11 +30,20 @@ console.log('\n시나리오 3 — 아이콘·색·문구가 상태를 따른다'
   const fn = slice('function _vfSyncCycleIcon(){', 'function _vfSetNav');
   sc.eq('셔플이면 셔플 아이콘', fn.includes('btn.innerHTML=shuffle?_VF_SHUFFLE_SVG:_VF_CYCLE_SVG;'), true);
   sc.eq('상태를 클래스로도 표시해 둔다(색과는 무관)', fn.includes("btn.classList.toggle('vf-cycle-shuffle',shuffle);"), true);
-  // 선 굵기(1.4)는 유지하고 보이는 아이콘 크기만 17px로 맞춘다.
+  // ⚠️ v26-0905-4, HB — 선 굵기는 이제 **화면에 찍히는 굵기 1.35px** 하나로
+  //    맞춘다. 그래서 stroke-width 숫자는 아이콘마다 다르다: 이 둘은 도안이
+  //    24 짜리 상자에 17px 로 들어가(배율 0.708) 1.91 이어야 1.35 가 된다.
+  //    (test_vf_top.js 가 네 아이콘을 한꺼번에 지킨다)
   sc.eq('아이콘은 사각 테두리 없이 선만',
-        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_CYCLE_SVG=\'<svg width="17" height="17" viewBox="0 -2.5 24 24" fill="none" stroke="currentColor" stroke-width="1.91"'), true);
   sc.eq('셔플 아이콘도 같은 스타일',
-        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"'), true);
+        SRC.includes('const _VF_SHUFFLE_SVG=\'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.91"'), true);
+  // ⚠️ 순환만 viewBox y 가 -2.5 다. 도안이 상자 안에서 그만큼 위로 치우쳐 있어
+  //    그대로 두면 옆의 홈·제목·닫기와 높이가 안 맞는다 (v26-0905-4, HB 2번).
+  sc.eq('순환 도안은 상자를 내려 한가운데로 앉힌다',
+        /_VF_CYCLE_SVG='<svg [^>]*viewBox="0 -2\.5 24 24"/.test(SRC), true);
+  sc.eq('셔플 도안은 이미 한가운데라 그대로',
+        /_VF_SHUFFLE_SVG='<svg [^>]*viewBox="0 0 24 24"/.test(SRC), true);
   // ⚠️ 0817-16 에선 화살촉을 한 줄(상단 절반)만 썼는데, HB 가 "위아래 둘 다
   //    완성해 달라"고 다시 요청해 작은 V 로 되돌렸다 — 다리 길이(2,2)는 그대로.
   sc.eq('셔플 화살촉은 위아래 다 있는 작은 V',

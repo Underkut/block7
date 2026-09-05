@@ -35,7 +35,9 @@ console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더�
   //    (지금 이 상수를 쓰는 곳이 따로 없어서, 어긋나도 눈에 안 띈다).
   sc.eq('화면의 책갈피 단추도 같은 크기',
         (SRC.match(/<svg width="19" height="23" viewBox="0 0 20 24"/g)||[]).length, 2);
-  sc.eq('책갈피 획은 이전보다 얇은 1.2다', /_VF_KEEP_MENU_SVG=.*stroke-width=\"1\.2\"/.test(SRC), true);
+  // ⚠️ v26-0905-4, HB — 선 굵기는 이제 **화면에 찍히는 1.35px** 로 통일한다.
+  //    책갈피는 배율 0.95 라 1.42 여야 1.35 가 된다 (test_vf_top.js 가 넷을 함께 지킨다).
+  sc.eq('책갈피 획은 통일된 굵기다', /_VF_KEEP_MENU_SVG=.*stroke-width=\"1\.42\"/.test(SRC), true);
 }
 
 console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체로 돌아간다');
@@ -45,23 +47,26 @@ console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체
   sc.eq('지정 말씀도 비운다', action.includes('_vfOverrideVerse=null;'), true);
   sc.eq('전체화면을 곧바로 다시 그린다', action.includes('_verseFullRender();'), true);
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  sc.eq('필터·지정 말씀 또는 홈 복귀 상태일 때 홈을 보인다',
-        sync.includes("hb.style.display=(_vfNavList||_vfOverrideVerse||_vfHomeAtCollection)?'flex':'none';"), true);
+  // ⚠️⚠️ v26-0905-4, HB — "채운 홈이 **어떤 동작 뒤에** 나오도록 짜지 말고,
+  //    설정한 대로인 상황이면 언제나 나오게." 그래서 이제 상태를 기억하지 않고
+  //    _vfAtCollection() 이 그때그때 판정한다. 단추는 **늘 보인다.**
+  sc.eq('홈은 늘 보인다', sync.includes("hb.style.display='flex';"), true);
+  sc.eq('채움 여부는 그때그때 판정한다', sync.includes('const atColl=_vfAtCollection();'), true);
   sc.eq('필터 안에서는 선 홈, 말씀 모음 전체에서는 채운 홈',
-        sync.includes('hb.innerHTML=_vfHomeAtCollection?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;'), true);
-  sc.eq('홈을 누르면 채운 상태를 남긴다', action.includes('_vfHomeAtCollection=true;'), true);
-  // ⚠️⚠️ v26-0905-2, HB 신고 — "필터가 꺼져 전체가 됐는데 홈 단추가 채워지지
-  //    않고 **사라진다.**" 화면을 맞추는 곳은 _vfSyncTopBar 하나뿐인데, 바로 위
-  //    _vfClearNav() 안에서 그것이 이미 한 번 돌아 버린다. 그때는 _vfHomeAtCollection
-  //    이 아직 false 라 단추를 감추고, 그 다음 줄에서 값만 true 로 되돌리니
-  //    값은 맞는데 단추는 숨은 채로 남았다. → 값을 정한 **뒤에** 다시 맞춘다.
-  sc.eq('채운 상태로 바꾼 뒤 윗줄을 다시 맞춘다',
-        action.indexOf('_vfSyncTopBar();') > action.indexOf('_vfHomeAtCollection=true;'), true);
-  sc.eq('_vfClearNav 가 부르는 것만 믿지 않는다', action.includes('_vfSyncTopBar();'), true);
-  // 홈 아이콘도 말씀 모음 설정에 견줘 작아 보여 17 → 21 로 키웠다 (v26-0905-2, HB).
+        sync.includes('hb.innerHTML=atColl?_VF_HOME_FILLED_SVG:_VF_HOME_SVG;'), true);
+  // 판정은 "걸러 놓은 목록도 없고 지정 구절도 없다" 이다. 말씀카드처럼 '모음
+  // 전체'를 목록으로 들고 들어오는 길만 _vfHomeAtCollection 으로 알려 준다.
+  const at = slice('function _vfAtCollection(){', '\nfunction vfHomeAction(){');
+  sc.eq('목록도 지정 구절도 없으면 모음 그대로다',
+        at.includes('!(_vfNavList&&_vfNavList.length) && !_vfOverrideVerse'), true);
+  sc.eq('위젯이 넘겨 준 표시도 인정한다', at.includes('!!_vfHomeAtCollection ||'), true);
+  // ⚠️ 홈 누름 함수는 이제 표시를 손으로 켜지 않는다 — 그 손댐이 0905-2 버그의
+  //    뿌리였다 (값만 켜고 화면은 안 맞춰서 단추가 숨은 채로 남았다).
+  sc.eq('홈을 눌러도 표시를 손으로 켜지 않는다', action.includes('_vfHomeAtCollection=true;'), false);
+  // 홈 아이콘 크기 — 0905-2 에서 21 로 키웠다가 HB 가 "그 사이 정도" 라 하여 19 (0905-4).
   // ⚠️ 아웃라인과 채움이 **같은 크기**여야 한다 — 다르면 필터를 풀 때 아이콘이 튄다.
-  sc.eq('홈 아이콘이 조금 커졌다',
-        (SRC.match(/_VF_HOME(?:_FILLED)?_SVG='<svg width="21" height="21" viewBox="0 0 20 20"/g)||[]).length, 2);
+  sc.eq('홈 아이콘은 19 다',
+        (SRC.match(/_VF_HOME(?:_FILLED)?_SVG='<svg width="19" height="19" viewBox="0 0 20 20"/g)||[]).length, 2);
   sc.eq('홈은 좌상단 첫 자리다', /\.vf-home\{[^}]*left:14px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('순환·셔플은 홈 오른쪽 자리다', /\.vf-cycle\{[\s\S]{0,120}left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('홈 색은 순환·셔플과 같다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
@@ -100,6 +105,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   eval(asVar(one("const _VF_HOME_FILLED_SVG=")));
   eval(asVar(slice('function _vfSetNav(list,idx,label,kind,atCollection,parts){', 'function _vfClearNav')));
   eval(asVar(one('function _vfClearNav()')));
+  eval(asVar(slice('function _vfAtCollection(){', 'function vfHomeAction(){')));
   eval(asVar(slice('function vfHomeAction(){', 'function vfOpenCollSettings')));
   eval(asVar(slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse')));
 
@@ -120,6 +126,26 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   // ③ 다시 필터로 들어가면 선 홈으로 돌아간다 (한쪽으로 굳지 않는다)
   _vfSetNav([{ref:'롬 5:8'}], 0, '저장함', 'keep', false);
   sc.eq('다시 필터 안 — 선 홈으로 돌아온다', hb.innerHTML === _VF_HOME_SVG, true);
+
+  // ④ ⚠️⚠️ v26-0905-4, HB 신고 — "상단 말씀영역을 더블탭해 전체화면으로 들어오면
+  //    설정한 모음 그대로인데도 홈이 사라져 있다." 그 길(openVerseFull)은
+  //    _vfOverrideVerse 를 비우고 _vfClearNav() 만 부른다. 홈을 **누른 적이 없어**
+  //    예전 표시(_vfHomeAtCollection)는 계속 false 였고, 그래서 단추가 숨었다.
+  //    → 이제는 상태만 보고 판정하므로 누른 적이 없어도 채운 홈이 나온다.
+  _vfOverrideVerse=null;
+  _vfClearNav();                      // openVerseFull() 이 하는 그대로
+  sc.eq('더블탭으로 그냥 들어와도 — 단추가 보인다', hb.style.display, 'flex');
+  sc.eq('더블탭으로 그냥 들어와도 — 채운 홈이다', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
+
+  // ⑤ 지정 구절 하나만 띄운 경우는 '모음 그대로'가 아니다 → 선 홈
+  _vfOverrideVerse={ref:'시 23:1'};
+  _vfSyncTopBar();
+  sc.eq('지정 구절을 띄운 중 — 선 홈', hb.innerHTML === _VF_HOME_SVG, true);
+
+  // ⑥ 말씀카드처럼 '모음 전체'를 목록으로 들고 들어온 경우 → 채운 홈
+  _vfOverrideVerse=null;
+  _vfSetNav([{ref:'요 3:16'},{ref:'롬 5:8'}], 0, '말씀 모음', null, true);
+  sc.eq('모음 전체를 목록으로 들고 와도 — 채운 홈', hb.innerHTML === _VF_HOME_FILLED_SVG, true);
 }
 
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');

@@ -83,11 +83,14 @@ console.log('\n시나리오 1-3 — PC 는 말씀 목록에 마우스만 올려�
 
 console.log('\n시나리오 2 — 둘 다 말씀모음 탭으로 간다');
 {
-  const go = SRC.slice(SRC.indexOf('function _vsetGoColl(){'), SRC.indexOf('function openVcCollSettings(){'));
+  // v26-0905-4 — 탭을 여는 일은 _vsetGoTab(id) 한 곳으로 모았다.
+  // _vsetGoColl 은 거기에 'coll' 을 넘기는 얇은 껍데기다.
+  const go = SRC.slice(SRC.indexOf('function _vsetGoTab(id,flash){'), SRC.indexOf('// 저절로 열린 탭의 이름을'));
   sc.eq('말씀설정을 연다', go.includes('openVerseSettingsModal();'), true);
-  sc.eq("'coll' 탭을 고른다", go.includes(`.includes("'coll'")`), true);
+  sc.eq('넘겨받은 탭을 고른다', go.includes(`.includes("'"+id+"'")`), true);
   sc.eq('탭 버튼이 없으면 함수로 직접',
-        go.includes("switchVerseSettingsTab('coll',null);"), true);
+        go.includes("switchVerseSettingsTab(id,null);"), true);
+  sc.eq("책 버튼은 'coll' 을 넘긴다", SRC.includes("function _vsetGoColl(){_vsetGoTab('coll');}"), true);
 }
 
 console.log('\n시나리오 3 — 닫으면 원래 팝업으로 되돌아간다 (20-2)');
