@@ -269,11 +269,11 @@ console.log('\n시나리오 10 — 좌측 정렬 칩: 최신순 ⇄ 등록순 (H
         /_VL_PERIODS=\[\['week','주간'\],\['month','월간'\],\['year','연간'\],\['all','전체'\],\['custom','직접'\]\]/.test(SRC_DEV), true);
 }
 
-console.log('\n시나리오 11 — 저장 단추는 공유 바로 위, 늘 보인다 (HB)');
+console.log('\n시나리오 11 — 저장 단추는 좋아요 바로 아래, 늘 보인다 (HB)');
 {
   const acts = (SRC_DEV.match(/id="vfAct(?:keep|like|mem|deeper|even|share)"/g)||[])
                  .map(x=>x.slice(9,-1));
-  sc.eq('차례가 …저장·공유', acts.slice(-2), ['keep','share']);
+  sc.eq('차례가 좋아요·저장…', acts.slice(0,2), ['like','keep']);
   // 예전처럼 감추지 않는다 — BLOCK7 에도 꺼내 볼 자리가 생겼다
   sc.eq('감추던 규칙을 없앴다', SRC_DEV.includes('.vf-act-keep{display:none;}'), false);
   sc.eq('제품·종류를 가리지 않는다',
