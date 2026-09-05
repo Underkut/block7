@@ -77,7 +77,9 @@ eval(
   '_vcScope,_vcScopeIsHome,_vcScopeCount,_vcScopeKey,_vcScopeLabel,_vcView,_vcSyncKind,' +
   '_vcListItems,_vcKeyOf,_vcVerseOf,_vcReactKeyOf,vcSetView,vcToggleView,_VC_TYPE_KIND,' +
   '_vcScopeParts,_vcHeadMode,setVcHeadMode,_vcAutoOn,_vcAutoMin,_vcAutoOffset,_vcAutoSlot,' +
-  'setVcAuto,setVcAutoMin,VC_AUTO_STEPS,VC_AUTO_LABEL,VC_AUTO_DEFAULT,_vcHiSplit});'
+  'setVcAuto,setVcAutoMin,VC_AUTO_STEPS,VC_AUTO_LABEL,VC_AUTO_DEFAULT,_vcHiSplit,' +
+  '_vcRollMode,_vcRollSec,_vcRollOpt,setVcRollMode,setVcRollSec,_rollSecLabel,' +
+  'VC_ROLL_SECS,VC_ROLL_DEFAULT});'
 );
 
 const reset = () => {
@@ -513,6 +515,43 @@ console.log('\n시나리오 7-F — 헤더에 무엇을 보여줄까');
         _vcScopeLabel({ ks: ['like', 'mem'], ls: ['여행'], mode: 'or' }), '좋아요 외 2');
 }
 
+// ═══ 7-F2. 이름 넘김 방식·간격 (v26-0905-8, HB) ═══
+// ⚠️ 이 두 값은 위젯 헤더와 **그 카드로 연 전체화면 윗줄**이 함께 쓴다.
+console.log('\n시나리오 7-F2 — 넘김 방식과 시간 간격');
+{
+  reset();
+  const id = _vcCreate(null, null);
+  const cfg = _vcGet(id);
+
+  sc.eq('기본은 플립', _vcRollMode(cfg), 'flip');
+  sc.eq('기본 간격은 4초', _vcRollSec(cfg), 4);
+  setVcRollMode(id, 'dissolve');
+  sc.eq('디졸브로 바꾼다', _vcRollMode(cfg), 'dissolve');
+  setVcRollMode(id, '엉뚱');
+  sc.eq('모르는 값은 플립으로', _vcRollMode(cfg), 'flip');
+
+  sc.eq('눈금은 3초부터 10분까지', [VC_ROLL_SECS[0], VC_ROLL_SECS[VC_ROLL_SECS.length - 1]], [3, 600]);
+  sc.eq('눈금이 작은 것부터', VC_ROLL_SECS.every((v, i) => i === 0 || v > VC_ROLL_SECS[i - 1]), true);
+  setVcRollSec(id, 0);
+  sc.eq('맨 왼쪽은 3초', _vcRollSec(cfg), 3);
+  setVcRollSec(id, VC_ROLL_SECS.length - 1);
+  sc.eq('맨 오른쪽은 10분', _vcRollSec(cfg), 600);
+  setVcRollSec(id, 999);
+  sc.eq('범위를 넘겨도 안전', _vcRollSec(cfg), 600);
+  setVcRollSec(id, 5);
+  sc.eq('가운데 눈금', _vcRollSec(cfg), VC_ROLL_SECS[5]);
+  cfg.rollSec = 7;                       // 눈금에 없는 값이 흘러들어와도
+  sc.eq('눈금에 없으면 기본값으로', _vcRollSec(cfg), 4);
+
+  sc.eq('초는 초로, 분은 분으로 적는다',
+        [_rollSecLabel(3), _rollSecLabel(60), _rollSecLabel(600), _rollSecLabel(90)],
+        ['3초', '1분', '10분', '1분 30초']);
+
+  // 전체화면에 넘길 꾸러미
+  cfg.rollSec = 30; cfg.rollMode = 'dissolve';
+  sc.eq('전체화면에 넘길 값', _vcRollOpt(cfg), { mode: 'dissolve', sec: 30 });
+}
+
 // ═══ 7-G. 명제의 대표 문구 (v26-0904-10, HB) ═══
 // 본문 안에 있으면 예전처럼 본문을 칠하고, 본문에 없으면 칠할 자리가 없어
 // 그대로 사라졌다 — 그때만 카드 좌상단에 작은 글씨로 얹는다.
@@ -618,8 +657,20 @@ console.log('\n시나리오 9 — 화면 연결');
   // 위젯 끄기 드롭존은 2단에서도
   sc.eq('2단에서도 위젯을 끌 수 있다', SRC.includes("onOff:(mode>=2&&type!=='todo')?()=>{"), true);
   // 이름 롤링
-  sc.eq('이름 롤링 부품', SRC.includes('function _rollHTML(parts,style)') && SRC.includes('function _rollFit(root)'), true);
-  sc.eq('시계는 앱 전체에 하나', SRC.includes('function _rollStart(){if(!_rollTimer)_rollTimer=setInterval(_rollTick,ROLL_MS);}'), true);
+  sc.eq('이름 롤링 부품', SRC.includes('function _rollHTML(parts,style,opt)') && SRC.includes('function _rollFit(root)'), true);
+  sc.eq('시계는 앱 전체에 하나', SRC.includes('function _rollStart(){if(!_rollTimer)_rollTimer=setInterval(_rollTick,ROLL_TICK_MS);}'), true);
+  // v26-0905-8 — 넘김 방식·간격은 요소가 들고 있고, 자리는 시계에서 곧장 센다
+  sc.eq('요소가 방식과 간격을 들고 있다',
+        SRC.includes('data-roll-mode="${mode}" data-roll-ms="${ms}"'), true);
+  sc.eq('자리를 세어 들고 있지 않는다 (다시 그려도 이어진다)',
+        SRC.includes('return Math.floor(Date.now()/ms)%n;'), true);
+  sc.eq('디졸브는 높이를 잰 뒤에 겹친다',
+        /el\.classList\.remove\('rd'\);[\s\S]{0,320}el\.classList\.add\('rd'\);/.test(SRC), true);
+  sc.eq('전체화면 상단도 그 값을 받는다',
+        SRC.includes("_vcScopeParts(sc),_vcRollOpt(cfg));"), true);
+  sc.eq('텍스트를 골라야 한 겹 더 열린다',
+        SRC.includes("const headExtra=_vcHeadMode(cfg)!=='text'?'':`"), true);
+  sc.eq('시간 간격은 슬라이더', SRC.includes('id="vcRollSecSlider"'), true);
   sc.eq('여럿이면 세로로 넘긴다', SRC.includes('class="roll-v"'), true);
   sc.eq('하나인데 길면 가로로 흐른다', SRC.includes('class="roll-h"'), true);
   sc.eq('전체화면 상단도 같은 부품을 쓴다', SRC.includes('${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel]'), true);
