@@ -664,14 +664,23 @@ console.log('\n시나리오 9 — 화면 연결');
         SRC.includes('data-roll-mode="${mode}" data-roll-ms="${ms}"'), true);
   sc.eq('자리를 세어 들고 있지 않는다 (다시 그려도 이어진다)',
         SRC.includes('return Math.floor(Date.now()/ms)%n;'), true);
-  sc.eq('디졸브는 높이를 잰 뒤에 겹친다',
-        /el\.classList\.remove\('rd'\);[\s\S]{0,320}el\.classList\.add\('rd'\);/.test(SRC), true);
+  // ⚠️⚠️ v26-0905-9, HB 신고 — "디졸브로 두면 전체화면 헤더에 제목이 아예 안
+  //    보인다." 절대배치로 겹치면 흐름에 남는 것이 없어 **가로 폭이 0** 이 된다.
+  //    위젯 헤더는 flex:1 이 폭을 주어 멀쩡했고, 전체화면 윗줄만 사라졌다.
+  sc.eq('디졸브는 grid 한 칸에 포갠다',
+        /\.roll-v\.rd \.roll-track\{display:grid;/.test(SRC), true);
+  sc.eq('디졸브에 절대배치를 쓰지 않는다',
+        /\.roll-v\.rd \.roll-item\{grid-area:1\/1;/.test(SRC), true);
+  sc.eq('겹침 표식은 HTML 이 들고 나온다',
+        SRC.includes("class=\"roll-v${mode==='dissolve'?' rd':''}\""), true);
+  sc.eq('플립은 여유 있게 0.7초',
+        /\.roll-v \.roll-track\{display:block;transition:transform \.7s cubic-bezier/.test(SRC), true);
   sc.eq('전체화면 상단도 그 값을 받는다',
         SRC.includes("_vcScopeParts(sc),_vcRollOpt(cfg));"), true);
   sc.eq('텍스트를 골라야 한 겹 더 열린다',
         SRC.includes("const headExtra=_vcHeadMode(cfg)!=='text'?'':`"), true);
   sc.eq('시간 간격은 슬라이더', SRC.includes('id="vcRollSecSlider"'), true);
-  sc.eq('여럿이면 세로로 넘긴다', SRC.includes('class="roll-v"'), true);
+  sc.eq('여럿이면 세로로 넘긴다', SRC.includes('class="roll-v${mode==='), true);
   sc.eq('하나인데 길면 가로로 흐른다', SRC.includes('class="roll-h"'), true);
   sc.eq('전체화면 상단도 같은 부품을 쓴다', SRC.includes('${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel]'), true);
   sc.eq('상단 이름을 말줄임으로 자르지 않는다',

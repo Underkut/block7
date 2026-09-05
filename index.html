@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-8  [production]  -->
+<!-- BLOCK7  v. 26-0905-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3019,16 +3019,20 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
       다시 그릴 때마다 타이머가 새어 나와 쌓인다. */
 .roll-v{position:relative;overflow:hidden;display:inline-block;vertical-align:middle;
   min-width:0;max-width:100%;}
-.roll-v .roll-track{display:block;transition:transform .42s cubic-bezier(.3,.9,.3,1);}
+/* 밀어 올리는 데 걸리는 시간 — 눈이 따라갈 만큼 여유 있게, 끝은 길게 눕는
+   곡선으로 (v26-0905-9, HB "조금 여유있고 차분하게"). */
+.roll-v .roll-track{display:block;transition:transform .7s cubic-bezier(.25,1,.3,1);}
 /* 세로로 넘기는 줄 **하나하나**도 자리보다 길면 가로로 흐른다 (겹쳐 쓴다) */
 .roll-v .roll-item{display:block;}
-/* 디졸브(.rd) — 줄을 밀어 올리는 대신 **겹쳐 놓고 서로 스며들게** 한다
-   (v26-0905-8, HB). 줄을 겹쳐 쌓으므로 상자 높이를 잃는다 → _rollFit 이
-   높이를 먼저 재어 박아 둔 **뒤에** 이 클래스를 붙인다. HTML 에 미리
-   써 두면 잴 때 이미 겹쳐 있어 높이가 0 이 된다. */
-.roll-v.rd .roll-track{position:relative;height:100%;transform:none!important;transition:none;}
-.roll-v.rd .roll-item{position:absolute;left:0;right:0;top:0;
-  opacity:0;transition:opacity var(--roll-fade,.6s) ease;}
+/* 디졸브(.rd) — 줄을 밀어 올리는 대신 **겹쳐 놓고 서로 스며들게** 한다.
+   ⚠️⚠️ 겹치는 데 **절대배치를 쓰지 말 것** (v26-0905-9, HB 신고 — "디졸브로
+      두면 전체화면 헤더에 제목이 아예 안 보인다"). 절대배치는 흐름에 남는
+      것이 없어 상자의 **가로 폭이 0** 이 된다. 위젯 헤더는 flex:1 이 폭을
+      주어 멀쩡했고, 전체화면 윗줄은 폭을 줄 것이 없어 통째로 사라졌다.
+      → grid 한 칸에 모두 포갠다. 폭·높이는 가장 넓은 줄이 정해 주고
+        겹치기는 그대로 된다 (흐름 안에 남는다). */
+.roll-v.rd .roll-track{display:grid;transform:none!important;transition:none;}
+.roll-v.rd .roll-item{grid-area:1/1;opacity:0;transition:opacity var(--roll-fade,.9s) ease;}
 .roll-v.rd .roll-item.on{opacity:1;}
 .roll-h{display:block;overflow:hidden;min-width:0;max-width:100%;}
 .roll-h > span{display:inline-block;white-space:nowrap;}
@@ -4235,7 +4239,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-8";
+const APP_VERSION = "v. 26-0905-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19311,7 +19315,7 @@ function _rollHTML(parts,style,opt){
   if(a.length===1)return`<span class="roll-h"${st}><span>${esc(a[0])}</span></span>`;
   const mode=(opt&&opt.mode==='dissolve')?'dissolve':'flip';
   const ms=Math.max(1000,Math.round((opt&&opt.sec?opt.sec:ROLL_MS/1000)*1000));
-  return`<span class="roll-v" data-roll-n="${a.length}" data-roll-i="-1"`
+  return`<span class="roll-v${mode==='dissolve'?' rd':''}" data-roll-n="${a.length}" data-roll-i="-1"`
     +` data-roll-mode="${mode}" data-roll-ms="${ms}"${st}>`
     +`<span class="roll-track">${a.map(x=>
         `<span class="roll-item"><span class="roll-h"><span>${esc(x)}</span></span></span>`).join('')}</span></span>`;
@@ -19351,16 +19355,12 @@ function _rollFit(root){
     const n=parseInt(el.getAttribute('data-roll-n'),10)||1;
     const tr=el.querySelector('.roll-track');
     if(!tr||n<2)return;
-    // ⚠️ 높이는 **겹쳐 놓기 전에** 잰다 (디졸브는 줄을 겹쳐 쌓아 높이를 잃는다)
-    el.classList.remove('rd');
+    // 상자 높이는 한 줄 몫으로 (플립은 n 줄짜리 띠를 잘라 보여 주기 때문이다).
+    // 디졸브는 grid 한 칸이라 재도 한 줄이 나온다 — 두 방식이 같은 길을 쓴다.
     const one=tr.firstElementChild;
     if(one){
       const h=one.getBoundingClientRect().height;
       if(h>0)el.style.height=h+'px';
-    }
-    if(el.getAttribute('data-roll-mode')==='dissolve'){
-      el.classList.add('rd');
-      tr.style.transform='';
     }
     _rollShow(el,n,_rollIdx(el,n));
   });
