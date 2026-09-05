@@ -299,7 +299,11 @@ console.log('\n시나리오 11 — 저장 단추는 좋아요 바로 아래, 늘
   sc.eq('가운데에 놓는다',
         /justify-content:center;padding-top:10px;">\s*<button class="keep-pick-ok"/.test(SRC_DEV), true);
   sc.eq('ESC 로도 닫힌다', /\['keepPickModal',\s*\(\)=>closeKeepPicker\(\)\]/.test(SRC_DEV), true);
-  sc.eq('바깥을 눌러도 닫힌다', SRC_DEV.includes("['keepPickOverlay','keepPickModal']"), true);
+  // ⚠️ 예전에는 전체화면 숨김 명단(_vfHideCovers)의 짝 이름으로 이것을 확인했다.
+  //    그 명단이 v26-0905-12 에 클래스 훑기로 바뀌어 짝 이름이 사라졌다 —
+  //    애초에 '바깥 누르면 닫힘'을 하는 것은 덮개의 onclick 이므로 그것을 본다.
+  sc.eq('바깥을 눌러도 닫힌다',
+        /<div class="event-modal-overlay" id="keepPickOverlay"[^>]*onclick="closeKeepPicker\(\)"/.test(SRC_DEV), true);
 }
 
 console.log('\n시나리오 12 — 저장 기록은 예전과 **같은 자리**에 남는다');

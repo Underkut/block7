@@ -13,8 +13,16 @@ console.log('시나리오 1 — 폴더 팝업과 전체화면 제목은 아이�
 
 console.log('\n시나리오 2 — 전체화면이 아래의 폴더 메뉴까지 숨겼다가 복원한다');
 {
+  // v26-0905-12 — 숨길 것을 **이름표로 적지 않는다.** 팝업을 새로 만들 때마다
+  // 명단에 넣어야 했고 계속 빠뜨렸다(파이차트 팝업이 실제로 그랬다).
+  // 이제는 클래스로 훑는다 — 좌상단 폴더 메뉴는 .task-menu 계열이라 저절로 걸린다.
   const hide = slice('function _vfHideCovers(){', 'function closeVerseFull');
-  sc.eq('좌상단 메뉴와 덮개를 숨김 명단에 넣는다', hide.includes("['logoMenuOverlay','logoMenu']"), true);
+  sc.eq('좌상단 메뉴가 훑는 클래스에 든다',
+        SRC.includes("const _VF_COVER_SEL='.event-modal-overlay,.event-modal,.task-menu-overlay,.task-menu,#collEditPage'"), true);
+  sc.eq('좌상단 메뉴가 실제로 그 클래스를 쓴다',
+        SRC.includes('<div class="task-menu-overlay" id="logoMenuOverlay"') &&
+        SRC.includes('<div class="task-menu" id="logoMenu"'), true);
+  sc.eq('그 클래스로 훑어 숨긴다', hide.includes('document.querySelectorAll(_VF_COVER_SEL).forEach'), true);
   sc.eq('숨긴 display 값을 복원한다', hide.includes('jobs.push(()=>{el.style.display=d;});'), true);
 }
 
