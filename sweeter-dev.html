@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0905-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0905-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3022,6 +3022,14 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .roll-v .roll-track{display:block;transition:transform .42s cubic-bezier(.3,.9,.3,1);}
 /* 세로로 넘기는 줄 **하나하나**도 자리보다 길면 가로로 흐른다 (겹쳐 쓴다) */
 .roll-v .roll-item{display:block;}
+/* 디졸브(.rd) — 줄을 밀어 올리는 대신 **겹쳐 놓고 서로 스며들게** 한다
+   (v26-0905-8, HB). 줄을 겹쳐 쌓으므로 상자 높이를 잃는다 → _rollFit 이
+   높이를 먼저 재어 박아 둔 **뒤에** 이 클래스를 붙인다. HTML 에 미리
+   써 두면 잴 때 이미 겹쳐 있어 높이가 0 이 된다. */
+.roll-v.rd .roll-track{position:relative;height:100%;transform:none!important;transition:none;}
+.roll-v.rd .roll-item{position:absolute;left:0;right:0;top:0;
+  opacity:0;transition:opacity var(--roll-fade,.6s) ease;}
+.roll-v.rd .roll-item.on{opacity:1;}
 .roll-h{display:block;overflow:hidden;min-width:0;max-width:100%;}
 .roll-h > span{display:inline-block;white-space:nowrap;}
 .roll-h.on > span{animation:rollH var(--roll-dur,9s) linear infinite alternate;}
@@ -3030,6 +3038,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 @media (prefers-reduced-motion:reduce){
   .roll-h.on > span{animation:none;}
   .roll-v .roll-track{transition:none;}
+  .roll-v.rd .roll-item{transition:none;}
 }
 /* ══ 헤더의 범위 단추 (v26-0904-7) ══
    말씀 목록은 헤더 **왼쪽 끝**, 말씀 카드는 헤더 **가운데**. 누르면 '무엇을
@@ -4226,7 +4235,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0905-7";
+const APP_VERSION = "v. 26-0905-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13569,6 +13578,8 @@ let _vfNavList=null,_vfNavIdx=0,_vfNavLabel='',_vfNavKind=null;
 // ⚠️ _vfNavLabel 은 그대로 **한 덩이 글자**로 남긴다 — 저장 폴더 목록에서
 //    지금 보고 있는 폴더를 가려내는 데(L.n===_vfNavLabel) 쓰이기 때문이다.
 let _vfNavParts=null;
+// 그 위젯이 정해 둔 넘김 방식·간격 (v26-0905-8, HB). 없으면 기본값으로 돈다.
+let _vfNavRoll=null;
 // 가로폭은 그대로, 세로선은 원래보다 약 1.2배 길게. 획은 한결 가는 1.2다.
 // ══ 좌상단·우상단 아이콘의 크기와 선 굵기 (v26-0905-4, HB) ══════════
 // HB — "홈·책갈피·순환셔플·닫기 X 의 **선 굵기가 다 같아야** 한다."
@@ -13696,17 +13707,18 @@ function _vfShufPush(stack,p){
 // 홈을 눌러 놓아둔 직전 필터 — 뜻과 쓰임은 아래 vfHomeAction 에 적어 두었다.
 // (선언을 여기 두는 것은 아래 세 곳이 이 값을 건드리기 때문이다)
 let _vfHomeBack=null;
-function _vfSetNav(list,idx,label,kind,atCollection,parts){
+function _vfSetNav(list,idx,label,kind,atCollection,parts,rollOpt){
   _vfShufReset();
   _vfHomeBack=null;      // 새 필터가 들어왔다 — 홈으로 되돌아갈 옛 필터는 버린다
   _vfHomeAtCollection=!!atCollection;
   _vfNavList=(list&&list.length)?list.slice():null;
   _vfNavIdx=idx||0;_vfNavLabel=label||'';
   _vfNavParts=(Array.isArray(parts)&&parts.length)?parts.slice():null;
+  _vfNavRoll=(rollOpt&&typeof rollOpt==='object')?{mode:rollOpt.mode,sec:rollOpt.sec}:null;
   _vfNavKind=(kind&&_VLIST_KIND_TITLE[kind])?kind:null;
   _vfSyncTopBar();
 }
-function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavKind=null;_vfHomeAtCollection=false;_vfSyncTopBar();}
+function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavRoll=null;_vfNavKind=null;_vfHomeAtCollection=false;_vfSyncTopBar();}
 // ── 지금 보는 것이 '말씀 설정에서 정한 그 모음' 그대로인가 ──────────
 // ⚠️⚠️ v26-0905-4, HB — "채운 홈이 **어떤 동작 뒤에** 나오도록 짜지 말고,
 //    설정한 대로인 상황이면 **언제나** 나오게 하면 되는 것 아니냐."
@@ -13731,7 +13743,7 @@ function _vfAtCollection(){
 function _vfHomeStash(){
   return(_vfNavList||_vfOverrideVerse)?{
     list:_vfNavList?_vfNavList.slice():null,idx:_vfNavIdx,label:_vfNavLabel,
-    parts:_vfNavParts?_vfNavParts.slice():null,kind:_vfNavKind,
+    parts:_vfNavParts?_vfNavParts.slice():null,roll:_vfNavRoll?{..._vfNavRoll}:null,kind:_vfNavKind,
     atColl:!!_vfHomeAtCollection,ov:_vfOverrideVerse
   }:null;
 }
@@ -13743,7 +13755,7 @@ function vfHomeAction(){
     // ⚠️ 지정 구절을 **먼저** 되살린다 — _vfSetNav 안에서 윗줄을 다시 그리는데,
     //    그때 이 값이 없으면 선/채움 판정이 한 번 어긋난 채로 그려진다.
     _vfOverrideVerse=b.ov||null;
-    _vfSetNav(b.list,b.idx,b.label,b.kind,b.atColl,b.parts);   // 여기서 _vfHomeBack 이 비워진다
+    _vfSetNav(b.list,b.idx,b.label,b.kind,b.atColl,b.parts,b.roll);   // 여기서 _vfHomeBack 이 비워진다
     _verseFullRender();
     return;
   }
@@ -13823,7 +13835,7 @@ function _vfSyncTopBar(){
     lb.classList.toggle('vf-keep-title',on&&_vfNavKind==='keep');
     lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;
     lb.innerHTML=on
-      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:''}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;')}</span>`
+      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:''}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',_vfNavRoll)}</span>`
       :'';
     if(on){_rollFit(lb);_rollStart();}
   }
@@ -18175,7 +18187,8 @@ function _vliOpenFullForWidget(id,ref){
   if(list.length){
     const sc=_vcScope(cfg);
     _vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),
-              _vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc),_vcScopeParts(sc));
+              _vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc),
+              _vcScopeParts(sc),_vcRollOpt(cfg));
   }
 }
 let _vliRef=null,_vliKind=null,_vliArmed=true;
@@ -19283,15 +19296,42 @@ function closeVerseAggPopup(){
 // 자리보다 길면** 가로로 흘려보낸다. 위젯 헤더와 전체화면 상단이 같이 쓴다.
 // ⚠️ 시계는 앱 전체에 하나뿐이다 — 요소는 자기 상태를 data-roll-i 에 들고 있어
 //    화면을 다시 그려도 타이머를 새로 만들 필요가 없다.
-const ROLL_MS=2600;
-function _rollHTML(parts,style){
+// 넘김 방식과 간격은 **요소가 들고 있는다** (v26-0905-8, HB) — 말씀카드마다
+// 따로 정하고, 그 카드로 연 전체화면 상단도 같은 값을 그대로 쓴다.
+//   data-roll-mode : 'flip'(밀어 올리기) | 'dissolve'(스며들기)
+//   data-roll-ms   : 한 줄이 머무는 시간
+// ⚠️ 지금 몇 번째 줄인지는 **시계에서 계산**한다 (Math.floor(now/ms)%n).
+//    세어서 들고 있으면 화면을 다시 그릴 때마다 처음으로 돌아가 버린다.
+const ROLL_MS=4000;
+const ROLL_TICK_MS=400;      // 시계가 도는 간격 (바뀐 것만 손댄다)
+function _rollHTML(parts,style,opt){
   const a=(parts||[]).map(x=>String(x==null?'':x).trim()).filter(Boolean);
   if(!a.length)return'';
   const st=style?` style="${style}"`:'';
   if(a.length===1)return`<span class="roll-h"${st}><span>${esc(a[0])}</span></span>`;
-  return`<span class="roll-v" data-roll-n="${a.length}" data-roll-i="0"${st}>`
+  const mode=(opt&&opt.mode==='dissolve')?'dissolve':'flip';
+  const ms=Math.max(1000,Math.round((opt&&opt.sec?opt.sec:ROLL_MS/1000)*1000));
+  return`<span class="roll-v" data-roll-n="${a.length}" data-roll-i="-1"`
+    +` data-roll-mode="${mode}" data-roll-ms="${ms}"${st}>`
     +`<span class="roll-track">${a.map(x=>
         `<span class="roll-item"><span class="roll-h"><span>${esc(x)}</span></span></span>`).join('')}</span></span>`;
+}
+// 지금 보여줄 줄 번호 — 시계에서 곧장 센다
+function _rollIdx(el,n){
+  const ms=Math.max(1000,parseInt(el.getAttribute('data-roll-ms'),10)||ROLL_MS);
+  return Math.floor(Date.now()/ms)%n;
+}
+// 한 줄을 보여 준다 (방식에 따라 밀거나 스미거나)
+function _rollShow(el,n,i){
+  const tr=el.querySelector('.roll-track');
+  if(!tr)return;
+  el.setAttribute('data-roll-i',String(i));
+  if(el.classList.contains('rd')){
+    const kids=tr.children;
+    for(let j=0;j<kids.length;j++)kids[j].classList.toggle('on',j===i);
+  }else{
+    tr.style.transform=`translateY(${-i*100/n}%)`;
+  }
 }
 // 그린 **직후**에 부른다 — 넘치는지는 실제로 재 봐야 안다.
 function _rollFit(root){
@@ -19311,27 +19351,31 @@ function _rollFit(root){
     const n=parseInt(el.getAttribute('data-roll-n'),10)||1;
     const tr=el.querySelector('.roll-track');
     if(!tr||n<2)return;
+    // ⚠️ 높이는 **겹쳐 놓기 전에** 잰다 (디졸브는 줄을 겹쳐 쌓아 높이를 잃는다)
+    el.classList.remove('rd');
     const one=tr.firstElementChild;
     if(one){
       const h=one.getBoundingClientRect().height;
       if(h>0)el.style.height=h+'px';
     }
-    const i=(parseInt(el.getAttribute('data-roll-i'),10)||0)%n;
-    tr.style.transform=`translateY(${-i*100/n}%)`;
+    if(el.getAttribute('data-roll-mode')==='dissolve'){
+      el.classList.add('rd');
+      tr.style.transform='';
+    }
+    _rollShow(el,n,_rollIdx(el,n));
   });
 }
 function _rollTick(){
   document.querySelectorAll('.roll-v[data-roll-n]').forEach(el=>{
     const n=parseInt(el.getAttribute('data-roll-n'),10)||1;
     if(n<2)return;
-    const i=((parseInt(el.getAttribute('data-roll-i'),10)||0)+1)%n;
-    el.setAttribute('data-roll-i',String(i));
-    const tr=el.querySelector('.roll-track');
-    if(tr)tr.style.transform=`translateY(${-i*100/n}%)`;
+    const i=_rollIdx(el,n);
+    if(String(i)===el.getAttribute('data-roll-i'))return;   // 바뀐 것만 손댄다
+    _rollShow(el,n,i);
   });
 }
 let _rollTimer=null;
-function _rollStart(){if(!_rollTimer)_rollTimer=setInterval(_rollTick,ROLL_MS);}
+function _rollStart(){if(!_rollTimer)_rollTimer=setInterval(_rollTick,ROLL_TICK_MS);}
 
 // ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════
 // 다른 위젯은 "타입 하나 = 위젯 하나"다 (_lay() 가 seen Set 으로 중복을 지운다).
@@ -19464,6 +19508,47 @@ function setVcAutoMin(id,m){
   if(v)cfg.ref=_vcKeyOf(v);                                    // 새 간격으로 다시 센다
   cfg.autoAt=_vcAutoSlot(id,cfg);
   save();renderVcSettings();renderLayout();
+}
+// ── 이름 넘김 방식·간격 (v26-0905-8, HB) ──────────────────
+// 이름이 여럿일 때 한 줄씩 어떻게 바뀔지, 몇 초에 한 번 바뀔지.
+// ⚠️ 이 카드로 연 **전체화면 상단**도 같은 값을 그대로 쓴다 (_vcRollOpt 를
+//    _vfSetNav 에 함께 넘긴다) — 두 화면이 따로 놀면 같은 이름인데 다르게 흐른다.
+const VC_ROLL_SECS=[3,4,5,6,8,10,15,20,30,45,60,90,120,180,300,600];
+const VC_ROLL_DEFAULT=4;
+function _vcRollSec(cfg){
+  const n=parseInt(cfg&&cfg.rollSec,10);
+  return VC_ROLL_SECS.includes(n)?n:VC_ROLL_DEFAULT;
+}
+function _vcRollMode(cfg){return(cfg&&cfg.rollMode==='dissolve')?'dissolve':'flip';}
+function _vcRollOpt(cfg){return{mode:_vcRollMode(cfg),sec:_vcRollSec(cfg)};}
+function _rollSecLabel(sec){
+  const n=parseInt(sec,10)||0;
+  if(n<60)return n+'초';
+  return(n%60)?(Math.floor(n/60)+'분 '+(n%60)+'초'):((n/60)+'분');
+}
+function setVcRollMode(id,mode){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  cfg.rollMode=(mode==='dissolve')?'dissolve':'flip';
+  save();renderVcSettings();renderLayout();
+  if(typeof _vfSyncTopBar==='function')_vfSyncTopBar();
+}
+// 슬라이더는 **자리 번호**(0~15)를 준다 — 초를 그대로 주면 눈금이 고르지 않다
+function setVcRollSec(id,idx){
+  const cfg=_vcGet(id);
+  if(!cfg)return;
+  const i=Math.max(0,Math.min(VC_ROLL_SECS.length-1,parseInt(idx,10)||0));
+  cfg.rollSec=VC_ROLL_SECS[i];
+  save();renderVcSettings();renderLayout();
+  if(typeof _vfSyncTopBar==='function')_vfSyncTopBar();
+}
+// 끄는 동안은 글자만 바꾼다 (놓을 때 한 번 저장한다 — 화면 크기 슬라이더와 같은 방식)
+function vcRollSecInput(sl){
+  const i=Math.max(0,Math.min(VC_ROLL_SECS.length-1,parseInt(sl.value,10)||0));
+  const fill=i*100/(VC_ROLL_SECS.length-1);
+  sl.style.background=`linear-gradient(to right, var(--ac) ${fill}%, var(--bd2) ${fill}%)`;
+  const lab=document.getElementById('vcRollSecLabel');
+  if(lab)lab.textContent=_rollSecLabel(VC_ROLL_SECS[i]);
 }
 // 헤더에 범위를 무엇으로 보여줄까 — 'icon'(기존 방식) 또는 'text' (v26-0904-10, HB)
 function _vcHeadMode(cfg){return(cfg&&cfg.headMode==='text')?'text':'icon';}
@@ -20013,7 +20098,8 @@ function vcOpenFull(id){
   _vfOverrideVerse=v;
   openVerseFull(true);
   const sc=_vcScope(cfg);
-  _vfSetNav(list,i,_vcScopeLabel(sc),_vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc),_vcScopeParts(sc));
+  _vfSetNav(list,i,_vcScopeLabel(sc),_vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc),
+            _vcScopeParts(sc),_vcRollOpt(cfg));
 }
 // 어느 컬럼에도 놓여 있지 않은 그 반응의 카드 설정을 찾는다.
 // 목록 ↔ 카드를 오갈 때 배경·글자 크기 설정이 사라지지 않게, 설정은 카드가
@@ -20200,7 +20286,7 @@ function _vcScopeBtnHTML(id,cfg,fl,withName){
   // 아이콘만 서 있는 카드에서만 '+N' 을 덧붙인다 (이름을 보여 주면 이미 안다)
   const extra=parts.length?0:_vcScopeCount(sc)-1;
   return`<button class="vw-scope${withName?'':' vw-scope-c'}" onclick="event.stopPropagation();openVwScope('${id}')" title="무엇을 볼지 고르기">
-      ${txt?'':`<span class="vw-ic">${_vcScopeIcon(sc)}</span>`}${_rollHTML(parts,'flex:1;min-width:0;')}${extra>0?`<span class="vw-more">+${extra}</span>`:''}
+      ${txt?'':`<span class="vw-ic">${_vcScopeIcon(sc)}</span>`}${_rollHTML(parts,'flex:1;min-width:0;',_vcRollOpt(cfg))}${extra>0?`<span class="vw-more">+${extra}</span>`:''}
     </button>`;
 }
 // ── 말씀 목록 모습 한 벌 ──
@@ -20430,6 +20516,29 @@ function renderVcSettings(){
       onclick="setVcHeadMode('${id}','${k}')">${inner}</button>`;
   const hmIcons=['like','mem','keep'].map(k=>
     `<span style="display:inline-flex;align-items:center;color:${k==='like'?'var(--sun-red)':'inherit'};">${_VLIST_KIND_TITLE[k]}</span>`).join('');
+  // 텍스트를 고르면 **한 겹 더** 열린다 — 넘김 방식과 시간 간격 (v26-0905-8, HB)
+  const rmBtn=(k,label)=>`<button class="preset-btn${_vcRollMode(cfg)===k?' on':''}"
+      style="width:auto;min-width:74px;padding:0 14px;font-size:11px;"
+      onclick="setVcRollMode('${id}','${k}')">${label}</button>`;
+  const rsIdx=Math.max(0,VC_ROLL_SECS.indexOf(_vcRollSec(cfg)));
+  const rsFill=rsIdx*100/(VC_ROLL_SECS.length-1);
+  const headExtra=_vcHeadMode(cfg)!=='text'?'':`
+      <div style="margin-top:14px;">
+        <div class="settings-row-label" style="font-size:12px;margin-bottom:6px;">넘김 방식</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">이름이 여럿일 때 한 줄씩 어떻게 바뀔지 골라요. <b>플립</b>은 밀어 올리고, <b>디졸브</b>는 스며들듯 바뀝니다.</div>
+        <div style="display:flex;gap:8px;">${rmBtn('flip','플립')}${rmBtn('dissolve','디졸브')}</div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="settings-row-label" style="font-size:12px;margin-bottom:6px;">시간 간격</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input type="range" class="uiscale-slider" id="vcRollSecSlider"
+            min="0" max="${VC_ROLL_SECS.length-1}" step="1" value="${rsIdx}"
+            style="background:linear-gradient(to right, var(--ac) ${rsFill}%, var(--bd2) ${rsFill}%);"
+            oninput="vcRollSecInput(this)" onchange="setVcRollSec('${id}',this.value)">
+          <span id="vcRollSecLabel" style="font-size:12px;color:var(--tx2);min-width:52px;text-align:right;font-family:var(--font-number);">${_rollSecLabel(_vcRollSec(cfg))}</span>
+        </div>
+        <div class="settings-row-desc" style="margin-top:8px;">3초부터 10분까지. 이 두 가지는 <b>이 카드로 연 전체화면 윗줄</b>에도 그대로 적용돼요.</div>
+      </div>`;
   const _sc=_vcScope(cfg);
   const where=cfg.filter&&cfg.filter.val
     ? `지금은 <b>${esc(_vcFilterLabel(cfg))}</b> 필터 안에서 도는 카드예요. 헤더 가운데를 눌러 풀 수 있어요.`
@@ -20462,7 +20571,7 @@ function renderVcSettings(){
     <div class="settings-section">
       <div class="settings-section-title">제목 표시</div>
       <div class="settings-row-desc" style="margin-bottom:8px;">헤더에 지금 보는 범위를 무엇으로 보여줄지 고릅니다. 텍스트가 헤더보다 길거나 여럿이면 <b>저절로 흘러가요</b>.</div>
-      <div style="display:flex;gap:8px;">${hmBtn('icon',hmIcons)}${hmBtn('text','텍스트')}</div>
+      <div style="display:flex;gap:8px;">${hmBtn('icon',hmIcons)}${hmBtn('text','텍스트')}</div>${headExtra}
     </div>
     <div class="settings-section">
       <div class="settings-section-title">테마</div>

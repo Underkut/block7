@@ -73,7 +73,7 @@ console.log('\n시나리오 3-1 — 홈은 필터를 풀어 말씀 모음 전체
   sc.eq('순환·셔플은 홈 오른쪽 자리다', /\.vf-cycle\{[\s\S]{0,120}left:52px;top:calc\(env\(safe-area-inset-top,0px\) \+ 12px\)/.test(SRC), true);
   sc.eq('홈 색은 순환·셔플과 같다', /\.vf-home\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
   sc.eq('말씀 모음 전체를 보는 위젯은 처음부터 채운 홈 상태를 넘긴다',
-        SRC.includes('_vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),\n              _vcScopeIsHome(sc)?null:(sc.ks[0]||\'keep\'),_vcScopeIsHome(sc),_vcScopeParts(sc));'), true);
+        SRC.includes('_vfSetNav(list,Math.max(0,keys.indexOf(ref)),_vcScopeLabel(sc),\n              _vcScopeIsHome(sc)?null:(sc.ks[0]||\'keep\'),_vcScopeIsHome(sc),\n              _vcScopeParts(sc),_vcRollOpt(cfg));'), true);
   const cardOpen = slice('function vcOpenFull(id){', 'function _vcUnplacedForKind');
   sc.eq('카드 모습으로 연 위젯도 범위가 말씀 모음 전체면 채운 홈 상태를 넘긴다',
         cardOpen.includes("_vcScopeIsHome(sc)?null:(sc.ks[0]||'keep'),_vcScopeIsHome(sc)"), true);
@@ -106,7 +106,7 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
   const one = (mark) => SRC.slice(SRC.indexOf(mark), SRC.indexOf('\n', SRC.indexOf(mark))+1);
   eval(asVar(one("const _VF_HOME_ON_SVG=")));
   eval(asVar(one("const _VF_HOME_OFF_SVG=")));
-  eval(asVar(slice('function _vfSetNav(list,idx,label,kind,atCollection,parts){', 'function _vfClearNav')));
+  eval(asVar(slice('function _vfSetNav(list,idx,label,kind,atCollection,parts,rollOpt){', 'function _vfClearNav')));
   eval(asVar(one('function _vfClearNav()')));
   eval(asVar(slice('function _vfAtCollection(){', 'function _vfHomeStash(){')));
   eval(asVar(slice('function _vfHomeStash(){', 'function vfOpenCollSettings')));

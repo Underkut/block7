@@ -147,7 +147,7 @@ console.log('\n시나리오 5-2 — 셔플에서 뒤로 가면 방금 본 말씀
         SRC.includes('if(stack.length>_VF_SHUF_MAX)stack.shift();'), true);
   // ⚠️ 보던 목록이 바뀌면 자취를 버린다 (다른 목록의 자리를 쓰면 엉뚱해진다)
   sc.eq('목록이 바뀌면 자취를 버린다',
-        /function _vfSetNav\(list,idx,label,kind,atCollection,parts\)\{\s*\n\s*_vfShufReset\(\);/.test(SRC), true);
+        /function _vfSetNav\(list,idx,label,kind,atCollection,parts,rollOpt\)\{\s*\n\s*_vfShufReset\(\);/.test(SRC), true);
   sc.eq('목록을 지울 때도 버린다', SRC.includes('function _vfClearNav(){_vfShufReset();'), true);
 
   // ── 실제로 돌려 본다 ──
