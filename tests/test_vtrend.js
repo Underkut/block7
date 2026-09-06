@@ -211,6 +211,10 @@ console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간
     SRC.includes('class="vtr-mkA"') && SRC.includes('class="vtr-mkB"'), true);
   sc.eq("띠 안에 '최근'·'이전' 을 적는다",
     SRC.includes('>최근</text>') && SRC.includes('>이전</text>'), true);
+  // ⚠️ 글자에는 면을 칠하는 --ac 가 아니라 글자용 --ac-tx 를 쓴다.
+  //    어두운 테마에서 옅은 띠 위에 --ac 를 얹으면 배경에 묻힌다 (v26-0906-3).
+  sc.eq("'최근' 글자는 --ac-tx", /class="vtr-mkAl"[^>]*fill="var\(--ac-tx\)"/.test(SRC), true);
+  sc.eq("'최근' 글자에 --ac 를 쓰지 않는다", /class="vtr-mkAl"[^>]*fill="var\(--ac\)"/.test(SRC), false);
   sc.eq('잡는 자리를 넉넉히 둔다', SRC.includes('class="vtr-mkGrab"'), true);
   sc.eq('손을 뗄 때만 저장한다', /paint\(g\.edge[\s\S]{0,80}vTrInsSet\(cur\);/.test(SRC), true);
   // 인사이트 알약과 그림 띠가 같은 색을 쓴다 (HB 4-2)
@@ -269,7 +273,12 @@ console.log('\n시나리오 9-7 — 그림 안에 이름을 쓰고, 누르면 �
 {
   sc.eq('영역 안에 이름을 쓴다 (띠가 두꺼운 칸에)', /bestI>=0&&bestT>=11/.test(SRC), true);
   sc.eq('선 오른쪽 끝에 이름을 쓴다', /tips\.sort\(\(a,b\)=>a\.y-b\.y\);/.test(SRC), true);
-  sc.eq('겹치면 벌린다', /if\(y-prev<12\)y=prev\+12;/.test(SRC), true);
+  // v26-0906-3 — 선들이 끝에서 한 점으로 모이면 이름이 서로 포개져 못 읽었다.
+  //   ① 위에서부터 벌리고 ② 아래로 넘치면 묶음째 올린 뒤 아래에서부터 다시 벌린다.
+  sc.eq('겹치면 벌린다', /t\.ly=Math\.max\(t\.y-7,prev\+GAP\);/.test(SRC), true);
+  sc.eq('아래로 넘치면 묶음째 밀어 올린다', /if\(over>0\)tips\.forEach\(t=>\{t\.ly-=over;\}\);/.test(SRC), true);
+  sc.eq('올린 뒤 아래에서부터 다시 벌린다',
+    /for\(let i=tips\.length-1;i>=0;i--\)\{ tips\[i\]\.ly=Math\.min\(tips\[i\]\.ly,next-GAP\); next=tips\[i\]\.ly; \}/.test(SRC), true);
   sc.eq('영역·선·이름을 누르면 표의 그 줄과 같은 일을 한다',
     /const clickOf=s=>book\?'':` style="cursor:pointer;" onclick="vDashOpenFilter/.test(SRC), true);
   sc.eq('성경 안(장)에서는 누를 것이 없다', /clickOf=s=>book\?''/.test(SRC), true);
