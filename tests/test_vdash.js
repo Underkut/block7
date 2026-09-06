@@ -232,7 +232,7 @@ console.log('\n시나리오 4-2 — 흐름: 어느 성경이 늘고 줄었나');
     V('로마서 8:2', '나', '', [], '2026-07-17'),
     V('시편 23:1', '다', '', [], '2020-01-01')       // 구간 밖 — 세지 않는다
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, v: 2 };
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
   const d = D._vTrData();
   sc.eq('칸이 8개', d.keys.length, 8);
   const mat = d.all.find(s => s.key === '마태복음');
@@ -254,7 +254,11 @@ console.log('\n시나리오 4-2 — 흐름: 어느 성경이 늘고 줄었나');
   const html = D._vTrInsightHTML(d, rows, h);
   sc.eq('가장 많이 는 것을 짚어 준다', html.includes('<b>마태복음</b>'), true);
   sc.eq('가장 많이 준 것도 짚어 준다', html.includes('<b>로마서</b>'), true);
-  sc.eq('견주는 기간을 거기서 바로 고른다', html.includes('vTrInsSet'), true);
+  // v26-0906-2 — 슬라이더는 없앴다. 구간은 그림 안의 띠를 끌어 바꾼다.
+  sc.eq('인사이트 블럭에 슬라이더가 없다', html.includes('<input type="range"'), false);
+  sc.eq('최근·이전 알약 둘로 보여준다',
+        html.includes('vtr-pill-a') && html.includes('vtr-pill-b'), true);
+  sc.eq('띠를 끌라고 알려 준다', html.includes('그래프의 띠를 끌어'), true);
   // 슬라이더로 견주는 자리를 좁히면 셈도 함께 좁아진다.
   // 8/31·9/1·9/2 는 모두 **같은 주 칸**에 들고 7/15 는 멀리 있다 → 1주만 견주면
   // 그 옛 기록이 '이전' 에서 빠져 0 이 되고, 늘어난 폭이 커진다.
@@ -271,7 +275,7 @@ console.log('\n시나리오 4-3 — 흐름: 갈래(말씀/명제)로 가른다')
     V('마태복음 1:1', '가', '', [], '2026-09-01'),
     V('마태복음 5:3', '설교', '', [], '2026-09-01', { pid: 'P1', books: ['마태복음'] })
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, v: 2 };
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
   sc.eq('전체는 둘 다', D._vTrData().all[0].total, 2);
   ST.settings.vTrPref.tab = 'verse';
   sc.eq('말씀만 하나', D._vTrData().all[0].total, 1);
@@ -285,7 +289,10 @@ console.log('\n시나리오 4-4 — 흐름: 그래프가 실제로 그려진다'
   const keys = ['2026-08-16', '2026-08-23', '2026-08-30'];
   const ser = [{ key: '마태복음', vals: [1, 2, 3], total: 6, ci: 0 }, { key: '로마서', vals: [2, 0, 1], total: 3, ci: 1 }];
   const line = D._vTrChartSVG(keys, ser, 'week', 'line', 520);
-  sc.eq('선 그래프는 polyline 두 줄', (line.match(/<polyline/g) || []).length, 2);
+  // v26-0906-2 — 선마다 **잡기용 투명 선**이 한 겹 더 깔린다 (손가락으로 짚으려고)
+  sc.eq('선 그래프는 계열마다 두 겹 (보이는 선 + 잡는 선)',
+        (line.match(/<polyline/g) || []).length, 4);
+  sc.eq('보이는 선은 눌림을 안 받는다', line.includes('stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"'), true);
   sc.eq('점도 찍는다(칸이 적을 때)', line.includes('<circle'), true);
   const area = D._vTrChartSVG(keys, ser, 'week', 'area', 520);
   sc.eq('비중 그래프는 polygon 두 장', (area.match(/<polygon/g) || []).length, 2);
@@ -342,7 +349,7 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
 
   // 위쪽 전환과 흐름
   sc.eq('분포 ⇄ 흐름 전환이 있다', SRC.includes('id="vDashViewTabs"'), true);
-  sc.eq("전환 값은 두 가지", SRC.includes("const _VDASH_VIEWS=[['pie','분포'],['trend','흐름']];"), true);
+  sc.eq("전환은 흐름이 왼쪽, 분포가 오른쪽", SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포']];"), true);
   sc.eq('흐름을 그리는 곳이 있다', SRC.includes('function renderVDashTrend(){'), true);
   sc.eq('기간 칩은 분포에서만', /per\.style\.display=view==='pie'\?'flex':'none';/.test(SRC), true);
 }

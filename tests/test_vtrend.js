@@ -19,11 +19,21 @@ global._bookOfRef = ref => {
   return m ? m[1] : '';
 };
 global._vDashVerse = () => null;
+global._vgEscAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+global._vDashQ = s => global._vgEscAttr(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+global._bibleRankOfRef = ref => {
+  // 성경 차례 대역 — 창세기·마태복음·로마서 셋만 있으면 이 테스트에는 충분하다
+  const ORDER=['창세기','시편','이사야','마태복음','요한복음','로마서'];
+  const m=String(ref||'').match(/^([가-힣]+)/);
+  const i=ORDER.indexOf(m?m[1]:'');
+  return (i<0?999:i)*1000000;
+};
 // ⚠️ eval 안의 const 는 밖으로 새어 나오지 않는다 (function 만 나온다).
 //    쓸 이름을 한 곳에 적어 돌려받는다 — 이름이 바뀌면 여기서 바로 걸린다.
-const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_vTrPref','_vTrSpan','_vTrInsMax',
+const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref','_vTrSpan','_vTrInsMax',
   '_vTrInsN','_vTrBucketOf','_vTrBucketList','_vTrUnitWord','_vTrChapterKeys','_vTrChapNo',
-  '_vTrDiffHTML'];
+  '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
+  '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML'];
 const API=eval(slice("const _VTR_UNITS=", 'function renderVDashTrend(')+'\n;({'+NAMES.join(',')+'})');
 NAMES.forEach(n=>{
   if(API[n]===undefined){console.error('[로더] 이름이 사라졌어요:',n);process.exit(2);}
@@ -136,6 +146,162 @@ console.log('시나리오 8 — 오갈 때의 팝업 순서');
   const vg = SRC.slice(SRC.indexOf('function vgPick('), SRC.indexOf('function vgTapDateSort('));
   sc.eq('전체화면을 띄운 뒤에 그리드를 닫는다',
     vg.indexOf("el.style.display='flex'") < vg.lastIndexOf('closeVerseGrid()'), true);
+}
+
+// ═══ 9. v26-0906-2 — 처음 자리 · 쉬는 슬라이더 값 · 표 정렬 · 그림 안 이름 ═══
+console.log('\n시나리오 9 — 처음 열었을 때의 자리 (HB 3)');
+{
+  sc.eq('흐름 · 전체 · 말씀 모음 · 성경 · 4주 · 비중',
+    [_VTR_DEFAULTS.tab,_VTR_DEFAULTS.kind,_VTR_DEFAULTS.axis,
+     _VTR_DEFAULTS.unit,_VTR_DEFAULTS.span,_VTR_DEFAULTS.form],
+    ['all','home','book','week',4,'area']);
+  sc.eq('대시보드가 처음 여는 화면은 흐름', /if\(p\.v!==1\)\{p\.v=1;p\.view='trend';\}/.test(SRC), true);
+  sc.eq('흐름 탭이 왼쪽, 분포가 오른쪽',
+    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포']];"), true);
+  // 이미 값이 있는 기기에도 한 번은 닿아야 한다 (번호 이관)
+  ST.settings.vTrPref={kind:'like',axis:'tag',tab:'prop',unit:'month',span:24,form:'line',
+                       off:['x'],exp:['y'],ins:3,book:'로마서',v:2};
+  const p=_vTrPref();
+  sc.eq('옛 기기도 새 자리로 한 번 옮겨진다',
+    [p.kind,p.axis,p.tab,p.unit,p.span,p.form,p.book], ['home','book','all','week',4,'area',null]);
+  sc.eq('옮긴 뒤에는 다시 안 건드린다', (p.kind='like', _vTrPref().kind), 'like');
+  ST.settings.vTrPref=null;
+}
+
+console.log('\n시나리오 9-2 — 쉬는 쪽 슬라이더는 4주=1달 로 맞춘다 (HB 5-2)');
+{
+  sc.eq('달 1 이면 주는 4', _vTrOtherSpan('month',1), 4);
+  sc.eq('달 2 이면 주는 8', _vTrOtherSpan('month',2), 8);
+  sc.eq('달 6 이면 주는 24', _vTrOtherSpan('month',6), 24);
+  sc.eq('달 7 이어도 주는 24 에 머문다', _vTrOtherSpan('month',7), 24);
+  sc.eq('달 24 여도 주는 24', _vTrOtherSpan('month',24), 24);
+  sc.eq('주 1 이면 달은 1', _vTrOtherSpan('week',1), 1);
+  sc.eq('주 4 여도 달은 1', _vTrOtherSpan('week',4), 1);
+  sc.eq('주 5 면 달은 2', _vTrOtherSpan('week',5), 2);
+  sc.eq('주 8 이면 달은 2', _vTrOtherSpan('week',8), 2);
+  sc.eq('주 9 면 달은 3', _vTrOtherSpan('week',9), 3);
+  sc.eq('주 24 면 달은 6', _vTrOtherSpan('week',24), 6);
+}
+
+console.log('\n시나리오 9-3 — 부드러운 슬라이더 (HB 5-1)');
+{
+  sc.eq('<input type=range> 는 흐름 화면에서 없앴다',
+    /vtr-slide[\s\S]{0,400}input type="range"/.test(SRC), false);
+  sc.eq('손으로 만든 레일이 있다', SRC.includes('class="vtr-rail"'), true);
+  const rail=_vTrRailHTML({min:1,max:24,val:12,done:'span',unit:'week',lb:'x',suffix:'주',label:'주'});
+  sc.eq('가운데 값이면 손잡이도 가운데쯤', /left:47\.83%/.test(rail), true);
+  sc.eq('끌린 값은 손을 뗄 때만 저장한다',
+    /el\.dataset\.done;\s*\n\s*if\(fn==='span'\)vTrSpanSet/.test(SRC), true);
+  sc.eq('끄는 동안에는 손잡이와 글자만 바꾼다', /const paint=\(f,v\)=>\{/.test(SRC), true);
+  sc.eq('PC 도 폰도 같은 포인터 이벤트로', SRC.includes("el.addEventListener('pointerdown',down);"), true);
+  sc.eq('넓으면 두 슬라이더를 한 줄에', /@media \(min-width:720px\)\{\s*\n?\s*\.vtr-slides\{flex-direction:row/.test(SRC.replace(/\n\s*/g,'\n')), true);
+}
+
+console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간을 바꾼다 (HB 4)');
+{
+  // 그림 자리 셈과 끌 때의 셈이 **같은 함수**를 쓴다 (따로 세면 손가락과 어긋난다)
+  const g=_vTrGeo(520,12);
+  sc.eq('칸 하나의 폭', Math.round(g.bw), Math.round((520-40)/11));
+  sc.eq('맨 오른쪽 칸의 x', Math.round(g.X(11)), 510);
+  // 오른쪽 끝을 잡으면 h=1, 왼쪽으로 갈수록 커진다
+  sc.eq('오른쪽 끝은 최근 1칸', _vTrHFromX(509,520,12,6), 1);
+  sc.eq('왼쪽 끝은 절반까지만', _vTrHFromX(31,520,12,6), 6);
+  sc.eq('가운데쯤이면 6칸', _vTrHFromX(275,520,12,6), 6);
+  sc.eq('A 띠와 B 띠를 둘 다 그린다',
+    SRC.includes('class="vtr-mkA"') && SRC.includes('class="vtr-mkB"'), true);
+  sc.eq("띠 안에 '최근'·'이전' 을 적는다",
+    SRC.includes('>최근</text>') && SRC.includes('>이전</text>'), true);
+  sc.eq('잡는 자리를 넉넉히 둔다', SRC.includes('class="vtr-mkGrab"'), true);
+  sc.eq('손을 뗄 때만 저장한다', /paint\(g\.edge[\s\S]{0,80}vTrInsSet\(cur\);/.test(SRC), true);
+  // 인사이트 알약과 그림 띠가 같은 색을 쓴다 (HB 4-2)
+  sc.eq('A 알약은 강조색', /\.vtr-pill-a\{background:var\(--vtr-a-bg\);/.test(SRC), true);
+  sc.eq('B 알약은 회색', /\.vtr-pill-b\{background:var\(--vtr-b-bg\);/.test(SRC), true);
+  sc.eq('그림의 A 띠도 강조색', /class="vtr-mkA"[^>]*fill="var\(--ac\)"/.test(SRC), true);
+  sc.eq('그림의 B 띠는 회색', /class="vtr-mkB"[^>]*fill="#8a8a99"/.test(SRC), true);
+}
+
+console.log('\n시나리오 9-5 — 표 정렬 (HB 7)');
+{
+  const D={axis:'book',book:null};
+  const R=(k,late,prev,total)=>({key:k,late,prev,diff:late-prev,total});
+  const rows=[R('로마서',3,1,7),R('마태복음',5,5,9),R('창세기',5,2,4)];
+  sc.eq('기본은 최근 내림차순', _vTrSort().col+'/'+_vTrSort().dir, '1/-1');
+  sc.eq('최근 내림차순 — 같으면 성경순',
+    _vTrSortRows(rows,D,{col:1,dir:-1}).map(r=>r.key), ['창세기','마태복음','로마서']);
+  sc.eq('최근 오름차순', _vTrSortRows(rows,D,{col:1,dir:1}).map(r=>r.key), ['로마서','창세기','마태복음']);
+  sc.eq('1열은 성경 차례 (ㄱㄴㄷ 아님)',
+    _vTrSortRows(rows,D,{col:0,dir:1}).map(r=>r.key), ['창세기','마태복음','로마서']);
+  sc.eq('1열 거꾸로', _vTrSortRows(rows,D,{col:0,dir:-1}).map(r=>r.key), ['로마서','마태복음','창세기']);
+  sc.eq('성경이 아니면 ㄱㄴㄷ',
+    _vTrSortRows([R('하늘',1,0,1),R('가나',1,0,1),R('나라',1,0,1)],{axis:'tag',book:null},{col:0,dir:1})
+      .map(r=>r.key), ['가나','나라','하늘']);
+  sc.eq('성경 안(장)에서는 숫자 차례',
+    _vTrSortRows([R('10장',1,0,1),R('2장',1,0,1),R('1장',1,0,1)],{axis:'book',book:'로마서'},{col:0,dir:1})
+      .map(r=>r.key), ['1장','2장','10장']);
+  sc.eq('변화 열로도 정렬한다', _vTrSortRows(rows,D,{col:3,dir:-1})[0].key, '창세기');
+  sc.eq('합계 열로도 정렬한다', _vTrSortRows(rows,D,{col:4,dir:-1})[0].key, '마태복음');
+  // 제목줄 — 누를 수 있고, 지금 정렬 중인 열에 화살표가 붙는다 (HB 7·8)
+  const th=_vTrTheadHTML({unit:'week',book:null},4,12,{col:1,dir:-1});
+  sc.eq('제목을 누르면 정렬한다', th.includes('onclick="vTrSortBy(1)"'), true);
+  sc.eq('정렬 중인 열에 화살표', th.includes('<span class="vtr-sarrow">▼</span>'), true);
+  sc.eq("합계 앞에 기간을 적는다 (HB 8)", th.includes('12주 합계'), true);
+  sc.eq('최근·이전은 견주는 구간을 따른다',
+    th.includes('최근 4주') && th.includes('이전 4주'), true);
+  sc.eq("성경 안에서는 1열 이름이 '장'",
+    _vTrTheadHTML({unit:'week',book:'로마서'},4,12,{col:1,dir:-1}).includes('>장<'), true);
+}
+
+console.log('\n시나리오 9-6 — 표 이름 칸을 범례 색으로 채운다 (HB 9-4)');
+{
+  const d={axis:'book',book:null};
+  const r={key:'로마서',late:3,prev:1,diff:2,total:7};
+  const withC=_vTrRowHTML(r,d,4,{color:'#5a70f8'});
+  sc.eq('이름 칸에 그 색을 깐다', withC.includes('linear-gradient(90deg,#5a70f82e,#5a70f812)'), true);
+  sc.eq('왼쪽 끝에 진한 띠', withC.includes('border-left-color:#5a70f8'), true);
+  sc.eq('색이 없으면 안 칠한다', _vTrRowHTML(r,d,4,{}).includes('linear-gradient'), false);
+  sc.eq('이름을 누르면 그 목록으로', withC.includes("vDashOpenFilter('book','로마서')"), true);
+  // 성경 하나를 들여다볼 때 '장' 은 걸어 줄 필터가 없다 → 링크로 만들지 않는다
+  const chap=_vTrRowHTML({key:'3장',late:1,prev:0,diff:1,total:1},{axis:'book',book:'로마서'},4,{});
+  sc.eq('장 줄은 링크가 아니다', chap.includes('vDashOpenFilter'), false);
+}
+
+console.log('\n시나리오 9-7 — 그림 안에 이름을 쓰고, 누르면 목록으로 (HB 9-1~9-3)');
+{
+  sc.eq('영역 안에 이름을 쓴다 (띠가 두꺼운 칸에)', /bestI>=0&&bestT>=11/.test(SRC), true);
+  sc.eq('선 오른쪽 끝에 이름을 쓴다', /tips\.sort\(\(a,b\)=>a\.y-b\.y\);/.test(SRC), true);
+  sc.eq('겹치면 벌린다', /if\(y-prev<12\)y=prev\+12;/.test(SRC), true);
+  sc.eq('영역·선·이름을 누르면 표의 그 줄과 같은 일을 한다',
+    /const clickOf=s=>book\?'':` style="cursor:pointer;" onclick="vDashOpenFilter/.test(SRC), true);
+  sc.eq('성경 안(장)에서는 누를 것이 없다', /clickOf=s=>book\?''/.test(SRC), true);
+}
+
+console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
+{
+  sc.eq('늘 있는 빈 칸이 × 를 오른쪽 끝으로 민다', SRC.includes('<div class="vdash-hdgap"></div>'), true);
+  sc.eq('빈 칸이 늘어난다', /\.vdash-hdgap\{flex:1 1 auto;/.test(SRC), true);
+  sc.eq('기간 칩은 이제 늘어나지 않는다', SRC.includes('id="vDashPeriods" style="display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex:0 1 auto;'), true);
+  sc.eq('윗줄에 말씀 모음 설정 단추가 있다', SRC.includes('onclick="vDashOpenCollSettings()"'), true);
+  sc.eq('그 단추는 말씀모음 탭을 열고 이름을 반짝인다', /function vDashOpenCollSettings\(\)\{[\s\S]{0,200}_vsetGoTab\('coll',true\);/.test(SRC), true);
+  sc.eq('설정을 닫으면 대시보드로 돌아온다', /to==='vdash'&&typeof openVerseDashboard==='function'/.test(SRC), true);
+}
+
+console.log('\n시나리오 9-9 — 성경 이름은 맨 위 가로선 바로 아래 (HB 6)');
+{
+  sc.eq('위쪽에 붙인다', /\.vtr-book\{flex:0 0 auto;max-width:38%;display:flex;align-items:flex-start;/.test(SRC), true);
+}
+
+// ═══ 10. 그래프 폭은 **띄운 뒤에** 잰다 ═══
+// ⚠️ 숨어 있는 동안에는 clientWidth 가 0 이라 늘 280px 짜리로 그려졌다.
+//    폰에서는 화면과 엇비슷해 안 보였고 PC 에서만 반쪽으로 나왔다 (v26-0906-2).
+console.log('\n시나리오 10 — 그래프 폭을 잴 수 있을 때 그린다');
+{
+  const fn = SRC.slice(SRC.indexOf('function openVerseDashboard(){'),
+                       SRC.indexOf('function closeVerseDashboard(){'));
+  sc.eq('먼저 띄우고', fn.indexOf("style.display='flex'") < fn.indexOf('renderVerseDashboard()'), true);
+  sc.eq('그 다음 그린다', fn.includes('renderVerseDashboard();'), true);
+  sc.eq('창 크기가 바뀌면 다시 그린다',
+    /window\.addEventListener\('resize',\(\)=>\{[\s\S]{0,300}renderVerseDashboard\(\);\},180\);/.test(SRC), true);
+  sc.eq('열려 있을 때만 다시 그린다', /if\(!m\|\|!m\.style\.display\|\|m\.style\.display==='none'\)return;/.test(SRC), true);
 }
 
 sc.done();
