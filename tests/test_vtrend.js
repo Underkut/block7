@@ -390,6 +390,12 @@ console.log('\n시나리오 12 — 성경 지도');
   sc.eq('빈자리 이름은 지도에 안 들어간다',
         /_vDashKeysOf\(e\.ref,'book',e\.v\)\.forEach\(b=>\{\s*\n?\s*if\(_vDashIsPlaceholder\(b\)\)return;/.test(SRC), true);
   sc.eq('안 밟은 장도 칸으로 남긴다', SRC.includes('for(let i=1;i<=total;i++){'), true);
+  // ⚠️ 장 격자는 누른 칸이 있는 쪽(구약/신약) 바로 아래에 편다 — 맨 끝에 붙이면
+  //    구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다 (v26-0906-6).
+  sc.eq('구약을 누르면 구약 아래에',
+    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT)+(isOT?chapsHTML:'')"), true);
+  sc.eq('신약을 누르면 신약 아래에',
+    SRC.includes("+grid('신약',BIBLE_ORDER_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
 }
 
 console.log('\n시나리오 12-2 — 연결 · 리듬');

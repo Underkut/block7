@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0906-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0906-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4445,7 +4445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0906-5";
+const APP_VERSION = "v. 26-0906-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -20380,11 +20380,10 @@ function renderVDashMap(){
   html+=`<div class="vmap-sum">${lines.join('<br>')}</div>`;
   const grid=(title,books)=>`<div class="vmap-sect">${title}</div><div class="vmap-grid">`+
     books.map(b=>_vMapCellHTML(b,stats.get(b),mode,maxN,nowKey,p.mapBook===b)).join('')+`</div>`;
-  html+=grid('구약',BIBLE_ORDER_OT)+grid('신약',BIBLE_ORDER_NT);
-  html+=`<div class="vmap-legend"><span>${mode==='aged'?'최근':'적게'}</span>`+
-    [0.2,0.4,0.6,0.8,1].map(f=>`<span class="vmap-sw" style="background:${_vMapShade(f,mode==='aged')};"></span>`).join('')+
-    `<span>${mode==='aged'?'오래됨':'많이'}</span>`+
-    `<span class="vmap-sw" style="margin-left:8px;"></span><span>아직 없음</span></div>`;
+  // ⚠️ 장 격자는 **누른 칸이 있는 쪽 바로 아래**에 편다 (v26-0906-5).
+  //    맨 끝에 붙이면 구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다.
+  let chapsHTML='';
+  const isOT=p.mapBook&&BIBLE_ORDER_OT.indexOf(p.mapBook)>=0;
   // 고른 성경의 장 격자 — 그 책의 전체 장을 다 깔고, 다룬 장만 칠한다
   if(p.mapBook){
     const b=p.mapBook, g=stats.get(b);
@@ -20404,7 +20403,7 @@ function renderVDashMap(){
         `title="${esc(b)} ${i}장${n?' · '+n:' — 아직 없어요'}">${i}</div>`;
     }
     const hit=[...chap.keys()].length;
-    html+=`<div class="vmap-chaps"><div class="vmap-chaphd">`+
+    chapsHTML=`<div class="vmap-chaps"><div class="vmap-chaphd">`+
       `<span class="vmap-chapnm">${esc(b)}</span>`+
       `<span style="font-size:10px;color:var(--tx3);">${total}장 중 ${hit}장</span>`+
       `<span style="flex:1;"></span>`+
@@ -20416,6 +20415,12 @@ function renderVDashMap(){
       (total?`<div class="vmap-chapgrid">${cells}</div>`
             :`<div class="vdash-empty">장 수를 모르는 책이에요</div>`)+`</div>`;
   }
+  html+=grid('구약',BIBLE_ORDER_OT)+(isOT?chapsHTML:'')
+      +grid('신약',BIBLE_ORDER_NT)+(p.mapBook&&!isOT?chapsHTML:'');
+  html+=`<div class="vmap-legend"><span>${mode==='aged'?'최근':'적게'}</span>`+
+    [0.2,0.4,0.6,0.8,1].map(f=>`<span class="vmap-sw" style="background:${_vMapShade(f,mode==='aged')};"></span>`).join('')+
+    `<span>${mode==='aged'?'오래됨':'많이'}</span>`+
+    `<span class="vmap-sw" style="margin-left:8px;"></span><span>아직 없음</span></div>`;
   box.innerHTML=html;
 }
 // ── 연결 (주제 ↔ 성경) ───────────────────────────────────────────────────
