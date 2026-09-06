@@ -19,6 +19,9 @@ global._bookOfRef = ref => {
   return m ? m[1] : '';
 };
 global._vDashVerse = () => null;
+global._vDashRefLabel = r => String(r||'');
+global._vDashIsPlaceholder = k => ['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'].indexOf(String(k))>=0;
+global.todayKey = () => '2026-09-06';
 global._vgEscAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 global._vDashQ = s => global._vgEscAttr(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 global._bibleRankOfRef = ref => {
@@ -33,8 +36,18 @@ global._bibleRankOfRef = ref => {
 const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref','_vTrSpan','_vTrInsMax',
   '_vTrInsN','_vTrBucketOf','_vTrBucketList','_vTrUnitWord','_vTrChapterKeys','_vTrChapNo',
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
-  '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML'];
-const API=eval(slice("const _VTR_UNITS=", 'function renderVDashTrend(')+'\n;({'+NAMES.join(',')+'})');
+  '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
+  '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyWeeks','_VRHY_WEEKS',
+  '_vMapMode','_vLinkAxis','_vDashScope',
+  'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
+  '_bibleChapters','_bibleShort'];
+// ⚠️ 지도·연결·리듬은 renderVDashTrend 뒤에 있고, 성경 차례·장 수는 훨씬 위에 있다.
+//    세 토막을 이어 붙여 한 통에 넣는다 (이름이 하나라도 사라지면 아래에서 걸린다).
+const SRC_TR =
+  slice("const BIBLE_ORDER_OT=", '\n// ── Alarm scheduler ──') +
+  slice("const _VTR_UNITS=", 'function renderVDashTrend(') +
+  slice('// ══════ 지도 · 연결 · 리듬', '// ── 장절 느슨한 대조 ──');
+const API=eval(SRC_TR+'\n;({'+NAMES.join(',')+'})');
 NAMES.forEach(n=>{
   if(API[n]===undefined){console.error('[로더] 이름이 사라졌어요:',n);process.exit(2);}
   global[n]=API[n];
@@ -156,8 +169,8 @@ console.log('\n시나리오 9 — 처음 열었을 때의 자리 (HB 3)');
      _VTR_DEFAULTS.unit,_VTR_DEFAULTS.span,_VTR_DEFAULTS.form],
     ['all','home','book','week',4,'area']);
   sc.eq('대시보드가 처음 여는 화면은 흐름', /if\(p\.v!==1\)\{p\.v=1;p\.view='trend';\}/.test(SRC), true);
-  sc.eq('흐름 탭이 왼쪽, 분포가 오른쪽',
-    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포']];"), true);
+  sc.eq('흐름 탭이 왼쪽, 분포가 그 다음',
+    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],"), true);
   // 이미 값이 있는 기기에도 한 번은 닿아야 한다 (번호 이관)
   ST.settings.vTrPref={kind:'like',axis:'tag',tab:'prop',unit:'month',span:24,form:'line',
                        off:['x'],exp:['y'],ins:3,book:'로마서',v:2};
@@ -280,8 +293,9 @@ console.log('\n시나리오 9-7 — 그림 안에 이름을 쓰고, 누르면 �
   sc.eq('올린 뒤 아래에서부터 다시 벌린다',
     /for\(let i=tips\.length-1;i>=0;i--\)\{ tips\[i\]\.ly=Math\.min\(tips\[i\]\.ly,next-GAP\); next=tips\[i\]\.ly; \}/.test(SRC), true);
   sc.eq('영역·선·이름을 누르면 표의 그 줄과 같은 일을 한다',
-    /const clickOf=s=>book\?'':` style="cursor:pointer;" onclick="vDashOpenFilter/.test(SRC), true);
-  sc.eq('성경 안(장)에서는 누를 것이 없다', /clickOf=s=>book\?''/.test(SRC), true);
+    /const clickOf=s=>[\s\S]{0,80}onclick="vDashOpenFilter/.test(SRC), true);
+  sc.eq('성경 안(장)·빈자리 이름에서는 누를 것이 없다',
+    SRC.includes("const clickOf=s=>(book||_vDashIsPlaceholder(s.key))?''"), true);
 }
 
 console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
@@ -311,6 +325,103 @@ console.log('\n시나리오 10 — 그래프 폭을 잴 수 있을 때 그린다
   sc.eq('창 크기가 바뀌면 다시 그린다',
     /window\.addEventListener\('resize',\(\)=>\{[\s\S]{0,300}renderVerseDashboard\(\);\},180\);/.test(SRC), true);
   sc.eq('열려 있을 때만 다시 그린다', /if\(!m\|\|!m\.style\.display\|\|m\.style\.display==='none'\)return;/.test(SRC), true);
+}
+
+// ═══ 11. v26-0906-5 — 작은 발견 (HB 2) ═══
+// 상위 여섯에 못 드는 것도 뜻이 있다: 처음 나왔다 / 오랜만이다 / 이 하나뿐이다.
+console.log('\n시나리오 11 — 작은 발견');
+{
+  // 12칸(주). 최근 절반은 6..11
+  const S=(key,vals,top)=>({key,vals,total:vals.reduce((a,b)=>a+b,0),top:top||''});
+  const d={keys:new Array(12).fill(0).map((_,i)=>'k'+i),unit:'week',axis:'tag',book:null,all:[
+    S('은혜',[2,2,2,2,2,2,2,2,2,2,2,2]),                 // 늘 있었다 — 아무것도 아님
+    S('절제',[0,0,0,0,0,0,0,0,0,0,0,1]),                 // 처음 + 하나뿐
+    S('회복',[1,0,0,0,0,0,0,0,0,0,0,1]),                 // 오랜만 (6칸 비었다)
+    S('희년',[0,0,0,1,0,0,0,0,0,0,0,0],'창세기 1:1'),    // 옛날에 하나뿐
+    S('인내',[0,0,0,0,0,0,0,0,0,0,1,1]),                 // 처음(둘)
+    S('평강',[1,0,1,0,0,0,0,0,0,0,0,0]),                 // 옛날에만 두 번 — 카드는 아니고 꼬리
+  ]};
+  const f = _vTrFindings(d,6);
+  sc.eq('처음 나온 것을 골라낸다', f.fresh.map(x=>x.s.key).sort(), ['인내','절제']);
+  sc.eq('오랜만인 것을 골라낸다', f.back.map(x=>x.s.key), ['회복']);
+  // '몇 주 만에' — 지난번(0칸)에서 이번(11칸)까지의 거리
+  sc.eq('몇 주 만인지 센다', f.back[0].gap, 11);
+  sc.eq('하나뿐인 것을 골라낸다', f.only.map(x=>x.s.key).sort(), ['절제','희년']);
+  sc.eq('꼬리(1~2회)에는 늘 있던 것이 안 들어간다', f.tail.some(s=>s.key==='은혜'), false);
+  sc.eq('꼬리에 적게 나온 것들이 들어간다',
+        f.tail.map(s=>s.key).sort(), ['인내','절제','평강','회복','희년']);
+
+  const html=_vTrFindingsHTML(d,6);
+  sc.eq('카드가 그려진다', html.includes('vfind-card'), true);
+  sc.eq('세 갈래 이름표', /처음/.test(html)&&/오랜만/.test(html)&&/하나뿐/.test(html), true);
+  // ⚠️ 같은 이름이 카드 두 장에 겹쳐 나오면 안 된다 ('절제'는 처음이자 하나뿐)
+  sc.eq("한 이름은 카드 한 장만", (html.match(/vfind-key" title="절제"/g)||[]).length, 1);
+  sc.eq('카드는 여섯 장까지', (html.match(/vfind-card/g)||[]).length <= 6, true);
+  sc.eq('카드를 누르면 그 목록으로', html.includes("vDashOpenFilter('tag','절제')"), true);
+  sc.eq('카드에 안 든 꼬리는 칩으로', html.includes('vfind-chip'), true);
+  sc.eq('카드로 세운 것은 칩에 또 안 나온다',
+        (html.match(/vfind-chip"[^>]*>절제/g)||[]).length, 0);
+  // 성경 하나를 들여다보는 중에는 걸어 줄 필터가 없다
+  sc.eq('성경 안에서는 안 눌린다',
+        _vTrFindingsHTML(Object.assign({},d,{book:'로마서'}),6).includes('vDashOpenFilter'), false);
+  sc.eq('아무것도 없으면 통째로 안 그린다', _vTrFindingsHTML({keys:[],unit:'week',axis:'tag',book:null,all:[]},1), '');
+}
+
+// ═══ 12. v26-0906-5 — 지도 · 연결 · 리듬 (HB 1) ═══
+console.log('\n시나리오 12 — 성경 지도');
+{
+  sc.eq('66권의 장 수가 있다', BIBLE_CHAPTERS_OT.length+BIBLE_CHAPTERS_NT.length, 66);
+  sc.eq('책 이름 수와 맞는다',
+        [BIBLE_ORDER_OT.length,BIBLE_ORDER_NT.length], [BIBLE_CHAPTERS_OT.length,BIBLE_CHAPTERS_NT.length]);
+  sc.eq('창세기 50장', _bibleChapters('창세기'), 50);
+  sc.eq('시편 150장', _bibleChapters('시편'), 150);
+  sc.eq('오바댜 1장', _bibleChapters('오바댜'), 1);
+  sc.eq('요한계시록 22장', _bibleChapters('요한계시록'), 22);
+  sc.eq('모르는 책은 0', _bibleChapters('없는책'), 0);
+  sc.eq('짧은 이름', [_bibleShort('사무엘상'),_bibleShort('요한계시록'),_bibleShort('시편')], ['삼상','계','시']);
+  // 진하기 — 0 은 부르지 않는다(빈 칸), 1 이면 가장 진하게
+  sc.eq('가장 옅은 칸', _vMapShade(0.1).includes('0.22'), true);
+  sc.eq('가장 진한 칸', _vMapShade(1).includes('1)'), true);
+  sc.eq('묵힘은 따뜻한 색', _vMapShade(1,true).includes('224,164,88'), true);
+  sc.eq('지난 주 수를 센다', _vWeeksSince('2026-08-16','2026-09-06'), 3);
+  sc.eq('같은 날은 0주', _vWeeksSince('2026-09-06','2026-09-06'), 0);
+  sc.eq('날짜가 없으면 아주 큰 수', _vWeeksSince('','2026-09-06'), 999);
+  sc.eq('지도 기본은 횟수 보기', _vMapMode(), 'count');
+  sc.eq('빈자리 이름은 지도에 안 들어간다',
+        /_vDashKeysOf\(e\.ref,'book',e\.v\)\.forEach\(b=>\{\s*\n?\s*if\(_vDashIsPlaceholder\(b\)\)return;/.test(SRC), true);
+  sc.eq('안 밟은 장도 칸으로 남긴다', SRC.includes('for(let i=1;i<=total;i++){'), true);
+}
+
+console.log('\n시나리오 12-2 — 연결 · 리듬');
+{
+  sc.eq('연결의 왼쪽 기본은 태그', _vLinkAxis(), 'tag');
+  sc.eq('짝 열쇠를 안 나오는 글자로 가른다',
+        SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
+  sc.eq('선을 누르면 그 성경으로', /onclick="vDashOpenFilter\('book','\$\{_vDashQ\(r\)\}'\)"/.test(SRC), true);
+  sc.eq('리듬 기본은 반년', _vRhyWeeks(), 26);
+  sc.eq('리듬은 12·26·52 만 받는다', _VRHY_WEEKS.map(x=>x[0]), ['12','26','52']);
+  ST.settings.vTrPref.rhyWeeks='52'; sc.eq('고른 값을 쓴다', _vRhyWeeks(), 52);
+  ST.settings.vTrPref.rhyWeeks='9';  sc.eq('엉뚱한 값이면 반년', _vRhyWeeks(), 26);
+  ST.settings.vTrPref=null;
+  sc.eq('요일 수가 같으면 최다·최소를 말하지 않는다', SRC.includes('요일마다 고르게 보고 있어요'), true);
+  // 세 화면은 흐름과 같은 범위·갈래를 쓴다
+  const scp=_vDashScope();
+  sc.eq('기본 범위는 말씀 모음', [scp.kind,scp.tab], ['home','all']);
+  sc.eq('지도류의 기본 기간은 전체', scp.all, true);
+}
+
+console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
+{
+  sc.eq('화면이 다섯',
+    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];"), true);
+  ['map','link','rhythm'].forEach(v=>{
+    sc.eq(`${v} 를 그리는 곳이 있다`, SRC.includes(`if(view==='${v}'){renderVDash`), true);
+  });
+  // ⚠️ 칩·슬라이더가 늘 흐름을 그리면 지도에서 칩을 눌렀을 때 화면이 튄다
+  sc.eq('설정 칩은 지금 화면을 다시 그린다',
+    /function vTrSet\(key,val\)\{[\s\S]{0,400}renderVerseDashboard\(\);/.test(SRC), true);
+  sc.eq('흐름만 그리던 옛 호출은 한 곳(분기)뿐',
+    (SRC.match(/renderVDashTrend\(\);/g)||[]).length, 1);
 }
 
 sc.done();

@@ -349,7 +349,9 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
 
   // 위쪽 전환과 흐름
   sc.eq('분포 ⇄ 흐름 전환이 있다', SRC.includes('id="vDashViewTabs"'), true);
-  sc.eq("전환은 흐름이 왼쪽, 분포가 오른쪽", SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포']];"), true);
+  // v26-0906-5 — 지도·연결·리듬 셋이 더 붙어 화면이 다섯이 됐다
+  sc.eq("전환은 흐름이 맨 왼쪽", SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],"), true);
+  sc.eq("화면이 다섯", (SRC.match(/const _VDASH_VIEWS=\[\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\]\];/)||[]).length, 1);
   sc.eq('흐름을 그리는 곳이 있다', SRC.includes('function renderVDashTrend(){'), true);
   sc.eq('기간 칩은 분포에서만', /per\.style\.display=view==='pie'\?'flex':'none';/.test(SRC), true);
 }
