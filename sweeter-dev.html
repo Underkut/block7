@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0906-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0906-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3671,7 +3671,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vdash-top{font-size:10px;color:var(--tx2);text-align:center;line-height:1.35;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .vdash-top b{color:var(--ac-tx);font-weight:600;}
-.vdash-ref{font-size:9.5px;color:var(--tx3);font-family:var(--font-number);text-align:center;}
+/* ⚠️ 명제는 여기에 장절이 아니라 **대표 문구 1**이 온다 (v26-0906-5) — 길다.
+   두 줄까지 보이고 넘치면 … 로 자른다. 전체 글은 title 로 뜬다. */
+.vdash-ref{font-size:9.5px;color:var(--tx3);font-family:var(--font-number);text-align:center;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word;line-height:1.3;}
 .vdash-empty{font-size:10px;color:var(--tx3);opacity:.6;padding:16px 0;}
 .vdash-pie{cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
 .vdash-pie:hover{opacity:.82;}
@@ -3794,6 +3798,68 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vtr-subrow td{color:var(--tx3);}
 .vtr-subrow td:nth-child(1){padding-left:19px;color:var(--tx2);}
 .vtr-subname{font-size:11px;}
+/* ── 작은 발견 (v26-0906-5, HB 2) ────────────────────────────────────────
+   상위 몇 개만 크게 보이면 나머지는 영영 안 보인다. 횟수는 적어도 **뜻이 있는**
+   것들(처음 나온 것 · 오랜만인 것 · 하나뿐인 것)을 따로 건져 카드로 보여준다. */
+.vfind{margin-top:12px;}
+.vfind-hd{font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.02em;margin-bottom:6px;}
+.vfind-row{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding-bottom:4px;
+  -webkit-overflow-scrolling:touch;}
+.vfind-card{flex:0 0 auto;min-width:112px;max-width:170px;padding:7px 9px 8px;border-radius:9px;
+  background:var(--s2,rgba(255,255,255,.02));cursor:pointer;-webkit-tap-highlight-color:transparent;
+  border-left:3px solid var(--bd2);}
+.vfind-card.k-new{border-left-color:#4bb3a6;}
+.vfind-card.k-back{border-left-color:#e0a458;}
+.vfind-card.k-only{border-left-color:#c2668f;}
+.vfind-tag{font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:.02em;}
+.vfind-card.k-new .vfind-tag{color:#3f9e91;}
+.vfind-card.k-back .vfind-tag{color:#c08636;}
+.vfind-card.k-only .vfind-tag{color:#b0567f;}
+.vfind-key{font-size:12px;font-weight:700;color:var(--tx);margin:2px 0 1px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vfind-say{font-size:9.5px;color:var(--tx3);line-height:1.35;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+/* 적게 나온 것들 — 칩으로 죽 늘어놓는다 (하나하나가 눌러 들어가는 문이다) */
+.vfind-tail{display:flex;flex-wrap:wrap;gap:5px 8px;margin-top:8px;}
+.vfind-chip{font-size:10.5px;color:var(--tx2);cursor:pointer;-webkit-tap-highlight-color:transparent;
+  padding:2px 7px;border-radius:999px;background:var(--s2,rgba(255,255,255,.03));white-space:nowrap;}
+.vfind-chip b{color:var(--tx3);font-weight:400;font-family:var(--font-number);margin-left:3px;}
+/* ── 성경 지도 (v26-0906-5, HB 1) ───────────────────────────────────────
+   66권을 다 깔아 두고 **안 밟은 곳은 빈 칸**으로 남긴다. 많이 본 곳만
+   보여주는 다른 화면들이 못 하는 일이 이것이다. */
+.vmap-sect{font-size:10px;font-weight:700;color:var(--tx3);margin:10px 0 5px;letter-spacing:.02em;}
+.vmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px;}
+.vmap-cell{aspect-ratio:1/1;border-radius:6px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;border:1px solid var(--bd2);
+  font-size:10px;color:var(--tx2);line-height:1;overflow:hidden;}
+.vmap-cell.on{border-color:transparent;color:#fff;}
+.vmap-cell.zero{opacity:.55;}
+.vmap-cell.sel{outline:2px solid var(--ac);outline-offset:1px;}
+.vmap-n{font-size:8.5px;opacity:.85;font-family:var(--font-number);}
+.vmap-legend{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--tx3);margin-top:8px;}
+.vmap-sw{width:13px;height:9px;border-radius:2px;border:1px solid var(--bd2);}
+.vmap-chaps{margin-top:9px;padding:9px 10px;border-radius:9px;background:var(--s2,rgba(255,255,255,.02));}
+.vmap-chaphd{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.vmap-chapnm{font-size:12.5px;font-weight:700;color:var(--tx);}
+.vmap-chapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));gap:3px;}
+.vmap-chap{aspect-ratio:1/1;border-radius:4px;display:flex;align-items:center;justify-content:center;
+  font-size:8.5px;font-family:var(--font-number);border:1px solid var(--bd2);color:var(--tx3);}
+.vmap-chap.on{border-color:transparent;color:#fff;}
+.vmap-sum{font-size:11px;color:var(--tx2);line-height:1.5;margin:10px 0 2px;
+  padding:8px 10px;border-radius:9px;background:var(--s2,rgba(255,255,255,.02));}
+.vmap-sum b{color:var(--ac-tx);font-weight:700;}
+/* ── 연결 (주제 ↔ 성경) (v26-0906-5, HB 1-4) ── */
+.vlink-wrap{overflow-x:auto;overflow-y:hidden;margin-top:4px;}
+.vlink-note{font-size:9.5px;color:var(--tx3);opacity:.8;margin-top:6px;}
+/* ── 주간 리듬 (잔디) ── */
+.vrhy-wrap{overflow-x:auto;overflow-y:hidden;margin-top:4px;}
+.vrhy-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,12px);gap:3px;
+  align-items:start;width:max-content;}
+.vrhy-dot{width:12px;height:12px;border-radius:3px;border:1px solid var(--bd2);}
+.vrhy-dows{display:grid;grid-template-rows:repeat(7,12px);gap:3px;margin-right:5px;}
+.vrhy-dow{font-size:8px;color:var(--tx3);line-height:12px;text-align:right;width:14px;}
+.vrhy-row{display:flex;align-items:flex-start;}
 /* 변화량 — 늘면 초록, 줄면 빨강 (v26-0906-1, HB 9)
    ⚠️ `.vtr-tbl td` (0,1,1) 가 `.vtr-up` (0,1,0) 보다 세다. 표 칸을 함께 적지
       않으면 색이 조용히 무시되고 본문색으로 나온다 — 예전 표가 그랬다. */
@@ -4379,7 +4445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0906-4";
+const APP_VERSION = "v. 26-0906-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10064,6 +10130,36 @@ function toggleVerseAlarmContent(key,btn){
 // Canonical Bible order for the books that appear in the 180 verses
 const BIBLE_ORDER_OT=['창세기','출애굽기','레위기','민수기','신명기','여호수아','사사기','룻기','사무엘상','사무엘하','열왕기상','열왕기하','역대상','역대하','에스라','느헤미야','에스더','욥기','시편','잠언','전도서','아가','이사야','예레미야','예레미야애가','에스겔','다니엘','호세아','요엘','아모스','오바댜','요나','미가','나훔','하박국','스바냐','학개','스가랴','말라기'];
 const BIBLE_ORDER_NT=['마태복음','마가복음','누가복음','요한복음','사도행전','로마서','고린도전서','고린도후서','갈라디아서','에베소서','빌립보서','골로새서','데살로니가전서','데살로니가후서','디모데전서','디모데후서','디도서','빌레몬서','히브리서','야고보서','베드로전서','베드로후서','요한1서','요한2서','요한3서','유다서','요한계시록'];
+// 66권의 장 수 — 위 두 줄과 **같은 차례**다 (구약 39 + 신약 27).
+// 성경 지도가 '아직 안 밟은 장'을 빈 칸으로 남기려면 전체 장 수를 알아야 한다.
+// ⚠️ 개신교 정경 기준. 차례를 바꾸면 이 줄도 함께 바꿀 것.
+const BIBLE_CHAPTERS_OT=[50,40,27,36,34,24,21,4,31,24,22,25,29,36,10,13,10,42,150,31,12,8,66,52,5,48,12,14,3,9,1,4,7,3,3,3,2,14,4];
+const BIBLE_CHAPTERS_NT=[28,16,24,21,28,16,16,13,6,6,4,4,5,3,6,4,3,1,13,5,5,3,5,1,1,1,22];
+let _BIBLE_CHAP_MAP=null;
+function _bibleChapters(book){
+  if(!_BIBLE_CHAP_MAP){
+    _BIBLE_CHAP_MAP=new Map();
+    BIBLE_ORDER_OT.forEach((b,i)=>_BIBLE_CHAP_MAP.set(b,BIBLE_CHAPTERS_OT[i]||0));
+    BIBLE_ORDER_NT.forEach((b,i)=>_BIBLE_CHAP_MAP.set(b,BIBLE_CHAPTERS_NT[i]||0));
+  }
+  return _BIBLE_CHAP_MAP.get(book)||0;
+}
+// 지도 칸에 쓸 짧은 이름 (칸이 좁다). 두 글자면 그대로, 길면 앞 두 글자.
+const _BIBLE_SHORT={'창세기':'창','출애굽기':'출','레위기':'레','민수기':'민','신명기':'신',
+  '여호수아':'수','사사기':'삿','룻기':'룻','사무엘상':'삼상','사무엘하':'삼하',
+  '열왕기상':'왕상','열왕기하':'왕하','역대상':'대상','역대하':'대하','에스라':'스',
+  '느헤미야':'느','에스더':'에','욥기':'욥','시편':'시','잠언':'잠','전도서':'전',
+  '아가':'아','이사야':'사','예레미야':'렘','예레미야애가':'애','에스겔':'겔',
+  '다니엘':'단','호세아':'호','요엘':'욜','아모스':'암','오바댜':'옵','요나':'욘',
+  '미가':'미','나훔':'나','하박국':'합','스바냐':'습','학개':'학','스가랴':'슥','말라기':'말',
+  '마태복음':'마','마가복음':'막','누가복음':'눅','요한복음':'요','사도행전':'행',
+  '로마서':'롬','고린도전서':'고전','고린도후서':'고후','갈라디아서':'갈',
+  '에베소서':'엡','빌립보서':'빌','골로새서':'골','데살로니가전서':'살전',
+  '데살로니가후서':'살후','디모데전서':'딤전','디모데후서':'딤후','디도서':'딛',
+  '빌레몬서':'몬','히브리서':'히','야고보서':'약','베드로전서':'벧전',
+  '베드로후서':'벧후','요한1서':'요일','요한2서':'요이','요한3서':'요삼',
+  '유다서':'유','요한계시록':'계'};
+function _bibleShort(book){return _BIBLE_SHORT[book]||String(book||'').slice(0,2);}
 
 // ── Alarm scheduler ──
 // 켜진 각 모음의 하위 필터가 적용된 구절을 모두 합침 (ACTIVE_VERSES와 동일 로직)
@@ -19101,6 +19197,7 @@ function _vDashHomeAgg(){
 // ref → 말씀 정보 (대분류·소주제·태그). 모음 어디에 있든 찾는다.
 // ⚠️ 반응 키(명제는 'P<코드><명제 ID>')로도 찾을 수 있어야 한다. 장절만
 //    담아 두면 명제에 눌린 좋아요·암송이 전부 '(목록에 없음)' 으로 떨어진다.
+const _VDASH_PID_PRE='pid';    // 명제 ID 만으로 찾을 때 쓰는 앞머리
 let _vDashVerseMap=null;
 function _vDashVerse(ref){
   if(!_vDashVerseMap){
@@ -19109,10 +19206,36 @@ function _vDashVerse(ref){
       const k=(typeof _reactKey==='function')?_reactKey(v):'';
       if(k&&!_vDashVerseMap.has(k))_vDashVerseMap.set(k,v);
       if(v.ref&&!_vDashVerseMap.has(v.ref))_vDashVerseMap.set(v.ref,v);
+      // ⚠️ 명제 ID 만으로도 찾을 수 있게 한 벌 더 넣어 둔다 (아래 까닭)
+      if(v.pid&&!_vDashVerseMap.has(_VDASH_PID_PRE+v.pid))_vDashVerseMap.set(_VDASH_PID_PRE+v.pid,v);
     });
   }
-  return _vDashVerseMap.get(ref)||null;
+  const hit=_vDashVerseMap.get(ref);
+  if(hit)return hit;
+  // 반응 키에는 그 모음의 **6자리 발행 코드**가 함께 들어 있다 (P<코드><명제 ID>).
+  // 모음을 다시 받으면 importCode 가 새로 붙어, 예전에 눌러 둔 기록의 코드와
+  // 지금 코드가 어긋난다. 정확한 열쇠로만 찾던 이 표는 그때부터 그 명제를 못
+  // 찾았고, 성경을 모르니 파이에서 '(미상)' 으로 떨어졌다 (v26-0906-5, HB 4).
+  // (_findVerseByRefLoose 는 명제 ID 만 보므로 눌러 들어가면 멀쩡히 열렸다)
+  // → 열쇠로 못 찾으면 **명제 ID 로 한 번 더** 찾고, 찾으면 그 열쇠도 적어 둔다.
+  if(typeof _isReactPid==='function'&&_isReactPid(ref)){
+    const pt=(typeof _reactKeyParts==='function')?_reactKeyParts(ref):null;
+    const byPid=(pt&&pt.pid)?_vDashVerseMap.get(_VDASH_PID_PRE+pt.pid):null;
+    if(byPid){_vDashVerseMap.set(ref,byPid);return byPid;}
+  }
+  return null;
 }
+// 표·파이에 적을 이름. 명제는 장절이 아니라 **대표 문구 1**(v.hi)을 쓴다
+// (v26-0906-5, HB 3 — 명제 ID 가 그대로 노출돼 이상했다).
+function _vDashRefLabel(ref){
+  const v=_vDashVerse(ref);
+  if(v&&(v.pid||v.kind==='prop'))
+    return((v.hi||'').trim()||(v.krText||'').trim()||(v.ref||'').trim()||String(ref||''));
+  return String(ref||'');
+}
+// 값이 아니라 '빈자리'를 가리키는 이름들 — 눌러 봐야 빈 목록이 나오므로 링크로 만들지 않는다
+const _VDASH_PLACEHOLDERS=['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'];
+function _vDashIsPlaceholder(k){return _VDASH_PLACEHOLDERS.indexOf(String(k))>=0;}
 // 한 축(cat/topic/tag/book)에 대해 그 말씀이 속하는 값들. 태그·성경은 여러 개일 수 있다.
 // vin 을 주면 그것을 쓴다 (모음에서 곧장 온 경우 — 찾는 수고를 던다).
 // ⚠️ 성경은 _booksOf 를 쓴다 — 타일뷰의 '성경별' 필터가 쓰는 것과 **같은 함수**다.
@@ -19184,15 +19307,16 @@ function _vDashCellHTML(agg,axis,kind){
   if(!slices.length)return `<div class="vdash-cell"><div class="vdash-empty">기록 없음</div></div>`;
   const top=slices[0];
   const topRef=top.top?top.top.ref:'';
+  const topLb=topRef?_vDashRefLabel(topRef):'';
   const ka=_vDashQ(kind),aa=_vDashQ(axis),va=_vDashQ(top.key);
-  // 1등 항목: '기타'는 묶음이라 필터로 열 수 없다 → 상세 팝업으로 대신 보낸다
-  const topClick=top.key==='기타'
+  // 1등 항목: '기타'·'(없음)' 같은 빈자리 이름은 필터로 열 수 없다 → 상세 팝업으로
+  const topClick=_vDashIsPlaceholder(top.key)
     ? `vDashOpenDetail('${ka}','${aa}')`
     : `vDashOpenFilter('${aa}','${va}')`;
   return `<div class="vdash-cell">
     <div class="vdash-pie" onclick="vDashOpenDetail('${ka}','${aa}')" title="자세히 보기">${_vDashPieSVG(slices,84)}</div>
     <div class="vdash-top vdash-link" onclick="${topClick}"><b>${esc(top.key)}</b> ${top.count}</div>
-    ${topRef?`<div class="vdash-ref vdash-link" onclick="vDashOpenVerse('${_vDashQ(topRef)}')">${esc(topRef)}</div>`:''}
+    ${topRef?`<div class="vdash-ref vdash-link" title="${_vgEscAttr(topLb)}" onclick="vDashOpenVerse('${_vDashQ(topRef)}')">${esc(topLb)}</div>`:''}
   </div>`;
 }
 // 행 이름. '현재 말씀 모음'은 아이콘이 없다 — '현재' 라는 글자가 그 자리를 대신한다
@@ -19225,9 +19349,13 @@ function vDashSetCustom(){
   renderVerseDashboard();
 }
 // ── 위쪽 전환: 분포(파이) ⇄ 흐름(꺾은선) ──
-// 차례가 곧 화면 차례다 — 흐름이 왼쪽 (v26-0906-2, HB 3)
-const _VDASH_VIEWS=[['trend','흐름'],['pie','분포']];
-function _vDashView(){return(_vDashPref().view==='trend')?'trend':'pie';}
+// 차례가 곧 화면 차례다 — 흐름이 왼쪽 (v26-0906-2, HB 3).
+// v26-0906-5 — 지도·연결·리듬 셋이 더 붙었다 (HB 1).
+const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];
+function _vDashView(){
+  const v=_vDashPref().view;
+  return _VDASH_VIEWS.some(x=>x[0]===v)?v:'trend';
+}
 function vDashSetView(v){
   _vDashPref().view=v; save();
   renderVerseDashboard();
@@ -19256,6 +19384,9 @@ function renderVerseDashboard(){
   }
   _vDashVerseMap=null;   // 모음이 바뀌었을 수 있으니 매번 새로 만든다
   if(view==='trend'){renderVDashTrend();return;}
+  if(view==='map'){renderVDashMap();return;}
+  if(view==='link'){renderVDashLink();return;}
+  if(view==='rhythm'){renderVDashRhythm();return;}
   // 기간 칩은 '언제 눌렀나'를 자르는 것이라 반응 네 줄에만 걸린다.
   // 맨 윗줄은 지금 켜져 있는 모음 그 자체다 (v26-0906-2, HB 2) — 말없이
   // 다르게 굴면 고장으로 읽히므로 기간을 좁혔을 때만 한 줄 짚어 준다.
@@ -19325,7 +19456,7 @@ function vTrSortBy(col){
   // 이름(0)은 오름차순(ㄱㄴㄷ·성경순), 숫자 열은 내림차순(많은 것부터).
   p.sort=(cur.col===col)?{col,dir:-cur.dir}:{col,dir:(col===0?1:-1)};
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // 기간(칸 수)과 인사이트 비교 칸 수 — 두 값 다 여기 한 곳에서만 다듬는다.
 function _vTrSpan(p){
@@ -19341,6 +19472,10 @@ function _vTrInsN(p){
   if(!(want>=1))return mx;                    // 0(=자동)이면 절반
   return Math.min(mx,want);
 }
+// ⚠️ 설정 칩·슬라이더는 **지금 보고 있는 화면**을 다시 그려야 한다 (v26-0906-5).
+//    예전에는 늘 renderVDashTrend() 를 불러서, 지도·연결·리듬에서 칩을 누르면
+//    화면이 흐름으로 바뀌어 버렸다. renderVerseDashboard 가 _vDashView() 를
+//    보고 알아서 나눠 준다. 아래 vTr* 설정 함수들이 모두 같은 까닭으로 바뀌었다.
 function vTrSet(key,val){
   const p=_vTrPref();
   p[key]=val;
@@ -19349,7 +19484,7 @@ function vTrSet(key,val){
   // '무엇을'을 성경이 아닌 것으로 바꾸면 성경 하나만 보던 화면에서 나온다
   if(key==='axis'&&val!=='book')p.book=null;
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // ── 기간 슬라이더 ────────────────────────────────────────────────────────
 // 주 슬라이더와 달 슬라이더 둘. 움직인 쪽이 '쓰는 쪽'이 되고 다른 쪽은 흐려진다.
@@ -19371,7 +19506,7 @@ function vTrSpanSet(unit,val){
   p.unit=(unit==='month')?'month':'week';
   p.span=Math.max(1,Math.min(_VTR_SPAN_MAX,parseInt(val,10)||12));
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // ── 부드럽게 끌리는 슬라이더 ─────────────────────────────────────────────
 // <input type=range> 는 손잡이가 값 자리로만 뛴다. 여기서는 손잡이를 손가락에
@@ -19435,14 +19570,14 @@ function vTrInsSet(val){
   const p=_vTrPref();
   p.ins=Math.max(1,Math.min(_vTrInsMax(p),parseInt(val,10)||1));
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 function vTrToggleSeries(key){
   const p=_vTrPref();
   const i=p.off.indexOf(key);
   if(i<0)p.off.push(key); else p.off.splice(i,1);
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // 표에서 성경 한 줄을 펼치고 접는다 (그 안의 장들이 나온다)
 function vTrToggleExp(key){
@@ -19450,7 +19585,7 @@ function vTrToggleExp(key){
   const i=p.exp.indexOf(key);
   if(i<0)p.exp.push(key); else p.exp.splice(i,1);
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // 성경 하나만 들여다보기 — 갈래·범위·무엇을·기간·모양은 **그대로 두고**
 // 그 성경 안의 '장'으로 다시 센다.
@@ -19462,13 +19597,13 @@ function vTrOpenBook(book){
   const on=(typeof _ptFontsOn==='function')?_ptFontsOn():['brush'];
   _vTrBookFont=on[Math.floor(Math.random()*on.length)]||'brush';
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 function vTrCloseBook(){
   const p=_vTrPref();
   p.book=null; p.off=[];
   save();
-  renderVDashTrend();
+  renderVerseDashboard();
 }
 // 원천 — 분포의 _vDashEntries 와 달리 **기간을 안 자른다** (칸으로 나눌 것이므로).
 // 반환은 [{ref,date,v?}].
@@ -19620,7 +19755,8 @@ function _vTrChartSVG(keys,series,unit,form,W,insN,axis,book){
   }
   // 항목 하나를 눌렀을 때 — 표의 그 줄 이름을 누른 것과 똑같이 (v26-0906-2, HB 9-3).
   // 성경 하나를 들여다보는 중(book)에는 '장' 이라 걸어 줄 필터가 없다.
-  const clickOf=s=>book?'':` style="cursor:pointer;" onclick="vDashOpenFilter('${_vDashQ(axis)}','${_vDashQ(s.key)}')"`;
+  const clickOf=s=>(book||_vDashIsPlaceholder(s.key))?''
+    :` style="cursor:pointer;" onclick="vDashOpenFilter('${_vDashQ(axis)}','${_vDashQ(s.key)}')"`;
   // 그림 안에 얹는 이름표 — 흰 글자에 어두운 테두리 (어느 색 위에서도 읽힌다)
   const nameTx=(x,y,t,anchor)=>`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor||'middle'}" `+
     `dominant-baseline="central" font-size="10" font-weight="700" fill="#fff" `+
@@ -19910,6 +20046,71 @@ function _vTrInsightHTML(d,rows,h){
   if(dn&&dn.diff<0)lines.push(`가장 많이 줄어든 것은 <b>${esc(dn.key)}</b> (지난 ${h}${unitW}보다 ${_vTrDiffHTML(dn.diff)}).`);
   return`<div class="vtr-sum">${slider}<div class="vtr-sumtx">${lines.join('<br>')}</div></div>`;
 }
+// ── 작은 발견 (v26-0906-5, HB 2) ────────────────────────────────────────
+// 상위 여섯만 색을 받고 나머지는 회색 뭉치로 묻힌다. 그런데 **횟수가 적은 것에도
+// 뜻이 있다** — 처음 나왔다 / 오랜만이다 / 이 하나뿐이다.
+// 그 셋을 건져 카드로 세우고, 남은 꼬리는 칩으로 죽 늘어놓는다. 다 눌러 들어간다.
+// ⚠️ 여기서 새로 세지 않는다. 위에서 이미 만든 d.all(칸별 횟수)만 다시 읽는다.
+function _vTrFindings(d,h){
+  const n=d.keys.length, lateIdx=Math.max(0,n-h);
+  const sum=(a,i,j)=>a.slice(Math.max(0,i),Math.max(0,j)).reduce((x,y)=>x+y,0);
+  const fresh=[],back=[],only=[],tail=[];
+  d.all.forEach(s=>{
+    if(_vDashIsPlaceholder(s.key))return;
+    const late=sum(s.vals,lateIdx,n), before=sum(s.vals,0,lateIdx);
+    if(late>0&&before===0){fresh.push({s,late});}
+    else if(late>0&&before>0){
+      // '몇 주 만에 다시' — 지난번 나온 칸과 이번에 나온 첫 칸 사이의 거리다.
+      // (빈 칸 수가 아니라 사람이 세는 방식으로 센다)
+      let prev=-1,first=-1;
+      for(let i=lateIdx-1;i>=0;i--){ if(s.vals[i]>0){prev=i;break;} }
+      for(let i=lateIdx;i<n;i++){ if(s.vals[i]>0){first=i;break;} }
+      const gap=(prev<0||first<0)?0:(first-prev);
+      if(gap>=3)back.push({s,gap});
+    }
+    if(s.total===1)only.push({s});
+    if(s.total<=2)tail.push(s);
+  });
+  fresh.sort((a,b)=>b.late-a.late||_vDashKeyCmp(a.s.key,b.s.key));
+  back.sort((a,b)=>b.gap-a.gap||_vDashKeyCmp(a.s.key,b.s.key));
+  only.sort((a,b)=>_vDashKeyCmp(a.s.key,b.s.key));
+  tail.sort((a,b)=>a.total-b.total||_vDashKeyCmp(a.key,b.key));
+  return{fresh,back,only,tail};
+}
+function _vTrFindingsHTML(d,h){
+  if(!d.all.length)return '';
+  const f=_vTrFindings(d,h);
+  const unitW=_vTrUnitWord(d.unit);
+  const linkOf=k=>(d.book||_vDashIsPlaceholder(k))?''
+    :` onclick="vDashOpenFilter('${_vDashQ(d.axis)}','${_vDashQ(k)}')"`;
+  const card=(kind,tag,key,say)=>`<div class="vfind-card ${kind}"${linkOf(key)}>`+
+    `<div class="vfind-tag">${esc(tag)}</div>`+
+    `<div class="vfind-key" title="${_vgEscAttr(key)}">${esc(key)}</div>`+
+    `<div class="vfind-say">${say}</div></div>`;
+  // ⚠️ 한 항목이 '처음'이면서 '하나뿐'인 일이 흔하다 — 같은 이름이 카드 두 장에
+  //    겹쳐 나오면 발견처럼 안 보인다. 먼저 뽑힌 쪽만 남긴다 (처음 > 오랜만 > 하나뿐).
+  //    카드는 여섯 장까지 — 그 이상은 '작은' 발견이 아니라 또 하나의 목록이다.
+  const shown=new Set();
+  let cards='',nCard=0;
+  const put=(kind,tag,key,say)=>{
+    if(nCard>=6||shown.has(key))return;
+    shown.add(key); nCard++;
+    cards+=card(kind,tag,key,say);
+  };
+  f.fresh.slice(0,2).forEach(x=>put('k-new','처음',x.s.key,`최근 ${h}${unitW}에 처음 나왔어요`));
+  f.back.slice(0,2).forEach(x=>put('k-back','오랜만',x.s.key,`${x.gap}${unitW} 만에 다시 나왔어요`));
+  f.only.slice(0,3).forEach(x=>{
+    const lb=x.s.top?_vDashRefLabel(x.s.top):'';
+    put('k-only','하나뿐',x.s.key,lb?`${esc(lb)} — 이 하나뿐이에요`:'이 하나뿐이에요');
+  });
+  // 꼬리 칩 — 카드로 이미 세운 것은 빼고
+  const chips=f.tail.filter(s=>!shown.has(s.key)).slice(0,16)
+    .map(s=>`<span class="vfind-chip"${linkOf(s.key)}>${esc(s.key)}<b>${s.total}</b></span>`).join('');
+  if(!cards&&!chips)return '';
+  return`<div class="vfind"><div class="vfind-hd">작은 발견</div>`+
+    (cards?`<div class="vfind-row">${cards}</div>`:'')+
+    (chips?`<div class="vfind-tail">${chips}</div>`:'')+`</div>`;
+}
 // ── 표 정렬 (v26-0906-2, HB 7) ──────────────────────────────────────────
 // 1열(항목)은 성경이면 **성경 차례**, 장이면 숫자 차례, 그 밖은 ㄱㄴㄷ.
 // 2~5열은 숫자. 값이 같으면 1열 규칙으로 한 번 더 가른다.
@@ -19952,7 +20153,8 @@ function _vTrRowHTML(r,d,h,opts){
   if(o.sub||d.book){
     name=`<span class="vtr-subname">${esc(r.key)}</span>`;
   }else{
-    name=`<span class="vdash-link" onclick="vDashOpenFilter('${_vDashQ(d.axis)}','${_vDashQ(r.key)}')">${esc(r.key)}</span>`;
+    name=_vDashIsPlaceholder(r.key)?esc(r.key)
+      :`<span class="vdash-link" onclick="vDashOpenFilter('${_vDashQ(d.axis)}','${_vDashQ(r.key)}')">${esc(r.key)}</span>`;
     if(o.exp!==undefined){
       const open=o.exp;
       name=`<span class="vtr-exp${open?' on':''}" onclick="vTrToggleExp('${_vDashQ(r.key)}')" `+
@@ -20009,6 +20211,8 @@ function renderVDashTrend(){
   const rows=_vTrRowsOf(d,h);
   html+=_vTrInsightHTML(d,rows,h);
   html+=`<div class="vtr-chartwrap">${_vTrChartSVG(d.keys,shown,unit,form,W,h,d.axis,book)}</div>`;
+  // 상위 여섯에 못 든 것들 가운데 뜻이 있는 것을 건져 보여준다 (v26-0906-5, HB 2)
+  const findHTML=_vTrFindingsHTML(d,h);
   // 범례 — 누르면 그 선을 껐다 켠다 (색은 켜져 있든 아니든 그 선이 받은 색 그대로)
   if(head.length){
     html+='<div class="vtr-legend">'+head.map(s=>{
@@ -20035,6 +20239,7 @@ function renderVDashTrend(){
       }
     });
     html+=`<table class="vtr-tbl">${_vTrTheadHTML(d,h,span,srt)}<tbody>${body}</tbody></table>`;
+    html+=findHTML;
   }else{
     // 모음(home)은 **시트의 날짜 열**로 자리를 잡는다 — 그 칸이 비어 있으면
     // 아무 칸에도 못 놓인다. 까닭을 짚어 주지 않으면 고장으로 읽힌다.
@@ -20046,6 +20251,318 @@ function renderVDashTrend(){
   box.innerHTML=html;
   _vTrBindRails();
   _vTrBindBand();
+}
+// ══════ 지도 · 연결 · 리듬 (v26-0906-5, HB 1) ══════
+// 흐름·분포는 "많이 나온 것"을 보여준다. 여기 셋은 그것이 못 하는 것을 한다 —
+//   지도 : 아직 **안 밟은 곳**이 어디인가 (그리고 얼마나 묵었나)
+//   연결 : 어떤 주제가 어떤 성경으로만 가는가 (편중)
+//   리듬 : 언제 말씀을 보는가
+// 세 화면 다 흐름과 **같은 원천·같은 셈**을 쓴다 (_vTrEntries · _vDashKeysOf).
+// 범위(kind)·갈래(tab)·기간(unit·span)도 흐름의 값을 그대로 함께 쓴다 —
+// 화면을 옮겨도 "무엇을 보고 있는지"가 안 바뀌게.
+
+// 기간 창 — all 이면 자르지 않는다
+function _vDashWinEntries(kind,tab,unit,span,all){
+  const keys=all?null:new Set(_vTrBucketList(unit,span));
+  const out=[];
+  _vTrEntries(kind).forEach(e=>{
+    if(tab&&tab!=='all'&&(e.v?!!e.v.pid:_vlIsProp(e.ref))!==(tab==='prop'))return;
+    if(keys&&!keys.has(_vTrBucketOf(e.date,unit)))return;
+    out.push(e);
+  });
+  return out;
+}
+// 지도·연결·리듬이 함께 쓰는 '지금 무엇을 보고 있나'
+function _vDashScope(){
+  const p=_vTrPref();
+  return{kind:p.kind||'home',tab:p.tab||'all',
+         unit:(p.unit==='month')?'month':'week',span:_vTrSpan(p),
+         all:p.mapAll!==false};       // 지도류의 기본은 **전체 기간**
+}
+function vDashSetMapAll(v){_vTrPref().mapAll=(v==='1');save();renderVerseDashboard();}
+// 범위·갈래·기간 칩 한 벌 (세 화면이 같이 쓴다)
+function _vDashScopeCtlHTML(){
+  const p=_vTrPref(),sc=_vDashScope();
+  let h='';
+  h+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
+  h+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.map(([v,l])=>[v,v==='home'?'말씀 모음':l]),p.kind||'home');
+  h+=`<div class="vtr-ctl"><span class="vtr-ctl-lb">기간</span><span class="vtr-ctl-vals">`+
+    `<span class="vtr-chip${sc.all?' on':''}" onclick="vDashSetMapAll('1')">전체</span>`+
+    `<span class="vtr-chip${sc.all?'':' on'}" onclick="vDashSetMapAll('0')">최근 ${sc.span}${_vTrUnitWord(sc.unit)}</span>`+
+    `</span></div>`;
+  return h;
+}
+// ── 지도 ────────────────────────────────────────────────────────────────
+const _VMAP_MODES=[['count','횟수'],['aged','묵힘']];
+function _vMapMode(){return(_vTrPref().mapMode==='aged')?'aged':'count';}
+function vDashMapPick(book){
+  const p=_vTrPref();
+  p.mapBook=(p.mapBook===book)?null:book;
+  save();
+  renderVerseDashboard();
+}
+// 성경별 {n, last} — last 는 마지막으로 나온 날짜(YYYY-MM-DD)
+function _vMapStats(){
+  const sc=_vDashScope();
+  const m=new Map();
+  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc.all).forEach(e=>{
+    _vDashKeysOf(e.ref,'book',e.v).forEach(b=>{
+      if(_vDashIsPlaceholder(b))return;
+      if(!m.has(b))m.set(b,{n:0,last:'',refs:[]});
+      const g=m.get(b);
+      g.n++;
+      if(e.date>g.last)g.last=e.date;
+      if(g.refs.length<400)g.refs.push(e);
+    });
+  });
+  return m;
+}
+// 0~1 을 다섯 칸의 색으로 (0 은 부르지 않는다 — 빈 칸은 테두리만 남긴다)
+function _vMapShade(f,warm){
+  const step=Math.max(1,Math.min(5,Math.ceil(f*5)));
+  const a=[0.22,0.38,0.55,0.75,1][step-1];
+  return warm?`rgba(224,164,88,${a})`:`rgba(90,112,248,${a})`;
+}
+function _vMapCellHTML(book,g,mode,maxN,nowKey,sel){
+  const n=g?g.n:0;
+  const short=_bibleShort(book);
+  let bg='',cls='vmap-cell',tip;
+  if(mode==='aged'){
+    if(!n){tip=`${book} — 아직 없어요`;cls+=' zero';}
+    else{
+      const w=_vWeeksSince(g.last,nowKey);
+      // 26주(반년)를 가장 진하게 본다 — 그보다 오래된 것은 다 같은 진하기
+      bg=_vMapShade(Math.min(1,(w+1)/26),true);
+      cls+=' on';
+      tip=`${book} — ${w}주 전 (${g.last})`;
+    }
+  }else{
+    if(!n){tip=`${book} — 아직 없어요`;cls+=' zero';}
+    else{bg=_vMapShade(n/Math.max(1,maxN));cls+=' on';tip=`${book} ${n}`;}
+  }
+  if(sel)cls+=' sel';
+  const sub=n?(mode==='aged'?`${_vWeeksSince(g.last,nowKey)}주`:String(n)):'';
+  return`<div class="${cls}" style="${bg?`background:${bg};`:''}" title="${_vgEscAttr(tip)}" `+
+    `onclick="vDashMapPick('${_vDashQ(book)}')">${esc(short)}`+
+    (sub?`<span class="vmap-n">${esc(sub)}</span>`:'')+`</div>`;
+}
+// 두 날짜(YYYY-MM-DD) 사이의 주 수
+function _vWeeksSince(from,to){
+  if(!from||!to)return 999;
+  const a=new Date(from+'T00:00:00'),b=new Date(to+'T00:00:00');
+  if(isNaN(a.getTime())||isNaN(b.getTime()))return 999;
+  return Math.max(0,Math.floor((b-a)/(7*864e5)));
+}
+function renderVDashMap(){
+  const box=document.getElementById('vDashBody');
+  if(!box)return;
+  _vDashVerseMap=null;
+  const p=_vTrPref(),sc=_vDashScope(),mode=_vMapMode();
+  const stats=_vMapStats();
+  const nowKey=todayKey();
+  let maxN=1; stats.forEach(g=>{if(g.n>maxN)maxN=g.n;});
+  let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
+    _vTrChipsHTML('보기','mapMode',_VMAP_MODES,mode)+`</div>`;
+  // 한 줄 요약 — 몇 권을 밟았나 / 가장 오래 안 편 곳
+  const done=[...stats.keys()].length;
+  const lines=[];
+  lines.push(`66권 가운데 <b>${done}권</b>을 다뤘어요 (${Math.round(done/66*100)}%).`);
+  if(mode==='aged'){
+    const aged=[...stats.entries()].map(([b,g])=>({b,w:_vWeeksSince(g.last,nowKey)}))
+      .sort((x,y)=>y.w-x.w).slice(0,3);
+    if(aged.length)lines.push('가장 오래 안 편 곳: '+aged.map(a=>`<b>${esc(a.b)}</b> ${a.w}주`).join(' · ')+'.');
+  }else{
+    const top=[...stats.entries()].sort((x,y)=>y[1].n-x[1].n).slice(0,3);
+    if(top.length)lines.push('가장 많이 다룬 곳: '+top.map(t=>`<b>${esc(t[0])}</b> ${t[1].n}`).join(' · ')+'.');
+    const never=BIBLE_ORDER_OT.concat(BIBLE_ORDER_NT).filter(b=>!stats.has(b));
+    if(never.length)lines.push(`아직 한 번도 안 밟은 곳이 <b>${never.length}권</b> 있어요.`);
+  }
+  html+=`<div class="vmap-sum">${lines.join('<br>')}</div>`;
+  const grid=(title,books)=>`<div class="vmap-sect">${title}</div><div class="vmap-grid">`+
+    books.map(b=>_vMapCellHTML(b,stats.get(b),mode,maxN,nowKey,p.mapBook===b)).join('')+`</div>`;
+  html+=grid('구약',BIBLE_ORDER_OT)+grid('신약',BIBLE_ORDER_NT);
+  html+=`<div class="vmap-legend"><span>${mode==='aged'?'최근':'적게'}</span>`+
+    [0.2,0.4,0.6,0.8,1].map(f=>`<span class="vmap-sw" style="background:${_vMapShade(f,mode==='aged')};"></span>`).join('')+
+    `<span>${mode==='aged'?'오래됨':'많이'}</span>`+
+    `<span class="vmap-sw" style="margin-left:8px;"></span><span>아직 없음</span></div>`;
+  // 고른 성경의 장 격자 — 그 책의 전체 장을 다 깔고, 다룬 장만 칠한다
+  if(p.mapBook){
+    const b=p.mapBook, g=stats.get(b);
+    const total=_bibleChapters(b);
+    const chap=new Map();
+    if(g)g.refs.forEach(e=>{
+      _vTrChapterKeys(e.ref,b,e.v).forEach(k=>{
+        const no=_vTrChapNo(k);
+        if(no<99999)chap.set(no,(chap.get(no)||0)+1);
+      });
+    });
+    let cmax=1; chap.forEach(v=>{if(v>cmax)cmax=v;});
+    let cells='';
+    for(let i=1;i<=total;i++){
+      const n=chap.get(i)||0;
+      cells+=`<div class="vmap-chap${n?' on':''}" style="${n?`background:${_vMapShade(n/cmax)};`:''}" `+
+        `title="${esc(b)} ${i}장${n?' · '+n:' — 아직 없어요'}">${i}</div>`;
+    }
+    const hit=[...chap.keys()].length;
+    html+=`<div class="vmap-chaps"><div class="vmap-chaphd">`+
+      `<span class="vmap-chapnm">${esc(b)}</span>`+
+      `<span style="font-size:10px;color:var(--tx3);">${total}장 중 ${hit}장</span>`+
+      `<span style="flex:1;"></span>`+
+      `<span class="vdash-link" style="font-size:10.5px;color:var(--ac-tx);" `+
+      `onclick="vDashOpenFilter('book','${_vDashQ(b)}')">이 성경 말씀 보기</span>`+
+      `<span class="vtr-bookx" onclick="vDashMapPick('${_vDashQ(b)}')" title="접기">`+
+      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+      `stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></span></div>`+
+      (total?`<div class="vmap-chapgrid">${cells}</div>`
+            :`<div class="vdash-empty">장 수를 모르는 책이에요</div>`)+`</div>`;
+  }
+  box.innerHTML=html;
+}
+// ── 연결 (주제 ↔ 성경) ───────────────────────────────────────────────────
+const _VLINK_LEFTS=[['cat','대분류'],['topic','소주제'],['tag','태그']];
+function _vLinkAxis(){
+  const a=_vTrPref().linkAxis;
+  return _VLINK_LEFTS.some(x=>x[0]===a)?a:'tag';
+}
+function renderVDashLink(){
+  const box=document.getElementById('vDashBody');
+  if(!box)return;
+  _vDashVerseMap=null;
+  const sc=_vDashScope(), la=_vLinkAxis();
+  // \u0001 은 이름에 절대 안 나오는 글자다 (_reactKey 가 쓰는 것과 같은 수)
+  const SEP='\u0001';
+  const pair=new Map(), lTot=new Map(), rTot=new Map();
+  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc.all).forEach(e=>{
+    const ls=_vDashKeysOf(e.ref,la,e.v).filter(k=>!_vDashIsPlaceholder(k));
+    const rs=_vDashKeysOf(e.ref,'book',e.v).filter(k=>!_vDashIsPlaceholder(k));
+    ls.forEach(l=>{
+      lTot.set(l,(lTot.get(l)||0)+1);
+      rs.forEach(r=>{
+        pair.set(l+SEP+r,(pair.get(l+SEP+r)||0)+1);
+      });
+    });
+    rs.forEach(r=>rTot.set(r,(rTot.get(r)||0)+1));
+  });
+  let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
+    _vTrChipsHTML('왼쪽','linkAxis',_VLINK_LEFTS,la)+`</div>`;
+  const L=[...lTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,7).map(x=>x[0]);
+  const R=[...rTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,9).map(x=>x[0]);
+  if(!L.length||!R.length){
+    box.innerHTML=html+'<div class="vdash-empty" style="text-align:center;">이 구간에는 이을 것이 없어요</div>';
+    return;
+  }
+  const W=Math.max(300,(box.clientWidth||520)-2);
+  const rowH=26, H=Math.max(L.length,R.length)*rowH+16;
+  const lx=Math.min(112,W*0.3), rx=W-Math.min(112,W*0.3);
+  const yOf=(i,n)=>10+ (i+0.5)*(H-16)/Math.max(1,n);
+  let links='',lLb='',rLb='';
+  let mx=1; pair.forEach(v=>{if(v>mx)mx=v;});
+  L.forEach((l,li)=>{
+    const c=_VTR_COLORS[li%_VTR_COLORS.length];
+    R.forEach((r,ri)=>{
+      const v=pair.get(l+SEP+r)||0;
+      if(!v)return;
+      const y1=yOf(li,L.length), y2=yOf(ri,R.length);
+      const w=1+ (v/mx)*7;
+      links+=`<path d="M${lx},${y1.toFixed(1)} C${(lx+rx)/2},${y1.toFixed(1)} ${(lx+rx)/2},${y2.toFixed(1)} ${rx},${y2.toFixed(1)}" `+
+        `fill="none" stroke="${c}" stroke-width="${w.toFixed(1)}" opacity="0.45" `+
+        `style="cursor:pointer;" onclick="vDashOpenFilter('book','${_vDashQ(r)}')">`+
+        `<title>${esc(l)} × ${esc(r)} — ${v}</title></path>`;
+    });
+    lLb+=`<text x="${(lx-7).toFixed(1)}" y="${(yOf(li,L.length)+3.5).toFixed(1)}" text-anchor="end" `+
+      `font-size="10.5" fill="var(--tx)" style="cursor:pointer;" `+
+      `onclick="vDashOpenFilter('${_vDashQ(la)}','${_vDashQ(l)}')">${esc(l)}</text>`;
+    lLb+=`<circle cx="${lx}" cy="${yOf(li,L.length).toFixed(1)}" r="3.2" fill="${c}"/>`;
+  });
+  R.forEach((r,ri)=>{
+    rLb+=`<circle cx="${rx}" cy="${yOf(ri,R.length).toFixed(1)}" r="3.2" fill="var(--tx3)"/>`;
+    rLb+=`<text x="${(rx+7).toFixed(1)}" y="${(yOf(ri,R.length)+3.5).toFixed(1)}" text-anchor="start" `+
+      `font-size="10.5" fill="var(--tx)" style="cursor:pointer;" `+
+      `onclick="vDashOpenFilter('book','${_vDashQ(r)}')">${esc(r)}</text>`;
+  });
+  html+=`<div class="vlink-wrap"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" `+
+    `style="display:block;max-width:100%;">${links}${lLb}${rLb}</svg></div>`;
+  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
+  const skew=[];
+  L.forEach(l=>{
+    const tot=lTot.get(l)||0;
+    if(tot<2)return;
+    let best='',bn=0;
+    R.forEach(r=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
+    if(best&&bn/tot>=0.6)skew.push({l,r:best,f:Math.round(bn/tot*100)});
+  });
+  if(skew.length){
+    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
+      skew.slice(0,3).map(s=>`<b>${esc(s.l)}</b>${_vTrJosaGa(s.l)==='이'?'은':'는'} `+
+        `${s.f}% 가 <b>${esc(s.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
+  }
+  html+=`<div class="vlink-note">선을 누르면 그 성경의 말씀들이 열려요. 왼쪽·오른쪽 이름도 눌러 볼 수 있어요.</div>`;
+  box.innerHTML=html;
+}
+// ── 주간 리듬 (잔디) ─────────────────────────────────────────────────────
+const _VRHY_DOW=['일','월','화','수','목','금','토'];
+// 리듬은 자기 기간을 쓴다 — 반년(26주)이 기본. 넉 주로는 리듬이 안 보인다.
+const _VRHY_WEEKS=[['12','12주'],['26','반년'],['52','1년']];
+function _vRhyWeeks(){
+  const n=parseInt(_vTrPref().rhyWeeks,10);
+  return(n===12||n===26||n===52)?n:26;
+}
+function renderVDashRhythm(){
+  const box=document.getElementById('vDashBody');
+  if(!box)return;
+  _vDashVerseMap=null;
+  const p=_vTrPref(),sc=_vDashScope();
+  // ⚠️ 잔디는 늘 '주' 로 본다 (달 단위로는 요일이 안 보인다).
+  //    그리고 **자기 기간을 따로 쓴다** — 흐름의 기본(4주)은 네 칸뿐이라
+  //    리듬이라 부를 것이 안 나온다. 반년(26주)이 기본이다.
+  const weeks=_vRhyWeeks();
+  const cnt=new Map();
+  let tot=0;
+  _vDashWinEntries(sc.kind,sc.tab,'week',weeks,false).forEach(e=>{
+    const d=String(e.date||'').slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
+    cnt.set(d,(cnt.get(d)||0)+1); tot++;
+  });
+  let html=`<div class="vtr-ctls">`;
+  html+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
+  html+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.map(([v,l])=>[v,v==='home'?'말씀 모음':l]),p.kind||'home');
+  html+=_vTrChipsHTML('기간','rhyWeeks',_VRHY_WEEKS,String(weeks));
+  html+=`</div>`;
+  const starts=_vTrBucketList('week',weeks);
+  let mx=1; cnt.forEach(v=>{if(v>mx)mx=v;});
+  const dowTot=new Array(7).fill(0);
+  let cells='';
+  starts.forEach(sun=>{
+    for(let i=0;i<7;i++){
+      const d=new Date(sun+'T00:00:00'); d.setDate(d.getDate()+i);
+      const k=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+      const n=cnt.get(k)||0;
+      dowTot[i]+=n;
+      cells+=`<div class="vrhy-dot" style="${n?`background:${_vMapShade(n/mx)};border-color:transparent;`:''}" `+
+        `title="${k}${n?' · '+n:''}"></div>`;
+    }
+  });
+  html+=`<div class="vrhy-wrap"><div class="vrhy-row"><div class="vrhy-dows">`+
+    _VRHY_DOW.map((d,i)=>`<div class="vrhy-dow">${(i%2===0)?d:''}</div>`).join('')+
+    `</div><div class="vrhy-grid">${cells}</div></div></div>`;
+  html+=`<div class="vmap-legend"><span>적음</span>`+
+    [0.2,0.4,0.6,0.8,1].map(f=>`<span class="vmap-sw" style="background:${_vMapShade(f)};border-color:transparent;"></span>`).join('')+
+    `<span>많음</span></div>`;
+  if(tot){
+    const hi=Math.max(...dowTot), lo=Math.min(...dowTot);
+    const best=dowTot.indexOf(hi), worst=dowTot.indexOf(lo);
+    // ⚠️ 요일별 수가 모두 같으면 '가장 많은'과 '가장 뜸한'이 같은 요일이 된다 —
+    //    그때는 그 말을 하지 않는다 (v26-0906-5).
+    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
+      `최근 ${weeks}주 동안 <b>${tot}번</b>.`+
+      ((hi>lo)?` 가장 많은 요일은 <b>${_VRHY_DOW[best]}요일</b> (${hi}), `+
+               `가장 뜸한 요일은 <b>${_VRHY_DOW[worst]}요일</b> (${lo}).`
+              :` 요일마다 고르게 보고 있어요.`)+
+      `</div></div>`;
+  }else{
+    html+='<div class="vdash-empty" style="text-align:center;">이 구간에는 기록이 없어요</div>';
+  }
+  box.innerHTML=html;
 }
 // ── 장절 느슨한 대조 ──
 // 좋아요·암송 기록은 누른 시점의 장절 문자열을 그대로 남긴다. 그래서
@@ -20405,9 +20922,12 @@ function vDashOpenDetail(kind,axis){
       const pct=(sl.count/total*100);
       // 8위부터는 파이에서 '기타' 한 조각으로 묶였다 — 표에서도 그 색을 쓴다
       const color=(folded&&i>=_VDASH_MAX_SLICE)?_VDASH_ETC_COLOR:_VDASH_COLORS[i%_VDASH_COLORS.length];
-      const nameCell=`<span class="vdash-link" onclick="vDashOpenFilter('${_vDashQ(axis)}','${_vDashQ(sl.key)}')">${esc(sl.key)}</span>`;
+      // 빈자리 이름('(없음)'·'(미상)'…)은 걸어 줄 필터가 없어 링크로 만들지 않는다
+      const nameCell=_vDashIsPlaceholder(sl.key)?esc(sl.key)
+        :`<span class="vdash-link" onclick="vDashOpenFilter('${_vDashQ(axis)}','${_vDashQ(sl.key)}')">${esc(sl.key)}</span>`;
+      const refLb=sl.top?_vDashRefLabel(sl.top.ref):'';
       const refCell=sl.top?`<div class="vdash-ref vdash-link" style="text-align:left;margin-top:2px;" `+
-        `onclick="vDashOpenVerse('${_vDashQ(sl.top.ref)}')">${esc(sl.top.ref)}</div>`:'';
+        `title="${_vgEscAttr(refLb)}" onclick="vDashOpenVerse('${_vDashQ(sl.top.ref)}')">${esc(refLb)}</div>`:'';
       return`<tr><td>${i+1}</td><td><span class="vdd-sw" style="background:${color};"></span>${nameCell}${refCell}</td>`+
         `<td>${sl.count}</td><td>${pct.toFixed(1)}%</td></tr>`;
     }).join('');
