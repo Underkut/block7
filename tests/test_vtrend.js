@@ -302,7 +302,11 @@ console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
 {
   sc.eq('늘 있는 빈 칸이 × 를 오른쪽 끝으로 민다', SRC.includes('<div class="vdash-hdgap"></div>'), true);
   sc.eq('빈 칸이 늘어난다', /\.vdash-hdgap\{flex:1 1 auto;/.test(SRC), true);
-  sc.eq('기간 칩은 이제 늘어나지 않는다', SRC.includes('id="vDashPeriods" style="display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex:0 1 auto;'), true);
+  // v26-0906-8 — 화면이 다섯이 되면서 윗줄이 빽빽해졌다. 기간 칩은 아랫줄로 내렸다.
+  sc.eq('기간 칩은 윗줄이 아니라 그 아랫줄에 있다',
+        SRC.includes('id="vDashPeriods" style="display:none;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;margin:-4px 0 8px;"'), true);
+  sc.eq('윗줄에는 탭·책·빈칸·닫기만',
+        /id="vDashViewTabs"><\/div>[\s\S]{0,900}vdash-hdgap[\s\S]{0,60}modal-x modal-x-inline" onclick="closeVerseDashboard/.test(SRC), true);
   sc.eq('윗줄에 말씀 모음 설정 단추가 있다', SRC.includes('onclick="vDashOpenCollSettings()"'), true);
   sc.eq('그 단추는 말씀모음 탭을 열고 이름을 반짝인다', /function vDashOpenCollSettings\(\)\{[\s\S]{0,200}_vsetGoTab\('coll',true\);/.test(SRC), true);
   sc.eq('설정을 닫으면 대시보드로 돌아온다', /to==='vdash'&&typeof openVerseDashboard==='function'/.test(SRC), true);

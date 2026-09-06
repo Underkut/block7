@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0906-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0906-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4445,7 +4445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0906-7";
+const APP_VERSION = "v. 26-0906-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6071,11 +6071,13 @@ window._fbScriptsReady=new Promise(resolve=>{
       <svg width="17" height="17" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
     </span>
     <div class="vdash-hdgap"></div>
-    <div id="vDashPeriods" style="display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;flex:0 1 auto;min-width:0;"></div>
     <button class="modal-x modal-x-inline" onclick="closeVerseDashboard()" aria-label="닫기">
       <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
     </button>
   </div>
+  <!-- ⚠️ 기간 칩은 **아랫줄**로 내렸다 (v26-0906-8). 화면이 다섯이 되면서 윗줄이
+       빽빽해져, 폰에서 칩 다섯이 한 줄에 하나씩 세로로 늘어섰다. -->
+  <div id="vDashPeriods" style="display:none;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;margin:-4px 0 8px;"></div>
   <div id="vDashCustomRow" style="display:none;gap:6px;align-items:center;margin-bottom:8px;justify-content:flex-end;">
     <input type="date" id="vDashFrom" class="event-modal-text" style="width:auto;margin:0;padding:5px 8px;font-size:11px;" onchange="vDashSetCustom()">
     <span style="font-size:11px;color:var(--tx3);">~</span>
