@@ -38,7 +38,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
   '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyWeeks','_VRHY_WEEKS',
-  '_vMapMode','_vLinkAxis','_vDashScope',
+  '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
 // ⚠️ 지도·연결·리듬은 renderVDashTrend 뒤에 있고, 성경 차례·장 수는 훨씬 위에 있다.
@@ -383,6 +383,11 @@ console.log('\n시나리오 12 — 성경 지도');
   sc.eq('가장 옅은 칸', _vMapShade(0.1).includes('0.22'), true);
   sc.eq('가장 진한 칸', _vMapShade(1).includes('1)'), true);
   sc.eq('묵힘은 따뜻한 색', _vMapShade(1,true).includes('224,164,88'), true);
+  // ⚠️ 옅은 칸에 흰 글자를 쓰면 배경에 묻힌다 (v26-0906-7 — '묵힘' 지도가 그랬다)
+  sc.eq('옅은 칸의 글자는 본문색', _vMapInk(0.1), 'var(--tx2)');
+  sc.eq('진한 칸의 글자는 흰색', _vMapInk(1), '#fff');
+  sc.eq('가운데(3단)부터 흰색', [_vMapInk(0.5),_vMapInk(0.35)], ['#fff','var(--tx2)']);
+  sc.eq('흰 글자를 CSS 에서 못박지 않는다', SRC.includes('.vmap-cell.on{border-color:transparent;}'), true);
   sc.eq('지난 주 수를 센다', _vWeeksSince('2026-08-16','2026-09-06'), 3);
   sc.eq('같은 날은 0주', _vWeeksSince('2026-09-06','2026-09-06'), 0);
   sc.eq('날짜가 없으면 아주 큰 수', _vWeeksSince('','2026-09-06'), 999);
