@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0906-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0906-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4379,7 +4379,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0906-3";
+const APP_VERSION = "v. 26-0906-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7079,6 +7079,26 @@ function _collFilteredVerses(id){
   const f=_getCollFilter(id);
   return raw.filter(v=>_collPeriodPass(v,f)&&_collVersePassesFilter(v,f,null));
 }
+// '전체' 가 가져오는 구절 = 기간 필터만 건 것.
+// 대분류·소주제·태그·성경 선택은 여기서 보지 않는다 (HB 26-0906).
+function _collPeriodVerses(id){
+  const f=_getCollFilter(id);
+  return _collRawVerses(id).filter(v=>_collPeriodPass(v,f));
+}
+// 네 갈래(대분류/소주제/태그/성경) 가운데 하나라도 골라 둔 것이 있는가
+function _cfHasSel(f){
+  if(!f)return false;
+  return ['cats','topics','tags','books'].some(k=>Array.isArray(f[k])&&f[k].length>0);
+}
+// '전체' 를 누르면 네 갈래 선택을 **모두 푼다**. 기간 필터만 남는다.
+// (예전엔 mode 만 'all' 로 바뀌어 목록만 접혔고, 골라 둔 것은 그대로 걸려 있었다 —
+//  "전체를 눌렀는데 전체가 안 나온다" 는 신고의 원인. HB 26-0906)
+function _cfClearSel(id){
+  const f=_getCollFilter(id);
+  const had=_cfHasSel(f);
+  f.cats=[];f.topics=[];f.tags=[];f.books=[];
+  return had;
+}
 
 // ── 현재 켜진 말씀 모음의 구절 집합 (말씀바·전체목록·선택이 따라감) ──
 // 켜진 각 모음마다 그 모음의 하위 필터(전체/대분류별/소주제별/성경별)가 적용된
@@ -7218,10 +7238,20 @@ function _collLabel(id){
   const c=findColl(id);
   return c?(c.importName||c.name||'말씀 모음'):'말씀 모음';
 }
-// '전체' 버튼에 현재 교집합 결과 구절 수를 표시 ("전체 123구절")
+// 지금 걸러진 결과 개수는 **모음 이름 오른쪽**에 적는다 (HB 26-0906).
+// '전체' 칩에는 숫자를 넣지 않는다 — 그 칩은 "다 풀고 전체를 본다" 는 동작이지
+// 개수를 알리는 자리가 아니다. 칩은 골라 둔 것이 있으면 꺼진 상태로 둔다.
 function _updateCfAllCount(id){
+  const c=document.getElementById(`cfCount-${id}`);
+  if(c){
+    const n=_collFilteredVerses(id).length;
+    c.textContent=_collIsProp(findColl(id))?`${n}명제`:`${n}구절`;
+  }
   const b=document.getElementById(`cfAllBtn-${id}`);
-  if(b)b.textContent=`전체 ${_collFilteredVerses(id).length}구절`;
+  if(b){
+    const f=_getCollFilter(id);
+    b.classList.toggle('on',(f.mode||'all')==='all'&&!_cfHasSel(f));
+  }
 }
 function renderCollFilterPanels(){
   const box=document.getElementById('collFilterPanels');
@@ -7246,6 +7276,11 @@ function _buildCollFilterPanel(id,raw){
   title.style.cssText='font-size:11px;color:var(--tx3);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
   title.textContent=_collLabel(id);
   titleRow.appendChild(title);
+  // 모음 이름 오른쪽 — 지금 걸러진 결과 개수 (필터를 만질 때마다 따라 바뀐다)
+  const cnt=document.createElement('div');
+  cnt.id=`cfCount-${id}`;
+  cnt.style.cssText='font-size:11px;color:var(--ac-tx);font-weight:600;white-space:nowrap;';
+  titleRow.appendChild(cnt);
   const spacer=document.createElement('div');spacer.style.flex='1';
   titleRow.appendChild(spacer);
   // 직접 기간 날짜 입력 줄 (직접 선택 시에만 표시)
@@ -7305,12 +7340,15 @@ function _buildCollFilterPanel(id,raw){
     const b=document.createElement('button');
     b.className='preset-btn'+((f.mode||'all')===m?' on':'');
     b.style.cssText='width:auto;padding:0 10px;font-size:11px;';
-    b.textContent=m==='all'?`전체 ${_collFilteredVerses(id).length}구절`:label;
+    b.textContent=label;
     if(m==='all')b.id=`cfAllBtn-${id}`;
     b.onclick=()=>{
+      // 전체 = 골라 둔 것을 모두 풀고 기간 필터만 남긴다
+      if(m==='all')_cfClearSel(id);
       f.mode=m;rawSave();
       Object.entries(modeBtns).forEach(([mm,btn])=>btn.classList.toggle('on',mm===m));
       _renderPickerInto(pickerHost,id,raw,f);
+      _updateCfAllCount(id);
       _afterActiveVersesChanged();
     };
     modeBtns[m]=b;
