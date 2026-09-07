@@ -60,9 +60,12 @@ global._aggByRef = entries => {
   });
   return [...m.values()];
 };
-global._vlKindEntries = k => (k === 'like' ? global._flatSimpleEntries(LIKE) : []);
+global.KEEP = [];         // 저장(담기) 기록 — [{ref,date,time}]
+global._vlKeepEntries = () => KEEP.slice();
+global._vlKindEntries = k => (k === 'like' ? global._flatSimpleEntries(LIKE)
+  : k === 'keep' ? global._vlKeepEntries() : []);
 global._vlIsProp = ref => global._isReactPid(ref);
-global._VLIST_KIND_TITLE = { mem: '<svg/>', like: '<svg/>', deeper: '<svg/>', even: '<svg/>' };
+global._VLIST_KIND_TITLE = { mem: '<svg/>', like: '<svg/>', deeper: '<svg/>', even: '<svg/>', keep: '<svg/>' };
 global._VL_PERIODS = [['week', '주간'], ['month', '월간'], ['year', '연간'], ['all', '전체'], ['custom', '직접']];
 global._VL_TABS = [['all', '전체'], ['verse', '말씀'], ['prop', '명제']];
 global.document = { getElementById: () => null, querySelectorAll: () => [] };
@@ -132,11 +135,13 @@ console.log('\n시나리오 1-2 — 같은 카운트 안에서는 ㄱㄴㄷ순')
         D._vDashBuckets(agg, 'cat').map(s => s.key), ['라', '가', '나', '다']);
 }
 
-console.log('\n시나리오 2 — 행이 다섯: 현재 말씀 모음 · 좋아요 · 암송 · Deeper · Even');
+console.log('\n시나리오 2 — 행이 여섯: 현재 말씀 모음 · 좋아요 · 암송 · Deeper · Even · 저장');
 {
-  sc.eq('행이 5개', D._VDASH_KINDS.length, 5);
+  sc.eq('행이 6개', D._VDASH_KINDS.length, 6);
   sc.eq('맨 위가 현재 말씀 모음', D._VDASH_KINDS[0], ['home', '현재 말씀 모음']);
-  sc.eq('나머지 넷은 그대로', D._VDASH_KINDS.slice(1).map(k => k[0]), ['like', 'mem', 'deeper', 'even']);
+  sc.eq('가운데 넷은 그대로', D._VDASH_KINDS.slice(1, 5).map(k => k[0]), ['like', 'mem', 'deeper', 'even']);
+  // v26-0907-3, HB — "'저장'도 모든 대시보드 탭의 범위 맨 마지막 항목으로"
+  sc.eq('맨 끝이 저장', D._VDASH_KINDS[5], ['keep', '저장']);
   sc.eq('열은 그대로 넷', D._VDASH_AXES.map(a => a[0]), ['cat', 'topic', 'tag', 'book']);
   const hd = D._vDashRowHeadHTML('home', '현재 말씀 모음');
   sc.eq("행 제목이 '현재' + 줄바꿈 '말씀 모음'", /^<div class="vdash-rowhd">현재<span>말씀 모음<\/span><\/div>$/.test(hd), true);
@@ -176,9 +181,9 @@ console.log('\n시나리오 2-3 — 명제도 대분류·태그·성경을 찾�
   sc.eq('목록에 없는 열쇠는 (목록에 없음)', D._vDashKeysOf('PXX없음', 'cat'), ['(목록에 없음)']);
 }
 
-console.log('\n시나리오 3 — 상세 팝업 5행 × 4열 이동 (양 끝 순환은 loopViews)');
+console.log('\n시나리오 3 — 상세 팝업 6행 × 4열 이동 (양 끝 순환은 loopViews)');
 {
-  sc.eq('점판이 20칸', (D._vDashDetailDotsHTML('home', 'cat').match(/vdd-dot/g) || []).length, 20);
+  sc.eq('점판이 24칸', (D._vDashDetailDotsHTML('home', 'cat').match(/vdd-dot/g) || []).length, 24);
   sc.eq('지금 칸 하나만 켜져 있다', (D._vDashDetailDotsHTML('home', 'cat').match(/vdd-dot on/g) || []).length, 1);
 
   ST.settings.loopViews = false;
@@ -187,18 +192,54 @@ console.log('\n시나리오 3 — 상세 팝업 5행 × 4열 이동 (양 끝 순
   sc.eq('왼쪽 끝에서는 못 간다(순환 꺼짐)', D.go(0, -1), null);
   sc.eq('위쪽 끝에서도 못 간다', D.go(-1, 0), null);
   sc.eq('아래로는 좋아요 행', D.go(1, 0), { kind: 'like', axis: 'cat' });
-  D.setCtx('even', 'book');
+  D.setCtx('keep', 'book');
   sc.eq('오른쪽 끝에서는 못 간다', D.go(0, 1), null);
   sc.eq('아래쪽 끝에서도 못 간다', D.go(1, 0), null);
+  sc.eq('저장 위는 Even', D.go(-1, 0), { kind: 'even', axis: 'book' });
 
   ST.settings.loopViews = true;
   D.setCtx('home', 'cat');
   sc.eq('순환 켜짐 — 왼쪽 끝에서 성경으로', D.go(0, -1), { kind: 'home', axis: 'book' });
-  sc.eq('순환 켜짐 — 위쪽 끝에서 Even 으로', D.go(-1, 0), { kind: 'even', axis: 'cat' });
-  D.setCtx('even', 'book');
-  sc.eq('순환 켜짐 — 오른쪽 끝에서 대분류로', D.go(0, 1), { kind: 'even', axis: 'cat' });
+  sc.eq('순환 켜짐 — 위쪽 끝에서 저장으로', D.go(-1, 0), { kind: 'keep', axis: 'cat' });
+  D.setCtx('keep', 'book');
+  sc.eq('순환 켜짐 — 오른쪽 끝에서 대분류로', D.go(0, 1), { kind: 'keep', axis: 'cat' });
   sc.eq('순환 켜짐 — 아래쪽 끝에서 현재 말씀 모음으로', D.go(1, 0), { kind: 'home', axis: 'book' });
   ST.settings.loopViews = false;
+}
+
+console.log("\n시나리오 2-4 — '저장'도 다른 반응과 똑같이 세어진다 (v26-0907-3, HB)");
+{
+  setVerses([
+    V('마태복음 1:1', '가', '', ['t1']),
+    V('로마서 8:28', '나', '', ['t2']),
+  ]);
+  KEEP = [
+    { ref: '마태복음 1:1', date: '2026-09-01', time: '09:00' },
+    { ref: '마태복음 1:1', date: '2026-09-02', time: '10:00' },
+    { ref: '로마서 8:28', date: '2026-09-03', time: '11:00' },
+  ];
+  const agg = D._vDashEntries('keep');
+  sc.eq('저장 기록이 ref 별로 접힌다', agg.length, 2);
+  sc.eq('마태복음이 2건', (agg.find(a => a.ref === '마태복음 1:1') || {}).count, 2);
+  sc.eq('로마서가 1건', (agg.find(a => a.ref === '로마서 8:28') || {}).count, 1);
+  const bk = D._vDashBuckets(agg, 'book').map(b => b.key);
+  sc.eq('성경 축으로도 갈린다', bk.includes('마태복음') && bk.includes('로마서'), true);
+
+  // 흐름·지도·연결·리듬이 쓰는 길 — 여기에도 저장이 있어야 한다
+  const tr = D._vTrEntries('keep');
+  sc.eq('흐름 쪽 원천도 3건', tr.length, 3);
+  sc.eq('흐름 쪽 원천에 날짜가 있다', tr.every(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)), true);
+  sc.eq('흐름 쪽 원천에 시각이 있다 (리듬이 쓴다)', tr.every(e => /^\d{2}:\d{2}$/.test(e.time)), true);
+
+  KEEP = [];
+  setVerses([]);
+}
+
+console.log("\n시나리오 2-5 — '저장' 행 머리는 아이콘으로 나온다");
+{
+  const hd = D._vDashRowHeadHTML('keep', '저장');
+  sc.eq('아이콘이 있다', hd.includes('<svg'), true);
+  sc.eq("이름이 '저장'", hd.includes('저장'), true);
 }
 
 console.log('\n시나리오 4 — 흐름: 날짜를 주/달 칸으로 나눈다');
@@ -353,7 +394,18 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   sc.eq("전환은 흐름이 맨 왼쪽", SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],"), true);
   sc.eq("화면이 다섯", (SRC.match(/const _VDASH_VIEWS=\[\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\]\];/)||[]).length, 1);
   sc.eq('흐름을 그리는 곳이 있다', SRC.includes('function renderVDashTrend(){'), true);
-  sc.eq('기간 칩은 분포에서만', /per\.style\.display=view==='pie'\?'flex':'none';/.test(SRC), true);
+  // v26-0907-3, HB 3-2 — 기간은 다섯 화면이 함께 쓰는 **한 벌**이 됐다.
+  // '직접' 날짜 줄만 그 칩이 있는 세 화면(분포·지도·연결)에서 나온다.
+  sc.eq('직접 날짜 줄은 전체·직접 칩이 있는 화면에서만',
+        /const hasAll=\(view==='pie'\|\|view==='map'\|\|view==='link'\);/.test(SRC), true);
+
+  // v26-0907-3 — '저장' 범위. 테스트는 _vlKindEntries 를 가짜로 쓰므로
+  // 진짜 원본에도 갈래가 뚫려 있는지 여기서 눈으로 확인한다.
+  sc.eq("흐름 쪽 원천에 저장 갈래가 있다", /function _vlKindEntries\(k\)\{[\s\S]{0,600}?if\(k==='keep'\)return _vlKeepEntries\(\);/.test(SRC), true);
+  // 분포도 이제 지도·연결과 **같은 길**로 센다 — 갈래를 따로 적을 필요가 없다
+  sc.eq('분포도 같은 기간 창을 쓴다',
+        /function _vDashEntries\(kind\)\{[\s\S]{0,200}?_aggByRef\(_vDashWinEntries\(kind,'all',sc\.unit,sc\.span,sc\)\)/.test(SRC), true);
+  sc.eq('저장이 범위 맨 끝이다', /_VDASH_KINDS=\[.*\['keep','저장'\]\];/.test(SRC), true);
 }
 
 sc.done();

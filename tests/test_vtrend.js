@@ -22,6 +22,8 @@ global._vDashVerse = () => null;
 global._vDashRefLabel = r => String(r||'');
 global._vDashIsPlaceholder = k => ['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'].indexOf(String(k))>=0;
 global.todayKey = () => '2026-09-06';
+// 직접 기간(날짜 두 개)은 대시보드 쪽 저장칸에 그대로 남아 있다 (v26-0907-3)
+global._vDashPref = () => (ST.settings.vDashPref = ST.settings.vDashPref || { customFrom:'', customTo:'' });
 global._vgEscAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 global._vDashQ = s => global._vgEscAttr(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 global._bibleRankOfRef = ref => {
@@ -207,7 +209,18 @@ console.log('\n시나리오 9-3 — 부드러운 슬라이더 (HB 5-1)');
     /el\.dataset\.done;\s*\n\s*if\(fn==='span'\)vTrSpanSet/.test(SRC), true);
   sc.eq('끄는 동안에는 손잡이와 글자만 바꾼다', /const paint=\(f,v\)=>\{/.test(SRC), true);
   sc.eq('PC 도 폰도 같은 포인터 이벤트로', SRC.includes("el.addEventListener('pointerdown',down);"), true);
-  sc.eq('넓으면 두 슬라이더를 한 줄에', /@media \(min-width:720px\)\{\s*\n?\s*\.vtr-slides\{flex-direction:row/.test(SRC.replace(/\n\s*/g,'\n')), true);
+  sc.eq('넓으면 두 슬라이더를 한 줄에', /@media \(min-width:720px\)\{[\s\S]{0,400}?\.vtr-slides\{flex-direction:row/.test(SRC), true);
+
+  // v26-0907-3, HB 3-1 — 값 라벨이 자기 레일 **앞**에 선다.
+  // 뒤에 두면 왼쪽 슬라이더의 숫자가 오른쪽 슬라이더에 더 붙어 보여 짝이 헷갈렸다.
+  {
+    const one = SRC.slice(SRC.indexOf('const row=u=>{'), SRC.indexOf('let chips='));
+    sc.eq('라벨이 레일보다 먼저 나온다',
+          one.indexOf('vtr-slide-lb') < one.indexOf('_vTrRailHTML('), true);
+  }
+  // 두 슬라이더 사이(28px)가 슬라이더 안쪽 간격(8px)보다 훨씬 넓다
+  sc.eq('슬라이더 사이가 안쪽보다 넓다', /\.vtr-slides\{flex-direction:row;align-items:center;gap:28px;\}/.test(SRC), true);
+  sc.eq('슬라이더 안쪽 간격은 8px', /\.vtr-slide\{display:flex;align-items:center;gap:8px;/.test(SRC), true);
 }
 
 console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간을 바꾼다 (HB 4)');
@@ -303,8 +316,13 @@ console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
   sc.eq('늘 있는 빈 칸이 × 를 오른쪽 끝으로 민다', SRC.includes('<div class="vdash-hdgap"></div>'), true);
   sc.eq('빈 칸이 늘어난다', /\.vdash-hdgap\{flex:1 1 auto;/.test(SRC), true);
   // v26-0906-8 — 화면이 다섯이 되면서 윗줄이 빽빽해졌다. 기간 칩은 아랫줄로 내렸다.
-  sc.eq('기간 칩은 윗줄이 아니라 그 아랫줄에 있다',
-        SRC.includes('id="vDashPeriods" style="display:none;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;margin:-4px 0 8px;"'), true);
+  // v26-0907-3, HB 3-2 — 분포 전용 기간 글자 버튼 줄을 아예 없앴다.
+  // 기간은 이제 본문 안 **한 벌**([전체][직접] + 주·달 슬라이더)뿐이다.
+  sc.eq('분포 전용 기간 줄은 사라졌다', SRC.includes('id="vDashPeriods"'), false);
+  sc.eq('분포 전용 기간 버튼 만들개도 사라졌다', SRC.includes('function _vDashPeriodBtnsHTML('), false);
+  sc.eq('기간 한 벌은 흐름 말고 세 화면에도 붙는다',
+        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g) || []).length, 2);
+  sc.eq('흐름은 전체·직접 칩 없이 쓴다', SRC.includes('ctl+=_vTrSpanRowHTML();'), true);
   sc.eq('윗줄에는 탭·책·빈칸·닫기만',
         /id="vDashViewTabs"><\/div>[\s\S]{0,900}vdash-hdgap[\s\S]{0,60}modal-x modal-x-inline" onclick="closeVerseDashboard/.test(SRC), true);
   sc.eq('윗줄에 말씀 모음 설정 단추가 있다', SRC.includes('onclick="vDashOpenCollSettings()"'), true);
@@ -430,9 +448,13 @@ console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
   sc.eq('화면이 다섯',
     SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];"), true);
   ['map','link','rhythm'].forEach(v=>{
-    sc.eq(`${v} 를 그리는 곳이 있다`, SRC.includes(`if(view==='${v}'){renderVDash`), true);
+    // v26-0907-3 — 화면마다 return 으로 빠져나가지 않는다. 다섯 화면이 다
+    // 슬라이더를 갖게 되어, 그린 **뒤에** 레일에 손가락을 붙여야 하기 때문이다.
+    sc.eq(`${v} 를 그리는 곳이 있다`, new RegExp(`view==='${v}'\\)renderVDash`).test(SRC), true);
   });
   // ⚠️ 칩·슬라이더가 늘 흐름을 그리면 지도에서 칩을 눌렀을 때 화면이 튄다
+  sc.eq('다 그린 뒤 슬라이더에 손가락을 붙인다',
+    /else renderVDashPie\(\);\s*\n\s*_vTrBindRails\(\);/.test(SRC), true);
   sc.eq('설정 칩은 지금 화면을 다시 그린다',
     /function vTrSet\(key,val\)\{[\s\S]{0,400}renderVerseDashboard\(\);/.test(SRC), true);
   sc.eq('흐름만 그리던 옛 호출은 한 곳(분기)뿐',
