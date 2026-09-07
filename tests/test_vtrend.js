@@ -22,6 +22,11 @@ global._vDashVerse = () => null;
 global._vDashRefLabel = r => String(r||'');
 global._vDashIsPlaceholder = k => ['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'].indexOf(String(k))>=0;
 global.todayKey = () => '2026-09-06';
+// 리듬의 세로 1겹은 **앱이 쓰는 그 시간대**다. 여기서 베껴 적지 말고
+// index.html 의 진짜 정의를 그대로 떠 온다 (바뀌면 테스트도 함께 따라간다).
+global.SECS = eval(slice('const DEFAULT_SECS=[', '\n];') + '\n];DEFAULT_SECS');
+// 직접 기간(날짜 두 개)은 대시보드 쪽 저장칸에 그대로 남아 있다 (v26-0907-3)
+global._vDashPref = () => (ST.settings.vDashPref = ST.settings.vDashPref || { customFrom:'', customTo:'' });
 global._vgEscAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 global._vDashQ = s => global._vgEscAttr(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 global._bibleRankOfRef = ref => {
@@ -37,7 +42,8 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrInsN','_vTrBucketOf','_vTrBucketList','_vTrUnitWord','_vTrChapterKeys','_vTrChapNo',
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
-  '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyWeeks','_VRHY_WEEKS',
+  '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
+  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
@@ -207,7 +213,18 @@ console.log('\n시나리오 9-3 — 부드러운 슬라이더 (HB 5-1)');
     /el\.dataset\.done;\s*\n\s*if\(fn==='span'\)vTrSpanSet/.test(SRC), true);
   sc.eq('끄는 동안에는 손잡이와 글자만 바꾼다', /const paint=\(f,v\)=>\{/.test(SRC), true);
   sc.eq('PC 도 폰도 같은 포인터 이벤트로', SRC.includes("el.addEventListener('pointerdown',down);"), true);
-  sc.eq('넓으면 두 슬라이더를 한 줄에', /@media \(min-width:720px\)\{\s*\n?\s*\.vtr-slides\{flex-direction:row/.test(SRC.replace(/\n\s*/g,'\n')), true);
+  sc.eq('넓으면 두 슬라이더를 한 줄에', /@media \(min-width:720px\)\{[\s\S]{0,400}?\.vtr-slides\{flex-direction:row/.test(SRC), true);
+
+  // v26-0907-3, HB 3-1 — 값 라벨이 자기 레일 **앞**에 선다.
+  // 뒤에 두면 왼쪽 슬라이더의 숫자가 오른쪽 슬라이더에 더 붙어 보여 짝이 헷갈렸다.
+  {
+    const one = SRC.slice(SRC.indexOf('const row=u=>{'), SRC.indexOf('let chips='));
+    sc.eq('라벨이 레일보다 먼저 나온다',
+          one.indexOf('vtr-slide-lb') < one.indexOf('_vTrRailHTML('), true);
+  }
+  // 두 슬라이더 사이(28px)가 슬라이더 안쪽 간격(8px)보다 훨씬 넓다
+  sc.eq('슬라이더 사이가 안쪽보다 넓다', /\.vtr-slides\{flex-direction:row;align-items:center;gap:28px;\}/.test(SRC), true);
+  sc.eq('슬라이더 안쪽 간격은 8px', /\.vtr-slide\{display:flex;align-items:center;gap:8px;/.test(SRC), true);
 }
 
 console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간을 바꾼다 (HB 4)');
@@ -303,8 +320,13 @@ console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
   sc.eq('늘 있는 빈 칸이 × 를 오른쪽 끝으로 민다', SRC.includes('<div class="vdash-hdgap"></div>'), true);
   sc.eq('빈 칸이 늘어난다', /\.vdash-hdgap\{flex:1 1 auto;/.test(SRC), true);
   // v26-0906-8 — 화면이 다섯이 되면서 윗줄이 빽빽해졌다. 기간 칩은 아랫줄로 내렸다.
-  sc.eq('기간 칩은 윗줄이 아니라 그 아랫줄에 있다',
-        SRC.includes('id="vDashPeriods" style="display:none;gap:9px;flex-wrap:wrap;justify-content:flex-end;align-items:center;margin:-4px 0 8px;"'), true);
+  // v26-0907-3, HB 3-2 — 분포 전용 기간 글자 버튼 줄을 아예 없앴다.
+  // 기간은 이제 본문 안 **한 벌**([전체][직접] + 주·달 슬라이더)뿐이다.
+  sc.eq('분포 전용 기간 줄은 사라졌다', SRC.includes('id="vDashPeriods"'), false);
+  sc.eq('분포 전용 기간 버튼 만들개도 사라졌다', SRC.includes('function _vDashPeriodBtnsHTML('), false);
+  sc.eq('기간 한 벌은 흐름 말고 세 화면에도 붙는다',
+        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g) || []).length, 2);
+  sc.eq('흐름은 전체·직접 칩 없이 쓴다', SRC.includes('ctl+=_vTrSpanRowHTML();'), true);
   sc.eq('윗줄에는 탭·책·빈칸·닫기만',
         /id="vDashViewTabs"><\/div>[\s\S]{0,900}vdash-hdgap[\s\S]{0,60}modal-x modal-x-inline" onclick="closeVerseDashboard/.test(SRC), true);
   sc.eq('윗줄에 말씀 모음 설정 단추가 있다', SRC.includes('onclick="vDashOpenCollSettings()"'), true);
@@ -402,9 +424,54 @@ console.log('\n시나리오 12 — 성경 지도');
   // ⚠️ 장 격자는 누른 칸이 있는 쪽(구약/신약) 바로 아래에 편다 — 맨 끝에 붙이면
   //    구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다 (v26-0906-6).
   sc.eq('구약을 누르면 구약 아래에',
-    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT)+(isOT?chapsHTML:'')"), true);
+    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')"), true);
   sc.eq('신약을 누르면 신약 아래에',
-    SRC.includes("+grid('신약',BIBLE_ORDER_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+    SRC.includes("+grid('신약',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+}
+
+// ═══ 14. v26-0907-3 — 지도 손질 (HB 6) ═══
+console.log('\n시나리오 14 — 지도: 갈래 줄바꿈 · 구간 슬라이더 · 뜨거운 색');
+{
+  // 6-2 갈래마다 줄을 바꾼다. 책 이름은 BIBLE_ORDER 차례를 그대로 끊어 쓴다.
+  const ot = _vMapGroups(BIBLE_ORDER_OT, _VMAP_GROUPS_OT);
+  const nt = _vMapGroups(BIBLE_ORDER_NT, _VMAP_GROUPS_NT);
+  sc.eq('구약이 다섯 갈래', ot.map(g => g.nm), ['율법서','역사서','시가서','대선지서','소선지서']);
+  sc.eq('신약이 다섯 갈래', nt.map(g => g.nm), ['복음서','역사서','바울서신','일반서신','예언서']);
+  sc.eq('율법서는 창~신', ot[0].books, ['창세기','출애굽기','레위기','민수기','신명기']);
+  sc.eq('역사서는 여호수아부터', ot[1].books[0], '여호수아');
+  sc.eq('소선지서 끝이 말라기', ot[4].books[ot[4].books.length-1], '말라기');
+  sc.eq('바울서신은 롬~몬 열셋', [nt[2].books[0], nt[2].books[12], nt[2].books.length], ['로마서','빌레몬서',13]);
+  sc.eq('예언서는 계시록 하나', nt[4].books, ['요한계시록']);
+  sc.eq('구약 39권을 다 덮는다', ot.reduce((a,g)=>a+g.books.length,0), 39);
+  sc.eq('신약 27권을 다 덮는다', nt.reduce((a,g)=>a+g.books.length,0), 27);
+  sc.eq('빠지거나 겹치는 책이 없다',
+        new Set(ot.concat(nt).flatMap(g=>g.books)).size, 66);
+
+  // 6-3 양쪽 손잡이 — 아무것도 안 골랐으면 구간 전체
+  ST.settings.vTrPref = null;
+  const full = _vMapRange('count', 12);
+  sc.eq('처음엔 구간 전체', [full.lo, full.hi, full.full], [0, 12, true]);
+  _vTrPref().mapRg = { count: { lo: 3, hi: 8 } };
+  const cut = _vMapRange('count', 12);
+  sc.eq('고른 구간을 쓴다', [cut.lo, cut.hi, cut.full], [3, 8, false]);
+  // 자료가 줄어 최댓값이 작아져도 구간이 밖으로 삐져나가지 않는다
+  const small = _vMapRange('count', 5);
+  sc.eq('최댓값이 줄면 함께 줄어든다', [small.lo, small.hi], [3, 5]);
+  _vTrPref().mapRg = { count: { lo: 9, hi: 2 } };
+  sc.eq('뒤집힌 값도 바로잡는다', (r => r.lo <= r.hi)(_vMapRange('count', 12)), true);
+  ST.settings.vTrPref = null;
+  // 보기(횟수/묵힘)마다 구간을 따로 든다 — 하나는 '번', 하나는 '주'다
+  sc.eq('보기마다 구간이 따로', SRC.includes("p.mapRg[mode]={lo:Math.round(lo),hi:Math.round(hi)};"), true);
+  sc.eq('구간 밖은 지우지 않고 흐린다', SRC.includes("if(v<rg.lo||v>rg.hi)cls+=' out';"), true);
+  sc.eq('두 손잡이는 서로를 밀지 않는다',
+        SRC.includes("if(grab==='lo')lo=Math.max(min,Math.min(hi,v));"), true);
+
+  // 6-4 횟수는 빨강(뜨거움), 묵힘의 호박색은 그대로
+  sc.eq('횟수는 빨강 계열', /return warm\?`rgba\(224,164,88,\$\{a\}\)`:`rgba\(203,58,68,\$\{a\}\)`;/.test(SRC), true);
+  sc.eq('예전 파랑은 사라졌다', SRC.includes('rgba(90,112,248,${a})'), false);
+
+  // 6-1 좌우 끝 테두리가 잘리지 않게 격자에 여백을 줬다
+  sc.eq('격자에 테두리 설 자리가 있다', /\.vmap-grid\{[^}]*padding:3px;margin:-3px;\}/.test(SRC), true);
 }
 
 console.log('\n시나리오 12-2 — 연결 · 리듬');
@@ -413,11 +480,6 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('짝 열쇠를 안 나오는 글자로 가른다',
         SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
   sc.eq('선을 누르면 그 성경으로', /onclick="vDashOpenFilter\('book','\$\{_vDashQ\(r\)\}'\)"/.test(SRC), true);
-  sc.eq('리듬 기본은 반년', _vRhyWeeks(), 26);
-  sc.eq('리듬은 12·26·52 만 받는다', _VRHY_WEEKS.map(x=>x[0]), ['12','26','52']);
-  ST.settings.vTrPref.rhyWeeks='52'; sc.eq('고른 값을 쓴다', _vRhyWeeks(), 52);
-  ST.settings.vTrPref.rhyWeeks='9';  sc.eq('엉뚱한 값이면 반년', _vRhyWeeks(), 26);
-  ST.settings.vTrPref=null;
   sc.eq('요일 수가 같으면 최다·최소를 말하지 않는다', SRC.includes('요일마다 고르게 보고 있어요'), true);
   // 세 화면은 흐름과 같은 범위·갈래를 쓴다
   const scp=_vDashScope();
@@ -425,14 +487,52 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('지도류의 기본 기간은 전체', scp.all, true);
 }
 
+// ═══ 13. v26-0907-3 — 리듬을 요일 × 한 시간으로 다시 짰다 (HB 5) ═══
+console.log('\n시나리오 13 — 리듬: 가로 요일 · 세로 두 겹(시간대 / 한 시간)');
+{
+  // 범위에서 '말씀 모음'은 빠진다 — 모음의 날짜 열에는 시각이 없다
+  sc.eq('범위는 반응 넷 + 저장 다섯', _VRHY_KINDS, ['like','mem','deeper','even','keep']);
+  sc.eq('말씀 모음은 빠져 있다', _VRHY_KINDS.indexOf('home'), -1);
+  sc.eq('말씀 모음을 고르고 있으면 좋아요로 본다', _vRhyKind('home'), 'like');
+  sc.eq('엉뚱한 값도 좋아요로', _vRhyKind('zzz'), 'like');
+  sc.eq('저장은 그대로 쓴다', _vRhyKind('keep'), 'keep');
+
+  // 세로 1겹 — 앱이 쓰는 시간대를 그대로 (기본 여섯: 새벽·오전·점심·오후·저녁·밤)
+  const bands = _vRhyBands();
+  sc.eq('시간대가 여섯 묶음', bands.length, 6);
+  sc.eq('첫 묶음은 새벽', bands[0].name, '새벽');
+  sc.eq('표는 첫 시간대가 시작하는 3시부터', bands[0].hs[0], 3);
+  sc.eq('스물넉 시간을 다 덮는다', bands.reduce((a,b)=>a+b.n,0), 24);
+  sc.eq('시각이 겹치지 않는다', new Set(bands.flatMap(b=>b.hs)).size, 24);
+  // 자정을 넘는 '밤'(20:00~03:00)이 한 묶음으로 이어진다 — 표가 두 동강 나지 않는다
+  const night = bands[bands.length-1];
+  sc.eq('마지막 묶음이 밤', night.name, '밤');
+  sc.eq('밤은 20시부터 2시까지 일곱 시간', [night.hs[0], night.hs[night.hs.length-1], night.n], [20, 2, 7]);
+
+  // 가로 요일 글자는 설정(요일 표기)을 따른다
+  sc.eq('요일 글자는 설정을 따른다', SRC.includes("const dow=(typeof getDOW==='function')?getDOW()"), true);
+  // 칸 자리를 하나하나 적는다 (자동 배치는 걸친 칸 때문에 어긋난다)
+  sc.eq('칸마다 자리를 적어 넣는다', /grid-column:\$\{3\+i\};grid-row:\$\{row\};/.test(SRC), true);
+  sc.eq('시간대 칸이 여러 줄을 걸친다', /grid-row:\$\{2\+r\}\/span \$\{b\.n\}/.test(SRC), true);
+  // 시각 없는 기록은 세지 않고, 몇 건인지 알려 준다
+  sc.eq('시각 없는 기록은 뺀다', SRC.includes("if(!m){noTime++;return;}"), true);
+  sc.eq('뺀 건수를 알려 준다', SRC.includes('시각이 없는 기록'), true);
+  // 옛 잔디는 사라졌다
+  sc.eq('옛 잔디(요일 × 주)는 없앴다', SRC.includes('vrhy-dot'), false);
+}
+
 console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
 {
   sc.eq('화면이 다섯',
     SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];"), true);
   ['map','link','rhythm'].forEach(v=>{
-    sc.eq(`${v} 를 그리는 곳이 있다`, SRC.includes(`if(view==='${v}'){renderVDash`), true);
+    // v26-0907-3 — 화면마다 return 으로 빠져나가지 않는다. 다섯 화면이 다
+    // 슬라이더를 갖게 되어, 그린 **뒤에** 레일에 손가락을 붙여야 하기 때문이다.
+    sc.eq(`${v} 를 그리는 곳이 있다`, new RegExp(`view==='${v}'\\)renderVDash`).test(SRC), true);
   });
   // ⚠️ 칩·슬라이더가 늘 흐름을 그리면 지도에서 칩을 눌렀을 때 화면이 튄다
+  sc.eq('다 그린 뒤 슬라이더에 손가락을 붙인다',
+    /else renderVDashPie\(\);\s*\n\s*_vTrBindRails\(\);/.test(SRC), true);
   sc.eq('설정 칩은 지금 화면을 다시 그린다',
     /function vTrSet\(key,val\)\{[\s\S]{0,400}renderVerseDashboard\(\);/.test(SRC), true);
   sc.eq('흐름만 그리던 옛 호출은 한 곳(분기)뿐',
