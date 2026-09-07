@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0907-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3886,7 +3886,37 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vmap-sum{font-size:11px;color:var(--tx2);line-height:1.5;margin:10px 0 2px;
   padding:8px 10px;border-radius:9px;background:var(--s2,rgba(255,255,255,.02));}
 .vmap-sum b{color:var(--ac-tx);font-weight:700;}
-/* ── 연결 — 그래프 뷰 (v26-0907-4, HB 7) ── */
+/* ── 연결 — 그래프 뷰 (v26-0907-4 · v26-0907-5, HB 7) ── */
+/* 위 줄 — 찾기 · 골라보기 · 배치 · 다시배치 */
+.vg-bar{display:flex;align-items:center;gap:7px;margin:2px 0 5px;}
+.vg-find{display:flex;align-items:center;gap:5px;flex:1;min-width:0;color:var(--tx3);
+  border-bottom:1px solid var(--bd2);padding-bottom:3px;}
+.vg-find input{flex:1;min-width:0;border:0;background:transparent;outline:none;
+  font-size:11.5px;color:var(--tx);font-family:inherit;padding:1px 0;}
+.vg-find input::placeholder{color:var(--tx3);opacity:.8;}
+/* iOS 사파리가 붙이는 기본 지우기 단추는 결이 달라 감춘다 */
+.vg-find input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;}
+.vg-btn{font-size:11px;color:var(--tx3);cursor:pointer;padding:2px 1px;white-space:nowrap;
+  -webkit-tap-highlight-color:transparent;flex:0 0 auto;}
+.vg-btn:hover{color:var(--ac-tx);}
+.vg-btn-ic{display:inline-flex;align-items:center;line-height:0;}
+.vg-note{font-size:9.5px;color:var(--tx3);line-height:1.5;min-height:0;margin-bottom:2px;}
+.vg-note b{color:var(--ac-tx);font-weight:700;}
+/* 골라 보기 목록 */
+.vgp-gp{font-size:10px;font-weight:700;color:var(--tx3);margin:9px 0 4px;letter-spacing:.02em;}
+.vgp-row{display:flex;align-items:center;gap:7px;padding:5px 2px;cursor:pointer;
+  border-radius:6px;-webkit-tap-highlight-color:transparent;}
+.vgp-row.on{background:var(--vtr-a-bg);}
+.vgp-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.vgp-nm{flex:1;min-width:0;font-size:11.5px;color:var(--tx2);overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;}
+.vgp-row.on .vgp-nm{color:var(--ac-tx);font-weight:700;}
+.vgp-n{font-size:10px;color:var(--tx3);font-family:var(--font-number);flex:0 0 auto;}
+.vgp-note{font-size:10px;color:var(--tx3);line-height:1.5;margin-bottom:4px;}
+.vgp-note b{color:var(--ac-tx);font-weight:700;}
+/* 배치 값 */
+.vgc-row{margin-bottom:11px;}
+.vgc-desc{font-size:9.5px;color:var(--tx3);opacity:.85;padding-left:66px;line-height:1.4;}
 .vlink-note{font-size:9.5px;color:var(--tx3);opacity:.8;margin-top:6px;line-height:1.5;}
 .vg-wrap{position:relative;margin-top:4px;}
 /* ⚠️ touch-action:none 이 없으면 폰에서 점을 끄는 대신 화면이 스크롤된다 */
@@ -4507,7 +4537,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-4";
+const APP_VERSION = "v. 26-0907-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6114,6 +6144,26 @@ window._fbScriptsReady=new Promise(resolve=>{
     <div id="vDashDetailBody" style="overflow:auto;flex:1;min-height:0;"></div>
     <div class="vdd-dots" id="vDashDetailDots"></div>
   </div>
+</div>
+
+<!-- ══════ 연결 그래프 — 골라 보기 (v26-0907-5, HB 1-1) ══════ -->
+<div class="event-modal-overlay" id="vgPickOverlay" style="display:none;z-index:4710;" onclick="closeVgPick()"></div>
+<div class="event-modal" id="vgPickModal" style="display:none;z-index:4711;width:min(92vw,380px);max-height:82vh;flex-direction:column;">
+  <button class="modal-x" onclick="closeVgPick()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="event-modal-title" style="margin-bottom:10px;padding:0 28px;">골라 보기</div>
+  <div id="vgPickBody" style="overflow:auto;flex:1;min-height:0;"></div>
+</div>
+
+<!-- ══════ 연결 그래프 — 배치 값 (v26-0907-5, HB 2-1) ══════ -->
+<div class="event-modal-overlay" id="vgCfgOverlay" style="display:none;z-index:4710;" onclick="closeVgCfg()"></div>
+<div class="event-modal" id="vgCfgModal" style="display:none;z-index:4711;width:min(92vw,380px);max-height:82vh;flex-direction:column;">
+  <button class="modal-x" onclick="closeVgCfg()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="event-modal-title" style="margin-bottom:10px;padding:0 28px;">배치 값</div>
+  <div id="vgCfgBody" style="overflow:auto;flex:1;min-height:0;"></div>
 </div>
 
 <!-- ══════ 말씀 대시보드 ══════
@@ -9624,6 +9674,8 @@ const _ESC_CLOSERS=[
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   // 팝업류
+  ['vgPickModal',     ()=>closeVgPick()],
+  ['vgCfgModal',      ()=>closeVgCfg()],
   ['syncConflictModal',()=>closeSyncConflicts()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
@@ -19701,6 +19753,8 @@ function _vTrRailBind(el){
     if(fn==='span')vTrSpanSet(el.dataset.unit,v);
     else if(fn==='ins')vTrInsSet(v);
     else if(fn==='slices')vDashSetSlices(v);
+    else if(fn==='vgdepth')vgDepthSet(v);
+    else if(fn&&fn.indexOf('vgcfg:')===0)vgCfgSet(fn.slice(6),v);
   };
   el.addEventListener('pointerdown',down);
   el.addEventListener('pointermove',move);
@@ -20752,26 +20806,153 @@ function _vLinkAxis(){
   const a=_vTrPref().linkAxis;
   return _VLINK_LEFTS.some(x=>x[0]===a)?a:'tag';
 }
-// ══════ 연결 — 그래프 뷰 (v26-0907-4, HB 7) ══════
-// 두 줄로 세워 두고 선을 잇던 것을 **그래프**로 바꿨다. 옵시디언의 그래프 뷰처럼
+// ══════ 연결 — 그래프 뷰 (v26-0907-4 · v26-0907-5, HB 7) ══════
 // 점끼리 서로 밀고(척력) 이어진 점끼리 당겨서(용수철) 스스로 자리를 잡는다.
 //
 //   점 = 주제(대분류/소주제/태그) + 성경.  선 = 함께 나온 횟수(굵기).
 //   점을 끌어 옮기고, 빈 곳을 끌어 화면을 밀고, 휠·두 손가락으로 키우고 줄인다.
 //   점을 톡 누르면 그 목록이 열린다.
 //
+// v26-0907-5 (HB) 에 넷이 붙었다:
+//   0   점이 격하게 춤추던 것 — 식힘(alpha)을 **자리 이동에 곱하고** 가까울 때
+//       터지던 척력에 상한을 뒀다. 말씀 모음처럼 점이 많을 때 특히 심했다.
+//   1   골라 보기 — 목록에서 점을 여럿 고르고, 거기서 **N뎁스**까지만 본다.
+//       검색어는 타이핑하는 동안 바로 걸린다.
+//   2-1 배치 값(사이 거리·미는 힘·당기는 힘·글자 크기)을 팝업에서 고친다.
+//   2-2 키울 때 점과 글자가 **제곱근만큼만** 커진다 (다른 걸 안 가린다).
+//
 // ⚠️ 라이브러리를 못 쓴다(단일 파일·오프라인). 그래서 물리를 직접 돌린다.
-//    점이 40개 안쪽이라 모든 쌍을 다 재도(O(n²)) 한 판에 800번이 안 된다.
 // ⚠️ **반드시 멈춰야 한다.** 화면을 옮기거나 대시보드를 닫을 때 _vgStop() 을
 //    부르지 않으면 애니메이션이 뒤에서 영원히 돈다 (배터리를 먹는다).
 const _VG_MAXL=14, _VG_MAXR=22;     // 주제 점 · 성경 점 수 상한 (넘으면 많은 순으로 자른다)
 // ⚠️ 주제 색에는 **회색을 넣지 않는다.** 성경 점이 회색이라, 주제가 회색으로
 //    돌아오는 순간(_VTR_COLORS 의 여섯째) 둘을 눈으로 못 가른다.
 const _VG_COLORS=['#5a70f8','#4bb3a6','#e0a458','#c2668f','#6aa5d8','#7c8cf9','#3fae86','#d08a4a'];
+const _VG_SEP='\u0001';   // 이름에 절대 안 나오는 글자
 let _vgSim=null;
+let _vgData=null;      // 지금 그려 둔 그래프 {N,E,W,H,la} — 거르기가 이것을 다시 쓴다
+let _vgQuery='';       // 검색어. **저장하지 않는다** — 화면을 떠나면 지워진다
 function _vgStop(){
   if(_vgSim&&_vgSim.raf)cancelAnimationFrame(_vgSim.raf);
   _vgSim=null;
+  _vgData=null;
+}
+// ── 배치 값 (2-1) ────────────────────────────────────────────────────────
+// ⚠️ 사람이 읽는 이름과 물리 값은 다르다. 팝업은 '사이 거리·미는 힘·당기는 힘'
+//    으로 묻고, 여기서 물리 값으로 옮긴다. 당기는 힘은 0.001 단위라 백분율처럼
+//    다루지 않으면 슬라이더가 못 잡는다.
+const _VG_DEF={rest:64,rep:760,pull:24,font:100};
+function _vgCfg(){
+  const p=_vTrPref();
+  if(!p.vgCfg||typeof p.vgCfg!=='object')p.vgCfg=Object.assign({},_VG_DEF);
+  const c=p.vgCfg;
+  const cl=(v,d,lo,hi)=>{const n=parseFloat(v);return(isFinite(n)&&n>=lo&&n<=hi)?n:d;};
+  return{rest:cl(c.rest,_VG_DEF.rest,24,150),
+         rep:cl(c.rep,_VG_DEF.rep,200,2200),
+         pull:cl(c.pull,_VG_DEF.pull,5,70),      // 실제 용수철 세기 = pull/1000
+         font:cl(c.font,_VG_DEF.font,60,170)};   // 글자 크기 백분율
+}
+function vgCfgSet(key,val){
+  const p=_vTrPref();
+  if(!p.vgCfg||typeof p.vgCfg!=='object')p.vgCfg=Object.assign({},_VG_DEF);
+  p.vgCfg[key]=val;
+  save();
+  renderVDashLink();
+  renderVgCfg();
+}
+function vgCfgReset(){
+  _vTrPref().vgCfg=Object.assign({},_VG_DEF);
+  save();
+  renderVDashLink();
+  renderVgCfg();
+}
+// ── 골라 보기 (1-1) ──────────────────────────────────────────────────────
+function _vgSel(){
+  const p=_vTrPref();
+  if(!Array.isArray(p.vgSel))p.vgSel=[];
+  return p.vgSel;
+}
+function _vgDepth(){
+  const n=parseInt(_vTrPref().vgDepth,10);
+  return(isFinite(n)&&n>=0&&n<=4)?n:1;
+}
+function vgDepthSet(v){
+  _vTrPref().vgDepth=Math.max(0,Math.min(4,parseInt(v,10)||0));
+  save();
+  _vgApplyFilter();
+  renderVgPick();
+}
+function vgToggleSel(id){
+  const sel=_vgSel();
+  const i=sel.indexOf(id);
+  if(i<0)sel.push(id); else sel.splice(i,1);
+  save();
+  _vgApplyFilter();
+  renderVgPick();
+}
+function vgClearSel(){
+  _vTrPref().vgSel=[];
+  _vgQuery='';
+  const box=document.getElementById('vgSearch');
+  if(box)box.value='';
+  save();
+  _vgApplyFilter();
+  renderVgPick();
+}
+// 검색 — 타이핑하는 동안 바로 걸린다 (1-2)
+// ⚠️ 다시 그리지 않는다. 점의 자리를 그대로 두고 **보임/숨김만** 바꾼다 —
+//    글자 한 자마다 배치를 새로 하면 화면이 춤춘다.
+function vgSearch(q){
+  _vgQuery=String(q||'').trim().toLowerCase();
+  _vgApplyFilter();
+  renderVgPick();
+}
+// 씨앗 = (검색어가 있으면 걸린 점) 아니면 (고른 점). 둘 다 없으면 전부 보인다.
+// ⚠️ 검색어가 고른 것을 **덮는다.** 둘을 합치면 "검색했는데 왜 딴 게 보이지"가 된다.
+function _vgSeeds(N){
+  const out=new Set();
+  if(_vgQuery){
+    N.forEach((n,i)=>{ if(n.key.toLowerCase().indexOf(_vgQuery)>=0)out.add(i); });
+    return out;
+  }
+  const sel=_vgSel();
+  if(sel.length)N.forEach((n,i)=>{ if(sel.indexOf(n.kind+_VG_SEP+n.key)>=0)out.add(i); });
+  return out;
+}
+// 씨앗에서 depth 걸음까지 번져 나간 점들. 씨앗이 없으면 null(= 전부 보임).
+function _vgReach(N,E,seeds,depth){
+  if(!seeds.size)return null;
+  const adj=N.map(()=>[]);
+  E.forEach(e=>{ adj[e.a].push(e.b); adj[e.b].push(e.a); });
+  const seen=new Set(seeds);
+  let front=[...seeds];
+  for(let d=0;d<depth&&front.length;d++){
+    const next=[];
+    front.forEach(i=>adj[i].forEach(j=>{ if(!seen.has(j)){seen.add(j);next.push(j);} }));
+    front=next;
+  }
+  return seen;
+}
+// 지금 조건대로 보임/숨김을 다시 매긴다 (배치는 건드리지 않는다)
+function _vgApplyFilter(){
+  if(!_vgData||!_vgSim)return;
+  const{N,E}=_vgData;
+  const seeds=_vgSeeds(N);
+  const reach=_vgReach(N,E,seeds,_vgDepth());
+  N.forEach((n,i)=>{ n.hide=!!(reach&&!reach.has(i)); });
+  _vgData.shown=reach?reach.size:N.length;
+  if(_vgSim.mark)_vgSim.mark();
+  if(_vgSim.wake)_vgSim.wake();      // 남은 점끼리 다시 자리를 잡는다
+  const lb=document.getElementById('vgFilterNote');
+  if(lb)lb.innerHTML=_vgFilterNoteHTML();
+}
+function _vgFilterNoteHTML(){
+  if(!_vgData)return '';
+  const tot=_vgData.N.length, shown=_vgData.shown==null?tot:_vgData.shown;
+  if(shown>=tot)return '';
+  const why=_vgQuery?`'${esc(_vgQuery)}'`:`고른 ${_vgSel().length}개`;
+  return `${why} 에서 <b>${_vgDepth()}뎁스</b> — ${tot}개 중 <b>${shown}개</b> `+
+    `<span class="vdash-link" onclick="vgClearSel()">모두 보기</span>`;
 }
 function renderVDashLink(){
   const box=document.getElementById('vDashBody');
@@ -20779,8 +20960,7 @@ function renderVDashLink(){
   _vgStop();
   _vDashVerseMap=null;
   const sc=_vDashScope(), la=_vLinkAxis();
-  // 이름에 절대 안 나오는 글자 (_reactKey 가 쓰는 것과 같은 수)
-  const SEP='\u0001';
+  const SEP=_VG_SEP;
   const pair=new Map(), lTot=new Map(), rTot=new Map();
   _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
     const ls=_vDashKeysOf(e.ref,la,e.v).filter(k=>!_vDashIsPlaceholder(k));
@@ -20811,7 +20991,7 @@ function renderVDashLink(){
     const t=nodes.length*2.399963;                 // 황금각 — 고르게 퍼진다
     const rad=Math.min(W,H)*0.34*Math.sqrt((nodes.length+1)/tot);
     nodes.push({key,kind,w:weight,color,
-      x:cx+Math.cos(t)*rad, y:cy+Math.sin(t)*rad, vx:0, vy:0, deg:0});
+      x:cx+Math.cos(t)*rad, y:cy+Math.sin(t)*rad, vx:0, vy:0, deg:0, hide:false});
   };
   L.forEach(([k,v],i)=>push(k,'topic',v,_VG_COLORS[i%_VG_COLORS.length]));
   R.forEach(([k,v])=>push(k,'book',v,''));
@@ -20833,14 +21013,25 @@ function renderVDashLink(){
   let wmax=1; N.forEach(n=>{if(n.w>wmax)wmax=n.w;});
   N.forEach(n=>{ n.r=(n.kind==='topic'?5:3.5)+Math.sqrt(n.w/wmax)*(n.kind==='topic'?7:5); });
 
-  html+=`<div class="vg-wrap">`+
+  html+=`<div class="vg-bar">`+
+    `<span class="vg-find">`+
+      `<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+      `stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L18 18"/></svg>`+
+      `<input id="vgSearch" type="search" placeholder="이름으로 찾기" autocomplete="off" `+
+      `value="${_vgEscAttr(_vgQuery)}" oninput="vgSearch(this.value)">`+
+    `</span>`+
+    `<span class="vg-btn" onclick="openVgPick()" title="골라 보기">골라보기</span>`+
+    `<span class="vg-btn" onclick="openVgCfg()" title="배치 값">배치</span>`+
+    `<span class="vg-btn vg-btn-ic" onclick="vDashLinkRelayout()" title="다시 배치">`+
+      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+      `stroke-width="1.6" stroke-linecap="round"><path d="M16.5 6.5A7.5 7.5 0 1 0 17 11"/>`+
+      `<path d="M17 3v4h-4"/></svg></span>`+
+    `</div>`+
+    `<div class="vg-note" id="vgFilterNote"></div>`+
+    `<div class="vg-wrap">`+
     `<svg id="vgSvg" class="vg-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`+
-    `<g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg>`+
-    `<span class="vg-reset" onclick="vDashLinkRelayout()" title="다시 배치">`+
-    `<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
-    `stroke-width="1.6" stroke-linecap="round"><path d="M16.5 6.5A7.5 7.5 0 1 0 17 11"/>`+
-    `<path d="M17 3v4h-4"/></svg></span></div>`;
-  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다 (예전 화면에서 그대로 가져온다)
+    `<g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg></div>`;
+  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
   const skew=[];
   L.forEach(([l])=>{
     const t2=lTot.get(l)||0;
@@ -20857,7 +21048,9 @@ function renderVDashLink(){
   html+=`<div class="vlink-note">점을 끌어 옮기고, 빈 곳을 끌어 밀어요. `+
     `휠(또는 두 손가락)로 키우고 줄여요. 점을 톡 누르면 그 목록이 열려요.</div>`;
   box.innerHTML=html;
+  _vgData={N,E,W,H,la,shown:N.length};
   _vgRun(N,E,W,H,mx,la);
+  _vgApplyFilter();
 }
 function vDashLinkRelayout(){ renderVDashLink(); }
 // ⚠️ 서로 안 이어진 덩어리는 척력만 받아 **판 밖으로 날아간다.** 가운데로
@@ -20877,12 +21070,13 @@ function _vgRun(N,E,W,H,mx,la){
   if(!svg||!gV||!N.length)return;
   const NS='http://www.w3.org/2000/svg';
   const cx=W/2, cy=H/2;
+  const cfg=_vgCfg();
   const lineEls=E.map(e=>{
     const el=document.createElementNS(NS,'line');
     el.setAttribute('stroke',N[e.a].color||'var(--tx3)');
-    el.setAttribute('stroke-width',(0.7+(e.v/mx)*3.4).toFixed(2));
     el.setAttribute('stroke-opacity','0.32');
     el.setAttribute('stroke-linecap','round');
+    el._w=0.7+(e.v/mx)*3.4;
     gL.appendChild(el);
     return el;
   });
@@ -20891,7 +21085,6 @@ function _vgRun(N,E,W,H,mx,la){
     g.setAttribute('class','vg-node');
     g.setAttribute('data-i',String(i));
     const c=document.createElementNS(NS,'circle');
-    c.setAttribute('r',n.r.toFixed(1));
     c.setAttribute('fill',n.color||'var(--tx3)');
     c.setAttribute('fill-opacity',n.kind==='topic'?'0.95':'0.45');
     if(n.kind==='topic'){                       // 주제는 테두리 한 겹 — 결이 다르다
@@ -20902,9 +21095,9 @@ function _vgRun(N,E,W,H,mx,la){
     const t=document.createElementNS(NS,'text');
     t.setAttribute('class','vg-lb');
     t.setAttribute('text-anchor','middle');
-    t.setAttribute('font-size',n.kind==='topic'?'10.5':'9.5');
     // 이름이 길면 줄인다 — 안 줄이면 판 밖으로 삐져나가 잘린다 (전체는 tooltip 에)
     t.textContent=(n.key.length>9)?(n.key.slice(0,8)+'…'):n.key;
+    t._base=(n.kind==='topic'?10.5:9.5);
     g.appendChild(t);
     const ti=document.createElementNS(NS,'title');
     ti.textContent=n.key+' — '+n.w;
@@ -20912,6 +21105,28 @@ function _vgRun(N,E,W,H,mx,la){
     gN.appendChild(g);
     return{g,c,t};
   });
+  // ── 2-2 · 키울 때 점과 글자는 **제곱근만큼만** 커진다 ────────────────────
+  // ⚠️ 그냥 두면 확대 배율 그대로 커져 서로를 가린다. 자리는 배율대로 벌어지되
+  //    크기는 √배율만 커지게, 안쪽에서 배율의 역수를 곱해 상쇄한다.
+  let zm=1;
+  const applyScale=()=>{
+    const k=1/Math.sqrt(zm);                 // 그려지는 크기 = 원래 × √zm
+    const f=_vgCfg().font/100;
+    N.forEach((n,i)=>{
+      const o=nodeEls[i];
+      o.c.setAttribute('r',(n.r*k).toFixed(2));
+      o.t.setAttribute('font-size',(o.t._base*f*k).toFixed(2));
+      o.t.setAttribute('y',(n.r*k+9*k).toFixed(2));
+    });
+    lineEls.forEach(el=>el.setAttribute('stroke-width',(el._w*k).toFixed(2)));
+  };
+  // 보임/숨김만 다시 칠한다 (검색·골라보기가 부른다)
+  const mark=()=>{
+    N.forEach((n,i)=>{ nodeEls[i].g.style.display=n.hide?'none':''; });
+    E.forEach((e,i)=>{
+      lineEls[i].style.display=(N[e.a].hide||N[e.b].hide)?'none':'';
+    });
+  };
   const paint=()=>{
     E.forEach((e,i)=>{
       const a=N[e.a], b=N[e.b], el=lineEls[i];
@@ -20919,64 +21134,94 @@ function _vgRun(N,E,W,H,mx,la){
       el.setAttribute('x2',b.x.toFixed(1)); el.setAttribute('y2',b.y.toFixed(1));
     });
     N.forEach((n,i)=>{
-      const o=nodeEls[i];
-      o.g.setAttribute('transform','translate('+n.x.toFixed(1)+','+n.y.toFixed(1)+')');
-      o.t.setAttribute('y',(n.r+9).toFixed(1));
+      nodeEls[i].g.setAttribute('transform','translate('+n.x.toFixed(1)+','+n.y.toFixed(1)+')');
     });
   };
-  // 한 판 — 척력 · 용수철 · 가운데로 · 감쇠
-  const REST=64, K=0.024, REP=760, DAMP=0.86;
+  // ── 한 판 — 척력 · 용수철 · 가운데로 · 감쇠 ──────────────────────────────
+  // ⚠️ v26-0907-5 (HB 0) — "말씀 모음 전체를 보면 점들이 격하게 춤추다 멈춘다".
+  //    까닭 둘: ① 척력이 REP/d² 라 두 점이 가까우면 값이 폭발해 한 판에 화면
+  //    절반을 건너뛴다. ② 식힘(alpha)을 **멈출 때를 정하는 데만** 쓰고 자리
+  //    이동에는 안 곱해서, 마지막 순간까지 전속력으로 움직이다 뚝 선다.
+  //    → 척력에 상한을 두고, 이동에 alpha 를 곱해 점점 잦아들게 한다.
+  const REST=cfg.rest, K=cfg.pull/1000, REP=cfg.rep, DAMP=0.86;
+  // ⚠️ 가까울 때 REP/d² 가 폭발하는 것은 **힘에 뚜껑을 씌워** 막지 않는다.
+  //    뚜껑을 씌우면 겹친 점이 서로 못 밀어내 한 덩어리로 뭉친다 (실제로 그랬다).
+  //    대신 거리에 **바닥**을 준다 — 12px 보다 가까우면 12px 로 친다.
+  const DMIN2=144;
+  // ⚠️ 같은 갈래끼리는 더 세게 민다. 말씀 모음처럼 주제마다 성경을 거의 다
+  //    갖는 그래프에서는 용수철이 주제들을 **모두 같은 한가운데**로 끌어당겨,
+  //    이름표가 서로 포개져 읽을 수 없게 된다. 같은 갈래를 더 밀어 흩어 놓는다.
+  // ⚠️ 주제끼리를 가장 세게 민다 — 주제 이름('그리스도를 전함')이 성경 이름보다
+  //    훨씬 길어 같은 거리라도 이름표가 먼저 부딪힌다.
+  const _rep2=(a,b)=>(a.kind!==b.kind)?1:(a.kind==='topic'?7:2.2);
+  let alpha=1;
   const tick=()=>{
     const n=N.length;
     for(let i=0;i<n;i++){
       const a=N[i];
+      if(a.hide)continue;
       for(let j=i+1;j<n;j++){
         const b=N[j];
+        if(b.hide)continue;
         let dx=a.x-b.x, dy=a.y-b.y;
         let d2=dx*dx+dy*dy;
         if(d2<1){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=1;}   // 겹치면 살짝 흔든다
         const d=Math.sqrt(d2);
-        const f=REP/d2, ux=dx/d, uy=dy/d;
+        const dd=Math.max(d2,DMIN2);
+        const f=REP*_rep2(a,b)/dd, ux=dx/d, uy=dy/d;
         a.vx+=ux*f; a.vy+=uy*f;
         b.vx-=ux*f; b.vy-=uy*f;
       }
     }
     E.forEach(e=>{
       const a=N[e.a], b=N[e.b];
+      if(a.hide||b.hide)return;
       const dx=b.x-a.x, dy=b.y-a.y;
       const d=Math.max(1,Math.hypot(dx,dy));
       const f=(d-REST)*K, ux=dx/d, uy=dy/d;
       a.vx+=ux*f; a.vy+=uy*f;
       b.vx-=ux*f; b.vy-=uy*f;
     });
+    let moved=0;
     N.forEach(p=>{
-      p.vx+=(cx-p.x)*0.006; p.vy+=(cy-p.y)*0.006;
+      if(p.hide){p.vx=0;p.vy=0;return;}
+      p.vx+=(cx-p.x)*0.004; p.vy+=(cy-p.y)*0.004;
       if(p.fix){p.vx=0;p.vy=0;_vgClamp(p,W,H);return;}  // 끌고 있는 점은 손가락이 자리를 정한다
       p.vx*=DAMP; p.vy*=DAMP;
-      p.x+=Math.max(-18,Math.min(18,p.vx));
-      p.y+=Math.max(-18,Math.min(18,p.vy));
+      // ⚠️ 식힘을 이동에 곱한다 — 이것이 '춤추다 뚝 멈추는' 것을 없앤다
+      const ddx=Math.max(-10,Math.min(10,p.vx))*alpha;
+      const ddy=Math.max(-10,Math.min(10,p.vy))*alpha;
+      p.x+=ddx; p.y+=ddy;
       _vgClamp(p,W,H);
+      const m=Math.abs(ddx)+Math.abs(ddy);
+      if(m>moved)moved=m;
     });
+    return moved;
   };
   // 처음 몇 판은 안 그리고 돌려 둔다 — 점이 튀어나오는 모습을 안 보인다
-  for(let i=0;i<90;i++)tick();
-  paint();
-  let alpha=1;
+  for(let i=0;i<160;i++)tick();
+  applyScale(); mark(); paint();
+  // ⚠️ 이미 잦아들었으면 **곧바로 멈춘다.** 워밍업에서 거의 자리를 잡고 오므로,
+  //    안 움직이는 그림을 3초 동안 다시 그리는 것은 배터리만 먹는다.
+  let still=0;
   const loop=()=>{
     if(!_vgSim)return;
-    tick(); paint();
+    const moved=tick();
+    paint();
     alpha*=0.985;
-    if(alpha>0.06)_vgSim.raf=requestAnimationFrame(loop);
+    still=(moved<0.05)?(still+1):0;
+    if(alpha>0.06&&still<8)_vgSim.raf=requestAnimationFrame(loop);
     else _vgSim.raf=null;
   };
-  _vgSim={raf:null,wake:()=>{
-    alpha=1;
-    if(_vgSim&&!_vgSim.raf)_vgSim.raf=requestAnimationFrame(loop);
-  }};
+  _vgSim={raf:null,mark,
+    wake:()=>{
+      alpha=1;
+      if(_vgSim&&!_vgSim.raf)_vgSim.raf=requestAnimationFrame(loop);
+    }};
   _vgSim.raf=requestAnimationFrame(loop);
 
   // ── 손가락 · 마우스 ──────────────────────────────────────────────────
-  let tx=0,ty=0,zm=1;
+  let tx=0,ty=0;
   const applyView=()=>gV.setAttribute('transform',
     'translate('+tx.toFixed(1)+','+ty.toFixed(1)+') scale('+zm.toFixed(3)+')');
   const toGraph=(clientX,clientY)=>{
@@ -20988,7 +21233,7 @@ function _vgRun(N,E,W,H,mx,la){
   const zoomTo=next=>{
     const n2=Math.max(0.4,Math.min(3,next));
     tx=W/2-(W/2-tx)*(n2/zm); ty=H/2-(H/2-ty)*(n2/zm);
-    zm=n2; applyView();
+    zm=n2; applyView(); applyScale();
   };
   const pts=new Map();
   let drag=null, moved=0, panFrom=null, pinch=null;
@@ -21024,6 +21269,7 @@ function _vgRun(N,E,W,H,mx,la){
       const g=toGraph(e.clientX,e.clientY), n=N[drag.i];
       moved+=Math.abs(g.x-n.x)+Math.abs(g.y-n.y);
       n.x=g.x; n.y=g.y; n.vx=0; n.vy=0;
+      _vgClamp(n,W,H);
       if(_vgSim)_vgSim.wake();
       e.preventDefault();
     }else if(panFrom){
@@ -21054,6 +21300,89 @@ function _vgRun(N,E,W,H,mx,la){
     e.preventDefault();
     zoomTo(zm*(e.deltaY<0?1.12:1/1.12));
   },{passive:false});
+}
+// ══════ 골라 보기 팝업 (1-1) ══════
+function openVgPick(){
+  if(!_vgData){showToast('먼저 연결 그래프를 열어 주세요');return;}
+  document.getElementById('vgPickOverlay').style.display='block';
+  document.getElementById('vgPickModal').style.display='flex';
+  renderVgPick();
+}
+function closeVgPick(){
+  document.getElementById('vgPickOverlay').style.display='none';
+  document.getElementById('vgPickModal').style.display='none';
+}
+function renderVgPick(){
+  const body=document.getElementById('vgPickBody');
+  if(!body||!_vgData)return;
+  const{N,la}=_vgData;
+  const sel=_vgSel(), d=_vgDepth();
+  const group=(kind,title)=>{
+    const rows=N.map((n,i)=>({n,i})).filter(x=>x.n.kind===kind)
+      .sort((x,y)=>y.n.w-x.n.w||_vDashKeyCmp(x.n.key,y.n.key));
+    if(!rows.length)return '';
+    return `<div class="vgp-gp">${esc(title)}</div>`+
+      rows.map(({n})=>{
+        const id=n.kind+_VG_SEP+n.key;
+        const on=sel.indexOf(id)>=0;
+        return `<div class="vgp-row${on?' on':''}" onclick="vgToggleSel('${_vDashQ(id)}')">`+
+          `<span class="vgp-dot" style="background:${n.color||'var(--tx3)'};`+
+          `opacity:${n.kind==='topic'?'0.95':'0.45'};"></span>`+
+          `<span class="vgp-nm">${esc(n.key)}</span>`+
+          `<span class="vgp-n">${n.w}</span></div>`;
+      }).join('');
+  };
+  const axisName=(_VLINK_LEFTS.find(x=>x[0]===la)||[,'주제'])[1];
+  body.innerHTML=
+    `<div class="vtr-ctl" style="margin-bottom:10px;">`+
+      `<span class="vtr-ctl-lb">뎁스</span>`+
+      `<span class="vtr-ctl-vals vtr-slides"><div class="vtr-slide on">`+
+        `<span class="vtr-slide-lb" id="vgDepthLb">${d}뎁스</span>`+
+        _vTrRailHTML({min:0,max:4,val:d,done:'vgdepth',lb:'vgDepthLb',
+                      suffix:'뎁스',label:'몇 걸음까지 볼지'})+
+      `</div></span></div>`+
+    `<div class="vgp-note">고른 점에서 <b>${d}걸음</b>까지 이어진 점만 보여요. `+
+      `0이면 고른 것만 보여요.</div>`+
+    group('topic',axisName)+group('book','성경')+
+    `<div style="margin-top:10px;text-align:right;">`+
+      `<span class="vdash-link" onclick="vgClearSel()">모두 지우기</span></div>`;
+  _vTrBindRails(body);
+}
+// ══════ 배치 값 팝업 (2-1) ══════
+function openVgCfg(){
+  document.getElementById('vgCfgOverlay').style.display='block';
+  document.getElementById('vgCfgModal').style.display='flex';
+  renderVgCfg();
+}
+function closeVgCfg(){
+  document.getElementById('vgCfgOverlay').style.display='none';
+  document.getElementById('vgCfgModal').style.display='none';
+}
+// [열쇠, 이름, 최소, 최대, 단위, 한 줄 설명]
+const _VG_CFG_ROWS=[
+  ['rest','사이 거리',24,150,'','이어진 두 점이 머물려는 거리예요'],
+  ['rep','미는 힘',200,2200,'','점끼리 밀어내는 세기예요 — 크면 넓게 퍼져요'],
+  ['pull','당기는 힘',5,70,'','이어진 점을 끌어당기는 세기예요 — 크면 뭉쳐요'],
+  ['font','글자 크기',60,170,'%','이름 글자 크기예요'],
+];
+function renderVgCfg(){
+  const body=document.getElementById('vgCfgBody');
+  if(!body)return;
+  const c=_vgCfg();
+  body.innerHTML=_VG_CFG_ROWS.map(([key,nm,lo,hi,unit,desc])=>
+    `<div class="vgc-row">`+
+      `<div class="vtr-ctl" style="margin-bottom:2px;">`+
+        `<span class="vtr-ctl-lb" style="flex:0 0 58px;">${esc(nm)}</span>`+
+        `<span class="vtr-ctl-vals vtr-slides"><div class="vtr-slide on">`+
+          `<span class="vtr-slide-lb vtr-slide-lb2" id="vgCfgLb_${key}">${c[key]}${unit}</span>`+
+          _vTrRailHTML({min:lo,max:hi,val:c[key],done:'vgcfg:'+key,lb:'vgCfgLb_'+key,
+                        suffix:unit,label:nm})+
+        `</div></span></div>`+
+      `<div class="vgc-desc">${esc(desc)}</div>`+
+    `</div>`).join('')+
+    `<div style="margin-top:12px;text-align:right;">`+
+      `<span class="vdash-link" onclick="vgCfgReset()">기본값으로</span></div>`;
+  _vTrBindRails(body);
 }
 // ── 주간 리듬 (잔디) ─────────────────────────────────────────────────────
 // ── 리듬 (요일 × 한 시간) ────────────────────────────────────────────────
