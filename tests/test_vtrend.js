@@ -22,6 +22,9 @@ global._vDashVerse = () => null;
 global._vDashRefLabel = r => String(r||'');
 global._vDashIsPlaceholder = k => ['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'].indexOf(String(k))>=0;
 global.todayKey = () => '2026-09-06';
+// 리듬의 세로 1겹은 **앱이 쓰는 그 시간대**다. 여기서 베껴 적지 말고
+// index.html 의 진짜 정의를 그대로 떠 온다 (바뀌면 테스트도 함께 따라간다).
+global.SECS = eval(slice('const DEFAULT_SECS=[', '\n];') + '\n];DEFAULT_SECS');
 // 직접 기간(날짜 두 개)은 대시보드 쪽 저장칸에 그대로 남아 있다 (v26-0907-3)
 global._vDashPref = () => (ST.settings.vDashPref = ST.settings.vDashPref || { customFrom:'', customTo:'' });
 global._vgEscAttr = s => String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -39,7 +42,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrInsN','_vTrBucketOf','_vTrBucketList','_vTrUnitWord','_vTrChapterKeys','_vTrChapNo',
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
-  '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyWeeks','_VRHY_WEEKS',
+  '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
@@ -431,16 +434,45 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('짝 열쇠를 안 나오는 글자로 가른다',
         SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
   sc.eq('선을 누르면 그 성경으로', /onclick="vDashOpenFilter\('book','\$\{_vDashQ\(r\)\}'\)"/.test(SRC), true);
-  sc.eq('리듬 기본은 반년', _vRhyWeeks(), 26);
-  sc.eq('리듬은 12·26·52 만 받는다', _VRHY_WEEKS.map(x=>x[0]), ['12','26','52']);
-  ST.settings.vTrPref.rhyWeeks='52'; sc.eq('고른 값을 쓴다', _vRhyWeeks(), 52);
-  ST.settings.vTrPref.rhyWeeks='9';  sc.eq('엉뚱한 값이면 반년', _vRhyWeeks(), 26);
-  ST.settings.vTrPref=null;
   sc.eq('요일 수가 같으면 최다·최소를 말하지 않는다', SRC.includes('요일마다 고르게 보고 있어요'), true);
   // 세 화면은 흐름과 같은 범위·갈래를 쓴다
   const scp=_vDashScope();
   sc.eq('기본 범위는 말씀 모음', [scp.kind,scp.tab], ['home','all']);
   sc.eq('지도류의 기본 기간은 전체', scp.all, true);
+}
+
+// ═══ 13. v26-0907-3 — 리듬을 요일 × 한 시간으로 다시 짰다 (HB 5) ═══
+console.log('\n시나리오 13 — 리듬: 가로 요일 · 세로 두 겹(시간대 / 한 시간)');
+{
+  // 범위에서 '말씀 모음'은 빠진다 — 모음의 날짜 열에는 시각이 없다
+  sc.eq('범위는 반응 넷 + 저장 다섯', _VRHY_KINDS, ['like','mem','deeper','even','keep']);
+  sc.eq('말씀 모음은 빠져 있다', _VRHY_KINDS.indexOf('home'), -1);
+  sc.eq('말씀 모음을 고르고 있으면 좋아요로 본다', _vRhyKind('home'), 'like');
+  sc.eq('엉뚱한 값도 좋아요로', _vRhyKind('zzz'), 'like');
+  sc.eq('저장은 그대로 쓴다', _vRhyKind('keep'), 'keep');
+
+  // 세로 1겹 — 앱이 쓰는 시간대를 그대로 (기본 여섯: 새벽·오전·점심·오후·저녁·밤)
+  const bands = _vRhyBands();
+  sc.eq('시간대가 여섯 묶음', bands.length, 6);
+  sc.eq('첫 묶음은 새벽', bands[0].name, '새벽');
+  sc.eq('표는 첫 시간대가 시작하는 3시부터', bands[0].hs[0], 3);
+  sc.eq('스물넉 시간을 다 덮는다', bands.reduce((a,b)=>a+b.n,0), 24);
+  sc.eq('시각이 겹치지 않는다', new Set(bands.flatMap(b=>b.hs)).size, 24);
+  // 자정을 넘는 '밤'(20:00~03:00)이 한 묶음으로 이어진다 — 표가 두 동강 나지 않는다
+  const night = bands[bands.length-1];
+  sc.eq('마지막 묶음이 밤', night.name, '밤');
+  sc.eq('밤은 20시부터 2시까지 일곱 시간', [night.hs[0], night.hs[night.hs.length-1], night.n], [20, 2, 7]);
+
+  // 가로 요일 글자는 설정(요일 표기)을 따른다
+  sc.eq('요일 글자는 설정을 따른다', SRC.includes("const dow=(typeof getDOW==='function')?getDOW()"), true);
+  // 칸 자리를 하나하나 적는다 (자동 배치는 걸친 칸 때문에 어긋난다)
+  sc.eq('칸마다 자리를 적어 넣는다', /grid-column:\$\{3\+i\};grid-row:\$\{row\};/.test(SRC), true);
+  sc.eq('시간대 칸이 여러 줄을 걸친다', /grid-row:\$\{2\+r\}\/span \$\{b\.n\}/.test(SRC), true);
+  // 시각 없는 기록은 세지 않고, 몇 건인지 알려 준다
+  sc.eq('시각 없는 기록은 뺀다', SRC.includes("if(!m){noTime++;return;}"), true);
+  sc.eq('뺀 건수를 알려 준다', SRC.includes('시각이 없는 기록'), true);
+  // 옛 잔디는 사라졌다
+  sc.eq('옛 잔디(요일 × 주)는 없앴다', SRC.includes('vrhy-dot'), false);
 }
 
 console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
