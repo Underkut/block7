@@ -43,6 +43,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
   '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
+  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
@@ -423,9 +424,54 @@ console.log('\n시나리오 12 — 성경 지도');
   // ⚠️ 장 격자는 누른 칸이 있는 쪽(구약/신약) 바로 아래에 편다 — 맨 끝에 붙이면
   //    구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다 (v26-0906-6).
   sc.eq('구약을 누르면 구약 아래에',
-    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT)+(isOT?chapsHTML:'')"), true);
+    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')"), true);
   sc.eq('신약을 누르면 신약 아래에',
-    SRC.includes("+grid('신약',BIBLE_ORDER_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+    SRC.includes("+grid('신약',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+}
+
+// ═══ 14. v26-0907-3 — 지도 손질 (HB 6) ═══
+console.log('\n시나리오 14 — 지도: 갈래 줄바꿈 · 구간 슬라이더 · 뜨거운 색');
+{
+  // 6-2 갈래마다 줄을 바꾼다. 책 이름은 BIBLE_ORDER 차례를 그대로 끊어 쓴다.
+  const ot = _vMapGroups(BIBLE_ORDER_OT, _VMAP_GROUPS_OT);
+  const nt = _vMapGroups(BIBLE_ORDER_NT, _VMAP_GROUPS_NT);
+  sc.eq('구약이 다섯 갈래', ot.map(g => g.nm), ['율법서','역사서','시가서','대선지서','소선지서']);
+  sc.eq('신약이 다섯 갈래', nt.map(g => g.nm), ['복음서','역사서','바울서신','일반서신','예언서']);
+  sc.eq('율법서는 창~신', ot[0].books, ['창세기','출애굽기','레위기','민수기','신명기']);
+  sc.eq('역사서는 여호수아부터', ot[1].books[0], '여호수아');
+  sc.eq('소선지서 끝이 말라기', ot[4].books[ot[4].books.length-1], '말라기');
+  sc.eq('바울서신은 롬~몬 열셋', [nt[2].books[0], nt[2].books[12], nt[2].books.length], ['로마서','빌레몬서',13]);
+  sc.eq('예언서는 계시록 하나', nt[4].books, ['요한계시록']);
+  sc.eq('구약 39권을 다 덮는다', ot.reduce((a,g)=>a+g.books.length,0), 39);
+  sc.eq('신약 27권을 다 덮는다', nt.reduce((a,g)=>a+g.books.length,0), 27);
+  sc.eq('빠지거나 겹치는 책이 없다',
+        new Set(ot.concat(nt).flatMap(g=>g.books)).size, 66);
+
+  // 6-3 양쪽 손잡이 — 아무것도 안 골랐으면 구간 전체
+  ST.settings.vTrPref = null;
+  const full = _vMapRange('count', 12);
+  sc.eq('처음엔 구간 전체', [full.lo, full.hi, full.full], [0, 12, true]);
+  _vTrPref().mapRg = { count: { lo: 3, hi: 8 } };
+  const cut = _vMapRange('count', 12);
+  sc.eq('고른 구간을 쓴다', [cut.lo, cut.hi, cut.full], [3, 8, false]);
+  // 자료가 줄어 최댓값이 작아져도 구간이 밖으로 삐져나가지 않는다
+  const small = _vMapRange('count', 5);
+  sc.eq('최댓값이 줄면 함께 줄어든다', [small.lo, small.hi], [3, 5]);
+  _vTrPref().mapRg = { count: { lo: 9, hi: 2 } };
+  sc.eq('뒤집힌 값도 바로잡는다', (r => r.lo <= r.hi)(_vMapRange('count', 12)), true);
+  ST.settings.vTrPref = null;
+  // 보기(횟수/묵힘)마다 구간을 따로 든다 — 하나는 '번', 하나는 '주'다
+  sc.eq('보기마다 구간이 따로', SRC.includes("p.mapRg[mode]={lo:Math.round(lo),hi:Math.round(hi)};"), true);
+  sc.eq('구간 밖은 지우지 않고 흐린다', SRC.includes("if(v<rg.lo||v>rg.hi)cls+=' out';"), true);
+  sc.eq('두 손잡이는 서로를 밀지 않는다',
+        SRC.includes("if(grab==='lo')lo=Math.max(min,Math.min(hi,v));"), true);
+
+  // 6-4 횟수는 빨강(뜨거움), 묵힘의 호박색은 그대로
+  sc.eq('횟수는 빨강 계열', /return warm\?`rgba\(224,164,88,\$\{a\}\)`:`rgba\(203,58,68,\$\{a\}\)`;/.test(SRC), true);
+  sc.eq('예전 파랑은 사라졌다', SRC.includes('rgba(90,112,248,${a})'), false);
+
+  // 6-1 좌우 끝 테두리가 잘리지 않게 격자에 여백을 줬다
+  sc.eq('격자에 테두리 설 자리가 있다', /\.vmap-grid\{[^}]*padding:3px;margin:-3px;\}/.test(SRC), true);
 }
 
 console.log('\n시나리오 12-2 — 연결 · 리듬');

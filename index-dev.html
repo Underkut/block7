@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0907-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3752,6 +3752,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vtr-rail-knob{position:absolute;top:4px;width:14px;height:14px;margin-left:-7px;
   border-radius:50%;background:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.35);}
 .vtr-rail.dragging .vtr-rail-knob{transform:scale(1.15);}
+/* 양쪽 손잡이 (v26-0907-3, HB 6-3) — 채움이 왼쪽 끝이 아니라 두 손잡이 사이다 */
+.vtr-rail2 .vtr-rail-fill{opacity:.42;}
+.vtr-rail2 .vtr-rail-knob{box-shadow:0 1px 3px rgba(0,0,0,.35),0 0 0 2px var(--bg,#fff);}
+/* 구간 라벨은 '0~12번' 이라 한 손잡이 짜리(‘4주’)보다 자리가 더 든다 */
+.vtr-slide-lb2{flex:0 0 52px;}
 /* 소제목 묶음 + (성경 하나만 볼 때) 그 이름 */
 .vtr-head{display:flex;gap:14px;align-items:stretch;}
 .vtr-ctls{flex:1;min-width:0;}
@@ -3839,7 +3844,18 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    66권을 다 깔아 두고 **안 밟은 곳은 빈 칸**으로 남긴다. 많이 본 곳만
    보여주는 다른 화면들이 못 하는 일이 이것이다. */
 .vmap-sect{font-size:10px;font-weight:700;color:var(--tx3);margin:10px 0 5px;letter-spacing:.02em;}
-.vmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px;}
+/* ⚠️ 좌우 끝 칸의 테두리(1px)와 고른 칸의 outline(2px+1px)이 스크롤 상자
+   가장자리에서 **잘려 나갔다** (v26-0907-3, HB 6-1). 격자에 3px 만 여백을
+   주고 그만큼 바깥으로 당겨, 폭은 그대로 두고 테두리 설 자리만 만든다. */
+.vmap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:4px;
+  padding:3px;margin:-3px;}
+/* 갈래마다 줄을 바꾼다 — 이름이 왼쪽에 서고 책들이 오른쪽으로 흐른다 (HB 6-2) */
+.vmap-grp{display:flex;gap:6px;align-items:flex-start;margin-bottom:7px;}
+.vmap-grpnm{flex:0 0 34px;font-size:9px;color:var(--tx3);padding-top:7px;line-height:1.3;
+  word-break:keep-all;text-align:right;}
+.vmap-grp .vmap-grid{flex:1;min-width:0;}
+/* 구간 밖 — 지우지 않고 흐려 둔다 (지도는 66권이 다 있어야 지도다) */
+.vmap-cell.out{opacity:.18;}
 .vmap-cell{aspect-ratio:1/1;border-radius:6px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:1px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;border:1px solid var(--bd2);
@@ -4468,7 +4484,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-2";
+const APP_VERSION = "v. 26-0907-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19616,8 +19632,73 @@ function _vTrRailBind(el){
   el.addEventListener('pointerup',up);
   el.addEventListener('pointercancel',up);
 }
+// ── 양쪽 손잡이 슬라이더 (v26-0907-3, HB 6-3) ────────────────────────────
+// 손잡이가 둘이라 '어디부터 어디까지'를 고른다. 한 손잡이 짜리와 같은 결로
+// 움직인다 — 미는 동안에는 손잡이와 숫자만 바꾸고, 손을 뗄 때 다시 그린다.
+// ⚠️ 두 손잡이는 서로를 **밀지 않는다.** 넘어서면 그 자리에서 멈춘다.
+//    밀어내게 두면 왼쪽 손잡이를 끝까지 밀었을 때 구간이 통째로 사라진다.
+function _vTrRail2Bind(el){
+  if(!el||el._railOn)return;
+  el._railOn=true;
+  const min=parseFloat(el.dataset.min)||0, max=parseFloat(el.dataset.max)||1;
+  const fill=el.querySelector('.vtr-rail-fill');
+  const kLo=el.querySelector('.vtr-rail-knob[data-k="lo"]');
+  const kHi=el.querySelector('.vtr-rail-knob[data-k="hi"]');
+  const lb=el.dataset.lb?document.getElementById(el.dataset.lb):null;
+  const suffix=el.dataset.suffix||'';
+  let lo=parseFloat(el.dataset.lo)||0, hi=parseFloat(el.dataset.hi);
+  if(!isFinite(hi))hi=max;
+  let id=null,grab=null;
+  const fracOf=e=>{
+    const r=el.getBoundingClientRect();
+    if(r.width<=0)return 0;
+    return Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  };
+  const valOf=f=>Math.round(min+f*(max-min));
+  const pc=v=>((max===min)?0:((v-min)/(max-min))*100).toFixed(2)+'%';
+  const paint=()=>{
+    if(kLo)kLo.style.left=pc(lo);
+    if(kHi)kHi.style.left=pc(hi);
+    if(fill){fill.style.left=pc(lo);fill.style.width=`calc(${pc(hi)} - ${pc(lo)})`;}
+    if(lb)lb.textContent=lo+'~'+hi+suffix;
+  };
+  const down=e=>{
+    if(id!==null)return;
+    id=e.pointerId;
+    const v=valOf(fracOf(e));
+    // 가까운 쪽을 잡는다. 같으면 바깥으로 벌어지는 쪽을 잡아야 갇히지 않는다.
+    grab=(Math.abs(v-lo)<Math.abs(v-hi))?'lo':(Math.abs(v-lo)>Math.abs(v-hi))?'hi':(v<lo?'lo':'hi');
+    el.classList.add('dragging');
+    try{el.setPointerCapture(id);}catch(_){}
+    move(e);
+    e.preventDefault();
+  };
+  const move=e=>{
+    if(id===null||e.pointerId!==id)return;
+    const v=valOf(fracOf(e));
+    if(grab==='lo')lo=Math.max(min,Math.min(hi,v));
+    else hi=Math.min(max,Math.max(lo,v));
+    paint();
+    e.preventDefault();
+  };
+  const up=e=>{
+    if(id===null||e.pointerId!==id)return;
+    try{el.releasePointerCapture(id);}catch(_){}
+    id=null; grab=null;
+    el.classList.remove('dragging');
+    paint();
+    if(el.dataset.done==='maprange')vMapRangeSet(lo,hi);
+  };
+  el.addEventListener('pointerdown',down);
+  el.addEventListener('pointermove',move);
+  el.addEventListener('pointerup',up);
+  el.addEventListener('pointercancel',up);
+}
 function _vTrBindRails(){
-  document.querySelectorAll('#vDashBody .vtr-rail').forEach(_vTrRailBind);
+  document.querySelectorAll('#vDashBody .vtr-rail').forEach(el=>{
+    if(el.classList.contains('vtr-rail2'))_vTrRail2Bind(el);
+    else _vTrRailBind(el);
+  });
 }
 function vTrInsSet(val){
   const p=_vTrPref();
@@ -20043,6 +20124,16 @@ function _vTrRailHTML(o){
     `<div class="vtr-rail-fill" style="width:${pct};"></div>`+
     `<div class="vtr-rail-knob" style="left:${pct};"></div></div>`;
 }
+// 양쪽 손잡이 한 벌 (v26-0907-3, HB 6-3)
+function _vTrRail2HTML(o){
+  const pc=v=>((o.max===o.min)?0:((v-o.min)/(o.max-o.min))*100).toFixed(2)+'%';
+  return`<div class="vtr-rail vtr-rail2" data-min="${o.min}" data-max="${o.max}" `+
+    `data-lo="${o.lo}" data-hi="${o.hi}" data-done="${o.done}" data-lb="${o.lb}" `+
+    `data-suffix="${_vgEscAttr(o.suffix||'')}" role="group" aria-label="${_vgEscAttr(o.label||'')}">`+
+    `<div class="vtr-rail-fill" style="left:${pc(o.lo)};width:calc(${pc(o.hi)} - ${pc(o.lo)});"></div>`+
+    `<div class="vtr-rail-knob" data-k="lo" style="left:${pc(o.lo)};"></div>`+
+    `<div class="vtr-rail-knob" data-k="hi" style="left:${pc(o.hi)};"></div></div>`;
+}
 // 기간 한 벌 — [전체][직접] 칩 + 주 슬라이더 + 달 슬라이더.
 // 다섯 화면이 **모두 이것 하나**를 쓴다 (v26-0907-3, HB 3-2).
 //
@@ -20402,14 +20493,51 @@ function _vMapStats(){
 }
 // 0~1 을 다섯 칸의 색으로 (0 은 부르지 않는다 — 빈 칸은 테두리만 남긴다)
 function _vMapStep(f){return Math.max(1,Math.min(5,Math.ceil(f*5)));}
+// warm=true 는 '묵힘'(호박색). 기본은 '횟수'인데 v26-0907-3 에 파랑에서
+// **빨강(뜨거움)** 으로 바꿨다 (HB 6-4 — "많이 다룬 곳이 뜨겁게 보이도록").
+// ⚠️ 묵힘의 호박색은 그대로 둔다 (HB — "묵힘 색은 괜찮아"). 둘이 붉은 계열로
+//    가까워 보이지만 채도·색상이 뚜렷이 달라 '보기' 칩과 함께 보면 안 헷갈린다.
 function _vMapShade(f,warm){
   const a=[0.22,0.38,0.55,0.75,1][_vMapStep(f)-1];
-  return warm?`rgba(224,164,88,${a})`:`rgba(90,112,248,${a})`;
+  return warm?`rgba(224,164,88,${a})`:`rgba(203,58,68,${a})`;
 }
 // ⚠️ 칸 색이 옅으면 흰 글자가 배경에 묻힌다 (v26-0906-7 — '묵힘' 지도에서
 //    '창 1주' 가 안 보였다). 진한 칸에만 흰 글자를 쓰고 옅은 칸은 본문색으로.
 function _vMapInk(f){return(_vMapStep(f)>=3)?'#fff':'var(--tx2)';}
-function _vMapCellHTML(book,g,mode,maxN,nowKey,sel){
+// 66권을 무엇으로 가를까 — 성경 안의 갈래 (v26-0907-3, HB 6-2).
+// ⚠️ 책 이름을 여기 다시 적지 않는다. BIBLE_ORDER_OT/NT 의 **차례 그대로**
+//    몇 권씩 끊을지만 적는다 — 이름을 두 벌 들면 언젠가 어긋난다.
+const _VMAP_GROUPS_OT=[['율법서',5],['역사서',12],['시가서',5],['대선지서',5],['소선지서',12]];
+const _VMAP_GROUPS_NT=[['복음서',4],['역사서',1],['바울서신',13],['일반서신',8],['예언서',1]];
+function _vMapGroups(order,defs){
+  const out=[]; let i=0;
+  defs.forEach(([nm,n])=>{ out.push({nm,books:order.slice(i,i+n)}); i+=n; });
+  if(i<order.length)out.push({nm:'',books:order.slice(i)});   // 차례가 늘면 남는 것도 보인다
+  return out;
+}
+// 양쪽 손잡이로 고른 구간 (v26-0907-3, HB 6-3).
+// 횟수 : 몇 번 이상 ~ 몇 번 이하.  묵힘 : 몇 주 전 ~ 몇 주 전.
+// ⚠️ 아직 한 번도 안 밟은 칸은 구간과 상관없이 늘 빈 칸으로 남는다 —
+//    지도는 66권을 다 깔아 두는 것이 뜻이라, 걸러도 자리는 지킨다.
+function _vMapRange(mode,max){
+  const p=_vTrPref();
+  if(!p.mapRg||typeof p.mapRg!=='object')p.mapRg={};
+  const r=p.mapRg[mode]||{};
+  const mx=Math.max(1,max);
+  let lo=(typeof r.lo==='number'&&isFinite(r.lo))?r.lo:0;
+  let hi=(typeof r.hi==='number'&&isFinite(r.hi))?r.hi:mx;
+  lo=Math.max(0,Math.min(mx,Math.round(lo)));
+  hi=Math.max(lo,Math.min(mx,Math.round(hi)));
+  return{lo,hi,max:mx,full:(lo<=0&&hi>=mx)};
+}
+function vMapRangeSet(lo,hi){
+  const p=_vTrPref(),mode=_vMapMode();
+  if(!p.mapRg||typeof p.mapRg!=='object')p.mapRg={};
+  p.mapRg[mode]={lo:Math.round(lo),hi:Math.round(hi)};
+  save();
+  renderVerseDashboard();
+}
+function _vMapCellHTML(book,g,mode,maxN,nowKey,sel,rg){
   const n=g?g.n:0;
   const short=_bibleShort(book);
   let sty='',cls='vmap-cell',tip;
@@ -20426,6 +20554,11 @@ function _vMapCellHTML(book,g,mode,maxN,nowKey,sel){
     sty=`background:${_vMapShade(f)};color:${_vMapInk(f)};`;
     cls+=' on';
     tip=`${book} ${n}`;
+  }
+  // 구간 밖이면 흐려 둔다 (지우지 않는다 — 지도는 66권이 다 있어야 지도다)
+  if(n&&rg&&!rg.full){
+    const v=(mode==='aged')?_vWeeksSince(g.last,nowKey):n;
+    if(v<rg.lo||v>rg.hi)cls+=' out';
   }
   if(sel)cls+=' sel';
   const sub=n?(mode==='aged'?`${_vWeeksSince(g.last,nowKey)}주`:String(n)):'';
@@ -20448,8 +20581,26 @@ function renderVDashMap(){
   const stats=_vMapStats();
   const nowKey=todayKey();
   let maxN=1; stats.forEach(g=>{if(g.n>maxN)maxN=g.n;});
+  // '보기' 오른쪽에 양쪽 손잡이 — 어디부터 어디까지만 볼지 (v26-0907-3, HB 6-3)
+  const rgMax=(mode==='aged')
+    ? Math.max(1,...[...stats.values()].map(g=>_vWeeksSince(g.last,nowKey)).filter(w=>w<999))
+    : maxN;
+  const rg=_vMapRange(mode,rgMax);
+  const unitW=(mode==='aged')?'주':'번';
   let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
-    _vTrChipsHTML('보기','mapMode',_VMAP_MODES,mode)+`</div>`;
+    `<div class="vtr-ctl"><span class="vtr-ctl-lb">보기</span>`+
+    `<span class="vtr-ctl-vals vtr-spanwrap">`+
+      `<span class="vtr-spanchips">`+
+        _VMAP_MODES.map(([v,l])=>`<span class="vtr-chip${mode===v?' on':''}" `+
+          `onclick="vTrSet('mapMode','${v}')">${esc(l)}</span>`).join('')+
+      `</span>`+
+      `<span class="vtr-slides"><div class="vtr-slide on">`+
+        `<span class="vtr-slide-lb vtr-slide-lb2" id="vMapRgLb">${rg.lo}~${rg.hi}${unitW}</span>`+
+        _vTrRail2HTML({min:0,max:rg.max,lo:rg.lo,hi:rg.hi,done:'maprange',lb:'vMapRgLb',
+                       suffix:unitW,label:(mode==='aged'?'묵힌 주':'다룬 횟수')+' 구간'})+
+      `</div></span>`+
+    `</span></div>`+
+    `</div>`;
   // 한 줄 요약 — 몇 권을 밟았나 / 가장 오래 안 편 곳
   const done=[...stats.keys()].length;
   const lines=[];
@@ -20465,8 +20616,14 @@ function renderVDashMap(){
     if(never.length)lines.push(`아직 한 번도 안 밟은 곳이 <b>${never.length}권</b> 있어요.`);
   }
   html+=`<div class="vmap-sum">${lines.join('<br>')}</div>`;
-  const grid=(title,books)=>`<div class="vmap-sect">${title}</div><div class="vmap-grid">`+
-    books.map(b=>_vMapCellHTML(b,stats.get(b),mode,maxN,nowKey,p.mapBook===b)).join('')+`</div>`;
+  // ⚠️ 66권을 한 판에 쏟지 않고 **갈래마다 줄을 바꿔** 깐다 (v26-0907-3, HB 6-2).
+  //    갈래 이름은 왼쪽에 서고 그 책들이 오른쪽으로 흐른다.
+  const grid=(title,order,defs)=>`<div class="vmap-sect">${title}</div>`+
+    _vMapGroups(order,defs).map(g=>
+      `<div class="vmap-grp"><div class="vmap-grpnm">${esc(g.nm)}</div>`+
+      `<div class="vmap-grid">`+
+      g.books.map(b=>_vMapCellHTML(b,stats.get(b),mode,maxN,nowKey,p.mapBook===b,rg)).join('')+
+      `</div></div>`).join('');
   // ⚠️ 장 격자는 **누른 칸이 있는 쪽 바로 아래**에 편다 (v26-0906-5).
   //    맨 끝에 붙이면 구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다.
   let chapsHTML='';
@@ -20504,8 +20661,8 @@ function renderVDashMap(){
       (total?`<div class="vmap-chapgrid">${cells}</div>`
             :`<div class="vdash-empty">장 수를 모르는 책이에요</div>`)+`</div>`;
   }
-  html+=grid('구약',BIBLE_ORDER_OT)+(isOT?chapsHTML:'')
-      +grid('신약',BIBLE_ORDER_NT)+(p.mapBook&&!isOT?chapsHTML:'');
+  html+=grid('구약',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')
+      +grid('신약',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');
   html+=`<div class="vmap-legend"><span>${mode==='aged'?'최근':'적게'}</span>`+
     [0.2,0.4,0.6,0.8,1].map(f=>`<span class="vmap-sw" style="background:${_vMapShade(f,mode==='aged')};"></span>`).join('')+
     `<span>${mode==='aged'?'오래됨':'많이'}</span>`+
