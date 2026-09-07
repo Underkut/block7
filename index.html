@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-1  [production]  -->
+<!-- BLOCK7  v. 26-0907-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4445,7 +4445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-1";
+const APP_VERSION = "v. 26-0907-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -20165,9 +20165,11 @@ function _vTrRowHTML(r,d,h,opts){
       const open=o.exp;
       name=`<span class="vtr-exp${open?' on':''}" onclick="vTrToggleExp('${_vDashQ(r.key)}')" `+
         `title="${open?'접기':'장별로 보기'}">${open?'⌄':'›'}</span>`+name+
+        // ⚠️ 선이 아니라 **채운 산 모양**으로 그린다 (v26-0906-9, HB 지시 —
+        //    성경 → 장 그래프로 들어가는 버튼이니 '비중(영역)' 그래프를 닮게).
         (open?`<span class="vtr-go" onclick="vTrOpenBook('${_vDashQ(r.key)}')" title="${esc(r.key)} 안의 흐름 보기">`+
-          `<svg width="17" height="11" viewBox="0 0 17 11" fill="none" stroke="currentColor" stroke-width="1.4" `+
-          `stroke-linecap="round" stroke-linejoin="round"><path d="M1 9L5.5 4.5 9 7.5 16 1.5"/></svg></span>`:'');
+          `<svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor" stroke="none">`+
+          `<path d="M1 9L5.5 4.5 9 7.5 16 1.5 16 11 1 11Z"/></svg></span>`:'');
     }
   }
   return`<tr class="${o.sub?'vtr-subrow':''}"><td class="vtr-namecell"${cellSty}>${name}</td>`+

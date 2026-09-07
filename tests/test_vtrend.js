@@ -439,4 +439,14 @@ console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
     (SRC.match(/renderVDashTrend\(\);/g)||[]).length, 1);
 }
 
+console.log('\n시나리오 13 — 성경→장 그래프 버튼은 채운 산 모양 (v26-0907-2, HB)');
+{
+  // 예전엔 선(outline)만 그려서 산 그래프(비중)를 닮지 않았다는 지적 — 채운
+  // 다각형으로 바꿨다. fill 이 currentColor 이고 stroke 가 없어야 '채운' 것이다.
+  const seg=SRC.slice(SRC.indexOf('class="vtr-go"'), SRC.indexOf('class="vtr-go"')+260);
+  sc.eq('fill 로 채운다', seg.includes('fill="currentColor"'), true);
+  sc.eq('테두리선만 그리지 않는다(stroke=none)', seg.includes('stroke="none"'), true);
+  sc.eq('닫힌 다각형이다(바닥까지 내려와 닫힌다)', seg.includes('16 11 1 11Z'), true);
+}
+
 sc.done();
