@@ -4,7 +4,7 @@
 //       고른 것이 그대로 걸려 있어 전체가 나오지 않는다.
 // 기획: '전체' = 네 갈래 선택을 **모두 풀고** 그 모음의 구절을 전부 가져오되,
 //       우상단 기간 필터(주간·월간·연간·전체·직접)만 그대로 먹는다.
-const { slice, makeScorer } = require('./_load');
+const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 eval(
@@ -75,6 +75,17 @@ console.log('\n시나리오 4 — 이름 오른쪽 개수는 고른 것을 따�
   _cfClearSel('c1');
   sc.eq('전체를 누르면 3구절', _collFilteredVerses('c1').length, 3);
   sc.eq("그제서야 '전체' 칩이 켜진다", _cfHasSel(F()), false);
+}
+
+// 설정창을 처음 열었을 때 개수 자리가 빈칸이던 것 (HB 26-0907)
+// 원인: _updateCfAllCount 는 id 로 요소를 찾는데, 패널을 만드는 도중에는
+//       아직 문서에 붙기 전이라 못 찾았다. 붙인 뒤에 한 번 더 채워야 한다.
+console.log('\n시나리오 5 — 패널을 화면에 붙인 뒤 개수를 채운다');
+{
+  const m = SRC.match(/box\.appendChild\(_buildCollFilterPanel\(id,raw\)\);([\s\S]{0,400}?)\n  \}\);/);
+  sc.eq('renderCollFilterPanels 안에서 붙이는 자리를 찾았다', !!m, true);
+  sc.eq('붙인 바로 뒤에 _updateCfAllCount(id) 가 있다',
+        !!(m && /_updateCfAllCount\(id\);/.test(m[1])), true);
 }
 
 sc.done();

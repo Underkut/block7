@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0906-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0907-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4445,7 +4445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0906-8";
+const APP_VERSION = "v. 26-0907-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7330,6 +7330,10 @@ function renderCollFilterPanels(){
     const raw=_collRawVerses(id);
     if(!raw.length)return; // 구절 없는 모음(구절 안 채운 새 모음)엔 필터 표시 안함
     box.appendChild(_buildCollFilterPanel(id,raw));
+    // ⚠️ 개수·'전체' 칩 상태는 **화면에 붙인 뒤** 채운다. _updateCfAllCount 는
+    //    id 로 찾아 쓰는데, 만드는 도중에는 아직 문서에 없어 찾지 못한다 —
+    //    그래서 설정창을 처음 열면 개수 자리가 빈칸이었다 (HB 26-0907).
+    _updateCfAllCount(id);
   });
 }
 function _buildCollFilterPanel(id,raw){
