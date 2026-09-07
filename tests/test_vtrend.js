@@ -483,10 +483,53 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('점을 톡 누르면 그 목록으로',
         SRC.includes("if(moved<5)vDashOpenFilter(n.kind==='book'?'book':la,n.key);"), true);
   sc.eq('점 · 선 상한이 있다', [_VG_MAXL, _VG_MAXR], [14, 22]);
-  sc.eq('물리를 직접 돈다 (척력·용수철·가운데로)',
-        /const REST=64, K=0\.024, REP=760, DAMP=0\.86;/.test(SRC), true);
+  // v26-0907-5 — 배치 값이 팝업에서 고쳐지므로 상수가 아니라 설정에서 온다
+  sc.eq('물리 값은 설정에서 온다',
+        /const REST=cfg\.rest, K=cfg\.pull\/1000, REP=cfg\.rep, DAMP=0\.86;/.test(SRC), true);
   sc.eq('아무 선에도 안 걸린 점은 뺀다', SRC.includes('const N=nodes.filter(n=>n.deg>0);'), true);
-  sc.eq('처음 몇 판은 안 그리고 돌려 둔다', SRC.includes('for(let i=0;i<90;i++)tick();'), true);
+  sc.eq('처음 몇 판은 안 그리고 돌려 둔다', SRC.includes('for(let i=0;i<160;i++)tick();'), true);
+
+  // ═══ v26-0907-5 (HB) — 연결 그래프 손질 ═══
+  // 0 · 점이 격하게 춤추던 것 — 척력 상한 + 식힘을 이동에 곱한다
+  // 가까울 때의 폭발은 **힘에 뚜껑을 씌워** 막지 않는다 — 뚜껑을 씌우면
+  // 겹친 점이 서로 못 밀어내 한 덩어리로 뭉친다 (처음 시도에서 실제로 그랬다).
+  // 대신 거리에 바닥을 준다.
+  sc.eq('거리에 바닥을 줘서 폭발을 막는다', SRC.includes('const DMIN2=144;'), true);
+  sc.eq('거리 바닥을 실제로 쓴다', SRC.includes('const dd=Math.max(d2,DMIN2);'), true);
+  sc.eq('힘에 뚜껑을 씌우지 않는다', SRC.includes('Math.min(REP/d2,FMAX)'), false);
+  // 같은 갈래끼리 더 세게 민다 — 주제끼리가 가장 세다 (이름이 길어 먼저 부딪힌다)
+  sc.eq('같은 갈래를 더 민다',
+        SRC.includes("const _rep2=(a,b)=>(a.kind!==b.kind)?1:(a.kind==='topic'?7:2.2);"), true);
+  sc.eq('그 세기를 실제로 쓴다', SRC.includes('const f=REP*_rep2(a,b)/dd'), true);
+  // 식힘을 자리 이동에 곱한다 — 이것이 '춤추다 뚝 멈추는' 것을 없앤다
+  sc.eq('식힘을 자리 이동에 곱한다',
+        /const ddx=Math\.max\(-10,Math\.min\(10,p\.vx\)\)\*alpha;/.test(SRC), true);
+  // 이미 잦아들었으면 곧바로 멈춘다 (안 움직이는 그림을 계속 다시 그리지 않는다)
+  sc.eq('잦아들면 곧바로 멈춘다', /still=\(moved<0\.05\)\?\(still\+1\):0;/.test(SRC), true);
+  sc.eq('멈출 조건에 그것이 들어간다', SRC.includes('if(alpha>0.06&&still<8)'), true);
+  // 1-1 · 골라 보기 + N뎁스
+  sc.eq('씨앗에서 N걸음까지 번진다', SRC.includes('function _vgReach(N,E,seeds,depth)'), true);
+  sc.eq('씨앗이 없으면 전부 보인다', SRC.includes('if(!seeds.size)return null;'), true);
+  sc.eq('뎁스는 0~4', SRC.includes('return(isFinite(n)&&n>=0&&n<=4)?n:1;'), true);
+  // 1-2 · 검색은 타이핑하는 동안 바로. 다시 그리지 않고 보임/숨김만 바꾼다.
+  sc.eq('타이핑하는 동안 걸린다', SRC.includes('oninput="vgSearch(this.value)"'), true);
+  sc.eq('검색은 다시 그리지 않는다',
+        /function vgSearch\(q\)\{[\s\S]{0,200}?_vgApplyFilter\(\);/.test(SRC), true);
+  sc.eq('검색어는 저장하지 않는다', SRC.includes("let _vgQuery='';"), true);
+  sc.eq('숨긴 점은 물리에서도 빠진다', SRC.includes('if(a.hide)continue;'), true);
+  // 2-1 · 배치 값 팝업
+  sc.eq('배치 값 넷', SRC.includes("const _VG_CFG_ROWS=["), true);
+  sc.eq('기본값이 있다', SRC.includes("const _VG_DEF={rest:64,rep:760,pull:24,font:100};"), true);
+  sc.eq('두 팝업 다 ESC 로 닫힌다',
+        SRC.includes("['vgPickModal',     ()=>closeVgPick()],") &&
+        SRC.includes("['vgCfgModal',      ()=>closeVgCfg()],"), true);
+  // 2-2 · 키울 때 제곱근만큼만 커진다
+  sc.eq('크기는 √배율만 커진다', SRC.includes('const k=1/Math.sqrt(zm);'), true);
+  sc.eq('점·글자·선 모두 되돌려 곱한다',
+        /o\.c\.setAttribute\('r',\(n\.r\*k\)/.test(SRC) &&
+        /o\.t\.setAttribute\('font-size',\(o\.t\._base\*f\*k\)/.test(SRC) &&
+        /el\.setAttribute\('stroke-width',\(el\._w\*k\)/.test(SRC), true);
+  sc.eq('키울 때마다 다시 잰다', /zm=n2; applyView\(\); applyScale\(\);/.test(SRC), true);
   // ⚠️ 안 멈추면 뒤에서 영원히 돈다 — 두 자리에서 반드시 멈춘다
   sc.eq('화면을 옮길 때 멈춘다',
         SRC.includes("if(view!=='link'&&typeof _vgStop==='function')_vgStop();"), true);
