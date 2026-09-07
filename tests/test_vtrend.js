@@ -242,11 +242,15 @@ console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간
   sc.eq('가운데쯤이면 6칸', _vTrHFromX(275,520,12,6), 6);
   sc.eq('A 띠와 B 띠를 둘 다 그린다',
     SRC.includes('class="vtr-mkA"') && SRC.includes('class="vtr-mkB"'), true);
-  sc.eq("띠 안에 '최근'·'이전' 을 적는다",
-    SRC.includes('>최근</text>') && SRC.includes('>이전</text>'), true);
+  // v26-0908-1, HB 2-1 — 띠 글자에 **기간 숫자까지** 넣는다('최근' 만으로는
+  // 무엇과 견주는지 알 수 없다). 인사이트 알약·표 머리와 같은 글이 된다.
+  sc.eq("띠 글자에 기간 숫자까지 (최근 N주)",
+    SRC.includes('const lbA=`최근 ${insH}${unitW2}`;') &&
+    SRC.includes("const lbB=`이전 ${(n>=2*insH)?'':'~'}${insH}${unitW2}`;"), true);
   // ⚠️ 글자에는 면을 칠하는 --ac 가 아니라 글자용 --ac-tx 를 쓴다.
   //    어두운 테마에서 옅은 띠 위에 --ac 를 얹으면 배경에 묻힌다 (v26-0906-3).
-  sc.eq("'최근' 글자는 --ac-tx", /class="vtr-mkAl"[^>]*fill="var\(--ac-tx\)"/.test(SRC), true);
+  sc.eq("'최근' 글자는 --ac-tx",
+    SRC.includes("pill('vtr-mkAl',(xl+rt)/2,lbA,'var(--vtr-a-bg)','var(--ac-tx)')"), true);
   sc.eq("'최근' 글자에 --ac 를 쓰지 않는다", /class="vtr-mkAl"[^>]*fill="var\(--ac\)"/.test(SRC), false);
   sc.eq('잡는 자리를 넉넉히 둔다', SRC.includes('class="vtr-mkGrab"'), true);
   sc.eq('손을 뗄 때만 저장한다', /paint\(g\.edge[\s\S]{0,80}vTrInsSet\(cur\);/.test(SRC), true);
@@ -254,7 +258,13 @@ console.log('\n시나리오 9-4 — 그림 안의 띠를 끌어 견주는 구간
   sc.eq('A 알약은 강조색', /\.vtr-pill-a\{background:var\(--vtr-a-bg\);/.test(SRC), true);
   sc.eq('B 알약은 회색', /\.vtr-pill-b\{background:var\(--vtr-b-bg\);/.test(SRC), true);
   sc.eq('그림의 A 띠도 강조색', /class="vtr-mkA"[^>]*fill="var\(--ac\)"/.test(SRC), true);
-  sc.eq('그림의 B 띠는 회색', /class="vtr-mkB"[^>]*fill="#8a8a99"/.test(SRC), true);
+  // v26-0908-1, HB 2-2 — '이전' 이 안 보이던 진짜 까닭은 투명도가 아니라
+  // **고정 회색(#8a8a99)** 이었다. 테마에 따라 배경과 밝기가 같아져 사라졌다.
+  sc.eq('그림의 B 띠는 테마를 따르는 본문색', /class="vtr-mkB"[^>]*fill="var\(--tx2\)"/.test(SRC), true);
+  // (주석 안의 설명 말고, 실제로 칠하는 값으로 안 쓴다는 뜻)
+  sc.eq('고정 회색(#8a8a99)으로 칠하지 않는다', SRC.includes('fill="#8a8a99"'), false);
+  sc.eq('두 구간이 같은 짜임 — 왼쪽 모서리 선도 둘 다',
+    SRC.includes('class="vtr-mkBe"') && SRC.includes('class="vtr-mkE"'), true);
 }
 
 console.log('\n시나리오 9-5 — 표 정렬 (HB 7)');
@@ -528,7 +538,12 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
         SRC.includes('_vTrPref().vgDepth=Math.max(1,Math.min(4,parseInt(v,10)||1));'), true);
   // v26-0907-9, HB 92 — 슬라이더를 걷어내고 알약칩(1·2·3·전체)으로 바꿨다.
   sc.eq('뎁스는 이제 슬라이더가 아니라 칩', SRC.includes("[1,2,3,4].map(v=>"), true);
-  sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("onclick=\"vgDepthSet(${v})\">${v===4?'전체':v}</span>"), true);
+  // v26-0908-1, HB 92 — 글자만 있던 칩을 테두리 있는 진짜 알약 버튼으로.
+  sc.eq('뎁스는 테두리 있는 알약 버튼', SRC.includes('<span class="vg-depthchip${d===v?\' on\':\'\'}"'), true);
+  sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("${v===4?'전체':v}</span>"), true);
+  sc.eq('알약 CSS — 테두리·둥근 모서리', /\.vg-depthchip\{[^}]*border:1px solid var\(--bd2\)/.test(SRC), true);
+  // 고른 점이 없으면 뎁스가 아무 일도 안 한다 — 그 사정을 적어 준다
+  sc.eq('씨앗이 없으면 까닭을 적는다', SRC.includes('<span class="vg-depthnote">점을 고르면 적용돼요</span>'), true);
   sc.eq('안내 문구도 4뎁스일 땐 전체라고 쓴다',
         SRC.includes("const dtx=_vgDepth()>=4?'전체':`${_vgDepth()}뎁스`;"), true);
   // 1-2 · 검색은 타이핑하는 동안 바로. 다시 그리지 않고 보임/숨김만 바꾼다.
@@ -609,10 +624,14 @@ console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 �
   // v26-0907-9, HB 91-3-3-1 — 제목을 누르면 이제 그 필터가 걸린 타일뷰로 간다.
   // 갈래를 도는 일은 제목 아래 칩(#vfModeChip)이 맡는다.
   sc.eq('제목을 누르면 필터 걸린 타일뷰로', SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
-  sc.eq('칩이 제목 아래에서 돈다(이진, 색으로만)', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab==='all','vpCycleFullTab()');"), true);
-  // v26-0907-9, HB 91-3-2 — 말씀→명제→함께 세 갈래를 다 도는 대신, '함께' 와
-  // 들어올 때의 갈래 사이만 오가는 이진 토글로 바꿨다(글자는 안 바뀐다).
-  sc.eq('이진 토글로 돈다', SRC.includes("const next=(_vpFullTab==='all')?(_vpLastSingleTab||'verse'):'all';"), true);
+  sc.eq('칩이 제목 아래에서 돈다(세 갈래)', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
+  // v26-0908-1, HB 91-3-2 — 한 라운드 앞서 이걸 '함께 ⟷ 한 갈래' 이진 토글로
+  // 잘못 만들었다. HB 가 말한 것은 **세 모드**(말씀만 / 명제만 / 둘 다)를 돌면서
+  // 글자는 그대로 두고 **낱말 색**으로 켜짐을 보이는 것이었다.
+  sc.eq('세 갈래를 돈다', SRC.includes('const next=_vpNextTab(_vpFullTab);'), true);
+  sc.eq('도는 차례는 말씀 → 명제 → 함께',
+    SRC.includes("const _VP_CYCLE=['verse','prop','all'];"), true);
+  sc.eq('이진 토글 흔적은 안 남아 있다', SRC.includes('_vpLastSingleTab'), false);
   // 본문은 한 줄뿐
   sc.eq('본문은 한 줄로 자른다', /\.vp-c2\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(SRC), true);
   // 좁으면 위아래, 넓으면 좌우
@@ -806,13 +825,21 @@ console.log('\n시나리오 22 — 3-1..3-5 축 아이콘 · 통합 모드칩 ·
   // v26-0907-9, HB 91-2·91-3-2 — 글자가 말씀/명제/함께로 도는 대신 늘
   // '말씀 + 명제' 로 고정, active(불리언)로만 색을 가른다. plain 이면 짝
   // 목록 하단처럼 클릭도 색도 없는 민무늬.
-  sc.eq('모드칩 헬퍼 — 텍스트 고정 + 활성 불리언', /function _vpModeChipHTML\(active,onclickExpr,plain\)\{/.test(SRC), true);
-  sc.eq("텍스트는 늘 '말씀 + 명제' 로 고정", SRC.includes('`말씀 + 명제</span>`;'), true);
+  sc.eq('모드칩 헬퍼 — 갈래를 그대로 받는다', /function _vpModeChipHTML\(tab,onclickExpr,plain\)\{/.test(SRC), true);
+  sc.eq("글자는 늘 '말씀 + 명제'",
+    SRC.includes("w('verse','말씀')+`<span class=\"vpm-plus\">+</span>`+w('prop','명제')"), true);
+  sc.eq('켜진 낱말만 색을 갖는다',
+    SRC.includes("const w=(k,tx)=>`<span class=\"vpm-w${(t==='all'||t===k)?' on':''}\">${tx}</span>`;"), true);
+  sc.eq('꺼진 낱말은 옅게, 켜진 낱말만 강조색',
+    /\.vp-modechip \.vpm-w\{color:var\(--tx3\);opacity:\.5;\}/.test(SRC) &&
+    /\.vp-modechip \.vpm-w\.on\{color:var\(--vf-ac,var\(--ac-tx\)\);opacity:1;\}/.test(SRC), true);
   sc.eq('짝 목록 제목이 축 아이콘을 단다(innerHTML 로)',
         SRC.includes("if(ttl)ttl.innerHTML=_vAxisIconHTML(_vpCtx.axis)+esc(_vpCtx.val);"), true);
-  sc.eq('짝 목록 하단은 민무늬 고정 칩(91-2)', SRC.includes("`<div class=\"vp-foot\">${_vpModeChipHTML(true,null,true)}`+"), true);
-  sc.eq('타일뷰 갈래 탭이 칩 하나로(이진)', SRC.includes('row.innerHTML=_vpModeChipHTML(_vgTab()===\'all\','), true);
-  sc.eq('타일뷰 칩도 이진 토글', SRC.includes("vgSetTab(cur==='all'?(_vgState.lastSingleTab||'verse'):'all');"), true);
+  sc.eq('짝 목록 하단은 민무늬 고정 칩(91-2)', SRC.includes("`<div class=\"vp-foot\">${_vpModeChipHTML('all',null,true)}`+"), true);
+  sc.eq('민무늬는 강조색도 테두리도 없다',
+    /\.vp-modechip\.plain \.vpm-w,\.vp-modechip\.plain \.vpm-w\.on/.test(SRC), true);
+  sc.eq('타일뷰 갈래 탭도 같은 칩', SRC.includes('row.innerHTML=_vpModeChipHTML(_vgTab(),'), true);
+  sc.eq('타일뷰 칩도 세 갈래', SRC.includes('function vgCycleTab(){ vgSetTab(_vpNextTab(_vgTab())); }'), true);
   sc.eq('전체화면 제목을 누르면 필터 걸린 타일뷰로(91-3-3-1)',
         SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
   sc.eq('전체화면 칩 자리(#vfModeChip)가 있다',
@@ -909,13 +936,25 @@ console.log('\n시나리오 27 — 92 연결탭 뎁스 알약칩');
 console.log('\n시나리오 28 — 93-1 지도 구약/신약 접기 · 순위창 다듬기');
 {
   sc.eq('접기 토글 함수', SRC.includes('function vMapToggleFold(id){'), true);
-  sc.eq('접힌 갈래는 성경칩 하나(카운트·색 연동)', SRC.includes('vmap-cell vmap-cell-fold'), true);
+  // v26-0908-1, HB 11-1 — 구약을 접으면 **하나**가 아니라 갈래마다(율법서·
+  // 역사서·시가서·대선지서·소선지서) 칩 하나씩 나온다.
+  sc.eq('접힌 갈래는 갈래마다 칩 하나', SRC.includes('return head+`<div class="vmap-folds">`+_vMapGroups(order,defs).map(gp=>{'), true);
+  sc.eq('칩에 카운트·색이 연동된다', SRC.includes('const sty=cnt?`background:${_vMapShade(f,mode===\'aged\')};color:${_vMapInk(f)};`:\'\';'), true);
+  // HB — 카운트는 전체가 아니라 지금 걸린 구간 필터를 먹인 값이어야 한다
+  sc.eq('카운트는 구간 필터를 먹인 값만', SRC.includes('books.forEach(b=>{ const g=stats.get(b); if(!inRg(g))return;'), true);
+  sc.eq('칩 색은 칩끼리 견준다(foldMax)', SRC.includes('const f=cnt?(mode===\'aged\'?Math.min(1,((isFinite(minW)?minW:0)+1)/26):(sum/foldMax)):0;'), true);
   sc.eq('접었다 펼쳤다는 화면마다 기억한다(p.mapFold)', SRC.includes("if(!p.mapFold||typeof p.mapFold!=='object')p.mapFold={};"), true);
   // 93-1-2-1 — 슬라이더 비활성 트랙이 --bd2(진함) 대신 --bd(연함)
   sc.eq('가로 슬라이더 트랙이 옅어졌다', SRC.includes('.vtr-rail::before{content:"";position:absolute;left:0;right:0;top:9.5px;height:3px;\n  border-radius:2px;background:var(--bd);}'), true);
   sc.eq('세로 순위창 트랙도 옅어졌다', SRC.includes('.vgp-rank::before{content:"";position:absolute;top:0;bottom:0;left:10.5px;width:3px;\n  border-radius:2px;background:var(--bd);}'), true);
-  // 93-1-2-2 — 범위 라벨이 원 숫자 대신 '몇 권 빠졌는지'
-  sc.eq('라벨을 성경 권수로 보여준다(제안: ▲/▼ 제외 권수)', SRC.includes("lb.textContent=(below||above)?`▲${above} ▼${below} 제외`:'전체';"), true);
+  // v26-0908-1, HB 11-2 — ▲▼ 세모는 뜻을 알 수 없었다. 말로 적는다.
+  sc.eq('라벨은 말로 적는다', SRC.includes('lb.textContent=_vTrExclLabel(above,below);'), true);
+  sc.eq("'상위 N개, 하위 O개 제외' 로 만든다",
+    SRC.includes('if(above)t.push(`상위 ${above}개`);') &&
+    SRC.includes('if(below)t.push(`하위 ${below}개`);') &&
+    SRC.includes("return t.length?t.join(', ')+' 제외':'전체';"), true);
+  sc.eq('세모 화살표는 안 남아 있다', SRC.includes('▲${'), false);
+  sc.eq('그린 자리와 미는 자리가 같은 글을 쓴다', SRC.includes('const rgLbTx=_vTrExclLabel(_rgAbove,_rgBelow);'), true);
   sc.eq('지도 쪽에서 그 값들을 넘긴다(data-vals)', SRC.includes('vals:rgVals,label:'), true);
 }
 
@@ -924,7 +963,14 @@ console.log('\n시나리오 29 — 93-2 리듬 시간개념없음 버그 · 구�
   sc.eq("'시간 개념 없음' 구간은 시간 칸을 안 차지한다",
         /secs\.forEach\(\(sec,i\)=>\{[\s\S]{0,220}if\(_secNoTime\(sec\)\)return;/.test(SRC), true);
   sc.eq('첫 시간대 계산도 실제 시간 구간만 본다', SRC.includes('const realSecs=secs.filter(sec=>!_secNoTime(sec));'), true);
-  sc.eq('빈 칸에도 그 시간대 색이 옅게 배인다(오른쪽 끝까지)', SRC.includes('const bandTint=b.color?`background:color-mix(in srgb,${b.color} 9%,transparent);`:'), true);
+  // v26-0908-1, HB 93-2-2 — 빈 칸만 물들이면 기록이 있는 칸에서 띠가 끊겨
+  // 오른쪽만 보면서 시간대를 짚을 수가 없었다. 칸들 **뒤에** 깔리는 띠 하나로.
+  sc.eq('시간대마다 띠 하나가 칸들 뒤에 깔린다',
+    SRC.includes('g+=`<div class="vrhy2-zone" style="grid-column:2/-1;grid-row:${2+r}/span ${b.n};${zoneSty}" `+'), true);
+  sc.eq('시각 열부터 오른쪽 끝열까지 이어진다', SRC.includes('grid-column:2/-1;grid-row:'), true);
+  sc.eq('칸이 띠보다 위에 온다', /\.vrhy2-hr,\.vrhy2-cell\{position:relative;z-index:1;\}/.test(SRC), true);
+  sc.eq('띠는 z-index 0', /\.vrhy2-zone\{[\s\S]{0,120}z-index:0;/.test(SRC), true);
+  sc.eq('빈 칸만 물들이던 옛 방식은 없앴다', SRC.includes('const bandTint='), false);
 }
 
 console.log('\n시나리오 30 — 93-3 대시보드 모바일 우측 잘림');
@@ -939,12 +985,18 @@ console.log('\n시나리오 31 — 94 세팅① 누락 6항목');
   // 0-1 그래프 버튼 색 약하게
   sc.eq('그래프 버튼(.vtr-go) 옅게', /\.vtr-go\{[^}]*opacity:\.55;/.test(SRC), true);
   // 0-2 꺾쇠·이름·버튼 세로 중앙
-  sc.eq('꺾쇠(.vtr-exp)도 세로 중앙', /\.vtr-exp\{[^}]*vertical-align:middle;/.test(SRC), true);
+  // v26-0908-1, HB 0-2 — vertical-align 으로는 안 맞았다(글자는 baseline,
+  // 아이콘은 middle). 셋을 한 줄 flex 로 묶는다.
+  sc.eq('꺾쇠·이름·버튼을 한 줄 flex 로 묶는다',
+    /\.vtr-nmrow\{display:flex;align-items:center;/.test(SRC), true);
+  sc.eq('그 줄로 감싸서 그린다', SRC.includes('name=`<span class="vtr-nmrow">`+'), true);
   // 2-1 최근/이전 표기 통일 — 표 머리에도 알약
-  sc.eq('표 머리 최근/이전도 알약(.vtr-pill)', SRC.includes("const lbl=pc?`<span class=\"vtr-pill ${pc}\">${esc(l)}</span>`:esc(l);"), true);
-  sc.eq('그래프 안 띠에도 같은 알약 배경', SRC.includes('fill="var(--vtr-a-bg)"') && SRC.includes('fill="var(--vtr-b-bg)"'), true);
-  // 2-2 opacity 0.07 버그
-  sc.eq("'이전' 띠가 0.07(안 보임) 대신 0.14(A와 같은 세기)", SRC.includes('fill="#8a8a99" opacity="0.14"'), true);
+  // v26-0908-1, HB 2-1 — 표 머리 알약에도 id 를 준다(끄는 동안 N 이 바뀐다)
+  sc.eq('표 머리 최근/이전도 알약(.vtr-pill)',
+    SRC.includes("const lbl=pc?`<span class=\"vtr-pill ${pc}\" id=\"${c===1?'vtrThLbA':'vtrThLbB'}\">${esc(l)}</span>`:esc(l);"), true);
+  sc.eq('그래프 안 띠에도 같은 알약 배경',
+    SRC.includes("lbA,'var(--vtr-a-bg)'") && SRC.includes("lbB,'var(--vtr-b-bg)'"), true);
+  sc.eq("'이전' 띠 면 색은 --tx2", SRC.includes('fill="var(--tx2)" opacity="0.10"'), true);
   sc.eq('예전 0.07 값은 안 남아 있다', SRC.includes('opacity="0.07"'), false);
   // 2-3 ↔ → vs
   sc.eq("화살표(↔) 대신 'vs'", SRC.includes('<span style="opacity:.6;">vs</span>'), true);
@@ -954,6 +1006,40 @@ console.log('\n시나리오 31 — 94 세팅① 누락 6항목');
   sc.eq('여는 함수 — 설정 닫고 대시보드 연다',
         /function vsetGoDashboard\(\)\{\s*\n\s*closeVerseSettingsModal\(\);\s*\n\s*openVerseDashboard\(\);\s*\n\}/.test(SRC),
         true);
+}
+
+console.log('\n시나리오 32 — 0908-1 되짚기 (앞 라운드에서 잘못했거나 빠뜨린 것들)');
+{
+  // ── 91-3-1 · 알약칩 후보는 **지금 화면에 보이는** 1뎁스만 ──────────────
+  // DB 상 이어져 있다는 것과 지금 그래프에 떠 있다는 것은 다르다. 골라보기
+  // 순위·검색·뎁스로 화면에서 빠진 값은 후보에도 없어야 한다.
+  sc.eq('그래프의 점·선에서 후보를 뽑는다',
+    /function _vpFacetCandidates\(\)\{[\s\S]{0,320}if\(_vgData&&_vgData\.N&&_vgData\.E\)\{/.test(SRC), true);
+  sc.eq('클릭한 점을 그래프에서 찾는다',
+    SRC.includes("const i=N.findIndex(n=>n.kind===kind&&n.key===_vpCtx.val);"), true);
+  sc.eq('선으로 이어진 이웃만 본다(1뎁스)',
+    SRC.includes('const j=(e.a===i)?e.b:((e.b===i)?e.a:-1);'), true);
+  sc.eq('숨겨진 점은 후보에서 뺀다', SRC.includes('if(!n||n.hide||_vDashIsPlaceholder(n.key))return;'), true);
+  sc.eq('그래프가 없는 길로 열렸을 때만 데이터에서 직접 센다',
+    SRC.includes('  // 그래프가 없는 길로 열렸을 때만 데이터에서 직접 센다'), true);
+
+  // ── 2-1 · 끄는 동안 알약이 따라오고, 표 머리 N 도 함께 바뀐다 ──────────
+  // 예전엔 글자(text)만 옮기고 알약 배경(rect)에는 class 가 없어 제자리에 남았다.
+  sc.eq('알약 배경에도 class 를 준다', SRC.includes('<rect class="${cls}p"'), true);
+  sc.eq('끌 때 알약 배경도 함께 잡는다',
+    SRC.includes("Ap=svg.querySelectorAll('.vtr-mkAlp'),Bp=svg.querySelectorAll('.vtr-mkBlp'),"), true);
+  sc.eq('글자 폭을 재서 알약을 맞춘다(SVG 엔 자동 크기가 없다)',
+    SRC.includes('try{w=tx.getBBox().width;}catch(_){w=0;}'), true);
+  sc.eq('띠가 알약보다 좁으면 둘 다 숨긴다', SRC.includes('const hide=(bandW<pw+6);'), true);
+  sc.eq('끄는 동안 띠 글자도 갈아 끼운다',
+    SRC.includes('if(Al)Al.textContent=txA;') && SRC.includes('if(Bl)Bl.textContent=txB;'), true);
+  sc.eq('하단 표 머리의 N 도 실시간으로',
+    SRC.includes("const ta=document.getElementById('vtrThLbA'),tb=document.getElementById('vtrThLbB');"), true);
+  sc.eq('붙자마자 한 번 그려 알약 폭을 맞춘다',
+    SRC.includes('  paint(g.edge(Math.max(0,Math.min(n-1,n-cur))),cur);\n  svg.addEventListener'), true);
+  // 알약 배경은 불투명해야 한다 — 반투명이면 알록달록한 영역 그래프가 비쳐
+  // 어두운 테마에서 글자가 사라졌다.
+  sc.eq('알약은 판 색을 먼저 깔아 불투명하게', SRC.includes('rx="6.5" fill="var(--s1)"/>'), true);
 }
 
 sc.done();
