@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-3  [production]  -->
+<!-- BLOCK7  v. 26-0907-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3856,6 +3856,16 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vmap-grp .vmap-grid{flex:1;min-width:0;}
 /* 구간 밖 — 지우지 않고 흐려 둔다 (지도는 66권이 다 있어야 지도다) */
 .vmap-cell.out{opacity:.18;}
+/* ── 파이 상세: 조각 수 슬라이더 · '기타' 켜고 끄기 (v26-0907-4, HB 4) ── */
+.vdd-ctl{display:flex;align-items:center;gap:10px;margin:0 0 10px;}
+.vdd-note{font-size:10.5px;color:var(--tx2);line-height:1.5;margin:8px 0 2px;
+  padding:7px 9px;border-radius:8px;background:var(--s2,rgba(255,255,255,.02));}
+.vdd-note b{color:var(--ac-tx);font-weight:700;}
+/* 격자 칸의 '상위 N · 전체의 21%' — 원이 전체가 아님을 칸 안에서 밝힌다 */
+.vdash-cover{font-size:8.5px;color:var(--tx3);opacity:.85;margin-top:2px;
+  font-variant-numeric:tabular-nums;}
+/* 파이에서 빠진 줄 — 표에는 그대로 두되 흐리게 (없어진 것이 아니다) */
+.vdd-tbl tr.vdd-out td{opacity:.45;}
 .vmap-cell{aspect-ratio:1/1;border-radius:6px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:1px;cursor:pointer;
   -webkit-tap-highlight-color:transparent;border:1px solid var(--bd2);
@@ -3876,9 +3886,22 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vmap-sum{font-size:11px;color:var(--tx2);line-height:1.5;margin:10px 0 2px;
   padding:8px 10px;border-radius:9px;background:var(--s2,rgba(255,255,255,.02));}
 .vmap-sum b{color:var(--ac-tx);font-weight:700;}
-/* ── 연결 (주제 ↔ 성경) (v26-0906-5, HB 1-4) ── */
-.vlink-wrap{overflow-x:auto;overflow-y:hidden;margin-top:4px;}
-.vlink-note{font-size:9.5px;color:var(--tx3);opacity:.8;margin-top:6px;}
+/* ── 연결 — 그래프 뷰 (v26-0907-4, HB 7) ── */
+.vlink-note{font-size:9.5px;color:var(--tx3);opacity:.8;margin-top:6px;line-height:1.5;}
+.vg-wrap{position:relative;margin-top:4px;}
+/* ⚠️ touch-action:none 이 없으면 폰에서 점을 끄는 대신 화면이 스크롤된다 */
+.vg-svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab;
+  -webkit-tap-highlight-color:transparent;user-select:none;}
+.vg-svg:active{cursor:grabbing;}
+.vg-node{cursor:pointer;}
+.vg-node circle{transition:fill-opacity .12s;}
+.vg-node.on circle,.vg-node:hover circle{fill-opacity:1;}
+/* 이름은 선 위에 얹히므로 바탕색으로 한 번 두르고 그 위에 글자를 얹는다 */
+.vg-lb{fill:var(--tx2);paint-order:stroke;stroke:var(--s1);stroke-width:2.6px;
+  stroke-linejoin:round;pointer-events:none;}
+.vg-node.on .vg-lb,.vg-node:hover .vg-lb{fill:var(--tx);}
+.vg-reset{position:absolute;right:4px;top:4px;color:var(--tx3);cursor:pointer;padding:4px;
+  line-height:0;-webkit-tap-highlight-color:transparent;}
 /* ── 리듬 (요일 × 한 시간) (v26-0907-3, HB 5) ──
    가로가 요일, 세로가 두 겹(시간대 / 한 시간씩).
    ⚠️ 칸을 **자동 배치에 맡기지 않는다.** 시간대 칸이 여러 줄을 걸치기 때문에
@@ -4484,7 +4507,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-3";
+const APP_VERSION = "v. 26-0907-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19193,7 +19216,40 @@ const _VDASH_AXES=[['cat','대분류'],['topic','소주제'],['tag','태그'],['
 // 조각이 너무 잘게 나뉘면 읽을 수 없다. 상위 N개만 색으로 보이고 나머지는 '기타'로 묶는다.
 // ⚠️ 이것은 **파이차트에만** 해당한다. 상세 팝업의 표는 기타 없이 전부 보여준다
 //    (v26-0905-12, HB — "카운트가 1인 것들까지 다").
-const _VDASH_MAX_SLICE=7;
+const _VDASH_MAX_SLICE=7;          // 처음 값. 실제로 쓰는 값은 _vDashMaxSlice()
+const _VDASH_SLICE_MIN=3, _VDASH_SLICE_MAX=12;
+// v26-0907-4, HB 4 — "소주제·태그가 늘면 파이가 뜻을 잃는다".
+//   ① 몇 조각까지 색으로 볼지 **상세 화면에서 슬라이더로** 고른다 (3~12).
+//      고른 값은 24칸 격자에도 그대로 걸린다 (격자에서는 슬라이더가 너무 작다).
+//   ② 그것만으로는 안 풀린다. 태그가 100개면 상위 7개가 각 3% 씩이고 '기타'가
+//      79% 라, 조각 수를 줄여도 여전히 '거대한 회색 하나 + 얇은 조각 몇'이다.
+//      그래서 **'기타'를 파이에서 뺄 수 있게** 했다 — 상위 N 끼리 다시 100% 로
+//      나눠 서로 견줄 수 있는 원이 된다. 대신 전체에서 얼마인지를 파이 아래
+//      한 줄로 반드시 밝힌다 ("상위 7개가 전체의 21%"). 안 밝히면 거짓말이 된다.
+function _vDashMaxSlice(){
+  const n=parseInt(_vDashPref().slices,10);
+  return(isFinite(n)&&n>=_VDASH_SLICE_MIN&&n<=_VDASH_SLICE_MAX)?n:_VDASH_MAX_SLICE;
+}
+// v26-0907-4, HB — "B안으로 진행". '기타'는 **꺼진 채로 시작**한다.
+// 켜 두면 태그가 많을 때 파이가 '거대한 회색 하나 + 얇은 조각 몇' 이 되어
+// 견줄 수가 없다. 끄면 상위 N 끼리 다시 100% 로 나뉘어 서로 견줄 수 있다.
+// ⚠️ 대신 전체에서 얼마인지를 **격자 칸과 상세 팝업 양쪽에서** 반드시 밝힌다.
+function _vDashShowEtc(){return _vDashPref().etc===true;}
+function _vDashEtcColor(n){return _VDASH_COLORS[n%_VDASH_COLORS.length];}
+function vDashSetSlices(v){
+  const p=_vDashPref();
+  p.slices=Math.max(_VDASH_SLICE_MIN,Math.min(_VDASH_SLICE_MAX,parseInt(v,10)||_VDASH_MAX_SLICE));
+  save();
+  renderVerseDashboard();                       // 뒤에 깔린 격자도 함께 따라온다
+  if(_vDashDetailCtx)vDashOpenDetail(_vDashDetailCtx.kind,_vDashDetailCtx.axis);
+}
+function vDashToggleEtc(){
+  const p=_vDashPref();
+  p.etc=!_vDashShowEtc();
+  save();
+  renderVerseDashboard();
+  if(_vDashDetailCtx)vDashOpenDetail(_vDashDetailCtx.kind,_vDashDetailCtx.axis);
+}
 // 조각 색 — 강조색 계열에서 명도·채도를 돌려 만든다 (밝은/어두운 테마 모두 무난)
 const _VDASH_COLORS=['#5a70f8','#7c8cf9','#4bb3a6','#e0a458','#c2668f','#6aa5d8','#8f8f99','#3f4450'];
 // '기타'(그리고 상세 표에서 8위 아래)에 쓰는 색 — 파이의 마지막 조각과 같은 색이라
@@ -19320,13 +19376,17 @@ function _vDashBuckets(agg,axis){
   });
   return[...buck.values()].sort((x,y)=>y.count-x.count||_vDashKeyCmp(x.key,y.key));
 }
-// 파이차트용 조각 — 상위 _VDASH_MAX_SLICE 개 + '기타'.
+// 파이차트용 조각 — 상위 N 개 (+ '기타'를 켜 뒀으면 그 한 조각).
+// ⚠️ '기타'를 끄면 남은 것을 **버리는 것이 아니라 파이에서만 뺀다.** 표에는
+//    여전히 전부 나오고, 파이 아래 한 줄이 전체에서 얼마인지 밝힌다.
 function _vDashSlices(agg,axis){
   const all=_vDashBuckets(agg,axis);
-  if(all.length<=_VDASH_MAX_SLICE)return all;
-  const head=all.slice(0,_VDASH_MAX_SLICE);
-  const rest=all.slice(_VDASH_MAX_SLICE);
-  const etc={key:'기타',count:rest.reduce((n,r)=>n+r.count,0),top:null};
+  const n=_vDashMaxSlice();
+  if(all.length<=n)return all;
+  const head=all.slice(0,n);
+  if(!_vDashShowEtc())return head;
+  const rest=all.slice(n);
+  const etc={key:'기타',count:rest.reduce((x,r)=>x+r.count,0),top:null};
   rest.forEach(r=>{ if(r.top&&(!etc.top||r.top.count>etc.top.count))etc.top=r.top; });
   head.push(etc);
   return head;
@@ -19357,6 +19417,18 @@ function _vDashPieSVG(slices,size){
 function _vDashCellHTML(agg,axis,kind){
   const slices=_vDashSlices(agg,axis);
   if(!slices.length)return `<div class="vdash-cell"><div class="vdash-empty">기록 없음</div></div>`;
+  // '기타'를 껐을 때 이 원은 **상위 N 안에서의 비중**이다. 전체에서 얼마인지를
+  // 칸 안에서도 밝힌다 — 상세 팝업까지 들어가야 알 수 있으면 격자가 거짓말을 한다.
+  let cover='';
+  if(!_vDashShowEtc()){
+    const all=_vDashBuckets(agg,axis), n=_vDashMaxSlice();
+    if(all.length>n){
+      const tot=all.reduce((x,b)=>x+b.count,0);
+      const head=all.slice(0,n).reduce((x,b)=>x+b.count,0);
+      cover=`<div class="vdash-cover" title="나머지 ${all.length-n}개는 이 원에서 뺐어요">`+
+        `상위 ${n} · 전체의 ${Math.round(head/tot*100)}%</div>`;
+    }
+  }
   const top=slices[0];
   const topRef=top.top?top.top.ref:'';
   const topLb=topRef?_vDashRefLabel(topRef):'';
@@ -19369,6 +19441,7 @@ function _vDashCellHTML(agg,axis,kind){
     <div class="vdash-pie" onclick="vDashOpenDetail('${ka}','${aa}')" title="자세히 보기">${_vDashPieSVG(slices,84)}</div>
     <div class="vdash-top vdash-link" onclick="${topClick}"><b>${esc(top.key)}</b> ${top.count}</div>
     ${topRef?`<div class="vdash-ref vdash-link" title="${_vgEscAttr(topLb)}" onclick="vDashOpenVerse('${_vDashQ(topRef)}')">${esc(topLb)}</div>`:''}
+    ${cover}
   </div>`;
 }
 // 행 이름. '현재 말씀 모음'은 아이콘이 없다 — '현재' 라는 글자가 그 자리를 대신한다
@@ -19424,6 +19497,7 @@ function renderVerseDashboard(){
   // ⚠️ 다섯 화면이 다 기간 슬라이더를 갖게 되면서(v26-0907-3), 그리고 나서
   //    **반드시** 레일에 손가락을 붙여야 한다. 예전처럼 화면마다 return 으로
   //    빠져나가면 흐름 말고는 슬라이더가 죽은 채로 그려진다.
+  if(view!=='link'&&typeof _vgStop==='function')_vgStop();   // 그래프는 두고 나가면 계속 돈다
   if(view==='map')renderVDashMap();
   else if(view==='link')renderVDashLink();
   else if(view==='rhythm')renderVDashRhythm();
@@ -19626,6 +19700,7 @@ function _vTrRailBind(el){
     const fn=el.dataset.done;
     if(fn==='span')vTrSpanSet(el.dataset.unit,v);
     else if(fn==='ins')vTrInsSet(v);
+    else if(fn==='slices')vDashSetSlices(v);
   };
   el.addEventListener('pointerdown',down);
   el.addEventListener('pointermove',move);
@@ -19694,8 +19769,10 @@ function _vTrRail2Bind(el){
   el.addEventListener('pointerup',up);
   el.addEventListener('pointercancel',up);
 }
-function _vTrBindRails(){
-  document.querySelectorAll('#vDashBody .vtr-rail').forEach(el=>{
+// root 를 주면 그 안만 훑는다 — 파이 상세 팝업은 #vDashBody 바깥이다 (v26-0907-4)
+function _vTrBindRails(root){
+  ((root&&root.querySelectorAll)?root:document.querySelector('#vDashBody')||document)
+    .querySelectorAll('.vtr-rail').forEach(el=>{
     if(el.classList.contains('vtr-rail2'))_vTrRail2Bind(el);
     else _vTrRailBind(el);
   });
@@ -20675,12 +20752,34 @@ function _vLinkAxis(){
   const a=_vTrPref().linkAxis;
   return _VLINK_LEFTS.some(x=>x[0]===a)?a:'tag';
 }
+// ══════ 연결 — 그래프 뷰 (v26-0907-4, HB 7) ══════
+// 두 줄로 세워 두고 선을 잇던 것을 **그래프**로 바꿨다. 옵시디언의 그래프 뷰처럼
+// 점끼리 서로 밀고(척력) 이어진 점끼리 당겨서(용수철) 스스로 자리를 잡는다.
+//
+//   점 = 주제(대분류/소주제/태그) + 성경.  선 = 함께 나온 횟수(굵기).
+//   점을 끌어 옮기고, 빈 곳을 끌어 화면을 밀고, 휠·두 손가락으로 키우고 줄인다.
+//   점을 톡 누르면 그 목록이 열린다.
+//
+// ⚠️ 라이브러리를 못 쓴다(단일 파일·오프라인). 그래서 물리를 직접 돌린다.
+//    점이 40개 안쪽이라 모든 쌍을 다 재도(O(n²)) 한 판에 800번이 안 된다.
+// ⚠️ **반드시 멈춰야 한다.** 화면을 옮기거나 대시보드를 닫을 때 _vgStop() 을
+//    부르지 않으면 애니메이션이 뒤에서 영원히 돈다 (배터리를 먹는다).
+const _VG_MAXL=14, _VG_MAXR=22;     // 주제 점 · 성경 점 수 상한 (넘으면 많은 순으로 자른다)
+// ⚠️ 주제 색에는 **회색을 넣지 않는다.** 성경 점이 회색이라, 주제가 회색으로
+//    돌아오는 순간(_VTR_COLORS 의 여섯째) 둘을 눈으로 못 가른다.
+const _VG_COLORS=['#5a70f8','#4bb3a6','#e0a458','#c2668f','#6aa5d8','#7c8cf9','#3fae86','#d08a4a'];
+let _vgSim=null;
+function _vgStop(){
+  if(_vgSim&&_vgSim.raf)cancelAnimationFrame(_vgSim.raf);
+  _vgSim=null;
+}
 function renderVDashLink(){
   const box=document.getElementById('vDashBody');
   if(!box)return;
+  _vgStop();
   _vDashVerseMap=null;
   const sc=_vDashScope(), la=_vLinkAxis();
-  // \u0001 은 이름에 절대 안 나오는 글자다 (_reactKey 가 쓰는 것과 같은 수)
+  // 이름에 절대 안 나오는 글자 (_reactKey 가 쓰는 것과 같은 수)
   const SEP='\u0001';
   const pair=new Map(), lTot=new Map(), rTot=new Map();
   _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
@@ -20688,67 +20787,273 @@ function renderVDashLink(){
     const rs=_vDashKeysOf(e.ref,'book',e.v).filter(k=>!_vDashIsPlaceholder(k));
     ls.forEach(l=>{
       lTot.set(l,(lTot.get(l)||0)+1);
-      rs.forEach(r=>{
-        pair.set(l+SEP+r,(pair.get(l+SEP+r)||0)+1);
-      });
+      rs.forEach(r=>pair.set(l+SEP+r,(pair.get(l+SEP+r)||0)+1));
     });
     rs.forEach(r=>rTot.set(r,(rTot.get(r)||0)+1));
   });
   let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
     _vTrChipsHTML('왼쪽','linkAxis',_VLINK_LEFTS,la)+`</div>`;
-  const L=[...lTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,7).map(x=>x[0]);
-  const R=[...rTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,9).map(x=>x[0]);
+  const L=[...lTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_MAXL);
+  const R=[...rTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_MAXR);
   if(!L.length||!R.length){
     box.innerHTML=html+'<div class="vdash-empty" style="text-align:center;">이 구간에는 이을 것이 없어요</div>';
     return;
   }
-  const W=Math.max(300,(box.clientWidth||520)-2);
-  const rowH=26, H=Math.max(L.length,R.length)*rowH+16;
-  const lx=Math.min(112,W*0.3), rx=W-Math.min(112,W*0.3);
-  const yOf=(i,n)=>10+ (i+0.5)*(H-16)/Math.max(1,n);
-  let links='',lLb='',rLb='';
-  let mx=1; pair.forEach(v=>{if(v>mx)mx=v;});
-  L.forEach((l,li)=>{
-    const c=_VTR_COLORS[li%_VTR_COLORS.length];
-    R.forEach((r,ri)=>{
-      const v=pair.get(l+SEP+r)||0;
-      if(!v)return;
-      const y1=yOf(li,L.length), y2=yOf(ri,R.length);
-      const w=1+ (v/mx)*7;
-      links+=`<path d="M${lx},${y1.toFixed(1)} C${(lx+rx)/2},${y1.toFixed(1)} ${(lx+rx)/2},${y2.toFixed(1)} ${rx},${y2.toFixed(1)}" `+
-        `fill="none" stroke="${c}" stroke-width="${w.toFixed(1)}" opacity="0.45" `+
-        `style="cursor:pointer;" onclick="vDashOpenFilter('book','${_vDashQ(r)}')">`+
-        `<title>${esc(l)} × ${esc(r)} — ${v}</title></path>`;
-    });
-    lLb+=`<text x="${(lx-7).toFixed(1)}" y="${(yOf(li,L.length)+3.5).toFixed(1)}" text-anchor="end" `+
-      `font-size="10.5" fill="var(--tx)" style="cursor:pointer;" `+
-      `onclick="vDashOpenFilter('${_vDashQ(la)}','${_vDashQ(l)}')">${esc(l)}</text>`;
-    lLb+=`<circle cx="${lx}" cy="${yOf(li,L.length).toFixed(1)}" r="3.2" fill="${c}"/>`;
-  });
-  R.forEach((r,ri)=>{
-    rLb+=`<circle cx="${rx}" cy="${yOf(ri,R.length).toFixed(1)}" r="3.2" fill="var(--tx3)"/>`;
-    rLb+=`<text x="${(rx+7).toFixed(1)}" y="${(yOf(ri,R.length)+3.5).toFixed(1)}" text-anchor="start" `+
-      `font-size="10.5" fill="var(--tx)" style="cursor:pointer;" `+
-      `onclick="vDashOpenFilter('book','${_vDashQ(r)}')">${esc(r)}</text>`;
-  });
-  html+=`<div class="vlink-wrap"><svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" `+
-    `style="display:block;max-width:100%;">${links}${lLb}${rLb}</svg></div>`;
-  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
+  // ── 점과 선 만들기 ──
+  const nodes=[],idx=new Map();
+  const W=Math.max(280,(box.clientWidth||520)-2);
+  const H=Math.max(320,Math.min(520,Math.round(W*0.86)));
+  const cx=W/2, cy=H/2;
+  const tot=L.length+R.length;
+  const push=(key,kind,weight,color)=>{
+    idx.set(kind+SEP+key,nodes.length);
+    // 처음 자리는 나선으로 흩어 둔다 — 다 한 점에서 시작하면 척력이 폭발한다
+    const t=nodes.length*2.399963;                 // 황금각 — 고르게 퍼진다
+    const rad=Math.min(W,H)*0.34*Math.sqrt((nodes.length+1)/tot);
+    nodes.push({key,kind,w:weight,color,
+      x:cx+Math.cos(t)*rad, y:cy+Math.sin(t)*rad, vx:0, vy:0, deg:0});
+  };
+  L.forEach(([k,v],i)=>push(k,'topic',v,_VG_COLORS[i%_VG_COLORS.length]));
+  R.forEach(([k,v])=>push(k,'book',v,''));
+  const links=[];
+  let mx=1;
+  L.forEach(([l])=>R.forEach(([r])=>{
+    const v=pair.get(l+SEP+r)||0;
+    if(!v)return;
+    if(v>mx)mx=v;
+    const ai=idx.get('topic'+SEP+l), bi=idx.get('book'+SEP+r);
+    links.push({a:ai,b:bi,v});
+    nodes[ai].deg++; nodes[bi].deg++;
+  }));
+  // 아무 선에도 안 걸린 점은 뺀다 (떠다니기만 해서 읽기를 방해한다)
+  const remap=new Map(); let ni=0;
+  nodes.forEach((n,i)=>{ if(n.deg>0)remap.set(i,ni++); });
+  const N=nodes.filter(n=>n.deg>0);
+  const E=links.map(e=>({a:remap.get(e.a),b:remap.get(e.b),v:e.v}));
+  let wmax=1; N.forEach(n=>{if(n.w>wmax)wmax=n.w;});
+  N.forEach(n=>{ n.r=(n.kind==='topic'?5:3.5)+Math.sqrt(n.w/wmax)*(n.kind==='topic'?7:5); });
+
+  html+=`<div class="vg-wrap">`+
+    `<svg id="vgSvg" class="vg-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`+
+    `<g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg>`+
+    `<span class="vg-reset" onclick="vDashLinkRelayout()" title="다시 배치">`+
+    `<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+    `stroke-width="1.6" stroke-linecap="round"><path d="M16.5 6.5A7.5 7.5 0 1 0 17 11"/>`+
+    `<path d="M17 3v4h-4"/></svg></span></div>`;
+  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다 (예전 화면에서 그대로 가져온다)
   const skew=[];
-  L.forEach(l=>{
-    const tot=lTot.get(l)||0;
-    if(tot<2)return;
+  L.forEach(([l])=>{
+    const t2=lTot.get(l)||0;
+    if(t2<2)return;
     let best='',bn=0;
-    R.forEach(r=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
-    if(best&&bn/tot>=0.6)skew.push({l,r:best,f:Math.round(bn/tot*100)});
+    R.forEach(([r])=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
+    if(best&&bn/t2>=0.6)skew.push({l,r:best,f:Math.round(bn/t2*100)});
   });
   if(skew.length){
     html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
-      skew.slice(0,3).map(s=>`<b>${esc(s.l)}</b>${_vTrJosaGa(s.l)==='이'?'은':'는'} `+
-        `${s.f}% 가 <b>${esc(s.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
+      skew.slice(0,3).map(s2=>`<b>${esc(s2.l)}</b>${_vTrJosaGa(s2.l)==='이'?'은':'는'} `+
+        `${s2.f}% 가 <b>${esc(s2.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
   }
-  html+=`<div class="vlink-note">선을 누르면 그 성경의 말씀들이 열려요. 왼쪽·오른쪽 이름도 눌러 볼 수 있어요.</div>`;
+  html+=`<div class="vlink-note">점을 끌어 옮기고, 빈 곳을 끌어 밀어요. `+
+    `휠(또는 두 손가락)로 키우고 줄여요. 점을 톡 누르면 그 목록이 열려요.</div>`;
   box.innerHTML=html;
+  _vgRun(N,E,W,H,mx,la);
+}
+function vDashLinkRelayout(){ renderVDashLink(); }
+// ⚠️ 서로 안 이어진 덩어리는 척력만 받아 **판 밖으로 날아간다.** 가운데로
+//    당기는 힘만으로는 못 잡는다 (그 힘을 키우면 덩어리가 한 점에 뭉친다).
+//    그래서 테두리에서 잡아 세운다 — 아래쪽은 이름이 설 자리를 더 비운다.
+function _vgClamp(p,W,H){
+  const m=p.r+3;
+  if(p.x<m){p.x=m;p.vx=0;} else if(p.x>W-m){p.x=W-m;p.vx=0;}
+  if(p.y<m){p.y=m;p.vy=0;} else if(p.y>H-m-11){p.y=H-m-11;p.vy=0;}
+}
+// ── 물리와 그리기 ─────────────────────────────────────────────────────────
+function _vgRun(N,E,W,H,mx,la){
+  const svg=document.getElementById('vgSvg');
+  const gV=document.getElementById('vgView');
+  const gL=document.getElementById('vgLinks');
+  const gN=document.getElementById('vgNodes');
+  if(!svg||!gV||!N.length)return;
+  const NS='http://www.w3.org/2000/svg';
+  const cx=W/2, cy=H/2;
+  const lineEls=E.map(e=>{
+    const el=document.createElementNS(NS,'line');
+    el.setAttribute('stroke',N[e.a].color||'var(--tx3)');
+    el.setAttribute('stroke-width',(0.7+(e.v/mx)*3.4).toFixed(2));
+    el.setAttribute('stroke-opacity','0.32');
+    el.setAttribute('stroke-linecap','round');
+    gL.appendChild(el);
+    return el;
+  });
+  const nodeEls=N.map((n,i)=>{
+    const g=document.createElementNS(NS,'g');
+    g.setAttribute('class','vg-node');
+    g.setAttribute('data-i',String(i));
+    const c=document.createElementNS(NS,'circle');
+    c.setAttribute('r',n.r.toFixed(1));
+    c.setAttribute('fill',n.color||'var(--tx3)');
+    c.setAttribute('fill-opacity',n.kind==='topic'?'0.95':'0.45');
+    if(n.kind==='topic'){                       // 주제는 테두리 한 겹 — 결이 다르다
+      c.setAttribute('stroke','var(--s1)');
+      c.setAttribute('stroke-width','1.6');
+    }
+    g.appendChild(c);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('class','vg-lb');
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size',n.kind==='topic'?'10.5':'9.5');
+    // 이름이 길면 줄인다 — 안 줄이면 판 밖으로 삐져나가 잘린다 (전체는 tooltip 에)
+    t.textContent=(n.key.length>9)?(n.key.slice(0,8)+'…'):n.key;
+    g.appendChild(t);
+    const ti=document.createElementNS(NS,'title');
+    ti.textContent=n.key+' — '+n.w;
+    g.appendChild(ti);
+    gN.appendChild(g);
+    return{g,c,t};
+  });
+  const paint=()=>{
+    E.forEach((e,i)=>{
+      const a=N[e.a], b=N[e.b], el=lineEls[i];
+      el.setAttribute('x1',a.x.toFixed(1)); el.setAttribute('y1',a.y.toFixed(1));
+      el.setAttribute('x2',b.x.toFixed(1)); el.setAttribute('y2',b.y.toFixed(1));
+    });
+    N.forEach((n,i)=>{
+      const o=nodeEls[i];
+      o.g.setAttribute('transform','translate('+n.x.toFixed(1)+','+n.y.toFixed(1)+')');
+      o.t.setAttribute('y',(n.r+9).toFixed(1));
+    });
+  };
+  // 한 판 — 척력 · 용수철 · 가운데로 · 감쇠
+  const REST=64, K=0.024, REP=760, DAMP=0.86;
+  const tick=()=>{
+    const n=N.length;
+    for(let i=0;i<n;i++){
+      const a=N[i];
+      for(let j=i+1;j<n;j++){
+        const b=N[j];
+        let dx=a.x-b.x, dy=a.y-b.y;
+        let d2=dx*dx+dy*dy;
+        if(d2<1){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=1;}   // 겹치면 살짝 흔든다
+        const d=Math.sqrt(d2);
+        const f=REP/d2, ux=dx/d, uy=dy/d;
+        a.vx+=ux*f; a.vy+=uy*f;
+        b.vx-=ux*f; b.vy-=uy*f;
+      }
+    }
+    E.forEach(e=>{
+      const a=N[e.a], b=N[e.b];
+      const dx=b.x-a.x, dy=b.y-a.y;
+      const d=Math.max(1,Math.hypot(dx,dy));
+      const f=(d-REST)*K, ux=dx/d, uy=dy/d;
+      a.vx+=ux*f; a.vy+=uy*f;
+      b.vx-=ux*f; b.vy-=uy*f;
+    });
+    N.forEach(p=>{
+      p.vx+=(cx-p.x)*0.006; p.vy+=(cy-p.y)*0.006;
+      if(p.fix){p.vx=0;p.vy=0;_vgClamp(p,W,H);return;}  // 끌고 있는 점은 손가락이 자리를 정한다
+      p.vx*=DAMP; p.vy*=DAMP;
+      p.x+=Math.max(-18,Math.min(18,p.vx));
+      p.y+=Math.max(-18,Math.min(18,p.vy));
+      _vgClamp(p,W,H);
+    });
+  };
+  // 처음 몇 판은 안 그리고 돌려 둔다 — 점이 튀어나오는 모습을 안 보인다
+  for(let i=0;i<90;i++)tick();
+  paint();
+  let alpha=1;
+  const loop=()=>{
+    if(!_vgSim)return;
+    tick(); paint();
+    alpha*=0.985;
+    if(alpha>0.06)_vgSim.raf=requestAnimationFrame(loop);
+    else _vgSim.raf=null;
+  };
+  _vgSim={raf:null,wake:()=>{
+    alpha=1;
+    if(_vgSim&&!_vgSim.raf)_vgSim.raf=requestAnimationFrame(loop);
+  }};
+  _vgSim.raf=requestAnimationFrame(loop);
+
+  // ── 손가락 · 마우스 ──────────────────────────────────────────────────
+  let tx=0,ty=0,zm=1;
+  const applyView=()=>gV.setAttribute('transform',
+    'translate('+tx.toFixed(1)+','+ty.toFixed(1)+') scale('+zm.toFixed(3)+')');
+  const toGraph=(clientX,clientY)=>{
+    const r=svg.getBoundingClientRect();
+    const px=(clientX-r.left)*(W/Math.max(1,r.width));
+    const py=(clientY-r.top)*(H/Math.max(1,r.height));
+    return{x:(px-tx)/zm, y:(py-ty)/zm};
+  };
+  const zoomTo=next=>{
+    const n2=Math.max(0.4,Math.min(3,next));
+    tx=W/2-(W/2-tx)*(n2/zm); ty=H/2-(H/2-ty)*(n2/zm);
+    zm=n2; applyView();
+  };
+  const pts=new Map();
+  let drag=null, moved=0, panFrom=null, pinch=null;
+  svg.addEventListener('pointerdown',e=>{
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    try{svg.setPointerCapture(e.pointerId);}catch(_){}
+    if(pts.size===2){                        // 두 손가락 — 키우고 줄이기
+      const v=[...pts.values()];
+      pinch={d:Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y),zm};
+      if(drag){N[drag.i].fix=false;nodeEls[drag.i].g.classList.remove('on');}
+      drag=null; panFrom=null;
+      return;
+    }
+    moved=0;
+    const g=e.target&&e.target.closest?e.target.closest('.vg-node'):null;
+    if(g){
+      const i=parseInt(g.getAttribute('data-i'),10);
+      drag={i}; N[i].fix=true; g.classList.add('on');
+    }else{
+      panFrom={x:e.clientX,y:e.clientY,tx,ty};
+    }
+    e.preventDefault();
+  });
+  svg.addEventListener('pointermove',e=>{
+    if(pts.has(e.pointerId))pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pinch&&pts.size===2){
+      const v=[...pts.values()];
+      const d=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y);
+      if(pinch.d>4)zoomTo(pinch.zm*(d/pinch.d));
+      return;
+    }
+    if(drag){
+      const g=toGraph(e.clientX,e.clientY), n=N[drag.i];
+      moved+=Math.abs(g.x-n.x)+Math.abs(g.y-n.y);
+      n.x=g.x; n.y=g.y; n.vx=0; n.vy=0;
+      if(_vgSim)_vgSim.wake();
+      e.preventDefault();
+    }else if(panFrom){
+      const r=svg.getBoundingClientRect();
+      tx=panFrom.tx+(e.clientX-panFrom.x)*(W/Math.max(1,r.width));
+      ty=panFrom.ty+(e.clientY-panFrom.y)*(H/Math.max(1,r.height));
+      moved+=2; applyView();
+      e.preventDefault();
+    }
+  });
+  const up=e=>{
+    pts.delete(e.pointerId);
+    if(pts.size<2)pinch=null;
+    if(drag){
+      const n=N[drag.i], o=nodeEls[drag.i];
+      n.fix=false;
+      if(o)o.g.classList.remove('on');
+      // 끌지 않고 톡 눌렀으면 그 목록을 연다
+      if(moved<5)vDashOpenFilter(n.kind==='book'?'book':la,n.key);
+      drag=null;
+      if(_vgSim)_vgSim.wake();
+    }
+    panFrom=null;
+  };
+  svg.addEventListener('pointerup',up);
+  svg.addEventListener('pointercancel',up);
+  svg.addEventListener('wheel',e=>{
+    e.preventDefault();
+    zoomTo(zm*(e.deltaY<0?1.12:1/1.12));
+  },{passive:false});
 }
 // ── 주간 리듬 (잔디) ─────────────────────────────────────────────────────
 // ── 리듬 (요일 × 한 시간) ────────────────────────────────────────────────
@@ -21222,25 +21527,47 @@ function vDashOpenDetail(kind,axis){
     body.innerHTML='<div class="vdash-empty" style="text-align:center;">이 기간에는 기록이 없어요</div>';
   }else{
     const total=full.reduce((n,s)=>n+s.count,0);
-    const folded=full.length>_VDASH_MAX_SLICE;   // 파이에서 '기타'로 묶인 줄이 있나
+    const nSl=_vDashMaxSlice(), showEtc=_vDashShowEtc();
+    const folded=full.length>nSl;                // 파이에 안 들어간 줄이 있나
     const rows=full.map((sl,i)=>{
       const pct=(sl.count/total*100);
-      // 8위부터는 파이에서 '기타' 한 조각으로 묶였다 — 표에서도 그 색을 쓴다
-      const color=(folded&&i>=_VDASH_MAX_SLICE)?_VDASH_ETC_COLOR:_VDASH_COLORS[i%_VDASH_COLORS.length];
+      // N위 아래는 파이에서 '기타' 한 조각으로 묶였거나(켜짐) 아예 빠졌다(꺼짐).
+      // 어느 쪽이든 표에서는 같은 색으로 묶어 파이와 눈이 이어지게 한다.
+      const color=(folded&&i>=nSl)?_vDashEtcColor(nSl):_VDASH_COLORS[i%_VDASH_COLORS.length];
       // 빈자리 이름('(없음)'·'(미상)'…)은 걸어 줄 필터가 없어 링크로 만들지 않는다
       const nameCell=_vDashIsPlaceholder(sl.key)?esc(sl.key)
         :`<span class="vdash-link" onclick="vDashOpenFilter('${_vDashQ(axis)}','${_vDashQ(sl.key)}')">${esc(sl.key)}</span>`;
       const refLb=sl.top?_vDashRefLabel(sl.top.ref):'';
       const refCell=sl.top?`<div class="vdash-ref vdash-link" style="text-align:left;margin-top:2px;" `+
         `title="${_vgEscAttr(refLb)}" onclick="vDashOpenVerse('${_vDashQ(sl.top.ref)}')">${esc(refLb)}</div>`:'';
-      return`<tr><td>${i+1}</td><td><span class="vdd-sw" style="background:${color};"></span>${nameCell}${refCell}</td>`+
+      const dim=(folded&&i>=nSl&&!showEtc)?' class="vdd-out"':'';
+      return`<tr${dim}><td>${i+1}</td><td><span class="vdd-sw" style="background:${color};"></span>${nameCell}${refCell}</td>`+
         `<td>${sl.count}</td><td>${pct.toFixed(1)}%</td></tr>`;
     }).join('');
-    body.innerHTML=_vDashPieDetailSVG(slices,190)+
+    // 몇 조각까지 색으로 볼지 — 여기서 고른 값이 24칸 격자에도 걸린다 (HB 4)
+    const headSum=full.slice(0,nSl).reduce((n,s)=>n+s.count,0);
+    const ctl=`<div class="vdd-ctl">`+
+      `<span class="vtr-ctl-lb" style="flex:0 0 auto;">조각</span>`+
+      `<span class="vtr-slide on" style="flex:1;min-width:0;">`+
+        `<span class="vtr-slide-lb" id="vddSlLb">${nSl}개</span>`+
+        _vTrRailHTML({min:_VDASH_SLICE_MIN,max:_VDASH_SLICE_MAX,val:nSl,done:'slices',
+                      lb:'vddSlLb',suffix:'개',label:'파이에 색으로 보일 조각 수'})+
+      `</span>`+
+      `<span class="vtr-chip${showEtc?' on':''}" onclick="vDashToggleEtc()" `+
+      `title="끄면 상위 ${nSl}개끼리 다시 100%로 나눠 서로 견줄 수 있어요">기타</span>`+
+      `</div>`;
+    // ⚠️ '기타'를 끄면 파이는 상위 N 안에서의 비중이다. 전체에서 얼마인지를
+    //    반드시 함께 밝힌다 — 안 밝히면 파이가 거짓말을 한다.
+    const note=(folded&&!showEtc)
+      ?`<div class="vdd-note">이 원은 <b>상위 ${nSl}개끼리의 비중</b>이에요 — `+
+       `이 ${nSl}개가 전체 ${total}회 가운데 <b>${(headSum/total*100).toFixed(0)}%</b>예요.</div>`
+      :'';
+    body.innerHTML=ctl+_vDashPieDetailSVG(slices,190)+note+
       `<table class="vdd-tbl"><thead><tr><th></th><th>항목</th><th>횟수</th><th>비율</th></tr></thead>`+
       `<tbody>${rows}</tbody></table>`+
       `<div style="font-size:10px;color:var(--tx3);margin-top:8px;text-align:right;">`+
       `${full.length}개 · 합계 ${total}회</div>`;
+    _vTrBindRails(body);
   }
   const dots=document.getElementById('vDashDetailDots');
   if(dots)dots.innerHTML=_vDashDetailDotsHTML(kind,axis);
@@ -21375,6 +21702,9 @@ window.addEventListener('resize',()=>{
   _vDashResizeT=setTimeout(()=>{_vDashResizeT=null;renderVerseDashboard();},180);
 });
 function closeVerseDashboard(){
+  // ⚠️ 연결 그래프의 애니메이션을 여기서 반드시 멈춘다 (v26-0907-4).
+  //    안 멈추면 닫은 뒤에도 뒤에서 영원히 돌며 배터리를 먹는다.
+  if(typeof _vgStop==='function')_vgStop();
   document.getElementById('vDashOverlay').style.display='none';
   document.getElementById('vDashModal').style.display='none';
 }

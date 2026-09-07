@@ -74,6 +74,7 @@ global.document = { getElementById: () => null, querySelectorAll: () => [] };
 const D = eval('(function(){' + SRC_DASH + ';return{' + [
   '_VDASH_KINDS', '_VDASH_AXES', '_VDASH_MAX_SLICE', '_VDASH_ETC_COLOR',
   '_vDashKeyCmp', '_vDashQ', '_vDashPref', '_vDashEntries', '_vDashHomeAgg',
+  '_vDashMaxSlice', '_vDashShowEtc', '_vDashEtcColor', '_VDASH_SLICE_MIN', '_VDASH_SLICE_MAX',
   '_vDashKeysOf', '_vDashBuckets', '_vDashSlices', '_vDashRowHeadHTML',
   '_vDashKindLabel', '_vDashAxisLabel',
   '_vTrPref', '_vTrEntries', '_vTrBucketOf', '_vTrBucketList', '_vTrBucketLabel', '_vTrData',
@@ -110,12 +111,29 @@ console.log('시나리오 1 — 상세 표는 기타 없이 전부, 파이만 �
   sc.eq('표는 태그 10종을 모두 담는다', full.length, 10);
   sc.eq("표에는 '기타' 가 없다", full.some(s => s.key === '기타'), false);
   sc.eq('카운트 1짜리도 표에 있다', full.filter(s => s.count === 1).length, 8);
-  sc.eq('파이는 상위 7 + 기타 = 8조각', slices.length, D._VDASH_MAX_SLICE + 1);
-  sc.eq("파이 마지막 조각은 '기타'", slices[slices.length - 1].key, '기타');
-  sc.eq('기타 조각의 수는 8위 아래의 합', slices[7].count,
+  // v26-0907-4, HB — 기본은 '기타' 꺼짐(B안). 파이는 상위 7 개뿐이다.
+  sc.eq('파이는 상위 7 조각뿐', slices.length, D._VDASH_MAX_SLICE);
+  sc.eq("파이에 '기타'가 없다", slices.some(s => s.key === '기타'), false);
+  // '기타'를 켜면 예전처럼 한 조각으로 묶인다
+  D._vDashPref().etc = true;
+  const withEtc = D._vDashSlices(agg, 'tag');
+  sc.eq('켜면 7 + 기타 = 8조각', withEtc.length, D._VDASH_MAX_SLICE + 1);
+  sc.eq("켜면 마지막 조각이 '기타'", withEtc[withEtc.length - 1].key, '기타');
+  sc.eq('기타 조각의 수는 8위 아래의 합', withEtc[7].count,
         full.slice(7).reduce((n, s) => n + s.count, 0));
-  sc.eq('표 합계와 파이 합계가 같다',
-        full.reduce((n, s) => n + s.count, 0), slices.reduce((n, s) => n + s.count, 0));
+  D._vDashPref().etc = false;
+  // v26-0907-4 (B안) — 파이는 상위 N 뿐이라 표보다 합이 **작다**. 그것이 의도다.
+  // 대신 '기타'를 켜면 예전처럼 둘이 정확히 맞아떨어져야 한다 (한 건도 안 샌다).
+  const tableSum = full.reduce((n, s) => n + s.count, 0);
+  sc.eq('파이 합계가 표보다 작다 (상위 N 뿐이라서)',
+        slices.reduce((n, s) => n + s.count, 0) < tableSum, true);
+  sc.eq('파이 합계는 상위 7개의 합과 같다',
+        slices.reduce((n, s) => n + s.count, 0),
+        full.slice(0, D._VDASH_MAX_SLICE).reduce((n, s) => n + s.count, 0));
+  D._vDashPref().etc = true;
+  sc.eq("'기타'를 켜면 표 합계와 정확히 같다 (한 건도 안 샌다)",
+        D._vDashSlices(agg, 'tag').reduce((n, s) => n + s.count, 0), tableSum);
+  D._vDashPref().etc = false;
   sc.eq('가장 많은 것이 맨 위', [full[0].key, full[0].count], ['t01', 3]);
   sc.eq('카운트 0인 항목은 애초에 생기지 않는다', full.some(s => s.count === 0), false);
 }
@@ -240,6 +258,65 @@ console.log("\n시나리오 2-5 — '저장' 행 머리는 아이콘으로 나�
   const hd = D._vDashRowHeadHTML('keep', '저장');
   sc.eq('아이콘이 있다', hd.includes('<svg'), true);
   sc.eq("이름이 '저장'", hd.includes('저장'), true);
+}
+
+console.log("\n시나리오 1-3 — 파이 조각 수를 고른다 · '기타'를 뺄 수 있다 (v26-0907-4, HB 4)");
+{
+  // 태그가 많을 때가 문제였다 — 상위 몇 개만 색으로 보고 나머지는 접는다
+  const agg = [];
+  for (let i = 0; i < 20; i++) agg.push({ ref: 'r' + i, count: 20 - i, v: null });
+  const V = agg.map((a, i) => ({ ref: a.ref, cat: '', topic: '', tags: ['t' + i], d: '' }));
+  setVerses(V);
+
+  ST.settings.vDashPref = null;
+  sc.eq('처음엔 일곱 조각', D._vDashMaxSlice(), 7);
+  // B안 — '기타'는 꺼진 채로 시작한다 (HB, v26-0907-4)
+  sc.eq("처음엔 '기타'가 꺼져 있다", D._vDashShowEtc(), false);
+  sc.eq('파이는 일곱 조각뿐', D._vDashSlices(agg, 'tag').length, 7);
+  D._vDashPref().etc = true;
+  sc.eq('켜면 일곱 + 기타 = 여덟', D._vDashSlices(agg, 'tag').length, 8);
+  sc.eq("여덟째가 '기타'", D._vDashSlices(agg, 'tag')[7].key, '기타');
+  D._vDashPref().etc = false;
+
+  // ① 조각 수 슬라이더 — 3~12 밖은 안 받는다
+  D._vDashPref().slices = 4;
+  sc.eq('네 조각으로 줄인다', D._vDashMaxSlice(), 4);
+  sc.eq('네 조각뿐', D._vDashSlices(agg, 'tag').length, 4);
+  D._vDashPref().slices = 99;
+  sc.eq('너무 크면 처음 값으로', D._vDashMaxSlice(), 7);
+  D._vDashPref().slices = 1;
+  sc.eq('너무 작아도 처음 값으로', D._vDashMaxSlice(), 7);
+  sc.eq('고를 수 있는 폭', [D._VDASH_SLICE_MIN, D._VDASH_SLICE_MAX], [3, 12]);
+
+  // ② '기타'가 꺼져 있으면 상위 N 만 남는다 — 버리는 게 아니라 파이에서만 뺀다
+  D._vDashPref().slices = 5;
+  sc.eq("'기타'가 꺼져 있다", D._vDashShowEtc(), false);
+  const cut = D._vDashSlices(agg, 'tag');
+  sc.eq('다섯 조각뿐', cut.length, 5);
+  sc.eq("'기타' 조각이 없다", cut.some(s => s.key === '기타'), false);
+  sc.eq('표에는 스무 개가 그대로 있다', D._vDashBuckets(agg, 'tag').length, 20);
+  // 파이 아래 한 줄이 전체에서 얼마인지 밝힌다 — 안 밝히면 거짓말이 된다
+  sc.eq('전체에서 얼마인지 밝힌다', SRC.includes('끼리의 비중</b>이에요'), true);
+  sc.eq('그 줄은 기타를 껐을 때만', SRC.includes('const note=(folded&&!showEtc)'), true);
+  // 격자 칸에서도 밝힌다 — 상세까지 들어가야 알 수 있으면 격자가 거짓말을 한다
+  sc.eq('격자 칸에도 비중 줄이 있다', SRC.includes('class="vdash-cover"'), true);
+  sc.eq('격자 줄은 전체의 몇 %인지 적는다', SRC.includes('전체의 ${Math.round(head/tot*100)}%'), true);
+
+  // 조각이 항목 수보다 많으면 접지 않는다
+  const few = [{ ref: 'a', count: 3, v: null }, { ref: 'b', count: 1, v: null }];
+  setVerses([{ ref: 'a', cat: '', topic: '', tags: ['x'], d: '' },
+             { ref: 'b', cat: '', topic: '', tags: ['y'], d: '' }]);
+  sc.eq('항목이 적으면 그대로', D._vDashSlices(few, 'tag').length, 2);
+
+  // 고른 값은 24칸 격자에도 걸린다 (격자에서는 슬라이더가 너무 작다)
+  sc.eq('격자도 같은 값을 쓴다', /function _vDashCellHTML\([\s\S]{0,80}?const slices=_vDashSlices\(agg,axis\);/.test(SRC), true);
+  sc.eq('슬라이더가 격자를 다시 그린다',
+        /function vDashSetSlices\(v\)\{[\s\S]{0,300}?renderVerseDashboard\(\);/.test(SRC), true);
+  sc.eq('상세 팝업도 함께 다시 그린다',
+        SRC.includes('if(_vDashDetailCtx)vDashOpenDetail(_vDashDetailCtx.kind,_vDashDetailCtx.axis);'), true);
+
+  ST.settings.vDashPref = null;
+  setVerses([]);
 }
 
 console.log('\n시나리오 4 — 흐름: 날짜를 주/달 칸으로 나눈다');
