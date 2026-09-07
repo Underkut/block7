@@ -21,6 +21,8 @@ global._bookOfRef = ref => {
 global._vDashVerse = () => null;
 global._vDashRefLabel = r => String(r||'');
 global._vDashIsPlaceholder = k => ['기타','(없음)','(태그 없음)','(목록에 없음)','(미상)','장 모름'].indexOf(String(k))>=0;
+// '시간 개념 없음'(0분) 구간 판정 — index.html 의 진짜 정의와 같은 한 줄
+global._secNoTime = sec => !!(sec&&sec.noTime);
 global.todayKey = () => '2026-09-06';
 // 리듬의 세로 1겹은 **앱이 쓰는 그 시간대**다. 여기서 베껴 적지 말고
 // index.html 의 진짜 정의를 그대로 떠 온다 (바뀌면 테스트도 함께 따라간다).
@@ -424,10 +426,11 @@ console.log('\n시나리오 12 — 성경 지도');
   sc.eq('안 밟은 장도 칸으로 남긴다', SRC.includes('for(let i=1;i<=total;i++){'), true);
   // ⚠️ 장 격자는 누른 칸이 있는 쪽(구약/신약) 바로 아래에 편다 — 맨 끝에 붙이면
   //    구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다 (v26-0906-6).
+  // v26-0907-9, HB 93-1-1 — grid() 에 접기 id('ot'/'nt')가 더 붙었다.
   sc.eq('구약을 누르면 구약 아래에',
-    SRC.includes("html+=grid('구약',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')"), true);
+    SRC.includes("html+=grid('구약','ot',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')"), true);
   sc.eq('신약을 누르면 신약 아래에',
-    SRC.includes("+grid('신약',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+    SRC.includes("+grid('신약','nt',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
 }
 
 // ═══ 14. v26-0907-3 — 지도 손질 (HB 6) ═══
@@ -523,7 +526,11 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('뎁스는 1~4 (0은 없앴다)', SRC.includes('return(isFinite(n)&&n>=1&&n<=4)?n:1;'), true);
   sc.eq('저장할 때도 1~4 로 가둔다',
         SRC.includes('_vTrPref().vgDepth=Math.max(1,Math.min(4,parseInt(v,10)||1));'), true);
-  sc.eq('슬라이더 자체도 1부터 시작', SRC.includes("_vTrRailHTML({min:1,max:4,val:d,done:'vgdepth'"), true);
+  // v26-0907-9, HB 92 — 슬라이더를 걷어내고 알약칩(1·2·3·전체)으로 바꿨다.
+  sc.eq('뎁스는 이제 슬라이더가 아니라 칩', SRC.includes("[1,2,3,4].map(v=>"), true);
+  sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("onclick=\"vgDepthSet(${v})\">${v===4?'전체':v}</span>"), true);
+  sc.eq('안내 문구도 4뎁스일 땐 전체라고 쓴다',
+        SRC.includes("const dtx=_vgDepth()>=4?'전체':`${_vgDepth()}뎁스`;"), true);
   // 1-2 · 검색은 타이핑하는 동안 바로. 다시 그리지 않고 보임/숨김만 바꾼다.
   sc.eq('타이핑하는 동안 걸린다', SRC.includes('oninput="vgSearch(this.value)"'), true);
   sc.eq('검색은 다시 그리지 않는다',
@@ -599,12 +606,13 @@ console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 �
   // ⚠️ 그 함수는 한 줄이어야 한다 — test_keep_fullscreen.js 가 한 줄로 잘라 쓴다
   sc.eq('_vfClearNav 는 한 줄이다',
         /function _vfClearNav\(\)\{[^\n]*_vfSyncTopBar\(\);\}/.test(SRC), true);
-  // v26-0907-8, HB 3-3 — 제목을 눌러 도는 방식은 접었다. 이제 제목 아래
-  // 칩(#vfModeChip)이 그 일을 대신한다 (안 보이던 상호작용을 눈에 띄게).
-  sc.eq('제목은 더 이상 눌리지 않는다(칩이 대신한다)',
-        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
-  sc.eq('칩이 제목 아래에서 돈다', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
-  sc.eq('세 갈래를 돈다', SRC.includes('_VP_TABS[(i+1)%_VP_TABS.length][0]'), true);
+  // v26-0907-9, HB 91-3-3-1 — 제목을 누르면 이제 그 필터가 걸린 타일뷰로 간다.
+  // 갈래를 도는 일은 제목 아래 칩(#vfModeChip)이 맡는다.
+  sc.eq('제목을 누르면 필터 걸린 타일뷰로', SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
+  sc.eq('칩이 제목 아래에서 돈다(이진, 색으로만)', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab==='all','vpCycleFullTab()');"), true);
+  // v26-0907-9, HB 91-3-2 — 말씀→명제→함께 세 갈래를 다 도는 대신, '함께' 와
+  // 들어올 때의 갈래 사이만 오가는 이진 토글로 바꿨다(글자는 안 바뀐다).
+  sc.eq('이진 토글로 돈다', SRC.includes("const next=(_vpFullTab==='all')?(_vpLastSingleTab||'verse'):'all';"), true);
   // 본문은 한 줄뿐
   sc.eq('본문은 한 줄로 자른다', /\.vp-c2\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(SRC), true);
   // 좁으면 위아래, 넓으면 좌우
@@ -712,8 +720,15 @@ console.log('\n시나리오 15 — 4 짝 목록에서 나간 타일뷰·전체�
   sc.eq('나갈 때 짝 목록이 떠 있었는지도 적는다',
         /vp:\(shown\('vpModal'\)&&typeof _vpCtx!=='undefined'&&_vpCtx\)\?\{\.\.\._vpCtx\}:null/.test(SRC), true);
   sc.eq('돌아올 때 짝 목록을 최우선으로 되살린다',
-        /if\(r\.vp&&typeof openVPair==='function'\)\{openVPair\(r\.vp\.axis,r\.vp\.val\);return true;\}/.test(SRC),
+        /if\(r\.vp&&typeof openVPair==='function'\)\{/.test(SRC), true);
+  // v26-0907-9, HB 91-4 — vpTile/vpFull 이 대시보드를 실제로 닫아 버려서
+  // (closeVerseDashboard, 그래프 시뮬도 멈춘다) 짝 목록만 되살리면 그 뒤가
+  // 빈 화면이었다. 대시보드부터 다시 연다.
+  sc.eq('짝 목록보다 먼저 대시보드부터 되살린다',
+        /if\(r\.vp&&typeof openVPair==='function'\)\{\s*\n\s*if\(r\.dash&&typeof openVerseDashboard==='function'\)openVerseDashboard\(\);/.test(SRC),
         true);
+  sc.eq('필터도 그대로 들고 돌아온다(keepFilt)',
+        SRC.includes('openVPair(r.vp.axis,r.vp.val,true);'), true);
 }
 
 console.log('\n시나리오 16 — 5 짝 목록 좌우 배치일 때 오른쪽 판이 넘치던 것');
@@ -788,21 +803,25 @@ console.log('\n시나리오 22 — 3-1..3-5 축 아이콘 · 통합 모드칩 ·
   sc.eq('축 아이콘 헬퍼 — 태그·성경만', /function _vAxisIconHTML\(axis\)\{\s*\n\s*if\(axis==='tag'\)/.test(SRC), true);
   sc.eq('성경 축은 Deeper 아이콘을 그대로 쓴다(새로 안 만든다)',
         SRC.includes('return `<span class="vp-axisic">${_VLIST_KIND_TITLE.deeper}</span>`;'), true);
-  sc.eq('모드칩 헬퍼 — 말씀/명제/말씀+명제', /function _vpModeChipHTML\(tab,onclickExpr\)\{/.test(SRC), true);
-  sc.eq("'함께' 대신 '말씀 + 명제' 라벨",
-        SRC.includes("const label=tab==='verse'?'말씀':tab==='prop'?'명제':'말씀 + 명제';"), true);
+  // v26-0907-9, HB 91-2·91-3-2 — 글자가 말씀/명제/함께로 도는 대신 늘
+  // '말씀 + 명제' 로 고정, active(불리언)로만 색을 가른다. plain 이면 짝
+  // 목록 하단처럼 클릭도 색도 없는 민무늬.
+  sc.eq('모드칩 헬퍼 — 텍스트 고정 + 활성 불리언', /function _vpModeChipHTML\(active,onclickExpr,plain\)\{/.test(SRC), true);
+  sc.eq("텍스트는 늘 '말씀 + 명제' 로 고정", SRC.includes('`말씀 + 명제</span>`;'), true);
   sc.eq('짝 목록 제목이 축 아이콘을 단다(innerHTML 로)',
         SRC.includes("if(ttl)ttl.innerHTML=_vAxisIconHTML(_vpCtx.axis)+esc(_vpCtx.val);"), true);
-  sc.eq('짝 목록 하단은 고정(활성) 칩', SRC.includes("`<div class=\"vp-foot\">${_vpModeChipHTML('all',null)}`+"), true);
-  sc.eq('타일뷰 갈래 탭이 칩 하나로', SRC.includes("row.innerHTML=_vpModeChipHTML(_vgTab(),'vgCycleTab()');"), true);
-  sc.eq('타일뷰 칩은 _VL_TABS 순서로 돈다', SRC.includes('function vgCycleTab(){'), true);
-  sc.eq('전체화면 제목은 더 이상 눌러 돌리지 않는다(칩이 대신한다)',
-        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
+  sc.eq('짝 목록 하단은 민무늬 고정 칩(91-2)', SRC.includes("`<div class=\"vp-foot\">${_vpModeChipHTML(true,null,true)}`+"), true);
+  sc.eq('타일뷰 갈래 탭이 칩 하나로(이진)', SRC.includes('row.innerHTML=_vpModeChipHTML(_vgTab()===\'all\','), true);
+  sc.eq('타일뷰 칩도 이진 토글', SRC.includes("vgSetTab(cur==='all'?(_vgState.lastSingleTab||'verse'):'all');"), true);
+  sc.eq('전체화면 제목을 누르면 필터 걸린 타일뷰로(91-3-3-1)',
+        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
   sc.eq('전체화면 칩 자리(#vfModeChip)가 있다',
         SRC.includes('<div class="vf-modechiprow" id="vfModeChip" style="display:none;"></div>'), true);
-  sc.eq('칩 디자인엔 테두리·박스가 없다(집 규칙)',
-        /\.vp-modechip\{[^}]*\}/.exec(SRC) ? !/border|box-shadow|background/.test(/\.vp-modechip\{[^}]*\}/.exec(SRC)[0]) : false,
-        true);
+  // v26-0907-9, HB 91-3-2 — HB 가 이 칩만은 얇은 테두리 알약으로 달라고 직접
+  // 요청했다(집 규칙 '테두리 금지'의 의도된 예외 — 여러 상태를 색만으로
+  // 가르기 어려워서다). 그래서 여기선 테두리가 **있는지**를 확인한다.
+  sc.eq('91-3-2 요청대로 테두리 있는 알약(의도된 예외)',
+        /\.vp-modechip\{[^}]*border:1px solid/.test(SRC), true);
 }
 
 console.log('\n시나리오 23 — 6 인사이트 블럭 위치 · 캡션 우상단');
@@ -845,6 +864,95 @@ console.log('\n시나리오 25 — 8-2 검색 결과 없음');
   sc.eq('7-4(연결) 아이콘을 그대로 쓴다', SRC.includes('${_VDASH_TAB_ICON.link}<span>검색결과가 없어요</span></div>'), true);
   sc.eq('필터를 다시 매길 때마다 이 칸도 함께 켜고 끈다',
         /const eb=document\.getElementById\('vgEmptyState'\);\s*\n\s*if\(eb\)eb\.style\.display=searchEmpty\?'flex':'none';/.test(SRC),
+        true);
+}
+
+console.log('\n시나리오 26 — 91-1·91-3 짝 목록 정렬 고정 · 다중 필터');
+{
+  sc.eq('말씀은 성경순으로 고정 정렬',
+        SRC.includes('const verses=all.filter(v=>!_vfIsProp(v)).sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));'),
+        true);
+  sc.eq('명제는 대표 문구 ㄱㄴㄷ순으로 고정 정렬',
+        SRC.includes('const props=all.filter(v=>_vfIsProp(v)).sort((a,b)=>_vDashKeyCmp(_vpRep(a),_vpRep(b)));'),
+        true);
+  sc.eq('반대 축 헬퍼 — 성경을 눌렀으면 지금 왼쪽 축, 아니면 성경',
+        /function _vpOtherAxis\(\)\{[\s\S]{0,120}_vpCtx\.axis==='book'\?_vLinkAxis\(\):'book';/.test(SRC), true);
+  sc.eq('1뎁스 후보는 필터 걸기 전 전체를 본다(안 사라진다)',
+        SRC.includes('function _vpFacetCandidates(){'), true);
+  sc.eq('토글은 다중으로 교집합(모두 만족해야 한다)',
+        SRC.includes('if(!_vpFilt.every(f=>oks.indexOf(f)>=0))return;'), true);
+  sc.eq('새 점을 누르면 필터를 지운다(keepFilt 없으면)',
+        SRC.includes('if(!keepFilt)_vpFilt=[];'), true);
+  sc.eq('타일뷰로 넘길 때 교집합 refs 를 함께 준다',
+        SRC.includes('openVerseGrid(ax,val,null,_vpFiltRefSet());'), true);
+  sc.eq('openVerseGrid 가 그 refs 를 받아 저장한다',
+        /function openVerseGrid\(kind,val,cardId,limitRefs\)\{[\s\S]{0,500}_vgState\.limitRefs=limitRefs\|\|null;/.test(SRC),
+        true);
+  sc.eq('_vgFilteredPool 이 그 refs 로 거른다',
+        SRC.includes('if(_vgState.limitRefs)pool=pool.filter(v=>_vgState.limitRefs.has(v.ref));'), true);
+  sc.eq('전체화면 제목 아래 2뎁스 표시 자리(#vfFacetRow)',
+        SRC.includes('<div class="vf-facetrow" id="vfFacetRow" style="display:none;"></div>'), true);
+  sc.eq('타일뷰 제외 스테퍼 오른쪽 2뎁스 표시 자리(#vgFacetBox)',
+        SRC.includes('<div class="vg-facet" id="vgFacetBox" style="display:none;"></div>'), true);
+  sc.eq('타일뷰 쪽도 + 로 시작해 항목을 나열한다',
+        SRC.includes("fb.innerHTML='<span class=\"vg-facet-plus\">+</span>'+"), true);
+  sc.eq('제목을 누르면 그 필터 그대로 타일뷰로 (91-3-3-1)',
+        /function vpGoToFilteredTile\(\)\{[\s\S]{0,120}closeVerseFull\(\);\s*\n\s*vpTile\(tab\);/.test(SRC), true);
+}
+
+console.log('\n시나리오 27 — 92 연결탭 뎁스 알약칩');
+{
+  sc.eq('1·2·3·전체 알약칩', SRC.includes("D.innerHTML=`<div class=\"vtr-ctl\" style=\"margin-bottom:0;\">`+\n      `<span class=\"vtr-ctl-lb\">뎁스</span>`+\n      `<span class=\"vtr-ctl-vals\">`+[1,2,3,4].map(v=>"), true);
+  sc.eq('슬라이더 바인딩은 더 없다(칩뿐)', SRC.includes('_vTrBindRails(D);'), false);
+}
+
+console.log('\n시나리오 28 — 93-1 지도 구약/신약 접기 · 순위창 다듬기');
+{
+  sc.eq('접기 토글 함수', SRC.includes('function vMapToggleFold(id){'), true);
+  sc.eq('접힌 갈래는 성경칩 하나(카운트·색 연동)', SRC.includes('vmap-cell vmap-cell-fold'), true);
+  sc.eq('접었다 펼쳤다는 화면마다 기억한다(p.mapFold)', SRC.includes("if(!p.mapFold||typeof p.mapFold!=='object')p.mapFold={};"), true);
+  // 93-1-2-1 — 슬라이더 비활성 트랙이 --bd2(진함) 대신 --bd(연함)
+  sc.eq('가로 슬라이더 트랙이 옅어졌다', SRC.includes('.vtr-rail::before{content:"";position:absolute;left:0;right:0;top:9.5px;height:3px;\n  border-radius:2px;background:var(--bd);}'), true);
+  sc.eq('세로 순위창 트랙도 옅어졌다', SRC.includes('.vgp-rank::before{content:"";position:absolute;top:0;bottom:0;left:10.5px;width:3px;\n  border-radius:2px;background:var(--bd);}'), true);
+  // 93-1-2-2 — 범위 라벨이 원 숫자 대신 '몇 권 빠졌는지'
+  sc.eq('라벨을 성경 권수로 보여준다(제안: ▲/▼ 제외 권수)', SRC.includes("lb.textContent=(below||above)?`▲${above} ▼${below} 제외`:'전체';"), true);
+  sc.eq('지도 쪽에서 그 값들을 넘긴다(data-vals)', SRC.includes('vals:rgVals,label:'), true);
+}
+
+console.log('\n시나리오 29 — 93-2 리듬 시간개념없음 버그 · 구간 시각화');
+{
+  sc.eq("'시간 개념 없음' 구간은 시간 칸을 안 차지한다",
+        /secs\.forEach\(\(sec,i\)=>\{[\s\S]{0,220}if\(_secNoTime\(sec\)\)return;/.test(SRC), true);
+  sc.eq('첫 시간대 계산도 실제 시간 구간만 본다', SRC.includes('const realSecs=secs.filter(sec=>!_secNoTime(sec));'), true);
+  sc.eq('빈 칸에도 그 시간대 색이 옅게 배인다(오른쪽 끝까지)', SRC.includes('const bandTint=b.color?`background:color-mix(in srgb,${b.color} 9%,transparent);`:'), true);
+}
+
+console.log('\n시나리오 30 — 93-3 대시보드 모바일 우측 잘림');
+{
+  sc.eq('#vDashBody 좌우 여백 — 손잡이 반지름만큼(8px)',
+        SRC.includes('<div id="vDashBody" style="overflow:auto;flex:1;min-height:0;border-top:1px solid var(--bd2);padding:10px 8px 0;">'),
+        true);
+}
+
+console.log('\n시나리오 31 — 94 세팅① 누락 6항목');
+{
+  // 0-1 그래프 버튼 색 약하게
+  sc.eq('그래프 버튼(.vtr-go) 옅게', /\.vtr-go\{[^}]*opacity:\.55;/.test(SRC), true);
+  // 0-2 꺾쇠·이름·버튼 세로 중앙
+  sc.eq('꺾쇠(.vtr-exp)도 세로 중앙', /\.vtr-exp\{[^}]*vertical-align:middle;/.test(SRC), true);
+  // 2-1 최근/이전 표기 통일 — 표 머리에도 알약
+  sc.eq('표 머리 최근/이전도 알약(.vtr-pill)', SRC.includes("const lbl=pc?`<span class=\"vtr-pill ${pc}\">${esc(l)}</span>`:esc(l);"), true);
+  sc.eq('그래프 안 띠에도 같은 알약 배경', SRC.includes('fill="var(--vtr-a-bg)"') && SRC.includes('fill="var(--vtr-b-bg)"'), true);
+  // 2-2 opacity 0.07 버그
+  sc.eq("'이전' 띠가 0.07(안 보임) 대신 0.14(A와 같은 세기)", SRC.includes('fill="#8a8a99" opacity="0.14"'), true);
+  sc.eq('예전 0.07 값은 안 남아 있다', SRC.includes('opacity="0.07"'), false);
+  // 2-3 ↔ → vs
+  sc.eq("화살표(↔) 대신 'vs'", SRC.includes('<span style="opacity:.6;">vs</span>'), true);
+  sc.eq('예전 화살표는 이 자리에 없다', SRC.includes('<span style="opacity:.6;">↔</span>'), false);
+  // 8 말씀모음탭 우상단 파이 버튼
+  sc.eq('말씀 모음 탭에 대시보드 버튼', SRC.includes('class="vset-dashbtn" onclick="vsetGoDashboard()"'), true);
+  sc.eq('여는 함수 — 설정 닫고 대시보드 연다',
+        /function vsetGoDashboard\(\)\{\s*\n\s*closeVerseSettingsModal\(\);\s*\n\s*openVerseDashboard\(\);\s*\n\}/.test(SRC),
         true);
 }
 

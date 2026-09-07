@@ -166,9 +166,11 @@ console.log('\n시나리오 7 — 전체화면·공유·말씀 모음 탭');
 
   const c = panel('coll');
   sc.eq("'말씀 모음 (어느 구절에서 뽑을지)' > '말씀 모음' (뎁스1 제목, 탭 이름은 '말씀모음'으로 붙여씀)",
-        c.includes('<div class="settings-section-title">말씀 모음</div>'), true);
+        /<div class="settings-section-title"[^>]*>\s*<span[^>]*>말씀 모음<\/span>/.test(c), true);
   sc.eq('대신 설명 문구로 적었다',
         c.includes('선택한 말씀 모음에서 성경 구절을 뽑아서 알림, 말씀카드, 상단말씀에 사용합니다.'), true);
+  sc.eq('v26-0907-9 94(8) — 우상단에 대시보드로 돌아가는 파이 버튼(.vset-dashbtn)',
+        c.includes('class="vset-dashbtn" onclick="vsetGoDashboard()"'), true);
 }
 
 console.log('\n시나리오 8 — 시트가 정한 기본값');

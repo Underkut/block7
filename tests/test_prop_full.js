@@ -535,11 +535,11 @@ console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26
 {
   sc.eq('탭 줄이 있다', SRC_DEV.includes('<div class="vg-tabrow" id="vgTabRow"></div>'), true);
   // 목록 팝업과 **같은 값**을 쓴다 (이름이 어긋나면 두 곳이 따로 논다).
-  // v26-0907-8, HB 3-3 — 버튼 셋 대신 칩 하나가 도는 방식으로 바뀌었지만,
-  // 도는 순서는 여전히 _VL_TABS 그 표 하나다.
-  sc.eq('같은 탭 표를 쓴다', SRC_DEV.includes("row.innerHTML=_vpModeChipHTML(_vgTab(),'vgCycleTab()');"), true);
-  sc.eq('칩을 누르면 그 표 순서로 돈다',
-        /function vgCycleTab\(\)\{[\s\S]{0,150}_VL_TABS\.findIndex/.test(SRC_DEV), true);
+  // v26-0907-9, HB 91-3-2 — 버튼 셋 대신 칩 하나(이진 토글)가 도는 방식으로
+  // 바뀌었지만, 갈래 값은 여전히 _VL_TABS 그 표 하나다.
+  sc.eq('같은 탭 표를 쓴다(이진 칩)', SRC_DEV.includes("row.innerHTML=_vpModeChipHTML(_vgTab()==='all',\"vgCycleTab()\");"), true);
+  sc.eq('칩을 누르면 함께⟷마지막 갈래로 돈다',
+        SRC_DEV.includes("vgSetTab(cur==='all'?(_vgState.lastSingleTab||'verse'):'all');"), true);
   sc.eq('거르는 자리는 한 곳',
         SRC_DEV.includes("if(_tab!=='all')pool=pool.filter(v=>_vfIsProp(v)===(_tab==='prop'));"), true);
   // '명제' 표시는 목록 팝업과 같은 음영 칩, '전체' 탭에서만

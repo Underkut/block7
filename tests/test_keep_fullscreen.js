@@ -212,11 +212,11 @@ console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일�
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
   // 저장 목록은 예전 그대로 제목을 눌러 그 타일뷰로 간다 (앞자리를 그대로 지킨다).
   sc.eq('저장 목록 제목에 타일뷰 동작을 연결한다',
-        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
-  // v26-0907-8, HB 3-3 — 짝 목록에서 온 전체화면은 이제 제목이 아니라 제목
-  // 아래 칩(#vfModeChip)을 눌러 갈래를 돈다 (제목 탭은 안 보이는 상호작용이었다).
+        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
+  // v26-0907-9, HB 91-3-2 — 짝 목록에서 온 전체화면은 제목 아래 칩을 눌러
+  // 갈래를 돈다. 이제 이진(함께⟷마지막 한 갈래) + 색으로만 활성을 보인다.
   sc.eq('짝 목록에서 온 화면은 칩이 갈래 스위치',
-        sync.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
+        sync.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab==='all','vpCycleFullTab()');"), true);
   const pool = slice('function _vgFilteredPool(){', 'function _vgHomeLabel');
   sc.eq('저장 폴더 기록만 타일 풀로 만든다', pool.includes("(_vgState.kind==='keep')"), true);
   const pick = slice('function vgPick(i){', 'function vgTapDateSort');
