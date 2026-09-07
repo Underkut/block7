@@ -43,7 +43,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
   '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
-  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange',
+  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange','_VG_MAXL','_VG_MAXR',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
@@ -479,7 +479,26 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('연결의 왼쪽 기본은 태그', _vLinkAxis(), 'tag');
   sc.eq('짝 열쇠를 안 나오는 글자로 가른다',
         SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
-  sc.eq('선을 누르면 그 성경으로', /onclick="vDashOpenFilter\('book','\$\{_vDashQ\(r\)\}'\)"/.test(SRC), true);
+  // v26-0907-4, HB 7 — 두 줄 사이를 잇던 그림을 **그래프 뷰**로 바꿨다.
+  sc.eq('점을 톡 누르면 그 목록으로',
+        SRC.includes("if(moved<5)vDashOpenFilter(n.kind==='book'?'book':la,n.key);"), true);
+  sc.eq('점 · 선 상한이 있다', [_VG_MAXL, _VG_MAXR], [14, 22]);
+  sc.eq('물리를 직접 돈다 (척력·용수철·가운데로)',
+        /const REST=64, K=0\.024, REP=760, DAMP=0\.86;/.test(SRC), true);
+  sc.eq('아무 선에도 안 걸린 점은 뺀다', SRC.includes('const N=nodes.filter(n=>n.deg>0);'), true);
+  sc.eq('처음 몇 판은 안 그리고 돌려 둔다', SRC.includes('for(let i=0;i<90;i++)tick();'), true);
+  // ⚠️ 안 멈추면 뒤에서 영원히 돈다 — 두 자리에서 반드시 멈춘다
+  sc.eq('화면을 옮길 때 멈춘다',
+        SRC.includes("if(view!=='link'&&typeof _vgStop==='function')_vgStop();"), true);
+  sc.eq('대시보드를 닫을 때도 멈춘다',
+        /function closeVerseDashboard\(\)\{[\s\S]{0,260}?_vgStop\(\);/.test(SRC), true);
+  sc.eq('다시 그릴 때도 먼저 멈춘다',
+        /function renderVDashLink\(\)\{[\s\S]{0,160}?_vgStop\(\);/.test(SRC), true);
+  sc.eq('멈추면 프레임 요청을 취소한다',
+        SRC.includes('if(_vgSim&&_vgSim.raf)cancelAnimationFrame(_vgSim.raf);'), true);
+  // 폰에서 점을 끄는 대신 화면이 스크롤되면 안 된다
+  sc.eq('그래프 판은 손가락을 가로챈다', /\.vg-svg\{[^}]*touch-action:none;/.test(SRC), true);
+  sc.eq('옛 두 줄 그림은 사라졌다', SRC.includes('class="vlink-wrap"'), false);
   sc.eq('요일 수가 같으면 최다·최소를 말하지 않는다', SRC.includes('요일마다 고르게 보고 있어요'), true);
   // 세 화면은 흐름과 같은 범위·갈래를 쓴다
   const scp=_vDashScope();
