@@ -44,6 +44,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
   '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
   '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange','_VG_MAXL','_VG_MAXR',
+  '_vpRep','_vpShortRef','_vpTabName','_VP_TABS',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
   '_bibleChapters','_bibleShort'];
@@ -480,8 +481,9 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('짝 열쇠를 안 나오는 글자로 가른다',
         SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
   // v26-0907-4, HB 7 — 두 줄 사이를 잇던 그림을 **그래프 뷰**로 바꿨다.
-  sc.eq('점을 톡 누르면 그 목록으로',
-        SRC.includes("if(moved<5)vDashOpenFilter(n.kind==='book'?'book':la,n.key);"), true);
+  // v26-0907-6, HB 3 — 타일뷰로 곧장 보내지 않고 **짝 목록**을 연다
+  sc.eq('점을 톡 누르면 짝 목록으로',
+        SRC.includes("if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);"), true);
   sc.eq('점 · 선 상한이 있다', [_VG_MAXL, _VG_MAXR], [14, 22]);
   // v26-0907-5 — 배치 값이 팝업에서 고쳐지므로 상수가 아니라 설정에서 온다
   sc.eq('물리 값은 설정에서 온다',
@@ -530,6 +532,45 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
         /o\.t\.setAttribute\('font-size',\(o\.t\._base\*f\*k\)/.test(SRC) &&
         /el\.setAttribute\('stroke-width',\(el\._w\*k\)/.test(SRC), true);
   sc.eq('키울 때마다 다시 잰다', /zm=n2; applyView\(\); applyScale\(\);/.test(SRC), true);
+}
+
+// ═══ 15. v26-0907-6 — 짝 목록 (말씀 · 명제) (HB 3) ═══
+console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 길');
+{
+  // 말씀 1열은 **성경 약어 + 장절** (HB 지적 — 빠져 있었다)
+  sc.eq('약어를 붙인다', _vpShortRef({ref:'로마서 3:23'}), '롬 3:23');
+  sc.eq('사무엘상도 약어로', _vpShortRef({ref:'사무엘상 7:12'}), '삼상 7:12');
+  sc.eq('장절이 없으면 그대로', _vpShortRef({ref:'로마서'}), '로마서');
+  // 명제 1열은 **대표 문구 1** — v.hi 는 '/' 로 여럿이 이어져 있다
+  sc.eq('대표 문구는 첫째만', _vpRep({hi:'은혜로 값없이/두 번째/세 번째'}), '은혜로 값없이');
+  sc.eq('대표 문구가 없으면 본문으로', _vpRep({hi:'',krText:'본문이다'}), '본문이다');
+
+  // 나가는 길 여섯 — {말씀·명제·함께} × {타일뷰·전체화면}
+  sc.eq('갈래가 셋', _VP_TABS.map(x=>x[0]), ['verse','prop','all']);
+  sc.eq('갈래 이름', _VP_TABS.map(x=>x[1]), ['말씀','명제','함께']);
+  sc.eq('머리의 ⌗ 는 그 갈래만 타일뷰로', SRC.includes('onclick="vpTile(\'${tab}\')"'), true);
+  sc.eq('하단은 합본 타일뷰와 전체화면 둘', 
+        SRC.includes('onclick="vpTile(\'all\')"') && SRC.includes('onclick="vpFull(\'all\')"'), true);
+  sc.eq('줄을 누르면 그 말씀 전체화면', SRC.includes('onclick="vpOpenVerse('), true);
+  // 타일뷰의 갈래는 이미 있던 탭을 그대로 쓴다 (새로 만들지 않는다)
+  sc.eq('타일뷰는 있던 탭을 쓴다', /function vpTile\(tab\)\{[\s\S]{0,400}?vgSetTab\(tab\);/.test(SRC), true);
+  // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 갈래는 연 뒤에 심어야 한다
+  sc.eq('갈래는 전체화면을 연 뒤에 심는다',
+        /openVerseFull\(true\);\s*\n\s*_vpFullTab=tab;/.test(SRC), true);
+  sc.eq('나갈 때 갈래 기억도 지운다',
+        /function _vfClearNav\(\)\{[^\n]*_vpFullTab=null;/.test(SRC), true);
+  // ⚠️ 그 함수는 한 줄이어야 한다 — test_keep_fullscreen.js 가 한 줄로 잘라 쓴다
+  sc.eq('_vfClearNav 는 한 줄이다',
+        /function _vfClearNav\(\)\{[^\n]*_vfSyncTopBar\(\);\}/.test(SRC), true);
+  // 제목을 눌러 세 갈래를 돈다 (둘만 오가면 합본에서 되돌아갈 길이 없다)
+  sc.eq('제목이 눌러진다', SRC.includes('vpOn?vpCycleFullTab:null'), true);
+  sc.eq('세 갈래를 돈다', SRC.includes('_VP_TABS[(i+1)%_VP_TABS.length][0]'), true);
+  // 본문은 한 줄뿐
+  sc.eq('본문은 한 줄로 자른다', /\.vp-c2\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(SRC), true);
+  // 좁으면 위아래, 넓으면 좌우
+  sc.eq('좁으면 위아래', /\.vp-wrap\{display:flex;flex-direction:column;/.test(SRC), true);
+  sc.eq('넓으면 좌우', /@media \(min-width:640px\)\{\s*\n?\s*\.vp-wrap\{flex-direction:row;/.test(SRC.replace(/\n\s*/g,'\n')), true);
+  sc.eq('ESC 로도 닫힌다', SRC.includes("['vpModal',         ()=>closeVPair()],"), true);
   // ⚠️ 안 멈추면 뒤에서 영원히 돈다 — 두 자리에서 반드시 멈춘다
   sc.eq('화면을 옮길 때 멈춘다',
         SRC.includes("if(view!=='link'&&typeof _vgStop==='function')_vgStop();"), true);
