@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-6  [production]  -->
+<!-- BLOCK7  v. 26-0907-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3900,7 +3900,26 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   -webkit-tap-highlight-color:transparent;flex:0 0 auto;}
 .vg-btn:hover{color:var(--ac-tx);}
 .vg-btn-ic{display:inline-flex;align-items:center;line-height:0;}
+.vg-btn.on{color:var(--ac-tx);font-weight:700;}
 .vg-note{font-size:9.5px;color:var(--tx3);line-height:1.5;min-height:0;margin-bottom:2px;}
+.vg-depth{margin:2px 0 6px;}
+/* ⚠️ 좁으면 그래프가 먼저 오고 두 목록이 그 **아래에 나란히** 선다.
+   390px 폭에 그래프와 목록 둘을 옆으로 세우면 셋 다 못 쓰게 좁아진다.
+   넓어지면(900px+) 주제는 왼쪽, 성경은 오른쪽으로 간다. */
+.vg-stage{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;}
+.vg-stage .vg-wrap{order:1;flex:1 1 100%;min-width:0;}
+.vg-stage .vg-pane{order:2;flex:1 1 0;min-width:0;display:none;}
+.vg-stage.pick .vg-pane{display:block;}
+@media (min-width:900px){
+  .vg-stage{flex-wrap:nowrap;}
+  .vg-stage.pick .vg-pane-l{order:0;flex:0 0 148px;}
+  .vg-stage .vg-wrap{order:1;flex:1 1 auto;}
+  .vg-stage.pick .vg-pane-r{order:2;flex:0 0 148px;}
+}
+/* 배치 값은 그래프 아래 서랍 — 넓으면 두 칸으로 접어 화면을 덜 먹는다 */
+.vg-drawer{margin-top:8px;padding-top:8px;border-top:1px solid var(--bd2);}
+.vgc-grid{display:grid;grid-template-columns:1fr;gap:0;}
+@media (min-width:640px){ .vgc-grid{grid-template-columns:1fr 1fr;gap:0 18px;} }
 .vg-note b{color:var(--ac-tx);font-weight:700;}
 /* ── 짝 목록 (v26-0907-6, HB 3) ── */
 /* ⚠️ 좁으면 위/아래, 넓으면 좌/우. 가르는 값은 팝업 폭이 아니라 **화면 폭**이다 —
@@ -3930,8 +3949,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vp-foot{display:flex;align-items:center;justify-content:center;gap:8px;
   padding-top:9px;margin-top:2px;border-top:1px solid var(--bd2);flex:0 0 auto;}
 .vp-footnm{font-size:11px;color:var(--tx2);}
-/* 골라 보기 목록 */
-.vgp-gp{font-size:10px;font-weight:700;color:var(--tx3);margin:9px 0 4px;letter-spacing:.02em;}
+/* 골라 보기 목록 — 판 안에서만 스크롤한다 (그래프를 밀어내지 않게) */
+.vgp-gp{font-size:10px;font-weight:700;color:var(--tx3);margin:2px 0 4px;letter-spacing:.02em;}
+.vgp-list{max-height:190px;overflow:auto;-webkit-overflow-scrolling:touch;}
+@media (min-width:900px){ .vgp-list{max-height:340px;} }
 .vgp-row{display:flex;align-items:center;gap:7px;padding:5px 2px;cursor:pointer;
   border-radius:6px;-webkit-tap-highlight-color:transparent;}
 .vgp-row.on{background:var(--vtr-a-bg);}
@@ -3954,6 +3975,8 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vg-node{cursor:pointer;}
 .vg-node circle{transition:fill-opacity .12s;}
 .vg-node.on circle,.vg-node:hover circle{fill-opacity:1;}
+/* 끌어다 놓아 못 박은 점 — 테두리로 알린다 (v26-0907-7, HB 2) */
+.vg-node.pin circle{stroke:var(--ac);stroke-width:1.6;stroke-opacity:.95;}
 /* 이름은 선 위에 얹히므로 바탕색으로 한 번 두르고 그 위에 글자를 얹는다 */
 .vg-lb{fill:var(--tx2);paint-order:stroke;stroke:var(--s1);stroke-width:2.6px;
   stroke-linejoin:round;pointer-events:none;}
@@ -4565,7 +4588,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-6";
+const APP_VERSION = "v. 26-0907-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6182,26 +6205,6 @@ window._fbScriptsReady=new Promise(resolve=>{
   </button>
   <div class="event-modal-title" id="vpTitle" style="margin-bottom:10px;padding:0 28px;"></div>
   <div id="vpBody" style="display:flex;flex-direction:column;flex:1;min-height:0;"></div>
-</div>
-
-<!-- ══════ 연결 그래프 — 골라 보기 (v26-0907-5, HB 1-1) ══════ -->
-<div class="event-modal-overlay" id="vgPickOverlay" style="display:none;z-index:4710;" onclick="closeVgPick()"></div>
-<div class="event-modal" id="vgPickModal" style="display:none;z-index:4711;width:min(92vw,380px);max-height:82vh;flex-direction:column;">
-  <button class="modal-x" onclick="closeVgPick()" aria-label="닫기">
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
-  </button>
-  <div class="event-modal-title" style="margin-bottom:10px;padding:0 28px;">골라 보기</div>
-  <div id="vgPickBody" style="overflow:auto;flex:1;min-height:0;"></div>
-</div>
-
-<!-- ══════ 연결 그래프 — 배치 값 (v26-0907-5, HB 2-1) ══════ -->
-<div class="event-modal-overlay" id="vgCfgOverlay" style="display:none;z-index:4710;" onclick="closeVgCfg()"></div>
-<div class="event-modal" id="vgCfgModal" style="display:none;z-index:4711;width:min(92vw,380px);max-height:82vh;flex-direction:column;">
-  <button class="modal-x" onclick="closeVgCfg()" aria-label="닫기">
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
-  </button>
-  <div class="event-modal-title" style="margin-bottom:10px;padding:0 28px;">배치 값</div>
-  <div id="vgCfgBody" style="overflow:auto;flex:1;min-height:0;"></div>
 </div>
 
 <!-- ══════ 말씀 대시보드 ══════
@@ -9713,8 +9716,6 @@ const _ESC_CLOSERS=[
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   // 팝업류
   ['vpModal',         ()=>closeVPair()],
-  ['vgPickModal',     ()=>closeVgPick()],
-  ['vgCfgModal',      ()=>closeVgCfg()],
   ['syncConflictModal',()=>closeSyncConflicts()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
@@ -19779,26 +19780,36 @@ function _vTrRailBind(el){
     const f=fracOf(e); paint(f,valOf(f));
     e.preventDefault();
   };
+  // 값을 넘기는 곳 한 군데. live 는 '아직 미는 중' 이라는 뜻이다.
+  // ⚠️ live 로 부르는 쪽은 **다시 그리지도, 저장하지도 않아야 한다.**
+  //    미는 내내 다시 그리면 손가락을 못 따라오고, 매번 저장하면 디스크를 때린다.
+  const fire=(v,live)=>{
+    const fn=el.dataset.done;
+    if(fn==='span')vTrSpanSet(el.dataset.unit,v);
+    else if(fn==='ins')vTrInsSet(v);
+    else if(fn==='slices')vDashSetSlices(v);
+    else if(fn==='vgdepth')vgDepthSet(v);
+    else if(fn&&fn.indexOf('vgcfg:')===0)vgCfgSet(fn.slice(6),v,live);
+  };
+  let lastLive=null;
   const move=e=>{
     if(id===null||e.pointerId!==id)return;
-    const f=fracOf(e); paint(f,valOf(f));
+    const f=fracOf(e), v=valOf(f);
+    paint(f,v);
+    // data-live 를 단 레일은 미는 동안에도 바로 먹인다 (v26-0907-7, HB 2)
+    if(el.dataset.live==='1'&&v!==lastLive){lastLive=v;fire(v,true);}
     e.preventDefault();
   };
   const up=e=>{
     if(id===null||e.pointerId!==id)return;
     const f=fracOf(e), v=valOf(f);
     try{el.releasePointerCapture(id);}catch(_){}
-    id=null;
+    id=null; lastLive=null;
     el.classList.remove('dragging');
     // 손잡이를 값 자리로 붙인 뒤 넘긴다 (다시 그리기 전에 눈이 먼저 맞는다)
     const snap=(max===min)?0:(v-min)/(max-min);
     paint(snap,v);
-    const fn=el.dataset.done;
-    if(fn==='span')vTrSpanSet(el.dataset.unit,v);
-    else if(fn==='ins')vTrInsSet(v);
-    else if(fn==='slices')vDashSetSlices(v);
-    else if(fn==='vgdepth')vgDepthSet(v);
-    else if(fn&&fn.indexOf('vgcfg:')===0)vgCfgSet(fn.slice(6),v);
+    fire(v,false);
   };
   el.addEventListener('pointerdown',down);
   el.addEventListener('pointermove',move);
@@ -20292,6 +20303,7 @@ function _vTrRailHTML(o){
   const f=(o.max===o.min)?0:((o.val-o.min)/(o.max-o.min));
   const pct=(f*100).toFixed(2)+'%';
   return`<div class="vtr-rail" data-min="${o.min}" data-max="${o.max}" data-done="${o.done}"`+
+    (o.live?' data-live="1"':'')+
     (o.unit?` data-unit="${o.unit}"`:'')+
     ` data-lb="${o.lb}" data-suffix="${_vgEscAttr(o.suffix||'')}" role="slider" `+
     `aria-label="${_vgEscAttr(o.label||'')}" aria-valuemin="${o.min}" aria-valuemax="${o.max}" `+
@@ -20885,7 +20897,9 @@ function _vgStop(){
 // ⚠️ 사람이 읽는 이름과 물리 값은 다르다. 팝업은 '사이 거리·미는 힘·당기는 힘'
 //    으로 묻고, 여기서 물리 값으로 옮긴다. 당기는 힘은 0.001 단위라 백분율처럼
 //    다루지 않으면 슬라이더가 못 잡는다.
-const _VG_DEF={rest:64,rep:760,pull:24,font:100};
+// stick = 끌어다 놓은 자리에 **머물려는 힘** (HB 가 '복원력' 이라 부른 것).
+// 0 이면 손을 떼는 순간 용수철이 도로 끌어가고, 크면 그 자리에 붙어 있는다.
+const _VG_DEF={rest:64,rep:760,pull:24,stick:120,font:100};
 function _vgCfg(){
   const p=_vTrPref();
   if(!p.vgCfg||typeof p.vgCfg!=='object')p.vgCfg=Object.assign({},_VG_DEF);
@@ -20894,20 +20908,24 @@ function _vgCfg(){
   return{rest:cl(c.rest,_VG_DEF.rest,24,150),
          rep:cl(c.rep,_VG_DEF.rep,200,2200),
          pull:cl(c.pull,_VG_DEF.pull,5,70),      // 실제 용수철 세기 = pull/1000
+         stick:cl(c.stick,_VG_DEF.stick,0,240),  // 실제 머무는 힘 = stick/1000
          font:cl(c.font,_VG_DEF.font,60,170)};   // 글자 크기 백분율
 }
-function vgCfgSet(key,val){
+// ⚠️ **다시 그리지 않는다.** 돌고 있는 물리에 값만 갈아끼운다 — 그래야 미는
+//    동안 그래프가 바로 반응하고, 끌어다 놓은 점의 자리도 안 흐트러진다.
+function vgCfgSet(key,val,live){
   const p=_vTrPref();
   if(!p.vgCfg||typeof p.vgCfg!=='object')p.vgCfg=Object.assign({},_VG_DEF);
   p.vgCfg[key]=val;
-  save();
-  renderVDashLink();
-  renderVgCfg();
+  const now=_vgCfg();
+  if(_vgSim&&_vgSim.setCfg)_vgSim.setCfg(key,now[key]);
+  if(!live)save();          // 미는 동안에는 저장하지 않는다
 }
 function vgCfgReset(){
   _vTrPref().vgCfg=Object.assign({},_VG_DEF);
   save();
-  renderVDashLink();
+  const now=_vgCfg();
+  if(_vgSim&&_vgSim.setCfg)Object.keys(now).forEach(k=>_vgSim.setCfg(k,now[k]));
   renderVgCfg();
 }
 // ── 골라 보기 (1-1) ──────────────────────────────────────────────────────
@@ -21023,10 +21041,62 @@ function renderVDashLink(){
     box.innerHTML=html+'<div class="vdash-empty" style="text-align:center;">이 구간에는 이을 것이 없어요</div>';
     return;
   }
-  // ── 점과 선 만들기 ──
+  // ── 껍데기를 먼저 넣는다 ──────────────────────────────────────────────
+  // ⚠️ 폭을 **넣은 뒤에** 잰다. '골라보기'를 켜면 그래프 양옆에 목록이 서서
+  //    그래프가 좁아지는데, 그 폭은 실제로 그려 봐야 알 수 있다.
+  const showPick=_vgShow('pick'), showCfg=_vgShow('cfg');
+  html+=`<div class="vg-bar">`+
+    `<span class="vg-find">`+
+      `<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+      `stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L18 18"/></svg>`+
+      `<input id="vgSearch" type="search" placeholder="이름으로 찾기" autocomplete="off" `+
+      `value="${_vgEscAttr(_vgQuery)}" oninput="vgSearch(this.value)">`+
+    `</span>`+
+    `<span class="vg-btn${showPick?' on':''}" onclick="vgToggle('pick')" title="골라 보기">골라보기</span>`+
+    `<span class="vg-btn${showCfg?' on':''}" onclick="vgToggle('cfg')" title="배치 값">배치</span>`+
+    `<span class="vg-btn vg-btn-ic" onclick="vDashLinkRelayout()" title="처음 배치로 (못 박은 것도 뽑아요)">`+
+      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
+      `stroke-width="1.6" stroke-linecap="round"><path d="M16.5 6.5A7.5 7.5 0 1 0 17 11"/>`+
+      `<path d="M17 3v4h-4"/></svg></span>`+
+    `</div>`+
+    `<div class="vg-note" id="vgFilterNote"></div>`+
+    (showPick?`<div class="vg-depth" id="vgDepthRow"></div>`:'')+
+    `<div class="vg-stage${showPick?' pick':''}">`+
+      `<div class="vg-pane vg-pane-l" id="vgPaneL"></div>`+
+      `<div class="vg-wrap">`+
+      `<svg id="vgSvg" class="vg-svg"><g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg>`+
+      `</div>`+
+      `<div class="vg-pane vg-pane-r" id="vgPaneR"></div>`+
+    `</div>`+
+    (showCfg?`<div class="vg-drawer" id="vgCfgBody"></div>`:'');
+  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
+  const skew=[];
+  L.forEach(([l])=>{
+    const t2=lTot.get(l)||0;
+    if(t2<2)return;
+    let best='',bn=0;
+    R.forEach(([r])=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
+    if(best&&bn/t2>=0.6)skew.push({l,r:best,f:Math.round(bn/t2*100)});
+  });
+  if(skew.length){
+    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
+      skew.slice(0,3).map(s2=>`<b>${esc(s2.l)}</b>${_vTrJosaGa(s2.l)==='이'?'은':'는'} `+
+        `${s2.f}% 가 <b>${esc(s2.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
+  }
+  html+=`<div class="vlink-note">점을 끌어 옮기고, 빈 곳을 끌어 밀어요. `+
+    `휠(또는 두 손가락)로 키우고 줄여요. 점을 톡 누르면 그 목록이 열려요.</div>`;
+  box.innerHTML=html;
+
+  // ── 이제 그래프가 실제로 차지한 폭을 재고, 그 폭으로 점을 만든다 ──────────
+  const wrap=box.querySelector('.vg-wrap');
+  const W=Math.max(200,Math.round((wrap&&wrap.clientWidth)||box.clientWidth||520)-2);
+  const H=Math.max(300,Math.min(520,Math.round(W*0.9)));
+  const svg=document.getElementById('vgSvg');
+  if(svg){
+    svg.setAttribute('width',W); svg.setAttribute('height',H);
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  }
   const nodes=[],idx=new Map();
-  const W=Math.max(280,(box.clientWidth||520)-2);
-  const H=Math.max(320,Math.min(520,Math.round(W*0.86)));
   const cx=W/2, cy=H/2;
   const tot=L.length+R.length;
   const push=(key,kind,weight,color)=>{
@@ -21057,44 +21127,25 @@ function renderVDashLink(){
   let wmax=1; N.forEach(n=>{if(n.w>wmax)wmax=n.w;});
   N.forEach(n=>{ n.r=(n.kind==='topic'?5:3.5)+Math.sqrt(n.w/wmax)*(n.kind==='topic'?7:5); });
 
-  html+=`<div class="vg-bar">`+
-    `<span class="vg-find">`+
-      `<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
-      `stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L18 18"/></svg>`+
-      `<input id="vgSearch" type="search" placeholder="이름으로 찾기" autocomplete="off" `+
-      `value="${_vgEscAttr(_vgQuery)}" oninput="vgSearch(this.value)">`+
-    `</span>`+
-    `<span class="vg-btn" onclick="openVgPick()" title="골라 보기">골라보기</span>`+
-    `<span class="vg-btn" onclick="openVgCfg()" title="배치 값">배치</span>`+
-    `<span class="vg-btn vg-btn-ic" onclick="vDashLinkRelayout()" title="다시 배치">`+
-      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
-      `stroke-width="1.6" stroke-linecap="round"><path d="M16.5 6.5A7.5 7.5 0 1 0 17 11"/>`+
-      `<path d="M17 3v4h-4"/></svg></span>`+
-    `</div>`+
-    `<div class="vg-note" id="vgFilterNote"></div>`+
-    `<div class="vg-wrap">`+
-    `<svg id="vgSvg" class="vg-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`+
-    `<g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg></div>`;
-  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
-  const skew=[];
-  L.forEach(([l])=>{
-    const t2=lTot.get(l)||0;
-    if(t2<2)return;
-    let best='',bn=0;
-    R.forEach(([r])=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
-    if(best&&bn/t2>=0.6)skew.push({l,r:best,f:Math.round(bn/t2*100)});
-  });
-  if(skew.length){
-    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
-      skew.slice(0,3).map(s2=>`<b>${esc(s2.l)}</b>${_vTrJosaGa(s2.l)==='이'?'은':'는'} `+
-        `${s2.f}% 가 <b>${esc(s2.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
-  }
-  html+=`<div class="vlink-note">점을 끌어 옮기고, 빈 곳을 끌어 밀어요. `+
-    `휠(또는 두 손가락)로 키우고 줄여요. 점을 톡 누르면 그 목록이 열려요.</div>`;
-  box.innerHTML=html;
   _vgData={N,E,W,H,la,shown:N.length};
   _vgRun(N,E,W,H,mx,la);
+  if(showPick)renderVgPick();
+  if(showCfg)renderVgCfg();
   _vgApplyFilter();
+}
+// 골라보기·배치는 **팝업이 아니다** (v26-0907-7, HB 1·2) — 그래프를 보면서
+// 만지도록 옆(넓을 때)이나 아래(좁을 때)에 편다. 켜고 끄면 그래프 폭이 바뀌므로
+// 다시 그린다.
+function _vgShow(which){
+  const p=_vTrPref();
+  return which==='pick'?(p.vgShowPick===true):(p.vgShowCfg===true);
+}
+function vgToggle(which){
+  const p=_vTrPref();
+  if(which==='pick')p.vgShowPick=!_vgShow('pick');
+  else p.vgShowCfg=!_vgShow('cfg');
+  save();
+  renderVDashLink();
 }
 function vDashLinkRelayout(){ renderVDashLink(); }
 // ⚠️ 서로 안 이어진 덩어리는 척력만 받아 **판 밖으로 날아간다.** 가운데로
@@ -21114,7 +21165,8 @@ function _vgRun(N,E,W,H,mx,la){
   if(!svg||!gV||!N.length)return;
   const NS='http://www.w3.org/2000/svg';
   const cx=W/2, cy=H/2;
-  const cfg=_vgCfg();
+  // ⚠️ const 로 잡지 않는다 — 슬라이더가 미는 동안 이 값을 갈아끼운다.
+  const P=_vgCfg();
   const lineEls=E.map(e=>{
     const el=document.createElementNS(NS,'line');
     el.setAttribute('stroke',N[e.a].color||'var(--tx3)');
@@ -21155,7 +21207,7 @@ function _vgRun(N,E,W,H,mx,la){
   let zm=1;
   const applyScale=()=>{
     const k=1/Math.sqrt(zm);                 // 그려지는 크기 = 원래 × √zm
-    const f=_vgCfg().font/100;
+    const f=P.font/100;
     N.forEach((n,i)=>{
       const o=nodeEls[i];
       o.c.setAttribute('r',(n.r*k).toFixed(2));
@@ -21187,11 +21239,13 @@ function _vgRun(N,E,W,H,mx,la){
   //    절반을 건너뛴다. ② 식힘(alpha)을 **멈출 때를 정하는 데만** 쓰고 자리
   //    이동에는 안 곱해서, 마지막 순간까지 전속력으로 움직이다 뚝 선다.
   //    → 척력에 상한을 두고, 이동에 alpha 를 곱해 점점 잦아들게 한다.
-  const REST=cfg.rest, K=cfg.pull/1000, REP=cfg.rep, DAMP=0.86;
+  const DAMP=0.86;
   // ⚠️ 가까울 때 REP/d² 가 폭발하는 것은 **힘에 뚜껑을 씌워** 막지 않는다.
   //    뚜껑을 씌우면 겹친 점이 서로 못 밀어내 한 덩어리로 뭉친다 (실제로 그랬다).
   //    대신 거리에 **바닥**을 준다 — 12px 보다 가까우면 12px 로 친다.
   const DMIN2=144;
+  // 끌어다 놓은 점은 그 자리(ax,ay)로 당겨 붙는다 — '머무는 힘' (v26-0907-7, HB 2)
+  const stickOf=()=>P.stick/1000;
   // ⚠️ 같은 갈래끼리는 더 세게 민다. 말씀 모음처럼 주제마다 성경을 거의 다
   //    갖는 그래프에서는 용수철이 주제들을 **모두 같은 한가운데**로 끌어당겨,
   //    이름표가 서로 포개져 읽을 수 없게 된다. 같은 갈래를 더 밀어 흩어 놓는다.
@@ -21212,7 +21266,7 @@ function _vgRun(N,E,W,H,mx,la){
         if(d2<1){dx=Math.random()-0.5;dy=Math.random()-0.5;d2=1;}   // 겹치면 살짝 흔든다
         const d=Math.sqrt(d2);
         const dd=Math.max(d2,DMIN2);
-        const f=REP*_rep2(a,b)/dd, ux=dx/d, uy=dy/d;
+        const f=P.rep*_rep2(a,b)/dd, ux=dx/d, uy=dy/d;
         a.vx+=ux*f; a.vy+=uy*f;
         b.vx-=ux*f; b.vy-=uy*f;
       }
@@ -21222,14 +21276,17 @@ function _vgRun(N,E,W,H,mx,la){
       if(a.hide||b.hide)return;
       const dx=b.x-a.x, dy=b.y-a.y;
       const d=Math.max(1,Math.hypot(dx,dy));
-      const f=(d-REST)*K, ux=dx/d, uy=dy/d;
+      const f=(d-P.rest)*(P.pull/1000), ux=dx/d, uy=dy/d;
       a.vx+=ux*f; a.vy+=uy*f;
       b.vx-=ux*f; b.vy-=uy*f;
     });
     let moved=0;
+    const ST=stickOf();
     N.forEach(p=>{
       if(p.hide){p.vx=0;p.vy=0;return;}
       p.vx+=(cx-p.x)*0.004; p.vy+=(cy-p.y)*0.004;
+      // 못 박아 둔 점은 놓아 둔 자리로 되돌아온다 (머무는 힘이 0 이면 안 돈다)
+      if(p.pin&&ST>0){p.vx+=(p.ax-p.x)*ST; p.vy+=(p.ay-p.y)*ST;}
       if(p.fix){p.vx=0;p.vy=0;_vgClamp(p,W,H);return;}  // 끌고 있는 점은 손가락이 자리를 정한다
       p.vx*=DAMP; p.vy*=DAMP;
       // ⚠️ 식힘을 이동에 곱한다 — 이것이 '춤추다 뚝 멈추는' 것을 없앤다
@@ -21258,6 +21315,12 @@ function _vgRun(N,E,W,H,mx,la){
     else _vgSim.raf=null;
   };
   _vgSim={raf:null,mark,
+    // 슬라이더가 미는 동안 부른다 — 다시 그리지 않고 값만 갈아끼운다
+    setCfg:(k,v)=>{
+      P[k]=v;
+      if(k==='font')applyScale();
+      if(_vgSim&&_vgSim.wake)_vgSim.wake();
+    },
     wake:()=>{
       alpha=1;
       if(_vgSim&&!_vgSim.raf)_vgSim.raf=requestAnimationFrame(loop);
@@ -21335,6 +21398,12 @@ function _vgRun(N,E,W,H,mx,la){
       // 예전에는 타일뷰로 곧장 보냈는데, 점 하나를 눌렀을 뿐인데 정보가
       // 한꺼번에 펼쳐져 버렸다.
       if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);
+      else{
+        // 끌어다 놓았으면 그 자리에 **못을 박는다** (v26-0907-7, HB 2).
+        // '머무는 힘' 이 0 이면 못은 박히되 힘이 안 걸려 예전처럼 흘러간다.
+        n.pin=true; n.ax=n.x; n.ay=n.y;
+        if(o)o.g.classList.add('pin');
+      }
       drag=null;
       if(_vgSim)_vgSim.wake();
     }
@@ -21492,27 +21561,21 @@ function vpCycleFullTab(){
   _vfSyncTopBar();
   _verseFullRender();
 }
-// ══════ 골라 보기 팝업 (1-1) ══════
-function openVgPick(){
-  if(!_vgData){showToast('먼저 연결 그래프를 열어 주세요');return;}
-  document.getElementById('vgPickOverlay').style.display='block';
-  document.getElementById('vgPickModal').style.display='flex';
-  renderVgPick();
-}
-function closeVgPick(){
-  document.getElementById('vgPickOverlay').style.display='none';
-  document.getElementById('vgPickModal').style.display='none';
-}
+// ══════ 골라 보기 — 그래프 옆(넓을 때)·아래(좁을 때) (v26-0907-7, HB 1) ══════
+// ⚠️ 팝업이 아니다. 그래프를 **보면서** 켜고 꺼야 무엇이 사라지는지 알 수 있다.
+//    주제는 왼쪽 판, 성경은 오른쪽 판. 좁은 화면에서는 둘이 그래프 아래로 내려와
+//    나란히 선다 (390px 폭에 셋을 나란히 두면 셋 다 못 쓰게 좁아진다).
 function renderVgPick(){
-  const body=document.getElementById('vgPickBody');
-  if(!body||!_vgData)return;
+  const L=document.getElementById('vgPaneL'), R=document.getElementById('vgPaneR');
+  const D=document.getElementById('vgDepthRow');
+  if(!L||!R||!_vgData)return;
   const{N,la}=_vgData;
   const sel=_vgSel(), d=_vgDepth();
-  const group=(kind,title)=>{
+  const paneHTML=(kind,title)=>{
     const rows=N.map((n,i)=>({n,i})).filter(x=>x.n.kind===kind)
       .sort((x,y)=>y.n.w-x.n.w||_vDashKeyCmp(x.n.key,y.n.key));
-    if(!rows.length)return '';
-    return `<div class="vgp-gp">${esc(title)}</div>`+
+    if(!rows.length)return `<div class="vgp-gp">${esc(title)}</div>`;
+    return `<div class="vgp-gp">${esc(title)}</div><div class="vgp-list">`+
       rows.map(({n})=>{
         const id=n.kind+_VG_SEP+n.key;
         const on=sel.indexOf(id)>=0;
@@ -21521,57 +21584,50 @@ function renderVgPick(){
           `opacity:${n.kind==='topic'?'0.95':'0.45'};"></span>`+
           `<span class="vgp-nm">${esc(n.key)}</span>`+
           `<span class="vgp-n">${n.w}</span></div>`;
-      }).join('');
+      }).join('')+`</div>`;
   };
   const axisName=(_VLINK_LEFTS.find(x=>x[0]===la)||[,'주제'])[1];
-  body.innerHTML=
-    `<div class="vtr-ctl" style="margin-bottom:10px;">`+
+  L.innerHTML=paneHTML('topic',axisName);
+  R.innerHTML=paneHTML('book','성경');
+  if(D){
+    D.innerHTML=`<div class="vtr-ctl" style="margin-bottom:0;">`+
       `<span class="vtr-ctl-lb">뎁스</span>`+
       `<span class="vtr-ctl-vals vtr-slides"><div class="vtr-slide on">`+
         `<span class="vtr-slide-lb" id="vgDepthLb">${d}뎁스</span>`+
         _vTrRailHTML({min:0,max:4,val:d,done:'vgdepth',lb:'vgDepthLb',
                       suffix:'뎁스',label:'몇 걸음까지 볼지'})+
-      `</div></span></div>`+
-    `<div class="vgp-note">고른 점에서 <b>${d}걸음</b>까지 이어진 점만 보여요. `+
-      `0이면 고른 것만 보여요.</div>`+
-    group('topic',axisName)+group('book','성경')+
-    `<div style="margin-top:10px;text-align:right;">`+
-      `<span class="vdash-link" onclick="vgClearSel()">모두 지우기</span></div>`;
-  _vTrBindRails(body);
+      `</div></span>`+
+      `<span class="vdash-link" style="flex:0 0 auto;font-size:10.5px;" `+
+      `onclick="vgClearSel()">모두 지우기</span></div>`;
+    _vTrBindRails(D);
+  }
 }
-// ══════ 배치 값 팝업 (2-1) ══════
-function openVgCfg(){
-  document.getElementById('vgCfgOverlay').style.display='block';
-  document.getElementById('vgCfgModal').style.display='flex';
-  renderVgCfg();
-}
-function closeVgCfg(){
-  document.getElementById('vgCfgOverlay').style.display='none';
-  document.getElementById('vgCfgModal').style.display='none';
-}
+// ══════ 배치 값 — 그래프 아래 (v26-0907-7, HB 2) ══════
 // [열쇠, 이름, 최소, 최대, 단위, 한 줄 설명]
 const _VG_CFG_ROWS=[
   ['rest','사이 거리',24,150,'','이어진 두 점이 머물려는 거리예요'],
   ['rep','미는 힘',200,2200,'','점끼리 밀어내는 세기예요 — 크면 넓게 퍼져요'],
   ['pull','당기는 힘',5,70,'','이어진 점을 끌어당기는 세기예요 — 크면 뭉쳐요'],
+  ['stick','머무는 힘',0,240,'','끌어다 놓은 점이 그 자리에 머물려는 힘이에요 — 0이면 도로 흘러가요'],
   ['font','글자 크기',60,170,'%','이름 글자 크기예요'],
 ];
 function renderVgCfg(){
   const body=document.getElementById('vgCfgBody');
   if(!body)return;
   const c=_vgCfg();
-  body.innerHTML=_VG_CFG_ROWS.map(([key,nm,lo,hi,unit,desc])=>
+  // ⚠️ live:true — 손을 뗄 때가 아니라 **미는 동안** 바로 먹인다 (HB 2).
+  body.innerHTML=`<div class="vgc-grid">`+_VG_CFG_ROWS.map(([key,nm,lo,hi,unit,desc])=>
     `<div class="vgc-row">`+
       `<div class="vtr-ctl" style="margin-bottom:2px;">`+
         `<span class="vtr-ctl-lb" style="flex:0 0 58px;">${esc(nm)}</span>`+
         `<span class="vtr-ctl-vals vtr-slides"><div class="vtr-slide on">`+
           `<span class="vtr-slide-lb vtr-slide-lb2" id="vgCfgLb_${key}">${c[key]}${unit}</span>`+
           _vTrRailHTML({min:lo,max:hi,val:c[key],done:'vgcfg:'+key,lb:'vgCfgLb_'+key,
-                        suffix:unit,label:nm})+
+                        suffix:unit,label:nm,live:true})+
         `</div></span></div>`+
       `<div class="vgc-desc">${esc(desc)}</div>`+
-    `</div>`).join('')+
-    `<div style="margin-top:12px;text-align:right;">`+
+    `</div>`).join('')+`</div>`+
+    `<div style="margin-top:8px;text-align:right;">`+
       `<span class="vdash-link" onclick="vgCfgReset()">기본값으로</span></div>`;
   _vTrBindRails(body);
 }
