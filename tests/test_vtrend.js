@@ -43,7 +43,7 @@ const NAMES=['_VTR_SPAN_MAX','_VTR_FORMS','_VTR_UNITS','_VTR_DEFAULTS','_vTrPref
   '_vTrDiffHTML','_vTrOtherSpan','_vTrSort','_vTrSortRows','_vTrNameCmp','_vTrTheadHTML',
   '_vTrGeo','_vTrHFromX','_vTrRailHTML','_vTrRowHTML','_vTrInsightHTML',
   '_vTrFindings','_vTrFindingsHTML','_vMapShade','_vWeeksSince','_vRhyBands','_vRhyKind','_VRHY_KINDS',
-  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange','_VG_MAXL','_VG_MAXR',
+  '_vMapGroups','_VMAP_GROUPS_OT','_VMAP_GROUPS_NT','_vMapRange','_VG_RANK_MAX',
   '_vpRep','_vpShortRef','_vpTabName','_VP_TABS',
   '_vMapMode','_vLinkAxis','_vDashScope','_vMapInk','_vMapStep',
   'BIBLE_ORDER_OT','BIBLE_ORDER_NT','BIBLE_CHAPTERS_OT','BIBLE_CHAPTERS_NT',
@@ -484,7 +484,9 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   // v26-0907-6, HB 3 — 타일뷰로 곧장 보내지 않고 **짝 목록**을 연다
   sc.eq('점을 톡 누르면 짝 목록으로',
         SRC.includes("if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);"), true);
-  sc.eq('점 · 선 상한이 있다', [_VG_MAXL, _VG_MAXR], [14, 22]);
+  // v26-0907-8, HB 2-1·2-2 — 고정 상한(14/22) 대신 순위 슬라이더로 바뀌었다.
+  // 절대 안전판(_VG_RANK_MAX)만 남는다 — 자세한 순위 계산은 시나리오 21 에서.
+  sc.eq('점 · 선 후보의 절대 상한이 있다', _VG_RANK_MAX, 60);
   // v26-0907-5 — 배치 값이 팝업에서 고쳐지므로 상수가 아니라 설정에서 온다
   // v26-0907-7 — 슬라이더가 **미는 동안** 값을 갈아끼우므로 const 로 굳히지 않는다
   sc.eq('물리 값을 담은 통이 있다', SRC.includes('const P=_vgCfg();'), true);
@@ -515,7 +517,13 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   // 1-1 · 골라 보기 + N뎁스
   sc.eq('씨앗에서 N걸음까지 번진다', SRC.includes('function _vgReach(N,E,seeds,depth)'), true);
   sc.eq('씨앗이 없으면 전부 보인다', SRC.includes('if(!seeds.size)return null;'), true);
-  sc.eq('뎁스는 0~4', SRC.includes('return(isFinite(n)&&n>=0&&n<=4)?n:1;'), true);
+  // v26-0907-8, HB 2-3 — "1뎁스가 최하값인데 손잡이가 왼쪽 끝이 아니다".
+  // 0~4 였던 것을 1~4 로 좁혔다 — 이제 1뎁스가 진짜 최솟값이라 손잡이가
+  // 그 값에서 슬라이더 왼쪽 끝에 선다.
+  sc.eq('뎁스는 1~4 (0은 없앴다)', SRC.includes('return(isFinite(n)&&n>=1&&n<=4)?n:1;'), true);
+  sc.eq('저장할 때도 1~4 로 가둔다',
+        SRC.includes('_vTrPref().vgDepth=Math.max(1,Math.min(4,parseInt(v,10)||1));'), true);
+  sc.eq('슬라이더 자체도 1부터 시작', SRC.includes("_vTrRailHTML({min:1,max:4,val:d,done:'vgdepth'"), true);
   // 1-2 · 검색은 타이핑하는 동안 바로. 다시 그리지 않고 보임/숨김만 바꾼다.
   sc.eq('타이핑하는 동안 걸린다', SRC.includes('oninput="vgSearch(this.value)"'), true);
   sc.eq('검색은 다시 그리지 않는다',
@@ -591,8 +599,11 @@ console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 �
   // ⚠️ 그 함수는 한 줄이어야 한다 — test_keep_fullscreen.js 가 한 줄로 잘라 쓴다
   sc.eq('_vfClearNav 는 한 줄이다',
         /function _vfClearNav\(\)\{[^\n]*_vfSyncTopBar\(\);\}/.test(SRC), true);
-  // 제목을 눌러 세 갈래를 돈다 (둘만 오가면 합본에서 되돌아갈 길이 없다)
-  sc.eq('제목이 눌러진다', SRC.includes('vpOn?vpCycleFullTab:null'), true);
+  // v26-0907-8, HB 3-3 — 제목을 눌러 도는 방식은 접었다. 이제 제목 아래
+  // 칩(#vfModeChip)이 그 일을 대신한다 (안 보이던 상호작용을 눈에 띄게).
+  sc.eq('제목은 더 이상 눌리지 않는다(칩이 대신한다)',
+        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
+  sc.eq('칩이 제목 아래에서 돈다', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
   sc.eq('세 갈래를 돈다', SRC.includes('_VP_TABS[(i+1)%_VP_TABS.length][0]'), true);
   // 본문은 한 줄뿐
   sc.eq('본문은 한 줄로 자른다', /\.vp-c2\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/.test(SRC), true);
@@ -679,6 +690,162 @@ console.log('\n시나리오 13 — 성경→장 그래프 버튼은 채운 산 �
   sc.eq('fill 로 채운다', seg.includes('fill="currentColor"'), true);
   sc.eq('테두리선만 그리지 않는다(stroke=none)', seg.includes('stroke="none"'), true);
   sc.eq('닫힌 다각형이다(바닥까지 내려와 닫힌다)', seg.includes('16 11 1 11Z'), true);
+}
+
+// ═══ v26-0907-8 (HB) — 연결 그래프 버그 넷 + 대시보드 버튼 + 버전 배지 ═══
+console.log('\n시나리오 14 — 1-2 드래그 시 보이지 않는 사각형에 걸리던 것');
+{
+  // 손가락으로 끄는 동안에는 화면 좌표를 그대로 쓴다 — 가두지 않는다.
+  // (줌아웃하면 화면엔 보이는데 원래 크기 상자 경계에서 멈추는 게 버그였다)
+  sc.eq('pointermove 에서 안 가둔다',
+        !/n\.x=g\.x; n\.y=g\.y; n\.vx=0; n\.vy=0;\s*\n\s*_vgClamp\(n,W,H\);/.test(SRC), true);
+  sc.eq('tick() 의 드래그 중 분기에서도 안 가둔다',
+        SRC.includes('if(p.fix){p.vx=0;p.vy=0;return;}  // 끌고 있는 점은 손가락이 자리를 정한다 (안 가둔다)'),
+        true);
+  // 저절로 움직이는(끌지 않는) 점은 여전히 가둔다 — 흩어진 덩어리가 날아가는
+  // 것을 막는 원래 목적은 그대로 살아 있어야 한다.
+  sc.eq('자유 낙하하는 점은 그대로 가둔다', SRC.includes('_vgClamp(p,W,H);\n      const m=Math.abs(ddx)'), true);
+}
+
+console.log('\n시나리오 15 — 4 짝 목록에서 나간 타일뷰·전체화면을 닫으면 그 목록으로');
+{
+  sc.eq('나갈 때 짝 목록이 떠 있었는지도 적는다',
+        /vp:\(shown\('vpModal'\)&&typeof _vpCtx!=='undefined'&&_vpCtx\)\?\{\.\.\._vpCtx\}:null/.test(SRC), true);
+  sc.eq('돌아올 때 짝 목록을 최우선으로 되살린다',
+        /if\(r\.vp&&typeof openVPair==='function'\)\{openVPair\(r\.vp\.axis,r\.vp\.val\);return true;\}/.test(SRC),
+        true);
+}
+
+console.log('\n시나리오 16 — 5 짝 목록 좌우 배치일 때 오른쪽 판이 넘치던 것');
+{
+  // flex 항목은 min-width:auto 가 기본이라 내용(긴 본문 한 줄)보다 안 줄어든다.
+  // 조상 사슬에 min-width:0 을 끝까지 걸어야 진짜로 줄어든다.
+  sc.eq('.vp-pane 에 min-width:0',
+        /\.vp-pane\{display:flex;flex-direction:column;flex:1 1 0;min-height:0;min-width:0;\}/.test(SRC), true);
+  sc.eq('.vp-list 에도 min-width:0',
+        /\.vp-list\{overflow:auto;flex:1;min-height:0;min-width:0;/.test(SRC), true);
+}
+
+console.log('\n시나리오 17 — 8-1 "이름으로 찾기" 안내 글자를 없앴다');
+{
+  sc.eq('placeholder 를 비웠다', SRC.includes('placeholder="" autocomplete="off"'), true);
+  sc.eq('안내 글자 문구는 소스에 없다', SRC.includes('placeholder="이름으로 찾기"'), false);
+}
+
+console.log('\n시나리오 18 — 0 설정창 우하단 버전 배지 (개발자 계정 전용)');
+{
+  sc.eq('일반설정에 배지 자리', SRC.includes('<div class="settings-verbadge" id="settingsVerBadge" style="display:none;"></div>'), true);
+  sc.eq('말씀설정에도 배지 자리', SRC.includes('<div class="settings-verbadge" id="verseSettingsVerBadge" style="display:none;"></div>'), true);
+  sc.eq('배지를 채우는 함수가 있다', SRC.includes('function _syncDevVerBadge(){'), true);
+  sc.eq('개발자 계정 판정을 그대로 쓴다', /function _syncDevVerBadge\(\)\{\s*\n\s*const dev=_isDevAccount\(\);/.test(SRC), true);
+  sc.eq('일반설정을 열 때 부른다', /function openSettings\(tabId\)\{\s*\n\s*renderSettingsPanel\(\);\s*\n\s*_syncDevVerBadge\(\);/.test(SRC), true);
+  sc.eq('말씀설정을 열 때도 부른다', /function openVerseSettingsModal\(\)\{\s*\n\s*renderVerseSettingsModal\(\);\s*\n\s*applyVerseUiLevel\(\);\s*\n\s*_syncDevVerBadge\(\);/.test(SRC), true);
+}
+
+console.log('\n시나리오 19 — 9 전체화면 좌상단 대시보드 버튼');
+{
+  sc.eq('버튼이 있다', SRC.includes('<button class="vf-dashbtn" id="vfDashBtn" onclick="event.stopPropagation();vfOpenDashboard()" aria-label="대시보드">'), true);
+  sc.eq('여는 함수가 있다', SRC.includes('function vfOpenDashboard(){\n  openVerseDashboard();\n}'), true);
+  // 차례: 홈(12) · 말씀 모음 설정(50) · 대시보드(88, 새로 낀 자리) · 저장(126, 밀려남)
+  sc.eq('대시보드가 50과 88 사이 그 자리', /\.vf-dashbtn\{position:absolute;top:calc\(env\(safe-area-inset-top,0px\) \+ 88px\)/.test(SRC), true);
+  sc.eq('저장 책갈피가 126 으로 밀렸다', /\.vf-keepmenu\{position:absolute;top:calc\(env\(safe-area-inset-top,0px\) \+ 126px\)/.test(SRC), true);
+  sc.eq('그 아래 드롭다운도 160 으로 함께 밀렸다', /\.vf-keep-switch\{position:absolute;z-index:13;top:calc\(env\(safe-area-inset-top,0px\) \+ 160px\)/.test(SRC), true);
+}
+
+console.log('\n시나리오 20 — 1-1 대시보드 모달을 키웠다');
+{
+  sc.eq('모달 폭을 880→1200 로', SRC.includes('width:min(97vw,1200px);max-height:92vh;'), true);
+  sc.eq('그래프 세로 한도도 520→760 으로',
+        SRC.includes('const H=Math.max(300,Math.min(760,Math.round(W*0.9)));'), true);
+}
+
+console.log('\n시나리오 21 — 2-1·2-2 골라보기 순위 듀얼 슬라이더');
+{
+  sc.eq('절대 상한 상수', SRC.includes('const _VG_RANK_MAX=60;'), true);
+  sc.eq('예전 고정 상한(14/22)은 없앴다', SRC.includes('const _VG_MAXL=14, _VG_MAXR=22;'), false);
+  sc.eq('rk 계산 헬퍼', /function _vgRankOf\(side,total\)\{/.test(SRC), true);
+  sc.eq('lo 는 1 미만으로 안 내려간다', SRC.includes("const lo=Math.max(1,Math.min(max,parseInt(r.lo,10)||1));"), true);
+  sc.eq('hi 는 lo 보다 작아지지 않는다', SRC.includes("const hi=Math.max(lo,Math.min(max,parseInt(r.hi,10)||max));"), true);
+  sc.eq('세팅 함수는 그래프를 통째로 다시 만든다',
+        /function vgRankSet\(side,lo,hi\)\{[\s\S]{0,220}renderVDashLink\(\);/.test(SRC), true);
+  sc.eq('세로 손잡이 바인더', SRC.includes('function _vgRankRailBind(el){'), true);
+  sc.eq('clientY 로 계산한다(세로축)', /_vgRankRailBind[\s\S]{0,700}e\.clientY-r\.top/.test(SRC), true);
+  sc.eq('CSS 트랙 클래스', SRC.includes('.vgp-rank{position:relative;flex:0 0 22px;width:22px;'), true);
+  sc.eq('L 판은 목록 앞(바깥쪽)에, R 판은 목록 뒤(바깥쪽)에 세운다',
+        SRC.includes("L.innerHTML=paneHTML('topic','L',axisName,la,Lfull||[],_vgRankOf('L',(Lfull||[]).length),true);") &&
+        SRC.includes("R.innerHTML=paneHTML('book','R','성경','book',Rfull||[],_vgRankOf('R',(Rfull||[]).length),false);"),
+        true);
+  sc.eq('순위창 밖 줄은 클릭이 안 걸린다(그래프에 없는 것)',
+        SRC.includes('`<div class="vgp-row${on?\' on\':\'\'}${active?\'\':\' rankoff\'}"`+\n        (active?` onclick="vgToggleSel'),
+        true);
+}
+
+console.log('\n시나리오 22 — 3-1..3-5 축 아이콘 · 통합 모드칩 · 새 격자 아이콘');
+{
+  sc.eq('예전 ⌗ 상수는 없앴다', SRC.includes("const _VP_HASH_SVG="), false);
+  sc.eq('테두리 있는 3×3 격자로 교체', SRC.includes('const _VP_GRID_SVG='), true);
+  sc.eq('# 태그 축 아이콘', SRC.includes('const _VG_TAG_ICON_SVG='), true);
+  sc.eq('축 아이콘 헬퍼 — 태그·성경만', /function _vAxisIconHTML\(axis\)\{\s*\n\s*if\(axis==='tag'\)/.test(SRC), true);
+  sc.eq('성경 축은 Deeper 아이콘을 그대로 쓴다(새로 안 만든다)',
+        SRC.includes('return `<span class="vp-axisic">${_VLIST_KIND_TITLE.deeper}</span>`;'), true);
+  sc.eq('모드칩 헬퍼 — 말씀/명제/말씀+명제', /function _vpModeChipHTML\(tab,onclickExpr\)\{/.test(SRC), true);
+  sc.eq("'함께' 대신 '말씀 + 명제' 라벨",
+        SRC.includes("const label=tab==='verse'?'말씀':tab==='prop'?'명제':'말씀 + 명제';"), true);
+  sc.eq('짝 목록 제목이 축 아이콘을 단다(innerHTML 로)',
+        SRC.includes("if(ttl)ttl.innerHTML=_vAxisIconHTML(_vpCtx.axis)+esc(_vpCtx.val);"), true);
+  sc.eq('짝 목록 하단은 고정(활성) 칩', SRC.includes("`<div class=\"vp-foot\">${_vpModeChipHTML('all',null)}`+"), true);
+  sc.eq('타일뷰 갈래 탭이 칩 하나로', SRC.includes("row.innerHTML=_vpModeChipHTML(_vgTab(),'vgCycleTab()');"), true);
+  sc.eq('타일뷰 칩은 _VL_TABS 순서로 돈다', SRC.includes('function vgCycleTab(){'), true);
+  sc.eq('전체화면 제목은 더 이상 눌러 돌리지 않는다(칩이 대신한다)',
+        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
+  sc.eq('전체화면 칩 자리(#vfModeChip)가 있다',
+        SRC.includes('<div class="vf-modechiprow" id="vfModeChip" style="display:none;"></div>'), true);
+  sc.eq('칩 디자인엔 테두리·박스가 없다(집 규칙)',
+        /\.vp-modechip\{[^}]*\}/.exec(SRC) ? !/border|box-shadow|background/.test(/\.vp-modechip\{[^}]*\}/.exec(SRC)[0]) : false,
+        true);
+}
+
+console.log('\n시나리오 23 — 6 인사이트 블럭 위치 · 캡션 우상단');
+{
+  const iAxis=SRC.indexOf("_vTrChipsHTML('왼쪽','linkAxis',_VLINK_LEFTS,la)");
+  const iSkew=SRC.indexOf('skew.slice(0,3).map(s2=>');
+  const iHelp=SRC.indexOf('class="vlink-help"');
+  const iBar=SRC.indexOf('html+=`<div class="vg-bar">`+');
+  sc.eq('넷 다 찾았다', iAxis>=0&&iSkew>=0&&iHelp>=0&&iBar>=0, true);
+  sc.eq('순서: 왼쪽(축) → 인사이트 → 캡션 → 검색줄', iAxis<iSkew&&iSkew<iHelp&&iHelp<iBar, true);
+  sc.eq('도움말은 토스트를 재사용한다(새 팝업 안 만든다)',
+        SRC.includes('function vgShowHelp(){ showToast(_VG_HELP_TX); }'), true);
+  sc.eq('넓으면 글자, 좁으면 버튼(900px 갈림)',
+        /@media \(min-width:900px\)\{\s*\n\s*\.vlink-note-full\{display:inline;\}\s*\n\s*\.vlink-note-ibtn\{display:none;\}/.test(SRC),
+        true);
+}
+
+console.log('\n시나리오 24 — 7 대시보드 5개 탭 아이콘');
+{
+  sc.eq('탭 아이콘 표가 있다', SRC.includes('const _VDASH_TAB_ICON={'), true);
+  ['trend','pie','map','link','rhythm'].forEach(k=>{
+    sc.eq(`${k} 아이콘 항목이 있다`, new RegExp(`\\b${k}:'<svg`).test(SRC), true);
+  });
+  sc.eq('분포는 로고 메뉴의 대시보드 아이콘과 같은 것(원+반지름선)',
+        SRC.includes('<circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>'), true);
+  sc.eq('탭 렌더에서 라벨 앞에 아이콘을 붙인다',
+        SRC.includes('`${_VDASH_TAB_ICON[v]||\'\'}${l}</span>`).join(\'\');'), true);
+  sc.eq('탭을 세로로 쌓는 CSS(아이콘 위·글자 아래)',
+        SRC.includes('.vdash-vtab{display:flex;flex-direction:column;align-items:center;gap:2px;'), true);
+}
+
+console.log('\n시나리오 25 — 8-2 검색 결과 없음');
+{
+  sc.eq('검색어는 있는데 하나도 안 걸린 경우를 따로 가른다',
+        SRC.includes('const searchEmpty=!!(_vgQuery&&!seeds.size);'), true);
+  sc.eq('그 경우엔 빈 Set 을 준다(전부 안 보임)',
+        SRC.includes('const reach=searchEmpty?new Set():_vgReach(N,E,seeds,_vgDepth());'), true);
+  sc.eq('빈 상태 칸이 있다(그래프 판 안, svg 옆)',
+        SRC.includes('<div class="vg-search-empty" id="vgEmptyState" style="display:none;">'), true);
+  sc.eq('7-4(연결) 아이콘을 그대로 쓴다', SRC.includes('${_VDASH_TAB_ICON.link}<span>검색결과가 없어요</span></div>'), true);
+  sc.eq('필터를 다시 매길 때마다 이 칸도 함께 켜고 끈다',
+        /const eb=document\.getElementById\('vgEmptyState'\);\s*\n\s*if\(eb\)eb\.style\.display=searchEmpty\?'flex':'none';/.test(SRC),
+        true);
 }
 
 sc.done();

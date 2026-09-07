@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0907-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -942,7 +942,7 @@ header{
   -webkit-tap-highlight-color:transparent;}
 .vf-home:active{opacity:.5;}
 @media(hover:none){.vf-home{opacity:.3;}}
-.vf-keepmenu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 88px);left:14px;z-index:14;
+.vf-keepmenu{position:absolute;top:calc(env(safe-area-inset-top,0px) + 126px);left:14px;z-index:14;
   width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
   display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
   -webkit-tap-highlight-color:transparent;}
@@ -956,6 +956,13 @@ header{
   -webkit-tap-highlight-color:transparent;}
 .vf-collset:active{opacity:.5;}
 @media(hover:none){.vf-collset{opacity:.3;}}
+/* 대시보드 (v26-0907-8, HB 9) — 홈 · 말씀 모음 · 저장 사이, 그 사이 자리 */
+.vf-dashbtn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 88px);left:14px;z-index:14;
+  width:30px;height:30px;background:none;border:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--vf-tx,var(--tx));opacity:.2;
+  -webkit-tap-highlight-color:transparent;}
+.vf-dashbtn:active{opacity:.5;}
+@media(hover:none){.vf-dashbtn{opacity:.3;}}
 /* ⚠️ 넘침은 이제 **롤링**이 맡는다 (v26-0904-10, HB) — 말줄임(…)으로 자르지
    않는다. 이름이 여럿이면 세로로 한 줄씩 넘어가고, 하나인데 길면 가로로 흐른다. */
 /* ⚠️ 제목은 좌·우 단추와 **같은 30px 띠 안에서** 가운데로 선다 (v26-0905-4, HB —
@@ -970,12 +977,15 @@ header{
   overflow:hidden;pointer-events:none;letter-spacing:.02em;
   align-items:center;justify-content:center;}
 .vf-toplabel.vf-keep-title{pointer-events:auto;cursor:pointer;}
+/* 짝 목록에서 넘어온 전체화면의 모드칩 — 제목 바로 아래, 가운데 (v26-0907-8, HB 3-3) */
+.vf-modechiprow{position:absolute;top:calc(env(safe-area-inset-top,0px) + 44px);left:50%;
+  transform:translateX(-50%);z-index:11;align-items:center;justify-content:center;}
 /* ⚠️ 배경은 **반투명 + 블러**다 (v26-0904-4, HB) — 뒤에 떠 있는 말씀·명제
    글자가 어렴풋이 비쳐야 한다. 그래서 그라디언트(--vf-bgimg)를 그대로 쓰지
    못한다. 그림에는 투명도를 줄 수 없어서, 테마의 **첫 색 한 가지**(--vf-bg1)를
    따로 흘려보내 그것에 투명도를 준다 (applyVfTheme 참고).
    머리줄(.vf-keep-head)은 목록이 그 아래로 지나가므로 더 진하게 둔다. */
-.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 122px);left:14px;
+.vf-keep-switch{position:absolute;z-index:13;top:calc(env(safe-area-inset-top,0px) + 160px);left:14px;
   width:min(230px,calc(100vw - 66px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
   padding:5px 6px;color:var(--vf-tx,var(--tx));
   /* v26-0905-1, HB — "더 비치고, 덜 뿌옇게". 52%→38% · 18px→10px.
@@ -3231,6 +3241,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   .settings-overlay{align-items:flex-start;padding-top:10vh;}
 }
 .settings-panel{
+  position:relative;
   width:100%;max-width:480px;
   max-height:88vh;
   background:var(--s1);
@@ -3239,6 +3250,10 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   overflow:hidden; /* prevents sticky tab bar from escaping panel bounds */
   animation:settingsIn .22s ease;
 }
+/* v26-0907-8, HB 0 — 개발자 계정에만 보이는 버전 표시. 우하단에 조용히. */
+.settings-verbadge{position:absolute;right:8px;bottom:6px;z-index:1;
+  font-size:9px;color:var(--tx3);opacity:.55;font-family:var(--font-number);
+  pointer-events:none;letter-spacing:.02em;}
 @media(min-width:720px){
   .settings-panel{border-radius:16px;max-height:80vh;}
 }
@@ -3696,9 +3711,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .vdd-dot.on{background:var(--ac);opacity:1;}
 /* ── 대시보드 위쪽 전환 (분포 ⇄ 흐름) ── */
-.vdash-vtab{font-size:12.5px;font-weight:400;color:var(--tx3);cursor:pointer;padding:2px 1px;
+/* v26-0907-8, HB 7 — 제목 위에 작은 아이콘을 얹느라 세로로 쌓는다. */
+.vdash-vtab{display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:12.5px;font-weight:400;color:var(--tx3);cursor:pointer;padding:2px 1px;
   -webkit-tap-highlight-color:transparent;}
+.vdash-vtab svg{opacity:.8;}
 .vdash-vtab.on{font-weight:700;color:var(--ac-tx);}
+.vdash-vtab.on svg{opacity:1;}
 /* ── 흐름(추이) ── */
 /* 소제목(갈래·범위·무엇을·기간·모양)은 **한 칸에 세로로 맞춘다** (v26-0906-1, HB 4).
    예전에는 9.5px 에 opacity .75 라 값보다 흐렸다 — 무엇을 고르는 줄인지 읽히지
@@ -3925,7 +3944,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* ⚠️ 좁으면 위/아래, 넓으면 좌/우. 가르는 값은 팝업 폭이 아니라 **화면 폭**이다 —
    팝업이 94vw 라 화면이 좁으면 팝업도 좁다. */
 .vp-wrap{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;}
-.vp-pane{display:flex;flex-direction:column;flex:1 1 0;min-height:0;}
+.vp-pane{display:flex;flex-direction:column;flex:1 1 0;min-height:0;min-width:0;}
 @media (min-width:640px){
   .vp-wrap{flex-direction:row;gap:14px;}
 }
@@ -3936,9 +3955,9 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vp-ic{color:var(--tx3);cursor:pointer;line-height:0;padding:3px;flex:0 0 auto;
   -webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;}
 .vp-ic:hover{color:var(--ac-tx);}
-.vp-list{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+.vp-list{overflow:auto;flex:1;min-height:0;min-width:0;-webkit-overflow-scrolling:touch;}
 .vp-row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;cursor:pointer;
-  border-bottom:1px solid var(--bd2);-webkit-tap-highlight-color:transparent;}
+  min-width:0;border-bottom:1px solid var(--bd2);-webkit-tap-highlight-color:transparent;}
 .vp-row:hover{background:var(--vtr-a-bg);}
 .vp-c1{flex:0 0 auto;max-width:42%;font-size:11px;color:var(--ac-tx);font-weight:700;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -3948,7 +3967,14 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 하단은 '실행' 자리 — 합본으로 나가는 두 길만 둔다 (집 규칙) */
 .vp-foot{display:flex;align-items:center;justify-content:center;gap:8px;
   padding-top:9px;margin-top:2px;border-top:1px solid var(--bd2);flex:0 0 auto;}
-.vp-footnm{font-size:11px;color:var(--tx2);}
+/* 축 아이콘(#·Deeper) — 골라보기 소제목·짝 목록 제목·전체화면 제목이 같이 쓴다 */
+.vp-axisic{display:inline-flex;vertical-align:-2px;margin-right:3px;opacity:.75;}
+/* 말씀·명제·말씀+명제 모드칩 (v26-0907-8, HB 3-3·3-4) — 박스 없이 강조색 글자로.
+   --vf-ac 가 있으면(전체화면 안) 그 색을, 없으면 보통 강조색을 쓴다. */
+.vp-modechip{display:inline-flex;align-items:center;padding:2px 3px;
+  font-size:11px;font-weight:700;color:var(--vf-ac,var(--ac-tx));cursor:pointer;
+  -webkit-tap-highlight-color:transparent;white-space:nowrap;}
+.vp-modechip:active{opacity:.6;}
 /* 골라 보기 목록 — 판 안에서만 스크롤한다 (그래프를 밀어내지 않게) */
 .vgp-gp{font-size:10px;font-weight:700;color:var(--tx3);margin:2px 0 4px;letter-spacing:.02em;}
 .vgp-list{max-height:190px;overflow:auto;-webkit-overflow-scrolling:touch;}
@@ -3961,13 +3987,44 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   text-overflow:ellipsis;white-space:nowrap;}
 .vgp-row.on .vgp-nm{color:var(--ac-tx);font-weight:700;}
 .vgp-n{font-size:10px;color:var(--tx3);font-family:var(--font-number);flex:0 0 auto;}
+/* 순위창 밖으로 밀려난 줄 — 그래프에 없는 것이니 클릭도 안 받는다 (v26-0907-8, HB 2-1) */
+.vgp-row.rankoff{opacity:.35;cursor:default;}
+.vgp-body{display:flex;gap:6px;align-items:stretch;}
+.vgp-body .vgp-list{flex:1;min-width:0;}
+/* 세로 두 손잡이 순위창 — .vtr-rail2 와 같은 결이지만 축이 세로다 */
+.vgp-rank{position:relative;flex:0 0 22px;width:22px;cursor:pointer;
+  touch-action:none;-webkit-tap-highlight-color:transparent;}
+.vgp-rank::before{content:"";position:absolute;top:0;bottom:0;left:10.5px;width:3px;
+  border-radius:2px;background:var(--bd2);}
+.vgp-rank-fill{position:absolute;left:10.5px;width:3px;border-radius:2px;
+  background:var(--ac);opacity:.42;}
+.vgp-rank-knob{position:absolute;left:3.5px;width:17px;height:17px;margin-top:-8.5px;
+  border-radius:50%;background:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.35),0 0 0 2px var(--s1);
+  display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;
+  color:#fff;font-family:var(--font-number);}
+.vgp-rank.dragging .vgp-rank-knob{transform:scale(1.15);}
 .vgp-note{font-size:10px;color:var(--tx3);line-height:1.5;margin-bottom:4px;}
 .vgp-note b{color:var(--ac-tx);font-weight:700;}
 /* 배치 값 */
 .vgc-row{margin-bottom:11px;}
 .vgc-desc{font-size:9.5px;color:var(--tx3);opacity:.85;padding-left:66px;line-height:1.4;}
-.vlink-note{font-size:9.5px;color:var(--tx3);opacity:.8;margin-top:6px;line-height:1.5;}
+/* 도움말 캡션 — 우상단 (v26-0907-8, HB 6). 넓으면 글자 그대로, 좁으면 ⓘ 버튼 하나로 접는다. */
+.vlink-help{display:flex;justify-content:flex-end;margin-bottom:5px;}
+.vlink-note-full{display:none;font-size:9.5px;color:var(--tx3);opacity:.8;line-height:1.4;text-align:right;}
+/* 집 규칙 — 아이콘에 테두리·박스 금지. 원은 글자 자체(ⓘ)가 이미 들고 있다. */
+.vlink-note-ibtn{display:inline-flex;align-items:center;justify-content:center;
+  font-size:15px;line-height:1;color:var(--tx3);opacity:.7;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+@media (min-width:900px){
+  .vlink-note-full{display:inline;}
+  .vlink-note-ibtn{display:none;}
+}
 .vg-wrap{position:relative;margin-top:4px;}
+/* 검색 결과 없음 (v26-0907-8, HB 8-2) — 그래프 판 가운데, 옅게 */
+.vg-search-empty{position:absolute;inset:0;display:none;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;pointer-events:none;color:var(--tx3);}
+.vg-search-empty svg{width:36px;height:36px;opacity:.25;}
+.vg-search-empty span{font-size:12px;opacity:.65;}
 /* ⚠️ touch-action:none 이 없으면 폰에서 점을 끄는 대신 화면이 스크롤된다 */
 .vg-svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab;
   -webkit-tap-highlight-color:transparent;user-select:none;}
@@ -4588,7 +4645,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-7";
+const APP_VERSION = "v. 26-0907-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -4763,6 +4820,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- ── SETTINGS PANEL ── -->
 <div class="settings-overlay" id="settingsOverlay" style="display:none" onclick="closeSettingsOnBg(event)">
   <div class="settings-panel" id="settingsPanel">
+    <div class="settings-verbadge" id="settingsVerBadge" style="display:none;"></div>
     <div class="settings-hd">
       <div class="settings-title">설정</div>
       <div class="uilv-row" id="uiLevelRow">
@@ -5413,6 +5471,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 말씀 설정 모달 (설정창과 별개, 로고 메뉴에서만 진입) -->
 <div class="settings-overlay" id="verseSettingsOverlay" style="display:none" onclick="closeVerseSettingsModal(event)">
   <div class="settings-panel" id="verseSettingsPanel">
+    <div class="settings-verbadge" id="verseSettingsVerBadge" style="display:none;"></div>
     <div class="settings-hd">
       <div class="settings-title">말씀 설정</div>
       <!-- 이지/미드/파워 선택은 일반설정창과 따로 저장한다(v26-0819-1, HB) — 아이콘 모양(동물/사각)만 같은 값을 쓴다 -->
@@ -6213,7 +6272,7 @@ window._fbScriptsReady=new Promise(resolve=>{
      기간 필터는 말씀 목록들과 같은 방식을 쓰고,
      주간/월간/연간의 계산 기준은 말씀설정 → 말씀 모음 → 기간 기준을 따른다. -->
 <div class="event-modal-overlay" id="vDashOverlay" style="display:none;z-index:4600;" onclick="closeVerseDashboard()"></div>
-<div class="event-modal" id="vDashModal" style="display:none;z-index:4601;width:min(94vw,880px);max-height:88vh;flex-direction:column;padding-bottom:12px;">
+<div class="event-modal" id="vDashModal" style="display:none;z-index:4601;width:min(97vw,1200px);max-height:92vh;flex-direction:column;padding-bottom:12px;">
   <!-- 윗줄: [흐름][분포][말씀 모음 설정] ... (기간 칩은 분포에서만) ... [×]
        ⚠️ 가운데 빈 칸(vdash-hdgap)은 **늘 있어야 한다.** 예전에는 기간 칩에
           flex:1 을 줘서 그 칸 노릇을 시켰는데, 흐름에서는 기간 칩이 숨으므로
@@ -6578,7 +6637,12 @@ window._fbScriptsReady=new Promise(resolve=>{
   <button class="vf-collset" id="vfCollSetBtn" onclick="event.stopPropagation();vfOpenCollSettings()" aria-label="말씀 모음 설정">
     <svg width="18" height="18" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
   </button>
+  <!-- 대시보드 (v26-0907-8, HB 9) — 말씀 모음 설정과 저장 책갈피 사이 -->
+  <button class="vf-dashbtn" id="vfDashBtn" onclick="event.stopPropagation();vfOpenDashboard()" aria-label="대시보드">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>
+  </button>
   <div class="vf-toplabel" id="vfTopLabel" style="display:none;"></div>
+  <div class="vf-modechiprow" id="vfModeChip" style="display:none;"></div>
   <div class="vf-keep-switch" id="vfKeepSwitchBox" style="display:none;"></div>
   <!-- 순환·셔플 전환. 닫기와 같은 높이의 좌상단 대칭 자리에 둔다. -->
   <button class="vf-cycle" id="vfCycleBtn" onclick="event.stopPropagation();vfToggleCycleMode()"></button>
@@ -9679,6 +9743,7 @@ function toggleVerseBarOn(){
 function openVerseSettingsModal(){
   renderVerseSettingsModal();
   applyVerseUiLevel();
+  _syncDevVerBadge();
   switchVerseSettingsTab('top',null,'direct');
   document.getElementById('verseSettingsOverlay').classList.add('open');
   _initVerseSettingsSwipe();
@@ -14233,6 +14298,11 @@ function vfHomeAction(){
 // ⚠️ 되돌아갈 팝업(_vsetBackTo)을 **비워 둔다.** 전체화면은 닫히지 않고 설정창
 //    (z-index 4000) 아래에 그대로 있으므로, 설정을 닫으면 저절로 다시 보인다.
 //    여기에 'verseList' 같은 값을 넣으면 닫을 때 엉뚱한 목록이 위로 떠오른다.
+// 전체화면에서 대시보드로 (v26-0907-8, HB 9) — 여느 팝업처럼 전체화면 위에
+// 뜨는 게 아니라, 대시보드가 늘 하던 대로 전체화면을 숨겨 두고 그 자리에 뜬다.
+function vfOpenDashboard(){
+  openVerseDashboard();
+}
 function vfOpenCollSettings(){
   closeVfKeepSwitch();
   _vsetBackTo=null;_vsetBackId=null;
@@ -14291,14 +14361,20 @@ function _vfSyncTopBar(){
   const lb=document.getElementById('vfTopLabel'),hb=document.getElementById('vfHomeBtn');
   if(lb){
     lb.style.display=on?'flex':'none';
-    // 저장 목록은 눌러 그 타일뷰로, 짝 목록에서 온 화면은 눌러 갈래를 돈다
+    // 저장 목록은 눌러 그 타일뷰로. 짝 목록에서 온 화면은 이제 제목이 아니라
+    // 제목 아래 칩(vfModeChip)을 눌러 갈래를 돈다 (v26-0907-8, HB 3-3).
     const vpOn=on&&!!(typeof _vpFullTab!=='undefined'&&_vpFullTab);
-    lb.classList.toggle('vf-keep-title',on&&(_vfNavKind==='keep'||vpOn));
-    lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpCycleFullTab:null);
+    lb.classList.toggle('vf-keep-title',on&&_vfNavKind==='keep');
+    lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;
     lb.innerHTML=on
-      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:''}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',Object.assign({key:'vf'},_vfNavRoll||{}))}</span>`
+      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${vpOn?_vAxisIconHTML(_vpCtx.axis):(_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:'')}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',Object.assign({key:'vf'},_vfNavRoll||{}))}</span>`
       :'';
     if(on){_rollFit(lb);_rollStart();}
+    const mc=document.getElementById('vfModeChip');
+    if(mc){
+      mc.style.display=vpOn?'flex':'none';
+      if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');
+    }
   }
   if(hb){
     // ⚠️ 홈은 **늘 보인다** (v26-0905-4, HB). 감추면 "모음 전체" 라는 것을
@@ -15442,9 +15518,14 @@ function vgSetTab(t){
 function _vgRenderTabs(){
   const row=document.getElementById('vgTabRow');
   if(!row)return;
+  row.innerHTML=_vpModeChipHTML(_vgTab(),'vgCycleTab()');
+}
+// 칩을 누르면 전체 → 말씀 → 명제 로 돈다 (v26-0907-8, HB 3-3 — 짝 목록에서 넘어온
+// 전체화면과 같은 결로 통일했다). _VL_TABS 순서를 그대로 쓴다.
+function vgCycleTab(){
   const cur=_vgTab();
-  row.innerHTML=_VL_TABS.map(([k,label])=>
-    `<button class="vl-tab${cur===k?' on':''}" onclick="vgSetTab('${k}')">${label}</button>`).join('');
+  const i=_VL_TABS.findIndex(x=>x[0]===cur);
+  vgSetTab(_VL_TABS[(i+1)%_VL_TABS.length][0]);
 }
 function renderVerseGrid(){
   const grid=document.getElementById('vgGrid'),scroll=document.getElementById('vgScroll');
@@ -19563,6 +19644,34 @@ function vDashSetCustom(){
 // 차례가 곧 화면 차례다 — 흐름이 왼쪽 (v26-0906-2, HB 3).
 // v26-0906-5 — 지도·연결·리듬 셋이 더 붙었다 (HB 1).
 const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];
+// v26-0907-8, HB 7 — 탭마다 제목 위에 놓을 작은 아이콘. 분포는 로고 메뉴의
+// '대시보드' 아이콘(원+반지름선)을 그대로 재사용한다 — 그 화면이 파이차트라
+// 뜻이 통한다.
+const _VDASH_TAB_ICON={
+  trend:'<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" stroke="none">'+
+    '<path d="M2 15 L2 11 L6 7 L9 10 L13 4 L17 8 L18 8 L18 15 Z" opacity=".88"/></svg>',
+  pie:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+    'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+
+    '<circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>',
+  map:'<svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" stroke="none">'+
+    '<rect x="2" y="2" width="4.6" height="4.6" rx="1"/><rect x="7.7" y="2" width="4.6" height="4.6" rx="1"/>'+
+    '<rect x="2" y="7.7" width="4.6" height="4.6" rx="1"/><rect x="7.7" y="7.7" width="4.6" height="4.6" rx="1"/>'+
+    '<rect x="13.4" y="7.7" width="4.6" height="4.6" rx="1"/><rect x="2" y="13.4" width="4.6" height="4.6" rx="1"/>'+
+    '<rect x="7.7" y="13.4" width="4.6" height="4.6" rx="1"/><rect x="13.4" y="13.4" width="4.6" height="4.6" rx="1"/>'+
+    '</svg>',
+  link:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+    'stroke-width="1.6" stroke-linecap="round">'+
+    '<path d="M5 14 L10 6 M10 6 L16 9 M5 14 L14 15"/>'+
+    '<circle cx="5" cy="14" r="2.1" fill="currentColor" stroke="none"/>'+
+    '<circle cx="10" cy="6" r="2.1" fill="currentColor" stroke="none"/>'+
+    '<circle cx="16" cy="9" r="2.1" fill="currentColor" stroke="none"/>'+
+    '<circle cx="14" cy="15" r="2.1" fill="currentColor" stroke="none"/></svg>',
+  rhythm:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+    'stroke-width="2.4" stroke-linecap="round">'+
+    '<path d="M2 3h7" opacity=".3"/><path d="M11 3h7" opacity=".9"/>'+
+    '<path d="M2 10h7" opacity=".6"/><path d="M11 10h7" opacity=".4"/>'+
+    '<path d="M2 17h7" opacity=".8"/><path d="M11 17h7" opacity=".5"/></svg>',
+};
 function _vDashView(){
   const v=_vDashPref().view;
   return _VDASH_VIEWS.some(x=>x[0]===v)?v:'trend';
@@ -19574,7 +19683,8 @@ function vDashSetView(v){
 function _vDashViewTabsHTML(){
   const cur=_vDashView();
   return _VDASH_VIEWS.map(([v,l])=>
-    `<span class="vdash-vtab${cur===v?' on':''}" onclick="vDashSetView('${v}')">${l}</span>`).join('');
+    `<span class="vdash-vtab${cur===v?' on':''}" onclick="vDashSetView('${v}')">`+
+    `${_VDASH_TAB_ICON[v]||''}${l}</span>`).join('');
 }
 function renderVerseDashboard(){
   const pref=_vDashPref();
@@ -20880,7 +20990,10 @@ function _vLinkAxis(){
 // ⚠️ 라이브러리를 못 쓴다(단일 파일·오프라인). 그래서 물리를 직접 돌린다.
 // ⚠️ **반드시 멈춰야 한다.** 화면을 옮기거나 대시보드를 닫을 때 _vgStop() 을
 //    부르지 않으면 애니메이션이 뒤에서 영원히 돈다 (배터리를 먹는다).
-const _VG_MAXL=14, _VG_MAXR=22;     // 주제 점 · 성경 점 수 상한 (넘으면 많은 순으로 자른다)
+// v26-0907-8, HB 2-1·2-2 — 예전엔 고정 상한(14/22)이었는데, 이제 사용자가
+// 듀얼 슬라이더로 "몇 등부터 몇 등까지 보일지" 직접 정한다. 절대 상한만 남긴다
+// (성능 안전판 — 후보 자체를 여기서 자른다. 태그가 수백 개여도 그래프는 안 죽는다).
+const _VG_RANK_MAX=60;
 // ⚠️ 주제 색에는 **회색을 넣지 않는다.** 성경 점이 회색이라, 주제가 회색으로
 //    돌아오는 순간(_VTR_COLORS 의 여섯째) 둘을 눈으로 못 가른다.
 const _VG_COLORS=['#5a70f8','#4bb3a6','#e0a458','#c2668f','#6aa5d8','#7c8cf9','#3fae86','#d08a4a'];
@@ -20936,13 +21049,89 @@ function _vgSel(){
 }
 function _vgDepth(){
   const n=parseInt(_vTrPref().vgDepth,10);
-  return(isFinite(n)&&n>=0&&n<=4)?n:1;
+  return(isFinite(n)&&n>=1&&n<=4)?n:1;
 }
 function vgDepthSet(v){
-  _vTrPref().vgDepth=Math.max(0,Math.min(4,parseInt(v,10)||0));
+  _vTrPref().vgDepth=Math.max(1,Math.min(4,parseInt(v,10)||1));
   save();
   _vgApplyFilter();
   renderVgPick();
+}
+// ── 노출 순위창 (2-1·2-2) — "몇 등부터 몇 등까지 그래프에 보일지".
+//   side 는 'L'(왼쪽 — 대분류/소주제/태그, 축에 따라 바뀐다) 또는 'R'(성경).
+function _vgRankPref(side){
+  const p=_vTrPref();
+  const key=side==='R'?'vgRankR':'vgRankL';
+  if(!p[key]||typeof p[key]!=='object')p[key]={lo:1,hi:20};
+  return p[key];
+}
+function _vgRankOf(side,total){
+  const r=_vgRankPref(side);
+  const max=Math.max(1,Math.min(total||1,_VG_RANK_MAX));
+  const lo=Math.max(1,Math.min(max,parseInt(r.lo,10)||1));
+  const hi=Math.max(lo,Math.min(max,parseInt(r.hi,10)||max));
+  return{lo,hi,max};
+}
+function vgRankSet(side,lo,hi){
+  const key=side==='R'?'vgRankR':'vgRankL';
+  _vTrPref()[key]={lo:Math.max(1,parseInt(lo,10)||1),hi:Math.max(1,parseInt(hi,10)||20)};
+  save();
+  renderVDashLink();   // 상한 자체가 바뀌므로 그래프를 통째로 다시 만든다
+}
+// 세로 두 손잡이 — _vTrRail2Bind 와 같은 결이지만 축이 세로다 (clientY/top/height).
+function _vgRankRailBind(el){
+  if(!el||el._railOn)return;
+  el._railOn=true;
+  const side=el.dataset.side;
+  const max=Math.max(1,parseInt(el.dataset.max,10)||1);
+  const fill=el.querySelector('.vgp-rank-fill');
+  const kLo=el.querySelector('.vgp-rank-knob[data-k="lo"]');
+  const kHi=el.querySelector('.vgp-rank-knob[data-k="hi"]');
+  let lo=parseInt(el.dataset.lo,10)||1, hi=parseInt(el.dataset.hi,10)||max;
+  let id=null,grab=null;
+  const fracOf=e=>{
+    const r=el.getBoundingClientRect();
+    if(r.height<=0)return 0;
+    return Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+  };
+  const valOf=f=>Math.max(1,Math.min(max,Math.round(1+f*(max-1))));
+  const pc=v=>(max<=1?0:((v-1)/(max-1))*100).toFixed(2)+'%';
+  const paint=()=>{
+    if(kLo){kLo.style.top=pc(lo);kLo.textContent=lo;}
+    if(kHi){kHi.style.top=pc(hi);kHi.textContent=hi;}
+    if(fill){fill.style.top=pc(lo);fill.style.height=`calc(${pc(hi)} - ${pc(lo)})`;}
+  };
+  const down=e=>{
+    if(id!==null)return;
+    id=e.pointerId;
+    const v=valOf(fracOf(e));
+    // 가까운 쪽을 잡는다 — 같으면 바깥으로 벌어지는 쪽 (안 그러면 한쪽에 갇힌다)
+    grab=(Math.abs(v-lo)<Math.abs(v-hi))?'lo':(Math.abs(v-lo)>Math.abs(v-hi))?'hi':(v<lo?'lo':'hi');
+    el.classList.add('dragging');
+    try{el.setPointerCapture(id);}catch(_){}
+    move(e);
+    e.preventDefault();
+  };
+  const move=e=>{
+    if(id===null||e.pointerId!==id)return;
+    const v=valOf(fracOf(e));
+    if(grab==='lo')lo=Math.max(1,Math.min(hi,v));
+    else hi=Math.min(max,Math.max(lo,v));
+    paint();
+    e.preventDefault();
+  };
+  const up=e=>{
+    if(id===null||e.pointerId!==id)return;
+    try{el.releasePointerCapture(id);}catch(_){}
+    id=null; grab=null;
+    el.classList.remove('dragging');
+    paint();
+    vgRankSet(side,lo,hi);
+  };
+  el.addEventListener('pointerdown',down);
+  el.addEventListener('pointermove',move);
+  el.addEventListener('pointerup',up);
+  el.addEventListener('pointercancel',up);
 }
 function vgToggleSel(id){
   const sel=_vgSel();
@@ -21000,20 +21189,26 @@ function _vgApplyFilter(){
   if(!_vgData||!_vgSim)return;
   const{N,E}=_vgData;
   const seeds=_vgSeeds(N);
-  const reach=_vgReach(N,E,seeds,_vgDepth());
+  // v26-0907-8, HB 8-2 — 검색어는 있는데 하나도 안 걸리면 '아무 것도 안 걸었다'
+  // 와 갈라야 한다. 안 그러면 _vgReach 가 null(=전부 보임)을 돌려줘 "검색이
+  // 무시된 것"처럼 보인다.
+  const searchEmpty=!!(_vgQuery&&!seeds.size);
+  const reach=searchEmpty?new Set():_vgReach(N,E,seeds,_vgDepth());
   N.forEach((n,i)=>{ n.hide=!!(reach&&!reach.has(i)); });
   _vgData.shown=reach?reach.size:N.length;
   if(_vgSim.mark)_vgSim.mark();
   if(_vgSim.wake)_vgSim.wake();      // 남은 점끼리 다시 자리를 잡는다
   const lb=document.getElementById('vgFilterNote');
   if(lb)lb.innerHTML=_vgFilterNoteHTML();
+  const eb=document.getElementById('vgEmptyState');
+  if(eb)eb.style.display=searchEmpty?'flex':'none';
 }
 function _vgFilterNoteHTML(){
   if(!_vgData)return '';
   const tot=_vgData.N.length, shown=_vgData.shown==null?tot:_vgData.shown;
   if(shown>=tot)return '';
   const why=_vgQuery?`'${esc(_vgQuery)}'`:`고른 ${_vgSel().length}개`;
-  return `${why} 에서 <b>${_vgDepth()}뎁스</b> — ${tot}개 중 <b>${shown}개</b> `+
+  return `${why} 에서 <b>${_vgDepth()}뎁스</b>까지 — ${tot}개 중 <b>${shown}개</b> `+
     `<span class="vdash-link" onclick="vgClearSel()">모두 보기</span>`;
 }
 function renderVDashLink(){
@@ -21035,12 +21230,35 @@ function renderVDashLink(){
   });
   let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
     _vTrChipsHTML('왼쪽','linkAxis',_VLINK_LEFTS,la)+`</div>`;
-  const L=[...lTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_MAXL);
-  const R=[...rTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_MAXR);
+  const Lfull=[...lTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_RANK_MAX);
+  const Rfull=[...rTot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0])).slice(0,_VG_RANK_MAX);
+  const rkL=_vgRankOf('L',Lfull.length), rkR=_vgRankOf('R',Rfull.length);
+  const L=Lfull.slice(rkL.lo-1,rkL.hi);
+  const R=Rfull.slice(rkR.lo-1,rkR.hi);
   if(!L.length||!R.length){
     box.innerHTML=html+'<div class="vdash-empty" style="text-align:center;">이 구간에는 이을 것이 없어요</div>';
     return;
   }
+  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다. v26-0907-8, HB 6 —
+  // 맨 아래(스크롤해야 보이던 자리)에서 왼쪽(범위) 바로 아래로 옮겼다.
+  const skew=[];
+  L.forEach(([l])=>{
+    const t2=lTot.get(l)||0;
+    if(t2<2)return;
+    let best='',bn=0;
+    R.forEach(([r])=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
+    if(best&&bn/t2>=0.6)skew.push({l,r:best,f:Math.round(bn/t2*100)});
+  });
+  if(skew.length){
+    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
+      skew.slice(0,3).map(s2=>`<b>${esc(s2.l)}</b>${_vTrJosaGa(s2.l)==='이'?'은':'는'} `+
+        `${s2.f}% 가 <b>${esc(s2.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
+  }
+  // 도움말 캡션 — 우상단. 넓으면 글자 그대로, 좁으면 ⓘ 하나로 접는다 (HB 6).
+  html+=`<div class="vlink-help">`+
+    `<span class="vlink-note-full">${esc(_VG_HELP_TX)}</span>`+
+    `<span class="vlink-note-ibtn" onclick="vgShowHelp()" title="도움말" aria-label="도움말">ⓘ</span>`+
+    `</div>`;
   // ── 껍데기를 먼저 넣는다 ──────────────────────────────────────────────
   // ⚠️ 폭을 **넣은 뒤에** 잰다. '골라보기'를 켜면 그래프 양옆에 목록이 서서
   //    그래프가 좁아지는데, 그 폭은 실제로 그려 봐야 알 수 있다.
@@ -21049,7 +21267,7 @@ function renderVDashLink(){
     `<span class="vg-find">`+
       `<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" `+
       `stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M13.5 13.5L18 18"/></svg>`+
-      `<input id="vgSearch" type="search" placeholder="이름으로 찾기" autocomplete="off" `+
+      `<input id="vgSearch" type="search" placeholder="" autocomplete="off" `+
       `value="${_vgEscAttr(_vgQuery)}" oninput="vgSearch(this.value)">`+
     `</span>`+
     `<span class="vg-btn${showPick?' on':''}" onclick="vgToggle('pick')" title="골라 보기">골라보기</span>`+
@@ -21065,32 +21283,21 @@ function renderVDashLink(){
       `<div class="vg-pane vg-pane-l" id="vgPaneL"></div>`+
       `<div class="vg-wrap">`+
       `<svg id="vgSvg" class="vg-svg"><g id="vgView"><g id="vgLinks"></g><g id="vgNodes"></g></g></svg>`+
+      // 8-2 — 검색 결과 없음. 옅은 연결탭 아이콘(7-4) + 안내 한 줄, 가운데.
+      `<div class="vg-search-empty" id="vgEmptyState" style="display:none;">`+
+      `${_VDASH_TAB_ICON.link}<span>검색결과가 없어요</span></div>`+
       `</div>`+
       `<div class="vg-pane vg-pane-r" id="vgPaneR"></div>`+
     `</div>`+
     (showCfg?`<div class="vg-drawer" id="vgCfgBody"></div>`:'');
-  // 가장 한쪽으로만 가는 짝 — 편중을 한 줄로 짚어 준다
-  const skew=[];
-  L.forEach(([l])=>{
-    const t2=lTot.get(l)||0;
-    if(t2<2)return;
-    let best='',bn=0;
-    R.forEach(([r])=>{const v=pair.get(l+SEP+r)||0;if(v>bn){bn=v;best=r;}});
-    if(best&&bn/t2>=0.6)skew.push({l,r:best,f:Math.round(bn/t2*100)});
-  });
-  if(skew.length){
-    html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
-      skew.slice(0,3).map(s2=>`<b>${esc(s2.l)}</b>${_vTrJosaGa(s2.l)==='이'?'은':'는'} `+
-        `${s2.f}% 가 <b>${esc(s2.r)}</b> 로 가요.`).join('<br>')+`</div></div>`;
-  }
-  html+=`<div class="vlink-note">점을 끌어 옮기고, 빈 곳을 끌어 밀어요. `+
-    `휠(또는 두 손가락)로 키우고 줄여요. 점을 톡 누르면 그 목록이 열려요.</div>`;
   box.innerHTML=html;
 
   // ── 이제 그래프가 실제로 차지한 폭을 재고, 그 폭으로 점을 만든다 ──────────
   const wrap=box.querySelector('.vg-wrap');
   const W=Math.max(200,Math.round((wrap&&wrap.clientWidth)||box.clientWidth||520)-2);
-  const H=Math.max(300,Math.min(520,Math.round(W*0.9)));
+  // v26-0907-8, HB 1-1 — 대시보드 모달을 키운 만큼 그래프도 커진 폭을 따라
+  // 세로로도 자랄 수 있게 위 한도를 520→760 으로 올린다.
+  const H=Math.max(300,Math.min(760,Math.round(W*0.9)));
   const svg=document.getElementById('vgSvg');
   if(svg){
     svg.setAttribute('width',W); svg.setAttribute('height',H);
@@ -21127,7 +21334,7 @@ function renderVDashLink(){
   let wmax=1; N.forEach(n=>{if(n.w>wmax)wmax=n.w;});
   N.forEach(n=>{ n.r=(n.kind==='topic'?5:3.5)+Math.sqrt(n.w/wmax)*(n.kind==='topic'?7:5); });
 
-  _vgData={N,E,W,H,la,shown:N.length};
+  _vgData={N,E,W,H,la,shown:N.length,Lfull,Rfull};
   _vgRun(N,E,W,H,mx,la);
   if(showPick)renderVgPick();
   if(showCfg)renderVgCfg();
@@ -21287,7 +21494,7 @@ function _vgRun(N,E,W,H,mx,la){
       p.vx+=(cx-p.x)*0.004; p.vy+=(cy-p.y)*0.004;
       // 못 박아 둔 점은 놓아 둔 자리로 되돌아온다 (머무는 힘이 0 이면 안 돈다)
       if(p.pin&&ST>0){p.vx+=(p.ax-p.x)*ST; p.vy+=(p.ay-p.y)*ST;}
-      if(p.fix){p.vx=0;p.vy=0;_vgClamp(p,W,H);return;}  // 끌고 있는 점은 손가락이 자리를 정한다
+      if(p.fix){p.vx=0;p.vy=0;return;}  // 끌고 있는 점은 손가락이 자리를 정한다 (안 가둔다)
       p.vx*=DAMP; p.vy*=DAMP;
       // ⚠️ 식힘을 이동에 곱한다 — 이것이 '춤추다 뚝 멈추는' 것을 없앤다
       const ddx=Math.max(-10,Math.min(10,p.vx))*alpha;
@@ -21375,8 +21582,9 @@ function _vgRun(N,E,W,H,mx,la){
     if(drag){
       const g=toGraph(e.clientX,e.clientY), n=N[drag.i];
       moved+=Math.abs(g.x-n.x)+Math.abs(g.y-n.y);
+      // ⚠️ 여기서 가두지 않는다 — 줌아웃했을 때 화면엔 보이는데 못 끄는
+      //    "보이지 않는 사각형"이 바로 이 자리의 클램프였다 (v26-0907-8, HB 1-2).
       n.x=g.x; n.y=g.y; n.vx=0; n.vy=0;
-      _vgClamp(n,W,H);
       if(_vgSim)_vgSim.wake();
       e.preventDefault();
     }else if(panFrom){
@@ -21467,13 +21675,36 @@ function _vpList(tab){
   return all;
 }
 function _vpTitle(tab){return((_vpCtx&&_vpCtx.val)||'')+' · '+_vpTabName(tab);}
-// ⌗ — 기울지 않은 우물 정. 아이콘은 테두리 없이 획만 (집 규칙)
-const _VP_HASH_SVG='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
-  'stroke-width="1.7" stroke-linecap="round"><path d="M7.5 3v14M12.5 3v14M3 7.5h14M3 12.5h14"/></svg>';
+// ▦ — 테두리 있는 3×3 격자, '타일뷰' 그 자체를 가리킨다. 예전엔 ⌗(우물 정)
+// 이었는데, 새로 생긴 #(태그 축) 아이콘과 닮아 헷갈려 바꿨다 (v26-0907-8, HB 3-5).
+const _VP_GRID_SVG='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.5" stroke-linejoin="round"><rect x="2.5" y="2.5" width="15" height="15" rx="1.5"/>'+
+  '<path d="M2.5 7.83h15M2.5 13.17h15M7.83 2.5v15M13.17 2.5v15"/></svg>';
 // ⛶ — 네 귀퉁이 꺾쇠 (HB 가 준 그림)
 const _VP_FULL_SVG='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
   'stroke-width="2" stroke-linecap="square"><path d="M3 7V3h4"/><path d="M13 3h4v4"/>'+
   '<path d="M17 13v4h-4"/><path d="M7 17H3v-4"/></svg>';
+// # — 태그 축 아이콘 (기울여 진짜 '#' 처럼 보이게). 성경 축은 이미 있는
+// Deeper(펼친 책) 아이콘을 그대로 쓴다 — 새로 안 만든다 (v26-0907-8, HB 3-1·3-2·3-3).
+const _VG_TAG_ICON_SVG='<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round"><path d="M7.5 2.5L5.5 17.5M14.5 2.5L12.5 17.5'+
+  'M2.5 7.5L17.5 6.5M2 13L17.5 12"/></svg>';
+// 축 아이콘 — 태그·성경만 있다 (대분류·소주제는 축을 가리킬 아이콘이 없다).
+// 골라보기 소제목(3-1)·노드 클릭으로 연 짝 목록 제목(3-2)·그 짝 목록에서
+// 넘어간 전체화면 제목(3-3)이 함께 쓴다.
+function _vAxisIconHTML(axis){
+  if(axis==='tag')return `<span class="vp-axisic">${_VG_TAG_ICON_SVG}</span>`;
+  if(axis==='book')return `<span class="vp-axisic">${_VLIST_KIND_TITLE.deeper}</span>`;
+  return '';
+}
+// 말씀 · 명제 · 말씀+명제 를 오가는 칩 하나 (3-3·3-4). 전체화면(제목 아래) ·
+// 타일뷰(기존 갈래 탭 자리) · 짝 목록 하단이 모두 이 모양을 쓴다.
+// onclickExpr 를 안 주면 눌리지 않는 '고정' 칩이 된다 (짝 목록 하단이 이 경우).
+function _vpModeChipHTML(tab,onclickExpr){
+  const label=tab==='verse'?'말씀':tab==='prop'?'명제':'말씀 + 명제';
+  return `<span class="vp-modechip"${onclickExpr?` onclick="${onclickExpr}"`:' style="cursor:default;"'}>`+
+    `${esc(label)}</span>`;
+}
 function openVPair(axis,val){
   if(!val)return;
   _vpCtx={axis,val};
@@ -21488,7 +21719,7 @@ function closeVPair(){
 function renderVPair(){
   const body=document.getElementById('vpBody'), ttl=document.getElementById('vpTitle');
   if(!body||!_vpCtx)return;
-  if(ttl)ttl.textContent=_vpCtx.val;
+  if(ttl)ttl.innerHTML=_vAxisIconHTML(_vpCtx.axis)+esc(_vpCtx.val);
   const rows=(tab)=>{
     const list=_vpList(tab);
     if(!list.length)return '<div class="vdash-empty" style="text-align:center;">없어요</div>';
@@ -21505,11 +21736,11 @@ function renderVPair(){
     `<span class="vp-n">${_vpList(tab).length}</span>`+
     `<span style="flex:1;"></span>`+
     `<span class="vp-ic" onclick="vpTile('${tab}')" title="${esc(_vpTabName(tab))} 타일뷰">`+
-    `${_VP_HASH_SVG}</span></div>`+
+    `${_VP_GRID_SVG}</span></div>`+
     `<div class="vp-list">${rows(tab)}</div></div>`;
   body.innerHTML=`<div class="vp-wrap">${pane('verse')}${pane('prop')}</div>`+
-    `<div class="vp-foot"><span class="vp-footnm">말씀 + 명제 함께</span>`+
-    `<span class="vp-ic" onclick="vpTile('all')" title="함께 타일뷰">${_VP_HASH_SVG}</span>`+
+    `<div class="vp-foot">${_vpModeChipHTML('all',null)}`+
+    `<span class="vp-ic" onclick="vpTile('all')" title="함께 타일뷰">${_VP_GRID_SVG}</span>`+
     `<span class="vp-ic" onclick="vpFull('all')" title="함께 전체화면">${_VP_FULL_SVG}</span></div>`;
 }
 // 목록 머리의 ⌗ — 그 갈래만 타일뷰로
@@ -21569,32 +21800,49 @@ function renderVgPick(){
   const L=document.getElementById('vgPaneL'), R=document.getElementById('vgPaneR');
   const D=document.getElementById('vgDepthRow');
   if(!L||!R||!_vgData)return;
-  const{N,la}=_vgData;
+  const{N,la,Lfull,Rfull}=_vgData;
   const sel=_vgSel(), d=_vgDepth();
-  const paneHTML=(kind,title)=>{
-    const rows=N.map((n,i)=>({n,i})).filter(x=>x.n.kind===kind)
-      .sort((x,y)=>y.n.w-x.n.w||_vDashKeyCmp(x.n.key,y.n.key));
-    if(!rows.length)return `<div class="vgp-gp">${esc(title)}</div>`;
-    return `<div class="vgp-gp">${esc(title)}</div><div class="vgp-list">`+
-      rows.map(({n})=>{
-        const id=n.kind+_VG_SEP+n.key;
-        const on=sel.indexOf(id)>=0;
-        return `<div class="vgp-row${on?' on':''}" onclick="vgToggleSel('${_vDashQ(id)}')">`+
-          `<span class="vgp-dot" style="background:${n.color||'var(--tx3)'};`+
-          `opacity:${n.kind==='topic'?'0.95':'0.45'};"></span>`+
-          `<span class="vgp-nm">${esc(n.key)}</span>`+
-          `<span class="vgp-n">${n.w}</span></div>`;
-      }).join('')+`</div>`;
+  const idx=new Map(N.map(n=>[n.kind+_VG_SEP+n.key,n]));
+  // 0열/4열 (HB 2-1·2-2) — 그래프 양옆에 세운 순위 슬라이더. 태그(왼쪽 목록)는
+  // 목록 앞(바깥쪽), 성경(오른쪽 목록)은 목록 뒤(바깥쪽)에 세워 그래프를 가운데
+  // 두고 대칭이 되게 한다.
+  const rankHTML=(side,rk,total)=>{
+    const pc=v=>(total<=1?0:((v-1)/(total-1))*100).toFixed(2)+'%';
+    return `<div class="vgp-rank" data-side="${side}" data-max="${total}" `+
+      `data-lo="${rk.lo}" data-hi="${rk.hi}" role="group" aria-label="노출 순위 범위">`+
+      `<div class="vgp-rank-fill" style="top:${pc(rk.lo)};height:calc(${pc(rk.hi)} - ${pc(rk.lo)});"></div>`+
+      `<div class="vgp-rank-knob" data-k="lo" style="top:${pc(rk.lo)};">${rk.lo}</div>`+
+      `<div class="vgp-rank-knob" data-k="hi" style="top:${pc(rk.hi)};">${rk.hi}</div>`+
+      `</div>`;
+  };
+  const paneHTML=(nodeKind,side,title,iconAxis,full,rk,rankFirst)=>{
+    const gp=`<div class="vgp-gp">${_vAxisIconHTML(iconAxis)}${esc(title)}</div>`;
+    if(!full.length)return gp;
+    const listHTML=`<div class="vgp-list">`+full.map(([key,w],i)=>{
+      const rank=i+1, active=(rank>=rk.lo&&rank<=rk.hi);
+      const id=nodeKind+_VG_SEP+key;
+      const node=idx.get(id);
+      const on=active&&sel.indexOf(id)>=0;
+      return `<div class="vgp-row${on?' on':''}${active?'':' rankoff'}"`+
+        (active?` onclick="vgToggleSel('${_vDashQ(id)}')"`:'')+`>`+
+        `<span class="vgp-dot" style="background:${node?(node.color||'var(--tx3)'):'var(--tx3)'};`+
+        `opacity:${node?(nodeKind==='topic'?'0.95':'0.45'):'0.25'};"></span>`+
+        `<span class="vgp-nm">${esc(key)}</span>`+
+        `<span class="vgp-n">${w}</span></div>`;
+    }).join('')+`</div>`;
+    const rank=rankHTML(side,rk,full.length);
+    return gp+`<div class="vgp-body">${rankFirst?rank+listHTML:listHTML+rank}</div>`;
   };
   const axisName=(_VLINK_LEFTS.find(x=>x[0]===la)||[,'주제'])[1];
-  L.innerHTML=paneHTML('topic',axisName);
-  R.innerHTML=paneHTML('book','성경');
+  L.innerHTML=paneHTML('topic','L',axisName,la,Lfull||[],_vgRankOf('L',(Lfull||[]).length),true);
+  R.innerHTML=paneHTML('book','R','성경','book',Rfull||[],_vgRankOf('R',(Rfull||[]).length),false);
+  [L,R].forEach(box=>box.querySelectorAll('.vgp-rank').forEach(_vgRankRailBind));
   if(D){
     D.innerHTML=`<div class="vtr-ctl" style="margin-bottom:0;">`+
       `<span class="vtr-ctl-lb">뎁스</span>`+
       `<span class="vtr-ctl-vals vtr-slides"><div class="vtr-slide on">`+
         `<span class="vtr-slide-lb" id="vgDepthLb">${d}뎁스</span>`+
-        _vTrRailHTML({min:0,max:4,val:d,done:'vgdepth',lb:'vgDepthLb',
+        _vTrRailHTML({min:1,max:4,val:d,done:'vgdepth',lb:'vgDepthLb',
                       suffix:'뎁스',label:'몇 걸음까지 볼지'})+
       `</div></span>`+
       `<span class="vdash-link" style="flex:0 0 auto;font-size:10.5px;" `+
@@ -21631,6 +21879,11 @@ function renderVgCfg(){
       `<span class="vdash-link" onclick="vgCfgReset()">기본값으로</span></div>`;
   _vTrBindRails(body);
 }
+// 그래프 도움말 캡션 — 예전엔 맨 아래였는데 우상단으로 옮겼다 (v26-0907-8, HB 6).
+// 토스트를 재사용한다 (새 팝업 부품을 안 만든다).
+const _VG_HELP_TX='점을 끌어 옮기고, 빈 곳을 끌어 밀어요. 휠(또는 두 손가락)로 키우고 줄여요. '+
+  '점을 톡 누르면 그 목록이 열려요.';
+function vgShowHelp(){ showToast(_VG_HELP_TX); }
 // ── 주간 리듬 (잔디) ─────────────────────────────────────────────────────
 // ── 리듬 (요일 × 한 시간) ────────────────────────────────────────────────
 // v26-0907-3, HB 5 — 잔디(요일 × 주)를 걷어내고 **요일 × 한 시간**으로 다시 짰다.
@@ -21927,11 +22180,16 @@ function _vDashMarkReturn(){
   //    되살아났다 ('현재 말씀 모음 · 소주제'). 아이폰에서 안 겪은 것은 그저
   //    파이 상세를 연 적이 없어서였다.
   _vDashReturn={dash:shown('vDashModal'),list:shown('verseListModal'),
-                detail:(shown('vDashDetailModal')&&_vDashDetailCtx)?{..._vDashDetailCtx}:null};
+                detail:(shown('vDashDetailModal')&&_vDashDetailCtx)?{..._vDashDetailCtx}:null,
+                // v26-0907-8, HB 4 — 짝 목록(vpModal)에서 나갔다면 그것부터 돌아온다.
+                vp:(shown('vpModal')&&typeof _vpCtx!=='undefined'&&_vpCtx)?{..._vpCtx}:null};
 }
 function _vDashMaybeReturn(){
   if(!_vDashReturn)return false;
   const r=_vDashReturn; _vDashReturn=null;
+  // 짝 목록에서 나간 것이면 그 목록만 되살린다 — 대시보드는 그 뒤에 이미
+  // (숨긴 채) 남아 있어 다시 열 필요가 없다.
+  if(r.vp&&typeof openVPair==='function'){openVPair(r.vp.axis,r.vp.val);return true;}
   if(r.list&&typeof openVerseListModal==='function')openVerseListModal();
   if(r.dash)openVerseDashboard();
   if(r.detail)vDashOpenDetail(r.detail.kind,r.detail.axis);
@@ -25146,6 +25404,16 @@ const DEV_INBOX_EMAIL='denartist@gmail.com';
 function _isDevAccount(){
   const u=window._fbUser;
   return !!(u&&u.email&&u.email.toLowerCase()===DEV_INBOX_EMAIL);
+}
+// 설정창 두 곳의 버전 배지 — 개발자 계정에만 보인다 (v26-0907-8, HB 0)
+function _syncDevVerBadge(){
+  const dev=_isDevAccount();
+  ['settingsVerBadge','verseSettingsVerBadge'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.style.display=dev?'':'none';
+    if(dev)el.textContent=APP_VERSION;
+  });
 }
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
@@ -30597,6 +30865,7 @@ function resizeAllInputs(){
 
 function openSettings(tabId){
   renderSettingsPanel();
+  _syncDevVerBadge();
   applyUiLevel();          // 등급에 맞게 보일 것만 남긴다
   document.getElementById('settingsOverlay').classList.add('open');
   setTimeout(()=>{

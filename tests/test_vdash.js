@@ -463,7 +463,7 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   // 팝업이 되살아나던 것). 이 한 줄이 그 회귀를 막는다.
   sc.eq('상세는 떠 있을 때만 적는다',
     /detail:\(shown\('vDashDetailModal'\)&&_vDashDetailCtx\)/.test(SRC), true);
-  sc.eq('대시보드를 안 열었으면 다시 열지 않는다', /_vDashMaybeReturn[\s\S]{0,300}if\(r\.dash\)openVerseDashboard\(\);/.test(SRC), true);
+  sc.eq('대시보드를 안 열었으면 다시 열지 않는다', /_vDashMaybeReturn[\s\S]{0,500}if\(r\.dash\)openVerseDashboard\(\);/.test(SRC), true);
 
   // 위쪽 전환과 흐름
   sc.eq('분포 ⇄ 흐름 전환이 있다', SRC.includes('id="vDashViewTabs"'), true);

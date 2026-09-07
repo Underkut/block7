@@ -32,9 +32,9 @@ console.log('\n시나리오 3 — 모든 전체화면의 책갈피에서 폴더�
   sc.eq('어느 진입 경로에서든 폴더 메뉴를 연다', SRC.includes('id="vfKeepMenuBtn" onclick="event.stopPropagation();toggleVfKeepSwitch()"'), true);
   sc.eq('폴더 선택은 해당 폴더 항목으로 내비게이션을 다시 만든다', SRC.includes("_vfSetNav(list,i,name,'keep')"), true);
   sc.eq('책갈피 색은 순환·닫기와 같은 전체화면 전경색이다', /\.vf-keepmenu\{[^}]*color:var\(--vf-tx,var\(--tx\)\);opacity:\.2/.test(SRC), true);
-  // v26-0904-4, HB — 순환·셔플(12) 과 책갈피(88) 사이에 '말씀 모음 설정'(50) 이
-  // 들어왔다. 책갈피는 그만큼 아래로 내려갔다.
-  sc.eq('책갈피는 말씀 모음 설정 아래에 놓인다', /\.vf-keepmenu\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 88px\);left:14px/.test(SRC), true);
+  // v26-0904-4, HB — 순환·셔플(12) 과 책갈피 사이에 '말씀 모음 설정'(50) 이
+  // 들어왔다. v26-0907-8 에서 대시보드(88) 까지 더 끼어들어 책갈피는 126 으로.
+  sc.eq('책갈피는 말씀 모음 설정·대시보드 아래에 놓인다', /\.vf-keepmenu\{[^}]*top:calc\(env\(safe-area-inset-top,0px\) \+ 126px\);left:14px/.test(SRC), true);
   sc.eq('진입 경로와 무관하게 책갈피를 표시한다', SRC.includes('id="vfKeepMenuBtn"'), true);
   // v26-0905-2, HB — 말씀 모음 설정에 비해 작아 보여 17×20 → 19×23 으로 키웠다
   // (세로가 가로보다 긴 비율 20:24 는 그대로).
@@ -210,11 +210,13 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
 {
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  // v26-0907-6 — 짝 목록에서 온 전체화면은 제목을 눌러 갈래를 돈다.
-  // 저장 목록은 예전 그대로 그 타일뷰로 간다 (앞자리를 그대로 지킨다).
+  // 저장 목록은 예전 그대로 제목을 눌러 그 타일뷰로 간다 (앞자리를 그대로 지킨다).
   sc.eq('저장 목록 제목에 타일뷰 동작을 연결한다',
-        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpCycleFullTab:null);"), true);
-  sc.eq('짝 목록에서 온 화면은 제목이 갈래 스위치', sync.includes('vpOn?vpCycleFullTab:null'), true);
+        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;"), true);
+  // v26-0907-8, HB 3-3 — 짝 목록에서 온 전체화면은 이제 제목이 아니라 제목
+  // 아래 칩(#vfModeChip)을 눌러 갈래를 돈다 (제목 탭은 안 보이는 상호작용이었다).
+  sc.eq('짝 목록에서 온 화면은 칩이 갈래 스위치',
+        sync.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
   const pool = slice('function _vgFilteredPool(){', 'function _vgHomeLabel');
   sc.eq('저장 폴더 기록만 타일 풀로 만든다', pool.includes("(_vgState.kind==='keep')"), true);
   const pick = slice('function vgPick(i){', 'function vgTapDateSort');
