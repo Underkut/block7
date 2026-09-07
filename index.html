@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0907-5  [production]  -->
+<!-- BLOCK7  v. 26-0907-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3902,6 +3902,34 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vg-btn-ic{display:inline-flex;align-items:center;line-height:0;}
 .vg-note{font-size:9.5px;color:var(--tx3);line-height:1.5;min-height:0;margin-bottom:2px;}
 .vg-note b{color:var(--ac-tx);font-weight:700;}
+/* ── 짝 목록 (v26-0907-6, HB 3) ── */
+/* ⚠️ 좁으면 위/아래, 넓으면 좌/우. 가르는 값은 팝업 폭이 아니라 **화면 폭**이다 —
+   팝업이 94vw 라 화면이 좁으면 팝업도 좁다. */
+.vp-wrap{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0;}
+.vp-pane{display:flex;flex-direction:column;flex:1 1 0;min-height:0;}
+@media (min-width:640px){
+  .vp-wrap{flex-direction:row;gap:14px;}
+}
+.vp-hd{display:flex;align-items:center;gap:6px;padding:0 2px 5px;
+  border-bottom:1px solid var(--bd2);flex:0 0 auto;}
+.vp-hdnm{font-size:11.5px;font-weight:700;color:var(--tx2);}
+.vp-n{font-size:10px;color:var(--tx3);font-family:var(--font-number);}
+.vp-ic{color:var(--tx3);cursor:pointer;line-height:0;padding:3px;flex:0 0 auto;
+  -webkit-tap-highlight-color:transparent;display:inline-flex;align-items:center;}
+.vp-ic:hover{color:var(--ac-tx);}
+.vp-list{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+.vp-row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;cursor:pointer;
+  border-bottom:1px solid var(--bd2);-webkit-tap-highlight-color:transparent;}
+.vp-row:hover{background:var(--vtr-a-bg);}
+.vp-c1{flex:0 0 auto;max-width:42%;font-size:11px;color:var(--ac-tx);font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ⚠️ 본문은 **한 줄뿐**이다. 두 줄이 되면 목록이 아니라 글 뭉치가 된다. */
+.vp-c2{flex:1;min-width:0;font-size:11px;color:var(--tx2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 하단은 '실행' 자리 — 합본으로 나가는 두 길만 둔다 (집 규칙) */
+.vp-foot{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding-top:9px;margin-top:2px;border-top:1px solid var(--bd2);flex:0 0 auto;}
+.vp-footnm{font-size:11px;color:var(--tx2);}
 /* 골라 보기 목록 */
 .vgp-gp{font-size:10px;font-weight:700;color:var(--tx3);margin:9px 0 4px;letter-spacing:.02em;}
 .vgp-row{display:flex;align-items:center;gap:7px;padding:5px 2px;cursor:pointer;
@@ -4537,7 +4565,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0907-5";
+const APP_VERSION = "v. 26-0907-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6144,6 +6172,16 @@ window._fbScriptsReady=new Promise(resolve=>{
     <div id="vDashDetailBody" style="overflow:auto;flex:1;min-height:0;"></div>
     <div class="vdd-dots" id="vDashDetailDots"></div>
   </div>
+</div>
+
+<!-- ══════ 짝 목록 — 말씀 · 명제 (v26-0907-6, HB 3) ══════ -->
+<div class="event-modal-overlay" id="vpOverlay" style="display:none;z-index:4712;" onclick="closeVPair()"></div>
+<div class="event-modal" id="vpModal" style="display:none;z-index:4713;width:min(94vw,760px);height:min(86vh,640px);flex-direction:column;">
+  <button class="modal-x" onclick="closeVPair()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="event-modal-title" id="vpTitle" style="margin-bottom:10px;padding:0 28px;"></div>
+  <div id="vpBody" style="display:flex;flex-direction:column;flex:1;min-height:0;"></div>
 </div>
 
 <!-- ══════ 연결 그래프 — 골라 보기 (v26-0907-5, HB 1-1) ══════ -->
@@ -9674,6 +9712,7 @@ const _ESC_CLOSERS=[
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   // 팝업류
+  ['vpModal',         ()=>closeVPair()],
   ['vgPickModal',     ()=>closeVgPick()],
   ['vgCfgModal',      ()=>closeVgCfg()],
   ['syncConflictModal',()=>closeSyncConflicts()],
@@ -14134,7 +14173,10 @@ function _vfSetNav(list,idx,label,kind,atCollection,parts,rollOpt){
   _vfNavKind=(kind&&_VLIST_KIND_TITLE[kind])?kind:null;
   _vfSyncTopBar();
 }
-function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavRoll=null;_vfNavKind=null;_vfHomeAtCollection=false;_vfSyncTopBar();}
+// ⚠️ **한 줄로 둔다.** tests/test_keep_fullscreen.js 가 이 함수를 '표시부터 줄
+//    끝까지' 한 줄로 잘라 eval 한다 — 여러 줄로 펴면 그 테스트가 구문 오류로 죽는다.
+//    (v26-0907-6 에 _vpFullTab 정리를 넣으면서 실제로 겪었다)
+function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavRoll=null;_vfNavKind=null;_vfHomeAtCollection=false;if(typeof _vpFullTab!=='undefined')_vpFullTab=null;_vfSyncTopBar();}
 // ── 지금 보는 것이 '말씀 설정에서 정한 그 모음' 그대로인가 ──────────
 // ⚠️⚠️ v26-0905-4, HB — "채운 홈이 **어떤 동작 뒤에** 나오도록 짜지 말고,
 //    설정한 대로인 상황이면 **언제나** 나오게 하면 되는 것 아니냐."
@@ -14248,8 +14290,10 @@ function _vfSyncTopBar(){
   const lb=document.getElementById('vfTopLabel'),hb=document.getElementById('vfHomeBtn');
   if(lb){
     lb.style.display=on?'flex':'none';
-    lb.classList.toggle('vf-keep-title',on&&_vfNavKind==='keep');
-    lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:null;
+    // 저장 목록은 눌러 그 타일뷰로, 짝 목록에서 온 화면은 눌러 갈래를 돈다
+    const vpOn=on&&!!(typeof _vpFullTab!=='undefined'&&_vpFullTab);
+    lb.classList.toggle('vf-keep-title',on&&(_vfNavKind==='keep'||vpOn));
+    lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpCycleFullTab:null);
     lb.innerHTML=on
       ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:''}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',Object.assign({key:'vf'},_vfNavRoll||{}))}</span>`
       :'';
@@ -21287,8 +21331,10 @@ function _vgRun(N,E,W,H,mx,la){
       const n=N[drag.i], o=nodeEls[drag.i];
       n.fix=false;
       if(o)o.g.classList.remove('on');
-      // 끌지 않고 톡 눌렀으면 그 목록을 연다
-      if(moved<5)vDashOpenFilter(n.kind==='book'?'book':la,n.key);
+      // 끌지 않고 톡 눌렀으면 **짝 목록**을 연다 (v26-0907-6, HB 3).
+      // 예전에는 타일뷰로 곧장 보냈는데, 점 하나를 눌렀을 뿐인데 정보가
+      // 한꺼번에 펼쳐져 버렸다.
+      if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);
       drag=null;
       if(_vgSim)_vgSim.wake();
     }
@@ -21300,6 +21346,151 @@ function _vgRun(N,E,W,H,mx,la){
     e.preventDefault();
     zoomTo(zm*(e.deltaY<0?1.12:1/1.12));
   },{passive:false});
+}
+// ══════ 짝 목록 — 말씀 · 명제 (v26-0907-6, HB 3) ══════
+// 연결 그래프에서 점을 톡 누르면 **타일뷰로 곧장 보내지 않고** 이 화면을 연다.
+// 타일뷰는 흘러가듯 둘러보기에는 좋지만, 점 하나를 눌렀을 때는 정보가 한꺼번에
+// 펼쳐져 버린다. 여기서는 두 목록을 나란히 놓고 한 줄씩 훑게 한다.
+//
+//   말씀 : 1열 성경 약어+장절(롬 3:23) · 2열 본문 한 줄
+//   명제 : 1열 대표 문구 1 · 2열 본문 한 줄
+//
+// ⚠️ 본문은 **한 줄을 넘지 않는다.** 자리가 허락하는 데까지만 보이고 뒤는 … 로
+//    줄인다 (두 줄이 되면 목록이 아니라 글 뭉치가 된다).
+// ⚠️ 나가는 길은 여섯이다 — {말씀·명제·함께} × {타일뷰·전체화면}.
+//    목록 머리의 ⌗ 가 넷 중 둘, 줄을 누르는 것이 둘, 나머지 둘(함께)은 하단 줄.
+let _vpCtx=null;       // {axis,val} — 어느 점에서 들어왔나
+let _vpFullTab=null;   // 전체화면이 이 화면에서 열렸으면 그 갈래 (제목 스위치용)
+const _VP_TABS=[['verse','말씀'],['prop','명제'],['all','함께']];
+function _vpTabName(t){return(_VP_TABS.find(x=>x[0]===t)||[,'함께'])[1];}
+// 대표 문구 1 — v.hi 는 '/' 로 여럿이 이어져 있다. 그 첫째만 쓴다.
+function _vpRep(v){
+  const h=String((v&&v.hi)||'').trim();
+  if(h)return h.split('/')[0].trim();
+  return String((v&&v.krText)||'').trim();
+}
+// 성경 약어 + 장절 — '로마서 3:23' → '롬 3:23'
+function _vpShortRef(v){
+  const ref=String((v&&v.ref)||'').trim();
+  const m=ref.match(/^(.+?)\s+(\d.*)$/);
+  if(!m)return ref;
+  return _bibleShort(m[1].trim())+' '+m[2].trim();
+}
+// 지금 대시보드 범위·기간 안에서 axis=val 인 말씀들 (겹치는 것은 하나로)
+function _vpPool(){
+  if(!_vpCtx)return[];
+  const sc=_vDashScope();
+  const seen=new Set(), out=[];
+  _vDashWinEntries(sc.kind,'all',sc.unit,sc.span,sc).forEach(e=>{
+    if(_vDashKeysOf(e.ref,_vpCtx.axis,e.v).indexOf(_vpCtx.val)<0)return;
+    if(seen.has(e.ref))return;
+    seen.add(e.ref);
+    const v=e.v||_vDashVerse(e.ref)||
+      ((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(e.ref):null);
+    if(v)out.push(v);
+  });
+  return out;
+}
+function _vpList(tab){
+  const all=_vpPool();
+  if(tab==='verse')return all.filter(v=>!_vfIsProp(v));
+  if(tab==='prop') return all.filter(v=>_vfIsProp(v));
+  return all;
+}
+function _vpTitle(tab){return((_vpCtx&&_vpCtx.val)||'')+' · '+_vpTabName(tab);}
+// ⌗ — 기울지 않은 우물 정. 아이콘은 테두리 없이 획만 (집 규칙)
+const _VP_HASH_SVG='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round"><path d="M7.5 3v14M12.5 3v14M3 7.5h14M3 12.5h14"/></svg>';
+// ⛶ — 네 귀퉁이 꺾쇠 (HB 가 준 그림)
+const _VP_FULL_SVG='<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" '+
+  'stroke-width="2" stroke-linecap="square"><path d="M3 7V3h4"/><path d="M13 3h4v4"/>'+
+  '<path d="M17 13v4h-4"/><path d="M7 17H3v-4"/></svg>';
+function openVPair(axis,val){
+  if(!val)return;
+  _vpCtx={axis,val};
+  document.getElementById('vpOverlay').style.display='block';
+  document.getElementById('vpModal').style.display='flex';
+  renderVPair();
+}
+function closeVPair(){
+  document.getElementById('vpOverlay').style.display='none';
+  document.getElementById('vpModal').style.display='none';
+}
+function renderVPair(){
+  const body=document.getElementById('vpBody'), ttl=document.getElementById('vpTitle');
+  if(!body||!_vpCtx)return;
+  if(ttl)ttl.textContent=_vpCtx.val;
+  const rows=(tab)=>{
+    const list=_vpList(tab);
+    if(!list.length)return '<div class="vdash-empty" style="text-align:center;">없어요</div>';
+    return list.map(v=>{
+      const c1=(tab==='prop')?_vpRep(v):_vpShortRef(v);
+      const c2=String(v.krText||'').trim();
+      return `<div class="vp-row" onclick="vpOpenVerse('${_vDashQ(tab)}','${_vDashQ(v.ref||'')}')">`+
+        `<span class="vp-c1">${esc(c1)}</span>`+
+        `<span class="vp-c2">${esc(c2)}</span></div>`;
+    }).join('');
+  };
+  const pane=(tab)=>`<div class="vp-pane">`+
+    `<div class="vp-hd"><span class="vp-hdnm">${esc(_vpTabName(tab))}</span>`+
+    `<span class="vp-n">${_vpList(tab).length}</span>`+
+    `<span style="flex:1;"></span>`+
+    `<span class="vp-ic" onclick="vpTile('${tab}')" title="${esc(_vpTabName(tab))} 타일뷰">`+
+    `${_VP_HASH_SVG}</span></div>`+
+    `<div class="vp-list">${rows(tab)}</div></div>`;
+  body.innerHTML=`<div class="vp-wrap">${pane('verse')}${pane('prop')}</div>`+
+    `<div class="vp-foot"><span class="vp-footnm">말씀 + 명제 함께</span>`+
+    `<span class="vp-ic" onclick="vpTile('all')" title="함께 타일뷰">${_VP_HASH_SVG}</span>`+
+    `<span class="vp-ic" onclick="vpFull('all')" title="함께 전체화면">${_VP_FULL_SVG}</span></div>`;
+}
+// 목록 머리의 ⌗ — 그 갈래만 타일뷰로
+function vpTile(tab){
+  if(!_vpCtx)return;
+  const ax=_vpCtx.axis, val=_vpCtx.val;
+  _vDashMarkReturn();
+  closeVPair(); closeVDashDetail(); closeVerseDashboard(); closeVerseListModal();
+  openVerseGrid(ax,val);
+  vgSetTab(tab);
+}
+// 하단 ⛶ — 그 갈래를 전체화면으로 (첫 항목부터)
+function vpFull(tab){ _vpGoFull(tab,''); }
+// 목록의 한 줄 — 그 말씀을 전체화면으로
+function vpOpenVerse(tab,ref){ _vpGoFull(tab,ref); }
+function _vpGoFull(tab,ref){
+  if(!_vpCtx)return;
+  const list=_vpList(tab);
+  if(!list.length){showToast('보여줄 말씀이 없어요');return;}
+  let i=ref?list.findIndex(v=>String(v.ref||'')===String(ref)):0;
+  if(i<0)i=0;
+  _vDashMarkReturn();
+  closeVPair();
+  // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 그래서 갈래와
+  //    이동 목록은 **연 뒤에** 심는다. 먼저 심으면 그 자리에서 지워진다.
+  _vfOverrideVerse=list[i];
+  openVerseFull(true);
+  _vpFullTab=tab;
+  _vfSetNav(list,i,_vpTitle(tab));
+  _vfOverrideVerse=list[i];
+  _vfSyncTopBar();
+  _verseFullRender();
+}
+// 전체화면 위 가운데 제목을 누르면 말씀 → 명제 → 함께 로 돈다.
+// ⚠️ 세 갈래를 도는 까닭 — '함께'도 머무를 수 있는 자리라서다. 둘만 오가면
+//    합본에서 빠져나온 뒤 되돌아갈 길이 없어진다.
+function vpCycleFullTab(){
+  if(!_vpCtx||!_vpFullTab)return;
+  const i=_VP_TABS.findIndex(x=>x[0]===_vpFullTab);
+  const next=_VP_TABS[(i+1)%_VP_TABS.length][0];
+  const cur=_vfCurrentVerse();
+  const list=_vpList(next);
+  if(!list.length){showToast(_vpTabName(next)+'이 없어요');return;}
+  let j=cur?list.findIndex(v=>String(v.ref||'')===String(cur.ref||'')):0;
+  if(j<0)j=0;
+  _vpFullTab=next;
+  _vfSetNav(list,j,_vpTitle(next));
+  _vfOverrideVerse=list[j];
+  _vfSyncTopBar();
+  _verseFullRender();
 }
 // ══════ 골라 보기 팝업 (1-1) ══════
 function openVgPick(){

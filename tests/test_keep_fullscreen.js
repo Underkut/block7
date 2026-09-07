@@ -210,7 +210,11 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
 {
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  sc.eq('저장 목록 제목에 타일뷰 동작을 연결한다', sync.includes('lb.onclick=(on&&_vfNavKind===\'keep\')?vfOpenKeepGrid:null;'), true);
+  // v26-0907-6 — 짝 목록에서 온 전체화면은 제목을 눌러 갈래를 돈다.
+  // 저장 목록은 예전 그대로 그 타일뷰로 간다 (앞자리를 그대로 지킨다).
+  sc.eq('저장 목록 제목에 타일뷰 동작을 연결한다',
+        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpCycleFullTab:null);"), true);
+  sc.eq('짝 목록에서 온 화면은 제목이 갈래 스위치', sync.includes('vpOn?vpCycleFullTab:null'), true);
   const pool = slice('function _vgFilteredPool(){', 'function _vgHomeLabel');
   sc.eq('저장 폴더 기록만 타일 풀로 만든다', pool.includes("(_vgState.kind==='keep')"), true);
   const pick = slice('function vgPick(i){', 'function vgTapDateSort');
