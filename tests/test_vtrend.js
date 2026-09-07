@@ -486,8 +486,11 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
         SRC.includes("if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);"), true);
   sc.eq('점 · 선 상한이 있다', [_VG_MAXL, _VG_MAXR], [14, 22]);
   // v26-0907-5 — 배치 값이 팝업에서 고쳐지므로 상수가 아니라 설정에서 온다
-  sc.eq('물리 값은 설정에서 온다',
-        /const REST=cfg\.rest, K=cfg\.pull\/1000, REP=cfg\.rep, DAMP=0\.86;/.test(SRC), true);
+  // v26-0907-7 — 슬라이더가 **미는 동안** 값을 갈아끼우므로 const 로 굳히지 않는다
+  sc.eq('물리 값을 담은 통이 있다', SRC.includes('const P=_vgCfg();'), true);
+  sc.eq('미는 힘을 통에서 읽는다', SRC.includes('const f=P.rep*_rep2(a,b)/dd'), true);
+  sc.eq('당기는 힘을 통에서 읽는다', SRC.includes('const f=(d-P.rest)*(P.pull/1000)'), true);
+  sc.eq('통을 갈아끼우는 문이 있다', /setCfg:\(k,v\)=>\{\s*\n?\s*P\[k\]=v;/.test(SRC), true);
   sc.eq('아무 선에도 안 걸린 점은 뺀다', SRC.includes('const N=nodes.filter(n=>n.deg>0);'), true);
   sc.eq('처음 몇 판은 안 그리고 돌려 둔다', SRC.includes('for(let i=0;i<160;i++)tick();'), true);
 
@@ -502,7 +505,7 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   // 같은 갈래끼리 더 세게 민다 — 주제끼리가 가장 세다 (이름이 길어 먼저 부딪힌다)
   sc.eq('같은 갈래를 더 민다',
         SRC.includes("const _rep2=(a,b)=>(a.kind!==b.kind)?1:(a.kind==='topic'?7:2.2);"), true);
-  sc.eq('그 세기를 실제로 쓴다', SRC.includes('const f=REP*_rep2(a,b)/dd'), true);
+  sc.eq('그 세기를 실제로 쓴다', SRC.includes('const f=P.rep*_rep2(a,b)/dd'), true);
   // 식힘을 자리 이동에 곱한다 — 이것이 '춤추다 뚝 멈추는' 것을 없앤다
   sc.eq('식힘을 자리 이동에 곱한다',
         /const ddx=Math\.max\(-10,Math\.min\(10,p\.vx\)\)\*alpha;/.test(SRC), true);
@@ -521,10 +524,36 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('숨긴 점은 물리에서도 빠진다', SRC.includes('if(a.hide)continue;'), true);
   // 2-1 · 배치 값 팝업
   sc.eq('배치 값 넷', SRC.includes("const _VG_CFG_ROWS=["), true);
-  sc.eq('기본값이 있다', SRC.includes("const _VG_DEF={rest:64,rep:760,pull:24,font:100};"), true);
-  sc.eq('두 팝업 다 ESC 로 닫힌다',
-        SRC.includes("['vgPickModal',     ()=>closeVgPick()],") &&
-        SRC.includes("['vgCfgModal',      ()=>closeVgCfg()],"), true);
+  // 머무는 힘 기본 120 — 놓은 자리에서 20px 안쪽만 흘러간다 (브라우저에서 실측)
+  sc.eq('기본값이 있다', SRC.includes("const _VG_DEF={rest:64,rep:760,pull:24,stick:120,font:100};"), true);
+
+  // ═══ v26-0907-7 (HB 1·2) — 팝업을 걷어내고 그래프 곁에서 만진다 ═══
+  sc.eq('골라보기 팝업은 없앴다', SRC.includes('id="vgPickModal"'), false);
+  sc.eq('배치 팝업도 없앴다', SRC.includes('id="vgCfgModal"'), false);
+  sc.eq('두 판이 그래프와 한 무대에 선다',
+        SRC.includes('<div class="vg-pane vg-pane-l" id="vgPaneL">') &&
+        SRC.includes('<div class="vg-pane vg-pane-r" id="vgPaneR">'), true);
+  sc.eq('좁으면 그래프가 먼저, 목록은 아래로',
+        /\.vg-stage \.vg-wrap\{order:1;flex:1 1 100%;/.test(SRC), true);
+  sc.eq('넓으면 주제 왼쪽 · 성경 오른쪽',
+        /\.vg-stage\.pick \.vg-pane-l\{order:0;/.test(SRC) &&
+        /\.vg-stage\.pick \.vg-pane-r\{order:2;/.test(SRC), true);
+  // 폭은 **넣은 뒤에** 잰다 — 옆 목록이 켜지면 그래프가 좁아진다
+  sc.eq('껍데기를 넣고 나서 폭을 잰다',
+        /box\.innerHTML=html;[\s\S]{0,200}?const wrap=box\.querySelector\('\.vg-wrap'\);/.test(SRC), true);
+  // 배치 값은 미는 동안 바로 먹인다 — 다시 그리지도 저장하지도 않는다
+  sc.eq('배치 슬라이더는 live', SRC.includes("label:nm,live:true}"), true);
+  sc.eq('미는 동안 바로 먹인다',
+        SRC.includes("if(el.dataset.live==='1'&&v!==lastLive){lastLive=v;fire(v,true);}"), true);
+  sc.eq('미는 동안에는 저장하지 않는다', SRC.includes('if(!live)save();'), true);
+  sc.eq('배치를 바꿔도 다시 그리지 않는다',
+        /function vgCfgSet\(key,val,live\)\{[\s\S]{0,400}?\}/.exec(SRC)[0].includes('renderVDashLink'), false);
+  // 머무는 힘 (HB 가 '복원력' 이라 부른 것)
+  sc.eq('머무는 힘이 있다', SRC.includes("['stick','머무는 힘',0,240,''"), true);
+  sc.eq('못 박은 점을 그 자리로 당긴다',
+        SRC.includes('if(p.pin&&ST>0){p.vx+=(p.ax-p.x)*ST; p.vy+=(p.ay-p.y)*ST;}'), true);
+  sc.eq('끌어다 놓으면 못을 박는다', /n\.pin=true; n\.ax=n\.x; n\.ay=n\.y;/.test(SRC), true);
+  sc.eq('못 박힌 것을 테두리로 알린다', /\.vg-node\.pin circle\{stroke:var\(--ac\);/.test(SRC), true);
   // 2-2 · 키울 때 제곱근만큼만 커진다
   sc.eq('크기는 √배율만 커진다', SRC.includes('const k=1/Math.sqrt(zm);'), true);
   sc.eq('점·글자·선 모두 되돌려 곱한다',
