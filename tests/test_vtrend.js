@@ -434,13 +434,13 @@ console.log('\n시나리오 12 — 성경 지도');
   sc.eq('빈자리 이름은 지도에 안 들어간다',
         /_vDashKeysOf\(e\.ref,'book',e\.v\)\.forEach\(b=>\{\s*\n?\s*if\(_vDashIsPlaceholder\(b\)\)return;/.test(SRC), true);
   sc.eq('안 밟은 장도 칸으로 남긴다', SRC.includes('for(let i=1;i<=total;i++){'), true);
-  // ⚠️ 장 격자는 누른 칸이 있는 쪽(구약/신약) 바로 아래에 편다 — 맨 끝에 붙이면
-  //    구약을 눌렀는데 신약 격자를 다 지나 한참 내려가야 보인다 (v26-0906-6).
-  // v26-0907-9, HB 93-1-1 — grid() 에 접기 id('ot'/'nt')가 더 붙었다.
-  sc.eq('구약을 누르면 구약 아래에',
-    SRC.includes("html+=grid('구약','ot',BIBLE_ORDER_OT,_VMAP_GROUPS_OT)+(isOT?chapsHTML:'')"), true);
-  sc.eq('신약을 누르면 신약 아래에',
-    SRC.includes("+grid('신약','nt',BIBLE_ORDER_NT,_VMAP_GROUPS_NT)+(p.mapBook&&!isOT?chapsHTML:'');"), true);
+  // v26-0908-2, HB 2-2-1 — 구약/신약 덩어리 끝이 아니라 **고른 성경이 있는
+  //   그 갈래 줄 바로 아래**에 편다. 누른 자리에서 눈이 안 떠나야 한다.
+  sc.eq('장 격자는 고른 성경이 있는 줄 바로 아래에',
+    SRC.includes("((p.mapBook&&g.books.indexOf(p.mapBook)>=0)?chapsHTML:'')).join('');"), true);
+  sc.eq('접혀 있어도 그 갈래 아래에 편다',
+    SRC.includes("((p.mapBook&&order.indexOf(p.mapBook)>=0)?chapsHTML:'');"), true);
+  sc.eq('맨 끝에 한 번 더 붙이던 옛 자리는 없앴다', SRC.includes('isOT?chapsHTML'), false);
 }
 
 // ═══ 14. v26-0907-3 — 지도 손질 (HB 6) ═══
@@ -462,21 +462,33 @@ console.log('\n시나리오 14 — 지도: 갈래 줄바꿈 · 구간 슬라이�
         new Set(ot.concat(nt).flatMap(g=>g.books)).size, 66);
 
   // 6-3 양쪽 손잡이 — 아무것도 안 골랐으면 구간 전체
+  // v26-0908-2, HB 2-1-2 — 손잡이가 집는 값이 말씀 카운트에서 **성경 순위**로
+  //   바뀌었다. 1등이 가장 많이 다룬 곳이라 첫 값이 0 이 아니라 1 이다.
+  //   ⚠️ 저장 키도 mapRg → mapRg2 로 옮겼다. 뜻이 아예 달라진 값이라 옛 값을
+  //      그대로 읽으면 엉뚱한 구간이 걸린 채로 열린다.
   ST.settings.vTrPref = null;
   const full = _vMapRange('count', 12);
-  sc.eq('처음엔 구간 전체', [full.lo, full.hi, full.full], [0, 12, true]);
-  _vTrPref().mapRg = { count: { lo: 3, hi: 8 } };
+  sc.eq('처음엔 구간 전체(1~N)', [full.lo, full.hi, full.full], [1, 12, true]);
+  _vTrPref().mapRg2 = { count: { lo: 3, hi: 8 } };
   const cut = _vMapRange('count', 12);
   sc.eq('고른 구간을 쓴다', [cut.lo, cut.hi, cut.full], [3, 8, false]);
   // 자료가 줄어 최댓값이 작아져도 구간이 밖으로 삐져나가지 않는다
   const small = _vMapRange('count', 5);
   sc.eq('최댓값이 줄면 함께 줄어든다', [small.lo, small.hi], [3, 5]);
-  _vTrPref().mapRg = { count: { lo: 9, hi: 2 } };
+  _vTrPref().mapRg2 = { count: { lo: 9, hi: 2 } };
   sc.eq('뒤집힌 값도 바로잡는다', (r => r.lo <= r.hi)(_vMapRange('count', 12)), true);
   ST.settings.vTrPref = null;
-  // 보기(횟수/묵힘)마다 구간을 따로 든다 — 하나는 '번', 하나는 '주'다
-  sc.eq('보기마다 구간이 따로', SRC.includes("p.mapRg[mode]={lo:Math.round(lo),hi:Math.round(hi)};"), true);
-  sc.eq('구간 밖은 지우지 않고 흐린다', SRC.includes("if(v<rg.lo||v>rg.hi)cls+=' out';"), true);
+  // 보기(횟수/묵힘)마다 구간을 따로 든다
+  sc.eq('보기마다 구간이 따로', SRC.includes("p.mapRg2[mode]={lo:Math.round(lo),hi:Math.round(hi)};"), true);
+  sc.eq('구간 밖은 지우지 않고 흐린다', SRC.includes("if(!rk||rk<rg.lo||rk>rg.hi)cls+=' out';"), true);
+  sc.eq('순위표를 따로 만든다(값 큰 차례)', SRC.includes('function _vMapRanks(stats,mode,nowKey){'), true);
+  sc.eq('왼쪽 글자와 손잡이가 같은 단위를 쓴다',
+    SRC.includes('const rgLbTx=_vTrExclLabel(rg.lo-1, rk.total-rg.hi);'), true);
+  // 2-1-1 — 두 손잡이 사이 바 위에 남은 성경 개수
+  sc.eq('두 손잡이 사이에 남은 개수를 적는다',
+    SRC.includes('<span class="vtr-rail-n">${Math.max(0,o.hi-o.lo+1)}</span>'), true);
+  sc.eq('미는 동안에도 그 숫자가 따라간다',
+    SRC.includes('if(midN)midN.textContent=String(Math.max(0,hi-lo+1));'), true);
   sc.eq('두 손잡이는 서로를 밀지 않는다',
         SRC.includes("if(grab==='lo')lo=Math.max(min,Math.min(hi,v));"), true);
 
@@ -539,8 +551,16 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   // v26-0907-9, HB 92 — 슬라이더를 걷어내고 알약칩(1·2·3·전체)으로 바꿨다.
   sc.eq('뎁스는 이제 슬라이더가 아니라 칩', SRC.includes("[1,2,3,4].map(v=>"), true);
   // v26-0908-1, HB 92 — 글자만 있던 칩을 테두리 있는 진짜 알약 버튼으로.
-  sc.eq('뎁스는 테두리 있는 알약 버튼', SRC.includes('<span class="vg-depthchip${d===v?\' on\':\'\'}"'), true);
-  sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("${v===4?'전체':v}</span>"), true);
+  sc.eq('뎁스는 테두리 있는 알약 버튼',
+    SRC.includes('<span class="vg-depthchip${d===v?\' on\':\'\'}${seeded?\'\':\' idle\'}" '), true);
+  sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("${v===4?'전체':v}"), true);
+  // v26-0908-2, HB 1-2 — "뎁스가 그래프에 안 먹는다". 값은 잘 들어가는데
+  //   두 갈래 그물이라 2뎁스면 이어진 곳을 거의 다 훑어 3·전체가 2와 같아진다.
+  //   칩마다 그 뎁스에서 몇 개가 보이는지를 미리 세어 적어 두면 그것이 보인다.
+  sc.eq('칩마다 그 뎁스의 개수를 적는다', SRC.includes('<span class="vg-depthn">${cnt[v-1]}</span>'), true);
+  sc.eq('뎁스별 개수를 세는 함수', SRC.includes('function _vgDepthCounts(){'), true);
+  sc.eq('씨앗이 없으면 null (뎁스가 할 일이 없다)',
+    /function _vgDepthCounts\(\)\{[\s\S]{0,220}if\(!seeds\.size\)return null;/.test(SRC), true);
   sc.eq('알약 CSS — 테두리·둥근 모서리', /\.vg-depthchip\{[^}]*border:1px solid var\(--bd2\)/.test(SRC), true);
   // 고른 점이 없으면 뎁스가 아무 일도 안 한다 — 그 사정을 적어 준다
   sc.eq('씨앗이 없으면 까닭을 적는다', SRC.includes('<span class="vg-depthnote">점을 고르면 적용돼요</span>'), true);
@@ -623,7 +643,10 @@ console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 �
         /function _vfClearNav\(\)\{[^\n]*_vfSyncTopBar\(\);\}/.test(SRC), true);
   // v26-0907-9, HB 91-3-3-1 — 제목을 누르면 이제 그 필터가 걸린 타일뷰로 간다.
   // 갈래를 도는 일은 제목 아래 칩(#vfModeChip)이 맡는다.
-  sc.eq('제목을 누르면 필터 걸린 타일뷰로', SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
+  // v26-0908-2, HB 2-2-4 — 헤더에 무엇이 떠 있든 그 목록의 타일뷰로 가는 문이다.
+  sc.eq('제목이 가리키는 타일뷰를 한 곳에서 정한다',
+    SRC.includes('const tileFn=_vfTitleTileFn(on,vpOn);') &&
+    SRC.includes('lb.onclick=tileFn;'), true);
   sc.eq('칩이 제목 아래에서 돈다(세 갈래)', SRC.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
   // v26-0908-1, HB 91-3-2 — 한 라운드 앞서 이걸 '함께 ⟷ 한 갈래' 이진 토글로
   // 잘못 만들었다. HB 가 말한 것은 **세 모드**(말씀만 / 명제만 / 둘 다)를 돌면서
@@ -841,7 +864,7 @@ console.log('\n시나리오 22 — 3-1..3-5 축 아이콘 · 통합 모드칩 ·
   sc.eq('타일뷰 갈래 탭도 같은 칩', SRC.includes('row.innerHTML=_vpModeChipHTML(_vgTab(),'), true);
   sc.eq('타일뷰 칩도 세 갈래', SRC.includes('function vgCycleTab(){ vgSetTab(_vpNextTab(_vgTab())); }'), true);
   sc.eq('전체화면 제목을 누르면 필터 걸린 타일뷰로(91-3-3-1)',
-        SRC.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
+        SRC.includes('if(vpOn)return vpGoToFilteredTile;'), true);
   sc.eq('전체화면 칩 자리(#vfModeChip)가 있다',
         SRC.includes('<div class="vf-modechiprow" id="vfModeChip" style="display:none;"></div>'), true);
   // v26-0907-9, HB 91-3-2 — HB 가 이 칩만은 얇은 테두리 알약으로 달라고 직접
@@ -941,21 +964,24 @@ console.log('\n시나리오 28 — 93-1 지도 구약/신약 접기 · 순위창
   sc.eq('접힌 갈래는 갈래마다 칩 하나', SRC.includes('return head+`<div class="vmap-folds">`+_vMapGroups(order,defs).map(gp=>{'), true);
   sc.eq('칩에 카운트·색이 연동된다', SRC.includes('const sty=cnt?`background:${_vMapShade(f,mode===\'aged\')};color:${_vMapInk(f)};`:\'\';'), true);
   // HB — 카운트는 전체가 아니라 지금 걸린 구간 필터를 먹인 값이어야 한다
-  sc.eq('카운트는 구간 필터를 먹인 값만', SRC.includes('books.forEach(b=>{ const g=stats.get(b); if(!inRg(g))return;'), true);
+  sc.eq('카운트는 구간 필터를 먹인 값만', SRC.includes('books.forEach(b=>{ if(!inRg(b))return;'), true);
   sc.eq('칩 색은 칩끼리 견준다(foldMax)', SRC.includes('const f=cnt?(mode===\'aged\'?Math.min(1,((isFinite(minW)?minW:0)+1)/26):(sum/foldMax)):0;'), true);
   sc.eq('접었다 펼쳤다는 화면마다 기억한다(p.mapFold)', SRC.includes("if(!p.mapFold||typeof p.mapFold!=='object')p.mapFold={};"), true);
   // 93-1-2-1 — 슬라이더 비활성 트랙이 --bd2(진함) 대신 --bd(연함)
   sc.eq('가로 슬라이더 트랙이 옅어졌다', SRC.includes('.vtr-rail::before{content:"";position:absolute;left:0;right:0;top:9.5px;height:3px;\n  border-radius:2px;background:var(--bd);}'), true);
   sc.eq('세로 순위창 트랙도 옅어졌다', SRC.includes('.vgp-rank::before{content:"";position:absolute;top:0;bottom:0;left:10.5px;width:3px;\n  border-radius:2px;background:var(--bd);}'), true);
   // v26-0908-1, HB 11-2 — ▲▼ 세모는 뜻을 알 수 없었다. 말로 적는다.
-  sc.eq('라벨은 말로 적는다', SRC.includes('lb.textContent=_vTrExclLabel(above,below);'), true);
+  // v26-0908-2, HB 2-1-2 — 값이 순위면 1등이 '위' 라 상/하가 뒤바뀐다.
+  sc.eq('라벨은 말로 적는다',
+    SRC.includes('lb.textContent=rankMode?_vTrExclLabel(lower,upper):_vTrExclLabel(upper,lower);'), true);
   sc.eq("'상위 N개, 하위 O개 제외' 로 만든다",
     SRC.includes('if(above)t.push(`상위 ${above}개`);') &&
     SRC.includes('if(below)t.push(`하위 ${below}개`);') &&
     SRC.includes("return t.length?t.join(', ')+' 제외':'전체';"), true);
   sc.eq('세모 화살표는 안 남아 있다', SRC.includes('▲${'), false);
-  sc.eq('그린 자리와 미는 자리가 같은 글을 쓴다', SRC.includes('const rgLbTx=_vTrExclLabel(_rgAbove,_rgBelow);'), true);
-  sc.eq('지도 쪽에서 그 값들을 넘긴다(data-vals)', SRC.includes('vals:rgVals,label:'), true);
+  sc.eq('그린 자리와 미는 자리가 같은 글을 쓴다',
+    SRC.includes('const rgLbTx=_vTrExclLabel(rg.lo-1, rk.total-rg.hi);'), true);
+  sc.eq('지도 쪽에서 그 값들을 넘긴다(data-vals)', SRC.includes('vals:rgVals,rank:true,midN:true,'), true);
 }
 
 console.log('\n시나리오 29 — 93-2 리듬 시간개념없음 버그 · 구간 시각화');
@@ -1040,6 +1066,78 @@ console.log('\n시나리오 32 — 0908-1 되짚기 (앞 라운드에서 잘못�
   // 알약 배경은 불투명해야 한다 — 반투명이면 알록달록한 영역 그래프가 비쳐
   // 어두운 테마에서 글자가 사라졌다.
   sc.eq('알약은 판 색을 먼저 깔아 불투명하게', SRC.includes('rx="6.5" fill="var(--s1)"/>'), true);
+}
+
+console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 빼기 · 인사이트)');
+{
+  // ── 1-1-1 · 알약칩 안에 개수 ─────────────────────────────────────
+  sc.eq('필터칩에 개수를 적는다', SRC.includes('<span class="vp-facetn">${n}</span>'), true);
+  // ── 1-1-2 · 칩이 '성경' 이면 하나만 (한 말씀은 성경 하나에만 속한다) ──
+  sc.eq('성경 축이면 복수 선택을 끈다',
+    SRC.includes("function _vpFiltMulti(){ return _vpOtherAxis()!=='book'; }"), true);
+  sc.eq('단일 축에서는 갈아탄다', SRC.includes('else _vpFilt=[val];'), true);
+
+  // ── 1-3 · 노드로 들어간 길이면 타일뷰를 거쳐도 칩을 지킨다 ──────────
+  sc.eq('노드에서 온 길인지 기억한다', SRC.includes('let _vpFromNode=false;'), true);
+  sc.eq('타일뷰로 갈 때 표시한다', SRC.includes('_vpFromNode=true;'), true);
+  sc.eq('타일뷰에서 연 전체화면도 그 갈래를 쥔다',
+    /if\(_vpFromNode&&_vpCtx&&typeof _vpFullTab!=='undefined'\)\{[\s\S]{0,80}_vpFullTab=_vgTab\(\);/.test(SRC), true);
+  sc.eq('홈을 누르면 그 길이 끝난다',
+    /function vfHomeAction\(\)\{[\s\S]{0,220}_vpFromNode=false;/.test(SRC), true);
+
+  // ── 1-4 · 골라보기 목록을 세로가 허락하는 만큼 ────────────────────
+  sc.eq('15줄 고정을 걷어낸다', /\.vgp-list\{max-height:min\(46vh,520px\);/.test(SRC), true);
+  sc.eq('넓은 화면에서는 더 길게', /\.vgp-list\{max-height:min\(58vh,700px\);\}/.test(SRC), true);
+
+  // ── 2-2-2·2-2-3 · 장 목록 머리 버튼 · 장 클릭 ────────────────────
+  sc.eq("'이 성경 말씀 보기' 글자 링크를 걷어냈다", SRC.includes('이 성경 말씀 보기'), false);
+  sc.eq('격자·전체화면 아이콘 둘',
+    SRC.includes('onclick="vMapOpenGrid(') && SRC.includes("onclick=\"vMapOpenChapter('${_vDashQ(b)}',0)"), true);
+  sc.eq('다룬 장만 누를 자리로', SRC.includes("(n?`onclick=\"vMapOpenChapter('${_vDashQ(b)}',${i})\" `:'')"), true);
+  sc.eq('장 전체화면을 여는 함수', SRC.includes('function vMapOpenChapter(book,chap){'), true);
+  sc.eq('그 장의 첫 말씀 자리를 찾는다',
+    SRC.includes('const hit=list.findIndex(v=>_vTrChapterKeys(v.ref,book,v).some(k=>_vTrChapNo(k)===chap));'), true);
+
+  // ── 2-2-4 · 전체화면 제목은 언제나 그 타일뷰로 가는 문 ────────────
+  sc.eq('제목이 가리킬 곳을 한 함수가 정한다', SRC.includes('function _vfTitleTileFn(on,vpOn){'), true);
+  sc.eq('따로 일러 준 타일뷰가 있으면 그리로', SRC.includes('let _vfNavTile=null;'), true);
+  sc.eq('새 목록이 들어오면 옛 문은 닫는다',
+    SRC.includes("if(typeof _vfNavTile!=='undefined')_vfNavTile=null;   // 새 목록 — 옛 문은 닫는다"), true);
+  sc.eq('_vfClearNav 도 함께 비운다', /function _vfClearNav\(\)\{[^\n]*_vfNavTile=null;/.test(SRC), true);
+  sc.eq('지도에서 연 전체화면은 그 성경 타일뷰를 가리킨다',
+    SRC.includes("_vfNavTile={kind:'book',val:book};"), true);
+  // ⚠️ 제목(.vf-toplabel)은 z-index 11, '이전 말씀' 꺾쇠(.vf-nav-u)는 2 다.
+  //    제목이 위라 눌러도 꺾쇠가 먼저 먹지 않는다 (HB 2-2-4 의 걱정).
+  sc.eq('제목이 꺾쇠보다 위에 선다', /\.vf-toplabel\{[\s\S]{0,220}z-index:11;/.test(SRC), true);
+  sc.eq('꺾쇠는 그 아래', /\.vf-nav\{[\s\S]{0,160}z-index:2;/.test(SRC), true);
+  sc.eq('누를 자리일 때만 클릭을 받는다',
+    /\.vf-toplabel\.vf-keep-title\{pointer-events:auto;/.test(SRC), true);
+
+  // ── 2-3 · 범위 빼기 ─────────────────────────────────────────────
+  sc.eq("'빼기' 알약칩", SRC.includes('<span class="vdash-subbtn${(sub||armed)?\' on\':\'\'}" onclick="vDashSubToggle()" '), true);
+  sc.eq('B 를 기다리는 상태가 있다', SRC.includes('function _vDashSubArmed(){'), true);
+  sc.eq('다음에 고른 범위가 B 가 된다',
+    /function vDashKindPick\(v\)\{[\s\S]{0,200}p\.kindSub=v; p\.subArm=false;/.test(SRC), true);
+  sc.eq('A 와 같은 것은 못 고른다', SRC.includes("showToast('A 와 다른 범위를 골라 주세요')"), true);
+  // ⚠️ 빼는 곳은 **한 곳(_vDashWinEntries)** 이다. 탭마다 따로 빼면 하나는 빠뜨린다.
+  sc.eq('한 곳에서 뺀다 — 다섯 탭이 저절로 따라온다',
+    SRC.includes('const sub=_vDashSubRefSet();\n  return sub?out.filter(e=>!sub.has(e.ref)):out;'), true);
+  sc.eq('B 를 세는 동안 다시 빼지 않는다(빗장)', SRC.includes('let _vDashSubBusy=false;'), true);
+
+  // ── 3 · 조건이 만든 인사이트 ────────────────────────────────────
+  sc.eq('A − B 를 말로', SRC.includes('function _vDashSubWords(){'), true);
+  sc.eq('갈래를 좁혔을 때도', SRC.includes('function _vDashTabWords(){'), true);
+  sc.eq("'상위 N개를 빼면 그다음은' 줄", SRC.includes('function _vDashNextLine(rows,lo,hi,verb,unit){'), true);
+  sc.eq('조건이 기본값이면 아무 말도 안 한다', SRC.includes("if(!lines.length)return'';"), true);
+  sc.eq('분포 탭에도 한 줄', SRC.includes('function _vDashPieInsightHTML(){'), true);
+  sc.eq('지도 — 빼기 줄', SRC.includes('const _subW=_vDashSubWords();'), true);
+  sc.eq('지도 — 구약·신약 균형', SRC.includes('구약 <b>${_ot}권</b>'), true);
+  sc.eq('리듬 — 가장 뜸한 때', SRC.includes('가장 뜸한 때는 <b>${esc(q.b.name)}</b>'), true);
+  sc.eq('연결 — 순위창으로 접어 둔 개수', SRC.includes('순위창으로 ${bits.join(\' · \')}를 접어 뒀어요.'), true);
+  // 받침에 따라 갈리는 조사 — '로마서이', '마태복음는', '밤예요' 가 안 나오게
+  sc.eq('은/는 조사', SRC.includes('function _vTrJosaEun(w){'), true);
+  sc.eq('(으)로 조사', SRC.includes('function _vTrJosaRo(w){'), true);
+  sc.eq('예요/이에요 조사', SRC.includes('function _vTrJosaYeyo(w){'), true);
 }
 
 sc.done();
