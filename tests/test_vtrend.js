@@ -337,9 +337,15 @@ console.log('\n시나리오 9-8 — 닫기 × 는 늘 우상단 (HB 1)');
   // 기간은 이제 본문 안 **한 벌**([전체][직접] + 주·달 슬라이더)뿐이다.
   sc.eq('분포 전용 기간 줄은 사라졌다', SRC.includes('id="vDashPeriods"'), false);
   sc.eq('분포 전용 기간 버튼 만들개도 사라졌다', SRC.includes('function _vDashPeriodBtnsHTML('), false);
-  sc.eq('기간 한 벌은 흐름 말고 세 화면에도 붙는다',
-        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g) || []).length, 2);
-  sc.eq('흐름은 전체·직접 칩 없이 쓴다', SRC.includes('ctl+=_vTrSpanRowHTML();'), true);
+  // v26-0908-8, HB 7 — 기간·갈래는 **다섯 탭 공통 줄** 하나로 모였다.
+  //   탭 이름 바로 아래, 가로선 위. 부르는 자리도 딱 하나뿐이다.
+  sc.eq('기간 한 벌을 부르는 자리는 하나뿐',
+        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g) || []).length, 1);
+  sc.eq('그 하나가 공통 줄이다',
+        /function _vDashCommonHTML\(\)\{[\s\S]{0,220}?_vTrSpanRowHTML\(\{all:true\}\)/.test(SRC), true);
+  sc.eq('흐름도 이제 [전체][직접] 을 함께 쓴다', SRC.includes('ctl+=_vTrSpanRowHTML();'), false);
+  sc.eq('공통 줄은 #vDashBody 바깥이다',
+        /id="vDashCommon"[\s\S]{0,240}?id="vDashBody"/.test(SRC), true);
   sc.eq('윗줄에는 탭·책·빈칸·닫기만',
         /id="vDashViewTabs"><\/div>[\s\S]{0,900}vdash-hdgap[\s\S]{0,60}modal-x modal-x-inline" onclick="closeVerseDashboard/.test(SRC), true);
   sc.eq('윗줄에 말씀 모음 설정 단추가 있다', SRC.includes('onclick="vDashOpenCollSettings()"'), true);
