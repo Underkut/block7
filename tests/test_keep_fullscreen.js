@@ -210,15 +210,22 @@ console.log('\n시나리오 3-2 — 홈을 눌렀을 때 단추가 실제로 어
 console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일뷰를 연다');
 {
   const sync = slice('function _vfSyncTopBar(){', 'function _vfCurrentVerse');
-  // 저장 목록은 예전 그대로 제목을 눌러 그 타일뷰로 간다 (앞자리를 그대로 지킨다).
+  // v26-0908-2, HB 2-2-4 — 제목이 가리키는 타일뷰를 _vfTitleTileFn 한 곳에서
+  // 정한다. 저장 목록은 예전 그대로 그 폴더 타일뷰로 간다 (앞자리를 지킨다).
   sc.eq('저장 목록 제목에 타일뷰 동작을 연결한다',
-        sync.includes("lb.onclick=(on&&_vfNavKind==='keep')?vfOpenKeepGrid:(vpOn?vpGoToFilteredTile:null);"), true);
+        sync.includes('const tileFn=_vfTitleTileFn(on,vpOn);') &&
+        sync.includes('lb.onclick=tileFn;'), true);
   // v26-0908-1, HB 91-3-2 — 짝 목록에서 온 전체화면은 제목 아래 칩을 눌러
   // 말씀 → 명제 → 함께 세 갈래를 돈다 (글자는 늘 '말씀 + 명제').
   sc.eq('짝 목록에서 온 화면은 칩이 갈래 스위치',
         sync.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
   const pool = slice('function _vgFilteredPool(){', 'function _vgHomeLabel');
-  sc.eq('저장 폴더 기록만 타일 풀로 만든다', pool.includes("(_vgState.kind==='keep')"), true);
+  // v26-0908-2, HB 2-2-4 — '저장' 뿐 아니라 좋아요·암송·Deeper·Even 도 타일뷰로
+  // 열 수 있어야 한다(전체화면 제목을 누르면 그 목록으로 가야 하니까).
+  // _VLIST_KIND_TITLE 에 있는 갈래가 곧 반응 목록이다 — 저장도 그 안에 있다.
+  sc.eq('반응 목록(저장 포함)은 그 기록으로 타일 풀을 만든다',
+        pool.includes("(_VLIST_KIND_TITLE[_vgState.kind])"), true);
+  sc.eq("'저장' 도 그 표 안에 있다", SRC.includes('keep:'), true);
   const pick = slice('function vgPick(i){', 'function vgTapDateSort');
   sc.eq('타일 선택 뒤에도 저장 폴더 문맥을 유지한다', pick.includes("_vgState.kind==='keep'?'keep':null"), true);
 }
