@@ -533,7 +533,17 @@ console.log('\n시나리오 15 — 글꼴 기다리기가 무한히 되풀이되
 
 console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26-0831-19, HB)');
 {
-  sc.eq('탭 줄이 있다', SRC_DEV.includes('<div class="vg-tabrow" id="vgTabRow"></div>'), true);
+  // v26-0908-7, HB 8 — 짝 목록에서 물려받은 '+ 항목들'(#vgFacetBox)이 윗줄에서
+  //   이 둘째 줄로 내려왔다 (폰에서 윗줄 오른쪽이 잘렸다).
+  //   ⚠️ #vgTabRow 는 _vgRenderTabs 가 innerHTML 을 통째로 갈아 끼우는 자리다.
+  //      필터 상자를 그 **안**에 넣으면 갈래를 누를 때마다 지워진다 — 형제로 둔다.
+  sc.eq('탭 줄이 있다', /<div class="vg-tabrow">\s*<span id="vgTabRow"><\/span>/.test(SRC_DEV), true);
+  sc.eq('필터 상자가 탭 줄 안, 탭 자리 바깥에 있다',
+        /<span id="vgTabRow"><\/span>\s*<div class="vg-facet" id="vgFacetBox"/.test(SRC_DEV), true);
+  // 상자는 화면에 딱 하나 — 위 두 줄이 그 하나의 자리를 못박으므로,
+  // 윗줄에 하나 더 만들어 두는 되돌이를 이 줄이 막는다.
+  sc.eq('필터 상자는 화면에 하나뿐',
+        (SRC_DEV.match(/id="vgFacetBox"/g) || []).length, 1);
   // 목록 팝업과 **같은 값**을 쓴다 (이름이 어긋나면 두 곳이 따로 논다).
   // v26-0908-1, HB 91-3-2 — 버튼 셋 대신 칩 하나가 세 갈래를 돈다. 글자는
   // 늘 '말씀 + 명제' 이고 켜진 낱말만 색을 갖는다. 갈래 값은 여전히 _VL_TABS.

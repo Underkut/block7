@@ -472,9 +472,31 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   sc.eq("화면이 다섯", (SRC.match(/const _VDASH_VIEWS=\[\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\]\];/)||[]).length, 1);
   sc.eq('흐름을 그리는 곳이 있다', SRC.includes('function renderVDashTrend(){'), true);
   // v26-0907-3, HB 3-2 — 기간은 다섯 화면이 함께 쓰는 **한 벌**이 됐다.
-  // '직접' 날짜 줄만 그 칩이 있는 세 화면(분포·지도·연결)에서 나온다.
-  sc.eq('직접 날짜 줄은 전체·직접 칩이 있는 화면에서만',
-        /const hasAll=\(view==='pie'\|\|view==='map'\|\|view==='link'\);/.test(SRC), true);
+  // '직접' 날짜 칸도 그 칩이 있는 화면에서만 나온다.
+  // v26-0908-7, HB 7 — 날짜 칸이 모달 머리(#vDashCustomRow)를 떠나 '기간' 줄
+  //   **안**으로 들어왔다. 그래서 "어느 화면에서 보이나"는 이제 화면 이름을
+  //   적어 두는 것이 아니라 _vTrSpanRowHTML 의 o.all 가지가 정한다 — 칩을 그리는
+  //   그 가지 안에서만 날짜 칸을 만들므로 둘이 어긋날 수가 없다.
+  sc.eq('날짜 칸은 칩과 같은 가지 안에서만 만든다',
+        /if\(o\.all\)\{[\s\S]{0,900}?_vDashDateBtn\('vDashFrom'/.test(SRC), true);
+  sc.eq('그 가지를 켜는 화면은 셋 (분포·지도·연결)',
+        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g)||[]).length, 2);
+  sc.eq('흐름·리듬은 칩 없이 부른다',
+        (SRC.match(/_vTrSpanRowHTML\(\)/g)||[]).length, 2);
+  sc.eq('모달 머리의 옛 날짜 줄은 없앴다', SRC.includes('id="vDashCustomRow"'), false);
+  // 겉은 우리가 그린 알약, 속은 투명하게 덮은 진짜 <input type=date> 다.
+  // ⚠️ 이 두 줄이 깨지면 아이폰에서 날짜 휠이 안 뜬다.
+  sc.eq('알약 속에 진짜 날짜칸이 덮여 있다',
+        /function _vDashDateBtn[\s\S]{0,600}?<input type="date" id="\$\{id\}"/.test(SRC), true);
+  sc.eq('그 날짜칸은 투명하게 덮는다',
+        /\.vtr-date input\{position:absolute;[^}]*opacity:0;/.test(SRC), true);
+  // 7 — 다섯 화면 **모두** '기간' 이 맨 첫 줄이다
+  sc.eq('지도·연결: 기간이 갈래보다 먼저',
+        /function _vDashScopeCtlHTML\(\)\{[\s\S]{0,600}?_vTrSpanRowHTML\(\{all:true\}\);[\s\S]{0,200}?_vTrChipsHTML\('갈래'/.test(SRC), true);
+  sc.eq('흐름: 기간이 갈래보다 먼저',
+        /ctl\+=_vTrSpanRowHTML\(\);[\s\S]{0,120}?ctl\+=_vTrChipsHTML\('갈래'/.test(SRC), true);
+  sc.eq('리듬: 기간이 갈래보다 먼저',
+        /html\+=_vTrSpanRowHTML\(\);[\s\S]{0,160}?html\+=_vTrChipsHTML\('갈래'/.test(SRC), true);
 
   // v26-0907-3 — '저장' 범위. 테스트는 _vlKindEntries 를 가짜로 쓰므로
   // 진짜 원본에도 갈래가 뚫려 있는지 여기서 눈으로 확인한다.
