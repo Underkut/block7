@@ -484,11 +484,17 @@ console.log('\n시나리오 14 — 지도: 갈래 줄바꿈 · 구간 슬라이�
   sc.eq('순위표를 따로 만든다(값 큰 차례)', SRC.includes('function _vMapRanks(stats,mode,nowKey){'), true);
   sc.eq('왼쪽 글자와 손잡이가 같은 단위를 쓴다',
     SRC.includes('const rgLbTx=_vTrExclLabel(rg.lo-1, rk.total-rg.hi);'), true);
-  // 2-1-1 — 두 손잡이 사이 바 위에 남은 성경 개수
+  // 2-1-1 — 두 손잡이 사이 바 위에 남은 성경 개수.
+  // v26-0908-3, HB — 막대 **밖**에 둔다. 막대는 opacity .42 라 그 안에 넣으면
+  //   글자까지 흐려져 배경과 구별이 안 됐다. 색도 강조색으로.
   sc.eq('두 손잡이 사이에 남은 개수를 적는다',
-    SRC.includes('<span class="vtr-rail-n">${Math.max(0,o.hi-o.lo+1)}</span>'), true);
+    SRC.includes('${Math.max(0,o.hi-o.lo+1)}</span>'), true);
+  sc.eq('숫자는 막대 밖에 선다(흐려지지 않게)',
+    /\.vtr-rail-n\{position:absolute;[\s\S]{0,140}color:var\(--ac-tx\);/.test(SRC), true);
   sc.eq('미는 동안에도 그 숫자가 따라간다',
-    SRC.includes('if(midN)midN.textContent=String(Math.max(0,hi-lo+1));'), true);
+    SRC.includes('midN.textContent=String(Math.max(0,hi-lo+1));'), true);
+  sc.eq('미는 동안 자리도 따라간다',
+    SRC.includes('midN.style.left=`calc((${midPc(lo)} + ${midPc(hi)}) / 2)`;'), true);
   sc.eq('두 손잡이는 서로를 밀지 않는다',
         SRC.includes("if(grab==='lo')lo=Math.max(min,Math.min(hi,v));"), true);
 
@@ -507,8 +513,12 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
         SRC.includes('const SEP=') && SRC.includes('pair.set(l+SEP+r'), true);
   // v26-0907-4, HB 7 — 두 줄 사이를 잇던 그림을 **그래프 뷰**로 바꿨다.
   // v26-0907-6, HB 3 — 타일뷰로 곧장 보내지 않고 **짝 목록**을 연다
+  // v26-0908-3, HB 1-2 — 짝 목록을 여는 것에 더해, 그 점을 그래프의 **중심**
+  //   으로 삼는다. 고른 점이 없으면 뎁스는 원리상 아무 일도 못 하기 때문이다.
   sc.eq('점을 톡 누르면 짝 목록으로',
-        SRC.includes("if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);"), true);
+        SRC.includes("openVPair(n.kind==='book'?'book':la,n.key);"), true);
+  sc.eq('그 점이 중심이 된다', SRC.includes('vgSetSelOnly(n.kind+_VG_SEP+n.key);'), true);
+  sc.eq('그 점 하나만 고르는 함수', SRC.includes('function vgSetSelOnly(id){'), true);
   // v26-0907-8, HB 2-1·2-2 — 고정 상한(14/22) 대신 순위 슬라이더로 바뀌었다.
   // 절대 안전판(_VG_RANK_MAX)만 남는다 — 자세한 순위 계산은 시나리오 21 에서.
   sc.eq('점 · 선 후보의 절대 상한이 있다', _VG_RANK_MAX, 60);
@@ -552,7 +562,14 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
   sc.eq('뎁스는 이제 슬라이더가 아니라 칩', SRC.includes("[1,2,3,4].map(v=>"), true);
   // v26-0908-1, HB 92 — 글자만 있던 칩을 테두리 있는 진짜 알약 버튼으로.
   sc.eq('뎁스는 테두리 있는 알약 버튼',
-    SRC.includes('<span class="vg-depthchip${d===v?\' on\':\'\'}${seeded?\'\':\' idle\'}" '), true);
+    SRC.includes('<span class="vg-depthchip${d===v?\' on\':\'\'}" '), true);
+  // v26-0908-3, HB — 옅게 두는 것은 **줄 전체**다. 고른 칩(.on)까지 덮으면
+  //   꺼진 것처럼 보인다.
+  sc.eq('옅게 두는 것은 줄 전체', SRC.includes("vtr-ctl-vals${seeded?'':' vg-depth-idle'}"), true);
+  sc.eq('고른 칩은 어떤 상태에서도 또렷하다',
+    /\.vg-depth-idle \.vg-depthchip\.on\{opacity:1;\}/.test(SRC), true);
+  sc.eq('개수는 늘 적는다(고른 점이 없어도)',
+    SRC.includes("const cnt=_vgDepthCounts()||[0,0,0,0].map(()=>(_vgData?_vgData.N.length:0));"), true);
   sc.eq("4뎁스는 '전체' 라고 쓴다", SRC.includes("${v===4?'전체':v}"), true);
   // v26-0908-2, HB 1-2 — "뎁스가 그래프에 안 먹는다". 값은 잘 들어가는데
   //   두 갈래 그물이라 2뎁스면 이어진 곳을 거의 다 훑어 3·전체가 2와 같아진다.
@@ -563,7 +580,8 @@ console.log('\n시나리오 12-2 — 연결 · 리듬');
     /function _vgDepthCounts\(\)\{[\s\S]{0,220}if\(!seeds\.size\)return null;/.test(SRC), true);
   sc.eq('알약 CSS — 테두리·둥근 모서리', /\.vg-depthchip\{[^}]*border:1px solid var\(--bd2\)/.test(SRC), true);
   // 고른 점이 없으면 뎁스가 아무 일도 안 한다 — 그 사정을 적어 준다
-  sc.eq('씨앗이 없으면 까닭을 적는다', SRC.includes('<span class="vg-depthnote">점을 고르면 적용돼요</span>'), true);
+  sc.eq('씨앗이 없으면 무엇을 하면 되는지 적는다',
+    SRC.includes('<span class="vg-depthnote">점을 톡 누르면 그 점이 중심이 돼요</span>'), true);
   sc.eq('안내 문구도 4뎁스일 땐 전체라고 쓴다',
         SRC.includes("const dtx=_vgDepth()>=4?'전체':`${_vgDepth()}뎁스`;"), true);
   // 1-2 · 검색은 타이핑하는 동안 바로. 다시 그리지 않고 보임/숨김만 바꾼다.
@@ -635,7 +653,7 @@ console.log('\n시나리오 15 — 짝 목록: 두 목록 · 나가는 여섯 �
   sc.eq('타일뷰는 있던 탭을 쓴다', /function vpTile\(tab\)\{[\s\S]{0,400}?vgSetTab\(tab\);/.test(SRC), true);
   // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 갈래는 연 뒤에 심어야 한다
   sc.eq('갈래는 전체화면을 연 뒤에 심는다',
-        /openVerseFull\(true\);\s*\n\s*_vpFullTab=tab;/.test(SRC), true);
+        /openVerseFull\(true\);\s*\n\s*_vfSetTabPool\(_vpList\('all'\),tab\);/.test(SRC), true);
   sc.eq('나갈 때 갈래 기억도 지운다',
         /function _vfClearNav\(\)\{[^\n]*_vpFullTab=null;/.test(SRC), true);
   // ⚠️ 그 함수는 한 줄이어야 한다 — test_keep_fullscreen.js 가 한 줄로 잘라 쓴다
@@ -863,8 +881,13 @@ console.log('\n시나리오 22 — 3-1..3-5 축 아이콘 · 통합 모드칩 ·
     /\.vp-modechip\.plain \.vpm-w,\.vp-modechip\.plain \.vpm-w\.on/.test(SRC), true);
   sc.eq('타일뷰 갈래 탭도 같은 칩', SRC.includes('row.innerHTML=_vpModeChipHTML(_vgTab(),'), true);
   sc.eq('타일뷰 칩도 세 갈래', SRC.includes('function vgCycleTab(){ vgSetTab(_vpNextTab(_vgTab())); }'), true);
+  // ⚠️ v26-0908-3 — 차례가 중요하다. 갈래 칩이 서는 조건이 넓어지면서
+  //    타일뷰에서 연 전체화면도 vpOn 이 참이 됐다. 따로 일러 준 타일뷰
+  //    (_vfNavTile)가 언제나 먼저다 — 안 그러면 예전에 열었던 짝 목록으로 간다.
   sc.eq('전체화면 제목을 누르면 필터 걸린 타일뷰로(91-3-3-1)',
-        SRC.includes('if(vpOn)return vpGoToFilteredTile;'), true);
+        SRC.includes('if(vpOn&&_vpCtx)return vpGoToFilteredTile;'), true);
+  sc.eq('따로 일러 준 타일뷰가 언제나 먼저',
+        /if\(_vfNavTile&&_vfNavTile\.kind&&_vfNavTile\.val\)return vfOpenNavTile;\s*\n\s*if\(vpOn&&_vpCtx\)/.test(SRC), true);
   sc.eq('전체화면 칩 자리(#vfModeChip)가 있다',
         SRC.includes('<div class="vf-modechiprow" id="vfModeChip" style="display:none;"></div>'), true);
   // v26-0907-9, HB 91-3-2 — HB 가 이 칩만은 얇은 테두리 알약으로 달라고 직접
@@ -952,7 +975,7 @@ console.log('\n시나리오 26 — 91-1·91-3 짝 목록 정렬 고정 · 다중
 
 console.log('\n시나리오 27 — 92 연결탭 뎁스 알약칩');
 {
-  sc.eq('1·2·3·전체 알약칩', SRC.includes("D.innerHTML=`<div class=\"vtr-ctl\" style=\"margin-bottom:0;\">`+\n      `<span class=\"vtr-ctl-lb\">뎁스</span>`+\n      `<span class=\"vtr-ctl-vals\">`+[1,2,3,4].map(v=>"), true);
+  sc.eq('1·2·3·전체 알약칩', SRC.includes("`<span class=\"vtr-ctl-lb\">뎁스</span>`+"), true);
   sc.eq('슬라이더 바인딩은 더 없다(칩뿐)', SRC.includes('_vTrBindRails(D);'), false);
 }
 
@@ -1072,16 +1095,24 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
 {
   // ── 1-1-1 · 알약칩 안에 개수 ─────────────────────────────────────
   sc.eq('필터칩에 개수를 적는다', SRC.includes('<span class="vp-facetn">${n}</span>'), true);
-  // ── 1-1-2 · 칩이 '성경' 이면 하나만 (한 말씀은 성경 하나에만 속한다) ──
-  sc.eq('성경 축이면 복수 선택을 끈다',
-    SRC.includes("function _vpFiltMulti(){ return _vpOtherAxis()!=='book'; }"), true);
+  // ── 1-1-2 · 복수 선택은 **태그일 때만** (v26-0908-3, HB) ──────────
+  //   한 말씀이 여럿을 가질 수 있는 축은 태그뿐이다. 성경·대분류·소주제는
+  //   하나씩만 가지므로 둘을 켜면 교집합이 반드시 비어 목록이 사라진다.
+  sc.eq('복수 선택은 태그일 때만',
+    SRC.includes("function _vpFiltMulti(){ return _vpOtherAxis()==='tag'; }"), true);
   sc.eq('단일 축에서는 갈아탄다', SRC.includes('else _vpFilt=[val];'), true);
 
   // ── 1-3 · 노드로 들어간 길이면 타일뷰를 거쳐도 칩을 지킨다 ──────────
   sc.eq('노드에서 온 길인지 기억한다', SRC.includes('let _vpFromNode=false;'), true);
   sc.eq('타일뷰로 갈 때 표시한다', SRC.includes('_vpFromNode=true;'), true);
+  // v26-0908-3, HB 1-3 — 짝 목록에서 온 길만이 아니라 **어느 길로 왔든**
+  //   타일뷰에서 연 전체화면이면 칩이 선다. 지도 → 타일뷰가 그래서 빠졌었다.
   sc.eq('타일뷰에서 연 전체화면도 그 갈래를 쥔다',
-    /if\(_vpFromNode&&_vpCtx&&typeof _vpFullTab!=='undefined'\)\{[\s\S]{0,80}_vpFullTab=_vgTab\(\);/.test(SRC), true);
+    SRC.includes("_vfSetTabPool(_vgSort(_vgFilteredPool(true)),_vgTab());"), true);
+  sc.eq('칩이 서는 조건은 밑 목록이 있느냐',
+    SRC.includes("const vpOn=on&&!!(typeof _vpFullTab!=='undefined'&&_vpFullTab&&_vfTabPool);"), true);
+  sc.eq('그 타일뷰로 돌아갈 문도 함께 심는다',
+    SRC.includes("_vfNavTile={kind:_vgState.kind,val:_vgState.val,"), true);
   sc.eq('홈을 누르면 그 길이 끝난다',
     /function vfHomeAction\(\)\{[\s\S]{0,220}_vpFromNode=false;/.test(SRC), true);
 
@@ -1104,8 +1135,14 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
   sc.eq('새 목록이 들어오면 옛 문은 닫는다',
     SRC.includes("if(typeof _vfNavTile!=='undefined')_vfNavTile=null;   // 새 목록 — 옛 문은 닫는다"), true);
   sc.eq('_vfClearNav 도 함께 비운다', /function _vfClearNav\(\)\{[^\n]*_vfNavTile=null;/.test(SRC), true);
+  // v26-0908-3, HB 2-2-3 — 걸린 필터(refs)와 조건 이름까지 함께 들고 간다.
   sc.eq('지도에서 연 전체화면은 그 성경 타일뷰를 가리킨다',
-    SRC.includes("_vfNavTile={kind:'book',val:book};"), true);
+    SRC.includes("_vfNavTile={kind:'book',val:book,refs:refs,facet:cond?[cond]:null};"), true);
+  sc.eq('장을 열 때 위쪽 필터가 걸린 기록만 쓴다',
+    /function vMapOpenChapter\(book,chap\)\{[\s\S]{0,400}_vDashWinEntries\(sc\.kind,sc\.tab,sc\.unit,sc\.span,sc\)/.test(SRC), true);
+  sc.eq('제목에도 그 조건을 적는다', SRC.includes("_vfSetNav(list,i,book+(cond?' · '+cond:''),null);"), true);
+  sc.eq('타일뷰로 넘어가도 그 필터를 지킨다',
+    SRC.includes("openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null);"), true);
   // ⚠️ 제목(.vf-toplabel)은 z-index 11, '이전 말씀' 꺾쇠(.vf-nav-u)는 2 다.
   //    제목이 위라 눌러도 꺾쇠가 먼저 먹지 않는다 (HB 2-2-4 의 걱정).
   sc.eq('제목이 꺾쇠보다 위에 선다', /\.vf-toplabel\{[\s\S]{0,220}z-index:11;/.test(SRC), true);
@@ -1138,6 +1175,66 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
   sc.eq('은/는 조사', SRC.includes('function _vTrJosaEun(w){'), true);
   sc.eq('(으)로 조사', SRC.includes('function _vTrJosaRo(w){'), true);
   sc.eq('예요/이에요 조사', SRC.includes('function _vTrJosaYeyo(w){'), true);
+}
+
+console.log('\n시나리오 34 — 0908-3 (뎁스가 진짜로 먹게 · 칩 유지 · 문구 다듬기)');
+{
+  // ── 1-2 · "뎁스가 아직도 안 먹는다" 의 뿌리 ──────────────────────
+  // 뎁스는 '고른 점에서 몇 걸음' 이라, 고른 점이 없으면 원리상 아무 일도
+  // 못 한다. HB 화면에 개수가 안 적히고 칩이 옅던 것이 바로 그 상태였다.
+  // → 그래프의 점을 톡 누르면 그 점이 중심이 되게 해서 전제를 없앴다.
+  sc.eq('점 하나만 고르는 길이 있다', SRC.includes('function vgSetSelOnly(id){'), true);
+  sc.eq('고른 뒤 곧바로 다시 매긴다',
+    /function vgSetSelOnly\(id\)\{[\s\S]{0,160}_vgApplyFilter\(\);/.test(SRC), true);
+  sc.eq('그래프 탭이 그 길을 쓴다', SRC.includes('vgSetSelOnly(n.kind+_VG_SEP+n.key);'), true);
+
+  // ── 1-3 · 칩이 도는 밑 목록 ─────────────────────────────────────
+  sc.eq('갈래 칩이 도는 밑 목록', SRC.includes('let _vfTabPool=null;'), true);
+  sc.eq('밑 목록에서 갈래만 거른다', SRC.includes('function _vfTabList(tab){'), true);
+  sc.eq('칩 돌리기는 그 밑 목록으로', SRC.includes('const list=_vfTabList(next);'), true);
+  // ⚠️ _vfSetNav 는 '제목이 가리키는 타일뷰' 를 비운다 — 갈래만 도는 것이지
+  //    목록이 바뀐 것이 아니므로 그 문은 그대로 들고 가야 한다.
+  sc.eq('갈래를 돌아도 제목의 문은 그대로', SRC.includes('const keepTile=_vfNavTile;'), true);
+  sc.eq('홈을 누르면 밑 목록도 내린다',
+    /function vfHomeAction\(\)\{[\s\S]{0,300}_vfTabPool=null;/.test(SRC), true);
+  sc.eq('_vfClearNav 도 밑 목록을 비운다',
+    /function _vfClearNav\(\)\{[^\n]*_vfTabPool=null;/.test(SRC), true);
+
+  // ── 1-4 · 순위 손잡이를 미는 동안 목록이 따라온다 ───────────────
+  sc.eq('미는 동안 줄의 활성/비활성이 바뀐다', SRC.includes('const paintRows=()=>{'), true);
+  sc.eq('다시 그리지 않고 class 만 갈아 끼운다',
+    SRC.includes("r.classList.toggle('rankoff',!active);"), true);
+
+  // ── 3-2-1 · 범위마다 다른 말 ────────────────────────────────────
+  sc.eq('범위별 동사표', SRC.includes('const _VDASH_VERB={'), true);
+  sc.eq('좋아요는 좋아한', SRC.includes("like:'많이 좋아한'"), true);
+  sc.eq('암송은 외운', SRC.includes("mem:'많이 외운'"), true);
+  sc.eq('Deeper 는 성경을 찾아본', SRC.includes("deeper:'많이 성경을 찾아본'"), true);
+  sc.eq('Even 은 더 깊게 찾아본', SRC.includes("even:'많이 성경을 더 깊게 찾아본'"), true);
+  sc.eq('지도 인사이트가 그 말을 쓴다', SRC.includes('`가장 ${_vDashVerbWord()} 곳: `'), true);
+
+  // ── 3-2-2 · 리듬 문구 ───────────────────────────────────────────
+  // 차트 칸은 설정을 따르지만 문장은 늘 '일요일…'. LMTWTFS 일 때만 '주일'.
+  sc.eq('문장용 요일 이름을 따로 만든다',
+    SRC.includes("const dowFull=[_lord?'주일':'일요일','월요일','화요일','수요일','목요일','금요일','토요일'];"), true);
+  sc.eq('LMTWTFS 일 때만 주일',
+    SRC.includes("const _lord=(ST.settings.dowFormat||'letter-lord')==='letter-lord';"), true);
+  sc.eq('내용마다 줄을 바꾼다', SRC.includes("rl.join('<br>')+"), true);
+  sc.eq('조건 줄도 줄바꿈으로 잇는다', SRC.includes("return ex.length?'<br>'+ex.join('<br>'):'';"), true);
+
+  // ── 4 · 리듬 시간구간을 표 안에서도 알아보게 ────────────────────
+  sc.eq('띠 가운데에 구간 이름을 한 번 더',
+    SRC.includes('<span class="vrhy2-zonenm">${esc(b.name)}</span>'), true);
+  sc.eq('띠 위쪽 경계선을 굵게', /\.vrhy2-zone\{[\s\S]{0,120}border-top-width:2px;/.test(SRC), true);
+  sc.eq('경계선은 그 구간 색으로', SRC.includes('border-top-color:color-mix(in srgb,${b.color} 70%,transparent);'), true);
+  // ⚠️ 칸보다 뒤에 깔리므로 아주 옅게 — 진하면 숫자 칸이 안 읽힌다.
+  sc.eq('이름은 아주 옅게', /\.vrhy2-zonenm\{[\s\S]{0,110}opacity:\.22;/.test(SRC), true);
+
+  // ── 2-2-3 · 위쪽 필터를 물고 가는 길 ────────────────────────────
+  sc.eq('제목에 쓸 조건 이름', SRC.includes('function _vDashScopeTitle(){'), true);
+  sc.eq('기본값이면 빈 문자열', SRC.includes("return bits.join(' ');"), true);
+  sc.eq('격자 버튼도 같은 필터를 물고 간다',
+    /function vMapOpenGrid\(book\)\{[\s\S]{0,420}openVerseGrid\('book',book,null,refs\.size\?refs:null\);/.test(SRC), true);
 }
 
 sc.done();
