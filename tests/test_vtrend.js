@@ -1126,8 +1126,11 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
     SRC.includes('onclick="vMapOpenGrid(') && SRC.includes("onclick=\"vMapOpenChapter('${_vDashQ(b)}',0)"), true);
   sc.eq('다룬 장만 누를 자리로', SRC.includes("(n?`onclick=\"vMapOpenChapter('${_vDashQ(b)}',${i})\" `:'')"), true);
   sc.eq('장 전체화면을 여는 함수', SRC.includes('function vMapOpenChapter(book,chap){'), true);
-  sc.eq('그 장의 첫 말씀 자리를 찾는다',
-    SRC.includes('const hit=list.findIndex(v=>_vTrChapterKeys(v.ref,book,v).some(k=>_vTrChapNo(k)===chap));'), true);
+  // v26-0908-4, HB 2-2-3 — 그 장 자리로 '가기만' 하던 것을 **그 장만 남기는
+  //   필터**로 바꿨다. 3장을 눌렀으면 넘겨도 3장이어야 한다.
+  sc.eq('그 장만 남긴다',
+    SRC.includes('const inChap=(ref,v)=>!chap||_vTrChapterKeys(ref,book,v).some(k=>_vTrChapNo(k)===chap);'), true);
+  sc.eq('거르는 자리는 기록을 훑는 그 곳', SRC.includes('if(!inChap(e.ref,e.v))return;'), true);
 
   // ── 2-2-4 · 전체화면 제목은 언제나 그 타일뷰로 가는 문 ────────────
   sc.eq('제목이 가리킬 곳을 한 함수가 정한다', SRC.includes('function _vfTitleTileFn(on,vpOn){'), true);
@@ -1137,10 +1140,14 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
   sc.eq('_vfClearNav 도 함께 비운다', /function _vfClearNav\(\)\{[^\n]*_vfNavTile=null;/.test(SRC), true);
   // v26-0908-3, HB 2-2-3 — 걸린 필터(refs)와 조건 이름까지 함께 들고 간다.
   sc.eq('지도에서 연 전체화면은 그 성경 타일뷰를 가리킨다',
-    SRC.includes("_vfNavTile={kind:'book',val:book,refs:refs,facet:cond?[cond]:null};"), true);
+    SRC.includes("_vfNavTile={kind:'book',val:book,refs:refs,"), true);
+  sc.eq('장까지 걸었으면 그것도 보여 준다',
+    SRC.includes("facet:[chap?`${chap}장`:'',cond].filter(Boolean)};"), true);
   sc.eq('장을 열 때 위쪽 필터가 걸린 기록만 쓴다',
     /function vMapOpenChapter\(book,chap\)\{[\s\S]{0,400}_vDashWinEntries\(sc\.kind,sc\.tab,sc\.unit,sc\.span,sc\)/.test(SRC), true);
-  sc.eq('제목에도 그 조건을 적는다', SRC.includes("_vfSetNav(list,i,book+(cond?' · '+cond:''),null);"), true);
+  sc.eq('제목에 어디를 걸었는지 적는다',
+    SRC.includes("const where=book+(chap?` ${chap}장`:'');") &&
+    SRC.includes("_vfSetNav(list,0,where+(cond?' · '+cond:''),null);"), true);
   sc.eq('타일뷰로 넘어가도 그 필터를 지킨다',
     SRC.includes("openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null);"), true);
   // ⚠️ 제목(.vf-toplabel)은 z-index 11, '이전 말씀' 꺾쇠(.vf-nav-u)는 2 다.
@@ -1235,6 +1242,42 @@ console.log('\n시나리오 34 — 0908-3 (뎁스가 진짜로 먹게 · 칩 유
   sc.eq('기본값이면 빈 문자열', SRC.includes("return bits.join(' ');"), true);
   sc.eq('격자 버튼도 같은 필터를 물고 간다',
     /function vMapOpenGrid\(book\)\{[\s\S]{0,420}openVerseGrid\('book',book,null,refs\.size\?refs:null\);/.test(SRC), true);
+}
+
+console.log('\n시나리오 35 — 0908-4 (장 필터 · 겹친 손잡이 · 버전 표시)');
+{
+  // ── 2-4 · 두 손잡이가 겹쳤을 때는 **미는 방향**이 어느 쪽인지 정한다 ──
+  //   겹치면 어느 쪽이 가까운지 잴 수가 없어 늘 한쪽(하위)만 잡혔다.
+  sc.eq('겹치면 아직 안 정한 채로 둔다', SRC.includes("grab=(lo===hi)?null"), true);
+  sc.eq('누른 자리를 기억한다', SRC.includes('downX=e.clientX;'), true);
+  sc.eq('안 정했으면 누르자마자 움직이지 않는다', SRC.includes('if(grab)move(e);'), true);
+  sc.eq('첫 방향이 손잡이를 정한다', SRC.includes("grab=(dx<0)?'lo':'hi';"), true);
+  // ⚠️ 손가락 떨림으로 엉뚱한 쪽이 잡히지 않게 조금 기다린다
+  sc.eq('떨림은 무시한다(3px)', SRC.includes('if(Math.abs(dx)<3){e.preventDefault();return;}'), true);
+
+  // ── 5 · 버전 표시 ────────────────────────────────────────────────
+  // id 를 하나하나 적지 않고 클래스로 훑는다 — 설정창이 늘 때마다 표를
+  // 고치는 것을 잊어 배지가 빠지곤 했다.
+  sc.eq('클래스로 훑는다', SRC.includes("document.querySelectorAll('.settings-verbadge').forEach(el=>{"), true);
+  sc.eq('개발자 계정에만', /function _syncDevVerBadge\(\)\{\s*\n\s*const dev=_isDevAccount\(\);/.test(SRC), true);
+  // 설정창 네 곳 모두 (일반·말씀·위젯·말씀카드)
+  // (주석 안의 안내 한 줄은 빼고, 실제로 화면에 심긴 자리만 센다)
+  sc.eq('설정창 네 곳에 자리가 있다',
+    (SRC.match(/<div class="settings-verbadge"/g)||[]).length, 4);
+  sc.eq('위젯 설정을 열 때도 맞춘다',
+    /function openRpConfig\(\)\{[\s\S]{0,220}_syncDevVerBadge\(\);/.test(SRC), true);
+  sc.eq('말씀카드 설정을 열 때도 맞춘다',
+    /function openVcSettings\(id\)\{[\s\S]{0,320}_syncDevVerBadge\(\);/.test(SRC), true);
+  // ⚠️ 아래 끝에 딱 붙어 있어 아이폰 홈 인디케이터에 가렸다.
+  sc.eq('안전영역만큼 띄운다',
+    SRC.includes('bottom:calc(env(safe-area-inset-bottom,0px) + 7px);'), true);
+  sc.eq('어떤 내용 위에서도 읽히게 판을 깐다',
+    /\.settings-verbadge\{[\s\S]{0,260}background:var\(--s1\);/.test(SRC), true);
+  // 로그인·로그아웃 그 순간에도 (설정창을 다시 열지 않아도 되게)
+  sc.eq('로그인할 때 맞춘다',
+    /window\._fbUser=user;\s*\n\s*try\{_syncDevVerBadge\(\);\}catch\(e\)\{\}/.test(SRC), true);
+  sc.eq('로그아웃할 때도 맞춘다',
+    /window\._fbUser=null;\s*\n\s*try\{_syncDevVerBadge\(\);\}catch\(e\)\{\}/.test(SRC), true);
 }
 
 sc.done();

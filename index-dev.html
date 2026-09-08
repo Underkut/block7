@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0908-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3268,10 +3268,14 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   overflow:hidden; /* prevents sticky tab bar from escaping panel bounds */
   animation:settingsIn .22s ease;
 }
-/* v26-0907-8, HB 0 — 개발자 계정에만 보이는 버전 표시. 우하단에 조용히. */
-.settings-verbadge{position:absolute;right:8px;bottom:6px;z-index:1;
-  font-size:9px;color:var(--tx3);opacity:.55;font-family:var(--font-number);
-  pointer-events:none;letter-spacing:.02em;}
+/* v26-0907-8, HB 0 — 개발자 계정에만 보이는 버전 표시. 우하단에 조용히.
+   ⚠️ v26-0908-4 — 아래 끝에 딱 붙어 있어 아이폰 홈 인디케이터에 가렸다.
+      안전영역만큼 띄우고, 뒤에 옅은 판을 깔아 어떤 내용 위에서도 읽히게 한다. */
+.settings-verbadge{position:absolute;right:8px;z-index:3;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 7px);
+  font-size:9.5px;color:var(--tx3);opacity:.75;font-family:var(--font-number);
+  pointer-events:none;letter-spacing:.02em;
+  background:var(--s1);padding:1px 5px;border-radius:99px;}
 @media(min-width:720px){
   .settings-panel{border-radius:16px;max-height:80vh;}
 }
@@ -4768,7 +4772,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-3";
+const APP_VERSION = "v. 26-0908-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6685,6 +6689,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 우측 패널 위젯 설정 팝업 -->
 <div class="event-modal-overlay" id="rpConfigOverlay" style="display:none;z-index:4300;" onclick="closeRpConfig()"></div>
 <div class="event-modal" id="rpConfigModal" style="display:none;z-index:4310;width:400px;max-width:92vw;max-height:84vh;overflow-y:auto;">
+  <div class="settings-verbadge" style="display:none;"></div>
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div class="event-modal-title" style="margin:0;">위젯 설정</div>
     <button onclick="closeRpConfig()" style="background:none;border:none;cursor:pointer;color:var(--tx3);padding:2px;display:flex;-webkit-tap-highlight-color:transparent;">
@@ -6697,6 +6702,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 말씀카드 설정 (위젯 하나하나마다 따로) -->
 <div class="event-modal-overlay" id="vcSetOverlay" style="display:none;z-index:4320;" onclick="closeVcSettings()"></div>
 <div class="event-modal" id="vcSetModal" style="display:none;z-index:4330;width:380px;max-width:92vw;max-height:84vh;overflow-y:auto;">
+  <div class="settings-verbadge" style="display:none;"></div>
   <div class="modal-head">
     <span class="modal-x modal-x-inline" onclick="openVcCollSettings()" title="말씀 모음 설정">
       <svg width="18" height="18" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>
@@ -20208,7 +20214,7 @@ function _vTrRail2Bind(el){
   const midPc=v=>((max===min)?0:((v-min)/(max-min))*100).toFixed(2)+'%';
   let lo=parseFloat(el.dataset.lo)||0, hi=parseFloat(el.dataset.hi);
   if(!isFinite(hi))hi=max;
-  let id=null,grab=null;
+  let id=null,grab=null,downX=0;
   const fracOf=e=>{
     const r=el.getBoundingClientRect();
     if(r.width<=0)return 0;
@@ -20236,15 +20242,30 @@ function _vTrRail2Bind(el){
     if(id!==null)return;
     id=e.pointerId;
     const v=valOf(fracOf(e));
-    // 가까운 쪽을 잡는다. 같으면 바깥으로 벌어지는 쪽을 잡아야 갇히지 않는다.
-    grab=(Math.abs(v-lo)<Math.abs(v-hi))?'lo':(Math.abs(v-lo)>Math.abs(v-hi))?'hi':(v<lo?'lo':'hi');
+    // v26-0908-4, HB 2-4 — 두 손잡이가 **겹쳐 있으면**(구간이 하나뿐) 어느 쪽이
+    //   가까운지 잴 수가 없어 늘 한쪽만 잡혔다. 그때는 **처음 민 방향**이 정한다:
+    //   왼쪽으로 밀면 위쪽(lo·상위) 손잡이가, 오른쪽으로 밀면 아래쪽(hi·하위)
+    //   손잡이가 따라간다. 정해지기 전에는 아무것도 안 움직인다.
+    // 겹치지 않았으면 예전 그대로 — 가까운 쪽, 같으면 바깥으로 벌어지는 쪽.
+    grab=(lo===hi)?null
+      :(Math.abs(v-lo)<Math.abs(v-hi))?'lo'
+      :(Math.abs(v-lo)>Math.abs(v-hi))?'hi'
+      :(v<lo?'lo':'hi');
+    downX=e.clientX;
     el.classList.add('dragging');
     try{el.setPointerCapture(id);}catch(_){}
-    move(e);
+    if(grab)move(e);
     e.preventDefault();
   };
   const move=e=>{
     if(id===null||e.pointerId!==id)return;
+    if(!grab){
+      // 아직 어느 손잡이인지 안 정했다 — 첫 방향이 정한다 (2-4).
+      // ⚠️ 손가락 떨림으로 엉뚱한 쪽이 잡히지 않게 3px 은 기다린다.
+      const dx=e.clientX-downX;
+      if(Math.abs(dx)<3){e.preventDefault();return;}
+      grab=(dx<0)?'lo':'hi';
+    }
     const v=valOf(fracOf(e));
     if(grab==='lo')lo=Math.max(min,Math.min(hi,v));
     else hi=Math.min(max,Math.max(lo,v));
@@ -21360,35 +21381,38 @@ function vMapOpenGrid(book){
 }
 // v26-0908-3, HB 2-2-3 — 위쪽 필터(갈래·범위·기간)가 걸린 그대로 연다.
 //   지도가 세고 있는 것과 전체화면에 뜨는 것이 달라서는 안 된다.
+// v26-0908-4, HB 2-2-3 — **그 장 안에서만** 보여준다.
+//   예전엔 성경 전체를 넘기고 그 장 자리로 가기만 해서, 넘기다 보면 다른
+//   장이 나왔다. 3장을 눌렀으면 3장이 전부여야 한다.
 function vMapOpenChapter(book,chap){
   if(!book)return;
   const sc=_vDashScope();
-  // 지금 지도가 보고 있는 바로 그 기록들 — 거기서 이 성경 것만.
+  const inChap=(ref,v)=>!chap||_vTrChapterKeys(ref,book,v).some(k=>_vTrChapNo(k)===chap);
+  // 지금 지도가 보고 있는 바로 그 기록들 — 거기서 이 성경(그리고 그 장) 것만.
   const refs=new Set();
   _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
-    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)>=0)refs.add(e.ref);
+    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)<0)return;
+    if(!inChap(e.ref,e.v))return;
+    refs.add(e.ref);
   });
   const pool=_vgRawPool().filter(v=>refs.has(v.ref));
   if(!pool.length){showToast('보여줄 말씀이 없어요');return;}
   const list=pool.slice().sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));
-  let i=0;
-  if(chap){
-    const hit=list.findIndex(v=>_vTrChapterKeys(v.ref,book,v).some(k=>_vTrChapNo(k)===chap));
-    if(hit>=0)i=hit;
-  }
   _vDashMarkReturn();
   closeVerseDashboard();
   // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 갈래·이동 목록은
   //    **연 뒤에** 심는다 (짝 목록에서 배운 것과 같다).
-  _vfOverrideVerse=list[i];
+  _vfOverrideVerse=list[0];
   openVerseFull(true);
-  // 제목에 조건을 함께 적는다 — '사무엘상 · 좋아요' 처럼
+  // 제목에 무엇을 걸었는지 함께 적는다 — '사무엘상 3장 · 좋아요 16주' 처럼
   const cond=_vDashScopeTitle();
+  const where=book+(chap?` ${chap}장`:'');
   _vfSetTabPool(list,'all');
-  _vfSetNav(list,i,book+(cond?' · '+cond:''),null);
+  _vfSetNav(list,0,where+(cond?' · '+cond:''),null);
   // 2-2-4 — 제목을 누르면 그 타일뷰로. 걸린 필터(refs)까지 함께 들고 간다.
-  _vfNavTile={kind:'book',val:book,refs:refs,facet:cond?[cond]:null};
-  _vfOverrideVerse=list[i];
+  _vfNavTile={kind:'book',val:book,refs:refs,
+              facet:[chap?`${chap}장`:'',cond].filter(Boolean)};
+  _vfOverrideVerse=list[0];
   _vfSyncTopBar();
   _verseFullRender();
 }
@@ -24746,6 +24770,7 @@ function openVcSettings(id){
   const ov=document.getElementById('vcSetOverlay'),md=document.getElementById('vcSetModal');
   if(!ov||!md)return;
   ov.style.display='block';md.style.display='block';
+  _syncDevVerBadge();
   renderVcSettings();
 }
 function closeVcSettings(){
@@ -25166,6 +25191,7 @@ function openRpConfig(){
   document.getElementById('rpConfigOverlay').style.display='block';
   document.getElementById('rpConfigModal').style.display='block';
   renderRpConfigList();
+  _syncDevVerBadge();
 }
 function closeRpConfig(){
   document.getElementById('rpConfigOverlay').style.display='none';
@@ -26331,12 +26357,13 @@ function _isDevAccount(){
   const u=window._fbUser;
   return !!(u&&u.email&&u.email.toLowerCase()===DEV_INBOX_EMAIL);
 }
-// 설정창 두 곳의 버전 배지 — 개발자 계정에만 보인다 (v26-0907-8, HB 0)
+// 설정창들의 버전 배지 — 개발자 계정에만 보인다 (v26-0907-8, HB 0).
+// v26-0908-4, HB 5 — id 를 하나하나 적지 않고 **클래스로 훑는다.** 설정창이
+//   늘 때마다 이 표를 고치는 것을 잊어 배지가 빠지곤 했다. 새 설정창에는
+//   settings-verbadge 클래스를 단 빈 div 한 줄만 넣으면 저절로 따라온다.
 function _syncDevVerBadge(){
   const dev=_isDevAccount();
-  ['settingsVerBadge','verseSettingsVerBadge'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el)return;
+  document.querySelectorAll('.settings-verbadge').forEach(el=>{
     el.style.display=dev?'':'none';
     if(dev)el.textContent=APP_VERSION;
   });
@@ -36863,6 +36890,7 @@ window.fbStartListening=function(uid){
 fbAuth.onAuthStateChanged(async user=>{
   if(user){
     window._fbUser=user;
+    try{_syncDevVerBadge();}catch(e){}   // 로그인 그 순간에 배지도 맞춘다 (HB 5)
     document.getElementById('authScreen').classList.add('hidden');
     try{closeAccountSensitiveModals();}catch(e){} // 이전 계정 모달 스테일 DOM 방지
 
@@ -36920,6 +36948,7 @@ fbAuth.onAuthStateChanged(async user=>{
   } else {
     // 로그아웃: 다음 로그인에 이전 계정 데이터가 새지 않도록 로컬을 완전히 비움
     window._fbUser=null;
+    try{_syncDevVerBadge();}catch(e){}
     if(_fbUnsub){_fbUnsub();_fbUnsub=null;}
     _fbInitLoaded=false;
     try{closeAccountSensitiveModals();}catch(e){}
