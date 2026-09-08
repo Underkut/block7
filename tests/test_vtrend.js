@@ -961,8 +961,19 @@ console.log('\n시나리오 26 — 91-1·91-3 짝 목록 정렬 고정 · 다중
   sc.eq('openVerseGrid 가 그 refs 를 받아 저장한다',
         /function openVerseGrid\(kind,val,cardId,limitRefs\)\{[\s\S]{0,500}_vgState\.limitRefs=limitRefs\|\|null;/.test(SRC),
         true);
-  sc.eq('_vgFilteredPool 이 그 refs 로 거른다',
-        SRC.includes('if(_vgState.limitRefs)pool=pool.filter(v=>_vgState.limitRefs.has(v.ref));'), true);
+  // v26-0908-6, HB 2-2-3 — 장절이 아니라 **반응키**로 가린다. 장절로 가리면
+  //   같은 장절을 가진 한 설교의 명제들이 통째로 딸려 들어와, 걸어 둔 필터가
+  //   타일뷰에서만 풀린 것처럼 보였다.
+  sc.eq('_vgFilteredPool 이 그 꾸러미로 거른다',
+        SRC.includes('pool=pool.filter(v=>_L.has(_vIdKey(v)));'), true);
+  sc.eq('장절로 한 번 더 봐 주지 않는다(그것이 새는 구멍이었다)',
+        SRC.includes('_L.has(_vIdKey(v))||'), false);
+  sc.eq('가리는 열쇠는 한 함수', SRC.includes('function _vIdKey(v){'), true);
+  sc.eq('반응키를 먼저 쓴다',
+        SRC.includes("const k=(typeof _reactKey==='function')?_reactKey(v):'';\n  return k||v.ref||('#'+(v.krText||''));"), true);
+  sc.eq('짝 목록 꾸러미도 같은 열쇠로',
+        SRC.includes("const k=_vIdKey(v);            // 장절이 아니라 반응키 (v26-0908-6)"), true);
+  sc.eq('지도가 넘기는 꾸러미도 같은 열쇠로', SRC.includes('function _vMapLimitSet(list){'), true);
   sc.eq('전체화면 제목 아래 2뎁스 표시 자리(#vfFacetRow)',
         SRC.includes('<div class="vf-facetrow" id="vfFacetRow" style="display:none;"></div>'), true);
   sc.eq('타일뷰 제외 스테퍼 오른쪽 2뎁스 표시 자리(#vgFacetBox)',
@@ -1136,7 +1147,9 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
   sc.eq('글자가 아니라 뜻으로 말씀을 푼다',
     SRC.includes("const v=e.v||_vDashVerse(e.ref)||") &&
     SRC.includes("_findVerseByRefLoose(e.ref):null);"), true);
-  sc.eq('말씀은 하나로 묶어 센다', SRC.includes('if(v)g.verses.set(v.ref||e.ref,v);'), true);
+  // v26-0908-6 — 겹침도 장절이 아니라 반응키로 본다. 장절로 보면 같은 장절의
+  //   명제가 좋아요 누른 말씀을 **덮어써** 목록에서 사라졌다.
+  sc.eq('말씀은 반응키로 묶어 센다', SRC.includes('if(v)g.verses.set(_vIdKey(v)||e.ref,v);'), true);
   sc.eq('여는 목록도 같은 곳에서', SRC.includes('function _vMapChapList(book,chap){'), true);
   sc.eq('격자가 그 함수를 쓴다', SRC.includes('const chap=_vMapChapMap(b);'), true);
   sc.eq('누를 때도 그 함수를 쓴다', SRC.includes('const list=_vMapChapList(book,chap);'), true);
@@ -1245,17 +1258,27 @@ console.log('\n시나리오 34 — 0908-3 (뎁스가 진짜로 먹게 · 칩 유
   sc.eq('띠 가운데에 구간 이름을 한 번 더',
     SRC.includes('<span class="vrhy2-zonenm">${esc(b.name)}</span>'), true);
   sc.eq('띠 위쪽 경계선을 굵게', /\.vrhy2-zone\{[\s\S]{0,120}border-top-width:2px;/.test(SRC), true);
-  sc.eq('경계선은 그 구간 색으로', SRC.includes('border-top-color:color-mix(in srgb,${b.color} 75%,transparent);'), true);
+  sc.eq('경계선은 그 구간 색으로', SRC.includes('border-top-color:color-mix(in srgb,${b.color} 80%,transparent);'), true);
   // v26-0908-5, HB 4-1 — 경계선이 설 자리를 따로 만든다(세로 틈 5px + 띠가
   //   위로 3px). 예전엔 2px 틈에 선이 들어가 칸 테두리와 겹쳤다.
   sc.eq('세로 틈을 넓혀 선 자리를 만든다', SRC.includes('gap:5px 2px;align-items:stretch;'), true);
   sc.eq('띠가 위로 자라 틈 안에 선이 놓인다', /\.vrhy2-zone\{[\s\S]{0,140}margin-top:-3px;/.test(SRC), true);
   // 4-2 — 면이 진하면 칸끼리의 색 차이가 묻힌다
-  sc.eq('면은 더 옅게', SRC.includes('background:color-mix(in srgb,${b.color} 6%,transparent);'), true);
+  // v26-0908-6, HB 4-2 — 6% 도 아직 진하다는 지적. 3% 로 낮추고 구간을
+  //   가르는 일은 경계선이 맡는다.
+  sc.eq('면은 아주 옅게(3%)', SRC.includes('background:color-mix(in srgb,${b.color} 3%,transparent);'), true);
   // ⚠️ 칸보다 뒤에 깔리므로 아주 옅게 — 진하면 숫자 칸이 안 읽힌다.
-  // 4-3 — 한 단계 키우고 조금 더 또렷하게
+  // 4-3 — 한 단계 키우고, 색은 구간색이 아니라 테마의 수수한 색으로 통일한다.
+  //   구간마다 글자색이 달라지면 표가 알록달록해져 칸의 진하기 차이가 안 읽힌다.
   sc.eq('이름을 키우고 또렷하게',
-    /\.vrhy2-zonenm\{font-size:12px;[\s\S]{0,80}opacity:\.38;/.test(SRC), true);
+    /\.vrhy2-zonenm\{font-size:12px;[\s\S]{0,80}opacity:\.42;/.test(SRC), true);
+  sc.eq('이름 색은 테마의 수수한 색으로 통일', /\.vrhy2-zonenm\{[\s\S]{0,120}color:var\(--tx3\);/.test(SRC), true);
+  // ⚠️ 좌측 Y축 제목(.vrhy2-band)은 예전 그대로 구간색을 쓴다 — 거기까지
+  //    회색으로 만들면 어느 구간인지 가릴 것이 아무것도 안 남는다.
+  //    회색으로 바꾼 것은 **표 안 가운데 이름**뿐이다.
+  sc.eq('띠(zone)에는 구간색 글자색을 안 물린다',
+    /const zoneSty=b\.color[\s\S]{0,320}border-top-color[^;]*;`\s*\n\s*: ''/.test(SRC), true);
+  sc.eq('좌측 Y축 제목은 그대로 구간색', SRC.includes("(b.color?`color:${b.color};`:'')"), true);
 
   // ── 2-2-3 · 위쪽 필터를 물고 가는 길 ────────────────────────────
   sc.eq('제목에 쓸 조건 이름', SRC.includes('function _vDashScopeTitle(){'), true);
