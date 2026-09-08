@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-6  [production]  -->
+<!-- BLOCK7  v. 26-0908-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1211,11 +1211,11 @@ header{
   border-left:1px solid var(--bd);border-right:1px solid var(--bd);
   line-height:18px;font-variant-numeric:tabular-nums;
 }
-/* 91-3-4 — 짝 목록 다중 필터를 물려받은 타일뷰. 제외 스테퍼 오른쪽,
-   정렬 버튼들 왼쪽. 자리가 모자라면 옆으로 흘려 스크롤한다(줄바꿈 안 함 —
-   위 줄 높이가 늘어나면 타일이 보일 자리를 뺏는다). */
-.vg-facet{display:flex;align-items:center;gap:5px;flex:1 1 40px;min-width:0;
-  overflow-x:auto;-webkit-overflow-scrolling:touch;margin-left:8px;}
+/* 짝 목록에서 물려받은 '+ 항목들'. v26-0908-7, HB 8 — 첫 줄이 아니라 갈래
+   칩과 **같은 둘째 줄**에 선다(첫 줄은 이미 빽빽해 모바일에서 잘렸다).
+   자리가 모자라면 옆으로 흘려 스크롤한다 — 줄바꿈하면 타일 자리를 뺏는다. */
+.vg-facet{display:flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .vg-facet-plus{flex:0 0 auto;font-size:11px;color:var(--tx3);opacity:.7;}
 .vg-facet-item{flex:0 0 auto;font-size:10.5px;color:var(--tx2);white-space:nowrap;
   background:var(--s2,rgba(127,127,127,.16));border-radius:99px;padding:2px 8px;}
@@ -3270,13 +3270,13 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 /* v26-0908-5, HB 5 — 할일뷰 달성바 왼쪽 위. 아주 작게, 자리를 안 차지하게. */
 .settings-verbadge.tiny-verbadge{right:auto;left:0;bottom:auto;top:-7px;
-  font-size:7.5px;opacity:.5;padding:0;background:none;}
+  font-size:7.5px;opacity:.72;padding:0;background:none;}
 /* v26-0907-8, HB 0 — 개발자 계정에만 보이는 버전 표시. 우하단에 조용히.
    ⚠️ v26-0908-4 — 아래 끝에 딱 붙어 있어 아이폰 홈 인디케이터에 가렸다.
       안전영역만큼 띄우고, 뒤에 옅은 판을 깔아 어떤 내용 위에서도 읽히게 한다. */
 .settings-verbadge{position:absolute;right:8px;z-index:3;
   bottom:calc(env(safe-area-inset-bottom,0px) + 7px);
-  font-size:9.5px;color:var(--tx3);opacity:.75;font-family:var(--font-number);
+  font-size:9.5px;color:var(--tx2);opacity:.9;font-family:var(--font-number);
   pointer-events:none;letter-spacing:.02em;
   background:var(--s1);padding:1px 5px;border-radius:99px;}
 @media(min-width:720px){
@@ -3778,7 +3778,22 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    ⚠️ 흐린 쪽도 **끌 수 있다.** 못 끌게 막으면 달에서 주로 되돌아올 길이 없다.
    ⚠️ 폭이 넉넉하면(720px 이상) 두 줄 대신 **한 줄에 나란히** 둔다 (v26-0906-2, HB 5-2). */
 .vtr-spanwrap{flex-direction:column;align-items:stretch;gap:7px;}
-.vtr-spanchips{display:flex;gap:11px;align-items:center;flex:0 0 auto;}
+.vtr-spanchips{display:flex;gap:11px;align-items:center;flex:0 0 auto;flex-wrap:wrap;}
+/* 7 (v26-0908-7) — '직접' 날짜 두 칸. [전체][직접] 바로 오른쪽, 같은 줄.
+   겉은 알약, 속은 투명하게 덮은 진짜 <input type=date> (_vDashDateBtn 주석 참고). */
+.vtr-daterow{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;}
+.vtr-date{position:relative;display:inline-flex;align-items:center;justify-content:center;
+  min-width:58px;font-size:11px;line-height:17px;padding:1px 8px;border-radius:99px;
+  border:1px solid var(--bd2);color:var(--tx2);font-family:var(--font-number);
+  font-variant-numeric:tabular-nums;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+.vtr-date-e{color:var(--tx3);}
+.vtr-date-tx{white-space:nowrap;pointer-events:none;}
+/* 고르개는 눌리되 보이지는 않는다 */
+.vtr-date input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;
+  margin:0;padding:0;border:0;background:none;cursor:pointer;
+  -webkit-appearance:none;appearance:none;font-size:11px;}
+.vtr-datesep{font-size:11px;color:var(--tx3);}
 .vtr-slides{display:flex;flex-direction:column;align-items:stretch;gap:7px;flex:1;min-width:0;}
 @media (min-width:720px){
   .vtr-spanwrap{flex-direction:row;align-items:center;gap:16px;}
@@ -4544,8 +4559,8 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-row-more:active{opacity:.5;}
 /* 타일뷰 갈래 탭 — 목록 팝업의 .vl-tab 을 그대로 쓰고 줄만 따로 둔다.
    ⚠️ 높이를 최소로 (글자 10.5px). 타일이 보일 자리를 뺏으면 안 된다. */
-.vg-tabrow{display:flex;gap:14px;align-items:center;justify-content:center;
-  padding:0 12px 4px;flex-shrink:0;}
+.vg-tabrow{display:flex;gap:10px;align-items:center;justify-content:center;
+  padding:0 12px 4px;flex-shrink:0;min-width:0;}
 #verseGrid .vg-tabrow .vl-tab{color:var(--vf-tx3,var(--tx3));}
 #verseGrid .vg-tabrow .vl-tab.on{color:var(--vf-tx,var(--tx));}
 /* 타일 안의 '명제' 표시 — 장절 줄 맨 앞 */
@@ -4783,7 +4798,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-6";
+const APP_VERSION = "v. 26-0908-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6439,11 +6454,9 @@ window._fbScriptsReady=new Promise(resolve=>{
        예전에는 분포만 여기 위쪽에 [주간 월간 연간 전체 직접] 글자 버튼을 따로
        뒀는데, 화면마다 기간 조작부가 달라 어디서 무엇을 고르는지 헷갈렸다.
        이제 다섯 화면이 같은 자리에서 같은 한 벌([전체][직접] + 주·달 슬라이더)을 쓴다. -->
-  <div id="vDashCustomRow" style="display:none;gap:6px;align-items:center;margin-bottom:8px;justify-content:flex-end;">
-    <input type="date" id="vDashFrom" class="event-modal-text" style="width:auto;margin:0;padding:5px 8px;font-size:11px;" onchange="vDashSetCustom()">
-    <span style="font-size:11px;color:var(--tx3);">~</span>
-    <input type="date" id="vDashTo" class="event-modal-text" style="width:auto;margin:0;padding:5px 8px;font-size:11px;" onchange="vDashSetCustom()">
-  </div>
+  <!-- v26-0908-7, HB 7 — '직접' 날짜 두 칸은 이제 본문 안 '기간' 줄에 든다
+       ([전체][직접] 칩 바로 오른쪽). 여기 머리에 따로 두었더니 가로선 위에
+       떠서, 무엇을 고르면 어디가 바뀌는지 눈으로 이어지지 않았다. -->
   <!-- v26-0907-9, HB 93-3 — 좌우로 8px 여유를 둔다. 슬라이더 손잡이가 0%/100%에
        있을 때 반지름(7px)만큼 트랙 밖으로 걸치는데, 여백이 없으면 overflow:auto
        가 그 반쪽을 그대로 잘라 먹어 "오른쪽 끝이 잘린" 것처럼 보였다. -->
@@ -6891,9 +6904,6 @@ window._fbScriptsReady=new Promise(resolve=>{
         <button id="vgExclPlus" onclick="vgStepTileExcl(1)" aria-label="기준 늘리기">+</button>
       </div>
     </div>
-    <!-- 91-3-4 — 짝 목록 다중 필터를 물려받아 왔으면 '+ 항목들' 로 보여준다.
-         제외 스테퍼 오른쪽, 정렬 버튼 왼쪽 (평소엔 비어서 안 보인다). -->
-    <div class="vg-facet" id="vgFacetBox" style="display:none;"></div>
     <!-- 남는 자리를 먹어 좌·우 묶음을 갈라 놓는다 (제목이 flex:1 이면 안 된다) -->
     <span class="vg-sp"></span>
     <div class="vg-sort">
@@ -6903,8 +6913,15 @@ window._fbScriptsReady=new Promise(resolve=>{
     </div>
   </div>
   <!-- 갈래 탭 (전체·말씀·명제) — 목록 팝업의 것과 **같은 얼개·같은 높이**.
-       ⚠️ 위 줄(.vg-top)은 이미 빽빽하다. 한 줄을 따로 두되 높이를 최소로. -->
-  <div class="vg-tabrow" id="vgTabRow"></div>
+       ⚠️ 위 줄(.vg-top)은 이미 빽빽하다. 한 줄을 따로 두되 높이를 최소로.
+       v26-0908-7, HB 8 — 짝 목록에서 물려받은 '+ 항목들'(#vgFacetBox)도 이
+       둘째 줄로 내렸다. 첫 줄에 두었더니 모바일에서 오른쪽이 잘렸다.
+       ⚠️ #vgTabRow 는 _vgRenderTabs 가 innerHTML 을 통째로 갈아 끼우는 자리라,
+          필터 상자는 그 **바깥**(형제)에 둬야 지워지지 않는다. -->
+  <div class="vg-tabrow">
+    <span id="vgTabRow"></span>
+    <div class="vg-facet" id="vgFacetBox" style="display:none;"></div>
+  </div>
   <div class="vg-scroll" id="vgScroll">
     <div class="vg-grid" id="vgGrid"></div>
   </div>
@@ -19876,6 +19893,25 @@ function _vDashKindLabel(kind){return(_VDASH_KINDS.find(k=>k[0]===kind)||[,kind]
 function _vDashAxisLabel(axis){return(_VDASH_AXES.find(a=>a[0]===axis)||[,axis])[1];}
 // (v26-0907-3 에 분포 전용 기간 글자 버튼 _vDashPeriodBtnsHTML · vDashSetPeriod 를
 //  없앴다 — 기간은 이제 _vTrSpanRowHTML 한 벌로 다섯 화면이 함께 쓴다.)
+// 날짜 한 칸. 겉은 우리가 그린 작은 알약, 속은 투명하게 덮은 진짜
+// <input type=date> 다 (v26-0908-7, HB 7).
+// ⚠️ 브라우저가 그리는 날짜칸을 그대로 쓰면 한 칸이 110px 을 넘어, 폰에서
+//    [전체][직접] 칩 오른쪽에 두 칸이 못 선다. 겉만 우리가 그리면 60px 이면 된다.
+// ⚠️ 고르개를 여는 일은 덮어 둔 input 이 그대로 한다 — 아이폰에서는 눌린 자리가
+//    곧 input 이라 늘 하던 날짜 휠이 뜬다. PC 는 showPicker() 로 거든다.
+function _vDashDateLb(v){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');
+  return m?`${m[1].slice(2)}.${m[2]}.${m[3]}`:'';
+}
+function _vDashDateBtn(id,val,ph){
+  const lb=_vDashDateLb(val);
+  return `<span class="vtr-date${lb?'':' vtr-date-e'}" `+
+    `onclick="try{this.querySelector('input').showPicker()}catch(e){}">`+
+    `<span class="vtr-date-tx">${lb||ph}</span>`+
+    `<input type="date" id="${id}" value="${_vgEscAttr(val)}" onchange="vDashSetCustom()" `+
+    `aria-label="${_vgEscAttr(ph)} 날짜">`+
+    `</span>`;
+}
 function vDashSetCustom(){
   const pref=_vDashPref();
   pref.customFrom=document.getElementById('vDashFrom').value||'';
@@ -19935,15 +19971,8 @@ function renderVerseDashboard(){
   const view=_vDashView();
   const tabs=document.getElementById('vDashViewTabs');
   if(tabs)tabs.innerHTML=_vDashViewTabsHTML();
-  // 직접 기간(날짜 두 개)은 '직접' 을 고른 화면에서만 나온다.
-  // 흐름·리듬은 칸으로 그리는 화면이라 '직접' 칩 자체가 없다.
-  const cr=document.getElementById('vDashCustomRow');
-  if(cr){
-    const hasAll=(view==='pie'||view==='map'||view==='link');
-    cr.style.display=(hasAll&&_vTrSpanMode()==='custom')?'flex':'none';
-    const f=document.getElementById('vDashFrom'),t=document.getElementById('vDashTo');
-    if(f)f.value=pref.customFrom||''; if(t)t.value=pref.customTo||'';
-  }
+  // 직접 기간(날짜 두 개)은 '기간' 줄 안에서 함께 그려진다 (v26-0908-7, HB 7).
+  //   그 줄은 화면마다 다시 그려지므로 여기서 따로 값을 넣어 줄 일이 없다.
   _vDashVerseMap=null;   // 모음이 바뀌었을 수 있으니 매번 새로 만든다
   // ⚠️ 다섯 화면이 다 기간 슬라이더를 갖게 되면서(v26-0907-3), 그리고 나서
   //    **반드시** 레일에 손가락을 붙여야 한다. 예전처럼 화면마다 return 으로
@@ -20870,6 +20899,17 @@ function _vTrSpanRowHTML(opt){
     chips=`<span class="vtr-spanchips">`+
       `<span class="vtr-chip${mode==='all'?' on':''}" onclick="vDashSetSpanMode('all')">전체</span>`+
       `<span class="vtr-chip${mode==='custom'?' on':''}" onclick="vDashSetSpanMode('custom')">직접</span>`+
+      // v26-0908-7, HB 7 — 날짜 두 칸은 [전체][직접] **바로 오른쪽, 같은 줄**에.
+      //   예전엔 가로선 위(모달 머리)에 따로 떠서, 무엇을 고르면 어디가 바뀌는지
+      //   눈으로 이어지지 않았다.
+      (mode==='custom'?(()=>{
+        const pr=_vDashPref();
+        return `<span class="vtr-daterow">`+
+          _vDashDateBtn('vDashFrom',pr.customFrom||'','시작')+
+          `<span class="vtr-datesep">~</span>`+
+          _vDashDateBtn('vDashTo',pr.customTo||'','끝')+
+          `</span>`;
+      })():'')+
       `</span>`;
   }
   return`<div class="vtr-ctl"><span class="vtr-ctl-lb">기간</span>`+
@@ -21076,12 +21116,13 @@ function renderVDashTrend(){
   //    옆으로 밀어 보게 했는데, 그러면 세로 눈금 글자가 왼쪽 밖으로 나가고
   //    가장 최근 칸은 오른쪽 밖에 있어 둘 중 하나는 늘 안 보였다.
   const W=Math.max(280,(box.clientWidth||520)-2);
-  // ── 소제목 차례: 갈래 - 범위 - 무엇을 - 기간 - 모양 (v26-0906-1, HB 3) ──
+  // ── 소제목 차례: 기간 - 갈래 - 범위 - 무엇을 - 모양 ──
+  //    v26-0908-7, HB 7 — 다섯 화면이 **모두** 기간을 맨 위에 둔다.
   let ctl='';
+  ctl+=_vTrSpanRowHTML();
   ctl+=_vTrChipsHTML('갈래','tab',_VL_TABS,pf.tab||'all');
   ctl+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.map(([v,l])=>[v,v==='home'?'말씀 모음':l]),pf.kind||'home');
   ctl+=_vTrChipsHTML('무엇을','axis',_VDASH_AXES,pf.axis||'book');
-  ctl+=_vTrSpanRowHTML();
   ctl+=_vTrChipsHTML('모양','form',_VTR_FORMS,form);
   let html=`<div class="vtr-head"><div class="vtr-ctls">${ctl}</div>`;
   if(book){
@@ -21225,9 +21266,11 @@ function _vDashScope(){
 function _vDashScopeCtlHTML(){
   const p=_vTrPref(),sc=_vDashScope();
   let h='';
+  // v26-0908-7, HB 7 — '기간' 이 맨 첫 줄이다. '직접' 을 고르면 날짜 칸이
+  //   그 줄에서 바로 열리므로, 아래로 내려가 있으면 눈이 두 번 움직인다.
+  h+=_vTrSpanRowHTML({all:true});
   h+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
   h+=_vDashKindRowHTML();
-  h+=_vTrSpanRowHTML({all:true});
   return h;
 }
 // 3-2-1 (v26-0908-3, HB) — 범위마다 '많이 무엇을 한 곳' 인지 말이 다르다.
@@ -21547,6 +21590,7 @@ function renderVDashMap(){
   const rgVals=rk.rows.map((r,i)=>i+1);          // 1,2,3… — 순위 그 자체
   const rgLbTx=_vTrExclLabel(rg.lo-1, rk.total-rg.hi);
   let html=`<div class="vtr-ctls">${_vDashScopeCtlHTML()}`+
+    // '보기' 는 지도에만 있는 줄이라 맨 아래에 둔다 (기간·갈래·범위 다음)
     `<div class="vtr-ctl"><span class="vtr-ctl-lb">보기</span>`+
     `<span class="vtr-ctl-vals vtr-spanwrap">`+
       `<span class="vtr-spanchips">`+
@@ -22905,9 +22949,9 @@ function renderVDashRhythm(){
   let mx=1; cnt.forEach(v=>{if(v>mx)mx=v;});
 
   let html=`<div class="vtr-ctls">`;
+  html+=_vTrSpanRowHTML();     // v26-0908-7, HB 7 — 기간이 맨 첫 줄
   html+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
   html+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.filter(([v])=>_VRHY_KINDS.indexOf(v)>=0),kind);
-  html+=_vTrSpanRowHTML();
   html+=`</div>`;
   if((p.kind||'home')==='home'){
     html+=`<div style="font-size:9.5px;color:var(--tx3);opacity:.8;margin:-2px 0 8px;">`+
