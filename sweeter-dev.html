@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0908-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4191,9 +4191,12 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   background:var(--s2,rgba(127,127,127,.05));z-index:0;pointer-events:none;
   display:flex;align-items:center;justify-content:center;overflow:hidden;}
 /* 표 안 가로 가운데에 한 번 더 쓰는 구간 이름 (v26-0908-3, HB 4).
-   v26-0908-5, HB 4-3 — 한 단계 키우고 조금 더 또렷하게. */
-.vrhy2-zonenm{font-size:12px;font-weight:700;letter-spacing:.3em;opacity:.38;
-  white-space:nowrap;text-indent:.3em;}
+   v26-0908-5, HB 4-3 — 한 단계 키우고 조금 더 또렷하게.
+   v26-0908-6, HB 4-3 — 색은 구간색을 따라가지 않고 **테마의 수수한 색**으로
+   통일한다. 구간마다 글자색이 달라지면 표가 알록달록해져 정작 칸의 진하기
+   차이가 안 읽힌다. 구간을 가리는 일은 경계선 색이 이미 하고 있다. */
+.vrhy2-zonenm{font-size:12px;font-weight:700;letter-spacing:.3em;opacity:.42;
+  color:var(--tx3);white-space:nowrap;text-indent:.3em;}
 .vrhy2-hr,.vrhy2-cell{position:relative;z-index:1;}
 /* 변화량 — 늘면 초록, 줄면 빨강 (v26-0906-1, HB 9)
    ⚠️ `.vtr-tbl td` (0,1,1) 가 `.vtr-up` (0,1,0) 보다 세다. 표 칸을 함께 적지
@@ -4780,7 +4783,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-5";
+const APP_VERSION = "v. 26-0908-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15652,7 +15655,16 @@ function _vgFilteredPool(allTabs){
     const ok=new Set(_aggEntriesForKind(_vgState.limitKind).map(g=>g.ref));
     pool=pool.filter(v=>ok.has(v.ref));
   }
-  if(_vgState.limitRefs)pool=pool.filter(v=>_vgState.limitRefs.has(v.ref));
+  // v26-0908-6, HB 2-2-3 — 장절이 아니라 **반응키**로 가린다. 장절로 가리면
+  //   같은 장절을 가진 한 설교의 명제들이 통째로 딸려 들어와, 걸어 둔 필터가
+  //   타일뷰에서만 풀린 것처럼 보였다.
+  // ⚠️ 장절(v.ref)로 한 번 더 봐 주면 안 된다. 한 설교의 명제들이 같은 장절을
+  //    갖기 때문에, 그중 하나만 걸어도 나머지가 통째로 딸려 들어온다.
+  //    꾸러미를 만드는 쪽도 _vIdKey 로만 담으므로 여기서도 그것만 본다.
+  if(_vgState.limitRefs){
+    const _L=_vgState.limitRefs;
+    pool=pool.filter(v=>_L.has(_vIdKey(v)));
+  }
   return pool;
 }
 // 기본 목록이 무엇인지 한 줄로 정리 (켜둔 모음 이름)
@@ -21374,6 +21386,16 @@ function _vMapRanks(stats,mode,nowKey){
   rows.forEach((r,i)=>rank.set(r.b,i+1));
   return{rows,rank,total:rows.length};
 }
+// v26-0908-6, HB 2-2-3 — 말씀·명제 하나를 가리는 열쇠.
+// ⚠️ 장절을 쓰면 안 된다. 한 설교의 명제 여럿이 같은 장절을 갖기 때문에
+//    (본문이 같다) 서로를 덮어쓰고, 걸러 낼 때도 한 명제만 걸면 나머지가
+//    전부 딸려 들어온다. 반응키는 명제 ID까지 보므로 하나하나 갈린다.
+//    (_vgRawPool 의 v26-0831-20 주석이 같은 교훈을 적어 두었다)
+function _vIdKey(v){
+  if(!v)return '';
+  const k=(typeof _reactKey==='function')?_reactKey(v):'';
+  return k||v.ref||('#'+(v.krText||''));
+}
 // v26-0908-5, HB 2-2-3 — 장별로 {기록 수, 말씀들}. 격자에 적는 수와 눌러서
 //   여는 목록이 **여기 하나에서** 나온다. 둘을 따로 세면 반드시 어긋난다.
 // ⚠️ 기록의 장절은 약칭이거나 명제의 반응키라 모음의 v.ref 와 글자가 다를 수
@@ -21392,7 +21414,7 @@ function _vMapChapMap(book){
       if(!out.has(no))out.set(no,{occ:0,verses:new Map()});
       const g=out.get(no);
       g.occ++;
-      if(v)g.verses.set(v.ref||e.ref,v);
+      if(v)g.verses.set(_vIdKey(v)||e.ref,v);
     });
   });
   return out;
@@ -21407,12 +21429,18 @@ function _vMapChapList(book,chap){
   });
   return[...seen.values()].sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));
 }
+// 그 목록을 타일뷰에 넘길 때 쓰는 열쇠 꾸러미 (장절이 아니라 반응키다)
+function _vMapLimitSet(list){
+  const out=new Set();
+  (list||[]).forEach(v=>{ const k=_vIdKey(v); if(k)out.add(k); });
+  return out;
+}
 // 2-2-2·2-2-3 (v26-0908-2) — 지도에서 곧장 타일뷰·전체화면으로.
 //   chap 이 0 이면 그 성경의 첫 말씀부터.
 function vMapOpenGrid(book){
   if(!book)return;
   const list=_vMapChapList(book,0);
-  const refs=new Set(list.map(v=>v.ref));
+  const refs=_vMapLimitSet(list);
   _vDashMarkReturn();
   closeVerseDashboard();
   openVerseGrid('book',book,null,refs.size?refs:null);
@@ -21429,7 +21457,7 @@ function vMapOpenChapter(book,chap){
   // 격자에 적힌 수와 **같은 곳**에서 뽑는다 (v26-0908-5, HB 2-2-3)
   const list=_vMapChapList(book,chap);
   if(!list.length){showToast('보여줄 말씀이 없어요');return;}
-  const refs=new Set(list.map(v=>v.ref));
+  const refs=_vMapLimitSet(list);
   _vDashMarkReturn();
   closeVerseDashboard();
   // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 갈래·이동 목록은
@@ -22496,7 +22524,9 @@ function _vpFiltRefSet(){
   const out=new Set();
   _vgRawPool().forEach(v=>{
     const oks=_vDashKeysOf(v.ref,oax,v);
-    if(_vpFilt.every(f=>oks.indexOf(f)>=0))out.add(v.ref);
+    if(!_vpFilt.every(f=>oks.indexOf(f)>=0))return;
+    const k=_vIdKey(v);            // 장절이 아니라 반응키 (v26-0908-6)
+    if(k)out.add(k);
   });
   return out;
 }
@@ -22902,13 +22932,13 @@ function renderVDashRhythm(){
     // v26-0908-3, HB 4 — 띠 위쪽 경계에 **또렷한 가로선**을 긋고, 표 안
     //   가로 가운데에도 구간 이름을 한 번 더 옅게 얹는다. 왼쪽 세로 제목까지
     //   시선을 옮기지 않아도 지금 보는 칸이 어느 때인지 알 수 있다.
-    // v26-0908-5, HB 4-2 — 면을 더 옅게. 진하면 칸끼리의 색 차이(적음·많음)가
-    //   묻힌다. 경계선은 그대로 또렷하게 둔다.
+    // v26-0908-6, HB 4-2 — 면을 3% 까지 낮춘다. 구간을 가르는 일은 **경계선**이
+    //   맡고, 면은 '여기까지가 한 구간' 이라는 것만 아주 옅게 거든다.
+    //   진하면 칸끼리의 색 차이(적음·많음)가 묻힌다.
     const zoneSty=b.color
-      ? `background:color-mix(in srgb,${b.color} 6%,transparent);`+
-        `border-color:color-mix(in srgb,${b.color} 22%,transparent);`+
-        `border-top-color:color-mix(in srgb,${b.color} 75%,transparent);`+
-        `color:${b.color};`
+      ? `background:color-mix(in srgb,${b.color} 3%,transparent);`+
+        `border-color:color-mix(in srgb,${b.color} 16%,transparent);`+
+        `border-top-color:color-mix(in srgb,${b.color} 80%,transparent);`
       : '';
     g+=`<div class="vrhy2-zone" style="grid-column:2/-1;grid-row:${2+r}/span ${b.n};${zoneSty}" `+
        `title="${_vgEscAttr(b.name||'')}">`+
