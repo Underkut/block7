@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0908-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3268,6 +3268,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   overflow:hidden; /* prevents sticky tab bar from escaping panel bounds */
   animation:settingsIn .22s ease;
 }
+/* v26-0908-5, HB 5 — 할일뷰 달성바 왼쪽 위. 아주 작게, 자리를 안 차지하게. */
+.settings-verbadge.tiny-verbadge{right:auto;left:0;bottom:auto;top:-7px;
+  font-size:7.5px;opacity:.5;padding:0;background:none;}
 /* v26-0907-8, HB 0 — 개발자 계정에만 보이는 버전 표시. 우하단에 조용히.
    ⚠️ v26-0908-4 — 아래 끝에 딱 붙어 있어 아이폰 홈 인디케이터에 가렸다.
       안전영역만큼 띄우고, 뒤에 옅은 판을 깔아 어떤 내용 위에서도 읽히게 한다. */
@@ -4161,8 +4164,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
       (grid-row: span n) 자동 배치는 뒤따르는 칸들이 구멍을 건너뛰며 어긋난다.
       그래서 모든 칸에 grid-column·grid-row 를 하나하나 적어 넣는다. */
 .vrhy2-wrap{overflow-x:auto;margin-top:4px;}
+/* v26-0908-5, HB 4-1 — 세로 틈을 넓혀 **시간구간 경계선이 설 자리**를 따로
+   만든다. 예전엔 2px 틈에 선이 들어가 칸 테두리와 겹쳐 지저분했다. */
 .vrhy2-grid{display:grid;grid-template-columns:15px 22px repeat(7,minmax(26px,1fr));
-  gap:2px;align-items:stretch;min-width:252px;}
+  gap:5px 2px;align-items:stretch;min-width:252px;}
 .vrhy2-dow{font-size:10px;color:var(--tx3);text-align:center;padding-bottom:3px;}
 /* 시간대 이름은 세로로 세운다 — 가로로 두면 이름 길이만큼 표가 밀린다.
    ⚠️ text-orientation:upright 가 없으면 한글이 **옆으로 누워** 읽히지 않는다.
@@ -4179,13 +4184,16 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    깔린다. 띠와 띠 사이의 격자 틈(2px)이 그대로 구분선이 된다.
    ⚠️ 칸보다 뒤에 있어야 하므로 칸 쪽에 z-index 를 준다 (둘 다 격자 자식이라
       순서만으로는 겹침이 안 정해진다). */
+/* ⚠️ 위로 3px 자라 **틈 안에** 경계선이 놓이게 한다 (HB 4-1). 그래야 선이
+   칸 테두리를 안 건드리고 자기 자리를 갖는다. */
 .vrhy2-zone{border-radius:5px;border:1px solid var(--bd);border-top-width:2px;
-  background:var(--s2,rgba(127,127,127,.07));z-index:0;pointer-events:none;
+  margin-top:-3px;
+  background:var(--s2,rgba(127,127,127,.05));z-index:0;pointer-events:none;
   display:flex;align-items:center;justify-content:center;overflow:hidden;}
 /* 표 안 가로 가운데에 한 번 더 쓰는 구간 이름 (v26-0908-3, HB 4).
-   ⚠️ 칸보다 뒤에 깔리므로 아주 옅게 — 진하면 숫자 칸이 안 읽힌다. */
-.vrhy2-zonenm{font-size:10px;font-weight:700;letter-spacing:.28em;opacity:.22;
-  white-space:nowrap;text-indent:.28em;}
+   v26-0908-5, HB 4-3 — 한 단계 키우고 조금 더 또렷하게. */
+.vrhy2-zonenm{font-size:12px;font-weight:700;letter-spacing:.3em;opacity:.38;
+  white-space:nowrap;text-indent:.3em;}
 .vrhy2-hr,.vrhy2-cell{position:relative;z-index:1;}
 /* 변화량 — 늘면 초록, 줄면 빨강 (v26-0906-1, HB 9)
    ⚠️ `.vtr-tbl td` (0,1,1) 가 `.vtr-up` (0,1,0) 보다 세다. 표 칸을 함께 적지
@@ -4772,7 +4780,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-4";
+const APP_VERSION = "v. 26-0908-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6191,7 +6199,8 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div id="todayView" style="padding:0 14px;">
 <div id="todaySlide">
   <div id="dTopNavWrap">
-    <div class="total-row" id="totalRow">
+    <div class="total-row" id="totalRow" style="position:relative;">
+      <div class="settings-verbadge tiny-verbadge" style="display:none;"></div>
       <button class="dn-nav dn-nav-l" onclick="navigateDate(-1)" title="어제" aria-label="어제"><i>‹</i></button>
       <div class="total-prog"><div class="total-fill" id="tFill" style="width:0%"></div></div>
       <span class="total-lbl" id="tLbl">0 / 6</span>
@@ -6408,6 +6417,7 @@ window._fbScriptsReady=new Promise(resolve=>{
      주간/월간/연간의 계산 기준은 말씀설정 → 말씀 모음 → 기간 기준을 따른다. -->
 <div class="event-modal-overlay" id="vDashOverlay" style="display:none;z-index:4600;" onclick="closeVerseDashboard()"></div>
 <div class="event-modal" id="vDashModal" style="display:none;z-index:4601;width:min(97vw,1200px);max-height:92vh;flex-direction:column;padding-bottom:12px;">
+  <div class="settings-verbadge" style="display:none;"></div>
   <!-- 윗줄: [흐름][분포][말씀 모음 설정] ... (기간 칩은 분포에서만) ... [×]
        ⚠️ 가운데 빈 칸(vdash-hdgap)은 **늘 있어야 한다.** 예전에는 기간 칩에
           flex:1 을 줘서 그 칸 노릇을 시켰는데, 흐름에서는 기간 칩이 숨으므로
@@ -21364,15 +21374,45 @@ function _vMapRanks(stats,mode,nowKey){
   rows.forEach((r,i)=>rank.set(r.b,i+1));
   return{rows,rank,total:rows.length};
 }
+// v26-0908-5, HB 2-2-3 — 장별로 {기록 수, 말씀들}. 격자에 적는 수와 눌러서
+//   여는 목록이 **여기 하나에서** 나온다. 둘을 따로 세면 반드시 어긋난다.
+// ⚠️ 기록의 장절은 약칭이거나 명제의 반응키라 모음의 v.ref 와 글자가 다를 수
+//    있다. 글자로 맞추지 말고 _vDashVerse → _findVerseByRefLoose 로 푼다.
+function _vMapChapMap(book){
+  const sc=_vDashScope();
+  const out=new Map();          // 장 -> {occ, verses:Map(key->verse)}
+  if(!book)return out;
+  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
+    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)<0)return;
+    const v=e.v||_vDashVerse(e.ref)||
+      ((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(e.ref):null);
+    _vTrChapterKeys(e.ref,book,e.v).forEach(k=>{
+      const no=_vTrChapNo(k);
+      if(no>=99999)return;
+      if(!out.has(no))out.set(no,{occ:0,verses:new Map()});
+      const g=out.get(no);
+      g.occ++;
+      if(v)g.verses.set(v.ref||e.ref,v);
+    });
+  });
+  return out;
+}
+// 그 성경(장을 주면 그 장)에서 보여줄 말씀들 — 성경순으로.
+function _vMapChapList(book,chap){
+  const cm=_vMapChapMap(book);
+  const seen=new Map();
+  cm.forEach((g,no)=>{
+    if(chap&&no!==chap)return;
+    g.verses.forEach((v,k)=>{ if(!seen.has(k))seen.set(k,v); });
+  });
+  return[...seen.values()].sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));
+}
 // 2-2-2·2-2-3 (v26-0908-2) — 지도에서 곧장 타일뷰·전체화면으로.
 //   chap 이 0 이면 그 성경의 첫 말씀부터.
 function vMapOpenGrid(book){
   if(!book)return;
-  const sc=_vDashScope();
-  const refs=new Set();
-  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
-    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)>=0)refs.add(e.ref);
-  });
+  const list=_vMapChapList(book,0);
+  const refs=new Set(list.map(v=>v.ref));
   _vDashMarkReturn();
   closeVerseDashboard();
   openVerseGrid('book',book,null,refs.size?refs:null);
@@ -21386,18 +21426,10 @@ function vMapOpenGrid(book){
 //   장이 나왔다. 3장을 눌렀으면 3장이 전부여야 한다.
 function vMapOpenChapter(book,chap){
   if(!book)return;
-  const sc=_vDashScope();
-  const inChap=(ref,v)=>!chap||_vTrChapterKeys(ref,book,v).some(k=>_vTrChapNo(k)===chap);
-  // 지금 지도가 보고 있는 바로 그 기록들 — 거기서 이 성경(그리고 그 장) 것만.
-  const refs=new Set();
-  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
-    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)<0)return;
-    if(!inChap(e.ref,e.v))return;
-    refs.add(e.ref);
-  });
-  const pool=_vgRawPool().filter(v=>refs.has(v.ref));
-  if(!pool.length){showToast('보여줄 말씀이 없어요');return;}
-  const list=pool.slice().sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));
+  // 격자에 적힌 수와 **같은 곳**에서 뽑는다 (v26-0908-5, HB 2-2-3)
+  const list=_vMapChapList(book,chap);
+  if(!list.length){showToast('보여줄 말씀이 없어요');return;}
+  const refs=new Set(list.map(v=>v.ref));
   _vDashMarkReturn();
   closeVerseDashboard();
   // ⚠️ openVerseFull 이 앞머리에서 _vfClearNav() 를 부른다 — 갈래·이동 목록은
@@ -21619,26 +21651,28 @@ function renderVDashMap(){
   let chapsHTML='';
   // 고른 성경의 장 격자 — 그 책의 전체 장을 다 깔고, 다룬 장만 칠한다
   if(p.mapBook){
-    const b=p.mapBook, g=stats.get(b);
+    const b=p.mapBook;
     const total=_bibleChapters(b);
-    const chap=new Map();
-    if(g)g.refs.forEach(e=>{
-      _vTrChapterKeys(e.ref,b,e.v).forEach(k=>{
-        const no=_vTrChapNo(k);
-        if(no<99999)chap.set(no,(chap.get(no)||0)+1);
-      });
-    });
-    let cmax=1; chap.forEach(v=>{if(v>cmax)cmax=v;});
+    // v26-0908-5, HB 2-2-3 — 세는 곳과 여는 곳을 하나로. ⚠️ g.refs(400개 상한)
+    //   로 세던 것을 걷어냈다 — 기록이 많은 성경에서 뒤쪽 장이 통째로 빠졌다.
+    const chap=_vMapChapMap(b);
+    let cmax=1; chap.forEach(g2=>{if(g2.occ>cmax)cmax=g2.occ;});
     let cells='';
     for(let i=1;i<=total;i++){
-      const n=chap.get(i)||0;
+      const g2=chap.get(i);
+      const n=g2?g2.occ:0, nv=g2?g2.verses.size:0;
       const cf=n/cmax;
-      // 2-2-3 (v26-0908-2) — 다룬 장을 누르면 그 장의 전체화면으로 곧장 간다.
+      // 2-2-3 — 다룬 장을 누르면 그 장의 전체화면으로 곧장 간다.
       //   아직 없는 장은 열 것이 없으니 누를 자리로 두지 않는다.
+      //   ⚠️ 칸 색은 **기록 수**(몇 번 눌렀나), 여는 목록은 **말씀 수**다.
+      //      둘이 다를 수 있으니 안내에 둘 다 적는다 — 4번 눌렀는데 말씀은
+      //      하나일 수 있다.
       cells+=`<div class="vmap-chap${n?' on':''}" `+
         `style="${n?`background:${_vMapShade(cf)};color:${_vMapInk(cf)};`:''}" `+
         (n?`onclick="vMapOpenChapter('${_vDashQ(b)}',${i})" `:'')+
-        `title="${esc(b)} ${i}장${n?' · '+n+' — 눌러서 전체화면':' — 아직 없어요'}">${i}</div>`;
+        `title="${esc(b)} ${i}장`+
+        (n?` · 말씀 ${nv}개${n!==nv?` (${n}번)`:''} — 눌러서 전체화면`:' — 아직 없어요')+
+        `">${i}</div>`;
     }
     const hit=[...chap.keys()].length;
     chapsHTML=`<div class="vmap-chaps"><div class="vmap-chaphd">`+
@@ -22868,10 +22902,12 @@ function renderVDashRhythm(){
     // v26-0908-3, HB 4 — 띠 위쪽 경계에 **또렷한 가로선**을 긋고, 표 안
     //   가로 가운데에도 구간 이름을 한 번 더 옅게 얹는다. 왼쪽 세로 제목까지
     //   시선을 옮기지 않아도 지금 보는 칸이 어느 때인지 알 수 있다.
+    // v26-0908-5, HB 4-2 — 면을 더 옅게. 진하면 칸끼리의 색 차이(적음·많음)가
+    //   묻힌다. 경계선은 그대로 또렷하게 둔다.
     const zoneSty=b.color
-      ? `background:color-mix(in srgb,${b.color} 13%,transparent);`+
-        `border-color:color-mix(in srgb,${b.color} 30%,transparent);`+
-        `border-top-color:color-mix(in srgb,${b.color} 70%,transparent);`+
+      ? `background:color-mix(in srgb,${b.color} 6%,transparent);`+
+        `border-color:color-mix(in srgb,${b.color} 22%,transparent);`+
+        `border-top-color:color-mix(in srgb,${b.color} 75%,transparent);`+
         `color:${b.color};`
       : '';
     g+=`<div class="vrhy2-zone" style="grid-column:2/-1;grid-row:${2+r}/span ${b.n};${zoneSty}" `+
@@ -23475,6 +23511,7 @@ function openVerseDashboard(){
   document.getElementById('vDashOverlay').style.display='block';
   document.getElementById('vDashModal').style.display='flex';
   renderVerseDashboard();
+  _syncDevVerBadge();          // v26-0908-5, HB 5 — 탭을 옮겨도 우하단에 남는다
 }
 // 화면을 돌리거나 창을 늘리면 그래프 폭도 따라가야 한다.
 // ⚠️ 잦은 resize 마다 다시 세면 무겁다 — 잠깐 묶어 두었다가 한 번만 그린다.
@@ -27514,6 +27551,7 @@ function makeBigGhost(id,secColor){
 }
 
 function updateTotal(){
+  try{_syncDevVerBadge();}catch(e){}   // 달성바 배지도 함께 (HB 5)
   const k=tKey();
   const all=SECS.flatMap(s=>getBigs(k,s.id)).filter(b=>b.text?.trim());
   const tot=all.length,done=all.filter(b=>b.done).length;
