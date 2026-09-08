@@ -1018,7 +1018,7 @@ console.log('\n시나리오 29 — 93-2 리듬 시간개념없음 버그 · 구�
     SRC.includes('g+=`<div class="vrhy2-zone" style="grid-column:2/-1;grid-row:${2+r}/span ${b.n};${zoneSty}" `+'), true);
   sc.eq('시각 열부터 오른쪽 끝열까지 이어진다', SRC.includes('grid-column:2/-1;grid-row:'), true);
   sc.eq('칸이 띠보다 위에 온다', /\.vrhy2-hr,\.vrhy2-cell\{position:relative;z-index:1;\}/.test(SRC), true);
-  sc.eq('띠는 z-index 0', /\.vrhy2-zone\{[\s\S]{0,120}z-index:0;/.test(SRC), true);
+  sc.eq('띠는 z-index 0', /\.vrhy2-zone\{[\s\S]{0,220}z-index:0;/.test(SRC), true);
   sc.eq('빈 칸만 물들이던 옛 방식은 없앴다', SRC.includes('const bandTint='), false);
 }
 
@@ -1126,11 +1126,23 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
     SRC.includes('onclick="vMapOpenGrid(') && SRC.includes("onclick=\"vMapOpenChapter('${_vDashQ(b)}',0)"), true);
   sc.eq('다룬 장만 누를 자리로', SRC.includes("(n?`onclick=\"vMapOpenChapter('${_vDashQ(b)}',${i})\" `:'')"), true);
   sc.eq('장 전체화면을 여는 함수', SRC.includes('function vMapOpenChapter(book,chap){'), true);
-  // v26-0908-4, HB 2-2-3 — 그 장 자리로 '가기만' 하던 것을 **그 장만 남기는
-  //   필터**로 바꿨다. 3장을 눌렀으면 넘겨도 3장이어야 한다.
-  sc.eq('그 장만 남긴다',
-    SRC.includes('const inChap=(ref,v)=>!chap||_vTrChapterKeys(ref,book,v).some(k=>_vTrChapNo(k)===chap);'), true);
-  sc.eq('거르는 자리는 기록을 훑는 그 곳', SRC.includes('if(!inChap(e.ref,e.v))return;'), true);
+  // v26-0908-5, HB 2-2-3 — 격자에 적히는 수와 눌러서 열리는 목록을 **한
+  //   함수**에서 뽑는다. 따로 세니 반드시 어긋났다:
+  //   ① 격자는 기록 수를 셌다(같은 말씀을 네 번 누르면 4), 목록은 말씀을
+  //      하나로 묶어 1 — 4 인데 1개가 나왔다.
+  //   ② 기록의 장절은 약칭이거나 명제 반응키라 v.ref 와 글자가 달라,
+  //      멀쩡히 있는 말씀을 못 찾아 '보여줄 말씀이 없어요' 가 됐다.
+  sc.eq('장별 {기록 수, 말씀들} 을 한 곳에서', SRC.includes('function _vMapChapMap(book){'), true);
+  sc.eq('글자가 아니라 뜻으로 말씀을 푼다',
+    SRC.includes("const v=e.v||_vDashVerse(e.ref)||") &&
+    SRC.includes("_findVerseByRefLoose(e.ref):null);"), true);
+  sc.eq('말씀은 하나로 묶어 센다', SRC.includes('if(v)g.verses.set(v.ref||e.ref,v);'), true);
+  sc.eq('여는 목록도 같은 곳에서', SRC.includes('function _vMapChapList(book,chap){'), true);
+  sc.eq('격자가 그 함수를 쓴다', SRC.includes('const chap=_vMapChapMap(b);'), true);
+  sc.eq('누를 때도 그 함수를 쓴다', SRC.includes('const list=_vMapChapList(book,chap);'), true);
+  // 안내에 말씀 수를 적는다 — 기록 수와 다를 수 있으니 둘 다 보인다
+  sc.eq('안내에 말씀 수를 적는다', SRC.includes(' · 말씀 ${nv}개'), true);
+  sc.eq('기록 수와 다르면 그것도 함께', SRC.includes('${n!==nv?'), true);
 
   // ── 2-2-4 · 전체화면 제목은 언제나 그 타일뷰로 가는 문 ────────────
   sc.eq('제목이 가리킬 곳을 한 함수가 정한다', SRC.includes('function _vfTitleTileFn(on,vpOn){'), true);
@@ -1144,7 +1156,7 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
   sc.eq('장까지 걸었으면 그것도 보여 준다',
     SRC.includes("facet:[chap?`${chap}장`:'',cond].filter(Boolean)};"), true);
   sc.eq('장을 열 때 위쪽 필터가 걸린 기록만 쓴다',
-    /function vMapOpenChapter\(book,chap\)\{[\s\S]{0,400}_vDashWinEntries\(sc\.kind,sc\.tab,sc\.unit,sc\.span,sc\)/.test(SRC), true);
+    /function _vMapChapMap\(book\)\{[\s\S]{0,260}_vDashWinEntries\(sc\.kind,sc\.tab,sc\.unit,sc\.span,sc\)/.test(SRC), true);
   sc.eq('제목에 어디를 걸었는지 적는다',
     SRC.includes("const where=book+(chap?` ${chap}장`:'');") &&
     SRC.includes("_vfSetNav(list,0,where+(cond?' · '+cond:''),null);"), true);
@@ -1233,9 +1245,17 @@ console.log('\n시나리오 34 — 0908-3 (뎁스가 진짜로 먹게 · 칩 유
   sc.eq('띠 가운데에 구간 이름을 한 번 더',
     SRC.includes('<span class="vrhy2-zonenm">${esc(b.name)}</span>'), true);
   sc.eq('띠 위쪽 경계선을 굵게', /\.vrhy2-zone\{[\s\S]{0,120}border-top-width:2px;/.test(SRC), true);
-  sc.eq('경계선은 그 구간 색으로', SRC.includes('border-top-color:color-mix(in srgb,${b.color} 70%,transparent);'), true);
+  sc.eq('경계선은 그 구간 색으로', SRC.includes('border-top-color:color-mix(in srgb,${b.color} 75%,transparent);'), true);
+  // v26-0908-5, HB 4-1 — 경계선이 설 자리를 따로 만든다(세로 틈 5px + 띠가
+  //   위로 3px). 예전엔 2px 틈에 선이 들어가 칸 테두리와 겹쳤다.
+  sc.eq('세로 틈을 넓혀 선 자리를 만든다', SRC.includes('gap:5px 2px;align-items:stretch;'), true);
+  sc.eq('띠가 위로 자라 틈 안에 선이 놓인다', /\.vrhy2-zone\{[\s\S]{0,140}margin-top:-3px;/.test(SRC), true);
+  // 4-2 — 면이 진하면 칸끼리의 색 차이가 묻힌다
+  sc.eq('면은 더 옅게', SRC.includes('background:color-mix(in srgb,${b.color} 6%,transparent);'), true);
   // ⚠️ 칸보다 뒤에 깔리므로 아주 옅게 — 진하면 숫자 칸이 안 읽힌다.
-  sc.eq('이름은 아주 옅게', /\.vrhy2-zonenm\{[\s\S]{0,110}opacity:\.22;/.test(SRC), true);
+  // 4-3 — 한 단계 키우고 조금 더 또렷하게
+  sc.eq('이름을 키우고 또렷하게',
+    /\.vrhy2-zonenm\{font-size:12px;[\s\S]{0,80}opacity:\.38;/.test(SRC), true);
 
   // ── 2-2-3 · 위쪽 필터를 물고 가는 길 ────────────────────────────
   sc.eq('제목에 쓸 조건 이름', SRC.includes('function _vDashScopeTitle(){'), true);
@@ -1262,8 +1282,16 @@ console.log('\n시나리오 35 — 0908-4 (장 필터 · 겹친 손잡이 · 버
   sc.eq('개발자 계정에만', /function _syncDevVerBadge\(\)\{\s*\n\s*const dev=_isDevAccount\(\);/.test(SRC), true);
   // 설정창 네 곳 모두 (일반·말씀·위젯·말씀카드)
   // (주석 안의 안내 한 줄은 빼고, 실제로 화면에 심긴 자리만 센다)
-  sc.eq('설정창 네 곳에 자리가 있다',
-    (SRC.match(/<div class="settings-verbadge"/g)||[]).length, 4);
+  // v26-0908-5, HB 5 — 대시보드 창과 할일뷰 달성바가 더해져 여섯 곳이다.
+  sc.eq('버전 자리는 여섯 곳',
+    (SRC.match(/<div class="settings-verbadge/g)||[]).length, 6);
+  sc.eq('대시보드 창에도', /id="vDashModal"[\s\S]{0,220}<div class="settings-verbadge"/.test(SRC), true);
+  sc.eq('대시보드를 열 때 맞춘다',
+    /function openVerseDashboard\(\)\{[\s\S]{0,260}_syncDevVerBadge\(\);/.test(SRC), true);
+  sc.eq('할일뷰 달성바 왼쪽 위에 아주 작게',
+    /\.settings-verbadge\.tiny-verbadge\{[\s\S]{0,90}font-size:7\.5px;/.test(SRC), true);
+  sc.eq('달성바가 그 자리를 갖는다',
+    SRC.includes('<div class="total-row" id="totalRow" style="position:relative;">'), true);
   sc.eq('위젯 설정을 열 때도 맞춘다',
     /function openRpConfig\(\)\{[\s\S]{0,220}_syncDevVerBadge\(\);/.test(SRC), true);
   sc.eq('말씀카드 설정을 열 때도 맞춘다',
