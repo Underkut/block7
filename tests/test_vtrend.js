@@ -920,6 +920,28 @@ console.log('\n시나리오 24 — 7 대시보드 5개 탭 아이콘');
   });
   sc.eq('분포는 로고 메뉴의 대시보드 아이콘과 같은 것(원+반지름선)',
         SRC.includes('<circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>'), true);
+  // v26-0908-7, HB 9 — 흐름은 표 안 '장별 흐름 보기' 버튼의 **채운 영역차트
+  //   원본 그대로**를 쓴다. 두 자리의 path 가 한 글자라도 어긋나면 안 된다.
+  const _AREA = '<path d="M1 9L5.5 4.5 9 7.5 16 1.5 16 11 1 11Z"/>';
+  sc.eq('흐름 아이콘이 그 영역차트다', SRC.includes(
+    `trend:'<svg width="14" height="14" viewBox="0 -2.25 17 17" fill="currentColor" stroke="none">'+\n    '${_AREA}</svg>'`), true);
+  sc.eq('표 안 버튼도 같은 그림 그대로다', (SRC.match(new RegExp(_AREA.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'))||[]).length, 2);
+  // ⚠️ 상자는 정사각(17×17)이어야 한다. 원본 상자(17×11)를 그대로 쓰면 다섯 탭
+  //    가운데 이것만 아이콘이 낮아 글자 줄이 어긋난다.
+  sc.eq('상자는 정사각으로 넓혔다', SRC.includes('viewBox="0 -2.25 17 17"'), true);
+  // v26-0908-7, HB 10 (C안) — 연결은 가운데 점 하나 + 불규칙한 각도로 뻗은 점 넷.
+  sc.eq('연결은 가운데 점이 크다', SRC.includes('<circle cx="10" cy="10" r="3" fill="currentColor" stroke="none"/>'), true);
+  sc.eq('바깥 점이 넷이다',
+        (SRC.match(/<circle cx="(?:4\.1|14\.5|12\.3|4\.4)" cy="(?:12\.8|15\.4|3\.6|7\.4)" r="1\.7"/g)||[]).length, 4);
+  sc.eq('넷 다 가운데에서 뻗는다',
+        SRC.includes('<path d="M10 10 L4.1 12.8 M10 10 L14.5 15.4 M10 10 L12.3 3.6 M10 10 L4.4 7.4" opacity=".5"/>'), true);
+  // 각도가 가지런하면 십자가·별표로 읽힌다 — 넷의 각도가 서로 달라야 한다
+  sc.eq('네 각도가 서로 다르다', (()=>{
+    const pts=[[4.1,12.8],[14.5,15.4],[12.3,3.6],[4.4,7.4]];
+    const deg=pts.map(([x,y])=>Math.round(Math.atan2(10-y,x-10)*180/Math.PI+360)%360).sort((a,b)=>a-b);
+    const gaps=deg.map((d,i)=>(deg[(i+1)%4]-d+360)%360);
+    return gaps.every(g=>g>35) && new Set(gaps).size===4;   // 겹치지도, 가지런하지도 않다
+  })(), true);
   sc.eq('탭 렌더에서 라벨 앞에 아이콘을 붙인다',
         SRC.includes('`${_VDASH_TAB_ICON[v]||\'\'}${l}</span>`).join(\'\');'), true);
   sc.eq('탭을 세로로 쌓는 CSS(아이콘 위·글자 아래)',
