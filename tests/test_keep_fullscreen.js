@@ -219,7 +219,8 @@ console.log('\n시나리오 4 — 중앙 폴더 이름에서 그 폴더 타일�
   // 말씀 → 명제 → 함께 세 갈래를 돈다 (글자는 늘 '말씀 + 명제').
   sc.eq('짝 목록에서 온 화면은 칩이 갈래 스위치',
         sync.includes("if(vpOn)mc.innerHTML=_vpModeChipHTML(_vpFullTab,'vpCycleFullTab()');"), true);
-  const pool = slice('function _vgFilteredPool(){', 'function _vgHomeLabel');
+  // v26-0908-3 — 갈래를 안 거른 뭉치도 뽑을 수 있게 인자가 하나 붙었다.
+  const pool = slice('function _vgFilteredPool(allTabs){', 'function _vgHomeLabel');
   // v26-0908-2, HB 2-2-4 — '저장' 뿐 아니라 좋아요·암송·Deeper·Even 도 타일뷰로
   // 열 수 있어야 한다(전체화면 제목을 누르면 그 목록으로 가야 하니까).
   // _VLIST_KIND_TITLE 에 있는 갈래가 곧 반응 목록이다 — 저장도 그 안에 있다.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0908-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3814,11 +3814,12 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* v26-0908-1, HB 11-2 — '상위 3개, 하위 2개 제외' 가 들어갈 만큼 넓힌다 */
 .vtr-slide-lb2{flex:0 0 118px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   font-family:inherit;}
-/* 2-1-1 (v26-0908-2) — 두 손잡이 사이에 남은 개수. 바 위에 얹혀 가운데 선다.
-   ⚠️ 바가 좁아지면 숫자가 삐져나온다 — 넘치는 것은 안 보이게 자른다. */
-.vtr-rail2 .vtr-rail-fill{display:flex;align-items:center;justify-content:center;overflow:hidden;}
-.vtr-rail-n{font-size:9px;font-weight:700;color:#fff;font-family:var(--font-number);
-  line-height:1;pointer-events:none;white-space:nowrap;}
+/* 2-1-1 (v26-0908-3, HB) — 두 손잡이 사이에 남은 개수. 막대 **바로 위**에
+   가운데로 선다. 예전엔 막대 안에 넣었는데, 막대가 opacity .42 라 글자까지
+   흐려져 배경과 구별이 안 됐다. 막대 밖으로 꺼내고 강조색을 쓴다. */
+.vtr-rail-n{position:absolute;top:-2px;transform:translateX(-50%);
+  font-size:9.5px;font-weight:700;color:var(--ac-tx);font-family:var(--font-number);
+  line-height:1;pointer-events:none;white-space:nowrap;z-index:2;}
 /* 소제목 묶음 + (성경 하나만 볼 때) 그 이름 */
 .vtr-head{display:flex;gap:14px;align-items:stretch;}
 .vtr-ctls{flex:1;min-width:0;}
@@ -3998,8 +3999,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   font-weight:600;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .vg-depthchip.on{border-color:var(--ac);background:var(--ac);color:#fff;}
 .vg-depthchip:active{opacity:.55;}
-/* 씨앗(고른 점·검색어)이 없으면 뎁스가 할 일이 없다 — 그 사정을 옅게 보인다 */
-.vg-depthchip.idle{opacity:.45;}
+/* 고른 점이 없으면 뎁스가 할 일이 없다 — 그 줄 전체를 옅게 둔다.
+   ⚠️ 고른 칩(.on)까지 덮으면 꺼진 것처럼 보인다. 그 하나는 또렷하게 남긴다
+      (v26-0908-3, HB — "선택된 칩 색이 비활성 색인 것도 문제야"). */
+.vg-depth-idle .vg-depthchip{opacity:.45;}
+.vg-depth-idle .vg-depthchip.on{opacity:1;}
 /* 그 뎁스에서 몇 개가 보이는지 (v26-0908-2, HB 1-2) */
 .vg-depthn{margin-left:5px;font-size:9.5px;opacity:.6;font-family:var(--font-number);}
 .vg-depthchip.on .vg-depthn{opacity:.85;}
@@ -4171,8 +4175,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    깔린다. 띠와 띠 사이의 격자 틈(2px)이 그대로 구분선이 된다.
    ⚠️ 칸보다 뒤에 있어야 하므로 칸 쪽에 z-index 를 준다 (둘 다 격자 자식이라
       순서만으로는 겹침이 안 정해진다). */
-.vrhy2-zone{border-radius:5px;border:1px solid var(--bd);
-  background:var(--s2,rgba(127,127,127,.07));z-index:0;pointer-events:none;}
+.vrhy2-zone{border-radius:5px;border:1px solid var(--bd);border-top-width:2px;
+  background:var(--s2,rgba(127,127,127,.07));z-index:0;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;}
+/* 표 안 가로 가운데에 한 번 더 쓰는 구간 이름 (v26-0908-3, HB 4).
+   ⚠️ 칸보다 뒤에 깔리므로 아주 옅게 — 진하면 숫자 칸이 안 읽힌다. */
+.vrhy2-zonenm{font-size:10px;font-weight:700;letter-spacing:.28em;opacity:.22;
+  white-space:nowrap;text-indent:.28em;}
 .vrhy2-hr,.vrhy2-cell{position:relative;z-index:1;}
 /* 변화량 — 늘면 초록, 줄면 빨강 (v26-0906-1, HB 9)
    ⚠️ `.vtr-tbl td` (0,1,1) 가 `.vtr-up` (0,1,0) 보다 세다. 표 칸을 함께 적지
@@ -4759,7 +4768,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-2";
+const APP_VERSION = "v. 26-0908-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14372,7 +14381,7 @@ function _vfSetNav(list,idx,label,kind,atCollection,parts,rollOpt){
 // ⚠️ **한 줄로 둔다.** tests/test_keep_fullscreen.js 가 이 함수를 '표시부터 줄
 //    끝까지' 한 줄로 잘라 eval 한다 — 여러 줄로 펴면 그 테스트가 구문 오류로 죽는다.
 //    (v26-0907-6 에 _vpFullTab 정리를 넣으면서 실제로 겪었다)
-function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavRoll=null;_vfNavKind=null;_vfHomeAtCollection=false;if(typeof _vpFullTab!=='undefined')_vpFullTab=null;if(typeof _vfNavTile!=='undefined')_vfNavTile=null;_vfSyncTopBar();}
+function _vfClearNav(){_vfShufReset();_vfNavList=null;_vfNavIdx=0;_vfNavLabel='';_vfNavParts=null;_vfNavRoll=null;_vfNavKind=null;_vfHomeAtCollection=false;if(typeof _vpFullTab!=='undefined')_vpFullTab=null;if(typeof _vfTabPool!=='undefined')_vfTabPool=null;if(typeof _vfNavTile!=='undefined')_vfNavTile=null;_vfSyncTopBar();}
 // ── 지금 보는 것이 '말씀 설정에서 정한 그 모음' 그대로인가 ──────────
 // ⚠️⚠️ v26-0905-4, HB — "채운 홈이 **어떤 동작 뒤에** 나오도록 짜지 말고,
 //    설정한 대로인 상황이면 **언제나** 나오게 하면 되는 것 아니냐."
@@ -14403,8 +14412,9 @@ function _vfHomeStash(){
 }
 function vfHomeAction(){
   closeVfKeepSwitch();
-  // 1-3 — 홈을 누르면 노드에서 온 길이 끝난다 ('말씀 + 명제' 칩도 여기서 내린다)
+  // 1-3 — 홈을 누르면 그 길이 끝난다 ('말씀 + 명제' 칩도 여기서 내린다)
   if(typeof _vpFromNode!=='undefined')_vpFromNode=false;
+  if(typeof _vfTabPool!=='undefined')_vfTabPool=null;
   // ① 이미 모음 전체인데 놓아둔 필터가 있다 → 그것으로 되돌아간다
   if(_vfAtCollection()&&_vfHomeBack){
     const b=_vfHomeBack;
@@ -14494,15 +14504,24 @@ let _vfNavTile=null;
 // 지금 제목을 누르면 갈 곳. 없으면 null (그러면 제목은 누를 자리가 아니다).
 function _vfTitleTileFn(on,vpOn){
   if(!on)return null;
-  if(vpOn)return vpGoToFilteredTile;                       // 짝 목록에서 온 길
+  // ⚠️ 차례가 중요하다 (v26-0908-3). 갈래 칩이 서는 조건(_vfTabPool)이 넓어지면서
+  //    타일뷰에서 연 전체화면도 vpOn 이 참이 됐다. 그때 vpGoToFilteredTile 을
+  //    먼저 고르면 **예전에 열었던 짝 목록(_vpCtx)** 으로 가 버린다.
+  //    따로 일러 준 타일뷰(_vfNavTile)가 있으면 그것이 언제나 먼저다.
   if(_vfNavTile&&_vfNavTile.kind&&_vfNavTile.val)return vfOpenNavTile;
+  if(vpOn&&_vpCtx)return vpGoToFilteredTile;               // 짝 목록에서 온 길
   if(_vfNavKind&&_VLIST_KIND_TITLE[_vfNavKind])return vfOpenNavTile;
   return null;
 }
 function vfOpenNavTile(){
   closeVfKeepSwitch();
   if(_vfNavTile&&_vfNavTile.kind&&_vfNavTile.val){
-    openVerseGrid(_vfNavTile.kind,_vfNavTile.val);
+    // 걸려 있던 필터(교집합 refs·보여 줄 항목)까지 그대로 들고 간다 (2-2-3)
+    openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null);
+    if(_vfNavTile.facet&&_vfNavTile.facet.length){
+      _vgState.facetVals=_vfNavTile.facet.slice();
+      _vgRenderTabs();
+    }
     return;
   }
   if(_vfNavKind==='keep'){vfOpenKeepGrid();return;}
@@ -14516,19 +14535,21 @@ function _vfSyncTopBar(){
     lb.style.display=on?'flex':'none';
     // 저장 목록은 눌러 그 타일뷰로. 짝 목록에서 온 화면은 제목을 누르면 그
     // 필터가 걸린 타일뷰로 들어가고(91-3-3-1), 갈래는 제목 아래 칩으로 돈다.
-    const vpOn=on&&!!(typeof _vpFullTab!=='undefined'&&_vpFullTab);
+    // v26-0908-3, HB 1-3 — 칩은 '갈래를 돌 밑 목록이 있느냐' 로만 정한다.
+    //   짝 목록에서 왔는지(_vpCtx) 는 이제 조건이 아니다.
+    const vpOn=on&&!!(typeof _vpFullTab!=='undefined'&&_vpFullTab&&_vfTabPool);
     // 2-2-4 — 헤더에 무엇이 떠 있든, 그 목록의 타일뷰로 가는 문으로 만든다.
     const tileFn=_vfTitleTileFn(on,vpOn);
     lb.classList.toggle('vf-keep-title',!!tileFn);
     lb.onclick=tileFn;
     lb.innerHTML=on
-      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${vpOn?_vAxisIconHTML(_vpCtx.axis):(_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:'')}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',Object.assign({key:'vf'},_vfNavRoll||{}))}</span>`
+      ?`<span style="display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;">${(vpOn&&_vpCtx)?_vAxisIconHTML(_vpCtx.axis):(_vfNavKind&&_vfNavKind!=='keep'?_VLIST_KIND_TITLE[_vfNavKind]:'')}${_rollHTML(_vfNavParts&&_vfNavParts.length?_vfNavParts:[_vfNavLabel],'flex:1;min-width:0;',Object.assign({key:'vf'},_vfNavRoll||{}))}</span>`
       :'';
     if(on){_rollFit(lb);_rollStart();}
     // 91-3-3-2 — 제목과 칩 사이, 다중 필터를 걸고 들어왔으면 그 항목들을 보여준다.
     const fr=document.getElementById('vfFacetRow');
     if(fr){
-      const vals=vpOn?_vpFilt:[];
+      const vals=(vpOn&&_vpCtx)?_vpFilt:[];
       fr.style.display=vals.length?'flex':'none';
       fr.innerHTML=vals.length?vals.map(v=>`<span class="vf-facet-item">${esc(v)}</span>`).join(''):'';
     }
@@ -15594,7 +15615,9 @@ function _vgMatch(v,kind,val){
   if(kind==='tag')  return(v.tags||[]).map(t=>String(t).trim()).includes(val);
   return true;
 }
-function _vgFilteredPool(){
+// allTabs=true 면 갈래(말씀/명제) 거르기를 건너뛴다 — 전체화면의 갈래 칩이
+// 돌 밑 목록으로 쓴다 (v26-0908-3, HB 1-3).
+function _vgFilteredPool(allTabs){
   // v26-0908-2, HB 2-2-4 — '저장' 뿐 아니라 좋아요·암송·Deeper·Even 목록도
   //   타일뷰로 열 수 있어야 한다 (전체화면 제목을 누르면 그 목록으로 가야 하니까).
   //   _VLIST_KIND_TITLE 에 있는 갈래가 곧 '반응 목록' 이다.
@@ -15605,7 +15628,7 @@ function _vgFilteredPool(){
     : _vgRawPool().filter(v=>_vgMatch(v,_vgState.kind,_vgState.val));
   // 갈래 탭 (v26-0831-19, HB) — 여기 한 곳에서만 거른다.
   //   그래야 정렬·묶음·개수가 저절로 따라온다.
-  const _tab=_vgTab();
+  const _tab=allTabs?'all':_vgTab();
   if(_tab!=='all')pool=pool.filter(v=>_vfIsProp(v)===(_tab==='prop'));
   // 반응 목록카드에서 들어온 경우 그 목록과의 **교집합**만 보여준다.
   // (안 그러면 여기서 고른 말씀이 카드로 돌아갔을 때 목록에 없어 사라진다)
@@ -16319,10 +16342,15 @@ function vgPick(i){
   // 이전/다음은 방금 보던 타일 목록 안에서 돈다 (홈 목록이면 본 시퀀스 그대로)
   if(_vgState.kind==='home')_vfClearNav();
   else _vfSetNav(_vgLastSorted,i,_vgFilterLabelText(),_vgState.kind==='keep'?'keep':null);
-  // 1-3 (v26-0908-2) — 노드 → 짝 목록 → 타일뷰로 온 길이면, 여기서 연 전체화면
-  //   에서도 '말씀 + 명제' 칩을 그대로 쥐고 간다 (홈을 누를 때까지).
-  if(_vpFromNode&&_vpCtx&&typeof _vpFullTab!=='undefined'){
-    _vpFullTab=_vgTab();
+  // v26-0908-3, HB 1-3·2-2-4 — 타일뷰에서 연 전체화면은 **어느 길로 왔든**
+  //   ① '말씀 + 명제' 칩을 세우고(밑 목록은 갈래를 안 거른 그 타일뷰 뭉치)
+  //   ② 제목을 누르면 그 타일뷰로 되돌아간다.
+  //   예전엔 짝 목록에서 온 길만 챙겨, 지도 → 타일뷰로 들어가면 칩도 없고
+  //   제목도 안 눌려 '이전 말씀' 꺾쇠가 대신 먹었다.
+  if(_vgState.kind!=='home'){
+    _vfSetTabPool(_vgSort(_vgFilteredPool(true)),_vgTab());
+    _vfNavTile={kind:_vgState.kind,val:_vgState.val,
+                refs:_vgState.limitRefs||null,facet:_vgState.facetVals||null};
     _vfSyncTopBar();
   }
   applyVfTheme();
@@ -20177,6 +20205,7 @@ function _vTrRail2Bind(el){
   const vals=el.dataset.vals?el.dataset.vals.split(',').map(Number):null;
   const rankMode=el.dataset.rank==='1';
   const midN=el.querySelector('.vtr-rail-n');
+  const midPc=v=>((max===min)?0:((v-min)/(max-min))*100).toFixed(2)+'%';
   let lo=parseFloat(el.dataset.lo)||0, hi=parseFloat(el.dataset.hi);
   if(!isFinite(hi))hi=max;
   let id=null,grab=null;
@@ -20198,7 +20227,10 @@ function _vTrRail2Bind(el){
         lb.textContent=rankMode?_vTrExclLabel(lower,upper):_vTrExclLabel(upper,lower);
       }else lb.textContent=lo+'~'+hi+suffix;
     }
-    if(midN)midN.textContent=String(Math.max(0,hi-lo+1));
+    if(midN){
+      midN.textContent=String(Math.max(0,hi-lo+1));
+      midN.style.left=`calc((${midPc(lo)} + ${midPc(hi)}) / 2)`;
+    }
   };
   const down=e=>{
     if(id!==null)return;
@@ -20758,8 +20790,11 @@ function _vTrRail2HTML(o){
     `data-suffix="${_vgEscAttr(o.suffix||'')}" role="group" aria-label="${_vgEscAttr(o.label||'')}"`+
     (o.vals?` data-vals="${o.vals.join(',')}"`:'')+
     (o.rank?' data-rank="1"':'')+(o.midN?' data-midn="1"':'')+`>`+
-    `<div class="vtr-rail-fill" style="left:${pc(o.lo)};width:calc(${pc(o.hi)} - ${pc(o.lo)});">`+
-    (o.midN?`<span class="vtr-rail-n">${Math.max(0,o.hi-o.lo+1)}</span>`:'')+`</div>`+
+    `<div class="vtr-rail-fill" style="left:${pc(o.lo)};width:calc(${pc(o.hi)} - ${pc(o.lo)});"></div>`+
+    // ⚠️ 숫자는 막대 **밖**에 둔다. 막대는 opacity .42 라 그 안에 넣으면
+    //    글자까지 흐려져 배경과 구별이 안 됐다 (v26-0908-3, HB 2-1-1).
+    (o.midN?`<span class="vtr-rail-n" style="left:calc((${pc(o.lo)} + ${pc(o.hi)}) / 2);">`+
+      `${Math.max(0,o.hi-o.lo+1)}</span>`:'')+
     `<div class="vtr-rail-knob" data-k="lo" style="left:${pc(o.lo)};"></div>`+
     `<div class="vtr-rail-knob" data-k="hi" style="left:${pc(o.hi)};"></div></div>`;
 }
@@ -21152,6 +21187,32 @@ function _vDashScopeCtlHTML(){
   h+=_vTrSpanRowHTML({all:true});
   return h;
 }
+// 3-2-1 (v26-0908-3, HB) — 범위마다 '많이 무엇을 한 곳' 인지 말이 다르다.
+//   같은 숫자라도 좋아요는 '좋아한', 암송은 '외운' 이라야 뜻이 산다.
+const _VDASH_VERB={
+  home:'많이 다룬', like:'많이 좋아한', mem:'많이 외운',
+  deeper:'많이 성경을 찾아본', even:'많이 성경을 더 깊게 찾아본', keep:'많이 저장한',
+};
+function _vDashVerbWord(){
+  const k=_vTrPref().kind||'home';
+  return _VDASH_VERB[k]||'많이 다룬';
+}
+// v26-0908-3, HB 2-2-3 — 제목·타일뷰에 함께 적을 짧은 조건 이름.
+//   기본값(말씀 모음 · 전체 갈래 · 전체 기간)이면 빈 문자열.
+function _vDashScopeTitle(){
+  const p=_vTrPref();
+  const bits=[];
+  if((p.kind||'home')!=='home')bits.push(_vDashKindName(p.kind));
+  const sub=_vDashSubKind();
+  if(sub)bits.push('− '+_vDashKindName(sub));
+  const t=_vDashTabWords();
+  if(t)bits.push(t);
+  if(_vTrSpanMode()!=='all'){
+    const sc=_vDashScope();
+    if(sc.mode==='span')bits.push(`${sc.span}${_vTrUnitWord(sc.unit)}`);
+  }
+  return bits.join(' ');
+}
 // ══ 조건이 만든 인사이트 (v26-0908-2, HB 3) ══════════════════════════
 // 다섯 탭이 함께 쓰는 조각들. 고른 조건이 기본값이면 빈 문자열을 돌려준다.
 function _vDashKindName(v){
@@ -21286,13 +21347,28 @@ function _vMapRanks(stats,mode,nowKey){
 //   chap 이 0 이면 그 성경의 첫 말씀부터.
 function vMapOpenGrid(book){
   if(!book)return;
+  const sc=_vDashScope();
+  const refs=new Set();
+  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
+    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)>=0)refs.add(e.ref);
+  });
   _vDashMarkReturn();
   closeVerseDashboard();
-  openVerseGrid('book',book);
+  openVerseGrid('book',book,null,refs.size?refs:null);
+  const cond=_vDashScopeTitle();
+  if(cond){_vgState.facetVals=[cond];_vgRenderTabs();}
 }
+// v26-0908-3, HB 2-2-3 — 위쪽 필터(갈래·범위·기간)가 걸린 그대로 연다.
+//   지도가 세고 있는 것과 전체화면에 뜨는 것이 달라서는 안 된다.
 function vMapOpenChapter(book,chap){
   if(!book)return;
-  const pool=_vgRawPool().filter(v=>_booksOf(v).includes(book));
+  const sc=_vDashScope();
+  // 지금 지도가 보고 있는 바로 그 기록들 — 거기서 이 성경 것만.
+  const refs=new Set();
+  _vDashWinEntries(sc.kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
+    if(_vDashKeysOf(e.ref,'book',e.v).indexOf(book)>=0)refs.add(e.ref);
+  });
+  const pool=_vgRawPool().filter(v=>refs.has(v.ref));
   if(!pool.length){showToast('보여줄 말씀이 없어요');return;}
   const list=pool.slice().sort((a,b)=>_bibleRankOfRef(a.ref)-_bibleRankOfRef(b.ref));
   let i=0;
@@ -21306,8 +21382,12 @@ function vMapOpenChapter(book,chap){
   //    **연 뒤에** 심는다 (짝 목록에서 배운 것과 같다).
   _vfOverrideVerse=list[i];
   openVerseFull(true);
-  _vfSetNav(list,i,book,null);
-  _vfNavTile={kind:'book',val:book};     // 2-2-4 — 제목을 누르면 이 타일뷰로
+  // 제목에 조건을 함께 적는다 — '사무엘상 · 좋아요' 처럼
+  const cond=_vDashScopeTitle();
+  _vfSetTabPool(list,'all');
+  _vfSetNav(list,i,book+(cond?' · '+cond:''),null);
+  // 2-2-4 — 제목을 누르면 그 타일뷰로. 걸린 필터(refs)까지 함께 들고 간다.
+  _vfNavTile={kind:'book',val:book,refs:refs,facet:cond?[cond]:null};
   _vfOverrideVerse=list[i];
   _vfSyncTopBar();
   _verseFullRender();
@@ -21407,7 +21487,8 @@ function renderVDashMap(){
     if(aged.length)lines.push('가장 오래 안 편 곳: '+aged.map(a=>`<b>${esc(a.b)}</b> ${a.w}주`).join(' · ')+'.');
   }else{
     const top=[...stats.entries()].sort((x,y)=>y[1].n-x[1].n).slice(0,3);
-    if(top.length)lines.push('가장 많이 다룬 곳: '+top.map(t=>`<b>${esc(t[0])}</b> ${t[1].n}`).join(' · ')+'.');
+    // 3-2-1 — 범위에 맞는 말로 ('가장 많이 좋아한 곳' 처럼)
+    if(top.length)lines.push(`가장 ${_vDashVerbWord()} 곳: `+top.map(t=>`<b>${esc(t[0])}</b> ${t[1].n}`).join(' · ')+'.');
     const never=BIBLE_ORDER_OT.concat(BIBLE_ORDER_NT).filter(b=>!stats.has(b));
     if(never.length)lines.push(`아직 한 번도 안 밟은 곳이 <b>${never.length}권</b> 있어요.`);
   }
@@ -21424,7 +21505,7 @@ function renderVDashMap(){
   // ② '보기' 구간을 좁혔을 때 — 상위 몇 개를 뺀 뒤의 그다음
   if(!rg.full){
     const nx=_vDashNextLine(rk.rows.map(r=>({k:r.b,v:r.v})),rg.lo,rg.hi,
-                            mode==='aged'?'오래 묵힌':'많이 다룬',mode==='aged'?'주':'번');
+                            mode==='aged'?'오래 묵힌':_vDashVerbWord(),mode==='aged'?'주':'번');
     if(nx)lines.push(nx);
     const left=Math.max(0,Math.min(rk.total,rg.hi)-rg.lo+1);
     if(left)lines.push(`지금 보고 있는 것은 <b>${left}권</b>이에요 (${rk.total}권 가운데).`);
@@ -21691,10 +21772,23 @@ function _vgRankRailBind(el){
   };
   const valOf=f=>Math.max(1,Math.min(max,Math.round(1+f*(max-1))));
   const pc=v=>(max<=1?0:((v-1)/(max-1))*100).toFixed(2)+'%';
+  // v26-0908-3, HB 1-4 — 미는 동안 옆 목록의 활성/비활성이 바로 따라온다.
+  //   ⚠️ 다시 그리지 않는다(renderVgPick 은 손을 뗄 때만). 줄에 붙은 class 만
+  //      갈아 끼운다 — 미는 내내 다시 그리면 손가락을 못 따라온다.
+  const pane=el.closest('.vg-pane');
+  const rows=pane?[...pane.querySelectorAll('.vgp-row')]:[];
+  const paintRows=()=>{
+    rows.forEach((r,i)=>{
+      const active=(i+1>=lo&&i+1<=hi);
+      r.classList.toggle('rankoff',!active);
+      if(!active)r.classList.remove('on');
+    });
+  };
   const paint=()=>{
     if(kLo){kLo.style.top=pc(lo);kLo.textContent=lo;}
     if(kHi){kHi.style.top=pc(hi);kHi.textContent=hi;}
     if(fill){fill.style.top=pc(lo);fill.style.height=`calc(${pc(hi)} - ${pc(lo)})`;}
+    paintRows();
   };
   const down=e=>{
     if(id!==null)return;
@@ -21727,6 +21821,14 @@ function _vgRankRailBind(el){
   el.addEventListener('pointermove',move);
   el.addEventListener('pointerup',up);
   el.addEventListener('pointercancel',up);
+}
+// v26-0908-3, HB 1-2 — 그 점 하나만 고른다 (그래프에서 점을 톡 눌렀을 때).
+function vgSetSelOnly(id){
+  const p=_vTrPref();
+  p.vgSel=id?[id]:[];
+  save();
+  _vgApplyFilter();
+  renderVgPick();
 }
 function vgToggleSel(id){
   const sel=_vgSel();
@@ -22223,7 +22325,13 @@ function _vgRun(N,E,W,H,mx,la){
       // 끌지 않고 톡 눌렀으면 **짝 목록**을 연다 (v26-0907-6, HB 3).
       // 예전에는 타일뷰로 곧장 보냈는데, 점 하나를 눌렀을 뿐인데 정보가
       // 한꺼번에 펼쳐져 버렸다.
-      if(moved<5)openVPair(n.kind==='book'?'book':la,n.key);
+      if(moved<5){
+        // v26-0908-3, HB 1-2 — 누른 점을 그래프의 **중심**으로 삼는다.
+        //   이래야 뎁스가 곧바로 무엇을 하는지 눈에 보인다 (고른 점이 없으면
+        //   뎁스는 원리상 아무 일도 못 한다). 되돌리기는 '모두 보기'.
+        vgSetSelOnly(n.kind+_VG_SEP+n.key);
+        openVPair(n.kind==='book'?'book':la,n.key);
+      }
       else{
         // 끌어다 놓았으면 그 자리에 **못을 박는다** (v26-0907-7, HB 2).
         // '머무는 힘' 이 0 이면 못은 박히되 힘이 안 걸려 예전처럼 흘러간다.
@@ -22260,6 +22368,19 @@ let _vpFullTab=null;   // 전체화면이 이 화면에서 열렸으면 그 갈�
 // 1-3 (v26-0908-2) — 노드에서 들어온 길인가. 타일뷰를 거쳐 전체화면으로 가도
 // '말씀 + 명제' 칩이 따라가야 한다. 좌상단 홈을 누를 때 비운다.
 let _vpFromNode=false;
+// v26-0908-3, HB 1-3 — 칩이 도는 **밑 목록** (말씀·명제를 다 든 것).
+//   이것만 있으면 어느 길로 온 전체화면이든 칩이 선다. 짝 목록에서 왔든
+//   지도 → 타일뷰로 왔든 같다.
+let _vfTabPool=null;
+function _vfSetTabPool(pool,tab){
+  _vfTabPool=(pool&&pool.length)?pool.slice():null;
+  _vpFullTab=_vfTabPool?(tab||'all'):null;
+}
+function _vfTabList(tab){
+  if(!_vfTabPool)return[];
+  if(tab==='all')return _vfTabPool.slice();
+  return _vfTabPool.filter(v=>_vfIsProp(v)===(tab==='prop'));
+}
 const _VP_TABS=[['verse','말씀'],['prop','명제'],['all','함께']];
 // 클릭한 노드의 반대 축 — 성경을 눌렀으면 지금 왼쪽 축(대분류/소주제/태그),
 // 그 반대(대분류/소주제/태그를 눌렀으면 성경).
@@ -22298,10 +22419,10 @@ function _vpFacetCandidates(){
   });
   return[...tot.entries()].sort((a,b)=>b[1]-a[1]||_vDashKeyCmp(a[0],b[0]));
 }
-// 1-1-2 (v26-0908-2) — 칩이 '성경' 이면 복수 선택을 끈다. 한 말씀은 성경
-// 하나에만 속하므로 둘을 켜면 교집합이 반드시 비어 목록이 통째로 사라진다.
-// 태그처럼 한 말씀이 여럿을 가질 수 있는 축에서만 복수로 켤 수 있다.
-function _vpFiltMulti(){ return _vpOtherAxis()!=='book'; }
+// 1-1-2 (v26-0908-3, HB) — 복수 선택은 **태그일 때만** 켠다.
+// 한 말씀이 여럿을 가질 수 있는 축은 태그뿐이다. 성경·대분류·소주제는
+// 하나씩만 가지므로 둘을 켜면 교집합이 반드시 비어 목록이 통째로 사라진다.
+function _vpFiltMulti(){ return _vpOtherAxis()==='tag'; }
 function vpToggleFilt(val){
   const i=_vpFilt.indexOf(val);
   if(i>=0)_vpFilt.splice(i,1);
@@ -22482,23 +22603,29 @@ function _vpGoFull(tab,ref){
   //    이동 목록은 **연 뒤에** 심는다. 먼저 심으면 그 자리에서 지워진다.
   _vfOverrideVerse=list[i];
   openVerseFull(true);
-  _vpFullTab=tab;
+  _vfSetTabPool(_vpList('all'),tab);
   _vfSetNav(list,i,_vpCtx.val);
   _vfOverrideVerse=list[i];
   _vfSyncTopBar();
   _verseFullRender();
 }
 // 91-3-2 — 제목 아래 칩을 누르면 말씀 → 명제 → 함께 세 갈래를 돈다.
+// v26-0908-3, HB 1-3 — 밑 목록(_vfTabPool)만 있으면 어느 길로 왔든 돈다.
 function vpCycleFullTab(){
-  if(!_vpCtx||!_vpFullTab)return;
+  if(!_vpFullTab||!_vfTabPool)return;
   const next=_vpNextTab(_vpFullTab);
   const cur=_vfCurrentVerse();
-  const list=_vpList(next);
+  const list=_vfTabList(next);
   if(!list.length){showToast(_vpTabName(next)+'이 없어요');return;}
   let j=cur?list.findIndex(v=>String(v.ref||'')===String(cur.ref||'')):0;
   if(j<0)j=0;
+  // ⚠️ _vfSetNav 는 '제목이 가리키는 타일뷰'(_vfNavTile)를 비운다 — 갈래만
+  //    도는 것이지 목록이 바뀐 것이 아니므로 그 문은 그대로 들고 간다.
+  const keepTile=_vfNavTile;
+  const keepLabel=_vfNavLabel, keepKind=_vfNavKind;
   _vpFullTab=next;
-  _vfSetNav(list,j,_vpCtx.val);
+  _vfSetNav(list,j,keepLabel,keepKind);
+  _vfNavTile=keepTile;
   _vfOverrideVerse=list[j];
   _vfSyncTopBar();
   _verseFullRender();
@@ -22564,15 +22691,19 @@ function renderVgPick(){
     //   그래서 눌러도 그림이 그대로다. 칩마다 **그 뎁스에서 몇 개가 보이는지**를
     //   미리 세어 적어 둔다 — 같은 수면 왜 안 바뀌는지 보이고, 다른 수면
     //   실제로 바뀐다. (씨앗이 없으면 뎁스 자체가 할 일이 없다 — 그것도 적는다)
+    // v26-0908-3, HB 1-2 — ① 개수는 **늘** 적는다(고른 점이 없으면 네 값이
+    //   똑같이 나와, 지금은 아무것도 안 걸렀다는 것이 그대로 보인다).
+    //   ② 고른 칩(.on)은 어떤 상태에서도 또렷하다 — 옅은 색은 '지금 뎁스가
+    //   할 일이 없다' 는 뜻이라 고른 칩까지 덮으면 꺼진 것처럼 보였다.
     const seeded=!!(_vgQuery||sel.length);
-    const cnt=_vgDepthCounts();
+    const cnt=_vgDepthCounts()||[0,0,0,0].map(()=>(_vgData?_vgData.N.length:0));
     D.innerHTML=`<div class="vtr-ctl" style="margin-bottom:0;">`+
       `<span class="vtr-ctl-lb">뎁스</span>`+
-      `<span class="vtr-ctl-vals">`+[1,2,3,4].map(v=>
-        `<span class="vg-depthchip${d===v?' on':''}${seeded?'':' idle'}" `+
+      `<span class="vtr-ctl-vals${seeded?'':' vg-depth-idle'}">`+[1,2,3,4].map(v=>
+        `<span class="vg-depthchip${d===v?' on':''}" `+
         `onclick="vgDepthSet(${v})">${v===4?'전체':v}`+
-        (cnt?`<span class="vg-depthn">${cnt[v-1]}</span>`:'')+`</span>`).join('')+
-      (seeded?'':`<span class="vg-depthnote">점을 고르면 적용돼요</span>`)+
+        `<span class="vg-depthn">${cnt[v-1]}</span></span>`).join('')+
+      (seeded?'':`<span class="vg-depthnote">점을 톡 누르면 그 점이 중심이 돼요</span>`)+
       `</span>`+
       `<span class="vdash-link" style="flex:0 0 auto;font-size:10.5px;" `+
       `onclick="vgClearSel()">모두 지우기</span></div>`;
@@ -22662,6 +22793,11 @@ function renderVDashRhythm(){
   const p=_vTrPref(),sc=_vDashScope();
   const kind=_vRhyKind(p.kind||'');
   const dow=(typeof getDOW==='function')?getDOW():['일','월','화','수','목','금','토'];
+  // 3-2-2-1 (v26-0908-3, HB) — 차트의 요일 칸은 설정을 따르지만, 인사이트
+  //   문장은 늘 '일요일·월요일…' 로 적는다. 다만 표기 설정이 LMTWTFS(주일)
+  //   이면 그 하루만 '주일' 로 부른다.
+  const _lord=(ST.settings.dowFormat||'letter-lord')==='letter-lord';
+  const dowFull=[_lord?'주일':'일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
   // 요일 × 시각으로 센다. 시각이 없는 기록은 셀 자리가 없으니 뺀다.
   const cnt=new Map();            // 'dow,hour' -> 횟수
   const dowTot=new Array(7).fill(0);
@@ -22705,12 +22841,18 @@ function renderVDashRhythm(){
     //   오른쪽만 보면서 알 수 있다.
     //   ⚠️ 예전엔 빈 칸에만 색을 물들였는데, 기록이 있는 칸에서 띠가 끊겨
     //      구간이 눈에 안 들어왔다.
+    // v26-0908-3, HB 4 — 띠 위쪽 경계에 **또렷한 가로선**을 긋고, 표 안
+    //   가로 가운데에도 구간 이름을 한 번 더 옅게 얹는다. 왼쪽 세로 제목까지
+    //   시선을 옮기지 않아도 지금 보는 칸이 어느 때인지 알 수 있다.
     const zoneSty=b.color
-      ? `background:color-mix(in srgb,${b.color} 14%,transparent);`+
-        `border-color:color-mix(in srgb,${b.color} 45%,transparent);`
+      ? `background:color-mix(in srgb,${b.color} 13%,transparent);`+
+        `border-color:color-mix(in srgb,${b.color} 30%,transparent);`+
+        `border-top-color:color-mix(in srgb,${b.color} 70%,transparent);`+
+        `color:${b.color};`
       : '';
     g+=`<div class="vrhy2-zone" style="grid-column:2/-1;grid-row:${2+r}/span ${b.n};${zoneSty}" `+
-       `title="${_vgEscAttr(b.name||'')}"></div>`;
+       `title="${_vgEscAttr(b.name||'')}">`+
+       (b.name?`<span class="vrhy2-zonenm">${esc(b.name)}</span>`:'')+`</div>`;
     b.hs.forEach((h,j)=>{
       const row=2+r+j;
       g+=`<div class="vrhy2-hr" style="grid-column:2;grid-row:${row};">${h}</div>`;
@@ -22735,13 +22877,17 @@ function renderVDashRhythm(){
     let bTot=bands.map(b=>b.hs.reduce((x,h)=>{
       let sum=0; for(let i=0;i<7;i++)sum+=(cnt.get(i+','+h)||0); return x+sum;},0));
     let bi=0; bTot.forEach((v,i)=>{if(v>bTot[bi])bi=i;});
+    // 3-2-2-2 (v26-0908-3, HB) — 내용마다 줄을 바꾼다. 한 문단에 몰아 쓰면
+    //   세 이야기가 한 덩어리로 읽혀 아무것도 안 남는다.
+    const rl=[];
+    rl.push(`최근 ${sc.span}${_vTrUnitWord(sc.unit)} 동안 <b>${tot}번</b> 봤어요.`);
+    rl.push((hi>lo)?`가장 많은 요일은 <b>${esc(dowFull[best]||'')}</b>, `+
+               `가장 뜸한 요일은 <b>${esc(dowFull[worst]||'')}</b>이에요 (${hi}번 대 ${lo}번).`
+              :`요일마다 고르게 보고 있어요.`);
+    if(bands[bi]&&bands[bi].name&&bTot[bi])
+      rl.push(`가장 많은 때는 <b>${esc(bands[bi].name)}</b>${_vTrJosaYeyo(bands[bi].name)}.`);
     html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
-      `최근 ${sc.span}${_vTrUnitWord(sc.unit)} 동안 <b>${tot}번</b>.`+
-      ((hi>lo)?` 가장 많은 요일은 <b>${esc(dow[best]||'')}</b> (${hi}), `+
-               `가장 뜸한 요일은 <b>${esc(dow[worst]||'')}</b> (${lo}).`
-              :` 요일마다 고르게 보고 있어요.`)+
-      (bands[bi]&&bands[bi].name&&bTot[bi]
-        ?` 가장 많은 때는 <b>${esc(bands[bi].name)}</b>${_vTrJosaYeyo(bands[bi].name)}.`:'')+
+      rl.join('<br>')+
       // 3-2 — 조건이 만든 줄들
       (()=>{
         const ex=[];
@@ -22761,7 +22907,7 @@ function renderVDashRhythm(){
         }
         const cw=_vDashCondWords();
         if(cw)ex.unshift(`지금 보고 있는 것은 <b>${esc(cw)}</b>이에요.`);
-        return ex.length?'<br>'+ex.join(' '):'';
+        return ex.length?'<br>'+ex.join('<br>'):'';
       })()+
       (noTime?`<br><span style="color:var(--tx3);">시각이 없는 기록 ${noTime}건은 뺐어요.</span>`:'')+
       `</div></div>`;
