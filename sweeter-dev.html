@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0908-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3845,6 +3845,11 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 소제목 묶음 + (성경 하나만 볼 때) 그 이름 */
 .vtr-head{display:flex;gap:14px;align-items:stretch;}
 .vtr-ctls{flex:1;min-width:0;}
+/* 다섯 탭이 함께 쓰는 두 줄(기간·갈래). 탭 이름 아래, 가로선 위 (v26-0908-8, HB 7).
+   ⚠️ 좌우 8px 은 #vDashBody 와 **같은 값**이라야 소제목이 세로로 맞는다.
+      마지막 줄의 아래 여백은 가로선이 대신하므로 지운다. */
+.vdash-common{flex:0 0 auto;padding:0 8px;}
+.vdash-common .vtr-ctl:last-child{margin-bottom:9px;}
 /* ⚠️ 성경 이름은 **맨 위 가로선 바로 아래**에 선다 (v26-0906-2, HB 6).
    align-items:center 로 두면 소제목 다섯 줄의 한가운데 — 기간 슬라이더 옆에
    내려앉는다. flex-start 라야 첫 줄 높이에 맞춰 올라온다. */
@@ -4798,7 +4803,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-7";
+const APP_VERSION = "v. 26-0908-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6460,6 +6465,14 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- v26-0907-9, HB 93-3 — 좌우로 8px 여유를 둔다. 슬라이더 손잡이가 0%/100%에
        있을 때 반지름(7px)만큼 트랙 밖으로 걸치는데, 여백이 없으면 overflow:auto
        가 그 반쪽을 그대로 잘라 먹어 "오른쪽 끝이 잘린" 것처럼 보였다. -->
+  <!-- v26-0908-8, HB 7 — '기간'·'갈래' 는 다섯 탭이 **함께 쓰는 것**이라
+       탭 이름 바로 아래, 가로선 **위**에 한 벌만 둔다.
+       위 = 다섯 탭 공통 / 아래(#vDashBody) = 이 탭만. 가로선이 그 경계다.
+       ⚠️ #vDashBody 바깥이라 탭을 옮겨도 이 줄은 스크롤에 딸려 올라가지 않고,
+          renderVerseDashboard 가 여기 innerHTML 을 따로 채운다.
+          슬라이더 잡아 끌기(_vTrBindRails)도 이 상자에 따로 걸어 줘야 한다 —
+          그 함수의 기본 훑는 자리가 #vDashBody 안이기 때문이다. -->
+  <div id="vDashCommon" class="vtr-ctls vdash-common"></div>
   <div id="vDashBody" style="overflow:auto;flex:1;min-height:0;border-top:1px solid var(--bd2);padding:10px 8px 0;"></div>
 </div>
 
@@ -19716,9 +19729,11 @@ function _vDashPref(){
 //    _vListRange 로 잘랐다. 이제 지도·연결과 똑같이 _vDashWinEntries 를 쓴다 —
 //    같은 화면에서 기간을 바꾸면 다섯 화면이 다 같이 따라온다.
 function _vDashEntries(kind){
-  if(kind==='home')return _vDashHomeAgg();
   const sc=_vDashScope();
-  return _aggByRef(_vDashWinEntries(kind,'all',sc.unit,sc.span,sc));
+  if(kind==='home')return _vDashHomeAgg(sc.tab);
+  // v26-0908-8, HB 7 — 갈래가 공통 줄로 올라왔다. 분포만 안 따르면
+  //   "눌러도 여기만 안 바뀐다" 가 된다 — sc.tab 을 그대로 넘긴다.
+  return _aggByRef(_vDashWinEntries(kind,sc.tab,sc.unit,sc.span,sc));
 }
 // '현재 말씀 모음' — 켜둔 모음의 말씀들 그 자체.
 // ⚠️ 말씀 하나가 1건이다. 반응 횟수를 곱하지 않는다 — 그러면 '좋아요' 행과 같아진다.
@@ -19733,9 +19748,12 @@ function _vDashEntries(kind){
 //      이미 **말씀 모음 설정의 기간**(_collPeriodPass)이 정한다. '현재' 라는
 //      이름 그대로, 지금 켜져 있는 모음을 그대로 보여주는 것이 맞다.
 //    (기간 칩은 원래 '언제 눌렀나'를 자르는 것이라 좋아요·암송 네 행의 몫이다)
-function _vDashHomeAgg(){
+function _vDashHomeAgg(tab){
   const out=[];
+  const t=tab||'all';
   (ACTIVE_VERSES()||[]).forEach(v=>{
+    // 갈래 — 모음에서 곧장 온 것이라 pid 하나로 갈린다 (v26-0908-8, HB 7)
+    if(t!=='all'&&(!!v.pid)!==(t==='prop'))return;
     const d=(v.d?String(v.d):'').trim();
     out.push({ref:(typeof _reactKey==='function'?_reactKey(v):'')||v.ref||'',count:1,lastDate:d,lastTime:'',v});
   });
@@ -19961,6 +19979,13 @@ function vDashSetView(v){
   _vDashPref().view=v; save();
   renderVerseDashboard();
 }
+// v26-0908-8, HB 7 — 다섯 탭이 함께 쓰는 두 줄. **여기 한 곳에서만** 만든다.
+//   화면마다 따로 그리던 것을 모았다 — 어느 탭에서 무엇이 보이나가 갈릴 수 없다.
+function _vDashCommonHTML(){
+  const p=_vTrPref();
+  return _vTrSpanRowHTML({all:true})+
+         _vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
+}
 function _vDashViewTabsHTML(){
   const cur=_vDashView();
   return _VDASH_VIEWS.map(([v,l])=>
@@ -19972,6 +19997,10 @@ function renderVerseDashboard(){
   const view=_vDashView();
   const tabs=document.getElementById('vDashViewTabs');
   if(tabs)tabs.innerHTML=_vDashViewTabsHTML();
+  // 공통 두 줄(기간·갈래) — #vDashBody 바깥이라 여기서 따로 채우고
+  // 슬라이더도 따로 건다 (v26-0908-8, HB 7).
+  const cm=document.getElementById('vDashCommon');
+  if(cm){cm.innerHTML=_vDashCommonHTML(); _vTrBindRails(cm);}
   // 직접 기간(날짜 두 개)은 '기간' 줄 안에서 함께 그려진다 (v26-0908-7, HB 7).
   //   그 줄은 화면마다 다시 그려지므로 여기서 따로 값을 넣어 줄 일이 없다.
   _vDashVerseMap=null;   // 모음이 바뀌었을 수 있으니 매번 새로 만든다
@@ -19988,13 +20017,13 @@ function renderVerseDashboard(){
 }
 // ══════ 분포 (파이 격자) ══════
 function renderVDashPie(){
-  // 기간 한 벌 — 다섯 화면이 함께 쓰는 그것 (v26-0907-3, HB 3-2)
-  let html=`<div class="vtr-ctls">${_vTrSpanRowHTML({all:true})}</div>`;
+  // 기간·갈래는 위 공통 줄이 맡는다 (v26-0908-8, HB 7) — 여기에는 없다.
+  let html='';
   // 기간은 '언제 눌렀나'를 자르는 것이라 반응 다섯 줄에만 걸린다.
   // 맨 윗줄은 지금 켜져 있는 모음 그 자체다 (v26-0906-2, HB 2) — 말없이
   // 다르게 굴면 고장으로 읽히므로 기간을 좁혔을 때만 한 줄 짚어 준다.
   if(_vTrSpanMode()!=='all'){
-    html+=`<div style="font-size:9.5px;color:var(--tx3);opacity:.75;margin:-2px 0 8px;">`+
+    html+=`<div style="font-size:9.5px;color:var(--tx3);opacity:.75;margin:0 0 8px;">`+
       `기간은 좋아요·암송·Deeper·Even·저장 다섯 줄에만 걸려요 — 맨 윗줄은 지금 켜 둔 모음 그대로예요</div>`;
   }
   // 헤더 한 줄 + 여섯 행을 하나의 그리드에 이어 붙인다
@@ -20121,8 +20150,16 @@ function _vTrSpan(p){
   const n=parseInt((p||_vTrPref()).span,10);
   return(n>=1&&n<=_VTR_SPAN_MAX)?n:12;
 }
+// v26-0908-8, HB 7 — 지금 그림에 **실제로 그려진 칸 수**. '최근 N칸' 이면
+//   슬라이더 값 그대로지만, '전체'·'직접' 에서는 칸 수가 데이터가 정한다.
+//   _vTrData 가 그릴 때마다 여기 적어 둔다 (흐름 말고는 아무도 안 본다).
+let _vTrKeysN=0;
+function _vTrNowN(p){
+  const n=(_vTrSpanMode()==='span')?0:_vTrKeysN;
+  return(n>=1)?n:_vTrSpan(p);
+}
 // 인사이트는 '최근 h칸'과 '그 앞 h칸'을 견준다 → h 는 기간의 절반을 넘을 수 없다.
-function _vTrInsMax(p){return Math.max(1,Math.floor(_vTrSpan(p)/2));}
+function _vTrInsMax(p){return Math.max(1,Math.floor(_vTrNowN(p)/2));}
 function _vTrInsN(p){
   const pf=p||_vTrPref();
   const want=parseInt(pf.ins,10);
@@ -20404,6 +20441,67 @@ function _vTrBucketOf(date,unit){
   d.setDate(d.getDate()-d.getDay());
   return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
 }
+// 칸 하나에서 다음 칸으로 (주는 7일, 달은 한 달)
+function _vTrBucketRange(unit,lo,hi){
+  const out=[];
+  if(!lo||!hi||lo>hi)return out;
+  if(unit==='month'){
+    let y=+lo.slice(0,4),m=+lo.slice(5,7);
+    const ey=+hi.slice(0,4),em=+hi.slice(5,7);
+    while(y<ey||(y===ey&&m<=em)){
+      out.push(`${y}-${z(m)}`);
+      if(++m>12){m=1;y++;}
+      if(out.length>1200)break;                    // 100년치 — 무한 고리 막이
+    }
+  }else{
+    const d=new Date(lo+'T00:00:00'), e=new Date(hi+'T00:00:00');
+    if(isNaN(d.getTime())||isNaN(e.getTime()))return out;
+    while(d<=e){
+      out.push(`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`);
+      d.setDate(d.getDate()+7);
+      if(out.length>6000)break;
+    }
+  }
+  return out;
+}
+// 오늘이 든 칸
+function _vTrNowBucket(unit){
+  const n=logicalNow();
+  return _vTrBucketOf(`${n.getFullYear()}-${z(n.getMonth()+1)}-${z(n.getDate())}`,unit);
+}
+// v26-0908-8, HB 7 — 흐름의 가로 칸 목록. 여태 늘 '최근 N칸' 이었다.
+//   이제 [전체]·[직접] 도 뜻을 갖는다.
+//     전체 : 기록이 있는 **가장 오래된 칸**부터 오늘 칸까지
+//     직접 : 고른 두 날짜가 든 칸부터 칸까지 (한쪽만 골랐으면 나머지는 열어 둔다)
+//   ⚠️ 칸이 한없이 늘면 그림도 표도 못 읽는다. 상한을 두고 넘치면 **최근 쪽**을
+//      남긴다 — 잘랐다는 사실은 화면에 한 줄로 밝힌다(잘라 놓고 입 다물면
+//      "전체라며 왜 예전 게 없지" 가 된다).
+//   ⚠️ 범위를 잴 때 갈래(말씀/명제)로 거르지 않는다. 부모 줄과 펼친 장 줄이
+//      **같은 칸**을 써야 '최근 h칸' 이 서로 어긋나지 않기 때문이다.
+const _VTR_KEYS_MAX={week:104,month:120};      // 주 2년 · 달 10년
+let _vTrKeysCut=0;                              // 상한에 걸려 잘라낸 칸 수
+function _vTrScopeKeys(unit,entries){
+  const mode=_vTrSpanMode();
+  _vTrKeysCut=0;
+  if(mode==='span')return _vTrBucketList(unit,_vTrSpan());
+  const nowB=_vTrNowBucket(unit);
+  const d=_vDashPref();
+  let lo=(mode==='custom'&&d.customFrom)?_vTrBucketOf(d.customFrom,unit):'';
+  let hi=(mode==='custom'&&d.customTo)?_vTrBucketOf(d.customTo,unit):nowB;
+  if(!lo)(entries||[]).forEach(e=>{
+    const b=_vTrBucketOf(e.date,unit);
+    if(b&&(!lo||b<lo))lo=b;
+  });
+  if(!hi)hi=nowB;
+  if(!lo)lo=hi;
+  if(lo>hi)lo=hi;
+  const all=_vTrBucketRange(unit,lo,hi);
+  if(!all.length)return _vTrBucketList(unit,_vTrSpan());
+  const mx=_VTR_KEYS_MAX[unit]||104;
+  if(all.length<=mx)return all;
+  _vTrKeysCut=all.length-mx;
+  return all.slice(-mx);
+}
 // 오늘이 든 칸까지 거슬러 n칸 (오래된 것 -> 최신)
 function _vTrBucketList(unit,n){
   const now=logicalNow();
@@ -20496,7 +20594,10 @@ function _vTrData(book){
   const span=_vTrSpan(pf);
   const axis=pf.axis||'book';
   const tab=pf.tab||'all';
-  const keys=_vTrBucketList(unit,span);
+  // v26-0908-8, HB 7 — 칸 목록은 모드가 정한다 ('최근 N칸' / 전체 / 직접).
+  const ents=_vTrEntries(pf.kind||'home');
+  const keys=_vTrScopeKeys(unit,ents);
+  _vTrKeysN=keys.length;              // 인사이트의 '최근 h칸' 이 이 값을 본다
   const kidx=new Map(keys.map((k,i)=>[k,i]));
   const ser=new Map();
   const add=(k,bi,ref)=>{
@@ -20505,7 +20606,7 @@ function _vTrData(book){
     s.vals[bi]++; s.total++;
     if(!s.top)s.top=ref;
   };
-  _vTrEntries(pf.kind||'home').forEach(e=>{
+  ents.forEach(e=>{
     const bi=kidx.get(_vTrBucketOf(e.date,unit));
     if(bi===undefined)return;
     // 갈래 — 모음에서 곧장 온 것(e.v)은 pid 로 바로 안다. 기록만 있는 것은
@@ -21111,17 +21212,17 @@ function renderVDashTrend(){
   const shown=head.filter(s=>!off.has(s.key));
   const form=(pf.form==='line')?'line':'area';
   const unit=(pf.unit==='month')?'month':'week';
-  const span=_vTrSpan(pf);
+  // v26-0908-8, HB 7 — '전체'·'직접' 에서는 슬라이더 값이 아니라 **실제로 그린
+  //   칸 수**가 기준이다. 표 머리의 'N주 합계' 도, 인사이트의 '최근 h칸' 도.
+  const span=d.keys.length||_vTrSpan(pf);
   const h=_vTrInsN(pf);
   // ⚠️ 그래프는 **화면 폭에 맞춘다** (v26-0905-12). 처음에는 최소 520px 을 주고
   //    옆으로 밀어 보게 했는데, 그러면 세로 눈금 글자가 왼쪽 밖으로 나가고
   //    가장 최근 칸은 오른쪽 밖에 있어 둘 중 하나는 늘 안 보였다.
   const W=Math.max(280,(box.clientWidth||520)-2);
-  // ── 소제목 차례: 기간 - 갈래 - 범위 - 무엇을 - 모양 ──
-  //    v26-0908-7, HB 7 — 다섯 화면이 **모두** 기간을 맨 위에 둔다.
+  // ── 소제목 차례: 범위 - 무엇을 - 모양 ──
+  //    v26-0908-8, HB 7 — 기간·갈래는 위 공통 줄로 올라갔다.
   let ctl='';
-  ctl+=_vTrSpanRowHTML();
-  ctl+=_vTrChipsHTML('갈래','tab',_VL_TABS,pf.tab||'all');
   ctl+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.map(([v,l])=>[v,v==='home'?'말씀 모음':l]),pf.kind||'home');
   ctl+=_vTrChipsHTML('무엇을','axis',_VDASH_AXES,pf.axis||'book');
   ctl+=_vTrChipsHTML('모양','form',_VTR_FORMS,form);
@@ -21139,6 +21240,14 @@ function renderVDashTrend(){
   const rows=_vTrRowsOf(d,h);
   html+=_vTrInsightHTML(d,rows,h);
   html+=`<div class="vtr-chartwrap">${_vTrChartSVG(d.keys,shown,unit,form,W,h,d.axis,book)}</div>`;
+  // 칸 상한에 걸려 앞쪽을 잘랐으면 반드시 밝힌다 (v26-0908-8, HB 7)
+  if(_vTrKeysCut>0){
+    const uw=_vTrUnitWord(unit);
+    html+=`<div style="font-size:9.5px;color:var(--tx3);opacity:.8;margin:2px 0 8px;text-align:center;">`+
+      `칸이 너무 많아 최근 ${d.keys.length}${uw}만 그렸어요 `+
+      `(앞의 ${_vTrKeysCut}${uw}${_vTrJosaEun(uw)} 뺐어요) — `+
+      `'달'로 바꾸면 더 멀리까지 한눈에 보여요</div>`;
+  }
   // 상위 여섯에 못 든 것들 가운데 뜻이 있는 것을 건져 보여준다 (v26-0906-5, HB 2)
   const findHTML=_vTrFindingsHTML(d,h);
   // 범례 — 누르면 그 선을 껐다 켠다 (색은 켜져 있든 아니든 그 선이 받은 색 그대로)
@@ -21256,6 +21365,20 @@ function _vDashWinEntries(kind,tab,unit,span,all){
 }
 // 지도·연결·리듬이 함께 쓰는 '지금 무엇을 보고 있나'
 // v26-0907-3 — 기간을 다섯 화면이 함께 쓴다. mode 는 all / span / custom.
+// v26-0908-8, HB 7 — 지금 보고 있는 기간을 말로. 다섯 화면이 함께 쓴다.
+//   ⚠️ '최근 N주' 로 못 박아 쓰면 [전체]·[직접] 을 골라 둔 화면이 거짓말을 한다.
+function _vDashSpanWords(){
+  const sc=_vDashScope();
+  if(sc.mode==='span')return `최근 ${sc.span}${_vTrUnitWord(sc.unit)} 동안`;
+  if(sc.mode==='custom'){
+    const lb=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');return m?`${m[1].slice(2)}.${m[2]}.${m[3]}`:'';};
+    const f=lb(sc.from),t=lb(sc.to);
+    if(f&&t)return `${f} ~ ${t} 사이에`;
+    if(f)return `${f} 뒤로`;
+    if(t)return `${t} 앞으로`;
+  }
+  return '여태까지';
+}
 function _vDashScope(){
   const p=_vTrPref(),d=_vDashPref();
   const mode=_vTrSpanMode();
@@ -21263,16 +21386,10 @@ function _vDashScope(){
          unit:(p.unit==='month')?'month':'week',span:_vTrSpan(p),
          mode,all:mode==='all',from:d.customFrom||'',to:d.customTo||''};
 }
-// 범위·갈래·기간 칩 한 벌 (세 화면이 같이 쓴다)
+// 범위 칩 한 벌 (지도·연결이 같이 쓴다)
+// v26-0908-8, HB 7 — 기간·갈래는 위 공통 줄(_vDashCommonHTML)로 올라갔다.
 function _vDashScopeCtlHTML(){
-  const p=_vTrPref(),sc=_vDashScope();
-  let h='';
-  // v26-0908-7, HB 7 — '기간' 이 맨 첫 줄이다. '직접' 을 고르면 날짜 칸이
-  //   그 줄에서 바로 열리므로, 아래로 내려가 있으면 눈이 두 번 움직인다.
-  h+=_vTrSpanRowHTML({all:true});
-  h+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
-  h+=_vDashKindRowHTML();
-  return h;
+  return _vDashKindRowHTML();
 }
 // 3-2-1 (v26-0908-3, HB) — 범위마다 '많이 무엇을 한 곳' 인지 말이 다르다.
 //   같은 숫자라도 좋아요는 '좋아한', 암송은 '외운' 이라야 뜻이 산다.
@@ -22935,7 +23052,9 @@ function renderVDashRhythm(){
   const cnt=new Map();            // 'dow,hour' -> 횟수
   const dowTot=new Array(7).fill(0);
   let tot=0,noTime=0;
-  _vDashWinEntries(kind,sc.tab,sc.unit,sc.span,{mode:'span'}).forEach(e=>{
+  // v26-0908-8, HB 7 — 여기 mode 를 'span' 으로 못 박아 두어서 [전체][직접] 이
+  //   리듬에서는 아무 일도 안 했다. 이제 고른 모드를 그대로 따른다.
+  _vDashWinEntries(kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
     const d=String(e.date||'').slice(0,10);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
     const m=String(e.time||'').match(/^(\d{1,2}):/);
@@ -22949,9 +23068,8 @@ function renderVDashRhythm(){
   });
   let mx=1; cnt.forEach(v=>{if(v>mx)mx=v;});
 
+  // 기간·갈래는 위 공통 줄이 맡는다 (v26-0908-8, HB 7)
   let html=`<div class="vtr-ctls">`;
-  html+=_vTrSpanRowHTML();     // v26-0908-7, HB 7 — 기간이 맨 첫 줄
-  html+=_vTrChipsHTML('갈래','tab',_VL_TABS,p.tab||'all');
   html+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.filter(([v])=>_VRHY_KINDS.indexOf(v)>=0),kind);
   html+=`</div>`;
   if((p.kind||'home')==='home'){
@@ -23015,7 +23133,7 @@ function renderVDashRhythm(){
     // 3-2-2-2 (v26-0908-3, HB) — 내용마다 줄을 바꾼다. 한 문단에 몰아 쓰면
     //   세 이야기가 한 덩어리로 읽혀 아무것도 안 남는다.
     const rl=[];
-    rl.push(`최근 ${sc.span}${_vTrUnitWord(sc.unit)} 동안 <b>${tot}번</b> 봤어요.`);
+    rl.push(`${_vDashSpanWords()} <b>${tot}번</b> 봤어요.`);
     rl.push((hi>lo)?`가장 많은 요일은 <b>${esc(dowFull[best]||'')}</b>, `+
                `가장 뜸한 요일은 <b>${esc(dowFull[worst]||'')}</b>이에요 (${hi}번 대 ${lo}번).`
               :`요일마다 고르게 보고 있어요.`);

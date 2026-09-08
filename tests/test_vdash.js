@@ -78,6 +78,8 @@ const D = eval('(function(){' + SRC_DASH + ';return{' + [
   '_vDashKeysOf', '_vDashBuckets', '_vDashSlices', '_vDashRowHeadHTML',
   '_vDashKindLabel', '_vDashAxisLabel',
   '_vTrPref', '_vTrEntries', '_vTrBucketOf', '_vTrBucketList', '_vTrBucketLabel', '_vTrData',
+  '_vTrBucketRange', '_vTrScopeKeys', '_vTrSpanMode', '_vTrNowN',
+  'keysCut:()=>_vTrKeysCut',
   '_vTrInsightHTML', '_vTrRowsOf', '_vTrInsN', '_vTrChartSVG',
   '_vDashDetailDotsHTML',
   'setCtx:(k,a)=>{_vDashDetailCtx={kind:k,axis:a};}',
@@ -350,7 +352,9 @@ console.log('\n시나리오 4-2 — 흐름: 어느 성경이 늘고 줄었나');
     V('로마서 8:2', '나', '', [], '2026-07-17'),
     V('시편 23:1', '다', '', [], '2020-01-01')       // 구간 밖 — 세지 않는다
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
+  // v26-0908-8, HB 7 — 흐름도 이제 [전체][직접] 을 따른다. '8주 구간' 을 보려면
+  //   spanMode 를 'span' 이라고 **적어 줘야** 한다 (기본값은 'all').
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, spanMode: 'span', form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
   const d = D._vTrData();
   sc.eq('칸이 8개', d.keys.length, 8);
   const mat = d.all.find(s => s.key === '마태복음');
@@ -393,7 +397,7 @@ console.log('\n시나리오 4-3 — 흐름: 갈래(말씀/명제)로 가른다')
     V('마태복음 1:1', '가', '', [], '2026-09-01'),
     V('마태복음 5:3', '설교', '', [], '2026-09-01', { pid: 'P1', books: ['마태복음'] })
   ]);
-  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
+  ST.settings.vTrPref = { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 8, spanMode: 'span', form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 };
   sc.eq('전체는 둘 다', D._vTrData().all[0].total, 2);
   ST.settings.vTrPref.tab = 'verse';
   sc.eq('말씀만 하나', D._vTrData().all[0].total, 1);
@@ -479,10 +483,15 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   //   그 가지 안에서만 날짜 칸을 만들므로 둘이 어긋날 수가 없다.
   sc.eq('날짜 칸은 칩과 같은 가지 안에서만 만든다',
         /if\(o\.all\)\{[\s\S]{0,900}?_vDashDateBtn\('vDashFrom'/.test(SRC), true);
-  sc.eq('그 가지를 켜는 화면은 셋 (분포·지도·연결)',
-        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g)||[]).length, 2);
-  sc.eq('흐름·리듬은 칩 없이 부른다',
-        (SRC.match(/_vTrSpanRowHTML\(\)/g)||[]).length, 2);
+  // v26-0908-8, HB 7 — 기간·갈래는 **다섯 탭 공통 줄** 하나로 모였다.
+  //   그래서 _vTrSpanRowHTML 을 부르는 자리도 딱 한 곳뿐이다.
+  //   ⚠️ 두 곳이 되는 순간 "어느 탭에서 무엇이 보이나"가 다시 갈린다.
+  sc.eq('기간 한 벌을 부르는 자리는 공통 줄 하나뿐',
+        (SRC.match(/_vTrSpanRowHTML\(\{all:true\}\)/g)||[]).length, 1);
+  sc.eq('칩 없이 부르는 자리는 이제 없다',
+        (SRC.match(/_vTrSpanRowHTML\(\)/g)||[]).length, 0);
+  sc.eq('그 한 자리가 공통 줄이다',
+        /function _vDashCommonHTML\(\)\{[\s\S]{0,220}?_vTrSpanRowHTML\(\{all:true\}\)\+\s*\n\s*_vTrChipsHTML\('갈래'/.test(SRC), true);
   sc.eq('모달 머리의 옛 날짜 줄은 없앴다', SRC.includes('id="vDashCustomRow"'), false);
   // 겉은 우리가 그린 알약, 속은 투명하게 덮은 진짜 <input type=date> 다.
   // ⚠️ 이 두 줄이 깨지면 아이폰에서 날짜 휠이 안 뜬다.
@@ -490,21 +499,122 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
         /function _vDashDateBtn[\s\S]{0,600}?<input type="date" id="\$\{id\}"/.test(SRC), true);
   sc.eq('그 날짜칸은 투명하게 덮는다',
         /\.vtr-date input\{position:absolute;[^}]*opacity:0;/.test(SRC), true);
-  // 7 — 다섯 화면 **모두** '기간' 이 맨 첫 줄이다
-  sc.eq('지도·연결: 기간이 갈래보다 먼저',
-        /function _vDashScopeCtlHTML\(\)\{[\s\S]{0,600}?_vTrSpanRowHTML\(\{all:true\}\);[\s\S]{0,200}?_vTrChipsHTML\('갈래'/.test(SRC), true);
-  sc.eq('흐름: 기간이 갈래보다 먼저',
-        /ctl\+=_vTrSpanRowHTML\(\);[\s\S]{0,120}?ctl\+=_vTrChipsHTML\('갈래'/.test(SRC), true);
-  sc.eq('리듬: 기간이 갈래보다 먼저',
-        /html\+=_vTrSpanRowHTML\(\);[\s\S]{0,160}?html\+=_vTrChipsHTML\('갈래'/.test(SRC), true);
+  // ── 7 (v26-0908-8, HB) · 기간·갈래는 탭 이름 아래 **공통 영역** ──────────
+  //   위 = 다섯 탭 공통 / 아래(#vDashBody) = 이 탭만. 가로선이 그 경계다.
+  sc.eq('공통 상자가 #vDashBody 바깥에 있다',
+        /id="vDashCommon"[\s\S]{0,240}?id="vDashBody"/.test(SRC), true);
+  sc.eq('탭 줄 다음이 공통 상자다',
+        SRC.indexOf('id="vDashViewTabs"') < SRC.indexOf('id="vDashCommon"'), true);
+  sc.eq('가로선은 공통 상자 아래(=#vDashBody 위)에 있다',
+        /id="vDashBody"[^>]*border-top:1px solid var\(--bd2\)/.test(SRC), true);
+  sc.eq('그릴 때마다 공통 상자를 채운다',
+        /const cm=document\.getElementById\('vDashCommon'\);\s*\n\s*if\(cm\)\{cm\.innerHTML=_vDashCommonHTML\(\);/.test(SRC), true);
+  // ⚠️ #vDashBody 바깥이라 _vTrBindRails 의 기본 훑는 자리에 안 걸린다 —
+  //    슬라이더를 따로 걸지 않으면 기간 슬라이더가 안 끌린다.
+  sc.eq('공통 상자의 슬라이더도 따로 건다',
+        /if\(cm\)\{cm\.innerHTML=_vDashCommonHTML\(\); _vTrBindRails\(cm\);\}/.test(SRC), true);
+  // 다섯 화면 어디에도 기간·갈래 줄이 남아 있으면 안 된다 (두 벌이 되면 어긋난다)
+  sc.eq('지도·연결에는 범위만 남았다',
+        /function _vDashScopeCtlHTML\(\)\{\s*\n\s*return _vDashKindRowHTML\(\);\s*\n\}/.test(SRC), true);
+  sc.eq("어느 화면도 갈래 줄을 따로 안 그린다",
+        (SRC.match(/_vTrChipsHTML\('갈래'/g)||[]).length, 1);
 
   // v26-0907-3 — '저장' 범위. 테스트는 _vlKindEntries 를 가짜로 쓰므로
   // 진짜 원본에도 갈래가 뚫려 있는지 여기서 눈으로 확인한다.
   sc.eq("흐름 쪽 원천에 저장 갈래가 있다", /function _vlKindEntries\(k\)\{[\s\S]{0,600}?if\(k==='keep'\)return _vlKeepEntries\(\);/.test(SRC), true);
-  // 분포도 이제 지도·연결과 **같은 길**로 센다 — 갈래를 따로 적을 필요가 없다
+  // 분포도 이제 지도·연결과 **같은 길**로 센다.
+  // v26-0908-8, HB 7 — 갈래가 공통 줄로 올라온 이상 분포도 그것을 따라야 한다.
+  //   안 따르면 "다섯 탭 공통" 이라 해 놓고 한 탭만 안 바뀌는 꼴이 된다.
   sc.eq('분포도 같은 기간 창을 쓴다',
-        /function _vDashEntries\(kind\)\{[\s\S]{0,200}?_aggByRef\(_vDashWinEntries\(kind,'all',sc\.unit,sc\.span,sc\)\)/.test(SRC), true);
+        /function _vDashEntries\(kind\)\{[\s\S]{0,400}?_aggByRef\(_vDashWinEntries\(kind,sc\.tab,sc\.unit,sc\.span,sc\)\)/.test(SRC), true);
+  sc.eq('말씀 모음 줄도 갈래를 따른다',
+        /function _vDashHomeAgg\(tab\)\{[\s\S]{0,320}?if\(t!=='all'&&\(!!v\.pid\)!==\(t==='prop'\)\)return;/.test(SRC), true);
+  // 리듬은 mode 를 'span' 으로 못 박아 두어 [전체][직접] 이 아무 일도 안 했다
+  sc.eq('리듬도 고른 기간 모드를 따른다',
+        SRC.includes("_vDashWinEntries(kind,sc.tab,sc.unit,sc.span,{mode:'span'})"), false);
   sc.eq('저장이 범위 맨 끝이다', /_VDASH_KINDS=\[.*\['keep','저장'\]\];/.test(SRC), true);
+}
+
+// ══════════════════════════════════════════════════════════════════
+console.log('\n시나리오 36 — 7 (v26-0908-8, HB): 흐름도 [전체][직접] 을 따른다');
+// 여태 흐름의 가로 칸은 늘 '최근 N칸' 이었다. 칩이 아예 없었으니 그래도 됐다.
+// 이제 칩이 공통 줄에 있으므로, 눌러도 아무 일이 안 일어나면 고장으로 읽힌다.
+{
+  const P = (o) => Object.assign(
+    { kind: 'home', axis: 'book', tab: 'all', unit: 'week', span: 4,
+      form: 'line', off: [], ins: 0, exp: [], book: null, sort: null, v: 3 }, o);
+  // 오늘은 2026-09-05(토). 이번 주 칸은 2026-08-30.
+  setVerses([
+    V('마태복음 1:1', '가', '', [], '2026-06-07'),      // 13주 전쯤
+    V('마태복음 1:2', '가', '', [], '2026-07-20'),
+    V('마태복음 1:3', '가', '', [], '2026-09-01')       // 이번 주
+  ]);
+
+  // ── 최근 N칸 — 예전 그대로 ──
+  ST.settings.vTrPref = P({ spanMode: 'span' });
+  ST.settings.vDashPref = null;
+  const dS = D._vTrData();
+  sc.eq('최근 N칸이면 슬라이더 값 그대로', dS.keys.length, 4);
+  sc.eq('마지막 칸이 이번 주', dS.keys[dS.keys.length - 1], '2026-08-30');
+  sc.eq('4주 밖의 6월·7월 기록은 안 센다', dS.all[0].total, 1);
+
+  // ── 전체 — 가장 오래된 기록이 든 칸부터 이번 주까지 ──
+  ST.settings.vTrPref = P({ spanMode: 'all' });
+  const dA = D._vTrData();
+  sc.eq('전체는 가장 오래된 칸부터', dA.keys[0], '2026-06-07');
+  sc.eq('전체도 이번 주에서 끝난다', dA.keys[dA.keys.length - 1], '2026-08-30');
+  sc.eq('그 사이 칸을 다 만든다(6/07~8/30 = 13주)', dA.keys.length, 13);
+  sc.eq('세 건이 다 들어온다', dA.all[0].total, 3);
+  sc.eq('상한에 안 걸렸으니 자른 것 없음', D.keysCut(), 0);
+
+  // ── 직접 — 고른 두 날짜가 든 칸부터 칸까지 ──
+  ST.settings.vTrPref = P({ spanMode: 'custom' });
+  ST.settings.vDashPref = { period: 'all', customFrom: '2026-07-01', customTo: '2026-08-01',
+                            view: 'trend', v: 1 };
+  const dC = D._vTrData();
+  sc.eq('직접은 고른 날이 든 칸부터', dC.keys[0], '2026-06-28');
+  sc.eq('직접은 고른 날이 든 칸까지', dC.keys[dC.keys.length - 1], '2026-07-26');
+  sc.eq('그 안의 7/20 하나만 센다', dC.all[0].total, 1);
+
+  // 한쪽만 고르면 나머지는 열어 둔다
+  ST.settings.vDashPref = { period: 'all', customFrom: '2026-08-01', customTo: '',
+                            view: 'trend', v: 1 };
+  const dC2 = D._vTrData();
+  sc.eq('끝을 안 고르면 오늘 칸까지', dC2.keys[dC2.keys.length - 1], '2026-08-30');
+
+  // ── 칸 상한 — 한없이 늘면 그림도 표도 못 읽는다 ──
+  ST.settings.vTrPref = P({ spanMode: 'all' });
+  ST.settings.vDashPref = null;
+  setVerses([
+    V('마태복음 1:1', '가', '', [], '2010-01-04'),      // 아주 오래된 것 하나
+    V('마태복음 1:2', '가', '', [], '2026-09-01')
+  ]);
+  const dMax = D._vTrData();
+  sc.eq('주는 104칸(2년)에서 멈춘다', dMax.keys.length, 104);
+  sc.eq('잘라낸 칸 수를 적어 둔다', D.keysCut() > 0, true);
+  sc.eq('남는 것은 **최근** 쪽이다', dMax.keys[dMax.keys.length - 1], '2026-08-30');
+  ST.settings.vTrPref = P({ spanMode: 'all', unit: 'month' });
+  const dMo = D._vTrData();
+  sc.eq('달은 120칸(10년)까지 간다', dMo.keys.length, 120);
+
+  // ── 칸 짓기 자체 ──
+  sc.eq('주 칸 잇기', D._vTrBucketRange('week', '2026-08-16', '2026-08-30'),
+        ['2026-08-16', '2026-08-23', '2026-08-30']);
+  sc.eq('달 칸 잇기(해를 넘어도)', D._vTrBucketRange('month', '2025-11', '2026-02'),
+        ['2025-11', '2025-12', '2026-01', '2026-02']);
+  sc.eq('거꾸로 주면 빈 목록', D._vTrBucketRange('week', '2026-08-30', '2026-08-16'), []);
+
+  // ── 인사이트의 '최근 h칸' 도 **그린 칸 수**를 따른다 ──
+  //    안 그러면 104칸을 그려 놓고 "최근 2주 vs 이전 2주" 를 견주게 된다.
+  setVerses([V('마태복음 1:1', '가', '', [], '2026-06-07'), V('마태복음 1:2', '가', '', [], '2026-09-01')]);
+  ST.settings.vTrPref = P({ spanMode: 'span', span: 8 });
+  D._vTrData();
+  sc.eq('최근 N칸이면 슬라이더의 절반', D._vTrInsN(ST.settings.vTrPref), 4);
+  ST.settings.vTrPref = P({ spanMode: 'all', span: 8 });
+  const dIns = D._vTrData();
+  sc.eq('전체면 그린 칸의 절반', D._vTrInsN(ST.settings.vTrPref), Math.floor(dIns.keys.length / 2));
+
+  ST.settings.vDashPref = null;
 }
 
 sc.done();
