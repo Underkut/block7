@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3682,6 +3682,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   -webkit-tap-highlight-color:transparent;
 }
 .settings-tab.on{color:var(--ac-tx);border-bottom-color:var(--ac);}
+/* 좁은 폰에서 네 글자 탭이 3+1로 갈라지지 않게 뜻 단위로 2+2 줄바꿈한다. */
+@media (max-width:430px){
+  #verseSettingsTabBar .vstab-pair>span{display:block;white-space:nowrap;}
+}
 /* 어디서 왔는지에 따라 **저절로** 열린 탭 — 그 자리를 한 번 짚어 준다
    (v26-0905-4, HB). 테두리를 새로 두르지 않는다 (UI 원칙) — 강조색이 옅게
    들어왔다 빠지기를 두 번 하고 멈춘다. 계속 깜빡이면 눈이 붙잡힌다. */
@@ -4805,7 +4809,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-6";
+const APP_VERSION = "v. 26-0909-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5643,13 +5647,13 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="settings-close" onclick="closeVerseSettingsModal()">×</button>
     </div>
     <div class="settings-tab-bar" id="verseSettingsTabBar">
-      <button class="settings-tab on" onclick="switchVerseSettingsTab('top',this)">상단말씀</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('widget',this)">말씀위젯</button>
+      <button class="settings-tab on" onclick="switchVerseSettingsTab('top',this)"><span class="vstab-pair"><span>상단</span><span>말씀</span></span></button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('widget',this)"><span class="vstab-pair"><span>말씀</span><span>위젯</span></span></button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('view',this)">뷰</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('alarm',this)">알림</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)">전체화면</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)"><span class="vstab-pair"><span>전체</span><span>화면</span></span></button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('share',this)">공유</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)">말씀모음</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)"><span class="vstab-pair"><span>말씀</span><span>모음</span></span></button>
     </div>
     <div class="settings-body">
       <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:7;">
