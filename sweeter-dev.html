@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4805,7 +4805,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-4";
+const APP_VERSION = "v. 26-0909-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19278,7 +19278,7 @@ function _keepBindDrag(box){
   if(!box||box._keepDrag)return;
   box._keepDrag=true;
   box.classList.add('keep-drag-zone');
-  let el=null,name='',grabY=0,lastY=0,moved=false,holdTimer=null,pointerId=null;
+  let el=null,name='',grabY=0,lastY=0,moved=false,dragging=false,holdTimer=null,pointerId=null;
   const rowsOf=()=>[...box.querySelectorAll('[data-keepname]')];
   const put=()=>{ if(el)el.style.transform='translateY('+(lastY-grabY)+'px)'; };
   // 지금 떠 있는 자리가 몇 번째인가 (잡은 줄을 뺀 나머지 사이에서)
@@ -19315,11 +19315,12 @@ function _keepBindDrag(box){
     clearTimeout(holdTimer);holdTimer=null;
     rowsOf().forEach(r=>{r.style.transition='';r.style.transform='';});
     if(el)el.classList.remove('keep-dragging');
-    el=null;name='';pointerId=null;
+    el=null;name='';pointerId=null;dragging=false;
   };
   const begin=e=>{
     if(!el)return;
     holdTimer=null;
+    dragging=true;
     try{box.setPointerCapture(pointerId);}catch(_){}
     grabY=lastY=e.clientY;
     el.style.transition='none';
@@ -19332,10 +19333,11 @@ function _keepBindDrag(box){
     if(!el)return;
     moved=false;name=el.getAttribute('data-keepname');pointerId=e.pointerId;
     grabY=lastY=e.clientY;
-    // 마우스는 바로 끌고, 터치는 잠깐 멈춰 있어야 끌기가 시작된다.
+    // 터치는 잠깐 멈춰 있어야 끌기가 시작된다.
     // 기다리는 동안 세로 움직임이 생기면 브라우저 스크롤에 온전히 넘긴다.
-    if(e.pointerType==='mouse')begin(e);
-    else holdTimer=setTimeout(()=>begin(e),_KEEP_HOLD_MS);
+    // 마우스는 줄을 누른 즉시 포인터를 캡처하면 pointerup 대상이 박스로
+    // 바뀌어 줄의 click이 사라진다. 따라서 실제로 움직인 뒤에만 캡는다.
+    if(e.pointerType!=='mouse')holdTimer=setTimeout(()=>begin(e),_KEEP_HOLD_MS);
   });
   box.addEventListener('pointermove',e=>{
     if(!el)return;
@@ -19343,6 +19345,11 @@ function _keepBindDrag(box){
     if(holdTimer){
       if(Math.abs(lastY-grabY)>=7)clear();
       return;
+    }
+    if(e.pointerType==='mouse'&&!dragging){
+      if(Math.abs(lastY-grabY)<4)return;
+      begin(e);
+      moved=true;
     }
     if(e.cancelable)e.preventDefault();
     // 행 전체가 입력 자리인 만큼 손가락 떨림은 탭으로 남겨 목록을 고를 수 있게 한다.
@@ -19356,13 +19363,15 @@ function _keepBindDrag(box){
     if(!el)return;
     // 홀드 전에 놓은 것은 탭/스크롤이다. 차례를 저장하지 않는다.
     if(holdTimer){clear();return;}
+    // PC의 짧은 클릭도 같다. 끌기가 시작되지 않았으면 줄의 click으로 넘긴다.
+    if(!dragging){clear();return;}
     const names=rowsOf().map(x=>x.getAttribute('data-keepname'));
     const cur=el;
     // 놓은 줄은 제자리로 미끄러져 들어간다 (같은 속도·곡선)
     cur.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
     cur.style.transform='';
     cur.classList.remove('keep-dragging');
-    el=null;name='';pointerId=null;
+    el=null;name='';pointerId=null;dragging=false;
     _keepSetOrder(names);
     // 끌었으면 뒤이어 오는 클릭(=목록 고르기)은 삼킨다
     if(moved)box._keepSwallow=Date.now();
@@ -19380,7 +19389,7 @@ function _keepBindDrag(box){
   //    수동(passive:false)으로** 잡아 끄는 동안에는 무조건 막는다.
   //    holdTimer 가 아직 살아 있으면 = 아직 끌기 전이므로 그대로 흘려 보낸다.
   box.addEventListener('touchmove',e=>{
-    if(el&&!holdTimer&&e.cancelable)e.preventDefault();
+    if(el&&dragging&&e.cancelable)e.preventDefault();
   },{passive:false});
   // ⚠️ 손잡이를 놓은 직후의 클릭이 줄로 새면 엉뚱한 목록이 골라진다
   box.addEventListener('click',e=>{

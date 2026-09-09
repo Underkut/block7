@@ -108,9 +108,9 @@ console.log('\n시나리오 4 — GNB 높이와 내순서 끌기');
   // pointermove 의 preventDefault 만으로는 늦는다(브라우저가 이미 스크롤을
   // 시작하면 그 이벤트가 cancelable 이 아니게 된다).
   sc.eq('끌기 중 touchmove 를 수동으로 잡는다',
-        /box\.addEventListener\('touchmove',e=>\{\s*if\(el&&!holdTimer&&e\.cancelable\)e\.preventDefault\(\);\s*\},\{passive:false\}\)/.test(SRC), true);
+        /box\.addEventListener\('touchmove',e=>\{\s*if\(el&&dragging&&e\.cancelable\)e\.preventDefault\(\);\s*\},\{passive:false\}\)/.test(SRC), true);
   // 홀드 전에는 흘려 보내야 목록 스크롤이 된다
-  sc.eq('홀드 전(=아직 끌기 전)에는 막지 않는다', SRC.includes('if(el&&!holdTimer&&e.cancelable)'), true);
+  sc.eq('홀드 전(=아직 끌기 전)에는 막지 않는다', SRC.includes('if(el&&dragging&&e.cancelable)'), true);
   sc.eq('줄에는 pan-y 가 그대로 (쓱 밀면 스크롤)',
         /\.keep-drag-zone \[data-keepname\]\{touch-action:pan-y;\}/.test(c), true);
 

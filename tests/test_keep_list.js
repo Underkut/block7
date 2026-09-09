@@ -9,9 +9,12 @@ const picker = SRC.slice(SRC.indexOf('function _renderKeepPicker(){'), SRC.index
 console.log('시나리오 1 — 내 순서에서 터치는 홀드 뒤에만 끌기');
 sc.eq('터치 홀드 시간은 할일과 같은 280ms', drag.includes('const _KEEP_HOLD_MS=280'), true);
 sc.eq('홀드 전에는 세로 스크롤 허용', css.includes('touch-action:pan-y'), true);
-sc.eq('터치 즉시 끌기 금지', drag.includes("else holdTimer=setTimeout(()=>begin(e),_KEEP_HOLD_MS)"), true);
+sc.eq('터치 즉시 끌기 금지', drag.includes("if(e.pointerType!=='mouse')holdTimer=setTimeout(()=>begin(e),_KEEP_HOLD_MS)"), true);
 sc.eq('스크롤 거리 7px이면 홀드 취소', drag.includes('Math.abs(lastY-grabY)>=7'), true);
-sc.eq('마우스는 기존처럼 즉시 끌기', drag.includes("if(e.pointerType==='mouse')begin(e)"), true);
+console.log('\n시나리오 1-2 — PC에서 줄을 클릭하면 폴더를 고르기');
+sc.eq('마우스는 움직이기 전에 포인터를 캡처하지 않음', drag.includes("if(e.pointerType==='mouse')begin(e)"), false);
+sc.eq('마우스가 4px 이상 움직여야 끌기 시작', drag.includes("if(e.pointerType==='mouse'&&!dragging){"), true);
+sc.eq('끌기가 시작되지 않은 포인터업은 클릭으로 남김', drag.includes('if(!dragging){clear();return;}'), true);
 
 console.log('\n시나리오 2 — 새 목록 만들기는 스크롤 밖 좌상단 +');
 const modal = SRC.slice(SRC.indexOf('id="keepPickModal"'), SRC.indexOf('id="keepPickSort"'));
