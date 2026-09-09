@@ -13,11 +13,12 @@ sc.eq('터치 즉시 끌기 금지', drag.includes("else holdTimer=setTimeout(()
 sc.eq('스크롤 거리 7px이면 홀드 취소', drag.includes('Math.abs(lastY-grabY)>=7'), true);
 sc.eq('마우스는 기존처럼 즉시 끌기', drag.includes("if(e.pointerType==='mouse')begin(e)"), true);
 
-console.log('\n시나리오 2 — 새 목록 행은 언제나 목록보다 위');
-const addAt = picker.indexOf('keep-pick-row keep-pick-new');
-const rowsAt = picker.indexOf('<div id="keepPickRows">');
-sc.eq('새 목록 행이 목록 묶음보다 먼저', addAt >= 0 && addAt < rowsAt, true);
-sc.eq('새 목록 행은 드래그 묶음 밖', picker.slice(rowsAt).includes('keep-pick-row keep-pick-new'), false);
+console.log('\n시나리오 2 — 새 목록 만들기는 스크롤 밖 좌상단 +');
+const modal = SRC.slice(SRC.indexOf('id="keepPickModal"'), SRC.indexOf('id="keepPickSort"'));
+sc.eq('목록 안의 새 목록 행 제거', picker.includes('keep-pick-row keep-pick-new'), false);
+sc.eq('좌상단 +가 새 목록 만들기 호출', modal.includes('style="left:14px;right:auto;" onclick="keepPickNew()"'), true);
+sc.eq('+와 닫기 아이콘 크기 동일', (modal.match(/<svg width="18" height="18"/g)||[]).length, 2);
+sc.eq('+와 닫기 선 굵기 동일', (modal.match(/stroke-width="1.8"/g)||[]).length, 2);
 
 
 // v26-0903-1 — 좌상단 저장 목록은 독립적으로 스크롤하고, 팝업 뒤에서도 상태를 보존한다.
