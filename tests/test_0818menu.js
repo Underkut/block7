@@ -84,31 +84,23 @@ console.log('\n시나리오 2-2 — 스몰 블럭 포함을 알림 테스트 앞
   sc.eq('스몰 블럭 포함 위에 구분선', (between.match(/<div class="div-line"/g)||[]).length>=2, true);
 }
 
-console.log('\n시나리오 4 — 전체화면 롱터치 메뉴: 본문 복사');
+console.log('\n시나리오 4 — 말씀 롱터치 메뉴: 화면별 전체 화면·본문 복사');
 {
-  sc.eq('메뉴 첫 항목에 id 를 달았다', SRC.includes('id="verseMemMenuFirstItem"'), true);
-  sc.eq('openVerseMemMenu 가 네 번째 인자(fromFull)를 받는다',
-        SRC.includes('function openVerseMemMenu(anchorEl,secId,atPoint,fromFull){'), true);
+  sc.eq('전체 화면과 본문 복사가 별도 항목이다',
+        SRC.includes('id="verseMemMenuFullItem"') && SRC.includes('id="verseMemMenuCopyItem"'), true);
+  const sync = slice('function _vmmSyncItems(anchorEl,fromFull){', '// fromFull:');
+  sc.eq('상단 말씀에서만 전체 화면을 보인다',
+        sync.includes("(!fromFull&&fromTop)?'flex':'none'"), true);
   const openFn = slice('function openVerseMemMenu(anchorEl,secId,atPoint,fromFull){', '\n}');
-  sc.eq('열 때마다 첫 항목을 그 상태에 맞춰 다시 그린다', openFn.includes('_vmmSyncFirstItem(!!fromFull);'), true);
+  sc.eq('메뉴를 열 때 화면별 항목을 맞춘다', openFn.includes('_vmmSyncItems(anchorEl,!!fromFull);'), true);
+  sc.eq('명제에서는 암송 완료 체크만 감춘다',
+        openFn.includes("record.style.display=prop?'none':'flex'"), true);
 
-  const sync = slice('function _vmmSyncFirstItem(fromFull){', 'function openVerseMemMenu');
-  sc.eq("전체화면에서 열렸으면 '본문 복사'로", sync.includes("el.innerHTML='<span") && sync.includes('본문 복사'), true);
-  sc.eq('그 onclick 은 vfCopyBodyOnly', sync.includes('closeVerseMemMenu();vfCopyBodyOnly()'), true);
-  sc.eq("아니면 '전체 화면'으로 되돌린다", sync.includes('전체 화면'), true);
-  sc.eq('그 onclick 은 openVerseFull', sync.includes('closeVerseMemMenu();openVerseFull()'), true);
-
-  // 전체화면 자체의 두 진입 경로(롱터치·우클릭)만 fromFull=true 를 넘긴다
   const vfGest = slice('function _initVerseFullGestures(){', '\n  // 두 손가락으로 벌리면');
   sc.eq('전체화면 롱터치가 fromFull=true 를 넘긴다',
         vfGest.includes('openVerseMemMenu(el,null,{x:sx,y:sy},true);'), true);
   sc.eq('전체화면 우클릭도 fromFull=true 를 넘긴다',
         vfGest.includes('openVerseMemMenu(el,null,{x:e.clientX,y:e.clientY},true);'), true);
-  // ⚠️ 다른 진입 경로(타일뷰·말씀영역)는 그대로 둬야 한다 — 거기선 '전체 화면'이 여전히 뜻이 있다
-  sc.eq('타일뷰 롱터치는 fromFull 을 안 넘긴다(그대로 전체 화면)',
-        SRC.includes('openVerseMemMenu(gd,null,{x:gsx,y:gsy});'), true);
-  sc.eq('말씀영역 롱터치도 fromFull 을 안 넘긴다',
-        SRC.includes('openVerseMemMenu(bar,null,{x:sx,y:sy}); // null'), true);
 }
 
 console.log('\n시나리오 4 — vfCopyBodyOnly: 본문만, 동기적으로 클립보드에');
