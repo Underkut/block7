@@ -18,7 +18,7 @@ const modal = SRC.slice(SRC.indexOf('id="keepPickModal"'), SRC.indexOf('id="keep
 sc.eq('목록 안의 새 목록 행 제거', picker.includes('keep-pick-row keep-pick-new'), false);
 sc.eq('좌상단 +가 새 목록 만들기 호출', modal.includes('style="left:14px;right:auto;" onclick="keepPickNew()"'), true);
 sc.eq('+ 아이콘은 18px 유지', (modal.match(/<svg width="18" height="18"/g)||[]).length, 1);
-sc.eq('대각선 닫기 아이콘은 √2 비율에 가까운 13px', (modal.match(/<svg width="13" height="13"/g)||[]).length, 1);
+sc.eq('대각선 닫기 아이콘은 15px', (modal.match(/<svg width="15" height="15"/g)||[]).length, 1);
 sc.eq('+ 선 굵기는 1.8 유지', (modal.match(/stroke-width="1.8"/g)||[]).length, 1);
 sc.eq('줄인 닫기 아이콘은 보이는 선 굵기를 2.5로 보정', (modal.match(/stroke-width="2.5"/g)||[]).length, 1);
 
