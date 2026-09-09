@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-18  [production]  -->
+<!-- BLOCK7  v. 26-0909-19  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4809,7 +4809,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-18";
+const APP_VERSION = "v. 26-0909-19";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5632,7 +5632,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
 </div>
 
-<!-- 말씀 설정 모달 (설정창과 별개, 로고 메뉴에서만 진입) -->
+<!-- 말씀 설정 모달 (일반 설정창과 별개이며 화면 곳곳의 말씀 진입점에서 연다) -->
 <div class="settings-overlay" id="verseSettingsOverlay" style="display:none" onclick="closeVerseSettingsModal(event)">
   <div class="settings-panel" id="verseSettingsPanel">
     <div class="settings-verbadge" id="verseSettingsVerBadge" style="display:none;"></div>
@@ -6360,7 +6360,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <!-- 2-1: filled left triangle for prev -->
   <!-- 2-1: filled right triangle for next -->
-  <div class="task-menu-item" onclick="openVerseListModal()">
+  <div class="task-menu-item" onclick="openVerseCollFromLogo()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M5.53 7.95 L11.55 10.65 L13.31 9.53 L7.29 6.83 Z M8.17 6.27 L14.19 8.97 L15.95 7.85 L9.93 5.15 Z M10.81 4.59 L13.82 5.94 L15.58 4.82 L12.57 3.47 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg></span><span style="flex:1;">현재 말씀 모음</span>
     <!-- 우측 동기화 — 로고 롱터치/우클릭과 같은 기능 (전체 업데이트) -->
     <span class="task-menu-side" onclick="event.stopPropagation();closeLogoMenu();verseSyncAllNow();" title="말씀 모음 전체 업데이트" aria-label="말씀 모음 전체 업데이트">
@@ -6386,7 +6386,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l6 6-6 6"/></svg>
     </span>
   </div>
-  <div class="task-menu-item" onclick="closeLogoMenu();openVerseSettingsModal();">
+  <div class="task-menu-item" onclick="openVerseCollFromLogo()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정
   </div>
   </div>
@@ -7002,7 +7002,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="vliAction('even')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…</div>
   <div class="task-menu-item" onclick="vliAction('share')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg></span>공유</div>
   <div class="task-menu-sep"></div>
-  <div class="task-menu-item" onclick="closeVliMenu();openVerseSettingsModal()"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정</div>
+  <div class="task-menu-item" onclick="openVerseCollFromListMenu()"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정</div>
   <div class="task-menu-item" onclick="vliAction('del')" style="color:var(--danger,#e5484d);"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M6 6l.7 10a1 1 0 0 0 1 1h4.6a1 1 0 0 0 1-1L14 6"/><path d="M10 9v5"/></svg></span><span id="vliDelLabel">삭제</span></div>
 </div>
 
@@ -23413,7 +23413,9 @@ function _vsetGoTab(id,flash){
     if(flash)_vsetFlashTab(btn);
   },40);
 }
-function _vsetGoColl(){_vsetGoTab('coll');}
+// 화면 곳곳의 '말씀 모음'·'말씀 설정' 길은 이 한 동작을 함께 쓴다.
+// 대시보드 헤더의 책 버튼처럼 모음 탭을 열고 제목을 천천히 세 번 짚어 준다.
+function _vsetGoColl(){_vsetGoTab('coll',true);}
 // 저절로 열린 탭의 이름을 한 번 짚어 준다 (v26-0905-4, HB).
 // ⚠️ 클래스를 뗐다가 다시 붙이기 전에 offsetWidth 를 한 번 읽어야 애니메이션이
 //    처음부터 다시 돈다 (연달아 열면 두 번째부터 안 반짝인다).
@@ -23431,6 +23433,18 @@ function openVerseSettingsFromMenu(){
   closeVerseMemMenu();
   _vsetBackTo=null;_vsetBackId=null;
   _vsetGoTab(_vmmFromTab,true);
+}
+// 로고 메뉴의 '현재 말씀 모음'과 '말씀 설정'은 같은 도착점으로 간다.
+function openVerseCollFromLogo(){
+  closeLogoMenu();
+  _vsetBackTo=null;_vsetBackId=null;
+  _vsetGoColl();
+}
+// 활동 목록 행 메뉴의 '말씀 설정'도 같은 도착점으로 간다.
+function openVerseCollFromListMenu(){
+  closeVliMenu();
+  _vsetBackTo=null;_vsetBackId=null;
+  _vsetGoColl();
 }
 // 말씀카드 설정 좌상단의 책 버튼 → 말씀 설정의 '말씀 모음' 탭
 function openVcCollSettings(){
@@ -23466,14 +23480,7 @@ function openVerseCollSettings(){
   _vsetBackTo='verseList';_vsetBackId=null;
   const m=document.getElementById('verseListModal');if(m)m.style.display='none';
   const o=document.getElementById('verseListOverlay');if(o)o.style.display='none';
-  openVerseSettingsModal();
-  setTimeout(()=>{
-    const bar=document.getElementById('verseSettingsTabBar');
-    const btn=bar?[...bar.querySelectorAll('.settings-tab,.vsettings-tab')]
-      .find(b=>(b.getAttribute('onclick')||'').includes("'coll'")):null;
-    if(btn)btn.click();
-    else if(typeof switchVerseSettingsTab==='function')switchVerseSettingsTab('coll',null);
-  },40);
+  _vsetGoColl();
 }
 // ── 파이차트 상세 팝업 ──
 // 큰 파이 안에 1·2·3위 이름을 얹고, 아래에 항목별 개수·비율 표를 붙인다.

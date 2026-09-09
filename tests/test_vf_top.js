@@ -200,8 +200,8 @@ console.log('\n시나리오 4 — 롱터치한 자리를 기억해 그 탭을 �
   const go = slice('function _vsetGoTab(id,flash){', 'function _vsetGoColl');
   sc.eq('탭 단추를 실제로 눌러 준다', go.includes('btn.click();'), true);
   sc.eq('반짝임은 넘겨받았을 때만', go.includes('if(flash)_vsetFlashTab(btn);'), true);
-  // ⚠️ 책 버튼(_vsetGoColl)은 반짝이지 않는다 — 스스로 누른 자리라 짚어 줄 까닭이 없다
-  sc.eq('책 버튼은 반짝임 없이', SRC.includes("function _vsetGoColl(){_vsetGoTab('coll');}"), true);
+  // 화면의 책 버튼은 대시보드 기준 동작과 같게 도착한 말씀 모음 탭을 세 번 짚는다.
+  sc.eq('책 버튼도 말씀 모음 탭을 반짝인다', SRC.includes("function _vsetGoColl(){_vsetGoTab('coll',true);}"), true);
 }
 
 sc.done();
