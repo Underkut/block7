@@ -161,8 +161,8 @@ console.log('\n시나리오 5 — 개수를 메뉴 줄 오른쪽에 적는다');
 console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
 {
   const menu = slice('<!-- Task move mini menu -->', '<!-- (date input now lives inline');
-  sc.eq('개수를 붙인 줄 다섯 (이동 3 · 복제 2)',
-    (menu.match(/data-cnt-days=/g)||[]).length, 5);
+  sc.eq('개수를 붙인 줄 일곱 (이동 3 · 복제 4)',
+    (menu.match(/data-cnt-days=/g)||[]).length, 7);
   sc.eq('날짜 지정 줄에는 개수를 안 붙인다 (어느 날인지 아직 모른다)',
     menu.slice(menu.indexOf('id="dateLabelRow"'), menu.indexOf('id="dateLabelRow"')+400)
       .includes('data-cnt-days'), false);

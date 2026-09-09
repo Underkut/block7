@@ -1,5 +1,5 @@
 // 할일 롱터치 메뉴의 이동·복제 구획과 복제 동작
-// (v26-0904-1 덩어리 나누기 → v26-0904-2 '날짜 지정' 복제 + 새 할일로 복제, HB 요청)
+// (v26-0904-1 덩어리 나누기 → v26-0904-2 날짜 지정 → v26-0909-8 오늘·어제 복제, HB 요청)
 const { slice, makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
@@ -14,8 +14,10 @@ console.log('시나리오 1 — 메뉴를 이동·복제 덩어리로 나눈다'
   const yesterdayMove = MENU.indexOf('onclick="moveTaskTo(-1)"');
   const pickedDate = MENU.indexOf('id="dateLabelRow"');
   const copyTitle = MENU.indexOf('>복제</div>');
+  const todayCopy = MENU.indexOf('onclick="duplicateTaskTo(0)"');
   const tomorrowCopy = MENU.indexOf('onclick="duplicateTaskTo(1)"');
   const weekCopy = MENU.indexOf('onclick="duplicateTaskTo(7)"');
+  const yesterdayCopy = MENU.indexOf('onclick="duplicateTaskTo(-1)"');
   const dateCopy = MENU.indexOf('id="dupDateLabelRow"');
   const daily = MENU.indexOf('id="dailyToggleItem"');
 
@@ -23,27 +25,30 @@ console.log('시나리오 1 — 메뉴를 이동·복제 덩어리로 나눈다'
     [moveTitle,tomorrowMove,weekMove,yesterdayMove,pickedDate].every(i=>i>=0) &&
       moveTitle < tomorrowMove && tomorrowMove < weekMove && weekMove < yesterdayMove && yesterdayMove < pickedDate,
     true);
-  sc.eq('복제 제목 아래 순서 (내일 · 다음 주 · 날짜 지정)',
-    [copyTitle,tomorrowCopy,weekCopy,dateCopy].every(i=>i>=0) &&
-      pickedDate < copyTitle && copyTitle < tomorrowCopy &&
-      tomorrowCopy < weekCopy && weekCopy < dateCopy,
+  sc.eq('복제 제목 아래 순서 (오늘 · 내일 · 다음 주 · 어제 · 날짜 지정)',
+    [copyTitle,todayCopy,tomorrowCopy,weekCopy,yesterdayCopy,dateCopy].every(i=>i>=0) &&
+      pickedDate < copyTitle && copyTitle < todayCopy && todayCopy < tomorrowCopy &&
+      tomorrowCopy < weekCopy && weekCopy < yesterdayCopy && yesterdayCopy < dateCopy,
     true);
   sc.eq('매일 반복은 복제 다음 덩어리', daily>=0 && dateCopy < daily, true);
 }
 
-console.log('\n시나리오 2 — 복제 세 줄의 아이콘이 서로 다르다 (v26-0904-2, HB 지적)');
+console.log('\n시나리오 2 — 복제 다섯 줄의 아이콘이 서로 다르다');
 {
-  // 세 줄이 같은 그림이면 어느 줄인지 눈으로 못 가른다. 뒷장(복제)은 같고
-  // 앞의 기호(내일 ▶ · 다음 주 ▶▶ · 날짜 달력)만 다르게 그린다.
+  // 뒷장(복제)은 같고 앞의 기호(오늘 ● · 내일 ▶ · 다음 주 ▶▶ · 어제 ◀ · 달력)를 다르게 그린다.
   const copyBlock = MENU.slice(MENU.indexOf('>복제</div>'), MENU.indexOf('id="dailyToggleItem"'));
   const icons = [...copyBlock.matchAll(/<svg[\s\S]*?<\/svg>/g)].map(m=>m[0]);
-  sc.eq('복제 칸 아이콘 3개', icons.length, 3);
-  sc.eq('셋 다 서로 다른 그림', new Set(icons).size, 3);
-  sc.eq('셋 다 복제를 뜻하는 뒷장을 함께 그린다',
+  sc.eq('복제 칸 아이콘 5개', icons.length, 5);
+  sc.eq('다섯 모두 서로 다른 그림', new Set(icons).size, 5);
+  sc.eq('다섯 모두 복제를 뜻하는 뒷장을 함께 그린다',
     icons.every(g=>g.includes('M4 13.5H3.4V4.4')), true);
-  sc.eq('내일로는 삼각형 하나', (icons[0].match(/v8\.2l6\.6-4\.1z/g)||[]).length, 1);
-  sc.eq('다음 주로는 삼각형 둘', (icons[1].match(/v8l4\.8-4z/g)||[]).length, 2);
-  sc.eq('날짜 지정은 달력', icons[2].includes('<rect') && icons[2].includes('M7.2 10.2h9.2'), true);
+  sc.eq('오늘로는 채운 원', icons[0].includes('<circle') && icons[0].includes('fill="currentColor"'), true);
+  sc.eq('내일로는 오른쪽 삼각형 하나', (icons[1].match(/v8\.2l6\.6-4\.1z/g)||[]).length, 1);
+  sc.eq('다음 주로는 오른쪽 삼각형 둘', (icons[2].match(/v8l4\.8-4z/g)||[]).length, 2);
+  sc.eq('어제로는 왼쪽 삼각형 하나', icons[3].includes('v8.2L8 11.5z'), true);
+  sc.eq('오늘·내일·어제의 뒷장 선은 플립하지 않는다',
+    [icons[0],icons[1],icons[3]].every(g=>g.includes('M4 13.5H3.4V4.4')), true);
+  sc.eq('날짜 지정은 달력', icons[4].includes('<rect') && icons[4].includes('M7.2 10.2h9.2'), true);
 }
 
 console.log('\n시나리오 3 — 복제된 할일은 그날 새로 만든 할일이다 (v26-0904-2, HB 요청)');
@@ -63,7 +68,7 @@ console.log('\n시나리오 4 — 길어진 메뉴가 작은 화면 안에서 �
   sc.eq('실제 메뉴 높이로 위치 계산', open.includes('menu.offsetHeight'), true);
 }
 
-console.log('\n시나리오 5 — 실제로 내일과 다음 주에 복제해 본다');
+console.log('\n시나리오 5 — 실제로 오늘·내일·다음 주·어제에 복제해 본다');
 {
   const run = (type,days) => {
     const from=[{text:'전화하기',done:true,flag:true,contactTask:true,daily:true,
@@ -96,6 +101,11 @@ console.log('\n시나리오 5 — 실제로 내일과 다음 주에 복제해 �
   sc.eq('다음 주 작은 할일도 복제', nextWeek.to.length, 1);
   sc.eq('다음 주 복제 안내', nextWeek.calls.at(-1),
     ['jump','다음 주로 복제했어요',7,{key:7,secId:'am',type:'small',idx:0}]);
+
+  sc.eq('오늘 복제 안내', run('big',0).calls.at(-1),
+    ['jump','오늘로 복제했어요','today',{key:'today',secId:'am',type:'big',idx:1}]);
+  sc.eq('어제 복제 안내', run('small',-1).calls.at(-1),
+    ['jump','어제로 복제했어요',-1,{key:-1,secId:'am',type:'small',idx:0}]);
 }
 
 console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
