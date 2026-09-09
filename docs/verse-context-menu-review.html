@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>말씀 관련 우클릭 메뉴 검토표</title>
+<style>
+:root{color-scheme:light;--ink:#20201e;--muted:#72716c;--line:#deddd7;--paper:#f7f6f1;--card:#fff;--accent:#365f52;--changed:#fff4d6}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif}.wrap{max-width:1600px;margin:auto;padding:30px 20px 70px}h1{margin:0 0 8px;font-size:28px}.lead{max-width:950px;margin:0 0 18px;color:var(--muted)}.toolbar{position:sticky;top:0;z-index:6;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;background:rgba(247,246,241,.95);backdrop-filter:blur(8px)}button{border:1px solid var(--line);border-radius:999px;background:#fff;padding:8px 13px;color:var(--ink);cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.saved{color:var(--muted);font-size:12px}.table-wrap{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:14px;background:var(--card)}table{border-collapse:separate;border-spacing:0;min-width:1450px;width:100%;text-align:center}th,td{height:43px;padding:6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}thead th{position:sticky;top:0;z-index:3;background:#edf1ee;font-size:12px;white-space:nowrap}thead tr:nth-child(2) th{top:43px;background:#f5f7f5}thead .menu-head{left:0;z-index:5;min-width:180px}tbody th{position:sticky;left:0;z-index:2;background:#fff;text-align:left;white-space:nowrap;font-weight:600}tr:last-child>*{border-bottom:0}tr>*:last-child{border-right:0}.screen-note{display:block;color:var(--muted);font-size:10px;font-weight:400}.cell{padding:0}.cell label{display:grid;place-items:center;width:100%;height:42px;cursor:pointer}.cell input{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer}.cell.changed{background:var(--changed)}.legend{display:flex;flex-wrap:wrap;gap:16px;margin:10px 2px 20px;color:var(--muted);font-size:12px}.legend span{display:flex;align-items:center;gap:6px}.swatch{display:inline-block;width:16px;height:16px;border:1px solid var(--line);background:var(--changed)}h2{margin:28px 0 8px;font-size:18px}textarea{width:100%;min-height:100px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;background:#fff}.print-note{display:none}@media(max-width:700px){.wrap{padding:20px 10px 50px}h1{font-size:23px}.table-wrap{max-height:68vh}}@media print{.toolbar{display:none}.table-wrap{overflow:visible;max-height:none}table{min-width:0;font-size:8px}th,td{padding:2px;height:28px}.cell label{height:27px}.cell input{width:12px;height:12px}.print-note{display:block}}
+</style>
+</head>
+<body><main class="wrap">
+  <h1>말씀 관련 우클릭 메뉴 검토표</h1>
+  <p class="lead">가로는 메뉴를 여는 화면, 세로는 메뉴 항목입니다. 각 화면은 <b>말씀</b>과 <b>명제</b> 두 칸으로 나뉩니다. 현재 메뉴에 있는 항목은 미리 체크되어 있습니다. 넣고 싶은 항목은 체크하고, 빼고 싶은 항목은 체크를 해제해 주세요.</p>
+  <div class="toolbar"><button class="primary" id="copy">변경안 복사</button><button id="print">인쇄 / PDF</button><button id="reset">현재 구성으로 되돌리기</button><span class="saved" id="saved">자동 저장됨</span></div>
+  <div class="table-wrap"><table id="matrix"><thead></thead><tbody></tbody></table></div>
+  <div class="legend"><span>☑ 현재 포함하거나 새로 넣을 항목</span><span>☐ 현재 없거나 뺄 항목</span><span><i class="swatch"></i> 현재 상태에서 바꾼 칸</span></div>
+  <h2>순서·문구 등 추가 의견</h2>
+  <textarea id="note" placeholder="예: 공유를 좋아요 바로 아래로 옮겨 주세요. ‘저장 목록…’ 문구를 바꿔 주세요."></textarea>
+  <p class="print-note">노란 칸은 2026-09-09 현재 운영 구성에서 변경한 항목입니다.</p>
+</main>
+<script>
+const screens=[
+ {id:'top',name:'말씀 상단영역',note:'첫 화면 위쪽'},
+ {id:'full',name:'전체화면',note:'본문을 크게 연 화면'},
+ {id:'tile',name:'타일뷰',note:'장절·분류·태그 타일'},
+ {id:'activity',name:'활동 목록',note:'암송·좋아요·Deeper'},
+ {id:'keep',name:'저장 목록',note:'좌상단 메뉴'},
+ {id:'card',name:'말씀카드 위젯',note:'오른쪽 패널 카드'},
+ {id:'listwidget',name:'말씀목록 위젯',note:'오른쪽 패널 목록'}
+];
+const items=['전체 화면','본문 복사','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장','저장 목록…','말씀 설정','삭제','이 목록에서 빼기 / 저장 풀기'];
+const A=['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'];
+const FULL_VERSE=['본문 복사','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'];
+const PROP=['좋아요','저장','공유'];
+const B=['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제'];
+const KEEP=['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','이 목록에서 빼기 / 저장 풀기'];
+const initial={top:{verse:A,prop:A},full:{verse:FULL_VERSE,prop:PROP},tile:{verse:A,prop:A},activity:{verse:B,prop:B},keep:{verse:KEEP,prop:KEEP},card:{verse:B,prop:B},listwidget:{verse:B,prop:B}};
+const head=document.querySelector('#matrix thead');
+head.innerHTML=`<tr><th class="menu-head" rowspan="2">메뉴 항목</th>${screens.map(s=>`<th colspan="2">${s.name}<span class="screen-note">${s.note}</span></th>`).join('')}</tr><tr>${screens.map(()=>'<th>말씀</th><th>명제</th>').join('')}</tr>`;
+const body=document.querySelector('#matrix tbody');
+body.innerHTML=items.map((item,row)=>`<tr><th scope="row">${item}</th>${screens.flatMap(s=>['verse','prop'].map(type=>{const id=`${s.id}-${type}-${row}`;const checked=initial[s.id][type].includes(item);return `<td class="cell"><label for="${id}" title="${s.name} · ${type==='verse'?'말씀':'명제'} · ${item}"><input id="${id}" type="checkbox" data-screen="${s.id}" data-type="${type}" data-item="${item}" ${checked?'checked':''}></label></td>`})).join('')}</tr>`).join('');
+const KEY='block7-verse-context-review-v2';
+const boxes=[...document.querySelectorAll('input[type="checkbox"]')];
+function isInitial(box){return initial[box.dataset.screen][box.dataset.type].includes(box.dataset.item)}
+function mark(box){box.closest('td').classList.toggle('changed',box.checked!==isInitial(box))}
+function save(){const changed={};boxes.forEach(box=>{if(box.checked!==isInitial(box))changed[box.id]=box.checked});localStorage.setItem(KEY,JSON.stringify({changed,note:document.getElementById('note').value}));boxes.forEach(mark);const saved=document.getElementById('saved');saved.textContent='방금 자동 저장됨';setTimeout(()=>saved.textContent='자동 저장됨',900)}
+function load(){try{const data=JSON.parse(localStorage.getItem(KEY)||'{}');Object.entries(data.changed||{}).forEach(([id,value])=>{const box=document.getElementById(id);if(box)box.checked=value});document.getElementById('note').value=data.note||''}catch(e){}boxes.forEach(mark)}
+document.addEventListener('change',save);document.getElementById('note').addEventListener('input',save);load();
+document.getElementById('copy').onclick=async()=>{const lines=['# 말씀 관련 우클릭 메뉴 변경안'];screens.forEach(s=>['verse','prop'].forEach(type=>{const add=[],remove=[];boxes.filter(b=>b.dataset.screen===s.id&&b.dataset.type===type).forEach(b=>{if(b.checked!==isInitial(b))(b.checked?add:remove).push(b.dataset.item)});if(add.length||remove.length){lines.push(`\n## ${s.name} · ${type==='verse'?'말씀':'명제'}`);if(add.length)lines.push(`- 추가: ${add.join(', ')}`);if(remove.length)lines.push(`- 삭제: ${remove.join(', ')}`)}}));if(lines.length===1)lines.push('\n(체크 변경 없음)');const note=document.getElementById('note').value.trim();if(note)lines.push('\n## 순서·문구 등 추가 의견',note);const text=lines.join('\n');try{await navigator.clipboard.writeText(text);alert('변경안을 복사했습니다. 대화창에 붙여 넣어 주세요.')}catch(e){prompt('아래 내용을 복사해 주세요.',text)}};
+document.getElementById('print').onclick=()=>window.print();document.getElementById('reset').onclick=()=>{if(confirm('모든 체크를 현재 운영 구성으로 되돌릴까요?')){localStorage.removeItem(KEY);location.reload()}};
+</script></body></html>
