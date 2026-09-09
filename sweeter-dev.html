@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0908-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4552,7 +4552,6 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .keep-drag-zone [data-keepname]{touch-action:pan-y;}
 .keep-pick-nm{flex:1;min-width:0;text-align:left;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.keep-pick-new{color:var(--ac-tx);}
 .keep-grip{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
   width:14px;color:var(--tx3);cursor:grab;touch-action:none;}
 /* 잡은 줄 — 손가락을 따라 그 자리에서 **떠서** 움직인다 (스위터 방식).
@@ -4803,7 +4802,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0908-8";
+const APP_VERSION = "v. 26-0909-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7048,6 +7047,9 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 저장 목록 고르기 (책갈피 롱터치) — 유튜브·인스타의 '저장 위치' 창과 같은 얼개 -->
 <div class="event-modal-overlay" id="keepPickOverlay" style="display:none;z-index:4720;" onclick="closeKeepPicker()"></div>
 <div class="event-modal" id="keepPickModal" style="display:none;z-index:4730;width:280px;max-height:70vh;flex-direction:column;">
+  <button class="modal-x" style="left:14px;right:auto;" onclick="keepPickNew()" aria-label="새 목록 만들기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+  </button>
   <button class="modal-x" onclick="closeKeepPicker()" aria-label="닫기">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
@@ -19494,7 +19496,7 @@ function _renderKeepSubMenu(){
 }
 
 // ══════ 저장 목록 고르기 (저장 단추를 누르면) ══════════════
-// 유튜브·인스타와 같다 — 체크로 여러 목록에 동시에 담고, 맨 위에서 새 목록을 만든다.
+// 유튜브·인스타와 같다 — 체크로 여러 목록에 동시에 담고, 좌상단 + 로 새 목록을 만든다.
 let _keepPickRef=null;
 let _keepPickCloseTimer=0;
 function openKeepPicker(ref){
@@ -19529,13 +19531,10 @@ function _renderKeepPicker(){
   if(!box||!_keepPickRef)return;
   const mine=_keepListsOf(_keepPickRef);
   // ⚠️ v26-0831-19, HB — 빈 '기본' 을 미리 만들어 보여 주지 않는다.
-  //    목록이 하나도 없으면 '새 목록' 한 줄만 남는다.
   const lists=_keepLists();
   const drag=_keepSort()==='manual';
   // ⚠️ 고른 것은 **줄 전체의 음영**으로 나타낸다 (왼쪽 체크 자리는 손잡이가 쓴다)
-  box.innerHTML=`<div class="keep-pick-row keep-pick-new" onclick="keepPickNew()">`
-    +`<span class="keep-pick-nm">＋ 새 목록</span></div>`
-    +`<div id="keepPickRows">`+lists.map(L=>{
+  box.innerHTML=`<div id="keepPickRows">`+lists.map(L=>{
     const on=mine.has(L.n);
     return `<div class="keep-pick-row${on?' on':''}" data-keepname="${_keepAttr(L.n)}"`
       +` onclick="keepPickToggle('${_keepAttr(L.n)}')">`
