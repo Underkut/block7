@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>말씀 관련 우클릭 메뉴 검토판</title>
+<style>
+:root{color-scheme:light;--ink:#20201e;--muted:#72716c;--line:#deddd7;--paper:#f7f6f1;--card:#fff;--accent:#365f52;--warn:#9a5b22}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,"Pretendard","Noto Sans KR",sans-serif}.wrap{max-width:1180px;margin:auto;padding:32px 20px 80px}h1{margin:0 0 8px;font-size:28px}h2{margin:34px 0 12px;font-size:19px}.lead{color:var(--muted);max-width:850px}.notice{margin:18px 0;padding:14px 16px;border-left:3px solid var(--warn);background:#fff8ed}.toolbar{position:sticky;top:0;z-index:3;display:flex;gap:8px;align-items:center;padding:10px 0;background:rgba(247,246,241,.94);backdrop-filter:blur(8px)}button{border:1px solid var(--line);border-radius:999px;background:#fff;padding:8px 13px;color:var(--ink);cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}.saved{color:var(--muted);font-size:12px}.legend,.cards{display:grid;gap:12px}.legend{grid-template-columns:repeat(3,minmax(0,1fr))}.legend>div,.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.card h3{margin:0 0 4px;font-size:16px}.route{font-size:12px;color:var(--muted);margin-bottom:12px}.type{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}.typehead{display:flex;align-items:center;gap:7px}.badge{font-size:11px;padding:2px 7px;border-radius:999px;background:#edf3f0;color:var(--accent)}.same{background:#f1f1ee;color:var(--muted)}ol{margin:8px 0 8px;padding-left:22px}.detail{font-size:12px;color:var(--muted)}.feedback{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}.choices{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}.choices label{font-size:12px}textarea{width:100%;min-height:72px;resize:vertical;border:1px solid var(--line);border-radius:9px;padding:9px;font:inherit;background:#fff}.overall{min-height:120px}.warn{color:var(--warn);font-weight:650}.print-note{display:none}@media(max-width:760px){.cards,.legend{grid-template-columns:1fr}.wrap{padding:20px 12px 60px}}@media print{.toolbar{display:none}.cards{display:block}.card{break-inside:avoid;margin:0 0 12px}.print-note{display:block}}
+</style>
+</head>
+<body><main class="wrap">
+  <h1>말씀 관련 우클릭 메뉴 검토판</h1>
+  <p class="lead">2026-09-09 현재 운영 코드의 <b>우클릭·롱터치 결과</b>를 화면별, 대상별로 펼쳤습니다. 각 칸에서 유지·수정·삭제를 고르고 원하는 문구나 순서를 적어 주세요. 입력 내용은 이 브라우저에 자동 저장됩니다.</p>
+  <div class="notice"><b>먼저 보이는 핵심:</b> 실제 메뉴는 2벌뿐입니다. 상단·전체화면·타일은 <b>말씀 화면 메뉴</b>, 활동 목록·저장 목록·두 위젯은 <b>목록 행 메뉴</b>를 공유합니다. 다만 명제를 별도로 줄여 주는 것은 현재 <b>전체화면 하나뿐</b>입니다.</div>
+  <div class="toolbar"><button class="primary" id="copy">피드백 복사</button><button id="print">인쇄 / PDF</button><button id="reset">입력 지우기</button><span class="saved" id="saved">자동 저장됨</span></div>
+  <section class="legend">
+    <div><b>A · 말씀 화면 메뉴</b><br><span class="detail">상단 말씀영역, 전체화면, 타일뷰가 공유합니다.</span></div>
+    <div><b>B · 목록 행 메뉴</b><br><span class="detail">활동·저장 목록, 말씀카드·말씀목록 위젯이 공유합니다.</span></div>
+    <div><b>표시 원칙</b><br><span class="detail">아래 번호는 실제 위→아래 순서이며 ‘│’는 메뉴 구분선입니다.</span></div>
+  </section>
+  <h2>화면별 검토</h2>
+  <section class="cards" id="cards"></section>
+  <h2>전체 의견</h2>
+  <textarea class="overall" data-key="overall" placeholder="예: 모든 곳에서 순서를 ‘좋아요 → 저장 → 공유’로 통일. 명제에는 암송 완료를 보이지 않기…"></textarea>
+  <p class="print-note">이 문서는 BLOCK7 운영 코드의 현황을 읽어 만든 검토용 문서입니다.</p>
+</main>
+<script>
+const A_VERSE=['전체 화면','│','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','│','말씀 설정'];
+const A_FULL_VERSE=['본문 복사','│','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','│','말씀 설정'];
+const A_PROP=['좋아요','저장','공유'];
+const B=['전체 화면','│','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','│','말씀 설정','│','삭제'];
+const screens=[
+ {id:'top',name:'말씀 상단영역',route:'첫 화면 위쪽의 현재 말씀',family:'A',verse:A_VERSE,prop:A_VERSE,note:'명제도 말씀과 똑같이 나옵니다. 현재 코드는 이 자리에서 명제 여부를 검사하지 않습니다.',warn:true},
+ {id:'full',name:'전체화면',route:'말씀 또는 명제를 전체화면으로 연 상태',family:'A',verse:A_FULL_VERSE,prop:A_PROP,note:'유일하게 명제를 따로 판정합니다. 말씀의 첫 항목은 “전체 화면” 대신 “본문 복사”입니다. 명제에서는 구분선·말씀 설정도 모두 숨깁니다.'},
+ {id:'tile',name:'타일뷰',route:'전체화면 장절·분류·태그에서 들어가는 타일',family:'A',verse:A_VERSE,prop:A_VERSE,note:'명제도 말씀과 똑같이 나옵니다. 타일을 누른 대상은 잡지만 명제 전용 메뉴로 전환하지 않습니다.',warn:true},
+ {id:'activity',name:'활동 목록',route:'좌상단 메뉴 → 암송 / 좋아요 / Deeper / Even Deeper 목록',family:'B',verse:B,prop:B,note:'말씀·명제에 같은 메뉴가 나옵니다. 마지막 “삭제”는 보고 있던 활동의 가장 최근 기록 1건을 지웁니다.',warn:true},
+ {id:'keep',name:'저장 목록',route:'좌상단 메뉴 → 저장 목록',family:'B',verse:[...B.slice(0,-1),'이 목록에서 빼기 / 저장 풀기'],prop:[...B.slice(0,-1),'이 목록에서 빼기 / 저장 풀기'],note:'말씀·명제에 같은 메뉴가 나옵니다. 특정 저장 목록이면 “이 목록에서 빼기”, 전체 저장을 보는 중이면 “저장 풀기”로 마지막 문구만 바뀝니다.',warn:true},
+ {id:'card',name:'말씀카드 위젯',route:'오른쪽 패널의 말씀카드 본문',family:'B',verse:B,prop:B,note:'말씀·명제에 같은 메뉴가 나옵니다. 위젯 범위를 하나의 활동/저장 목록으로 좁힌 경우에만 “삭제” 대상 갈래가 정해지며, 혼합 범위에서는 삭제를 눌러도 지원하지 않는다는 안내가 뜹니다.',warn:true},
+ {id:'listwidget',name:'말씀목록 위젯',route:'오른쪽 패널의 말씀목록 한 줄',family:'B',verse:B,prop:B,note:'말씀·명제에 같은 메뉴가 나옵니다. 카드 위젯과 동일한 목록 행 메뉴를 씁니다.',warn:true}
+];
+const menu=s=>'<ol>'+s.map(x=>x==='│'?'<li style="list-style:none;color:#aaa">────────</li>':`<li>${x}</li>`).join('')+'</ol>';
+document.getElementById('cards').innerHTML=screens.map(s=>`<article class="card" data-screen="${s.id}"><h3>${s.name} <span class="badge">메뉴 ${s.family}</span></h3><div class="route">${s.route}</div><div class="type"><div class="typehead"><b>대상이 말씀일 때</b></div>${menu(s.verse)}</div><div class="type"><div class="typehead"><b>대상이 명제일 때</b><span class="badge ${s.verse.join()==s.prop.join()?'same':''}">${s.verse.join()==s.prop.join()?'말씀과 같음':'별도 구성'}</span></div>${menu(s.prop)}</div><div class="detail ${s.warn?'warn':''}">${s.note}</div><div class="feedback"><div class="choices">${['유지','수정','삭제'].map((x,i)=>`<label><input type="radio" name="${s.id}" value="${x}" ${i===0?'checked':''}> ${x}</label>`).join('')}</div><textarea data-key="${s.id}" placeholder="원하는 항목, 문구, 순서와 말씀/명제 차이를 적어 주세요."></textarea></div></article>`).join('');
+const KEY='block7-verse-context-review-v1';
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY)||'{}');document.querySelectorAll('textarea').forEach(e=>e.value=d[e.dataset.key]?.note||'');screens.forEach(s=>{const v=d[s.id]?.choice;if(v){const e=document.querySelector(`input[name="${s.id}"][value="${v}"]`);if(e)e.checked=true;}})}catch(e){}}
+function save(){const d={};screens.forEach(s=>d[s.id]={choice:document.querySelector(`input[name="${s.id}"]:checked`).value,note:document.querySelector(`textarea[data-key="${s.id}"]`).value});d.overall={note:document.querySelector('[data-key="overall"]').value};localStorage.setItem(KEY,JSON.stringify(d));const el=document.getElementById('saved');el.textContent='방금 자동 저장됨';setTimeout(()=>el.textContent='자동 저장됨',900)}
+document.addEventListener('input',save);document.addEventListener('change',save);load();
+document.getElementById('copy').onclick=async()=>{const lines=['# 말씀 관련 우클릭 메뉴 피드백'];screens.forEach(s=>{lines.push(`\n## ${s.name} — ${document.querySelector(`input[name="${s.id}"]:checked`).value}`);lines.push(document.querySelector(`textarea[data-key="${s.id}"]`).value||'(의견 없음)')});lines.push('\n## 전체 의견',document.querySelector('[data-key="overall"]').value||'(의견 없음)');const text=lines.join('\n');try{await navigator.clipboard.writeText(text);alert('피드백을 복사했습니다. 대화창에 붙여 넣어 주세요.')}catch(e){prompt('아래 내용을 복사해 주세요.',text)}};
+document.getElementById('print').onclick=()=>window.print();document.getElementById('reset').onclick=()=>{if(confirm('이 문서에 적은 내용을 모두 지울까요?')){localStorage.removeItem(KEY);location.reload()}};
+</script></body></html>
