@@ -27,4 +27,13 @@ sc.eq('입력칸 선택 범위를 접는다',
 sc.eq('PC와 모바일 모두 입력칸 포커스를 해제한다',
       (part.match(/document\.activeElement\.blur\(\)/g)||[]).length >= 2, true);
 
+console.log('\n시나리오 4 — PC 할일 글자 위 우클릭도 이동 메뉴를 연다');
+const contextFrom = part.indexOf("el.addEventListener('contextmenu',e=>{");
+const contextTo = part.indexOf('});', contextFrom);
+const contextHandler = part.slice(contextFrom, contextTo);
+sc.eq('입력칸을 브라우저 메뉴로 보내는 예외가 없다',
+      contextHandler.includes("closest('input,textarea')"), false);
+sc.eq('브라우저 단어 선택 메뉴를 막는다', contextHandler.includes('e.preventDefault()'), true);
+sc.eq('할일 이동 메뉴를 연다', contextHandler.includes('openTaskMenu(type, id, i, el'), true);
+
 sc.done();
