@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4805,7 +4805,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-5";
+const APP_VERSION = "v. 26-0909-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -27953,6 +27953,7 @@ const DR={active:false,type:null,fromId:null,fromI:null,el:null,wrap:null,offX:0
 // and event-chip dragging (attachEventChipInteraction) so the
 // interaction feels identical across the app.
 const LONG_PRESS_MOUSE=1; // desktop mouse long-press
+const LONG_PRESS_MOUSE_INPUT=200; // task text: short click edits, hold drags
 const LONG_PRESS_TOUCH=280; // mobile touch long-press — needs more headroom
                               // to avoid racing iOS's native callout gesture
 
@@ -28045,9 +28046,11 @@ function attachDrag(el,type,i,id){
 
   el.addEventListener('mousedown',e=>{
     // Skip if starting on the handle itself (already handled above) or
-    // on an interactive control — those should keep their normal behavior.
-    if(e.target.closest('.bi-dh,.si-dh,input,textarea,.blk-chk,.blk-del'))return;
+    // on a button/textarea. Task text inputs are intentionally included:
+    // a short click still edits, while a 200ms hold starts row dragging.
+    if(e.target.closest('.bi-dh,.si-dh,textarea,.blk-chk,.blk-del'))return;
     if(e.button!==0)return; // left click only
+    const heldInput=e.target.closest('input.bi-inp,input.si-inp');
     mousePressX=e.clientX;mousePressY=e.clientY;
     mouseDownActive=true;
     el.classList.add('pressing');
@@ -28056,10 +28059,17 @@ function attachDrag(el,type,i,id){
       mousePressTimer=null;
       el.classList.remove('pressing');
       if(document.activeElement&&el.contains(document.activeElement)){
+        // Collapse the browser's text selection before leaving edit mode.
+        // This prevents a held task label from turning into Select All.
+        const a=document.activeElement;
+        if(a.matches?.('input.bi-inp,input.si-inp')&&a.setSelectionRange){
+          const p=a.selectionEnd??a.value.length;
+          try{a.setSelectionRange(p,p);}catch(err){}
+        }
         document.activeElement.blur();
       }
       start(mousePressX,mousePressY);
-    },LONG_PRESS_MOUSE);
+    },heldInput?LONG_PRESS_MOUSE_INPUT:LONG_PRESS_MOUSE);
   });
 
   function cancelMousePress(){
@@ -28106,7 +28116,9 @@ function attachDrag(el,type,i,id){
   el._cancelPressTimer=cancelPressTimer;
 
   el.addEventListener('touchstart',e=>{
-    const onControl=e.target.closest('input,textarea,.blk-chk,.blk-del');
+    // Existing task text participates in hold-to-drag. A short tap is left
+    // untouched so it still focuses the input and places the caret.
+    const onControl=e.target.closest('textarea,.blk-chk,.blk-del');
     if(onControl)return;
 
     if(!DR.active&&document.body.dataset.scrollLockedForDrag){
@@ -28173,6 +28185,11 @@ function attachDrag(el,type,i,id){
       el.classList.remove('pressing');
       // blur any focused input so keyboard dismisses
       if(document.activeElement&&el.contains(document.activeElement)){
+        const a=document.activeElement;
+        if(a.matches?.('input.bi-inp,input.si-inp')&&a.setSelectionRange){
+          const p=a.selectionEnd??a.value.length;
+          try{a.setSelectionRange(p,p);}catch(err){}
+        }
         document.activeElement.blur();
       }
       // Explicitly collapse any selection iOS may have started forming
