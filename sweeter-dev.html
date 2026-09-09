@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4809,7 +4809,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-7";
+const APP_VERSION = "v. 26-0909-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7170,11 +7170,17 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">복제</div>
+  <div class="task-menu-item" data-cnt-days="0" onclick="duplicateTaskTo(0)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><circle cx="11.3" cy="11.5" r="3.6" fill="currentColor" stroke="none"/></svg></span>오늘로
+  </div>
   <div class="task-menu-item" data-cnt-days="1" onclick="duplicateTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M8 7.4v8.2l6.6-4.1z" fill="currentColor" stroke="none"/></svg></span>내일로
   </div>
   <div class="task-menu-item" data-cnt-days="7" onclick="duplicateTaskTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M7.4 7.6v8l4.8-4z" fill="currentColor" stroke="none"/><path d="M11.8 7.6v8l4.8-4z" fill="currentColor" stroke="none"/></svg></span>다음 주로
+  </div>
+  <div class="task-menu-item" data-cnt-days="-1" onclick="duplicateTaskTo(-1)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M14.6 7.4v8.2L8 11.5z" fill="currentColor" stroke="none"/></svg></span>어제로
   </div>
   <div class="task-menu-item" id="dupDateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><rect x="7.2" y="7.4" width="9.2" height="8.6" rx="1.4"/><path d="M7.2 10.2h9.2M9.9 6.1v2.6M13.7 6.1v2.6"/></svg></span><span id="dupDateLabelText">날짜 지정</span>
@@ -30619,7 +30625,8 @@ function duplicateTaskTo(days){
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  _toastWithJump(`${days===1?'내일로':'다음 주로'} 복제했어요`,toKey,
+  const label=days===-1?'어제로':days===0?'오늘로':days===1?'내일로':'다음 주로';
+  _toastWithJump(`${label} 복제했어요`,toKey,
     {key:toKey,secId,type,idx:dest.length-1});
 }
 
