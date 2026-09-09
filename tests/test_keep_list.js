@@ -18,9 +18,13 @@ const modal = SRC.slice(SRC.indexOf('id="keepPickModal"'), SRC.indexOf('id="keep
 sc.eq('목록 안의 새 목록 행 제거', picker.includes('keep-pick-row keep-pick-new'), false);
 sc.eq('좌상단 +가 새 목록 만들기 호출', modal.includes('style="left:14px;right:auto;" onclick="keepPickNew()"'), true);
 sc.eq('+ 아이콘은 18px 유지', (modal.match(/<svg width="18" height="18"/g)||[]).length, 1);
-sc.eq('대각선 닫기 아이콘은 15px', (modal.match(/<svg width="15" height="15"/g)||[]).length, 1);
+sc.eq('대각선 닫기 아이콘은 14px', (modal.match(/<svg width="14" height="14"/g)||[]).length, 1);
 sc.eq('+ 선 굵기는 1.8 유지', (modal.match(/stroke-width="1.8"/g)||[]).length, 1);
-sc.eq('줄인 닫기 아이콘은 보이는 선 굵기를 2.5로 보정', (modal.match(/stroke-width="2.5"/g)||[]).length, 1);
+sc.eq('14px 닫기 아이콘은 +와 실제 획 폭이 맞는 2.3', (modal.match(/stroke-width="2.3"/g)||[]).length, 1);
+sc.eq('양쪽 머리 동작에 옅은 색 전용 클래스 적용', (modal.match(/class="modal-x keep-pick-head-action"/g)||[]).length, 2);
+const headActionCss = SRC.slice(SRC.indexOf('#keepPickModal .keep-pick-head-action{'), SRC.indexOf('/* 헤더 줄 안에 들어가는 형태'));
+sc.eq('양쪽 머리 동작 색은 tx3보다 한 단계 옅게', headActionCss.includes('color-mix(in srgb,var(--tx3) 72%,transparent)'), true);
+sc.eq('가리킨 때도 기존 기본색인 tx3까지만 진해짐', headActionCss.includes('.keep-pick-head-action:hover{color:var(--tx3);}'), true);
 
 
 // v26-0903-1 — 좌상단 저장 목록은 독립적으로 스크롤하고, 팝업 뒤에서도 상태를 보존한다.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0909-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2481,6 +2481,9 @@ body.split-d #todayView.animating{overflow:hidden;}
   line-height:0;-webkit-tap-highlight-color:transparent;
 }
 .modal-x:hover{color:var(--tx);}
+/* 저장 목록 양쪽 동작은 제목보다 한발 물러나되, 가리킨 때도 갑자기 진해지지 않게 한다. */
+#keepPickModal .keep-pick-head-action{color:color-mix(in srgb,var(--tx3) 72%,transparent);}
+#keepPickModal .keep-pick-head-action:hover{color:var(--tx3);}
 /* 헤더 줄 안에 들어가는 형태 (제목을 가운데 두고 좌우에 아이콘).
    좌우 폭을 같게 잡아야 가운데 제목이 실제로 정중앙에 온다. */
 .modal-x-inline{
@@ -4802,7 +4805,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-3";
+const APP_VERSION = "v. 26-0909-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7047,12 +7050,12 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- 저장 목록 고르기 (책갈피 롱터치) — 유튜브·인스타의 '저장 위치' 창과 같은 얼개 -->
 <div class="event-modal-overlay" id="keepPickOverlay" style="display:none;z-index:4720;" onclick="closeKeepPicker()"></div>
 <div class="event-modal" id="keepPickModal" style="display:none;z-index:4730;width:280px;max-height:70vh;flex-direction:column;">
-  <button class="modal-x" style="left:14px;right:auto;" onclick="keepPickNew()" aria-label="새 목록 만들기">
+  <button class="modal-x keep-pick-head-action" style="left:14px;right:auto;" onclick="keepPickNew()" aria-label="새 목록 만들기">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
   </button>
-  <button class="modal-x" onclick="closeKeepPicker()" aria-label="닫기">
-    <!-- +와 시각적 균형을 맞추면서도 충분히 잘 보이도록 닫기 아이콘을 15px로 조정한다. -->
-    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  <button class="modal-x keep-pick-head-action" onclick="closeKeepPicker()" aria-label="닫기">
+    <!-- 14px에서 실제 획 폭이 18px +의 1.8 획과 같도록 2.3으로 보정한다. -->
+    <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
   <div class="event-modal-title" style="padding:0 28px;">저장 목록</div>
   <div id="keepPickSort" style="flex-shrink:0;margin-top:6px;"></div>
