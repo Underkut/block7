@@ -58,7 +58,7 @@ console.log('\n시나리오 1-1 — 커버 컷아웃 모양 (십자가 vs 3줄)'
   // 3줄(마지막 절반) 컷아웃 — 좌상단 말씀메뉴의 '현재 말씀 모음' 항목
   const linesCount = (SRC.match(/M5\.53 7\.95 L11\.55 10\.65 L13\.31 9\.53 L7\.29 6\.83 Z/g)||[]).length;
   sc.eq('3줄 컷아웃이 한 곳(좌상단 말씀메뉴)', linesCount, 1);
-  const menuIcon = SRC.slice(SRC.indexOf('onclick="openVerseListModal()"'), SRC.indexOf('onclick="openVerseListModal()"')+600);
+  const menuIcon = SRC.slice(SRC.indexOf('onclick="openVerseCollFromLogo()"'), SRC.indexOf('onclick="openVerseCollFromLogo()"')+600);
   sc.eq('좌상단 말씀메뉴 항목이 3줄 아이콘을 쓴다', menuIcon.includes('M5.53 7.95'), true);
 }
 
@@ -91,7 +91,7 @@ console.log('\n시나리오 2 — 둘 다 말씀모음 탭으로 간다');
   sc.eq('넘겨받은 탭을 고른다', go.includes(`.includes("'"+id+"'")`), true);
   sc.eq('탭 버튼이 없으면 함수로 직접',
         go.includes("switchVerseSettingsTab(id,null);"), true);
-  sc.eq("책 버튼은 'coll' 을 넘긴다", SRC.includes("function _vsetGoColl(){_vsetGoTab('coll');}"), true);
+  sc.eq("책 버튼은 'coll' 과 강조를 넘긴다", SRC.includes("function _vsetGoColl(){_vsetGoTab('coll',true);}"), true);
 }
 
 console.log('\n시나리오 3 — 닫으면 원래 팝업으로 되돌아간다 (20-2)');
