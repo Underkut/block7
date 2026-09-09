@@ -81,10 +81,10 @@ console.log('\n시나리오 3 — 명제 본문은 좌정렬 · 자연스러운 
 
 console.log('\n시나리오 3-1 — 명제 전체화면 롱홀드 메뉴');
 {
-  sc.eq('명제는 좋아요·저장·공유만 남긴다',
-        SRC_DEV.includes("const keep=el.id==='verseMemLikeItem'||el.id==='verseMemKeepItem'||el.id==='verseMemShareItem';"), true);
+  sc.eq('명제는 암송 완료 체크만 감춘다',
+        SRC_DEV.includes("record.style.display=prop?'none':'flex';"), true);
   sc.eq('저장은 현재 명제를 목록 고르기로 보낸다',
-        SRC_DEV.includes("id=\"verseMemKeepItem\" style=\"display:none\" onclick=\"closeVerseMemMenu();openKeepPicker(_reactKey(_vfCurrentVerse()))\""), true);
+        SRC_DEV.includes("id=\"verseMemKeepItem\" onclick=\"closeVerseMemMenu();openKeepPicker(_reactKey(_vfCurrentVerse()))\""), true);
   sc.eq('공유 메뉴도 종이비행기',
         /id="verseMemShareItem"[\s\S]{0,500}M22 2 11 13[\s\S]{0,100}M22 2 15 22 11 13 2 9 22 2Z/.test(SRC_DEV), true);
 }
