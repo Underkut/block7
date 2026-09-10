@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -739,11 +739,11 @@ header{
    ⚠️ 자리를 차지하지 않는다 (absolute). 폭·여백을 주면 문구가 밀려난다. */
 .vf-ptitle .pt-ink{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;}
 /* 대표 문구 등장 효과. 레이아웃은 먼저 완성한 뒤 보이기만 바꿔 본문이 흔들리지 않는다. */
-.vf-ptitle.pt-motion-dissolve .pt-w{display:inline-block;animation:ptDissolve .24s cubic-bezier(.22,.61,.36,1) both;}
-.vf-ptitle.pt-motion-dissolve .pt-ink{transform-origin:left center;animation:ptInkIn .28s .09s ease-out both;}
-.vf-ptitle.pt-motion-typing .pt-ch{opacity:0;animation:ptTypeIn .08s ease-out forwards;}
-.vf-ptitle.pt-motion-typing .pt-ink{transform-origin:left center;animation:ptInkIn .26s var(--pt-type-end,.5s) ease-out both;}
-@keyframes ptDissolve{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.vf-ptitle.pt-motion-dissolve .pt-w{display:inline-block;animation:ptDissolve .95s cubic-bezier(.16,.84,.44,1) both;}
+.vf-ptitle.pt-motion-dissolve .pt-ink{transform-origin:left center;animation:ptInkIn .5s .55s ease-out both;}
+.vf-ptitle.pt-motion-typing .pt-ch{opacity:0;animation:ptTypeIn .18s ease-out forwards;}
+.vf-ptitle.pt-motion-typing .pt-ink{transform-origin:left center;animation:ptInkIn .32s var(--pt-type-end,.9s) ease-out both;}
+@keyframes ptDissolve{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ptTypeIn{from{opacity:0}to{opacity:1}}
 @keyframes ptInkIn{from{opacity:0;transform:scaleX(.05)}to{opacity:1;transform:scaleX(1)}}
 @media (prefers-reduced-motion:reduce){
@@ -4822,7 +4822,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-5";
+const APP_VERSION = "v. 26-0910-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15298,11 +15298,11 @@ function _vfRenderPropTitle(v){
   el._lines=lines;
   if(motion==='typing'){
     const chars=Array.from(lines.join('')).length;
-    const step=Math.max(18,Math.min(42,Math.round(620/Math.max(1,chars))));
+    const step=Math.max(45,Math.min(95,Math.round(1500/Math.max(1,chars))));
     let n=0;
     const typed=lines.map(line=>Array.from(line).map(c=>
       `<span class="pt-ch" style="animation-delay:${n++*step}ms">${esc(c)}</span>`).join('')).join('<br>');
-    el.style.setProperty('--pt-type-end',(Math.min(760,Math.max(220,chars*step+70)))+'ms');
+    el.style.setProperty('--pt-type-end',(Math.min(3200,Math.max(450,chars*step+320)))+'ms');
     el.innerHTML='<span class="pt-w">'+typed+'</span>';
   }else{
     el.style.removeProperty('--pt-type-end');
