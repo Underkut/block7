@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -78,6 +78,13 @@
 // 배열 위치를 ID 로 쓰지 않는다(순서가 바뀌면 남의 테마가 된다).
 // 값이 없거나 모르는 ID 면 아무 토큰도 얹지 않아 :root 의 기존 색이 그대로
 // 보인다 — 업데이트만으로 기존 사용자 외형이 바뀌지 않게 하는 장치다.
+//
+// ⚠️ 화면에 보이는 **번호(11·12…)와 저장되는 ID 는 서로 다른 것**이다.
+//    번호는 themeNo() 가 목록 순서에서 그때그때 계산한다 — 목록 가운데에
+//    새 테마를 끼워 넣으면 뒤 번호가 저절로 밀린다.
+//    ID 는 그때도 그대로 둔다. ID 를 같이 밀면 '24' 를 저장해 둔 기기가
+//    다음 실행에서 남의 테마로 바뀐다(사용자가 고른 적 없는 색이 된다).
+//    그래서 나중에 끼워 넣은 테마의 ID 는 아예 숫자가 아니다.
 const THEME_GROUPS={
   spark :{id:'spark' ,label:'SPARK' ,desc:'선명하고 생동감 있는 테마'},
   breath:{id:'breath',label:'BREATH',desc:'부드럽고 차분한 테마'}
@@ -95,6 +102,10 @@ const THEME_PRESETS=[
    source:['#210F04','#452103','#690500','#934B00','#BB6B00'],
    light:['#FFF1D8','#FFF8EC','#210F04','#690500','#934B00'],
    dark :['#160A03','#210F04','#FFE8B8','#E19925','#B74B36']},
+  {id:'lemonpie',group:'spark',name:'Lemon Meringue Pie',
+   source:['#3A2410','#8B5A2B','#D9A62E','#F2C230','#FFF8E4'],
+   light:['#F7DE58','#FCF0A0','#3A2410','#9A6220','#8B5A2B'],
+   dark :['#5C4028','#6E4E33','#FFF3D4','#F2C230','#E9B441']},
   {id:'14',group:'spark',name:'Olive Garden Feast',
    source:['#606C38','#283618','#FEFAE0','#DDA15E','#BC6C25'],
    light:['#FEFAE0','#FFFFF3','#283618','#606C38','#BC6C25'],
@@ -123,6 +134,10 @@ const THEME_PRESETS=[
    source:['#5C7476','#BC641C','#632401','#C5B884','#000000'],
    light:['#F2ECD9','#FBF8F0','#253436','#98470F','#5C7476'],
    dark :['#12100E','#29241F','#E9DFC1','#D17A37','#87A0A2']},
+  {id:'dubaicookie',group:'breath',name:'Dubai Chewy Cookie',
+   source:['#7A4235','#4D3339','#8C873E','#D1C5A5','#A38A5F'],
+   light:['#E9E1CD','#F1EADA','#3B2A22','#7A4235','#6E692F'],
+   dark :['#4E3A33','#5F4A41','#EFE6CF','#A69F5E','#B99A6C']},
   {id:'24',group:'breath',name:'Sunny Beach Day',
    source:['#264653','#2A9D8F','#E9C46A','#F4A261','#E76F51'],
    light:['#FFF6E4','#FFFBF2','#264653','#1E7D73','#E76F51'],
@@ -149,6 +164,14 @@ function themeById(id){
   const s=String(id);
   for(let i=0;i<THEME_PRESETS.length;i++)if(THEME_PRESETS[i].id===s)return THEME_PRESETS[i];
   return null;  // 모르는 ID — 저장값은 그대로 두고 화면만 기본으로
+}
+// 화면에 보이는 번호. 그룹 자리(SPARK 10번대 · BREATH 20번대)에 목록 순서를 더한다.
+// 저장하지 않는 값이라 목록을 바꾸면 번호도 따라 바뀐다 — ID 는 건드리지 않는다.
+const _THEME_NO_BASE={spark:10,breath:20};
+function themeNo(p){
+  if(!p)return '';
+  const inGroup=THEME_PRESETS.filter(x=>x.group===p.group);
+  return String((_THEME_NO_BASE[p.group]||0)+inGroup.indexOf(p)+1);
 }
 // ── 색 계산 도구 ──
 function _thRgb(h){h=String(h).replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
@@ -4882,7 +4905,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-13";
+const APP_VERSION = "v. 26-0910-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -32298,7 +32321,7 @@ let _themePickerGroup='spark';
 function _themeSummaryText(id){
   const p=themeById(id);
   if(!p)return '기본';
-  return THEME_GROUPS[p.group].label+' · '+p.id+' '+p.name;
+  return THEME_GROUPS[p.group].label+' · '+themeNo(p)+' '+p.name;
 }
 // 뷰 탭의 요약 줄 — 지금 테마의 이름과 원본 팔레트 띠
 function _renderThemeSummary(){
@@ -32368,7 +32391,7 @@ function _renderThemePicker(){
     return `<button type="button" class="theme-item${on?' on':''}" aria-pressed="${on?'true':'false'}"
       onclick="themePickerPick('${p.id}')"><span class="theme-item-in">
       <span class="theme-item-head">
-        <span class="theme-item-id">${p.id}</span>
+        <span class="theme-item-id">${themeNo(p)}</span>
         <span class="theme-item-name">${esc(p.name)}</span>
       </span>
       <span class="theme-strip">${strip}</span>
