@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-10T03:10:32.613Z",
+  "updatedAt": "2026-09-10T03:10:34.986Z",
   "checks": {
     "top:verse:item-0": true,
     "top:verse:item-1": true,
@@ -246,8 +246,8 @@
     "full:prop:separator-1789009811313": false,
     "tile:verse:separator-1789009811313": false,
     "tile:prop:separator-1789009811313": false,
-    "activity:verse:separator-1789009811313": false,
-    "activity:prop:separator-1789009811313": false,
+    "activity:verse:separator-1789009811313": true,
+    "activity:prop:separator-1789009811313": true,
     "keep:verse:separator-1789009811313": false,
     "keep:prop:separator-1789009811313": false,
     "card:verse:separator-1789009811313": false,
