@@ -45,14 +45,23 @@ const iconChoices={'item-7':[
  {id:'plane',name:'종이비행기',where:'말씀 상단·전체화면·타일뷰·말씀카드',svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>'},
  {id:'upload',name:'위로 보내기',where:'활동 목록·저장 목록·말씀목록',svg:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14V4"/><path d="M6 7.5L10 3.5l4 4"/><path d="M3.5 13v2.5a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V13"/></svg>'}
 ]};
+// ⚠️ 이 배열은 index.html 의 실제 메뉴(#verseMemMenu, #vliMenu)를 손으로 옮겨
+// 적은 것이다 — 자동으로 맞춰지지 않는다. index.html 에서 이 두 메뉴의 항목을
+// 추가·삭제·이름변경 하면 **여기도 같이 고쳐야** '✓ 현재 운영 메뉴' 표시가
+// 안 틀린다. v26-0909-17 통일 때 이 배열을 안 고쳐서 열흘 가까이 옛 메뉴
+// 구성('저장 목록…' 있음, '저장'·'전체 화면'(목록류) 없음)이 그대로 남아
+// 있었다 — HB 가 '되돌리기'를 눌러도 옛 값이 나온다고 알려줘서 v26-0910-2 에
+// 바로잡았다. 실제 메뉴는 index.html 의 openVerseMemMenu()/_vmmSyncItems()
+// (말씀 상단·전체화면·타일뷰) 와 openVliMenu()/vliAction() (활동 목록·저장
+// 목록·말씀카드 위젯·말씀목록 위젯) 을 grep 해서 확인한다.
 const screens=[
- {id:'top',name:'말씀 상단영역',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정']},
- {id:'full',name:'전체화면',verse:['본문 복사','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['좋아요','저장','공유']},
- {id:'tile',name:'타일뷰',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정']},
- {id:'activity',name:'활동 목록',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제']},
- {id:'keep',name:'저장 목록',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','이 목록에서 빼기'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','이 목록에서 빼기']},
- {id:'card',name:'말씀카드 위젯',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제']},
- {id:'listwidget',name:'말씀목록 위젯',verse:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제'],prop:['전체 화면','좋아요','암송 완료 체크','Deeper…','Even Deeper…','공유','저장 목록…','말씀 설정','삭제']}
+ {id:'top',name:'말씀 상단영역',verse:['전체 화면','본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['전체 화면','본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정']},
+ {id:'full',name:'전체화면',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정']},
+ {id:'tile',name:'타일뷰',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정']},
+ {id:'activity',name:'활동 목록',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정','삭제'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정','삭제']},
+ {id:'keep',name:'저장 목록',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정','이 목록에서 빼기'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정','이 목록에서 빼기']},
+ {id:'card',name:'말씀카드 위젯',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정','삭제'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정','삭제']},
+ {id:'listwidget',name:'말씀목록 위젯',verse:['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정','삭제'],prop:['본문 복사','좋아요','저장','Deeper…','Even Deeper…','공유','말씀 설정','삭제']}
 ];
 const original={};screens.forEach(s=>['verse','prop'].forEach(t=>initialRows.forEach(row=>original[`${s.id}:${t}:${row.id}`]=s[t].includes(row.label))));
 const REPO='Underkut/block7',STATE_PATH='docs/verse-context-menu-review-state.json',SHARED_BRANCH='verse-context-menu-review',TOKEN_KEY='block7-review-github-token';
