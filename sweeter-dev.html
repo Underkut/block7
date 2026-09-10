@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-11  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-12  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1385,7 +1385,7 @@ header{
   max-height:200px;
   opacity:1;
 }
-#verseBarInner{
+.vbInner{
   margin:0 14px 5px;
   background:var(--s2);
   border:1px solid var(--bd2);
@@ -1398,55 +1398,69 @@ header{
   grid-template-columns:1fr 1fr;
   gap:0 13px;
 }
-#verseBarInner.dissolving{opacity:0;}
+.vbInner.dissolving{opacity:0;}
+/* 손잡이 그림을 두지 않으므로(미니멀) **잡히는 자리를 넉넉히** 둔다.
+   전체 모드는 상자가 높아 34px 를 줘도 위쪽에 좌우 넘김·롱터치 자리가 남는다.
+   스닉픽은 상자 자체가 낮아 22px 만 준다. 어차피 이 자리를 **눌렀다 떼기만**
+   해도 모드가 바뀌므로(탭 통과), 넓어져서 잃는 동작은 없다. */
 #verseBarResizeEdge{
-  position:absolute;left:14px;right:14px;bottom:0;height:18px;z-index:6;
+  position:absolute;left:14px;right:14px;bottom:0;height:22px;z-index:6;
   cursor:ns-resize;touch-action:none;-webkit-user-select:none;user-select:none;
 }
+.vbInner:not(.sneak-mode)~#verseBarResizeEdge{height:34px;}
+/* 드래그 중 옛 글자가 머무는 층.
+   ⚠️ 겉옷(.verse-mode-clip)이 **프레임과 똑같은 크기로 잘라주는** 몫을 맡고,
+   그 안의 복제본은 원래 상자와 한 글자도 다르지 않은 모습이어야 한다.
+   그래서 복제본의 생김새는 id 가 아니라 **클래스(.vbInner 등)** 로 정해 둔다 —
+   id 를 뗀 복제본이 맨몸이 되어 글자가 상자 밖으로 쏟아진 적이 있다 (26-0910-11). */
+.verse-mode-clip{
+  position:absolute;left:14px;right:14px;top:0;z-index:2;
+  overflow:hidden;pointer-events:none;
+}
 .verse-mode-ghost{
-  position:absolute!important;left:0;right:0;top:0;z-index:2;pointer-events:none;
+  position:static!important;margin:0!important;
   background:transparent!important;border-color:transparent!important;
 }
 /* Full-mode grid layout */
-#verseBarCat{
+.vbCat{
   grid-column:1;grid-row:1;
   font-size:10px;font-weight:700;color:var(--ac-tx);
   font-family:var(--font-ui),sans-serif;letter-spacing:.02em;
   margin:0;
 }
-#verseBarTag{
+.vbTag{
   grid-column:2;grid-row:1;
   font-size:9px;color:var(--tx3);
   font-family:var(--font-ui),sans-serif;
   text-align:right;
   margin:0;
 }
-#verseBarTopic{
+.vbTopic{
   grid-column:1;grid-row:2;
   font-size:10px;color:var(--tx3);
   font-family:var(--font-ui),sans-serif;
   margin:0;
 }
-#verseBarRef{
+.vbRef{
   grid-column:2;grid-row:2;
   font-size:9px;color:var(--tx3);
   font-family:var(--font-ui),sans-serif;
   text-align:right;
   margin:0;
 }
-#verseBarText{
+.vbText{
   grid-column:1/-1;grid-row:3;
   font-size:13px;line-height:1.55;color:var(--tx);
   font-family:var(--font-ui),sans-serif;
   margin-top:8px;
 }
-#verseBarFirstWord{
+.vbFirst{
   display:none;
 }
 /* 묶음 div 는 전체 모드에서 없는 셈 친다 → 그리드 레이아웃이 그대로 유지된다 */
-#verseBarLine{display:contents;}
+.vbLine{display:contents;}
 /* Sneak-peek mode: all items on one baseline row, same size */
-#verseBarInner.sneak-mode{
+.vbInner.sneak-mode{
   display:flex;justify-content:center;
   padding:8px 13px 9px;
 }
@@ -1456,23 +1470,23 @@ header{
    한 뒤 남는 폭에서 넘치는 부분을 … 로 자른다.
    max-width 는 상자가 아니라 **이 한 줄 텍스트**의 최대 가로 폭이다
    (설정값, 기본 1000px). 기기 폭이 더 좁으면 기기 폭을 따른다. */
-#verseBarInner.sneak-mode #verseBarLine{
+.vbInner.sneak-mode .vbLine{
   display:flex;flex-direction:row;align-items:baseline;flex-wrap:nowrap;
   justify-content:center;gap:0;
   max-width:var(--sneak-maxw,1000px);
   min-width:0;width:100%;
 }
 /* 대분류·장절·구분점은 줄어들지 않는다 — 짧고, 구절을 알아보는 데 꼭 필요하다 */
-#verseBarInner.sneak-mode #verseBarCat,
-#verseBarInner.sneak-mode #verseBarRef,
-#verseBarInner.sneak-mode .verse-sneak-sep{
+.vbInner.sneak-mode .vbCat,
+.vbInner.sneak-mode .vbRef,
+.vbInner.sneak-mode .verse-sneak-sep{
   flex:0 0 auto;white-space:nowrap;
 }
 /* ⚠️ 소주제·태그도 줄어들 수 있어야 한다. 예전엔 본문만 줄어들어서, 항목을 다 켜고
    태그가 긴 구절을 만나면 **줄이 통째로 말씀 영역 밖으로 넘쳤다** (0813-5 HB 신고).
    자를 순서는 본문 → 태그 → 소주제 (뒤로 갈수록 구절을 알아보는 데 더 필요하다). */
-#verseBarInner.sneak-mode #verseBarTopic,
-#verseBarInner.sneak-mode #verseBarTag{
+.vbInner.sneak-mode .vbTopic,
+.vbInner.sneak-mode .vbTag{
   flex:0 1 auto;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
@@ -1485,14 +1499,14 @@ header{
    조금이라도 줄면 CSS 말줄임이 태그 **글자 자체**를 잘라 "선.." 처럼 되어
    무슨 태그인지 알 수 없었다. 줄어드는 몫은 본문이 다 가져간다
    (본문은 길고, 줄어도 뜻이 남는다). */
-#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}
-#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}
+.vbInner.sneak-mode .vbTag{flex:0 0 auto;}
+.vbInner.sneak-mode .vbTopic{flex-shrink:1;}
 /* 그래도 못 줄이는 경우(대분류+장절만으로 이미 넘칠 때)를 위한 마지막 안전장치.
    ⚠️ 이게 없으면 넘친 글자가 말씀 영역 밖으로 그려진다. */
-#verseBarInner.sneak-mode{overflow:hidden;}
+.vbInner.sneak-mode{overflow:hidden;}
 /* 본문만 남는 폭까지 늘었다 줄었다 하며 넘치면 … 로 잘린다.
    display:inline 으로는 말줄임이 안 걸려서 이 항목만 block 으로 둔다. */
-#verseBarInner.sneak-mode #verseBarFirstWord{
+.vbInner.sneak-mode .vbFirst{
   display:block!important;
   /* 늘어나지는 않고(0) 줄어들기만 한다. 짧은 구절에서는 한 줄이 가운데에
      오밀조밀 모이고, 긴 구절에서만 본문이 줄면서 … 가 붙는다.
@@ -1504,11 +1518,11 @@ header{
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 /* Kill full-mode individual margins so everything sits on the same line */
-#verseBarInner.sneak-mode #verseBarCat,
-#verseBarInner.sneak-mode #verseBarTopic,
-#verseBarInner.sneak-mode #verseBarFirstWord,
-#verseBarInner.sneak-mode #verseBarRef,
-#verseBarInner.sneak-mode #verseBarTag{
+.vbInner.sneak-mode .vbCat,
+.vbInner.sneak-mode .vbTopic,
+.vbInner.sneak-mode .vbFirst,
+.vbInner.sneak-mode .vbRef,
+.vbInner.sneak-mode .vbTag{
   font-size:12px;line-height:1.4;
   font-family:var(--font-ui),sans-serif;
   font-weight:400;
@@ -1517,17 +1531,17 @@ header{
   text-align:left;
 }
 /* Color mode: tiered colors only, no size difference */
-#verseBarInner.sneak-mode.mode-color #verseBarCat{color:var(--ac-tx);font-weight:700;}
-#verseBarInner.sneak-mode.mode-color #verseBarTopic{color:var(--tx3);}
-#verseBarInner.sneak-mode.mode-color #verseBarFirstWord{color:var(--tx);}
-#verseBarInner.sneak-mode.mode-color #verseBarRef{color:var(--tx3);}
-#verseBarInner.sneak-mode.mode-color #verseBarTag{color:var(--tx3);}
+.vbInner.sneak-mode.mode-color .vbCat{color:var(--ac-tx);font-weight:700;}
+.vbInner.sneak-mode.mode-color .vbTopic{color:var(--tx3);}
+.vbInner.sneak-mode.mode-color .vbFirst{color:var(--tx);}
+.vbInner.sneak-mode.mode-color .vbRef{color:var(--tx3);}
+.vbInner.sneak-mode.mode-color .vbTag{color:var(--tx3);}
 /* Mono mode: all same gray */
-#verseBarInner.sneak-mode.mode-mono #verseBarCat,
-#verseBarInner.sneak-mode.mode-mono #verseBarTopic,
-#verseBarInner.sneak-mode.mode-mono #verseBarFirstWord,
-#verseBarInner.sneak-mode.mode-mono #verseBarRef,
-#verseBarInner.sneak-mode.mode-mono #verseBarTag{color:var(--tx3);}
+.vbInner.sneak-mode.mode-mono .vbCat,
+.vbInner.sneak-mode.mode-mono .vbTopic,
+.vbInner.sneak-mode.mode-mono .vbFirst,
+.vbInner.sneak-mode.mode-mono .vbRef,
+.vbInner.sneak-mode.mode-mono .vbTag{color:var(--tx3);}
 .verse-sneak-sep{font-size:12px;line-height:1.4;margin:0 4px;color:var(--tx3);display:inline;}
 .tabs{display:flex;gap:1px;}
 .tab{
@@ -4849,7 +4863,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-11";
+const APP_VERSION = "v. 26-0910-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6245,17 +6259,17 @@ window._fbScriptsReady=new Promise(resolve=>{
   <!-- v26-0817-16 — HB 가 스케치로 확정한 셔플 아이콘(교차 곡선 + 위·아래 절반 화살촉)으로 통일 -->
   <div class="vb-top"><button class="vb-shuffle" onclick="event.stopPropagation();vbShuffleVerse()" aria-label="말씀 뽑기" title="말씀 뽑기"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h5c4 0 4 10 8 10h4"/><path d="M3 17h5c4 0 4-10 8-10h4"/><path d="M18 15l2 2-2 2"/><path d="M18 5l2 2-2 2"/></svg></button></div>
 <div id="verseBar" style="display:none;" onclick="onVerseBarClick(event)">
-  <div id="verseBarInner">
+  <div id="verseBarInner" class="vbInner">
     <!-- 스닉픽에서 "한 줄"이 되는 묶음. 전체 모드에서는 display:contents 라
          레이아웃에서 사라지고, 아래 항목들이 그대로 #verseBarInner 의
          그리드 칸에 놓인다(= 전체 모드 동작은 그대로). -->
-    <div id="verseBarLine">
-      <div id="verseBarCat"></div>
-      <div id="verseBarTopic"></div>
-      <div id="verseBarText"></div>
-      <div id="verseBarFirstWord"></div>
-      <div id="verseBarRef"></div>
-      <div id="verseBarTag"></div>
+    <div id="verseBarLine" class="vbLine">
+      <div id="verseBarCat" class="vbCat"></div>
+      <div id="verseBarTopic" class="vbTopic"></div>
+      <div id="verseBarText" class="vbText"></div>
+      <div id="verseBarFirstWord" class="vbFirst"></div>
+      <div id="verseBarRef" class="vbRef"></div>
+      <div id="verseBarTag" class="vbTag"></div>
     </div>
   </div>
   <div id="verseBarResizeEdge" aria-hidden="true" onclick="event.stopPropagation()"></div>
@@ -9842,12 +9856,18 @@ function _initVerseBarSwipe(){
 function _verseResizeThreshold(distance,isFine){
   return Math.min(44,Math.max(isFine?20:28,distance*.3));
 }
+// 손을 움직인 만큼 옛 글자는 옅어지고 새 글자는 짙어진다.
+// ⚠️ 새 글자는 **도착한 그 자리에서 정확히 100%** 가 되어야 한다 (HB 26-0910).
+//    중간에 미리 100% 가 되면 나머지 구간이 '멈춘 그림'처럼 보인다.
 function _verseResizeOpacity(progress){
   const clamp=n=>Math.max(0,Math.min(1,n));
-  return {from:1-clamp((progress-.25)/.33),to:clamp((progress-.42)/.33)};
+  return {from:clamp(1-progress/.55),to:clamp((progress-.18)/.82)};
 }
+// 옛 글자가 손을 따라 따라오는 정도. 1 이면 손과 똑같이, 0 이면 제자리.
+// 조금 느리게 따라와야(0.35) 글자가 프레임에 붙어 밀려나는 느낌이 난다.
+const VERSE_GHOST_DRIFT=.35;
 function _verseModeTextEls(root){
-  return [...root.querySelectorAll('#verseBarCat,#verseBarTopic,#verseBarText,#verseBarFirstWord,#verseBarRef,#verseBarTag,.verse-sneak-sep')];
+  return [...root.querySelectorAll('.vbCat,.vbTopic,.vbText,.vbFirst,.vbRef,.vbTag,.verse-sneak-sep')];
 }
 function _verseModeSession(fromMode,targetMode){
   const inner=document.getElementById('verseBarInner');
@@ -9856,9 +9876,15 @@ function _verseModeSession(fromMode,targetMode){
   const old=bar._resizeSession;
   if(old)old.cleanup(old.progress>=.5);
   const fromH=inner.getBoundingClientRect().height;
+  // 옛 모습을 그대로 뜬 복제본. id 는 문서에 둘일 수 없으므로 떼고,
+  // 생김새는 클래스가 그대로 들고 온다.
   const ghost=inner.cloneNode(true);
-  ghost.removeAttribute('id');ghost.classList.add('verse-mode-ghost');
-  bar.appendChild(ghost);
+  ghost.removeAttribute('id');
+  ghost.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  ghost.classList.add('verse-mode-ghost');
+  const clip=document.createElement('div');
+  clip.className='verse-mode-clip';clip.style.height=fromH+'px';
+  clip.appendChild(ghost);bar.appendChild(clip);
   ST.settings.verseMode=targetMode;
   _fillVerseBarDOM(getVerseByIdx(ST.settings.verseCurrentIdx));
   const targetH=inner.getBoundingClientRect().height;
@@ -9866,16 +9892,19 @@ function _verseModeSession(fromMode,targetMode){
   inner.style.boxSizing='border-box';inner.style.overflow='hidden';inner.style.height=fromH+'px';
   const targetEls=_verseModeTextEls(inner);
   targetEls.forEach(el=>{el.style.opacity='0';});
-  const session={fromMode,targetMode,fromH,targetH,inner,ghost,targetEls,progress:0,raf:0};
+  const session={fromMode,targetMode,fromH,targetH,inner,clip,ghost,targetEls,progress:0,raf:0};
   session.setProgress=p=>{
     p=Math.max(0,Math.min(1,p));session.progress=p;
     const op=_verseResizeOpacity(p);
-    inner.style.height=(fromH+(targetH-fromH)*p)+'px';
-    ghost.style.opacity=String(op.from);
+    const h=fromH+(targetH-fromH)*p;
+    inner.style.height=h+'px';
+    clip.style.height=h+'px';
+    clip.style.opacity=String(op.from);
+    ghost.style.transform='translateY('+((h-fromH)*VERSE_GHOST_DRIFT)+'px)';
     targetEls.forEach(el=>{el.style.opacity=String(op.to);});
   };
   session.cleanup=commit=>{
-    cancelAnimationFrame(session.raf);ghost.remove();
+    cancelAnimationFrame(session.raf);clip.remove();
     inner.style.height='';inner.style.boxSizing='';inner.style.overflow='';
     targetEls.forEach(el=>{el.style.opacity='';});
     ST.settings.verseMode=commit?targetMode:fromMode;
@@ -9929,7 +9958,11 @@ function _initVerseBarResize(){
     if(e.pointerId!==pointerId||!session)return;
     e.preventDefault();e.stopPropagation();
     const done=session;session=null;pointerId=null;
-    _verseModeSettle(done,e.type==='pointercancel'?false:candidate);
+    // 거의 움직이지 않았으면 '누르기'다 — 손잡이가 없는 자리라, 이 자리를
+    // 그냥 눌러도 상자 아무 데나 누른 것과 똑같이 모드가 바뀌어야 한다.
+    const dragged=Math.abs(e.clientY-startY)>6;
+    const commit=e.type==='pointercancel'?false:(dragged?candidate:true);
+    _verseModeSettle(done,commit);
     setTimeout(()=>{bar._swipeJustHappened=false;},400);
   };
   edge.addEventListener('pointerup',end);

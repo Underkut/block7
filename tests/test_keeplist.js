@@ -400,11 +400,11 @@ console.log('\n시나리오 17 — 상단 말씀영역의 태그 (v26-0831-17, H
   sc.eq('본문이 가장 많이 줄어든다', SRC_DEV.includes('flex:0 8 auto;min-width:0;'), true);
   // v26-0831-18, HB — 태그는 아예 줄이지 않는다 (말줄임이 태그 글자를 잘랐다)
   sc.eq('태그는 안 줄인다',
-        SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}'), true);
+        SRC_DEV.includes('.vbInner.sneak-mode .vbTag{flex:0 0 auto;}'), true);
   sc.eq('소주제가 마지막',
-        SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
+        SRC_DEV.includes('.vbInner.sneak-mode .vbTopic{flex-shrink:1;}'), true);
   sc.eq('태그가 세 배 빨리 줄던 값은 없앴다',
-        SRC_DEV.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), false);
+        SRC_DEV.includes('.vbInner.sneak-mode .vbTag{flex-shrink:3;}'), false);
 }
 
 console.log('\n시나리오 18 — 기본 목록을 만들지 않는다 (v26-0831-19, HB)');
