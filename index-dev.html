@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0909-19  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4809,7 +4809,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0909-19";
+const APP_VERSION = "v. 26-0910-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -29531,10 +29531,16 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
     left=window.innerWidth/2-mw/2;top=window.innerHeight/2-mh/2;
   }
 
+  // 위쪽 한계는 그냥 8px 가 아니라 헤더(시계·노치 영역) 아래로 잡는다.
+  // 안 그러면 화면 위쪽 항목을 길게 눌렀을 때 메뉴 첫 줄이 상태표시줄/노치에
+  // 가려 손이 닿지 않는다 (아이폰, v26-0910 HB 스크린샷).
+  const headerEl=document.querySelector('header');
+  const minTop=headerEl?headerEl.getBoundingClientRect().bottom+8:8;
+
   if(left+mw>window.innerWidth)left=window.innerWidth-mw-8;
   if(left<8)left=8;
   if(top+mh>window.innerHeight)top=(atPoint?atPoint.y:top)-mh-6;
-  if(top<8)top=8;
+  if(top<minTop)top=minTop;
 
   menu.style.left=left+'px';
   menu.style.top=top+'px';
