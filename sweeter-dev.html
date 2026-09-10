@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1399,6 +1399,14 @@ header{
   gap:0 13px;
 }
 #verseBarInner.dissolving{opacity:0;}
+#verseBarResizeEdge{
+  position:absolute;left:14px;right:14px;bottom:0;height:18px;z-index:6;
+  cursor:ns-resize;touch-action:none;-webkit-user-select:none;user-select:none;
+}
+.verse-mode-ghost{
+  position:absolute!important;left:0;right:0;top:0;z-index:2;pointer-events:none;
+  background:transparent!important;border-color:transparent!important;
+}
 /* Full-mode grid layout */
 #verseBarCat{
   grid-column:1;grid-row:1;
@@ -4841,7 +4849,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-10";
+const APP_VERSION = "v. 26-0910-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6250,6 +6258,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div id="verseBarTag"></div>
     </div>
   </div>
+  <div id="verseBarResizeEdge" aria-hidden="true" onclick="event.stopPropagation()"></div>
 </div>
 </div>
 
@@ -9759,6 +9768,7 @@ function _initVerseBarSwipe(){
 
   bar.addEventListener('touchstart',e=>{
     const t=e.touches[0];sx=t.clientX;sy=t.clientY;dx=0;moved=false;dragDir=null;longFired=false;
+    if(e.target.closest('#verseBarResizeEdge'))return;
     inner=document.getElementById('verseBarInner');
     longTimer=setTimeout(()=>{
       longFired=true;
@@ -9767,6 +9777,7 @@ function _initVerseBarSwipe(){
   },{passive:true});
 
   bar.addEventListener('touchmove',e=>{
+    if(bar._resizeSession)return;
     if(longFired)return;
     const t=e.touches[0];
     const ddx=t.clientX-sx,ddy=t.clientY-sy;
@@ -9774,9 +9785,8 @@ function _initVerseBarSwipe(){
       if(Math.abs(ddx)<10&&Math.abs(ddy)<10)return;
       moved=true;
       if(longTimer){clearTimeout(longTimer);longTimer=null;}
-      // Same direction-decision convention as the other swipes; unlike
-      // them, vertical here isn't a bail-out — it's the mode-flip
-      // gesture (down=full, up=sneak), resolved on touchend as before.
+      // 하단 전용 영역이 아닌 곳에서 시작한 세로 움직임은 모드 전환으로
+      // 쓰지 않는다. 크기 전환은 오직 보이지 않는 하단 가장자리에서 시작한다.
       dragDir=Math.abs(ddy)>Math.abs(ddx)*1.3?'v':'h';
       if(dragDir==='h'&&inner)inner.style.transition='none';
     }
@@ -9788,13 +9798,13 @@ function _initVerseBarSwipe(){
   },{passive:false});
 
   bar.addEventListener('touchend',e=>{
+    if(bar._resizeSession)return;
     if(longTimer){clearTimeout(longTimer);longTimer=null;}
     if(longFired)return; // already handled by long-press
     if(!moved){
       // pure tap — toggle mode (handled by onclick on #verseBar)
       return;
     }
-    const ddy=e.changedTouches[0].clientY-sy;
     if(dragDir==='h'&&inner){
       const innerEl=inner; // capture — a new touchstart may reassign `inner` before the timeouts below run
       innerEl.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
@@ -9808,12 +9818,6 @@ function _initVerseBarSwipe(){
         // Not enough distance — snap back.
         innerEl.style.transform='';innerEl.style.opacity='';
         setTimeout(()=>{innerEl.style.transition='';},240);
-      }
-    } else if(dragDir==='v'){
-      if(Math.abs(ddy)<24){dragDir=null;dx=0;moved=false;return;}
-      const targetMode=ddy>0?'full':'sneak';
-      if(ST.settings.verseMode!==targetMode){
-        ST.settings.verseMode=targetMode;save();_verseBarModeFlip();
       }
     }
     // Guard: some browsers still fire a synthetic click after a drag;
@@ -9829,67 +9833,121 @@ function _initVerseBarSwipe(){
     e.preventDefault();
     openVerseMemMenu(bar,null,{x:e.clientX,y:e.clientY}); // null = 기록 시점의 '현재 시각 구간' 사용
   });
+  _initVerseBarResize();
 }
 
-// Mode flip: dissolve text content, swap, re-appear (6-3)
-// Does NOT fully collapse/expand — just cross-fades the text
-// Estimated heights for mode-based max-height (rough values that cover content)
-const VERSE_MAX_H={full:200,sneak:60};
-
-function _verseBarModeFlip(){
+// 말씀영역 하단 드래그: 프레임은 손을 따라 실제 높이가 바뀌고, 두 모드의
+// 글자는 중간 구간에서만 교차 디졸브한다. 고정 높이를 짐작하지 않고 현재
+// 화면 폭·글자 크기·말씀 내용으로 두 끝 높이를 매번 실측한다.
+function _verseResizeThreshold(distance,isFine){
+  return Math.min(44,Math.max(isFine?20:28,distance*.3));
+}
+function _verseResizeOpacity(progress){
+  const clamp=n=>Math.max(0,Math.min(1,n));
+  return {from:1-clamp((progress-.25)/.33),to:clamp((progress-.42)/.33)};
+}
+function _verseModeTextEls(root){
+  return [...root.querySelectorAll('#verseBarCat,#verseBarTopic,#verseBarText,#verseBarFirstWord,#verseBarRef,#verseBarTag,.verse-sneak-sep')];
+}
+function _verseModeSession(fromMode,targetMode){
   const inner=document.getElementById('verseBarInner');
   const bar=document.getElementById('verseBar');
-  if(!inner||!bar)return;
-  const newMode=ST.settings.verseMode; // already updated before calling this
+  if(!inner||!bar)return null;
+  const old=bar._resizeSession;
+  if(old)old.cleanup(old.progress>=.5);
+  const fromH=inner.getBoundingClientRect().height;
+  const ghost=inner.cloneNode(true);
+  ghost.removeAttribute('id');ghost.classList.add('verse-mode-ghost');
+  bar.appendChild(ghost);
+  ST.settings.verseMode=targetMode;
+  _fillVerseBarDOM(getVerseByIdx(ST.settings.verseCurrentIdx));
+  const targetH=inner.getBoundingClientRect().height;
+  ST.settings.verseMode=fromMode;
+  inner.style.boxSizing='border-box';inner.style.overflow='hidden';inner.style.height=fromH+'px';
+  const targetEls=_verseModeTextEls(inner);
+  targetEls.forEach(el=>{el.style.opacity='0';});
+  const session={fromMode,targetMode,fromH,targetH,inner,ghost,targetEls,progress:0,raf:0};
+  session.setProgress=p=>{
+    p=Math.max(0,Math.min(1,p));session.progress=p;
+    const op=_verseResizeOpacity(p);
+    inner.style.height=(fromH+(targetH-fromH)*p)+'px';
+    ghost.style.opacity=String(op.from);
+    targetEls.forEach(el=>{el.style.opacity=String(op.to);});
+  };
+  session.cleanup=commit=>{
+    cancelAnimationFrame(session.raf);ghost.remove();
+    inner.style.height='';inner.style.boxSizing='';inner.style.overflow='';
+    targetEls.forEach(el=>{el.style.opacity='';});
+    ST.settings.verseMode=commit?targetMode:fromMode;
+    _fillVerseBarDOM(getVerseByIdx(ST.settings.verseCurrentIdx));
+    bar._resizeSession=null;
+  };
+  bar._resizeSession=session;
+  return session;
+}
+function _verseModeSettle(session,commit){
+  if(!session)return;
+  const start=session.progress,end=commit?1:0,t0=performance.now();
+  const duration=160+Math.abs(end-start)*100;
+  const step=now=>{
+    const x=Math.min(1,(now-t0)/duration),ease=1-Math.pow(1-x,3);
+    session.setProgress(start+(end-start)*ease);
+    if(x<1)session.raf=requestAnimationFrame(step);
+    else{session.cleanup(commit);if(commit)save();}
+  };
+  session.raf=requestAnimationFrame(step);
+}
+function _initVerseBarResize(){
+  const edge=document.getElementById('verseBarResizeEdge');
+  const bar=document.getElementById('verseBar');
+  if(!edge||!bar||edge._resizeAttached)return;
+  edge._resizeAttached=true;
+  let pointerId=null,startY=0,session=null,candidate=false,threshold=0;
+  edge.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    e.preventDefault();e.stopPropagation();pointerId=e.pointerId;startY=e.clientY;
+    edge.setPointerCapture(pointerId);
+    const from=ST.settings.verseMode||'full';
+    session=_verseModeSession(from,from==='full'?'sneak':'full');
+    if(!session)return;
+    threshold=_verseResizeThreshold(Math.abs(session.targetH-session.fromH),e.pointerType==='mouse');
+    candidate=false;bar._swipeJustHappened=true;
+  });
+  edge.addEventListener('pointermove',e=>{
+    if(e.pointerId!==pointerId||!session)return;
+    e.preventDefault();
+    const direction=session.targetMode==='full'?1:-1;
+    const travel=(e.clientY-startY)*direction;
+    const distance=Math.max(1,Math.abs(session.targetH-session.fromH));
+    let p=travel/distance;
+    if(p<0)p*=.22;
+    session.setProgress(Math.max(0,Math.min(1,p)));
+    if(!candidate&&travel>=threshold)candidate=true;
+    else if(candidate&&travel<threshold*.7)candidate=false;
+  });
+  const end=e=>{
+    if(e.pointerId!==pointerId||!session)return;
+    e.preventDefault();e.stopPropagation();
+    const done=session;session=null;pointerId=null;
+    _verseModeSettle(done,e.type==='pointercancel'?false:candidate);
+    setTimeout(()=>{bar._swipeJustHappened=false;},400);
+  };
+  edge.addEventListener('pointerup',end);
+  edge.addEventListener('pointercancel',end);
+}
 
-  // Step 1: fade out only the text content elements
-  const textEls=[
-    document.getElementById('verseBarCat'),
-    document.getElementById('verseBarTopic'),
-    document.getElementById('verseBarText'),
-    document.getElementById('verseBarFirstWord'),
-    document.getElementById('verseBarRef'),
-    document.getElementById('verseBarTag'),
-    ...inner.querySelectorAll('.verse-sneak-sep')
-  ].filter(Boolean);
-  textEls.forEach(el=>{el.style.transition='opacity .4s ease';el.style.opacity='0';});
-
-  // Step 2: simultaneously adjust bar max-height toward new mode (6-3-1,2)
-  bar.style.maxHeight=VERSE_MAX_H[newMode]+'px';
-
-  // Step 3: after fade-out, swap content and fade back in
-  setTimeout(()=>{
-    const v=getVerseByIdx(ST.settings.verseCurrentIdx);
-    _fillVerseBarDOM(v);
-    // New content starts invisible
-    const newEls=[
-      document.getElementById('verseBarCat'),
-      document.getElementById('verseBarTopic'),
-      document.getElementById('verseBarText'),
-      document.getElementById('verseBarFirstWord'),
-      document.getElementById('verseBarRef'),
-      document.getElementById('verseBarTag'),
-      ...inner.querySelectorAll('.verse-sneak-sep')
-    ].filter(Boolean);
-    newEls.forEach(el=>{el.style.transition='none';el.style.opacity='0';});
-    // Force reflow then fade in
-    inner.offsetWidth;
-    newEls.forEach(el=>{el.style.transition='opacity .4s ease';el.style.opacity='1';});
-    // Clean up inline styles after transition
-    setTimeout(()=>{
-      newEls.forEach(el=>{el.style.transition='';el.style.opacity='';});
-    },500);
-  },400);
+function _verseBarModeFlip(){
+  const target=ST.settings.verseMode;
+  const from=target==='full'?'sneak':'full';
+  ST.settings.verseMode=from;
+  _verseModeSettle(_verseModeSession(from,target),true);
 }
 
 function onVerseBarClick(e){
   e.stopPropagation();
-  // Ignore if this click is the tail end of a swipe (flag set in
-  // _initVerseBarSwipe's touchend for any moved drag).
   const bar=document.getElementById('verseBar');
   if(bar&&bar._swipeJustHappened)return;
   ST.settings.verseMode=ST.settings.verseMode==='full'?'sneak':'full';
-  save();
   _verseBarModeFlip();
 }
 
