@@ -163,26 +163,26 @@ console.log('\n시나리오 — 보여줄 항목 버튼이 저장값을 비춘�
 //    줄이 통째로 영역 밖으로 넘쳤다 (실측: 영역 362px 에 글자 567px, 좌우 103px 씩).
 console.log('\n시나리오 — 스닉픽이 영역을 넘지 않는다');
 {
-  const css = SRC.slice(SRC.indexOf('#verseBarInner.sneak-mode{'), SRC.indexOf('#verseBarInner.sneak-mode #verseBarFirstWord'));
+  const css = SRC.slice(SRC.indexOf('.vbInner.sneak-mode{'), SRC.indexOf('.vbInner.sneak-mode .vbFirst'));
   // 소주제·태그도 줄어들 수 있어야 한다
   sc.eq('소주제·태그가 줄어든다',
-        /#verseBarInner\.sneak-mode #verseBarTopic,\s*\n#verseBarInner\.sneak-mode #verseBarTag\{[^}]*flex:0 1 auto/.test(SRC), true);
-  sc.eq('말줄임이 걸린다', /#verseBarTag\{[\s\S]{0,120}text-overflow:ellipsis/.test(css), true);
+        /\.vbInner\.sneak-mode .vbTopic,\s*\n\.vbInner\.sneak-mode .vbTag\{[^}]*flex:0 1 auto/.test(SRC), true);
+  sc.eq('말줄임이 걸린다', /\.vbTag\{[\s\S]{0,120}text-overflow:ellipsis/.test(css), true);
   // v26-0831-17, HB 신고 — 예전 값(태그 3, 본문 1)은 **거꾸로**였다.
   //   태그가 본문보다 세 배 빨리 줄어 폭 0 이 되어 "켜도 안 보인다" 였다.
   //   차례는 주석대로 본문(8) → 태그(2) → 소주제(1).
   sc.eq('본문부터 줄인다', SRC.includes('flex:0 8 auto;min-width:0;'), true);
   // v26-0831-18, HB — 태그는 아예 줄이지 않는다. 조금이라도 줄면 말줄임이
   //   태그 **글자 자체**를 잘라 "선.." 이 되어 무슨 태그인지 알 수 없었다.
-  sc.eq('태그는 안 줄인다', SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex:0 0 auto;}'), true);
-  sc.eq('소주제가 마지막', SRC.includes('#verseBarInner.sneak-mode #verseBarTopic{flex-shrink:1;}'), true);
+  sc.eq('태그는 안 줄인다', SRC.includes('.vbInner.sneak-mode .vbTag{flex:0 0 auto;}'), true);
+  sc.eq('소주제가 마지막', SRC.includes('.vbInner.sneak-mode .vbTopic{flex-shrink:1;}'), true);
   sc.eq('태그가 먼저 사라지던 값은 없앴다',
-        SRC.includes('#verseBarInner.sneak-mode #verseBarTag{flex-shrink:3;}'), false);
+        SRC.includes('.vbInner.sneak-mode .vbTag{flex-shrink:3;}'), false);
   // 대분류·장절은 그대로 (짧고, 구절을 알아보는 데 필요하다)
   sc.eq('대분류·장절은 안 줄어든다',
-        /#verseBarInner\.sneak-mode #verseBarCat,\s*\n#verseBarInner\.sneak-mode #verseBarRef,[\s\S]{0,80}flex:0 0 auto/.test(SRC), true);
+        /\.vbInner\.sneak-mode .vbCat,\s*\n\.vbInner\.sneak-mode .vbRef,[\s\S]{0,80}flex:0 0 auto/.test(SRC), true);
   // 마지막 안전장치 — 그래도 넘치면 잘라 낸다
-  sc.eq('넘치면 잘라 낸다', SRC.includes('#verseBarInner.sneak-mode{overflow:hidden;}'), true);
+  sc.eq('넘치면 잘라 낸다', SRC.includes('.vbInner.sneak-mode{overflow:hidden;}'), true);
 }
 
 // ═══ 전체화면 탭 — 글자 크기 버튼 4등분 · 첫 사용자 기본값 (0813-7) ═══
