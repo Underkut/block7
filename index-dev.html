@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0910-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -740,15 +740,20 @@ header{
 .vf-ptitle .pt-ink{position:absolute;left:0;top:0;overflow:visible;pointer-events:none;}
 /* 대표 문구 등장 효과. 레이아웃은 먼저 완성한 뒤 보이기만 바꿔 본문이 흔들리지 않는다. */
 .vf-ptitle.pt-motion-dissolve .pt-w{display:inline-block;animation:ptDissolve .95s cubic-bezier(.16,.84,.44,1) both;}
-.vf-ptitle.pt-motion-dissolve .pt-ink{transform-origin:left center;animation:ptInkIn .5s .55s ease-out both;}
-.vf-ptitle.pt-motion-typing .pt-ch{display:inline-block;opacity:0;animation:ptTypeIn .22s ease-out forwards;}
-.vf-ptitle.pt-motion-typing .pt-ink{transform-origin:left center;animation:ptInkIn .32s var(--pt-type-end,.9s) ease-out both;}
+.vf-ptitle.pt-motion-dissolve .pt-ink{animation:ptInkWipe .5s .55s ease-out both;}
+/* ⚠️ 타이핑 글자는 세로 이동 없이 opacity 만 (HB — "4px 이동은 없어야"). 낱말 사이
+   공백은 white-space:pre 로 지켜야 한다 — 안 그러면 공백만 든 span 은 폭이
+   0 으로 접혀 사라진다(칸이 붙어 보이는 원인). */
+.vf-ptitle.pt-motion-typing .pt-ch{display:inline-block;white-space:pre;opacity:0;animation:ptTypeIn .22s ease-out forwards;}
+.vf-ptitle.pt-motion-typing .pt-ink{animation:ptInkWipe .32s var(--pt-type-end,.9s) ease-out both;}
 @keyframes ptDissolve{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes ptTypeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
-@keyframes ptInkIn{from{opacity:0;transform:scaleX(.05)}to{opacity:1;transform:scaleX(1)}}
+@keyframes ptTypeIn{from{opacity:0}to{opacity:1}}
+/* 밑줄은 늘어나며 일그러지는 scaleX 대신, 제 모양 그대로 왼→오로 드러나는
+   클립 와이프로 그린다 (HB — "이동 없이 스와이프만"). */
+@keyframes ptInkWipe{from{opacity:0;clip-path:inset(0 100% 0 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
 @media (prefers-reduced-motion:reduce){
   .vf-ptitle.pt-motion-dissolve .pt-w,.vf-ptitle.pt-motion-dissolve .pt-ink,
-  .vf-ptitle.pt-motion-typing .pt-ch,.vf-ptitle.pt-motion-typing .pt-ink{animation:none!important;opacity:1!important;transform:none!important;}
+  .vf-ptitle.pt-motion-typing .pt-ch,.vf-ptitle.pt-motion-typing .pt-ink{animation:none!important;opacity:1!important;transform:none!important;clip-path:none!important;}
 }
 /* 대표 문구 글씨체 (v26-0831-5, HB — "붓 느낌이 없는데?")
    ⚠️ 손글씨체는 **획이 가늘고 크게 흘려 써서** 같은 px 로도 훨씬 작아 보인다.
@@ -3410,13 +3415,17 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 }
 /* 명제 타이틀 절 — 제목과 디졸브·타이핑 버튼을 한 가로 줄에 나란히 둔다.
    ⚠️ 예전엔 버튼을 position:absolute 로 제목 위에 띄웠는데, 버튼 높이가
-   제목 줄보다 커서 아래 설명 문구와 겹쳤다(v26-0910 HB 신고). 절 전체를
-   flex-wrap 으로 바꿔 버튼을 제목과 같은 줄에, 설명·글씨체 칸은 다음 줄
-   전체 폭으로 접히게 한다 — 이러면 실제 레이아웃이라 겹칠 수가 없다. */
-#ptTitleSettings{display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;}
-#ptTitleSettings>.settings-section-title{flex:0 1 auto;}
-#ptTitleSettings>.pt-motion-row{flex:0 0 auto;margin-left:auto;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-#ptTitleSettings>.settings-row-desc,#ptTitleSettings>#ptFontRow{flex:1 1 100%;}
+   제목 줄보다 커서 아래 설명 문구와 겹쳤다(v26-0910 HB 신고).
+   ⚠️ flex-wrap(+flex-basis:100%)으로 한 번 고쳤었는데, 그래도 버튼이
+   눌리다 만 것처럼 켜고 끄기가 잘 안 됐다 — 설명 칸이 줄바꿈이 안 되고
+   버튼 위에 얹혀 탭을 가로챈 것으로 보인다. **float + clear** 로
+   바꿨다: 제목은 왼쪽, 버튼은 오른쪽으로 뜨고, 아래 설명·글씨체 칸은
+   clear:both 로 반드시 그 아래에서 시작한다 — 겹칠 수 있는 경로 자체가
+   없다(flex 의 줄바꿈 판정에 기대지 않는다). */
+#ptTitleSettings::after{content:"";display:block;clear:both;}
+#ptTitleSettings>.settings-section-title{float:left;}
+#ptTitleSettings>.pt-motion-row{float:right;display:flex;align-items:center;gap:6px;}
+#ptTitleSettings>.settings-row-desc,#ptTitleSettings>#ptFontRow{clear:both;}
 /* 말씀 모음 탭 우상단 → 대시보드 (v26-0907-9, HB 94(8)). 테두리 없이 아이콘만 */
 .vset-dashbtn{display:inline-flex;align-items:center;color:var(--tx3);opacity:.6;
   cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -4830,7 +4839,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-7";
+const APP_VERSION = "v. 26-0910-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15336,13 +15345,24 @@ function _vfPropInk(el){
   if(!rects.length)return;
   const last=rects[rects.length-1];
   const box=el.getBoundingClientRect();
+  // ⚠️ 디졸브 중에는 .pt-w 에 translateY 가 걸려 있어(등장 애니메이션),
+  //    그 순간 잰 좌표를 그대로 쓰면 문구는 제자리로 돌아온 뒤에도
+  //    밑줄만 애니메이션 도중 위치에 눌어붙는다(v26-0910-6 HB 신고,
+  //    올려 뜨는 거리를 4px→14px 로 키우며 훨씬 눈에 띄게 됐다).
+  //    지금 걸려 있는 transform 을 읽어 되돌린 뒤 최종 위치로 잰다.
+  let dy=0;
+  const liveTr=getComputedStyle(w).transform;
+  if(liveTr&&liveTr!=='none'){
+    const m=liveTr.match(/matrix\(([^)]+)\)/);
+    if(m){const p=m[1].split(',').map(Number);if(p.length>=6&&isFinite(p[5]))dy=p[5];}
+  }
   const fs=parseFloat(getComputedStyle(el).fontSize)||24;
   // 문구 폭의 62~88% 만 긋는다 — 끝까지 그으면 밑줄이 되어 딱딱해진다
   const frac=0.62+((_vfPropSeed%27)/27)*0.26;
   const lw=Math.max(24,last.width*frac);
   const x=(last.left-box.left)+(last.width-lw)*((_vfPropSeed>>5)%100)/100;
   // 글자 상자의 어디에 긋는지는 앱이 이미 정해 뒀다 (HI_POS.wave) — 그 값을 쓴다
-  const y=(last.top-box.top)+last.height*HI_POS.wave;
+  const y=(last.top-box.top-dy)+last.height*HI_POS.wave;
   // ⚠️ _hiWavePoly 는 **점 배열**을 준다 (path 문자열이 아니다).
   //    앱의 물결 덮개(_hiOverlay 의 put)와 **똑같은 방식**으로 잇는다 —
   //    한쪽만 바꾸면 같은 붓인데 다른 그림이 된다.
