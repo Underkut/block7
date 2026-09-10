@@ -1,9 +1,9 @@
-// BB1 1단계 — 색상 테마 프리셋 (SPARK 7 + BREATH 8 = 15개).
+// BB1 1단계 — 색상 테마 프리셋 (SPARK 8 + BREATH 9 = 17개).
 //
 // 이 파일은 두 가지를 본다:
 //  ① 데이터·구조 (ID·순서·그룹·저장 방식·미리보기 분리)
-//  ② **색 계산 결과** — index.html 의 파생 함수를 실제로 돌려서 30벌
-//     (15테마 × 라이트/다크)의 대비가 접근성 기준을 넘는지 전부 확인한다.
+//  ② **색 계산 결과** — index.html 의 파생 함수를 실제로 돌려서 34벌
+//     (17테마 × 라이트/다크 = 34벌)의 대비가 접근성 기준을 넘는지 전부 확인한다.
 //     색을 눈으로 고르면 어느 한 테마에서 조용히 안 읽히게 되므로 기계로 잰다.
 const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -13,32 +13,65 @@ const sc = makeScorer();
 const engineSrc = slice('const THEME_GROUPS={', '// ── 조기 적용 (첫 페인트 전) ──');
 const engine = {};
 new Function('exports', engineSrc + `
-Object.assign(exports,{THEME_GROUPS,THEME_PRESETS,themeById,_themeTokens,_thRgb,_thContrast,_thHex,_thMix,_thDeltaE});
+Object.assign(exports,{THEME_GROUPS,THEME_PRESETS,themeById,themeNo,_themeTokens,_thRgb,_thContrast,_thHex,_thMix,_thDeltaE});
 `)(engine);
-const { THEME_GROUPS, THEME_PRESETS, themeById, _themeTokens, _thRgb, _thContrast, _thMix, _thDeltaE } = engine;
+const { THEME_GROUPS, THEME_PRESETS, themeById, themeNo, _themeTokens, _thRgb, _thContrast, _thMix, _thDeltaE } = engine;
 
-// ═══ 1. 15개 테마의 ID·이름·순서 ═══
+// ═══ 1. 17개 테마의 ID·이름·순서 ═══
 console.log('시나리오 1 — 테마 목록');
 {
   const expect = [
     ['11', 'spark', 'Bold Berry'], ['12', 'spark', 'Sunset Deep'], ['13', 'spark', 'Chocolate Delight'],
+    ['lemonpie', 'spark', 'Lemon Meringue Pie'],
     ['14', 'spark', 'Olive Garden Feast'], ['15', 'spark', 'Mulberry Forest'], ['16', 'spark', 'Fiery Ocean'],
     ['17', 'spark', 'Black Cherry'],
     ['21', 'breath', 'Soft Whisper'], ['22', 'breath', 'Mint Chocolate'], ['23', 'breath', 'Chestnut Gentleman'],
+    ['dubaicookie', 'breath', 'Dubai Chewy Cookie'],
     ['24', 'breath', 'Sunny Beach Day'], ['25', 'breath', 'Dusk Horizon'], ['26', 'breath', 'Sunset Breeze'],
     ['27', 'breath', 'Charcoal Orange'], ['28', 'breath', 'Winter Blanket'],
   ];
-  sc.eq('테마는 모두 15개', THEME_PRESETS.length, 15);
-  sc.eq('ID·그룹·이름이 정확하고 11–17, 21–28 순서',
+  sc.eq('테마는 모두 17개', THEME_PRESETS.length, 17);
+  sc.eq('ID·그룹·이름과 목록 순서',
         THEME_PRESETS.map(p => [p.id, p.group, p.name]), expect);
-  sc.eq('SPARK 7개', THEME_PRESETS.filter(p => p.group === 'spark').length, 7);
-  sc.eq('BREATH 8개', THEME_PRESETS.filter(p => p.group === 'breath').length, 8);
+  sc.eq('SPARK 8개', THEME_PRESETS.filter(p => p.group === 'spark').length, 8);
+  sc.eq('BREATH 9개', THEME_PRESETS.filter(p => p.group === 'breath').length, 9);
   sc.eq('ID 는 전부 문자열', THEME_PRESETS.every(p => typeof p.id === 'string'), true);
-  sc.eq('ID 중복 없음', new Set(THEME_PRESETS.map(p => p.id)).size, 15);
+  sc.eq('ID 중복 없음', new Set(THEME_PRESETS.map(p => p.id)).size, 17);
   sc.eq('테마마다 원본·라이트·다크 다섯 색씩',
         THEME_PRESETS.every(p => p.source.length === 5 && p.light.length === 5 && p.dark.length === 5), true);
   sc.eq('색은 전부 #RRGGBB',
         THEME_PRESETS.every(p => [...p.source, ...p.light, ...p.dark].every(c => /^#[0-9A-Fa-f]{6}$/.test(c))), true);
+}
+
+// ═══ 1-2. 화면 번호와 저장 ID 는 서로 다른 것 ═══
+// 목록 가운데에 테마를 끼워 넣으면 **번호만** 밀려야 한다.
+// ID 까지 밀면 '24' 를 저장해 둔 기기가 다음 실행에 남의 테마로 바뀐다.
+console.log('\n시나리오 1-2 — 화면 번호(themeNo)와 저장 ID 의 분리');
+{
+  const nos = THEME_PRESETS.map(p => themeNo(p));
+  sc.eq('번호는 SPARK 11–18, BREATH 21–29 순서', nos,
+        ['11','12','13','14','15','16','17','18',
+         '21','22','23','24','25','26','27','28','29']);
+  sc.eq('레몬 머랭 파이는 SPARK 14', themeNo(themeById('lemonpie')), '14');
+  sc.eq('두바이 쫀득 쿠키는 BREATH 24', themeNo(themeById('dubaicookie')), '24');
+  sc.eq('올리브 가든은 14 에서 15 로 밀렸다', themeNo(themeById('14')), '15');
+  sc.eq('블랙 체리는 18', themeNo(themeById('17')), '18');
+  sc.eq('써니 비치는 24 에서 25 로 밀렸다', themeNo(themeById('24')), '25');
+  sc.eq('윈터 블랭킷은 29', themeNo(themeById('28')), '29');
+
+  // ⚠️ 여기가 핵심 — 예전에 저장된 ID 는 예전과 **같은 테마**를 가리켜야 한다.
+  const savedBefore = {
+    '11':'Bold Berry','12':'Sunset Deep','13':'Chocolate Delight','14':'Olive Garden Feast',
+    '15':'Mulberry Forest','16':'Fiery Ocean','17':'Black Cherry',
+    '21':'Soft Whisper','22':'Mint Chocolate','23':'Chestnut Gentleman','24':'Sunny Beach Day',
+    '25':'Dusk Horizon','26':'Sunset Breeze','27':'Charcoal Orange','28':'Winter Blanket',
+  };
+  Object.entries(savedBefore).forEach(([id, name]) => {
+    sc.eq(`저장된 '${id}' 는 여전히 ${name}`, themeById(id).name, name);
+  });
+  sc.eq('새 테마 ID 는 숫자가 아니다(뒤에 또 끼워 넣어도 안 밀린다)',
+        ['lemonpie','dubaicookie'].every(id => !/^\d+$/.test(id)), true);
+  sc.eq('번호를 ID 로 착각해 저장하지 않는다', /themePresetId[^\n]*themeNo\(/.test(SRC), false);
 }
 
 // ═══ 2. 사용자에게 보이는 그룹명 ═══
@@ -66,8 +99,8 @@ console.log('\n시나리오 3 — 잘못된 ID 는 안전하게 기본으로');
   sc.eq('배열 위치가 아니라 ID 로 찾는다(0 번이 "11")', themeById('0'), null);
 }
 
-// ═══ 4. 색 계산 결과 — 30벌 전부 접근성 기준 ═══
-console.log('\n시나리오 4 — 30벌(15 × 라이트/다크) 대비 검사');
+// ═══ 4. 색 계산 결과 — 34벌 전부 접근성 기준 ═══
+console.log('\n시나리오 4 — 34벌(17 × 라이트/다크) 대비 검사');
 {
   const ct = _thContrast, rgb = _thRgb;
   let worst = { 본문: 99, 보조글자: 99, 비활성글자: 99, 강조위글자: 99, 강조: 99, 강한경계: 99, 위험색: 99 };
@@ -97,7 +130,7 @@ console.log('\n시나리오 4 — 30벌(15 × 라이트/다크) 대비 검사');
       if (ct(s1, bg) < 1.03 && v.강한경계 < 2.9) fails.push(`${p.id} ${mode} 패널 구분 불가`);
     }
   }
-  sc.eq('30벌 전부 기준 통과', fails, []);
+  sc.eq('34벌 전부 기준 통과', fails, []);
   console.log('   최저값 —', Object.entries(worst).map(([k, x]) => `${k} ${x.toFixed(2)}`).join(' / '));
   sc.eq('일반 본문 4.5:1 이상', worst.본문 >= 4.5, true);
   sc.eq('보조 글자도 4.5:1 이상(패널 위 포함)', worst.보조글자 >= 4.5, true);
@@ -189,10 +222,10 @@ console.log('\n시나리오 9 — 설정 화면 구조');
 {
   sc.eq('뷰 탭 항목명은 "색상 테마"',
         SRC.includes('<div class="settings-row-label lv1">색상 테마</div>'), true);
-  sc.eq('뷰 탭에 15개를 펼치지 않는다(요약 + 버튼)',
+  sc.eq('뷰 탭에 17개를 펼치지 않는다(요약 + 버튼)',
         SRC.includes('id="themeSummary"') && SRC.includes('onclick="openThemePicker()"'), true);
-  sc.eq('요약에 그룹·ID·이름을 함께 보인다',
-        SRC.includes("THEME_GROUPS[p.group].label+' · '+p.id+' '+p.name"), true);
+  sc.eq('요약에 그룹·번호·이름을 함께 보인다',
+        SRC.includes("THEME_GROUPS[p.group].label+' · '+themeNo(p)+' '+p.name"), true);
   sc.eq('요약에 원본 팔레트 색상띠', SRC.includes('theme-strip-cell'), true);
   sc.eq('밝기(다크/라이트/시스템)는 그대로 남아 있다',
         SRC.includes('id="themeBtnDark"') && SRC.includes('id="themeBtnSystem"'), true);
@@ -331,7 +364,7 @@ console.log('\n시나리오 12 — 선택·활성 틴트의 세기');
   // 기준: 기본 테마(테마 없음)의 틴트 색차가 라이트 13 · 다크 15 다.
   // 캡(2.4)에 걸리는 테마가 하나 있어 12 를 하한으로 잡는다.
   sc.eq('보정 전에는 기준에 못 미치는 테마가 있었다', worstBefore < 12, true);
-  sc.eq('보정 뒤에는 30벌 전부 색차 12 이상', worstAfter >= 12, true);
+  sc.eq('보정 뒤에는 34벌 전부 색차 12 이상', worstAfter >= 12, true);
   sc.eq('보정이 필요 없는 테마는 배수 1 그대로', kMin, 1);
   sc.eq('가장 흐린 테마는 배수를 키운다', kMax > 1.5, true);
 
@@ -378,7 +411,7 @@ console.log('\n시나리오 13 — 글자용 강조색');
   // 기준값은 34 다. 45 까지 올려 **채도로만** 갈라 세우던 때(v26-0903-3)는
   // 30벌 중 20벌이 밀려 팔레트 통일성이 깨졌다(HB). 지금은 강조색이 모자라면
   // 채도를 밀기 전에 **그 테마의 보조색(--sec)** 을 먼저 쓴다.
-  sc.eq('손본 뒤에는 30벌 전부 글자색과 ΔE 28 이상', worstAfter >= 28, true);
+  sc.eq('손본 뒤에는 34벌 전부 글자색과 ΔE 28 이상', worstAfter >= 28, true);
   sc.eq('기준값은 34', /_thAcText\(ac,sec,\[tx,tx2,tx3\],faces,34\)/.test(SRC), true);
   sc.eq('보조색을 먼저 본다(채도 밀기는 마지막)',
         SRC.indexOf('const secFit=_thReadable(sec,faces,') < SRC.indexOf('return _thAcPush(ac,texts,faces,target);'), true);
@@ -417,7 +450,7 @@ console.log('\n시나리오 13 — 글자용 강조색');
   // (v26-0903-2 HB: '14 올리브 가든 피스트' 라이트에서 오늘 날짜가 강조로 안 보인다)
   sc.eq("오늘 날짜는 --ac-tx", SRC.includes("el.style.color=isT?'var(--ac-tx)':'var(--tx2)'"), true);
   sc.eq("오늘 날짜에 --ac 를 쓰지 않는다", SRC.includes("el.style.color=isT?'var(--ac)'"), false);
-  // 30벌 전부에서 '오늘'과 '오늘 아님'이 갈라져 보이는가
+  // 34벌 전부에서 '오늘'과 '오늘 아님'이 갈라져 보이는가
   THEME_PRESETS.forEach(p => ['light', 'dark'].forEach(mode => {
     const t = _themeTokens(p, mode);
     sc.eq(`${p.id} ${mode} — 오늘 날짜가 보통 날짜와 갈라진다`,
@@ -439,7 +472,7 @@ console.log('\n시나리오 14 — 패널 음영');
       sc.eq(`${p.id} ${mode} — s2 가 s1 과 구분된다`, d >= 5.99, true);
     });
   });
-  sc.eq('30벌 최저 색차가 기본 테마(6.1) 수준', worst >= 5.99, true);
+  sc.eq('34벌 최저 색차가 기본 테마(6.1) 수준', worst >= 5.99, true);
   // 음영이 너무 세면 패널이 얼룩덜룩해진다 — 위쪽도 막아 둔다
   const maxD = THEME_PRESETS.reduce((m, p) => ['light', 'dark'].reduce((n, mode) => {
     const t = _themeTokens(p, mode);
