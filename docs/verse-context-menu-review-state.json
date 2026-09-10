@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-10T03:09:06.996Z",
+  "updatedAt": "2026-09-10T03:10:13.491Z",
   "checks": {
     "top:verse:item-0": true,
     "top:verse:item-1": true,
@@ -239,7 +239,21 @@
     "listwidget:prop:settings-plain": false,
     "listwidget:prop:item-10": true,
     "listwidget:prop:item-11": false,
-    "listwidget:prop:item-12": false
+    "listwidget:prop:item-12": false,
+    "top:verse:separator-1789009811313": false,
+    "top:prop:separator-1789009811313": false,
+    "full:verse:separator-1789009811313": false,
+    "full:prop:separator-1789009811313": false,
+    "tile:verse:separator-1789009811313": false,
+    "tile:prop:separator-1789009811313": false,
+    "activity:verse:separator-1789009811313": false,
+    "activity:prop:separator-1789009811313": false,
+    "keep:verse:separator-1789009811313": false,
+    "keep:prop:separator-1789009811313": false,
+    "card:verse:separator-1789009811313": false,
+    "card:prop:separator-1789009811313": false,
+    "listwidget:verse:separator-1789009811313": false,
+    "listwidget:prop:separator-1789009811313": false
   },
   "iconChoice": {
     "item-7": "plane"
@@ -330,6 +344,11 @@
       "id": "item-12",
       "type": "item",
       "label": "저장 풀기"
+    },
+    {
+      "id": "separator-1789009811313",
+      "type": "separator",
+      "label": "가로선"
     }
   ],
   "storageFix": 1
