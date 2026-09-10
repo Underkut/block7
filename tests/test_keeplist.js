@@ -637,9 +637,10 @@ console.log('\n시나리오 22 — 저장 목록의 삭제 (v26-0902-2, HB 신�
   deleteLatestVerseEvent('keep', R2);
   sc.eq('없다고 말해 준다', TOASTS[0], '저장한 데가 없어요');
 
-  // 22-7 메뉴 글자도 하는 일에 맞춘다 — '삭제' 는 말씀을 지우는 것으로 읽힌다
-  sc.eq('글자에 이름표가 있다', SRC_DEV.includes('<span id="vliDelLabel">삭제</span>'), true);
-  sc.eq('목록을 보는 중이면 빼기', SRC_DEV.includes("?(window._vAggKeepList?'이 목록에서 빼기':'저장 풀기')"), true);
+  // 22-7 메뉴 글자도 하는 일에 맞춘다 — '삭제' 는 말씀을 지우는 것으로 읽힌다.
+  // v26-0910-3, HB: 활동 목록·말씀카드·말씀목록 위젯도 같은 문구로 통일했다.
+  sc.eq('글자에 이름표가 있다', SRC_DEV.includes('<span id="vliDelLabel">이 목록에서 빼기</span>'), true);
+  sc.eq('목록을 보는 중이 아니면 저장 풀기', SRC_DEV.includes("(kind==='keep'&&!window._vAggKeepList)\n    ?'저장 풀기'\n    :'이 목록에서 빼기'"), true);
 }
 
 sc.done();

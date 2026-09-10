@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-2  [production]  -->
+<!-- BLOCK7  v. 26-0910-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4809,7 +4809,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-2";
+const APP_VERSION = "v. 26-0910-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7004,7 +7004,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="openVerseCollFromListMenu()"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정</div>
   <div class="task-menu-sep"></div>
-  <div class="task-menu-item" onclick="vliAction('del')" style="color:var(--danger,#e5484d);"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M6 6l.7 10a1 1 0 0 0 1 1h4.6a1 1 0 0 0 1-1L14 6"/><path d="M10 9v5"/></svg></span><span id="vliDelLabel">삭제</span></div>
+  <div class="task-menu-item" onclick="vliAction('del')" style="color:var(--danger,#e5484d);"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1V6M6 6l.7 10a1 1 0 0 0 1 1h4.6a1 1 0 0 0 1-1L14 6"/><path d="M10 9v5"/></svg></span><span id="vliDelLabel">이 목록에서 빼기</span></div>
 </div>
 
 <!-- 암송/좋아요/Deeper 집계 목록 팝업 (로고 메뉴에서 열림) -->
@@ -19036,12 +19036,14 @@ function closeVliMenuFromOverlay(){
 }
 function openVliMenu(x,y,ref,kind){
   _vliRef=ref;_vliKind=kind;
-  // ⚠️ 저장 목록에서는 '삭제' 가 **그 목록에서 빼기** 다 (v26-0902-2, HB).
-  //    말씀 자체를 지우는 것으로 읽히면 무서워서 못 누른다.
+  // ⚠️ 이 동작은 어디서든 '그 목록에서 하나 빼는' 것이지 말씀 자체를 지우는
+  //    게 아니다(v26-0902-2, HB) — '삭제'라고 하면 말씀 전체를 지우는 것으로
+  //    오해해 무서워서 못 누른다. 그래서 활동 목록·말씀카드 위젯·말씀목록
+  //    위젯도 저장 목록과 같은 문구 '이 목록에서 빼기'로 통일한다(v26-0910-3, HB).
   const _dl=document.getElementById('vliDelLabel');
-  if(_dl)_dl.textContent=(kind==='keep')
-    ?(window._vAggKeepList?'이 목록에서 빼기':'저장 풀기')
-    :'삭제';
+  if(_dl)_dl.textContent=(kind==='keep'&&!window._vAggKeepList)
+    ?'저장 풀기'
+    :'이 목록에서 빼기';
   const verse=_vliVerse(ref);
   const mem=document.getElementById('vliMemItem');
   if(mem)mem.style.display=_vfIsProp(verse)?'none':'flex';
