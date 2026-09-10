@@ -13,6 +13,10 @@ sc.eq('가로선 3개도 화면마다 체크/해제된다',state.rows.filter(r=>
 sc.eq('현재 운영 체크가 18행×14화면 조합에 있음',Object.keys(state.checks).length,7*2*18);
 sc.eq('저장 목록에서 이 목록에서 빼기 사용',state.checks['keep:verse:item-11'],true);
 sc.eq('아직 없는 저장 풀기는 미사용',state.checks['keep:verse:item-12'],false);
+sc.eq('활동 목록도 삭제 대신 이 목록에서 빼기로 통일 (v26-0910-3, HB)',state.checks['activity:verse:item-11'],true);
+sc.eq('활동 목록엔 삭제 문구가 더는 없음',state.checks['activity:verse:item-10'],false);
+sc.eq('말씀카드 위젯도 통일',state.checks['card:prop:item-11'],true);
+sc.eq('말씀목록 위젯도 통일',state.checks['listwidget:verse:item-11'],true);
 sc.eq('현재 운영 공유 아이콘은 종이비행기',state.iconChoice['item-7'],'plane');
 sc.eq('가로선 1은 말씀 상단에도 있음',state.checks['top:verse:sep-1'],true);
 sc.eq('가로선 2는 말씀목록 위젯 명제에도 있음',state.checks['listwidget:prop:sep-2'],true);

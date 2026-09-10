@@ -18,7 +18,7 @@ console.log('\n시나리오 2 — 활동·저장 목록과 두 위젯 공용 메
 {
   sc.eq('전체 화면·저장 목록 항목은 빼고 검토표 순서대로 배치', labels(list),
     ['본문 복사','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','말씀 설정']);
-  sc.eq('삭제 행은 동적 문구 자리를 유지', list.includes('id="vliDelLabel">삭제</span>'), true);
+  sc.eq('삭제 행은 동적 문구 자리를 유지', list.includes('id="vliDelLabel">이 목록에서 빼기</span>'), true);
   sc.eq('말씀 설정과 삭제 사이 가로선 (v26-0910-2, HB 검토표 결정)', /말씀 설정<\/div>\s*<div class="task-menu-sep"><\/div>\s*<div class="task-menu-item" onclick="vliAction\('del'\)/.test(list), true);
   const open = slice('function openVliMenu(x,y,ref,kind){', 'function closeVliMenu');
   sc.eq('명제에서는 암송 완료 체크만 감춘다', open.includes("mem.style.display=_vfIsProp(verse)?'none':'flex'"), true);
