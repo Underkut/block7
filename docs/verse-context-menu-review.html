@@ -58,6 +58,7 @@ const initialItems=[
  {id:'settings-top',label:'말씀 설정 → 상단말씀 탭 깜빡'},
  {id:'settings-coll',label:'말씀 설정 → 말씀모음 탭 깜빡'},
  {id:'settings-plain',label:'말씀 설정 → 기본 화면(깜빡 없음)'},
+ {id:'sep-3',label:'가로선 3',sep:true},
  {id:'item-10',label:'삭제'},
  {id:'item-11',label:'이 목록에서 빼기'},
  {id:'item-12',label:'저장 풀기'}
@@ -80,10 +81,10 @@ const screens=[
  {id:'top',name:'말씀 상단영역',verse:['전체 화면','본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 상단말씀 탭 깜빡'],prop:['전체 화면','본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 상단말씀 탭 깜빡']},
  {id:'full',name:'전체화면',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡']},
  {id:'tile',name:'타일뷰',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡']},
- {id:'activity',name:'활동 목록',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제']},
- {id:'keep',name:'저장 목록',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','이 목록에서 빼기'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','이 목록에서 빼기']},
- {id:'card',name:'말씀카드 위젯',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제']},
- {id:'listwidget',name:'말씀목록 위젯',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','삭제']}
+ {id:'activity',name:'활동 목록',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제']},
+ {id:'keep',name:'저장 목록',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','이 목록에서 빼기'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','이 목록에서 빼기']},
+ {id:'card',name:'말씀카드 위젯',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제']},
+ {id:'listwidget',name:'말씀목록 위젯',verse:['본문 복사','가로선 1','좋아요','저장','암송 완료 체크','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제'],prop:['본문 복사','가로선 1','좋아요','저장','Deeper…','Even Deeper…','공유','가로선 2','말씀 설정 → 말씀모음 탭 깜빡','가로선 3','삭제']}
 ];
 const original={};screens.forEach(s=>['verse','prop'].forEach(t=>initialRows.forEach(row=>original[`${s.id}:${t}:${row.id}`]=s[t].includes(row.label))));
 const REPO='Underkut/block7',STATE_PATH='docs/verse-context-menu-review-state.json',SHARED_BRANCH='verse-context-menu-review',TOKEN_KEY='block7-review-github-token';
