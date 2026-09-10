@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-10T03:10:13.491Z",
+  "updatedAt": "2026-09-10T03:10:20.667Z",
   "checks": {
     "top:verse:item-0": true,
     "top:verse:item-1": true,
@@ -240,7 +240,7 @@
     "listwidget:prop:item-10": true,
     "listwidget:prop:item-11": false,
     "listwidget:prop:item-12": false,
-    "top:verse:separator-1789009811313": false,
+    "top:verse:separator-1789009811313": true,
     "top:prop:separator-1789009811313": false,
     "full:verse:separator-1789009811313": false,
     "full:prop:separator-1789009811313": false,
@@ -331,6 +331,11 @@
       "label": "말씀 설정 → 기본 화면(깜빡 없음)"
     },
     {
+      "id": "separator-1789009811313",
+      "type": "separator",
+      "label": "가로선"
+    },
+    {
       "id": "item-10",
       "type": "item",
       "label": "삭제"
@@ -344,11 +349,6 @@
       "id": "item-12",
       "type": "item",
       "label": "저장 풀기"
-    },
-    {
-      "id": "separator-1789009811313",
-      "type": "separator",
-      "label": "가로선"
     }
   ],
   "storageFix": 1
