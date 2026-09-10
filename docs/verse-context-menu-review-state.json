@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-09-10T03:10:38.048Z",
+  "updatedAt": "2026-09-10T03:10:43.434Z",
   "checks": {
     "top:verse:item-0": true,
     "top:verse:item-1": true,
@@ -249,11 +249,11 @@
     "activity:verse:separator-1789009811313": true,
     "activity:prop:separator-1789009811313": true,
     "keep:verse:separator-1789009811313": true,
-    "keep:prop:separator-1789009811313": false,
-    "card:verse:separator-1789009811313": false,
-    "card:prop:separator-1789009811313": false,
-    "listwidget:verse:separator-1789009811313": false,
-    "listwidget:prop:separator-1789009811313": false
+    "keep:prop:separator-1789009811313": true,
+    "card:verse:separator-1789009811313": true,
+    "card:prop:separator-1789009811313": true,
+    "listwidget:verse:separator-1789009811313": true,
+    "listwidget:prop:separator-1789009811313": true
   },
   "iconChoice": {
     "item-7": "plane"
