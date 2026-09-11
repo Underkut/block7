@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0910-15  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0911-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2664,6 +2664,21 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 /* Sub-picker grid: day-of-week (7 cells) or week-of-month (5 cells) —
    same shaded on/off button language throughout. */
+/* 반복 범위 고르기 (이것만 / 이번 및 이후 / 모두) — v26-0911-1 */
+.rep-scope-list{display:flex;flex-direction:column;gap:7px;}
+.rep-scope-btn{
+  width:100%;padding:12px 13px;border-radius:9px;text-align:left;
+  background:var(--s2);border:1px solid var(--bd2);color:var(--tx);
+  font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background .12s,border-color .12s;
+}
+.rep-scope-btn:hover,.rep-scope-btn:active{background:var(--s1);border-color:var(--ac);}
+.rep-scope-btn .rep-scope-sub{
+  display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--tx3);line-height:1.5;
+}
+.rep-scope-btn.danger{color:var(--ov);}
+
 .event-repeat-sub-grid{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(38px,1fr));
   gap:6px;margin-bottom:16px;
@@ -4905,7 +4920,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0910-15";
+const APP_VERSION = "v. 26-0911-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6399,6 +6414,19 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="event-modal-actions">
     <button class="auth-btn" onclick="closeRepeatSubPicker()" style="margin:0;">확인</button>
   </div>
+</div>
+
+<!-- ══════ 반복 범위 고르기 ══════
+     반복되는 일정·할일을 고치거나 지울 때 "어디까지?" 를 묻는 자리.
+     구글 캘린더와 같은 세 갈래 — 이것만 / 이번 및 이후 / 모두.
+     버튼 글자는 _repScopeAsk() 가 그때그때 갈아 끼운다. -->
+<div class="event-modal-overlay" id="repScopeOverlay" style="display:none;z-index:5200;" onclick="closeRepScope()"></div>
+<div class="event-modal" id="repScopeModal" style="display:none;z-index:5201;">
+  <button class="modal-x" onclick="closeRepScope()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+  </button>
+  <div class="event-modal-title" id="repScopeTitle" style="padding:0 28px;">반복되는 항목이에요</div>
+  <div class="rep-scope-list" id="repScopeList"></div>
 </div>
 
 <!-- ══════ 연락처 관리 ══════
@@ -10232,6 +10260,7 @@ const _ESC_CLOSERS=[
   ['verseMemMenu',    ()=>closeVerseMemMenu()],
   ['logoMenu',        ()=>closeLogoMenu()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
+  ['repScopeModal',   ()=>closeRepScope()],
   // 팝업류
   ['vpModal',         ()=>closeVPair()],
   ['syncConflictModal',()=>closeSyncConflicts()],
@@ -17438,9 +17467,9 @@ function getSmalls(k,id){const d=getDay(k);if(!d.small[id])d.small[id]=[];return
 // given date — big and small blocks both count, completed ones don't.
 // Used by the 할일 유/무 filter buttons.
 function secHasPendingTodo(k,secId){
-  const bigs=getBigs(k,secId).some(b=>b.text?.trim()&&!b.done);
+  const bigs=getBigs(k,secId).some(b=>b.text?.trim()&&!b.done&&!_repHiddenOn(b,k));
   if(bigs)return true;
-  return getSmalls(k,secId).some(s=>s.text?.trim()&&!s.done);
+  return getSmalls(k,secId).some(s=>s.text?.trim()&&!s.done&&!_repHiddenOn(s,k));
 }
 
 // Whether a section has at least one event (own or repeated-virtual)
@@ -17456,6 +17485,31 @@ function getEvents(k,id){const d=getDay(k);if(!d.events[id])d.events[id]=[];retu
 function weekOfMonth(date){
   return Math.ceil(date.getDate()/7);
 }
+
+// ═══════ 반복 규칙 — 일정과 할일이 **같은 것**을 쓴다 ═══════
+// 모양은 구글 캘린더(iCalendar RFC 5545)와 같다.
+//   · 규칙(RRULE)  = daily/daysOfWeek · weekly/weeksOfMonth  — 언제 되풀이되나
+//   · 끝날(UNTIL)  = rep.until  — 이 날까지만. '이후 모두' 를 고르면 여기가 채워진다
+//   · 뺀 날(EXDATE)= rep.ex[]   — 이 날만 건너뛴다. '이 날만 삭제' 가 여기에 쌓인다
+// 되풀이의 출발점(origin)은 그 항목이 실제로 저장된 날짜다.
+// ⚠️ 이 세 가지를 함부로 고치지 말 것 — tests/test_repeat_scope.js 가 지킨다.
+function _repRule(rep){return rep&&(rep.daily||rep.weekly)?rep:null;}
+function _repUntil(rep){return(rep&&typeof rep.until==='string'&&rep.until)?rep.until:null;}
+function _repEx(rep){return(rep&&Array.isArray(rep.ex))?rep.ex:[];}
+// 끝날·뺀 날 때문에 이 날짜가 빠지는가 (규칙 자체는 보지 않는다)
+function _repBlocked(rep,dateKey){
+  const u=_repUntil(rep);
+  if(u&&dateKey>u)return true;
+  return _repEx(rep).includes(dateKey);
+}
+// 하루 앞선 날짜 키 — '이후 모두' 가 끝날을 전날로 잡을 때 쓴다
+function _dayKeyBefore(k){
+  const[y,m,d]=k.split('-').map(Number);
+  const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()-1);
+  return `${dt.getFullYear()}-${z(dt.getMonth()+1)}-${z(dt.getDate())}`;
+}
+// 반복 묶음의 이름표. 한 묶음(원본 + 그 날짜별 실체)이 같은 값을 갖는다.
+function _newRid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 
 // Determines whether a repeating event (created on originDateKey)
 // should also be considered "occurring" on targetDateKey.
@@ -17474,6 +17528,8 @@ function eventRepeatsOnDate(ev,originDateKey,targetDateKey){
   if(!ev.repeat)return false;
   const r=ev.repeat;
   if(!r.daily&&!r.weekly)return false;
+  // 끝날(이후 모두 삭제·수정) · 뺀 날(이 날만 삭제) 을 먼저 본다
+  if(_repBlocked(r,targetDateKey))return false;
 
   const[ty,tm,td]=targetDateKey.split('-').map(Number);
   const targetDate=new Date(ty,tm-1,td);
@@ -17522,6 +17578,10 @@ function eventOccursOnOwnDate(ev,originDateKey){
   if(!ev.repeat)return true; // no repeat config — always shows on its own date
   const r=ev.repeat;
   if(!r.daily&&!r.weekly)return true; // repeat object present but inactive — treat as a plain one-off event
+  // 자기 날짜도 '이 날만 삭제' 로 빠질 수 있다. 그래도 항목 자체는 남는다 —
+  // 그것이 반복 규칙을 들고 있는 **원본**이라 지우면 묶음 전체가 사라진다.
+  // (구글 캘린더도 EXDATE 를 마스터에 적어 두고 마스터는 지우지 않는다)
+  if(_repBlocked(r,originDateKey))return false;
 
   const[oy,om,od]=originDateKey.split('-').map(Number);
   const originDate=new Date(oy,om-1,od);
@@ -17900,7 +17960,8 @@ function attachEventChipInteraction(chip,secId,i,ev){
 function getTrash(k){return getDay(k).trash;}
 
 function totalBigCount(k){
-  return SECS.reduce((a,s)=>a+(getBigs(k,s.id).filter(b=>b.text?.trim()).length),0);
+  // 그 날만 빼 둔 반복 원본(_repHiddenOn)은 화면에 없으니 세지도 않는다
+  return SECS.reduce((a,s)=>a+(getBigs(k,s.id).filter(b=>b.text?.trim()&&!_repHiddenOn(b,k)).length),0);
 }
 
 // ═══════ VIEW DATE (navigable date) ═══════
@@ -18395,7 +18456,11 @@ function sw(t,btn){
 }
 
 // ═══════ TODAY ═══════
-function renderToday(){renderAddRow();renderSecs();updateTotal();updateTrashBadge();renderVerseBar();document.body.classList.toggle('split-d',document.getElementById('todayView').style.display!=='none');renderRightPanel();}
+function renderToday(){
+  // 이 날짜의 반복 할일을 챙긴다 — 오늘이든 앞날이든, 그 날짜를 펼쳐 보는
+  // 순간 그 날의 실체가 생긴다. (지난 날짜에는 만들지 않는다)
+  try{if(typeof ensureRepeatsForView==='function')ensureRepeatsForView(tKey());}catch(e){}
+  renderAddRow();renderSecs();updateTotal();updateTrashBadge();renderVerseBar();document.body.classList.toggle('split-d',document.getElementById('todayView').style.display!=='none');renderRightPanel();}
 
 // ═══════ 우측 위젯 패널 (D뷰 좌우 분할) ═══════
 // 900px 이상 화면에서 D뷰가 좌우로 분할되고, 우측에 위젯들이 쌓인다.
@@ -26954,8 +27019,8 @@ function renderSecs(){
 function updateSecSummary(id){
   const el=document.getElementById(`tsum-${id}`);if(!el)return;
   const k=tKey();
-  const bigCount=getBigs(k,id).filter(b=>b.text?.trim()&&!b.done).length;
-  const smCount=getSmalls(k,id).filter(s=>s.text?.trim()&&!s.done).length;
+  const bigCount=getBigs(k,id).filter(b=>b.text?.trim()&&!b.done&&!_repHiddenOn(b,k)).length;
+  const smCount=getSmalls(k,id).filter(s=>s.text?.trim()&&!s.done&&!_repHiddenOn(s,k)).length;
   if(bigCount===0&&smCount===0){el.textContent='';} else {el.textContent=`${bigCount}/${smCount}`;}
 
   // 할일 유무에 따라 자동 접힘/펼침
@@ -27863,16 +27928,16 @@ function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
   const wrap=makeSwipeWrap(
     item,
-    ()=>{ // left → delete
-      const k=tKey();beforeSave();const removed=getBigs(k,id).splice(i,1)[0];
-      sendToTrash(k,'big',id,removed);save();renderSecBody(id);updateTotal();refreshTaskViewsLive();
+    ()=>{ // left → delete (반복 할일이면 "어디까지 지울까"를 먼저 묻는다)
+      _taskDeleteAt('big',id,i);
     },
     ()=>{ // right → toggle done
       const k=tKey();const arr=getBigs(k,id);
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();updateTotal();renderSecBody(id);refreshTaskViewsLive();}
     }
   );
-  if((b.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(b))wrap.hidden=true;
+  if((b.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(b)
+     ||_repHiddenOn(b,tKey()))wrap.hidden=true;
   return wrap;
 }
 
@@ -28018,6 +28083,9 @@ function makeBigItem(id,i,b,secColor){
     else if(contactBadgeCountChanged(div,inp.value)){renderSecBody(id);}
     autoSizeInput(inp);
     refreshTaskViewsLive(); // 텍스트 수정·빈값 삭제가 W/M 표시에도 즉시 반영
+    // 반복 할일의 글자를 바꿨으면 "어디까지 바꿀까"를 묻는다 (글자는 이미 이 날짜
+    // 것에만 들어가 있다 — 여기서 정하는 것은 다른 날짜로 옮길지 여부다)
+    _taskTextCommit('big',id,i,_origText,inp.value);
   };
   inp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
@@ -28138,7 +28206,7 @@ function makeBigGhost(id,secColor){
 function updateTotal(){
   try{_syncDevVerBadge();}catch(e){}   // 달성바 배지도 함께 (HB 5)
   const k=tKey();
-  const all=SECS.flatMap(s=>getBigs(k,s.id)).filter(b=>b.text?.trim());
+  const all=SECS.flatMap(s=>getBigs(k,s.id)).filter(b=>b.text?.trim()&&!_repHiddenOn(b,k));
   const tot=all.length,done=all.filter(b=>b.done).length;
   const bigLimit=ST.settings.bigLimit||6;
   const ov=tot>bigLimit;
@@ -28154,16 +28222,16 @@ function makeSmWrap(id,i,sm,secColor){
   const item=makeSmItem(id,i,sm,secColor);
   const wrap=makeSwipeWrap(
     item,
-    ()=>{ // left → delete
-      const k=tKey();beforeSave();const removed=getSmalls(k,id).splice(i,1)[0];
-      sendToTrash(k,'small',id,removed);save();renderSmList(id,secColor);updateSmCnt(id);refreshTaskViewsLive();
+    ()=>{ // left → delete (반복 할일이면 "어디까지 지울까"를 먼저 묻는다)
+      _taskDeleteAt('small',id,i);
     },
     ()=>{ // right → toggle done
       const k=tKey();const arr=getSmalls(k,id);
       if(arr[i]){beforeSave();arr[i].done=!arr[i].done;save();renderSmList(id,secColor);refreshTaskViewsLive();}
     }
   );
-  if((sm.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(sm))wrap.hidden=true;
+  if((sm.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(sm)
+     ||_repHiddenOn(sm,tKey()))wrap.hidden=true;
   return wrap;
 }
 
@@ -28213,6 +28281,7 @@ function makeSmItem(id,i,sm,secColor){
     else if(contactBadgeCountChanged(div,inp.value)){renderSmList(id,secColor);}
     autoSizeInput(inp);
     refreshTaskViewsLive();
+    _taskTextCommit('small',id,i,_origText,inp.value);
   };
   inp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
@@ -29858,7 +29927,7 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   // Reflect this item's current daily-repeat and flag state in the menu.
   const arr=(type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId));
   const item=arr[idx];
-  const isDaily=!!(item&&item.daily);
+  const isDaily=!!(item&&(item.daily||item.rid));
   const dailyItem=document.getElementById('dailyToggleItem');
   const dailyLabel=document.getElementById('dailyToggleLabel');
   if(dailyItem&&dailyLabel){
@@ -30268,6 +30337,7 @@ let _eventModalDateKey=null,_eventModalOrigDateKey=null; // which date this even
 // month) — turning on daily/specific-days auto-enables weekly, and
 // opening weekly's sub-picker starts with all 5 weeks already on.
 let _eventRepeat={daily:false,daysOfWeek:[0,1,2,3,4,5,6],weekly:false,weeksOfMonth:[1,2,3,4,5]};
+let _eventModalOccKey=null;   // 반복 일정에서 사용자가 실제로 누른 날짜
 
 // Copies each hour/minute <select>'s current value into its visible,
 // centered display span — the select itself is rendered invisible
@@ -30333,6 +30403,10 @@ function openEventModal(secId,editIdx,dateKey){
   _eventModalEditIdx=(typeof editIdx==='number')?editIdx:null;
   _eventModalDateKey=dateKey||tKey();
   _eventModalOrigDateKey=_eventModalDateKey;   // 수정 중 날짜를 바꾸면 옮겨야 하므로 기억
+  // 사용자가 실제로 누른 날짜 — 반복 일정은 여러 날에 비치므로, 저장 자리
+  // (_eventModalDateKey, 원본이 있는 날)와 **누른 날**이 다를 수 있다.
+  // '이 일정만 / 이후 모두' 를 가르는 기준은 언제나 **누른 날**이다.
+  _eventModalOccKey=tKey();
   _syncEventDateUI();
   document.getElementById('eventModalOverlay').style.display='block';
   document.getElementById('eventModal').style.display='block';
@@ -30410,8 +30484,9 @@ function openEventModal(secId,editIdx,dateKey){
 // the one currently being viewed — used when editing a virtual
 // (repeated) occurrence, which must edit the real stored event at its
 // origin date rather than whatever date is currently on screen.
-function openEventModalForDate(dateKey,secId,editIdx){
+function openEventModalForDate(dateKey,secId,editIdx,occKey){
   openEventModal(secId,editIdx,dateKey);
+  if(occKey)_eventModalOccKey=occKey;
 }
 
 function setEventTimeToggle(on){
@@ -30474,6 +30549,21 @@ function submitEventModal(){
     (_eventRepeat.weeksOfMonth.length>0&&_eventRepeat.weeksOfMonth.length<5);
   const repeat=(dailyOn||weeklyOn)?JSON.parse(JSON.stringify(_eventRepeat)):null;
 
+  // 반복 묶음에 속한 일정을 고치는 중이면 "어디까지?" 를 먼저 묻는다.
+  // 구간·날짜를 함께 옮기는 일은 반복에서는 다루지 않는다 — 반복은 제 자리에서
+  // 되풀이되는 것이 본질이라, 옮기려면 반복을 끄고 옮기는 편이 헷갈리지 않는다.
+  if(_eventModalEditIdx!==null){
+    const _cur=getEvents(_eventModalDateKey||tKey(),_eventModalSecId)[_eventModalEditIdx];
+    if(_cur&&_evInSeries(_cur)){
+      const payload={text,time,repeat,secId:_eventModalSecId,
+        dateKey:_eventModalDateKey||tKey(),editIdx:_eventModalEditIdx,
+        occ:_eventModalOccKey||_eventModalDateKey||tKey()};
+      closeEventModal();
+      _repScopeAsk({kind:'event',mode:'edit',onPick:sc=>_evEditApply(payload,sc)});
+      return;
+    }
+  }
+
   beforeSave();
   const fromSec=_eventModalSecId; // capture before closeEventModal() nulls these out
   // 시각이 구간을 정한다 — 시각을 넣거나 바꾸면 그 시각의 구간으로 간다.
@@ -30496,7 +30586,7 @@ function submitEventModal(){
   const events=getEvents(k,secId);
   if(moved){
     moved.time=time;moved.text=text;
-    if(repeat)moved.repeat=repeat;else delete moved.repeat;
+    if(repeat){moved.repeat=repeat;if(!moved.rid)moved.rid=_newRid();}else delete moved.repeat;
     events.push(moved);
     ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
     save();closeEventModal();
@@ -30512,11 +30602,12 @@ function submitEventModal(){
     // 시각 없는 일정은 지금 자리를 그대로 지킨다.
     events[editIdx].time=time;
     events[editIdx].text=text;
-    if(repeat)events[editIdx].repeat=repeat;else delete events[editIdx].repeat;
+    if(repeat){events[editIdx].repeat=repeat;if(!events[editIdx].rid)events[editIdx].rid=_newRid();}
+    else delete events[editIdx].repeat;
     ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
   } else {
     const newEvent={id:'ev'+Date.now(),time,text};
-    if(repeat)newEvent.repeat=repeat;
+    if(repeat){newEvent.repeat=repeat;newEvent.rid=_newRid();}
     events.push(newEvent);
     ST.days[k].events[secId]=_sortEventsKeepingTimeless(events);
   }
@@ -30808,17 +30899,18 @@ function deleteEventFromMenu(){
   if(!_eventEditMenuCtx)return;
   const{secId,ev}=_eventEditMenuCtx;
   closeEventEditMenu();
-  beforeSave();
-  if(ev._virtualFrom){
-    // Deleting a virtual occurrence deletes the entire repeating
-    // event at its origin — there's no per-occurrence record to
-    // remove individually with the current data model. (A more
-    // advanced "skip just this one day" exception list could be
-    // added later if needed.)
-    getEvents(ev._virtualFrom,secId).splice(ev._virtualIdx,1);
-  } else {
-    getEvents(tKey(),secId).splice(ev._ownIdx,1);
+  // 반복 일정이면 "어디까지 지울까" 를 먼저 묻는다 (구글 캘린더와 같은 세 갈래).
+  // 저장 자리(dateKey/idx)는 원본이 있는 날, occ 는 **사용자가 누른 날**이다.
+  const p=ev._virtualFrom
+    ?{dateKey:ev._virtualFrom,idx:ev._virtualIdx,secId,occ:tKey()}
+    :{dateKey:tKey(),idx:ev._ownIdx,secId,occ:tKey()};
+  const stored=getEvents(p.dateKey,secId)[p.idx];
+  if(stored&&_evInSeries(stored)){
+    _repScopeAsk({kind:'event',mode:'delete',onPick:sc=>_evDeleteApply(p,sc)});
+    return;
   }
+  beforeSave();
+  getEvents(p.dateKey,secId).splice(p.idx,1);
   save();
   renderSecEvents(secId);
   refreshTaskViewsLive();   // 주간/월간 위젯 즉시 반영
@@ -30872,70 +30964,544 @@ function toggleTaskContact(){
 function toggleDailyRepeat(){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
-  const arr=type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId);
+  const k=tKey();
+  const arr=type==='big'?getBigs(k,secId):getSmalls(k,secId);
   const item=arr[idx];
   if(!item)return;
   beforeSave();
-  item.daily=!item.daily;
+  if(item.daily||item.rid){
+    // 끄기 = "오늘부터 그만" — 지난 기록은 그대로 두고 앞날 것만 거둔다.
+    // (구글 캘린더에서 반복을 끄는 것도 이 자리부터 끊는 것과 같다)
+    const rid=item.rid;
+    const root=rid?_taskRepRootOf(rid):null;
+    if(root&&root.k<k){
+      if(!root.item.repeat)root.item.repeat=_taskRepDefault();
+      root.item.repeat.until=_dayKeyBefore(k);
+      _repPurgeTasks(rid,_dayKeyAfter(k),false);
+    } else if(root){
+      delete root.item.repeat;
+      _repPurgeTasks(rid,_dayKeyAfter(k),false);
+    }
+    delete item.repeat;
+    delete item.rid;
+    delete item.daily;
+    save();closeTaskMenu();renderSecBody(secId);refreshTaskViewsLive();
+    showToast('오늘부터 매일 반복을 멈췄어요');
+    return;
+  }
+  item.daily=true;
+  item.rid=_newRid();
+  item.repeat=_taskRepDefault();
   save();
   closeTaskMenu();
   renderSecBody(secId);
-  showToast(item.daily?'매일 반복으로 설정했어요':'매일 반복을 해제했어요');
+  refreshTaskViewsLive();
+  showToast('매일 반복으로 설정했어요 — 내일부터 이 할일이 매일 생겨요');
 }
 
-// Called once per day-view render. Walks backward from today to find
-// the most recent PAST day that has data, and for every item flagged
-// daily there that ISN'T already present (by text) in today's same
-// section/type, adds a fresh undone copy of it to today.
-function _dayHasTasks(d){
-  if(!d)return false;
-  return [d.big,d.small].some(o=>o&&Object.values(o).some(
-    arr=>Array.isArray(arr)&&arr.some(it=>it&&typeof it.text==='string'&&it.text.trim())));
+// ═══════ 할일의 반복 ═══════
+// 일정과 **같은 규칙**(위 _repRule 묶음)을 쓴다. 다른 점은 하나뿐이다 —
+// 할일은 '한 일/안 한 일' 이라는 제 상태를 날짜마다 따로 갖는다. 그래서
+// 일정처럼 비추기만 할 수 없고, **그 날짜를 펼쳐 볼 때 그 날의 실체를 만든다**
+// (구글 Tasks 도 다음 회차를 실제 할일로 만들어 준다).
+//
+// 용어 세 가지만 기억하면 된다:
+//   · 원본  = 반복 규칙(repeat)을 들고 있는 할일. 처음 만든 그 날짜에 있다
+//   · 실체  = 원본이 다른 날짜에 만들어 놓은 복사본. rid 로 원본과 이어져 있다
+//   · rid   = 그 반복 묶음의 이름표. 원본과 실체가 모두 같은 값을 갖는다
+//
+// 지난 날짜에는 실체를 만들지 않는다. 그날 있었던 일은 기록이지 예정이 아니다.
+//   (tests/test_repeat_scope.js 시나리오 5)
+function _taskRepDefault(){
+  return{daily:true,daysOfWeek:[0,1,2,3,4,5,6],weekly:false,weeksOfMonth:[1,2,3,4,5]};
 }
-function ensureDailyRepeats(){
-  const todayK=todayKey();
-  if(ST.lastDailyRepeatKey===todayK)return; // already seeded today
-  // ⚠️ 화면을 그리기만 해도 getDay() 가 그 날짜의 **빈 껍데기**를 만든다
-  //   (D뷰에서 다른 날로 넘겨보기·주간뷰 일정모드 등). 그 껍데기가 "가장 최근
-  //   과거 날짜"로 잡히면 거기엔 daily 표시가 하나도 없으니 아무것도 안 넘어오고,
-  //   그 결과 오늘도 빈 껍데기로 남아 **다음 날도, 그 다음 날도** 똑같이 멈춘다
-  //   (한 번 걸리면 스스로 풀리지 않는다 — 2026-09-10 HB 신고 "매일반복이 고장났다").
-  //   그래서 껍데기는 건너뛰고 **할일이 실제로 들어 있는** 가장 최근 날짜를 본다.
-  //   (tests/test_daily_repeat.js 시나리오 2 가 지킨다)
-  const pastKeys=Object.keys(ST.days).filter(k=>k<todayK&&_dayHasTasks(ST.days[k])).sort();
-  if(pastKeys.length===0){ST.lastDailyRepeatKey=todayK;return;}
-  const mostRecentKey=pastKeys[pastKeys.length-1];
-  const mostRecentDay=ST.days[mostRecentKey];
-  if(!mostRecentDay){ST.lastDailyRepeatKey=todayK;return;}
-
-  let addedAny=false;
-  SECS.forEach(sec=>{
-    const pastBigs=(mostRecentDay.big?.[sec.id]||[]).filter(b=>b.daily&&b.text?.trim());
-    const pastSmalls=(mostRecentDay.small?.[sec.id]||[]).filter(s=>s.daily&&s.text?.trim());
-    if(pastBigs.length){
-      const todayBigs=getBigs(todayK,sec.id);
-      const existingTexts=new Set(todayBigs.map(b=>b.text));
-      pastBigs.forEach(b=>{
-        if(!existingTexts.has(b.text)){
-          todayBigs.push({text:b.text,done:false,daily:true});
-          addedAny=true;
-        }
+// 이 항목이 '반복 원본' 인가
+function _isRepRoot(it){return !!(it&&it.repeat&&_repRule(it.repeat));}
+// 모든 반복 원본을 훑는다 → [{k,type,secId,idx,item}]
+function _taskRepRoots(){
+  const out=[];
+  Object.keys(ST.days||{}).forEach(k=>{
+    const day=ST.days[k];if(!day)return;
+    [['big',day.big],['small',day.small]].forEach(pair=>{
+      const type=pair[0],bag=pair[1];
+      if(!bag)return;
+      Object.keys(bag).forEach(secId=>{
+        const arr=bag[secId];if(!Array.isArray(arr))return;
+        arr.forEach((it,idx)=>{if(_isRepRoot(it))out.push({k,type,secId,idx,item:it});});
       });
-    }
-    if(pastSmalls.length){
-      const todaySmalls=getSmalls(todayK,sec.id);
-      const existingTexts=new Set(todaySmalls.map(s=>s.text));
-      pastSmalls.forEach(s=>{
-        if(!existingTexts.has(s.text)){
-          todaySmalls.push({text:s.text,done:false,daily:true});
-          addedAny=true;
-        }
-      });
-    }
+    });
   });
+  return out;
+}
+// 한 반복 묶음의 원본 찾기
+function _taskRepRootOf(rid){
+  if(!rid)return null;
+  return _taskRepRoots().find(r=>r.item.rid===rid)||null;
+}
+// 한 반복 묶음의 항목들(원본 포함) — fromKey 부터(포함). 안 주면 전부.
+function _taskRepInstances(rid,fromKey){
+  const out=[];
+  if(!rid)return out;
+  Object.keys(ST.days||{}).forEach(k=>{
+    if(fromKey&&k<fromKey)return;
+    const day=ST.days[k];if(!day)return;
+    [['big',day.big],['small',day.small]].forEach(pair=>{
+      const type=pair[0],bag=pair[1];
+      if(!bag)return;
+      Object.keys(bag).forEach(secId=>{
+        const arr=bag[secId];if(!Array.isArray(arr))return;
+        arr.forEach((it,idx)=>{if(it&&it.rid===rid)out.push({k,type,secId,idx,item:it});});
+      });
+    });
+  });
+  return out;
+}
+// 그 날짜에 이 묶음의 항목이 이미 있는가 (원본이든 실체든)
+function _ridPresentOn(k,rid){
+  const day=ST.days[k];if(!day||!rid)return false;
+  return [day.big,day.small].some(bag=>bag&&Object.keys(bag).some(secId=>
+    Array.isArray(bag[secId])&&bag[secId].some(it=>it&&it.rid===rid)));
+}
 
+// ── 옛 자료 옮겨심기 ──
+// 예전 모델은 daily:true 플래그 하나뿐이었고, 매일 아침 '가장 최근 과거
+// 날짜' 에서 글자가 같은 것을 베껴 왔다. 이제는 원본 하나가 규칙을 들고
+// 나머지는 그 실체가 된다. 글자가 같은 것끼리 한 묶음으로 보고,
+// **가장 최근 날짜의 것**을 원본으로 삼는다 (앞날로 뻗어야 하므로).
+function _migrateTaskRepeats(){
+  if(ST.taskRepeatV2)return;
+  const groups=new Map();
+  Object.keys(ST.days||{}).sort().forEach(k=>{
+    const day=ST.days[k];if(!day)return;
+    [['big',day.big],['small',day.small]].forEach(pair=>{
+      const type=pair[0],bag=pair[1];
+      if(!bag)return;
+      Object.keys(bag).forEach(secId=>{
+        const arr=bag[secId];if(!Array.isArray(arr))return;
+        arr.forEach(it=>{
+          // 이미 묶음 이름표가 있는 것은 새 모델로 만든 것이다 — 손대지 않는다
+          if(!it||!it.daily||it.rid||!it.text||!it.text.trim())return;
+          const key=type+' '+secId+' '+it.text.trim();
+          if(!groups.has(key))groups.set(key,[]);
+          groups.get(key).push({k,item:it});
+        });
+      });
+    });
+  });
+  groups.forEach(list=>{
+    const rid=_newRid();
+    list.forEach(e=>{e.item.rid=rid;});
+    const root=list[list.length-1].item;   // 가장 최근 날짜의 것이 원본
+    if(!root.repeat)root.repeat=_taskRepDefault();
+  });
+  ST.taskRepeatV2=true;
+}
+
+// ── 그 날짜의 실체 만들기 ──
+// 날짜 k 를 펼쳐 볼 때 부른다. 만든 개수를 돌려준다.
+function materializeRepeatsFor(k){
+  if(!k||k<todayKey())return 0;   // 지난 날짜에는 만들지 않는다
+  let added=0;
+  _taskRepRoots().forEach(r=>{
+    if(r.k>k)return;                                   // 아직 시작도 안 한 반복
+    if(!r.item.rid)r.item.rid=_newRid();
+    if(_ridPresentOn(k,r.item.rid))return;             // 이미 있다 (실체·이 날만 수정본)
+    if(r.k===k)return;                                 // 원본이 있는 날 — 원본이 곧 그 날의 것
+    if(!eventRepeatsOnDate(r.item,r.k,k))return;       // 규칙·끝날·뺀 날 판정 (일정과 같은 함수)
+    const arr=(r.type==='big')?getBigs(k,r.secId):getSmalls(k,r.secId);
+    const it={text:r.item.text,done:false,daily:true,rid:r.item.rid};
+    if(r.item.flag)it.flag=true;
+    if(r.item.contactTask)it.contactTask=true;
+    arr.push(it);
+    added++;
+  });
+  return added;
+}
+// 예전 이름 — 부팅할 때 오늘 것을 챙긴다. 부르는 자리가 여럿이라 그대로 둔다.
+function ensureDailyRepeats(){
+  _migrateTaskRepeats();
+  const todayK=todayKey();
+  const added=materializeRepeatsFor(todayK);
   ST.lastDailyRepeatKey=todayK;
-  if(addedAny)rawSave();
+  if(added)rawSave();
+  return added;
+}
+// 날짜를 펼쳐 그릴 때마다 부른다 (오늘·앞날). 만든 것이 있으면 저장한다.
+function ensureRepeatsForView(k){
+  _migrateTaskRepeats();
+  const added=materializeRepeatsFor(k);
+  if(added)rawSave();
+  return added;
+}
+
+// ── 보여주기용 앞날 미리보기 (저장하지 않는다) ──
+// 주간뷰·월간뷰는 여러 날을 한꺼번에 훑는다. 거기서 실체를 만들면 보기만
+// 해도 자료가 불어나므로, 그 자리에서는 **비추기만** 한다 (일정과 같은 방식).
+function getDisplayTasks(k,secId,type){
+  // ⚠️ getBigs()/getSmalls() 를 쓰면 안 된다 — 없는 날짜의 **빈 껍데기**를 만들어
+  //   버린다. 여러 날을 훑는 자리라 껍데기가 우수수 생긴다 (v26-0910-15 의 그 고장).
+  const day=ST.days[k];
+  const own=(day&&day[type]&&day[type][secId])||[];
+  if(k<todayKey())return own;
+  const extra=[];
+  _taskRepRoots().forEach(r=>{
+    if(r.type!==type||r.secId!==secId)return;
+    if(r.k>=k)return;
+    if(r.item.rid&&_ridPresentOn(k,r.item.rid))return;
+    if(!eventRepeatsOnDate(r.item,r.k,k))return;
+    extra.push({text:r.item.text,done:false,daily:true,rid:r.item.rid,_repeatPreview:true});
+  });
+  return extra.length?[...own,...extra]:own;
+}
+
+
+// ═══════ 반복 범위 고르기 (이것만 / 이번 및 이후 / 모두) ═══════
+// 구글 캘린더가 반복 일정을 고치거나 지울 때 묻는 그 세 갈래다.
+// 여기서는 **묻기만** 한다 — 실제로 무엇을 하는지는 아래 _rep*Apply 들이 맡는다.
+let _repScopeCb=null,_repScopeCancel=null;
+function _repScopeAsk(opt){
+  const kindWord=(opt.kind==='event')?'일정':'할일';
+  const list=document.getElementById('repScopeList');
+  const title=document.getElementById('repScopeTitle');
+  if(!list||!title){if(opt.onPick)opt.onPick('all');return;}
+  const verb=(opt.mode==='delete')?'삭제':'수정';
+  title.textContent=`반복되는 ${kindWord}이에요 — 어디까지 ${verb}할까요?`;
+  const rows=[
+    ['one',   `이 ${kindWord}만`,        '고른 날짜 하나에만 적용해요'],
+    ['future',`이번 및 이후 ${kindWord}`, '이 날짜부터 앞으로 모두 적용해요'],
+    ['all',   `모든 ${kindWord}`,        '지난 것까지 이 반복 전체에 적용해요']
+  ];
+  list.innerHTML='';
+  rows.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='rep-scope-btn'+((opt.mode==='delete'&&r[0]!=='one')?' danger':'');
+    b.innerHTML=`${esc(r[1])}<span class="rep-scope-sub">${esc(r[2])}</span>`;
+    b.onclick=()=>_repScopePick(r[0]);
+    list.appendChild(b);
+  });
+  _repScopeCb=opt.onPick||null;
+  _repScopeCancel=opt.onCancel||null;
+  document.getElementById('repScopeOverlay').style.display='block';
+  document.getElementById('repScopeModal').style.display='block';
+}
+function closeRepScope(){
+  const o=document.getElementById('repScopeOverlay'),m=document.getElementById('repScopeModal');
+  if(o)o.style.display='none';
+  if(m)m.style.display='none';
+  const c=_repScopeCancel;
+  _repScopeCb=null;_repScopeCancel=null;
+  if(c)c();   // 아무것도 고르지 않고 닫았다 — 화면을 원래대로 되돌린다
+}
+function _repScopePick(scope){
+  const cb=_repScopeCb;
+  _repScopeCb=null;_repScopeCancel=null;
+  closeRepScope();
+  if(cb)cb(scope);
+}
+
+// ── 묶음을 훑어 지우기 ──
+// fromKey 부터(포함)의 날짜에서 rid 가 같은 것을 뺀다. keepRoot 면 원본은 남긴다.
+// (원본을 지우면 반복 규칙 자체가 사라져 나머지 날짜가 다시 생기지 않는다)
+function _repPurgeTasks(rid,fromKey,keepRoot){
+  let n=0;
+  if(!rid)return n;
+  Object.keys(ST.days||{}).forEach(k=>{
+    if(fromKey&&k<fromKey)return;
+    const day=ST.days[k];if(!day)return;
+    ['big','small'].forEach(type=>{
+      const bag=day[type];if(!bag)return;
+      Object.keys(bag).forEach(secId=>{
+        const arr=bag[secId];if(!Array.isArray(arr))return;
+        const next=arr.filter(it=>{
+          if(!it||it.rid!==rid)return true;
+          if(keepRoot&&_isRepRoot(it))return true;
+          n++;return false;
+        });
+        if(next.length!==arr.length)bag[secId]=next;
+      });
+    });
+  });
+  return n;
+}
+function _repPurgeEvents(rid,fromKey,keepRoot){
+  let n=0;
+  if(!rid)return n;
+  Object.keys(ST.days||{}).forEach(k=>{
+    if(fromKey&&k<fromKey)return;
+    const bag=ST.days[k]&&ST.days[k].events;if(!bag)return;
+    Object.keys(bag).forEach(secId=>{
+      const arr=bag[secId];if(!Array.isArray(arr))return;
+      const next=arr.filter(ev=>{
+        if(!ev||ev.rid!==rid)return true;
+        if(keepRoot&&ev.repeat&&_repRule(ev.repeat))return true;
+        n++;return false;
+      });
+      if(next.length!==arr.length)bag[secId]=next;
+    });
+  });
+  return n;
+}
+// 원본의 '뺀 날' 에 하루 더하기
+function _repAddEx(rootItem,dateKey){
+  if(!rootItem||!rootItem.repeat)return;
+  if(!Array.isArray(rootItem.repeat.ex))rootItem.repeat.ex=[];
+  if(!rootItem.repeat.ex.includes(dateKey))rootItem.repeat.ex.push(dateKey);
+}
+// 반복 원본을 그 날짜에는 감출 것인가 (자기 날짜가 '뺀 날' 이 된 원본)
+// 지우지 않고 감추기만 하는 까닭 — 지우면 반복 규칙이 함께 사라진다.
+function _repHiddenOn(it,k){
+  return !!(it&&_isRepRoot(it)&&_repBlocked(it.repeat,k));
+}
+
+// ── 일정의 원본 찾기 ──
+function _evRepRootOf(rid){
+  if(!rid)return null;
+  let found=null;
+  Object.keys(ST.days||{}).forEach(k=>{
+    if(found)return;
+    const bag=ST.days[k]&&ST.days[k].events;if(!bag)return;
+    Object.keys(bag).forEach(secId=>{
+      if(found)return;
+      const arr=bag[secId];if(!Array.isArray(arr))return;
+      const idx=arr.findIndex(ev=>ev&&ev.rid===rid&&ev.repeat&&_repRule(ev.repeat));
+      if(idx>=0)found={k,secId,idx,ev:arr[idx]};
+    });
+  });
+  return found;
+}
+// 반복 묶음에 속한 일정인가 (원본이든, 어느 하루만 고친 것이든)
+function _evInSeries(ev){return !!(ev&&(ev.rid||(ev.repeat&&_repRule(ev.repeat))));}
+
+
+// ── 규칙을 물려줄 때 끝날·뺀 날은 잃지 않는다 ──
+// 팝업에서 돌아온 규칙에는 '매일/매주' 만 들어 있을 수 있다. 원본이 갖고 있던
+// 끝날(until)·뺀 날(ex)까지 덮어써 버리면 지웠던 날이 되살아난다.
+function _repKeepMarks(rule,oldRep){
+  if(!rule)return null;
+  const out=Object.assign({},rule);
+  if(oldRep){
+    if(out.until===undefined&&oldRep.until)out.until=oldRep.until;
+    if(!Array.isArray(out.ex)&&Array.isArray(oldRep.ex))out.ex=oldRep.ex.slice();
+  }
+  return out;
+}
+
+// ═══════ 일정 — 범위에 따라 고치기 ═══════
+function _evEditApply(p,scope){
+  const arr=getEvents(p.dateKey,p.secId);
+  const target=arr[p.editIdx];
+  if(!target){renderSecEvents(p.secId);return;}
+  beforeSave();
+  if(!target.rid)target.rid=_newRid();
+  const rid=target.rid;
+  let root=_evRepRootOf(rid);
+  if(!root&&target.repeat&&_repRule(target.repeat))root={k:p.dateKey,secId:p.secId,idx:p.editIdx,ev:target};
+
+  const putOverride=()=>{
+    // 그 하루만 따로 서는 일정 — 규칙은 갖지 않고 rid 로만 묶음에 매여 있다
+    // (구글 캘린더의 RECURRENCE-ID 예외와 같은 자리)
+    const dayArr=getEvents(p.occ,p.secId);
+    const kept=dayArr.filter(ev=>!(ev&&ev.rid===rid&&!(ev.repeat&&_repRule(ev.repeat))));
+    kept.push({id:'ev'+Date.now(),time:p.time,text:p.text,rid});
+    ST.days[p.occ].events[p.secId]=_sortEventsKeepingTimeless(kept);
+  };
+
+  if(scope==='one'){
+    if(root){_repAddEx(root.ev,p.occ);putOverride();}
+    else{target.text=p.text;target.time=p.time;}
+  } else if(scope==='future'){
+    if(!root||p.occ<=root.k){
+      const base=root?root.ev:target;
+      base.text=p.text;base.time=p.time;
+      const rule=_repKeepMarks(p.repeat,base.repeat);
+      if(rule)base.repeat=rule;else delete base.repeat;
+    } else {
+      // 원본은 어제까지만 살려 두고, 오늘부터는 **새 묶음**으로 다시 시작한다
+      // (구글 캘린더도 원본에 UNTIL 을 걸고 새 반복을 만든다)
+      if(!root.ev.repeat)root.ev.repeat=_taskRepDefault();
+      root.ev.repeat.until=_dayKeyBefore(p.occ);
+      _repPurgeEvents(rid,p.occ,true);
+      const rule=_repKeepMarks(p.repeat,null);
+      if(rule){rule.until=undefined;delete rule.until;rule.ex=[];}
+      const fresh={id:'ev'+Date.now(),time:p.time,text:p.text,rid:_newRid()};
+      if(rule)fresh.repeat=rule;
+      const dayArr=getEvents(p.occ,p.secId);
+      dayArr.push(fresh);
+      ST.days[p.occ].events[p.secId]=_sortEventsKeepingTimeless(dayArr);
+    }
+  } else { // all
+    const base=root?root.ev:target;
+    base.text=p.text;base.time=p.time;
+    const rule=_repKeepMarks(p.repeat,base.repeat);
+    if(rule)base.repeat=rule;else delete base.repeat;
+    // 하루만 따로 고쳐 둔 것들은 되돌린다 (구글도 '모든 일정' 을 고르면 초기화한다)
+    _repPurgeEvents(rid,null,true);
+  }
+  save();
+  renderSecEvents(p.secId);
+  if(p.secId!==_eventModalSecId&&_eventModalSecId)renderSecEvents(_eventModalSecId);
+  refreshTaskViewsLive();
+  showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+}
+
+// ═══════ 일정 — 범위에 따라 지우기 ═══════
+function _evDeleteApply(p,scope){
+  const arr=getEvents(p.dateKey,p.secId);
+  const target=arr[p.idx];
+  if(!target){renderSecEvents(p.secId);return;}
+  beforeSave();
+  const rid=target.rid;
+  let root=_evRepRootOf(rid);
+  if(!root&&target.repeat&&_repRule(target.repeat))root={k:p.dateKey,secId:p.secId,idx:p.idx,ev:target};
+
+  if(scope==='one'){
+    if(root){
+      _repAddEx(root.ev,p.occ);
+      // 그 날에 따로 세워 둔 것이 있으면 그것도 치운다
+      if(root.ev!==target)arr.splice(p.idx,1);
+    } else {
+      arr.splice(p.idx,1);
+    }
+  } else if(scope==='future'){
+    if(!root||p.occ<=root.k){
+      if(rid)_repPurgeEvents(rid,null,false);
+      else arr.splice(p.idx,1);
+    } else {
+      root.ev.repeat.until=_dayKeyBefore(p.occ);
+      _repPurgeEvents(rid,p.occ,true);
+    }
+  } else { // all
+    if(rid)_repPurgeEvents(rid,null,false);
+    else arr.splice(p.idx,1);
+  }
+  save();
+  renderSecEvents(p.secId);
+  refreshTaskViewsLive();
+  showToast(scope==='one'?'이 날짜만 지웠어요':scope==='future'?'이 날짜부터 앞으로 지웠어요':'반복 전체를 지웠어요');
+}
+
+// ═══════ 할일 — 범위에 따라 지우기 ═══════
+function _taskDeleteAt(type,secId,idx){
+  const k=tKey();   // ⚠️ 묻는 동안 날짜를 넘길 수 있다 — 여기서 붙잡아 둔다
+  const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item){renderSecBody(secId);return;}
+  if(!item.rid){
+    beforeSave();
+    const removed=arr.splice(idx,1)[0];
+    sendToTrash(k,type,secId,removed);
+    save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
+    return;
+  }
+  _repScopeAsk({
+    kind:'task',mode:'delete',
+    onPick:sc=>_taskDeleteApply(type,secId,idx,sc,k),
+    onCancel:()=>renderSecBody(secId)   // 스와이프로 밀어 둔 줄을 제자리로
+  });
+}
+function _taskDeleteApply(type,secId,idx,scope,dayKey){
+  const k=dayKey||tKey();
+  const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item){renderSecBody(secId);return;}
+  const rid=item.rid;
+  const root=_taskRepRootOf(rid);
+  beforeSave();
+  if(scope==='one'){
+    if(root&&root.item===item){
+      // 규칙을 들고 있는 원본이다 — 지우면 묶음이 통째로 사라지므로 감추기만 한다
+      _repAddEx(item,k);
+    } else {
+      const removed=arr.splice(idx,1)[0];
+      sendToTrash(k,type,secId,removed);
+      if(root)_repAddEx(root.item,k);
+    }
+  } else if(scope==='future'){
+    if(!root||k<=root.k){
+      _repPurgeTasks(rid,null,false);
+    } else {
+      if(!root.item.repeat)root.item.repeat=_taskRepDefault();
+      root.item.repeat.until=_dayKeyBefore(k);
+      _repPurgeTasks(rid,k,false);
+    }
+  } else {
+    _repPurgeTasks(rid,null,false);
+  }
+  save();
+  if(tKey()===k)renderSecBody(secId);else renderToday();
+  updateTotal();refreshTaskViewsLive();
+  showToast(scope==='one'?'이 날짜만 지웠어요':scope==='future'?'이 날짜부터 앞으로 지웠어요':'반복 전체를 지웠어요');
+}
+
+// ═══════ 할일 — 글자를 고쳤을 때 범위 묻기 ═══════
+// 할일 글자는 화면에서 바로 고쳐지므로(누를 때마다 저장) 이미 이 날짜의 것은
+// 새 글자다. 여기서는 "다른 날짜에도 옮길까"만 정한다.
+function _taskTextCommit(type,secId,idx,oldText,newText){
+  if(oldText===newText)return;
+  const k=tKey();   // ⚠️ 묻는 동안 날짜를 넘길 수 있다 — 여기서 붙잡아 둔다
+  const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item||!item.rid)return;
+  if(!newText.trim())return;   // 빈 칸은 삭제 흐름이 따로 있다
+  _repScopeAsk({
+    kind:'task',mode:'edit',
+    onPick:sc=>_taskTextApply(type,secId,idx,oldText,newText,sc,k)
+  });
+}
+function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
+  const k=dayKey||tKey();
+  const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item)return;
+  const rid=item.rid;
+  const root=_taskRepRootOf(rid);
+  beforeSave();
+  if(scope==='one'){
+    if(root&&root.item===item){
+      // 원본의 글자를 그대로 두고, 이 날짜에만 따로 서는 할일을 만든다
+      item.text=oldText;
+      _repAddEx(item,k);
+      const one={text:newText,done:false};
+      if(item.flag)one.flag=true;
+      if(item.contactTask)one.contactTask=true;
+      arr.splice(idx+1,0,one);
+    } else {
+      delete item.rid;      // 묶음에서 떼어 낸다 — 이 날짜만의 할일이 된다
+      delete item.daily;
+      if(root)_repAddEx(root.item,k);
+    }
+  } else if(scope==='future'){
+    if(!root||k<=root.k){
+      if(root)root.item.text=newText;
+      item.text=newText;
+    } else {
+      // 원본은 어제까지, 오늘부터는 새 묶음
+      if(!root.item.repeat)root.item.repeat=_taskRepDefault();
+      root.item.repeat.until=_dayKeyBefore(k);
+      const rule=_taskRepDefault();
+      const oldRule=root.item.repeat;
+      rule.daily=oldRule.daily;rule.daysOfWeek=(oldRule.daysOfWeek||[0,1,2,3,4,5,6]).slice();
+      rule.weekly=oldRule.weekly;rule.weeksOfMonth=(oldRule.weeksOfMonth||[1,2,3,4,5]).slice();
+      _repPurgeTasks(rid,_dayKeyAfter(k),false);
+      item.rid=_newRid();
+      item.repeat=rule;
+      item.daily=true;
+      item.text=newText;
+    }
+  } else { // all
+    if(root)root.item.text=newText;
+    _taskRepInstances(rid,todayKey()).forEach(e=>{e.item.text=newText;});
+    item.text=newText;
+  }
+  save();
+  if(tKey()===k)renderSecBody(secId);else renderToday();
+  updateTotal();refreshTaskViewsLive();
+  showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+}
+function _dayKeyAfter(k){
+  const[y,m,d]=k.split('-').map(Number);
+  const dt=new Date(y,m-1,d);dt.setDate(dt.getDate()+1);
+  return `${dt.getFullYear()}-${z(dt.getMonth()+1)}-${z(dt.getDate())}`;
 }
 
 function moveTaskTo(days){
@@ -31347,7 +31913,9 @@ function renderWeekly(hostEl){
       h+=`<div class="wc${cellCls}" style="cursor:pointer" data-k="${k}" data-sec="${sec.id}" onclick="goToDate('${k}')">`;
 
       if(wmMode==='todo'){
-        const bigs=ST.days[k]?.big?.[sec.id]||[];const sms=ST.days[k]?.small?.[sec.id]||[];
+        // 앞날 칸에는 아직 만들어지지 않은 반복 할일도 비춰 준다 (저장은 안 한다 —
+        // 그 날짜를 실제로 펼쳐 볼 때 만들어진다)
+        const bigs=getDisplayTasks(k,sec.id,'big');const sms=getDisplayTasks(k,sec.id,'small');
         bigs.slice(0,2).forEach(b=>{if(b.text)h+=`<div class="wbig${b.done?' done':''}${b.flag?' wbig-flag':''}">${renderTaskTextHTML(b.text)}</div>`;});
         sms.slice(0,2).forEach(s=>h+=`<div class="wsm${s.done?' done':''}">${renderTaskTextHTML(s.text)}</div>`);
         const more=(bigs.length>2?bigs.length-2:0)+(sms.length>2?sms.length-2:0);
@@ -32027,8 +32595,9 @@ function renderMonthly(){
     const k=`${y}-${z(m+1)}-${z(d)}`;const day=ST.days[k];
     const isT=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
     const isSun=(d-1+fd)%7===0&&ST.settings.sundayRed!==false;
-    const bigs=SECS.flatMap(s=>day?.big?.[s.id]||[]).filter(b=>b.text?.trim());
-    const smt=SECS.reduce((a,s)=>a+(day?.small?.[s.id]?.length||0),0);
+    // 앞날 칸에는 아직 만들어지지 않은 반복 할일도 함께 센다 (저장은 안 한다)
+    const bigs=SECS.flatMap(s=>getDisplayTasks(k,s.id,'big')).filter(b=>b.text?.trim());
+    const smt=SECS.reduce((a,s)=>a+getDisplayTasks(k,s.id,'small').length,0);
     const wdiff=weeksFromToday(cellDate);
     let cellCls;
     if(wdiff===0){cellCls=isT?' mct':' mct-2';}
@@ -34096,8 +34665,10 @@ function _doCarry(scopeFilter){
       if(day.big)day.big[sec.id]=bigs.filter(b=>b.done||!b.text?.trim());
       if(day.small)day.small[sec.id]=smalls.filter(s=>s.done||!s.text?.trim());
       const tB=getBigs(todayK,sec.id),tS=getSmalls(todayK,sec.id);
-      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.flag)it.flag=true;if(b.contactTask)it.contactTask=true;tB.push(it);});
-      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.flag)it.flag=true;if(s.contactTask)it.contactTask=true;tS.push(it);});
+      // rid(반복 묶음 이름표)를 함께 옮긴다 — 안 그러면 오늘 실체가 또 만들어져
+      // 같은 할일이 두 줄로 보인다. repeat(규칙)은 원본에만 있으므로 안 옮긴다.
+      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.rid&&!_isRepRoot(b))it.rid=b.rid;if(b.flag)it.flag=true;if(b.contactTask)it.contactTask=true;tB.push(it);});
+      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.rid&&!_isRepRoot(s))it.rid=s.rid;if(s.flag)it.flag=true;if(s.contactTask)it.contactTask=true;tS.push(it);});
     });
   });
   return{movedCount,dayCount:pastKeys.length};
