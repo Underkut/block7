@@ -37,9 +37,10 @@ console.log('\n시나리오 2 — 실제로 돌려 본다 (HB 가 준 예 그대
   const box = {};
   // 등급은 흉내만 낸다 — 이 시험의 관심사는 **고르는 순위**이지 등급표가 아니다.
   const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
-  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE',
+  const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
                src + ';box.cut=_ptCutTitle;box.at=_ptCutPoint;')
-    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 });
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
 
   // ③ 주어 뒤 — HB 가 준 바로 그 예
   sc.eq('주어 뒤에서 끊는다',
@@ -78,6 +79,47 @@ console.log('\n시나리오 2 — 실제로 돌려 본다 (HB 가 준 예 그대
   // 낱말이 하나뿐이면 가를 수 없다
   sc.eq('한 낱말은 그대로', box.cut('은혜'), ['은혜']);
   sc.eq('빈 값은 빈 배열', box.cut(''), []);
+}
+
+console.log('\n시나리오 2-2 — 끊으면 말이 두 동강 나는 자리 (v26-0913-5, HB)');
+{
+  // HB 26-0913 신고 —
+  //   "현재: 세는 것조차 잊을/만큼        선호: 세는 것조차/잊을 만큼"
+  //   "현재: 용서하라/하신 주님을 신뢰합니다  선호: 용서하라 하신 주님을/신뢰합니다"
+  // 둘 다 **꾸미는 말과 꾸밈 받는 말이 갈라진** 경우다.
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_CUT_COMMA='),
+                            SRC_DEV.indexOf('// 줄 배열을 화면에 얹는다.'));
+  const box = {};
+  const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
+  const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+               src + ';box.cut=_ptCutTitle;box.glued=_ptGlued;')
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+
+  // 나 — 의존명사('만큼'·'것조차')는 앞말과 떼지 않는다
+  sc.eq('의존명사를 떼어내지 않는다',
+        box.cut('세는 것조차 잊을 만큼'), ['세는 것조차', '잊을 만큼']);
+  // 다 — 인용한 말과 인용동사('용서하라 하신')는 붙어 있다
+  // 가 — 관형형('하신')은 꾸밈 받는 말('주님을')과 붙어 있다
+  sc.eq('인용과 인용동사를 떼지 않는다',
+        box.cut('용서하라 하신 주님을 신뢰합니다'), ['용서하라 하신 주님을', '신뢰합니다']);
+
+  // 자리 판정 자체도 확인한다
+  sc.eq("'잊을 | 만큼' 은 붙은 자리", box.glued(['잊을', '만큼'], 0), true);
+  sc.eq("'세는 | 것조차' 도 붙은 자리", box.glued(['세는', '것조차'], 0), true);
+  sc.eq("'용서하라 | 하신' 도 붙은 자리", box.glued(['용서하라', '하신'], 0), true);
+  sc.eq("'하신 | 주님을' 도 붙은 자리", box.glued(['하신', '주님을'], 0), true);
+  // ⚠️ 우연히 같은 글자로 시작하는 말은 걸리면 안 된다
+  sc.eq("'수많은' 은 의존명사가 아니다", box.glued(['받은', '수많은'], 0), false);
+  sc.eq("'바라보는' 도 아니다", box.glued(['주를', '바라보는'], 0), false);
+  // ⚠️ '내게'(나에게)가 보조용언 '내다'로 걸리면 쉼표 규칙까지 깨진다
+  sc.eq("'내게' 는 보조용언이 아니다", box.glued(['목자시니,', '내게'], 0), false);
+  sc.eq('그래서 쉼표 규칙이 그대로 산다',
+        box.cut('주는 나의 목자시니, 내게 부족함이 없으리로다'),
+        ['주는 나의 목자시니,', '내게 부족함이 없으리로다']);
+
+  // 빼고 나서 하나도 안 남으면 예전처럼 전부에서 고른다 — 안 끊기는 일은 없다
+  sc.eq('막다른 골목에서도 끊는다', box.cut('잊을 만큼').length, 2);
 }
 
 console.log('\n시나리오 3 — 한 줄에 들어가면 끊지 않는다 (앉혀 보고 정한다)');
