@@ -105,8 +105,10 @@ console.log('\n시나리오 3-2 — 본문 줄바꿈 규칙 (v26-0901-6, HB)');
   //       명제까지 억지로 갈라 되돌렸다)
   sc.eq('그려진 첫 줄로 잰다', fn.includes("_ptLen(lines[0]||'')>_PT_LINE_MAX"), true);
   sc.eq('본문 전체로 재지 않는다', fn.includes('_ptLen(raw)>_PT_LINE_MAX'), false);
-  // '두 줄 이하' 는 조건 — 저절로 길게 흐르는 명제는 안 건드린다
-  sc.eq('두 줄 이하일 때만', fn.includes('lines.length<=2&&'), true);
+  // ⚠️ v26-0913-4, HB — '두 줄 이하' 조건을 없앴다. "규칙이 전혀 안 걸린다" 는
+  //    신고의 절반이 이것이었다 — 세 줄 넘게 흐르는 명제는 첫 줄이 아무리 길어도
+  //    손대지 않아서, 정작 가장 읽기 힘든 긴 명제가 통째로 빠져 있었다.
+  sc.eq('두 줄 이하 조건은 없앴다', fn.includes('lines.length<=2&&'), false);
   // 가르는 규칙은 **한 벌**만 쓴다 (대표 문구와 같은 함수·같은 점수표)
   sc.eq('같은 가르개를 쓴다', fn.includes('const cut=_ptWrapTitle(raw);'), true);
   // 줄이 하나 늘면 예전 크기로는 넘칠 수 있다 → 크기를 다시 고른다
@@ -563,8 +565,14 @@ console.log('\n시나리오 17 — 타일뷰의 갈래 탭과 명제 표시 (v26
   sc.eq('높이를 최소로', /\.vg-tabrow\{[^}]*padding:0 12px 4px;/.test(SRC_DEV), true);
 }
 
-console.log('\n시나리오 18 — 대표 문구 줄바꿈 규칙 (v26-0901-3, HB)');
+console.log('\n시나리오 18 — 명제 **본문** 가르개 (v26-0901-3 / v26-0913-4, HB)');
 {
+  // ⚠️ v26-0913-4 — 이 가르개(_ptWrapTitle)는 이름과 달리 **본문의 것**이다.
+  //    만들 때 대표 문구에 걸었다가 본문으로 옮겼는데 대표 문구 쪽을 떼지 않아
+  //    두 곳이 같은 함수를 쓰고 있었다. 이제 부르는 곳은 _vfLayoutPropText 뿐이고,
+  //    대표 문구는 _ptCutTitle() 이라는 제 규칙을 쓴다 (tests/test_prop_wrap.js).
+  sc.eq('대표 문구는 더 이상 이 가르개를 쓰지 않는다',
+        /_vfRenderPropTitle\(v\)\{[\s\S]{0,1600}_ptWrapTitle\(/.test(SRC_DEV), false);
   // HB — "첫줄 글자수가 스페이스 제외 30자가 넘으면 가장 점수 높은 곳에서 1회
   //       줄바꿈. 그 뒤 한 줄이 또 30자를 넘거나 두 줄 차이가 10자를 넘으면
   //       긴 줄을 또 1회 줄바꿈."
