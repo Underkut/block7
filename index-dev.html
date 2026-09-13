@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0913-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0913-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4920,7 +4920,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0913-1";
+const APP_VERSION = "v. 26-0913-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9253,15 +9253,7 @@ async function verseSyncAllNow(){
   const colls=getVerseCollections();
   let added=0,restored=0,updated=0,removed=0,blocked=0,sheets=0,subs=0,fails=0;
   const today=todayKey();
-  const byCat=new Map(); // 대분류별 집계 합산 — 결과 화면에서 보여준다
-  const _mergeCat=m=>{
-    if(!m)return;
-    m.forEach((v,k)=>{
-      if(!byCat.has(k))byCat.set(k,{added:0,restored:0,updated:0,removed:0});
-      const t=byCat.get(k);
-      t.added+=v.added;t.restored+=v.restored;t.updated+=v.updated;t.removed+=v.removed;
-    });
-  };
+  const groups=[]; // 모음 × 시트(또는 구독)별 내역 — 결과 화면에서 보여준다
   try{
     // ⚠️⚠️ v26-0901-3, HB — "너무 오래 걸린다. 앞으로 자료는 훨씬 더 쌓일 텐데."
     //    실측해 보니 앱이 하는 일(읽기·반영·저장)은 명제 300개에 **0.03초**다.
@@ -9288,7 +9280,8 @@ async function verseSyncAllNow(){
         if(!items.length){fails++;continue;}
         const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
         added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed;
-        blocked+=r.blocked||0;_mergeCat(r.byCat);
+        blocked+=r.blocked||0;
+        groups.push({coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0});
         g.lastSync=today;sheets++;
       }
       // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
@@ -9302,7 +9295,8 @@ async function verseSyncAllNow(){
           if(doc.exists){
             const d=doc.data();
             const r=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
-            added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed||0;_mergeCat(r.byCat);
+            added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed||0;
+            groups.push({coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0});
             c.importName=d.name||c.importName;
             c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
             if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
@@ -9320,7 +9314,7 @@ async function verseSyncAllNow(){
   hideBusyToast();
   if(!sheets&&!subs){showToast('업데이트할 구글 시트나 구독이 없어요');return;}
   const src=[sheets&&`구글 시트 ${sheets}개`,subs&&`구독 ${subs}개`].filter(Boolean).join(' · ');
-  showSyncResultModal({src,added,restored,updated,removed,blocked,fails,byCat});
+  showSyncResultModal({src,added,restored,updated,removed,blocked,fails,groups});
 }
 // ── 하루 시작 시간 자동 동기화 ──
 // 하루 시작 시간(dayStartHour)에 앱이 켜져 있으면 그때, 안 켜져 있었으면
@@ -9331,6 +9325,7 @@ async function runVerseSheetAutoSync(){
   if(!colls.length)return;
   const today=todayKey();
   let changed=false,ran=0,tAdded=0,tRestored=0,tUpdated=0,tRemoved=0;
+  const groups=[]; // 모음 × 시트별 내역 — 결과 화면에서 보여준다
   for(const c of colls){
     for(const g of (c.google||[])){
       if(!g.autoSync||g.lastSync===today)continue;
@@ -9340,10 +9335,11 @@ async function runVerseSheetAutoSync(){
       if(!_sheetRowsSane(rows).ok)continue;
       const items=_rowsToItems(rows);
       if(!items.length)continue;
-      const {added,restored,updated,removed}=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
+      const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
       g.lastSync=today;
       changed=true;ran++;
-      tAdded+=added;tRestored+=restored;tUpdated+=updated;tRemoved+=removed;
+      tAdded+=r.added;tRestored+=r.restored;tUpdated+=r.updated;tRemoved+=r.removed;
+      groups.push({coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0});
     }
   }
   if(changed){
@@ -9352,13 +9348,17 @@ async function runVerseSheetAutoSync(){
     if(typeof renderVerseBar==='function')renderVerseBar();
     _afterActiveVersesChanged&&_afterActiveVersesChanged();
   }
-  // 오늘 실제로 받아온 게 있으면 결과를 한 줄로 알린다 (변경이 없어도 알려준다)
-  if(ran){
-    const chg=[tAdded&&`${tAdded}개 추가`,tRestored&&`${tRestored}개 되살아남`,tUpdated&&`${tUpdated}개 수정`,tRemoved&&`${tRemoved}개 휴지통으로`].filter(Boolean).join(', ');
-    showToast(chg?`구글 시트 ${ran}개 — ${chg}`:`구글 시트 ${ran}개 — 새로운 내용이 없어요`);
+  // 공유 코드로 받은 모음도 하루 1회 업데이트 — 시트와 합쳐 한 화면으로 알린다
+  const shareRes=await runSharedCollSync();
+  const subs=shareRes.ran;
+  groups.push(...shareRes.groups);
+  // 오늘 실제로 뭔가 받아왔으면(변경이 없어도) 결과 화면을 띄운다. 자는 사이
+  // 조용히 도는 동기화라 확인 버튼 화면이 과할 수도 있지만, 무엇이 어느
+  // 모음·시트에서 바뀌었는지 놓치지 않도록 전체 업데이트와 같은 화면을 쓴다.
+  if(ran||subs){
+    const src=[ran&&`구글 시트 ${ran}개`,subs&&`구독 ${subs}개`].filter(Boolean).join(' · ');
+    showSyncResultModal({src,added:tAdded,restored:tRestored,updated:tUpdated,removed:tRemoved,groups});
   }
-  // 공유 코드로 받은 모음도 하루 1회 업데이트
-  await runSharedCollSync();
 }
 
 // ── 공유 (Firestore shared/{code}) ──
@@ -9531,22 +9531,26 @@ function _fmtSubDate(ms){
   try{const d=new Date(ms);const p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;}catch(e){return '—';}
 }
 // 공유 코드로 받은 모음들 하루 1회 자동 업데이트
+// 결과를 스스로 알리지 않고 {ran,groups} 로 돌려준다 — 부르는 쪽(현재
+// runVerseSheetAutoSync 하나뿐)이 시트 결과와 합쳐 한 화면으로 보여준다.
 async function runSharedCollSync(){
   const colls=getVerseCollections();
-  if(!colls.length)return;
+  const groups=[];
+  if(!colls.length)return{ran:0,groups};
   const today=todayKey();
-  let changed=false,sRan=0,sAdded=0,sRestored=0,sUpdated=0;
+  let changed=false,sRan=0;
   for(const c of colls){
     if(!c.importCode||c.lastShareSync===today)continue;
     try{
       const doc=await window._fbDB.collection('shared').doc(c.importCode).get();
       if(doc.exists){
         const d=doc.data();
-        const {added,restored,updated}=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
+        const r=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
         c.importName=d.name||c.importName;
         c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
         if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
-        sAdded+=added;sRestored+=restored;sUpdated+=updated;sRan++;
+        groups.push({coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0});
+        sRan++;
       }
       c.lastShareSync=today;changed=true;
     }catch(e){/* 조용히 넘김 */}
@@ -9558,10 +9562,7 @@ async function runSharedCollSync(){
     if(typeof renderSubButtons==='function')renderSubButtons();
     _afterActiveVersesChanged&&_afterActiveVersesChanged();
   }
-  if(sRan){
-    const chg=[sAdded&&`${sAdded}개 추가`,sRestored&&`${sRestored}개 되살아남`,sUpdated&&`${sUpdated}개 수정`].filter(Boolean).join(', ');
-    showToast(chg?`구독 ${sRan}개 — ${chg}`:`구독 ${sRan}개 — 새로운 내용이 없어요`);
-  }
+  return{ran:sRan,groups};
 }
 
 function getVerseByIdx(idx){
@@ -35707,6 +35708,9 @@ function _appConfirmResolve(ok){
 function _escHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// r.groups = [{coll, source, byCat:Map<cat,{added,restored,updated,removed}>, blocked}]
+// 한 그룹 = 말씀 모음 하나 × 시트(또는 구독) 하나. 자동 동기화·전체 업데이트 둘 다
+// 이 모양으로 넘긴다 — "시트 3개 중 어느 것이 바뀌었나"가 한눈에 보이도록.
 function showSyncResultModal(r){
   const ov=document.getElementById('syncResultOverlay');
   const md=document.getElementById('syncResultModal');
@@ -35728,28 +35732,41 @@ function showSyncResultModal(r){
     if(r.updated)tot.push(`수정 ${r.updated}구절`);
     if(r.removed)tot.push(`휴지통 ${r.removed}구절`);
     lines.push(`<div style="font-weight:600;margin-bottom:8px;">${tot.join(' · ')}</div>`);
-    // 대분류(카테고리)별 내역 — 바뀐 게 있는 것만 보여준다
-    const cats=[...(r.byCat instanceof Map?r.byCat:new Map())]
-      .filter(([,v])=>v.added||v.restored||v.updated||v.removed)
-      .sort((a,b)=>(b[1].added+b[1].restored+b[1].updated+b[1].removed)-(a[1].added+a[1].restored+a[1].updated+a[1].removed));
-    if(cats.length){
+    // 모음 × 시트별 내역 — 바뀐 게 있는 그룹만, 변화량이 큰 순서로
+    const groups=(r.groups||[]).filter(g=>{
+      const cats=[...(g.byCat instanceof Map?g.byCat:new Map())];
+      return g.blocked||cats.some(([,v])=>v.added||v.restored||v.updated||v.removed);
+    }).sort((a,b)=>_syncGroupWeight(b)-_syncGroupWeight(a));
+    if(groups.length){
       lines.push('<div style="border-top:1px solid var(--bd,#3332);margin:6px 0 8px;"></div>');
-      cats.forEach(([cat,v])=>{
-        const parts=[];
-        if(v.added)parts.push(`+${v.added}`);
-        if(v.restored)parts.push(`복원 ${v.restored}`);
-        if(v.updated)parts.push(`수정 ${v.updated}`);
-        if(v.removed)parts.push(`휴지통 ${v.removed}`);
-        lines.push(`<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0;">
-          <span style="color:var(--tx);">${_escHtml(cat)}</span>
-          <span style="color:var(--tx3);white-space:nowrap;">${parts.join(', ')}</span>
+      groups.forEach(g=>{
+        lines.push(`<div style="font-size:11px;font-weight:700;margin:8px 0 3px;">
+          <span style="color:var(--ac,var(--accent,#c8752e));">${_escHtml(g.coll||'말씀 모음')}</span>
+          <span style="color:var(--tx3);font-weight:500;"> · ${_escHtml(g.source||'')}</span>
         </div>`);
+        const cats=[...(g.byCat instanceof Map?g.byCat:new Map())]
+          .filter(([,v])=>v.added||v.restored||v.updated||v.removed)
+          .sort((a,b)=>_syncCatWeight(b[1])-_syncCatWeight(a[1]));
+        cats.forEach(([cat,v])=>{
+          const parts=[];
+          if(v.added)parts.push(`+${v.added}`);
+          if(v.restored)parts.push(`복원 ${v.restored}`);
+          if(v.updated)parts.push(`수정 ${v.updated}`);
+          if(v.removed)parts.push(`휴지통 ${v.removed}`);
+          lines.push(`<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0 2px 10px;font-size:12.5px;">
+            <span style="color:var(--tx);">${_escHtml(cat)}</span>
+            <span style="color:var(--tx3);white-space:nowrap;">${parts.join(', ')}</span>
+          </div>`);
+        });
+        if(g.blocked){
+          lines.push(`<div style="padding:2px 0 2px 10px;font-size:12px;color:var(--danger,#e5484d);">⚠ 정리 보류 ${g.blocked}구절</div>`);
+        }
       });
     }
   }
   if(r.blocked){
     lines.push(`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd,#3332);color:var(--danger,#e5484d);font-size:12px;line-height:1.6;">
-      ⚠ ${r.blocked}구절이 시트에서 사라진 것으로 보여 정리를 보류했어요.<br>말씀 모음 편집에서 확인해주세요.
+      ⚠ 시트에서 사라진 것으로 보이는 구절이 있어 정리를 보류했어요.<br>말씀 모음 편집에서 확인해주세요.
     </div>`);
   }
   if(r.fails){
@@ -35757,6 +35774,12 @@ function showSyncResultModal(r){
   }
   body.innerHTML=lines.join('');
   ov.style.display='block';md.style.display='block';
+}
+function _syncCatWeight(v){return(v.added||0)+(v.restored||0)+(v.updated||0)+(v.removed||0);}
+function _syncGroupWeight(g){
+  let w=(g.blocked||0)*1000; // 정리 보류는 맨 위로
+  (g.byCat instanceof Map?g.byCat:new Map()).forEach(v=>{w+=_syncCatWeight(v);});
+  return w;
 }
 function closeSyncResultModal(){
   const ov=document.getElementById('syncResultOverlay');
