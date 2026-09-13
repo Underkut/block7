@@ -174,8 +174,10 @@ console.log('\n시나리오 5-2 — 타이틀 크기는 본문 줄 수를 따라
   // 그리는 차례상 타이틀이 먼저다 → 본문을 앉힌 **뒤** 다시 잡는다
   sc.eq('크기를 잡는 함수가 따로 있다', SRC_DEV.includes('function _vfSizePropTitle(n){'), true);
   sc.eq('처음엔 기준으로 잡는다', SRC_DEV.includes('_vfSizePropTitle(_PT_LINE_BASE);'), true);
+  // v26-0913-6 — 크기를 다시 잡은 뒤 **줄도 다시 정한다**(_ptRelines). 그래서
+  // 판정을 변수로 받는 모양이 됐다. 본문 줄 수로 다시 잡는 것은 그대로다.
   sc.eq('앉힌 뒤 줄 수로 다시 잡는다',
-        SRC_DEV.includes("if(_vfSizePropTitle((el._lines||[]).length)){"), true);
+        SRC_DEV.includes("const ptSized=_vfSizePropTitle((el._lines||[]).length);"), true);
   // ⚠️ 다시 앉히는 것은 **한 번만** — 되풀이하면 오락가락한다
   const br = SRC_DEV.slice(SRC_DEV.indexOf("if(el.classList.contains('prop')){"),
                            SRC_DEV.indexOf('_vfApplyPropAlign();'));

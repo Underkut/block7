@@ -20,7 +20,10 @@ const sc = makeScorer();
 console.log('시나리오 1 — 규칙이 한 곳에 모여 있다');
 {
   sc.eq('쉼표 자리', SRC_DEV.includes('const _PT_CUT_COMMA=/[,，]$/;'), true);
-  sc.eq("'아니라' 자리", SRC_DEV.includes('const _PT_CUT_NOT=/아니라[,，]?$/;'), true);
+  // v26-0913-6, HB — '아닌'도 '아니라'와 같은 자리다 ('소비자가 아닌, / 하나님 나라의 투자자')
+  sc.eq("'아니라'·'아닌' 자리", SRC_DEV.includes('const _PT_CUT_NOT=/(아니라|아닌)[,，]?$/;'), true);
+  sc.eq('비교의 보다 자리', SRC_DEV.includes('const _PT_CUT_CMP=/.보다$/;'), true);
+  sc.eq('부사어는 주어가 아니다', SRC_DEV.includes('const _PT_NOT_SUBJ='), true);
   sc.eq('주어 자리', SRC_DEV.includes('const _PT_CUT_SUBJ=/(이|가|은|는)$/;'), true);
   sc.eq('관형형 거르개가 있다', SRC_DEV.includes('const _PT_ADNOM='), true);
   sc.eq('가르개가 있다', SRC_DEV.includes('function _ptCutTitle(text){'), true);
@@ -122,19 +125,66 @@ console.log('\n시나리오 2-2 — 끊으면 말이 두 동강 나는 자리 (v
   sc.eq('막다른 골목에서도 끊는다', box.cut('잊을 만큼').length, 2);
 }
 
-console.log('\n시나리오 3 — 한 줄에 들어가면 끊지 않는다 (앉혀 보고 정한다)');
+console.log('\n시나리오 2-3 — HB 가 준 예 열 개 (v26-0913-6)');
 {
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_CUT_COMMA='),
+                            SRC_DEV.indexOf('// ── 정한 줄을 **폭을 아는 자리에서**'));
+  if (!src) throw new Error('[테스트] 대표 문구 규칙 구간을 찾지 못했어요.');
+  const box = {};
+  const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
+  const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+               src + ';box.cut=_ptCutTitle;')
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+
+  const want = [
+    // [문구, 1행, 2행, 어느 규칙이 잡는가]
+    ['세는 것조차 잊을 만큼',            '세는 것조차', '잊을 만큼',            '나: 의존명사 앞'],
+    ['하나님을 하나님 때문에',            '하나님을', '하나님 때문에',          '나: 때문에'],
+    ['내 손으로는 해하지 않겠다',         '내 손으로는', '해하지 않겠다',        '사: 지+않'],
+    ['저 사람이 아니라, 하나님 앞의 나',  '저 사람이 아니라,', '하나님 앞의 나', '①: 쉼표'],
+    ['부활이 두려움을 거둔다',            '부활이', '두려움을 거둔다',          '③: 주어'],
+    ['용서는 손해가 아니다',              '용서는', '손해가 아니다',            '바: 아니다 앞'],
+    ['예수님은 피해자가 아니셨다',        '예수님은', '피해자가 아니셨다',      '바: 아니셨다 앞'],
+    ['소비자가 아닌, 하나님 나라의 투자자','소비자가 아닌,', '하나님 나라의 투자자','①: 쉼표'],
+    ['우리의 힘보다 하나님의 선의',       '우리의 힘보다', '하나님의 선의',      '②-2: 비교의 보다'],
+    // ⚠️ HB — "1행·2행 길이 차이가 많이 나지만 이대로 유지가 좋은 예"
+    ['의무로는 만들 수 없는 사랑',        '의무로는 만들 수 없는', '사랑',       '마: 수 뒤 + 부사어는 주어가 아니다'],
+  ];
+  for (const [t, a, b, why] of want) sc.eq(`${t}  (${why})`, box.cut(t), [a, b]);
+}
+
+console.log('\n시나리오 3 — 정한 줄이 화면에 실제로 반영된다 (v26-0913-6, HB)');
+{
+  // ⚠️⚠️ HB 26-0913 신고 — "쉼표 규칙, '아니라' 규칙이 왜 적용이 안 됐지?"
+  //    규칙이 안 걸린 게 아니라 **정한 줄이 화면에 반영되지 않았다.** 차례 탓이다:
+  //    대표 문구를 그리는 때에는 아직 상자 폭이 안 잡혀 "한 줄에 들어간다"고
+  //    잘못 읽었고, 그 뒤 _vfSizePropTitle 이 글자 크기를 바꾸는데 거기서
+  //    줄을 다시 정하는 곳이 없었다. 그래서 브라우저가 아무 자리에서나 접었다.
+  sc.eq('줄을 다시 정하는 함수가 있다', SRC_DEV.includes('function _ptRelines(el){'), true);
+  // 재는 것은 **글자 폭**이다 — 그려 보고 재면 아직 안 앉은 화면에서 또 틀린다
+  sc.eq('글자 폭으로 잰다',
+        /function _ptRelines\(el\)\{[\s\S]{0,900}ctx\.measureText\(t\)\.width>availW/.test(SRC_DEV), true);
+  sc.eq('상자에서 폭을 얻는다', SRC_DEV.includes('function _ptAvailW(){'), true);
+  sc.eq('아직 못 재면 손대지 않는다',
+        /function _ptRelines\(el\)\{[\s\S]{0,400}if\(availW<40\)return false;/.test(SRC_DEV), true);
+  // ⚠️ 줄이 그대로면 다시 그리지 않는다 — 타이핑 모션이 처음부터 되감긴다
+  sc.eq('줄이 같으면 다시 그리지 않는다',
+        /now\.every\(\(l,i\)=>l===want\[i\]\)\)return false;/.test(SRC_DEV), true);
+
+  // **폭을 아는 자리**(본문을 앉힌 뒤)에서 반드시 다시 정해야 한다
+  const lay = SRC_DEV.slice(SRC_DEV.indexOf("if(el.classList.contains('prop')){"),
+                            SRC_DEV.indexOf('function _vfLayoutPropText('));
+  sc.eq('본문을 앉힌 뒤 다시 정한다', lay.includes('_ptRelines(ptEl)'), true);
+  // 줄이 바뀌면 타이틀 높이가 달라진다 → 본문도 다시 앉힌다
+  sc.eq('줄이 바뀌면 본문도 다시 앉힌다', lay.includes('if(ptSized||ptRelined){'), true);
+
   const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _vfRenderPropTitle(v){'),
                            SRC_DEV.indexOf('function _vfPropInk(el){'));
-  // ⚠️ 글자 수로 셈하면 안 된다 — 글씨가 커서 일고여덟 자만 넘어도 접힌다.
-  //    한 줄로 그려 크기를 잡아 보고, **그래도 넘칠 때만** 가른다.
-  sc.eq('한 줄로 먼저 그린다', fn.includes('let lines=[t];'), true);
-  sc.eq('그려 보고 잰다', fn.includes('if(_ptDrawnLines(el)>1){'), true);
-  sc.eq('그때만 가른다', fn.includes('const cut=_ptCutTitle(t);'), true);
-  sc.eq('가른 뒤 크기를 다시 잡는다',
-        /lines=cut;\s*\n\s*_ptPaint\(el,lines,motion\);\s*\n\s*_vfSizePropTitle\(/.test(fn), true);
+  sc.eq('그릴 때도 한 번 정한다', fn.includes('_ptRelines(el);'), true);
+  sc.eq('모션을 적어 둔다(다시 그릴 때 같은 모션)', fn.includes('el._motion=motion;'), true);
   // 공유 이미지가 이 배열을 그대로 그린다
-  sc.eq('줄 배열을 남긴다', fn.includes('el._lines=lines;'), true);
+  sc.eq('줄 배열을 남긴다', fn.includes('el._lines=[t];'), true);
 }
 
 console.log('\n시나리오 4 — 우리가 정한 줄을 <br> 로 못 박는다');
