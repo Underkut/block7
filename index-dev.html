@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0913-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0913-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -768,6 +768,11 @@ header{
    공백은 white-space:pre 로 지켜야 한다 — 안 그러면 공백만 든 span 은 폭이
    0 으로 접혀 사라진다(칸이 붙어 보이는 원인). */
 .vf-ptitle.pt-motion-typing .pt-ch{display:inline-block;white-space:pre;opacity:0;animation:ptTypeIn .55s ease-out forwards;}
+/* ⚠️ 타이핑은 글자마다 상자(inline-block)를 만드는데, **상자와 상자 사이는
+   브라우저가 어디서나 끊을 수 있는 자리**다 — 글자 단위라 위의 word-break:keep-all
+   이 통하지 않는다. 두 글자 낱말의 한 글자만 다음 줄로 넘어가던 원인이 이것이다
+   (HB 26-0913 신고). 낱말을 상자로 한 번 더 묶어 낱말 안에서는 못 끊게 한다. */
+.vf-ptitle.pt-motion-typing .pt-wd{display:inline-block;}
 .vf-ptitle.pt-motion-typing .pt-ink{animation:ptInkWipe .32s var(--pt-type-end,.9s) ease-out both;}
 @keyframes ptDissolve{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ptTypeIn{from{opacity:0}to{opacity:1}}
@@ -4920,7 +4925,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0913-3";
+const APP_VERSION = "v. 26-0913-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12864,9 +12869,13 @@ function _vfLayoutPropText(el,raw,availW,availH){
   //       폰은 줄이 이미 짧아서 끊을 까닭이 없다.
   //    ⚠️ v26-0901-6 에서 이것을 '본문 전체 글자수'로 바꿨다가 되돌렸다 —
   //       폰에서 서른 자 남짓한 명제까지 억지로 갈랐다.
-  // ⚠️ '두 줄 이하' 는 그대로 조건이다 — 저절로 세 줄 넘게 흐르는 긴 명제는
-  //    건드리지 않는다 (산문을 의미 단위로 끊으면 조각이 혼자 남는다).
-  if(lines.length<=2&&_ptLen(lines[0]||'')>_PT_LINE_MAX){
+  // ⚠️ v26-0913-4, HB — '두 줄 이하' 조건을 없앴다. 이 규칙이 "전혀 걸리지
+  //    않는다" 는 신고의 절반이 이것이었다 — 세 줄 넘게 흐르는 명제는 아무리
+  //    첫 줄이 길어도 손대지 않아서, 정작 가장 읽기 힘든 긴 명제가 빠졌다.
+  //    ⚠️ 30자를 **그려진 첫 줄**로 재는 것은 그대로다 (HB 26-0913 재확인).
+  //       폰은 한 줄이 열일곱 자라 안 걸리는 것이 정상이고, 원문 글자 수로
+  //       바꾸면 우리가 끊은 덩어리를 폰이 한 번 더 접어 끝이 너덜거린다.
+  if(_ptLen(lines[0]||'')>_PT_LINE_MAX){
     const cut=_ptWrapTitle(raw);
     if(cut.length>1){
       el.innerHTML=cut.map(esc).join('<br>');
@@ -15469,7 +15478,11 @@ function _vgOpenFromRef(r){
   const b=_bookOfRef(r);
   if(b)openVerseGrid('book',b);
 }
-// ── 대표 문구 줄바꿈 (v26-0901-3, HB) ────────────────────────────────
+// ── 명제 **본문** 가르개 (v26-0901-3, HB) ───────────────────────────
+// ⚠️ v26-0913-4 — 이름과 달리 이것은 **본문의 것**이다. 만들 때 대표 문구에
+//    걸었다가(v26-0901-3~5) 본문으로 옮겼는데(v26-0901-6) 대표 문구 쪽을 떼지
+//    않아 두 곳에서 같은 함수를 쓰고 있었다. 이제 부르는 곳은 _vfLayoutPropText
+//    하나뿐이다 — 대표 문구는 _ptCutTitle() 이라는 **제 규칙**을 따로 쓴다.
 // HB — "첫줄 글자수가 스페이스 제외하고 30자가 넘으면, 기존 기본 줄바꿈 규칙에서
 //       가장 점수 높은 곳에서 1회 줄바꿈. 줄바꿈 후 한 줄이 또 30자를 넘거나
 //       두 줄의 차이가 10자를 넘으면 두 줄 중 긴 줄을 또 1회 줄바꿈."
@@ -15586,6 +15599,91 @@ function _ptDrawnLines(el){
   const lh=parseFloat(cs.lineHeight)||(parseFloat(cs.fontSize)*1.34)||1;
   return Math.max(1,Math.round(el.offsetHeight/lh));
 }
+// ── 대표 문구 줄바꿈 (v26-0913-4, HB) ────────────────────────────────
+// 대표 문구는 **의미로 끊는다.** 말씀 본문처럼 폭·균형을 저울질하지 않는다 —
+// 짧고 글씨가 커서, 균형을 보면 좋은 자리를 놓친다.
+//   HB 26-0913 — "'하나님이 우리를 사랑하시는 이유는' 은
+//                 '하나님이 / 우리를 사랑하시는 이유' 가 되면 좋겠어."
+//                "한쪽이 짧아도 나는 괜찮아. 의미로 끊는 것이 그만큼 중요해."
+// → **길이 균형은 보지 않는다.** 아래 순위에서 먼저 걸리는 자리를 그대로 쓴다.
+//     ① 쉼표 뒤  ② '아니라' 뒤  ③ 주어 뒤  ④ 본문 엔진의 등급이 가장 높은 자리
+// 한 줄에 들어가면 끊지 않고, 끊어도 **두 줄까지**다 (대표 문구는 길지 않다).
+const _PT_CUT_COMMA=/[,，]$/;
+const _PT_CUT_NOT=/아니라[,，]?$/;
+const _PT_CUT_SUBJ=/(이|가|은|는)$/;
+// ⚠️ ③ 의 걸림돌 — '사랑하시는·믿는·좋은' 같은 관형형도 은/는 으로 끝난다.
+//    이것들은 **뒤 낱말을 꾸미는** 말이라 뒤에서 끊으면 말이 두 동강 난다.
+//    사전이 없으니 끝 음절로 가린다. 빠진 것이 보이면 여기 한 줄만 늘리면 된다.
+const _PT_ADNOM=/((하|시|되|오|가|주|받|보|믿|있|없|르|느|우|추|기|나|사|지|드|쓰|듣|먹)는|(작|좋|같|많|적|깊|높|낮|넓|밝|않)은)$/;
+// ⚠️ ③ 은 본문 엔진을 **일부러 거스른다.** 엔진은 조사 '이/가/은/는' 을
+//    '끊지 말 것'(_VF_NO_TRANS)으로 보는데, 그게 말씀에서는 옳지만 대표 문구에서는
+//    HB 가 바로 그 자리를 원한다. 그래서 ③ 은 등급을 묻지 않고 먼저 고른다.
+// 낱말 사이 한 자리를 고른다. 못 고르면 -1.
+function _ptCutPoint(words){
+  const n=words.length;
+  if(n<2)return -1;
+  // 같은 순위의 자리가 여럿일 때만 가운데에 가까운 것으로 — 순위를 어기지 않는
+  // 선에서의 저울질이다 (순위가 다르면 길이는 보지 않는다).
+  const mid=(n-1)/2;
+  const pick=test=>{
+    let best=-1;
+    for(let i=0;i<n-1;i++){
+      if(!test(words[i]))continue;
+      if(best<0||Math.abs(i-mid)<Math.abs(best-mid))best=i;
+    }
+    return best;
+  };
+  let at=pick(w=>_PT_CUT_COMMA.test(w));            // ① 쉼표 뒤
+  if(at<0)at=pick(w=>_PT_CUT_NOT.test(w));          // ② '아니라' 뒤
+  if(at<0){                                          // ③ 주어 뒤 — 앞에서부터 첫 자리
+    for(let i=0;i<n-1;i++){
+      if(_PT_CUT_SUBJ.test(words[i])&&!_PT_ADNOM.test(words[i])){at=i;break;}
+    }
+  }
+  if(at<0){                                          // ④ 등급이 가장 높은 자리
+    let bs=-1;
+    for(let i=0;i<n-1;i++){
+      const s=_PT_BREAK_SCORE[_vfBreakClass(words[i],words[i+1])]||0;
+      if(s>bs||(s===bs&&at>=0&&Math.abs(i-mid)<Math.abs(at-mid))){bs=s;at=i;}
+    }
+  }
+  return at;
+}
+// 대표 문구를 두 줄로 가른다 (한 낱말뿐이면 그대로).
+function _ptCutTitle(text){
+  const t=String(text||'').trim();
+  if(!t)return[];
+  const w=t.split(/\s+/).filter(Boolean);
+  const at=_ptCutPoint(w);
+  if(at<0)return[t];
+  return[w.slice(0,at+1).join(' '),w.slice(at+1).join(' ')];
+}
+// 줄 배열을 화면에 얹는다.
+// ⚠️ 우리가 정한 줄을 <br> 로 **못 박는다.** 그러지 않으면 브라우저가 폭에 맞춰
+//    제 마음대로 한 번 더 접어, 의도한 자리와 보이는 자리가 달라진다.
+function _ptPaint(el,lines,motion){
+  if(motion==='typing'){
+    const chars=Array.from(lines.join('')).length;
+    // 사람이 치는 것처럼 보이려고 글자마다 간격을 들쭉날쭉(0.55~1.55배) 흔든다
+    // — 누적(acc)으로 더해서 흔들려도 전체 속도는 step 언저리를 유지한다.
+    const step=Math.max(55,Math.min(120,Math.round(1900/Math.max(1,chars))));
+    let acc=0;
+    const ch=c=>{
+      acc+=step*(0.55+Math.random()*1.0);
+      return `<span class="pt-ch" style="animation-delay:${Math.round(acc)}ms">${esc(c)}</span>`;
+    };
+    // ⚠️ 낱말마다 상자(.pt-wd)로 묶는다 — 글자 상자끼리는 어디서나 끊겨서
+    //    두 글자 낱말의 한 글자만 다음 줄로 넘어갔다 (HB 26-0913 신고).
+    const typed=lines.map(line=>line.split(/\s+/).filter(Boolean)
+      .map(w=>'<span class="pt-wd">'+Array.from(w).map(ch).join('')+'</span>')
+      .join(' ')).join('<br>');
+    el.style.setProperty('--pt-type-end',(Math.min(4200,Math.max(500,acc+380)))+'ms');
+    el.innerHTML='<span class="pt-w">'+typed+'</span>';
+  }else{
+    el.style.removeProperty('--pt-type-end');
+    el.innerHTML='<span class="pt-w">'+lines.map(esc).join('<br>')+'</span>';
+  }
+}
 function _vfRenderPropTitle(v){
   const el=document.getElementById('vfPTitle');
   if(!el)return;
@@ -15611,28 +15709,26 @@ function _vfRenderPropTitle(v){
   // ⚠️ 줄 배열은 **공유 이미지도 그대로 쓴다** (_shotDraw). 비워 두면 이미지에
   //    타이틀이 한 줄로 넘친다.
   el._raw=t;
-  const lines=_ptWrapTitle(t);
-  el._lines=lines;
-  if(motion==='typing'){
-    const chars=Array.from(lines.join('')).length;
-    // 사람이 치는 것처럼 보이려고 글자마다 간격을 들쭉날쭉(0.55~1.55배) 흔든다
-    // — 누적(acc)으로 더해서 흔들려도 전체 속도는 step 언저리를 유지한다.
-    const step=Math.max(55,Math.min(120,Math.round(1900/Math.max(1,chars))));
-    let acc=0;
-    const typed=lines.map(line=>Array.from(line).map(c=>{
-      acc+=step*(0.55+Math.random()*1.0);
-      return `<span class="pt-ch" style="animation-delay:${Math.round(acc)}ms">${esc(c)}</span>`;
-    }).join('')).join('<br>');
-    el.style.setProperty('--pt-type-end',(Math.min(4200,Math.max(500,acc+380)))+'ms');
-    el.innerHTML='<span class="pt-w">'+typed+'</span>';
-  }else{
-    el.style.removeProperty('--pt-type-end');
-    el.innerHTML='<span class="pt-w">'+lines.map(esc).join('<br>')+'</span>';
-  }
-  _vfPropMotionArmed=false;
-  // 본문이 몇 줄이 되는지는 아직 모르므로 **기준(3줄)** 으로 한 번 잡고,
+  // ⚠️ 한 줄에 들어가는지는 **앉혀 봐야** 안다. 글자 수로 셈하면 안 된다 —
+  //    대표 문구는 글씨가 커서 일고여덟 자만 넘어도 브라우저가 접는다.
+  //    그래서 ① 한 줄로 그려 크기를 잡아 보고 ② 그래도 넘칠 때만 가른다.
+  // 본문이 몇 줄이 되는지는 아직 모르므로 **기준(3줄)** 으로 잡고,
   // 본문을 앉힌 뒤 _vfLayoutPropText 쪽에서 다시 잡는다.
+  let lines=[t];
+  _ptPaint(el,lines,motion);
   _vfSizePropTitle(_PT_LINE_BASE);
+  if(_ptDrawnLines(el)>1){
+    const cut=_ptCutTitle(t);
+    if(cut.length>1){
+      lines=cut;
+      _ptPaint(el,lines,motion);
+      _vfSizePropTitle(_PT_LINE_BASE);
+    }
+  }
+  // ⚠️ 공유 이미지(_shotDraw)가 이 배열을 그대로 그린다. 비워 두면 이미지에만
+  //    타이틀이 한 줄로 넘친다.
+  el._lines=lines;
+  _vfPropMotionArmed=false;
   // ⚠️ 등장 모션(디졸브·타이핑)이 있으면 밑줄은 긋지 않는다 — 모션이랑
   // 안 어울린다는 HB 지시. 모션이 둘 다 꺼져 있을 때만(motion==='') 예전처럼 긋는다.
   if(!motion)_vfPropInk(el);
