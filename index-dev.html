@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0913-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0913-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4925,7 +4925,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0913-6";
+const APP_VERSION = "v. 26-0913-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15613,7 +15613,14 @@ function _ptDrawnLines(el){
 //     ① 쉼표 뒤  ② '아니라' 뒤  ③ 주어 뒤  ④ 본문 엔진의 등급이 가장 높은 자리
 // 한 줄에 들어가면 끊지 않고, 끊어도 **두 줄까지**다 (대표 문구는 길지 않다).
 const _PT_CUT_COMMA=/[,，]$/;
-const _PT_CUT_NOT=/(아니라|아닌)[,，]?$/;   // v26-0913-6, HB — '아닌'도 같은 자리다
+// ② 'A가 아니라 B' · 'A가 아닌 B' — **'아니라' 앞에서** 끊는다.
+// ⚠️ v26-0913-7, HB — 방향이 바뀌었다. 예전엔 뒤에서 끊었는데 HB 가 준 예 셋이
+//    모두 앞이었다:  '내가 듣고 싶은 말이 / 아니라'
+//                   '물의 움직임이 / 아니라…'
+//                   '그 사람을 믿어서가 / 아니라…'
+//    쉼표가 붙은 '아니라,' 는 ① 쉼표 규칙이 **먼저** 잡아 뒤에서 끊는다
+//    ('저 사람이 아니라, / 하나님 앞의 나'). 둘은 어긋나지 않는다 — 순위가 가른다.
+const _PT_CUT_NOT=/^(아니라|아닌)/;
 // v26-0913-6, HB — 비교의 '보다' ('힘보다 / 하나님의 선의').
 // ⚠️ 동사 '보다'와 가르려고 **앞에 글자가 붙어 있을 때만** 본다 (힘보다·나보다).
 const _PT_CUT_CMP=/.보다$/;
@@ -15658,6 +15665,10 @@ const _PT_QUOTE_NEXT=/^(하신|하시는|하시던|하는|하고|하며|하여|�
 const _PT_BOUND_BARE=/^(것|수|줄|바|리|만큼|뿐|따름|터|데|채|척|체|듯|양|대로|때문|나름|무렵|즈음|뻔|법)$/;
 const _PT_NOT_NEXT=/^아니/;        // 바. '손해가 / 아니다' ✗ — 서술어가 통째로 하나다
 const _PT_NEG_NEXT=/^(않|못|말)/;  // 사. '해하지 / 않겠다' ✗ — 본용언 + 부정 보조용언
+// 아. 부사 '-히' 뒤 — 바로 뒤 용언을 꾸민다 ('중히 / 여긴' ✗). v26-0913-7, HB
+// ⚠️ '-이·-게'까지 넓히지 않았다. '사랑이·같이·에게'처럼 부사가 아닌 말이 무더기로
+//    걸린다. '히'는 거의 언제나 부사다 — 넓히려면 여기 한 곳만 고치면 된다.
+const _PT_ADV=/히$/;
 function _ptGlued(words,i){
   const w=words[i],nx=words[i+1]||'';
   if(_PT_MODIFIER.test(w))return true;                              // 가
@@ -15665,8 +15676,11 @@ function _ptGlued(words,i){
   if(/(라|다|자|냐)$/.test(w)&&_PT_QUOTE_NEXT.test(nx))return true;  // 다
   if(/[어아]$/.test(w)&&_VF_AUX_NEXT.test(nx))return true;           // 라 (엔진과 같은 조건)
   if(_PT_BOUND_BARE.test(w))return true;                            // 마
-  if(_PT_NOT_NEXT.test(nx))return true;                             // 바
+  // 바 — 다만 '아니라·아닌'은 ② 가 **앞에서 끊는 자리**로 삼는다 (v26-0913-7)
+  if(_PT_NOT_NEXT.test(nx)&&!_PT_CUT_NOT.test(nx))return true;
   if(/지$/.test(w)&&_PT_NEG_NEXT.test(nx))return true;              // 사
+  if(_PT_ADV.test(w))return true;                                   // 아
+  if(/고$/.test(w)&&/^싶/.test(nx))return true;                     // 라-2 ('듣고 | 싶은')
   return false;
 }
 // 낱말 사이 한 자리를 고른다. 못 고르면 -1.
@@ -15688,8 +15702,17 @@ function _ptCutPoint(words){
     }
     return best;
   };
+  // 다음 낱말을 보고 그 **앞에서** 끊는 규칙용
+  const pickNext=test=>{
+    let best=-1;
+    for(const i of pool){
+      if(!test(words[i+1]||''))continue;
+      if(best<0||Math.abs(i-mid)<Math.abs(best-mid))best=i;
+    }
+    return best;
+  };
   let at=pick(w=>_PT_CUT_COMMA.test(w));            // ① 쉼표 뒤
-  if(at<0)at=pick(w=>_PT_CUT_NOT.test(w));          // ② '아니라'·'아닌' 뒤
+  if(at<0)at=pickNext(nx=>_PT_CUT_NOT.test(nx));    // ② '아니라'·'아닌' **앞**
   if(at<0)at=pick(w=>_PT_CUT_CMP.test(w));          // ②-2 비교의 '보다' 뒤
   if(at<0){                                          // ③ 주어 뒤 — 앞에서부터 첫 자리
     for(const i of pool){
