@@ -20,7 +20,7 @@ const sc = makeScorer();
 console.log('시나리오 1 — 규칙이 한 곳에 모여 있다');
 {
   sc.eq('쉼표 자리', SRC_DEV.includes('const _PT_CUT_COMMA=/[,，]$/;'), true);
-  // v26-0913-7, HB — '아니라'·'아닌'은 그 **앞에서** 끊는다 (방향이 바뀌었다)
+  // v26-0913-8, HB — '아니라'·'아닌' **뒤**가 기본, 맨 끝일 때만 앞에서 끊는다
   sc.eq("'아니라'·'아닌' 자리", SRC_DEV.includes('const _PT_CUT_NOT=/^(아니라|아닌)/;'), true);
   sc.eq('비교의 보다 자리', SRC_DEV.includes('const _PT_CUT_CMP=/.보다$/;'), true);
   sc.eq('부사어는 주어가 아니다', SRC_DEV.includes('const _PT_NOT_SUBJ='), true);
@@ -29,7 +29,7 @@ console.log('시나리오 1 — 규칙이 한 곳에 모여 있다');
   sc.eq('가르개가 있다', SRC_DEV.includes('function _ptCutTitle(text){'), true);
   // ④ 는 본문 엔진의 등급을 그대로 쓴다 — 점수표를 두 벌 만들지 않는다
   sc.eq('본문 엔진의 등급을 빌려 쓴다',
-        /function _ptCutPoint\(words\)\{[\s\S]{0,1600}_PT_BREAK_SCORE\[_vfBreakClass\(/.test(SRC_DEV), true);
+        /function _ptCutPoint\(words\)\{[\s\S]{0,3000}_PT_BREAK_SCORE\[_vfBreakClass\(/.test(SRC_DEV), true);
 }
 
 console.log('\n시나리오 2 — 실제로 돌려 본다 (HB 가 준 예 그대로)');
@@ -41,9 +41,10 @@ console.log('\n시나리오 2 — 실제로 돌려 본다 (HB 가 준 예 그대
   // 등급은 흉내만 낸다 — 이 시험의 관심사는 **고르는 순위**이지 등급표가 아니다.
   const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
   const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
-  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+  const NOEND = /^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT', '_VF_NOEND_WORD',
                src + ';box.cut=_ptCutTitle;box.at=_ptCutPoint;')
-    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX, NOEND);
 
   // ③ 주어 뒤 — HB 가 준 바로 그 예
   sc.eq('주어 뒤에서 끊는다',
@@ -52,13 +53,13 @@ console.log('\n시나리오 2 — 실제로 돌려 본다 (HB 가 준 예 그대
   // ⚠️ 한쪽이 아주 짧아도 그대로 둔다 (균형을 보지 않는다 — HB 확인)
   sc.eq('짧아도 무르지 않는다', box.cut('하나님이 우리를 사랑하시는 이유는')[0], '하나님이');
 
-  // ② '아니라' **앞** (v26-0913-7 에 방향이 바뀌었다 — HB 가 준 예 셋이 모두 앞)
-  sc.eq("'아니라' 앞에서 끊는다",
+  // ② '아니라' **뒤** — 부정한 것과 내세우는 것 사이를 가른다 (v26-0913-8 확정)
+  sc.eq("'아니라' 뒤에서 끊는다",
         box.cut('우리가 잘나서가 아니라 그분이 먼저 택하셨다'),
-        ['우리가 잘나서가', '아니라 그분이 먼저 택하셨다']);
+        ['우리가 잘나서가 아니라', '그분이 먼저 택하셨다']);
   // '아니라' 는 주어(③)보다 세다 — '우리가' 가 앞에 있어도 '아니라' 가 이긴다
   sc.eq("'아니라' 가 주어보다 앞선다",
-        box.cut('우리가 잘나서가 아니라 그분이 먼저 택하셨다')[1].startsWith('아니라'), true);
+        box.cut('우리가 잘나서가 아니라 그분이 먼저 택하셨다')[0].endsWith('아니라'), true);
 
   // ① 쉼표 뒤 — 가장 세다
   sc.eq('쉼표 뒤에서 끊는다',
@@ -95,9 +96,10 @@ console.log('\n시나리오 2-2 — 끊으면 말이 두 동강 나는 자리 (v
   const box = {};
   const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
   const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
-  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+  const NOEND = /^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT', '_VF_NOEND_WORD',
                src + ';box.cut=_ptCutTitle;box.glued=_ptGlued;')
-    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX, NOEND);
 
   // 나 — 의존명사('만큼'·'것조차')는 앞말과 떼지 않는다
   sc.eq('의존명사를 떼어내지 않는다',
@@ -133,9 +135,10 @@ console.log('\n시나리오 2-3 — HB 가 준 예 열 개 (v26-0913-6)');
   const box = {};
   const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
   const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
-  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+  const NOEND = /^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT', '_VF_NOEND_WORD',
                src + ';box.cut=_ptCutTitle;')
-    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX, NOEND);
 
   const want = [
     // [문구, 1행, 2행, 어느 규칙이 잡는가]
@@ -161,21 +164,25 @@ console.log('\n시나리오 2-4 — HB 가 준 예 넷 (v26-0913-7)');
   const box = {};
   const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
   const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
-  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT',
+  const NOEND = /^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT', '_VF_NOEND_WORD',
                src + ';box.cut=_ptCutTitle;')
-    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX);
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX, NOEND);
 
   // ⚠️ ② 의 방향이 바뀌었다 — '아니라' **앞**에서 끊는다.
   //    HB: "기존에 보여준 예시는 주로 '내가' 다음에 끊는 게 맞는데,
   //         이런 경우는 다른 경우로 보여."
   sc.eq('아니라 앞에서 끊는다 ①',
         box.cut('내가 듣고 싶은 말이 아니라'), ['내가 듣고 싶은 말이', '아니라']);
-  sc.eq('아니라 앞에서 끊는다 ②',
+  // ⚠️ v26-0913-8 — 이 둘은 **뒤**로 되돌렸다. HB 가 26-0913 에 준 예 다섯이
+  //    모두 '아니라 뒤'였다 ('진통제가 아니라 / 치유' 등). 앞서 이 둘을 '앞'으로
+  //    읽은 것은 HB 가 '…' 로 줄여 쓴 문구를 잘못 해석한 탓으로 본다.
+  sc.eq('아니라 뒤에서 끊는다 ②',
         box.cut('물의 움직임이 아니라 하나님의 손길이다'),
-        ['물의 움직임이', '아니라 하나님의 손길이다']);
-  sc.eq('아니라 앞에서 끊는다 ③',
+        ['물의 움직임이 아니라', '하나님의 손길이다']);
+  sc.eq('아니라 뒤에서 끊는다 ③',
         box.cut('그 사람을 믿어서가 아니라 하나님을 믿어서다'),
-        ['그 사람을 믿어서가', '아니라 하나님을 믿어서다']);
+        ['그 사람을 믿어서가 아니라', '하나님을 믿어서다']);
   // 아 — 부사 '중히'는 바로 뒤 용언('여긴')을 꾸민다
   sc.eq('부사 뒤에서 안 끊는다',
         box.cut('왕의 생명을 중히 여긴 것 같이'), ['왕의 생명을', '중히 여긴 것 같이']);
@@ -194,6 +201,85 @@ console.log('\n시나리오 2-4 — HB 가 준 예 넷 (v26-0913-7)');
         box.cut('예수님은 피해자가 아니셨다'), ['예수님은', '피해자가 아니셨다']);
 }
 
+console.log('\n시나리오 2-5 — HB 가 준 예 스무 개 (v26-0913-8)');
+{
+  const src = SRC_DEV.slice(SRC_DEV.indexOf('const _PT_CUT_COMMA='),
+                            SRC_DEV.indexOf('// ── 정한 줄을 **폭을 아는 자리에서**'));
+  const box = {};
+  const cls = w => /(고|니|며|면)$/.test(w) ? 'ok' : 'soft';
+  const AUX = /^(못|아니|말고|말라|말며|하|버리|주|지|오|가|있|없|보|놓|두|내|드리|계시|싶|만들)/;
+  const NOEND = /^(모든|각|온|새|어떤|무슨|이런|그런|저런|한|두|세|여러|큰|그|이|저|내|나의|그의|우리|너희|또|또한|곧|가장|매우)$/;
+  new Function('box', '_vfBreakClass', '_PT_BREAK_SCORE', '_VF_AUX_NEXT', '_VF_NOEND_WORD',
+               src + ';box.cut=_ptCutTitle;')
+    (box, cls, { forced: 4, must: 3, ok: 2, soft: 1, no: 0 }, AUX, NOEND);
+
+  const want = [
+    // ── 'A가 아니라 B' 는 **아니라 뒤**가 기본 ──
+    ['구원의 사다리가 아니다',        '구원의 사다리가', '아니다',        '카: -의 뒤 금지 + ③'],
+    ["'내 뜻이 아니라 주의 뜻'",      "'내 뜻이 아니라", "주의 뜻'",      '②: 아니라 뒤'],
+    ['진통제가 아니라 치유',          '진통제가 아니라', '치유',          '②: 아니라 뒤'],
+    ['시간이 아니라 은혜',            '시간이 아니라', '은혜',            '②: 아니라 뒤'],
+    ['의무가 아닌 사랑으로',          '의무가 아닌', '사랑으로',          '②: 아닌 뒤'],
+    ['익숙함이 아니라 경외',          '익숙함이 아니라', '경외',          '②: 아니라 뒤'],
+    // 맨 끝이면 뒤에 자리가 없으니 그때만 앞에서
+    ['내가 듣고 싶은 말이 아니라',    '내가 듣고 싶은 말이', '아니라',    '②: 끝이면 앞에서'],
+    // ── 부사는 제 용언과 붙는다 ──
+    ['말씀을 계속 심을 때',           '말씀을', '계속 심을 때',           '자: 부사 계속'],
+    ['받은 용서가 다시 흐를 때',      '받은 용서가', '다시 흐를 때',      '자: 부사 다시 + ③'],
+    ['성찬에서 다시 받는 용서',       '성찬에서 다시 받는', '용서',       '자: 부사 다시'],
+    ['기다림 속에서 더 깊이',         '기다림 속에서', '더 깊이',         '나: 속 + 자: 더'],
+    ['왕의 생명을 중히 여긴 것 같이', '왕의 생명을', '중히 여긴 것 같이', '아: 부사 -히'],
+    // ── 의존명사 '때' ──
+    ['은사까지 내려놓을 때',          '은사까지', '내려놓을 때',          '나: 때'],
+    ['그리스도만 주인 되실 때',       '그리스도만', '주인 되실 때',       '나: 때 + 가: 주인'],
+    ['충동에 복종할 것인가',          '충동에', '복종할 것인가',          '나: 것인가'],
+    // ── 관형형은 제 짝과 붙는다 ──
+    ['열린 눈으로 보는 십자가',       '열린 눈으로 보는', '십자가',       '가: 열린 + ④ 뒤쪽'],
+    ['굳어버린 소망을 다시',          '굳어버린 소망을', '다시',          '가: 굳어버린'],
+    ['먼저 찾아오신 예수님',          '먼저 찾아오신', '예수님',          '자: 먼저'],
+    ['네가 헤아리는 그 헤아림으로',   '네가 헤아리는', '그 헤아림으로',   '③: 관형절 안은 안 끊는다'],
+    ['받은 위로가 흘러갈 때',         '받은 위로가', '흘러갈 때',         '③: 받은은 주어가 아니다'],
+    ['아무도 나를 이해하지 못해',     '아무도 나를', '이해하지 못해',     '사: 지+못'],
+  ];
+  for (const [t, a, b, why] of want) sc.eq(`${t}  (${why})`, box.cut(t), [a, b]);
+
+  // ⚠️ 지난 규칙이 그대로 사는지 — 방향이 바뀐 ② 때문에 특히 확인한다
+  sc.eq("'아니라,' 는 쉼표가 먼저",
+        box.cut('저 사람이 아니라, 하나님 앞의 나'), ['저 사람이 아니라,', '하나님 앞의 나']);
+  sc.eq('용서는 / 손해가 아니다 는 그대로',
+        box.cut('용서는 손해가 아니다'), ['용서는', '손해가 아니다']);
+  sc.eq('예수님은 / 피해자가 아니셨다 도 그대로',
+        box.cut('예수님은 피해자가 아니셨다'), ['예수님은', '피해자가 아니셨다']);
+  sc.eq('의무로는 만들 수 없는 / 사랑 도 그대로',
+        box.cut('의무로는 만들 수 없는 사랑'), ['의무로는 만들 수 없는', '사랑']);
+  sc.eq('세는 것조차 / 잊을 만큼 도 그대로',
+        box.cut('세는 것조차 잊을 만큼'), ['세는 것조차', '잊을 만큼']);
+}
+
+console.log('\n시나리오 3-2 — 세 줄은 절대 만들지 않는다 (v26-0913-8, HB)');
+{
+  // HB — "대표 문구는 3줄 절대 하지마!! 얘기했는데 이게 무슨 일이야???"
+  // 두 줄까지만 갈라 놓고 넘치는 것은 그냥 뒀더니 브라우저가 한 번 더 접었다.
+  // → 두 줄로도 넘치면 **글자를 줄인다.**
+  sc.eq('넘치면 글자를 줄인다',
+        /while\(px>floor&&widest\(want,px\)>availW\)px-=1;/.test(SRC_DEV), true);
+  sc.eq('줄이는 바닥이 있다', SRC_DEV.includes('const floor=Math.max(9,Math.round(px*0.5));'), true);
+  sc.eq('가장 넓은 줄로 잰다',
+        /widest=\(lines,size\)=>\{[\s\S]{0,200}reduce\(\(m,l\)=>Math\.max\(m,ctx\.measureText\(l\)\.width\),0\)/.test(SRC_DEV), true);
+}
+
+console.log('\n시나리오 3-3 — 본문이 줄면 대표 문구도 함께 줄인다 (v26-0913-8, HB)');
+{
+  // HB — "본문이 엄청 길어서 폰트가 작아졌는데, 대표문구는 너무 큰 경우가 있어."
+  // 까닭 — bodyMax 는 '본문이 쓸 수 있는 가장 큰 크기'일 뿐 실제 크기가 아니다.
+  const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _vfSizePropTitle(n){'),
+                           SRC_DEV.indexOf('function _ptDrawnLines(el){'));
+  sc.eq('본문의 실제 크기를 읽는다', fn.includes("const bodyEl=document.getElementById('vfText');"), true);
+  sc.eq('명제 본문일 때만', fn.includes("bodyEl.classList.contains('prop')"), true);
+  sc.eq('줄이기만 한다(키우지 않는다)', fn.includes('shrink=Math.min(1,cur/bodyMax);'), true);
+  sc.eq('크기 계산에 곱한다', fn.includes('_ptLineK(n)*shrink'), true);
+}
+
 console.log('\n시나리오 3 — 정한 줄이 화면에 실제로 반영된다 (v26-0913-6, HB)');
 {
   // ⚠️⚠️ HB 26-0913 신고 — "쉼표 규칙, '아니라' 규칙이 왜 적용이 안 됐지?"
@@ -204,13 +290,13 @@ console.log('\n시나리오 3 — 정한 줄이 화면에 실제로 반영된다
   sc.eq('줄을 다시 정하는 함수가 있다', SRC_DEV.includes('function _ptRelines(el){'), true);
   // 재는 것은 **글자 폭**이다 — 그려 보고 재면 아직 안 앉은 화면에서 또 틀린다
   sc.eq('글자 폭으로 잰다',
-        /function _ptRelines\(el\)\{[\s\S]{0,900}ctx\.measureText\(t\)\.width>availW/.test(SRC_DEV), true);
+        /function _ptRelines\(el\)\{[\s\S]{0,1200}widest\(want,px\)>availW/.test(SRC_DEV), true);
   sc.eq('상자에서 폭을 얻는다', SRC_DEV.includes('function _ptAvailW(){'), true);
   sc.eq('아직 못 재면 손대지 않는다',
         /function _ptRelines\(el\)\{[\s\S]{0,400}if\(availW<40\)return false;/.test(SRC_DEV), true);
   // ⚠️ 줄이 그대로면 다시 그리지 않는다 — 타이핑 모션이 처음부터 되감긴다
   sc.eq('줄이 같으면 다시 그리지 않는다',
-        /now\.every\(\(l,i\)=>l===want\[i\]\)\)return false;/.test(SRC_DEV), true);
+        /if\(now\.length!==want\.length\|\|!now\.every\(\(l,i\)=>l===want\[i\]\)\)\{/.test(SRC_DEV), true);
 
   // **폭을 아는 자리**(본문을 앉힌 뒤)에서 반드시 다시 정해야 한다
   const lay = SRC_DEV.slice(SRC_DEV.indexOf("if(el.classList.contains('prop')){"),
