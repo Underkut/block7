@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0913-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0913-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4920,7 +4920,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0913-2";
+const APP_VERSION = "v. 26-0913-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10180,19 +10180,11 @@ function _initVerseBandDrag(){
   document.addEventListener('pointercancel',e=>{if(e.pointerType!=='touch')fin(true);},true);
 }
 
-function _verseBarModeFlip(){
-  const target=ST.settings.verseMode;
-  const from=target==='full'?'sneak':'full';
-  ST.settings.verseMode=from;
-  _verseModeSettle(_verseModeSession(from,target),true);
-}
-
 function onVerseBarClick(e){
   e.stopPropagation();
   const bar=document.getElementById('verseBar');
   if(bar&&bar._swipeJustHappened)return;
-  ST.settings.verseMode=ST.settings.verseMode==='full'?'sneak':'full';
-  _verseBarModeFlip();
+  openVerseFull();
 }
 
 
