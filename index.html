@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0911-1  [production]  -->
+<!-- BLOCK7  v. 26-0913-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4920,7 +4920,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0911-1";
+const APP_VERSION = "v. 26-0913-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6918,6 +6918,17 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
 </div>
 
+<!-- 말씀 모음 동기화 결과 — 토스트 대신 확인 버튼을 눌러야 닫히는 화면.
+     대분류별로 무엇이 바뀌었는지까지 보여준다. showSyncResultModal()로 사용. -->
+<div class="event-modal-overlay" id="syncResultOverlay" style="display:none;z-index:4440;" onclick="closeSyncResultModal()"></div>
+<div class="event-modal" id="syncResultModal" style="display:none;z-index:4450;width:310px;max-height:80vh;overflow-y:auto;">
+  <div style="font-size:15px;font-weight:600;color:var(--tx);text-align:center;margin-bottom:12px;">말씀 모음 동기화 결과</div>
+  <div id="syncResultBody" style="font-size:13px;line-height:1.7;color:var(--tx);"></div>
+  <div style="display:flex;margin-top:18px;">
+    <button class="settings-btn" onclick="closeSyncResultModal()" style="flex:1;border-color:var(--ac);color:var(--tx);">확인</button>
+  </div>
+</div>
+
 <!-- 시간 구간 지우기 — 보관 / 깨끗이 지우기 중에서 고른다.
      확인창이 셋으로 갈라지므로 공용 appConfirm 대신 따로 둔다. -->
 <div class="event-modal-overlay" id="secDelOverlay" style="display:none;z-index:4440;" onclick="closeSecDelModal()"></div>
@@ -8647,6 +8658,12 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   });
   const gid=(srcInfo&&srcInfo.gid)||'';
   let added=0,restored=0,updated=0,removed=0;
+  const byCat=new Map(); // 대분류별 집계 — 동기화 결과 화면에서 쓴다
+  const _bump=(cat,field)=>{
+    const k=String(cat||'나의 암송');
+    if(!byCat.has(k))byCat.set(k,{added:0,restored:0,updated:0,removed:0});
+    byCat.get(k)[field]++;
+  };
   items.forEach(it=>{
     // 명제는 장절 칸이 비어 있어도 받는다 — 구별은 명제 ID 가 한다
     if(!it.krText||(!it.ref&&!it.pid))return;
@@ -8667,7 +8684,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
     }
     if(ex){
       claimed.add(ex);
-      if(ex.del==='simple'){delete ex.del;restored++;} // 삭제 심플만 되살림
+      if(ex.del==='simple'){delete ex.del;restored++;_bump(newCat,'restored');} // 삭제 심플만 되살림
       if(gid&&ex.gid!==gid)ex.gid=gid;                 // 출처 표시 (변경으로 세지 않음)
       if(it.row&&ex.row!==it.row)ex.row=it.row;        // 시트에서의 행 번호 (변경으로 세지 않음)
       // 명제는 시트의 날짜가 **그대로 정답**이다 — 비면 비운다 (위 주석 참고).
@@ -8700,7 +8717,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
         if(refChanged)ex.ref=newRef;
         if(refsChanged){ if(newRefs.length)ex.refs=newRefs.slice(); else delete ex.refs; }
         if(booksChanged){ if(newBooks.length)ex.books=newBooks.slice(); else delete ex.books; }
-        updated++;
+        updated++;_bump(newCat,'updated');
       }
     }else{
       // ⚠️ v26-0831-18, HB 신고 — "주간 필터에 160개가 나오는데 시트에는 30개다."
@@ -8721,7 +8738,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
       byRef.get(r).push(nv);
-      added++;
+      added++;_bump(newCat,'added');
     }
   });
   // ── 시트에서 사라진 구절 정리 ──
@@ -8758,7 +8775,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
     if(!srcInfo.force&&(tooMany||tooFew)){
       blocked=doomed.length;
     }else{
-      doomed.forEach(v=>{v.del='simple';removed++;});
+      doomed.forEach(v=>{v.del='simple';removed++;_bump(v.cat,'removed');});
     }
   }
   // 파싱이 깨져 들어온 유령 구절(장절이 장절 같지 않은 구글 유래 항목) 정리.
@@ -8772,7 +8789,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       if(v.src==='google'&&v.ref&&!_looksLikeRef(v.ref))coll.verses.splice(i,1);
     }
   }
-  return{added,restored,updated,removed,blocked};
+  return{added,restored,updated,removed,blocked,byCat};
 }
 function addCustomVerseFromForm(){
   if(!_currentColl()){showToast('말씀 모음을 먼저 하나 선택한 뒤 다시 시도해주세요');return;}
@@ -9236,6 +9253,15 @@ async function verseSyncAllNow(){
   const colls=getVerseCollections();
   let added=0,restored=0,updated=0,removed=0,blocked=0,sheets=0,subs=0,fails=0;
   const today=todayKey();
+  const byCat=new Map(); // 대분류별 집계 합산 — 결과 화면에서 보여준다
+  const _mergeCat=m=>{
+    if(!m)return;
+    m.forEach((v,k)=>{
+      if(!byCat.has(k))byCat.set(k,{added:0,restored:0,updated:0,removed:0});
+      const t=byCat.get(k);
+      t.added+=v.added;t.restored+=v.restored;t.updated+=v.updated;t.removed+=v.removed;
+    });
+  };
   try{
     // ⚠️⚠️ v26-0901-3, HB — "너무 오래 걸린다. 앞으로 자료는 훨씬 더 쌓일 텐데."
     //    실측해 보니 앱이 하는 일(읽기·반영·저장)은 명제 300개에 **0.03초**다.
@@ -9262,7 +9288,7 @@ async function verseSyncAllNow(){
         if(!items.length){fails++;continue;}
         const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
         added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed;
-        blocked+=r.blocked||0;
+        blocked+=r.blocked||0;_mergeCat(r.byCat);
         g.lastSync=today;sheets++;
       }
       // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
@@ -9276,7 +9302,7 @@ async function verseSyncAllNow(){
           if(doc.exists){
             const d=doc.data();
             const r=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
-            added+=r.added;restored+=r.restored;updated+=r.updated;
+            added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed||0;_mergeCat(r.byCat);
             c.importName=d.name||c.importName;
             c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
             if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
@@ -9291,12 +9317,10 @@ async function verseSyncAllNow(){
     if(typeof renderSubButtons==='function')renderSubButtons();
     _afterActiveVersesChanged&&_afterActiveVersesChanged();
   }finally{_verseSyncBusy=false;}
+  hideBusyToast();
   if(!sheets&&!subs){showToast('업데이트할 구글 시트나 구독이 없어요');return;}
   const src=[sheets&&`구글 시트 ${sheets}개`,subs&&`구독 ${subs}개`].filter(Boolean).join(' · ');
-  const chg=[added&&`${added}개 추가`,restored&&`${restored}개 되살아남`,updated&&`${updated}개 수정`,removed&&`${removed}개 휴지통으로`].filter(Boolean).join(', ');
-  showToast(chg?`${src} — ${chg}`:`${src} — 새로운 내용이 없어요`+(fails?` (${fails}개 실패)`:''));
-  // 대량 정리를 보류했으면 반드시 사람에게 알린다 — 조용히 넘어가면 안 된다
-  if(blocked)setTimeout(()=>showToast(`${blocked}구절이 시트에서 사라진 것으로 보여 정리를 보류했어요. 말씀 모음 편집에서 확인해주세요`),4800);
+  showSyncResultModal({src,added,restored,updated,removed,blocked,fails,byCat});
 }
 // ── 하루 시작 시간 자동 동기화 ──
 // 하루 시작 시간(dayStartHour)에 앱이 켜져 있으면 그때, 안 켜져 있었으면
@@ -10264,6 +10288,7 @@ const _ESC_CLOSERS=[
   // 팝업류
   ['vpModal',         ()=>closeVPair()],
   ['syncConflictModal',()=>closeSyncConflicts()],
+  ['syncResultModal',  ()=>closeSyncResultModal()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
   ['cellTodoModal',   ()=>closeCellTodo()],
@@ -35674,6 +35699,70 @@ function _appConfirmResolve(ok){
   if(ov)ov.style.display='none';
   if(md)md.style.display='none';
   if(ok&&cb)cb();
+}
+// ── 말씀 모음 동기화 결과 화면 (v26-0913) ──────────────────────
+// HB — "동기화 토스트가 몇 초 만에 사라져서 뭐가 바뀌었는지 놓친다.
+//       대분류별로도 알려주면 좋겠고, 확인을 눌러야 닫히면 좋겠다."
+// → showBusyToast 로 진행 중 표시를 하다가, 끝나면 토스트 대신 이 화면을 띄운다.
+function _escHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function showSyncResultModal(r){
+  const ov=document.getElementById('syncResultOverlay');
+  const md=document.getElementById('syncResultModal');
+  const body=document.getElementById('syncResultBody');
+  if(!ov||!md||!body){ // 폴백 — 마크업이 없으면 토스트로
+    const chg=[r.added&&`${r.added}개 추가`,r.restored&&`${r.restored}개 되살아남`,r.updated&&`${r.updated}개 수정`,r.removed&&`${r.removed}개 휴지통으로`].filter(Boolean).join(', ');
+    showToast(chg?`${r.src} — ${chg}`:`${r.src} — 새로운 내용이 없어요`);
+    return;
+  }
+  const totalChg=(r.added||0)+(r.restored||0)+(r.updated||0)+(r.removed||0);
+  const lines=[];
+  lines.push(`<div style="color:var(--tx3);font-size:12px;margin-bottom:10px;">${_escHtml(r.src)} 확인 완료</div>`);
+  if(!totalChg){
+    lines.push(`<div>새로운 내용이 없어요 — 이미 최신 상태예요.</div>`);
+  }else{
+    const tot=[];
+    if(r.added)tot.push(`추가 ${r.added}구절`);
+    if(r.restored)tot.push(`복원 ${r.restored}구절`);
+    if(r.updated)tot.push(`수정 ${r.updated}구절`);
+    if(r.removed)tot.push(`휴지통 ${r.removed}구절`);
+    lines.push(`<div style="font-weight:600;margin-bottom:8px;">${tot.join(' · ')}</div>`);
+    // 대분류(카테고리)별 내역 — 바뀐 게 있는 것만 보여준다
+    const cats=[...(r.byCat instanceof Map?r.byCat:new Map())]
+      .filter(([,v])=>v.added||v.restored||v.updated||v.removed)
+      .sort((a,b)=>(b[1].added+b[1].restored+b[1].updated+b[1].removed)-(a[1].added+a[1].restored+a[1].updated+a[1].removed));
+    if(cats.length){
+      lines.push('<div style="border-top:1px solid var(--bd,#3332);margin:6px 0 8px;"></div>');
+      cats.forEach(([cat,v])=>{
+        const parts=[];
+        if(v.added)parts.push(`+${v.added}`);
+        if(v.restored)parts.push(`복원 ${v.restored}`);
+        if(v.updated)parts.push(`수정 ${v.updated}`);
+        if(v.removed)parts.push(`휴지통 ${v.removed}`);
+        lines.push(`<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0;">
+          <span style="color:var(--tx);">${_escHtml(cat)}</span>
+          <span style="color:var(--tx3);white-space:nowrap;">${parts.join(', ')}</span>
+        </div>`);
+      });
+    }
+  }
+  if(r.blocked){
+    lines.push(`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd,#3332);color:var(--danger,#e5484d);font-size:12px;line-height:1.6;">
+      ⚠ ${r.blocked}구절이 시트에서 사라진 것으로 보여 정리를 보류했어요.<br>말씀 모음 편집에서 확인해주세요.
+    </div>`);
+  }
+  if(r.fails){
+    lines.push(`<div style="margin-top:10px;color:var(--tx3);font-size:12px;">(${r.fails}개는 받아오지 못했어요)</div>`);
+  }
+  body.innerHTML=lines.join('');
+  ov.style.display='block';md.style.display='block';
+}
+function closeSyncResultModal(){
+  const ov=document.getElementById('syncResultOverlay');
+  const md=document.getElementById('syncResultModal');
+  if(ov)ov.style.display='none';
+  if(md)md.style.display='none';
 }
 // ── 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) ──
 let _sfxMenuVal=null,_sfxMenuRowId=null,_sfxEditing=null;
