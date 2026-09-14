@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0914-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4965,7 +4965,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-4";
+const APP_VERSION = "v. 26-0914-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -29282,6 +29282,11 @@ function attachDrag(el,type,i,id){
   // 제외 — 이미 자기 몫의 동작이 있다. 드래그 중이던 클릭도 제외한다.
   // 탭 하나가 들어올 때마다 타이머를 새로 걸고, 그 사이 더 안 오면 그때까지
   // 센 탭 수로 판정한다 — 싱글탭(입력칸 포커스 등 기존 동작)은 건드리지 않는다.
+  // ⚠️ 캡처 단계로 건다 — 입력칸(input.bi-inp/si-inp)은 자기 몫으로
+  // inp.onclick=e=>e.stopPropagation() 을 이미 갖고 있어서(다른 상위 클릭과
+  // 안 부딪히게), 버블 단계로 걸면 글자 위를 탭할 때만 이 리스너까지 전파가
+  // 안 와 더블/트리플탭이 죽는다(HB 확인, v26-0914-4 버그). 캡처는 그 전파
+  // 차단보다 먼저 실행되므로 글자 위에서도 그대로 잡힌다.
   let _tapCount=0,_tapTimer=null;
   el.addEventListener('click',e=>{
     if(e.target.closest('.bi-dh,.si-dh,.blk-chk,.blk-del'))return;
@@ -29302,7 +29307,7 @@ function attachDrag(el,type,i,id){
       if(n===2)_doToggleFlag(type,id,i);
       else if(n>=3)_doToggleUrgent(type,id,i);
     },320);
-  });
+  },{capture:true});
 }
 
 function getSecColor(id){
