@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0914-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2017,7 +2017,7 @@ header{
   user-select:none;-webkit-user-select:none;
   -webkit-touch-callout:none;
   position:relative;
-  transition:transform .18s,box-shadow .18s,opacity .18s,border-color .15s;
+  transition:transform .18s,box-shadow .18s,opacity .18s,border-color .15s,filter .22s;
   will-change:transform;cursor:grab;
 }
 /* 체크↔텍스트 간격: 모바일 기준 */
@@ -2053,6 +2053,11 @@ header{
 }
 .big-item.drag-active .bi-inp{color:var(--tx3)!important;}
 .big-item.dov{outline:1.5px solid var(--ac);}
+/* 긴급 표시 스포트라이트 — 나머지 행만 살짝 어둡게+흐리게.
+   탭/드래그/체크는 그대로 되도록 pointer-events 는 건드리지 않는다. */
+.big-item.urg-dim{opacity:.6;filter:blur(1.2px);}
+.big-item.done-st.urg-dim{opacity:.28;}
+.big-item.drag-active.urg-dim{opacity:.275;filter:grayscale(1);}
 
 /* hover delete button — desktop only */
 .blk-del{
@@ -2155,7 +2160,7 @@ header{
   user-select:none;-webkit-user-select:none;
   -webkit-touch-callout:none;
   position:relative;
-  transition:transform .18s,box-shadow .18s,opacity .18s;
+  transition:transform .18s,box-shadow .18s,opacity .18s,filter .22s;
   will-change:transform;cursor:grab;
 }
 .sm-item .blk-chk{margin-right:4px;} /* 체크↔텍스트 간격 (기본 gap:3px 위에 추가) */
@@ -2171,6 +2176,9 @@ header{
 }
 .sm-item.drag-active .si-inp{color:var(--tx3)!important;}
 .sm-item.dov{outline:1.5px solid var(--ac);}
+.sm-item.urg-dim{opacity:.6;filter:blur(1.2px);}
+.sm-item.done-st.urg-dim{opacity:.26;}
+.sm-item.drag-active.urg-dim{opacity:.275;filter:grayscale(1);}
 
 .si-dh{display:none;color:var(--tx3);font-size:10px;flex-shrink:0;cursor:grab;}
 .si-inp{
@@ -4965,7 +4973,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-5";
+const APP_VERSION = "v. 26-0914-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -18819,7 +18827,7 @@ function renderToday(){
   // 이 날짜의 반복 할일을 챙긴다 — 오늘이든 앞날이든, 그 날짜를 펼쳐 보는
   // 순간 그 날의 실체가 생긴다. (지난 날짜에는 만들지 않는다)
   try{if(typeof ensureRepeatsForView==='function')ensureRepeatsForView(tKey());}catch(e){}
-  renderAddRow();renderSecs();updateTotal();updateTrashBadge();renderVerseBar();document.body.classList.toggle('split-d',document.getElementById('todayView').style.display!=='none');renderRightPanel();}
+  renderAddRow();renderSecs();updateTotal();updateTrashBadge();renderVerseBar();document.body.classList.toggle('split-d',document.getElementById('todayView').style.display!=='none');renderRightPanel();_ensureUrgentSpotlightObserver();}
 
 // ═══════ 우측 위젯 패널 (D뷰 좌우 분할) ═══════
 // 900px 이상 화면에서 D뷰가 좌우로 분할되고, 우측에 위젯들이 쌓인다.
@@ -28509,6 +28517,7 @@ function makeBigItem(id,i,b,secColor){
   const div=document.createElement('div');
   div.className=`big-item${b.done?' done-st':''}${isOver?' over':''}`;
   div.dataset.id=id;div.dataset.i=i;
+  div.dataset.urgent=b.urgent?'1':'0';
   div.dataset.flipkey='b:'+(b.text||'').slice(0,80);
   if(secColor)div.style.setProperty('--sec-color',secColor);
 
@@ -28728,6 +28737,7 @@ function makeSmItem(id,i,sm,secColor){
   const div=document.createElement('div');
   div.className=`sm-item${sm.done?' done-st':''}${ov?' over':''}`;
   div.dataset.id=id;div.dataset.i=i;
+  div.dataset.urgent=sm.urgent?'1':'0';
   div.dataset.flipkey='s:'+(sm.text||'').slice(0,80);
   if(secColor)div.style.setProperty('--sec-color',secColor);
 
@@ -31552,6 +31562,40 @@ function _doToggleFlag(type,secId,idx){
 // flag/contactTask 와 다른 점이다. 옮겨간 자리에서 그 날의 2개 한도를 몰래
 // 넘길 수 있기 때문. (tests/test_urgent.js)
 const URGENT_MAX_PER_DAY=2;
+
+// ── 긴급 표시 스포트라이트 ──────────────────────────────────────────
+// 오늘(tKey()) 목록 안에 긴급 표시된 항목이 하나라도 있으면, 같은 날짜
+// 목록(#secList) 안의 나머지(긴급 아닌) 빅/스몰 행에 .urg-dim 클래스를
+// 붙여 살짝 어둡게+흐리게 만든다 — 긴급 표시된 행만 도드라지게.
+// 섹션 하나가 아니라 "그 날 전체" 를 기준으로 한다: 긴급 표시는 섹션을
+// 가리지 않고 하루 전체에서 최대 2개까지이므로(_urgentItemsOn), 사용자가
+// "그 행에 집중" 하려는 의도도 섹션·시간대 경계가 아니라 하루 전체 목록
+// 기준이 맞다고 보고 정했다. 순수 시각효과만 건드리고 pointer-events 는
+// 손대지 않아 탭·드래그·체크는 그대로 된다.
+function _applyUrgentSpotlight(){
+  const list=document.getElementById('secList');
+  if(!list)return;
+  const rows=list.querySelectorAll('.big-item,.sm-item');
+  let hasUrgent=false;
+  rows.forEach(r=>{if(r.dataset.urgent==='1')hasUrgent=true;});
+  rows.forEach(r=>{
+    r.classList.toggle('urg-dim', hasUrgent && r.dataset.urgent!=='1');
+  });
+}
+let _urgSpotlightObs=null;
+function _ensureUrgentSpotlightObserver(){
+  if(_urgSpotlightObs)return;
+  const list=document.getElementById('secList');
+  if(!list)return;
+  let scheduled=false;
+  _urgSpotlightObs=new MutationObserver(()=>{
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;_applyUrgentSpotlight();});
+  });
+  _urgSpotlightObs.observe(list,{childList:true,subtree:true});
+  _applyUrgentSpotlight();
+}
 
 // 오늘(k) 안의 모든 긴급 표시 항목 — {type,secId,idx,item}, 랭크(1→2) 순.
 function _urgentItemsOn(k){
