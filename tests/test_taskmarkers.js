@@ -9,7 +9,7 @@ sc.eq('깃발 버튼 기본 OFF', /showFlagFilterBtn:false/.test(SRC_DEV), true)
 sc.eq('연락 버튼 기본 OFF', /showContactFilterBtn:false/.test(SRC_DEV), true);
 
 console.log('시나리오 2 — 표시 순서와 필터 판정');
-sc.eq('깃발 다음 연락 아이콘', /div\.append\(chk,dh,flagBadge,contactTaskBadge,inp\)/.test(SRC_DEV), true);
+sc.eq('깃발 다음 연락 아이콘', /div\.append\(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp\)/.test(SRC_DEV), true);
 sc.eq('깃발 필터는 flag 판정', /markerFilter==='flag'[\s\S]{0,120}item\.flag/.test(SRC_DEV), true);
 sc.eq('연락 필터는 contactTask 판정', /markerFilter==='contact'[\s\S]{0,120}item\.contactTask/.test(SRC_DEV), true);
 
