@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0914-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2183,27 +2183,33 @@ header{
 .si-inp::placeholder{color:var(--tx3);font-weight:400;font-size:12px;}
 
 /* Flag (important) indicator — sits before the text, right after the
-   (hidden) drag handle. Red, regardless of theme, since it's meant to
-   stand out as an urgency marker rather than blend with the UI palette. */
+   (hidden) drag handle. Uses the theme accent color — "important" is a
+   per-theme emphasis, not an absolute-danger signal like urgent below. */
 .blk-flag-badge{
   display:flex;align-items:center;flex-shrink:0;
-  color:#e8483a;margin-right:5px;
+  color:var(--ac-tx);margin-right:5px;
 }
 .blk-flag-badge:empty{display:none;}
 .blk-flag-badge svg{display:block;}
 /* 긴급 표시 — 깃발 바로 앞에 놓이는 빨간 사이렌. 몸통은 고정, 뒤의 후광만
-   opacity/scale 로 숨쉬듯 깜빡인다 (회전·빛줄기 없음). */
+   opacity/scale 로 숨쉬듯 깜빡인다 (회전·빛줄기 없음).
+   ⚠️ 빨강 고정 — 테마를 안 탄다. "위급함"은 색 자체의 의미이므로
+   중요 표시(깃발, 위)와 달리 강조색으로 바꾸지 말 것 (2026-09-14 HB 확정). */
 .blk-urgent-badge{
   display:flex;align-items:center;flex-shrink:0;
-  color:#e8483a;margin-right:4px;
+  color:#ff2d1a;margin-right:4px;
 }
 .blk-urgent-badge:empty{display:none;}
 .blk-urgent-badge svg{display:block;}
-html:not([data-theme="light"]) .blk-urgent-badge{color:#ff5d4e;}
+html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 .urg-glow{transform-box:fill-box;transform-origin:center;
-  animation:urg-dissolve 1.7s ease-in-out infinite;}
-@keyframes urg-dissolve{0%,100%{opacity:.25;transform:scale(.85);}50%{opacity:1;transform:scale(1);}}
-@media (prefers-reduced-motion: reduce){.urg-glow{animation:none;opacity:.7;}}
+  animation:urg-dissolve 1.3s ease-in-out infinite;}
+@keyframes urg-dissolve{
+  0%,100%{opacity:.12;transform:scale(.8);}
+  20%,60%{opacity:1;transform:scale(1.25);}
+  85%{opacity:.12;transform:scale(.8);}
+}
+@media (prefers-reduced-motion: reduce){.urg-glow{animation:none;opacity:.85;}}
 /* 연락할 일 표시 — 깃발(빨강)과 나란히 놓이는 초록. 채워진 수화기. */
 .blk-contact-task-badge{display:flex;align-items:center;flex-shrink:0;color:#2f9e5e;margin-right:5px;}
 .blk-contact-task-badge:empty{display:none;}
@@ -4959,7 +4965,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-3";
+const APP_VERSION = "v. 26-0914-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28139,6 +28145,7 @@ function renderSecBody(id){
 // ═══════ SWIPE-TO-DELETE / SWIPE-TO-COMPLETE ═══════
 function makeSwipeWrap(innerEl, onDelete, onComplete){
   const wrap=document.createElement('div');wrap.className='swipe-wrap';
+  if(innerEl&&innerEl.dataset&&innerEl.dataset.flipkey)wrap.dataset.flipkey=innerEl.dataset.flipkey;
 
   // left underlay — delete (red)
   const delUnder=document.createElement('div');delUnder.className='del-underlay';
@@ -28488,9 +28495,9 @@ function autoSizeInput(inp){
 let _urgGlowSeq=0;
 function _makeUrgentBadgeHTML(size){
   const gid='urgGlow'+(_urgGlowSeq++);
-  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20"><defs><radialGradient id="${gid}" cx="50%" cy="45%" r="55%">`+
-    `<stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>`+
-    `<stop offset="60%" stop-color="currentColor" stop-opacity=".18"/>`+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" overflow="visible"><defs><radialGradient id="${gid}" cx="50%" cy="45%" r="55%">`+
+    `<stop offset="0%" stop-color="currentColor" stop-opacity=".9"/>`+
+    `<stop offset="55%" stop-color="currentColor" stop-opacity=".4"/>`+
     `<stop offset="100%" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs>`+
     `<circle class="urg-glow" cx="10" cy="10" r="10" fill="url(#${gid})"/>`+
     `<path d="M6.1 12.2c0-2.7 1.75-4.5 3.9-4.5s3.9 1.8 3.9 4.5v3.1H6.1v-3.1Z" fill="currentColor"/></svg>`;
@@ -28502,6 +28509,7 @@ function makeBigItem(id,i,b,secColor){
   const div=document.createElement('div');
   div.className=`big-item${b.done?' done-st':''}${isOver?' over':''}`;
   div.dataset.id=id;div.dataset.i=i;
+  div.dataset.flipkey='b:'+(b.text||'').slice(0,80);
   if(secColor)div.style.setProperty('--sec-color',secColor);
 
   // CHECK — leftmost
@@ -28720,6 +28728,7 @@ function makeSmItem(id,i,sm,secColor){
   const div=document.createElement('div');
   div.className=`sm-item${sm.done?' done-st':''}${ov?' over':''}`;
   div.dataset.id=id;div.dataset.i=i;
+  div.dataset.flipkey='s:'+(sm.text||'').slice(0,80);
   if(secColor)div.style.setProperty('--sec-color',secColor);
 
   // CHECK — leftmost
@@ -29278,6 +29287,15 @@ function attachDrag(el,type,i,id){
     if(e.target.closest('.bi-dh,.si-dh,.blk-chk,.blk-del'))return;
     if(DR.active)return; // 드래그 중이던 클릭은 무시
     _tapCount++;
+    // 두 번째 탭부터는(=더블/트리플탭이 될 수 있는 순간) 텍스트 편집으로
+    // 들어가지 않게 한다. 탭=포커스는 브라우저 기본 동작이라 이 click이
+    // 오기 전에 입력칸이 이미 포커스를 받았을 수 있으므로 즉시 물러난다
+    // (320ms 판정을 기다리면 그 사이 키보드가 열려 있는 게 보인다).
+    // 최종 판정(중요/긴급 표시)은 아래 타이머가 그대로 한다.
+    if(_tapCount>=2){
+      const inp=e.target.closest('input.bi-inp,input.si-inp')||el.querySelector('input.bi-inp,input.si-inp');
+      if(inp&&document.activeElement===inp)inp.blur();
+    }
     if(_tapTimer)clearTimeout(_tapTimer);
     _tapTimer=setTimeout(()=>{
       const n=_tapCount;_tapCount=0;_tapTimer=null;
@@ -31478,6 +31496,33 @@ function _reorderTaskPriority(arr){
   for(let i=0;i<arr.length;i++)arr[i]=sorted[i];
 }
 
+// 중요/긴급 표시로 순서가 바뀔 때 '저장 목록'과 같은 방법(_keepFlipRender)으로
+// 부드럽게 움직인다 — 옛 자리를 재 두었다가 다시 그린 뒤 그 차이만큼 되돌려
+// 놓고 0 으로 보낸다(FLIP). 줄을 알아보는 열쇠는 data-flipkey(빅/스몰 구분 +
+// 글 내용)다 — 같은 글 내용이 두 번 있으면 서로 뒤바뀌어도 눈에 띄지 않는다.
+function _taskFlipRender(secId,fn){
+  const tb=document.getElementById(`tb-${secId}`);
+  if(!tb){fn();return;}
+  const was=new Map();
+  tb.querySelectorAll('.swipe-wrap[data-flipkey]').forEach(r=>{
+    was.set(r.getAttribute('data-flipkey'),r.getBoundingClientRect().top);
+  });
+  fn();
+  document.getElementById(`tb-${secId}`)?.querySelectorAll('.swipe-wrap[data-flipkey]').forEach(r=>{
+    const o=was.get(r.getAttribute('data-flipkey'));
+    if(o==null)return;
+    const dy=o-r.getBoundingClientRect().top;
+    if(!dy)return;
+    r.style.transition='none';
+    r.style.transform='translateY('+dy+'px)';
+    requestAnimationFrame(()=>{
+      r.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+      r.style.transform='';
+      setTimeout(()=>{r.style.transition='';r.style.transform='';},_SW_SLIDE+80);
+    });
+  });
+}
+
 // 중요 표시 토글 — 메뉴/더블탭 어느 쪽에서 불러도 같은 동작을 하도록 한 곳에 둔다.
 function _doToggleFlag(type,secId,idx){
   const k=tKey();
@@ -31488,7 +31533,7 @@ function _doToggleFlag(type,secId,idx){
   item.flag=!item.flag;
   if(item.flag)_reorderTaskPriority(arr);
   save();
-  renderSecBody(secId);
+  _taskFlipRender(secId,()=>renderSecBody(secId));
   showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
   refreshTaskViewsLive();
 }
@@ -31535,7 +31580,7 @@ function _doToggleUrgent(type,secId,idx){
     item.urgentRank=usedRanks.has(1)?2:1;
     _reorderTaskPriority(arr);
     save();
-    renderSecBody(secId);
+    _taskFlipRender(secId,()=>renderSecBody(secId));
     showToast('긴급 표시했어요');
   } else {
     beforeSave();
@@ -31543,7 +31588,7 @@ function _doToggleUrgent(type,secId,idx){
     delete item.urgentRank;
     delete item.urgentAt;
     save();
-    renderSecBody(secId);
+    _taskFlipRender(secId,()=>renderSecBody(secId));
     showToast('긴급 표시를 해제했어요');
   }
   refreshTaskViewsLive();
@@ -31577,8 +31622,8 @@ function toggleUrgentRank(){
   }
   save();
   closeTaskMenu();
-  renderSecBody(secId);
-  if(other.secId!==secId)renderSecBody(other.secId);
+  _taskFlipRender(secId,()=>renderSecBody(secId));
+  if(other.secId!==secId)_taskFlipRender(other.secId,()=>renderSecBody(other.secId));
   refreshTaskViewsLive();
 }
 
