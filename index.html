@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-2  [production]  -->
+<!-- BLOCK7  v. 26-0914-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2191,6 +2191,19 @@ header{
 }
 .blk-flag-badge:empty{display:none;}
 .blk-flag-badge svg{display:block;}
+/* 긴급 표시 — 깃발 바로 앞에 놓이는 빨간 사이렌. 몸통은 고정, 뒤의 후광만
+   opacity/scale 로 숨쉬듯 깜빡인다 (회전·빛줄기 없음). */
+.blk-urgent-badge{
+  display:flex;align-items:center;flex-shrink:0;
+  color:#e8483a;margin-right:4px;
+}
+.blk-urgent-badge:empty{display:none;}
+.blk-urgent-badge svg{display:block;}
+html:not([data-theme="light"]) .blk-urgent-badge{color:#ff5d4e;}
+.urg-glow{transform-box:fill-box;transform-origin:center;
+  animation:urg-dissolve 1.7s ease-in-out infinite;}
+@keyframes urg-dissolve{0%,100%{opacity:.25;transform:scale(.85);}50%{opacity:1;transform:scale(1);}}
+@media (prefers-reduced-motion: reduce){.urg-glow{animation:none;opacity:.7;}}
 /* 연락할 일 표시 — 깃발(빨강)과 나란히 놓이는 초록. 채워진 수화기. */
 .blk-contact-task-badge{display:flex;align-items:center;flex-shrink:0;color:#2f9e5e;margin-right:5px;}
 .blk-contact-task-badge:empty{display:none;}
@@ -4946,7 +4959,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-2";
+const APP_VERSION = "v. 26-0914-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7323,6 +7336,12 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- Task move mini menu -->
 <div class="task-menu-overlay" id="taskMenuOverlay" style="display:none" onclick="closeTaskMenu()"></div>
 <div class="task-menu" id="taskMenu" style="display:none">
+  <div class="task-menu-item" id="urgentToggleItem" onclick="toggleTaskUrgent()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20"><defs><radialGradient id="urgMenuGlow" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="currentColor" stop-opacity=".55"/><stop offset="60%" stop-color="currentColor" stop-opacity=".18"/><stop offset="100%" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(#urgMenuGlow)"/><path d="M6.1 12.2c0-2.7 1.75-4.5 3.9-4.5s3.9 1.8 3.9 4.5v3.1H6.1v-3.1Z" fill="currentColor"/></svg></span><span id="urgentToggleLabel">긴급 표시</span>
+  </div>
+  <div class="task-menu-item" id="urgentRankSwapItem" style="display:none" onclick="toggleUrgentRank()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9M9.5 3.5 13 7l-3.5 3.5"/><path d="M16 13H7M10.5 16.5 7 13l3.5-3.5"/></svg></span><span id="urgentRankSwapLabel">1순위로</span>
+  </div>
   <div class="task-menu-item" id="flagToggleItem" onclick="toggleTaskFlag()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg></span><span id="flagToggleLabel">중요 표시</span>
   </div>
@@ -28463,6 +28482,20 @@ function autoSizeInput(inp){
   requestAnimationFrame(measure);
 }
 
+// 긴급 표시 아이콘 — 사이렌 몸통(고정) + 후광(opacity/scale 디졸브).
+// radialGradient id 는 한 화면에 여러 줄이 동시에 그려지므로 매번 새로 만든다
+// (같은 id 를 재사용하면 브라우저가 첫 것만 그리고 나머지는 안 보인다).
+let _urgGlowSeq=0;
+function _makeUrgentBadgeHTML(size){
+  const gid='urgGlow'+(_urgGlowSeq++);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20"><defs><radialGradient id="${gid}" cx="50%" cy="45%" r="55%">`+
+    `<stop offset="0%" stop-color="currentColor" stop-opacity=".55"/>`+
+    `<stop offset="60%" stop-color="currentColor" stop-opacity=".18"/>`+
+    `<stop offset="100%" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs>`+
+    `<circle class="urg-glow" cx="10" cy="10" r="10" fill="url(#${gid})"/>`+
+    `<path d="M6.1 12.2c0-2.7 1.75-4.5 3.9-4.5s3.9 1.8 3.9 4.5v3.1H6.1v-3.1Z" fill="currentColor"/></svg>`;
+}
+
 function makeBigItem(id,i,b,secColor){
   const k=tKey();const tot=totalBigCount(k);
   const isOver=(tot>(ST.settings.bigLimit||6))&&!b.done;
@@ -28481,6 +28514,14 @@ function makeBigItem(id,i,b,secColor){
 
   const dh=document.createElement('span');dh.className='bi-dh';dh.textContent='⠿';
 
+  // Urgent indicator — sits right before the flag badge. Same idea as
+  // flag but with a blinking red-siren glow (see _makeUrgentBadgeHTML).
+  const urgentBadge=document.createElement('span');
+  urgentBadge.className='blk-urgent-badge';
+  if(b.urgent){
+    urgentBadge.innerHTML=_makeUrgentBadgeHTML(11);
+    urgentBadge.title=b.urgentRank===2?'긴급 표시 · 2순위':'긴급 표시 · 1순위';
+  }
   // Flag (important) indicator — red, shown only when set via the task
   // menu's "중요 표시" toggle. Sits right before the text, separate
   // from the daily/carry badges which follow the text instead.
@@ -28583,7 +28624,7 @@ function makeBigItem(id,i,b,secColor){
     sendToTrash(kk,'big',id,removed);save();renderSecBody(id);updateTotal();refreshTaskViewsLive();
   };
 
-  div.append(chk,dh,flagBadge,contactTaskBadge,inp);
+  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
   makeContactBadges(b.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge,del);
   attachDrag(div,'big',i,id);
@@ -28691,6 +28732,12 @@ function makeSmItem(id,i,sm,secColor){
 
   const dh=document.createElement('span');dh.className='si-dh';dh.textContent='⠿';
 
+  const urgentBadge=document.createElement('span');
+  urgentBadge.className='blk-urgent-badge';
+  if(sm.urgent){
+    urgentBadge.innerHTML=_makeUrgentBadgeHTML(10);
+    urgentBadge.title=sm.urgentRank===2?'긴급 표시 · 2순위':'긴급 표시 · 1순위';
+  }
   const flagBadge=document.createElement('span');
   flagBadge.className='blk-flag-badge';
   if(sm.flag){
@@ -28770,7 +28817,7 @@ function makeSmItem(id,i,sm,secColor){
   // slot is now used by the carry-count badge instead, and the
   // small-list-count badge (sc-${id}) already communicates the same
   // "too many" information elsewhere.
-  div.append(chk,dh,flagBadge,contactTaskBadge,inp);
+  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
   makeContactBadges(sm.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
 
@@ -29219,6 +29266,25 @@ function attachDrag(el,type,i,id){
     if(!DR._pressPending)return;
     if(e.cancelable)e.preventDefault();
   },{passive:false});
+
+  // ── 더블탭 = 중요 표시 토글, 트리플탭 = 긴급 표시 토글 ──
+  // 'click' 은 마우스든 터치든 손을 뗄 때 한 번 나므로 두 갈래를 따로 잡을
+  // 필요가 없다(PC 는 더블/트리플 클릭도 여기로 온다). 체크·삭제·손잡이는
+  // 제외 — 이미 자기 몫의 동작이 있다. 드래그 중이던 클릭도 제외한다.
+  // 탭 하나가 들어올 때마다 타이머를 새로 걸고, 그 사이 더 안 오면 그때까지
+  // 센 탭 수로 판정한다 — 싱글탭(입력칸 포커스 등 기존 동작)은 건드리지 않는다.
+  let _tapCount=0,_tapTimer=null;
+  el.addEventListener('click',e=>{
+    if(e.target.closest('.bi-dh,.si-dh,.blk-chk,.blk-del'))return;
+    if(DR.active)return; // 드래그 중이던 클릭은 무시
+    _tapCount++;
+    if(_tapTimer)clearTimeout(_tapTimer);
+    _tapTimer=setTimeout(()=>{
+      const n=_tapCount;_tapCount=0;_tapTimer=null;
+      if(n===2)_doToggleFlag(type,id,i);
+      else if(n>=3)_doToggleUrgent(type,id,i);
+    },320);
+  });
 }
 
 function getSecColor(id){
@@ -30383,6 +30449,19 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   if(flagItem&&flagLabel){
     flagLabel.textContent=isFlagged?'중요 표시됨':'중요 표시';
   }
+  const isUrgent=!!(item&&item.urgent);
+  const urgentLabel=document.getElementById('urgentToggleLabel');
+  if(urgentLabel){
+    urgentLabel.textContent=isUrgent?'긴급 표시됨':'긴급 표시';
+  }
+  const rankSwapItem=document.getElementById('urgentRankSwapItem');
+  const rankSwapLabel=document.getElementById('urgentRankSwapLabel');
+  if(rankSwapItem&&rankSwapLabel){
+    // 긴급 표시가 켜져 있고, 오늘 다른 긴급 항목이 하나 더 있을 때만 보인다.
+    const otherExists=isUrgent&&_urgentItemsOn(tKey()).some(e=>e.item!==item);
+    rankSwapItem.style.display=otherExists?'':'none';
+    if(otherExists)rankSwapLabel.textContent=(item.urgentRank===1)?'2순위로':'1순위로';
+  }
   const isContactTask=!!(item&&item.contactTask);
   const contactItem=document.getElementById('contactTaskToggleItem');
   const contactLabel=document.getElementById('contactTaskToggleLabel');
@@ -31379,15 +31458,128 @@ function closeTaskMenu(){
 function toggleTaskFlag(){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
-  const arr=type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId);
+  _doToggleFlag(type,secId,idx);
+  closeTaskMenu();
+}
+
+// 켜는 순간 그 구간(빅/스몰 각각)의 배열 안에서 맨 위로 온다. 최종 순서는
+// 긴급 1순위 → 긴급 2순위 → 중요 표시 → 나머지(원래/수동 순서) — 같은 등급
+// 안에서는 원래 자리를 그대로 지킨다(Array#sort 는 안정 정렬이라 보장된다).
+function _taskPriorityRank(it){
+  if(it&&it.urgent)return (it.urgentRank===2)?1:0;
+  if(it&&it.flag)return 2;
+  return 3;
+}
+function _reorderTaskPriority(arr){
+  if(!Array.isArray(arr)||arr.length<2)return;
+  const sorted=arr.map((it,idx)=>({it,idx}))
+    .sort((a,b)=>{const d=_taskPriorityRank(a.it)-_taskPriorityRank(b.it);return d!==0?d:a.idx-b.idx;})
+    .map(x=>x.it);
+  for(let i=0;i<arr.length;i++)arr[i]=sorted[i];
+}
+
+// 중요 표시 토글 — 메뉴/더블탭 어느 쪽에서 불러도 같은 동작을 하도록 한 곳에 둔다.
+function _doToggleFlag(type,secId,idx){
+  const k=tKey();
+  const arr=type==='big'?getBigs(k,secId):getSmalls(k,secId);
   const item=arr[idx];
   if(!item)return;
   beforeSave();
   item.flag=!item.flag;
+  if(item.flag)_reorderTaskPriority(arr);
+  save();
+  renderSecBody(secId);
+  showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
+  refreshTaskViewsLive();
+}
+
+// ═══ 긴급 표시 ═══════════════════════════════════════════════════════
+// item.urgent=true, item.urgentRank=1|2, item.urgentAt=켠 시각(ms).
+// 하루(tKey()) 안에 최대 URGENT_MAX_PER_DAY(=2)개까지만 켤 수 있다 — 우선순위는
+// 켠 순서(먼저 켠 것이 1순위)이고, 메뉴의 순위 바꾸기로 서로 맞바꿀 수 있다.
+// ⚠️ flag 와 대칭인 필드로 설계했지만(같은 방식으로 저장·병합된다) 트래시로
+// 보내거나 다른 날짜로 옮기거나 복제할 때는 **urgent 를 들고 가지 않는다** —
+// flag/contactTask 와 다른 점이다. 옮겨간 자리에서 그 날의 2개 한도를 몰래
+// 넘길 수 있기 때문. (tests/test_urgent.js)
+const URGENT_MAX_PER_DAY=2;
+
+// 오늘(k) 안의 모든 긴급 표시 항목 — {type,secId,idx,item}, 랭크(1→2) 순.
+function _urgentItemsOn(k){
+  const out=[];
+  SECS.forEach(s=>{
+    ['big','small'].forEach(type=>{
+      const arr=(type==='big'?getBigs(k,s.id):getSmalls(k,s.id));
+      arr.forEach((item,idx)=>{if(item&&item.urgent)out.push({type,secId:s.id,idx,item});});
+    });
+  });
+  out.sort((a,b)=>(a.item.urgentRank||9)-(b.item.urgentRank||9));
+  return out;
+}
+
+// 긴급 표시 토글 — 메뉴/트리플탭 공용. 한도를 넘으면 안내만 하고 끝낸다.
+function _doToggleUrgent(type,secId,idx){
+  const k=tKey();
+  const arr=type==='big'?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item)return;
+  if(!item.urgent){
+    const existing=_urgentItemsOn(k);
+    if(existing.length>=URGENT_MAX_PER_DAY){
+      showToast('오늘은 이미 긴급 표시가 2개예요. 하나를 먼저 해제해 주세요');
+      return;
+    }
+    beforeSave();
+    const usedRanks=new Set(existing.map(e=>e.item.urgentRank||1));
+    item.urgent=true;
+    item.urgentAt=Date.now();
+    item.urgentRank=usedRanks.has(1)?2:1;
+    _reorderTaskPriority(arr);
+    save();
+    renderSecBody(secId);
+    showToast('긴급 표시했어요');
+  } else {
+    beforeSave();
+    item.urgent=false;
+    delete item.urgentRank;
+    delete item.urgentAt;
+    save();
+    renderSecBody(secId);
+    showToast('긴급 표시를 해제했어요');
+  }
+  refreshTaskViewsLive();
+}
+
+function toggleTaskUrgent(){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  _doToggleUrgent(type,secId,idx);
+  closeTaskMenu();
+}
+
+// 오늘 긴급 표시된 두 항목의 1/2순위를 맞바꾼다 (메뉴의 "1순위로"/"2순위로").
+function toggleUrgentRank(){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const k=tKey();
+  const arr=type==='big'?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item||!item.urgent)return;
+  const other=_urgentItemsOn(k).find(e=>e.item!==item);
+  if(!other)return;
+  beforeSave();
+  const myRank=item.urgentRank||1,otherRank=other.item.urgentRank||2;
+  item.urgentRank=otherRank;
+  other.item.urgentRank=myRank;
+  _reorderTaskPriority(arr);
+  if(other.secId!==secId||other.type!==type){
+    const otherArr=other.type==='big'?getBigs(k,other.secId):getSmalls(k,other.secId);
+    _reorderTaskPriority(otherArr);
+  }
   save();
   closeTaskMenu();
   renderSecBody(secId);
-  showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
+  if(other.secId!==secId)renderSecBody(other.secId);
+  refreshTaskViewsLive();
 }
 
 function toggleTaskContact(){
@@ -36911,7 +37103,35 @@ function _mgDay(b,l,c,baseKnown){
     }
     if(v!==undefined)out[k]=v;
   });
+  _mgEnforceUrgentCap(out);
   return out;
+}
+// ── 긴급 표시 한도(하루 2개)를 병합 뒤에도 지킨다 (v26-0914-3) ──
+// ⚠️ 두 기기가 같은 날 **서로 다른** 할일을 각자 긴급 표시하면(각자는 1개뿐이라
+//    자기 기기에서는 한도를 넘지 않았다) 병합 결과엔 3개 이상이 남을 수 있다.
+//    그때는 가장 먼저 켠(urgentAt 이 이른) 2개만 남기고 나머지는 조용히 끈다 —
+//    누가 지웠다고 오판하지 않도록 urgent/urgentRank/urgentAt 만 지운다.
+//    (tests/test_urgent.js 시나리오 "병합 중 한도 초과")
+function _mgEnforceUrgentCap(dayOut){
+  const found=[];
+  ['big','small'].forEach(type=>{
+    const sec=dayOut[type];if(!sec)return;
+    Object.keys(sec).forEach(secId=>{
+      const arr=sec[secId];if(!Array.isArray(arr))return;
+      arr.forEach((item,idx)=>{if(item&&item.urgent)found.push({item,at:item.urgentAt||0});});
+    });
+  });
+  // ⚠️ 상수(URGENT_MAX_PER_DAY=2)를 그대로 쓰지 않고 숫자를 박아 둔다 — 이
+  //    함수는 tests/test_merge.js 처럼 파일 일부만 잘라 붙이는(eval slice)
+  //    자리에서도 불려 다닌다. 값을 바꾸려면 아래 toggleTaskUrgent 근처의
+  //    URGENT_MAX_PER_DAY 와 함께 고칠 것 (tests/test_urgent.js 가 둘을 맞춰 지킨다).
+  const CAP=2;
+  if(found.length<=CAP)return;
+  found.sort((a,b)=>a.at-b.at);
+  found.slice(CAP).forEach(e=>{
+    delete e.item.urgent;delete e.item.urgentRank;delete e.item.urgentAt;
+  });
+  found.slice(0,CAP).forEach((e,i)=>{e.item.urgentRank=i+1;});
 }
 // id 있는 배열(말씀 모음·연락처) — id 단위 3자. 순서는 로컬 우선,
 // 클라우드에만 있는 항목은 뒤에 붙는다.
