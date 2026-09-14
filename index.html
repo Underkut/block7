@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-6  [production]  -->
+<!-- BLOCK7  v. 26-0914-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2058,6 +2058,10 @@ header{
 .big-item.urg-dim{opacity:.6;filter:blur(1.2px);}
 .big-item.done-st.urg-dim{opacity:.28;}
 .big-item.drag-active.urg-dim{opacity:.275;filter:grayscale(1);}
+/* 긴급 표시가 2개(1·2순위 다 찼을 때)면 한 단계 더 세게 — HB 요청 v26-0914-7 */
+.big-item.urg-dim.urg-dim2{opacity:.42;filter:blur(2px);}
+.big-item.done-st.urg-dim.urg-dim2{opacity:.2;}
+.big-item.drag-active.urg-dim.urg-dim2{opacity:.2;filter:grayscale(1);}
 
 /* hover delete button — desktop only */
 .blk-del{
@@ -2179,6 +2183,9 @@ header{
 .sm-item.urg-dim{opacity:.6;filter:blur(1.2px);}
 .sm-item.done-st.urg-dim{opacity:.26;}
 .sm-item.drag-active.urg-dim{opacity:.275;filter:grayscale(1);}
+.sm-item.urg-dim.urg-dim2{opacity:.42;filter:blur(2px);}
+.sm-item.done-st.urg-dim.urg-dim2{opacity:.2;}
+.sm-item.drag-active.urg-dim.urg-dim2{opacity:.2;filter:grayscale(1);}
 
 .si-dh{display:none;color:var(--tx3);font-size:10px;flex-shrink:0;cursor:grab;}
 .si-inp{
@@ -4973,7 +4980,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-6";
+const APP_VERSION = "v. 26-0914-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -31576,10 +31583,13 @@ function _applyUrgentSpotlight(){
   const list=document.getElementById('secList');
   if(!list)return;
   const rows=list.querySelectorAll('.big-item,.sm-item');
-  let hasUrgent=false;
-  rows.forEach(r=>{if(r.dataset.urgent==='1')hasUrgent=true;});
+  let urgentCount=0;
+  rows.forEach(r=>{if(r.dataset.urgent==='1')urgentCount++;});
+  const hasUrgent=urgentCount>0,strong=urgentCount>=2; // 2개 다 찼으면 한 단계 더 세게(HB 요청)
   rows.forEach(r=>{
-    r.classList.toggle('urg-dim', hasUrgent && r.dataset.urgent!=='1');
+    const dim=hasUrgent && r.dataset.urgent!=='1';
+    r.classList.toggle('urg-dim', dim);
+    r.classList.toggle('urg-dim2', dim && strong);
   });
 }
 let _urgSpotlightObs=null;
