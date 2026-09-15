@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0914-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0915-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4980,7 +4980,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0914-7";
+const APP_VERSION = "v. 26-0915-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28310,7 +28310,7 @@ function makeBigWrap(id,i,b,secColor){
       const k=tKey();const arr=getBigs(k,id);
       if(arr[i]){
         beforeSave();arr[i].done=!arr[i].done;
-        if(arr[i].done){const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
+        if(arr[i].done){_clearUrgentOnDone(arr[i]);const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
         save();updateTotal();renderSecBody(id);refreshTaskViewsLive();
       }
     }
@@ -28532,7 +28532,7 @@ function makeBigItem(id,i,b,secColor){
   const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
   chk.onclick=e=>{
     e.stopPropagation();const arr=getBigs(tKey(),id);beforeSave();arr[i].done=!arr[i].done;
-    if(arr[i].done)_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);
+    if(arr[i].done){_clearUrgentOnDone(arr[i]);_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);}
     save();updateTotal();renderSecBody(id);refreshTaskViewsLive();
   };
 
@@ -28729,7 +28729,7 @@ function makeSmWrap(id,i,sm,secColor){
       const k=tKey();const arr=getSmalls(k,id);
       if(arr[i]){
         beforeSave();arr[i].done=!arr[i].done;
-        if(arr[i].done){const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
+        if(arr[i].done){_clearUrgentOnDone(arr[i]);const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
         save();renderSmList(id,secColor);refreshTaskViewsLive();
       }
     }
@@ -28752,7 +28752,7 @@ function makeSmItem(id,i,sm,secColor){
   const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
   chk.onclick=e=>{
     e.stopPropagation();const arr=getSmalls(tKey(),id);beforeSave();arr[i].done=!arr[i].done;
-    if(arr[i].done)_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);
+    if(arr[i].done){_clearUrgentOnDone(arr[i]);_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);}
     save();renderSmList(id,secColor);refreshTaskViewsLive();
   };
 
@@ -31618,6 +31618,18 @@ function _urgentItemsOn(k){
   });
   out.sort((a,b)=>(a.item.urgentRank||9)-(b.item.urgentRank||9));
   return out;
+}
+
+// 긴급 표시된 할일을 완료 체크하면 긴급 표시도 함께 해제한다 — 끝낸 일은
+// 더 이상 "오늘 집중할 것"이 아니기 때문(HB 요청). 완료 체크 4곳(빅/스몰 ×
+// 체크 버튼/스와이프)에서 done 이 true 로 바뀔 때만 부른다 — 완료를 되돌려도
+// 긴급 표시는 되살리지 않는다(한 번 지워진 값이라 복원할 근거가 없다).
+function _clearUrgentOnDone(item){
+  if(item&&item.urgent){
+    item.urgent=false;
+    delete item.urgentRank;
+    delete item.urgentAt;
+  }
 }
 
 // 긴급 표시 토글 — 메뉴/트리플탭 공용. 한도를 넘으면 안내만 하고 끝낸다.
