@@ -6,6 +6,7 @@ const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 global.document = { visibilityState: 'visible', addEventListener: () => {} };
 eval(slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면'));
+eval(slice('function _clearUrgentOnDone(', '// 긴급 표시 토글 — 메뉴/트리플탭 공용'));
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 
@@ -120,6 +121,22 @@ console.log('시나리오 5 — 한도 안이면 손대지 않는다');
   const m=_fbMerge(base,local,cloud);
   const day=m.days['2026-09-14'];
   sc.eq('둘 다 긴급 표시로 남는다',[day.big.am[0].urgent,day.big.am[1].urgent],[true,true]);
+}
+
+// ═══ 시나리오 6: 완료 체크하면 긴급 표시가 함께 해제된다(HB 요청) ═══
+// _clearUrgentOnDone 은 체크 버튼/스와이프 4곳에서 done 이 true 로 바뀔
+// 때만 불린다 — 여기서는 그 함수 자체가 맞는 필드를 지우는지만 본다.
+console.log('시나리오 6 — 완료 체크하면 긴급 표시가 함께 해제된다');
+{
+  const item={text:'설교 준비',done:false,urgent:true,urgentRank:1,urgentAt:1000};
+  _clearUrgentOnDone(item);
+  sc.eq('urgent 가 꺼진다',item.urgent,false);
+  sc.eq('urgentRank 가 지워진다',item.urgentRank,undefined);
+  sc.eq('urgentAt 이 지워진다',item.urgentAt,undefined);
+
+  const plain={text:'그냥 할일',done:false}; // 애초에 긴급 표시가 아니던 항목은 손대지 않는다
+  _clearUrgentOnDone(plain);
+  sc.eq('긴급 표시가 없던 항목은 그대로다',plain,{text:'그냥 할일',done:false});
 }
 
 sc.done();
