@@ -189,8 +189,8 @@ console.log('\n시나리오 8 — 따로 포함한 목록의 구성');
 console.log('\n시나리오 9 — 화면에 실제로 붙어 있는가');
 {
   sc.eq('말풍선 문구', SRC.includes('보여주는 현재 말씀모음 목록에 아직 포함 안되었어요'), true);
-  sc.eq('버튼 문구', SRC.includes('구절 포함시키기'), true);
-  sc.eq('누른 뒤 문구', SRC.includes('구절이 이제 포함되었어요'), true);
+  sc.eq('버튼 문구', SRC.includes('개 포함시키기'), true);
+  sc.eq('누른 뒤 문구', SRC.includes('개가 이제 포함되었어요'), true);
   sc.eq('되돌린 뒤 문구', SRC.includes('되돌렸어요'), true);
   sc.eq('버튼 아래 작은 줄', SRC.includes('전체화면 · 상단말씀 · 알림에 함께 나와요'), true);
   sc.eq('설정창 표시', SRC.includes('따로 포함'), true);
@@ -201,6 +201,35 @@ console.log('\n시나리오 9 — 화면에 실제로 붙어 있는가');
   sc.eq('이름줄이 따라온다(sticky)', /\.cf-name\{[^}]*position:sticky/.test(SRC), true);
   sc.eq('밴드 뒤에 바탕색 한 겹', /\.cf-name\{[^}]*var\(--s1\)/.test(SRC), true);
   sc.eq('색 띠가 그룹 전체를 감싼다', /\.coll-filter-panel\{[^}]*border-left/.test(SRC), true);
+}
+
+// ═══ 10. 숫자 단위는 '개' 로 통일 (v26-0916-3, HB) ═══
+console.log('\n시나리오 10 — 단위는 개');
+{
+  sc.eq('총계', SRC.includes('`추가 ${r.added}개`'), true);
+  sc.eq('안내 문구', SRC.includes('새로 들어온 ${total}개 가운데 ${n}개는'), true);
+  sc.eq('버튼', SRC.includes('${n}개 포함시키기'), true);
+  sc.eq('누른 뒤', SRC.includes('${_syncIncUndo.n}개가 이제 포함되었어요'), true);
+  sc.eq('설정창 개수', SRC.includes('c.textContent=`${n}개`;'), true);
+  sc.eq('따로 포함한 목록 구성', SRC.includes('${g.n}개</span>'), true);
+  sc.eq('구절/명제로 가르던 옛 표기 없음', SRC.includes('_collIsProp(findColl(id))?`${n}명제`'), false);
+}
+
+// ═══ 11. 넣은 뒤의 네 갈래 길 ═══
+console.log('\n시나리오 11 — 넣은 뒤 화면');
+{
+  sc.eq('전체화면 버튼', SRC.includes('추가된 말씀/명제 전체화면으로 보기'), true);
+  sc.eq('전체화면 윗줄 이름', SRC.includes("'지금 추가된 말씀/명제'"), true);
+  // openVerseFull 이 _vfClearNav 를 부르므로 목록은 **연 뒤에** 심어야 한다
+  const fn=(/function syncIncludeOpenFull\(\)\{([\s\S]*?)\n\}/.exec(SRC)||[])[1]||'';
+  sc.eq('열고 나서 목록을 심는다',
+        fn.indexOf('openVerseFull(true)')<fn.indexOf('_vfSetNav('), true);
+  sc.eq('넣은 열쇠로 걸러 온다', /keys\.has\(_plusKeyOf\(v\)\)/.test(fn), true);
+  sc.eq('세 갈래 버튼', ['현재 말씀목록','말씀모음설정','되돌리기'].every(t=>SRC.includes(t)), true);
+  sc.eq('목록 버튼은 목록 팝업으로', SRC.includes("wire('syncIncListBtn',()=>{closeSyncResultModal();openVerseListModal();});"), true);
+  sc.eq('설정 버튼은 모음 탭 + 반짝', /wire\('syncIncSetBtn'[^\n]*_vsetGoColl\(\)/.test(SRC), true);
+  // 전체화면은 결과 화면을 닫지 않는다 — 숨겼다 되살리는 기존 장치를 쓴다
+  sc.eq('전체화면은 결과 화면을 닫지 않는다', /closeSyncResultModal\(\)/.test(fn), false);
 }
 
 sc.done();

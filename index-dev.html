@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0916-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0916-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1843,6 +1843,16 @@ header{
   content:'';position:absolute;top:-5px;left:18px;width:11px;height:11px;
   background:var(--s2);transform:rotate(45deg);border-radius:2px;
 }
+/* 넣은 뒤 갈 만한 곳 셋 — 아이콘 위, 글자 아래 */
+.sync-go-row{display:flex;gap:6px;margin-top:8px;}
+.sync-go{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 2px 7px;background:none;border:1px solid var(--bd2);border-radius:10px;
+  color:var(--tx2);font-family:inherit;font-size:10.5px;font-weight:600;line-height:1.2;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.sync-go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.sync-go:active{opacity:.6;}
 
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
@@ -5014,7 +5024,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0916-2";
+const APP_VERSION = "v. 26-0916-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6622,7 +6632,7 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <!-- 2-1: filled left triangle for prev -->
   <!-- 2-1: filled right triangle for next -->
-  <div class="task-menu-item" onclick="openVerseCollFromLogo()">
+  <div class="task-menu-item" onclick="closeLogoMenu();openVerseListModal();">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M5.53 7.95 L11.55 10.65 L13.31 9.53 L7.29 6.83 Z M8.17 6.27 L14.19 8.97 L15.95 7.85 L9.93 5.15 Z M10.81 4.59 L13.82 5.94 L15.58 4.82 L12.57 3.47 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg></span><span style="flex:1;">현재 말씀 모음</span>
     <!-- 우측 동기화 — 로고 롱터치/우클릭과 같은 기능 (전체 업데이트) -->
     <span class="task-menu-side" onclick="event.stopPropagation();closeLogoMenu();verseSyncAllNow();" title="말씀 모음 전체 업데이트" aria-label="말씀 모음 전체 업데이트">
@@ -8140,7 +8150,7 @@ function _updateCfAllCount(id){
   const c=document.getElementById(`cfCount-${id}`);
   if(c){
     const n=_collFilteredVerses(id).length;
-    c.textContent=_collIsProp(findColl(id))?`${n}명제`:`${n}구절`;
+    c.textContent=`${n}개`;
   }
   const pm=document.getElementById(`cfPlus-${id}`);
   if(pm){
@@ -24468,12 +24478,11 @@ function openVerseSettingsFromMenu(){
   _vsetBackTo=null;_vsetBackId=null;
   _vsetGoTab(_vmmFromTab,true);
 }
-// 로고 메뉴의 '현재 말씀 모음'은 말씀모음 탭으로 간다.
-function openVerseCollFromLogo(){
-  closeLogoMenu();
-  _vsetBackTo=null;_vsetBackId=null;
-  _vsetGoColl();
-}
+// ⚠️ 로고 메뉴의 '현재 말씀 모음'은 **목록 팝업**(openVerseListModal)으로 간다.
+//    v26-0909-19 '진입 동작 통일' 때 말씀 설정의 모음 탭으로 바뀌었는데,
+//    그러면 말씀과 명제를 목록으로 훑어보는 길이 메뉴에서 사라진다(HB 26-0916).
+//    설정 탭으로 가는 길은 그 목록 팝업 좌상단의 책 아이콘이 이미 맡고 있다
+//    (openVerseCollSettings). 한 메뉴에서 두 번 갈 이유가 없다.
 // 로고 메뉴의 '말씀 설정'은 기본 화면으로 열 뿐, 탭을 강제로 옮기거나
 // 깜빡이지 않는다 (v26-0910-4, HB 검토표 결정).
 function openVerseSettingsFromLogo(){
@@ -36691,10 +36700,10 @@ function showSyncResultModal(r){
     lines.push(`<div>새로운 내용이 없어요 — 이미 최신 상태예요.</div>`);
   }else{
     const tot=[];
-    if(r.added)tot.push(`추가 ${r.added}구절`);
-    if(r.restored)tot.push(`복원 ${r.restored}구절`);
-    if(r.updated)tot.push(`수정 ${r.updated}구절`);
-    if(r.removed)tot.push(`휴지통 ${r.removed}구절`);
+    if(r.added)tot.push(`추가 ${r.added}개`);
+    if(r.restored)tot.push(`복원 ${r.restored}개`);
+    if(r.updated)tot.push(`수정 ${r.updated}개`);
+    if(r.removed)tot.push(`휴지통 ${r.removed}개`);
     lines.push(`<div style="font-weight:600;margin-bottom:8px;">${tot.join(' · ')}</div>`);
     // 모음 × 시트별 내역 — 바뀐 게 있는 그룹만, 변화량이 큰 순서로
     const groups=(r.groups||[]).filter(g=>{
@@ -36723,7 +36732,7 @@ function showSyncResultModal(r){
           </div>`);
         });
         if(g.blocked){
-          lines.push(`<div style="padding:2px 0 2px 10px;font-size:12px;color:var(--danger,#e5484d);">⚠ 정리 보류 ${g.blocked}구절</div>`);
+          lines.push(`<div style="padding:2px 0 2px 10px;font-size:12px;color:var(--danger,#e5484d);">⚠ 정리 보류 ${g.blocked}개</div>`);
         }
       });
     }
@@ -36766,41 +36775,69 @@ function _syncIncludeInit(r){
   _syncIncPend=hidden?{byColl,total,hidden}:null;
   _syncIncludeRender();
 }
+// 아이콘 위, 글자 아래의 작은 버튼 한 칸
+function _syncGoBtn(id,label,icon){
+  return `<button type="button" class="sync-go" id="${id}">${icon}<span>${_escHtml(label)}</span></button>`;
+}
+// 방금 넣은 것만 걸러 전체화면으로 — 윗줄에 '지금 추가된 말씀/명제' 가 뜬다.
+// ⚠️ openVerseFull() 이 앞머리에서 _vfClearNav() 를 부른다. 목록은 **연 뒤에** 심는다.
+// ⚠️ 동기화 결과 화면은 닫지 않는다 — 전체화면이 덮는 화면들을 숨겼다가
+//    closeVerseFull() 이 되살리므로, 나오면 결과 화면(되돌리기 포함)이 그대로 있다.
+function syncIncludeOpenFull(){
+  if(!_syncIncUndo)return;
+  const keys=new Set(_syncIncUndo.keys||[]);
+  const list=(ACTIVE_VERSES()||[]).filter(v=>keys.has(_plusKeyOf(v)));
+  if(!list.length){showToast('방금 넣은 말씀을 찾지 못했어요');return;}
+  _vfOverrideVerse=list[0];
+  openVerseFull(true);
+  _vfSetNav(list,0,'지금 추가된 말씀/명제',null);
+  _vfSyncTopBar();
+  _verseFullRender();
+}
 function _syncIncludeRender(msg){
   const box=document.getElementById('syncIncludeBox');
   if(!box)return;
   if(!_syncIncPend&&!_syncIncUndo){box.innerHTML='';return;}
   const bub=(inner)=>`<div class="sync-bubble">${inner}</div>`;
   if(_syncIncUndo){
-    // 넣은 직후 — 되돌리기는 토스트 동작('보러 가기')과 같은 말투로
+    // 넣은 직후 — 넣은 것을 바로 볼 수 있는 길과, 갈 만한 곳 셋을 함께 준다
     box.innerHTML=bub(
       `<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--tx);">`+
       `<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--ac)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,11 8,15 16,5"/></svg>`+
-      `<span>${_syncIncUndo.n}구절이 이제 포함되었어요</span></div>`+
-      // .toast-act 는 align-self 로 오른쪽에 붙으므로 flex 줄 안에 담는다
-      `<div style="display:flex;justify-content:flex-end;margin-top:8px;">`+
-      `<button type="button" class="toast-act" id="syncIncUndoBtn">되돌리기`+
-      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5L3 9l4 4"/><path d="M3 9h8a5 5 0 0 1 0 10H8"/></svg></button></div>`);
-    const b=document.getElementById('syncIncUndoBtn');
-    if(b)b.onclick=syncIncludeUndo;
+      `<span>${_syncIncUndo.n}개가 이제 포함되었어요</span></div>`+
+      `<button type="button" class="settings-btn" id="syncIncFullBtn" style="width:100%;margin-top:10px;border-color:var(--ac);color:var(--tx);">추가된 말씀/명제 전체화면으로 보기</button>`+
+      `<div class="sync-go-row">`+
+      _syncGoBtn('syncIncListBtn','현재 말씀목록',
+        `<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg>`)+
+      _syncGoBtn('syncIncSetBtn','말씀모음설정',
+        `<svg width="17" height="17" viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>`)+
+      _syncGoBtn('syncIncUndoBtn','되돌리기',
+        `<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4"/><path d="M3 8h8.5a4.5 4.5 0 0 1 0 9H8"/></svg>`)+
+      `</div>`);
+    const wire=(id,fn)=>{const b=document.getElementById(id);if(b)b.onclick=fn;};
+    wire('syncIncFullBtn',syncIncludeOpenFull);
+    wire('syncIncListBtn',()=>{closeSyncResultModal();openVerseListModal();});
+    wire('syncIncSetBtn',()=>{closeSyncResultModal();_vsetBackTo=null;_vsetBackId=null;_vsetGoColl();});
+    wire('syncIncUndoBtn',syncIncludeUndo);
     return;
   }
   const n=_syncIncPend.hidden,total=_syncIncPend.total;
   const head=msg?`<b>${_escHtml(msg)}</b> `:'';
   const say=msg
-    ? `${head}${n}구절은 <b>다시 목록에 포함되지 않은 상태</b>예요.`
-    : `새로 들어온 ${total}구절 가운데 ${n}구절은 <b>보여주는 현재 말씀모음 목록에 아직 포함 안되었어요.</b>`;
+    ? `${head}${n}개는 <b>다시 목록에 포함되지 않은 상태</b>예요.`
+    : `새로 들어온 ${total}개 가운데 ${n}개는 <b>보여주는 현재 말씀모음 목록에 아직 포함 안되었어요.</b>`;
   box.innerHTML=bub(
     `<div style="font-size:12px;line-height:1.65;color:var(--tx2);">${say}</div>`+
-    `<button type="button" class="settings-btn" id="syncIncBtn" style="width:100%;margin-top:9px;border-color:var(--ac);color:var(--tx);">${n}구절 포함시키기</button>`+
+    `<button type="button" class="settings-btn" id="syncIncBtn" style="width:100%;margin-top:9px;border-color:var(--ac);color:var(--tx);">${n}개 포함시키기</button>`+
     `<div style="font-size:10.5px;color:var(--tx3);text-align:center;margin-top:6px;">전체화면 · 상단말씀 · 알림에 함께 나와요</div>`);
   const b=document.getElementById('syncIncBtn');
   if(b)b.onclick=syncIncludeNow;
 }
 function syncIncludeNow(){
   if(!_syncIncPend)return;
-  const snap=[];
+  const snap=[],allKeys=[];
   _syncIncPend.byColl.forEach((keys,id)=>{
+    keys.forEach(k=>allKeys.push(k));
     const f=_getCollFilter(id);
     snap.push({id,plus:f.plus.slice(),cats:f.cats.slice(),topics:f.topics.slice(),
                tags:f.tags.slice(),books:f.books.slice(),wasOn:isCollActive(id)});
@@ -36814,7 +36851,7 @@ function syncIncludeNow(){
   if(typeof renderCollButtons==='function')renderCollButtons();
   if(typeof renderVerseBar==='function')renderVerseBar();
   _afterActiveVersesChanged&&_afterActiveVersesChanged();
-  _syncIncUndo={n,snap};
+  _syncIncUndo={n,snap,keys:allKeys};
   _syncIncludeRender();
 }
 function syncIncludeUndo(){
@@ -36921,10 +36958,9 @@ function renderPlusList(){
   };
   if(_plusListTab==='comp'){
     _plusGroups(id).forEach(g=>{
-      const unit=g.isProp?'명제':'구절';
       addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_escHtml(g.key)}`+
              (g.isProp?`<span class="coll-propmark" style="margin-left:4px;">명제</span>`:'')+`</span>`+
-             `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap;">${g.n}${unit}</span>`,
+             `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap;">${g.n}개</span>`,
              ()=>plusRemoveCat(g.key));
       g.topics.forEach(t=>{
         addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_escHtml(t.key)}</span>`+
