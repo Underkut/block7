@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0916-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0916-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1807,8 +1807,42 @@ header{
   display:flex;flex-direction:column;gap:0;margin-top:26px;
   border-top:1px solid var(--bd1);
 }
-.coll-filter-panel{padding:22px 0 26px;}
+/* ── 모음 구역 (v26-0916-2, HB) ────────────────────────────────
+   칩은 꽉 찬 덩어리라 먼저 눈에 들어오는데, 정작 "누구의 칩인지" 를 말하는
+   모음 이름은 작은 회색 글씨라 뒤로 밀렸다. 그래서 두 가지를 준다 —
+     ① 색 띠가 **그 모음의 칩 줄까지** 통째로 감싼다 (구역을 묶는다)
+     ② 이름줄은 스크롤해도 위에 붙어 따라온다 (.cf-name)
+   띠 색은 모음마다 다르되 **테마 강조색에서 돌려 뽑는다** (_collHue). */
+.coll-filter-panel{padding:22px 0 26px;border-left:3px solid var(--ac);border-radius:3px;}
 .coll-filter-panel+.coll-filter-panel{border-top:1px solid var(--bd1);}
+.coll-filter-panel>*:not(.cf-name){padding-left:9px;}
+/* ⚠️ 그라데이션만 깔면 오른쪽 투명한 쪽으로 **칩이 비쳐 지나간다.**
+      그 아래 바탕색(--s1)을 한 겹 더 깔아야 뒤가 가려진다. */
+.cf-name{
+  position:sticky;top:0;z-index:3;display:flex;align-items:baseline;gap:7px;
+  padding:5px 9px;margin-bottom:7px;
+  background:linear-gradient(to right,var(--cf-band,rgba(0,0,0,.05)),rgba(0,0,0,0)),var(--s1);
+}
+.cf-name .cf-nm{font-size:13.5px;font-weight:700;color:var(--tx);letter-spacing:-.2px;
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cf-name .cf-cnt{font-size:10.5px;color:var(--tx3);white-space:nowrap;}
+/* ＋따로 포함 N — 누르면 목록이 열린다. 지우기(×)는 그 안에만 둔다 */
+.cf-plus{
+  font-size:10px;font-weight:700;color:var(--ac-tx);background:var(--s2);
+  border:1px solid var(--bd2);border-radius:9px;padding:1px 7px;white-space:nowrap;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.cf-plus:active{opacity:.6;}
+/* 앱이 말을 거는 자리 — 동기화 결과 화면의 안내는 말풍선으로 감싼다.
+   테두리는 두지 않는다 (미니멀 원칙) — 옅은 채움과 작은 꼬리만. */
+.sync-bubble{
+  position:relative;background:var(--s2);border-radius:13px;
+  padding:11px 12px 12px;margin-top:16px;
+}
+.sync-bubble::before{
+  content:'';position:absolute;top:-5px;left:18px;width:11px;height:11px;
+  background:var(--s2);transform:rotate(45deg);border-radius:2px;
+}
 
 /* ★ two steps larger, shift up 1px to center optically */
 .preset-btn.star-btn{font-size:18px;line-height:1;padding-bottom:2px;}
@@ -4980,7 +5014,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0916-1";
+const APP_VERSION = "v. 26-0916-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7028,6 +7062,27 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
 </div>
 
+<!-- 따로 포함한 목록 — 필터와 상관없이 통과시킨 구절들.
+     [구성]은 대분류 > 소주제로 묶어서, [목록]은 구절 하나씩 보여준다. -->
+<div class="event-modal-overlay" id="plusListOverlay" style="display:none;z-index:4460;" onclick="closePlusList()"></div>
+<div class="event-modal" id="plusListModal" style="display:none;z-index:4470;width:310px;max-height:80vh;flex-direction:column;">
+  <button class="modal-x" onclick="closePlusList()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+  </button>
+  <div style="text-align:center;margin-bottom:10px;">
+    <div style="font-size:15px;font-weight:600;color:var(--tx);padding:0 28px;">따로 포함한 목록</div>
+    <div id="plusListSub" style="font-size:11px;color:var(--tx3);margin-top:2px;"></div>
+  </div>
+  <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px;">
+    <button class="preset-btn on" id="plusTabComp" onclick="setPlusTab('comp')" style="width:auto;padding:0 12px;font-size:11px;">구성</button>
+    <button class="preset-btn" id="plusTabList" onclick="setPlusTab('list')" style="width:auto;padding:0 12px;font-size:11px;">목록</button>
+  </div>
+  <div id="plusListBody" style="overflow-y:auto;flex:1;min-height:0;"></div>
+  <div style="display:flex;margin-top:14px;">
+    <button class="settings-btn" onclick="plusClearAll()" style="flex:1;">모두 제외</button>
+  </div>
+</div>
+
 <!-- 시간 구간 지우기 — 보관 / 깨끗이 지우기 중에서 고른다.
      확인창이 셋으로 갈라지므로 공용 appConfirm 대신 따로 둔다. -->
 <div class="event-modal-overlay" id="secDelOverlay" style="display:none;z-index:4440;" onclick="closeSecDelModal()"></div>
@@ -7607,12 +7662,15 @@ function ALL_VERSES(){
 function VERSE_TOTAL(){return NAVIGATOR_VERSES.length+getCustomVerses().length;}
 
 // ── 모음별 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) ──
-// ST.settings.collFilters[id] = {mode, cats:[], topics:[], books:[], sortCat, sortTopic, sortBook, bookTab}
+// ST.settings.collFilters[id] = {mode, cats:[], topics:[], books:[], sortCat, sortTopic, sortBook, bookTab, plus:[]}
+// plus = '따로 포함' 한 구절들의 열쇠 목록. 필터(네 축·기간)와 상관없이 통과한다.
 function _getCollFilter(id){
   if(!ST.settings.collFilters)ST.settings.collFilters={};
   if(!ST.settings.collFilters[id]){
-    ST.settings.collFilters[id]={mode:'all',cats:[],topics:[],books:[],tags:[],sortCat:'count',sortTopic:'count',sortBook:'count',sortTag:'count',bookTab:'NT',period:'all',pFrom:'',pTo:''};
+    ST.settings.collFilters[id]={mode:'all',cats:[],topics:[],books:[],tags:[],sortCat:'count',sortTopic:'count',sortBook:'count',sortTag:'count',bookTab:'NT',period:'all',pFrom:'',pTo:'',plus:[]};
   }
+  // 예전 기기에서 만들어진 필터에는 plus 가 없다 — 읽을 때 채운다
+  if(!Array.isArray(ST.settings.collFilters[id].plus))ST.settings.collFilters[id].plus=[];
   return ST.settings.collFilters[id];
 }
 // id별 원본 구절(삭제 제외) — nav180이면 180 전체, 아니면 그 모음의 구절
@@ -7786,13 +7844,13 @@ function _collPeriodPass(v,f){
 function _collFilteredVerses(id){
   const raw=_collRawVerses(id);
   const f=_getCollFilter(id);
-  return raw.filter(v=>_collPeriodPass(v,f)&&_collVersePassesFilter(v,f,null));
+  return raw.filter(v=>_collVerseShows(v,f));
 }
 // '전체' 가 가져오는 구절 = 기간 필터만 건 것.
 // 대분류·소주제·태그·성경 선택은 여기서 보지 않는다 (HB 26-0906).
 function _collPeriodVerses(id){
   const f=_getCollFilter(id);
-  return _collRawVerses(id).filter(v=>_collPeriodPass(v,f));
+  return _collRawVerses(id).filter(v=>_collPeriodPass(v,f)||_plusHas(f,v));
 }
 // 네 갈래(대분류/소주제/태그/성경) 가운데 하나라도 골라 둔 것이 있는가
 function _cfHasSel(f){
@@ -7807,6 +7865,114 @@ function _cfClearSel(id){
   const had=_cfHasSel(f);
   f.cats=[];f.topics=[];f.tags=[];f.books=[];
   return had;
+}
+
+// ══ 따로 포함 (plus) — 필터를 건드리지 않고 그 구절만 통과시키는 쪽문 ══════
+// 동기화로 새 말씀이 들어와도, 필터에 골라 둔 것이 있으면 새 대분류·새 소주제로
+// 들어온 것은 화면에 안 나온다. 그때마다 설정창에 들어가 칩을 켜는 대신
+// 결과 화면에서 한 번 눌러 넣는다.
+//
+// ⚠️ 왜 축(cats/topics)에 값을 더하지 않고 따로 두는가 —
+//    축은 **교집합**이라, 두 축에 값을 더하면 조합이 늘어 **예전 구절까지 함께**
+//    보이게 된다. 사용자는 "새로 온 것만 넣었는데 왜 옛 게 나오지" 가 된다.
+//    쪽문은 넣은 구절 하나하나만 통과시키므로 그런 일이 없다.
+// ⚠️ 그렇다고 쪽문이 쌓이기만 하면 설정창이 지저분해진다. 그래서 넣은 뒤
+//    _plusTidy() 가 "그냥 칩 하나 켠 것과 결과가 똑같은가" 를 따져 보고,
+//    똑같으면 칩으로 바꾸고 쪽문을 비운다. (tests/test_plus.js 가 지킨다)
+function _plusKeyOf(v){return _verseIdentity(v&&v.ref,v&&v.cat,v&&v.topic,v&&v.pid);}
+function _plusHas(f,v){
+  const p=f&&f.plus;
+  return !!(p&&p.length&&p.indexOf(_plusKeyOf(v))>=0);
+}
+// 이 구절이 지금 화면에 나오는가 (쪽문 포함)
+function _collVerseShows(v,f){
+  if(_plusHas(f,v))return true;
+  return _collPeriodPass(v,f)&&_collVersePassesFilter(v,f,null);
+}
+// 쪽문을 뺀, 필터만으로 통과하는가
+function _collVersePassesOnly(v,f){
+  return _collPeriodPass(v,f)&&_collVersePassesFilter(v,f,null);
+}
+// 지금 보이는 구절들의 자취 — 뒷처리가 "결과가 같은가" 를 가리는 데 쓴다
+function _plusVisibleMask(id){
+  const f=_getCollFilter(id);
+  return _collRawVerses(id).map(v=>_collVerseShows(v,f)?'1':'0').join('');
+}
+function _plusVerses(id){
+  const f=_getCollFilter(id);
+  if(!f.plus.length)return [];
+  return _collRawVerses(id).filter(v=>_plusHas(f,v));
+}
+// 짝 없는 열쇠(지워졌거나 휴지통으로 간 구절)를 걷어낸다 — 쌓이지 않게
+function _plusPrune(id){
+  const f=_getCollFilter(id);
+  if(!f.plus.length)return false;
+  const live=new Set(_collRawVerses(id).map(_plusKeyOf));
+  const kept=f.plus.filter(k=>live.has(k));
+  if(kept.length===f.plus.length)return false;
+  f.plus=kept;return true;
+}
+const _PLUS_AXES=[
+  ['cats',  v=>[(v.cat||'나의 암송').trim()||'나의 암송']],
+  ['topics',v=>[(v.topic||'').trim()||'(주제 없음)']],
+  ['tags',  v=>((v.tags&&v.tags.length)?v.tags.slice():['(태그 없음)'])],
+];
+// 뒷처리 — 쪽문을 칩으로 바꿀 수 있으면 바꾼다.
+// ⚠️ 선택이 **하나도 없는 축**은 '제한 없음' 이다. 거기에 값을 더하면 범위가
+//    오히려 좁아져 멀쩡히 보이던 구절이 사라진다. 그래서 건드리지 않는다.
+function _plusTidy(id){
+  const f=_getCollFilter(id);
+  _plusPrune(id);
+  if(!f.plus.length)return;
+  const want=_plusVisibleMask(id);           // 지금 보이는 모습 — 이게 기준이다
+  _PLUS_AXES.forEach(([selKey,valsOf])=>{
+    if(!Array.isArray(f[selKey])||!f[selKey].length)return;
+    const cand=[];
+    _plusVerses(id).forEach(v=>valsOf(v).forEach(val=>{
+      if(f[selKey].indexOf(val)<0&&cand.indexOf(val)<0)cand.push(val);
+    }));
+    cand.forEach(val=>{
+      const keepSel=f[selKey].slice(),keepPlus=f.plus.slice();
+      f[selKey]=keepSel.concat(val);
+      // 이제 필터만으로 통과하는 것은 쪽문에서 덜어낸다
+      f.plus=_collRawVerses(id).filter(v=>_plusHas(f,v)&&!_collVersePassesOnly(v,f)).map(_plusKeyOf);
+      if(_plusVisibleMask(id)!==want){f[selKey]=keepSel;f.plus=keepPlus;}
+    });
+  });
+}
+// 구절들을 쪽문에 넣는다. 모음이 꺼져 있으면 함께 켠다.
+function _plusAdd(id,keys){
+  const f=_getCollFilter(id);
+  (keys||[]).forEach(k=>{if(k&&f.plus.indexOf(k)<0)f.plus.push(k);});
+  _plusTidy(id);
+}
+// 대분류 > 소주제로 묶은 구성 (따로 포함한 목록 화면이 쓴다)
+function _plusGroups(id){
+  const out=[],byCat=new Map();
+  _plusVerses(id).forEach(v=>{
+    const cat=(v.cat||'나의 암송').trim()||'나의 암송';
+    const topic=(v.topic||'').trim()||'주제 없음';
+    if(!byCat.has(cat)){const g={key:cat,n:0,isProp:false,topics:[],_t:new Map()};byCat.set(cat,g);out.push(g);}
+    const g=byCat.get(cat);
+    g.n++;
+    if(v.pid||v.kind==='prop')g.isProp=true;
+    if(!g._t.has(topic)){const t={key:topic,n:0};g._t.set(topic,t);g.topics.push(t);}
+    g._t.get(topic).n++;
+  });
+  out.forEach(g=>{delete g._t;g.topics.sort((a,b)=>b.n-a.n);});
+  return out.sort((a,b)=>b.n-a.n);
+}
+// 그 모음에서, 주어진 열쇠들 가운데 지금 화면에 안 나오는 것
+function _plusHiddenKeys(id,keys){
+  const f=_getCollFilter(id);
+  const on=isCollActive(id);
+  const byKey=new Map();
+  _collRawVerses(id).forEach(v=>byKey.set(_plusKeyOf(v),v));
+  return (keys||[]).filter(k=>{
+    const v=byKey.get(k);
+    if(!v)return false;
+    return !on||!_collVerseShows(v,f);
+  });
 }
 
 // ── 현재 켜진 말씀 모음의 구절 집합 (말씀바·전체목록·선택이 따라감) ──
@@ -7950,11 +8116,37 @@ function _collLabel(id){
 // 지금 걸러진 결과 개수는 **모음 이름 오른쪽**에 적는다 (HB 26-0906).
 // '전체' 칩에는 숫자를 넣지 않는다 — 그 칩은 "다 풀고 전체를 본다" 는 동작이지
 // 개수를 알리는 자리가 아니다. 칩은 골라 둔 것이 있으면 꺼진 상태로 둔다.
+// 모음 구역의 띠 색 — 아무 색이나 쓰지 않고 **지금 테마의 강조색에서 색상환을
+// 일정 각도씩 돌려** 뽑는다. 테마를 바꿔도 늘 어울리고, 모음 id 에서 정하므로
+// 모음을 지웠다 다시 만들어도 색이 흔들리지 않는다.
+// alpha 를 주면 이름줄 밴드용 옅은 색이 된다.
+function _collHue(id,alpha){
+  const ac=getComputedStyle(document.documentElement).getPropertyValue('--ac').trim()||'#c8752e';
+  const m=/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(ac);
+  let r=200,g=117,b=46;
+  if(m){r=parseInt(m[1],16);g=parseInt(m[2],16);b=parseInt(m[3],16);}
+  let h=0,s=0,l=0;
+  {const mx=Math.max(r,g,b)/255,mn=Math.min(r,g,b)/255,d=mx-mn;
+   l=(mx+mn)/2; s=d?d/(1-Math.abs(2*l-1)):0;
+   if(d){const R=r/255,G=g/255,B=b/255;
+     h=mx===R?((G-B)/d)%6:mx===G?(B-R)/d+2:(R-G)/d+4; h*=60; if(h<0)h+=360;}}
+  let n=0;const str=String(id||'');
+  for(let i=0;i<str.length;i++)n=(n*31+str.charCodeAt(i))>>>0;
+  if(id==='nav180')n=0;
+  h=(h+[0,168,42,300,126,210,84][n%7])%360;   // 강조색에서 돌린 각도
+  return `hsl(${Math.round(h)} ${Math.round(Math.max(.25,Math.min(.72,s))*100)}% ${Math.round(Math.max(.38,Math.min(.62,l))*100)}%${alpha?` / ${alpha}`:''})`;
+}
 function _updateCfAllCount(id){
   const c=document.getElementById(`cfCount-${id}`);
   if(c){
     const n=_collFilteredVerses(id).length;
     c.textContent=_collIsProp(findColl(id))?`${n}명제`:`${n}구절`;
+  }
+  const pm=document.getElementById(`cfPlus-${id}`);
+  if(pm){
+    const n=_getCollFilter(id).plus.length;
+    pm.textContent=n?`＋따로 포함 ${n}`:'';
+    pm.style.display=n?'':'none';
   }
   const b=document.getElementById(`cfAllBtn-${id}`);
   if(b){
@@ -7981,19 +8173,27 @@ function _buildCollFilterPanel(id,raw){
   const f=_getCollFilter(id);
   const wrap=document.createElement('div');
   wrap.className='coll-filter-panel';
+  wrap.style.borderLeftColor=_collHue(id);
+  wrap.style.setProperty('--cf-band',_collHue(id,.16));
 
-  // 제목 줄: 모음 이름 + (우측) 기간 글자버튼 주간 월간 연간 전체 직접
+  // 제목 줄: 모음 이름 + 개수 + (따로 포함) + (우측) 기간 글자버튼
   const titleRow=document.createElement('div');
-  titleRow.style.cssText='display:flex;align-items:baseline;gap:8px;margin-bottom:6px;';
+  titleRow.className='cf-name';
   const title=document.createElement('div');
-  title.style.cssText='font-size:11px;color:var(--tx3);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+  title.className='cf-nm';
   title.textContent=_collLabel(id);
   titleRow.appendChild(title);
   // 모음 이름 오른쪽 — 지금 걸러진 결과 개수 (필터를 만질 때마다 따라 바뀐다)
   const cnt=document.createElement('div');
   cnt.id=`cfCount-${id}`;
-  cnt.style.cssText='font-size:11px;color:var(--ac-tx);font-weight:600;white-space:nowrap;';
+  cnt.className='cf-cnt';
   titleRow.appendChild(cnt);
+  // ＋따로 포함 N — 따로 넣어 둔 것이 있을 때만 나타난다. 누르면 목록이 열린다.
+  const plusMark=document.createElement('div');
+  plusMark.id=`cfPlus-${id}`;
+  plusMark.className='cf-plus';
+  plusMark.onclick=()=>openPlusList(id);
+  titleRow.appendChild(plusMark);
   const spacer=document.createElement('div');spacer.style.flex='1';
   titleRow.appendChild(spacer);
   // 직접 기간 날짜 입력 줄 (직접 선택 시에만 표시)
@@ -8763,6 +8963,8 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   });
   const gid=(srcInfo&&srcInfo.gid)||'';
   let added=0,restored=0,updated=0,removed=0;
+  const addedKeys=[];    // 이번에 새로 들어온 구절의 열쇠 — '따로 포함' 이 쓴다
+  const reKey=[];        // 신원이 바뀐 구절 [예전 열쇠, 새 열쇠] — 쪽문이 따라가게
   const byCat=new Map(); // 대분류별 집계 — 동기화 결과 화면에서 쓴다
   const _bump=(cat,field)=>{
     const k=String(cat||'나의 암송');
@@ -8789,6 +8991,11 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
     }
     if(ex){
       claimed.add(ex);
+      // 신원(장절·대분류·소주제·명제ID)이 바뀌면 '따로 포함' 의 열쇠도 바뀐다.
+      // 여기서 짝을 적어 두지 않으면, 시트에서 소주제만 고쳐도 그 구절이
+      // 쪽문에서 조용히 빠져 화면에서 사라진다. (tests/test_plus.js 시나리오 6)
+      const exKey=_verseIdentity(ex.ref,ex.cat,ex.topic,ex.pid);
+      if(exKey!==key)reKey.push([exKey,key]);
       if(ex.del==='simple'){delete ex.del;restored++;_bump(newCat,'restored');} // 삭제 심플만 되살림
       if(gid&&ex.gid!==gid)ex.gid=gid;                 // 출처 표시 (변경으로 세지 않음)
       if(it.row&&ex.row!==it.row)ex.row=it.row;        // 시트에서의 행 번호 (변경으로 세지 않음)
@@ -8843,7 +9050,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
       byRef.get(r).push(nv);
-      added++;_bump(newCat,'added');
+      added++;_bump(newCat,'added');addedKeys.push(key);
     }
   });
   // ── 시트에서 사라진 구절 정리 ──
@@ -8894,7 +9101,18 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       if(v.src==='google'&&v.ref&&!_looksLikeRef(v.ref))coll.verses.splice(i,1);
     }
   }
-  return{added,restored,updated,removed,blocked,byCat};
+  // '따로 포함' 의 열쇠를 구절이 바뀐 대로 따라가게 하고, 짝 없는 것은 걷는다
+  if(coll.id&&typeof ST!=='undefined'&&ST.settings){
+    const f=_getCollFilter(coll.id);
+    if(f.plus.length){
+      reKey.forEach(([from,to])=>{
+        const i=f.plus.indexOf(from);
+        if(i>=0)f.plus[i]=to;
+      });
+      _plusPrune(coll.id);
+    }
+  }
+  return{added,restored,updated,removed,blocked,byCat,addedKeys};
 }
 function addCustomVerseFromForm(){
   if(!_currentColl()){showToast('말씀 모음을 먼저 하나 선택한 뒤 다시 시도해주세요');return;}
@@ -9386,7 +9604,7 @@ async function verseSyncAllNow(){
         const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
         added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed;
         blocked+=r.blocked||0;
-        groups.push({coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0});
+        groups.push({collId:c.id,coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
         g.lastSync=today;sheets++;
       }
       // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
@@ -9401,7 +9619,7 @@ async function verseSyncAllNow(){
             const d=doc.data();
             const r=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
             added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed||0;
-            groups.push({coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0});
+            groups.push({collId:c.id,coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0,addedKeys:r.addedKeys||[]});
             c.importName=d.name||c.importName;
             c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
             if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
@@ -9444,7 +9662,7 @@ async function runVerseSheetAutoSync(){
       g.lastSync=today;
       changed=true;ran++;
       tAdded+=r.added;tRestored+=r.restored;tUpdated+=r.updated;tRemoved+=r.removed;
-      groups.push({coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0});
+      groups.push({collId:c.id,coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
     }
   }
   if(changed){
@@ -9654,7 +9872,7 @@ async function runSharedCollSync(){
         c.importName=d.name||c.importName;
         c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
         if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
-        groups.push({coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0});
+        groups.push({collId:c.id,coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0,addedKeys:r.addedKeys||[]});
         sRan++;
       }
       c.lastShareSync=today;changed=true;
@@ -10386,6 +10604,7 @@ const _ESC_CLOSERS=[
   // 팝업류
   ['vpModal',         ()=>closeVPair()],
   ['syncConflictModal',()=>closeSyncConflicts()],
+  ['plusListModal',    ()=>closePlusList()],
   ['syncResultModal',  ()=>closeSyncResultModal()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
@@ -36517,8 +36736,100 @@ function showSyncResultModal(r){
   if(r.fails){
     lines.push(`<div style="margin-top:10px;color:var(--tx3);font-size:12px;">(${r.fails}개는 받아오지 못했어요)</div>`);
   }
+  lines.push('<div id="syncIncludeBox"></div>');
   body.innerHTML=lines.join('');
+  _syncIncludeInit(r);
   ov.style.display='block';md.style.display='block';
+}
+// ── "새로 들어온 말씀을 목록에 포함시키기" (v26-0916-2, HB) ────────────
+// 동기화로 들어온 새 말씀은 필터에 골라 둔 것이 있으면 화면에 안 나온다.
+// 그때마다 설정창에 들어가 칩을 켜는 일이 번거로워, 결과 화면에서 한 번 눌러
+// 넣는다. 필터는 건드리지 않고 그 구절만 통과시킨다(_plusAdd).
+//
+// ⚠️ 문구에 '켜기' 를 쓰지 않는다 — 앱에서 '켜기' 는 기능 스위치(알림 켜기·
+//    상단 말씀 켜기)의 말이라 뜻이 겹친다 (HB 26-0916).
+let _syncIncPend=null,_syncIncUndo=null;
+function _syncIncludeInit(r){
+  _syncIncUndo=null;
+  // 모음별로 "새로 들어왔는데 아직 목록에 없는" 열쇠를 모은다
+  const byColl=new Map();
+  (r.groups||[]).forEach(g=>{
+    if(!g.collId||!g.addedKeys||!g.addedKeys.length)return;
+    const hid=_plusHiddenKeys(g.collId,g.addedKeys);
+    if(!hid.length)return;
+    if(!byColl.has(g.collId))byColl.set(g.collId,[]);
+    const arr=byColl.get(g.collId);
+    hid.forEach(k=>{if(arr.indexOf(k)<0)arr.push(k);});
+  });
+  const total=(r.added||0);
+  let hidden=0;byColl.forEach(a=>hidden+=a.length);
+  _syncIncPend=hidden?{byColl,total,hidden}:null;
+  _syncIncludeRender();
+}
+function _syncIncludeRender(msg){
+  const box=document.getElementById('syncIncludeBox');
+  if(!box)return;
+  if(!_syncIncPend&&!_syncIncUndo){box.innerHTML='';return;}
+  const bub=(inner)=>`<div class="sync-bubble">${inner}</div>`;
+  if(_syncIncUndo){
+    // 넣은 직후 — 되돌리기는 토스트 동작('보러 가기')과 같은 말투로
+    box.innerHTML=bub(
+      `<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--tx);">`+
+      `<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="var(--ac)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,11 8,15 16,5"/></svg>`+
+      `<span>${_syncIncUndo.n}구절이 이제 포함되었어요</span></div>`+
+      // .toast-act 는 align-self 로 오른쪽에 붙으므로 flex 줄 안에 담는다
+      `<div style="display:flex;justify-content:flex-end;margin-top:8px;">`+
+      `<button type="button" class="toast-act" id="syncIncUndoBtn">되돌리기`+
+      `<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 5L3 9l4 4"/><path d="M3 9h8a5 5 0 0 1 0 10H8"/></svg></button></div>`);
+    const b=document.getElementById('syncIncUndoBtn');
+    if(b)b.onclick=syncIncludeUndo;
+    return;
+  }
+  const n=_syncIncPend.hidden,total=_syncIncPend.total;
+  const head=msg?`<b>${_escHtml(msg)}</b> `:'';
+  const say=msg
+    ? `${head}${n}구절은 <b>다시 목록에 포함되지 않은 상태</b>예요.`
+    : `새로 들어온 ${total}구절 가운데 ${n}구절은 <b>보여주는 현재 말씀모음 목록에 아직 포함 안되었어요.</b>`;
+  box.innerHTML=bub(
+    `<div style="font-size:12px;line-height:1.65;color:var(--tx2);">${say}</div>`+
+    `<button type="button" class="settings-btn" id="syncIncBtn" style="width:100%;margin-top:9px;border-color:var(--ac);color:var(--tx);">${n}구절 포함시키기</button>`+
+    `<div style="font-size:10.5px;color:var(--tx3);text-align:center;margin-top:6px;">전체화면 · 상단말씀 · 알림에 함께 나와요</div>`);
+  const b=document.getElementById('syncIncBtn');
+  if(b)b.onclick=syncIncludeNow;
+}
+function syncIncludeNow(){
+  if(!_syncIncPend)return;
+  const snap=[];
+  _syncIncPend.byColl.forEach((keys,id)=>{
+    const f=_getCollFilter(id);
+    snap.push({id,plus:f.plus.slice(),cats:f.cats.slice(),topics:f.topics.slice(),
+               tags:f.tags.slice(),books:f.books.slice(),wasOn:isCollActive(id)});
+    if(!isCollActive(id)){
+      const a=getActiveColls().slice();a.push(id);ST.settings.activeColls=a;
+    }
+    _plusAdd(id,keys);
+  });
+  const n=_syncIncPend.hidden;
+  save();_invalidateVerseCaches();
+  if(typeof renderCollButtons==='function')renderCollButtons();
+  if(typeof renderVerseBar==='function')renderVerseBar();
+  _afterActiveVersesChanged&&_afterActiveVersesChanged();
+  _syncIncUndo={n,snap};
+  _syncIncludeRender();
+}
+function syncIncludeUndo(){
+  if(!_syncIncUndo)return;
+  _syncIncUndo.snap.forEach(s=>{
+    const f=_getCollFilter(s.id);
+    f.plus=s.plus;f.cats=s.cats;f.topics=s.topics;f.tags=s.tags;f.books=s.books;
+    if(!s.wasOn)ST.settings.activeColls=getActiveColls().filter(x=>x!==s.id);
+  });
+  _syncIncUndo=null;
+  save();_invalidateVerseCaches();
+  if(typeof renderCollButtons==='function')renderCollButtons();
+  if(typeof renderVerseBar==='function')renderVerseBar();
+  _afterActiveVersesChanged&&_afterActiveVersesChanged();
+  _syncIncludeRender('되돌렸어요.');
 }
 function _syncCatWeight(v){return(v.added||0)+(v.restored||0)+(v.updated||0)+(v.removed||0);}
 function _syncGroupWeight(g){
@@ -36531,6 +36842,122 @@ function closeSyncResultModal(){
   const md=document.getElementById('syncResultModal');
   if(ov)ov.style.display='none';
   if(md)md.style.display='none';
+}
+// ── 따로 포함한 목록 (v26-0916-2, HB) ──────────────────────────
+// 필터와 상관없이 통과시킨 구절들을 두 갈래로 본다.
+//   구성 — 대분류 > 소주제로 묶어 "무엇이 몇 개" 를 한눈에
+//   목록 — 구절 하나씩
+// 제외는 세 단위: 대분류 통째로 / 소주제만 / 구절 하나. 그리고 '모두 제외'.
+let _plusListId=null,_plusListTab='comp';
+function openPlusList(id){
+  _plusListId=id;_plusListTab='comp';
+  const ov=document.getElementById('plusListOverlay');
+  const md=document.getElementById('plusListModal');
+  if(!ov||!md)return;
+  ov.style.display='block';md.style.display='flex';
+  renderPlusList();
+}
+function closePlusList(){
+  const ov=document.getElementById('plusListOverlay');
+  const md=document.getElementById('plusListModal');
+  if(ov)ov.style.display='none';
+  if(md)md.style.display='none';
+  _plusListId=null;
+}
+function setPlusTab(t){
+  _plusListTab=t;
+  const a=document.getElementById('plusTabComp'),b=document.getElementById('plusTabList');
+  if(a)a.classList.toggle('on',t==='comp');
+  if(b)b.classList.toggle('on',t==='list');
+  renderPlusList();
+}
+// 제외한 뒤 화면을 다시 맞춘다 — 비면 목록을 닫는다
+function _plusAfterChange(){
+  const id=_plusListId;
+  save();_invalidateVerseCaches();
+  if(typeof renderVerseBar==='function')renderVerseBar();
+  _afterActiveVersesChanged&&_afterActiveVersesChanged();
+  if(typeof renderCollFilterPanels==='function')renderCollFilterPanels();
+  if(!id||!_getCollFilter(id).plus.length){closePlusList();return;}
+  renderPlusList();
+}
+function plusRemoveKeys(keys){
+  const id=_plusListId;if(!id)return;
+  const f=_getCollFilter(id);
+  const drop=new Set(keys);
+  f.plus=f.plus.filter(k=>!drop.has(k));
+  _plusAfterChange();
+}
+function plusRemoveCat(cat){
+  const id=_plusListId;if(!id)return;
+  plusRemoveKeys(_plusVerses(id).filter(v=>((v.cat||'나의 암송').trim()||'나의 암송')===cat).map(_plusKeyOf));
+}
+function plusRemoveTopic(cat,topic){
+  const id=_plusListId;if(!id)return;
+  plusRemoveKeys(_plusVerses(id).filter(v=>
+    ((v.cat||'나의 암송').trim()||'나의 암송')===cat&&((v.topic||'').trim()||'주제 없음')===topic).map(_plusKeyOf));
+}
+function plusClearAll(){
+  const id=_plusListId;if(!id)return;
+  _getCollFilter(id).plus=[];
+  _plusAfterChange();
+}
+function renderPlusList(){
+  const id=_plusListId;
+  const body=document.getElementById('plusListBody');
+  const sub=document.getElementById('plusListSub');
+  if(!id||!body)return;
+  const verses=_plusVerses(id);
+  if(sub)sub.textContent=`${_collLabel(id)} · ${verses.length}개`;
+  const rowCss='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bd1);';
+  const xCss='width:16px;text-align:center;color:var(--tx3);font-size:13px;cursor:pointer;flex:none;';
+  body.innerHTML='';
+  const addRow=(html,onX)=>{
+    const d=document.createElement('div');
+    d.style.cssText=rowCss;
+    d.innerHTML=html+`<span style="${xCss}">×</span>`;
+    d.lastChild.onclick=onX;
+    body.appendChild(d);
+  };
+  if(_plusListTab==='comp'){
+    _plusGroups(id).forEach(g=>{
+      const unit=g.isProp?'명제':'구절';
+      addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_escHtml(g.key)}`+
+             (g.isProp?`<span class="coll-propmark" style="margin-left:4px;">명제</span>`:'')+`</span>`+
+             `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap;">${g.n}${unit}</span>`,
+             ()=>plusRemoveCat(g.key));
+      g.topics.forEach(t=>{
+        addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_escHtml(t.key)}</span>`+
+               `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);">${t.n}</span>`,
+               ()=>plusRemoveTopic(g.key,t.key));
+      });
+    });
+  }else{
+    let lastGrp='';
+    verses.slice().sort((a,b)=>{
+      const ka=`${a.cat||''}${a.topic||''}`,kb=`${b.cat||''}${b.topic||''}`;
+      return ka<kb?-1:ka>kb?1:0;
+    }).forEach(v=>{
+      const grp=`${(v.cat||'나의 암송').trim()||'나의 암송'} · ${(v.topic||'').trim()||'주제 없음'}`;
+      if(grp!==lastGrp){
+        lastGrp=grp;
+        const h=document.createElement('div');
+        h.style.cssText='font-size:10px;font-weight:700;color:var(--ac-tx);margin:9px 0 2px;';
+        h.textContent=grp;
+        body.appendChild(h);
+      }
+      const ref=v.ref||(v.refs&&v.refs.length?v.refs[0]:'')||'(장절 없음)';
+      const snip=String(v.krText||'').slice(0,26);
+      addRow(`<span style="flex:1;min-width:0;">`+
+             `<span style="font-size:12px;font-weight:700;color:var(--tx);">${_escHtml(ref)}</span><br>`+
+             `<span style="font-size:11px;color:var(--tx3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(snip)}…</span>`+
+             `</span>`,
+             ()=>plusRemoveKeys([_plusKeyOf(v)]));
+    });
+  }
+  if(!verses.length){
+    body.innerHTML='<div style="font-size:12.5px;color:var(--tx3);text-align:center;padding:14px 0;">따로 포함한 것이 없어요.</div>';
+  }
 }
 // ── 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) ──
 let _sfxMenuVal=null,_sfxMenuRowId=null,_sfxEditing=null;
