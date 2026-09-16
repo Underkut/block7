@@ -18,7 +18,6 @@ console.log('시나리오 1 — 공통 도착점과 강조');
 console.log('\n시나리오 2 — 화면의 모든 진입점');
 {
   const routes = [
-    'openVerseCollFromLogo',       // 로고 메뉴: 현재 말씀 모음
     'openVerseCollFromListMenu',   // 활동 목록 행 메뉴: 말씀 설정
     'openVcCollSettings',          // 말씀카드 설정 헤더
     'vfOpenCollSettings',          // 말씀 전체화면 헤더
@@ -27,7 +26,10 @@ console.log('\n시나리오 2 — 화면의 모든 진입점');
   ];
   routes.forEach(name=>sc.eq(`${name}이 공통 길을 쓴다`, /_vsetGoColl\(\)/.test(body(name)), true));
   sc.eq('대시보드 기준 버튼도 같은 탭과 강조다', /_vsetGoTab\('coll',true\)/.test(body('vDashOpenCollSettings')), true);
-  sc.eq('로고 메뉴 현재 말씀 모음은 한 곳에서만 쓴다', (SRC.match(/onclick="openVerseCollFromLogo\(\)"/g) || []).length, 1);
+  // ⚠️ 로고 메뉴의 '현재 말씀 모음'은 설정이 아니라 **목록 팝업**으로 간다 (v26-0916-3, HB).
+  //    v26-0909-19 에 설정 탭으로 바뀌면서 말씀·명제를 목록으로 훑는 길이 메뉴에서 사라졌다.
+  sc.eq('로고 메뉴 현재 말씀 모음은 목록 팝업으로', SRC.includes('onclick="closeLogoMenu();openVerseListModal();"'), true);
+  sc.eq('설정 탭으로 가는 옛 길은 없앴다', SRC.includes('openVerseCollFromLogo'), false);
 }
 
 console.log('\n시나리오 3 — 말씀 상단영역 메뉴 예외');
