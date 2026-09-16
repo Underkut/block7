@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0916-3  [production]  -->
+<!-- BLOCK7  v. 26-0916-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1804,8 +1804,8 @@ header{
 .sub-coll-name{width:100%;font-size:12px;font-weight:700;overflow-wrap:anywhere;}
 .sub-coll-meta{width:100%;font-size:10.5px;font-weight:500;opacity:.72;overflow-wrap:anywhere;}
 .coll-filter-panels{
-  display:flex;flex-direction:column;gap:0;margin-top:26px;
-  border-top:1px solid var(--bd1);
+  display:flex;flex-direction:column;gap:30px;margin-top:26px;
+  border-top:1px solid var(--bd1);padding-top:26px;
 }
 /* ── 모음 구역 (v26-0916-2, HB) ────────────────────────────────
    칩은 꽉 찬 덩어리라 먼저 눈에 들어오는데, 정작 "누구의 칩인지" 를 말하는
@@ -1813,13 +1813,23 @@ header{
      ① 색 띠가 **그 모음의 칩 줄까지** 통째로 감싼다 (구역을 묶는다)
      ② 이름줄은 스크롤해도 위에 붙어 따라온다 (.cf-name)
    띠 색은 모음마다 다르되 **테마 강조색에서 돌려 뽑는다** (_collHue). */
-.coll-filter-panel{padding:22px 0 26px;border-left:3px solid var(--ac);border-radius:3px;}
-.coll-filter-panel+.coll-filter-panel{border-top:1px solid var(--bd1);}
+/* ⚠️ 구역 사이는 **여백(gap)으로만** 가른다. 예전엔 위아래 padding 을 줬는데,
+      색 띠가 그 빈 padding 까지 흘러 구역과 구역 사이에 **띠 토막**이 남았다
+      (HB 26-0916 지적). 띠는 실제 내용이 있는 만큼만 그어야 한다.
+      가로 구분선도 없앴다 — 띠와 여백이 이미 갈라 준다. */
+.coll-filter-panel{padding:0;border-left:3px solid var(--ac);border-radius:3px;}
 .coll-filter-panel>*:not(.cf-name){padding-left:9px;}
 /* ⚠️ 그라데이션만 깔면 오른쪽 투명한 쪽으로 **칩이 비쳐 지나간다.**
-      그 아래 바탕색(--s1)을 한 겹 더 깔아야 뒤가 가려진다. */
+      그 아래 바탕색(--s1)을 한 겹 더 깔아야 뒤가 가려진다.
+   ⚠️⚠️ top 을 스크롤 칸의 위 여백만큼 **끌어올린다.** sticky 는 스크롤 칸의
+      padding 안쪽에 붙으므로 top:0 이면 붙는 자리가 탭 바보다 16px 아래다.
+      그러면 ① 그 틈으로 내용이 지나가 보이고 ② 잘리는 선(탭 바 밑)과 붙는
+      자리가 어긋나 밀려날 때 **반쯤 잘린 채** 떴다 (HB 26-0916 지적 둘).
+      끌어올리면 붙는 자리와 잘리는 선이 같아져, 밀려날 때 탭 바 밑으로
+      미끄러져 들어간다. */
 .cf-name{
-  position:sticky;top:0;z-index:3;display:flex;align-items:baseline;gap:7px;
+  position:sticky;top:calc(0px - var(--vset-pad-top,16px));
+  z-index:3;display:flex;align-items:baseline;gap:7px;
   padding:5px 9px;margin-bottom:7px;
   background:linear-gradient(to right,var(--cf-band,rgba(0,0,0,.05)),rgba(0,0,0,0)),var(--s1);
 }
@@ -3916,7 +3926,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 }
 .settings-tab.stab-flash{animation:stabFlash 3s ease-out 1;border-radius:0;}
 @media (prefers-reduced-motion:reduce){.settings-tab.stab-flash{animation:none;}}
-.vsettings-tab-content{padding-top:16px;}
+/* ⚠️ --vset-pad-top 은 이 padding-top 과 **같은 값이어야 한다.** 붙어 따라오는
+      이름줄(.cf-name)이 이 값만큼 스스로를 끌어올려 탭 바 밑에 딱 붙는다.
+      한쪽만 고치면 그 틈으로 내용이 비친다. (tests/test_plus.js 가 지킨다) */
+.vsettings-tab-content{padding-top:16px;--vset-pad-top:16px;}
 /* ── 말씀 대시보드 ── */
 /* ⚠️ 제목열(행 이름)은 **가로 스크롤에도 남아 있어야** 한다 (v26-0905-12, HB).
    폰에서는 4열이 다 안 들어가는데, 제목열이 함께 밀려 나가면 지금 보는 줄이
@@ -5024,7 +5037,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0916-3";
+const APP_VERSION = "v. 26-0916-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
