@@ -203,6 +203,23 @@ console.log('\n시나리오 9 — 화면에 실제로 붙어 있는가');
   sc.eq('색 띠가 그룹 전체를 감싼다', /\.coll-filter-panel\{[^}]*border-left/.test(SRC), true);
 }
 
+// ═══ 9-2. 붙어 따라오는 이름줄의 자리 (v26-0916-4, HB 지적 셋) ═══
+console.log('\n시나리오 9-2 — 이름줄이 붙는 자리와 구역 여백');
+{
+  // ⚠️ sticky 는 스크롤 칸의 padding **안쪽**에 붙는다. top:0 이면 붙는 자리가
+  //    탭 바보다 그 padding 만큼 아래라 ① 그 틈으로 내용이 비치고 ② 잘리는 선과
+  //    어긋나 밀려날 때 반쯤 잘린 채 뜬다. 그래서 그만큼 끌어올린다.
+  sc.eq('이름줄이 스크롤 칸 여백만큼 끌어올려진다',
+        /\.cf-name\{[^}]*top:calc\(0px - var\(--vset-pad-top,16px\)\)/.test(SRC), true);
+  // 두 값이 어긋나면 다시 틈이 생긴다 — 한 줄에 함께 적어 둔다
+  sc.eq('끌어올리는 값과 실제 여백이 한 줄에 함께',
+        SRC.includes('.vsettings-tab-content{padding-top:16px;--vset-pad-top:16px;}'), true);
+  // 구역 사이는 여백으로만 가른다 — padding 을 주면 그 빈 자리까지 색 띠가 흐른다
+  sc.eq('구역은 여백으로 가른다', /\.coll-filter-panels\{[^}]*gap:30px/.test(SRC), true);
+  sc.eq('구역 안쪽 위아래 padding 은 없앴다', /\.coll-filter-panel\{padding:0;/.test(SRC), true);
+  sc.eq('가로 구분선도 없앴다', SRC.includes('.coll-filter-panel+.coll-filter-panel{border-top'), false);
+}
+
 // ═══ 10. 숫자 단위는 '개' 로 통일 (v26-0916-3, HB) ═══
 console.log('\n시나리오 10 — 단위는 개');
 {
