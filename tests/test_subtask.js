@@ -141,6 +141,18 @@ console.log('시나리오 5 — 메모에서 주소·전화·이메일·날짜�
   sc.eq('주소',kinds('자료는 https://block7.my/a?b=1 에 있어요'),
     ['url:https://block7.my/a?b=1']);
   sc.eq('www 로 시작해도 주소',kinds('www.naver.com 참고'),['url:www.naver.com']);
+  // ── http:// 없이 적은 웹주소도 알아본다 (HB 2026-09-17) ──
+  sc.eq('맨 웹주소',kinds('block7.my 에서 보세요'),['url:block7.my']);
+  sc.eq('맨 웹주소 + 경로',kinds('block7.my/index-dev.html 열기'),
+    ['url:block7.my/index-dev.html']);
+  sc.eq('가운데 - 가 있어도',kinds('my-site.co.kr'),['url:my-site.co.kr']);
+  sc.eq('물음표 뒤 값도 함께',kinds('shop.example.com/a?b=1&c=2'),
+    ['url:shop.example.com/a?b=1&c=2']);
+  sc.eq('한글 조사가 붙어도 주소만 떼어 낸다',kinds('naver.com에서'),['url:naver.com']);
+  // ⚠️ 아는 끝(TLD)만 골라 보는 까닭 — 파일 이름을 주소로 읽으면 안 된다
+  sc.eq('파일 이름은 주소가 아니다',kinds('보고서.docx 와 index.html 과 check.sh'),[]);
+  sc.eq('판 번호도 주소가 아니다',kinds('v1.2.3 을 씁니다'),[]);
+  sc.eq('맨 웹주소가 이메일을 삼키지 않는다',kinds('hb@example.com'),['mail:hb@example.com']);
   sc.eq('전화번호',kinds('김집사 010-1234-5678 로 연락'),['tel:010-1234-5678']);
   sc.eq('지역번호도 전화번호',kinds('교회 02-345-6789'),['tel:02-345-6789']);
   sc.eq('이메일',kinds('hb@example.com 으로 보내기'),['mail:hb@example.com']);
