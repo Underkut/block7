@@ -5,6 +5,10 @@ const sc = makeScorer();
 
 const MENU = slice('<!-- Task move mini menu -->', '<!-- (date input now lives inline');
 const DUP  = slice('function _freshTaskCopy(', '// 메뉴가 열릴 때마다');
+// 하위·메모를 실어 나르는 순수 함수 — _movedTaskCopy·_freshTaskCopy 등
+// 항목을 새로 만드는 자리들이 모두 이것을 쓴다 (tests/test_subtask.js 가 규칙을 지킨다)
+const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
+const DUPRUN = SUBHELP + '\n' + DUP;   // 실행용 (글자 검사는 DUP 그대로)
 
 console.log('시나리오 1 — 메뉴를 이동·복제 덩어리로 나눈다');
 {
@@ -82,7 +86,7 @@ console.log('\n시나리오 5 — 실제로 오늘·내일·다음 주·어제�
     const make = new Function('_taskMenuCtx','tKey','addDays','viewDate','getBigs','getSmalls',
       'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive','closeTaskMenu','_toastWithJump',
       '_moveLabel',
-      `${DUP}; return duplicateTaskTo;`);
+      `${DUPRUN}; return duplicateTaskTo;`);
     const duplicate=make({type,secId:'am',idx:0},d=>d||'today',(_,d)=>d,
       'today',getBigs,getSmalls,...['before','save','render','total','refresh','close','jump']
         .map(name=>(...args)=>calls.push([name,...args])),
@@ -125,7 +129,7 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
     'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy','_secPickOn',
     `${src}; return duplicateTaskToPickedDate;`);
   const rec=(name)=>(...args)=>{calls.push([name,...args]);};
-  const freshCopy=new Function(`${DUP}; return _freshTaskCopy;`)();
+  const freshCopy=new Function(`${DUPRUN}; return _freshTaskCopy;`)();
   const dup=make({type:'big',secId:'am',idx:0},()=>true,()=>'today',
     (key)=>key==='today'?from:to,(key)=>key==='today'?from:to,
     rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('jump'),

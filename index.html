@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0917-2  [production]  -->
+<!-- BLOCK7  v. 26-0917-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2374,6 +2374,110 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
   width:5px;height:5px;min-width:5px;min-height:5px;
   display:block;flex:none;transform:rotate(45deg);
 }
+/* ═══ 하위 할일 게이지 · 메모 배지 (v26-0917-3) ═══
+   둘 다 이월 배지와 같은 자리(글자 뒤)에 붙어 글자 길이를 따라간다. */
+.blk-sub-gauge{
+  display:flex;align-items:center;flex-shrink:0;
+  margin-left:4px;color:var(--sec-color,var(--ac));cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.blk-sub-gauge:empty{display:none;}
+.blk-sub-gauge svg{display:block;}
+/* 다 끝냈을 때만 색이 바뀐다 — 숫자를 안 적는 대신 색으로 '끝' 을 말한다 */
+.blk-sub-gauge.full{color:#2f9e5e;}
+.blk-memo-badge{
+  display:flex;align-items:center;flex-shrink:0;
+  margin-left:4px;color:var(--tx3);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.blk-memo-badge:empty{display:none;}
+.blk-memo-badge svg{display:block;}
+
+/* ── 하위 할일 판 ──
+   ⚠️ .swipe-wrap 의 **형제**로 목록에 들어간다 (자식이 아니다). 자식으로 두면
+      ① 스와이프 밑판(.del-underlay 는 top:0;bottom:0)이 판까지 빨갛게 덮고
+      ② 드래그 이동이 쓰는 wrap 사각형이 판만큼 커져 드롭 자리가 어긋난다. */
+.sub-panel{
+  margin:-2px 0 6px 13px;padding:3px 0 1px 11px;
+  border-left:2px solid var(--sec-color,var(--ac));
+  display:flex;flex-direction:column;
+}
+/* ⚠️ display 를 정해 둔 요소는 [hidden] 만으로 안 사라진다 (display 가 이긴다).
+   부모 줄이 필터로 숨겨졌는데 하위 판만 남아 떠 있던 까닭이 이것이었다
+   (2026-09-17 브라우저 확인 — 완료한 할일 숨기기를 켜 두었을 때). */
+.sub-panel[hidden]{display:none;}
+.sub-panel-sm{margin-left:11px;}
+.sub-row{
+  display:flex;align-items:center;gap:7px;
+  padding:3px 2px;border-radius:6px;
+  touch-action:pan-y;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+}
+.sub-row.done{opacity:.4;}
+.sub-chk{
+  flex:none;width:14px;height:14px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:1px solid var(--bd2);border-radius:4px;
+  color:transparent;font-size:9px;line-height:1;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.sub-row.done .sub-chk{
+  color:var(--sec-color,var(--ac));border-color:var(--sec-color,var(--ac));
+}
+.sub-inp{
+  flex:1;min-width:0;background:none;border:none;outline:none;
+  color:var(--tx2);font-size:12px;font-family:inherit;padding:1px 0;
+}
+.sub-row.done .sub-inp{text-decoration:line-through;}
+.sub-del{
+  flex:none;background:none;border:none;color:var(--tx3);
+  font-size:14px;line-height:1;padding:2px 4px;cursor:pointer;opacity:0;
+  -webkit-tap-highlight-color:transparent;
+}
+@media(hover:hover){.sub-row:hover .sub-del{opacity:1;}}
+.sub-ghost{display:flex;align-items:flex-start;gap:7px;padding:3px 2px;}
+.sub-ghost-mark{
+  flex:none;width:14px;height:14px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--tx3);font-size:13px;line-height:1;
+}
+/* 새 하위를 받는 칸만 <textarea> 다 — 여러 줄 붙여넣기를 살리기 위해서다 */
+.sub-add{
+  flex:1;min-width:0;background:none;border:none;outline:none;resize:none;
+  color:var(--tx2);font-size:12px;font-family:inherit;
+  padding:1px 0;line-height:1.5;overflow:hidden;
+}
+.sub-add::placeholder{color:var(--tx3);opacity:.75;}
+
+/* ── 메모 팝업 ──
+   팝업 전체가 스크롤되므로 제목줄은 .modal-head (sticky) 를 쓰고 × 는
+   그 안의 .modal-x-inline 이다. 위 여백은 제목줄이 갖는다 (padding-top:0). */
+.memo-modal{
+  width:300px;max-height:76vh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.memo-task{
+  font-size:11px;line-height:1.6;color:var(--tx3);
+  text-align:center;margin:-4px 0 12px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.memo-view{
+  font-size:13px;line-height:1.85;color:var(--tx2);
+  white-space:pre-wrap;word-break:break-word;min-height:38px;
+}
+.memo-view .memo-empty{color:var(--tx3);font-size:12px;}
+.memo-lk{
+  color:var(--ac-tx);text-decoration:underline;text-underline-offset:3px;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.memo-edit{
+  width:100%;box-sizing:border-box;min-height:150px;
+  background:var(--s2);border:1px solid var(--bd);border-radius:8px;
+  padding:10px;color:var(--tx);font-size:13px;line-height:1.75;
+  font-family:inherit;outline:none;resize:vertical;
+}
+.memo-hint{margin-top:11px;font-size:11px;line-height:1.7;color:var(--tx3);}
+
 
 /* sm inline ghost — always visible at bottom, no + button */
 .sm-ghost-inline{
@@ -2745,7 +2849,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 /* ② 제목줄이 위쪽 여백을 가져갔으니 팝업 자신은 위 여백을 비운다.
    (안 비우면 제목줄이 붙을 때 20px 만큼 위로 튀어 오른다) */
-#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal{padding-top:0;}
+#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal,#taskMemoModal{padding-top:0;}
 .event-modal:has(> .modal-head){padding-top:0;}
 .modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
@@ -5080,7 +5184,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0917-2";
+const APP_VERSION = "v. 26-0917-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6690,6 +6794,31 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- @닉네임 배지 탭 시 뜨는 액션 메뉴 (전화/문자/이메일/카톡) -->
 <div class="task-menu-overlay" id="contactMenuOverlay" style="display:none" onclick="closeContactMenu()"></div>
 <div class="task-menu" id="contactMenu" style="display:none"></div>
+<!-- 하위 할일 줄 메뉴 (v26-0917-3) — 내용은 JS 가 그린다 -->
+<div class="task-menu-overlay" id="subRowMenuOverlay" style="display:none" onclick="closeSubRowMenu()"></div>
+<div class="task-menu" id="subRowMenu" style="display:none"></div>
+
+<!-- 메모 안에서 알아본 것(주소·전화·이메일·날짜)의 동작 메뉴 -->
+<div class="task-menu-overlay" id="memoActMenuOverlay" style="display:none" onclick="closeMemoActMenu()"></div>
+<div class="task-menu" id="memoActMenu" style="display:none"></div>
+
+<!-- 할일 메모 — 좌상단 연필이 '보기 ↔ 고치기' 를 오간다 -->
+<div class="event-modal-overlay" id="taskMemoOverlay" style="display:none;z-index:5200;" onclick="closeTaskMemo()"></div>
+<div class="event-modal memo-modal" id="taskMemoModal" style="display:none;z-index:5201;">
+  <div class="modal-head">
+    <button class="modal-x modal-x-inline" id="memoEditBtn" onclick="toggleTaskMemoEdit()" aria-label="메모 고치기">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5 16.5 6.5 7 16H4v-3z"/></svg>
+    </button>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">메모</div>
+    <button class="modal-x modal-x-inline" onclick="closeTaskMemo()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+  <div class="memo-task" id="memoTask"></div>
+  <div class="memo-view" id="memoView"></div>
+  <textarea class="memo-edit" id="memoEdit" style="display:none" placeholder="메모를 적어 주세요."></textarea>
+  <div class="memo-hint" id="memoHint"></div>
+</div>
 
 <!-- 로고 롱터치 메뉴 — 네비게이토 180 verse bar controls -->
 <div class="task-menu-overlay" id="logoMenuOverlay" style="display:none"></div>
@@ -7504,6 +7633,13 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-item" id="contactTaskToggleItem" onclick="toggleTaskContact()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span><span id="contactTaskToggleLabel">연락할 일</span>
+  </div>
+  <div class="task-menu-sep"></div>
+  <div class="task-menu-item" id="subTaskMenuItem" onclick="openSubsFromMenu()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h12"/><path d="M8 10h8"/><path d="M8 15h8"/><path d="M4.6 9.2v5.2"/></svg></span><span id="subTaskMenuLabel">하위 할일</span>
+  </div>
+  <div class="task-menu-item" id="memoMenuItem" onclick="openMemoFromMenu()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3.2h9.6v13.6H5.2z"/><path d="M7.6 6.8h4.8M7.6 10h4.8M7.6 13.2h3"/></svg></span><span id="memoMenuLabel">메모</span>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">이동</div>
@@ -10685,6 +10821,8 @@ const _ESC_CLOSERS=[
   ['eventEditMenu',   ()=>closeEventEditMenu()],
   ['taskMenu',        ()=>{if(_secPickSpec){_secPickBack();return;}closeTaskMenu();}],
   ['contactMenu',     ()=>closeContactMenu()],
+  ['subRowMenu',      ()=>closeSubRowMenu()],
+  ['memoActMenu',     ()=>closeMemoActMenu()],
   ['collAddMenu',     ()=>closeCollAddMenu()],
   ['collMenu',        ()=>closeCollMenu()],
   ['sfxMenu',         ()=>closeSfxMenu()],
@@ -10700,6 +10838,7 @@ const _ESC_CLOSERS=[
   ['syncResultModal',  ()=>closeSyncResultModal()],
   ['verseAlarmTimeModal',()=>closeVerseAlarmCustomTimePopup()],
   ['contactsModal',   ()=>closeContactsModal()],
+  ['taskMemoModal',   ()=>closeTaskMemo()],
   ['cellTodoModal',   ()=>closeCellTodo()],
   ['subscribeDialog', ()=>closeSubscribeDialog()],
   ['shareDialog',     ()=>closeShareDialog()],
@@ -28609,6 +28748,741 @@ function taskMarkerFilterPass(item){
   if(markerFilter==='contact')return !!item.contactTask;
   return true;
 }
+// ═══════ 하위 할일(subs) · 메모(memo) ═══════
+// 한 할일 안에 작은 할일 목록과 메모를 담는다 (v26-0917-3, HB).
+//   item.subs    = [{text,done}]   — 비면 키 자체를 두지 않는다
+//   item.subOpen = true            — 펼쳐 둔 상태 (접힌 게 기본)
+//   item.memo    = "..."           — 비면 키 자체를 두지 않는다
+// ⚠️ 세 칸은 병합이 **칸 단위로** 지키는 평범한 칸이다 (_mgTaskOne 은 제목이
+//    같으면 칸마다 3자 병합을 한다). 그래서 '완료 체크는 이 기기, 하위 추가는
+//    저 기기' 가 둘 다 산다.
+// ⚠️ 항목을 **새로 만드는 자리**가 다섯 곳이다 — 복제(_freshTaskCopy) ·
+//    이동(_movedTaskCopy) · 자동 이월(runAutoCarryOver) · 반복 실체
+//    (materializeRepeatsFor) · 반복 미리보기(getDisplayTasks). 한 곳이라도
+//    빠지면 그 길로만 하위·메모가 사라진다. (tests/test_subtask.js 가 지킨다)
+
+// ── 하위·메모: 자료 다루기 (순수 함수) ──
+function _subsOf(item){return (item&&Array.isArray(item.subs))?item.subs:[];}
+function _subStat(item){
+  const a=_subsOf(item);let d=0;
+  a.forEach(s=>{if(s&&s.done)d++;});
+  return{n:a.length,done:d};
+}
+// 여러 개를 한 번에 받아 쪼갠다 (HB 2026-09-17).
+//   ① 줄바꿈으로 쪼갠다 — 목록을 복사해 붙이면 그대로 여러 줄이 된다
+//   ② 한 줄 안에 {…} 조각이 있으면 **그 조각들만** 각각 하위가 된다
+// ⚠️ 쉼표로 쪼개지 않는다. '계란 2판, 반숙' 처럼 쉼표는 내용 안에 쓰는 글자다
+//    (HB 지적). 중괄호는 할일 글에 거의 쓰이지 않아 안전하다.
+function _subParse(raw){
+  const out=[];
+  String(raw==null?'':raw).split(/\r?\n/).forEach(line=>{
+    const braced=line.match(/\{[^{}]*\}/g);
+    if(braced&&braced.length){
+      braced.forEach(b=>{const t=b.slice(1,-1).trim();if(t)out.push(t);});
+      return;
+    }
+    const t=line.trim();
+    if(t)out.push(t);
+  });
+  return out;
+}
+// 하위가 전부 끝났으면 부모도 완료, 하나라도 남으면 부모는 미완료.
+// 바뀌었으면 true 를 돌려준다 (부른 쪽이 다시 그릴지 판단한다).
+function _subSyncParent(item){
+  const st=_subStat(item);
+  if(!st.n)return false;
+  const want=(st.done===st.n);
+  if(!!item.done===want)return false;
+  item.done=want;
+  if(want&&typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);
+  return true;
+}
+// 부모를 체크하면 하위도 한꺼번에 따라간다 — 묻지 않는다 (HB 2026-09-17).
+// 부모를 다시 풀면 하위도 함께 풀린다 (되돌리기가 한 번으로 끝나야 한다).
+function _subSetAll(item,done){
+  _subsOf(item).forEach(s=>{if(s)s.done=!!done;});
+}
+// 항목을 새로 만드는 자리에서 하위·메모를 실어 보낸다.
+//   keepDone=true  → 끝낸 하위도 그대로 (이동·이월: 어제 하던 일이 이어진다)
+//   keepDone=false → 하위는 처음부터 (복제·반복: 그 날 새로 하는 일이다)
+function _subsCopy(item,keepDone){
+  const a=_subsOf(item);
+  if(!a.length)return null;
+  return a.map(s=>({text:String((s&&s.text)||''),done:keepDone?!!(s&&s.done):false}));
+}
+function _carryTaskExtras(src,dst,keepDone){
+  const subs=_subsCopy(src,keepDone);
+  if(subs)dst.subs=subs;
+  if(src&&src.memo)dst.memo=src.memo;
+  return dst;
+}
+// ── 메모 안에서 알아보는 것 (주소·전화·이메일·날짜) ──
+// 표 순서가 곧 우선순위다. 같은 자리에서 겹치면 위에 있는 쪽이 이긴다 —
+// 이메일이 주소·전화보다 먼저여야 'a@b.com' 이 주소로 잘리지 않는다.
+const _MEMO_KINDS=[
+  ['mail',"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"],
+  ['url', "(?:https?:\\/\\/|www\\.)[^\\s<>\"'()\\[\\]]+"],
+  ['date',"(?:\\d{4}[-.\\/]\\d{1,2}[-.\\/]\\d{1,2})|(?:\\d{1,2}\\s?월\\s?\\d{1,2}\\s?일)"],
+  ['tel', "(?:\\+\\d{1,3}[-\\s]?)?0\\d{1,2}[-\\s]?\\d{3,4}[-\\s]?\\d{4}"]
+];
+function _memoScan(text){
+  const s=String(text==null?'':text);
+  const hits=[];
+  _MEMO_KINDS.forEach((pair,ki)=>{
+    const re=new RegExp(pair[1],'g');
+    let m;
+    while((m=re.exec(s))!==null){
+      if(!m[0]){re.lastIndex++;continue;}
+      hits.push({i:m.index,len:m[0].length,kind:pair[0],val:m[0],ki:ki});
+    }
+  });
+  hits.sort((a,b)=>a.i-b.i||b.len-a.len||a.ki-b.ki);
+  const out=[];let end=0;
+  hits.forEach(h=>{if(h.i<end)return;out.push(h);end=h.i+h.len;});
+  return out;
+}
+// '2026-09-17' · '2026.9.17' · '9월 17일' → 'YYYY-MM-DD'.
+// 연도를 안 적은 표기는 **지금 보고 있는 날짜의 해**로 읽는다.
+function _memoDateKey(val,refKey){
+  const s=String(val==null?'':val).trim();
+  let m=s.match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})$/);
+  const p2=n=>String(n).padStart(2,'0');
+  if(m)return m[1]+'-'+p2(+m[2])+'-'+p2(+m[3]);
+  m=s.match(/^(\d{1,2})\s?월\s?(\d{1,2})\s?일$/);
+  if(m){
+    const y=/^\d{4}/.test(String(refKey||''))?String(refKey).slice(0,4)
+             :String(new Date().getFullYear());
+    return y+'-'+p2(+m[1])+'-'+p2(+m[2]);
+  }
+  return null;
+}
+function _memoTelDigits(val){return String(val==null?'':val).replace(/[^+\d]/g,'');}
+// ── 하위·메모: 화면 ──
+
+function _taskArrOf(type,secId,k){
+  const kk=k||tKey();
+  return type==='big'?getBigs(kk,secId):getSmalls(kk,secId);
+}
+function _subRerender(type,secId){
+  if(type==='big')renderSecBody(secId);
+  else renderSmList(secId);
+  updateTotal();
+  refreshTaskViewsLive();
+}
+
+// ── 줄 끝의 작은 원형 게이지 ──
+// 접힌 채로도 '몇 개 중 몇 개' 가 한눈에 보이게 한다 (HB 2026-09-17).
+// 탭 = 펼치기/접기, 길게 누르기 = 개수를 말로 알려주기.
+function _subGaugeSVG(n,d,size){
+  const r=(size/2)-1.35,c=size/2;
+  const C=2*Math.PI*r;
+  const frac=n?Math.max(0,Math.min(1,d/n)):0;
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+
+    '<circle cx="'+c+'" cy="'+c+'" r="'+r.toFixed(2)+'" fill="none" stroke="currentColor" stroke-opacity=".26" stroke-width="2"/>'+
+    '<circle cx="'+c+'" cy="'+c+'" r="'+r.toFixed(2)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"'+
+    ' stroke-dasharray="'+C.toFixed(2)+'" stroke-dashoffset="'+(C*(1-frac)).toFixed(2)+'"'+
+    ' transform="rotate(-90 '+c+' '+c+')"/>'+
+    '</svg>';
+}
+function _subGaugeFill(el,item,size){
+  const st=_subStat(item);
+  if(!st.n){el.innerHTML='';el.removeAttribute('title');el.classList.remove('full');return;}
+  el.innerHTML=_subGaugeSVG(st.n,st.done,size);
+  el.classList.toggle('full',st.done===st.n);
+  el.title='하위 '+st.n+'개 중 '+st.done+'개 끝냈어요';
+}
+function _memoBadgeFill(el,item,size){
+  const has=!!(item&&item.memo&&String(item.memo).trim());
+  if(!has){el.innerHTML='';el.removeAttribute('title');return;}
+  el.innerHTML='<svg width="'+size+'" height="'+size+'" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+
+    '<path d="M5.2 3.2h9.6v13.6H5.2z"/><path d="M7.6 6.8h4.8M7.6 10h4.8M7.6 13.2h3"/></svg>';
+  el.title='메모';
+}
+// 두 배지를 만들어 줄 끝에 붙인다. 빅·스몰이 같은 함수를 쓴다 — 따로 두면
+// 한쪽만 고쳐져 스몰 블럭에서만 안 되는 일이 생긴다.
+function _attachSubMemoBadges(div,type,secId,idx,item,size){
+  const gauge=document.createElement('span');
+  gauge.className='blk-sub-gauge';
+  _subGaugeFill(gauge,item,size);
+  if(_subStat(item).n){
+    let lpFired=false,lpTimer=null;
+    const clearLp=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}};
+    gauge.addEventListener('touchstart',e=>{
+      e.stopPropagation();lpFired=false;
+      lpTimer=setTimeout(()=>{
+        lpTimer=null;lpFired=true;
+        const st=_subStat(item);
+        showToast('하위 '+st.n+'개 중 '+st.done+'개 끝냈어요');
+      },500);
+    },{passive:true});
+    ['touchend','touchcancel','touchmove'].forEach(ev=>
+      gauge.addEventListener(ev,clearLp,{passive:true}));
+    gauge.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();});
+    gauge.addEventListener('click',e=>{
+      e.stopPropagation();e.preventDefault();
+      if(lpFired){lpFired=false;return;}   // 길게 누르기가 이미 처리했다
+      _subToggleOpen(type,secId,idx);
+    });
+  }
+  const memo=document.createElement('span');
+  memo.className='blk-memo-badge';
+  _memoBadgeFill(memo,item,size);
+  if(item&&item.memo&&String(item.memo).trim()){
+    memo.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+    memo.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();});
+    memo.addEventListener('click',e=>{
+      e.stopPropagation();e.preventDefault();
+      openTaskMemo(type,secId,idx);
+    });
+  }
+  div.append(gauge,memo);
+}
+
+function _subToggleOpen(type,secId,idx,force){
+  const item=_taskArrOf(type,secId)[idx];
+  if(!item)return;
+  const open=(force===undefined)?!item.subOpen:!!force;
+  if(open)item.subOpen=true;else delete item.subOpen;
+  rawSave();
+  _subRerender(type,secId);
+  if(open)setTimeout(()=>_subFocusGhost(type,secId,idx),40);
+}
+function _subGhostId(type,secId,idx){return 'sg-'+type+'-'+secId+'-'+idx;}
+function _subFocusGhost(type,secId,idx){
+  const el=document.getElementById(_subGhostId(type,secId,idx));
+  if(el)el.focus();
+}
+
+// ── 하위 할일 판 ──
+// ⚠️ .swipe-wrap 의 **형제**로 목록에 들어간다 (자식이 아니다). 자식으로 두면
+//    ① 스와이프 밑판(.del-underlay 는 top:0;bottom:0)이 판까지 빨갛게 덮고
+//    ② 드래그 이동이 쓰는 wrap 사각형이 판만큼 커져 드롭 자리가 어긋난다.
+//    그래서 makeBigWrap/makeSmWrap 은 [wrap, panel] 을 담은 조각(fragment)을
+//    돌려준다 — appendChild·insertBefore 가 조각을 그대로 풀어 넣는다.
+function makeSubPanel(type,secId,idx,item,secColor){
+  if(!item||!item.subOpen)return null;
+  const panel=document.createElement('div');
+  panel.className='sub-panel'+(type==='small'?' sub-panel-sm':'');
+  if(secColor)panel.style.setProperty('--sec-color',secColor);
+  _subsOf(item).forEach((s,j)=>panel.appendChild(_makeSubRow(type,secId,idx,j,s)));
+  panel.appendChild(_makeSubGhost(type,secId,idx));
+  return panel;
+}
+function _makeSubRow(type,secId,idx,j,sub){
+  const row=document.createElement('div');
+  row.className='sub-row'+((sub&&sub.done)?' done':'');
+  row.dataset.j=j;
+
+  const chk=document.createElement('button');
+  chk.className='sub-chk';chk.textContent='✓';chk.title='완료';
+  chk.onclick=e=>{
+    e.stopPropagation();
+    const item=_taskArrOf(type,secId)[idx];
+    const a=_subsOf(item);
+    if(!a[j])return;
+    beforeSave();
+    a[j].done=!a[j].done;
+    _subSyncParent(item);
+    save();
+    _subRerender(type,secId);
+  };
+
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='sub-inp';inp.value=(sub&&sub.text)||'';
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.placeholder='하위 할일';
+  inp.onclick=e=>e.stopPropagation();
+  inp.oninput=()=>{
+    const a=_subsOf(_taskArrOf(type,secId)[idx]);
+    if(a[j]){a[j].text=inp.value;saveText();}
+  };
+  inp.onblur=()=>{
+    const item=_taskArrOf(type,secId)[idx];
+    const a=_subsOf(item);
+    if(!a[j])return;
+    a[j].text=inp.value;
+    if(inp.value.trim()===''){          // 빈 줄은 스스로 사라진다 (본 할일과 같은 규칙)
+      beforeSave();a.splice(j,1);
+      if(!a.length)delete item.subs;
+      _subSyncParent(item);
+      save();_subRerender(type,secId);
+      return;
+    }
+    rawSave();
+  };
+  inp.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();
+      const panel=inp.closest('.sub-panel');
+      const rows=[...(panel?panel.querySelectorAll('.sub-inp'):[])];
+      const at=rows.indexOf(inp);
+      if(at>=0&&rows[at+1])rows[at+1].focus();
+      else _subFocusGhost(type,secId,idx);
+    }
+    if(e.key==='Escape'){e.preventDefault();inp.blur();}
+  };
+
+  const del=document.createElement('button');
+  del.className='sub-del';del.textContent='×';del.title='삭제';
+  del.onclick=e=>{e.stopPropagation();_subRemove(type,secId,idx,j);};
+
+  row.append(chk,inp,del);
+
+  // 보조 동작은 롱터치/우클릭으로 — 앱 전체 규칙 그대로
+  let lpTimer=null;
+  const clearLp=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}};
+  row.addEventListener('touchstart',e=>{
+    if(e.target.closest('input'))return;
+    lpTimer=setTimeout(()=>{
+      lpTimer=null;
+      const t=e.touches&&e.touches[0];
+      openSubRowMenu(type,secId,idx,j,t?{x:t.clientX,y:t.clientY}:null);
+    },500);
+  },{passive:true});
+  ['touchend','touchcancel','touchmove'].forEach(ev=>
+    row.addEventListener(ev,clearLp,{passive:true}));
+  row.addEventListener('contextmenu',e=>{
+    e.preventDefault();e.stopPropagation();clearLp();
+    openSubRowMenu(type,secId,idx,j,{x:e.clientX,y:e.clientY});
+  });
+  return row;
+}
+// 새 하위를 받는 칸. <input> 이 아니라 <textarea> 다 — 여러 줄을 붙여넣었을 때
+// 브라우저가 줄바꿈을 공백으로 뭉개지 않아야 한 번에 여러 개로 쪼갤 수 있다.
+function _makeSubGhost(type,secId,idx){
+  const gh=document.createElement('div');
+  gh.className='sub-ghost';
+  const mark=document.createElement('span');
+  mark.className='sub-ghost-mark';mark.textContent='+';
+  const ta=document.createElement('textarea');
+  ta.className='sub-add';ta.rows=1;ta.id=_subGhostId(type,secId,idx);
+  ta.placeholder='하위 할일 추가 (엔터)';
+  const fit=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';};
+  let committing=false;
+  const commit=()=>{
+    if(committing)return;              // onblur 가 뒤따라 들어와도 두 번 넣지 않는다
+    const v=ta.value;
+    if(!v.trim()){ta.value='';fit();return;}
+    committing=true;
+    ta.value='';fit();                 // 넣기 **전에** 비운다 — 뒤따르는 blur 가 빈 칸을 본다
+    _subAdd(type,secId,idx,v);
+  };
+  ta.onclick=e=>e.stopPropagation();
+  ta.oninput=fit;
+  ta.onkeydown=e=>{
+    if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();commit();
+    }
+    if(e.key==='Escape'){e.preventDefault();ta.value='';fit();ta.blur();}
+  };
+  // 붙여넣기에 줄바꿈이 있으면 곧바로 여러 개로 갈라 넣는다 — 목록을 복사해
+  // 붙이는 것이 가장 잦은 쓰임이라 엔터를 한 번 더 누르게 하지 않는다.
+  ta.addEventListener('paste',()=>{
+    setTimeout(()=>{if(/\r?\n/.test(ta.value))commit();else fit();},0);
+  });
+  ta.onblur=()=>{if(ta.value.trim())commit();};
+  gh.append(mark,ta);
+  setTimeout(fit,0);
+  return gh;
+}
+function _subAdd(type,secId,idx,raw){
+  const parts=_subParse(raw);
+  if(!parts.length)return;
+  const item=_taskArrOf(type,secId)[idx];
+  if(!item)return;
+  beforeSave();
+  if(!Array.isArray(item.subs))item.subs=[];
+  parts.forEach(t=>item.subs.push({text:t,done:false}));
+  item.subOpen=true;
+  // 하위가 생겼으니 부모의 '완료' 는 더 이상 혼자 정하지 않는다.
+  _subSyncParent(item);
+  save();
+  _subRerender(type,secId);
+  setTimeout(()=>_subFocusGhost(type,secId,idx),40);
+}
+function _subRemove(type,secId,idx,j){
+  const item=_taskArrOf(type,secId)[idx];
+  const a=_subsOf(item);
+  if(!a[j])return;
+  beforeSave();
+  a.splice(j,1);
+  if(!a.length)delete item.subs;
+  _subSyncParent(item);
+  save();
+  _subRerender(type,secId);
+}
+
+// ── 하위 줄 메뉴 (위로 · 아래로 · 꺼내기 · 삭제) ──
+let _subMenuCtx=null;
+function openSubRowMenu(type,secId,idx,j,atPoint){
+  const item=_taskArrOf(type,secId)[idx];
+  const a=_subsOf(item);
+  if(!a[j])return;
+  _subMenuCtx={type,secId,idx,j};
+  const menu=document.getElementById('subRowMenu');
+  const ov=document.getElementById('subRowMenuOverlay');
+  if(!menu||!ov)return;
+  const ico=d=>'<span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg></span>';
+  const row=(label,fn,icon)=>'<div class="task-menu-item" onclick="'+fn+'">'+icon+label+'</div>';
+  let html='';
+  if(j>0)html+=row('위로','_subMoveFromMenu(-1)',ico('<path d="M10 16V5"/><path d="M6 9l4-4 4 4"/>'));
+  if(j<a.length-1)html+=row('아래로','_subMoveFromMenu(1)',ico('<path d="M10 4v11"/><path d="M6 11l4 4 4-4"/>'));
+  html+=row((type==='big'?'빅':'스몰')+' 블럭으로 꺼내기','_subPromoteFromMenu()',
+    ico('<path d="M4.5 10.5v5h11v-5"/><path d="M10 13V4"/><path d="M6.5 7.5 10 4l3.5 3.5"/>'));
+  html+=row('삭제','_subRemoveFromMenu()',ico('<path d="M4 6h12"/><path d="M7.5 6V4.5h5V6"/><path d="M15 6l-.8 9.5H5.8L5 6"/>'));
+  menu.innerHTML=html;
+  menu.style.display='block';ov.style.display='block';
+  const mw=200,mh=menu.offsetHeight||160;
+  let left=atPoint?atPoint.x:window.innerWidth/2-mw/2;
+  let top=atPoint?atPoint.y+8:window.innerHeight/2-mh/2;
+  if(left+mw>window.innerWidth)left=window.innerWidth-mw-8;
+  if(left<8)left=8;
+  if(top+mh>window.innerHeight)top=(atPoint?atPoint.y:top)-mh-8;
+  if(top<8)top=8;
+  menu.style.left=left+'px';menu.style.top=top+'px';
+}
+function closeSubRowMenu(){
+  const menu=document.getElementById('subRowMenu');
+  const ov=document.getElementById('subRowMenuOverlay');
+  if(menu)menu.style.display='none';
+  if(ov)ov.style.display='none';
+  _subMenuCtx=null;
+}
+function _subMoveFromMenu(dir){
+  const c=_subMenuCtx;if(!c)return;
+  closeSubRowMenu();
+  const a=_subsOf(_taskArrOf(c.type,c.secId)[c.idx]);
+  const to=c.j+dir;
+  if(to<0||to>=a.length)return;
+  beforeSave();
+  const one=a.splice(c.j,1)[0];
+  a.splice(to,0,one);
+  save();
+  _subRerender(c.type,c.secId);
+}
+function _subRemoveFromMenu(){
+  const c=_subMenuCtx;if(!c)return;
+  closeSubRowMenu();
+  _subRemove(c.type,c.secId,c.idx,c.j);
+}
+// 하위를 독립 할일로 꺼낸다. 같은 구간·같은 종류로, 부모 **바로 뒤**에 넣는다
+// (목록 맨 끝으로 보내면 어디로 갔는지 눈으로 못 찾는다).
+function _subPromoteFromMenu(){
+  const c=_subMenuCtx;if(!c)return;
+  closeSubRowMenu();
+  const arr=_taskArrOf(c.type,c.secId);
+  const item=arr[c.idx];
+  const a=_subsOf(item);
+  if(!item||!a[c.j])return;
+  beforeSave();
+  const one=a.splice(c.j,1)[0];
+  if(!a.length)delete item.subs;
+  _subSyncParent(item);
+  arr.splice(c.idx+1,0,{text:String(one.text||''),done:!!one.done});
+  save();
+  _subRerender(c.type,c.secId);
+  showToast('"'+String(one.text||'').slice(0,14)+'" 을 따로 꺼냈어요');
+}
+
+// ═══════ 할일 메모 ═══════
+// 두 모습으로 돈다 — **보기**(주소·전화 등을 눌러 바로 쓰는 모습)와
+// **고치기**(글을 적는 모습). 좌상단 연필이 둘을 오간다.
+// ⚠️ 보기 모드가 있어야 하는 까닭: 글칸(textarea) 안에서는 주소를 눌러도
+//    글자 커서만 움직인다. 눌러서 열리게 하려면 읽기 전용 화면이 따로 필요하다.
+let _memoCtx=null;
+let _memoEditing=false;
+function openTaskMemo(type,secId,idx,startEdit){
+  const item=_taskArrOf(type,secId)[idx];
+  if(!item)return;
+  _memoCtx={type,secId,idx,k:tKey()};
+  const has=!!(item.memo&&String(item.memo).trim());
+  _memoEditing=(startEdit===undefined)?!has:!!startEdit;
+  const ov=document.getElementById('taskMemoOverlay');
+  const md=document.getElementById('taskMemoModal');
+  if(!ov||!md)return;
+  ov.style.display='block';md.style.display='block';
+  _memoRender();
+  if(_memoEditing)setTimeout(()=>{const e=document.getElementById('memoEdit');if(e)e.focus();},60);
+}
+function closeTaskMemo(){
+  _memoSaveEdit();
+  closeMemoActMenu();
+  const ov=document.getElementById('taskMemoOverlay');
+  const md=document.getElementById('taskMemoModal');
+  if(ov)ov.style.display='none';
+  if(md)md.style.display='none';
+  const c=_memoCtx;
+  _memoCtx=null;_memoEditing=false;
+  if(c)_subRerender(c.type,c.secId);
+}
+function toggleTaskMemoEdit(){
+  if(!_memoCtx)return;
+  if(_memoEditing)_memoSaveEdit();
+  _memoEditing=!_memoEditing;
+  _memoRender();
+  if(_memoEditing)setTimeout(()=>{const e=document.getElementById('memoEdit');if(e)e.focus();},40);
+}
+function _memoItem(){
+  if(!_memoCtx)return null;
+  return _taskArrOf(_memoCtx.type,_memoCtx.secId,_memoCtx.k)[_memoCtx.idx]||null;
+}
+function _memoSaveEdit(){
+  if(!_memoCtx||!_memoEditing)return;
+  const ta=document.getElementById('memoEdit');
+  const item=_memoItem();
+  if(!ta||!item)return;
+  const v=ta.value;
+  const now=String(item.memo||'');
+  if(v===now)return;
+  beforeSave();
+  if(v.trim())item.memo=v;else delete item.memo;
+  save();
+}
+function _memoRender(){
+  const item=_memoItem();
+  if(!item)return;
+  const view=document.getElementById('memoView');
+  const edit=document.getElementById('memoEdit');
+  const hint=document.getElementById('memoHint');
+  const task=document.getElementById('memoTask');
+  const btn=document.getElementById('memoEditBtn');
+  if(task)task.textContent=String(item.text||'').slice(0,40);
+  if(btn)btn.title=_memoEditing?'다 적었어요 (보기로)':'메모 고치기';
+  if(btn)btn.innerHTML=_memoEditing
+    ? '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 3.5 16.5 6.5 7 16H4v-3z"/></svg>';
+  if(_memoEditing){
+    if(view)view.style.display='none';
+    if(edit){edit.style.display='';edit.value=String(item.memo||'');}
+    if(hint)hint.textContent='주소·전화번호·이메일·날짜를 적어 두면, 보기로 돌아갔을 때 눌러서 바로 쓸 수 있어요.';
+    return;
+  }
+  if(edit)edit.style.display='none';
+  if(view){
+    view.style.display='';
+    view.innerHTML=_memoViewHTML(String(item.memo||''));
+    view.querySelectorAll('.memo-lk').forEach(el=>{
+      el.addEventListener('click',e=>{
+        e.stopPropagation();e.preventDefault();
+        openMemoActMenu(el.dataset.kind,el.dataset.val,{x:e.clientX,y:e.clientY});
+      });
+    });
+  }
+  const n=_memoScan(String(item.memo||'')).length;
+  if(hint)hint.textContent=n?('눌러서 쓸 수 있는 것 '+n+'개 — 밑줄 그어진 곳을 눌러 보세요.')
+                           :'좌상단 연필로 메모를 고칠 수 있어요.';
+}
+function _memoViewHTML(text){
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  if(!text.trim())return '<span class="memo-empty">아직 메모가 없어요. 좌상단 연필을 눌러 적어 보세요.</span>';
+  const hits=_memoScan(text);
+  let out='',pos=0;
+  hits.forEach(h=>{
+    out+=esc(text.slice(pos,h.i));
+    out+='<span class="memo-lk" data-kind="'+h.kind+'" data-val="'+esc(h.val)+'">'+esc(h.val)+'</span>';
+    pos=h.i+h.len;
+  });
+  out+=esc(text.slice(pos));
+  return out;
+}
+
+// ── 알아본 것을 눌렀을 때의 동작 메뉴 ──
+let _memoAct=null;
+function openMemoActMenu(kind,val,atPoint){
+  const menu=document.getElementById('memoActMenu');
+  const ov=document.getElementById('memoActMenuOverlay');
+  if(!menu||!ov||!kind||!val)return;
+  _memoAct={kind,val};
+  const ico=d=>'<span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg></span>';
+  const row=(label,fn,icon)=>'<div class="task-menu-item" onclick="'+fn+'">'+icon+label+'</div>';
+  const D={
+    open:'<path d="M11.5 3.5h5v5"/><path d="M16.5 3.5 9 11"/><path d="M14 11.5v4a1 1 0 0 1-1 1H4.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4"/>',
+    copy:'<rect x="7" y="7" width="9" height="9" rx="1.4"/><path d="M13 7V4.6a1 1 0 0 0-1-1H4.6a1 1 0 0 0-1 1V12a1 1 0 0 0 1 1H7"/>',
+    call:'<path d="M4 3.5h3l1.5 4-2 1.5a11 11 0 0 0 4.5 4.5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5C8.5 17 3 11.5 2.5 5.1A1.5 1.5 0 0 1 4 3.5z"/>',
+    sms:'<path d="M3 4.5h14v9H8l-4 3v-3H3z"/>',
+    mail:'<rect x="2.5" y="4.5" width="15" height="11" rx="1.5"/><path d="M3 5.5 10 11l7-5.5"/>',
+    inapp:'<circle cx="10" cy="7.5" r="2.8"/><path d="M4.5 16.5c0-3 2.5-4.6 5.5-4.6s5.5 1.6 5.5 4.6"/>',
+    phone:'<rect x="6" y="2.8" width="8" height="14.4" rx="1.6"/><path d="M8.8 15.2h2.4"/>',
+    cal:'<rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13M7 3v3M13 3v3"/>',
+    movecal:'<rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13"/><path d="M10 10v4M8 12.2l2 2 2-2"/>'
+  };
+  let html='',title='';
+  if(kind==='url'){
+    title='주소';
+    html+=row('브라우저로 열기','memoActRun("open")',ico(D.open));
+    html+=row('주소 복사','memoActRun("copy")',ico(D.copy));
+  }else if(kind==='mail'){
+    title='이메일';
+    html+=row('메일 보내기','memoActRun("mail")',ico(D.mail));
+    html+=row('주소 복사','memoActRun("copy")',ico(D.copy));
+  }else if(kind==='tel'){
+    title='전화번호';
+    html+=row('전화하기','memoActRun("call")',ico(D.call));
+    html+=row('문자 보내기','memoActRun("sms")',ico(D.sms));
+    html+=row('앱 연락처에 저장','memoActRun("inapp")',ico(D.inapp));
+    html+=row('폰 연락처에 저장','memoActRun("phone")',ico(D.phone));
+  }else if(kind==='date'){
+    title='날짜';
+    html+=row('그 날로 가 보기','memoActRun("goto")',ico(D.cal));
+    html+=row('이 할일을 그 날로','memoActRun("movecal")',ico(D.movecal));
+    html+=row('날짜 복사','memoActRun("copy")',ico(D.copy));
+  }else{
+    return;
+  }
+  html='<div class="task-menu-item" style="pointer-events:none;color:var(--tx3);font-size:11px;padding:6px 14px 4px;">'+
+       title+' · '+String(val).slice(0,22)+'</div><div class="task-menu-sep"></div>'+html;
+  menu.innerHTML=html;
+  menu.style.display='block';ov.style.display='block';
+  const mw=210,mh=menu.offsetHeight||170;
+  let left=atPoint?atPoint.x:window.innerWidth/2-mw/2;
+  let top=atPoint?atPoint.y+8:window.innerHeight/2-mh/2;
+  if(left+mw>window.innerWidth)left=window.innerWidth-mw-8;
+  if(left<8)left=8;
+  if(top+mh>window.innerHeight)top=(atPoint?atPoint.y:top)-mh-8;
+  if(top<8)top=8;
+  menu.style.left=left+'px';menu.style.top=top+'px';
+}
+function closeMemoActMenu(){
+  const menu=document.getElementById('memoActMenu');
+  const ov=document.getElementById('memoActMenuOverlay');
+  if(menu)menu.style.display='none';
+  if(ov)ov.style.display='none';
+  _memoAct=null;
+}
+// ⚠️ 복사는 **탭 직후 동기적으로** 시작해야 한다. await 뒤에 복사하면
+//    아이폰 PWA 에서 조용히 실패한다 (CLAUDE.md '자주 걸리는 것들').
+function _memoCopyText(txt){
+  let ok=false;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt);ok=true;
+    }
+  }catch(e){}
+  if(!ok){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=txt;ta.style.position='fixed';ta.style.top='-999px';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.select();
+      ok=document.execCommand('copy');
+      ta.remove();
+    }catch(e){}
+  }
+  showToast(ok?'복사했어요':'복사하지 못했어요');
+}
+function memoActRun(what){
+  const a=_memoAct;
+  if(!a)return;
+  const kind=a.kind,val=a.val;
+  const tel=_memoTelDigits(val);
+  if(what==='copy'){closeMemoActMenu();_memoCopyText(val);return;}
+  if(what==='open'){
+    const href=/^https?:\/\//i.test(val)?val:('https://'+val);
+    closeMemoActMenu();
+    window.open(href,'_blank','noopener');
+    return;
+  }
+  if(what==='mail'){closeMemoActMenu();location.href='mailto:'+val;return;}
+  if(what==='call'){closeMemoActMenu();location.href='tel:'+tel;return;}
+  if(what==='sms'){closeMemoActMenu();location.href='sms:'+tel;return;}
+  if(what==='inapp'){
+    const item=_memoItem();
+    const guess=item?String(item.text||'').trim().slice(0,12):'';
+    closeMemoActMenu();closeTaskMemo();
+    openContactsModalWith(tel,'',guess);
+    return;
+  }
+  if(what==='phone'){
+    const item=_memoItem();
+    closeMemoActMenu();
+    _memoSaveToPhone(tel,item?String(item.text||'').trim():'');
+    return;
+  }
+  if(what==='goto'||what==='movecal'){
+    const k=_memoDateKey(val,_memoCtx?_memoCtx.k:null);
+    if(!k){closeMemoActMenu();showToast('날짜를 알아보지 못했어요');return;}
+    if(what==='goto'){
+      const back=tKey();
+      closeMemoActMenu();closeTaskMemo();
+      goToDate(k);
+      showToast(_dayLabel(k)+'로 왔어요',false,
+        {label:_dayLabel(back,true)+'로 돌아가기',onClick:()=>{goToDate(back);}});
+      return;
+    }
+    closeMemoActMenu();
+    _memoMoveTaskToDate(k);
+    return;
+  }
+}
+// 메모에 적힌 날짜로 이 할일을 옮긴다. 메뉴의 '날짜 지정' 과 **같은 함수**
+// (_movedTaskCopy) 를 쓴다 — 따로 만들면 이 길로만 하위·이월 횟수가 어긋난다.
+function _memoMoveTaskToDate(k){
+  const c=_memoCtx;
+  if(!c)return;
+  const fromKey=c.k||tKey();
+  if(!k||k===fromKey){showToast('이미 그 날짜예요');return;}
+  const src=_taskArrOf(c.type,c.secId,fromKey);
+  const item=src[c.idx];
+  if(!item)return;
+  beforeSave();
+  src.splice(c.idx,1);
+  const moved=_movedTaskCopy(item,_dayKeyDiff(fromKey,k));
+  const dest=_taskArrOf(c.type,c.secId,k);
+  dest.push(moved);
+  save();
+  closeTaskMemo();
+  renderSecBody(c.secId);updateTotal();refreshTaskViewsLive();
+  _toastWithJump(_dayLabel(k)+'로 옮겼어요',k,
+    {key:k,secId:c.secId,type:c.type,idx:dest.length-1});
+}
+// 폰 주소록에 넣기 — .vcf 한 장을 만들어 내려준다. 아이폰에서 그 파일을 열면
+// '새 연락처 추가' 화면이 바로 뜬다. (앱 안 연락처와는 따로다 — 앱 연락처는
+// @닉네임 태그·기기 간 동기화에 쓰이고, 이쪽은 폰 전체에서 쓰인다)
+function _memoSaveToPhone(tel,label){
+  const name=(label||'').trim()||tel;
+  try{
+    const vcf=['BEGIN:VCARD','VERSION:3.0','N:'+name+';;;;','FN:'+name,
+               'TEL;TYPE=CELL:'+tel,'END:VCARD',''].join('\r\n');
+    const blob=new Blob([vcf],{type:'text/vcard;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=(name.replace(/[^\w가-힣._-]+/g,'_')||'contact')+'.vcf';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{try{a.remove();URL.revokeObjectURL(url);}catch(e){}},600);
+    showToast('연락처 파일을 만들었어요 — 열면 주소록에 추가됩니다');
+  }catch(e){
+    showToast('연락처 파일을 만들지 못했어요');
+  }
+}
+// 앱 연락처에 넣기 — 연락처 관리 팝업을 열고 번호를 미리 채워 둔다.
+// 닉네임은 사람이 정해야 해서(@태그로 쓰는 이름이다) 그 칸에 커서를 둔다.
+function openContactsModalWith(phone,email,nickGuess){
+  if(typeof openContactsModal!=='function')return;
+  openContactsModal();
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v;};
+  set('cPhone',phone);
+  set('cEmail',email);
+  set('cNick',(nickGuess||'').replace(/^@/,''));
+  setTimeout(()=>{const el=document.getElementById('cNick');if(el){el.focus();el.select&&el.select();}},80);
+  showToast('닉네임만 정하면 @태그로 쓸 수 있어요');
+}
+
+// ── 할일 메뉴의 두 줄 ('하위 할일' · '메모') ──
+function openSubsFromMenu(){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  closeTaskMenu();
+  _subToggleOpen(type,secId,idx,true);
+}
+function openMemoFromMenu(){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  closeTaskMenu();
+  openTaskMemo(type,secId,idx);
+}
+// ═══════ 하위 할일 · 메모 끝 ═══════
+
 function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
   const wrap=makeSwipeWrap(
@@ -28620,6 +29494,7 @@ function makeBigWrap(id,i,b,secColor){
       const k=tKey();const arr=getBigs(k,id);
       if(arr[i]){
         beforeSave();arr[i].done=!arr[i].done;
+        _subSetAll(arr[i],arr[i].done);
         if(arr[i].done){_clearUrgentOnDone(arr[i]);const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
         save();updateTotal();renderSecBody(id);refreshTaskViewsLive();
       }
@@ -28627,7 +29502,14 @@ function makeBigWrap(id,i,b,secColor){
   );
   if((b.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(b)
      ||_repHiddenOn(b,tKey()))wrap.hidden=true;
-  return wrap;
+  // 하위 판은 wrap 의 **형제**다 (까닭은 makeSubPanel 주석). 조각(fragment)으로
+  // 돌려주면 appendChild·insertBefore 가 둘을 나란히 풀어 넣는다.
+  const panel=makeSubPanel('big',id,i,b,secColor);
+  if(!panel)return wrap;
+  if(wrap.hidden)panel.hidden=true;
+  const frag=document.createDocumentFragment();
+  frag.append(wrap,panel);
+  return frag;
 }
 
 // Fills in a .blk-carry-badge element based on the item's carry-over
@@ -28842,6 +29724,8 @@ function makeBigItem(id,i,b,secColor){
   const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
   chk.onclick=e=>{
     e.stopPropagation();const arr=getBigs(tKey(),id);beforeSave();arr[i].done=!arr[i].done;
+    // 부모를 체크하면 하위도 한꺼번에 따라간다 — 묻지 않는다 (HB 2026-09-17)
+    _subSetAll(arr[i],arr[i].done);
     if(arr[i].done){_clearUrgentOnDone(arr[i]);_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);}
     save();updateTotal();renderSecBody(id);refreshTaskViewsLive();
   };
@@ -28957,7 +29841,9 @@ function makeBigItem(id,i,b,secColor){
 
   div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
   makeContactBadges(b.text).forEach(cb=>div.appendChild(cb));
-  div.append(spacer,dailyBadge,carryBadge,del);
+  div.append(spacer,dailyBadge,carryBadge);
+  _attachSubMemoBadges(div,'big',id,i,b,12);
+  div.append(del);
   attachDrag(div,'big',i,id);
   wireActivateClick(div,'big',id,i);
   return div;
@@ -29036,6 +29922,7 @@ function makeSmWrap(id,i,sm,secColor){
       const k=tKey();const arr=getSmalls(k,id);
       if(arr[i]){
         beforeSave();arr[i].done=!arr[i].done;
+        _subSetAll(arr[i],arr[i].done);
         if(arr[i].done){_clearUrgentOnDone(arr[i]);const cr=item.querySelector('.blk-chk')?.getBoundingClientRect(),rr=item.getBoundingClientRect();_playDoneFx(cr,rr,arr[i]);}
         save();renderSmList(id,secColor);refreshTaskViewsLive();
       }
@@ -29043,7 +29930,12 @@ function makeSmWrap(id,i,sm,secColor){
   );
   if((sm.done&&ST.settings.showCompletedTasks===false)||!taskMarkerFilterPass(sm)
      ||_repHiddenOn(sm,tKey()))wrap.hidden=true;
-  return wrap;
+  const panel=makeSubPanel('small',id,i,sm,secColor);
+  if(!panel)return wrap;
+  if(wrap.hidden)panel.hidden=true;
+  const frag=document.createDocumentFragment();
+  frag.append(wrap,panel);
+  return frag;
 }
 
 function makeSmItem(id,i,sm,secColor){
@@ -29059,6 +29951,7 @@ function makeSmItem(id,i,sm,secColor){
   const chk=document.createElement('button');chk.className='blk-chk';chk.textContent='✓';
   chk.onclick=e=>{
     e.stopPropagation();const arr=getSmalls(tKey(),id);beforeSave();arr[i].done=!arr[i].done;
+    _subSetAll(arr[i],arr[i].done);
     if(arr[i].done){_clearUrgentOnDone(arr[i]);_playDoneFx(chk.getBoundingClientRect(),div.getBoundingClientRect(),arr[i]);}
     save();renderSmList(id,secColor);refreshTaskViewsLive();
   };
@@ -29150,6 +30043,7 @@ function makeSmItem(id,i,sm,secColor){
   div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
   makeContactBadges(sm.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
+  _attachSubMemoBadges(div,'small',id,i,sm,11);
 
   // desktop hover delete
   const del=document.createElement('button');del.className='blk-del';del.textContent='×';
@@ -30821,6 +31715,22 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
     contactLabel.textContent=isContactTask?'연락할 일로 표시됨':'연락할 일';
   }
 
+  // 하위 할일·메모 두 줄 — 지금 몇 개인지, 메모가 있는지를 글자로 알려준다.
+  const subLabel=document.getElementById('subTaskMenuLabel');
+  const subItem=document.getElementById('subTaskMenuItem');
+  if(subLabel&&subItem){
+    const st=_subStat(item);
+    subLabel.textContent=st.n?('하위 할일 '+st.done+'/'+st.n):'하위 할일';
+    subItem.classList.toggle('on',st.n>0);
+  }
+  const memoLabel=document.getElementById('memoMenuLabel');
+  const memoItem=document.getElementById('memoMenuItem');
+  if(memoLabel&&memoItem){
+    const hasMemo=!!(item&&item.memo&&String(item.memo).trim());
+    memoLabel.textContent=hasMemo?'메모 보기':'메모';
+    memoItem.classList.toggle('on',hasMemo);
+  }
+
   // On desktop, make the date input visible inline so the native
   // calendar-icon click target is real and reliably opens the picker.
   // On mobile, keep it as an invisible full-row overlay under the label
@@ -32175,6 +33085,9 @@ function materializeRepeatsFor(k){
     if(kind==='w')it.rk='w';   // 줄 끝 표시를 매주 아이콘으로 그리기 위한 한 글자
     if(r.item.flag)it.flag=true;
     if(r.item.contactTask)it.contactTask=true;
+    // 반복 할일의 하위는 **날마다 처음부터** 다 (어제 체크한 것이 오늘 켜져
+    // 있으면 안 된다). 메모는 그 할일의 성격이라 그대로 물려받는다.
+    _carryTaskExtras(r.item,it,false);
     arr.push(it);
     added++;
   });
@@ -32214,6 +33127,7 @@ function getDisplayTasks(k,secId,type){
     if(!eventRepeatsOnDate(r.item,r.k,k))return;
     const pv={text:r.item.text,done:false,daily:true,rid:r.item.rid,_repeatPreview:true};
     if(_repKindOf(r.item)==='w')pv.rk='w';
+    _carryTaskExtras(r.item,pv,false);
     extra.push(pv);
   });
   return extra.length?[...own,...extra]:own;
@@ -32657,6 +33571,10 @@ function _movedTaskCopy(item,days){
   const bump=(days===1&&!item.done)?1:0;
   moved.manualCarryCount=(item.manualCarryCount||0)+bump;
   moved.autoCarryCount=item.autoCarryCount||0;
+  // 옮긴 할일은 **같은 할일**이 날짜만 바뀐 것이다. 그래서 끝낸 하위도
+  // 그대로 따라간다 (HB 2026-09-17 — "끝낸 하위도 따라가게 해줘").
+  _carryTaskExtras(item,moved,true);
+  if(item.subOpen)moved.subOpen=true;
   return moved;
 }
 
@@ -32719,6 +33637,9 @@ function _freshTaskCopy(item){
   if(item.daily)copy.daily=true;
   if(item.flag)copy.flag=true;
   if(item.contactTask)copy.contactTask=true;
+  // 하위 할일·메모도 '무엇을 하는 일인가' 를 말해 주는 것이라 물려받는다.
+  // 다만 하위의 **완료 표시는 지운다** — 사본은 그 날 새로 하는 일이다.
+  _carryTaskExtras(item,copy,false);
   return copy;
 }
 
@@ -36078,8 +36999,8 @@ function _doCarry(scopeFilter){
       const tB=getBigs(todayK,sec.id),tS=getSmalls(todayK,sec.id);
       // rid(반복 묶음 이름표)를 함께 옮긴다 — 안 그러면 오늘 실체가 또 만들어져
       // 같은 할일이 두 줄로 보인다. repeat(규칙)은 원본에만 있으므로 안 옮긴다.
-      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.rid&&!_isRepRoot(b))it.rid=b.rid;if(b.flag)it.flag=true;if(b.contactTask)it.contactTask=true;tB.push(it);});
-      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.rid&&!_isRepRoot(s))it.rid=s.rid;if(s.flag)it.flag=true;if(s.contactTask)it.contactTask=true;tS.push(it);});
+      ub.forEach(b=>{const it={text:b.text,done:false,autoCarryCount:(b.autoCarryCount||0)+1,manualCarryCount:b.manualCarryCount||0};if(b.daily)it.daily=true;if(b.rid&&!_isRepRoot(b))it.rid=b.rid;if(b.flag)it.flag=true;if(b.contactTask)it.contactTask=true;_carryTaskExtras(b,it,true);if(b.subOpen)it.subOpen=true;tB.push(it);});
+      us.forEach(s=>{const it={text:s.text,done:false,autoCarryCount:(s.autoCarryCount||0)+1,manualCarryCount:s.manualCarryCount||0};if(s.daily)it.daily=true;if(s.rid&&!_isRepRoot(s))it.rid=s.rid;if(s.flag)it.flag=true;if(s.contactTask)it.contactTask=true;_carryTaskExtras(s,it,true);if(s.subOpen)it.subOpen=true;tS.push(it);});
     });
   });
   return{movedCount,dayCount:pastKeys.length};
