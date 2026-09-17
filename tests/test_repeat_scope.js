@@ -12,7 +12,10 @@ const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 const RULE = slice('function _repRule(rep){', 'function getDisplayEvents(k,secId){');
-const TASK = slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec){');
+// 하위·메모를 실어 나르는 순수 함수 — _movedTaskCopy·_freshTaskCopy 등
+// 항목을 새로 만드는 자리들이 모두 이것을 쓴다 (tests/test_subtask.js 가 규칙을 지킨다)
+const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
+const TASK = SUBHELP + '\n' + slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec){');
 
 function makeEnv(days, todayK) {
   const ST = { days: days || {} };
