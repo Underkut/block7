@@ -77,12 +77,16 @@ console.log('\n시나리오 5 — 실제로 오늘·내일·다음 주·어제�
     const calls=[];
     const getBigs=(key)=>key==='today'?from:to;
     const getSmalls=(key)=>key==='today'?from:to;
+    // _moveLabel 은 '내일로' / '내일 오후로' 를 만든다 (v26-0917-1). 구간을
+    // 따로 고르지 않은 이 시나리오에서는 예전 문구 그대로여야 한다.
     const make = new Function('_taskMenuCtx','tKey','addDays','viewDate','getBigs','getSmalls',
       'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive','closeTaskMenu','_toastWithJump',
+      '_moveLabel',
       `${DUP}; return duplicateTaskTo;`);
     const duplicate=make({type,secId:'am',idx:0},d=>d||'today',(_,d)=>d,
       'today',getBigs,getSmalls,...['before','save','render','total','refresh','close','jump']
-        .map(name=>(...args)=>calls.push([name,...args])));
+        .map(name=>(...args)=>calls.push([name,...args])),
+      (days,from,to)=>(to&&to!==from?`내일 ${to}로`:(days===-1?'어제로':days===0?'오늘로':days===1?'내일로':'다음 주로')));
     duplicate(days);
     return {from,to,calls};
   };
@@ -114,16 +118,18 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
   const from=[{text:'세금 내기',done:true,flag:true,manualCarryCount:5}];
   const to=[];
   const calls=[];
+  // v26-0917-1 — 날짜 지정 복제는 '구간 판' 설정을 물어본다. 여기서는 꺼 둔
+  // 자리(달력에서 고르면 곧바로 복제)를 지킨다.
   const make = new Function('_taskMenuCtx','_datePickArmed','tKey','getBigs','getSmalls',
     'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive',
-    'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy',
+    'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy','_secPickOn',
     `${src}; return duplicateTaskToPickedDate;`);
   const rec=(name)=>(...args)=>{calls.push([name,...args]);};
   const freshCopy=new Function(`${DUP}; return _freshTaskCopy;`)();
   const dup=make({type:'big',secId:'am',idx:0},()=>true,()=>'today',
     (key)=>key==='today'?from:to,(key)=>key==='today'?from:to,
     rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('jump'),
-    (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy);
+    (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy,()=>false);
 
   dup('2026-09-20');
   sc.eq('원본은 그 자리에 남는다', from.length, 1);
@@ -135,12 +141,12 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
   const to2=[];
   const dup2=make({type:'big',secId:'am',idx:0},()=>false,()=>'today',
     (key)=>key==='today'?from:to2,(key)=>key==='today'?from:to2,
-    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy);
+    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false);
   dup2('2026-09-20');
   sc.eq('무장 전 change 는 복제하지 않는다', to2.length, 0);
   sc.eq('빈 날짜면 아무 일도 없다', (()=>{const t=[];const d=make({type:'big',secId:'am',idx:0},
     ()=>true,()=>'today',(k)=>k==='today'?from:t,(k)=>k==='today'?from:t,
-    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy);d('');return t.length;})(), 0);
+    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false);d('');return t.length;})(), 0);
 }
 
 console.log('\n시나리오 7 — 두 날짜 줄이 각각 자기 입력칸에 연결된다');

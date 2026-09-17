@@ -14,7 +14,7 @@ const LBL   = slice('const _KDOW=', 'function _moveDateToastMsg(');
 const JUMP  = slice('function _toastWithJump(', '// 도착한 곳에서 그 할일이');
 const FLASH = slice('let _pendingTaskFlash=null;', '// 그 날짜에 이미 있는 할일 개수');
 const COUNT = slice('function _dayTaskCount(', '// 메뉴 줄 오른쪽 끝에');
-const FILL  = slice('function _fillTaskMenuCounts(', '// ─ Toast ─');
+const FILL  = slice('function _fillTaskMenuCounts(', '// ══════════ 구간 판');
 
 console.log('시나리오 1 — 날짜 이름을 한 곳에서 만든다');
 {
@@ -127,42 +127,58 @@ console.log('\n시나리오 4 — 옮기기 전에 그 날 할일이 몇 개인�
 
 console.log('\n시나리오 5 — 개수를 메뉴 줄 오른쪽에 적는다');
 {
+  // v26-0917-1 부터 숫자 왼쪽에 구간 색 점도 함께 찍는다. 점과 숫자는 같은
+  // 날짜를 보므로, 점 개수는 그 날 할일이 있는 **구간 수**여야 한다.
+  const mkEl=()=>({className:'',textContent:'',style:{},_kids:[],
+    // 진짜 DOM 처럼 innerHTML='' 은 자식을 비운다 — 메뉴를 다시 열 때
+    // 색 점이 쌓이지 않는 것이 이 자리에 걸려 있다
+    set innerHTML(v){if(!v)this._kids=[];},
+    get innerHTML(){return this._kids.length?'…':'';},
+    appendChild(el){this._kids.push(el);},
+    classList:{_c:new Set(),toggle(c,on){on?this._c.add(c):this._c.delete(c);},
+               contains(c){return this._c.has(c);}}});
   const rows=[
     {dataset:{cntDays:'1'},_kids:[]},
     {dataset:{cntDays:'7'},_kids:[]},
     {dataset:{cntDays:'-1'},_kids:[]},
   ];
   rows.forEach(r=>{
-    r.querySelector=()=>r._kids[0]||null;
-    r.appendChild=(el)=>{r._kids.push(el);};
+    r.querySelector=(sel)=>r._kids.find(k=>('.'+k.className)===sel)||null;
+    // appendChild 는 이미 붙어 있는 것을 **맨 뒤로 옮긴다** (진짜 DOM 과 같게).
+    // 개수 칸이 점 뒤에 오도록 다시 붙이는 코드가 여기에 기댄다.
+    r.appendChild=(el)=>{const i=r._kids.indexOf(el);if(i>=0)r._kids.splice(i,1);r._kids.push(el);};
   });
   const made=[];
-  const doc={
-    querySelectorAll:(s)=>{made.push(s);return rows;},
-    createElement:()=>({className:'',textContent:'',
-      classList:{_c:new Set(),toggle(c,on){on?this._c.add(c):this._c.delete(c);},
-                 contains(c){return this._c.has(c);}}})
-  };
+  const doc={querySelectorAll:(s)=>{made.push(s);return rows;},createElement:mkEl};
   const counts={'d1':3,'d7':0,'d-1':1};
-  const fill = new Function('document','tKey','addDays','viewDate','_dayTaskCount',
+  const secs={'d1':[{id:'am',color:'#1'},{id:'pm',color:'#2'}],'d7':[],'d-1':[{id:'night',color:'#3'}]};
+  const fill = new Function('document','tKey','addDays','viewDate','_dayTaskCount','_dayTaskSecs',
     `${FILL}; return _fillTaskMenuCounts;`)(
-      doc,(d)=>d,(_,n)=>'d'+n,'today',(k)=>counts[k]);
+      doc,(d)=>d,(_,n)=>'d'+n,'today',(k)=>counts[k],(k)=>secs[k]);
   fill();
+  const cnt=r=>r.querySelector('.task-menu-cnt');
+  const dots=r=>r.querySelector('.task-menu-dots');
   sc.eq('개수를 붙일 줄만 고른다', made[0], '#taskMenu [data-cnt-days]');
-  sc.eq('내일 줄에 3', rows[0]._kids[0].textContent, '3');
-  sc.eq('다음 주 줄에 0', rows[1]._kids[0].textContent, '0');
-  sc.eq('0 인 날은 옅게', rows[1]._kids[0].classList.contains('zero'), true);
-  sc.eq('있는 날은 옅지 않게', rows[0]._kids[0].classList.contains('zero'), false);
-  sc.eq('어제 줄에 1', rows[2]._kids[0].textContent, '1');
+  sc.eq('내일 줄에 3', cnt(rows[0]).textContent, '3');
+  sc.eq('다음 주 줄에 0', cnt(rows[1]).textContent, '0');
+  sc.eq('0 인 날은 옅게', cnt(rows[1]).classList.contains('zero'), true);
+  sc.eq('있는 날은 옅지 않게', cnt(rows[0]).classList.contains('zero'), false);
+  sc.eq('어제 줄에 1', cnt(rows[2]).textContent, '1');
+  sc.eq('색 점은 할일이 있는 구간 수만큼', dots(rows[0])._kids.length, 2);
+  sc.eq('빈 날은 점도 없다', dots(rows[1])._kids.length, 0);
+  sc.eq('점이 숫자보다 앞에 온다',
+    rows[0]._kids.indexOf(dots(rows[0])) < rows[0]._kids.indexOf(cnt(rows[0])), true);
   fill();
-  sc.eq('다시 열어도 칸이 하나뿐', rows[0]._kids.length, 1);
+  sc.eq('다시 열어도 칸이 하나뿐', rows[0]._kids.length, 2);
+  sc.eq('다시 열어도 점이 쌓이지 않는다', dots(rows[0])._kids.length, 2);
 }
 
 console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
 {
   const menu = slice('<!-- Task move mini menu -->', '<!-- (date input now lives inline');
-  sc.eq('개수를 붙인 줄 일곱 (이동 3 · 복제 4)',
-    (menu.match(/data-cnt-days=/g)||[]).length, 7);
+  // v26-0917-1 에 이동 칸의 '오늘 다른 구간으로' 가 늘어 여덟이 됐다
+  sc.eq('개수를 붙인 줄 여덟 (이동 4 · 복제 4)',
+    (menu.match(/data-cnt-days=/g)||[]).length, 8);
   sc.eq('날짜 지정 줄에는 개수를 안 붙인다 (어느 날인지 아직 모른다)',
     menu.slice(menu.indexOf('id="dateLabelRow"'), menu.indexOf('id="dateLabelRow"')+400)
       .includes('data-cnt-days'), false);
@@ -189,9 +205,9 @@ console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
 
 console.log('\n시나리오 7 — 이동·복제 네 길이 모두 같은 안내를 쓴다');
 {
-  const move = slice('function moveTaskTo(days)', 'function _freshTaskCopy(');
+  const move = slice('function moveTaskTo(days,toSec)', "// '내일로' · '내일 오후로'");
   const movePick = slice('function moveTaskToPickedDate(', '// 복제 칸의 \'날짜 지정\'');
-  const dup = slice('function duplicateTaskTo(days)', '// 메뉴가 열릴 때마다');
+  const dup = slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다');
   const dupPick = slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');
   [['이동',move],['이동(날짜 지정)',movePick],['복제',dup],['복제(날짜 지정)',dupPick]]
     .forEach(([name,src])=>{

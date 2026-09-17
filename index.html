@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0916-4  [production]  -->
+<!-- BLOCK7  v. 26-0917-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2606,6 +2606,49 @@ body.split-d #todayView.animating{overflow:hidden;}
   color:var(--tx3);font-family:var(--font-number);font-size:11px;font-weight:400;
 }
 .task-menu-cnt.zero{opacity:.4;}
+/* 개수 왼쪽의 구간 색 점 — 그 숫자가 **어느 구간** 것인지 판을 열지 않고도
+   보이게 (v26-0917-1, HB). 할일이 있는 구간마다 점 하나. 개수만큼이 아니라
+   구간마다 하나인 까닭은, 할일이 열 개인 날에도 줄 너비가 안 변하기 때문이다. */
+.task-menu-dots{display:flex;align-items:center;gap:3px;margin-left:auto;padding-left:12px;}
+.task-menu-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.task-menu-dots+.task-menu-cnt{margin-left:0;padding-left:6px;}
+
+/* ── 구간 판 — 옮길 시간 구간을 고르고, 그 구간에 무엇이 있는지 본다 ──
+   (v26-0917-1, HB: "어느 시간구간에 무슨 할일이 있어서 그 개수인지 궁금하고,
+    다른 구간으로 보내고 싶을 때도 많다.")
+   ⚠️ 장치를 새로 만들지 않았다 — 로고 메뉴의 '말씀 목록' 하위 뎁스와 **같은 방식**이다.
+      PC(마우스): 메뉴는 그대로 두고 오른쪽에 띄운다 (.task-menu-sub-float 재사용).
+      손가락 기기: 메뉴 자리에서 바꿔 보여주고 맨 위에 '‹ 되돌아가기' 줄을 둔다.
+      둘을 다르게 고치지 말 것 — 한쪽만 고쳐져 어긋난 적이 있다. */
+#secPickBoard.task-menu-sub-float{min-width:236px;max-width:264px;}
+.secpick-back{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
+  font-size:12.5px;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.secpick-back:hover,.secpick-back:active{background:var(--s2);color:var(--tx2);}
+.secpick-head{padding:8px 12px 6px;display:flex;align-items:baseline;gap:7px;
+  border-bottom:1px solid var(--bd);margin:-4px -4px 4px;}
+.secpick-head-t{font-size:12px;font-weight:600;color:var(--tx);}
+.secpick-head-d{font-size:10.5px;color:var(--tx3);font-family:var(--font-number);}
+.secpick-row{padding:7px 12px 8px;border-radius:8px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;transition:background .1s;}
+.secpick-row:hover,.secpick-row:active{background:var(--s2);}
+.secpick-top{display:flex;align-items:center;gap:8px;}
+.secpick-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.secpick-name{font-size:13px;font-weight:500;color:var(--tx2);}
+.secpick-n{margin-left:auto;color:var(--tx3);font-family:var(--font-number);font-size:11px;}
+.secpick-n.zero{opacity:.4;}
+.secpick-items{margin-top:3px;padding-left:15px;font-size:11px;line-height:1.45;
+  color:var(--tx3);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.secpick-items .sm{opacity:.62;}
+/* 지금 이 할일이 있는 구간 — "그냥 누르면 여기로 간다" 는 표시.
+   두 번 숨 쉬고 멈춘다. 계속 깜빡이면 눈이 아프다. */
+.secpick-row.here{background:rgba(var(--ac-rgb),.10);box-shadow:inset 0 0 0 1.5px rgba(var(--ac-rgb),.5);}
+.secpick-row.here .secpick-name{color:var(--tx);font-weight:600;}
+@keyframes secpickHere{
+  0%{box-shadow:inset 0 0 0 1.5px rgba(var(--ac-rgb),.18);}
+  50%{box-shadow:inset 0 0 0 1.5px rgba(var(--ac-rgb),.85);}
+  100%{box-shadow:inset 0 0 0 1.5px rgba(var(--ac-rgb),.18);}
+}
+.secpick-row.here.beat{animation:secpickHere 1.1s ease-in-out 2;}
 /* PC 에서 '말씀 목록' 하위 뎁스를 1뎁스를 가리지 않고 오른쪽에 띄운다 (v26-0818-9, HB) */
 .task-menu-sub-float{
   position:fixed;z-index:201;
@@ -5037,7 +5080,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0916-4";
+const APP_VERSION = "v. 26-0917-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5529,6 +5572,20 @@ window._fbScriptsReady=new Promise(resolve=>{
           <button class="theme-pick-btn" id="carrySrcBoth" onclick="updateSetting('carryCountSource','both')">합계(a+b)</button>
           <button class="theme-pick-btn" id="carrySrcAuto" onclick="updateSetting('carryCountSource','auto')">자동만(a)</button>
           <button class="theme-pick-btn" id="carrySrcManual" onclick="updateSetting('carryCountSource','manual')">수동만(b)</button>
+        </div>
+      </div>
+
+      <!-- 옮길 구간 고르기 (v26-0917-1, HB) -->
+      <div class="settings-section" data-lv="p">
+        <div class="settings-row">
+          <div class="settings-row-text">
+            <div class="settings-row-label">옮길 구간 고르기</div>
+            <div class="settings-row-desc">옮기거나 복제할 때 어느 시간 구간으로 보낼지 고를 수 있어요. 그 날짜의 구간마다 무슨 할 일이 있는지도 함께 보여줘요. 켜면 휴대폰에서는 한 번 더 눌러야 해요 — 꺼 두어도 메뉴 줄을 길게 누르면(PC 는 오른쪽 클릭) 볼 수 있어요.</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setMoveSecPicker" onchange="updateSetting('moveSecPicker',this.checked)">
+            <span class="settings-toggle-track"></span>
+          </label>
         </div>
       </div>
 
@@ -7435,6 +7492,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- Task move mini menu -->
 <div class="task-menu-overlay" id="taskMenuOverlay" style="display:none" onclick="closeTaskMenu()"></div>
 <div class="task-menu" id="taskMenu" style="display:none">
+ <div id="taskMenuMain">
   <div class="task-menu-item" id="urgentToggleItem" onclick="toggleTaskUrgent()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20"><defs><radialGradient id="urgMenuGlow" cx="50%" cy="45%" r="55%"><stop offset="0%" stop-color="currentColor" stop-opacity=".55"/><stop offset="60%" stop-color="currentColor" stop-opacity=".18"/><stop offset="100%" stop-color="currentColor" stop-opacity="0"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(#urgMenuGlow)"/><path d="M6.1 12.2c0-2.7 1.75-4.5 3.9-4.5s3.9 1.8 3.9 4.5v3.1H6.1v-3.1Z" fill="currentColor"/></svg></span><span id="urgentToggleLabel">긴급 표시</span>
   </div>
@@ -7449,16 +7507,20 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">이동</div>
-  <div class="task-menu-item" data-cnt-days="1" onclick="moveTaskTo(1)">
+  <div class="task-menu-item" data-act="move" data-cnt-days="1" onclick="moveTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>내일로
   </div>
-  <div class="task-menu-item" data-cnt-days="7" onclick="moveTaskTo(7)">
+  <div class="task-menu-item" data-act="move" data-cnt-days="7" onclick="moveTaskTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
   </div>
-  <div class="task-menu-item" data-cnt-days="-1" onclick="moveTaskTo(-1)">
+  <div class="task-menu-item" data-act="move" data-cnt-days="-1" onclick="moveTaskTo(-1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M14 4.5v11L5 10z"/></svg></span>어제로
   </div>
-  <div class="task-menu-item" id="dateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
+  <div class="task-menu-item" id="todaySecRow" data-act="move" data-cnt-days="0"
+       data-secpick="always" onclick="_secPickOpenFromRow(this)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h11M4.5 15.5h11"/><path d="M10 7.6v4.8M7.9 10.3 10 12.4l2.1-2.1"/></svg></span>오늘 다른 구간으로
+  </div>
+  <div class="task-menu-item" id="dateLabelRow" data-act="move" data-when="pick" style="position:relative;display:flex;align-items:center;cursor:pointer;">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13M7 3v3M13 3v3"/></svg></span><span id="dateLabelText">날짜 지정</span>
     <input type="date" id="datePickerInput"
       style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;
@@ -7468,19 +7530,19 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">복제</div>
-  <div class="task-menu-item" data-cnt-days="0" onclick="duplicateTaskTo(0)">
+  <div class="task-menu-item" data-act="dup" data-cnt-days="0" onclick="duplicateTaskTo(0)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><circle cx="11.3" cy="11.5" r="3.6" fill="currentColor" stroke="none"/></svg></span>오늘로
   </div>
-  <div class="task-menu-item" data-cnt-days="1" onclick="duplicateTaskTo(1)">
+  <div class="task-menu-item" data-act="dup" data-cnt-days="1" onclick="duplicateTaskTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M8 7.4v8.2l6.6-4.1z" fill="currentColor" stroke="none"/></svg></span>내일로
   </div>
-  <div class="task-menu-item" data-cnt-days="7" onclick="duplicateTaskTo(7)">
+  <div class="task-menu-item" data-act="dup" data-cnt-days="7" onclick="duplicateTaskTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M7.4 7.6v8l4.8-4z" fill="currentColor" stroke="none"/><path d="M11.8 7.6v8l4.8-4z" fill="currentColor" stroke="none"/></svg></span>다음 주로
   </div>
-  <div class="task-menu-item" data-cnt-days="-1" onclick="duplicateTaskTo(-1)">
+  <div class="task-menu-item" data-act="dup" data-cnt-days="-1" onclick="duplicateTaskTo(-1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><path d="M14.6 7.4v8.2L8 11.5z" fill="currentColor" stroke="none"/></svg></span>어제로
   </div>
-  <div class="task-menu-item" id="dupDateLabelRow" style="position:relative;display:flex;align-items:center;cursor:pointer;">
+  <div class="task-menu-item" id="dupDateLabelRow" data-act="dup" data-when="pick" style="position:relative;display:flex;align-items:center;cursor:pointer;">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><rect x="7.2" y="7.4" width="9.2" height="8.6" rx="1.4"/><path d="M7.2 10.2h9.2M9.9 6.1v2.6M13.7 6.1v2.6"/></svg></span><span id="dupDateLabelText">날짜 지정</span>
     <input type="date" id="dupDatePickerInput"
       style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;
@@ -7492,6 +7554,10 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4a6.5 6.5 0 1 0 6.5 6.5"/><path d="M7 3.3 10.3 4l-1 3.3"/></svg></span><span id="dailyToggleLabel">매일 반복</span>
   </div>
+ </div>
+ <!-- 구간 판 (v26-0917-1) — PC 에선 .task-menu-sub-float 로 오른쪽에 떠 나가고,
+      손가락 기기에선 위 #taskMenuMain 을 감추고 이 자리에 나타난다. 내용은 JS 가 그린다. -->
+ <div id="secPickBoard" style="display:none"></div>
 </div>
 
 <!-- (date input now lives inline inside the task menu, see below) -->
@@ -10614,7 +10680,7 @@ function _verseSettingsOpen(){
 const _ESC_CLOSERS=[
   // 작은 메뉴류 (가장 위)
   ['eventEditMenu',   ()=>closeEventEditMenu()],
-  ['taskMenu',        ()=>closeTaskMenu()],
+  ['taskMenu',        ()=>{if(_secPickSpec){_secPickBack();return;}closeTaskMenu();}],
   ['contactMenu',     ()=>closeContactMenu()],
   ['collAddMenu',     ()=>closeCollAddMenu()],
   ['collMenu',        ()=>closeCollMenu()],
@@ -17967,7 +18033,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -30773,6 +30839,8 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   // 옮길 곳에 이미 할일이 몇 개 있는지 줄 오른쪽에 적어 둔다 (v26-0904-3, HB).
   // 화면을 옮기지 않고도 그 날 사정을 알 수 있다.
   _fillTaskMenuCounts();
+  _secPickBack();            // 지난번에 열어 둔 구간 판이 남아 있지 않게
+  _wireSecPickRows();
 
   const mw=180,mh=menu.offsetHeight;
   let left,top;
@@ -31720,6 +31788,7 @@ function deleteEventFromMenu(){
 }
 
 function closeTaskMenu(){
+  _secPickBack();
   document.getElementById('taskMenu').style.display='none';
   document.getElementById('taskMenuOverlay').style.display='none';
   document.getElementById('taskMenu').style.transform='';
@@ -32529,28 +32598,42 @@ function _dayKeyDiff(fromKey,toKey){
   return Math.round((d2-d1)/86400000);
 }
 
-function moveTaskTo(days){
+// toSec — 보낼 시간 구간. 안 주면 예전 그대로 **할일이 있던 구간**으로 간다
+// (v26-0917-1 에서 구간 판이 생기기 전까지는 그 길밖에 없었다).
+function moveTaskTo(days,toSec){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
+  const destSec=toSec||secId;
   const fromKey=tKey();
   const toDate=addDays(viewDate,days);
   const toKey=tKey(toDate);
+  // 같은 날 같은 구간 = 갈 곳이 없다. 그냥 두면 목록 맨 아래로 자리만 바뀐다.
+  if(days===0&&destSec===secId){closeTaskMenu();return;}
   beforeSave();
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=src[idx];
   if(!item){closeTaskMenu();return;}
   src.splice(idx,1);
   const newItem=_movedTaskCopy(item,days);
-  const dest=type==='big'?getBigs(toKey,secId):getSmalls(toKey,secId);
+  const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
   dest.push(newItem);
   save();
   renderSecBody(secId);
+  // 같은 날 다른 구간으로 옮겼으면 받는 구간도 다시 그려야 한다 — 둘 다 화면에 있다
+  if(destSec!==secId&&toKey===fromKey)renderSecBody(destSec);
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
   // brief flash to confirm
-  const label=days===-1?'어제로':days===1?'내일로':'다음 주로';
-  _toastWithJump(`${label} 이동했어요`,toKey,{key:toKey,secId,type,idx:dest.length-1});
+  _toastWithJump(`${_moveLabel(days,secId,destSec)} 이동했어요`,toKey,
+    {key:toKey,secId:destSec,type,idx:dest.length-1});
+}
+
+// '내일로' · '내일 오후로' — 구간을 따로 고른 때만 구간 이름을 붙인다.
+function _moveLabel(days,fromSec,destSec){
+  const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
+  const name=(destSec&&destSec!==fromSec)?((SECS.find(x=>x.id===destSec)||{}).name||''):'';
+  return name?`${base} ${name}${_euroRo(name)}`:`${base}로`;
 }
 
 // 복제된 할일은 "그 날 새로 만든 할일" 이다 (2026-09-04 HB).
@@ -32569,9 +32652,10 @@ function _freshTaskCopy(item){
   return copy;
 }
 
-function duplicateTaskTo(days){
+function duplicateTaskTo(days,toSec){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
+  const destSec=toSec||secId;
   const fromKey=tKey();
   const toKey=tKey(addDays(viewDate,days));
   const source=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
@@ -32581,16 +32665,16 @@ function duplicateTaskTo(days){
   // 복제는 원본을 그대로 둔다 (splice 하지 않는다).
   const copy=_freshTaskCopy(item);
   beforeSave();
-  const dest=type==='big'?getBigs(toKey,secId):getSmalls(toKey,secId);
+  const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
   dest.push(copy);
   save();
   renderSecBody(secId);
+  if(destSec!==secId&&toKey===fromKey)renderSecBody(destSec);
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  const label=days===-1?'어제로':days===0?'오늘로':days===1?'내일로':'다음 주로';
-  _toastWithJump(`${label} 복제했어요`,toKey,
-    {key:toKey,secId,type,idx:dest.length-1});
+  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요`,toKey,
+    {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
 // 메뉴가 열릴 때마다 '날짜 지정' 줄의 <input type=date> 를 새로 만들어 끼운다.
@@ -32655,6 +32739,7 @@ function _datePickArmed(inpId){
 }
 
 function closeTaskMenu_keepCtx(){
+  _secPickBack();
   document.getElementById('taskMenu').style.display='none';
   document.getElementById('taskMenuOverlay').style.display='none';
   document.getElementById('taskMenu').style.transform='';
@@ -32664,7 +32749,7 @@ function closeTaskMenu_keepCtx(){
 function closeDatePicker(){}
 function confirmDatePicker(){}
 
-function moveTaskToPickedDate(dateStr){
+function moveTaskToPickedDate(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   // Reject a 'change' that fires too soon after the input was focused
   // to plausibly be a real human picking a date through the native
@@ -32672,8 +32757,17 @@ function moveTaskToPickedDate(dateStr){
   // exists. 200ms is generous; real picker interactions take at least
   // several hundred ms even for a fast tap.
   if(!_datePickArmed('datePickerInput'))return;
+  // 구간 판이 켜져 있으면 **달력이 먼저, 판이 그 다음**이다. 날짜를 알아야
+  // 그 날 구간에 무엇이 있는지 보여줄 수 있다. 판에서 구간을 고르면 toSec 을
+  // 들고 여기로 다시 들어온다.
+  if(toSec===undefined&&_secPickOn()){
+    _secPickOpen({act:'move',dateStr,toKey:dateStr,label:'이동 · 날짜 지정'},
+      document.getElementById('dateLabelRow'));
+    return;
+  }
 
   const {type,secId,idx}=_taskMenuCtx;
+  const destSec=toSec||secId;
   const fromKey=tKey();
   beforeSave();
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
@@ -32681,21 +32775,29 @@ function moveTaskToPickedDate(dateStr){
   if(!item){_taskMenuCtx=null;closeTaskMenu_keepCtx();return;}
   src.splice(idx,1);
   // 메뉴의 '내일로' 와 **똑같은 것을 들고 간다** (_movedTaskCopy 의 설명 참고).
-  const dest=type==='big'?getBigs(dateStr,secId):getSmalls(dateStr,secId);
+  const dest=type==='big'?getBigs(dateStr,destSec):getSmalls(dateStr,destSec);
   dest.push(_movedTaskCopy(item,_dayKeyDiff(fromKey,dateStr)));
-  save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
+  save();renderSecBody(secId);
+  if(destSec!==secId&&dateStr===fromKey)renderSecBody(destSec);
+  updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  _toastWithJump(_moveDateToastMsg(dateStr,secId),dateStr,
-    {key:dateStr,secId,type,idx:dest.length-1});
+  _toastWithJump(_moveDateToastMsg(dateStr,destSec),dateStr,
+    {key:dateStr,secId:destSec,type,idx:dest.length-1});
 }
 
 // 복제 칸의 '날짜 지정' — 원본은 그대로 두고 고른 날짜에 새 할일로 하나 만든다.
-function duplicateTaskToPickedDate(dateStr){
+function duplicateTaskToPickedDate(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   if(!_datePickArmed('dupDatePickerInput'))return;
+  if(toSec===undefined&&_secPickOn()){
+    _secPickOpen({act:'dup',dateStr,toKey:dateStr,label:'복제 · 날짜 지정'},
+      document.getElementById('dupDateLabelRow'));
+    return;
+  }
 
   const {type,secId,idx}=_taskMenuCtx;
+  const destSec=toSec||secId;
   const fromKey=tKey();
   const source=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=source[idx];
@@ -32703,13 +32805,15 @@ function duplicateTaskToPickedDate(dateStr){
 
   beforeSave();
   const copy=_freshTaskCopy(item);
-  const dest=type==='big'?getBigs(dateStr,secId):getSmalls(dateStr,secId);
+  const dest=type==='big'?getBigs(dateStr,destSec):getSmalls(dateStr,destSec);
   dest.push(copy);
-  save();renderSecBody(secId);updateTotal();refreshTaskViewsLive();
+  save();renderSecBody(secId);
+  if(destSec!==secId&&dateStr===fromKey)renderSecBody(destSec);
+  updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  _toastWithJump(_moveDateToastMsg(dateStr,secId,'복제'),dateStr,
-    {key:dateStr,secId,type,idx:dest.length-1});
+  _toastWithJump(_moveDateToastMsg(dateStr,destSec,'복제'),dateStr,
+    {key:dateStr,secId:destSec,type,idx:dest.length-1});
 }
 // "8월 17일 월요일 오전 날짜로 이동했어요" — 어느 날짜·구간으로 옮겼는지
 // 바로 알 수 있게 (v26-0817-1, HB 요청). 요일은 설정과 무관하게 항상 이
@@ -32788,17 +32892,241 @@ function _dayTaskCount(key){
   });
   return n;
 }
+// 그 날짜에 할일이 있는 구간들 — 화면에 보이는 순서 그대로.
+// 개수 옆의 색 점과 구간 판이 함께 쓴다. _dayTaskCount 와 같은 잣대로 센다
+// (미완료만). 둘이 어긋나면 "점은 셋인데 숫자는 넷" 이 된다.
+function _dayTaskSecs(key){
+  const d=ST&&ST.days&&ST.days[key];
+  if(!d)return[];
+  const has=a=>(a||[]).some(t=>t&&t.text&&t.text.trim()&&!t.done);
+  return SECS.filter(sec=>ST.vis&&ST.vis.includes(sec.id))
+             .filter(sec=>has(d.big&&d.big[sec.id])||has(d.small&&d.small[sec.id]));
+}
 // 메뉴 줄 오른쪽 끝에 그 개수를 적는다 (data-cnt-days 가 붙은 줄만).
+// 숫자 왼쪽에는 할일이 있는 구간마다 색 점 하나 — 판을 열지 않고도 그 숫자가
+// 어느 구간 것인지 보인다 (v26-0917-1, HB).
 function _fillTaskMenuCounts(){
   document.querySelectorAll('#taskMenu [data-cnt-days]').forEach(row=>{
     const days=parseInt(row.dataset.cntDays,10);
     if(isNaN(days))return;
-    const n=_dayTaskCount(tKey(addDays(viewDate,days)));
+    const key=tKey(addDays(viewDate,days));
+    const n=_dayTaskCount(key);
+    let dots=row.querySelector('.task-menu-dots');
+    if(!dots){dots=document.createElement('span');dots.className='task-menu-dots';row.appendChild(dots);}
+    dots.innerHTML='';
+    _dayTaskSecs(key).forEach(sec=>{
+      const d=document.createElement('span');
+      d.className='task-menu-dot';d.style.background=sec.color;
+      dots.appendChild(d);
+    });
     let span=row.querySelector('.task-menu-cnt');
     if(!span){span=document.createElement('span');span.className='task-menu-cnt';row.appendChild(span);}
+    // 점 다음에 숫자가 오도록 순서를 지킨다 (다시 열 때 자리가 바뀌면 안 된다)
+    row.appendChild(span);
     span.textContent=String(n);
     span.classList.toggle('zero',n===0);
   });
+}
+
+// ══════════ 구간 판 — 옮길 시간 구간 고르기 (v26-0917-1, HB) ══════════
+// HB — "어느 시간구간에 무슨 할일이 있어서 그 개수인지 궁금하고, 다른 구간으로
+//       넣고 싶은 경우도 많다."
+// ⚠️ 여는 방식은 **로고 메뉴의 '말씀 목록' 하위 뎁스와 똑같다**(logoMenuOpenListSub).
+//    PC 는 오른쪽에 띄우고 손가락 기기는 그 자리에서 바꾼다. 한쪽만 고치지 말 것.
+//
+// 설정(파워) '옮길 구간 고르기' 가 켜져 있으면
+//   · PC  : 목적지 줄에 마우스를 올리면 판이 뜬다. **클릭은 예전 그대로** — 원래 구간으로 간다.
+//   · 손가락: 목적지 줄을 탭하면 판이 뜬다 (탭이 한 번 늘어난다. 그래서 설정이다.)
+// 꺼 두어도 길게 누르기(PC 는 우클릭)로 판을 부를 수 있다 — 앱의 다른 곳과
+// 같은 규칙이다("보조 동작은 롱터치/우클릭", CLAUDE.md UI 원칙).
+let _secPickSpec=null;      // {act:'move'|'dup', days|dateStr, toKey, label}
+let _secPickCloseTimer=null;
+let _secPickWired=false;
+
+function _secPickOn(){return !!(ST&&ST.settings&&ST.settings.moveSecPicker);}
+
+// 그 날짜 그 구간의 미완료 할일 (읽기 전용).
+// ⚠️ getBigs()/getSmalls() 를 쓰지 않는다 — 그 둘은 **없는 날짜를 만들어 버린다.**
+//    판을 한 번 열 때마다 빈 날이 저장소에 쌓이고 동기화까지 따라 움직인다.
+function _daySecTasks(key,secId){
+  const d=ST&&ST.days&&ST.days[key];
+  const pick=a=>((a&&a[secId])||[]).filter(t=>t&&t.text&&t.text.trim()&&!t.done);
+  return {bigs:d?pick(d.big):[],smalls:d?pick(d.small):[]};
+}
+// 판에 세울 구간들. 지금 이 할일이 있는 구간을 사용자가 꺼 두었더라도 맨 앞에
+// 넣는다 — 안 그러면 "그냥 누르면 어디로 가는지" 를 판이 못 보여준다.
+function _secPickSecs(hereSec){
+  const vis=SECS.filter(sec=>ST.vis&&ST.vis.includes(sec.id));
+  if(hereSec&&!vis.some(sec=>sec.id===hereSec)){
+    const here=SECS.find(sec=>sec.id===hereSec);
+    if(here)return[here,...vis];
+  }
+  return vis;
+}
+// 줄 하나가 뜻하는 목적지. 날짜 지정 줄은 날짜를 고른 뒤에야 알 수 있어 여기선 null.
+function _secPickSpecFor(row){
+  if(!row)return null;
+  const act=row.dataset.act==='dup'?'dup':'move';
+  const days=parseInt(row.dataset.cntDays,10);
+  if(isNaN(days))return null;
+  const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
+  return {act,days,toKey:tKey(addDays(viewDate,days)),
+          label:(act==='dup'?'복제':'이동')+' · '+base};
+}
+function _secPickRender(){
+  const spec=_secPickSpec,board=document.getElementById('secPickBoard');
+  if(!spec||!board||!_taskMenuCtx)return;
+  const hereSec=_taskMenuCtx.secId;
+  let h='';
+  if(_isTouchDevice()){
+    h+=`<div class="secpick-back" onclick="_secPickBack()">‹ <span>${esc(spec.label)}</span></div>`+
+       `<div class="task-menu-sep"></div>`;
+  }
+  h+=`<div class="secpick-head"><span class="secpick-head-t">어느 구간으로</span>`+
+     `<span class="secpick-head-d">${esc(_dayLabel(spec.toKey))}</span></div>`;
+  _secPickSecs(hereSec).forEach(sec=>{
+    const {bigs,smalls}=_daySecTasks(spec.toKey,sec.id);
+    const n=bigs.length+smalls.length;
+    const items=[...bigs.map(b=>`<span>${esc(b.text)}</span>`),
+                 ...smalls.map(x=>`<span class="sm">${esc(x.text)}</span>`)].join(' · ');
+    h+=`<div class="secpick-row${sec.id===hereSec?' here beat':''}" data-sec="${esc(sec.id)}">`+
+         `<div class="secpick-top"><span class="secpick-dot" style="background:${esc(sec.color)}"></span>`+
+         `<span class="secpick-name">${esc(sec.name)}</span>`+
+         `<span class="secpick-n${n?'':' zero'}">${n}</span></div>`+
+         (n?`<div class="secpick-items">${items}</div>`:'')+
+       `</div>`;
+  });
+  board.innerHTML=h;
+  // 줄마다 onclick 을 박지 않고 한 번만 위임한다 — 사용자가 만든 구간의 id 를
+  // 따옴표째로 HTML 에 넣는 일이 없도록.
+  board.querySelectorAll('.secpick-row').forEach(r=>{
+    r.onclick=e=>{e.stopPropagation();_secPickChoose(r.dataset.sec);};
+  });
+}
+function _secPickOpen(spec,rowEl){
+  if(!_taskMenuCtx||!spec)return;
+  _secPickSpec=spec;
+  clearTimeout(_secPickCloseTimer);
+  const menu=document.getElementById('taskMenu'),
+        main=document.getElementById('taskMenuMain'),
+        board=document.getElementById('secPickBoard');
+  if(!menu||!main||!board)return;
+  _secPickRender();
+  if(_isTouchDevice()){
+    board.classList.remove('task-menu-sub-float');
+    board.style.left='';board.style.top='';
+    main.style.display='none';
+    board.style.display='';
+    _menuFitHeight(menu);
+  }else{
+    board.classList.add('task-menu-sub-float');
+    board.style.display='';
+    const r=menu.getBoundingClientRect();
+    const rr=rowEl?rowEl.getBoundingClientRect():r;
+    const bw=board.offsetWidth||236;
+    let left=r.right+6;
+    if(left+bw>window.innerWidth)left=r.left-bw-6;   // 오른쪽이 좁으면 왼쪽으로
+    if(left<8)left=8;
+    board.style.left=left+'px';
+    board.style.top=Math.max(8,rr.top-8)+'px';
+    _menuFitHeight(board);
+  }
+}
+function _secPickOpenFromRow(row){
+  if(!row)return;
+  // 날짜 지정 줄은 달력이 먼저다 — 날짜를 알아야 그 날 구간을 보여줄 수 있다.
+  if(row.dataset.when==='pick')return;
+  _secPickOpen(_secPickSpecFor(row),row);
+}
+function _secPickBack(){
+  const main=document.getElementById('taskMenuMain'),
+        board=document.getElementById('secPickBoard');
+  if(board){
+    board.style.display='none';
+    board.classList.remove('task-menu-sub-float');
+    board.style.left='';board.style.top='';
+  }
+  if(main)main.style.display='';
+  _secPickSpec=null;
+  clearTimeout(_secPickCloseTimer);
+  _menuFitHeight(document.getElementById('taskMenu'));
+}
+function _secPickScheduleClose(){
+  if(_isTouchDevice())return;   // 손가락 기기는 '‹ 되돌아가기' 로만 닫는다
+  clearTimeout(_secPickCloseTimer);
+  _secPickCloseTimer=setTimeout(()=>{
+    const board=document.getElementById('secPickBoard');
+    if(board&&board.classList.contains('task-menu-sub-float'))_secPickBack();
+  },160);
+}
+function _secPickCancelClose(){clearTimeout(_secPickCloseTimer);}
+function _secPickChoose(secId){
+  const spec=_secPickSpec;
+  if(!spec||!secId||!_taskMenuCtx)return;
+  _secPickBack();
+  if(spec.dateStr){
+    if(spec.act==='dup')duplicateTaskToPickedDate(spec.dateStr,secId);
+    else moveTaskToPickedDate(spec.dateStr,secId);
+  }else{
+    if(spec.act==='dup')duplicateTaskTo(spec.days,secId);
+    else moveTaskTo(spec.days,secId);
+  }
+}
+// 목적지 줄에 판을 건다. 메뉴를 열 때마다 부르지만 배선은 한 번만 한다.
+function _wireSecPickRows(){
+  const main=document.getElementById('taskMenuMain'),
+        board=document.getElementById('secPickBoard');
+  if(!main||!board)return;
+  main.querySelectorAll('[data-act]').forEach(row=>{
+    if(row.dataset.when==='pick')return;          // 달력이 먼저인 줄
+    row.onmouseenter=()=>{if(!_isTouchDevice()&&_secPickOn())_secPickOpenFromRow(row);};
+    row.onmouseleave=()=>_secPickScheduleClose();
+    row.oncontextmenu=e=>{e.preventDefault();e.stopPropagation();_secPickOpenFromRow(row);};
+    _attachSecPickLongPress(row);
+  });
+  board.onmouseenter=()=>_secPickCancelClose();
+  board.onmouseleave=()=>_secPickScheduleClose();
+  if(_secPickWired)return;
+  _secPickWired=true;
+  // 손가락 기기에서 설정이 켜져 있으면 **탭이 곧 판 열기**다. 줄에 박힌
+  // onclick 보다 먼저 가로채야 하므로 부모에서 캡처 단계로 받는다.
+  main.addEventListener('click',e=>{
+    if(!_isTouchDevice()||!_secPickOn())return;
+    const row=e.target&&e.target.closest&&e.target.closest('[data-act]');
+    if(!row||row.dataset.when==='pick')return;
+    e.preventDefault();e.stopPropagation();
+    _secPickOpenFromRow(row);
+  },true);
+}
+// 길게 누르면 판 — 설정과 무관하다 (CLAUDE.md UI 원칙: 보조 동작은 롱터치).
+function _attachSecPickLongPress(row){
+  if(row._secPickLP)return;
+  row._secPickLP=true;
+  let timer=null,sx=0,sy=0,fired=false;
+  row.addEventListener('touchstart',e=>{
+    if(!e.touches||!e.touches[0])return;
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;
+    clearTimeout(timer);
+    timer=setTimeout(()=>{fired=true;timer=null;_secPickOpenFromRow(row);},LONG_PRESS_TOUCH+60);
+  },{passive:true});
+  row.addEventListener('touchmove',e=>{
+    if(!timer||!e.touches||!e.touches[0])return;
+    if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10){clearTimeout(timer);timer=null;}
+  },{passive:true});
+  row.addEventListener('touchend',e=>{
+    if(timer){clearTimeout(timer);timer=null;}
+    // 길게 눌러 판을 연 뒤 이어지는 합성 click 이 그대로 옮겨 버리면 안 된다
+    if(fired){e.preventDefault();setTimeout(()=>{fired=false;},400);}
+  },{passive:false});
+  row.addEventListener('touchcancel',()=>{if(timer){clearTimeout(timer);timer=null;}fired=false;},{passive:true});
+}
+// '오전으로' · '오후로' — 받침을 보고 고른다 (ㄹ 받침은 '로').
+function _euroRo(word){
+  const ch=String(word||'').trim().slice(-1);
+  const c=ch.charCodeAt(0);
+  if(isNaN(c)||c<0xAC00||c>0xD7A3)return'로';
+  const jong=(c-0xAC00)%28;
+  return(jong===0||jong===8)?'로':'으로';
 }
 
 // ─ Toast ─
@@ -34168,6 +34496,7 @@ function renderSettingsPanel(){
   // (동기화 코드는 if(!DEV_MODE) 안에 있어 창구를 통해 부른다)
   if(typeof window._cfSyncVisibility==='function')window._cfSyncVisibility();
   if(document.getElementById('setMonthTitleYear'))document.getElementById('setMonthTitleYear').checked=s.monthTitleYear!==false;
+  if(document.getElementById('setMoveSecPicker'))document.getElementById('setMoveSecPicker').checked=!!s.moveSecPicker;
   if(document.getElementById('setDoneFxGlow'))document.getElementById('setDoneFxGlow').checked=s.doneFxGlow!==false;
   if(document.getElementById('setDoneFxRipple'))document.getElementById('setDoneFxRipple').checked=s.doneFxRipple!==false;
   const mMode=s.mviewMemMode||'cross';
