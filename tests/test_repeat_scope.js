@@ -51,11 +51,13 @@ function makeEnv(days, todayK) {
      '_migrateTaskRepeats', 'materializeRepeatsFor', 'ensureDailyRepeats', 'ensureRepeatsForView',
      'getDisplayTasks', '_repPurgeTasks', '_repPurgeEvents', '_repAddEx', '_repHiddenOn',
      '_evRepRootOf', '_evInSeries', '_evEditApply', '_evDeleteApply',
-     '_taskDeleteApply', '_taskTextApply'].join(',') + '};';
+     '_taskDeleteApply', '_taskTextApply',
+     '_taskRepWeekly', '_repKindOf', '_taskSetRepeat'].join(',') + '};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log };
 }
 const rep = over => Object.assign({ daily: true, daysOfWeek: [0, 1, 2, 3, 4, 5, 6], weekly: false, weeksOfMonth: [1, 2, 3, 4, 5] }, over || {});
+const api0weekly = () => ({ daily: false, daysOfWeek: [0, 1, 2, 3, 4, 5, 6], weekly: true, weeksOfMonth: [1, 2, 3, 4, 5] });
 const bigsOn = (ST, k, sec) => ((ST.days[k] && ST.days[k].big && ST.days[k].big[sec]) || []).map(b => b.text);
 const T = '2026-09-11';
 
@@ -290,6 +292,90 @@ console.log('\n시나리오 14 — 묻는 동안 날짜를 넘겨도 처음 고�
   sc.eq('12일 것이 지워진다', bigsOn(ST, '2026-09-12', 'am'), []);
   sc.eq('오늘 것은 그대로', bigsOn(ST, T, 'am'), ['성경읽기']);
   sc.eq('뺀 날도 12일로 적힌다', ST.days[T].big.am[0].repeat.ex, ['2026-09-12']);
+}
+
+console.log('\n시나리오 15 — 매주 반복: 같은 요일에만 생긴다');
+{
+  // 2026-09-11 은 금요일. 매주면 9/18, 9/25 (금)에만 생겨야 한다.
+  const { ST, api } = makeEnv({
+    [T]: { big: { am: [{ text: '주간회의', done: false, daily: true, rk: 'w', rid: 'rw', repeat: api0weekly() }] }, small: {}, trash: [], events: {} }
+  }, T);
+  ['2026-09-12','2026-09-14','2026-09-17','2026-09-18','2026-09-25'].forEach(k => api.ensureRepeatsForView(k));
+  sc.eq('다음 날(토)엔 없다', bigsOn(ST, '2026-09-12', 'am'), []);
+  sc.eq('월요일엔 없다', bigsOn(ST, '2026-09-14', 'am'), []);
+  sc.eq('목요일엔 없다', bigsOn(ST, '2026-09-17', 'am'), []);
+  sc.eq('다음 주 금요일엔 있다', bigsOn(ST, '2026-09-18', 'am'), ['주간회의']);
+  sc.eq('그 다음 주 금요일에도', bigsOn(ST, '2026-09-25', 'am'), ['주간회의']);
+  sc.eq('실체도 매주 표시를 물려받는다', ST.days['2026-09-18'].big.am[0].rk, 'w');
+}
+
+console.log('\n시나리오 16 — 매주 반복도 범위 세 갈래가 그대로 된다');
+{
+  const mk = () => ({
+    [T]: { big: { am: [{ text: '주간회의', done: false, daily: true, rk: 'w', rid: 'rw', repeat: api0weekly() }] }, small: {}, trash: [], events: {} }
+  });
+  // 이 날짜만 — 9/18 만 빠지고 9/25 는 남는다
+  const a = makeEnv(mk(), T);
+  a.api.ensureRepeatsForView('2026-09-18');
+  a.api.ensureRepeatsForView('2026-09-25');
+  const a2 = makeEnv(a.ST.days, '2026-09-18');
+  a2.api._taskDeleteApply('big', 'am', 0, 'one');
+  sc.eq('그 주만 빠진다', bigsOn(a.ST, '2026-09-18', 'am'), []);
+  sc.eq('다음 주는 그대로', bigsOn(a.ST, '2026-09-25', 'am'), ['주간회의']);
+
+  // 이번 및 이후 — 9/18 부터 끊긴다
+  const b = makeEnv(mk(), T);
+  b.api.ensureRepeatsForView('2026-09-18');
+  const b2 = makeEnv(b.ST.days, '2026-09-18');
+  b2.api._taskDeleteApply('big', 'am', 0, 'future');
+  sc.eq('끝날이 전날로 잡힌다', b.ST.days[T].big.am[0].repeat.until, '2026-09-17');
+  b2.api.ensureRepeatsForView('2026-09-25');
+  sc.eq('그 뒤로는 안 생긴다', bigsOn(b.ST, '2026-09-25', 'am'), []);
+  sc.eq('원본이 있는 오늘은 남는다', bigsOn(b.ST, T, 'am'), ['주간회의']);
+}
+
+console.log('\n시나리오 17 — 매일 ↔ 매주 갈아타기 (오늘부터, 지난 기록은 그대로)');
+{
+  // 어제부터 매일 반복이던 할일을 오늘 '매주' 로 바꾼다
+  const { ST, api } = makeEnv({
+    '2026-09-10': { big: { am: [{ text: '성경읽기', done: true, daily: true, rid: 'r1', repeat: rep() }] }, small: {}, trash: [], events: {} }
+  }, T);
+  api.ensureRepeatsForView(T);
+  sc.eq('오늘 것이 있다', bigsOn(ST, T, 'am'), ['성경읽기']);
+  const e = makeEnv(ST.days, T);
+  e.api._taskSetRepeat('big', 'am', 0, 'w');
+  sc.eq('옛 매일 묶음은 어제까지', ST.days['2026-09-10'].big.am[0].repeat.until, '2026-09-10');
+  sc.eq('오늘 것이 새 매주 원본', !!ST.days[T].big.am[0].repeat, true);
+  sc.eq('매주 규칙이다', ST.days[T].big.am[0].repeat.weekly && !ST.days[T].big.am[0].repeat.daily, true);
+  sc.eq('매주 표시가 붙는다', e.api._repKindOf(ST.days[T].big.am[0]), 'w');
+  sc.eq('지난 기록은 그대로', bigsOn(ST, '2026-09-10', 'am'), ['성경읽기']);
+  e.api.ensureRepeatsForView('2026-09-12');
+  sc.eq('내일은 이제 안 생긴다', bigsOn(ST, '2026-09-12', 'am'), []);
+  e.api.ensureRepeatsForView('2026-09-18');
+  sc.eq('다음 주 같은 요일엔 생긴다', bigsOn(ST, '2026-09-18', 'am'), ['성경읽기']);
+}
+
+console.log('\n시나리오 18 — 켜져 있는 쪽을 다시 누르면 꺼진다');
+{
+  const { ST, api } = makeEnv({
+    [T]: { big: { am: [{ text: '주간회의', done: false, daily: true, rk: 'w', rid: 'rw', repeat: api0weekly() }] }, small: {}, trash: [], events: {} }
+  }, T);
+  api._taskSetRepeat('big', 'am', 0, 'w');   // 매주인데 매주를 다시 누름 = 끄기
+  const it = ST.days[T].big.am[0];
+  sc.eq('규칙이 사라진다', it.repeat, undefined);
+  sc.eq('묶음 이름표도', it.rid, undefined);
+  sc.eq('매주 표시도', it.rk, undefined);
+  sc.eq('할일 자체는 남는다', bigsOn(ST, T, 'am'), ['주간회의']);
+}
+
+console.log('\n시나리오 19 — 반복 종류를 무엇으로 읽는가 (_repKindOf)');
+{
+  const { api } = makeEnv({}, T);
+  sc.eq('규칙 없는 할일', api._repKindOf({ text: 'x' }), null);
+  sc.eq('매일 원본', api._repKindOf({ repeat: rep() }), 'd');
+  sc.eq('매주 원본', api._repKindOf({ repeat: api0weekly() }), 'w');
+  sc.eq('매주 실체(표시만)', api._repKindOf({ rid: 'rw', rk: 'w', daily: true }), 'w');
+  sc.eq('매일 실체', api._repKindOf({ rid: 'r1', daily: true }), 'd');
 }
 
 sc.done();
