@@ -12,7 +12,7 @@ const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 
 const RULE = slice('function _repRule(rep){', 'function getDisplayEvents(k,secId){');
-const TASK = slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days){');
+const TASK = slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec){');
 
 function makeEnv(days, todayK) {
   const ST = { days: days || {} };

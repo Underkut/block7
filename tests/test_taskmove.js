@@ -36,6 +36,12 @@ function makeEnv(items, todayK) {
     showToast: t => log.toasts.push(t),
     _toastWithJump: t => log.toasts.push(t),
     _moveDateToastMsg: () => '날짜로 이동했어요',
+    // v26-0917-1 — 옮기기 함수가 '구간 판' 설정을 물어본다. 이 테스트는
+    // 판이 꺼진 자리(예전 그대로)를 지킨다.
+    _secPickOn: () => false,
+    _secPickOpen() {}, _secPickBack() {},
+    _euroRo: () => '로',
+    SECS: [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }],
     document: { getElementById: () => fakeEl() },
   };
   env.getBigs = (k, id) => { const d = env.getDay(k); if (!d.big[id]) d.big[id] = []; return d.big[id]; };
