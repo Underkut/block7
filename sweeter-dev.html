@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0918-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0918-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5184,7 +5184,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0918-1";
+const APP_VERSION = "v. 26-0918-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -25229,8 +25229,30 @@ function _vcAutoMin(cfg){
 // 카드마다 다른 '어긋남'. 정시(15:00) 기준으로만 세면 10분·30분 카드가 한꺼번에
 // 넘어가 화면이 우르르 바뀐다. 카드 id 에서 뽑은 **고정 오프셋**을 쓰면 사람이
 // 아무것도 정하지 않아도 카드마다 저절로 어긋나고, 저장할 값도 늘지 않는다.
+//
+// ⚠️⚠️ v26-0918-2, HB 신고 — "자동 넘김이 아직도 모든 위젯이 한꺼번에 넘어간다."
+//    까닭: 예전에는 _vcHash 를 그대로 나머지 연산했다. 그런데 카드 id 는
+//    'c1'·'c2'·'c3' 처럼 **끝 한 글자만 다르고**, _vcHash 는 h*31+글자 라서
+//    **해시가 딱 1 씩만 차이 난다.** 5분 간격에서 재 보면
+//      c1=87973ms · c2=87972ms · c3=87971ms …
+//    **1밀리초씩** 어긋난 셈이라 사실상 전부 같은 순간에 넘어갔다.
+//    (해시를 오프셋으로 쓸 때 늘 조심할 자리다 — 입력이 규칙적이면 출력도 규칙적이다)
+// → 해시를 쓰지 않고 **황금비 저불일치 수열**로 고르게 나눠 앉힌다.
+//   카드 번호 n 에 대해 frac(n×0.618…) 은 이웃한 번호끼리 가장 멀리 떨어지므로,
+//   장수가 늘어도 최소 간격이 보장된다 (12장이어도 5분 간격에서 17초 이상).
+const VC_AUTO_GOLD=0.6180339887498949;
+// 'c7' 처럼 끝의 번호를 뽑는다 (_vcNewId 가 그렇게 짓는다).
+// 번호가 없는 id 가 흘러들어오면 해시를 섞어(비트 흩뜨리기) 대신 쓴다.
+function _vcAutoSeq(id){
+  const m=/(\d+)$/.exec(String(id||''));
+  if(m)return parseInt(m[1],10)||0;
+  let h=_vcHash('auto|'+id)|0;
+  h^=h>>>16;h=Math.imul(h,0x85ebca6b);h^=h>>>13;h=Math.imul(h,0xc2b2ae35);h^=h>>>16;
+  return (h>>>0)%100000;
+}
 function _vcAutoOffset(id,minutes){
-  return _vcHash('auto|'+id)%Math.max(1,minutes*60000);
+  const ms=Math.max(1,minutes*60000);
+  return Math.floor(((_vcAutoSeq(id)*VC_AUTO_GOLD)%1)*ms);
 }
 // 지금이 몇 번째 칸인가 (칸 하나 = 간격 하나)
 function _vcAutoSlot(id,cfg,now){
@@ -25510,9 +25532,12 @@ function _vcAutoChanged(){
 // "툭 하고 바뀌는데 좌우 슬라이드로 바뀌게 해줘"). 손으로 밀 때와 같은 길이·곡선.
 function _vcAutoSlide(ids){
   const olds=ids.map(id=>_vcSlideEl(id)).filter(el=>el&&!el._vcBusy);
+  // 어긋남이 제대로 퍼져 있어도 두 장이 같은 틱에 걸릴 수는 있다.
+  // 그때는 한 장씩 **차례로** 들어오게 해 '우르르' 느낌을 없앤다 (v26-0918-2).
+  const STAGGER=150;
   const finish=()=>{
     renderLayout();
-    ids.forEach(id=>{
+    ids.forEach((id,k)=>{
       const c=_vcGet(id),v=c?_vcCurrent(c,id):null;
       if(v)_vcAutoSetAnchor(id,_vcKeyOf(v));      // 지금 보이는 자리를 기기에 적어 둔다
       const ns=_vcSlideEl(id);
@@ -25523,20 +25548,23 @@ function _vcAutoSlide(ids){
       ns.style.opacity='0';
       ns.offsetWidth;                              // 강제 리플로우 — 시작값을 굳힌다
       ns.style.transition=_VC_SLIDE_TR;
+      ns.style.transitionDelay=(k*STAGGER)+'ms';
       ns.style.transform='translateX(0)';
       ns.style.opacity='1';
-      setTimeout(()=>{ns.style.transition='';ns.style.transform='';ns.style.opacity='';},210);
+      setTimeout(()=>{ns.style.transition='';ns.style.transitionDelay='';
+        ns.style.transform='';ns.style.opacity='';},210+k*STAGGER);
     });
   };
   if(!olds.length){finish();return;}
-  olds.forEach(el=>{
+  olds.forEach((el,k)=>{
     el._vcBusy=true;
     const w=el.getBoundingClientRect().width||220;
     el.style.transition=_VC_SLIDE_TR;
+    el.style.transitionDelay=(k*STAGGER)+'ms';
     el.style.transform=`translateX(${-w*0.4}px)`;
     el.style.opacity='0';
   });
-  setTimeout(finish,190);
+  setTimeout(finish,190+(olds.length-1)*STAGGER);
 }
 function _vcAutoTick(){
   if(!document.body.classList.contains('split-d'))return;   // 위젯이 안 보이는 화면이면 그릴 것이 없다
@@ -25560,7 +25588,7 @@ function _vcAutoStart(){
   _vcAutoSaveAnchors();
   _vcAutoSlots={};
   _vcAutoChanged();                       // 지금 칸을 기준으로 삼는다 (첫 시계에 안 튀게)
-  _vcAutoTimer=setInterval(_vcAutoTick,20000);
+  _vcAutoTimer=setInterval(_vcAutoTick,10000);   // 넘김 시각을 더 촘촘히 본다
 }
 // 헤더에 보여줄 갈래 이름 (#태그 는 # 를 붙인다)
 function _vcFilterLabel(cfg){

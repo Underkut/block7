@@ -79,7 +79,8 @@ eval(
   '_vcScopeParts,_vcHeadMode,setVcHeadMode,_vcAutoOn,_vcAutoMin,_vcAutoOffset,_vcAutoSlot,' +
   'setVcAuto,setVcAutoMin,VC_AUTO_STEPS,VC_AUTO_LABEL,VC_AUTO_DEFAULT,_vcHiSplit,' +
   '_vcRollMode,_vcRollSec,_vcRollOpt,setVcRollMode,setVcRollSec,_rollSecLabel,' +
-  'VC_ROLL_SECS,VC_ROLL_DEFAULT,_vcAutoAnchors,_vcAutoSetAnchor,_vcAutoResetAnchors});'
+  'VC_ROLL_SECS,VC_ROLL_DEFAULT,_vcAutoAnchors,_vcAutoSetAnchor,_vcAutoResetAnchors,' +
+  '_vcAutoSeq,VC_AUTO_GOLD});'
 );
 
 const reset = () => {
@@ -498,6 +499,33 @@ console.log('\n시나리오 7-E — 말씀카드 자동 넘김');
   sc.eq('오프셋은 간격 안에 있다', offA >= 0 && offA < 10 * 60000, true);
   sc.eq('카드마다 다르다', offA !== offB, true);
   sc.eq('같은 카드는 늘 같은 값', _vcAutoOffset(id, 10), offA);
+
+  // ⚠️⚠️ v26-0918-2, HB 신고 — "아직도 모든 위젯이 한꺼번에 넘어간다."
+  //    위의 '카드마다 다르다' 는 **1밀리초만 달라도 통과한다.** 실제로 그랬다:
+  //    해시가 h*31+글자 라서 'c1'·'c2'·'c3' 의 해시가 딱 1 씩만 차이 났고,
+  //    오프셋도 1ms 씩만 벌어져 사실상 전부 같은 순간에 넘어갔다.
+  //    → 다르기만 해서는 안 되고 **충분히 멀어야** 한다. 그것을 여기서 잰다.
+  //    (다른 곳에서 해시를 오프셋으로 쓸 때도 이 검사를 본보기로 삼을 것)
+  [[5, 12], [10, 8], [60, 8]].forEach(([min, cards]) => {
+    const ms = min * 60000;
+    const offs = [];
+    for (let k = 1; k <= cards; k++) offs.push(_vcAutoOffset('c' + k, min));
+    sc.eq(`${min}분 · ${cards}장 — 모두 간격 안에`,
+          offs.every(o => o >= 0 && o < ms), true);
+    sc.eq(`${min}분 · ${cards}장 — 겹치는 값이 없다`, new Set(offs).size, cards);
+    const sorted = offs.slice().sort((x, y) => x - y);
+    let gap = Infinity;
+    for (let i = 1; i < sorted.length; i++) gap = Math.min(gap, sorted[i] - sorted[i - 1]);
+    // 가장 가까운 두 장도 시계가 도는 주기(10초)보다는 멀어야 같은 틱에 안 걸린다
+    sc.eq(`${min}분 · ${cards}장 — 가장 가까운 두 장도 10초 넘게 떨어진다`,
+          gap > 10000, true);
+    // 그리고 간격의 최소 4% 이상은 벌어져야 '우르르' 로 안 보인다
+    sc.eq(`${min}분 · ${cards}장 — 간격의 4% 이상 벌어진다`, gap / ms > 0.04, true);
+  });
+  // 번호가 없는 id 가 흘러들어와도 안전하다
+  sc.eq('번호 없는 id 도 간격 안에',
+        _vcAutoOffset('엉뚱한id', 5) >= 0 && _vcAutoOffset('엉뚱한id', 5) < 300000, true);
+  sc.eq('번호 없는 id 도 늘 같은 값', _vcAutoOffset('엉뚱한id', 5), _vcAutoOffset('엉뚱한id', 5));
 
   // 끄면 그 자리에 그대로 선다 (기기의 기억도 지운다)
   setVcAuto(id, false);
