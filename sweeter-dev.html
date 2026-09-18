@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0917-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0918-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5184,7 +5184,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0917-4";
+const APP_VERSION = "v. 26-0918-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -28948,11 +28948,37 @@ function _attachSubMemoBadges(div,type,secId,idx,item,size){
   div.append(gauge,memo);
 }
 
+// 하위가 하나도 안 남으면 키도 지우고 판도 닫는다.
+// ⚠️ subs 만 지우고 subOpen 을 남기면 **빈 판이 그대로 떠 있고**, 게이지도
+//    함께 사라져 접을 방법이 없어진다 (2026-09-18 HB 신고).
+function _subPrune(item){
+  if(!item||_subsOf(item).length)return;
+  delete item.subs;
+  delete item.subOpen;
+}
+// '아직 하위가 없는데 넣으려고 열어 둔 판' 은 여기 한 자리에만 적어 둔다.
+// **저장하지 않는다** — 저장하면 다음에 앱을 켤 때도 빈 판이 떠 있는다.
+let _subEmptyOpen=null;
+function _subKey(type,secId,idx){return type+'|'+secId+'|'+idx;}
+// 이 줄의 판을 펼쳐 둘 것인가. 하위가 있으면 저장된 값(subOpen)을 따르고,
+// 하나도 없으면 방금 연 그 한 줄일 때만 펼친다.
+function _subIsOpen(type,secId,idx,item){
+  if(!item)return false;
+  if(_subStat(item).n)return !!item.subOpen;
+  return _subEmptyOpen===_subKey(type,secId,idx);
+}
 function _subToggleOpen(type,secId,idx,force){
   const item=_taskArrOf(type,secId)[idx];
   if(!item)return;
-  const open=(force===undefined)?!item.subOpen:!!force;
-  if(open)item.subOpen=true;else delete item.subOpen;
+  const open=(force===undefined)?!_subIsOpen(type,secId,idx,item):!!force;
+  const key=_subKey(type,secId,idx);
+  if(open){
+    if(_subStat(item).n){item.subOpen=true;if(_subEmptyOpen===key)_subEmptyOpen=null;}
+    else{delete item.subOpen;_subEmptyOpen=key;}   // 빈 판은 저장하지 않는다
+  }else{
+    delete item.subOpen;
+    if(_subEmptyOpen===key)_subEmptyOpen=null;
+  }
   rawSave();
   _subRerender(type,secId);
   if(open)setTimeout(()=>_subFocusGhost(type,secId,idx),40);
@@ -28970,7 +28996,10 @@ function _subFocusGhost(type,secId,idx){
 //    그래서 makeBigWrap/makeSmWrap 은 [wrap, panel] 을 담은 조각(fragment)을
 //    돌려준다 — appendChild·insertBefore 가 조각을 그대로 풀어 넣는다.
 function makeSubPanel(type,secId,idx,item,secColor){
-  if(!item||!item.subOpen)return null;
+  if(!item)return null;
+  // 예전 판(v26-0917-3·4)이 남긴 '하위 없는 펼침' 을 그리는 김에 지운다.
+  if(item.subOpen&&!_subStat(item).n)delete item.subOpen;
+  if(!_subIsOpen(type,secId,idx,item))return null;
   const panel=document.createElement('div');
   panel.className='sub-panel'+(type==='small'?' sub-panel-sm':'');
   if(secColor)panel.style.setProperty('--sec-color',secColor);
@@ -29013,7 +29042,7 @@ function _makeSubRow(type,secId,idx,j,sub){
     a[j].text=inp.value;
     if(inp.value.trim()===''){          // 빈 줄은 스스로 사라진다 (본 할일과 같은 규칙)
       beforeSave();a.splice(j,1);
-      if(!a.length)delete item.subs;
+      _subPrune(item);
       _subSyncParent(item);
       save();_subRerender(type,secId);
       return;
@@ -29090,7 +29119,14 @@ function _makeSubGhost(type,secId,idx){
   ta.addEventListener('paste',()=>{
     setTimeout(()=>{if(/\r?\n/.test(ta.value))commit();else fit();},0);
   });
-  ta.onblur=()=>{if(ta.value.trim())commit();};
+  ta.onblur=()=>{
+    if(ta.value.trim()){commit();return;}
+    // 열어만 두고 아무것도 안 넣었으면 빈 판은 스스로 닫힌다 — 그대로 두면
+    // 하위가 0개라 게이지가 없어 접을 손잡이가 없다 (2026-09-18 HB).
+    const item=_taskArrOf(type,secId)[idx];
+    if(item&&!_subStat(item).n&&_subEmptyOpen===_subKey(type,secId,idx))
+      _subToggleOpen(type,secId,idx,false);
+  };
   gh.append(mark,ta);
   setTimeout(fit,0);
   return gh;
@@ -29103,7 +29139,8 @@ function _subAdd(type,secId,idx,raw){
   beforeSave();
   if(!Array.isArray(item.subs))item.subs=[];
   parts.forEach(t=>item.subs.push({text:t,done:false}));
-  item.subOpen=true;
+  item.subOpen=true;                       // 하위가 생겼으니 이제는 저장해 둔다
+  if(_subEmptyOpen===_subKey(type,secId,idx))_subEmptyOpen=null;
   // 하위가 생겼으니 부모의 '완료' 는 더 이상 혼자 정하지 않는다.
   _subSyncParent(item);
   save();
@@ -29116,7 +29153,7 @@ function _subRemove(type,secId,idx,j){
   if(!a[j])return;
   beforeSave();
   a.splice(j,1);
-  if(!a.length)delete item.subs;
+  _subPrune(item);
   _subSyncParent(item);
   save();
   _subRerender(type,secId);
@@ -29186,7 +29223,7 @@ function _subPromoteFromMenu(){
   if(!item||!a[c.j])return;
   beforeSave();
   const one=a.splice(c.j,1)[0];
-  if(!a.length)delete item.subs;
+  _subPrune(item);
   _subSyncParent(item);
   arr.splice(c.idx+1,0,{text:String(one.text||''),done:!!one.done});
   save();
@@ -29483,7 +29520,7 @@ function openSubsFromMenu(){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
   closeTaskMenu();
-  _subToggleOpen(type,secId,idx,true);
+  _subToggleOpen(type,secId,idx);   // 게이지와 같은 스위치 — 열려 있으면 접는다
 }
 function openMemoFromMenu(){
   if(!_taskMenuCtx)return;
@@ -31730,7 +31767,9 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   const subItem=document.getElementById('subTaskMenuItem');
   if(subLabel&&subItem){
     const st=_subStat(item);
-    subLabel.textContent=st.n?('하위 할일 '+st.done+'/'+st.n):'하위 할일';
+    const opened=_subIsOpen(type,secId,idx,item);
+    subLabel.textContent=opened?'하위 할일 접기'
+                        :(st.n?('하위 할일 '+st.done+'/'+st.n):'하위 할일');
     subItem.classList.toggle('on',st.n>0);
   }
   const memoLabel=document.getElementById('memoMenuLabel');

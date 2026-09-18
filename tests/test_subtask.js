@@ -12,6 +12,7 @@ global.document = { visibilityState: 'visible', addEventListener: () => {} };
 eval(slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면'));
 eval(slice('function _clearUrgentOnDone(', '// 긴급 표시 토글 — 메뉴/트리플탭 공용'));
 eval(slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──'));
+eval(slice('function _subPrune(item){', 'let _subEmptyOpen=null;'));
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
 const sub=(t,d)=>({text:t,done:!!d});
@@ -48,6 +49,18 @@ console.log('시나리오 2 — 부모·하위의 완료가 서로 맞물린다'
   sc.eq('부모 체크 → 하위 전부 완료',p.subs.map(s=>s.done),[true,true]);
   _subSetAll(p,false);
   sc.eq('부모 해제 → 하위 전부 해제',p.subs.map(s=>s.done),[false,false]);
+
+  // 하위를 **다 지우면** subs 와 함께 subOpen 도 지운다.
+  // ⚠️ subs 만 지우고 subOpen 을 남기면 하위 하나 없는 빈 판이 그대로 떠 있고,
+  //    그때는 게이지도 없어(하위 0개면 안 그린다) 접을 손잡이가 사라진다
+  //    (2026-09-18 HB 신고 — "그 틀이 남아있고 지우는 방법이 없어").
+  const emptied={text:'장보기',done:false,subs:[],subOpen:true};
+  _subPrune(emptied);
+  sc.eq('다 지우면 subs 키가 사라진다','subs' in emptied,false);
+  sc.eq('다 지우면 판도 닫힌다','subOpen' in emptied,false);
+  const kept={text:'장보기',done:false,subs:[sub('빵')],subOpen:true};
+  _subPrune(kept);
+  sc.eq('하나라도 남으면 그대로 둔다',[kept.subs.length,!!kept.subOpen],[1,true]);
 
   // 하위가 없는 할일은 부모 완료를 건드리지 않는다
   const solo={text:'설교 준비',done:true};
