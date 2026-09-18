@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0918-2  [production]  -->
+<!-- BLOCK7  v. 26-0918-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -28,7 +28,17 @@
     if(!(sc>1))return;
     var m=document.querySelector('meta[name="viewport"]');
     if(!m)return;
-    var w=Math.max(200,Math.min(baseW,Math.round(baseW/sc)));  // 확대면 폭은 반드시 줄어든다
+    // ⚠️ 반올림이 아니라 **올림**이다 (v26-0918-3, HB '가장자리에 흰 픽셀 한 줄').
+    //    폭 w 로 잡은 페이지가 화면에 보이는 크기는 w×sc 다. 반올림하면 그 값이
+    //    화면보다 **작아지는** 배율이 생긴다 — 393px 기기에서 1.1배면
+    //    round(357.27)=357 → 357×1.1=392.7 로 0.3px 모자라고, 높이는 폭에서
+    //    따라오므로 아래쪽도 함께 모자란다. 그 모자란 자리는 페이지 **바깥**이라
+    //    앱이 무슨 색을 칠해도 못 덮는다(브라우저 바탕 = 흰색). 그게 흰 줄이었다.
+    //    올림이면 w×sc ≥ 화면폭 이 언제나 참이라 틈이 아예 안 생긴다.
+    //    넘치는 쪽(≤1px)은 html{overflow-x:hidden} 이 잘라 내므로 보이지 않는다.
+    //    ⚠️ 배율(sc)은 사용자가 고른 값 그대로 둔다 — 여기서 배율을 만지면
+    //       고른 크기와 실제 크기가 어긋난다. 고치는 것은 폭 하나뿐이다.
+    var w=Math.max(200,Math.min(baseW,Math.ceil(baseW/sc)));   // 확대면 폭은 반드시 줄어든다
     m.setAttribute('content','width='+w+', initial-scale='+sc+', minimum-scale='+sc+', maximum-scale='+sc+', viewport-fit=cover');
   }catch(e){}
 })();
@@ -5184,7 +5194,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0918-2";
+const APP_VERSION = "v. 26-0918-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -19641,7 +19651,10 @@ function applyUiScaleNow(){
   let content;
   if(sc>1){
     const baseW=_deviceBaseW();
-    const w=Math.max(200,Math.min(baseW,Math.round(baseW/sc)));
+    // ⚠️ 올림이다. 까닭은 맨 위 부트 스크립트의 같은 줄에 적어 두었다
+    //    (반올림하면 페이지가 화면보다 살짝 좁아져 가장자리에 흰 줄이 생긴다).
+    //    두 곳이 **같은 값**을 내야 한다 — 한쪽만 고치면 새로고침 전후가 달라진다.
+    const w=Math.max(200,Math.min(baseW,Math.ceil(baseW/sc)));
     content=`width=${w}, initial-scale=${sc}, minimum-scale=${sc}, maximum-scale=${sc}, viewport-fit=cover`;
   }else{
     content=_VP_DEFAULT_CONTENT;
