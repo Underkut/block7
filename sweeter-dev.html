@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0918-3  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0918-4  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -976,6 +976,10 @@ header{
      background-image:linear-gradient(rgba(var(--ac-rgb),0),rgba(var(--ac-rgb),0));}
 }
 .task-flash{animation:taskFlashRing 1.6s ease-out 1;}
+/* 설정 탭 버튼(둥근 네모)을 3번 반짝인다 — 토스트의 '설정 → 계정' 단추를 눌러
+   건너왔을 때, 어디를 봐야 하는지 눈으로 바로 알 수 있게 (v26-0918-4, HB 요청).
+   같은 링 애니메이션을 재사용하되 짧게 세 번 반복한다. */
+.settings-tab.tab-flash{animation:taskFlashRing .5s ease-out 3;border-radius:8px;}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
 /* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Even.
@@ -5194,7 +5198,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0918-3";
+const APP_VERSION = "v. 26-0918-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35464,7 +35468,7 @@ function resizeAllInputs(){
 //  SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════
 
-function openSettings(tabId){
+function openSettings(tabId,flashTabId){
   renderSettingsPanel();
   _syncDevVerBadge();
   applyUiLevel();          // 등급에 맞게 보일 것만 남긴다
@@ -35484,7 +35488,22 @@ function openSettings(tabId){
         if(btn)switchSettingsTab(tabId,btn,'direct');
       }
     }
+    // 토스트를 타고 건너온 경우, 봐야 할 탭 버튼을 3번 반짝여 눈에 띄게 한다.
+    if(flashTabId)_flashSettingsTab(flashTabId);
   },30);
+}
+// 설정 탭 버튼(둥근 네모)을 3번 반짝인다. openSettings 로 건너뛰어 들어왔을 때
+// (예: 충돌 토스트의 '설정 → 계정으로') 어디를 봐야 하는지 짚어 준다.
+function _flashSettingsTab(tabId){
+  const bar=document.getElementById('settingsTabBar');
+  if(!bar)return;
+  const btn=[...bar.querySelectorAll('.settings-tab')]
+    .find(b=>b.getAttribute('onclick')?.includes(`'${tabId}'`));
+  if(!btn)return;
+  btn.classList.remove('tab-flash');
+  void btn.offsetWidth; // 다시 반짝이려면 리플로우를 한 번 끼워야 한다
+  btn.classList.add('tab-flash');
+  setTimeout(()=>btn.classList.remove('tab-flash'),1600);
 }
 function closeSettings(){
   document.getElementById('settingsOverlay').classList.remove('open');
@@ -40017,7 +40036,10 @@ function _cfStore(list){
   // 이유만으로 팝업이 뜨면 아무도 안 본다.
   if(added&&Date.now()-_cfToastAt>60000){
     _cfToastAt=Date.now();
-    try{showToast(`다른 기기와 겹친 변경 ${_cfOpenCount()}건이 있어요 — 설정 → 계정에서 정할 수 있어요`);}catch(e){}
+    try{
+      showToast(`다른 기기와 겹친 변경 ${_cfOpenCount()}건이 있어요`,false,
+        {label:'설정 → 계정으로',onClick:()=>{openSettings('account','account');}});
+    }catch(e){}
   }
   return added;
 }
