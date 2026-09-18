@@ -18,7 +18,10 @@ global.localStorage = {
   removeItem: k => { delete LS[k]; }
 };
 global.APP_VERSION = 'v. 26-0828-6';
-global.showToast = () => {};
+let _toastCalls = [];
+global.showToast = (msg, busy, action) => { _toastCalls.push({ msg, busy, action }); };
+let _openSettingsCalls = [];
+global.openSettings = (tabId, flashTabId) => { _openSettingsCalls.push({ tabId, flashTabId }); };
 global._deviceId = () => 'dev-mac';
 global._deviceLabel = () => '맥';
 global.ST = {};
@@ -32,6 +35,7 @@ eval(sliceDev('let _fbLastTouchTs=', '// 원격/병합 상태를 화면')
         list: () => _cfList,
         setList: v => { _cfList = v; },
         openCount: _cfOpenCount,
+        resetToastCooldown: () => { _cfToastAt = 0; },
         explain: _cfExplain,
         nice: _cfNiceLabel,
         group: _cfGroupName,
@@ -359,6 +363,26 @@ console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
   const bulk = { entityType: 'bulk', entityId: 'bulk/days', base: 100, local: 30, remote: 100 };
   sc.eq('대량 손실은 말로 알린다', S.explain(bulk).note.includes('할일·일정'), true);
   sc.eq('고를 것이 없다', S.explain(bulk).local.length, 0);
+}
+
+// ═══ 22. 충돌 토스트에 계정 탭 바로가기 단추 (v26-0918-4, HB 요청) ═══
+// ⚠️ 예전엔 "설정 → 계정에서 정할 수 있어요" 라고 글로만 알렸다. 눌러서
+//    바로 가는 단추가 없으면 사람이 직접 설정을 열고 계정 탭을 찾아야 했다.
+console.log('\n시나리오 22 — 충돌 토스트의 계정 탭 바로가기');
+{
+  _toastCalls = []; _openSettingsCalls = [];
+  S.setList([]);
+  S.resetToastCooldown(); // 앞선 시나리오들이 이미 최근에 토스트를 띄워 60초 냉각 중일 수 있다
+  const rec = { conflictId: 'tzz:1', entityType: 'setting', entityId: 'settings/theme',
+    base: 'dark', local: 'dark', remote: 'paper', choice: null, resolvedAt: null };
+  S.store([rec]);
+  sc.eq('토스트가 떴다', _toastCalls.length, 1);
+  const act = _toastCalls[0] && _toastCalls[0].action;
+  sc.eq('단추 이름', act && act.label, '설정 → 계정으로');
+  sc.eq('바쁨 표시가 아니다(단추가 눌리게)', _toastCalls[0].busy, false);
+  act.onClick();
+  sc.eq('계정 탭으로 연다', _openSettingsCalls[0] && _openSettingsCalls[0].tabId, 'account');
+  sc.eq('계정 탭을 반짝이라고 함께 넘긴다', _openSettingsCalls[0] && _openSettingsCalls[0].flashTabId, 'account');
 }
 
 sc.done();
