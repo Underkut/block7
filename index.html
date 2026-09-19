@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0919-3  [production]  -->
+<!-- BLOCK7  v. 26-0919-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4892,6 +4892,13 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin-top:1px;}
 .sw-barbtn{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;
   padding:5px 12px;font:400 11px/1 var(--font-ui);cursor:pointer;}
+/* BLOCK7 에서 말씀을 가져오라는 안내 한 줄.
+   상자를 만들지 않는다 (UI 원칙) — 글자와 단추만 둔다. */
+.sw-notice{display:none;align-items:center;justify-content:space-between;gap:10px;
+  padding:0 18px 8px;flex:0 0 auto;
+  font-family:var(--font-ui);font-size:11px;color:var(--tx3);}
+.sw-notice span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sw-notice .sw-barbtn{flex:0 0 auto;}
 /* 아래 여백을 넉넉히 — 편집을 마치려고 '타일 바깥'을 누를 자리다 */
 .sw-board{position:relative;flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 14px 120px;
   display:grid;gap:9px;grid-template-columns:1fr 1fr;align-content:start;
@@ -5198,7 +5205,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0919-3";
+const APP_VERSION = "v. 26-0919-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7763,7 +7770,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div id="swHome">
   <div class="sw-bar">
     <div>
-      <div class="sw-ttl">Sweeter</div>
+      <div class="sw-ttl" id="swTtl">Sweeter</div>
       <div class="sw-sub" id="swSub">말씀과 함께하는 하루</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
@@ -7771,6 +7778,8 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="sw-barbtn" id="swClassicBtn" onclick="swToggleHome()">기존 화면</button>
     </div>
   </div>
+  <!-- 가져올 것이 있을 때만 뜨는 한 줄. 내용은 _swSyncNotice() 가 만든다. -->
+  <div class="sw-notice" id="swNotice"></div>
   <div class="sw-board" id="swBoard"></div>
 </div>
 <!-- 기존 BLOCK7 화면을 보는 동안 Sweeter 홈으로 되돌아오는 단추.
@@ -41402,11 +41411,13 @@ const _SW_TYPES={
         empty:'태그가 붙은 말씀이 아직 없어요.'},
   react:{n:'말씀 반응',sorts:['모두','이번 달'],
         empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
+  coll:{n:'말씀 모음',sorts:['말씀 많은','이름'],
+        empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'},
   keep:{n:'저장',wide:true,sorts:['저장한 순','오래된 순'],
         empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'}
 };
 // 처음 켰을 때 놓이는 차례
-const _SW_DEFAULT_TILES=['last','keep','recent','book','tag','react'];
+const _SW_DEFAULT_TILES=['last','keep','coll','recent','book','tag','react'];
 
 // ── 담아두기 ─────────────────────────────────────────────
 // 다시 꺼내 읽고 싶은 말씀을 표시해 둔다. 기록은 좋아요·공유와 **똑같은 모양**
@@ -41706,6 +41717,113 @@ function _swSpareKinds(){
   return Object.keys(_SW_TYPES).filter(k=>!on.has(k));
 }
 
+// ── BLOCK7 에서 내 말씀 가져오기 ─────────────────────────
+// Sweeter 개발본은 Firebase 가 **꺼져 있어야 한다** (까닭은 tools/make-sweeter.sh
+// 맨 위 주석 — 2026-08-31 대량 손실). 그래서 로그인으로는 내 말씀이 들어오지
+// 않고, 지금까지 이 화면에 뜬 것은 기본 내장(네비게이토 180)뿐이었다.
+// 대신 **같은 브라우저 안에 이미 내려와 있는 BLOCK7 의 저장 칸**을 한 번 읽어
+// 말씀만 복사한다.
+//
+// ⚠️ 이것은 동기화가 아니라 **한 방향 복사**다. BLOCK7 쪽 저장 칸은 **읽기만**
+//    한다 — 여기서 한 일은 BLOCK7 으로도 클라우드로도 돌아가지 않는다.
+// ⚠️ 2026-08-31 사고와 **반대 방향**이라 그 사고 조건이 성립하지 않는다.
+//    그때는 빈 Sweeter 가 BLOCK7 의 동기화 기준점을 읽고 클라우드를 덮어썼다.
+//    여기서는 ①클라우드로 나가는 길이 아예 없고(DEV_MODE) ②기준점 세 키
+//    (b7v1_owner·b7v1_syncbase·b7v1_syncmeta)를 읽지도 쓰지도 않는다.
+// ⚠️ 아이폰은 **홈 화면 앱끼리 저장 칸이 나뉘어 있다.** 홈 화면의 BLOCK7
+//    아이콘과 Sweeter DEV 아이콘 사이로는 이 길이 안 통한다. 사파리 탭에서
+//    block7.my 에 로그인해 두고, 같은 사파리에서 sweeter-dev.html 을 열 것.
+
+// 옮기는 것은 **말씀에 관한 것뿐이다.** 할일·구간·화면 설정은 건드리지 않는다 —
+// 설정까지 끌어오면 제품 칸막이(_PRODUCT_SCOPED)가 애써 갈라 둔 것을 도로 뭉갠다.
+const _SW_IMPORT_KEYS=['verseCollections','customVerses','memorizationLog',
+  'verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog'];
+// 말씀이 화면에 나오는 데 꼭 필요한 설정 둘 — 어느 모음을 켜 두었나, 어떻게 걸렀나.
+const _SW_IMPORT_SETTINGS=['activeColls','collFilters'];
+
+// 이 상태에 들어 있는 말씀 수 (휴지통은 빼고)
+function _swCountVerses(o){
+  return (Array.isArray(o&&o.verseCollections)?o.verseCollections:[])
+    .reduce((a,c)=>a+((c&&c.verses)||[]).filter(v=>v&&!v.del).length,0);
+}
+// 같은 origin 의 BLOCK7 저장 칸. 운영본·개발본 가운데 **말씀이 많은 쪽**을 고른다.
+// 망가진 값은 조용히 건너뛴다 — 여기서 터지면 Sweeter 가 아예 안 뜬다.
+function _swBlock7Src(){
+  if(!_swOn())return null;                     // BLOCK7 에서는 들여다보지도 않는다
+  let best=null;
+  ['b7v1','b7v1_dev'].forEach(k=>{
+    if(k===LS_KEY)return;                      // 제 저장 칸은 건너뛴다
+    let raw=null;try{raw=localStorage.getItem(k);}catch(e){raw=null;}
+    if(!raw)return;
+    let o=null;try{o=JSON.parse(raw);}catch(e){o=null;}
+    if(!o||typeof o!=='object'||Array.isArray(o))return;
+    const n=_swCountVerses(o);
+    if(n>0&&(!best||n>best.n))best={key:k,data:o,n};
+  });
+  return best;
+}
+// 실제로 옮기는 자리. 정해 둔 키 말고는 **아무것도 건드리지 않는다.**
+function _swImportApply(src){
+  if(!src||!src.data)return 0;
+  const o=src.data;
+  _SW_IMPORT_KEYS.forEach(k=>{if(o[k]!==undefined)ST[k]=o[k];});
+  if(o.settings&&typeof o.settings==='object'&&!Array.isArray(o.settings)){
+    if(!ST.settings)ST.settings={};
+    _SW_IMPORT_SETTINGS.forEach(k=>{
+      if(o.settings[k]!==undefined)ST.settings[k]=o.settings[k];});
+  }
+  return _swCountVerses(o);
+}
+function swImportFromBlock7(){
+  if(!_swOn())return false;
+  const src=_swBlock7Src();
+  if(!src){
+    showToast('이 브라우저에서 BLOCK7 말씀을 찾지 못했어요 — 같은 사파리에서 block7.my 에 먼저 들어가 보세요');
+    return false;
+  }
+  const mine=_swCountVerses(ST);
+  const msg='BLOCK7 에 있는 말씀 '+src.n+'개를 Sweeter 로 가져올까요?'
+    +(mine?'\n\n지금 Sweeter 에 있는 말씀 '+mine+'개는 덮어써집니다.':'')
+    +'\n\n(BLOCK7 쪽은 읽기만 하고 그대로 둡니다)';
+  if(!confirm(msg))return false;
+  if(typeof beforeSave==='function')beforeSave();
+  const n=_swImportApply(src);
+  save();
+  try{_invalidateVerseCaches();renderCollButtons();_afterActiveVersesChanged();}catch(e){}
+  _SW_TILES.forEach(t=>{t.p=0;});              // 값이 통째로 달라졌으니 처음 칸부터
+  _swRender();_swSyncNotice();
+  showToast('말씀 '+n+'개를 가져왔어요');
+  return true;
+}
+// 판 맨 위 안내 한 줄. **가져올 것이 있을 때만** 뜬다.
+//  · 여기 말씀이 없으면            → "BLOCK7 에 말씀 N개가 있어요"
+//  · 수가 다르면 (새 설교가 들어옴) → "BLOCK7 쪽은 N개예요"
+//  · 같으면                        → 사라진다 (그래도 제목 롱터치로 다시 가져올 수 있다)
+function _swSyncNotice(){
+  const el=document.getElementById('swNotice');
+  if(!el)return;
+  const src=_swOn()?_swBlock7Src():null;
+  const mine=_swCountVerses(ST);
+  if(!src||src.n===mine){el.style.display='none';el.innerHTML='';return;}
+  const msg=mine?('BLOCK7 쪽 말씀은 '+src.n+'개예요 (여기는 '+mine+'개)')
+                :('BLOCK7 에 말씀 '+src.n+'개가 있어요');
+  el.innerHTML='<span>'+_swEsc(msg)+'</span>'
+    +'<button class="sw-barbtn" onclick="swImportFromBlock7()">'
+    +(mine?'다시 가져오기':'가져오기')+'</button>';
+  el.style.display='flex';
+}
+
+// ── 말씀 모음 타일 ───────────────────────────────────────
+// 지금 켜 둔 모음마다 이름과 말씀 수. 개수는 화면에 실제로 나오는 것과 같게
+// **필터를 통과한 것**만 센다 (_collFilteredVerses) — 모음 칩의 숫자와 같은 규칙이다.
+function _swColls(sortIdx){
+  const a=(getActiveColls()||[]).map(id=>({
+    id,name:_collLabel(id),n:_collFilteredVerses(id).length}));
+  if(sortIdx===1)a.sort((x,y)=>x.name.localeCompare(y.name,'ko'));
+  else a.sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name,'ko'));
+  return a;
+}
+
 // ── 값 만들기 (진짜 데이터) ──────────────────────────────
 // 마지막에 만난 말씀: 반응 기록을 합쳐 최신순. _aggByRef 가 이미 최신순으로 준다.
 // ⚠️ '마지막에 **본**' 이 아니다. 지금 앱에는 "열어 봤다"는 기록이 없다.
@@ -41800,6 +41918,7 @@ function _swValues(t){
   if(t.k==='book')return _swBooks(i);
   if(t.k==='tag')return _swTags(i);
   if(t.k==='react')return _swReacts(i);
+  if(t.k==='coll')return _swColls(i);
   return[];
 }
 // 띠 = [타이틀] + 값들. 대시보드 칸은 아직 없다 (다음 단계).
@@ -41840,7 +41959,8 @@ function _swCellHTML(t,it,i){
     // 말이 된다 (실제로 그랬다 — 26-0830-8 에서 고침).
     const n=it.length-1;
     const sub={last:n+'개의 말씀',keep:n+'개 담아둠',recent:n+'편의 설교',
-               book:n+'권',tag:n+'가지 태그',react:n+'가지'}[t.k]||n;
+               book:n+'권',tag:n+'가지 태그',react:n+'가지',
+               coll:n+'개 모음'}[t.k]||n;
     return '<div class="sw-cell"><div class="sw-val">'+_swEsc(T.n)+'</div>'
       +'<div class="sw-num">'+_swEsc(sub)+'</div></div>';
   }
@@ -42027,6 +42147,18 @@ function _swVersesFor(t,cur){
   if(t.k==='book')return av.filter(v=>{const b=_booksOf(v);return (b.length?b:['그 밖']).includes(g.name);});
   if(t.k==='tag')
     return av.filter(v=>(v.tags||[]).some(x=>String(x||'').trim()===g.name));
+  if(t.k==='coll'){
+    // ⚠️ 장절(ref)로 다시 찾지 않는다 — 같은 장절이 여러 모음에 있으면 엉뚱한
+    //    모음 것을 집는다. ACTIVE_VERSES() 가 켜진 모음을 **차례대로** 이어
+    //    붙인다는 성질을 그대로 되짚어 이 모음 몫만 잘라낸다.
+    let at=0;
+    for(const id of (getActiveColls()||[])){
+      const n=_collFilteredVerses(id).length;
+      if(id===g.id)return av.slice(at,at+n);
+      at+=n;
+    }
+    return [];
+  }
   if(t.k==='react'){
     let e;
     if(g.kind==='mem')e=_flatMemEntries();
@@ -42335,7 +42467,7 @@ function swToggleHome(){
   if(el)el.classList.toggle('on',!_swClassic);
   const back=document.getElementById('swBackBtn');
   if(back)back.style.display=_swClassic?'block':'none';
-  if(!_swClassic)_swRender();
+  if(!_swClassic){_swRender();_swSyncNotice();}
 }
 function _swBoot(){
   if(!_swOn())return;            // BLOCK7 에서는 아무 일도 하지 않는다
@@ -42345,6 +42477,20 @@ function _swBoot(){
   _SW_TILES=_swLoadTiles();
   _swInitGestures();
   _swRender();
+  _swSyncNotice();
+  // 제목 롱터치/우클릭 = 다시 가져오기. 수가 같아 안내 줄이 사라진 뒤에도
+  // (본문만 고쳐졌을 때) 다시 받아올 길을 하나 남겨 둔다 — 보조 동작은
+  // 롱터치로 일관되게 한다는 UI 원칙 그대로다.
+  const ttl=document.getElementById('swTtl');
+  if(ttl&&!ttl.dataset.swlp){
+    ttl.dataset.swlp='1';
+    let tm=null;
+    const stop=()=>{if(tm){clearTimeout(tm);tm=null;}};
+    ttl.addEventListener('touchstart',()=>{stop();tm=setTimeout(()=>{tm=null;swImportFromBlock7();},550);},{passive:true});
+    ttl.addEventListener('touchmove',stop,{passive:true});
+    ttl.addEventListener('touchend',stop,{passive:true});
+    ttl.oncontextmenu=e=>{e.preventDefault();swImportFromBlock7();};
+  }
   // 폰트가 늦게 붙으면 폭이 달라지므로 한 번 더 잰다
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_swSizeCells);
 }
