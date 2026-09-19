@@ -1,0 +1,70 @@
+# Sweeter 운영본을 sweeter.my 로 올린다 (파이어베이스 호스팅, 사이트 sweeter7).
+#
+# BLOCK7(block7.my)은 깃헙 페이지가 알아서 올린다 — 이 파일과 상관없다.
+# Sweeter 는 깃헙 페이지에 자리가 없어서(저장소 하나에 도메인 하나) 여기로 간다.
+#
+# ⚠️ 열쇠(FIREBASE_SERVICE_ACCOUNT)가 아직 없으면 **그냥 건너뛰고 초록으로 끝낸다.**
+#    없다고 빨갛게 만들면 main 이 계속 빨간 채로 남는다.
+#    넣는 자리: 저장소 Settings → Secrets and variables → Actions
+#    값 만드는 자리: 파이어베이스 콘솔 → 프로젝트 설정 → 서비스 계정 → 새 비공개 키 생성
+name: Sweeter 배포 (sweeter.my)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'manifest-sweeter.json'
+      - 'icon.png'
+      - 'fonts/**'
+      - 'firebase-messaging-sw.js'
+      - 'tools/make-sweeter-prod.sh'
+      - 'firebase.json'
+      - '.github/workflows/deploy-sweeter.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 열쇠가 있는지 본다
+        id: key
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$SA" ]; then
+            echo "have=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "have=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::FIREBASE_SERVICE_ACCOUNT 가 아직 없어 배포를 건너뜁니다."
+          fi
+
+      - name: 산출물 만들기 (build-sweeter/)
+        if: steps.key.outputs.have == 'yes'
+        run: ./tools/make-sweeter-prod.sh
+
+      # 올리기 전에 마지막으로 한 번 더 본다. 여기서 걸리면 배포를 안 한다 —
+      # 로그인이 꺼진 앱이나 BLOCK7 이 sweeter.my 에 올라가는 일을 막는 자리다.
+      - name: 올릴 것이 맞는지 확인
+        if: steps.key.outputs.have == 'yes'
+        run: |
+          set -e
+          f=build-sweeter/index.html
+          grep -q 'const APP_PRODUCT = "sweeter";' "$f" || { echo "제품이 sweeter 가 아닙니다"; exit 1; }
+          grep -q 'const DEV_MODE = false;'        "$f" || { echo "로그인이 꺼져 있습니다"; exit 1; }
+          grep -q '<title>Sweeter</title>'         "$f" || { echo "제목이 Sweeter 가 아닙니다"; exit 1; }
+          test -f build-sweeter/manifest.json
+          grep -q '"name": "Sweeter"' build-sweeter/manifest.json || { echo "manifest 가 Sweeter 것이 아닙니다"; exit 1; }
+          echo "확인 완료"
+
+      - name: 파이어베이스 호스팅으로 올리기
+        if: steps.key.outputs.have == 'yes'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: block7-8f24e
+          channelId: live
+          target: sweeter7
