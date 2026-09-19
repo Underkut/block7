@@ -531,17 +531,17 @@ console.log('\n시나리오 15 — Sweeter 개발본의 Firebase 는 꺼져 있�
 {
   // ⛔️ v26-0830-16 에서 한 번 켰다가 계정 데이터를 통째로 날렸다.
   //
-  //  까닭 — 동기화 기준점 세 키가 **제품별로 갈려 있지 않다**:
-  //    b7v1_owner · b7v1_syncbase · b7v1_syncmeta  (전부 고정 이름)
-  //  같은 도메인(block7.my)에 두 제품이 있으면 Sweeter 는
-  //    · 저장 키 b7v1_sweeter 가 비어 있어 ST 가 defaultState() 이고
-  //    · 기준점(b7v1_syncbase)은 BLOCK7 이 남긴 **가득 찬 상태**를 읽는다.
-  //  로그인 경로의 3자 병합 _fbMerge(base=가득, local=빈, cloud=가득) 은
-  //  이것을 "사용자가 전부 지웠다"로 읽어 빈 상태를 만들고 클라우드에 올린다.
-  //  ⚠️ 대량 손실 방어 _fbBulkLoss 는 base 를 **모를 때만** 돈다
-  //     (_fbMergeGuarded 의 if(!base)). 이 경로는 base 가 있어 방어가 안 켜진다.
+  //  까닭이었던 것 — 동기화 기준점 세 키가 제품별로 갈려 있지 않았다.
+  //  ✅ 그 까닭은 **v26-0919-5 에서 없앴다** (_lsk 가 LS_KEY 와 같은 규칙으로
+  //     가른다). 재현과 증명은 tests/test_product_syncbase.js 시나리오 3·4.
   //
-  //  → 세 키를 제품별로 가르고 시험을 먼저 쓴 뒤에야 다시 켤 수 있다.
+  //  그런데도 **개발본은 계속 꺼 둔다.** 남은 까닭은 다른 것이다 —
+  //    · sweeter-dev.html 은 block7.my 에 얹혀 산다. 운영본 BLOCK7 과 같은
+  //      도메인에서 로그인 두 벌이 오가면 확인할 것이 갑절이 된다.
+  //    · 켜는 자리는 **제 도메인에 설 운영본 sweeter.html** 이다. 그 파일이
+  //      생기기 전에는 켤 자리 자체가 없다.
+  //  → 이 시험은 "개발본은 꺼져 있다" 만 지킨다. 운영본을 만들 때 그 파일에
+  //    맞는 시험을 새로 쓴다.
   const mk = require('fs').readFileSync(__dirname + '/../tools/make-sweeter.sh', 'utf8');
   sc.eq('DEV_MODE 를 켠다(=Firebase 끔)',
         mk.includes("sub_once(out,'const DEV_MODE = false;','const DEV_MODE = true;','DEV_MODE')"), true);
@@ -553,13 +553,15 @@ console.log('\n시나리오 15 — Sweeter 개발본의 Firebase 는 꺼져 있�
   sc.eq('저장 키는 b7v1_sweeter_dev',
         (sw.includes('const APP_PRODUCT = "sweeter";') && sw.includes('const DEV_MODE = true;')), true);
 
-  // 기준점 세 키가 아직 제품별로 갈려 있지 않다는 사실 자체를 못 박아 둔다.
-  // 이 셋이 LS_KEY 처럼 제품 이름을 타게 되면 이 시험이 걸리고, 그때 위 금지를
-  // 풀 수 있다 (그전에 병합 시나리오 시험을 먼저 써야 한다).
+  // 기준점 세 키가 **이제는 갈려 있다**. 예전에는 여기서 "아직 고정 이름"임을
+  // 못 박아 두었는데, 그 금지를 푸는 것이 v26-0919-5 의 일이었다.
+  // ⚠️ 이 둘이 다시 고정 이름으로 돌아가면 사고 조건이 그대로 되살아난다.
   const SRC = require('fs').readFileSync(__dirname + '/../index.html', 'utf8');
-  sc.eq('소유자 키는 아직 고정 이름', SRC.includes("localStorage.getItem('b7v1_owner')"), true);
-  sc.eq('기준점 키도 아직 고정 이름',
-        SRC.includes("const _FB_BASE_KEY='b7v1_syncbase',_FB_META_KEY='b7v1_syncmeta';"), true);
+  sc.eq('소유자 키가 제품별로 갈렸다', SRC.includes("localStorage.getItem(_lsk('owner'))"), true);
+  sc.eq('기준점 키도 제품별로 갈렸다',
+        SRC.includes("const _FB_BASE_KEY=_lsk('syncbase'),_FB_META_KEY=_lsk('syncmeta');"), true);
+  sc.eq('이름 규칙은 LS_KEY 에서 나온다',
+        SRC.includes("function _lsk(name){return LS_KEY+'_'+name;}"), true);
 }
 
 sc.done();

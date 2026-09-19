@@ -7,6 +7,12 @@
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 global.document = { visibilityState: 'visible', addEventListener: () => {} };
+
+// 이 기기 전용 저장 키 이름 — index.html 의 _lsk 와 **같은 규칙**.
+// (기준점·충돌 보관함 키가 제품별로 갈린 뒤로, 그 구간을 떠오려면 이게 있어야 한다.
+//  이름 규칙 자체는 tests/test_product_syncbase.js 가 진짜 소스로 검사한다)
+let LS_KEY='b7v1';
+function _lsk(name){return LS_KEY+'_'+name;}
 eval(slice('let _fbBaseJson=null;', '// 원격/병합 상태를 화면'));
 
 function clone(o){return JSON.parse(JSON.stringify(o));}

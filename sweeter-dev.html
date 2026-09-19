@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0919-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0919-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5128,6 +5128,32 @@ const APP_PRODUCT_DEFAULT = "block7";   // 설정을 settings 에 그대로 두�
 const LS_KEY = (APP_PRODUCT === APP_PRODUCT_DEFAULT ? 'b7v1' : 'b7v1_' + APP_PRODUCT)
              + (DEV_MODE ? '_dev' : '');
 
+// ══ 이 기기 전용 저장 키 이름 — **한 곳에서 정한다** ═══════════════════════
+// ⚠️⚠️ 2026-08-31 대량 손실이 난 자리가 바로 여기다. 그때는 저장 칸(LS_KEY)만
+//    제품별로 갈리고 **동기화 기준점 세 키는 고정 이름**이었다
+//    (b7v1_owner·b7v1_syncbase·b7v1_syncmeta). 그래서 같은 도메인에 나란히 선
+//    Sweeter 는 제 저장 칸이 비어 ST 가 기본값인데, 기준점으로는 BLOCK7 의
+//    가득 찬 상태를 읽었다. 3자 병합이 그것을 **"사용자가 전부 지웠다"** 로
+//    읽고 빈 상태를 클라우드에 올려 모든 기기가 따라 지워졌다.
+//    ⚠️ 대량 손실 방어(_fbBulkLoss)는 **base 를 모를 때만** 돈다
+//       (_fbMergeGuarded 의 if(!base)). 이 경로는 base 가 있어 켜지지도 않았다.
+//
+// → 이제 **LS_KEY 와 같은 규칙**으로 가른다. 제품·빌드가 갈리면 기준점도 갈리고,
+//   Sweeter 는 base 를 아예 못 찾아 방어가 정상으로 켜진다.
+//
+//   BLOCK7 운영본   b7v1            → b7v1_owner          (예전과 한 글자도 같다)
+//   BLOCK7 개발본   b7v1_dev        → b7v1_dev_owner
+//   Sweeter 개발본  b7v1_sweeter_dev→ b7v1_sweeter_dev_owner
+//   Sweeter 운영본  b7v1_sweeter    → b7v1_sweeter_owner
+//
+// ⚠️ BLOCK7 운영본의 이름이 **한 글자라도 달라지면 안 된다.** 달라지는 순간
+//    지금 쓰는 기기가 전부 "처음 보는 기기"가 되어 기준점을 잃는다.
+//    (그래서 접두사를 새로 짓지 않고 LS_KEY 를 그대로 앞에 둔다)
+// ⚠️ 이 기기 안에서만 쓰는 이름이다. **클라우드 문서는 두 제품이 같이 쓴다** —
+//    한 아이디로 두 앱에 들어오면 말씀 모음이 양쪽에 같이 보여야 하니까.
+//    가르는 것은 '어디까지 맞춰 봤나(기준점)' 뿐이다.
+function _lsk(name){return LS_KEY+'_'+name;}
+
 // ═══════════════════════════════════════════════════════════
 //  진단 로그 (개발본 전용) — v26-0817-5
 // ═══════════════════════════════════════════════════════════
@@ -5205,7 +5231,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0919-4";
+const APP_VERSION = "v. 26-0919-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -18500,8 +18526,8 @@ function load(){
   return defaultState();
 }
 // 로컬 상태가 속한 계정 uid 태그 — 계정 전환 시 데이터 격리에 사용
-function _localOwner(){try{return localStorage.getItem('b7v1_owner');}catch(e){return null;}}
-function _setLocalOwner(uid){try{if(uid)localStorage.setItem('b7v1_owner',uid);else localStorage.removeItem('b7v1_owner');}catch(e){}}
+function _localOwner(){try{return localStorage.getItem(_lsk('owner'));}catch(e){return null;}}
+function _setLocalOwner(uid){try{if(uid)localStorage.setItem(_lsk('owner'),uid);else localStorage.removeItem(_lsk('owner'));}catch(e){}}
 // 로컬 상태를 기본값으로 초기화 (로그아웃/계정 전환 시 이전 데이터 격리)
 function resetStateToDefaults(){
   const d=defaultState();
@@ -38919,10 +38945,12 @@ function refreshNotifyUI(){
 // (기기 로컬 전용 — 클라우드로 동기화하지 않는다)
 function _deviceId(){
   try{
-    let v=localStorage.getItem('b7v1_devid');
+    // ⚠️ 제품별로 가른다. 같은 id 를 쓰면 두 앱이 계정 문서의 **같은 기기 자리**에
+    //    푸시 등록을 덮어써서, 한쪽을 켜면 다른 쪽 알림이 꺼진다.
+    let v=localStorage.getItem(_lsk('devid'));
     if(!v){
       v=(Date.now().toString(36)+Math.random().toString(36).slice(2,10));
-      localStorage.setItem('b7v1_devid',v);
+      localStorage.setItem(_lsk('devid'),v);
     }
     return v;
   }catch(e){return 'nolocal';}
@@ -39310,7 +39338,8 @@ let _fbLastSeenRev=-1;      // 내가 마지막으로 확인한 클라우드 rev
 let _fbBaseJson=null;       // 클라우드와 마지막으로 일치했던 상태(JSON 문자열)
 let _fbDirtySeq=0,_fbCleanSeq=0; // 로컬 편집 일련번호 / 전송 완료 지점
 let _fbCommitBusy=false,_fbCommitAgain=false,_fbRetryTimer=null;
-const _FB_BASE_KEY='b7v1_syncbase',_FB_META_KEY='b7v1_syncmeta'; // 기기 로컬 전용
+// 기기 로컬 전용. 이름은 _lsk 가 제품·빌드별로 가른다 (위 '이 기기 전용 저장 키 이름').
+const _FB_BASE_KEY=_lsk('syncbase'),_FB_META_KEY=_lsk('syncmeta');
 
 function _fbSetBase(json,rev,uid){
   _fbBaseJson=json;
@@ -40364,7 +40393,9 @@ function _fbWriteBackup(json,rev){
 // ── 충돌 보관 · 화면 ────────────────────────────────────────────────
 // ⚠️ 보관은 **동기화를 절대 막지 않는다.** 실패해도 조용히 넘어간다
 //    (_fbWriteBackup 과 같은 규칙 — 인계문서 7-3 체크리스트).
-const _CF_LS_KEY='b7v1_conflicts';        // 기기 로컬 (클라우드 동기화 대상 아님)
+// 기기 로컬 (클라우드 동기화 대상 아님). 제품별로 가른다 — 안 가르면 Sweeter 에서
+// BLOCK7 할일 충돌이 뜬다.
+const _CF_LS_KEY=_lsk('conflicts');
 let _cfList=[];
 let _cfToastAt=0;
 function _cfLoadLocal(){
