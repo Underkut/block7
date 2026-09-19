@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0919-2  [production]  -->
+<!-- BLOCK7  v. 26-0919-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5198,7 +5198,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0919-2";
+const APP_VERSION = "v. 26-0919-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7207,6 +7207,9 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="collAddAction('subscribe')">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v9M6.5 9.5L10 13l3.5-3.5"/><path d="M4 13v2.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V13"/></svg></span>구독 받기
   </div>
+  <div class="task-menu-item" onclick="collAddAction('group')">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="2.4"/><circle cx="13.6" cy="6.2" r="1.9"/><path d="M3 15.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6"/><path d="M12.2 11.9c1.9 0 3.3 1.3 3.3 3.2"/></svg></span>교회 그룹
+  </div>
 </div>
 
 <!-- 우측 패널 위젯 설정 팝업 -->
@@ -7578,11 +7581,27 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="event-modal-overlay" id="subscribeOverlay" style="display:none;z-index:4500;" onclick="closeSubscribeDialog()"></div>
 <div id="subscribeDialog" style="display:none;position:fixed;z-index:4510;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--s1);border:1px solid var(--bd2);border-radius:16px;padding:22px;width:300px;max-width:88vw;box-shadow:0 8px 30px rgba(0,0,0,.4);">
   <div style="font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px;">구독 받기</div>
-  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px;line-height:1.5;">발행자에게 받은 이름 주소(예: tlc)나 6자리 코드를 입력하면 그 말씀 모음을 구독해요. 이후 매일 하루 시작 시간에 최신 내용으로 업데이트돼요.</div>
-  <input type="text" id="subCodeInput" class="auth-input" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" placeholder="예: tlc 또는 123456" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:16px;letter-spacing:2px;text-align:center;margin-bottom:12px;">
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px;line-height:1.5;">발행자에게 받은 6자리 코드를 입력하면 그 말씀 모음을 구독해요. 이후 매일 하루 시작 시간에 최신 내용으로 업데이트돼요.</div>
+  <input type="text" id="subCodeInput" class="auth-input" inputmode="numeric" maxlength="6" placeholder="예: 123456" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:16px;letter-spacing:4px;text-align:center;margin-bottom:12px;">
   <div style="display:flex;gap:8px;">
     <button class="settings-btn" onclick="closeSubscribeDialog()" style="flex:1;">취소</button>
     <button class="settings-btn" onclick="doSubscribe()" style="flex:1;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">받기</button>
+  </div>
+</div>
+
+<!-- 교회 그룹 만들기·고치기 — 말씀모음 여러 개를 주소 하나로 묶는다 -->
+<div class="event-modal-overlay" id="groupOverlay" style="display:none;z-index:4500;" onclick="closeGroupDialog()"></div>
+<div id="groupDialog" style="display:none;position:fixed;z-index:4510;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--s1);border:1px solid var(--bd2);border-radius:16px;padding:22px;width:320px;max-width:90vw;max-height:84vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.4);">
+  <div style="font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px;">교회 그룹</div>
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px;line-height:1.5;">말씀 모음 여러 개를 주소 하나로 묶어요. 그 주소를 연 사람은 묶음을 통째로 받고, 나중에 더하거나 뺀 것도 따라옵니다.</div>
+  <input type="text" id="grpAddrInput" class="auth-input" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" placeholder="주소 (예: tlc)" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:16px;text-align:center;margin-bottom:6px;">
+  <div id="grpAddrPreview" style="font-size:11px;color:var(--tx3);text-align:center;margin-bottom:10px;min-height:15px;"></div>
+  <input type="text" id="grpNameInput" class="auth-input" maxlength="30" placeholder="그룹 이름 (예: 더사랑의교회)" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:14px;margin-bottom:12px;">
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:6px;">묶을 말씀 모음</div>
+  <div id="grpCollList" style="margin-bottom:14px;"></div>
+  <div style="display:flex;gap:8px;">
+    <button class="settings-btn" onclick="closeGroupDialog()" style="flex:1;">취소</button>
+    <button class="settings-btn" id="grpSaveBtn" onclick="doSaveGroup()" style="flex:1;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">만들기</button>
   </div>
 </div>
 
@@ -7590,11 +7609,9 @@ window._fbScriptsReady=new Promise(resolve=>{
 <div class="event-modal-overlay" id="shareDialogOverlay" style="display:none;z-index:4500;" onclick="closeShareDialog()"></div>
 <div id="shareDialog" style="display:none;position:fixed;z-index:4510;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--s1);border:1px solid var(--bd2);border-radius:16px;padding:22px;width:300px;max-width:88vw;box-shadow:0 8px 30px rgba(0,0,0,.4);text-align:center;">
   <div style="font-size:13px;color:var(--tx2);margin-bottom:4px;" id="shareDialogName">말씀 모음</div>
-  <div id="shareDialogHint" style="font-size:11px;color:var(--tx3);margin-bottom:14px;">이 코드를 전하면 상대가 이 말씀 모음을 받아볼 수 있어요.</div>
-  <!-- 이름 주소가 있으면 주소를, 없으면 6자리 코드를 크게 보인다 (나란히 늘리지 않고 교체) -->
-  <div id="shareCodeText" style="font-size:34px;font-weight:800;letter-spacing:8px;color:var(--tx);margin-bottom:4px;word-break:break-all;">000000</div>
-  <div id="shareAddrSub" style="font-size:11px;color:var(--tx3);margin-bottom:2px;"></div>
-  <button class="settings-btn" id="shareCopyBtn" onclick="shareCopyCode()" style="margin:6px 0 16px;">코드 복사</button>
+  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px;">이 코드를 전하면 상대가 이 말씀 모음을 받아볼 수 있어요.</div>
+  <div id="shareCodeText" style="font-size:34px;font-weight:800;letter-spacing:8px;color:var(--tx);margin-bottom:4px;">000000</div>
+  <button class="settings-btn" onclick="shareCopyCode()" style="margin:6px 0 16px;">코드 복사</button>
   <div style="display:flex;justify-content:center;gap:18px;">
     <button onclick="shareVia('sms')" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--tx2);font-size:11px;">
       <span style="width:44px;height:44px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;">
@@ -7608,19 +7625,6 @@ window._fbScriptsReady=new Promise(resolve=>{
       <span style="width:44px;height:44px;border-radius:50%;background:var(--s2);display:flex;align-items:center;justify-content:center;">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V4M6.5 7.5L10 4l3.5 3.5"/><path d="M4 13v2.5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V13"/></svg>
       </span>공유</button>
-  </div>
-</div>
-
-<!-- 이름 주소 정하기 — 6자리 코드 대신 사람이 읽는 주소(block7.my/?g=tlc) -->
-<div class="event-modal-overlay" id="shareNameOverlay" style="display:none;z-index:4520;" onclick="closeShareNameDialog()"></div>
-<div id="shareNameDialog" style="display:none;position:fixed;z-index:4530;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--s1);border:1px solid var(--bd2);border-radius:16px;padding:22px;width:300px;max-width:88vw;box-shadow:0 8px 30px rgba(0,0,0,.4);">
-  <div style="font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px;">이름 주소</div>
-  <div style="font-size:11px;color:var(--tx3);margin-bottom:14px;line-height:1.5;">영문 소문자·숫자·붙임표로 2~20글자. 이 주소를 연 사람은 이 말씀 모음을 자동으로 받아요.</div>
-  <input type="text" id="shareNameInput" class="auth-input" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" placeholder="예: tlc" style="width:100%;box-sizing:border-box;padding:8px 10px;font-size:16px;letter-spacing:2px;text-align:center;margin-bottom:6px;">
-  <div id="shareNamePreview" style="font-size:11px;color:var(--tx3);text-align:center;margin-bottom:12px;min-height:15px;"></div>
-  <div style="display:flex;gap:8px;">
-    <button class="settings-btn" onclick="closeShareNameDialog()" style="flex:1;">취소</button>
-    <button class="settings-btn" onclick="doClaimShareName()" style="flex:1;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">정하기</button>
   </div>
 </div>
 
@@ -8350,7 +8354,9 @@ function renderSubButtons(){
     meta.className='sub-coll-meta';
     const owner=c.importOwner||'???';
     const date=c.importUpdatedAt?_fmtSubDate(c.importUpdatedAt):'—';
-    meta.textContent=`${owner} · ${c.importAddr||c.importCode} · ${date} 업데이트`;
+    meta.textContent=c.groupAddr
+      ? `${c.groupName||'교회 그룹'} · ${c.groupAddr} · ${date} 업데이트`
+      : `${owner} · ${c.importCode} · ${date} 업데이트`;
     b.append(nm,meta);
     b.onclick=()=>{ if(_collLpFired){_collLpFired=false;return;} toggleColl(c.id); };
     b.addEventListener('touchstart',e=>{
@@ -8715,156 +8721,8 @@ function collAddAction(what){
   closeCollAddMenu();
   if(what==='new')addNewCollection();
   else if(what==='subscribe')openSubscribeDialog();
+  else if(what==='group')openGroupDialog();
 }
-// ══ 이름 주소 (v26-0919-1 · 교회 그룹 2단계) ══════════════════════════════
-// 6자리 코드는 사람이 외우지도 옮겨 적지도 못한다. 그래서 모음마다 읽을 수 있는
-// 주소를 하나 붙인다 — `block7.my/?g=tlc`.
-//
-// ⚠️ 주소는 **'모드 스위치'가 아니라 '초대장'이다.** 주소마다 저장 칸(LS_KEY)을
-//    따로 만드는 방식은 금지다. 그것이 2026-08-31 대량 손실과 **똑같은 조건**이다:
-//    그때 저장 키는 제품별로 갈렸는데 동기화 기준점은 안 갈려서, 빈 저장 칸 +
-//    남의 기준점 조합을 3자 병합이 "사용자가 전부 지웠다"로 읽었다.
-//    여기서 주소가 하는 일은 단 하나 — "이 모음을 한 번 구독해 달라" 는 부탁이다.
-//    받고 나면 주소는 아무 힘이 없고, 어느 주소로 들어와도 같은 화면이다.
-//
-// 저장 구조 — 진짜 내용은 **늘 6자리 코드 문서에만** 있다.
-//   shared/123456 : {name, verses, ownerUid, …}   ← 내용 (예전 그대로)
-//   shared/tlc    : {aliasOf:'123456', ownerUid}   ← 가리키는 쪽지
-// 그래서 이름을 새로 정해도 이미 구독한 사람의 `importCode`(6자리)는 그대로라
-// 구독이 끊기지 않고, 발행할 때 쓸 곳이 한 곳뿐이라 두 문서가 어긋날 수 없다.
-const _SHARE_NAME_RESERVED=new Set([
-  'index','dev','sweeter','admin','api','app','www','block7','shared','new',
-  'verse','verses','null','undefined','test','help','about','login','logout'
-]);
-// 들어온 글자를 주소 한 가지 모양으로 눕힌다. 대문자·앞뒤 공백·@·슬래시·
-// 전체 주소를 붙여넣어도 같은 곳으로 간다.
-function _shareNameNorm(s){
-  let t=String(s==null?'':s).trim();
-  const m=t.match(/[?&]g=([^&#]*)/);        // 주소를 통째로 붙여넣은 경우
-  if(m)t=m[1];
-  else t=t.replace(/^https?:\/\/[^?#]*/,'');// ?g= 없는 주소는 남는 게 없다
-  t=t.replace(/[?&#].*$/,'');               // 뒤에 붙은 다른 인자
-  t=t.replace(/^[@/]+/,'').replace(/\/+$/,'');
-  try{t=decodeURIComponent(t);}catch(e){}
-  return t.trim().toLowerCase();
-}
-function _shareIsCode(s){return /^\d{6}$/.test(String(s||''));}
-// 주소로 쓸 수 있는 이름인가. ⚠️ 숫자만으로 된 이름은 막는다 — 6자리 코드와
-// 같은 칸(shared 컬렉션)에 사는데 이름이 숫자면 남의 코드 문서를 덮어쓴다.
-function _shareNameValid(s){
-  const t=String(s||'');
-  if(!/^[a-z][a-z0-9-]{1,19}$/.test(t))return false;
-  if(t.indexOf('--')>=0||t.endsWith('-'))return false;
-  return !_SHARE_NAME_RESERVED.has(t);
-}
-function _shareAddrUrl(name){
-  try{return location.origin+location.pathname+'?g='+encodeURIComponent(name);}
-  catch(e){return 'https://block7.my/?g='+name;}
-}
-function _shareAddrShow(name){return _shareAddrUrl(name).replace(/^https?:\/\//,'');}
-// 주소 하나(이름이든 6자리 코드든)로 발행 문서를 찾는다.
-// 돌려주는 `code` 는 **언제나 6자리** 라, 구독 뒤의 매일 갱신(runSharedCollSync)은
-// 예전 코드 그대로 돈다.
-async function _resolveSharedDoc(key){
-  const k=_shareNameNorm(key);
-  if(!k)return null;
-  const get=async id=>{const d=await window._fbDB.collection('shared').doc(id).get();return d.exists?(d.data()||{}):null;};
-  const first=await get(k);
-  if(!first)return null;
-  if(first.aliasOf){
-    const target=String(first.aliasOf);
-    if(target===k)return null;                 // 자기를 가리키는 쪽지 — 없는 것으로 본다
-    const real=await get(target);
-    if(!real||real.aliasOf)return null;        // 쪽지가 쪽지를 가리키면 따라가지 않는다
-    return{code:target,addr:k,data:real};
-  }
-  return{code:k,addr:'',data:first};
-}
-// 구독을 실제로 만드는 **한 곳**. 손으로 입력하는 길(doSubscribe)과
-// 초대장(?g=)이 같은 길을 지나야 둘이 어긋나지 않는다.
-// ⚠️ 하는 일은 **더하기뿐이다** — 기존 모음·할일·설정을 지우거나 고치지 않는다.
-async function _subscribeShared(key){
-  if(!_fbReady())return{ok:false,why:'auth'};
-  let r;
-  try{r=await _resolveSharedDoc(key);}catch(e){return{ok:false,why:'net'};}
-  if(!r)return{ok:false,why:'none'};
-  const dup=getVerseCollections().find(c=>c.importCode===r.code);
-  if(dup)return{ok:false,why:'dup',code:r.code,name:dup.importName||dup.name||'말씀 모음'};
-  const data=r.data;
-  // 항목 목록은 _sharedVerseIn 한 곳에서 정한다 (_sharedVerseOut 과 짝)
-  const verses=(data.verses||[]).map(_sharedVerseIn);
-  const id=_genCollId();
-  beforeSave();
-  if(!Array.isArray(ST.verseCollections))ST.verseCollections=[];
-  ST.verseCollections.push({
-    id,name:data.name||'구독 모음',verses,google:[],shareCode:null,
-    importCode:r.code,
-    importAddr:r.addr||data.addr||'',
-    importName:data.name||'',
-    importOwner:data.ownerIdPrefix||(data.ownerUid?String(data.ownerUid).slice(0,3):''),
-    importUpdatedAt:(data.updatedAt&&data.updatedAt.toMillis)?data.updatedAt.toMillis():Date.now(),
-    lastShareSync:todayKey()
-  });
-  const active=[...getActiveColls()];
-  if(!active.includes(id))active.push(id);
-  ST.settings.activeColls=active;
-  save();
-  _invalidateVerseCaches();
-  renderCollButtons();
-  _afterActiveVersesChanged();
-  return{ok:true,id,code:r.code,name:data.name||'말씀 모음',n:verses.length};
-}
-
-// ══ 초대장 (?g=tlc) ══════════════════════════════════════════════════════
-// 이 앱에서 **사람이 아무것도 누르지 않았는데 클라우드가 바뀌는 첫 기능**이다.
-// 그래서 때를 아주 좁게 잡는다:
-//   ① 주소에서 이름을 집어 localStorage 에 적어 두고 주소에서는 ?g= 만 지운다
-//   ② 로그인이 되고 **초기 클라우드 읽기가 성공한 뒤에만**(`_fbInitLoaded`) 받는다
-//      → 읽기에 실패한 기기는 쓰기 자체가 막혀 있다. 빈 상태가 클라우드를
-//        덮어쓰는 길(7-2-3 사고)로 초대장이 들어가지 못한다.
-//   ③ 받고 나면 적어 둔 것을 지우고, 받은 주소를 `settings.invites` 에 남긴다.
-//      같은 초대장은 두 번 받지 않는다 ("처음 들어오면" 이 HB 의 주문이다).
-//      손으로 구독 받기에 입력하는 것은 **사람의 행동**이라 늘 통한다.
-const _INVITE_KEY=LS_KEY+'_invite';   // 제품·개발본마다 따로 (고정 이름 금지 — 0831 교훈)
-function _inviteRead(){try{return _shareNameNorm(localStorage.getItem(_INVITE_KEY)||'');}catch(e){return '';}}
-function _inviteClear(){try{localStorage.removeItem(_INVITE_KEY);}catch(e){}}
-// ⚠️ 주소에서 ?g= **만** 지운다. 통째로 지우면 알림 클릭이 싣고 온 ?verse= 가
-//    함께 날아가 전체화면이 안 열린다 (_verseRefFromUrl 과 같은 주소를 본다).
-function _inviteFromUrl(){
-  try{
-    const q=new URLSearchParams(location.search);
-    const g=q.get('g');
-    if(g===null)return '';
-    q.delete('g');
-    const qs=q.toString();
-    history.replaceState(null,'',location.pathname+(qs?'?'+qs:'')+location.hash);
-    const nm=_shareNameNorm(g);
-    if(!nm||(!_shareIsCode(nm)&&!_shareNameValid(nm)))return '';
-    localStorage.setItem(_INVITE_KEY,nm);
-    return nm;
-  }catch(e){return '';}
-}
-function _inviteSeen(){return Array.isArray(ST.settings.invites)?ST.settings.invites:[];}
-// `ready` = 초기 클라우드 읽기가 성공했는가(_fbInitLoaded). 그 값은 Firebase
-// 블록 안에만 살아서 부르는 쪽이 넘겨준다.
-async function _inviteApply(ready){
-  const key=_inviteRead();
-  if(!key)return{done:false,why:'none'};
-  if(!_fbReady()||!ready)return{done:false,why:'wait'};   // 때가 아니다 — 다음 기회에
-  if(_inviteSeen().includes(key)){_inviteClear();return{done:false,why:'seen'};}
-  const r=await _subscribeShared(key);
-  if(r.why==='net'||r.why==='auth')return{done:false,why:r.why};  // 지우지 않고 다음 기회에
-  _inviteClear();
-  if(r.why==='none'){showToast('초대 주소를 찾을 수 없어요');return{done:false,why:'none'};}
-  const seen=_inviteSeen().slice();
-  seen.push(key);
-  ST.settings.invites=seen.slice(-30);
-  save();
-  if(r.ok)showToast(`'${r.name}' 말씀 모음을 받았어요 (${r.n}구절)`);
-  return{done:true,why:r.ok?'ok':'dup',id:r.id};
-}
-_inviteFromUrl();   // 주소는 가장 먼저 집어 둔다 (다른 코드가 주소를 지우기 전에)
-
 // ── 구독 받기 (상위 레벨) ──
 function openSubscribeDialog(){
   if(!_fbReady()){showToast('로그인 상태에서만 구독할 수 있어요');return;}
@@ -8879,15 +8737,16 @@ function closeSubscribeDialog(){
 }
 async function doSubscribe(){
   if(!_fbReady()){showToast('로그인 상태에서만 구독할 수 있어요');return;}
-  const key=_shareNameNorm(document.getElementById('subCodeInput').value||'');
-  if(!key||(!_shareIsCode(key)&&!_shareNameValid(key))){
-    showToast('이름 주소(예: tlc)나 6자리 코드를 입력해주세요');return;
-  }
+  const code=(document.getElementById('subCodeInput').value||'').trim();
+  if(!/^\d{6}$/.test(code)){showToast('6자리 숫자 코드를 입력해주세요');return;}
   showToast('불러오는 중…');
-  const r=await _subscribeShared(key);
+  // 구독을 만드는 길은 _subscribeShared 한 곳뿐이다 — 손으로 넣는 이 길과
+  // 교회 그룹이 갈라져 있으면 둘이 조용히 어긋난다.
+  const r=await _subscribeShared(code);
   if(r.ok){closeSubscribeDialog();showToast(`'${r.name}' 구독 완료 (${r.n}구절)`);return;}
-  if(r.why==='dup'){showToast('이미 구독 중이에요');closeSubscribeDialog();return;}
-  if(r.why==='none'){showToast('그 주소의 말씀 모음을 찾을 수 없어요');return;}
+  if(r.why==='dup'){showToast('이미 구독 중인 코드예요');closeSubscribeDialog();return;}
+  if(r.why==='mine'){showToast('내가 만든 말씀 모음이에요');closeSubscribeDialog();return;}
+  if(r.why==='none'){showToast('해당 코드의 말씀 모음을 찾을 수 없어요');return;}
   showToast('불러오기 실패 — 네트워크를 확인해주세요');
 }
 function toggleColl(id){
@@ -8995,6 +8854,13 @@ function deleteCollection(id){
   const n=(c.verses||[]).length;
   if(!confirm(`'${c.name}' 말씀 모음을 삭제할까요?${n?`\n(구절 ${n}개도 함께 삭제)`:''}`))return;
   beforeSave();
+  // 교회 그룹이 넣어 준 것을 사람이 직접 지웠다 — 그 뜻을 적어 둔다.
+  // 적어 두지 않으면 다음 갱신에 그대로 되살아난다.
+  if(c.groupAddr&&c.importCode){
+    const out=Array.isArray(ST.settings.groupOptOut)?ST.settings.groupOptOut.slice():[];
+    if(out.indexOf(c.importCode)<0)out.push(c.importCode);
+    ST.settings.groupOptOut=out.slice(-60);
+  }
   ST.verseCollections=getVerseCollections().filter(x=>x.id!==id);
   let active=getActiveColls().filter(x=>x!==id);
   if(!active.length)active=['nav180'];
@@ -10028,6 +9894,9 @@ async function verseSyncAllNow(){
 // 그 이후 최초로 앱을 열 때 자동으로 시트를 받아온다. 하루 1회 스탬프
 // (todayKey)로 중복을 막는다.
 async function runVerseSheetAutoSync(){
+  // ⚠️ 그룹 맞추기가 **먼저**다. 그리고 아래 `모음이 없으면 돌아간다` 보다도
+  //    앞이라야 한다 — 이제 막 들어온 성도는 아직 모음이 하나도 없다.
+  try{await runGroupSync();}catch(e){}
   const colls=getVerseCollections();
   if(!colls.length)return;
   const today=todayKey();
@@ -10122,7 +9991,6 @@ async function _publishSharedColl(coll){
   try{
     await window._fbDB.collection('shared').doc(coll.shareCode).set({
       code:coll.shareCode,
-      addr:coll.shareName||'',   // 이름 주소 — 구독자가 그대로 다시 나눌 수 있게
       name:coll.name||'말씀 모음',
       // 항목 목록은 _sharedVerseOut 한 곳에서 정한다 (위 주석 참고)
       verses:(coll.verses||[]).filter(v=>!v.del).map(_sharedVerseOut),
@@ -10133,48 +10001,344 @@ async function _publishSharedColl(coll){
     return true;
   }catch(e){console.warn('shared publish failed',e);return false;}
 }
-let _shareDialogCode=null,_shareDialogName='',_shareDialogAddr='',_shareDialogCollId=null;
-// 공유창을 한 모양으로 그린다. 이름 주소가 있으면 주소를 크게, 없으면 6자리를
-// 크게 — 나란히 늘리지 않고 **교체**한다 (UI 원칙).
-function _renderShareDialog(){
-  const big=document.getElementById('shareCodeText');
-  const sub=document.getElementById('shareAddrSub');
-  const hint=document.getElementById('shareDialogHint');
-  const btn=document.getElementById('shareCopyBtn');
-  const own=!!_shareDialogCollId;   // 내 모음일 때만 이름을 정할 수 있다
-  if(_shareDialogAddr){
-    big.textContent=_shareAddrShow(_shareDialogAddr);
-    big.style.fontSize='19px';big.style.letterSpacing='0';
-    hint.textContent='이 주소를 열면 이 말씀 모음이 바로 구독돼요.';
-    btn.textContent='주소 복사';
-  }else{
-    big.textContent=_shareDialogCode||'';
-    big.style.fontSize='34px';big.style.letterSpacing='8px';
-    hint.textContent='이 코드를 전하면 상대가 이 말씀 모음을 받아볼 수 있어요.';
-    btn.textContent='코드 복사';
-  }
-  sub.innerHTML='';
-  if(_shareDialogAddr){
-    sub.appendChild(document.createTextNode('코드 '+_shareDialogCode+(own?' · ':'')));
-  }
-  if(own){
-    const a=document.createElement('span');
-    a.textContent=_shareDialogAddr?'이름 바꾸기':'이름 주소 만들기';
-    a.style.cssText='color:var(--ac-tx);cursor:pointer;';   // 글자이므로 --ac 가 아니다
-    a.onclick=()=>openShareNameDialog();
-    sub.appendChild(a);
-  }
-  document.getElementById('shareDialogName').textContent=_shareDialogName;
+// ══ 교회 그룹 (v26-0919-3) ════════════════════════════════════════════════
+// 6자리 공유가 **말씀 모음 하나**를 나누는 것이라면, 그룹은 그 한 단계 위다 —
+// 모음 여러 개를 묶어 두고 주소 하나(block7.my/tlc)로 통째로 나눈다.
+// 6자리 공유는 예전 그대로 둔다. 그룹이 넣어 준 모음도 속을 들여다보면
+// **평범한 6자리 구독**이라, 매일 갱신(runSharedCollSync)이 한 줄도 안 바뀌고 돈다.
+//
+// ⚠️ 주소는 '모드 스위치'가 아니라 '초대장'이다. 주소마다 저장 칸(LS_KEY)을
+//    따로 만드는 방식은 금지다 — 2026-08-31 대량 손실과 똑같은 조건이다
+//    (저장 키만 갈리고 동기화 기준점은 안 갈려서, 3자 병합이 빈 저장 칸을
+//    "사용자가 전부 지웠다" 로 읽었다).
+//
+// 문서 한 장 — `shared` 컬렉션을 그대로 쓴다 (보안 규칙이 이미 있다):
+//   shared/tlc = {kind:'group', name:'더사랑의교회',
+//                 codes:['123456','234567'], ownerUid, …}
+// ⚠️ 이 문서에는 `verses` 키를 **두지 않는다.** 혹시 모음으로 잘못 읽히더라도
+//    '빈 모음'이 되지 않게 — 빈 목록으로 덮는 것이 이 앱의 옛 사고 모양이다.
+const _GRP_RESERVED=new Set([
+  'index','dev','sweeter','admin','api','app','www','block7','shared','new',
+  'verse','verses','null','undefined','test','help','about','login','logout',
+  'icon','fonts','lab','functions','docs','tests','tools','manifest','versepush'
+]);
+// 들어온 글자를 주소 한 가지 모양으로 눕힌다. 대문자·앞뒤 공백·@·슬래시·
+// 주소를 통째로 붙여넣어도 같은 곳으로 간다.
+function _grpNameNorm(s){
+  let t=String(s==null?'':s).trim();
+  t=t.replace(/^https?:\/\/[^/]*/,'');
+  t=t.replace(/[?#].*$/,'');
+  t=t.replace(/^[@/]+/,'').replace(/\/+$/,'');
+  try{t=decodeURIComponent(t);}catch(e){}
+  return t.trim().toLowerCase();
 }
+// ⚠️ 영문 소문자로 시작한다. **숫자만으로 된 이름은 막는다** — 6자리 코드와
+//    같은 칸(shared 컬렉션)에 살아서, 허락하면 남의 발행 문서를 덮어쓴다.
+function _grpNameValid(s){
+  const t=String(s||'');
+  if(!/^[a-z][a-z0-9-]{1,19}$/.test(t))return false;
+  if(t.indexOf('--')>=0||t.endsWith('-'))return false;
+  return !_GRP_RESERVED.has(t);
+}
+function _grpAddrUrl(name){
+  try{return location.origin+'/'+name;}catch(e){return 'https://block7.my/'+name;}
+}
+function _grpAddrShow(name){return _grpAddrUrl(name).replace(/^https?:\/\//,'');}
+// 그룹 문서를 읽는다. kind 가 'group' 이 아니면 **그룹이 아니다** —
+// 6자리 발행 문서를 그룹으로 잘못 읽어 구절을 지우는 일이 없게.
+async function _grpFetch(addr){
+  const a=_grpNameNorm(addr);
+  if(!a)return null;
+  const d=await window._fbDB.collection('shared').doc(a).get();
+  if(!d.exists)return null;
+  const o=d.data()||{};
+  return (o.kind==='group')?o:null;
+}
+
+// 6자리 코드 하나를 구독한다 — 손으로 넣는 길(doSubscribe)과 그룹이 **같은
+// 길**을 지나야 둘이 어긋나지 않는다 (1단계의 pid 누락과 같은 종류의 위험).
+// ⚠️ 하는 일은 **더하기뿐이다.** 지우거나 고치는 것은 하나도 없다.
+async function _subscribeShared(code,opts){
+  opts=opts||{};
+  if(!_fbReady())return{ok:false,why:'auth'};
+  code=String(code||'');
+  if(!/^\d{6}$/.test(code))return{ok:false,why:'bad'};
+  // ⚠️ 그룹이 넣어 준 모음을 사람이 직접 지웠으면 다시 넣지 않는다.
+  //    안 그러면 지울 때마다 다음 갱신에 되살아나 아무도 못 지운다.
+  if(opts.groupAddr){
+    const out=Array.isArray(ST.settings.groupOptOut)?ST.settings.groupOptOut:[];
+    if(out.indexOf(code)>=0)return{ok:false,why:'optout'};
+  }
+  // 내가 발행한 모음은 다시 구독하지 않는다 (내 그룹에 내 모음을 담은 경우)
+  const mine=getVerseCollections().find(c=>c.shareCode===code);
+  if(mine)return{ok:false,why:'mine',name:mine.name||'말씀 모음'};
+  const dup=getVerseCollections().find(c=>c.importCode===code);
+  if(dup){
+    if(opts.groupAddr){dup.groupAddr=opts.groupAddr;dup.groupName=opts.groupName||'';}
+    return{ok:false,why:'dup',name:dup.importName||dup.name||'말씀 모음'};
+  }
+  let data;
+  try{
+    const doc=await window._fbDB.collection('shared').doc(code).get();
+    if(!doc.exists)return{ok:false,why:'none'};
+    data=doc.data()||{};
+  }catch(e){return{ok:false,why:'net'};}
+  if(data.kind==='group')return{ok:false,why:'none'};   // 그룹 문서는 모음이 아니다
+  // 항목 목록은 _sharedVerseIn 한 곳에서 정한다 (_sharedVerseOut 과 짝)
+  const verses=(data.verses||[]).map(_sharedVerseIn);
+  const id=_genCollId();
+  beforeSave();
+  if(!Array.isArray(ST.verseCollections))ST.verseCollections=[];
+  ST.verseCollections.push({
+    id,name:data.name||'구독 모음',verses,google:[],shareCode:null,
+    importCode:code,
+    importName:data.name||'',
+    importOwner:data.ownerIdPrefix||(data.ownerUid?String(data.ownerUid).slice(0,3):''),
+    importUpdatedAt:(data.updatedAt&&data.updatedAt.toMillis)?data.updatedAt.toMillis():Date.now(),
+    groupAddr:opts.groupAddr||'',
+    groupName:opts.groupAddr?(opts.groupName||''):'',
+    lastShareSync:todayKey()
+  });
+  const active=[...getActiveColls()];
+  if(!active.includes(id))active.push(id);
+  ST.settings.activeColls=active;
+  if(!opts.quiet){
+    save();_invalidateVerseCaches();
+    renderCollButtons();_afterActiveVersesChanged();
+  }
+  return{ok:true,id,code,name:data.name||'말씀 모음',n:verses.length};
+}
+
+// 그룹 하나를 이 기기 상태에 맞춘다. 더하기는 그냥 하고, **빼기는 아주 좁게** 한다.
+// ⚠️ 그룹이 넣어 준 모음(groupAddr 표시가 있는 것)만 그룹이 뺄 수 있다.
+//    사람이 직접 만든 모음도, 6자리로 따로 구독한 모음도 건드리지 않는다.
+async function _grpSync(addr,opts){
+  opts=opts||{};
+  if(!_fbReady())return{ok:false,why:'auth'};
+  addr=_grpNameNorm(addr);
+  let g;
+  try{g=await _grpFetch(addr);}catch(e){return{ok:false,why:'net'};}
+  if(!g)return{ok:false,why:'none'};
+  const gname=g.name||'교회 그룹';
+  const want=[...new Set((g.codes||[]).map(String).filter(c=>/^\d{6}$/.test(c)))];
+  let added=0,removed=0,blocked=0;
+  for(const code of want){
+    const r=await _subscribeShared(code,{groupAddr:addr,groupName:gname,quiet:true});
+    // ⚠️ 도중에 네트워크가 끊기면 **빼기는 하지 않고** 그대로 물러난다.
+    //    반만 받아 온 목록으로 지우면 멀쩡한 모음이 사라진다.
+    if(r.why==='net')return{ok:false,why:'net'};
+    if(r.ok)added++;
+  }
+  // ── 빼기 ──
+  // ⚠️ codes 가 비어 있으면 **아무것도 지우지 않는다.** "받아온 게 비어 있지
+  //    않다" 가 안전 조건이 못 되듯, 비어 있는 것은 더더욱 근거가 못 된다
+  //    (2026-08-02 대량 삭제 사고).
+  if(want.length){
+    const held=getVerseCollections().filter(c=>c.groupAddr===addr);
+    const gone=held.filter(c=>want.indexOf(c.importCode)<0);
+    // 규모 상한 — 한 번에 3개를 넘고 그 그룹 모음의 절반을 넘게 빠지면 멈춘다.
+    // (교회 관리자의 실수 한 번이 모든 성도에게 번지지 않게)
+    if(gone.length>3&&gone.length>held.length/2){
+      blocked=gone.length;
+    }else if(gone.length){
+      const ids=new Set(gone.map(c=>c.id));
+      ST.verseCollections=getVerseCollections().filter(c=>!ids.has(c.id));
+      let active=getActiveColls().filter(x=>!ids.has(x));
+      if(!active.length)active=['nav180'];
+      ST.settings.activeColls=active;
+      if(ST.settings.collFilters)ids.forEach(i=>{delete ST.settings.collFilters[i];});
+      removed=gone.length;
+    }
+  }
+  // 교회가 뺐다가 나중에 다시 넣으면 그때는 받는다 — 사람이 지운 뜻은
+  // '그때 그 목록'에 대한 것이지 영영 거절한다는 뜻이 아니다.
+  if(want.length&&Array.isArray(ST.settings.groupOptOut)){
+    const keep=ST.settings.groupOptOut.filter(x=>want.indexOf(x)>=0);
+    if(keep.length!==ST.settings.groupOptOut.length)ST.settings.groupOptOut=keep;
+  }
+  const joined=Array.isArray(ST.settings.groups)?ST.settings.groups.slice():[];
+  if(joined.indexOf(addr)<0)joined.push(addr);
+  ST.settings.groups=joined.slice(-20);
+  if(!opts.quiet){
+    save();_invalidateVerseCaches();
+    renderCollButtons();_afterActiveVersesChanged();
+  }
+  return{ok:true,addr,name:gname,added,removed,blocked,total:want.length};
+}
+
+// 들어가 있는 그룹을 하루 1회 맞춘다 — 교회가 더하면 따라오고, 빼면 함께 빠진다.
+async function runGroupSync(){
+  const joined=Array.isArray(ST.settings.groups)?ST.settings.groups:[];
+  if(!joined.length||!_fbReady())return{ran:0,added:0,removed:0,blocked:0};
+  // ⚠️ 초기 클라우드 읽기가 성공했을 때만 돈다. 실패한 기기에서 빼기가 돌면
+  //    사람이 누르지도 않았는데 모음이 사라진다 (인계문서 7-2-3 과 같은 길).
+  if(typeof window._fbSyncReady!=='function'||!window._fbSyncReady())
+    return{ran:0,added:0,removed:0,blocked:0};
+  let ran=0,added=0,removed=0,blocked=0;
+  for(const addr of joined.slice()){
+    const r=await _grpSync(addr,{quiet:true});
+    if(!r.ok)continue;                       // 못 읽었으면 조용히 넘긴다
+    ran++;added+=r.added;removed+=r.removed;blocked+=r.blocked;
+  }
+  if(ran){
+    save();_invalidateVerseCaches();
+    if(typeof renderCollButtons==='function')renderCollButtons();
+    _afterActiveVersesChanged&&_afterActiveVersesChanged();
+  }
+  if(blocked)showToast(`교회 그룹에서 한꺼번에 ${blocked}개가 빠져 있어 그대로 두었어요`);
+  else if(removed)showToast(`교회 그룹에서 말씀 모음 ${removed}개가 빠졌어요`);
+  return{ran,added,removed,blocked};
+}
+
+// ══ 초대 주소 (block7.my/tlc) ═════════════════════════════════════════════
+// 주소에 물음표가 안 나오게 하려고 404.html 이 길을 놓는다. GitHub Pages 는
+// 없는 주소를 열면 404.html 을 내주므로, 그 페이지 맨 위에서 주소의 'tlc' 를
+// 적어 두고 곧바로 앱(/)으로 넘긴다. 사람 눈에는 block7.my/tlc 만 보인다.
+//
+// ⚠️ 적어 두는 칸 이름은 **고정(b7v1_join)** 이다 — 404.html 은 운영본인지
+//    개발본인지 모르기 때문이다. 한 번 쓰고 지우는 쪽지라 괜찮다.
+//    동기화 기준점(b7v1_syncbase 등)과는 성질이 다르다.
+const _JOIN_KEY='b7v1_join';
+function _joinRead(){try{return _grpNameNorm(localStorage.getItem(_JOIN_KEY)||'');}catch(e){return '';}}
+function _joinClear(){try{localStorage.removeItem(_JOIN_KEY);}catch(e){}}
+// 이 앱에서 **사람이 아무것도 누르지 않았는데 클라우드가 바뀌는 첫 기능**이다.
+// `ready` = 초기 클라우드 읽기 성공(_fbInitLoaded). 그것을 보기 전에는 아무것도
+// 하지 않는다 — 읽기에 실패한 기기는 쓰기가 막혀 있고(인계문서 7-2-3), 그 길에
+// 사람이 누르지도 않은 변경을 얹으면 안 된다. 때가 아니면 적어 둔 것을 지우지
+// 않고 다음 부팅으로 미룬다.
+async function _joinApply(ready){
+  const addr=_joinRead();
+  if(!addr)return{done:false,why:'none'};
+  if(!_grpNameValid(addr)){_joinClear();return{done:false,why:'bad'};}
+  if(!_fbReady()||!ready)return{done:false,why:'wait'};
+  const r=await _grpSync(addr);
+  if(r.why==='net'||r.why==='auth')return{done:false,why:r.why};
+  _joinClear();
+  if(r.why==='none'){showToast('그 주소의 교회 그룹을 찾을 수 없어요');return{done:false,why:'none'};}
+  if(r.added)showToast(`'${r.name}' 의 말씀 모음 ${r.added}개를 받았어요`);
+  else showToast(`'${r.name}' 에 이미 들어와 있어요`);
+  return{done:true,why:'ok',added:r.added};
+}
+
+// ── 그룹 만들기·고치기 (교회 쪽 화면) ──
+let _grpPick=new Set();
+function openGroupDialog(){
+  if(!_fbReady()){showToast('로그인 상태에서만 그룹을 만들 수 있어요');return;}
+  const my=ST.settings.myGroup||null;
+  document.getElementById('grpAddrInput').value=my?(my.addr||''):'';
+  document.getElementById('grpNameInput').value=my?(my.name||''):'';
+  _grpPick=new Set(my&&Array.isArray(my.ids)?my.ids:[]);
+  document.getElementById('grpSaveBtn').textContent=my?'고치기':'만들기';
+  const inp=document.getElementById('grpAddrInput');
+  if(inp&&!inp._b7bound){inp._b7bound=1;inp.addEventListener('input',_grpAddrPreview);}
+  _grpAddrPreview();
+  _grpRenderColls();
+  document.getElementById('groupOverlay').style.display='block';
+  document.getElementById('groupDialog').style.display='block';
+}
+function closeGroupDialog(){
+  document.getElementById('groupOverlay').style.display='none';
+  document.getElementById('groupDialog').style.display='none';
+}
+function _grpAddrPreview(){
+  const el=document.getElementById('grpAddrPreview');if(!el)return;
+  const v=_grpNameNorm((document.getElementById('grpAddrInput')||{}).value||'');
+  if(!v){el.textContent='';return;}
+  el.textContent=_grpNameValid(v)?_grpAddrShow(v):'쓸 수 없는 주소예요';
+}
+// 내가 만든 모음만 묶을 수 있다 (구독 모음은 발행 문서를 내가 못 고친다)
+function _grpRenderColls(){
+  const box=document.getElementById('grpCollList');if(!box)return;
+  box.innerHTML='';
+  const own=getVerseCollections().filter(c=>!c.importCode);
+  if(!own.length){
+    box.innerHTML='<div style="font-size:11px;color:var(--tx3);">묶을 말씀 모음이 없어요. 먼저 모음을 만들어주세요.</div>';
+    return;
+  }
+  own.forEach(c=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 2px;cursor:pointer;';
+    const on=_grpPick.has(c.id);
+    const mark=document.createElement('span');
+    mark.style.cssText='width:16px;flex-shrink:0;color:'+(on?'var(--ac-tx)':'var(--tx3)')+';';
+    mark.textContent=on?'✓':'·';
+    const nm=document.createElement('span');
+    nm.style.cssText='flex:1;min-width:0;font-size:13px;color:'+(on?'var(--tx)':'var(--tx2)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+    nm.textContent=c.name||'말씀 모음';
+    row.append(mark,nm);
+    row.onclick=()=>{ if(_grpPick.has(c.id))_grpPick.delete(c.id); else _grpPick.add(c.id); _grpRenderColls(); };
+    box.appendChild(row);
+  });
+}
+async function doSaveGroup(){
+  if(!_fbReady()){showToast('로그인 상태에서만 그룹을 만들 수 있어요');return;}
+  const addr=_grpNameNorm((document.getElementById('grpAddrInput')||{}).value||'');
+  const gname=((document.getElementById('grpNameInput')||{}).value||'').trim();
+  if(!_grpNameValid(addr)){showToast('영문 소문자로 시작하는 2~20글자 주소로 지어주세요');return;}
+  if(!gname){showToast('그룹 이름을 적어주세요');return;}
+  if(!_grpPick.size){showToast('묶을 말씀 모음을 하나 이상 골라주세요');return;}
+  const btn=document.getElementById('grpSaveBtn');
+  btn.disabled=true;
+  showToast('준비 중…');
+  try{
+    // 남이 쓰는 주소인지 먼저 본다
+    const prev=await window._fbDB.collection('shared').doc(addr).get();
+    if(prev.exists){
+      const d=prev.data()||{};
+      if(d.ownerUid!==window._fbUser.uid){showToast('이미 누가 쓰는 주소예요');return;}
+      if(d.kind!=='group'){showToast('그 주소는 이미 다른 데 쓰이고 있어요');return;}
+    }
+    // 고른 모음마다 공유 코드를 만들고 최신 내용을 발행한다
+    const codes=[];
+    for(const id of _grpPick){
+      const c=findColl(id);
+      if(!c)continue;
+      if(!c.shareCode){
+        const code=await _generateUniqueShareCode();
+        if(!code){showToast('공유 코드 생성에 실패했어요. 다시 시도해주세요');return;}
+        beforeSave();c.shareCode=code;save();
+      }
+      const ok=await _publishSharedColl(c);
+      if(!ok){showToast(`'${c.name||'말씀 모음'}' 발행에 실패했어요`);return;}
+      codes.push(c.shareCode);
+    }
+    // ⚠️ 구절 목록은 담지 않는다 — 내용은 6자리 문서에만 있다 (위 주석 참고)
+    await window._fbDB.collection('shared').doc(addr).set({
+      code:addr,kind:'group',name:gname,codes,
+      ownerUid:window._fbUser.uid,
+      ownerIdPrefix:((window._fbUser.email||window._fbUser.uid||'').slice(0,3)),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    beforeSave();
+    ST.settings.myGroup={addr,name:gname,ids:[..._grpPick]};
+    save();
+  }catch(e){showToast('그룹 저장 실패 — 네트워크·보안 규칙을 확인해주세요');return;}
+  finally{btn.disabled=false;}
+  closeGroupDialog();
+  _grpShowAddr(addr,gname);
+}
+// 만든 뒤 주소를 바로 나눌 수 있게 공유창을 그대로 쓴다
+function _grpShowAddr(addr,gname){
+  _shareDialogCode='';_shareDialogAddr=addr;
+  _shareDialogName=gname;
+  document.getElementById('shareCodeText').textContent=_grpAddrShow(addr);
+  document.getElementById('shareCodeText').style.cssText=
+    'font-size:18px;font-weight:800;letter-spacing:0;color:var(--tx);margin-bottom:4px;word-break:break-all;';
+  document.getElementById('shareDialogName').textContent=gname;
+  document.getElementById('shareDialogOverlay').style.display='block';
+  document.getElementById('shareDialog').style.display='block';
+}
+let _shareDialogCode=null,_shareDialogName='',_shareDialogAddr='';
 async function openShareDialog(id){
   const c=findColl(id);
   if(!c)return;
-  // 구독 모음: 발행자의 코드·주소를 그대로 재공유 (발행 문서는 발행자만 수정 가능)
+  _shareDialogAddr='';                 // 그룹 주소를 보여 준 뒤 남아 있지 않게
+  _shareResetBigText();
+  // 구독 모음: 발행자의 코드를 그대로 재공유 (발행 문서는 발행자만 수정 가능)
   if(c.importCode){
-    _shareDialogCollId=null;
     _shareDialogCode=c.importCode;_shareDialogName=c.importName||c.name||'말씀 모음';
-    _shareDialogAddr=c.importAddr||'';
-    _renderShareDialog();
+    document.getElementById('shareCodeText').textContent=c.importCode;
+    document.getElementById('shareDialogName').textContent=_shareDialogName;
     document.getElementById('shareDialogOverlay').style.display='block';
     document.getElementById('shareDialog').style.display='block';
     return;
@@ -10188,10 +10352,9 @@ async function openShareDialog(id){
   }
   const ok=await _publishSharedColl(c); // 최신 내용 반영
   if(!ok){showToast('공유 준비 실패 — 로그인·네트워크·보안 규칙을 확인해주세요');return;}
-  _shareDialogCollId=c.id;
   _shareDialogCode=c.shareCode;_shareDialogName=c.name||'말씀 모음';
-  _shareDialogAddr=c.shareName||'';
-  _renderShareDialog();
+  document.getElementById('shareCodeText').textContent=c.shareCode;
+  document.getElementById('shareDialogName').textContent=c.name||'말씀 모음';
   document.getElementById('shareDialogOverlay').style.display='block';
   document.getElementById('shareDialog').style.display='block';
 }
@@ -10199,69 +10362,22 @@ function closeShareDialog(){
   document.getElementById('shareDialogOverlay').style.display='none';
   document.getElementById('shareDialog').style.display='none';
 }
-// ── 이름 주소 정하기 ──
-function openShareNameDialog(){
-  if(!_shareDialogCollId)return;
-  const inp=document.getElementById('shareNameInput');
-  if(inp)inp.value=_shareDialogAddr||'';
-  _shareNamePreview();
-  if(inp&&!inp._b7bound){inp._b7bound=1;inp.addEventListener('input',_shareNamePreview);}
-  document.getElementById('shareNameOverlay').style.display='block';
-  document.getElementById('shareNameDialog').style.display='block';
-  setTimeout(()=>{try{inp&&inp.focus();}catch(e){}},50);
-}
-function closeShareNameDialog(){
-  document.getElementById('shareNameOverlay').style.display='none';
-  document.getElementById('shareNameDialog').style.display='none';
-}
-function _shareNamePreview(){
-  const el=document.getElementById('shareNamePreview');if(!el)return;
-  const v=_shareNameNorm((document.getElementById('shareNameInput')||{}).value||'');
-  if(!v){el.textContent='';return;}
-  el.textContent=_shareNameValid(v)?_shareAddrShow(v):'쓸 수 없는 이름이에요';
-}
-async function doClaimShareName(){
-  const c=findColl(_shareDialogCollId);
-  if(!c){closeShareNameDialog();return;}
-  if(!_fbReady()){showToast('로그인 상태에서만 정할 수 있어요');return;}
-  const name=_shareNameNorm((document.getElementById('shareNameInput')||{}).value||'');
-  if(!_shareNameValid(name)){showToast('영문 소문자로 시작하는 2~20글자로 지어주세요');return;}
-  if(!c.shareCode){showToast('먼저 공유 코드를 만들어주세요');return;}
-  showToast('확인 중…');
-  try{
-    const prev=await window._fbDB.collection('shared').doc(name).get();
-    if(prev.exists){
-      const d=prev.data()||{};
-      if(d.ownerUid!==window._fbUser.uid){showToast('이미 누가 쓰는 이름이에요');return;}
-      if(d.aliasOf&&String(d.aliasOf)!==c.shareCode){showToast('그 이름은 다른 모음이 쓰고 있어요');return;}
-    }
-    // 쪽지 한 장만 쓴다 — 내용은 늘 6자리 코드 문서에 있다.
-    // ⚠️ 이름을 바꿔도 옛 쪽지는 지우지 않는다. 그 주소를 이미 전달받은 사람이
-    //    있을 수 있어서다. 옛 주소도 같은 모음으로 계속 이어진다.
-    await window._fbDB.collection('shared').doc(name).set({
-      code:name,aliasOf:c.shareCode,name:c.name||'말씀 모음',
-      ownerUid:window._fbUser.uid,
-      ownerIdPrefix:((window._fbUser.email||window._fbUser.uid||'').slice(0,3)),
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }catch(e){showToast('이름 주소 저장 실패 — 네트워크·보안 규칙을 확인해주세요');return;}
-  beforeSave();c.shareName=name;save();
-  await _publishSharedColl(c);   // 발행 문서에도 주소를 적어 둔다 — 이미 구독 중인
-                                 // 사람이 매일 갱신 때 이 주소를 이어받는다
-  _shareDialogAddr=name;
-  closeShareNameDialog();
-  _renderShareDialog();
-  showToast('이름 주소를 정했어요');
+// 큰 글씨 칸을 6자리 코드 모양으로 되돌린다 (그룹 주소는 작게 눕혀 쓰므로)
+function _shareResetBigText(){
+  const el=document.getElementById('shareCodeText');
+  if(el)el.style.cssText='font-size:34px;font-weight:800;letter-spacing:8px;color:var(--tx);margin-bottom:4px;';
 }
 function _shareMessage(){
   if(_shareDialogAddr){
-    return `'${_shareDialogName}' 말씀 모음을 나눠요.\n아래 주소를 열면 바로 받아져요.\n${_shareAddrUrl(_shareDialogAddr)}`;
+    return `'${_shareDialogName}' 말씀 모음을 나눠요.\n아래 주소를 열면 바로 받아져요.\n${_grpAddrUrl(_shareDialogAddr)}`;
   }
   return `'${_shareDialogName}' 말씀 모음을 나눠요.\nBLOCK7 앱 → 말씀 모음 → + → 구독 받기에 코드 입력:\n${_shareDialogCode}`;
 }
 function shareCopyCode(){
-  const txt=_shareDialogAddr?_shareAddrUrl(_shareDialogAddr):_shareDialogCode;
-  const done=()=>showToast(_shareDialogAddr?'주소를 복사하였습니다. 말씀 모음을 함께 나누세요':'공유 코드를 복사하였습니다. 말씀 모음을 함께 나누세요');
+  const txt=_shareDialogAddr?_grpAddrUrl(_shareDialogAddr):_shareDialogCode;
+  const done=()=>showToast(_shareDialogAddr
+    ? '주소를 복사하였습니다. 교회 그룹을 함께 나누세요'
+    : '공유 코드를 복사하였습니다. 말씀 모음을 함께 나누세요');
   if(navigator.clipboard&&navigator.clipboard.writeText){
     navigator.clipboard.writeText(txt).then(done).catch(()=>{_fallbackCopy(txt);done();});
   }else{_fallbackCopy(txt);done();}
@@ -10346,7 +10462,6 @@ async function runSharedCollSync(){
         const d=doc.data();
         const r=_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'});
         c.importName=d.name||c.importName;
-        if(d.addr)c.importAddr=d.addr;   // 발행자가 이름 주소를 나중에 정해도 따라온다
         c.importOwner=d.ownerIdPrefix||(d.ownerUid?String(d.ownerUid).slice(0,3):c.importOwner);
         if(d.updatedAt&&d.updatedAt.toMillis)c.importUpdatedAt=d.updatedAt.toMillis();
         groups.push({collId:c.id,coll:c.name||'말씀 모음',source:'구독: '+(c.importName||d.name||'모음'),byCat:r.byCat,blocked:0,addedKeys:r.addedKeys||[]});
@@ -11089,7 +11204,7 @@ const _ESC_CLOSERS=[
   ['contactsModal',   ()=>closeContactsModal()],
   ['taskMemoModal',   ()=>closeTaskMemo()],
   ['cellTodoModal',   ()=>closeCellTodo()],
-  ['shareNameDialog', ()=>closeShareNameDialog()],
+  ['groupDialog',     ()=>closeGroupDialog()],
   ['subscribeDialog', ()=>closeSubscribeDialog()],
   ['shareDialog',     ()=>closeShareDialog()],
   ['hdrCalModal',     ()=>closeHdrCalendar()],
@@ -39083,6 +39198,10 @@ window._fbUser=null;
 window._fbDB=fbDB; // exposed for the global 푸시 알림 functions (defined outside this IIFE)
 let _fbUnsub=null;       // Firestore realtime listener unsubscribe fn
 let _fbApplyingRemote=false; // guard against write-triggered echo loops
+// 초기 클라우드 읽기가 성공했는가 — 이 블록 밖(교회 그룹 등)에서 물어보는 창구.
+// ⚠️ 이 값이 거짓이면 쓰기가 막혀 있다. 사람이 누르지 않은 변경은 그때
+//    **아무것도 하지 않아야** 한다 (인계문서 7-2-3).
+window._fbSyncReady=function(){return _fbInitLoaded;};
 let _fbInitLoaded=false; // becomes true only after the initial remote fetch succeeds; blocks writes until then so a failed load can't clobber remote with empty local state
 let _authMode='login';   // 'login' | 'signup'
 
@@ -41103,10 +41222,9 @@ window.fbStartListening=function(uid){
     // 이제 안전하게 쓰기를 허용할 수 있다 (빈 로컬로 덮을 위험이 사라짐)
     if(!_fbInitLoaded&&doc.metadata&&!doc.metadata.fromCache){
       _fbInitLoaded=true;
-      // 초기 읽기가 실패했던 기기 — 이제야 쓰기가 열렸으니 기다리던 초대장을
-      // 여기서 받는다. ⚠️ 이 스냅샷이 ST 에 **반영된 뒤**라야 한다. 지금은 아직
-      // 옛 ST 라, 여기서 바로 받으면 이미 받은 초대인지 판정이 어긋난다.
-      setTimeout(()=>{try{_inviteApply(true);}catch(e){}},0);
+      // 초기 읽기가 실패했던 기기 — 이제야 쓰기가 열렸으니 기다리던 초대를 받는다.
+      // ⚠️ 이 스냅샷이 ST 에 반영된 **뒤**라야 한다 (지금은 아직 옛 ST).
+      setTimeout(()=>{try{_joinApply(true);}catch(e){}},0);
     }
 
     // ⚠️ rev 필드가 없는 문서 = 아직 업데이트되지 않은 옛 버전 기기가
@@ -41221,11 +41339,10 @@ fbAuth.onAuthStateChanged(async user=>{
     _fbEnsureSync(); // 시작 시 병합으로 생긴 미전송분이 있으면 바로 올림
     // 이 기기·다른 기기가 보관해 둔 충돌을 읽어 온다 (실패해도 동기화에는 영향 없음)
     try{_cfList=_cfLoadLocal();_cfSyncVisibility();_cfFetchCloud();}catch(e){}
-    // ?g= 로 받은 초대장. ⚠️ **초기 클라우드 읽기가 성공했을 때만** 받는다
-    // (_fbInitLoaded). 실패한 기기는 쓰기가 막혀 있어 여기서 받으면 초대가
-    // 조용히 사라지고, 무엇보다 빈 상태가 클라우드를 덮어쓰는 길(7-2-3)에
-    // 사람이 누르지도 않은 변경을 얹게 된다. 못 받으면 적어 둔 채 다음 부팅에.
-    try{_inviteApply(_fbInitLoaded);}catch(e){}
+    // block7.my/tlc 로 들어온 초대. ⚠️ **초기 클라우드 읽기가 성공했을 때만**
+    // 받는다(_fbInitLoaded). 실패한 기기는 쓰기가 막혀 있는데, 그 길에 사람이
+    // 누르지도 않은 변경을 얹으면 안 된다(7-2-3). 못 받으면 적어 둔 채 다음 부팅에.
+    try{_joinApply(_fbInitLoaded);}catch(e){}
   } else {
     // 로그아웃: 다음 로그인에 이전 계정 데이터가 새지 않도록 로컬을 완전히 비움
     window._fbUser=null;
@@ -42253,13 +42370,13 @@ if(DEV_MODE){
   const ub=document.getElementById('userBadge'); if(ub)ub.style.display='none';
   document.getElementById('settingsUserEmail') && (document.getElementById('settingsUserEmail').textContent='개발 모드 — 로그인 없음');
   initAppUI();
-  // ?g= 초대장은 Firestore 를 읽어야 받을 수 있는데 개발본은 Firebase 가 꺼져
-  // 있다. 그래서 여기서는 **주소를 제대로 읽었다는 것만** 보여 주고 지운다
-  // (적어 두면 개발본에서 영영 못 받아 매번 같은 알림이 뜬다).
-  const _inv=_inviteRead();
-  if(_inv){
-    _inviteClear();
-    setTimeout(()=>showToast(`초대 주소 '${_inv}' 를 읽었어요 — 개발본은 Firebase 가 꺼져 있어 실제 구독은 운영본에서 됩니다`),800);
+  // 초대 주소는 Firestore 를 읽어야 받을 수 있는데 개발본은 Firebase 가 꺼져
+  // 있다. 주소를 제대로 읽었다는 것만 보여 주고 지운다 (적어 두면 개발본에서
+  // 영영 못 받아 매번 같은 알림이 뜬다).
+  const _j=_joinRead();
+  if(_j){
+    _joinClear();
+    setTimeout(()=>showToast(`초대 주소 '${_j}' 를 읽었어요 — 개발본은 Firebase 가 꺼져 있어 실제 참여는 운영본에서 됩니다`),800);
   }
 }
 </script>
