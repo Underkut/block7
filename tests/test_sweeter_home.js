@@ -348,8 +348,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
 {
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
-  sc.eq('처음엔 기본 여섯', _swLoadTiles().map(t=>t.k),
-        ['last','keep','recent','book','tag','react']);
+  sc.eq('처음엔 기본 일곱', _swLoadTiles().map(t=>t.k),
+        ['last','keep','coll','recent','book','tag','react']);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -375,7 +375,7 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   _SW_TILES=_swLoadTiles();
   sc.eq('남은 종류가 없다', _swSpareKinds(), []);
   _SW_TILES=[{k:'last',s:0,p:0}];
-  sc.eq('남은 다섯', _swSpareKinds().sort(), ['book','keep','react','recent','tag']);
+  sc.eq('남은 여섯', _swSpareKinds().sort(), ['book','coll','keep','react','recent','tag']);
 }
 
 // ═══ 10. BLOCK7 과 갈라져 있는가 ═══
