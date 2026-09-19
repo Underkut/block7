@@ -31,9 +31,9 @@ const V = (text, tags) => ({ ref: '테스트 1:1', krText: text, tags });
 console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 {
   const marks = Object.keys(box._TAGART_MARKS);
-  sc.eq('도안 50개 (성령 3종·고난 4종이라 묶음보다 넷 많다)', marks.length, 50);
-  sc.eq('묶음 46개', Object.keys(box._TAGART_MARKOF).length, 46);
-  sc.eq('별칭 369개', Object.keys(box.alias()).length, 369);
+  sc.eq('도안 59개 (성령 3 · 고난 4 · 은혜/공급/열매/열쇠 각 2)', marks.length, 59);
+  sc.eq('묶음 51개', Object.keys(box._TAGART_MARKOF).length, 51);
+  sc.eq('별칭 434개', Object.keys(box.alias()).length, 434);
   // v26-0826-6 에 큰 묶음을 쪼개며 새로 그린 열하나
   sc.eq('4차 도안 11개가 다 있다',
     ['m-holy','m-onefold','m-idol','m-newman','m-mature','m-create',
@@ -49,9 +49,9 @@ console.log('시나리오 1 — 도안과 표가 서로 맞는다');
 
   sc.eq('그리스도는 십자가 도안을 함께 쓴다',
     box._TAGART_MARKOF['그리스도'], box._TAGART_MARKOF['십자가']);
-  sc.eq('도안이 여럿인 묶음은 성령·고난 둘뿐이다',
+  sc.eq('도안이 여럿인 묶음 여섯',
     Object.entries(box._TAGART_MARKOF).filter(([, v]) => v.length > 1).map(([k]) => k).sort(),
-    ['고난', '성령'].sort());
+    ['고난', '공급', '성령', '열매', '열쇠', '은혜'].sort());
   sc.eq('고난은 도안 4종을 랜덤으로 쓴다',
     box._TAGART_MARKOF['고난'], ['m-narrow', 'm-narrowb', 'm-narrowc', 'm-narrowd']);
   sc.eq('모든 도안에 그릴 선이 있다',
@@ -104,7 +104,7 @@ console.log('\n시나리오 2-2 — HB 가 지시한 묶음 재편 (v26-0826-7)'
   ['기쁨', '희락', '즐거움', '행복'].forEach(t => sc.eq('"' + t + '" 은 기쁨', a[t], '기쁨'));
   sc.eq('기쁨은 반짝이는 별 도안', box._TAGART_MARKOF['기쁨'], ['m-spark']);
   ['상', '상급', '기업', '유업', '상속'].forEach(t => sc.eq('"' + t + '" 은 상급', a[t], '상급'));
-  sc.eq('공급은 원래 그림 그대로', of('복'), ['m-provide']);
+  sc.eq('공급은 원래 그림에 보리이삭이 더해졌다', of('복'), ['m-provide', 'm-barley']);
   sc.eq('상급은 새 그림(메달)', of('상급'), ['m-medal']);
   // ② 한마음 쪼개기 — 우선순위 / 연합(퍼즐) / 예수 중심은 십자가로
   ['우선순위', '가치', '한 가지', '정렬'].forEach(t => sc.eq('"' + t + '" 은 우선순위', a[t], '우선순위'));
@@ -113,6 +113,34 @@ console.log('\n시나리오 2-2 — HB 가 지시한 묶음 재편 (v26-0826-7)'
   sc.eq('연합은 퍼즐 한 조각', of('연합'), ['m-unite']);
   ['예수 중심', '그리스도 중심'].forEach(t => sc.eq('"' + t + '" 은 십자가', a[t], '십자가'));
   sc.eq('예수 중심은 십자가 그림', of('예수 중심'), ['m-cross']);
+}
+
+console.log('\n시나리오 2-4 — 6차로 새로 그린 아홉 (v26-0919-2)');
+{
+  const a = box.alias(), of = t => box._TAGART_MARKOF[a[t]];
+  // 새 묶음 다섯
+  sc.eq('"보물" 은 보화(상자)', of('보물'), ['m-chest']);
+  ['재물', '맘몬', '두 주인', '헛됨'].forEach(t => sc.eq('"' + t + '" 은 재물', a[t], '재물'));
+  sc.eq('재물은 지폐 도안', of('재물'), ['m-money']);
+  ['천국 열쇠', '매고 푸는 권세', '위임', '문', '문지기']
+    .forEach(t => sc.eq('"' + t + '" 은 열쇠', a[t], '열쇠'));
+  sc.eq('열쇠는 열쇠·열쇠구멍 둘을 랜덤으로', of('문'), ['m-key', 'm-keyhole']);
+  ['샘', '꿀', '말씀의 맛'].forEach(t => sc.eq('"' + t + '" 은 잔', a[t], '잔'));
+  sc.eq('잔은 물컵 도안', of('샘'), ['m-cup']);
+  ['관계', '우정', '예수님의 손', '예수님의 발', '아버지의 손']
+    .forEach(t => sc.eq('"' + t + '" 은 관계', a[t], '관계'));
+  sc.eq('관계는 맞잡은 두 손', of('관계'), ['m-hands']);
+  // 기존 묶음이 얻은 둘째 도안
+  sc.eq('은혜는 빗줄기 + 비구름', of('이른 비'), ['m-rain', 'm-cloud']);
+  sc.eq('공급은 그릇 + 보리이삭', of('이삭'), ['m-provide', 'm-barley']);
+  sc.eq('열매는 열매가지 + 포도송이', of('새 포도주'), ['m-fruit', 'm-grape']);
+  // ⚠ 옮겨 온 태그가 옛 묶음에 남아 있으면 안 된다
+  sc.eq("'보물' 은 우선순위에서 빠졌다", box._TAGART_GROUPSRC['우선순위'].includes('보물'), false);
+  sc.eq("'재물' 은 정욕에서 빠졌다", box._TAGART_GROUPSRC['정욕'].includes('재물'), false);
+  sc.eq("'관계' 는 임재에서 빠졌다",
+    box._TAGART_GROUPSRC['임재'].split('|').includes('관계'), false);
+  // ⚠ 벧전 2:7 의 '보배'는 그리스도를 가리키므로 보화로 옮기지 않는다
+  sc.eq("'보배' 는 그리스도에 그대로", a['보배'], '그리스도');
 }
 
 console.log('\n시나리오 2-3 — 강조 문구와 가까운 태그를 고른다 (v26-0827-5)');
