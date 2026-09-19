@@ -86,6 +86,32 @@ else
   rm -f "$_tmp3"
 fi
 
+# Sweeter 운영본은 **커밋하지 않는다** (커밋하면 block7.my 에도 올라가 같은
+# 도메인에 로그인이 두 벌이 된다 — CLAUDE.md '절대 하지 말 것').
+# 그래서 낡았는지 견줄 대상이 없다. 대신 **지금 만들어 보고** 제대로 나오는지 본다.
+if [ ! -x tools/make-sweeter-prod.sh ]; then
+  echo "tools/make-sweeter-prod.sh 가 없거나 실행 권한이 없습니다 ✗"
+  fail=1
+else
+  if ./tools/make-sweeter-prod.sh >/dev/null 2>&1      && grep -q 'const APP_PRODUCT = "sweeter";' build-sweeter/index.html      && grep -q 'const DEV_MODE = false;'        build-sweeter/index.html      && grep -q '<title>Sweeter</title>'         build-sweeter/index.html      && grep -q '"name": "Sweeter"'              build-sweeter/manifest.json; then
+    echo "Sweeter 운영본(build-sweeter/) 만들어짐 ✓"
+  else
+    echo "Sweeter 운영본을 만들지 못했습니다 ✗  → ./tools/make-sweeter-prod.sh 를 직접 돌려 보세요"
+    fail=1
+  fi
+fi
+
+# 운영본이 저장소에 들어오면 곧바로 막는다. 이것 하나가 '같은 도메인에 두 로그인'
+# 을 막는 마지막 문이다 — 실수로 git add 되는 것을 사람 눈에만 맡기지 않는다.
+if git ls-files --error-unmatch sweeter.html >/dev/null 2>&1    || git ls-files --error-unmatch build-sweeter >/dev/null 2>&1    || [ -n "$(git ls-files build-sweeter/ 2>/dev/null)" ]; then
+  echo "Sweeter 운영본이 저장소에 들어와 있습니다 ✗"
+  echo "   → block7.my 에도 올라가 같은 도메인에 로그인이 두 벌이 됩니다."
+  echo "   → git rm --cached 로 빼세요 (.gitignore 에 build-sweeter/ 가 있습니다)"
+  fail=1
+else
+  echo "Sweeter 운영본은 저장소 밖에 있음 ✓"
+fi
+
 # 구역 지도는 문서일 뿐이라 낡았다고 배포를 막지는 않는다 — 알림만 둔다.
 if [ ! -f docs/MAP.md ]; then
   echo "docs/MAP.md 가 없습니다 (경고)  → ./tools/make-map.sh"

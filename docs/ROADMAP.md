@@ -50,9 +50,53 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
 | 2 | 판 맨 위 안내 한 줄 | ✅ | v26-0919-4 · `_swSyncNotice` |
 | 3 | '말씀 모음' 타일 | ✅ | v26-0919-4 · `tests/test_sweeter_coll.js` |
 | 4 | **이 기기 전용 키를 제품별로 가르기** (Firebase 를 막던 그것) | ✅ | v26-0919-5 · `tests/test_product_syncbase.js` |
-| 5 | 도메인 사서 연결 + 띄울 자리 정하기 | ⏳ | HB |
-| 6 | 운영본 `sweeter.html` (Firebase 켠 것) + 그에 맞는 시험 | 미착수 | — |
-| 7 | 1·2단계 임시 다리와 '기존 화면' 단추 떼기 | 미착수 | — |
+| 5 | 도메인 사서 연결 (`sweeter.my` · 가비아 · 파이어베이스 호스팅 `sweeter7`) | ✅ | HB · DNS 퍼지는 중 |
+| 6 | 운영본 + 자동 배포 + "빈 기기로 로그인" 시험 | ✅ | v26-0919-6 · `tests/test_sweeter_prod.js` |
+| 7 | HB 가 열쇠 넣기 (`FIREBASE_SERVICE_ACCOUNT`) → 첫 배포 | ⏳ | HB |
+| 8 | 실기기 확인 — 로그인하면 내 말씀이 뜨는가 | ⏳ | HB |
+| 9 | 임시 다리(가져오기)와 '기존 화면' 단추 떼기 | 미착수 | — |
+
+### 6단계에서 한 일
+
+**⚠️ `sweeter.html` 을 저장소에 커밋하지 않는다.** 깃헙 페이지는 저장소의 모든
+파일을 `block7.my/…` 로 내보낸다 → 커밋하면 **`block7.my/sweeter.html` 이
+"같은 도메인에서 로그인이 켜진 Sweeter"** 가 되어 버린다. 바로 위 금지 조항이
+말리는 그 모양이다. 그래서 산출물은 **배포할 때만** 만든다:
+
+    tools/make-sweeter-prod.sh  →  build-sweeter/   (.gitignore 됨)
+      index.html      = index.html 에서 APP_PRODUCT·제목·OG 를 바꾼 것 (DEV_MODE 는 false 그대로)
+      manifest.json   = manifest-sweeter.json
+      icon.png · fonts/ · firebase-messaging-sw.js
+
+  → `index.html` 안의 `manifest.json` 링크를 **안 바꿔도 된다**. 담는 폴더가
+    다르니 이름은 그대로 두고 **내용물만** Sweeter 것으로 넣는다.
+
+**빈 기기로 로그인하면 클라우드가 어떻게 되는가** — 실제로 돌려 확인했다.
+로그인 경로가 타는 길은 이렇다:
+
+  `_localOwner()` → null (제 칸이 비었다) → `resetStateToDefaults()`
+  → `_fbLoadPersistedBase()` → null (5단계에서 가른 덕) → **병합을 아예 안 한다**
+  → `applyRemoteState(클라우드)` 로 통째로 받는다
+
+즉 3자 병합이 돌지 않는다 — 사고가 날 수 있는 길로 아예 들어가지 않는다.
+그 뒤 처음 저장할 때 `_psProject(ST, prior)` 가 BLOCK7 의 화면 설정을
+클라우드에 **되돌려 놓는다**. (시나리오 2·3·4 가 지킨다)
+
+**푸시는 손대지 않았다.** 새 도메인은 알림 권한이 `default` 라 **저절로 켜지지
+않는다** — 코드를 고칠 까닭이 없었다. 다만 아래 '아직 안 한 것' 참고.
+
+### 아직 안 한 것 (급하지 않음)
+
+- **Sweeter 에서 알림을 켜면 두 앱이 같이 울린다.** 발송 서버(`versepush`)는
+  클라우드의 `settings.notify` 를 보는데, 그 칸은 BLOCK7 것이다 (Sweeter 몫은
+  `productSettings.sweeter` 에 들어 있어 서버가 못 본다).
+  → 서버가 제품을 알아보게 만들기 전에는 **Sweeter 에서 알림을 켜지 말 것.**
+- **Sweeter 전용 공유 이미지(og:image)가 없다.** 지금은 이미지 없는 카드로
+  나간다 — BLOCK7 그림을 그대로 쓰면 이름과 그림이 어긋나서 뺐다.
+- `sweeter.my/…` 짧은 주소(교회 그룹의 `block7.my/tlc` 같은 것) — 지금은 없다.
+- 이른 부팅 키 둘(`b7v1_devw`·`b7v1_uiscale`)은 `_lsk()` 를 못 쓴다.
+  `LS_KEY` 보다 **먼저 도는 script 블록**에 있기 때문. 도메인이 갈리면
+  어차피 안 섞이므로 그대로 둔다.
 
 ### 4단계에서 한 일 — 2026-08-31 사고의 뿌리를 뽑았다
 

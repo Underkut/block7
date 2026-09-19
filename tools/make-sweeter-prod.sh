@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# index.html(BLOCK7 운영본) → build-sweeter/  (sweeter.my 에 올릴 Sweeter 운영본)
+#
+# ⚠️⚠️ 이 산출물은 **저장소에 커밋하지 않는다.**
+#    깃헙 페이지는 저장소의 모든 파일을 block7.my/… 로 내보낸다. 그래서
+#    sweeter.html 을 커밋하면 block7.my/sweeter.html 이 **"같은 도메인에서
+#    로그인이 켜진 Sweeter"** 가 되어 버린다 — CLAUDE.md 가 말리는 그 모양이다.
+#    → 배포할 때만 만든다. build-sweeter/ 는 .gitignore 에 있다.
+#      (.github/workflows/deploy-sweeter.yml 이 이 스크립트를 부른다)
+#
+# 개발본(make-sweeter.sh)과 **딱 한 가지가 다르다: DEV_MODE 를 안 건드린다.**
+# false 그대로 둬서 Firebase 가 켜진다 — 그게 이 파일의 존재 이유다.
+# 켜도 되는 까닭은 v26-0919-5 에서 기준점 키를 제품별로 갈랐기 때문이다
+# (tests/test_product_syncbase.js 시나리오 3·4 가 사고 재현과 증명을 들고 있다).
+#
+# 바꾸는 곳:
+#   ① 2번째 줄 주석                [production] → [SWEETER — production]
+#   ② const APP_PRODUCT            block7 → sweeter   ← 핵심 한 줄
+#   ③ apple-mobile-web-app-title   BLOCK7 → Sweeter
+#   ④ <title>                      → Sweeter
+#   ⑤ 공유 카드(OG·트위터)         BLOCK7 → Sweeter, 이미지 줄은 뺀다
+#
+# ⚠️ manifest 링크는 **안 바꾼다.** 담는 폴더가 다르므로 이름은 manifest.json
+#    그대로 두고 내용물만 manifest-sweeter.json 으로 갈아 넣는다.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+[ -f index.html ] || { echo "index.html 이 없습니다"; exit 1; }
+[ -f manifest-sweeter.json ] || { echo "manifest-sweeter.json 이 없습니다"; exit 1; }
+
+OUT=build-sweeter
+rm -rf "$OUT"
+mkdir -p "$OUT"
+
+python3 - <<'PY'
+import io,sys,re
+
+src=io.open('index.html',encoding='utf-8').read()
+
+m=re.search(r'^<!-- BLOCK7\s+(v\. \d{2}-\d{4}-\d+)\s+\[production\]\s+-->$',src,re.M)
+if not m:
+    sys.exit('2번째 줄 버전 주석을 못 찾았습니다. 형식: <!-- BLOCK7  v. YY-MMDD-N  [production]  -->')
+ver=m.group(1)
+out=src.replace(m.group(0),
+    '<!-- BLOCK7  %s  [SWEETER — production]  -->'%ver,1)
+
+def sub_once(text,a,b,what):
+    if text.count(a)!=1:
+        sys.exit('%s: %d곳 발견 (1곳이어야 함)'%(what,text.count(a)))
+    return text.replace(a,b,1)
+
+# ② 핵심 한 줄. 이것으로 저장 키·기준점 키·설정 칸막이가 전부 갈린다.
+out=sub_once(out,'const APP_PRODUCT = "block7";','const APP_PRODUCT = "sweeter";','APP_PRODUCT')
+
+# ⛔️ DEV_MODE 는 **건드리지 않는다.** 여기서 false 인지 한 번 확인만 한다 —
+#    실수로 true 가 섞여 들어오면 로그인이 없는 앱이 sweeter.my 에 올라간다.
+if out.count('const DEV_MODE = false;')!=1:
+    sys.exit('DEV_MODE 가 false 가 아닙니다 — 운영본을 만들 수 없습니다')
+
+out=sub_once(out,'<meta name="apple-mobile-web-app-title" content="BLOCK7">',
+                 '<meta name="apple-mobile-web-app-title" content="Sweeter">','앱 이름')
+out=sub_once(out,'<title>BLOCK 7</title>','<title>Sweeter</title>','탭 제목')
+
+# ⑤ 공유 카드. 이름과 설명은 갈고, **이미지는 뺀다** —
+#    BLOCK7 그림을 그대로 쓰면 이름과 그림이 어긋난다 (Sweeter 그림은 아직 없다).
+out=sub_once(out,'<meta name="description" content="아름다운 하루 · 일곱 블럭">',
+                 '<meta name="description" content="말씀과 함께하는 하루">','description')
+out=sub_once(out,'<meta property="og:site_name" content="BLOCK7">',
+                 '<meta property="og:site_name" content="Sweeter">','og:site_name')
+out=sub_once(out,'<meta property="og:title" content="BLOCK7">',
+                 '<meta property="og:title" content="Sweeter">','og:title')
+out=sub_once(out,'<meta property="og:description" content="아름다운 하루 · 일곱 블럭">',
+                 '<meta property="og:description" content="말씀과 함께하는 하루">','og:description')
+out=sub_once(out,'<meta property="og:url" content="https://block7.my/">',
+                 '<meta property="og:url" content="https://sweeter.my/">','og:url')
+out=sub_once(out,'<meta name="twitter:title" content="BLOCK7">',
+                 '<meta name="twitter:title" content="Sweeter">','twitter:title')
+out=sub_once(out,'<meta name="twitter:description" content="아름다운 하루 · 일곱 블럭">',
+                 '<meta name="twitter:description" content="말씀과 함께하는 하루">','twitter:description')
+# 이미지를 뺐으니 카드 종류도 큰 그림용이 아니라 작은 것으로 바꾼다
+out=sub_once(out,'<meta name="twitter:card" content="summary_large_image">',
+                 '<meta name="twitter:card" content="summary">','twitter:card')
+for line in ['<meta property="og:image" content="https://block7.my/og-image.png?v=260730d">\n',
+             '<meta property="og:image:width" content="1200">\n',
+             '<meta property="og:image:height" content="630">\n',
+             '<meta name="twitter:image" content="https://block7.my/og-image.png?v=260730d">\n']:
+    out=sub_once(out,line,'','공유 이미지 줄 빼기')
+
+io.open('build-sweeter/index.html','w',encoding='utf-8').write(out)
+print('build-sweeter/index.html — %s'%ver)
+PY
+
+cp manifest-sweeter.json "$OUT/manifest.json"
+cp icon.png "$OUT/icon.png"
+cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
+cp -r fonts "$OUT/fonts"
+
+echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"
