@@ -3,23 +3,24 @@
 // HB 가 정한 것 (2026-09-21):
 //  ① Sweeter 도 좌상단 로고를 둔다 — 탭 = 말씀 메뉴 · 롱터치 = 전체 업데이트
 //  ② 로고 메뉴 **맨 아래**에 형제 앱으로 가는 한 줄
-//     탭 = 앱 안에서 화면 바꾸기 · 롱터치 = 상대 앱 주소로 진짜 이동
+//     ⚠️ v26-0921-2 에서 **하나로 줄였다** — 누르면 언제나 상대 앱을 제 주소로
+//     연다. 예전에는 '탭=앱 안에서 화면 바꾸기 / 롱터치=주소' 둘이었는데
+//     HB 가 "너무 헷갈리고 기능도 불완전하다" 고 했다 (2026-09-21).
 //  ③ 우상단은 '기존 화면' 대신 톱니 — 탭 = 말씀 설정
 //  ④ Sweeter 전용 아이콘 (파비콘·홈화면)
 //
-// ⚠️ 가장 조심한 곳: **BLOCK7 안에서는 Sweeter 판을 깨우지 않는다.**
-//    APP_PRODUCT 가 기본값인 동안 Sweeter 장치는 잠들어 있어야 한다(CLAUDE.md).
-//    깨우면 타일 구성(swTiles)이 BLOCK7 의 공용 설정 칸에 들어가 클라우드가
-//    지저분해진다. 그래서 BLOCK7 → Sweeter 는 **주소로만** 간다 (시나리오 3).
+// ⚠️ 가장 조심한 곳: **어느 쪽에서도 앱 안에서 화면을 바꾸지 않는다.**
+//    특히 BLOCK7 안에서 Sweeter 판을 깨우면 안 된다 — APP_PRODUCT 가 기본값인
+//    동안 그 장치는 잠들어 있어야 하고(CLAUDE.md), 깨우면 타일 구성(swTiles)이
+//    BLOCK7 의 공용 설정 칸에 들어가 클라우드가 지저분해진다.
 const { SRC, sliceDev, makeScorer } = require('./_load');
 const sc = makeScorer();
 const fs = require('fs'), path = require('path');
 const R = f => path.join(__dirname, '..', f);
 
 let APP_PRODUCT='sweeter', DEV_MODE=false;
-let WENT=null, TOGGLED=0, CLOSED=0;
+let WENT=null, OPENED=null, OPEN_OK=true, CLOSED=0;
 function _swOn(){return APP_PRODUCT==='sweeter';}
-function swToggleHome(){TOGGLED++;}
 function closeLogoMenu(){CLOSED++;}
 global.location={get href(){return '';},set href(v){WENT=v;}};
 
@@ -30,11 +31,12 @@ function mkEl(id){return EL[id]={id,dataset:{},title:'',textContent:'',_src:null
   addEventListener(){},oncontextmenu:null};}
 ['logoMenuSister','logoMenuSisterIcon','logoMenuSisterLabel'].forEach(mkEl);
 global.document={getElementById:id=>EL[id]||null,querySelector:()=>null,addEventListener:()=>{}};
-global.window={addEventListener:()=>{}};
+global.window={addEventListener:()=>{},
+  open:(url,target,feat)=>{OPENED={url,target,feat};return OPEN_OK?{opener:{}}:null;}};
 
-eval(sliceDev('function _sisterApp(){', '\n// ── 켜고 끄기'));
+eval(sliceDev('function _sisterApp(){', '\nfunction _swBoot('));
 
-function as(prod,dev){APP_PRODUCT=prod;DEV_MODE=dev;WENT=null;TOGGLED=0;CLOSED=0;}
+function as(prod,dev){APP_PRODUCT=prod;DEV_MODE=dev;WENT=null;OPENED=null;OPEN_OK=true;CLOSED=0;}
 
 // ═══ 1. 어느 빌드에서 어디로 가는가 ═══
 console.log('시나리오 1 — 형제 앱의 이름·주소·그림');
@@ -56,52 +58,67 @@ console.log('시나리오 1 — 형제 앱의 이름·주소·그림');
   sc.eq('개발본이 운영 주소로 튀지 않는다', /block7\.my|sweeter\.my/.test(_sisterApp().href), false);
 }
 
-// ═══ 2. Sweeter 에서 탭 = 앱 안에서 바꾸기 ═══
-console.log('\n시나리오 2 — Sweeter 의 탭은 앱 안에서');
+// ═══ 2. 누르면 언제나 상대 앱을 제 주소로 연다 ═══
+console.log('\n시나리오 2 — 누르면 상대 앱이 열린다');
 {
   as('sweeter',false);
-  sc.eq('앱 안에서 바꿀 수 있다고 표시된다', _sisterApp().inApp, true);
-  sisterTap();
-  sc.eq('화면만 바꿨다', TOGGLED, 1);
-  sc.eq('주소로 가지 않았다', WENT, null);
+  sisterGo();
+  sc.eq('새 창으로 연다', [OPENED.url,OPENED.target], ['https://block7.my/','_blank']);
   sc.eq('메뉴는 닫았다', CLOSED, 1);
-}
+  sc.eq('보던 창은 그대로다 (주소를 갈아엎지 않는다)', WENT, null);
 
-// ═══ 3. ⚠️ BLOCK7 에서는 Sweeter 판을 깨우지 않는다 ═══
-console.log('\n시나리오 3 — BLOCK7 의 탭은 주소로 간다');
-{
-  as('block7',false);
-  sc.eq('앱 안에서 바꾸지 않는다', _sisterApp().inApp, false);
-  sisterTap();
-  sc.eq('⭐ Sweeter 판을 깨우지 않았다', TOGGLED, 0);
-  sc.eq('대신 주소로 갔다', WENT, 'https://sweeter.my/');
-  // 소스에도 그 까닭이 적혀 있어야 한다 — 다음 사람이 무심코 뒤집지 않게
-  sc.eq('까닭이 소스에 적혀 있다', SRC.includes('Sweeter 장치는 **잠들어 있어야**'), true);
-}
-
-// ═══ 4. 롱터치 = 상대 앱 주소로 진짜 이동 ═══
-console.log('\n시나리오 4 — 롱터치는 언제나 주소로');
-{
-  as('sweeter',false);
-  sisterGo();
-  sc.eq('Sweeter 에서 롱터치 → block7.my', WENT, 'https://block7.my/');
   as('block7',false);
   sisterGo();
-  sc.eq('BLOCK7 에서 롱터치 → sweeter.my', WENT, 'https://sweeter.my/');
+  sc.eq('BLOCK7 에서도 마찬가지', OPENED.url, 'https://sweeter.my/');
+  sc.eq('보던 창 그대로', WENT, null);
 }
 
-// ═══ 5. 롱터치 뒤 따라오는 탭은 버린다 ═══
-console.log('\n시나리오 5 — 롱터치 뒤의 헛탭');
+// ═══ 3. ⚠️ 앱 안에서 화면을 바꾸는 길은 아예 없다 ═══
+console.log('\n시나리오 3 — 앱 안에서 바꾸지 않는다');
 {
-  // 손을 뗄 때 click 이 한 번 더 나는 것이 모바일의 버릇이다.
-  // 그대로 두면 "주소로 갔다가 곧바로 화면도 바뀌는" 겹침이 난다.
+  // HB 가 "너무 헷갈린다" 고 해서 v26-0921-2 에서 통째로 뺐다.
+  sc.eq('swToggleHome() 이 없다', /function swToggleHome\(/.test(SRC), false);
+  sc.eq("'Sweeter 홈' 되돌아가기 단추도 없다", SRC.includes('id="swBackBtn"'), false);
+  sc.eq('_swClassic 도 없다', /_swClassic/.test(SRC), false);
+  sc.eq('메뉴 줄은 sisterGo 하나만 부른다',
+        SRC.includes('id="logoMenuSister" onclick="sisterGo()"'), true);
+  sc.eq('sisterTap 은 사라졌다', /function sisterTap\(/.test(SRC), false);
+  // ⭐ BLOCK7 에서는 Sweeter 판이 깨어날 길이 없어야 한다 —
+  //    판을 켜는 곳은 _swBoot 하나뿐이고, 그 첫 줄이 문지기다.
+  sc.eq('⭐ _swBoot 의 첫 줄이 문지기다',
+        /function _swBoot\(\)\{\s*\n\s*if\(!_swOn\(\)\)return;/.test(SRC), true);
+  sc.eq('판을 켜는 곳은 한 군데뿐', (SRC.match(/classList\.add\('on'\)/g)||[]).length>=1, true);
+}
+
+// ═══ 4. 팝업이 막히면 이 창에서라도 연다 ═══
+console.log('\n시나리오 4 — 팝업이 막혔을 때');
+{
+  // 아무 일도 안 일어나는 것이 가장 나쁘다 — 눌렀는데 반응이 없으면 고장으로 읽힌다.
   as('sweeter',false);
-  EL.logoMenuSister.dataset.lpFired='1';
-  sisterTap();
-  sc.eq('헛탭은 아무 일도 안 한다', [TOGGLED,WENT], [0,null]);
-  sc.eq('표시는 지워진다', EL.logoMenuSister.dataset.lpFired, '');
-  sisterTap();
-  sc.eq('그다음 진짜 탭은 먹는다', TOGGLED, 1);
+  OPEN_OK=false;
+  sisterGo();
+  sc.eq('이 창에서라도 연다', WENT, 'https://block7.my/');
+
+  as('block7',false);
+  OPEN_OK=false;
+  sisterGo();
+  sc.eq('BLOCK7 에서도', WENT, 'https://sweeter.my/');
+}
+
+// ═══ 5. ⚠️ 새 창이 떴으면 보던 창은 그대로 둔다 ═══
+console.log('\n시나리오 5 — 두 창이 함께 떠나지 않는다');
+{
+  // ⚠️ 여기가 실제로 터졌던 자리다 (2026-09-21).
+  //    window.open 에 'noopener' 를 주면 규격상 **창을 열고도 null** 을 돌려준다.
+  //    그것을 "막혔다" 로 읽어 되돌림까지 돌면 새 창이 뜨는 동시에
+  //    보던 창도 떠나 버린다. 브라우저에서 눌러 보고서야 잡혔다.
+  as('sweeter',false);
+  sisterGo();
+  sc.eq('창은 열렸고', OPENED.url, 'https://block7.my/');
+  sc.eq('⭐ 보던 창은 그대로다', WENT, null);
+  sc.eq('noopener 를 주지 않는다 (null 을 돌려받는 함정)',
+        /noopener/.test(OPENED.feat||''), false);
+  sc.eq('소스에 그 까닭이 적혀 있다', SRC.includes("'noopener' 를 **주지 말 것.**"), true);
 }
 
 // ═══ 6. 메뉴 한 줄이 제품에 맞게 채워진다 ═══
@@ -111,12 +128,16 @@ console.log('\n시나리오 6 — 메뉴 한 줄');
   _sisterFill();
   sc.eq('이름', EL.logoMenuSisterLabel.textContent, 'BLOCK7');
   sc.eq('그림', EL.logoMenuSisterIcon._src, 'icon-block7.png');
-  sc.eq('안내말에 롱터치를 알려 준다', /길게 누르면/.test(EL.logoMenuSister.title), true);
+  sc.eq('안내말은 한 가지뿐', EL.logoMenuSister.title, 'BLOCK7 열기');
   as('block7',false);
   _sisterFill();
   sc.eq('BLOCK7 에서는 Sweeter 로', EL.logoMenuSisterLabel.textContent, 'Sweeter');
   sc.eq('그림도 바뀐다', EL.logoMenuSisterIcon._src, 'icon-sweeter.png');
-  sc.eq('앱 안에서 못 바꾸니 그 말은 없다', /길게 누르면/.test(EL.logoMenuSister.title), false);
+  sc.eq('BLOCK7 쪽 안내말도 한 가지뿐', EL.logoMenuSister.title, 'Sweeter 열기');
+  // ⚠️ 길이 둘이었던 흔적이 남아 있으면 안 된다 — HB 가 헷갈린다고 했다.
+  //    (톱니의 '길게 누르면 일반 설정' 은 **다른 자리**라 그대로 둔다)
+  sc.eq('형제 줄에 롱터치를 달지 않는다', /sisterLp/.test(SRC), false);
+  sc.eq('형제 줄 안내말에 롱터치 이야기가 없다', /길게 누르면.*주소|주소.*길게 누르면/.test(SRC), false);
 }
 
 // ═══ 7. 화면에 박아 둔 것들 ═══
@@ -131,7 +152,6 @@ console.log('\n시나리오 7 — 로고·톱니·파비콘');
   sc.eq('⭐ 톱니 탭=말씀설정 · 롱터치=일반설정',
         SRC.includes('attachRepeatBtnInteraction(setBtn,()=>openVerseSettingsFromLogo(),()=>openSettings())'), true);
   sc.eq("'기존 화면' 단추는 없앴다", SRC.includes('>기존 화면<'), false);
-  sc.eq("되돌아오는 'Sweeter 홈' 단추는 남겨 뒀다", SRC.includes('id="swBackBtn"'), true);
   // 제목 롱터치(가져오기)는 뗐다 — 로고 묶음의 '전체 업데이트' 와 겹친다
   sc.eq('제목 롱터치는 뗐다', /ttl\.dataset\.swlp/.test(SRC), false);
   sc.eq('가져오기는 안내 줄이 맡는다', SRC.includes('function _swSyncNotice()'), true);
