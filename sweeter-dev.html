@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4905,6 +4905,9 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   -webkit-tap-highlight-color:transparent;}
 .sw-iconbtn svg{width:19px;height:19px;display:block;}
 .sw-iconbtn:active{opacity:.55;}
+/* 개발자 버전 — 톱니 위쪽 빈 자리. 자리를 차지하지 않으므로 다른 칸이 안 밀린다. */
+.sw-bar{position:relative;}
+.sw-verbadge{right:16px;bottom:auto;top:2px;}
 /* BLOCK7 에서 말씀을 가져오라는 안내 한 줄.
    상자를 만들지 않는다 (UI 원칙) — 글자와 단추만 둔다. */
 .sw-notice{display:none;align-items:center;justify-content:space-between;gap:10px;
@@ -5244,7 +5247,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-5";
+const APP_VERSION = "v. 26-0921-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7825,14 +7828,18 @@ window._fbScriptsReady=new Promise(resolve=>{
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
       <button class="sw-barbtn" id="swEditBtn" aria-pressed="false" onclick="swToggleEdit()">편집</button>
+      <!-- 개발자 계정에서만 뜨는 버전 (_syncDevVerBadge 가 클래스로 훑어 채운다).
+           ⚠️ 자리를 차지하지 않는다 — position:absolute 로 톱니 **위쪽 빈 곳**에
+              얹을 뿐이라 다른 사용자의 화면은 한 칸도 달라지지 않는다. -->
+      <div class="settings-verbadge sw-verbadge" style="display:none;"></div>
       <!-- 톱니 — 탭 = 말씀 설정 · 롱터치 = 일반 설정(계정·로그아웃).
            ⚠️ 롱터치를 빼면 **로그아웃으로 가는 길이 아예 막힌다** — openSettings() 로
               들어가는 문은 기존 화면 안의 톱니 하나뿐이었다. -->
       <button class="sw-iconbtn" id="swSetBtn" aria-label="말씀 설정" title="말씀 설정 (길게 누르면 일반 설정)">
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="10" cy="10" r="5.7" stroke-width="1.4"/>
-          <circle cx="10" cy="10" r="2.3" stroke-width="1.4"/>
-          <path d="M15.70 10.00L18.00 10.00M14.03 14.03L15.66 15.66M10.00 15.70L10.00 18.00M5.97 14.03L4.34 15.66M4.30 10.00L2.00 10.00M5.97 5.97L4.34 4.34M10.00 4.30L10.00 2.00M14.03 5.97L15.66 4.34" stroke-width="1.9"/>
+        <!-- BLOCK7 설정 단추와 **같은 그림**이다 (v26-0921-6, HB). 테두리·박스만 없다. -->
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10" cy="10" r="2.5"/>
+          <path d="M10.6 3.2h-1.2a.8.8 0 0 0-.78.62l-.27 1.2a6.5 6.5 0 0 0-1.43.83l-1.17-.4a.8.8 0 0 0-.95.35L4.17 7.1a.8.8 0 0 0 .15 1l.92.83a6.5 6.5 0 0 0 0 1.66l-.92.83a.8.8 0 0 0-.15 1l.6 1.3a.8.8 0 0 0 .95.35l1.17-.4c.42.34.9.62 1.43.83l.27 1.2a.8.8 0 0 0 .78.62h1.2a.8.8 0 0 0 .78-.62l.27-1.2a6.5 6.5 0 0 0 1.43-.83l1.17.4a.8.8 0 0 0 .95-.35l.6-1.3a.8.8 0 0 0-.15-1l-.92-.83a6.5 6.5 0 0 0 0-1.66l.92-.83a.8.8 0 0 0 .15-1l-.6-1.3a.8.8 0 0 0-.95-.35l-1.17.4a6.5 6.5 0 0 0-1.43-.83l-.27-1.2a.8.8 0 0 0-.78-.62z"/>
         </svg>
       </button>
     </div>
@@ -11224,7 +11231,10 @@ function openVerseSettingsModal(){
   renderVerseSettingsModal();
   applyVerseUiLevel();
   _syncDevVerBadge();
-  switchVerseSettingsTab('top',null,'direct');
+  _vsetTitleSync();
+  // ⚠️ 'top' 을 못 박지 않는다 — Sweeter 에서는 그 탭이 아예 없어서
+  //    switchVerseSettingsTab('top') 이 그냥 돌아 나가고 **아무 탭도 안 열린다.**
+  switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct');
   document.getElementById('verseSettingsOverlay').classList.add('open');
   _initVerseSettingsSwipe();
 }
@@ -11350,7 +11360,18 @@ const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll'];
 // ⚠️ 일반설정창의 _stabList() 와 같은 함정 — 자리(idx)는 항상 **보이는 목록** 기준이다.
 function _vstabList(){
   const lv=verseUiLevel();
-  return VERSE_SETTINGS_TABS.filter(id=>!((id==='widget'||id==='share')&&lv==='easy'));
+  return VERSE_SETTINGS_TABS.filter(id=>{
+    if((id==='widget'||id==='share')&&lv==='easy')return false;
+    // Sweeter 에는 BLOCK7 화면이 없다 — '상단 말씀'(할일 화면 위에 띄우는 띠)과
+    // '말씀 위젯'(할일 화면의 카드)은 가리킬 대상 자체가 없다 (v26-0921-6, HB).
+    if(typeof _swOn==='function'&&_swOn()&&(id==='top'||id==='widget'))return false;
+    return true;
+  });
+}
+// 설정창 제목 — Sweeter 에서는 말씀만 다루므로 그냥 '설정' 이다.
+function _vsetTitleSync(){
+  const el=document.querySelector('#verseSettingsPanel .settings-title');
+  if(el)el.textContent=(typeof _swOn==='function'&&_swOn())?'설정':'말씀 설정';
 }
 let _currentVerseSettingsTabIdx=0;
 function switchVerseSettingsTab(id,btn,direction){
@@ -14596,9 +14617,18 @@ function _shotDraw(o){
     const _blk7NumFont=getComputedStyle(document.documentElement).getPropertyValue('--font-number').trim()||"'Pretendard',-apple-system,sans-serif";
     const _blk7MonoFont=`400 ${fs}px 'IBM Plex Mono',monospace`;
     const _blk7NumFontFull=`400 ${fs}px ${_blk7NumFont}`;
-    const LS=fs*0.18;
-    let wAll=0;[...'BLOCK7'].forEach(c=>{
-      ctx.font=/\d/.test(c)?_blk7NumFontFull:_blk7MonoFont;
+    // 워드마크는 제품마다 다르다 (v26-0921-6, HB).
+    //   BLOCK7  : 'BLOCK'(모노) + '7'(숫자 글꼴·강조색) — 예전 그대로
+    //   Sweeter : 'Sweeter' 한 덩어리를 제목 글꼴로. 자간도 좁게 —
+    //             0.18em 은 대문자 워드마크용이라 소문자에는 너무 벌어진다.
+    const _mkSw=(typeof _swOn==='function'&&_swOn());
+    const _blk7DispFace=getComputedStyle(document.documentElement).getPropertyValue('--font-display').trim()
+                        ||"'Pretendard',-apple-system,sans-serif";
+    const _blk7DispFont=`600 ${fs}px ${_blk7DispFace}`;
+    const MARK=_mkSw?'Sweeter':'BLOCK7';
+    const LS=fs*(_mkSw?0.05:0.18);
+    let wAll=0;[...MARK].forEach(c=>{
+      ctx.font=_mkSw?_blk7DispFont:(/\d/.test(c)?_blk7NumFontFull:_blk7MonoFont);
       wAll+=ctx.measureText(c).width+LS;
     });wAll-=LS;
     // 우상단 액션 스택의 맨 위 지점 — 그보다 위에 자리가 있어야 우상단에 놓는다
@@ -14639,10 +14669,15 @@ function _shotDraw(o){
       if(lx<pad)lx=pad;             // 그래도 자리가 없을 때만 좌상단
     }
     ctx.textAlign='left';ctx.textBaseline='top';
-    ctx.font=_blk7MonoFont;
-    ctx.fillStyle=th.tx2;lx+=_cardTextLS(ctx,'BLOCK',lx,fy,LS,'left')+LS;
-    ctx.font=_blk7NumFontFull;
-    ctx.fillStyle=th.ac;_cardTextLS(ctx,'7',lx,fy,LS,'left');
+    if(_mkSw){
+      ctx.font=_blk7DispFont;
+      ctx.fillStyle=th.tx2;_cardTextLS(ctx,MARK,lx,fy,LS,'left');
+    }else{
+      ctx.font=_blk7MonoFont;
+      ctx.fillStyle=th.tx2;lx+=_cardTextLS(ctx,'BLOCK',lx,fy,LS,'left')+LS;
+      ctx.font=_blk7NumFontFull;
+      ctx.fillStyle=th.ac;_cardTextLS(ctx,'7',lx,fy,LS,'left');
+    }
   }
   return cv;
 }
@@ -14882,6 +14917,9 @@ function _renderSharePreview(){
 function _syncShareSettingsUI(){
   const s=ST.settings||{},set=(id,on)=>document.getElementById(id)?.classList.toggle('on',!!on);
   set('imgLeft',s.imgInclLeft!==false);set('imgActions',s.imgInclActions!==false);set('imgBlock7',s.imgInclBlock7!==false);
+  // 단추 글자도 제품 이름으로 — 켜고 끄는 대상이 무엇인지 그대로 보이게
+  const _b7btn=document.getElementById('imgBlock7');
+  if(_b7btn)_b7btn.textContent=(typeof _swOn==='function'&&_swOn())?'Sweeter':'BLOCK7';
   set('imgHi',s.imgHi!==false);            // 강조를 이미지에 넣을지 (종류는 화면 설정 그대로)
   set('imgArt',s.imgInclArt!==false);      // 태그 그림을 이미지에 넣을지 (v26-0825-3)
   _syncHiUI();                             // 전체화면 탭의 강조 칸도 같은 창에 있다
