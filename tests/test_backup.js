@@ -14,14 +14,18 @@ const sc = makeScorer();
 
 const fn = SRC.slice(SRC.indexOf('function exportBackup(){'),
                      SRC.indexOf('// Filename format: B7bak-'));
+// v26-0921-8 — 백업의 '속' 은 _backupPayload() 로 빠졌다 (제품마다 담는 것이 다르다).
+const pay = SRC.slice(SRC.indexOf('function _backupPayload(){'),
+                      SRC.indexOf('function exportBackup(){'));
 
 console.log('시나리오 1 — 백업에 담기는 것이 빠지지 않는다');
 {
-  ['secs:SECS', 'secArchive:ST.secArchive||[]', 'settings:ST.settings',
-   'days:ST.days', 'vis:ST.vis', 'collapsed:ST.collapsed'
-  ].forEach(k => sc.eq('담긴다: ' + k, fn.includes(k), true));
-  sc.eq('앱 이름표', fn.includes("app:'BLOCK7'"), true);
-  sc.eq('내보낸 시각', fn.includes('exportedAt:new Date().toISOString()'), true);
+  ['p.secs=SECS;', 'p.secArchive=ST.secArchive||[];', 'p.settings=ST.settings;',
+   'p.days=ST.days;', 'p.vis=ST.vis;', 'p.collapsed=ST.collapsed;'
+  ].forEach(k => sc.eq('담긴다: ' + k, pay.includes(k), true));
+  sc.eq('앱 이름표', pay.includes("app:sw?'Sweeter':'BLOCK7'"), true);
+  sc.eq('내보낸 시각', pay.includes('exportedAt:new Date().toISOString()'), true);
+  sc.eq('exportBackup 은 그 속을 그대로 쓴다', fn.includes('const payload=_backupPayload();'), true);
 }
 
 console.log('\n시나리오 2 — 아이폰은 공유 시트, 나머지는 예전 방식');

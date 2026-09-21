@@ -26,17 +26,21 @@ console.log('시나리오 1 — 탭 목록');
   const t=_vstabList();
   sc.eq('상단 말씀 탭 없음', t.includes('top'), false);
   sc.eq('말씀 위젯 탭 없음', t.includes('widget'), false);
-  sc.eq('나머지는 그대로', t, ['view','alarm','full','share','coll']);
+  // '계정' 은 거꾸로 — Sweeter 에만 붙는다 (v26-0921-8, HB 4-5)
+  sc.eq('계정 탭이 붙는다', t.includes('account'), true);
+  sc.eq('나머지는 그대로', t, ['view','alarm','full','share','coll','account']);
 
-  // ⭐ BLOCK7 은 예전 그대로여야 한다
+  // ⭐ BLOCK7 은 예전 그대로여야 한다 — '계정' 은 일반설정창에 이미 있으므로 여긴 없다
   APP_PRODUCT='block7';
-  sc.eq('⭐ BLOCK7 은 일곱 탭 그대로', _vstabList(), VERSE_SETTINGS_TABS);
+  sc.eq('⭐ BLOCK7 은 일곱 탭 그대로',
+        _vstabList(), ['top','widget','view','alarm','full','share','coll']);
+  sc.eq('⭐ BLOCK7 말씀설정창엔 계정 탭 없음', _vstabList().includes('account'), false);
 
   // 등급 규칙은 두 제품에서 그대로 걸린다
   LV='easy';
   sc.eq('BLOCK7 이지: 위젯·공유가 빠진다', _vstabList(), ['top','view','alarm','full','coll']);
   APP_PRODUCT='sweeter';
-  sc.eq('Sweeter 이지: 넷만 남는다', _vstabList(), ['view','alarm','full','coll']);
+  sc.eq('Sweeter 이지: 넷 + 계정', _vstabList(), ['view','alarm','full','coll','account']);
   LV='power';
 }
 
