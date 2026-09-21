@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-12  [production]  -->
+<!-- BLOCK7  v. 26-0921-13  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5167,6 +5167,16 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    ⚠️ 끌기 시작한 뒤에는 document 의 touchmove 가 기본 동작을 막는다. 그때는
       아직 스크롤이 시작되지 않았으므로 preventDefault 가 먹는다. */
 .sw-board.edit .sw-tile{touch-action:pan-y;}
+/* ── PC: 자판이 보고 있는 위젯 (v26-0921-13, HB) ──────────
+   ⚠️ **자판을 쓴 뒤에만** 뜬다 (_KBW 가 null 인 동안에는 아무 데도 안 붙는다).
+   ⚠️ 테두리를 새로 두르지 않는다 (UI 원칙) — 안쪽 선 하나.
+   ⚠️⚠️ 선은 반드시 위젯 **안쪽**(inset:0)에 그린다. `.rp-widget` 은
+      overflow:hidden 이라 바깥으로 넓혀 그리면 **통째로 잘려 하나도 안 보인다** —
+      첫 시안이 그랬다 (실제 브라우저에서 3단을 열어 보고 알았다). */
+.kb-wfocus{position:relative;}
+.kb-wfocus::after{content:"";position:absolute;inset:0;border-radius:12px;
+  box-shadow:inset 0 0 0 2px var(--ac);pointer-events:none;z-index:4;}
+
 /* ── PC: 자판이 보고 있는 타일 (v26-0921-12, HB) ─────────
    ⚠️ **자판을 쓴 뒤에만** 뜬다. 손가락으로만 쓰는 사람의 화면은 한 칸도
       달라지지 않는다 (_SW_KB 가 -1 인 동안에는 아무 타일에도 안 붙는다).
@@ -5349,7 +5359,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-12";
+const APP_VERSION = "v. 26-0921-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -11482,6 +11492,20 @@ const _ESC_CLOSERS=[
 ];
 function _escShown(el){
   return el.getClientRects().length>0 && getComputedStyle(el).visibility!=='hidden';
+}
+// 판 위에 **다른 화면이 떠 있는가**. 자판 단축키(블럭7·스위터 둘 다)가 이 하나를
+// 본다 — 위에 팝업이 있으면 자판은 그 팝업의 것이다.
+// ⚠️ 새 팝업이 생길 때마다 여기를 고치지 않아도 되게 **ESC 표를 그대로 되쓴다.**
+//    두 벌로 두면 한쪽만 고쳐져 '닫히는데 자판은 뒤로 새는' 자리가 생긴다.
+function _kbOverlayOpen(){
+  const a=document.getElementById('authScreen');
+  if(a&&_escShown(a))return true;
+  for(const[id,,test]of _ESC_CLOSERS){
+    const el=document.getElementById(id);
+    if(!el)continue;
+    if(test?test(el):_escShown(el))return true;
+  }
+  return false;
 }
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||e.defaultPrevented)return;
@@ -27377,6 +27401,7 @@ function renderLayout(){
   _vcLayoutAll(pc);
   _rollFit(pc);          // 헤더 이름이 자리보다 긴지는 그린 다음에야 잴 수 있다
   _rollStart();
+  if(typeof _kbWSync==='function')_kbWSync();   // 다시 그리면 자판 표시가 날아간다
 }
 window.renderRightPanel=renderLayout; // 기존 호출부 호환 별칭
 // 위젯 추가 + 버튼 (미니멀: 테두리·원 없이 + 만) — 누르면 위젯 설정 팝업
@@ -32401,6 +32426,301 @@ document.addEventListener('keydown',e=>{
     }
   }
 });
+
+
+// ══════════════════════════════════════════════════════════
+//  PC 자판 — 위젯 사이 오가기 · 할일 다루기 (v26-0921-13, HB)
+// ──────────────────────────────────────────────────────────
+//  스위터 홈의 자판(_swBoardKey)을 블럭7 2·3단으로 옮겨 온 것이다.
+//
+//  ⚠️⚠️ **지금까지의 단축키는 한 글자도 안 바뀐다.** 새 것은 전부 '레벨 1' 이다 —
+//     위젯 포커스를 잡기 전(_KBW === null)에는 화살표·Enter·⌘⇧ 가 예전 그대로고,
+//     할일 단축키는 글자를 치는 중이 아닐 때만 돈다.
+//
+//    W / Shift+W   위젯 포커스 켜기 → 다음 / 이전 위젯
+//    ← → ↑ ↓       (포커스 중) 위젯 **사이** — 화면에 놓인 자리로 잰다
+//    [  ]          위젯 **안** — 달 넘기기 · 카드 넘기기 · 주 넘기기 · 날짜 넘기기
+//    Enter         그 위젯 안으로 (할일=첫 할일 고르기 · 말씀카드=전체화면)
+//    Esc           포커스를 놓는다 → 화살표가 다시 예전 것이 된다
+//
+//  ⭐ **스위터와 좌/우의 뜻이 다르다 — 일부러 다르다.** 스위터 홈은 한 판을
+//     세로로 훑는 구조라 좌/우가 '타일 안'이어야 했다. 블럭7 2·3단은
+//     **컬럼이 본질**이라, 좌/우가 '옆 컬럼'이 아니면 오히려 헛돈다.
+//     위젯 안은 `[` `]` 가 맡는다 (한글 자판에서도 같은 자리 — e.code 로 본다).
+// ══════════════════════════════════════════════════════════
+// 지금 보고 있는 위젯의 **이름**(data-wtype). null = 아직 아무 데도.
+// ⚠️ 번호가 아니라 이름으로 기억한다. renderLayout() 이 판을 통째로 다시 그리므로
+//    번호로 잡아 두면 다시 그릴 때마다 엉뚱한 위젯을 가리킨다.
+let _KBW=null;
+// 2·3단일 때만 위젯이라는 것이 있다 (1단은 할일뷰 하나뿐).
+function _kbWOn(){
+  const b=document.body;
+  return b.classList.contains('split-d')&&(b.classList.contains('lay2')||b.classList.contains('lay3'));
+}
+// 화면에 놓인 차례대로 — 컬럼 순서(좌·중·우)가 곧 DOM 순서다.
+// 3단 주간뷰 패널은 위젯 목록 밖에 있으므로 'weekly' 라는 이름으로 함께 세운다.
+function _kbWEls(){
+  const out=[...document.querySelectorAll('#pageContent .rp-widget[data-wtype]')]
+    .filter(el=>el.getClientRects().length>0);
+  const pane=document.getElementById('weeklyPane');
+  if(pane&&pane.getClientRects().length>0){pane.dataset.wtype='weekly';out.push(pane);}
+  return out;
+}
+function _kbWName(el){return el?(el.dataset.wtype||''):'';}
+// 다시 그리면 표시가 날아가므로 renderLayout() 끝에서 다시 붙인다.
+function _kbWSync(){
+  document.querySelectorAll('.kb-wfocus').forEach(el=>el.classList.remove('kb-wfocus'));
+  if(_KBW==null)return;
+  const els=_kbWEls(),hit=els.find(el=>_kbWName(el)===_KBW);
+  if(!hit){_KBW=null;return;}          // 그 위젯이 사라졌다 (설정에서 껐거나 1단이 됐다)
+  hit.classList.add('kb-wfocus');
+}
+function _kbWSet(name,scroll){
+  _KBW=name||null;
+  _kbWSync();
+  if(scroll===false||_KBW==null)return;
+  const hit=_kbWEls().find(el=>_kbWName(el)===_KBW);
+  if(hit&&hit.scrollIntoView)
+    try{hit.scrollIntoView({block:'nearest',behavior:_swNoMotion()?'auto':'smooth'});}catch(_){}
+}
+// 차례대로 한 칸 (W · Shift+W). 끝에서는 돌아온다.
+function _kbWStep(d){
+  const els=_kbWEls();
+  if(!els.length)return false;
+  const at=els.findIndex(el=>_kbWName(el)===_KBW);
+  _kbWSet(_kbWName(els[at<0?(d>0?0:els.length-1):(at+d+els.length)%els.length]));
+  return true;
+}
+// 화면에 놓인 자리로 옮긴다 — 스위터 타일 판(_swKbGo)과 같은 얼개다.
+// 위/아래는 가장 가까운 줄 안에서 가로로 가장 많이 겹치는 것,
+// 좌/우는 같은 줄 안에서 가장 가까운 것 (없으면 차례대로 한 칸).
+function _kbWGo(dx,dy){
+  const els=_kbWEls();
+  if(!els.length)return false;
+  const at=els.findIndex(el=>_kbWName(el)===_KBW);
+  if(at<0){_kbWSet(_kbWName(els[0]));return true;}
+  const r=els[at].getBoundingClientRect(),cand=[];
+  els.forEach((el,k)=>{
+    if(k===at)return;
+    const q=el.getBoundingClientRect();
+    if(dy){
+      if(dy>0?q.top<=r.top+4:q.top>=r.top-4)return;
+      // ⚠️ 위/아래는 **같은 컬럼 안에서만** 움직인다. 2·3단은 컬럼이 본질이라,
+      //    가로로 하나도 안 겹치는(= 옆 컬럼) 위젯이 ↓ 로 걸리면 판이 뒤죽박죽이
+      //    된 것처럼 느껴진다 — 실제 브라우저에서 3단을 그렇게 겪었다.
+      //    옆 컬럼으로 가는 길은 ←→ 와 W 가 따로 맡는다.
+      const ov=Math.min(r.right,q.right)-Math.max(r.left,q.left);
+      if(ov<=0)return;
+      cand.push({el,a:Math.abs(q.top-r.top),b:-ov});
+    }else{
+      if(q.bottom<=r.top+4||q.top>=r.bottom-4)return;      // 같은 줄이 아니다
+      if(dx>0?q.left<=r.left+4:q.left>=r.left-4)return;
+      cand.push({el,a:Math.abs(q.left-r.left),b:0});
+    }
+  });
+  if(!cand.length){
+    if(dx)return _kbWStep(dx);                             // 줄 끝 — 차례대로
+    return true;                                           // 판의 끝 (고무줄과 같은 뜻)
+  }
+  cand.sort((x,y)=>x.a-y.a||x.b-y.b);
+  _kbWSet(_kbWName(cand[0].el));
+  return true;
+}
+// 위젯 **안** 넘기기 ([ ]). 위젯마다 '넘긴다'의 뜻이 다르다.
+function _kbWPage(d){
+  const n=_KBW||'';
+  if(n==='todo'){navigateDate(d);return true;}
+  if(n==='weekly'){navigateWeek(d);return true;}
+  if(n==='monthSingle'){rpChMonth('single',d);return true;}
+  if(n==='monthTriple'){rpChMonth('triple',d);return true;}
+  if(n.indexOf('card#')===0){vcNav(n.slice(5),d);return true;}
+  return false;
+}
+// 위젯 **안으로** (Enter). 들어갈 곳이 있는 위젯만 뜻이 있다.
+function _kbWEnter(){
+  const n=_KBW||'';
+  if(n==='todo'){
+    _kbWSet(null);                     // 포커스를 놓아 화살표를 할일에게 돌려준다
+    if(ACTIVE.size===0)moveActiveSelection(1,false);
+    return true;
+  }
+  if(n.indexOf('card#')===0){vcOpenFull(n.slice(5));return true;}
+  return true;                         // 달력처럼 들어갈 데가 없는 위젯 — 조용히 머문다
+}
+
+// ── 할일 다루기 ──────────────────────────────────────────
+// ⚠️ 여기 오는 것은 **글자를 치는 중이 아닐 때**뿐이다 (위 마스터 핸들러의
+//    isAnyInputFocused 가드와 같은 조건을 아래 _b7BoardKey 가 다시 본다).
+// 고른 항목들을 화면에 보이는 차례대로 (지울 때는 뒤에서부터 지워야 자리가 안 밀린다)
+function _kbSelItems(){
+  const list=buildFlatList(),out=[];
+  list.forEach(it=>{if(ACTIVE.has(itemKey(it.type,it.secId,it.idx)))out.push(it);});
+  return out;
+}
+function _kbAnchor(){
+  if(ACTIVE.size===0)return null;
+  const k=_anchorKey&&ACTIVE.has(_anchorKey)?_anchorKey:[...ACTIVE][0];
+  return parseItemKey(k);
+}
+// 지금 다루는 섹션 — 고른 항목의 섹션, 없으면 보이는 첫 섹션
+function _kbSecId(){
+  const a=_kbAnchor();
+  if(a)return a.secId;
+  const s=SECS.find(x=>ST.vis.includes(x.id));
+  return s?s.id:null;
+}
+// 한 일 ↔ 안 한 일. **고른 것 전부**를 한꺼번에 — 되돌릴 수 있는 동작이라 묶어도 된다.
+// ⚠️ 체크 단추를 그대로 누른다. 완료 효과·하위 따라가기·긴급 해제가 전부 그 안에
+//    들어 있어서, 여기서 done 을 직접 뒤집으면 그 셋이 통째로 빠진다.
+function _kbToggleDone(){
+  const its=_kbSelItems();
+  if(!its.length)return false;
+  its.forEach(it=>{
+    const el=getRowEl(it.type,it.secId,it.idx);
+    const chk=el&&el.querySelector('.blk-chk');
+    if(chk)chk.click();
+  });
+  _kbReactivate();
+  return true;
+}
+// ⚠️ 구간을 다시 그리면 고른 표시(.kb-active)가 **클래스째 날아간다** —
+//    ACTIVE 에는 그대로 남아 있는데 화면에서만 사라져서, 다음에 Space 를 누르면
+//    "아무것도 안 골랐는데 뭔가 토글되는" 것처럼 보인다 (실제 브라우저에서 겪었다).
+//    그리는 일이 한 틀 뒤에 끝나는 길(_taskFlipRender)도 있어 다음 프레임에 한 번 더.
+function _kbReactivate(){
+  refreshActiveVisuals();
+  try{requestAnimationFrame(()=>refreshActiveVisuals());}catch(_){}
+}
+// 지우기 — **한 번에 하나만** (v26-0921-13).
+// ⚠️ 까닭 둘: ①되돌리기 어렵다 ②반복 할일은 "어디까지 지울까"를 먼저 물어야 해서
+//    (_repScopeAsk) 묶어 지울 수 없다. 여러 개 골랐으면 알려만 준다.
+function _kbDelete(){
+  if(ACTIVE.size>1){showToast('지우기는 하나씩만 돼요 — 하나만 골라 주세요');return true;}
+  const a=_kbAnchor();
+  if(!a)return false;
+  clearActive();
+  _taskDeleteAt(a.type,a.secId,a.idx);
+  return true;
+}
+// 중요·긴급 — **한 번에 하나만.**
+// ⚠️⚠️ 까닭: 켜는 순간 그 항목이 목록 **맨 위로 올라간다**(_reorderTaskPriority).
+//    고른 자리를 번호(idx)로 들고 있으므로, 그대로 두면 그 번호가 **다른 할일**을
+//    가리키게 되어 이어서 누른 Space 가 엉뚱한 것을 토글한다 (실제로 그랬다).
+//    그래서 ①하나만 받고 ②끝난 뒤 그 **항목 자체**로 새 자리를 찾아 다시 고른다.
+function _kbOneSel(fn){
+  const a=_kbAnchor();
+  if(!a)return false;
+  if(ACTIVE.size>1){showToast('표시는 하나씩만 돼요 — 하나만 골라 주세요');return true;}
+  const arr=(a.type==='big')?getBigs(tKey(),a.secId):getSmalls(tKey(),a.secId);
+  const obj=arr[a.idx];
+  fn(a);
+  const ni=obj?arr.indexOf(obj):-1;
+  if(ni>=0)setActiveSingle(a.type,a.secId,ni); else clearActive();
+  _kbReactivate();
+  return true;
+}
+function _b7TaskKey(e){
+  const k=e.key,c=e.code;
+  // 새 할일 — 고른 항목의 섹션에. 고른 것이 없으면 보이는 첫 섹션.
+  if(c==='KeyN'){
+    const sec=_kbSecId();
+    if(!sec)return false;
+    openInlineInput(sec,e.shiftKey?'small':'big');
+    return true;
+  }
+  if(e.shiftKey)return false;
+  if(k===' ')return _kbToggleDone();
+  if(k==='Delete'||k==='Backspace')return _kbDelete();
+  const a=_kbAnchor();
+  if(c==='KeyE'){if(!a)return false;focusItemInput(a.type,a.secId,a.idx);return true;}
+  if(c==='KeyM'){if(!a)return false;openTaskMemo(a.type,a.secId,a.idx);return true;}
+  if(c==='KeyF')return _kbOneSel(it=>_doToggleFlag(it.type,it.secId,it.idx));
+  if(c==='KeyU')return _kbOneSel(it=>_doToggleUrgent(it.type,it.secId,it.idx));
+  // 내일로 미루기 — 메뉴의 '내일로' 와 같은 길. 한 번에 하나만(자리가 밀린다).
+  if(c==='KeyD'){
+    if(!a)return false;
+    if(ACTIVE.size>1){showToast('미루기는 하나씩만 돼요');return true;}
+    _taskMenuCtx={type:a.type,secId:a.secId,idx:a.idx};
+    clearActive();
+    moveTaskTo(1);
+    return true;
+  }
+  return false;
+}
+
+// ── 들어오는 문 ──────────────────────────────────────────
+// 판이 D뷰이고, 위에 다른 화면이 없고, 글자를 치는 중이 아닐 때만 받는다.
+function _b7KbReady(){
+  if(typeof _swOn==='function'&&_swOn())return false;    // 스위터는 제 자판이 있다
+  if(typeof _swBoardOn==='function'&&_swBoardOn())return false;
+  if(_kbOverlayOpen())return false;
+  return true;
+}
+function _b7BoardKey(e){
+  if(e.altKey||e.ctrlKey||e.metaKey)return false;
+  const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return false;
+  if(typeof isAnyInputFocused==='function'&&isAnyInputFocused())return false;
+  // 도움말은 떠 있는 동안에도 닫을 수 있어야 하므로 판 검사보다 앞에 둔다
+  if(_swKbHelpOpen()){
+    if(e.key==='?'||e.key==='Escape'){closeSwKbHelp();return true;}
+    return false;
+  }
+  if(!_b7KbReady())return false;
+  if(e.key==='?'){openSwKbHelp();return true;}
+  const dView=document.querySelector('.tab.on')?.id==='tabD';
+  if(!dView){if(_KBW!=null)_kbWSet(null);return false;}   // 주간·월간뷰로 가면 놓는다
+
+  // ── 위젯 포커스를 잡은 동안 ──
+  if(_KBW!=null){
+    const k=e.key;
+    if(k==='Escape'){_kbWSet(null);return true;}
+    if(k==='ArrowUp')   return _kbWGo(0,-1);
+    if(k==='ArrowDown') return _kbWGo(0,1);
+    if(k==='ArrowLeft') return _kbWGo(-1,0);
+    if(k==='ArrowRight')return _kbWGo(1,0);
+    if(k==='Enter')     return _kbWEnter();
+    if(e.code==='KeyW'){_kbWStep(e.shiftKey?-1:1);return true;}
+    if(e.code==='BracketLeft') return _kbWPage(-1);
+    if(e.code==='BracketRight')return _kbWPage(1);
+    // 나머지는 할일 단축키로 흘려보낸다 (위젯을 보면서도 할일을 다룰 수 있게)
+    return _b7TaskKey(e);
+  }
+  // ── 포커스를 잡기 전 — 여기서만 새 글쇠를 받는다 ──
+  if(e.code==='KeyW'&&!e.altKey&&!e.ctrlKey&&!e.metaKey){
+    if(!_kbWOn()){showToast('2단·3단 화면에서만 위젯 사이를 오갈 수 있어요');return true;}
+    _kbWHint();
+    _kbWStep(e.shiftKey?-1:1);
+    return true;
+  }
+  if(e.code==='BracketLeft'||e.code==='BracketRight'){
+    // 위젯을 안 잡았으면 '[ ]' 는 날짜 넘기기 — ←→ 와 같은 뜻이다
+    navigateDate(e.code==='BracketRight'?1:-1);
+    return true;
+  }
+  if(e.key==='Escape'&&ACTIVE.size>0){clearActive();return true;}
+  return _b7TaskKey(e);
+}
+// 처음 한 번만 알려 준다. 이 기기 전용 키는 반드시 _lsk() 로 (2026-08-31 사고).
+function _kbWHint(){
+  try{
+    if(localStorage.getItem(_lsk('b7kbhint')))return;
+    localStorage.setItem(_lsk('b7kbhint'),'1');
+  }catch(_){return;}
+  showToast('화살표로 위젯 사이를 · [ ] 로 위젯 안을 · ? 를 누르면 단축키를 봅니다');
+}
+// ⚠️⚠️ **캡처 단계**로 붙인다 (capture:true). 위의 마스터 핸들러(화살표·⌘⇧)는
+//    이 파일에서 **먼저** 등록되므로, 그냥 붙이면 위젯 포커스를 잡고 있어도
+//    화살표를 그쪽이 먼저 가져가 날짜가 넘어가 버린다. 캡처는 등록 차례와 상관없이
+//    거품(bubble) 단계보다 먼저 돌아서, 우리가 처리한 키만 골라 막을 수 있다.
+//    ⚠️ 막을 때는 stopPropagation 까지 부른다 — 같은 document 의 **거품 리스너**
+//       (마스터 핸들러·ESC 표)는 전파가 끊겨야 비로소 안 돈다.
+document.addEventListener('keydown',e=>{
+  if(e.defaultPrevented)return;
+  if(typeof _b7BoardKey==='function'&&_b7BoardKey(e)){
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+  }
+},true);
 
 // Click the row-spacer (B-zone) to activate a row without entering
 // text-edit mode. Wired up from attachDrag below via a tiny helper so
@@ -43180,14 +43500,7 @@ function _swKbReady(){
   if(typeof _swBoardOn!=='function'||!_swBoardOn())return false;
   const b=document.getElementById('swBoard');
   if(!b||!b.getClientRects||!b.getClientRects().length)return false;
-  const a=document.getElementById('authScreen');
-  if(a&&_escShown(a))return false;
-  for(const[id,,test]of _ESC_CLOSERS){
-    const el=document.getElementById(id);
-    if(!el)continue;
-    if(test?test(el):_escShown(el))return false;
-  }
-  return true;
+  return !_kbOverlayOpen();
 }
 // 한 번만 알려 주는 안내 — 자판을 처음 쓴 사람에게 '?' 가 있다는 것만 짚어 준다.
 // ⚠️ 이 기기 전용 키는 반드시 _lsk() 로 만든다 (2026-08-31 사고, CLAUDE.md).
@@ -43297,10 +43610,46 @@ const _SWKB_HELP=[
   ['Esc','자판 자리를 놓는다 (Tab 이 브라우저로 돌아간다)'],
   ['?','이 표'],
 ];
+// 블럭7 표. ⚠️ 스위터와 **한 팝업**을 나눠 쓴다 — 지금 보고 있는 화면에 따라
+// 표만 갈아 끼운다. 팝업을 두 벌 두면 ESC 표·× 규칙·padding-top 예외를 전부
+// 두 번씩 지켜야 한다 (v26-0921-13).
+const _B7KB_HELP=[
+  ['sec','위젯 사이 (2단·3단)'],
+  ['W','다음 위젯 · Shift+W 이전'],
+  ['↑ ↓ ← →','고른 뒤 — 옆·위아래 위젯으로'],
+  ['Enter','그 위젯 안으로'],
+  ['Esc','위젯 놓기 — 화살표가 예전 것으로'],
+  ['sec','위젯 안'],
+  ['[  ]','달 넘기기 · 카드 넘기기 · 주 넘기기'],
+  ['[  ]','위젯을 안 골랐으면 날짜 넘기기'],
+  ['sec','할일'],
+  ['N','새 할일 · Shift+N 작은 할일'],
+  ['Space','한 일 ↔ 안 한 일 (고른 것 전부)'],
+  ['Enter · E','글자 고치기'],
+  ['F · U','중요 표시 · 긴급 표시'],
+  ['M','메모 열기'],
+  ['D','내일로 미루기'],
+  ['Delete','지우기 (하나씩만)'],
+  ['Esc','고른 것 놓기'],
+  ['sec','예전부터 있던 것'],
+  ['↑ ↓','할일 고르기 · Shift+↑↓ 여러 개'],
+  ['⌘⇧↑ ↓','고른 할일을 위아래로 옮기기'],
+  ['⌘⇧⌥↑ ↓','구간을 넘어 옮기기'],
+  ['← →','앞뒤 날짜 · 주 · 달'],
+  ['⌘⇧8 9 0','일간 · 주간 · 월간 뷰'],
+  ['⌘⇧← →','뷰 넘기기'],
+  ['sec','그 밖'],
+  ['?','이 표'],
+];
+// 지금 보고 있는 화면의 표를 고른다
+function _kbHelpRows(){
+  const sw=(typeof _swBoardOn==='function')&&_swBoardOn();
+  return sw?_SWKB_HELP:_B7KB_HELP;
+}
 function _swKbHelpFill(){
   const b=document.getElementById('swKbHelpBody');
   if(!b)return;
-  b.innerHTML=_SWKB_HELP.map(([a,c])=>a==='sec'
+  b.innerHTML=_kbHelpRows().map(([a,c])=>a==='sec'
     ?'<div class="swkb-sec">'+_swEsc(c)+'</div>'
     :'<div class="swkb-row"><span class="swkb-k">'+_swEsc(a)+'</span>'
       +'<span>'+_swEsc(c)+'</span></div>').join('');
