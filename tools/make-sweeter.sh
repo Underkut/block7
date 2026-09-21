@@ -66,6 +66,21 @@ out=sub_once(out,'<link rel="icon" href="icon.png">',
 out=sub_once(out,'<link rel="apple-touch-icon" href="icon.png">',
                  '<link rel="apple-touch-icon" href="icon-sweeter.png">','홈화면 아이콘')
 
+# ⚠️⚠️ 판을 **첫 그림부터** 덮게 한다 (class="on").
+#    안 그러면 로그인이 풀리기 전까지 paintAppUIFromLocal() 이 그린
+#    **BLOCK7 홈이 번쩍 보였다 넘어간다** (HB 신고 2026-09-21).
+#    JS 로 켜는 것은 늦다 — HTML 에 박혀 있어야 첫 그림부터 덮는다.
+out=sub_once(out,'<div id="swHome">','<div id="swHome" class="on">','판 첫 그림')
+
+# ⚠️ 로그인 화면도 Sweeter 것으로. 안 바꾸면 sweeter.my 로 들어온 사람이
+#    **BLOCK7 로그인 화면**을 먼저 본다 (HB 신고 2026-09-21 의 한 갈래).
+out=sub_once(out,'<div class="auth-logo" id="authLogo">BLOCK<b>7</b></div>',
+                 '<div class="auth-logo" id="authLogo">Sweeter</div>','로그인 로고')
+out=sub_once(out,'<div class="auth-sub" id="authSub">One beautiful day. Seven simple blocks.</div>',
+                 '<div class="auth-sub" id="authSub">말씀과 함께하는 하루</div>','로그인 부제')
+
+
+
 io.open('sweeter-dev.html','w',encoding='utf-8').write(out)
 print('sweeter-dev.html 생성 완료 — %s'%ver)
 PY
