@@ -61,6 +61,17 @@ out=sub_once(out,'<meta name="apple-mobile-web-app-title" content="BLOCK7">',
                  '<meta name="apple-mobile-web-app-title" content="Sweeter">','앱 이름')
 out=sub_once(out,'<title>BLOCK 7</title>','<title>Sweeter</title>','탭 제목')
 
+# ⚠️⚠️ 파비콘·홈화면 아이콘은 **파일 이름을 바꿔서** 가리킨다 (icon-sweeter.png).
+#    내용만 갈아 끼우면 안 된다 — 첫 배포(v26-0919-6)가 sweeter.my/icon.png 로
+#    **BLOCK7 아이콘**을 내보냈고, 그 뒤 내용을 Sweeter 것으로 바꿨는데도
+#    브라우저가 같은 주소의 옛 그림을 계속 물고 있었다. 크롬 탭에 스위터 로고와
+#    블럭7 로고가 번갈아 뜬 까닭이 이것이다 (HB 신고 2026-09-21).
+#    → 주소가 바뀌면 캐시가 걸릴 자리가 없다.
+out=sub_once(out,'<link rel="icon" href="icon.png">',
+                 '<link rel="icon" href="icon-sweeter.png">','파비콘')
+out=sub_once(out,'<link rel="apple-touch-icon" href="icon.png">',
+                 '<link rel="apple-touch-icon" href="icon-sweeter.png">','홈화면 아이콘')
+
 # ⑤ 공유 카드. 이름과 설명은 갈고, **이미지는 뺀다** —
 #    BLOCK7 그림을 그대로 쓰면 이름과 그림이 어긋난다 (Sweeter 그림은 아직 없다).
 out=sub_once(out,'<meta name="description" content="아름다운 하루 · 일곱 블럭">',

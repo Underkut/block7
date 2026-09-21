@@ -31,12 +31,25 @@ function mkEl(id){return EL[id]={id,dataset:{},title:'',textContent:'',_src:null
   addEventListener(){},oncontextmenu:null};}
 ['logoMenuSister','logoMenuSisterIcon','logoMenuSisterLabel'].forEach(mkEl);
 global.document={getElementById:id=>EL[id]||null,querySelector:()=>null,addEventListener:()=>{}};
+// 홈 화면 앱인가 / 아이폰인가 — 시험에서 갈아 끼운다
+let STANDALONE=false, IOS=false;
+// ⚠️ Node 22 에는 navigator 가 **읽기 전용 전역**으로 이미 있다.
+//    global.navigator={...} 로는 조용히 안 먹는다 — defineProperty 로 갈아 끼운다.
+//    (이걸 몰라 시나리오 5-2 가 처음에 통째로 빗나갔다)
+Object.defineProperty(global,'navigator',{configurable:true,value:{
+  get standalone(){return STANDALONE;},
+  get userAgent(){return IOS?'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)':'Mozilla/5.0 (X11; Linux x86_64)';},
+  platform:'', maxTouchPoints:0}});
+let TOAST='';
+function showToast(m){TOAST=m;}
 global.window={addEventListener:()=>{},
+  matchMedia:q=>({matches:STANDALONE&&/standalone/.test(q)}),
   open:(url,target,feat)=>{OPENED={url,target,feat};return OPEN_OK?{opener:{}}:null;}};
 
 eval(sliceDev('function _sisterApp(){', '\nfunction _swBoot('));
 
-function as(prod,dev){APP_PRODUCT=prod;DEV_MODE=dev;WENT=null;OPENED=null;OPEN_OK=true;CLOSED=0;}
+function as(prod,dev){APP_PRODUCT=prod;DEV_MODE=dev;WENT=null;OPENED=null;OPEN_OK=true;
+  CLOSED=0;TOAST='';STANDALONE=false;IOS=false;}
 
 // ═══ 1. 어느 빌드에서 어디로 가는가 ═══
 console.log('시나리오 1 — 형제 앱의 이름·주소·그림');
@@ -121,6 +134,41 @@ console.log('\n시나리오 5 — 두 창이 함께 떠나지 않는다');
   sc.eq('소스에 그 까닭이 적혀 있다', SRC.includes("'noopener' 를 **주지 말 것.**"), true);
 }
 
+// ═══ 5-2. ⚠️ 아이폰 홈 화면 앱 — 못 하는 것을 하는 척하지 않는다 ═══
+console.log('\n시나리오 5-2 — 아이폰 홈 화면 앱');
+{
+  // 아이폰에는 **상대 홈 화면 앱을 부르는 길이 아예 없다** (웹의 한계).
+  // 억지로 열면 앱 안에 브라우저가 떠서, 로그인도 안 되어 있고 우리 앱처럼
+  // 보이지도 않는다 — HB 가 "헷갈린다" 고 한 그 화면이다 (2026-09-21).
+  as('sweeter',false);
+  STANDALONE=true;IOS=true;
+  sisterGo();
+  sc.eq('⭐ 브라우저를 띄우지 않는다', OPENED, null);
+  sc.eq('⭐ 보던 앱도 떠나지 않는다', WENT, null);
+  sc.eq('무엇을 하면 되는지 알려 준다', /홈 화면의 BLOCK7 아이콘/.test(TOAST), true);
+  sc.eq('메뉴는 닫는다', CLOSED, 1);
+
+  as('block7',false);
+  STANDALONE=true;IOS=true;
+  sisterGo();
+  sc.eq('BLOCK7 쪽도 마찬가지', [OPENED,WENT], [null,null]);
+  sc.eq('상대 이름을 제대로 말한다', /홈 화면의 Sweeter 아이콘/.test(TOAST), true);
+
+  // 안드로이드 홈 화면 앱은 기기가 설치된 앱으로 넘겨줄 때가 있다 → 그대로 연다
+  as('sweeter',false);
+  STANDALONE=true;IOS=false;
+  sisterGo();
+  sc.eq('안드로이드 홈 화면 앱은 그대로 연다', OPENED.url, 'https://block7.my/');
+  sc.eq('그때는 토스트를 띄우지 않는다', TOAST, '');
+
+  // 브라우저 탭은 아이폰이어도 새 탭으로 연다 (HB 가 확인한 그 동작)
+  as('sweeter',false);
+  STANDALONE=false;IOS=true;
+  sisterGo();
+  sc.eq('아이폰 **브라우저**에서는 새 탭으로', OPENED.url, 'https://block7.my/');
+  sc.eq('토스트 없음', TOAST, '');
+}
+
 // ═══ 6. 메뉴 한 줄이 제품에 맞게 채워진다 ═══
 console.log('\n시나리오 6 — 메뉴 한 줄');
 {
@@ -179,6 +227,17 @@ console.log('\n시나리오 8 — 아이콘 파일');
   sc.eq('⭐ BLOCK7 은 icon.png 그대로', SRC.includes('<link rel="apple-touch-icon" href="icon.png">'), true);
   const mb7=JSON.parse(fs.readFileSync(R('manifest.json'),'utf8'));
   sc.eq('BLOCK7 manifest 도 그대로', [...new Set(mb7.icons.map(i=>i.src))], ['icon.png']);
+
+  // ⚠️ 운영본 파비콘은 **주소 자체가 달라야** 한다. 첫 배포가 sweeter.my/icon.png
+  //    로 BLOCK7 아이콘을 내보냈고, 내용만 바꾸니 브라우저가 옛 그림을 계속
+  //    물고 있었다 (크롬 탭에 두 로고가 번갈아 떴다 — HB 신고 2026-09-21).
+  const mkp=fs.readFileSync(R('tools/make-sweeter-prod.sh'),'utf8');
+  sc.eq('⭐ 운영본 파비콘 주소를 갈아 끼운다',
+        mkp.includes(`'<link rel="icon" href="icon-sweeter.png">'`), true);
+  sc.eq('⭐ 홈화면 아이콘 주소도',
+        mkp.includes(`'<link rel="apple-touch-icon" href="icon-sweeter.png">'`), true);
+  const msw=JSON.parse(fs.readFileSync(R('manifest-sweeter.json'),'utf8'));
+  sc.eq('⭐ 운영본 manifest 도 새 이름', [...new Set(msw.icons.map(i=>i.src))], ['icon-sweeter.png']);
 
   // 운영본 빌드 — 이름은 그대로 두고 내용물만 Sweeter 것으로
   if(fs.existsSync(R('build-sweeter/index.html'))){

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5244,7 +5244,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-2";
+const APP_VERSION = "v. 26-0921-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -42550,9 +42550,33 @@ function _sisterFill(){
 //    그래서 우리가 할 수 있는 최선은 "상대 주소를 연다" 까지다.
 //    ⛔️ 예전에 '앱 안에서 화면만 바꾸기' 를 함께 두었는데 HB 가 헷갈린다고 했다
 //       (2026-09-21). 길이 둘이면 어느 쪽으로 갔는지 알 수 없다 — 하나로 둔다.
+// 지금 '홈 화면 앱' 으로 열려 있는가 (브라우저 탭이 아니라)
+function _sisterStandalone(){
+  try{
+    if(navigator.standalone)return true;                       // 아이폰 홈 화면 앱
+    return !!(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  }catch(e){return false;}
+}
+function _sisterIsIOS(){
+  const u=navigator.userAgent||'';
+  return /iP(hone|ad|od)/.test(u)
+      ||(navigator.platform==='MacIntel'&&(navigator.maxTouchPoints||0)>1);
+}
 function sisterGo(){
   closeLogoMenu();
-  const href=_sisterApp().href;
+  const app=_sisterApp();
+  const href=app.href;
+  // ⚠️⚠️ 아이폰 홈 화면 앱에서는 **상대 홈 화면 앱을 부르는 길이 아예 없다.**
+  //    웹에 그런 장치가 없다 (애플 개발자 포럼에도 같은 물음과 "방법 없음" 이
+  //    올라와 있다). 억지로 열면 앱 **안에** 브라우저가 뜨는데, 그건 저장 칸이
+  //    달라 로그인도 안 되어 있고 우리 앱처럼 보이지도 않는다 —
+  //    HB 가 "헷갈린다" 고 한 그 화면이다 (2026-09-21).
+  //    → 못 하는 것을 하는 척하지 않는다. 무엇을 하면 되는지 한 줄로 알려 준다.
+  //    ⚠️ 안드로이드는 기기가 설치된 앱으로 넘겨줄 때가 있으므로 그대로 연다.
+  if(_sisterStandalone()&&_sisterIsIOS()){
+    try{showToast('아이폰 앱에서는 바로 건너뛸 수 없어요 — 홈 화면의 '+app.name+' 아이콘을 눌러 주세요');}catch(e){}
+    return;
+  }
   // ⚠️⚠️ 세 번째 인자에 'noopener' 를 **주지 말 것.** 규격상 그때 window.open 은
   //    창을 열고도 **null 을 돌려준다.** 그것을 "팝업이 막혔다" 로 잘못 읽어
   //    아래 되돌림까지 함께 돌면 — 새 창이 뜨는 **동시에 보던 창도 떠나 버린다.**
