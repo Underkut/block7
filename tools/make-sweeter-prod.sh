@@ -134,6 +134,9 @@ cp icon-sweeter.png "$OUT/icon.png"
 cp icon-sweeter.png "$OUT/icon-sweeter.png"
 cp icon-block7.png  "$OUT/icon-block7.png"
 cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
+# 버전표 — 앱이 "내가 낡았나" 를 묻는 곳 (_upCheck). 없으면 새 버전을 못 받는다.
+./tools/make-version.sh >/dev/null
+cp version.txt "$OUT/version.txt"
 cp -r fonts "$OUT/fonts"
 
 echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"

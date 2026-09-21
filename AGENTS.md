@@ -83,7 +83,11 @@ cat "$(ls | grep 작업인계)"
   개발본도 저장소에 함께 커밋한다 → `https://block7.my/index-dev.html` 로 어느 기기에서나 열린다.
   아이폰은 그 주소에서 "홈 화면에 추가" 하면 **BLOCK7 DEV** 아이콘이 운영본과 따로 생긴다.
   ⚠️ 개발본은 Firebase 가 꺼져 있어 **푸시 알림은 개발본에서 확인할 수 없다** (운영본에서만).
-- **네 번째 산출물 `build-sweeter/` 는 커밋하지 않는다** (v26-0919-6).
+- **버전표 `version.txt` 를 함께 고친다** (v26-0921-10). `./tools/make-version.sh` 가 만든다.
+  앱이 "내가 낡았나" 를 묻는 곳이다 — 기기들은 이 파일 하나만 읽어 새 버전이 나온 줄 안다
+  (`_upCheck`). **낡으면 아무 기기도 새 버전을 못 받는다** → `check.sh` 가 배포를 막는다.
+  손으로 고치지 말 것.
+- **다섯 번째 산출물 `build-sweeter/` 는 커밋하지 않는다** (v26-0919-6).
   `sweeter.my` 에 올릴 Sweeter 운영본이다. `./tools/make-sweeter-prod.sh` 가 만들고
   `.github/workflows/deploy-sweeter.yml` 이 파이어베이스 호스팅(사이트 `sweeter7`)으로 올린다.
   ⚠️⚠️ **커밋하면 안 된다.** 깃헙 페이지는 저장소의 모든 파일을 `block7.my/…` 로

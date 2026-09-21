@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5333,7 +5333,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-9";
+const APP_VERSION = "v. 26-0921-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5517,6 +5517,20 @@ window._fbScriptsReady=new Promise(resolve=>{
   </div>
   <div class="auth-version" id="authVersion"></div>
 </div>
+<script>
+// 로그인 막을 **첫 그림에서** 걷는다 (v26-0921-10, HB 신고 — "스위터 홈 화면
+// 나오기 전에 로그인 화면이 반짝 지나간다").
+// ⚠️ 이 일은 paintAppUIFromLocal() 이 이미 하고 있었다. 그런데 그것은 1.4MB
+//    짜리 스크립트 **안**이라, 브라우저가 그 전에 화면을 한 번 그려 버린다 —
+//    그 한 번이 로그인 화면이다. 그래서 여기, 막 바로 뒤에서 결정한다.
+// ⚠️ 판단 잣대는 paintAppUIFromLocal 과 **똑같다**: 이 기기에 주인이 있고
+//    저장 칸에 내용이 있으면 = 자동 로그인이 예정된 기기다.
+//    세션이 정말 끊겼으면 onAuthStateChanged(null) 이 도로 띄운다 (예전 그대로).
+try{
+  if(!DEV_MODE&&localStorage.getItem(_lsk('owner'))&&localStorage.getItem(LS_KEY))
+    document.getElementById('authScreen').classList.add('hidden');
+}catch(e){}
+</script>
 
 <!-- ── SETTINGS PANEL ── -->
 <div class="settings-overlay" id="settingsOverlay" style="display:none" onclick="closeSettingsOnBg(event)">
@@ -39461,6 +39475,100 @@ async function sendTestPush(){
   }catch(e){console.warn('서버 테스트 실패:',e);showToast('서버 알림 테스트에 실패했어요. 네트워크를 확인해주세요');}
 }
 
+// ── 앱 버전 비교 ("v. YY-MMDD-N") ──
+// 마지막 자리는 숫자로 비교해야 한다 (문자열이면 "-10" < "-4" 가 되어 뒤집힌다).
+function _verNums(s){
+  const m=/(\d{2})-(\d{4})-(\d+)/.exec(String(s==null?'':s));
+  return m?[+m[1],+m[2],+m[3]]:null;
+}
+function _verCmp(a,b){
+  const x=_verNums(a),y=_verNums(b);
+  if(!x||!y)return null;                       // 못 읽으면 판단하지 않는다
+  for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]<y[i]?-1:1;}
+  return 0;
+}
+
+// ══════════════════════════════════════════════════════════
+//  새 버전이 나왔는지 스스로 본다 (v26-0921-10, HB 신고)
+//  ────────────────────────────────────────────────────────
+//  HB: "웹앱을 종료하고 새로 열어도 새로운 버전으로 들어가지 않아."
+//
+//  까닭: 이 앱에는 **캐시를 관리하는 서비스워커가 없다**
+//  (firebase-messaging-sw.js 는 알림 전용이라 fetch 를 가로채지 않는다).
+//  그래서 index.html 을 쥐고 있는 것은 브라우저의 HTTP 캐시이고, 얼마나 오래
+//  쥐느냐는 서버가 정한다 — 깃헙 페이지는 10분, 파이어베이스 호스팅은 기본
+//  1시간이다. 홈 화면 웹앱은 그 사이에 껐다 켜도 **네트워크에 묻지 않는다.**
+//
+//  ⚠️ 그냥 location.reload() 로는 못 고친다. 그것도 캐시에 있는 옛 파일을
+//     다시 읽을 뿐이다. 캐시를 **갈아끼운 뒤에** 읽어야 한다:
+//        fetch(내 주소, {cache:'reload'})  →  location.reload()
+//
+//  ⚠️⚠️ 무한 새로고침을 막는 장치가 반드시 있어야 한다. 캐시 갈아끼우기가
+//     듣지 않는 기기가 있으면 "새 버전이 있다 → 새로고침 → 여전히 옛 것" 이
+//     끝없이 돈다. 같은 세션에서 **같은 버전에 두 번까지만** 시도한다.
+// ══════════════════════════════════════════════════════════
+const _UP_FILE='version.txt';      // tools/make-version.sh 가 만든다
+const _UP_MIN_MS=10*60*1000;       // 이보다 자주 묻지 않는다
+let _upBusy=false,_upLastCheck=0,_upReloading=false;
+// 이 세션에서 그 버전으로 몇 번 가 보았나 (sessionStorage — 앱을 완전히 닫으면 사라진다)
+function _upTries(want){
+  try{const v=JSON.parse(sessionStorage.getItem(_lsk('upTry'))||'null');
+      return (v&&v.v===want)?(v.n|0):0;}catch(e){return 0;}
+}
+function _upSetTries(want,n){
+  try{sessionStorage.setItem(_lsk('upTry'),JSON.stringify({v:want,n}));}catch(e){}
+}
+function _upClearTries(){try{sessionStorage.removeItem(_lsk('upTry'));}catch(e){}}
+// 캐시를 새 것으로 갈아끼운 뒤 다시 읽는다. _fbMaybeSelfUpdate 도 이 길을 쓴다.
+async function _upReloadFresh(){
+  try{await fetch(location.href,{cache:'reload',credentials:'same-origin'});}catch(e){}
+  setTimeout(()=>{try{location.reload();}catch(e){}},1200);
+}
+// 지금 새로고침해도 되는가 — 글자를 치는 중이거나 못 올린 편집이 있으면 안 된다.
+function _upSafeNow(){
+  if(window._fbHasPending&&window._fbHasPending())return false;
+  const ae=document.activeElement;
+  if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable))return false;
+  return true;
+}
+function _upApply(want){
+  if(_upReloading||!_upSafeNow())return;
+  const tried=_upTries(want);
+  if(tried>=2){
+    // 두 번 해 봤는데도 옛 것이 온다 — 더 하면 무한 새로고침이다. 한 번만 알린다.
+    if(tried===2){_upSetTries(want,3);
+      try{showToast('새 버전이 있는데 이 기기가 옛 화면을 계속 쥐고 있어요 — 앱을 완전히 닫았다 열어 주세요');}catch(e){}}
+    return;
+  }
+  _upReloading=true;
+  _upSetTries(want,tried+1);
+  try{showToast('새 버전('+want+')이 있어 화면을 새로 불러올게요');}catch(e){}
+  // 두 번째 시도는 **아예 다른 주소**로 간다 (?v=…) — 캐시가 걸릴 자리가 없다.
+  if(tried===1){setTimeout(()=>{try{
+    location.replace(location.pathname+'?v='+encodeURIComponent(want));}catch(e){}},1200);return;}
+  _upReloadFresh();
+}
+async function _upCheck(){
+  if(_upBusy||_upReloading)return;
+  const now=Date.now();
+  if(_upLastCheck&&(now-_upLastCheck)<_UP_MIN_MS)return;
+  _upLastCheck=now;_upBusy=true;
+  try{
+    // ⚠️ no-store 와 ?t= 를 함께 쓴다 — 브라우저 캐시도, 중간 CDN 도 건너뛴다.
+    const r=await fetch(_UP_FILE+'?t='+now,{cache:'no-store'});
+    if(!r.ok)return;
+    const want=(await r.text()).trim();
+    if(!/^v\. \d\d-\d{4}-\d+$/.test(want))return;   // 못 알아볼 값이면 아무 일도 안 한다
+    if(_verCmp(want,APP_VERSION)!==1){_upClearTries();return;}   // 내가 최신이거나 같다
+    _upApply(want);
+  }catch(e){/* 네트워크가 없으면 그냥 다음 기회에 */}
+  finally{_upBusy=false;}
+}
+// 보는 때 — 부팅하고 조금 뒤 한 번, 그리고 앱을 다시 앞으로 불러올 때마다.
+// ⚠️ 부팅 직후가 아니라 4초 뒤다. 첫 그림·로그인·클라우드 읽기와 다투지 않게.
+setTimeout(()=>{_upCheck();},4000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck();});
+
 if(!DEV_MODE){
 (async function(){
   // ⚠️ 반드시 아래 await "앞에서" — SDK 로드·인증·fetch 를 하나도 기다리지 않고
@@ -39614,6 +39722,13 @@ let _fbLastSeenRev=-1;      // 내가 마지막으로 확인한 클라우드 rev
 let _fbBaseJson=null;       // 클라우드와 마지막으로 일치했던 상태(JSON 문자열)
 let _fbDirtySeq=0,_fbCleanSeq=0; // 로컬 편집 일련번호 / 전송 완료 지점
 let _fbCommitBusy=false,_fbCommitAgain=false,_fbRetryTimer=null;
+// 아직 클라우드에 못 올린 편집이 있는가 — 새 버전 확인(_upCheck)이 묻는다.
+// ⚠️ 이 물음에 '있다' 면 새로고침하지 않는다. 여기서 새로고침하면 그 편집이 사라진다.
+// ⚠️ window 가 있는지 먼저 본다 — 이 구간을 떠 가는 테스트가 여럿이고,
+//    거기에는 window 가 없다 (있는 그대로 두면 그 테스트들이 통째로 죽는다).
+if(typeof window!=='undefined')window._fbHasPending=function(){
+  return (_fbCleanSeq!==_fbDirtySeq)||!!_fbWriteTimer||_fbCommitBusy;
+};
 // 기기 로컬 전용. 이름은 _lsk 가 제품·빌드별로 가른다 (위 '이 기기 전용 저장 키 이름').
 const _FB_BASE_KEY=_lsk('syncbase'),_FB_META_KEY=_lsk('syncmeta');
 
@@ -39683,18 +39798,9 @@ function _fbDeviceIdle(){
   if(_fbLastEditTs<=_fbVisibleSince&&(Date.now()-_fbVisibleSince)<_FB_WAKE_MS)return true;
   return (Date.now()-_fbLastTouchTs)>_FB_IDLE_MS;
 }
-// ── 앱 버전 비교 ("v. YY-MMDD-N") ──
-// 마지막 자리는 숫자로 비교해야 한다 (문자열이면 "-10" < "-4" 가 되어 뒤집힌다).
-function _verNums(s){
-  const m=/(\d{2})-(\d{4})-(\d+)/.exec(String(s==null?'':s));
-  return m?[+m[1],+m[2],+m[3]]:null;
-}
-function _verCmp(a,b){
-  const x=_verNums(a),y=_verNums(b);
-  if(!x||!y)return null;                       // 못 읽으면 판단하지 않는다
-  for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]<y[i]?-1:1;}
-  return 0;
-}
+// (버전 비교 _verNums·_verCmp 는 이 IIFE 밖으로 옮겼다 — v26-0921-10.
+//  새 버전 확인(_upCheck)이 개발본에서도 돌아야 하는데, 여기 두면 개발본에는
+//  아예 없는 함수가 된다. 옮긴 자리는 `if(!DEV_MODE){` 바로 위다.)
 // 클라우드 문서를 **나보다 낮은 버전**이 썼는가?
 // appVer 자체가 없으면 그것을 기록하기 전(≤v26-0802-0) 기기다 = 낡았다.
 function _fbVerIsOlder(cloudVer){
@@ -41532,7 +41638,9 @@ function _fbMaybeSelfUpdate(cloudVer){
   if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable))return;
   _fbReloading=true;
   try{showToast('새 버전이 있어 화면을 새로 불러올게요');}catch(e){}
-  setTimeout(()=>{try{location.reload();}catch(e){}},1500);
+  // ⚠️ 그냥 reload 하면 **캐시에 있는 옛 파일**을 다시 읽는다 (v26-0921-10).
+  //    고치려던 낡은 탭이 그대로 낡은 채 남던 자리다.
+  _upReloadFresh();
 }
 window.fbStartListening=function(uid){
   if(_fbUnsub)_fbUnsub();
