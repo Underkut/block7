@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-3  [production]  -->
+<!-- BLOCK7  v. 26-0921-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5244,7 +5244,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-3";
+const APP_VERSION = "v. 26-0921-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7841,6 +7841,10 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="sw-notice" id="swNotice"></div>
   <div class="sw-board" id="swBoard"></div>
 </div>
+<!-- 상대 제품 화면을 앱 안에서 보는 동안 뜨는 되돌아가기 단추 (아이폰 홈 화면 앱).
+     글자는 _swCrossBtnSync() 가 채운다 — 어느 제품에서 눌렀느냐로 갈린다. -->
+<button class="sw-barbtn" id="swCrossBack" onclick="swCrossToggle()"
+  style="display:none;position:fixed;z-index:201;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--s1);"></button>
 
 <!-- AI Drawer -->
 
@@ -38399,6 +38403,11 @@ function paintAppUIFromLocal(){
     updateHeaderDate();
     renderToday();
     updateUrBtns();
+    // ⚠️ Sweeter 판도 **여기서** 세운다. 이 함수는 로그인을 기다리지 않고 곧바로
+    //    BLOCK7 화면을 그리므로, 판을 로그인 뒤에 세우면 그 사이에
+    //    **BLOCK7 홈이 번쩍 보였다 넘어간다** (HB 신고 2026-09-21).
+    //    판은 첫 그림부터 덮고 있어야 한다. (HTML 에도 class="on" 을 박아 둔다)
+    try{_swBoot();}catch(e){}
   }catch(e){console.warn('빠른 첫 그리기 실패(치명 아님):',e);}
 }
 
@@ -41453,6 +41462,13 @@ fbAuth.onAuthStateChanged(async user=>{
 //     정렬 바꾸기는 칩 탭이다.
 // ═══════════════════════════════════════════════════════════
 function _swOn(){return APP_PRODUCT==='sweeter';}
+// 지금 **상대 제품 화면**을 앱 안에서 보고 있는가 (아이폰 홈 화면 앱 전용).
+// ⚠️ 아이폰은 웹앱끼리 서로를 부를 수 없어서(플랫폼 한계) 남은 길이 이것뿐이다.
+let _swCross=false;
+// 타일 판을 지금 보여 주어야 하는가.
+//   Sweeter : 평소 켬 · 상대 화면을 보는 중이면 끔
+//   BLOCK7  : 평소 끔 · 상대 화면(=Sweeter 판)을 보는 중이면 켬
+function _swBoardOn(){return _swOn()?!_swCross:_swCross;}
 
 // 지금 판에 놓인 타일. 화면을 벗어나도 남도록 **저장한다** (아래 _swSaveTiles).
 // p(지금 몇 번째 값을 보는가)는 화면에만 두고 저장하지 않는다 — 다시 열면 처음부터.
@@ -41744,7 +41760,7 @@ function _swKeeps(sortIdx,list){
 // 담아둔 것이 바뀌면 판 위의 '담아둔 것' 타일을 다시 그린다.
 // ⚠️ BLOCK7 에서도 불린다 (전체화면 액션 줄). 판이 없으면 조용히 나간다.
 function _swRepaintKeepTiles(except){
-  if(typeof _swOn!=='function'||!_swOn())return;
+  if(typeof _swBoardOn!=='function'||!_swBoardOn())return;
   if(!Array.isArray(_SW_TILES))return;
   _SW_TILES.forEach((x,j)=>{
     if(x.k!=='keep'||j===except)return;
@@ -41758,14 +41774,25 @@ function _swRepaintKeepTiles(except){
 // ── 저장 ─────────────────────────────────────────────────
 // ⚠️ 이 목록은 **Sweeter 것**이다. _PRODUCT_SCOPED 에 들어 있어 저장할 때
 //    productSettings.sweeter 로 갈라진다 — BLOCK7 은 건드리지도 보지도 않는다.
+// ⚠️⚠️ BLOCK7 이 Sweeter 판을 미리 볼 때는 **Sweeter 몫**(productSettings.sweeter)을
+//    읽는다. BLOCK7 의 settings 에서 읽으면 거기 없는 값이라 늘 기본값이 되고,
+//    더 나쁜 것은 **저장까지 하면** BLOCK7 의 공용 설정 칸에 swTiles 가 들어가
+//    클라우드 문서가 예전과 달라진다 (CLAUDE.md: BLOCK7 은 한 글자도 달라지지 않는다).
+function _swTilesRaw(){
+  if(_swOn())return (ST.settings||{}).swTiles;
+  return ((((ST.productSettings||{}).sweeter)||{}).swTiles);
+}
 function _swLoadTiles(){
-  const raw=(ST.settings||{}).swTiles;
+  const raw=_swTilesRaw();
   // 아직 한 번도 손대지 않았으면 기본 차례로 (빈 배열은 "다 껐다"는 뜻이라 살린다)
   if(!Array.isArray(raw))return _SW_DEFAULT_TILES.map(k=>({k,s:0,p:0}));
   // 모르는 종류는 버린다 — 뒤 버전에서 없앤 타일이 남아 있을 수 있다
   return raw.filter(t=>t&&_SW_TYPES[t.k]).map(t=>({k:t.k,s:(+t.s||0),p:0}));
 }
 function _swSaveTiles(){
+  // ⛔️ 미리보기(BLOCK7 이 Sweeter 판을 보는 중)에서는 **쓰지 않는다.**
+  //    쓰면 BLOCK7 의 클라우드 문서에 Sweeter 것이 섞인다.
+  if(!_swOn())return;
   if(!ST.settings)ST.settings={};
   ST.settings.swTiles=_SW_TILES.map(t=>({k:t.k,s:t.s}));   // p 는 담지 않는다
   save();
@@ -42506,7 +42533,7 @@ function _swInitGestures(){
     if(!_swG)return;
     if((_swG.lp||_swG.drag)&&e.cancelable)e.preventDefault();
   },{passive:false});
-  window.addEventListener('resize',()=>{if(_swOn())_swSizeCells();});
+  window.addEventListener('resize',()=>{if(_swBoardOn())_swSizeCells();});
 }
 // 문턱을 못 넘었거나 끝이면 제자리로 (설정창과 같은 되돌림)
 function _swSnap(el,tr){
@@ -42550,6 +42577,28 @@ function _sisterFill(){
 //    그래서 우리가 할 수 있는 최선은 "상대 주소를 연다" 까지다.
 //    ⛔️ 예전에 '앱 안에서 화면만 바꾸기' 를 함께 두었는데 HB 가 헷갈린다고 했다
 //       (2026-09-21). 길이 둘이면 어느 쪽으로 갔는지 알 수 없다 — 하나로 둔다.
+// 앱 안에서 상대 제품 화면을 보여 줬다 되돌린다 (아이폰 홈 화면 앱 전용).
+// ⚠️ 한 방향이 아니라 **양쪽 다** 된다 —
+//    Sweeter 에서는 판을 내려 BLOCK7 화면을 보이고,
+//    BLOCK7 에서는 판을 세워 Sweeter 화면을 보인다.
+//    BLOCK7 쪽은 **읽기만** 한다 (타일 구성을 저장하지 않는다 — _swSaveTiles).
+function swCrossToggle(){
+  _swCross=!_swCross;
+  const el=document.getElementById('swHome');
+  if(el){
+    if(_swBoardOn())_swMount();
+    else el.classList.remove('on');
+  }
+  _swCrossBtnSync();
+}
+// 되돌아가는 단추 — 상대 화면을 보는 동안에만 뜬다. 내 제품 이름을 단다.
+function _swCrossBtnSync(){
+  const b=document.getElementById('swCrossBack');
+  if(!b)return;
+  if(!_swCross){b.style.display='none';return;}
+  b.textContent=(_swOn()?'Sweeter':'BLOCK7')+' 로';
+  b.style.display='block';
+}
 // 지금 '홈 화면 앱' 으로 열려 있는가 (브라우저 탭이 아니라)
 function _sisterStandalone(){
   try{
@@ -42568,13 +42617,13 @@ function sisterGo(){
   const href=app.href;
   // ⚠️⚠️ 아이폰 홈 화면 앱에서는 **상대 홈 화면 앱을 부르는 길이 아예 없다.**
   //    웹에 그런 장치가 없다 (애플 개발자 포럼에도 같은 물음과 "방법 없음" 이
-  //    올라와 있다). 억지로 열면 앱 **안에** 브라우저가 뜨는데, 그건 저장 칸이
-  //    달라 로그인도 안 되어 있고 우리 앱처럼 보이지도 않는다 —
-  //    HB 가 "헷갈린다" 고 한 그 화면이다 (2026-09-21).
-  //    → 못 하는 것을 하는 척하지 않는다. 무엇을 하면 되는지 한 줄로 알려 준다.
+  //    올라와 있다). 그렇다고 브라우저를 띄우면 앱 **안에** 브라우저가 뜨는데,
+  //    그건 저장 칸이 달라 로그인도 안 되어 있고 우리 앱처럼 보이지도 않는다 —
+  //    HB 가 "헷갈린다" 고 한 그 화면이다.
+  //    → 앱 **안에서** 상대 화면을 보여 준다 (HB 결정 2026-09-21).
   //    ⚠️ 안드로이드는 기기가 설치된 앱으로 넘겨줄 때가 있으므로 그대로 연다.
   if(_sisterStandalone()&&_sisterIsIOS()){
-    try{showToast('아이폰 앱에서는 바로 건너뛸 수 없어요 — 홈 화면의 '+app.name+' 아이콘을 눌러 주세요');}catch(e){}
+    swCrossToggle();
     return;
   }
   // ⚠️⚠️ 세 번째 인자에 'noopener' 를 **주지 말 것.** 규격상 그때 window.open 은
@@ -42590,10 +42639,18 @@ function sisterGo(){
   try{location.href=href;}catch(e){}
 }
 function _swBoot(){
-  if(!_swOn())return;            // BLOCK7 에서는 아무 일도 하지 않는다
+  if(!_swOn())return;            // BLOCK7 에서는 저 혼자 켜지지 않는다
+  _swMount();
+}
+// 판을 실제로 세운다. Sweeter 의 첫 그림과 BLOCK7 의 미리보기가 **같은 길**을 쓴다.
+// 두 번 불려도 안전하다 (dataset 표시로 손짓을 한 번만 묶는다).
+function _swMount(){
   const el=document.getElementById('swHome');
   if(!el)return;
   el.classList.add('on');
+  // 편집은 **제 제품에서만** — 미리보기에서 고치면 저장할 곳이 없다
+  const eb=document.getElementById('swEditBtn');
+  if(eb)eb.style.display=_swOn()?'':'none';
   _SW_TILES=_swLoadTiles();
   _swInitGestures();
   _swRender();

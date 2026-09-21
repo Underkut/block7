@@ -564,4 +564,47 @@ console.log('\n시나리오 15 — Sweeter 개발본의 Firebase 는 꺼져 있�
         SRC.includes("function _lsk(name){return LS_KEY+'_'+name;}"), true);
 }
 
+// ═══ 16. ⚠️ BLOCK7 이 Sweeter 판을 미리 볼 때 제 설정을 건드리지 않는가 ═══
+console.log('\n시나리오 16 — BLOCK7 의 미리보기는 읽기만 한다');
+{
+  // 아이폰 홈 화면 앱에서는 웹앱끼리 서로를 못 불러서, BLOCK7 안에서 Sweeter
+  // 화면을 보여 준다 (v26-0921-4, HB). 그때 **BLOCK7 의 클라우드 문서가
+  // 예전과 한 글자도 달라지면 안 된다** (CLAUDE.md).
+  APP_PRODUCT='block7';
+  ST={settings:{theme:'dark'},productSettings:{sweeter:{swTiles:[{k:'coll',s:1},{k:'tag',s:0}]}}};
+  sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k), ['coll','tag']);
+  sc.eq('정렬 값도 함께', _swLoadTiles()[0].s, 1);
+
+  // ⭐ 저장은 **하지 않는다**
+  _SW_TILES=[{k:'last',s:0},{k:'book',s:2}];
+  SAVED=0;
+  _swSaveTiles();
+  sc.eq('⭐ 저장을 부르지 않는다', SAVED, 0);
+  sc.eq('⭐ BLOCK7 의 settings 에 swTiles 가 생기지 않는다', ST.settings.swTiles, undefined);
+  sc.eq('⭐ Sweeter 몫도 건드리지 않는다',
+        ST.productSettings.sweeter.swTiles.map(t=>t.k), ['coll','tag']);
+  sc.eq('BLOCK7 의 다른 설정도 그대로', ST.settings.theme, 'dark');
+
+  // Sweeter 몫이 아직 없으면 기본 차례로 (빈 화면이 되면 안 된다)
+  ST={settings:{},productSettings:{}};
+  sc.eq('Sweeter 몫이 없으면 기본 차례', _swLoadTiles().map(t=>t.k), _SW_DEFAULT_TILES);
+  ST={settings:{}};
+  sc.eq('productSettings 자체가 없어도 터지지 않는다', _swLoadTiles().length>0, true);
+
+  // 제 제품(Sweeter)에서는 예전 그대로 제 settings 에 저장한다
+  APP_PRODUCT='sweeter';
+  ST={settings:{},productSettings:{}};
+  _SW_TILES=[{k:'last',s:0}];
+  SAVED=0;
+  _swSaveTiles();
+  sc.eq('Sweeter 는 예전처럼 저장한다', [SAVED,ST.settings.swTiles.length], [1,1]);
+
+  // 판을 보여 주어야 하는가 — 제품과 '상대 화면 보는 중' 의 조합
+  APP_PRODUCT='sweeter'; _swCross=false; sc.eq('Sweeter 평소 = 판 켬', _swBoardOn(), true);
+  _swCross=true;                          sc.eq('Sweeter 상대화면 = 판 끔', _swBoardOn(), false);
+  APP_PRODUCT='block7';  _swCross=false; sc.eq('BLOCK7 평소 = 판 끔', _swBoardOn(), false);
+  _swCross=true;                          sc.eq('BLOCK7 상대화면 = 판 켬', _swBoardOn(), true);
+  _swCross=false;
+}
+
 sc.done();
