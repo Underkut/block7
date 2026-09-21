@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-11  [production]  -->
+<!-- BLOCK7  v. 26-0921-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2865,7 +2865,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 /* ② 제목줄이 위쪽 여백을 가져갔으니 팝업 자신은 위 여백을 비운다.
    (안 비우면 제목줄이 붙을 때 20px 만큼 위로 튀어 오른다) */
-#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal,#taskMemoModal{padding-top:0;}
+#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal,#taskMemoModal,#swKbHelpModal{padding-top:0;}
 .event-modal:has(> .modal-head){padding-top:0;}
 .modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
@@ -5167,6 +5167,22 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    ⚠️ 끌기 시작한 뒤에는 document 의 touchmove 가 기본 동작을 막는다. 그때는
       아직 스크롤이 시작되지 않았으므로 preventDefault 가 먹는다. */
 .sw-board.edit .sw-tile{touch-action:pan-y;}
+/* ── PC: 자판이 보고 있는 타일 (v26-0921-12, HB) ─────────
+   ⚠️ **자판을 쓴 뒤에만** 뜬다. 손가락으로만 쓰는 사람의 화면은 한 칸도
+      달라지지 않는다 (_SW_KB 가 -1 인 동안에는 아무 타일에도 안 붙는다).
+   ⚠️ 테두리를 새로 두르지 않는다 (UI 원칙) — 편집 모드가 쓰는 것과 같은
+      안쪽 선 하나로, 색만 진하게 해서 '지금 여기' 를 나타낸다. */
+.sw-tile.sw-kb::before{content:"";position:absolute;inset:0;border-radius:15px;
+  box-shadow:inset 0 0 0 2px var(--ac);pointer-events:none;z-index:2;}
+/* 자판 도움말 — 한 줄에 '키 + 뜻' */
+.swkb-row{display:flex;align-items:baseline;gap:10px;padding:6px 2px;
+  border-bottom:1px solid var(--bd);font-size:12.5px;color:var(--tx);}
+.swkb-row:last-child{border-bottom:0;}
+.swkb-k{flex:0 0 96px;font:600 11px/1.5 var(--font-number);letter-spacing:.02em;
+  color:var(--ac-tx);white-space:nowrap;}
+.swkb-sec{margin:12px 0 2px;font:600 10.5px/1 var(--font-ui);letter-spacing:.06em;
+  color:var(--tx3);}
+.swkb-sec:first-child{margin-top:0;}
 .sw-kill{position:absolute;top:7px;right:7px;width:21px;height:21px;border-radius:50%;
   background:var(--bg);border:1px solid var(--bd);color:var(--tx2);
   display:grid;place-items:center;font-size:13px;line-height:1;z-index:3;cursor:pointer;
@@ -5333,7 +5349,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-11";
+const APP_VERSION = "v. 26-0921-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7985,6 +8001,22 @@ try{
      글자는 _swCrossBtnSync() 가 채운다 — 어느 제품에서 눌렀느냐로 갈린다. -->
 <button class="sw-barbtn" id="swCrossBack" onclick="swCrossToggle()"
   style="display:none;position:fixed;z-index:201;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));background:var(--s1);"></button>
+
+<!-- 자판 단축키 도움말 (v26-0921-12, HB) — PC 에서 '?' 를 누르면 뜬다.
+     ⚠️ 팝업 **전체**가 스크롤되므로 × 는 .modal-head 안의 .modal-x-inline 이다
+        (UI 원칙 표 참고). 내용은 _swKbHelpFill() 이 그리고, × 는 HTML 에 그대로
+        남아 있으므로 innerHTML 로 지워지지 않는다 — 본문 칸만 따로 둔 까닭이다. -->
+<div class="event-modal-overlay" id="swKbHelpOverlay" style="display:none;z-index:4460;" onclick="closeSwKbHelp()"></div>
+<div class="event-modal" id="swKbHelpModal" style="display:none;z-index:4470;width:360px;max-width:92vw;max-height:84vh;overflow-y:auto;">
+  <div class="modal-head">
+    <div class="modal-head-gap"></div>
+    <div class="event-modal-title" style="margin:0;flex:1;">자판 단축키</div>
+    <button class="modal-x modal-x-inline" onclick="closeSwKbHelp()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+    </button>
+  </div>
+  <div id="swKbHelpBody"></div>
+</div>
 
 <!-- AI Drawer -->
 
@@ -11409,6 +11441,7 @@ const _ESC_CLOSERS=[
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   ['repScopeModal',   ()=>closeRepScope()],
   // 팝업류
+  ['swKbHelpModal',   ()=>closeSwKbHelp()],
   ['vpModal',         ()=>closeVPair()],
   ['syncConflictModal',()=>closeSyncConflicts()],
   ['plusListModal',    ()=>closePlusList()],
@@ -11479,6 +11512,17 @@ document.addEventListener('keydown',e=>{
   const t=e.target;
   if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
   if(typeof _vDashDetailKey==='function'&&_vDashDetailKey(e)){
+    e.preventDefault();e.stopImmediatePropagation();
+  }
+});
+// Sweeter 홈(타일 판) — PC 자판 (v26-0921-12, HB).
+// ⚠️ 여기는 **조합키를 미리 걸러 내지 않는다.** Shift 는 쓰는 자리가 있고
+//    (Shift+Tab · Shift+←/→ · '?'), 나머지는 _swBoardKey 가 스스로 돌아 나간다.
+// ⚠️ 위의 ESC 처리보다 **뒤**에 둔다. 판 위에 팝업이 떠 있으면 _swKbReady() 가
+//    먼저 막으므로 ESC 는 언제나 위에 뜬 화면의 것이다.
+document.addEventListener('keydown',e=>{
+  if(e.defaultPrevented)return;
+  if(typeof _swBoardKey==='function'&&_swBoardKey(e)){
     e.preventDefault();e.stopImmediatePropagation();
   }
 });
@@ -42510,6 +42554,7 @@ function _swRender(){
     b.appendChild(el);
   });
   _swSizeCells();
+  _swKbSync();          // 다시 그리면 자판 표시가 날아간다 (v26-0921-12)
 }
 // ── 편집 모드 ────────────────────────────────────────────
 // 편집을 **다시 그리지 않고** 켠다 (× 를 붙이고 ＋ 칸을 잇는다).
@@ -42533,6 +42578,7 @@ function _swEditOn(){
     b.appendChild(el);
   });
   _swEditBtnSync();
+  _swKbSync();
 }
 // ⚠️ 편집에서는 **토스트를 띄우지 않는다** (HB 지시 26-0830-12).
 //    길게 누른 손 그대로 끌려는데 화면 한가운데 큰 알림이 튀어나와 몸짓이
@@ -42602,6 +42648,7 @@ function _swRepaint(i){
   el.className=_swTileClass(t);   // sw-dragging 도 여기서 사라진다
   el.innerHTML=_swFace(t)
     +(_SW_EDIT?'<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>':'');
+  _swKbSync();                    // className 을 새로 준 자리라 표시도 다시 (v26-0921-12)
 }
 
 // ── 누르면 전체화면 ──────────────────────────────────────
@@ -42786,6 +42833,8 @@ function _swInitGestures(){
     // 타일 바깥(판의 빈 자리)을 누르면 편집을 마친다 (HB 지시 26-0830-14).
     // ⚠️ 언젠가 편집/완료 단추는 없앨 자리다. 그때 이 길이 유일한 출구가 된다.
     if(!el){if(_SW_EDIT)swToggleEdit();return;}
+    // 자판을 **이미 쓰고 있던** 사람만 — 손가락으로만 쓰는 화면에는 표시가 안 뜬다
+    if(_SW_KB>=0){const _ix=_swKbTiles().indexOf(el);if(_ix>=0)_swKbSet(_ix,false);}
     if(el.dataset.swadd!==undefined){_swAddTile(el.dataset.swadd);return;}
     const i=+el.dataset.swi;
     if(e.target.closest('[data-swkill]')){_swKillTile(i);e.preventDefault();return;}
@@ -42984,6 +43033,288 @@ function _swSnap(el,tr){
   tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
   tr.style.transform='translateX(-33.3333%)';
   setTimeout(()=>{if(tr)tr.style.transition='';},240);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PC — 자판으로 오가기 (v26-0921-12, HB)
+// ──────────────────────────────────────────────────────────
+//  폰에서 손가락이 하는 일을 자판이 그대로 할 수 있게 한다.
+//
+//    ↑ ↓      **타일 간** — 판을 한 줄씩 오르내린다
+//    ← →      **타일 안** — 값을 넘긴다 (옆쓸기의 짝)
+//    Tab      차례대로 (목차 번호 순) · Shift+Tab 은 거꾸로
+//    Enter    지금 값을 전체화면으로 (탭의 짝)
+//    ?        이 표를 띄운다
+//
+//  ⚠️ 좌/우를 '옆 타일'이 아니라 '타일 안'으로 둔 까닭:
+//     이 판에서 옆쓸기는 **가장 자주 쓰는 몸짓**이고, 자판은 그 몸짓의 짝이라야
+//     새로 배울 것이 없다 (대시보드 상세의 _vDashDetailKey 와 같은 생각).
+//     옆 타일로 가는 길은 Tab 과 **편집 중의 좌/우**가 맡는다 — 편집 중에는
+//     값이 넘어가지 않으므로(.sw-board.edit .sw-track) 좌/우가 비어 있다.
+//
+//  ⚠️ IS_TOUCH 로 막지 않는다. 자판 이벤트는 자판이 있어야 오고, 아이패드에
+//     자판을 붙인 사람은 **둘 다** 쓴다. 대신 표시(.sw-kb)는 자판을 실제로
+//     쓴 뒤에만 뜬다 — 손가락으로만 쓰는 화면은 한 칸도 달라지지 않는다.
+// ══════════════════════════════════════════════════════════
+// 자판이 보고 있는 타일. -1 = 아직 아무 데도 (표시가 안 뜬다)
+let _SW_KB=-1;
+// 판 위의 타일들 — **＋칸까지** 차례대로다. 판에 놓인 차례가 곧 _SW_TILES 의
+// 차례이고 그 뒤에 ＋칸이 붙으므로, k < _SW_TILES.length 이면 진짜 타일이다.
+function _swKbTiles(){
+  const b=document.getElementById('swBoard');
+  return b?[...b.querySelectorAll('.sw-tile')]:[];
+}
+// 다시 그리면 클래스가 날아가므로(_swRender·_swRepaint) 그 끝에서 다시 붙인다.
+function _swKbSync(){
+  const els=_swKbTiles();
+  if(_SW_KB>=els.length)_SW_KB=els.length-1;
+  els.forEach((el,k)=>el.classList.toggle('sw-kb',_SW_KB>=0&&k===_SW_KB));
+}
+function _swKbSet(i,scroll){
+  const els=_swKbTiles();
+  if(!els.length)return;
+  _SW_KB=Math.max(0,Math.min(els.length-1,i));
+  _swKbSync();
+  if(scroll===false)return;
+  const el=els[_SW_KB];
+  if(el&&el.scrollIntoView)
+    try{el.scrollIntoView({block:'nearest',behavior:_swNoMotion()?'auto':'smooth'});}catch(_){}
+}
+// 차례대로 한 칸 (Tab · 편집 중의 좌/우). 끝에서는 돌아온다 — Tab 의 성질이다.
+function _swKbStep(d){
+  const n=_swKbTiles().length;
+  if(!n)return;
+  _swKbSet(_SW_KB<0?(d>0?0:n-1):(_SW_KB+d+n)%n);
+}
+// 위/아래 — **화면에 실제로 놓인 자리**로 잰다. 넓은 타일이 한 줄을 통째로
+// 차지하므로 '칸 번호를 2씩 더하는' 셈법은 어긋난다.
+// 가장 가까운 줄을 먼저 고르고, 그 줄 안에서는 가로로 가장 많이 겹치는 것을 고른다.
+function _swKbGo(dy){
+  const els=_swKbTiles();
+  if(!els.length)return;
+  if(_SW_KB<0){_swKbSet(0);return;}
+  const cur=els[_SW_KB];
+  if(!cur)return;
+  const r=cur.getBoundingClientRect(),cand=[];
+  els.forEach((el,k)=>{
+    if(k===_SW_KB)return;
+    const q=el.getBoundingClientRect();
+    if(dy>0?q.top<=r.top+4:q.top>=r.top-4)return;
+    cand.push({k,top:q.top,ov:Math.min(r.right,q.right)-Math.max(r.left,q.left)});
+  });
+  if(!cand.length)return;   // 끝이면 제자리 (고무줄과 같은 뜻)
+  cand.sort((a,b)=>(dy>0?a.top-b.top:b.top-a.top)||b.ov-a.ov);
+  _swKbSet(cand[0].k);
+}
+// 좌/우 타일로 — 같은 줄 안에서 가장 가까운 것. 그 줄의 끝이면 차례대로 한 칸.
+// ⚠️ 이 길은 **넘길 값이 없는 타일**(값이 하나뿐이거나 비었을 때)과 편집 중에만
+//    쓴다. 값이 여럿인 타일에서 좌/우는 언제나 '타일 안'이다 — 옆쓸기의 짝이니까.
+function _swKbGoX(dx){
+  const els=_swKbTiles();
+  if(!els.length)return;
+  if(_SW_KB<0){_swKbSet(0);return;}
+  const cur=els[_SW_KB];
+  if(!cur)return;
+  const r=cur.getBoundingClientRect(),cand=[];
+  els.forEach((el,k)=>{
+    if(k===_SW_KB)return;
+    const q=el.getBoundingClientRect();
+    if(q.bottom<=r.top+4||q.top>=r.bottom-4)return;      // 같은 줄이 아니다
+    if(dx>0?q.left<=r.left+4:q.left>=r.left-4)return;
+    cand.push({k,d:Math.abs(q.left-r.left)});
+  });
+  if(!cand.length){_swKbStep(dx);return;}                // 줄 끝 — 차례대로 넘어간다
+  cand.sort((a,b)=>a.d-b.d);
+  _swKbSet(cand[0].k);
+}
+// 타일 안에서 값 넘기기. end 를 주면 처음·끝으로 뛴다 (Shift+좌/우).
+function _swKbPage(dir,end){
+  const t=_SW_TILES[_SW_KB];
+  if(!t)return false;
+  const n=_swStrip(t).length;
+  if(n<=1)return false;
+  const was=t.p;
+  t.p=end?(dir>0?n-1:0):Math.max(0,Math.min(n-1,t.p+dir));
+  if(t.p===was)return false;
+  _swRepaint(_SW_KB);
+  return true;
+}
+// 정렬 칩 한 번 누른 것과 같다 (S)
+function _swKbSort(){
+  const t=_SW_TILES[_SW_KB];
+  if(!t)return false;
+  const S=_SW_TYPES[t.k].sorts;
+  t.s=(t.s+1)%S.length;t.p=0;
+  _swRepaint(_SW_KB);
+  return true;
+}
+// 책갈피(저장) 한 번 누른 것과 같다 (B) — 지금 칸이 말씀일 때만.
+// ⚠️ 새로 담을 때는 **목록을 고르는 창**이 뜬다. 손가락 길과 똑같다.
+function _swKbKeep(){
+  const t=_SW_TILES[_SW_KB];
+  if(!t)return false;
+  const it=_swStrip(t),cur=it[t.p];
+  if(!(cur&&cur.kind==='val'&&cur.v&&cur.v.verse))return false;
+  const rk=_reactKey(cur.v.verse);
+  if(_swIsKept(rk)){swToggleKeep(rk);_swRepaint(_SW_KB);_swRepaintKeepTiles(_SW_KB);}
+  else openKeepPicker(rk);
+  return true;
+}
+// 편집 중 Shift+좌/우 — 끌기의 짝. 차례를 한 자리씩 옮긴다.
+// ⚠️ 위/아래로는 옮기지 않는다. 넓은 타일이 섞여 있어 '한 줄'이 두 칸이라고
+//    말할 수 없기 때문이다 — 목차 번호를 한 자리씩 미는 것만 정직하다.
+function _swKbMove(d){
+  if(!_SW_EDIT)return false;
+  const from=_SW_KB,to=from+d;
+  if(from<0||from>=_SW_TILES.length||to<0||to>=_SW_TILES.length)return false;
+  const[m]=_SW_TILES.splice(from,1);
+  _SW_TILES.splice(to,0,m);
+  _SW_KB=to;
+  _swRender();          // 안에서 _swKbSync() 가 표시를 새 자리에 옮겨 준다
+  return true;
+}
+// 판이 화면에 떠 있고, 그 위에 **다른 화면이 없고**, 글자를 치는 중이 아닐 때만 받는다.
+// ⚠️ '위에 다른 화면이 있는가' 는 _ESC_CLOSERS 표를 그대로 되쓴다 — 새 팝업이
+//    생길 때마다 여기를 따로 고치지 않아도 되게 (ESC 가 쓰는 그 표다).
+function _swKbReady(){
+  if(typeof _swBoardOn!=='function'||!_swBoardOn())return false;
+  const b=document.getElementById('swBoard');
+  if(!b||!b.getClientRects||!b.getClientRects().length)return false;
+  const a=document.getElementById('authScreen');
+  if(a&&_escShown(a))return false;
+  for(const[id,,test]of _ESC_CLOSERS){
+    const el=document.getElementById(id);
+    if(!el)continue;
+    if(test?test(el):_escShown(el))return false;
+  }
+  return true;
+}
+// 한 번만 알려 주는 안내 — 자판을 처음 쓴 사람에게 '?' 가 있다는 것만 짚어 준다.
+// ⚠️ 이 기기 전용 키는 반드시 _lsk() 로 만든다 (2026-08-31 사고, CLAUDE.md).
+function _swKbHint(){
+  try{
+    if(localStorage.getItem(_lsk('swkbhint')))return;
+    localStorage.setItem(_lsk('swkbhint'),'1');
+  }catch(_){return;}
+  if(typeof showToast==='function')
+    showToast('← → 값 넘기기 · ↑ ↓ 타일 이동 · ? 를 누르면 단축키를 봅니다');
+}
+function _swBoardKey(e){
+  if(e.altKey||e.ctrlKey||e.metaKey)return false;
+  const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return false;
+  // 도움말은 **떠 있는 동안에도** 닫을 수 있어야 하므로 판 검사보다 앞에 둔다
+  if(_swKbHelpOpen()){
+    if(e.key==='?'||e.key==='Escape'){closeSwKbHelp();return true;}
+    return false;
+  }
+  if(!_swKbReady())return false;
+  const k=e.key;
+  if(k==='?'){openSwKbHelp();return true;}
+  if(k==='Escape'){
+    if(_SW_EDIT){swToggleEdit();return true;}
+    if(_SW_KB>=0){_SW_KB=-1;_swKbSync();return true;}
+    return false;
+  }
+  // ⚠️ Tab 은 **자판 자리를 이미 잡았을 때만** 가로챈다. 아무 데도 안 보고 있는
+  //    동안에는 브라우저의 Tab 그대로여야 톱니·필터 같은 머리줄 단추로 갈 수 있다.
+  //    Esc 로 자리를 놓으면 다시 브라우저에게 돌려준다.
+  if(k==='Tab'){
+    if(_SW_KB<0)return false;
+    _swKbStep(e.shiftKey?-1:1);return true;
+  }
+  // 첫 자판은 '자리를 잡는' 것부터 — 아무 데도 안 보고 있는데 값을 넘기면 놀란다
+  if(_SW_KB<0&&(k==='ArrowUp'||k==='ArrowDown'||k==='ArrowLeft'||k==='ArrowRight'
+                ||k==='Enter'||k===' '||k==='Home'||k==='End')){
+    _swKbHint();_swKbSet(0);return true;
+  }
+  if(k==='Home'){_swKbSet(0);return true;}
+  if(k==='End'){_swKbSet(_swKbTiles().length-1);return true;}
+  if(k==='ArrowUp'||k==='ArrowDown'){
+    if(e.shiftKey)return false;
+    _swKbGo(k==='ArrowDown'?1:-1);return true;
+  }
+  if(k==='ArrowLeft'||k==='ArrowRight'){
+    const d=k==='ArrowRight'?1:-1;
+    if(_SW_EDIT){if(e.shiftKey)_swKbMove(d);else _swKbGoX(d);return true;}
+    // 넘길 값이 있으면 '타일 안', 없으면 '옆 타일' — 값 하나짜리 타일에 갇히지 않게
+    const t=_SW_TILES[_SW_KB];
+    if(t&&_swStrip(t).length>1){_swKbPage(d,e.shiftKey);return true;}
+    _swKbGoX(d);return true;
+  }
+  if(k==='Enter'||k===' '){
+    const el=_swKbTiles()[_SW_KB];
+    if(el&&el.dataset.swadd!==undefined){
+      _swAddTile(el.dataset.swadd);
+      _swKbSet(_SW_TILES.length-1,false);
+      return true;
+    }
+    if(_SW_EDIT)return true;              // 편집 중에는 여는 일이 없다 (탭과 같다)
+    if(_SW_TILES[_SW_KB])_swTileOpen(_SW_KB);
+    return true;
+  }
+  if(_SW_EDIT&&(k==='Delete'||k==='Backspace')){
+    if(_SW_TILES[_SW_KB])_swKillTile(_SW_KB);   // _swRender 가 표시를 추슬러 준다
+    return true;
+  }
+  if(e.shiftKey)return false;
+  // ⚠️ 글쇠는 e.key 가 아니라 **e.code** 로 본다. 한글 자판이 켜져 있으면
+  //    e.key 는 'ㄴ' 같은 글자가 되지만 e.code 는 언제나 'KeyS' 다.
+  if(e.code==='KeyE'){swToggleEdit();_swKbSync();return true;}
+  if(_SW_EDIT)return false;
+  if(e.code==='KeyF'){swOpenCollFilter();return true;}
+  if(e.code==='KeyS')return _swKbSort();
+  if(e.code==='KeyB')return _swKbKeep();
+  return false;
+}
+// ── 자판 단축키 도움말 ───────────────────────────────────
+function _swKbHelpOpen(){
+  const m=document.getElementById('swKbHelpModal');
+  return !!(m&&m.style.display!=='none'&&m.style.display!=='');
+}
+const _SWKB_HELP=[
+  ['sec','타일 사이'],
+  ['↑ ↓','위아래 타일로'],
+  ['Tab','다음 타일 · Shift+Tab 이전 타일'],
+  ['← →','값이 하나뿐인 타일에서는 옆 타일로'],
+  ['Home End','첫 타일 · 마지막 타일'],
+  ['sec','타일 안'],
+  ['← →','값을 넘긴다 (옆쓸기와 같다)'],
+  ['Shift+← →','첫 값 · 마지막 값으로'],
+  ['Enter','지금 값을 전체화면으로'],
+  ['sec','손 안 대고 하는 일'],
+  ['S','정렬 바꾸기 (우상단 칩과 같다)'],
+  ['B','지금 말씀을 저장 (책갈피)'],
+  ['F','말씀 모음 고르기'],
+  ['E','편집 켜기·끄기'],
+  ['sec','편집 중'],
+  ['← →','옆 타일로'],
+  ['Shift+← →','타일 자리를 옮긴다'],
+  ['Delete','이 타일 끄기'],
+  ['Enter','＋칸이면 그 타일을 켠다'],
+  ['Esc','편집 마치기'],
+  ['sec','그 밖'],
+  ['Esc','자판 자리를 놓는다 (Tab 이 브라우저로 돌아간다)'],
+  ['?','이 표'],
+];
+function _swKbHelpFill(){
+  const b=document.getElementById('swKbHelpBody');
+  if(!b)return;
+  b.innerHTML=_SWKB_HELP.map(([a,c])=>a==='sec'
+    ?'<div class="swkb-sec">'+_swEsc(c)+'</div>'
+    :'<div class="swkb-row"><span class="swkb-k">'+_swEsc(a)+'</span>'
+      +'<span>'+_swEsc(c)+'</span></div>').join('');
+}
+function openSwKbHelp(){
+  _swKbHelpFill();
+  const o=document.getElementById('swKbHelpOverlay'),m=document.getElementById('swKbHelpModal');
+  if(o)o.style.display='block';
+  if(m)m.style.display='block';   // ⚠️ .event-modal 은 flex 가 아니다 — flex 를 주면
+}                                 //    제목줄과 본문이 **나란히** 서서 글자가 잘린다
+function closeSwKbHelp(){
+  const o=document.getElementById('swKbHelpOverlay'),m=document.getElementById('swKbHelpModal');
+  if(o)o.style.display='none';
+  if(m)m.style.display='none';
 }
 
 // ── 형제 앱 열기 (v26-0921-2, HB) ────────────────────────
