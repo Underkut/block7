@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0919-6  [production]  -->
+<!-- BLOCK7  v. 26-0921-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -49,6 +49,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BLOCK7">
 <meta name="theme-color" content="#0d0e10">
+<!-- 브라우저 탭 아이콘. Sweeter 산출물은 만들 때 icon-sweeter.png 로 바뀐다. -->
+<link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <!-- ── 링크 공유 카드 (카카오톡·문자·SNS) ──
      주소를 붙여넣었을 때 뜨는 미리보기 카드의 내용.
@@ -4892,6 +4894,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   color:var(--tx3);margin-top:1px;}
 .sw-barbtn{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;
   padding:5px 12px;font:400 11px/1 var(--font-ui);cursor:pointer;}
+/* 좌상단 로고 묶음 — 로고와 제목이 한 덩어리로 눌린다 (BLOCK7 의 로고와 같은 자리) */
+.sw-brand{display:flex;align-items:center;gap:9px;min-width:0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;}
+.sw-logo{width:30px;height:30px;border-radius:7px;display:block;flex:0 0 auto;
+  user-select:none;-webkit-user-drag:none;pointer-events:none;}
+/* 톱니 — 테두리·박스 없이 아이콘만 (UI 원칙) */
+.sw-iconbtn{background:none;border:0;padding:4px;margin:0;cursor:pointer;
+  color:var(--tx2);display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;}
+.sw-iconbtn svg{width:19px;height:19px;display:block;}
+.sw-iconbtn:active{opacity:.55;}
 /* BLOCK7 에서 말씀을 가져오라는 안내 한 줄.
    상자를 만들지 않는다 (UI 원칙) — 글자와 단추만 둔다. */
 .sw-notice{display:none;align-items:center;justify-content:space-between;gap:10px;
@@ -5231,7 +5244,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0919-6";
+const APP_VERSION = "v. 26-0921-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6907,6 +6920,12 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="task-menu-item" onclick="openVerseSettingsFromLogo()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정
   </div>
+  <!-- 형제 앱으로 건너가는 다리 (v26-0921-1, HB) — 내용은 _sisterFill() 이 채운다.
+       탭 = 앱 안에서 화면 바꾸기 · 롱터치/우클릭 = 상대 앱 주소로 진짜 이동.
+       ⚠️ 아이콘은 <img> 다. 상대 제품의 로고를 그대로 보여 줘야 해서 SVG 로 못 그린다. -->
+  <div class="task-menu-item" id="logoMenuSister" onclick="sisterTap()">
+    <span class="task-menu-icon"><img id="logoMenuSisterIcon" alt="" width="15" height="15" style="border-radius:3.5px;display:block;"></span><span id="logoMenuSisterLabel">…</span>
+  </div>
   </div>
   <!-- 하위 뎁스: 말씀 목록 (HB 1-2) — 뒤로가기 한 줄 + 좋아요/암송/Deeper/Even Deeper -->
   <div id="logoMenuListSub" style="display:none" onmouseenter="_logoMenuSubCancelClose();" onmouseleave="_logoMenuSubScheduleClose();">
@@ -7795,13 +7814,27 @@ window._fbScriptsReady=new Promise(resolve=>{
      타일은 _swRender() 가 그린다 — HTML 에 타일을 박아 두지 말 것. -->
 <div id="swHome">
   <div class="sw-bar">
-    <div>
-      <div class="sw-ttl" id="swTtl">Sweeter</div>
-      <div class="sw-sub" id="swSub">말씀과 함께하는 하루</div>
+    <!-- 좌상단 로고 — BLOCK7 과 **같은 손버릇**이다 (v26-0921-1, HB):
+         탭 = 말씀 메뉴 · 롱터치/우클릭 = 말씀 모음 전체 업데이트. -->
+    <div class="sw-brand">
+      <img class="sw-logo" id="swLogo" src="icon-sweeter.png" alt="Sweeter">
+      <div style="min-width:0;">
+        <div class="sw-ttl" id="swTtl">Sweeter</div>
+        <div class="sw-sub" id="swSub">말씀과 함께하는 하루</div>
+      </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
       <button class="sw-barbtn" id="swEditBtn" aria-pressed="false" onclick="swToggleEdit()">편집</button>
-      <button class="sw-barbtn" id="swClassicBtn" onclick="swToggleHome()">기존 화면</button>
+      <!-- 톱니 — 탭 = 말씀 설정 · 롱터치 = 일반 설정(계정·로그아웃).
+           ⚠️ 롱터치를 빼면 **로그아웃으로 가는 길이 아예 막힌다** — openSettings() 로
+              들어가는 문은 기존 화면 안의 톱니 하나뿐이었다. -->
+      <button class="sw-iconbtn" id="swSetBtn" aria-label="말씀 설정" title="말씀 설정 (길게 누르면 일반 설정)">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10" cy="10" r="5.7" stroke-width="1.4"/>
+          <circle cx="10" cy="10" r="2.3" stroke-width="1.4"/>
+          <path d="M15.70 10.00L18.00 10.00M14.03 14.03L15.66 15.66M10.00 15.70L10.00 18.00M5.97 14.03L4.34 15.66M4.30 10.00L2.00 10.00M5.97 5.97L4.34 4.34M10.00 4.30L10.00 2.00M14.03 5.97L15.66 4.34" stroke-width="1.9"/>
+        </svg>
+      </button>
     </div>
   </div>
   <!-- 가져올 것이 있을 때만 뜨는 한 줄. 내용은 _swSyncNotice() 가 만든다. -->
@@ -18222,6 +18255,7 @@ function openLogoMenu(anchorEl){
   closeLogoMenu();
   document.getElementById('logoMenuToggleLabel').textContent=
     ST.settings.verseBarOn?'상단 말씀 끄기':'상단 말씀 켜기';
+  try{_sisterFill();}catch(e){}   // 맨 아래 '형제 앱' 한 줄 (v26-0921-1)
   const overlay=document.getElementById('logoMenuOverlay');
   const menu=document.getElementById('logoMenu');
 
@@ -42489,9 +42523,64 @@ function _swSnap(el,tr){
   setTimeout(()=>{if(tr)tr.style.transition='';},240);
 }
 
+// ── 형제 앱으로 건너가기 (v26-0921-1, HB) ────────────────
+// 두 제품은 **같은 파일 하나**에서 나온다. 그래서 오가는 길이 둘이다:
+//   탭      = 앱 안에서 화면만 바꾼다 (즉시 · 다시 로그인할 필요 없음)
+//   롱터치  = 상대 앱 **주소**를 연다 (진짜 그 앱으로 간다)
+//
+// ⚠️ 앱 안에서 바꾸는 것은 **Sweeter → BLOCK7 한 방향뿐**이다.
+//    거꾸로(BLOCK7 안에서 Sweeter 판 띄우기)는 하지 않는다 —
+//    `APP_PRODUCT` 가 기본값인 동안 Sweeter 장치는 **잠들어 있어야** 하고
+//    (CLAUDE.md), 깨우면 타일 구성(swTiles)이 BLOCK7 의 공용 설정 칸에
+//    들어가 클라우드가 지저분해진다. BLOCK7 에서는 탭도 주소로 간다.
+// ⚠️ 홈 화면 앱(PWA)에서 주소로 가면 **상대 아이콘 앱이 열리는 것이 아니라**
+//    브라우저가 열린다. 저장 칸이 달라 거기서는 다시 로그인해야 한다.
+//    앱 안에서 바꾸는 길(탭)을 먼저 둔 까닭이 이것이다.
+function _sisterApp(){
+  const dev=(typeof DEV_MODE!=='undefined'&&DEV_MODE);
+  return _swOn()
+    ? {name:'BLOCK7', icon:'icon-block7.png',  href:dev?'index-dev.html'  :'https://block7.my/',  inApp:true}
+    : {name:'Sweeter',icon:'icon-sweeter.png', href:dev?'sweeter-dev.html':'https://sweeter.my/', inApp:false};
+}
+// 메뉴 한 줄을 지금 제품에 맞게 채운다 (로고 메뉴를 열 때마다)
+function _sisterFill(){
+  const row=document.getElementById('logoMenuSister');
+  if(!row)return;
+  const s=_sisterApp();
+  const ic=document.getElementById('logoMenuSisterIcon');
+  const lb=document.getElementById('logoMenuSisterLabel');
+  if(ic&&ic.getAttribute('src')!==s.icon)ic.setAttribute('src',s.icon);
+  if(lb)lb.textContent=s.name;
+  row.title=s.inApp?(s.name+' 화면으로 (길게 누르면 '+s.name+' 주소를 엽니다)')
+                   :(s.name+' 열기');
+  // 롱터치·우클릭은 한 번만 달아 둔다
+  if(!row.dataset.sisterLp){
+    row.dataset.sisterLp='1';
+    let tm=null;
+    const stop=()=>{if(tm){clearTimeout(tm);tm=null;}};
+    row.addEventListener('touchstart',()=>{stop();tm=setTimeout(()=>{tm=null;row.dataset.lpFired='1';sisterGo();},550);},{passive:true});
+    row.addEventListener('touchmove',stop,{passive:true});
+    row.addEventListener('touchend',stop,{passive:true});
+    row.oncontextmenu=e=>{e.preventDefault();sisterGo();};
+  }
+}
+// 탭 — 앱 안에서 바꿀 수 있으면 바꾸고, 아니면 주소로 간다
+function sisterTap(){
+  const row=document.getElementById('logoMenuSister');
+  if(row&&row.dataset.lpFired==='1'){row.dataset.lpFired='';return;}  // 롱터치 뒤 따라오는 탭은 버린다
+  closeLogoMenu();
+  if(_sisterApp().inApp)swToggleHome();
+  else sisterGo();
+}
+// 롱터치 — 상대 앱 주소를 진짜로 연다
+function sisterGo(){
+  closeLogoMenu();
+  try{location.href=_sisterApp().href;}catch(e){}
+}
+
 // ── 켜고 끄기 ────────────────────────────────────────────
-// 개발 중에는 기존 BLOCK7 화면도 봐야 해서 우상단 단추로 오간다.
-// Sweeter 가 제 모습을 갖추면 이 단추는 없앤다.
+// Sweeter 안에서 BLOCK7 화면을 보여 줬다 되돌린다. 되돌아오는 길은
+// 떠 있는 'Sweeter 홈' 단추(#swBackBtn)다.
 function swToggleHome(){
   _swClassic=!_swClassic;
   const el=document.getElementById('swHome');
@@ -42509,18 +42598,22 @@ function _swBoot(){
   _swInitGestures();
   _swRender();
   _swSyncNotice();
-  // 제목 롱터치/우클릭 = 다시 가져오기. 수가 같아 안내 줄이 사라진 뒤에도
-  // (본문만 고쳐졌을 때) 다시 받아올 길을 하나 남겨 둔다 — 보조 동작은
-  // 롱터치로 일관되게 한다는 UI 원칙 그대로다.
-  const ttl=document.getElementById('swTtl');
-  if(ttl&&!ttl.dataset.swlp){
-    ttl.dataset.swlp='1';
-    let tm=null;
-    const stop=()=>{if(tm){clearTimeout(tm);tm=null;}};
-    ttl.addEventListener('touchstart',()=>{stop();tm=setTimeout(()=>{tm=null;swImportFromBlock7();},550);},{passive:true});
-    ttl.addEventListener('touchmove',stop,{passive:true});
-    ttl.addEventListener('touchend',stop,{passive:true});
-    ttl.oncontextmenu=e=>{e.preventDefault();swImportFromBlock7();};
+  // ── 좌상단 로고 — BLOCK7 과 **같은 손버릇**이다 (v26-0921-1, HB) ──
+  //    탭 = 말씀 메뉴 · 롱터치/우클릭 = 말씀 모음 전체 업데이트.
+  // ⚠️ 예전에는 제목 롱터치가 '다시 가져오기' 였는데 **뗐다** — 그 자리가
+  //    이제 로고 묶음이라 '전체 업데이트' 와 손짓이 겹친다. 가져오기는
+  //    안내 줄(_swSyncNotice)이 맡는다.
+  const brand=document.querySelector('#swHome .sw-brand');
+  if(brand&&!brand.dataset.swlp){
+    brand.dataset.swlp='1';
+    attachRepeatBtnInteraction(brand,()=>openLogoMenu(brand),()=>verseSyncAllNow());
+  }
+  // ── 우상단 톱니 — 탭 = 말씀 설정 · 롱터치 = 일반 설정 ──
+  // ⚠️ 롱터치를 빼면 로그인·로그아웃·백업으로 가는 길이 **아예 막힌다.**
+  const setBtn=document.getElementById('swSetBtn');
+  if(setBtn&&!setBtn.dataset.swlp){
+    setBtn.dataset.swlp='1';
+    attachRepeatBtnInteraction(setBtn,()=>openVerseSettingsFromLogo(),()=>openSettings());
   }
   // 폰트가 늦게 붙으면 폭이 달라지므로 한 번 더 잰다
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(_swSizeCells);

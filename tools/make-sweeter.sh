@@ -11,6 +11,7 @@
 #   ④ manifest.json          → manifest-sweeter-dev.json
 #   ⑤ apple-mobile-web-app-title  BLOCK7 → Sweeter DEV
 #   ⑥ <title>                → Sweeter DEV
+#   ⑦ 파비콘·홈화면 아이콘     icon.png → icon-sweeter.png
 #
 # ③ 이 핵심이다. 이 한 줄로 LS_KEY 가 'b7v1_sweeter_dev' 로 갈리고,
 # 설정 칸막이(_psOverlay·_psProject)가 깨어난다.
@@ -58,6 +59,12 @@ out=sub_once(out,'<link rel="manifest" href="manifest.json">',
 out=sub_once(out,'<meta name="apple-mobile-web-app-title" content="BLOCK7">',
                  '<meta name="apple-mobile-web-app-title" content="Sweeter DEV">','앱 이름')
 out=sub_once(out,'<title>BLOCK 7</title>','<title>Sweeter DEV</title>','탭 제목')
+# ⑦ 아이콘 — 개발본은 block7.my 에 얹혀 살아 icon.png 가 **BLOCK7 것**이다.
+#    그래서 파비콘·홈화면 아이콘을 Sweeter 전용 파일로 가리킨다.
+out=sub_once(out,'<link rel="icon" href="icon.png">',
+                 '<link rel="icon" href="icon-sweeter.png">','파비콘')
+out=sub_once(out,'<link rel="apple-touch-icon" href="icon.png">',
+                 '<link rel="apple-touch-icon" href="icon-sweeter.png">','홈화면 아이콘')
 
 io.open('sweeter-dev.html','w',encoding='utf-8').write(out)
 print('sweeter-dev.html 생성 완료 — %s'%ver)
