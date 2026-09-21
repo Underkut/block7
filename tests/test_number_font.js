@@ -141,8 +141,11 @@ console.log('\n시나리오 8 — 공유 이미지 BLOCK7 서명');
   sc.eq('BLOCK 은 IBM Plex Mono 유지', SRC.includes("const _blk7MonoFont=`400 ${fs}px 'IBM Plex Mono',monospace`;"), true);
   sc.eq('7 은 --font-number(computed) 사용',
         SRC.includes("const _blk7NumFont=getComputedStyle(document.documentElement).getPropertyValue('--font-number').trim()"), true);
+  // v26-0921-6 — 워드마크가 제품마다 갈렸다 (BLOCK7 / Sweeter).
+  // 재는 규칙은 그대로다: **그릴 때 쓸 글꼴로 글자마다 잰다.**
   sc.eq('폭 계산(wAll)도 글자별로 알맞은 폰트로 잰다(정렬 안 밀리게)',
-        /\[\.\.\.'BLOCK7'\]\.forEach\(c=>\{\s*ctx\.font=\/\\d\/\.test\(c\)\?_blk7NumFontFull:_blk7MonoFont;\s*wAll\+=ctx\.measureText\(c\)\.width\+LS;\s*\}\);/.test(SRC), true);
+        /\[\.\.\.MARK\]\.forEach\(c=>\{\s*ctx\.font=_mkSw\?_blk7DispFont:\(\/\\d\/\.test\(c\)\?_blk7NumFontFull:_blk7MonoFont\);\s*wAll\+=ctx\.measureText\(c\)\.width\+LS;\s*\}\);/.test(SRC), true);
+  sc.eq('⭐ BLOCK7 워드마크는 예전 글자 그대로', SRC.includes("_mkSw?'Sweeter':'BLOCK7'"), true);
   sc.eq("실제로 그릴 때도 'BLOCK' 은 모노, '7' 은 숫자 폰트로 바꿔 그린다",
         SRC.includes('ctx.font=_blk7MonoFont;') && SRC.includes('ctx.font=_blk7NumFontFull;'), true);
   // .vf-cnt 캡처는 getComputedStyle(cnt).fontFamily 를 그대로 쓰므로(하드코딩 없음)

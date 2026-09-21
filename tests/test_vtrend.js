@@ -1333,9 +1333,11 @@ console.log('\n시나리오 35 — 0908-4 (장 필터 · 겹친 손잡이 · 버
   sc.eq('개발자 계정에만', /function _syncDevVerBadge\(\)\{\s*\n\s*const dev=_isDevAccount\(\);/.test(SRC), true);
   // 설정창 네 곳 모두 (일반·말씀·위젯·말씀카드)
   // (주석 안의 안내 한 줄은 빼고, 실제로 화면에 심긴 자리만 센다)
-  // v26-0908-5, HB 5 — 대시보드 창과 할일뷰 달성바가 더해져 여섯 곳이다.
-  sc.eq('버전 자리는 여섯 곳',
-    (SRC.match(/<div class="settings-verbadge/g)||[]).length, 6);
+  // v26-0908-5, HB 5 — 대시보드 창과 할일뷰 달성바가 더해져 여섯 곳이었고,
+  // v26-0921-6 에 Sweeter 홈 바가 더해져 일곱 곳이다.
+  sc.eq('버전 자리는 일곱 곳',
+    (SRC.match(/<div class="settings-verbadge/g)||[]).length, 7);
+  sc.eq('Sweeter 홈 바에도', SRC.includes('class="settings-verbadge sw-verbadge"'), true);
   sc.eq('대시보드 창에도', /id="vDashModal"[\s\S]{0,220}<div class="settings-verbadge"/.test(SRC), true);
   sc.eq('대시보드를 열 때 맞춘다',
     /function openVerseDashboard\(\)\{[\s\S]{0,260}_syncDevVerBadge\(\);/.test(SRC), true);
