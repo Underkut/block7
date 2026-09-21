@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-10  [production]  -->
+<!-- BLOCK7  v. 26-0921-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5162,8 +5162,8 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    아예 넘기지 않는다는 뜻이라, **판을 훑어 내릴 방법이 없었다** — 타일을 보려고
    내리려 하면 번번이 타일이 끌려 나왔다 (HB 신고 26-0921).
    이제는 세로를 브라우저에게 준다(pan-y). 끄는 것과 훑는 것은 **잡는 시간**으로
-   가른다 (_SW_EDIT_HOLD) — 250ms 를 잡고 있거나 가로로 밀면 끌리고, 그 전에
-   세로로 움직이면 몸짓을 깨끗이 포기한다.
+   가른다 (_SW_EDIT_HOLD) — 가만히 0.4초를 잡고 있어야 끌리고, 그 전에 손이
+   움직이면 방향을 가리지 않고 몸짓을 깨끗이 포기한다 (v26-0921-11, HB).
    ⚠️ 끌기 시작한 뒤에는 document 의 touchmove 가 기본 동작을 막는다. 그때는
       아직 스크롤이 시작되지 않았으므로 preventDefault 가 먹는다. */
 .sw-board.edit .sw-tile{touch-action:pan-y;}
@@ -5333,7 +5333,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-10";
+const APP_VERSION = "v. 26-0921-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -42689,11 +42689,19 @@ let _swG=null;
 const _SW_COMMIT_DIST=50;
 const _SW_COMMIT_VEL=0.28;
 const _SW_MOVE=5;
-// 편집 중에 '훑기'와 '끌기'를 가르는 두 값 (v26-0921-9, HB).
-//   _SW_EDIT_HOLD = 이만큼 잡고 있으면 끌기로 본다 (움직이지 않은 채)
-//   _SW_EDIT_MOVE = 이만큼 움직이면 그 자리에서 방향으로 판단한다
-const _SW_EDIT_HOLD=250;
-const _SW_EDIT_MOVE=8;
+// 편집 중에 '훑기'와 '끌기'를 가르는 두 값 (v26-0921-9 → v26-0921-11 에서 고쳤다).
+//   _SW_EDIT_HOLD = 이만큼 **가만히** 잡고 있어야 끌기로 본다
+//   _SW_EDIT_MOVE = 이만큼 움직이면 훑기다 — 잡는 것을 그 자리에서 놓는다
+//
+// ⚠️⚠️ **끌기로 들어가는 길은 '잡고 있기' 하나뿐이다** (HB 지시 2026-09-21).
+//    v26-0921-9 에는 "가로로 밀면 바로 끌기" 라는 지름길이 하나 더 있었다.
+//    그런데 그 판정이 **70도까지 가로로 쳐주는** 잣대(_SW_ANGLE)를 그대로 써서,
+//    위아래로 훑는 손도 조금만 기울면(예: 아래로 20px · 옆으로 9px) 가로로 읽혀
+//    타일이 끌려 나왔다 — HB 가 "아직도 저절로 드래그된다" 고 한 그것이다.
+//    그 잣대는 **말씀 카드를 옆으로 넘기는 몸짓**을 위한 것이지 편집용이 아니다.
+//    이제 편집 중에는 방향을 아예 보지 않는다. 움직이면 무조건 훑기다.
+const _SW_EDIT_HOLD=400;
+const _SW_EDIT_MOVE=6;
 const _SW_ANGLE=2.75;  // 옆쓸기로 볼 최대 기울기 = tan(70°). 아래 주석 참고
 
 // ── 편집: 끌어서 자리 바꾸기 ───────────────────────────────
@@ -42784,8 +42792,9 @@ function _swInitGestures(){
     // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
     try{b.setPointerCapture(e.pointerId);}catch(_){}
     if(_SW_EDIT){
-      // ⚠️ 누르자마자 끌지 않는다 (v26-0921-9, HB). 250ms 를 잡고 있거나 가로로
-      //    밀어야 비로소 끌린다 — 그 전에 세로로 움직이면 스크롤에게 넘긴다.
+      // ⚠️ 누르자마자 끌지 않는다 (v26-0921-9 · v26-0921-11, HB).
+      //    **가만히 0.4초를 잡고 있어야** 비로소 끌린다. 그 전에 손이 움직이면
+      //    (방향이 어느 쪽이든) 훑는 손으로 보고 스크롤에게 넘긴다.
       // ⚠️⚠️ 여기서 preventDefault 를 하지 말 것. 하면 그 250ms 동안 브라우저가
       //    스크롤을 못 시작해, 고치려던 그 증상이 그대로 남는다.
       _swG={i,el,pend:true,x:e.clientX,y:e.clientY,t:Date.now(),moved:false,
@@ -42830,15 +42839,15 @@ function _swInitGestures(){
   });
   b.addEventListener('pointermove',e=>{
     if(!_swG)return;
-    // 편집 중 '잡는 중' — 아직 끌기도 스크롤도 아니다. 여기서 방향으로 가른다.
+    // 편집 중 '잡는 중' — 아직 끌기가 아니다.
+    // ⚠️ 여기서 **방향을 보지 않는다** (v26-0921-11, HB). 손이 움직였다는 것은
+    //    잡고 있지 않았다는 뜻이고, 편집 중에 움직이는 손은 판을 훑는 손이다.
+    //    몸짓을 깨끗이 놓아 주어야 브라우저가 스크롤을 이어 간다.
     if(_swG.pend){
       const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
       if(Math.abs(dx)<_SW_EDIT_MOVE&&Math.abs(dy)<_SW_EDIT_MOVE)return;
       clearTimeout(_swG.lp);_swG.lp=0;
-      // 세로로 훑는 손 — 몸짓을 **깨끗이 포기한다** (넘기기와 같은 각도 잣대).
-      if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){_swG=null;return;}
-      _swG.pend=false;
-      _swDragStart(_swG.el,_swG.i,e.clientX,e.clientY);
+      _swG=null;
       return;
     }
     if(_swG.drag){

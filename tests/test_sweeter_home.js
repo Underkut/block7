@@ -667,13 +667,20 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   sc.eq('값이 없으면 까닭을 알려 준다', TOAST.includes('태그가 붙은 말씀이'), true);
 
   // ── ⑥ 편집 중에도 세로로 훑을 수 있다 (HB 신고 — "폴드 타임이 거의 없다")
-  sc.eq('잡는 시간이 있다', SRC_DEV.includes('const _SW_EDIT_HOLD=250;'), true);
-  sc.eq('움직임 문턱도 있다', SRC_DEV.includes('const _SW_EDIT_MOVE=8;'), true);
+  // v26-0921-11, HB — "아직도 저절로 드래그된다. 짧은 홀드 시간을 줘야 할 것 같아"
+  sc.eq('잡는 시간이 있다', SRC_DEV.includes('const _SW_EDIT_HOLD=400;'), true);
+  sc.eq('움직임 문턱도 있다', SRC_DEV.includes('const _SW_EDIT_MOVE=6;'), true);
   sc.eq('누르자마자 끌지 않는다',
         SRC_DEV.includes('if(_SW_EDIT){_swDragStart(el,i,e.clientX,e.clientY);'), false);
   sc.eq('잡는 중이라는 표시를 둔다', SRC_DEV.includes('_swG={i,el,pend:true,'), true);
-  sc.eq('세로로 움직이면 몸짓을 포기한다',
-        SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){_swG=null;return;}'), true);
+  // ⚠️⚠️ 끌기로 들어가는 길은 **잡고 있기 하나뿐**이다. 예전에 있던
+  //    "가로로 밀면 바로 끌기" 지름길이 70도까지 가로로 쳐주는 잣대(_SW_ANGLE)를
+  //    써서, 조금 기울어진 세로 훑기가 끌기로 읽혔다 (HB 신고).
+  const _pend=/if\(_swG\.pend\)\{[\s\S]*?\n    \}/.exec(SRC_DEV)[0];
+  sc.eq('움직이면 방향을 가리지 않고 놓아 준다',
+        /Math\.abs\(dx\)<_SW_EDIT_MOVE&&Math\.abs\(dy\)<_SW_EDIT_MOVE\)return;[\s\S]{0,120}_swG=null;/.test(_pend), true);
+  sc.eq('⭐ 잡는 중에는 각도를 보지 않는다', _pend.includes('_SW_ANGLE'), false);
+  sc.eq('⭐ 움직이다가 끌기로 넘어가지 않는다', _pend.includes('_swDragStart'), false);
   sc.eq('잡는 중에 뗀 것은 아무 일도 아니다',
         SRC_DEV.includes('if(_swG.pend){_swG=null;return;}'), true);
 
