@@ -91,7 +91,14 @@ print('build-sweeter/index.html — %s'%ver)
 PY
 
 cp manifest-sweeter.json "$OUT/manifest.json"
-cp icon.png "$OUT/icon.png"
+# ⚠️ 아이콘은 **이름을 그대로 두고 내용물만** Sweeter 것으로 갈아 넣는다.
+#    담는 폴더가 다르니 HTML 의 icon.png 링크를 안 건드려도 된다.
+cp icon-sweeter.png "$OUT/icon.png"
+# 형제 앱 아이콘 두 개도 함께. **어느 빌드에서나 같은 이름으로 부를 수 있게**
+# 하려는 것이다 — 안 그러면 "여기선 이 이름, 저기선 저 이름" 이 되어
+# 로고 메뉴의 형제 줄 그림이 빌드마다 깨진다.
+cp icon-sweeter.png "$OUT/icon-sweeter.png"
+cp icon-block7.png  "$OUT/icon-block7.png"
 cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
 cp -r fonts "$OUT/fonts"
 
