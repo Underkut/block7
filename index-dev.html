@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4905,6 +4905,46 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   -webkit-tap-highlight-color:transparent;}
 .sw-iconbtn svg{width:19px;height:19px;display:block;}
 .sw-iconbtn:active{opacity:.55;}
+/* ══════════════════════════════════════════════════════════
+   제품별로 보이고 감추는 한 쌍 (v26-0921-7)
+   ──────────────────────────────────────────────────────────
+   두 제품이 **같은 HTML** 을 쓰므로, 어느 한쪽에만 둘 것은 표시를 붙여 가른다.
+     data-prod="b7" → BLOCK7 에서만   (Sweeter 에서 감춘다)
+     data-prod="sw" → Sweeter 에서만  (BLOCK7 에서 감춘다)
+   ⚠️ 표시는 <html data-product="sweeter"> 에 달린다. 빌드 스크립트가 박는다 —
+      JS 로 붙이면 첫 그림에 늦어 깜빡인다 (v26-0921-4 에서 겪은 그것).
+   ══════════════════════════════════════════════════════════ */
+html[data-product="sweeter"] [data-prod="b7"]{display:none!important;}
+html:not([data-product="sweeter"]) [data-prod="sw"]{display:none!important;}
+
+/* ══ Sweeter 로그인 화면 — 로고에서 뽑은 두 색 (v26-0921-7, HB) ══
+   바탕 #a04808(진한 호박갈색) · 글자 #f0a830(골드). 로고에 있는 색이 이 둘뿐이다.
+   ⚠️ 회원가입 쪽은 **건드리지 않는다** — 붉은색(버건디)이 그대로 남는다 (HB 지시).
+      다만 내 규칙이 더 구체적이라 그냥 두면 이겨 버린다. 그래서 회원가입 줄을
+      **다시 한 번 적어** 버건디를 되돌려 놓는다. 지우지 말 것.
+   ⚠️ 밝은 테마에서는 골드가 흰 바탕에 묻힌다 → 그때는 진한 쪽을 쓴다. */
+html[data-product="sweeter"] #authScreen{
+  background:radial-gradient(120% 78% at 50% 10%, rgba(240,168,48,.11), transparent 62%), var(--bg);
+}
+html[data-product="sweeter"] .auth-mark{
+  display:block;width:56px;height:56px;border-radius:14px;margin:0 auto 14px;
+  box-shadow:0 6px 22px -8px rgba(160,72,8,.55);
+}
+html[data-product="sweeter"] .auth-logo{
+  font-family:var(--font-display);font-weight:700;font-size:25px;letter-spacing:-.01em;
+  color:#f0a830;
+}
+html[data-theme="light"][data-product="sweeter"] .auth-logo{color:#a04808;}
+html[data-product="sweeter"] .auth-sub{color:#c08a4a;opacity:.9;}
+html[data-product="sweeter"] .auth-input:focus{border-color:rgba(240,168,48,.55);}
+html[data-product="sweeter"] .auth-btn{background:#a04808;color:#ffeccd;}
+html[data-product="sweeter"] .auth-switch button{color:#d0862e;}
+/* ↓ 회원가입은 붉은색 그대로 (위 규칙을 되돌린다) */
+html[data-product="sweeter"] .auth-logo.auth-signup{color:var(--bgd-tx);}
+html[data-product="sweeter"] .auth-btn.auth-signup{background:var(--bgd);color:var(--on-accent);}
+html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx);}
+/* 로고 그림은 Sweeter 에서만 — BLOCK7 에서는 src 가 없어 받아오지도 않는다 */
+.auth-mark{display:none;}
 /* 개발자 버전 — 톱니 위쪽 빈 자리. 자리를 차지하지 않으므로 다른 칸이 안 밀린다. */
 .sw-bar{position:relative;}
 .sw-verbadge{right:16px;bottom:auto;top:2px;}
@@ -5247,7 +5287,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-6";
+const APP_VERSION = "v. 26-0921-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5409,6 +5449,7 @@ window._fbScriptsReady=new Promise(resolve=>{
 <!-- ── AUTH SCREEN (shown before the app until login) ── -->
 <div id="authScreen">
   <div class="auth-box">
+    <img class="auth-mark" id="authMark" alt="">
     <div class="auth-logo" id="authLogo">BLOCK<b>7</b></div>
     <div class="auth-sub" id="authSub">One beautiful day. Seven simple blocks.</div>
 
@@ -6263,8 +6304,9 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- ═══ 뷰 (순서: 할일뷰 → 월간뷰 → 태그 타일뷰) ═══ -->
       <div class="vsettings-tab-content settings-tab-content" id="vstab-view">
 
-      <!-- ── 할일뷰 말씀 표시 (버튼탭에서 옮겨 옴 — 말씀 관련이라 여기가 맞다) ── -->
-      <div class="settings-section">
+      <!-- ── 할일뷰 말씀 표시 (버튼탭에서 옮겨 옴 — 말씀 관련이라 여기가 맞다) ──
+           ⚠️ Sweeter 에는 할일뷰가 없다 → data-prod="b7" 로 감춘다 (v26-0921-7, HB 4-3) -->
+      <div class="settings-section" data-prod="b7">
         <div class="settings-section-title">할일뷰 말씀 표시</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">구간 제목 옆에 표시할 말씀 기록을 골라요. 암송은 구간별로, 나머지는 그날 첫 구간에 표시돼요.</div>
         <!-- 전체 스위치(신규) — 아래 네 개의 켬/끔은 그대로 둔 채 통째로 보일지만 정한다.
@@ -6296,7 +6338,8 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- ── M뷰 암송 표시 방식 ── -->
-      <div class="settings-section" data-lv="p">
+      <!-- ⚠️ Sweeter 에는 월간뷰가 없다 → data-prod="b7" (v26-0921-7, HB 4-3) -->
+      <div class="settings-section" data-lv="p" data-prod="b7">
         <div class="settings-section-title">월간 뷰 암송 표시</div>
         <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰 날짜 칸에 암송 기록을 어떻게 표시할지 선택해요.</div>
         <div style="display:flex;gap:8px;">
@@ -7836,8 +7879,13 @@ window._fbScriptsReady=new Promise(resolve=>{
            ⚠️ 롱터치를 빼면 **로그아웃으로 가는 길이 아예 막힌다** — openSettings() 로
               들어가는 문은 기존 화면 안의 톱니 하나뿐이었다. -->
       <button class="sw-iconbtn" id="swSetBtn" aria-label="말씀 설정" title="말씀 설정 (길게 누르면 일반 설정)">
-        <!-- BLOCK7 설정 단추와 **같은 그림**이다 (v26-0921-6, HB). 테두리·박스만 없다. -->
-        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- BLOCK7 설정 단추와 **같은 그림**이다 (v26-0921-6, HB). 테두리·박스만 없다.
+             ⚠️ 굵기는 1.5 가 아니라 1.1 이다 (v26-0921-7, HB — "선이 다른 디자인과
+                일관성이 없다"). 같은 그림이라도 **크게 그리면 선도 같이 굵어진다** —
+                BLOCK7 은 14px 에 1.5 라 화면에서 1.5×14/20 = 1.05px 이고,
+                여기는 19px 이라 같은 값을 쓰면 1.43px 로 확 굵어 보였다.
+                1.1×19/20 ≈ 1.05px — 메뉴의 다른 아이콘들과 같은 굵기다. -->
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="10" cy="10" r="2.5"/>
           <path d="M10.6 3.2h-1.2a.8.8 0 0 0-.78.62l-.27 1.2a6.5 6.5 0 0 0-1.43.83l-1.17-.4a.8.8 0 0 0-.95.35L4.17 7.1a.8.8 0 0 0 .15 1l.92.83a6.5 6.5 0 0 0 0 1.66l-.92.83a.8.8 0 0 0-.15 1l.6 1.3a.8.8 0 0 0 .95.35l1.17-.4c.42.34.9.62 1.43.83l.27 1.2a.8.8 0 0 0 .78.62h1.2a.8.8 0 0 0 .78-.62l.27-1.2a6.5 6.5 0 0 0 1.43-.83l1.17.4a.8.8 0 0 0 .95-.35l.6-1.3a.8.8 0 0 0-.15-1l-.92-.83a6.5 6.5 0 0 0 0-1.66l.92-.83a.8.8 0 0 0 .15-1l-.6-1.3a.8.8 0 0 0-.95-.35l-1.17.4a6.5 6.5 0 0 0-1.43-.83l-.27-1.2a.8.8 0 0 0-.78-.62z"/>
         </svg>

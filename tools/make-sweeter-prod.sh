@@ -78,6 +78,14 @@ out=sub_once(out,'<link rel="apple-touch-icon" href="icon.png">',
 #    JS 로 켜는 것은 늦다 — HTML 에 박혀 있어야 첫 그림부터 덮는다.
 out=sub_once(out,'<div id="swHome">','<div id="swHome" class="on">','판 첫 그림')
 
+# ⚠️ 제품 표시 — 제품별로 보이고 감추는 CSS 한 쌍(data-prod)이 이걸 본다.
+#    JS 로 붙이면 첫 그림에 늦어 깜빡인다. HTML 에 박아야 한다.
+out=sub_once(out,'<html lang="ko">','<html lang="ko" data-product="sweeter">','제품 표시')
+# 로그인 화면의 로고 그림 — BLOCK7 에는 src 가 없어 받아오지도 않는다.
+out=sub_once(out,'<img class="auth-mark" id="authMark" alt="">',
+                 '<img class="auth-mark" id="authMark" src="icon-sweeter.png" alt="">','로그인 로고 그림')
+
+
 # ⚠️ 로그인 화면도 Sweeter 것으로. 안 바꾸면 sweeter.my 로 들어온 사람이
 #    **BLOCK7 로그인 화면**을 먼저 본다 (HB 신고 2026-09-21 의 한 갈래).
 out=sub_once(out,'<div class="auth-logo" id="authLogo">BLOCK<b>7</b></div>',

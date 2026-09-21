@@ -331,8 +331,15 @@ console.log('\n시나리오 11 — 토큰 구조');
         SRC.includes('background:var(--ac);color:var(--on-accent);'), true);
   sc.eq('테마별 컴포넌트 선택자 복제를 만들지 않았다',
         (SRC.match(/html\[data-theme-preset/g) || []).length, 0);
+  // ⚠️ 이 검사의 뜻은 "**테마 작업에서** !important 를 뿌리지 않았다" 이다.
+  //    v26-0921-7 에 제품별 보이기/감추기(data-prod) 두 줄이 이 구간에 들어왔는데,
+  //    그건 테마와 무관하고 !important 가 **꼭 필요하다** — JS 가 인라인으로
+  //    display 를 건드리는 자리들을 확실히 이겨야 하기 때문이다.
+  //    그래서 그 둘만 빼고 센다. (늘어나면 이 검사가 바로 걸린다)
+  const _impo=(slice('.theme-picker{', '</style>').match(/[^\n]*!important[^\n]*/g) || []);
   sc.eq('!important 를 새로 뿌리지 않았다',
-        (slice('.theme-picker{', '</style>').match(/!important/g) || []).length, 0);
+        _impo.filter(l=>!/data-prod=/.test(l)).length, 0);
+  sc.eq('제품별 감추기 두 줄만 예외다', _impo.length, 2);
 }
 
 // ═══ 12. 선택·활성 틴트가 눈에 보이는가 (--ac-tint-k) ═══

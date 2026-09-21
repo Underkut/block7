@@ -109,8 +109,13 @@ console.log('\n시나리오 5 — 뷰탭 (순서변경: 할일뷰 → 월간뷰 
         /<span data-lv="em"[^>]*>(<svg[\s\S]*?<\/svg>){4}<\/span>/.test(p), true);
   sc.eq('하위 네 줄은 파워 전용 + 전체 스위치에 딸린 줄',
         (p.match(/data-lv="p" data-cond="dviewMark"/g) || []).length, 4);
+  // v26-0921-7 — Sweeter 에는 월간뷰가 없어 data-prod="b7" 이 붙었다.
+  //   등급 규칙(data-lv="p")은 그대로다.
   sc.eq('월간 뷰 암송 표시는 파워만',
-        /<div class="settings-section" data-lv="p">\s*<div class="settings-section-title">월간 뷰 암송 표시/.test(p), true);
+        /<div class="settings-section" data-lv="p" data-prod="b7">\s*<div class="settings-section-title">월간 뷰 암송 표시/.test(p), true);
+  // 주석에도 그 말이 나오므로 **태그에 붙은 것만** 센다
+  sc.eq('할일뷰·월간뷰는 Sweeter 에서 감춘다',
+        (p.match(/<div class="settings-section"[^>]*data-prod="b7"/g)||[]).length, 2);
 }
 
 console.log('\n시나리오 5-1 — 전체 스위치가 꺼지면 할일뷰에 아무것도 안 그린다');
