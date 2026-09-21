@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5096,10 +5096,52 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
   font-variant-numeric:tabular-nums;font-family:var(--font-number);line-height:1.45;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .sw-pips{position:relative;display:flex;gap:3.5px;justify-content:flex-end;
-  margin-top:7px;align-items:center;height:4px;flex:0 0 auto;}
+  margin-top:7px;align-items:center;min-height:11px;flex:0 0 auto;}
 .sw-pips i{width:3.5px;height:3.5px;border-radius:50%;background:var(--tx3);opacity:.35;}
 .sw-pips i.on{opacity:1;background:var(--ac);}
 .sw-empty{position:relative;font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
+
+/* ══════════════════════════════════════════════════════════
+   매거진 얼굴 (v26-0921-9, HB)
+   ──────────────────────────────────────────────────────────
+   "첫 타일이 각 타일의 첫 컨텐츠가 되게 … 하나의 매거진 표지나 목차를 보는 것처럼"
+   ⚠️ 테두리도 박스도 새로 두르지 않는다 (UI 원칙). 달라지는 것은 **글자와
+      바탕의 농도**뿐이다 — 종류마다 낯이 다르되 한 판에서 한 식구로 보이게.
+   ⚠️ 큰 숫자(.sw-big)는 **장식이다.** 읽을 숫자는 아랫줄(.sw-num·.sw-cnt)에
+      따로 있다 — 옅은 글자 하나에 뜻을 걸지 않는다.
+   ══════════════════════════════════════════════════════════ */
+/* 차례 번호 — 목차의 그 번호 */
+.sw-ix{flex:0 0 auto;font:600 9.5px/1 var(--font-number);letter-spacing:.04em;
+  color:var(--ac-tx);opacity:.8;}
+/* 아랫줄 왼쪽의 개수 (점은 오른쪽에 그대로 있다) */
+.sw-cnt{margin-right:auto;font:400 9.5px/1 var(--font-number);letter-spacing:.02em;
+  color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 본문 위 머리말 — 말씀 칸의 장절이 여기로 올라왔다.
+   ⚠️ 칸의 **맨 위**에 띄운다. 본문은 아래에 붙으므로(justify-content:flex-end)
+      그냥 두면 본문에 딱 붙어 버리고 칸 위쪽이 통째로 빈다 — 매거진처럼
+      위는 머리말, 아래는 본문으로 나눠 채운다. */
+.sw-kick{position:absolute;left:13px;right:13px;top:0;
+  font:600 9.5px/1.2 var(--font-ui);letter-spacing:.09em;color:var(--ac-tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* 뒤에 옅게 깔리는 큰 숫자.
+   ⚠️ **위쪽**에 둔다. 칸의 내용은 아래로 붙으므로(justify-content:flex-end)
+      아래에 두면 글자와 겹쳐 둘 다 흐려진다 (첫 시안에서 그랬다). */
+.sw-big{position:absolute;right:2px;top:-6px;pointer-events:none;
+  font:700 54px/1 var(--font-number);letter-spacing:-.05em;color:var(--tx);opacity:.09;}
+.sw-tile.wide .sw-big{font-size:62px;right:7px;}
+/* 종류마다 다른 글자 */
+.sw-cell.book .sw-val,.sw-cell.coll .sw-val{font-family:var(--font-display);
+  font-size:19px;font-weight:700;letter-spacing:-.02em;-webkit-line-clamp:2;}
+.sw-cell.sermon .sw-val{font-family:var(--font-display);font-size:16px;font-weight:600;}
+.sw-cell.stat .sw-val{font-size:15px;font-weight:600;letter-spacing:.01em;}
+.sw-cell.tag .sw-val i{font-style:normal;color:var(--ac-tx);opacity:.75;margin-right:1px;}
+/* 종류마다 다른 바탕 — 강조색을 아주 옅게만 쓴다 */
+.sw-tile.k-last{background:linear-gradient(146deg,rgba(var(--ac-rgb),.17),var(--s1) 64%);}
+.sw-tile.k-keep{background:linear-gradient(146deg,rgba(var(--ac-rgb),.08),var(--s1) 60%);}
+.sw-tile.k-coll{background:rgba(var(--ac-rgb),.07);}
+.sw-tile.k-react{background:linear-gradient(202deg,rgba(var(--ac-rgb),.10),var(--s1) 70%);}
+/* ＋ 칸은 바탕을 비워 둔다 — 위 규칙이 걸리지 않게 뒤에 적는다 */
+.sw-tile.sw-add{background:transparent;}
 
 /* ── 편집 모드 ─────────────────────────────────────────
    끌어서 옮기고, × 로 끄고, ＋ 칸으로 다시 켠다. 나갈 때 한 번 저장한다. */
@@ -5116,11 +5158,15 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    투명도만 낮추는 것으로는 안 된다 — 눈에만 흐릴 뿐 여전히 손가락을 가린다. */
 .sw-tile.sw-drag{opacity:.6;z-index:5;box-shadow:0 12px 30px -8px var(--shadow-color);
   transition:none;pointer-events:none;}
-/* 편집 중에는 브라우저에게 세로를 넘기지 않는다. 안 그러면 위아래로 끌 때
-   브라우저가 스크롤을 시작하며 pointercancel 로 드래그를 끊는다.
-   ⚠️ 그래서 편집 중에는 판이 스크롤되지 않는다. 타일이 한 화면을 넘길 만큼
-      늘어나면 가장자리 자동 스크롤을 붙여야 한다. */
-.sw-board.edit .sw-tile{touch-action:none;}
+/* ⚠️ 예전에는 여기가 touch-action:none 이었다. 편집 중에는 브라우저에게 세로를
+   아예 넘기지 않는다는 뜻이라, **판을 훑어 내릴 방법이 없었다** — 타일을 보려고
+   내리려 하면 번번이 타일이 끌려 나왔다 (HB 신고 26-0921).
+   이제는 세로를 브라우저에게 준다(pan-y). 끄는 것과 훑는 것은 **잡는 시간**으로
+   가른다 (_SW_EDIT_HOLD) — 250ms 를 잡고 있거나 가로로 밀면 끌리고, 그 전에
+   세로로 움직이면 몸짓을 깨끗이 포기한다.
+   ⚠️ 끌기 시작한 뒤에는 document 의 touchmove 가 기본 동작을 막는다. 그때는
+      아직 스크롤이 시작되지 않았으므로 preventDefault 가 먹는다. */
+.sw-board.edit .sw-tile{touch-action:pan-y;}
 .sw-kill{position:absolute;top:7px;right:7px;width:21px;height:21px;border-radius:50%;
   background:var(--bg);border:1px solid var(--bd);color:var(--tx2);
   display:grid;place-items:center;font-size:13px;line-height:1;z-index:3;cursor:pointer;
@@ -5287,7 +5333,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-8";
+const APP_VERSION = "v. 26-0921-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7878,7 +7924,24 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;">
-      <button class="sw-barbtn" id="swEditBtn" aria-pressed="false" onclick="swToggleEdit()">편집</button>
+      <!-- 편집을 마치는 단추. **편집 중에만** 뜨고, 그때 필터 아이콘과 자리를
+           바꾼다 (UI 원칙: 나란히 늘리지 말고 교체한다). 들어가는 길은 타일
+           롱터치 하나다 (v26-0921-9, HB — "우상단 편집 버튼은 없어도 될 것 같고"). -->
+      <button class="sw-barbtn" id="swEditBtn" aria-pressed="true" style="display:none;"
+              onclick="swToggleEdit()">완료</button>
+      <!-- 필터(파라미터) 아이콘 — 누르면 말씀 설정의 '말씀 모음' 탭을 열고
+           그 탭 이름을 세 번 반짝인다 (v26-0921-9, HB).
+           ⚠️ 굵기는 톱니와 같은 1.1 이다 (19px 에 그리므로 — 위 톱니 주석 참고).
+           ⚠️ 동그라미는 줄 위에 **얹힌다.** fill 을 바탕색으로 줘야 줄이 안 비친다. -->
+      <button class="sw-iconbtn" id="swFilterBtn" aria-label="말씀 모음"
+              title="말씀 모음 설정" onclick="swOpenCollFilter()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
+          <path d="M2.6 5h14.8M2.6 10h14.8M2.6 15h14.8"/>
+          <circle cx="6.6" cy="5" r="2.3" fill="var(--bg)"/>
+          <circle cx="13.4" cy="10" r="2.3" fill="var(--bg)"/>
+          <circle cx="9" cy="15" r="2.3" fill="var(--bg)"/>
+        </svg>
+      </button>
       <!-- 개발자 계정에서만 뜨는 버전 (_syncDevVerBadge 가 클래스로 훑어 채운다).
            ⚠️ 자리를 차지하지 않는다 — position:absolute 로 톱니 **위쪽 빈 곳**에
               얹을 뿐이라 다른 사용자의 화면은 한 칸도 달라지지 않는다. -->
@@ -42198,10 +42261,20 @@ function _swValues(t){
   if(t.k==='coll')return _swColls(i);
   return[];
 }
-// 띠 = [타이틀] + 값들. 대시보드 칸은 아직 없다 (다음 단계).
+// 띠 = 값들. **타이틀 칸은 없다** (v26-0921-9, HB — "첫 타일이 그 타일이 무슨
+// 종류인지 말해 주는 타일로 되어 있는데 그것은 너무 건조하고 재미가 없어").
+// 첫 칸부터 곧바로 내용이다. 종류 이름은 이름줄(.sw-lab)이, 개수는 아랫줄
+// (.sw-cnt)이 맡는다 — 첫 칸에서만 보이던 것이 이제 **언제나** 보인다.
+// ⚠️ 칸의 모양({kind:'val',v})은 그대로 두었다. 몸짓·갈피표·열기가 모두
+//    kind==='val' 을 보고 있어서, 모양을 바꾸면 그 넷을 다 손봐야 한다.
 function _swStrip(t){
-  const vals=_swValues(t);
-  return [{kind:'title'}].concat(vals.map(v=>({kind:'val',v:v})));
+  return _swValues(t).map(v=>({kind:'val',v:v}));
+}
+// 아랫줄에 적는 개수. 세는 단위는 종류마다 다르다 — 하나로 뭉뚱그리면
+// '성경 400편의 설교' 같은 말이 된다 (26-0830-8 에서 겪음).
+function _swCountText(k,n){
+  return{last:'말씀 '+n,keep:'담아둔 '+n,recent:'설교 '+n+'편',book:n+'권',
+         tag:'태그 '+n,react:n+'가지',coll:'모음 '+n}[k]||String(n);
 }
 
 // ── 한 타일의 얼굴 ───────────────────────────────────────
@@ -42226,43 +42299,45 @@ function _swPipsHTML(n,p){
   for(let i=0;i<9;i++)o+='<i class="'+(i===k?'on':'')+'"></i>';
   return o;
 }
+// 칸 뒤에 옅게 깔리는 큰 숫자. **장식이다** — 읽을 숫자는 아랫줄에 따로 있다.
+// (매거진 목차의 쪽 번호에서 가져왔다)
+function _swBigHTML(n){return '<div class="sw-big">'+_swEsc(n)+'</div>';}
 // 한 칸(이전·지금·다음 중 하나). 범위 밖이면 빈 칸을 둔다 — 그래야 끝에서
 // 밀어도 트랙이 같은 폭으로 움직인다.
+// ⚠️ 종류마다 **낯이 다르다** (v26-0921-9, HB — "하나의 매거진 표지나 목차를
+//    보는 것처럼"). 다른 것은 글자와 바탕뿐이고, 담는 내용은 예전 그대로다.
 function _swCellHTML(t,it,i){
   if(i<0||i>=it.length)return '<div class="sw-cell"></div>';
-  const T=_SW_TYPES[t.k],cur=it[i];
-  if(cur.kind==='title'){
-    // 세는 단위는 종류마다 다르다. 하나로 뭉뚱그리면 '성경 400편의 설교' 같은
-    // 말이 된다 (실제로 그랬다 — 26-0830-8 에서 고침).
-    const n=it.length-1;
-    const sub={last:n+'개의 말씀',keep:n+'개 담아둠',recent:n+'편의 설교',
-               book:n+'권',tag:n+'가지 태그',react:n+'가지',
-               coll:n+'개 모음'}[t.k]||n;
-    return '<div class="sw-cell"><div class="sw-val">'+_swEsc(T.n)+'</div>'
-      +'<div class="sw-num">'+_swEsc(sub)+'</div></div>';
-  }
+  const cur=it[i],g=cur.v;
   if(t.k==='last'||t.k==='keep'){
-    const v=cur.v.verse;
-    // ⚠️ verse 는 **칸**에 붙인다. 이웃 칸이 제목일 수 있어 타일에 붙이면 어긋난다.
+    const v=g.verse;
+    // ⚠️ verse 는 **칸**에 붙인다. 이웃 칸이 비어 있을 수 있어 타일에 붙이면 어긋난다.
+    // 장절은 본문 **위**로 올라간다 — 매거진의 머리말(kicker) 자리다.
     return '<div class="sw-cell verse">'+_swArtHTML(v)
+      +'<div class="sw-kick">'+_swEsc(v.ref)+'</div>'
       +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
-      +'<div class="sw-num">'+_swEsc(v.ref)
-        +(cur.v.when?' · '+_swEsc(cur.v.when):'')+'</div></div>';
+      +(g.when?'<div class="sw-num">'+_swEsc(g.when)+'</div>':'')+'</div>';
   }
-  const g=cur.v;
   if(t.k==='recent')
-    return '<div class="sw-cell"><div class="sw-val">'+_swEsc(g.cat)+'</div>'
+    return '<div class="sw-cell sermon">'+_swBigHTML(g.n)
+      +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
       +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div></div>';
   if(t.k==='react')
-    return '<div class="sw-cell"><div class="sw-val">'+_swEsc(g.name)+'</div>'
+    return '<div class="sw-cell stat">'+_swBigHTML(g.n)
+      +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc(g.n+'번')+'</div></div>';
-  // 성경 · 태그 — 이름과 담긴 말씀 수
-  return '<div class="sw-cell"><div class="sw-val">'+_swEsc(g.name)+'</div>'
+  if(t.k==='tag')
+    return '<div class="sw-cell tag">'+_swBigHTML(g.n)
+      +'<div class="sw-val"><i>#</i>'+_swEsc(g.name)+'</div>'
+      +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
+  // 성경 · 말씀 모음 — 이름을 크게, 담긴 말씀 수는 아래에
+  return '<div class="sw-cell '+(t.k==='coll'?'coll':'book')+'">'+_swBigHTML(g.n)
+    +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
     +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
 }
 function _swFace(t){
   const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
-  t.p=Math.max(0,Math.min(n-1,t.p));
+  t.p=Math.max(0,Math.min(Math.max(0,n-1),t.p));
   const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
     +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
   // ⚠️ 고정 세간 — 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단).
@@ -42280,21 +42355,29 @@ function _swFace(t){
           :'<path d="'+_KEEP_D+'"/>')
       +'</svg></button>';
   }
-  const lab='<div class="sw-lab">'+mark+'<span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
-  if(n===1){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
+  // 차례 번호 — 매거진 목차의 그 번호다 (v26-0921-9, HB).
+  // ⚠️ 갈피표 **뒤**에 둔다. 앞에 두면 말씀 타일에서만 줄이 한 칸 밀려 보인다.
+  const ix=Math.max(0,_SW_TILES.indexOf(t))+1;
+  const lab='<div class="sw-lab">'+mark
+    +'<b class="sw-ix">'+(ix<10?'0'+ix:ix)+'</b>'
+    +'<span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
+  if(!n){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
     return '<div class="sw-face">'+lab
       +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>';
   }
+  // 아랫줄 = 개수(왼쪽) + 점(오른쪽). 개수는 예전에 타이틀 칸에만 있던 것이라
+  // 첫 칸을 넘기면 사라졌다 — 이제 언제나 보인다.
+  const foot='<div class="sw-pips"><span class="sw-cnt">'
+    +_swEsc(_swCountText(t.k,n))+'</span>'+_swPipsHTML(n,t.p)+'</div>';
   // 이전·지금·다음 세 칸. 트랙은 -33.3333% 에서 시작해 가운데 칸을 보여 준다.
   return '<div class="sw-face">'+lab
     +'<div class="sw-trackwrap"><div class="sw-track">'
       +_swCellHTML(t,it,t.p-1)+_swCellHTML(t,it,t.p)+_swCellHTML(t,it,t.p+1)
-    +'</div></div>'
-    +'<div class="sw-pips">'+_swPipsHTML(n,t.p)+'</div></div>';
+    +'</div></div>'+foot+'</div>';
 }
 
 // ── 그리기 ───────────────────────────────────────────────
-function _swTileClass(t){return 'sw-tile '+(_SW_TYPES[t.k].wide?'wide':'');}
+function _swTileClass(t){return 'sw-tile k-'+t.k+' '+(_SW_TYPES[t.k].wide?'wide':'');}
 function _swRender(){
   const b=document.getElementById('swBoard');
   if(!b)return;
@@ -42341,17 +42424,32 @@ function _swEditOn(){
       +'<div class="sw-addname">'+_swEsc(_SW_TYPES[k].n)+'</div></div>';
     b.appendChild(el);
   });
-  const btn=document.getElementById('swEditBtn');
-  if(btn){btn.textContent='완료';btn.setAttribute('aria-pressed','true');}
+  _swEditBtnSync();
 }
 // ⚠️ 편집에서는 **토스트를 띄우지 않는다** (HB 지시 26-0830-12).
 //    길게 누른 손 그대로 끌려는데 화면 한가운데 큰 알림이 튀어나와 몸짓이
 //    끊기는 것처럼 느껴졌다. 무엇이 켜지고 꺼졌는지는 화면이 이미 보여 준다.
+// 우상단 단추 한 자리 — 평소엔 필터 아이콘, 편집 중엔 '완료' (v26-0921-9, HB).
+// ⚠️ 미리보기(BLOCK7 이 Sweeter 판을 보는 중)에서는 **둘 다 감춘다.** 거기서
+//    고쳐 봐야 저장할 곳이 없다 (_swSaveTiles 가 돌아 나간다).
+function _swEditBtnSync(){
+  const mine=(typeof _swOn==='function')&&_swOn();
+  const done=document.getElementById('swEditBtn');
+  const filt=document.getElementById('swFilterBtn');
+  if(done)done.style.display=(mine&&_SW_EDIT)?'':'none';
+  if(filt)filt.style.display=(mine&&!_SW_EDIT)?'':'none';
+}
+// 필터 아이콘 — 말씀 설정의 '말씀 모음' 탭을 열고 그 이름을 세 번 반짝인다.
+// 화면 곳곳의 '말씀 모음' 길과 **같은 동작**을 쓴다 (_vsetGoColl).
+function swOpenCollFilter(){
+  if(_SW_EDIT)swToggleEdit();           // 편집 중이었으면 먼저 마친다 (저장까지)
+  _vsetBackTo=null;_vsetBackId=null;    // 닫으면 Sweeter 홈이 그대로 남는다
+  _vsetGoColl();
+}
 function swToggleEdit(){
   if(!_SW_EDIT){_swEditOn();return;}
   _SW_EDIT=false;
-  const btn=document.getElementById('swEditBtn');
-  if(btn){btn.textContent='편집';btn.setAttribute('aria-pressed','false');}
+  _swEditBtnSync();
   _swSaveTiles();                       // 나갈 때 한 번만 저장한다
   _swRender();
 }
@@ -42451,11 +42549,11 @@ function _swVersesFor(t,cur){
 }
 function _swTileOpen(i){
   const t=_SW_TILES[i],it=_swStrip(t);
-  if(it.length<=1){showToast(_SW_TYPES[t.k].empty);return;}
-  const cur=it[t.p].kind==='val'?it[t.p]:it[1];
+  if(!it.length){showToast(_SW_TYPES[t.k].empty);return;}
+  const cur=it[Math.max(0,Math.min(it.length-1,t.p))];
   // 말씀이 곧 값인 타일 — 띠 전체가 그대로 목록이 된다
   if(t.k==='last'||t.k==='keep'){
-    const list=it.slice(1).map(x=>x.v.verse);
+    const list=it.map(x=>x.v.verse);
     const idx=Math.max(0,list.indexOf(cur.v.verse));
     _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES[t.k].n);
     return;
@@ -42483,6 +42581,11 @@ let _swG=null;
 const _SW_COMMIT_DIST=50;
 const _SW_COMMIT_VEL=0.28;
 const _SW_MOVE=5;
+// 편집 중에 '훑기'와 '끌기'를 가르는 두 값 (v26-0921-9, HB).
+//   _SW_EDIT_HOLD = 이만큼 잡고 있으면 끌기로 본다 (움직이지 않은 채)
+//   _SW_EDIT_MOVE = 이만큼 움직이면 그 자리에서 방향으로 판단한다
+const _SW_EDIT_HOLD=250;
+const _SW_EDIT_MOVE=8;
 const _SW_ANGLE=2.75;  // 옆쓸기로 볼 최대 기울기 = tan(70°). 아래 주석 참고
 
 // ── 편집: 끌어서 자리 바꾸기 ───────────────────────────────
@@ -42572,7 +42675,20 @@ function _swInitGestures(){
     if(e.target.closest('[data-swkill]')){_swKillTile(i);e.preventDefault();return;}
     // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
     try{b.setPointerCapture(e.pointerId);}catch(_){}
-    if(_SW_EDIT){_swDragStart(el,i,e.clientX,e.clientY);e.preventDefault();return;}
+    if(_SW_EDIT){
+      // ⚠️ 누르자마자 끌지 않는다 (v26-0921-9, HB). 250ms 를 잡고 있거나 가로로
+      //    밀어야 비로소 끌린다 — 그 전에 세로로 움직이면 스크롤에게 넘긴다.
+      // ⚠️⚠️ 여기서 preventDefault 를 하지 말 것. 하면 그 250ms 동안 브라우저가
+      //    스크롤을 못 시작해, 고치려던 그 증상이 그대로 남는다.
+      _swG={i,el,pend:true,x:e.clientX,y:e.clientY,t:Date.now(),moved:false,
+        lp:setTimeout(()=>{
+          if(!_swG||!_swG.pend)return;
+          const gi=_swG.i,gx=_swG.x,gy=_swG.y,gel=_swG.el;
+          _swG.lp=0;_swG.pend=false;
+          _swDragStart(gel,gi,gx,gy);
+        },_SW_EDIT_HOLD)};
+      return;
+    }
     if(e.target.closest('[data-swkeep]')){
       const t=_SW_TILES[i],it=_swStrip(t),cur=it[t.p];
       if(cur&&cur.kind==='val'&&cur.v&&cur.v.verse){
@@ -42606,6 +42722,17 @@ function _swInitGestures(){
   });
   b.addEventListener('pointermove',e=>{
     if(!_swG)return;
+    // 편집 중 '잡는 중' — 아직 끌기도 스크롤도 아니다. 여기서 방향으로 가른다.
+    if(_swG.pend){
+      const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
+      if(Math.abs(dx)<_SW_EDIT_MOVE&&Math.abs(dy)<_SW_EDIT_MOVE)return;
+      clearTimeout(_swG.lp);_swG.lp=0;
+      // 세로로 훑는 손 — 몸짓을 **깨끗이 포기한다** (넘기기와 같은 각도 잣대).
+      if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){_swG=null;return;}
+      _swG.pend=false;
+      _swDragStart(_swG.el,_swG.i,e.clientX,e.clientY);
+      return;
+    }
     if(_swG.drag){
       _swG.moved=true;
       _swDragMove(e.clientX,e.clientY);
@@ -42680,6 +42807,9 @@ function _swInitGestures(){
   const end=e=>{
     if(!_swG)return;
     clearTimeout(_swG.lp);
+    // 편집 중에 그냥 탭한 것 — 아무 일도 일어나지 않는다 (끄는 것은 ×, 나가는
+    // 것은 타일 바깥 누르기나 '완료').
+    if(_swG.pend){_swG=null;return;}
     if(_swG.drag){
       _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
       _swDragHoleOff();_swG=null;_swRender();return;
@@ -42697,6 +42827,8 @@ function _swInitGestures(){
   b.addEventListener('pointercancel',()=>{
     if(!_swG){return;}
     clearTimeout(_swG.lp);
+    // 브라우저가 세로 스크롤로 가져갔다 — 편집 중 '잡는 중'이었다면 그대로 놓아 준다
+    if(_swG.pend){_swG=null;return;}
     if(_swG.drag){
       _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
       _swDragHoleOff();_swG=null;_swRender();return;
@@ -42722,7 +42854,9 @@ function _swInitGestures(){
   //    **5px 쯤에서 취소된다** — HB 가 겪은 그 증상이다.
   document.addEventListener('touchmove',e=>{
     if(!_swG)return;
-    if((_swG.lp||_swG.drag)&&e.cancelable)e.preventDefault();
+    // ⚠️ 편집 중 '잡는 중'(pend)에는 **막지 않는다.** 막으면 잡는 250ms 동안
+    //    스크롤이 다시 멈춰 서서, 고치려던 그 증상이 그대로 남는다.
+    if(((_swG.lp&&!_swG.pend)||_swG.drag)&&e.cancelable)e.preventDefault();
   },{passive:false});
   window.addEventListener('resize',()=>{if(_swBoardOn())_swSizeCells();});
 }
@@ -42911,9 +43045,8 @@ function _swMount(){
   const el=document.getElementById('swHome');
   if(!el)return;
   el.classList.add('on');
-  // 편집은 **제 제품에서만** — 미리보기에서 고치면 저장할 곳이 없다
-  const eb=document.getElementById('swEditBtn');
-  if(eb)eb.style.display=_swOn()?'':'none';
+  // 편집·필터 단추는 **제 제품에서만** — 미리보기에서 고치면 저장할 곳이 없다
+  _swEditBtnSync();
   _SW_TILES=_swLoadTiles();
   _swInitGestures();
   _swRender();

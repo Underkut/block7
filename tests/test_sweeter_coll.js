@@ -73,14 +73,18 @@ console.log('시나리오 1 — 모음 목록');
   sc.eq('정렬 이름 두 가지', _SW_TYPES.coll.sorts, ['말씀 많은','이름']);
 }
 
-// ═══ 2. 띠의 첫 칸(제목)은 '개 모음' 으로 센다 ═══
+// ═══ 2. 세는 단위 — '모음 3' 으로 센다 ═══
+// ⚠️ v26-0921-9 부터 **제목 칸이 없다** (HB — 첫 칸이 곧 첫 내용). 개수는
+//    타일 아랫줄(_swCountText)로 옮겼고, 첫 칸에는 첫 모음이 바로 나온다.
 console.log('\n시나리오 2 — 세는 단위');
 {
   setup();
   const html=_swCellHTML(_SW_TILES[0],_swStrip(_SW_TILES[0]),0);
-  sc.eq('제목은 타일 이름', /말씀 모음/.test(html), true);
-  sc.eq("'3개 모음' 이라고 센다", /3개 모음/.test(html), true);
-  sc.eq('설교·권·가지로 세지 않는다', /편의 설교|\d권|가지/.test(html), false);
+  sc.eq('첫 칸은 곧 첫 모음', /내 모음/.test(html), true);
+  sc.eq('제목 칸은 없다', /말씀 모음/.test(html), false);
+  sc.eq("아랫줄은 '모음 3' 이라고 센다", _swCountText('coll',3), '모음 3');
+  sc.eq('설교·권·가지로 세지 않는다',
+        /편의 설교|\d권|가지/.test(_swCountText('coll',3)), false);
 }
 
 // ═══ 3. ⚠️ 누르면 그 모음의 말씀만 (겹치는 장절이 있어도) ═══
@@ -134,9 +138,10 @@ console.log('\n시나리오 6 — 네비게이토 180 만 켜 있을 때');
   const a=_swColls(0);
   sc.eq('한 줄', a.map(x=>x.name), ['네비게이토 180']);
   sc.eq('개수', a[0].n, 2);
-  const t={k:'coll',s:0,p:1};
+  // 제목 칸이 없어졌으므로 첫 모음은 **0번 칸**이다 (v26-0921-9)
+  const t={k:'coll',s:0,p:0};
   sc.eq('눌러도 제 말씀이 나온다',
-        _swVersesFor(t,_swStrip(t)[1]).map(v=>v.ref), ['창 1:1','출 20:3']);
+        _swVersesFor(t,_swStrip(t)[0]).map(v=>v.ref), ['창 1:1','출 20:3']);
 }
 
 // ═══ 7. 기본 타일 차례에 들어 있다 ═══

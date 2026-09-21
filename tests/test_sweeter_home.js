@@ -126,7 +126,10 @@ console.log('\n시나리오 4 — 띠·점·빈 상태');
   VERSES=[V('마 5:13','A','2026-06-21'),V('시 1:1','B','2026-07-01')];
   LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
   const t={k:'recent',p:0,s:0};
-  sc.eq('띠 = 타이틀 + 값들', _swStrip(t).length, 3);
+  // v26-0921-9, HB — 타이틀 칸을 없앴다. 첫 칸부터 곧바로 내용이다.
+  sc.eq('띠 = 값들만 (타이틀 칸 없음)', _swStrip(t).length, 2);
+  sc.eq('타이틀 칸은 만들지 않는다',
+        _swStrip(t).some(x=>x.kind==='title'), false);
 
   // 점은 아홉 칸을 넘지 않는다 (값이 스무 개여도)
   sc.eq('값이 적으면 그대로', (_swPipsHTML(4,0).match(/<i/g)||[]).length, 4);
@@ -139,10 +142,14 @@ console.log('\n시나리오 4 — 띠·점·빈 상태');
   const empty={k:'last',p:0,s:0};
   sc.eq('빈 타일은 까닭을 적는다', _swFace(empty).includes('아직 기록이 없어요'), true);
 
-  // p 가 범위를 벗어나도 조용히 되돌아온다
+  // p 가 범위를 벗어나도 조용히 되돌아온다 (값 둘 → 마지막 자리는 1)
   const over={k:'recent',p:99,s:0};
   _swFace(over);
-  sc.eq('넘친 자리는 끝으로 되돌아온다', over.p, 2);
+  sc.eq('넘친 자리는 끝으로 되돌아온다', over.p, 1);
+  // 값이 하나도 없는 타일도 조용히 0 으로 (Math.min(-1,p) 에 빠지지 않게)
+  const none={k:'tag',p:99,s:0};
+  _swFace(none);
+  sc.eq('빈 타일의 자리는 0', none.p, 0);
 }
 
 // ═══ 5. 글자 그대로 새지 않는다 ═══
@@ -195,8 +202,10 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('다시 그리지 않으니 번호만 새로 매긴다',
         SRC_DEV.includes("[...b.querySelectorAll('.sw-tile[data-swi]')].forEach((t,i)=>{t.dataset.swi=i;});"), true);
   // 롱터치가 재는 동안·끄는 동안 브라우저의 스크롤 판단을 막는다 (할일뷰와 같은 방법)
+  // ⚠️ v26-0921-9 — 편집 중 '잡는 중'(pend)만은 **막지 않는다.** 막으면 잡는
+  //    250ms 동안 스크롤이 다시 멈춰 서서, 고치려던 증상이 그대로 남는다.
   sc.eq('재는 동안 스크롤을 막는다',
-        SRC_DEV.includes("if((_swG.lp||_swG.drag)&&e.cancelable)e.preventDefault();"), true);
+        SRC_DEV.includes("if(((_swG.lp&&!_swG.pend)||_swG.drag)&&e.cancelable)e.preventDefault();"), true);
   sc.eq('막는 리스너는 passive 가 아니다',
         SRC_DEV.includes("},{passive:false});\n  window.addEventListener('resize'"), true);
   // ⚠️ 브라우저가 세로 스크롤로 가져가도(pointercancel) 이미 문턱을 넘었으면
@@ -240,9 +249,10 @@ console.log('\n시나리오 6 — 소스에 고정');
   //    투명도만으로는 안 된다. pointer-events:none 이라야 한다.
   sc.eq('끌리는 타일은 손가락 밑을 비켜 준다',
         /\.sw-tile\.sw-drag\{[^}]*pointer-events:none/.test(SRC_DEV), true);
-  // 편집 중에는 브라우저에게 세로를 넘기지 않는다 (pointercancel 로 끊긴다)
-  sc.eq('편집 중에는 몸짓을 브라우저에 뺏기지 않는다',
-        SRC_DEV.includes('.sw-board.edit .sw-tile{touch-action:none;}'), true);
+  // v26-0921-9, HB — 편집 중에도 **판을 훑어 내릴 수 있어야 한다.**
+  //   예전에는 touch-action:none 이라 세로가 아예 막혀 있었다.
+  sc.eq('편집 중에도 세로는 브라우저의 것',
+        SRC_DEV.includes('.sw-board.edit .sw-tile{touch-action:pan-y;}'), true);
   // ⚠️ 행 높이는 --sw-cell 로 직접 준다 (aspect-ratio 는 그리드에 안 먹는다)
   sc.eq('행 높이를 재서 넣는다', SRC_DEV.includes("setProperty('--sw-cell'"), true);
   // ⚠️ 미는 동안 누름 축소(scale .975)가 걸려 있으면, 손을 뗄 때 타일이 되돌아오며
@@ -283,9 +293,9 @@ console.log('\n시나리오 7 — 트랙으로 넘긴다 (설정창 탭과 같�
   t.p=1;
   const h1=_swFace(t);
   sc.eq('가운데 자리도 세 칸', (h1.match(/class="sw-cell/g)||[]).length, 3);
-  // 가운데 칸이 지금 값이어야 한다 (앞칸=타이틀, 가운데=첫 설교)
+  // 가운데 칸이 지금 값이어야 한다 (앞칸 = 바로 앞 **내용**, 타이틀이 아니다)
   const cells=h1.split('class="sw-cell');
-  sc.eq('앞칸은 타이틀', cells[1].includes('최근 설교'), true);
+  sc.eq('앞칸도 내용이다 (타이틀 칸은 없다)', cells[1].includes('최근 설교'), false);
   sc.eq('가운데 칸이 지금 값', cells[2].includes('언덕 위의 도시')||cells[2].includes('꿀보다'), true);
 
   // ⚠️ verse 는 타일이 아니라 **칸**에 붙는다. 이웃 칸이 제목일 수 있어서다.
@@ -389,8 +399,9 @@ console.log('\n시나리오 10 — 타일 구성은 Sweeter 것이다');
   sc.eq('나갈 때 저장한다',
         SRC_DEV.includes('_swSaveTiles();                       // 나갈 때 한 번만 저장한다'), true);
   // wide 는 표에서 읽는다 — 타일이 늘어도 하드코딩이 남지 않게
+  // (v26-0921-9 부터 종류 이름표 k-<종류> 도 함께 붙는다 — 바탕·글자를 가르는 열쇠)
   sc.eq('넓은 타일은 표에서 정한다',
-        SRC_DEV.includes("return 'sw-tile '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
+        SRC_DEV.includes("return 'sw-tile k-'+t.k+' '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
 }
 
 // ═══ 11. 값을 누르면 그 말씀들이 열린다 ═══
@@ -605,6 +616,80 @@ console.log('\n시나리오 16 — BLOCK7 의 미리보기는 읽기만 한다')
   APP_PRODUCT='block7';  _swCross=false; sc.eq('BLOCK7 평소 = 판 끔', _swBoardOn(), false);
   _swCross=true;                          sc.eq('BLOCK7 상대화면 = 판 켬', _swBoardOn(), true);
   _swCross=false;
+}
+
+// ═══ 17. 매거진 얼굴 · 편집 중 스크롤 · 필터 아이콘 (v26-0921-9, HB) ═══
+console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · 필터 아이콘');
+{
+  APP_PRODUCT='sweeter';
+  VERSES=[V('마태복음 5:13','언덕 위의 도시','2026-06-21'),
+          V('시편 119:105','등불','2026-07-01')];
+  VERSES[0].tags=['소금과 빛'];
+  ST={settings:{},verseKeepLog:{}};
+  LIKE={'2026-08-20':[{ref:'마태복음 5:13',time:'09:10'}]};
+  MEM={}; DEEP={}; EVEN={}; SHARE={};
+  _SW_TILES=[{k:'last',s:0,p:0},{k:'recent',s:0,p:0},{k:'book',s:0,p:0}];
+
+  // ── ① 첫 칸이 곧 첫 내용이다 (타이틀 칸이 사라졌다)
+  const hL=_swFace(_SW_TILES[0]);
+  sc.eq('첫 칸부터 말씀 본문', hL.includes('언덕 위의 도시 본문'), true);
+  sc.eq('장절은 본문 위 머리말로', hL.includes('<div class="sw-kick">마태복음 5:13</div>'), true);
+  // ── ② 개수는 아랫줄에 언제나 있다 (예전엔 첫 칸에서만 보였다)
+  sc.eq('아랫줄에 개수',
+        hL.includes('<div class="sw-pips"><span class="sw-cnt">말씀 1</span>'), true);
+  sc.eq('세는 단위는 종류마다',
+        [_swCountText('recent',3),_swCountText('book',3),_swCountText('react',3)],
+        ['설교 3편','3권','3가지']);
+  // ── ③ 차례 번호 — 목차의 그 번호
+  sc.eq('첫 타일은 01', hL.includes('<b class="sw-ix">01</b>'), true);
+  sc.eq('셋째 타일은 03', _swFace(_SW_TILES[2]).includes('<b class="sw-ix">03</b>'), true);
+  sc.eq('번호는 이름 앞에', hL.indexOf('sw-ix')<hL.indexOf('sw-nm'), true);
+  // ── ④ 종류마다 낯이 다르다
+  sc.eq('설교 칸', _swFace(_SW_TILES[1]).includes('class="sw-cell sermon"'), true);
+  sc.eq('성경 칸', _swFace(_SW_TILES[2]).includes('class="sw-cell book"'), true);
+  sc.eq('타일에 종류 이름표', _swTileClass(_SW_TILES[1]), 'sw-tile k-recent ');
+  sc.eq('큰 숫자는 장식으로 깔린다', _swFace(_SW_TILES[2]).includes('class="sw-big"'), true);
+  sc.eq('큰 숫자는 옅게만',
+        /\.sw-big\{[^}]*opacity:\.09;\}/.test(SRC_DEV), true);
+  // ⚠️ 큰 숫자·머리말은 칸의 **위쪽**에 둔다 — 내용이 아래로 붙으므로 아래에
+  //    두면 글자와 겹쳐 둘 다 흐려진다 (첫 시안에서 그랬다).
+  sc.eq('큰 숫자는 위쪽에', /\.sw-big\{[^}]*top:-6px/.test(SRC_DEV), true);
+  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:absolute;[^}]*top:0/.test(SRC_DEV), true);
+  // 값이 없으면 예전처럼 까닭을 적는다 (아랫줄도 안 그린다)
+  const hE=_swFace({k:'keep',s:0,p:0});   // 담아둔 것이 하나도 없는 타일
+  sc.eq('빈 타일은 까닭만', hE.includes('sw-pips'), false);
+
+  // ── ⑤ 눌러서 여는 자리도 타이틀 없이 센다
+  TOAST='';
+  _SW_TILES=[{k:'tag',s:0,p:0}];
+  VERSES=[V('마태복음 5:13','A','2026-06-21')];   // 태그 없음 → 값 0
+  _swTileOpen(0);
+  sc.eq('값이 없으면 까닭을 알려 준다', TOAST.includes('태그가 붙은 말씀이'), true);
+
+  // ── ⑥ 편집 중에도 세로로 훑을 수 있다 (HB 신고 — "폴드 타임이 거의 없다")
+  sc.eq('잡는 시간이 있다', SRC_DEV.includes('const _SW_EDIT_HOLD=250;'), true);
+  sc.eq('움직임 문턱도 있다', SRC_DEV.includes('const _SW_EDIT_MOVE=8;'), true);
+  sc.eq('누르자마자 끌지 않는다',
+        SRC_DEV.includes('if(_SW_EDIT){_swDragStart(el,i,e.clientX,e.clientY);'), false);
+  sc.eq('잡는 중이라는 표시를 둔다', SRC_DEV.includes('_swG={i,el,pend:true,'), true);
+  sc.eq('세로로 움직이면 몸짓을 포기한다',
+        SRC_DEV.includes('if(Math.abs(dy)>Math.abs(dx)*_SW_ANGLE){_swG=null;return;}'), true);
+  sc.eq('잡는 중에 뗀 것은 아무 일도 아니다',
+        SRC_DEV.includes('if(_swG.pend){_swG=null;return;}'), true);
+
+  // ── ⑦ 우상단 — '편집' 이 필터 아이콘에게 자리를 내줬다
+  sc.eq('필터 단추가 있다', SRC_DEV.includes('id="swFilterBtn"'), true);
+  sc.eq('누르면 말씀 모음으로', SRC_DEV.includes('onclick="swOpenCollFilter()"'), true);
+  sc.eq('세 번 반짝이는 그 길을 그대로 쓴다',
+        /function swOpenCollFilter\(\)\{[\s\S]{0,260}_vsetGoColl\(\);/.test(SRC_DEV), true);
+  sc.eq("'편집' 글자는 없앴다", SRC_DEV.includes('onclick="swToggleEdit()">편집</button>'), false);
+  sc.eq('편집 중에만 완료가 뜬다',
+        /function _swEditBtnSync\(\)\{[\s\S]{0,400}done\.style\.display=\(mine&&_SW_EDIT\)/.test(SRC_DEV), true);
+  sc.eq('둘은 나란히 서지 않고 교체된다',
+        /filt\.style\.display=\(mine&&!_SW_EDIT\)/.test(SRC_DEV), true);
+  // 들어가는 길은 롱터치 하나 — 나가는 길(타일 바깥)은 그대로 있어야 한다
+  sc.eq('나가는 길은 남아 있다',
+        SRC_DEV.includes('if(!el){if(_SW_EDIT)swToggleEdit();return;}'), true);
 }
 
 sc.done();
