@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0921-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5244,7 +5244,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-4";
+const APP_VERSION = "v. 26-0921-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12773,13 +12773,22 @@ function _vfHideCovers(){
   });
   return jobs.length?jobs:null;
 }
+// 숨겨 뒀던 화면들을 되살린다. 두 번 불러도 안전하다 (명단을 비우고 돈다).
+// ⚠️ 닫을 때만이 아니라 **가장자리 스와이프를 시작할 때도** 부른다 —
+//    밀려나는 전체화면 뒤에 드러날 것이 그 화면이어야 한다. 안 그러면
+//    Sweeter 에서 닫는 동안 뒤에 **BLOCK7 화면이 비친다** (HB 신고 2026-09-21).
+function _vfRestoreCovers(){
+  const restore=_vfNotifRestore;_vfNotifRestore=null;
+  if(restore)restore.forEach(f=>{try{f();}catch(e){}});
+  return !!restore;
+}
 function closeVerseFull(){
   closeVfKeepSwitch();
   // 알림으로 열 때 숨겨 뒀던 화면들을 먼저 되살린다.
   // ⚠️ 아래 대시보드 훅(setTimeout)보다 "먼저, 동기적으로" 되살려야 한다 —
   //    타일뷰가 되살아나면 _vgIsOpen() 이 true 가 되어 대시보드가 겹쳐 뜨지 않는다.
-  const restore=_vfNotifRestore;_vfNotifRestore=null;
-  if(restore)restore.forEach(f=>{try{f();}catch(e){}});
+  //    (가장자리 스와이프로 닫는 길에서는 이미 되살아나 있어 여기선 그냥 지나간다)
+  _vfRestoreCovers();
   // 대시보드에서 넘어온 경우 그 화면으로 되돌린다 (그리드가 위에 없을 때만)
   setTimeout(()=>{ if(!_vgIsOpen())_vDashMaybeReturn(); },0);
   const el=document.getElementById('verseFull');
@@ -17132,9 +17141,11 @@ function _initVerseFullGestures(){
   let tapT=null,lastTap=0;
   // 왼쪽 가장자리 → 오른쪽 = 닫기. 손이 **움직이기 시작할 때** 뒤 바탕부터
   // 되돌리고, 손이 모자라 제자리로 돌아가면 다시 칠한다.
+  // ⚠️ 되살리기(_vfRestoreCovers)는 **바탕칠(_vfSyncPageBg)보다 먼저** 한다 —
+  //    타일뷰가 되살아난 뒤라야 _vgIsOpen() 이 참이 되어 바탕을 그대로 둔다.
   _initEdgeBack(el,()=>{_vfClosing=false;closeVerseFull();},
-                   ()=>{_vfClosing=true;_vfSyncPageBg();},
-                   ()=>{_vfClosing=false;_vfSyncPageBg();});
+                   ()=>{_vfClosing=true;_vfRestoreCovers();_vfSyncPageBg();},
+                   ()=>{_vfClosing=false;_vfHideCoversNow();_vfSyncPageBg();});
   el.addEventListener('click',e=>{
     // 핀치 끝자락에 딸려 오는 가짜 클릭 — 이걸 막지 않으면 말씀이 넘어간다
     if(_tsPinchBusy()){e.preventDefault();e.stopPropagation();return;}
@@ -42549,7 +42560,13 @@ function _swSnap(el,tr){
 // (앱 안에서 화면만 바꾸는 길은 없앴다 — 아래 sisterGo 주석 참고)
 function _sisterApp(){
   const dev=(typeof DEV_MODE!=='undefined'&&DEV_MODE);
-  return _swOn()
+  // ⚠️ **지금 보고 있는 화면**의 반대쪽을 가리킨다 — 제품이 무엇인지만 보면 안 된다.
+  //    앱 안에서 상대 화면을 보는 중(_swCross)이면, '건너가기' 는 내 제품으로
+  //    **돌아가는** 것이다. 이것을 빠뜨려 Sweeter 에서 넘어간 BLOCK7 화면의
+  //    메뉴가 다시 'BLOCK7' 이라고 떴다 (HB 신고 2026-09-21).
+  const cross=(typeof _swCross!=='undefined'&&_swCross);
+  const toBlock7=_swOn()?!cross:cross;
+  return toBlock7
     ? {name:'BLOCK7', icon:'icon-block7.png',  href:dev?'index-dev.html'  :'https://block7.my/'}
     : {name:'Sweeter',icon:'icon-sweeter.png', href:dev?'sweeter-dev.html':'https://sweeter.my/'};
 }

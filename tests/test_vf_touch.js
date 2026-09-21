@@ -150,7 +150,28 @@ console.log('\n시나리오 5 — 화면 끝에 흰 줄이 생기지 않는다')
         SRC.includes("if(!painted&&typeof onBackStart==='function')"), true);
   sc.eq('제자리로 돌아가면 다시 칠한다',
         SRC.includes("if(typeof onBackCancel==='function'){try{onBackCancel();}catch(err){}}") &&
-        SRC.includes('()=>{_vfClosing=false;_vfSyncPageBg();}'), true);
+        SRC.includes('_vfClosing=false;_vfHideCoversNow();_vfSyncPageBg();'), true);
+  // ⚠️⚠️ HB 신고 2026-09-21 — "스위터에서 전체화면을 스와이프로 닫으면
+  //    뒤에 **BLOCK7 화면**이 보인다."
+  //    까닭: 전체화면을 열 때 숨겨 둔 화면들(#swHome 포함)을 되살리는 일이
+  //    **다 닫힌 뒤**(closeVerseFull)에야 돌았다. 미는 동안 드러나는 것은
+  //    그래서 Sweeter 판이 아니라 그 아래 BLOCK7 화면이었다.
+  //    → 손이 움직이기 시작할 때 **먼저 되살린다.**
+  sc.eq('⭐ 밀기 시작하면 숨겼던 화면부터 되살린다',
+        SRC.includes('_vfClosing=true;_vfRestoreCovers();_vfSyncPageBg();'), true);
+  sc.eq('⭐ 되살리기가 바탕칠보다 **먼저**다',
+        SRC.indexOf('_vfRestoreCovers();_vfSyncPageBg();')>=0, true);
+  sc.eq('⭐ 제자리로 돌아가면 다시 숨긴다',
+        SRC.includes('_vfHideCoversNow();_vfSyncPageBg();'), true);
+  // 되살리기는 두 번 불려도 안전해야 한다 — 닫기 경로에서도 부른다
+  sc.eq('명단을 비우고 돈다',
+        slice('function _vfRestoreCovers(){', '\n}')
+          .includes('_vfNotifRestore=null;'), true);
+  sc.eq('닫기 경로도 같은 함수를 쓴다',
+        slice('function closeVerseFull(){', '\n}').includes('_vfRestoreCovers();'), true);
+  // Sweeter 판이 그 명단에 들어 있어야 한다 (안 그러면 애초에 가려지지 않는다)
+  sc.eq('Sweeter 판이 숨김 명단에 있다',
+        slice('function _vfHideCovers(){', '\n}').includes("getElementById('swHome')"), true);
   // 놓은 뒤에만 되돌리던 옛 자리는 없앴다 (paint 첫 걸음이 이미 했다)
   sc.eq('놓은 뒤에 또 부르지 않는다',
         /if\(moved&&dx>=COMMIT\)\{[\s\S]{0,200}onBackStart/.test(SRC), false);

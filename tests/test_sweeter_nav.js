@@ -180,6 +180,33 @@ console.log('\n시나리오 5-2 — 아이폰 홈 화면 앱');
   sc.eq('앱 안에서 바꾸지 않는다', _swCross, false);
 }
 
+// ═══ 5-3. ⚠️ 상대 화면을 보는 중에는 메뉴가 '돌아가기' 를 가리킨다 ═══
+console.log('\n시나리오 5-3 — 건너간 뒤의 메뉴 이름');
+{
+  // ⚠️ 실제로 뒤집혀 있던 자리다 (HB 신고 2026-09-21).
+  //    Sweeter 에서 BLOCK7 화면으로 넘어갔는데 메뉴가 다시 'BLOCK7' 이라고
+  //    떴다 — 이미 보고 있는 것을 또 가리킨 것이다.
+  //    **제품이 무엇인가**가 아니라 **지금 무엇을 보고 있는가**로 정해야 한다.
+  as('sweeter',false);
+  _sisterFill();
+  sc.eq('Sweeter 홈에서는 BLOCK7 을 가리킨다', EL.logoMenuSisterLabel.textContent, 'BLOCK7');
+
+  _swCross=true;                       // BLOCK7 화면으로 건너간 상태
+  _sisterFill();
+  sc.eq('⭐ 건너간 뒤에는 Sweeter 로 돌아가기', EL.logoMenuSisterLabel.textContent, 'Sweeter');
+  sc.eq('⭐ 그림도 Sweeter 것', EL.logoMenuSisterIcon._src, 'icon-sweeter.png');
+
+  as('block7',false);
+  _sisterFill();
+  sc.eq('BLOCK7 에서는 Sweeter 를 가리킨다', EL.logoMenuSisterLabel.textContent, 'Sweeter');
+
+  _swCross=true;                       // Sweeter 화면으로 건너간 상태
+  _sisterFill();
+  sc.eq('⭐ 건너간 뒤에는 BLOCK7 로 돌아가기', EL.logoMenuSisterLabel.textContent, 'BLOCK7');
+  sc.eq('⭐ 그림도 BLOCK7 것', EL.logoMenuSisterIcon._src, 'icon-block7.png');
+  _swCross=false;
+}
+
 // ═══ 6. 메뉴 한 줄이 제품에 맞게 채워진다 ═══
 console.log('\n시나리오 6 — 메뉴 한 줄');
 {
