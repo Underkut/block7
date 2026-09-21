@@ -19,6 +19,11 @@ const sc = makeScorer();
 
 global.document = { visibilityState: 'visible', addEventListener: () => {} };
 global.APP_VERSION = 'v. 26-0812-12';
+// ⚠️ v26-0921-10 — 버전 비교(_verNums·_verCmp)는 이 구간 밖으로 옮겼다.
+//    개발본에서도 새 버전 확인(_upCheck)이 돌아야 해서 로그인 뭉치(IIFE) 밖으로
+//    나갔다. 그래서 따로 한 번 더 떠 온다.
+eval(slice('// ── 앱 버전 비교 ("v. YY-MMDD-N") ──', '// ═══════════════')
+       .replace(/^(?:const|let) /gm, 'var '));
 eval(slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면') +
   // eval 안의 let 은 바깥으로 새지 않는다 → 값을 넣어 볼 통로를 하나 뚫는다
   ';Object.assign(globalThis,{_probeIdle:(vis,edit,touch)=>{' +

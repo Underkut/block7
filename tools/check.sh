@@ -112,6 +112,19 @@ else
   echo "Sweeter 운영본은 저장소 밖에 있음 ✓"
 fi
 
+# 버전표(version.txt)는 앱이 "내가 낡았나" 를 묻는 곳이다 (_upCheck).
+# 낡으면 **새 버전을 영영 못 받는다** — 배포를 막는 급이다.
+_ver_html=$(grep -m1 -o 'const APP_VERSION = "v\. [0-9-]*"' index.html | sed 's/.*"\(v\. [0-9-]*\)"/\1/')
+_ver_txt=$(head -1 version.txt 2>/dev/null | tr -d '\r\n')
+if [ "$_ver_html" = "$_ver_txt" ] && [ -n "$_ver_html" ]; then
+  echo "version.txt ↔ index.html 같은 버전 ✓ ($_ver_html)"
+else
+  echo "version.txt 가 index.html 과 다릅니다 ✗  (파일: '${_ver_txt:-없음}' / 코드: '$_ver_html')"
+  echo "   → ./tools/make-version.sh 로 다시 만들어 함께 커밋하세요"
+  echo "   → 안 맞으면 기기들이 새 버전이 나온 줄 모릅니다"
+  fail=1
+fi
+
 # 구역 지도는 문서일 뿐이라 낡았다고 배포를 막지는 않는다 — 알림만 둔다.
 if [ ! -f docs/MAP.md ]; then
   echo "docs/MAP.md 가 없습니다 (경고)  → ./tools/make-map.sh"

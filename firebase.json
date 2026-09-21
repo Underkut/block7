@@ -7,7 +7,21 @@
     {
       "site": "sweeter7",
       "public": "build-sweeter",
-      "ignore": ["**/.*"]
+      "ignore": ["**/.*"],
+      "headers": [
+        {
+          "source": "/",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        },
+        {
+          "source": "**/*.@(html|json|txt)",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        },
+        {
+          "source": "/firebase-messaging-sw.js",
+          "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        }
+      ]
     }
   ]
 }
