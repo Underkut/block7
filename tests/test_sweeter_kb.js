@@ -44,6 +44,8 @@ function showToast(m){TOAST=m;}
 // ESC 표 — 진짜를 떠온다 (자판 차단이 이 표를 되쓴다)
 eval(sliceDev('const _ESC_CLOSERS=[','function _escShown(').replace(/^const /m,'var '));
 function _escShown(el){return !!(el&&el._shown);}
+// 팝업이 위에 떴는지 보는 판정도 진짜를 떠온다 (블럭7·스위터가 같이 쓴다)
+eval(sliceDev('function _kbOverlayOpen(', "document.addEventListener('keydown'"));
 function closeSwKbHelp(){const m=OPEN_MODALS.swKbHelpModal;if(m){m.style.display='none';m._shown=false;}}
 
 // ── Sweeter 블록 떠오기 ───────────────────────────────────
@@ -268,8 +270,13 @@ console.log('\n시나리오 8 — 소스에 남겨 둔 약속');
 {
   sc.eq('IS_TOUCH 로 막지 않는다 (자판 붙인 아이패드)',
         /function _swBoardKey\(e\)\{[\s\S]{0,400}IS_TOUCH/.test(SRC_DEV), false);
-  sc.eq('차단은 ESC 표를 되쓴다',
-        /function _swKbReady\(\)\{[\s\S]{0,700}for\(const\[id,,test\]of _ESC_CLOSERS\)/.test(SRC_DEV), true);
+  // ⚠️ v26-0921-13 에서 이 판정을 _kbOverlayOpen() 한 곳으로 모았다 —
+  //    블럭7 자판(_b7KbReady)도 같은 것을 본다. 두 벌로 두면 새 팝업이 생길 때
+  //    한쪽만 고쳐져 '닫히는데 자판은 뒤로 새는' 자리가 생긴다.
+  sc.eq('차단은 한 곳(_kbOverlayOpen)이 맡는다',
+        /function _swKbReady\(\)\{[\s\S]{0,300}return !_kbOverlayOpen\(\);/.test(SRC_DEV), true);
+  sc.eq('그 한 곳은 ESC 표를 되쓴다',
+        /function _kbOverlayOpen\(\)\{[\s\S]{0,400}for\(const\[id,,test\]of _ESC_CLOSERS\)/.test(SRC_DEV), true);
   sc.eq('다시 그린 뒤 표시를 되붙인다',
         /_swSizeCells\(\);\n  _swKbSync\(\);/.test(SRC_DEV), true);
   sc.eq('한 칸만 다시 그릴 때도 되붙인다',
