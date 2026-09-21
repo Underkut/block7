@@ -20,8 +20,9 @@ const panel = t => {
 
 console.log('시나리오 1 — 탭 구성 (상단 말씀·말씀 위젯 신설, 뷰 분리)');
 {
+  // v26-0921-8 — 맨 뒤에 '계정' 이 붙었다. Sweeter 에서만 보인다(_vstabList).
   sc.eq('탭 목록이 시트 순서 그대로',
-        SRC.includes("const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll'];"), true);
+        SRC.includes("const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll','account'];"), true);
   // v26-0819-3, HB 1 — 탭이 7개로 늘면서 이름에 스페이스가 있으면 구분이 잘 안 돼
   // 보여지는 탭 이름에서만 스페이스를 뺐다(내부 id·다른 화면 문구는 그대로).
   [['top','상단말씀'],['widget','말씀위젯'],['view','뷰']].forEach(([id,label])=>{
@@ -31,12 +32,13 @@ console.log('시나리오 1 — 탭 구성 (상단 말씀·말씀 위젯 신설,
   });
   const collButton = SRC.match(/switchVerseSettingsTab\('coll',this\)\">([\s\S]*?)<\/button>/);
   sc.eq("'말씀모음' 탭 버튼", collButton ? collButton[1].replace(/<[^>]+>/g, '') : '', '말씀모음');
-  sc.eq('트랙 칸 수 7', SRC.includes('id="verseSettingsTabTrack" style="--stab-count:7;"'), true);
+  sc.eq('트랙 칸 수 8', SRC.includes('id="verseSettingsTabTrack" style="--stab-count:8;"'), true);
   sc.eq('예전 vstab-general 은 사라졌다', SRC.includes('id="vstab-general"'), false);
   // 탭 순서가 실제 문서 순서와도 맞아야 트랙 이동이 맞는다
   sc.eq('문서 순서 = 탭 순서',
         idx('top') < idx('widget') && idx('widget') < idx('view') && idx('view') < idx('alarm')
-        && idx('alarm') < idx('full') && idx('full') < idx('share') && idx('share') < idx('coll'), true);
+        && idx('alarm') < idx('full') && idx('full') < idx('share') && idx('share') < idx('coll')
+        && idx('coll') < idx('account'), true);
 }
 
 console.log('\n시나리오 2 — 이지유저는 말씀 위젯·공유 탭 자체가 안 보인다');

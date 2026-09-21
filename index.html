@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-7  [production]  -->
+<!-- BLOCK7  v. 26-0921-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5287,7 +5287,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-7";
+const APP_VERSION = "v. 26-0921-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5675,7 +5675,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <div class="settings-tab-content" id="stab-view">
 
       <!-- 유저 모드 — 설정창 헤더의 이지/미드/파워 아이콘 모양 고르기 (파워에서만) -->
-      <div class="settings-section" data-lv="p">
+      <div class="settings-section" id="secUiLevelSet" data-lv="p">
         <div class="settings-section-title">유저 모드</div>
         <div class="settings-row-desc" style="margin-bottom:10px;">설정창 위쪽의 이지·미드·파워 아이콘 모양이에요.</div>
         <div style="display:flex;gap:8px;">
@@ -5685,7 +5685,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- 화면 크기 (뷰포트 스케일 — 모바일·태블릿 전용) -->
-      <div class="settings-section">
+      <div class="settings-section" id="secUiScale">
         <div class="settings-row-text" style="margin-bottom:10px;">
           <div class="settings-row-label lv1">글자 크기</div>
           <div class="settings-row-desc">글자가 작아 보이면 전체 화면을 키워보세요. 누르는 즉시 적용되고, 이 설정은 기기마다 따로 저장돼요. 휴대폰·태블릿 전용이고, 데스크탑에서는 브라우저 확대(Cmd/Ctrl +)를 사용하세요.</div>
@@ -5698,7 +5698,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- 밝기 — 색상 테마보다 먼저 온다 (v26-0823-1, HB). 버튼은 라이트·다크·시스템 순 -->
-      <div class="settings-section">
+      <div class="settings-section" id="secBrightness">
         <div class="settings-row-text" style="margin-bottom:10px;">
           <div class="settings-row-label lv1">밝기</div>
           <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정에 맞춰요.</div>
@@ -5711,7 +5711,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       </div>
 
       <!-- 색상 테마 — 15개를 여기 다 펼치지 않는다. 요약만 보이고 전용 화면에서 고른다 -->
-      <div class="settings-section">
+      <div class="settings-section" id="secColorTheme">
         <div class="settings-row-text" style="margin-bottom:10px;">
           <div class="settings-row-label lv1">색상 테마</div>
           <div class="settings-row-desc">앱 전체의 색을 한 번에 바꿔요. 밝기(다크·라이트)는 그대로 따라가요.</div>
@@ -6033,7 +6033,7 @@ window._fbScriptsReady=new Promise(resolve=>{
       <!-- 백업 및 복원 -->
       <div class="settings-section">
         <div class="settings-section-title">백업 및 복원</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">모든 할일 데이터를 파일로 저장하거나, 저장해둔 파일을 불러올 수 있어요</div>
+        <div class="settings-row-desc" id="backupScopeDesc" style="margin-bottom:10px;">할일·일정·구간·설정과 말씀 데이터를 파일로 저장하거나, 저장해둔 파일을 불러올 수 있어요</div>
         <div class="settings-btn-row">
           <button class="settings-btn settings-btn-flat-icon" onclick="exportBackup()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5v8m-3-3 3 3 3-3"/><path d="M3.5 12v2.5h11V12"/></svg><span>백업 다운로드</span></button>
           <button class="settings-btn settings-btn-flat-icon" onclick="document.getElementById('importFileInput2').click()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V3m-3 3 3-3 3 3"/><path d="M3.5 12v2.5h11V12"/></svg><span>백업 불러오기</span></button>
@@ -6186,9 +6186,11 @@ window._fbScriptsReady=new Promise(resolve=>{
       <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)"><span class="vstab-pair"><span>전체</span><span>화면</span></span></button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('share',this)">공유</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)"><span class="vstab-pair"><span>말씀</span><span>모음</span></span></button>
+      <!-- 계정 — Sweeter 에서만 보인다(_vstabList). BLOCK7 은 일반설정창에 그대로 있다 -->
+      <button class="settings-tab" onclick="switchVerseSettingsTab('account',this)">계정</button>
     </div>
     <div class="settings-body">
-      <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:7;">
+      <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:8;">
 
       <!-- ═══ 상단 말씀 (v26-0819-2, 구글시트 '말씀설정창' 탭 기준 신설) ═══ -->
       <div class="vsettings-tab-content settings-tab-content" id="vstab-top">
@@ -6687,6 +6689,12 @@ window._fbScriptsReady=new Promise(resolve=>{
         <div id="collFilterPanels" class="coll-filter-panels"></div>
         </div>
       </div><!-- /vstab-coll -->
+
+      <!-- ═══ 계정 (Sweeter 전용) ═══
+           비어 있는 것이 맞다. _swMergeAccountTab() 이 일반설정창 '계정' 탭의
+           내용을 **통째로 옮겨** 담는다 (복제하면 id 가 두 벌이 된다). -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-account">
+      </div><!-- /vstab-account -->
 
       </div><!-- /verseSettingsTabTrack -->
     </div>
@@ -11276,6 +11284,9 @@ function toggleVerseBarOn(){
 }
 
 function openVerseSettingsModal(){
+  _swMergeViewTab();            // Sweeter 뷰 탭 병합 — 두 번 불려도 안전 (v26-0921-8)
+  _swMergeAccountTab();         // Sweeter 계정 탭 — 마찬가지
+  _swFillMovedRows();           // 옮겨 온 칸들의 '값' 채우기
   renderVerseSettingsModal();
   applyVerseUiLevel();
   _syncDevVerBadge();
@@ -11402,7 +11413,7 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();
   document.getElementById('verseSettingsOverlay').classList.remove('open');
 });
-const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll'];
+const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll','account'];
 // 이 등급에서 보이는 탭들. 이지는 '말씀 위젯'·'공유' 탭 자체를 감춘다
 // (구글시트 '말씀설정창' 탭의 "(이지유저에는 안 보임)").
 // ⚠️ 일반설정창의 _stabList() 와 같은 함정 — 자리(idx)는 항상 **보이는 목록** 기준이다.
@@ -11413,6 +11424,9 @@ function _vstabList(){
     // Sweeter 에는 BLOCK7 화면이 없다 — '상단 말씀'(할일 화면 위에 띄우는 띠)과
     // '말씀 위젯'(할일 화면의 카드)은 가리킬 대상 자체가 없다 (v26-0921-6, HB).
     if(typeof _swOn==='function'&&_swOn()&&(id==='top'||id==='widget'))return false;
+    // '계정' 은 거꾸로 — Sweeter 에만 있다. BLOCK7 은 일반설정창에 이미 갖고 있어서
+    // 여기 또 두면 같은 것이 두 군데 보인다 (v26-0921-8, HB 4-5).
+    if(id==='account'&&!(typeof _swOn==='function'&&_swOn()))return false;
     return true;
   });
 }
@@ -36822,7 +36836,13 @@ function setUiLevel(v){
 // 이 등급에서 보이는 탭들 (이지는 '버튼' 탭 자체를 감춘다)
 function _stabList(){
   const lv=uiLevel();
-  return SETTINGS_TABS.filter(id=>!(id==='buttons'&&lv==='easy'));
+  return SETTINGS_TABS.filter(id=>{
+    if(id==='buttons'&&lv==='easy')return false;
+    // Sweeter 는 '계정' 탭의 내용을 제 설정창으로 **옮겨 갔다**(_swMergeAccountTab).
+    // 그대로 두면 여기 빈 탭이 남는다 (v26-0921-8, HB 4-5).
+    if(id==='account'&&typeof _swOn==='function'&&_swOn())return false;
+    return true;
+  });
 }
 // 어떤 상자 안의 data-lv 들을 지금 등급에 맞춰 켜고 끈다.
 // (설정창은 열려 있는 동안에도 다시 그려지는 곳이 있어 따로 부를 수 있게 뺐다)
@@ -37385,17 +37405,44 @@ function deleteSectionConfig(name){
 }
 
 // ── Backup / restore ──
+// ── 백업에 담는 '말씀 쪽' (v26-0921-8, HB 4-5) ──
+// export 와 import 가 **같은 목록**을 본다. 하나만 고치면 되살릴 때 조용히 빠진다.
+// 명제는 따로 없다 — 말씀 모음(verseCollections) 안에 함께 들어 있다.
+const _VERSE_BACKUP_KEYS=['verseCollections','memorizationLog','verseLikeLog',
+  'verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog'];
+// 이 제품의 '화면 취향' 만 뽑는다 (_psProject 가 저장할 때 하는 것과 같은 일).
+// ⚠️ ST.productSettings 를 그냥 읽지 않는다 — 그 칸은 저장할 때 채워지므로
+//    지금 화면에서 방금 바꾼 값이 아직 안 들어가 있을 수 있다.
+function _myProductSettings(){
+  const out={};
+  if(typeof _PRODUCT_SCOPED==='undefined')return out;
+  const s=ST.settings||{};
+  _PRODUCT_SCOPED.forEach(k=>{if(s[k]!==undefined)out[k]=s[k];});
+  return out;
+}
+// 백업 파일의 속. Sweeter 는 **말씀 쪽만** 담는다 (HB 확정) —
+// 남의 할일이 들어 있는 파일을 되살렸을 때 무슨 일이 날지 예측할 수 없어서다.
+function _backupPayload(){
+  const sw=(typeof _swOn==='function')&&_swOn();
+  const p={exportedAt:new Date().toISOString(),app:sw?'Sweeter':'BLOCK7',scope:sw?'verse':'all'};
+  _VERSE_BACKUP_KEYS.forEach(k=>{if(ST[k]!==undefined)p[k]=ST[k];});
+  if(sw){
+    p.productSettings={};
+    p.productSettings[APP_PRODUCT]=_myProductSettings();
+    return p;
+  }
+  p.secs=SECS;
+  p.secArchive=ST.secArchive||[];   // 보관해 둔 구간도 함께 (되살릴 수 있게)
+  p.settings=ST.settings;
+  p.days=ST.days;
+  p.vis=ST.vis;
+  p.collapsed=ST.collapsed;
+  // 다른 제품의 취향도 그대로 지고 간다 — 빼면 되살릴 때 "지웠다"가 된다
+  p.productSettings=ST.productSettings||{};
+  return p;
+}
 function exportBackup(){
-  const payload={
-    exportedAt:new Date().toISOString(),
-    app:'BLOCK7',
-    secs:SECS,
-    secArchive:ST.secArchive||[],   // 보관해 둔 구간도 함께 (되살릴 수 있게)
-    settings:ST.settings,
-    days:ST.days,
-    vis:ST.vis,
-    collapsed:ST.collapsed
-  };
+  const payload=_backupPayload();
   const json=JSON.stringify(payload,null,2);
   const name=buildBackupFilename();
   // ⚠️ 아이폰은 <a download> 를 누르면 내려받은 파일을 **전체화면 미리보기**로
@@ -37485,20 +37532,48 @@ function importBackup(file){
     try{
       const data=JSON.parse(e.target.result);
       if(!data||typeof data!=='object')throw new Error('invalid');
-      if(!confirm('백업을 불러오면 현재 데이터를 덮어써요. 계속할까요?'))return;
+      // Sweeter 는 **말씀 쪽만** 되살린다. 파일에 할일이 들어 있어도 건드리지 않는다
+      // — 클라우드 문서는 두 제품이 같이 쓰므로, 여기서 할일을 덮으면 BLOCK7 이
+      //   지금 쓰고 있는 것을 옛 파일로 되돌리는 셈이 된다 (v26-0921-8, HB 4-5).
+      const swOnly=(typeof _swOn==='function')&&_swOn();
+      const hasVerse=_VERSE_BACKUP_KEYS.some(k=>data[k]!==undefined);
+      if(swOnly&&!hasVerse){
+        alert('이 파일에는 말씀 데이터가 없어요. Sweeter 에서는 말씀만 되살릴 수 있어요.');
+        return;
+      }
+      if(!confirm(swOnly
+        ? '백업을 불러오면 지금의 말씀 모음·기록·설정을 덮어써요. 할일은 그대로 둬요. 계속할까요?'
+        : '백업을 불러오면 현재 데이터를 덮어써요. 계속할까요?'))return;
 
       beforeSave();
-      if(data.secs&&Array.isArray(data.secs)&&data.secs.length>0){
-        SECS=data.secs;ST.secs=SECS;
+      // ① 말씀 쪽 — 두 제품이 똑같이 되살린다
+      _VERSE_BACKUP_KEYS.forEach(k=>{if(data[k]!==undefined)ST[k]=data[k];});
+      // ② 화면 취향 — 파일에 담긴 이 제품 몫만
+      const pset=(data.productSettings&&data.productSettings[APP_PRODUCT])||null;
+      if(pset&&typeof _PRODUCT_SCOPED!=='undefined'){
+        _PRODUCT_SCOPED.forEach(k=>{if(pset[k]!==undefined)ST.settings[k]=pset[k];});
       }
-      if(Array.isArray(data.secArchive))ST.secArchive=data.secArchive;
-      if(data.settings)Object.assign(ST.settings,data.settings);
-      if(data.days)ST.days=data.days;
-      if(data.vis)ST.vis=data.vis;
-      if(data.collapsed)ST.collapsed=data.collapsed;
-      // 옛 백업에는 겹치는 시각이 들어 있을 수 있다 — 경계선 하나짜리로
-      // 정리하고, 시각 있는 일정을 그 시각의 구간에 다시 놓는다.
-      _secsCommit();
+      if(data.productSettings&&!swOnly)ST.productSettings=data.productSettings;
+      // ③ 할일·구간·설정 — BLOCK7 에서만
+      if(!swOnly){
+        if(data.secs&&Array.isArray(data.secs)&&data.secs.length>0){
+          SECS=data.secs;ST.secs=SECS;
+        }
+        if(Array.isArray(data.secArchive))ST.secArchive=data.secArchive;
+        if(data.settings)Object.assign(ST.settings,data.settings);
+        if(data.days)ST.days=data.days;
+        if(data.vis)ST.vis=data.vis;
+        if(data.collapsed)ST.collapsed=data.collapsed;
+        // 옛 백업에는 겹치는 시각이 들어 있을 수 있다 — 경계선 하나짜리로
+        // 정리하고, 시각 있는 일정을 그 시각의 구간에 다시 놓는다.
+        _secsCommit();          // 이 안에서 저장까지 한다
+      }else{
+        // 말씀만 되살린 길 — _secsCommit 을 안 거치므로 여기서 직접 저장한다
+        save();
+        if(typeof applyTheme==='function')applyTheme(ST.settings.theme);
+        if(typeof applyUiScale==='function')applyUiScale();
+        if(typeof _swRender==='function')_swRender();
+      }
 
       renderSettingsPanel();
       renderToday();
@@ -37507,7 +37582,10 @@ function importBackup(file){
     }catch(err){
       alert('파일을 읽을 수 없어요. 올바른 백업 파일인지 확인해주세요.');
     }
-    document.getElementById('importFileInput').value='';
+    // ⚠️ 'importFileInput' 이 아니다 — 그 id 는 없어서 여기서 늘 예외가 났고,
+    //    그 바람에 **같은 파일을 연달아 두 번** 고르면 아무 일도 안 일어났다.
+    const fin=document.getElementById('importFileInput2');
+    if(fin)fin.value='';
   };
   reader.readAsText(file);
 }
@@ -40555,7 +40633,23 @@ function _cfTrimmed(){
 function _cfSaveLocal(){
   try{localStorage.setItem(_CF_LS_KEY,JSON.stringify(_cfTrimmed()));}catch(e){}
 }
-function _cfOpenCount(){return _cfList.filter(r=>!r.resolvedAt).length;}
+// ── Sweeter 에서는 '말씀 쪽' 충돌만 보여 준다 (v26-0921-8, HB 4-5) ──
+// 할일 충돌을 말씀 앱에서 물어볼 까닭이 없다 — 무엇이 달라졌는지 볼 화면조차 없다.
+// ⚠️ **감추기만 한다.** 기록은 그대로 남아 BLOCK7 에서 정할 수 있다.
+//    (여기서 지우면 두 기기의 할일 차이가 아무도 모르게 묻힌다)
+const _CF_VERSE_BULK=['verseCollections','memorizationLog','verseLogs'];
+function _cfMine(r){
+  if(!(typeof _swOn==='function'&&_swOn()))return true;   // BLOCK7 은 전부 본다
+  if(!r)return false;
+  if(r.kind==='collection')return true;
+  if(r.kind==='bulk'||r.kind==='shrink'){
+    const what=String(r.entityId||'').split('/')[1]||'';
+    return _CF_VERSE_BULK.includes(what);
+  }
+  return false;
+}
+function _cfOpen(){return _cfList.filter(r=>!r.resolvedAt&&_cfMine(r));}
+function _cfOpenCount(){return _cfOpen().length;}
 // 같은 자리의 충돌은 번호가 같으므로 덮어쓴다 — 두 번 쌓이지 않는다.
 function _cfStore(list){
   if(!list||!list.length)return 0;
@@ -40818,7 +40912,7 @@ function _cfCardHTML(rec){
 function cfRender(){
   const b=document.getElementById('syncConflictBody');
   if(!b)return;
-  const open=_cfList.filter(r=>!r.resolvedAt);
+  const open=_cfOpen();
   if(!open.length){
     b.innerHTML='<div style="font-size:11px;color:var(--tx3);line-height:1.8;">정할 것이 남아 있지 않아요. 두 기기에서 겹쳐 고친 것은 앱이 알아서 합쳐 두었어요.</div>';
     return;
@@ -40877,7 +40971,7 @@ window.cfChoose=function(id,choice){
   showToast(choice==='ack'?'읽은 것으로 해 둘게요':'고르신 대로 해 두었어요');
 }
 window.cfMergeAll=function(){
-  const open=_cfList.filter(r=>!r.resolvedAt&&_cfCanMerge(r));
+  const open=_cfOpen().filter(_cfCanMerge);
   if(!open.length)return;
   let n=0;
   open.forEach(rec=>{
@@ -42744,6 +42838,72 @@ function sisterGo(){
 function _swBoot(){
   if(!_swOn())return;            // BLOCK7 에서는 저 혼자 켜지지 않는다
   _swMount();
+  _swMergeViewTab();
+  _swMergeAccountTab();
+}
+// ── Sweeter 설정창 '계정' 탭 (v26-0921-8, HB 4-5) ──
+// 일반설정창 '계정' 탭의 내용을 **통째로 옮긴다**. BLOCK7 은 그대로 두고,
+// Sweeter 에서만 말씀설정창(= '설정')의 마지막 탭으로 옮겨 담는다.
+// ⚠️ 여기도 복제가 아니라 이동이다 — id 가 두 벌이 되면 어느 쪽이 채워지는지
+//    알 수 없다 (백업 버튼·로그아웃·쪽지함이 전부 id 로 걸려 있다).
+function _swMergeAccountTab(){
+  if(!_swOn())return;
+  const src=document.getElementById('stab-account');
+  const dst=document.getElementById('vstab-account');
+  if(!src||!dst||dst.dataset.swMerged)return;
+  while(src.firstElementChild)dst.appendChild(src.firstElementChild);
+  dst.dataset.swMerged='1';
+  const d=document.getElementById('backupScopeDesc');
+  if(d)d.textContent='말씀 모음·명제·기록과 Sweeter 설정을 파일로 저장하거나, 저장해둔 파일을 불러올 수 있어요. 할일은 담기지 않아요.';
+  // 데이터 복구는 **개발자 계정에만** 보이는 진단 도구다. 여기만은 계정 문서를
+  // 통째로 견준다 — 말씀만 보여 주면 "왜 숫자가 안 맞지" 를 못 짚는다.
+  const rd=document.querySelector('#dataRecoverySection .settings-row-desc');
+  if(rd&&!rd.dataset.swNote){
+    rd.dataset.swNote='1';
+    rd.textContent+=' (개발자용 진단이라 할일까지 포함한 계정 전체를 견줍니다)';
+  }
+  _lvApplyIn(dst,verseUiLevel());
+  if(typeof _cfSyncVisibility==='function')_cfSyncVisibility();
+}
+// ── Sweeter 설정창 '뷰' 탭 병합 (v26-0921-8, HB 4-4) ──
+// BLOCK7 일반설정창 '뷰' 탭에 있는 **화면 취향** 항목들을, Sweeter 에서는
+// 말씀설정창(= Sweeter 의 '설정') '뷰' 탭으로 **옮긴다**.
+// ⚠️ HTML 을 복제하지 않는다 — id 가 두 벌이 되면 renderSettingsPanel() 같은
+//    기존 배선이 어느 쪽을 잡는지 알 수 없어지고, 한쪽만 값이 채워진다.
+//    옮기면 id 는 여전히 하나뿐이라 기존 배선이 한 줄도 안 바뀌고 그대로 산다.
+// 가져오지 않는 것 — 전부 **달력·할일 전용**이라 Sweeter 에는 쓸 자리가 없다:
+//    요일 표기(주일 RED 표시 포함) · 월 제목 표기(년도 표시 포함) · 이월 횟수 표시
+//    · 완료 효과 · 블럭 · 뷰 전환 · 레이아웃 분할 기준 — 여기까지는 HB 가 정한 목록.
+//    **옮길 구간 고르기**도 뺀다 — HB 목록엔 없지만(`data-lv="p"` 라 눈에 안 띈다)
+//    '할일을 어느 시간 구간으로 옮길까' 라서 Sweeter 에는 고를 구간 자체가 없다.
+const _SW_VIEWTAB_MOVE=['secUiLevelSet','secUiScale','secBrightness','secColorTheme'];
+// 옮겨 온 칸들의 **값**을 채운다.
+// ⚠️ 값을 채우는 것은 예나 지금이나 renderSettingsPanel() 이다. Sweeter 는
+//    일반설정창을 안 여는 것이 보통이라, 여기서 한 번 불러 주지 않으면
+//    글자 크기 슬라이더도 밝기 버튼도 테마 요약도 **빈 채로** 뜬다.
+function _swFillMovedRows(){
+  if(!_swOn())return;
+  try{if(typeof renderSettingsPanel==='function')renderSettingsPanel();}
+  catch(e){console.warn('설정 값 채우기 실패:',e);}
+  // '유저 모드' 의 두 미리보기만은 applyUiLevel 쪽에서 그린다 — 따로 부른다
+  try{if(typeof _renderUiLevelIcons==='function')_renderUiLevelIcons();}catch(e){}
+}
+function _swMergeViewTab(){
+  if(!_swOn())return;                       // BLOCK7 은 한 글자도 안 바뀐다
+  const dst=document.getElementById('vstab-view');
+  if(!dst||dst.dataset.swMerged)return;     // 두 번 불려도 안전
+  const anchor=dst.firstElementChild;       // 원래 있던 항목들보다 **위**에 둔다
+  let moved=0;
+  _SW_VIEWTAB_MOVE.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    dst.insertBefore(el,anchor);            // 같은 anchor 앞에 차례로 → 순서 유지
+    moved++;
+  });
+  if(!moved)return;
+  dst.dataset.swMerged='1';
+  // 옮긴 항목의 data-lv 는 이제 **말씀설정창 등급**을 따른다
+  _lvApplyIn(dst,verseUiLevel());
 }
 // 판을 실제로 세운다. Sweeter 의 첫 그림과 BLOCK7 의 미리보기가 **같은 길**을 쓴다.
 // 두 번 불려도 안전하다 (dataset 표시로 손짓을 한 번만 묶는다).

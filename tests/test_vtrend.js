@@ -820,7 +820,8 @@ console.log('\n시나리오 18 — 0 설정창 우하단 버전 배지 (개발�
   sc.eq('배지를 채우는 함수가 있다', SRC.includes('function _syncDevVerBadge(){'), true);
   sc.eq('개발자 계정 판정을 그대로 쓴다', /function _syncDevVerBadge\(\)\{\s*\n\s*const dev=_isDevAccount\(\);/.test(SRC), true);
   sc.eq('일반설정을 열 때 부른다', /function openSettings\(tabId,\s*flashTabId\)\{\s*\n\s*renderSettingsPanel\(\);\s*\n\s*_syncDevVerBadge\(\);/.test(SRC), true);
-  sc.eq('말씀설정을 열 때도 부른다', /function openVerseSettingsModal\(\)\{\s*\n\s*renderVerseSettingsModal\(\);\s*\n\s*applyVerseUiLevel\(\);\s*\n\s*_syncDevVerBadge\(\);/.test(SRC), true);
+  // v26-0921-8 — 맨 앞에 Sweeter 탭 병합 두 줄이 붙었다. 순서만 본다.
+  sc.eq('말씀설정을 열 때도 부른다', /function openVerseSettingsModal\(\)\{[\s\S]{0,400}?renderVerseSettingsModal\(\);\s*\n\s*applyVerseUiLevel\(\);\s*\n\s*_syncDevVerBadge\(\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 19 — 9 전체화면 좌상단 대시보드 버튼');
