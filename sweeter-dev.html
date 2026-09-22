@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4957,9 +4957,20 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-notice .sw-barbtn{flex:0 0 auto;}
 /* 아래 여백을 넉넉히 — 편집을 마치려고 '타일 바깥'을 누를 자리다 */
 .sw-board{position:relative;flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:6px 14px 120px;
-  display:grid;gap:9px;grid-template-columns:1fr 1fr;align-content:start;
+  display:grid;gap:9px;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;
   grid-auto-rows:var(--sw-cell,150px);
   scrollbar-width:none;touch-action:pan-y;}
+/* ── PC: 넓어지면 **열이 는다** (v26-0922-11, HB 4) ──────────────────
+   HB: "지금은 그냥 타일이 하나하나가 무한정 커지니까 에러난 것 같이 보여."
+   ⚠️ 행 높이(--sw-cell)는 JS 가 **타일 하나의 실제 너비**를 재서 넣으므로
+      열 수만 바꾸면 정사각도 저절로 지켜진다 (_swSizeCells).
+   ⚠️ auto-fill·minmax 를 쓰지 않는다. 폭이 조금만 달라져도 열 수가 널뛰어
+      '넓은 타일(span 2)' 이 줄을 바꿔 가며 판 전체가 다시 짜인다. */
+@media (min-width:560px){ .sw-board{grid-template-columns:repeat(3,minmax(0,1fr));} }
+@media (min-width:780px){ .sw-board{grid-template-columns:repeat(4,minmax(0,1fr));} }
+@media (min-width:1020px){ .sw-board{grid-template-columns:repeat(5,minmax(0,1fr));} }
+@media (min-width:1280px){ .sw-board{grid-template-columns:repeat(6,minmax(0,1fr));} }
+@media (min-width:1560px){ .sw-board{grid-template-columns:repeat(7,minmax(0,1fr));} }
 .sw-board::-webkit-scrollbar{display:none;}
 .sw-tile{position:relative;height:100%;border-radius:15px;background:var(--s1);
   border:1px solid var(--bd);overflow:hidden;cursor:pointer;touch-action:pan-y;
@@ -4972,14 +4983,24 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
       붙어 축소가 걸리지 않는다. */
 .sw-tile:not(.sw-dragging):active{transform:scale(.975);}
 .sw-tile.sw-dragging{transform:none;}
+/* ⚠️⚠️ --sw-ct · --sw-cb 는 **띠(.sw-trackwrap)를 타일 끝까지 넓히려고** 둔 값이다
+   (v26-0922-11, HB: "타일 위아래가 비어서 안 이뻐 — 이미지를 꽉 채우든지").
+   예전에는 띠가 이름줄과 점줄 **사이**에만 있어서, 칸 안의 사진(inset:0)도
+   그 사이만 덮었다. 이제 띠는 타일을 통째로 덮고, 이름줄·점줄이 그 **위에**
+   얹힌다. 칸은 같은 만큼 안쪽 여백을 두어 글자 자리는 예전 그대로다.
+     --sw-ct = 13(얼굴 여백) + 20(이름줄) + 4(이름줄 아래 여백)
+     --sw-cb = 13(얼굴 여백) + 11(점줄) + 7(점줄 위 여백)
+   ⚠️ 이 값이 어긋나면 글자가 이름줄·점줄과 겹친다. 이름줄에 height 를 못박아
+      둔 것도 그 때문이다 (정렬 칩이 19.5px 이라 20px 이면 딱 맞는다). */
 .sw-face{position:absolute;inset:0;padding:13px;display:flex;flex-direction:column;
-  justify-content:flex-end;}
-.sw-art{position:absolute;left:0;right:0;top:0;bottom:0;display:grid;place-items:center;
-  pointer-events:none;color:var(--tx);opacity:.17;}
+  justify-content:flex-end;--sw-ct:37px;--sw-cb:31px;}
+.sw-art{position:absolute;left:0;right:0;top:var(--sw-ct,0px);bottom:var(--sw-cb,0px);
+  display:grid;place-items:center;pointer-events:none;color:var(--tx);opacity:.17;}
 .sw-art svg{width:52%;height:70%;}
 .sw-tile.wide .sw-art{justify-items:end;padding-right:7%;}
 .sw-tile.wide .sw-art svg{width:26%;height:64%;}
-.sw-lab{position:relative;font-family:var(--font-ui);font-size:10px;letter-spacing:.02em;
+.sw-lab{position:relative;z-index:2;height:20px;
+  font-family:var(--font-ui);font-size:10px;letter-spacing:.02em;
   color:var(--tx3);margin:0 0 4px;flex:0 0 auto;
   display:flex;align-items:center;gap:5px;max-width:100%;}
 .sw-lab .sw-nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
@@ -5095,11 +5116,15 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-num{position:relative;font-size:10.5px;color:var(--tx2);margin-top:3px;
   font-variant-numeric:tabular-nums;font-family:var(--font-number);line-height:1.45;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-.sw-pips{position:relative;display:flex;gap:3.5px;justify-content:flex-end;
+.sw-pips{position:relative;z-index:2;display:flex;gap:3.5px;justify-content:flex-end;
   margin-top:7px;align-items:center;min-height:11px;flex:0 0 auto;}
 .sw-pips i{width:3.5px;height:3.5px;border-radius:50%;background:var(--tx3);opacity:.35;}
 .sw-pips i.on{opacity:1;background:var(--ac);}
-.sw-empty{position:relative;font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
+/* ⚠️ 값이 없는 타일에는 띠가 없다. 그대로 두면 flex 가 **이름줄까지 아래로**
+   끌어내려 타일 한가운데가 통째로 비고 이름이 까닭 바로 위에 붙는다
+   (v26-0922-11 에 실제로 그렇게 보였다). 까닭 칸이 남은 자리를 채워 준다. */
+.sw-empty{position:relative;flex:1 1 auto;display:flex;align-items:flex-end;
+  font-size:12px;color:var(--tx3);line-height:1.6;word-break:keep-all;}
 
 /* ══════════════════════════════════════════════════════════
    매거진 얼굴 (v26-0921-9, HB)
@@ -5120,13 +5145,13 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    ⚠️ 칸의 **맨 위**에 띄운다. 본문은 아래에 붙으므로(justify-content:flex-end)
       그냥 두면 본문에 딱 붙어 버리고 칸 위쪽이 통째로 빈다 — 매거진처럼
       위는 머리말, 아래는 본문으로 나눠 채운다. */
-.sw-kick{position:absolute;left:13px;right:13px;top:0;
+.sw-kick{position:absolute;left:13px;right:13px;top:var(--sw-ct,0px);
   font:600 9.5px/1.2 var(--font-ui);letter-spacing:.09em;color:var(--ac-tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* 뒤에 옅게 깔리는 큰 숫자.
    ⚠️ **위쪽**에 둔다. 칸의 내용은 아래로 붙으므로(justify-content:flex-end)
       아래에 두면 글자와 겹쳐 둘 다 흐려진다 (첫 시안에서 그랬다). */
-.sw-big{position:absolute;right:2px;top:-6px;pointer-events:none;
+.sw-big{position:absolute;right:2px;top:calc(var(--sw-ct,0px) - 6px);pointer-events:none;
   font:700 54px/1 var(--font-number);letter-spacing:-.05em;color:var(--tx);opacity:.09;}
 .sw-tile.wide .sw-big{font-size:62px;right:7px;}
 /* 종류마다 다른 글자 */
@@ -5138,22 +5163,32 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 /* ══ 사진 (v26-0922-4) ════════════════════════════════════
    글자가 위에 얹히므로 **아래에서 위로 어둡게 덮는다.** 사진만 예쁘고 글이 안
    읽히면 아무 소용이 없다. 밝은 테마에서는 반대로 하얗게 덮는다. */
+/* ⚠️ 칸(.sw-cell)이 이제 타일을 통째로 덮으므로 inset:0 이면 **타일을 꽉 채운다**
+   (v26-0922-11). 예전에는 이름줄과 점줄 사이만 덮어 위아래가 비어 보였다. */
 .sw-photo{position:absolute;inset:0;background-size:cover;background-position:center;
-  border-radius:15px;pointer-events:none;opacity:.5;overflow:hidden;}
+  border-radius:15px;pointer-events:none;opacity:.62;overflow:hidden;
+  /* HB: "아래로 내려가면서 그라데이션으로 옅어져서 경계가 불분명해 보이는 것이
+     도움이 되기는 하네." → 그 성질을 **사진 자체**에 준다. 아래로 갈수록 사진이
+     사라져 타일 바탕에 녹아들고, 글자는 맨바탕 위에 앉아 가장 잘 읽힌다. */
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.4) 78%,rgba(0,0,0,0) 97%);
+          mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.4) 78%,rgba(0,0,0,0) 97%);}
 /* 유튜브 썸네일처럼 **주소를 갈아끼워야** 하는 사진은 <img> 로 넣는다.
    ⚠️ object-fit:cover 라야 칸을 꽉 채운다 (v26-0922-10, HB: "위아래가 비어서"). */
 .sw-photo>img{width:100%;height:100%;object-fit:cover;display:block;border-radius:15px;}
+/* 위는 이름줄이, 아래는 본문이 앉는 자리라 둘 다 조금씩 덮는다 */
 .sw-photo::after{content:"";position:absolute;inset:0;border-radius:15px;
-  background:linear-gradient(0deg,rgba(0,0,0,.72),rgba(0,0,0,.22) 55%,rgba(0,0,0,.05));}
-html[data-theme="light"] .sw-photo{opacity:.42;}
+  background:linear-gradient(180deg,rgba(0,0,0,.40),rgba(0,0,0,.05) 28%,
+    rgba(0,0,0,.04) 56%,rgba(0,0,0,.34));}
+html[data-theme="light"] .sw-photo{opacity:.5;}
 html[data-theme="light"] .sw-photo::after{
-  background:linear-gradient(0deg,rgba(255,255,255,.86),rgba(255,255,255,.5) 55%,rgba(255,255,255,.2));}
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.12) 28%,
+    rgba(255,255,255,.16) 56%,rgba(255,255,255,.62));}
 /* 사진이 깔린 칸은 손그림을 물린다 — 둘이 겹치면 둘 다 지저분해진다 */
 .sw-cell.has-photo .sw-art{display:none;}
 /* ══ 삽화 (v26-0922-6, HB 6·7·8) ══════════════════════════
    데이터 그림(.sw-sig)은 우상단, 삽화는 **왼쪽 위** 빈 자리다. 서로 안 겹친다.
    ⚠️ 글자는 칸 아래쪽에 붙으므로 삽화는 위쪽에만 둔다. */
-.sw-ill{position:absolute;left:12px;top:4px;width:20%;max-width:48px;
+.sw-ill{position:absolute;left:12px;top:calc(var(--sw-ct,0px) + 4px);width:20%;max-width:48px;
   color:var(--tx);opacity:.14;pointer-events:none;line-height:0;}
 .sw-ill svg{width:100%;height:auto;display:block;}
 .sw-tile.wide .sw-ill{width:13%;max-width:52px;}
@@ -5168,7 +5203,7 @@ html[data-theme="light"] .sw-photo::after{
    꾸밈 그림이 아니다 — 그 타일의 **실제 데이터**로 그린다. 그래서 옅게 깔되
    큰 숫자(.sw-big)만큼 옅게는 두지 않는다 (읽히는 것이 뜻이다).
    ⚠️ 자리는 큰 숫자와 **같은 우상단**이라 둘을 같이 그리지 않는다 (_swCellHTML). */
-.sw-sig{position:absolute;right:12px;top:2px;width:46%;max-width:118px;
+.sw-sig{position:absolute;right:12px;top:calc(var(--sw-ct,0px) + 2px);width:46%;max-width:118px;
   color:var(--tx);opacity:.5;pointer-events:none;line-height:0;}
 .sw-sig svg{width:100%;height:auto;display:block;}
 .k-book .sw-sig{width:56%;opacity:.42;}
@@ -5176,7 +5211,7 @@ html[data-theme="light"] .sw-photo::after{
 .k-react .sw-sig{width:42%;opacity:.55;}
 .k-coll .sw-sig{width:34%;opacity:.75;}
 .k-tag .sw-sig{width:40%;opacity:.35;}
-.k-rhythm .sw-sig{width:58%;opacity:.7;top:4px;}
+.k-rhythm .sw-sig{width:58%;opacity:.7;top:calc(var(--sw-ct,0px) + 4px);}
 /* 발견 — 문장이 곧 내용이다. 본문 글씨체로 또박또박. */
 .sw-cell.insight .sw-val{font-size:14.5px;line-height:1.5;font-weight:400;-webkit-line-clamp:4;}
 .sw-cell.insight .sw-val b{font-weight:700;color:var(--ac-tx);}
@@ -5191,7 +5226,8 @@ html[data-theme="light"] .sw-photo::after{
   letter-spacing:-.01em;line-height:1.45;-webkit-line-clamp:3;}
 /* 묵상 질문 — 물음표를 크게 두고 물음을 또박또박 */
 .sw-cell.ask .sw-val{font-size:15.5px;line-height:1.5;font-weight:500;-webkit-line-clamp:4;}
-.sw-cell.ask .sw-quote{left:auto;right:12px;top:-4px;font-size:58px;opacity:.14;}
+.sw-cell.ask .sw-quote{left:auto;right:12px;top:calc(var(--sw-ct,0px) - 4px);
+  font-size:58px;opacity:.14;}
 .k-tag .sw-sig svg{height:auto;}
 /* 표지 카드 — 판에서 가장 큰 한 장.
    ⚠️ 내용을 **가운데로 모은다.** 아래로 붙이면(다른 칸의 기본값) 위쪽이 한 뼘
@@ -5200,12 +5236,20 @@ html[data-theme="light"] .sw-photo::after{
       겹쳤다.** 가운데로 모으는 것이 답이다 — 위아래 여백이 고르게 남는다. */
 .sw-cell.hero{justify-content:center;}
 .sw-cell.hero .sw-val{font-size:17.5px;line-height:1.66;-webkit-line-clamp:7;}
+/* ⚠️⚠️ 머리말(.sw-kick)은 칸 **폭 전체**를 쓴다. 그래서 우상단에 그림이 있는
+   칸에서는 그 그림 밑으로 파고들어 **겹쳐 보인다** (v26-0922-11, HB 2 —
+   "좌상단 글자와 타이틀이 겹쳐보이는 곳도 있어"). 겹치는 자리는 둘뿐이다:
+     · 말씀 모음 — 쌓인 책 그림(.sw-sig, 34%)
+     · 묵상 질문 — 물음표 인용부호(.sw-quote, 58px)
+   그 둘에서만 오른쪽을 비운다. 넓혀 두면 짧은 머리말이 한가운데로 몰린다. */
+.k-coll .sw-kick{right:42%;}
+.sw-cell.ask .sw-kick{right:46px;}
 .sw-cell.hero .sw-kick{position:relative;left:auto;right:auto;top:auto;margin-bottom:9px;}
 .sw-cell.hero .sw-num{margin-top:9px;}
 /* 인용부호 — 칸 **안쪽**에 둔다. 음수 자리에 두면 트랙이 잘라 먹는다. */
 /* ⚠️ 글자에는 --ac 가 아니라 **--ac-tx** 를 쓴다 (테마 34벌 규칙 —
       tests/test_theme_preset.js 가 지킨다). --ac 는 면을 칠하는 색이다. */
-.sw-quote{position:absolute;left:11px;top:0;font:700 52px/.8 var(--font-display);
+.sw-quote{position:absolute;left:11px;top:var(--sw-ct,0px);font:700 52px/.8 var(--font-display);
   color:var(--ac-tx);opacity:.2;pointer-events:none;}
 /* 표지 카드의 손그림은 한쪽으로 물러선다 (본문이 주인이다) */
 .sw-tile.k-today .sw-art{justify-items:end;align-items:end;padding:0 9% 7% 0;}
@@ -5339,13 +5383,37 @@ html[data-theme="light"] .sw-offveil{
       다음 값이 늦게 나타났다 (HB 신고). 트랙은 두 칸이 **붙어서** 움직이므로
       빈틈도, 페이드도, 늦게 나타나는 것도 없다.
    원본은 .settings-tab-track — 시간·가속도까지 같은 값을 쓴다. */
+/* ⚠️ 음수 여백으로 **타일 끝까지** 넓힌다 (위 --sw-ct·--sw-cb 주석 참고) */
 .sw-trackwrap{position:relative;flex:1 1 auto;min-height:0;
-  margin:0 -13px;overflow:hidden;}
+  margin:calc(0px - var(--sw-ct,0px)) -13px calc(0px - var(--sw-cb,0px));
+  overflow:hidden;border-radius:15px;}
+/* ⚠️ 어림수(3 3 . 3 3 3 3 %)가 아니라 **calc(100%/3)** 이다 (v26-0922-11, HB:
+   "브라우저 사이즈에 따라 좌우 글자가 좀 잘리기도 해"). 그 어림수 × 3 은 300% 에서
+   0.0001% 가 모자라, 폭에 따라 칸 경계가 1px 못 미쳐 글자 끝이 잘렸다.
+   calc 는 브라우저가 더 높은 정밀도로 셈해 그 틈이 생기지 않는다. */
 .sw-track{position:absolute;inset:0;display:flex;width:300%;
-  transform:translateX(-33.3333%);
+  transform:translateX(calc(-100% / 3));
   transition:transform .22s cubic-bezier(.4,0,.2,1);will-change:transform;}
-.sw-cell{width:33.3333%;flex-shrink:0;position:relative;box-sizing:border-box;
-  padding:0 13px;display:flex;flex-direction:column;justify-content:flex-end;}
+.sw-cell{width:calc(100% / 3);flex-shrink:0;position:relative;box-sizing:border-box;
+  padding:var(--sw-ct,0px) 13px var(--sw-cb,0px);
+  display:flex;flex-direction:column;justify-content:flex-end;}
+/* ══ PC 좌우 꺽쇠 (v26-0922-11, HB 5) ══════════════════════
+   말씀 카드의 .vc-arrow 와 **같은 얼개**다 — 마우스가 있는 기기에서만 나오고,
+   타일에 올리면 옅게 떠올랐다가 꺽쇠에 닿으면 또렷해진다.
+   ⚠️ 손가락 기기에는 아예 만들지 않는다 (좌우로 밀면 되는 자리다).
+   ⚠️ 편집 중에는 끈다 — 그때 타일을 누르는 일은 '끌기' 하나뿐이다. */
+.sw-nav{display:none;}
+@media (hover:hover){
+  .sw-nav{display:flex;align-items:center;position:absolute;
+    top:var(--sw-ct,26px);bottom:var(--sw-cb,26px);width:26%;z-index:3;
+    background:none;border:0;padding:0;cursor:pointer;color:var(--tx);
+    opacity:0;transition:opacity .15s ease;-webkit-tap-highlight-color:transparent;}
+  .sw-tile:hover .sw-nav{opacity:.28;}
+  .sw-nav:hover{opacity:.9;}
+  .sw-nav-l{left:0;justify-content:flex-start;padding-left:6px;}
+  .sw-nav-r{right:0;justify-content:flex-end;padding-right:6px;}
+  .sw-board.edit .sw-nav{display:none;}
+}
 @media (prefers-reduced-motion:reduce){
   .sw-track{transition:none;}
   .sw-tile{transition:none;}
@@ -5486,7 +5554,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-10";
+const APP_VERSION = "v. 26-0922-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44198,6 +44266,12 @@ function _swCellHTML(t,it,i){
     +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
     +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
 }
+// 꺽쇠 그림은 **말씀 카드의 것을 그대로 쓴다** (_VC_ARROW_L·_VC_ARROW_R).
+// 손으로 옮겨 적으면 둘이 어긋난다 (CLAUDE.md 의 그 규칙).
+// ⚠️ 시험은 이 구간만 떠 가므로 그 상수가 없을 수 있다 — 그때는 조용히 비운다.
+function _swArrowHTML(dir){
+  try{return dir<0?_VC_ARROW_L:_VC_ARROW_R;}catch(_){return '';}
+}
 function _swFace(t){
   const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
   t.p=Math.max(0,Math.min(Math.max(0,n-1),t.p));
@@ -44234,11 +44308,16 @@ function _swFace(t){
   // 첫 칸을 넘기면 사라졌다 — 이제 언제나 보인다.
   const foot='<div class="sw-pips"><span class="sw-cnt">'
     +_swEsc(_swCountText(t.k,n))+'</span>'+_swPipsHTML(n,t.p)+'</div>';
-  // 이전·지금·다음 세 칸. 트랙은 -33.3333% 에서 시작해 가운데 칸을 보여 준다.
+  // PC 좌우 꺽쇠 — 값이 둘 이상일 때만 (v26-0922-11, HB 5).
+  // ⚠️ 손가락 기기에서는 CSS 가 아예 감춘다 (@media (hover:hover)).
+  const nav=n>1?('<button class="sw-nav sw-nav-l" data-swnav="-1" aria-label="이전">'
+      +_swArrowHTML(-1)+'</button><button class="sw-nav sw-nav-r" data-swnav="1" aria-label="다음">'
+      +_swArrowHTML(1)+'</button>'):'';
+  // 이전·지금·다음 세 칸. 트랙은 calc(-100%/3) 에서 시작해 가운데 칸을 보여 준다.
   return '<div class="sw-face">'+lab
     +'<div class="sw-trackwrap"><div class="sw-track">'
       +_swCellHTML(t,it,t.p-1)+_swCellHTML(t,it,t.p)+_swCellHTML(t,it,t.p+1)
-    +'</div></div>'+foot+'</div>';
+    +'</div></div>'+nav+foot+'</div>';
 }
 
 // 꺼진 타일 한 장 — **진짜 얼굴을 그린다** (v26-0922-1, HB 지시).
@@ -44357,7 +44436,25 @@ function _swTrack(el){return el?el.querySelector('.sw-track'):null;}
 function _swTrackTo(tr,px,anim){
   if(!tr)return;
   tr.style.transition=anim?'':'none';
-  tr.style.transform=px?'translateX(calc(-33.3333% + '+px+'px))':'translateX(-33.3333%)';
+  // ⚠️ 칸 폭이 calc(100%/3) 이므로 여기도 같은 셈이라야 한다 (v26-0922-11).
+  tr.style.transform=px?'translateX(calc(-100% / 3 + '+px+'px))':'translateX(calc(-100% / 3))';
+}
+// ── 한 칸 넘기기 (PC 꺽쇠·자판이 쓴다) ────────────────────
+// 손으로 밀어 넘길 때와 **똑같은 움직임**을 쓴다 — 트랙을 그대로 밀고 끝나면
+// 다시 그린다. 끝 칸이면 아무 일도 하지 않는다.
+function _swStep(i,dir){
+  const t=_SW_TILES[i];if(!t)return;
+  const b=document.getElementById('swBoard');if(!b)return;
+  const el=b.querySelector('[data-swi="'+i+'"]');
+  if(!el||el._swAnim)return;
+  const n=_swStrip(t).length;
+  if(dir>0?(t.p>=n-1):(t.p<=0))return;
+  const tr=_swTrack(el);
+  if(_swNoMotion()||!tr){t.p+=dir;_swRepaint(i);return;}
+  tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
+  tr.style.transform=dir>0?'translateX(calc(-200% / 3))':'translateX(0px)';
+  t.p+=dir;el._swAnim=true;
+  setTimeout(()=>{el._swAnim=false;_swRepaint(i);},220);
 }
 // 다시 그리면 트랙은 저절로 가운데로 돌아온다 (CSS 기본값).
 function _swRepaint(i){
@@ -44438,7 +44535,10 @@ function _swTileOpen(i){
     return;
   }
   // 말씀이 곧 값인 타일 — 띠 전체가 그대로 목록이 된다
-  if(t.k==='last'||t.k==='keep'){
+  // ⚠️ 'today' 를 빠뜨려 두었더니 표지 카드를 누를 때마다 "그 말씀들을 찾지
+  //    못했어요" 만 떴다 (v26-0922-11, HB 신고). _swVersesFor 에는 today 가
+  //    없으므로 여기서 잡지 못하면 빈 목록으로 떨어진다.
+  if(t.k==='today'||t.k==='last'||t.k==='keep'){
     const list=it.map(x=>x.v.verse);
     const idx=Math.max(0,list.indexOf(cur.v.verse));
     _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES[t.k].n);
@@ -44605,6 +44705,10 @@ function _swInitGestures(){
       }
       e.preventDefault();return;
     }
+    if(e.target.closest('[data-swnav]')){
+      _swStep(i,+e.target.closest('[data-swnav]').dataset.swnav);
+      e.preventDefault();return;
+    }
     if(e.target.closest('[data-swsc]')){
       const t=_SW_TILES[i],S=_SW_TYPES[t.k].sorts;
       t.s=(t.s+1)%S.length;t.p=0;
@@ -44612,7 +44716,14 @@ function _swInitGestures(){
       e.preventDefault();return;
     }
     if(el._swAnim)return;   // 넘어가는 중 — 새 몸짓을 받지 않는다
-    _swG={i,el,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false,dx:0,lp:setTimeout(()=>{
+    // ⚠️⚠️ 띠의 길이는 **여기서 한 번만** 센다 (v26-0922-11, HB 6 — "'저장'
+    //    타일만 좌우 슬라이드가 드드드득 부자연스럽게 느려져").
+    //    까닭: 손가락이 움직일 때마다(pointermove) _swStrip(t) 을 다시 불렀는데,
+    //    '저장' 타일의 _swKeeps 는 담아 둔 것 하나하나를 _findVerseByRefLoose 로
+    //    **전체 말씀에서 찾아온다.** 담아 둔 것이 수십 개면 한 프레임에 수천 번을
+    //    훑는다 — 다른 타일은 값이 이미 세어 둔 수라 티가 안 났을 뿐이다.
+    const _n0=(()=>{try{return _swStrip(_SW_TILES[i]).length;}catch(_){return 0;}})();
+    _swG={i,el,n:_n0,x:e.clientX,y:e.clientY,ax:null,t:Date.now(),moved:false,dx:0,lp:setTimeout(()=>{
       // 길게 누르면 편집으로. ⚠️ 그러고 나서 **손을 떼지 않고 바로** 끌 수 있어야
       //    한다. 예전엔 여기서 몸짓을 버려서 뗐다가 다시 잡아야 했다 (HB 신고).
       if(!_swG||_swG.moved)return;
@@ -44678,7 +44789,7 @@ function _swInitGestures(){
     const _now=Date.now();
     if(_swG.pt){const _dt=_now-_swG.pt;if(_dt>0)_swG.v=(dx-_swG.pdx)/_dt;}
     _swG.pt=_now;_swG.pdx=dx;
-    const t=_SW_TILES[_swG.i],n=_swStrip(t).length;
+    const t=_SW_TILES[_swG.i],n=_swG.n||0;   // 몸짓 시작 때 센 값 (위 주석 참고)
     const can=dx<0?(t.p<n-1):(t.p>0);
     _swTrackTo(_swTrack(_swG.el),can?dx:dx*0.25,false);   // 끝에서는 고무줄
   });
@@ -44691,13 +44802,13 @@ function _swInitGestures(){
     const far=Math.abs(dx)>=_SW_COMMIT_DIST;
     const fast=Math.abs(v)>=_SW_COMMIT_VEL&&v*dx>0&&Math.abs(dx)>=_SW_MOVE*2;
     if(_swG.ax==='x'&&(far||fast)){
-      const n=_swStrip(t).length, dir=dx<0?1:-1;
+      const n=_swG.n||0, dir=dx<0?1:-1;
       const can=dir>0?(t.p<n-1):(t.p>0);
       if(can){
         el.classList.remove('sw-dragging');
         if(_swNoMotion()){t.p+=dir;_swRepaint(i);return;}
         if(tr){tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
-               tr.style.transform='translateX('+(dir>0?-66.6667:0)+'%)';}
+               tr.style.transform=dir>0?'translateX(calc(-200% / 3))':'translateX(0px)';}
         t.p+=dir;
         el._swAnim=true;
         setTimeout(()=>{el._swAnim=false;_swRepaint(i);},220);
@@ -44767,7 +44878,7 @@ function _swSnap(el,tr){
   el.classList.remove('sw-dragging');
   if(!tr)return;
   tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';
-  tr.style.transform='translateX(-33.3333%)';
+  tr.style.transform='translateX(calc(-100% / 3))';
   setTimeout(()=>{if(tr)tr.style.transition='';},240);
 }
 
