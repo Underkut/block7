@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5483,7 +5483,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-6";
+const APP_VERSION = "v. 26-0922-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -18703,9 +18703,13 @@ let _logoMenuOpenedAt=0;
 // (v26-0903-2 HB 신고 — '목록을 스크롤하면 뒤에 깔린 할일 뷰가 같이 스크롤된다')
 // 그래서 자리를 정한 **뒤에** 남은 높이를 재서 넣는다. 내용이 짧으면 max-height
 // 가 그냥 안 쓰이므로 메뉴가 억지로 늘어나지는 않는다.
-function _menuFitHeight(el){
+// topOverride — 메뉴가 놓일 자리를 이미 아는 쪽은 그 값을 넘겨 준다.
+// 넘기지 않으면 지금 그려진 자리를 재는데, **여는 애니메이션(menuIn: scale .95)
+// 한가운데서 재면 실제보다 낮게 잡힌다** — 그래서 처음 열 때와 두 번째 열 때
+// 높이가 몇 px 씩 달라졌다 (2026-09-22).
+function _menuFitHeight(el,topOverride){
   if(!el||el.style.display==='none')return;
-  const top=el.getBoundingClientRect().top;
+  const top=(typeof topOverride==='number')?topOverride:el.getBoundingClientRect().top;
   el.style.maxHeight=Math.max(120,Math.round(window.innerHeight-top-8))+'px';
   _menuLockScroll(el);
 }
@@ -32967,6 +32971,10 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   menu.style.display='block';
   overlay.style.display='block';
   menu.style.transform='';
+  // 지난번에 씌워 둔 높이 제한을 먼저 벗긴다. 안 벗기면 ① 이번 메뉴의 진짜
+  // 높이를 잴 수 없고(아래 offsetHeight 로 자리를 정한다) ② 지난번에 낮은
+  // 자리에서 열렸던 제한이 그대로 따라온다.
+  menu.style.maxHeight='';
 
   // Reflect this item's current daily-repeat and flag state in the menu.
   const arr=(type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId));
@@ -33052,7 +33060,8 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   // 옮길 곳에 이미 할일이 몇 개 있는지 줄 오른쪽에 적어 둔다 (v26-0904-3, HB).
   // 화면을 옮기지 않고도 그 날 사정을 알 수 있다.
   _fillTaskMenuCounts();
-  _secPickBack();            // 지난번에 열어 둔 구간 판이 남아 있지 않게
+  _secPickBack(true);        // 지난번에 열어 둔 구간 판이 남아 있지 않게
+                             // (true = 높이는 여기서 재지 않는다. 아래 주석 참고)
   _wireSecPickRows();
 
   const mw=180,mh=menu.offsetHeight;
@@ -33080,6 +33089,15 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
 
   menu.style.left=left+'px';
   menu.style.top=top+'px';
+  // ⚠️ 높이는 **자리를 정한 뒤에** 잰다. 자리를 정하기 전의 #taskMenu 는
+  //    position:fixed 인데 top 이 없어서, 문서 흐름상의 자리 — 화면 한참
+  //    아래 — 에 놓인다. 거기서 "화면 아래까지 남은 높이" 를 재면 거의 0 이라
+  //    메뉴가 세 줄짜리로 접힌 채 열린다.
+  //    v26-0917-1 에서 구간 판을 넣으며 이 순서가 어긋났고, 그래서 **페이지를
+  //    새로 연 뒤 첫 번째 메뉴만** 접혀서 열렸다 (두 번째부터는 지난번 top 이
+  //    남아 있어 멀쩡했다 — 2026-09-22 HB 신고). 이 줄을 위로 올리지 말 것.
+  //    자리는 방금 우리가 정했으므로 다시 재지 않고 그대로 넘긴다.
+  _menuFitHeight(menu,top);
 }
 
 // ═══════ 연락처 (@닉네임) ═══════
@@ -34001,7 +34019,7 @@ function deleteEventFromMenu(){
 }
 
 function closeTaskMenu(){
-  _secPickBack();
+  _secPickBack(true);
   document.getElementById('taskMenu').style.display='none';
   document.getElementById('taskMenuOverlay').style.display='none';
   document.getElementById('taskMenu').style.transform='';
@@ -35029,7 +35047,7 @@ function _datePickArmed(inpId){
 }
 
 function closeTaskMenu_keepCtx(){
-  _secPickBack();
+  _secPickBack(true);
   document.getElementById('taskMenu').style.display='none';
   document.getElementById('taskMenuOverlay').style.display='none';
   document.getElementById('taskMenu').style.transform='';
@@ -35328,7 +35346,9 @@ function _secPickOpenFromRow(row){
   if(row.dataset.when==='pick')return;
   _secPickOpen(_secPickSpecFor(row),row);
 }
-function _secPickBack(){
+// skipFit — 아직 메뉴가 자리를 못 잡은 때(openTaskMenu 한가운데)는 높이를
+// 재면 안 된다. 그 자리에서 재면 메뉴가 세 줄로 접힌다 (openTaskMenu 끝 주석).
+function _secPickBack(skipFit){
   const main=document.getElementById('taskMenuMain'),
         board=document.getElementById('secPickBoard');
   if(board){
@@ -35339,7 +35359,7 @@ function _secPickBack(){
   if(main)main.style.display='';
   _secPickSpec=null;
   clearTimeout(_secPickCloseTimer);
-  _menuFitHeight(document.getElementById('taskMenu'));
+  if(!skipFit)_menuFitHeight(document.getElementById('taskMenu'));
 }
 function _secPickScheduleClose(){
   if(_isTouchDevice())return;   // 손가락 기기는 '‹ 되돌아가기' 로만 닫는다

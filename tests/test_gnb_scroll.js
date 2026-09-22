@@ -55,10 +55,13 @@ console.log('\n시나리오 2 — 가로 자르기는 html 에서 (sticky GNB)')
 // ═══ 3. 떠 있는 메뉴의 높이·스크롤 가둠 ═══
 console.log('\n시나리오 3 — 저장 목록 메뉴가 뒤쪽을 끌고 다니지 않는다');
 {
-  sc.eq('높이를 재는 함수가 있다', SRC.includes('function _menuFitHeight(el){'), true);
-  const fn = SRC.slice(SRC.indexOf('function _menuFitHeight(el){'), SRC.indexOf('function openLogoMenu(anchorEl){'));
+  // 2026-09-22 — 자리를 아는 쪽이 top 을 넘길 수 있게 인자가 하나 늘었다
+  // (여는 애니메이션 한가운데서 재면 실제보다 낮게 잡힌다).
+  sc.eq('높이를 재는 함수가 있다', SRC.includes('function _menuFitHeight(el,topOverride){'), true);
+  const fn = SRC.slice(SRC.indexOf('function _menuFitHeight(el,topOverride){'), SRC.indexOf('function openLogoMenu(anchorEl){'));
   sc.eq('놓인 자리(top)를 재서 남은 높이를 쓴다',
         fn.includes('getBoundingClientRect().top') && fn.includes('window.innerHeight-top'), true);
+  sc.eq('넘겨받은 자리가 있으면 그것을 쓴다', fn.includes("(typeof topOverride==='number')"), true);
   sc.eq('너무 납작해지지는 않는다 (최소 120px)', fn.includes('Math.max(120'), true);
   sc.eq('숨어 있는 메뉴는 재지 않는다', fn.includes("el.style.display==='none'"), true);
 
