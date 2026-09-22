@@ -358,9 +358,9 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
 {
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
-  // v26-0922-1 — 표지 카드('오늘의 말씀')가 맨 앞에 붙어 여덟이 됐다
-  sc.eq('처음엔 기본 여덟', _swLoadTiles().map(t=>t.k),
-        ['today','last','keep','coll','recent','book','tag','react']);
+  // v26-0922-1 표지 카드 · v26-0922-2 발견·리듬이 더해져 열이 됐다
+  sc.eq('처음엔 기본 열', _swLoadTiles().map(t=>t.k),
+        ['today','insight','last','keep','rhythm','coll','recent','book','tag','react']);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -386,8 +386,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   _SW_TILES=_swLoadTiles();
   sc.eq('남은 종류가 없다', _swSpareKinds(), []);
   _SW_TILES=[{k:'last',s:0,p:0}];
-  sc.eq('남은 일곱', _swSpareKinds().sort(),
-        ['book','coll','keep','react','recent','tag','today']);
+  sc.eq('남은 아홉', _swSpareKinds().sort(),
+        ['book','coll','insight','keep','react','recent','rhythm','tag','today']);
 }
 
 // ═══ 10. BLOCK7 과 갈라져 있는가 ═══
@@ -589,7 +589,8 @@ console.log('\n시나리오 16 — BLOCK7 의 미리보기는 읽기만 한다')
   ST={settings:{theme:'dark'},productSettings:{sweeter:{swTiles:[{k:'coll',s:1},{k:'tag',s:0}]}}};
   // ⚠️ v26-0922-1 — 새 타일 한 번 끼우기(판 번호)가 미리보기에서도 보인다.
   //    **쓰지는 않는다** — 아래 '저장을 부르지 않는다' 가 그것을 지킨다.
-  sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k), ['today','coll','tag']);
+  sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k),
+        ['today','insight','rhythm','coll','tag']);
   sc.eq('정렬 값도 함께', _swLoadTiles().find(t=>t.k==='coll').s, 1);
   sc.eq('미리보기에서는 판 번호를 쓰지 않는다',
         (ST.productSettings.sweeter.swTilesV===undefined)&&(ST.settings.swTilesV===undefined), true);
@@ -709,6 +710,89 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   // 들어가는 길은 롱터치 하나 — 나가는 길(타일 바깥)은 그대로 있어야 한다
   sc.eq('나가는 길은 남아 있다',
         SRC_DEV.includes('if(!el){if(_SW_EDIT)swToggleEdit();return;}'), true);
+}
+
+// ═══ 18. 2차 — 대표 문구·글씨체 · 요즘 우리 교회 · 나의 리듬 (v26-0922-2, HB) ═══
+console.log('\n시나리오 18 — 대표 문구 · 흐름 · 리듬');
+{
+  APP_PRODUCT='sweeter';
+  // ── ① 대표 문구(명제) · 강조 문구(말씀)
+  const prop={ref:'마 5:13',pid:'P0001',krText:'명제 본문',hi:'소금과 빛',hi2:'너희는',tags:[]};
+  sc.eq('명제는 대표 문구를 쓴다', ['소금과 빛','너희는'].includes(_swHiText(prop)), true);
+  sc.eq('같은 명제는 늘 같은 문구', _swHiText(prop), _swHiText(prop));
+  const v1={ref:'요 1:1',krText:'본문',hi:'이 말씀은 곧 하나님이시니라/말씀이 육신이 되어',tags:[]};
+  sc.eq('말씀은 첫 강조 문구만', _swHiText(v1), '이 말씀은 곧 하나님이시니라');
+  sc.eq('문구가 없으면 빈 줄', _swHiText({ref:'가 1:1',krText:'본문'}), '');
+  // ── ② 글씨체는 **판에 한 벌** (여러 벌을 받으면 한글 글꼴이 수백 KB씩 온다)
+  ST={settings:{propTitleFonts:['brush','dokdo','yeon']},verseKeepLog:{}};
+  _swHandFontKey='';
+  const f1=_swHandFont();
+  sc.eq('켜 둔 글씨체 가운데 하나', ['brush','dokdo','yeon'].includes(f1), true);
+  sc.eq('같은 날엔 같은 글씨체', _swHandFont(), f1);
+  sc.eq('칸마다 새로 뽑지 않는다',
+        /function _swHiHTML\(v\)\{[\s\S]{0,240}_swHandFont\(\)/.test(SRC_DEV), true);
+
+  // ── ③ 요즘 우리 교회 — 흐름을 읽는다
+  const V2=(ref,cat,topic,d,tags)=>({idx:0,cat,topic,krText:cat+' 본문',ref,tags:tags||[],hi:'',d,pid:'',kind:''});
+  VERSES=[
+    V2('에베소서 1:3','주일예배','은혜의 부르심','2026-09-21',['은혜','부르심']),
+    V2('에베소서 2:8','주일예배','은혜의 부르심','2026-09-21',['은혜']),
+    V2('에베소서 4:1','주일예배','합당한 삶','2026-09-14',['은혜','순종']),
+    V2('에베소서 5:1','주일예배','합당한 삶','2026-09-07',['순종']),
+    V2('창세기 1:1','주일예배','창조','2026-06-01',['창조']),
+    V2('창세기 2:7','주일예배','창조','2026-05-25',['창조'])
+  ];
+  LIKE={'2026-09-20':[{ref:'에베소서 1:3',time:'09:00'}]};
+  MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const ins=_swInsights(0);
+  sc.eq('흐름을 읽어 낸다', ins.length>=3, true);
+  sc.eq('성경 흐름을 설교 횟수로 말한다',
+        /요즘 설교는 에베소서에 머물러 있어요 — 최근 설교 \d번 가운데 \d번/.test(ins[0].text), true);
+  sc.eq('되풀이되는 주제', ins.some(x=>/되풀이되는 주제는/.test(x.text)), true);
+  sc.eq('⭐ 내가 머문 자리를 말한다',
+        ins.some(x=>/가장 많이 머문/.test(x.text)), true);
+  // ⚠️⚠️ HB 가 여러 번 못 박은 것 — **'내가 안 본 것'을 권면하지 않는다.**
+  // ⚠️ 주석은 빼고 본다 — 이 규칙을 적어 둔 **경고 주석 자체**에 그 말이 들어 있다
+  const insSrc=sliceDev('function _swInsights(sortIdx){','function _swVersesForInsight')
+                 .replace(/\/\/[^\n]*/g,'');
+  sc.eq('⭐ 빈칸 채우기 권면을 만들지 않는다',
+        /안 읽|안 본|아직 한 번도|읽지 않|만나지 않/.test(insSrc), false);
+  // 누르면 그 흐름의 말씀들로 간다
+  const hit=_swVersesForInsight({axis:'book',key:'에베소서'},0).map(v=>v.ref);
+  sc.eq('그 흐름 안의 말씀만', hit, ['에베소서 1:3','에베소서 2:8','에베소서 4:1','에베소서 5:1']);
+  sc.eq('흐름 밖(옛 설교)은 안 들어온다', hit.some(r=>/창세기/.test(r)), false);
+  // 날짜가 없으면 아무 말도 하지 않는다 (없는 흐름을 지어내지 않는다)
+  VERSES=[V2('마 5:13','A','제자도','',['빛'])];
+  sc.eq('흐름을 못 읽으면 빈 손', _swInsights(0), []);
+
+  // ── ④ 나의 리듬
+  VERSES=[V2('마 5:13','A','제자도','2026-09-01',['빛'])];
+  LIKE={'2026-09-18':[{ref:'마 5:13',time:'07:30'}],      // 금요일 오전
+        '2026-09-19':[{ref:'마 5:13',time:'21:10'}],      // 토요일 밤
+        '2026-08-14':[{ref:'마 5:13',time:'07:40'}]};     // 지난달 금요일 오전
+  MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const rh=_swRhythm(0);
+  sc.eq('가장 자주 만나는 때', rh[0].name, '금요일 오전');
+  sc.eq('그 칸에 불을 켤 자리를 준다', rh[0].cell, {d:5,s:1});
+  sc.eq('모두 세 장', rh.length, 3);
+  sc.eq('모두 몇 번', /지금까지 3번/.test(rh[2].text), true);
+  // '이번 달' — 이 시험의 오늘은 2026-08-30 이므로 8월 것 하나만 센다
+  const rhM=_swRhythm(1);
+  sc.eq('이번 달만 세기도 한다', /지금까지 1번/.test(rhM[2].text), true);
+  // 격자는 7×4 (요일 × 때)
+  sc.eq('격자는 요일 × 때', _swRhythmGrid(0).g.length, 7);
+  sc.eq('때는 넷', _swRhythmGrid(0).g[0].length, 4);
+  // 리듬은 말씀이 아니라 대시보드로 간다
+  sc.eq('리듬은 대시보드로',
+        /if\(t\.k==='rhythm'\)\{[\s\S]{0,160}openVerseDashboard\(\);/.test(SRC_DEV), true);
+
+  // ── ⑤ 기본 차례에 둘 다 들어왔다 (판 번호로 한 번 끼워 준다)
+  sc.eq('기본 차례에 있다',
+        [_SW_DEFAULT_TILES.indexOf('insight')>=0,_SW_DEFAULT_TILES.indexOf('rhythm')>=0], [true,true]);
+  sc.eq('판 번호가 올라갔다', _SW_TILES_V, 3);
+  ST={settings:{swTiles:[{k:'last',s:0}]},verseKeepLog:{}};
+  sc.eq('이미 꾸며 둔 기기에도 한 번 끼운다',
+        _swLoadTiles().map(t=>t.k), ['today','insight','rhythm','last']);
 }
 
 sc.done();

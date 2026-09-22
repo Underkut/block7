@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-1  [production]  -->
+<!-- BLOCK7  v. 26-0922-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5149,6 +5149,11 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .k-react .sw-sig{width:42%;opacity:.55;}
 .k-coll .sw-sig{width:34%;opacity:.75;}
 .k-tag .sw-sig{width:40%;opacity:.35;}
+.k-rhythm .sw-sig{width:58%;opacity:.7;top:4px;}
+/* 발견 — 문장이 곧 내용이다. 본문 글씨체로 또박또박. */
+.sw-cell.insight .sw-val{font-size:14.5px;line-height:1.5;font-weight:400;-webkit-line-clamp:4;}
+.sw-cell.insight .sw-val b{font-weight:700;color:var(--ac-tx);}
+.sw-cell.rhythm .sw-val{font-size:16px;font-weight:600;}
 .k-tag .sw-sig svg{height:auto;}
 /* 표지 카드 — 판에서 가장 큰 한 장.
    ⚠️ 내용을 **가운데로 모은다.** 아래로 붙이면(다른 칸의 기본값) 위쪽이 한 뼘
@@ -5170,12 +5175,46 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .k-today .sw-lab .sw-nm{color:var(--ac-tx);}
 /* 꺼진 타일에는 차례 번호를 적지 않는다 (판에 놓이지 않았으니 차례가 없다) */
 .sw-tile.sw-off .sw-ix{display:none;}
+/* ══ 대표 문구·강조 문구를 타일에 (v26-0922-2, HB) ═════════
+   HB: "1,2,3번 타일에 대표문구나 강조문구도 활용하고, 전체화면 명제타이틀에
+        추가로 사용하는 폰트들도 다양하게 활용하면 어떤가?"
+   → 전체화면이 쓰는 그 글씨체 표(_PT_FACES)를 **그대로** 되쓴다.
+   ⚠️⚠️ 글씨체는 **판 하나에 한 벌**이다 (날짜를 씨앗으로 뽑는다). 칸마다 다른
+      글씨체를 쓰면 그 글씨체를 다 내려받아야 하는데, 한글 한 벌이 수백 KB다
+      (전체화면이 '명제를 열 때만' 받는 것과 같은 까닭 — 위 @font-face 주석).
+   ⚠️ 크기 배율(--sw-hik)은 전체화면의 --pt-k 를 그대로 옮긴 값이다. 손글씨는
+      획이 가늘고 흘려 써서 같은 px 로도 훨씬 작아 보인다. */
+.sw-hi{position:relative;font-family:var(--font-display);
+  font-size:calc(var(--sw-hi-size,17px)*var(--sw-hik,1));
+  line-height:1.3;font-weight:500;color:var(--tx);margin-bottom:6px;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  word-break:keep-all;}
+.sw-cell.hero .sw-hi{--sw-hi-size:23px;margin-bottom:9px;-webkit-line-clamp:3;}
+/* 대표 문구가 주인이 되면 본문은 한 걸음 물러선다 */
+.sw-cell.has-hi .sw-val{font-size:12.5px;opacity:.82;-webkit-line-clamp:2;}
+.sw-cell.hero.has-hi .sw-val{font-size:13.5px;-webkit-line-clamp:3;}
+.sw-hi.pf-brush{font-family:'Nanum Brush Script',var(--font-display);--sw-hik:1.5;}
+.sw-hi.pf-dokdo{font-family:'East Sea Dokdo',var(--font-display);--sw-hik:1.32;}
+.sw-hi.pf-yeon{font-family:'Yeon Sung',var(--font-display);--sw-hik:1.50;}
+.sw-hi.pf-song{font-family:'Song Myung',var(--font-display);--sw-hik:1.04;}
+.sw-hi.pf-gowun{font-family:'Gowun Batang',var(--font-display);--sw-hik:1.03;}
+.sw-hi.pf-daegwang{font-family:'B7 Daegwang',var(--font-display);--sw-hik:1.38;}
+.sw-hi.pf-nmyet{font-family:'B7 Nmyet',var(--font-display);--sw-hik:0.97;}
+.sw-hi.pf-gmarketL{font-family:'B7 GmarketL',var(--font-display);--sw-hik:1.06;}
+.sw-hi.pf-gmarketB{font-family:'B7 GmarketB',var(--font-display);--sw-hik:0.97;}
+.sw-hi.pf-barun{font-family:'B7 Barun',var(--font-display);--sw-hik:1.20;}
+.sw-hi.pf-uridal{font-family:'B7 Uridal',var(--font-display);--sw-hik:1.20;}
+.sw-hi.pf-bombaram{font-family:'B7 Bombaram',var(--font-display);--sw-hik:0.93;}
+.sw-hi.pf-sangjang{font-family:'B7 Sangjang',var(--font-display);--sw-hik:0.91;}
 /* 종류마다 다른 바탕 — 강조색을 아주 옅게만 쓴다 */
 .sw-tile.k-today{background:
   radial-gradient(120% 90% at 8% 0%,rgba(var(--ac-rgb),.26),transparent 62%),var(--s1);}
 .sw-tile.k-last{background:linear-gradient(146deg,rgba(var(--ac-rgb),.17),var(--s1) 64%);}
 .sw-tile.k-keep{background:linear-gradient(146deg,rgba(var(--ac-rgb),.08),var(--s1) 60%);}
 .sw-tile.k-coll{background:rgba(var(--ac-rgb),.07);}
+.sw-tile.k-insight{background:
+  linear-gradient(118deg,rgba(var(--ac-rgb),.20),var(--s1) 58%);}
+.sw-tile.k-rhythm{background:linear-gradient(200deg,rgba(var(--ac-rgb),.09),var(--s1) 66%);}
 .sw-tile.k-react{background:linear-gradient(202deg,rgba(var(--ac-rgb),.10),var(--s1) 70%);}
 /* ＋ 칸은 바탕을 비워 둔다 — 위 규칙이 걸리지 않게 뒤에 적는다 */
 .sw-tile.sw-add{background:transparent;}
@@ -5406,7 +5445,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-1";
+const APP_VERSION = "v. 26-0922-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -42270,15 +42309,26 @@ const _SW_TYPES={
   coll:{n:'말씀 모음',sorts:['말씀 많은','이름'],
         empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'},
   keep:{n:'저장',wide:true,sorts:['저장한 순','오래된 순'],
-        empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'}
+        empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'},
+  // ── 2차 (v26-0922-2, HB) ────────────────────────────────
+  // '요즘 우리 교회' — 말씀 모음(설교 명제)을 분석해 **지금 흐름**을 말해 준다.
+  // ⚠️⚠️ HB 가 여러 번 못 박은 것: 권면의 방향은 **'내가 안 본 것'이 아니다.**
+  //    "요즘 우리 교회가 가는 방향, 집중하고 있는 방향, 내가 더 깊이 파고들
+  //     방향을 분석하고 종합해서 그것을 더 볼 수 있도록" — 빈칸 채우기 식
+  //    권면("로마서를 아직 안 읽으셨어요")을 만들지 말 것.
+  insight:{n:'요즘 우리 교회',wide:true,sorts:['최근 흐름','한 해 흐름'],
+        empty:'설교 날짜가 있는 말씀이 아직 적어 흐름을 읽지 못했어요.'},
+  // '나의 리듬' — 언제 말씀을 만나는가 (요일 × 때). 대시보드의 그 화면을 줄인 것.
+  rhythm:{n:'나의 리듬',sorts:['모두','이번 달'],
+        empty:'아직 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'}
 };
 // 처음 켰을 때 놓이는 차례
-const _SW_DEFAULT_TILES=['today','last','keep','coll','recent','book','tag','react'];
+const _SW_DEFAULT_TILES=['today','insight','last','keep','rhythm','coll','recent','book','tag','react'];
 // 판 구성의 판 번호. 새 타일을 기본 차례에 더했을 때, **이미 판을 꾸며 둔 기기**도
 // 그것을 한 번은 보게 해 준다 (안 그러면 새 타일은 영영 ＋ 줄에만 있다).
 // ⚠️ 한 번만 끼운다. 사용자가 끈 것을 되살리지 않으려면 번호를 올려야만 한다.
-const _SW_TILES_V=2;
-const _SW_TILES_V2_ADD=['today'];
+const _SW_TILES_V=3;
+const _SW_TILES_V2_ADD=['today','insight','rhythm'];
 
 // ── 담아두기 ─────────────────────────────────────────────
 // 다시 꺼내 읽고 싶은 말씀을 표시해 둔다. 기록은 좋아요·공유와 **똑같은 모양**
@@ -42875,9 +42925,197 @@ function _swToday(sortIdx){
   }
   return idx.slice(0,3).map(k=>wrap(av[k]));
 }
+// ══════════════════════════════════════════════════════════
+//  '요즘 우리 교회' — 흐름을 읽어 권면한다 (v26-0922-2, HB)
+//  ────────────────────────────────────────────────────────
+//  재료는 **말씀 모음(설교 명제) 그 자체**다. 설교 날짜(d)로 최근 흐름을 자르고,
+//  네 축(성경 · 소주제 · 태그 · 대분류)에서 지금 무엇에 머물러 있는지 센다.
+//
+//  ⚠️⚠️ 방향을 지킬 것 (HB 가 여러 번 지적) — **'내가 안 본 것'을 말하지 않는다.**
+//     말할 것은 셋이다: ①우리 교회가 지금 가는 방향 ②그 안에서 되풀이되는 것
+//     ③그 흐름에서 내가 이미 머문 자리(= 더 깊이 팔 줄기).
+//     "아직 안 읽은 책" 같은 빈칸 채우기는 만들지 않는다.
+//
+//  ⚠️ 지어내지 않는다. 문장에 들어가는 수는 전부 센 값이고, 셀 것이 모자라면
+//     그 카드를 아예 내보내지 않는다 (없는 흐름을 있다고 말하지 않는다).
+// ══════════════════════════════════════════════════════════
+// 한 축의 값들 — 말씀 하나가 여러 값에 걸릴 수 있다 (태그·성경).
+function _swAxisKeys(v,axis){
+  if(axis==='book'){const b=_booksOf(v);return (b&&b.length)?b:[];}
+  if(axis==='tag')return (v.tags||[]).map(x=>String(x||'').trim()).filter(Boolean);
+  if(axis==='topic'){const t=String(v.topic||'').trim();return t?[t]:[];}
+  const c=String(v.cat||'').trim();return c?[c]:[];
+}
+function _swCount(list,axis){
+  const m=new Map();
+  list.forEach(v=>_swAxisKeys(v,axis).forEach(k=>m.set(k,(m.get(k)||0)+1)));
+  return [...m.entries()].map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n||a.k.localeCompare(b.k,'ko'));
+}
+// 최근 흐름 자르기 — 설교 **날짜 묶음**으로 센다 (말씀 수로 자르면 한 설교가
+// 명제를 많이 남긴 주에 흐름이 통째로 쏠린다).
+function _swFlow(sortIdx){
+  const av=(ACTIVE_VERSES()||[]).filter(v=>v&&String(v.d||''));
+  const days=[...new Set(av.map(v=>String(v.d)))].sort();
+  if(av.length<3||days.length<2)return null;
+  const take=sortIdx===1?12:4;                       // 최근 설교 4번 / 12번
+  const cut=days[Math.max(0,days.length-take)];
+  const now=av.filter(v=>String(v.d)>=cut);
+  const before=av.filter(v=>String(v.d)<cut);
+  return {now,before,days:days.filter(d=>d>=cut),cut};
+}
+// 내 기록이 이 말씀들 가운데 어디에 머물렀나 (반응 기록을 축별로 센다)
+function _swMyWeight(list,axis){
+  let touch=new Map();
+  try{touch=_swLastTouch();}catch(e){}
+  if(!touch.size)return [];
+  const m=new Map();
+  list.forEach(v=>{
+    const key=(typeof _reactKey==='function')?_reactKey(v):v.ref;
+    if(!touch.has(key)&&!touch.has(v.ref))return;
+    _swAxisKeys(v,axis).forEach(k=>m.set(k,(m.get(k)||0)+1));
+  });
+  return [...m.entries()].map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n);
+}
+const _SW_AXIS_WORD={book:'성경',topic:'주제',tag:'태그',cat:'예배'};
+function _swInsights(sortIdx){
+  const f=_swFlow(sortIdx);
+  if(!f)return [];
+  const out=[],N=f.now.length,sermons=f.days.length;
+  const push=(axis,key,text)=>{if(key&&text)out.push({axis,key,name:key,text});};
+  // ① 지금 머물러 있는 성경
+  //    ⚠️ 말씀 수의 비율로 말하면 "설교 4번 가운데 13%" 같은 **단위가 섞인 말**이
+  //       된다. 설교(날짜) 몇 번이 그 성경이었는지로 센다 — 사람이 쓰는 말이다.
+  const byDay=new Map();
+  f.now.forEach(v=>{
+    const d=String(v.d||'');
+    if(!byDay.has(d))byDay.set(d,new Set());
+    _swAxisKeys(v,'book').forEach(b=>byDay.get(d).add(b));
+  });
+  const dayHit=new Map();
+  byDay.forEach(set=>set.forEach(b=>dayHit.set(b,(dayHit.get(b)||0)+1)));
+  const bk=_swCount(f.now,'book');
+  const topDay=[...dayHit.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko'))[0];
+  if(topDay&&topDay[1]>1)
+    push('book',topDay[0],'요즘 설교는 '+topDay[0]+'에 머물러 있어요 — 최근 설교 '
+      +sermons+'번 가운데 '+topDay[1]+'번');
+  else if(bk.length)
+    push('book',bk[0].k,'요즘 가장 많이 펼친 성경은 '+bk[0].k+' 예요 — 이 흐름의 말씀 '
+      +N+'개 가운데 '+bk[0].n+'개');
+  // ② 되풀이되는 주제 (소주제)
+  const tp=_swCount(f.now,'topic');
+  if(tp.length&&tp[0].n>1)
+    push('topic',tp[0].k,'되풀이되는 주제는 \u2018'+tp[0].k+'\u2019 — 말씀 '+tp[0].n+'개가 여기에 걸려 있어요');
+  // ③ 함께 자주 나온 말 (태그 두셋)
+  const tg=_swCount(f.now,'tag');
+  if(tg.length){
+    const top=tg.slice(0,3).filter(x=>x.n>1);
+    if(top.length)
+      push('tag',top[0].k,'함께 자주 나온 말은 '+top.map(x=>'\u2018'+x.k+'\u2019').join(' \u00b7 ')+' 예요');
+  }
+  // ④ 지난 흐름보다 눈에 띄게 늘어난 것 (새로 열린 방향)
+  if(f.before.length>=3){
+    const nowM=new Map(_swCount(f.now,'tag').map(x=>[x.k,x.n]));
+    const oldM=new Map(_swCount(f.before,'tag').map(x=>[x.k,x.n]));
+    const nb=f.before.length;
+    let best=null;
+    nowM.forEach((n,k)=>{
+      if(n<2)return;
+      const r=(n/N)-((oldM.get(k)||0)/nb);
+      if(!best||r>best.r)best={k,n,r};
+    });
+    if(best&&best.r>0.08)
+      push('tag',best.k,'지난 흐름보다 눈에 띄게 늘어난 것은 \u2018'+best.k+'\u2019 이에요');
+  }
+  // ⑤ 이 흐름에서 **내가 이미 머문 자리** = 더 깊이 팔 줄기
+  //    ⚠️ '안 본 것' 이 아니라 '머문 것' 을 말한다 (HB 지시).
+  const mine=_swMyWeight(f.now,'tag');
+  if(mine.length)
+    push('tag',mine[0].k,'이 흐름에서 당신이 가장 많이 머문 곳은 \u2018'+mine[0].k
+      +'\u2019 — 그 줄기를 더 따라가 보세요');
+  else{
+    const mineT=_swMyWeight(f.now,'topic');
+    if(mineT.length)
+      push('topic',mineT[0].k,'이 흐름에서 당신이 가장 많이 머문 주제는 \u2018'+mineT[0].k
+        +'\u2019 — 그 줄기를 더 따라가 보세요');
+  }
+  return out;
+}
+// 그 발견이 가리키는 말씀들 (눌렀을 때 도는 목록)
+function _swVersesForInsight(g,sortIdx){
+  const f=_swFlow(sortIdx);
+  const pool=f?f.now:(ACTIVE_VERSES()||[]);
+  return pool.filter(v=>_swAxisKeys(v,g.axis).includes(g.key));
+}
+
+// ══════════════════════════════════════════════════════════
+//  '나의 리듬' — 언제 말씀을 만나는가 (요일 × 때)
+//  대시보드의 리듬 화면과 **같은 재료**(반응 기록의 날짜·시각)를 쓴다.
+// ══════════════════════════════════════════════════════════
+const _SW_RH_SLOTS=[['새벽',0,6],['오전',6,12],['오후',12,18],['밤',18,24]];
+const _SW_DOW=['일','월','화','수','목','금','토'];
+function _swRhythmGrid(sortIdx){
+  const mon=sortIdx===1?String(_calKey()).slice(0,7):null;
+  const g=[];for(let i=0;i<7;i++)g.push([0,0,0,0]);
+  let all=[];
+  try{
+    all=_flatSimpleEntries(getLikeLog())
+      .concat(_flatMemEntries(),_flatSimpleEntries(getDeeperLog()),
+              _flatSimpleEntries(getEvenDeeperLog()),_flatSimpleEntries(getShareLog()));
+  }catch(e){all=[];}
+  let n=0;
+  all.forEach(e=>{
+    const d=String(e.date||'');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
+    if(mon&&d.slice(0,7)!==mon)return;
+    const dow=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getDay();
+    const h=parseInt(String(e.time||'').slice(0,2),10);
+    const hh=isNaN(h)?9:h;                                  // 시각이 없던 옛 기록은 오전으로
+    let si=0;_SW_RH_SLOTS.forEach((sl,i)=>{if(hh>=sl[1]&&hh<sl[2])si=i;});
+    g[dow][si]++;n++;
+  });
+  return {g,n};
+}
+function _swRhythm(sortIdx){
+  const {g,n}=_swRhythmGrid(sortIdx);
+  if(!n)return [];
+  const out=[];
+  // ① 가장 자주 만나는 때
+  let best={v:0,d:0,s:0};
+  g.forEach((row,d)=>row.forEach((v,si)=>{if(v>best.v)best={v,d,s:si};}));
+  if(best.v)out.push({name:_SW_DOW[best.d]+'요일 '+_SW_RH_SLOTS[best.s][0],
+    n:best.v,cell:{d:best.d,s:best.s},          // 격자에서 그 칸에 불을 켠다
+    text:'가장 자주 말씀을 만나는 때는 '+_SW_DOW[best.d]+'요일 '
+      +_SW_RH_SLOTS[best.s][0]+'이에요 ('+best.v+'번)'});
+  // ② 어느 때에 몰려 있나 (네 때 가운데)
+  const bySlot=[0,0,0,0];g.forEach(row=>row.forEach((v,i)=>{bySlot[i]+=v;}));
+  const si=bySlot.indexOf(Math.max.apply(null,bySlot));
+  out.push({name:_SW_RH_SLOTS[si][0],n:bySlot[si],
+    text:_SW_RH_SLOTS[si][0]+'에 가장 많이 머물러요 — 전체의 '
+      +Math.round(bySlot[si]/n*100)+'%'});
+  // ③ 모두 몇 번
+  out.push({name:'모두',n,text:'지금까지 '+n+'번 말씀을 만났어요'});
+  return out;
+}
+// 리듬 그림 — 7×4 격자. 진한 칸이 자주 만나는 때다.
+function _swSigRhythm(sortIdx,cur){
+  const {g,n}=_swRhythmGrid(sortIdx||0);
+  if(!n)return '';
+  let max=0;g.forEach(r=>r.forEach(v=>{if(v>max)max=v;}));
+  const CW=7,CH=6,GAP=2;
+  let o='<svg viewBox="0 0 '+(7*(CW+GAP))+' '+(4*(CH+GAP))+'" fill="none">';
+  for(let d=0;d<7;d++)for(let si=0;si<4;si++){
+    const v=g[d][si],on=cur&&cur.d===d&&cur.s===si;
+    o+='<rect x="'+(d*(CW+GAP))+'" y="'+(si*(CH+GAP))+'" width="'+CW+'" height="'+CH+'" rx="1.4" '
+      +'fill="'+(on?'var(--ac)':'currentColor')+'" '
+      +'opacity="'+(v?(on?1:(0.2+0.6*v/max)).toFixed(2):'.1')+'"/>';
+  }
+  return _swSigWrap(o+'</svg>');
+}
 function _swValues(t){
   const i=t.s%_SW_TYPES[t.k].sorts.length;
   if(t.k==='today')return _swToday(i);
+  if(t.k==='insight')return _swInsights(i);
+  if(t.k==='rhythm')return _swRhythm(i);
   if(t.k==='last')return _swLastVerses(i);
   if(t.k==='keep')return _swKeeps(i);
   if(t.k==='recent')return _swSermons(i);
@@ -42900,7 +43138,8 @@ function _swStrip(t){
 // '성경 400편의 설교' 같은 말이 된다 (26-0830-8 에서 겪음).
 function _swCountText(k,n){
   return{today:'말씀 '+n,last:'말씀 '+n,keep:'담아둔 '+n,recent:'설교 '+n+'편',book:n+'권',
-         tag:'태그 '+n,react:n+'가지',coll:'모음 '+n}[k]||String(n);
+         tag:'태그 '+n,react:n+'가지',coll:'모음 '+n,
+         insight:'읽은 흐름 '+n,rhythm:n+'가지'}[k]||String(n);
 }
 
 // ── 한 타일의 얼굴 ───────────────────────────────────────
@@ -42925,6 +43164,54 @@ function _swPipsHTML(n,p){
   for(let i=0;i<9;i++)o+='<i class="'+(i===k?'on':'')+'"></i>';
   return o;
 }
+// ══════════════════════════════════════════════════════════
+//  대표 문구·강조 문구 (v26-0922-2, HB)
+//  ────────────────────────────────────────────────────────
+//  명제에는 **대표 문구**(시트 '대표 문구 1·2')가, 말씀에는 **강조 문구**가 있다.
+//  둘 다 그 말씀의 심장이라 타일에서 가장 크게 보일 값이다.
+//  ⚠️ 글씨체는 **판 하나에 한 벌**만 쓴다 (날짜를 씨앗으로 뽑는다). 칸마다 다른
+//     글씨체를 쓰면 한글 글꼴 여러 벌을 내려받게 된다 — 전체화면이 '명제를 열
+//     때만' 받는 것과 같은 까닭이다.
+// ══════════════════════════════════════════════════════════
+let _swHandFontDay='',_swHandFontKey='';
+function _swHandFont(){
+  const day=(typeof _calKey==='function')?_calKey():'';
+  if(_swHandFontKey&&_swHandFontDay===day)return _swHandFontKey;
+  let on=['brush'];
+  try{if(typeof _ptFontsOn==='function')on=_ptFontsOn();}catch(e){}
+  let h=0;
+  try{h=_hiHash('sw-hand-'+day);}catch(e){h=day.length;}
+  _swHandFontDay=day;
+  _swHandFontKey=on[Math.abs(h)%on.length]||'brush';
+  // 구글에서 오는 글씨체는 이 <link> 한 줄이 있어야 받아진다 (없으면 기본 글씨체로 뜬다)
+  try{if(typeof _ptLinkGoogle==='function')_ptLinkGoogle();}catch(e){}
+  return _swHandFontKey;
+}
+// 이 말씀의 대표 문구(명제) 또는 첫 강조 문구(말씀). 없으면 빈 문자열.
+// ⚠️ 강조 문구는 한 칸에 여럿이 '/' 로 들어온다 — 첫 조각만 쓴다.
+function _swHiText(v){
+  if(!v)return '';
+  const hi=String(v.hi||'').trim(),hi2=String(v.hi2||'').trim();
+  if(v.pid){
+    // 명제 — 대표 문구가 둘이면 장절을 씨앗으로 하나를 고른다 (늘 같은 답)
+    if(hi&&hi2){
+      let h=0;try{h=_hiHash(String(v.pid));}catch(e){h=hi.length;}
+      return (Math.abs(h)%2)?hi2:hi;
+    }
+    return hi||hi2;
+  }
+  if(!hi)return '';
+  let ph=[];
+  try{ph=_hiPhrases(v);}catch(e){ph=hi.split('/');}
+  return String((ph&&ph[0])||'').trim();
+}
+// 칸에 올릴 한 줄. 판 글씨체를 함께 입힌다.
+function _swHiHTML(v){
+  const t=_swHiText(v);
+  if(!t)return '';
+  return '<div class="sw-hi pf-'+_swEsc(_swHandFont())+'">'+_swEsc(t)+'</div>';
+}
+
 // 칸 뒤에 옅게 깔리는 큰 숫자. **장식이다** — 읽을 숫자는 아랫줄에 따로 있다.
 // (매거진 목차의 쪽 번호에서 가져왔다)
 function _swBigHTML(n){return '<div class="sw-big">'+_swEsc(n)+'</div>';}
@@ -43057,13 +43344,32 @@ function _swCellHTML(t,it,i){
       if(t.k==='keep'&&_swAgo(g.when))why=_swAgo(g.when)+' 담아 뒀어요';
       else why=_swWhyOf(v,null)||g.when||'';
     }
-    return '<div class="sw-cell verse'+(t.k==='today'?' hero':'')+'">'
+    // 대표 문구(명제)·강조 문구(말씀)가 있으면 **그것이 주인**이고 본문은 물러선다
+    const hi=_swHiHTML(v);
+    return '<div class="sw-cell verse'+(t.k==='today'?' hero':'')+(hi?' has-hi':'')+'">'
       +(t.k==='today'?'<div class="sw-quote" aria-hidden="true">\u201C</div>':'')
       +_swArtHTML(v)
       +'<div class="sw-kick">'+_swEsc(v.ref)+'</div>'
+      +hi
       +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
       +(why?'<div class="sw-num">'+_swEsc(why)+'</div>':'')+'</div>';
   }
+  // 발견 — 문장이 곧 내용이다. 눌러야 할 말(key)을 강조색으로 짚어 준다.
+  if(t.k==='insight'){
+    const tx=_swEsc(g.text).replace('\u2018'+_swEsc(g.key)+'\u2019',
+      '<b>\u2018'+_swEsc(g.key)+'\u2019</b>').replace(_swEsc(g.key)+'에 머물러',
+      '<b>'+_swEsc(g.key)+'</b>에 머물러');
+    return '<div class="sw-cell insight">'
+      +'<div class="sw-kick">'+_swEsc(_SW_AXIS_WORD[g.axis]||'흐름')+'</div>'
+      +'<div class="sw-val">'+tx+'</div>'
+      +'<div class="sw-num">눌러서 그 말씀들 보기</div></div>';
+  }
+  // 리듬 — 격자가 곧 내용이다 (글자는 그것을 사람 말로 옮긴 것)
+  if(t.k==='rhythm')
+    return '<div class="sw-cell rhythm">'
+      +_swSigRhythm(t.s%_SW_TYPES.rhythm.sorts.length,g.cell)
+      +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
+      +'<div class="sw-num">'+_swEsc(g.text)+'</div></div>';
   // ⚠️ 그림과 큰 숫자는 **같은 자리(우상단)** 다. 둘을 같이 그리면 겹쳐서 둘 다
   //    흐려진다 → 그림이 있으면 그림만 (그림이 더 많이 말해 준다).
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
@@ -43275,6 +43581,8 @@ function _swOpenVerse(v,list,idx,label){
 function _swVersesFor(t,cur){
   const av=ACTIVE_VERSES()||[];
   const g=cur.v;
+  // 발견 — 그 흐름 안의 말씀들만 (최근 흐름으로 자른 그 묶음이다)
+  if(t.k==='insight')return _swVersesForInsight(g,t.s%_SW_TYPES.insight.sorts.length);
   if(t.k==='recent'){
     const c=g.cat;
     return av.filter(v=>(String(v.cat||'').trim()||'나의 암송')===c);
@@ -43316,6 +43624,11 @@ function _swTileOpen(i){
     const list=it.map(x=>x.v.verse);
     const idx=Math.max(0,list.indexOf(cur.v.verse));
     _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES[t.k].n);
+    return;
+  }
+  // 리듬은 말씀이 아니라 **대시보드**로 간다 (그 화면이 이 그림의 큰 판이다)
+  if(t.k==='rhythm'){
+    if(typeof openVerseDashboard==='function')openVerseDashboard();
     return;
   }
   const list=_swVersesFor(t,cur);
