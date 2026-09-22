@@ -374,9 +374,13 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
 {
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
-  // v26-0922-1 표지 카드 · v26-0922-2 발견·리듬이 더해져 열이 됐다
-  sc.eq('처음엔 기본 열둘', _swLoadTiles().map(t=>t.k),
-        ['today','insight','need','ask','last','keep','rhythm','coll','recent','book','tag','react']);
+  // ⚠️ v26-0922-20 (HB: "처음사용자 디폴트를 … 내가 드래그 조정해서 세팅한대로")
+  //    — HB 가 제 판을 손으로 꾸며 둔 차례를 그대로 옮겼다.
+  //    '저장'(keep)은 빠져 있다 (담아 둔 것이 없는 사람에게는 빈 칸이라,
+  //    편집에서 켤 수 있게만 두었다).
+  sc.eq('처음엔 HB 가 꾸며 둔 열하나', _swLoadTiles().map(t=>t.k),
+        ['today','ask','insight','recent','tag','need','last','coll','book','react','rhythm']);
+  sc.eq("'저장'은 기본에서 빠져 있다", _swLoadTiles().some(t=>t.k==='keep'), false);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -400,7 +404,7 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   // 더하기·끄기
   ST={settings:{}};
   _SW_TILES=_swLoadTiles();
-  sc.eq('남은 종류가 없다', _swSpareKinds(), []);
+  sc.eq('남은 종류는 저장 하나', _swSpareKinds(), ['keep']);
   _SW_TILES=[{k:'last',s:0,p:0}];
   sc.eq('남은 열하나', _swSpareKinds().sort(),
         ['ask','book','coll','insight','keep','need','react','recent','rhythm','tag','today']);
@@ -1276,6 +1280,45 @@ console.log('\n시나리오 26 — 돌릴 때 뒤가 비치지 않게');
     SRC_DEV.includes("_swCoverOn(false);jobs.push(()=>_swCoverOn(true));"), true);
   sc.eq('클래스만 따로 건드리지 않는다',
     SRC_DEV.includes("swh.classList.remove('on');jobs.push(()=>swh.classList.add('on'));"), false);
+}
+
+// ═══ 27. 날마다 바뀌는 사진 · 촤라락 스며드는 첫 그림 (v26-0922-20, HB) ═══
+console.log('\n시나리오 27 — 날마다 바뀌는 사진 · 차례로 스며드는 첫 그림');
+{
+  // ① HB: "날마다 바뀌게 해줘"
+  // ⚠️ 씨앗은 말씀 + **오늘 날짜**다. 날이 바뀌면 다른 사진이 뜨고,
+  //    그날 안에서는 바뀌지 않는다 — 다시 그릴 때마다 달라지면 깜빡여 보인다.
+  sc.eq('씨앗에 오늘 날짜를 넣는다',
+    SRC_DEV.includes("h=_hiHash(String(v.ref||'')+String(v.pid||'')+'@'+_calKey());"), true);
+  {
+    APP_PRODUCT='sweeter';
+    _SW_PHOTOS=[{f:'a.jpg',for:['평안'],by:'t'},{f:'b.jpg',for:['평안'],by:'t'},
+                {f:'c.jpg',for:['평안'],by:'t'},{f:'d.jpg',for:['평안'],by:'t'}];
+    _swPhotoTried=true;
+    const v={ref:'시편 23:1',pid:'P9',tags:['평안'],sit:[],topic:'',cat:''};
+    const day=_calKey;
+    const seen=new Set();
+    ['2026-09-22','2026-09-23','2026-09-24','2026-09-25','2026-09-26','2026-09-27']
+      // ⚠️ global._calKey 로는 안 바뀐다 — 이 파일 위쪽에 function 선언이 있어
+      //    그 이름이 이미 묶여 있다. 그 묶음 자체를 바꿔 끼운다.
+      .forEach(d=>{_calKey=()=>d;seen.add(_swPhotoPick(v));});
+    _calKey=day;
+    sc.eq('날이 바뀌면 사진도 바뀐다', seen.size>1, true);
+    // ⚠️ 그날 안에서는 **늘 같은 한 장**이라야 한다
+    sc.eq('같은 날엔 같은 사진', _swPhotoPick(v), _swPhotoPick(v));
+  }
+
+  // ② HB: "위에서부터 촤라라락 디졸브로 순서대로"
+  sc.eq('스며드는 움직임이 있다', /@keyframes swTileIn\{/.test(SRC_DEV), true);
+  sc.eq('판을 세울 때만 건다', /const intro=!_swIntroDone&&!_SW_EDIT&&_SW_TILES\.length>0&&!_swNoMotion\(\);/.test(SRC_DEV), true);
+  sc.eq('위에서부터 차례로', SRC_DEV.includes("el.style.animationDelay=(i*_SW_INTRO_STEP)+'ms';"), true);
+  // ⚠️⚠️ 다 스며든 뒤에는 .intro 를 반드시 걷는다 — fill-mode:both 가 마지막
+  //    모습을 붙잡아, 그대로 두면 누를 때 작아지는 손맛이 먹히지 않는다.
+  sc.eq('끝나면 걷는다', SRC_DEV.includes("b.classList.remove('intro');"), true);
+  sc.eq('한 번만 건다', SRC_DEV.includes('_swIntroDone=true;'), true);
+  // 움직임 줄이기를 켠 기기에서는 아예 안 한다
+  sc.eq('움직임 줄이기를 지킨다',
+    /@media \(prefers-reduced-motion:reduce\)\{\s*\n\s*\.sw-board\.intro \.sw-tile\{animation:none;\}/.test(SRC_DEV), true);
 }
 
 sc.done();
