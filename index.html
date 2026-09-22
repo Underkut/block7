@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-5  [production]  -->
+<!-- BLOCK7  v. 26-0922-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5147,6 +5147,18 @@ html[data-theme="light"] .sw-photo::after{
   background:linear-gradient(0deg,rgba(255,255,255,.86),rgba(255,255,255,.5) 55%,rgba(255,255,255,.2));}
 /* 사진이 깔린 칸은 손그림을 물린다 — 둘이 겹치면 둘 다 지저분해진다 */
 .sw-cell.has-photo .sw-art{display:none;}
+/* ══ 삽화 (v26-0922-6, HB 6·7·8) ══════════════════════════
+   데이터 그림(.sw-sig)은 우상단, 삽화는 **왼쪽 위** 빈 자리다. 서로 안 겹친다.
+   ⚠️ 글자는 칸 아래쪽에 붙으므로 삽화는 위쪽에만 둔다. */
+.sw-ill{position:absolute;left:12px;top:4px;width:20%;max-width:48px;
+  color:var(--tx);opacity:.14;pointer-events:none;line-height:0;}
+.sw-ill svg{width:100%;height:auto;display:block;}
+.sw-tile.wide .sw-ill{width:13%;max-width:52px;}
+.k-need .sw-ill{opacity:.12;}
+.k-rhythm .sw-ill{width:26%;}
+/* 묵상 질문의 대표 문구는 물음보다 조금 작게 (물음이 주인이다) */
+.sw-cell.ask .sw-hi{--sw-hi-size:15px;margin-bottom:5px;-webkit-line-clamp:1;}
+.sw-cell.ask.has-hi .sw-val{font-size:14.5px;-webkit-line-clamp:3;}
 /* 긴 타일 (표지 카드) — 두 줄을 차지한다. 넓은 것과 겹치면 2×2 한 장이 된다. */
 .sw-tile.tall{grid-row:span 2;}
 /* ══ 데이터가 곧 그림 (.sw-sig) ════════════════════════════
@@ -5167,9 +5179,13 @@ html[data-theme="light"] .sw-photo::after{
 .sw-cell.insight .sw-val b{font-weight:700;color:var(--ac-tx);}
 .sw-cell.rhythm .sw-val{font-size:16px;font-weight:600;}
 /* 지금 이런 마음이라면 — 상황 하나가 크게 선다 */
-/* 말투로 건네는 한 줄이라 글자를 조금 낮추고 줄을 넉넉히 준다 */
-.sw-cell.need .sw-val{font-family:var(--font-display);font-size:17.5px;font-weight:600;
-  letter-spacing:-.01em;line-height:1.42;-webkit-line-clamp:3;}
+/* 말투로 건네는 한 줄 — **판 글씨체**로 쓴다 (v26-0922-6, HB 1).
+   ⚠️ 손글씨는 획이 가늘어 같은 px 로도 작아 보인다 → 글씨체마다 배율(--sw-hik). */
+/* ⚠️ 여기에 font-family 를 적지 말 것. 이 규칙이 .sw-say.pf-* 보다 힘이 세서
+      판 글씨체가 먹히지 않는다 (첫 시안에서 그랬다 — 기본 글씨체로 떴다). */
+.sw-cell.need .sw-val{font-weight:600;
+  font-size:calc(18px*var(--sw-hik,1));
+  letter-spacing:-.01em;line-height:1.45;-webkit-line-clamp:3;}
 /* 묵상 질문 — 물음표를 크게 두고 물음을 또박또박 */
 .sw-cell.ask .sw-val{font-size:15.5px;line-height:1.5;font-weight:500;-webkit-line-clamp:4;}
 .sw-cell.ask .sw-quote{left:auto;right:12px;top:-4px;font-size:58px;opacity:.14;}
@@ -5212,19 +5228,19 @@ html[data-theme="light"] .sw-photo::after{
 /* 대표 문구가 주인이 되면 본문은 한 걸음 물러선다 */
 .sw-cell.has-hi .sw-val{font-size:12.5px;opacity:.82;-webkit-line-clamp:2;}
 .sw-cell.hero.has-hi .sw-val{font-size:13.5px;-webkit-line-clamp:3;}
-.sw-hi.pf-brush{font-family:'Nanum Brush Script',var(--font-display);--sw-hik:1.5;}
-.sw-hi.pf-dokdo{font-family:'East Sea Dokdo',var(--font-display);--sw-hik:1.32;}
-.sw-hi.pf-yeon{font-family:'Yeon Sung',var(--font-display);--sw-hik:1.50;}
-.sw-hi.pf-song{font-family:'Song Myung',var(--font-display);--sw-hik:1.04;}
-.sw-hi.pf-gowun{font-family:'Gowun Batang',var(--font-display);--sw-hik:1.03;}
-.sw-hi.pf-daegwang{font-family:'B7 Daegwang',var(--font-display);--sw-hik:1.38;}
-.sw-hi.pf-nmyet{font-family:'B7 Nmyet',var(--font-display);--sw-hik:0.97;}
-.sw-hi.pf-gmarketL{font-family:'B7 GmarketL',var(--font-display);--sw-hik:1.06;}
-.sw-hi.pf-gmarketB{font-family:'B7 GmarketB',var(--font-display);--sw-hik:0.97;}
-.sw-hi.pf-barun{font-family:'B7 Barun',var(--font-display);--sw-hik:1.20;}
-.sw-hi.pf-uridal{font-family:'B7 Uridal',var(--font-display);--sw-hik:1.20;}
-.sw-hi.pf-bombaram{font-family:'B7 Bombaram',var(--font-display);--sw-hik:0.93;}
-.sw-hi.pf-sangjang{font-family:'B7 Sangjang',var(--font-display);--sw-hik:0.91;}
+.sw-hi.pf-brush,.sw-say.pf-brush{font-family:'Nanum Brush Script',var(--font-display);--sw-hik:1.5;}
+.sw-hi.pf-dokdo,.sw-say.pf-dokdo{font-family:'East Sea Dokdo',var(--font-display);--sw-hik:1.32;}
+.sw-hi.pf-yeon,.sw-say.pf-yeon{font-family:'Yeon Sung',var(--font-display);--sw-hik:1.50;}
+.sw-hi.pf-song,.sw-say.pf-song{font-family:'Song Myung',var(--font-display);--sw-hik:1.04;}
+.sw-hi.pf-gowun,.sw-say.pf-gowun{font-family:'Gowun Batang',var(--font-display);--sw-hik:1.03;}
+.sw-hi.pf-daegwang,.sw-say.pf-daegwang{font-family:'B7 Daegwang',var(--font-display);--sw-hik:1.38;}
+.sw-hi.pf-nmyet,.sw-say.pf-nmyet{font-family:'B7 Nmyet',var(--font-display);--sw-hik:0.97;}
+.sw-hi.pf-gmarketL,.sw-say.pf-gmarketL{font-family:'B7 GmarketL',var(--font-display);--sw-hik:1.06;}
+.sw-hi.pf-gmarketB,.sw-say.pf-gmarketB{font-family:'B7 GmarketB',var(--font-display);--sw-hik:0.97;}
+.sw-hi.pf-barun,.sw-say.pf-barun{font-family:'B7 Barun',var(--font-display);--sw-hik:1.20;}
+.sw-hi.pf-uridal,.sw-say.pf-uridal{font-family:'B7 Uridal',var(--font-display);--sw-hik:1.20;}
+.sw-hi.pf-bombaram,.sw-say.pf-bombaram{font-family:'B7 Bombaram',var(--font-display);--sw-hik:0.93;}
+.sw-hi.pf-sangjang,.sw-say.pf-sangjang{font-family:'B7 Sangjang',var(--font-display);--sw-hik:0.91;}
 /* 종류마다 다른 바탕 — 강조색을 아주 옅게만 쓴다 */
 .sw-tile.k-today{background:
   radial-gradient(120% 90% at 8% 0%,rgba(var(--ac-rgb),.26),transparent 62%),var(--s1);}
@@ -5467,7 +5483,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-5";
+const APP_VERSION = "v. 26-0922-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8627,7 +8643,7 @@ function ACTIVE_VERSES(){
            // sit = 상황 태그(또는 상황/필요) · q = 묵상 질문 (v26-0922-3).
            // ⚠️ 이 줄에 없으면 화면까지 오지 않는다 — 강조 문구(hi)가 실제로
            //    여기서 막혔던 그 자리다 (위 주석).
-           sit:v.sit||[],q:v.q||'',img:v.img||'',
+           sit:v.sit||[],q:v.q||'',img:v.img||'',yt:v.yt||'',
            books:v.books||[],refs:v.refs||[],_code:v._code||''};
   });
 }
@@ -9630,10 +9646,11 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       // 상황/필요·묵상 질문 (v26-0922-3) — 시트를 채워 나가는 중이라, 나중에
       // 적은 것도 다시 받으면 들어와야 한다 (강조 문구와 같은 까닭).
       const newSit=Array.isArray(it.sit)?it.sit:[];
-      const newQ=String(it.q||''),newImg=String(it.img||'');
+      const newQ=String(it.q||''),newImg=String(it.img||''),newYt=String(it.yt||'');
       const sitChanged=hasF('sit')&&JSON.stringify(ex.sit||[])!==JSON.stringify(newSit);
       const qChanged=hasF('q')&&String(ex.q||'')!==newQ;
       const imgChanged=hasF('img')&&String(ex.img||'')!==newImg;
+      const ytChanged=hasF('yt')&&String(ex.yt||'')!==newYt;
       const refChanged=hasF('ref')&&String(ex.ref||'')!==newRef;
       const refsChanged=hasF('ref')&&JSON.stringify(ex.refs||[])!==JSON.stringify(newRefs);
       const booksChanged=hasF('ref')&&JSON.stringify(ex.books||[])!==JSON.stringify(newBooks);
@@ -9644,7 +9661,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const hi2Changed=hasF('hi2')&&String(ex.hi2||'')!==newHi2;
       const changed=ex.krText!==it.krText||catChanged||topicChanged||
         tagsChanged||hiChanged||hi2Changed||dChanged||
-        refChanged||refsChanged||booksChanged||sitChanged||qChanged||imgChanged;
+        refChanged||refsChanged||booksChanged||sitChanged||qChanged||imgChanged||ytChanged;
       if(changed){
         ex.krText=it.krText;
         if(catChanged)ex.cat=newCat;
@@ -9662,6 +9679,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
         if(sitChanged){ if(newSit.length)ex.sit=newSit.slice(); else delete ex.sit; }
         if(qChanged){ if(newQ)ex.q=newQ; else delete ex.q; }
         if(imgChanged){ if(newImg)ex.img=newImg; else delete ex.img; }
+        if(ytChanged){ if(newYt)ex.yt=newYt; else delete ex.yt; }
         updated++;_bump(newCat,'updated');
       }
     }else{
@@ -9684,6 +9702,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       if(it.sit&&it.sit.length)nv.sit=it.sit.slice();           // 상황/필요
       if(it.q)nv.q=String(it.q);                                // 묵상 질문
       if(it.img)nv.img=String(it.img);                          // 사진 주소
+      if(it.yt)nv.yt=String(it.yt);                             // 유튜브 영상 id
       coll.verses.push(nv);claimed.add(nv);byKey.set(key,nv);
       const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
@@ -9901,6 +9920,15 @@ function _propImg(raw){
   if(m)return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1200';
   return t;
 }
+// 유튜브 주소에서 **영상 id 열한 글자**만 뽑는다 (v26-0922-6).
+// ⚠️ 주소를 통째로 들고 다니지 않는다 — 썸네일 주소를 만들 때만 쓰므로 id 면 된다.
+//    watch?v= · youtu.be/ · live/ · embed/ 네 가지 모양을 다 받는다.
+function _propYt(raw){
+  const t=String(raw==null?'':raw).trim();
+  if(!t)return '';
+  const m=t.match(/(?:v=|youtu\.be\/|\/live\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/);
+  return m?m[1]:'';
+}
 // 상황/필요를 조각으로 가른다. 쉼표·세미콜론·가운뎃점·줄바꿈으로 자르고,
 // 너무 긴 조각(문장으로 적은 칸)은 **자르지 않고 통째로** 둔다.
 // ⚠️ 빈 값·중복은 버린다. 타일에서 개수를 세는 값이라 지저분하면 바로 보인다.
@@ -9976,6 +10004,9 @@ function _propRowsToItems(rows){
   // 사진 주소 (v26-0922-4, HB 선택 — '시트에 사진 링크 한 칸').
   // 교역자가 그 주(週)의 사진을 직접 넣는 자리다. 이름은 셋 다 받는다.
   const iImg=colX('사진 링크','이미지 링크','사진');
+  // 유튜브 영상 링크 (v26-0922-6, HB) — '설교 목록' 탭에 있는 그 열이다.
+  // 명제 DB 에 같은 이름의 열을 만들어 두면(VLOOKUP) 설교 타일에 썸네일이 뜬다.
+  const iYt=colX('영상 링크','유튜브','영상');
   // ⚠️ HB 정정 (26-0831): 전체화면에 쓸 성경은 **F열 '설교 본문'** 이다.
   //    예전에 읽던 H열은 이름이 '인용 본문' 으로 바뀌었는데, 그것은 설교 본문에
   //    더해 설교에서 인용된 **모든** 본문이라 화면에 다 쓰면 너무 많다.
@@ -10025,11 +10056,13 @@ function _propRowsToItems(rows){
       //    (주제 태그가 없는 탭을 한 번 받으면 태그가 통째로 날아가는 식)
       //    → 아래 _syncSheetVersesIntoColl 이 **있던 열만** 덮어쓴다.
       _has:{cat:iCat>=0,topic:iTitle>=0,tags:iTags>=0,hi:iHi>=0,hi2:iHi2>=0,
-            d:iDate>=0,ref:iRefCols.length>0,sit:(iSit>=0||iNeed>=0),q:iAsk>=0,img:iImg>=0},
+            d:iDate>=0,ref:iRefCols.length>0,sit:(iSit>=0||iNeed>=0),q:iAsk>=0,
+            img:iImg>=0,yt:iYt>=0},
       // 상황/필요 — 두 열을 **합쳐** 한 묶음으로 본다 (탭마다 이름이 다를 뿐 뜻은 같다)
       sit:_propSits(iSit>=0?r[iSit]:'',iNeed>=0?r[iNeed]:''),
       q:iAsk>=0?String(r[iAsk]||'').trim():'',  // 묵상 질문 (한 문장)
       img:_propImg(iImg>=0?r[iImg]:''),         // 사진 주소 (https 만 받는다)
+      yt:_propYt(iYt>=0?r[iYt]:''),             // 유튜브 영상 id (11글자)
       hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 1 (= 강조 문구 자리)
       hi2:iHi2>=0?String(r[iHi2]||'').trim():'',// 대표 문구 2 (비면 하나만 쓰는 명제다)
       // ⚠️ 명제는 한 칸에 본문이 여럿 들어온다 ("롬 5:8; 엡 2:8-9").
@@ -42412,7 +42445,7 @@ const _SW_TYPES={
         empty:'태그가 붙은 말씀이 아직 없어요.'},
   react:{n:'말씀 반응',sorts:['모두','이번 달'],
         empty:'아직 반응 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
-  coll:{n:'말씀 모음',sorts:['말씀 많은','이름'],
+  coll:{n:'말씀 모음',sorts:['많은 순','가나다'],
         empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'},
   keep:{n:'저장',wide:true,sorts:['저장한 순','오래된 순'],
         empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'},
@@ -42869,9 +42902,21 @@ function _swSyncNotice(){
 // ── 말씀 모음 타일 ───────────────────────────────────────
 // 지금 켜 둔 모음마다 이름과 말씀 수. 개수는 화면에 실제로 나오는 것과 같게
 // **필터를 통과한 것**만 센다 (_collFilteredVerses) — 모음 칩의 숫자와 같은 규칙이다.
+// ⚠️ v26-0922-6, HB — "말씀모음 타일이 무슨 의미인지 와닿지 않는다. 퍼센티지
+//    원형 표시도, 우상단 칩도 전달력이 약하다."
+//    → ①고리(%)를 걷어냈다 (내 말씀에서 이 모음이 차지하는 몫 — 알 필요가 없다)
+//      ②대신 **그 모음에 무엇이 담겼는지**를 적는다: 말씀 수 · 설교 편수 · 성경 권수
+//      ③삽화로 책 아이콘을 깔아 '모음' 임을 한눈에
 function _swColls(sortIdx){
-  const a=(getActiveColls()||[]).map(id=>({
-    id,name:_collLabel(id),n:_collFilteredVerses(id).length}));
+  const a=(getActiveColls()||[]).map(id=>{
+    const vs=_collFilteredVerses(id)||[];
+    const cats=new Set(),books=new Set();
+    vs.forEach(v=>{
+      const c=String(v.cat||'').trim();if(c)cats.add(c);
+      (_booksOf(v)||[]).forEach(b=>books.add(b));
+    });
+    return {id,name:_collLabel(id),n:vs.length,cats:cats.size,books:books.size};
+  });
   if(sortIdx===1)a.sort((x,y)=>x.name.localeCompare(y.name,'ko'));
   else a.sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name,'ko'));
   return a;
@@ -42904,9 +42949,11 @@ function _swSermons(sortIdx){
   const g=new Map();
   (ACTIVE_VERSES()||[]).forEach(v=>{
     const k=String(v.cat||'').trim()||'나의 암송';
-    if(!g.has(k))g.set(k,{cat:k,n:0,d:''});
+    if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:''});
     const o=g.get(k);o.n++;
     const d=String(v.d||'');if(d>o.d)o.d=d;
+    // 그 설교의 유튜브 영상 (한 명제에만 적혀 있어도 그 설교 것이다)
+    if(!o.yt&&v.yt)o.yt=String(v.yt);
   });
   const a=[...g.values()];
   if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
@@ -43742,6 +43789,44 @@ function _swPhotoHTML(v){
     +'style="background-image:url(\''+_swEsc(src).replace(/'/g,'%27')+'\')"></div>';
 }
 
+// ══════════════════════════════════════════════════════════
+//  삽화 (v26-0922-6, HB 6·7·8)
+//  ────────────────────────────────────────────────────────
+//  HB: "기존 표시는 유지하면서 **왼쪽 여백에** 삽화처럼 넣어 줘."
+//  → 데이터 그림(.sw-sig)은 우상단에 그대로 두고, 왼쪽 위 빈 자리에 그 타일이
+//    무엇을 다루는지 **한눈에 알려 주는 그림**을 옅게 깐다.
+//  ⚠️ 전부 앱이 이미 쓰고 있는 그림을 그대로 가져왔다 (새로 그리지 않았다):
+//     책 세 권+십자가 = 말씀 모음 아이콘 · 하트/책갈피/체크/책 = 말씀 반응 단추.
+// ══════════════════════════════════════════════════════════
+const _SW_ILL={
+  // 말씀 모음·성경 — 책 세 권 위에 십자가 (말씀 목록 좌상단의 그 아이콘)
+  // ⚠️ 말씀 목록 좌상단의 **그 아이콘 그대로**다 (책 세 권 + 십자가).
+  //    HB 가 직접 고른 최종본이라 다시 그리지 않는다 (tests/test_coll_btn.js).
+  book:'<svg viewBox="3.2 2 17.6 19.7" fill="currentColor" stroke="currentColor" stroke-width="0.7" stroke-linejoin="round"><path fill-rule="evenodd" d="M3.8 8.2 L12.6 2.6 L20.2 6 L20.2 7.5 L11.4 13.1 L3.8 9.7 Z M15.3 3.98 L17.19 4.83 L14.92 6.27 L17.33 7.34 L15.58 8.46 L13.17 7.38 L8.56 10.31 L6.67 9.46 L11.28 6.54 L8.87 5.46 L10.62 4.35 L13.03 5.42 Z"/><path d="M3.8 12.2 L11.4 15.6 L20.2 10 L20.2 11.5 L11.4 17.1 L3.8 13.7 Z"/><path d="M3.8 16.2 L11.4 19.6 L20.2 14 L20.2 15.5 L11.4 21.1 L3.8 17.7 Z"/></svg>',
+  // 말씀 반응 — 지금 보고 있는 갈래의 그 단추를 그대로 (전체화면 액션 줄과 같은 그림)
+  like:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 '
+    +'7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>',
+  keep:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 '
+    +'21V4a1 1 0 0 1 1-1z"/></svg>',
+  mem:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.1" '
+    +'stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>',
+  deeper:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 '
+    +'3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>',
+  even:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/>'
+    +'<path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>',
+  share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" '
+    +'stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 10.5 13.5"/>'
+    +'<path d="M21 3 14.5 21 10.5 13.5 3 9.5 21 3Z"/></svg>',
+  // 나의 리듬 — 시계
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" '
+    +'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/>'
+    +'<path d="M12 6.8V12l3.4 2.1"/></svg>'
+};
+function _swIllHTML(k){
+  const svg=_SW_ILL[k];
+  return svg?('<div class="sw-ill" aria-hidden="true">'+svg+'</div>'):'';
+}
+
 // 칸 뒤에 옅게 깔리는 큰 숫자. **장식이다** — 읽을 숫자는 아랫줄에 따로 있다.
 // (매거진 목차의 쪽 번호에서 가져왔다)
 function _swBigHTML(n){return '<div class="sw-big">'+_swEsc(n)+'</div>';}
@@ -43848,8 +43933,10 @@ function _swSigHTML(t,g){
   try{
     if(t.k==='book')return _swSigBook(g&&g.name);
     if(t.k==='react')return _swSigReact(g&&g.kind,t.s%_SW_TYPES.react.sorts.length);
-    if(t.k==='recent')return _swSigSermon(g&&g.cat);
-    if(t.k==='coll')return _swSigColl(g&&g.n);
+    // ⚠️ v26-0922-6, HB — 직선 위의 점(설교가 놓인 시간)은 "의미 연결이 안 된다"
+    //    고 하셨다. 그 대신 **유튜브 썸네일**을 깐다 (_swCellHTML 에서 그린다).
+    if(t.k==='recent')return '';
+    if(t.k==='coll')return '';   // 고리(%)는 걷어냈다 — 아래 _swColls 주석
     if(t.k==='tag')return _swSigTag(g&&g.name);
   }catch(e){}
   return '';
@@ -43899,44 +43986,64 @@ function _swCellHTML(t,it,i){
   // ⚠️ 머리말을 달지 않는다 — 타일 이름이 이미 '지금 이런 마음이라면' 이라
   //    같은 말이 두 줄 이어진다 (첫 시안에서 그랬다).
   if(t.k==='need'){
+    // 말투로 건네는 한 줄이라 **판 글씨체**로 쓴다 (v26-0922-6, HB 1)
     const say=_swNeedSay(g.name);
     return '<div class="sw-cell need">'
-      +'<div class="sw-val">'+_swEsc(say)+'</div>'
+      +'<div class="sw-val sw-say pf-'+_swEsc(_swHandFont())+'">'+_swEsc(say)+'</div>'
       // 원래 태그도 작게 남긴다 — 시트에 적힌 말과 화면의 말이 이어져 보이게
       +'<div class="sw-num">'+_swEsc(g.name+' \u00b7 말씀 '+g.n)+'</div></div>';
   }
   // 묵상 질문 — 물음이 주인이고, 그 물음이 나온 말씀이 아래에 선다
   if(t.k==='ask'){
     const photo=_swPhotoHTML(g.verse);
-    return '<div class="sw-cell ask'+(photo?' has-photo':'')+'">'+photo
+    // 대표 문구를 물음 **위에** 특별 글씨체로 (v26-0922-6, HB 2)
+    const hi=_swHiHTML(g.verse);
+    return '<div class="sw-cell ask'+(photo?' has-photo':'')+(hi?' has-hi':'')+'">'+photo
       +'<div class="sw-quote" aria-hidden="true">?</div>'
       +'<div class="sw-kick">'+_swEsc(g.ref||'')+'</div>'
+      +hi
       +'<div class="sw-val">'+_swEsc(g.q)+'</div>'
       +(g.why?'<div class="sw-num">'+_swEsc(g.why)+'</div>':'')+'</div>';
   }
   // 리듬 — 격자가 곧 내용이다 (글자는 그것을 사람 말로 옮긴 것)
   if(t.k==='rhythm')
     return '<div class="sw-cell rhythm">'
-      +_swSigRhythm(t.s%_SW_TYPES.rhythm.sorts.length,g.cell)
+      +_swSigRhythm(t.s%_SW_TYPES.rhythm.sorts.length,g.cell)+_swIllHTML('clock')
       +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc(g.text)+'</div></div>';
   // ⚠️ 그림과 큰 숫자는 **같은 자리(우상단)** 다. 둘을 같이 그리면 겹쳐서 둘 다
   //    흐려진다 → 그림이 있으면 그림만 (그림이 더 많이 말해 준다).
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
-  if(t.k==='recent')
-    return '<div class="sw-cell sermon">'+deco
+  if(t.k==='recent'){
+    // 유튜브 썸네일이 있으면 그것이 이 칸의 얼굴이다 (없으면 예전처럼 큰 숫자)
+    const th=g.yt?('<div class="sw-photo" aria-hidden="true" style="background-image:url(\''
+      +'https://i.ytimg.com/vi/'+_swEsc(g.yt)+'/hqdefault.jpg\')"></div>'):'';
+    // ⚠️ 큰 숫자를 **늘** 깔아 둔다. 썸네일이 안 오는 기기·망에서도 칸이 비지
+    //    않게 — 사진이 오면 그 위를 덮으므로 보이지 않는다.
+    return '<div class="sw-cell sermon'+(th?' has-photo':'')+'">'+deco+th
       +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
-      +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div></div>';
+      +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' \u00b7 '+g.d:''))+'</div></div>';
+  }
   if(t.k==='react')
-    return '<div class="sw-cell stat">'+deco
+    return '<div class="sw-cell stat">'+deco+_swIllHTML(g.kind)
       +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc(g.n+'번')+'</div></div>';
   if(t.k==='tag')
     return '<div class="sw-cell tag">'+deco
       +'<div class="sw-val"><i>#</i>'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
-  // 성경 · 말씀 모음 — 이름을 크게, 담긴 말씀 수는 아래에
-  return '<div class="sw-cell '+(t.k==='coll'?'coll':'book')+'">'+deco
+  if(t.k==='coll'){
+    // 무엇이 담긴 모음인지 — 말씀 수 · 설교 편수 · 성경 권수
+    const bits=['말씀 '+g.n];
+    if(g.cats>1)bits.push('설교 '+g.cats+'편');
+    if(g.books)bits.push('성경 '+g.books+'권');
+    return '<div class="sw-cell coll">'+_swIllHTML('book')
+      +'<div class="sw-kick">이 모음에 담긴 것</div>'
+      +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
+      +'<div class="sw-num">'+_swEsc(bits.join(' \u00b7 '))+'</div></div>';
+  }
+  // 성경 — 책 이름을 크게, 담긴 말씀 수는 아래에
+  return '<div class="sw-cell book">'+deco+_swIllHTML('book')
     +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
     +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
 }

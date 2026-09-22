@@ -18,21 +18,24 @@ console.log('시나리오 1 — 세 곳 모두 같은 책 실루엣을 쓴다');
   // v26-0904-4, HB — 전체화면 좌상단에도 같은 버튼이 생겨 넷이 됐다.
   // v26-0906-2, HB — 대시보드 윗줄에도 생겨 다섯이 됐다.
   // v26-0916-3, HB — 동기화 결과 화면의 '말씀모음설정' 버튼까지 여섯이 됐다.
+  // v26-0922-6, HB — Sweeter 홈의 '말씀 모음'·'성경' 타일 삽화가 일곱 번째다
+  //    ("기존에 우리가 말씀모음에 사용하는 그 아이콘을 삽화처럼 넣어 줘").
+  //    ⚠️ **같은 그림이어야 한다** — 그래서 코드에서 떠다 넣었고 이 수가 늘었다.
   const books = (SRC.match(/M3\.8 8\.2 L12\.6 2\.6 L20\.2 6 L20\.2 7\.5 L11\.4 13\.1 L3\.8 9\.7 Z/g)||[]).length;
-  sc.eq('책 실루엣이 여섯 곳에 있다', books, 6);
+  sc.eq('책 실루엣이 일곱 곳에 있다', books, 7);
   // 위 커버(첫 조각)는 이제 fill-rule=evenodd 로 십자가/4줄과 한 path 에 있어
   // 예전처럼 단독으로 시작하지 않는다 — 가운데·아래 두 조각(3권 중 나머지)만 센다
   const slabs = (SRC.match(/<path d="M3\.8 (12\.2|16\.2) /g)||[]).length;
-  sc.eq('여섯 곳 모두 아래 두 권은 그대로', slabs, 12);
+  sc.eq('일곱 곳 모두 아래 두 권은 그대로', slabs, 14);
   // ⚠️ 전체에서 evenodd 를 세면 안 된다 — 다른 아이콘도 컷아웃을 쓴다
   //    (v26-0830-16 담아두기 주머니). 책 커버가 시작되는 path 만 센다.
-  sc.eq('여섯 곳 모두 컷아웃 방식(evenodd)',
-        (SRC.match(/fill-rule="evenodd" d="M3\.8 8\.2 /g)||[]).length, 6);
+  sc.eq('일곱 곳 모두 컷아웃 방식(evenodd)',
+        (SRC.match(/fill-rule="evenodd" d="M3\.8 8\.2 /g)||[]).length, 7);
   // v26-0818-7, HB — 메뉴의 다른 아이콘들에 비해 여백이 커 보인다는 지적으로
   // viewBox 를 도형 실제 bbox 에 바짝 맞춰 크롭했다(디자인·각도는 그대로, 여백만 축소).
   // v26-0916-3 — 동기화 결과 화면의 '말씀모음설정' 버튼이 여섯 번째 자리다
   sc.eq('꽉 찬 실루엣으로 그린다',
-        (SRC.match(/viewBox="3\.2 2 17\.6 19\.7" fill="currentColor" stroke="currentColor" stroke-width="0\.7" stroke-linejoin="round"/g)||[]).length, 6);
+        (SRC.match(/viewBox="3\.2 2 17\.6 19\.7" fill="currentColor" stroke="currentColor" stroke-width="0\.7" stroke-linejoin="round"/g)||[]).length, 7);
   // 예전 햄버거(가로줄 3개)는 사라져야 한다
   sc.eq('햄버거 가로줄은 없앴다',
         SRC.includes('<line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/>'), false);
@@ -53,7 +56,8 @@ console.log('\n시나리오 1-1 — 커버 컷아웃 모양 (십자가 vs 3줄)'
   // 십자가 컷아웃 — '현재 말씀 모음' 팝업, 말씀카드 설정, 전체화면 좌상단,
   // v26-0906-2 부터 대시보드 윗줄, v26-0916-3 부터 동기화 결과 화면까지 다섯 곳
   const crossCount = (SRC.match(/M15\.3 3\.98 L17\.19 4\.83 L14\.92 6\.27 L17\.33 7\.34 L15\.58 8\.46 L13\.17 7\.38 L8\.56 10\.31 L6\.67 9\.46 L11\.28 6\.54 L8\.87 5\.46 L10\.62 4\.35 L13\.03 5\.42 Z/g)||[]).length;
-  sc.eq('십자가 컷아웃이 다섯 곳', crossCount, 5);
+  // v26-0922-6 — Sweeter 홈 타일 삽화가 여섯 번째다 (같은 그림을 그대로 떠 왔다)
+  sc.eq('십자가 컷아웃이 여섯 곳', crossCount, 6);
   // 전체화면 좌상단 버튼도 같은 아이콘이어야 한다 (v26-0904-4, HB)
   const vfBtn = SRC.slice(SRC.indexOf('class="vf-collset"'), SRC.indexOf('class="vf-collset"')+900);
   sc.eq('전체화면 좌상단 버튼도 십자가 책', vfBtn.includes('M15.3 3.98'), true);
