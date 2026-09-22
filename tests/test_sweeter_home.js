@@ -683,7 +683,7 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   // ⚠️⚠️ v26-0922-13 — 머리말은 **흐름 안**에 둔다 (HB: "하단 내용이 3줄일 때
   //    타이틀이 올라가면서 좌상단 고정텍스트와 겹치게 돼"). 띄워 두면 본문이
   //    위로 자라며 머리말을 덮는다. margin-bottom:auto 가 맨 위로 올려 준다.
-  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:relative;margin-bottom:auto;/.test(SRC_DEV), true);
+  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:relative;flex-shrink:0;margin-bottom:auto;/.test(SRC_DEV), true);
   sc.eq('머리말을 띄우지 않는다', /\.sw-kick\{position:absolute/.test(SRC_DEV), false);
   sc.eq('오른쪽 그림은 padding 으로 피한다',
         /\.k-coll \.sw-kick\{padding-right:42%;\}/.test(SRC_DEV), true);
@@ -955,7 +955,10 @@ console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
   sc.eq('없는 영상은 mqdefault 로 내려간다', fr.includes('onerror="_swYtThumbFail(this)"'), true);
   sc.eq('내려갈 자리가 16:9 다', _SW_YT_THUMB[2], 'mqdefault.jpg');
   // 주소를 갈아끼워야 하므로 바탕그림이 아니라 <img> 다. 채우는 것은 object-fit.
-  sc.eq('<img> 로 넣는다', /<div class="sw-photo" aria-hidden="true"><img /.test(fr), true);
+  // ⚠️ 썸네일에는 sw-yt 가 붙는다 — 사진첩 사진보다 제 색을 더 남긴다 (v26-0922-14)
+  sc.eq('<img> 로 넣는다', /<div class="sw-photo sw-yt" aria-hidden="true"><img /.test(fr), true);
+  sc.eq('썸네일은 색을 더 살린다', /\.sw-photo\.sw-yt>img\{filter:grayscale\(\.1\)/.test(SRC_DEV), true);
+  sc.eq('썸네일은 덜 물들인다', /\.sw-photo\.sw-yt::before\{opacity:\.1;\}/.test(SRC_DEV), true);
   sc.eq('칸을 꽉 채운다', /\.sw-photo>img\{[^}]*object-fit:cover/.test(SRC_DEV), true);
   // ⚠️ 사진첩 사진도 **바탕그림이 아니라 <img>** 다 (v26-0922-13) — 흐리기·
   //    물들이기를 사진에만 걸어야 덮개·그레인까지 흐려지지 않는다.
@@ -1087,14 +1090,25 @@ console.log('\n시나리오 22 — 타일마다 사진 켜고 끄기 · 테마�
   sc.eq('옛 값은 켬으로 읽는다', _swLoadTiles()[0].ph, 1);
 
   // ── 색 보정 (HB: "사진 색이 다 제각각인데 테마와 어울리게") ──
-  sc.eq('사진에서 색을 걷어낸다', /\.sw-photo>img\{[^}]*grayscale\(\.74\)/.test(SRC_DEV), true);
-  sc.eq('살짝 흐린다', /\.sw-photo>img\{[^}]*blur\(1\.1px\)/.test(SRC_DEV), true);
+  // ⚠️ v26-0922-14 — 걷어내는 힘을 .74 → .34, 흐리기를 1.1 → .6px 로 낮췄다.
+  //    HB: "너무 흑백인 느낌 … 뭔지 너무 안 보여서 맥락이 전달이 안 돼."
+  //    사진이 무엇인지는 알아볼 수 있어야 한다.
+  sc.eq('사진에서 색을 조금만 걷어낸다', /\.sw-photo>img\{[^}]*grayscale\(\.34\)/.test(SRC_DEV), true);
+  sc.eq('살짝 흐린다', /\.sw-photo>img\{[^}]*blur\(\.6px\)/.test(SRC_DEV), true);
   // ⚠️ 흐리기는 가장자리에 김을 만든다 — 조금 키워서 잘라 낸다
   sc.eq('가장자리 김을 잘라낸다', /\.sw-photo>img\{[^}]*transform:scale\(1\.06\)/.test(SRC_DEV), true);
   // ⚠️ 테마 강조색으로 물들인다. 명암은 그대로 두고 **색만** 갈아 끼우므로
   //    테마를 바꾸면 사진 색도 따라 바뀐다.
   sc.eq('테마 색으로 물들인다',
     /\.sw-photo::before\{[^}]*background:rgb\(var\(--ac-rgb\)\);mix-blend-mode:color/.test(SRC_DEV), true);
+  // ⚠️⚠️ 글 덩어리는 **눌리지 않는다** — 눌리면 -webkit-line-clamp 와 상관없이
+  //    마지막 줄이 반쯤 잘린다 (v26-0922-14, HB: "3줄일 때 아래가 잘리네").
+  ['\\.sw-val','\\.sw-hi','\\.sw-kick','\\.sw-num'].forEach(k=>{
+    sc.eq(k.replace(/\\\\/g,'')+' 는 눌리지 않는다',
+      new RegExp(k+'\\{[^}]*flex-shrink:0').test(SRC_DEV), true);
+  });
+  sc.eq('넓은 묵상 질문은 두 줄',
+    /\.sw-cell\.ask\.has-hi \.sw-val\{font-size:14\.5px;-webkit-line-clamp:2;\}/.test(SRC_DEV), true);
   sc.eq('물들이기가 타일 밖으로 안 샌다', /\.sw-photo\{[^}]*isolation:isolate/.test(SRC_DEV), true);
   sc.eq('그레인을 얹는다', /--sw-grain:url\("data:image\/svg\+xml,/.test(SRC_DEV), true);
   sc.eq('그레인은 주소로 인코딩한다', SRC_DEV.includes('%3CfeTurbulence'), true);
