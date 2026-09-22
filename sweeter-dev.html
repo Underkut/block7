@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5483,7 +5483,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-7";
+const APP_VERSION = "v. 26-0922-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10075,6 +10075,69 @@ function _propRowsToItems(rows){
   }
   return items;
 }
+// ── '설교 목록' 탭을 그대로 연결하기 (v26-0922-8, HB) ────────────────
+// 유튜브 썸네일에 쓸 **영상 링크**는 '설교 목록' 탭에만 있다. 명제 DB 에
+// VLOOKUP 열을 만들어 끌어오는 길도 있지만, HB 가 묵상 질문에서 겪었듯이
+// 수식이 빈칸만 뱉는 일이 잦다 → 탭을 **그대로 연결**할 수 있게 한다.
+//
+// ⚠️⚠️ '설교 목록' 탭에는 **'명제 ID' 열이 없다.** 알아보지 못하면 _isPropSheet
+//    가 false 를 주어 **평범한 말씀 시트**로 읽히고, 설교 400줄이 엉뚱한 말씀으로
+//    들어오면서 원래 명제들은 "시트에서 사라졌다"로 읽혀 휴지통으로 간다.
+//    그래서 이 탭은 **알아보고 다른 길**로 보낸다 — 구절을 만들지도 지우지도
+//    않고, 이미 들어와 있는 명제에 영상 링크만 얹는다.
+//    (지키는 것: tests/test_sermon_sheet.js)
+function _isSermonListSheet(h){
+  if(!h||!h.length)return false;
+  const n=h.map(c=>String(c||'').trim());
+  if(n.indexOf('명제 ID')>=0)return false;   // 명제 ID 가 있으면 언제나 명제 시트다
+  const has=x=>n.indexOf(x)>=0;
+  // ⚠️ 이름은 **정확히 같을 때만** 센다. '영상 시각'을 '영상'으로 집어가면
+  //    시각 칸에서 영상 번호를 찾다가 빈손으로 돌아온다.
+  const vid=has('영상 링크')||has('유튜브')||has('영상');
+  return vid&&has('날짜')&&(has('설교 제목')||has('설교자'));
+}
+// 설교 목록 → { '날짜|카테고리': 영상id, '날짜': 영상id }
+// ⚠️ 날짜만의 열쇠는 **그날 설교가 하나뿐일 때만** 넣는다. 같은 날 1부·2부가
+//    있는데 아무거나 집어 주면 엉뚱한 설교 영상이 뜬다 — 비워 두는 편이 낫다.
+function _sermonListMap(rows){
+  const h=(rows&&rows[0]||[]).map(c=>String(c||'').trim());
+  const at=(...names)=>{for(const x of names){const i=h.indexOf(x);if(i>=0)return i;}return -1;};
+  const iD=at('날짜'),iCat=at('카테고리'),iYt=at('영상 링크','유튜브','영상');
+  const m=Object.create(null);
+  const out={map:m,n:0};
+  if(iD<0||iYt<0)return out;
+  const byD=Object.create(null);
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i]||[];
+    const d=_parseVDate(r[iD]);if(!d)continue;
+    const yt=_propYt(r[iYt]);if(!yt)continue;
+    const cat=iCat>=0?String(r[iCat]==null?'':r[iCat]).trim():'';
+    if(cat)m[d+'|'+cat]=yt;
+    out.n++;
+    if(byD[d]===undefined)byD[d]=yt;else if(byD[d]!==yt)byD[d]=null;
+  }
+  Object.keys(byD).forEach(d=>{if(byD[d])m[d]=byD[d];});
+  return out;
+}
+// 이미 들어와 있는 명제에 영상 링크만 얹는다. **만들지도 지우지도 않는다.**
+function _applySermonListSheet(coll,rows){
+  const g=_sermonListMap(rows);
+  let updated=0;
+  const byCat=new Map();
+  if(g.n)((coll&&coll.verses)||[]).forEach(v=>{
+    const d=String(v.d||'');if(!d)return;
+    const k=String(v.cat||'').trim();
+    const y=g.map[d+'|'+k]||g.map[d];
+    if(!y||v.yt===y)return;
+    v.yt=y;updated++;
+    const ck=k||'그 밖';
+    if(!byCat.has(ck))byCat.set(ck,{added:0,restored:0,updated:0,removed:0});
+    byCat.get(ck).updated++;
+  });
+  // 결과 모양은 _syncSheetVersesIntoColl 과 맞춘다 (부르는 쪽이 같은 칸을 읽는다)
+  return{sermonList:true,sermons:g.n,updated,
+         added:0,restored:0,removed:0,blocked:0,byCat,addedKeys:[]};
+}
 function _rowsToItems(rows){
   if(!rows||!rows.length)return[];
   let start=0;
@@ -10267,6 +10330,19 @@ async function ceImportGoogleLink(i){
   const rows=_parseCsv(res.text);
   const sane=_sheetRowsSane(rows);
   if(!sane.ok){showToast(sane.why);return;}       // 수상하면 손대지 않는다
+  // ⚠️ '설교 목록' 탭이면 여기서 갈라진다 (v26-0922-8). 구절을 만들지도 지우지도
+  //    않고 **영상 링크만** 얹는다. 아래 평소 길로 보내면 명제가 통째로 휴지통에 간다.
+  if(_isSermonListSheet(rows[0]||[])){
+    beforeSave();
+    const rs=_applySermonListSheet(c,rows);
+    g.lastSync=todayKey();
+    save();
+    _invalidateVerseCaches();_ceFillSelects();renderCeVerseList();
+    showToast(rs.updated
+      ? `${g.name}: 설교 ${rs.sermons}편의 영상 링크를 명제 ${rs.updated}개에 붙였어요`
+      : `${g.name}: 설교 목록 ${rs.sermons}편 — 새로 붙일 영상 링크가 없어요`);
+    return;
+  }
   const items=_rowsToItems(rows);
   if(!items.length){showToast('시트에서 읽어온 구절이 없어요 — 아무것도 바꾸지 않았어요');return;}
   const run=force=>{
@@ -10323,6 +10399,13 @@ async function verseSyncAllNow(){
         const rows=_parseCsv(res.text);
         const sane=_sheetRowsSane(rows);
         if(!sane.ok){fails++;continue;}       // 깨진 응답이면 이 시트는 건너뛴다
+        if(_isSermonListSheet(rows[0]||[])){  // '설교 목록' 탭 — 영상 링크만 얹는다
+          const rs=_applySermonListSheet(c,rows);
+          updated+=rs.updated;
+          groups.push({collId:c.id,coll:c.name||'말씀 모음',
+            source:(g.name||'구글 시트')+' · 설교 목록',byCat:rs.byCat,blocked:0,addedKeys:[]});
+          g.lastSync=today;sheets++;continue;
+        }
         const items=_rowsToItems(rows);
         if(!items.length){fails++;continue;}
         const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
@@ -10383,6 +10466,13 @@ async function runVerseSheetAutoSync(){
       if(res.err)continue; // 실패는 조용히 넘기고 다음 기회에 재시도
       const rows=_parseCsv(res.text);
       if(!_sheetRowsSane(rows).ok)continue;
+      if(_isSermonListSheet(rows[0]||[])){    // '설교 목록' 탭 — 영상 링크만 얹는다
+        const rs=_applySermonListSheet(c,rows);
+        g.lastSync=today;changed=true;ran++;tUpdated+=rs.updated;
+        groups.push({collId:c.id,coll:c.name||'말씀 모음',
+          source:(g.name||'구글 시트')+' · 설교 목록',byCat:rs.byCat,blocked:0,addedKeys:[]});
+        continue;
+      }
       const items=_rowsToItems(rows);
       if(!items.length)continue;
       const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
@@ -42969,11 +43059,14 @@ function _swSermons(sortIdx){
   const g=new Map();
   (ACTIVE_VERSES()||[]).forEach(v=>{
     const k=String(v.cat||'').trim()||'나의 암송';
-    if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:''});
+    if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:'',ytd:''});
     const o=g.get(k);o.n++;
     const d=String(v.d||'');if(d>o.d)o.d=d;
-    // 그 설교의 유튜브 영상 (한 명제에만 적혀 있어도 그 설교 것이다)
-    if(!o.yt&&v.yt)o.yt=String(v.yt);
+    // 그 설교의 유튜브 영상 (한 명제에만 적혀 있어도 그 설교 것이다).
+    // ⚠️ 카테고리는 설교 하나가 아니라 **예배 종류**라서 한 묶음에 영상이 여럿
+    //    들어온다. 타일에 적히는 날짜는 가장 최근이므로 **썸네일도 그 날짜 것**
+    //    이라야 짝이 맞는다 (v26-0922-8). 예전엔 먼저 만난 것을 그냥 썼다.
+    if(v.yt&&(!o.yt||d>=o.ytd)){o.yt=String(v.yt);o.ytd=d;}
   });
   const a=[...g.values()];
   if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
