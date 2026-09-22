@@ -896,4 +896,60 @@ console.log('\n시나리오 19 — 상황/필요 · 묵상 질문 타일');
         ['today','insight','need','ask','rhythm','last']);
 }
 
+// ═══ 20. 특별 글씨체 · 삽화 · 썸네일 (v26-0922-6, HB 1·2·4·5·6·7·8) ═══
+console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
+{
+  APP_PRODUCT='sweeter';
+  ST={settings:{propTitleFonts:['brush']},verseKeepLog:{}};
+  _swHandFontKey='';
+  const V3=(ref,o)=>Object.assign({idx:0,cat:'주일예배',topic:'제자의 정체성',
+    krText:ref+' 본문',ref,tags:[],hi:'소금과 빛',d:'2026-09-21',pid:'P1',kind:'prop',
+    sit:[],q:''},o||{});
+
+  // ① '지금 이런 마음이라면' 타이틀도 판 글씨체로
+  VERSES=[V3('마 5:13',{sit:['기다림']})];
+  LIKE={};MEM={};DEEP={};EVEN={};SHARE={};
+  const fn=_swFace({k:'need',s:0,p:0});
+  sc.eq('말투에 판 글씨체를 입힌다', /class="sw-val sw-say pf-brush"/.test(fn), true);
+  // ⚠️ .sw-cell.need .sw-val 에 font-family 를 적으면 그 규칙이 이겨 글씨체가 안 먹는다
+  sc.eq('글씨체를 이길 규칙을 두지 않는다',
+        /\.sw-cell\.need \.sw-val\{[^}]*font-family/.test(SRC_DEV), false);
+
+  // ② 묵상 질문에 대표 문구를 특별 글씨체로
+  VERSES=[V3('약 1:2,4',{q:'내가 붙들고 있는 것은 무엇입니까?',hi:'여러 가지 시험'})];
+  const fa=_swFace({k:'ask',s:1,p:0});
+  sc.eq('대표 문구가 함께 뜬다', fa.includes('여러 가지 시험'), true);
+  sc.eq('그것도 판 글씨체', /class="sw-hi pf-brush"/.test(fa), true);
+  sc.eq('물음도 그대로', fa.includes('내가 붙들고 있는 것은 무엇입니까?'), true);
+
+  // ④ 최근 설교 — 유튜브 썸네일 (없으면 큰 숫자)
+  VERSES=[V3('마 5:13',{yt:'dQw4w9WgXcQ'}),V3('마 5:14',{yt:'dQw4w9WgXcQ'})];
+  const fr=_swFace({k:'recent',s:0,p:0});
+  sc.eq('썸네일을 깐다', fr.includes('i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'), true);
+  sc.eq('⭐ 못 받아도 칸이 비지 않는다', fr.includes('class="sw-big"'), true);
+  sc.eq('직선·점 그림은 뺐다', /class="sw-sig"/.test(fr), false);
+  VERSES=[V3('마 5:13',{})];
+  sc.eq('영상이 없으면 썸네일도 없다', _swFace({k:'recent',s:0,p:0}).includes('ytimg'), false);
+
+  // ⑤ 말씀 모음 — 무엇이 담겼는지 말한다 (고리 % 는 걷어냈다)
+  sc.eq('칩 이름을 바꿨다', _SW_TYPES.coll.sorts, ['많은 순','가나다']);
+  sc.eq('고리(%)는 없앴다', /function _swSigColl/.test(SRC_DEV)?_swSigHTML({k:'coll',s:0},{n:3}):'', '');
+
+  // ⑥⑦⑧ 삽화 — 성경·반응·리듬 (기존 그림은 그대로 둔 채 왼쪽 위에)
+  VERSES=[V3('로마서 8:28',{})];
+  const fb=_swFace({k:'book',s:0,p:0});
+  sc.eq('성경 타일에 책 삽화', fb.includes('class="sw-ill"'), true);
+  sc.eq('모자이크도 그대로', fb.includes('class="sw-sig"'), true);
+  LIKE={'2026-09-20':[{ref:'로마서 8:28',time:'09:00'}]};
+  const fx=_swFace({k:'react',s:0,p:0});
+  sc.eq('반응 타일에 그 갈래의 그림', fx.includes('class="sw-ill"'), true);
+  sc.eq('막대도 그대로', fx.includes('class="sw-sig"'), true);
+  const fy=_swFace({k:'rhythm',s:0,p:0});
+  sc.eq('리듬 타일에 시계', fy.includes('class="sw-ill"'), true);
+  sc.eq('격자도 그대로', fy.includes('class="sw-sig"'), true);
+  // 삽화는 **왼쪽 위**, 데이터 그림은 **우상단** — 서로 겹치지 않는다
+  sc.eq('삽화는 왼쪽', /\.sw-ill\{position:absolute;left:12px/.test(SRC_DEV), true);
+  sc.eq('데이터 그림은 오른쪽', /\.sw-sig\{position:absolute;right:12px/.test(SRC_DEV), true);
+}
+
 sc.done();
