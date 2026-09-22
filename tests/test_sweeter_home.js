@@ -278,7 +278,12 @@ console.log('\n시나리오 7 — 트랙으로 넘긴다 (설정창 탭과 같�
   //    다음 값이 늦게 나타났다 (HB 신고 26-0830-7). 이전·지금·다음 세 칸을
   //    한 줄에 붙여 놓고 통째로 밀면 빈틈도 페이드도 없다.
   sc.eq('트랙이 있다', SRC_DEV.includes('.sw-track{position:absolute;inset:0;display:flex;width:300%;'), true);
-  sc.eq('가운데 칸을 보여 준다', SRC_DEV.includes('transform:translateX(-33.3333%);'), true);
+  // ⚠️ 33.3333% 가 아니라 **calc(100%/3)** 이다 (v26-0922-11, HB: "브라우저
+  //    사이즈에 따라 좌우 글자가 좀 잘리기도 해"). 33.3333%×3 은 300% 에서
+  //    0.0001% 가 모자라, 폭에 따라 칸 경계가 어긋나 글자 끝이 잘렸다.
+  sc.eq('가운데 칸을 보여 준다', SRC_DEV.includes('transform:translateX(calc(-100% / 3));'), true);
+  sc.eq('칸 폭도 같은 셈으로', SRC_DEV.includes('.sw-cell{width:calc(100% / 3);'), true);
+  sc.eq('어림수는 남기지 않는다', SRC_DEV.includes('33.3333%'), false);
   sc.eq('설정창 탭과 같은 시간·가속도',
         SRC_DEV.includes("tr.style.transition='transform .22s cubic-bezier(.4,0,.2,1)';"), true);
   sc.eq('손가락을 1:1 로 따라간다', SRC_DEV.includes('_swTrackTo(_swTrack(_swG.el),can?dx:dx*0.25,false);'), true);
@@ -672,8 +677,19 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
         /\.sw-big\{[^}]*opacity:\.09;\}/.test(SRC_DEV), true);
   // ⚠️ 큰 숫자·머리말은 칸의 **위쪽**에 둔다 — 내용이 아래로 붙으므로 아래에
   //    두면 글자와 겹쳐 둘 다 흐려진다 (첫 시안에서 그랬다).
-  sc.eq('큰 숫자는 위쪽에', /\.sw-big\{[^}]*top:-6px/.test(SRC_DEV), true);
-  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:absolute;[^}]*top:0/.test(SRC_DEV), true);
+  // ⚠️ v26-0922-11 — 칸(.sw-cell)이 타일을 통째로 덮게 되면서, 칸 위쪽에 붙는
+  //    장식은 이름줄 높이(--sw-ct)만큼 내려와야 이름줄과 안 겹친다.
+  sc.eq('큰 숫자는 위쪽에', /\.sw-big\{[^}]*top:calc\(var\(--sw-ct,0px\) - 6px\)/.test(SRC_DEV), true);
+  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:absolute;[^}]*top:var\(--sw-ct,0px\)/.test(SRC_DEV), true);
+  // ⚠️⚠️ 이름줄·점줄 높이와 칸 여백은 **같은 값**이라야 한다. 어긋나면 글자가
+  //    이름줄·점줄과 겹친다 (HB 2 — "좌상단 글자와 타이틀이 겹쳐보이는 곳도 있어").
+  sc.eq('띠가 타일을 통째로 덮는다',
+        /\.sw-trackwrap\{[^}]*margin:calc\(0px - var\(--sw-ct,0px\)\) -13px calc\(0px - var\(--sw-cb,0px\)\)/.test(SRC_DEV), true);
+  sc.eq('칸은 그만큼 안쪽 여백을 둔다',
+        /\.sw-cell\{[^}]*padding:var\(--sw-ct,0px\) 13px var\(--sw-cb,0px\)/.test(SRC_DEV), true);
+  sc.eq('이름줄 높이를 못박았다', /\.sw-lab\{[^}]*height:20px/.test(SRC_DEV), true);
+  sc.eq('이름줄은 사진 위에', /\.sw-lab\{[^}]*z-index:2/.test(SRC_DEV), true);
+  sc.eq('점줄도 사진 위에', /\.sw-pips\{[^}]*z-index:2/.test(SRC_DEV), true);
   // 값이 없으면 예전처럼 까닭을 적는다 (아랫줄도 안 그린다)
   const hE=_swFace({k:'keep',s:0,p:0});   // 담아둔 것이 하나도 없는 타일
   sc.eq('빈 타일은 까닭만', hE.includes('sw-pips'), false);
@@ -959,6 +975,58 @@ console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
   // 삽화는 **왼쪽 위**, 데이터 그림은 **우상단** — 서로 겹치지 않는다
   sc.eq('삽화는 왼쪽', /\.sw-ill\{position:absolute;left:12px/.test(SRC_DEV), true);
   sc.eq('데이터 그림은 오른쪽', /\.sw-sig\{position:absolute;right:12px/.test(SRC_DEV), true);
+}
+
+// ═══ 21. PC 판 늘리기 · 꺽쇠 · 표지 카드 열기 (v26-0922-11, HB 2~6) ═══
+console.log('\n시나리오 21 — PC 열 확장 · 꺽쇠 · 표지 카드 · 저장 타일 미끄러짐');
+{
+  APP_PRODUCT='sweeter';
+  ST={settings:{propTitleFonts:['brush']},verseKeepLog:{}};
+  const V4=(ref,o)=>Object.assign({idx:0,cat:'주일예배',topic:'제자의 정체성',
+    krText:ref+' 본문',ref,tags:[],hi:'',d:'2026-09-21',pid:'P'+ref,kind:'prop',
+    sit:[],q:''},o||{});
+
+  // ④ 넓어지면 열이 는다 — HB: "타일이 하나하나가 무한정 커지니까 에러난 것 같이"
+  sc.eq('좁을 땐 두 열',
+    /\.sw-board\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/.test(SRC_DEV), true);
+  [[560,3],[780,4],[1020,5],[1280,6],[1560,7]].forEach(([w,c])=>{
+    sc.eq(w+'px 부터 '+c+'열',
+      SRC_DEV.includes('@media (min-width:'+w+'px){ .sw-board{grid-template-columns:repeat('+c+',minmax(0,1fr));} }'), true);
+  });
+  // ⚠️ 행 높이는 여전히 **타일 하나의 실제 너비**다 → 열이 늘어도 정사각이 지켜진다
+  sc.eq('행 높이는 재서 넣는다', SRC_DEV.includes("b.style.setProperty('--sw-cell',Math.round(w)+'px')"), true);
+
+  // ⑤ PC 꺽쇠 — 값이 둘 이상일 때만, 마우스가 있는 기기에서만
+  LIKE={};MEM={};DEEP={};EVEN={};SHARE={};
+  VERSES=[V4('마태복음 5:13'),V4('로마서 8:28'),V4('요한복음 1:1')];
+  const f2=_swFace({k:'book',s:0,p:0});
+  VERSES=[V4('마태복음 5:13')];
+  const f1=_swFace({k:'book',s:0,p:0});
+  sc.eq('값이 둘 이상이면 꺽쇠를 단다', f2.includes('data-swnav="-1"')&&f2.includes('data-swnav="1"'), true);
+  sc.eq('값이 하나면 안 단다', f1.includes('data-swnav'), false);
+  // ⚠️ 트랙 **바깥**이라야 값이 넘어가도 제자리에 있는다
+  sc.eq('꺽쇠는 트랙 바깥', f2.indexOf('data-swnav')>f2.indexOf('</div></div>'), true);
+  sc.eq('손가락 기기에는 아예 없다', /\.sw-nav\{display:none;\}/.test(SRC_DEV), true);
+  sc.eq('마우스가 있을 때만 켠다', /@media \(hover:hover\)\{\s*\.sw-nav\{display:flex/.test(SRC_DEV), true);
+  sc.eq('편집 중에는 끈다', /\.sw-board\.edit \.sw-nav\{display:none;\}/.test(SRC_DEV), true);
+  // 그림은 말씀 카드의 것을 그대로 쓴다 (손으로 옮겨 적지 않는다)
+  sc.eq('꺽쇠 그림은 카드 것을 쓴다', /function _swArrowHTML\(dir\)\{\s*try\{return dir<0\?_VC_ARROW_L:_VC_ARROW_R;/.test(SRC_DEV), true);
+  sc.eq('한 칸 넘기기가 있다', typeof _swStep, 'function');
+
+  // ③ '오늘의 말씀'을 누르면 열린다
+  // ⚠️ _swVersesFor 에는 today 가 없다 — _swTileOpen 에서 잡지 못하면 빈 목록이
+  //    되어 "그 말씀들을 찾지 못했어요" 만 뜬다 (HB 신고).
+  sc.eq('표지 카드도 말씀 목록으로',
+    SRC_DEV.includes("if(t.k==='today'||t.k==='last'||t.k==='keep'){"), true);
+  // ⚠️ _swVersesFor 가 today 를 모른다는 것이 이 고침의 전제다 — 그 함수 안을 본다
+  sc.eq('_swVersesFor 는 여전히 today 를 모른다',
+    /function _swVersesFor\(t,cur\)\{[\s\S]*?\n\}/.exec(SRC_DEV)[0].includes("t.k==='today'"), false);
+
+  // ⑥ '저장' 타일만 드드드득 — 손가락이 움직일 때마다 띠를 다시 세던 것
+  sc.eq('띠 길이는 몸짓 시작 때 한 번만', SRC_DEV.includes('const _n0=(()=>{try{return _swStrip(_SW_TILES[i]).length;}catch(_){return 0;}})();'), true);
+  sc.eq('움직일 때는 세어 둔 값을 쓴다', SRC_DEV.includes('const t=_SW_TILES[_swG.i],n=_swG.n||0;'), true);
+  sc.eq('옛 길은 없앴다', SRC_DEV.includes('const t=_SW_TILES[_swG.i],n=_swStrip(t).length;'), false);
+  sc.eq('마무리도 세어 둔 값으로', SRC_DEV.includes('const n=_swG.n||0, dir=dx<0?1:-1;'), true);
 }
 
 sc.done();
