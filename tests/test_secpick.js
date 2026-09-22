@@ -224,4 +224,42 @@ console.log('\n시나리오 9 — 여는 방식은 로고 메뉴와 같다');
   sc.eq('판 안의 목록은 두 줄까지', /\.secpick-items\{[^}]*-webkit-line-clamp:2/.test(SRC), true);
 }
 
+console.log('\n시나리오 10 — 처음 여는 메뉴도 제 높이로 열린다 (2026-09-22 HB 신고)');
+{
+  // 증상 — 페이지를 새로 연 뒤 **첫 번째** 할일 메뉴만 세 줄짜리로 접힌 채
+  //        열리고 그 안에서 스크롤됐다. 두 번째부터는 멀쩡했다.
+  // 까닭 — 자리를 정하기 전의 #taskMenu 는 position:fixed 인데 top 이 없어서
+  //        문서 흐름상의 자리(화면 한참 아래)에 놓인다. 거기서 높이를 재면
+  //        "화면 아래까지 남은 높이" 가 거의 0 이다. v26-0917-1 에서 구간 판을
+  //        넣으며 _secPickBack() → _menuFitHeight() 가 **자리를 정하기 전에**
+  //        불리면서 생긴 어긋남이다. 두 번째부터 멀쩡했던 것은 지난번 top 이
+  //        남아 있었기 때문이다.
+  // 그래서 이 시나리오는 **순서**를 못 박는다.
+  const open = slice('function openTaskMenu(', '// ═══════ 연락처');
+  const iClear = open.indexOf("menu.style.maxHeight='';");
+  const iMeasure = open.indexOf('menu.offsetHeight');
+  const iTop = open.indexOf("menu.style.top=top+'px';");
+  const iFit = open.indexOf('_menuFitHeight(menu,');
+
+  sc.eq('지난번 높이 제한을 먼저 벗긴다', iClear >= 0, true);
+  sc.eq('벗긴 뒤에 진짜 높이를 잰다', iClear < iMeasure, true);
+  sc.eq('높이 맞추기는 자리를 정한 뒤에', iTop >= 0 && iFit > iTop, true);
+  // 여는 애니메이션(scale .95) 한가운데서 재면 실제보다 낮게 잡힌다 —
+  // 자리는 방금 정했으니 다시 재지 말고 그 값을 넘긴다
+  sc.eq('정한 자리를 그대로 넘긴다', open.includes('_menuFitHeight(menu,top);'), true);
+  sc.eq('자리를 정하기 전에는 높이를 재지 않는다',
+    open.slice(0, iTop).indexOf('_menuFitHeight') < 0, true);
+  sc.eq('구간 판 되돌리기도 여기선 높이를 건드리지 않는다',
+    open.includes('_secPickBack(true);'), true);
+
+  const back = slice('function _secPickBack(skipFit)', 'function _secPickScheduleClose(');
+  sc.eq('되돌리기는 건너뛰기를 받는다', back.includes('if(!skipFit)_menuFitHeight('), true);
+  // 판에서 '‹ 되돌아가기' 로 돌아올 때는 메뉴가 이미 자리를 잡았으므로 재야 한다
+  sc.eq('판의 되돌아가기 줄은 그대로 높이를 잰다',
+    /onclick="_secPickBack\(\)"/.test(SRC), true);
+  // 닫는 길에서는 곧 감출 메뉴라 높이를 새로 쓰지 않는다
+  sc.eq('닫을 때는 높이를 새로 쓰지 않는다',
+    slice('function closeTaskMenu()', 'function toggleDailyRepeat').includes('_secPickBack(true);'), true);
+}
+
 sc.done();
