@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-16  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-17  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4914,6 +4914,33 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    ⚠️ 표시는 <html data-product="sweeter"> 에 달린다. 빌드 스크립트가 박는다 —
       JS 로 붙이면 첫 그림에 늦어 깜빡인다 (v26-0921-4 에서 겪은 그것).
    ══════════════════════════════════════════════════════════ */
+/* ══ 첫 그림 (v26-0922-17, HB: "첫 화면 로딩 때 빈 화면이 너무 길어") ══════
+   ⚠️⚠️ 이것은 **본문(1.4MB)이 읽히기 전에** 떠야 한다. 그래서 JS 가 만들지
+      않고 HTML 에 박아 둔다 — 브라우저는 <body> 를 만나는 즉시 그린다.
+      JS 로 만들면 그 JS 가 읽힐 때까지 또 빈 화면이라 아무 소용이 없다.
+   ⚠️ **Sweeter 에서만** 뜬다. BLOCK7 의 첫 그림은 건드리지 않는다.
+   ⚠️ 기다리는 동안 볼 것은 **말씀 한 구절**이다 — 앱이 하려는 일 그 자체라
+      광고도 로딩바도 아니다. 구절은 본문에 이미 박혀 있는 것을 쓴다(네비게이토). */
+#swBoot{display:none;}
+html[data-product="sweeter"] #swBoot{
+  display:flex;position:fixed;inset:0;z-index:400;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:13px;padding:0 34px;background:var(--bg);color:var(--tx);
+  transition:opacity .5s ease;}
+html[data-product="sweeter"] #swBoot.off{opacity:0;pointer-events:none;}
+.swboot-mark{font:700 18px/1 var(--font-ui);letter-spacing:.01em;color:var(--ac-tx);opacity:.92;}
+.swboot-v{font-family:var(--font-display);font-size:16.5px;line-height:1.8;text-align:center;
+  word-break:keep-all;color:var(--tx2);max-width:20em;}
+.swboot-r{font:500 10.5px/1 var(--font-ui);letter-spacing:.07em;color:var(--tx3);}
+.swboot-bar{width:72px;height:2px;border-radius:2px;background:var(--bd);
+  overflow:hidden;margin-top:8px;}
+.swboot-bar i{display:block;width:38%;height:100%;border-radius:2px;background:var(--ac);
+  animation:swbootSlide 1.2s ease-in-out infinite;}
+@keyframes swbootSlide{0%{transform:translateX(-110%)}100%{transform:translateX(290%)}}
+@media (prefers-reduced-motion:reduce){.swboot-bar i{animation:none;}}
+/* Even Deeper 는 **개발자 계정에만** (v26-0922-17, HB). 켜는 자리는
+   <html data-even="1"> 하나다 — _syncEvenVisibility 가 붙였다 뗀다. */
+html:not([data-even="1"]) .even-only{display:none!important;}
 html[data-product="sweeter"] [data-prod="b7"]{display:none!important;}
 html:not([data-product="sweeter"]) [data-prod="sw"]{display:none!important;}
 
@@ -5480,8 +5507,12 @@ html[data-theme="light"] .sw-offveil{
     top:var(--sw-ct,26px);bottom:var(--sw-cb,26px);width:26%;z-index:3;
     background:none;border:0;padding:0;cursor:pointer;color:var(--tx);
     opacity:0;transition:opacity .15s ease;-webkit-tap-highlight-color:transparent;}
-  .sw-tile:hover .sw-nav{opacity:.28;}
-  .sw-nav:hover{opacity:.9;}
+  /* ⚠️ 타일 위 = 있다는 것만 알린다 / 꺽쇠 자리 안 = **누를 수 있다**는 신호.
+     둘의 차이가 뚜렷해야 손이 어디로 갈지 안다 (v26-0922-17, HB). */
+  .sw-tile:hover .sw-nav{opacity:.26;}
+  .sw-nav:hover{opacity:1;}
+  .sw-nav:hover svg{transform:scale(1.22);}
+  .sw-nav svg{transition:transform .14s ease;}
   .sw-nav-l{left:0;justify-content:flex-start;padding-left:6px;}
   .sw-nav-r{right:0;justify-content:flex-end;padding-right:6px;}
   .sw-board.edit .sw-nav{display:none;}
@@ -5626,7 +5657,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-16";
+const APP_VERSION = "v. 26-0922-17";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5772,6 +5803,42 @@ window._fbScriptsReady=new Promise(resolve=>{
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js" defer onload="window._fbScriptLoaded()"></script>
 </head>
 <body>
+
+<!-- 첫 그림 — 본문이 읽히기 전에 먼저 뜬다 (위 #swBoot 주석 참고).
+     Sweeter 에서만 보이고, 판이 서는 순간 _swBootOff() 가 걷는다. -->
+<div id="swBoot" aria-hidden="true">
+  <div class="swboot-mark">Sweeter</div>
+  <div class="swboot-v" id="swBootV">주의 말씀은 내 발에 등이요 내 길에 빛이니이다</div>
+  <div class="swboot-r" id="swBootR">시편 119:105</div>
+  <div class="swboot-bar"><i></i></div>
+</div>
+<script>
+// ⚠️ 여기는 **아주 짧아야 한다.** 본문보다 먼저 도는 자리라, 길어지면
+//    첫 그림이 늦어져 하려던 일과 반대가 된다.
+(function(){
+  var V=[['주의 말씀은 내 발에 등이요 내 길에 빛이니이다','시편 119:105'],
+    ['수고하고 무거운 짐 진 자들아 다 내게로 오라 내가 너희를 쉬게 하리라','마태복음 11:28'],
+    ['여호와는 나의 목자시니 내게 부족함이 없으리로다','시편 23:1'],
+    ['너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라','잠언 3:5'],
+    ['내가 네게 명령한 것이 아니냐 강하고 담대하라','여호수아 1:9'],
+    ['내게 능력 주시는 자 안에서 내가 모든 것을 할 수 있느니라','빌립보서 4:13'],
+    ['사람이 떡으로만 살 것이 아니요 하나님의 입으로부터 나오는 모든 말씀으로 살 것이라','마태복음 4:4'],
+    ['너희는 먼저 그의 나라와 그의 의를 구하라','마태복음 6:33']];
+  try{
+    var d=new Date(), k=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%V.length;
+    document.getElementById('swBootV').textContent=V[k][0];
+    document.getElementById('swBootR').textContent=V[k][1];
+  }catch(e){}
+  // 판이 서면 _swMount 가 부른다. 혹시 본문이 멈춰도 갇히지 않게 여기서도 건다.
+  window._swBootOff=function(){
+    var b=document.getElementById('swBoot');
+    if(!b||b.classList.contains('off'))return;
+    b.classList.add('off');
+    setTimeout(function(){b.style.display='none';},600);
+  };
+  setTimeout(function(){window._swBootOff();},9000);
+})();
+</script>
 
 <!-- 완료 효과(Glow/Ripple)의 광학 왜곡용 SVG 필터. PC·안드로이드 크롬에서만
      보인다 — iOS Safari 는 backdrop-filter 의 url() SVG 필터 참조를 지원하지
@@ -7349,7 +7416,7 @@ try{
     <div class="task-menu-item" onclick="openVerseAggPopup('deeper')">
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg></span>Deeper
     </div>
-    <div class="task-menu-item" onclick="openVerseAggPopup('even')">
+    <div class="task-menu-item even-only" onclick="openVerseAggPopup('even')">
       <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper
     </div>
   </div>
@@ -7483,7 +7550,7 @@ try{
   <div class="task-menu-item" onclick="closeVerseMemMenu();openDeeperFromRef(_vfCurrentVerse().ref)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg></span>Deeper…
   </div>
-  <div class="task-menu-item" onclick="closeVerseMemMenu();openEvenDeeperFromRef(_vfCurrentVerse().ref)">
+  <div class="task-menu-item even-only" onclick="closeVerseMemMenu();openEvenDeeperFromRef(_vfCurrentVerse().ref)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…
   </div>
   <div class="task-menu-item" id="verseMemShareItem" onclick="closeVerseMemMenu();openVfShareFor(_vfCurrentVerse())">
@@ -7852,7 +7919,7 @@ try{
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>
       </span><span class="vf-cnt" id="vfCntdeeper">0</span>
     </button>
-    <button class="vf-act vf-act-even" id="vfActeven" onclick="vfAct('even')" aria-label="Even Deeper">
+    <button class="vf-act vf-act-even even-only" id="vfActeven" onclick="vfAct('even')" aria-label="Even Deeper">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>
@@ -7978,7 +8045,7 @@ try{
   <div class="task-menu-item" onclick="vliAction('keep')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg></span>저장</div>
   <div class="task-menu-item" id="vliMemItem" onclick="vliAction('mem')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.9 3.9L16 5.3"/></svg></span>암송 완료 체크</div>
   <div class="task-menu-item" onclick="vliAction('deeper')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg></span>Deeper…</div>
-  <div class="task-menu-item" onclick="vliAction('even')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…</div>
+  <div class="task-menu-item even-only" onclick="vliAction('even')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…</div>
   <div class="task-menu-item" onclick="vliAction('share')"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg></span>공유</div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" onclick="openVerseCollFromListMenu()"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="2" x2="10" y2="18"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span>말씀 설정</div>
@@ -12250,6 +12317,8 @@ const VP_ORDERS=[
   {v:'random',l:'랜덤'},{v:'recent',l:'최신순'},{v:'added',l:'등록순'},{v:'bible',l:'성경순'},
   {v:'like',l:'좋아요순'},{v:'mem',l:'암송순'},{v:'deeper',l:'Deeper순'},{v:'even',l:'Even순'}
 ];
+// 고르개에 실제로 내놓을 것 — 'Even순' 은 개발자 계정에만 (v26-0922-17, HB)
+function _vpOrders(){return VP_ORDERS.filter(o=>o.v!=='even'||_evenOn());}
 // 시트 기본값 — 오전 6시부터 오후 6시까지 1시간마다
 const VP_DEFAULTS={enabled:false,order:'random',timesOn:false,times:['08:00'],
   interval:{on:false,from:'06:00',to:'18:00',everyMin:60},days:[0,1,2,3,4,5,6]};
@@ -12325,7 +12394,7 @@ function _syncVersePushUI(){
   const v=getVersePush();
   if(typeof _syncDeviceNotifyUI==='function')_syncDeviceNotifyUI();
   const or=document.getElementById('vpOrderRow');
-  if(or)or.innerHTML=VP_ORDERS.map(o=>
+  if(or)or.innerHTML=_vpOrders().map(o=>
     `<button class="settings-btn${o.v===v.order?' on':''}" style="font-size:11px;padding:7px 4px;" onclick="setVersePush('order','${o.v}')">${o.l}</button>`
   ).join('');
   // ① 정해진 시각
@@ -13055,7 +13124,7 @@ function showMemorizationPopup(dateKey,secId){
         <span style="display:flex;align-items:center;gap:4px;">
         ${bskUrl?`<button onclick="recordVerseDeeper('${v.ref}');BibleLinkProvider.open('${bskUrl}')"
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:2px 7px;cursor:pointer;-webkit-tap-highlight-color:transparent;">Deeper…</button>`:''}
-        <button onclick="openEvenDeeperFromRef('${v.ref}')"
+        <button class="even-only" onclick="openEvenDeeperFromRef('${v.ref}')"
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:2px 7px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">Even Deeper…</button>
         </span>
       </div>`;
@@ -13338,7 +13407,7 @@ function _renderMemHistoryList(){
         <span style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
         ${bskUrl?`<button onclick="event.stopPropagation();recordVerseDeeper('${v.ref}');BibleLinkProvider.open('${bskUrl}')"
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:1px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;">Deeper…</button>`:''}
-        <button onclick="event.stopPropagation();openEvenDeeperFromRef('${v.ref}')"
+        <button class="even-only" onclick="event.stopPropagation();openEvenDeeperFromRef('${v.ref}')"
           style="font-size:10px;color:var(--tx3);background:none;border:1px solid var(--bd2);border-radius:5px;padding:1px 6px;cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap;">Even Deeper…</button>
         </span>
       </div>`;
@@ -29082,8 +29151,23 @@ function _isDevAccount(){
 // v26-0908-4, HB 5 — id 를 하나하나 적지 않고 **클래스로 훑는다.** 설정창이
 //   늘 때마다 이 표를 고치는 것을 잊어 배지가 빠지곤 했다. 새 설정창에는
 //   settings-verbadge 클래스를 단 빈 div 한 줄만 넣으면 저절로 따라온다.
+// ── Even Deeper 는 **개발자 계정에만** 보인다 (v26-0922-17, HB) ──
+// HB: "이븐디퍼는 개발자에게만 보이는 기능인 거야. 블럭7도 스위터도.
+//      사용화면에서도, 설정에서도."
+// ⚠️⚠️ 켜고 끄는 자리는 **<html data-even="1"> 한 곳**이다. 낱낱의
+//    style.display 를 건드리지 않는다 — 다른 장치(명제에서 감추기 등)가
+//    감춰 둔 것까지 되살아난다. 감출 것에는 even-only 클래스만 붙인다.
+function _evenOn(){try{return _isDevAccount();}catch(e){return false;}}
+function _syncEvenVisibility(){
+  try{
+    const r=document.documentElement;
+    if(_evenOn())r.setAttribute('data-even','1');
+    else r.removeAttribute('data-even');
+  }catch(e){}
+}
 function _syncDevVerBadge(){
   const dev=_isDevAccount();
+  _syncEvenVisibility();      // 배지와 같은 자리에서 함께 맞춘다
   document.querySelectorAll('.settings-verbadge').forEach(el=>{
     el.style.display=dev?'':'none';
     if(dev)el.textContent=APP_VERSION;
@@ -43270,7 +43354,10 @@ function _swTags(sortIdx){
   else a.sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name,'ko'));
   return a;
 }
-// 말씀 반응: 좋아요·암송·디퍼·이븐디퍼·공유를 센다. 0 인 것은 내보내지 않는다.
+// ⚠️ _evenOn 은 이 구간 **밖**에 있다. 시험은 이 구간만 떠 가므로 없을 수
+//    있는데, 그때는 조용히 '꺼짐'으로 본다 (감추는 쪽이 안전하다).
+function _swEvenOn(){try{return _evenOn();}catch(e){return false;}}
+// 말씀 반응: 좋아요·암송·Deeper·Even Deeper·공유를 센다. 0 인 것은 내보내지 않는다.
 function _swReacts(sortIdx){
   const mon=sortIdx===1?String(_calKey()).slice(0,7):null;   // '이번 달'
   const inRange=d=>!mon||String(d).slice(0,7)===mon;
@@ -43281,10 +43368,12 @@ function _swReacts(sortIdx){
     if(!inRange(d))return;
     Object.values(day||{}).forEach(arr=>{mem+=(arr||[]).length;});
   });
+  // ⚠️ 'Even Deeper..' 는 **개발자 계정에만** 보인다 (v26-0922-17, HB).
+  //    _evenOn() 이 거짓이면 셈조차 내보내지 않는다.
   return[{name:'좋아요',kind:'like',n:cnt(getLikeLog())},
          {name:'암송',kind:'mem',n:mem},
-         {name:'디퍼',kind:'deeper',n:cnt(getDeeperLog())},
-         {name:'이븐디퍼',kind:'even',n:cnt(getEvenDeeperLog())},
+         {name:'Deeper..',kind:'deeper',n:cnt(getDeeperLog())},
+         {name:'Even Deeper..',kind:'even',n:_swEvenOn()?cnt(getEvenDeeperLog()):0},
          {name:'공유',kind:'share',n:cnt(getShareLog())}].filter(x=>x.n>0);
 }
 // ── 까닭 한 줄 (v26-0922-1, HB 2번 선택) ───────────────
@@ -43516,7 +43605,18 @@ function _swRhythm(sortIdx){
   const {g,n}=_swRhythmGrid(sortIdx);
   if(!n)return [];
   const out=[];
-  // ① 가장 자주 만나는 때
+  // ① 오늘 요일이 일주일 가운데 몇 등인가 (v26-0922-17, HB)
+  // ⚠️ '오늘' 은 판을 여는 그날이다 — 날마다 바뀐다.
+  //    같은 횟수면 같은 등수로 본다 (7번 중 3위가 둘일 수 있다).
+  const byDow=g.map(r=>r.reduce((a,b)=>a+b,0));
+  let dow=0;
+  try{const k=String(_calKey());
+    dow=new Date(+k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10)).getDay();}catch(e){dow=0;}
+  const rank=1+byDow.filter(v=>v>byDow[dow]).length;
+  out.push({name:'일주일 중 '+rank+'위',kind:'rank',n:byDow[dow],
+    cell:{d:dow,s:-1},                       // 격자에서 그 **요일 줄**에 불을 켠다
+    text:_SW_DOW[dow]+'요일은 일주일 중 '+rank+'위로 말씀을 많이 보았어요'});
+  // ② 가장 자주 만나는 때
   let best={v:0,d:0,s:0};
   g.forEach((row,d)=>row.forEach((v,si)=>{if(v>best.v)best={v,d,s:si};}));
   if(best.v)out.push({name:_SW_DOW[best.d]+'요일 '+_SW_RH_SLOTS[best.s][0],
@@ -43529,8 +43629,8 @@ function _swRhythm(sortIdx){
   out.push({name:_SW_RH_SLOTS[si][0],n:bySlot[si],
     text:_SW_RH_SLOTS[si][0]+'에 가장 많이 머물러요 — 전체의 '
       +Math.round(bySlot[si]/n*100)+'%'});
-  // ③ 모두 몇 번
-  out.push({name:'모두',n,text:'지금까지 '+n+'번 말씀을 만났어요'});
+  // ⚠️ '모두 N번' 칸은 **뺐다** (v26-0922-17, HB: "왜 있는지 모르겠어").
+  //    그 수는 말해 주는 것이 없다 — 아랫줄 개수와도 겹쳤다.
   return out;
 }
 // 리듬 그림 — 7×4 격자. 진한 칸이 자주 만나는 때다.
@@ -43541,10 +43641,15 @@ function _swSigRhythm(sortIdx,cur){
   const CW=7,CH=6,GAP=2;
   let o='<svg viewBox="0 0 '+(7*(CW+GAP))+' '+(4*(CH+GAP))+'" fill="none">';
   for(let d=0;d<7;d++)for(let si=0;si<4;si++){
-    const v=g[d][si],on=cur&&cur.d===d&&cur.s===si;
+    // ⚠️ s 가 음수면 그 **요일 줄 전체**에 불을 켠다 ('일주일 중 N위' 칸)
+    const v=g[d][si],on=!!(cur&&cur.d===d&&(cur.s<0||cur.s===si));
+    // ⚠️ 불을 켠 칸은 **기록이 없어도 보여야 한다.** 예전에는 v 가 0 이면
+    //    무조건 .1 로 깔아, '일주일 중 N위' 가 요일 줄에 불을 켜도 그 줄에서
+    //    기록이 있는 칸 하나만 보였다 (v26-0922-17).
+    const op=on?(v?1:0.42):(v?(0.2+0.6*v/max):0.1);
     o+='<rect x="'+(d*(CW+GAP))+'" y="'+(si*(CH+GAP))+'" width="'+CW+'" height="'+CH+'" rx="1.4" '
       +'fill="'+(on?'var(--ac)':'currentColor')+'" '
-      +'opacity="'+(v?(on?1:(0.2+0.6*v/max)).toFixed(2):'.1')+'"/>';
+      +'opacity="'+op.toFixed(2)+'"/>';
   }
   return _swSigWrap(o+'</svg>');
 }
@@ -44064,7 +44169,12 @@ function _swPhotoHTML(v){
   if(!src)return '';
   // ⚠️ 바탕그림이 아니라 <img> 다 (v26-0922-13) — 흐리기·물들이기를 사진에만
   //    걸어야 덮개·그레인까지 함께 흐려지지 않는다.
-  return '<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
+  // ⚠️⚠️ decoding="sync" 가 **깜빡임을 없앤다** (v26-0922-17, HB: "슬라이드 후
+  //    자리잡은 다음에 한번씩 깜빡이는 에러"). 다시 그릴 때 <img> 가 새로
+  //    만들어지는데, 그림은 이미 받아 뒀어도 **그리는 일은 다음 프레임으로
+  //    미뤄져서** 그 한 프레임 동안 칸이 사진 없이 보인다. sync 는 그리기를
+  //    먼저 끝낸 뒤 내놓는다. loading="lazy" 도 뗀다 — 보이는 자리의 사진이다.
+  return '<div class="sw-photo" aria-hidden="true"><img alt="" decoding="sync" src="'
     +_swEsc(src).replace(/"/g,'%22')+'"></div>';
 }
 
@@ -44078,6 +44188,17 @@ function _swPhotoHTML(v){
 //     책 세 권+십자가 = 말씀 모음 아이콘 · 하트/책갈피/체크/책 = 말씀 반응 단추.
 // ══════════════════════════════════════════════════════════
 const _SW_ILL={
+  // 시상대 — '일주일 중 N위' 칸 (v26-0922-17, HB 가 그림을 찍어 줬다).
+  // 가운데가 1위(가장 높고 트로피가 있다) · 왼쪽 2위 · 오른쪽 3위.
+  // ⚠️ 한 색으로만 그린다 (삽화는 opacity .14 로 옅게 깔린다).
+  podium:'<svg viewBox="0 0 24 24" fill="currentColor">'
+    +'<path d="M9.9 2.6h4.2v2.8a2.1 2.1 0 0 1-4.2 0V2.6Z"/>'
+    +'<path d="M11.4 5.9h1.2v2.2h-1.2Z"/><path d="M9.7 8.1h4.6v1.1H9.7Z"/>'
+    +'<path d="M8.6 3.1h1.1v1.1H8.6a1.5 1.5 0 0 0 1.1 1.4v1.1A2.6 2.6 0 0 1 8.6 3.1Z"/>'
+    +'<path d="M15.4 3.1h-1.1v1.1h1.1a1.5 1.5 0 0 1-1.1 1.4v1.1a2.6 2.6 0 0 0 1.1-3.6Z"/>'
+    +'<rect x="1.8" y="14.2" width="6.8" height="7" rx=".7"/>'
+    +'<rect x="8.9" y="10.3" width="6.2" height="10.9" rx=".7"/>'
+    +'<rect x="15.4" y="16.1" width="6.8" height="5.1" rx=".7"/></svg>',
   // 말씀 모음·성경 — 책 세 권 위에 십자가 (말씀 목록 좌상단의 그 아이콘)
   // ⚠️ 말씀 목록 좌상단의 **그 아이콘 그대로**다 (책 세 권 + 십자가).
   //    HB 가 직접 고른 최종본이라 다시 그리지 않는다 (tests/test_coll_btn.js).
@@ -44302,7 +44423,9 @@ function _swCellHTML(t,it,i){
   // 리듬 — 격자가 곧 내용이다 (글자는 그것을 사람 말로 옮긴 것)
   if(t.k==='rhythm')
     return '<div class="sw-cell rhythm">'
-      +_swSigRhythm(t.s%_SW_TYPES.rhythm.sorts.length,g.cell)+_swIllHTML('clock')
+      // ⚠️ 삽화는 **칸마다 다르다** — 등수 칸은 시상대, 나머지는 시계 (HB)
+      +_swSigRhythm(t.s%_SW_TYPES.rhythm.sorts.length,g.cell)
+      +_swIllHTML(g.kind==='rank'?'podium':'clock')
       +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc(g.text)+'</div></div>';
   // ⚠️ 그림과 큰 숫자는 **같은 자리(우상단)** 다. 둘을 같이 그리면 겹쳐서 둘 다
@@ -44310,7 +44433,7 @@ function _swCellHTML(t,it,i){
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
   if(t.k==='recent'){
     // 유튜브 썸네일이 있으면 그것이 이 칸의 얼굴이다 (없으면 예전처럼 큰 숫자)
-    const th=(g.yt&&_swPhOn(t))?('<div class="sw-photo sw-yt" aria-hidden="true"><img alt="" loading="lazy" src="'
+    const th=(g.yt&&_swPhOn(t))?('<div class="sw-photo sw-yt" aria-hidden="true"><img alt="" decoding="sync" src="'
       +_SW_YT_THUMB[0]+_swEsc(g.yt)+'/'+_SW_YT_THUMB[1]
       +'" onerror="_swYtThumbFail(this)"></div>'):'';
     // ⚠️ 큰 숫자를 **늘** 깔아 둔다. 썸네일이 안 오는 기기·망에서도 칸이 비지
@@ -45564,6 +45687,8 @@ function _swMount(){
   _swInitGestures();
   _swRender();
   _swSyncNotice();
+  // 첫 그림을 걷는다 — 판이 실제로 선 바로 그 순간이다 (v26-0922-17, HB)
+  try{window._swBootOff&&window._swBootOff();}catch(e){}
   // ── 좌상단 로고 — BLOCK7 과 **같은 손버릇**이다 (v26-0921-1, HB) ──
   //    탭 = 말씀 메뉴 · 롱터치/우클릭 = 말씀 모음 전체 업데이트.
   // ⚠️ 예전에는 제목 롱터치가 '다시 가져오기' 였는데 **뗐다** — 그 자리가

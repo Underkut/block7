@@ -336,10 +336,12 @@ console.log('\n시나리오 11 — 토큰 구조');
   //    그건 테마와 무관하고 !important 가 **꼭 필요하다** — JS 가 인라인으로
   //    display 를 건드리는 자리들을 확실히 이겨야 하기 때문이다.
   //    그래서 그 둘만 빼고 센다. (늘어나면 이 검사가 바로 걸린다)
+  //    v26-0922-17 에 Even Deeper 감추기 한 줄이 더 들어왔다 — 역시 테마와
+  //    무관하고, JS 가 인라인으로 display 를 건드리는 자리를 이겨야 한다.
   const _impo=(slice('.theme-picker{', '</style>').match(/[^\n]*!important[^\n]*/g) || []);
   sc.eq('!important 를 새로 뿌리지 않았다',
-        _impo.filter(l=>!/data-prod=/.test(l)).length, 0);
-  sc.eq('제품별 감추기 두 줄만 예외다', _impo.length, 2);
+        _impo.filter(l=>!/data-prod=|even-only/.test(l)).length, 0);
+  sc.eq('감추기 세 줄만 예외다', _impo.length, 3);
 }
 
 // ═══ 12. 선택·활성 틴트가 눈에 보이는가 (--ac-tint-k) ═══
