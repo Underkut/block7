@@ -184,7 +184,11 @@ console.log('\n시나리오 8 — 시트 열 읽기');
   sc.eq('행에서 읽는다', SRC.includes("hi:String(r[hiCol]||'').trim(),"), true);
   // ⚠️ 시트를 채워 나가는 중이라, 다시 동기화하면 나중에 적은 것도 반영돼야 한다
   sc.eq('다시 동기화하면 갱신된다', SRC.includes("String(ex.hi||'')!==newHi"), true);
-  sc.eq('갱신할 때 실제로 넣는다', SRC.includes('ex.tags=newTags;ex.hi=newHi;'), true);
+  // ⚠️ v26-0922-4 — 한 모음에 시트를 둘 연결할 수 있게 되면서, **그 시트에 있던
+  //    열만** 덮어쓰도록 바뀌었다 (없는 열을 빈 값으로 덮으면 먼저 받아 둔 태그·
+  //    강조 문구가 통째로 날아간다). 그래서 한 줄이 조건 두 줄로 갈렸다.
+  sc.eq('갱신할 때 실제로 넣는다',
+        /if\(tagsChanged\)ex\.tags=newTags;\s*\n\s*if\(hiChanged\)ex\.hi=newHi;/.test(SRC), true);
   // v26-0831-18 — 명제는 날짜를 꾸며 내지 않아서 이 줄이 두 줄로 나뉘었다
   sc.eq('새로 추가할 때도', SRC.includes("tags:newTags,\n                hi:String(it.hi||''),src:'google'"), true);
   // 개발자용 '그 셀로 열기' 도 G열까지
@@ -455,7 +459,8 @@ console.log('\n시나리오 13 — 알림 경로');
   sc.eq('갱신도 같은 길',
         SRC.includes("_syncSheetVersesIntoColl(c,d.verses||[],{kind:'share'})"), true);
   sc.eq('갱신이 강조를 넣는다', SRC.includes("hi:String(it.hi||'')"), true);
-  sc.eq('갱신이 강조를 고친다', SRC.includes('ex.tags=newTags;ex.hi=newHi;'), true);
+  sc.eq('갱신이 강조를 고친다',
+        /if\(hiChanged\)ex\.hi=newHi;/.test(SRC), true);
 
   // ⚠️ 0813-4 — 받는 쪽만 고쳐서는 소용이 없었다. 게시가 **편집창을 닫거나
   //    공유창을 열 때만** 일어나서, 시트에 나중에 적은 강조 문구가 구독자에게
