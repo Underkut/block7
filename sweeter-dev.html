@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-22  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-23  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -424,9 +424,20 @@ function applyThemeVars(id,mode,el){
   return t;
 }
 // ── 조기 적용 (첫 페인트 전) ──
+// ⚠️⚠️ 저장 칸 이름은 **제품마다 다르다** (LS_KEY = b7v1[_제품][_dev]).
+//    여기서 'b7v1' 만 읽던 탓에 Sweeter 가 **BLOCK7 의 테마**로 한 번 그려졌다가
+//    본문이 읽힌 뒤에야 제 색으로 바뀌었다 — 그것이 HB 가 본 "블럭 세븐 기본
+//    색깔이 잠시 번쩍" 이다 (v26-0922-23). theme·themePresetId 는 _PRODUCT_SCOPED
+//    에 들어 있어 제품별로 갈린다.
+//    여기는 본문(1.4MB)보다 먼저 도는 자리라 LS_KEY 를 쓸 수 없다. 그래서 규칙을
+//    손으로 옮겨 적는다 — LS_KEY 쪽을 고치면 여기도 함께 고쳐야 한다
+//    (tests/test_sweeter_home.js 시나리오 30 이 지킨다).
 (function(){
   try{
-    const raw=localStorage.getItem('b7v1');
+    const _p=document.documentElement.getAttribute('data-product');
+    const _base=(_p&&_p!=='block7'?'b7v1_'+_p:'b7v1')
+              + (/-dev\.html$/.test(location.pathname)?'_dev':'');
+    const raw=localStorage.getItem(_base);
     const st=raw?JSON.parse(raw):null;
     const theme=st&&st.settings&&st.settings.theme;
     let effective=theme||'dark';
@@ -4922,22 +4933,43 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    ⚠️ 기다리는 동안 볼 것은 **말씀 한 구절**이다 — 앱이 하려는 일 그 자체라
       광고도 로딩바도 아니다. 구절은 본문에 이미 박혀 있는 것을 쓴다(네비게이토). */
 #swBoot{display:none;}
+/* ── 첫 그림의 색은 **테마를 따르지 않는다** (v26-0922-23, HB) ────────────
+   까닭 둘.
+   ① 테마 34벌을 따라다니면 벌집이 초록도 되고 보라도 된다 —
+      HB: "이 벌집색과 로딩 화면은 테마 상관없이 고정으로 해."
+   ② 첫 그림은 본문이 읽히기 **전에** 뜨는데 그때 --bg·--ac 는 아직 제 값이
+      아니어서 블럭7 기본색이 한 번 번쩍했다 (HB 지적).
+   쓰는 색은 **로고에 있는 두 색뿐**이다 — 진한 호박갈색 #a04808 · 골드 #f2a633.
+   (icon-sweeter.png 에서 직접 뽑은 값: 바탕 #9f4409 · 글자 #f2a633)
+   밝고 어두움만 갈린다. data-theme 은 첫 페인트 전에 정해진다 — 머릿말의
+   '조기 적용'이 그 일을 한다. */
+#swBoot{
+  --sb-bg:#14100c; --sb-tx:#e6d4b4; --sb-tx3:#9c8462;
+  --sb-ac:#f2a633; --sb-bd:rgba(242,166,51,.24);
+}
+html[data-theme="light"] #swBoot{
+  --sb-bg:#fdf3e0; --sb-tx:#6d4414; --sb-tx3:#b08a5f;
+  --sb-ac:#a04808; --sb-bd:rgba(160,72,8,.26);
+}
 html[data-product="sweeter"] #swBoot{
   display:flex;position:fixed;inset:0;z-index:400;
   flex-direction:column;align-items:center;justify-content:center;
-  gap:13px;padding:0 34px;background:var(--bg);color:var(--tx);
+  gap:13px;padding:0 34px;background:var(--sb-bg);color:var(--sb-tx);
   transition:opacity .3s ease;}
 html[data-product="sweeter"] #swBoot.off{opacity:0;pointer-events:none;}
 /* ⚠️ 영어 구절일 때는 이름을 **뺀다** (HB) — 구절 안에 이미 'sweeter' 가
    강조되어 있어 같은 말이 두 번 읽힌다. */
-.swboot-mark{font:700 18px/1 var(--font-ui);letter-spacing:.01em;color:var(--ac-tx);opacity:.92;}
-#swBoot.en .swboot-mark{display:none;}
+.swboot-mark{font:700 18px/1 var(--font-ui);letter-spacing:.01em;color:var(--sb-ac);opacity:.92;}
+/* ⚠️ **자리는 비워 둔다**(visibility). display:none 으로 지우면 이름이 붙는 그
+   찰나에 아래 글이 위로 튀어 Y 자리가 한 번 흔들린다
+   (v26-0922-23, HB: "심지어 Y축 수직 위치도 달라"). */
+#swBoot.en .swboot-mark{visibility:hidden;}
 .swboot-v{font-family:var(--font-display);font-size:16.5px;line-height:1.8;text-align:center;
-  word-break:keep-all;color:var(--tx2);max-width:20em;}
-/* ⚠️ 강조는 **--ac-tx** 로 (--ac 는 면을 칠하는 색이다 — 테마 34벌 규칙,
-   tests/test_theme_preset.js 가 지킨다) */
-.swboot-v b{color:var(--ac-tx);font-weight:600;}
-.swboot-r{font:500 10.5px/1 var(--font-ui);letter-spacing:.07em;color:var(--tx3);}
+  word-break:keep-all;color:var(--sb-tx);max-width:20em;}
+/* ⚠️ 여기 강조는 테마의 --ac-tx 가 아니라 **고정색**이다 (위 까닭 참고).
+   테마 34벌 규칙(면은 --ac, 글자는 --ac-tx)은 #swBoot 밖에서만 다툰다. */
+.swboot-v b{color:var(--sb-ac);font-weight:600;}
+.swboot-r{font:500 10.5px/1 var(--font-ui);letter-spacing:.07em;color:var(--sb-tx3);}
 /* ── 꿀벌집 — 아래에서부터 한 칸씩 차오른다 (v26-0922-22, HB) ──────
    가로선 대신이다. 육각형 일곱 칸(가운데 줄 셋 + 양옆 둘씩)이 **아래에서 위로**
    차례로 채워지고, 꽉 차면 잠시 머물렀다 비우고 다시 시작한다.
@@ -4945,8 +4977,8 @@ html[data-product="sweeter"] #swBoot.off{opacity:0;pointer-events:none;}
       그림자도 빛무리도 없다 — 차오르는 것만으로 충분히 읽힌다 (UI 원칙).
    ⚠️ 빠르기는 HB 가 고른 '아주 느긋' 이다 (한 칸 300ms · 한 바퀴 4.4초). */
 .swboot-comb{width:54px;height:auto;display:block;margin-top:10px;}
-.swboot-comb .swhw{fill:none;stroke:var(--bd);stroke-width:6;stroke-linejoin:round;}
-.swboot-comb .swhf{fill:var(--ac);
+.swboot-comb .swhw{fill:none;stroke:var(--sb-bd);stroke-width:6;stroke-linejoin:round;}
+.swboot-comb .swhf{fill:var(--sb-ac);
   transform-box:fill-box;transform-origin:bottom;transform:scaleY(0);
   animation:swCombFill 4400ms cubic-bezier(.42,0,.3,1) infinite;
   animation-delay:calc(var(--i) * 300ms);}
@@ -5706,7 +5738,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-22";
+const APP_VERSION = "v. 26-0922-23";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5859,14 +5891,22 @@ window._fbScriptsReady=new Promise(resolve=>{
   <div class="swboot-mark">Sweeter</div>
   <div class="swboot-v" id="swBootV">주의 말씀은 내 발에 등이요 내 길에 빛이니이다</div>
   <div class="swboot-r" id="swBootR">시편 119:105</div>
+  <!-- ⚠️⚠️ 자르개(clipPath)는 **바깥 <g> 에 걸어야 한다** (v26-0922-23).
+       <rect> 에 직접 걸면 rect 의 transform 이 자르개까지 같이 늘려서, 칸이
+       "차오르는" 대신 **육각형 자체가 아래에서 위로 펼쳐진다** — 그래서 테두리
+       밖으로 삐죽 튀어나왔다 (HB: "정말 말 그대로 채워지게 그려").
+       자르개를 안 움직이는 <g> 에 걸면 육각형 자리는 붙박이고 그 안의 네모만
+       자라 올라 → 진짜로 채워진다.
+       ⚠️ 자르개의 육각형은 테두리보다 **한 뼘 작다**(0.9). 테두리와 같은 크기로
+       채우면 채워진 칸끼리 맞붙어 한 덩어리로 보여 "한 칸씩" 이 안 읽힌다. -->
   <svg class="swboot-comb" viewBox="-5 -5 260 270" aria-hidden="true">
-    <g transform="translate(75,173.2)"><clipPath id="swhc0"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc0)" width="100" height="86.6" style="--i:0"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(0,129.9)"><clipPath id="swhc1"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc1)" width="100" height="86.6" style="--i:1"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(150,129.9)"><clipPath id="swhc2"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc2)" width="100" height="86.6" style="--i:2"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(75,86.6)"><clipPath id="swhc3"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc3)" width="100" height="86.6" style="--i:3"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(0,43.3)"><clipPath id="swhc4"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc4)" width="100" height="86.6" style="--i:4"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(150,43.3)"><clipPath id="swhc5"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc5)" width="100" height="86.6" style="--i:5"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
-    <g transform="translate(75,0)"><clipPath id="swhc6"><path d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></clipPath><rect class="swhf" clip-path="url(#swhc6)" width="100" height="86.6" style="--i:6"/><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(75,173.2)"><clipPath id="swhc0"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc0)"><rect class="swhf" width="100" height="86.6" style="--i:0"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(0,129.9)"><clipPath id="swhc1"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc1)"><rect class="swhf" width="100" height="86.6" style="--i:1"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(150,129.9)"><clipPath id="swhc2"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc2)"><rect class="swhf" width="100" height="86.6" style="--i:2"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(75,86.6)"><clipPath id="swhc3"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc3)"><rect class="swhf" width="100" height="86.6" style="--i:3"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(0,43.3)"><clipPath id="swhc4"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc4)"><rect class="swhf" width="100" height="86.6" style="--i:4"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(150,43.3)"><clipPath id="swhc5"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc5)"><rect class="swhf" width="100" height="86.6" style="--i:5"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
+    <g transform="translate(75,0)"><clipPath id="swhc6"><path d="M27.5 4.33H72.5L95 43.3L72.5 82.27H27.5L5 43.3Z"/></clipPath><g clip-path="url(#swhc6)"><rect class="swhf" width="100" height="86.6" style="--i:6"/></g><path class="swhw" d="M25 0H75l25 43.3L75 86.6H25L0 43.3Z"/></g>
   </svg>
 </div>
 <script>
