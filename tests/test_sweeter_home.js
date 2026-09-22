@@ -33,6 +33,12 @@ function _calKey(){return '2026-08-30';}
 // 성경 순서 도구 — 진짜를 떠온다 (책 이름 표준화·정경 순서가 여기 들어 있다)
 
 function _findVerseByRefLoose(ref){return VERSES.find(v=>v.ref===ref)||null;}
+// 씨앗 난수 — 진짜(_hiHash·_hiRng)는 딸린 것이 많아, **성질만** 흉내낸다:
+// 씨앗이 같으면 늘 같은 차례가 나온다. '오늘의 말씀'·'묵상 질문'이 이것을 쓴다.
+function _hiHash(s){const t=String(s==null?'':s);let h=0;
+  for(let i=0;i<t.length;i++)h=(h*31+t.charCodeAt(i))|0;return h;}
+function _hiRng(seed){let x=((seed||1)>>>0)||1;
+  return ()=>{x=(x*1664525+1013904223)>>>0;return x/4294967296;};}
 function _tagartPick(){return null;} function _tagartSvg(){return '';}
 function _tagartStyle(){return 'minimal';}
 
@@ -359,8 +365,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
   // v26-0922-1 표지 카드 · v26-0922-2 발견·리듬이 더해져 열이 됐다
-  sc.eq('처음엔 기본 열', _swLoadTiles().map(t=>t.k),
-        ['today','insight','last','keep','rhythm','coll','recent','book','tag','react']);
+  sc.eq('처음엔 기본 열둘', _swLoadTiles().map(t=>t.k),
+        ['today','insight','need','ask','last','keep','rhythm','coll','recent','book','tag','react']);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -386,8 +392,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   _SW_TILES=_swLoadTiles();
   sc.eq('남은 종류가 없다', _swSpareKinds(), []);
   _SW_TILES=[{k:'last',s:0,p:0}];
-  sc.eq('남은 아홉', _swSpareKinds().sort(),
-        ['book','coll','insight','keep','react','recent','rhythm','tag','today']);
+  sc.eq('남은 열하나', _swSpareKinds().sort(),
+        ['ask','book','coll','insight','keep','need','react','recent','rhythm','tag','today']);
 }
 
 // ═══ 10. BLOCK7 과 갈라져 있는가 ═══
@@ -590,7 +596,7 @@ console.log('\n시나리오 16 — BLOCK7 의 미리보기는 읽기만 한다')
   // ⚠️ v26-0922-1 — 새 타일 한 번 끼우기(판 번호)가 미리보기에서도 보인다.
   //    **쓰지는 않는다** — 아래 '저장을 부르지 않는다' 가 그것을 지킨다.
   sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k),
-        ['today','insight','rhythm','coll','tag']);
+        ['today','insight','need','ask','rhythm','coll','tag']);
   sc.eq('정렬 값도 함께', _swLoadTiles().find(t=>t.k==='coll').s, 1);
   sc.eq('미리보기에서는 판 번호를 쓰지 않는다',
         (ST.productSettings.sweeter.swTilesV===undefined)&&(ST.settings.swTilesV===undefined), true);
@@ -789,10 +795,68 @@ console.log('\n시나리오 18 — 대표 문구 · 흐름 · 리듬');
   // ── ⑤ 기본 차례에 둘 다 들어왔다 (판 번호로 한 번 끼워 준다)
   sc.eq('기본 차례에 있다',
         [_SW_DEFAULT_TILES.indexOf('insight')>=0,_SW_DEFAULT_TILES.indexOf('rhythm')>=0], [true,true]);
-  sc.eq('판 번호가 올라갔다', _SW_TILES_V, 3);
+  sc.eq('판 번호가 올라갔다', _SW_TILES_V>=3, true);
   ST={settings:{swTiles:[{k:'last',s:0}]},verseKeepLog:{}};
   sc.eq('이미 꾸며 둔 기기에도 한 번 끼운다',
-        _swLoadTiles().map(t=>t.k), ['today','insight','rhythm','last']);
+        _swLoadTiles().map(t=>t.k).indexOf('insight')>=0, true);
+}
+
+// ═══ 19. 3차 — 지금 이런 마음이라면 · 묵상 질문 (v26-0922-3, HB) ═══
+// 둘 다 **시트에 이미 적혀 있는 것**에서 나온다 (상황 태그 / 상황·필요 / 묵상 질문).
+// ⚠️ 시트에 그 열이 없으면 조용히 비어 있어야 한다 — 지어내지 않는다.
+console.log('\n시나리오 19 — 상황/필요 · 묵상 질문 타일');
+{
+  APP_PRODUCT='sweeter';
+  const W=(ref,sit,q,topic)=>({idx:0,cat:'주일예배',topic:topic||'',krText:ref+' 본문',
+                               ref,tags:[],hi:'',d:'2026-09-21',pid:'P1',kind:'prop',
+                               sit:sit||[],q:q||''});
+  VERSES=[
+    W('마 5:13',['불안할 때','지칠 때'],'오늘 내 마음은 어디에 매여 있습니까?','제자의 정체성'),
+    W('마 5:14',['불안할 때'],'','제자의 정체성'),
+    W('요 3:16',['감사할 때'],'내가 붙들고 있는 것은 무엇입니까?','사랑'),
+    W('롬 8:28',[],'','섭리')
+  ];
+  LIKE={};MEM={};DEEP={};EVEN={};SHARE={};
+  ST={settings:{},verseKeepLog:{}};
+
+  // ── 상황/필요
+  const nd=_swNeeds(0);
+  sc.eq('상황을 많은 순으로', nd.map(x=>x.name), ['불안할 때','감사할 때','지칠 때']);
+  sc.eq('개수도 함께', nd[0].n, 2);
+  sc.eq('이름순으로도 선다', _swNeeds(1).map(x=>x.name), ['감사할 때','불안할 때','지칠 때']);
+  sc.eq('상황이 없으면 세지 않는다', nd.some(x=>x.name===''), false);
+  // 누르면 그 상황의 말씀들
+  const t1={k:'need',s:0,p:0};
+  sc.eq('그 상황의 말씀만',
+        _swVersesFor(t1,{kind:'val',v:{name:'불안할 때'}}).map(v=>v.ref), ['마 5:13','마 5:14']);
+  // 머리말을 겹쳐 적지 않는다 (타일 이름이 이미 그 말이다)
+  sc.eq('머리말을 겹치지 않는다', _swFace(t1).includes('이런 마음이라면</div>'), false);
+
+  // ── 묵상 질문
+  const ak=_swAsks(1);            // '최근 설교' — 질문이 있는 것만
+  sc.eq('질문이 적힌 말씀만', ak.length, 2);
+  sc.eq('물음을 그대로 들고 온다', ak[0].q.endsWith('?'), true);
+  sc.eq('그 말씀도 함께', !!ak[0].verse, true);
+  const t2={k:'ask',s:0,p:0};
+  sc.eq('물음이 칸의 주인', _swFace(t2).includes('class="sw-cell ask"'), true);
+  sc.eq('물음표를 크게 둔다', _swFace(t2).includes('class="sw-quote"'), true);
+
+  // ── ⚠️ 시트에 그 열이 없으면 조용히 빈다
+  VERSES=[{idx:0,cat:'A',topic:'',krText:'본문',ref:'마 5:13',tags:[],hi:'',d:'',pid:'',kind:''}];
+  sc.eq('상황 열이 없으면 빈 손', _swNeeds(0), []);
+  sc.eq('질문 열이 없으면 빈 손', _swAsks(0), []);
+  sc.eq('까닭을 적어 둔다',
+        [_SW_TYPES.need.empty.includes('상황'),_SW_TYPES.ask.empty.includes('묵상 질문')],
+        [true,true]);
+
+  // ── 두 값은 **화면까지 오는 길**이 뚫려 있어야 한다 (hi 가 막혔던 그 자리)
+  sc.eq('⭐ ACTIVE_VERSES 가 상황·질문을 들고 온다',
+        SRC_DEV.includes("sit:v.sit||[],q:v.q||'',"), true);
+  // 기본 차례에 들어왔고, 이미 꾸며 둔 기기에도 한 번 끼워 준다
+  sc.eq('판 번호가 올라갔다', _SW_TILES_V, 4);
+  ST={settings:{swTiles:[{k:'last',s:0}]},verseKeepLog:{}};
+  sc.eq('한 번만 끼운다', _swLoadTiles().map(t=>t.k),
+        ['today','insight','need','ask','rhythm','last']);
 }
 
 sc.done();
