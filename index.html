@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-11  [production]  -->
+<!-- BLOCK7  v. 26-0922-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5179,10 +5179,15 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-photo::after{content:"";position:absolute;inset:0;border-radius:15px;
   background:linear-gradient(180deg,rgba(0,0,0,.40),rgba(0,0,0,.05) 28%,
     rgba(0,0,0,.04) 56%,rgba(0,0,0,.34));}
-html[data-theme="light"] .sw-photo{opacity:.5;}
+/* ⚠️ 밝은 테마에서는 **덮는 힘이 셀수록 사진이 잿빛으로 죽는다.** 가운데는 거의
+   덮지 않고(사진이 살고) 위아래만 덮는다(이름줄·본문이 읽히고). 사진 자체의
+   진하기도 어두운 테마보다 살짝 낮춘다 — 글자가 검정이라 대비가 필요하다. */
+html[data-theme="light"] .sw-photo{opacity:.58;filter:brightness(1.07);}
 html[data-theme="light"] .sw-photo::after{
-  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.12) 28%,
-    rgba(255,255,255,.16) 56%,rgba(255,255,255,.62));}
+  /* ⚠️ 맨 위는 조금 더 덮는다 — 머리말(장절)이 앉는 자리라 어두운 사진에서는
+     글자가 묻힌다. 대신 **빨리** 걷어서(20%) 사진이 잿빛이 되지 않게 한다. */
+  background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,.05) 20%,
+    rgba(255,255,255,.06) 54%,rgba(255,255,255,.58));}
 /* 사진이 깔린 칸은 손그림을 물린다 — 둘이 겹치면 둘 다 지저분해진다 */
 .sw-cell.has-photo .sw-art{display:none;}
 /* ══ 삽화 (v26-0922-6, HB 6·7·8) ══════════════════════════
@@ -5554,7 +5559,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-11";
+const APP_VERSION = "v. 26-0922-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데

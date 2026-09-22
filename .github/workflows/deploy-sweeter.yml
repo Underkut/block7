@@ -18,6 +18,7 @@ on:
       - 'manifest-sweeter.json'
       - 'icon.png'
       - 'fonts/**'
+      - 'photos/**'
       - 'firebase-messaging-sw.js'
       - 'tools/make-sweeter-prod.sh'
       - 'firebase.json'

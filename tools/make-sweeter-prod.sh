@@ -138,5 +138,11 @@ cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
 ./tools/make-version.sh >/dev/null
 cp version.txt "$OUT/version.txt"
 cp -r fonts "$OUT/fonts"
+# 타일 바탕 사진첩 — **글이 아니라 그림만** 옮긴다 (README·WANTED 는 우리끼리 볼 글이다).
+# ⚠️ 이게 빠지면 sweeter.my 에서 photos/manifest.json 이 404 가 되어 사진이
+#    한 장도 안 깔린다. block7.my 는 깃헙 페이지가 저장소째 내보내 저절로 된다.
+mkdir -p "$OUT/photos"
+cp photos/manifest.json "$OUT/photos/manifest.json"
+cp photos/*.jpg "$OUT/photos/" 2>/dev/null || true
 
 echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"
