@@ -1398,7 +1398,7 @@ console.log('\n시나리오 28 — 첫 그림의 말씀');
   sc.eq('꿀 구절 영어', SRC_DEV.includes('How sweet are thy words unto my taste! yea, <b>sweeter</b> than honey to my mouth!'), true);
   sc.eq('열 때마다 하나씩 센다', SRC_DEV.includes("localStorage.setItem(base+'_bootn',String(n%999));"), true);
   sc.eq('셋으로 나눠 고른다', SRC_DEV.includes('var m=n%3, pick;'), true);
-  sc.eq('강조는 --ac-tx 로', /\.swboot-v b\{color:var\(--ac-tx\);/.test(SRC_DEV), true);
+  sc.eq('강조는 첫 그림 고정색으로', /\.swboot-v b\{color:var\(--sb-ac\);/.test(SRC_DEV), true);
   // ⚠️ 셋째 자리의 글은 **사용자 것**이다 — HTML 로 넣지 않는다
   sc.eq('사용자 글은 textContent 로',
     SRC_DEV.includes('if(pick[2])ev.innerHTML=pick[0]; else ev.textContent=pick[0];'), true);
@@ -1420,7 +1420,7 @@ console.log('\n시나리오 29 — 꿀벌집이 차오르는 로딩');
   sc.eq('맨 위 가운데가 마지막 칸',
     /translate\(75,0\)[^]{0,200}style="--i:6"/.test(SRC_DEV), true);
   // ⚠️ HB: "미니멀하게, 3D 그라데이션도 없게" → 납작한 한 색이다
-  sc.eq('납작한 한 색', /\.swboot-comb \.swhf\{fill:var\(--ac\);/.test(SRC_DEV), true);
+  sc.eq('납작한 한 색', /\.swboot-comb \.swhf\{fill:var\(--sb-ac\);/.test(SRC_DEV), true);
   sc.eq('그라데이션을 쓰지 않는다', /swboot-comb[^]{0,400}linearGradient/.test(SRC_DEV), false);
   sc.eq('빛무리도 없다', /\.swboot-comb[^}]*(box-shadow|drop-shadow|filter:)/.test(SRC_DEV), false);
   // 빠르기는 HB 가 고른 '아주 느긋'
@@ -1428,10 +1428,47 @@ console.log('\n시나리오 29 — 꿀벌집이 차오르는 로딩');
   sc.eq('한 바퀴 4.4초', SRC_DEV.includes('animation:swCombFill 4400ms'), true);
   sc.eq('움직임 줄이기를 지킨다', /\.swboot-comb \.swhf\{animation:none;/.test(SRC_DEV), true);
 
-  // 영어 구절일 때는 이름(Sweeter)을 뺀다 — 구절 안에 이미 sweeter 가 있다
-  sc.eq('영어면 이름을 뺀다', SRC_DEV.includes('#swBoot.en .swboot-mark{display:none;}'), true);
+  // 영어 구절일 때는 이름(Sweeter)을 뺀다 — 구절 안에 이미 sweeter 가 있다.
+  // ⚠️ 지우지 않고 **자리만 비운다** — 지우면 Y 자리가 한 번 흔들린다 (시나리오 30)
+  sc.eq('영어면 이름을 뺀다', SRC_DEV.includes('#swBoot.en .swboot-mark{visibility:hidden;}'), true);
   sc.eq('영어 자리에서만 붙인다',
     SRC_DEV.includes("{pick=HONEY_EN;document.getElementById('swBoot').classList.add('en');}"), true);
+}
+
+// ═══ 30. 첫 그림은 테마를 따르지 않는다 (v26-0922-23, HB) ═══
+console.log('\n시나리오 30 — 첫 그림 고정색 · 진짜로 차오르는 벌집');
+{
+  // HB: "이 벌집색과 로딩 화면은 테마 상관없이 고정으로 해.
+  //      라이트 버전, 다크 버전 각각 내 로고 기준으로 색 배정해."
+  // 로고(icon-sweeter.png)에 있는 색은 둘뿐이다 — 바탕 #9f4409 · 글자 #f2a633.
+  sc.eq('어두운 쪽 골드는 로고 색', /#swBoot\{\s*--sb-bg:#14100c;[^]{0,160}--sb-ac:#f2a633;/.test(SRC_DEV), true);
+  sc.eq('밝은 쪽은 진한 호박갈색',
+    /html\[data-theme="light"\] #swBoot\{[^]{0,160}--sb-ac:#a04808;/.test(SRC_DEV), true);
+  sc.eq('밝은 쪽 바탕은 크림',
+    /html\[data-theme="light"\] #swBoot\{[^]{0,60}--sb-bg:#fdf3e0;/.test(SRC_DEV), true);
+
+  // ⚠️ 첫 그림 안에서는 테마 변수를 **하나도** 쓰지 않는다. 하나라도 남으면
+  //    테마를 갈아 끼울 때 그 한 곳만 따라 변해 어긋난다.
+  const boot=SRC_DEV.slice(SRC_DEV.indexOf('#swBoot{display:none;}'),
+                           SRC_DEV.indexOf('@media (prefers-reduced-motion:reduce){\n  .swboot-comb'));
+  sc.eq('첫 그림 CSS 를 찾았다', boot.length>400, true);
+  ['--bg','--tx','--tx2','--tx3','--ac','--ac-tx','--bd'].forEach(v=>{
+    sc.eq('테마색 '+v+' 를 안 쓴다', boot.includes('var('+v+')'), false);
+  });
+
+  // ⚠️⚠️ 자르개는 **바깥 <g>** 에 건다. <rect> 에 직접 걸면 rect 의 transform 이
+  //    자르개까지 늘려서 육각형이 "펼쳐진다" (HB: "정말 말 그대로 채워지게 그려").
+  sc.eq('자르개는 움직이지 않는 <g> 에 걸린다',
+    (SRC_DEV.match(/<g clip-path="url\(#swhc\d\)"><rect class="swhf"/g)||[]).length, 7);
+  sc.eq('네모에 자르개를 직접 걸지 않는다',
+    /<rect class="swhf" clip-path=/.test(SRC_DEV), false);
+
+  // ⚠️ 조기 적용이 **제품 저장 칸**을 읽는다 — 이것이 "블럭7 색 번쩍"의 까닭이었다
+  sc.eq('조기 적용이 제품별 칸을 읽는다',
+    SRC_DEV.includes("const _base=(_p&&_p!=='block7'?'b7v1_'+_p:'b7v1')"), true);
+  sc.eq('개발본이면 _dev 를 붙인다',
+    SRC_DEV.includes("+ (/-dev\\.html$/.test(location.pathname)?'_dev':'');"), true);
+  sc.eq("'b7v1' 을 그냥 읽지 않는다", SRC_DEV.includes("localStorage.getItem('b7v1');"), false);
 }
 
 sc.done();
