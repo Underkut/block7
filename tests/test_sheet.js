@@ -167,4 +167,38 @@ console.log('\n시나리오 — 여러 시트를 한꺼번에 받는다 (v26-090
   sc.eq('하나 실패해도 나머지는 산다', fn.includes(".then(r=>r,()=>({err:'실패'}))"), true);
 }
 
+// ═══ 5. 시트 주소 두 모양 (v26-0922-9, HB) ═══
+console.log("\n시나리오 5 — 주소창 주소 · '웹에 게시' 주소 둘 다 받는다");
+{
+  eval(slice('// 시트 주소 → 실제로 받아올 주소들', 'async function _fetchSheetCsv('));
+  // ① 주소창 주소 — 이것을 권한다. export 가 1순위, gviz 가 폴백.
+  const a=_sheetCsvEndpoints('https://docs.google.com/spreadsheets/d/1fDVyeY-Ixd4/edit?gid=1001#gid=1001');
+  sc.eq('주소창 주소는 두 갈래',a.length,2);
+  sc.eq('export 가 1순위',a[0],
+    'https://docs.google.com/spreadsheets/d/1fDVyeY-Ixd4/export?format=csv&gid=1001');
+  sc.eq('gviz 는 폴백',a[1].indexOf('gviz/tq')>0,true);
+  // gid 가 없으면 첫 탭
+  sc.eq('gid 없으면 0',
+    _sheetCsvEndpoints('https://docs.google.com/spreadsheets/d/AAA/edit')[0].endsWith('gid=0'),true);
+
+  // ② '웹에 게시' 주소 — id 자리가 `/d/e/…` 다.
+  // ⚠️⚠️ 예전엔 `/d/(...)` 규칙에 걸려 id 가 **'e'** 가 됐다. 그러면 무엇을
+  //    받아도 실패하고 "공유를 뷰어로 설정해주세요" 라는 엉뚱한 안내가 떴다
+  //    (2026-09-22 HB 신고). 게시 주소는 **그대로** 받아야 한다.
+  const PUB='https://docs.google.com/spreadsheets/d/e/2PACX-1vT19-n5pKoZby6/pub?gid=1001&single=true&output=csv';
+  const b=_sheetCsvEndpoints(PUB);
+  sc.eq('게시 주소는 한 갈래',b.length,1);
+  sc.eq('게시 주소는 그대로',b[0],PUB);
+  sc.eq("id 를 'e' 로 읽지 않는다",b[0].indexOf('/d/e/export')<0&&b[0].indexOf('/spreadsheets/d/e/export')<0,true);
+  // output 이 없거나 다른 값이면 csv 로 못박는다
+  sc.eq('output 이 없으면 붙인다',
+    _sheetCsvEndpoints('https://docs.google.com/spreadsheets/d/e/2PACX-AA/pub?gid=7')[0],
+    'https://docs.google.com/spreadsheets/d/e/2PACX-AA/pub?gid=7&output=csv');
+  sc.eq('pubhtml 도 csv 로',
+    _sheetCsvEndpoints('https://docs.google.com/spreadsheets/d/e/2PACX-AA/pubhtml?gid=7')[0],
+    'https://docs.google.com/spreadsheets/d/e/2PACX-AA/pub?gid=7&output=csv');
+  // 구글 시트가 아니면 빈손 (부르는 쪽이 '링크 형식이 아니에요' 를 띄운다)
+  sc.eq('엉뚱한 주소는 빈손',_sheetCsvEndpoints('https://example.com/x').length,0);
+}
+
 sc.done();
