@@ -344,4 +344,44 @@ console.log('\n시나리오 — 상황/필요 · 묵상 질문');
         [coll.verses[0].sit,coll.verses[0].q], [undefined,undefined]);
 }
 
+// ═══ 한 모음에 시트를 둘 연결해도 값이 지워지지 않는다 (v26-0922-4) ═══
+// HB 의 시트는 탭마다 열이 다르다 — '명제 DB' 에는 주제 태그·대표 문구가 있고
+// '성도 공유용' 에는 상황/필요·묵상 질문이 있다. 두 탭을 같은 모음에 연결하면,
+// 뒤에 받은 탭에 **없는 열**까지 빈 값으로 덮어써 먼저 받아 둔 것이 날아갈 수 있다.
+// ⚠️ 이 시험이 그 사고를 막는다.
+console.log('\n시나리오 — 탭이 둘이어도 서로의 값을 지우지 않는다');
+{
+  // ① '명제 DB' 탭에서 먼저 받는다 (태그·대표 문구·날짜가 있다)
+  const first=_propRowsToItems([HEAD,
+    P('P0001','명제 하나',{'주제 태그':'소금과 빛, 제자도','대표 문구':'소금과 빛',
+                          '상황 태그':'정체성'})]);
+  const coll={verses:[],google:[{id:'g1'},{id:'g2'}]};
+  _syncSheetVersesIntoColl(coll,first,{kind:'google',gid:'g1'});
+  const v=coll.verses[0];
+  sc.eq('태그가 들어왔다', v.tags, ['소금과 빛','제자도']);
+  sc.eq('대표 문구도', v.hi, '소금과 빛');
+  sc.eq('상황도', v.sit, ['정체성']);
+
+  // ② '성도 공유용' 탭 — 주제 태그도 대표 문구도 **열 자체가 없다**
+  const HEAD2=['명제 ID','명제','상황/필요','묵상 질문','데이터 상태'];
+  const r2=['P0001','명제 하나','불안할 때','오늘 내 마음은 어디에 있습니까?','활성'];
+  const second=_propRowsToItems([HEAD2,r2]);
+  sc.eq('없는 열은 없다고 적어 둔다', [second[0]._has.tags,second[0]._has.hi], [false,false]);
+  _syncSheetVersesIntoColl(coll,second,{kind:'google',gid:'g2'});
+  sc.eq('⭐ 태그가 살아 있다', coll.verses[0].tags, ['소금과 빛','제자도']);
+  sc.eq('⭐ 대표 문구도 살아 있다', coll.verses[0].hi, '소금과 빛');
+  sc.eq('⭐ 날짜도 살아 있다', coll.verses[0].d, '2026-06-21');
+  sc.eq('묵상 질문은 새로 들어왔다', coll.verses[0].q, '오늘 내 마음은 어디에 있습니까?');
+  sc.eq('상황도 새 탭 것으로 바뀐다', coll.verses[0].sit, ['불안할 때']);
+  sc.eq('명제가 둘로 갈라지지 않는다', coll.verses.length, 1);
+
+  // ③ 옛 말씀 시트(_has 가 없는 것)는 예전 그대로 전부 덮어쓴다
+  const old=[{ref:'요 3:16',cat:'믿음',topic:'사랑',krText:'새것',tags:[],hi:'',row:2}];
+  const c2={verses:[{ref:'요 3:16',cat:'믿음',topic:'사랑',krText:'옛것',tags:['가'],
+                     hi:'옛 강조',src:'google',gid:'g1'}],google:[{id:'g1'}]};
+  _syncSheetVersesIntoColl(c2,old,{kind:'google',gid:'g1'});
+  sc.eq('옛 시트는 예전 규칙 그대로', [c2.verses[0].krText,c2.verses[0].tags,c2.verses[0].hi],
+        ['새것',[],'']);
+}
+
 sc.done();
