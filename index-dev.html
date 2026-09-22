@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5483,7 +5483,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-8";
+const APP_VERSION = "v. 26-0922-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10183,11 +10183,26 @@ function _importVerseRows(rows,src){
   showToast(`${added}구절 추가됨${skipped>0?` (중복·빈행 ${skipped} 제외)`:''}`);
 }
 // 구글 시트 CSV 가져오기 (뷰어 공유면 CSV 엔드포인트로 읽힘)
-async function _fetchSheetCsv(url){
-  const m=(url||'').match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if(!m)return{err:'구글 시트 링크 형식이 아니에요'};
+// 시트 주소 → 실제로 받아올 주소들. 주소는 두 모양으로 들어온다 —
+//   ① **주소창 주소** (권함)  .../spreadsheets/d/{id}/edit#gid=123
+//   ② '웹에 게시' 주소        .../spreadsheets/d/e/2PACX-…/pub?gid=123&output=csv
+// ⚠️⚠️ ②는 id 자리가 `/d/e/…` 라서 ①의 규칙(`/d/(...)`)으로 읽으면 id 가
+//    **'e'** 가 된다. 그러면 무엇을 받아도 실패하고 "공유를 뷰어로 설정해주세요"
+//    라는 엉뚱한 안내가 뜬다 (2026-09-22 HB 신고 — '웹에 게시' 주소를 붙였다).
+//    그래서 ②를 **먼저** 가린다. (지키는 것: tests/test_sheet.js 시나리오 5)
+function _sheetCsvEndpoints(url){
+  const u0=String(url||'').trim();
+  if(/\/spreadsheets\/d\/e\/[a-zA-Z0-9-_]+\/pub/.test(u0)){
+    // 게시 주소는 **그대로** 받는다 (gid 가 이미 들어 있다). csv 로만 못박는다.
+    let u=u0.split('#')[0].replace('/pubhtml','/pub');
+    if(/[?&]output=/.test(u))u=u.replace(/([?&])output=[^&]*/,'$1output=csv');
+    else u+=(u.indexOf('?')>=0?'&':'?')+'output=csv';
+    return[u];
+  }
+  const m=u0.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if(!m)return[];
   const id=m[1];
-  const gidM=url.match(/[#&?]gid=(\d+)/);
+  const gidM=u0.match(/[#&?]gid=(\d+)/);
   const gid=gidM?gidM[1]:'0';
   // ⚠️ 순서가 중요하다. export?format=csv 는 시트를 있는 그대로 내려주지만,
   // gviz/tq 는 열의 자료형을 스스로 추정하면서 **앞쪽 여러 행을 통째로
@@ -10196,10 +10211,14 @@ async function _fetchSheetCsv(url){
   // 145개가 사라진 줄 알고 전부 휴지통으로 보냈다.
   // 그래서 export 를 1순위로 두고, gviz 는 폴백으로만 쓰되 headers=1 로
   // 머리글이 정확히 한 줄임을 못박는다.
-  const endpoints=[
+  return[
     `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`,
     `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&headers=1&gid=${gid}`
   ];
+}
+async function _fetchSheetCsv(url){
+  const endpoints=_sheetCsvEndpoints(url);
+  if(!endpoints.length)return{err:'구글 시트 링크 형식이 아니에요'};
   for(const ep of endpoints){
     try{
       const r=await fetch(ep);
@@ -10210,7 +10229,7 @@ async function _fetchSheetCsv(url){
       return{text};
     }catch(e){/* try next */}
   }
-  return{err:'시트를 읽지 못했어요. 공유를 "링크가 있는 모든 사용자 – 뷰어"로 설정해주세요.'};
+  return{err:'시트를 읽지 못했어요. 공유를 "링크가 있는 모든 사용자 – 뷰어"로 바꾸고, 주소창 주소를 그대로 붙여주세요.'};
 }
 // 파일 업로드 (.csv 직접 파싱, .xlsx는 SheetJS를 CDN에서 지연 로드)
 let _sheetJsLoading=null;
