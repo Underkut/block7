@@ -1326,7 +1326,12 @@ console.log('\n시나리오 27 — 날마다 바뀌는 사진 · 차례로 스�
   sc.eq('흐른 만큼 뺀다', SRC_DEV.includes('const gone=_swIntroStart?(now-_swIntroStart):0;'), true);
   sc.eq('다시 그려도 이어진다', SRC_DEV.includes('intro=(now-_swIntroStart)<_swIntroSpan();'), true);
   sc.eq('옛 빗장은 없앴다', SRC_DEV.includes('let _swIntroDone=false;'), false);
-  sc.eq('터울은 90ms', SRC_DEV.includes('const _SW_INTRO_STEP=90;'), true);
+  // ⚠️ HB 가 아티팩트에서 직접 골랐다 ('조금 느리게') — 90 → 150ms
+  sc.eq('터울은 150ms', SRC_DEV.includes('const _SW_INTRO_STEP=150;'), true);
+  // ⚠️⚠️ JS 의 _SW_INTRO_DUR 과 CSS 의 animation 시간은 **같은 값**이라야 한다.
+  //    어긋나면 .intro 를 걷는 시계가 움직임보다 먼저 울려 끝이 툭 끊긴다.
+  sc.eq('한 장 시간도 같은 값', SRC_DEV.includes('const _SW_INTRO_DUR=620;')&&
+    /\.sw-board\.intro \.sw-tile\{animation:swTileIn \.62s/.test(SRC_DEV), true);
   sc.eq('첫 장 앞에 뜸을 둔다', SRC_DEV.includes('const _SW_INTRO_LEAD=260;'), true);
   // HB: "하나씩 살짝 내려오는 모션" — 위에서 내려앉는다 (예전엔 아래서 올라왔다)
   sc.eq('위에서 내려앉는다', /from\{opacity:0;transform:translateY\(-14px\);\}/.test(SRC_DEV), true);
@@ -1399,6 +1404,34 @@ console.log('\n시나리오 28 — 첫 그림의 말씀');
     SRC_DEV.includes('if(pick[2])ev.innerHTML=pick[0]; else ev.textContent=pick[0];'), true);
   // ⚠️ 동전 던지기가 아니다
   sc.eq('동전 던지기가 아니다', SRC_DEV.includes('(Math.random()<0.5)?HONEY'), false);
+}
+
+// ═══ 29. 꿀벌집 로딩 (v26-0922-22, HB) ═══
+console.log('\n시나리오 29 — 꿀벌집이 차오르는 로딩');
+{
+  // HB: 가로선 대신 "육각형이 아래에서부터 한칸씩 차오르는 애니"
+  sc.eq('가로선은 없앴다', SRC_DEV.includes('.swboot-bar{'), false);
+  sc.eq('벌집이 있다', /\.swboot-comb\{width:54px/.test(SRC_DEV), true);
+  sc.eq('일곱 칸', (SRC_DEV.match(/class="swhf"/g)||[]).length, 7);
+  sc.eq('칸마다 차례가 있다', (SRC_DEV.match(/style="--i:\d"/g)||[]).length>=7, true);
+  // ⚠️ 차례는 **아래에서 위로**다 — 맨 아래 가운데 칸이 0번이라야 한다
+  sc.eq('맨 아래 가운데가 첫 칸',
+    /translate\(75,173\.2\)[^]{0,200}style="--i:0"/.test(SRC_DEV), true);
+  sc.eq('맨 위 가운데가 마지막 칸',
+    /translate\(75,0\)[^]{0,200}style="--i:6"/.test(SRC_DEV), true);
+  // ⚠️ HB: "미니멀하게, 3D 그라데이션도 없게" → 납작한 한 색이다
+  sc.eq('납작한 한 색', /\.swboot-comb \.swhf\{fill:var\(--ac\);/.test(SRC_DEV), true);
+  sc.eq('그라데이션을 쓰지 않는다', /swboot-comb[^]{0,400}linearGradient/.test(SRC_DEV), false);
+  sc.eq('빛무리도 없다', /\.swboot-comb[^}]*(box-shadow|drop-shadow|filter:)/.test(SRC_DEV), false);
+  // 빠르기는 HB 가 고른 '아주 느긋'
+  sc.eq('한 칸 300ms', SRC_DEV.includes('animation-delay:calc(var(--i) * 300ms);'), true);
+  sc.eq('한 바퀴 4.4초', SRC_DEV.includes('animation:swCombFill 4400ms'), true);
+  sc.eq('움직임 줄이기를 지킨다', /\.swboot-comb \.swhf\{animation:none;/.test(SRC_DEV), true);
+
+  // 영어 구절일 때는 이름(Sweeter)을 뺀다 — 구절 안에 이미 sweeter 가 있다
+  sc.eq('영어면 이름을 뺀다', SRC_DEV.includes('#swBoot.en .swboot-mark{display:none;}'), true);
+  sc.eq('영어 자리에서만 붙인다',
+    SRC_DEV.includes("{pick=HONEY_EN;document.getElementById('swBoot').classList.add('en');}"), true);
 }
 
 sc.done();
