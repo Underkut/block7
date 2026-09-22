@@ -234,7 +234,12 @@ console.log('\n시나리오 6 — 소스에 고정');
   sc.eq('되바꿈을 막는다',
         SRC_DEV.includes("if(_swG.lock&&(now<_swG.lock||"), true);
   sc.eq('그 뒤에도 20px 은 더 가야 한다',
-        SRC_DEV.includes("Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;"), true);
+        SRC_DEV.includes("(!auto&&Math.hypot(x-_swG.lx,y-_swG.ly)<20)))return;"), true);
+  // ⚠️⚠️ **저절로 굴러갈 때(auto)는 20px 을 보지 않는다** (v26-0922-15, HB).
+  //    손가락은 가만히 있고 판이 움직이는 것이라, 20px 을 기다리면 영영
+  //    자리가 안 바뀐다.
+  sc.eq('저절로 굴러갈 때는 20px 을 안 본다',
+        /_swDragHover\(_swG\.x,_swG\.y,true\)/.test(SRC_DEV), true);
   // 비켜 주는 움직임 — 출발도 도착도 느긋하게 (HB 지시 26-0830-13)
   sc.eq('쉬는 시간은 비켜 주는 움직임과 짝', SRC_DEV.includes('const _SW_SLIDE=420;'), true);
   // ⚠️ y 가 0~1 을 벗어나야 '쫄깃'해진다 — 출발에서 반대로 뜸을 들이고(-0.05)
@@ -1113,6 +1118,38 @@ console.log('\n시나리오 22 — 타일마다 사진 켜고 끄기 · 테마�
   sc.eq('그레인을 얹는다', /--sw-grain:url\("data:image\/svg\+xml,/.test(SRC_DEV), true);
   sc.eq('그레인은 주소로 인코딩한다', SRC_DEV.includes('%3CfeTurbulence'), true);
   sc.eq('덮개와 그레인이 한 겹에', /\.sw-photo::after\{[^}]*background-image:var\(--sw-grain\)/.test(SRC_DEV), true);
+}
+
+// ═══ 23. 끌면서 판 끝에 닿으면 저절로 굴러간다 (v26-0922-15, HB) ═══
+console.log('\n시나리오 23 — 끌면서 판 끝에 닿으면 저절로 굴러간다');
+{
+  // HB: "맨 위로 드래그해서 홀드하고 있는데 화면이 멈춰 있어서 위로 더 올라갈
+  //      수가 없어서 한번 손을 떼고 스크롤 하고 다시 드래그 해야하는 번거로움"
+  // ⚠️⚠️ 손가락이 멈춰 있으면 pointermove 가 **오지 않는다.** 스스로 도는
+  //    고리가 있어야 한다.
+  sc.eq('스스로 도는 고리가 있다', typeof _swAutoScroll, 'function');
+  sc.eq('멈추는 길도 있다', typeof _swAutoStop, 'function');
+  sc.eq('매 프레임 다시 돈다',
+        SRC_DEV.includes('_swAutoRaf=requestAnimationFrame(_swAutoScroll);'), true);
+  sc.eq('끌기를 시작할 때 켠다',
+        SRC_DEV.includes('_swAutoStop();_swAutoScroll();'), true);
+  // ⚠️ 끝났는데 안 멈추면 판이 혼자 굴러간다. 놓기·브라우저가 가져감 둘 다.
+  sc.eq('끝나면 반드시 멈춘다',
+        (SRC_DEV.match(/_swAutoStop\(\);\n      _swG\.el\.classList\.remove\('sw-drag'\)/g)||[]).length, 2);
+  sc.eq('고리는 끌기 중에만 돈다',
+        SRC_DEV.includes("if(!_swG||!_swG.drag)return;\n  const b=document.getElementById('swBoard');"), true);
+  // 손가락이 멈춰도 마지막 자리를 알고 있어야 한다
+  sc.eq('마지막 자리를 남긴다', SRC_DEV.includes('_swG.x=e.clientX;_swG.y=e.clientY;'), true);
+  // 가장자리 띠와 빠르기 — 끝에 가까울수록 빨리 (한 속도면 지나치기 쉽다)
+  sc.eq('가장자리 띠', SRC_DEV.includes('const _SW_EDGE=74;'), true);
+  sc.eq('한 번에 굴릴 최대', SRC_DEV.includes('const _SW_EDGE_MAX=15;'), true);
+  sc.eq('위쪽도 아래쪽도', /y<r\.top\+_SW_EDGE[\s\S]{0,120}y>r\.bottom-_SW_EDGE/.test(SRC_DEV), true);
+  // ⚠️ 끝까지 굴렀으면 타일 자리를 다시 잴 까닭이 없다 (헛일 + 깜빡임)
+  sc.eq('끝까지 갔으면 그만', SRC_DEV.includes('if(b.scrollTop!==was){'), true);
+
+  // 우상단 필터 아이콘 — 동그라미만 조금 작게 (가로선은 그대로, HB)
+  sc.eq('동그라미를 줄였다', (SRC_DEV.match(/r="1\.95" fill="var\(--bg\)"/g)||[]).length, 3);
+  sc.eq('가로선은 그대로', SRC_DEV.includes('d="M2.6 5h14.8M2.6 10h14.8M2.6 15h14.8"'), true);
 }
 
 sc.done();
