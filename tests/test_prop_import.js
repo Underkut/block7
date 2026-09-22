@@ -291,4 +291,57 @@ console.log('시나리오 7 — 기존 말씀 모음은 달라지지 않는다')
   sc.eq('내용이 갱신됨',coll.verses[0].krText,'새것');
 }
 
+// ═══ 상황/필요 · 묵상 질문 (v26-0922-3, HB) ═══
+// 시트에는 탭마다 이름이 다른 **같은 뜻의 열**이 있다:
+//   '명제 DB' 탭      → 상황 태그
+//   '성도 공유용' 탭  → 상황/필요 · 묵상 질문
+// 어느 탭을 연결하든 **있는 열만** 읽어야 한다.
+console.log('\n시나리오 — 상황/필요 · 묵상 질문');
+{
+  const items=_propRowsToItems([HEAD,
+    P('P0001','명제 하나',{'상황 태그':'명목상 신앙, 자기기만 · 정체성'}),
+    P('P0002','명제 둘',{'상황 태그':''})]);
+  sc.eq('상황 태그를 가른다', items[0].sit, ['명목상 신앙','자기기만','정체성']);
+  sc.eq('비어 있으면 빈 배열', items[1].sit, []);
+  sc.eq('묵상 질문 열이 없으면 빈 줄', items[0].q, '');
+
+  // '성도 공유용' 탭 — 열 이름이 다르다
+  const HEAD2=['명제 ID','날짜','카테고리','설교 제목','설교 본문','명제','대표 문구 1',
+               '주제 태그','상황/필요','묵상 질문','데이터 상태'];
+  const r2=(id,text,sit,q)=>{
+    const r=new Array(HEAD2.length).fill('');
+    r[0]=id;r[1]='2026-06-21';r[2]='주일예배';r[3]='설교 제목';r[4]='마 5:13';
+    r[5]=text;r[6]='대표';r[7]='태그';r[8]=sit;r[9]=q;r[10]='활성';
+    return r;
+  };
+  const it2=_propRowsToItems([HEAD2,
+    r2('P0001','명제 하나','불안할 때, 지칠 때','오늘 내 마음은 어디에 매여 있습니까?')]);
+  sc.eq("'상황/필요' 도 같은 자리로", it2[0].sit, ['불안할 때','지칠 때']);
+  sc.eq('묵상 질문은 한 문장 그대로', it2[0].q, '오늘 내 마음은 어디에 매여 있습니까?');
+
+  // ⚠️⚠️ 두 이름은 서로의 열을 집어가면 안 된다 ('상황' 을 둘 다 품고 있다)
+  const HEAD3=['명제 ID','날짜','카테고리','설교 제목','설교 본문','명제','대표 문구 1',
+               '주제 태그','상황 태그','데이터 상태'];
+  const r3=new Array(HEAD3.length).fill('');
+  r3[0]='P0001';r3[1]='2026-06-21';r3[2]='주일예배';r3[3]='제목';r3[4]='마 5:13';
+  r3[5]='명제';r3[6]='대표';r3[7]='태그';r3[8]='정체성';r3[9]='활성';
+  const it3=_propRowsToItems([HEAD3,r3]);
+  sc.eq('⭐ 상황 태그만 있는 탭', it3[0].sit, ['정체성']);
+  sc.eq('⭐ 없는 열을 지어내지 않는다', it3[0].q, '');
+
+  // 다시 받아올 때도 따라온다 (나중에 시트를 채운 것이 들어와야 한다)
+  const coll={verses:[{pid:'P0001',ref:'마 5:13',cat:'주일예배',topic:'설교 제목',
+                       krText:'명제 하나',tags:['태그'],hi:'대표',src:'google',gid:'g1'}],
+              google:[{id:'g1'}]};
+  const r=_syncSheetVersesIntoColl(coll,it2,{kind:'google',gid:'g1'});
+  sc.eq('이미 있던 명제도 채워진다', coll.verses[0].sit, ['불안할 때','지칠 때']);
+  sc.eq('묵상 질문도 함께', coll.verses[0].q, '오늘 내 마음은 어디에 매여 있습니까?');
+  sc.eq('바뀐 것으로 센다', r.updated, 1);
+  // 시트에서 지우면 앱에서도 지운다 (옛 값이 남아 그 명제만 계속 뜨면 안 된다)
+  const it4=_propRowsToItems([HEAD2,r2('P0001','명제 하나','','')]);
+  _syncSheetVersesIntoColl(coll,it4,{kind:'google',gid:'g1'});
+  sc.eq('시트에서 지우면 함께 지운다',
+        [coll.verses[0].sit,coll.verses[0].q], [undefined,undefined]);
+}
+
 sc.done();

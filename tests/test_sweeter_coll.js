@@ -153,7 +153,7 @@ console.log('\n시나리오 7 — 처음 켰을 때 놓인다');
   // ⚠️ 이것이 없으면 새 타일은 이미 쓰고 있는 기기에서 영영 ＋ 줄에만 있다.
   ST={settings:{swTiles:[{k:'last',s:0}]}};
   sc.eq('새 타일을 한 번 끼워 준다', _swLoadTiles().map(t=>t.k),
-        ['today','insight','rhythm','last']);
+        ['today','insight','need','ask','rhythm','last']);
   sc.eq('판 번호를 적어 둔다', ST.settings.swTilesV, _SW_TILES_V);
   // 판 번호가 적혀 있으면 다시 끼우지 않는다 (사용자가 끈 것을 되살리지 않는다)
   ST={settings:{swTiles:[{k:'last',s:0}],swTilesV:_SW_TILES_V}};

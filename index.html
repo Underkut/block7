@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-2  [production]  -->
+<!-- BLOCK7  v. 26-0922-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5154,6 +5154,12 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-cell.insight .sw-val{font-size:14.5px;line-height:1.5;font-weight:400;-webkit-line-clamp:4;}
 .sw-cell.insight .sw-val b{font-weight:700;color:var(--ac-tx);}
 .sw-cell.rhythm .sw-val{font-size:16px;font-weight:600;}
+/* 지금 이런 마음이라면 — 상황 하나가 크게 선다 */
+.sw-cell.need .sw-val{font-family:var(--font-display);font-size:20px;font-weight:700;
+  letter-spacing:-.02em;-webkit-line-clamp:2;}
+/* 묵상 질문 — 물음표를 크게 두고 물음을 또박또박 */
+.sw-cell.ask .sw-val{font-size:15.5px;line-height:1.5;font-weight:500;-webkit-line-clamp:4;}
+.sw-cell.ask .sw-quote{left:auto;right:12px;top:-4px;font-size:58px;opacity:.14;}
 .k-tag .sw-sig svg{height:auto;}
 /* 표지 카드 — 판에서 가장 큰 한 장.
    ⚠️ 내용을 **가운데로 모은다.** 아래로 붙이면(다른 칸의 기본값) 위쪽이 한 뼘
@@ -5215,6 +5221,9 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-tile.k-insight{background:
   linear-gradient(118deg,rgba(var(--ac-rgb),.20),var(--s1) 58%);}
 .sw-tile.k-rhythm{background:linear-gradient(200deg,rgba(var(--ac-rgb),.09),var(--s1) 66%);}
+.sw-tile.k-need{background:linear-gradient(160deg,rgba(var(--ac-rgb),.13),var(--s1) 62%);}
+.sw-tile.k-ask{background:
+  radial-gradient(110% 80% at 92% 4%,rgba(var(--ac-rgb),.18),transparent 60%),var(--s1);}
 .sw-tile.k-react{background:linear-gradient(202deg,rgba(var(--ac-rgb),.10),var(--s1) 70%);}
 /* ＋ 칸은 바탕을 비워 둔다 — 위 규칙이 걸리지 않게 뒤에 적는다 */
 .sw-tile.sw-add{background:transparent;}
@@ -5445,7 +5454,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-2";
+const APP_VERSION = "v. 26-0922-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8602,6 +8611,10 @@ function ACTIVE_VERSES(){
            // books = 시트 '성경권'. 한 명제가 여러 권에 걸린다.
            // _code = 그 모음의 6자리 발행 코드 (명제의 전체 집계를 교회별로 가른다)
            // refs = 설교 본문 여럿 (명제). 장절 줄에서 하나씩 눌러 걸러 볼 수 있다.
+           // sit = 상황 태그(또는 상황/필요) · q = 묵상 질문 (v26-0922-3).
+           // ⚠️ 이 줄에 없으면 화면까지 오지 않는다 — 강조 문구(hi)가 실제로
+           //    여기서 막혔던 그 자리다 (위 주석).
+           sit:v.sit||[],q:v.q||'',
            books:v.books||[],refs:v.refs||[],_code:v._code||''};
   });
 }
@@ -9598,13 +9611,19 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       const newRef=String(it.ref||'');
       const newRefs=Array.isArray(it.refs)?it.refs:[];
       const newBooks=Array.isArray(it.books)?it.books:[];
+      // 상황/필요·묵상 질문 (v26-0922-3) — 시트를 채워 나가는 중이라, 나중에
+      // 적은 것도 다시 받으면 들어와야 한다 (강조 문구와 같은 까닭).
+      const newSit=Array.isArray(it.sit)?it.sit:[];
+      const newQ=String(it.q||'');
+      const sitChanged=JSON.stringify(ex.sit||[])!==JSON.stringify(newSit);
+      const qChanged=String(ex.q||'')!==newQ;
       const refChanged=String(ex.ref||'')!==newRef;
       const refsChanged=JSON.stringify(ex.refs||[])!==JSON.stringify(newRefs);
       const booksChanged=JSON.stringify(ex.books||[])!==JSON.stringify(newBooks);
       const changed=ex.krText!==it.krText||ex.cat!==newCat||ex.topic!==newTopic||
         JSON.stringify(ex.tags||[])!==JSON.stringify(newTags)||String(ex.hi||'')!==newHi||
         String(ex.hi2||'')!==newHi2||dChanged||
-        refChanged||refsChanged||booksChanged;
+        refChanged||refsChanged||booksChanged||sitChanged||qChanged;
       if(changed){
         ex.krText=it.krText;ex.cat=newCat;ex.topic=newTopic;ex.tags=newTags;ex.hi=newHi;
         // 대표 문구 2 는 **비면 지운다** — 시트에서 지웠는데 앱에 남아 있으면
@@ -9614,6 +9633,9 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
         if(refChanged)ex.ref=newRef;
         if(refsChanged){ if(newRefs.length)ex.refs=newRefs.slice(); else delete ex.refs; }
         if(booksChanged){ if(newBooks.length)ex.books=newBooks.slice(); else delete ex.books; }
+        // 비면 **지운다** — 시트에서 지웠는데 앱에 남으면 그 명제만 옛 값을 계속 쓴다
+        if(sitChanged){ if(newSit.length)ex.sit=newSit.slice(); else delete ex.sit; }
+        if(qChanged){ if(newQ)ex.q=newQ; else delete ex.q; }
         updated++;_bump(newCat,'updated');
       }
     }else{
@@ -9836,6 +9858,22 @@ function _propRefs(raw){
 //    → 성경권 열을 **더 이상 읽지 않는다.** 설교 본문에서 뽑은 것이 전부다.
 //    ('인용 본문'은 나중에 Sweeter 에서 교역자가 관련 명제를 잇는 데 쓸 값이지,
 //     지금 화면의 성경 필터에 쓸 값이 아니다)
+// 상황/필요를 조각으로 가른다. 쉼표·세미콜론·가운뎃점·줄바꿈으로 자르고,
+// 너무 긴 조각(문장으로 적은 칸)은 **자르지 않고 통째로** 둔다.
+// ⚠️ 빈 값·중복은 버린다. 타일에서 개수를 세는 값이라 지저분하면 바로 보인다.
+const _PROP_SIT_MAX=8;
+function _propSits(){
+  const out=[];
+  [].slice.call(arguments).forEach(raw=>{
+    const t=String(raw==null?'':raw).trim();
+    if(!t)return;
+    t.split(/[,;·\n\r]+|\s\/\s/).forEach(x=>{
+      const k=x.trim().replace(/^[\-–—\s]+|[\-–—\s]+$/g,'');
+      if(k&&out.indexOf(k)<0)out.push(k);
+    });
+  });
+  return out.slice(0,_PROP_SIT_MAX);
+}
 function _propBooks(refs){
   const out=[];
   (refs||[]).forEach(r=>{const b=_bookOfRef(r);if(b&&out.indexOf(b)<0)out.push(b);});
@@ -9881,6 +9919,17 @@ function _propRowsToItems(rows){
   const iBooks=col('성경권');
   const iSermon=col('설교 본문'),iOldRef=col('장절/단락'),iQuote=col('인용 본문');
   const iText=col('명제');   // ⚠️ 반드시 '명제 ID' **뒤에** 정한다
+  // ── 상황/필요 · 묵상 질문 (v26-0922-3, HB) ──────────────────────────
+  // '명제 DB' 탭에는 **상황 태그**, '성도 공유용' 탭에는 **상황/필요 · 묵상 질문**
+  // 이 있다. 어느 탭을 연결하든 **있는 열만** 읽으면 되도록 이름으로 찾는다.
+  // ⚠️⚠️ 여기만은 col() 의 '포함' 찾기를 쓰지 않는다 (colX = 정확히 같은 이름만).
+  //    '상황 태그' 와 '상황/필요' 는 둘 다 '상황' 을 품고 있어서, 포함으로 찾으면
+  //    한 탭에 하나만 있을 때 **서로의 열을 집어간다.**
+  const colX=(...names)=>{
+    for(const n of names){const i=h.indexOf(n);if(i>=0&&!used.has(i)){used.add(i);return i;}}
+    return -1;
+  };
+  const iSit=colX('상황 태그'),iNeed=colX('상황/필요'),iAsk=colX('묵상 질문');
   // ⚠️ HB 정정 (26-0831): 전체화면에 쓸 성경은 **F열 '설교 본문'** 이다.
   //    예전에 읽던 H열은 이름이 '인용 본문' 으로 바뀌었는데, 그것은 설교 본문에
   //    더해 설교에서 인용된 **모든** 본문이라 화면에 다 쓰면 너무 많다.
@@ -9924,6 +9973,9 @@ function _propRowsToItems(rows){
       refs:_propRefs(refCell(r)),
       ref:_propRefs(refCell(r)).join(' · '),
       tags:tagsRaw?tagsRaw.split(/[,;]/).map(t=>t.trim()).filter(Boolean):[],
+      // 상황/필요 — 두 열을 **합쳐** 한 묶음으로 본다 (탭마다 이름이 다를 뿐 뜻은 같다)
+      sit:_propSits(iSit>=0?r[iSit]:'',iNeed>=0?r[iNeed]:''),
+      q:iAsk>=0?String(r[iAsk]||'').trim():'',  // 묵상 질문 (한 문장)
       hi:iHi>=0?String(r[iHi]||'').trim():'',   // 대표 문구 1 (= 강조 문구 자리)
       hi2:iHi2>=0?String(r[iHi2]||'').trim():'',// 대표 문구 2 (비면 하나만 쓰는 명제다)
       // ⚠️ 명제는 한 칸에 본문이 여럿 들어온다 ("롬 5:8; 엡 2:8-9").
@@ -42320,15 +42372,22 @@ const _SW_TYPES={
         empty:'설교 날짜가 있는 말씀이 아직 적어 흐름을 읽지 못했어요.'},
   // '나의 리듬' — 언제 말씀을 만나는가 (요일 × 때). 대시보드의 그 화면을 줄인 것.
   rhythm:{n:'나의 리듬',sorts:['모두','이번 달'],
-        empty:'아직 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'}
+        empty:'아직 기록이 없어요. 좋아요·암송을 남기면 여기에 쌓입니다.'},
+  // ── 3차 (v26-0922-3, HB) — 시트의 '상황 태그'·'묵상 질문' 에서 나온다 ──
+  // ⚠️ 시트에 그 열이 없으면 **조용히 비어 있는다** (지어내지 않는다).
+  //    HB 가 '말씀 모음 전체 업데이트' 를 한 번 돌려야 값이 들어온다.
+  need:{n:'지금 이런 마음이라면',wide:true,sorts:['많은 순','이름'],
+        empty:'시트의 \u2018상황 태그\u2019(또는 \u2018상황/필요\u2019)를 아직 못 읽었어요. 말씀 모음을 다시 받아 보세요.'},
+  ask:{n:'묵상 질문',wide:true,sorts:['오늘','최근 설교'],
+        empty:'시트의 \u2018묵상 질문\u2019 열을 아직 못 읽었어요. 그 열이 있는 시트를 연결해 보세요.'}
 };
 // 처음 켰을 때 놓이는 차례
-const _SW_DEFAULT_TILES=['today','insight','last','keep','rhythm','coll','recent','book','tag','react'];
+const _SW_DEFAULT_TILES=['today','insight','need','ask','last','keep','rhythm','coll','recent','book','tag','react'];
 // 판 구성의 판 번호. 새 타일을 기본 차례에 더했을 때, **이미 판을 꾸며 둔 기기**도
 // 그것을 한 번은 보게 해 준다 (안 그러면 새 타일은 영영 ＋ 줄에만 있다).
 // ⚠️ 한 번만 끼운다. 사용자가 끈 것을 되살리지 않으려면 번호를 올려야만 한다.
-const _SW_TILES_V=3;
-const _SW_TILES_V2_ADD=['today','insight','rhythm'];
+const _SW_TILES_V=4;
+const _SW_TILES_V2_ADD=['today','insight','need','ask','rhythm'];
 
 // ── 담아두기 ─────────────────────────────────────────────
 // 다시 꺼내 읽고 싶은 말씀을 표시해 둔다. 기록은 좋아요·공유와 **똑같은 모양**
@@ -43111,8 +43170,49 @@ function _swSigRhythm(sortIdx,cur){
   }
   return _swSigWrap(o+'</svg>');
 }
+// ══════════════════════════════════════════════════════════
+//  '지금 이런 마음이라면' · '묵상 질문' (v26-0922-3, HB)
+//  ────────────────────────────────────────────────────────
+//  둘 다 **시트에 이미 적혀 있는 것**에서 나온다 (새로 지어내지 않는다):
+//    · 상황 태그 / 상황/필요  → 지금 마음 상태로 말씀을 찾는 길
+//    · 묵상 질문              → 그 말씀 앞에서 스스로에게 던지는 물음
+//  ⚠️ 시트에 그 열이 없으면 값이 하나도 없다 → 타일이 조용히 까닭을 적는다.
+// ══════════════════════════════════════════════════════════
+function _swNeeds(sortIdx){
+  const m=new Map();
+  (ACTIVE_VERSES()||[]).forEach(v=>{
+    (v&&Array.isArray(v.sit)?v.sit:[]).forEach(k0=>{
+      const k=String(k0||'').trim();
+      if(!k)return;
+      m.set(k,(m.get(k)||0)+1);
+    });
+  });
+  const a=[...m.entries()].map(([name,n])=>({name,n}));
+  if(sortIdx===1)a.sort((x,y)=>x.name.localeCompare(y.name,'ko'));
+  else a.sort((x,y)=>y.n-x.n||x.name.localeCompare(y.name,'ko'));
+  return a.slice(0,12);
+}
+// 묵상 질문 — 질문이 적힌 말씀만 모은다. 물음 하나에 말씀 하나가 짝이다.
+function _swAsks(sortIdx){
+  const av=(ACTIVE_VERSES()||[]).filter(v=>v&&String(v.q||'').trim());
+  if(!av.length)return [];
+  const wrap=v=>({verse:v,ref:v.ref,q:String(v.q).trim(),
+                  why:(String(v.topic||'').trim()||String(v.cat||'').trim()||'')});
+  if(sortIdx===1){
+    // 최근 설교의 질문부터
+    return av.slice().sort((a,b)=>String(b.d||'').localeCompare(String(a.d||''))).slice(0,12).map(wrap);
+  }
+  // 오늘 — 날짜를 씨앗으로 섞는다 (하루 동안 같은 물음이 남는다)
+  const R=_hiRng(_hiHash('sw-ask-'+_calKey()));
+  const idx=av.map((v,i)=>i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(R()*(i+1));const t=idx[i];idx[i]=idx[j];idx[j]=t;}
+  return idx.slice(0,5).map(k=>wrap(av[k]));
+}
+
 function _swValues(t){
   const i=t.s%_SW_TYPES[t.k].sorts.length;
+  if(t.k==='need')return _swNeeds(i);
+  if(t.k==='ask')return _swAsks(i);
   if(t.k==='today')return _swToday(i);
   if(t.k==='insight')return _swInsights(i);
   if(t.k==='rhythm')return _swRhythm(i);
@@ -43139,7 +43239,8 @@ function _swStrip(t){
 function _swCountText(k,n){
   return{today:'말씀 '+n,last:'말씀 '+n,keep:'담아둔 '+n,recent:'설교 '+n+'편',book:n+'권',
          tag:'태그 '+n,react:n+'가지',coll:'모음 '+n,
-         insight:'읽은 흐름 '+n,rhythm:n+'가지'}[k]||String(n);
+         insight:'읽은 흐름 '+n,rhythm:n+'가지',
+         need:'상황 '+n,ask:'질문 '+n}[k]||String(n);
 }
 
 // ── 한 타일의 얼굴 ───────────────────────────────────────
@@ -43364,6 +43465,20 @@ function _swCellHTML(t,it,i){
       +'<div class="sw-val">'+tx+'</div>'
       +'<div class="sw-num">눌러서 그 말씀들 보기</div></div>';
   }
+  // 지금 이런 마음이라면 — 상황 하나가 한 칸이다
+  // ⚠️ 머리말을 달지 않는다 — 타일 이름이 이미 '지금 이런 마음이라면' 이라
+  //    같은 말이 두 줄 이어진다 (첫 시안에서 그랬다).
+  if(t.k==='need')
+    return '<div class="sw-cell need">'
+      +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
+      +'<div class="sw-num">'+_swEsc('말씀 '+g.n+' \u00b7 눌러서 보기')+'</div></div>';
+  // 묵상 질문 — 물음이 주인이고, 그 물음이 나온 말씀이 아래에 선다
+  if(t.k==='ask')
+    return '<div class="sw-cell ask">'
+      +'<div class="sw-quote" aria-hidden="true">?</div>'
+      +'<div class="sw-kick">'+_swEsc(g.ref||'')+'</div>'
+      +'<div class="sw-val">'+_swEsc(g.q)+'</div>'
+      +(g.why?'<div class="sw-num">'+_swEsc(g.why)+'</div>':'')+'</div>';
   // 리듬 — 격자가 곧 내용이다 (글자는 그것을 사람 말로 옮긴 것)
   if(t.k==='rhythm')
     return '<div class="sw-cell rhythm">'
@@ -43583,6 +43698,9 @@ function _swVersesFor(t,cur){
   const g=cur.v;
   // 발견 — 그 흐름 안의 말씀들만 (최근 흐름으로 자른 그 묶음이다)
   if(t.k==='insight')return _swVersesForInsight(g,t.s%_SW_TYPES.insight.sorts.length);
+  // 지금 이런 마음이라면 — 그 상황이 적힌 말씀들
+  if(t.k==='need')
+    return av.filter(v=>(Array.isArray(v.sit)?v.sit:[]).some(x=>String(x||'').trim()===g.name));
   if(t.k==='recent'){
     const c=g.cat;
     return av.filter(v=>(String(v.cat||'').trim()||'나의 암송')===c);
@@ -43619,6 +43737,13 @@ function _swTileOpen(i){
   const t=_SW_TILES[i],it=_swStrip(t);
   if(!it.length){showToast(_SW_TYPES[t.k].empty);return;}
   const cur=it[Math.max(0,Math.min(it.length-1,t.p))];
+  // 묵상 질문 — 그 물음이 나온 말씀을 연다 (물음이 곧 그 말씀의 것이다)
+  if(t.k==='ask'){
+    const list=it.map(x=>x.v.verse);
+    const idx=Math.max(0,list.indexOf(cur.v.verse));
+    _swOpenVerse(cur.v.verse,list,idx,_SW_TYPES.ask.n);
+    return;
+  }
   // 말씀이 곧 값인 타일 — 띠 전체가 그대로 목록이 된다
   if(t.k==='last'||t.k==='keep'){
     const list=it.map(x=>x.v.verse);
