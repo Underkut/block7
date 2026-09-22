@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5108,12 +5108,18 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
   max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sw-sc::after{content:"";position:absolute;inset:-12px -8px;}
 .sw-sc:active{border-color:var(--ac);color:var(--ac-tx);}
-.sw-val{position:relative;font-size:16.5px;font-weight:500;line-height:1.3;letter-spacing:-.01em;
+/* ⚠️⚠️ **flex-shrink:0** — 글 덩어리는 절대 눌리지 않는다 (v26-0922-14, HB:
+   "3줄일 때 아래가 잘리네"). 칸은 flex 세로줄이라 자리가 모자라면 글자 칸을
+   눌러 버리는데, 그러면 -webkit-line-clamp 가 센 줄 수와 상관없이 **마지막
+   줄이 반쯤 잘린다.** 눌리지 않게 해 두면 모자랄 때 위로 넘쳐 머리말이
+   먼저 가려질 뿐, 읽던 줄이 잘리지는 않는다. */
+.sw-val{position:relative;flex-shrink:0;
+  font-size:16.5px;font-weight:500;line-height:1.3;letter-spacing:-.01em;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
   word-break:keep-all;}
 .sw-cell.verse .sw-val{font-family:var(--font-display);font-size:13.5px;line-height:1.58;
   font-weight:400;-webkit-line-clamp:3;}
-.sw-num{position:relative;font-size:10.5px;color:var(--tx2);margin-top:3px;
+.sw-num{position:relative;flex-shrink:0;font-size:10.5px;color:var(--tx2);margin-top:3px;
   font-variant-numeric:tabular-nums;font-family:var(--font-number);line-height:1.45;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .sw-pips{position:relative;z-index:2;display:flex;gap:3.5px;justify-content:flex-end;
@@ -5151,7 +5157,7 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    줄이 늘면 **위로 자라 머리말을 덮었다.** 흐름 안에 두면 서로 밀어낼 뿐
    겹치지 않는다 — margin-bottom:auto 가 남는 자리를 다 먹어 맨 위로 올린다.
    ⚠️ 오른쪽 그림을 피하는 것은 이제 right 가 아니라 padding-right 다. */
-.sw-kick{position:relative;margin-bottom:auto;
+.sw-kick{position:relative;flex-shrink:0;margin-bottom:auto;
   font:600 9.5px/1.2 var(--font-ui);letter-spacing:.09em;color:var(--ac-tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* 뒤에 옅게 깔리는 큰 숫자.
@@ -5175,9 +5181,11 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    HB: "사진 색이 다 제각각인데 좀더 테마와 어울리게 색 보정이 필요할 듯해.
         좀 블러시키는 것은 어떤가? 그레인 노이즈를 추가한다거나."
    네 겹으로 만든다. 순서가 곧 뜻이다 —
-     ① 사진    색을 걷어내고(grayscale) 살짝 흐린다(blur). 읽을 것이 아니라
-               **바탕**이라는 신호다. scale(1.06) 은 흐리기가 가장자리에
-               만드는 김을 잘라 내려는 것이다.
+     ① 사진    색을 **조금만** 걷어내고(grayscale .34) 살짝 흐린다(blur .6px).
+               ⚠️ v26-0922-13 에서 .74/1.1px 까지 갔더니 HB: "너무 흑백인
+               느낌은 있어 … 뭔지 너무 안 보여서 맥락이 전달이 안 되는 문제".
+               사진이 무엇인지는 알아볼 수 있어야 한다.
+               scale(1.06) 은 흐리기가 가장자리에 만드는 김을 잘라 낸다.
      ② 물들이기 테마 강조색을 mix-blend-mode:color 로 얹는다. 사진의 명암은
                그대로 두고 **색만** 갈아 끼우므로 스물네 장이 전부 한 색으로
                모인다. 테마를 바꾸면 사진 색도 따라 바뀐다.
@@ -5189,7 +5197,7 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    ⚠️ 그레인 그림은 **주소로 인코딩한** SVG 다. 날글자로 적으면 tools/check.sh
       의 태그 짝 세기에 걸린다. */
 .sw-photo{position:absolute;inset:0;
-  border-radius:15px;pointer-events:none;opacity:.40;overflow:hidden;isolation:isolate;
+  border-radius:15px;pointer-events:none;opacity:.52;overflow:hidden;isolation:isolate;
   --sw-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
   /* HB: "아래로 내려가면서 그라데이션으로 옅어져서 경계가 불분명해 보이는 것이
      도움이 되기는 하네." → 그 성질을 **사진 자체**에 준다. 아래로 갈수록 사진이
@@ -5202,10 +5210,10 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
       순서를 정해 주지 않으면 물들이기가 사진 **밑**으로 깔린다. */
 .sw-photo>img{position:relative;z-index:0;width:100%;height:100%;object-fit:cover;
   display:block;border-radius:15px;transform:scale(1.06);
-  filter:grayscale(.74) contrast(.94) brightness(1.04) blur(1.1px);}
+  filter:grayscale(.34) contrast(.97) brightness(1.03) blur(.6px);}
 /* ② 테마 색으로 물들인다 — 명암은 그대로, 색만 */
 .sw-photo::before{content:"";position:absolute;inset:0;z-index:1;border-radius:15px;
-  background:rgb(var(--ac-rgb));mix-blend-mode:color;opacity:.58;}
+  background:rgb(var(--ac-rgb));mix-blend-mode:color;opacity:.30;}
 /* ③④ 덮개 + 그레인 */
 .sw-photo::after{content:"";position:absolute;inset:0;z-index:2;border-radius:15px;
   background-image:var(--sw-grain),
@@ -5213,11 +5221,23 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
       rgba(0,0,0,.08) 56%,rgba(0,0,0,.38));
   background-size:120px 120px,100% 100%;
   background-repeat:repeat,no-repeat;}
+/* ── 유튜브 썸네일은 **제 색을 더 많이 남긴다** (v26-0922-14, HB) ──
+   HB: "썸네일은 특히 기존 색과 사진이 완전히는 아니어도 다른 배경들보다는
+        좀더 살면 좋겠어."
+   까닭이 있다 — 썸네일은 교회가 **직접 만든 그림**이다. 설교 제목이 적혀 있고
+   색도 그 설교의 것이다. 사진첩 사진처럼 바탕으로 깔아 버리면 그 뜻이 사라진다.
+   그래서 색은 거의 그대로, 흐리기는 아주 조금, 물들이기도 살짝만. */
+.sw-photo.sw-yt{opacity:.72;}
+.sw-photo.sw-yt>img{filter:grayscale(.1) contrast(1) brightness(1) blur(.25px);}
+.sw-photo.sw-yt::before{opacity:.1;}
+html[data-theme="light"] .sw-photo.sw-yt{opacity:.62;}
+html[data-theme="light"] .sw-photo.sw-yt>img{
+  filter:grayscale(.1) contrast(.98) brightness(1.04) blur(.25px);}
 /* ⚠️ 밝은 테마에서는 **덮는 힘이 셀수록 사진이 잿빛으로 죽는다.** 가운데는 거의
    덮지 않고(사진이 살고) 위아래만 덮는다(이름줄·본문이 읽히고). */
-html[data-theme="light"] .sw-photo{opacity:.34;}
+html[data-theme="light"] .sw-photo{opacity:.44;}
 html[data-theme="light"] .sw-photo>img{
-  filter:grayscale(.74) contrast(.92) brightness(1.1) blur(1.1px);}
+  filter:grayscale(.34) contrast(.95) brightness(1.07) blur(.6px);}
 html[data-theme="light"] .sw-photo::after{
   /* ⚠️ 맨 위는 조금 더 덮는다 — 머리말(장절)이 앉는 자리라 어두운 사진에서는
      글자가 묻힌다. 대신 **빨리** 걷어서(22%) 사진이 잿빛이 되지 않게 한다. */
@@ -5237,7 +5257,9 @@ html[data-theme="light"] .sw-photo::after{
 .k-rhythm .sw-ill{width:26%;}
 /* 묵상 질문의 대표 문구는 물음보다 조금 작게 (물음이 주인이다) */
 .sw-cell.ask .sw-hi{--sw-hi-size:15px;margin-bottom:5px;-webkit-line-clamp:1;}
-.sw-cell.ask.has-hi .sw-val{font-size:14.5px;-webkit-line-clamp:3;}
+/* ⚠️ 두 줄이다. 대표 문구(한 줄)+물음(세 줄)+까닭(한 줄)은 넓은 타일 높이에
+   들어가지 않는다 — 넣으면 마지막 줄이 반쯤 잘린다 (v26-0922-14, HB). */
+.sw-cell.ask.has-hi .sw-val{font-size:14.5px;-webkit-line-clamp:2;}
 /* 긴 타일 (표지 카드) — 두 줄을 차지한다. 넓은 것과 겹치면 2×2 한 장이 된다. */
 .sw-tile.tall{grid-row:span 2;}
 /* ══ 데이터가 곧 그림 (.sw-sig) ════════════════════════════
@@ -5308,7 +5330,7 @@ html[data-theme="light"] .sw-photo::after{
       (전체화면이 '명제를 열 때만' 받는 것과 같은 까닭 — 위 @font-face 주석).
    ⚠️ 크기 배율(--sw-hik)은 전체화면의 --pt-k 를 그대로 옮긴 값이다. 손글씨는
       획이 가늘고 흘려 써서 같은 px 로도 훨씬 작아 보인다. */
-.sw-hi{position:relative;font-family:var(--font-display);
+.sw-hi{position:relative;flex-shrink:0;font-family:var(--font-display);
   font-size:calc(var(--sw-hi-size,17px)*var(--sw-hik,1));
   line-height:1.3;font-weight:500;color:var(--tx);margin-bottom:6px;
   overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
@@ -5604,7 +5626,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-13";
+const APP_VERSION = "v. 26-0922-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44288,7 +44310,7 @@ function _swCellHTML(t,it,i){
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
   if(t.k==='recent'){
     // 유튜브 썸네일이 있으면 그것이 이 칸의 얼굴이다 (없으면 예전처럼 큰 숫자)
-    const th=(g.yt&&_swPhOn(t))?('<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
+    const th=(g.yt&&_swPhOn(t))?('<div class="sw-photo sw-yt" aria-hidden="true"><img alt="" loading="lazy" src="'
       +_SW_YT_THUMB[0]+_swEsc(g.yt)+'/'+_SW_YT_THUMB[1]
       +'" onerror="_swYtThumbFail(this)"></div>'):'';
     // ⚠️ 큰 숫자를 **늘** 깔아 둔다. 썸네일이 안 오는 기기·망에서도 칸이 비지
