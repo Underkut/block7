@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-12  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-13  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5145,7 +5145,13 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    ⚠️ 칸의 **맨 위**에 띄운다. 본문은 아래에 붙으므로(justify-content:flex-end)
       그냥 두면 본문에 딱 붙어 버리고 칸 위쪽이 통째로 빈다 — 매거진처럼
       위는 머리말, 아래는 본문으로 나눠 채운다. */
-.sw-kick{position:absolute;left:13px;right:13px;top:var(--sw-ct,0px);
+/* ⚠️⚠️ 머리말은 **흐름 안**에 둔다 (v26-0922-13, HB — "하단 내용이 2줄일 때는
+   괜찮은데 3줄일 때 타이틀이 올라가면서 좌상단 고정텍스트와 겹치게 돼").
+   예전에는 칸 맨 위에 띄워 두었는데(position:absolute), 본문은 아래에 붙으므로
+   줄이 늘면 **위로 자라 머리말을 덮었다.** 흐름 안에 두면 서로 밀어낼 뿐
+   겹치지 않는다 — margin-bottom:auto 가 남는 자리를 다 먹어 맨 위로 올린다.
+   ⚠️ 오른쪽 그림을 피하는 것은 이제 right 가 아니라 padding-right 다. */
+.sw-kick{position:relative;margin-bottom:auto;
   font:600 9.5px/1.2 var(--font-ui);letter-spacing:.09em;color:var(--ac-tx);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* 뒤에 옅게 깔리는 큰 숫자.
@@ -5165,29 +5171,59 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    읽히면 아무 소용이 없다. 밝은 테마에서는 반대로 하얗게 덮는다. */
 /* ⚠️ 칸(.sw-cell)이 이제 타일을 통째로 덮으므로 inset:0 이면 **타일을 꽉 채운다**
    (v26-0922-11). 예전에는 이름줄과 점줄 사이만 덮어 위아래가 비어 보였다. */
-.sw-photo{position:absolute;inset:0;background-size:cover;background-position:center;
-  border-radius:15px;pointer-events:none;opacity:.62;overflow:hidden;
+/* ══ 바탕 사진 — **한 판의 식구로 보이게** (v26-0922-13, HB) ══════
+   HB: "사진 색이 다 제각각인데 좀더 테마와 어울리게 색 보정이 필요할 듯해.
+        좀 블러시키는 것은 어떤가? 그레인 노이즈를 추가한다거나."
+   네 겹으로 만든다. 순서가 곧 뜻이다 —
+     ① 사진    색을 걷어내고(grayscale) 살짝 흐린다(blur). 읽을 것이 아니라
+               **바탕**이라는 신호다. scale(1.06) 은 흐리기가 가장자리에
+               만드는 김을 잘라 내려는 것이다.
+     ② 물들이기 테마 강조색을 mix-blend-mode:color 로 얹는다. 사진의 명암은
+               그대로 두고 **색만** 갈아 끼우므로 스물네 장이 전부 한 색으로
+               모인다. 테마를 바꾸면 사진 색도 따라 바뀐다.
+     ③ 덮개    위아래만 거든다 (이름줄·본문이 읽히게).
+     ④ 그레인  아주 옅은 결. 흐린 사진이 '뭉개진' 것이 아니라 '종이에 인쇄된'
+               것처럼 보이게 한다.
+   ⚠️ 진하기(opacity)를 먼저 낮춘다 — 덮개를 세게 하면 잿빛으로 죽는다
+      (HB: "다 너무 진하네").
+   ⚠️ 그레인 그림은 **주소로 인코딩한** SVG 다. 날글자로 적으면 tools/check.sh
+      의 태그 짝 세기에 걸린다. */
+.sw-photo{position:absolute;inset:0;
+  border-radius:15px;pointer-events:none;opacity:.40;overflow:hidden;isolation:isolate;
+  --sw-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='.5'/%3E%3C/svg%3E");
   /* HB: "아래로 내려가면서 그라데이션으로 옅어져서 경계가 불분명해 보이는 것이
      도움이 되기는 하네." → 그 성질을 **사진 자체**에 준다. 아래로 갈수록 사진이
      사라져 타일 바탕에 녹아들고, 글자는 맨바탕 위에 앉아 가장 잘 읽힌다. */
   -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.4) 78%,rgba(0,0,0,0) 97%);
           mask-image:linear-gradient(180deg,#000 0%,#000 44%,rgba(0,0,0,.4) 78%,rgba(0,0,0,0) 97%);}
-/* 유튜브 썸네일처럼 **주소를 갈아끼워야** 하는 사진은 <img> 로 넣는다.
-   ⚠️ object-fit:cover 라야 칸을 꽉 채운다 (v26-0922-10, HB: "위아래가 비어서"). */
-.sw-photo>img{width:100%;height:100%;object-fit:cover;display:block;border-radius:15px;}
-/* 위는 이름줄이, 아래는 본문이 앉는 자리라 둘 다 조금씩 덮는다 */
-.sw-photo::after{content:"";position:absolute;inset:0;border-radius:15px;
-  background:linear-gradient(180deg,rgba(0,0,0,.40),rgba(0,0,0,.05) 28%,
-    rgba(0,0,0,.04) 56%,rgba(0,0,0,.34));}
+/* ① 사진은 언제나 <img> 다 (사진첩·유튜브 썸네일 둘 다).
+   ⚠️ object-fit:cover 라야 칸을 꽉 채운다 (v26-0922-10, HB: "위아래가 비어서").
+   ⚠️ z-index 를 못박는다 — transform 이 붙은 요소는 ::before 와 같은 층이라
+      순서를 정해 주지 않으면 물들이기가 사진 **밑**으로 깔린다. */
+.sw-photo>img{position:relative;z-index:0;width:100%;height:100%;object-fit:cover;
+  display:block;border-radius:15px;transform:scale(1.06);
+  filter:grayscale(.74) contrast(.94) brightness(1.04) blur(1.1px);}
+/* ② 테마 색으로 물들인다 — 명암은 그대로, 색만 */
+.sw-photo::before{content:"";position:absolute;inset:0;z-index:1;border-radius:15px;
+  background:rgb(var(--ac-rgb));mix-blend-mode:color;opacity:.58;}
+/* ③④ 덮개 + 그레인 */
+.sw-photo::after{content:"";position:absolute;inset:0;z-index:2;border-radius:15px;
+  background-image:var(--sw-grain),
+    linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.08) 24%,
+      rgba(0,0,0,.08) 56%,rgba(0,0,0,.38));
+  background-size:120px 120px,100% 100%;
+  background-repeat:repeat,no-repeat;}
 /* ⚠️ 밝은 테마에서는 **덮는 힘이 셀수록 사진이 잿빛으로 죽는다.** 가운데는 거의
-   덮지 않고(사진이 살고) 위아래만 덮는다(이름줄·본문이 읽히고). 사진 자체의
-   진하기도 어두운 테마보다 살짝 낮춘다 — 글자가 검정이라 대비가 필요하다. */
-html[data-theme="light"] .sw-photo{opacity:.58;filter:brightness(1.07);}
+   덮지 않고(사진이 살고) 위아래만 덮는다(이름줄·본문이 읽히고). */
+html[data-theme="light"] .sw-photo{opacity:.34;}
+html[data-theme="light"] .sw-photo>img{
+  filter:grayscale(.74) contrast(.92) brightness(1.1) blur(1.1px);}
 html[data-theme="light"] .sw-photo::after{
   /* ⚠️ 맨 위는 조금 더 덮는다 — 머리말(장절)이 앉는 자리라 어두운 사진에서는
-     글자가 묻힌다. 대신 **빨리** 걷어서(20%) 사진이 잿빛이 되지 않게 한다. */
-  background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,.05) 20%,
-    rgba(255,255,255,.06) 54%,rgba(255,255,255,.58));}
+     글자가 묻힌다. 대신 **빨리** 걷어서(22%) 사진이 잿빛이 되지 않게 한다. */
+  background-image:var(--sw-grain),
+    linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.14) 22%,
+      rgba(255,255,255,.16) 54%,rgba(255,255,255,.60));}
 /* 사진이 깔린 칸은 손그림을 물린다 — 둘이 겹치면 둘 다 지저분해진다 */
 .sw-cell.has-photo .sw-art{display:none;}
 /* ══ 삽화 (v26-0922-6, HB 6·7·8) ══════════════════════════
@@ -5247,9 +5283,10 @@ html[data-theme="light"] .sw-photo::after{
      · 말씀 모음 — 쌓인 책 그림(.sw-sig, 34%)
      · 묵상 질문 — 물음표 인용부호(.sw-quote, 58px)
    그 둘에서만 오른쪽을 비운다. 넓혀 두면 짧은 머리말이 한가운데로 몰린다. */
-.k-coll .sw-kick{right:42%;}
-.sw-cell.ask .sw-kick{right:46px;}
-.sw-cell.hero .sw-kick{position:relative;left:auto;right:auto;top:auto;margin-bottom:9px;}
+.k-coll .sw-kick{padding-right:42%;}
+.sw-cell.ask .sw-kick{padding-right:46px;}
+/* 표지 카드는 가운데로 모으므로 머리말도 본문 바로 위에 붙는다 (auto 가 아니다) */
+.sw-cell.hero .sw-kick{margin-bottom:9px;}
 .sw-cell.hero .sw-num{margin-top:9px;}
 /* 인용부호 — 칸 **안쪽**에 둔다. 음수 자리에 두면 트랙이 잘라 먹는다. */
 /* ⚠️ 글자에는 --ac 가 아니라 **--ac-tx** 를 쓴다 (테마 34벌 규칙 —
@@ -5363,6 +5400,14 @@ html[data-theme="light"] .sw-photo::after{
   background:var(--bg);border:1px solid var(--bd);color:var(--tx2);
   display:grid;place-items:center;font-size:13px;line-height:1;z-index:3;cursor:pointer;
   padding:0;}
+/* 편집에서 **타일마다** 바탕 사진을 켜고 끈다 (v26-0922-13, HB).
+   ⚠️ × 와 같은 모양·같은 크기로 반대쪽 귀퉁이에 둔다 — 편집 중에만 보이므로
+      평소 화면에는 단추가 하나도 늘지 않는다 (UI 원칙). */
+.sw-ph{position:absolute;top:7px;left:7px;width:21px;height:21px;border-radius:50%;
+  background:var(--bg);border:1px solid var(--bd);color:var(--ac-tx);
+  display:grid;place-items:center;line-height:0;z-index:3;cursor:pointer;padding:0;}
+.sw-ph svg{width:12px;height:12px;display:block;}
+.sw-ph.off{color:var(--tx3);}
 /* 놓을 자리에 들어오는 불 (할일뷰의 드롭 표시와 같은 뜻) */
 .sw-hole{position:absolute;border-radius:15px;pointer-events:none;z-index:1;
   border:1.5px dashed var(--ac);background:var(--ac-soft);opacity:.9;
@@ -5559,7 +5604,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-12";
+const APP_VERSION = "v. 26-0922-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -42976,15 +43021,17 @@ function _swVerRaw(){
 function _swLoadTiles(){
   const raw=_swTilesRaw();
   // 아직 한 번도 손대지 않았으면 기본 차례로 (빈 배열은 "다 껐다"는 뜻이라 살린다)
-  if(!Array.isArray(raw))return _SW_DEFAULT_TILES.map(k=>({k,s:0,p:0}));
+  if(!Array.isArray(raw))return _SW_DEFAULT_TILES.map(k=>({k,s:0,p:0,ph:1}));
   // 모르는 종류는 버린다 — 뒤 버전에서 없앤 타일이 남아 있을 수 있다
-  const out=raw.filter(t=>t&&_SW_TYPES[t.k]).map(t=>({k:t.k,s:(+t.s||0),p:0}));
+  // ph: 바탕 사진 켬(1)/끔(0). 적힌 적이 없으면 **켬**이 기본이다 (v26-0922-13)
+  const out=raw.filter(t=>t&&_SW_TYPES[t.k])
+    .map(t=>({k:t.k,s:(+t.s||0),p:0,ph:(t.ph===0?0:1)}));
   // 새로 생긴 타일을 **한 번만** 앞에 끼운다 (이미 꾸며 둔 기기도 새것을 본다).
   // ⚠️ 판 번호를 올려 두므로 사용자가 그 타일을 끄면 다시 들어오지 않는다.
   if((+_swVerRaw()||0)<_SW_TILES_V){
     const have=new Set(out.map(t=>t.k));
     _SW_TILES_V2_ADD.slice().reverse().forEach(k=>{
-      if(_SW_TYPES[k]&&!have.has(k))out.unshift({k,s:0,p:0});
+      if(_SW_TYPES[k]&&!have.has(k))out.unshift({k,s:0,p:0,ph:1});
     });
     if(_swOn()){
       if(!ST.settings)ST.settings={};
@@ -42998,7 +43045,7 @@ function _swSaveTiles(){
   //    쓰면 BLOCK7 의 클라우드 문서에 Sweeter 것이 섞인다.
   if(!_swOn())return;
   if(!ST.settings)ST.settings={};
-  ST.settings.swTiles=_SW_TILES.map(t=>({k:t.k,s:t.s}));   // p 는 담지 않는다
+  ST.settings.swTiles=_SW_TILES.map(t=>({k:t.k,s:t.s,ph:(t.ph===0?0:1)})); // p 는 담지 않는다
   ST.settings.swTilesV=_SW_TILES_V;                        // 끼워 넣기는 한 번만
   save();
 }
@@ -43993,8 +44040,10 @@ function _swPhotoFor(v){
 function _swPhotoHTML(v){
   const src=_swPhotoFor(v);
   if(!src)return '';
-  return '<div class="sw-photo" aria-hidden="true" '
-    +'style="background-image:url(\''+_swEsc(src).replace(/'/g,'%27')+'\')"></div>';
+  // ⚠️ 바탕그림이 아니라 <img> 다 (v26-0922-13) — 흐리기·물들이기를 사진에만
+  //    걸어야 덮개·그레인까지 함께 흐려지지 않는다.
+  return '<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
+    +_swEsc(src).replace(/"/g,'%22')+'"></div>';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -44185,7 +44234,7 @@ function _swCellHTML(t,it,i){
       else why=_swWhyOf(v,null)||g.when||'';
     }
     // 대표 문구(명제)·강조 문구(말씀)가 있으면 **그것이 주인**이고 본문은 물러선다
-    const hi=_swHiHTML(v),photo=_swPhotoHTML(v);
+    const hi=_swHiHTML(v),photo=_swPhOn(t)?_swPhotoHTML(v):'';
     return '<div class="sw-cell verse'+(t.k==='today'?' hero':'')+(hi?' has-hi':'')
       +(photo?' has-photo':'')+'">'+photo
       +(t.k==='today'?'<div class="sw-quote" aria-hidden="true">\u201C</div>':'')
@@ -44218,7 +44267,7 @@ function _swCellHTML(t,it,i){
   }
   // 묵상 질문 — 물음이 주인이고, 그 물음이 나온 말씀이 아래에 선다
   if(t.k==='ask'){
-    const photo=_swPhotoHTML(g.verse);
+    const photo=_swPhOn(t)?_swPhotoHTML(g.verse):'';
     // 대표 문구를 물음 **위에** 특별 글씨체로 (v26-0922-6, HB 2)
     const hi=_swHiHTML(g.verse);
     return '<div class="sw-cell ask'+(photo?' has-photo':'')+(hi?' has-hi':'')+'">'+photo
@@ -44239,7 +44288,7 @@ function _swCellHTML(t,it,i){
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
   if(t.k==='recent'){
     // 유튜브 썸네일이 있으면 그것이 이 칸의 얼굴이다 (없으면 예전처럼 큰 숫자)
-    const th=g.yt?('<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
+    const th=(g.yt&&_swPhOn(t))?('<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
       +_SW_YT_THUMB[0]+_swEsc(g.yt)+'/'+_SW_YT_THUMB[1]
       +'" onerror="_swYtThumbFail(this)"></div>'):'';
     // ⚠️ 큰 숫자를 **늘** 깔아 둔다. 썸네일이 안 오는 기기·망에서도 칸이 비지
@@ -44270,6 +44319,43 @@ function _swCellHTML(t,it,i){
   return '<div class="sw-cell book">'+deco+_swIllHTML('book')
     +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
     +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
+}
+// ── 타일마다 바탕 사진 켜고 끄기 (v26-0922-13, HB) ───────
+// HB: "사진을 배경으로 쓸지 말지는 사용자가 어딘가 설정에서 타일마다 고를 수
+//      있게 해주면 좋을 것 같아."
+// → 타일을 꾸미는 자리는 **편집 모드**다 (켜고 끄기·차례 바꾸기가 거기 있다).
+//   ×(끄기) 맞은편 귀퉁이에 같은 모양으로 단추를 하나 둔다.
+// ⚠️ 사진이 깔리는 타일에만 단추를 단다 — 나머지에 달면 눌러도 아무 일이 없다.
+const _SW_PHOTO_KINDS=['today','last','keep','ask','recent'];
+// ⚠️ 켬·끔 두 벌을 **한 함수**에서 만든다. 문자열을 둘로 나눠 적으면
+//    여는 태그 하나에 닫는 태그가 둘이 되어 tools/check.sh 의 짝 세기에 걸린다.
+function _swPhIcon(on){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    +'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    +'<rect x="3" y="5" width="18" height="14" rx="2.5"/>'
+    +'<circle cx="8.6" cy="10" r="1.5"/><path d="M21 16.2l-4.8-4.8L10 18"/>'
+    +(on?'':'<path d="M4.4 19.6 19.6 4.4"/>')
+    +'</svg>';
+}
+function _swPhOn(t){return !t||t.ph!==0;}
+// 편집 중에만 붙는 단추들 (×, 그리고 사진이 깔리는 타일이면 사진 켬/끔)
+function _swEditBtns(t){
+  if(!_SW_EDIT)return '';
+  let h='<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>';
+  if(_SW_PHOTO_KINDS.indexOf(t.k)>=0){
+    const on=_swPhOn(t);
+    h+='<button class="sw-ph'+(on?'':' off')+'" data-swph="1" aria-pressed="'+(on?'true':'false')+'"'
+      +' aria-label="바탕 사진 '+(on?'끄기':'켜기')+'" title="바탕 사진 '+(on?'끄기':'켜기')+'">'
+      +_swPhIcon(on)+'</button>';
+  }
+  return h;
+}
+function _swTogglePhoto(i){
+  const t=_SW_TILES[i];if(!t)return;
+  t.ph=_swPhOn(t)?0:1;
+  _swSaveTiles();
+  _swRepaint(i);
+  showToast(_swPhOn(t)?'바탕 사진을 켰어요':'바탕 사진을 껐어요');
 }
 // 꺽쇠 그림은 **말씀 카드의 것을 그대로 쓴다** (_VC_ARROW_L·_VC_ARROW_R).
 // 손으로 옮겨 적으면 둘이 어긋난다 (CLAUDE.md 의 그 규칙).
@@ -44356,8 +44442,7 @@ function _swRender(){
     el.className=_swTileClass(t);
     el.dataset.swi=i;
     el.dataset.swk=t.k;   // FLIP 이 옛 자리와 짝지을 때 쓰는 이름표
-    el.innerHTML=_swFace(t)
-      +(_SW_EDIT?'<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>':'');
+    el.innerHTML=_swFace(t)+_swEditBtns(t);
     b.appendChild(el);
   });
   // 편집 중에만 — 꺼 둔 타일을 **제 얼굴로** 이어 붙인다 (누르면 켜진다)
@@ -44412,7 +44497,7 @@ function swToggleEdit(){
 }
 function _swAddTile(k){
   if(!_SW_TYPES[k]||_SW_TILES.some(t=>t.k===k))return;
-  _SW_TILES.push({k,s:0,p:0});
+  _SW_TILES.push({k,s:0,p:0,ph:1});
   _swRender();
 }
 function _swKillTile(i){
@@ -44467,8 +44552,7 @@ function _swRepaint(i){
   const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
   const t=_SW_TILES[i];
   el.className=_swTileClass(t);   // sw-dragging 도 여기서 사라진다
-  el.innerHTML=_swFace(t)
-    +(_SW_EDIT?'<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>':'');
+  el.innerHTML=_swFace(t)+_swEditBtns(t);
   _swKbSync();                    // className 을 새로 준 자리라 표시도 다시 (v26-0921-12)
 }
 
@@ -44680,6 +44764,8 @@ function _swInitGestures(){
     if(el.dataset.swadd!==undefined){_swAddTile(el.dataset.swadd);e.preventDefault();return;}
     const i=+el.dataset.swi;
     if(e.target.closest('[data-swkill]')){_swKillTile(i);e.preventDefault();return;}
+    // 편집 중 바탕 사진 켬/끔 — ⚠️ 아래 '편집이면 끌기' 보다 **먼저** 본다
+    if(e.target.closest('[data-swph]')){_swTogglePhoto(i);e.preventDefault();return;}
     // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
     try{b.setPointerCapture(e.pointerId);}catch(_){}
     if(_SW_EDIT){

@@ -680,7 +680,13 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   // ⚠️ v26-0922-11 — 칸(.sw-cell)이 타일을 통째로 덮게 되면서, 칸 위쪽에 붙는
   //    장식은 이름줄 높이(--sw-ct)만큼 내려와야 이름줄과 안 겹친다.
   sc.eq('큰 숫자는 위쪽에', /\.sw-big\{[^}]*top:calc\(var\(--sw-ct,0px\) - 6px\)/.test(SRC_DEV), true);
-  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:absolute;[^}]*top:var\(--sw-ct,0px\)/.test(SRC_DEV), true);
+  // ⚠️⚠️ v26-0922-13 — 머리말은 **흐름 안**에 둔다 (HB: "하단 내용이 3줄일 때
+  //    타이틀이 올라가면서 좌상단 고정텍스트와 겹치게 돼"). 띄워 두면 본문이
+  //    위로 자라며 머리말을 덮는다. margin-bottom:auto 가 맨 위로 올려 준다.
+  sc.eq('머리말도 위쪽에', /\.sw-kick\{position:relative;margin-bottom:auto;/.test(SRC_DEV), true);
+  sc.eq('머리말을 띄우지 않는다', /\.sw-kick\{position:absolute/.test(SRC_DEV), false);
+  sc.eq('오른쪽 그림은 padding 으로 피한다',
+        /\.k-coll \.sw-kick\{padding-right:42%;\}/.test(SRC_DEV), true);
   // ⚠️⚠️ 이름줄·점줄 높이와 칸 여백은 **같은 값**이라야 한다. 어긋나면 글자가
   //    이름줄·점줄과 겹친다 (HB 2 — "좌상단 글자와 타이틀이 겹쳐보이는 곳도 있어").
   sc.eq('띠가 타일을 통째로 덮는다',
@@ -951,6 +957,10 @@ console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
   // 주소를 갈아끼워야 하므로 바탕그림이 아니라 <img> 다. 채우는 것은 object-fit.
   sc.eq('<img> 로 넣는다', /<div class="sw-photo" aria-hidden="true"><img /.test(fr), true);
   sc.eq('칸을 꽉 채운다', /\.sw-photo>img\{[^}]*object-fit:cover/.test(SRC_DEV), true);
+  // ⚠️ 사진첩 사진도 **바탕그림이 아니라 <img>** 다 (v26-0922-13) — 흐리기·
+  //    물들이기를 사진에만 걸어야 덮개·그레인까지 흐려지지 않는다.
+  sc.eq('사진첩도 <img> 로', /return '<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'/.test(SRC_DEV), true);
+  sc.eq('바탕그림으로 넣지 않는다', SRC_DEV.includes("style=\"background-image:url("), false);
   sc.eq('⭐ 못 받아도 칸이 비지 않는다', fr.includes('class="sw-big"'), true);
   sc.eq('직선·점 그림은 뺐다', /class="sw-sig"/.test(fr), false);
   VERSES=[V3('마 5:13',{})];
@@ -1027,6 +1037,68 @@ console.log('\n시나리오 21 — PC 열 확장 · 꺽쇠 · 표지 카드 · �
   sc.eq('움직일 때는 세어 둔 값을 쓴다', SRC_DEV.includes('const t=_SW_TILES[_swG.i],n=_swG.n||0;'), true);
   sc.eq('옛 길은 없앴다', SRC_DEV.includes('const t=_SW_TILES[_swG.i],n=_swStrip(t).length;'), false);
   sc.eq('마무리도 세어 둔 값으로', SRC_DEV.includes('const n=_swG.n||0, dir=dx<0?1:-1;'), true);
+}
+
+// ═══ 22. 타일마다 바탕 사진 켜고 끄기 · 색 보정 (v26-0922-13, HB) ═══
+console.log('\n시나리오 22 — 타일마다 사진 켜고 끄기 · 테마에 맞춘 색 보정');
+{
+  APP_PRODUCT='sweeter';
+  ST={settings:{propTitleFonts:['brush']},verseKeepLog:{}};
+  LIKE={};MEM={};DEEP={};EVEN={};SHARE={};
+  const V5=(ref,o)=>Object.assign({idx:0,cat:'주일예배',topic:'제자의 정체성',
+    krText:ref+' 본문',ref,tags:['평안'],hi:'',d:'2026-09-21',pid:'P'+ref,kind:'prop',
+    sit:[],q:''},o||{});
+  // 사진첩이 있는 것처럼 꾸민다 (_swLoadPhotos 는 fetch 라 시험에서 안 돈다)
+  _SW_PHOTOS=[{f:'dawn-lake-mist.jpg',for:['평안'],by:'시험'}];
+  _swPhotoTried=true;
+  VERSES=[V5('마태복음 5:13')];
+
+  // 기본은 **켬**이다
+  sc.eq('적힌 적 없으면 켬', _swPhOn({k:'today'}), true);
+  sc.eq('0 이면 끔', _swPhOn({k:'today',ph:0}), false);
+  const on=_swFace({k:'today',s:0,p:0,ph:1});
+  const off=_swFace({k:'today',s:0,p:0,ph:0});
+  sc.eq('켜면 사진이 깔린다', on.includes('class="sw-photo"'), true);
+  sc.eq('끄면 안 깔린다', off.includes('class="sw-photo"'), false);
+  // 유튜브 썸네일도 같은 스위치를 따른다
+  VERSES=[V5('마태복음 5:14',{yt:'dQw4w9WgXcQ'}),V5('마태복음 5:15',{yt:'dQw4w9WgXcQ'})];
+  sc.eq('썸네일도 끌 수 있다', _swFace({k:'recent',s:0,p:0,ph:0}).includes('ytimg'), false);
+  sc.eq('켜면 다시 뜬다', _swFace({k:'recent',s:0,p:0,ph:1}).includes('ytimg'), true);
+
+  // 단추는 **편집 중에만**, 사진이 깔리는 타일에만
+  sc.eq('평소에는 단추가 없다', _swEditBtns({k:'today',ph:1}), '');
+  _SW_EDIT=true;
+  const bT=_swEditBtns({k:'today',ph:1}), bR=_swEditBtns({k:'rhythm',ph:1});
+  sc.eq('편집 중에는 ×', bT.includes('data-swkill'), true);
+  sc.eq('사진 타일에는 사진 단추도', bT.includes('data-swph'), true);
+  sc.eq('사진이 안 깔리는 타일에는 없다', bR.includes('data-swph'), false);
+  sc.eq('꺼 두면 꺼진 모습으로', _swEditBtns({k:'today',ph:0}).includes('class="sw-ph off"'), true);
+  _SW_EDIT=false;
+  // 사진이 깔리는 타일 목록 — 여기 없으면 단추도 안 달린다
+  sc.eq('사진이 깔리는 타일', _SW_PHOTO_KINDS, ['today','last','keep','ask','recent']);
+
+  // 고른 값이 **저장된다** (안 그러면 앱을 껐다 켜면 되돌아간다)
+  _SW_TILES=[{k:'today',s:0,p:0,ph:0},{k:'keep',s:0,p:0,ph:1}];
+  _swSaveTiles();
+  sc.eq('끔이 저장된다', (ST.settings.swTiles||[])[0], {k:'today',s:0,ph:0});
+  sc.eq('켬도 저장된다', (ST.settings.swTiles||[])[1], {k:'keep',s:0,ph:1});
+  // 옛 기기의 저장값에는 ph 가 없다 → **켬**으로 읽는다
+  ST.settings.swTiles=[{k:'today',s:0}];
+  sc.eq('옛 값은 켬으로 읽는다', _swLoadTiles()[0].ph, 1);
+
+  // ── 색 보정 (HB: "사진 색이 다 제각각인데 테마와 어울리게") ──
+  sc.eq('사진에서 색을 걷어낸다', /\.sw-photo>img\{[^}]*grayscale\(\.74\)/.test(SRC_DEV), true);
+  sc.eq('살짝 흐린다', /\.sw-photo>img\{[^}]*blur\(1\.1px\)/.test(SRC_DEV), true);
+  // ⚠️ 흐리기는 가장자리에 김을 만든다 — 조금 키워서 잘라 낸다
+  sc.eq('가장자리 김을 잘라낸다', /\.sw-photo>img\{[^}]*transform:scale\(1\.06\)/.test(SRC_DEV), true);
+  // ⚠️ 테마 강조색으로 물들인다. 명암은 그대로 두고 **색만** 갈아 끼우므로
+  //    테마를 바꾸면 사진 색도 따라 바뀐다.
+  sc.eq('테마 색으로 물들인다',
+    /\.sw-photo::before\{[^}]*background:rgb\(var\(--ac-rgb\)\);mix-blend-mode:color/.test(SRC_DEV), true);
+  sc.eq('물들이기가 타일 밖으로 안 샌다', /\.sw-photo\{[^}]*isolation:isolate/.test(SRC_DEV), true);
+  sc.eq('그레인을 얹는다', /--sw-grain:url\("data:image\/svg\+xml,/.test(SRC_DEV), true);
+  sc.eq('그레인은 주소로 인코딩한다', SRC_DEV.includes('%3CfeTurbulence'), true);
+  sc.eq('덮개와 그레인이 한 겹에', /\.sw-photo::after\{[^}]*background-image:var\(--sw-grain\)/.test(SRC_DEV), true);
 }
 
 sc.done();
