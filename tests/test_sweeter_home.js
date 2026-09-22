@@ -805,13 +805,21 @@ console.log('\n시나리오 18 — 대표 문구 · 흐름 · 리듬');
         '2026-08-14':[{ref:'마 5:13',time:'07:40'}]};     // 지난달 금요일 오전
   MEM={}; DEEP={}; EVEN={}; SHARE={};
   const rh=_swRhythm(0);
-  sc.eq('가장 자주 만나는 때', rh[0].name, '금요일 오전');
-  sc.eq('그 칸에 불을 켤 자리를 준다', rh[0].cell, {d:5,s:1});
-  sc.eq('모두 세 장', rh.length, 3);
-  sc.eq('모두 몇 번', /지금까지 3번/.test(rh[2].text), true);
+  // ⚠️ v26-0922-17 (HB) — 첫 칸은 **오늘 요일의 등수**다. 이 시험의 오늘은
+  //    2026-08-30(일요일)이고 일요일에는 기록이 없으므로 꼴찌 무리에 든다.
+  sc.eq('첫 칸은 오늘 요일의 등수', rh[0].kind, 'rank');
+  sc.eq('등수 이름', rh[0].name, '일주일 중 3위');
+  sc.eq('하단 문구', rh[0].text, '일요일은 일주일 중 3위로 말씀을 많이 보았어요');
+  // ⚠️ s 가 음수면 그 **요일 줄 전체**에 불을 켠다
+  sc.eq('요일 줄에 불을 켠다', rh[0].cell, {d:0,s:-1});
+  sc.eq('가장 자주 만나는 때', rh[1].name, '금요일 오전');
+  sc.eq('그 칸에 불을 켤 자리를 준다', rh[1].cell, {d:5,s:1});
+  // ⚠️ '모두 N번' 칸은 **뺐다** (HB: "왜 있는지 모르겠어") → 두 장이다
+  sc.eq('두 장', rh.length, 3);
+  sc.eq("'모두' 칸은 없다", rh.some(x=>x.name==='모두'), false);
   // '이번 달' — 이 시험의 오늘은 2026-08-30 이므로 8월 것 하나만 센다
   const rhM=_swRhythm(1);
-  sc.eq('이번 달만 세기도 한다', /지금까지 1번/.test(rhM[2].text), true);
+  sc.eq('이번 달만 셀 때도 등수가 먼저', rhM[0].kind, 'rank');
   // 격자는 7×4 (요일 × 때)
   sc.eq('격자는 요일 × 때', _swRhythmGrid(0).g.length, 7);
   sc.eq('때는 넷', _swRhythmGrid(0).g[0].length, 4);
@@ -967,7 +975,13 @@ console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
   sc.eq('칸을 꽉 채운다', /\.sw-photo>img\{[^}]*object-fit:cover/.test(SRC_DEV), true);
   // ⚠️ 사진첩 사진도 **바탕그림이 아니라 <img>** 다 (v26-0922-13) — 흐리기·
   //    물들이기를 사진에만 걸어야 덮개·그레인까지 흐려지지 않는다.
-  sc.eq('사진첩도 <img> 로', /return '<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'/.test(SRC_DEV), true);
+  sc.eq('사진첩도 <img> 로', /return '<div class="sw-photo" aria-hidden="true"><img alt="" decoding="sync" src="'/.test(SRC_DEV), true);
+  // ⚠️⚠️ decoding="sync" 가 **깜빡임을 없앤다** (v26-0922-17, HB: "슬라이드 후
+  //    자리잡은 다음에 한번씩 깜빡이는 에러 … 모바일에서만"). 다시 그릴 때
+  //    <img> 가 새로 만들어지는데, 그림을 이미 받아 뒀어도 **그리는 일은 다음
+  //    프레임으로 미뤄져** 그 한 프레임 동안 칸이 사진 없이 보인다.
+  sc.eq('그리기를 미루지 않는다', (SRC_DEV.match(/decoding="sync"/g)||[]).length>=2, true);
+  sc.eq('보이는 사진에 lazy 를 붙이지 않는다', /class="sw-photo[^"]*"[^>]*><img alt="" loading="lazy"/.test(SRC_DEV), false);
   sc.eq('바탕그림으로 넣지 않는다', SRC_DEV.includes("style=\"background-image:url("), false);
   sc.eq('⭐ 못 받아도 칸이 비지 않는다', fr.includes('class="sw-big"'), true);
   sc.eq('직선·점 그림은 뺐다', /class="sw-sig"/.test(fr), false);
@@ -1174,6 +1188,46 @@ console.log('\n시나리오 24 — 타일이 세로로 늘어나지 않게');
   // ⚠️ resize 만으로는 놓치는 자리가 있다 (홈 화면 앱이 뜰 때·주소줄이 오르내릴 때)
   sc.eq('판의 크기를 지켜본다', SRC_DEV.includes('if(window.ResizeObserver)new ResizeObserver(()=>{'), true);
   sc.eq('돌려도 다시 잰다', SRC_DEV.includes("window.addEventListener('orientationchange',"), true);
+}
+
+// ═══ 25. 첫 그림 · 시상대 · 꺽쇠 · Even Deeper (v26-0922-17, HB) ═══
+console.log('\n시나리오 25 — 첫 그림 · 시상대 · 꺽쇠 · Even Deeper');
+{
+  // ① 첫 그림 — HB: "첫 화면 로딩 때 빈 화면이 너무 길어"
+  // ⚠️⚠️ 본문(1.4MB)이 읽히기 **전에** 떠야 한다 → JS 가 만들지 않고 HTML 에
+  //    박아 둔다. JS 로 만들면 그 JS 가 읽힐 때까지 또 빈 화면이다.
+  const body=SRC_DEV.slice(SRC_DEV.indexOf('<body>'));
+  sc.eq('첫 그림이 HTML 에 박혀 있다', body.indexOf('<div id="swBoot"')>=0, true);
+  // 본문 <script> 보다 앞이라야 뜻이 있다
+  sc.eq('본문보다 앞에 있다',
+    body.indexOf('<div id="swBoot"') < body.indexOf('const ST=load()'), true);
+  sc.eq('Sweeter 에서만 뜬다', /#swBoot\{display:none;\}/.test(SRC_DEV)&&
+    /html\[data-product="sweeter"\] #swBoot\{/.test(SRC_DEV), true);
+  sc.eq('판이 서면 걷는다', SRC_DEV.includes('try{window._swBootOff&&window._swBootOff();}catch(e){}'), true);
+  // ⚠️ 본문이 멈춰도 갇히지 않게 스스로도 걷는다
+  sc.eq('갇히지 않는다', SRC_DEV.includes('setTimeout(function(){window._swBootOff();},9000);'), true);
+
+  // ② 말씀 반응 이름 · Even Deeper 는 개발자만
+  sc.eq("'Deeper..' 로", SRC_DEV.includes("{name:'Deeper..',kind:'deeper'"), true);
+  sc.eq("'Even Deeper..' 로", SRC_DEV.includes("{name:'Even Deeper..',kind:'even'"), true);
+  sc.eq('꺼져 있으면 세지도 않는다',
+    SRC_DEV.includes("n:_swEvenOn()?cnt(getEvenDeeperLog()):0"), true);
+  // ⚠️ 켜고 끄는 자리는 <html data-even="1"> **한 곳**이다
+  sc.eq('한 곳에서 켜고 끈다', /html:not\(\[data-even="1"\]\) \.even-only\{display:none!important;\}/.test(SRC_DEV), true);
+  sc.eq('개발자 계정일 때만', /function _evenOn\(\)\{try\{return _isDevAccount\(\);\}/.test(SRC_DEV), true);
+  // 들머리를 빠짐없이 표시했는가 (전체화면 단추·메뉴 셋·목록 단추 둘)
+  sc.eq('들머리마다 표시가 붙었다', (SRC_DEV.match(/even-only/g)||[]).length>=7, true);
+
+  // ③ 나의 리듬 — 시상대 삽화, 요일 줄에 불
+  sc.eq('시상대 삽화가 있다', /podium:'<svg viewBox="0 0 24 24" fill="currentColor">/.test(SRC_DEV), true);
+  sc.eq('등수 칸에만 시상대', SRC_DEV.includes("_swIllHTML(g.kind==='rank'?'podium':'clock')"), true);
+  // ⚠️ 불을 켠 칸은 **기록이 없어도** 보여야 한다 (요일 줄 전체에 불을 켜므로)
+  sc.eq('빈 칸에도 불이 보인다', SRC_DEV.includes('const op=on?(v?1:0.42):(v?(0.2+0.6*v/max):0.1);'), true);
+
+  // ④ PC 꺽쇠 — 누를 수 있는 자리에 들어오면 더 밝게
+  sc.eq('타일 위에서는 옅게', /\.sw-tile:hover \.sw-nav\{opacity:\.26;\}/.test(SRC_DEV), true);
+  sc.eq('꺽쇠 자리에서는 또렷하게', /\.sw-nav:hover\{opacity:1;\}/.test(SRC_DEV), true);
+  sc.eq('조금 커지기까지', /\.sw-nav:hover svg\{transform:scale\(1\.22\);\}/.test(SRC_DEV), true);
 }
 
 sc.done();
