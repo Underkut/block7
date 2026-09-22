@@ -416,8 +416,14 @@ console.log('\n시나리오 18 — 기본 목록을 만들지 않는다 (v26-083
         SRC_DEV.includes("if(!names.includes(KEEP_DEFAULT_LIST))names.unshift(KEEP_DEFAULT_LIST);"), false);
   sc.eq('기본을 맨 앞에 못 박지 않는다',
         SRC_DEV.includes("if(a.n===KEEP_DEFAULT_LIST)return-1;"), false);
-  // Sweeter 타일의 책갈피도 목록을 고르게 한다 (기본에 몰래 담지 않는다)
-  sc.eq('타일도 목록을 고르게 한다', SRC_DEV.includes('}else openKeepPicker(rk);'), true);
+  // Sweeter 타일의 책갈피도 목록을 고르게 한다 (기본에 몰래 담지 않는다).
+  // ⚠️ v26-0922-1, HB — 타일에서는 **해제하지 않는다.** 담긴 것을 눌러도
+  //    목록 고르기가 열린다 ("너무 불친절하고 위험한 구조" 라는 지적).
+  //    그래서 예전의 '담겼으면 곧바로 풀기' 갈림길이 아예 없어졌다.
+  sc.eq('타일도 목록을 고르게 한다',
+        SRC_DEV.includes('openKeepPicker(_reactKey(cur.v.verse));'), true);
+  sc.eq('타일에서 곧바로 풀지 않는다',
+        /data-swkeep[\s\S]{0,900}swToggleKeep\(/.test(SRC_DEV), false);
   // 실제로 — 목록이 하나도 없으면 아무 이름도 안 나온다
   ST.verseKeepLog={}; ST.settings={};
   sc.eq('목록이 없으면 비어 있다', _keepLists().length, 0);

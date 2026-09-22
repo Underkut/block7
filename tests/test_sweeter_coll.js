@@ -148,9 +148,15 @@ console.log('\n시나리오 6 — 네비게이토 180 만 켜 있을 때');
 console.log('\n시나리오 7 — 처음 켰을 때 놓인다');
 {
   sc.eq('기본 차례에 있다', _SW_DEFAULT_TILES.indexOf('coll')>=0, true);
-  // 이미 타일을 저장해 둔 기기는 바뀌지 않는다 (편집 ＋ 로 넣는다)
+  // 이미 타일을 저장해 둔 기기 — 차례는 그대로 두고, **새로 생긴 타일만**
+  // 한 번 앞에 끼워 준다 (v26-0922-1, 판 번호 _SW_TILES_V).
+  // ⚠️ 이것이 없으면 새 타일은 이미 쓰고 있는 기기에서 영영 ＋ 줄에만 있다.
   ST={settings:{swTiles:[{k:'last',s:0}]}};
-  sc.eq('저장해 둔 구성은 건드리지 않는다', _swLoadTiles().map(t=>t.k), ['last']);
+  sc.eq('새 타일을 한 번 끼워 준다', _swLoadTiles().map(t=>t.k), ['today','last']);
+  sc.eq('판 번호를 적어 둔다', ST.settings.swTilesV, _SW_TILES_V);
+  // 판 번호가 적혀 있으면 다시 끼우지 않는다 (사용자가 끈 것을 되살리지 않는다)
+  ST={settings:{swTiles:[{k:'last',s:0}],swTilesV:_SW_TILES_V}};
+  sc.eq('두 번 끼우지 않는다', _swLoadTiles().map(t=>t.k), ['last']);
   _SW_TILES=[{k:'last',s:0}];
   sc.eq('＋ 줄에 나온다', _swSpareKinds().indexOf('coll')>=0, true);
 }
