@@ -1310,15 +1310,95 @@ console.log('\n시나리오 27 — 날마다 바뀌는 사진 · 차례로 스�
 
   // ② HB: "위에서부터 촤라라락 디졸브로 순서대로"
   sc.eq('스며드는 움직임이 있다', /@keyframes swTileIn\{/.test(SRC_DEV), true);
-  sc.eq('판을 세울 때만 건다', /const intro=!_swIntroDone&&!_SW_EDIT&&_SW_TILES\.length>0&&!_swNoMotion\(\);/.test(SRC_DEV), true);
-  sc.eq('위에서부터 차례로', SRC_DEV.includes("el.style.animationDelay=(i*_SW_INTRO_STEP)+'ms';"), true);
+  sc.eq('판을 세울 때만 건다', /if\(!_SW_EDIT&&_SW_TILES\.length>0&&!_swNoMotion\(\)\)\{/.test(SRC_DEV), true);
+  // ⚠️ v26-0922-21 (HB: "촤라락이 안 느껴져") — 터울을 90ms 로 늘리고 첫 장
+  //    앞에 260ms 를 두었다. 그 뜸이 핵심이다: 첫 그림이 걷히는 동안 타일이
+  //    이미 다 떠 버려서 아무도 그 움직임을 못 봤다.
+  sc.eq('위에서부터 차례로',
+    SRC_DEV.includes("(_SW_INTRO_LEAD+Math.min(i,_SW_INTRO_MAX)*_SW_INTRO_STEP-gone)+'ms';"), true);
+  // ⚠️⚠️ **'한 번만' 을 빗장(boolean)으로 걸면 안 된다.** HB 가 "촤라락이 안
+  //    느껴져" 라고 한 진짜 까닭이 이것이었다 — 판을 세우고 20ms 뒤 사진첩이
+  //    도착해 다시 그리는데(_swLoadPhotos), 그때 빗장이 이미 잠겨 있어
+  //    .intro 가 걷혀 버렸다 (516ms 에 opacity 0 → 536ms 에 1).
+  //    → 시작한 때를 기억하고, 다시 그리면 **흐른 만큼 음수 delay** 를 주어
+  //      처음부터 다시 돌지 않고 이어서 스며들게 한다.
+  sc.eq('시작한 때를 기억한다', SRC_DEV.includes('let _swIntroStart=0;'), true);
+  sc.eq('흐른 만큼 뺀다', SRC_DEV.includes('const gone=_swIntroStart?(now-_swIntroStart):0;'), true);
+  sc.eq('다시 그려도 이어진다', SRC_DEV.includes('intro=(now-_swIntroStart)<_swIntroSpan();'), true);
+  sc.eq('옛 빗장은 없앴다', SRC_DEV.includes('let _swIntroDone=false;'), false);
+  sc.eq('터울은 90ms', SRC_DEV.includes('const _SW_INTRO_STEP=90;'), true);
+  sc.eq('첫 장 앞에 뜸을 둔다', SRC_DEV.includes('const _SW_INTRO_LEAD=260;'), true);
+  // HB: "하나씩 살짝 내려오는 모션" — 위에서 내려앉는다 (예전엔 아래서 올라왔다)
+  sc.eq('위에서 내려앉는다', /from\{opacity:0;transform:translateY\(-14px\);\}/.test(SRC_DEV), true);
   // ⚠️⚠️ 다 스며든 뒤에는 .intro 를 반드시 걷는다 — fill-mode:both 가 마지막
   //    모습을 붙잡아, 그대로 두면 누를 때 작아지는 손맛이 먹히지 않는다.
   sc.eq('끝나면 걷는다', SRC_DEV.includes("b.classList.remove('intro');"), true);
-  sc.eq('한 번만 건다', SRC_DEV.includes('_swIntroDone=true;'), true);
+  sc.eq('한 번만 건다', SRC_DEV.includes('if(!_swIntroStart)_swIntroStart=now;'), true);
   // 움직임 줄이기를 켠 기기에서는 아예 안 한다
   sc.eq('움직임 줄이기를 지킨다',
     /@media \(prefers-reduced-motion:reduce\)\{\s*\n\s*\.sw-board\.intro \.sw-tile\{animation:none;\}/.test(SRC_DEV), true);
+}
+
+// ═══ 28. 첫 그림의 말씀 (v26-0922-21, HB) ═══
+console.log('\n시나리오 28 — 첫 그림의 말씀');
+{
+  // HB: "내가 좋아요 많이 한 것 중에서 한 줄 안에 끝나는 짧은 말씀들 안에서 랜덤"
+  // ⚠️⚠️ 첫 그림은 본문(1.4MB)이 읽히기 **전에** 뜬다 → ST 도 ACTIVE_VERSES()
+  //    도 없다. 앱이 **미리 뽑아 둔 작은 칸**만 읽는다.
+  sc.eq('미리 뽑아 두는 길이 있다', typeof _swSaveBootVerses, 'function');
+  sc.eq('판을 세울 때 뽑아 둔다', SRC_DEV.includes('try{_swSaveBootVerses();}catch(e){}'), true);
+  // ⚠️ 저장 키는 반드시 _lsk() 로 (CLAUDE.md — 2026-08-31 대량 손실의 그 규칙)
+  sc.eq('_lsk 로 저장한다', SRC_DEV.includes("localStorage.setItem(_lsk('bootv'),"), true);
+  // ⚠️ 첫 그림 쪽 이름은 LS_KEY 규칙을 손으로 옮겨 적은 것이다 — 둘이 맞아야 한다
+  sc.eq('LS_KEY 규칙 그대로',
+    SRC_DEV.includes("const LS_KEY = (APP_PRODUCT === APP_PRODUCT_DEFAULT ? 'b7v1' : 'b7v1_' + APP_PRODUCT)"), true);
+  sc.eq('첫 그림도 같은 이름을 본다', SRC_DEV.includes("? 'b7v1_sweeter' : 'b7v1';"), true);
+  sc.eq('개발본 이름도 본다', SRC_DEV.includes("localStorage.getItem(base+'_dev_bootv')"), true);
+
+  // 실제로 뽑아 보기
+  APP_PRODUCT='sweeter';
+  ST={settings:{},verseKeepLog:{}};
+  const V6=(ref,txt)=>({idx:0,cat:'주일예배',topic:'t',krText:txt,ref,tags:[],hi:'',
+    d:'2026-09-21',kind:'verse',sit:[],q:''});
+  VERSES=[V6('시편 23:1','여호와는 나의 목자시니'),           // 12자 — 짧다
+          V6('마태복음 5:13','너희는 세상의 소금이니'),        // 12자 — 짧다
+          V6('요한복음 3:16','하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 그를 믿는 자마다'),  // 길다
+          V6('마태복음 6:33','먼저 그의 나라를 구하라'),        // 좋아요 없음
+          V6('시편 1:1','복 있는 사람은')];
+  LIKE={'2026-09-20':[{ref:'시편 23:1',time:'09:00'},{ref:'요한복음 3:16',time:'09:10'}],
+        '2026-09-21':[{ref:'마태복음 5:13',time:'10:00'}]};
+  MEM={};DEEP={};EVEN={};SHARE={};
+  const store={};
+  global.localStorage={getItem:k=>(k in store?store[k]:null),
+                       setItem:(k,v)=>{store[k]=String(v);},removeItem:k=>{delete store[k];}};
+  // ⚠️ LS_KEY·_lsk 는 이 구간 밖에 있다 — 시험에서는 Sweeter 것과 같은 모양으로 흉내낸다
+  global._lsk=n=>'b7v1_sweeter_'+n;
+  _swSaveBootVerses();
+  const got=JSON.parse(store['b7v1_sweeter_bootv']||'null');
+  sc.eq('좋아요 한 것만', got.map(x=>x[1]).sort(), ['마태복음 5:13','시편 23:1']);
+  // ⚠️ 긴 것은 뺀다 — 첫 그림에서 여러 줄이 된다
+  sc.eq('긴 말씀은 뺀다', got.some(x=>/요한복음 3:16/.test(x[1])), false);
+  sc.eq('좋아요 안 한 것도 뺀다', got.some(x=>/마태복음 6:33|시편 1:1/.test(x[1])), false);
+  sc.eq('글도 함께 담는다', got[0].length, 2);
+  // 좋아요가 하나도 없으면 아무것도 쓰지 않는다 (기본 목록으로 돈다)
+  delete store['b7v1_sweeter_bootv'];
+  LIKE={};
+  _swSaveBootVerses();
+  sc.eq('좋아요가 없으면 안 쓴다', 'b7v1_sweeter_bootv' in store, false);
+  delete global.localStorage;
+
+  // ⚠️⚠️ **셋이 차례로 돌아간다** (HB): ①시편 119:103 한글 ②같은 구절 영어
+  //    ③좋아요 한 짧은 말씀. 동전 던지기가 아니라 순서다.
+  sc.eq('꿀 구절 한글', SRC_DEV.includes('주의 말씀의 맛이 내게 어찌 그리 단지요 내 입에 꿀보다 <b>더 다니이다</b>'), true);
+  sc.eq('꿀 구절 영어', SRC_DEV.includes('How sweet are thy words unto my taste! yea, <b>sweeter</b> than honey to my mouth!'), true);
+  sc.eq('열 때마다 하나씩 센다', SRC_DEV.includes("localStorage.setItem(base+'_bootn',String(n%999));"), true);
+  sc.eq('셋으로 나눠 고른다', SRC_DEV.includes('var m=n%3, pick;'), true);
+  sc.eq('강조는 --ac-tx 로', /\.swboot-v b\{color:var\(--ac-tx\);/.test(SRC_DEV), true);
+  // ⚠️ 셋째 자리의 글은 **사용자 것**이다 — HTML 로 넣지 않는다
+  sc.eq('사용자 글은 textContent 로',
+    SRC_DEV.includes('if(pick[2])ev.innerHTML=pick[0]; else ev.textContent=pick[0];'), true);
+  // ⚠️ 동전 던지기가 아니다
+  sc.eq('동전 던지기가 아니다', SRC_DEV.includes('(Math.random()<0.5)?HONEY'), false);
 }
 
 sc.done();
