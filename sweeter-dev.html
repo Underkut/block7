@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-15  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-16  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5626,7 +5626,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-15";
+const APP_VERSION = "v. 26-0922-16";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44529,13 +44529,33 @@ function _swKillTile(i){
 }
 // 행 높이를 타일 하나의 실제 너비와 같게 맞춘다 (정사각).
 // 넓은 타일은 두 칸을 차지하므로 저절로 2:1 이 된다.
+// ⚠️⚠️ **타일을 재지 않는다 — 판에게 직접 묻는다** (v26-0922-16, HB 신고:
+//    "이렇게 세로로 길게 늘어나는 오류가 있어").
+//    예전에는 '넓지 않은 타일 하나'를 찾아 그 너비를 썼는데, 그 한 장이
+//    무엇이냐에 따라(넓은 타일만 있을 때·아직 안 그려졌을 때·그리는 도중)
+//    엉뚱한 너비가 잡혔고, 그 값이 그대로 **모든 줄의 높이**가 되어 타일이
+//    세로로 늘어났다. 이제 판의 안쪽 너비와 **열 수**로 셈한다 — 어느 타일을
+//    골랐느냐에 기대지 않으므로 틀릴 자리가 없다.
+// ⚠️ 판이 안 보이는 동안(clientWidth 0)에는 **아무것도 쓰지 않는다.** 0 을 쓰면
+//    줄 높이가 0 이 되어 판이 통째로 사라진다.
 function _swSizeCells(){
   const b=document.getElementById('swBoard');
   if(!b)return;
-  const t=b.querySelector('.sw-tile:not(.wide)')||b.querySelector('.sw-tile');
-  if(!t)return;
-  let w=t.getBoundingClientRect().width;
-  if(t.classList.contains('wide'))w=(w-9)/2;   // gap 9px
+  let cs;try{cs=getComputedStyle(b);}catch(e){return;}
+  // 열 수는 **계산된 값**에서 센다 ("196.5px 196.5px" → 2). 판이 안 보이면
+  // 여기에 'repeat(2, minmax(0, 1fr))' 같은 글이 그대로 오는데, 그때는
+  // 아래 inner 가 0 이라 어차피 돌아간다.
+  const cols=String(cs.gridTemplateColumns||'').trim().split(/\s+/)
+    .filter(x=>x&&x.slice(-2)==='px').length;
+  const gap=parseFloat(cs.columnGap)||9;
+  const inner=b.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0);
+  if(!cols||!(inner>10))return;
+  let w=(inner-(cols-1)*gap)/cols;
+  // ⚠️ 마지막 빗장 — 열은 **언제나 둘 이상**이므로 한 칸이 화면 폭의 62%를
+  //    넘을 수가 없다. 넘으면 무언가 잘못 잰 것이다. 그대로 쓰면 타일이
+  //    세로로 길게 늘어난다 (HB 신고). 늘어나느니 조금 작은 편이 낫다.
+  const cap=Math.round((window.innerWidth||inner)*0.62);
+  if(cap>40&&w>cap)w=cap;
   if(w>10)b.style.setProperty('--sw-cell',Math.round(w)+'px');
 }
 // 기기가 "움직임 줄이기"를 켜 두었는가 (iOS·안드로이드·PC 모두 이 질의를 준다)
@@ -45029,6 +45049,18 @@ function _swInitGestures(){
     if(((_swG.lp&&!_swG.pend)||_swG.drag)&&e.cancelable)e.preventDefault();
   },{passive:false});
   window.addEventListener('resize',()=>{if(_swBoardOn())_swSizeCells();});
+  // ⚠️ 판의 크기가 **어떤 까닭으로든** 달라지면 줄 높이를 다시 잰다.
+  //    resize 만으로는 놓치는 자리가 있다 — 홈 화면 앱이 뜰 때, 주소줄이
+  //    오르내릴 때, 판이 숨었다 다시 보일 때. 그때 잘못 잡힌 값이 그대로
+  //    굳으면 타일이 세로로 늘어난 채 남는다 (v26-0922-16, HB 신고).
+  try{
+    if(window.ResizeObserver)new ResizeObserver(()=>{
+      if(_swBoardOn())_swSizeCells();
+    }).observe(b);
+  }catch(_){}
+  window.addEventListener('orientationchange',()=>{
+    setTimeout(()=>{if(_swBoardOn())_swSizeCells();},120);
+  });
 }
 // 문턱을 못 넘었거나 끝이면 제자리로 (설정창과 같은 되돌림)
 function _swSnap(el,tr){

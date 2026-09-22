@@ -1152,4 +1152,28 @@ console.log('\n시나리오 23 — 끌면서 판 끝에 닿으면 저절로 굴�
   sc.eq('가로선은 그대로', SRC_DEV.includes('d="M2.6 5h14.8M2.6 10h14.8M2.6 15h14.8"'), true);
 }
 
+// ═══ 24. 줄 높이는 판에게 묻는다 (v26-0922-16, HB) ═══
+console.log('\n시나리오 24 — 타일이 세로로 늘어나지 않게');
+{
+  // HB: "이렇게 세로로 길게 늘어나는 오류가 있어" (아이폰, v26-0922-15)
+  // ⚠️⚠️ 예전에는 **타일 하나를 찾아 그 너비**를 줄 높이로 썼다. 그 한 장이
+  //    무엇이냐에 따라 엉뚱한 너비가 잡혔고, 그 값이 그대로 모든 줄의 높이가
+  //    되어 타일이 세로로 늘어났다.
+  sc.eq('타일을 재지 않는다',
+    SRC_DEV.includes("const t=b.querySelector('.sw-tile:not(.wide)')||b.querySelector('.sw-tile');"), false);
+  sc.eq('열 수는 계산된 값에서 센다',
+    SRC_DEV.includes("const cols=String(cs.gridTemplateColumns||'').trim().split(/\\s+/)"), true);
+  sc.eq('판의 안쪽 너비로 셈한다',
+    SRC_DEV.includes('const w=(inner-(cols-1)*gap)/cols;')||
+    SRC_DEV.includes('let w=(inner-(cols-1)*gap)/cols;'), true);
+  // ⚠️ 판이 안 보이면 clientWidth 가 0 이다. 0 을 쓰면 줄 높이가 0 이 되어
+  //    판이 통째로 사라진다 → 아무것도 쓰지 않는다.
+  sc.eq('안 보이면 아무것도 안 쓴다', SRC_DEV.includes('if(!cols||!(inner>10))return;'), true);
+  // ⚠️ 마지막 빗장 — 열은 늘 둘 이상이라 한 칸이 화면 폭의 62%를 넘을 수 없다
+  sc.eq('마지막 빗장이 있다', SRC_DEV.includes('if(cap>40&&w>cap)w=cap;'), true);
+  // ⚠️ resize 만으로는 놓치는 자리가 있다 (홈 화면 앱이 뜰 때·주소줄이 오르내릴 때)
+  sc.eq('판의 크기를 지켜본다', SRC_DEV.includes('if(window.ResizeObserver)new ResizeObserver(()=>{'), true);
+  sc.eq('돌려도 다시 잰다', SRC_DEV.includes("window.addEventListener('orientationchange',"), true);
+}
+
 sc.done();
