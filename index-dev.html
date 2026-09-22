@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-14  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-15  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5626,7 +5626,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-14";
+const APP_VERSION = "v. 26-0922-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8244,9 +8244,9 @@ try{
               title="말씀 모음 설정" onclick="swOpenCollFilter()">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
           <path d="M2.6 5h14.8M2.6 10h14.8M2.6 15h14.8"/>
-          <circle cx="6.6" cy="5" r="2.3" fill="var(--bg)"/>
-          <circle cx="13.4" cy="10" r="2.3" fill="var(--bg)"/>
-          <circle cx="9" cy="15" r="2.3" fill="var(--bg)"/>
+          <circle cx="6.6" cy="5" r="1.95" fill="var(--bg)"/>
+          <circle cx="13.4" cy="10" r="1.95" fill="var(--bg)"/>
+          <circle cx="9" cy="15" r="1.95" fill="var(--bg)"/>
         </svg>
       </button>
       <!-- 개발자 계정에서만 뜨는 버전 (_syncDevVerBadge 가 클래스로 훑어 채운다).
@@ -44711,6 +44711,7 @@ function _swDragStart(el,i,x,y){
   _swG={i,el,drag:true,gx:x-r.left,gy:y-r.top,x,y,moved:false,t:Date.now()};
   el.classList.add('sw-drag');
   _swDragMove(x,y);
+  _swAutoStop();_swAutoScroll();   // 판 끝에 닿으면 저절로 굴러간다
 }
 // 지금 칸(변형을 뺀 자리)을 기준으로 손가락까지의 거리를 새로 잰다.
 function _swDragMove(x,y){
@@ -44730,6 +44731,55 @@ function _swDragHole(r){
   h.style.width=r.width+'px';h.style.height=r.height+'px';
 }
 function _swDragHoleOff(){const h=document.getElementById('swHole');if(h)h.remove();}
+// 손가락 밑에 있는 타일과 자리를 바꾼다 (손으로 움직일 때도, 저절로 굴러갈 때도).
+// ⚠️ 반동 막기 — 크기가 다른 두 타일이 자리를 바꾸면 판이 다시 짜여 손가락 밑에
+//    곧바로 상대 타일이 온다. 그대로 두면 바꾸고 되바꾸기를 매 프레임 되풀이해
+//    떨리고 깜빡인다 (HB 신고). ①비켜 주는 움직임이 끝날 때까지 쉬고
+//    ②그 뒤에도 손가락이 20px 은 더 가야 다음 자리바꿈을 받는다.
+// ⚠️⚠️ **저절로 굴러갈 때(auto)는 ②를 보지 않는다.** 손가락은 가만히 있고
+//    판이 움직이는 것이라, 20px 을 기다리면 영영 자리가 안 바뀐다.
+function _swDragHover(x,y,auto){
+  if(!_swG||!_swG.drag)return;
+  const now=Date.now();
+  if(_swG.lock&&(now<_swG.lock||
+     (!auto&&Math.hypot(x-_swG.lx,y-_swG.ly)<20)))return;
+  const under=document.elementFromPoint(x,y);
+  const tgt=under&&under.closest?under.closest('.sw-tile'):null;
+  if(tgt&&tgt!==_swG.el&&tgt.dataset.swi!==undefined)
+    _swReorder(+_swG.el.dataset.swi,+tgt.dataset.swi,x,y);
+}
+// ── 판 끝에 닿으면 저절로 굴러간다 (v26-0922-15, HB) ──────
+// HB: "맨 위로 드래그해서 홀드하고 있는데 화면이 멈춰 있어서 위로 더 올라갈 수가
+//      없어서 한번 손을 떼고 스크롤 하고 다시 드래그 해야하는 번거로움이 있어."
+// ⚠️⚠️ 손가락이 멈춰 있으면 pointermove 가 **오지 않는다.** 그래서 스스로 도는
+//    고리(requestAnimationFrame)를 끌기 내내 돌리고, 굴린 만큼 타일 자리와
+//    자리바꿈을 다시 본다. 끌기가 끝나면 반드시 멈춘다 (_swAutoStop).
+// ⚠️ 굴리는 빠르기는 **끝에 얼마나 가까운가**로 정한다. 가장자리에 살짝 걸치면
+//    천천히, 끝까지 밀면 빠르게 — 한 속도로 굴리면 지나치기 쉽다.
+const _SW_EDGE=74;       // 판 위아래 이만큼 안에 들어오면 굴린다
+const _SW_EDGE_MAX=15;   // 한 번에 굴릴 최대 px
+let _swAutoRaf=0;
+function _swAutoScroll(){
+  _swAutoRaf=0;
+  if(!_swG||!_swG.drag)return;
+  const b=document.getElementById('swBoard');
+  if(!b){return;}
+  const r=b.getBoundingClientRect(),y=_swG.y;
+  let v=0;
+  if(y<r.top+_SW_EDGE)         v=-(r.top+_SW_EDGE-y)/_SW_EDGE;
+  else if(y>r.bottom-_SW_EDGE) v=(y-(r.bottom-_SW_EDGE))/_SW_EDGE;
+  if(v){
+    v=Math.max(-1,Math.min(1,v));
+    const was=b.scrollTop;
+    b.scrollTop=was+v*_SW_EDGE_MAX;
+    if(b.scrollTop!==was){        // 끝까지 갔으면 더 할 일이 없다
+      _swDragMove(_swG.x,_swG.y);
+      _swDragHover(_swG.x,_swG.y,true);
+    }
+  }
+  _swAutoRaf=requestAnimationFrame(_swAutoScroll);
+}
+function _swAutoStop(){if(_swAutoRaf){cancelAnimationFrame(_swAutoRaf);_swAutoRaf=0;}}
 // 비켜 주는 움직임의 길이. ⚠️ 이 값은 아래 '반동 막기'의 쉬는 시간과 짝이다 —
 // 애니메이션이 끝나기 전에 또 바꾸면 두 타일이 서로를 밀며 떨린다.
 // 비켜 주는 움직임. 시간은 넉넉히, 곡선은 **쫄깃하게** (HB 지시 26-0830-14).
@@ -44861,19 +44911,11 @@ function _swInitGestures(){
     }
     if(_swG.drag){
       _swG.moved=true;
+      // ⚠️ 마지막 자리를 남겨 둔다 — 손가락이 멈춰도 저절로 굴러가는 고리가
+      //    이 자리를 보고 일한다 (_swAutoScroll).
+      _swG.x=e.clientX;_swG.y=e.clientY;
       _swDragMove(e.clientX,e.clientY);
-      // ⚠️ 반동 막기 — 크기가 다른 두 타일(넓은 것 ↔ 보통 것)이 자리를 바꾸면
-      //    판이 다시 짜여 손가락 밑에 곧바로 상대 타일이 온다. 그대로 두면
-      //    바꾸고 되바꾸기를 매 프레임 되풀이해 **떨리고 깜빡인다** (HB 신고).
-      //    ① 비켜 주는 움직임이 끝날 때까지 쉬고
-      //    ② 그 뒤에도 손가락이 20px 은 더 가야 다음 자리바꿈을 받는다.
-      const now=Date.now();
-      if(_swG.lock&&(now<_swG.lock||
-         Math.hypot(e.clientX-_swG.lx,e.clientY-_swG.ly)<20))return;
-      const under=document.elementFromPoint(e.clientX,e.clientY);
-      const tgt=under&&under.closest?under.closest('.sw-tile'):null;
-      if(tgt&&tgt!==_swG.el&&tgt.dataset.swi!==undefined)
-        _swReorder(+_swG.el.dataset.swi,+tgt.dataset.swi,e.clientX,e.clientY);
+      _swDragHover(e.clientX,e.clientY,false);
       return;
     }
     const dx=e.clientX-_swG.x,dy=e.clientY-_swG.y;
@@ -44937,6 +44979,7 @@ function _swInitGestures(){
     // 것은 타일 바깥 누르기나 '완료').
     if(_swG.pend){_swG=null;return;}
     if(_swG.drag){
+      _swAutoStop();
       _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
       _swDragHoleOff();_swG=null;_swRender();return;
     }
@@ -44956,6 +44999,7 @@ function _swInitGestures(){
     // 브라우저가 세로 스크롤로 가져갔다 — 편집 중 '잡는 중'이었다면 그대로 놓아 준다
     if(_swG.pend){_swG=null;return;}
     if(_swG.drag){
+      _swAutoStop();
       _swG.el.classList.remove('sw-drag');_swG.el.style.transform='';
       _swDragHoleOff();_swG=null;_swRender();return;
     }

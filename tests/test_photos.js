@@ -21,7 +21,9 @@ sc.eq('manifest.json 이 읽힌다', !!man, true);
 const list=(man&&Array.isArray(man.photos))?man.photos:[];
 const files=fs.readdirSync(DIR).filter(f=>/\.jpe?g$/i.test(f)).sort();
 sc.eq('표에 적힌 장수', list.length, files.length);
-sc.eq('스물네 장', files.length, 24);
+// ⚠️ v26-0922-15 — 스물넷에서 **열일곱**으로 줄였다. 타일에서 뭔지 안 읽히는
+//    일곱 장을 뺐다 (photos/WANTED.md 의 '뺀 7장과 까닭').
+sc.eq('열일곱 장', files.length, 17);
 const inMan=list.map(x=>x.f).sort();
 sc.eq('표 ↔ 파일이 한 장도 안 어긋난다', inMan.join('|'), files.join('|'));
 
@@ -54,7 +56,7 @@ console.log('\n시나리오 3 — 모으기 목록(WANTED.md)과 어울리는 �
     const m=l.match(/^\|\s*\d+\s*\|\s*`([^`]+)`\s*\|\s*[^|]+\|\s*([^|]+?)\s*\|\s*$/);
     if(m)want.set(m[1], m[2].split('·').map(s=>s.trim()).filter(Boolean).join('|'));
   });
-  sc.eq('목록도 스물네 장', want.size, 24);
+  sc.eq('목록도 열일곱 장', want.size, 17);
   const off=list.filter(x=>want.get(x.f)!==x.for.join('|')).map(x=>x.f);
   sc.eq('어울리는 말이 목록과 같다', off, []);
 }

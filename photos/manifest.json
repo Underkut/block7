@@ -8,31 +8,27 @@
         "안식",
         "잠잠함",
         "쉼",
-        "신뢰"
+        "신뢰",
+        "맡김",
+        "의존",
+        "시편",
+        "기다림",
+        "하나님의 때"
       ],
       "by": "Alan Bowman / Unsplash (Unsplash License) · https://unsplash.com/photos/misty-mountains-reflected-in-a-calm-lake-at-dawn-Jy8PdNvEp2w"
     },
     {
-      "f": "predawn-sky.jpg",
+      "f": "desert-ridge-shadow.jpg",
       "for": [
-        "소망",
-        "새 출발",
-        "기다림",
-        "하나님의 때",
-        "새 생명"
+        "광야",
+        "시험",
+        "유혹",
+        "고난",
+        "환난",
+        "두려움",
+        "다윗의 광야"
       ],
-      "by": "Fernando Strabuli / Unsplash (Unsplash License) · https://unsplash.com/photos/pink-yellow-and-purple-cloudy-sky-iW1WzbuWMcA"
-    },
-    {
-      "f": "morning-light-room.jpg",
-      "for": [
-        "임재",
-        "친밀함",
-        "은밀한 처소",
-        "기도",
-        "하나님을 앎"
-      ],
-      "by": "X F / Unsplash (Unsplash License) · https://unsplash.com/photos/sunlight-streams-through-a-dirty-window-into-an-old-room-4lRGOUYjsGs"
+      "by": "Kai Vu / Unsplash (Unsplash License) · https://unsplash.com/photos/landscape-photography-of-desert-MzJjabZWBRo"
     },
     {
       "f": "empty-bench-afternoon.jpg",
@@ -46,126 +42,28 @@
       "by": "Uran Wang / Unsplash (Unsplash License) · https://unsplash.com/photos/a-wooden-chair-sitting-next-to-a-wall-fwqUKJEL4Eo"
     },
     {
-      "f": "open-bible-desk.jpg",
-      "for": [
-        "말씀",
-        "묵상",
-        "계시",
-        "마음의 율법",
-        "산상수훈"
-      ],
-      "by": "Aaron Burden / Unsplash (Unsplash License) · https://unsplash.com/photos/open-bible-book-on-brown-wooden-panel-wsowOKsHLDU"
-    },
-    {
-      "f": "bread-and-cup.jpg",
-      "for": [
-        "성찬",
-        "성찬예식",
-        "새 언약",
-        "언약",
-        "기억"
-      ],
-      "by": "Serghey Savchuk / Unsplash (Unsplash License) · https://unsplash.com/photos/a-table-topped-with-bread-and-grapes-next-to-a-bowl-of-honey-mu9fvpxAwC0"
-    },
-    {
-      "f": "vine-branches-rain.jpg",
-      "for": [
-        "연합",
-        "열매",
-        "성령의 열매",
-        "거함",
-        "성숙"
-      ],
-      "by": "Pawel Andrzejczak / Unsplash (Unsplash License) · https://unsplash.com/photos/a-green-grape-leaf-covered-in-water-droplets-pJn7ysLTNG4"
-    },
-    {
-      "f": "wheat-field-wind.jpg",
-      "for": [
-        "부르심",
-        "사명",
-        "추수",
-        "열매",
-        "전도"
-      ],
-      "by": "Thorsten Hack / Unsplash (Unsplash License) · https://unsplash.com/photos/a-field-of-wheat-S41nKAkAZgM"
-    },
-    {
-      "f": "narrow-path-hill.jpg",
-      "for": [
-        "제자도",
-        "순례",
-        "인도하심",
-        "길",
-        "따름"
-      ],
-      "by": "Seung Hyun Lee / Unsplash (Unsplash License) · https://unsplash.com/photos/a-dirt-path-winds-through-a-grassy-field-towards-hills-ADEjxjRg4y4"
-    },
-    {
       "f": "foggy-forest-path.jpg",
       "for": [
         "분별",
         "섭리",
-        "무지",
         "혼란",
-        "하나님의 뜻"
+        "하나님의 뜻",
+        "무지"
       ],
       "by": "Wolfgang Hasselmann / Unsplash (Unsplash License) · https://unsplash.com/photos/a-foggy-path-leads-through-a-dense-forest-4QDWYXHMxgE"
     },
     {
-      "f": "desert-ridge-shadow.jpg",
+      "f": "folded-hands-backlit.jpg",
       "for": [
-        "광야",
-        "시험",
-        "유혹",
-        "고난",
-        "환난",
-        "다윗의 광야"
-      ],
-      "by": "Kai Vu / Unsplash (Unsplash License) · https://unsplash.com/photos/landscape-photography-of-desert-MzJjabZWBRo"
-    },
-    {
-      "f": "rock-shelter.jpg",
-      "for": [
-        "피난처",
-        "반석",
-        "안전",
-        "보호",
-        "두려움"
-      ],
-      "by": "engin akyurt / Unsplash (Unsplash License) · https://unsplash.com/photos/rocky-cliff-face-with-a-dark-cave-opening-U2ex3j12fvg"
-    },
-    {
-      "f": "light-through-clouds.jpg",
-      "for": [
-        "회복",
-        "부흥",
-        "영광",
-        "소망",
-        "치유"
-      ],
-      "by": "Zach Kessinger / Unsplash (Unsplash License) · https://unsplash.com/photos/sunbeams-through-clouds-over-mountain-reflection-FapgpCgQQJQ"
-    },
-    {
-      "f": "puddle-reflection-sky.jpg",
-      "for": [
+        "기도",
+        "겸손",
+        "순복",
+        "헌신",
         "회개",
-        "용서",
-        "정결",
-        "씻김",
-        "죄 사함"
+        "간구",
+        "침묵"
       ],
-      "by": "Paul / Unsplash (Unsplash License) · https://unsplash.com/photos/a-puddle-reflects-the-sky-J2ehfUqKCpY"
-    },
-    {
-      "f": "night-stars.jpg",
-      "for": [
-        "여호와 경외",
-        "창조",
-        "영원",
-        "주권",
-        "경외"
-      ],
-      "by": "Casey Horner / Unsplash (Unsplash License) · https://unsplash.com/photos/silhouette-of-trees-on-hill-under-starry-night-ZW7H36aXhiM"
+      "by": "Romina Ahmadpour / Unsplash (Unsplash License) · https://unsplash.com/photos/hands-clasped-tightly-on-a-table-surface-78sWtJIvTms"
     },
     {
       "f": "hilltop-town-lights.jpg",
@@ -179,26 +77,122 @@
       "by": "le Sixième Rêve / Unsplash (Unsplash License) · https://unsplash.com/photos/village-nestled-on-hillside-at-dusk-with-bridge-nR6oBMv_7Qg"
     },
     {
-      "f": "single-candle.jpg",
+      "f": "light-through-clouds.jpg",
       "for": [
-        "기도",
-        "임재",
-        "은밀한 처소",
-        "간구",
-        "침묵"
+        "회복",
+        "부흥",
+        "영광",
+        "소망",
+        "치유",
+        "새 출발"
       ],
-      "by": "Josef Hejpetr / Unsplash (Unsplash License) · https://unsplash.com/photos/a-single-lit-candle-glows-in-the-darkness-mhnNlv1Lyk8"
+      "by": "Zach Kessinger / Unsplash (Unsplash License) · https://unsplash.com/photos/sunbeams-through-clouds-over-mountain-reflection-FapgpCgQQJQ"
     },
     {
-      "f": "folded-hands-backlit.jpg",
+      "f": "morning-light-room.jpg",
       "for": [
+        "임재",
+        "친밀함",
+        "은밀한 처소",
         "기도",
-        "겸손",
-        "순복",
-        "헌신",
-        "회개"
+        "하나님을 앎",
+        "초대"
       ],
-      "by": "Romina Ahmadpour / Unsplash (Unsplash License) · https://unsplash.com/photos/hands-clasped-tightly-on-a-table-surface-78sWtJIvTms"
+      "by": "X F / Unsplash (Unsplash License) · https://unsplash.com/photos/sunlight-streams-through-a-dirty-window-into-an-old-room-4lRGOUYjsGs"
+    },
+    {
+      "f": "narrow-path-hill.jpg",
+      "for": [
+        "제자도",
+        "순례",
+        "인도하심",
+        "길",
+        "따름",
+        "부르심",
+        "새 삶",
+        "자유"
+      ],
+      "by": "Seung Hyun Lee / Unsplash (Unsplash License) · https://unsplash.com/photos/a-dirt-path-winds-through-a-grassy-field-towards-hills-ADEjxjRg4y4"
+    },
+    {
+      "f": "night-stars.jpg",
+      "for": [
+        "여호와 경외",
+        "창조",
+        "영원",
+        "주권",
+        "경외",
+        "영원한 보화"
+      ],
+      "by": "Casey Horner / Unsplash (Unsplash License) · https://unsplash.com/photos/silhouette-of-trees-on-hill-under-starry-night-ZW7H36aXhiM"
+    },
+    {
+      "f": "open-bible-desk.jpg",
+      "for": [
+        "말씀",
+        "묵상",
+        "계시",
+        "마음의 율법",
+        "산상수훈",
+        "언약",
+        "기억"
+      ],
+      "by": "Aaron Burden / Unsplash (Unsplash License) · https://unsplash.com/photos/open-bible-book-on-brown-wooden-panel-wsowOKsHLDU"
+    },
+    {
+      "f": "rock-shelter.jpg",
+      "for": [
+        "피난처",
+        "반석",
+        "안전",
+        "보호"
+      ],
+      "by": "engin akyurt / Unsplash (Unsplash License) · https://unsplash.com/photos/rocky-cliff-face-with-a-dark-cave-opening-U2ex3j12fvg"
+    },
+    {
+      "f": "soil-furrow-seed.jpg",
+      "for": [
+        "씨앗",
+        "보이지 않아도 심는 믿음",
+        "인내",
+        "성장",
+        "새 생명"
+      ],
+      "by": "Matt Baron-Thompson / Unsplash (Unsplash License) · https://unsplash.com/photos/a-plowed-field-with-trees-in-the-background-dCOjMPjTglI"
+    },
+    {
+      "f": "stone-wall-old.jpg",
+      "for": [
+        "교회",
+        "산돌 공동체",
+        "건축",
+        "함께 세움"
+      ],
+      "by": "Artur Opala / Unsplash (Unsplash License) · https://unsplash.com/photos/a-textured-old-stone-wall-with-varied-rocks-lYYrl4BgKCQ"
+    },
+    {
+      "f": "vine-branches-rain.jpg",
+      "for": [
+        "연합",
+        "열매",
+        "성령의 열매",
+        "거함",
+        "성숙",
+        "성찬",
+        "성찬예식",
+        "새 언약"
+      ],
+      "by": "Pawel Andrzejczak / Unsplash (Unsplash License) · https://unsplash.com/photos/a-green-grape-leaf-covered-in-water-droplets-pJn7ysLTNG4"
+    },
+    {
+      "f": "wheat-field-wind.jpg",
+      "for": [
+        "부르심",
+        "사명",
+        "추수",
+        "전도"
+      ],
+      "by": "Thorsten Hack / Unsplash (Unsplash License) · https://unsplash.com/photos/a-field-of-wheat-S41nKAkAZgM"
     },
     {
       "f": "wooden-cross-silhouette.jpg",
@@ -207,63 +201,12 @@
         "구속",
         "복음",
         "속량",
-        "은혜"
+        "은혜",
+        "용서",
+        "죄 사함",
+        "회개"
       ],
       "by": "Alvin David / Unsplash (Unsplash License) · https://unsplash.com/photos/wooden-cross-and-evergreen-trees-against-twilight-sky-ckgH--6ggLg"
-    },
-    {
-      "f": "still-water-boat.jpg",
-      "for": [
-        "신뢰",
-        "맡김",
-        "평안",
-        "시편",
-        "의존"
-      ],
-      "by": "Shakib Uzzaman / Unsplash (Unsplash License) · https://unsplash.com/photos/two-small-wooden-boats-floating-on-top-of-a-lake-H6J3pkkEQmY"
-    },
-    {
-      "f": "soil-furrow-seed.jpg",
-      "for": [
-        "씨앗",
-        "보이지 않아도 심는 믿음",
-        "인내",
-        "기다림"
-      ],
-      "by": "Matt Baron-Thompson / Unsplash (Unsplash License) · https://unsplash.com/photos/a-plowed-field-with-trees-in-the-background-dCOjMPjTglI"
-    },
-    {
-      "f": "sprout-in-stone.jpg",
-      "for": [
-        "새 생명",
-        "성장",
-        "회복",
-        "새 출발",
-        "재도전"
-      ],
-      "by": "Pablo Fernández / Unsplash (Unsplash License) · https://unsplash.com/photos/a-small-plant-growing-out-of-a-crack-in-a-stone-wall-PD-uAPD6O-s"
-    },
-    {
-      "f": "open-door-light.jpg",
-      "for": [
-        "문",
-        "초대",
-        "부르심",
-        "자유",
-        "새 삶"
-      ],
-      "by": "Lan Gao / Unsplash (Unsplash License) · https://unsplash.com/photos/an-open-door-in-a-dark-room-with-light-coming-in-KBuWjEVavM8"
-    },
-    {
-      "f": "stone-wall-old.jpg",
-      "for": [
-        "교회",
-        "산돌 공동체",
-        "건축",
-        "언약",
-        "함께 세움"
-      ],
-      "by": "Artur Opala / Unsplash (Unsplash License) · https://unsplash.com/photos/a-textured-old-stone-wall-with-varied-rocks-lYYrl4BgKCQ"
     }
   ]
 }
