@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0921-13  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0922-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5135,7 +5135,44 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 .sw-cell.sermon .sw-val{font-family:var(--font-display);font-size:16px;font-weight:600;}
 .sw-cell.stat .sw-val{font-size:15px;font-weight:600;letter-spacing:.01em;}
 .sw-cell.tag .sw-val i{font-style:normal;color:var(--ac-tx);opacity:.75;margin-right:1px;}
+/* 긴 타일 (표지 카드) — 두 줄을 차지한다. 넓은 것과 겹치면 2×2 한 장이 된다. */
+.sw-tile.tall{grid-row:span 2;}
+/* ══ 데이터가 곧 그림 (.sw-sig) ════════════════════════════
+   꾸밈 그림이 아니다 — 그 타일의 **실제 데이터**로 그린다. 그래서 옅게 깔되
+   큰 숫자(.sw-big)만큼 옅게는 두지 않는다 (읽히는 것이 뜻이다).
+   ⚠️ 자리는 큰 숫자와 **같은 우상단**이라 둘을 같이 그리지 않는다 (_swCellHTML). */
+.sw-sig{position:absolute;right:12px;top:2px;width:46%;max-width:118px;
+  color:var(--tx);opacity:.5;pointer-events:none;line-height:0;}
+.sw-sig svg{width:100%;height:auto;display:block;}
+.k-book .sw-sig{width:56%;opacity:.42;}
+.k-recent .sw-sig{width:60%;opacity:.55;}
+.k-react .sw-sig{width:42%;opacity:.55;}
+.k-coll .sw-sig{width:34%;opacity:.75;}
+.k-tag .sw-sig{width:40%;opacity:.35;}
+.k-tag .sw-sig svg{height:auto;}
+/* 표지 카드 — 판에서 가장 큰 한 장.
+   ⚠️ 내용을 **가운데로 모은다.** 아래로 붙이면(다른 칸의 기본값) 위쪽이 한 뼘
+      통째로 비어 "왜 이렇게 큰가" 가 된다 (첫 시안에서 그랬다). */
+/* ⚠️ space-between 으로 벌려 보았더니 장절이 맨 위로 올라가 **인용부호와
+      겹쳤다.** 가운데로 모으는 것이 답이다 — 위아래 여백이 고르게 남는다. */
+.sw-cell.hero{justify-content:center;}
+.sw-cell.hero .sw-val{font-size:17.5px;line-height:1.66;-webkit-line-clamp:7;}
+.sw-cell.hero .sw-kick{position:relative;left:auto;right:auto;top:auto;margin-bottom:9px;}
+.sw-cell.hero .sw-num{margin-top:9px;}
+/* 인용부호 — 칸 **안쪽**에 둔다. 음수 자리에 두면 트랙이 잘라 먹는다. */
+/* ⚠️ 글자에는 --ac 가 아니라 **--ac-tx** 를 쓴다 (테마 34벌 규칙 —
+      tests/test_theme_preset.js 가 지킨다). --ac 는 면을 칠하는 색이다. */
+.sw-quote{position:absolute;left:11px;top:0;font:700 52px/.8 var(--font-display);
+  color:var(--ac-tx);opacity:.2;pointer-events:none;}
+/* 표지 카드의 손그림은 한쪽으로 물러선다 (본문이 주인이다) */
+.sw-tile.k-today .sw-art{justify-items:end;align-items:end;padding:0 9% 7% 0;}
+.sw-tile.k-today .sw-art svg{width:30%;height:44%;}
+.k-today .sw-lab .sw-nm{color:var(--ac-tx);}
+/* 꺼진 타일에는 차례 번호를 적지 않는다 (판에 놓이지 않았으니 차례가 없다) */
+.sw-tile.sw-off .sw-ix{display:none;}
 /* 종류마다 다른 바탕 — 강조색을 아주 옅게만 쓴다 */
+.sw-tile.k-today{background:
+  radial-gradient(120% 90% at 8% 0%,rgba(var(--ac-rgb),.26),transparent 62%),var(--s1);}
 .sw-tile.k-last{background:linear-gradient(146deg,rgba(var(--ac-rgb),.17),var(--s1) 64%);}
 .sw-tile.k-keep{background:linear-gradient(146deg,rgba(var(--ac-rgb),.08),var(--s1) 60%);}
 .sw-tile.k-coll{background:rgba(var(--ac-rgb),.07);}
@@ -5146,7 +5183,7 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 /* ── 편집 모드 ─────────────────────────────────────────
    끌어서 옮기고, × 로 끄고, ＋ 칸으로 다시 켠다. 나갈 때 한 번 저장한다. */
 .sw-board.edit .sw-tile{cursor:grab;}
-.sw-board.edit .sw-tile:not(.sw-add)::after{content:"";position:absolute;inset:0;
+.sw-board.edit .sw-tile:not(.sw-off)::after{content:"";position:absolute;inset:0;
   border-radius:15px;box-shadow:inset 0 0 0 1px var(--ac);opacity:.45;pointer-events:none;}
 .sw-board.edit .sw-track{transition:none;}   /* 편집 중엔 값이 넘어가지 않는다 */
 /* ⚠️ 정렬 칩과 × 가 같은 자리(우상단)라 겹쳤다. 편집 중에는 정렬을 바꿀 일이
@@ -5202,10 +5239,20 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
   border:1.5px dashed var(--ac);background:var(--ac-soft);opacity:.9;
   transition:left .42s cubic-bezier(.45,-0.05,.3,1.22),top .42s cubic-bezier(.45,-0.05,.3,1.22),
              width .42s cubic-bezier(.45,-0.05,.3,1.22),height .42s cubic-bezier(.45,-0.05,.3,1.22);}
-.sw-tile.sw-add{border-style:dashed;background:transparent;}
-.sw-tile.sw-add .sw-face{align-items:center;justify-content:center;gap:6px;}
-.sw-addplus{font-size:22px;color:var(--tx3);line-height:1;}
-.sw-addname{font-size:11px;color:var(--tx2);text-align:center;word-break:keep-all;}
+/* ══ 꺼 둔 타일 (v26-0922-1, HB 지시) ══════════════════════
+   예전에는 점선 네모에 '＋ 이름' 만 적었다(.sw-add — 이제 없앴다).
+   HB: "텍스트 목록으로만 보면 그 타일이 어떤 것인지 직관적으로 알기 어렵다."
+   → 꺼진 타일도 **제 얼굴**을 그리고, 그 위에 옅은 막을 덮어 켜진 것과 가른다.
+   ⚠️ 막(.sw-offveil)은 손가락을 가리지 않는다 — 타일 어디를 눌러도 켜진다. */
+.sw-tile.sw-off{border-style:dashed;}
+.sw-tile.sw-off .sw-face{filter:grayscale(.75);opacity:.5;}
+.sw-offveil{position:absolute;inset:0;border-radius:15px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.28));}
+html[data-theme="light"] .sw-offveil{
+  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.45));}
+.sw-on{position:absolute;top:7px;right:7px;width:21px;height:21px;border-radius:50%;
+  background:var(--ac);border:0;color:var(--on-accent);z-index:3;cursor:pointer;
+  display:grid;place-items:center;font-size:12px;line-height:1;padding:0;}
 /* ── 값 넘기기: 설정창 탭과 **같은 방식**이다 (v26-0830-7) ──────────
    이전·지금·다음 세 칸을 한 줄(.sw-track)에 붙여 놓고 그 줄을 통째로 민다.
    ⚠️ 예전엔 "내보내고 → 갈아끼우고 → 들인다" 였다. 그 사이에 빈틈이 생겨
@@ -5359,7 +5406,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0921-13";
+const APP_VERSION = "v. 26-0922-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -5374,7 +5421,7 @@ const _PRODUCT_SCOPED=[
   'verseBarOn','verseMode','verseSneakStyle',                   // 상단 말씀 표시 방식
   'verseWidgetCat','verseWidgetTopic','verseWidgetText','verseWidgetRef',
   'verseWidgetTag','verseWidgetTextSize','verseWidgetRefSize',  // 말씀 위젯
-  'swTiles'                                                     // Sweeter 홈의 타일 구성
+  'swTiles','swTilesV'                                          // Sweeter 홈의 타일 구성·판 번호
 ];
 // ══ 기기별로만 두는 설정 (v26-0828-7) ═════════════════════════════════════
 // ⚠️ 바로 위의 _PRODUCT_SCOPED 와는 **다른 것**이다. 저건 BLOCK7 과 Sweeter 를 가르고,
@@ -42202,7 +42249,15 @@ let _SW_TILES=[];
 let _SW_EDIT=false;     // 편집 모드 (끌어서 옮기고 × 로 끄고 ＋ 로 켠다)
 
 const _SW_TYPES={
-  last:{n:'마지막에 만난 말씀',wide:true,sorts:['모두','좋아요','암송'],
+  // 표지 카드 (v26-0922-1, HB) — 판에서 **가장 큰 한 장**. 넓고(2칸) 길다(2줄).
+  // 하루가 지나면 고르는 말씀이 바뀐다 (날짜를 씨앗으로 쓰므로 같은 날엔 늘 같다).
+  today:{n:'오늘의 말씀',wide:true,tall:true,sorts:['오늘','최근 설교'],
+        empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'},
+  // ⚠️ 이름이 '마지막에 만난 말씀' 이었다. HB: "어떤 의미인지 잘 이해가 안 돼."
+  //    실제로는 **좋아요·암송·Deeper·공유 기록이 최근에 남은 말씀**이다. 앱에는
+  //    '열어 봤다'는 기록이 아예 없어서 이름과 속이 어긋나 있었다 (v26-0922-1).
+  //    → 이름을 바꾸고, 칸마다 **왜 여기 있는지**를 한 줄로 적는다.
+  last:{n:'이어서 볼 말씀',wide:true,sorts:['모두','좋아요','암송'],
         empty:'아직 기록이 없어요. 말씀에 좋아요나 암송을 남기면 여기에 쌓입니다.'},
   recent:{n:'최근 설교',sorts:['최근','말씀 많은','이름'],
         empty:'켜진 말씀 모음이 없어요. 말씀 설정에서 모음을 켜 주세요.'},
@@ -42218,7 +42273,12 @@ const _SW_TYPES={
         empty:'저장한 말씀이 없어요. 말씀 왼쪽 위의 책갈피를 누르면 저장돼요.'}
 };
 // 처음 켰을 때 놓이는 차례
-const _SW_DEFAULT_TILES=['last','keep','coll','recent','book','tag','react'];
+const _SW_DEFAULT_TILES=['today','last','keep','coll','recent','book','tag','react'];
+// 판 구성의 판 번호. 새 타일을 기본 차례에 더했을 때, **이미 판을 꾸며 둔 기기**도
+// 그것을 한 번은 보게 해 준다 (안 그러면 새 타일은 영영 ＋ 줄에만 있다).
+// ⚠️ 한 번만 끼운다. 사용자가 끈 것을 되살리지 않으려면 번호를 올려야만 한다.
+const _SW_TILES_V=2;
+const _SW_TILES_V2_ADD=['today'];
 
 // ── 담아두기 ─────────────────────────────────────────────
 // 다시 꺼내 읽고 싶은 말씀을 표시해 둔다. 기록은 좋아요·공유와 **똑같은 모양**
@@ -42508,12 +42568,29 @@ function _swTilesRaw(){
   if(_swOn())return (ST.settings||{}).swTiles;
   return ((((ST.productSettings||{}).sweeter)||{}).swTiles);
 }
+function _swVerRaw(){
+  if(_swOn())return (ST.settings||{}).swTilesV;
+  return ((((ST.productSettings||{}).sweeter)||{}).swTilesV);
+}
 function _swLoadTiles(){
   const raw=_swTilesRaw();
   // 아직 한 번도 손대지 않았으면 기본 차례로 (빈 배열은 "다 껐다"는 뜻이라 살린다)
   if(!Array.isArray(raw))return _SW_DEFAULT_TILES.map(k=>({k,s:0,p:0}));
   // 모르는 종류는 버린다 — 뒤 버전에서 없앤 타일이 남아 있을 수 있다
-  return raw.filter(t=>t&&_SW_TYPES[t.k]).map(t=>({k:t.k,s:(+t.s||0),p:0}));
+  const out=raw.filter(t=>t&&_SW_TYPES[t.k]).map(t=>({k:t.k,s:(+t.s||0),p:0}));
+  // 새로 생긴 타일을 **한 번만** 앞에 끼운다 (이미 꾸며 둔 기기도 새것을 본다).
+  // ⚠️ 판 번호를 올려 두므로 사용자가 그 타일을 끄면 다시 들어오지 않는다.
+  if((+_swVerRaw()||0)<_SW_TILES_V){
+    const have=new Set(out.map(t=>t.k));
+    _SW_TILES_V2_ADD.slice().reverse().forEach(k=>{
+      if(_SW_TYPES[k]&&!have.has(k))out.unshift({k,s:0,p:0});
+    });
+    if(_swOn()){
+      if(!ST.settings)ST.settings={};
+      ST.settings.swTilesV=_SW_TILES_V;
+    }
+  }
+  return out;
 }
 function _swSaveTiles(){
   // ⛔️ 미리보기(BLOCK7 이 Sweeter 판을 보는 중)에서는 **쓰지 않는다.**
@@ -42521,6 +42598,7 @@ function _swSaveTiles(){
   if(!_swOn())return;
   if(!ST.settings)ST.settings={};
   ST.settings.swTiles=_SW_TILES.map(t=>({k:t.k,s:t.s}));   // p 는 담지 않는다
+  ST.settings.swTilesV=_SW_TILES_V;                        // 끼워 넣기는 한 번만
   save();
 }
 // 아직 판에 없는 종류 (＋ 줄에 뜬다)
@@ -42722,8 +42800,84 @@ function _swReacts(sortIdx){
          {name:'이븐디퍼',kind:'even',n:cnt(getEvenDeeperLog())},
          {name:'공유',kind:'share',n:cnt(getShareLog())}].filter(x=>x.n>0);
 }
+// ── 까닭 한 줄 (v26-0922-1, HB 2번 선택) ───────────────
+// "왜 이 말씀이 지금 여기 있는가" 를 한 줄로 적는다. 타일 이름만으로는
+// 무슨 뜻인지 알 수 없다는 HB 지적에서 나왔다.
+// ⚠️ 지어내지 않는다 — 전부 기록에 있는 것만 말한다.
+function _swAgo(d){
+  const k=_calKey();
+  if(!d)return '';
+  if(d===k)return '오늘';
+  const a=new Date(k.slice(0,4),+k.slice(5,7)-1,+k.slice(8,10));
+  const b=new Date(d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10));
+  const n=Math.round((a-b)/86400000);
+  if(n===1)return '어제';
+  if(n<0)return '';
+  if(n<7)return n+'일 전';
+  if(n<35)return Math.round(n/7)+'주 전';
+  return Math.round(n/30)+'달 전';
+}
+// 기록 다섯 갈래를 한 번에 훑어 **장절마다 가장 마지막 흔적**을 찾는다.
+const _SW_WHY_VERB={like:'좋아요 했어요',mem:'암송했어요',deeper:'더 깊이 봤어요',
+                    even:'더 깊이 봤어요',share:'나눴어요',keep:'담아 뒀어요'};
+function _swLastTouch(){
+  const m=new Map();
+  const add=(arr,kind)=>(arr||[]).forEach(e=>{
+    if(!e||!e.ref)return;
+    const o=m.get(e.ref);
+    if(!o||String(e.date)>o.date)m.set(e.ref,{date:String(e.date||''),kind});
+  });
+  try{
+    add(_flatSimpleEntries(getLikeLog()),'like');
+    add(_flatMemEntries(),'mem');
+    add(_flatSimpleEntries(getDeeperLog()),'deeper');
+    add(_flatSimpleEntries(getEvenDeeperLog()),'even');
+    add(_flatSimpleEntries(getShareLog()),'share');
+  }catch(e){}
+  return m;
+}
+// 한 말씀의 까닭. ①남긴 기록이 있으면 그것 ②아니면 설교 날짜 ③아니면 대분류.
+function _swWhyOf(v,touch){
+  if(!v)return '';
+  const key=(typeof _reactKey==='function')?_reactKey(v):v.ref;
+  const t=(touch||_swLastTouch()).get(key)||(touch||_swLastTouch()).get(v.ref);
+  if(t&&t.date){
+    const ago=_swAgo(t.date);
+    if(ago)return ago+' '+(_SW_WHY_VERB[t.kind]||'만났어요');
+  }
+  const d=String(v.d||'');
+  if(d){
+    const ago=_swAgo(d);
+    if(ago==='오늘'||ago==='어제'||/^[1-6]일 전$/.test(ago))return '이번 주 설교 말씀이에요';
+    if(ago)return ago+' 설교 말씀이에요';
+  }
+  const c=String(v.cat||'').trim();
+  return c?('\u2018'+c+'\u2019 에서'):'';
+}
+// ── 오늘의 말씀 (표지 카드) ────────────────────────────
+// ⚠️ 무작위로 뽑되 **날짜를 씨앗**으로 쓴다 — 같은 날 다시 열어도 같은 말씀이다.
+//    매번 바뀌면 "오늘의 말씀" 이라는 말이 거짓이 된다.
+function _swToday(sortIdx){
+  const av=(ACTIVE_VERSES()||[]).filter(v=>v&&v.krText);
+  if(!av.length)return[];
+  const touch=_swLastTouch();
+  const wrap=v=>({verse:v,ref:v.ref,when:'',why:_swWhyOf(v,touch)});
+  if(sortIdx===1){
+    // 최근 설교 — 날짜가 가장 새로운 설교의 말씀들
+    let best='';av.forEach(v=>{const d=String(v.d||'');if(d>best)best=d;});
+    const list=best?av.filter(v=>String(v.d||'')===best):av.slice(0,12);
+    return list.slice(0,12).map(wrap);
+  }
+  const R=_hiRng(_hiHash('sw-today-'+_calKey()));
+  const idx=av.map((v,i)=>i);
+  for(let i=idx.length-1;i>0;i--){
+    const j=Math.floor(R()*(i+1));const t=idx[i];idx[i]=idx[j];idx[j]=t;
+  }
+  return idx.slice(0,3).map(k=>wrap(av[k]));
+}
 function _swValues(t){
   const i=t.s%_SW_TYPES[t.k].sorts.length;
+  if(t.k==='today')return _swToday(i);
   if(t.k==='last')return _swLastVerses(i);
   if(t.k==='keep')return _swKeeps(i);
   if(t.k==='recent')return _swSermons(i);
@@ -42745,7 +42899,7 @@ function _swStrip(t){
 // 아랫줄에 적는 개수. 세는 단위는 종류마다 다르다 — 하나로 뭉뚱그리면
 // '성경 400편의 설교' 같은 말이 된다 (26-0830-8 에서 겪음).
 function _swCountText(k,n){
-  return{last:'말씀 '+n,keep:'담아둔 '+n,recent:'설교 '+n+'편',book:n+'권',
+  return{today:'말씀 '+n,last:'말씀 '+n,keep:'담아둔 '+n,recent:'설교 '+n+'편',book:n+'권',
          tag:'태그 '+n,react:n+'가지',coll:'모음 '+n}[k]||String(n);
 }
 
@@ -42774,6 +42928,115 @@ function _swPipsHTML(n,p){
 // 칸 뒤에 옅게 깔리는 큰 숫자. **장식이다** — 읽을 숫자는 아랫줄에 따로 있다.
 // (매거진 목차의 쪽 번호에서 가져왔다)
 function _swBigHTML(n){return '<div class="sw-big">'+_swEsc(n)+'</div>';}
+
+// ══════════════════════════════════════════════════════════
+//  데이터가 곧 그림 (v26-0922-1, HB)
+//  ────────────────────────────────────────────────────────
+//  HB: "각 타일이 각각의 성격과 컨텐츠를 잘 담아내서 eye-catching 이 되면 좋겠고,
+//       그냥 예쁘기만 한 게 아니라 의미와 연결되는 비주얼이면 좋겠어."
+//  → 타일마다 **그 타일의 데이터로 그린 그림**을 깐다. 꾸밈 그림이 아니다:
+//     성경 = 내 성경 지도에서 이 책의 자리 · 반응 = 다섯 갈래의 실제 크기 ·
+//     설교 = 설교들이 놓인 시간 위의 자리 · 모음 = 내 말씀에서 이 모음의 몫 ·
+//     태그 = 그 태그의 손그림 · 말씀 = 인용부호.
+//  ⚠️ 글자를 가리지 않게 **뒤에 옅게** 깐다 (.sw-sig 는 pointer-events 도 없다).
+// ══════════════════════════════════════════════════════════
+// ⚠️ 여는 <div> 와 닫는 </div> 는 **같은 함수 안에** 둔다. 여는 쪽만 상수로
+//    빼 두면 tools/verify.py 의 태그 짝 세기가 어긋나 배포가 막힌다.
+function _swSigWrap(inner){return inner?('<div class="sw-sig" aria-hidden="true">'+inner+'</div>'):'';}
+// ① 성경 — 66권 격자. 내 말씀이 있는 칸만 밝고, 지금 칸의 책은 강조색이다.
+//    (대시보드의 '성경 지도' 와 같은 뜻을 타일 크기로 줄인 것)
+function _swSigBook(name){
+  let order=[];
+  try{order=(BIBLE_ORDER_OT||[]).concat(BIBLE_ORDER_NT||[]);}catch(e){order=[];}
+  if(!order.length)return '';
+  const mine=new Map();
+  (ACTIVE_VERSES()||[]).forEach(v=>{
+    const bs=_booksOf(v);(bs&&bs.length?bs:[]).forEach(b=>mine.set(b,(mine.get(b)||0)+1));
+  });
+  const COLS=11,CELL=7,GAP=2;
+  let o='<svg viewBox="0 0 '+(COLS*(CELL+GAP))+' '+(Math.ceil(order.length/COLS)*(CELL+GAP))+'" fill="none">';
+  order.forEach((b,i)=>{
+    const x=(i%COLS)*(CELL+GAP),y=Math.floor(i/COLS)*(CELL+GAP);
+    const has=mine.has(b),on=(b===name);
+    o+='<rect x="'+x+'" y="'+y+'" width="'+CELL+'" height="'+CELL+'" rx="1.6" '
+      +'fill="'+(on?'var(--ac)':'currentColor')+'" '
+      +'opacity="'+(on?'1':(has?'.5':'.12'))+'"/>';
+  });
+  return _swSigWrap(o+'</svg>');
+}
+// ② 말씀 반응 — 다섯 갈래의 실제 크기를 막대로. 지금 칸의 갈래가 강조색이다.
+function _swSigReact(kind,sortIdx){
+  let all=[];try{all=_swReacts(sortIdx||0);}catch(e){all=[];}
+  if(!all.length)return '';
+  const max=Math.max.apply(null,all.map(x=>x.n))||1;
+  const W=64,H=34,n=all.length,bw=Math.min(9,(W-(n-1)*4)/n);
+  let o='<svg viewBox="0 0 '+W+' '+H+'" fill="none">';
+  all.forEach((x,i)=>{
+    const h=Math.max(2,Math.round(x.n/max*H));
+    o+='<rect x="'+(i*(bw+4)).toFixed(1)+'" y="'+(H-h)+'" width="'+bw.toFixed(1)+'" height="'+h+'" rx="1.4" '
+      +'fill="'+(x.kind===kind?'var(--ac)':'currentColor')+'" opacity="'+(x.kind===kind?'.95':'.3')+'"/>';
+  });
+  return _swSigWrap(o+'</svg>');
+}
+// ③ 최근 설교 — 설교들이 놓인 **시간 위의 자리**. 지금 설교가 강조색 큰 점이다.
+function _swSigSermon(cat,sortIdx){
+  let all=[];try{all=_swSermons(0);}catch(e){all=[];}
+  const ds=all.map(x=>x.d).filter(Boolean).sort();
+  if(ds.length<2)return '';
+  const lo=ds[0],hi=ds[ds.length-1];
+  const num=d=>{const m=/(\d{4})-(\d{2})-(\d{2})/.exec(d||'');
+    return m?(+m[1])*372+(+m[2])*31+(+m[3]):0;};
+  const a=num(lo),b=num(hi),span=(b-a)||1;
+  const W=78,H=20;
+  let o='<svg viewBox="0 0 '+W+' '+H+'" fill="none">'
+    +'<line x1="1" y1="'+(H/2)+'" x2="'+(W-1)+'" y2="'+(H/2)+'" stroke="currentColor" stroke-width=".7" opacity=".22"/>';
+  all.forEach(g=>{
+    if(!g.d)return;
+    const x=1+((num(g.d)-a)/span)*(W-2);
+    const on=(g.cat===cat);
+    o+='<circle cx="'+x.toFixed(1)+'" cy="'+(H/2)+'" r="'+(on?3.2:1.7)+'" '
+      +'fill="'+(on?'var(--ac)':'currentColor')+'" opacity="'+(on?'1':'.35')+'"/>';
+  });
+  return _swSigWrap(o+'</svg>');
+}
+// ④ 말씀 모음 — 내 말씀 전체에서 이 모음이 차지하는 몫을 고리로.
+function _swSigColl(n){
+  const tot=(ACTIVE_VERSES()||[]).length;
+  if(!tot||!n)return '';
+  const f=Math.max(0.02,Math.min(1,n/tot));
+  const R=15,C=2*Math.PI*R;
+  const o='<svg viewBox="0 0 40 40" fill="none">'
+    +'<circle cx="20" cy="20" r="'+R+'" stroke="currentColor" stroke-width="3.4" opacity=".16"/>'
+    +'<circle cx="20" cy="20" r="'+R+'" stroke="var(--ac)" stroke-width="3.4" stroke-linecap="round" '
+    +'stroke-dasharray="'+(C*f).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 20 20)"/>'
+    +'<text x="20" y="23.5" text-anchor="middle" font-size="10" fill="currentColor" opacity=".55">'
+    +Math.round(f*100)+'%</text>'+'</svg>';
+  return _swSigWrap(o);
+}
+// ⑤ 태그 — 그 태그의 **손그림**. 말씀에 붙는 그림과 같은 표를 쓴다
+//    (_TAGART_MARKOF: 태그 → 뜻 묶음 → 그림). 없는 태그는 그림을 비운다.
+function _swSigTag(name){
+  let id='';
+  try{
+    const g=_tagartAliasMap()[String(name||'').trim()];
+    const ids=g?_TAGART_MARKOF[g]:null;
+    if(ids&&ids.length)id=ids[0];
+  }catch(e){id='';}
+  if(!id)return '';
+  let svg='';try{svg=_tagartSvg(id,_tagartStyle());}catch(e){svg='';}
+  return _swSigWrap(svg);
+}
+// 한 칸의 그림 — 종류마다 다른 것을 부른다. 없으면 빈 문자열이다.
+function _swSigHTML(t,g){
+  try{
+    if(t.k==='book')return _swSigBook(g&&g.name);
+    if(t.k==='react')return _swSigReact(g&&g.kind,t.s%_SW_TYPES.react.sorts.length);
+    if(t.k==='recent')return _swSigSermon(g&&g.cat);
+    if(t.k==='coll')return _swSigColl(g&&g.n);
+    if(t.k==='tag')return _swSigTag(g&&g.name);
+  }catch(e){}
+  return '';
+}
 // 한 칸(이전·지금·다음 중 하나). 범위 밖이면 빈 칸을 둔다 — 그래야 끝에서
 // 밀어도 트랙이 같은 폭으로 움직인다.
 // ⚠️ 종류마다 **낯이 다르다** (v26-0921-9, HB — "하나의 매거진 표지나 목차를
@@ -42781,37 +43044,53 @@ function _swBigHTML(n){return '<div class="sw-big">'+_swEsc(n)+'</div>';}
 function _swCellHTML(t,it,i){
   if(i<0||i>=it.length)return '<div class="sw-cell"></div>';
   const cur=it[i],g=cur.v;
-  if(t.k==='last'||t.k==='keep'){
+  if(t.k==='today'||t.k==='last'||t.k==='keep'){
     const v=g.verse;
     // ⚠️ verse 는 **칸**에 붙인다. 이웃 칸이 비어 있을 수 있어 타일에 붙이면 어긋난다.
     // 장절은 본문 **위**로 올라간다 — 매거진의 머리말(kicker) 자리다.
-    return '<div class="sw-cell verse">'+_swArtHTML(v)
+    // 아랫줄은 날짜가 아니라 **까닭 한 줄**이다 (v26-0922-1, HB — 날짜만으로는
+    // 그것이 무슨 날짜인지 알 수 없었다).
+    // ⚠️ 까닭 한 줄은 **여기서** 만든다. 값 만드는 함수(_swKeeps·_swLastVerses)
+    //    안에서 부르면, 그 구간만 떠 가는 테스트들이 통째로 죽는다 (실제로 그랬다).
+    let why=g.why||'';
+    if(!why){
+      if(t.k==='keep'&&_swAgo(g.when))why=_swAgo(g.when)+' 담아 뒀어요';
+      else why=_swWhyOf(v,null)||g.when||'';
+    }
+    return '<div class="sw-cell verse'+(t.k==='today'?' hero':'')+'">'
+      +(t.k==='today'?'<div class="sw-quote" aria-hidden="true">\u201C</div>':'')
+      +_swArtHTML(v)
       +'<div class="sw-kick">'+_swEsc(v.ref)+'</div>'
       +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
-      +(g.when?'<div class="sw-num">'+_swEsc(g.when)+'</div>':'')+'</div>';
+      +(why?'<div class="sw-num">'+_swEsc(why)+'</div>':'')+'</div>';
   }
+  // ⚠️ 그림과 큰 숫자는 **같은 자리(우상단)** 다. 둘을 같이 그리면 겹쳐서 둘 다
+  //    흐려진다 → 그림이 있으면 그림만 (그림이 더 많이 말해 준다).
+  const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
   if(t.k==='recent')
-    return '<div class="sw-cell sermon">'+_swBigHTML(g.n)
+    return '<div class="sw-cell sermon">'+deco
       +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
       +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' · '+g.d:''))+'</div></div>';
   if(t.k==='react')
-    return '<div class="sw-cell stat">'+_swBigHTML(g.n)
+    return '<div class="sw-cell stat">'+deco
       +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc(g.n+'번')+'</div></div>';
   if(t.k==='tag')
-    return '<div class="sw-cell tag">'+_swBigHTML(g.n)
+    return '<div class="sw-cell tag">'+deco
       +'<div class="sw-val"><i>#</i>'+_swEsc(g.name)+'</div>'
       +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
   // 성경 · 말씀 모음 — 이름을 크게, 담긴 말씀 수는 아래에
-  return '<div class="sw-cell '+(t.k==='coll'?'coll':'book')+'">'+_swBigHTML(g.n)
+  return '<div class="sw-cell '+(t.k==='coll'?'coll':'book')+'">'+deco
     +'<div class="sw-val">'+_swEsc(g.name)+'</div>'
     +'<div class="sw-num">'+_swEsc('말씀 '+g.n)+'</div></div>';
 }
 function _swFace(t){
   const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
   t.p=Math.max(0,Math.min(Math.max(0,n-1),t.p));
-  const chip='<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
-    +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>';
+  // 고를 것이 하나뿐인 타일에는 칩을 달지 않는다 (누를 이유가 없다)
+  const chip=(T.sorts.length>1)
+    ?('<button class="sw-sc" data-swsc="1" title="순서 바꾸기">'
+      +_swEsc(T.sorts[t.s%T.sorts.length])+'</button>'):'';
   // ⚠️ 고정 세간 — 타일 이름(좌상단)·정렬 칩(우상단)·점(우하단).
   //    트랙 **바깥**에 두므로 값이 넘어가도 제자리에 있는다.
   // 지금 보이는 칸이 말씀이면 책갈피를 단다 (담아두기)
@@ -42848,8 +43127,27 @@ function _swFace(t){
     +'</div></div>'+foot+'</div>';
 }
 
+// 꺼진 타일 한 장 — **진짜 얼굴을 그린다** (v26-0922-1, HB 지시).
+// ⚠️ 예전에는 점선 네모에 '＋ 이름' 만 적었다. 블럭7 위젯 고르기와 같은 방식인데,
+//    HB: "그냥 텍스트 목록으로만 꺼진 타일들이 있으면 그 타일이 어떤 것인지
+//    직관적으로 알기 어렵다." → 꺼진 타일도 제 내용을 미리 보여 주고, 누르면 켠다.
+// ⚠️ 그림은 그대로 그리되 흐리게 덮는다. 켜진 타일과 헷갈리지 않아야 한다.
+function _swOffTileEl(k){
+  const el=document.createElement('div');
+  el.className=_swTileClass({k,s:0,p:0})+' sw-off';
+  el.dataset.swadd=k;
+  let face='';
+  try{face=_swFace({k,s:0,p:0});}catch(e){face='';}
+  el.innerHTML=face
+    +'<div class="sw-offveil" aria-hidden="true"></div>'
+    +'<button class="sw-on" data-swadd2="'+_swEsc(k)+'" aria-label="이 타일 켜기">＋</button>';
+  return el;
+}
 // ── 그리기 ───────────────────────────────────────────────
-function _swTileClass(t){return 'sw-tile k-'+t.k+' '+(_SW_TYPES[t.k].wide?'wide':'');}
+function _swTileClass(t){
+  const T=_SW_TYPES[t.k];
+  return 'sw-tile k-'+t.k+' '+(T.wide?'wide ':'')+(T.tall?'tall':'');
+}
 function _swRender(){
   const b=document.getElementById('swBoard');
   if(!b)return;
@@ -42864,15 +43162,8 @@ function _swRender(){
       +(_SW_EDIT?'<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>':'');
     b.appendChild(el);
   });
-  // 편집 중에만 — 아직 안 놓은 종류를 ＋ 칸으로 보여 준다
-  if(_SW_EDIT)_swSpareKinds().forEach(k=>{
-    const el=document.createElement('div');
-    el.className='sw-tile sw-add';
-    el.dataset.swadd=k;
-    el.innerHTML='<div class="sw-face"><div class="sw-addplus">＋</div>'
-      +'<div class="sw-addname">'+_swEsc(_SW_TYPES[k].n)+'</div></div>';
-    b.appendChild(el);
-  });
+  // 편집 중에만 — 꺼 둔 타일을 **제 얼굴로** 이어 붙인다 (누르면 켜진다)
+  if(_SW_EDIT)_swSpareKinds().forEach(k=>{b.appendChild(_swOffTileEl(k));});
   _swSizeCells();
   _swKbSync();          // 다시 그리면 자판 표시가 날아간다 (v26-0921-12)
 }
@@ -42888,15 +43179,9 @@ function _swEditOn(){
   b.querySelectorAll('.sw-tile[data-swi]').forEach(el=>{
     if(!el.querySelector('[data-swkill]'))
       el.insertAdjacentHTML('beforeend',
-        '<button class="sw-kill" data-swkill="1" aria-label="이 타일 끄기">×</button>');
+        '<button class="sw-kill" data-swkill="1" aria-label="이 타일 안 보이게">×</button>');
   });
-  _swSpareKinds().forEach(k=>{
-    const el=document.createElement('div');
-    el.className='sw-tile sw-add';el.dataset.swadd=k;
-    el.innerHTML='<div class="sw-face"><div class="sw-addplus">＋</div>'
-      +'<div class="sw-addname">'+_swEsc(_SW_TYPES[k].n)+'</div></div>';
-    b.appendChild(el);
-  });
+  _swSpareKinds().forEach(k=>{b.appendChild(_swOffTileEl(k));});
   _swEditBtnSync();
   _swKbSync();
 }
@@ -43155,7 +43440,8 @@ function _swInitGestures(){
     if(!el){if(_SW_EDIT)swToggleEdit();return;}
     // 자판을 **이미 쓰고 있던** 사람만 — 손가락으로만 쓰는 화면에는 표시가 안 뜬다
     if(_SW_KB>=0){const _ix=_swKbTiles().indexOf(el);if(_ix>=0)_swKbSet(_ix,false);}
-    if(el.dataset.swadd!==undefined){_swAddTile(el.dataset.swadd);return;}
+    // 꺼진 타일 — 타일 어디를 눌러도 켜진다 (＋ 단추도 같은 길로 온다)
+    if(el.dataset.swadd!==undefined){_swAddTile(el.dataset.swadd);e.preventDefault();return;}
     const i=+el.dataset.swi;
     if(e.target.closest('[data-swkill]')){_swKillTile(i);e.preventDefault();return;}
     // 몸짓이 어디로 새지 않게 판이 붙든다 (끌리는 타일은 pointer-events 가 없다)
@@ -43179,13 +43465,12 @@ function _swInitGestures(){
       const t=_SW_TILES[i],it=_swStrip(t),cur=it[t.p];
       if(cur&&cur.kind==='val'&&cur.v&&cur.v.verse){
         // v26-0831-19 — 담을 때는 **목록을 고른다** (기본 목록을 만들지 않는다).
-        //   이미 담긴 것은 그 자리에서 바로 푼다.
-        const rk=_reactKey(cur.v.verse);
-        if(_swIsKept(rk)){
-          swToggleKeep(rk);
-          _swRepaint(i);
-          _swRepaintKeepTiles(i);   // '저장' 타일이 떠 있으면 그것도 새로
-        }else openKeepPicker(rk);
+        // ⚠️⚠️ v26-0922-1, HB — **타일에서는 저장을 해제하지 않는다.**
+        //    예전에는 이미 담긴 것을 탭 한 번에 곧바로 풀었다. 확인도 되돌리기도
+        //    없어서 "너무 불친절하고 위험한 구조" 라는 지적을 받았다.
+        //    이제 담긴 것을 눌러도 **목록 고르기**가 열린다 — 빼는 것은 그 창에서
+        //    제 뜻으로 한다.
+        openKeepPicker(_reactKey(cur.v.verse));
       }
       e.preventDefault();return;
     }
@@ -43475,9 +43760,9 @@ function _swKbKeep(){
   if(!t)return false;
   const it=_swStrip(t),cur=it[t.p];
   if(!(cur&&cur.kind==='val'&&cur.v&&cur.v.verse))return false;
-  const rk=_reactKey(cur.v.verse);
-  if(_swIsKept(rk)){swToggleKeep(rk);_swRepaint(_SW_KB);_swRepaintKeepTiles(_SW_KB);}
-  else openKeepPicker(rk);
+  // ⚠️ v26-0922-1, HB — 판에서는 **해제하지 않는다.** 담긴 것을 눌러도 목록
+  //    고르기가 열린다 (손가락 길과 똑같다 — 위 data-swkeep 주석 참고).
+  openKeepPicker(_reactKey(cur.v.verse));
   return true;
 }
 // 편집 중 Shift+좌/우 — 끌기의 짝. 차례를 한 자리씩 옮긴다.

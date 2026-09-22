@@ -358,8 +358,9 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
 {
   // 아직 손대지 않았으면 기본 차례
   ST={settings:{}};
-  sc.eq('처음엔 기본 일곱', _swLoadTiles().map(t=>t.k),
-        ['last','keep','coll','recent','book','tag','react']);
+  // v26-0922-1 — 표지 카드('오늘의 말씀')가 맨 앞에 붙어 여덟이 됐다
+  sc.eq('처음엔 기본 여덟', _swLoadTiles().map(t=>t.k),
+        ['today','last','keep','coll','recent','book','tag','react']);
 
   // 저장 → 되읽기
   _SW_TILES=[{k:'tag',s:1,p:3},{k:'last',s:0,p:0}];
@@ -385,7 +386,8 @@ console.log('\n시나리오 9 — 타일 구성을 저장한다');
   _SW_TILES=_swLoadTiles();
   sc.eq('남은 종류가 없다', _swSpareKinds(), []);
   _SW_TILES=[{k:'last',s:0,p:0}];
-  sc.eq('남은 여섯', _swSpareKinds().sort(), ['book','coll','keep','react','recent','tag']);
+  sc.eq('남은 일곱', _swSpareKinds().sort(),
+        ['book','coll','keep','react','recent','tag','today']);
 }
 
 // ═══ 10. BLOCK7 과 갈라져 있는가 ═══
@@ -400,8 +402,10 @@ console.log('\n시나리오 10 — 타일 구성은 Sweeter 것이다');
         SRC_DEV.includes('_swSaveTiles();                       // 나갈 때 한 번만 저장한다'), true);
   // wide 는 표에서 읽는다 — 타일이 늘어도 하드코딩이 남지 않게
   // (v26-0921-9 부터 종류 이름표 k-<종류> 도 함께 붙는다 — 바탕·글자를 가르는 열쇠)
-  sc.eq('넓은 타일은 표에서 정한다',
-        SRC_DEV.includes("return 'sw-tile k-'+t.k+' '+(_SW_TYPES[t.k].wide?'wide':'');"), true);
+  // v26-0922-1 — 긴 타일(tall)도 표에서 읽는다 (표지 카드가 두 줄을 차지한다)
+  sc.eq('넓은 타일·긴 타일을 표에서 정한다',
+        SRC_DEV.includes("return 'sw-tile k-'+t.k+' '+(T.wide?'wide ':'')+(T.tall?'tall':'');"), true);
+  sc.eq('긴 타일은 두 줄을 차지한다', SRC_DEV.includes('.sw-tile.tall{grid-row:span 2;}'), true);
 }
 
 // ═══ 11. 값을 누르면 그 말씀들이 열린다 ═══
@@ -583,8 +587,12 @@ console.log('\n시나리오 16 — BLOCK7 의 미리보기는 읽기만 한다')
   // 예전과 한 글자도 달라지면 안 된다** (CLAUDE.md).
   APP_PRODUCT='block7';
   ST={settings:{theme:'dark'},productSettings:{sweeter:{swTiles:[{k:'coll',s:1},{k:'tag',s:0}]}}};
-  sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k), ['coll','tag']);
-  sc.eq('정렬 값도 함께', _swLoadTiles()[0].s, 1);
+  // ⚠️ v26-0922-1 — 새 타일 한 번 끼우기(판 번호)가 미리보기에서도 보인다.
+  //    **쓰지는 않는다** — 아래 '저장을 부르지 않는다' 가 그것을 지킨다.
+  sc.eq('Sweeter 몫을 읽는다', _swLoadTiles().map(t=>t.k), ['today','coll','tag']);
+  sc.eq('정렬 값도 함께', _swLoadTiles().find(t=>t.k==='coll').s, 1);
+  sc.eq('미리보기에서는 판 번호를 쓰지 않는다',
+        (ST.productSettings.sweeter.swTilesV===undefined)&&(ST.settings.swTilesV===undefined), true);
 
   // ⭐ 저장은 **하지 않는다**
   _SW_TILES=[{k:'last',s:0},{k:'book',s:2}];
@@ -648,7 +656,11 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   sc.eq('설교 칸', _swFace(_SW_TILES[1]).includes('class="sw-cell sermon"'), true);
   sc.eq('성경 칸', _swFace(_SW_TILES[2]).includes('class="sw-cell book"'), true);
   sc.eq('타일에 종류 이름표', _swTileClass(_SW_TILES[1]), 'sw-tile k-recent ');
-  sc.eq('큰 숫자는 장식으로 깔린다', _swFace(_SW_TILES[2]).includes('class="sw-big"'), true);
+  // ⚠️ v26-0922-1 — 그림이 있으면 큰 숫자는 그리지 않는다 (자리가 같아 겹친다).
+  //    성경 타일에는 66권 격자가 깔리므로 숫자가 아니라 그림이 뜬다.
+  const _hb=_swFace(_SW_TILES[2]);
+  sc.eq('성경 칸에는 그림이 깔린다', _hb.includes('class="sw-sig"'), true);
+  sc.eq('그림이 있으면 큰 숫자는 없다', _hb.includes('class="sw-big"'), false);
   sc.eq('큰 숫자는 옅게만',
         /\.sw-big\{[^}]*opacity:\.09;\}/.test(SRC_DEV), true);
   // ⚠️ 큰 숫자·머리말은 칸의 **위쪽**에 둔다 — 내용이 아래로 붙으므로 아래에
