@@ -925,7 +925,16 @@ console.log('\n시나리오 20 — 글씨체 · 삽화 · 썸네일');
   // ④ 최근 설교 — 유튜브 썸네일 (없으면 큰 숫자)
   VERSES=[V3('마 5:13',{yt:'dQw4w9WgXcQ'}),V3('마 5:14',{yt:'dQw4w9WgXcQ'})];
   const fr=_swFace({k:'recent',s:0,p:0});
-  sc.eq('썸네일을 깐다', fr.includes('i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'), true);
+  // ⚠️⚠️ hqdefault.jpg 는 480×360(4:3)이라 16:9 영상의 **검은 띠가 그림 안에 박혀**
+  //    온다 → cover 로 채워도 칸 위아래가 비어 보인다 (v26-0922-10 HB 신고).
+  //    16:9 그대로인 것은 maxresdefault 와 mqdefault 뿐이다.
+  sc.eq('썸네일을 깐다', fr.includes('i.ytimg.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'), true);
+  sc.eq('검은 띠가 박힌 hqdefault 는 쓰지 않는다', fr.includes('hqdefault'), false);
+  sc.eq('없는 영상은 mqdefault 로 내려간다', fr.includes('onerror="_swYtThumbFail(this)"'), true);
+  sc.eq('내려갈 자리가 16:9 다', _SW_YT_THUMB[2], 'mqdefault.jpg');
+  // 주소를 갈아끼워야 하므로 바탕그림이 아니라 <img> 다. 채우는 것은 object-fit.
+  sc.eq('<img> 로 넣는다', /<div class="sw-photo" aria-hidden="true"><img /.test(fr), true);
+  sc.eq('칸을 꽉 채운다', /\.sw-photo>img\{[^}]*object-fit:cover/.test(SRC_DEV), true);
   sc.eq('⭐ 못 받아도 칸이 비지 않는다', fr.includes('class="sw-big"'), true);
   sc.eq('직선·점 그림은 뺐다', /class="sw-sig"/.test(fr), false);
   VERSES=[V3('마 5:13',{})];

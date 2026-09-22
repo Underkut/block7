@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-9  [production]  -->
+<!-- BLOCK7  v. 26-0922-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5139,7 +5139,10 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
    글자가 위에 얹히므로 **아래에서 위로 어둡게 덮는다.** 사진만 예쁘고 글이 안
    읽히면 아무 소용이 없다. 밝은 테마에서는 반대로 하얗게 덮는다. */
 .sw-photo{position:absolute;inset:0;background-size:cover;background-position:center;
-  border-radius:15px;pointer-events:none;opacity:.5;}
+  border-radius:15px;pointer-events:none;opacity:.5;overflow:hidden;}
+/* 유튜브 썸네일처럼 **주소를 갈아끼워야** 하는 사진은 <img> 로 넣는다.
+   ⚠️ object-fit:cover 라야 칸을 꽉 채운다 (v26-0922-10, HB: "위아래가 비어서"). */
+.sw-photo>img{width:100%;height:100%;object-fit:cover;display:block;border-radius:15px;}
 .sw-photo::after{content:"";position:absolute;inset:0;border-radius:15px;
   background:linear-gradient(0deg,rgba(0,0,0,.72),rgba(0,0,0,.22) 55%,rgba(0,0,0,.05));}
 html[data-theme="light"] .sw-photo{opacity:.42;}
@@ -5483,7 +5486,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-9";
+const APP_VERSION = "v. 26-0922-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44073,6 +44076,21 @@ function _swSigHTML(t,g){
   }catch(e){}
   return '';
 }
+// ── 유튜브 썸네일 (v26-0922-10, HB: "타일 위아래가 비어서 안 이뻐") ──────
+// ⚠️⚠️ **hqdefault.jpg 를 쓰지 말 것.** 480×360(4:3)인데 영상은 16:9 라서
+//    **검은 띠가 그림 안에 박혀** 온다. object-fit:cover 로 채워도 그 띠까지
+//    같이 채워지니 칸 위아래가 비어 보인다.
+//    16:9 그대로인 것은 maxresdefault(1280×720)와 mqdefault(320×180)뿐이다.
+//    maxresdefault 는 없는 영상이 있어서(720p 미만으로 올린 것) 없으면
+//    mqdefault 로 내려간다. 둘 다 없으면 뒤에 깔아 둔 큰 숫자가 드러난다.
+const _SW_YT_THUMB=['https://i.ytimg.com/vi/','maxresdefault.jpg','mqdefault.jpg'];
+function _swYtThumbFail(img){
+  try{
+    if(!img||img.dataset.fell){if(img)img.style.display='none';return;}
+    img.dataset.fell='1';
+    img.src=img.src.replace(/\/[^/]+\.jpg(\?.*)?$/,'/'+_SW_YT_THUMB[2]);
+  }catch(e){}
+}
 // 한 칸(이전·지금·다음 중 하나). 범위 밖이면 빈 칸을 둔다 — 그래야 끝에서
 // 밀어도 트랙이 같은 폭으로 움직인다.
 // ⚠️ 종류마다 **낯이 다르다** (v26-0921-9, HB — "하나의 매거진 표지나 목차를
@@ -44148,8 +44166,9 @@ function _swCellHTML(t,it,i){
   const sig=_swSigHTML(t,g),deco=sig||_swBigHTML(g.n);
   if(t.k==='recent'){
     // 유튜브 썸네일이 있으면 그것이 이 칸의 얼굴이다 (없으면 예전처럼 큰 숫자)
-    const th=g.yt?('<div class="sw-photo" aria-hidden="true" style="background-image:url(\''
-      +'https://i.ytimg.com/vi/'+_swEsc(g.yt)+'/hqdefault.jpg\')"></div>'):'';
+    const th=g.yt?('<div class="sw-photo" aria-hidden="true"><img alt="" loading="lazy" src="'
+      +_SW_YT_THUMB[0]+_swEsc(g.yt)+'/'+_SW_YT_THUMB[1]
+      +'" onerror="_swYtThumbFail(this)"></div>'):'';
     // ⚠️ 큰 숫자를 **늘** 깔아 둔다. 썸네일이 안 오는 기기·망에서도 칸이 비지
     //    않게 — 사진이 오면 그 위를 덮으므로 보이지 않는다.
     return '<div class="sw-cell sermon'+(th?' has-photo':'')+'">'+deco+th
