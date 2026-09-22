@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0922-17  [production]  -->
+<!-- BLOCK7  v. 26-0922-18  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4941,6 +4941,14 @@ html[data-product="sweeter"] #swBoot.off{opacity:0;pointer-events:none;}
 /* Even Deeper 는 **개발자 계정에만** (v26-0922-17, HB). 켜는 자리는
    <html data-even="1"> 하나다 — _syncEvenVisibility 가 붙였다 뗀다. */
 html:not([data-even="1"]) .even-only{display:none!important;}
+/* ⚠️⚠️ 판이 떠 있는 동안에는 BLOCK7 의 본문을 **아예 그리지 않는다**
+   (v26-0922-18, HB: "세로로 보다가 가로로 돌리면 순간 블럭7 화면이 보였다가
+   사라지는 버그"). 판은 덮개(position:fixed)일 뿐이라, 화면을 돌리는 그 찰나에
+   덮개가 새 크기를 잡기 전 아래가 비친다. **덮는 대신 없애면** 비칠 것이 없다.
+   ⚠️ 켜고 끄는 자리는 _swCoverOn() 한 곳이다 — 전체화면을 열 때 판을 숨기면
+      이 표시도 함께 걷혀 BLOCK7 본문이 제자리로 돌아온다. */
+html[data-product="sweeter"][data-swboard="1"] #pageWrap,
+html[data-product="sweeter"][data-swboard="1"] #verseBarWrap{display:none;}
 html[data-product="sweeter"] [data-prod="b7"]{display:none!important;}
 html:not([data-product="sweeter"]) [data-prod="sw"]{display:none!important;}
 
@@ -5509,8 +5517,10 @@ html[data-theme="light"] .sw-offveil{
     opacity:0;transition:opacity .15s ease;-webkit-tap-highlight-color:transparent;}
   /* ⚠️ 타일 위 = 있다는 것만 알린다 / 꺽쇠 자리 안 = **누를 수 있다**는 신호.
      둘의 차이가 뚜렷해야 손이 어디로 갈지 안다 (v26-0922-17, HB). */
-  .sw-tile:hover .sw-nav{opacity:.26;}
-  .sw-nav:hover{opacity:1;}
+  .sw-tile:hover .sw-nav{opacity:.16;}
+  /* ⚠️ 차이를 **크게** 벌린다 (v26-0922-18, HB: "더 많이 밝아져야"). 투명도만으로는
+     사진 위에서 티가 안 나므로 **바탕색 테두리 빛**(drop-shadow)을 함께 준다. */
+  .sw-nav:hover{opacity:1;filter:drop-shadow(0 0 3px var(--bg)) drop-shadow(0 0 7px var(--bg));}
   .sw-nav:hover svg{transform:scale(1.22);}
   .sw-nav svg{transition:transform .14s ease;}
   .sw-nav-l{left:0;justify-content:flex-start;padding-left:6px;}
@@ -5657,7 +5667,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0922-17";
+const APP_VERSION = "v. 26-0922-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13528,7 +13538,7 @@ function _vfHideCovers(){
   // 닫지 말고 숨겼다가 closeVerseFull() 이 되살린다 (CLAUDE.md 의 규칙).
   const swh=document.getElementById('swHome');
   if(swh&&swh.classList.contains('on')){
-    swh.classList.remove('on');jobs.push(()=>swh.classList.add('on'));
+    _swCoverOn(false);jobs.push(()=>_swCoverOn(true));
   }
   // 타일뷰 — display 로만 숨긴다 (closeVerseGrid() 는 대시보드 복귀 훅까지 돌므로 금지)
   const gd=document.getElementById('verseGrid');
@@ -42811,7 +42821,7 @@ const _SW_TYPES={
   //    "요즘 우리 교회가 가는 방향, 집중하고 있는 방향, 내가 더 깊이 파고들
   //     방향을 분석하고 종합해서 그것을 더 볼 수 있도록" — 빈칸 채우기 식
   //    권면("로마서를 아직 안 읽으셨어요")을 만들지 말 것.
-  insight:{n:'요즘 우리 교회',wide:true,sorts:['최근 흐름','한 해 흐름'],
+  insight:{n:'요즘 우리 교회',wide:true,sorts:['최근 흐름','모두'],
         empty:'설교 날짜가 있는 말씀이 아직 적어 흐름을 읽지 못했어요.'},
   // '나의 리듬' — 언제 말씀을 만나는가 (요일 × 때). 대시보드의 그 화면을 줄인 것.
   rhythm:{n:'나의 리듬',sorts:['모두','이번 달'],
@@ -43483,11 +43493,18 @@ function _swFlow(sortIdx){
   const av=(ACTIVE_VERSES()||[]).filter(v=>v&&String(v.d||''));
   const days=[...new Set(av.map(v=>String(v.d)))].sort();
   if(av.length<3||days.length<2)return null;
-  const take=sortIdx===1?12:4;                       // 최근 설교 4번 / 12번
-  const cut=days[Math.max(0,days.length-take)];
+  // ⚠️⚠️ '최근 흐름' 은 **설교 여덟 번**이다 (v26-0922-18, HB).
+  //    예전에는 넷이었는데, 주일·수요·라이프라인이 다른 날짜로 세어지므로
+  //    넷이면 한 주 반밖에 안 된다. 한 연속 설교가 통째로 들어와
+  //    "요즘 설교는 갈라디아서에 머물러 있어요" 가 되어 버렸다 — HB 가
+  //    "우리 교회는 마태복음이 가장 많을 텐데 이해가 안돼" 라고 한 그것이다.
+  //    그리고 두 번째 칩은 **'모두'** 다 — 전체를 보면 그 물음에 바로 답한다.
+  const all=sortIdx===1;
+  const take=8;
+  const cut=all?days[0]:days[Math.max(0,days.length-take)];
   const now=av.filter(v=>String(v.d)>=cut);
-  const before=av.filter(v=>String(v.d)<cut);
-  return {now,before,days:days.filter(d=>d>=cut),cut};
+  const before=all?[]:av.filter(v=>String(v.d)<cut);
+  return {now,before,days:days.filter(d=>d>=cut),cut,all};
 }
 // 내 기록이 이 말씀들 가운데 어디에 머물렀나 (반응 기록을 축별로 센다)
 function _swMyWeight(list,axis){
@@ -43503,6 +43520,11 @@ function _swMyWeight(list,axis){
   return [...m.entries()].map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n);
 }
 const _SW_AXIS_WORD={book:'성경',topic:'주제',tag:'태그',cat:'예배'};
+// '2026-09-03' → '9월 3일'. 어느 구간을 본 말인지 밝히는 데 쓴다.
+function _swMD(d){
+  const m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/);
+  return m?(+m[1])+'월 '+(+m[2])+'일':'';
+}
 function _swInsights(sortIdx){
   const f=_swFlow(sortIdx);
   if(!f)return [];
@@ -43522,7 +43544,10 @@ function _swInsights(sortIdx){
   const bk=_swCount(f.now,'book');
   const topDay=[...dayHit.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko'))[0];
   if(topDay&&topDay[1]>1)
-    push('book',topDay[0],'요즘 설교는 '+topDay[0]+'에 머물러 있어요 — 최근 설교 '
+    // ⚠️ **어느 구간을 본 말인지**를 문장 안에 둔다 (v26-0922-18, HB).
+    //    "최근 설교 4번 가운데 3번" 만으로는 그것이 전체 이야기인 줄 읽힌다.
+    push('book',topDay[0],(f.all?'모아 둔 설교를 보면 ':'요즘 설교는 ')+topDay[0]
+      +(f.all?'가 가장 많아요 — 설교 ':'에 머물러 있어요 — '+_swMD(f.cut)+' 이후 설교 ')
       +sermons+'번 가운데 '+topDay[1]+'번');
   else if(bk.length)
     push('book',bk[0].k,'요즘 가장 많이 펼친 성경은 '+bk[0].k+' 예요 — 이 흐름의 말씀 '
@@ -43616,21 +43641,21 @@ function _swRhythm(sortIdx){
   out.push({name:'일주일 중 '+rank+'위',kind:'rank',n:byDow[dow],
     cell:{d:dow,s:-1},                       // 격자에서 그 **요일 줄**에 불을 켠다
     text:_SW_DOW[dow]+'요일은 일주일 중 '+rank+'위로 말씀을 많이 보았어요'});
-  // ② 가장 자주 만나는 때
-  let best={v:0,d:0,s:0};
-  g.forEach((row,d)=>row.forEach((v,si)=>{if(v>best.v)best={v,d,s:si};}));
-  if(best.v)out.push({name:_SW_DOW[best.d]+'요일 '+_SW_RH_SLOTS[best.s][0],
-    n:best.v,cell:{d:best.d,s:best.s},          // 격자에서 그 칸에 불을 켠다
-    text:'가장 자주 말씀을 만나는 때는 '+_SW_DOW[best.d]+'요일 '
-      +_SW_RH_SLOTS[best.s][0]+'이에요 ('+best.v+'번)'});
-  // ② 어느 때에 몰려 있나 (네 때 가운데)
-  const bySlot=[0,0,0,0];g.forEach(row=>row.forEach((v,i)=>{bySlot[i]+=v;}));
-  const si=bySlot.indexOf(Math.max.apply(null,bySlot));
-  out.push({name:_SW_RH_SLOTS[si][0],n:bySlot[si],
-    text:_SW_RH_SLOTS[si][0]+'에 가장 많이 머물러요 — 전체의 '
-      +Math.round(bySlot[si]/n*100)+'%'});
-  // ⚠️ '모두 N번' 칸은 **뺐다** (v26-0922-17, HB: "왜 있는지 모르겠어").
-  //    그 수는 말해 주는 것이 없다 — 아랫줄 개수와도 겹쳤다.
+  // ② **오늘 요일 안에서** 가장 많이 만나는 때
+  // ⚠️⚠️ 일주일 전체에서 고르지 않는다 (v26-0922-18, HB 가 못 박았다).
+  //    ①이 '오늘 요일' 이야기인데 ②만 일주일 이야기면 둘이 따로 논다.
+  const row=g[dow];
+  const si=row.indexOf(Math.max.apply(null,row));
+  if(row[si]>0)out.push({name:_SW_DOW[dow]+'요일 '+_SW_RH_SLOTS[si][0],
+    n:row[si],cell:{d:dow,s:si},                // 격자에서 그 칸에 불을 켠다
+    text:_SW_DOW[dow]+'요일에는 '+_SW_RH_SLOTS[si][0]+'에 가장 많이 만나요 ('
+      +row[si]+'번)'});
+  // ⚠️ 오늘 요일에 기록이 없어도 **칸은 둔다.** 없는 것을 지어내지 않되,
+  //    한 칸만 있는 타일은 넘길 것이 없어 고장처럼 보인다.
+  else out.push({name:_SW_DOW[dow]+'요일',n:0,cell:{d:dow,s:-1},
+    text:_SW_DOW[dow]+'요일에는 아직 말씀을 만난 기록이 없어요'});
+  // ⚠️ 칸은 **둘뿐**이다 (v26-0922-17·-18, HB). '모두 N번' 도, '오후에 가장 많이
+  //    머물러요' 도 뺐다 — 앞의 둘과 단위가 섞여 무슨 말인지 흐려졌다.
   return out;
 }
 // 리듬 그림 — 7×4 격자. 진한 칸이 자주 만나는 때다.
@@ -45677,10 +45702,22 @@ function _swMergeViewTab(){
 }
 // 판을 실제로 세운다. Sweeter 의 첫 그림과 BLOCK7 의 미리보기가 **같은 길**을 쓴다.
 // 두 번 불려도 안전하다 (dataset 표시로 손짓을 한 번만 묶는다).
+// 판을 덮개로 올리고 내린다. ⚠️ 클래스 하나만 건드리지 말 것 —
+// <html data-swboard="1"> 이 함께 움직여야 뒤의 BLOCK7 본문이 아예 안 그려진다
+// (v26-0922-18, 돌릴 때 번쩍이던 것).
+function _swCoverOn(on){
+  const el=document.getElementById('swHome');
+  if(el)el.classList.toggle('on',!!on);
+  try{
+    const r=document.documentElement;
+    if(on)r.setAttribute('data-swboard','1');
+    else r.removeAttribute('data-swboard');
+  }catch(e){}
+}
 function _swMount(){
   const el=document.getElementById('swHome');
   if(!el)return;
-  el.classList.add('on');
+  _swCoverOn(true);
   // 편집·필터 단추는 **제 제품에서만** — 미리보기에서 고치면 저장할 곳이 없다
   _swEditBtnSync();
   _SW_TILES=_swLoadTiles();
