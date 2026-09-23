@@ -169,4 +169,25 @@ console.log('시나리오 11 — 단추 자리 (T-4)');
   sc.eq('Sweeter GNB — 말씀 없이', /id="swThereBtn"[\s\S]{0,120}onclick="openThere\(''\)"/.test(SRC), true);
 }
 
+console.log('시나리오 12 — 리듬: 기도 시간을 **시간마다 분으로** 나눠 담는다 (T-5)');
+{
+  eval(slice('function _vRhyThereSplit(', '// 시간대 목록'));
+  const cells = {};
+  const add = (wd, h, m) => { const k = wd + ',' + h; cells[k] = Math.round(((cells[k] || 0) + m) * 100) / 100; };
+  // 2026-09-23 은 수요일(3). 21:30 부터 40분
+  sc.eq('제대로 읽힘', _vRhyThereSplit({ date: '2026-09-23', time: '21:30', d: 2400 }, add), true);
+  sc.eq('21시 30분 + 22시 10분', cells, { '3,21': 30, '3,22': 10 });
+  // 자정을 넘기면 다음 날(목요일=4) 칸으로
+  const c2 = {};
+  _vRhyThereSplit({ date: '2026-09-23', time: '23:50', d: 1800 }, (wd, h, m) => { c2[wd + ',' + h] = Math.round(m); });
+  sc.eq('수 23시 10분 + 목 0시 20분', c2, { '3,23': 10, '4,0': 20 });
+  sc.eq('시각이 없으면 못 놓는다', _vRhyThereSplit({ date: '2026-09-23', time: '', d: 600 }, () => {}), false);
+}
+console.log('시나리오 13 — 리듬의 There 는 p.kind 를 건드리지 않는다 (다른 탭은 There 를 모른다)');
+{
+  sc.eq("There 칩은 rhyThere 만 켠다", SRC.includes(".replace(`vTrSet('kind','there')`,`vTrSet('rhyThere','1')`)"), true);
+  sc.eq('다른 범위를 고르면 There 를 내려놓는다', /if\(key==='kind'\)p\.rhyThere='';/.test(SRC), true);
+  sc.eq('_VDASH_KINDS 에는 There 가 없다', /_VDASH_KINDS=\[[^;]*'there'/.test(SRC), false);
+}
+
 sc.done();

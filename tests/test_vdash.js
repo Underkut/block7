@@ -155,13 +155,14 @@ console.log('\n시나리오 1-2 — 같은 카운트 안에서는 ㄱㄴㄷ순')
         D._vDashBuckets(agg, 'cat').map(s => s.key), ['라', '가', '나', '다']);
 }
 
-console.log('\n시나리오 2 — 행이 여섯: 현재 말씀 모음 · 좋아요 · 암송 · Deeper · Even · 저장');
+console.log('\n시나리오 2 — 행이 여섯: 현재 말씀 모음 · 좋아요 · 저장 · 암송 · Deeper · Even');
 {
   sc.eq('행이 6개', D._VDASH_KINDS.length, 6);
   sc.eq('맨 위가 현재 말씀 모음', D._VDASH_KINDS[0], ['home', '현재 말씀 모음']);
-  sc.eq('가운데 넷은 그대로', D._VDASH_KINDS.slice(1, 5).map(k => k[0]), ['like', 'mem', 'deeper', 'even']);
-  // v26-0907-3, HB — "'저장'도 모든 대시보드 탭의 범위 맨 마지막 항목으로"
-  sc.eq('맨 끝이 저장', D._VDASH_KINDS[5], ['keep', '저장']);
+  // v26-0923-7, HB — "'저장'이 '좋아요' 다음 두번째로 와야겠네. 그다음 '암송'"
+  //   (예전 v26-0907-3 에는 저장이 맨 끝이었다)
+  sc.eq('좋아요 다음이 저장, 그다음 암송', D._VDASH_KINDS.slice(1, 5).map(k => k[0]), ['like', 'keep', 'mem', 'deeper']);
+  sc.eq('맨 끝이 Even', D._VDASH_KINDS[5], ['even', 'Even']);
   sc.eq('열은 그대로 넷', D._VDASH_AXES.map(a => a[0]), ['cat', 'topic', 'tag', 'book']);
   const hd = D._vDashRowHeadHTML('home', '현재 말씀 모음');
   sc.eq("행 제목이 '현재' + 줄바꿈 '말씀 모음'", /^<div class="vdash-rowhd">현재<span>말씀 모음<\/span><\/div>$/.test(hd), true);
@@ -212,17 +213,20 @@ console.log('\n시나리오 3 — 상세 팝업 6행 × 4열 이동 (양 끝 순
   sc.eq('왼쪽 끝에서는 못 간다(순환 꺼짐)', D.go(0, -1), null);
   sc.eq('위쪽 끝에서도 못 간다', D.go(-1, 0), null);
   sc.eq('아래로는 좋아요 행', D.go(1, 0), { kind: 'like', axis: 'cat' });
-  D.setCtx('keep', 'book');
+  D.setCtx('even', 'book');
   sc.eq('오른쪽 끝에서는 못 간다', D.go(0, 1), null);
   sc.eq('아래쪽 끝에서도 못 간다', D.go(1, 0), null);
-  sc.eq('저장 위는 Even', D.go(-1, 0), { kind: 'even', axis: 'book' });
+  sc.eq('Even 위는 Deeper', D.go(-1, 0), { kind: 'deeper', axis: 'book' });
+  D.setCtx('keep', 'book');
+  sc.eq('저장 위는 좋아요 (v26-0923-7)', D.go(-1, 0), { kind: 'like', axis: 'book' });
+  sc.eq('저장 아래는 암송', D.go(1, 0), { kind: 'mem', axis: 'book' });
 
   ST.settings.loopViews = true;
   D.setCtx('home', 'cat');
   sc.eq('순환 켜짐 — 왼쪽 끝에서 성경으로', D.go(0, -1), { kind: 'home', axis: 'book' });
-  sc.eq('순환 켜짐 — 위쪽 끝에서 저장으로', D.go(-1, 0), { kind: 'keep', axis: 'cat' });
-  D.setCtx('keep', 'book');
-  sc.eq('순환 켜짐 — 오른쪽 끝에서 대분류로', D.go(0, 1), { kind: 'keep', axis: 'cat' });
+  sc.eq('순환 켜짐 — 위쪽 끝에서 Even 으로', D.go(-1, 0), { kind: 'even', axis: 'cat' });
+  D.setCtx('even', 'book');
+  sc.eq('순환 켜짐 — 오른쪽 끝에서 대분류로', D.go(0, 1), { kind: 'even', axis: 'cat' });
   sc.eq('순환 켜짐 — 아래쪽 끝에서 현재 말씀 모음으로', D.go(1, 0), { kind: 'home', axis: 'book' });
   ST.settings.loopViews = false;
 }
@@ -532,7 +536,7 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   // 리듬은 mode 를 'span' 으로 못 박아 두어 [전체][직접] 이 아무 일도 안 했다
   sc.eq('리듬도 고른 기간 모드를 따른다',
         SRC.includes("_vDashWinEntries(kind,sc.tab,sc.unit,sc.span,{mode:'span'})"), false);
-  sc.eq('저장이 범위 맨 끝이다', /_VDASH_KINDS=\[.*\['keep','저장'\]\];/.test(SRC), true);
+  sc.eq('저장이 좋아요 다음이다 (v26-0923-7)', /_VDASH_KINDS=\[\['home','현재 말씀 모음'\],\['like','좋아요'\],\['keep','저장'\],\['mem','암송'\]/.test(SRC), true);
 }
 
 // ══════════════════════════════════════════════════════════════════
