@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -695,8 +695,8 @@ header{
   font-size:11px;letter-spacing:.2em;color:#8d8698;opacity:.6;pointer-events:none;
   font-variant-numeric:tabular-nums;
 }
-#thereFx .tf-x{top:calc(12px + env(safe-area-inset-top));right:12px;color:#e8e2d8;opacity:.7;z-index:4;padding:9px;}
-#thereFx .tf-x:hover{color:#e8e2d8;opacity:1;}
+#thereFx .tf-x{top:calc(12px + env(safe-area-inset-top));right:12px;color:#e8e2d8;opacity:.35;z-index:4;padding:9px;}   /* v26-0923-11 HB — .7 의 절반 */
+#thereFx .tf-x:hover{color:#e8e2d8;opacity:.6;}
 /* 세팅 판 — 설정창 '세팅하러 가기' 로 열었을 때만 나온다 */
 #thereFx .tf-tune{
   position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:3;
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-10";
+const APP_VERSION = "v. 26-0923-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
