@@ -1326,12 +1326,12 @@ console.log('\n시나리오 27 — 날마다 바뀌는 사진 · 차례로 스�
   sc.eq('흐른 만큼 뺀다', SRC_DEV.includes('const gone=_swIntroStart?(now-_swIntroStart):0;'), true);
   sc.eq('다시 그려도 이어진다', SRC_DEV.includes('intro=(now-_swIntroStart)<_swIntroSpan();'), true);
   sc.eq('옛 빗장은 없앴다', SRC_DEV.includes('let _swIntroDone=false;'), false);
-  // ⚠️ HB 가 아티팩트에서 직접 골랐다 ('조금 느리게') — 90 → 150ms
-  sc.eq('터울은 150ms', SRC_DEV.includes('const _SW_INTRO_STEP=150;'), true);
+  // ⚠️ HB 가 고른 값이다 — 90 → 150 → **320ms** ('아주 느리게', v26-0923-3)
+  sc.eq('터울은 320ms', SRC_DEV.includes('const _SW_INTRO_STEP=320;'), true);
   // ⚠️⚠️ JS 의 _SW_INTRO_DUR 과 CSS 의 animation 시간은 **같은 값**이라야 한다.
   //    어긋나면 .intro 를 걷는 시계가 움직임보다 먼저 울려 끝이 툭 끊긴다.
-  sc.eq('한 장 시간도 같은 값', SRC_DEV.includes('const _SW_INTRO_DUR=620;')&&
-    /\.sw-board\.intro \.sw-tile\{animation:swTileIn \.62s/.test(SRC_DEV), true);
+  sc.eq('한 장 시간도 같은 값', SRC_DEV.includes('const _SW_INTRO_DUR=900;')&&
+    /\.sw-board\.intro \.sw-tile\{animation:swTileIn \.9s/.test(SRC_DEV), true);
   sc.eq('첫 장 앞에 뜸을 둔다', SRC_DEV.includes('const _SW_INTRO_LEAD=260;'), true);
   // HB: "하나씩 살짝 내려오는 모션" — 위에서 내려앉는다 (예전엔 아래서 올라왔다)
   sc.eq('위에서 내려앉는다', /from\{opacity:0;transform:translateY\(-14px\);\}/.test(SRC_DEV), true);
