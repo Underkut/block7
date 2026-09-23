@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -669,7 +669,7 @@ header{
    ⚠️ 화면 전체를 일렁이게 하던 필터(feTurbulence)는 모바일에서 끊겨 뺐다.
       되살리지 말 것. 안개는 transform 만 움직여 GPU 가 맡는다. */
 #thereFx{
-  position:fixed;inset:-1px;z-index:5200;background:#0e0d12;color:#e8e2d8;
+  position:fixed;inset:-1px;z-index:5200;background:var(--tf-bg,#0e0d12);color:#e8e2d8;
   overflow:hidden;touch-action:pan-y;
   -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
   opacity:0;transition:opacity .35s ease;
@@ -677,11 +677,16 @@ header{
 #thereFx.on{opacity:1;}
 #thereFx .tf-haze{
   position:absolute;inset:-10%;opacity:.9;will-change:transform;pointer-events:none;
-  background:radial-gradient(40% 30% at 30% 80%,rgba(120,110,160,.22),transparent 70%),
-             radial-gradient(35% 28% at 70% 20%,rgba(120,110,160,.22),transparent 70%),
-             radial-gradient(50% 40% at 50% 50%,rgba(120,110,160,.22),transparent 70%);
+  background:radial-gradient(40% 30% at 30% 80%,var(--tf-g1,rgba(120,110,160,.22)),transparent 70%),
+             radial-gradient(35% 28% at 70% 20%,var(--tf-g2,rgba(120,110,160,.22)),transparent 70%),
+             radial-gradient(50% 40% at 50% 50%,var(--tf-g1,rgba(120,110,160,.22)),transparent 70%);
   animation:tfDrift 14s ease-in-out infinite alternate;
 }
+/* 테마 빛 — 아래(기도가 오르는 곳)는 메인색, 위(내려오는 곳)는 보조색으로 은은히.
+   화면 전체를 그 테마의 방향으로 물들이는 한 겹 (v26-0923-8, HB) */
+#thereFx .tf-veil{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,var(--tf-v1,transparent),transparent 58%),
+             linear-gradient(to bottom,var(--tf-v2,transparent),transparent 50%);}
 @keyframes tfDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-3%,2%) scale(1.06)}100%{transform:translate(2%,-2%) scale(1.02)}}
 #thereFx canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
 #tfCross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;}
@@ -744,6 +749,13 @@ header{
 body.lay-multi .gnb-there{display:block;}
 /* Sweeter GNB — 필터 왼쪽. 선 아이콘들 사이의 **채운** 그림이라 한 치수 작게 둔다 */
 .sw-iconbtn .there-ic{width:17px;height:17px;display:block;}
+/* GNB 두 곳 — 옆 아이콘들(톱니·필터·로고)보다 **아래가 더 내려와** 보였다 (HB).
+   위 경계는 맞으므로 **위를 기준으로** 줄여 아래만 올린다. 보좌·불꽃은 그림이
+   상자를 아래까지 꽉 채워 더 많이, 기도손은 조금. */
+.sw-iconbtn .there-ic svg,.gnb-there .there-ic svg{transform-origin:50% 12%;}
+.sw-iconbtn .there-ic[data-k="hands"] svg{transform:scale(.9);}   /* BLOCK7 로고 옆 기도손은 괜찮다 (HB) */
+.sw-iconbtn .there-ic[data-k="throne"] svg,.gnb-there .there-ic[data-k="throne"] svg,
+.sw-iconbtn .there-ic[data-k="flame"] svg,.gnb-there .there-ic[data-k="flame"] svg{transform:scale(.8);}
 /* Sweeter 타일 — 우하단 구석. 점(.sw-pips)은 그만큼 왼쪽으로 비켜선다 */
 .sw-there{position:relative;flex:0 0 auto;background:none;border:0;padding:0;margin:0 0 0 8px;
   cursor:pointer;color:var(--tx3);line-height:0;-webkit-tap-highlight-color:transparent;}
@@ -5839,7 +5851,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-7";
+const APP_VERSION = "v. 26-0923-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8205,6 +8217,7 @@ try{
      세팅 판(tfTune)은 말씀 설정 → 전체화면 탭의 '세팅하러 가기' 로 열 때만 나온다. -->
 <div id="thereFx" style="display:none;" role="dialog" aria-label="There">
   <div class="tf-haze"></div>
+  <div class="tf-veil"></div>
   <canvas id="tfCv"></canvas>
   <svg id="tfCross" aria-hidden="true"><path id="tfCrossP" fill="currentColor"/></svg>
   <div class="tf-clock" id="tfClock" style="display:none;"></div>
@@ -15396,7 +15409,11 @@ function _thereIconKey(){const k=ST.settings&&ST.settings.thereIcon;return _THER
 // 고른 그림을 [data-there-ic] 자리마다 넣는다 — 자리가 늘어도 여기 하나로 끝난다
 function _thereIconSync(){
   const svg=_THERE_ICONS[_thereIconKey()].svg;
-  document.querySelectorAll('[data-there-ic]').forEach(el=>{if(el._tic!==svg){el.innerHTML=svg;el._tic=svg;}});
+  const key=_thereIconKey();
+  document.querySelectorAll('[data-there-ic]').forEach(el=>{
+    if(el._tic!==svg){el.innerHTML=svg;el._tic=svg;}
+    el.setAttribute('data-k',key);
+  });
   const box=document.getElementById('thereIconPick');
   if(box){
     const cur=_thereIconKey();
@@ -15410,7 +15427,8 @@ function _thereIconSync(){
 // 단추 안에 넣을 그림 자리. 그림은 지금 고른 것을 바로 넣고, 나중에 바꾸면
 // _thereIconSync() 가 [data-there-ic] 를 훑어 갈아 끼운다.
 function _thereIcHTML(){
-  return '<span class="there-ic" data-there-ic>'+_THERE_ICONS[_thereIconKey()].svg+'</span>';
+  const k=_thereIconKey();
+  return '<span class="there-ic" data-there-ic data-k="'+k+'">'+_THERE_ICONS[k].svg+'</span>';
 }
 function setThereIcon(k){
   ST.settings.thereIcon=_THERE_ICONS[k]?k:'hands';
@@ -15588,6 +15606,36 @@ function thereTuneFold(){
   const b=document.getElementById('tfFoldBtn');if(b)b.textContent=t.classList.contains('fold')?'펼치기':'접기';
 }
 
+// ── 테마 입히기 (v26-0923-8, HB) ──
+// HB: "각자 적용되고 있던 테마와 너무 다른 느낌". 라이트 모드를 쓰는 중이어도
+// **그 테마의 다크 판**을 꺼내 쓴다(_themeTokens(…,'dark')) — There 는 늘 어두운
+// 판이라서다. 테마를 안 고른 사람(기본)은 예전 그대로의 색.
+//   · 배경  = 테마 다크 배경을 한층 가라앉힌 것 (입자가 묻히지 않게)
+//   · 안개  = 메인색·보조색
+//   · 빛    = 아래(EARTH 가 오르는 곳) 메인색 · 위(HEAVEN 이 내려오는 곳) 보조색
+// ⚠️ 입자 색(HEAVEN·EARTH)과 십자가 색은 세팅의 것을 그대로 둔다 — 사용자가 고른 색이다.
+function _tfApplyTheme(el){
+  let bg=null,ac=null,sec=null;
+  try{
+    const pr=(typeof themeById==='function')?themeById(ST.settings.themePresetId):null;
+    if(pr){
+      const t=_themeTokens(pr,'dark');
+      const h=t['--bg'];
+      bg=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+      ac=String(t['--ac-rgb']).split(',').map(Number);
+      sec=String(t['--sec-rgb']).split(',').map(Number);
+    }
+  }catch(e){bg=null;}
+  const set=(k,v)=>{if(v==null)el.style.removeProperty(k);else el.style.setProperty(k,v);};
+  if(!bg||bg.some(isNaN)){['--tf-bg','--tf-g1','--tf-g2','--tf-v1','--tf-v2'].forEach(k=>set(k,null));return;}
+  const mix=(a,b,k)=>a.map((v,i)=>Math.round(v*(1-k)+b[i]*k));
+  set('--tf-bg',`rgb(${mix(bg,[6,5,9],0.42)})`);
+  set('--tf-g1',`rgba(${ac},.20)`);
+  set('--tf-g2',`rgba(${sec},.16)`);
+  set('--tf-v1',`rgba(${ac},.16)`);
+  set('--tf-v2',`rgba(${sec},.10)`);
+}
+
 // ── 열기·닫기 ──
 function _thereIsOpen(){return !!_tf.run;}
 // ref: 반응 키(말씀=장절, 명제=명제 키). 빈칸이면 특정 말씀 없이 (GNB).
@@ -15599,6 +15647,7 @@ function openThere(ref,opts){
   _tf.preview=!!opts.preview;_tf.ref=ref||'';_tf.sec=-1;
   const tune=document.getElementById('tfTune');if(tune)tune.style.display=_tf.preview?'':'none';
   el.style.transition='';el.style.transform='';el.style.opacity='';
+  _tfApplyTheme(el);
   el.style.display='block';
   void el.offsetWidth;el.classList.add('on');
   _tfSize();_tf.P=[];_tfBuildSprites();_tfSyncUI();
