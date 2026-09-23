@@ -15,7 +15,7 @@ const asVar = s => s.replace(/^(?:const|let) /gm, 'var ');
 
 eval(asVar(sliceDev('function _verseIdentity(', 'function _gSrcId(')));
 eval(asVar(sliceDev('const _PROP_REF_MAX=', 'function _rowsToItems(')));
-eval(asVar(sliceDev('function _sharedVerseOut(', '// 소유자의 모음 내용을 shared')));
+eval(asVar(sliceDev('function _shareCopy(', '// 소유자의 모음 내용을 shared')));
 eval(asVar(sliceDev('function _syncSheetVersesIntoColl(', 'function addCustomVerseFromForm(')));
 eval(asVar(sliceDev('function _propHiList(', 'function _vfIsProp(')));
 
