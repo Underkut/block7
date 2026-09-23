@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-3  [production]  -->
+<!-- BLOCK7  v. 26-0923-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2310,6 +2310,20 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 .blk-contact-task-badge{display:flex;align-items:center;flex-shrink:0;color:#2f9e5e;margin-right:5px;}
 .blk-contact-task-badge:empty{display:none;}
 .blk-contact-task-badge svg{display:block;}
+
+/* 하위 여닫이 단추 (왼쪽 자리, v26-0923-4 HB) — 줄 오른쪽 게이지와 짝이다.
+   색은 빨강(중요·긴급)·초록(연락할 일)을 피한다. 그 둘은 '무슨 할일인가' 를
+   말하는 표시라 같은 색을 쓰면 성격 표시로 읽힌다. 이건 **누르는 것**이므로
+   앱이 누를 수 있는 곳에 쓰는 강조색을 쓰고, 접혀 있을 땐 한 걸음 물러난다. */
+.blk-sub-toggle{
+  display:flex;align-items:center;flex-shrink:0;
+  color:color-mix(in srgb,var(--ac-tx) 78%,transparent);
+  margin-right:5px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.blk-sub-toggle:empty{display:none;}
+.blk-sub-toggle svg{display:block;}
+.blk-sub-toggle.on{color:var(--ac-tx);}
 
 /* Daily-repeat indicator — sits right after the input so it follows
    text length naturally instead of breaking left-alignment. */
@@ -5738,7 +5752,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-3";
+const APP_VERSION = "v. 26-0923-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -30387,30 +30401,53 @@ function _memoBadgeFill(el,item,size){
 }
 // 두 배지를 만들어 줄 끝에 붙인다. 빅·스몰이 같은 함수를 쓴다 — 따로 두면
 // 한쪽만 고쳐져 스몰 블럭에서만 안 되는 일이 생긴다.
+// 하위를 여닫는 손잡이는 이제 **두 곳**이다 — 줄 오른쪽의 게이지와
+// 왼쪽(체크박스 옆)의 아이콘. 둘이 하는 일이 똑같아야 하므로 누르는
+// 동작은 이 한 함수에서만 붙인다. 따로 두면 한쪽만 고쳐진다.
+//   탭 = 펼치기/접기, 길게 누르기 = 몇 개 중 몇 개인지 말해 주기
+function _wireSubHandle(el,type,secId,idx,item){
+  let lpFired=false,lpTimer=null;
+  const clearLp=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}};
+  el.addEventListener('touchstart',e=>{
+    e.stopPropagation();lpFired=false;
+    lpTimer=setTimeout(()=>{
+      lpTimer=null;lpFired=true;
+      const st=_subStat(item);
+      showToast('하위 '+st.n+'개 중 '+st.done+'개 끝냈어요');
+    },500);
+  },{passive:true});
+  ['touchend','touchcancel','touchmove'].forEach(ev=>
+    el.addEventListener(ev,clearLp,{passive:true}));
+  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();});
+  el.addEventListener('click',e=>{
+    e.stopPropagation();e.preventDefault();
+    if(lpFired){lpFired=false;return;}   // 길게 누르기가 이미 처리했다
+    _subToggleOpen(type,secId,idx);
+  });
+}
+// 왼쪽 자리의 여닫이 아이콘 — 할일 메뉴의 '하위 할일' 줄과 **같은 그림**이다.
+// 하위가 하나도 없으면 아무것도 그리지 않는다 (:empty 로 자리도 사라진다).
+function _subToggleBadgeFill(el,item,size,open){
+  if(!_subStat(item).n){el.innerHTML='';el.removeAttribute('title');el.classList.remove('on');return;}
+  el.innerHTML='<svg width="'+size+'" height="'+size+'" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">'+
+    '<path d="M4.6 3.1v9.6a3.1 3.1 0 0 0 3.1 3.1h5"/><path d="M4.6 7.3h8.1"/>'+
+    '<circle cx="15.3" cy="7.3" r="2.6"/><circle cx="15.3" cy="15.8" r="2.6"/></svg>';
+  el.classList.toggle('on',!!open);
+  el.title=open?'하위 할일 접기':'하위 할일 펼치기';
+}
+// 체크박스 오른쪽(성격 표시들이 있는 자리)에 놓을 여닫이 단추를 만든다.
+function makeSubToggleBadge(type,secId,idx,item,size){
+  const el=document.createElement('span');
+  el.className='blk-sub-toggle';
+  _subToggleBadgeFill(el,item,size,_subIsOpen(type,secId,idx,item));
+  if(_subStat(item).n)_wireSubHandle(el,type,secId,idx,item);
+  return el;
+}
 function _attachSubMemoBadges(div,type,secId,idx,item,size){
   const gauge=document.createElement('span');
   gauge.className='blk-sub-gauge';
   _subGaugeFill(gauge,item,size);
-  if(_subStat(item).n){
-    let lpFired=false,lpTimer=null;
-    const clearLp=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}};
-    gauge.addEventListener('touchstart',e=>{
-      e.stopPropagation();lpFired=false;
-      lpTimer=setTimeout(()=>{
-        lpTimer=null;lpFired=true;
-        const st=_subStat(item);
-        showToast('하위 '+st.n+'개 중 '+st.done+'개 끝냈어요');
-      },500);
-    },{passive:true});
-    ['touchend','touchcancel','touchmove'].forEach(ev=>
-      gauge.addEventListener(ev,clearLp,{passive:true}));
-    gauge.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();});
-    gauge.addEventListener('click',e=>{
-      e.stopPropagation();e.preventDefault();
-      if(lpFired){lpFired=false;return;}   // 길게 누르기가 이미 처리했다
-      _subToggleOpen(type,secId,idx);
-    });
-  }
+  if(_subStat(item).n)_wireSubHandle(gauge,type,secId,idx,item);
   const memo=document.createElement('span');
   memo.className='blk-memo-badge';
   _memoBadgeFill(memo,item,size);
@@ -31363,7 +31400,8 @@ function makeBigItem(id,i,b,secColor){
     sendToTrash(kk,'big',id,removed);save();renderSecBody(id);updateTotal();refreshTaskViewsLive();
   };
 
-  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
+  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,
+             makeSubToggleBadge('big',id,i,b,12),inp);
   makeContactBadges(b.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
   _attachSubMemoBadges(div,'big',id,i,b,12);
@@ -31564,7 +31602,8 @@ function makeSmItem(id,i,sm,secColor){
   // slot is now used by the carry-count badge instead, and the
   // small-list-count badge (sc-${id}) already communicates the same
   // "too many" information elsewhere.
-  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp);
+  div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,
+             makeSubToggleBadge('small',id,i,sm,11),inp);
   makeContactBadges(sm.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
   _attachSubMemoBadges(div,'small',id,i,sm,11);
