@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-6  [production]  -->
+<!-- BLOCK7  v. 26-0923-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5839,7 +5839,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-6";
+const APP_VERSION = "v. 26-0923-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -22878,7 +22878,9 @@ function _keepAfterChange(){
 //    범위 항목 중 맨 마지막"). 저장 기록은 _keepEntries 가 **목록마다 하나로 접은**
 //    뒤라, 같은 말씀을 여러 목록에 담으면 그 수만큼 센다. 날짜·시각을 함께 들고
 //    오므로 흐름·지도·연결·리듬(시간대)까지 다른 반응과 똑같이 쓸 수 있다.
-const _VDASH_KINDS=[['home','현재 말씀 모음'],['like','좋아요'],['mem','암송'],['deeper','Deeper'],['even','Even'],['keep','저장']];
+// ⚠️ v26-0923-7, HB — 차례를 좋아요 → **저장** → 암송 … 으로 바꿨다 (저장이 두 번째).
+//    이 목록 하나를 대시보드의 모든 탭이 같이 쓴다 → 모든 탭에서 함께 바뀐다.
+const _VDASH_KINDS=[['home','현재 말씀 모음'],['like','좋아요'],['keep','저장'],['mem','암송'],['deeper','Deeper'],['even','Even']];
 const _VDASH_AXES=[['cat','대분류'],['topic','소주제'],['tag','태그'],['book','성경']];
 // 조각이 너무 잘게 나뉘면 읽을 수 없다. 상위 N개만 색으로 보이고 나머지는 '기타'로 묶는다.
 // ⚠️ 이것은 **파이차트에만** 해당한다. 상세 팝업의 표는 기타 없이 전부 보여준다
@@ -23389,6 +23391,8 @@ function _vTrInsN(p){
 function vTrSet(key,val){
   const p=_vTrPref();
   p[key]=val;
+  // 리듬의 'There' 는 따로 적어 둔다(rhyThere) — 다른 범위를 고르면 내려놓는다
+  if(key==='kind')p.rhyThere='';
   // 축·범위·갈래가 바뀌면 항목 이름이 통째로 바뀐다 — 꺼 둔 선·펼친 줄 기억은 버린다
   if(key==='kind'||key==='axis'||key==='tab'){p.off=[];p.exp=[];}
   // '무엇을'을 성경이 아닌 것으로 바꾸면 성경 하나만 보던 화면에서 나온다
@@ -23639,6 +23643,12 @@ function vTrCloseBook(){
 // 원천 — 분포의 _vDashEntries 와 달리 **기간을 안 자른다** (칸으로 나눌 것이므로).
 // 반환은 [{ref,date,v?}].
 function _vTrEntries(kind){
+  // There (v26-0923-7) — 리듬에서만 쓴다. d = 머문 초. ref 가 빈칸이면 말씀 없이 연 것.
+  if(kind==='there'){
+    const out=[];
+    try{_thereEach((en,k)=>out.push({ref:en.ref||'',date:k,time:en.time||'',d:(+en.d)||0}));}catch(e){}
+    return out;
+  }
   if(kind==='home'){
     return(ACTIVE_VERSES()||[]).map(v=>({
       ref:(typeof _reactKey==='function'?_reactKey(v):'')||v.ref||'',
@@ -24564,7 +24574,9 @@ function _vDashWinEntries(kind,tab,unit,span,all){
   const to=(mode==='custom')?(sc.to||''):'';
   const out=[];
   _vTrEntries(kind).forEach(e=>{
-    if(tab&&tab!=='all'&&(e.v?!!e.v.pid:_vlIsProp(e.ref))!==(tab==='prop'))return;
+    // 말씀 없이 연 There 는 말씀도 명제도 아니다 — 어느 갈래에서나 센다 (HB: 합산에 포함)
+    const noRef=(kind==='there'&&!e.ref);
+    if(!noRef&&tab&&tab!=='all'&&(e.v?!!e.v.pid:_vlIsProp(e.ref))!==(tab==='prop'))return;
     if(keys&&!keys.has(_vTrBucketOf(e.date,unit)))return;
     if(mode==='custom'){
       const d=String(e.date||'').slice(0,10);
@@ -24643,7 +24655,10 @@ function _vDashSubWords(){
   const sub=_vDashSubKind();
   if(!sub)return'';
   const p=_vTrPref();
-  return`${_vDashKindName(p.kind||'home')} 중에서 ${_vDashKindName(sub)}를 뺀 것`;
+  // 리듬에서 There 를 보는 중이면 A 는 There 다 (p.kind 가 아니라 p.rhyThere — v26-0923-7)
+  const a=(p.rhyThere==='1'&&typeof _vDashView==='function'&&_vDashView()==='rhythm')
+    ?'There':_vDashKindName(p.kind||'home');
+  return`${a} 중에서 ${_vDashKindName(sub)}를 뺀 것`;
 }
 // 갈래를 말씀/명제 한쪽으로 좁혔을 때
 function _vDashTabWords(){
@@ -26223,6 +26238,29 @@ function vgShowHelp(){ showToast(_VG_HELP_TX); }
 //    시간 칸에 놓을 자리가 없다. 반응 넷과 저장 다섯만 시각을 들고 있다.
 const _VRHY_KINDS=['like','mem','deeper','even','keep'];
 function _vRhyKind(k){return(_VRHY_KINDS.indexOf(k)>=0)?k:'like';}
+// ── There (v26-0923-7, HB) — 범위 맨 끝 '저장' 다음 ──
+// ⚠️ 고른 것을 p.kind 에 넣지 않고 **p.rhyThere** 에 둔다. p.kind 는 대시보드의
+//    모든 탭이 같이 읽는데 다른 탭은 There 를 모른다(분포·흐름·지도·연결은 횟수로
+//    센다). 리듬에서 There 를 고른 채 다른 탭으로 가도 그 탭은 예전 범위 그대로다.
+// 칸은 **분**으로 칠한다. 한 번의 기도가 여러 시간에 걸치면 시간마다 나눠 담는다
+// (21:30~22:10 → 21시 30분 + 22시 10분). 자정을 넘기면 다음 날 칸으로 간다.
+function _vRhyThereSplit(e,add){
+  const d=String(e.date||'').slice(0,10),m=String(e.time||'').match(/^(\d{1,2}):(\d{2})/);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!m)return false;
+  let t=new Date(d+'T00:00:00');
+  if(isNaN(t.getTime()))return false;
+  t=new Date(t.getTime()+((+m[1])*60+(+m[2]))*60000);
+  let left=Math.max(0,(+e.d)||0)/60;               // 분
+  let guard=0;
+  while(left>0.0001&&guard++<200){
+    const inHour=60-t.getMinutes()-t.getSeconds()/60;
+    const take=Math.min(left,inHour);
+    add(t.getDay(),t.getHours(),take);
+    left-=take;
+    t=new Date(t.getTime()+take*60000);
+  }
+  return true;
+}
 // 시간대 목록 — [{name,color,h0,n}] 로 펴서 돌려준다 (h0 = 시작 시, n = 몇 시간)
 function _vRhyBands(){
   const secs=(typeof SECS!=='undefined'&&Array.isArray(SECS)&&SECS.length)?SECS:[];
@@ -26256,7 +26294,10 @@ function renderVDashRhythm(){
   if(!box)return;
   _vDashVerseMap=null;
   const p=_vTrPref(),sc=_vDashScope();
-  const kind=_vRhyKind(p.kind||'');
+  const there=p.rhyThere==='1';
+  const kind=there?'there':_vRhyKind(p.kind||'');
+  // 칸의 값 — There 는 분, 나머지는 횟수. 글자로 옮기는 것도 여기 하나로.
+  const U=n=>there?(n>=0.5?_thereDurWords(Math.round(n)*60):'0분'):`${n}번`;
   const dow=(typeof getDOW==='function')?getDOW():['일','월','화','수','목','금','토'];
   // 3-2-2-1 (v26-0908-3, HB) — 차트의 요일 칸은 설정을 따르지만, 인사이트
   //   문장은 늘 '일요일·월요일…' 로 적는다. 다만 표기 설정이 LMTWTFS(주일)
@@ -26269,7 +26310,14 @@ function renderVDashRhythm(){
   let tot=0,noTime=0;
   // v26-0908-8, HB 7 — 여기 mode 를 'span' 으로 못 박아 두어서 [전체][직접] 이
   //   리듬에서는 아무 일도 안 했다. 이제 고른 모드를 그대로 따른다.
+  let nThere=0;
   _vDashWinEntries(kind,sc.tab,sc.unit,sc.span,sc).forEach(e=>{
+    if(there){
+      if(_vRhyThereSplit(e,(wd,h,mins)=>{
+        const k=wd+','+h;cnt.set(k,(cnt.get(k)||0)+mins);dowTot[wd]+=mins;tot+=mins;
+      }))nThere++;
+      return;
+    }
     const d=String(e.date||'').slice(0,10);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return;
     const m=String(e.time||'').match(/^(\d{1,2}):/);
@@ -26285,9 +26333,13 @@ function renderVDashRhythm(){
 
   // 기간·갈래는 위 공통 줄이 맡는다 (v26-0908-8, HB 7)
   let html=`<div class="vtr-ctls">`;
-  html+=_vTrChipsHTML('범위','kind',_VDASH_KINDS.filter(([v])=>_VRHY_KINDS.indexOf(v)>=0),kind);
+  // 맨 끝에 'There' — 글자 단추 (HB). 누르면 rhyThere 만 켠다 (위 주석).
+  //   ⚠️ 칩 한 벌을 그대로 쓰고 There 칩의 누름만 rhyThere 로 돌린다.
+  html+=_vTrChipsHTML('범위','kind',
+      _VDASH_KINDS.filter(([v])=>_VRHY_KINDS.indexOf(v)>=0).concat([['there','There']]),kind)
+    .replace(`vTrSet('kind','there')`,`vTrSet('rhyThere','1')`);
   html+=`</div>`;
-  if((p.kind||'home')==='home'){
+  if(!there&&(p.kind||'home')==='home'){
     html+=`<div style="font-size:9.5px;color:var(--tx3);opacity:.8;margin:-2px 0 8px;">`+
       `말씀 모음에는 시각 기록이 없어서 리듬에는 못 올려요 — 좋아요로 보여드려요</div>`;
   }
@@ -26328,7 +26380,7 @@ function renderVDashRhythm(){
         const n=cnt.get(i+','+h)||0;
         g+=`<div class="vrhy2-cell" style="grid-column:${3+i};grid-row:${row};`+
            (n?`background:${_vMapShade(n/mx)};border-color:transparent;`:'')+`" `+
-           `title="${esc(dow[i]||'')} ${h}시${n?' · '+n:''}"></div>`;
+           `title="${esc(dow[i]||'')} ${h}시${n?' · '+U(n):''}"></div>`;
       }
     });
     r+=b.n;
@@ -26348,10 +26400,11 @@ function renderVDashRhythm(){
     // 3-2-2-2 (v26-0908-3, HB) — 내용마다 줄을 바꾼다. 한 문단에 몰아 쓰면
     //   세 이야기가 한 덩어리로 읽혀 아무것도 안 남는다.
     const rl=[];
-    rl.push(`${_vDashSpanWords()} <b>${tot}번</b> 봤어요.`);
+    rl.push(there?`${_vDashSpanWords()} There 에 <b>${U(tot)}</b> 머물렀어요 (${nThere}번).`
+                 :`${_vDashSpanWords()} <b>${tot}번</b> 봤어요.`);
     rl.push((hi>lo)?`가장 많은 요일은 <b>${esc(dowFull[best]||'')}</b>, `+
-               `가장 뜸한 요일은 <b>${esc(dowFull[worst]||'')}</b>이에요 (${hi}번 대 ${lo}번).`
-              :`요일마다 고르게 보고 있어요.`);
+               `가장 뜸한 요일은 <b>${esc(dowFull[worst]||'')}</b>이에요 (${U(hi)} 대 ${U(lo)}).`
+              :(there?`요일마다 고르게 머물고 있어요.`:`요일마다 고르게 보고 있어요.`));
     if(bands[bi]&&bands[bi].name&&bTot[bi])
       rl.push(`가장 많은 때는 <b>${esc(bands[bi].name)}</b>${_vTrJosaYeyo(bands[bi].name)}.`);
     html+=`<div class="vtr-sum"><div class="vtr-sumtx">`+
@@ -26363,12 +26416,13 @@ function renderVDashRhythm(){
         const named=bands.map((b,i)=>({b,v:bTot[i]})).filter(x=>x.b.name);
         if(named.length>1){
           const q=named.slice().sort((x,y)=>x.v-y.v)[0];
-          if(q&&q.v<bTot[bi])ex.push(`가장 뜸한 때는 <b>${esc(q.b.name)}</b>${_vTrJosaYeyo(q.b.name)} (${q.v}번).`);
+          if(q&&q.v<bTot[bi])ex.push(`가장 뜸한 때는 <b>${esc(q.b.name)}</b>${_vTrJosaYeyo(q.b.name)} (${U(q.v)}).`);
         }
         // 주중과 주말
         const wk=dowTot[1]+dowTot[2]+dowTot[3]+dowTot[4]+dowTot[5];
         const we=dowTot[0]+dowTot[6];
-        if(wk+we>0){
+        // There 는 분이라 한쪽이 0 이면 배수가 수천 배로 튄다 — 양쪽 다 있을 때만 견준다
+        if(wk+we>0&&!(there&&(!wk||!we))){
           const wkD=wk/5, weD=we/2;
           if(weD>wkD*1.3)ex.push(`하루로 고르면 주말이 <b>주중의 ${(weD/Math.max(0.01,wkD)).toFixed(1)}배</b>예요.`);
           else if(wkD>weD*1.3)ex.push(`하루로 고르면 주중이 <b>주말의 ${(wkD/Math.max(0.01,weD)).toFixed(1)}배</b>예요.`);

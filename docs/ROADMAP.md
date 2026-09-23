@@ -41,8 +41,9 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
 | T-1 | There 전체화면 + 'There 전체화면 세팅'(말씀 설정 → 전체화면 탭 맨 아래, **파워만**) | ✅ | v26-0923-5 · PR #442 · `openThere` · `_tfGet` |
 | T-2 | 시간 기록 `verseThereLog` + 병합·백업 여덟 곳 등록 (시험 먼저) | ✅ | v26-0923-5 · PR #442 · `tests/test_there.js` |
 | T-3 | 버튼 그림 3종 + 고르는 메뉴(말씀 설정 → 뷰 탭 맨 아래) + 전체화면 말씀반응 맨 아래 단추(횟수) | ✅ | v26-0923-5 · PR #442 · `_thereIconSync` |
-| T-4 | 버튼 자리: 상단 말씀 영역 · 말씀카드 위젯 토글 · BLOCK7 GNB(2·3단) · Sweeter GNB · Sweeter 타일 넷 | ✅ | v26-0923-6 · `_vbThereEl` · `_SW_THERE_KINDS` |
-| T-5 | 대시보드 리듬 'There'(시간) + 범위 순서 좋아요→저장→암송… | ⬜ | |
+| T-4 | 버튼 자리: 상단 말씀 영역 · 말씀카드 위젯 토글 · BLOCK7 GNB(2·3단) · Sweeter GNB · Sweeter 타일 넷 | ✅ | v26-0923-6 · PR #443 · `_vbThereEl` · `_SW_THERE_KINDS` |
+| T-5 | 대시보드 리듬 'There'(시간) + 범위 순서 좋아요→저장→암송… | ✅ | v26-0923-7 · `_vRhyThereSplit` · `tests/test_vdash.js` |
+| T-6 | **HB 실기기 확인** — 끝나면 이 묶음을 지우고 배경만 작업인계로 | ⏳ | |
 
 ### 정해 둔 것 (HB 확정)
 
@@ -80,6 +81,11 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
 - Sweeter 타일 단추는 값이 있는 타일에만 붙는다(아랫줄 `.sw-pips` 안) — 빈 타일은
   아랫줄 자체가 없다. 누르면 지금 보이는 칸이 말씀이면 그 말씀, 아니면 말씀 없이.
 - Sweeter GNB 단추는 편집 중에 필터와 함께 비켜선다 (`_swEditBtnSync`).
+- **리듬의 There 는 `p.kind` 가 아니라 `p.rhyThere` 에 둔다.** `p.kind` 는 대시보드
+  다섯 탭이 같이 읽는데 다른 탭은 There 를 모른다(횟수로 센다). There 를
+  `_VDASH_KINDS` 에 넣지 말 것 — 넣는 순간 분포·흐름·지도·연결에 There 가 생긴다.
+- 리듬 칸은 **분**. 한 번의 기도를 시간마다 나눠 담고, 자정을 넘기면 다음 날 칸.
+  주중/주말 배수는 한쪽이 0 이면 말하지 않는다 (분이라 수천 배로 튄다).
 
 ## Sweeter — 제 도메인으로 독립 (`sweeter.my`)
 
