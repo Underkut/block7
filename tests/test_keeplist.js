@@ -313,7 +313,8 @@ console.log('\n시나리오 12 — 저장 기록은 예전과 **같은 자리**�
   sc.eq('② 시작할 때 채운다',
         SRC_DEV.includes('if(!ST.verseKeepLog)ST.verseKeepLog={};'), true);
   sc.eq('③ 병합이 로그로 다룬다',
-        SRC_DEV.includes("||k==='verseKeepLog')v=_mgLogFlat(bv,lv,cv,baseKnown);"), true);
+        // 뒤에 다른 기록 이름이 더 붙어도 된다 (v26-0923-5 verseThereLog)
+        /\|\|k==='verseKeepLog'(\|\|k==='\w+')*\)v=_mgLogFlat\(bv,lv,cv,baseKnown\);/.test(SRC_DEV), true);
   sc.eq('④ 대량 손실 방어가 센다',
         SRC_DEV.includes('verseLogs:_fbCountArrays(o.verseKeepLog||{},0)'), true);
   sc.eq('⑤ 클라우드에서 받아 반영한다',
