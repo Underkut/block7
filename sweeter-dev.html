@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -713,10 +713,14 @@ header{
 #thereFx .tf-sl output{text-align:right;color:#8d8698;font-variant-numeric:tabular-nums;}
 #thereFx .tf-cols{display:flex;justify-content:space-between;gap:6px;margin:10px 0 4px;padding-top:8px;border-top:1px solid #2a2733;}
 #thereFx .tf-col{position:relative;display:flex;align-items:center;gap:2px;}
-#thereFx .tf-col .tf-nm{font-size:12px;letter-spacing:.14em;font-weight:500;padding:6px 2px;color:var(--c);}
+#thereFx .tf-col .tf-nm{position:relative;font-size:12px;letter-spacing:.14em;font-weight:500;padding:6px 2px;color:var(--c);cursor:pointer;}
 #thereFx .tf-col .tf-rs{font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;}
 #thereFx .tf-col.custom .tf-rs{opacity:.8;pointer-events:auto;}
-#thereFx .tf-col input[type=color]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;}
+/* ⚠️ 색 칸을 글자 **위에 투명하게 깔아** 손가락이 직접 누르게 한다 (v26-0923-10).
+   예전엔 1px 칸을 숨겨 두고 코드로 대신 눌렀는데(inp.click) 모바일이 그 길을 막아
+   글자를 눌러도 아무 일이 없었다. PC 에서만 되던 까닭이다. */
+#thereFx .tf-col input[type=color]{position:absolute;inset:-6px -4px;width:calc(100% + 8px);height:calc(100% + 12px);
+  opacity:.011;border:0;padding:0;margin:0;cursor:pointer;-webkit-appearance:none;appearance:none;background:none;}
 #thereFx .tf-line{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:8px;border-top:1px solid #2a2733;color:#e8e2d8;}
 #thereFx .tf-sw{width:34px;height:20px;border-radius:10px;background:#3a3644;position:relative;cursor:pointer;transition:background .2s;}
 #thereFx .tf-sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#cfc8d8;transition:transform .2s;}
@@ -5851,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-9";
+const APP_VERSION = "v. 26-0923-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8234,9 +8238,9 @@ try{
       <label class="tf-sl">십자가 크기<input type="range" id="tfK_c" min="0" max="3" step="0.1"><output></output></label>
       <label class="tf-sl">십자가 굵기<input type="range" id="tfK_w" min="0.4" max="2.5" step="0.1"><output></output></label>
       <div class="tf-cols">
-        <div class="tf-col" data-k="heaven"><button class="tf-nm">HEAVEN</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="HEAVEN 색"></div>
-        <div class="tf-col" data-k="earth"><button class="tf-nm">EARTH</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="EARTH 색"></div>
-        <div class="tf-col" data-k="cross"><button class="tf-nm">CROSS</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="CROSS 색"></div>
+        <div class="tf-col" data-k="heaven"><span class="tf-nm">HEAVEN<input type="color" aria-label="HEAVEN 색"></span><button class="tf-rs" aria-label="기본색으로">↺</button></div>
+        <div class="tf-col" data-k="earth"><span class="tf-nm">EARTH<input type="color" aria-label="EARTH 색"></span><button class="tf-rs" aria-label="기본색으로">↺</button></div>
+        <div class="tf-col" data-k="cross"><span class="tf-nm">CROSS<input type="color" aria-label="CROSS 색"></span><button class="tf-rs" aria-label="기본색으로">↺</button></div>
       </div>
       <div class="tf-line"><span>시간 표시</span><div class="tf-sw" id="tfK_t" role="switch" onclick="thereTuneClock()"></div></div>
       <div class="tf-line"><span style="color:#8d8698;font-size:11px;">슬라이더 기본값으로</span><button onclick="thereTuneReset()">되돌리기</button></div>
@@ -15581,7 +15585,6 @@ function _tfWire(){
   });
   document.querySelectorAll('#tfTune .tf-col').forEach(c=>{
     const k=c.dataset.k,inp=c.querySelector('input');
-    c.querySelector('.tf-nm').addEventListener('click',()=>inp.click());
     inp.addEventListener('input',()=>{_tfLoad()[k]=inp.value;_tfStore();_tfSyncUI();if(k!=='cross')_tfBuildSprites();});
     c.querySelector('.tf-rs').addEventListener('click',()=>{delete _tfLoad()[k];_tfStore();_tfSyncUI();if(k!=='cross')_tfBuildSprites();});
   });
