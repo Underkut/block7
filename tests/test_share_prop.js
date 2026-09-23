@@ -324,4 +324,74 @@ console.log('\n시나리오 9 — 시트가 여럿이어도 전부 발행된다 
   sc.eq('한 시트를 다시 받아도 그대로', coll.verses.filter(v => !v.del).length, before);
 }
 
+// ═══ 10. 이미 받아 둔 구절에 나중에 채워 넣기 (HB 신고 2026-09-23) ═══
+console.log('\n시나리오 10 — 교회가 뒤늦게 채운 것이 성도에게 닿는가 ⚠️');
+{
+  // HB 상황 그대로다. 성도는 /tlc 로 **이미** 모음을 받아 두었고, 그 구절에는
+  // 상황/필요·묵상 질문·사진·영상이 없다. 그 뒤에 교회 시트에 그 열들이
+  // 채워졌다. 이제 성도에게 닿아야 한다.
+  //
+  // ⚠️ 새로 들어오는 길(added)이 아니라 **이미 있는 것을 고치는 길(updated)** 이다.
+  //    두 길은 코드가 아주 다르다 — 새로 들어오는 쪽만 맞춰 두고 안심했다가
+  //    v26-0922-4 에 실제로 당했다("처음 받는 명제에는 상황·질문이 통째로 빠졌다").
+
+  // ① 교회 모음 — 예전에 받아 둔 명제 하나 (그 네 칸이 아직 없다)
+  const church = { id:'c1', name:'주일 명제집', shareCode:'123456',
+    google:[{url:'u1',id:'g1'}],
+    verses:[{ cat:'9월 7일 주일', topic:'믿음', krText:'지극히 작은 자',
+              ref:'마태복음 25:40', tags:[], hi:'지극히 작은 자', d:'2026-09-07',
+              pid:'P0001', kind:'prop', src:'google', gid:'g1', row:2 }] };
+  sc.eq('교회에도 아직 없다', 'q' in church.verses[0], false);
+
+  // ② 교회가 '전체 업데이트' 를 돌린다 — 이제 시트에 그 열들이 있다.
+  //    _has 는 "이 시트에 그 열이 실제로 있었나" 다 (v26-0922-4).
+  const sheetRow = { cat:'9월 7일 주일', topic:'믿음', krText:'지극히 작은 자',
+    ref:'마태복음 25:40', tags:[], hi:'지극히 작은 자', d:'2026-09-07', pid:'P0001',
+    sit:['낙심될 때','작게 느껴질 때'], q:'내 곁의 지극히 작은 자는 누구인가?',
+    img:'star.jpg', yt:'abc123',
+    _has:{ sit:true, q:true, img:true, yt:true, ref:true, cat:true,
+           topic:true, tags:true, hi:true, hi2:true, d:true } };
+  const r1 = _syncSheetVersesIntoColl(church, [sheetRow], { kind:'google', gid:'g1' });
+  sc.eq('교회 구절이 갱신된다', r1.updated, 1);
+  sc.eq('상황이 들어왔다', church.verses[0].sit, ['낙심될 때','작게 느껴질 때']);
+  sc.eq('질문이 들어왔다', church.verses[0].q, '내 곁의 지극히 작은 자는 누구인가?');
+  sc.eq('사진이 들어왔다', church.verses[0].img, 'star.jpg');
+  sc.eq('영상이 들어왔다', church.verses[0].yt, 'abc123');
+
+  // ③ 교회가 발행한다 (_publishSharedColl 이 싣는 것과 **똑같이** 만든다)
+  const published = (church.verses || []).filter(v => !v.del).map(_sharedVerseOut);
+  sc.eq('발행에 상황이 실린다', published[0].sit, ['낙심될 때','작게 느껴질 때']);
+  sc.eq('발행에 질문이 실린다', published[0].q, '내 곁의 지극히 작은 자는 누구인가?');
+  sc.eq('발행에 사진이 실린다', published[0].img, 'star.jpg');
+  sc.eq('발행에 영상이 실린다', published[0].yt, 'abc123');
+
+  // ④ 성도는 **이미** 그 명제를 받아 두었다 — 네 칸이 없는 옛 모양으로.
+  const member = { id:'m1', name:'주일 명제집', importCode:'123456',
+    groupAddr:'tlc', groupName:'주님의교회',
+    verses:[{ cat:'9월 7일 주일', topic:'믿음', krText:'지극히 작은 자',
+              ref:'마태복음 25:40', tags:[], hi:'지극히 작은 자', d:'2026-09-07',
+              pid:'P0001', kind:'prop', src:'shared' }] };
+  sc.eq('성도에게도 아직 없다', 'q' in member.verses[0], false);
+
+  // ⑤ 성도가 '전체 업데이트' 를 돌린다
+  const r2 = _syncSheetVersesIntoColl(member, published.map(_sharedVerseIn), { kind:'share' });
+  sc.eq('새로 늘지 않는다 (같은 명제다)', r2.added, 0);
+  sc.eq('있던 것이 갱신된다', r2.updated, 1);
+
+  // ⚠️ 여기가 HB 가 못 받고 있던 바로 그 네 칸이다
+  sc.eq('성도에게 상황이 닿는다', member.verses[0].sit, ['낙심될 때','작게 느껴질 때']);
+  sc.eq('성도에게 질문이 닿는다', member.verses[0].q, '내 곁의 지극히 작은 자는 누구인가?');
+  sc.eq('성도에게 사진이 닿는다', member.verses[0].img, 'star.jpg');
+  sc.eq('성도에게 영상이 닿는다', member.verses[0].yt, 'abc123');
+  sc.eq('원래 것도 그대로', member.verses[0].krText, '지극히 작은 자');
+  sc.eq('구절이 하나 그대로', member.verses.length, 1);
+
+  // ⑥ 교회가 시트에서 지우면 성도에게서도 빠진다 (빈 값과 '원래 없음'을 가른다)
+  const cleared = published.map(v => { const o = {...v}; delete o.q; delete o.sit; return o; });
+  _syncSheetVersesIntoColl(member, cleared.map(_sharedVerseIn), { kind:'share' });
+  sc.eq('지운 질문은 빠진다', 'q' in member.verses[0], false);
+  sc.eq('지운 상황도 빠진다', 'sit' in member.verses[0], false);
+  sc.eq('영상은 그대로 남는다', member.verses[0].yt, 'abc123');
+}
+
 sc.done();

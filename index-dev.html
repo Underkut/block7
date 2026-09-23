@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5738,7 +5738,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-1";
+const APP_VERSION = "v. 26-0923-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -43006,6 +43006,26 @@ const _SW_TYPES={
   ask:{n:'묵상 질문',wide:true,sorts:['오늘','최근 설교'],
         empty:'\u2018묵상 질문\u2019 열이 지금 연결된 시트 탭에 없어요. 그 열이 있는 탭(성도 공유용)을 말씀 설정 → 모음의 구글 시트에 하나 더 더하면 채워집니다.'}
 };
+// ── 비었을 때의 안내는 **보는 사람에 따라 달라야 한다** (v26-0923-2) ──
+// ⚠️ HB 신고 2026-09-23 — 교회 그룹(/tlc)으로 받아 보는 성도에게 '묵상 질문'
+//    타일이 "그 열이 있는 탭을 시트에 하나 더 더하면 채워집니다" 라고 말했다.
+//    성도에게는 **붙일 시트가 없다.** 할 수 없는 일을 시키는 안내였고, 그래서
+//    "공유가 안 된다" 로 읽혔다 (실제로는 교회가 아직 발행을 안 한 것이었다).
+// → 내가 붙인 시트가 하나도 없고 받아 보는 모음만 있으면 = 성도다.
+function _swEmptyText(k){
+  const T=_SW_TYPES[k];
+  if(!T)return '';
+  if(k!=='ask'&&k!=='need')return T.empty;
+  let colls=[];
+  try{colls=getVerseCollections();}catch(e){return T.empty;}
+  const mine=colls.some(c=>!c.importCode&&((c.google||[]).length>0));
+  const subs=colls.filter(c=>c.importCode);
+  if(mine||!subs.length)return T.empty;          // 시트를 가진 사람 = 예전 안내 그대로
+  const who=(subs.find(c=>c.groupName)||{}).groupName;
+  return (who?"'"+who+"' 가 ":'교회가 ')
+    +'아직 이 자료를 올리지 않았어요. 올라오면 하루 시작 시간에 저절로 들어옵니다 \u2014 '
+    +'지금 받아 보려면 좌상단 로고를 길게 눌러 \u2018말씀 모음 전체 업데이트\u2019를 한 번 돌려 보세요.';
+}
 // 처음 켰을 때 놓이는 차례
 // ⚠️ 처음 쓰는 사람이 보는 **기본 판**이다 (v26-0922-20, HB: "처음사용자
 //    디폴트를 지금 내 계정에 내가 드래그 조정해서 세팅한대로 해줘").
@@ -44746,7 +44766,7 @@ function _swFace(t){
     +'<span class="sw-nm">'+_swEsc(T.n)+'</span>'+chip+'</div>';
   if(!n){  // 값이 하나도 없다 — 왜 비었는지 말해 준다
     return '<div class="sw-face">'+lab
-      +'<div class="sw-empty">'+_swEsc(T.empty)+'</div></div>';
+      +'<div class="sw-empty">'+_swEsc(_swEmptyText(t.k))+'</div></div>';
   }
   // 아랫줄 = 개수(왼쪽) + 점(오른쪽). 개수는 예전에 타이틀 칸에만 있던 것이라
   // 첫 칸을 넘기면 사라졌다 — 이제 언제나 보인다.
@@ -45065,7 +45085,7 @@ function _swVersesFor(t,cur){
 }
 function _swTileOpen(i){
   const t=_SW_TILES[i],it=_swStrip(t);
-  if(!it.length){showToast(_SW_TYPES[t.k].empty);return;}
+  if(!it.length){showToast(_swEmptyText(t.k));return;}
   const cur=it[Math.max(0,Math.min(it.length-1,t.p))];
   // 묵상 질문 — 그 물음이 나온 말씀을 연다 (물음이 곧 그 말씀의 것이다)
   if(t.k==='ask'){
