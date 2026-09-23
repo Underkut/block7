@@ -9,7 +9,11 @@ sc.eq('깃발 버튼 기본 OFF', /showFlagFilterBtn:false/.test(SRC_DEV), true)
 sc.eq('연락 버튼 기본 OFF', /showContactFilterBtn:false/.test(SRC_DEV), true);
 
 console.log('시나리오 2 — 표시 순서와 필터 판정');
-sc.eq('깃발 다음 연락 아이콘', /div\.append\(chk,dh,urgentBadge,flagBadge,contactTaskBadge,inp\)/.test(SRC_DEV), true);
+// 지키려는 것은 **차례**다 — 체크 · 손잡이 · 긴급 · 깃발 · 연락, 그 뒤에 글자.
+// 그 사이에 표시가 더 붙는 것은 막지 않는다 (v26-0923-4 에 하위 여닫이 단추가
+// 연락 표시 다음에 들어왔다). 글자로 딱 맞추면 표시 하나 늘 때마다 여기가 깨진다.
+sc.eq('깃발 다음 연락 아이콘',
+  /div\.append\(chk,dh,urgentBadge,flagBadge,contactTaskBadge,[\s\S]{0,160}inp\)/.test(SRC_DEV), true);
 sc.eq('깃발 필터는 flag 판정', /markerFilter==='flag'[\s\S]{0,120}item\.flag/.test(SRC_DEV), true);
 sc.eq('연락 필터는 contactTask 판정', /markerFilter==='contact'[\s\S]{0,120}item\.contactTask/.test(SRC_DEV), true);
 
