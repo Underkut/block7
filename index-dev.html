@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -662,6 +662,66 @@ header{
   -webkit-tap-highlight-color:transparent;
   user-select:none;-webkit-user-select:none;
 }
+/* ── There — 기도·예배 전체화면 (v26-0923-5, HB) ──
+   테마와 상관없이 **어두운 판 하나**다 (HB — 밝은 판은 만들지 않기로).
+   그래서 색을 변수(--bg 등)에서 받지 않고 여기 박는다.
+   z-index 는 말씀 설정창(4000)보다 위 — 설정창의 '세팅하러 가기' 에서 그 위로 뜬다.
+   ⚠️ 화면 전체를 일렁이게 하던 필터(feTurbulence)는 모바일에서 끊겨 뺐다.
+      되살리지 말 것. 안개는 transform 만 움직여 GPU 가 맡는다. */
+#thereFx{
+  position:fixed;inset:-1px;z-index:5200;background:#0e0d12;color:#e8e2d8;
+  overflow:hidden;touch-action:pan-y;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+  opacity:0;transition:opacity .35s ease;
+}
+#thereFx.on{opacity:1;}
+#thereFx .tf-haze{
+  position:absolute;inset:-10%;opacity:.9;will-change:transform;pointer-events:none;
+  background:radial-gradient(40% 30% at 30% 80%,rgba(120,110,160,.22),transparent 70%),
+             radial-gradient(35% 28% at 70% 20%,rgba(120,110,160,.22),transparent 70%),
+             radial-gradient(50% 40% at 50% 50%,rgba(120,110,160,.22),transparent 70%);
+  animation:tfDrift 14s ease-in-out infinite alternate;
+}
+@keyframes tfDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-3%,2%) scale(1.06)}100%{transform:translate(2%,-2%) scale(1.02)}}
+#thereFx canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+#tfCross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;}
+#thereFx .tf-clock{
+  position:absolute;left:0;right:0;top:calc(24px + env(safe-area-inset-top));text-align:center;
+  font-size:11px;letter-spacing:.2em;color:#8d8698;opacity:.6;pointer-events:none;
+  font-variant-numeric:tabular-nums;
+}
+#thereFx .tf-x{top:calc(12px + env(safe-area-inset-top));right:12px;color:#e8e2d8;opacity:.7;z-index:4;padding:9px;}
+#thereFx .tf-x:hover{color:#e8e2d8;opacity:1;}
+/* 세팅 판 — 설정창 '세팅하러 가기' 로 열었을 때만 나온다 */
+#thereFx .tf-tune{
+  position:absolute;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:3;
+  max-width:420px;margin:0 auto;background:rgba(20,18,26,.74);border-radius:14px;
+  padding:10px 14px 8px;font-size:12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  touch-action:manipulation;
+}
+#thereFx .tf-tune.fold .tf-rows{display:none;}
+#thereFx .tf-top{display:flex;justify-content:space-between;align-items:center;color:#8d8698;}
+#thereFx .tf-tune button{background:none;border:0;color:#8d8698;font:inherit;cursor:pointer;padding:4px;}
+#thereFx .tf-sl{display:grid;grid-template-columns:72px 1fr 38px;align-items:center;gap:8px;margin:7px 0;}
+#thereFx .tf-sl input{width:100%;accent-color:#b9a0e0;}
+#thereFx input:focus,#thereFx button:focus{outline:none;}
+#thereFx .tf-sl output{text-align:right;color:#8d8698;font-variant-numeric:tabular-nums;}
+#thereFx .tf-cols{display:flex;justify-content:space-between;gap:6px;margin:10px 0 4px;padding-top:8px;border-top:1px solid #2a2733;}
+#thereFx .tf-col{position:relative;display:flex;align-items:center;gap:2px;}
+#thereFx .tf-col .tf-nm{font-size:12px;letter-spacing:.14em;font-weight:500;padding:6px 2px;color:var(--c);}
+#thereFx .tf-col .tf-rs{font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;}
+#thereFx .tf-col.custom .tf-rs{opacity:.8;pointer-events:auto;}
+#thereFx .tf-col input[type=color]{position:absolute;left:0;bottom:0;width:1px;height:1px;opacity:0;border:0;padding:0;}
+#thereFx .tf-line{display:flex;justify-content:space-between;align-items:center;margin-top:6px;padding-top:8px;border-top:1px solid #2a2733;color:#e8e2d8;}
+#thereFx .tf-sw{width:34px;height:20px;border-radius:10px;background:#3a3644;position:relative;cursor:pointer;transition:background .2s;}
+#thereFx .tf-sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#cfc8d8;transition:transform .2s;}
+#thereFx .tf-sw.on{background:#8a74b8;}
+#thereFx .tf-sw.on::after{transform:translateX(14px);}
+/* There 버튼 그림 — 글자색을 따라간다 (선택한 하나만 쓰인다) */
+.there-ic{display:inline-block;width:1em;height:1em;line-height:0;}
+.there-ic svg{width:100%;height:100%;display:block;}
+/* 전체화면 반응 단추 안에서는 다른 단추들과 같은 크기 규칙(.vf-ic svg)을 탄다 */
+.vf-ic .there-ic{width:auto;height:auto;display:block;}
 /* ── 태그 그림 (v26-0825-3, 자리는 v26-0826-3에 바뀜) ──
    말씀에 붙은 태그 하나를 골라 **본문 바로 위·가운데**에 옅게 띄운다.
    세로 자리(top)는 본문 분량에 따라 달라지므로 CSS 로 못 정한다 —
@@ -5752,7 +5812,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-4";
+const APP_VERSION = "v. 26-0923-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6948,6 +7008,13 @@ try{
         </div>
       </div>
 
+      <!-- ── There 버튼 그림 (v26-0923-5, HB) — 세 벌 중 하나. 처음엔 기도하는 손 ── -->
+      <div class="settings-section">
+        <div class="settings-section-title">There 버튼</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">기도·예배 시간을 여는 There 버튼의 그림을 골라요.</div>
+        <div id="thereIconPick" style="display:flex;gap:8px;"></div>
+      </div>
+
       </div><!-- /vstab-view -->
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-alarm">
@@ -7147,6 +7214,15 @@ try{
           <button id="lnkModeChrome" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('chrome')">크롬</button>
           <button id="lnkModeInApp" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('inapp')">앱 안에서</button>
         </div>
+      </div>
+
+      <!-- ── There 전체화면 세팅 (v26-0923-5, HB) — 파워만 ──
+           실제 There 화면을 띄우고 그 위의 판에서 고른다. 값은 **이 기기에만** 남는다
+           (_lsk('thereFx')). 세팅하러 들어간 동안은 기록하지 않는다. -->
+      <div class="settings-section" data-lv="p">
+        <div class="settings-section-title">There 전체화면 세팅</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">밝기·입자 양·속도·십자가·색을 실제 화면을 보면서 맞춰요. 이 기기에만 저장돼요.</div>
+        <button class="settings-btn" style="width:100%;" onclick="openThereTune()">세팅하러 가기</button>
       </div>
 
             </div>
@@ -8084,6 +8160,42 @@ try{
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
       </span><span class="vf-cnt" id="vfCntshare">0</span>
     </button>
+    <!-- There — 기도·예배 (v26-0923-5, HB). 맨 아래. 그림은 설정에서 고른 하나를
+         _thereIconSync() 가 넣는다 (세 벌 중 하나). 숫자는 이 말씀에서 연 횟수. -->
+    <button class="vf-act vf-act-there" id="vfActthere" onclick="openThereFromVf()" aria-label="There">
+      <span class="vf-ic"><span class="there-ic" data-there-ic></span></span><span class="vf-cnt" id="vfCntthere">0</span>
+    </button>
+    </div>
+  </div>
+</div>
+
+<!-- There — 기도·예배 전체화면 (v26-0923-5, HB)
+     입자가 아래→위(EARTH, 우리의 기도·예배), 위→아래(HEAVEN, 계시·공급·축복).
+     열려 있던 시간을 ST.verseThereLog 에 남긴다 — 화면에는 안 보인다.
+     세팅 판(tfTune)은 말씀 설정 → 전체화면 탭의 '세팅하러 가기' 로 열 때만 나온다. -->
+<div id="thereFx" style="display:none;" role="dialog" aria-label="There">
+  <div class="tf-haze"></div>
+  <canvas id="tfCv"></canvas>
+  <svg id="tfCross" aria-hidden="true"><path id="tfCrossP" fill="currentColor"/></svg>
+  <div class="tf-clock" id="tfClock" style="display:none;"></div>
+  <button class="modal-x tf-x" onclick="closeThere()" aria-label="닫기">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
+  </button>
+  <div class="tf-tune" id="tfTune" style="display:none;">
+    <div class="tf-top"><span>There 전체화면 세팅</span><button onclick="thereTuneFold()" id="tfFoldBtn">접기</button></div>
+    <div class="tf-rows">
+      <label class="tf-sl">밝기<input type="range" id="tfK_a" min="0.2" max="2.5" step="0.1"><output></output></label>
+      <label class="tf-sl">입자 양<input type="range" id="tfK_n" min="0.2" max="3" step="0.1"><output></output></label>
+      <label class="tf-sl">속도<input type="range" id="tfK_v" min="0.2" max="3" step="0.1"><output></output></label>
+      <label class="tf-sl">십자가 크기<input type="range" id="tfK_c" min="0" max="3" step="0.1"><output></output></label>
+      <label class="tf-sl">십자가 굵기<input type="range" id="tfK_w" min="0.4" max="2.5" step="0.1"><output></output></label>
+      <div class="tf-cols">
+        <div class="tf-col" data-k="heaven"><button class="tf-nm">HEAVEN</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="HEAVEN 색"></div>
+        <div class="tf-col" data-k="earth"><button class="tf-nm">EARTH</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="EARTH 색"></div>
+        <div class="tf-col" data-k="cross"><button class="tf-nm">CROSS</button><button class="tf-rs" aria-label="기본색으로">↺</button><input type="color" aria-label="CROSS 색"></div>
+      </div>
+      <div class="tf-line"><span>시간 표시</span><div class="tf-sw" id="tfK_t" role="switch" onclick="thereTuneClock()"></div></div>
+      <div class="tf-line"><span style="color:#8d8698;font-size:11px;">슬라이더 기본값으로</span><button onclick="thereTuneReset()">되돌리기</button></div>
     </div>
   </div>
 </div>
@@ -12227,6 +12339,8 @@ const _ESC_CLOSERS=[
   ['verseListModal',  ()=>closeVerseListModal()],
   ['trashPanel',      ()=>closeTrash(), el=>el.classList.contains('op')],
   // 전체화면류 (가장 아래)
+  // There 는 opacity 로 여닫고 설정창(4000)보다 위(5200)에 뜬다 — 열림 판정을 직접 준다
+  ['thereFx',         ()=>closeThere(), ()=>_thereIsOpen()],
   ['verseGrid',       ()=>closeVerseGrid()],
   ['verseFull',       ()=>closeVerseFull()],
 ];
@@ -12295,6 +12409,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||!_verseSettingsOpen())return;
   if(_vgIsOpen()||_verseFullIsOpen())return;   // 위에 뜬 화면이 먼저 ESC를 가져간다
+  if(_thereIsOpen())return;                    // There 세팅 화면도 (v26-0923-5)
   e.preventDefault();
   document.getElementById('verseSettingsOverlay').classList.remove('open');
 });
@@ -12471,6 +12586,7 @@ function renderVerseSettingsModal(){
   el('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');
   el('setPeriodBaseRolling')?.classList.toggle('on',pbm==='rolling');
   _syncLinkOpenModeUI();
+  _thereIconSync();
   _syncVersePushUI();
   _syncVfTextScaleUI();
   _vfArtSyncUI();
@@ -12983,6 +13099,65 @@ function recordVerseShare(ref){
   _bumpVerseStat('share',ref);
   rawSave();
   if(_verseFullIsOpen())_vfSyncCounts();
+}
+// ══ There — 기도·예배 시간 기록 (v26-0923-5, HB) ══════════════════════
+// There 전체화면이 **열려 있던 시간**을 남긴다. 화면에는 안 보이고, 대시보드
+// 리듬의 'There' 가 읽는다.
+//   ST.verseThereLog = {"YYYY-MM-DD":[{ref,time:"HH:MM",t:시작ms,d:초,sec}]}
+// · 모양이 좋아요·공유와 같다 → 병합(_mgLogFlat)·백업·가져오기를 그대로 탄다.
+//   항목마다 시작 시각(t, ms)이 들어 있어 같은 내용이 둘로 겹칠 일이 없다.
+// · 날짜는 **시작한 날**이다. 자정을 넘겨 기도해도 한 건이 두 날로 쪼개지지 않는다.
+// · ref 가 빈칸이면 특정 말씀·명제 없이 연 것이다 (GNB 의 There).
+//   합계에는 넣고, 말씀별 횟수에는 안 센다.
+// · 10초 미만은 버린다 (HB — 잘못 누르고 바로 닫은 것).
+// ⚠️ 새 기록 칸이라 이름을 알아야 하는 자리가 여덟 곳이다 — 한 곳이라도 빠지면
+//    그 길에서 조용히 사라진다. tests/test_there.js 시나리오 9 가 전부 본다.
+const THERE_MIN_SEC=10;
+let _thereSess=null;          // 지금 열려 있는 한 번 {ref,t0,key,time,sec}
+function getThereLog(){ if(!ST.verseThereLog)ST.verseThereLog={}; return ST.verseThereLog; }
+function _thereBegin(ref){
+  _thereSess={ref:ref||'',t0:Date.now(),key:_calKey(),time:_nowHM(),sec:_secIdNowAll()};
+}
+// 지금 세션을 끝내고 남긴다. 남긴 항목(없으면 null)을 돌려준다.
+function _thereCommit(){
+  const s=_thereSess;_thereSess=null;
+  if(!s)return null;
+  const d=Math.round((Date.now()-s.t0)/1000);
+  if(!(d>=THERE_MIN_SEC))return null;
+  const log=getThereLog();
+  if(!log[s.key])log[s.key]=[];
+  const en={ref:s.ref,time:s.time,t:s.t0,d,sec:s.sec};
+  log[s.key].push(en);
+  rawSave();
+  return en;
+}
+function _thereEach(fn){
+  const log=getThereLog();
+  Object.keys(log).forEach(k=>(log[k]||[]).forEach(en=>{if(en)fn(en,k);}));
+}
+function _thereTotalSec(){let s=0;_thereEach(en=>{s+=(+en.d)||0;});return s;}
+// 이 말씀·명제(반응 키)에서 연 횟수 — 전체화면 단추 아래 숫자
+function _thereCountFor(key){
+  if(!key)return 0;
+  const pid=_isReactPid(key),want=pid?key:_refNorm(key);
+  let n=0;
+  _thereEach(en=>{
+    if(!en.ref)return;
+    if(pid?en.ref===key:(!_isReactPid(en.ref)&&(en.ref===key||_refNorm(en.ref)===want)))n++;
+  });
+  return n;
+}
+// 전체화면 위쪽 시간 표시 — 한 시간 전까지 MM:SS, 넘으면 H:MM:SS
+function _thereClock(s){
+  s=Math.max(0,s|0);
+  const p2=n=>String(n).padStart(2,'0');
+  return(s>=3600?(Math.floor(s/3600))+':':'')+p2(Math.floor(s/60)%60)+':'+p2(s%60);
+}
+// 합계 글자 — "N시간 M분"
+function _thereDurWords(s){
+  const m=Math.floor((s||0)/60),h=Math.floor(m/60),mm=m%60;
+  if(!h&&!mm)return '1분 미만';
+  return(h?h+'시간':'')+(h&&mm?' ':'')+(mm?mm+'분':'');
 }
 // ── Deeper 로그 (누적 이벤트형, 열람할 때마다) ──
 // ST.verseDeeperLog = { "YYYY-MM-DD": [{ref, time:"HH:MM"}] }
@@ -15101,6 +15276,10 @@ function _vfSyncCounts(){
   [['like','like'],['mem','mem'],['deeper','deeper'],['even','even'],['share','share']].forEach(([id,kind])=>{
     setCnt(id,_verseEventCount(kind,ref));
   });
+  // There — 이 말씀에서 연 횟수 (v26-0923-5). 채움 아이콘이 없는 단추라 숫자만.
+  //   내 기록만 센다 — 구독자 전체 집계(_fetchVerseStat)에는 There 가 없다.
+  _thereIconSync();
+  setText('there',_thereCountFor(ref));
   // ── 명제에서는 안 쓰는 단추를 감춘다 (v26-0903-10) ──
   // 암송·Even Deeper 는 말씀 전용이다. Deeper 는 연결된 설교 본문으로
   // 들어가는 길이라 명제에도 다시 보인다 (본문이 여럿이면 먼저 고른다).
@@ -15137,6 +15316,267 @@ function _vfSyncCounts(){
     });
   }
 }
+// ══ There 전체화면 (v26-0923-5, HB) ══════════════════════════════════
+// 아티팩트 시안 여섯 판을 거쳐 HB 가 정한 모양 그대로다. 줄기:
+//   · 입자 둘 — EARTH(아래→위, 우리의 기도·예배) · HEAVEN(위→아래, 계시·공급·축복).
+//     **출발점에 빽빽하고 멀어질수록 흐려진다** — 입자마다 갈 거리(L)가 다르고
+//     대부분 짧게 가다 사라진다. 모두 끝까지 가게 하면 가운데가 제일 빽빽해진다.
+//   · 가운데 십자가 + 은은한 빛.
+//   · 입자 그림은 한 번만 그려(스프라이트) 찍기만 한다 — 매 프레임 그라디언트를
+//     새로 만들면 폰에서 끊긴다. 화면 전체 왜곡 필터도 같은 까닭으로 뺐다.
+// 세팅(밝기·양·속도·십자가·색·시간 표시)은 **이 기기에만** 둔다 (_lsk('thereFx')).
+//   기기마다 화면 크기와 힘이 달라 HB 가 기기 종류별 기본값을 따로 정했다.
+//   바꾼 값만 저장한다 → 저장칸이 비면 기본값. 기본값을 고치면 손대지 않은
+//   사람에게는 새 기본값이 그대로 간다.
+const _THERE_ICONS={
+  // 두 손 모음 — Phosphor Icons 'hands-praying-fill' (MIT). 기본값.
+  hands:{name:'기도하는 손',svg:'<svg viewBox="-18 -18 292 292" aria-hidden="true"><path fill="currentColor" d="m235.32 180l-36.24-36.25l-36.46-120.29A21.76 21.76 0 0 0 128 12.93a21.76 21.76 0 0 0-34.62 10.53l-36.46 120.3L20.68 180a16 16 0 0 0 0 22.62l32.69 32.69a16 16 0 0 0 22.63 0L124.28 187a41 41 0 0 0 3.72-4.29a41 41 0 0 0 3.72 4.29L180 235.32a16 16 0 0 0 22.63 0l32.69-32.69a16 16 0 0 0 0-22.63M120 158.75a23.85 23.85 0 0 1-7 17L88.68 200L56 167.32l13.65-13.66a8 8 0 0 0 2-3.34l37-122.22A5.78 5.78 0 0 1 120 29.78Zm47.44 41.38L143 175.72a23.85 23.85 0 0 1-7-17v-129a5.78 5.78 0 0 1 11.31-1.68l37 122.22a8 8 0 0 0 2 3.34l14.49 14.49Z"/></svg>'},
+  // 보좌 — 다리 없이 등받이를 길게 (HB '난장이 같다' → 위엄 있게)
+  throne:{name:'보좌',svg:'<svg viewBox="0.6 0.4 22.8 22.8" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd">'+
+    '<path d="M6 3.2 7.3 2l1.3 1.2V5h1.6V3.4L12 1.6l1.8 1.8V5h1.6V3.2L16.7 2 18 3.2V16.8H6Z M12 7.4 10.1 9.4 12 11.4 13.9 9.4Z"/>'+
+    '<path d="M3 14.6h2.4v4.2H3Z M18.6 14.6H21v4.2h-2.4Z"/><path d="M4.4 19.4h15.2V22H4.4Z"/><path d="M6.4 17.4h11.2v1.4H6.4Z"/></g></svg>'},
+  // 불꽃 — 두 갈래로 오르는 불꽃 (새로 그림)
+  flame:{name:'불꽃',svg:'<svg viewBox="1.8 1.2 21.4 21.4" aria-hidden="true"><g fill="currentColor">'+
+    '<path d="M10.6 1.6c.9 2.4.3 4.6-1.3 6.8C7.5 10.9 5.6 13 5.6 16.1c0 3.1 2.2 5.6 5.1 6.2-1.4-1.2-2.1-2.8-2-4.6.1-2.4 1.6-4 2.9-5.9 1.7-2.4 2.3-5.5-1-10.2Z"/>'+
+    '<path d="M14.2 6.4c.4 2-.2 3.6-1.3 5.2-1.4 2-3 3.8-3 6.2 0 2.4 1.6 4.2 3.8 4.6 3.2-.2 5.7-2.8 5.7-6 0-2.1-.9-3.7-2.2-5.2.2 1.4-.2 2.6-1.1 3.4-.5.5-1.3.3-1.4-.4-.3-1.9.7-4.8-.5-7.8Z"/></g></svg>'}
+};
+const _THERE_ICON_ORDER=['hands','throne','flame'];
+function _thereIconKey(){const k=ST.settings&&ST.settings.thereIcon;return _THERE_ICONS[k]?k:'hands';}
+// 고른 그림을 [data-there-ic] 자리마다 넣는다 — 자리가 늘어도 여기 하나로 끝난다
+function _thereIconSync(){
+  const svg=_THERE_ICONS[_thereIconKey()].svg;
+  document.querySelectorAll('[data-there-ic]').forEach(el=>{if(el._tic!==svg){el.innerHTML=svg;el._tic=svg;}});
+  const box=document.getElementById('thereIconPick');
+  if(box){
+    const cur=_thereIconKey();
+    box.innerHTML=_THERE_ICON_ORDER.map(k=>
+      `<button class="settings-btn${k===cur?' on':''}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;" `+
+      `onclick="setThereIcon('${k}')" aria-label="${_THERE_ICONS[k].name}">`+
+      `<span class="there-ic" style="font-size:22px;">${_THERE_ICONS[k].svg}</span>`+
+      `<span style="font-size:11px;">${_THERE_ICONS[k].name}</span></button>`).join('');
+  }
+}
+function setThereIcon(k){
+  ST.settings.thereIcon=_THERE_ICONS[k]?k:'hands';
+  save();
+  _thereIconSync();
+}
+
+// ── 세팅 (이 기기에만) ──
+const _TF_KEY=_lsk('thereFx');
+const _TF_COL_DEF={heaven:'#a892d6',earth:'#dab87a',cross:'#c8323c'};
+// HB 확정 (2026-09-23) — 처음 쓰는 기기의 기본값
+const _TF_SL_DEF={
+  pc:    {a:1.4,n:1.2,v:0.9,c:1.1,w:1.0},
+  tablet:{a:1.3,n:0.5,v:0.8,c:1.0,w:1.0},
+  phone: {a:1.9,n:1.0,v:0.8,c:1.0,w:1.0}
+};
+const _TF_SL=['a','n','v','c','w'];
+// 마우스를 쓰면 PC, 터치이고 짧은 변이 600 미만이면 폰, 나머지는 태블릿
+function _tfDevKind(){
+  let touch=false;try{touch=matchMedia('(pointer:coarse)').matches;}catch(e){}
+  if(!touch)return 'pc';
+  const w=Math.min(screen.width||0,screen.height||0)||Math.min(window.innerWidth,window.innerHeight);
+  return w<600?'phone':'tablet';
+}
+let _tfK=null;
+function _tfLoad(){
+  if(_tfK)return _tfK;
+  try{_tfK=JSON.parse(localStorage.getItem(_TF_KEY)||'{}');}catch(e){_tfK=null;}
+  if(!_tfK||typeof _tfK!=='object')_tfK={};
+  return _tfK;
+}
+function _tfStore(){try{localStorage.setItem(_TF_KEY,JSON.stringify(_tfK||{}));}catch(e){}}
+function _tfGet(k){
+  const K=_tfLoad();
+  if(_TF_COL_DEF[k]!==undefined)return(typeof K[k]==='string'&&/^#[0-9a-f]{6}$/i.test(K[k]))?K[k]:_TF_COL_DEF[k];
+  if(k==='t')return !!K.t;
+  const v=+K[k];
+  if(K[k]!=null&&isFinite(v))return v;
+  return _TF_SL_DEF[_tfDevKind()][k];
+}
+
+// ── 그리기 ──
+const _tf={run:false,raf:0,last:0,t0:0,W:0,H:0,P:[],up:null,down:null,preview:false,ref:'',sec:-1,wired:false};
+function _tfHex2Hsl(h){
+  let r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let H=0,S=0;
+  if(mx!==mn){const d=mx-mn;S=l>.5?d/(2-mx-mn):d/(mx+mn);
+    H=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;H*=60;}
+  return[H,S,l];
+}
+function _tfHsl2Rgb(h,s,l){
+  h=((h%360)+360)%360;
+  const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));
+  return[f(0),f(8),f(4)].map(v=>Math.round(v*255));
+}
+// 기본색 하나에서 변주 둘을 만든다 — EARTH 는 살짝 주황, HEAVEN 은 살짝 하늘색 쪽으로
+function _tfSprites(hex,shifts){
+  const[h,s,l]=_tfHex2Hsl(hex);
+  const tot=shifts.reduce((t,e)=>t+e[1],0);
+  return shifts.map(([dh,w])=>{
+    const c=_tfHsl2Rgb(h+dh,s,l),S=96,m=S/2,o=document.createElement('canvas');
+    o.width=o.height=S;const g=o.getContext('2d');
+    // 가우스 곡선으로 번지는 빛 + 가운데 작은 심지 (경계가 뚜렷한 원판은 인위적이었다)
+    const r=g.createRadialGradient(m,m,0,m,m,m);
+    for(let i=0;i<=10;i++){const t=i/10;r.addColorStop(t,`rgba(${c},${(Math.exp(-t*t*9)*0.55).toFixed(3)})`);}
+    g.fillStyle=r;g.fillRect(0,0,S,S);
+    const kk=g.createRadialGradient(m,m,0,m,m,m*0.14);
+    kk.addColorStop(0,`rgba(${c.map(v=>Math.min(255,v+30))},0.95)`);kk.addColorStop(1,`rgba(${c},0)`);
+    g.fillStyle=kk;g.fillRect(0,0,S,S);
+    return[o,w/tot];
+  });
+}
+function _tfPick(list){let r=Math.random();for(const[sp,w]of list){if((r-=w)<=0)return sp;}return list[0][0];}
+function _tfBuildSprites(){
+  _tf.up=_tfSprites(_tfGet('earth'),[[0,6],[-8,2],[-16,1]]);
+  _tf.down=_tfSprites(_tfGet('heaven'),[[0,6],[-12,2],[-50,1.5]]);
+  _tf.P.forEach(p=>{p.img=_tfPick(p.up?_tf.up:_tf.down);});
+}
+function _tfSize(){
+  const cv=document.getElementById('tfCv');if(!cv)return;
+  const dpr=Math.min(2,window.devicePixelRatio||1);
+  _tf.W=window.innerWidth;_tf.H=window.innerHeight;
+  cv.width=Math.round(_tf.W*dpr);cv.height=Math.round(_tf.H*dpr);
+  cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+}
+function _tfSpawn(up,anywhere){
+  const H=_tf.H,L=H*(0.12+Math.pow(Math.random(),2.2)*0.95);
+  const y0=up?H+6-Math.random()*H*0.06:-6+Math.random()*H*0.06;
+  return{img:_tfPick(up?_tf.up:_tf.down),up,x:Math.random()*_tf.W,y0,d:anywhere?Math.random()*L:0,L,
+    v:18+Math.random()*50,ph:Math.random()*6.28,sz:6+Math.random()*(up?20:16),a:0.3+Math.random()*0.6,tw:0.5+Math.random()*2};
+}
+function _tfDrawCross(){
+  const el=document.getElementById('tfCross'),pa=document.getElementById('tfCrossP');if(!el||!pa)return;
+  const sc=_tfGet('c'),t=6*_tfGet('w'),W0=40,H0=56,x=(W0-t)/2,y=16,c=_tfGet('cross');
+  el.style.display=sc>0?'':'none';
+  el.setAttribute('viewBox',`0 0 ${W0} ${H0}`);el.setAttribute('width',W0*sc);el.setAttribute('height',H0*sc);
+  pa.setAttribute('d',`M${x} 1h${t}v${y-1}H${W0-1}v${t}H${x+t}V${H0-1}h${-t}V${y+t}H1v${-t}h${x-1}z`);
+  el.style.color=c;
+  el.style.filter=`drop-shadow(0 0 6px ${c}8c) drop-shadow(0 0 22px ${c}59)`;
+}
+function _tfFrame(now){
+  if(!_tf.run)return;
+  const cv=document.getElementById('tfCv');if(!cv){_tf.run=false;return;}
+  const cx=cv.getContext('2d'),W=_tf.W,H=_tf.H;
+  const dt=Math.min(0.05,(now-_tf.last)/1000);_tf.last=now;
+  const el=(now-_tf.t0)/1000;
+  cx.clearRect(0,0,W,H);cx.globalCompositeOperation='lighter';
+  const A=_tfGet('a'),V=_tfGet('v');
+  const want=Math.min(2400,Math.round(W*H/800*_tfGet('n')));
+  while(_tf.P.length<want)_tf.P.push(_tfSpawn(_tf.P.length%2===0,true));
+  if(_tf.P.length>want)_tf.P.length=want;
+  for(const p of _tf.P){
+    p.d+=p.v*dt*V;
+    const y=p.up?p.y0-p.d:p.y0+p.d,x=p.x+Math.sin(el*0.6+p.ph)*6;
+    const k=p.d/p.L,fade=Math.min(1,k*12)*Math.pow(1-k,1.6);
+    const a=A*p.a*(0.55+0.45*Math.sin(el*p.tw+p.ph))*fade;
+    if(a>0.01){cx.globalAlpha=Math.min(1,a);cx.drawImage(p.img,x-p.sz/2,y-p.sz/2,p.sz,p.sz);}
+    if(p.d>=p.L)Object.assign(p,_tfSpawn(p.up,false));
+  }
+  cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
+  const s=el|0;
+  if(s!==_tf.sec){_tf.sec=s;const ck=document.getElementById('tfClock');if(ck&&_tfGet('t'))ck.textContent=_thereClock(s);}
+  _tf.raf=requestAnimationFrame(_tfFrame);
+}
+
+// ── 세팅 판 ──
+function _tfSyncUI(){
+  _TF_SL.forEach(k=>{
+    const inp=document.getElementById('tfK_'+k);if(!inp)return;
+    inp.value=_tfGet(k);
+    const o=inp.nextElementSibling;if(o)o.textContent='×'+(+_tfGet(k)).toFixed(1);
+  });
+  document.querySelectorAll('#tfTune .tf-col').forEach(c=>{
+    const k=c.dataset.k;c.style.setProperty('--c',_tfGet(k));
+    const inp=c.querySelector('input');if(inp)inp.value=_tfGet(k);
+    c.classList.toggle('custom',_tfLoad()[k]!=null);
+  });
+  const on=_tfGet('t');
+  document.getElementById('tfK_t')?.classList.toggle('on',on);
+  const ck=document.getElementById('tfClock');
+  if(ck){ck.style.display=on?'':'none';if(on)ck.textContent=_thereClock(Math.max(0,_tf.sec));}
+  _tfDrawCross();
+}
+function _tfWire(){
+  if(_tf.wired)return;_tf.wired=true;
+  _TF_SL.forEach(k=>{
+    const inp=document.getElementById('tfK_'+k);if(!inp)return;
+    inp.addEventListener('input',()=>{_tfLoad()[k]=+inp.value;_tfStore();_tfSyncUI();});
+  });
+  document.querySelectorAll('#tfTune .tf-col').forEach(c=>{
+    const k=c.dataset.k,inp=c.querySelector('input');
+    c.querySelector('.tf-nm').addEventListener('click',()=>inp.click());
+    inp.addEventListener('input',()=>{_tfLoad()[k]=inp.value;_tfStore();_tfSyncUI();if(k!=='cross')_tfBuildSprites();});
+    c.querySelector('.tf-rs').addEventListener('click',()=>{delete _tfLoad()[k];_tfStore();_tfSyncUI();if(k!=='cross')_tfBuildSprites();});
+  });
+  const el=document.getElementById('thereFx');
+  // ESC — 세팅 판의 슬라이더·색 칸을 만진 뒤에는 초점이 그 입력 칸에 남는다.
+  //   공용 ESC(_ESC_CLOSERS)는 입력 칸의 ESC 를 '편집 취소' 로 보고 비켜서므로,
+  //   그러면 아래에 있는 설정창의 ESC 가 대신 받아 **설정창이 닫혔다.**
+  //   There 안에서 난 ESC 는 여기서 먼저 받아 There 만 닫는다.
+  el.addEventListener('keydown',e=>{
+    if(e.key!=='Escape'||!_tf.run)return;
+    e.preventDefault();e.stopPropagation();
+    closeThere();
+  });
+  // 왼쪽 가장자리 → 오른쪽 = 닫기 (말씀 전체화면과 같은 장치)
+  _initEdgeBack(el,()=>closeThere());
+  window.addEventListener('resize',()=>{if(_tf.run)_tfSize();});
+}
+function thereTuneClock(){const K=_tfLoad();K.t=!K.t;_tfStore();_tfSyncUI();}
+function thereTuneReset(){const K=_tfLoad();_TF_SL.forEach(k=>delete K[k]);_tfStore();_tfSyncUI();}
+function thereTuneFold(){
+  const t=document.getElementById('tfTune');if(!t)return;
+  t.classList.toggle('fold');
+  const b=document.getElementById('tfFoldBtn');if(b)b.textContent=t.classList.contains('fold')?'펼치기':'접기';
+}
+
+// ── 열기·닫기 ──
+function _thereIsOpen(){return !!_tf.run;}
+// ref: 반응 키(말씀=장절, 명제=명제 키). 빈칸이면 특정 말씀 없이 (GNB).
+// opts.preview: 설정창에서 세팅하러 들어온 것 — 기록하지 않고 세팅 판을 띄운다.
+function openThere(ref,opts){
+  opts=opts||{};
+  const el=document.getElementById('thereFx');if(!el||_tf.run)return;
+  _tfWire();
+  _tf.preview=!!opts.preview;_tf.ref=ref||'';_tf.sec=-1;
+  const tune=document.getElementById('tfTune');if(tune)tune.style.display=_tf.preview?'':'none';
+  el.style.transition='';el.style.transform='';el.style.opacity='';
+  el.style.display='block';
+  void el.offsetWidth;el.classList.add('on');
+  _tfSize();_tf.P=[];_tfBuildSprites();_tfSyncUI();
+  _tf.run=true;_tf.t0=_tf.last=performance.now();
+  _tf.raf=requestAnimationFrame(_tfFrame);
+  if(!_tf.preview)_thereBegin(_tf.ref);
+}
+function closeThere(){
+  const el=document.getElementById('thereFx');if(!el||!_tf.run)return;
+  const en=_tf.preview?null:_thereCommit();
+  _tf.run=false;cancelAnimationFrame(_tf.raf);
+  el.classList.remove('on');
+  setTimeout(()=>{if(!_tf.run){el.style.display='none';_tf.P=[];}},360);
+  if(en)_thereRecorded();
+}
+// 기록이 하나 늘었을 때 숫자를 보여주는 자리들을 맞춘다
+function _thereRecorded(){
+  if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_vfSyncCounts();
+}
+// 말씀 전체화면 우하단 단추
+function openThereFromVf(){
+  const v=_vfCurrentVerse();
+  openThere(_reactKey(v));
+}
+// 설정창 '세팅하러 가기'
+function openThereTune(){openThere('',{preview:true});}
+// 앱을 벗어나거나 화면이 꺼지면 **그 순간이 마침** (HB). 돌아오면 새로 시작한다.
+// ⚠️ 화면은 열어 둔 채 둔다 — 돌아와서 이어 기도할 수 있게. 기록만 끊어 남긴다.
+document.addEventListener('visibilitychange',()=>{
+  if(!_tf.run||_tf.preview)return;
+  if(document.visibilityState==='hidden'){if(_thereCommit())_thereRecorded();}
+  else if(!_thereSess)_thereBegin(_tf.ref);
+});
+window.addEventListener('pagehide',()=>{if(_tf.run&&!_tf.preview)_thereCommit();});
 // ── 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) ──
 // 릴스 밖(말씀영역·위젯 메뉴)에서 특정 구절을 공유할 때 — 같은 팝업을 재사용한다
 let _vfShareTarget=null;
@@ -18259,6 +18699,7 @@ function _initVerseFullGestures(){
     }
   }
   document.addEventListener('keydown',e=>{
+    if(_thereIsOpen())return;           // There 가 위에 떠 있다 (v26-0923-5)
     if(_vgIsOpen()){if(e.key==='Escape'){closeVerseGrid();}return;} // 그리드가 위에 있으면 우선
     if(!_verseFullIsOpen())return;
     if(e.key==='Escape'){closeVerseFull();}
@@ -19531,6 +19972,8 @@ function defaultState(){
     // 담아둔 말씀. 좋아요·공유와 **똑같은 모양**이라 병합 장치를 그대로 쓴다.
     // ⚠️ 제품별로 가르지 않는다 — 두 제품이 같은 말씀을 본다.
     verseKeepLog:{},    // { "YYYY-MM-DD": [{ref, time:"HH:MM"}] }
+    // There — 기도·예배 시간 (v26-0923-5). 두 제품이 같이 쓴다 — 가르지 않는다.
+    verseThereLog:{},   // { "YYYY-MM-DD": [{ref, time:"HH:MM", t:시작ms, d:초, sec}] }
     settings:{
       autoCarryOver:false,   // carry unfinished tasks to next day automatically
       carryScopes:['yesterday'], // 가져올 대상 범위(단일 선택, 원소 1개): yesterday|week|month|custom
@@ -19589,6 +20032,7 @@ if(!ST.verseLikeLog)ST.verseLikeLog={};   // 좋아요 누적 이벤트 로그
 if(!ST.verseShareLog)ST.verseShareLog={}; // 공유 누적 이벤트 로그
 if(!ST.verseDeeperLog)ST.verseDeeperLog={}; // Deeper 열람 누적 이벤트 로그
 if(!ST.verseKeepLog)ST.verseKeepLog={};   // 담아두기 누적 이벤트 로그 (v26-0830-15)
+if(!ST.verseThereLog)ST.verseThereLog={}; // There 기도·예배 시간 (v26-0923-5)
 // ── 암송 기록 마이그레이션: verseIdx → ref ──
 // 예전 기록은 {verseIdx,time}만 저장했는데, verseIdx는 활성 모음 구성에
 // 따라 가리키는 구절이 바뀔 수 있는 불안정한 값이다. 네비게이토180 기준
@@ -20529,7 +20973,7 @@ function _secsCommit(rebalance){
 // ST.secArchive 에 넣는다. '+ 시간 구간 추가' 아래에서 되살릴 수 있다.
 // 담는 것: 할일(빅·스몰) · 시각 없는 일정 · 암송 기록 · 말씀 반응
 // 담지 않는 것: 시각 있는 일정 — 시각이 구간을 정하므로 자동 재배치된다.
-const _SEC_MARK_LOGS=['verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog'];
+const _SEC_MARK_LOGS=['verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseThereLog'];
 function _secArchiveCapture(secId,secObj){
   const cp=v=>JSON.parse(JSON.stringify(v));
   const entry={id:'arc'+Date.now(),ts:Date.now(),sec:cp(secObj||{}),big:{},small:{},events:{},memo:{},marks:{}};
@@ -25995,7 +26439,7 @@ function _dupVerseScan(){
 function _rewriteLogRefs(from,to){
   if(from===to)return 0;
   let n=0;
-  [ST.verseLikeLog,ST.verseShareLog,ST.verseDeeperLog,ST.verseEvenDeeperLog].forEach(log=>{
+  [ST.verseLikeLog,ST.verseShareLog,ST.verseDeeperLog,ST.verseEvenDeeperLog,ST.verseThereLog].forEach(log=>{
     if(!log)return;
     Object.keys(log).forEach(k=>{
       (log[k]||[]).forEach(en=>{if(en&&en.ref===from){en.ref=to;n++;}});
@@ -38652,7 +39096,7 @@ function deleteSectionConfig(name){
 // export 와 import 가 **같은 목록**을 본다. 하나만 고치면 되살릴 때 조용히 빠진다.
 // 명제는 따로 없다 — 말씀 모음(verseCollections) 안에 함께 들어 있다.
 const _VERSE_BACKUP_KEYS=['verseCollections','memorizationLog','verseLikeLog',
-  'verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog'];
+  'verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog','verseThereLog'];
 // 이 제품의 '화면 취향' 만 뽑는다 (_psProject 가 저장할 때 하는 것과 같은 일).
 // ⚠️ ST.productSettings 를 그냥 읽지 않는다 — 그 칸은 저장할 때 채워지므로
 //    지금 화면에서 방금 바꾼 값이 아직 안 들어가 있을 수 있다.
@@ -41181,6 +41625,7 @@ function _fbCountByKind(o){
     verseLogs:_fbCountArrays(o.verseKeepLog||{},0)
              +_fbCountArrays(o.verseLikeLog||{},0)+_fbCountArrays(o.verseShareLog||{},0)
              +_fbCountArrays(o.verseDeeperLog||{},0)+_fbCountArrays(o.verseEvenDeeperLog||{},0)
+             +_fbCountArrays(o.verseThereLog||{},0)
   };
 }
 // 예전 이름 — 전체 개수가 필요한 곳을 위해 남겨 둔다
@@ -41221,7 +41666,7 @@ function _fbMerge(base,local,cloud,preferCloud){
     if(k==='days')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgDay(b2,l2,c2,baseKnown));
     else if(k==='memorizationLog')v=_mgLogNested(bv,lv,cv,baseKnown);
     else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog'
-            ||k==='verseKeepLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
+            ||k==='verseKeepLog'||k==='verseThereLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
     else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
       _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
@@ -41543,7 +41988,7 @@ function _dfContacts(a,b,out){
 // ── 기록(암송·좋아요·담아두기·나눔·Deeper) ──
 const _DF_LOGS=[['memorizationLog','암송',2],['verseKeepLog','담아두기',1],
   ['verseLikeLog','좋아요',1],['verseShareLog','나눔',1],
-  ['verseDeeperLog','Deeper',1],['verseEvenDeeperLog','Even Deeper',1]];
+  ['verseDeeperLog','Deeper',1],['verseEvenDeeperLog','Even Deeper',1],['verseThereLog','There',1]];
 function _dfLogRefs(node,depth,acc){
   if(!node)return acc;
   if(Array.isArray(node)){node.forEach(x=>acc.push(_dfVKey(x)||'(이름 없음)'));return acc;}
@@ -42729,6 +43174,7 @@ function applyRemoteState(remote){
   if(remote.verseDeeperLog)ST.verseDeeperLog=remote.verseDeeperLog;
   if(remote.verseEvenDeeperLog)ST.verseEvenDeeperLog=remote.verseEvenDeeperLog; // v0731-5: 누락돼 있던 Even 기록 반영
   if(remote.verseKeepLog)ST.verseKeepLog=remote.verseKeepLog;   // 담아두기 (v26-0830-15)
+  if(remote.verseThereLog)ST.verseThereLog=remote.verseThereLog; // There (v26-0923-5)
   ST.contacts=Array.isArray(remote.contacts)?remote.contacts:[];
   if(remote.secs&&Array.isArray(remote.secs)&&remote.secs.length>0){
     SECS=remote.secs;
@@ -43429,7 +43875,7 @@ function _swSpareKinds(){
 // 옮기는 것은 **말씀에 관한 것뿐이다.** 할일·구간·화면 설정은 건드리지 않는다 —
 // 설정까지 끌어오면 제품 칸막이(_PRODUCT_SCOPED)가 애써 갈라 둔 것을 도로 뭉갠다.
 const _SW_IMPORT_KEYS=['verseCollections','customVerses','memorizationLog',
-  'verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog'];
+  'verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog','verseThereLog'];
 // 말씀이 화면에 나오는 데 꼭 필요한 설정 둘 — 어느 모음을 켜 두었나, 어떻게 걸렀나.
 const _SW_IMPORT_SETTINGS=['activeColls','collFilters'];
 
