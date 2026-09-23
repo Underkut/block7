@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-0923-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -722,6 +722,33 @@ header{
 .there-ic svg{width:100%;height:100%;display:block;}
 /* 전체화면 반응 단추 안에서는 다른 단추들과 같은 크기 규칙(.vf-ic svg)을 탄다 */
 .vf-ic .there-ic{width:auto;height:auto;display:block;}
+/* ── There 단추 자리들 (v26-0923-5 T-4) ── 테두리·박스 없이 그림만 (UI 원칙) */
+/* 상단 말씀 영역 — 글자 한 자 크기. 누르는 자리는 ::after 로 넉넉히.
+   ⚠️ z-index:7 — PC 에서는 영역 아래쪽 34px 를 크기 손잡이(#verseBarResizeEdge,
+      z-index:6)가 덮는다. 본문 끝줄이 거기 걸리므로 그 위로 올라와야 눌린다. */
+.vb-there{position:relative;z-index:7;background:none;border:0;padding:0;margin:0;cursor:pointer;
+  color:var(--tx3);line-height:0;-webkit-tap-highlight-color:transparent;font-size:13px;}
+.vb-there::after{content:"";position:absolute;inset:-10px -10px -8px -10px;}
+.vb-there .there-ic{width:1em;height:1em;display:block;}
+.vb-there:active{opacity:.5;}
+.vbText .vb-there{float:right;margin:5px 0 0 8px;}
+.vbInner.sneak-mode .vb-there{flex:0 0 auto;margin-left:7px;font-size:12px;align-self:center;}
+/* 말씀카드 위젯 — 다른 반응과 같은 16px */
+.vc-act .there-ic{width:16px;height:16px;display:block;}
+/* BLOCK7 GNB — 할일뷰 2·3단에서만, 로고 바로 오른쪽 (left 는 JS 가 로고 폭으로) */
+.gnb-there{display:none;position:absolute;left:84px;top:50%;transform:translateY(-50%);z-index:5;
+  background:none;border:0;padding:6px;margin:0;cursor:pointer;color:var(--tx3);line-height:0;
+  -webkit-tap-highlight-color:transparent;}
+.gnb-there .there-ic{width:15px;height:15px;display:block;}
+.gnb-there:hover{color:var(--tx);}
+body.lay-multi .gnb-there{display:block;}
+/* Sweeter GNB — 필터 왼쪽. 선 아이콘들 사이의 **채운** 그림이라 한 치수 작게 둔다 */
+.sw-iconbtn .there-ic{width:17px;height:17px;display:block;}
+/* Sweeter 타일 — 우하단 구석. 점(.sw-pips)은 그만큼 왼쪽으로 비켜선다 */
+.sw-there{position:relative;flex:0 0 auto;background:none;border:0;padding:0;margin:0 0 0 8px;
+  cursor:pointer;color:var(--tx3);line-height:0;-webkit-tap-highlight-color:transparent;}
+.sw-there .there-ic{width:13px;height:13px;display:block;}
+.sw-there::after{content:"";position:absolute;inset:-12px -10px;}   /* 손가락 자리 */
 /* ── 태그 그림 (v26-0825-3, 자리는 v26-0826-3에 바뀜) ──
    말씀에 붙은 태그 하나를 골라 **본문 바로 위·가운데**에 옅게 띄운다.
    세로 자리(top)는 본문 분량에 따라 달라지므로 CSS 로 못 정한다 —
@@ -5812,7 +5839,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-5";
+const APP_VERSION = "v. 26-0923-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7354,6 +7381,9 @@ try{
 
 <header>
   <div class="logo" id="logoHome" style="cursor:pointer;">BLOCK<b>7</b></div>
+  <!-- There — 할일뷰 2·3단에서만, 로고 바로 오른쪽 (v26-0923-5 T-4, HB 3-4).
+       특정 말씀 없이 연다 (ref 빈칸) — 합계에는 든다. 자리(left)는 renderLayout 이 잰다. -->
+  <button class="gnb-there" id="gnbThereBtn" onclick="openThere('')" aria-label="There" title="There"><span class="there-ic" data-there-ic></span></button>
   <button class="rp-gear" id="gnbLayoutBtn" style="display:none;" onclick="openRpConfig()" title="위젯 설정">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="5.5" x2="17" y2="5.5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14.5" x2="17" y2="14.5"/></svg>
   </button>
@@ -8573,6 +8603,10 @@ try{
            그 탭 이름을 세 번 반짝인다 (v26-0921-9, HB).
            ⚠️ 굵기는 톱니와 같은 1.1 이다 (19px 에 그리므로 — 위 톱니 주석 참고).
            ⚠️ 동그라미는 줄 위에 **얹힌다.** fill 을 바탕색으로 줘야 줄이 안 비친다. -->
+      <!-- There — 필터 왼쪽 (v26-0923-5 T-4, HB 3-5). 특정 말씀 없이 연다.
+           편집 중에는 필터와 함께 비켜선다 (_swEditBtnSync). -->
+      <button class="sw-iconbtn" id="swThereBtn" aria-label="There" title="There"
+              onclick="openThere('')"><span class="there-ic" data-there-ic></span></button>
       <button class="sw-iconbtn" id="swFilterBtn" aria-label="말씀 모음"
               title="말씀 모음 설정" onclick="swOpenCollFilter()">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
@@ -11687,6 +11721,8 @@ function _fillVerseBarDOM(v){
     topicEl.style.display=s.verseFullTopic!==false ? '' : 'none';
     textEl.textContent = v.krText;
     textEl.style.display='block';
+    // There — 본문 끝줄 오른쪽 (v26-0923-5 T-4, HB 3-2). 글자 한 자 크기.
+    textEl.appendChild(_vbThereEl(v));
     firstEl.textContent='';firstEl.style.display='none';
     refEl.textContent  = s.verseFullRef!==false ? barRef : '';
     refEl.style.display= s.verseFullRef!==false ? '' : 'none';
@@ -11762,7 +11798,22 @@ function _fillVerseBarDOM(v){
       sep.textContent='·';
       line.insertBefore(sep,el);
     });
+    // There — 한 줄의 맨 끝 (v26-0923-5 T-4)
+    line.querySelectorAll('.vb-there').forEach(el=>el.remove());
+    line.appendChild(_vbThereEl(v));
   }
+}
+// 상단 말씀 영역의 There 단추. 누른 말씀을 단추에 적어 둔다 — 넘기는 중(디졸브)
+// 에는 영역이 잠깐 다른 말씀을 그리므로, 누른 그 순간의 것을 써야 맞다.
+// ⚠️ 영역 자체를 누르면 전체화면이 열린다(onVerseBarClick) → 전파를 막는다.
+function _vbThereEl(v){
+  const b=document.createElement('button');
+  b.className='vb-there';b.type='button';
+  b.setAttribute('aria-label','There');
+  b.dataset.ref=_reactKey(v)||'';
+  b.innerHTML=_thereIcHTML();
+  b.onclick=e=>{e.stopPropagation();openThere(b.dataset.ref);};
+  return b;
 }
 
 let _verseMemMenuSec=null; // which secId to record against
@@ -15356,6 +15407,11 @@ function _thereIconSync(){
       `<span style="font-size:11px;">${_THERE_ICONS[k].name}</span></button>`).join('');
   }
 }
+// 단추 안에 넣을 그림 자리. 그림은 지금 고른 것을 바로 넣고, 나중에 바꾸면
+// _thereIconSync() 가 [data-there-ic] 를 훑어 갈아 끼운다.
+function _thereIcHTML(){
+  return '<span class="there-ic" data-there-ic>'+_THERE_ICONS[_thereIconKey()].svg+'</span>';
+}
 function setThereIcon(k){
   ST.settings.thereIcon=_THERE_ICONS[k]?k:'hands';
   save();
@@ -15561,6 +15617,7 @@ function closeThere(){
 // 기록이 하나 늘었을 때 숫자를 보여주는 자리들을 맞춘다
 function _thereRecorded(){
   if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())_vfSyncCounts();
+  document.querySelectorAll('.vc-widget').forEach(w=>{try{_vcSyncCounts(w);}catch(e){}});
 }
 // 말씀 전체화면 우하단 단추
 function openThereFromVf(){
@@ -27545,7 +27602,7 @@ function _vcShow(key){return ST.settings[key]!==false;}
 // 전체를 껐다가 다시 켜면 하나하나 정해 둔 값이 그대로 되살아난다.
 const _VC_SHOW_GROUP={
   meta:['verseCardCat','verseCardTopic','verseCardTag'],
-  react:['verseCardLike','verseCardMem','verseCardDeeper','verseCardEven','verseCardShare'],
+  react:['verseCardLike','verseCardMem','verseCardDeeper','verseCardEven','verseCardShare','verseCardThere'],
 };
 function _vcGroupOf(key){return _VC_SHOW_GROUP.meta.indexOf(key)>=0?'meta':'react';}
 function _vcGroupOn(cfg,which){
@@ -27575,7 +27632,8 @@ const _VC_ACT_SVG={
   even:'<svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg><svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>',
   share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>'
 };
-const _VC_ACT_KEY={like:'verseCardLike',mem:'verseCardMem',deeper:'verseCardDeeper',even:'verseCardEven',share:'verseCardShare'};
+const _VC_ACT_KEY={like:'verseCardLike',mem:'verseCardMem',deeper:'verseCardDeeper',even:'verseCardEven',share:'verseCardShare',
+  there:'verseCardThere'};   // There (v26-0923-5) — 그림은 고른 것을 따른다 (_thereIcHTML)
 const _VC_META_KEY={cat:'verseCardCat',topic:'verseCardTopic',tag:'verseCardTag'};
 function _vcCardHTML(id){
   const cfg=_vcGet(id);
@@ -27616,9 +27674,9 @@ function _vcCardHTML(id){
     if(_vcShowFor(cfg,'verseCardCat')&&v.cat)meta.push(`<div class="vc-cat" onclick="event.stopPropagation();vcOpenFilter('${id}','cat')">${esc(v.cat)}</div>`);
     if(_vcShowFor(cfg,'verseCardTopic')&&v.topic)meta.push(`<div class="vc-topic" onclick="event.stopPropagation();vcOpenFilter('${id}','topic')">${esc(v.topic)}</div>`);
     if(_vcShowFor(cfg,'verseCardTag')&&tags.length)meta.push(`<div class="vc-tag">${tags.map(t=>`<span class="vc-tagchip" data-tag="${_vgEscAttr(t)}" onclick="event.stopPropagation();vcOpenFilter('${id}','tag',this.dataset.tag)">#${esc(t)}</span>`).join('  ')}</div>`);
-    const acts=['like','mem','deeper','even','share'].filter(k=>_vcShowFor(cfg,_VC_ACT_KEY[k]));
+    const acts=['like','mem','deeper','even','share','there'].filter(k=>_vcShowFor(cfg,_VC_ACT_KEY[k]));
     const actHTML=acts.map(k=>`<button class="vc-act vc-act-${k}" data-vcact="${k}" onclick="event.stopPropagation();vcAct('${id}','${k}')" aria-label="${k}">
-        ${_VC_ACT_SVG[k]}<span class="vc-cnt">0</span>
+        ${k==='there'?_thereIcHTML():_VC_ACT_SVG[k]}<span class="vc-cnt">0</span>
       </button>`).join('');
     // 좌우 넘김 화살표는 마우스 기기에서만 보인다 (CSS @media (hover:hover))
     const arrows=`<button class="vc-arrow vc-arrow-l" onclick="event.stopPropagation();vcNav('${id}',-1)" aria-label="이전 말씀">${_VC_ARROW_L}</button>
@@ -27726,6 +27784,7 @@ function _vcSyncCounts(wEl){
     if(c)c.textContent=val;
   };
   ['like','mem','deeper','even','share'].forEach(k=>put(k,_verseEventCount(k,ref)));
+  putText('there',_thereCountFor(ref));   // There — 내 기록만 (채움 아이콘 없음)
   if((ST.settings.verseCountScope||'all')==='all'&&ref){
     _fetchVerseStat(ref).then(st=>{
       if(!st||!body.isConnected)return;
@@ -27746,6 +27805,7 @@ function vcAct(id,kind){
   const cfg=_vcGet(id);const v=_vcCurrent(cfg,id);
   if(!v)return;
   if(kind==='share'){openVfShareFor(v);return;}
+  if(kind==='there'){openThere(_vcReactKeyOf(v));return;}
   if(kind==='like'||kind==='mem')_reactWithToast(kind,_vcReactKeyOf(v));
   else if(kind==='deeper')openDeeperFromRef(v.k||v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.k||v.ref);
@@ -28349,7 +28409,7 @@ function renderVcSettings(){
     </div>
     <div class="settings-section">
       ${swTitle("오른쪽 아래 — 말씀 반응","react")}
-      ${swRow('verseCardLike','좋아요',rIcon('like'))}${swRow('verseCardMem','암송',rIcon('mem'))}${swRow('verseCardDeeper','Deeper',rIcon('deeper'))}${swRow('verseCardEven','Even Deeper',rIcon('even'))}${swRow('verseCardShare','공유',rIcon('share'))}
+      ${swRow('verseCardLike','좋아요',rIcon('like'))}${swRow('verseCardMem','암송',rIcon('mem'))}${swRow('verseCardDeeper','Deeper',rIcon('deeper'))}${swRow('verseCardEven','Even Deeper',rIcon('even'))}${swRow('verseCardShare','공유',rIcon('share'))}${swRow('verseCardThere','There',`<span style="display:inline-flex;align-items:center;justify-content:center;width:15px;flex-shrink:0;color:var(--tx2);">${_thereIcHTML().replace('class="there-ic"','class="there-ic" style="width:13px;height:13px;"')}</span>`)}
     </div>
     <div class="settings-section">
       <div class="settings-row-desc">반응 카운터와 링크 열기는 <b>전체화면 설정을 그대로 따라가요.</b><br>
@@ -28538,6 +28598,14 @@ function renderLayout(){
     if(todayView.parentElement!==todoSlot)todoSlot.appendChild(todayView);
   }else{
     if(todayView.parentElement!==colL)colL.insertBefore(todayView,colL.firstChild);
+  }
+
+  // ── There: GNB 로고 바로 오른쪽 (보이고 말고는 CSS body.lay-multi) ──
+  const gThere=document.getElementById('gnbThereBtn');
+  if(gThere){
+    const logo=document.getElementById('logoHome');
+    if(logo&&logo.offsetWidth)gThere.style.left=(logo.offsetLeft+logo.offsetWidth+6)+'px';
+    if(!gThere.querySelector('svg'))_thereIconSync();
   }
 
   // ── 설정(햄버거) 버튼: GNB 로고 우측, 2단부터 표시 (3-3) ──
@@ -45221,6 +45289,13 @@ function _swTogglePhoto(i){
 function _swArrowHTML(dir){
   try{return dir<0?_VC_ARROW_L:_VC_ARROW_R;}catch(_){return '';}
 }
+// There 단추가 붙는 타일 — 내용이 **말씀으로** 보이는 것만 (v26-0923-5 T-4, HB 3-6)
+const _SW_THERE_KINDS=['today','ask','last','keep'];
+function _swThereHTML(k){
+  if(_SW_THERE_KINDS.indexOf(k)<0)return '';
+  let ic='';try{ic=_thereIcHTML();}catch(_){return '';}   // 시험은 이 구간만 떠 간다
+  return '<button class="sw-there" data-swthere="1" aria-label="There" title="There">'+ic+'</button>';
+}
 function _swFace(t){
   const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
   t.p=Math.max(0,Math.min(Math.max(0,n-1),t.p));
@@ -45255,8 +45330,9 @@ function _swFace(t){
   }
   // 아랫줄 = 개수(왼쪽) + 점(오른쪽). 개수는 예전에 타이틀 칸에만 있던 것이라
   // 첫 칸을 넘기면 사라졌다 — 이제 언제나 보인다.
+  // There 는 **맨 오른쪽 구석** — 점은 그만큼 왼쪽으로 비켜선다 (HB 3-6)
   const foot='<div class="sw-pips"><span class="sw-cnt">'
-    +_swEsc(_swCountText(t.k,n))+'</span>'+_swPipsHTML(n,t.p)+'</div>';
+    +_swEsc(_swCountText(t.k,n))+'</span>'+_swPipsHTML(n,t.p)+_swThereHTML(t.k)+'</div>';
   // PC 좌우 꺽쇠 — 값이 둘 이상일 때만 (v26-0922-11, HB 5).
   // ⚠️ 손가락 기기에서는 CSS 가 아예 감춘다 (@media (hover:hover)).
   const nav=n>1?('<button class="sw-nav sw-nav-l" data-swnav="-1" aria-label="이전">'
@@ -45416,6 +45492,11 @@ function _swEditBtnSync(){
   const filt=document.getElementById('swFilterBtn');
   if(done)done.style.display=(mine&&_SW_EDIT)?'':'none';
   if(filt)filt.style.display=(mine&&!_SW_EDIT)?'':'none';
+  const th=document.getElementById('swThereBtn');
+  if(th){
+    th.style.display=(mine&&!_SW_EDIT)?'':'none';
+    if(!th.querySelector('svg')&&typeof _thereIconSync==='function')_thereIconSync();
+  }
 }
 // 필터 아이콘 — 말씀 설정의 '말씀 모음' 탭을 열고 그 이름을 세 번 반짝인다.
 // 화면 곳곳의 '말씀 모음' 길과 **같은 동작**을 쓴다 (_vsetGoColl).
@@ -45788,6 +45869,12 @@ function _swInitGestures(){
           _swDragStart(gel,gi,gx,gy);
         },_SW_EDIT_HOLD)};
       return;
+    }
+    // There — 지금 보이는 칸이 말씀이면 그 말씀으로, 아니면 말씀 없이
+    if(e.target.closest('[data-swthere]')){
+      const t=_SW_TILES[i],cur=_swStrip(t)[t.p];
+      openThere((cur&&cur.kind==='val'&&cur.v&&cur.v.verse)?_reactKey(cur.v.verse):'');
+      e.preventDefault();return;
     }
     if(e.target.closest('[data-swkeep]')){
       const t=_SW_TILES[i],it=_swStrip(t),cur=it[t.p];
