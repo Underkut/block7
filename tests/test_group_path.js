@@ -142,4 +142,46 @@ console.log('\n시나리오 7 — Sweeter 산출물에 점검 페이지가 들�
         R('.gitignore').includes('build-sweeter/'), true);
 }
 
+
+
+console.log('\n시나리오 8 — 성도에게는 성도에게 맞는 안내를 한다 ⚠️');
+{
+  // ⚠️ HB 신고 2026-09-23 — 교회 그룹(/tlc)으로 받아 보는 성도에게 '묵상 질문'
+  //    타일이 "그 열이 있는 탭을 시트에 하나 더 더하면 채워집니다" 라고 말했다.
+  //    성도에게는 **붙일 시트가 없다.** 할 수 없는 일을 시키는 안내였고,
+  //    그래서 "공유가 안 된다" 로 읽혔다 (실제로는 교회가 아직 발행을 안 한 것).
+  eval(asVar(sliceDev('const _SW_TYPES=', '// 처음 켰을 때 놓이는 차례')));
+
+  let COLLS = [];
+  global.getVerseCollections = () => COLLS;
+
+  // ① 시트를 가진 사람(교회) — 예전 안내 그대로
+  COLLS = [{ id:'c1', name:'명제집', google:[{url:'u',id:'g1'}] }];
+  sc.eq('교회에게는 시트 안내', /시트 탭/.test(_swEmptyText('ask')), true);
+
+  // ② 받아 보기만 하는 사람(성도) — 할 수 있는 일을 말해 준다
+  COLLS = [{ id:'m1', name:'명제집', importCode:'123456',
+             groupAddr:'tlc', groupName:'주님의교회' }];
+  const t = _swEmptyText('ask');
+  sc.eq('성도에게는 시트 얘기를 안 한다', /시트 탭/.test(t), false);
+  sc.eq('누가 올려야 하는지 말해 준다', /주님의교회/.test(t), true);
+  sc.eq('지금 받는 법도 말해 준다', /전체 업데이트/.test(t), true);
+  // 상황/필요 타일도 같은 규칙
+  sc.eq('상황 타일도 성도 안내로', /주님의교회/.test(_swEmptyText('need')), true);
+
+  // ③ 그룹 이름을 모르면 '교회가' 로 두루뭉술하게
+  COLLS = [{ id:'m1', name:'명제집', importCode:'123456' }];
+  sc.eq('이름을 모르면 교회가', /^교회가/.test(_swEmptyText('ask')), true);
+
+  // ④ 둘 다 가진 사람(교회이면서 남의 것도 구독) — 시트 안내가 맞다
+  COLLS = [{ id:'c1', name:'내 것', google:[{url:'u',id:'g1'}] },
+           { id:'m1', name:'받은 것', importCode:'123456', groupName:'주님의교회' }];
+  sc.eq('시트를 가졌으면 예전 안내', /시트 탭/.test(_swEmptyText('ask')), true);
+
+  // ⑤ 그 밖의 타일은 손대지 않는다
+  COLLS = [{ id:'m1', importCode:'123456', groupName:'주님의교회' }];
+  sc.eq('다른 타일은 예전 그대로',
+        _swEmptyText('keep'), _SW_TYPES.keep.empty);
+}
+
 sc.done();
