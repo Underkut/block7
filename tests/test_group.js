@@ -74,7 +74,7 @@ eval(asVar(sliceDev('async function _subscribeShared(', '// 그룹 하나를 이
 eval(asVar(sliceDev('async function _grpSync(', '// 들어가 있는 그룹을 하루 1회 맞춘다')));
 eval(asVar(sliceDev('async function runGroupSync(', '// ══ 초대 주소 (block7.my/tlc)')));
 eval(asVar(sliceDev('const _JOIN_KEY=', '// ── 그룹 만들기·고치기')));
-eval(asVar(sliceDev('function _sharedVerseOut(', '// 소유자의 모음 내용을 shared')));
+eval(asVar(sliceDev('function _shareCopy(', '// 소유자의 모음 내용을 shared')));
 // 3자 병합 엔진 — 초대가 정말로 '더하기뿐'인지 진짜 병합기로 본다.
 // ⚠️ 여기만 asVar 를 쓰지 않는다. `let _mgPreferCloud` 가 eval 안에 남아야
 //    _fbMerge 가 그것을 보고 돈다 (test_merge.js 와 같은 방식).

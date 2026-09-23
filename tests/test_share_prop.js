@@ -25,7 +25,7 @@ const asVar = s => s.replace(/^(?:const|let) /gm, 'var ');
 
 // 진짜 코드를 떠온다
 eval(asVar(sliceDev('function _verseIdentity(', 'function _gSrcId(')));
-eval(asVar(sliceDev('function _sharedVerseOut(', '// 소유자의 모음 내용을 shared')));
+eval(asVar(sliceDev('function _shareCopy(', '// 소유자의 모음 내용을 shared')));
 eval(asVar(sliceDev('function _syncSheetVersesIntoColl(', 'function addCustomVerseFromForm(')));
 
 function _calKey(){ return '2026-08-31'; }
@@ -126,22 +126,94 @@ console.log('\n시나리오 4 — 매일 갱신에서도 명제가 온전히 온
 console.log('\n시나리오 5 — 항목 목록은 한 곳에서만 정한다');
 {
   // ⚠️ 세 경로(발행 · 구독 받기 · 매일 갱신)가 각자 목록을 적고 있으면
-  //    다음에 항목을 더할 때 또 빠진다. 실제로 hi 가 그렇게 당했다.
+  //    다음에 항목을 더할 때 또 빠진다. 실제로 hi·pid 가 그렇게 당했다.
+  //    v26-0923-1 에 **한 곳(_shareCopy)** 으로 더 모았다 — 주고받는 두
+  //    방향이 같은 함수를 지나므로 이제 어긋날 수가 없다.
   sc.eq('발행이 _sharedVerseOut 을 쓴다',
         /verses:\(coll\.verses\|\|\[\]\)\.filter\(v=>!v\.del\)\.map\(_sharedVerseOut\)/.test(SRC_DEV), true);
   sc.eq('구독 받기가 _sharedVerseIn 을 쓴다',
-        /const verses=\(data\.verses\|\|\[\]\)\.map\(_sharedVerseIn\)/.test(SRC_DEV), true);
-  // 옛 방식(각자 손으로 적은 목록)이 남아 있으면 안 된다.
-  // 항목 목록은 이제 두 함수 안에만 있어야 한다 — 그 둘이 곧 이 두 번이다.
-  sc.eq('항목 목록이 적힌 곳은 두 곳뿐',
-        (SRC_DEV.match(/cat:v\.cat\|\|'나의 암송',topic:v\.topic\|\|''/g)||[]).length, 2);
-  const outFn = SRC_DEV.slice(SRC_DEV.indexOf('function _sharedVerseOut('),
-                              SRC_DEV.indexOf('// 소유자의 모음 내용을 shared'));
-  sc.eq('그 두 곳이 _sharedVerseOut · _sharedVerseIn 이다',
-        (outFn.match(/cat:v\.cat\|\|'나의 암송',topic:v\.topic\|\|''/g)||[]).length, 2);
+        /\(data\.verses\|\|\[\]\)\.map\(_sharedVerseIn\)/.test(SRC_DEV), true);
+  // 두 방향이 같은 함수를 지난다
+  sc.eq('내보내기는 _shareCopy 를 지난다',
+        SRC_DEV.includes('function _sharedVerseOut(v){return _shareCopy(v,{});}'), true);
+  sc.eq('받아오기도 _shareCopy 를 지난다',
+        SRC_DEV.includes("function _sharedVerseIn(v){return _shareCopy(v,{src:'shared'});}"), true);
+  // 목록이 적힌 곳은 이제 **한 곳뿐**이다
+  sc.eq('목록을 적은 곳은 한 곳',
+        (SRC_DEV.match(/o\.cat=v\.cat\|\|'나의 암송'/g) || []).length, 1);
   // kind 는 한 규칙에서만 나온다 — pid 가 있으면 prop
   sc.eq('kind 는 pid 에서 파생한다',
         SRC_DEV.includes("if(v.pid){o.pid=v.pid;o.kind='prop';}"), true);
+}
+
+// ═══ 8. 시트가 넣을 수 있는 것은 **전부** 발행에 실려야 한다 ═══
+console.log('\n시나리오 8 — 시트의 열이 늘면 발행도 따라간다 ⚠️');
+{
+  // ⚠️⚠️ 이 시험이 이 파일에서 가장 값진 자리다.
+  //    hi(0813-3) · pid(26-0831) · sit·q·img·yt(26-0922) — **세 번 다**
+  //    "시트에 열을 더하고 발행 목록에는 안 더한" 같은 실수였다.
+  //    발행자 화면은 멀쩡해서 아무도 한참 모른다.
+  //    → 글자를 맞춰 보는 대신, 시트가 실제로 만들어 넣는 항목을 코드에서
+  //      뽑아내 **하나하나 돌려 본다.** 새 열을 만들고 _shareCopy 에 안 넣으면
+  //      그 이름을 대며 여기서 실패한다.
+  const fn = SRC_DEV.slice(SRC_DEV.indexOf('function _syncSheetVersesIntoColl('),
+                           SRC_DEV.indexOf('function addCustomVerseFromForm('));
+  // 새 구절을 만드는 자리에서 쓰는 이름을 전부 모은다
+  const lit = fn.slice(fn.indexOf('const nv={'), fn.indexOf('coll.verses.push(nv)'));
+  const keys = new Set();
+  (lit.match(/(?:^|[{,\s])([a-zA-Z_]\w*)\s*:/g) || [])
+    .forEach(m => keys.add(m.replace(/[^a-zA-Z_]/g, '')));
+  (fn.match(/\bnv\.(\w+)=/g) || [])
+    .forEach(m => keys.add(m.slice(3, -1)));
+
+  // 일부러 안 보내는 것 — 발행자 사정이라 구독자에게 가면 오히려 엉킨다
+  const SKIP = new Set([
+    'src',   // 받는 쪽이 'shared' 로 다시 매긴다
+    'gid',   // 어느 시트인지 — 보내면 구독자 시트 동기화가 남의 시트를 문다
+    'row'    // 시트 몇 째 줄인지 — 구독자에게 뜻이 없다
+  ]);
+  const want = [...keys].filter(k => !SKIP.has(k)).sort();
+  sc.eq('시트가 넣는 항목을 실제로 찾아냈다', want.length >= 12, true);
+
+  // 모든 칸을 채운 구절 하나를 만들어 실제로 내보내 본다
+  const full = { cat:'주일', topic:'믿음', krText:'명제 본문', ref:'로마서 1:17',
+                 tags:['믿음'], hi:'믿음으로', hi2:'의인은', d:'2026-09-07',
+                 pid:'P0001', kind:'prop', books:['로마서'], refs:['롬 1:17'],
+                 sit:['낙심될 때'], q:'무엇을 믿는가?', img:'a.jpg', yt:'abc123',
+                 src:'google', gid:'g1', row:2 };
+  const out = _sharedVerseOut(full);
+  const missing = want.filter(k => !(k in out));
+  // ⚠️ 실패하면 빠진 이름이 그대로 찍힌다 — 무엇을 _shareCopy 에 더해야
+  //    하는지 바로 알 수 있게.
+  sc.eq('발행에서 빠진 항목이 없다', missing, []);
+
+  // 되받는 쪽도 똑같이
+  const back = _sharedVerseIn(out);
+  sc.eq('구독에서 빠진 항목도 없다', want.filter(k => !(k in back)), []);
+  sc.eq('구독으로 온 것임을 표시', back.src, 'shared');
+
+  // 9월 22일에 늘어난 넷 — HB 가 물어서 찾은 것들. 이름을 박아 둔다.
+  sc.eq('상황/필요가 간다', out.sit, ['낙심될 때']);
+  sc.eq('묵상 질문이 간다', out.q, '무엇을 믿는가?');
+  sc.eq('사진이 간다', out.img, 'a.jpg');
+  sc.eq('영상이 간다', out.yt, 'abc123');
+
+  // 일부러 안 보내는 것은 그대로 안 보낸다
+  sc.eq('시트 출처는 안 보낸다', out.gid, undefined);
+  sc.eq('행 번호도 안 보낸다', out.row, undefined);
+
+  // 배열은 복사해서 보낸다 — 같은 배열을 물고 가면 한쪽 수정이 양쪽에 번진다
+  out.sit.push('망가뜨리기'); out.books.push('망가뜨리기');
+  sc.eq('원본 상황은 그대로', full.sit, ['낙심될 때']);
+  sc.eq('원본 성경권도 그대로', full.books, ['로마서']);
+
+  // 빈 값은 항목 자체를 안 만든다 — "원래 없다" 와 "시트에서 지웠다" 를
+  // 구별해야 하기 때문이다 (말씀에는 이 칸들이 아예 없다)
+  const plain = _sharedVerseOut({ ref:'요한복음 3:16', krText:'말씀' });
+  sc.eq('말씀에는 상황이 안 붙는다', 'sit' in plain, false);
+  sc.eq('말씀에는 질문도 안 붙는다', 'q' in plain, false);
+  sc.eq('그래도 기본 칸은 늘 있다',
+        ['cat','topic','krText','ref','tags','hi','d'].every(k => k in plain), true);
 }
 
 // ═══ 6. 이미 구독 중인 사람은 어떻게 되는가 (넘어가는 길) ═══
@@ -198,6 +270,58 @@ console.log('\n시나리오 7 — 성경권(여러 권)이 살아 간다');
   _syncSheetVersesIntoColl(mine, [out], { kind:'share' });
   sc.eq('갱신에서도 이어받는다',
         mine.verses[0].books, ['로마서','에베소서','망가뜨리기']);
+}
+
+// ═══ 9. 한 모음에 구글 시트가 여럿일 때 (HB 물음 2026-09-23) ═══
+console.log('\n시나리오 9 — 시트가 여럿이어도 전부 발행된다 ⚠️');
+{
+  // HB: "한 말씀모음 안에 구글시트가 여럿이면 첫 번째 것만 공유되는 것 아닌가?"
+  // → 아니다. 시트마다 따로 담기는 것이 아니라 **한 배열(coll.verses)에 모인다.**
+  //   발행은 그 배열을 통째로 싣는다. 이 시험이 그것을 못 박는다.
+  const coll = { id:'c1', name:'교회 자료', shareCode:'123456',
+                 google:[{url:'u1',id:'g1'},{url:'u2',id:'g2'},{url:'u3',id:'g3'}],
+                 verses:[] };
+  const sheet = (n, gid) => ([
+    { cat:n+' 주일', topic:'', krText:n+' 명제 하나', ref:'로마서 1:17',
+      tags:[], hi:'', d:'2026-09-07', pid:gid+'-P1' },
+    { cat:n+' 주일', topic:'', krText:n+' 명제 둘', ref:'로마서 1:18',
+      tags:[], hi:'', d:'2026-09-07', pid:gid+'-P2' }
+  ]);
+  _syncSheetVersesIntoColl(coll, sheet('첫째','g1'), { kind:'google', gid:'g1' });
+  _syncSheetVersesIntoColl(coll, sheet('둘째','g2'), { kind:'google', gid:'g2' });
+  _syncSheetVersesIntoColl(coll, sheet('셋째','g3'), { kind:'google', gid:'g3' });
+
+  // ⚠️ 나중에 받은 시트가 앞선 시트의 구절을 **지우지 않는다.**
+  //    (지우는 자리는 gid 로 갈라 "이 시트가 관리하던 것" 만 본다)
+  sc.eq('세 시트가 한 배열에 모인다', coll.verses.length, 6);
+  sc.eq('시트마다 출처가 남는다',
+        [...new Set(coll.verses.map(v => v.gid))].sort(), ['g1','g2','g3']);
+
+  // 사람이 직접 넣은 구절도 섞여 있을 수 있다
+  coll.verses.push({ cat:'나의 암송', topic:'', krText:'손으로 넣은 말씀',
+                     ref:'요한복음 3:16', tags:[], hi:'', d:'2026-09-01', src:'direct' });
+
+  const out = (coll.verses || []).filter(v => !v.del).map(_sharedVerseOut);
+  sc.eq('일곱 개가 전부 발행된다', out.length, 7);
+  sc.eq('세 시트 것이 다 간다',
+        out.map(v => v.krText).filter(t => /명제/.test(t)).sort(),
+        ['둘째 명제 둘','둘째 명제 하나','셋째 명제 둘','셋째 명제 하나',
+         '첫째 명제 둘','첫째 명제 하나']);
+  sc.eq('손으로 넣은 것도 간다',
+        out.some(v => v.krText === '손으로 넣은 말씀'), true);
+  // 어느 시트에서 왔는지는 보내지 않는다 (구독자 시트 동기화가 엉킨다)
+  sc.eq('시트 출처는 안 간다', out.every(v => v.gid === undefined), true);
+
+  // 구독자가 받아 보면 일곱 개가 그대로 선다
+  const mine = { id:'m1', name:'교회 자료', importCode:'123456', verses:[] };
+  const r = _syncSheetVersesIntoColl(mine, out.map(_sharedVerseIn), { kind:'share' });
+  sc.eq('구독자에게 일곱 개가 들어온다', r.added, 7);
+  sc.eq('명제 여섯이 살아 있다', mine.verses.filter(v => v.kind === 'prop').length, 6);
+
+  // 교회가 한 시트만 다시 받아도 다른 시트 것이 안 사라진다
+  const before = coll.verses.length;
+  _syncSheetVersesIntoColl(coll, sheet('첫째','g1'), { kind:'google', gid:'g1' });
+  sc.eq('한 시트를 다시 받아도 그대로', coll.verses.filter(v => !v.del).length, before);
 }
 
 sc.done();

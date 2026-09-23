@@ -134,6 +134,26 @@ cp icon-sweeter.png "$OUT/icon.png"
 cp icon-sweeter.png "$OUT/icon-sweeter.png"
 cp icon-block7.png  "$OUT/icon-block7.png"
 cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
+
+# ⚠️ 점검 페이지(404). 두 가지 일을 한다 —
+#   ① 파이어베이스 호스팅의 **기본 404**("Page Not Found")를 우리 것으로 바꾼다.
+#      2026-09-22 에 HB 가 sweeter.my/tlc 에서 본 그 하얀 화면이다.
+#   ② block7.my 와 같은 '초대 주소 다리'를 놓는다. sweeter.my 는 firebase.json
+#      의 rewrites 가 /tlc 를 앱으로 바로 내주므로 평소엔 여기까지 안 오지만,
+#      규칙이 빠지거나 바뀌어도 초대가 죽지 않게 같은 다리를 깔아 둔다.
+# 이름만 Sweeter 로 갈아 끼운다 — sweeter.my 에서 'BLOCK7' 이 보이면 안 된다.
+python3 - <<'PY404'
+import io,sys
+src=io.open('404.html',encoding='utf-8').read()
+def sub_once(t,a,b,what):
+    if t.count(a)!=1: sys.exit('404.html %s: %d곳 (1곳이어야 함)'%(what,t.count(a)))
+    return t.replace(a,b,1)
+src=sub_once(src,'<title>BLOCK7</title>','<title>Sweeter</title>','탭 제목')
+src=sub_once(src,'<div class="logo">BLOCK<b>7</b></div>',
+                 '<div class="logo">Sweeter</div>','로고')
+src=src.replace("BLOCK7 점검 페이지","Sweeter 점검 페이지")
+io.open('build-sweeter/404.html','w',encoding='utf-8').write(src)
+PY404
 # 버전표 — 앱이 "내가 낡았나" 를 묻는 곳 (_upCheck). 없으면 새 버전을 못 받는다.
 ./tools/make-version.sh >/dev/null
 cp version.txt "$OUT/version.txt"

@@ -442,7 +442,7 @@ console.log('\n시나리오 13 — 알림 경로');
   //    **실제로 돌려서** 강조가 살아 나가고 살아 들어오는지 본다 —
   //    항목을 더해도 안 깨지고, 정작 지키려는 것은 더 확실하게 지킨다.
   //    (목록이 두 곳뿐인지는 tests/test_share_prop.js 가 지킨다)
-  eval(SRC.slice(SRC.indexOf('function _sharedVerseOut('),
+  eval(SRC.slice(SRC.indexOf('function _shareCopy('),
                  SRC.indexOf('// 소유자의 모음 내용을 shared'))
           .replace(/^(?:const|let) /gm, 'var '));
   const one = { cat:'나의 암송', topic:'', krText:'본문', ref:'요한복음 3:16',

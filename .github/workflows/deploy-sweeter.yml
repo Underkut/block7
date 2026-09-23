@@ -14,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - '404.html'          # 점검 페이지 + 초대 주소 다리
       - 'version.txt'
       - 'manifest-sweeter.json'
       - 'icon.png'
