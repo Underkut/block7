@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-0923-11  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1004-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-0923-11";
+const APP_VERSION = "v. 26-1004-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10119,6 +10119,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
   const gid=(srcInfo&&srcInfo.gid)||'';
   let added=0,restored=0,updated=0,removed=0;
   const addedKeys=[];    // 이번에 새로 들어온 구절의 열쇠 — '따로 포함' 이 쓴다
+  const touched=[];      // 이번에 '수정'으로 센 구절 — 여러 시트를 합쳐 셀 때 쓴다 (_syncCollSheets)
   const reKey=[];        // 신원이 바뀐 구절 [예전 열쇠, 새 열쇠] — 쪽문이 따라가게
   const byCat=new Map(); // 대분류별 집계 — 동기화 결과 화면에서 쓴다
   const _bump=(cat,field)=>{
@@ -10208,7 +10209,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
         if(qChanged){ if(newQ)ex.q=newQ; else delete ex.q; }
         if(imgChanged){ if(newImg)ex.img=newImg; else delete ex.img; }
         if(ytChanged){ if(newYt)ex.yt=newYt; else delete ex.yt; }
-        updated++;_bump(newCat,'updated');
+        updated++;_bump(newCat,'updated');touched.push(ex);
       }
     }else{
       // ⚠️ v26-0831-18, HB 신고 — "주간 필터에 160개가 나오는데 시트에는 30개다."
@@ -10297,7 +10298,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       _plusPrune(coll.id);
     }
   }
-  return{added,restored,updated,removed,blocked,byCat,addedKeys};
+  return{added,restored,updated,removed,blocked,byCat,addedKeys,touched};
 }
 function addCustomVerseFromForm(){
   if(!_currentColl()){showToast('말씀 모음을 먼저 하나 선택한 뒤 다시 시도해주세요');return;}
@@ -10624,15 +10625,21 @@ function _isSermonListSheet(h){
   const vid=has('영상 링크')||has('유튜브')||has('영상');
   return vid&&has('날짜')&&(has('설교 제목')||has('설교자'));
 }
-// 설교 목록 → { '날짜|카테고리': 영상id, '날짜': 영상id }
+// 설교 목록 → { '날짜|카테고리': 영상id, '날짜': 영상id } + 날짜별 설교 목록(day)
 // ⚠️ 날짜만의 열쇠는 **그날 설교가 하나뿐일 때만** 넣는다. 같은 날 1부·2부가
 //    있는데 아무거나 집어 주면 엉뚱한 설교 영상이 뜬다 — 비워 두는 편이 낫다.
+// ⚠️ v26-1004-1, HB — 10/4 주일예배·라이프라인처럼 **같은 날 설교가 둘**이면
+//    날짜만으로는 못 찾고 카테고리가 맞아야 한다. 그런데 두 탭의 카테고리 표기가
+//    조금만 달라도('라이프라인' / '라이프라인 예배') 영영 안 붙었다.
+//    → 띄어쓰기를 지우고 견주고, 그래도 없으면 **한쪽이 다른 쪽을 품는** 설교가
+//      그날 **하나뿐일 때만** 붙인다 (_sermonYtFor). 둘이면 여전히 비운다.
+function _sermonCatNorm(c){return String(c==null?'':c).replace(/\s+/g,'');}
 function _sermonListMap(rows){
   const h=(rows&&rows[0]||[]).map(c=>String(c||'').trim());
   const at=(...names)=>{for(const x of names){const i=h.indexOf(x);if(i>=0)return i;}return -1;};
   const iD=at('날짜'),iCat=at('카테고리'),iYt=at('영상 링크','유튜브','영상');
-  const m=Object.create(null);
-  const out={map:m,n:0};
+  const m=Object.create(null),day=Object.create(null);
+  const out={map:m,day,n:0};
   if(iD<0||iYt<0)return out;
   const byD=Object.create(null);
   for(let i=1;i<rows.length;i++){
@@ -10640,31 +10647,109 @@ function _sermonListMap(rows){
     const d=_parseVDate(r[iD]);if(!d)continue;
     const yt=_propYt(r[iYt]);if(!yt)continue;
     const cat=iCat>=0?String(r[iCat]==null?'':r[iCat]).trim():'';
-    if(cat)m[d+'|'+cat]=yt;
+    if(cat){m[d+'|'+cat]=yt;m[d+'|~'+_sermonCatNorm(cat)]=yt;}
+    (day[d]||(day[d]=[])).push({c:_sermonCatNorm(cat),yt});
     out.n++;
     if(byD[d]===undefined)byD[d]=yt;else if(byD[d]!==yt)byD[d]=null;
   }
   Object.keys(byD).forEach(d=>{if(byD[d])m[d]=byD[d];});
   return out;
 }
+// 명제 하나(날짜·카테고리)에 붙일 영상. 못 찾으면 ''.
+function _sermonYtFor(g,d,cat){
+  const k=String(cat||'').trim(),kn=_sermonCatNorm(k);
+  let y=g.map[d+'|'+k]||(kn&&g.map[d+'|~'+kn])||g.map[d];
+  if(y)return y;
+  if(kn.length<2)return '';
+  const hit=new Set();
+  (g.day[d]||[]).forEach(x=>{
+    if(x.c.length>=2&&(x.c.indexOf(kn)>=0||kn.indexOf(x.c)>=0))hit.add(x.yt);
+  });
+  return hit.size===1?[...hit][0]:'';
+}
 // 이미 들어와 있는 명제에 영상 링크만 얹는다. **만들지도 지우지도 않는다.**
 function _applySermonListSheet(coll,rows){
   const g=_sermonListMap(rows);
   let updated=0;
-  const byCat=new Map();
+  const byCat=new Map(),touched=[];
   if(g.n)((coll&&coll.verses)||[]).forEach(v=>{
     const d=String(v.d||'');if(!d)return;
     const k=String(v.cat||'').trim();
-    const y=g.map[d+'|'+k]||g.map[d];
+    const y=_sermonYtFor(g,d,k);
     if(!y||v.yt===y)return;
-    v.yt=y;updated++;
+    v.yt=y;updated++;touched.push(v);
     const ck=k||'그 밖';
     if(!byCat.has(ck))byCat.set(ck,{added:0,restored:0,updated:0,removed:0});
     byCat.get(ck).updated++;
   });
   // 결과 모양은 _syncSheetVersesIntoColl 과 맞춘다 (부르는 쪽이 같은 칸을 읽는다)
   return{sermonList:true,sermons:g.n,updated,
-         added:0,restored:0,removed:0,blocked:0,byCat,addedKeys:[]};
+         added:0,restored:0,removed:0,blocked:0,byCat,addedKeys:[],touched};
+}
+// ── 한 모음에 연결된 시트 여럿을 **한 번에** 반영한다 (v26-1004-1, HB 신고) ──
+// HB: "방금 동기화했는데 다시 누르면 또 '수정 116개'. 몇 번을 눌러도 똑같다."
+//     "최근 설교 썸네일이 이 기능을 처음 만든 날의 영상에서 안 바뀐다."
+// 까닭 — 한 모음에 '명제 DB' 와 '설교 목록' 이 같이 연결돼 있으면 두 탭이 같은
+//   칸(영상 링크)을 **서로 덮어썼다.** 명제 DB 의 '영상 링크' 열은 처음에 끌어온
+//   VLOOKUP 값이라 새 줄은 비어 있다. 연결 순서가 [설교 목록 → 명제 DB] 이면
+//     ① 설교 목록이 새 설교에 영상을 붙이고   (수정 N)
+//     ② 명제 DB 가 "시트엔 비어 있다" 며 지운다 (수정 N)
+//   를 **누를 때마다** 되풀이했다 → 시트가 그대로여도 늘 수정 2N개,
+//   그리고 마지막에 이긴 쪽이 명제 DB 라 새 설교는 영상이 없어 타일이
+//   **영상이 남아 있는 옛 설교(처음 만든 날 것)** 를 계속 썼다.
+// 고친 것 —
+//   ① '설교 목록' 탭은 **언제나 맨 뒤에** 반영한다 (연결 순서와 상관없이).
+//      영상은 설교 목록이 마지막으로 정한다. 같은 동기화에서 새로 들어온
+//      명제에도 그 자리에서 영상이 붙는다.
+//   ② '수정' 은 시트마다 센 것을 더하지 않고, **동기화 전과 뒤를 견주어**
+//      실제로 달라진 구절만 센다. 두 탭이 무엇을 주고받든 끝 모양이 지난번과
+//      같으면 0 이다. (명제 DB 와 '성도 공유용' 탭이 같은 칸을 다르게 적어도 같다)
+// ⚠️ 구절을 만들고 지우는 규칙은 하나도 바꾸지 않는다 — 차례와 세는 법만이다.
+// list = [{g, rows}] — 이미 받아 와 _sheetRowsSane 을 지난 것만 넘긴다.
+// (지키는 것: tests/test_sermon_sheet.js 시나리오 7~9)
+function _syncVerseFp(v){
+  // 출처(gid)·행 번호(row)는 변경으로 세지 않는다 (원래도 그랬다).
+  // 휴지통(del)은 복원·휴지통 칸이 따로 센다.
+  const o={};
+  Object.keys(v||{}).sort().forEach(k=>{if(k!=='gid'&&k!=='row'&&k!=='del')o[k]=v[k];});
+  return JSON.stringify(o);
+}
+function _syncCollSheets(c,list){
+  const out={added:0,restored:0,updated:0,removed:0,blocked:0,sheets:0,fails:0,groups:[]};
+  const before=new Map();
+  ((c&&c.verses)||[]).forEach(v=>before.set(v,_syncVerseFp(v)));
+  const isList=x=>_isSermonListSheet((x.rows&&x.rows[0])||[]);
+  const ord=list.filter(x=>!isList(x)).concat(list.filter(isList));
+  const lastBy=new Map();   // 구절 → 그것을 마지막으로 고친 내역(groups 의 자리)
+  ord.forEach(x=>{
+    const g=x.g;
+    let r,src=g.name||'구글 시트';
+    if(isList(x)){
+      r=_applySermonListSheet(c,x.rows);
+      src+=' · 설교 목록';
+    }else{
+      const items=_rowsToItems(x.rows);
+      if(!items.length){out.fails++;return;}
+      r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
+    }
+    out.added+=r.added||0;out.restored+=r.restored||0;
+    out.removed+=r.removed||0;out.blocked+=r.blocked||0;
+    const gi=out.groups.length;
+    out.groups.push({collId:c.id,coll:c.name||'말씀 모음',source:src,
+      byCat:r.byCat||new Map(),blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
+    (r.touched||[]).forEach(v=>lastBy.set(v,gi));
+    g.lastSync=x.today||g.lastSync;out.sheets++;
+  });
+  // '수정' 을 다시 센다 — 동기화 전부터 있던 구절 가운데 **끝 모양이 달라진 것만**,
+  // 그리고 그것을 마지막으로 고친 시트 한 곳에만 (두 시트에 두 번 세지 않는다).
+  out.groups.forEach(gr=>gr.byCat.forEach(v=>{v.updated=0;}));
+  lastBy.forEach((gi,v)=>{
+    if(!before.has(v)||before.get(v)===_syncVerseFp(v))return;
+    const bc=out.groups[gi].byCat,k=String(v.cat||'나의 암송');
+    if(!bc.has(k))bc.set(k,{added:0,restored:0,updated:0,removed:0});
+    bc.get(k).updated++;out.updated++;
+  });
+  return out;
 }
 function _rowsToItems(rows){
   if(!rows||!rows.length)return[];
@@ -10940,26 +11025,22 @@ async function verseSyncAllNow(){
     const gotOf=new Map();
     jobs.forEach((j,i)=>gotOf.set(j.g,fetched[i]));
     for(const c of colls){
+      // ⚠️ 한 모음의 시트들은 _syncCollSheets 가 **한 번에** 반영한다 (v26-1004-1).
+      //    '설교 목록' 탭을 맨 뒤로 돌리고, '수정' 은 전후를 견주어 센다 — 그 주석 참고.
+      const list=[];
       for(const g of (c.google||[])){
         const res=gotOf.get(g)||{err:'실패'};
         if(res.err){fails++;continue;}
         const rows=_parseCsv(res.text);
         const sane=_sheetRowsSane(rows);
         if(!sane.ok){fails++;continue;}       // 깨진 응답이면 이 시트는 건너뛴다
-        if(_isSermonListSheet(rows[0]||[])){  // '설교 목록' 탭 — 영상 링크만 얹는다
-          const rs=_applySermonListSheet(c,rows);
-          updated+=rs.updated;
-          groups.push({collId:c.id,coll:c.name||'말씀 모음',
-            source:(g.name||'구글 시트')+' · 설교 목록',byCat:rs.byCat,blocked:0,addedKeys:[]});
-          g.lastSync=today;sheets++;continue;
-        }
-        const items=_rowsToItems(rows);
-        if(!items.length){fails++;continue;}
-        const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
+        list.push({g,rows,today});
+      }
+      if(list.length){
+        const r=_syncCollSheets(c,list);
         added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed;
-        blocked+=r.blocked||0;
-        groups.push({collId:c.id,coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
-        g.lastSync=today;sheets++;
+        blocked+=r.blocked;fails+=r.fails;sheets+=r.sheets;
+        groups.push(...r.groups);
       }
       // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
       // ⚠️ 예전엔 **모음 편집창을 닫거나 공유창을 열 때만** 게시했다. 그래서 시트에
@@ -11007,27 +11088,22 @@ async function runVerseSheetAutoSync(){
   let changed=false,ran=0,tAdded=0,tRestored=0,tUpdated=0,tRemoved=0;
   const groups=[]; // 모음 × 시트별 내역 — 결과 화면에서 보여준다
   for(const c of colls){
+    // 한 모음의 시트들은 _syncCollSheets 가 한 번에 반영한다 (v26-1004-1 — 그 주석)
+    const list=[];
     for(const g of (c.google||[])){
       if(!g.autoSync||g.lastSync===today)continue;
       const res=await _fetchSheetCsv(g.url);
       if(res.err)continue; // 실패는 조용히 넘기고 다음 기회에 재시도
       const rows=_parseCsv(res.text);
       if(!_sheetRowsSane(rows).ok)continue;
-      if(_isSermonListSheet(rows[0]||[])){    // '설교 목록' 탭 — 영상 링크만 얹는다
-        const rs=_applySermonListSheet(c,rows);
-        g.lastSync=today;changed=true;ran++;tUpdated+=rs.updated;
-        groups.push({collId:c.id,coll:c.name||'말씀 모음',
-          source:(g.name||'구글 시트')+' · 설교 목록',byCat:rs.byCat,blocked:0,addedKeys:[]});
-        continue;
-      }
-      const items=_rowsToItems(rows);
-      if(!items.length)continue;
-      const r=_syncSheetVersesIntoColl(c,items,{kind:'google',gid:_gSrcId(g)});
-      g.lastSync=today;
-      changed=true;ran++;
-      tAdded+=r.added;tRestored+=r.restored;tUpdated+=r.updated;tRemoved+=r.removed;
-      groups.push({collId:c.id,coll:c.name||'말씀 모음',source:g.name||'구글 시트',byCat:r.byCat,blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
+      list.push({g,rows,today});
     }
+    if(!list.length)continue;
+    const r=_syncCollSheets(c,list);
+    if(!r.sheets)continue;
+    changed=true;ran+=r.sheets;
+    tAdded+=r.added;tRestored+=r.restored;tUpdated+=r.updated;tRemoved+=r.removed;
+    groups.push(...r.groups);
   }
   if(changed){
     save();

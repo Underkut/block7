@@ -160,7 +160,15 @@ console.log('\n시나리오 — 여러 시트를 한꺼번에 받는다 (v26-090
   // ⚠️⚠️ 받기만 함께 하고 **반영은 예전 그대로 차례대로** 한다.
   //    같은 모음에 시트가 둘일 때 순서가 뒤바뀌면, 나중 시트가 앞 시트의
   //    구절을 "시트에서 사라진 것"으로 보고 휴지통에 넣는다.
-  sc.eq('반영은 여전히 차례대로', /for\(const c of colls\)\{\s*\n\s*for\(const g of \(c\.google\|\|\[\]\)\)\{/.test(fn), true);
+  //    v26-1004-1 부터 한 모음의 시트들은 _syncCollSheets 가 반영한다 — 모음을
+  //    차례로 돌며 부르고, 그 안에서도 시트를 **한 줄로(forEach)** 반영한다.
+  //    '설교 목록' 탭만 맨 뒤로 가는데, 그 탭은 구절을 만들지도 지우지도 않는다.
+  //    나머지 시트끼리의 순서는 연결한 순서 그대로다 (filter 는 순서를 지킨다).
+  sc.eq('반영은 여전히 차례대로 (모음마다)', /for\(const c of colls\)\{[\s\S]*?_syncCollSheets\(c,list\)/.test(fn), true);
+  const cs = SRC.slice(SRC.indexOf('function _syncCollSheets('), SRC.indexOf('function _rowsToItems('));
+  sc.eq('모음 안에서도 한 줄로', /ord\.forEach\(/.test(cs) && !/Promise\.all|await /.test(cs), true);
+  sc.eq('설교 목록 말고는 연결 순서 그대로',
+    cs.includes('const ord=list.filter(x=>!isList(x)).concat(list.filter(isList));'), true);
   sc.eq('반영을 Promise.all 로 돌리지 않는다',
         /Promise\.all\([^)]*_syncSheetVersesIntoColl/.test(fn), false);
   // 하나가 실패해도 나머지는 받아진다
