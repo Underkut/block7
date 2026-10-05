@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1005-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1005-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1005-5";
+const APP_VERSION = "v. 26-1005-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -39615,7 +39615,10 @@ function runAutoCarryOver(){
   const{movedCount}=_doCarry(_carryDateInScope);
   ST.lastCarryKey=todayK;
   rawSave();
-  if(movedCount>0)showToast(`완료하지 못한 할일 ${movedCount}개를 오늘로 가져왔어요`);
+  // Sweeter 에는 할일 화면이 없다 — 보이지도 않는 할일을 알리지 않는다 (v26-1005-6, HB).
+  // ⚠️ 이월 자체는 그대로 한다. 할일은 두 제품이 같이 쓰는 상태라, 여기서 건너뛰면
+  //    제품마다 할일의 모양이 갈린다. 감추는 것은 알림 한 줄뿐이다.
+  if(movedCount>0&&!_swOn())showToast(`완료하지 못한 할일 ${movedCount}개를 오늘로 가져왔어요`);
 }
 
 // "어제 미완료 할일 가져오기" — an on-demand version of the same
