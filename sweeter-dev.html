@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1005-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1005-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1005-2";
+const APP_VERSION = "v. 26-1005-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9141,7 +9141,14 @@ function _plusHiddenKeys(id,keys){
 // 켜진 각 모음마다 그 모음의 하위 필터(전체/대분류별/소주제별/성경별)가 적용된
 // 구절만 모은다. idx는 이 집합 안에서 1..N로 다시 매겨지므로 말씀바 순환/
 // 선택이 일관됨.
-function ACTIVE_VERSES(){
+function ACTIVE_VERSES(){return _activeVersesFrom(_collFilteredVerses);}
+// 켜진 모음의 구절 **전부** — 모음마다 걸어 둔 필터(기간·대분류·소주제·태그·성경)를
+// 보지 않는다. 모양(항목·idx 매김)은 ACTIVE_VERSES 와 똑같다.
+// ⚠️ 쓰는 곳은 Sweeter '최근 설교' 타일 하나다 (v26-1005-3, HB) — 그 타일은
+//    필터와 상관없이 **타일에 적힌 그날 그 설교**를 보여 줘야 한다.
+//    다른 화면에서 이것을 쓰면 말씀 모음 설정의 필터가 무시된다.
+function ACTIVE_VERSES_ALL(){return _activeVersesFrom(_collRawVerses);}
+function _activeVersesFrom(pick){
   const active=getActiveColls();
   const raw=[];
   // ⚠️ 구절이 **어느 모음에서 왔는지**를 함께 들고 온다. 명제의 '구독자 전체'
@@ -9149,7 +9156,7 @@ function ACTIVE_VERSES(){
   active.forEach(id=>{
     const c=findColl(id);
     const code=c?(c.shareCode||c.importCode||''):'';
-    _collFilteredVerses(id).forEach(v=>raw.push(code?Object.assign({_code:code},v):v));
+    pick(id).forEach(v=>raw.push(code?Object.assign({_code:code},v):v));
   });
   if(!raw.length)return NAVIGATOR_VERSES; // 안전 폴백
   const builtinCats=new Map(NAVIGATOR_VERSES.map(v=>[v.cat,v.catNo]));
@@ -44329,14 +44336,22 @@ function _swLastVerses(sortIdx){
   });
   return out;
 }
-// 최근 설교: 켜진 말씀을 대분류(= 시트의 '설교 제목')로 묶는다.
-// 날짜는 구절의 d 항목 — ACTIVE_VERSES() 가 그대로 넘겨준다.
+// 최근 설교: 켜진 말씀을 대분류(= 명제 시트의 '카테고리', 예배 종류)로 묶는다.
+// 날짜는 구절의 d 항목 — 켜진 모음의 구절이 그대로 들고 온다.
+// ⚠️⚠️ v26-1005-3, HB — 이 타일은 **말씀 모음 필터와 상관없이** 늘 그 예배의
+//    가장 최근 설교 하나를 보여 준다. 그래서 필터를 보지 않는 ACTIVE_VERSES_ALL
+//    을 쓰고(켜진 모음인지는 본다), 숫자 n 도 **그날 그 설교의 말씀 수**다.
+//    예전엔 n 이 그 예배 종류의 **모든 날짜**를 합친 수였고, 누르면 그 전부가
+//    시트 차례(옛날 것부터)로 열려서 "이번 주 주일예배가 아니라 옛날 주일예배
+//    부터 나온다" 가 됐다. 여는 목록은 _swSermonVerses 가 같은 규칙으로 고른다.
+function _swSermonPool(){return ACTIVE_VERSES_ALL()||[];}
 function _swSermons(sortIdx){
   const g=new Map();
-  (ACTIVE_VERSES()||[]).forEach(v=>{
+  const pool=_swSermonPool();
+  pool.forEach(v=>{
     const k=String(v.cat||'').trim()||'나의 암송';
     if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:''});
-    const o=g.get(k);o.n++;
+    const o=g.get(k);
     const d=String(v.d||'');
     // 그 설교의 유튜브 영상 (한 명제에만 적혀 있어도 그 설교 것이다).
     // ⚠️ 카테고리는 설교 하나가 아니라 **예배 종류**라서 한 묶음에 영상이 여럿
@@ -44349,11 +44364,26 @@ function _swSermons(sortIdx){
     if(d>o.d){o.d=d;o.yt=v.yt?String(v.yt):'';}
     else if(d===o.d&&!o.yt&&v.yt)o.yt=String(v.yt);
   });
+  // 그날 그 설교의 말씀 수 — 누르면 열리는 목록과 **같은 수**라야 한다
+  g.forEach(o=>{o.n=_swSermonVerses(o.cat,o.d,pool).length;});
   const a=[...g.values()];
   if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
   else if(sortIdx===2)a.sort((x,y)=>x.cat.localeCompare(y.cat,'ko'));
   else a.sort((x,y)=>y.d.localeCompare(x.d)||y.n-x.n);
   return a;
+}
+// 그날 그 설교의 말씀과 명제 — 예배 종류(cat)와 날짜(d)가 **둘 다** 맞는 것만.
+// 같은 명제가 켜진 모음 둘에 들어 있으면(내 모음 + 구독) 한 번만 담는다.
+function _swSermonVerses(cat,d,pool){
+  const out=[],seen=new Set();
+  (pool||_swSermonPool()).forEach(v=>{
+    if((String(v.cat||'').trim()||'나의 암송')!==cat)return;
+    if(String(v.d||'')!==String(d||''))return;
+    const key=v.pid?('p:'+v.pid):('v:'+v.ref+'|'+v.krText);
+    if(seen.has(key))return;
+    seen.add(key);out.push(v);
+  });
+  return out;
 }
 // 성경: 장절에서 책 이름을 뽑아 묶는다. '성경 순서'는 창세기→요한계시록.
 function _swBooks(sortIdx){
@@ -45888,10 +45918,9 @@ function _swVersesFor(t,cur){
   // 지금 이런 마음이라면 — 그 상황이 적힌 말씀들
   if(t.k==='need')
     return av.filter(v=>(Array.isArray(v.sit)?v.sit:[]).some(x=>String(x||'').trim()===g.name));
-  if(t.k==='recent'){
-    const c=g.cat;
-    return av.filter(v=>(String(v.cat||'').trim()||'나의 암송')===c);
-  }
+  // 최근 설교 — 타일에 적힌 **그날 그 설교**만. 말씀 모음 필터는 보지 않는다
+  // (v26-1005-3, HB). 고르는 규칙은 타일의 숫자와 한 곳(_swSermonVerses)이다.
+  if(t.k==='recent')return _swSermonVerses(g.cat,g.d);
   if(t.k==='book')return av.filter(v=>{const b=_booksOf(v);return (b.length?b:['그 밖']).includes(g.name);});
   if(t.k==='tag')
     return av.filter(v=>(v.tags||[]).some(x=>String(x||'').trim()===g.name));
@@ -45948,7 +45977,9 @@ function _swTileOpen(i){
   }
   const list=_swVersesFor(t,cur);
   if(!list.length){showToast('그 말씀들을 찾지 못했어요');return;}
-  const label=cur.v.cat||cur.v.name||_SW_TYPES[t.k].n;
+  // 최근 설교는 이름 옆에 그 날짜를 붙인다 — 어느 날 설교인지가 곧 이 목록의 뜻이다
+  const md=(t.k==='recent'&&cur.v.d)?_swMD(cur.v.d):'';
+  const label=(cur.v.cat||cur.v.name||_SW_TYPES[t.k].n)+(md?' \u00b7 '+md:'');
   _swOpenVerse(list[0],list,0,label);
 }
 
