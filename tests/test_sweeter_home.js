@@ -1620,4 +1620,49 @@ console.log('\n시나리오 32 — 주간이면 판 전체가 주간 안에서')
   LIKE={}; MEM={}; VERSES_ALL=null;
 }
 
+// ═══ 33. 요즘 우리 교회 — 기간 안에서 비율과 흐름 (v26-1005-5, HB) ═══
+console.log('\n시나리오 33 — 주간이라도 한 주치 안에서 흐름');
+{
+  // HB: "주간 설정이라도 한주치 안에서 비율 보고 하면 되지. 하루 것 비율이라도,
+  //      그리고 한주 안에 수요 금요 예배가 있으면 흐름 보면 되고."
+  APP_PRODUCT='sweeter';
+  global.getActiveColls=()=>['c1'];
+  global._getCollFilter=()=>({period:'week'});
+  global._vListRange=()=>({from:'2026-08-24',to:'2026-08-30'});
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const P=(pid,cat,d,ref,tags,topic)=>({idx:0,cat,topic:topic||(cat+d),krText:pid,ref,tags,hi:'',d,pid,kind:'prop'});
+  // ① 하루치 설교 하나 — 예전엔 '설교 날짜가 둘 이상' 이 아니면 빈 타일이었다
+  VERSES=[P('P1','주일예배','2026-08-30','마태복음 7:13',['은혜','믿음']),
+          P('P2','주일예배','2026-08-30','마태복음 7:14',['은혜']),
+          P('P3','주일예배','2026-08-30','로마서 8:1',['은혜','믿음'])];
+  const one=_swInsights(0);
+  sc.eq('하루치라도 읽는다', one.length>0, true);
+  sc.eq('예배가 하나면 흐름 카드는 없다', one.some(x=>x.axis==='flow'), false);
+  sc.eq('성경은 비율로', one.find(x=>x.axis==='book').text, "이번 주 말씀 3개 가운데 2개가 ‘마태복음’ 에서 나왔어요 (67%)");
+  sc.eq('자주 나온 말도 비율로', one.find(x=>x.axis==='tag').text.startsWith("이번 주 가장 자주 나온 말은 ‘은혜’ — 말씀 3개 가운데 3개"), true);
+  sc.eq('설교 하나뿐이면 제목을 되풀이로 말하지 않는다', one.some(x=>x.axis==='topic'), false);
+
+  // ② 수요·금요가 끼면 흐름을 말한다 (설교 차례대로, 예배마다 가장 많이 펼친 성경)
+  VERSES=[P('P4','주일예배','2026-08-30','마태복음 7:13',['은혜'],'좁은 길'),
+          P('P5','수요예배','2026-08-26','요한복음 15:1',['은혜'],'포도나무'),
+          P('P6','인카운터','2026-08-28','요한복음 15:5',['기도'],'포도나무'),
+          P('P7','주일예배','2026-08-30','마태복음 7:14',['믿음'],'좁은 길')];
+  const many=_swInsights(0);
+  sc.eq('흐름 카드가 맨 앞', many[0].axis, 'flow');
+  sc.eq('흐름은 설교 차례대로', many[0].text,
+        '이번 주 흐름 — 8/26 수요예배 요한복음 → 8/28 인카운터 요한복음 → 8/30 주일예배 마태복음');
+  // 마태복음·요한복음 둘 다 말씀 2개지만, 요한복음은 **예배 둘**(수요·인카운터)이 펼쳤다
+  sc.eq('성경은 예배 몇 번 가운데', many.find(x=>x.axis==='book').text, "이번 주 설교 3번 가운데 2번이 ‘요한복음’ 을 펼쳤어요");
+  sc.eq('예배를 넘어 이어진 설교', many.find(x=>x.axis==='topic').text, "‘포도나무’ 설교가 예배 2번에 걸쳐 이어졌어요");
+  sc.eq('흐름 카드를 열면 그 주 말씀 전부를 설교 차례대로',
+        _swVersesFor({k:'insight',s:0},{v:many[0]}).map(v=>v.pid), ['P5','P6','P4','P7']);
+  sc.eq('두 칩이 같은 기간을 본다', _swInsights(1).map(x=>x.text), many.map(x=>x.text));
+
+  // ③ 기간을 안 걸었으면 예전 그대로 (설교 날짜가 둘 이상이어야 읽는다)
+  global._getCollFilter=()=>({period:'all'});
+  VERSES=[P('P1','주일예배','2026-08-30','마태복음 7:13',['은혜'])];
+  sc.eq('기간이 없으면 예전 규칙', _swInsights(0), []);
+  delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
+}
+
 sc.done();
