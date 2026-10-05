@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1005-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1005-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1005-4";
+const APP_VERSION = "v. 26-1005-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44607,8 +44607,18 @@ function _swCount(list,axis){
 // 최근 흐름 자르기 — 설교 **날짜 묶음**으로 센다 (말씀 수로 자르면 한 설교가
 // 명제를 많이 남긴 주에 흐름이 통째로 쏠린다).
 function _swFlow(sortIdx){
-  const av=_swPool().filter(v=>v&&String(v.d||''));
+  const w=_swWin();
+  const av=_swPool(w).filter(v=>v&&String(v.d||''));
   const days=[...new Set(av.map(v=>String(v.d)))].sort();
+  // ⚠️ 말씀 필터에 기간을 걸었으면 **그 기간 전체**가 흐름이다 (v26-1005-5, HB):
+  //    "주간 설정이라도 한 주치 안에서 비율 보고 하면 되지. 하루 것 비율이라도.
+  //     한 주 안에 수요·금요 예배가 있으면 흐름 보면 되고."
+  //    → 하루치(설교 하나)라도 읽는다. 문장은 _swInsightsWin 이 따로 만든다.
+  //    '최근 흐름'·'모두' 두 칩은 이때 같은 것을 본다 (기간이 곧 범위다).
+  if(w){
+    if(!av.length)return null;
+    return {now:av,before:[],days,cut:days[0],all:false,win:w};
+  }
   if(av.length<3||days.length<2)return null;
   // ⚠️⚠️ '최근 흐름' 은 **설교 여덟 번**이다 (v26-0922-18, HB).
   //    예전에는 넷이었는데, 주일·수요·라이프라인이 다른 날짜로 세어지므로
@@ -44631,7 +44641,8 @@ function _swMyWeight(list,axis){
   const m=new Map();
   list.forEach(v=>{
     const key=(typeof _reactKey==='function')?_reactKey(v):v.ref;
-    if(!touch.has(key)&&!touch.has(v.ref))return;
+    // 명제는 장절로 남의 기록을 빌리지 않는다 (_swWhyOf 와 같은 규칙, v26-1005-4)
+    if(!touch.has(key)&&(v.pid||!touch.has(v.ref)))return;
     _swAxisKeys(v,axis).forEach(k=>m.set(k,(m.get(k)||0)+1));
   });
   return [...m.entries()].map(([k,n])=>({k,n})).sort((a,b)=>b.n-a.n);
@@ -44642,9 +44653,69 @@ function _swMD(d){
   const m=String(d||'').match(/^\d{4}-(\d{2})-(\d{2})$/);
   return m?(+m[1])+'월 '+(+m[2])+'일':'';
 }
+// ── 기간 안의 흐름 (v26-1005-5, HB) ─────────────────────────────
+// 예배 하나 = **날짜 + 예배 종류**. 10/4 처럼 하루에 주일·성찬·라이프라인이 있으면 셋이다.
+function _swSvcKey(v){return String(v.d||'')+'|'+(String(v.cat||'').trim()||'설교');}
+function _swInsightsWin(f){
+  const out=[],now=f.now,N=now.length,W=f.win.word;
+  const push=(axis,key,text)=>{if(key&&text)out.push({axis,key,name:key,text});};
+  const svc=new Map();
+  now.forEach(v=>{const k=_swSvcKey(v);if(!svc.has(k))svc.set(k,[]);svc.get(k).push(v);});
+  const svcs=[...svc.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const S=svcs.length;
+  const md=d=>{const m=/^\d{4}-(\d{2})-(\d{2})$/.exec(d);return m?(+m[1])+'/'+(+m[2]):'';};
+  // ① 흐름 — 예배가 둘 이상이면 차례대로, 예배마다 가장 많이 펼친 성경
+  if(S>=2){
+    const steps=svcs.map(([k,vs])=>{
+      const i=k.indexOf('|'),b=_swCount(vs,'book')[0];
+      return md(k.slice(0,i))+' '+k.slice(i+1)+(b?' '+b.k:'');
+    });
+    push('flow',W+' 흐름',W+' 흐름 \u2014 '+steps.join(' \u2192 '));
+  }
+  // ② 가장 많이 펼친 성경 — 예배가 여럿이면 '몇 번 가운데 몇 번', 하나면 말씀 수의 비율
+  //    ⚠️ 예배가 여럿이면 **몇 번의 예배가 펼쳤나**로 고른다 — 말씀 수로 고르면
+  //       명제를 많이 남긴 설교 하나가 이긴다.
+  const bk=_swCount(now,'book');
+  if(bk.length){
+    const hits=new Map();
+    svcs.forEach(([,vs])=>{
+      const set=new Set();vs.forEach(v=>_swAxisKeys(v,'book').forEach(b=>set.add(b)));
+      set.forEach(b=>hits.set(b,(hits.get(b)||0)+1));
+    });
+    const nOf=new Map(bk.map(x=>[x.k,x.n]));
+    const byHit=[...hits.entries()].sort((a,b)=>b[1]-a[1]||(nOf.get(b[0])||0)-(nOf.get(a[0])||0)||a[0].localeCompare(b[0],'ko'));
+    const multi=S>=2&&byHit.length&&byHit[0][1]>1;
+    const top=multi?byHit[0][0]:bk[0].k,hit=multi?byHit[0][1]:0;
+    push('book',top,multi
+      ?W+' 설교 '+S+'번 가운데 '+hit+'번이 \u2018'+top+'\u2019 을 펼쳤어요'
+      :W+' 말씀 '+N+'개 가운데 '+bk[0].n+'개가 \u2018'+top+'\u2019 에서 나왔어요 ('+Math.round(bk[0].n*100/N)+'%)');
+  }
+  // ③ 예배를 넘어 이어진 설교 — 같은 설교 제목이 둘 이상의 예배에 걸릴 때만
+  //    (예배 하나뿐이면 그 설교 제목일 뿐이라 '되풀이' 가 아니다)
+  if(S>=2){
+    const tm=new Map();
+    svcs.forEach(([,vs])=>{
+      const set=new Set();vs.forEach(v=>_swAxisKeys(v,'topic').forEach(t=>set.add(t)));
+      set.forEach(t=>tm.set(t,(tm.get(t)||0)+1));
+    });
+    const t=[...tm.entries()].sort((a,b)=>b[1]-a[1])[0];
+    if(t&&t[1]>1)push('topic',t[0],'\u2018'+t[0]+'\u2019 설교가 예배 '+t[1]+'번에 걸쳐 이어졌어요');
+  }
+  // ④ 가장 자주 나온 말 — 비율로
+  const tg=_swCount(now,'tag').filter(x=>x.n>1);
+  if(tg.length)
+    push('tag',tg[0].k,W+' 가장 자주 나온 말은 \u2018'+tg[0].k+'\u2019 \u2014 말씀 '+N+'개 가운데 '+tg[0].n+'개'
+      +(tg.length>1?' \u00b7 그다음 '+tg.slice(1,3).map(x=>'\u2018'+x.k+'\u2019').join(' \u00b7 '):''));
+  // ⑤ 그 안에서 내가 머문 자리 (_swLastTouch 가 이미 기간 안의 흔적만 센다)
+  const mine=_swMyWeight(now,'tag');
+  if(mine.length)
+    push('tag',mine[0].k,W+' 당신이 가장 많이 머문 곳은 \u2018'+mine[0].k+'\u2019 \u2014 그 줄기를 더 따라가 보세요');
+  return out;
+}
 function _swInsights(sortIdx){
   const f=_swFlow(sortIdx);
   if(!f)return [];
+  if(f.win)return _swInsightsWin(f);
   const out=[],N=f.now.length,sermons=f.days.length;
   const push=(axis,key,text)=>{if(key&&text)out.push({axis,key,name:key,text});};
   // ① 지금 머물러 있는 성경
@@ -44712,6 +44783,9 @@ function _swInsights(sortIdx){
 function _swVersesForInsight(g,sortIdx){
   const f=_swFlow(sortIdx);
   const pool=f?f.now:_swPool();
+  // 흐름 카드 — 그 기간의 말씀 전부를 **설교 차례대로** (v26-1005-5)
+  if(g.axis==='flow')
+    return pool.map((v,i)=>[v,i]).sort((a,b)=>String(a[0].d).localeCompare(String(b[0].d))||a[1]-b[1]).map(x=>x[0]);
   return pool.filter(v=>_swAxisKeys(v,g.axis).includes(g.key));
 }
 
