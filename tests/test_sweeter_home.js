@@ -26,6 +26,9 @@ function getShareLog(){return SHARE;}
 
 let VERSES=[];
 function ACTIVE_VERSES(){return VERSES;}
+// 켜진 모음 전부 (필터 없이). 따로 주지 않으면 필터가 아무것도 안 거른 것으로 본다.
+let VERSES_ALL=null;
+function ACTIVE_VERSES_ALL(){return VERSES_ALL||VERSES;}
 let ST={settings:{}};
 let SAVED=0;
 function save(){SAVED++;}
@@ -441,7 +444,7 @@ console.log('\n시나리오 11 — 어떤 타일을 눌러도 말씀이 열린�
   MEM={}; DEEP={}; EVEN={}; SHARE={};
 
   const at=(k,v)=>_swVersesFor({k},{v});
-  sc.eq('설교로 고른다', at('recent',{cat:'언덕 위의 도시'}).length, 2);
+  sc.eq('설교로 고른다 (그날 그 설교)', at('recent',{cat:'언덕 위의 도시',d:'2026-06-21'}).length, 2);
   sc.eq('성경으로 고른다', at('book',{name:'마태복음'}).length, 2);
   sc.eq('그 밖의 책', at('book',{name:'시편'}).map(v=>v.ref), ['시편 119:105']);
   sc.eq('태그로 고른다', at('tag',{name:'소금과 빛'}).length, 2);
@@ -1470,6 +1473,79 @@ console.log('\n시나리오 30 — 첫 그림 고정색 · 진짜로 차오르�
   sc.eq('개발본이면 _dev 를 붙인다',
     SRC_DEV.includes("+ (/-dev\\.html$/.test(location.pathname)?'_dev':'');"), true);
   sc.eq("'b7v1' 을 그냥 읽지 않는다", SRC_DEV.includes("localStorage.getItem('b7v1');"), false);
+}
+
+// ═══ 31. 말씀 모음 필터 — 타일마다 따르는가 · 최근 설교만은 그날 그 설교 (v26-1005-3, HB) ═══
+console.log('\n시나리오 31 — 모음 필터와 최근 설교');
+{
+  // HB 신고 — "주간으로 골랐는데 최근 설교에서 주일예배를 누르면 이번 주가 아니라
+  //   옛날 주일예배부터 나온다." 그리고 "최근 설교 타일만은 필터와 상관없이
+  //   타일에 적힌 그날 그 설교의 말씀과 명제만" 보여 달라.
+  // 실제 시트(BLOCK7 설교 명제 DB)는 **옛날 → 최신** 차례다. 그래서 예배 종류로만
+  // 고른 목록은 언제나 6/21 부터 열렸다.
+  APP_PRODUCT='sweeter';
+  const P=(pid,cat,d,ref,tag)=>({idx:0,cat,topic:cat+' '+d,krText:pid+' 명제',ref,tags:tag?[tag]:[],
+                           hi:'',d,pid,kind:'prop',sit:['불안할 때'],q:pid+' 물음'});
+  const all=[
+    P('P0001','주일예배','2026-06-21','마태복음 5:13','빛'),
+    P('P0002','주일예배','2026-06-21','마태복음 5:14','빛'),
+    P('P0400','주일예배','2026-09-27','로마서 8:1','은혜'),
+    P('P0440','라이프라인','2026-10-04','사무엘상 21:1','은혜'),
+    P('P0441','주일예배','2026-10-04','마태복음 7:13','좁은 길'),
+    P('P0442','주일예배','2026-10-04','마태복음 7:14','좁은 길'),
+    P('P0443','주일예배','2026-10-04','마태복음 7:14','좁은 길')
+  ];
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+
+  // ① 필터 없음 — 최근 설교는 그 예배의 **가장 최근 날짜** 것만 센다
+  VERSES=all; VERSES_ALL=null;
+  const s0=_swSermons(0);
+  const sun=s0.find(x=>x.cat==='주일예배');
+  sc.eq('주일예배 타일은 10/4', sun.d, '2026-10-04');
+  sc.eq('숫자는 그날 그 설교의 말씀 수 (옛날 것까지 합치지 않는다)', sun.n, 3);
+  const opened=_swVersesFor({k:'recent'},{v:sun}).map(v=>v.pid);
+  sc.eq('누르면 그날 그 설교만 열린다', opened, ['P0441','P0442','P0443']);
+  sc.eq('숫자와 열린 수가 같다', opened.length, sun.n);
+  sc.eq('라이프라인은 섞이지 않는다', opened.includes('P0440'), false);
+
+  // ② 같은 명제가 켜진 모음 둘에 있으면(내 모음 + 구독) 한 번만
+  VERSES=all.concat([Object.assign({},all[5],{_code:'ABC123'})]);
+  sc.eq('겹친 명제는 한 번만', _swVersesFor({k:'recent'},{v:_swSermons(0)[0]}).length, 3);
+
+  // ③ 필터가 걸려 있어도 최근 설교는 **필터와 상관없이** 타일의 그날 그 설교
+  //    (예: 대분류 필터로 라이프라인만 켜 둔 경우 — 거른 목록에는 주일예배가 없다)
+  VERSES_ALL=all;
+  VERSES=all.filter(v=>v.cat==='라이프라인');
+  const s1=_swSermons(0);
+  sc.eq('필터에 걸린 예배도 최근 설교에는 나온다', s1.map(x=>x.cat).sort(), ['라이프라인','주일예배']);
+  sc.eq('그 숫자도 그날 것', s1.find(x=>x.cat==='주일예배').n, 3);
+  sc.eq('열면 그날 그 설교',
+        _swVersesFor({k:'recent'},{v:s1.find(x=>x.cat==='주일예배')}).map(v=>v.pid), ['P0441','P0442','P0443']);
+
+  // ④ 나머지 타일은 **말씀 모음 필터를 그대로 따른다** (거른 목록 = ACTIVE_VERSES)
+  //    '주간'(10/4~)으로 거른 것을 흉내 낸다 — 거른 목록에는 10/4 것만 있다.
+  VERSES_ALL=all;
+  VERSES=all.filter(v=>v.d>='2026-10-04');
+  sc.eq('성경 타일은 거른 것만', _swBooks(0).map(x=>x.name).sort(), ['마태복음','사무엘상']);
+  sc.eq('태그 타일은 거른 것만', _swTags(0).map(x=>x.name).sort(), ['은혜','좁은 길']);
+  sc.eq('태그를 열어도 거른 것만',
+        _swVersesFor({k:'tag'},{v:{name:'은혜'}}).map(v=>v.pid), ['P0440']);
+  sc.eq('성경을 열어도 거른 것만',
+        _swVersesFor({k:'book'},{v:{name:'마태복음'}}).map(v=>v.pid), ['P0441','P0442','P0443']);
+  sc.eq('마음 타일도 거른 것만',
+        _swVersesFor({k:'need'},{v:{name:'불안할 때'}}).length, 4);
+  sc.eq('묵상 질문도 거른 것만', _swAsks(1).every(x=>x.verse.d>='2026-10-04'), true);
+  sc.eq('오늘의 말씀도 거른 것만', _swToday(0).every(x=>x.verse.d>='2026-10-04'), true);
+
+  // ⑤ 열 때 머리의 이름에 날짜가 붙는다 — 어느 날 설교인지가 곧 이 목록의 뜻이다
+  sc.eq('이름에 날짜를 붙인다',
+        SRC_DEV.includes("const md=(t.k==='recent'&&cur.v.d)?_swMD(cur.v.d):'';"), true);
+  // ⚠️ 필터를 안 보는 길(ACTIVE_VERSES_ALL)은 **최근 설교 한 곳**에서만 쓴다.
+  //    다른 타일이 이것을 쓰면 말씀 모음 설정의 필터가 조용히 무시된다.
+  const sw=SRC_DEV.slice(SRC_DEV.indexOf('function _swOn(){'),SRC_DEV.indexOf('// ── DEV MODE BOOTSTRAP ──'));
+  sc.eq('Sweeter 에서 필터 없는 길은 한 곳', (sw.match(/ACTIVE_VERSES_ALL\(\)/g)||[]).length, 1);
+  sc.eq('그 한 곳은 최근 설교', /function _swSermonPool\(\)\{return ACTIVE_VERSES_ALL\(\)/.test(sw), true);
+  VERSES_ALL=null;
 }
 
 sc.done();

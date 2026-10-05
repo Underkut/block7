@@ -18,7 +18,7 @@ const sc = makeScorer();
 function z(n){return String(n).padStart(2,'0');}
 eval(slice('function _parseVDate(', 'function _looksLikeRef(').replace(/^const /gm,'var '));
 eval(slice('// ══ 명제집(설교 명제 DB) 시트 읽기', 'function _rowsToItems'));
-eval(slice('function _swSermons(', '// 성경: 장절에서'));
+eval(slice('function _swSermonPool(', '// 성경: 장절에서'));
 
 // 실제 '설교 목록' 탭의 열 이름 (2026-09-22 시트 그대로)
 const SHEAD=['날짜','카테고리','설교 제목','설교자','영상 링크','영상 시각','주요 본문',
@@ -111,7 +111,7 @@ console.log('\n시나리오 5 — 설교 타일의 썸네일은 최신 것');
   // ⚠️ 카테고리는 설교 하나가 아니라 **예배 종류**다('주일예배'). 그래서 한 묶음에
   //    영상이 여럿 들어온다. 타일에 적히는 날짜는 **가장 최근**이므로
   //    썸네일도 그 날짜 것이라야 짝이 맞는다.
-  global.ACTIVE_VERSES=()=>[
+  global.ACTIVE_VERSES_ALL=()=>[
     {cat:'주일예배',d:'2026-09-07',yt:'old11111111'},
     {cat:'주일예배',d:'2026-09-21',yt:'new22222222'},
     {cat:'주일예배',d:'2026-09-14',yt:'mid33333333'}];
@@ -121,7 +121,7 @@ console.log('\n시나리오 5 — 설교 타일의 썸네일은 최신 것');
   sc.eq('썸네일도 그 날짜 것',a[0].yt,'new22222222');
   // ⚠️ v26-1005-2, HB — 가장 최근 설교에 영상이 없으면 **썸네일을 비운다** (칸은 숫자).
   //    예전엔 영상이 있는 옛 설교의 사진을 골라, 날짜(10/4)와 사진(옛 설교)이 어긋났다.
-  global.ACTIVE_VERSES=()=>[
+  global.ACTIVE_VERSES_ALL=()=>[
     {cat:'성찬예식',d:'2026-09-06',yt:'old11111111'},
     {cat:'성찬예식',d:'2026-10-04'},
     {cat:'성찬예식',d:'2026-10-04'}];
@@ -129,7 +129,7 @@ console.log('\n시나리오 5 — 설교 타일의 썸네일은 최신 것');
   sc.eq('날짜는 가장 최근',b[0].d,'2026-10-04');
   sc.eq('그날 영상이 없으면 썸네일 없음 (옛 사진을 쓰지 않는다)',b[0].yt,'');
   // 그날 명제 하나에만 영상이 적혀 있어도 그 설교 것이다 (차례와 상관없이)
-  global.ACTIVE_VERSES=()=>[
+  global.ACTIVE_VERSES_ALL=()=>[
     {cat:'주일예배',d:'2026-10-04'},
     {cat:'주일예배',d:'2026-09-27',yt:'old11111111'},
     {cat:'주일예배',d:'2026-10-04',yt:'new22222222'}];
@@ -238,7 +238,7 @@ console.log("\n시나리오 7 — 설교 목록이 먼저 연결돼 있어도 �
   sc.eq('10/4 주일예배',[ytOf(c,'P0011'),ytOf(c,'P0012')],['Zdu80ci9E7Q','Zdu80ci9E7Q']);
   // 같은 날 설교가 셋이라 날짜만으로는 못 찾는다 — 카테고리가 '라이프라인 예배' 로 달라도
   sc.eq("10/4 라이프라인 ('라이프라인 예배' 표기)",ytOf(c,'P0013'),'hFJ3pqd2xbo');
-  global.ACTIVE_VERSES=()=>c.verses;
+  global.ACTIVE_VERSES_ALL=()=>c.verses;
   const by={};_swSermons(0).forEach(x=>{by[_sermonCatNorm(x.cat)]=x;});
   sc.eq('타일: 주일예배는 10/4 영상',by['주일예배'].yt,'Zdu80ci9E7Q');
   sc.eq('타일: 수요예배는 9/30 영상',by['수요예배'].yt,'0PxJfeQzVgI');
