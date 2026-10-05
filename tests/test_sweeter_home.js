@@ -1548,4 +1548,76 @@ console.log('\n시나리오 31 — 모음 필터와 최근 설교');
   VERSES_ALL=null;
 }
 
+// ═══ 32. 말씀 필터의 기간을 판 전체에 (v26-1005-4, HB) ═══
+console.log('\n시나리오 32 — 주간이면 판 전체가 주간 안에서');
+{
+  // HB: "말씀 필터를 주간으로 설정했으면 오늘의 말씀 타일에서도 '2주 전에 좋아요
+  //      했어요', '한 달 전에 …' 같은 것이 안 보여야지. 주간 안에서 보여줘야지."
+  // 오늘은 2026-08-30(일) — '주간' = 8/24~8/30 으로 흉내 낸다.
+  APP_PRODUCT='sweeter';
+  global.getActiveColls=()=>['c1'];
+  let PERIOD='week';
+  global._getCollFilter=()=>({period:PERIOD});
+  global._vListRange=p=>p.period==='all'?null:{from:'2026-08-24',to:'2026-08-30'};
+  const P=(pid,d,ref,extra)=>Object.assign({idx:0,cat:'주일예배',topic:'',krText:pid+' 명제',ref,tags:['은혜'],
+                                hi:'',d,pid,kind:'prop',sit:['불안할 때'],q:pid+' 물음'},extra||{});
+  const NAV=(ref)=>({idx:0,cat:'A 새로운 삶',topic:'',krText:ref+' 본문',ref,tags:['은혜'],hi:'',d:'',pid:'',kind:''});
+  // 거른 목록(ACTIVE_VERSES) — 모음 필터가 이미 걸린 모양: 주간 명제 둘 + **날짜 없는 암송 말씀**
+  VERSES=[P('P0900','2026-08-30','마태복음 7:13'),P('P0901','2026-08-30','마태복음 7:14'),
+          NAV('고후 5:17'),NAV('갈 2:20')];
+  VERSES_ALL=VERSES.concat([P('P0100','2026-06-21','마태복음 7:13')]);
+  const K=pid=>'P\u0001\u0001'+pid;   // 명제의 반응 키 (_reactKey 모양)
+  global._reactKey=v=>v.pid?K(v.pid):v.ref;
+  // 진짜 _findVerseByRefLoose 처럼 명제 반응 키로도 찾게 한다 (이 시나리오 안에서만)
+  const _findOld=_findVerseByRefLoose;
+  _findVerseByRefLoose=r=>VERSES.find(v=>(v.pid&&K(v.pid)===r)||v.ref===r)||null;
+  LIKE={'2026-08-16':[{ref:'고후 5:17',time:'09:00'},{ref:'마태복음 7:13',time:'09:00'}],   // 2주 전
+        '2026-08-29':[{ref:K('P0901'),time:'21:00'}]};                                    // 어제
+  MEM ={'2026-07-30':{am:[{ref:'갈 2:20',time:'07:00'}]}};                               // 한 달 전
+  DEEP={}; EVEN={}; SHARE={};
+
+  const w=_swWin();
+  sc.eq('기간을 읽는다', [w.from,w.to,w.word], ['2026-08-24','2026-08-30','이번 주']);
+
+  // ① 오늘의 말씀 — 날짜 없는 말씀(옛 암송 기록이 붙은 것)은 주간에 안 나온다
+  const today=_swToday(0);
+  sc.eq('오늘의 말씀은 주간 안의 것만', today.map(x=>x.verse.pid).sort(), ['P0900','P0901']);
+  const why=today.map(x=>x.why).join(' / ');
+  sc.eq('"2주 전 좋아요" 가 없다', /2주 전|달 전/.test(why), false);
+  sc.eq('주간 안의 기록은 말한다', today.find(x=>x.verse.pid==='P0901').why, '어제 좋아요 했어요');
+  // ⚠️ 명제는 장절로 **남의 기록**을 빌리지 않는다 — 8/16 의 '마태복음 7:13' 좋아요는
+  //    이 명제(P0900)의 것이 아니다 (같은 본문의 다른 설교·말씀일 수 있다)
+  sc.eq('남의 기록을 빌리지 않는다', today.find(x=>x.verse.pid==='P0900').why, '이번 주 설교 말씀이에요');
+
+  // ② 기록 타일 — 주간 안에 남긴 것만
+  sc.eq('이어서 볼 말씀도 주간 안의 기록만', _swLastVerses(0).map(x=>x.when), ['2026-08-29']);
+  sc.eq('말씀 반응도 주간 안의 수', _swReacts(0).map(x=>x.name+x.n), ['좋아요1']);
+  sc.eq('반응을 열어도 주간 안의 것', _swVersesFor({k:'react'},{v:{kind:'like'}}).map(v=>v.pid), ['P0901']);
+  sc.eq('나의 리듬도 주간 안', _swRhythmGrid(0).n, 1);
+
+  // ③ 말씀 타일 — 성경·태그·마음·물음도 주간 안의 말씀만
+  sc.eq('성경 타일', _swBooks(0).map(x=>x.name), ['마태복음']);
+  sc.eq('태그 수도 주간 안', _swTags(0)[0].n, 2);
+  sc.eq('마음 타일', _swNeeds(0)[0].n, 2);
+  sc.eq('묵상 질문', _swAsks(0).length, 2);
+  sc.eq('태그를 열어도 주간 안', _swVersesFor({k:'tag'},{v:{name:'은혜'}}).map(v=>v.pid), ['P0900','P0901']);
+
+  // ④ 최근 설교만은 기간과 상관없이 그날 그 설교 (v26-1005-3)
+  sc.eq('최근 설교는 기간을 안 본다', _swSermons(0)[0].d, '2026-08-30');
+
+  // ⑤ 비었을 때 까닭 — 기간 때문이라고 말한다
+  sc.eq('빈 타일은 기간을 말한다', _swEmptyText('keep').startsWith('이번 주 안에는'), true);
+  sc.eq('최근 설교는 예전 안내', _swEmptyText('recent'), _SW_TYPES.recent.empty);
+
+  // ⑥ 기간이 '전체' 면 예전 그대로 — 날짜 없는 말씀도, 옛 기록도 나온다
+  PERIOD='all';
+  sc.eq('전체면 기간이 없다', _swWin(), null);
+  sc.eq('전체면 날짜 없는 말씀도', _swToday(0).length, 3);
+  sc.eq('전체면 옛 기록도', _swLastVerses(0).length, 4);
+
+  delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange; delete global._reactKey;
+  _findVerseByRefLoose=_findOld;
+  LIKE={}; MEM={}; VERSES_ALL=null;
+}
+
 sc.done();

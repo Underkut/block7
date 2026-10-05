@@ -25,6 +25,8 @@ const WORLD = {};
 function _findVerseByRefLoose(ref){ return WORLD[ref] || null; }
 function _keepRepaintLists(){}   // 화면 다시 그리기는 이 시험의 관심사가 아니다
 eval(asVar(sliceDev('function getKeepLog(', 'function _swRepaintKeepTiles(')));
+// 판의 기간 도구 (v26-1005-4) — 켜진 모음이 없으면 기간도 없다(null) → 전부 보인다
+eval(asVar(sliceDev('const _SW_WIN_WORD=', 'function _swEmptyText(')));
 
 const R1 = '요한복음 3:16';
 const R2 = '로마서 8:28';
