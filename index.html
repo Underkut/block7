@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1005-1  [production]  -->
+<!-- BLOCK7  v. 26-1005-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1005-1";
+const APP_VERSION = "v. 26-1005-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44335,14 +44335,19 @@ function _swSermons(sortIdx){
   const g=new Map();
   (ACTIVE_VERSES()||[]).forEach(v=>{
     const k=String(v.cat||'').trim()||'나의 암송';
-    if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:'',ytd:''});
+    if(!g.has(k))g.set(k,{cat:k,n:0,d:'',yt:''});
     const o=g.get(k);o.n++;
-    const d=String(v.d||'');if(d>o.d)o.d=d;
+    const d=String(v.d||'');
     // 그 설교의 유튜브 영상 (한 명제에만 적혀 있어도 그 설교 것이다).
     // ⚠️ 카테고리는 설교 하나가 아니라 **예배 종류**라서 한 묶음에 영상이 여럿
     //    들어온다. 타일에 적히는 날짜는 가장 최근이므로 **썸네일도 그 날짜 것**
     //    이라야 짝이 맞는다 (v26-0922-8). 예전엔 먼저 만난 것을 그냥 썼다.
-    if(v.yt&&(!o.yt||d>=o.ytd)){o.yt=String(v.yt);o.ytd=d;}
+    // ⚠️⚠️ v26-1005-2, HB — 그 날짜 설교에 영상이 **없으면 썸네일을 비운다**
+    //    (칸은 큰 숫자를 보여 준다). 예전엔 "영상이 있는 것 중 가장 최근" 을 골라서,
+    //    10/4 성찬예식처럼 새 설교에 영상이 없으면 날짜는 10/4 인데 사진은 옛 설교
+    //    것이 떴다 — 날짜와 사진이 짝이 안 맞아 고장처럼 보였다.
+    if(d>o.d){o.d=d;o.yt=v.yt?String(v.yt):'';}
+    else if(d===o.d&&!o.yt&&v.yt)o.yt=String(v.yt);
   });
   const a=[...g.values()];
   if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
