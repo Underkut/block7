@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1004-1  [production]  -->
+<!-- BLOCK7  v. 26-1005-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1004-1";
+const APP_VERSION = "v. 26-1005-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -10534,7 +10534,9 @@ function _propRowsToItems(rows){
   // 교역자가 그 주(週)의 사진을 직접 넣는 자리다. 이름은 셋 다 받는다.
   const iImg=colX('사진 링크','이미지 링크','사진');
   // 유튜브 영상 링크 (v26-0922-6, HB) — '설교 목록' 탭에 있는 그 열이다.
-  // 명제 DB 에 같은 이름의 열을 만들어 두면(VLOOKUP) 설교 타일에 썸네일이 뜬다.
+  // ⚠️ HB 의 실제 명제 DB 에는 **이 열이 없다** (2026-10-05 시트를 열어 확인).
+  //    영상은 '설교 목록' 탭을 그대로 연결해 얹는다(_applySermonListSheet).
+  //    명제 시트에 이 열을 따로 만든 사람을 위해 읽기만 남겨 둔다.
   const iYt=colX('영상 링크','유튜브','영상');
   // ⚠️ HB 정정 (26-0831): 전체화면에 쓸 성경은 **F열 '설교 본문'** 이다.
   //    예전에 읽던 H열은 이름이 '인용 본문' 으로 바뀌었는데, 그것은 설교 본문에
@@ -10605,9 +10607,10 @@ function _propRowsToItems(rows){
   return items;
 }
 // ── '설교 목록' 탭을 그대로 연결하기 (v26-0922-8, HB) ────────────────
-// 유튜브 썸네일에 쓸 **영상 링크**는 '설교 목록' 탭에만 있다. 명제 DB 에
-// VLOOKUP 열을 만들어 끌어오는 길도 있지만, HB 가 묵상 질문에서 겪었듯이
-// 수식이 빈칸만 뱉는 일이 잦다 → 탭을 **그대로 연결**할 수 있게 한다.
+// 유튜브 썸네일에 쓸 **영상 링크**는 '설교 목록' 탭에만 있다. 처음엔 명제 DB 에
+// VLOOKUP 열을 만들자고 제안했지만, HB 가 묵상 질문에서 겪었듯이 수식이 빈칸만
+// 뱉는 일이 잦아 **쓰지 않기로 했다** → 탭을 **그대로 연결**한다. HB 의 명제 DB 에는
+// 영상 링크 열이 없다 (2026-10-05 시트를 열어 확인 — docs/명제집.md '실제 시트 모양').
 //
 // ⚠️⚠️ '설교 목록' 탭에는 **'명제 ID' 열이 없다.** 알아보지 못하면 _isPropSheet
 //    가 false 를 주어 **평범한 말씀 시트**로 읽히고, 설교 400줄이 엉뚱한 말씀으로
@@ -10638,15 +10641,24 @@ function _sermonListMap(rows){
   const h=(rows&&rows[0]||[]).map(c=>String(c||'').trim());
   const at=(...names)=>{for(const x of names){const i=h.indexOf(x);if(i>=0)return i;}return -1;};
   const iD=at('날짜'),iCat=at('카테고리'),iYt=at('영상 링크','유튜브','영상');
-  const m=Object.create(null),day=Object.create(null);
-  const out={map:m,day,n:0};
+  const iTitle=at('설교 제목');
+  const m=Object.create(null),day=Object.create(null),miss=[];
+  const out={map:m,day,miss,n:0};
   if(iD<0||iYt<0)return out;
   const byD=Object.create(null);
   for(let i=1;i<rows.length;i++){
     const r=rows[i]||[];
     const d=_parseVDate(r[iD]);if(!d)continue;
-    const yt=_propYt(r[iYt]);if(!yt)continue;
+    const yt=_propYt(r[iYt]);
     const cat=iCat>=0?String(r[iCat]==null?'':r[iCat]).trim():'';
+    // 영상이 없는 설교도 적어 둔다 — 동기화 결과에 "영상 링크 없음" 으로 알린다
+    // (v26-1005-1). 칸에 적힌 글('유튜브 미업로드')도 그대로 가져가 보여 준다.
+    if(!yt){
+      miss.push({d,c:_sermonCatNorm(cat),cat,
+        title:iTitle>=0?String(r[iTitle]==null?'':r[iTitle]).trim():'',
+        note:String(r[iYt]==null?'':r[iYt]).trim().slice(0,30)});
+      continue;
+    }
     if(cat){m[d+'|'+cat]=yt;m[d+'|~'+_sermonCatNorm(cat)]=yt;}
     (day[d]||(day[d]=[])).push({c:_sermonCatNorm(cat),yt});
     out.n++;
@@ -10684,19 +10696,57 @@ function _applySermonListSheet(coll,rows){
   });
   // 결과 모양은 _syncSheetVersesIntoColl 과 맞춘다 (부르는 쪽이 같은 칸을 읽는다)
   return{sermonList:true,sermons:g.n,updated,
-         added:0,restored:0,removed:0,blocked:0,byCat,addedKeys:[],touched};
+         added:0,restored:0,removed:0,blocked:0,byCat,addedKeys:[],touched,
+         noVideo:_sermonNoVideo(coll,g)};
+}
+// ── 영상이 없는 설교 (v26-1005-1, HB) ──────────────────────────────
+// HB: "썸네일 오류는 유튜브 링크가 없어서 그런 거였어. 동기화 후 메시지에서 알려 줘."
+// 명제가 들어와 있는데 영상이 안 붙은 설교를 **설교 하나(날짜·카테고리·제목)당 한 줄**로
+// 모은다. 왜 없는지도 함께 —
+//   why:'note'   설교 목록에 있는데 영상 칸에 링크 아닌 글이 있다 ('유튜브 미업로드')
+//   why:'empty'  설교 목록에 있는데 영상 칸이 비어 있다
+//   why:'absent' 설교 목록에서 그 설교를 못 찾았다 (날짜·카테고리가 다르거나 줄이 없다)
+// ⚠️ 명제(pid)만 본다. 손으로 넣은 말씀에도 날짜가 있지만 설교가 아니다.
+// ⚠️ 새 것이 위로 — 결과 화면은 몇 줄만 보여 주므로 오늘 설교가 먼저 보여야 한다.
+function _sermonNoVideo(coll,g){
+  const grp=new Map();
+  ((coll&&coll.verses)||[]).forEach(v=>{
+    if(v.del||v.yt||!(v.pid||v.kind==='prop'))return;
+    const d=String(v.d||'');if(!d)return;
+    const cat=String(v.cat||'').trim(),title=String(v.topic||'').trim();
+    const k=d+'\u0001'+cat+'\u0001'+title;
+    if(!grp.has(k))grp.set(k,{d,cat,title,n:0});
+    grp.get(k).n++;
+  });
+  const out=[];
+  grp.forEach(o=>{
+    const kn=_sermonCatNorm(o.cat),tn=_sermonCatNorm(o.title);
+    const same=(g.miss||[]).filter(x=>x.d===o.d);
+    // 제목이 같은 줄을 먼저, 없으면 카테고리가 맞는(또는 품는) 줄
+    const hit=same.find(x=>tn&&_sermonCatNorm(x.title)===tn)
+      ||same.find(x=>x.c&&kn&&(x.c===kn||x.c.indexOf(kn)>=0||kn.indexOf(x.c)>=0));
+    o.why=hit?(hit.note?'note':'empty'):'absent';
+    o.note=hit?hit.note:'';
+    out.push(o);
+  });
+  return out.sort((a,b)=>b.d.localeCompare(a.d)||a.cat.localeCompare(b.cat,'ko'));
 }
 // ── 한 모음에 연결된 시트 여럿을 **한 번에** 반영한다 (v26-1004-1, HB 신고) ──
 // HB: "방금 동기화했는데 다시 누르면 또 '수정 116개'. 몇 번을 눌러도 똑같다."
 //     "최근 설교 썸네일이 이 기능을 처음 만든 날의 영상에서 안 바뀐다."
-// 까닭 — 한 모음에 '명제 DB' 와 '설교 목록' 이 같이 연결돼 있으면 두 탭이 같은
-//   칸(영상 링크)을 **서로 덮어썼다.** 명제 DB 의 '영상 링크' 열은 처음에 끌어온
-//   VLOOKUP 값이라 새 줄은 비어 있다. 연결 순서가 [설교 목록 → 명제 DB] 이면
-//     ① 설교 목록이 새 설교에 영상을 붙이고   (수정 N)
-//     ② 명제 DB 가 "시트엔 비어 있다" 며 지운다 (수정 N)
-//   를 **누를 때마다** 되풀이했다 → 시트가 그대로여도 늘 수정 2N개,
-//   그리고 마지막에 이긴 쪽이 명제 DB 라 새 설교는 영상이 없어 타일이
-//   **영상이 남아 있는 옛 설교(처음 만든 날 것)** 를 계속 썼다.
+// 까닭 (v26-1005-1 에 **실제 시트를 열어** 바로잡았다) —
+//   HB 의 모음에는 한 시트 파일의 세 탭이 연결돼 있다: '명제 DB' · '설교 목록' ·
+//   '성도 공유용'. 명제 DB 와 성도 공유용은 같은 명제 ID 를 갖고 **같은 칸을
+//   각자 적는다** (명제 → 본문, 상황 태그 / 상황/필요 → 상황). 그런데 두 탭의 값이
+//   **58개 명제에서 달랐다** (2026-10-05: 상황 55 · 명제 문장 3). 그래서 누를 때마다
+//     ① 명제 DB 가 58개를 제 값으로 바꾸고   (수정 58)
+//     ② 성도 공유용이 그 58개를 다시 제 값으로 (수정 58)
+//   → 시트가 그대로여도 늘 **수정 116개** (실제 시트로 돌려 옛 길 116 · 새 길 0 확인).
+//   ⚠️ 처음(v26-1004-1)에는 시트를 열어 보지 않고 "명제 DB 의 VLOOKUP 영상 열" 탓으로
+//      적었다. **틀린 짐작이었다** — 명제 DB 에는 영상 링크 열이 없고 VLOOKUP 도 안 쓴다.
+//      시트 모양은 짐작하지 말고 열어 볼 것 (docs/명제집.md '실제 시트 모양').
+//   썸네일이 옛 영상에 멈춰 보인 것은 이것과 상관없었다 — '설교 목록' 탭에 그 설교의
+//   유튜브 링크가 아직 없었다 (HB 확인). 그래서 결과 화면에 알린다 (_syncNoVideoHTML).
 // 고친 것 —
 //   ① '설교 목록' 탭은 **언제나 맨 뒤에** 반영한다 (연결 순서와 상관없이).
 //      영상은 설교 목록이 마지막으로 정한다. 같은 동기화에서 새로 들어온
@@ -10715,7 +10765,7 @@ function _syncVerseFp(v){
   return JSON.stringify(o);
 }
 function _syncCollSheets(c,list){
-  const out={added:0,restored:0,updated:0,removed:0,blocked:0,sheets:0,fails:0,groups:[]};
+  const out={added:0,restored:0,updated:0,removed:0,blocked:0,sheets:0,fails:0,groups:[],noVideo:[]};
   const before=new Map();
   ((c&&c.verses)||[]).forEach(v=>before.set(v,_syncVerseFp(v)));
   const isList=x=>_isSermonListSheet((x.rows&&x.rows[0])||[]);
@@ -10738,6 +10788,8 @@ function _syncCollSheets(c,list){
     out.groups.push({collId:c.id,coll:c.name||'말씀 모음',source:src,
       byCat:r.byCat||new Map(),blocked:r.blocked||0,addedKeys:r.addedKeys||[]});
     (r.touched||[]).forEach(v=>lastBy.set(v,gi));
+    // 영상 없는 설교 — 설교 목록이 맨 뒤라 이것이 **끝 모양**이다 (v26-1005-1)
+    if(r.noVideo)out.noVideo=r.noVideo.map(o=>Object.assign({coll:c.name||'말씀 모음'},o));
     g.lastSync=x.today||g.lastSync;out.sheets++;
   });
   // '수정' 을 다시 센다 — 동기화 전부터 있던 구절 가운데 **끝 모양이 달라진 것만**,
@@ -10970,9 +11022,11 @@ async function ceImportGoogleLink(i){
     g.lastSync=todayKey();
     save();
     _invalidateVerseCaches();_ceFillSelects();renderCeVerseList();
-    showToast(rs.updated
+    const nv=(rs.noVideo||[]).length;   // 영상 링크가 없는 설교 (v26-1005-1)
+    showToast((rs.updated
       ? `${g.name}: 설교 ${rs.sermons}편의 영상 링크를 명제 ${rs.updated}개에 붙였어요`
-      : `${g.name}: 설교 목록 ${rs.sermons}편 — 새로 붙일 영상 링크가 없어요`);
+      : `${g.name}: 설교 목록 ${rs.sermons}편 — 새로 붙일 영상 링크가 없어요`)
+      +(nv?` · 영상 링크가 없는 설교 ${nv}편`:''));
     return;
   }
   const items=_rowsToItems(rows);
@@ -11009,6 +11063,7 @@ async function verseSyncAllNow(){
   let added=0,restored=0,updated=0,removed=0,blocked=0,sheets=0,subs=0,fails=0;
   const today=todayKey();
   const groups=[]; // 모음 × 시트(또는 구독)별 내역 — 결과 화면에서 보여준다
+  const noVideo=[]; // 영상 링크가 없는 설교 (v26-1005-1) — 결과 화면 아래에 알린다
   try{
     // ⚠️⚠️ v26-0901-3, HB — "너무 오래 걸린다. 앞으로 자료는 훨씬 더 쌓일 텐데."
     //    실측해 보니 앱이 하는 일(읽기·반영·저장)은 명제 300개에 **0.03초**다.
@@ -11040,7 +11095,7 @@ async function verseSyncAllNow(){
         const r=_syncCollSheets(c,list);
         added+=r.added;restored+=r.restored;updated+=r.updated;removed+=r.removed;
         blocked+=r.blocked;fails+=r.fails;sheets+=r.sheets;
-        groups.push(...r.groups);
+        groups.push(...r.groups);noVideo.push(...r.noVideo);
       }
       // 내가 공유 중인 모음이면 시트에서 받아온 최신 내용을 게시 문서에도 올린다.
       // ⚠️ 예전엔 **모음 편집창을 닫거나 공유창을 열 때만** 게시했다. 그래서 시트에
@@ -11072,7 +11127,7 @@ async function verseSyncAllNow(){
   hideBusyToast();
   if(!sheets&&!subs){showToast('업데이트할 구글 시트나 구독이 없어요');return;}
   const src=[sheets&&`구글 시트 ${sheets}개`,subs&&`구독 ${subs}개`].filter(Boolean).join(' · ');
-  showSyncResultModal({src,added,restored,updated,removed,blocked,fails,groups});
+  showSyncResultModal({src,added,restored,updated,removed,blocked,fails,groups,noVideo});
 }
 // ── 하루 시작 시간 자동 동기화 ──
 // 하루 시작 시간(dayStartHour)에 앱이 켜져 있으면 그때, 안 켜져 있었으면
@@ -11087,6 +11142,7 @@ async function runVerseSheetAutoSync(){
   const today=todayKey();
   let changed=false,ran=0,tAdded=0,tRestored=0,tUpdated=0,tRemoved=0;
   const groups=[]; // 모음 × 시트별 내역 — 결과 화면에서 보여준다
+  const noVideo=[]; // 영상 링크가 없는 설교 (v26-1005-1)
   for(const c of colls){
     // 한 모음의 시트들은 _syncCollSheets 가 한 번에 반영한다 (v26-1004-1 — 그 주석)
     const list=[];
@@ -11103,7 +11159,7 @@ async function runVerseSheetAutoSync(){
     if(!r.sheets)continue;
     changed=true;ran+=r.sheets;
     tAdded+=r.added;tRestored+=r.restored;tUpdated+=r.updated;tRemoved+=r.removed;
-    groups.push(...r.groups);
+    groups.push(...r.groups);noVideo.push(...r.noVideo);
   }
   if(changed){
     save();
@@ -11120,7 +11176,7 @@ async function runVerseSheetAutoSync(){
   // 모음·시트에서 바뀌었는지 놓치지 않도록 전체 업데이트와 같은 화면을 쓴다.
   if(ran||subs){
     const src=[ran&&`구글 시트 ${ran}개`,subs&&`구독 ${subs}개`].filter(Boolean).join(' · ');
-    showSyncResultModal({src,added:tAdded,restored:tRestored,updated:tUpdated,removed:tRemoved,groups});
+    showSyncResultModal({src,added:tAdded,restored:tRestored,updated:tUpdated,removed:tRemoved,groups,noVideo});
   }
 }
 
@@ -40733,10 +40789,37 @@ function showSyncResultModal(r){
   if(r.fails){
     lines.push(`<div style="margin-top:10px;color:var(--tx3);font-size:12px;">(${r.fails}개는 받아오지 못했어요)</div>`);
   }
+  lines.push(_syncNoVideoHTML(r.noVideo));
   lines.push('<div id="syncIncludeBox"></div>');
   body.innerHTML=lines.join('');
   _syncIncludeInit(r);
   ov.style.display='block';md.style.display='block';
+}
+// ── 영상 링크가 없는 설교 (v26-1005-1, HB) ─────────────────────────
+// HB: "썸네일 오류는 유튜브 링크가 없어서 그런 거였어. 동기화 후 메시지에서 알려 줘."
+// '최근 설교' 타일의 썸네일은 '설교 목록' 탭의 영상 링크에서 온다. 링크가 없으면
+// 그 설교는 썸네일이 없는데, 앱은 아무 말도 안 해서 **고장으로 보였다.**
+// → 결과 화면 맨 아래에 설교 하나당 한 줄로 알린다. 무엇이 바뀌었든(바뀐 게
+//   없어도) 늘 보인다 — 시트를 고칠 일이 남아 있다는 뜻이기 때문이다.
+// ⚠️ 몇 줄만 보인다(새 것부터). 옛 '유튜브 미업로드' 설교가 화면을 덮지 않도록.
+const _SYNC_NOVID_MAX=5;
+function _syncNoVideoHTML(list){
+  const a=(list||[]);
+  if(!a.length)return '';
+  const md=d=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d||'');return m?(+m[2])+'/'+(+m[3]):(d||'');};
+  const whyTx=o=>o.why==='note'?o.note:(o.why==='empty'?'영상 칸이 비어 있어요':'설교 목록에서 못 찾았어요');
+  // 설교 제목이 길어서 한 줄에 까닭까지 두면 폰에서 제목이 잘린다 → 까닭은 아랫줄
+  const rows=a.slice(0,_SYNC_NOVID_MAX).map(o=>
+    `<div style="padding:3px 0 3px 10px;">
+      <div style="font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(md(o.d)+' '+o.cat+(o.title?' · '+o.title:''))}</div>
+      <div style="font-size:11px;color:var(--tx3);">${_escHtml(whyTx(o))}</div>
+    </div>`).join('');
+  const more=a.length>_SYNC_NOVID_MAX?`<div style="padding:2px 0 0 10px;font-size:11.5px;color:var(--tx3);">그 밖에 ${a.length-_SYNC_NOVID_MAX}편</div>`:'';
+  return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd,#3332);">
+    <div style="font-size:12px;font-weight:600;margin-bottom:2px;">영상 링크가 없는 설교 ${a.length}편</div>
+    <div style="font-size:11.5px;color:var(--tx3);margin-bottom:6px;line-height:1.5;">'설교 목록' 탭에 유튜브 링크를 넣으면 다음 동기화에 썸네일이 떠요.</div>
+    ${rows}${more}
+  </div>`;
 }
 // ── "새로 들어온 말씀을 목록에 포함시키기" (v26-0916-2, HB) ────────────
 // 동기화로 들어온 새 말씀은 필터에 골라 둔 것이 있으면 화면에 안 나온다.

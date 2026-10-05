@@ -1,9 +1,10 @@
 // '설교 목록' 탭을 말씀 모음에 그대로 연결하기 (v26-0922-8, HB).
 //
 // 왜 필요한가 —
-//   유튜브 썸네일에 쓸 '영상 링크'는 **'설교 목록' 탭**에만 있다. 예전엔 명제 DB 에
-//   VLOOKUP 열을 만들어 끌어오라고 했는데, HB 가 묵상 질문에서 이미 겪었듯이
-//   수식이 빈칸만 뱉는 일이 잦다. 그래서 탭을 **그대로 연결**할 수 있게 한다.
+//   유튜브 썸네일에 쓸 '영상 링크'는 **'설교 목록' 탭**에만 있다. 처음엔 명제 DB 에
+//   VLOOKUP 열을 만들어 끌어오자고 제안했지만, HB 가 묵상 질문에서 이미 겪었듯이
+//   수식이 빈칸만 뱉는 일이 잦아 **쓰지 않았다.** 탭을 **그대로 연결**한다.
+//   (HB 의 명제 DB 에는 영상 링크 열이 없다 — 2026-10-05 시트를 열어 확인)
 //
 // ⚠️⚠️ 그냥 연결하면 큰일 난다 — '설교 목록' 탭에는 **'명제 ID' 열이 없다.**
 //    그러면 _isPropSheet 가 false 를 주어 **평범한 말씀 시트**로 읽히고,
@@ -145,7 +146,7 @@ console.log('\n시나리오 6 — 세 갈래 모두에 갈림목이 있다');
   sc.eq('③ 에 옛 길이 없다',body('async function runVerseSheetAutoSync(').indexOf("{kind:'google'")<0,true);
 }
 
-// ── 아래 시나리오 7~9 에 쓰는 것: 명제 DB 를 실제로 반영하는 길 ──
+// ── 아래 시나리오 7~10 에 쓰는 것: 명제 DB 를 실제로 반영하는 길 ──
 global.document = global.document || { visibilityState: 'visible', addEventListener: () => {} };
 global.showToast = global.showToast || (() => {});
 eval(slice('function _looksLikeRef(', 'function _sheetRowsSane'));
@@ -153,98 +154,156 @@ eval(slice('function _rowsToItems(', '// 파일/직접용 임포트'));
 eval(slice('function _verseIdentity(', '// 구글 시트 소스마다 고정 id'));
 eval(slice('function _gSrcId(', '// srcInfo ='));
 eval(slice('function _syncSheetVersesIntoColl(', 'function addCustomVerseFromForm'));
+eval(slice('const _SYNC_NOVID_MAX=', '// ── "새로 들어온 말씀을 목록에 포함시키기"').replace(/^const /gm,'var '));
+function _escHtml(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);}
 function _bookOfRef(){return '';}
 function _bookNorm(n){return String(n||'').trim();}
 function _calKey(){return '2026-10-04';}
 
-// 명제 DB — HB 가 처음에 VLOOKUP 으로 '영상 링크' 열을 만들어 둔 모양.
-// ⚠️ 수식은 **그때 있던 줄까지만** 채워져 있다 → 새 설교(9/30·10/4) 줄은 비어 있다.
-const PHEAD=['명제 ID','날짜','카테고리','설교 제목','설교 본문','명제','상황 태그','데이터 상태','영상 링크'];
-const prow=(id,d,cat,title,yt,sit)=>{
+// ⚠️⚠️ HB 의 **실제** 시트 모양 (2026-10-05, 'BLOCK7 설교 명제 DB' 를 열어 그대로 옮김).
+//    한 파일의 세 탭 — 명제 DB · 설교 목록 · 성도 공유용 — 을 한 모음에 연결해 쓴다.
+//    ⚠️ 명제 DB 에는 **'영상 링크' 열이 없다** (VLOOKUP 도 안 쓴다). v26-1004-1 에서
+//       그렇게 짐작해 적었다가 틀렸다. 시트 모양은 짐작하지 말고 열어 볼 것.
+const PHEAD=['명제 ID','날짜','카테고리','설교 제목','설교자','설교 본문','성경권','인용 본문','명제',
+  '대표 문구 1','대표 문구 2','분류','대표 명제','핵심 주제','주제 태그','조직신학','성경신학/구속사',
+  '성경 인물·소재','상황 태그','적용 대상','관련 본문','적용송','설교 흐름 위치','한 줄 요약','원문 상태',
+  '관련 명제 ID','비고','관련 암송말씀','공개용 문구','검토 메모','데이터 상태'];
+const XHEAD=['주제','상황/필요','명제','본문','분류','묵상 질문','설교 제목','날짜','명제 ID','공개 여부',
+  '검수 상태','공개 제목','공개 해설','기도문','공유 슬러그','공개 순서'];
+sc.eq('실제 명제 DB 에는 영상 링크 열이 없다',PHEAD.some(h=>/영상|유튜브/.test(h)),false);
+sc.eq('실제 성도 공유용 탭도 명제 시트로 읽힌다',_isPropSheet(XHEAD),true);
+const prow=(id,d,cat,title,o={})=>{
   const r=new Array(PHEAD.length).fill('');
-  r[0]=id;r[1]=d;r[2]=cat;r[3]=title;r[4]='롬 5:8';r[5]='명제 '+id;r[6]=sit||'';r[7]='활성';
-  r[8]=yt?YT(yt):'';return r;
+  const put=(k,v)=>{r[PHEAD.indexOf(k)]=v;};
+  put('명제 ID',id);put('날짜',d);put('카테고리',cat);put('설교 제목',title);put('설교 본문','롬 5:8');
+  put('명제',o.text||'명제 '+id);put('상황 태그',o.sit||'');put('데이터 상태','활성');
+  return r;
+};
+const xrow=(id,d,title,o={})=>{
+  const r=new Array(XHEAD.length).fill('');
+  const put=(k,v)=>{r[XHEAD.indexOf(k)]=v;};
+  put('명제 ID',id);put('날짜',d);put('설교 제목',title);put('명제',o.text||'명제 '+id);
+  put('상황/필요',o.sit||'');put('묵상 질문',o.q||'');
+  return r;
 };
 const propRows=()=>[PHEAD,
-  prow('P0001','2026-09-21','주일예배','처음 설교','devSUN00001'),
-  prow('P0002','2026-09-21','라이프라인','처음 라이프','devLIFE0001'),
-  prow('P0003','2026-09-24','수요예배','처음 수요','devWED00001'),
-  prow('P0010','2026-09-30','수요예배','새 수요',''),
-  prow('P0011','2026-10-04','주일예배','새 주일',''),
-  prow('P0012','2026-10-04','주일예배','새 주일',''),
-  prow('P0013','2026-10-04','라이프라인 예배','새 라이프','')];   // ⚠️ 표기가 조금 다르다
+  prow('P0001','2026-09-21','주일예배','처음 설교'),
+  prow('P0002','2026-09-21','라이프라인','처음 라이프'),
+  prow('P0010','2026-09-30','수요예배','사랑하나요?'),
+  prow('P0011','2026-10-04','주일예배','그 열매로 그들을 알리라'),
+  prow('P0012','2026-10-04','주일예배','그 열매로 그들을 알리라'),
+  prow('P0013','2026-10-04','라이프라인 예배','사울, 엔돌의 신접한 여인을 만나다'),  // ⚠️ 표기가 조금 다르다
+  prow('P0014','2026-10-04','성찬예식','십자가의 화해와 평안'),
+  prow('P0015','2026-09-12','결혼예식','결혼의 본질과 공동체'),
+  prow('P0016','2026-08-02','성찬 예식','성찬은 교환된 삶의 고백입니다'),
+  prow('P0017','2026-07-01','특강','설교 목록에 없는 설교')];
 const listRows=()=>[SHEAD,
   srow({'날짜':'2026-09-21','카테고리':'주일예배','설교 제목':'처음 설교','설교자':'ㄱ','영상 링크':YT('devSUN00001')}),
   srow({'날짜':'2026-09-21','카테고리':'라이프라인','설교 제목':'처음 라이프','설교자':'ㄱ','영상 링크':YT('devLIFE0001')}),
-  srow({'날짜':'2026-09-24','카테고리':'수요예배','설교 제목':'처음 수요','설교자':'ㄱ','영상 링크':YT('devWED00001')}),
-  srow({'날짜':'2026-09-30','카테고리':'수요예배','설교 제목':'새 수요','설교자':'ㄱ','영상 링크':YT('newWED00930')}),
-  srow({'날짜':'2026-10-04','카테고리':'주일예배','설교 제목':'새 주일','설교자':'ㄱ','영상 링크':YT('newSUN01004')}),
-  srow({'날짜':'2026-10-04','카테고리':'라이프라인','설교 제목':'새 라이프','설교자':'ㄱ','영상 링크':YT('newLIFE1004')})];
-// 연결 순서: HB 의 모음처럼 **설교 목록이 먼저** 연결돼 있다
+  srow({'날짜':'2026-09-30','카테고리':'수요예배','설교 제목':'사랑하나요?','설교자':'ㄱ','영상 링크':'https://www.youtube.com/live/0PxJfeQzVgI?si=8H8kiI99cFYs8OKt'}),
+  srow({'날짜':'2026-10-04','카테고리':'주일예배','설교 제목':'그 열매로 그들을 알리라','설교자':'ㄱ','영상 링크':'https://www.youtube.com/live/Zdu80ci9E7Q?si=av9FbXPzmjwEVTZu'}),
+  srow({'날짜':'2026-10-04','카테고리':'라이프라인','설교 제목':'사울, 엔돌의 신접한 여인을 만나다','설교자':'ㄱ','영상 링크':'https://www.youtube.com/live/hFJ3pqd2xbo?si=fVasv1pmKpAj2YiI'}),
+  srow({'날짜':'2026-10-04','카테고리':'성찬예식','설교 제목':'십자가의 화해와 평안','설교자':'ㄱ','영상 링크':'유튜브 미업로드'}),
+  srow({'날짜':'2026-09-12','카테고리':'결혼예식','설교 제목':'결혼의 본질과 공동체','설교자':'ㄱ','영상 링크':'유튜브 미업로드'}),
+  srow({'날짜':'2026-08-02','카테고리':'성찬 예식','설교 제목':'성찬은 교환된 삶의 고백입니다','설교자':'ㄱ','영상 링크':''})];
+// 연결 순서: **설교 목록이 먼저** 연결돼 있는 경우 (가장 까다로운 순서)
 const mkColl=()=>({id:'',name:'설교',verses:[],google:[{id:'gL',name:'설교 목록'},{id:'gP',name:'명제 DB'}]});
 const run=c=>_syncCollSheets(c,[{g:c.google[0],rows:listRows(),today:'2026-10-04'},
                                  {g:c.google[1],rows:propRows(),today:'2026-10-04'}]);
 const ytOf=(c,pid)=>(c.verses.find(v=>v.pid===pid)||{}).yt||'';
 
-// ═══ 7. 썸네일 — 새 설교에 새 영상이 붙는다 ═══
+// ═══ 7. 썸네일 — 새 설교에 그 설교 영상이 붙는다 ═══
 console.log("\n시나리오 7 — 설교 목록이 먼저 연결돼 있어도 새 설교에 영상이 붙는다");
 {
   const c=mkColl();
   const r1=run(c);
-  sc.eq('명제 7개가 들어왔다',[r1.added,c.verses.length],[7,7]);
-  // ⚠️ 예전엔 설교 목록이 먼저 돌고(그땐 명제가 아직 없다) 명제 DB 가 빈 칸을 남겼다
-  sc.eq('9/30 수요예배',ytOf(c,'P0010'),'newWED00930');
-  sc.eq('10/4 주일예배',[ytOf(c,'P0011'),ytOf(c,'P0012')],['newSUN01004','newSUN01004']);
-  // 같은 날 설교가 둘이라 날짜만으로는 못 찾는다 — 카테고리가 '라이프라인 예배' 로 달라도
-  sc.eq("10/4 라이프라인 ('라이프라인 예배' 표기)",ytOf(c,'P0013'),'newLIFE1004');
+  sc.eq('명제 10개가 들어왔다',[r1.added,c.verses.length],[10,10]);
+  // 예전엔 설교 목록이 먼저 돌아서(그땐 명제가 아직 없다) **다음 동기화**에야 붙었다
+  sc.eq('9/30 수요예배 (live/ 주소)',ytOf(c,'P0010'),'0PxJfeQzVgI');
+  sc.eq('10/4 주일예배',[ytOf(c,'P0011'),ytOf(c,'P0012')],['Zdu80ci9E7Q','Zdu80ci9E7Q']);
+  // 같은 날 설교가 셋이라 날짜만으로는 못 찾는다 — 카테고리가 '라이프라인 예배' 로 달라도
+  sc.eq("10/4 라이프라인 ('라이프라인 예배' 표기)",ytOf(c,'P0013'),'hFJ3pqd2xbo');
   global.ACTIVE_VERSES=()=>c.verses;
   const by={};_swSermons(0).forEach(x=>{by[_sermonCatNorm(x.cat)]=x;});
-  sc.eq('타일: 주일예배는 10/4 영상',by['주일예배'].yt,'newSUN01004');
-  sc.eq('타일: 수요예배는 9/30 영상',by['수요예배'].yt,'newWED00930');
-  sc.eq('타일: 라이프라인 예배는 10/4 영상',by['라이프라인예배'].yt,'newLIFE1004');
-  // 이제 두 번째 동기화 — 예전엔 여기서 영상이 지워졌다 다시 붙으며 늘 '수정' 이 떴다
-  const r2=run(c);
-  sc.eq('다시 동기화해도 수정 0',r2.updated,0);
-  sc.eq('추가·복원·휴지통도 0',[r2.added,r2.restored,r2.removed],[0,0,0]);
-  sc.eq('결과 화면 내역에도 수정이 없다',
-    r2.groups.some(g=>[...g.byCat.values()].some(v=>v.updated)),false);
-  sc.eq('영상은 그대로',ytOf(c,'P0011'),'newSUN01004');
-  sc.eq('세 번째도 0',run(c).updated,0);
+  sc.eq('타일: 주일예배는 10/4 영상',by['주일예배'].yt,'Zdu80ci9E7Q');
+  sc.eq('타일: 수요예배는 9/30 영상',by['수요예배'].yt,'0PxJfeQzVgI');
+  sc.eq('다시 동기화해도 수정 0',run(c).updated,0);
 }
 
-// ═══ 8. 옛 방식(시트마다 따로 반영)은 정말 늘 수정이 떴는가 — 사고 재현 ═══
-console.log("\n시나리오 8 — 사고 재현: 시트마다 따로 반영하면 매번 '수정'");
+// ═══ 8. '수정 116개' — 실제 원인 재현 ═══
+// 명제 DB 와 성도 공유용이 **같은 명제의 같은 칸을 다르게** 적는다
+// (2026-10-05 실제 시트: 58개 — 상황 55 · 명제 문장 3). 시트마다 따로 세면
+// 누를 때마다 앞 탭이 바꾸고 뒤 탭이 되돌려 2×58 = 116 이 떴다.
+console.log("\n시나리오 8 — 사고 재현: 두 탭이 다르게 적은 명제가 매번 두 번 '수정'");
 {
-  const c=mkColl();
-  const old=()=>{
-    let n=0;
-    n+=_applySermonListSheet(c,listRows()).updated;
-    n+=_syncSheetVersesIntoColl(c,_rowsToItems(propRows()),{kind:'google',gid:'gP'}).updated;
-    return n;
-  };
+  const db=()=>[PHEAD,
+    prow('P0175','2026-08-02','주일예배','광야',{sit:'상황적 불확실성, 사람의 인정'}),
+    prow('P0190','2026-08-09','주일예배','말씀',{text:'성도는 고난보다 더 실재하시는 하나님을 사랑한다.'}),
+    prow('P0200','2026-08-09','주일예배','말씀',{sit:'같음'})];
+  const share=()=>[XHEAD,
+    xrow('P0175','2026-08-02','광야',{sit:'불확실성, 사람의 인정',q:'무엇을 붙드는가?'}),
+    xrow('P0190','2026-08-09','말씀',{text:'성도는 고난보다 더 실재하신 하나님을 사랑한다.'}),
+    xrow('P0200','2026-08-09','말씀',{sit:'같음'})];
+  const c={id:'',name:'설교',verses:[],google:[{id:'gP',name:'명제 DB'},{id:'gX',name:'성도 공유용'}]};
+  const old=()=>_syncSheetVersesIntoColl(c,_rowsToItems(db()),{kind:'google',gid:'gP'}).updated
+              +_syncSheetVersesIntoColl(c,_rowsToItems(share()),{kind:'google',gid:'gX'}).updated;
   old();
-  const n2=old(),n3=old();
-  sc.eq('예전 길은 두 번째에도 수정이 뜬다 (이것이 116개의 정체)',n2>0,true);
-  sc.eq('세 번째에도 똑같이',n3,n2);
-  sc.eq('그리고 새 설교는 영상이 비어 있다',ytOf(c,'P0011'),'');
+  sc.eq('예전 길: 다른 2개 × 2 = 4 가 매번 뜬다 (실제 시트에선 58 × 2 = 116)',[old(),old()],[4,4]);
+  const c2={id:'',name:'설교',verses:[],google:[{id:'gP',name:'명제 DB'},{id:'gX',name:'성도 공유용'}]};
+  const go=()=>_syncCollSheets(c2,[{g:c2.google[0],rows:db(),today:'x'},{g:c2.google[1],rows:share(),today:'x'}]);
+  go();
+  sc.eq('새 길: 두 번째부터 수정 0',[go().updated,go().updated],[0,0]);
+  sc.eq('결과 화면 내역에도 수정이 없다',
+    go().groups.some(g=>[...g.byCat.values()].some(v=>v.updated)),false);
+  // 값은 **나중에 연결한 탭**(성도 공유용)의 것이 남는다 — 두 탭을 맞추는 건 시트 쪽 일이다
+  sc.eq('남는 값은 뒤 탭의 것',c2.verses.find(v=>v.pid==='P0190').krText,'성도는 고난보다 더 실재하신 하나님을 사랑한다.');
+  sc.eq('묵상 질문은 성도 공유용에서',c2.verses.find(v=>v.pid==='P0175').q,'무엇을 붙드는가?');
 }
 
-// ═══ 9. 두 탭이 같은 칸을 다르게 적어도 '수정' 이 쌓이지 않는다 ═══
-console.log("\n시나리오 9 — 명제 DB 와 성도 공유용이 상황을 다르게 적어도");
+// ═══ 9. 진짜로 바뀐 것은 한 번만 센다 ═══
+console.log("\n시나리오 9 — 시트에서 진짜 고친 것은 1개로 센다");
 {
-  const SHARE=['명제 ID','명제','상황/필요','묵상 질문'];
-  const shareRows=()=>[SHARE,['P0001','명제 P0001','두려울 때','무엇이 두려운가?']];
-  const c={id:'',name:'설교',verses:[],google:[{id:'gP',name:'명제 DB'},{id:'gS',name:'성도 공유용'}]};
-  const db=()=>[PHEAD,prow('P0001','2026-09-21','주일예배','처음 설교','','불안')];
-  const go=()=>_syncCollSheets(c,[{g:c.google[0],rows:db(),today:'x'},{g:c.google[1],rows:shareRows(),today:'x'}]);
-  go();
-  sc.eq('묵상 질문이 들어왔다',c.verses[0].q,'무엇이 두려운가?');
-  sc.eq('두 번째는 수정 0',go().updated,0);
-  // 시트에서 진짜로 바꾸면 그때는 센다
-  const db2=()=>[PHEAD,prow('P0001','2026-09-21','주일예배','고친 제목','','불안')];
-  const r=_syncCollSheets(c,[{g:c.google[0],rows:db2(),today:'x'},{g:c.google[1],rows:shareRows(),today:'x'}]);
-  sc.eq('진짜 바뀐 것은 1개로 센다 (두 번 세지 않는다)',r.updated,1);
+  const c={id:'',name:'설교',verses:[],google:[{id:'gP',name:'명제 DB'},{id:'gX',name:'성도 공유용'}]};
+  const db=t=>[PHEAD,prow('P0001','2026-09-21','주일예배',t,{sit:'불안'})];
+  const share=t=>[XHEAD,xrow('P0001','2026-09-21',t,{sit:'두려울 때',q:'무엇이 두려운가?'})];
+  const go=t=>_syncCollSheets(c,[{g:c.google[0],rows:db(t),today:'x'},{g:c.google[1],rows:share(t),today:'x'}]);
+  go('처음 제목');
+  sc.eq('두 번째는 수정 0',go('처음 제목').updated,0);
+  sc.eq('두 탭 모두 제목을 고치면 1개 (두 번 세지 않는다)',go('고친 제목').updated,1);
   sc.eq('lastSync 가 적힌다',c.google.map(g=>g.lastSync),['x','x']);
+}
+
+// ═══ 10. 영상 링크가 없는 설교를 결과 화면에서 알린다 (v26-1005-1, HB) ═══
+console.log("\n시나리오 10 — 영상 링크가 없는 설교 알림");
+{
+  // HB: "썸네일 오류는 유튜브 링크가 없어서 그런 거였어. 동기화 후 메시지에서 알려 줘."
+  const c=mkColl();
+  const r=run(c);
+  const nv=r.noVideo;
+  sc.eq('영상 없는 설교 4편 (설교 하나당 한 줄)',nv.length,4);
+  sc.eq('새 것이 위로',nv.map(o=>o.d),['2026-10-04','2026-09-12','2026-08-02','2026-07-01']);
+  sc.eq("칸에 적힌 말을 그대로 ('유튜브 미업로드')",[nv[0].why,nv[0].note],['note','유튜브 미업로드']);
+  sc.eq('제목과 명제 수',[nv[0].title,nv[0].n],['십자가의 화해와 평안',1]);
+  sc.eq('칸이 비어 있으면 empty',nv[2].why,'empty');
+  sc.eq('설교 목록에 아예 없으면 absent',nv[3].why,'absent');
+  sc.eq('영상이 붙은 설교는 안 나온다',nv.some(o=>o.cat==='주일예배'||o.cat==='수요예배'),false);
+  sc.eq('모음 이름이 붙는다',nv[0].coll,'설교');
+  const html=_syncNoVideoHTML(nv);
+  sc.eq('제목 줄',html.includes('영상 링크가 없는 설교 4편'),true);
+  sc.eq('한 줄 모양',html.includes('10/4 성찬예식 · 십자가의 화해와 평안'),true);
+  sc.eq('왜 없는지',html.includes('영상 칸이 비어 있어요')&&html.includes('설교 목록에서 못 찾았어요'),true);
+  sc.eq('없으면 아무것도 안 그린다',_syncNoVideoHTML([]),'');
+  // 많으면 몇 줄만 — 옛 '유튜브 미업로드' 설교가 화면을 덮지 않게
+  const many=Array.from({length:9},(_,i)=>({d:'2026-09-0'+(i+1),cat:'성찬예식',title:'t'+i,why:'note',note:'유튜브 미업로드'}));
+  const h2=_syncNoVideoHTML(many);
+  sc.eq('다섯 줄까지만',(h2.match(/유튜브 미업로드/g)||[]).length,5);
+  sc.eq('나머지는 개수로',h2.includes('그 밖에 4편'),true);
+  // 두 동기화 길 모두 결과 화면에 넘긴다
+  const fs=require('fs'),path=require('path');
+  const f=path.join(__dirname,'..','index-dev.html');
+  const src=fs.readFileSync(fs.existsSync(f)?f:path.join(__dirname,'..','index.html'),'utf-8');
+  sc.eq('결과 화면 두 길 모두 noVideo 를 넘긴다',(src.match(/showSyncResultModal\(\{[^}]*noVideo\}\)/g)||[]).length,2);
+  sc.eq('결과 화면이 그린다',src.includes('lines.push(_syncNoVideoHTML(r.noVideo));'),true);
 }
 
 sc.done();
