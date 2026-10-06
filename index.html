@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1005-6  [production]  -->
+<!-- BLOCK7  v. 26-1006-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1005-6";
+const APP_VERSION = "v. 26-1006-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17593,11 +17593,14 @@ function vfOpenNavTile(){
   closeVfKeepSwitch();
   if(_vfNavTile&&_vfNavTile.kind&&_vfNavTile.val){
     // 걸려 있던 필터(교집합 refs·보여 줄 항목)까지 그대로 들고 간다 (2-2-3)
-    openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null);
+    openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null,_vfNavTile.pool||null);
     if(_vfNavTile.facet&&_vfNavTile.facet.length){
       _vgState.facetVals=_vfNavTile.facet.slice();
       _vgRenderTabs();
     }
+    // v26-1006-1 — 알약에서 고른 갈래(말씀·명제·함께)를 타일뷰도 그대로 잇는다.
+    //   짝 목록에서 온 길(vpGoToFilteredTile → vpTile)은 원래 그랬다.
+    if(_vpFullTab&&_vgTab()!==_vpFullTab)vgSetTab(_vpFullTab);
     return;
   }
   if(_vfNavKind==='keep'){vfOpenKeepGrid();return;}
@@ -19010,6 +19013,8 @@ function _vgFilteredPool(allTabs){
     ? ACTIVE_VERSES()                                  // 말씀설정에 맞춰진 기본 목록
     :(_VLIST_KIND_TITLE[_vgState.kind])
     ? _aggEntriesForKind(_vgState.kind,'all').map(g=>((typeof _findVerseByRefLoose==='function')?_findVerseByRefLoose(g.ref):null)||verseByRef(g.ref)).filter(Boolean)
+    :(_vgState.kind==='list')
+    ? (_vgState.listPool||[]).slice()                  // 받은 목록 그대로 (Sweeter 타일)
     : _vgRawPool().filter(v=>_vgMatch(v,_vgState.kind,_vgState.val));
   // 갈래 탭 (v26-0831-19, HB) — 여기 한 곳에서만 거른다.
   //   그래야 정렬·묶음·개수가 저절로 따라온다.
@@ -19623,8 +19628,12 @@ function _vgOpenFromReels(kind){
 // 말씀카드 위젯의 갈래를 눌러 들어온 경우 그 카드의 id. 타일을 고르면
 // 전체화면이 아니라 그 카드에 말씀이 뜨고, 그때부터 카드가 이 갈래 안에서 돈다.
 let _vgCardTarget=null;
-function openVerseGrid(kind,val,cardId,limitRefs){
+// v26-1006-1, HB — kind 'list' 는 성경·태그 같은 축이 아니라 **받은 목록 그대로**를
+//   보여 준다 (listPool). Sweeter 타일(설교·마음·발견·모음…)은 목록 자체가 필터라
+//   그것을 담을 축이 없다. 다른 kind 에서는 listPool 을 반드시 비운다.
+function openVerseGrid(kind,val,cardId,limitRefs,listPool){
   if(!val)return;
+  _vgState.listPool=(kind==='list'&&Array.isArray(listPool))?listPool.slice():null;
   _vgCardTarget=(cardId&&_vcGet(cardId))?cardId:null;
   // 반응 목록카드에서 들어왔으면 그 목록과의 교집합만 (다른 경로면 반드시 해제)
   const _tc=_vgCardTarget?_vcGet(_vgCardTarget):null;
@@ -19744,7 +19753,8 @@ function vgPick(i){
   if(_vgState.kind!=='home'){
     _vfSetTabPool(_vgSort(_vgFilteredPool(true)),_vgTab());
     _vfNavTile={kind:_vgState.kind,val:_vgState.val,
-                refs:_vgState.limitRefs||null,facet:_vgState.facetVals||null};
+                refs:_vgState.limitRefs||null,facet:_vgState.facetVals||null,
+                pool:_vgState.listPool||null};
     _vfSyncTopBar();
   }
   applyVfTheme();
@@ -46040,14 +46050,36 @@ function _swRepaint(i){
 // ── 누르면 전체화면 ──────────────────────────────────────
 // 목록 안에서 이전/다음이 돌도록 _vfSetNav 로 명단을 넘긴다.
 // ⚠️ openVerseFull() 이 안에서 _vfClearNav() 를 부르므로 **연 뒤에** 준다.
-function _swOpenVerse(v,list,idx,label){
+// v26-1006-1, HB — 대시보드 '연결' 에서 연 전체화면과 **같은 원리**로 헤더를 세운다.
+//   ① '말씀 + 명제' 알약 — 밑 목록(_vfTabPool)은 그 타일의 목록 전체
+//   ② 제목을 누르면 그 목록의 타일뷰 (_vfNavTile). tile 을 안 주면 목록 그대로('list').
+//   ⚠️ 하나뿐인 목록도 제목을 세운다 — 예전엔 둘 이상일 때만 세워 알약도 문도 없었다.
+function _swOpenVerse(v,list,idx,label,tile){
   if(!v)return;
   const act=ACTIVE_VERSES()||[];
   const hit=act.find(x=>x.ref===v.ref&&x.krText===v.krText)||act.find(x=>x.ref===v.ref);
   if(hit){_vfOverrideVerse=null;setVerseIdx(hit.idx);}
   else _vfOverrideVerse=v;
   openVerseFull(true);
-  if(list&&list.length>1)_vfSetNav(list,idx||0,label||'');
+  if(!(list&&list.length))return;
+  const lb=label||'';
+  if(typeof _vfSetTabPool==='function')_vfSetTabPool(list,'all');
+  _vfSetNav(list,idx||0,lb);
+  if(typeof _vfNavTile!=='undefined'){
+    _vfNavTile=tile||{kind:'list',val:lb||'말씀',pool:list};
+    if(typeof _vfSyncTopBar==='function')_vfSyncTopBar();
+  }
+}
+// 그 타일의 목록이 어느 타일뷰로 열릴지 — 성경·태그는 그 축 그대로(롤링피커가 산다),
+// 나머지는 목록 그대로. 기간을 걸어 두었으면 그 말을 타일뷰 머리에 함께 적는다.
+function _swGridTile(t,g,list,label){
+  const w=_swWin();
+  const facet=(w&&/^(book|tag|need|coll|react)$/.test(t.k))?[w.word]:null;
+  if((t.k==='book'&&g&&g.name&&g.name!=='그 밖')||(t.k==='tag'&&g&&g.name)){
+    const refs=new Set(list.map(v=>_vIdKey(v)).filter(Boolean));
+    return {kind:t.k,val:g.name,refs,facet};
+  }
+  return {kind:'list',val:label||_SW_TYPES[t.k].n,pool:list,facet};
 }
 // 어떤 값을 눌렀을 때 전체화면에서 돌 말씀 목록.
 // ⚠️ 예전엔 '설교(cat)'로만 걸렀다. 그래서 성경·태그·반응 타일은 값의 이름이
@@ -46127,7 +46159,7 @@ function _swTileOpen(i){
   // 최근 설교는 이름 옆에 그 날짜를 붙인다 — 어느 날 설교인지가 곧 이 목록의 뜻이다
   const md=(t.k==='recent'&&cur.v.d)?_swMD(cur.v.d):'';
   const label=(cur.v.cat||cur.v.name||_SW_TYPES[t.k].n)+(md?' \u00b7 '+md:'');
-  _swOpenVerse(list[0],list,0,label);
+  _swOpenVerse(list[0],list,0,label,_swGridTile(t,cur.v,list,label));
 }
 
 // ── 몸짓 (좌우만 — 세로는 스크롤에게 양보) ────────────────
