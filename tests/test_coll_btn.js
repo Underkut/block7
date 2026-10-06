@@ -71,7 +71,9 @@ console.log('\n시나리오 1-1 — 커버 컷아웃 모양 (십자가 vs 3줄)'
 console.log('\n시나리오 1-2 — 좌상단 말씀메뉴 가운데 구분선 제거 (v26-0818-6, HB)');
 {
   const main = SRC.slice(SRC.indexOf('<div id="logoMenuMain">'), SRC.indexOf('<div id="logoMenuListSub"'));
-  sc.eq('메인 뎁스 안에는 구분선이 없다', main.includes('task-menu-sep'), false);
+  // v26-1006-6, HB — 형제 앱 줄 **위 하나만** 다시 둔다. 가운데 구분선은 여전히 없다.
+  sc.eq('메인 뎁스의 구분선은 형제 앱 줄 위 하나뿐', (main.match(/task-menu-sep/g) || []).length, 1);
+  sc.eq('그 하나는 형제 앱 줄 바로 위', /id="logoMenuSisterSep"><\/div>\s*<div class="task-menu-item" id="logoMenuSister"/.test(main), true);
   // 하위 뎁스(말씀 목록)의 뒤로가기 줄 아래 구분선은 그대로 둔다 — 없앤 건 메인 것뿐
   const sub = SRC.slice(SRC.indexOf('<div id="logoMenuListSub"'), SRC.indexOf('</div>\n</div>\n\n<!-- 암송/좋아요/Deeper 집계'));
   sc.eq('하위 뎁스 헤더 아래 구분선은 그대로', sub.includes('task-menu-sep'), true);

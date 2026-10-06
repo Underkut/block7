@@ -162,8 +162,8 @@ console.log('시나리오 11 — 단추 자리 (T-4)');
   sc.eq('타일 넷', m ? m[1].replace(/'/g, '').split(',').sort() : null, ['ask', 'keep', 'last', 'today']);
   // 말씀카드: 반응 구역의 맨 끝
   sc.eq('카드 반응 구역 맨 끝', /react:\[[^\]]*'verseCardShare','verseCardThere'\]/.test(SRC), true);
-  // GNB: BLOCK7 은 2·3단에서만 (body.lay-multi)
-  sc.eq('BLOCK7 GNB 는 2·3단에서만', /body\.lay-multi \.gnb-there\{display:block;\}/.test(SRC), true);
+  // GNB: BLOCK7 은 **상단 말씀 영역을 켰을 때만** (v26-1006-6, HB — 1단에서도 롤링 피커 옆에)
+  sc.eq('BLOCK7 GNB 는 상단 말씀이 켜졌을 때만 (body.vb-on)', /body\.vb-on \.gnb-there,body\.vb-on \.gnb-bible\{display:block;\}/.test(SRC), true);
   // GNB 두 곳 모두 말씀 없이 연다
   sc.eq('BLOCK7 GNB — 말씀 없이', /id="gnbThereBtn" onclick="openThere\(''\)"/.test(SRC), true);
   sc.eq('Sweeter GNB — 말씀 없이', /id="swThereBtn"[\s\S]{0,120}onclick="openThere\(''\)"/.test(SRC), true);

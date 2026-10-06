@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1006-5  [production]  -->
+<!-- BLOCK7  v. 26-1006-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -744,13 +744,29 @@ header{
 .vbInner.sneak-mode .vb-there{flex:0 0 auto;margin-left:7px;font-size:12px;align-self:center;}
 /* 말씀카드 위젯 — 다른 반응과 같은 16px */
 .vc-act .there-ic{width:16px;height:16px;display:block;}
-/* BLOCK7 GNB — 할일뷰 2·3단에서만, 로고 바로 오른쪽 (left 는 JS 가 로고 폭으로) */
-.gnb-there{display:none;position:absolute;left:84px;top:50%;transform:translateY(-50%);z-index:5;
+/* BLOCK7 GNB — There · 성경 (v26-1006-6, HB 8)
+   **상단 말씀 영역을 켰을 때만** 보인다 (body.vb-on — _gnbExtrasSync 가 붙였다 뗀다).
+   2·3단: 로고 바로 오른쪽 · 1단: D W M 이 롤링 피커로 줄어든 자리의 왼쪽.
+   자리(left)는 JS 가 잰다. */
+.gnb-there,.gnb-bible{display:none;position:absolute;left:84px;top:50%;transform:translateY(-50%);z-index:5;
   background:none;border:0;padding:6px;margin:0;cursor:pointer;color:var(--tx3);line-height:0;
   -webkit-tap-highlight-color:transparent;}
 .gnb-there .there-ic{width:15px;height:15px;display:block;}
-.gnb-there:hover{color:var(--tx);}
-body.lay-multi .gnb-there{display:block;}
+.gnb-bible{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+  background:none;border:0;padding:6px;margin:0;cursor:pointer;color:var(--tx3);line-height:0;
+  -webkit-tap-highlight-color:transparent;}
+.gnb-bible svg{width:16px;height:16px;display:block;}
+.gnb-there:hover,.gnb-bible:hover{color:var(--tx);}
+body.vb-on .gnb-there,body.vb-on .gnb-bible{display:block;}
+/* 1단 + 상단 말씀: D W M → 한 글자 세로 롤링 피커 (누르거나 위아래로 밀면 넘어간다) */
+body.vb-on:not(.lay-multi) header .tabs{display:block;position:relative;height:24px;width:36px;overflow:hidden;
+  border-radius:6px;background:var(--s2);touch-action:none;}
+body.vb-on:not(.lay-multi) header .tab{display:block;width:30px;height:24px;padding:0;line-height:24px;text-align:center;
+  background:transparent;color:var(--tx);transform:translateY(calc(var(--rp-i,0) * -100%));
+  transition:transform .28s cubic-bezier(.2,.8,.2,1);}
+.gnb-rp-hint{display:none;}
+body.vb-on:not(.lay-multi) .gnb-rp-hint{display:block;position:absolute;right:3px;top:50%;transform:translateY(-50%);
+  width:5px;height:12px;color:var(--tx3);pointer-events:none;}
 /* Sweeter GNB — 필터 왼쪽. 선 아이콘들 사이의 **채운** 그림이라 한 치수 작게 둔다 */
 .sw-iconbtn .there-ic{width:17px;height:17px;display:block;}
 /* GNB 두 곳 — 옆 아이콘들(톱니·필터·로고)보다 **아래가 더 내려와** 보였다 (HB).
@@ -5114,11 +5130,12 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-mrow .br-mi{position:relative;background:var(--br-sheet);border-bottom:0;cursor:pointer;align-items:flex-start;}
 #bibleRd .br-mrow .br-mi>div{flex:1;}
 .br-dt{font-size:10.5px;color:var(--tx3);margin-left:8px;font-family:var(--font-number),monospace;}
-#bibleRd .br-rx{width:32px;height:32px;flex:0 0 auto;margin:-4px -6px 0 0;color:var(--tx3);}
-#bibleRd .br-rx svg{width:15px;height:15px;}
+#bibleRd .br-rx{width:28px;height:28px;flex:0 0 auto;margin:-5px -7px 0 0;color:var(--tx3);opacity:.5;}
+#bibleRd .br-rx svg{width:11px;height:11px;}
 /* 아이폰 위쪽 시계 줄 — 판 안의 '고르기'·'검색' 은 판 맨 위부터 덮으므로 따로 비운다 (v26-1006-5, HB 신고) */
 #bibleRd .br-pick{padding-top:env(safe-area-inset-top,0px);}
-.br-memo-new{font-size:12px;color:var(--tx3);margin:6px 2px 6px;}
+.br-memo-new{font-size:12px;color:var(--tx3);margin:6px 2px 6px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+#bibleRd .br-newmemo{font-size:12.5px;color:var(--ac-tx);padding:5px 10px;border-radius:999px;background:var(--s2);font-weight:600;}
 .br-memo-item{display:flex;gap:8px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid var(--bd2);}
 .br-memo-item .br-mt{flex:1;min-width:0;font-size:14px;line-height:1.6;color:var(--tx);white-space:pre-line;cursor:pointer;}
 .br-memo-item .br-mt small{display:block;font-size:11px;color:var(--tx3);margin-top:3px;}
@@ -6025,7 +6042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1006-5";
+const APP_VERSION = "v. 26-1006-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7581,6 +7598,8 @@ try{
   <!-- There — 할일뷰 2·3단에서만, 로고 바로 오른쪽 (v26-0923-5 T-4, HB 3-4).
        특정 말씀 없이 연다 (ref 빈칸) — 합계에는 든다. 자리(left)는 renderLayout 이 잰다. -->
   <button class="gnb-there" id="gnbThereBtn" onclick="openThere('')" aria-label="There" title="There"><span class="there-ic" data-there-ic></span></button>
+  <!-- 성경 — There 오른쪽 (v26-1006-6, HB 8-2). 마지막 읽던 곳을 연다. -->
+  <button class="gnb-bible" id="gnbBibleBtn" onclick="bibleOpenLast()" aria-label="성경" title="성경"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg></button>
   <button class="rp-gear" id="gnbLayoutBtn" style="display:none;" onclick="openRpConfig()" title="위젯 설정">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="5.5" x2="17" y2="5.5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14.5" x2="17" y2="14.5"/></svg>
   </button>
@@ -7588,6 +7607,7 @@ try{
     <button class="tab on" id="tabD" onclick="sw('today',this)">D</button>
     <button class="tab" id="tabW" onclick="sw('weekly',this)">W</button>
     <button class="tab" id="tabM" onclick="sw('monthly',this)">M</button>
+    <svg class="gnb-rp-hint" viewBox="0 0 5 12" fill="currentColor"><path d="M2.5 0L5 3.5H0z"/><path d="M2.5 12L0 8.5h5z"/></svg>
   </div>
   <div class="hdr-r">
     <span id="hdrDateNav" style="display:flex;align-items:center;gap:inherit;">
@@ -7817,7 +7837,8 @@ try{
   <!-- 메인 뎁스 (HB 1-2) -->
   <div id="logoMenuMain">
   <!-- 2-3: verse area shape icon for on/off — header bar + hanging note card -->
-  <div class="task-menu-item" id="logoMenuToggleItem" onclick="logoMenuToggleVerse()">
+  <!-- 스위터에는 상단 말씀 영역이 없다 — 감춘다 (v26-1006-6, HB) -->
+  <div class="task-menu-item" id="logoMenuToggleItem" data-prod="b7" onclick="logoMenuToggleVerse()">
     <span class="task-menu-icon"><svg width="14" height="12" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7 L2 13 Q2 14.5 4 14.5 L16 14.5 Q18 14.5 18 13 L18 7"/></svg></span><span id="logoMenuToggleLabel">상단 말씀 켜기</span>
   </div>
   <!-- 2-1: filled left triangle for prev -->
@@ -7854,6 +7875,7 @@ try{
   <!-- 형제 앱으로 건너가는 다리 (v26-0921-1, HB) — 내용은 _sisterFill() 이 채운다.
        탭 = 앱 안에서 화면 바꾸기 · 롱터치/우클릭 = 상대 앱 주소로 진짜 이동.
        ⚠️ 아이콘은 <img> 다. 상대 제품의 로고를 그대로 보여 줘야 해서 SVG 로 못 그린다. -->
+  <div class="task-menu-sep" id="logoMenuSisterSep"></div>
   <div class="task-menu-item" id="logoMenuSister" onclick="sisterGo()">
     <span class="task-menu-icon"><img id="logoMenuSisterIcon" alt="" width="15" height="15" style="border-radius:3.5px;display:block;"></span><span id="logoMenuSisterLabel">…</span>
   </div>
@@ -12078,8 +12100,67 @@ function dayOfYearVerseIdx(){
   return(dayOfYear%ACTIVE_TOTAL())+1;
 }
 
+// ── GNB 의 There · 성경 · 1단 롤링 피커 (v26-1006-6, HB 8) ──
+// 상단 말씀 영역(verseBarOn)을 body.vb-on 으로 비추고, 두 단추의 자리를 잰다.
+// 상단 말씀을 켜고 끄는 모든 길(로고 메뉴·설정·원격)이 이 함수를 지난다 → 새로고침 없이 따라간다.
+const _GNB_VIEWS={tabD:'today',tabW:'weekly',tabM:'monthly'};
+function _gnbExtrasSync(){
+  const on=!!(ST.settings&&ST.settings.verseBarOn)&&(typeof APP_PRODUCT==='undefined'||APP_PRODUCT!=='sweeter');
+  document.body.classList.toggle('vb-on',on);
+  const tabs=document.querySelector('header .tabs');
+  if(tabs){const i=[...tabs.querySelectorAll('.tab')].findIndex(b=>b.classList.contains('on'));tabs.style.setProperty('--rp-i',Math.max(0,i));}
+  const th=document.getElementById('gnbThereBtn'),bi=document.getElementById('gnbBibleBtn');
+  if(tabs&&(!on||document.body.classList.contains('lay-multi')))tabs.style.marginLeft='';
+  if(!on||!th||!bi)return;
+  if(!th.querySelector('svg')&&typeof _thereIconSync==='function')_thereIconSync();
+  requestAnimationFrame(()=>{
+    if(document.body.classList.contains('lay-multi')){
+      const logo=document.getElementById('logoHome');
+      const x=(logo&&logo.offsetWidth)?logo.offsetLeft+logo.offsetWidth+6:84;
+      th.style.left=x+'px';bi.style.left=(x+th.offsetWidth)+'px';
+    }else if(tabs){
+      // 로고와 피커 사이가 두 단추에 모자라면 피커를 그만큼 오른쪽으로 비켜 세운다
+      // (header 는 양끝 맞춤이라 여백을 주면 양옆 간격도 같이 줄어든다 → 맞을 때까지 다시 잰다)
+      const logo=document.getElementById('logoHome');
+      const need=th.offsetWidth+bi.offsetWidth+4,edge=logo?logo.offsetLeft+logo.offsetWidth+2:0;
+      let m=0;tabs.style.marginLeft='';
+      for(let k=0;k<4;k++){const room=tabs.offsetLeft-edge;if(room>=need)break;m+=need-room;tabs.style.marginLeft=m+'px';}
+      const x=tabs.offsetLeft-bi.offsetWidth-2;
+      bi.style.left=x+'px';th.style.left=(x-th.offsetWidth)+'px';
+    }
+  });
+}
+function _gnbPickerOn(){return document.body.classList.contains('vb-on')&&!document.body.classList.contains('lay-multi');}
+function _gnbPickerStep(d){
+  const tabs=[...document.querySelectorAll('header .tabs .tab')];
+  const i=tabs.findIndex(b=>b.classList.contains('on'));
+  const n=tabs[(i+d+tabs.length)%tabs.length];
+  if(n)sw(_GNB_VIEWS[n.id],n);
+}
+(function _gnbPickerBind(){
+  const go=()=>{
+    const tabs=document.querySelector('header .tabs');if(!tabs||tabs._rpBound)return;tabs._rpBound=true;
+    // 피커일 때는 누른 글자와 상관없이 **다음** 보기로 넘긴다
+    tabs.addEventListener('click',e=>{
+      if(!_gnbPickerOn())return;
+      e.stopPropagation();e.preventDefault();
+      if(tabs._rpSwiped){tabs._rpSwiped=false;return;}
+      _gnbPickerStep(1);
+    },true);
+    let y0=null;
+    tabs.addEventListener('touchstart',e=>{if(_gnbPickerOn())y0=e.touches[0].clientY;},{passive:true});
+    tabs.addEventListener('touchend',e=>{
+      if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;y0=null;
+      if(Math.abs(dy)>12){tabs._rpSwiped=true;setTimeout(()=>{tabs._rpSwiped=false;},350);_gnbPickerStep(dy<0?1:-1);}
+    },{passive:true});
+    window.addEventListener('resize',_gnbExtrasSync);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
+})();
+
 function renderVerseBar(){
   const bar=document.getElementById('verseBar');
+  _gnbExtrasSync();
   if(!bar)return;
   if(!ST.settings.verseBarOn){
     bar.classList.remove('verse-open');
@@ -12726,6 +12807,7 @@ function toggleVerseBarOn(){
     ST.settings.verseLastShownDate=todayKey();
   }
   save();
+  _gnbExtrasSync();
   const bar=document.getElementById('verseBar');
   if(!bar)return;
   if(ST.settings.verseBarOn){
@@ -14162,12 +14244,12 @@ async function bibleStartPreload(){
 // ══ 바닥 시트 끌어 내려 닫기 (v26-1006-5, HB) ════════════════════════════
 // 머리(손잡이·제목줄)를 잡고 내리면 시트가 손가락을 따라 내려오고, 일정 거리
 // (_SHEET_DRAG_CLOSE)나 빠르게 튕기면 아래로 미끄러져 닫힌다. 아니면 제자리로.
-// ⚠️ 지금은 인앱 성경의 시트에만 건다. HB 확인 뒤 블럭7·스위터의 다른 메뉴에도
-//    이 함수 하나로 넓힌다 (ROADMAP B-11). 시트마다 따로 만들지 말 것.
+// 건 곳: 인앱 성경의 시트들 · 앱 설정 · 말씀 설정 (v26-1006-6). 새 바닥 시트를 만들면
+//    이 함수 하나로 건다 — 시트마다 따로 만들지 말 것.
 //   sheet   : 움직일 상자 (transform 으로 연다/닫는 것이어야 자연스럽다)
 //   handles : 잡을 수 있는 곳들 (단추는 빼고 잡힌다)
 //   close   : 닫을 때 부를 함수 — 끝자리까지 내려 준 뒤 부른다
-//   scrim   : 같이 옅어질 바탕 (없어도 된다)
+//   scrim   : 같이 옅어질 바탕 (없어도 된다 — 시트를 품은 막이면 넘기지 말 것)
 const _SHEET_DRAG_CLOSE=110;              // 이만큼 내리면 닫힌다 (px)
 const _SHEET_DRAG_FLICK=0.6;              // 이보다 빠르게 튕기면 짧아도 닫힌다 (px/ms)
 function _sheetDrag(sheet,handles,close,scrim){
@@ -14212,6 +14294,20 @@ function _sheetDrag(sheet,handles,close,scrim){
     h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up);
   });
 }
+
+// 앱 설정 · 말씀 설정 — 휴대폰에서는 바닥 시트다 (v26-1006-6, HB '모든 곳에').
+// 나머지 팝업은 화면 가운데 뜨는 것이라 끌어 내리기가 맞지 않는다 (전수 확인).
+// ⚠️ 바깥 막(overlay)이 시트를 품고 있어 막을 옅게 하면 시트도 옅어진다 → 막은 넘기지 않는다.
+function _sheetDragBindSettings(){
+  const a=document.getElementById('settingsPanel'),b=document.getElementById('verseSettingsPanel');
+  if(a)_sheetDrag(a,[a.querySelector('.settings-hd')],()=>closeSettings(),null);
+  if(b)_sheetDrag(b,[b.querySelector('.settings-hd')],()=>{
+    document.getElementById('verseSettingsOverlay').classList.remove('open');
+    if(typeof _vsetRestoreBack==='function')_vsetRestoreBack();
+  },null);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_sheetDragBindSettings);
+else _sheetDragBindSettings();
 
 // ══ 인앱 성경 — 화면 ══
 let _brCur={b:0,c:1},_brSel=new Set(),_brOpen=false,_brSess=null;
@@ -14268,8 +14364,10 @@ function _brEsc(){
   if(_brEl('brPick').classList.contains('on')){_brEl('brPick').classList.remove('on');return;}
   bibleClose();
 }
-async function _brShow(b,c,focus,focus2){
-  _brCur={b,c};_brSel.clear();_brCloseSheets();
+// keep: 열린 시트를 그대로 두고 본문만 다시 그린다 (내 표시에서 지울 때 — HB 2026-10-06)
+async function _brShow(b,c,focus,focus2,keep){
+  _brCur={b,c};
+  if(!keep){_brSel.clear();_brCloseSheets();}
   const books=_brBooks();
   _brEl('brTBook').textContent=books[b];_brEl('brTChap').textContent=c+_brUnit(b);
   _brEl('brPg').textContent=_bibleShort(books[b])+' '+c+' / '+_bibleChapters(books[b]);
@@ -14321,8 +14419,8 @@ function _brStep(dd){
   else if(c>_bibleChapters(books[b])){if(b===65)return;b++;c=1;}
   _brShow(b,c);
 }
-function _brRerender(){const sc=_brEl('brScroll'),y=sc.scrollTop;const keep=_brSess;_brSess=null;
-  _brShow(_brCur.b,_brCur.c).then(()=>{sc.scrollTop=y;if(keep)_brSess=keep;});}
+function _brRerender(keepSheets){const sc=_brEl('brScroll'),y=sc.scrollTop;const keep=_brSess;_brSess=null;
+  _brShow(_brCur.b,_brCur.c,0,0,!!keepSheets).then(()=>{sc.scrollTop=y;if(keep)_brSess=keep;});}
 // ── 시트 ──
 function _brOpenSheet(id,scrim){
   document.querySelectorAll('#bibleRd .br-sheet.on').forEach(s=>s.classList.remove('on'));
@@ -14358,7 +14456,9 @@ function _brOpenMemo(vs,id){
     return '<div class="br-memo-item'+(x===_brMemo.id?' on':'')+'" data-note="'+x+'"><div class="br-mt" data-noteedit="'+x+'">'+esc(n.t)
       +'<small>'+_brBooks()[b]+' '+c+':'+_brVerseList(n.v||[])+' · '+_brDate(n.at)+'</small></div>'
       +'<button class="br-ic br-x" data-notedel="'+x+'" aria-label="메모 지우기" style="width:32px;height:32px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg></button></div>';}).join('');
-  _brEl('brMemoNewLb').textContent=_brMemo.id?'고치는 중 — 글을 비우고 저장하면 지워져요':(ids.length?'새 메모':'');
+  _brEl('brMemoNewLb').innerHTML=_brMemo.id
+    ?'고치는 중 · 비우고 저장하면 지워져요<button class="br-newmemo" data-newmemo="1">+ 새 메모</button>'
+    :(ids.length?'새 메모':'');
   _brEl('brMemoTx').value=_brMemo.id?all[_brMemo.id].t:'';
   _brOpenSheet('brSMemo');
   setTimeout(()=>_brEl('brMemoTx').focus(),260);
@@ -14477,7 +14577,7 @@ function _brRowGone(row){
   row.style.transition='transform .2s ease, opacity .2s ease';
   row.querySelector('.br-mi').style.transform='translateX(-110%)';
   setTimeout(()=>{row.style.transition='height .2s ease';row.style.height=row.offsetHeight+'px';row.offsetHeight;row.style.height='0';row.style.overflow='hidden';},180);
-  setTimeout(()=>{_brListDelete(row.dataset.del);_brRenderList();if(_brOpen)_brRerender();},400);
+  setTimeout(()=>{_brListDelete(row.dataset.del);_brRenderList();if(_brOpen)_brRerender(true);},400);
 }
 // ── 검색 ──
 let _brFs={q:'',scope:'all',lim:100};
@@ -14562,6 +14662,7 @@ function _brBind(){
     _brNoteSave(_brMemo.id,_brCur.b,_brCur.c,_brMemo.vs,t);save();
     _brToast(t?'메모를 저장했어요':'메모를 지웠어요');_brRerender();
   };
+  $('brMemoNewLb').addEventListener('click',e=>{if(e.target.closest('[data-newmemo]'))_brOpenMemo(_brMemo.vs);});
   $('brMemoList').addEventListener('click',e=>{
     const del=e.target.closest('[data-notedel]');
     if(del){_brNoteSave(del.dataset.notedel,0,0,[],'');save();_brToast('메모를 지웠어요');
@@ -22446,6 +22547,7 @@ function sw(t,btn){
   btn.classList.add('on');
   ['todayView','weeklyView','monthlyView'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById(t+'View').style.display='block';
+  if(typeof _gnbExtrasSync==='function')_gnbExtrasSync();   // 1단 롤링 피커가 고른 글자를 따라간다
   // D뷰에서만 좌우 분할 활성 (900px 이상일 때 CSS가 실제 분할 적용)
   document.body.classList.toggle('split-d',t==='today');
   // Clear any leftover inline transform/opacity/transition from an
@@ -29893,13 +29995,8 @@ function renderLayout(){
     if(todayView.parentElement!==colL)colL.insertBefore(todayView,colL.firstChild);
   }
 
-  // ── There: GNB 로고 바로 오른쪽 (보이고 말고는 CSS body.lay-multi) ──
-  const gThere=document.getElementById('gnbThereBtn');
-  if(gThere){
-    const logo=document.getElementById('logoHome');
-    if(logo&&logo.offsetWidth)gThere.style.left=(logo.offsetLeft+logo.offsetWidth+6)+'px';
-    if(!gThere.querySelector('svg'))_thereIconSync();
-  }
+  // ── There · 성경: 상단 말씀이 켜졌을 때만 (_gnbExtrasSync) ──
+  _gnbExtrasSync();
 
   // ── 설정(햄버거) 버튼: GNB 로고 우측, 2단부터 표시 (3-3) ──
   document.querySelectorAll('.rp-head').forEach(e=>e.remove());
@@ -39393,6 +39490,7 @@ function updateSetting(key,value){
      key==='verseFullCat'||key==='verseFullTopic'||key==='verseFullRef'||key==='verseFullTag'||
      key==='verseSneakCat'||key==='verseSneakTopic'||key==='verseSneakRef'||key==='verseSneakFirstWord'||key==='verseSneakTag'){
     if(key==='verseBarOn'){
+      _gnbExtrasSync();
       // Apply the slide animation: value is the desired final state.
       const bar=document.getElementById('verseBar');
       if(bar){

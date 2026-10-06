@@ -228,6 +228,23 @@ console.log('\n시나리오 13-3 — 저장: 성경에서 저장한 장절도 �
   sc.eq('저장 목록 창을 성경 위로 올렸다가 닫을 때 되돌린다', /overlay\.style\.zIndex='4720';modal\.style\.zIndex='4730';/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-4 — v26-1006-6 (HB 2차 신고)');
+{
+  sc.eq('내 표시에서 지울 때는 시트를 닫지 않고 본문만 다시 그린다', /_brListDelete\(row\.dataset\.del\);_brRenderList\(\);if\(_brOpen\)_brRerender\(true\);/.test(SRC), true);
+  sc.eq('_brShow(…, keep) 은 시트를 안 닫는다', /if\(!keep\)\{_brSel\.clear\(\);_brCloseSheets\(\);\}/.test(SRC), true);
+  sc.eq('고치는 중 → + 새 메모', /data-newmemo="1">\+ 새 메모</.test(SRC), true);
+  sc.eq('앱 설정·말씀 설정도 끌어 내려 닫는다', /_sheetDrag\(a,\[a\.querySelector\('\.settings-hd'\)\]/.test(SRC) && /_sheetDrag\(b,\[b\.querySelector\('\.settings-hd'\)\]/.test(SRC), true);
+  sc.eq('스위터 로고 메뉴: 상단 말씀 줄은 BLOCK7 에서만', /id="logoMenuToggleItem" data-prod="b7"/.test(SRC), true);
+  sc.eq('로고 메뉴: 형제 앱 줄 위 구분선 (두 제품)', /id="logoMenuSisterSep"><\/div>\s*<div class="task-menu-item" id="logoMenuSister"/.test(SRC), true);
+  sc.eq('GNB There·성경은 상단 말씀이 켜졌을 때만 (body.vb-on)', /body\.vb-on \.gnb-there,body\.vb-on \.gnb-bible\{display:block;\}/.test(SRC), true);
+  sc.eq('예전 규칙(2·3단이면 늘 There)은 없다', /body\.lay-multi \.gnb-there\{display:block;\}/.test(SRC), false);
+  sc.eq('상단 말씀을 켜고 끄는 세 길이 모두 _gnbExtrasSync 를 부른다',
+    /function toggleVerseBarOn\(\)\{[\s\S]{0,300}_gnbExtrasSync\(\);/.test(SRC) &&
+    /if\(key==='verseBarOn'\)\{\s*_gnbExtrasSync\(\);/.test(SRC) &&
+    /function renderVerseBar\(\)\{\s*const bar=document\.getElementById\('verseBar'\);\s*_gnbExtrasSync\(\);/.test(SRC), true);
+  sc.eq('스위터에서는 vb-on 을 붙이지 않는다 (제 GNB 가 따로 있다)', /APP_PRODUCT!=='sweeter'\);\s*document\.body\.classList\.toggle\('vb-on',on\);/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
