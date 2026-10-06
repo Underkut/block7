@@ -20,6 +20,7 @@ on:
       - 'icon.png'
       - 'fonts/**'
       - 'photos/**'
+      - 'bible/**'          # 성경 본문 (개역한글)
       - 'firebase-messaging-sw.js'
       - 'tools/make-sweeter-prod.sh'
       - 'firebase.json'
