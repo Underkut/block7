@@ -988,7 +988,7 @@ console.log('\n시나리오 26 — 91-1·91-3 짝 목록 정렬 고정 · 다중
   sc.eq('타일뷰로 넘길 때 교집합 refs 를 함께 준다',
         SRC.includes('openVerseGrid(ax,val,null,_vpFiltRefSet());'), true);
   sc.eq('openVerseGrid 가 그 refs 를 받아 저장한다',
-        /function openVerseGrid\(kind,val,cardId,limitRefs\)\{[\s\S]{0,500}_vgState\.limitRefs=limitRefs\|\|null;/.test(SRC),
+        /function openVerseGrid\(kind,val,cardId,limitRefs,listPool\)\{[\s\S]{0,700}_vgState\.limitRefs=limitRefs\|\|null;/.test(SRC),
         true);
   // v26-0908-6, HB 2-2-3 — 장절이 아니라 **반응키**로 가린다. 장절로 가리면
   //   같은 장절을 가진 한 설교의 명제들이 통째로 딸려 들어와, 걸어 둔 필터가
@@ -1203,7 +1203,7 @@ console.log('\n시나리오 33 — 0908-2 (연결 다듬기 · 지도 순위 · 
     SRC.includes("const where=book+(chap?` ${chap}장`:'');") &&
     SRC.includes("_vfSetNav(list,0,where+(cond?' · '+cond:''),null);"), true);
   sc.eq('타일뷰로 넘어가도 그 필터를 지킨다',
-    SRC.includes("openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null);"), true);
+    SRC.includes("openVerseGrid(_vfNavTile.kind,_vfNavTile.val,null,_vfNavTile.refs||null,_vfNavTile.pool||null);"), true);
   // ⚠️ 제목(.vf-toplabel)은 z-index 11, '이전 말씀' 꺾쇠(.vf-nav-u)는 2 다.
   //    제목이 위라 눌러도 꺾쇠가 먼저 먹지 않는다 (HB 2-2-4 의 걱정).
   sc.eq('제목이 꺾쇠보다 위에 선다', /\.vf-toplabel\{[\s\S]{0,220}z-index:11;/.test(SRC), true);
