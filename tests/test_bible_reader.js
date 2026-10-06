@@ -14,24 +14,63 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,getBibleMarks,getBibleReadLog});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
-console.log('시나리오 1 — 형광펜·메모·책갈피는 절 하나에 함께, 다 지우면 칸이 사라진다');
+console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
 {
   ST.bibleMarks = {};
   const k = _brKey(42, 3, 16);
   sc.eq('자리 이름 = 책번호(1~66).장.절', k, '43.3.16');
   _brSetMark(k, { h: 2 });
-  _brSetMark(k, { m: '  하나님이 세상을 사랑하사  ' });
   _brSetMark(k, { k: true });
-  sc.eq('셋이 한 칸에', Object.keys(ST.bibleMarks[k]).sort(), ['h', 'k', 'm']);
-  sc.eq('메모는 앞뒤 공백을 다듬는다', ST.bibleMarks[k].m, '하나님이 세상을 사랑하사');
+  sc.eq('둘이 한 칸에 + 칠한 때(ht)', Object.keys(ST.bibleMarks[k]).sort(), ['h', 'ht', 'k']);
   const before = ST.bibleMarks[k];
   _brSetMark(k, { h: 0 });
   sc.eq('바꿀 때 객체를 새로 만든다 (병합이 절마다 견준다)', ST.bibleMarks[k] !== before, true);
-  _brSetMark(k, { m: '' }); _brSetMark(k, { k: false });
+  sc.eq('형광펜을 지우면 날짜도 같이', 'ht' in ST.bibleMarks[k], false);
+  _brSetMark(k, { k: false });
   sc.eq('다 지우면 칸이 없어진다', k in ST.bibleMarks, false);
+}
+
+console.log('\n시나리오 1-2 — 메모: 한 절에 여럿 · 여러 절 묶음에 하나 (HB 2026-10-06)');
+{
+  ST.bibleNotes = {};
+  const a = _brNoteSave(null, 42, 3, [17, 16], '  묶음 메모  ');
+  const b = _brNoteSave(null, 42, 3, [16], '두 번째 메모');
+  sc.eq('묶음은 절을 차례대로 담는다', ST.bibleNotes[a].v, [16, 17]);
+  sc.eq('글은 다듬는다', ST.bibleNotes[a].t, '묶음 메모');
+  sc.eq('16절에는 메모 둘', _brNotesAt(42, 3, 16).length, 2);
+  sc.eq('17절에는 묶음 메모 하나', _brNotesAt(42, 3, 17), [a]);
+  _brNoteSave(a, 0, 0, [], '고친 글');
+  sc.eq('고치면 같은 칸 · 글이 바뀐다', ST.bibleNotes[a].t, '고친 글');
+  _brNoteSave(b, 0, 0, [], '');
+  sc.eq('글을 비우면 지운다', b in ST.bibleNotes, false);
+}
+
+console.log('\n시나리오 1-3 — v26-1006-4 의 옛 메모(bibleMarks.m)를 옮긴다 · 두 기기가 옮겨도 하나');
+{
+  ST.bibleMarks = { '43.3.16': { m: '옛 메모', h: 1 }, '1.1.1': { m: '태초' } };
+  ST.bibleNotes = {};
+  _brMigrateNotes();
+  sc.eq('메모 둘이 옮겨졌다', Object.keys(ST.bibleNotes).sort(), ['m1.1.1', 'm43.3.16']);
+  sc.eq('형광펜은 남고 m 은 빠진다', ST.bibleMarks['43.3.16'], { h: 1 });
+  sc.eq('메모만 있던 칸은 사라진다', '1.1.1' in ST.bibleMarks, false);
+  const other = { '43.3.16': { b: 43, c: 3, v: [16], t: '옛 메모', at: 0, u: 0 } };
+  sc.eq('이름이 정해져 있어 다른 기기 결과와 같다', ST.bibleNotes['m43.3.16'], other['43.3.16']);
+}
+
+console.log('\n시나리오 1-4 — 읽은 곳: 목록에서 지워도 기록은 남고, 다시 읽으면 다시 나온다');
+{
+  ST.settings = {};
+  ST.bibleReadLog = { '2026-10-05': [{ b: 43, c: 3, time: '07:00', d: 60 }], '2026-10-06': [{ b: 1, c: 1, time: '08:00', d: 60 }] };
+  sc.eq('최근 것부터', _brHistory().map(x => x.b + '.' + x.c), ['0.1', '42.3']);
+  _brHistHide(42, 3);
+  sc.eq('지운 장은 빠진다', _brHistory().map(x => x.b + '.' + x.c), ['0.1']);
+  sc.eq('기록은 그대로', ST.bibleReadLog['2026-10-05'].length, 1);
+  ST.bibleReadLog['2099-01-01'] = [{ b: 43, c: 3, time: '07:00', d: 60 }];
+  sc.eq('다시 읽으면 다시 나온다', _brHistory()[0].b + '.' + _brHistory()[0].c, '42.3');
+  ST.settings = {};
 }
 
 console.log('\n시나리오 2 — 읽은 장: 10초 미만은 버리고, 30분에서 자른다, 시작한 날에 담는다');
@@ -150,7 +189,7 @@ console.log('\n시나리오 11 — 대량 손실 방어가 성경 기록도 센�
 console.log('\n시나리오 12 — 이름이 등록돼야 하는 자리 모두');
 {
   const has = (start, end, name) => slice(start, end).indexOf(name) >= 0;
-  ['bibleMarks', 'bibleReadLog'].forEach(n => {
+  ['bibleMarks', 'bibleReadLog', 'bibleNotes'].forEach(n => {
     sc.eq(n + ' — 처음 상태(defaultState)', has('function defaultState(){', 'settings:{', n), true);
     sc.eq(n + ' — 불러올 때 빈 칸 채우기', new RegExp('if\\(!ST\\.' + n + '\\)ST\\.' + n + '=\\{\\};').test(SRC), true);
     sc.eq(n + ' — 원격 받기(applyRemoteState)', has('function applyRemoteState(remote){', 'ST.contacts=', n), true);
@@ -173,12 +212,31 @@ console.log('\n시나리오 13 — 들어오는 길');
   sc.eq('마지막 자리는 이 기기에만 (_lsk)', /_lsk\('biblePos'\)/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-2 — 메모 병합: 두 기기가 같은 절에 각각 메모를 남겨도 둘 다 산다');
+{
+  const base = { bibleNotes: {} };
+  const local = { bibleNotes: { na: { b: 43, c: 3, v: [16], t: '폰', at: 1, u: 1 } } };
+  const cloud = { bibleNotes: { nb: { b: 43, c: 3, v: [16], t: 'PC', at: 2, u: 2 } } };
+  const m = _fbMerge(clone(base), local, cloud, false);
+  sc.eq('둘 다', Object.keys(m.bibleNotes).sort(), ['na', 'nb']);
+}
+
+console.log('\n시나리오 13-3 — 저장: 성경에서 저장한 장절도 저장 목록이 본문을 찾는다');
+{
+  sc.eq('_findVerseByRefLoose 끝에서 성경 본문을 찾는다', /\(\(typeof _brVerseObj==='function'\)\?_brVerseObj\(ref\):null\)/.test(slice('function _findVerseByRefLoose(', '// ── 중복 구절 일회성 정리')), true);
+  sc.eq('저장 단추는 앱의 저장 목록 창을 연다', /openKeepPicker\(ref\);/.test(slice("  $('brAKeep').onclick=", '};')), true);
+  sc.eq('저장 목록 창을 성경 위로 올렸다가 닫을 때 되돌린다', /overlay\.style\.zIndex='4720';modal\.style\.zIndex='4730';/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
   sc.eq('검색칸 규칙을 input 전체에 걸지 않는다 (체크박스가 부풀었다)', /#bibleRd input\{|\.br-fbar input\{/.test(css), false);
   sc.eq('체크박스는 직접 그린다 (아이폰은 크기 지정을 무시)', /#brFree\{-webkit-appearance:none;appearance:none;/.test(css), true);
   sc.eq('검색어 순서 자유 — 처음엔 꺼짐', /_brS\('bibleFindFree',false\)/.test(SRC), true);
+  sc.eq('고르기·검색 판은 아이폰 시계 줄만큼 비운다 (HB 신고 v26-1006-5)', /#bibleRd \.br-pick\{padding-top:env\(safe-area-inset-top,0px\);\}/.test(SRC), true);
+  sc.eq('말씀 팝업이 가운데 띄우기 규칙을 position:relative 로 덮지 않는다', /id="versePopupModal" style="[^"]*position:relative/.test(SRC), false);
+  sc.eq('바닥 시트는 끌어 내려 닫는다 (공용 _sheetDrag)', /_sheetDrag\(sh,\[sh\.querySelector\('\.br-grab'\),sh\.querySelector\('\.br-shead'\)\]/.test(SRC), true);
 }
 
 sc.done();
