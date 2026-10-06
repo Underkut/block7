@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1006-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1006-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1006-1";
+const APP_VERSION = "v. 26-1006-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13806,7 +13806,8 @@ function showToast(msg,busy,action){
   // Long messages (e.g. diagnostic errors) wrap; short ones keep the
   // original compact single-line pill. Duration is the same for both now.
   const long=s.length>24;
-  t.style.whiteSpace=long?'normal':'nowrap';
+  // 줄바꿈(\n)을 적은 문구는 그 자리에서 끊는다 (v26-1006-2, HB)
+  t.style.whiteSpace=s.includes('\n')?'pre-line':(long?'normal':'nowrap');
   t.style.textAlign=long?'left':'center';
   const icon=busy?_TOAST_SPIN:ICONS[kind];
   const act=(!busy&&action&&action.label&&typeof action.onClick==='function')?action:null;
@@ -26298,7 +26299,7 @@ function vpCycleFullTab(){
   const next=_vpNextTab(_vpFullTab);
   const cur=_vfCurrentVerse();
   const list=_vfTabList(next);
-  if(!list.length){showToast(_vpTabName(next)+'이 없어요');return;}
+  if(!list.length){showToast('이 모음에는\n'+(next==='prop'?'명제가':'말씀이')+' 없어요');return;}
   let j=cur?list.findIndex(v=>String(v.ref||'')===String(cur.ref||'')):0;
   if(j<0)j=0;
   // ⚠️ _vfSetNav 는 '제목이 가리키는 타일뷰'(_vfNavTile)를 비운다 — 갈래만
