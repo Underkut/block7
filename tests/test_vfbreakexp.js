@@ -120,8 +120,10 @@ console.log('\n시나리오 3 — 실제 판정 결과 (직접 로드해서 확�
 
 console.log('\n시나리오 3-1 — 붙어 다녀야 하는 낱말 쌍은 그 사이를 끊지 않는다 (v26-0819-11, HB 3)');
 {
-  sc.eq('쌍 목록에 것/같이, 하려/함이니라 가 있다',
-        SRC.includes("const _VF_PAIR_KEEP=[['것','같이'],['하려','함이니라']];"), true);
+  sc.eq('쌍 목록에 것/같이, 하려/함이니라, 그리고 ~다+하심 패턴이 있다',
+        SRC.includes("const _VF_PAIR_KEEP=[['것','같이'],['하려','함이니라'],[/다$/,/^하(심|신|시)/]];"), true);
+  sc.eq('쌍 비교가 정규식도 받는다(조사가 붙어도 걸리게)',
+        SRC.includes("const hit=(p,s)=>p instanceof RegExp?p.test(s):p===s;"), true);
   const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
   eval(m[0]);
   const ctx={measureText:(t)=>({width:t.length*12})};
@@ -455,6 +457,47 @@ console.log('\n시나리오 10 — 2-4 · 3-1(신규): 과/와 로 이어지는 
   // 매 항마다 강제로 끊지는 않는다 (넉넉한 폭에서는 여러 항이 한 줄에 모인다)
   sc.eq('3-1: 넉넉한 폭에서는 여러 병렬항이 한 줄에 모인다(강제가 아니라 우선)',
         _vfWrapFit(t2.split(' '),ctx(14),600).length < 9, true);
+}
+
+console.log('\n시나리오 11 — 2-2 확장: "~다 하심…" 을 한 낱말처럼 (v26-1006-3, HB 로마서 5:1 재신고)');
+{
+  const m = SRC.match(/const _VF_MINW[\s\S]*?function _vfFixWidow[\s\S]*?\n}\n/);
+  eval(m[0]);
+  // HB 신고 — "그러므로 우리가 믿음으로 의롭다 / 하심을 받았으니" 로 쪼개졌다
+  sc.eq("'의롭다'는 이제 must 가 아니라 no (뒤가 '하심…' 일 때)",
+        _vfBreakClass('의롭다','하심을'), 'no');
+  sc.eq("뒤가 '하심…' 이 아니면 예전대로 must",
+        _vfBreakClass('의롭다','함을'), 'must');
+
+  // 조사가 붙어도 걸린다 / 같은 꼴의 다른 낱말도 걸린다
+  // ⚠️ '의롭다' 를 글자 그대로 박은 게 아니다 — '~다' + '하심…' 꼴 전체를 묶는다.
+  //    (HB 재확인: "세웠다 하심", "없다 하심" 등도 모두 포함되어야 한다)
+  [['의롭다','하심을'],['의롭다','하심이'],['거룩하다','하심을'],
+   ['의롭다','하시는'],['의롭다','하신'],['선하다','하시고'],
+   ['세웠다','하심'],['세웠다','하심을'],['없다','하심'],['없다','하심이'],
+   ['먹었다','하심을'],['보내셨다','하심을'],['크다','하심을'],['기록하였다','하심을']
+  ].forEach(([a,b])=>{
+    sc.eq(`'${a} ${b}' 는 붙여 둔다`, _vfPairKeep(a,b), true);
+  });
+  // 지나치게 넓어지지 않았는지 — '다' 로 끝나기만 해서는 안 걸린다
+  [['의롭다','함을'],['받았다','우리는'],['하였다','그가'],['믿는다','사람이']].forEach(([a,b])=>{
+    sc.eq(`'${a} ${b}' 는 평소대로`, _vfPairKeep(a,b), false);
+  });
+  // 기존 쌍은 그대로
+  sc.eq("기존 쌍 '것 같이' 유지", _vfPairKeep('것','같이'), true);
+  sc.eq("기존 쌍 '하려 함이니라' 유지", _vfPairKeep('하려','함이니라'), true);
+  sc.eq("'것 같은' 은 쌍이 아니다", _vfPairKeep('것','같은'), false);
+
+  // 실제 구절을 여러 글자 폭에서 — '의롭다' 가 줄 끝에 오면 안 된다
+  const raw='그러므로 우리가 믿음으로 의롭다 하심을 받았으니 우리 주 예수 그리스도로 말미암아 하나님과 화평을 누리자';
+  const ctx=cw=>({measureText:t=>({width:[...t].reduce((a,c)=>a+(/\s/.test(c)?cw*0.4:cw),0)})});
+  [12,14,16,18,20,22].forEach(cw=>{
+    const ls=_vfWrapFit(raw.split(' '),ctx(cw),360);
+    sc.eq(`글자폭 ${cw}: '의롭다' 뒤에서 끊기지 않는다`,
+          ls.some((l,i)=>i<ls.length-1&&l.endsWith('의롭다')), false);
+    sc.eq(`글자폭 ${cw}: '의롭다 하심을' 이 한 줄에 있다`,
+          ls.some(l=>l.includes('의롭다 하심을')), true);
+  });
 }
 
 sc.done();

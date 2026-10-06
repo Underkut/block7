@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1006-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1006-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5855,7 +5855,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1006-2";
+const APP_VERSION = "v. 26-1006-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14239,9 +14239,20 @@ const _VF_EXP_EXCEPT=/^(따라)$/;   // "HB 줄바꿈 S2" 예외 — '라'로 �
 // 글자 수와 무관하게 항상 나눈다.
 const _VF_EXP_SHORT_MERGE_MAX=14;
 function _vfIsHeotdoeException(w,next){return w==='헛되고'&&next==='헛되며';}
-// v26-0819-11, HB 3 — 이 두 낱말이 이웃해 있으면 그 사이는 절대 끊지 않는다.
-const _VF_PAIR_KEEP=[['것','같이'],['하려','함이니라']];
-function _vfPairKeep(w,next){return _VF_PAIR_KEEP.some(([a,b])=>w===a&&next===b);}
+// HB 2-2 — 이 두 낱말이 이웃해 있으면 그 사이는 절대 끊지 않는다.
+// ⚠️ v26-1006-3 — 글자가 똑같아야만 걸리던 것을 **정규식도 쓸 수 있게** 넓혔다.
+//    HB 재신고(로마서 5:1): "그러므로 우리가 믿음으로 의롭다 / 하심을 받았으니"
+//    처럼 '의롭다 하심'(신학 용어 한 덩어리)이 쪼개졌다. '의롭다'가 '다'로 끝나
+//    원래 줄바꿈 **선호**(must) 자리였기 때문이다.
+//    '하심'은 뒤에 조사가 붙어 '하심을·하심이' 로 나오므로 글자 비교로는 못 잡는다.
+//    그래서 앞은 /다$/, 뒤는 /^하(심|신|시)/ 로 두어 '~다 하심…' 전체를 묶는다
+//    ("의롭다 하심" 뿐 아니라 "거룩하다 하심", "의롭다 하시는" 도 같이 걸린다).
+const _VF_PAIR_KEEP=[['것','같이'],['하려','함이니라'],[/다$/,/^하(심|신|시)/]];
+function _vfPairKeep(w,next){
+  if(!w||!next)return false;
+  const hit=(p,s)=>p instanceof RegExp?p.test(s):p===s;
+  return _VF_PAIR_KEEP.some(([a,b])=>hit(a,w)&&hit(b,next));
+}
 // v26-0819-12, HB 2-2 — '~게' 뒤가 "하려 함이니라" 쌍으로 이어지면 금지를 풀어준다.
 function _vfGeException(w,next,next2){return /게$/.test(w)&&next==='하려'&&next2==='함이니라';}
 // v26-0820-1, HB 2-1 — '한·의·지·게'는 이미 _VF_NO_TRANS/_VF_NO_AUX 가 접미사로
@@ -14434,6 +14445,12 @@ let _vfCanvas=null;
 // 'ok' 권장 / 'soft' 중립 / 'no' 금지
 function _vfBreakClass(w,next){
   if(!w)return 'no';
+  // ⚠️ v26-1006-3 — 2-2(낱말 쌍)를 맨 앞에서 'no' 로 못박는다.
+  //    DP 는 쌍 사이를 어차피 하드로 막지만(solve 의 _vfPairKeep continue), 등급이
+  //    'must' 로 남아 있으면 "필수 자리를 지나쳤다" 벌점(+280)이 그 낱말을 품은
+  //    모든 줄에 붙어 배치가 통째로 틀어진다 — "의롭다"가 바로 그 경우였다.
+  //    여기서 'no' 로 내려두면 벌점도 사라지고 DP 의 하드 금지와도 말이 맞는다.
+  if(_VF_EXP_BREAK_RULES&&next&&_vfPairKeep(w,next))return 'no';
   // ⚠️ v26-0819-11, HB — "이 규칙은 모든 규칙 위에 최상위 규칙" 이라는 재확인으로
   //    S2 를 맨 앞으로 옮겼다. '~께서·~에서'처럼 원래 no 였던 낱말도 '서'로
   //    끝나면 이제 forced 가 이긴다 — "따라"만 여전히 예외.
