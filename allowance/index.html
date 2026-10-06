@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<!-- 용돈장 v. 26-1006-1 — BLOCK7 과 별개인 독립 앱 (allowance/) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fbf7f1">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<title>용돈장</title>
+<style>
+:root{
+  --bg:#fbf7f1; --card:#ffffff; --ink:#2b2622; --sub:#8a8178; --line:#ece4d9;
+  --accent:#e07a4f; --accent-soft:#fbe7dc; --in:#3f8f6b; --out:#d2573f; --bar:#efe6da;
+  --shadow:0 6px 24px rgba(60,40,20,.10);
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#17140f; --card:#221e18; --ink:#f1ebe3; --sub:#9c9288; --line:#332d25;
+    --accent:#ef8b61; --accent-soft:#3a2a20; --in:#62c08f; --out:#ef7b63; --bar:#332d25;
+    --shadow:0 6px 24px rgba(0,0,0,.4); }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Pretendard","Noto Sans KR",system-ui,-apple-system,sans-serif;font-weight:300;
+  -webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:560px;margin:0 auto}
+.view{flex:1;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 18px) 20px 120px;display:none}
+.view.on{display:block}
+h1{font-size:15px;font-weight:400;color:var(--sub);margin:0 0 6px;letter-spacing:.02em}
+.big{font-size:44px;font-weight:300;letter-spacing:-.02em;line-height:1.1}
+.big small{font-size:20px;color:var(--sub);margin-left:2px}
+.pills{display:flex;gap:10px;margin:16px 0 4px;flex-wrap:wrap}
+.pill{background:var(--card);border-radius:14px;padding:10px 14px;flex:1;min-width:130px;box-shadow:var(--shadow)}
+.pill b{display:block;font-weight:400;font-size:18px;margin-top:2px}
+.pill>span{font-size:12px;color:var(--sub)}
+.neg{color:var(--out)}
+.mon{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 6px;font-size:16px;font-weight:400}
+.mon button{width:34px;height:34px;display:grid;place-items:center;color:var(--sub)}
+.msum{text-align:center;font-size:13px;color:var(--sub);margin-bottom:12px}
+.msum i{font-style:normal;color:var(--in)} .msum u{text-decoration:none;color:var(--out)}
+.day{font-size:12px;color:var(--sub);margin:16px 4px 6px}
+.row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);
+  border-radius:14px;padding:13px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
+.row .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.row .mid{flex:1;min-width:0}
+.row .t{font-size:15px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .s{font-size:12px;color:var(--sub);margin-top:2px}
+.row .a{font-size:16px;font-weight:400;white-space:nowrap}
+.empty{text-align:center;color:var(--sub);padding:44px 10px;font-size:14px;line-height:1.7}
+.fab{position:fixed;right:max(20px,calc(50% - 260px));bottom:calc(env(safe-area-inset-bottom) + 76px);
+  width:58px;height:58px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;
+  box-shadow:0 8px 22px rgba(224,122,79,.45);z-index:5}
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;max-width:560px;margin:0 auto;background:var(--bg);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:4}
+.tabs button{flex:1;padding:12px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--sub)}
+.tabs button.on{color:var(--accent)}
+.plan{background:var(--card);border-radius:16px;padding:15px 16px;margin-bottom:10px;box-shadow:var(--shadow);width:100%;text-align:left;display:block}
+.plan .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.plan .nm{font-size:16px;font-weight:400}
+.plan .left{font-size:13px;color:var(--sub);white-space:nowrap}
+.plan .left b{color:var(--ink);font-weight:400}
+.bar{height:6px;border-radius:3px;background:var(--bar);margin:11px 0 7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.bar i.over{background:var(--out)}
+.plan .sub{font-size:12px;color:var(--sub)}
+.plan.done{opacity:.55}
+.note{font-size:13px;color:var(--sub);line-height:1.7;margin:6px 2px 16px}
+.warn{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13px;margin:0 0 14px;line-height:1.6}
+.sec{font-size:13px;color:var(--sub);margin:22px 4px 8px}
+.btn{display:block;width:100%;background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:8px;
+  text-align:left;font-size:15px;font-weight:400;box-shadow:var(--shadow)}
+.btn small{display:block;font-weight:300;color:var(--sub);font-size:12px;margin-top:3px}
+.btn.main{background:var(--accent);color:#fff;text-align:center}
+.btn.del{color:var(--out);text-align:center;box-shadow:none;background:transparent}
+/* 바닥 시트 */
+.dim{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+.dim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--bg);border-radius:22px 22px 0 0;
+  padding:8px 20px calc(env(safe-area-inset-bottom) + 20px);transform:translateY(105%);transition:transform .25s;z-index:11;
+  max-height:92vh;overflow-y:auto}
+.sheet.on{transform:none}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 14px}
+.sheet h2{font-size:17px;font-weight:400;margin:0 0 14px;text-align:center}
+.seg{display:flex;background:var(--bar);border-radius:12px;padding:3px;margin-bottom:14px}
+.seg button{flex:1;padding:10px 0;border-radius:10px;font-size:15px;color:var(--sub)}
+.seg button.on{background:var(--card);color:var(--ink);font-weight:400;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+label{display:block;font-size:12px;color:var(--sub);margin:12px 2px 5px}
+.in{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px;outline:none}
+.in:focus{border-color:var(--accent)}
+.amt{font-size:30px;font-weight:300;text-align:right}
+.chips{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.chips button{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px 12px;font-size:13px}
+.two{display:flex;gap:10px}.two>div{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 140px);transform:translateX(-50%);background:#2b2622;color:#fff;
+  padding:10px 16px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20;white-space:nowrap}
+.toast.on{opacity:.95}
+textarea.in{min-height:110px;resize:none;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 내역 -->
+  <section class="view on" id="vHome">
+    <h1>지금 내 돈</h1>
+    <div class="big" id="bal"></div>
+    <div class="pills">
+      <div class="pill"><span>계획에 묶인 돈</span><b id="reserved"></b></div>
+      <div class="pill"><span>자유롭게 쓸 수 있는 돈</span><b id="free"></b></div>
+    </div>
+    <div class="mon">
+      <button id="mPrev" aria-label="이전 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <span id="mLabel"></span>
+      <button id="mNext" aria-label="다음 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="msum" id="mSum"></div>
+    <div id="list"></div>
+  </section>
+
+  <!-- 계획 -->
+  <section class="view" id="vPlan">
+    <h1>쓸 계획</h1>
+    <div class="note">받은 용돈을 어디에 쓸지 미리 정해 두세요. 그 계획으로 돈을 쓰면 남은 금액이 줄어들어요.</div>
+    <div id="planWarn"></div>
+    <div id="plans"></div>
+    <button class="btn main" id="addPlan">＋ 계획 만들기</button>
+  </section>
+
+  <!-- 더보기 -->
+  <section class="view" id="vMore">
+    <h1>더보기</h1>
+    <div class="note">이 돈 기록은 <b>이 휴대폰 안에만</b> 저장돼요. 휴대폰을 바꾸거나 앱을 지우면 사라지니, 가끔 백업해 두세요.</div>
+    <div class="sec">백업</div>
+    <button class="btn" id="bkCopy">기록 복사하기<small>복사한 글을 카톡 '나에게'에 붙여 두면 안전해요</small></button>
+    <button class="btn" id="bkFile">파일로 저장하기<small id="bkLast"></small></button>
+    <div class="sec">불러오기</div>
+    <button class="btn" id="bkOpen">백업에서 불러오기<small>복사해 둔 글을 붙여 넣거나 파일을 골라요</small></button>
+    <div class="sec">정보</div>
+    <div class="note" id="about"></div>
+  </section>
+
+  <button class="fab" id="fab" aria-label="기록 추가"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+
+  <nav class="tabs">
+    <button data-v="vHome" class="on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>내역</button>
+    <button data-v="vPlan"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg>계획</button>
+    <button data-v="vMore"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>더보기</button>
+  </nav>
+</div>
+
+<div class="dim" id="dim"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const APP_VERSION = "v. 26-1006-1";
+const KEY = 'allowance.v1';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won = n => Number(n).toLocaleString('ko-KR') + '원';
+
+/* ───────── 데이터 ───────── */
+let S = load();
+function blank(){ return {v:1, tx:[], plans:[], lastBackup:0}; }
+function load(){
+  try{
+    const r = localStorage.getItem(KEY);
+    if(r){ const o = JSON.parse(r); if(o && Array.isArray(o.tx) && Array.isArray(o.plans)) return Object.assign(blank(), o); }
+  }catch(e){}
+  return blank();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요 (저장 공간 부족?)'); } }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+function todayStr(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ───────── 계산 ───────── */
+function balance(){ return S.tx.reduce((a,t) => a + (t.t==='in' ? t.amt : -t.amt), 0); }
+function planSpent(id){ return S.tx.reduce((a,t) => a + (t.t==='out' && t.plan===id ? t.amt : 0), 0); }
+function planLeft(p){ return p.done ? 0 : Math.max(0, p.amt - planSpent(p.id)); }
+function reserved(){ return S.plans.reduce((a,p) => a + planLeft(p), 0); }
+
+/* ───────── 화면 ───────── */
+let month = todayStr().slice(0,7);
+function monthShift(m, d){ let [y,mm] = m.split('-').map(Number); mm += d; while(mm<1){mm+=12;y--} while(mm>12){mm-=12;y++} return y+'-'+String(mm).padStart(2,'0'); }
+
+function render(){
+  const bal = balance(), res = reserved(), free = bal - res;
+  $('bal').innerHTML = (bal<0?'<span class="neg">':'<span>') + Number(bal).toLocaleString('ko-KR') + '</span><small>원</small>';
+  $('reserved').textContent = won(res);
+  $('free').innerHTML = '<span class="'+(free<0?'neg':'')+'">'+won(free)+'</span>';
+
+  const [y,m] = month.split('-');
+  $('mLabel').textContent = y+'년 '+Number(m)+'월';
+  $('mNext').style.visibility = month >= todayStr().slice(0,7) ? 'hidden' : 'visible';
+  const rows = S.tx.filter(t => t.date.slice(0,7) === month).sort((a,b) => a.date<b.date?1:a.date>b.date?-1:(b.at||0)-(a.at||0));
+  const inSum = rows.filter(t=>t.t==='in').reduce((a,t)=>a+t.amt,0), outSum = rows.filter(t=>t.t==='out').reduce((a,t)=>a+t.amt,0);
+  $('mSum').innerHTML = rows.length ? '받은 돈 <i>'+won(inSum)+'</i> · 쓴 돈 <u>'+won(outSum)+'</u>' : '';
+  if(!rows.length){
+    $('list').innerHTML = '<div class="empty">'+(S.tx.length ? '이 달에는 기록이 없어요.' : '아직 기록이 없어요.<br>아래 ＋ 버튼으로 받은 용돈이나 쓴 돈을 적어 보세요.')+'</div>';
+  }else{
+    let h = '', last = '';
+    const wd = ['일','월','화','수','목','금','토'];
+    rows.forEach(t => {
+      if(t.date !== last){ last = t.date; const d = new Date(t.date+'T00:00:00'); h += '<div class="day">'+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+wd[d.getDay()]+')</div>'; }
+      const pl = t.plan ? S.plans.find(p=>p.id===t.plan) : null;
+      const sub = [pl ? pl.name : '', t.memo ? '' : ''].filter(Boolean).join(' · ');
+      h += '<button class="row" data-tx="'+t.id+'"><span class="dot" style="background:var(--'+(t.t==='in'?'in':'out')+')"></span>'
+        + '<span class="mid"><div class="t">'+esc(t.memo || (t.t==='in'?'용돈':'쓴 돈'))+'</div>'+(sub?'<div class="s">'+esc(sub)+'</div>':'')+'</span>'
+        + '<span class="a" style="color:var(--'+(t.t==='in'?'in':'out')+')">'+(t.t==='in'?'+':'−')+Number(t.amt).toLocaleString('ko-KR')+'원</span></button>';
+    });
+    $('list').innerHTML = h;
+  }
+  renderPlans();
+  const lb = S.lastBackup ? '마지막 백업: ' + new Date(S.lastBackup).toLocaleDateString('ko-KR') : '아직 백업한 적이 없어요';
+  $('bkLast').textContent = lb;
+  $('about').textContent = '용돈장 ' + APP_VERSION;
+}
+
+function renderPlans(){
+  const free = balance() - reserved();
+  $('planWarn').innerHTML = free < 0 ? '<div class="warn">계획으로 묶어 둔 돈이 지금 가진 돈보다 <b>'+won(-free)+'</b> 많아요. 계획 금액을 조금 줄여 볼까요?</div>' : '';
+  if(!S.plans.length){ $('plans').innerHTML = '<div class="empty">아직 계획이 없어요.<br>예) 저금 10,000원 · 간식 5,000원 · 친구 선물 8,000원</div>'; return; }
+  const ordered = S.plans.slice().sort((a,b) => (a.done?1:0)-(b.done?1:0));
+  $('plans').innerHTML = ordered.map(p => {
+    const sp = planSpent(p.id), left = p.amt - sp, pct = p.amt>0 ? Math.min(100, Math.round(sp/p.amt*100)) : 0;
+    return '<button class="plan'+(p.done?' done':'')+'" data-plan="'+p.id+'"><div class="top"><span class="nm">'+esc(p.name)+(p.done?' (끝)':'')+'</span>'
+      + '<span class="left">'+(left>=0 ? '남은 돈 <b>'+won(left)+'</b>' : '<b class="neg">'+won(-left)+' 넘게 썼어요</b>')+'</span></div>'
+      + '<div class="bar"><i class="'+(left<0?'over':'')+'" style="width:'+(left<0?100:pct)+'%"></i></div>'
+      + '<div class="sub">쓴 돈 '+won(sp)+' / 계획 '+won(p.amt)+'</div></button>';
+  }).join('');
+}
+
+/* ───────── 시트 ───────── */
+function openSheet(html){ $('sheet').innerHTML = '<div class="grab"></div>'+html; $('sheet').classList.add('on'); $('dim').classList.add('on'); $('sheet').scrollTop = 0; }
+function closeSheet(){ $('sheet').classList.remove('on'); $('dim').classList.remove('on'); if(document.activeElement) document.activeElement.blur(); }
+$('dim').onclick = closeSheet;
+
+function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), 2200); }
+const numOnly = el => { el.value = el.value.replace(/[^\d]/g,'').replace(/^0+(?=\d)/,''); };
+const fmtIn = el => { numOnly(el); };
+
+function txSheet(id){
+  const ex = id ? S.tx.find(t => t.id===id) : null;
+  let kind = ex ? ex.t : 'out';
+  const activePlans = S.plans.filter(p => !p.done || (ex && ex.plan===p.id));
+  openSheet(
+    '<h2>'+(ex?'기록 고치기':'기록 추가')+'</h2>'
+    + '<div class="seg"><button data-k="out" class="'+(kind==='out'?'on':'')+'">쓴 돈</button><button data-k="in" class="'+(kind==='in'?'on':'')+'">받은 돈</button></div>'
+    + '<label>금액</label><input class="in amt" id="fAmt" inputmode="numeric" placeholder="0" value="'+(ex?ex.amt:'')+'">'
+    + '<div class="chips" id="chips"></div>'
+    + '<label>메모 (어디에 썼는지 · 누구한테 받았는지)</label><input class="in" id="fMemo" maxlength="40" value="'+(ex?esc(ex.memo):'')+'" placeholder="예) 떡볶이 / 할머니 용돈">'
+    + '<div class="two"><div><label>날짜</label><input class="in" type="date" id="fDate" value="'+(ex?ex.date:todayStr())+'" max="'+todayStr()+'"></div>'
+    + '<div id="planWrap"><label>어떤 계획으로 썼나요?</label><select class="in" id="fPlan"><option value="">계획 없음</option>'
+    + activePlans.map(p=>'<option value="'+p.id+'"'+(ex&&ex.plan===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></div></div>'
+    + '<div style="height:16px"></div><button class="btn main" id="fSave">'+(ex?'고치기':'기록하기')+'</button>'
+    + (ex?'<button class="btn del" id="fDel">이 기록 지우기</button>':'')
+  );
+  const chips = [500,1000,5000,10000];
+  $('chips').innerHTML = chips.map(c=>'<button data-c="'+c+'">+'+Number(c).toLocaleString('ko-KR')+'</button>').join('') + '<button data-c="0">지우기</button>';
+  const sync = () => { $('planWrap').style.display = (kind==='out' && activePlans.length) ? '' : 'none'; if(kind==='in') $('fPlan').value=''; };
+  sync();
+  $('fAmt').oninput = e => numOnly(e.target);
+  $('chips').onclick = e => { const b = e.target.closest('button'); if(!b) return; const c = +b.dataset.c; $('fAmt').value = c ? String((+$('fAmt').value||0)+c) : ''; };
+  $('sheet').querySelector('.seg').onclick = e => { const b = e.target.closest('button'); if(!b) return; kind = b.dataset.k;
+    $('sheet').querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on', x===b)); sync(); };
+  $('fSave').onclick = () => {
+    const amt = parseInt($('fAmt').value,10);
+    if(!amt || amt<=0){ toast('금액을 적어 주세요'); $('fAmt').focus(); return; }
+    const date = $('fDate').value || todayStr();
+    const rec = {id: ex?ex.id:uid(), t:kind, amt, memo:$('fMemo').value.trim(), date, plan: kind==='out' ? ($('fPlan').value||null) : null, at: ex?ex.at:Date.now()};
+    if(ex) S.tx[S.tx.findIndex(t=>t.id===ex.id)] = rec; else S.tx.push(rec);
+    save(); month = date.slice(0,7); closeSheet(); render(); toast(ex?'고쳤어요':'기록했어요');
+  };
+  if(ex) $('fDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(t=>t.id!==ex.id); save(); closeSheet(); render(); toast('지웠어요'); };
+}
+
+function planSheet(id){
+  const ex = id ? S.plans.find(p=>p.id===id) : null;
+  openSheet(
+    '<h2>'+(ex?'계획 고치기':'계획 만들기')+'</h2>'
+    + '<label>무엇에 쓸 건가요?</label><input class="in" id="pName" maxlength="20" value="'+(ex?esc(ex.name):'')+'" placeholder="예) 저금 / 간식 / 친구 선물">'
+    + '<label>얼마를 쓸 계획인가요?</label><input class="in amt" id="pAmt" inputmode="numeric" placeholder="0" value="'+(ex?ex.amt:'')+'">'
+    + (ex?'<div class="note" style="margin-top:12px">지금까지 이 계획으로 쓴 돈: '+won(planSpent(ex.id))+'</div>':'')
+    + '<div style="height:16px"></div><button class="btn main" id="pSave">'+(ex?'고치기':'만들기')+'</button>'
+    + (ex?'<button class="btn" id="pDone" style="text-align:center">'+(ex.done?'다시 계획으로 되돌리기':'이 계획 끝내기 (남은 돈은 자유롭게)')+'</button><button class="btn del" id="pDel">이 계획 지우기</button>':'')
+  );
+  $('pAmt').oninput = e => numOnly(e.target);
+  $('pSave').onclick = () => {
+    const name = $('pName').value.trim(), amt = parseInt($('pAmt').value,10);
+    if(!name){ toast('이름을 적어 주세요'); $('pName').focus(); return; }
+    if(!amt || amt<=0){ toast('금액을 적어 주세요'); $('pAmt').focus(); return; }
+    if(ex){ ex.name = name; ex.amt = amt; } else S.plans.push({id:uid(), name, amt, done:false});
+    save(); closeSheet(); render(); toast(ex?'고쳤어요':'계획을 만들었어요');
+  };
+  if(ex){
+    $('pDone').onclick = () => { ex.done = !ex.done; save(); closeSheet(); render(); };
+    $('pDel').onclick = () => {
+      if(!confirm('이 계획을 지울까요?\n(이미 적어 둔 돈 기록은 그대로 남아요)')) return;
+      S.tx.forEach(t => { if(t.plan===ex.id) t.plan = null; });
+      S.plans = S.plans.filter(p=>p.id!==ex.id); save(); closeSheet(); render(); toast('지웠어요');
+    };
+  }
+}
+
+/* ───────── 백업 ───────── */
+function backupText(){ return JSON.stringify({app:'allowance', v:1, at:Date.now(), data:{tx:S.tx, plans:S.plans}}); }
+function markBackup(){ S.lastBackup = Date.now(); save(); render(); }
+$('bkCopy').onclick = () => {
+  const txt = backupText();
+  const ok = () => { markBackup(); toast('복사했어요. 카톡 나에게 보내기에 붙여 두세요'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok, fallback); } else fallback();
+  function fallback(){
+    const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+    let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove();
+    if(r) ok(); else toast('복사하지 못했어요. 파일로 저장해 주세요');
+  }
+};
+$('bkFile').onclick = () => {
+  const blob = new Blob([backupText()], {type:'application/json'}), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = '용돈장-백업-'+todayStr()+'.json'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000); markBackup(); toast('파일로 저장했어요');
+};
+$('bkOpen').onclick = () => {
+  openSheet('<h2>백업에서 불러오기</h2><div class="note">복사해 둔 글을 아래에 붙여 넣거나, 저장해 둔 파일을 골라 주세요.<br><b>지금 있는 기록은 모두 백업 내용으로 바뀝니다.</b></div>'
+    + '<textarea class="in" id="rText" placeholder="여기에 붙여 넣기"></textarea>'
+    + '<input type="file" id="rFile" accept=".json,application/json" style="margin:10px 0;font-size:13px;width:100%">'
+    + '<div style="height:8px"></div><button class="btn main" id="rGo">불러오기</button>');
+  $('rFile').onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $('rText').value = r.result; }; r.readAsText(f); };
+  $('rGo').onclick = () => {
+    let o; try{ o = JSON.parse($('rText').value.trim()); }catch(e){ toast('백업 내용이 올바르지 않아요'); return; }
+    const d = o && o.app==='allowance' && o.data;
+    if(!d || !Array.isArray(d.tx) || !Array.isArray(d.plans)){ toast('용돈장 백업이 아니에요'); return; }
+    const tx = d.tx.filter(t => t && (t.t==='in'||t.t==='out') && Number.isFinite(+t.amt) && +t.amt>0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date||''))
+      .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), date:t.date, plan:t.plan?String(t.plan):null, at:+t.at||0}));
+    const plans = d.plans.filter(p => p && p.name && Number.isFinite(+p.amt)).map(p => ({id:String(p.id||uid()), name:String(p.name).slice(0,20), amt:Math.round(+p.amt), done:!!p.done}));
+    if(!confirm('기록 '+tx.length+'개, 계획 '+plans.length+'개를 불러와요.\n지금 있는 기록은 모두 바뀝니다. 계속할까요?')) return;
+    S = Object.assign(blank(), {tx, plans, lastBackup:S.lastBackup}); save(); closeSheet(); render(); toast('불러왔어요');
+  };
+};
+
+/* ───────── 연결 ───────── */
+$('fab').onclick = () => txSheet();
+$('addPlan').onclick = () => planSheet();
+$('list').onclick = e => { const b = e.target.closest('[data-tx]'); if(b) txSheet(b.dataset.tx); };
+$('plans').onclick = e => { const b = e.target.closest('[data-plan]'); if(b) planSheet(b.dataset.plan); };
+$('mPrev').onclick = () => { month = monthShift(month,-1); render(); };
+$('mNext').onclick = () => { if(month < todayStr().slice(0,7)){ month = monthShift(month,1); render(); } };
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x===b));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id===b.dataset.v));
+  $('fab').style.display = b.dataset.v==='vHome' ? '' : 'none';
+});
+// 안드로이드 뒤로가기 대신 시트는 바깥을 눌러 닫는다. 지워지지 않게 저장 공간을 영구로 요청.
+try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+</script>
+</body>
+</html>
