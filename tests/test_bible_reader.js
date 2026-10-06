@@ -230,7 +230,7 @@ console.log('\n시나리오 13-3 — 저장: 성경에서 저장한 장절도 �
 
 console.log('\n시나리오 13-4 — v26-1006-6 (HB 2차 신고)');
 {
-  sc.eq('내 표시에서 지울 때는 시트를 닫지 않고 본문만 다시 그린다', /_brListDelete\(row\.dataset\.del\);_brRenderList\(\);if\(_brOpen\)_brRerender\(true\);/.test(SRC), true);
+  sc.eq('내 표시에서 지울 때는 시트를 닫지 않고 본문만 다시 그린다', /_brListDelete\(row\.dataset\.del\);if\(after\)after\(\);else _brRenderList\(\);if\(_brOpen\)_brRerender\(true\);/.test(SRC), true);
   sc.eq('_brShow(…, keep) 은 시트를 안 닫는다', /if\(!keep\)\{_brSel\.clear\(\);_brCloseSheets\(\);\}/.test(SRC), true);
   sc.eq('고치는 중 → + 새 메모', /data-newmemo="1">\+ 새 메모</.test(SRC), true);
   sc.eq('앱 설정·말씀 설정도 끌어 내려 닫는다', /_sheetDrag\(a,\[a\.querySelector\('\.settings-hd'\)\]/.test(SRC) && /_sheetDrag\(b,\[b\.querySelector\('\.settings-hd'\)\]/.test(SRC), true);
@@ -243,6 +243,16 @@ console.log('\n시나리오 13-4 — v26-1006-6 (HB 2차 신고)');
     /if\(key==='verseBarOn'\)\{\s*_gnbExtrasSync\(\);/.test(SRC) &&
     /function renderVerseBar\(\)\{\s*const bar=document\.getElementById\('verseBar'\);\s*_gnbExtrasSync\(\);/.test(SRC), true);
   sc.eq('스위터에서는 vb-on 을 붙이지 않는다 (제 GNB 가 따로 있다)', /APP_PRODUCT!=='sweeter'\);\s*document\.body\.classList\.toggle\('vb-on',on\);/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-5 — v26-1006-7 (HB 3차 신고)');
+{
+  sc.eq('메모 창의 메모 목록도 밀어서 지운다 (공용 _brSwipeBind)', /_brSwipeBind\(\$\('brMemoList'\)/.test(SRC) && /_brSwipeBind\(\$\('brLBody'\)\);/.test(SRC), true);
+  sc.eq('책갈피 = 절 왼쪽 세로줄', /#bibleRd \.br-v\.bm\{box-shadow:inset 2px 0 0 var\(--ac-tx\);/.test(SRC), true);
+  sc.eq('책갈피 단추 = 접힌 모서리', /id="brAMark"><svg[^>]*><path d="M5 3h9l5 5v13H5z"\/>/.test(SRC), true);
+  sc.eq('Sweeter 에서 건너간 BLOCK7 화면: 덮개 표시(data-swboard)까지 내린다', /if\(_swBoardOn\(\)\)_swMount\(\);[\s\S]{0,200}else _swCoverOn\(false\);/.test(slice('function swCrossToggle(', '// 되돌아가는 단추')), true);
+  sc.eq('BLOCK7 에서 건너간 Sweeter 판에도 There·성경', /const board=\(typeof _swBoardOn==='function'\)&&_swBoardOn\(\);/.test(slice('function _swEditBtnSync(', '// 필터 아이콘')), true);
+  sc.eq('GNB 단추 높이는 로고 줄 가운데 (아이폰 시계 자리를 뺀다)', /\.gnb-there,\.gnb-bible\{display:none;position:absolute;left:84px;top:calc\(50% \+ var\(--gnb-safe,0px\) \/ 2\)/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
