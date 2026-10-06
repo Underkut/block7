@@ -164,5 +164,8 @@ cp -r fonts "$OUT/fonts"
 mkdir -p "$OUT/photos"
 cp photos/manifest.json "$OUT/photos/manifest.json"
 cp photos/*.jpg "$OUT/photos/" 2>/dev/null || true
+# 성경 본문(개역한글, 책마다 파일 하나). 빠지면 sweeter.my 에서 본문 보기가 빈 화면이 된다.
+# block7.my 는 깃헙 페이지가 저장소째 내보내 저절로 된다 — 사진첩과 같은 사정이다.
+cp -r bible "$OUT/bible"
 
 echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"
