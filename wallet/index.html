@@ -307,10 +307,29 @@ const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms||12); }catch
 let AC = null, SFXG = null, BGMG = null, bgmTimer = null, bgmStep = 0, bgmNext = 0;
 function ac(){
   if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
-      SFXG = AC.createGain(); SFXG.gain.value = .7; SFXG.connect(AC.destination);
-      BGMG = AC.createGain(); BGMG.gain.value = .2; BGMG.connect(AC.destination); }catch(e){ AC = null; return null; } }
-  if(AC.state==='suspended') AC.resume();
+      SFXG = AC.createGain(); SFXG.gain.value = 1; SFXG.connect(AC.destination);
+      BGMG = AC.createGain(); BGMG.gain.value = .35; BGMG.connect(AC.destination); }catch(e){ AC = null; return null; } }
   return AC;
+}
+// 휴대폰은 '손가락을 뗀 순간(터치 끝/클릭)'에만 소리를 허락한다 → 그때 깨운다
+function unlockAudio(){
+  const c = ac(); if(!c) return false;
+  try{ if(navigator.audioSession && S.bgm) navigator.audioSession.type = 'playback'; }catch(e){}
+  if(c.state!=='running') c.resume().catch(()=>{});
+  try{ const b = c.createBuffer(1,1,22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }catch(e){}
+  return c.state==='running';
+}
+// 아이폰의 무음 스위치를 넘기 위한 '소리 없는 재생'(배경음악을 켰을 때만)
+let keepEl = null;
+function keepAudio(on){
+  try{
+    if(on){
+      if(!keepEl){ const n = 2205, buf = new ArrayBuffer(44+n*2), v = new DataView(buf), w = (o,t) => { for(let i=0;i<t.length;i++) v.setUint8(o+i, t.charCodeAt(i)); };
+        w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,22050,true); v.setUint32(28,44100,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+        keepEl = new Audio(URL.createObjectURL(new Blob([buf], {type:'audio/wav'}))); keepEl.loop = true; }
+      keepEl.play().catch(()=>{});
+    }else if(keepEl) keepEl.pause();
+  }catch(e){}
 }
 function tone(dest, f, when, dur, type, vol, toF){
   const o = AC.createOscillator(), g = AC.createGain();
@@ -318,9 +337,10 @@ function tone(dest, f, when, dur, type, vol, toF){
   g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(vol, when+Math.min(.015, dur/3)); g.gain.exponentialRampToValueAtTime(0.0001, when+dur);
   o.connect(g); g.connect(dest); o.start(when); o.stop(when+dur+.05);
 }
-function sfx(name){
-  if(!S.sfx || S.mute || !ac()) return;
-  const t = AC.currentTime, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', v||.25, to);
+function sfx(name, force){
+  if(!force && (!S.sfx || S.mute)) return;
+  const c = ac(); if(!c) return;
+  const go = () => { const t = c.currentTime + .02, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', (v||.25)*1.8, to);
   switch(name){
     case 'tap': T(660,0,.05,'sine',.12); break;
     case 'plus': T(523,0,.08,'triangle',.28); T(784,.07,.12,'triangle',.28); break;
@@ -332,12 +352,15 @@ function sfx(name){
     case 'trash': T(700,0,.32,'sawtooth',.1,110); break;
     case 'err': T(170,0,.12,'square',.1); T(125,.11,.16,'square',.1); break;
   }
+  };
+  if(c.state==='running') go(); else c.resume().then(go).catch(()=>{});
 }
 const BGM_SC = [0,2,4,7,9];
 const BGM_ML = [5,-1,7,-1,6,7,5,-1, 4,-1,6,-1,5,6,4,-1,  7,-1,9,-1,8,9,7,-1, 6,7,8,-1,9,-1,7,-1];
 const BGM_BASS = [0,-3,5,7];
 function bgmTick(){
   if(!AC || !S.bgm || S.mute) return;
+  if(AC.state!=='running'){ AC.resume().catch(()=>{}); bgmNext = AC.currentTime + .1; return; }
   const stepDur = 60/104/2;
   while(bgmNext < AC.currentTime + .6){
     const i = bgmStep % 32, d = BGM_ML[i];
@@ -346,14 +369,12 @@ function bgmTick(){
     bgmNext += stepDur; bgmStep++;
   }
 }
-function bgmStart(){ if(!S.bgm || S.mute || bgmTimer) return; if(!ac()) return; bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
-function bgmStop(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
+function bgmStart(){ if(!S.bgm || S.mute || bgmTimer) return; if(!ac()) return; unlockAudio(); keepAudio(true); bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
+function bgmStop(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } keepAudio(false); }
 document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else bgmStart(); });
-// 브라우저는 '손가락으로 눌러야' 소리를 허락한다 → 첫 터치에 배경음악을 시작하고, 버튼마다 톡 소리
-document.addEventListener('pointerdown', e => {
-  if(!bgmTimer) bgmStart();
-  const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac')) sfx('tap');
-}, true);
+// 브라우저는 '손가락을 뗄 때' 소리를 허락한다 → 그때 깨우고 배경음악을 시작, 버튼은 눌렀다 뗄 때 톡 소리
+['pointerup','touchend','click'].forEach(ev => document.addEventListener(ev, () => { if(!AC || AC.state!=='running') unlockAudio(); if(!bgmTimer) bgmStart(); }, true));
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac') && b.id!=='bkTest') sfx('tap'); }, true);
 
 /* ───────── 캐릭터 (전부 코드로 그린 그림) ───────── */
 const eyes = (y,dx,r=5.2,cx=50) => `<circle cx="${cx-dx}" cy="${y}" r="${r}" fill="#3b2a2a"/><circle cx="${cx+dx}" cy="${y}" r="${r}" fill="#3b2a2a"/><circle cx="${cx-dx+r*.36}" cy="${y-r*.36}" r="${r*.34}" fill="#fff"/><circle cx="${cx+dx+r*.36}" cy="${y-r*.36}" r="${r*.34}" fill="#fff"/>`;
@@ -990,12 +1011,17 @@ function backupSheet(){
   openSheet(`<h2>설정</h2>
     <div class="setrow"><span>효과음<small>누를 때 톡톡 소리가 나요</small></span><button class="sw ${S.sfx?'on':''}" id="swSfx" aria-label="효과음"><i></i></button></div>
     <div class="setrow"><span>배경 음악<small>조용한 곳에서는 꺼 두세요</small></span><button class="sw ${S.bgm?'on':''}" id="swBgm" aria-label="배경 음악"><i></i></button></div>
-    <div class="stack-btns" style="margin-top:14px"><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
+    <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
     <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
     <div class="note" style="margin-top:8px">용돈 친구들 ${APP_VERSION}</div>`);
-  $('swSfx').onclick = () => { S.sfx = !S.sfx; save(); $('swSfx').classList.toggle('on', S.sfx); if(S.sfx) sfx('plus'); };
-  $('swBgm').onclick = () => { S.bgm = !S.bgm; save(); $('swBgm').classList.toggle('on', S.bgm); if(S.bgm) bgmStart(); else bgmStop(); };
+  $('swSfx').onclick = () => { S.sfx = !S.sfx; save(); $('swSfx').classList.toggle('on', S.sfx); if(S.sfx){ unlockAudio(); sfx('plus'); } };
+  $('swBgm').onclick = () => { S.bgm = !S.bgm; save(); $('swBgm').classList.toggle('on', S.bgm); if(S.bgm){ unlockAudio(); bgmStart(); } else bgmStop(); };
+  $('bkTest').onclick = () => {
+    unlockAudio(); sfx('win', true);
+    setTimeout(() => { const st = AC ? AC.state : 'none';
+      toast(st==='running' ? (S.mute ? '소리를 냈어요! (지금은 음소거라 앱 소리는 꺼져 있어요)' : '소리를 냈어요! 안 들리면 폰의 미디어 볼륨·무음 모드를 확인해 주세요') : '이 폰이 소리를 막고 있어요 ('+st+')'); }, 500);
+  };
   $('bkPeople').onclick = peopleSheet;
   $('bkCopy').onclick = () => {
     const txt = backupText(), ok = () => { markBackup(); toast('복사했어요! 카톡 "나에게"에 붙여 두세요'); };
@@ -1031,7 +1057,7 @@ function renderMute(){ const b = $('muteBtn'); b.innerHTML = S.mute ? SPK_OFF : 
 $('muteBtn').onclick = () => {
   S.mute = !S.mute; save(); renderMute();
   if(S.mute){ bgmStop(); toast('소리를 껐어요'); }
-  else { bgmStart(); sfx('plus'); toast('소리를 켰어요'); }
+  else { unlockAudio(); bgmStart(); sfx('plus'); toast('소리를 켰어요'); }
 };
 
 /* ───────── 연결 ───────── */
