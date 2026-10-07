@@ -194,7 +194,13 @@ console.log('\n시나리오 8 — 설정과 여는 방법');
     SRC.includes("setMoveSecPicker').checked=!!s.moveSecPicker"), true);
 
   const wire = slice('function _wireSecPickRows(', '// 길게 누르면 판');
-  sc.eq('PC 는 올리면 뜬다 (설정 ON)', wire.includes('row.onmouseenter'), true);
+  // v26-1007-3 (HB 신고) — 마우스를 올리면 **설정과 무관하게** 판이 뜬다.
+  // 기기(_isTouchDevice)가 아니라 그 순간의 포인터 종류로 가른다 — 터치 화면
+  // 달린 PC 에서 호버가 막혀 우클릭으로만 열리던 것.
+  sc.eq('마우스를 올리면 뜬다 (설정과 무관)',
+    wire.includes("row.onpointerenter=e=>{if(e.pointerType==='mouse')_secPickOpenFromRow(row,true);};"), true);
+  sc.eq('호버를 기기·설정으로 막지 않는다', /onpointerenter[^\n]*(_isTouchDevice|_secPickOn)/.test(wire), false);
+  sc.eq('터치 PC 에서 마우스 클릭은 가로채지 않는다', wire.includes("if(e.pointerType==='mouse')return;"), true);
   sc.eq('설정이 꺼져 있어도 우클릭으로 부른다', wire.includes('row.oncontextmenu'), true);
   sc.eq('손가락은 설정이 켜졌을 때만 탭으로 열린다',
     /_isTouchDevice\(\)\|\|!_secPickOn\(\)\)return;/.test(wire), true);
@@ -207,7 +213,7 @@ console.log('\n시나리오 8 — 설정과 여는 방법');
 
 console.log('\n시나리오 9 — 여는 방식은 로고 메뉴와 같다');
 {
-  const open = slice('function _secPickOpen(spec,rowEl)', 'function _secPickOpenFromRow(');
+  const open = slice('function _secPickOpen(spec,rowEl,byMouse)', 'function _secPickOpenFromRow(');
   sc.eq('손가락 기기는 그 자리에서 바뀐다',
     open.includes("main.style.display='none'"), true);
   sc.eq('PC 는 오른쪽에 띄운다 (같은 클래스를 쓴다)',
