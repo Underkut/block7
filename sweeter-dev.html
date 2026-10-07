@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -760,15 +760,29 @@ header{
 .gnb-bible svg{width:16px;height:16px;display:block;}
 .gnb-there:hover,.gnb-bible:hover{color:var(--tx);}
 body.vb-on .gnb-there,body.vb-on .gnb-bible{display:block;}
-/* 1단 + 상단 말씀: D W M → 한 글자 세로 롤링 피커 (누르거나 위아래로 밀면 넘어간다) */
-body.vb-on:not(.lay-multi) header .tabs{display:block;position:relative;height:24px;width:36px;overflow:hidden;
-  border-radius:6px;background:var(--s2);touch-action:none;}
-body.vb-on:not(.lay-multi) header .tab{display:block;width:30px;height:24px;padding:0;line-height:24px;text-align:center;
-  background:transparent;color:var(--tx);transform:translateY(calc(var(--rp-i,0) * -100%));
+/* 1단 + 상단 말씀: D W M → 한 칸 피커 (v26-1007-7, HB 가+다)
+   글자 + 아래 점 셋(몇 번째인지) · 누르면 아래로 메뉴 · 좌우로 밀면 **손을 따라 움직이다가**
+   피커 폭의 40% 를 넘겨 놓으면 그 보기로, 못 넘기면 제자리로. */
+body.vb-on:not(.lay-multi) header .tabs{display:flex;flex-wrap:nowrap;position:relative;height:30px;width:34px;overflow:hidden;
+  border-radius:7px;background:var(--s2);touch-action:pan-y;cursor:pointer;}
+body.vb-on:not(.lay-multi) header .tab{flex:0 0 34px;width:34px;height:22px;padding:0;margin-top:1px;line-height:22px;text-align:center;
+  background:transparent;color:var(--tx);font-weight:600;
+  transform:translateX(calc(var(--rp-i,0) * -100% + var(--rp-dx,0px)));
   transition:transform .28s cubic-bezier(.2,.8,.2,1);}
-.gnb-rp-hint{display:none;}
-body.vb-on:not(.lay-multi) .gnb-rp-hint{display:block;position:absolute;right:3px;top:50%;transform:translateY(-50%);
-  width:5px;height:12px;color:var(--tx3);pointer-events:none;}
+body.vb-on:not(.lay-multi) header .tabs.rp-drag .tab{transition:none;}
+.gnb-rp-dots{display:none;}
+body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute;left:50%;bottom:4px;transform:translateX(-50%);pointer-events:none;}
+.gnb-rp-dots i{width:3px;height:3px;border-radius:50%;background:var(--tx3);opacity:.45;}
+.gnb-rp-dots i.on{background:var(--ac-tx);opacity:1;}
+/* 누르면 펼쳐지는 메뉴 */
+.gnb-rp-menu{position:absolute;z-index:70;background:var(--s1);border:1px solid var(--bd);border-radius:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.14);padding:4px;display:flex;flex-direction:column;gap:2px;
+  opacity:0;pointer-events:none;transform:translate(-50%,-4px);transition:opacity .16s,transform .16s;}
+.gnb-rp-menu.on{opacity:1;pointer-events:auto;transform:translate(-50%,0);}
+.gnb-rp-menu button{width:72px;padding:8px 0;border:0;border-radius:7px;background:none;color:var(--tx);
+  font-size:12px;font-weight:600;display:flex;gap:6px;justify-content:center;cursor:pointer;font-family:var(--font-ui),sans-serif;}
+.gnb-rp-menu button small{color:var(--tx3);font-weight:400;}
+.gnb-rp-menu button.on{background:var(--s2);}
 /* Sweeter GNB — 필터 왼쪽. 선 아이콘들 사이의 **채운** 그림이라 한 치수 작게 둔다 */
 .sw-iconbtn .there-ic{width:17px;height:17px;display:block;}
 /* GNB 두 곳 — 옆 아이콘들(톱니·필터·로고)보다 **아래가 더 내려와** 보였다 (HB).
@@ -5114,11 +5128,32 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-mk svg{width:.78em;height:.78em;}
 #bibleRd .br-mk .br-mm{display:inline-grid;place-items:center;padding:4px;margin:-4px -2px;color:var(--ac-tx);}
 #bibleRd .br-endnote{margin-top:34px;text-align:center;font-size:11.5px;color:var(--tx3);}
-#bibleRd .br-nav{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;
+#bibleRd .br-nav{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:6px;
+  transition:transform .26s cubic-bezier(.2,.8,.2,1),opacity .22s;
   padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));pointer-events:none;
   background:linear-gradient(to top,var(--bg) 45%,transparent);}
 #bibleRd .br-nav button{pointer-events:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;color:var(--tx2);background:var(--s1);box-shadow:0 1px 6px rgba(0,0,0,.08);}
 #bibleRd .br-nav button[disabled]{opacity:.25;pointer-events:none;}
+/* 하단 내 표시 네 단추 */
+#bibleRd .br-lts{display:flex;gap:2px;pointer-events:auto;background:var(--s1);border-radius:999px;padding:3px 6px;box-shadow:0 1px 6px rgba(0,0,0,.08);}
+#bibleRd .br-lts .br-lt{width:auto;height:auto;border-radius:999px;box-shadow:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 9px;color:var(--tx2);font-size:10px;background:transparent;}
+#bibleRd .br-lts .br-lt svg{width:18px;height:18px;}
+#bibleRd .br-lts .br-lt:active{background:var(--s2);}
+/* 읽어 내려갈 때 — 하단은 아래로 미끄러지며 사라지고, 헤더는 위로 접혀 '책 장' 한 줄만 */
+#bibleRd .br-nav.hide{transform:translateY(110%);opacity:0;pointer-events:none;}
+#bibleRd .br-nav.hide *{pointer-events:none;}
+#bibleRd #brHead{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:12;
+  transition:transform .26s cubic-bezier(.2,.8,.2,1);}
+#bibleRd::before{content:"";position:absolute;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:13;}
+#bibleRd #brHead>.br-tl,#bibleRd #brHead>.br-ttl,#bibleRd #brHead>.br-tr{transition:opacity .18s;}
+#bibleRd #brHead.mini{transform:translateY(calc(-100% + 26px));}
+#bibleRd #brHead.mini>.br-tl,#bibleRd #brHead.mini>.br-ttl,#bibleRd #brHead.mini>.br-tr{opacity:0;pointer-events:none;}
+#bibleRd .br-mini{position:absolute;left:0;right:0;bottom:0;height:26px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--tx2);opacity:0;pointer-events:none;transition:opacity .2s;}
+#bibleRd #brHead.mini .br-mini{opacity:1;pointer-events:auto;}
+#bibleRd .br-page{padding-top:calc(22px + 53px);}
+#bibleRd #brHead .there-ic{width:19px;height:19px;display:block;}
 #bibleRd .br-nav .br-pg{font-family:var(--font-number),monospace;font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;}
 #bibleRd .br-scrim{position:absolute;inset:0;background:var(--br-scrim);opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;}
 #bibleRd .br-scrim.on{opacity:1;pointer-events:auto;}
@@ -6049,7 +6084,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-6";
+const APP_VERSION = "v. 26-1007-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7614,7 +7649,7 @@ try{
     <button class="tab on" id="tabD" onclick="sw('today',this)">D</button>
     <button class="tab" id="tabW" onclick="sw('weekly',this)">W</button>
     <button class="tab" id="tabM" onclick="sw('monthly',this)">M</button>
-    <svg class="gnb-rp-hint" viewBox="0 0 5 12" fill="currentColor"><path d="M2.5 0L5 3.5H0z"/><path d="M2.5 12L0 8.5h5z"/></svg>
+    <span class="gnb-rp-dots" aria-hidden="true"><i></i><i></i><i></i></span>
   </div>
   <div class="hdr-r">
     <span id="hdrDateNav" style="display:flex;align-items:center;gap:inherit;">
@@ -8809,20 +8844,26 @@ try{
      ⚠️ 시트(아래에서 올라오는 판)·고르기 판은 전부 이 안에 있다. 밖으로 꺼내지 말 것 —
         ESC 와 × 가 '가장 위 것 하나' 를 닫는 규칙(_brEsc)이 이 상자 안에서만 돈다. -->
 <div id="bibleRd" role="dialog" aria-label="성경">
-  <div class="br-top">
-    <div class="br-tl"><button class="br-ic" id="brMenu" aria-label="내 표시"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></svg></button></div>
+  <!-- 헤더 (v26-1007-7, HB — 갓피플 방식): 아래로 읽으면 위로 접혀 '책 장' 한 줄만 남는다 (_brChrome) -->
+  <div class="br-top" id="brHead">
+    <div class="br-tl">
+      <button class="br-ic" id="brThere" aria-label="There"><span class="there-ic" data-there-ic></span></button>
+      <button class="br-ic" id="brDash" aria-label="대시보드"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 2.5V10l6.3 3.7"/></svg></button>
+    </div>
     <button class="br-ttl" id="brTitle" aria-label="책과 장 고르기"><span class="br-t"><span id="brTBook">창세기</span> <span id="brTChap">1장</span><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l3 3 3-3"/></svg></span><span class="br-s">개역한글</span></button>
     <div class="br-tr">
       <button class="br-ic" id="brFind" aria-label="성경 검색"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
       <button class="br-ic" id="brAa" aria-label="글자와 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18l4.5-12L12 18M4.6 14h5.8M14.5 18l3-8 3 8M15.5 15.5h4"/></svg></button>
       <button class="br-ic br-x" id="brClose" aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
     </div>
+    <button class="br-mini" id="brMini" aria-label="메뉴 펼치기"><span id="brMiniT"></span></button>
   </div>
   <div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
-  <div class="br-nav">
-    <button id="brPrev" aria-label="이전 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg></button>
-    <span class="br-pg" id="brPg"></span>
-    <button id="brNext" aria-label="다음 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"/></svg></button>
+  <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
+  <div class="br-nav" id="brNav">
+    <button class="br-nv" id="brPrev" aria-label="이전 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg></button>
+    <div class="br-lts"><button class="br-lt" data-lt="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5" fill="currentColor"/></svg><span>책갈피</span></button><button class="br-lt" data-lt="hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L10 19H5v-5z"/><path d="M12.5 6.5l5 5"/><path d="M4 21h16"/></svg><span>형광펜</span></button><button class="br-lt" data-lt="memo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg><span>메모</span></button><button class="br-lt" data-lt="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><span>읽은 곳</span></button></div>
+    <button class="br-nv" id="brNext" aria-label="다음 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"/></svg></button>
   </div>
 
   <div class="br-pick" id="brPick" aria-label="책과 장 고르기">
@@ -8867,7 +8908,6 @@ try{
       <button class="br-act" id="brAKeep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg><span>저장</span></button>
       <button class="br-act" id="brAMem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg><span>암송</span></button>
       <button class="br-act even-only" id="brAEven"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg><span>Even Deeper</span></button>
-      <button class="br-act" id="brAThere"><span class="there-ic" data-there-ic></span><span>There</span></button>
     </div>
     <!-- 아랫줄 = 도구 -->
     <div class="br-acts">
@@ -12124,7 +12164,9 @@ function _gnbExtrasSync(){
   const on=!!(ST.settings&&ST.settings.verseBarOn)&&(typeof APP_PRODUCT==='undefined'||APP_PRODUCT!=='sweeter');
   document.body.classList.toggle('vb-on',on);
   const tabs=document.querySelector('header .tabs');
-  if(tabs){const i=[...tabs.querySelectorAll('.tab')].findIndex(b=>b.classList.contains('on'));tabs.style.setProperty('--rp-i',Math.max(0,i));}
+  if(tabs){const i=[...tabs.querySelectorAll('.tab')].findIndex(b=>b.classList.contains('on'));tabs.style.setProperty('--rp-i',Math.max(0,i));
+    tabs.querySelectorAll('.gnb-rp-dots i').forEach((d,k)=>d.classList.toggle('on',k===i));}
+  if(!on||document.body.classList.contains('lay-multi'))_gnbRpMenu(false);
   const th=document.getElementById('gnbThereBtn'),bi=document.getElementById('gnbBibleBtn');
   if(tabs&&(!on||document.body.classList.contains('lay-multi')))tabs.style.marginLeft='';
   if(!on||!th||!bi)return;
@@ -12153,23 +12195,56 @@ function _gnbPickerStep(d){
   const n=tabs[(i+d+tabs.length)%tabs.length];
   if(n)sw(_GNB_VIEWS[n.id],n);
 }
+// 펼침 메뉴 — 피커 바로 아래, 가운데 맞춤
+function _gnbRpMenu(open){
+  let m=document.getElementById('gnbRpMenu');
+  if(!open){if(m)m.classList.remove('on');return;}
+  const header=document.querySelector('header'),tabs=document.querySelector('header .tabs');if(!header||!tabs)return;
+  if(!m){
+    m=document.createElement('div');m.id='gnbRpMenu';m.className='gnb-rp-menu';
+    m.innerHTML=[['tabD','D','하루'],['tabW','W','주간'],['tabM','M','월간']].map(x=>'<button data-tab="'+x[0]+'">'+x[1]+' <small>'+x[2]+'</small></button>').join('');
+    m.addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;e.stopPropagation();
+      const t=document.getElementById(b.dataset.tab);if(t)sw(_GNB_VIEWS[t.id],t);_gnbRpMenu(false);});
+    header.appendChild(m);
+  }
+  const cur=(document.querySelector('header .tab.on')||{}).id;
+  m.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===cur));
+  m.style.left=(tabs.offsetLeft+tabs.offsetWidth/2)+'px';
+  m.style.top=(tabs.offsetTop+tabs.offsetHeight+6)+'px';
+  m.classList.add('on');
+}
 (function _gnbPickerBind(){
   const go=()=>{
     const tabs=document.querySelector('header .tabs');if(!tabs||tabs._rpBound)return;tabs._rpBound=true;
-    // 피커일 때는 누른 글자와 상관없이 **다음** 보기로 넘긴다
+    // 누르기 = 메뉴 열고 닫기 (글자를 눌러도 그 보기로 바로 가지 않는다 — 피커일 때만)
     tabs.addEventListener('click',e=>{
       if(!_gnbPickerOn())return;
       e.stopPropagation();e.preventDefault();
       if(tabs._rpSwiped){tabs._rpSwiped=false;return;}
-      _gnbPickerStep(1);
+      const m=document.getElementById('gnbRpMenu');_gnbRpMenu(!(m&&m.classList.contains('on')));
     },true);
-    let y0=null;
-    tabs.addEventListener('touchstart',e=>{if(_gnbPickerOn())y0=e.touches[0].clientY;},{passive:true});
-    tabs.addEventListener('touchend',e=>{
-      if(y0==null)return;const dy=e.changedTouches[0].clientY-y0;y0=null;
-      if(Math.abs(dy)>12){tabs._rpSwiped=true;setTimeout(()=>{tabs._rpSwiped=false;},350);_gnbPickerStep(dy<0?1:-1);}
-    },{passive:true});
-    window.addEventListener('resize',_gnbExtrasSync);
+    document.addEventListener('click',e=>{if(!e.target.closest('header .tabs,#gnbRpMenu'))_gnbRpMenu(false);});
+    // 좌우 밀기 — 손을 따라 움직인다. 폭의 40% 를 넘겨 놓으면 넘어가고, 아니면 제자리로.
+    let st=null;
+    tabs.addEventListener('pointerdown',e=>{if(!_gnbPickerOn()||e.button>0)return;st={x:e.clientX,y:e.clientY,dx:0,on:false,id:e.pointerId};});
+    tabs.addEventListener('pointermove',e=>{
+      if(!st||e.pointerId!==st.id)return;
+      const dx=e.clientX-st.x,dy=e.clientY-st.y;
+      if(!st.on){if(Math.abs(dx)>6&&Math.abs(dx)>Math.abs(dy)){st.on=true;tabs.classList.add('rp-drag');_gnbRpMenu(false);
+        try{tabs.setPointerCapture(e.pointerId);}catch(x){}}else return;}
+      const n=tabs.querySelectorAll('.tab').length,i=+getComputedStyle(tabs).getPropertyValue('--rp-i')||0;
+      let d=dx;if((i===0&&d>0)||(i===n-1&&d<0))d*=0.3;          // 끝에서는 덜 따라온다 (고무줄)
+      st.dx=d;tabs.style.setProperty('--rp-dx',d+'px');
+    });
+    const up=e=>{
+      if(!st||e.pointerId!==st.id)return;const s0=st;st=null;if(!s0.on)return;
+      tabs.classList.remove('rp-drag');tabs.style.setProperty('--rp-dx','0px');
+      tabs._rpSwiped=true;setTimeout(()=>{tabs._rpSwiped=false;},300);
+      const w=tabs.offsetWidth||34,n=tabs.querySelectorAll('.tab').length,i=+getComputedStyle(tabs).getPropertyValue('--rp-i')||0;
+      if(Math.abs(s0.dx)>w*0.4){const k=i+(s0.dx<0?1:-1);if(k>=0&&k<n)_gnbPickerStep(k-i);}
+    };
+    tabs.addEventListener('pointerup',up);tabs.addEventListener('pointercancel',up);
+    window.addEventListener('resize',()=>{_gnbExtrasSync();_gnbRpMenu(false);});
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
 })();
@@ -14398,7 +14473,7 @@ function _brSessEnd(){
 function _brSessStep(){
   const s=_brSess;if(!s)return;
   const now=Date.now(),dt=Math.min(now-s.last,5000);s.last=now;
-  if(document.hidden)return;
+  if(!_brActiveWin())return;
   const sc=_brEl('brScroll');if(!sc)return;
   const top=sc.getBoundingClientRect().top,bot=top+sc.clientHeight;
   sc.querySelectorAll('.br-v').forEach(el=>{
@@ -14410,9 +14485,12 @@ function _brSessStep(){
     if(s.dwell[v]>=_BR_SEEN_MS)s.seen.add(v);
   });
 }
+// 창이 활성일 때만 센다 (HB 2026-10-07) — PC 에서 다른 프로그램을 누르면 그 순간 끊고,
+// 돌아오면 새로 잇는다. 휴대폰은 앱을 벗어날 때와 같다.
+function _brActiveWin(){try{return !document.hidden&&(typeof document.hasFocus!=='function'||document.hasFocus());}catch(e){return !document.hidden;}}
 function _brSessStart(){
   _brSessEnd();
-  if(!_brOpen||document.hidden)return;
+  if(!_brOpen||!_brActiveWin())return;
   const d=_BR_MEM.get(_brCur.b+1);
   _brSess={b:_brCur.b,c:_brCur.c,t:Date.now(),last:Date.now(),seen:new Set(),dwell:{},
     src:_brNextSrc||'resume',ref:_brNextRef||'',of:d&&d.c[_brCur.c-1]?d.c[_brCur.c-1].length:0};
@@ -14421,6 +14499,8 @@ function _brSessStart(){
 }
 document.addEventListener('visibilitychange',()=>{if(!_brOpen)return;if(document.hidden)_brSessEnd();else{_brNextSrc='resume';_brSessStart();}});
 window.addEventListener('pagehide',()=>{if(_brOpen)_brSessEnd();});
+window.addEventListener('blur',()=>{if(_brOpen)_brSessEnd();});
+window.addEventListener('focus',()=>{if(_brOpen&&!_brSess){_brNextSrc='resume';_brSessStart();}});
 
 // 여는 길 ① Sweeter 홈 Deeper — 마지막 읽던 곳, 처음이면 창세기 1장 1절
 function bibleOpenLast(src){const p=_brPosGet()||{b:0,c:1,v:0};_brNextSrc=src||'home';bibleOpen(p.b,p.c,0);}
@@ -14434,7 +14514,9 @@ function bibleOpenRef(ref){
 }
 function bibleOpen(b,c,v,v2){
   const el=_brEl('bibleRd');if(!el)return;
+  _brParked=false;
   _brLoadSerif();_brApplyLook();
+  if(typeof _thereIconSync==='function'&&!_brEl('brThere').querySelector('svg'))_thereIconSync();
   el.classList.add('on');_brOpen=true;
   _brShow(b,c,v,v2);
 }
@@ -14458,7 +14540,7 @@ async function _brShow(b,c,focus,focus2,keep){
   if(!keep){_brSel.clear();_brCloseSheets();}
   const books=_brBooks();
   _brEl('brTBook').textContent=books[b];_brEl('brTChap').textContent=c+_brUnit(b);
-  _brEl('brPg').textContent=_bibleShort(books[b])+' '+c+' / '+_bibleChapters(books[b]);
+  _brEl('brMiniT').textContent=books[b]+' '+c+_brUnit(b);
   _brEl('brPrev').disabled=(b===0&&c===1);
   _brEl('brNext').disabled=(b===65&&c===_bibleChapters(books[b]));
   const box=_brEl('brChap');
@@ -14498,6 +14580,7 @@ async function _brShow(b,c,focus,focus2,keep){
       box.querySelectorAll('.br-v').forEach(x=>{const n=+x.dataset.v;if(n>=focus&&n<=end){x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1800);}});
     }
   }else sc.scrollTop=0;
+  _brChrome(true);
   _brPosSet({b,c,v:focus||0});
   _brSessStart();
 }
@@ -14510,6 +14593,34 @@ function _brStep(dd){
 }
 function _brRerender(keepSheets){const sc=_brEl('brScroll'),y=sc.scrollTop;const keep=_brSess;_brSess=null;
   _brShow(_brCur.b,_brCur.c,0,0,!!keepSheets).then(()=>{sc.scrollTop=y;if(keep)_brSess=keep;});}
+// ── 헤더·하단 접기 (v26-1007-7, HB — 갓피플 방식) ──
+// 아래로 읽어 내려가면 하단(장 넘김·내 표시)은 내려가 사라지고 헤더는 '책 장' 한 줄만 남긴다.
+// 위로 올리거나 맨 위에 오면, 그리고 새 장을 펴면 다시 다 보인다.
+function _brChrome(show){
+  const h=_brEl('brHead'),n=_brEl('brNav');if(!h||!n)return;
+  h.classList.toggle('mini',!show);n.classList.toggle('hide',!show);
+}
+let _brLastY=0,_brAcc=0;
+function _brOnScroll(){
+  const y=_brEl('brScroll').scrollTop,dy=y-_brLastY;_brLastY=y;
+  if(y<30){_brAcc=0;_brChrome(true);return;}
+  _brAcc=(Math.sign(dy)===Math.sign(_brAcc))?_brAcc+dy:dy;   // 한 방향으로 이만큼 움직였을 때만 바꾼다 (손떨림)
+  if(_brAcc>12)_brChrome(false);else if(_brAcc<-12)_brChrome(true);
+}
+// 대시보드 — 성경을 잠시 접어 두고 연다. 대시보드를 닫으면 다시 편다
+// (대시보드 안의 작은 팝업들이 성경 화면(5100) 밑에 깔리지 않게).
+// ⚠️ 지금은 말씀 대시보드다. 성경 읽기 대시보드(B-9)가 생기면 여기서 그쪽을 연다.
+let _brParked=false;
+function _brOpenDash(){
+  if(typeof openVerseDashboard!=='function')return;
+  _brSessEnd();_brParked=true;
+  _brEl('bibleRd').classList.remove('on');_brOpen=false;
+  openVerseDashboard();
+}
+function _brUnpark(){
+  if(!_brParked)return;_brParked=false;
+  _brEl('bibleRd').classList.add('on');_brOpen=true;_brNextSrc='resume';_brSessStart();
+}
 // ── 시트 ──
 function _brOpenSheet(id,scrim){
   document.querySelectorAll('#bibleRd .br-sheet.on').forEach(s=>s.classList.remove('on'));
@@ -14528,7 +14639,6 @@ function _brOpenAct(){
   document.querySelectorAll('#brColors .br-sw').forEach(s=>s.classList.toggle('on',+s.dataset.c===same&&same>0));
   const allMk=[..._brSel].every(v=>(marks[_brKey(b,c,v)]||{}).k);
   _brEl('brAMark').querySelector('span').textContent=allMk?'책갈피 빼기':'책갈피';
-  if(typeof _thereIconSync==='function'&&!_brEl('brAThere').querySelector('svg'))_thereIconSync();
   _brOpenSheet('brSAct',false);
 }
 // 메모 창 — vs: 고른 절들(새 메모를 그 묶음에), id: 고칠 메모.
@@ -14788,7 +14898,6 @@ function _brBind(){
   $('brAMem').onclick=()=>{const r=selRef();if(!r)return;recordMemorizationByRef(r);_brToast('암송 완료로 기록했어요');_brCloseSheets();};
   // ⚠️ Even Deeper 는 누른 그 자리에서 곧장 복사를 시작해야 한다 (아이폰) — 시트 닫기는 그 뒤
   $('brAEven').onclick=()=>{const r=selRef();if(!r)return;openEvenDeeperFromRef(r);_brCloseSheets();};
-  $('brAThere').onclick=()=>{const r=selRef();if(!r)return;_brCloseSheets();openThere(r);};
   // 저장 — 블럭7·스위터의 '저장(담아두기)' 목록과 같은 것 (HB 2026-10-06 (가))
   $('brAKeep').onclick=()=>{
     const ref=selRef();if(!ref)return;
@@ -14823,8 +14932,13 @@ function _brBind(){
   [['brSegLh','bibleLh'],['brSegFont','bibleFont'],['brSegFlow','bibleFlow'],['brSegRs','txtRefStyle'],['brSegRb','txtRefBracket'],['brSegRp','txtRefPos']]
     .forEach(([id,k])=>$(id).onclick=e=>{const b=e.target.closest('button');if(b)_brSet(k,b.dataset.v);});
   $('brThemes').onclick=e=>{const b=e.target.closest('.br-th');if(b)_brSet('bibleTheme',b.dataset.t);};
-  // 내 표시
-  $('brMenu').onclick=()=>{_brRenderList();_brOpenSheet('brSList');};
+  // 내 표시 — 하단 네 단추가 그 갈래를 바로 연다 (시트 안에서도 갈래를 바꿀 수 있다)
+  document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});
+  // 헤더 좌상단 — There · 대시보드
+  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere('');};
+  $('brDash').onclick=_brOpenDash;
+  $('brMini').onclick=()=>_brChrome(true);
+  $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
   $('brLTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brLt=b.dataset.t;_brRenderList();};
   $('brLBody').addEventListener('click',e=>{
     if($('brLBody')._swiped){$('brLBody')._swiped=false;return;}
@@ -28469,6 +28583,7 @@ function closeVerseDashboard(){
   if(typeof _vgStop==='function')_vgStop();
   document.getElementById('vDashOverlay').style.display='none';
   document.getElementById('vDashModal').style.display='none';
+  if(typeof _brUnpark==='function')_brUnpark();   // 성경에서 왔으면 성경을 다시 편다
 }
 function closeVerseAggPopup(){
   closeKeepSwitch();
