@@ -270,7 +270,7 @@ console.log('\n시나리오 13-6 — 절 메뉴의 말씀 반응 (v26-1007-6 HB)
   sc.eq('아랫줄 도구 = 복사·메모·책갈피·공유', ids.slice(4), ['brACopy', 'brAMemo', 'brAMark', 'brAShare']);
   sc.eq('Deeper 는 없다 (이미 성경 안)', /brADeeper/.test(sheet), false);
   sc.eq('Even Deeper 는 켜진 계정에서만', /class="br-act even-only" id="brAEven"/.test(sheet), true);
-  sc.eq('반응은 앱의 같은 기록으로', /recordVerseLike\(r\)/.test(SRC) && /recordMemorizationByRef\(r\)/.test(SRC) && /openEvenDeeperFromRef\(r\)/.test(SRC), true);
+  sc.eq('반응은 앱의 같은 기록으로', /_reactWithToast\('like',r\)/.test(SRC) && /_reactWithToast\('mem',r\)/.test(SRC) && /openEvenDeeperFromRef\(r\)/.test(SRC), true);
 }
 
 console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피커 · 활성 창)');
@@ -293,7 +293,7 @@ console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피�
 console.log('\n시나리오 13-8 — v26-1007-8 (HB) 절 롱터치 메뉴 · 고른 줄 · 부드러운 접기');
 {
   const menu = slice('<div class="task-menu br-vmenu" id="brVMenu">', '\n  </div>');
-  sc.eq('롱터치 메뉴 = 본문 복사 · 좋아요 · 저장 · 암송 · Deeper · Even · 공유', (menu.match(/data-vm="[a-z]+"/g) || []).join(' '), 'data-vm="copy" data-vm="like" data-vm="keep" data-vm="mem" data-vm="deeper" data-vm="even" data-vm="share"');
+  sc.eq('롱터치 메뉴 = 본문 복사 · 좋아요 · 저장 · 암송 · Deeper · Even · 공유 · There', (menu.match(/data-vm="[a-z]+"/g) || []).join(' '), 'data-vm="copy" data-vm="like" data-vm="keep" data-vm="mem" data-vm="deeper" data-vm="even" data-vm="share" data-vm="there"');
   sc.eq('말씀 설정은 없다', /말씀 설정/.test(menu), false);
   sc.eq('구분선은 본문 복사 아래 하나뿐', (menu.match(/task-menu-sep/g) || []).length, 1);
   sc.eq('롱터치 0.5초 · 우클릭', /_brVmOpen\(\+v\.dataset\.v,x,y\);\},500\)/.test(SRC) && /addEventListener\('contextmenu'/.test(slice('function _brBind(', '// ESC')), true);
@@ -334,6 +334,19 @@ console.log('\n시나리오 13-9 — 성경 읽기 대시보드 숫자 (B-9, v26
   sc.eq('헤더 아래 진행 표시줄 — 접혀도 남는다', /<div class="br-progl" aria-hidden="true"><i id="brProgI"><\/i><\/div>/.test(SRC) && /function _brProgSync\(\)/.test(SRC), true);
   sc.eq('접기는 헤더 높이의 3.5 배에 걸쳐 · 마무리 0.75초 (HB — 아직 급하다)', /_BR_CHROME_SPAN=3\.5,_BR_CHROME_MS=750/.test(SRC), true);
   sc.eq('대시보드 단추는 성경 읽기 대시보드를 연다', /function _brOpenDash\(\)\{_brDashRender\(\);/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-10 — v26-1007-10 (HB) 직접 기간 · 큰 하트 · 더블탭 · There');
+{
+  const now = new Date(2026,9,7,12).getTime();
+  const log = {'2026-10-01':[{b:43,c:3,time:Date.now(),sec:60}],'2026-09-01':[{b:1,c:1,time:Date.now(),sec:30}]};
+  const C = _brDashStats(log, {}, {}, now, 'c', {from:'2026-09-25', to:'2026-10-07'});
+  const A = _brDashStats(log, {}, {}, now, 'all');
+  sc.eq('직접 기간은 고른 날만 센다', JSON.stringify(C) !== JSON.stringify(A), true);
+  sc.eq('좋아요·암송은 큰 토스트로', /_reactWithToast\('like',ref\)/.test(SRC) && /_reactWithToast\('mem',ref\)/.test(SRC), true);
+  sc.eq('롱터치 메뉴 There 는 그 절로 연다', /act==='there'[^]{0,80}openThere\(ref\)/.test(SRC), true);
+  sc.eq('절은 두 번 톡 쳐도 확대되지 않는다', /\.br-v\{[^}]*touch-action:manipulation/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');

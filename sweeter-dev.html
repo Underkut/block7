@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5196,8 +5196,9 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-vmov.on{display:block;}
 #bibleRd .br-vmenu{display:none;position:absolute;z-index:45;}
 #bibleRd .br-vmenu.on{display:block;}
+#bibleRd .br-vm-there{width:14px;height:14px;display:block;}
 /* 롱터치 중 아이폰 글자 고르기·확대경이 끼어들지 않게 */
-#bibleRd .br-v{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+#bibleRd .br-v{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation;}   /* 두 번 톡톡이 확대로 안 먹히게 */
 #bibleRd .br-sw.on::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tx2);}
 /* 단추 수가 바뀌어도(Even 이 없는 계정·There 를 뺀 뒤) 빈칸 없이 고르게 나눈다 (v26-1007-8 HB) */
 #bibleRd .br-acts{display:flex;justify-content:space-around;gap:4px;}
@@ -5280,6 +5281,9 @@ html #bibleRd[data-rt="night"] #brDashP{--bd-q0:#1b1e28;--bd-q1:#262d55;--bd-q2:
 #brDashBody{max-width:520px;margin:0 auto;width:100%;box-sizing:border-box;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px));}
 #brDashP .bd-chips{display:flex;gap:6px;justify-content:center;margin:2px 0 14px;flex-wrap:wrap;}
 #brDashP .bd-chips button{font-size:12.5px;background:var(--s2);color:var(--tx2);padding:6px 12px;border-radius:999px;}
+#brDashP .bd-custom{display:none;align-items:center;justify-content:center;gap:8px;margin:-6px 0 14px;font-size:12px;color:var(--tx3);}
+#brDashP .bd-custom.on{display:flex;}
+#brDashP .bd-custom input{font:inherit;font-size:13px;color:var(--tx);background:var(--s1);border:1px solid var(--bd2);border-radius:8px;padding:6px 8px;min-width:0;}
 #brDashP .bd-chips button.on{background:var(--tx);color:var(--bg);font-weight:600;}
 #brDashP .bd-sec{margin-top:24px;}
 #brDashP .bd-sec h2{font-size:13px;font-weight:600;color:var(--tx2);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;}
@@ -6162,7 +6166,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-9";
+const APP_VERSION = "v. 26-1007-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8977,7 +8981,8 @@ try{
       <button class="br-ic br-x" id="brDashClose" aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
     </div>
     <div class="br-pbody" id="brDashBody">
-      <div class="bd-chips" id="bdChips"><button data-r="w">이번 주</button><button data-r="m">이번 달</button><button data-r="y">올해</button><button data-r="all">전체</button></div>
+      <div class="bd-chips" id="bdChips"><button data-r="w">이번 주</button><button data-r="m">이번 달</button><button data-r="y">올해</button><button data-r="all">전체</button><button data-r="c">직접</button></div>
+      <div class="bd-custom" id="bdCustom"><input type="date" id="bdFrom" aria-label="시작 날짜"><span>~</span><input type="date" id="bdTo" aria-label="끝 날짜"></div>
       <div class="bd-tiles" id="bdTiles"></div>
       <div class="bd-sec"><h2>요즘의 나 <small>기록에서 찾은 것</small></h2><div class="bd-ins" id="bdIns"></div></div>
       <div class="bd-sec"><h2>통독 지도 <small>한 칸 = 한 장 · 진할수록 자주</small></h2>
@@ -9069,6 +9074,7 @@ try{
     <div class="task-menu-item" data-vm="deeper"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg></span>Deeper…</div>
     <div class="task-menu-item even-only" data-vm="even"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>Even Deeper…</div>
     <div class="task-menu-item" data-vm="share"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg></span>공유</div>
+    <div class="task-menu-item" data-vm="there"><span class="task-menu-icon"><span class="there-ic br-vm-there" data-there-ic></span></span>There</div>
   </div>
 </div>
 <!-- ── Sweeter 홈 (타일 판) ──────────────────────────────────
@@ -14439,11 +14445,13 @@ function _brDashStart(range,now){
   else return 0;
   return d.getTime();
 }
-function _brDashStats(log,marks,notes,now,range){
+// range 'c' = 직접 고른 기간 — custom {from,to} (ms · to 는 그날 끝까지). 지난 기간 = 같은 길이 바로 앞.
+function _brDashStats(log,marks,notes,now,range,custom){
   const CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],DAY=864e5;
-  const rows=_brDashRows(log),from=_brDashStart(range,now);
-  const L=rows.filter(e=>e.ms>=from&&e.ms<=now);
-  const prevFrom=from?from-(now-from):0,P=from?rows.filter(e=>e.ms>=prevFrom&&e.ms<from):[];
+  const rows=_brDashRows(log);
+  const from=range==='c'&&custom?custom.from:_brDashStart(range,now),end=range==='c'&&custom?custom.to:now;
+  const L=rows.filter(e=>e.ms>=from&&e.ms<=end);
+  const prevFrom=from?from-(end-from):0,P=from?rows.filter(e=>e.ms>=prevFrom&&e.ms<from):[];
   const sum=a=>a.reduce((x,e)=>x+(e.d||0),0);
   const dkey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
   const days=new Set(rows.map(e=>dkey(e.ms)));
@@ -14828,9 +14836,15 @@ const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추'
 function _brFmtMin(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
 function _brDashRender(){
   const $=_brEl,books=_brBooks(),CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],now=Date.now(),DAY=864e5;
-  const S=_brDashStats(getBibleReadLog(),getBibleMarks(),getBibleNotes(),now,_brDashRange);
+  // 직접 — 처음 열면 최근 30일. 날짜 칸은 이 기기의 날짜로 읽는다. 앞뒤가 바뀌면 바로잡는다.
+  const fi=$('bdFrom'),ti=$('bdTo'),ymd=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  if(!fi.value){fi.value=ymd(now-29*DAY);ti.value=ymd(now);}
+  const pd=(v,eod)=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');if(!m)return null;return new Date(+m[1],+m[2]-1,+m[3],eod?23:0,eod?59:0,eod?59:0).getTime();};
+  let cf=pd(fi.value,false),ct=pd(ti.value,true);if(cf&&ct&&cf>ct){cf=pd(ti.value,false);ct=pd(fi.value,true);}
+  $('bdCustom').classList.toggle('on',_brDashRange==='c');
+  const S=_brDashStats(getBibleReadLog(),getBibleMarks(),getBibleNotes(),now,_brDashRange,{from:cf||0,to:ct||now});
   document.querySelectorAll('#bdChips button').forEach(b=>b.classList.toggle('on',b.dataset.r===_brDashRange));
-  const rname={w:'이번 주',m:'이번 달',y:'올해',all:'전체'}[_brDashRange];
+  const rname={w:'이번 주',m:'이번 달',y:'올해',all:'전체',c:'고른 기간'}[_brDashRange];
   const q=(v,max)=>v<=0?'var(--bd-q0)':'var(--bd-q'+Math.min(5,1+Math.floor(v/max*4.999))+')';
   const md=ms=>{const d=new Date(ms);return (d.getMonth()+1)+'.'+d.getDate();};
   // 요약 네 칸
@@ -14907,6 +14921,7 @@ function _brVmOpen(v,x,y){
   if(_brSel.has(v)&&_brSel.size>1){const a=[..._brSel].map(Number).sort((p,q)=>p-q);if(a.every((n,i)=>!i||n===a[i-1]+1))vs=a;}
   _brVmVs=vs;_brVmRef=_brBooks()[_brCur.b]+' '+_brCur.c+':'+_brVerseList(vs);
   _brCloseSheets();
+  if(typeof _thereIconSync==='function'&&!_brEl('brVMenu').querySelector('.br-vm-there svg'))_thereIconSync();
   const m=_brEl('brVMenu'),ov=_brEl('brVMenuOv'),box=_brEl('bibleRd').getBoundingClientRect();
   ov.classList.add('on');m.classList.add('on');
   const mw=m.offsetWidth||200,mh=m.offsetHeight||260;
@@ -14922,11 +14937,12 @@ function _brVmRun(act){
   if(act==='copy'){
     // 본문만 — 말씀 롱터치 메뉴의 '본문 복사' 와 같다 (장절·번호 없이)
     _brCopy(vs.map(v=>ch[v-1]||'').join(' '),'복사했어요');
-  }else if(act==='like'){recordVerseLike(ref);_brToast('좋아요를 기록했어요');}
+  }else if(act==='like')_reactWithToast('like',ref);
   else if(act==='keep'){
     const ov=document.getElementById('keepPickOverlay'),md=document.getElementById('keepPickModal');
     if(ov)ov.style.zIndex='5150';if(md)md.style.zIndex='5160';openKeepPicker(ref);
-  }else if(act==='mem'){recordMemorizationByRef(ref);_brToast('암송 완료로 기록했어요');}
+  }else if(act==='mem')_reactWithToast('mem',ref);
+  else if(act==='there'){if(typeof openThere==='function')openThere(ref);}
   // Deeper — 이미 앱 안 성경이므로 **대한성서공회 사이트**(개역개정)로 그 절을 연다
   else if(act==='deeper'){recordVerseDeeper(ref);BibleLinkProvider.open(BibleLinkProvider.createBskUrlFromRef(ref));}
   else if(act==='even')openEvenDeeperFromRef(ref);
@@ -15169,8 +15185,25 @@ function _brBind(){
   $('brChap').addEventListener('contextmenu',e=>{const v=e.target.closest('.br-v');if(!v)return;e.preventDefault();lpCancel();lpFired=true;_brVmOpen(+v.dataset.v,e.clientX,e.clientY);});
   $('brVMenuOv').addEventListener('pointerdown',e=>{e.preventDefault();_brVmClose();});
   $('brVMenu').addEventListener('click',e=>{const it=e.target.closest('[data-vm]');if(it)_brVmRun(it.dataset.vm);});
+  // 두 번 톡톡(0.3초 안 · 같은 절) = 그 절 좋아요 (v26-1007-10, HB). 첫 번째 누르기가 바꾼
+  // 고르기는 되돌린다 — 그래서 고르기를 늦추지 않고도 두 손짓이 갈린다.
+  let dt=null;
   $('brChap').addEventListener('click',e=>{
     if(lpFired){lpFired=false;e.stopPropagation();return;}
+    const tv=e.target.closest('.br-v');
+    if(tv&&!e.target.closest('[data-memo]')){
+      const n=+tv.dataset.v,now=Date.now();
+      if(dt&&dt.v===n&&now-dt.t<300){
+        e.stopPropagation();
+        if(dt.was)_brSel.add(n);else _brSel.delete(n);
+        tv.classList.toggle('sel',dt.was);dt=null;
+        if(_brSel.size)_brOpenAct();else _brCloseSheets();
+        _reactWithToast('like',_brBooks()[_brCur.b]+' '+_brCur.c+':'+n);
+        tv.classList.add('flash');setTimeout(()=>tv.classList.remove('flash'),700);
+        return;
+      }
+      dt={v:n,t:now,was:_brSel.has(n)};
+    }
     const mm=e.target.closest('[data-memo]');if(mm){e.stopPropagation();
       const v=+mm.dataset.memo,ids=_brNotesAt(_brCur.b,_brCur.c,v);
       _brOpenMemo([v],ids.length===1?ids[0]:null);return;}
@@ -15220,8 +15253,9 @@ function _brBind(){
     if(!vs.length)return null;
     if(vs.some((v,i)=>i&&v!==vs[i-1]+1)){_brToast('이어진 절만 한 번에 할 수 있어요');return null;}
     return _brBooks()[_brCur.b]+' '+_brCur.c+':'+_brVerseList(vs);};
-  $('brALike').onclick=()=>{const r=selRef();if(!r)return;recordVerseLike(r);_brToast('좋아요를 기록했어요');_brCloseSheets();};
-  $('brAMem').onclick=()=>{const r=selRef();if(!r)return;recordMemorizationByRef(r);_brToast('암송 완료로 기록했어요');_brCloseSheets();};
+  // 좋아요·암송 — 앱의 다른 곳과 같은 **큰 하트·체크** 알림 (_reactWithToast, v26-1007-10 HB)
+  $('brALike').onclick=()=>{const r=selRef();if(!r)return;_reactWithToast('like',r);_brCloseSheets();};
+  $('brAMem').onclick=()=>{const r=selRef();if(!r)return;_reactWithToast('mem',r);_brCloseSheets();};
   // ⚠️ Even Deeper 는 누른 그 자리에서 곧장 복사를 시작해야 한다 (아이폰) — 시트 닫기는 그 뒤
   $('brAEven').onclick=()=>{const r=selRef();if(!r)return;openEvenDeeperFromRef(r);_brCloseSheets();};
   // 저장 — 블럭7·스위터의 '저장(담아두기)' 목록과 같은 것 (HB 2026-10-06 (가))
@@ -15265,6 +15299,7 @@ function _brBind(){
   $('brDash').onclick=_brOpenDash;
   $('brDashClose').onclick=()=>$('brDashP').classList.remove('on');
   $('bdChips').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brDashRange=b.dataset.r;_brDashRender();};
+  ['bdFrom','bdTo'].forEach(id=>$(id).addEventListener('change',()=>{_brDashRange='c';_brDashRender();}));
   // 지도 칸 · 다음 걸음 → 그 장을 연다
   $('brDashBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;
     const [b,c]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';_brShow(b,c);});
