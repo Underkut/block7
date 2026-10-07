@@ -44,6 +44,8 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .logo{font-size:20px;color:var(--pink-d)}
 .iconbtn{width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 4px 0 rgba(120,90,170,.18);color:var(--purple)}
+.topbtns{display:flex;gap:10px}
+.iconbtn.off{color:#b9aed6}
 .iconbtn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(120,90,170,.18)}
 .hero{position:relative;padding:14px 16px 16px;text-align:center;margin-bottom:16px}
 .bubble{position:relative;display:inline-block;background:#fff8d6;border:3px solid var(--yellow);border-radius:20px;padding:8px 14px;font-size:16px;line-height:1.4;margin-bottom:12px;max-width:92%}
@@ -238,7 +240,7 @@ body.dragging .toast{opacity:0!important}
   <!-- 홈 -->
   <section class="view on" id="vHome">
     <div class="top"><span class="logo">용돈 친구들</span>
-      <button class="iconbtn" id="gear" aria-label="백업"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button></div>
+<span class="topbtns"><button class="iconbtn" id="muteBtn" aria-label="소리 켜고 끄기"></button><button class="iconbtn" id="gear" aria-label="백업"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button></span></div>
     <div class="hero card">
       <div class="bubble" id="bubble"></div>
       <div class="pigwrap" id="pig"></div>
@@ -317,7 +319,7 @@ function tone(dest, f, when, dur, type, vol, toF){
   o.connect(g); g.connect(dest); o.start(when); o.stop(when+dur+.05);
 }
 function sfx(name){
-  if(!S.sfx || !ac()) return;
+  if(!S.sfx || S.mute || !ac()) return;
   const t = AC.currentTime, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', v||.25, to);
   switch(name){
     case 'tap': T(660,0,.05,'sine',.12); break;
@@ -335,7 +337,7 @@ const BGM_SC = [0,2,4,7,9];
 const BGM_ML = [5,-1,7,-1,6,7,5,-1, 4,-1,6,-1,5,6,4,-1,  7,-1,9,-1,8,9,7,-1, 6,7,8,-1,9,-1,7,-1];
 const BGM_BASS = [0,-3,5,7];
 function bgmTick(){
-  if(!AC || !S.bgm) return;
+  if(!AC || !S.bgm || S.mute) return;
   const stepDur = 60/104/2;
   while(bgmNext < AC.currentTime + .6){
     const i = bgmStep % 32, d = BGM_ML[i];
@@ -344,12 +346,12 @@ function bgmTick(){
     bgmNext += stepDur; bgmStep++;
   }
 }
-function bgmStart(){ if(!S.bgm || bgmTimer) return; if(!ac()) return; bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
+function bgmStart(){ if(!S.bgm || S.mute || bgmTimer) return; if(!ac()) return; bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
 function bgmStop(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
-document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else if(S.bgm) bgmStart(); });
+document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else bgmStart(); });
 // 브라우저는 '손가락으로 눌러야' 소리를 허락한다 → 첫 터치에 배경음악을 시작하고, 버튼마다 톡 소리
 document.addEventListener('pointerdown', e => {
-  if(S.bgm && !bgmTimer) bgmStart();
+  if(!bgmTimer) bgmStart();
   const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac')) sfx('tap');
 }, true);
 
@@ -466,7 +468,7 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfx:true, bgm:false, lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfx:true, bgm:false, mute:false, lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
@@ -487,7 +489,7 @@ function migrate(o0){
   o.exp = (Array.isArray(o.exp) ? o.exp : []).filter(e => e && Number.isFinite(+e.amt) && +e.amt>0)
     .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
   o.useExp = o.useExp !== false;
-  o.dashOpen = o.dashOpen !== false; o.sfx = o.sfx !== false; o.bgm = o.bgm === true;
+  o.dashOpen = o.dashOpen !== false; o.sfx = o.sfx !== false; o.bgm = o.bgm === true; o.mute = o.mute === true;
   const seenG = new Set();
   if(!(o0 && Array.isArray(o0.givers))) o.givers = DEFAULT_GIVERS.map(g=>Object.assign({},g));
   o.givers = o.givers.filter(g => g && g.n && !seenG.has(String(g.n)) && seenG.add(String(g.n))).map(g => ({n:String(g.n).slice(0,8), ch:CH[g.ch] ? g.ch : 'hamster'}));
@@ -1022,6 +1024,16 @@ function restoreSheet(){
   };
 }
 
+/* ───────── 소리 켜고 끄기 (홈 위쪽 스피커) ───────── */
+const SPK_ON = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.500v5h4l5 4v-13l-5 4z" fill="currentColor" fill-opacity=".15"/><path d="M16.500 9a4 4 0 010 6M19 6.500a8 8 0 010 11"/></svg>';
+const SPK_OFF = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.500v5h4l5 4v-13l-5 4z" fill="currentColor" fill-opacity=".15"/><path d="M17 9.500l4.500 5M21.500 9.500l-4.500 5"/></svg>';
+function renderMute(){ const b = $('muteBtn'); b.innerHTML = S.mute ? SPK_OFF : SPK_ON; b.classList.toggle('off', S.mute); b.setAttribute('aria-pressed', S.mute ? 'true' : 'false'); }
+$('muteBtn').onclick = () => {
+  S.mute = !S.mute; save(); renderMute();
+  if(S.mute){ bgmStop(); toast('소리를 껐어요'); }
+  else { bgmStart(); sfx('plus'); toast('소리를 켰어요'); }
+};
+
 /* ───────── 연결 ───────── */
 $('pig').innerHTML = PIG_BANK + '<span class="coindrop">'+COIN+'</span>';
 $('allocPig').innerHTML = face('pig');
@@ -1032,6 +1044,7 @@ $('bOut').onclick = () => { buzz(10); txFlow('out'); };
 $('bExp').onclick = () => { buzz(10); expFlow(); };
 $('bAlloc').onclick = () => { buzz(10); goTab('vAlloc'); };
 $('gear').onclick = backupSheet;
+renderMute();
 $('recent').onclick = $('list').onclick = e => { const b = e.target.closest('[data-tx]'); if(b) txSheet(b.dataset.tx); };
 $('dash').onclick = e => { if(!e.target.closest('#dashTog')) return; S.dashOpen = !S.dashOpen; save(); buzz(8); renderDash(); };
 $('mPrev').onclick = () => { month = monthShift(month,-1); renderLog(); };
