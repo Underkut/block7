@@ -323,7 +323,7 @@ console.log('\n시나리오 13-9 — 성경 읽기 대시보드 숫자 (B-9, v26
   sc.eq('들어온 길', S.src, { home: 1, nav: 1, deeper: 1 });
   sc.eq('Deeper 로 온 것', S.deeper.length, 1);
   sc.eq('가장 오래 머문 책 = 요한복음', Object.keys(S.byBook).sort((a, b) => S.byBook[b] - S.byBook[a])[0], '42');
-  sc.eq('이어 읽기 = Deeper 가 아닌 마지막 다음 장 (요 4장)', [S.next.b, S.next.c], [42, 4]);
+  sc.eq('이어 읽기 = Deeper 가 아닌 마지막 장 — 덜 읽었으면 그 장 첫 안 본 절 (요 3:19)', [S.next.b, S.next.c, S.next.v, S.next.resume], [42, 3, 19, true]);
   sc.eq('남긴 표시: 형광펜 2 · 메모 2 · 책갈피 1 (최근 3일 1)', [S.marks.hl, S.marks.memo, S.marks.bm, S.marks.recentBm], [2, 2, 1, 1]);
   sc.eq('메모가 가장 많은 책 = 시편', S.marks.memoTop, 18);
   sc.eq('한 번도 안 펼친 책은 짧은 것부터', S.never[0], 30);   // 오바댜(1장) — 같은 1장 책 중 차례가 가장 앞
@@ -371,6 +371,9 @@ console.log('\n시나리오 13-11 — 읽은 장 = 모든 절을 한 번씩 (HB 
   sc.eq('한 절이라도 빠지면 읽는 중', [M.done.has('42.3'), M.prog.all, M.full, M.part, M.avgSeen], [false, 0, 0, 1, 97]);
   sc.eq('3초만 열어 둔 장은 진도율에 안 든다', _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 3, t: T(0.1), of: 36 }] }, {}, {}, now, 'all').prog.all, 0);
   // 옛 줄 — v 범위는 n 이 꼭 맞을 때만 믿는다 (빈틈이 있을 수 있다)
+  const Dn = _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 60, t: T(0.1), vs: '1-36', of: 36 }] }, {}, {}, now, 'all');
+  sc.eq('다 읽었으면 이어 읽기는 다음 장', [Dn.next.b, Dn.next.c, !!Dn.next.resume], [42, 4, false]);
+  sc.eq('안 본 절이 없는 기록이면 1절부터', _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 3, t: T(0.1), of: 36 }] }, {}, {}, now, 'all').next.v, 1);
   sc.eq('옛 줄: v 와 n 이 맞으면 믿는다', _brSeenOf({ v: [1, 3], n: 3 }), [1, 2, 3]);
   sc.eq('옛 줄: 빈틈이 있으면 안 믿는다', _brSeenOf({ v: [1, 5], n: 3 }), []);
   sc.eq('새 줄 범위 글 읽기', _brSeenOf({ vs: '1-3,7' }), [1, 2, 3, 7]);
