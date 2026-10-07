@@ -282,12 +282,23 @@ console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피�
   const nav = slice('<div class="br-nav" id="brNav">', '<div class="br-pick" id="brPick"');
   sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" id="brNext"');
   sc.eq('하단 가운데 장 번호(요 3/21)는 없다', /id="brPg"/.test(SRC), false);
-  sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다', /h\.classList\.toggle\('mini',!show\);n\.classList\.toggle\('hide',!show\);/.test(SRC), true);
+  sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다 (스크롤을 따라 — v26-1007-8)', /h\.classList\.toggle\('mini',p>\.5\);n\.classList\.toggle\('hide',p>\.5\);/.test(SRC) && /_brP=Math\.max\(0,Math\.min\(1,_brP\+dy\/H\)\);/.test(SRC), true);
   sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);\s*_brPosSet\(/.test(SRC), true);
   sc.eq('대시보드는 성경을 접었다가 닫으면 다시 편다', /if\(typeof _brUnpark==='function'\)_brUnpark\(\);/.test(slice('function closeVerseDashboard(', '\n}')), true);
   sc.eq('읽은 시간은 창이 활성일 때만', /window\.addEventListener\('blur',\(\)=>\{if\(_brOpen\)_brSessEnd\(\);\}\);/.test(SRC) && /if\(!_brOpen\|\|!_brActiveWin\(\)\)return;/.test(SRC), true);
   sc.eq('피커: 누르면 메뉴, 밀면 손을 따라 (폭의 40%)', /_gnbRpMenu\(!\(m&&m\.classList\.contains\('on'\)\)\);/.test(SRC) && /if\(Math\.abs\(s0\.dx\)>w\*0\.4\)/.test(SRC) && /--rp-dx/.test(SRC), true);
   sc.eq('피커 옛 ▲▼ 그림은 없다', /gnb-rp-hint/.test(SRC), false);
+}
+
+console.log('\n시나리오 13-8 — v26-1007-8 (HB) 절 롱터치 메뉴 · 고른 줄 · 부드러운 접기');
+{
+  const menu = slice('<div class="task-menu br-vmenu" id="brVMenu">', '\n  </div>');
+  sc.eq('롱터치 메뉴 = 본문 복사 · 좋아요 · 저장 · 암송 · Deeper · Even · 공유', (menu.match(/data-vm="[a-z]+"/g) || []).join(' '), 'data-vm="copy" data-vm="like" data-vm="keep" data-vm="mem" data-vm="deeper" data-vm="even" data-vm="share"');
+  sc.eq('말씀 설정은 없다', /말씀 설정/.test(menu), false);
+  sc.eq('구분선은 본문 복사 아래 하나뿐', (menu.match(/task-menu-sep/g) || []).length, 1);
+  sc.eq('롱터치 0.5초 · 우클릭', /_brVmOpen\(\+v\.dataset\.v,x,y\);\},500\)/.test(SRC) && /addEventListener\('contextmenu'/.test(slice('function _brBind(', '// ESC')), true);
+  sc.eq('반응·도구 줄은 남은 단추 수만큼 고르게 (빈칸 없음)', /#bibleRd \.br-acts\{display:flex;justify-content:space-around;gap:4px;\}/.test(SRC), true);
+  sc.eq('손을 멈추면 움직이던 방향으로 마무리', /const t=_brDir>0\?\(_brP>\.15\?1:0\):\(_brP<\.85\?0:1\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
