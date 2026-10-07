@@ -18,8 +18,8 @@ const TASKF = slice('function _daySecTasks(', '// 판에 세울 구간들');
 const PICKS = slice('function _secPickSecs(', '// 줄 하나가 뜻하는 목적지');
 const SPECF = slice('function _secPickSpecFor(', 'function _secPickRender(');
 const EURO  = slice("// '오전으로' · '오후로'", '// ─ Toast ─');
-const LABEL = slice("// '내일로' · '내일 오후로'", '// 복제된 할일은');
-const MOVE  = slice('function moveTaskTo(days,toSec)', "// '내일로' · '내일 오후로'");
+const LABEL = slice("// '내일 오전으로' · '다음 주 밤으로'", '// 복제된 할일은');
+const MOVE  = slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'");
 
 console.log('시나리오 1 — 목적지 줄마다 어디로 가는지 적혀 있다');
 {
@@ -104,10 +104,14 @@ console.log('\n시나리오 5 — 안내 문구와 조사');
   sc.eq('한글이 아니면 로', euro('Gym'), '로');
 
   const SECS=[{id:'am',name:'오전'},{id:'pm',name:'오후'},{id:'night',name:'밤'}];
-  const label=new Function('SECS','_euroRo',`${LABEL}; return _moveLabel;`)(SECS,euro);
-  // 구간을 따로 고르지 않았으면 예전 문구 그대로 — 여기가 ① 이다
-  sc.eq('구간을 안 골랐으면 예전 그대로', label(1,'am',null), '내일로');
-  sc.eq('같은 구간이면 이름을 안 붙인다', label(1,'am','am'), '내일로');
+  const WITH = slice("// '9월 20일 일요일 오후로'", '// ─ Toast ─');
+  const withRo=new Function('SECS','_euroRo',`${WITH}; return _withSecRo;`)(SECS,euro);
+  const label=new Function('SECS','_euroRo','_withSecRo',`${LABEL}; return _moveLabel;`)(SECS,euro,withRo);
+  // v26-1007-4 (HB) — 도착한 구간을 **언제나** 붙인다. 구간을 따로 안 골랐으면
+  // 할일이 있던 구간 그대로 간 것이니 그 이름을 붙인다.
+  sc.eq('구간을 안 골랐으면 있던 구간 이름', label(1,'am',null), '내일 오전으로');
+  sc.eq('같은 구간이어도 이름을 붙인다', label(1,'am','am'), '내일 오전으로');
+  sc.eq('구간 이름을 못 찾으면 날짜만', label(1,'zzz',null), '내일로');
   sc.eq('다른 구간이면 이름을 붙인다', label(1,'am','pm'), '내일 오후로');
   sc.eq('받침 있는 구간', label(1,'pm','night'), '내일 밤으로');
   sc.eq('어제·오늘·다음 주도', [label(-1,'am','pm'),label(0,'am','pm'),label(7,'am','pm')],
@@ -166,7 +170,7 @@ console.log('\n시나리오 6 — 구간을 안 주면 예전 그대로 옮긴�
 console.log('\n시나리오 7 — 네 길이 모두 구간을 받는다');
 {
   const four = [
-    ['이동',           slice('function moveTaskTo(days,toSec)', "// '내일로' · '내일 오후로'")],
+    ['이동',           slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'")],
     ['복제',           slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다')],
     ['이동(날짜 지정)', slice('function moveTaskToPickedDate(dateStr,toSec)', "// 복제 칸의 '날짜 지정'")],
     ['복제(날짜 지정)', slice('function duplicateTaskToPickedDate(dateStr,toSec)', '// "8월 17일 월요일')],
