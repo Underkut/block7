@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-3  [production]  -->
+<!-- BLOCK7  v. 26-1007-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6047,7 +6047,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-3";
+const APP_VERSION = "v. 26-1007-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -37440,11 +37440,12 @@ function moveTaskTo(days,toSec){
     {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
-// '내일로' · '내일 오후로' — 구간을 따로 고른 때만 구간 이름을 붙인다.
+// '내일 오전으로' · '다음 주 밤으로' — 도착한 시간 구간을 **언제나** 붙인다
+// (v26-1007-4, HB: "어느 날로 갔는지만 있고 어느 구간인지가 없다").
+// 구간 이름을 못 찾을 때만 '내일로' 로 줄인다.
 function _moveLabel(days,fromSec,destSec){
   const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
-  const name=(destSec&&destSec!==fromSec)?((SECS.find(x=>x.id===destSec)||{}).name||''):'';
-  return name?`${base} ${name}${_euroRo(name)}`:`${base}로`;
+  return _withSecRo(base,destSec||fromSec);
 }
 
 // 복제된 할일은 "그 날 새로 만든 할일" 이다 (2026-09-04 HB).
@@ -37642,10 +37643,10 @@ function _dayLabel(dateStr,short){
   const dow=isNaN(dt.getTime())?'':_KDOW[dt.getDay()]+'요일';
   return short?`${m}월 ${d}일`:[`${m}월 ${d}일`,dow].filter(Boolean).join(' ');
 }
+// "9월 20일 일요일 오전으로 이동했어요" (v26-1007-4 — 예전엔 '오전 날짜로' 라
+// 구간이 날짜 앞말처럼 읽혔다. 이제 '내일 오전으로' 와 같은 꼴이다.)
 function _moveDateToastMsg(dateStr,secId,verb){
-  const secName=(SECS.find(s=>s.id===secId)||{}).name||'';
-  const parts=[_dayLabel(dateStr),secName].filter(Boolean);
-  return parts.join(' ')+' 날짜로 '+(verb||'이동')+'했어요';
+  return _withSecRo(_dayLabel(dateStr),secId)+' '+(verb||'이동')+'했어요';
 }
 
 // ── 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) ──────────────
@@ -37965,6 +37966,11 @@ function _euroRo(word){
   if(isNaN(c)||c<0xAC00||c>0xD7A3)return'로';
   const jong=(c-0xAC00)%28;
   return(jong===0||jong===8)?'로':'으로';
+}
+// '9월 20일 일요일 오후로' — 날짜 말 뒤에 구간 이름과 조사(로/으로)를 붙인다.
+function _withSecRo(dayWord,secId){
+  const name=((SECS.find(x=>x.id===secId)||{}).name||'').trim();
+  return name?`${dayWord} ${name}${_euroRo(name)}`:`${dayWord}${_euroRo(dayWord)}`;
 }
 
 // ─ Toast ─

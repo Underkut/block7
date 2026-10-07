@@ -44,6 +44,7 @@ function makeEnv(items, todayK) {
     _secPickOn: () => false,
     _secPickOpen() {}, _secPickBack() {},
     _euroRo: () => '로',
+    _withSecRo: (d) => d + '로',
     SECS: [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }],
     document: { getElementById: () => fakeEl() },
   };
