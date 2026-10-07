@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-17  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-18  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6170,7 +6170,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-17";
+const APP_VERSION = "v. 26-1007-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8989,9 +8989,9 @@ try{
       <div class="bd-custom" id="bdCustom"><input type="date" id="bdFrom" aria-label="시작 날짜"><span>~</span><input type="date" id="bdTo" aria-label="끝 날짜"></div>
       <div class="bd-tiles" id="bdTiles"></div>
       <div class="bd-sec"><h2>요즘의 나 <small>기록에서 찾은 것</small></h2><div class="bd-ins" id="bdIns"></div></div>
-      <div class="bd-sec"><h2>통독 지도 <small>한 칸 = 한 장 · 진할수록 자주</small></h2>
+      <div class="bd-sec"><h2>통독 지도 <small>한 칸 = 한 장 · 진할수록 많이 읽음</small></h2>
         <div class="bd-card"><div class="bd-prog" id="bdProg"></div><div class="bd-map" id="bdMap"></div>
-          <div class="bd-legend">적게 <i style="background:var(--bd-q1)"></i><i style="background:var(--bd-q2)"></i><i style="background:var(--bd-q3)"></i><i style="background:var(--bd-q4)"></i><i style="background:var(--bd-q5)"></i> 자주</div></div></div>
+          <div class="bd-legend">0% <i style="background:var(--bd-q1)"></i><i style="background:var(--bd-q2)"></i><i style="background:var(--bd-q3)"></i><i style="background:var(--bd-q4)"></i><i style="background:var(--bd-q5)"></i> 100%</div></div></div>
       <div class="bd-sec"><h2>읽는 리듬 <small>시간 × 요일 · 읽은 분</small></h2><div class="bd-card"><div class="bd-hm" id="bdHm"></div></div></div>
       <div class="bd-sec"><h2>오래 머문 책 <small>읽은 시간</small></h2><div class="bd-card"><div class="bd-hb" id="bdBooks"></div></div></div>
       <div class="bd-sec"><h2>끝까지 읽었나</h2><div class="bd-card"><div class="bd-ring" id="bdRing"></div></div></div>
@@ -14484,8 +14484,11 @@ function _brDashStats(log,marks,notes,now,range,custom){
     if(e.of>0)ofBy[k]=Math.max(ofBy[k]||0,e.of);});
   const isDone=k=>ofBy[k]>0&&seenBy[k]&&[...seenBy[k]].filter(v=>v>=1&&v<=ofBy[k]).length>=ofBy[k];
   const readSet=new Set(Object.keys(cnt).filter(isDone));
-  const OT=BIBLE_CHAPTERS_OT.reduce((a,b)=>a+b,0),TOT=CHS.reduce((a,b)=>a+b,0);
-  const otRead=[...readSet].filter(k=>+k.split('.')[0]<39).length;
+  // 진도율 = **읽은 절 수 / 전체 절 수** (HB v26-1007-18 — 장을 다 안 읽어도 읽은 만큼). 절 수는 개역한글 index.json 값
+  const OTV=23144,NTV=7957;
+  const cov={};Object.keys(seenBy).forEach(k=>{const of=ofBy[k]||0,n=[...seenBy[k]].filter(v=>v>=1&&(!of||v<=of)).length;
+    if(n)cov[k]={n,p:of?Math.min(1,n/of):0};});
+  let otN=0,ntN=0;Object.keys(cov).forEach(k=>{if(+k.split('.')[0]<39)otN+=cov[k].n;else ntN+=cov[k].n;});
   const byBook={},bookN={};L.forEach(e=>{byBook[e.b-1]=(byBook[e.b-1]||0)+(e.d||0);bookN[e.b-1]=(bookN[e.b-1]||0)+1;});
   const hourSec={};L.forEach(e=>{const h=new Date(e.ms).getHours();hourSec[h]=(hourSec[h]||0)+(e.d||0);});
   // 시간대 (HB v26-1007-15 — 성경 대시보드만. BLOCK7 의 다른 시간 구분과 따로 간다)
@@ -14507,7 +14510,8 @@ function _brDashStats(log,marks,notes,now,range,custom){
     if(!isDone(lk)){const of=ofBy[lk]||0,sn=seenBy[lk]||new Set();let v=1;if(of)while(v<of&&sn.has(v))v++;
       next={b:lastRead.b-1,c:lastRead.c,v,resume:true,from:{b:lastRead.b-1,c:lastRead.c}};}
     else{let b=lastRead.b-1,c=lastRead.c+1;if(c>CHS[b]){b=(b+1)%66;c=1;}next={b,c,from:{b:lastRead.b-1,c:lastRead.c}};}}
-  const never=CHS.map((n,b)=>b).filter(b=>![...readSet].some(k=>+k.split('.')[0]===b)).sort((a,b)=>CHS[a]-CHS[b]);
+  // 한 절이라도 읽은 책은 '안 펼친 책' 이 아니다 (v26-1007-18)
+  const never=CHS.map((n,b)=>b).filter(b=>!Object.keys(cov).some(k=>+k.split('.')[0]===b)).sort((a,b)=>CHS[a]-CHS[b]);
   const mk=marks||{},hlBy={},nb={};
   let hl=0,bm=0;Object.keys(mk).forEach(k=>{const o=mk[k]||{},bi=+k.split('.')[0]-1;if(o.h){hl++;hlBy[bi]=(hlBy[bi]||0)+1;}if(o.k)bm++;});
   const nt=notes||{};const memo=Object.keys(nt).filter(id=>nt[id]&&nt[id].t);memo.forEach(id=>{const bi=nt[id].b-1;nb[bi]=(nb[bi]||0)+1;});
@@ -14515,7 +14519,7 @@ function _brDashStats(log,marks,notes,now,range,custom){
   const recentBm=Object.keys(mk).filter(k=>mk[k]&&mk[k].k&&mk[k].k>=now-3*DAY).length;
   return {L,sec:sum(L),prevSec:sum(P),hasPrev:!!from&&P.length>0,today:{sec:sum(today),n:today.length},streak,best,last14,
     chapters:touched.filter(isDone).length,cnt,done:readSet,maxCnt:Math.max(1,...Object.values(cnt)),
-    prog:{ot:otRead/OT,nt:(readSet.size-otRead)/(TOT-OT),all:readSet.size/TOT},
+    prog:{ot:Math.min(1,otN/OTV),nt:Math.min(1,ntN/NTV),all:Math.min(1,(otN+ntN)/(OTV+NTV))},cov,
     byBook,bookN,topHour:top(hourSec),grid,slots:SLOTS,full,part:touched.length-full,avgSeen,src,dev,deeper,
     next,never,marks:{hl,memo:memo.length,bm,hlTop:top(hlBy),memoTop:top(nb),recentBm}};
 }
@@ -14913,7 +14917,9 @@ function _brDashRender(){
   let h='<div class="bd-part">구약</div>';
   CHS.forEach((n,b)=>{if(b===39)h+='<div class="bd-part">신약</div>';
     h+='<div class="bd-bk"><span class="nm">'+_bibleShort(books[b])+'</span><div class="bd-cells">';
-    for(let c=1;c<=n;c++){const k=b+'.'+c,v=S.cnt[k]||0,dn=S.done.has(k);h+='<i data-go="'+k+'" style="background:'+q(dn?v:0,S.maxCnt)+'" data-tip="'+books[b]+' '+c+_brUnit(b)+' · '+(dn?'다 읽음 · '+v+'번 펼침':v?'읽는 중 · '+v+'번 펼침':'아직')+'"></i>';}
+    // 칸 진하기 = 그 장에서 읽은 절의 비율 0~100% (HB v26-1007-18)
+    for(let c=1;c<=n;c++){const k=b+'.'+c,v=S.cnt[k]||0,dn=S.done.has(k),pc=dn?1:(S.cov[k]?S.cov[k].p:0);
+      h+='<i data-go="'+k+'" style="background:'+(pc>0?'var(--bd-q'+Math.min(5,1+Math.floor(pc*4.999))+')':'var(--bd-q0)')+'" data-tip="'+books[b]+' '+c+_brUnit(b)+' · '+(dn?'다 읽음 · '+v+'번 펼침':v?Math.round(pc*100)+'% 읽음 · '+v+'번 펼침':'아직')+'"></i>';}
     h+='</div></div>';});
   $('bdMap').innerHTML=h;
   // 리듬
