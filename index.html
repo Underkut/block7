@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-16  [production]  -->
+<!-- BLOCK7  v. 26-1007-17  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5077,19 +5077,19 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   background:var(--bg);color:var(--tx);font-family:var(--font-ui),-apple-system,sans-serif;
   --br-sheet:var(--s1);--br-scrim:rgba(0,0,0,.55);
   --br-hl1:rgba(255,206,60,.26);--br-hl2:rgba(110,210,130,.24);--br-hl3:rgba(100,170,255,.26);
-  --br-hl4:rgba(255,120,160,.24);--br-hl5:rgba(180,140,255,.26);
+  --br-hl4:rgba(255,120,160,.24);--br-hl5:rgba(180,140,255,.26);--br-hl6:rgba(255,120,110,.26);--br-hl7:rgba(255,165,90,.26);
   --br-serif:'Noto Serif KR','AppleMyungjo',serif;
   padding-top:env(safe-area-inset-top,0px);-webkit-tap-highlight-color:transparent;}
 #bibleRd.on{display:flex;}
 /* 앱은 기본이 어두운 판이고 밝은 판은 html[data-theme="light"] 로 켠다 */
 html[data-theme="light"] #bibleRd{--br-scrim:rgba(18,20,30,.38);
   --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);
-  --br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);}
+  --br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);--br-hl6:rgba(255,120,110,.36);--br-hl7:rgba(255,165,90,.36);}
 html #bibleRd[data-rt="light"]{--bg:#ffffff;--s1:#ffffff;--s2:#f1f2f6;--bd:#e3e5ec;--bd2:#eceef3;--tx:#1a1d28;--tx2:#5b6378;--tx3:#9aa1b4;--ac-tx:#4a5fe0;--br-sheet:#fff;--br-scrim:rgba(18,20,30,.38);color-scheme:light;
-  --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);--br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);}
+  --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);--br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);--br-hl6:rgba(255,120,110,.36);--br-hl7:rgba(255,165,90,.36);}
 html #bibleRd[data-rt="paper"]{--bg:#f3ecdc;--s1:#faf5e9;--s2:#ebe2cd;--bd:#ddd1b6;--bd2:#e6dcc4;--tx:#3b3226;--tx2:#6f6350;--tx3:#a0927a;--ac:#b07a34;--ac-tx:#8a5a1e;--br-sheet:#fbf6ea;--br-scrim:rgba(18,20,30,.38);color-scheme:light;
-  --br-hl1:rgba(255,206,60,.45);--br-hl2:rgba(120,200,130,.38);--br-hl3:rgba(110,170,240,.34);--br-hl4:rgba(250,130,160,.34);--br-hl5:rgba(180,140,240,.34);}
-html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,60,.26);--br-hl2:rgba(110,210,130,.24);--br-hl3:rgba(100,170,255,.26);--br-hl4:rgba(255,120,160,.24);--br-hl5:rgba(180,140,255,.26);--bg:#000;--s1:#0c0d10;--s2:#17181d;--bd:#26282f;--bd2:#1c1e24;--tx:#d9dce8;--tx2:#8a92b0;--tx3:#646b85;--ac-tx:#8c9bff;--br-sheet:#121317;color-scheme:dark;}
+  --br-hl1:rgba(255,206,60,.45);--br-hl2:rgba(120,200,130,.38);--br-hl3:rgba(110,170,240,.34);--br-hl4:rgba(250,130,160,.34);--br-hl5:rgba(180,140,240,.34);--br-hl6:rgba(255,120,110,.34);--br-hl7:rgba(255,165,90,.34);}
+html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,60,.26);--br-hl2:rgba(110,210,130,.24);--br-hl3:rgba(100,170,255,.26);--br-hl4:rgba(255,120,160,.24);--br-hl5:rgba(180,140,255,.26);--br-hl6:rgba(255,120,110,.26);--br-hl7:rgba(255,165,90,.26);--bg:#000;--s1:#0c0d10;--s2:#17181d;--bd:#26282f;--bd2:#1c1e24;--tx:#d9dce8;--tx2:#8a92b0;--tx3:#646b85;--ac-tx:#8c9bff;--br-sheet:#121317;color-scheme:dark;}
 #bibleRd button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 #bibleRd svg{display:block;}
 #bibleRd .br-top{display:grid;grid-template-columns:120px 1fr 120px;align-items:center;padding:6px 8px;
@@ -5119,6 +5119,7 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-v[data-hl="1"] .br-tx{background:var(--br-hl1);} .br-v[data-hl="2"] .br-tx{background:var(--br-hl2);}
 #bibleRd .br-v[data-hl="3"] .br-tx{background:var(--br-hl3);} .br-v[data-hl="4"] .br-tx{background:var(--br-hl4);}
 #bibleRd .br-v[data-hl="5"] .br-tx{background:var(--br-hl5);}
+#bibleRd .br-v[data-hl="6"] .br-tx{background:var(--br-hl6);} #bibleRd .br-v[data-hl="7"] .br-tx{background:var(--br-hl7);}
 #bibleRd .br-v.sel .br-tx{text-decoration:underline;text-decoration-color:var(--ac);text-decoration-thickness:2px;text-underline-offset:5px;}
 #bibleRd .br-v.flash{background:rgba(90,112,248,.16);}
 /* 책갈피 — 절 왼쪽 세로줄. 이어진 절이면 줄도 이어진다. 이어 읽기(인라인)에서는 줄마다 끊겨 그려진다 */
@@ -5190,6 +5191,7 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-sw{width:30px;height:30px;border-radius:50%;position:relative;}
 #bibleRd .br-sw[data-c="1"]{background:#ffd640;} #bibleRd .br-sw[data-c="2"]{background:#78d68c;} #bibleRd .br-sw[data-c="3"]{background:#6eb4ff;}
 #bibleRd .br-sw[data-c="4"]{background:#ff8caa;} #bibleRd .br-sw[data-c="5"]{background:#be96ff;}
+#bibleRd .br-sw[data-c="6"]{background:#ff7b72;} #bibleRd .br-sw[data-c="7"]{background:#ffa95e;}
 #bibleRd .br-sw.br-clear{background:var(--s2);color:var(--tx3);display:grid;place-items:center;}
 #bibleRd .br-sw.br-clear svg{width:14px;height:14px;}
 #bibleRd .br-vmov{display:none;position:absolute;inset:0;z-index:44;}
@@ -6168,7 +6170,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-16";
+const APP_VERSION = "v. 26-1007-17";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9006,9 +9008,11 @@ try{
     <div class="br-grab"></div>
     <div class="br-shead"><span></span><div class="br-selref" id="brSelRef"></div><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
     <div class="br-colors" id="brColors">
+      <!-- 순서는 화면 차례, 번호는 저장값 (v26-1007-17, HB). 6·7 은 새로 — 번호를 바꾸면 이미 칠한 색이 바뀐다 -->
+      <button class="br-sw" data-c="6" aria-label="빨강 형광펜"></button><button class="br-sw" data-c="7" aria-label="주황 형광펜"></button>
       <button class="br-sw" data-c="1" aria-label="노랑 형광펜"></button><button class="br-sw" data-c="2" aria-label="초록 형광펜"></button>
-      <button class="br-sw" data-c="3" aria-label="파랑 형광펜"></button><button class="br-sw" data-c="4" aria-label="분홍 형광펜"></button>
-      <button class="br-sw" data-c="5" aria-label="보라 형광펜"></button>
+      <button class="br-sw" data-c="3" aria-label="파랑 형광펜"></button><button class="br-sw" data-c="5" aria-label="보라 형광펜"></button>
+      <button class="br-sw" data-c="4" aria-label="분홍 형광펜"></button>
       <button class="br-sw br-clear" data-c="0" aria-label="형광펜 지우기"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
     </div>
     <!-- 윗줄 = 말씀 반응 (전체화면 우하단과 같은 차례·그림, v26-1007-6 HB). Deeper 는 뺐다 — 이미 성경 안이다.
@@ -14338,11 +14342,13 @@ function _brMigrateNotes(){
 function _brReadMs(day,time){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(day||'');if(!m)return 0;
   const t=/^(\d{1,2}):(\d{2})/.exec(time||'')||[0,0,0];return new Date(+m[1],+m[2]-1,+m[3],+t[1],+t[2]).getTime();}
 function _brHistory(){
-  const log=getBibleReadLog(),hide=(ST.settings&&ST.settings.bibleHistHide)||{},last={};
+  const log=getBibleReadLog(),hide=(ST.settings&&ST.settings.bibleHistHide)||{},last={},lastE={};
   Object.keys(log).forEach(day=>(log[day]||[]).forEach(e=>{
-    const k=e.b+'.'+e.c,ms=_brReadMs(day,e.time);if(!last[k]||ms>last[k])last[k]=ms;}));
+    const k=e.b+'.'+e.c,ms=e.t||_brReadMs(day,e.time);if(!last[k]||ms>=last[k]){last[k]=ms;lastE[k]=e;}}));
+  // vr = 마지막으로 읽을 때 본 절의 처음·끝 (v26-1007-17, HB — 읽은 곳에 절도). 옛 기록엔 없다
   return Object.keys(last).filter(k=>!(hide[k]&&hide[k]>=last[k])).sort((x,y)=>last[y]-last[x])
-    .map(k=>{const [bn,c]=k.split('.').map(Number);return {b:bn-1,c,ms:last[k]};});
+    .map(k=>{const [bn,c]=k.split('.').map(Number),e=lastE[k]||{};
+      return {b:bn-1,c,ms:last[k],vr:Array.isArray(e.v)&&e.v.length===2?e.v:null};});
 }
 function _brHistHide(b,c){
   if(!ST.settings.bibleHistHide)ST.settings.bibleHistHide={};
@@ -15126,7 +15132,9 @@ async function _brRenderList(){
   const txt=async(bn,c,vs)=>{try{const d=await _brGet(bn);return vs.map(v=>(d.c[c-1]||[])[v-1]||'').join(' ');}catch(e){return'';}};
   let h='';
   if(_brLt==='hist'){
-    _brHistory().forEach(x=>{h+=_brRow(x.b+'.'+x.c+'.0','hist:'+x.b+'.'+x.c,null,books[x.b]+' '+x.c+_brUnit(x.b),_brDate(x.ms),'','');});
+    _brHistory().forEach(x=>{const vr=x.vr;
+      h+=_brRow(x.b+'.'+x.c+'.'+(vr?vr[0]:0),'hist:'+x.b+'.'+x.c,null,
+        books[x.b]+' '+x.c+(vr?':'+(vr[0]===vr[1]?vr[0]:vr[0]+'-'+vr[1]):_brUnit(x.b)),_brDate(x.ms),'','');});
   }else if(_brLt==='memo'){
     const all=getBibleNotes();
     const ids=Object.keys(all).filter(id=>all[id]&&all[id].t).sort((a,b)=>(all[b].u||all[b].at||0)-(all[a].u||all[a].at||0));
@@ -15135,7 +15143,7 @@ async function _brRenderList(){
         esc(await txt(n.b,n.c,n.v||[])),'<div class="br-memo">'+esc(n.t)+'</div>');}
   }else{
     const marks=getBibleMarks(),f=_brLt==='mark'?'k':'h';
-    const COL=['','#ffd640','#78d68c','#6eb4ff','#ff8caa','#be96ff'];
+    const COL=['','#ffd640','#78d68c','#6eb4ff','#ff8caa','#be96ff','#ff7b72','#ffa95e'];
     const ks=Object.keys(marks).filter(k=>marks[k]&&marks[k][f]).map(k=>k.split('.').map(Number))
       .sort((a,b)=>a[0]-b[0]||a[1]-b[1]||a[2]-b[2]);
     for(const [bn,c,v] of ks){const mk=marks[bn+'.'+c+'.'+v]||{};

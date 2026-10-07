@@ -412,6 +412,22 @@ console.log('\n시나리오 13-14 — 읽는 리듬 시간대 · 자정 넘김 (
   sc.eq('목요일 4시 → 목요일 새벽', S.grid['4.0'], 50);
 }
 
+
+console.log('\n시나리오 13-15 — 읽은 곳에 절 · 형광펜 7색 (HB v26-1007-17)');
+{
+  ST.bibleReadLog = { '2026-10-07': [
+    { b: 43, c: 3, time: '07:00', d: 60, t: 1000, v: [1, 10], n: 10 },
+    { b: 43, c: 3, time: '08:00', d: 60, t: 2000, v: [11, 21], n: 11 },
+    { b: 1, c: 1, time: '06:00', d: 60, t: 500 } ] };
+  ST.settings.bibleHistHide = {};
+  const H = _brHistory();
+  sc.eq('마지막으로 읽을 때 본 절 범위', H[0].vr, [11, 21]);
+  sc.eq('옛 기록은 절 없이', H[1].vr, null);
+  const sw = (SRC.match(/<button class="br-sw" data-c="(\d)"/g) || []).map(x => x.match(/\d/)[0]).join('');
+  sc.eq('색 차례 = 연빨강·연주황·노랑·초록·파랑·연보라·연핑크 (번호는 저장값 그대로)', sw, '6712354');
+  sc.eq('새 색 6·7 은 본문 칠도 있다', /data-hl="6"\] \.br-tx\{background:var\(--br-hl6\)/.test(SRC) && /data-hl="7"\] \.br-tx\{background:var\(--br-hl7\)/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
