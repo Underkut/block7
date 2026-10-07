@@ -205,7 +205,7 @@ console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
 
 console.log('\n시나리오 7 — 이동·복제 네 길이 모두 같은 안내를 쓴다');
 {
-  const move = slice('function moveTaskTo(days,toSec)', "// '내일로' · '내일 오후로'");
+  const move = slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'");
   const movePick = slice('function moveTaskToPickedDate(', '// 복제 칸의 \'날짜 지정\'');
   const dup = slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다');
   const dupPick = slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');
