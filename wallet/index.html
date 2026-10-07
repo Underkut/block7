@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1007-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -148,6 +148,31 @@ body.dragging .toast{opacity:0!important}
 .smallnote{text-align:center;color:var(--sub);font-size:14px;margin:14px 0 4px}
 .linkbtn{display:block;margin:10px auto 0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px}
 
+/* 대시보드 */
+.dash{margin-bottom:12px;overflow:hidden}
+.dh{display:flex;align-items:center;gap:8px;width:100%;padding:14px 16px;font-size:19px;text-align:left}
+.dsum{flex:1;text-align:right;font-size:13px;color:var(--sub)}
+.dh .chev{width:22px;height:22px;color:var(--purple);margin-left:auto;transition:transform .2s;flex:none}
+.dh .chev.up{transform:rotate(180deg)}
+.dbody{padding:0 16px 14px;animation:fadeUp .25s ease}
+.dt{font-size:14px;color:var(--sub);margin:10px 2px 6px}
+.pie{display:flex;align-items:center;gap:14px}
+.donut{width:128px;flex:none;transform:rotate(0)}
+.leg{flex:1;min-width:0;font-size:14px}
+.leg div{display:flex;align-items:center;gap:6px;margin:3px 0}
+.leg i,.leg2 i{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.leg span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leg b{font-weight:400;color:var(--sub)}
+.bars{width:100%;display:block}
+.leg2{display:flex;gap:14px;justify-content:center;font-size:13px;color:var(--sub);margin-top:2px}
+.leg2 span{display:inline-flex;align-items:center;gap:5px}
+.ins{display:flex;gap:10px;align-items:flex-start;background:#f7f3ff;border-radius:16px;padding:9px 12px;margin-bottom:8px;font-size:15px;line-height:1.45}
+.ins .f{width:30px;flex:none}.ins .f svg{width:100%;display:block}
+.ins b{font-weight:400;color:var(--pink-d)}
+.memolink{margin:2px auto 8px}
+.memoin{margin:2px 0 12px;font-size:17px}
+.setrow{display:flex;align-items:center;justify-content:space-between;background:#f7f3ff;border-radius:18px;padding:10px 14px;margin-bottom:10px;font-size:18px}
+.setrow small{display:block;font-size:12px;color:var(--sub)}
 /* 시트 */
 .dim{position:fixed;inset:0;background:rgba(74,59,107,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .dim.on{opacity:1;pointer-events:auto}
@@ -249,6 +274,7 @@ body.dragging .toast{opacity:0!important}
   <!-- 기록 -->
   <section class="view" id="vLog">
     <div class="mon"><button id="mPrev" aria-label="이전 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="mLabel"></span><button id="mNext" aria-label="다음 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div>
+    <div class="dash card" id="dash"></div>
     <div class="msum" id="mSum"></div>
     <div id="list"></div>
   </section>
@@ -266,13 +292,66 @@ body.dragging .toast{opacity:0!important}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1007-2";
+const APP_VERSION = "v. 26-1008-2";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const nf = n => Number(n).toLocaleString('ko-KR');
 const won = n => nf(n) + '원';
 const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms||12); }catch(e){} };
+
+
+/* ───────── 소리 (파일 없이 휴대폰이 직접 만든다 — 저작권·용량 걱정 없음) ───────── */
+let AC = null, SFXG = null, BGMG = null, bgmTimer = null, bgmStep = 0, bgmNext = 0;
+function ac(){
+  if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
+      SFXG = AC.createGain(); SFXG.gain.value = .7; SFXG.connect(AC.destination);
+      BGMG = AC.createGain(); BGMG.gain.value = .2; BGMG.connect(AC.destination); }catch(e){ AC = null; return null; } }
+  if(AC.state==='suspended') AC.resume();
+  return AC;
+}
+function tone(dest, f, when, dur, type, vol, toF){
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, when); if(toF) o.frequency.exponentialRampToValueAtTime(toF, when+dur);
+  g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(vol, when+Math.min(.015, dur/3)); g.gain.exponentialRampToValueAtTime(0.0001, when+dur);
+  o.connect(g); g.connect(dest); o.start(when); o.stop(when+dur+.05);
+}
+function sfx(name){
+  if(!S.sfx || !ac()) return;
+  const t = AC.currentTime, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', v||.25, to);
+  switch(name){
+    case 'tap': T(660,0,.05,'sine',.12); break;
+    case 'plus': T(523,0,.08,'triangle',.28); T(784,.07,.12,'triangle',.28); break;
+    case 'minus': T(523,0,.08,'triangle',.25); T(392,.07,.12,'triangle',.25); break;
+    case 'coin': T(988,0,.07,'square',.1); T(1319,.07,.28,'square',.1); break;
+    case 'win': [523,659,784,1047].forEach((f,i) => T(f,i*.09,.16,'triangle',.28)); T(1319,.4,.4,'triangle',.25); break;
+    case 'lift': T(440,0,.14,'sine',.3,880); break;
+    case 'land': T(170,0,.16,'sine',.5,60); T(880,.02,.06,'triangle',.12); break;
+    case 'trash': T(700,0,.32,'sawtooth',.1,110); break;
+    case 'err': T(170,0,.12,'square',.1); T(125,.11,.16,'square',.1); break;
+  }
+}
+const BGM_SC = [0,2,4,7,9];
+const BGM_ML = [5,-1,7,-1,6,7,5,-1, 4,-1,6,-1,5,6,4,-1,  7,-1,9,-1,8,9,7,-1, 6,7,8,-1,9,-1,7,-1];
+const BGM_BASS = [0,-3,5,7];
+function bgmTick(){
+  if(!AC || !S.bgm) return;
+  const stepDur = 60/104/2;
+  while(bgmNext < AC.currentTime + .6){
+    const i = bgmStep % 32, d = BGM_ML[i];
+    if(d >= 0){ const semi = BGM_SC[d%5] + 12*Math.floor(d/5); tone(BGMG, 261.63*Math.pow(2, semi/12), bgmNext, .26, 'triangle', .5); }
+    if(i%4===0){ const r = BGM_BASS[Math.floor(i/8)%4]; tone(BGMG, 130.81*Math.pow(2, r/12), bgmNext, .5, 'sine', .55); if(i%8===4) tone(BGMG, 130.81*Math.pow(2,(r+7)/12), bgmNext, .4, 'sine', .35); }
+    bgmNext += stepDur; bgmStep++;
+  }
+}
+function bgmStart(){ if(!S.bgm || bgmTimer) return; if(!ac()) return; bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
+function bgmStop(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } }
+document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else if(S.bgm) bgmStart(); });
+// 브라우저는 '손가락으로 눌러야' 소리를 허락한다 → 첫 터치에 배경음악을 시작하고, 버튼마다 톡 소리
+document.addEventListener('pointerdown', e => {
+  if(S.bgm && !bgmTimer) bgmStart();
+  const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac')) sfx('tap');
+}, true);
 
 /* ───────── 캐릭터 (전부 코드로 그린 그림) ───────── */
 const eyes = (y,dx,r=5.2,cx=50) => `<circle cx="${cx-dx}" cy="${y}" r="${r}" fill="#3b2a2a"/><circle cx="${cx+dx}" cy="${y}" r="${r}" fill="#3b2a2a"/><circle cx="${cx-dx+r*.36}" cy="${y-r*.36}" r="${r*.34}" fill="#fff"/><circle cx="${cx+dx+r*.36}" cy="${y-r*.36}" r="${r*.34}" fill="#fff"/>`;
@@ -360,7 +439,7 @@ const face = k => `<svg viewBox="0 0 100 100">${(CH[k]||CH.star).s}</svg>`;
 const avatar = k => `<span class="av" style="background:${(CH[k]||CH.star).bg}">${face(k)}</span>`;
 const COLORS = {bear:'#e0a36f',bunny:'#ff9fc6',pig:'#ff7fa9',cat:'#ffbf55',dog:'#7fb0ff',penguin:'#6fc4ff',chick:'#ffd84d',hamster:'#ffb48a',star:'#ffcf3f'};
 const colOf = k => COLORS[k] || GCOL[(CH[k]||CH.star).g];
-const COIN = `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffd84d" stroke="#e0a900" stroke-width="3"/><circle cx="20" cy="20" r="11" fill="none" stroke="#e0a900" stroke-width="2"/><path d="M20 12v16M15 17h10M15 23h10" stroke="#e0a900" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const COIN = `<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#ffd84d" stroke="#e0a900" stroke-width="3"/><circle cx="20" cy="20" r="13" fill="none" stroke="#e0a900" stroke-width="1.5"/><path d="M11 13l4 14 5-12 5 12 4-14M9.500 19H30.500M9.500 23H30.500" stroke="#c98a00" stroke-width="2.400" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const PIG_BANK = `<svg viewBox="0 0 200 150"><ellipse cx="100" cy="140" rx="62" ry="7" fill="#000" opacity=".08"/><path d="M178 84q22-4 14-26q-6-14-18-6" fill="none" stroke="#ff86a8" stroke-width="6" stroke-linecap="round"/><rect x="54" y="112" width="26" height="30" rx="11" fill="#ff86a8"/><rect x="122" y="112" width="26" height="30" rx="11" fill="#ff86a8"/><ellipse cx="102" cy="82" rx="76" ry="54" fill="#ffa8c3"/><path d="M112 40L134 20L142 52Z" fill="#ff86a8"/><rect x="84" y="31" width="42" height="9" rx="4.5" fill="#b0486a"/><ellipse cx="34" cy="88" rx="17" ry="21" fill="#ff86a8"/><ellipse cx="29" cy="88" rx="3" ry="5" fill="#b0486a"/><ellipse cx="41" cy="88" rx="3" ry="5" fill="#b0486a"/><circle cx="66" cy="70" r="7" fill="#3b2a2a"/><circle cx="68.5" cy="67.5" r="2.4" fill="#fff"/><ellipse cx="70" cy="92" rx="9" ry="6" fill="#ff6f95" opacity=".6"/><path d="M60 100q10 8 20 0" stroke="#b0486a" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`;
 const TAB_ICONS = {
   home:`<svg viewBox="0 0 32 32" fill="none"><path d="M5 15L16 5l11 10v11a2 2 0 01-2 2H7a2 2 0 01-2-2z" fill="#ffd0e1" stroke="#ff6fa5" stroke-width="2.2" stroke-linejoin="round"/><rect x="13" y="18" width="6" height="10" rx="1.5" fill="#ff6fa5"/></svg>`,
@@ -373,10 +452,11 @@ const DEFAULT_TILES = [
   {k:'snack', n:'간식', ch:'bear'}, {k:'stat', n:'문구', ch:'bunny'}, {k:'save', n:'저금', ch:'pig'}, {k:'gift', n:'선물', ch:'cat'},
   {k:'play', n:'놀이', ch:'dog'}, {k:'style', n:'꾸미기', ch:'penguin'}, {k:'give', n:'헌금', ch:'chick'}, {k:'etc', n:'기타', ch:'hamster'}
 ];
-const GIVERS = [
+const DEFAULT_GIVERS = [
   {n:'엄마', ch:'cat'}, {n:'아빠', ch:'bear'}, {n:'할머니', ch:'bunny'}, {n:'할아버지', ch:'dog'}, {n:'친척', ch:'penguin'}, {n:'명절 용돈', ch:'chick'}, {n:'기타', ch:'hamster'}
 ];
-const giverCh = n => (GIVERS.find(g => g.n===n)||{}).ch || 'hamster';
+// 기록에는 그때의 캐릭터(ch)를 같이 저장해 두므로, 사람을 지우거나 바꿔도 예전 기록의 얼굴은 그대로다
+const giverCh = (n, ch) => (ch && CH[ch]) ? ch : ((S.givers.find(g => g.n===n)||{}).ch || 'hamster');
 const catOf = k => S.tiles.find(c => c.k===k) || (S.gone && S.gone[k] && Object.assign({k}, S.gone[k])) || {k, n:'기타', ch:'hamster'};
 
 /* ───────── 저장 ───────── */
@@ -386,7 +466,7 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfx:true, bgm:false, lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
@@ -405,8 +485,13 @@ function migrate(o0){
     .map(t => ({k:String(t.k), n:String(t.n).slice(0,8), ch:CH[t.ch] ? t.ch : 'star'}));
   o.gone = (o.gone && typeof o.gone==='object') ? o.gone : {};
   o.exp = (Array.isArray(o.exp) ? o.exp : []).filter(e => e && Number.isFinite(+e.amt) && +e.amt>0)
-    .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
+    .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
   o.useExp = o.useExp !== false;
+  o.dashOpen = o.dashOpen !== false; o.sfx = o.sfx !== false; o.bgm = o.bgm === true;
+  const seenG = new Set();
+  if(!(o0 && Array.isArray(o0.givers))) o.givers = DEFAULT_GIVERS.map(g=>Object.assign({},g));
+  o.givers = o.givers.filter(g => g && g.n && !seenG.has(String(g.n)) && seenG.add(String(g.n))).map(g => ({n:String(g.n).slice(0,8), ch:CH[g.ch] ? g.ch : 'hamster'}));
+  o.tx.forEach(t => { if(t){ t.note = String(t.note||'').slice(0,60); if(t.ch && !CH[t.ch]) t.ch = null; } });
   Object.keys(o.alloc).forEach(k => { const v = Math.round(+o.alloc[k]); if(v>0) o.alloc[k] = v; else delete o.alloc[k]; });
   return o;
 }
@@ -432,8 +517,8 @@ const wd = ['일','월','화','수','목','금','토'];
 
 function txRow(t){
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
-  const ch = isIn ? giverCh(t.memo) : c.ch;
-  return `<button class="row card" data-tx="${t.id}">${avatar(ch)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}</div><div class="s">${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
+  const ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
+  return `<button class="row card" data-tx="${t.id}">${avatar(ch)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}</div><div class="s">${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
 }
 const sortedTx = list => list.slice().sort((a,b) => a.date<b.date?1:a.date>b.date?-1:(b.at||0)-(a.at||0));
 
@@ -483,7 +568,7 @@ function renderAlloc(){
 
   const ex = expSorted();
   $('expBox').innerHTML = `<div class="exh"><span>받을 예정인 돈${ex.length?`<small>합계 ${won(pending())}</small>`:''}</span>${ex.length?`<span style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--sub)">계획에 넣기<button class="sw ${S.useExp?'on':''}" id="swExp" aria-label="계획에 넣기"><i></i></button></span>`:''}</div>`
-    + ex.map(e => { const l = expLabel(e); return `<div class="er" data-id="${e.id}"><div class="r1">${avatar(giverCh(e.who))}<span class="mid"><div class="t">${esc(e.who)}</div><div class="s ${l.late?'late':''}">${l.t}</div></span><span class="a">+${nf(e.amt)}</span></div><div class="eb"><button class="gb green sm" data-ea="get">받았어요!</button><button class="gb gray sm" data-ea="del">안 받게 됐어요</button></div></div>`; }).join('')
+    + ex.map(e => { const l = expLabel(e); return `<div class="er" data-id="${e.id}"><div class="r1" data-ea="edit">${avatar(giverCh(e.who,e.ch))}<span class="mid"><div class="t">${esc(e.who)}</div><div class="s ${l.late?'late':''}">${l.t}</div>${e.note?`<div class="s">${esc(e.note)}</div>`:''}</span><span class="a">+${nf(e.amt)}</span></div><div class="eb"><button class="gb green sm" data-ea="get">받았어요!</button><button class="gb blue sm" data-ea="edit">고치기</button><button class="gb gray sm" data-ea="del">취소</button></div></div>`; }).join('')
     + `<button class="gb blue sm" id="addExp" style="margin-top:10px">＋ 받을 예정인 돈 적기</button>`;
 
   $('agrid').innerHTML = S.tiles.map(c => {
@@ -496,10 +581,60 @@ function renderAlloc(){
   }).join('') + `<button class="ac add" id="addCat"><span class="plus">+</span>새 칸<br>만들기</button>`;
 }
 
+/* ───────── 기록 · 대시보드 ───────── */
+const PAL = ['#ff6fa5','#ffb347','#5aa9ff','#3cc98a','#9b7bff','#ffd84d','#ff8a5c','#6bd6ff'];
+const shortWon = n => n>=10000 ? (Math.round(n/1000)/10)+'만' : n>=1000 ? (Math.round(n/100)/10)+'천' : String(n);
+function mstats(m){
+  let inc = 0, sp = 0; const cats = {}, days = {};
+  S.tx.forEach(t => { if(t.date.slice(0,7)!==m) return;
+    if(t.t==='in') inc += t.amt;
+    else { sp += t.amt; const n = catOf(t.cat).n; cats[n] = (cats[n]||0) + t.amt; days[t.date] = (days[t.date]||0) + t.amt; } });
+  return {inc, sp, days, list: Object.keys(cats).map(n => ({n, v:cats[n]})).sort((a,b) => b.v-a.v)};
+}
+function pieHtml(st){
+  if(!st.sp) return `<div class="empty" style="padding:10px">${face('pig')}쓴 돈이 생기면<br>파이 그래프가 나와요</div>`;
+  const top = st.list.slice(0,5), rest = st.list.slice(5).reduce((a,x)=>a+x.v,0);
+  const sl = top.map((x,i) => ({n:x.n, v:x.v, c:PAL[i%PAL.length]})); if(rest>0) sl.push({n:'그 밖', v:rest, c:'#cfc7e0'});
+  let off = 25;
+  const arcs = sl.map(x => { const p = x.v/st.sp*100, c = `<circle cx="21" cy="21" r="15.915" fill="none" stroke="${x.c}" stroke-width="7" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${off}"/>`; off -= p; return c; }).join('');
+  return `<div class="pie"><svg viewBox="0 0 42 42" class="donut"><circle cx="21" cy="21" r="15.915" fill="none" stroke="#f1ecfa" stroke-width="7"/>${arcs}<text x="21" y="20" text-anchor="middle" font-size="3.6" fill="#9a8cb5" font-family="inherit">쓴 돈</text><text x="21" y="26" text-anchor="middle" font-size="5" fill="#4a3b6b" font-family="inherit">${shortWon(st.sp)}</text></svg>
+    <div class="leg">${sl.map(x=>`<div><i style="background:${x.c}"></i><span>${esc(x.n)}</span><b>${Math.round(x.v/st.sp*100)}%</b></div>`).join('')}</div></div>`;
+}
+function barsHtml(){
+  const ms = []; for(let i=5;i>=0;i--) ms.push(monthShift(month,-i));
+  const data = ms.map(m => mstats(m)), mx = Math.max(1, ...data.map(d => Math.max(d.inc, d.sp)));
+  const W = 320, H = 130, base = 104, ch = 70, gw = W/6;
+  let g = '';
+  data.forEach((d,i) => { const x = i*gw, hi = d.inc/mx*ch, hs = d.sp/mx*ch, cur = i===5;
+    g += `<rect x="${x+gw/2-17}" y="${base-hi}" width="15" height="${hi}" rx="4" fill="#3cc98a" opacity="${cur?1:.55}"/><rect x="${x+gw/2+2}" y="${base-hs}" width="15" height="${hs}" rx="4" fill="#ff6fa5" opacity="${cur?1:.55}"/>`;
+    if(d.inc) g += `<text x="${x+gw/2-9.5}" y="${base-hi-3}" text-anchor="middle" font-size="9" fill="#209a63" font-family="inherit">${shortWon(d.inc)}</text>`;
+    if(d.sp) g += `<text x="${x+gw/2+9.5}" y="${base-hs-3}" text-anchor="middle" font-size="9" fill="#d9467f" font-family="inherit">${shortWon(d.sp)}</text>`;
+    g += `<text x="${x+gw/2}" y="122" text-anchor="middle" font-size="11" fill="${cur?'#4a3b6b':'#9a8cb5'}" font-family="inherit">${Number(ms[i].slice(5))}월</text>`; });
+  return `<svg viewBox="0 0 ${W} ${H}" class="bars"><line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="#e8e0f5" stroke-width="1.5"/>${g}</svg>
+    <div class="leg2"><span><i style="background:#3cc98a"></i>받은 돈</span><span><i style="background:#ff6fa5"></i>쓴 돈</span></div>`;
+}
+function insights(st){
+  const [y,m] = month.split('-'), lbl = month===todayStr().slice(0,7) ? '이번 달' : Number(m)+'월', pv = mstats(monthShift(month,-1)), out = [];
+  if(st.sp>0){ const t = st.list[0]; out.push(`${lbl} 가장 많이 쓴 곳은 <b>${esc(t.n)}</b> ${won(t.v)}이에요. 쓴 돈의 ${Math.round(t.v/st.sp*100)}%예요.`); }
+  else out.push(`${lbl}에는 아직 쓴 돈이 없어요. 알뜰하네요!`);
+  if(pv.sp===0 && st.sp===0) out.push('지난달에도 쓴 돈이 없었어요.');
+  else if(pv.sp===0) out.push('지난달에는 쓴 돈이 없어서 비교할 수 없어요.');
+  else { const d = st.sp - pv.sp; out.push(d>0 ? `지난달보다 <b>${won(d)}</b> 더 썼어요.` : d<0 ? `지난달보다 <b>${won(-d)}</b> 덜 썼어요. 잘했어요!` : '지난달과 똑같이 썼어요.'); }
+  if(st.inc>0){ const left = st.inc - st.sp; out.push(left>=0 ? `받은 돈의 <b>${Math.round(st.sp/st.inc*100)}%</b>를 쓰고 ${won(left)}을 남겼어요.` : `받은 돈보다 ${won(-left)} 더 썼어요. 모아 둔 돈을 쓴 거예요.`); }
+  else if(st.sp>0){ const dk = Object.keys(st.days).sort((a,b)=>st.days[b]-st.days[a])[0]; out.push(`가장 많이 쓴 날은 ${Number(dk.slice(5,7))}월 ${Number(dk.slice(8,10))}일(${won(st.days[dk])})이에요.`); }
+  else out.push(`${lbl}에는 받은 돈도 없어요.`);
+  return out;
+}
+function renderDash(){
+  const open = S.dashOpen, st = mstats(month), faces = ['bear','bunny','hamster'];
+  $('dash').innerHTML = `<button class="dh" id="dashTog" aria-expanded="${open}"><span>내 돈 대시보드</span><span class="dsum">${open?'':'받은 '+won(st.inc)+' · 쓴 '+won(st.sp)}</span><svg class="chev ${open?'up':''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`
+    + (open ? `<div class="dbody"><div class="dt">어디에 썼을까?</div>${pieHtml(st)}<div class="dt">달마다 비교</div>${barsHtml()}<div class="dt">꿀꿀이의 한마디</div>${insights(st).map((t,i)=>`<div class="ins"><span class="f">${face(faces[i])}</span><span>${t}</span></div>`).join('')}</div>` : '');
+}
 function renderLog(){
   const [y,m] = month.split('-');
   $('mLabel').textContent = y+'년 '+Number(m)+'월';
   $('mNext').style.visibility = month >= todayStr().slice(0,7) ? 'hidden' : 'visible';
+  renderDash();
   const rows = sortedTx(S.tx.filter(t => t.date.slice(0,7)===month));
   const inS = rows.filter(t=>t.t==='in').reduce((a,t)=>a+t.amt,0), outS = rows.filter(t=>t.t==='out').reduce((a,t)=>a+t.amt,0);
   $('mSum').innerHTML = rows.length ? `받은 돈 <b class="in">${won(inS)}</b> · 쓴 돈 <b class="out">${won(outS)}</b>` : '';
@@ -522,7 +657,7 @@ function confetti(){
     e.style.left = (Math.random()*100)+'%'; e.style.background = cols[i%cols.length];
     e.style.setProperty('--dx', (Math.random()*160-80)+'px'); e.style.setProperty('--r', (Math.random()*720-360)+'deg');
     e.style.animationDelay = (Math.random()*.35)+'s'; e.style.borderRadius = i%3===0?'50%':'3px'; box.appendChild(e); }
-  document.body.appendChild(box); setTimeout(()=>box.remove(), 2400);
+  document.body.appendChild(box); setTimeout(()=>box.remove(), 2400); sfx('win');
 }
 function sparkle(r){
   for(let i=0;i<9;i++){ const e = document.createElement('span'); e.className = 'sp'; e.textContent = i%2 ? '★' : '✦';
@@ -538,88 +673,101 @@ function goTab(v){
 }
 
 /* ───────── 숫자판 (키보드 없이 금액 입력) ───────── */
-function padSheet({title, who, init, nextLabel, allowZero, extra, onDone}){
+// memo 를 넘기면(빈 글자라도) '✎ 메모 남기기' 가 생긴다. 눌러야 입력칸이 열린다 — 키보드를 기본으로 띄우지 않으려고.
+function padSheet({title, who, init, nextLabel, allowZero, extra, memo, onDone}){
   let val = String(init||0);
+  const hasMemo = memo !== undefined;
   openSheet(`<h2>${title}</h2>${who?`<div class="who">${avatar(who.ch)}<span style="font-size:19px">${esc(who.n)}</span></div>`:''}
     <div class="disp"><span id="pv"></span><small>원</small></div>
     <div class="chips" id="pc">${[500,1000,5000,10000].map(c=>`<button data-c="${c}">+${nf(c)}</button>`).join('')}</div>
     <div class="pad" id="pp">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-n="${n}">${n}</button>`).join('')}<button data-n="00">00</button><button data-n="0">0</button><button class="del" data-n="del" aria-label="지우기">⌫</button></div>
     ${extra||''}
+    ${hasMemo ? `<button class="linkbtn memolink" id="memoBtn" style="${memo?'display:none':''}">✎ 메모 남기기 (안 써도 돼요)</button><input class="inp memoin" id="memoIn" maxlength="60" placeholder="예) 세뱃돈 / 친구 생일선물" value="${esc(memo)}" style="${memo?'':'display:none'}">` : ''}
     <button class="gb ${allowZero?'purple':'green'}" id="pn">${nextLabel||'다음'}</button>`);
   const show = () => { $('pv').textContent = nf(+val); $('pn').disabled = !allowZero && +val<=0; };
   const put = s => { val = (val+s).replace(/^0+(?=\d)/,''); if(val.length>7) val = val.slice(0,7); };
   $('pp').onclick = e => { const b = e.target.closest('button'); if(!b) return; buzz(8); const n = b.dataset.n;
     if(n==='del') val = val.length>1 ? val.slice(0,-1) : '0'; else put(n); show(); };
   $('pc').onclick = e => { const b = e.target.closest('button'); if(!b) return; buzz(8); val = String(Math.min(9999999, +val + +b.dataset.c)); show(); };
-  $('pn').onclick = () => { if(!allowZero && +val<=0) return; onDone(+val); };
+  if(hasMemo) $('memoBtn').onclick = () => { $('memoBtn').style.display = 'none'; $('memoIn').style.display = ''; $('memoIn').focus(); };
+  $('pn').onclick = () => { if(!allowZero && +val<=0) return; onDone(+val, hasMemo ? $('memoIn').value.trim() : ''); };
   show();
 }
-const pickGrid = items => `<div class="pick" id="pk">${items.map(i => `<button class="pk${i.on?' on':''}" data-k="${esc(i.key)}" style="--bg:${CH[i.ch].bg}"><div class="face">${face(i.ch)}</div>${esc(i.n)}</button>`).join('')}</div>`;
+const newBtn = label => `<button class="pk newpk" data-k="__new" style="--bg:#fff;border:3px dashed #cdbdf0;box-shadow:none"><div style="font-size:44px;line-height:58px;color:var(--purple)">+</div>${label}</button>`;
+const pickGrid = (items, extra) => `<div class="pick" id="pk">${items.map(i => `<button class="pk${i.on?' on':''}" data-k="${esc(i.key)}" style="--bg:${CH[i.ch].bg}"><div class="face">${face(i.ch)}</div>${esc(i.n)}</button>`).join('')}${extra||''}</div>`;
+const giverItems = cur => S.givers.map(g => ({key:g.n, n:g.n, ch:g.ch, on:g.n===cur}));
+const chOfGiver = n => (S.givers.find(g => g.n===n)||{}).ch || 'hamster';
 
 /* ───────── 받았어요 / 썼어요 ───────── */
 function txFlow(kind, ex){
   let date = ex ? ex.date : todayStr();
   const dateRow = `<label class="datebtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span id="dtxt"></span><input type="date" id="fDate" max="${todayStr()}" value="${date}"></label>`;
   const dlabel = () => { const d = new Date(date+'T00:00:00'); $('dtxt').textContent = date===todayStr() ? '오늘' : (d.getMonth()+1)+'월 '+d.getDate()+'일'; };
-  padSheet({ title: kind==='in' ? '얼마 받았어요?' : '얼마 썼어요?', init: ex?ex.amt:0, nextLabel:'다음으로 ▶', extra: dateRow,
-    onDone: amt => pickStep(kind, amt, date, ex) });
+  padSheet({ title: kind==='in' ? '얼마 받았어요?' : '얼마 썼어요?', init: ex?ex.amt:0, nextLabel:'다음으로 ▶', extra: dateRow, memo: ex&&ex.note ? ex.note : '',
+    onDone: (amt, note) => pickStep(kind, amt, date, ex, note) });
   dlabel();
   $('fDate').onchange = e => { date = e.target.value || todayStr(); dlabel(); };
 }
-function pickStep(kind, amt, date, ex){
-  let items = kind==='in' ? GIVERS.map(g => ({key:g.n, n:g.n, ch:g.ch})) : S.tiles.map(c => ({key:c.k, n:c.n, ch:c.ch}));
+function pickStep(kind, amt, date, ex, note){
+  let items = kind==='in' ? giverItems(ex ? ex.memo : null) : S.tiles.map(c => ({key:c.k, n:c.n, ch:c.ch, on: !!ex && ex.cat===c.k}));
   if(kind==='out' && !items.length) items = [{key:'etc', n:'기타', ch:'hamster'}];
-  const cur = ex ? (kind==='in' ? ex.memo : ex.cat) : null;
-  items.forEach(i => { i.on = i.key===cur; });
-  openSheet(`<h2>${kind==='in' ? '누구한테 받았어요?' : '어디에 썼어요?'}</h2><div class="note">${won(amt)} — 하나를 눌러 주세요</div>${pickGrid(items)}<button class="linkbtn" id="pBack">◀ 금액 다시 쓰기</button>`);
-  $('pBack').onclick = () => txFlow(kind, Object.assign({}, ex||{}, {amt, date, t:kind}));
+  openSheet(`<h2>${kind==='in' ? '누구한테 받았어요?' : '어디에 썼어요?'}</h2><div class="note">${won(amt)}${note?' · '+esc(note):''} — 하나를 눌러 주세요</div>${pickGrid(items, newBtn(kind==='in'?'새 사람':'새 칸'))}<button class="linkbtn" id="pBack">◀ 금액 다시 쓰기</button>`);
+  $('pBack').onclick = () => txFlow(kind, Object.assign({}, ex||{}, {amt, date, t:kind, note}));
   const commit = k => {
-    const rec = {id: ex&&ex.id ? ex.id : uid(), t:kind, amt, date, at: ex&&ex.at ? ex.at : Date.now(),
-      memo: kind==='in' ? k : '', cat: kind==='out' ? k : null, plan:null};
+    const rec = {id: ex&&ex.id ? ex.id : uid(), t:kind, amt, date, at: ex&&ex.at ? ex.at : Date.now(), note: note||'',
+      memo: kind==='in' ? k : '', ch: kind==='in' ? chOfGiver(k) : null, cat: kind==='out' ? k : null, plan:null};
     if(ex&&ex.id) S.tx[S.tx.findIndex(t=>t.id===ex.id)] = rec; else S.tx.push(rec);
     save(); month = date.slice(0,7); closeSheet(); buzz(25); render();
     if(kind==='in'){ confetti(); toast('용돈 받았다! 이제 계획을 세워 볼까요?'); goTab('vAlloc'); }
-    else { toast(catOf(k).n+'에 '+won(amt)+' 썼어요'); const l = left(k); if(alloc(k)>0 && l<0) setTimeout(()=>toast(catOf(k).n+' 계획보다 '+won(-l)+' 더 썼어요'), 1700); }
+    else { sfx('coin'); toast(catOf(k).n+'에 '+won(amt)+' 썼어요'); const l = left(k); if(alloc(k)>0 && l<0) setTimeout(()=>toast(catOf(k).n+' 계획보다 '+won(-l)+' 더 썼어요'), 1700); }
   };
-  if(kind==='out') $('pk').insertAdjacentHTML('beforeend', `<button class="pk" data-k="__new" style="--bg:#fff;border:3px dashed #cdbdf0;box-shadow:none"><div style="font-size:44px;line-height:58px;color:var(--purple)">+</div>새 칸</button>`);
   $('pk').onclick = e => { const b = e.target.closest('button'); if(!b) return;
-    if(b.dataset.k==='__new'){ tileSheet(null, commit); return; }   // 칸을 만들면 그 칸으로 바로 기록한다
+    if(b.dataset.k==='__new'){ if(kind==='out') tileSheet(null, commit); else personSheet(null, commit); return; }   // 만들면서 바로 기록한다
     commit(b.dataset.k); };
 }
 function txSheet(id){
   const t = S.tx.find(x=>x.id===id); if(!t) return;
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
-  openSheet(`<h2>${isIn ? '받은 돈' : '쓴 돈'}</h2><div class="who">${avatar(isIn ? giverCh(t.memo) : c.ch)}<span style="font-size:20px">${esc(isIn ? (t.memo||'용돈') : c.n)}</span></div>
+  openSheet(`<h2>${isIn ? '받은 돈' : '쓴 돈'}</h2><div class="who">${avatar(isIn ? giverCh(t.memo, t.ch) : c.ch)}<span style="font-size:20px">${esc(isIn ? (t.memo||'용돈') : c.n)}</span></div>
     <div class="disp ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}<small>원</small></div>
-    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일</div>
+    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?'<br>✎ '+esc(t.note):''}</div>
     <div class="stack-btns"><button class="gb blue" id="tEdit">고치기</button><button class="gb gray" id="tDel">지우기</button></div>`);
   $('tEdit').onclick = () => txFlow(t.t, t);
   $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
 }
 
-/* ───────── 받을 예정인 돈 ───────── */
-function expFlow(){
-  padSheet({title:'얼마 받을 예정이에요?', init:0, nextLabel:'다음으로 ▶', onDone: amt => {
-    openSheet(`<h2>누구한테 받을 예정이에요?</h2><div class="note">${won(amt)} — 하나를 눌러 주세요</div>${pickGrid(GIVERS.map(g=>({key:g.n,n:g.n,ch:g.ch})))}<button class="linkbtn" id="pBack">◀ 금액 다시 쓰기</button>`);
-    $('pBack').onclick = expFlow;
-    $('pk').onclick = e => { const b = e.target.closest('button'); if(b) expWhen(amt, b.dataset.k); };
+/* ───────── 받을 예정인 돈 (새로 적기 · 고치기) ───────── */
+function expFlow(ex){
+  padSheet({title:'얼마 받을 예정이에요?', init: ex?ex.amt:0, nextLabel:'다음으로 ▶', memo: ex&&ex.note ? ex.note : '', onDone: (amt, note) => {
+    openSheet(`<h2>누구한테 받을 예정이에요?</h2><div class="note">${won(amt)}${note?' · '+esc(note):''} — 하나를 눌러 주세요</div>${pickGrid(giverItems(ex ? ex.who : null), newBtn('새 사람'))}<button class="linkbtn" id="pBack">◀ 금액 다시 쓰기</button>`);
+    $('pBack').onclick = () => expFlow(Object.assign({}, ex||{}, {amt, note}));
+    $('pk').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+      if(b.dataset.k==='__new'){ personSheet(null, n => expWhen(amt, n, note, ex)); return; }
+      expWhen(amt, b.dataset.k, note, ex); };
   }});
 }
-function expWhen(amt, who){
+function expWhen(amt, who, note, ex){
   const md = s => { const d = new Date(s+'T00:00:00'); return (d.getMonth()+1)+'월 '+d.getDate()+'일'; };
   const mo = new Date(); mo.setMonth(mo.getMonth()+1);
   const opts = [['내일', dayAdd(1)], ['3일 뒤', dayAdd(3)], ['일주일 뒤', dayAdd(7)], ['2주 뒤', dayAdd(14)], ['한 달 뒤', dstr(mo)], ['날짜는 몰라요', null]];
-  openSheet(`<h2>언제 받을 것 같아요?</h2><div class="who">${avatar(giverCh(who))}<span style="font-size:19px">${esc(who)} · ${won(amt)}</span></div>
+  if(ex && ex.date) opts.unshift(['그대로', ex.date]);
+  openSheet(`<h2>언제 받을 것 같아요?</h2><div class="who">${avatar(chOfGiver(who))}<span style="font-size:19px">${esc(who)} · ${won(amt)}</span></div>${note?`<div class="note" style="margin:2px 0 0">✎ ${esc(note)}</div>`:''}
     <div class="dgrid">${opts.map((o,i)=>`<button class="gb ${o[1]?'blue':'gray'} sm" data-i="${i}">${o[0]}${o[1]?`<small style="font-size:12px;opacity:.9"> ${md(o[1])}</small>`:''}</button>`).join('')}</div>
     <label class="datebtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>달력에서 고르기</span><input type="date" id="eDate" min="${todayStr()}"></label>`);
-  const done = date => { S.exp.push({id:uid(), amt, who, date, at:Date.now()}); S.useExp = true; save(); closeSheet(); buzz(20); render(); goTab('vAlloc'); toast('예정을 적었어요! 계획에 미리 넣어 볼 수 있어요'); };
+  const done = date => {
+    const rec = {id: ex&&ex.id ? ex.id : uid(), amt, who, ch: chOfGiver(who), note: note||'', date, at: ex&&ex.at ? ex.at : Date.now()};
+    const i = ex&&ex.id ? S.exp.findIndex(x=>x.id===ex.id) : -1;
+    if(i>=0) S.exp[i] = rec; else S.exp.push(rec);
+    S.useExp = true; save(); closeSheet(); buzz(20); render(); goTab('vAlloc');
+    toast(i>=0 ? '예정을 고쳤어요' : '예정을 적었어요! 계획에 미리 넣어 볼 수 있어요');
+  };
   $('sheet').querySelector('.dgrid').onclick = e => { const b = e.target.closest('button'); if(b) done(opts[+b.dataset.i][1]); };
   $('eDate').onchange = e => { if(e.target.value) done(e.target.value); };
 }
 function expReceive(id){
   const e = S.exp.find(x=>x.id===id); if(!e) return;
-  padSheet({title:'진짜 얼마 받았어요?', who:{n:e.who, ch:giverCh(e.who)}, init:e.amt, nextLabel:'받았어요!', onDone: v => {
-    S.tx.push({id:uid(), t:'in', amt:v, memo:e.who, date:todayStr(), cat:null, plan:null, at:Date.now()});
+  padSheet({title:'진짜 얼마 받았어요?', who:{n:e.who, ch:giverCh(e.who, e.ch)}, init:e.amt, nextLabel:'받았어요!', memo: e.note||'', onDone: (v, note) => {
+    S.tx.push({id:uid(), t:'in', amt:v, memo:e.who, ch:giverCh(e.who, e.ch), note: note||'', date:todayStr(), cat:null, plan:null, at:Date.now()});
     S.exp = S.exp.filter(x=>x.id!==id); save(); month = todayStr().slice(0,7); closeSheet(); buzz(25); render(); confetti(); toast('용돈 받았다!');
   }});
 }
@@ -633,14 +781,17 @@ $('expBox').onclick = e => {
   if(e.target.closest('#addExp')){ expFlow(); return; }
   if(e.target.closest('#swExp')){ S.useExp = !S.useExp; save(); buzz(10); render(); toast(S.useExp ? '받을 돈도 계획에 넣어요' : '지금 가진 돈으로만 계획해요'); return; }
   const b = e.target.closest('[data-ea]'), row = e.target.closest('.er'); if(!b || !row) return;
-  if(b.dataset.ea==='get') expReceive(row.dataset.id); else expCancel(row.dataset.id);
+  const a = b.dataset.ea;
+  if(a==='get') expReceive(row.dataset.id);
+  else if(a==='edit'){ const x = S.exp.find(v=>v.id===row.dataset.id); if(x) expFlow(x); }
+  else expCancel(row.dataset.id);
 };
 
 /* ───────── 계획세우기: 칸 ───────── */
 const tileOf = k => S.tiles.find(t=>t.k===k);
 function setAlloc(k, v){ if(v>0) S.alloc[k] = v; else delete S.alloc[k]; }
 function bumpCard(k, cls){ const el = document.querySelector('.ac[data-k="'+k+'"]'); if(!el) return; const t = cls==='amt' ? el.querySelector('.amt') : el; t.classList.remove('pop','bounce'); void t.offsetWidth; t.classList.add(cls==='amt'?'pop':'bounce'); }
-function shake(k){ const el = document.querySelector('.ac[data-k="'+k+'"]'); if(!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); buzz([20,40,20]); }
+function shake(k){ sfx('err'); const el = document.querySelector('.ac[data-k="'+k+'"]'); if(!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); buzz([20,40,20]); }
 function allocStep(k, dir){
   const av = avail();
   if(dir>0){
@@ -651,7 +802,7 @@ function allocStep(k, dir){
     if(now<=floor){ shake(k); toast(spent(k)>0 ? '이미 쓴 만큼은 줄일 수 없어요' : '더 줄일 게 없어요'); return; }
     setAlloc(k, Math.max(floor, now - step));
   }
-  buzz(14); save(); renderAlloc(); renderHome(); bumpCard(k,'amt');
+  buzz(14); sfx(dir>0?'plus':'minus'); save(); renderAlloc(); renderHome(); bumpCard(k,'amt');
   if(dir>0 && avail()<=0 && (balance()+(S.useExp?pending():0))>0){ confetti(); toast('와! 계획을 전부 세웠어요!'); }
 }
 $('agrid').onclick = e => {
@@ -679,28 +830,66 @@ $('allocReset').onclick = () => { if(!Object.keys(S.alloc).length){ toast('세�
   if(!confirm('세운 계획을 모두 지우고 다시 할까요?\n(쓴 기록은 그대로예요)')) return; S.alloc = {}; save(); render(); toast('처음부터 다시 계획해 봐요!'); };
 $('hint').onclick = e => { if(e.target.closest('#hIn')) txFlow('in'); else if(e.target.closest('#hExp')) expFlow(); };
 
-/* 칸 이름·동물 고치기 / 새로 만들기 */
-function tileSheet(t, onNew){
-  let ch = t ? t.ch : 'star', grp = CH[ch].g;
-  openSheet(`<h2>${t?'칸 고치기':'새 칸 만들기'}</h2>
-    <input class="inp" id="tName" maxlength="8" placeholder="" value="${t?esc(t.n):''}">
+/* 이름 + 캐릭터 고르는 공용 창 (칸 · 사람) */
+function charSheet({title, name, ch, okLabel, delLabel, needName, onSave, onDelete}){
+  let grp = CH[ch].g;
+  openSheet(`<h2>${title}</h2>
+    <input class="inp" id="tName" maxlength="8" placeholder="" value="${esc(name||'')}">
     <div class="gtabs" id="gTabs">${GROUPS.map(g=>`<button data-g="${g[0]}" class="${g[0]===grp?'on':''}">${g[1]}</button>`).join('')}</div>
     <div class="pick pk5" id="tPick"></div>
-    <button class="gb purple" id="tSave">${t?'고쳤어요!':'만들었어요!'}</button>
-    ${t?'<button class="linkbtn" id="tDel">이 칸 지우기</button>':''}`);
-  const ph = () => { $('tName').placeholder = CH[ch].n+' (이름을 써 보세요)'; };
+    <button class="gb purple" id="tSave">${okLabel}</button>
+    ${onDelete?`<button class="linkbtn" id="tDel">${delLabel}</button>`:''}`);
+  const ph = () => { $('tName').placeholder = needName ? '이름을 써 주세요' : CH[ch].n+' (이름을 써 보세요)'; };
   const drawPick = () => { $('tPick').innerHTML = Object.keys(CH).filter(k => CH[k].g===grp).map(k => `<button class="pk${k===ch?' on':''}" data-k="${k}" style="--bg:${CH[k].bg}"><div class="face">${face(k)}</div>${esc(CH[k].n)}</button>`).join(''); };
   ph(); drawPick();
   $('gTabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; grp = b.dataset.g; buzz(6); $('gTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x===b)); drawPick(); $('tPick').scrollTop = 0; };
   $('tPick').onclick = e => { const b = e.target.closest('button'); if(!b) return; ch = b.dataset.k; buzz(8); ph(); drawPick(); };
   $('tSave').onclick = () => {
-    const n = ($('tName').value.trim() || CH[ch].n).slice(0,8);
-    if(t){ const x = tileOf(t.k); x.n = n; x.ch = ch; } else { var nk = 't_'+uid(); S.tiles.push({k:nk, n, ch}); }
-    if(!t && onNew){ save(); onNew(nk); return; }
-    save(); closeSheet(); render(); toast(t?'고쳤어요':'새 칸이 생겼어요!');
-    if(!t) setTimeout(()=>{ const el = document.querySelector('.ac:nth-last-child(2)'); if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); bumpCard(S.tiles[S.tiles.length-1].k,'face'); } }, 300);
+    const typed = $('tName').value.trim();
+    if(needName && !typed){ toast('이름을 써 주세요'); $('tName').focus(); return; }
+    onSave((typed || CH[ch].n).slice(0,8), ch);
   };
-  if(t) $('tDel').onclick = () => { closeSheet(); askDeleteTile(t.k); };
+  if(onDelete) $('tDel').onclick = onDelete;
+}
+
+/* 칸 이름·동물 고치기 / 새로 만들기 (onNew: 만든 칸으로 바로 이어갈 일이 있을 때) */
+function tileSheet(t, onNew){
+  charSheet({title: t?'칸 고치기':'새 칸 만들기', name: t?t.n:'', ch: t?t.ch:'star', okLabel: t?'고쳤어요!':'만들었어요!', delLabel:'이 칸 지우기',
+    onSave: (n, ch) => {
+      let nk;
+      if(t){ const x = tileOf(t.k); x.n = n; x.ch = ch; } else { nk = 't_'+uid(); S.tiles.push({k:nk, n, ch}); }
+      if(!t && onNew){ save(); onNew(nk); return; }
+      save(); closeSheet(); render(); toast(t?'고쳤어요':'새 칸이 생겼어요!');
+      if(!t) setTimeout(()=>{ const el = document.querySelector('.ac:nth-last-child(2)'); if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); bumpCard(S.tiles[S.tiles.length-1].k,'face'); } }, 300);
+    },
+    onDelete: t ? () => { closeSheet(); askDeleteTile(t.k); } : null });
+}
+
+/* 사람(누구한테 받는지) 새로 만들기 / 고치기 / 지우기 */
+function personSheet(g, onNew){
+  charSheet({title: g?'사람 고치기':'새 사람 만들기', name: g?g.n:'', ch: g?g.ch:'hamster', needName:true, okLabel: g?'고쳤어요!':'만들었어요!', delLabel:'이 사람 지우기',
+    onSave: (n, ch) => {
+      if(g){
+        const old = g.n, x = S.givers.find(v=>v.n===old);   // g 와 x 는 같은 객체라, 바꾸기 전에 옛 이름을 따로 잡아 둔다
+        if(S.givers.some(v=>v!==x && v.n===n)){ toast('같은 이름이 이미 있어요'); return; }
+        x.n = n; x.ch = ch;
+        S.tx.forEach(t => { if(t.t==='in' && t.memo===old){ t.memo = n; t.ch = ch; } });
+        S.exp.forEach(e => { if(e.who===old){ e.who = n; e.ch = ch; } });
+      }else{
+        const x = S.givers.find(v=>v.n===n); if(x) x.ch = ch; else S.givers.push({n, ch});
+      }
+      save();
+      if(!g && onNew){ onNew(n); return; }
+      closeSheet(); render(); toast(g?'고쳤어요':'새 사람이 생겼어요!');
+    },
+    onDelete: g ? () => { if(!confirm('"'+g.n+'" 을(를) 목록에서 지울까요?\n예전 기록은 그대로 남아요.')) return;
+      S.givers = S.givers.filter(v=>v.n!==g.n); save(); closeSheet(); render(); toast('지웠어요'); } : null });
+}
+function peopleSheet(){
+  openSheet(`<h2>받은 사람 목록</h2><div class="note">누르면 이름·캐릭터를 고치거나 지울 수 있어요.</div>
+    <div class="pick" id="pk">${S.givers.map(g=>`<button class="pk" data-k="${esc(g.n)}" style="--bg:${CH[g.ch].bg}"><div class="face">${face(g.ch)}</div>${esc(g.n)}</button>`).join('')}${newBtn('새 사람')}</div>`);
+  $('pk').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    if(b.dataset.k==='__new') personSheet(null); else personSheet(S.givers.find(g=>g.n===b.dataset.k)); };
 }
 function askDeleteTile(k){
   const c = tileOf(k); if(!c) return false;
@@ -711,7 +900,7 @@ function askDeleteTile(k){
   if(!confirm(msg)) return false;
   if(S.tx.some(t => t.cat===k)) S.gone[k] = {n:c.n, ch:c.ch};
   delete S.alloc[k]; S.tiles = S.tiles.filter(t => t.k!==k); save(); render();
-  toast(l>0 ? '지웠어요. '+won(l)+'은 다시 계획할 수 있어요' : '지웠어요');
+  sfx('trash'); toast(l>0 ? '지웠어요. '+won(l)+'은 다시 계획할 수 있어요' : '지웠어요');
   return true;
 }
 
@@ -744,7 +933,7 @@ function dragStart(){
   try{ grid.setPointerCapture(DG.id); }catch(e){}
   const g = c.cloneNode(true); g.classList.add('ghost'); g.removeAttribute('data-k'); g.style.width = r.width+'px'; g.style.height = r.height+'px';
   document.body.appendChild(g); DG.ghost = g; c.classList.add('ph');
-  document.body.classList.add('dragging'); $('trash').classList.add('on'); buzz(30);
+  document.body.classList.add('dragging'); $('trash').classList.add('on'); buzz(30); sfx('lift');
   g.style.transform = `translate(${DG.x-DG.ox}px,${DG.y-DG.oy}px) scale(1.06)`;
   DG.raf = requestAnimationFrame(dragLoop);
 }
@@ -788,17 +977,24 @@ function dragEnd(e, cancelled){
   const r = d.card.getBoundingClientRect();
   d.ghost.style.transition = 'transform .22s cubic-bezier(.2,1.3,.4,1)'; d.ghost.style.transform = `translate(${r.left}px,${r.top}px) rotate(0deg) scale(1)`;
   S.tiles = [...grid.querySelectorAll('.ac[data-k]')].map(c => tileOf(c.dataset.k)).filter(Boolean); save(); buzz(20);
-  setTimeout(() => { finish(); d.card.classList.add('land'); sparkle(r); setTimeout(()=>d.card.classList.remove('land'), 500); }, 230);
+  setTimeout(() => { finish(); d.card.classList.add('land'); sparkle(r); sfx('land'); setTimeout(()=>d.card.classList.remove('land'), 500); }, 230);
 }
 
 /* ───────── 백업 ───────── */
-function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, exp:S.exp, useExp:S.useExp}}); }
+function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
 function markBackup(){ S.lastBackup = Date.now(); save(); }
 function backupSheet(){
   const last = S.lastBackup ? '마지막 백업: '+new Date(S.lastBackup).toLocaleDateString('ko-KR') : '아직 백업한 적이 없어요';
-  openSheet(`<h2>돈 기록 지키기</h2><div class="note">기록은 <b>이 휴대폰 안에만</b> 있어요.<br>가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
+  openSheet(`<h2>설정</h2>
+    <div class="setrow"><span>효과음<small>누를 때 톡톡 소리가 나요</small></span><button class="sw ${S.sfx?'on':''}" id="swSfx" aria-label="효과음"><i></i></button></div>
+    <div class="setrow"><span>배경 음악<small>조용한 곳에서는 꺼 두세요</small></span><button class="sw ${S.bgm?'on':''}" id="swBgm" aria-label="배경 음악"><i></i></button></div>
+    <div class="stack-btns" style="margin-top:14px"><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
+    <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
     <div class="note" style="margin-top:8px">용돈 친구들 ${APP_VERSION}</div>`);
+  $('swSfx').onclick = () => { S.sfx = !S.sfx; save(); $('swSfx').classList.toggle('on', S.sfx); if(S.sfx) sfx('plus'); };
+  $('swBgm').onclick = () => { S.bgm = !S.bgm; save(); $('swBgm').classList.toggle('on', S.bgm); if(S.bgm) bgmStart(); else bgmStop(); };
+  $('bkPeople').onclick = peopleSheet;
   $('bkCopy').onclick = () => {
     const txt = backupText(), ok = () => { markBackup(); toast('복사했어요! 카톡 "나에게"에 붙여 두세요'); };
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
@@ -818,8 +1014,8 @@ function restoreSheet(){
     let o; try{ o = JSON.parse($('rText').value.trim()); }catch(e){ toast('백업 내용이 이상해요'); return; }
     const d = o && o.app==='allowance' && o.data; if(!d || !Array.isArray(d.tx)){ toast('용돈 친구들 백업이 아니에요'); return; }
     const tx = d.tx.filter(t => t && (t.t==='in'||t.t==='out') && Number.isFinite(+t.amt) && +t.amt>0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date||''))
-      .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), date:t.date, cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
-    const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, exp:d.exp, useExp:d.useExp,
+      .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), note:String(t.note||'').slice(0,60), ch:t.ch&&CH[t.ch]?t.ch:null, date:t.date, cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
+    const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, exp:d.exp, useExp:d.useExp, givers:d.givers,
       plans: Array.isArray(d.plans) ? d.plans.filter(p=>p&&p.name&&Number.isFinite(+p.amt)).map(p=>({id:String(p.id||uid()), name:String(p.name), amt:Math.round(+p.amt), done:!!p.done})) : []});
     if(!confirm('기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
     S = Object.assign(n, {lastBackup:S.lastBackup}); save(); closeSheet(); render(); toast('불러왔어요!');
@@ -837,6 +1033,7 @@ $('bExp').onclick = () => { buzz(10); expFlow(); };
 $('bAlloc').onclick = () => { buzz(10); goTab('vAlloc'); };
 $('gear').onclick = backupSheet;
 $('recent').onclick = $('list').onclick = e => { const b = e.target.closest('[data-tx]'); if(b) txSheet(b.dataset.tx); };
+$('dash').onclick = e => { if(!e.target.closest('#dashTog')) return; S.dashOpen = !S.dashOpen; save(); buzz(8); renderDash(); };
 $('mPrev').onclick = () => { month = monthShift(month,-1); renderLog(); };
 $('mNext').onclick = () => { if(month < todayStr().slice(0,7)){ month = monthShift(month,1); renderLog(); } };
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { buzz(8); goTab(b.dataset.v); });
