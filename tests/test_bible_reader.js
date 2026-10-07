@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -306,9 +306,9 @@ console.log('\n시나리오 13-9 — 성경 읽기 대시보드 숫자 (B-9, v26
   const now = new Date('2026-10-07T21:00:00').getTime(), H = 36e5, D = 864e5;
   const log = {
     '2026-09-20': [{ b: 43, c: 1, time: '07:00', d: 300 }],                                   // 옛 줄 (t·n·of·s 없음)
-    '2026-10-05': [{ b: 43, c: 2, time: '07:00', d: 600, t: now - 2 * D - 14 * H, n: 30, of: 30, s: 'home', dv: 'm' }],
-    '2026-10-06': [{ b: 43, c: 3, time: '07:00', d: 900, t: now - D - 14 * H, n: 18, of: 36, s: 'nav', dv: 'm' }],
-    '2026-10-07': [{ b: 19, c: 23, time: '06:00', d: 120, t: now - 15 * H, n: 6, of: 6, s: 'deeper', r: '시 23:1', dv: 'pc' }]
+    '2026-10-05': [{ b: 43, c: 2, time: '07:00', d: 600, t: now - 2 * D - 14 * H, v: [1, 30], n: 30, of: 30, s: 'home', dv: 'm' }],
+    '2026-10-06': [{ b: 43, c: 3, time: '07:00', d: 900, t: now - D - 14 * H, v: [1, 18], n: 18, of: 36, s: 'nav', dv: 'm' }],
+    '2026-10-07': [{ b: 19, c: 23, time: '06:00', d: 120, t: now - 15 * H, v: [1, 6], n: 6, of: 6, s: 'deeper', r: '시 23:1', dv: 'pc' }]
   };
   const marks = { '45.8.28': { h: 2, ht: now }, '43.3.16': { k: now - D }, '43.3.17': { h: 1 } };
   const notes = { a: { b: 19, c: 23, v: [1], t: '목자', at: now }, b: { b: 19, c: 1, v: [1], t: '복', at: now } };
@@ -318,7 +318,7 @@ console.log('\n시나리오 13-9 — 성경 읽기 대시보드 숫자 (B-9, v26
   sc.eq('오늘', [S.today.sec, S.today.n], [120, 1]);
   sc.eq('연속으로 읽은 날 3 · 가장 길었던 때 3', [S.streak, S.best], [3, 3]);
   sc.eq('옛 줄도 통독 지도에는 든다 (요 1장)', S.cnt['42.1'], 1);
-  sc.eq('끝까지(90% 이상) 2 · 읽다 만 1', [S.full, S.part], [2, 1]);
+  sc.eq('끝까지(모든 절) 2 · 읽다 만 1', [S.full, S.part], [2, 1]);
   sc.eq('평균 본 절 비율', S.avgSeen, 83);
   sc.eq('들어온 길', S.src, { home: 1, nav: 1, deeper: 1 });
   sc.eq('Deeper 로 온 것', S.deeper.length, 1);
@@ -351,6 +351,32 @@ console.log('\n시나리오 13-10 — v26-1007-10 (HB) 직접 기간 · 큰 하�
   sc.eq('본문 파일이 바뀌었으니 기기 저장본을 새로 받는다 (대상 2:24)', /BIBLE_DATA_REV='krv-2'/.test(SRC), true);
 }
 
+
+
+console.log('\n시나리오 13-11 — 읽은 장 = 모든 절을 한 번씩 (HB (나), v26-1007-12)');
+{
+  const now = new Date('2026-10-07T21:00:00').getTime(), D = 864e5;
+  const T = d => now - d * D;
+  // 요 3장(36절)을 세 번에 나눠 봄 → 합치면 다 봤다
+  const split = { '2026-10-07': [
+    { b: 43, c: 3, time: '07:00', d: 60, t: T(0.3), vs: '1-12', of: 36 },
+    { b: 43, c: 3, time: '08:00', d: 60, t: T(0.2), vs: '10-30', of: 36 },
+    { b: 43, c: 3, time: '09:00', d: 60, t: T(0.1), vs: '31-36', of: 36 } ] };
+  const A = _brDashStats(split, {}, {}, now, 'all');
+  sc.eq('나눠 읽어도 합쳐서 다 읽은 장', [A.done.has('42.3'), A.full, A.part, A.chapters], [true, 1, 0, 1]);
+  sc.eq('진도율도 이 기준 (1장)', Math.round(A.prog.all * 31102) >= 1 && A.prog.all > 0, true);
+  // 한 절이 빠지면 아직
+  const miss = { '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 600, t: T(0.1), vs: '1-20,22-36', of: 36 }] };
+  const M = _brDashStats(miss, {}, {}, now, 'all');
+  sc.eq('한 절이라도 빠지면 읽는 중', [M.done.has('42.3'), M.prog.all, M.full, M.part, M.avgSeen], [false, 0, 0, 1, 97]);
+  sc.eq('3초만 열어 둔 장은 진도율에 안 든다', _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 3, t: T(0.1), of: 36 }] }, {}, {}, now, 'all').prog.all, 0);
+  // 옛 줄 — v 범위는 n 이 꼭 맞을 때만 믿는다 (빈틈이 있을 수 있다)
+  sc.eq('옛 줄: v 와 n 이 맞으면 믿는다', _brSeenOf({ v: [1, 3], n: 3 }), [1, 2, 3]);
+  sc.eq('옛 줄: 빈틈이 있으면 안 믿는다', _brSeenOf({ v: [1, 5], n: 3 }), []);
+  sc.eq('새 줄 범위 글 읽기', _brSeenOf({ vs: '1-3,7' }), [1, 2, 3, 7]);
+  sc.eq('기록에 본 절 범위를 남긴다', /extra\.vs=_brVerseList\(seen\)/.test(SRC), true);
+  sc.eq('읽는 리듬: 가로 요일 · 세로 시간대', /grid-template-columns:38px repeat\(7,minmax\(0,1fr\)\)/.test(SRC) && /S\.slots\.forEach\(\(x,i\)=>\{hm\+='<span class="d">'/.test(SRC), true);
+}
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
