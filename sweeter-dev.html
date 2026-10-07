@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5157,6 +5157,8 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-sw.br-clear svg{width:14px;height:14px;}
 #bibleRd .br-sw.on::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tx2);}
 #bibleRd .br-acts{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;}
+.br-reacts{grid-template-columns:repeat(auto-fit,minmax(0,1fr));padding-bottom:6px;margin-bottom:6px;border-bottom:1px solid var(--bd2);}
+#bibleRd .br-act .there-ic{width:22px;height:22px;display:block;color:var(--tx);}
 #bibleRd .br-act{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0;border-radius:10px;font-size:11.5px;color:var(--tx2);}
 #bibleRd .br-act svg{width:22px;height:22px;color:var(--tx);}
 #bibleRd .br-act:active{background:var(--s2);}
@@ -6047,7 +6049,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-5";
+const APP_VERSION = "v. 26-1007-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8858,12 +8860,21 @@ try{
       <button class="br-sw" data-c="5" aria-label="보라 형광펜"></button>
       <button class="br-sw br-clear" data-c="0" aria-label="형광펜 지우기"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
     </div>
+    <!-- 윗줄 = 말씀 반응 (전체화면 우하단과 같은 차례·그림, v26-1007-6 HB). Deeper 는 뺐다 — 이미 성경 안이다.
+         Even Deeper 는 전체화면처럼 그 기능이 켜진 계정에서만 (even-only). -->
+    <div class="br-acts br-reacts">
+      <button class="br-act" id="brALike"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg><span>좋아요</span></button>
+      <button class="br-act" id="brAKeep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg><span>저장</span></button>
+      <button class="br-act" id="brAMem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg><span>암송</span></button>
+      <button class="br-act even-only" id="brAEven"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg><span>Even Deeper</span></button>
+      <button class="br-act" id="brAThere"><span class="there-ic" data-there-ic></span><span>There</span></button>
+    </div>
+    <!-- 아랫줄 = 도구 -->
     <div class="br-acts">
-      <button class="br-act" id="brACopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg>복사</button>
-      <button class="br-act" id="brAMemo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg>메모</button>
+      <button class="br-act" id="brACopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/></svg><span>복사</span></button>
+      <button class="br-act" id="brAMemo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg><span>메모</span></button>
       <button class="br-act" id="brAMark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5" fill="currentColor"/></svg><span>책갈피</span></button>
-      <button class="br-act" id="brAKeep"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M7 4h10v16l-5-3.6L7 20z"/></svg>저장</button>
-      <button class="br-act" id="brAShare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M6 12v7h12v-7"/></svg>공유</button>
+      <button class="br-act" id="brAShare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg><span>공유</span></button>
     </div>
   </div>
 
@@ -14077,7 +14088,7 @@ const BibleLinkProvider = {
 //    살아남는다. 표시가 하나도 안 남은 절은 칸을 지운다 (지움이 상대 기기에 전해진다).
 const BIBLE_VER='krv';
 const BIBLE_DATA_REV='krv-1';            // 본문 파일이 바뀌면 올린다 → 기기들이 새로 받는다
-const _BR_MIN_READ=10;                    // 이보다 짧게 머문 장은 '읽음' 으로 남기지 않는다(넘기기만 한 것)
+const _BR_MIN_READ=3;                     // 3초 넘게 머문 장만 '읽음' 으로 남긴다 — 넘기기만 한 것은 버린다 (HB 2026-10-07, 10초에서 낮춤)
 // ⚠️ 쉰 시간을 빼는 규칙·상한은 **두지 않는다** (HB 2026-10-07 — "5시간을 켜 두면 5시간 그대로").
 //    화면이 꺼지거나 앱을 벗어나면 그 순간 끝나므로 그 동안은 세지 않는다.
 const _BR_SEEN_MS=1000;                   // 화면에 이만큼 머문 절을 '본 절' 로 센다
@@ -14141,7 +14152,7 @@ function _brHistHide(b,c){
 // 한 장에 머문 기록을 남긴다. 시작한 날에 담는다 (자정을 넘겨도).
 // 대시보드(B-9) 재료 — v26-1007-5 부터 한 줄에 이만큼 담는다 (옛 줄은 b·c·time·d 뿐):
 //   b,c   책 번호(1~66)·장          time "HH:MM" (병합 정렬용 — 지우지 말 것)
-//   d     화면에 펼쳐져 있던 초 (켜 둔 그대로 — 쉰 시간을 빼지 않는다, 상한 없음)
+//   d     화면에 펼쳐져 있던 초 (켜 둔 그대로 — 쉰 시간을 빼지 않는다, 상한 없음 · 3초 미만은 안 남김)
 //   t     시작 ms (정확한 때 · 같은 분에 두 번 읽어도 갈린다)
 //   v     [처음, 끝] 화면에 1초 넘게 머문 절의 범위 · n 그 절 수 · of 그 장의 전체 절 수
 //   s     들어온 길: deeper·home·gnb·pick·nav·search·list·recent·resume
@@ -14517,6 +14528,7 @@ function _brOpenAct(){
   document.querySelectorAll('#brColors .br-sw').forEach(s=>s.classList.toggle('on',+s.dataset.c===same&&same>0));
   const allMk=[..._brSel].every(v=>(marks[_brKey(b,c,v)]||{}).k);
   _brEl('brAMark').querySelector('span').textContent=allMk?'책갈피 빼기':'책갈피';
+  if(typeof _thereIconSync==='function'&&!_brEl('brAThere').querySelector('svg'))_thereIconSync();
   _brOpenSheet('brSAct',false);
 }
 // 메모 창 — vs: 고른 절들(새 메모를 그 묶음에), id: 고칠 메모.
@@ -14766,11 +14778,20 @@ function _brBind(){
       const vs=_brMemo.vs;_brRerender();setTimeout(()=>_brOpenMemo(vs),60);return;}
     const ed=e.target.closest('[data-noteedit]');if(ed)_brOpenMemo(_brMemo.vs,ed.dataset.noteedit);
   });
+  // 반응은 앱의 다른 곳과 **같은 기록**에 남는다 (같은 장절 글자 — 저장 목록·대시보드가 그대로 센다).
+  // 떨어진 절은 한 장절로 못 적으므로 막는다.
+  const selRef=()=>{const vs=[..._brSel].map(Number).sort((x,y)=>x-y);
+    if(!vs.length)return null;
+    if(vs.some((v,i)=>i&&v!==vs[i-1]+1)){_brToast('이어진 절만 한 번에 할 수 있어요');return null;}
+    return _brBooks()[_brCur.b]+' '+_brCur.c+':'+_brVerseList(vs);};
+  $('brALike').onclick=()=>{const r=selRef();if(!r)return;recordVerseLike(r);_brToast('좋아요를 기록했어요');_brCloseSheets();};
+  $('brAMem').onclick=()=>{const r=selRef();if(!r)return;recordMemorizationByRef(r);_brToast('암송 완료로 기록했어요');_brCloseSheets();};
+  // ⚠️ Even Deeper 는 누른 그 자리에서 곧장 복사를 시작해야 한다 (아이폰) — 시트 닫기는 그 뒤
+  $('brAEven').onclick=()=>{const r=selRef();if(!r)return;openEvenDeeperFromRef(r);_brCloseSheets();};
+  $('brAThere').onclick=()=>{const r=selRef();if(!r)return;_brCloseSheets();openThere(r);};
   // 저장 — 블럭7·스위터의 '저장(담아두기)' 목록과 같은 것 (HB 2026-10-06 (가))
   $('brAKeep').onclick=()=>{
-    const vs=[..._brSel].map(Number).sort((x,y)=>x-y);
-    if(vs.some((v,i)=>i&&v!==vs[i-1]+1)){_brToast('이어진 절만 한 번에 저장할 수 있어요');return;}
-    const ref=_brBooks()[_brCur.b]+' '+_brCur.c+':'+_brVerseList(vs);
+    const ref=selRef();if(!ref)return;
     _brCloseSheets();
     if(typeof openKeepPicker!=='function')return;
     // 저장 목록 고르기 창은 성경(5100) 아래에 산다 — 이번만 위로 올린다 (닫을 때 되돌린다)

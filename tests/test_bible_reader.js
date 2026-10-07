@@ -73,11 +73,13 @@ console.log('\n시나리오 1-4 — 읽은 곳: 목록에서 지워도 기록은
   ST.settings = {};
 }
 
-console.log('\n시나리오 2 — 읽은 장: 10초 미만은 버리고, 오래 켜 둔 것은 그대로, 시작한 날에 담는다');
+console.log('\n시나리오 2 — 읽은 장: 3초 미만은 버리고, 오래 켜 둔 것은 그대로, 시작한 날에 담는다');
 {
   ST.bibleReadLog = {};
   const t = new Date('2026-10-06T23:59:30').getTime();
-  sc.eq('5초는 버린다 (넘기기만 한 것)', _brReadAdd(0, 1, t, 5), false);
+  sc.eq('2초는 버린다 (넘기기만 한 것)', _brReadAdd(0, 1, t, 2), false);
+  sc.eq('3초부터 남긴다 (HB 2026-10-07)', _brReadAdd(0, 2, t, 3), true);
+  ST.bibleReadLog = {};
   sc.eq('40초는 남긴다', _brReadAdd(42, 3, t, 40), true);
   const e = ST.bibleReadLog['2026-10-06'][0];
   sc.eq('책 번호는 1~66 · 장 · 시각 · 초', [e.b, e.c, e.time, e.d], [43, 3, '23:59', 40]);
@@ -257,6 +259,17 @@ console.log('\n시나리오 13-5 — v26-1006-7 (HB 3차 신고)');
   sc.eq('Sweeter 에서 건너간 BLOCK7 화면: 덮개 표시(data-swboard)까지 내린다', /if\(_swBoardOn\(\)\)_swMount\(\);[\s\S]{0,200}else _swCoverOn\(false\);/.test(slice('function swCrossToggle(', '// 되돌아가는 단추')), true);
   sc.eq('BLOCK7 에서 건너간 Sweeter 판에도 There·성경', /const board=\(typeof _swBoardOn==='function'\)&&_swBoardOn\(\);/.test(slice('function _swEditBtnSync(', '// 필터 아이콘')), true);
   sc.eq('GNB 단추 높이는 로고 줄 가운데 (아이폰 시계 자리를 뺀다)', /\.gnb-there,\.gnb-bible\{display:none;position:absolute;left:84px;top:calc\(50% \+ var\(--gnb-safe,0px\) \/ 2\)/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-6 — 절 메뉴의 말씀 반응 (v26-1007-6 HB)');
+{
+  const sheet = slice('<div class="br-sheet" id="brSAct"', '<div class="br-sheet" id="brSMemo"');
+  const ids = (sheet.match(/id="brA[A-Za-z]+"/g) || []).map(x => x.slice(4, -1));
+  sc.eq('윗줄 반응 = 좋아요·저장·암송·Even·There (전체화면 차례)', ids.slice(0, 5), ['brALike', 'brAKeep', 'brAMem', 'brAEven', 'brAThere']);
+  sc.eq('아랫줄 도구 = 복사·메모·책갈피·공유', ids.slice(5), ['brACopy', 'brAMemo', 'brAMark', 'brAShare']);
+  sc.eq('Deeper 는 없다 (이미 성경 안)', /brADeeper/.test(sheet), false);
+  sc.eq('Even Deeper 는 켜진 계정에서만', /class="br-act even-only" id="brAEven"/.test(sheet), true);
+  sc.eq('반응은 앱의 같은 기록으로', /recordVerseLike\(r\)/.test(SRC) && /recordMemorizationByRef\(r\)/.test(SRC) && /openEvenDeeperFromRef\(r\)/.test(SRC) && /openThere\(r\)/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
