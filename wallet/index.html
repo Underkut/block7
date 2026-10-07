@@ -338,7 +338,7 @@ function tone(dest, f, when, dur, type, vol, toF){
   o.connect(g); g.connect(dest); o.start(when); o.stop(when+dur+.05);
 }
 function sfx(name, force){
-  if(!force && (!S.sfx || S.mute)) return;
+  if(force!==true && (!S.sfx || S.mute)) return;
   const c = ac(); if(!c) return;
   const go = () => { const t = c.currentTime + .02, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', (v||.25)*1.8, to);
   switch(name){
