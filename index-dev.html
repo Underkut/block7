@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1006-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6047,7 +6047,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1006-7";
+const APP_VERSION = "v. 26-1007-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44666,8 +44666,13 @@ window.restoreAutoBackup=function(slot){
 // _fbApplyingRemote around it to avoid echo writes.
 function applyRemoteState(remote){
   ST.vis=remote.vis||ST.vis;
-  ST.prevVis=remote.prevVis??ST.prevVis;
-  ST.preset=remote.preset??ST.preset;
+  // ⚠️ null 도 값이다 — '보기 필터 꺼짐' (v26-1007-1). 예전엔 `??` 로 받아서
+  //    다른 기기에서 끈 필터가 여기선 켜진 채 남았고, 이 기기가 다음에 아무거나
+  //    저장하면 3자 병합이 그것을 '이 기기가 켰다' 로 읽어 모든 기기에 도로 켰다
+  //    (HB: 가만히 있는데 깃발 필터가 저절로 켜진다). 칸이 아예 없을 때만 내 값을 둔다.
+  //    (tests/test_preset_sync.js)
+  if('prevVis' in remote)ST.prevVis=remote.prevVis;
+  if('preset' in remote)ST.preset=remote.preset;
   ST.collapsed=remote.collapsed||[];
   ST.days=remote.days||{};
   if(Array.isArray(remote.verseCollections))ST.verseCollections=remote.verseCollections;
