@@ -265,11 +265,29 @@ console.log('\n시나리오 13-6 — 절 메뉴의 말씀 반응 (v26-1007-6 HB)
 {
   const sheet = slice('<div class="br-sheet" id="brSAct"', '<div class="br-sheet" id="brSMemo"');
   const ids = (sheet.match(/id="brA[A-Za-z]+"/g) || []).map(x => x.slice(4, -1));
-  sc.eq('윗줄 반응 = 좋아요·저장·암송·Even·There (전체화면 차례)', ids.slice(0, 5), ['brALike', 'brAKeep', 'brAMem', 'brAEven', 'brAThere']);
-  sc.eq('아랫줄 도구 = 복사·메모·책갈피·공유', ids.slice(5), ['brACopy', 'brAMemo', 'brAMark', 'brAShare']);
+  // v26-1007-7 HB — There 는 절 메뉴에서 빼고 헤더 좌상단으로
+  sc.eq('윗줄 반응 = 좋아요·저장·암송·Even (전체화면 차례)', ids.slice(0, 4), ['brALike', 'brAKeep', 'brAMem', 'brAEven']);
+  sc.eq('아랫줄 도구 = 복사·메모·책갈피·공유', ids.slice(4), ['brACopy', 'brAMemo', 'brAMark', 'brAShare']);
   sc.eq('Deeper 는 없다 (이미 성경 안)', /brADeeper/.test(sheet), false);
   sc.eq('Even Deeper 는 켜진 계정에서만', /class="br-act even-only" id="brAEven"/.test(sheet), true);
-  sc.eq('반응은 앱의 같은 기록으로', /recordVerseLike\(r\)/.test(SRC) && /recordMemorizationByRef\(r\)/.test(SRC) && /openEvenDeeperFromRef\(r\)/.test(SRC) && /openThere\(r\)/.test(SRC), true);
+  sc.eq('반응은 앱의 같은 기록으로', /recordVerseLike\(r\)/.test(SRC) && /recordMemorizationByRef\(r\)/.test(SRC) && /openEvenDeeperFromRef\(r\)/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피커 · 활성 창)');
+{
+  const head = slice('<div class="br-top" id="brHead">', '<div class="br-scroll" id="brScroll">');
+  const ids = (head.match(/id="br[A-Za-z]+"/g) || []).map(x => x.slice(4, -1));
+  sc.eq('헤더 차례: There · 대시보드 · 제목 · 검색 · Aa · × · (접힌 줄)', ids.filter(x => ['brThere','brDash','brTitle','brFind','brAa','brClose','brMini'].includes(x)), ['brThere', 'brDash', 'brTitle', 'brFind', 'brAa', 'brClose', 'brMini']);
+  sc.eq('좌상단 내 표시 단추는 없다 (하단 네 단추로)', /id="brMenu"/.test(SRC), false);
+  const nav = slice('<div class="br-nav" id="brNav">', '<div class="br-pick" id="brPick"');
+  sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" id="brNext"');
+  sc.eq('하단 가운데 장 번호(요 3/21)는 없다', /id="brPg"/.test(SRC), false);
+  sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다', /h\.classList\.toggle\('mini',!show\);n\.classList\.toggle\('hide',!show\);/.test(SRC), true);
+  sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);\s*_brPosSet\(/.test(SRC), true);
+  sc.eq('대시보드는 성경을 접었다가 닫으면 다시 편다', /if\(typeof _brUnpark==='function'\)_brUnpark\(\);/.test(slice('function closeVerseDashboard(', '\n}')), true);
+  sc.eq('읽은 시간은 창이 활성일 때만', /window\.addEventListener\('blur',\(\)=>\{if\(_brOpen\)_brSessEnd\(\);\}\);/.test(SRC) && /if\(!_brOpen\|\|!_brActiveWin\(\)\)return;/.test(SRC), true);
+  sc.eq('피커: 누르면 메뉴, 밀면 손을 따라 (폭의 40%)', /_gnbRpMenu\(!\(m&&m\.classList\.contains\('on'\)\)\);/.test(SRC) && /if\(Math\.abs\(s0\.dx\)>w\*0\.4\)/.test(SRC) && /--rp-dx/.test(SRC), true);
+  sc.eq('피커 옛 ▲▼ 그림은 없다', /gnb-rp-hint/.test(SRC), false);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
