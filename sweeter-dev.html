@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-14  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-15  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6166,7 +6166,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-14";
+const APP_VERSION = "v. 26-1007-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14480,8 +14480,11 @@ function _brDashStats(log,marks,notes,now,range,custom){
   const otRead=[...readSet].filter(k=>+k.split('.')[0]<39).length;
   const byBook={},bookN={};L.forEach(e=>{byBook[e.b-1]=(byBook[e.b-1]||0)+(e.d||0);bookN[e.b-1]=(bookN[e.b-1]||0)+1;});
   const hourSec={};L.forEach(e=>{const h=new Date(e.ms).getHours();hourSec[h]=(hourSec[h]||0)+(e.d||0);});
-  const SLOTS=[[5,8,'새벽'],[8,11,'아침'],[11,14,'낮'],[14,17,'오후'],[17,20,'저녁'],[20,23,'밤'],[23,24,'늦은밤'],[0,5,'깊은밤']];
-  const grid={};L.forEach(e=>{const dt=new Date(e.ms),h=dt.getHours(),si=SLOTS.findIndex(x=>h>=x[0]&&h<x[1]);const k=dt.getDay()+'.'+si;grid[k]=(grid[k]||0)+(e.d||0);});
+  // 시간대 (HB v26-1007-15 — 성경 대시보드만. BLOCK7 의 다른 시간 구분과 따로 간다)
+  // 깊은밤(0~3시)은 **전날 밤의 연장**이라 앞날 요일에 넣는다 — 수요일 밤에 읽다 자정을 넘겨도 수요일 깊은밤
+  const SLOTS=[[3,6,'새벽'],[6,9,'아침'],[9,12,'오전'],[12,18,'오후'],[18,21,'저녁'],[21,24,'밤'],[0,3,'깊은밤']];
+  const grid={};L.forEach(e=>{const dt=new Date(e.ms),h=dt.getHours(),si=SLOTS.findIndex(x=>h>=x[0]&&h<x[1]);
+    const dw=h<3?(dt.getDay()+6)%7:dt.getDay();const k=dw+'.'+si;grid[k]=(grid[k]||0)+(e.d||0);});
   // 이 기간에 펼친 장들 — 끝까지(모든 절)인지, 얼마나 봤는지 (지금까지 본 것을 합쳐서)
   const touched=[...new Set(L.map(e=>(e.b-1)+'.'+e.c))].filter(k=>ofBy[k]>0);
   const full=touched.filter(isDone).length;
