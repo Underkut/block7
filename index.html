@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-4  [production]  -->
+<!-- BLOCK7  v. 26-1007-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6047,7 +6047,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-4";
+const APP_VERSION = "v. 26-1007-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7604,7 +7604,7 @@ try{
        특정 말씀 없이 연다 (ref 빈칸) — 합계에는 든다. 자리(left)는 renderLayout 이 잰다. -->
   <button class="gnb-there" id="gnbThereBtn" onclick="openThere('')" aria-label="There" title="There"><span class="there-ic" data-there-ic></span></button>
   <!-- 성경 — There 오른쪽 (v26-1006-6, HB 8-2). 마지막 읽던 곳을 연다. -->
-  <button class="gnb-bible" id="gnbBibleBtn" onclick="bibleOpenLast()" aria-label="성경" title="성경"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg></button>
+  <button class="gnb-bible" id="gnbBibleBtn" onclick="bibleOpenLast('gnb')" aria-label="성경" title="성경"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg></button>
   <button class="rp-gear" id="gnbLayoutBtn" style="display:none;" onclick="openRpConfig()" title="위젯 설정">
     <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="5.5" x2="17" y2="5.5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14.5" x2="17" y2="14.5"/></svg>
   </button>
@@ -14078,7 +14078,9 @@ const BibleLinkProvider = {
 const BIBLE_VER='krv';
 const BIBLE_DATA_REV='krv-1';            // 본문 파일이 바뀌면 올린다 → 기기들이 새로 받는다
 const _BR_MIN_READ=10;                    // 이보다 짧게 머문 장은 '읽음' 으로 남기지 않는다(넘기기만 한 것)
-const _BR_MAX_READ=1800;                  // 켜 둔 채 자리를 비운 것 — 30분에서 자른다
+// ⚠️ 쉰 시간을 빼는 규칙·상한은 **두지 않는다** (HB 2026-10-07 — "5시간을 켜 두면 5시간 그대로").
+//    화면이 꺼지거나 앱을 벗어나면 그 순간 끝나므로 그 동안은 세지 않는다.
+const _BR_SEEN_MS=1000;                   // 화면에 이만큼 머문 절을 '본 절' 로 센다
 function _brKey(b,c,v){return (b+1)+'.'+c+'.'+v;}   // b: 0~65
 function getBibleMarks(){if(!ST.bibleMarks)ST.bibleMarks={};return ST.bibleMarks;}
 function getBibleReadLog(){if(!ST.bibleReadLog)ST.bibleReadLog={};return ST.bibleReadLog;}
@@ -14136,16 +14138,35 @@ function _brHistHide(b,c){
   if(!ST.settings.bibleHistHide)ST.settings.bibleHistHide={};
   ST.settings.bibleHistHide=Object.assign({},ST.settings.bibleHistHide,{[(b+1)+'.'+c]:Date.now()});
 }
-// 한 장에 머문 시간을 남긴다. 시작한 날에 담는다 (자정을 넘겨도).
-function _brReadAdd(b,c,startMs,sec){
+// 한 장에 머문 기록을 남긴다. 시작한 날에 담는다 (자정을 넘겨도).
+// 대시보드(B-9) 재료 — v26-1007-5 부터 한 줄에 이만큼 담는다 (옛 줄은 b·c·time·d 뿐):
+//   b,c   책 번호(1~66)·장          time "HH:MM" (병합 정렬용 — 지우지 말 것)
+//   d     화면에 펼쳐져 있던 초 (켜 둔 그대로 — 쉰 시간을 빼지 않는다, 상한 없음)
+//   t     시작 ms (정확한 때 · 같은 분에 두 번 읽어도 갈린다)
+//   v     [처음, 끝] 화면에 1초 넘게 머문 절의 범위 · n 그 절 수 · of 그 장의 전체 절 수
+//   s     들어온 길: deeper·home·gnb·pick·nav·search·list·recent·resume
+//   r     Deeper 로 왔으면 그 말씀의 장절
+//   p     제품 b7/sw · dv 기기 m(폰)/t(태블릿)/pc · sec 그때의 시간 구간
+// ⚠️ 키를 짧게 둔다 — 클라우드 문서 하나(users/{uid})에 다 들어가고 문서에는 크기 상한이 있다.
+function _brReadAdd(b,c,startMs,sec,extra){
   sec=Math.round(sec);
   if(!(sec>=_BR_MIN_READ))return false;
-  sec=Math.min(sec,_BR_MAX_READ);
   const d=new Date(startMs);
   const day=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const log=getBibleReadLog();
-  (log[day]=log[day]||[]).push({b:b+1,c,time:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),d:sec});
+  const e={b:b+1,c,time:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'),d:sec};
+  if(extra)Object.keys(extra).forEach(k=>{const x=extra[k];if(x!==undefined&&x!==null&&x!=='')e[k]=x;});
+  (log[day]=log[day]||[]).push(e);
   return true;
+}
+// 이 기기 — There 와 같은 규칙: 마우스면 PC, 터치이고 짧은 변이 600 미만이면 폰, 나머지 태블릿
+function _brDev(){
+  try{
+    const touch=((navigator.maxTouchPoints||0)>0)||(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches);
+    if(!touch)return'pc';
+    const de=document.documentElement,w=de.clientWidth||screen.width,h=de.clientHeight||screen.height;
+    return Math.min(w,h)<600?'m':'t';
+  }catch(e){return'';}
 }
 // '요 3:16' · '요한1서 5:14' · '롬 8:28-30' · '시편 119' · '시 23편' → {b:0~65,c,v,v2}
 // 못 알아들으면 null (그때는 예전처럼 대한성서공회로 연다).
@@ -14348,21 +14369,55 @@ function _brLoadSerif(){
   l.href='https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&display=swap';
   document.head.appendChild(l);
 }
-// 읽는 시간 — 장을 펼친 순간부터 다음 장·닫기·앱 벗어남까지
+// ── 읽는 시간 · 본 절 — 장을 펼친 순간부터 다음 장·닫기·앱 벗어남까지 ──
+// 1초마다 한 번 잰다: 화면에 들어와 있는 절마다 머문 시간을 쌓아 1초가 넘은 절을 '본 절' 로 친다.
+// 읽은 시간은 펼친 때부터 끝날 때까지 그대로다. 화면이 꺼지거나 앱을 벗어나면 그 순간 끝난다.
+let _brNextSrc='',_brNextRef='',_brTick=0;
 function _brSessEnd(){
   if(!_brSess)return;
+  _brSessStep();
   const s=_brSess;_brSess=null;
-  if(_brReadAdd(s.b,s.c,s.t,(Date.now()-s.t)/1000))rawSave();
+  const seen=[...s.seen].sort((x,y)=>x-y);
+  const extra={t:s.t,s:s.src,r:s.ref,p:(typeof APP_PRODUCT!=='undefined'&&APP_PRODUCT==='sweeter')?'sw':'b7',
+    dv:_brDev(),of:s.of||undefined,sec:(typeof _secIdNowAll==='function')?(()=>{try{return _secIdNowAll();}catch(e){return'';}})():''};
+  if(seen.length){extra.v=[seen[0],seen[seen.length-1]];extra.n=seen.length;}
+  if(_brReadAdd(s.b,s.c,s.t,(Date.now()-s.t)/1000,extra))rawSave();
 }
-function _brSessStart(){_brSessEnd();if(_brOpen&&!document.hidden)_brSess={b:_brCur.b,c:_brCur.c,t:Date.now()};}
-document.addEventListener('visibilitychange',()=>{if(!_brOpen)return;if(document.hidden)_brSessEnd();else _brSessStart();});
+// 1초마다 — 읽은 시간 쌓기 + 화면에 보이는 절 재기
+function _brSessStep(){
+  const s=_brSess;if(!s)return;
+  const now=Date.now(),dt=Math.min(now-s.last,5000);s.last=now;
+  if(document.hidden)return;
+  const sc=_brEl('brScroll');if(!sc)return;
+  const top=sc.getBoundingClientRect().top,bot=top+sc.clientHeight;
+  sc.querySelectorAll('.br-v').forEach(el=>{
+    const r=el.getBoundingClientRect();
+    // 절의 절반 이상(또는 화면을 꽉 채운 긴 절)이 보이면 '보는 중'
+    const vis=Math.min(r.bottom,bot)-Math.max(r.top,top);
+    if(vis<=0||vis<Math.min(r.height,sc.clientHeight)*0.5)return;
+    const v=+el.dataset.v;s.dwell[v]=(s.dwell[v]||0)+dt;
+    if(s.dwell[v]>=_BR_SEEN_MS)s.seen.add(v);
+  });
+}
+function _brSessStart(){
+  _brSessEnd();
+  if(!_brOpen||document.hidden)return;
+  const d=_BR_MEM.get(_brCur.b+1);
+  _brSess={b:_brCur.b,c:_brCur.c,t:Date.now(),last:Date.now(),seen:new Set(),dwell:{},
+    src:_brNextSrc||'resume',ref:_brNextRef||'',of:d&&d.c[_brCur.c-1]?d.c[_brCur.c-1].length:0};
+  _brNextSrc='';_brNextRef='';
+  if(!_brTick)_brTick=setInterval(()=>{if(_brSess)_brSessStep();},1000);
+}
+document.addEventListener('visibilitychange',()=>{if(!_brOpen)return;if(document.hidden)_brSessEnd();else{_brNextSrc='resume';_brSessStart();}});
+window.addEventListener('pagehide',()=>{if(_brOpen)_brSessEnd();});
 
 // 여는 길 ① Sweeter 홈 Deeper — 마지막 읽던 곳, 처음이면 창세기 1장 1절
-function bibleOpenLast(){const p=_brPosGet()||{b:0,c:1,v:0};bibleOpen(p.b,p.c,0);}
+function bibleOpenLast(src){const p=_brPosGet()||{b:0,c:1,v:0};_brNextSrc=src||'home';bibleOpen(p.b,p.c,0);}
 // 여는 길 ② 전체화면 등의 Deeper — 그 말씀 장을 열고 그 절로. 못 알아들으면 false
 function bibleOpenRef(ref){
   const r=_brParseRef(ref);
   if(!r)return false;
+  _brNextSrc='deeper';_brNextRef=String(ref||'').slice(0,40);
   bibleOpen(r.b,r.c,r.v||0,r.v2||0);
   return true;
 }
@@ -14436,6 +14491,7 @@ async function _brShow(b,c,focus,focus2,keep){
   _brSessStart();
 }
 function _brStep(dd){
+  _brNextSrc='nav';
   let {b,c}=_brCur;const books=_brBooks();c+=dd;
   if(c<1){if(b===0)return;b--;c=_bibleChapters(books[b]);}
   else if(c>_bibleChapters(books[b])){if(b===65)return;b++;c=1;}
@@ -14525,7 +14581,7 @@ function _brRenderPick(){
   }else{
     _brEl('brPTitle').textContent=books[pk.b]+' '+pk.c+_brUnit(pk.b);
     const n=_brIndex&&_brIndex.books[pk.b]?_brIndex.books[pk.b].vc[pk.c-1]:0;
-    if(!n){_brEl('brPick').classList.remove('on');_brShow(pk.b,pk.c);return;}
+    if(!n){_brEl('brPick').classList.remove('on');_brNextSrc='pick';_brShow(pk.b,pk.c);return;}
     h+='<div class="br-crumb">절을 고르세요</div><div class="br-ngrid">';
     for(let v=1;v<=n;v++)h+='<button data-v="'+v+'">'+v+'</button>';
     h+='</div>';
@@ -14730,14 +14786,14 @@ function _brBind(){
   $('brPTabs').onclick=e=>{const t=e.target.closest('button');if(!t)return;_brPk={tab:t.dataset.t,b:null,c:null};_brRenderPick();};
   const pb=$('brPBody');
   pb.addEventListener('pointerdown',e=>{const c=e.target.closest('[data-c]');if(!c)return;
-    _brHold=setTimeout(()=>{_brHold='done';$('brPick').classList.remove('on');_brShow(_brPk.b,+c.dataset.c);},480);});
+    _brHold=setTimeout(()=>{_brHold='done';$('brPick').classList.remove('on');_brNextSrc='pick';_brShow(_brPk.b,+c.dataset.c);},480);});
   ['pointerup','pointerleave','pointercancel'].forEach(t=>pb.addEventListener(t,()=>{if(_brHold&&_brHold!=='done')clearTimeout(_brHold);}));
   pb.addEventListener('click',e=>{
     if(_brHold==='done'){_brHold=null;return;}_brHold=null;
-    const g=e.target.closest('[data-go]');if(g){const [b,c]=g.dataset.go.split('.').map(Number);$('brPick').classList.remove('on');_brShow(b,c);return;}
+    const g=e.target.closest('[data-go]');if(g){const [b,c]=g.dataset.go.split('.').map(Number);$('brPick').classList.remove('on');_brNextSrc='recent';_brShow(b,c);return;}
     const b=e.target.closest('[data-b]');if(b){_brPk.b=+b.dataset.b;if(_bibleChapters(_brBooks()[_brPk.b])===1)_brPk.c=1;_brRenderPick();return;}
     const c=e.target.closest('[data-c]');if(c){_brPk.c=+c.dataset.c;_brRenderPick();return;}
-    const v=e.target.closest('[data-v]');if(v){$('brPick').classList.remove('on');_brShow(_brPk.b,_brPk.c,+v.dataset.v);}
+    const v=e.target.closest('[data-v]');if(v){$('brPick').classList.remove('on');_brNextSrc='pick';_brShow(_brPk.b,_brPk.c,+v.dataset.v);}
   });
   // 글자와 화면
   $('brAa').onclick=()=>{_brSyncAa();_brOpenSheet('brSAa');};
@@ -14755,6 +14811,7 @@ function _brBind(){
     const g=e.target.closest('[data-go]');if(!g)return;
     const p=g.dataset.go.split('.');const [b,c,v]=p.map(Number);
     // 메모 탭: 그 절로 가서 그 메모를 연다 (HB 2026-10-06)
+    _brNextSrc='list';
     if(p[3]){_brShow(b,c,v).then(()=>_brOpenMemo([v],p[3]));return;}
     _brShow(b,c,v);
   });
@@ -14769,7 +14826,7 @@ function _brBind(){
   let ft=null;
   $('brFq').addEventListener('input',()=>{clearTimeout(ft);ft=setTimeout(()=>{_brFs.q=$('brFq').value.trim();_brFs.lim=100;_brRunFind();},220);});
   $('brFq').addEventListener('keydown',e=>{if(e.key==='Enter'){const j=$('brFBody').querySelector('.br-fjump');if(j)j.click();else $('brFq').blur();}});
-  $('brFBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const [b,c,v]=g.dataset.go.split('.').map(Number);$('brFindP').classList.remove('on');_brShow(b,c,v);});
+  $('brFBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const [b,c,v]=g.dataset.go.split('.').map(Number);$('brFindP').classList.remove('on');_brNextSrc='search';_brShow(b,c,v);});
   // ESC — 앱의 공용 ESC 는 입력 칸을 비켜선다(There 와 같은 사정). 메모·검색 칸에서도
   // 누르면 그 판만 닫히게 이 상자가 먼저 받는다.
   $('bibleRd').addEventListener('keydown',e=>{

@@ -73,7 +73,7 @@ console.log('\n시나리오 1-4 — 읽은 곳: 목록에서 지워도 기록은
   ST.settings = {};
 }
 
-console.log('\n시나리오 2 — 읽은 장: 10초 미만은 버리고, 30분에서 자른다, 시작한 날에 담는다');
+console.log('\n시나리오 2 — 읽은 장: 10초 미만은 버리고, 오래 켜 둔 것은 그대로, 시작한 날에 담는다');
 {
   ST.bibleReadLog = {};
   const t = new Date('2026-10-06T23:59:30').getTime();
@@ -81,8 +81,12 @@ console.log('\n시나리오 2 — 읽은 장: 10초 미만은 버리고, 30분�
   sc.eq('40초는 남긴다', _brReadAdd(42, 3, t, 40), true);
   const e = ST.bibleReadLog['2026-10-06'][0];
   sc.eq('책 번호는 1~66 · 장 · 시각 · 초', [e.b, e.c, e.time, e.d], [43, 3, '23:59', 40]);
-  _brReadAdd(0, 1, t, 99999);
-  sc.eq('켜 둔 채 자리를 비운 것은 30분', ST.bibleReadLog['2026-10-06'][1].d, 1800);
+  _brReadAdd(0, 1, t, 5 * 3600);
+  sc.eq('5시간을 켜 두면 5시간 그대로 (HB 2026-10-07)', ST.bibleReadLog['2026-10-06'][1].d, 18000);
+  _brReadAdd(42, 3, t, 75, { t: t, v: [3, 9], n: 7, of: 36, s: 'deeper', r: '요 3:16', p: 'b7', dv: 'm', sec: 'am', x: '' });
+  const e3 = ST.bibleReadLog['2026-10-06'][2];
+  sc.eq('자세한 기록 — 시작 ms·본 절·들어온 길·제품·기기·구간', [e3.t, e3.v, e3.n, e3.of, e3.s, e3.r, e3.p, e3.dv, e3.sec], [t, [3, 9], 7, 36, 'deeper', '요 3:16', 'b7', 'm', 'am']);
+  sc.eq('빈 값은 담지 않는다 (문서 크기)', 'x' in e3, false);
   sc.eq('자정을 넘겨도 시작한 날 하나', Object.keys(ST.bibleReadLog), ['2026-10-06']);
 }
 
