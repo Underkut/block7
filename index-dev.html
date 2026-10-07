@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-12  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-13  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6166,7 +6166,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-12";
+const APP_VERSION = "v. 26-1007-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14491,7 +14491,11 @@ function _brDashStats(log,marks,notes,now,range,custom){
   const deeper=L.filter(e=>e.s==='deeper');
   const lastRead=[...rows].reverse().find(e=>e.s!=='deeper')||rows[rows.length-1]||null;
   let next=null;
-  if(lastRead){let b=lastRead.b-1,c=lastRead.c+1;if(c>CHS[b]){b=(b+1)%66;c=1;}next={b,c,from:{b:lastRead.b-1,c:lastRead.c}};}
+  // 이어 읽기 — 마지막 장을 다 읽지 않았으면 그 장의 **처음 안 본 절**로 (HB v26-1007-13). 다 읽었을 때만 다음 장
+  if(lastRead){const lk=(lastRead.b-1)+'.'+lastRead.c;
+    if(!isDone(lk)){const of=ofBy[lk]||0,sn=seenBy[lk]||new Set();let v=1;if(of)while(v<of&&sn.has(v))v++;
+      next={b:lastRead.b-1,c:lastRead.c,v,resume:true,from:{b:lastRead.b-1,c:lastRead.c}};}
+    else{let b=lastRead.b-1,c=lastRead.c+1;if(c>CHS[b]){b=(b+1)%66;c=1;}next={b,c,from:{b:lastRead.b-1,c:lastRead.c}};}}
   const never=CHS.map((n,b)=>b).filter(b=>![...readSet].some(k=>+k.split('.')[0]===b)).sort((a,b)=>CHS[a]-CHS[b]);
   const mk=marks||{},hlBy={},nb={};
   let hl=0,bm=0;Object.keys(mk).forEach(k=>{const o=mk[k]||{},bi=+k.split('.')[0]-1;if(o.h){hl++;hlBy[bi]=(hlBy[bi]||0)+1;}if(o.k)bm++;});
@@ -14921,7 +14925,9 @@ function _brDashRender(){
   const IC_B='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg>';
   const IC_S='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 3v4M10 13v4M3 10h4M13 10h4"/></svg>';
   let nx='';
-  if(S.next)nx+='<button data-go="'+S.next.b+'.'+S.next.c+'"><span class="ic">'+IC_B+'</span><div><b>이어 읽기 — '+books[S.next.b]+' '+S.next.c+_brUnit(S.next.b)+'</b><small>지난번 '+books[S.next.from.b]+' '+S.next.from.c+_brUnit(S.next.from.b)+'까지 읽었어요</small></div></button>';
+  if(S.next)nx+=S.next.resume
+    ?'<button data-go="'+S.next.b+'.'+S.next.c+'.'+S.next.v+'"><span class="ic">'+IC_B+'</span><div><b>이어 읽기 — '+books[S.next.b]+' '+S.next.c+_brUnit(S.next.b)+(S.next.v>1?' '+S.next.v+'절부터':'')+'</b><small>지난번 이 장을 다 읽지 않았어요</small></div></button>'
+    :'<button data-go="'+S.next.b+'.'+S.next.c+'"><span class="ic">'+IC_B+'</span><div><b>이어 읽기 — '+books[S.next.b]+' '+S.next.c+_brUnit(S.next.b)+'</b><small>지난번 '+books[S.next.from.b]+' '+S.next.from.c+_brUnit(S.next.from.b)+'을 다 읽었어요</small></div></button>';
   if(S.never.length)nx+='<button data-go="'+S.never[0]+'.1"><span class="ic">'+IC_S+'</span><div><b>한 번도 안 펼친 책 '+S.never.length+'권</b><small>짧은 것부터 — '+S.never.slice(0,3).map(b=>books[b]+'('+CHS[b]+_brUnit(b)+')').join(' · ')+'</small></div></button>';
   $('bdNext').innerHTML=nx||'<div class="bd-empty">성경 전체를 한 번씩 다 펼쳤어요.</div>';
 }
@@ -15328,7 +15334,7 @@ function _brBind(){
   ['bdFrom','bdTo'].forEach(id=>$(id).addEventListener('change',()=>{_brDashRange='c';_brDashRender();}));
   // 지도 칸 · 다음 걸음 → 그 장을 연다
   $('brDashBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;
-    const [b,c]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';_brShow(b,c);});
+    const [b,c,v]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';v?_brShow(b,c,v):_brShow(b,c);});
   // 값 풍선 — 손가락을 대거나 마우스를 올리면
   const tip=$('bdTip');
   const showTip=el=>{if(!el){tip.classList.remove('on');return;}tip.innerHTML=el.dataset.tip;tip.classList.add('on');
