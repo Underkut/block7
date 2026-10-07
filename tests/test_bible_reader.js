@@ -398,6 +398,19 @@ console.log('\n시나리오 13-13 — 성경 화면 닫는 손짓 (HB v26-1007-1
   sc.eq('헤더를 끌어내려 닫기 · 끈 뒤 누르기는 버린다', /const rd=\$\('bibleRd'\),hd=\$\('brHead'\)/.test(SRC) && /if\(dragged\)\{dragged=false;e\.stopPropagation\(\);e\.preventDefault\(\);\}\},true\)/.test(SRC), true);
 }
 
+
+console.log('\n시나리오 13-14 — 읽는 리듬 시간대 · 자정 넘김 (HB v26-1007-15)');
+{
+  const now = new Date('2026-10-08T12:00:00').getTime();
+  const wedNight = new Date('2026-10-07T23:30:00').getTime(), afterMid = new Date('2026-10-08T00:40:00').getTime(), thuDawn = new Date('2026-10-08T04:00:00').getTime();
+  const log = { '2026-10-07': [{ b: 43, c: 3, time: '23:30', d: 100, t: wedNight }], '2026-10-08': [{ b: 43, c: 4, time: '00:40', d: 200, t: afterMid }, { b: 43, c: 5, time: '04:00', d: 50, t: thuDawn }] };
+  const S = _brDashStats(log, {}, {}, now, 'all');
+  sc.eq('시간대 = 새벽 3-6 · 아침 6-9 · 오전 9-12 · 오후 12-18 · 저녁 18-21 · 밤 21-24 · 깊은밤 0-3', S.slots.map(x => x[2] + x[0] + '-' + x[1]).join(' '), '새벽3-6 아침6-9 오전9-12 오후12-18 저녁18-21 밤21-24 깊은밤0-3');
+  sc.eq('수요일 밤 23:30 → 수요일 밤', S.grid['3.5'], 100);
+  sc.eq('자정 넘긴 0:40 → 수요일 깊은밤 (목요일 아님)', [S.grid['3.6'], S.grid['4.6']], [200, undefined]);
+  sc.eq('목요일 4시 → 목요일 새벽', S.grid['4.0'], 50);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
