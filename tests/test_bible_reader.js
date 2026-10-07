@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -195,7 +195,7 @@ console.log('\n시나리오 11 — 대량 손실 방어가 성경 기록도 센�
 console.log('\n시나리오 12 — 이름이 등록돼야 하는 자리 모두');
 {
   const has = (start, end, name) => slice(start, end).indexOf(name) >= 0;
-  ['bibleMarks', 'bibleReadLog', 'bibleNotes'].forEach(n => {
+  ['bibleMarks', 'bibleReadLog', 'bibleNotes', 'bibleInk'].forEach(n => {
     sc.eq(n + ' — 처음 상태(defaultState)', has('function defaultState(){', 'settings:{', n), true);
     sc.eq(n + ' — 불러올 때 빈 칸 채우기', new RegExp('if\\(!ST\\.' + n + '\\)ST\\.' + n + '=\\{\\};').test(SRC), true);
     sc.eq(n + ' — 원격 받기(applyRemoteState)', has('function applyRemoteState(remote){', 'ST.contacts=', n), true);
@@ -283,7 +283,7 @@ console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피�
   sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" id="brNext"');
   sc.eq('하단 가운데 장 번호(요 3/21)는 없다', /id="brPg"/.test(SRC), false);
   sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다 (스크롤을 따라 — v26-1007-8)', /h\.classList\.toggle\('mini',p>\.5\);n\.classList\.toggle\('hide',p>\.5\);/.test(SRC) && /_brP=Math\.max\(0,Math\.min\(1,_brP\+dy\/span\)\);/.test(SRC), true);
-  sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);_brProgSync\(\);\s*_brPosSet\(/.test(SRC), true);
+  sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);_brProgSync\(\);_brInkPaint\(\);/.test(SRC), true);
   sc.eq('대시보드는 성경을 접었다가 닫으면 다시 편다', /if\(typeof _brUnpark==='function'\)_brUnpark\(\);/.test(slice('function closeVerseDashboard(', '\n}')), true);
   sc.eq('읽은 시간은 창이 활성일 때만', /window\.addEventListener\('blur',\(\)=>\{if\(_brOpen\)_brSessEnd\(\);\}\);/.test(SRC) && /if\(!_brOpen\|\|!_brActiveWin\(\)\)return;/.test(SRC), true);
   sc.eq('피커: 누르면 메뉴, 밀면 손을 따라 (폭의 40%)', /_gnbRpMenu\(!\(m&&m\.classList\.contains\('on'\)\)\);/.test(SRC) && /if\(Math\.abs\(s0\.dx\)>w\*0\.4\)/.test(SRC) && /--rp-dx/.test(SRC), true);
@@ -346,7 +346,7 @@ console.log('\n시나리오 13-10 — v26-1007-10 (HB) 직접 기간 · 큰 하�
   sc.eq('직접 기간은 고른 날만 센다', JSON.stringify(C) !== JSON.stringify(A), true);
   sc.eq('좋아요·암송은 큰 토스트로', /_reactWithToast\('like',ref\)/.test(SRC) && /_reactWithToast\('mem',ref\)/.test(SRC), true);
   sc.eq('롱터치 메뉴 There 는 그 절로 연다', /act==='there'[^]{0,80}openThere\(ref\)/.test(SRC), true);
-  sc.eq('절은 두 번 톡 쳐도 확대되지 않는다', /\.br-v\{[^}]*touch-action:manipulation/.test(SRC), true);
+  sc.eq('절은 두 번 톡 쳐도 확대되지 않는다 · 가로 끌기는 긋기 몫 (pan-y, v26-1008-1)', /#bibleRd \.br-v\{[^}]*touch-action:pan-y;/.test(SRC), true);
   sc.eq('우상단 There 는 화면에 보이는 장절로 (v26-1007-11)', /\$\('brThere'\)\.onclick=\(\)=>\{if\(typeof openThere==='function'\)openThere\(_brViewRef\(\)\);\}/.test(SRC), true);
   sc.eq('본문 파일이 바뀌었으니 기기 저장본을 새로 받는다 (대상 2:24)', /BIBLE_DATA_REV='krv-2'/.test(SRC), true);
 }
@@ -396,7 +396,7 @@ console.log('\n시나리오 13-12 — 조작하는 시간은 읽은 시간에서
 console.log('\n시나리오 13-13 — 성경 화면 닫는 손짓 (HB v26-1007-14)');
 {
   sc.eq('왼쪽 가장자리 띠에서만 밀어 닫기 (화면 전체에 걸면 스크롤을 붙잡는다 — v26-1007-16)', /_initEdgeBack\(\$\('bibleRd'\)/.test(SRC), false);
-  sc.eq('가장자리 띠는 본문 위 왼쪽 18px', /<div class="br-edge" id="brEdge"/.test(SRC) && /#bibleRd \.br-edge\{position:absolute;left:0;top:0;bottom:0;width:18px;z-index:3;touch-action:none;\}/.test(SRC), true);
+  sc.eq('가장자리 띠는 본문 위 왼쪽 12px — 바깥 끝에서 시작해야 닫힌다 (v26-1008-1 엄격)', /<div class="br-edge" id="brEdge"/.test(SRC) && /#bibleRd \.br-edge\{position:absolute;left:0;top:0;bottom:0;width:12px;z-index:3;touch-action:none;\}/.test(SRC), true);
   sc.eq('관성 스크롤을 멈추는 누르기는 롱터치가 아니다', /if\(Date\.now\(\)-\(_brScrollAt\|\|0\)<250\)return;/.test(SRC), true);
   sc.eq('헤더를 끌어내려 닫기 · 끈 뒤 누르기는 버린다', /const rd=\$\('bibleRd'\),hd=\$\('brHead'\)/.test(SRC) && /if\(dragged\)\{dragged=false;e\.stopPropagation\(\);e\.preventDefault\(\);\}\},true\)/.test(SRC), true);
 }
@@ -428,6 +428,62 @@ console.log('\n시나리오 13-15 — 읽은 곳에 절 · 형광펜 7색 (HB v2
   const sw = (SRC.match(/<button class="br-sw" data-c="(\d)"/g) || []).map(x => x.match(/\d/)[0]).join('');
   sc.eq('색 차례 = 연빨강·연주황·노랑·초록·파랑·연보라·연핑크 (번호는 저장값 그대로)', sw, '6712354');
   sc.eq('새 색 6·7 은 본문 칠도 있다', /data-hl="6"\] \.br-tx\{background:var\(--br-hl6\)/.test(SRC) && /data-hl="7"\] \.br-tx\{background:var\(--br-hl7\)/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-16 — 본문에 긋는 표시 (bibleInk, v26-1008-1 HB)');
+{
+  const VS = ['레위 족속중 한 사람이 가서 레위 여자에게 장가 들었더니', '그 여자가 잉태하여 아들을 낳아'];
+  ST.bibleInk = {};
+  const B = 1, C = 2;   // 출애굽기(0부터 1) 2장
+  const sp = _brInkSpansFrom({ s: { v: 1, i: 3 }, e: { v: 1, i: 9 } }, VS);
+  sc.eq('끈 범위의 앞뒤 빈칸은 뺀다', _brInkSpansFrom({ s: { v: 1, i: 2 }, e: { v: 1, i: 6 } }, VS), [{ v: 1, a: 3, z: 5 }]);
+  sc.eq('거꾸로 끌어도 같다', _brInkSpansFrom({ s: { v: 1, i: 9 }, e: { v: 1, i: 3 } }, VS), sp);
+  sc.eq('절을 넘으면 절마다 나뉜다', _brInkSpansFrom({ s: { v: 1, i: 27 }, e: { v: 2, i: 3 } }, VS), [{ v: 1, a: 27, z: 30 }, { v: 2, a: 0, z: 3 }]);
+  sc.eq('한 글자씩 옮기기 — 빈칸 건너뛰기', _brInkStepPos({ v: 1, i: 1 }, 1, VS), { v: 1, i: 3 });
+  sc.eq('절 경계를 넘는다', _brInkStepPos({ v: 2, i: 0 }, -1, VS), { v: 1, i: 30 });
+  sc.eq('맨 끝에서는 그대로', _brInkStepPos({ v: 1, i: 0 }, -1, VS), { v: 1, i: 0 });
+
+  _brInkAdd('h', B, C, [{ v: 1, a: 0, z: 9 }], 6);
+  _brInkAdd('u', B, C, [{ v: 1, a: 3, z: 6 }], 1);
+  const all = () => Object.values(ST.bibleInk);
+  sc.eq('무리끼리는 겹친다 (형광펜 + 밑줄)', all().map(m => m.g).sort(), ['h', 'u']);
+  _brInkAdd('h', B, C, [{ v: 1, a: 3, z: 5 }], 2);
+  const hs = all().filter(m => m.g === 'h').sort((x, y) => x.a - y.a).map(m => [m.a, m.z, m.t]);
+  sc.eq('같은 무리는 새 것이 덮고 앞뒤는 남는다', hs, [[0, 2, 6], [3, 5, 2], [6, 9, 6]]);
+  _brInkErase('h', B, C, [{ v: 1, a: 4, z: 7 }]);
+  sc.eq('부분 지우기 — 그 무리 그 부분만', all().filter(m => m.g === 'h').sort((x, y) => x.a - y.a).map(m => [m.a, m.z]), [[0, 2], [3, 3], [8, 9]]);
+  sc.eq('다른 무리는 그대로', all().filter(m => m.g === 'u').length, 1);
+  _brInkAdd('s', B, C, [{ v: 1, a: 0, z: 2 }, { v: 2, a: 0, z: 3 }], 'heart', { i: 5, p: 'e', mono: true });
+  const s1 = all().find(m => m.g === 's');
+  sc.eq('기호는 끈 범위에 하나 — 자리가 뒤면 마지막 절', [s1.v, s1.a, s1.z, s1.t, s1.i, s1.p, s1.mono], [2, 0, 3, 'heart', 5, 'e', true]);
+  _brInkAdd('s', B, C, [{ v: 2, a: 2, z: 2 }], 'star', { i: 1, p: 'a' });
+  sc.eq('기호는 닿으면 통째로 바뀐다', all().filter(m => m.g === 's').map(m => m.t), ['star']);
+  sc.eq('그 범위에 닿는 것만 고른다', _brInkHits(B, C, [{ v: 1, a: 0, z: 0 }]).map(m => m.g).sort(), ['h']);
+  sc.eq('다른 장은 건드리지 않는다', (() => { _brInkAdd('h', B, 3, [{ v: 1, a: 0, z: 2 }], 1); _brInkErase('h', B, C, [{ v: 1, a: 0, z: 30 }]); return all().filter(m => m.g === 'h').map(m => m.c); })(), [3]);
+  sc.eq('원어찾기 문구 (HB 예시 모양)', _brInkQuery('출', 2, [{ v: 1, a: 0, z: 1 }], VS), "출2:1 '레위' 원어 해설");
+  sc.eq('여러 절이면 범위로', _brInkQuery('출', 2, [{ v: 1, a: 29, z: 30 }, { v: 2, a: 0, z: 0 }], VS), "출2:1-2 '더니 그' 원어 해설");
+
+  // 병합 — 두 기기가 같은 절에 따로 그어도 둘 다 산다 (표시 하나가 한 줄)
+  const base = { bibleInk: {} };
+  const local = { bibleInk: { ka: { b: 43, c: 3, v: 16, g: 'h', t: 1, a: 0, z: 3, s: 1, at: 1 } } };
+  const cloud = { bibleInk: { kb: { b: 43, c: 3, v: 16, g: 'u', t: 0, a: 2, z: 6, s: 2, at: 2 } } };
+  const m = _fbMerge(clone(base), local, cloud, false);
+  sc.eq('병합: 둘 다', Object.keys(m.bibleInk).sort(), ['ka', 'kb']);
+  const b2 = { bibleInk: { ka: local.bibleInk.ka, kb: cloud.bibleInk.kb } };
+  const l2 = clone(b2); delete l2.bibleInk.ka;
+  sc.eq('병합: 지운 것만 빠진다', Object.keys(_fbMerge(clone(b2), l2, clone(b2), false).bibleInk), ['kb']);
+  // 빈 기기로 로그인해도 클라우드의 표시가 안 지워진다 (CLAUDE.md)
+  global._fbBaseJson = null;
+  const g = _fbMergeGuarded(null, { bibleInk: {}, days: {} }, clone({ bibleInk: b2.bibleInk, days: {} }), false);
+  sc.eq('빈 기기 로그인: 클라우드 표시 그대로', Object.keys(g.bibleInk).sort(), ['ka', 'kb']);
+  sc.eq('대량 손실 방어가 표시도 센다', _fbCountByKind({ bibleInk: { a: {}, b: {} } }).bible, 2);
+  sc.eq('_PRODUCT_SCOPED 아님 — 두 제품이 같이 본다', /_PRODUCT_SCOPED\s*=\s*\[[^\]]*bibleInk/.test(SRC), false);
+  sc.eq('큰 물결 = HB 가 정한 값', /const _BR_INK_UL=\{amp:\.12,per:\.6,bw:\.076,vary:\.45,tilt:0\};/.test(SRC), true);
+  sc.eq('하트 8 · 별 3 · 체크 3', /const _BR_INK_NV=\{star:3,heart:8,check:3\};/.test(SRC), true);
+  sc.eq('장 넘기기는 좌우 여백에서만', /tx=\(x<=Math\.max\(_BR_SIDE,r\.left\)\|\|x>=Math\.min\(W-_BR_SIDE,r\.right\)\)\?x:null;/.test(SRC), true);
+  sc.eq('원어찾기는 Even Deeper 가 켜진 계정에서만 (even-only)', /class="br-act even-only" id="brInkOrig"/.test(SRC), true);
+  sc.eq('내 기록 › 표시 탭', /<h3>내 기록<\/h3>/.test(SRC) && /<button data-t="hl">표시<\/button>/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
