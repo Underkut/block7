@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5143,6 +5143,9 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 /* 읽어 내려갈 때 — 하단은 아래로 미끄러지며 사라지고, 헤더는 위로 접혀 '책 장' 한 줄만 */
 #bibleRd .br-nav.hide{pointer-events:none;}
 #bibleRd .br-nav.hide *{pointer-events:none;}
+#bibleRd #brHead{border-bottom:0;}
+#bibleRd .br-progl{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--bd2);pointer-events:none;}
+#bibleRd .br-progl i{display:block;height:100%;width:0;background:var(--ac);border-radius:0 2px 2px 0;transition:width .12s linear;}
 #bibleRd #brHead{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:12;
   transition:transform .26s cubic-bezier(.2,.8,.2,1);}
 #bibleRd::before{content:"";position:absolute;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:13;}
@@ -5268,6 +5271,74 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 64px);transform:translate(-50%,-10px);opacity:0;z-index:40;background:var(--tx);color:var(--bg);
   font-size:12.5px;padding:8px 14px;border-radius:999px;transition:.2s;pointer-events:none;white-space:nowrap;}
 #bibleRd .br-toast.on{opacity:.92;transform:translate(-50%,0);}
+/* ── 성경 읽기 대시보드 (v26-1007-9 · 시안 MmxtwQwAy2xr4DbScFJM7m) — 색은 남색 하나를 진하기로만 ── */
+#brDashP{--bd-q0:#1b1e28;--bd-q1:#262d55;--bd-q2:#34408a;--bd-q3:#4a5bc4;--bd-q4:#6c80f2;--bd-q5:#a3b1ff;}
+html[data-theme="light"] #brDashP,html #bibleRd[data-rt="light"] #brDashP,html #bibleRd[data-rt="paper"] #brDashP{
+  --bd-q0:#e9ecf6;--bd-q1:#c9d1fb;--bd-q2:#9eaef9;--bd-q3:#7389f6;--bd-q4:#4d63e6;--bd-q5:#3346b8;}
+html #bibleRd[data-rt="night"] #brDashP{--bd-q0:#1b1e28;--bd-q1:#262d55;--bd-q2:#34408a;--bd-q3:#4a5bc4;--bd-q4:#6c80f2;--bd-q5:#a3b1ff;}
+#brDashP{z-index:31;}
+#brDashBody{max-width:520px;margin:0 auto;width:100%;box-sizing:border-box;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px));}
+#brDashP .bd-chips{display:flex;gap:6px;justify-content:center;margin:2px 0 14px;flex-wrap:wrap;}
+#brDashP .bd-chips button{font-size:12.5px;background:var(--s2);color:var(--tx2);padding:6px 12px;border-radius:999px;}
+#brDashP .bd-chips button.on{background:var(--tx);color:var(--bg);font-weight:600;}
+#brDashP .bd-sec{margin-top:24px;}
+#brDashP .bd-sec h2{font-size:13px;font-weight:600;color:var(--tx2);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;}
+#brDashP .bd-sec h2 small{font-weight:400;color:var(--tx3);font-size:11.5px;}
+#brDashP .bd-card{background:var(--s1);border:1px solid var(--bd2);border-radius:14px;padding:14px;}
+#brDashP .bd-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#brDashP .bd-tile{background:var(--s1);border:1px solid var(--bd2);border-radius:14px;padding:12px 14px;min-width:0;}
+#brDashP .bd-tile .k{font-size:11.5px;color:var(--tx3);}
+#brDashP .bd-tile .v{font-family:var(--font-number),monospace;font-size:24px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em;white-space:nowrap;}
+#brDashP .bd-tile .v small{font-family:var(--font-ui),sans-serif;font-size:12px;color:var(--tx2);margin-left:3px;font-weight:400;}
+#brDashP .bd-tile .d{font-size:11px;color:var(--tx3);margin-top:3px;}
+#brDashP .bd-spark{display:flex;align-items:flex-end;gap:2px;height:22px;margin-top:6px;}
+#brDashP .bd-spark i{flex:1;background:var(--bd-q3);border-radius:2px 2px 0 0;min-height:2px;}
+#brDashP .bd-spark i.z{background:var(--bd-q0);}
+#brDashP .bd-ins{display:flex;flex-direction:column;gap:8px;}
+#brDashP .bd-ins div{background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.55;}
+#brDashP .bd-ins b{color:var(--ac-tx);font-weight:600;}
+#brDashP .bd-prog{display:flex;gap:14px;margin-bottom:12px;}
+#brDashP .bd-prog>div{flex:1;}#brDashP .bd-prog .k{font-size:11.5px;color:var(--tx3);}
+#brDashP .bd-bar{height:6px;border-radius:3px;background:var(--bd-q0);margin-top:6px;overflow:hidden;}
+#brDashP .bd-bar i{display:block;height:100%;background:var(--bd-q4);border-radius:3px;}
+#brDashP .bd-prog .n{font-family:var(--font-number),monospace;font-size:13px;margin-top:5px;}
+#brDashP .bd-map{display:flex;flex-direction:column;gap:3px;}
+#brDashP .bd-bk{display:grid;grid-template-columns:30px 1fr;gap:6px;align-items:center;}
+#brDashP .bd-bk .nm{font-size:10.5px;color:var(--tx2);text-align:right;}
+#brDashP .bd-cells{display:flex;flex-wrap:wrap;gap:2px;}
+#brDashP .bd-cells i{width:7px;height:7px;border-radius:1.5px;background:var(--bd-q0);cursor:pointer;}
+#brDashP .bd-part{font-size:11px;color:var(--tx3);margin:10px 0 4px 36px;}
+#brDashP .bd-legend{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--tx3);justify-content:flex-end;margin-top:10px;}
+#brDashP .bd-legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+#brDashP .bd-hm{display:grid;grid-template-columns:22px repeat(8,minmax(0,1fr));gap:3px;}
+#brDashP .bd-hm .h{font-size:10px;color:var(--tx3);text-align:center;}
+#brDashP .bd-hm .d{font-size:11px;color:var(--tx2);display:flex;align-items:center;}
+#brDashP .bd-hm i{aspect-ratio:1.5;max-width:100%;border-radius:4px;background:var(--bd-q0);}
+#brDashP .bd-hb{display:flex;flex-direction:column;gap:9px;}
+#brDashP .bd-hb .r{display:grid;grid-template-columns:82px 1fr 78px;gap:8px;align-items:center;font-size:12.5px;}
+#brDashP .bd-hb .r span:first-child{color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#brDashP .bd-hb .t{height:10px;border-radius:0 4px 4px 0;background:var(--bd-q3);min-width:2px;}
+#brDashP .bd-hb .val{font-family:var(--font-number),monospace;font-size:11.5px;color:var(--tx2);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;}
+#brDashP .bd-hb .foot{font-size:11.5px;color:var(--tx3);margin-top:4px;}
+#brDashP .bd-ring{display:flex;gap:16px;align-items:center;}
+#brDashP .bd-ring svg{width:92px;height:92px;flex:0 0 auto;}
+#brDashP .bd-ring .t1{font-size:13.5px;line-height:1.6;}#brDashP .bd-ring .t1 b{font-family:var(--font-number),monospace;font-weight:500;}
+#brDashP .bd-ring .t2{font-size:12px;color:var(--tx3);margin-top:4px;line-height:1.5;}
+#brDashP .bd-marks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+#brDashP .bd-marks>div{background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:10px 12px;min-width:0;}
+#brDashP .bd-marks .v{font-family:var(--font-number),monospace;font-size:18px;}
+#brDashP .bd-marks .k{font-size:11.5px;color:var(--tx3);}
+#brDashP .bd-marks .w{font-size:11px;color:var(--tx2);margin-top:4px;}
+#brDashP .bd-next{display:flex;flex-direction:column;gap:8px;}
+#brDashP .bd-next button{text-align:left;border:1px solid var(--bd2);background:var(--s1);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;}
+#brDashP .bd-next .ic{width:30px;height:30px;border-radius:9px;background:var(--s2);display:grid;place-items:center;color:var(--ac-tx);flex:0 0 auto;}
+#brDashP .bd-next .ic svg{width:16px;height:16px;}
+#brDashP .bd-next button>div{min-width:0;}
+#brDashP .bd-next b{font-weight:600;font-size:13.5px;display:block;}
+#brDashP .bd-next small{font-size:12px;color:var(--tx3);}
+#brDashP .bd-empty{font-size:12.5px;color:var(--tx3);padding:6px 2px;line-height:1.6;}
+#brDashP .bd-tip{position:fixed;z-index:60;pointer-events:none;background:var(--tx);color:var(--bg);font-size:11.5px;padding:6px 9px;border-radius:7px;opacity:0;transition:opacity .12s;white-space:nowrap;line-height:1.45;}
+#brDashP .bd-tip.on{opacity:.95;}
 @media (prefers-reduced-motion:reduce){#bibleRd .br-sheet,#bibleRd .br-pick,#bibleRd .br-scrim,#bibleRd .br-v,#bibleRd .br-toast{transition:none;}}
 /* ══════════════════════════════════════════════════════════
    제품별로 보이고 감추는 한 쌍 (v26-0921-7)
@@ -6091,7 +6162,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-8";
+const APP_VERSION = "v. 26-1007-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8864,6 +8935,8 @@ try{
       <button class="br-ic br-x" id="brClose" aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
     </div>
     <button class="br-mini" id="brMini" aria-label="메뉴 펼치기"><span id="brMiniT"></span></button>
+    <!-- 헤더 아래 선 = 이 장에서 어디쯤 읽고 있는지 (v26-1007-9, HB). 헤더가 접혀도 남는다 -->
+    <div class="br-progl" aria-hidden="true"><i id="brProgI"></i></div>
   </div>
   <div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
@@ -8895,6 +8968,29 @@ try{
         <label class="br-chk"><input type="checkbox" id="brFree"><span>검색어 순서 자유</span></label></div>
     </div>
     <div class="br-pbody" id="brFBody"></div>
+  </div>
+
+  <!-- 성경 읽기 대시보드 (v26-1007-9, B-9 — 시안 그대로). 그리는 일은 _brDashRender() -->
+  <div class="br-pick" id="brDashP" aria-label="성경 읽기">
+    <div class="br-top" style="grid-template-columns:40px 1fr 40px">
+      <span></span><div class="br-ttl"><span class="br-t">성경 읽기</span></div>
+      <button class="br-ic br-x" id="brDashClose" aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button>
+    </div>
+    <div class="br-pbody" id="brDashBody">
+      <div class="bd-chips" id="bdChips"><button data-r="w">이번 주</button><button data-r="m">이번 달</button><button data-r="y">올해</button><button data-r="all">전체</button></div>
+      <div class="bd-tiles" id="bdTiles"></div>
+      <div class="bd-sec"><h2>요즘의 나 <small>기록에서 찾은 것</small></h2><div class="bd-ins" id="bdIns"></div></div>
+      <div class="bd-sec"><h2>통독 지도 <small>한 칸 = 한 장 · 진할수록 자주</small></h2>
+        <div class="bd-card"><div class="bd-prog" id="bdProg"></div><div class="bd-map" id="bdMap"></div>
+          <div class="bd-legend">적게 <i style="background:var(--bd-q1)"></i><i style="background:var(--bd-q2)"></i><i style="background:var(--bd-q3)"></i><i style="background:var(--bd-q4)"></i><i style="background:var(--bd-q5)"></i> 자주</div></div></div>
+      <div class="bd-sec"><h2>읽는 리듬 <small>요일 × 시간 · 읽은 분</small></h2><div class="bd-card"><div class="bd-hm" id="bdHm"></div></div></div>
+      <div class="bd-sec"><h2>오래 머문 책 <small>읽은 시간</small></h2><div class="bd-card"><div class="bd-hb" id="bdBooks"></div></div></div>
+      <div class="bd-sec"><h2>끝까지 읽었나</h2><div class="bd-card"><div class="bd-ring" id="bdRing"></div></div></div>
+      <div class="bd-sec"><h2>어떻게 펼쳤나 <small>들어온 길</small></h2><div class="bd-card"><div class="bd-hb" id="bdSrc"></div></div></div>
+      <div class="bd-sec"><h2>남긴 표시</h2><div class="bd-marks" id="bdMarks"></div></div>
+      <div class="bd-sec"><h2>다음 걸음</h2><div class="bd-next" id="bdNext"></div></div>
+    </div>
+    <div class="bd-tip" id="bdTip"></div>
   </div>
 
   <div class="br-scrim" id="brScrim"></div>
@@ -14322,6 +14418,70 @@ function _brFindWords(q,free){
   return (free?String(q).split(/[\s,]+/).map(n):[n(q)]).filter(Boolean);
 }
 function _brMatch(text,words){const t=String(text).replace(_BR_SKIP_G,'');return words.every(w=>t.includes(w));}
+// ── 성경 읽기 대시보드 — 기록 → 숫자 (v26-1007-9, B-9) ──
+// 화면과 상관없는 순수 함수 (tests/test_bible_reader.js 가 돌린다).
+// range: 'w' 이번 주(주일부터) · 'm' 이번 달 · 'y' 올해 · 'all' 전체 — 달력 기준.
+// ⚠️ 옛 줄(v26-1007-5 이전)에는 t·n·of·s 가 없다 → 시각은 날짜+time 으로 짓고,
+//    '끝까지 읽었나'·'들어온 길' 에서는 그 줄을 빼고 센다 ('모름').
+function _brDashRows(log){
+  const out=[];
+  Object.keys(log||{}).forEach(day=>(log[day]||[]).forEach(e=>{
+    if(!e||!e.b||!e.c)return;
+    out.push(Object.assign({},e,{ms:e.t||_brReadMs(day,e.time),day}));
+  }));
+  return out.sort((a,b)=>a.ms-b.ms);
+}
+function _brDashStart(range,now){
+  const d=new Date(now);d.setHours(0,0,0,0);
+  if(range==='w')d.setDate(d.getDate()-d.getDay());
+  else if(range==='m')d.setDate(1);
+  else if(range==='y'){d.setMonth(0,1);}
+  else return 0;
+  return d.getTime();
+}
+function _brDashStats(log,marks,notes,now,range){
+  const CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],DAY=864e5;
+  const rows=_brDashRows(log),from=_brDashStart(range,now);
+  const L=rows.filter(e=>e.ms>=from&&e.ms<=now);
+  const prevFrom=from?from-(now-from):0,P=from?rows.filter(e=>e.ms>=prevFrom&&e.ms<from):[];
+  const sum=a=>a.reduce((x,e)=>x+(e.d||0),0);
+  const dkey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();};
+  const days=new Set(rows.map(e=>dkey(e.ms)));
+  let streak=0;for(let i=0;;i++){if(days.has(dkey(now-i*DAY)))streak++;else if(i===0)continue;else break;}
+  let best=0,cur=0;
+  if(rows.length){const first=new Date(rows[0].ms);first.setHours(0,0,0,0);
+    for(let t=first.getTime();t<=now;t+=DAY){if(days.has(dkey(t))){cur++;best=Math.max(best,cur);}else cur=0;}}
+  const todayK=dkey(now),today=rows.filter(e=>dkey(e.ms)===todayK);
+  const last14=[];for(let i=13;i>=0;i--){const k=dkey(now-i*DAY);last14.push({ms:now-i*DAY,sec:sum(rows.filter(e=>dkey(e.ms)===k))});}
+  const cnt={};rows.forEach(e=>{const k=(e.b-1)+'.'+e.c;cnt[k]=(cnt[k]||0)+1;});
+  const readSet=new Set(Object.keys(cnt));
+  const OT=BIBLE_CHAPTERS_OT.reduce((a,b)=>a+b,0),TOT=CHS.reduce((a,b)=>a+b,0);
+  const otRead=[...readSet].filter(k=>+k.split('.')[0]<39).length;
+  const byBook={},bookN={};L.forEach(e=>{byBook[e.b-1]=(byBook[e.b-1]||0)+(e.d||0);bookN[e.b-1]=(bookN[e.b-1]||0)+1;});
+  const hourSec={};L.forEach(e=>{const h=new Date(e.ms).getHours();hourSec[h]=(hourSec[h]||0)+(e.d||0);});
+  const SLOTS=[[5,8,'새벽'],[8,11,'아침'],[11,14,'낮'],[14,17,'오후'],[17,20,'저녁'],[20,23,'밤'],[23,24,'늦은밤'],[0,5,'깊은밤']];
+  const grid={};L.forEach(e=>{const dt=new Date(e.ms),h=dt.getHours(),si=SLOTS.findIndex(x=>h>=x[0]&&h<x[1]);const k=dt.getDay()+'.'+si;grid[k]=(grid[k]||0)+(e.d||0);});
+  const withSeen=L.filter(e=>e.of>0&&e.n>=0&&e.n!==undefined);
+  const full=withSeen.filter(e=>e.n/e.of>=.9).length;
+  const avgSeen=withSeen.length?Math.round(withSeen.reduce((a,e)=>a+Math.min(1,e.n/e.of),0)/withSeen.length*100):null;
+  const src={};L.forEach(e=>{if(e.s)src[e.s]=(src[e.s]||0)+1;});
+  const dev={};L.forEach(e=>{if(e.dv)dev[e.dv]=(dev[e.dv]||0)+1;});
+  const deeper=L.filter(e=>e.s==='deeper');
+  const lastRead=[...rows].reverse().find(e=>e.s!=='deeper')||rows[rows.length-1]||null;
+  let next=null;
+  if(lastRead){let b=lastRead.b-1,c=lastRead.c+1;if(c>CHS[b]){b=(b+1)%66;c=1;}next={b,c,from:{b:lastRead.b-1,c:lastRead.c}};}
+  const never=CHS.map((n,b)=>b).filter(b=>![...readSet].some(k=>+k.split('.')[0]===b)).sort((a,b)=>CHS[a]-CHS[b]);
+  const mk=marks||{},hlBy={},nb={};
+  let hl=0,bm=0;Object.keys(mk).forEach(k=>{const o=mk[k]||{},bi=+k.split('.')[0]-1;if(o.h){hl++;hlBy[bi]=(hlBy[bi]||0)+1;}if(o.k)bm++;});
+  const nt=notes||{};const memo=Object.keys(nt).filter(id=>nt[id]&&nt[id].t);memo.forEach(id=>{const bi=nt[id].b-1;nb[bi]=(nb[bi]||0)+1;});
+  const top=o=>{const k=Object.keys(o).sort((a,b)=>o[b]-o[a])[0];return k===undefined?null:+k;};
+  const recentBm=Object.keys(mk).filter(k=>mk[k]&&mk[k].k&&mk[k].k>=now-3*DAY).length;
+  return {L,sec:sum(L),prevSec:sum(P),hasPrev:!!from&&P.length>0,today:{sec:sum(today),n:today.length},streak,best,last14,
+    chapters:new Set(L.map(e=>(e.b-1)+'.'+e.c)).size,cnt,maxCnt:Math.max(1,...Object.values(cnt)),
+    prog:{ot:otRead/OT,nt:(readSet.size-otRead)/(TOT-OT),all:readSet.size/TOT},
+    byBook,bookN,topHour:top(hourSec),grid,slots:SLOTS,full,part:withSeen.length-full,avgSeen,src,dev,deeper,
+    next,never,marks:{hl,memo:memo.length,bm,hlTop:top(hlBy),memoTop:top(nb),recentBm}};
+}
 // ══ 인앱 성경 — 기록과 장절 끝 ══
 
 // ══ 인앱 성경 — 본문 받기 (B-4: 앱이 켜지면 성경 전체를 받아 기기에 담는다) ══
@@ -14543,7 +14703,7 @@ function bibleOpen(b,c,v,v2){
 function bibleClose(){
   _brSessEnd();
   _brCloseSheets();
-  ['brPick','brFindP'].forEach(id=>_brEl(id).classList.remove('on'));
+  ['brPick','brFindP','brDashP'].forEach(id=>_brEl(id).classList.remove('on'));
   _brEl('bibleRd').classList.remove('on');_brOpen=false;
 }
 function _brIsOpen(){return _brOpen;}
@@ -14551,6 +14711,7 @@ function _brIsOpen(){return _brOpen;}
 function _brEsc(){
   if(_brEl('brVMenu').classList.contains('on')){_brVmClose();return;}
   if(document.querySelector('#bibleRd .br-sheet.on')){_brCloseSheets();return;}
+  if(_brEl('brDashP').classList.contains('on')){_brEl('brDashP').classList.remove('on');return;}
   if(_brEl('brFindP').classList.contains('on')){_brEl('brFindP').classList.remove('on');return;}
   if(_brEl('brPick').classList.contains('on')){_brEl('brPick').classList.remove('on');return;}
   bibleClose();
@@ -14601,7 +14762,7 @@ async function _brShow(b,c,focus,focus2,keep){
       box.querySelectorAll('.br-v').forEach(x=>{const n=+x.dataset.v;if(n>=focus&&n<=end){x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1800);}});
     }
   }else sc.scrollTop=0;
-  _brChrome(true);
+  _brChrome(true);_brProgSync();
   _brPosSet({b,c,v:focus||0});
   _brSessStart();
 }
@@ -14621,15 +14782,18 @@ function _brRerender(keepSheets){const sc=_brEl('brScroll'),y=sc.scrollTop;const
 // 바꿨다. 접힌 정도 p(0=다 보임 · 1=한 줄)를 스크롤한 만큼 움직이고, 손을 멈추면(140ms)
 // 가까운 쪽으로 마저 미끄러진다. 헤더 단추는 먼저 옅어지고, 반쯤 지나서 '책 장' 한 줄이 떠오른다.
 let _brP=0,_brLastY=0,_brSettleT=0,_brDir=0;
-const _BR_EASE='cubic-bezier(.22,.8,.24,1)';
+const _BR_EASE='cubic-bezier(.25,.6,.2,1)';
+// v26-1007-9 (HB — "아직 급하다"): 접히는 데 드는 스크롤을 헤더 높이의 **3.5 배**로 늘리고,
+// 손을 멈춘 뒤 마무리는 0.75초로 천천히. 옅어지는 곡선도 완만하게.
+const _BR_CHROME_SPAN=3.5,_BR_CHROME_MS=750;
 function _brChromeApply(anim){
   const h=_brEl('brHead'),n=_brEl('brNav');if(!h||!n)return;
   const p=_brP,H=Math.max(1,h.offsetHeight-26),N=n.offsetHeight+8;
-  const tr=anim?'transform .42s '+_BR_EASE+', opacity .32s ease':'none';
+  const ms=_BR_CHROME_MS,tr=anim?'transform '+ms+'ms '+_BR_EASE+', opacity '+ms+'ms ease':'none';
   h.style.transition=tr;h.style.transform='translateY('+(-H*p).toFixed(1)+'px)';
-  const fade=Math.max(0,1-p*1.7),mini=Math.max(0,Math.min(1,(p-.45)/.55));
-  h.querySelectorAll(':scope>.br-tl,:scope>.br-ttl,:scope>.br-tr').forEach(el=>{el.style.transition=anim?'opacity .3s ease':'none';el.style.opacity=fade.toFixed(3);el.style.pointerEvents=p>.5?'none':'';});
-  const mn=_brEl('brMini');mn.style.transition=anim?'opacity .3s ease':'none';mn.style.opacity=mini.toFixed(3);mn.style.pointerEvents=p>.5?'auto':'none';
+  const fade=Math.max(0,1-p*1.35),mini=Math.max(0,Math.min(1,(p-.4)/.6));
+  h.querySelectorAll(':scope>.br-tl,:scope>.br-ttl,:scope>.br-tr').forEach(el=>{el.style.transition=anim?'opacity '+ms+'ms ease':'none';el.style.opacity=fade.toFixed(3);el.style.pointerEvents=p>.5?'none':'';});
+  const mn=_brEl('brMini');mn.style.transition=anim?'opacity '+ms+'ms ease':'none';mn.style.opacity=mini.toFixed(3);mn.style.pointerEvents=p>.5?'auto':'none';
   n.style.transition=tr;n.style.transform='translateY('+(N*p).toFixed(1)+'px)';n.style.opacity=(1-p).toFixed(3);
   h.classList.toggle('mini',p>.5);n.classList.toggle('hide',p>.5);
 }
@@ -14638,25 +14802,98 @@ function _brOnScroll(){
   const sc=_brEl('brScroll'),y=sc.scrollTop,dy=y-_brLastY;_brLastY=y;
   const h=_brEl('brHead');const H=Math.max(1,(h?h.offsetHeight:52)-26);
   if(dy)_brDir=Math.sign(dy);
-  _brP=Math.max(0,Math.min(1,_brP+dy/H));
-  if(y<=H)_brP=Math.min(_brP,Math.max(0,y/H));          // 맨 위 가까이에서는 늘 그만큼 펼친다
+  const span=H*_BR_CHROME_SPAN;
+  _brP=Math.max(0,Math.min(1,_brP+dy/span));
+  if(y<=span)_brP=Math.min(_brP,Math.max(0,y/span));    // 맨 위 가까이에서는 늘 그만큼 펼친다
   _brChromeApply(false);
+  _brProgSync();
   clearTimeout(_brSettleT);
   _brSettleT=setTimeout(()=>{                              // 손을 멈추면 가까운 쪽으로 (방향을 반영)
     // 내리던 중이면 조금만 접혀도 끝까지 접고, 올리던 중이면 조금만 펴져도 끝까지 편다
     const t=_brDir>0?(_brP>.15?1:0):(_brP<.85?0:1);
     _brP=(y<=4)?0:t;_brChromeApply(true);
-  },140);
+  },180);
 }
-// 대시보드 — 성경을 잠시 접어 두고 연다. 대시보드를 닫으면 다시 편다
-// (대시보드 안의 작은 팝업들이 성경 화면(5100) 밑에 깔리지 않게).
-// ⚠️ 지금은 말씀 대시보드다. 성경 읽기 대시보드(B-9)가 생기면 여기서 그쪽을 연다.
-let _brParked=false;
-function _brOpenDash(){
-  if(typeof openVerseDashboard!=='function')return;
-  _brSessEnd();_brParked=true;
-  _brEl('bibleRd').classList.remove('on');_brOpen=false;
-  openVerseDashboard();
+// 진행 표시줄 — 이 장의 맨 위 0% · 맨 끝 100%
+function _brProgSync(){
+  const sc=_brEl('brScroll'),i=_brEl('brProgI');if(!sc||!i)return;
+  const max=sc.scrollHeight-sc.clientHeight;
+  i.style.width=(max>0?Math.min(100,Math.max(0,sc.scrollTop/max*100)):0).toFixed(1)+'%';
+}
+// 대시보드 — 성경 읽기 대시보드(B-9, v26-1007-9). 성경 화면 안의 판이다.
+// (v26-1007-7~8 에는 말씀 대시보드를 열었다 — 그때 쓰던 접어 두기(_brParked)는 남아 있지만 이제 안 쓴다)
+let _brParked=false,_brDashRange='m';
+function _brOpenDash(){_brDashRender();_brEl('brDashBody').scrollTop=0;_brEl('brDashP').classList.add('on');}
+const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 표시',recent:'최근 읽은 곳',resume:'다시 돌아옴'};
+function _brFmtMin(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
+function _brDashRender(){
+  const $=_brEl,books=_brBooks(),CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],now=Date.now(),DAY=864e5;
+  const S=_brDashStats(getBibleReadLog(),getBibleMarks(),getBibleNotes(),now,_brDashRange);
+  document.querySelectorAll('#bdChips button').forEach(b=>b.classList.toggle('on',b.dataset.r===_brDashRange));
+  const rname={w:'이번 주',m:'이번 달',y:'올해',all:'전체'}[_brDashRange];
+  const q=(v,max)=>v<=0?'var(--bd-q0)':'var(--bd-q'+Math.min(5,1+Math.floor(v/max*4.999))+')';
+  const md=ms=>{const d=new Date(ms);return (d.getMonth()+1)+'.'+d.getDate();};
+  // 요약 네 칸
+  const mx14=Math.max(1,...S.last14.map(x=>x.sec));
+  let diff='';
+  if(S.hasPrev&&S.prevSec){const r=S.sec/S.prevSec-1;diff='지난 기간보다 '+Math.abs(Math.round(r*100))+'% '+(r>=0?'늘었어요':'줄었어요');}
+  $('bdTiles').innerHTML=
+    '<div class="bd-tile"><div class="k">오늘</div><div class="v">'+Math.round(S.today.sec/60)+'<small>분</small></div><div class="d">'+S.today.n+'장 펼침</div></div>'
+   +'<div class="bd-tile"><div class="k">연속으로 읽은 날</div><div class="v">'+S.streak+'<small>일</small></div><div class="d">가장 길었던 때 '+S.best+'일</div></div>'
+   +'<div class="bd-tile"><div class="k">'+rname+' 읽은 시간</div><div class="v" style="font-size:'+(S.sec>=3600?20:24)+'px">'+_brFmtMin(S.sec)+'</div><div class="d">'+diff+'</div></div>'
+   +'<div class="bd-tile"><div class="k">'+rname+' 읽은 장</div><div class="v">'+S.chapters+'<small>장</small></div><div class="bd-spark">'
+     +S.last14.map(x=>'<i class="'+(x.sec?'':'z')+'" style="height:'+(x.sec?Math.max(10,x.sec/mx14*100):8)+'%" data-tip="'+md(x.ms)+' · '+_brFmtMin(x.sec)+'"></i>').join('')+'</div></div>';
+  // 요즘의 나
+  const bk=Object.keys(S.byBook).sort((a,b)=>S.byBook[b]-S.byBook[a]);
+  const ins=[];
+  if(!S.L.length)ins.push(rname+'에는 아직 읽은 기록이 없어요. 성경을 3초 넘게 펼치면 여기에 쌓여요.');
+  if(bk.length)ins.push('이 기간에는 <b>'+books[bk[0]]+'</b>에 가장 오래 머물렀어요 ('+_brFmtMin(S.byBook[bk[0]])+').');
+  if(S.topHour!==null&&S.L.length>=3)ins.push('<b>'+(S.topHour<12?'오전 ':'오후 ')+((S.topHour%12)||12)+'시</b> 무렵에 가장 꾸준히 읽어요.');
+  if(S.deeper.length)ins.push('말씀에서 Deeper 로 성경을 펼친 게 <b>'+S.deeper.length+'번</b> — 주로 '+[...new Set(S.deeper.map(e=>books[e.b-1]))].slice(0,2).join('·')+'.');
+  if(S.avgSeen!==null)ins.push('한 장을 펴면 평균 <b>'+S.avgSeen+'%</b>까지 읽어요.'+(S.avgSeen<80?' 끝까지 읽기를 한 번 노려 볼까요?':''));
+  $('bdIns').innerHTML=ins.map(t=>'<div>'+t+'</div>').join('');
+  // 통독 지도 (전체 기간 — 진행률은 기간과 상관없다)
+  $('bdProg').innerHTML=[['구약',S.prog.ot],['신약',S.prog.nt],['전체',S.prog.all]].map(([k,p])=>
+    '<div><div class="k">'+k+'</div><div class="bd-bar"><i style="width:'+(p*100).toFixed(1)+'%"></i></div><div class="n">'+(p*100).toFixed(1)+'%</div></div>').join('');
+  let h='<div class="bd-part">구약</div>';
+  CHS.forEach((n,b)=>{if(b===39)h+='<div class="bd-part">신약</div>';
+    h+='<div class="bd-bk"><span class="nm">'+_bibleShort(books[b])+'</span><div class="bd-cells">';
+    for(let c=1;c<=n;c++){const v=S.cnt[b+'.'+c]||0;h+='<i data-go="'+b+'.'+c+'" style="background:'+q(v,S.maxCnt)+'" data-tip="'+books[b]+' '+c+_brUnit(b)+' · '+(v?v+'번 읽음':'아직')+'"></i>';}
+    h+='</div></div>';});
+  $('bdMap').innerHTML=h;
+  // 리듬
+  const DOW=['일','월','화','수','목','금','토'],gm=Math.max(1,...Object.values(S.grid));
+  let hm='<span></span>'+S.slots.map(x=>'<span class="h">'+x[2]+'</span>').join('');
+  [1,2,3,4,5,6,0].forEach(d=>{hm+='<span class="d">'+DOW[d]+'</span>';S.slots.forEach((x,i)=>{const v=S.grid[d+'.'+i]||0;
+    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+DOW[d]+'요일 '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
+  $('bdHm').innerHTML=hm;
+  // 오래 머문 책
+  const top=bk.slice(0,6),bm=S.byBook[top[0]]||1;
+  $('bdBooks').innerHTML=top.length?top.map(b=>'<div class="r"><span>'+books[b]+'</span><span class="t" style="width:'+(S.byBook[b]/bm*100)+'%" data-tip="'+books[b]+' · '+_brFmtMin(S.byBook[b])+' · '+S.bookN[b]+'번"></span><span class="val">'+_brFmtMin(S.byBook[b])+'</span></div>').join('')
+    :'<div class="bd-empty">아직 기록이 없어요.</div>';
+  // 끝까지
+  const tot=S.full+S.part,p=tot?S.full/tot:0,RR=38,C=2*Math.PI*RR;
+  $('bdRing').innerHTML=tot?('<svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="'+RR+'" fill="none" stroke="var(--bd-q0)" stroke-width="9"/><circle cx="46" cy="46" r="'+RR+'" fill="none" stroke="var(--bd-q4)" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+(C*p).toFixed(1)+' '+C.toFixed(1)+'" transform="rotate(-90 46 46)"/><text x="46" y="51" text-anchor="middle" font-size="17" fill="var(--tx)" style="font-family:var(--font-number),monospace">'+Math.round(p*100)+'%</text></svg>'
+    +'<div><div class="t1">끝까지 읽은 장 <b>'+S.full+'</b> · 읽다 만 장 <b>'+S.part+'</b></div><div class="t2">화면에 1초 넘게 머문 절이 그 장의 90% 를 넘으면 끝까지 읽은 것으로 셉니다. 평균 '+S.avgSeen+'%.</div></div>')
+    :'<div class="bd-empty">이번 버전부터 쌓이는 기록으로 셉니다.</div>';
+  // 들어온 길
+  const ks=Object.keys(S.src).sort((a,b)=>S.src[b]-S.src[a]),smx=S.src[ks[0]]||1,sn=ks.reduce((a,k)=>a+S.src[k],0);
+  const dvn=Object.values(S.dev).reduce((a,b)=>a+b,0);
+  $('bdSrc').innerHTML=ks.length?ks.map(k=>'<div class="r"><span>'+(_BR_SRC_NAME[k]||k)+'</span><span class="t" style="width:'+(S.src[k]/smx*100)+'%" data-tip="'+(_BR_SRC_NAME[k]||k)+' · '+S.src[k]+'번 ('+Math.round(S.src[k]/sn*100)+'%)"></span><span class="val">'+S.src[k]+'번</span></div>').join('')
+    +(dvn?'<div class="foot">'+[['m','폰'],['t','태블릿'],['pc','PC']].filter(([k])=>S.dev[k]).map(([k,n])=>n+' '+Math.round(S.dev[k]/dvn*100)+'%').join(' · ')+'</div>':'')
+    :'<div class="bd-empty">이번 버전부터 쌓이는 기록으로 셉니다.</div>';
+  // 남긴 표시
+  const M=S.marks;
+  $('bdMarks').innerHTML='<div><div class="v">'+M.hl+'</div><div class="k">형광펜</div><div class="w">'+(M.hlTop!==null?books[M.hlTop]+'에 가장 많이':'')+'</div></div>'
+    +'<div><div class="v">'+M.memo+'</div><div class="k">메모</div><div class="w">'+(M.memoTop!==null?books[M.memoTop]+'에 가장 많이':'')+'</div></div>'
+    +'<div><div class="v">'+M.bm+'</div><div class="k">책갈피</div><div class="w">'+(M.recentBm?'최근 3일 새 '+M.recentBm+'개':'')+'</div></div>';
+  // 다음 걸음
+  const IC_B='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg>';
+  const IC_S='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 3v4M10 13v4M3 10h4M13 10h4"/></svg>';
+  let nx='';
+  if(S.next)nx+='<button data-go="'+S.next.b+'.'+S.next.c+'"><span class="ic">'+IC_B+'</span><div><b>이어 읽기 — '+books[S.next.b]+' '+S.next.c+_brUnit(S.next.b)+'</b><small>지난번 '+books[S.next.from.b]+' '+S.next.from.c+_brUnit(S.next.from.b)+'까지 읽었어요</small></div></button>';
+  if(S.never.length)nx+='<button data-go="'+S.never[0]+'.1"><span class="ic">'+IC_S+'</span><div><b>한 번도 안 펼친 책 '+S.never.length+'권</b><small>짧은 것부터 — '+S.never.slice(0,3).map(b=>books[b]+'('+CHS[b]+_brUnit(b)+')').join(' · ')+'</small></div></button>';
+  $('bdNext').innerHTML=nx||'<div class="bd-empty">성경 전체를 한 번씩 다 펼쳤어요.</div>';
 }
 function _brUnpark(){
   if(!_brParked)return;_brParked=false;
@@ -15026,6 +15263,19 @@ function _brBind(){
   // 헤더 좌상단 — There · 대시보드
   $('brThere').onclick=()=>{if(typeof openThere==='function')openThere('');};
   $('brDash').onclick=_brOpenDash;
+  $('brDashClose').onclick=()=>$('brDashP').classList.remove('on');
+  $('bdChips').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brDashRange=b.dataset.r;_brDashRender();};
+  // 지도 칸 · 다음 걸음 → 그 장을 연다
+  $('brDashBody').addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;
+    const [b,c]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';_brShow(b,c);});
+  // 값 풍선 — 손가락을 대거나 마우스를 올리면
+  const tip=$('bdTip');
+  const showTip=el=>{if(!el){tip.classList.remove('on');return;}tip.innerHTML=el.dataset.tip;tip.classList.add('on');
+    const r=el.getBoundingClientRect();let x=r.left+r.width/2-tip.offsetWidth/2;x=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,x));
+    tip.style.left=x+'px';tip.style.top=Math.max(8,r.top-tip.offsetHeight-6)+'px';};
+  $('brDashBody').addEventListener('pointerover',e=>showTip(e.target.closest('[data-tip]')));
+  $('brDashBody').addEventListener('pointerdown',e=>showTip(e.target.closest('[data-tip]')));
+  $('brDashBody').addEventListener('scroll',()=>tip.classList.remove('on'),{passive:true});
   $('brMini').onclick=()=>_brChrome(true);
   $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
   $('brLTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brLt=b.dataset.t;_brRenderList();};

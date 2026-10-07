@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -282,8 +282,8 @@ console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피�
   const nav = slice('<div class="br-nav" id="brNav">', '<div class="br-pick" id="brPick"');
   sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" id="brNext"');
   sc.eq('하단 가운데 장 번호(요 3/21)는 없다', /id="brPg"/.test(SRC), false);
-  sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다 (스크롤을 따라 — v26-1007-8)', /h\.classList\.toggle\('mini',p>\.5\);n\.classList\.toggle\('hide',p>\.5\);/.test(SRC) && /_brP=Math\.max\(0,Math\.min\(1,_brP\+dy\/H\)\);/.test(SRC), true);
-  sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);\s*_brPosSet\(/.test(SRC), true);
+  sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다 (스크롤을 따라 — v26-1007-8)', /h\.classList\.toggle\('mini',p>\.5\);n\.classList\.toggle\('hide',p>\.5\);/.test(SRC) && /_brP=Math\.max\(0,Math\.min\(1,_brP\+dy\/span\)\);/.test(SRC), true);
+  sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);_brProgSync\(\);\s*_brPosSet\(/.test(SRC), true);
   sc.eq('대시보드는 성경을 접었다가 닫으면 다시 편다', /if\(typeof _brUnpark==='function'\)_brUnpark\(\);/.test(slice('function closeVerseDashboard(', '\n}')), true);
   sc.eq('읽은 시간은 창이 활성일 때만', /window\.addEventListener\('blur',\(\)=>\{if\(_brOpen\)_brSessEnd\(\);\}\);/.test(SRC) && /if\(!_brOpen\|\|!_brActiveWin\(\)\)return;/.test(SRC), true);
   sc.eq('피커: 누르면 메뉴, 밀면 손을 따라 (폭의 40%)', /_gnbRpMenu\(!\(m&&m\.classList\.contains\('on'\)\)\);/.test(SRC) && /if\(Math\.abs\(s0\.dx\)>w\*0\.4\)/.test(SRC) && /--rp-dx/.test(SRC), true);
@@ -299,6 +299,41 @@ console.log('\n시나리오 13-8 — v26-1007-8 (HB) 절 롱터치 메뉴 · 고
   sc.eq('롱터치 0.5초 · 우클릭', /_brVmOpen\(\+v\.dataset\.v,x,y\);\},500\)/.test(SRC) && /addEventListener\('contextmenu'/.test(slice('function _brBind(', '// ESC')), true);
   sc.eq('반응·도구 줄은 남은 단추 수만큼 고르게 (빈칸 없음)', /#bibleRd \.br-acts\{display:flex;justify-content:space-around;gap:4px;\}/.test(SRC), true);
   sc.eq('손을 멈추면 움직이던 방향으로 마무리', /const t=_brDir>0\?\(_brP>\.15\?1:0\):\(_brP<\.85\?0:1\);/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-9 — 성경 읽기 대시보드 숫자 (B-9, v26-1007-9)');
+{
+  const now = new Date('2026-10-07T21:00:00').getTime(), H = 36e5, D = 864e5;
+  const log = {
+    '2026-09-20': [{ b: 43, c: 1, time: '07:00', d: 300 }],                                   // 옛 줄 (t·n·of·s 없음)
+    '2026-10-05': [{ b: 43, c: 2, time: '07:00', d: 600, t: now - 2 * D - 14 * H, n: 30, of: 30, s: 'home', dv: 'm' }],
+    '2026-10-06': [{ b: 43, c: 3, time: '07:00', d: 900, t: now - D - 14 * H, n: 18, of: 36, s: 'nav', dv: 'm' }],
+    '2026-10-07': [{ b: 19, c: 23, time: '06:00', d: 120, t: now - 15 * H, n: 6, of: 6, s: 'deeper', r: '시 23:1', dv: 'pc' }]
+  };
+  const marks = { '45.8.28': { h: 2, ht: now }, '43.3.16': { k: now - D }, '43.3.17': { h: 1 } };
+  const notes = { a: { b: 19, c: 23, v: [1], t: '목자', at: now }, b: { b: 19, c: 1, v: [1], t: '복', at: now } };
+  const S = _brDashStats(log, marks, notes, now, 'm');
+  sc.eq('이번 달 = 10월 1일부터 (9월 옛 줄은 빠진다)', S.L.length, 3);
+  sc.eq('읽은 시간 합 (초)', S.sec, 1620);
+  sc.eq('오늘', [S.today.sec, S.today.n], [120, 1]);
+  sc.eq('연속으로 읽은 날 3 · 가장 길었던 때 3', [S.streak, S.best], [3, 3]);
+  sc.eq('옛 줄도 통독 지도에는 든다 (요 1장)', S.cnt['42.1'], 1);
+  sc.eq('끝까지(90% 이상) 2 · 읽다 만 1', [S.full, S.part], [2, 1]);
+  sc.eq('평균 본 절 비율', S.avgSeen, 83);
+  sc.eq('들어온 길', S.src, { home: 1, nav: 1, deeper: 1 });
+  sc.eq('Deeper 로 온 것', S.deeper.length, 1);
+  sc.eq('가장 오래 머문 책 = 요한복음', Object.keys(S.byBook).sort((a, b) => S.byBook[b] - S.byBook[a])[0], '42');
+  sc.eq('이어 읽기 = Deeper 가 아닌 마지막 다음 장 (요 4장)', [S.next.b, S.next.c], [42, 4]);
+  sc.eq('남긴 표시: 형광펜 2 · 메모 2 · 책갈피 1 (최근 3일 1)', [S.marks.hl, S.marks.memo, S.marks.bm, S.marks.recentBm], [2, 2, 1, 1]);
+  sc.eq('메모가 가장 많은 책 = 시편', S.marks.memoTop, 18);
+  sc.eq('한 번도 안 펼친 책은 짧은 것부터', S.never[0], 30);   // 오바댜(1장) — 같은 1장 책 중 차례가 가장 앞
+  sc.eq('이번 주는 주일부터', new Date(_brDashStart('w', now)).getDay(), 0);
+  sc.eq('전체는 처음부터', _brDashStart('all', now), 0);
+  const E = _brDashStats({}, {}, {}, now, 'all');
+  sc.eq('빈 기록에서도 터지지 않는다', [E.L.length, E.streak, E.avgSeen, E.next], [0, 0, null, null]);
+  sc.eq('헤더 아래 진행 표시줄 — 접혀도 남는다', /<div class="br-progl" aria-hidden="true"><i id="brProgI"><\/i><\/div>/.test(SRC) && /function _brProgSync\(\)/.test(SRC), true);
+  sc.eq('접기는 헤더 높이의 3.5 배에 걸쳐 · 마무리 0.75초 (HB — 아직 급하다)', /_BR_CHROME_SPAN=3\.5,_BR_CHROME_MS=750/.test(SRC), true);
+  sc.eq('대시보드 단추는 성경 읽기 대시보드를 연다', /function _brOpenDash\(\)\{_brDashRender\(\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
