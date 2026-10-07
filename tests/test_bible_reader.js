@@ -486,6 +486,14 @@ console.log('\n시나리오 13-16 — 본문에 긋는 표시 (bibleInk, v26-100
   sc.eq('내 기록 › 표시 탭', /<h3>내 기록<\/h3>/.test(SRC) && /<button data-t="hl">표시<\/button>/.test(SRC), true);
 }
 
+
+console.log('\n시나리오 13-17 — 아이폰 스크롤 방향 바꾸기 (HB v26-1008-2)');
+{
+  sc.eq('아이폰은 본문 touch-action 을 manipulation 으로', /#bibleRd\.br-ios \.br-v\{touch-action:manipulation;\}/.test(SRC), true);
+  sc.eq('아이폰 긋기는 터치 이벤트, 모두 passive', (SRC.match(/\$\('brChap'\)\.addEventListener\('touch(start|move|end|cancel)',[^\n]*\{passive:true\}\);/g) || []).length, 4);
+  sc.eq('아이폰 터치는 포인터 길을 타지 않는다', /if\(e\.button>0\|\|\(IOS&&e\.pointerType==='touch'\)\)return;/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
