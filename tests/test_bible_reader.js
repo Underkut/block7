@@ -368,7 +368,9 @@ console.log('\n시나리오 13-11 — 읽은 장 = 모든 절을 한 번씩 (HB 
   // 한 절이 빠지면 아직
   const miss = { '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 600, t: T(0.1), vs: '1-20,22-36', of: 36 }] };
   const M = _brDashStats(miss, {}, {}, now, 'all');
-  sc.eq('한 절이라도 빠지면 읽는 중', [M.done.has('42.3'), M.prog.all, M.full, M.part, M.avgSeen], [false, 0, 0, 1, 97]);
+  sc.eq('한 절이라도 빠지면 읽는 중 (다 읽은 장은 아니다)', [M.done.has('42.3'), M.full, M.part, M.avgSeen], [false, 0, 1, 97]);
+  sc.eq('진도율은 읽은 절만큼 (35절 / 31101절) — HB v26-1007-18', [Math.round(M.prog.all * 31101), Math.round(M.prog.nt * 7957), M.prog.ot], [35, 35, 0]);
+  sc.eq('통독 지도 칸 = 그 장에서 읽은 비율', Math.round(M.cov['42.3'].p * 100), 97);
   sc.eq('3초만 열어 둔 장은 진도율에 안 든다', _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 3, t: T(0.1), of: 36 }] }, {}, {}, now, 'all').prog.all, 0);
   // 옛 줄 — v 범위는 n 이 꼭 맞을 때만 믿는다 (빈틈이 있을 수 있다)
   const Dn = _brDashStats({ '2026-10-07': [{ b: 43, c: 3, time: '07:00', d: 60, t: T(0.1), vs: '1-36', of: 36 }] }, {}, {}, now, 'all');
