@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-10  [production]  -->
+<!-- BLOCK7  v. 26-1007-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6166,7 +6166,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-10";
+const APP_VERSION = "v. 26-1007-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14284,7 +14284,7 @@ const BibleLinkProvider = {
 //    3자 비교(_mgContainerKeys → _mgWhole)라, 두 기기가 서로 다른 절을 칠해도 다
 //    살아남는다. 표시가 하나도 안 남은 절은 칸을 지운다 (지움이 상대 기기에 전해진다).
 const BIBLE_VER='krv';
-const BIBLE_DATA_REV='krv-1';            // 본문 파일이 바뀌면 올린다 → 기기들이 새로 받는다
+const BIBLE_DATA_REV='krv-2';            // 본문 파일이 바뀌면 올린다 → 기기들이 새로 받는다
 const _BR_MIN_READ=3;                     // 3초 넘게 머문 장만 '읽음' 으로 남긴다 — 넘기기만 한 것은 버린다 (HB 2026-10-07, 10초에서 낮춤)
 // ⚠️ 쉰 시간을 빼는 규칙·상한은 **두지 않는다** (HB 2026-10-07 — "5시간을 켜 두면 5시간 그대로").
 //    화면이 꺼지거나 앱을 벗어나면 그 순간 끝나므로 그 동안은 세지 않는다.
@@ -14931,6 +14931,15 @@ function _brVmOpen(v,x,y){
   m.style.left=l+'px';m.style.top=t+'px';
 }
 function _brVmClose(){_brEl('brVMenu').classList.remove('on');_brEl('brVMenuOv').classList.remove('on');}
+// 지금 화면에 보이는 절들 → '요한복음 3:16-18'. 절의 절반 이상(또는 화면을 꽉 채운 긴 절)이 보이면 넣는다
+function _brViewRef(){
+  const sc=_brEl('brScroll'),vs=[];
+  if(sc){const top=sc.getBoundingClientRect().top,bot=top+sc.clientHeight;
+    sc.querySelectorAll('.br-v').forEach(el=>{const r=el.getBoundingClientRect(),vis=Math.min(r.bottom,bot)-Math.max(r.top,top);
+      if(vis>0&&vis>=Math.min(r.height,sc.clientHeight)*0.5)vs.push(+el.dataset.v);});}
+  const head=_brBooks()[_brCur.b]+' '+_brCur.c;
+  return vs.length?head+':'+_brVerseList(vs):head+':1';
+}
 function _brVmRun(act){
   const ref=_brVmRef,vs=_brVmVs||[];_brVmClose();if(!ref)return;
   const d=_BR_MEM.get(_brCur.b+1),ch=d?d.c[_brCur.c-1]:[];
@@ -15295,7 +15304,8 @@ function _brBind(){
   // 내 표시 — 하단 네 단추가 그 갈래를 바로 연다 (시트 안에서도 갈래를 바꿀 수 있다)
   document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});
   // 헤더 좌상단 — There · 대시보드
-  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere('');};
+  // 우상단 There = 지금 화면에 보이는 장절 (HB v26-1007-11). 하나도 안 잡히면 장만
+  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere(_brViewRef());};
   $('brDash').onclick=_brOpenDash;
   $('brDashClose').onclick=()=>$('brDashP').classList.remove('on');
   $('bdChips').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brDashRange=b.dataset.r;_brDashRender();};

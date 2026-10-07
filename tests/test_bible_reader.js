@@ -347,7 +347,10 @@ console.log('\n시나리오 13-10 — v26-1007-10 (HB) 직접 기간 · 큰 하�
   sc.eq('좋아요·암송은 큰 토스트로', /_reactWithToast\('like',ref\)/.test(SRC) && /_reactWithToast\('mem',ref\)/.test(SRC), true);
   sc.eq('롱터치 메뉴 There 는 그 절로 연다', /act==='there'[^]{0,80}openThere\(ref\)/.test(SRC), true);
   sc.eq('절은 두 번 톡 쳐도 확대되지 않는다', /\.br-v\{[^}]*touch-action:manipulation/.test(SRC), true);
+  sc.eq('우상단 There 는 화면에 보이는 장절로 (v26-1007-11)', /\$\('brThere'\)\.onclick=\(\)=>\{if\(typeof openThere==='function'\)openThere\(_brViewRef\(\)\);\}/.test(SRC), true);
+  sc.eq('본문 파일이 바뀌었으니 기기 저장본을 새로 받는다 (대상 2:24)', /BIBLE_DATA_REV='krv-2'/.test(SRC), true);
 }
+
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
