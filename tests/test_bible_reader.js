@@ -381,6 +381,22 @@ console.log('\n시나리오 13-11 — 읽은 장 = 모든 절을 한 번씩 (HB 
   sc.eq('읽는 리듬: 가로 요일 · 세로 시간대', /grid-template-columns:38px repeat\(7,minmax\(0,1fr\)\)/.test(SRC) && /S\.slots\.forEach\(\(x,i\)=>\{hm\+='<span class="d">'/.test(SRC), true);
 }
 
+
+console.log('\n시나리오 13-12 — 조작하는 시간은 읽은 시간에서 뺀다 (HB v26-1007-14)');
+{
+  sc.eq('읽은 시간 = 본문만 보고 있던 시간을 1초씩 쌓은 것', /if\(_brBusy\(\)\)return;\s*s\.act=\(s\.act\|\|0\)\+dt;/.test(SRC) && /_brReadAdd\(s\.b,s\.c,s\.t,\(s\.act\|\|0\)\/1000,extra\)/.test(SRC), true);
+  sc.eq('대시보드·고르기·검색·시트·롱터치 메뉴가 열리면 멈춘다', /#bibleRd \.br-sheet\.on,#brVMenu\.on,#brPick\.on,#brFindP\.on,#brDashP\.on/.test(SRC), true);
+  sc.eq('There·담기처럼 본문을 덮는 다른 화면도 멈춘다', /elementFromPoint\(r\.left\+r\.width\/2,r\.top\+r\.height\/2\);\s*return !!el&&!sc\.contains\(el\)/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-13 — 성경 화면 닫는 손짓 (HB v26-1007-14)');
+{
+  sc.eq('왼쪽 가장자리에서 밀어 닫기 (공용 _initEdgeBack)', /_initEdgeBack\(\$\('bibleRd'\),\(\)=>bibleClose\(\)\);/.test(SRC), true);
+  sc.eq('가장자리에서 시작한 밀기는 장 넘기기로 안 쓴다', /if\(tx<=28\)\{tx=null;return;\}/.test(SRC), true);
+  sc.eq('헤더를 끌어내려 닫기 · 끈 뒤 누르기는 버린다', /const rd=\$\('bibleRd'\),hd=\$\('brHead'\)/.test(SRC) && /if\(dragged\)\{dragged=false;e\.stopPropagation\(\);e\.preventDefault\(\);\}\},true\)/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
