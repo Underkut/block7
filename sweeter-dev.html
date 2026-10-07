@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6047,7 +6047,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-1";
+const APP_VERSION = "v. 26-1007-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -12878,7 +12878,7 @@ const _ESC_CLOSERS=[
   ['sfxMenu',         ()=>closeSfxMenu()],
   ['vliMenu',         ()=>closeVliMenu()],
   ['verseMemMenu',    ()=>closeVerseMemMenu()],
-  ['logoMenu',        ()=>closeLogoMenu()],
+  ['logoMenu',        ()=>_logoMenuEsc()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   ['repScopeModal',   ()=>closeRepScope()],
   // 팝업류
@@ -12897,7 +12897,7 @@ const _ESC_CLOSERS=[
   ['hdrCalModal',     ()=>closeHdrCalendar()],
   ['vDashDetailModal',()=>closeVDashDetail()],
   ['vDashModal',      ()=>closeVerseDashboard()],
-  ['vAggModal',       ()=>closeVerseAggPopup()],
+  ['vAggModal',       ()=>{if(_keepSwitchIsOpen()){closeKeepSwitch();return;}closeVerseAggPopup();}],
   ['vfDeeperModal', ()=>closeVfDeeperPicker()],
   ['keepPickModal',   ()=>closeKeepPicker()],
   ['keepRowMenu',     ()=>closeKeepRowMenu()],
@@ -12912,7 +12912,12 @@ const _ESC_CLOSERS=[
   ['taggedTasksModal',()=>closeContactTasksPopup()],
   ['eventModal',      ()=>closeEventModal()],
   ['secDelModal',     ()=>closeSecDelModal()],
-  ['verseSettingsOverlay',()=>document.getElementById('verseSettingsOverlay').classList.remove('open')],
+  // 표에 빠져 있던 둘 (v26-1007-2). 공용 확인창의 ESC 는 '취소' 다 — onYes 는 절대 안 부른다
+  ['appConfirmModal', ()=>_appConfirmResolve(false)],
+  ['ceDeletePopup',   ()=>ceCloseDeletePopup()],
+  // ⚠️ ×(closeVerseSettingsModal)와 같은 길 — 예전엔 classList.remove('open') 만 해서
+  //    '원래 보던 팝업으로 되돌아가기'(_vsetRestoreBack)를 건너뛰었다 (v26-1007-2)
+  ['verseSettingsOverlay',()=>closeVerseSettingsModal()],
   ['themePicker',     ()=>closeThemePicker()],
   ['settingsOverlay', ()=>closeSettings()],
   ['verseListModal',  ()=>closeVerseListModal()],
@@ -12944,22 +12949,34 @@ function _kbOverlayOpen(){
 }
 document.addEventListener('keydown',e=>{
   if(e.key!=='Escape'||e.defaultPrevented)return;
-  // 글자를 입력하는 중이면 그 칸의 ESC(편집 취소)가 우선이다
-  const t=e.target;
-  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable))return;
+  // ⚠️ 한글 같은 조합 입력 중의 ESC 는 '조합 취소' 다 — 팝업을 닫으면 안 된다 (v26-1007-2)
+  if(e.isComposing||e.keyCode===229)return;
   // 로그인 화면이 떠 있으면 ESC 로 뒤 화면을 건드리지 않는다
   const auth=document.getElementById('authScreen');
   if(auth&&_escShown(auth))return;
   let top=null,topZ=-1;
+  const open=[];   // 지금 열려 있는 팝업들의 요소 — 아래 '글자 입력 중' 판정에 쓴다
   for(const[id,fn,test]of _ESC_CLOSERS){
     const el=document.getElementById(id);
     if(!el)continue;
     if(test?!test(el):!_escShown(el))continue;
+    open.push(el);
     const z=parseInt(getComputedStyle(el).zIndex,10);
     const zz=isNaN(z)?0:z;
     if(zz>topZ){topZ=zz;top=fn;}   // 같은 높이면 표에서 위에 있는 쪽(먼저 만난 쪽)
   }
   if(!top)return;
+  // 글자를 입력하는 중이면 그 칸의 ESC(편집 취소)가 우선이다 — **팝업 밖의 칸이면.**
+  // ⚠️⚠️ 예전엔 입력칸이면 무조건 비켜섰다. 그 가드는 인라인 할일 편집(ESC=편집 취소)을
+  //    지키려던 것인데, 팝업 안의 입력칸까지 막았다 — 메모창은 열자마자 textarea 에 커서를
+  //    주므로 **언제나** ESC 로 안 닫혔다 (HB 신고 2026-10-07).
+  //    이제 입력칸이 **열려 있는 팝업 안**이면 닫는다. 자체 ESC 를 가진 칸은 전부
+  //    preventDefault() 를 부르므로(맨 위 defaultPrevented 검사) 두 번 처리되지 않는다.
+  //    ⚠️ 입력칸에 ESC 를 새로 달 때도 **반드시 preventDefault()** 를 부를 것.
+  const t=e.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable)){
+    if(!open.some(el=>el.contains(t)))return;
+  }
   e.preventDefault();
   e.stopImmediatePropagation();   // 아래에 남아 있는 옛 ESC 처리가 겹쳐 닫지 않도록
   try{top();}catch(err){}
@@ -12992,7 +13009,7 @@ document.addEventListener('keydown',e=>{
   if(_vgIsOpen()||_verseFullIsOpen())return;   // 위에 뜬 화면이 먼저 ESC를 가져간다
   if(_thereIsOpen())return;                    // There 세팅 화면도 (v26-0923-5)
   e.preventDefault();
-  document.getElementById('verseSettingsOverlay').classList.remove('open');
+  closeVerseSettingsModal();     // ×와 같은 길 (v26-1007-2)
 });
 const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll','account'];
 // 이 등급에서 보이는 탭들. 이지는 '말씀 위젯'·'공유' 탭 자체를 감춘다
@@ -21203,6 +21220,18 @@ function logoMenuBackToMain(){
   if(m)m.style.display='';
   _menuFitHeight(document.getElementById('logoMenu'));
 }
+// 로고 메뉴 ESC — 하위 단계(말씀 목록·저장 목록)가 떠 있으면 **한 단계 뒤로**, 메인이면 닫는다.
+// ⚠️ 터치 기기는 하위가 메인을 가리고(logoMenuMain 이 숨음), PC 는 오른쪽에 따로 뜬다 —
+//    둘 다 '하위가 보이는가' 로 갈라 본다.
+function _logoMenuEsc(){
+  // ⚠️ 하위를 보일 때 style.display 는 'none' 이 아니라 '' (비움) 이다 — 닫힘을 인라인 값으로
+  //    판정하면 거꾸로 읽는다. 실제로 그려져 있는가(getClientRects)로 본다.
+  const subOpen=['logoMenuListSub','logoMenuKeepSub'].some(k=>{
+    const e=document.getElementById(k);return !!(e&&e.getClientRects().length>0);
+  });
+  if(subOpen){logoMenuBackToMain();return;}
+  closeLogoMenu();
+}
 function _tryCloseLogoMenu(){
   if(Date.now()-_logoMenuOpenedAt<500)return;
   closeLogoMenu();
@@ -24011,6 +24040,10 @@ function toggleKeepSwitch(){
   box.style.display='block';
   box.classList.remove('on');void box.offsetWidth;
   box.classList.add('on');
+}
+function _keepSwitchIsOpen(){
+  const box=document.getElementById('keepSwitchBox');
+  return !!(box&&box.style.display!=='none'&&box.classList.contains('on'));
 }
 function closeKeepSwitch(){
   const box=document.getElementById('keepSwitchBox');
@@ -47976,7 +48009,7 @@ const _SWKB_HELP=[
   ['Esc','편집 마치기'],
   ['sec','그 밖'],
   ['Esc','자판 자리를 놓는다 (Tab 이 브라우저로 돌아간다)'],
-  ['?','이 표'],
+  ['? · ⌘/','이 표 (⌘/ 는 글자를 치는 중에도)'],
 ];
 // 블럭7 표. ⚠️ 스위터와 **한 팝업**을 나눠 쓴다 — 지금 보고 있는 화면에 따라
 // 표만 갈아 끼운다. 팝업을 두 벌 두면 ESC 표·× 규칙·padding-top 예외를 전부
@@ -48007,7 +48040,8 @@ const _B7KB_HELP=[
   ['⌘⇧8 9 0','일간 · 주간 · 월간 뷰'],
   ['⌘⇧← →','뷰 넘기기'],
   ['sec','그 밖'],
-  ['?','이 표'],
+  ['Esc','열린 팝업·메뉴 닫기 (한 겹씩 · 글자를 치는 중에도)'],
+  ['? · ⌘/','이 표 (⌘/ 는 글자를 치는 중에도)'],
 ];
 // 지금 보고 있는 화면의 표를 고른다
 function _kbHelpRows(){
@@ -48022,6 +48056,33 @@ function _swKbHelpFill(){
     :'<div class="swkb-row"><span class="swkb-k">'+_swEsc(a)+'</span>'
       +'<span>'+_swEsc(c)+'</span></div>').join('');
 }
+// ⌘/ (맥) — '?' 와 같은 단축키 표 (v26-1007-2, HB).
+// ⚠️ '?' 는 **글자**라서 입력칸에서는 쓸 수 없다. ⌘/ 는 글자가 아니므로 글자를 치는
+//    중에도 먹는다 — 이것이 '?' 말고 따로 두는 까닭이다.
+// ⚠️ 다른 팝업이 떠 있으면 안 연다 (표가 아래에 깔린다). 표 자신이 떠 있으면 닫는다.
+// ⚠️ 글쇠는 e.code — 한글 자판이 켜져 있어도 'Slash' 는 같다.
+// ⚠️ 캡처 단계: 입력칸·마스터 핸들러보다 먼저 받아야 한다.
+function _kbHelpKey(e){
+  // ESC — 표가 떠 있으면 **표가 먼저** 받는다.
+  // ⚠️⚠️ ⌘/ 는 글자를 치는 중에도 먹으므로, 표가 떠 있는 동안 커서는 뒤의 입력칸(인라인 할일
+  //    편집 등)에 남아 있다. 그대로 두면 ESC 를 그 칸의 자체 ESC('편집 취소')가 먼저 받아
+  //    **표는 안 닫히고 쓰던 글자만 취소된다** (실제 브라우저에서 겪었다). 그래서 캡처
+  //    단계에서 먼저 받아 표만 닫고, 그 칸에는 닿지 않게 한다 — 커서·글자는 그대로다.
+  if(e.key==='Escape'){
+    if(e.isComposing||e.keyCode===229)return false;
+    if(_swKbHelpOpen()){closeSwKbHelp();return true;}
+    return false;
+  }
+  if(e.code!=='Slash'||!e.metaKey||e.ctrlKey||e.altKey)return false;
+  if(_swKbHelpOpen()){closeSwKbHelp();return true;}
+  if(_kbOverlayOpen())return false;
+  openSwKbHelp();
+  return true;
+}
+document.addEventListener('keydown',e=>{
+  if(e.defaultPrevented)return;
+  if(_kbHelpKey(e)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
+},true);
 function openSwKbHelp(){
   _swKbHelpFill();
   const o=document.getElementById('swKbHelpOverlay'),m=document.getElementById('swKbHelpModal');
