@@ -378,6 +378,7 @@ console.log('\n시나리오 13-11 — 읽은 장 = 모든 절을 한 번씩 (HB 
   sc.eq('옛 줄: 빈틈이 있으면 안 믿는다', _brSeenOf({ v: [1, 5], n: 3 }), []);
   sc.eq('새 줄 범위 글 읽기', _brSeenOf({ vs: '1-3,7' }), [1, 2, 3, 7]);
   sc.eq('기록에 본 절 범위를 남긴다', /extra\.vs=_brVerseList\(seen\)/.test(SRC), true);
+  sc.eq('읽는 리듬: 첫 열은 주일', /const DW=\[0,1,2,3,4,5,6\],DN=d=>d===0\?'주일'/.test(SRC), true);
   sc.eq('읽는 리듬: 가로 요일 · 세로 시간대', /grid-template-columns:38px repeat\(7,minmax\(0,1fr\)\)/.test(SRC) && /S\.slots\.forEach\(\(x,i\)=>\{hm\+='<span class="d">'/.test(SRC), true);
 }
 

@@ -14896,10 +14896,11 @@ function _brDashRender(){
   // 리듬
   const DOW=['일','월','화','수','목','금','토'],gm=Math.max(1,...Object.values(S.grid));
   // 가로 = 요일, 세로 = 시간대 (HB v26-1007-12)
-  const DW=[1,2,3,4,5,6,0];
-  let hm='<span></span>'+DW.map(d=>'<span class="h">'+DOW[d]+'</span>').join('');
+  // 첫 열은 주일 (HB v26-1007-13)
+  const DW=[0,1,2,3,4,5,6],DN=d=>d===0?'주일':DOW[d];
+  let hm='<span></span>'+DW.map(d=>'<span class="h">'+DN(d)+'</span>').join('');
   S.slots.forEach((x,i)=>{hm+='<span class="d">'+x[2]+'</span>';DW.forEach(d=>{const v=S.grid[d+'.'+i]||0;
-    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+DOW[d]+'요일 '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
+    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+(d===0?'주일':DOW[d]+'요일')+' '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
   $('bdHm').innerHTML=hm;
   // 오래 머문 책
   const top=bk.slice(0,6),bm=S.byBook[top[0]]||1;
