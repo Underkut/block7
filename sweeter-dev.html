@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-15  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-16  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5198,6 +5198,8 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-vmenu.on{display:block;}
 #bibleRd .br-vm-there{width:14px;height:14px;display:block;}
 /* 롱터치 중 아이폰 글자 고르기·확대경이 끼어들지 않게 */
+/* 왼쪽 가장자리 띠 — 여기서 시작한 밀기만 '닫기' 로 받는다. 본문 스크롤에는 손대지 않는다 (v26-1007-16) */
+#bibleRd .br-edge{position:absolute;left:0;top:0;bottom:0;width:18px;z-index:3;touch-action:none;}
 #bibleRd .br-v{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation;}   /* 두 번 톡톡이 확대로 안 먹히게 */
 #bibleRd .br-sw.on::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tx2);}
 /* 단추 수가 바뀌어도(Even 이 없는 계정·There 를 뺀 뒤) 빈칸 없이 고르게 나눈다 (v26-1007-8 HB) */
@@ -6166,7 +6168,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-15";
+const APP_VERSION = "v. 26-1007-16";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8942,7 +8944,7 @@ try{
     <!-- 헤더 아래 선 = 이 장에서 어디쯤 읽고 있는지 (v26-1007-9, HB). 헤더가 접혀도 남는다 -->
     <div class="br-progl" aria-hidden="true"><i id="brProgI"></i></div>
   </div>
-  <div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
+  <div class="br-edge" id="brEdge" aria-hidden="true"></div><div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
   <div class="br-nav" id="brNav">
     <button class="br-nv" id="brPrev" aria-label="이전 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg></button>
@@ -14822,7 +14824,7 @@ function _brRerender(keepSheets){const sc=_brEl('brScroll'),y=sc.scrollTop;const
 // v26-1007-8 (HB — "딱딱하다"): 문턱을 넘는 순간 한꺼번에 접던 것을 **스크롤을 그대로 따라가게**
 // 바꿨다. 접힌 정도 p(0=다 보임 · 1=한 줄)를 스크롤한 만큼 움직이고, 손을 멈추면(140ms)
 // 가까운 쪽으로 마저 미끄러진다. 헤더 단추는 먼저 옅어지고, 반쯤 지나서 '책 장' 한 줄이 떠오른다.
-let _brP=0,_brLastY=0,_brSettleT=0,_brDir=0;
+let _brP=0,_brLastY=0,_brSettleT=0,_brDir=0,_brScrollAt=0;
 const _BR_EASE='cubic-bezier(.25,.6,.2,1)';
 // v26-1007-9 (HB — "아직 급하다"): 접히는 데 드는 스크롤을 헤더 높이의 **3.5 배**로 늘리고,
 // 손을 멈춘 뒤 마무리는 0.75초로 천천히. 옅어지는 곡선도 완만하게.
@@ -15224,11 +15226,12 @@ function _brBind(){
   $('brChap').addEventListener('pointerdown',e=>{
     if(e.button>0)return;const v=e.target.closest('.br-v');if(!v||e.target.closest('[data-memo]'))return;
     lpFired=false;const x=e.clientX,y=e.clientY;
+    if(Date.now()-(_brScrollAt||0)<250)return;   // 관성 스크롤을 멈추려는 손 — 메뉴를 띄우지 않는다
     lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;_brVmOpen(+v.dataset.v,x,y);},500)};
   });
   const lpCancel=e=>{if(!lp)return;if(e&&e.type==='pointermove'&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)<8)return;clearTimeout(lp.t);lp=null;};
   ['pointermove','pointerup','pointercancel'].forEach(t=>$('brChap').addEventListener(t,lpCancel));
-  $('brScroll').addEventListener('scroll',()=>lpCancel(),{passive:true});
+  $('brScroll').addEventListener('scroll',()=>{_brScrollAt=Date.now();lpCancel();},{passive:true});
   $('brChap').addEventListener('contextmenu',e=>{const v=e.target.closest('.br-v');if(!v)return;e.preventDefault();lpCancel();lpFired=true;_brVmOpen(+v.dataset.v,e.clientX,e.clientY);});
   $('brVMenuOv').addEventListener('pointerdown',e=>{e.preventDefault();_brVmClose();});
   $('brVMenu').addEventListener('click',e=>{const it=e.target.closest('[data-vm]');if(it)_brVmRun(it.dataset.vm);});
@@ -15394,12 +15397,24 @@ function _brBind(){
   // 넘기기: 옆으로 밀기 · 자판
   let tx=null,ty=null;
   $('brScroll').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
-  $('brScroll').addEventListener('touchend',e=>{if(tx==null)return;if(tx<=28){tx=null;return;}   // 가장자리에서 시작 = 닫기 몫
+  $('brScroll').addEventListener('touchend',e=>{if(tx==null)return;
     const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;
     if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)_brStep(dx<0?1:-1);},{passive:true});
   // 닫는 손짓 두 가지 (HB v26-1007-14) — 다른 전체화면과 같은 감각
   // ① 왼쪽 가장자리에서 오른쪽으로 밀기 (공용 _initEdgeBack)
-  _initEdgeBack($('bibleRd'),()=>bibleClose());
+  // ⚠️ v26-1007-16 (HB — 스크롤이 조금 가다 멈춘다): 예전엔 공용 _initEdgeBack 을 성경 화면 **전체**에 걸었다.
+  //    그 손짓은 touchmove 를 막을 수 있게(passive:false) 듣기 때문에, 본문 어디를 밀어도 아이폰이 매번
+  //    "막을지" 를 물어보며 스크롤을 붙잡았다. 이제는 왼쪽 가장자리 띠(#brEdge)에서만 듣는다.
+  {const rd=$('bibleRd'),eg=$('brEdge');let st=null;
+    eg.addEventListener('pointerdown',e=>{st={x:e.clientX,id:e.pointerId,dx:0};rd.style.transition='none';try{eg.setPointerCapture(e.pointerId);}catch(x){}});
+    eg.addEventListener('pointermove',e=>{if(!st||e.pointerId!==st.id)return;st.dx=Math.max(0,e.clientX-st.x);
+      rd.style.transform='translateX('+st.dx+'px)';rd.style.opacity=String(Math.max(.55,1-st.dx/(window.innerWidth*1.6)));});
+    const up=e=>{if(!st||e.pointerId!==st.id)return;const dx=st.dx;st=null;
+      rd.style.transition='transform .22s cubic-bezier(.3,0,.3,1),opacity .22s';
+      if(dx>=70){rd.style.transform='translateX('+window.innerWidth+'px)';rd.style.opacity='0';
+        setTimeout(()=>{bibleClose();rd.style.transition='';rd.style.transform='';rd.style.opacity='';},200);}
+      else{rd.style.transform='';rd.style.opacity='';setTimeout(()=>{rd.style.transition='';},220);}};
+    eg.addEventListener('pointerup',up);eg.addEventListener('pointercancel',up);}
   // ② 헤더를 잡고 끌어내리기. 헤더는 거의 단추라 단추 위에서 시작해도 끌리게 하고,
   //    끌었으면 뒤따르는 누르기는 버린다 (제목을 끌었는데 책 고르기가 열리면 안 된다)
   {const rd=$('bibleRd'),hd=$('brHead');let st=null,dragged=false;

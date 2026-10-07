@@ -393,8 +393,9 @@ console.log('\n시나리오 13-12 — 조작하는 시간은 읽은 시간에서
 
 console.log('\n시나리오 13-13 — 성경 화면 닫는 손짓 (HB v26-1007-14)');
 {
-  sc.eq('왼쪽 가장자리에서 밀어 닫기 (공용 _initEdgeBack)', /_initEdgeBack\(\$\('bibleRd'\),\(\)=>bibleClose\(\)\);/.test(SRC), true);
-  sc.eq('가장자리에서 시작한 밀기는 장 넘기기로 안 쓴다', /if\(tx<=28\)\{tx=null;return;\}/.test(SRC), true);
+  sc.eq('왼쪽 가장자리 띠에서만 밀어 닫기 (화면 전체에 걸면 스크롤을 붙잡는다 — v26-1007-16)', /_initEdgeBack\(\$\('bibleRd'\)/.test(SRC), false);
+  sc.eq('가장자리 띠는 본문 위 왼쪽 18px', /<div class="br-edge" id="brEdge"/.test(SRC) && /#bibleRd \.br-edge\{position:absolute;left:0;top:0;bottom:0;width:18px;z-index:3;touch-action:none;\}/.test(SRC), true);
+  sc.eq('관성 스크롤을 멈추는 누르기는 롱터치가 아니다', /if\(Date\.now\(\)-\(_brScrollAt\|\|0\)<250\)return;/.test(SRC), true);
   sc.eq('헤더를 끌어내려 닫기 · 끈 뒤 누르기는 버린다', /const rd=\$\('bibleRd'\),hd=\$\('brHead'\)/.test(SRC) && /if\(dragged\)\{dragged=false;e\.stopPropagation\(\);e\.preventDefault\(\);\}\},true\)/.test(SRC), true);
 }
 
