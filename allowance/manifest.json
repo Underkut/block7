@@ -1,12 +1,12 @@
 {
-  "name": "용돈장",
-  "short_name": "용돈장",
-  "description": "용돈을 받고 쓴 것을 적고, 쓸 계획을 세워요",
+  "name": "용돈 친구들",
+  "short_name": "용돈 친구들",
+  "description": "용돈을 적고, 어디에 쓸지 나눠 보는 친구들",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fbf7f1",
-  "theme_color": "#fbf7f1",
+  "background_color": "#ffe3ee",
+  "theme_color": "#ffe3ee",
   "orientation": "portrait",
   "icons": [
     {"src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
