@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1007-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1007-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6166,7 +6166,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1007-13";
+const APP_VERSION = "v. 26-1007-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14673,13 +14673,16 @@ function _brSessEnd(){
   const extra={t:s.t,s:s.src,r:s.ref,p:(typeof APP_PRODUCT!=='undefined'&&APP_PRODUCT==='sweeter')?'sw':'b7',
     dv:_brDev(),of:s.of||undefined,sec:(typeof _secIdNowAll==='function')?(()=>{try{return _secIdNowAll();}catch(e){return'';}})():''};
   if(seen.length){extra.v=[seen[0],seen[seen.length-1]];extra.n=seen.length;extra.vs=_brVerseList(seen).replace(/\s+/g,'');}
-  if(_brReadAdd(s.b,s.c,s.t,(Date.now()-s.t)/1000,extra))rawSave();
+  if(_brReadAdd(s.b,s.c,s.t,(s.act||0)/1000,extra))rawSave();
 }
 // 1초마다 — 읽은 시간 쌓기 + 화면에 보이는 절 재기
 function _brSessStep(){
   const s=_brSess;if(!s)return;
   const now=Date.now(),dt=Math.min(now-s.last,5000);s.last=now;
   if(!_brActiveWin())return;
+  // 대시보드·메뉴·시트·검색·There 처럼 본문 위에 무언가 떠 있으면 읽는 시간에서 뺀다 (HB v26-1007-14)
+  if(_brBusy())return;
+  s.act=(s.act||0)+dt;
   const sc=_brEl('brScroll');if(!sc)return;
   const top=sc.getBoundingClientRect().top,bot=top+sc.clientHeight;
   sc.querySelectorAll('.br-v').forEach(el=>{
@@ -14693,6 +14696,15 @@ function _brSessStep(){
 }
 // 창이 활성일 때만 센다 (HB 2026-10-07) — PC 에서 다른 프로그램을 누르면 그 순간 끊고,
 // 돌아오면 새로 잇는다. 휴대폰은 앱을 벗어날 때와 같다.
+// 본문이 아닌 것을 만지는 중인가 — 성경 안의 판·시트·메뉴가 열렸거나, 본문 한가운데를 다른 화면(There·담기 등)이 덮고 있다
+function _brBusy(){
+  try{
+    if(document.querySelector('#bibleRd .br-sheet.on,#brVMenu.on,#brPick.on,#brFindP.on,#brDashP.on'))return true;
+    const sc=_brEl('brScroll');if(!sc)return false;
+    const r=sc.getBoundingClientRect(),el=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
+    return !!el&&!sc.contains(el);
+  }catch(e){return false;}
+}
 function _brActiveWin(){try{return !document.hidden&&(typeof document.hasFocus!=='function'||document.hasFocus());}catch(e){return !document.hidden;}}
 function _brSessStart(){
   _brSessEnd();
@@ -14896,10 +14908,11 @@ function _brDashRender(){
   // 리듬
   const DOW=['일','월','화','수','목','금','토'],gm=Math.max(1,...Object.values(S.grid));
   // 가로 = 요일, 세로 = 시간대 (HB v26-1007-12)
-  const DW=[1,2,3,4,5,6,0];
-  let hm='<span></span>'+DW.map(d=>'<span class="h">'+DOW[d]+'</span>').join('');
+  // 첫 열은 주일 (HB v26-1007-13)
+  const DW=[0,1,2,3,4,5,6],DN=d=>d===0?'주일':DOW[d];
+  let hm='<span></span>'+DW.map(d=>'<span class="h">'+DN(d)+'</span>').join('');
   S.slots.forEach((x,i)=>{hm+='<span class="d">'+x[2]+'</span>';DW.forEach(d=>{const v=S.grid[d+'.'+i]||0;
-    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+DOW[d]+'요일 '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
+    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+(d===0?'주일':DOW[d]+'요일')+' '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
   $('bdHm').innerHTML=hm;
   // 오래 머문 책
   const top=bk.slice(0,6),bm=S.byBook[top[0]]||1;
@@ -15378,8 +15391,29 @@ function _brBind(){
   // 넘기기: 옆으로 밀기 · 자판
   let tx=null,ty=null;
   $('brScroll').addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
-  $('brScroll').addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;
+  $('brScroll').addEventListener('touchend',e=>{if(tx==null)return;if(tx<=28){tx=null;return;}   // 가장자리에서 시작 = 닫기 몫
+    const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;
     if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)_brStep(dx<0?1:-1);},{passive:true});
+  // 닫는 손짓 두 가지 (HB v26-1007-14) — 다른 전체화면과 같은 감각
+  // ① 왼쪽 가장자리에서 오른쪽으로 밀기 (공용 _initEdgeBack)
+  _initEdgeBack($('bibleRd'),()=>bibleClose());
+  // ② 헤더를 잡고 끌어내리기. 헤더는 거의 단추라 단추 위에서 시작해도 끌리게 하고,
+  //    끌었으면 뒤따르는 누르기는 버린다 (제목을 끌었는데 책 고르기가 열리면 안 된다)
+  {const rd=$('bibleRd'),hd=$('brHead');let st=null,dragged=false;
+    hd.style.touchAction='none';
+    hd.addEventListener('pointerdown',e=>{if(e.button>0)return;st={y:e.clientY,t:performance.now(),dy:0,v:0,id:e.pointerId};dragged=false;});
+    hd.addEventListener('pointermove',e=>{if(!st||e.pointerId!==st.id)return;
+      const now=performance.now(),dy=e.clientY-st.y;
+      if(!dragged){if(dy<8)return;dragged=true;rd.style.transition='none';try{hd.setPointerCapture(e.pointerId);}catch(x){}}
+      st.v=(dy-st.dy)/Math.max(1,now-st.t);st.t=now;st.dy=dy;
+      rd.style.transform='translateY('+Math.max(0,dy)+'px)';rd.style.opacity=String(Math.max(.6,1-Math.max(0,dy)/(window.innerHeight*1.4)));});
+    const up=e=>{if(!st||e.pointerId!==st.id)return;const s0=st;st=null;if(!dragged)return;
+      rd.style.transition='transform .22s cubic-bezier(.2,.8,.2,1),opacity .22s';
+      if(s0.dy>_SHEET_DRAG_CLOSE||s0.v>_SHEET_DRAG_FLICK){rd.style.transform='translateY(100%)';rd.style.opacity='0';
+        setTimeout(()=>{bibleClose();rd.style.transition='';rd.style.transform='';rd.style.opacity='';},210);}
+      else{rd.style.transform='';rd.style.opacity='';setTimeout(()=>{rd.style.transition='';},230);}};
+    hd.addEventListener('pointerup',up);hd.addEventListener('pointercancel',up);
+    hd.addEventListener('click',e=>{if(dragged){dragged=false;e.stopPropagation();e.preventDefault();}},true);}
   document.addEventListener('keydown',e=>{
     if(!_brOpen)return;
     const tg=e.target&&e.target.tagName;if(tg==='TEXTAREA'||tg==='INPUT')return;
