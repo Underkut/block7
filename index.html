@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1008-1  [production]  -->
+<!-- BLOCK7  v. 26-1008-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5251,7 +5251,8 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-sw[data-ih="1"]{background:#ffd640;} #bibleRd .br-sw[data-ih="2"]{background:#78d68c;} #bibleRd .br-sw[data-ih="3"]{background:#6eb4ff;} #bibleRd .br-sw[data-ih="4"]{background:#ff8caa;}
 #bibleRd .br-sw[data-ih="5"]{background:#be96ff;} #bibleRd .br-sw[data-ih="6"]{background:#ff7b72;} #bibleRd .br-sw[data-ih="7"]{background:#ffa95e;}
 
-#bibleRd .br-v{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y;}   /* 두 번 톡톡이 확대로 안 먹히게 */
+#bibleRd .br-v{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:pan-y;}
+#bibleRd.br-ios .br-v{touch-action:manipulation;}   /* 아이폰은 pan-y 에서 방향을 바꾸면 스크롤이 막힌다 (v26-1008-2) */   /* 두 번 톡톡이 확대로 안 먹히게 */
 #bibleRd .br-sw.on::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid var(--tx2);}
 /* 단추 수가 바뀌어도(Even 이 없는 계정·There 를 뺀 뒤) 빈칸 없이 고르게 나눈다 (v26-1007-8 HB) */
 #bibleRd .br-acts{display:flex;justify-content:space-around;gap:4px;}
@@ -6219,7 +6220,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1008-1";
+const APP_VERSION = "v. 26-1008-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15564,28 +15565,41 @@ function _brBind(){
   $('brVMenu').addEventListener('click',e=>{const it=e.target.closest('[data-vm]');if(it)_brVmRun(it.dataset.vm);});
   // 본문에 긋기 (v26-1007-19, HB) — 글자 위를 **옆으로** 끌면 고른다. 위아래는 스크롤(.br-v 는 pan-y),
   // 가만히 누르면 롱터치 메뉴(0.5초), 마우스는 어느 쪽으로 끌어도 긋기. 좌우 끝 _BR_SIDE 안에서 시작하면 장 넘기기 몫.
+  // ⚠️ v26-1008-2 (HB — 아이폰에서 내리다 손 떼지 않고 올리면 조금 가다 막힌다): v26-1008-1 에서 긋기를
+  //    받으려고 본문을 touch-action:pan-y 로 바꾼 뒤부터다. 아이폰은 pan-y 에서 방향을 바꾸면 스크롤을 놓는다.
+  //    → 아이폰은 예전 manipulation 으로 되돌리고(#bibleRd.br-ios), 긋기는 **터치 이벤트**로 받는다
+  //      (포인터 이벤트는 스크롤이 시작되면 끊기지만 터치 이벤트는 계속 온다). 다른 기기는 포인터 그대로.
+  //    터치 리스너는 모두 passive — 막지 않는다 (v26-1007-16 스크롤 멈춤의 원인이 non-passive 였다).
+  const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(IOS)$('bibleRd').classList.add('br-ios');
   let ip=null,inkFired=false;
-  $('brChap').addEventListener('pointerdown',e=>{
-    if(e.button>0||e.target.closest('[data-memo]'))return;
-    const W=document.documentElement.clientWidth;if(e.pointerType!=='mouse'&&(e.clientX<_BR_SIDE||e.clientX>W-_BR_SIDE))return;
-    const st=_brCharAt(e.clientX,e.clientY);if(!st)return;
-    ip={x:e.clientX,y:e.clientY,id:e.pointerId,st,mode:null,mouse:e.pointerType==='mouse'};
-  });
-  $('brChap').addEventListener('pointermove',e=>{if(!ip||e.pointerId!==ip.id)return;
-    const dx=e.clientX-ip.x,dy=e.clientY-ip.y;
+  const inkStart=(x,y,id,mouse,tgt)=>{
+    if(tgt&&tgt.closest&&tgt.closest('[data-memo]'))return;
+    const W=document.documentElement.clientWidth;if(!mouse&&(x<_BR_SIDE||x>W-_BR_SIDE))return;
+    const st=_brCharAt(x,y);if(!st)return;ip={x,y,id,st,mode:null,mouse};};
+  const inkMove=(x,y,cap)=>{if(!ip)return;const dx=x-ip.x,dy=y-ip.y;
     if(!ip.mode){if(Math.hypot(dx,dy)<(ip.mouse?5:9))return;
-      if(ip.mouse||Math.abs(dx)>Math.abs(dy)*1.2){ip.mode='ink';try{$('brChap').setPointerCapture(e.pointerId);}catch(x){}
+      if(ip.mouse||Math.abs(dx)>Math.abs(dy)*1.2){ip.mode='ink';if(cap)cap();
         if(lp){clearTimeout(lp.t);lp=null;}_brVmClose();_brCloseSheets();_brInkSel={s:ip.st,e:ip.st};}
-      else{ip.mode='no';return;}}
-    if(ip.mode!=='ink')return;
-    const c=_brCharAt(e.clientX,e.clientY);if(c&&(c.v!==_brInkSel.e.v||c.i!==_brInkSel.e.i)){_brInkSel.e=c;_brInkPaint();}
-    _brLoupe(e.clientX,e.clientY);
-  });
-  const ipEnd=e=>{if(!ip||e.pointerId!==ip.id)return;const p=ip;ip=null;_brLoupe();
+      else{ip=null;return;}}                 // 세로 = 스크롤 — 손을 놓는다
+    const c=_brCharAt(x,y);if(c&&(c.v!==_brInkSel.e.v||c.i!==_brInkSel.e.i)){_brInkSel.e=c;_brInkPaint();}
+    _brLoupe(x,y);};
+  const inkEnd=cancel=>{if(!ip)return;const p=ip;ip=null;_brLoupe();
     if(p.mode!=='ink')return;inkFired=true;setTimeout(()=>{inkFired=false;},450);
-    if(e.type==='pointercancel'||!_brInkSpans().length){_brInkSel=null;_brInkPaint();return;}
+    if(cancel||!_brInkSpans().length){_brInkSel=null;_brInkPaint();return;}
     _brInkOpen();};
-  $('brChap').addEventListener('pointerup',ipEnd);$('brChap').addEventListener('pointercancel',ipEnd);
+  // 마우스·펜·안드로이드 — 포인터
+  $('brChap').addEventListener('pointerdown',e=>{if(e.button>0||(IOS&&e.pointerType==='touch'))return;inkStart(e.clientX,e.clientY,e.pointerId,e.pointerType==='mouse',e.target);});
+  $('brChap').addEventListener('pointermove',e=>{if(!ip||e.pointerId!==ip.id)return;inkMove(e.clientX,e.clientY,()=>{try{$('brChap').setPointerCapture(e.pointerId);}catch(x){}});});
+  $('brChap').addEventListener('pointerup',e=>{if(ip&&e.pointerId===ip.id)inkEnd(false);});
+  $('brChap').addEventListener('pointercancel',e=>{if(ip&&e.pointerId===ip.id)inkEnd(true);});
+  // 아이폰 — 터치 (passive)
+  if(IOS){
+    $('brChap').addEventListener('touchstart',e=>{if(e.touches.length!==1){ip=null;return;}const t=e.touches[0];inkStart(t.clientX,t.clientY,'t',false,e.target);},{passive:true});
+    $('brChap').addEventListener('touchmove',e=>{if(!ip||ip.id!=='t')return;if(e.touches.length!==1){inkEnd(true);return;}const t=e.touches[0];inkMove(t.clientX,t.clientY);},{passive:true});
+    $('brChap').addEventListener('touchend',()=>{if(ip&&ip.id==='t')inkEnd(false);},{passive:true});
+    $('brChap').addEventListener('touchcancel',()=>{if(ip&&ip.id==='t')inkEnd(true);},{passive:true});
+  }
   // 두 번 톡톡(0.3초 안 · 같은 절) = 그 절 좋아요 (v26-1007-10, HB). 첫 번째 누르기가 바꾼
   // 고르기는 되돌린다 — 그래서 고르기를 늦추지 않고도 두 손짓이 갈린다.
   let dt=null;
