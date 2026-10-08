@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1008-6 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-7 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -336,7 +336,7 @@ body.dragging .toast{opacity:0!important}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1008-6";
+const APP_VERSION = "v. 26-1008-7";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -347,8 +347,9 @@ const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms||12); }catch
 
 /* ───────── 소리 (파일 없이 휴대폰이 직접 만든다 — 저작권·용량 걱정 없음) ───────── */
 let AC = null, SFXG = null, BGMG = null, PRVG = null;
-const LVL = [0, .12, .3, .5, .75, 1];                       // 0~5단계 → 소리 크기(귀에 고르게 들리도록 곡선)
-function applyVols(){ if(SFXG) SFXG.gain.value = LVL[S.sfxVol]; if(BGMG) BGMG.gain.value = LVL[S.bgmVol]*.8; if(PRVG) PRVG.gain.value = LVL[Math.max(S.bgmVol,1)]*.8; }
+const LVL = [0, .12, .3, .5, .75, 1];                       // 효과음 0~5단계 → 소리 크기
+const BLVL = [0, .024, .056, .096, .16, .256];  // 배경음악: 3단계가 예전 1단계 소리(.096)
+function applyVols(){ if(SFXG) SFXG.gain.value = LVL[S.sfxVol]; if(BGMG) BGMG.gain.value = BLVL[S.bgmVol]; if(PRVG) PRVG.gain.value = BLVL[S.bgmVol || 3]; }
 function ac(){
   if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
       SFXG = AC.createGain(); SFXG.connect(AC.destination); BGMG = AC.createGain(); BGMG.connect(AC.destination); PRVG = AC.createGain(); PRVG.connect(AC.destination); applyVols(); }catch(e){ AC = null; return null; } }
@@ -571,7 +572,7 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:1, bgmSel:null, bgmOrder:null, volv:2, mute:false, lastAcct:'cash', lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:3, bgmSel:null, bgmOrder:null, volv:3, mute:false, lastAcct:'cash', lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
@@ -598,9 +599,12 @@ function migrate(o0){
   o.useExp = o.useExp !== false;
   o.dashOpen = o.dashOpen !== false; // 예전 켬/끔(sfx·bgm)은 단계로 옮긴다: 효과음 켬=4 · 끔=0, 배경음악 켬=3 · 끔=0
   const lv = (v, d) => (typeof v==='number' && v>=0 && v<=5) ? Math.round(v) : d;
-  o.sfxVol = lv(o0 && o0.sfxVol, (o0 && o0.sfx===false) ? 0 : 4); o.bgmVol = lv(o0 && o0.bgmVol, (o0 && o0.bgm===true) ? 3 : 1);
-  if(o0 && typeof o0.bgmVol==='number' && o0.bgmVol===0 && o0.volv!==2) o.bgmVol = 1;      // 한 번도 안 만진 옛 기본값(0)은 새 기본(1)으로. 직접 0 으로 둔 것은 volv=2 라서 그대로
-  o.volv = 2; o.bgmOrder = Array.isArray(o.bgmOrder) ? o.bgmOrder.map(String) : null;
+  o.sfxVol = lv(o0 && o0.sfxVol, (o0 && o0.sfx===false) ? 0 : 4);
+  // 배경음악 눈금은 v3 에서 바뀌었다(3단계 = 예전 1단계 소리). 예전 값은 같은 소리가 되도록 옮긴다: 0→0 · 1→3 · 2 이상→5(최대)
+  let ob = lv(o0 && o0.bgmVol, (o0 && o0.bgm===true) ? 3 : 1);
+  if(o0 && typeof o0.bgmVol==='number' && o0.bgmVol===0 && !(o0.volv>=2)) ob = 1;       // 한 번도 안 만진 옛 기본값(0)은 옛 기본(1)으로 본다. 직접 0 으로 둔 것(volv>=2)은 그대로 끔
+  if(!(o0 && o0.volv>=3)) ob = ob===0 ? 0 : (ob===1 ? 3 : 5);
+  o.bgmVol = ob; o.volv = 3; o.bgmOrder = Array.isArray(o.bgmOrder) ? o.bgmOrder.map(String) : null;
   o.bgmSel = Array.isArray(o.bgmSel) ? o.bgmSel.map(String) : null; o.mute = o.mute === true;
   delete o.sfx; delete o.bgm;
   const seenG = new Set();
