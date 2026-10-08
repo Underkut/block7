@@ -42,4 +42,38 @@ console.log('\n시나리오 3 — 순서 변경 뒤에도 할일의 모든 상�
   sc.eq('텍스트와 완료 여부만으로 객체를 다시 만들지 않는다',
         endDrag.includes("{text:item.text||'',done:!!item.done}"), false);
 }
+
+// PC 는 빈 자리 mousedown 1ms 만에 드래그가 시작된다(LONG_PRESS_MOUSE). 그래서
+// 그냥 클릭만 해도 endDrag 가 불렸고, 화면 오른쪽 절반(스몰 자리)을 눌렀으면
+// 빅이 스몰로 옮겨지던 버그가 있었다(HB, PC 전용). 실제로 돌려 본다.
+console.log('\n시나리오 4 — 거의 안 움직이고 놓으면 옮기지 않는다');
+{
+  const endDragStart = SRC.indexOf('function endDrag(cx,cy){');
+  const body = SRC.slice(endDragStart, SRC.indexOf("document.addEventListener('mousemove'", endDragStart));
+  const el = { classList:{remove(){}}, style:{} };
+  const stubEl = () => ({ style:{}, className:'', innerHTML:'' });
+  function run(DRinit, cx, cy){
+    let dropAsked=0, moved=0;
+    const ctx = {
+      DR: Object.assign({active:true,type:'big',fromId:'am',fromI:0,el,_menuTimer:null}, DRinit),
+      document: { getElementById: stubEl, querySelectorAll: () => [], body:{style:{},dataset:{}} },
+      clearDropIndicators(){}, tKey: () => '2026-10-08', beforeSave(){}, save(){},
+      getBigs: () => { moved++; return [{text:'A'}]; }, getSmalls: () => { moved++; return []; },
+      getDropTarget(){ dropAsked++; return {type:'small',toId:'am',toI:0}; },
+      renderSecBody(){}, updateTotal(){}, ST:{settings:{}},
+      _stableDt:null, _stableY:0,
+    };
+    const f = new Function(...Object.keys(ctx), body + '\nendDrag(' + cx + ',' + cy + ');');
+    f(...Object.values(ctx));
+    return { dropAsked, moved, active: ctx.DR.active };
+  }
+  const click = run({_sx:900,_sy:300,_moved:false}, 900, 300);
+  sc.eq('클릭만(움직임 없음) — 떨어뜨릴 자리를 찾지 않는다', click.dropAsked, 0);
+  sc.eq('클릭만 — 할일을 옮기지 않는다', click.moved, 0);
+  sc.eq('클릭만 — 드래그 상태는 끝난다', click.active, false);
+  const jitter = run({_sx:900,_sy:300,_moved:true}, 903, 302);
+  sc.eq('손 떨림(6px 미만) — 옮기지 않는다', jitter.moved, 0);
+  const real = run({_sx:300,_sy:300,_moved:true}, 900, 300);
+  sc.eq('실제로 끌어 옮기면 — 그대로 옮긴다', real.dropAsked>0 && real.moved>0, true);
+}
 sc.done();

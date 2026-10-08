@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1008-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1008-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6220,7 +6220,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1008-2";
+const APP_VERSION = "v. 26-1008-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34705,7 +34705,7 @@ function attachDrag(el,type,i,id){
 
   function start(cx,cy,preRect){
     const r=preRect||el.getBoundingClientRect();
-    Object.assign(DR,{active:true,type,fromId:id,fromI:i,el,offX:cx-r.left,offY:cy-r.top,_moved:false,_frozen:false,_freezeX:undefined,_freezeY:undefined});
+    Object.assign(DR,{active:true,type,fromId:id,fromI:i,el,offX:cx-r.left,offY:cy-r.top,_sx:cx,_sy:cy,_moved:false,_frozen:false,_freezeX:undefined,_freezeY:undefined});
     const g=document.getElementById('dg');g.innerHTML='';
     const cl=el.cloneNode(true);
     // Read the section color BEFORE overwriting cssText below — setting
@@ -35376,7 +35376,11 @@ function endDrag(cx,cy){
     if(hint){hint.className='';const p=document.getElementById('dz-pill-inner');if(p)p.innerHTML='';}
 
     // Use non-stabilized target for drop (most accurate at finger-up position)
-    const dt=getDropTarget(cx,cy);
+    // 거의 안 움직이고 놓았으면 옮기지 않는다 — PC 는 빈 자리 mousedown 1ms 만에
+    // 드래그가 시작돼서(LONG_PRESS_MOUSE), 그냥 클릭만 해도 여기로 왔다. 그때
+    // 화면 오른쪽 절반(스몰 자리)을 눌렀으면 빅이 스몰로 바뀌던 버그(HB, PC 전용).
+    const still=!DR._moved||(DR._sx!=null&&Math.hypot(cx-DR._sx,cy-DR._sy)<6);
+    const dt=still?null:getDropTarget(cx,cy);
     if(dt){
       const k=tKey();beforeSave();
       let item;
