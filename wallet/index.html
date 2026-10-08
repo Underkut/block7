@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1008-11 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-12 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -217,6 +217,31 @@ em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px
 .pdots.shake{animation:shk .35s}@keyframes shk{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
 .sugg{display:flex;flex-direction:column;gap:6px;margin-top:6px}.sugg button{padding:9px;border-radius:14px;background:#f3eefc;color:var(--purple);font-size:15px}
 .lvchips{display:flex;gap:6px;flex-wrap:wrap}.lvchips button{width:40px;height:40px;border-radius:12px;background:#fff;color:var(--purple);box-shadow:0 3px 0 #d9ceee}.lvchips button.on{background:var(--purple);color:#fff;box-shadow:0 3px 0 var(--purple-d)}
+.logowrap{display:flex;align-items:center;gap:8px}
+.modechip{min-width:44px;height:30px;padding:0 10px;border-radius:15px;background:linear-gradient(135deg,#9b7bff,#6aa9ff);color:#fff;font-size:16px;box-shadow:0 3px 0 #6d4fd6}
+body[data-mode=P] .modechip{background:linear-gradient(135deg,#ff9f6f,#ff6fa5);box-shadow:0 3px 0 #d9467f}
+.modechip.none{background:#fff;color:var(--purple);box-shadow:0 3px 0 #d9ceee}.modechip:active{transform:translateY(2px)}
+.quizcard{position:relative;margin-bottom:10px}
+.qz{display:flex;align-items:center;gap:10px;width:100%;padding:10px 38px 10px 14px;border-radius:22px;background:linear-gradient(135deg,#efe6ff,#e3f1ff);box-shadow:0 5px 0 rgba(155,123,255,.25)}
+.qz .f{width:42px;flex:none}.qz .f svg{width:100%;display:block}.qz .t{font-size:18px}.qz .s{font-size:13px;color:var(--sub)}.qz .go{font-size:26px;color:var(--purple)}
+.qx{position:absolute;top:6px;right:10px;width:28px;height:28px;color:#a79dc2;font-size:15px}
+.qdots{display:flex;gap:6px;justify-content:center;margin:6px 0}.qdots i{width:10px;height:10px;border-radius:50%;background:#d9ceee;display:block}.qdots i.on{background:var(--purple)}
+.qopt{display:block;width:100%;margin:8px 0;padding:14px 12px;border-radius:18px;background:#fff;font-size:17px;text-align:left;color:var(--ink);box-shadow:0 4px 0 #d9ceee}.qopt:active{transform:translateY(3px);box-shadow:0 1px 0 #d9ceee}
+.modepick{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.modepick button{padding:12px 14px;border-radius:20px;background:#fff;text-align:left;font-size:19px;box-shadow:0 4px 0 #d9ceee}
+.modepick button.rec{outline:3px solid var(--purple)}
+.modepick b{display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:10px;background:var(--purple);color:#fff;font-weight:400;margin-right:6px}
+.modepick button:nth-child(2) b{background:#ff8a5c}.modepick small{display:block;font-size:13px;color:var(--sub);margin-top:4px}
+.jbox,.pbox,.waitbox{padding:12px 14px;margin-bottom:12px}
+.jhead{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;color:var(--sub);margin-bottom:6px}.jhead b{font-weight:400;color:var(--ink);font-size:14px}
+.wk{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;align-items:end}
+.wk div{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:13px;color:var(--sub);padding:4px 0;border-radius:12px}.wk div i{display:block;width:14px;border-radius:5px;background:#cdbdf0}
+.wk div b{font-weight:400;font-size:11px;color:var(--ink)}.wk div.today{background:#f1ebff}.wk div.today i{background:var(--purple)}
+.pbox{text-align:center}.ph1{font-size:15px;color:var(--sub)}.pbig{font-size:46px;color:var(--ink);line-height:1.1}.pbig small{font-size:22px}.pbig.neg{color:#ff8a5c}.ph2{font-size:14px;color:var(--sub)}
+.wh{font-size:17px}.wh small{display:block;font-size:12px;color:var(--sub)}
+.wi{display:flex;align-items:center;gap:8px;padding:8px;margin-top:8px;border-radius:16px;background:#f7f3ff}.wi .mid{flex:1;min-width:0;text-align:left}.wi .t{font-size:16px}.wi .s{font-size:12px;color:var(--sub)}
+.wi .gb.sm{width:auto;padding:6px 10px;flex:none;font-size:14px}
+.cta.soft{opacity:.85;transform:scale(.97)}
 .smallnote{text-align:center;color:var(--sub);font-size:14px;margin:14px 0 4px}
 .linkbtn{display:block;margin:10px auto 0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px}
 
@@ -348,9 +373,12 @@ em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px
 <div id="app">
   <!-- 홈 -->
   <section class="view on" id="vHome">
-    <div class="top"><span class="logo">용돈 친구들</span>
+    <div class="top"><span class="logowrap"><span class="logo">용돈 친구들</span><button class="modechip" id="modeChip" aria-label="J P 모드"></button></span>
 <span class="topbtns"><button class="iconbtn" id="giftBtn" aria-label="내 보상함"></button><button class="iconbtn" id="muteBtn" aria-label="소리 켜고 끄기"></button><button class="iconbtn" id="gear" aria-label="백업"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button></span></div>
     <div id="lvCard"></div>
+    <div class="quizcard" id="quizCard" style="display:none"></div>
+    <div class="jbox card" id="jBox" style="display:none"></div>
+    <div class="pbox card" id="pBox" style="display:none"></div>
     <div class="hero card">
       <div class="bubble" id="bubble"></div>
       <div class="pigwrap" id="pig"></div>
@@ -363,6 +391,7 @@ em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px
       <button class="gb green" id="bIn">받았어요!</button>
       <button class="gb orange" id="bOut">썼어요!</button>
     </div>
+    <div class="waitbox card" id="waitBox" style="display:none"></div>
     <button class="gb blue sm" id="bExp">받을 예정인 돈 적기</button>
     <button class="gb gray sm" id="bMove" style="margin-top:10px">현금 ↔ 체크카드 돈 옮기기</button>
     <button class="cta" id="bAlloc"><span class="f" id="ctaFace"></span><span><div class="t">계획 세우기</div><div class="s" id="ctaSub"></div></span></button>
@@ -401,7 +430,7 @@ em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px
   <nav class="tabs">
     <button data-v="vHome" class="on"><span class="ti" id="tiHome"></span>홈</button>
     <button data-v="vAlloc" class="mid"><span class="ti" id="tiAlloc"></span>계획세우기</button>
-    <button data-v="vLog"><span class="ti" id="tiLog"></span>기록</button>
+    <button data-v="vLog"><span class="ti" id="tiLog"></span>돌아보기</button>
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
@@ -411,7 +440,7 @@ em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1008-11";
+const APP_VERSION = "v. 26-1008-12";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -649,7 +678,7 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, goals:[], chk:{}, lvSeen:null, badges:{}, badgeInit:false, bnew:[], gnew:[], cseen:[], theme:null, pin:null, cps:[], exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:2, bgmSel:null, bgmOrder:null, volv:3, mute:true, lastAcct:'cash', lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, goals:[], chk:{}, lvSeen:null, badges:{}, badgeInit:false, bnew:[], gnew:[], cseen:[], theme:null, pin:null, cps:[], mode:null, quizHide:false, waits:[], held:0, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:2, bgmSel:null, bgmOrder:null, volv:3, mute:true, lastAcct:'cash', lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
@@ -681,6 +710,10 @@ function migrate(o0){
   o.pin = (o0 && o0.pin && /^\d{1,10}$/.test(String(o0.pin.h)) && /^\d{1,10}$/.test(String(o0.pin.r))) ? {h:String(o0.pin.h), r:String(o0.pin.r)} : null;
   o.cps = (o0 && Array.isArray(o0.cps) ? o0.cps : []).filter(c => c && c.n && idf.test(String(c.id||'')) && Number.isInteger(+c.lv) && +c.lv>=2 && +c.lv<=10)
     .map(c => ({id:String(c.id), n:String(c.n).slice(0,16), kind:c.kind==='money' ? 'money' : 'promise', amt:c.kind==='money' ? Math.max(1,Math.round(+c.amt)||1) : 0, lv:+c.lv, used:/^\d{4}-\d{2}-\d{2}$/.test(c.used||'') ? c.used : null}));
+  o.mode = (o0 && (o0.mode==='J' || o0.mode==='P')) ? o0.mode : null; o.quizHide = !!(o0 && o0.quizHide) || !!o.mode;
+  o.held = (o0 && Number.isFinite(+o0.held) && +o0.held>0) ? Math.round(+o0.held) : 0;
+  o.waits = (o0 && Array.isArray(o0.waits) ? o0.waits : []).filter(w => w && w.n && idf.test(String(w.id||'')) && Number.isFinite(+w.price) && +w.price>0 && /^\d{4}-\d{2}-\d{2}$/.test(w.date||''))
+    .map(w => ({id:String(w.id), n:String(w.n).slice(0,14), price:Math.round(+w.price), date:w.date}));
   const seenGoal = new Set(), okImg = i => i && ((i.t==='char' && CH[i.v]) || (i.t==='data' && typeof i.v==='string' && /^data:image\//.test(i.v) && i.v.length<400000) || (i.t==='url' && typeof i.v==='string' && /^https?:\/\/\S+$/i.test(i.v)));
   o.goals = (Array.isArray(o.goals) ? o.goals : []).filter(x => x && x.k && x.n && +x.price>0 && !seenGoal.has(String(x.k)) && !o.tiles.some(t => t.k===String(x.k)) && seenGoal.add(String(x.k)))
     .map(x => ({k:String(x.k), n:String(x.n).slice(0,14), price:Math.round(+x.price), img: okImg(x.img) ? {t:x.img.t, v:x.img.v} : {t:'char', v:'star'},
@@ -763,7 +796,7 @@ function renderHome(){
   $('bubble').textContent = msg;
   $('ctaSub').textContent = (bal<=0 && pend<=0) ? '용돈을 받으면 시작할 수 있어요' : (av>0 ? '얼마는 뭐 하는 데 쓸까? ('+won(av)+' 남음)' : (av<0 ? '계획이 돈보다 커요!' : '다 세웠어요! 고쳐 볼까?'));
   const rec = sortedTx(S.tx).slice(0,3);
-  renderLevel();
+  renderLevel(); renderModes();
   $('recent').innerHTML = rec.length ? rec.map(txRow).join('') : '<div class="empty">아직 아무것도 없어요.<br>위의 버튼을 눌러 보세요!</div>';
 }
 
@@ -1523,6 +1556,7 @@ const BADGES = [
   {id:'move', n:'돈 옮기기', ico:'⇄', hint:'현금과 체크카드 사이로 돈을 옮겨 봐요', ok:() => S.tx.some(t => t.t==='mv')},
   {id:'memo10', n:'메모 10번', ico:'✎', hint:'메모를 10번 남겨요', ok:() => S.tx.filter(t => t.note).length >= 10},
   {id:'star50', n:'별 50개', ico:'★', hint:'별을 50개 모아요', ok:() => starsOf() >= 50},
+  {id:'wait1', n:'한 박자 쉬기', ico:'⏳', hint:'P 모드의 "한 박자 쉬기"로 사고 싶은 걸 한 번 참아 봐요', ok:() => S.held > 0},
   {id:'lv5', n:'레벨 5', ico:'5', hint:'레벨 5가 돼요', ok:() => lvOf(starsOf()).lv >= 5},
   {id:'lv10', n:'레벨 10', ico:'10', hint:'가장 높은 레벨이 돼요', ok:() => lvOf(starsOf()).lv >= 10}
 ];
@@ -1667,8 +1701,119 @@ function couponUse(id){
 }
 $('giftBtn').innerHTML = GIFT_ICO; $('giftBtn').onclick = () => rewardSheet();
 
+/* ───────── J/P 모드 (G-4 · G-5) — 같은 데이터를 다르게 보여 주기만 한다 ───────── */
+// S.mode 'J'|'P'|null(=기본 홈) · S.quizHide 퀴즈 안내 숨김 · S.waits 한 박자 쉬기 목록 · S.held 참아서 아낀 돈
+const QUIZ = [
+  {q:'친구랑 놀러 가기로 했어. 나는…', j:'미리 시간과 코스를 짜 둬야 마음이 편해', p:'일단 가서 그때그때 정하는 게 재밌어', swap:false},
+  {q:'숙제나 준비물이 있을 때 나는…', j:'미리미리 조금씩 해 둬', p:'가까워지면 몰아서 척척 해', swap:true},
+  {q:'용돈을 받으면 나는…', j:'어디에 쓸지 먼저 정해 놓고 싶어', p:'일단 가지고 있다가 필요할 때 쓰고 싶어', swap:false},
+  {q:'갑자기 계획이 바뀌면 나는…', j:'조금 불편해, 원래 계획이 좋아', p:'오히려 좋아! 새로운 게 재밌어', swap:true}
+];
+const MODE_INFO = {
+  J:{n:'계획형', d:'미리 계획 세우는 게 편한 친구예요.', home:'계획 세우기와 이번 주 계획표가 눈에 띄는 홈이에요.'},
+  P:{n:'즉흥형', d:'그때그때 정하는 게 재밌는 친구예요.', home:'오늘 쓸 수 있는 돈과 \'한 박자 쉬기\'가 눈에 띄는 홈이에요.'}
+};
+function setMode(m, quiet){ S.mode = m; S.quizHide = true; save(); render(); if(!quiet){ buzz(12); sfx('win'); toast((m==='J'?'J(계획형)':'P(즉흥형)')+' 모드로 바꿨어요! 기록은 그대로예요'); } }
+function quizSheet(i=0, jc=0){
+  if(i >= QUIZ.length){ const pick = jc >= 3 ? 'J' : jc <= 1 ? 'P' : null; return quizResult(jc, pick); }
+  const Q = QUIZ[i], opts = [['J',Q.j],['P',Q.p]]; if(Q.swap) opts.reverse();
+  openSheet(`<h2>나는 어떤 스타일?</h2><div class="note">재미로 알아봐요. 정하는 건 내 마음이에요!</div>
+    <div class="qdots">${QUIZ.map((_,k) => `<i class="${k<=i?'on':''}"></i>`).join('')}</div>
+    <div class="note" style="color:var(--ink);font-size:20px;margin:6px 0">${i+1} / ${QUIZ.length} · ${Q.q}</div>
+    ${opts.map(o => `<button class="qopt" data-w="${o[0]}">${esc(o[1])}</button>`).join('')}`);
+  document.querySelectorAll('.qopt').forEach(b => b.onclick = () => { buzz(10); quizSheet(i+1, jc + (b.dataset.w==='J'?1:0)); });
+}
+function quizResult(jc, pick){
+  const rec = pick || 'J';
+  openSheet(`<h2>${pick ? '나는 '+pick+' 스타일!' : 'J도 P도 닮았어요!'}</h2><div style="text-align:center"><div style="width:110px;margin:4px auto">${face(rec==='J'?'bear':'bunny')}</div>
+    <div class="note" style="color:var(--ink);font-size:19px">${pick ? MODE_INFO[pick].n+' — '+MODE_INFO[pick].d : '둘 다 조금씩 닮았어요. 마음에 드는 쪽을 골라 보세요.'}</div>
+    <div class="note">J ${jc}개 · P ${QUIZ.length-jc}개 (재미로 보는 결과예요)</div></div>
+    <div class="modepick"><button data-m="J" class="${rec==='J'?'rec':''}"><b>J</b> 계획형<small>${MODE_INFO.J.home}</small></button><button data-m="P" class="${rec==='P'?'rec':''}"><b>P</b> 즉흥형<small>${MODE_INFO.P.home}</small></button></div>
+    <div class="note">고른 모드는 위쪽 <b>J / P 버튼</b>을 누르면 언제든 바로 바꿀 수 있어요.</div>`);
+  document.querySelectorAll('.modepick button').forEach(b => b.onclick = () => { closeSheet(); setMode(b.dataset.m); });
+}
+function modeStart(){
+  openSheet(`<h2>어떤 홈이 좋아요?</h2><div class="note">J와 P는 홈 화면의 모양만 달라요. 기록과 돈은 똑같아요.</div>
+    <div class="modepick"><button data-m="J"><b>J</b> 계획형<small>${MODE_INFO.J.home}</small></button><button data-m="P"><b>P</b> 즉흥형<small>${MODE_INFO.P.home}</small></button></div>
+    <button class="gb purple" id="qzGo" style="margin-top:6px">재미로 4문제 풀어 보기</button><button class="linkbtn" id="qzOff">지금은 기본 홈으로 쓸래요</button>`);
+  document.querySelectorAll('.modepick button').forEach(b => b.onclick = () => { closeSheet(); setMode(b.dataset.m); });
+  $('qzGo').onclick = () => quizSheet(); $('qzOff').onclick = () => { S.quizHide = true; save(); closeSheet(); render(); };
+}
+// 위쪽 J/P 버튼: 모드가 정해져 있으면 한 번에 바꾼다
+function modeToggle(){ if(!S.mode){ modeStart(); return; } setMode(S.mode==='J' ? 'P' : 'J'); }
+
+/* 이번 주 · 오늘 계산 */
+const weekStart = () => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay()+6) % 7)); return dstr(d); };
+const isGoalBuy = t => S.goals.some(g => g.k===t.cat);
+function weekPlan(){
+  const ws = weekStart(), days = Array.from({length:7}, (_,i) => dayShift(ws,i)), sp = days.map(d => S.tx.filter(t => t.date===d && t.t==='out').reduce((a,t) => a+t.amt, 0));
+  const used = S.tiles.filter(c => alloc(c.k,'cash') + alloc(c.k,'card') > 0), kept = used.filter(c => left(c.k,'cash') >= 0 && left(c.k,'card') >= 0).length;
+  return {days, sp, used:used.length, kept};
+}
+function todayBudget(){
+  const t = todayStr(), locked = S.goals.filter(g => !g.done).reduce((a,g) => a + goalTotal(g), 0), pool = Math.max(0, balance() - locked);
+  const sp = S.tx.filter(x => x.date===t && x.t==='out' && !isGoalBuy(x)).reduce((a,x) => a + x.amt, 0);
+  const next = S.exp.filter(e => e.date && e.date > t).map(e => e.date).sort()[0], days = next ? Math.max(1, dayDiff(next)) : 7;
+  let budget = Math.floor((pool + sp) / days); if(budget >= 1000) budget = Math.floor(budget/100)*100;
+  return {budget, sp, left: budget - sp, days, next, pool};
+}
+function renderModes(){
+  const m = S.mode; document.body.dataset.mode = m || '';
+  const chip = $('modeChip'); if(chip){ chip.textContent = m || 'J·P'; chip.classList.toggle('none', !m); chip.setAttribute('aria-label', m ? (m==='J'?'계획형':'즉흥형')+' 모드, 누르면 바뀌어요' : 'J P 모드 고르기'); }
+  const q = $('quizCard'); q.style.display = (!m && !S.quizHide) ? '' : 'none';
+  q.innerHTML = (!m && !S.quizHide) ? `<button class="qz" id="qzOpen"><span class="f">${face('owl')}</span><span style="flex:1;text-align:left"><div class="t">나는 J? P? 알아볼까요?</div><div class="s">재미로 4문제 · 홈 모양을 고를 수 있어요</div></span><span class="go">›</span></button><button class="qx" id="qzX" aria-label="닫기">✕</button>` : '';
+  const j = $('jBox'), pb = $('pBox'), wb = $('waitBox');
+  j.style.display = m==='J' ? '' : 'none'; pb.style.display = m==='P' ? '' : 'none'; wb.style.display = m==='P' ? '' : 'none';
+  $('bAlloc').classList.toggle('soft', m==='P');
+  if(m==='J'){
+    const W = weekPlan(), t = todayStr(), mx = Math.max(1, ...W.sp), pct = W.used ? Math.round(W.kept/W.used*100) : 0;
+    j.innerHTML = `<div class="jhead"><span>이번 주 계획표</span><b>${W.used ? '계획 지킨 칸 '+W.kept+' / '+W.used : '아직 계획한 칸이 없어요'}</b></div>
+      <div class="wk">${W.days.map((d,i) => `<div class="${d===t?'today':''}"><span>${'월화수목금토일'[i]}</span><i style="height:${Math.max(4, Math.round(W.sp[i]/mx*44))}px"></i><b>${W.sp[i] ? shortWon(W.sp[i]) : '·'}</b></div>`).join('')}</div>
+      ${W.used ? `<div class="gauge g" style="margin-top:8px"><i style="width:${pct}%"></i></div>` : '<button class="linkbtn" id="jPlan" style="margin:6px 0 0">계획 세우러 가기</button>'}`;
+  }else if(m==='P'){
+    const B = todayBudget(), pc = B.budget ? Math.min(100, Math.round(B.sp/B.budget*100)) : (B.sp ? 100 : 0);
+    pb.innerHTML = `<div class="ph1">오늘 쓸 수 있는 돈</div><div class="pbig ${B.left<0?'neg':''}">${nf(Math.max(0,B.left))}<small>원</small></div><div class="gauge ${B.left<0?'':'g'}" style="margin:8px 4px"><i style="width:${pc}%;${B.left<0?'background:#ff8a5c':''}"></i></div>
+      <div class="ph2">${B.left<0 ? '오늘은 정한 만큼 다 썼어요. 한 박자 쉬어 볼까요?' : '오늘 '+won(B.sp)+' 썼어요'} · ${B.next ? '다음 용돈까지 '+B.days+'일' : '다음 용돈 날짜를 몰라서 7일로 나눠 계산해요'}</div>`;
+    wb.innerHTML = `<div class="wh">한 박자 쉬기<small>사고 싶은 걸 적어 두고 하루 뒤에 다시 봐요${S.held ? ' · 참아서 아낀 돈 '+won(S.held) : ''}</small></div>`
+      + S.waits.map(w => { const ready = w.date < todayStr(); return `<div class="wi" data-w="${w.id}"><span class="av" style="background:${CH.gift.bg}">${face('gift')}</span><span class="mid"><div class="t">${esc(w.n)}</div><div class="s">${won(w.price)} · ${ready ? '하루 지났어요! 아직도 갖고 싶어요?' : '내일 다시 볼래요'}</div></span>${ready ? '<button class="gb sm green" data-wa="buy">살래요</button><button class="gb sm gray" data-wa="skip">안 살래요</button>' : '<button class="gb sm gray" data-wa="skip">그만둘래요</button>'}</div>`; }).join('')
+      + `<button class="gb blue sm" id="waitAdd" style="margin-top:8px">＋ 사고 싶은 것 담아 두기</button>`;
+  }
+}
+function waitSheet(){
+  const w = {n:'', price:0};
+  const draw = () => { openSheet(`<h2>사고 싶은 것 담아 두기</h2><div class="note">바로 사지 말고 하루만 기다려 봐요.<br>내일도 갖고 싶으면 그때 사면 돼요!</div>
+    <input class="inp" id="wName" maxlength="14" placeholder="무엇을 사고 싶어요? (예: 슬러시)" value="${esc(w.n)}">
+    <button class="gb ${w.price>0?'blue':'gray'} sm" id="wPrice" style="margin-top:10px">${w.price>0 ? '값 '+won(w.price) : '얼마예요? 눌러서 정하기'}</button>
+    <button class="gb purple" id="wSave" style="margin-top:10px">담아 두었어요</button>`);
+    $('wName').oninput = e => { w.n = e.target.value; };
+    $('wPrice').onclick = () => { w.n = $('wName').value; padSheet({title:'값이 얼마예요?', init:w.price, nextLabel:'정했어요!', onDone:v => { w.price = v; draw(); }}); };
+    $('wSave').onclick = () => { const n = $('wName').value.trim(); if(!n){ toast('이름을 써 주세요'); return; } if(!(w.price>0)){ toast('값을 정해 주세요'); return; }
+      S.waits.push({id:'w_'+uid(), n:n.slice(0,14), price:w.price, date:todayStr()}); save(); closeSheet(); render(); toast('담아 두었어요. 내일 다시 봐요!'); }; };
+  draw();
+}
+function waitBuy(w){
+  S.waits = S.waits.filter(x => x.id!==w.id); save(); render();
+  let date = todayStr(), acct = S.lastAcct;
+  padSheet({title:'얼마 썼어요?', init:w.price, nextLabel:'다음으로 ▶', memo:w.n, extra: acctSeg(acct, '무엇으로 썼어요?') + dateRowHtml(date), onDone:(amt, note) => pickStep('out', amt, date, null, note, acct)});
+  $('fDate').onchange = e => { date = e.target.value || todayStr(); $('dtxt').textContent = dlabelOf(date); };
+  bindAcct(v => { acct = v; });
+}
+function waitSkip(w){
+  const ready = w.date < todayStr();
+  if(ready){ S.held += w.price; S.waits = S.waits.filter(x => x.id!==w.id); save(); render(); confetti(); sfx('win'); toast('참았어요! '+won(w.price)+' 아꼈어요. 멋져요!'); }
+  else { S.waits = S.waits.filter(x => x.id!==w.id); save(); render(); toast('목록에서 뺐어요'); }
+}
+document.addEventListener('click', e => {
+  if(e.target.closest('#modeChip')) modeToggle();
+  else if(e.target.closest('#qzOpen')) modeStart();
+  else if(e.target.closest('#qzX')){ S.quizHide = true; save(); renderModes(); }
+  else if(e.target.closest('#jPlan')) goTab('vAlloc');
+  else if(e.target.closest('#waitAdd')) waitSheet();
+  else { const a = e.target.closest('[data-wa]'); if(a){ const w = S.waits.find(x => x.id===a.closest('[data-w]').dataset.w); if(w){ a.dataset.wa==='buy' ? waitBuy(w) : waitSkip(w); } } }
+});
+
 /* ───────── 백업 ───────── */
-function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
+function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, mode:S.mode, quizHide:S.quizHide, waits:S.waits, held:S.held, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
 function markBackup(){ S.lastBackup = Date.now(); save(); }
 function backupSheet(){
   const last = S.lastBackup ? '마지막 백업: '+new Date(S.lastBackup).toLocaleDateString('ko-KR') : '아직 백업한 적이 없어요';
@@ -1787,7 +1932,7 @@ function restoreSheet(){
     const d = o && o.app==='allowance' && o.data; if(!d || !Array.isArray(d.tx)){ toast('용돈 친구들 백업이 아니에요'); return; }
     const tx = d.tx.filter(t => t && (t.t==='in'||t.t==='out'||t.t==='mv') && Number.isFinite(+t.amt) && +t.amt>0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date||''))
       .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), note:String(t.note||'').slice(0,60), ch:t.ch&&CH[t.ch]?t.ch:null, date:t.date, acct:t.acct==='card'?'card':'cash', from:t.from==='card'?'card':'cash', to:t.to==='card'?'card':'cash', cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
-    const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, goals:d.goals, chk:d.chk, badges:d.badges, badgeInit:d.badgeInit, theme:d.theme, pin:d.pin, cps:d.cps, exp:d.exp, useExp:d.useExp, givers:d.givers,
+    const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, goals:d.goals, chk:d.chk, badges:d.badges, badgeInit:d.badgeInit, mode:d.mode, quizHide:d.quizHide, waits:d.waits, held:d.held, theme:d.theme, pin:d.pin, cps:d.cps, exp:d.exp, useExp:d.useExp, givers:d.givers,
       plans: Array.isArray(d.plans) ? d.plans.filter(p=>p&&p.name&&Number.isFinite(+p.amt)).map(p=>({id:String(p.id||uid()), name:String(p.name), amt:Math.round(+p.amt), done:!!p.done})) : []});
     if(!confirm('기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
     S = Object.assign(n, {lastBackup:S.lastBackup}); save(); closeSheet(); render(); toast('불러왔어요!');
