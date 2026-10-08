@@ -76,4 +76,21 @@ console.log('\n시나리오 4 — 거의 안 움직이고 놓으면 옮기지 �
   const real = run({_sx:300,_sy:300,_moved:true}, 900, 300);
   sc.eq('실제로 끌어 옮기면 — 그대로 옮긴다', real.dropAsked>0 && real.moved>0, true);
 }
+
+// 빈 자리를 누르기만 해선 끌기를 시작하지 않는다 (v26-1008-4, HB — PC 빈 자리 더블/트리플
+// 클릭이 안 먹던 것). 예전엔 1ms 타이머로 즉시 시작해서 클릭마다 끌기 상태가 켜졌다 꺼졌다.
+// 크로미움으로 확인: 눌러서 60ms 가만히 두면 예전 DR.active=true, 지금 false.
+console.log('\n시나리오 5 — 빈 자리는 움직여야 끌기가 시작된다');
+{
+  const a = SRC.indexOf('function attachDrag(el,type,i,id){');
+  const fn = SRC.slice(a, SRC.indexOf('// ── Desktop: right-click → task move context menu', a));
+  sc.eq('글자 아닌 곳은 타이머 없이 움직임을 기다린다', /\}else\{\s*mouseMovePending=true;\s*\}/.test(fn), true);
+  sc.eq('1ms 타이머로 바로 시작하지 않는다', fn.includes(':LONG_PRESS_MOUSE)'), false);
+  sc.eq('문턱을 넘게 움직이면 시작한다',
+        fn.includes('if(Math.abs(dx)>MOUSE_DRAG_START_PX||Math.abs(dy)>MOUSE_DRAG_START_PX)beginMouseDrag();'), true);
+  sc.eq('글자 위는 예전처럼 200ms 누르고 있으면 시작',
+        fn.includes('mousePressTimer=setTimeout(beginMouseDrag,LONG_PRESS_MOUSE_INPUT);'), true);
+  const cancel = fn.slice(fn.indexOf('function cancelMousePress(){'), fn.indexOf("el.addEventListener('mousemove'"));
+  sc.eq('떼면 기다리던 것을 지운다', cancel.includes('mouseMovePending=false;'), true);
+}
 sc.done();

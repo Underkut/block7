@@ -13,7 +13,8 @@ sc.eq('글자 입력칸 전용 홀드 시간이 200ms다',
 sc.eq('PC 제외 대상에 input 전체가 들어 있지 않다',
       part.includes("closest('.bi-dh,.si-dh,input,textarea,.blk-chk,.blk-del')"), false);
 sc.eq('PC 글자 입력칸만 전용 홀드 시간을 쓴다',
-      part.includes('heldInput?LONG_PRESS_MOUSE_INPUT:LONG_PRESS_MOUSE'), true);
+      // v26-1008-4: 빈 자리는 타이머가 아니라 '움직이면 시작'으로 바뀌었다 (tests/test_drop.js 시나리오 5)
+      /if\(heldInput\)\{[^}]*setTimeout\(beginMouseDrag,LONG_PRESS_MOUSE_INPUT\)/.test(part), true);
 
 console.log('\n시나리오 2 — 모바일 글자도 기존 280ms 홀드 드래그에 참여');
 sc.eq('모바일 제외 대상에서 input을 뺐다',
