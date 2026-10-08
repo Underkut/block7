@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1008-3  [production]  -->
+<!-- BLOCK7  v. 26-1008-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6220,7 +6220,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1008-3";
+const APP_VERSION = "v. 26-1008-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34781,6 +34781,28 @@ function attachDrag(el,type,i,id){
   let mousePressTimer=null;
   let mousePressX=0,mousePressY=0;
   let mouseDownActive=false;
+  // 빈 자리(글자 아닌 곳): 누르기만 해선 끌기를 시작하지 않고, **눌린 채 움직였을 때**
+  // 시작한다. 예전엔 1ms 만에 시작해서 클릭 한 번마다 끌기 상태(스크롤 잠금·줄 확대·
+  // 유령 그림)가 켜졌다 꺼졌고, 그 사이에 빅→스몰 오이동(v26-1008-3)·더블/트리플
+  // 클릭 판정 실패(HB, PC 빈 자리)가 났다. 클릭은 이제 그냥 클릭이다.
+  let mouseMovePending=false;
+  const MOUSE_DRAG_START_PX=4;
+
+  function beginMouseDrag(){
+    mousePressTimer=null;mouseMovePending=false;
+    el.classList.remove('pressing');
+    if(document.activeElement&&el.contains(document.activeElement)){
+      // Collapse the browser's text selection before leaving edit mode.
+      // This prevents a held task label from turning into Select All.
+      const a=document.activeElement;
+      if(a.matches?.('input.bi-inp,input.si-inp')&&a.setSelectionRange){
+        const p=a.selectionEnd??a.value.length;
+        try{a.setSelectionRange(p,p);}catch(err){}
+      }
+      document.activeElement.blur();
+    }
+    start(mousePressX,mousePressY);
+  }
 
   el.addEventListener('mousedown',e=>{
     // Skip if starting on the handle itself (already handled above) or
@@ -34791,39 +34813,36 @@ function attachDrag(el,type,i,id){
     const heldInput=e.target.closest('input.bi-inp,input.si-inp');
     mousePressX=e.clientX;mousePressY=e.clientY;
     mouseDownActive=true;
-    el.classList.add('pressing');
-
-    mousePressTimer=setTimeout(()=>{
-      mousePressTimer=null;
-      el.classList.remove('pressing');
-      if(document.activeElement&&el.contains(document.activeElement)){
-        // Collapse the browser's text selection before leaving edit mode.
-        // This prevents a held task label from turning into Select All.
-        const a=document.activeElement;
-        if(a.matches?.('input.bi-inp,input.si-inp')&&a.setSelectionRange){
-          const p=a.selectionEnd??a.value.length;
-          try{a.setSelectionRange(p,p);}catch(err){}
-        }
-        document.activeElement.blur();
-      }
-      start(mousePressX,mousePressY);
-    },heldInput?LONG_PRESS_MOUSE_INPUT:LONG_PRESS_MOUSE);
+    if(heldInput){
+      el.classList.add('pressing');
+      mousePressTimer=setTimeout(beginMouseDrag,LONG_PRESS_MOUSE_INPUT);
+    }else{
+      mouseMovePending=true;
+    }
   });
 
   function cancelMousePress(){
     if(mousePressTimer){clearTimeout(mousePressTimer);mousePressTimer=null;}
+    mouseMovePending=false;
     el.classList.remove('pressing');
     mouseDownActive=false;
   }
 
   el.addEventListener('mousemove',e=>{
-    if(mousePressTimer&&mouseDownActive){
-      const dx=e.clientX-mousePressX,dy=e.clientY-mousePressY;
+    if(!mouseDownActive)return;
+    const dx=e.clientX-mousePressX,dy=e.clientY-mousePressY;
+    if(mouseMovePending){
+      if(Math.abs(dx)>MOUSE_DRAG_START_PX||Math.abs(dy)>MOUSE_DRAG_START_PX)beginMouseDrag();
+    }else if(mousePressTimer){
       if(Math.abs(dx)>6||Math.abs(dy)>6)cancelMousePress();
     }
   });
   el.addEventListener('mouseup',()=>cancelMousePress());
-  el.addEventListener('mouseleave',()=>{ if(mousePressTimer)cancelMousePress(); });
+  el.addEventListener('mouseleave',e=>{
+    // 눌린 채 줄 밖으로 빠르게 끌어 나가면 mousemove 가 문턱 전에 끊길 수 있다 — 그때 시작한다.
+    if(mouseMovePending&&(e.buttons&1)){beginMouseDrag();return;}
+    if(mousePressTimer||mouseMovePending)cancelMousePress();
+  });
 
   // ── Desktop: right-click → task move context menu ──
   el.addEventListener('contextmenu',e=>{
@@ -35376,9 +35395,10 @@ function endDrag(cx,cy){
     if(hint){hint.className='';const p=document.getElementById('dz-pill-inner');if(p)p.innerHTML='';}
 
     // Use non-stabilized target for drop (most accurate at finger-up position)
-    // 거의 안 움직이고 놓았으면 옮기지 않는다 — PC 는 빈 자리 mousedown 1ms 만에
-    // 드래그가 시작돼서(LONG_PRESS_MOUSE), 그냥 클릭만 해도 여기로 왔다. 그때
-    // 화면 오른쪽 절반(스몰 자리)을 눌렀으면 빅이 스몰로 바뀌던 버그(HB, PC 전용).
+    // 거의 안 움직이고 놓았으면 옮기지 않는다 — 예전엔 PC 빈 자리 클릭만으로도
+    // 드래그가 시작돼 여기로 왔고, 화면 오른쪽 절반(스몰 자리)이면 빅이 스몰로
+    // 바뀌었다(HB, v26-1008-3). 빈 자리는 이제 움직여야 시작하지만(v26-1008-4),
+    // 손잡이(⠿) 누름은 여전히 즉시 시작하므로 이 막음은 그대로 둔다.
     const still=!DR._moved||(DR._sx!=null&&Math.hypot(cx-DR._sx,cy-DR._sy)<6);
     const dt=still?null:getDropTarget(cx,cy);
     if(dt){
