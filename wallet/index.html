@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1008-4 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-5 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -330,7 +330,7 @@ body.dragging .toast{opacity:0!important}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1008-4";
+const APP_VERSION = "v. 26-1008-5";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -398,16 +398,21 @@ let bgmList = [], bgmAudio = null, bgmPlaying = false, bgmCur = null, bgmFail = 
 const titleOf = f => f.replace(/\.[^.]+$/, '').normalize('NFC');          // 맥에서 올린 한글(NFD)도 곱게
 const isSel = f => S.bgmSel === null || S.bgmSel.includes(f);
 const playlist = () => bgmList.filter(t => isSel(t.file));
-// 폴더 안 파일 목록은 GitHub 에 물어서 알아낸다(공개 저장소). 10분간 기억해 두고, 못 물어보면 마지막으로 받은 목록을 쓴다.
+// 폴더 안 파일 목록은 GitHub 에 물어서 알아낸다(공개 저장소). 곡이 있는 목록만 3분간 기억하고(빈 목록은 기억하지 않는다 — 방금 올린 곡이 바로 보이게),
+// 못 물어보면 마지막으로 받은 목록을 쓴다. ⚠️ fetch 에 cache 옵션을 주지 않는다: 'no-store' 는 Cache-Control 헤더를 붙여 아이폰(WebKit)에서
+// GitHub 의 CORS 사전 확인에 막힌다. 새로고침은 주소 뒤 &t=시각 으로 한다.
+let bgmErr = '';
 function bgmLoadList(force){
   if(bgmLoading && !force) return bgmLoading;
   let cached = null; try{ cached = JSON.parse(localStorage.getItem(BGM_CACHE) || 'null'); }catch(e){}
-  if(cached && !force && Date.now() - cached.t < 600000){ bgmList = cached.l; bgmLoaded = true; return Promise.resolve(bgmList); }
-  bgmLoading = fetch(BGM_API, {cache:'no-store'}).then(r => r.status===404 ? [] : r.ok ? r.json() : Promise.reject(r.status))
+  if(cached && cached.l && cached.l.length && !force && Date.now() - cached.t < 180000){ bgmList = cached.l; bgmLoaded = true; bgmErr = ''; return Promise.resolve(bgmList); }
+  bgmLoading = fetch(BGM_API + (force ? '&t=' + Date.now() : '')).then(r => r.status===404 ? [] : r.ok ? r.json() : Promise.reject(r.status))
     .then(j => { const l = (Array.isArray(j) ? j : []).filter(x => x && x.type==='file' && /\.(mp3|m4a|aac|wav)$/i.test(x.name)).map(x => x.name)
         .sort((a,b) => titleOf(a).localeCompare(titleOf(b), 'ko')).map(f => ({file:f, title:titleOf(f)}));
-      bgmList = l; try{ localStorage.setItem(BGM_CACHE, JSON.stringify({t:Date.now(), l})); }catch(e){} return l; })
-    .catch(() => { if(cached) bgmList = cached.l; return bgmList; })
+      bgmList = l; bgmErr = '';
+      try{ if(l.length) localStorage.setItem(BGM_CACHE, JSON.stringify({t:Date.now(), l})); else localStorage.removeItem(BGM_CACHE); }catch(e){} return l; })
+    .catch(e => { bgmErr = (e===403 || e===429) ? '요청이 너무 많았어요. 잠시 뒤에 다시 눌러 주세요' : (typeof e==='number' ? 'GitHub 오류 '+e : '인터넷 연결을 확인해 주세요');
+      if(cached && cached.l) bgmList = cached.l; return bgmList; })
     .then(l => { bgmLoaded = true; bgmLoading = null; return l; });
   return bgmLoading;
 }
@@ -1199,7 +1204,7 @@ function backupSheet(){
 function renderTracks(){
   const box = $('trkBox'); if(!box || !$('sheet').classList.contains('on')) return;
   if(!bgmList.length){
-    box.innerHTML = `<div class="note" style="margin:0 0 8px">${bgmLoaded ? '아직 곡이 없어요.<br>GitHub 의 <b>wallet/bgm</b> 폴더에 mp3 를 올리면 여기에 나와요.' : '곡 목록을 불러오는 중…'}</div><button class="linkbtn" id="trkReload" style="margin-top:0">곡 목록 새로 불러오기</button>`;
+    box.innerHTML = `<div class="note" style="margin:0 0 8px">${!bgmLoaded ? '곡 목록을 불러오는 중…' : bgmErr ? '곡 목록을 불러오지 못했어요.<br><small>'+bgmErr+'</small>' : '아직 곡이 없어요.<br>GitHub 의 <b>wallet/bgm</b> 폴더에 mp3 를 올리면 여기에 나와요.'}</div><button class="linkbtn" id="trkReload" style="margin-top:0">곡 목록 새로 불러오기</button>`;
     $('trkReload').onclick = () => { bgmLoaded = false; renderTracks(); bgmLoadList(true).then(renderTracks); };
     return;
   }
