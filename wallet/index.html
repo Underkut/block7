@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1009-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-3 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -194,6 +194,7 @@ body.dragging .toast{opacity:0!important}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:linear-gradient(#fffaf3,#fff);border-radius:30px 30px 0 0;
   padding:8px 18px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,1.2,.4,1);z-index:11;max-height:94vh;overflow-y:auto}
 .sheet.on{transform:none}
+.sheet .grab,.sheet h2{touch-action:none}
 .grab{width:44px;height:5px;border-radius:3px;background:#e2d8f3;margin:4px auto 10px}
 .sheet h2{font-size:24px;text-align:center;margin:0 0 6px;font-weight:400}
 .who{display:flex;align-items:center;justify-content:center;gap:10px}
@@ -310,7 +311,7 @@ body.dragging .toast{opacity:0!important}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1009-1";
+const APP_VERSION = "v. 26-1008-3";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -324,7 +325,7 @@ let AC = null, SFXG = null, BGMG = null, bgmTimer = null, bgmStep = 0, bgmNext =
 function ac(){
   if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
       SFXG = AC.createGain(); SFXG.gain.value = 1; SFXG.connect(AC.destination);
-      BGMG = AC.createGain(); BGMG.gain.value = .35; BGMG.connect(AC.destination); }catch(e){ AC = null; return null; } }
+      BGMG = AC.createGain(); BGMG.gain.value = .35; const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; BGMG.connect(lp); lp.connect(AC.destination); }catch(e){ AC = null; return null; } }
   return AC;
 }
 // 휴대폰은 '손가락을 뗀 순간(터치 끝/클릭)'에만 소리를 허락한다 → 그때 깨운다
@@ -371,22 +372,43 @@ function sfx(name, force){
   };
   if(c.state==='running') go(); else c.resume().then(go).catch(()=>{});
 }
-const BGM_SC = [0,2,4,7,9];
-const BGM_ML = [5,-1,7,-1,6,7,5,-1, 4,-1,6,-1,5,6,4,-1,  7,-1,9,-1,8,9,7,-1, 6,7,8,-1,9,-1,7,-1];
-const BGM_BASS = [0,-3,5,7];
+/* 배경음악 ① 직접 만든 곡이 있으면 그걸 쓴다: wallet/bgm.mp3 (없으면 ②). bgm2.mp3·bgm3.mp3 를 더 넣으면 차례로 이어서 나온다 */
+let bgmTracks = [], bgmIdx = 0, bgmAudio = null;
+let bgmProbe = null;     // 배경음악을 처음 켤 때 한 번만 곡 파일이 있는지 확인한다
+const bgmReady = () => bgmProbe || (bgmProbe = Promise.all(['bgm.mp3','bgm.m4a','bgm2.mp3','bgm3.mp3'].map(n => fetch(n, {method:'HEAD', cache:'no-store'}).then(r => r.ok ? n : null).catch(() => null)))
+  .then(l => { bgmTracks = l.filter(Boolean).sort(); }));
+function fileStart(){
+  if(!bgmAudio){ bgmAudio = new Audio(); bgmAudio.volume = .55;
+    bgmAudio.addEventListener('ended', () => { bgmIdx = (bgmIdx+1) % bgmTracks.length; bgmAudio.src = bgmTracks[bgmIdx]; bgmAudio.play().catch(()=>{}); }); }
+  if(!bgmAudio.src) bgmAudio.src = bgmTracks[bgmIdx];
+  bgmAudio.loop = bgmTracks.length === 1; bgmAudio.play().catch(()=>{});
+}
+/* 배경음악 ② 곡 파일이 없을 때: 휴대폰이 만드는 밝고 조용한 곡 (C 장조, C–G–Am–F 코드, 8마디 반복) */
+const BGM_ML = [16,-1,12,-1,16,19,16,-1,  14,-1,11,-1,14,17,14,-1,  12,-1,9,-1,12,16,12,-1,  12,-1,9,-1,12,17,16,-1,
+                19,-1,16,-1,19,21,19,-1,  17,-1,14,-1,17,19,17,-1,  16,-1,12,-1,16,19,16,-1,  17,-1,16,14,12,-1,-1,-1];
+const BGM_CH = [[0,4,7,12,7,4,7,4,-12], [-5,-1,2,7,2,-1,2,-1,-17], [-3,0,4,9,4,0,4,0,-15], [-7,-3,0,5,0,-3,0,-3,-19]];
 function bgmTick(){
   if(!AC || !S.bgm || S.mute) return;
   if(AC.state!=='running'){ AC.resume().catch(()=>{}); bgmNext = AC.currentTime + .1; return; }
-  const stepDur = 60/104/2;
+  const stepDur = 60/92/2, hz = n => 261.63*Math.pow(2, n/12);
   while(bgmNext < AC.currentTime + .6){
-    const i = bgmStep % 32, d = BGM_ML[i];
-    if(d >= 0){ const semi = BGM_SC[d%5] + 12*Math.floor(d/5); tone(BGMG, 261.63*Math.pow(2, semi/12), bgmNext, .26, 'triangle', .5); }
-    if(i%4===0){ const r = BGM_BASS[Math.floor(i/8)%4]; tone(BGMG, 130.81*Math.pow(2, r/12), bgmNext, .5, 'sine', .55); if(i%8===4) tone(BGMG, 130.81*Math.pow(2,(r+7)/12), bgmNext, .4, 'sine', .35); }
+    const i = bgmStep % 64, bar = Math.floor(i/8), st = i%8, ch = BGM_CH[bar%4], m = BGM_ML[i];
+    tone(BGMG, hz(ch[st]), bgmNext, .34, 'triangle', .22);                         // 반주(아르페지오)
+    if(st===0 || st===4) tone(BGMG, hz(ch[8]), bgmNext, .6, 'sine', .5);           // 낮은 음
+    if(m >= 0){ tone(BGMG, hz(m), bgmNext, .36, 'triangle', .36); tone(BGMG, hz(m)*2, bgmNext, .3, 'sine', .08); }   // 멜로디
     bgmNext += stepDur; bgmStep++;
   }
 }
-function bgmStart(){ if(!S.bgm || S.mute || bgmTimer) return; if(!ac()) return; unlockAudio(); keepAudio(true); bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick(); }
-function bgmStop(){ if(bgmTimer){ clearInterval(bgmTimer); bgmTimer = null; } keepAudio(false); }
+function bgmStart(){
+  if(!S.bgm || S.mute || bgmTimer) return;
+  bgmTimer = -1;                                   // 시작 중 표시(곡 파일 확인을 기다리는 동안 두 번 시작되지 않게)
+  bgmReady().then(() => {
+    if(!S.bgm || S.mute || bgmTimer !== -1) { if(bgmTimer === -1) bgmTimer = null; return; }
+    if(bgmTracks.length){ fileStart(); return; }   // 곡 파일 모드: bgmTimer 는 -1 로 둔다
+    bgmTimer = null; if(!ac()) return; unlockAudio(); keepAudio(true); bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick();
+  });
+}
+function bgmStop(){ if(bgmTimer && bgmTimer !== -1){ clearInterval(bgmTimer); } bgmTimer = null; if(bgmAudio) bgmAudio.pause(); keepAudio(false); }
 document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else bgmStart(); });
 // 브라우저는 '손가락을 뗄 때' 소리를 허락한다 → 그때 깨우고 배경음악을 시작, 버튼은 눌렀다 뗄 때 톡 소리
 ['pointerup','touchend','click'].forEach(ev => document.addEventListener(ev, () => { if(!AC || AC.state!=='running') unlockAudio(); if(!bgmTimer) bgmStart(); }, true));
@@ -711,6 +733,30 @@ function render(){ renderHome(); renderAlloc(); renderLog(); }
 function openSheet(html){ $('sheet').innerHTML = '<div class="grab"></div>'+html; $('sheet').classList.add('on'); $('dim').classList.add('on'); $('sheet').scrollTop = 0; }
 function closeSheet(){ $('sheet').classList.remove('on'); $('dim').classList.remove('on'); if(document.activeElement) document.activeElement.blur(); }
 $('dim').onclick = closeSheet;
+/* 창 윗부분(손잡이·제목)을 잡고 아래로 끌면 따라 내려가고, 충분히 끌거나 빨리 쓸면 닫힌다 (블럭7·스위터와 같은 손짓) */
+(function(){
+  const sh = $('sheet'); let d = null;
+  sh.addEventListener('pointerdown', e => {
+    if(!sh.classList.contains('on') || (e.pointerType==='mouse' && e.button!==0)) return;
+    if(e.clientY - sh.getBoundingClientRect().top > 76) return;      // 윗부분만
+    d = {id:e.pointerId, y0:e.clientY, y:e.clientY, t0:performance.now(), moved:false};
+  });
+  window.addEventListener('pointermove', e => {
+    if(!d || e.pointerId!==d.id) return;
+    const dy = e.clientY - d.y0;
+    if(!d.moved){ if(Math.abs(dy) < 6) return; d.moved = true; sh.style.transition = 'none'; try{ sh.setPointerCapture(d.id); }catch(_){} }
+    d.y = e.clientY; const off = Math.max(0, dy);
+    sh.style.transform = 'translateY('+off+'px)'; $('dim').style.opacity = String(Math.max(.15, 1 - off/Math.max(sh.offsetHeight,300)));
+  });
+  const end = () => {
+    if(!d) return; const m = d.moved, dy = d.y - d.y0, v = dy / Math.max(1, performance.now() - d.t0); d = null;
+    if(!m) return;
+    sh.style.transition = ''; sh.style.transform = ''; $('dim').style.opacity = '';
+    if(dy > 110 || v > .6) closeSheet();
+  };
+  window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+  document.addEventListener('touchmove', e => { if(d && d.moved) e.preventDefault(); }, {passive:false});
+})();
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(()=>t.classList.remove('on'), 2300); }
 function confetti(){
   const box = document.createElement('div'); box.className = 'confetti';
