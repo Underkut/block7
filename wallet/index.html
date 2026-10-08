@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1008-3 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1008-4 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -186,7 +186,26 @@ body.dragging .toast{opacity:0!important}
 .ins b{font-weight:400;color:var(--pink-d)}
 .memolink{margin:2px auto 8px}
 .memoin{margin:2px 0 12px;font-size:17px}
-.setrow{display:flex;align-items:center;justify-content:space-between;background:#f7f3ff;border-radius:18px;padding:10px 14px;margin-bottom:10px;font-size:18px}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f7f3ff;border-radius:18px;padding:8px 14px;margin-bottom:10px;font-size:18px}
+.setrow>span{flex:1;min-width:0}
+.sl{width:50%;flex:none;display:flex;align-items:center;gap:6px}
+.sl b{width:30px;text-align:center;font-weight:400;font-size:17px;color:var(--purple-d)}
+.sl input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:36px;background:transparent;margin:0;touch-action:pan-y}
+.sl input[type=range]::-webkit-slider-runnable-track{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--purple) var(--p,0%),#e2d8f3 var(--p,0%))}
+.sl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:5px solid var(--purple);margin-top:-9px;box-shadow:0 3px 0 var(--purple-d)}
+.sl input[type=range]::-moz-range-track{height:12px;border-radius:6px;background:#e2d8f3}
+.sl input[type=range]::-moz-range-progress{height:12px;border-radius:6px;background:var(--purple)}
+.sl input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:5px solid var(--purple)}
+.trkh{display:flex;justify-content:space-between;align-items:center;margin:12px 4px 6px;font-size:16px;color:var(--sub)}
+.trkh small{font-size:12px}
+.trkh button{color:var(--purple);font-size:14px;text-decoration:underline}
+.trks{max-height:24vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.trk{display:flex;align-items:center;gap:10px;background:#f7f3ff;border-radius:14px;padding:10px 12px;text-align:left;font-size:16px}
+.trk span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk .ck{width:22px;height:22px;border-radius:7px;border:3px solid #cdbdf0;background:#fff;flex:none;position:relative}
+.trk.on .ck{background:var(--purple);border-color:var(--purple)}
+.trk.on .ck:after{content:"";position:absolute;left:4px;top:0;width:5px;height:10px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.trk b{color:var(--pink-d);font-weight:400}
 .setrow small{display:block;font-size:12px;color:var(--sub)}
 /* 시트 */
 .dim{position:fixed;inset:0;background:rgba(74,59,107,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
@@ -311,7 +330,7 @@ body.dragging .toast{opacity:0!important}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1008-3";
+const APP_VERSION = "v. 26-1008-4";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -321,17 +340,18 @@ const buzz = ms => { try{ navigator.vibrate && navigator.vibrate(ms||12); }catch
 
 
 /* ───────── 소리 (파일 없이 휴대폰이 직접 만든다 — 저작권·용량 걱정 없음) ───────── */
-let AC = null, SFXG = null, BGMG = null, bgmTimer = null, bgmStep = 0, bgmNext = 0;
+let AC = null, SFXG = null, BGMG = null;
+const LVL = [0, .12, .3, .5, .75, 1];                       // 0~5단계 → 소리 크기(귀에 고르게 들리도록 곡선)
+function applyVols(){ if(SFXG) SFXG.gain.value = LVL[S.sfxVol]; if(BGMG) BGMG.gain.value = LVL[S.bgmVol]*.8; }
 function ac(){
   if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
-      SFXG = AC.createGain(); SFXG.gain.value = 1; SFXG.connect(AC.destination);
-      BGMG = AC.createGain(); BGMG.gain.value = .35; const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400; BGMG.connect(lp); lp.connect(AC.destination); }catch(e){ AC = null; return null; } }
+      SFXG = AC.createGain(); SFXG.connect(AC.destination); BGMG = AC.createGain(); BGMG.connect(AC.destination); applyVols(); }catch(e){ AC = null; return null; } }
   return AC;
 }
 // 휴대폰은 '손가락을 뗀 순간(터치 끝/클릭)'에만 소리를 허락한다 → 그때 깨운다
 function unlockAudio(){
   const c = ac(); if(!c) return false;
-  try{ if(navigator.audioSession && S.bgm) navigator.audioSession.type = 'playback'; }catch(e){}
+  try{ if(navigator.audioSession && S.bgmVol>0) navigator.audioSession.type = 'playback'; }catch(e){}
   if(c.state!=='running') c.resume().catch(()=>{});
   try{ const b = c.createBuffer(1,1,22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }catch(e){}
   return c.state==='running';
@@ -355,7 +375,7 @@ function tone(dest, f, when, dur, type, vol, toF){
   o.connect(g); g.connect(dest); o.start(when); o.stop(when+dur+.05);
 }
 function sfx(name, force){
-  if(force!==true && (!S.sfx || S.mute)) return;
+  if(force!==true && (S.sfxVol<=0 || S.mute)) return;
   const c = ac(); if(!c) return;
   const go = () => { const t = c.currentTime + .02, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', (v||.25)*1.8, to);
   switch(name){
@@ -372,46 +392,57 @@ function sfx(name, force){
   };
   if(c.state==='running') go(); else c.resume().then(go).catch(()=>{});
 }
-/* 배경음악 ① 직접 만든 곡이 있으면 그걸 쓴다: wallet/bgm.mp3 (없으면 ②). bgm2.mp3·bgm3.mp3 를 더 넣으면 차례로 이어서 나온다 */
-let bgmTracks = [], bgmIdx = 0, bgmAudio = null;
-let bgmProbe = null;     // 배경음악을 처음 켤 때 한 번만 곡 파일이 있는지 확인한다
-const bgmReady = () => bgmProbe || (bgmProbe = Promise.all(['bgm.mp3','bgm.m4a','bgm2.mp3','bgm3.mp3'].map(n => fetch(n, {method:'HEAD', cache:'no-store'}).then(r => r.ok ? n : null).catch(() => null)))
-  .then(l => { bgmTracks = l.filter(Boolean).sort(); }));
-function fileStart(){
-  if(!bgmAudio){ bgmAudio = new Audio(); bgmAudio.volume = .55;
-    bgmAudio.addEventListener('ended', () => { bgmIdx = (bgmIdx+1) % bgmTracks.length; bgmAudio.src = bgmTracks[bgmIdx]; bgmAudio.play().catch(()=>{}); }); }
-  if(!bgmAudio.src) bgmAudio.src = bgmTracks[bgmIdx];
-  bgmAudio.loop = bgmTracks.length === 1; bgmAudio.play().catch(()=>{});
+/* ───────── 배경음악: wallet/bgm/ 폴더의 곡 (HB 가 올린 mp3 등). 곡 이름 = 파일 이름에서 확장자만 뺀 것 ───────── */
+const BGM_DIR = 'bgm/', BGM_API = 'https://api.github.com/repos/Underkut/block7/contents/wallet/bgm?ref=main', BGM_CACHE = 'allowance.bgmlist';
+let bgmList = [], bgmAudio = null, bgmPlaying = false, bgmCur = null, bgmFail = 0, bgmLoading = null, bgmLoaded = false;
+const titleOf = f => f.replace(/\.[^.]+$/, '').normalize('NFC');          // 맥에서 올린 한글(NFD)도 곱게
+const isSel = f => S.bgmSel === null || S.bgmSel.includes(f);
+const playlist = () => bgmList.filter(t => isSel(t.file));
+// 폴더 안 파일 목록은 GitHub 에 물어서 알아낸다(공개 저장소). 10분간 기억해 두고, 못 물어보면 마지막으로 받은 목록을 쓴다.
+function bgmLoadList(force){
+  if(bgmLoading && !force) return bgmLoading;
+  let cached = null; try{ cached = JSON.parse(localStorage.getItem(BGM_CACHE) || 'null'); }catch(e){}
+  if(cached && !force && Date.now() - cached.t < 600000){ bgmList = cached.l; bgmLoaded = true; return Promise.resolve(bgmList); }
+  bgmLoading = fetch(BGM_API, {cache:'no-store'}).then(r => r.status===404 ? [] : r.ok ? r.json() : Promise.reject(r.status))
+    .then(j => { const l = (Array.isArray(j) ? j : []).filter(x => x && x.type==='file' && /\.(mp3|m4a|aac|wav)$/i.test(x.name)).map(x => x.name)
+        .sort((a,b) => titleOf(a).localeCompare(titleOf(b), 'ko')).map(f => ({file:f, title:titleOf(f)}));
+      bgmList = l; try{ localStorage.setItem(BGM_CACHE, JSON.stringify({t:Date.now(), l})); }catch(e){} return l; })
+    .catch(() => { if(cached) bgmList = cached.l; return bgmList; })
+    .then(l => { bgmLoaded = true; bgmLoading = null; return l; });
+  return bgmLoading;
 }
-/* 배경음악 ② 곡 파일이 없을 때: 휴대폰이 만드는 밝고 조용한 곡 (C 장조, C–G–Am–F 코드, 8마디 반복) */
-const BGM_ML = [16,-1,12,-1,16,19,16,-1,  14,-1,11,-1,14,17,14,-1,  12,-1,9,-1,12,16,12,-1,  12,-1,9,-1,12,17,16,-1,
-                19,-1,16,-1,19,21,19,-1,  17,-1,14,-1,17,19,17,-1,  16,-1,12,-1,16,19,16,-1,  17,-1,16,14,12,-1,-1,-1];
-const BGM_CH = [[0,4,7,12,7,4,7,4,-12], [-5,-1,2,7,2,-1,2,-1,-17], [-3,0,4,9,4,0,4,0,-15], [-7,-3,0,5,0,-3,0,-3,-19]];
-function bgmTick(){
-  if(!AC || !S.bgm || S.mute) return;
-  if(AC.state!=='running'){ AC.resume().catch(()=>{}); bgmNext = AC.currentTime + .1; return; }
-  const stepDur = 60/92/2, hz = n => 261.63*Math.pow(2, n/12);
-  while(bgmNext < AC.currentTime + .6){
-    const i = bgmStep % 64, bar = Math.floor(i/8), st = i%8, ch = BGM_CH[bar%4], m = BGM_ML[i];
-    tone(BGMG, hz(ch[st]), bgmNext, .34, 'triangle', .22);                         // 반주(아르페지오)
-    if(st===0 || st===4) tone(BGMG, hz(ch[8]), bgmNext, .6, 'sine', .5);           // 낮은 음
-    if(m >= 0){ tone(BGMG, hz(m), bgmNext, .36, 'triangle', .36); tone(BGMG, hz(m)*2, bgmNext, .3, 'sine', .08); }   // 멜로디
-    bgmNext += stepDur; bgmStep++;
-  }
+function bgmEnsure(){
+  if(bgmAudio) return;
+  bgmAudio = new Audio(); bgmAudio.preload = 'auto';
+  const c = ac(); if(c){ try{ c.createMediaElementSource(bgmAudio).connect(BGMG); }catch(e){} }   // 소리 크기를 단계로 조절하려고 한 번 거친다
+  bgmAudio.addEventListener('ended', () => bgmNextTrack());
+  bgmAudio.addEventListener('playing', () => { bgmFail = 0; });
+  bgmAudio.addEventListener('error', () => { if(++bgmFail <= 3) setTimeout(bgmNextTrack, 400); else { bgmFail = 0; bgmStop(); } });   // 못 읽는 곡은 건너뛴다
 }
+function bgmPlayFile(f){
+  bgmEnsure(); bgmCur = f; bgmAudio.src = BGM_DIR + encodeURIComponent(f);        // 한글·공백·대소문자는 주소로 바꿔서
+  bgmAudio.loop = playlist().length === 1; bgmAudio.play().catch(()=>{}); renderTracks();
+}
+function bgmNextTrack(){ const pl = playlist(); if(!pl.length) return; const i = pl.findIndex(t => t.file===bgmCur); bgmPlayFile(pl[(i+1) % pl.length].file); }
 function bgmStart(){
-  if(!S.bgm || S.mute || bgmTimer) return;
-  bgmTimer = -1;                                   // 시작 중 표시(곡 파일 확인을 기다리는 동안 두 번 시작되지 않게)
-  bgmReady().then(() => {
-    if(!S.bgm || S.mute || bgmTimer !== -1) { if(bgmTimer === -1) bgmTimer = null; return; }
-    if(bgmTracks.length){ fileStart(); return; }   // 곡 파일 모드: bgmTimer 는 -1 로 둔다
-    bgmTimer = null; if(!ac()) return; unlockAudio(); keepAudio(true); bgmNext = AC.currentTime + .1; bgmTimer = setInterval(bgmTick, 150); bgmTick();
+  if(S.bgmVol<=0 || S.mute || bgmPlaying) return;
+  bgmPlaying = true;
+  bgmLoadList().then(() => {
+    if(!bgmPlaying) return;
+    const pl = playlist(); if(!pl.length || !ac()){ bgmPlaying = false; renderTracks(); return; }
+    unlockAudio(); applyVols(); keepAudio(true);
+    if(bgmAudio && bgmCur && pl.some(t => t.file===bgmCur)) bgmAudio.play().catch(()=>{}); else bgmPlayFile(pl[0].file);
   });
 }
-function bgmStop(){ if(bgmTimer && bgmTimer !== -1){ clearInterval(bgmTimer); } bgmTimer = null; if(bgmAudio) bgmAudio.pause(); keepAudio(false); }
+function bgmStop(){ bgmPlaying = false; if(bgmAudio) bgmAudio.pause(); keepAudio(false); renderTracks(); }
+function bgmApplySel(){        // 고른 곡이 바뀌면 지금 곡이 빠졌는지 보고 이어간다
+  if(!bgmPlaying) return;
+  const pl = playlist(); if(!pl.length){ bgmStop(); return; }
+  if(!pl.some(t => t.file===bgmCur)) bgmPlayFile(pl[0].file); else if(bgmAudio) bgmAudio.loop = pl.length === 1;
+}
 document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else bgmStart(); });
 // 브라우저는 '손가락을 뗄 때' 소리를 허락한다 → 그때 깨우고 배경음악을 시작, 버튼은 눌렀다 뗄 때 톡 소리
-['pointerup','touchend','click'].forEach(ev => document.addEventListener(ev, () => { if(!AC || AC.state!=='running') unlockAudio(); if(!bgmTimer) bgmStart(); }, true));
+['pointerup','touchend','click'].forEach(ev => document.addEventListener(ev, () => { if(!AC || AC.state!=='running') unlockAudio(); if(!bgmPlaying) bgmStart(); }, true));
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac') && b.id!=='bkTest') sfx('tap'); }, true);
 
 /* ───────── 캐릭터 (전부 코드로 그린 그림) ───────── */
@@ -527,7 +558,7 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfx:true, bgm:false, mute:false, lastAcct:'cash', lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:0, bgmSel:null, mute:false, lastAcct:'cash', lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
@@ -552,7 +583,11 @@ function migrate(o0){
   o.exp = (Array.isArray(o.exp) ? o.exp : []).filter(e => e && Number.isFinite(+e.amt) && +e.amt>0)
     .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), acct:e.acct==='card' ? 'card' : 'cash', date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
   o.useExp = o.useExp !== false;
-  o.dashOpen = o.dashOpen !== false; o.sfx = o.sfx !== false; o.bgm = o.bgm === true; o.mute = o.mute === true;
+  o.dashOpen = o.dashOpen !== false; // 예전 켬/끔(sfx·bgm)은 단계로 옮긴다: 효과음 켬=4 · 끔=0, 배경음악 켬=3 · 끔=0
+  const lv = (v, d) => (typeof v==='number' && v>=0 && v<=5) ? Math.round(v) : d;
+  o.sfxVol = lv(o0 && o0.sfxVol, (o0 && o0.sfx===false) ? 0 : 4); o.bgmVol = lv(o0 && o0.bgmVol, (o0 && o0.bgm===true) ? 3 : 0);
+  o.bgmSel = Array.isArray(o.bgmSel) ? o.bgmSel.map(String) : null; o.mute = o.mute === true;
+  delete o.sfx; delete o.bgm;
   const seenG = new Set();
   if(!(o0 && Array.isArray(o0.givers))) o.givers = DEFAULT_GIVERS.map(g=>Object.assign({},g));
   o.givers = o.givers.filter(g => g && g.n && !seenG.has(String(g.n)) && seenG.add(String(g.n))).map(g => ({n:String(g.n).slice(0,8), ch:CH[g.ch] ? g.ch : 'hamster'}));
@@ -738,7 +773,7 @@ $('dim').onclick = closeSheet;
   const sh = $('sheet'); let d = null;
   sh.addEventListener('pointerdown', e => {
     if(!sh.classList.contains('on') || (e.pointerType==='mouse' && e.button!==0)) return;
-    if(e.clientY - sh.getBoundingClientRect().top > 76) return;      // 윗부분만
+    if(e.clientY - sh.getBoundingClientRect().top > 76 || e.target.closest('input,button,textarea,select')) return;      // 윗부분만(슬라이더·버튼 위는 제외)
     d = {id:e.pointerId, y0:e.clientY, y:e.clientY, t0:performance.now(), moved:false};
   });
   window.addEventListener('pointermove', e => {
@@ -1132,14 +1167,20 @@ function markBackup(){ S.lastBackup = Date.now(); save(); }
 function backupSheet(){
   const last = S.lastBackup ? '마지막 백업: '+new Date(S.lastBackup).toLocaleDateString('ko-KR') : '아직 백업한 적이 없어요';
   openSheet(`<h2>설정</h2>
-    <div class="setrow"><span>효과음<small>누를 때 톡톡 소리가 나요</small></span><button class="sw ${S.sfx?'on':''}" id="swSfx" aria-label="효과음"><i></i></button></div>
-    <div class="setrow"><span>배경 음악<small>조용한 곳에서는 꺼 두세요</small></span><button class="sw ${S.bgm?'on':''}" id="swBgm" aria-label="배경 음악"><i></i></button></div>
+    <div class="setrow"><span>효과음<small>누를 때 나는 소리</small></span><div class="sl"><input type="range" id="slSfx" min="0" max="5" step="1" value="${S.sfxVol}" aria-label="효과음 크기"><b id="slSfxV"></b></div></div>
+    <div class="setrow"><span>배경 음악<small>끔 · 1~5 단계</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
+    <div id="trkBox"></div>
     <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
     <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
     <div class="note" style="margin-top:8px">용돈 친구들 ${APP_VERSION}</div>`);
-  $('swSfx').onclick = () => { S.sfx = !S.sfx; save(); $('swSfx').classList.toggle('on', S.sfx); if(S.sfx){ unlockAudio(); sfx('plus'); } };
-  $('swBgm').onclick = () => { S.bgm = !S.bgm; save(); $('swBgm').classList.toggle('on', S.bgm); if(S.bgm){ unlockAudio(); bgmStart(); } else bgmStop(); };
+  const bindSl = (id, key, onChange) => { const el = $(id), lab = $(id+'V');
+    const paint = () => { lab.textContent = +el.value===0 ? '끔' : el.value; el.style.setProperty('--p', (el.value/5*100)+'%'); }; paint();
+    el.oninput = () => { S[key] = +el.value; paint(); applyVols(); };
+    el.onchange = () => { save(); onChange(); }; };
+  bindSl('slSfx', 'sfxVol', () => { unlockAudio(); sfx('plus'); });
+  bindSl('slBgm', 'bgmVol', () => { if(S.bgmVol>0){ unlockAudio(); bgmStart(); } else bgmStop(); renderTracks(); });
+  renderTracks(); bgmLoadList().then(renderTracks);
   $('bkTest').onclick = () => {
     unlockAudio(); sfx('win', true);
     setTimeout(() => { const st = AC ? AC.state : 'none';
@@ -1154,6 +1195,25 @@ function backupSheet(){
   $('bkFile').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupText()], {type:'application/json'}));
     a.download = '용돈친구들-백업-'+todayStr()+'.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000); markBackup(); toast('파일로 저장했어요'); };
   $('bkOpen').onclick = restoreSheet;
+}
+function renderTracks(){
+  const box = $('trkBox'); if(!box || !$('sheet').classList.contains('on')) return;
+  if(!bgmList.length){
+    box.innerHTML = `<div class="note" style="margin:0 0 8px">${bgmLoaded ? '아직 곡이 없어요.<br>GitHub 의 <b>wallet/bgm</b> 폴더에 mp3 를 올리면 여기에 나와요.' : '곡 목록을 불러오는 중…'}</div><button class="linkbtn" id="trkReload" style="margin-top:0">곡 목록 새로 불러오기</button>`;
+    $('trkReload').onclick = () => { bgmLoaded = false; renderTracks(); bgmLoadList(true).then(renderTracks); };
+    return;
+  }
+  const all = S.bgmSel === null || bgmList.every(t => isSel(t.file));
+  box.innerHTML = `<div class="trkh"><span>들을 곡 고르기 <small>(여러 곡 가능)</small></span><button id="trkAll">${all ? '전체 선택됨' : '전체 선택'}</button></div>
+    <div class="trks">${bgmList.map(t => `<button class="trk ${isSel(t.file)?'on':''}" data-f="${esc(t.file)}"><i class="ck"></i><span>${esc(t.title)}</span>${bgmPlaying && bgmCur===t.file ? '<b>♪</b>' : ''}</button>`).join('')}</div>
+    <button class="linkbtn" id="trkReload" style="margin-top:0">곡 목록 새로 불러오기</button>`;
+  $('trkAll').onclick = () => { S.bgmSel = null; save(); bgmApplySel(); renderTracks(); };
+  $('trkReload').onclick = () => { bgmLoaded = false; renderTracks(); bgmLoadList(true).then(renderTracks); };
+  box.querySelector('.trks').onclick = e => { const b = e.target.closest('.trk'); if(!b) return; buzz(8);
+    const f = b.dataset.f, cur = bgmList.map(t => t.file).filter(x => isSel(x)), next = cur.includes(f) ? cur.filter(x => x!==f) : cur.concat(f);
+    if(!next.length){ toast('곡을 하나는 골라 주세요'); return; }
+    S.bgmSel = next.length === bgmList.length ? null : bgmList.map(t => t.file).filter(x => next.includes(x));
+    save(); bgmApplySel(); renderTracks(); };
 }
 function restoreSheet(){
   openSheet(`<h2>백업에서 불러오기</h2><div class="note">복사해 둔 글을 붙여 넣거나, 저장한 파일을 골라요.<br><b>지금 기록은 모두 바뀌어요!</b></div>
