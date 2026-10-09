@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-3 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -277,16 +277,18 @@ body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opa
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
 body.mirror .view{padding-top:14px}body.mirror #app{top:var(--mirH,120px);bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
-#tour{position:fixed;inset:0;z-index:80}
-.tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:all .25s;pointer-events:none}
-#tour.par .tr-hole{box-shadow:0 0 0 9999px rgba(10,12,16,.6)}
-.tr-bub{position:fixed;left:14px;right:14px;max-width:480px;margin:0 auto;background:#fff;border-radius:22px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+#tour{position:fixed;inset:0;z-index:80;opacity:0;transition:opacity .25s ease}#tour.on{opacity:1}
+.tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:left .38s cubic-bezier(.4,0,.2,1),top .38s cubic-bezier(.4,0,.2,1),width .38s cubic-bezier(.4,0,.2,1),height .38s cubic-bezier(.4,0,.2,1);pointer-events:none;will-change:left,top,width,height}
+.tr-bub.fade{opacity:0;transform:translateY(6px)}
+.tr-dots{display:flex;gap:5px;margin-right:auto;margin-left:4px}.tr-dots i{width:7px;height:7px;border-radius:50%;background:#e2d8f3;transition:all .25s}.tr-dots i.on{width:18px;border-radius:4px;background:var(--purple)}
+#tour.tpar .tr-hole{box-shadow:0 0 0 9999px rgba(10,12,16,.6)}
+.tr-bub{position:fixed;left:14px;right:14px;transition:top .38s cubic-bezier(.4,0,.2,1),opacity .2s ease,transform .25s ease;max-width:480px;margin:0 auto;background:#fff;border-radius:22px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
 .tr-f{width:46px;flex:none}.tr-f svg{width:100%;display:block}.tr-t{flex:1;min-width:0;font-size:17px;line-height:1.45;color:var(--ink)}
 .tr-b{width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-end;font-size:14px;color:var(--sub)}
 .tr-b button{padding:8px 14px;border-radius:14px;color:var(--sub);font-size:15px}.tr-b button.go{background:var(--purple);color:#fff;box-shadow:0 3px 0 var(--purple-d)}
-#trSkip{margin-right:auto}
-#tour.par .tr-bub{font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;border-radius:12px}#tour.par .tr-t{font-size:15px;color:#1f2430}
-#tour.par .tr-b button.go{background:#4f6bed;box-shadow:none;border-radius:8px}
+
+#tour.tpar .tr-bub{font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;border-radius:12px}#tour.tpar .tr-t{font-size:15px;color:#1f2430}
+#tour.tpar .tr-b button.go{background:#4f6bed;box-shadow:none;border-radius:8px}
 
 .pick1{color:var(--ink)}
 body.pmode.pdark:not(.mirror) .sheet .pick1,body.pmode.pdark:not(.mirror) .sheet .inp,body.pmode.pdark:not(.mirror) .sheet .stkrow button,body.pmode.pdark:not(.mirror) .sheet .pk,body.pmode.pdark:not(.mirror) .sheet .gtabs button{background:#2b313b;color:#e5e7eb;border-color:#3a414d;box-shadow:none}
@@ -539,7 +541,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-2";
+const APP_VERSION = "v. 26-1010-3";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2620,35 +2622,50 @@ let TOUR = null;
 const trAuto = () => !(navigator.webdriver && !window.WALLET_TOUR);   // 자동 시험(웹드라이버)에서는 저절로 뜨지 않게
 const trVisible = el => { if(!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility!=='hidden'; };
 function tourStart(kind){
-  if(TOUR) return; closeSheet();
-  const steps = kind==='par' ? TOUR_PAR : TOUR_KID;
-  TOUR = {kind, steps, i:0}; tourShow();
+  if(TOUR) tourEnd(true);                                              // 혹시 멈춰 있던 둘러보기가 있으면 치우고 새로
+  closeSheet();
+  TOUR = {kind, steps: kind==='par' ? TOUR_PAR : TOUR_KID, i:0}; tourShow();
 }
-function tourEnd(){ if(!TOUR) return; TR[TOUR.kind] = 1; trSave(); TOUR = null; const o = $('tour'); if(o) o.remove(); }
+function tourEnd(keepFlag){ if(!TOUR) return; if(keepFlag!==true){ TR[TOUR.kind] = 1; trSave(); } TOUR = null; trClose(); }
+function trClose(){ const o = $('tour'); if(!o) return; o.classList.remove('on'); setTimeout(() => { if(!o.classList.contains('on')) o.remove(); }, 260); }
+// 한 단계씩: 말풍선을 살짝 숨기고 → (필요할 때만) 부드럽게 스크롤 → 구멍·말풍선이 미끄러지듯 옮겨 가며 다시 나타난다
 function tourShow(){
   if(!TOUR) return;
   const s = TOUR.steps[TOUR.i];
   if(!s){ tourEnd(); return; }
-  if(s.tab) goTab(s.tab); if(s.ptab && PAR.tab!==s.ptab) setPTab(s.ptab);
-  setTimeout(() => {
-    const el = document.querySelector(s.sel);
-    if(!trVisible(el)){ TOUR.i++; tourShow(); return; }                 // 지금 없는 것(예: 우체통 아이콘)은 건너뛴다
-    el.scrollIntoView({block:'center'});
-    setTimeout(() => tourPaint(el, s.t, TOUR.i, TOUR.steps.length, TOUR.kind==='par'), 260);
-  }, 120);
+  try{
+    const bub = document.querySelector('#tour .tr-bub'); if(bub) bub.classList.add('fade');
+    let wait = bub ? 160 : 0;
+    if(s.tab && !$(s.tab).classList.contains('on')){ goTab(s.tab); wait = Math.max(wait, 120); }   // 이미 그 화면이면 다시 부르지 않는다(맨 위로 튀지 않게)
+    if(s.ptab && PAR.tab!==s.ptab){ setPTab(s.ptab); wait = Math.max(wait, 200); }
+    setTimeout(() => {
+      if(!TOUR) return;
+      const el = document.querySelector(s.sel);
+      if(!trVisible(el)){ TOUR.i++; tourShow(); return; }               // 지금 없는 것(예: 우체통 아이콘)은 건너뛴다
+      const r = el.getBoundingClientRect(), H = innerHeight;
+      const fixed = (() => { for(let x = el; x && x!==document.body; x = x.parentElement){ const ps = getComputedStyle(x).position; if(ps==='fixed' || ps==='sticky') return true; } return false; })();
+      const fits = fixed || (r.top >= 60 && r.bottom <= H - 200);   // 고정된 것(아래 탭 등)은 스크롤하지 않는다
+      if(!fits){ el.scrollIntoView({block:'center', behavior:'smooth'}); setTimeout(() => TOUR && tourPaint(el, s.t, TOUR.i, TOUR.steps.length, TOUR.kind==='par'), 450); }
+      else tourPaint(el, s.t, TOUR.i, TOUR.steps.length, TOUR.kind==='par');
+    }, wait);
+  }catch(e){ tourEnd(true); }
 }
 function tourPaint(el, text, i, n, par, tipId){
-  let o = $('tour'); if(!o){ o = document.createElement('div'); o.id = 'tour'; document.body.appendChild(o); }
+  let o = $('tour');
+  if(!o){ o = document.createElement('div'); o.id = 'tour'; o.innerHTML = '<div class="tr-hole"></div><div class="tr-bub fade"></div>'; document.body.appendChild(o); }
+  o.className = par ? 'tpar' : ''; requestAnimationFrame(() => o.classList.add('on'));
   const r = el.getBoundingClientRect(), pad = 6, W = innerWidth, H = innerHeight;
   const box = {l:Math.max(4, r.left-pad), t:Math.max(4, r.top-pad), w:Math.min(W-8, r.width+pad*2), h:Math.min(H-8, r.height+pad*2)};
-  const below = box.t + box.h + 200 < H;
+  const hole = o.querySelector('.tr-hole'), bub = o.querySelector('.tr-bub');
+  Object.assign(hole.style, {left:box.l+'px', top:box.t+'px', width:box.w+'px', height:box.h+'px'});
   const last = tipId || i===n-1;
-  o.className = par ? 'par' : '';
-  o.innerHTML = `<div class="tr-hole" style="left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px"></div>
-    <div class="tr-bub" style="${below ? 'top:'+(box.t+box.h+12) : 'bottom:'+(H-box.t+12)}px">${par ? '' : `<span class="tr-f">${face('pig')}</span>`}<div class="tr-t">${text}</div>
-    <div class="tr-b">${tipId ? '' : `<button id="trSkip">건너뛰기</button><span>${i+1} / ${n}</span>`}<button id="trNext" class="go">${tipId ? '알겠어요' : last ? '시작!' : '다음'}</button></div></div>`;
-  $('trNext').onclick = () => { buzz(8); if(tipId){ o.remove(); return; } TOUR.i++; tourShow(); };
-  if($('trSkip')) $('trSkip').onclick = tourEnd;
+  bub.innerHTML = `${par ? '' : `<span class="tr-f">${face('pig')}</span>`}<div class="tr-t">${text}</div>
+    <div class="tr-b">${tipId ? '' : `<button id="trSkip">건너뛰기</button><span class="tr-dots">${Array.from({length:n}, (_,k) => `<i class="${k===i?'on':''}"></i>`).join('')}</span>`}<button id="trNext" class="go">${tipId ? '알겠어요' : last ? '시작!' : '다음'}</button></div>`;
+  const bh = bub.offsetHeight, below = box.t + box.h + 12 + bh < H - 10;
+  bub.style.top = (below ? box.t + box.h + 12 : Math.max(10, box.t - bh - 12)) + 'px';
+  requestAnimationFrame(() => bub.classList.remove('fade'));
+  $('trNext').onclick = () => { buzz(8); if(tipId){ trClose(); return; } TOUR.i++; tourShow(); };
+  if($('trSkip')) $('trSkip').onclick = () => tourEnd();
 }
 // 그 자리에서 한 번만 나오는 말풍선
 function tip(id){
@@ -2659,7 +2676,7 @@ function tip(id){
   setTimeout(() => { const el = document.querySelector(T.sel); if(!trVisible(el) || $('tour') || TOUR) return;
     TR.tips[id] = 1; trSave(); tourPaint(el, T.t, 0, 1, !!T.par, id); }, 500);
 }
-function tourAgain(){ closeSheet(); TR.tips = {}; trSave(); setTimeout(() => tourStart(FAM && FAM.role==='parent' ? 'par' : 'kid'), 300); }
+function tourAgain(){ if(TOUR) tourEnd(true); const o = $('tour'); if(o) o.remove(); closeSheet(); TR.tips = {}; trSave(); setTimeout(() => tourStart(FAM && FAM.role==='parent' ? 'par' : 'kid'), 320); }
 // 처음 열 때: 아이 폰은 아이 둘러보기, 부모 폰은 부모 둘러보기 (한 번만)
 setTimeout(() => {
   if(!trAuto()) return;
