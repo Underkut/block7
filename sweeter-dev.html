@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1009-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5321,8 +5321,9 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-ngrid button{aspect-ratio:1;max-width:100%;border-radius:10px;background:var(--s1);font-family:var(--font-number),monospace;font-size:14px;}
 #bibleRd .br-ngrid button.cur{background:var(--ac);color:#fff;}
 #bibleRd .br-ngrid button.read{color:var(--ac-tx);}
-#bibleRd .br-recent{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-#bibleRd .br-recent button{font-size:12px;padding:6px 10px;border-radius:999px;background:var(--s2);color:var(--tx2);}
+#bibleRd .br-recent{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px 14px;padding:0 16px;overscroll-behavior-x:contain;}   /* 한 줄 · 좌우로 밀어 본다 (v26-1009-7) */
+#bibleRd .br-recent::-webkit-scrollbar{display:none;}
+#bibleRd .br-recent button{flex:0 0 auto;white-space:nowrap;font-size:12px;padding:6px 10px;border-radius:999px;background:var(--s2);color:var(--tx2);}
 #bibleRd .br-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--bd2);}
 #bibleRd .br-row:last-child{border-bottom:0;}
 #bibleRd .br-row .br-lb{font-size:13px;color:var(--tx2);flex:0 0 auto;}
@@ -6264,7 +6265,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-6";
+const APP_VERSION = "v. 26-1009-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15542,7 +15543,7 @@ async function _brRenderList(){
   let h='';
   if(_brLt==='orig'){
     // 원어 (v26-1009-3, HB) — [최신순⇄등록순] [한글순] [원어순] · 오른쪽 끝 찾기 칸. 목록만 따로 다시 그려 찾기 칸이 포커스를 잃지 않는다
-    const M=[['t',_brOM==='old'?'등록순':'최신순'],['ko','한글순'],['or','원어순']];
+    const M=[['t',_brOM==='old'?'등록순':'최신순'],['ko','한글순'],['or','원어순'],['bb','성경순']];
     h+='<div class="br-lf br-otool">'+M.map(([k,nm])=>'<button data-om="'+k+'" class="'+((k==='t'&&(_brOM==='new'||_brOM==='old'))||_brOM===k?'on':'')+'">'+nm+'</button>').join('')
       +'<input id="brOQ" type="search" placeholder="찾기" value="'+esc(_brOQ)+'" aria-label="원어 기록에서 찾기"></div><div id="brOList">'+_brOrigListHTML()+'</div>';
     body.innerHTML=h;return;
@@ -15625,7 +15626,8 @@ function _brOrigListHTML(){
         '<span class="br-ow">'+esc(g.w)+'</span>'+(g.ids.length>1?'<span class="br-on">'+g.ids.length+'번</span>':''),note('w:'+g.w,g.note)+btn(id));});
     if(!W.length)h='<div class="br-empty">'+(q?'찾는 말이 없어요':'본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요')+'</div>';
   }else{
-    const ids=Object.keys(all).filter(id=>all[id]&&all[id].w&&hit(all[id])).sort((x,y)=>_brOM==='old'?(all[x].at||0)-(all[y].at||0):(all[y].at||0)-(all[x].at||0));
+    const A=all,bib=(x,y)=>A[x].b-A[y].b||A[x].c-A[y].c||A[x].v-A[y].v||(A[x].a||0)-(A[y].a||0);   // 성경순 — 창세기부터 장절 차례 (v26-1009-7)
+    const ids=Object.keys(all).filter(id=>all[id]&&all[id].w&&hit(all[id])).sort((x,y)=>_brOM==='bb'?bib(x,y):_brOM==='old'?(all[x].at||0)-(all[y].at||0):(all[y].at||0)-(all[x].at||0));
     ids.forEach(id=>{const o=all[id];
       h+=_brRow('','orig:'+id,null,ref(o),_brDate(o.at),'<span class="br-ow">'+esc(o.w)+'</span>',note('i:'+id,o.n)+btn(id));});
     if(!ids.length)h='<div class="br-empty">'+(q?'찾는 말이 없어요':'본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요')+'</div>';
