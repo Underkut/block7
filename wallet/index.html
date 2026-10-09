@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-3 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-4 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -541,7 +541,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-3";
+const APP_VERSION = "v. 26-1010-4";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2112,7 +2112,8 @@ function kidCodeSheet(re){
 let PAR = {kids:[], sel:null, per:'week', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
 function hideParent(){ mirrorOff(); const p = $('par'); if(p) p.classList.remove('on'); document.body.classList.remove('pmode'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } if(PAR.unsubM){ PAR.unsubM(); PAR.unsubM = null; } if(PAR.unsubA){ PAR.unsubA(); PAR.unsubA = null; } }
 async function showParent(){
-  document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep'); $('parBody').innerHTML = '<div class="pr-empty">불러오는 중…</div>';
+  document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep');
+  if(typeof TR!=='undefined' && !TR.par && trAuto()) setTimeout(() => { if(!TR.par && !TOUR && document.body.classList.contains('pmode')) tourStart('par'); }, 1400); $('parBody').innerHTML = '<div class="pr-empty">불러오는 중…</div>';
   try{
     await fbLoad(); const u = FB.auth.currentUser || await authReady();
     if(!u || u.isAnonymous){ hideParent(); loginSheet(); return; }
@@ -2297,7 +2298,7 @@ function pSettings(){
     <div class="ptitle">가족 관리</div><div class="stack-btns"><button class="gb blue sm" id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button class="gb blue sm" id="prRe">아이 폰 다시 연결 (폰을 바꿨을 때)</button>' : ''}<button class="gb gray sm" id="prPar">다른 부모님 초대</button><button class="gb gray sm" id="prJoin">받은 초대 코드 넣기</button></div>
     <div class="note">아이 폰 연결 코드는 15분, 다른 부모님 초대 코드는 7일 동안 쓸 수 있어요.</div>
     <button class="gb gray sm" id="prTour" style="margin-top:10px">사용 설명 다시 보기</button>
-    <button class="linkbtn" id="prOut">로그아웃</button>`);
+    <button class="linkbtn" id="prOut">로그아웃</button><div class="note">용돈 친구들 ${APP_VERSION}</div>`);
   $('prTour').onclick = tourAgain;
   $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
   $('prNoti').onclick = notiSheet; $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
@@ -2676,12 +2677,18 @@ function tip(id){
   setTimeout(() => { const el = document.querySelector(T.sel); if(!trVisible(el) || $('tour') || TOUR) return;
     TR.tips[id] = 1; trSave(); tourPaint(el, T.t, 0, 1, !!T.par, id); }, 500);
 }
-function tourAgain(){ if(TOUR) tourEnd(true); const o = $('tour'); if(o) o.remove(); closeSheet(); TR.tips = {}; trSave(); setTimeout(() => tourStart(FAM && FAM.role==='parent' ? 'par' : 'kid'), 320); }
+function tourAgain(){
+  if(TOUR) tourEnd(true); const o = $('tour'); if(o) o.remove(); closeSheet(); TR.tips = {}; trSave();
+  toast('사용 설명을 시작해요');
+  setTimeout(() => tourStart(FAM && FAM.role==='parent' ? 'par' : 'kid'), 320);
+  // 혹시 안 보이면 까닭을 알려 준다(고칠 때 쓰려고)
+  setTimeout(() => { const t = $('tour'); if(!t || getComputedStyle(t).display==='none' || !t.querySelector('.tr-bub') || !t.querySelector('.tr-bub').offsetHeight) toast('설명을 띄우지 못했어요 ('+(t ? 'hidden' : TOUR ? 'step'+TOUR.i : 'none')+') — 캡처해서 알려 주세요'); }, 2200);
+}
 // 처음 열 때: 아이 폰은 아이 둘러보기, 부모 폰은 부모 둘러보기 (한 번만)
 setTimeout(() => {
   if(!trAuto()) return;
-  if(FAM && FAM.role==='parent'){ if(!TR.par){ const w = () => document.body.classList.contains('pmode') ? tourStart('par') : setTimeout(w, 500); setTimeout(w, 1200); } }
-  else if(!TR.kid && !window.WALLET_NOTOUR) tourStart('kid');
+  if(FAM && FAM.role==='parent') return;
+  if(!TR.kid && !window.WALLET_NOTOUR) tourStart('kid');
 }, 900);
 
 /* ───────── 백업 ───────── */
