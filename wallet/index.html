@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -277,6 +277,17 @@ body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opa
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
 body.mirror .view{padding-top:14px}body.mirror #app{top:var(--mirH,120px);bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
+#tour{position:fixed;inset:0;z-index:80}
+.tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:all .25s;pointer-events:none}
+#tour.par .tr-hole{box-shadow:0 0 0 9999px rgba(10,12,16,.6)}
+.tr-bub{position:fixed;left:14px;right:14px;max-width:480px;margin:0 auto;background:#fff;border-radius:22px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.tr-f{width:46px;flex:none}.tr-f svg{width:100%;display:block}.tr-t{flex:1;min-width:0;font-size:17px;line-height:1.45;color:var(--ink)}
+.tr-b{width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-end;font-size:14px;color:var(--sub)}
+.tr-b button{padding:8px 14px;border-radius:14px;color:var(--sub);font-size:15px}.tr-b button.go{background:var(--purple);color:#fff;box-shadow:0 3px 0 var(--purple-d)}
+#trSkip{margin-right:auto}
+#tour.par .tr-bub{font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;border-radius:12px}#tour.par .tr-t{font-size:15px;color:#1f2430}
+#tour.par .tr-b button.go{background:#4f6bed;box-shadow:none;border-radius:8px}
+
 .pick1{color:var(--ink)}
 body.pmode.pdark:not(.mirror) .sheet .pick1,body.pmode.pdark:not(.mirror) .sheet .inp,body.pmode.pdark:not(.mirror) .sheet .stkrow button,body.pmode.pdark:not(.mirror) .sheet .pk,body.pmode.pdark:not(.mirror) .sheet .gtabs button{background:#2b313b;color:#e5e7eb;border-color:#3a414d;box-shadow:none}
 body.pmode.pdark:not(.mirror) .sheet .stkrow button.on{background:#5b4a1a}
@@ -528,7 +539,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-1";
+const APP_VERSION = "v. 26-1010-2";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1053,6 +1064,7 @@ function sparkle(r){
     e.style.color = ['#ffc61a','#ff6fa5','#5aa9ff','#3cc98a'][i%4]; document.body.appendChild(e); setTimeout(()=>e.remove(), 700); }
 }
 function goTab(v){
+  if(v==='vAlloc' && !MIR && typeof tip==='function') tip('plan');
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.v===v));
   document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id===v));
   $(v).scrollTop = 0;
@@ -1578,6 +1590,7 @@ $('goalList').onclick = e => {
   else if(a==='edit'){ const g = S.goals.find(x => x.k===k); if(g) goalSheet(g); }
 };
 function applyPlanSeg(){
+  if(planSeg==='goals' && typeof tip==='function') tip('goals');
   document.querySelectorAll('#planSeg button').forEach(x => x.classList.toggle('on', x.dataset.p===planSeg));
   $('secTiles').style.display = planSeg==='tiles' ? '' : 'none'; $('secGoals').style.display = planSeg==='goals' ? '' : 'none';
 }
@@ -2211,7 +2224,7 @@ const PICO = {
 const curKid = () => PAR.kids.find(k => k.id===PAR.sel) || null;
 function kidTabsHtml(){ return PAR.kids.length > 1 ? PAR.kids.map(x => `<button data-k="${esc(x.id)}" class="${x.id===PAR.sel?'on':''}">${esc(x.name||'아이')}</button>`).join('') : ''; }
 function setPTab(t){
-  PAR.tab = t;
+  PAR.tab = t; if((t==='mir' || t==='mail') && !TOUR) setTimeout(() => tip(t), 400);
   document.querySelectorAll('#pnav button').forEach(b => b.classList.toggle('on', b.dataset.p===t));
   if(t==='mir'){ $('par').classList.remove('on'); mirrorOn(); }
   else { mirrorOff(); $('par').classList.add('on'); $('prRep').style.display = t==='rep' ? '' : 'none'; $('prMail').style.display = t==='mail' ? '' : 'none';
@@ -2281,7 +2294,9 @@ function pSettings(){
     <div class="ptitle">알림</div><button class="gb blue sm" id="prNoti">알림 설정 (무엇을 · 언제)</button>
     <div class="ptitle">가족 관리</div><div class="stack-btns"><button class="gb blue sm" id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button class="gb blue sm" id="prRe">아이 폰 다시 연결 (폰을 바꿨을 때)</button>' : ''}<button class="gb gray sm" id="prPar">다른 부모님 초대</button><button class="gb gray sm" id="prJoin">받은 초대 코드 넣기</button></div>
     <div class="note">아이 폰 연결 코드는 15분, 다른 부모님 초대 코드는 7일 동안 쓸 수 있어요.</div>
+    <button class="gb gray sm" id="prTour" style="margin-top:10px">사용 설명 다시 보기</button>
     <button class="linkbtn" id="prOut">로그아웃</button>`);
+  $('prTour').onclick = tourAgain;
   $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
   $('prNoti').onclick = notiSheet; $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
   $('prPar').onclick = async () => { try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } };
@@ -2572,6 +2587,86 @@ $('mailBtn').innerHTML = PICO.mail; $('mailBtn').onclick = () => kidMailSheet();
 if(FAM && FAM.role==='kid'){ stampsFor(); setTimeout(kidMailStart, 1200); }
 $('prTh').innerHTML = PICO.sun; $('prGear').innerHTML = PICO.gear; $('pnRep').innerHTML = PICO.rep; $('pnMir').innerHTML = PICO.mir; $('pnMail').innerHTML = PICO.mail;
 
+/* ───────── 사용 설명 (둘러보기 · 한 번만 나오는 말풍선 · 다시 보기) ───────── */
+// 이 기기에만 저장(allowance.tour) — 아이 폰·부모 폰이 따로 본다. 화면 하나를 비추고 말풍선으로 설명, '다음'으로 넘긴다.
+const TOUR_KEY = 'allowance.tour';
+let TR = (() => { try{ return JSON.parse(localStorage.getItem(TOUR_KEY)||'{}') || {}; }catch(e){ return {}; } })();
+const trSave = () => { try{ localStorage.setItem(TOUR_KEY, JSON.stringify(TR)); }catch(e){} };
+const TOUR_KID = [
+  {sel:'#vHome .hero', tab:'vHome', t:'안녕! 나는 꿀꿀이야. 여기는 <b>지금 내가 가진 돈</b>이야. 현금 · 체크카드 · 통장이 따로따로도 보여.'},
+  {sel:'#bIn', tab:'vHome', t:'용돈을 받으면 <b>초록 버튼</b>! 얼마인지, 누구한테 받았는지 눌러 주면 돼.'},
+  {sel:'#bOut', tab:'vHome', t:'돈을 쓰면 <b>주황 버튼</b>! 어디에 썼는지 칸을 골라 줘.'},
+  {sel:'#bAlloc', tab:'vHome', t:'<b>계획 세우기</b>: 가진 돈을 간식 · 저금 · 헌금 같은 칸에 나눠 담아. 갖고 싶은 것도 여기서 모아.'},
+  {sel:'#lvCard', tab:'vHome', t:'하루가 끝나면 <b>"오늘 쓴 돈·받은 돈 다 적었나요?"</b>에 정직하게 답해 봐. 별이 모이면 레벨이 올라!'},
+  {sel:'#giftBtn', tab:'vHome', t:'<b>보상함</b>: 뱃지, 레벨 선물, 부모님 쿠폰이 들어 있어.'},
+  {sel:'#mailBtn', tab:'vHome', t:'<b>우체통</b>: 부모님 쪽지 · 칭찬 도장 · 미션이 와. 용돈 요청도 여기서 보내.'},
+  {sel:'.tabs [data-v=vLog]', tab:'vHome', t:'<b>돌아보기</b>에서 한 달 동안 어디에 썼는지 그래프로 볼 수 있어. 그럼 시작해 볼까?'}
+];
+const TOUR_PAR = [
+  {sel:'#pnav [data-p=rep]', ptab:'rep', t:'<b>보고서</b> — 아이의 가진 돈, 받은 돈·쓴 돈, 계획 지킴, 정직 체크 달력, 기록 표를 한눈에 봅니다.'},
+  {sel:'#parSeg', ptab:'rep', t:'오늘 · 이번 주 · 이번 달로 기간을 바꿔 볼 수 있습니다.'},
+  {sel:'#pnav [data-p=mir]', ptab:'rep', t:'<b>아이 화면</b> — 아이 폰 화면을 그대로 보여 줍니다(보기만). 기록을 <b>길게 누르면 칭찬 도장</b>을 찍을 수 있습니다.'},
+  {sel:'#pnav [data-p=mail]', ptab:'rep', t:'<b>우체통</b> — 쪽지 · 칭찬 도장 · 미션을 보내고, 용돈 요청과 쿠폰 사용을 승인합니다. 알림 내역도 여기에 쌓입니다.'},
+  {sel:'#prGear', ptab:'rep', t:'<b>설정</b> — 알림(무엇을·언제), 아이 폰 연결, 다른 부모님 초대, 로그아웃.'},
+  {sel:'#prTh', ptab:'rep', t:'화면 밝기(시스템 · 라이트 · 다크)를 바꿉니다. 이 설명은 설정에서 다시 볼 수 있습니다.'}
+];
+const TIPS = {
+  plan:{sel:'#agrid .ac', t:'칸의 <b>+ −</b>로 돈을 담아. 칸 <b>이름</b>을 누르면 이름 바꾸기·숨기기, 칸을 <b>꾹 눌러 끌면</b> 순서를 바꿀 수 있어.'},
+  goals:{sel:'#addGoal', t:'갖고 싶은 걸 만들고 <b>+</b>로 조금씩 모아 봐. 다 모이면 "샀어요!"가 나와.'},
+  mir:{sel:'#mirBar', t:'아이 화면은 <b>보기만</b> 됩니다. 기록을 <b>길게 누르면</b> 칭찬 도장을 찍을 수 있습니다.', par:true},
+  mail:{sel:'#prMail .pr-sec', t:'<b>기다리는 일</b>에 용돈 요청 · 쿠폰 · 미션 완료가 오면 여기서 승인합니다.', par:true}
+};
+let TOUR = null;
+const trAuto = () => !(navigator.webdriver && !window.WALLET_TOUR);   // 자동 시험(웹드라이버)에서는 저절로 뜨지 않게
+const trVisible = el => { if(!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility!=='hidden'; };
+function tourStart(kind){
+  if(TOUR) return; closeSheet();
+  const steps = kind==='par' ? TOUR_PAR : TOUR_KID;
+  TOUR = {kind, steps, i:0}; tourShow();
+}
+function tourEnd(){ if(!TOUR) return; TR[TOUR.kind] = 1; trSave(); TOUR = null; const o = $('tour'); if(o) o.remove(); }
+function tourShow(){
+  if(!TOUR) return;
+  const s = TOUR.steps[TOUR.i];
+  if(!s){ tourEnd(); return; }
+  if(s.tab) goTab(s.tab); if(s.ptab && PAR.tab!==s.ptab) setPTab(s.ptab);
+  setTimeout(() => {
+    const el = document.querySelector(s.sel);
+    if(!trVisible(el)){ TOUR.i++; tourShow(); return; }                 // 지금 없는 것(예: 우체통 아이콘)은 건너뛴다
+    el.scrollIntoView({block:'center'});
+    setTimeout(() => tourPaint(el, s.t, TOUR.i, TOUR.steps.length, TOUR.kind==='par'), 260);
+  }, 120);
+}
+function tourPaint(el, text, i, n, par, tipId){
+  let o = $('tour'); if(!o){ o = document.createElement('div'); o.id = 'tour'; document.body.appendChild(o); }
+  const r = el.getBoundingClientRect(), pad = 6, W = innerWidth, H = innerHeight;
+  const box = {l:Math.max(4, r.left-pad), t:Math.max(4, r.top-pad), w:Math.min(W-8, r.width+pad*2), h:Math.min(H-8, r.height+pad*2)};
+  const below = box.t + box.h + 200 < H;
+  const last = tipId || i===n-1;
+  o.className = par ? 'par' : '';
+  o.innerHTML = `<div class="tr-hole" style="left:${box.l}px;top:${box.t}px;width:${box.w}px;height:${box.h}px"></div>
+    <div class="tr-bub" style="${below ? 'top:'+(box.t+box.h+12) : 'bottom:'+(H-box.t+12)}px">${par ? '' : `<span class="tr-f">${face('pig')}</span>`}<div class="tr-t">${text}</div>
+    <div class="tr-b">${tipId ? '' : `<button id="trSkip">건너뛰기</button><span>${i+1} / ${n}</span>`}<button id="trNext" class="go">${tipId ? '알겠어요' : last ? '시작!' : '다음'}</button></div></div>`;
+  $('trNext').onclick = () => { buzz(8); if(tipId){ o.remove(); return; } TOUR.i++; tourShow(); };
+  if($('trSkip')) $('trSkip').onclick = tourEnd;
+}
+// 그 자리에서 한 번만 나오는 말풍선
+function tip(id){
+  const T = TIPS[id]; TR.tips = TR.tips || {};
+  if(!trAuto() || TR.tips[id] || TOUR || $('tour') || $('sheet').classList.contains('on')) return;
+  if(!!T.par !== !!(FAM && FAM.role==='parent')) return;
+  if(!T.par && !TR.kid) return;                                         // 아이 둘러보기를 먼저 본 뒤에
+  setTimeout(() => { const el = document.querySelector(T.sel); if(!trVisible(el) || $('tour') || TOUR) return;
+    TR.tips[id] = 1; trSave(); tourPaint(el, T.t, 0, 1, !!T.par, id); }, 500);
+}
+function tourAgain(){ closeSheet(); TR.tips = {}; trSave(); setTimeout(() => tourStart(FAM && FAM.role==='parent' ? 'par' : 'kid'), 300); }
+// 처음 열 때: 아이 폰은 아이 둘러보기, 부모 폰은 부모 둘러보기 (한 번만)
+setTimeout(() => {
+  if(!trAuto()) return;
+  if(FAM && FAM.role==='parent'){ if(!TR.par){ const w = () => document.body.classList.contains('pmode') ? tourStart('par') : setTimeout(w, 500); setTimeout(w, 1200); } }
+  else if(!TR.kid && !window.WALLET_NOTOUR) tourStart('kid');
+}, 900);
+
 /* ───────── 백업 ───────── */
 function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, mode:S.mode, quizHide:S.quizHide, waits:S.waits, held:S.held, applied:S.applied, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
 function markBackup(){ S.lastBackup = Date.now(); save(); }
@@ -2581,7 +2676,7 @@ function backupSheet(){
     <div class="setrow"><span>효과음<small>누를 때 나는 소리</small></span><div class="sl"><input type="range" id="slSfx" min="0" max="5" step="1" value="${S.sfxVol}" aria-label="효과음 크기"><b id="slSfxV"></b></div></div>
     <div class="setrow"><span>배경 음악<small>끔 · 1~5 단계</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
     <div id="trkBox"></div>
-    <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button><button class="gb blue" id="bkTiles">쓴 곳(계획 칸) 목록 고치기</button></div>
+    <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button><button class="gb blue" id="bkTiles">쓴 곳(계획 칸) 목록 고치기</button><button class="gb gray" id="bkTour">사용 설명 다시 보기</button></div>
     ${famRowHtml()}
     <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
@@ -2598,7 +2693,7 @@ function backupSheet(){
     setTimeout(() => { const st = AC ? AC.state : 'none';
       toast(st==='running' ? (S.mute ? '소리를 냈어요! (지금은 음소거라 앱 소리는 꺼져 있어요)' : '소리를 냈어요! 안 들리면 폰의 미디어 볼륨·무음 모드를 확인해 주세요') : '이 폰이 소리를 막고 있어요 ('+st+')'); }, 500);
   };
-  $('bkPeople').onclick = peopleSheet; $('bkTiles').onclick = tilesSheet; famBindRow();
+  $('bkPeople').onclick = peopleSheet; $('bkTiles').onclick = tilesSheet; $('bkTour').onclick = tourAgain; famBindRow();
   $('bkCopy').onclick = () => {
     const txt = backupText(), ok = () => { markBackup(); toast('복사했어요! 카톡 "나에게"에 붙여 두세요'); };
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
