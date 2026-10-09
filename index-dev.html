@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1009-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5217,15 +5217,25 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-lf.br-otool{align-items:center;flex-wrap:nowrap;}
 #bibleRd .br-otool button{flex:0 0 auto;}
 #bibleRd #brOQ{flex:1 1 auto;min-width:0;height:30px;border:1px solid var(--bd);border-radius:999px;background:var(--s1);color:var(--tx);font:inherit;font-size:13px;padding:0 12px;}
-#bibleRd .br-onote{position:relative;margin-top:6px;padding:8px 30px 8px 12px;border-radius:10px;background:var(--s2);cursor:pointer;}
+#bibleRd .br-onote{position:relative;margin-top:6px;padding:8px 64px 8px 12px;border-radius:10px;background:var(--s2);cursor:pointer;}
 #bibleRd .br-ontx{font-size:13.5px;line-height:1.6;color:var(--tx2);max-height:1.6em;overflow:hidden;transition:max-height .32s cubic-bezier(.2,.8,.2,1);
   -webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);}
-#bibleRd .br-onote.open .br-ontx{max-height:60em;-webkit-mask-image:none;mask-image:none;color:var(--tx);}
+#bibleRd .br-onote.open{cursor:auto;}
+#bibleRd .br-onote.open .br-ontx{max-height:55vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;
+  -webkit-mask-image:none;mask-image:none;color:var(--tx);-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
+#bibleRd .br-ontx a{color:var(--ac-tx);text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
+#bibleRd .br-ontx img{max-width:100%;height:auto;vertical-align:middle;border-radius:3px;}
+#bibleRd .br-ontx img.br-ofav{width:16px;height:16px;margin-right:4px;}
+#bibleRd .br-onbar{position:absolute;right:6px;top:4px;display:flex;gap:2px;}
+#bibleRd .br-onbar button{width:26px;height:26px;display:grid;place-items:center;color:var(--tx3);border-radius:6px;}
+#bibleRd .br-onbar button svg{width:15px;height:15px;}
+#bibleRd .br-onote:not(.open) .br-oncp{display:none;}
 #bibleRd .br-otbw{overflow-x:auto;margin:4px 0;}
 #bibleRd .br-otb{border-collapse:collapse;font-size:12.5px;line-height:1.45;}
 #bibleRd .br-otb th,#bibleRd .br-otb td{border:1px solid var(--bd);padding:4px 8px;text-align:left;vertical-align:top;}
 #bibleRd .br-otb th{background:var(--s1);font-weight:600;color:var(--tx);}
-#bibleRd .br-onch{position:absolute;right:10px;top:10px;width:14px;height:14px;color:var(--tx3);transition:transform .25s;}
+#bibleRd .br-onch{transition:transform .25s;}
+#bibleRd .br-onch svg{width:13px;height:13px;}
 #bibleRd .br-onote.open .br-onch{transform:rotate(180deg);}
 @media (prefers-reduced-motion:reduce){ #bibleRd .br-ontx,#bibleRd .br-onch{transition:none;}}
 #bibleRd .br-obtn button{font-size:12px;color:var(--ac-tx);padding:4px 10px;border-radius:999px;background:var(--s2);}
@@ -6246,7 +6256,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-3";
+const APP_VERSION = "v. 26-1009-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15100,7 +15110,12 @@ window.addEventListener('blur',()=>{if(_brOpen)_brSessEnd();});
 window.addEventListener('focus',()=>{if(_brOpen&&!_brSess){_brNextSrc='resume';_brSessStart();}});
 
 // 여는 길 ① Sweeter 홈 Deeper — 마지막 읽던 곳, 처음이면 창세기 1장 1절
-function bibleOpenLast(src){const p=_brPosGet()||{b:0,c:1,v:0};_brNextSrc=src||'home';bibleOpen(p.b,p.c,0);}
+// v26-1009-4 (HB): 장 1절이 아니라 **보던 화면 그대로** — 맨 위에 걸친 절(sv)과 그 절이 화면 위에서 떨어진 거리(off)를 기억한다
+let _brRestore=null;
+function bibleOpenLast(src){const p=_brPosGet()||{b:0,c:1,v:0};_brNextSrc=src||'home';_brRestore=p.sv?p:null;bibleOpen(p.b,p.c,0);}
+function _brPosSave(){if(!_brOpen)return;const sc=_brEl('brScroll'),T=sc.getBoundingClientRect().top+ (_brEl('brHead')?_brEl('brHead').getBoundingClientRect().bottom-sc.getBoundingClientRect().top:0);
+  let sv=0,off=0;for(const el of sc.querySelectorAll('.br-v')){const r=el.getBoundingClientRect();if(r.bottom>T){sv=+el.dataset.v;off=r.top-sc.getBoundingClientRect().top;break;}}
+  if(sv)_brPosSet({b:_brCur.b,c:_brCur.c,v:sv,sv,off:Math.round(off)});}
 // 여는 길 ② 전체화면 등의 Deeper — 그 말씀 장을 열고 그 절로. 못 알아들으면 false
 function bibleOpenRef(ref){
   const r=_brParseRef(ref);
@@ -15174,14 +15189,16 @@ async function _brShow(b,c,focus,focus2,keep){
   if(focus){
     const t=box.querySelector('.br-v[data-v="'+focus+'"]');
     if(t){
-      sc.scrollTop=Math.max(0,t.offsetTop-sc.clientHeight*0.28);
+      sc.scrollTop=0;sc.scrollTop=Math.max(0,t.getBoundingClientRect().top-sc.getBoundingClientRect().top-sc.clientHeight*0.28);   // offsetTop 은 #brChap 기준이라 쓰지 않는다 (v26-1009-4)
       const end=focus2||focus;
       box.querySelectorAll('.br-v').forEach(x=>{const n=+x.dataset.v;if(n>=focus&&n<=end){x.classList.add('flash');setTimeout(()=>x.classList.remove('flash'),1800);}});
     }
+  }else if(_brRestore&&_brRestore.b===b&&_brRestore.c===c){const t=box.querySelector('.br-v[data-v="'+_brRestore.sv+'"]');
+    sc.scrollTop=0;sc.scrollTop=t?Math.max(0,t.getBoundingClientRect().top-sc.getBoundingClientRect().top-(_brRestore.off||0)):0;_brRestore=null;
   }else sc.scrollTop=0;
   _brChrome(true);_brProgSync();_brInkPaint();
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(_brCur.b===b&&_brCur.c===c)_brInkPaint();});
-  _brPosSet({b,c,v:focus||0});
+  _brPosSet({b,c,v:focus||0});setTimeout(_brPosSave,600);
   _brSessStart();
 }
 function _brStep(dd){
@@ -15217,6 +15234,7 @@ function _brChromeApply(anim){
 }
 function _brChrome(show){_brP=show?0:1;_brChromeApply(true);}
 function _brOnScroll(){
+  clearTimeout(_brOnScroll._pt);_brOnScroll._pt=setTimeout(_brPosSave,400);   // 보던 자리 (v26-1009-4)
   const sc=_brEl('brScroll'),y=sc.scrollTop,dy=y-_brLastY;_brLastY=y;
   const h=_brEl('brHead');const H=Math.max(1,(h?h.offsetHeight:52)-26);
   if(dy)_brDir=Math.sign(dy);
@@ -15547,13 +15565,28 @@ async function _brRenderList(){
   }
   body.innerHTML=h||'<div class="br-empty">'+EMPTY[_brLt]+'</div>';
 }
+// 한 줄 안 — GPT 마크다운의 링크 [글](주소) · 그림 ![글](주소) · 맨 주소 · **굵게**. 주소는 http(s) 만 (v26-1009-4, HB)
+// GPT 가 붙여 주는 출처 아이콘은 '[image](…favicons…)' 처럼 ! 없이 오므로, 주소가 그림이면 그림으로 본다.
+function _brNoteInline(l){
+  const isImg=u=>/\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(u)||/favicon/i.test(u);
+  const href=u=>{u=String(u).replace(/\\([&_*()\[\]])/g,'$1');return /^https?:\/\//i.test(u)?u:null;};
+  const parts=[];let rest=String(l||''),m;const re=/(!?)\[([^\]]*)\]\(([^)\s]+)\)|(https?:\/\/[^\s<>()]+)/;
+  while((m=re.exec(rest))){parts.push(esc(rest.slice(0,m.index)));
+    if(m[4]){const u=href(m[4]);parts.push(u?'<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(u)+'</a>':esc(m[0]));}
+    else{const u=href(m[3]);
+      if(!u)parts.push(esc(m[0]));
+      else if(m[1]||isImg(u))parts.push('<img'+(/favicon/i.test(u)?' class="br-ofav"':'')+' src="'+esc(u)+'" alt="'+esc(m[2])+'" loading="lazy" referrerpolicy="no-referrer">');
+      else parts.push('<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(m[2]||u)+'</a>');}
+    rest=rest.slice(m.index+m[0].length);}
+  parts.push(esc(rest));
+  return parts.join('').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');}
 // 해설 글 → 화면. GPT 가 준 마크다운 표(| … | 줄)는 표로, 나머지는 줄바꿈만 살린다 (HB v26-1009-3)
 function _brNoteHTML(t){const L=String(t||'').split(/\r?\n/),o=[];let tb=null;
   const sep=r=>r.every(c=>/^:?-{2,}:?$/.test(c));
   const cells=l=>l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
   const flush=()=>{if(!tb)return;const head=tb.length>1&&sep(tb[1]),rows=tb.filter(r=>!sep(r));
-    o.push('<div class="br-otbw"><table class="br-otb">'+rows.map((r,i)=>{const T=(head&&i===0)?'th':'td';return'<tr>'+r.map(c=>'<'+T+'>'+esc(c)+'</'+T+'>').join('')+'</tr>';}).join('')+'</table></div>');tb=null;};
-  L.forEach(l=>{if(/^\s*\|.*\|\s*$/.test(l))(tb=tb||[]).push(cells(l));else{flush();o.push(esc(l)+'<br>');}});flush();
+    o.push('<div class="br-otbw"><table class="br-otb">'+rows.map((r,i)=>{const T=(head&&i===0)?'th':'td';return'<tr>'+r.map(c=>'<'+T+'>'+_brNoteInline(c)+'</'+T+'>').join('')+'</tr>';}).join('')+'</table></div>');tb=null;};
+  L.forEach(l=>{if(/^\s*\|.*\|\s*$/.test(l))(tb=tb||[]).push(cells(l));else{flush();o.push(_brNoteInline(l)+'<br>');}});flush();
   return o.join('').replace(/(<br>)+$/,'');}
 // ── 원어 목록 (v26-1009-3) ──
 let _brOOpen=new Set();
@@ -15563,7 +15596,7 @@ function _brOrigListHTML(){
   const hit=o=>!q||[o.w,o.n||'',ref(o)].some(x=>String(x).indexOf(q)>=0);
   const CH='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l3 3 3-3"/></svg>';
   // 해설 — 처음엔 한 줄만, 누르면 펼친다 (높이가 부드럽게)
-  const note=(key,t)=>t?'<div class="br-onote'+(_brOOpen.has(key)?' open':'')+'" data-otog="'+esc(key)+'"><div class="br-ontx">'+_brNoteHTML(t)+'</div><span class="br-onch">'+CH+'</span></div>':'';
+  const note=(key,t)=>t?'<div class="br-onote'+(_brOOpen.has(key)?' open':'')+'" data-otog="'+esc(key)+'"><div class="br-ontx">'+_brNoteHTML(t)+'</div><span class="br-onbar"><button class="br-oncp" data-ocopy="'+esc(key)+'" aria-label="해설 전체 복사"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button><button class="br-onch" data-otg="1" aria-label="펼치기·접기">'+CH+'</button></span></div>':'';
   const btn=id=>'<div class="br-obtn"><button data-ogo="'+id+'">말씀으로</button><button data-onote="'+id+'">해설'+(all[id].n?' 고치기':' 붙이기')+'</button><button data-oagain="'+id+'">다시 찾기</button></div>';
   let h='';
   if(_brOM==='ko'||_brOM==='or'){
@@ -15602,7 +15635,7 @@ function _brRowGone(row,after){
 function _brSwipeBind(box,after){
   if(!box||box._swBound)return;box._swBound=true;box._swiped=false;
   let sw=null;
-  box.addEventListener('touchstart',e=>{const r=e.target.closest('.br-mrow');if(!r)return;
+  box.addEventListener('touchstart',e=>{const r=e.target.closest('.br-mrow');if(!r||e.target.closest('.br-onote.open'))return;
     sw={r,x:e.touches[0].clientX,y:e.touches[0].clientY,dx:0,on:false};},{passive:true});
   box.addEventListener('touchmove',e=>{if(!sw)return;
     const dx=e.touches[0].clientX-sw.x,dy=e.touches[0].clientY-sw.y;
@@ -15897,7 +15930,14 @@ function _brBind(){
     const om=e.target.closest('[data-om]');if(om){const k=om.dataset.om;
       _brOM=k==='t'?((_brOM==='new')?'old':'new'):k;_brRenderList();return;}   // 최신순을 다시 누르면 등록순
     if(e.target.closest('#brOQ'))return;
-    const ot=e.target.closest('[data-otog]');if(ot){e.stopPropagation();const k=ot.dataset.otog;
+    const cp=e.target.closest('[data-ocopy]');if(cp){e.stopPropagation();const k=cp.dataset.ocopy,all=getBibleOrig();
+      let t='';if(k.slice(0,2)==='i:')t=(all[k.slice(2)]||{}).n||'';else{const g=_brOrigWords(all).find(x=>x.w===k.slice(2));t=g&&g.note||'';}
+      if(t)_brCopy(t,'해설을 복사했어요');return;}                      // ⚠️ 누른 그 자리에서 복사 (아이폰)
+    if(e.target.closest('.br-ontx a'))return;                          // 링크는 그대로 열린다
+    const ot=e.target.closest('[data-otog]');if(ot){
+      // 펼친 상자: 글을 고르거나 스크롤하는 곳 — 화살표로만 접는다 (v26-1009-4). 접힌 상자는 어디를 눌러도 펼친다
+      if(ot.classList.contains('open')&&!e.target.closest('[data-otg]'))return;
+      e.stopPropagation();const k=ot.dataset.otog;
       if(_brOOpen.has(k))_brOOpen.delete(k);else _brOOpen.add(k);ot.classList.toggle('open');return;}
     const og=e.target.closest('[data-ogo]');if(og){e.stopPropagation();const o=getBibleOrig()[og.dataset.ogo];if(!o)return;_brNextSrc='list';
       _brShow(o.b-1,o.c,o.v).then(()=>{_brInkSel={s:{v:o.v,i:o.a},e:{v:o.v2||o.v,i:o.z}};_brInkOpen();});return;}
