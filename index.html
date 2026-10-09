@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-2  [production]  -->
+<!-- BLOCK7  v. 26-1009-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5213,7 +5213,21 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-origu{stroke:var(--tx3);stroke-width:1.3;stroke-dasharray:1.5 3;stroke-linecap:round;}
 #bibleRd .br-ow{font-family:var(--font-serif,serif);font-size:17px;color:var(--tx);}
 #bibleRd .br-on{font-size:11.5px;color:var(--tx3);margin-left:8px;}
-#bibleRd .br-obtn{display:flex;gap:6px;margin-top:6px;}
+#bibleRd .br-obtn{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+#bibleRd .br-lf.br-otool{align-items:center;flex-wrap:nowrap;}
+#bibleRd .br-otool button{flex:0 0 auto;}
+#bibleRd #brOQ{flex:1 1 auto;min-width:0;height:30px;border:1px solid var(--bd);border-radius:999px;background:var(--s1);color:var(--tx);font:inherit;font-size:13px;padding:0 12px;}
+#bibleRd .br-onote{position:relative;margin-top:6px;padding:8px 30px 8px 12px;border-radius:10px;background:var(--s2);cursor:pointer;}
+#bibleRd .br-ontx{font-size:13.5px;line-height:1.6;color:var(--tx2);max-height:1.6em;overflow:hidden;transition:max-height .32s cubic-bezier(.2,.8,.2,1);
+  -webkit-mask-image:linear-gradient(90deg,#000 80%,transparent);mask-image:linear-gradient(90deg,#000 80%,transparent);}
+#bibleRd .br-onote.open .br-ontx{max-height:60em;-webkit-mask-image:none;mask-image:none;color:var(--tx);}
+#bibleRd .br-otbw{overflow-x:auto;margin:4px 0;}
+#bibleRd .br-otb{border-collapse:collapse;font-size:12.5px;line-height:1.45;}
+#bibleRd .br-otb th,#bibleRd .br-otb td{border:1px solid var(--bd);padding:4px 8px;text-align:left;vertical-align:top;}
+#bibleRd .br-otb th{background:var(--s1);font-weight:600;color:var(--tx);}
+#bibleRd .br-onch{position:absolute;right:10px;top:10px;width:14px;height:14px;color:var(--tx3);transition:transform .25s;}
+#bibleRd .br-onote.open .br-onch{transform:rotate(180deg);}
+@media (prefers-reduced-motion:reduce){ #bibleRd .br-ontx,#bibleRd .br-onch{transition:none;}}
 #bibleRd .br-obtn button{font-size:12px;color:var(--ac-tx);padding:4px 10px;border-radius:999px;background:var(--s2);}
 #bibleRd .br-obtns{display:flex;gap:8px;}
 #bibleRd .br-obtns .br-go{flex:1;}
@@ -6232,7 +6246,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-2";
+const APP_VERSION = "v. 26-1009-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9012,7 +9026,7 @@ try{
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
   <div class="br-nav" id="brNav">
     <button class="br-nv" id="brPrev" aria-label="이전 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg></button>
-    <div class="br-lts"><button class="br-lt" data-lt="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5" fill="currentColor"/></svg><span>책갈피</span></button><button class="br-lt" data-lt="hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L10 19H5v-5z"/><path d="M12.5 6.5l5 5"/><path d="M4 21h16"/></svg><span>표시</span></button><button class="br-lt" data-lt="memo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg><span>메모</span></button><button class="br-lt" data-lt="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><span>읽은 곳</span></button></div>
+    <div class="br-lts"><button class="br-lt" data-lt="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5z"/><path d="M14 3v5h5" fill="currentColor"/></svg><span>책갈피</span></button><button class="br-lt" data-lt="hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5l5 5L10 19H5v-5z"/><path d="M12.5 6.5l5 5"/><path d="M4 21h16"/></svg><span>표시</span></button><button class="br-lt" data-lt="memo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M8.5 12.5h7M8.5 16h7"/></svg><span>메모</span></button><button class="br-lt" data-lt="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><span>읽은 곳</span></button><button class="br-lt even-only" data-lt="orig"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.2c1.4.2 2.2 1.3 3 2.8l6.6 12.4"/><path d="M14.6 2.8c.7 1.8.2 3.9-2.1 5.6"/><path d="M8.4 10.6c-2 1.4-3 3.6-3 6.4v1.6"/><path d="M4 18.6h3"/><path d="M11.6 21h3.2v-1.6a4.4 4.4 0 1 1 3.4 0V21h3.2"/></svg><span>원어</span></button></div>
     <button class="br-nv" id="brNext" aria-label="다음 장"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5L13 10l-5.5 5.5"/></svg></button>
   </div>
 
@@ -15475,7 +15489,7 @@ function _brSyncAa(){
 }
 function _brSet(k,v){ST.settings[k]=v;save();_brApplyLook();_brSyncAa();}
 // ── 내 표시 목록 ── (줄마다 날짜 · 오른쪽 × · 휴대폰은 왼쪽으로 밀어 지우기)
-let _brLt='mark',_brLF='all',_brLO=null,_brOM='r';
+let _brLt='mark',_brLF='all',_brLO=null,_brOM='new',_brOQ='';
 const _BR_X='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>';
 function _brRow(go,del,dot,ref,date,q,extra){
   return '<div class="br-mrow" data-del="'+del+'"><div class="br-mbg">지우기</div>'
@@ -15491,17 +15505,10 @@ async function _brRenderList(){
   const txt=async(bn,c,vs)=>{try{const d=await _brGet(bn);return vs.map(v=>(d.c[c-1]||[])[v-1]||'').join(' ');}catch(e){return'';}};
   let h='';
   if(_brLt==='orig'){
-    // 원어 — 최근 순 / 단어별 (v26-1009-2). 줄을 누르면 그 절로 가서 그 글자를 골라 둔다
-    const all=getBibleOrig(),ref=o=>books[o.b-1]+' '+o.c+':'+(o.v===o.v2||!o.v2?o.v:o.v+'-'+o.v2);
-    const btn=id=>'<div class="br-obtn"><button data-onote="'+id+'">해설'+(all[id].n?' 고치기':' 붙이기')+'</button><button data-oagain="'+id+'">다시 찾기</button></div>';
-    h+='<div class="br-lf">'+[['r','최근 순'],['w','단어별']].map(([k,nm])=>'<button data-om="'+k+'" class="'+(_brOM===k?'on':'')+'">'+nm+'</button>').join('')+'</div>';
-    const ids=Object.keys(all).filter(id=>all[id]&&all[id].w).sort((x,y)=>(all[y].at||0)-(all[x].at||0));
-    if(_brOM==='w')_brOrigWords(all).forEach(g=>{const id=g.ids.slice().sort((x,y)=>(all[y].at||0)-(all[x].at||0))[0],o=all[id];
-      h+=_brRow('o:'+id,'origw:'+g.w,null,ref(o)+(g.ids.length>1?' 외 '+(g.ids.length-1)+'곳':''),_brDate(g.last),'<span class="br-ow">'+esc(g.w)+'</span>'+(g.ids.length>1?'<span class="br-on">'+g.ids.length+'번</span>':''),
-        (g.note?'<div class="br-memo">'+esc(g.note)+'</div>':'')+btn(id));});
-    else ids.forEach(id=>{const o=all[id];
-      h+=_brRow('o:'+id,'orig:'+id,null,ref(o),_brDate(o.at),'<span class="br-ow">'+esc(o.w)+'</span>',(o.n?'<div class="br-memo">'+esc(o.n)+'</div>':'')+btn(id));});
-    if(!ids.length)h+='<div class="br-empty">본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요</div>';
+    // 원어 (v26-1009-3, HB) — [최신순⇄등록순] [한글순] [원어순] · 오른쪽 끝 찾기 칸. 목록만 따로 다시 그려 찾기 칸이 포커스를 잃지 않는다
+    const M=[['t',_brOM==='old'?'등록순':'최신순'],['ko','한글순'],['or','원어순']];
+    h+='<div class="br-lf br-otool">'+M.map(([k,nm])=>'<button data-om="'+k+'" class="'+((k==='t'&&(_brOM==='new'||_brOM==='old'))||_brOM===k?'on':'')+'">'+nm+'</button>').join('')
+      +'<input id="brOQ" type="search" placeholder="찾기" value="'+esc(_brOQ)+'" aria-label="원어 기록에서 찾기"></div><div id="brOList">'+_brOrigListHTML()+'</div>';
     body.innerHTML=h;return;
   }
   if(_brLt==='hist'){
@@ -15540,6 +15547,39 @@ async function _brRenderList(){
   }
   body.innerHTML=h||'<div class="br-empty">'+EMPTY[_brLt]+'</div>';
 }
+// 해설 글 → 화면. GPT 가 준 마크다운 표(| … | 줄)는 표로, 나머지는 줄바꿈만 살린다 (HB v26-1009-3)
+function _brNoteHTML(t){const L=String(t||'').split(/\r?\n/),o=[];let tb=null;
+  const sep=r=>r.every(c=>/^:?-{2,}:?$/.test(c));
+  const cells=l=>l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim());
+  const flush=()=>{if(!tb)return;const head=tb.length>1&&sep(tb[1]),rows=tb.filter(r=>!sep(r));
+    o.push('<div class="br-otbw"><table class="br-otb">'+rows.map((r,i)=>{const T=(head&&i===0)?'th':'td';return'<tr>'+r.map(c=>'<'+T+'>'+esc(c)+'</'+T+'>').join('')+'</tr>';}).join('')+'</table></div>');tb=null;};
+  L.forEach(l=>{if(/^\s*\|.*\|\s*$/.test(l))(tb=tb||[]).push(cells(l));else{flush();o.push(esc(l)+'<br>');}});flush();
+  return o.join('').replace(/(<br>)+$/,'');}
+// ── 원어 목록 (v26-1009-3) ──
+let _brOOpen=new Set();
+function _brOrigListHTML(){
+  const all=getBibleOrig(),books=_brBooks(),q=(_brOQ||'').trim();
+  const ref=o=>books[o.b-1]+' '+o.c+':'+(o.v===o.v2||!o.v2?o.v:o.v+'-'+o.v2);
+  const hit=o=>!q||[o.w,o.n||'',ref(o)].some(x=>String(x).indexOf(q)>=0);
+  const CH='<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l3 3 3-3"/></svg>';
+  // 해설 — 처음엔 한 줄만, 누르면 펼친다 (높이가 부드럽게)
+  const note=(key,t)=>t?'<div class="br-onote'+(_brOOpen.has(key)?' open':'')+'" data-otog="'+esc(key)+'"><div class="br-ontx">'+_brNoteHTML(t)+'</div><span class="br-onch">'+CH+'</span></div>':'';
+  const btn=id=>'<div class="br-obtn"><button data-ogo="'+id+'">말씀으로</button><button data-onote="'+id+'">해설'+(all[id].n?' 고치기':' 붙이기')+'</button><button data-oagain="'+id+'">다시 찾기</button></div>';
+  let h='';
+  if(_brOM==='ko'||_brOM==='or'){
+    // 원어순 — 지금은 한글 독음순과 같다. 원어(히브리어·헬라어) 자료가 생기면 그 알파벳 차례로 (HB 2026-10-09)
+    const W=_brOrigWords(all).filter(g=>g.ids.some(id=>hit(all[id]))).sort((x,y)=>x.w.localeCompare(y.w,'ko'));
+    W.forEach(g=>{const id=g.ids.slice().sort((x,y)=>(all[y].at||0)-(all[x].at||0))[0],o=all[id];
+      h+=_brRow('','origw:'+g.w,null,ref(o)+(g.ids.length>1?' 외 '+(g.ids.length-1)+'곳':''),_brDate(g.last),
+        '<span class="br-ow">'+esc(g.w)+'</span>'+(g.ids.length>1?'<span class="br-on">'+g.ids.length+'번</span>':''),note('w:'+g.w,g.note)+btn(id));});
+    if(!W.length)h='<div class="br-empty">'+(q?'찾는 말이 없어요':'본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요')+'</div>';
+  }else{
+    const ids=Object.keys(all).filter(id=>all[id]&&all[id].w&&hit(all[id])).sort((x,y)=>_brOM==='old'?(all[x].at||0)-(all[y].at||0):(all[y].at||0)-(all[x].at||0));
+    ids.forEach(id=>{const o=all[id];
+      h+=_brRow('','orig:'+id,null,ref(o),_brDate(o.at),'<span class="br-ow">'+esc(o.w)+'</span>',note('i:'+id,o.n)+btn(id));});
+    if(!ids.length)h='<div class="br-empty">'+(q?'찾는 말이 없어요':'본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요')+'</div>';
+  }
+  return h;}
 function _brListDelete(key){
   const [kind,rest]=[key.slice(0,key.indexOf(':')),key.slice(key.indexOf(':')+1)];
   if(kind==='memo')_brNoteSave(rest,0,0,[],'');
@@ -15847,16 +15887,23 @@ function _brBind(){
   $('brDashBody').addEventListener('scroll',()=>tip.classList.remove('on'),{passive:true});
   $('brMini').onclick=()=>_brChrome(true);
   $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
+  $('brLBody').addEventListener('input',e=>{if(e.target.id!=='brOQ')return;_brOQ=e.target.value;const L=$('brOList');if(L)L.innerHTML=_brOrigListHTML();});
   $('brLTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brLt=b.dataset.t;_brRenderList();};
   $('brLBody').addEventListener('click',e=>{
     if($('brLBody')._swiped){$('brLBody')._swiped=false;return;}
     const lf=e.target.closest('[data-lf]');if(lf){_brLF=lf.dataset.lf;_brLO=null;_brRenderList();return;}
     const lo=e.target.closest('[data-lo]');if(lo){_brLO=_brLO===lo.dataset.lo?null:lo.dataset.lo;_brRenderList();return;}
     const x=e.target.closest('[data-rx]');if(x){e.stopPropagation();_brRowGone(x.closest('.br-mrow'));return;}
-    const om=e.target.closest('[data-om]');if(om){_brOM=om.dataset.om;_brRenderList();return;}
+    const om=e.target.closest('[data-om]');if(om){const k=om.dataset.om;
+      _brOM=k==='t'?((_brOM==='new')?'old':'new'):k;_brRenderList();return;}   // 최신순을 다시 누르면 등록순
+    if(e.target.closest('#brOQ'))return;
+    const ot=e.target.closest('[data-otog]');if(ot){e.stopPropagation();const k=ot.dataset.otog;
+      if(_brOOpen.has(k))_brOOpen.delete(k);else _brOOpen.add(k);ot.classList.toggle('open');return;}
+    const og=e.target.closest('[data-ogo]');if(og){e.stopPropagation();const o=getBibleOrig()[og.dataset.ogo];if(!o)return;_brNextSrc='list';
+      _brShow(o.b-1,o.c,o.v).then(()=>{_brInkSel={s:{v:o.v,i:o.a},e:{v:o.v2||o.v,i:o.z}};_brInkOpen();});return;}
     const on=e.target.closest('[data-onote]');if(on){e.stopPropagation();_brOrigOpen(on.dataset.onote);return;}
     const oa=e.target.closest('[data-oagain]');if(oa){e.stopPropagation();const o=getBibleOrig()[oa.dataset.oagain];if(o&&o.q)_brOrigSend(o.q);return;}
-    const g=e.target.closest('[data-go]');if(!g)return;
+    const g=e.target.closest('[data-go]');if(!g||!g.dataset.go)return;   // 원어 줄은 '말씀으로' 단추로만 간다 (v26-1009-3)
     if(g.dataset.go.slice(0,2)==='o:'){const o=getBibleOrig()[g.dataset.go.slice(2)];if(!o)return;_brNextSrc='list';
       _brShow(o.b-1,o.c,o.v).then(()=>{_brInkSel={s:{v:o.v,i:o.a},e:{v:o.v2||o.v,i:o.z}};_brInkOpen();});return;}
     const p=g.dataset.go.split('.');const [b,c,v]=p.map(Number);
