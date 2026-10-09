@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1009-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6264,7 +6264,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-5";
+const APP_VERSION = "v. 26-1009-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15931,15 +15931,17 @@ function _brBind(){
     const [b,c,v]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';v?_brShow(b,c,v):_brShow(b,c);});
   // 값 풍선 — 손가락을 대거나 마우스를 올리면
   const tip=$('bdTip');
-  const showTipX=el=>{const t=el.dataset.tip;el.dataset.tip=el.dataset.tipx;showTip(el);el.dataset.tip=t;tip.classList.add('x');};
+  const showTipX=el=>{const t=el.dataset.tip;el.dataset.tip=el.dataset.tipx;showTip(el);el.dataset.tip=t;tip.classList.add('x');tip._x=el;};
   const showTip=el=>{tip.classList.remove('x');if(!el){tip.classList.remove('on');return;}tip.innerHTML=el.dataset.tip;tip.classList.add('on');
     const r=el.getBoundingClientRect();let x=r.left+r.width/2-tip.offsetWidth/2;x=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,x));
     tip.style.left=x+'px';tip.style.top=Math.max(8,r.top-tip.offsetHeight-6)+'px';};
-  $('brDashBody').addEventListener('pointerover',e=>showTip(e.target.closest('[data-tip]')));
-  $('brDashBody').addEventListener('pointerdown',e=>{const el=e.target.closest('[data-tip]');showTip(el);
-    clearTimeout(tip._lp);if(el&&el.dataset.tipx)tip._lp=setTimeout(()=>showTipX(el),500);});
+  $('brDashBody').addEventListener('pointerover',e=>{if(tip.classList.contains('x')&&e.target.closest('[data-tipx]')&&tip._x===e.target.closest('[data-tipx]'))return;showTip(e.target.closest('[data-tip]'));});
+  // PC: 마우스를 올리면 짧은 말, 누르면(클릭) 펼친다 · 휴대폰: 톡 = 짧은 말, 길게(0.5초) = 펼친다 (HB v26-1009-6)
+  $('brDashBody').addEventListener('pointerdown',e=>{const el=e.target.closest('[data-tip]');
+    clearTimeout(tip._lp);if(e.pointerType==='mouse'&&el&&el.dataset.tipx){showTipX(el);return;}
+    showTip(el);if(el&&el.dataset.tipx)tip._lp=setTimeout(()=>showTipX(el),500);});
   ['pointerup','pointercancel','pointerleave'].forEach(t=>$('brDashBody').addEventListener(t,()=>clearTimeout(tip._lp)));
-  $('brDashBody').addEventListener('contextmenu',e=>{const el=e.target.closest('[data-tipx]');if(!el)return;e.preventDefault();showTipX(el);});
+
   $('brDashBody').addEventListener('scroll',()=>tip.classList.remove('on'),{passive:true});
   $('brMini').onclick=()=>_brChrome(true);
   $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
