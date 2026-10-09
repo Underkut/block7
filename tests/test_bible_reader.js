@@ -610,7 +610,15 @@ console.log('\n시나리오 13-25 — 읽기 계획 끌어 옮기기 · 빼기 (
   sc.eq('옮긴 뒤 새로 담아도 화면 맨 오른쪽', (() => { _brTRToggle(0, 1); const L = _brTRList(); return L[0].b + '.' + L[0].c; })(), '1.1');
   sc.eq('길게 = 끌기 모드 (확인 창 아님)', /hold=setTimeout\(begin,500\)/.test(SRC) && !/을 읽기 계획에서 뺄까요\?/.test(SRC), true);
   sc.eq('빨간 빼기 자리 · 같은 속도·곡선', /id="brTRDel"/.test(SRC) && /transform '\+\(_SW_SLIDE\/1000\)\+'s '\+_SW_EASE;g\.style\.transform/.test(SRC), true);
-  sc.eq('끄는 동안 밀기를 삼키는 건 탭 줄만', /tr\.addEventListener\('touchmove',e=>\{if\(dragging&&e\.cancelable\)e\.preventDefault\(\);\},\{passive:false\}\);/.test(SRC), true);
+  sc.eq('성경 화면에 non-passive 터치 리스너가 없다 (스크롤이 걸린다 — v26-1007-16 · v26-1010-6)', /addEventListener\('touch(start|move)',[^\n]{0,400}\{passive:false\}\)/.test(slice('function _brBind(){', '// 글자와 화면')), false);
+  sc.eq('끄는 동안 탭 줄은 overflow:hidden 으로 멈춘다', /#bibleRd \.br-trbar\.drag\{overflow:hidden;/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-26 — 성경이 열려 있으면 상단 말씀 끌기 감시가 손대지 않는다 (v26-1010-6 HB)');
+{
+  sc.eq('_verseBandHit 은 성경이 열려 있으면 거짓', /function _verseBandHit\(x,y\)\{[\s\S]{0,600}if\(typeof _brOpen!=='undefined'&&_brOpen\)return false;/.test(SRC), true);
+  sc.eq('덮개가 가리면 거짓 (손가락 아래 맨 위 요소로)', /topEl\.closest\('#bibleRd,#verseFull,\.modal-overlay,\.overlay'\)\)return false;/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
