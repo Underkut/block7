@@ -139,4 +139,15 @@ console.log('시나리오 6 — 완료 체크하면 긴급 표시가 함께 해�
   sc.eq('긴급 표시가 없던 항목은 그대로다',plain,{text:'그냥 할일',done:false});
 }
 
+// ═══ 시나리오 7: 스포트라이트 흐림에 하위 할일 판도 들어간다(HB 요청, v26-1009-1) ═══
+console.log('시나리오 7 — 하위 할일 판도 부모 줄을 따라 흐려진다');
+{
+  const { SRC } = require('./_load');
+  const a=SRC.indexOf('function _applyUrgentSpotlight(){');
+  const fn=SRC.slice(a, SRC.indexOf('let _urgSpotlightObs=null;', a));
+  sc.eq('하위 판(.sub-panel)도 훑는다', fn.includes("list.querySelectorAll('.sub-panel')"), true);
+  sc.eq('바로 앞 부모 줄의 긴급 여부를 따른다', fn.includes("pn.previousElementSibling?.querySelector?.('.big-item,.sm-item')"), true);
+  sc.eq('흐림 CSS가 하위 판에도 있다', SRC.includes('.sub-panel.urg-dim{opacity:.6;filter:blur(1.2px);}'), true);
+}
+
 sc.done();
