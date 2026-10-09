@@ -574,6 +574,13 @@ console.log('\n시나리오 13-22 — 책 늘어놓기 · 리듬 칸 길게 (v26
   sc.eq('휴대폰은 길게, PC 는 클릭하면 펼친다 (v26-1009-6)', /tip\._lp=setTimeout\(\(\)=>showTipX\(el\),500\)/.test(SRC) && /if\(e\.pointerType==='mouse'&&el&&el\.dataset\.tipx\)\{showTipX\(el\);return;\}/.test(SRC), true);
 }
 
+
+console.log('\n시나리오 13-23 — 원어 성경순 · 최근 읽은 곳 한 줄 (v26-1009-7 HB)');
+{
+  sc.eq('원어 탭 성경순', /\['bb','성경순'\]/.test(SRC) && /_brOM==='bb'\?bib\(x,y\)/.test(SRC), true);
+  sc.eq('최근 읽은 곳 알약은 줄바꿈 없이 좌우로', /#bibleRd \.br-recent\{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
