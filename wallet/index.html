@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1009-5 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1009-6 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -275,10 +275,10 @@ body.pmode .par{padding-bottom:calc(env(safe-area-inset-bottom) + 80px)}
 body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opacity:.92}.mirtxt b{font-weight:600}
 .mirbar .pr-kids{justify-content:center;margin:6px 0 0}.mirbar .pr-kids button{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}.mirbar .pr-kids button.on{background:#fff;color:#1f2430}
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
-body.mirror .view{padding-top:calc(env(safe-area-inset-top) + 92px)}body.mirror #app{bottom:62px}
+body.mirror .view{padding-top:14px}body.mirror #app{top:var(--mirH,120px);bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
-#vAlloc .acctabs{position:sticky;top:0;z-index:6;margin:-6px -4px 10px;padding:6px 4px 8px;background:rgba(255,236,244,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:0 0 20px 20px}
-body.mirror #vAlloc .acctabs{top:calc(env(safe-area-inset-top) + 92px)}
+#vAlloc .acctabs{position:sticky;z-index:6;margin:-6px -4px 10px;padding:6px 4px 8px;background:rgba(255,236,244,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:0 0 20px 20px}
+#vAlloc .acctabs{top:env(safe-area-inset-top)}body.mirror #vAlloc .acctabs{top:0}
 .acctabs .at{min-width:0}.acctabs .at span,.acctabs .at b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acseg button{min-width:0;font-size:14px;padding:9px 4px}
 
@@ -520,7 +520,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1009-5";
+const APP_VERSION = "v. 26-1009-6";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1320,6 +1320,12 @@ function personSheet(g, onNew){
     },
     onDelete: g ? () => { if(!confirm('"'+g.n+'" 을(를) 목록에서 지울까요?\n예전 기록은 그대로 남아요.')) return;
       S.givers = S.givers.filter(v=>v.n!==g.n); save(); closeSheet(); render(); toast('지웠어요'); } : null });
+}
+function tilesSheet(){
+  openSheet(`<h2>쓴 곳(계획 칸) 목록</h2><div class="note">누르면 이름·캐릭터를 고치거나 지울 수 있어요.<br>순서는 계획세우기에서 칸을 꾹 눌러 끌어 바꿔요.</div>
+    <div class="pick" id="tlPk">${S.tiles.map(c => `<button class="pk" data-k="${c.k}" style="--bg:${CH[c.ch].bg}"><div class="face">${face(c.ch)}</div>${esc(c.n)}${AK.some(a => S.hideT[a].includes(c.k)) ? '<i class="lk">'+AK.filter(a => S.hideT[a].includes(c.k)).map(a => ACS[a]).join('·')+'에서 숨김</i>' : ''}</button>`).join('')}${newBtn('새 칸')}</div>`);
+  $('tlPk').onclick = e => { const b = e.target.closest('button'); if(!b) return;
+    if(b.dataset.k==='__new') tileSheet(null, () => tilesSheet()); else tileSheet(tileOf(b.dataset.k)); };
 }
 function peopleSheet(){
   openSheet(`<h2>받은 사람 목록</h2><div class="note">누르면 이름·캐릭터를 고치거나 지울 수 있어요.</div>
@@ -2218,13 +2224,15 @@ function mirrorOn(refresh){
   if(!k || !k.st){ document.body.classList.add('mirror'); $('mirTxt').textContent = k ? '아이 기록을 읽지 못했어요' : '아직 연결된 아이 폰이 없어요'; $('mirKids').innerHTML = kidTabsHtml(); return; }
   const cur = document.querySelector('.view.on'), v = cur ? cur.id : 'vHome', y = cur ? cur.scrollTop : 0;
   S = JSON.parse(JSON.stringify(k.st)); S.mute = true; curAcct = S.lastAcct;     // 부모 폰에서 아이 배경음악이 울리지 않게
-  document.body.classList.add('mirror');
+  document.body.classList.add('mirror'); mirH();
   $('mirTxt').innerHTML = `<b>${esc(k.name||'아이')}</b> 화면 · 보기만 할 수 있어요${k.at ? ' · '+k.at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 기준' : ''}`;
   $('mirKids').innerHTML = kidTabsHtml();
   stampsFor(k.id); render(); renderMute();
   if(refresh){ goTab(v); $(v).scrollTop = y; } else goTab('vHome');
   document.querySelectorAll('#mirSeg button').forEach(b => b.classList.toggle('on', b.dataset.v===(refresh ? v : 'vHome')));
 }
+const mirH = () => requestAnimationFrame(() => document.documentElement.style.setProperty('--mirH', $('mirBar').offsetHeight+'px'));
+window.addEventListener('resize', () => { if(MIR) mirH(); });
 function mirrorOff(){
   if(!MIR) return;
   S = MIR.keep; curAcct = MIR.acct; MIR = null; _ro = false;
@@ -2565,7 +2573,7 @@ function backupSheet(){
     <div class="setrow"><span>효과음<small>누를 때 나는 소리</small></span><div class="sl"><input type="range" id="slSfx" min="0" max="5" step="1" value="${S.sfxVol}" aria-label="효과음 크기"><b id="slSfxV"></b></div></div>
     <div class="setrow"><span>배경 음악<small>끔 · 1~5 단계</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
     <div id="trkBox"></div>
-    <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
+    <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button><button class="gb blue" id="bkTiles">쓴 곳(계획 칸) 목록 고치기</button></div>
     ${famRowHtml()}
     <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
@@ -2582,7 +2590,7 @@ function backupSheet(){
     setTimeout(() => { const st = AC ? AC.state : 'none';
       toast(st==='running' ? (S.mute ? '소리를 냈어요! (지금은 음소거라 앱 소리는 꺼져 있어요)' : '소리를 냈어요! 안 들리면 폰의 미디어 볼륨·무음 모드를 확인해 주세요') : '이 폰이 소리를 막고 있어요 ('+st+')'); }, 500);
   };
-  $('bkPeople').onclick = peopleSheet; famBindRow();
+  $('bkPeople').onclick = peopleSheet; $('bkTiles').onclick = tilesSheet; famBindRow();
   $('bkCopy').onclick = () => {
     const txt = backupText(), ok = () => { markBackup(); toast('복사했어요! 카톡 "나에게"에 붙여 두세요'); };
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
