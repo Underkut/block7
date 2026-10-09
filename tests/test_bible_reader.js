@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,getBibleOrig,_brOrigAdd,getBibleToRead,_brTRHas,_brTRToggle,_brTRList,_brOrigNote,_brOrigWords,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,getBibleOrig,_brOrigAdd,getBibleToRead,_brTRHas,_brTRToggle,_brTRList,_brTRSetOrder,_brOrigNote,_brOrigWords,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -598,6 +598,19 @@ console.log('\n시나리오 13-24 — 읽을 곳 (bibleToRead, v26-1009-8 HB)');
   sc.eq('장 목록 고르기 단추 · 고르는 동안 길게 눌러 열기는 쉰다', /data-trpk="1"/.test(SRC) && /if\(!c\|\|_brTRPick\)return;/.test(SRC), true);
   sc.eq('탭 줄은 오른쪽부터 (row-reverse) · 넘치면 좌우 스크롤', /#bibleRd \.br-trbar\{[^}]*flex-direction:row-reverse;[^}]*overflow-x:auto;/.test(SRC), true);
   sc.eq('+ = 지금 장 넣기 · 헤더와 함께 접힌다', /data-trplus="1"/.test(SRC) && /:scope>\.br-trbar'\)/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-25 — 읽기 계획 끌어 옮기기 · 빼기 (v26-1010-2 HB)');
+{
+  ST.bibleToRead = { '9.28': { b: 9, c: 28, at: 3 }, '48.6': { b: 48, c: 6, at: 1 }, '2.2': { b: 2, c: 2, at: 2 } };
+  sc.eq('처음엔 넣은 차례', _brTRList().map(x => x.b + '.' + x.c), ['48.6', '2.2', '9.28']);
+  _brTRSetOrder(['9.28', '48.6', '2.2']);
+  sc.eq('옮긴 차례가 남는다', _brTRList().map(x => x.b + '.' + x.c), ['9.28', '48.6', '2.2']);
+  sc.eq('새로 담은 것은 맨 끝(화면 맨 왼쪽)', (() => { _brTRToggle(0, 1); const L = _brTRList(); return L[L.length - 1].b + '.' + L[L.length - 1].c; })(), '1.1');
+  sc.eq('길게 = 끌기 모드 (확인 창 아님)', /hold=setTimeout\(begin,500\)/.test(SRC) && !/을 읽기 계획에서 뺄까요\?/.test(SRC), true);
+  sc.eq('빨간 빼기 자리 · 같은 속도·곡선', /id="brTRDel"/.test(SRC) && /transform '\+\(_SW_SLIDE\/1000\)\+'s '\+_SW_EASE;g\.style\.transform/.test(SRC), true);
+  sc.eq('끄는 동안 밀기를 삼키는 건 탭 줄만', /tr\.addEventListener\('touchmove',e=>\{if\(dragging&&e\.cancelable\)e\.preventDefault\(\);\},\{passive:false\}\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');

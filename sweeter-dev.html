@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5153,6 +5153,15 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-trbar::-webkit-scrollbar{display:none;}
 #bibleRd .br-trt{flex:0 0 auto;min-width:62px;height:34px;padding:0 12px;margin-left:-1px;border:1.5px solid var(--bd);border-top:0;border-radius:0 0 12px 12px;
   background:var(--s2);color:var(--tx2);font-size:13px;font-weight:600;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+#bibleRd .br-trbar.drag{touch-action:none;}
+#bibleRd .br-trt.ph{opacity:.25;}
+#bibleRd .br-trt.lift{box-shadow:0 10px 24px rgba(0,0,0,.22);border-radius:12px;border-top:1.5px solid var(--bd);}
+#bibleRd .br-trdel{position:absolute;left:50%;top:calc(100% + 64px);transform:translate(-50%,-6px) scale(.92);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:999px;background:rgba(229,72,77,.14);color:var(--danger,#e5484d);
+  border:1.5px dashed var(--danger,#e5484d);font-size:13px;font-weight:600;transition:opacity .2s,transform .2s,background .15s;}
+#bibleRd .br-trdel svg{width:17px;height:17px;}
+#bibleRd .br-trdel.on{opacity:1;transform:translate(-50%,0) scale(1);}
+#bibleRd .br-trdel.hot{background:var(--danger,#e5484d);color:#fff;border-style:solid;transform:translate(-50%,0) scale(1.08);}
 #bibleRd .br-trt.cur{background:var(--ac);border-color:var(--ac);color:#fff;}
 #bibleRd .br-trt.br-trplus{min-width:34px;padding:0;color:var(--tx3);font-weight:400;font-size:18px;background:var(--bg);}
 #bibleRd .br-crumbx{display:flex;align-items:center;justify-content:space-between;gap:8px;}
@@ -6278,7 +6287,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-1";
+const APP_VERSION = "v. 26-1010-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9054,6 +9063,7 @@ try{
     <!-- 헤더 아래 선 = 이 장에서 어디쯤 읽고 있는지 (v26-1007-9, HB). 헤더가 접혀도 남는다 -->
     <div class="br-progl" aria-hidden="true"><i id="brProgI"></i></div>
     <div class="br-trbar" id="brTR" aria-label="읽기 계획"></div>
+    <div class="br-trdel" id="brTRDel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg><span>여기에 놓으면 빼기</span></div>
   </div>
   <div class="br-edge" id="brEdge" aria-hidden="true"></div><div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
@@ -14720,8 +14730,12 @@ function _brOrigWords(all){const by={};Object.keys(all||{}).forEach(id=>{const o
 //   다 읽어도 저절로 빠지지 않는다 (HB) — 사람이 뺀다.
 function getBibleToRead(){if(!ST.bibleToRead)ST.bibleToRead={};return ST.bibleToRead;}
 function _brTRHas(b,c){return !!getBibleToRead()[(b+1)+'.'+c];}
-function _brTRToggle(b,c){const all=getBibleToRead(),k=(b+1)+'.'+c;if(all[k]){delete all[k];return false;}all[k]={b:b+1,c,at:Date.now()};return true;}
-function _brTRList(){const all=getBibleToRead();return Object.keys(all).filter(k=>all[k]).map(k=>all[k]).sort((x,y)=>(x.at||0)-(y.at||0));}
+function _brTRToggle(b,c){const all=getBibleToRead(),k=(b+1)+'.'+c;if(all[k]){delete all[k];return false;}const os=Object.values(all).filter(x=>x&&x.o!=null).map(x=>x.o);
+  all[k]=Object.assign({b:b+1,c,at:Date.now()},os.length?{o:Math.max(...os)+1}:{});return true;}   // 옮긴 차례가 있으면 맨 끝 다음
+// 차례: 사람이 옮긴 차례(o)가 있으면 그것, 없으면 넣은 때(at) — 끌어 옮기면 전부 o 를 다시 매긴다 (v26-1010-2)
+function _brTRKey(x){return x.o!=null?x.o:(x.at||0)/1e13;}
+function _brTRList(){const all=getBibleToRead();return Object.keys(all).filter(k=>all[k]).map(k=>all[k]).sort((x,y)=>_brTRKey(x)-_brTRKey(y)||(x.at||0)-(y.at||0));}
+function _brTRSetOrder(keys){const all=getBibleToRead();keys.forEach((k,i)=>{if(all[k])all[k]=Object.assign({},all[k],{o:i});});}
 // ══ 인앱 성경 — 기록과 장절 끝 ══
 
 // ══ 인앱 성경 — 본문 받기 (B-4: 앱이 켜지면 성경 전체를 받아 기기에 담는다) ══
@@ -15978,12 +15992,45 @@ function _brBind(){
 
   $('brDashBody').addEventListener('scroll',()=>tip.classList.remove('on'),{passive:true});
   $('brMini').onclick=()=>_brChrome(true);
-  // 읽을 곳 탭 — 톡 = 그 장으로, 길게(0.5초)·우클릭 = 빼기, + = 지금 장 넣기
-  {const tr=$('brTR');let hold=null,held=false;
-    const rm=t=>{const[b,c]=t.dataset.tr.split('.').map(Number);if(!confirm(_brBooks()[b]+' '+c+_brUnit(b)+'을 읽기 계획에서 뺄까요?'))return;_brTRToggle(b,c);save();_brTRRender();};
-    tr.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-tr]');held=false;if(!t)return;hold=setTimeout(()=>{held=true;rm(t);},500);});
-    ['pointerup','pointerleave','pointercancel'].forEach(k=>tr.addEventListener(k,()=>clearTimeout(hold)));
-    tr.addEventListener('contextmenu',e=>{const t=e.target.closest('[data-tr]');if(!t)return;e.preventDefault();clearTimeout(hold);held=true;rm(t);});
+  // 읽기 계획 탭 — 톡 = 그 장으로, + = 지금 장 담기.
+  // 길게(0.5초) = 끌기 모드 (v26-1010-2, HB): 손을 따라 옮겨 차례를 바꾸고, 아래 가운데 빨간 자리에 놓으면 뺀다.
+  // 움직임은 말씀 저장 목록 끌기와 같은 속도·곡선(_SW_SLIDE · _SW_EASE) — 비켜나는 탭은 제자리에서 미끄러진다.
+  {const tr=$('brTR'),dz=$('brTRDel');let hold=null,held=false,el=null,gh=null,dragging=false,sx=0,sy=0,lx=0,ly=0,ox=0,oy=0,pid=null,over=false;
+    const tabs=()=>[...tr.querySelectorAll('[data-tr]')];
+    // 끄는 탭은 떠 있는 사본(gh) — 탭 줄이 좌우 스크롤 상자라 원래 탭을 옮기면 상자 밖에서 잘린다. 원래 자리는 옅은 자리표시
+    const put=()=>{if(gh)gh.style.transform='translate('+(lx-ox)+'px,'+(ly-oy)+'px) scale(1.06)';};
+    // 지금 떠 있는 자리 — 화면에서 오른쪽에 있는 탭 수 = 차례 (줄이 오른쪽부터 쌓이므로)
+    const want=()=>{const c=lx;return tabs().filter(t=>t!==el).filter(t=>{const q=t.getBoundingClientRect();return q.left+q.width/2>c;}).length;};
+    const move=to=>{const others=tabs().filter(t=>t!==el),was=new Map();others.forEach(t=>was.set(t,t.getBoundingClientRect().left));
+      const ref=others[to];if(ref)tr.insertBefore(el,ref);else{const plus=tr.querySelector('[data-trplus]');tr.insertBefore(el,plus||null);}
+      others.forEach(t=>{const dx=was.get(t)-t.getBoundingClientRect().left;if(!dx)return;t.style.transition='none';t.style.transform='translateX('+dx+'px)';
+        requestAnimationFrame(()=>{t.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;t.style.transform='';});});};
+    const overDel=()=>{const r=dz.getBoundingClientRect();return lx>=r.left-10&&lx<=r.right+10&&ly>=r.top-14&&ly<=r.bottom+14;};
+    const begin=()=>{if(!el)return;hold=null;held=true;dragging=true;try{tr.setPointerCapture(pid);}catch(_){}
+      const r=el.getBoundingClientRect();gh=el.cloneNode(true);gh.classList.add('lift');
+      Object.assign(gh.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',margin:'0',zIndex:'60',transition:'none',pointerEvents:'none'});
+      _brEl('bibleRd').appendChild(gh);ox=lx;oy=ly;el.classList.add('ph');tr.classList.add('drag');put();dz.classList.add('on');
+      if(navigator.vibrate)try{navigator.vibrate(12);}catch(_){}};
+    const end=(drop)=>{clearTimeout(hold);hold=null;const cur=el,g=gh;el=null;gh=null;tr.classList.remove('drag');dz.classList.remove('on','hot');
+      if(!dragging||!cur){dragging=false;return;}dragging=false;
+      if(drop&&over){g.style.transition='transform .2s ease,opacity .2s ease';g.style.opacity='0';g.style.transform+=' scale(.6)';
+        const[b,c]=cur.dataset.tr.split('.').map(Number);setTimeout(()=>{g.remove();_brTRToggle(b,c);save();_brTRRender();_brToast('읽기 계획에서 뺐어요');},200);return;}
+      _brTRSetOrder(tabs().map(t=>{const[b,c]=t.dataset.tr.split('.').map(Number);return (b+1)+'.'+c;}));save();
+      // 놓은 탭은 제 자리로 미끄러져 들어간다 (같은 속도·곡선)
+      const r=cur.getBoundingClientRect(),gr0=parseFloat(g.style.left),gt0=parseFloat(g.style.top);
+      g.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;g.style.transform='translate('+(r.left-gr0)+'px,'+(r.top-gt0)+'px)';
+      setTimeout(()=>{g.remove();cur.classList.remove('ph');_brTRRender();},_SW_SLIDE);};
+    tr.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-tr]');held=false;if(!t||e.button>0)return;
+      el=t;pid=e.pointerId;sx=lx=e.clientX;sy=ly=e.clientY;over=false;hold=setTimeout(begin,500);});
+    tr.addEventListener('pointermove',e=>{if(!el||e.pointerId!==pid)return;lx=e.clientX;ly=e.clientY;
+      if(hold){if(Math.hypot(lx-sx,ly-sy)>8){clearTimeout(hold);hold=null;el=null;}return;}   // 기다리는 동안 밀면 = 탭 줄 스크롤
+      if(!dragging)return;put();over=overDel();dz.classList.toggle('hot',over);
+      if(!over){const to=want(),now=tabs().indexOf(el);if(to!==now)move(to);}});
+    tr.addEventListener('pointerup',e=>{if(el&&e.pointerId===pid)end(true);else{clearTimeout(hold);hold=null;}});
+    tr.addEventListener('pointercancel',()=>end(false));
+    // 끄는 동안에는 손가락 밀기를 통째로 삼킨다 — 탭 줄만 (본문 스크롤과 무관, v26-1007-16 교훈)
+    tr.addEventListener('touchmove',e=>{if(dragging&&e.cancelable)e.preventDefault();},{passive:false});
+    tr.addEventListener('contextmenu',e=>{if(e.target.closest('[data-tr]'))e.preventDefault();});
     tr.addEventListener('click',e=>{if(held){held=false;return;}
       if(e.target.closest('[data-trplus]')){_brTRToggle(_brCur.b,_brCur.c);save();_brTRRender();_brToast('읽기 계획에 담았어요');return;}
       const t=e.target.closest('[data-tr]');if(!t)return;const[b,c]=t.dataset.tr.split('.').map(Number);_brNextSrc='toread';_brShow(b,c);});}
@@ -16066,7 +16113,8 @@ function _brBind(){
   //    끌었으면 뒤따르는 누르기는 버린다 (제목을 끌었는데 책 고르기가 열리면 안 된다)
   {const rd=$('bibleRd'),hd=$('brHead');let st=null,dragged=false;
     hd.style.touchAction='none';
-    hd.addEventListener('pointerdown',e=>{if(e.button>0)return;st={y:e.clientY,t:performance.now(),dy:0,v:0,id:e.pointerId};dragged=false;});
+    hd.addEventListener('pointerdown',e=>{if(e.button>0||e.target.closest('.br-trbar,.br-trdel'))return;   // 읽기 계획 탭 줄은 제 손짓 (v26-1010-2)
+    st={y:e.clientY,t:performance.now(),dy:0,v:0,id:e.pointerId};dragged=false;});
     hd.addEventListener('pointermove',e=>{if(!st||e.pointerId!==st.id)return;
       const now=performance.now(),dy=e.clientY-st.y;
       if(!dragged){if(dy<8)return;dragged=true;rd.style.transition='none';try{hd.setPointerCapture(e.pointerId);}catch(x){}}
