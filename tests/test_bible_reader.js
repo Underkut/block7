@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,getBibleOrig,_brOrigAdd,_brOrigNote,_brOrigWords,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -195,7 +195,7 @@ console.log('\n시나리오 11 — 대량 손실 방어가 성경 기록도 센�
 console.log('\n시나리오 12 — 이름이 등록돼야 하는 자리 모두');
 {
   const has = (start, end, name) => slice(start, end).indexOf(name) >= 0;
-  ['bibleMarks', 'bibleReadLog', 'bibleNotes', 'bibleInk'].forEach(n => {
+  ['bibleMarks', 'bibleReadLog', 'bibleNotes', 'bibleInk', 'bibleOrig'].forEach(n => {
     sc.eq(n + ' — 처음 상태(defaultState)', has('function defaultState(){', 'settings:{', n), true);
     sc.eq(n + ' — 불러올 때 빈 칸 채우기', new RegExp('if\\(!ST\\.' + n + '\\)ST\\.' + n + '=\\{\\};').test(SRC), true);
     sc.eq(n + ' — 원격 받기(applyRemoteState)', has('function applyRemoteState(remote){', 'ST.contacts=', n), true);
@@ -492,6 +492,35 @@ console.log('\n시나리오 13-17 — 아이폰 스크롤 방향 바꾸기 (HB v
   sc.eq('아이폰은 본문 touch-action 을 manipulation 으로', /#bibleRd\.br-ios \.br-v\{touch-action:manipulation;\}/.test(SRC), true);
   sc.eq('아이폰 긋기는 터치 이벤트, 모두 passive', (SRC.match(/\$\('brChap'\)\.addEventListener\('touch(start|move|end|cancel)',[^\n]*\{passive:true\}\);/g) || []).length, 4);
   sc.eq('아이폰 터치는 포인터 길을 타지 않는다', /if\(e\.button>0\|\|\(IOS&&e\.pointerType==='touch'\)\)return;/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-18 — 원어찾기 기록 · 해설 (bibleOrig, v26-1009-2 HB)');
+{
+  const VS = ['레위 족속중 한 사람이 가서 레위 여자에게 장가 들었더니', '그 여자가 잉태하여'];
+  ST.bibleOrig = {};
+  const a = _brOrigAdd(1, 2, [{ v: 1, a: 0, z: 1 }], VS, "출2:1 '레위' 원어 해설");
+  const o = ST.bibleOrig[a];
+  sc.eq('누른 때 한 줄 — 장절·글자·문구', [o.b, o.c, o.v, o.a, o.v2, o.z, o.w, o.q], [2, 2, 1, 0, 1, 1, '레위', "출2:1 '레위' 원어 해설"]);
+  const b2 = _brOrigAdd(1, 2, [{ v: 1, a: 16, z: 17 }], VS, 'q2');
+  sc.eq('같은 단어를 또 찾으면 줄이 하나 더', Object.keys(ST.bibleOrig).length, 2);
+  _brOrigNote(b2, '  레위 = 연합하다  ');
+  sc.eq('해설은 다듬어 붙는다', ST.bibleOrig[b2].n, '레위 = 연합하다');
+  const W = _brOrigWords(ST.bibleOrig);
+  sc.eq('단어별로 묶는다 (2번 · 해설 함께)', [W.length, W[0].w, W[0].ids.length, W[0].note], [1, '레위', 2, '레위 = 연합하다']);
+  _brOrigNote(b2, '');
+  sc.eq('해설을 비우면 뗀다', 'n' in ST.bibleOrig[b2], false);
+  sc.eq('여러 절에 걸치면 끝 절도', (() => { const x = _brOrigAdd(1, 2, [{ v: 1, a: 29, z: 30 }, { v: 2, a: 0, z: 0 }], VS, ''); return [ST.bibleOrig[x].v, ST.bibleOrig[x].v2, ST.bibleOrig[x].w]; })(), [1, 2, '더니 그']);
+  const base = { bibleOrig: {} };
+  const m = _fbMerge(clone(base), { bibleOrig: { oa: { w: '레위', at: 1 } } }, { bibleOrig: { ob: { w: '모세', at: 2 } } }, false);
+  sc.eq('병합: 두 기기 것 둘 다', Object.keys(m.bibleOrig).sort(), ['oa', 'ob']);
+  global._fbBaseJson = null;
+  const g = _fbMergeGuarded(null, { bibleOrig: {}, days: {} }, { bibleOrig: { oa: { w: '레위' } }, days: {} }, false);
+  sc.eq('빈 기기 로그인: 클라우드 기록 그대로', Object.keys(g.bibleOrig), ['oa']);
+  sc.eq('대량 손실 방어가 원어 기록도 센다', _fbCountByKind({ bibleOrig: { a: {}, b: {} } }).bible, 2);
+  sc.eq('원어찾기 누르면 복사가 먼저, 기록은 그다음', /_brOrigSend\(q\);[^\n]*\n\s*_brOrigAdd\(b,c,sps,_brChVerses\(\),q\);save\(\);/.test(SRC), true);
+  sc.eq('원어 탭은 Even Deeper 계정만', /<button data-t="orig" class="even-only">원어<\/button>/.test(SRC), true);
+  sc.eq('해설 붙인 글자는 점선 · 톡 하면 해설', /class="br-origu"/.test(SRC) && /const oh=_brOrigHitAt\(e\.clientX,e\.clientY\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
