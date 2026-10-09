@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1009-4 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1009-5 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -277,6 +277,11 @@ body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opa
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
 body.mirror .view{padding-top:calc(env(safe-area-inset-top) + 92px)}body.mirror #app{bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
+#vAlloc .acctabs{position:sticky;top:0;z-index:6;margin:-6px -4px 10px;padding:6px 4px 8px;background:rgba(255,236,244,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:0 0 20px 20px}
+body.mirror #vAlloc .acctabs{top:calc(env(safe-area-inset-top) + 92px)}
+.acctabs .at{min-width:0}.acctabs .at span,.acctabs .at b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acseg button{min-width:0;font-size:14px;padding:9px 4px}
+
 .iconbtn svg{width:22px;height:22px}
 .nrow{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:15px}.nrow input{width:20px;height:20px;accent-color:#4f6bed}
 .nmin{font-size:13px;color:var(--sub);margin:-4px 0 4px 32px}.nmin select{font:inherit;padding:2px 4px;border-radius:6px;border:1px solid #d1d5db;background:#fff;color:inherit}
@@ -464,7 +469,7 @@ body:has(.par.on) #trash{visibility:hidden}
     </div>
     <div class="waitbox card" id="waitBox" style="display:none"></div>
     <button class="gb blue sm" id="bExp">받을 예정인 돈 적기</button>
-    <button class="gb gray sm" id="bMove" style="margin-top:10px">현금 ↔ 체크카드 돈 옮기기</button>
+    <button class="gb gray sm" id="bMove" style="margin-top:10px">현금 · 체크카드 · 통장 사이 돈 옮기기</button>
     <button class="cta" id="bAlloc"><span class="f" id="ctaFace"></span><span><div class="t">계획 세우기</div><div class="s" id="ctaSub"></div></span></button>
     <div class="sec">최근에 적은 것</div>
     <div id="recent"></div>
@@ -484,7 +489,8 @@ body:has(.par.on) #trash{visibility:hidden}
     <div class="steps"><span>한 번에</span><button data-s="500">500</button><button data-s="1000" class="on">1,000</button><button data-s="5000">5,000</button><button data-s="10000">10,000</button></div>
     <div id="secTiles">
     <div class="grid" id="agrid"></div>
-    <div class="smallnote">칸을 꾹 누르고 끌면 순서를 바꾸거나 지울 수 있어요</div>
+    <div id="hidRow"></div>
+    <div class="smallnote">칸을 꾹 누르고 끌면 순서를 바꾸거나 지울 수 있어요 · 칸 이름을 누르면 이 자산에서 숨길 수 있어요</div>
     <button class="linkbtn" id="allocReset">세운 계획 모두 지우고 다시 하기</button>
     </div>
     <div id="secGoals" style="display:none"><div id="goalList"></div></div>
@@ -514,7 +520,9 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1009-4";
+const APP_VERSION = "v. 26-1009-5";
+const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
+const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -752,15 +760,15 @@ const dstr = d => d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())
 const todayStr = () => dstr(new Date());
 const dayAdd = n => { const d = new Date(); d.setDate(d.getDate()+n); return dstr(d); };
 let S = load();
-function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, goals:[], chk:{}, lvSeen:null, badges:{}, badgeInit:false, bnew:[], gnew:[], cseen:[], theme:null, pin:null, cps:[], mode:null, quizHide:false, waits:[], held:0, applied:[], exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:2, bgmSel:null, bgmOrder:null, volv:3, mute:true, lastAcct:'cash', lastBackup:0}; }
+function blank(){ return {v:2, tx:[], plans:[], alloc:{cash:{}, card:{}, bank:{}}, hideT:{cash:[], card:[], bank:[]}, tiles:DEFAULT_TILES.map(t=>Object.assign({},t)), custom:[], gone:{}, goals:[], chk:{}, lvSeen:null, badges:{}, badgeInit:false, bnew:[], gnew:[], cseen:[], theme:null, pin:null, cps:[], mode:null, quizHide:false, waits:[], held:0, applied:[], exp:[], useExp:true, givers:DEFAULT_GIVERS.map(g=>Object.assign({},g)), dashOpen:true, sfxVol:4, bgmVol:2, bgmSel:null, bgmOrder:null, volv:3, mute:true, lastAcct:'cash', lastBackup:0}; }
 function migrate(o0){
   // 어떤 예전 모양이 와도 현재 모양으로: v1(계획 목록) · 개편1(custom 칸) → tiles
   const o = Object.assign(blank(), o0||{});
   o.tx = Array.isArray(o.tx) ? o.tx : [];
   // 계획은 자산별: {cash:{칸:금액}, card:{…}}. 예전(평평한 {칸:금액})은 현금 계획으로 옮긴다
-  { const old = (o.alloc && typeof o.alloc==='object') ? o.alloc : {}, A = {cash:{}, card:{}};
+  { const old = (o.alloc && typeof o.alloc==='object') ? o.alloc : {}, A = {cash:{}, card:{}, bank:{}};
     if(Object.keys(old).some(k => typeof old[k]==='number')) A.cash = old;
-    else ['cash','card'].forEach(a => { if(old[a] && typeof old[a]==='object') A[a] = old[a]; });
+    else AK.forEach(a => { if(old[a] && typeof old[a]==='object') A[a] = old[a]; });
     o.alloc = A; }
   if(!Array.isArray(o.tiles) || !(o0 && Array.isArray(o0.tiles))) o.tiles = DEFAULT_TILES.map(t=>Object.assign({},t));
   if(Array.isArray(o.custom)) o.custom.forEach(c => { if(c && c.k && c.n && !o.tiles.find(t=>t.k===c.k)) o.tiles.push({k:c.k, n:c.n, ch:c.ch}); });
@@ -794,7 +802,7 @@ function migrate(o0){
     .map(x => ({k:String(x.k), n:String(x.n).slice(0,14), price:Math.round(+x.price), img: okImg(x.img) ? {t:x.img.t, v:x.img.v} : {t:'char', v:'star'},
       due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||'') ? x.due : null, done:!!x.done, doneAt:/^\d{4}-\d{2}-\d{2}$/.test(x.doneAt||'') ? x.doneAt : null}));
   o.exp = (Array.isArray(o.exp) ? o.exp : []).filter(e => e && Number.isFinite(+e.amt) && +e.amt>0)
-    .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), acct:e.acct==='card' ? 'card' : 'cash', date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
+    .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), acct:okA(e.acct), date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
   o.useExp = o.useExp !== false;
   o.dashOpen = o.dashOpen !== false; // 예전 켬/끔(sfx·bgm)은 단계로 옮긴다: 효과음 켬=4 · 끔=0, 배경음악 켬=3 · 끔=0
   const lv = (v, d) => (typeof v==='number' && v>=0 && v<=5) ? Math.round(v) : d;
@@ -809,10 +817,11 @@ function migrate(o0){
   const seenG = new Set();
   if(!(o0 && Array.isArray(o0.givers))) o.givers = DEFAULT_GIVERS.map(g=>Object.assign({},g));
   o.givers = o.givers.filter(g => g && g.n && !seenG.has(String(g.n)) && seenG.add(String(g.n))).map(g => ({n:String(g.n).slice(0,8), ch:CH[g.ch] ? g.ch : 'hamster'}));
-  o.tx.forEach(t => { if(t){ t.note = String(t.note||'').slice(0,60); if(t.ch && !CH[t.ch]) t.ch = null; t.acct = t.acct==='card' ? 'card' : 'cash';
-    if(t.t==='mv'){ t.from = t.from==='card' ? 'card' : 'cash'; t.to = t.from==='card' ? 'cash' : 'card'; t.acct = t.from; } } });
-  ['cash','card'].forEach(a => Object.keys(o.alloc[a]).forEach(k => { const v = Math.round(+o.alloc[a][k]); if(v>0) o.alloc[a][k] = v; else delete o.alloc[a][k]; }));
-  o.lastAcct = o.lastAcct==='card' ? 'card' : 'cash';
+  o.tx.forEach(t => { if(t){ t.note = String(t.note||'').slice(0,60); if(t.ch && !CH[t.ch]) t.ch = null; t.acct = okA(t.acct);
+    if(t.t==='mv'){ t.from = okA(t.from); t.to = (AK.includes(t.to) && t.to!==t.from) ? t.to : (t.from==='card' ? 'cash' : 'card'); t.acct = t.from; } } });
+  AK.forEach(a => Object.keys(o.alloc[a]).forEach(k => { const v = Math.round(+o.alloc[a][k]); if(v>0) o.alloc[a][k] = v; else delete o.alloc[a][k]; }));
+  o.lastAcct = okA(o.lastAcct);
+  { const h = (o0 && o0.hideT && typeof o0.hideT==='object') ? o0.hideT : {}; o.hideT = {}; AK.forEach(a => { o.hideT[a] = Array.isArray(h[a]) ? h[a].filter(k => typeof k==='string' && o.tiles.some(t => t.k===k)) : []; }); }
   return o;
 }
 function load(){
@@ -823,25 +832,28 @@ var _ro = false;   // 부모 보고서가 아이 상태로 잠깐 계산하는 �
 function save(){ if(_ro || MIR) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); }
 
 /* ───────── 계산 ───────── */
-const ACCTS = [{k:'cash', n:'현금'}, {k:'card', n:'체크카드'}];
-const acctName = a => a==='card' ? '체크카드' : '현금';
-const byA = a => a==='card' ? '체크카드로' : '현금으로';
-const acctOf = t => (t && t.acct==='card') ? 'card' : 'cash';
+const ACCTS = [{k:'cash', n:'현금'}, {k:'card', n:'체크카드'}, {k:'bank', n:'통장'}];
+const ACN = {cash:'현금', card:'체크카드', bank:'통장'}, ACS = {cash:'현금', card:'카드', bank:'통장'};
+const acctName = a => ACN[a] || '현금';
+const byA = a => a==='bank' ? '통장으로' : a==='card' ? '체크카드로' : '현금으로';
+const acctOf = t => okA(t && t.acct);
+const sumA = f => AK.reduce((s, a) => s + f(a), 0);
 let curAcct = S.lastAcct;                                    // 계획세우기 화면이 보고 있는 자산
 // 잔액은 자산별로 센다. 돈 옮기기(mv)는 합계를 안 바꾸고 두 자산만 바꾼다. 받을 예정 돈은 잔액에 섞지 않는다.
 const balOf = a => S.tx.reduce((s,t) => t.t==='mv' ? s + (t.to===a ? t.amt : 0) - (t.from===a ? t.amt : 0) : (acctOf(t)===a ? s + (t.t==='in' ? t.amt : -t.amt) : s), 0);
-const balance = () => balOf('cash') + balOf('card');
+const balance = () => sumA(balOf);
 const pendOf = a => S.exp.reduce((s,e) => s + (acctOf(e)===a ? e.amt : 0), 0);
-const pendAll = () => pendOf('cash') + pendOf('card');
+const pendAll = () => sumA(pendOf);
 const spent = (k, a=curAcct) => S.tx.reduce((s,t) => s + (t.t==='out' && t.cat===k && acctOf(t)===a ? t.amt : 0), 0);
 const alloc = (k, a=curAcct) => (S.alloc[a] || {})[k] || 0;
 const left = (k, a=curAcct) => alloc(k,a) - spent(k,a);
 const reserved = (a=curAcct) => S.tiles.reduce((s,c) => s + Math.max(0, left(c.k,a)), 0) + S.goals.reduce((s,g) => s + (g.done ? 0 : alloc(g.k,a)), 0);
 const avail = (a=curAcct) => balOf(a) - reserved(a) + (S.useExp ? pendOf(a) : 0);      // 계획 세울 수 있는 돈 (자산별)
-const availAll = () => avail('cash') + avail('card');
+const availAll = () => sumA(a => avail(a));
 const AC_ICO = {
   cash:'<svg viewBox="0 0 32 32"><rect x="3" y="8" width="26" height="16" rx="3" fill="#7be0a8" stroke="#3cc98a" stroke-width="2"/><circle cx="16" cy="16" r="4" fill="#fff" opacity=".9"/><circle cx="8" cy="16" r="1.5" fill="#3cc98a"/><circle cx="24" cy="16" r="1.5" fill="#3cc98a"/></svg>',
   card:'<svg viewBox="0 0 32 32"><rect x="3" y="7" width="26" height="18" rx="3.500" fill="#8cc4ff" stroke="#5aa9ff" stroke-width="2"/><rect x="3" y="12" width="26" height="4" fill="#3f86df"/><rect x="7" y="19" width="8" height="2.500" rx="1" fill="#fff" opacity=".9"/></svg>'};
+AC_ICO.bank = '<svg viewBox="0 0 32 32"><path d="M4 12L16 5l12 7z" fill="#ffd27a" stroke="#f0a92c" stroke-width="2" stroke-linejoin="round"/><rect x="6" y="13" width="20" height="10" fill="#fff3d6" stroke="#f0a92c" stroke-width="2"/><path d="M11 14v8M16 14v8M21 14v8" stroke="#f0a92c" stroke-width="2"/><rect x="4" y="23" width="24" height="4" rx="1.500" fill="#f0a92c"/></svg>';
 const MV_ICO = '<svg viewBox="0 0 32 32" fill="none" stroke="#5aa9ff" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round" style="width:70%;height:70%"><path d="M6 12h18M19 7l5 5-5 5M26 21H8M13 16l-5 5 5 5"/></svg>';
 
 /* ───────── 화면 ───────── */
@@ -850,7 +862,7 @@ function monthShift(m, d){ let [y,mm] = m.split('-').map(Number); mm += d; while
 const wd = ['일','월','화','수','목','금','토'];
 
 function txRow(t){
-  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${t.from==='cash'?'카드에 넣었어요':'현금으로 뺐어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
+  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${byA(t.to)} 옮겼어요 · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
   const ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
   return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
@@ -911,7 +923,8 @@ function renderAlloc0(){
     + ex.map(e => { const l = expLabel(e); return `<div class="er" data-id="${e.id}"><div class="r1" data-ea="edit">${avatar(giverCh(e.who,e.ch))}<span class="mid"><div class="t">${esc(e.who)}</div><div class="s ${l.late?'late':''}">${l.t}</div>${e.note?`<div class="s">${esc(e.note)}</div>`:''}</span><span class="a">+${nf(e.amt)}</span></div><div class="eb"><button class="gb green sm" data-ea="get">받았어요!</button><button class="gb blue sm" data-ea="edit">고치기</button><button class="gb gray sm" data-ea="del">취소</button></div></div>`; }).join('')
     + `<button class="gb blue sm" id="addExp" style="margin-top:10px">＋ 받을 예정인 돈 적기</button>`;
 
-  $('agrid').innerHTML = S.tiles.map(c => {
+  const hid = (S.hideT[A]||[]);
+  $('agrid').innerHTML = S.tiles.filter(c => !hid.includes(c.k)).map(c => {
     const l = left(c.k), sp = spent(c.k);
     return `<div class="ac" data-k="${c.k}" style="--bg:${CH[c.ch].bg}"><button class="face" data-act="face">${face(c.ch)}</button>
       <button class="nm" data-act="name"><span>${esc(c.n)}</span>${PENCIL}</button>
@@ -919,6 +932,7 @@ function renderAlloc0(){
       <div class="sub">${sp>0 ? '쓴 돈 '+nf(sp)+'원' : (alloc(c.k)>0 ? '' : '눌러서 계획해요')}</div>
       <div class="pm"><button class="m" data-act="m" aria-label="줄이기">−</button><button class="p" data-act="p" aria-label="늘리기">+</button></div></div>`;
   }).join('') + `<button class="ac add" id="addCat"><span class="plus">+</span>새 칸<br>만들기</button>`;
+  $('hidRow').innerHTML = hid.length ? `<button class="linkbtn" id="hidShow">${acctName(A)}에서 숨긴 칸 ${hid.length}개 · 보기</button>` : '';
 }
 
 /* ───────── 기록 · 대시보드 ───────── */
@@ -1079,7 +1093,7 @@ function txFlow(kind, ex){
   bindAcct(v => { acct = v; });
 }
 function pickStep(kind, amt, date, ex, note, acct){
-  let items = kind==='in' ? giverItems(ex ? ex.memo : null) : S.tiles.map(c => ({key:c.k, n:c.n, ch:c.ch, on: !!ex && ex.cat===c.k}));
+  let items = kind==='in' ? giverItems(ex ? ex.memo : null) : S.tiles.filter(c => !(S.hideT[okA(acct)]||[]).includes(c.k) || (ex && ex.cat===c.k)).map(c => ({key:c.k, n:c.n, ch:c.ch, on: !!ex && ex.cat===c.k}));
   if(kind==='out' && !items.length) items = [{key:'etc', n:'기타', ch:'hamster'}];
   openSheet(`<h2>${kind==='in' ? '누구한테 받았어요?' : '어디에 썼어요?'}</h2><div class="note">${byA(acct)} ${won(amt)}${note?' · '+esc(note):''} — 하나를 눌러 주세요</div>${pickGrid(items, newBtn(kind==='in'?'새 사람':'새 칸'))}<button class="linkbtn" id="pBack">◀ 금액 다시 쓰기</button>`);
   $('pBack').onclick = () => txFlow(kind, Object.assign({}, ex||{}, {amt, date, t:kind, note, acct}));
@@ -1101,7 +1115,7 @@ function txSheet(id){
   if(t.t==='mv'){
     openSheet(`<h2>옮긴 돈</h2><div class="who"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span style="font-size:20px">${acctName(t.from)} → ${acctName(t.to)}</span></div>
       <div class="disp mvc">${nf(t.amt)}<small>원</small></div>
-      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${t.from==='cash'?'카드에 넣었어요':'현금으로 뺐어요'}${t.note?'<br>✎ '+esc(t.note):''}</div>
+      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${byA(t.to)} 옮겼어요${t.note?'<br>✎ '+esc(t.note):''}</div>
       <div class="stack-btns"><button class="gb blue" id="tEdit">고치기</button><button class="gb gray" id="tDel">지우기</button></div>`);
     $('tEdit').onclick = () => moveFlow(t);
     $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
@@ -1116,13 +1130,13 @@ function txSheet(id){
   $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
 }
 
-/* ───────── 현금 ↔ 체크카드 돈 옮기기 (인출 · 충전) ───────── */
+/* ───────── 현금 · 체크카드 · 통장 사이 돈 옮기기 (인출 · 충전) ───────── */
 function moveFlow(ex){
-  let from = ex ? ex.from : (S.lastAcct==='card' ? 'card' : 'cash'), date = ex ? ex.date : todayStr();
-  const hint = f => f==='cash' ? '현금을 체크카드에 넣었어요 (충전)' : '체크카드에서 현금으로 뺐어요 (인출)';
-  const seg = `<div class="aclabel">어느 쪽으로 옮겼어요?</div><div class="acseg" id="acSeg"><button data-a="cash" class="${from==='cash'?'on':''}">${AC_ICO.cash}현금 → 카드</button><button data-a="card" class="${from==='card'?'on':''}">${AC_ICO.card}카드 → 현금</button></div><div class="aclabel" id="mvHint" style="margin-top:0">${hint(from)}</div>`;
-  padSheet({title:'얼마를 옮겼어요?', init: ex?ex.amt:0, nextLabel:'옮겼어요!', memo: ex&&ex.note ? ex.note : '', extra: seg + dateRowHtml(date), onDone: (amt, note) => {
-    const to = from==='cash' ? 'card' : 'cash', room = balOf(from) + (ex && ex.from===from ? ex.amt : 0);
+  let from = ex ? ex.from : okA(S.lastAcct), to = ex ? ex.to : (from==='cash' ? 'card' : 'cash'), date = ex ? ex.date : todayStr();
+  const segH = (id, cur, lbl) => `<div class="aclabel">${lbl}</div><div class="acseg" id="${id}">${ACCTS.map(a => `<button data-a="${a.k}" class="${a.k===cur?'on':''}">${AC_ICO[a.k]}${a.n}</button>`).join('')}</div>`;
+  padSheet({title:'얼마를 옮겼어요?', init: ex?ex.amt:0, nextLabel:'옮겼어요!', memo: ex&&ex.note ? ex.note : '', extra: segH('acSeg', from, '어디에서 꺼냈어요?') + segH('acSeg2', to, '어디로 넣었어요?') + dateRowHtml(date), onDone: (amt, note) => {
+    if(from===to){ toast('꺼낸 곳과 넣은 곳이 같아요'); sfx('err'); return; }
+    const room = balOf(from) + (ex && ex.from===from ? ex.amt : 0);
     if(amt > room){ toast(acctName(from)+'에는 '+won(Math.max(room,0))+'밖에 없어요'); sfx('err'); buzz([20,40,20]); return; }
     const rec = {id: ex ? ex.id : uid(), t:'mv', from, to, amt, date, at: ex ? ex.at : Date.now(), note: note||'', acct: from, memo:'', ch:null, cat:null, plan:null};
     if(ex) S.tx[S.tx.findIndex(t=>t.id===ex.id)] = rec; else S.tx.push(rec);
@@ -1131,7 +1145,9 @@ function moveFlow(ex){
     if(avail(from)<0) setTimeout(()=>toast(acctName(from)+'의 계획이 돈보다 커졌어요. 계획세우기에서 줄여 주세요'), 1800);
   }});
   $('fDate').onchange = e => { date = e.target.value || todayStr(); $('dtxt').textContent = dlabelOf(date); };
-  bindAcct(v => { from = v; $('mvHint').textContent = hint(v); });
+  const pick = (id, fn) => { $(id).onclick = e => { const b = e.target.closest('button'); if(!b) return; $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x===b)); buzz(8); fn(b.dataset.a); }; };
+  pick('acSeg', v => { from = v; if(to===v){ to = AK.find(x => x!==v); $('acSeg2').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.a===to)); } });
+  pick('acSeg2', v => { to = v; if(from===v){ from = AK.find(x => x!==v); $('acSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.a===from)); } });
 }
 
 /* ───────── 받을 예정인 돈 (새로 적기 · 고치기) ───────── */
@@ -1230,16 +1246,18 @@ document.querySelector('.steps').onclick = e => { const b = e.target.closest('bu
   document.querySelectorAll('.steps button').forEach(x => x.classList.toggle('on', x===b)); };
 $('allocReset').onclick = () => { const tk = S.tiles.map(c => c.k).filter(k => alloc(k) > 0); if(!tk.length){ toast('세운 계획이 아직 없어요'); return; }
   if(!confirm(acctName(curAcct)+'으로 세운 계획을 모두 지우고 다시 할까요?\n(쓴 기록은 그대로예요)')) return; tk.forEach(k => delete S.alloc[curAcct][k]); save(); render(); toast('처음부터 다시 계획해 봐요!'); };
+$('hidRow').onclick = e => { if(e.target.closest('#hidShow')) hiddenSheet(); };
 $('hint').onclick = e => { if(e.target.closest('#hIn')) txFlow('in'); else if(e.target.closest('#hExp')) expFlow(); };
 
 /* 이름 + 캐릭터 고르는 공용 창 (칸 · 사람) */
-function charSheet({title, name, ch, okLabel, delLabel, needName, onSave, onDelete}){
+function charSheet({title, name, ch, okLabel, delLabel, needName, onSave, onDelete, extra}){
   let grp = CH[ch].g;
   openSheet(`<h2>${title}</h2>
     <input class="inp" id="tName" maxlength="8" placeholder="" value="${esc(name||'')}">
     <div class="gtabs" id="gTabs">${GROUPS.map(g=>`<button data-g="${g[0]}" class="${g[0]===grp?'on':''}">${g[1]}</button>`).join('')}</div>
     <div class="pick pk5" id="tPick"></div>
     <button class="gb purple" id="tSave">${okLabel}</button>
+    ${extra?`<button class="gb gray sm" id="tExtra" style="margin-top:8px">${extra.label}</button>`:''}
     ${onDelete?`<button class="linkbtn" id="tDel">${delLabel}</button>`:''}`);
   const ph = () => { $('tName').placeholder = needName ? '이름을 써 주세요' : CH[ch].n+' (이름을 써 보세요)'; };
   const drawPick = () => { $('tPick').innerHTML = Object.keys(CH).filter(k => CH[k].g===grp).map(k => `<button class="pk${k===ch?' on':''}${chOpen(k)?'':' lockch'}" data-k="${k}" style="--bg:${CH[k].bg}"><div class="face">${face(k)}</div>${esc(CH[k].n)}${lockTag(k)}</button>`).join(''); };
@@ -1252,6 +1270,7 @@ function charSheet({title, name, ch, okLabel, delLabel, needName, onSave, onDele
     onSave((typed || CH[ch].n).slice(0,8), ch);
   };
   if(onDelete) $('tDel').onclick = onDelete;
+  if(extra) $('tExtra').onclick = extra.fn;
 }
 
 /* 칸 이름·동물 고치기 / 새로 만들기 (onNew: 만든 칸으로 바로 이어갈 일이 있을 때) */
@@ -1264,9 +1283,24 @@ function tileSheet(t, onNew){
       save(); closeSheet(); render(); toast(t?'고쳤어요':'새 칸이 생겼어요!');
       if(!t) setTimeout(()=>{ const el = document.querySelector('.ac:nth-last-child(2)'); if(el){ el.scrollIntoView({block:'center',behavior:'smooth'}); bumpCard(S.tiles[S.tiles.length-1].k,'face'); } }, 300);
     },
-    onDelete: t ? () => { closeSheet(); askDeleteTile(t.k); } : null });
+    onDelete: t ? () => { closeSheet(); askDeleteTile(t.k); } : null,
+    extra: t ? {label: acctName(curAcct)+'에서 이 칸 숨기기', fn: () => hideTile(t.k)} : null });
 }
 
+/* 자산마다 칸 숨기기 — 칸은 그대로 있고 이 자산 화면에서만 안 보인다. 숨기면 이 자산의 그 칸 계획은 '안 세운 돈'으로 돌아간다 */
+function hideTile(k){
+  const a = curAcct, c = tileOf(k), al = alloc(k, a);
+  if(al > 0 && !confirm('"'+c.n+'" 칸에 '+acctName(a)+'로 계획한 '+won(al)+'은\n"아직 계획 안 세운 돈"으로 돌아가요. 숨길까요?')) return;
+  if(S.alloc[a]) delete S.alloc[a][k];
+  if(!S.hideT[a].includes(k)) S.hideT[a].push(k);
+  save(); closeSheet(); render(); toast(acctName(a)+'에서 "'+c.n+'" 칸을 숨겼어요');
+}
+function hiddenSheet(){
+  const a = curAcct, list = S.hideT[a].map(k => tileOf(k)).filter(Boolean);
+  if(!list.length){ closeSheet(); return; }
+  openSheet(`<h2>${acctName(a)}에서 숨긴 칸</h2><div class="note">누르면 다시 보여요</div><div class="pick" id="hidPk">${list.map(c => `<button class="pk" data-k="${c.k}" style="--bg:${CH[c.ch].bg}"><div class="face">${face(c.ch)}</div>${esc(c.n)}</button>`).join('')}</div>`);
+  $('hidPk').onclick = e => { const b = e.target.closest('button'); if(!b) return; S.hideT[a] = S.hideT[a].filter(x => x!==b.dataset.k); save(); render(); toast('다시 보여요'); hiddenSheet(); };
+}
 /* 사람(누구한테 받는지) 새로 만들기 / 고치기 / 지우기 */
 function personSheet(g, onNew){
   charSheet({title: g?'사람 고치기':'새 사람 만들기', name: g?g.n:'', ch: g?g.ch:'hamster', needName:true, okLabel: g?'고쳤어요!':'만들었어요!', delLabel:'이 사람 지우기',
@@ -1301,7 +1335,7 @@ function askDeleteTile(k){
     + (sp>0 ? '• 이미 쓴 기록('+won(sp)+')은 그대로 남아요.' : '• 이 칸에 쓴 기록은 없어요.');
   if(!confirm(msg)) return false;
   if(S.tx.some(t => t.cat===k)) S.gone[k] = {n:c.n, ch:c.ch};
-  ACCTS.forEach(x => { delete S.alloc[x.k][k]; }); S.tiles = S.tiles.filter(t => t.k!==k); save(); render();
+  ACCTS.forEach(x => { delete S.alloc[x.k][k]; S.hideT[x.k] = S.hideT[x.k].filter(h => h!==k); }); S.tiles = S.tiles.filter(t => t.k!==k); save(); render();
   sfx('trash'); toast(l>0 ? '지웠어요. '+won(l)+'은 다시 계획할 수 있어요' : '지웠어요');
   return true;
 }
@@ -1384,7 +1418,7 @@ function dragEnd(e, cancelled){
 
 /* ───────── 갖고 싶은 것 모으기 (G-1) ───────── */
 // 목표 = {k, n, price, img:{t:'char'|'data'|'url', v}, due, done, doneAt}. 모은 돈은 계획 칸과 똑같이 S.alloc[자산][k] — 그래서 '안 세운 돈'에서 빠진다.
-const goalTotal = g => alloc(g.k,'cash') + alloc(g.k,'card');
+const goalTotal = g => sumA(a => alloc(g.k,a));
 const catAvatar = c => (c.img && c.img.t!=='char') ? `<span class="av" style="background:#fff"><img class="gimg" referrerpolicy="no-referrer" alt="" src="${esc(c.img.v)}"></span>` : avatar(c.ch);
 const gImgHtml = (img, prev) => img.t==='char' ? face(img.v) : `<img class="gimg" referrerpolicy="no-referrer" alt="" src="${esc(img.v)}"${prev?' data-prev="1"':''}>`;
 const gBg = img => img.t==='char' ? CH[img.v].bg : '#f3eefc';
@@ -1450,7 +1484,7 @@ function goalBuy(k){
   $('gBuyNo').onclick = closeSheet;
   $('gBuyOk').onclick = () => {
     let need = g.price; const today = todayStr(), now = Date.now();
-    ['cash','card'].forEach((a,i) => { const pay = Math.min(alloc(g.k,a), need);
+    AK.forEach((a,i) => { const pay = Math.min(alloc(g.k,a), need);
       if(pay > 0){ S.tx.push({id:uid(), t:'out', amt:pay, memo:'', cat:g.k, date:today, at:now+i, note:'갖고 싶은 것을 샀어요', acct:a, plan:null, ch:null}); need -= pay; } });
     ACCTS.forEach(x => { if(S.alloc[x.k]) delete S.alloc[x.k][g.k]; });
     g.done = true; g.doneAt = today; save(); month = today.slice(0,7); closeSheet(); render(); confetti(); toast('샀어요! '+g.n+' 축하해요!');
@@ -1624,7 +1658,7 @@ const BADGES = [
   {id:'str3', n:'3일 연속', ico:'3', hint:'3일 연속 두 질문 모두 "네"라고 답해요', ok:() => streakOf() >= 3},
   {id:'str7', n:'7일 연속', ico:'7', hint:'7일 연속 두 질문 모두 "네"라고 답해요', ok:() => streakOf() >= 7},
   {id:'str30', n:'30일 연속', ico:'30', hint:'30일 연속 두 질문 모두 "네"라고 답해요', ok:() => streakOf() >= 30},
-  {id:'plan', n:'첫 계획', ico:'✓', hint:'계획 칸에 돈을 처음 나눠 담아요', ok:() => S.tiles.some(c => alloc(c.k,'cash') + alloc(c.k,'card') > 0)},
+  {id:'plan', n:'첫 계획', ico:'✓', hint:'계획 칸에 돈을 처음 나눠 담아요', ok:() => S.tiles.some(c => sumA(a => alloc(c.k,a)) > 0)},
   {id:'goal', n:'목표 세우기', ico:'♥', hint:'갖고 싶은 것을 처음 만들어요', ok:() => S.goals.length > 0},
   {id:'goaldone', n:'목표 달성', ico:'🎉', hint:'갖고 싶은 것을 모아서 샀어요', ok:() => S.goals.some(g => g.done)},
   {id:'save1', n:'저금 1만원', ico:'₩', hint:'가진 돈이 1만원이 돼요', ok:() => balance() >= 10000},
@@ -1829,7 +1863,7 @@ const weekStart = () => { const d = new Date(); d.setDate(d.getDate() - ((d.getD
 const isGoalBuy = t => S.goals.some(g => g.k===t.cat);
 function weekPlan(){
   const ws = weekStart(), days = Array.from({length:7}, (_,i) => dayShift(ws,i)), sp = days.map(d => S.tx.filter(t => t.date===d && t.t==='out').reduce((a,t) => a+t.amt, 0));
-  const used = S.tiles.filter(c => alloc(c.k,'cash') + alloc(c.k,'card') > 0), kept = used.filter(c => left(c.k,'cash') >= 0 && left(c.k,'card') >= 0).length;
+  const used = S.tiles.filter(c => sumA(a => alloc(c.k,a)) > 0), kept = used.filter(c => AK.every(a => left(c.k,a) >= 0)).length;
   return {days, sp, used:used.length, kept};
 }
 function todayBudget(){
@@ -2086,7 +2120,7 @@ function renderParent(){
   const R = perRange(PAR.per);
   const html = withS(k.st, () => {
     const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o;
-    const used = S.tiles.filter(c => alloc(c.k,'cash') + alloc(c.k,'card') > 0), over = used.filter(c => left(c.k,'cash') < 0 || left(c.k,'card') < 0);
+    const used = S.tiles.filter(c => sumA(a => alloc(c.k,a)) > 0), over = used.filter(c => AK.some(a => left(c.k,a) < 0));
     const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b){ const n = catOf(t.cat).n; cats[n] = (cats[n]||0) + t.amt; } });
     const cl = Object.keys(cats).map(n => ({n, v:cats[n]})).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
     const L = lvOf(starsOf()), sk = streakOf();
@@ -2098,7 +2132,7 @@ function renderParent(){
     const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,12);
     const rowH = t => { if(t.t==='mv') return `<tr><td>${md2(t.date)}</td><td>${acctName(t.from)} → ${acctName(t.to)}</td><td></td><td class="r pr-mv">${nf(t.amt)}</td></tr>`;
       const isIn = t.t==='in', nm = isIn ? (t.memo||'용돈') : catOf(t.cat).n;
-      return `<tr><td>${md2(t.date)}</td><td>${esc(nm)}${t.note ? ' <small>· '+esc(t.note)+'</small>' : ''}</td><td>${acctOf(t)==='card'?'카드':'현금'}</td><td class="r ${isIn?'pr-in':''}">${isIn?'+':'−'}${nf(t.amt)}</td></tr>`; };
+      return `<tr><td>${md2(t.date)}</td><td>${esc(nm)}${t.note ? ' <small>· '+esc(t.note)+'</small>' : ''}</td><td>${ACS[acctOf(t)]}</td><td class="r ${isIn?'pr-in':''}">${isIn?'+':'−'}${nf(t.amt)}</td></tr>`; };
     const goals = S.goals.filter(g => !g.done);
     const acts = [];
     S.tx.slice(-60).forEach(t => { if(t.t!=='mv') acts.push({at:t.at||0, d:t.date, c:t.t==='in'?'g':'b', t:(t.t==='in' ? '받은 돈 ' : '쓴 돈 ')+won(t.amt)+' · '+(t.t==='in' ? (t.memo||'용돈') : catOf(t.cat).n)}); });
@@ -2107,7 +2141,7 @@ function renderParent(){
     S.cps.filter(c => c.used).forEach(c => acts.push({at:new Date(c.used+'T20:00:00').getTime(), d:c.used, c:'p', t:'쿠폰 사용 · '+c.n}));
     acts.sort((a,b) => b.at-a.at);
     return `<div class="pr-sec"><h3>요약 · ${R.lb} ${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+'–'+md2(R.b) : Number(R.a.slice(5,7))+'월'}</h3><div class="pr-kpi">
-        <div><small>지금 가진 돈</small><b>${won(balance())}</b><em>현금 ${nf(balOf('cash'))} · 카드 ${nf(balOf('card'))}</em></div>
+        <div><small>지금 가진 돈</small><b>${won(balance())}</b><em>${AK.filter(a => a!=='bank' || balOf(a)).map(a => ACS[a]+' '+nf(balOf(a))).join(' · ')}</em></div>
         <div class="g"><small>받은 돈</small><b>${won(cur.i)}</b><em>${R.pl} ${won(prv.i)}</em></div>
         <div class="r"><small>쓴 돈</small><b>${won(cur.o)}</b><em class="${d>0?'up':''}">${R.pl}보다 ${d>0 ? '+'+nf(d) : d<0 ? '−'+nf(-d) : '같음'}</em></div>
         <div class="o"><small>계획 지킴 (지금)</small><b>${used.length ? (used.length-over.length)+' / '+used.length+'칸' : '계획 없음'}</b><em>${over.length ? over.map(c => c.n).join(', ')+' 초과' : used.length ? '모두 지키는 중' : ''}</em></div></div></div>
@@ -2642,7 +2676,7 @@ function restoreSheet(){
     let o; try{ o = JSON.parse($('rText').value.trim()); }catch(e){ toast('백업 내용이 이상해요'); return; }
     const d = o && o.app==='allowance' && o.data; if(!d || !Array.isArray(d.tx)){ toast('용돈 친구들 백업이 아니에요'); return; }
     const tx = d.tx.filter(t => t && (t.t==='in'||t.t==='out'||t.t==='mv') && Number.isFinite(+t.amt) && +t.amt>0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date||''))
-      .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), note:String(t.note||'').slice(0,60), ch:t.ch&&CH[t.ch]?t.ch:null, date:t.date, acct:t.acct==='card'?'card':'cash', from:t.from==='card'?'card':'cash', to:t.to==='card'?'card':'cash', cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
+      .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), note:String(t.note||'').slice(0,60), ch:t.ch&&CH[t.ch]?t.ch:null, date:t.date, acct:okA(t.acct), from:okA(t.from), to:okA(t.to), cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
     const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, goals:d.goals, chk:d.chk, badges:d.badges, badgeInit:d.badgeInit, mode:d.mode, quizHide:d.quizHide, waits:d.waits, held:d.held, applied:d.applied, theme:d.theme, pin:d.pin, cps:d.cps, exp:d.exp, useExp:d.useExp, givers:d.givers,
       plans: Array.isArray(d.plans) ? d.plans.filter(p=>p&&p.name&&Number.isFinite(+p.amt)).map(p=>({id:String(p.id||uid()), name:String(p.name), amt:Math.round(+p.amt), done:!!p.done})) : []});
     if(!confirm('기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
