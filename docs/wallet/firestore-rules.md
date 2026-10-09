@@ -1,29 +1,21 @@
-# 용돈 친구들 — 가족 계정 서버 설정 (HB 가 한 번만)
+# 용돈 친구들 — 가족 계정 서버 설정 (HB)
 
-가족 연결(부모 보고서)이 동작하려면 파이어베이스 콘솔에서 **두 가지**를 해야 해요.
-BLOCK7 의 기존 규칙·데이터는 건드리지 않아요 — **덧붙이기만** 해요.
-(이 덩어리는 에뮬레이터로 시험했어요: 남은 못 읽음 · 아이는 자기 칸에만 씀 · 가족 문서는 부모만 고침)
+BLOCK7 의 기존 규칙·함수·데이터는 건드리지 않아요 — **덧붙이기만** 해요.
+모든 덩어리는 에뮬레이터(서버 흉내 장치)로 시험했어요.
 
-## 1. 익명 로그인 켜기 (아이 폰용)
+## ✅ 1. 익명 로그인 켜기 — 2026-10-09 완료
 
-1. https://console.firebase.google.com → **block7-8f24e** 프로젝트
-2. 왼쪽 메뉴 **빌드 → Authentication**
-3. 위쪽 탭 **로그인 방법(Sign-in method)**
-4. **새 제공업체 추가** → **익명(Anonymous)** → **사용 설정** 스위치 켜기 → **저장**
+Authentication → 로그인 방법 → 익명 → 사용 설정.
 
-(이메일/비밀번호는 BLOCK7 이 이미 켜 두었어요 — 부모님 로그인은 그걸 써요)
+## 2. 보안 규칙 (2026-10-09 두 번째 판 — 우체통·알림 칸 추가)
 
-## 2. 보안 규칙에 덩어리 붙여 넣기
+> 첫 판을 이미 붙여 넣었다면: 규칙 화면에서 `// ── 용돈 친구들(wallet) 가족 계정 — 여기서부터 ──` 줄부터
+> `// ── 용돈 친구들 — 여기까지 ──` 줄까지를 **통째로 지우고**, 아래 새 덩어리를 그 자리에 붙여 넣어요.
 
-1. 왼쪽 메뉴 **빌드 → Firestore Database**
-2. 위쪽 탭 **규칙(Rules)**
-3. 규칙 맨 위쪽에 이런 줄이 있어요:
-   ```
-   match /databases/{database}/documents {
-   ```
-   ⚠️ 중괄호 안 이름이 `{database}` 인지 보세요. 다른 이름(예: `{db}`)이면 아래 덩어리의 `$(database)` 를 모두 그 이름으로 바꿔야 해요 — 모르겠으면 화면을 캡처해서 보여 주세요.
-4. 그 줄 **바로 다음 줄**에 커서를 두고, 아래 덩어리를 통째로 붙여 넣어요.
-5. 오른쪽 위 **게시(Publish)**. 빨간 오류가 나오면 게시하지 말고 캡처해서 보여 주세요.
+1. https://console.firebase.google.com → **block7-8f24e** → 빌드 → **Firestore Database** → **규칙** 탭
+2. (처음이면) 맨 위 `match /databases/{database}/documents {` 줄 **바로 다음 줄**에 붙여 넣어요.
+   중괄호 안 이름이 `{database}` 가 아니면 게시하지 말고 캡처해서 보여 주세요.
+3. 오른쪽 위 **게시**. 빨간 오류가 나오면 게시하지 말고 캡처해서 보여 주세요.
 
 ```
     // ── 용돈 친구들(wallet) 가족 계정 — 여기서부터 ──
@@ -54,7 +46,26 @@ BLOCK7 의 기존 규칙·데이터는 건드리지 않아요 — **덧붙이기
         allow create: if wIn() && uid == request.auth.uid && (
           (request.resource.data.role == 'parent' && wFull() && fid == request.auth.uid)
           || wJoinOk(fid, request.resource.data));
+        allow update: if wIn() && uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pname', 'notify', 'tokens']);
         allow delete: if wParent(fid) || (wIn() && uid == request.auth.uid);
+      }
+      match /msgs/{mid} {
+        allow read: if wParent(fid) || (wMem(fid) && resource.data.kidId == wMe(fid).kidId);
+        allow create: if wMem(fid) && request.resource.data.at == request.time && (
+          (wMe(fid).role == 'parent' && request.resource.data.from == 'parent')
+          || (wMe(fid).role == 'kid' && request.resource.data.from == 'kid'
+              && request.resource.data.kidId == wMe(fid).kidId
+              && request.resource.data.type in ['note', 'req', 'cpreq']
+              && request.resource.data.status in [null, 'open']));
+        allow update: if wParent(fid) || (wMem(fid) && wMe(fid).role == 'kid' && resource.data.kidId == wMe(fid).kidId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readKid', 'keep', 'hide', 'status', 'doneAt'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+              || (resource.data.type == 'mission' && resource.data.status == 'open' && request.resource.data.status == 'done')));
+        allow delete: if wParent(fid);
+      }
+      match /alerts/{aid} {
+        allow read, update: if wParent(fid);
       }
       match /kids/{kid} {
         allow read: if wMem(fid);
@@ -65,12 +76,35 @@ BLOCK7 의 기존 규칙·데이터는 건드리지 않아요 — **덧붙이기
     // ── 용돈 친구들 — 여기까지 ──
 ```
 
+## 3. 알림 서버 올리기 (구글 Cloud Shell — 설치할 것 없음)
+
+BLOCK7 할일 알림(`functions/`)과 **따로 묶인** 서버예요(`wallet-functions/`, 묶음 이름 `wallet`).
+아래 명령은 **지갑 알림만** 올리고 BLOCK7 함수는 건드리지 않아요.
+
+1. https://console.cloud.google.com → 위쪽 프로젝트가 **block7-8f24e** 인지 확인 → 오른쪽 위 **>_ (Cloud Shell 활성화)**
+2. 아래를 한 줄씩 붙여 넣고 엔터:
+
+```
+git clone https://github.com/Underkut/block7.git
+cd block7/wallet-functions/src
+npm install
+cd ..
+firebase login --no-localhost
+firebase deploy --only functions:wallet
+```
+
+- 이미 `block7` 폴더가 있으면 첫 줄 대신 `cd block7 && git pull && cd ..`
+- `npm warn` · `deprecated` 는 무시해도 돼요.
+- 성공 표시: `✔ functions[walletPing(asia-northeast3)] Successful create operation.` 와 `walletEvening` 두 줄
+- ⚠️ 배포 중에 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
+- 처음 올릴 때 "API 를 켤까요?(enable)" 를 물으면 **Y**
+
 ## 확인
 
-- 부모 폰: 용돈 친구들 → 설정(톱니) → **부모님이에요 (로그인)** → BLOCK7 계정으로 로그인 → 보고서 화면
-- 보고서 맨 아래 **아이 폰 연결하기** → 아이 이름 → 6자리 코드
-- 아이 폰: 설정 → **아이 폰 연결하기 (코드 넣기)** → 코드 → "가족과 연결됐어요!"
-- 부모 폰 보고서에 아이 이름과 기록이 몇 초 안에 나와요.
+- 부모 폰: 용돈 친구들 → 우상단 톱니 → **알림 설정** → **이 폰으로 알림 받기** → 허락
+  (아이폰은 Safari 에서 '홈 화면에 추가'한 용돈 친구들에서만 알림이 와요)
+- 아이 폰에서 무언가 기록 → 몇 초 안에 부모 폰에 알림. 알림을 누르면 그 기록이 열려요.
+- 부모 폰 → 우체통 탭 → **알림 내역**에 쌓여요.
 
-익명 로그인을 안 켰으면 아이 폰에서 "아직 서버에서 이 로그인이 켜지지 않았어요",
-규칙을 안 붙였으면 "권한이 없어요" 가 나와요.
+규칙을 안 바꿨으면 우체통에서 "권한이 없어요", 서버를 안 올렸으면 알림 내역이 비어 있어요
+(쪽지·도장·미션·승인은 서버 없이도 돼요 — 알림만 안 와요).

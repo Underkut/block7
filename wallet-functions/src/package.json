@@ -1,0 +1,10 @@
+{
+  "name": "wallet-functions",
+  "description": "용돈 친구들 알림 서버 (F-4) — BLOCK7 functions/ 와 따로 배포: firebase deploy --only functions:wallet",
+  "engines": { "node": "22" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^6.0.0"
+  }
+}
