@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1008-12 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1009-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -204,7 +204,7 @@ body.dragging .toast{opacity:0!important}
 .badge{position:relative;text-align:center;padding:10px 4px 8px;border-radius:18px;background:#fff7e0;font-size:14px;box-shadow:0 3px 0 rgba(255,166,61,.25)}
 .badge .bi{display:grid;place-items:center;width:44px;height:44px;margin:0 auto 4px;border-radius:50%;background:linear-gradient(135deg,#ffb347,#ffd84d);color:#fff;font-size:20px;text-shadow:0 1px 0 rgba(0,0,0,.15)}
 .badge small{display:block;font-size:11px;color:var(--sub);margin-top:2px}.badge.lock{background:#f1ecfa;box-shadow:none}.badge.lock .bi{background:#cfc7e0}.badge.lock{color:#9a8cb5}
-em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;vertical-align:middle}.badge em{position:absolute;top:4px;right:4px}
+.badge em,.gift em{font-style:normal;background:#ff5a7a;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;vertical-align:middle}.badge em{position:absolute;top:4px;right:4px}
 .gift,.cp{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:6px 0;border-radius:18px;background:#fff;box-shadow:0 3px 0 rgba(120,90,170,.14)}
 .gift.lock,.cp.wait{opacity:.6}.cp.used{opacity:.55}
 .gift .gp{width:52px;height:52px;border-radius:16px;flex:none;border:2px solid #fff;box-shadow:0 2px 0 rgba(120,90,170,.2)}
@@ -242,6 +242,30 @@ body[data-mode=P] .modechip{background:linear-gradient(135deg,#ff9f6f,#ff6fa5);b
 .wi{display:flex;align-items:center;gap:8px;padding:8px;margin-top:8px;border-radius:16px;background:#f7f3ff}.wi .mid{flex:1;min-width:0;text-align:left}.wi .t{font-size:16px}.wi .s{font-size:12px;color:var(--sub)}
 .wi .gb.sm{width:auto;padding:6px 10px;flex:none;font-size:14px}
 .cta.soft{opacity:.85;transform:scale(.97)}
+.par{position:fixed;inset:0;z-index:9;background:#f6f7f9;color:#1f2430;overflow-y:auto;display:none;padding:0 14px calc(env(safe-area-inset-bottom) + 24px);font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;font-size:14px;-webkit-overflow-scrolling:touch}
+.par.on{display:block}.par *{font-family:inherit}
+.pr-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;background:#f6f7f9;padding:calc(env(safe-area-inset-top) + 10px) 0 8px;max-width:640px;margin:0 auto}
+.pr-top b{font-size:17px;font-weight:600}.pr-top span,.pr-top button{width:34px;height:34px;display:grid;place-items:center;color:#6b7280}
+#parKids,#parSeg,#parBody{max-width:640px;margin:0 auto}
+.pr-kids{display:flex;gap:6px;margin-bottom:8px}.pr-kids:empty{display:none}.pr-kids button{padding:6px 12px;border:1px solid #e5e7eb;border-radius:16px;background:#fff;font-size:13px;color:#374151}.pr-kids button.on{background:#1f2430;color:#fff;border-color:#1f2430}
+.pr-seg{display:flex;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff;margin:4px auto 10px}.pr-seg button{flex:1;padding:8px 0;font-size:13px;color:#6b7280}.pr-seg button.on{background:#1f2430;color:#fff}
+.pr-meta{font-size:12px;color:#6b7280;margin:0 2px 8px}
+.pr-sec{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.pr-sec h3{font-size:13px;font-weight:600;color:#6b7280;margin:0 0 10px}
+.pr-kpi{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pr-kpi div{border-left:3px solid #4f6bed;padding-left:8px;min-width:0}.pr-kpi div.g{border-color:#16a34a}.pr-kpi div.r{border-color:#dc2626}.pr-kpi div.o{border-color:#d97706}
+.pr-kpi small{display:block;font-size:11px;color:#6b7280}.pr-kpi b{display:block;font-size:18px;font-weight:600}.pr-kpi em{display:block;font-style:normal;font-size:11px;color:#6b7280}.pr-kpi em.up{color:#dc2626}
+.pr-bar{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}.pr-bar span{width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pr-bar em{flex:1;height:8px;background:#eef0f4;border-radius:4px;overflow:hidden}.pr-bar em i{display:block;height:100%;background:#4f6bed}.pr-bar b{width:72px;text-align:right;font-weight:500}
+.pr-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:#6b7280}.pr-cal i{display:block;height:24px;line-height:24px;border-radius:5px;font-style:normal;font-size:11px;color:#fff;margin-top:2px;letter-spacing:1px}
+.pr-cal i.y{background:#16a34a}.pr-cal i.h{background:#86c99a}.pr-cal i.n{background:#d1d5db;color:#374151}.pr-cal i.e{background:#fff;border:1px dashed #e5e7eb}
+.pr-note{font-size:12px;color:#6b7280;margin:8px 0 0;line-height:1.5}
+.pr-gl{display:flex;justify-content:space-between;font-size:13px;margin:8px 0 4px}.pr-gb{display:block;height:6px;background:#eef0f4;border-radius:3px}.pr-gb i{display:block;height:100%;background:#16a34a;border-radius:3px}
+.pr-tb{width:100%;border-collapse:collapse;font-size:12.5px}.pr-tb td,.pr-tb th{padding:6px 2px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}.pr-tb th{color:#6b7280;font-weight:500;font-size:11px}.pr-tb .r{text-align:right;white-space:nowrap}.pr-tb small{color:#6b7280}.pr-in{color:#16a34a}.pr-mv{color:#6b7280}
+.pr-al{display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #e5e7eb;font-size:12.5px}.pr-al:last-child{border:0}.pr-al i{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;background:#4f6bed}.pr-al i.g{background:#16a34a}.pr-al i.o{background:#d97706}.pr-al i.p{background:#9b59b6}.pr-al span{flex:1}.pr-al small{color:#6b7280;white-space:nowrap}
+.pr-btns{display:flex;flex-wrap:wrap;gap:8px}.pr-btns button{flex:1 1 40%;padding:9px 0;border:1px solid #e5e7eb;border-radius:8px;background:#fff;font-size:13px;color:#1f2430}
+.pr-link{display:block;margin:10px auto 0;font-size:13px;color:#4f6bed;text-decoration:underline}
+.pr-empty{text-align:center;color:#6b7280;padding:40px 0}
+.setrow.fam{margin-top:12px}
+body:has(.par.on) #trash{visibility:hidden}
 .smallnote{text-align:center;color:var(--sub);font-size:14px;margin:14px 0 4px}
 .linkbtn{display:block;margin:10px auto 0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px}
 
@@ -434,13 +458,14 @@ body[data-mode=P] .modechip{background:linear-gradient(135deg,#ff9f6f,#ff6fa5);b
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
+<div class="par" id="par"><div class="pr-top"><span></span><b>용돈 보고서</b><button id="parX" aria-label="닫기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pr-kids" id="parKids"></div><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div>
 <div class="dim" id="dim"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1008-12";
+const APP_VERSION = "v. 26-1009-1";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -744,7 +769,8 @@ function load(){
   try{ const r = localStorage.getItem(KEY); if(r){ const o = JSON.parse(r); if(o && Array.isArray(o.tx)) return migrate(o); } }catch(e){}
   return blank();
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } }
+var _ro = false;   // 부모 보고서가 아이 상태로 잠깐 계산하는 동안은 저장하지 않는다
+function save(){ if(_ro) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); }
 
 /* ───────── 계산 ───────── */
 const ACCTS = [{k:'cash', n:'현금'}, {k:'card', n:'체크카드'}];
@@ -1812,6 +1838,247 @@ document.addEventListener('click', e => {
   else { const a = e.target.closest('[data-wa]'); if(a){ const w = S.waits.find(x => x.id===a.closest('[data-w]').dataset.w); if(w){ a.dataset.wa==='buy' ? waitBuy(w) : waitSkip(w); } } }
 });
 
+/* ───────── 가족 연결 (F-1) — 아이 폰이 원본, 클라우드는 사본(한 방향) ───────── */
+// 부모: 이메일 로그인 → families/{부모uid}. 아이: 부모가 만든 6자리 코드(wjoins/{코드}) → 익명 로그인 → members/{uid}{role:'kid',kidId} → kids/{kidId} 에 상태 사본.
+// ⚠️ 파이어베이스 앱 이름을 'wallet' 으로 따로 둔다 — 같은 주소의 BLOCK7 과 로그인 상태가 섞이지 않게.
+const FB_CFG = {apiKey:'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain:'block7-8f24e.firebaseapp.com', projectId:'block7-8f24e', storageBucket:'block7-8f24e.firebasestorage.app', messagingSenderId:'517626689480', appId:'1:517626689480:web:92ea52eeebc24277ef72fd'};
+const FB_JS = ['app','auth','firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-'+n+'-compat.js');
+const FAM_KEY = 'allowance.fam';
+let FB = null, FBP = null;
+function fbLoad(){
+  if(FB) return Promise.resolve(FB);
+  if(FBP) return FBP;
+  const one = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('net')); document.head.appendChild(s); });
+  FBP = FB_JS.reduce((p, src) => p.then(() => (window.firebase && src.includes('-app-') ? null : one(src))), Promise.resolve()).then(() => {
+    const app = firebase.apps.find(a => a.name==='wallet') || firebase.initializeApp(FB_CFG, 'wallet');
+    const auth = app.auth(), db = app.firestore();
+    if(window.WALLET_EMU){ auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 8080); }
+    FB = {app, auth, db, fv: firebase.firestore.FieldValue, ts: firebase.firestore.Timestamp};
+    return FB;
+  }).catch(e => { FBP = null; throw e; });
+  return FBP;
+}
+const authReady = () => new Promise(res => { const u = FB.auth.onAuthStateChanged(x => { u(); res(x); }); });
+function famLoad(){ try{ const o = JSON.parse(localStorage.getItem(FAM_KEY)||'null'); if(o && o.fid && (o.role==='kid' || o.role==='parent')) return o; }catch(e){} return null; }
+function famSave(){ try{ FAM ? localStorage.setItem(FAM_KEY, JSON.stringify(FAM)) : localStorage.removeItem(FAM_KEY); }catch(e){} }
+var FAM = famLoad();
+const fbErr = e => { const c = (e && e.code) || ''; if(/network|unavailable/.test(c) || (e && e.message==='net')) return '인터넷 연결을 확인해 주세요';
+  if(/permission/.test(c)) return '권한이 없어요 (설정을 확인해 주세요)'; if(/invalid-email/.test(c)) return '이메일 모양이 이상해요';
+  if(/wrong-password|invalid-credential|user-not-found|invalid-login/.test(c)) return '이메일 또는 비밀번호가 달라요'; if(/email-already/.test(c)) return '이미 가입된 이메일이에요. 로그인해 주세요';
+  if(/weak-password/.test(c)) return '비밀번호는 6자 이상이어야 해요'; if(/admin-restricted|operation-not-allowed/.test(c)) return '아직 서버에서 이 로그인이 켜지지 않았어요';
+  return '잠시 뒤에 다시 해 주세요'; };
+
+/* 아이 폰 → 클라우드 사본 */
+let famT = 0, famBusy = false, famAgain = false;
+function famQueue(){ if(!FAM || FAM.role!=='kid') return; clearTimeout(famT); famT = setTimeout(famPush, 2000); }
+function snapJson(){ let j = JSON.stringify(S);
+  if(j.length > 900000){ const c = JSON.parse(j); c.goals.forEach(g => { if(g.img.t==='data') g.img = {t:'char', v:'star'}; }); j = JSON.stringify(c); }
+  return j; }
+async function famPush(){
+  if(!FAM || FAM.role!=='kid') return;
+  if(famBusy){ famAgain = true; return; }
+  // 대량 손실 방어: 이 폰이 비었는데 클라우드엔 기록이 있으면 올리지 않는다
+  if(!S.tx.length && (FAM.cloudTx||0) > 0){ FAM.blocked = true; famSave(); return; }
+  famBusy = true;
+  try{
+    await fbLoad(); const u = FB.auth.currentUser || await authReady(); if(!u) throw {code:'auth'};
+    await FB.db.doc('families/'+FAM.fid+'/kids/'+FAM.kidId).set({json:snapJson(), tx:S.tx.length, name:FAM.name||'', v:APP_VERSION, at:FB.fv.serverTimestamp()});
+    FAM.last = Date.now(); FAM.cloudTx = S.tx.length; FAM.blocked = false; famSave();
+  }catch(e){ FAM.err = fbErr(e); famSave(); }
+  famBusy = false; if(famAgain){ famAgain = false; famQueue(); }
+}
+function codeSheet(){
+  pinPad({title:'가족 연결 코드', sub:'부모님 폰에 나온 <b>6자리 코드</b>를 눌러 주세요', len:6, onOk:(c, bad) => joinFamily(c, bad)});
+}
+async function joinFamily(code, bad){
+  toast('연결하는 중…');
+  try{
+    await fbLoad();
+    const u = FB.auth.currentUser || (await FB.auth.signInAnonymously()).user;
+    const js = await FB.db.doc('wjoins/'+code).get();
+    if(!js.exists){ toast('코드가 달라요. 부모님 폰의 코드를 다시 봐 주세요'); bad && bad(); return; }
+    const j = js.data();
+    if(j.exp.toMillis() < Date.now()){ toast('시간이 지난 코드예요. 부모님께 새 코드를 부탁해요'); bad && bad(); return; }
+    if(j.role!=='kid'){ toast('부모님용 코드예요. 부모님 로그인으로 들어가 주세요'); bad && bad(); return; }
+    await FB.db.doc('families/'+j.fid+'/members/'+u.uid).set({role:'kid', kidId:j.kidId, name:j.name||'', code});
+    FB.db.doc('wjoins/'+code).delete().catch(() => {});
+    const ks = await FB.db.doc('families/'+j.fid+'/kids/'+j.kidId).get();
+    const cloud = ks.exists ? ks.data() : null, cloudTx = cloud ? (cloud.tx||0) : 0;
+    const link = () => { FAM = {fid:j.fid, role:'kid', kidId:j.kidId, name:j.name||'', at:Date.now(), cloudTx}; famSave(); };
+    const useCloud = () => { const o = migrate(JSON.parse(cloud.json)); S = Object.assign(o, {lastBackup:S.lastBackup}); link(); save(); curAcct = S.lastAcct; closeSheet(); render(); toast('클라우드 기록을 되살렸어요!'); };
+    const useLocal = () => { link(); FAM.cloudTx = 0; famSave(); famPush(); closeSheet(); render(); toast('가족과 연결됐어요! 이제 부모님이 볼 수 있어요'); };
+    if(!cloud || !cloudTx) return useLocal();
+    if(!S.tx.length) return useCloud();
+    const when = cloud.at && cloud.at.toDate ? cloud.at.toDate().toLocaleDateString('ko-KR') : '';
+    openSheet(`<h2>어느 기록을 쓸까요?</h2><div class="note">이 폰에도, 클라우드에도 기록이 있어요.<br>하나를 고르면 다른 하나는 사라져요.</div>
+      <div class="stack-btns"><button class="gb blue" id="jLocal">이 폰 기록 (${S.tx.length}개)</button><button class="gb purple" id="jCloud">클라우드 기록 (${cloudTx}개${when?' · '+when:''})</button></div>`);
+    $('jLocal').onclick = () => { if(confirm('클라우드 기록('+cloudTx+'개)을 이 폰 기록으로 바꿀까요?')) useLocal(); };
+    $('jCloud').onclick = () => { if(confirm('이 폰 기록('+S.tx.length+'개)을 클라우드 기록으로 바꿀까요?')) useCloud(); };
+  }catch(e){ toast(fbErr(e)); bad && bad(); }
+}
+function famUnlink(){
+  if(!confirm(FAM.role==='kid' ? '가족 연결을 끊을까요?\n이 폰의 기록은 그대로 남아요.' : '로그아웃할까요?')) return;
+  const was = FAM; FAM = null; famSave(); closeSheet(); hideParent();
+  fbLoad().then(() => FB.auth.signOut()).catch(() => {});
+  toast(was.role==='kid' ? '연결을 끊었어요' : '로그아웃했어요'); render();
+}
+function famRowHtml(){
+  if(!FAM) return `<div class="setrow fam"><span>가족 연결<small>부모님이 내 용돈 보고서를 볼 수 있어요</small></span></div>
+    <div class="stack-btns" style="margin-top:4px"><button class="gb green sm" id="famKid">아이 폰 연결하기 (코드 넣기)</button><button class="gb gray sm" id="famPar">부모님이에요 (로그인)</button></div>`;
+  if(FAM.role==='kid'){ const ago = FAM.last ? Math.max(0, Math.round((Date.now()-FAM.last)/60000)) : null;
+    return `<div class="setrow fam"><span>가족과 연결됨<small>${FAM.blocked ? '⚠️ 이 폰 기록이 비어 있어서 올리지 않고 있어요' : FAM.err && !FAM.last ? FAM.err : ago===null ? '곧 부모님께 보내요' : '부모님께 보낸 때: '+(ago<1 ? '방금' : ago<60 ? ago+'분 전' : Math.round(ago/60)+'시간 전')}</small></span></div>
+      <button class="linkbtn" id="famOff">가족 연결 끊기</button>`; }
+  return `<div class="setrow fam"><span>부모님으로 로그인됨<small>${esc(FAM.email||'')}</small></span></div><div class="stack-btns" style="margin-top:4px"><button class="gb blue sm" id="famRep">보고서 보기</button></div>`;
+}
+function famBindRow(){
+  if($('famKid')) $('famKid').onclick = codeSheet;
+  if($('famPar')) $('famPar').onclick = () => loginSheet();
+  if($('famOff')) $('famOff').onclick = famUnlink;
+  if($('famRep')) $('famRep').onclick = () => { closeSheet(); showParent(); };
+}
+
+/* 부모: 로그인 · 가족 만들기 */
+function loginSheet(mode='in'){
+  openSheet(`<h2>${mode==='in' ? '부모님 로그인' : '부모님 가입'}</h2><div class="note">BLOCK7 계정이 있으면 그대로 써도 돼요.</div>
+    <input class="inp" id="lgEmail" type="email" inputmode="email" autocomplete="username" placeholder="이메일" style="font-size:17px">
+    <input class="inp" id="lgPw" type="password" autocomplete="${mode==='in'?'current-password':'new-password'}" placeholder="비밀번호 (6자 이상)" style="font-size:17px;margin-top:8px">
+    <button class="gb purple" id="lgGo" style="margin-top:10px">${mode==='in' ? '로그인' : '가입하기'}</button>
+    <button class="linkbtn" id="lgSw">${mode==='in' ? '처음이에요 — 가입하기' : '이미 계정이 있어요 — 로그인'}</button>`);
+  $('lgSw').onclick = () => loginSheet(mode==='in' ? 'up' : 'in');
+  $('lgGo').onclick = async () => {
+    const em = $('lgEmail').value.trim(), pw = $('lgPw').value; if(!em || !pw){ toast('이메일과 비밀번호를 써 주세요'); return; }
+    $('lgGo').disabled = true;
+    try{ await fbLoad(); const r = mode==='in' ? await FB.auth.signInWithEmailAndPassword(em, pw) : await FB.auth.createUserWithEmailAndPassword(em, pw);
+      const fid = await ensureFamily(r.user); FAM = {fid, role:'parent', email:em, at:Date.now()}; famSave(); closeSheet(); showParent(); toast('부모님으로 들어왔어요'); }
+    catch(e){ toast(fbErr(e)); if($('lgGo')) $('lgGo').disabled = false; }
+  };
+}
+async function ensureFamily(u){
+  const w = await FB.db.doc('wusers/'+u.uid).get();
+  if(w.exists && w.data().fid) return w.data().fid;
+  const f = FB.db.doc('families/'+u.uid);
+  if(!(await f.get().catch(() => null) || {}).exists) await f.set({owner:u.uid, at:FB.fv.serverTimestamp()});
+  await FB.db.doc('families/'+u.uid+'/members/'+u.uid).set({role:'parent', email:u.email||''});
+  await FB.db.doc('wusers/'+u.uid).set({fid:u.uid});
+  return u.uid;
+}
+async function makeCode(role, kidId, name){
+  const exp = FB.ts.fromMillis(Date.now() + 15*60000);
+  for(let i=0;i<5;i++){ const c = String(Math.floor(100000 + Math.random()*900000));
+    const ref = FB.db.doc('wjoins/'+c); const ex = await ref.get().catch(() => null);
+    if(ex && ex.exists) continue;
+    await ref.set(Object.assign({fid:FAM.fid, role, exp}, role==='kid' ? {kidId, name} : {})); return c; }
+  throw {code:'busy'};
+}
+function codeShow(c, who){
+  openSheet(`<h2>연결 코드</h2><div class="note">${who} 폰의 <b>용돈 친구들 → 설정 → ${who==='아이' ? '아이 폰 연결하기' : '부모님이에요'}</b>에서<br>이 코드를 넣어 주세요. 15분 동안 쓸 수 있어요.</div>
+    <div class="disp" style="letter-spacing:8px">${c.slice(0,3)} ${c.slice(3)}</div><button class="gb purple" id="cdOk">닫기</button>`);
+  $('cdOk').onclick = closeSheet;
+}
+function kidCodeSheet(re){
+  if(re){ openSheet(`<h2>아이 폰 다시 연결</h2><div class="note">폰을 바꿨을 때 써요. 새 폰에서 코드를 넣으면 클라우드 기록이 되살아나요.</div>
+      <div class="stack-btns">${PAR.kids.map(k => `<button class="gb blue sm" data-k="${esc(k.id)}">${esc(k.name||'아이')}</button>`).join('')}</div>`);
+    document.querySelectorAll('#sheet [data-k]').forEach(b => b.onclick = async () => { try{ const k = PAR.kids.find(x => x.id===b.dataset.k); codeShow(await makeCode('kid', k.id, k.name||''), '아이'); }catch(e){ toast(fbErr(e)); } });
+    return; }
+  openSheet(`<h2>아이 폰 연결하기</h2><div class="note">아이 이름(보고서에 보여요)</div><input class="inp" id="kName" maxlength="10" placeholder="예) 하늘" style="font-size:18px">
+    <button class="gb purple" id="kGo" style="margin-top:10px">코드 만들기</button>`);
+  $('kGo').onclick = async () => { const n = $('kName').value.trim(); if(!n){ toast('이름을 써 주세요'); return; }
+    try{ codeShow(await makeCode('kid', 'k_'+uid(), n), '아이'); }catch(e){ toast(fbErr(e)); } };
+}
+
+/* 부모 보고서 (F-2) — 게임 화면이 아니라 보고서 */
+let PAR = {kids:[], sel:null, per:'week', unsub:null, more:false};
+function hideParent(){ const p = $('par'); if(p) p.classList.remove('on'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } }
+async function showParent(){
+  $('par').classList.add('on'); $('parBody').innerHTML = '<div class="pr-empty">불러오는 중…</div>';
+  try{
+    await fbLoad(); const u = FB.auth.currentUser || await authReady();
+    if(!u || u.isAnonymous){ hideParent(); loginSheet(); return; }
+    if(PAR.unsub) PAR.unsub();
+    PAR.unsub = FB.db.collection('families/'+FAM.fid+'/kids').onSnapshot(qs => {
+      PAR.kids = qs.docs.map(d => { const x = d.data(); let st = null; try{ st = migrate(JSON.parse(x.json)); }catch(e){} return {id:d.id, name:x.name, at:x.at && x.at.toDate ? x.at.toDate() : null, st}; });
+      if(!PAR.sel || !PAR.kids.find(k => k.id===PAR.sel)) PAR.sel = PAR.kids[0] ? PAR.kids[0].id : null;
+      renderParent();
+    }, e => { $('parBody').innerHTML = `<div class="pr-empty">${fbErr(e)}</div>`; });
+  }catch(e){ $('parBody').innerHTML = `<div class="pr-empty">${fbErr(e)}</div>`; }
+}
+// 아이 상태로 잠깐 바꿔 계산한다. 그동안 저장은 막는다(부모 폰의 기록을 덮지 않게).
+function withS(st, fn){ const keep = S, ka = curAcct; _ro = true; S = st; try{ return fn(); } finally{ S = keep; curAcct = ka; _ro = false; } }
+const md2 = d => Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
+function perRange(per){ const t = todayStr();
+  if(per==='day') return {a:t, b:t, pa:dayShift(t,-1), pb:dayShift(t,-1), lb:'오늘', pl:'어제'};
+  if(per==='week'){ const a = weekStart(); return {a, b:dayShift(a,6), pa:dayShift(a,-7), pb:dayShift(a,-1), lb:'이번 주', pl:'지난주'}; }
+  const a = t.slice(0,8)+'01', pm = monthShift(t.slice(0,7),-1);
+  return {a, b:t.slice(0,8)+'31', pa:pm+'-01', pb:pm+'-31', lb:'이번 달', pl:'지난달'}; }
+function sumIO(a, b){ let i = 0, o = 0; S.tx.forEach(t => { if(t.date < a || t.date > b) return; if(t.t==='in') i += t.amt; else if(t.t==='out') o += t.amt; }); return {i, o}; }
+function renderParent(){
+  const box = $('parBody'), k = PAR.kids.find(x => x.id===PAR.sel);
+  $('parKids').innerHTML = PAR.kids.length > 1 ? PAR.kids.map(x => `<button data-k="${esc(x.id)}" class="${x.id===PAR.sel?'on':''}">${esc(x.name||'아이')}</button>`).join('') : '';
+  if(!k){ box.innerHTML = `<div class="pr-sec"><h3>아직 연결된 아이 폰이 없어요</h3><p class="pr-note">아래 <b>아이 폰 연결하기</b>로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p></div>` + parTools(); return; }
+  if(!k.st){ box.innerHTML = `<div class="pr-empty">아이 기록을 읽지 못했어요</div>` + parTools(); return; }
+  const R = perRange(PAR.per);
+  const html = withS(k.st, () => {
+    const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o;
+    const used = S.tiles.filter(c => alloc(c.k,'cash') + alloc(c.k,'card') > 0), over = used.filter(c => left(c.k,'cash') < 0 || left(c.k,'card') < 0);
+    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b){ const n = catOf(t.cat).n; cats[n] = (cats[n]||0) + t.amt; } });
+    const cl = Object.keys(cats).map(n => ({n, v:cats[n]})).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
+    const L = lvOf(starsOf()), sk = streakOf();
+    // 정직 체크: 주 = 7칸, 그 밖 = 이번 달 날짜들
+    const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number(todayStr().slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
+    const mark = v => v==='y' ? '✓' : v==='z' ? '○' : v==='n' ? '–' : '';
+    const cal = days.map(dd => { const c = S.chk[dd], cls = !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n';
+      return `<div><span>${PAR.per==='week' ? '월화수목금토일'[days.indexOf(dd)] : Number(dd.slice(8,10))}</span><i class="${dd>todayStr()?'e':cls}">${c ? mark(c.s)+mark(c.g) : ''}</i></div>`; }).join('');
+    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,12);
+    const rowH = t => { if(t.t==='mv') return `<tr><td>${md2(t.date)}</td><td>${acctName(t.from)} → ${acctName(t.to)}</td><td></td><td class="r pr-mv">${nf(t.amt)}</td></tr>`;
+      const isIn = t.t==='in', nm = isIn ? (t.memo||'용돈') : catOf(t.cat).n;
+      return `<tr><td>${md2(t.date)}</td><td>${esc(nm)}${t.note ? ' <small>· '+esc(t.note)+'</small>' : ''}</td><td>${acctOf(t)==='card'?'카드':'현금'}</td><td class="r ${isIn?'pr-in':''}">${isIn?'+':'−'}${nf(t.amt)}</td></tr>`; };
+    const goals = S.goals.filter(g => !g.done);
+    const acts = [];
+    S.tx.slice(-60).forEach(t => { if(t.t!=='mv') acts.push({at:t.at||0, d:t.date, c:t.t==='in'?'g':'b', t:(t.t==='in' ? '받은 돈 ' : '쓴 돈 ')+won(t.amt)+' · '+(t.t==='in' ? (t.memo||'용돈') : catOf(t.cat).n)}); });
+    Object.keys(S.chk).sort().slice(-14).forEach(dd => { const c = S.chk[dd]; acts.push({at:new Date(dd+'T21:00:00').getTime(), d:dd, c:(yes(c.s)&&yes(c.g))?'g':'o', t:'하루 마무리 · 쓴 돈 '+(mark(c.s)||'?')+' · 받은 돈 '+(mark(c.g)||'?')}); });
+    S.goals.filter(g => g.done && g.doneAt).forEach(g => acts.push({at:new Date(g.doneAt+'T20:00:00').getTime(), d:g.doneAt, c:'p', t:'목표 달성 · '+g.n+' ('+won(g.price)+')'}));
+    S.cps.filter(c => c.used).forEach(c => acts.push({at:new Date(c.used+'T20:00:00').getTime(), d:c.used, c:'p', t:'쿠폰 사용 · '+c.n}));
+    acts.sort((a,b) => b.at-a.at);
+    return `<div class="pr-sec"><h3>요약 · ${R.lb} ${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+'–'+md2(R.b) : Number(R.a.slice(5,7))+'월'}</h3><div class="pr-kpi">
+        <div><small>지금 가진 돈</small><b>${won(balance())}</b><em>현금 ${nf(balOf('cash'))} · 카드 ${nf(balOf('card'))}</em></div>
+        <div class="g"><small>받은 돈</small><b>${won(cur.i)}</b><em>${R.pl} ${won(prv.i)}</em></div>
+        <div class="r"><small>쓴 돈</small><b>${won(cur.o)}</b><em class="${d>0?'up':''}">${R.pl}보다 ${d>0 ? '+'+nf(d) : d<0 ? '−'+nf(-d) : '같음'}</em></div>
+        <div class="o"><small>계획 지킴 (지금)</small><b>${used.length ? (used.length-over.length)+' / '+used.length+'칸' : '계획 없음'}</b><em>${over.length ? over.map(c => c.n).join(', ')+' 초과' : used.length ? '모두 지키는 중' : ''}</em></div></div></div>
+      <div class="pr-sec"><h3>어디에 썼나 · ${R.lb}</h3>${cl.length ? cl.slice(0,6).map(x => `<div class="pr-bar"><span>${esc(x.n)}</span><em><i style="width:${Math.round(x.v/cmx*100)}%"></i></em><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
+      <div class="pr-sec"><h3>하루 마무리 (정직 체크)</h3><div class="pr-cal ${PAR.per==='month'?'m':''}">${cal}</div>
+        <p class="pr-note">왼쪽 = 쓴 돈, 오른쪽 = 받은 돈 · ✓ 다 적었어요 · ○ 없었어요 · – 아직 못 적었어요<br>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 별 ${starsOf()}개 · 연속 ${sk}일</p></div>
+      <div class="pr-sec"><h3>갖고 싶은 것</h3>${goals.length ? goals.map(g => { const sv = goalTotal(g), p = Math.min(100, Math.floor(sv/g.price*100)); return `<div class="pr-gl"><span>${esc(g.n)}</span><span>${nf(sv)} / ${won(g.price)} · ${p}%</span></div><em class="pr-gb"><i style="width:${p}%"></i></em>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
+      <div class="pr-sec"><h3>기록 · ${R.lb} (${rows.length}건)</h3>${rows.length ? `<table class="pr-tb"><tr><th>날짜</th><th>내용</th><th>수단</th><th class="r">금액</th></tr>${shown.map(rowH).join('')}</table>${rows.length > shown.length ? '<button class="pr-link" id="prMore">'+(rows.length-shown.length)+'건 더 보기</button>' : ''}` : '<p class="pr-note">기록이 없어요</p>'}</div>
+      <div class="pr-sec"><h3>최근 활동</h3>${acts.slice(0,10).map(a => `<div class="pr-al"><i class="${a.c}"></i><span>${esc(a.t)}</span><small>${md2(a.d)}</small></div>`).join('') || '<p class="pr-note">활동이 없어요</p>'}</div>`;
+  });
+  box.innerHTML = `<div class="pr-meta">${esc(k.name||'아이')} · ${k.at ? '아이 폰에서 받은 때 '+k.at.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}</div>` + html + parTools();
+}
+function parTools(){ return `<div class="pr-sec"><h3>가족 관리</h3><div class="pr-btns"><button id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button id="prRe">아이 폰 다시 연결</button>' : ''}<button id="prPar">다른 부모님 초대</button><button id="prJoin">받은 초대 코드 넣기</button></div>
+  <p class="pr-note">연결 코드는 15분 동안 쓸 수 있어요. 아이 폰은 기록을 할 때마다 몇 초 안에 이 보고서로 보내요.</p><button class="pr-link" id="prOut">로그아웃</button></div>`; }
+$('par').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.per){ PAR.per = b.dataset.per; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
+  else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; renderParent(); }
+  else if(b.id==='prMore'){ PAR.more = true; renderParent(); }
+  else if(b.id==='prKid') kidCodeSheet(false);
+  else if(b.id==='prRe') kidCodeSheet(true);
+  else if(b.id==='prPar'){ try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } }
+  else if(b.id==='prJoin') pinPad({title:'초대 코드', sub:'다른 부모님 폰에 나온 6자리', len:6, onOk:c => parentJoin(c)});
+  else if(b.id==='prOut' || b.id==='parX') b.id==='parX' ? hideParent() : famUnlink();
+});
+// 다른 부모님: 로그인한 뒤 코드로 같은 가족에 들어온다
+async function parentJoin(code){
+  try{ await fbLoad(); const u = FB.auth.currentUser; if(!u || u.isAnonymous){ toast('먼저 로그인해 주세요'); return; }
+    const js = await FB.db.doc('wjoins/'+code).get(); if(!js.exists || js.data().role!=='parent' || js.data().exp.toMillis() < Date.now()){ toast('코드가 맞지 않거나 시간이 지났어요'); return; }
+    const fid = js.data().fid; await FB.db.doc('families/'+fid+'/members/'+u.uid).set({role:'parent', email:u.email||'', code});
+    await FB.db.doc('wusers/'+u.uid).set({fid}); FB.db.doc('wjoins/'+code).delete().catch(() => {});
+    FAM = {fid, role:'parent', email:u.email||'', at:Date.now()}; famSave(); closeSheet(); showParent(); toast('가족에 들어왔어요');
+  }catch(e){ toast(fbErr(e)); }
+}
+// 부모 폰은 켜면 바로 보고서
+if(FAM && FAM.role==='parent') setTimeout(showParent, 50);
+if(FAM && FAM.role==='kid') setTimeout(famQueue, 1500);
+
 /* ───────── 백업 ───────── */
 function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, mode:S.mode, quizHide:S.quizHide, waits:S.waits, held:S.held, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
 function markBackup(){ S.lastBackup = Date.now(); save(); }
@@ -1822,6 +2089,7 @@ function backupSheet(){
     <div class="setrow"><span>배경 음악<small>끔 · 1~5 단계</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
     <div id="trkBox"></div>
     <div class="stack-btns" style="margin-top:14px"><button class="gb green sm" id="bkTest">소리 테스트</button><button class="gb blue" id="bkPeople">받은 사람 목록 고치기</button></div>
+    ${famRowHtml()}
     <div class="note" style="margin-top:6px"><b>돈 기록 지키기</b><br>기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br>(${last})</div>
     <div class="stack-btns"><button class="gb blue" id="bkCopy">기록 복사하기</button><button class="gb purple" id="bkFile">파일로 저장하기</button><button class="gb gray" id="bkOpen">백업에서 불러오기</button></div>
     <div class="note" style="margin-top:8px">용돈 친구들 ${APP_VERSION}</div>`);
@@ -1837,7 +2105,7 @@ function backupSheet(){
     setTimeout(() => { const st = AC ? AC.state : 'none';
       toast(st==='running' ? (S.mute ? '소리를 냈어요! (지금은 음소거라 앱 소리는 꺼져 있어요)' : '소리를 냈어요! 안 들리면 폰의 미디어 볼륨·무음 모드를 확인해 주세요') : '이 폰이 소리를 막고 있어요 ('+st+')'); }, 500);
   };
-  $('bkPeople').onclick = peopleSheet;
+  $('bkPeople').onclick = peopleSheet; famBindRow();
   $('bkCopy').onclick = () => {
     const txt = backupText(), ok = () => { markBackup(); toast('복사했어요! 카톡 "나에게"에 붙여 두세요'); };
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
