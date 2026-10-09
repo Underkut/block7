@@ -14,7 +14,7 @@ eval(
   slice('// ── 성경책 이름 하나로 모으기 ──', '// verses를 keyFn 기준으로 묶어') +
   slice('const BIBLE_ORDER_OT=', '// ── Alarm scheduler ──') +
   slice('// ══ 인앱 성경 — 기록과 장절 (v26-1006-4)', '// ══ 인앱 성경 — 기록과 장절 끝 ══') +
-  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,getBibleOrig,_brOrigAdd,_brOrigNote,_brOrigWords,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
+  ';Object.assign(globalThis,{_bookCanon,_brKey,_brSetMark,_brNoteSave,_brNotesAt,_brMigrateNotes,_brHistory,_brHistHide,_brReadAdd,_brParseRef,_brFmtRef,_brCopyText,_brFindWords,_brMatch,_brVerseList,_brDashStats,_brDashStart,_brSeenOf,getBibleInk,_brInkSpansFrom,_brInkStepPos,_brInkCut,_brInkAdd,_brInkErase,_brInkHits,_brInkQuery,getBibleOrig,_brOrigAdd,getBibleToRead,_brTRHas,_brTRToggle,_brTRList,_brOrigNote,_brOrigWords,_brReadMs,getBibleMarks,getBibleReadLog,getBibleNotes});'
 );
 
 console.log('시나리오 1 — 형광펜·책갈피는 절 하나에 함께 (칠한 날짜도), 다 지우면 칸이 사라진다');
@@ -195,7 +195,7 @@ console.log('\n시나리오 11 — 대량 손실 방어가 성경 기록도 센�
 console.log('\n시나리오 12 — 이름이 등록돼야 하는 자리 모두');
 {
   const has = (start, end, name) => slice(start, end).indexOf(name) >= 0;
-  ['bibleMarks', 'bibleReadLog', 'bibleNotes', 'bibleInk', 'bibleOrig'].forEach(n => {
+  ['bibleMarks', 'bibleReadLog', 'bibleNotes', 'bibleInk', 'bibleOrig', 'bibleToRead'].forEach(n => {
     sc.eq(n + ' — 처음 상태(defaultState)', has('function defaultState(){', 'settings:{', n), true);
     sc.eq(n + ' — 불러올 때 빈 칸 채우기', new RegExp('if\\(!ST\\.' + n + '\\)ST\\.' + n + '=\\{\\};').test(SRC), true);
     sc.eq(n + ' — 원격 받기(applyRemoteState)', has('function applyRemoteState(remote){', 'ST.contacts=', n), true);
@@ -579,6 +579,25 @@ console.log('\n시나리오 13-23 — 원어 성경순 · 최근 읽은 곳 한 
 {
   sc.eq('원어 탭 성경순', /\['bb','성경순'\]/.test(SRC) && /_brOM==='bb'\?bib\(x,y\)/.test(SRC), true);
   sc.eq('최근 읽은 곳 알약은 줄바꿈 없이 좌우로', /#bibleRd \.br-recent\{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-24 — 읽을 곳 (bibleToRead, v26-1009-8 HB)');
+{
+  ST.bibleToRead = {};
+  sc.eq('넣기', [_brTRToggle(8, 28), _brTRHas(8, 28)], [true, true]);
+  sc.eq('이름은 장 자리 (두 기기가 같은 장을 넣어도 하나)', Object.keys(ST.bibleToRead), ['9.28']);
+  ST.bibleToRead['48.6'] = { b: 48, c: 6, at: 1 };
+  sc.eq('먼저 넣은 것부터 (화면에선 맨 오른쪽)', _brTRList().map(x => x.b + '.' + x.c), ['48.6', '9.28']);
+  sc.eq('다시 누르면 뺀다', [_brTRToggle(8, 28), _brTRHas(8, 28)], [false, false]);
+  const m = _fbMerge(clone({ bibleToRead: {} }), { bibleToRead: { '9.28': { b: 9, c: 28, at: 1 } } }, { bibleToRead: { '3.5': { b: 3, c: 5, at: 2 } } }, false);
+  sc.eq('병합: 두 기기 것 둘 다', Object.keys(m.bibleToRead).sort(), ['3.5', '9.28']);
+  global._fbBaseJson = null;
+  const g = _fbMergeGuarded(null, { bibleToRead: {}, days: {} }, { bibleToRead: { '3.5': { b: 3, c: 5 } }, days: {} }, false);
+  sc.eq('빈 기기 로그인: 클라우드 읽을 곳 그대로', Object.keys(g.bibleToRead), ['3.5']);
+  sc.eq('장 목록 고르기 단추 · 고르는 동안 길게 눌러 열기는 쉰다', /data-trpk="1"/.test(SRC) && /if\(!c\|\|_brTRPick\)return;/.test(SRC), true);
+  sc.eq('탭 줄은 오른쪽부터 (row-reverse) · 넘치면 좌우 스크롤', /#bibleRd \.br-trbar\{[^}]*flex-direction:row-reverse;[^}]*overflow-x:auto;/.test(SRC), true);
+  sc.eq('+ = 지금 장 넣기 · 헤더와 함께 접힌다', /data-trplus="1"/.test(SRC) && /:scope>\.br-trbar'\)/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
