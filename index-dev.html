@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5153,7 +5153,7 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-trbar::-webkit-scrollbar{display:none;}
 #bibleRd .br-trt{flex:0 0 auto;min-width:62px;height:34px;padding:0 12px;margin-left:-1px;border:1.5px solid var(--bd);border-color:color-mix(in srgb,var(--tx3) 50%,transparent);border-top:0;border-radius:0 0 12px 12px;
   background:var(--s2);color:var(--tx2);font-size:13px;font-weight:600;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.06);}
-#bibleRd .br-trbar.drag{touch-action:none;}
+#bibleRd .br-trbar.drag{overflow:hidden;touch-action:none;}
 #bibleRd .br-trt.ph{opacity:.25;}
 #bibleRd .br-trt.lift{box-shadow:0 10px 24px rgba(0,0,0,.22);border-radius:12px;border-top:1.5px solid var(--bd);}
 #bibleRd .br-trdel{position:absolute;left:50%;top:calc(100% + 64px);transform:translate(-50%,-6px) scale(.92);opacity:0;pointer-events:none;
@@ -6288,7 +6288,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-5";
+const APP_VERSION = "v. 26-1010-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13061,6 +13061,12 @@ function _verseBandHit(x,y){
   const bar=document.getElementById('verseBar');
   if(!bar||bar.style.display==='none'||!ST.settings.verseBarOn)return false;
   if(_layMode()>=2)return false;          // 2·3단에서 이 자리는 날짜 이동·위젯 옮기기 몫
+  // ⚠️ v26-1010-6 (HB — 성경 읽다 스크롤이 걸린다): 좌표만 보고 판정해서, 성경·전체화면 같은 덮개가
+  //    이 띠를 **가리고 있어도** 그 자리 터치를 잡았다 → 문서에 non-passive touchmove 를 걸고,
+  //    가끔은 아예 스크롤을 막았다(preventDefault). 손가락 아래 맨 위 요소가 이 화면이 아니면 손대지 않는다.
+  if(typeof _brOpen!=='undefined'&&_brOpen)return false;
+  const topEl=document.elementFromPoint(x,y);
+  if(topEl&&topEl.closest&&topEl.closest('#bibleRd,#verseFull,.modal-overlay,.overlay'))return false;
   const b=bar.getBoundingClientRect();
   if(b.height<8)return false;             // 접혀 있으면 잡을 것이 없다
   const row=document.getElementById('totalRow');
@@ -16030,8 +16036,9 @@ function _brBind(){
       if(!over){const to=want(),now=tabs().indexOf(el);if(to!==now)move(to);}});
     tr.addEventListener('pointerup',e=>{if(el&&e.pointerId===pid)end(true);else{clearTimeout(hold);hold=null;}});
     tr.addEventListener('pointercancel',()=>end(false));
-    // 끄는 동안에는 손가락 밀기를 통째로 삼킨다 — 탭 줄만 (본문 스크롤과 무관, v26-1007-16 교훈)
-    tr.addEventListener('touchmove',e=>{if(dragging&&e.cancelable)e.preventDefault();},{passive:false});
+    // ⚠️ v26-1010-6 (HB — 본문 스크롤이 다시 걸린다): 여기 있던 non-passive touchmove 를 뺐다.
+    //    v26-1007-16 과 같은 까닭 — 아이폰은 막을 수 있는 터치 리스너가 있으면 스크롤을 붙잡는다.
+    //    끄는 동안 탭 줄이 밀리지 않게 하는 일은 overflow:hidden(.drag)이 대신한다 (스크롤 자리는 그대로 남는다).
     tr.addEventListener('contextmenu',e=>{if(e.target.closest('[data-tr]'))e.preventDefault();});
     tr.addEventListener('click',e=>{if(held){held=false;return;}
       if(e.target.closest('[data-trplus]')){_brTRToggle(_brCur.b,_brCur.c);save();_brTRRender();_brToast('읽기 계획에 담았어요');return;}
