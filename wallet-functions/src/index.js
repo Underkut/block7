@@ -38,9 +38,9 @@ function catName(st, k) {
 function overTiles(st) {
   const out = [];
   (st.tiles || []).forEach((c) => {
-    ["cash", "card"].forEach((a) => {
+    ["cash", "card", "bank"].forEach((a) => {
       const al = ((st.alloc || {})[a] || {})[c.k] || 0; if (!al) return;
-      const sp = (st.tx || []).reduce((s, t) => s + (t.t === "out" && t.cat === c.k && (t.acct === "card" ? "card" : "cash") === a ? t.amt : 0), 0);
+      const sp = (st.tx || []).reduce((s, t) => s + (t.t === "out" && t.cat === c.k && (["card", "bank"].includes(t.acct) ? t.acct : "cash") === a ? t.amt : 0), 0);
       if (sp > al && !out.includes(c.k)) out.push(c.k);
     });
   });
