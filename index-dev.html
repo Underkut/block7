@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6278,7 +6278,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-8";
+const APP_VERSION = "v. 26-1010-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9053,7 +9053,7 @@ try{
     <button class="br-mini" id="brMini" aria-label="메뉴 펼치기"><span id="brMiniT"></span></button>
     <!-- 헤더 아래 선 = 이 장에서 어디쯤 읽고 있는지 (v26-1007-9, HB). 헤더가 접혀도 남는다 -->
     <div class="br-progl" aria-hidden="true"><i id="brProgI"></i></div>
-    <div class="br-trbar" id="brTR" aria-label="읽을 곳"></div>
+    <div class="br-trbar" id="brTR" aria-label="읽기 계획"></div>
   </div>
   <div class="br-edge" id="brEdge" aria-hidden="true"></div><div class="br-scroll" id="brScroll"><div class="br-page"><div id="brChap"></div></div></div>
   <!-- 하단 (v26-1007-7, HB): 장 넘김 + 내 표시 네 갈래. 아래로 읽으면 함께 내려가 사라진다 (_brChrome) -->
@@ -15069,7 +15069,7 @@ let _brTRPick=false;
 // 오른쪽부터 — 먼저 넣은 것이 맨 오른쪽, 새 것은 왼쪽으로 쌓인다 (row-reverse). 맨 왼쪽 끝 + = 지금 장 넣기
 function _brTRRender(){const el=_brEl('brTR');if(!el)return;const books=_brBooks(),L=_brTRList(),{b,c}=_brCur;
   let h=L.map(x=>'<button class="br-trt'+(x.b-1===b&&x.c===c?' cur':'')+'" data-tr="'+(x.b-1)+'.'+x.c+'">'+esc(_bibleShort(books[x.b-1]))+' '+x.c+'</button>').join('');
-  if(_brOpen&&!_brTRHas(b,c))h+='<button class="br-trt br-trplus" data-trplus="1" aria-label="지금 장을 읽을 곳에 넣기">+</button>';
+  if(_brOpen&&!_brTRHas(b,c))h+='<button class="br-trt br-trplus" data-trplus="1" aria-label="지금 장을 읽기 계획에 담기">+</button>';
   el.innerHTML=h;}
 // ══ 인앱 성경 — 화면 ══
 let _brCur={b:0,c:1},_brSel=new Set(),_brOpen=false,_brSess=null;
@@ -15298,7 +15298,7 @@ function _brProgSync(){
 // (v26-1007-7~8 에는 말씀 대시보드를 열었다 — 그때 쓰던 접어 두기(_brParked)는 남아 있지만 이제 안 쓴다)
 let _brParked=false,_brDashRange='m';
 function _brOpenDash(){_brDashRender();_brEl('brDashBody').scrollTop=0;_brEl('brDashP').classList.add('on');}
-const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽을 곳'};
+const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽기 계획'};
 function _brFmtMin(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
 function _brDashRender(){
   const $=_brEl,books=_brBooks(),CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],now=Date.now(),DAY=864e5;
@@ -15518,8 +15518,8 @@ function _brRenderPick(){
     const read=new Set();const log=getBibleReadLog();
     Object.keys(log).forEach(d=>(log[d]||[]).forEach(e=>{if(e.b-1===pk.b)read.add(e.c);}));
     // 읽을 곳 고르기 (v26-1009-8, HB (가)) — 켜면 장을 톡톡 눌러 넣고 뺀다. 톡·길게(바로 열기)는 그대로 둔다
-    h+='<div class="br-crumb br-crumbx"><span>'+(_brTRPick?'읽을 곳에 넣을 '+_brUnit(pk.b)+'을 누르세요':_brUnit(pk.b)+'을 고르세요 · 길게 누르면 바로 열려요')+'</span>'
-      +'<button class="br-trpk'+(_brTRPick?' on':'')+'" data-trpk="1">'+(_brTRPick?'완료':'읽을 곳 고르기')+'</button></div><div class="br-ngrid'+(_brTRPick?' trpick':'')+'">';
+    h+='<div class="br-crumb br-crumbx"><span>'+(_brTRPick?'읽기 계획에 담을 '+_brUnit(pk.b)+'을 누르세요':_brUnit(pk.b)+'을 고르세요 · 길게 누르면 바로 열려요')+'</span>'
+      +'<button class="br-trpk'+(_brTRPick?' on':'')+'" data-trpk="1">'+(_brTRPick?'완료':'계획에 담기')+'</button></div><div class="br-ngrid'+(_brTRPick?' trpick':'')+'">';
     for(let c=1;c<=_bibleChapters(books[pk.b]);c++)h+='<button data-c="'+c+'" class="'+(pk.b===_brCur.b&&c===_brCur.c?'cur':read.has(c)?'read':'')+(_brTRHas(pk.b,c)?' tr':'')+'">'+c+'</button>';
     h+='</div>';
   }else{
@@ -15980,12 +15980,12 @@ function _brBind(){
   $('brMini').onclick=()=>_brChrome(true);
   // 읽을 곳 탭 — 톡 = 그 장으로, 길게(0.5초)·우클릭 = 빼기, + = 지금 장 넣기
   {const tr=$('brTR');let hold=null,held=false;
-    const rm=t=>{const[b,c]=t.dataset.tr.split('.').map(Number);if(!confirm(_brBooks()[b]+' '+c+_brUnit(b)+'을 읽을 곳에서 뺄까요?'))return;_brTRToggle(b,c);save();_brTRRender();};
+    const rm=t=>{const[b,c]=t.dataset.tr.split('.').map(Number);if(!confirm(_brBooks()[b]+' '+c+_brUnit(b)+'을 읽기 계획에서 뺄까요?'))return;_brTRToggle(b,c);save();_brTRRender();};
     tr.addEventListener('pointerdown',e=>{const t=e.target.closest('[data-tr]');held=false;if(!t)return;hold=setTimeout(()=>{held=true;rm(t);},500);});
     ['pointerup','pointerleave','pointercancel'].forEach(k=>tr.addEventListener(k,()=>clearTimeout(hold)));
     tr.addEventListener('contextmenu',e=>{const t=e.target.closest('[data-tr]');if(!t)return;e.preventDefault();clearTimeout(hold);held=true;rm(t);});
     tr.addEventListener('click',e=>{if(held){held=false;return;}
-      if(e.target.closest('[data-trplus]')){_brTRToggle(_brCur.b,_brCur.c);save();_brTRRender();_brToast('읽을 곳에 넣었어요');return;}
+      if(e.target.closest('[data-trplus]')){_brTRToggle(_brCur.b,_brCur.c);save();_brTRRender();_brToast('읽기 계획에 담았어요');return;}
       const t=e.target.closest('[data-tr]');if(!t)return;const[b,c]=t.dataset.tr.split('.').map(Number);_brNextSrc='toread';_brShow(b,c);});}
   $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
   $('brLBody').addEventListener('input',e=>{if(e.target.id!=='brOQ')return;_brOQ=e.target.value;const L=$('brOList');if(L)L.innerHTML=_brOrigListHTML();});
