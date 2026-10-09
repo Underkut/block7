@@ -530,7 +530,7 @@ console.log('\n시나리오 13-19 — 원어 목록 다듬기 (v26-1009-3 HB)');
   sc.eq('최신순을 다시 누르면 등록순', /_brOM=k==='t'\?\(\(_brOM==='new'\)\?'old':'new'\):k;/.test(SRC), true);
   sc.eq('한글순 · 원어순 · 찾기 칸', /\['ko','한글순'\],\['or','원어순'\]/.test(SRC) && /<input id="brOQ" type="search"/.test(SRC), true);
   sc.eq('찾기는 목록만 다시 그린다 (칸이 포커스를 잃지 않게)', /if\(e\.target\.id!=='brOQ'\)return;_brOQ=e\.target\.value;const L=\$\('brOList'\);if\(L\)L\.innerHTML=_brOrigListHTML\(\);/.test(SRC), true);
-  sc.eq('해설은 접혀 있다가 누르면 펼친다', /data-otog=/.test(SRC) && /#bibleRd \.br-onote\.open \.br-ontx\{max-height:60em;/.test(SRC), true);
+  sc.eq('해설은 접혀 있다가 누르면 펼친다', /data-otog=/.test(SRC) && /#bibleRd \.br-onote\.open \.br-ontx\{max-height:55vh;/.test(SRC), true);
   sc.eq('줄을 눌러도 가지 않고 말씀으로 단추로만', /data-ogo="'\+id\+'">말씀으로</.test(SRC) && /if\(!g\|\|!g\.dataset\.go\)return;/.test(SRC), true);
 }
 
@@ -538,13 +538,29 @@ console.log('\n시나리오 13-19 — 원어 목록 다듬기 (v26-1009-3 HB)');
 console.log('\n시나리오 13-20 — 해설 속 마크다운 표 (v26-1009-3 HB)');
 {
   global.esc = global.esc || (x => String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
-  eval(slice('// 해설 글 → 화면.', '// ── 원어 목록 (v26-1009-3) ──') + ';global._brNoteHTML=_brNoteHTML;');
+  eval(slice('// 한 줄 안 — GPT 마크다운의', '// ── 원어 목록 (v26-1009-3) ──') + ';global._brNoteHTML=_brNoteHTML;global._brNoteInline=_brNoteInline;');
   const md = '풀이\n| 헬라어 | 문법 | 의미 |\n| ----------- | --- | --- |\n| Τὸ κοράσιον | 중성 단수 명사 | 어린 소녀야 |\n| σοὶ | 2인칭 단수 여격 | 네게 |\n끝';
   const h = _brNoteHTML(md);
   sc.eq('표 하나 · 머리 칸 셋 · 줄 셋', [(h.match(/<table/g)||[]).length, (h.match(/<th>/g)||[]).length, (h.match(/<tr>/g)||[]).length], [1, 3, 3]);
   sc.eq('구분줄(----)은 안 보인다', /---/.test(h), false);
   sc.eq('표 밖 글은 그대로', h.startsWith('풀이<br>') && h.endsWith('끝'), true);
   sc.eq('글은 이스케이프', _brNoteHTML('<b>x</b>'), '&lt;b&gt;x&lt;/b&gt;');
+}
+
+
+console.log('\n시나리오 13-21 — 보던 자리 · 해설 상자 (v26-1009-4 HB)');
+{
+  sc.eq('보던 화면 그대로 다시 연다 (절 + 화면 위 거리)', /_brRestore=p\.sv\?p:null;bibleOpen\(p\.b,p\.c,0\);/.test(SRC) && /_brPosSet\(\{b:_brCur\.b,c:_brCur\.c,v:sv,sv,off:Math\.round\(off\)\}\)/.test(SRC), true);
+  sc.eq('스크롤이 멈추면 자리 저장', /_brOnScroll\._pt=setTimeout\(_brPosSave,400\);/.test(SRC), true);
+  sc.eq('펼친 해설은 상자 안에서 스크롤 · 글 고르기', /#bibleRd \.br-onote\.open \.br-ontx\{max-height:55vh;overflow-y:auto;[^}]*user-select:text;/.test(SRC), true);
+  sc.eq('펼친 상자는 화살표로만 접는다', /if\(ot\.classList\.contains\('open'\)&&!e\.target\.closest\('\[data-otg\]'\)\)return;/.test(SRC), true);
+  sc.eq('상자 우상단 전체 복사', /data-ocopy=/.test(SRC) && /_brCopy\(t,'해설을 복사했어요'\)/.test(SRC), true);
+  const h = _brNoteInline('[image](https://www.google.com/s2/favicons?domain=https://biblehub.com\\&sz=32) Bible Hub');
+  sc.eq('GPT 출처 아이콘은 그림으로 (\\& 풀기)', /<img class="br-ofav" src="https:\/\/www\.google\.com\/s2\/favicons\?domain=https:\/\/biblehub\.com&amp;sz=32"/.test(h) && /Bible Hub$/.test(h), true);
+  sc.eq('링크는 새 창으로', _brNoteInline('[Bible Hub](https://biblehub.com/greek/1453.htm)'), '<a href="https://biblehub.com/greek/1453.htm" target="_blank" rel="noopener">Bible Hub</a>');
+  sc.eq('맨 주소도 링크', /<a href="https:\/\/biblehub\.com"/.test(_brNoteInline('보기 https://biblehub.com 끝')), true);
+  sc.eq('http(s) 아닌 주소는 글 그대로', _brNoteInline('[x](javascript:alert(1))').indexOf('<a')<0, true);
+  sc.eq('굵게', _brNoteInline('**ἔγειρε**'), '<b>ἔγειρε</b>');
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
