@@ -280,7 +280,7 @@ console.log('\n시나리오 13-7 — v26-1007-7 (HB 성경 화면 배치 · 피�
   sc.eq('헤더 차례: There · 대시보드 · 제목 · 검색 · Aa · × · (접힌 줄)', ids.filter(x => ['brThere','brDash','brTitle','brFind','brAa','brClose','brMini'].includes(x)), ['brThere', 'brDash', 'brTitle', 'brFind', 'brAa', 'brClose', 'brMini']);
   sc.eq('좌상단 내 표시 단추는 없다 (하단 네 단추로)', /id="brMenu"/.test(SRC), false);
   const nav = slice('<div class="br-nav" id="brNav">', '<div class="br-pick" id="brPick"');
-  sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" id="brNext"');
+  sc.eq('하단: ‹ · 책갈피 · 형광펜 · 메모 · 읽은 곳 · ›', (nav.match(/id="brPrev"|data-lt="[a-z]+"|id="brNext"/g) || []).join(' '), 'id="brPrev" data-lt="mark" data-lt="hl" data-lt="memo" data-lt="hist" data-lt="orig" id="brNext"');
   sc.eq('하단 가운데 장 번호(요 3/21)는 없다', /id="brPg"/.test(SRC), false);
   sc.eq('아래로 읽으면 헤더는 한 줄, 하단은 사라진다 (스크롤을 따라 — v26-1007-8)', /h\.classList\.toggle\('mini',p>\.5\);n\.classList\.toggle\('hide',p>\.5\);/.test(SRC) && /_brP=Math\.max\(0,Math\.min\(1,_brP\+dy\/span\)\);/.test(SRC), true);
   sc.eq('새 장을 펴면 다시 다 보인다', /_brChrome\(true\);_brProgSync\(\);_brInkPaint\(\);/.test(SRC), true);
@@ -521,6 +521,30 @@ console.log('\n시나리오 13-18 — 원어찾기 기록 · 해설 (bibleOrig, 
   sc.eq('원어찾기 누르면 복사가 먼저, 기록은 그다음', /_brOrigSend\(q\);[^\n]*\n\s*_brOrigAdd\(b,c,sps,_brChVerses\(\),q\);save\(\);/.test(SRC), true);
   sc.eq('원어 탭은 Even Deeper 계정만', /<button data-t="orig" class="even-only">원어<\/button>/.test(SRC), true);
   sc.eq('해설 붙인 글자는 점선 · 톡 하면 해설', /class="br-origu"/.test(SRC) && /const oh=_brOrigHitAt\(e\.clientX,e\.clientY\);/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-19 — 원어 목록 다듬기 (v26-1009-3 HB)');
+{
+  sc.eq('하단 다섯째 단추 원어 (Even Deeper 계정만)', /<button class="br-lt even-only" data-lt="orig">/.test(SRC), true);
+  sc.eq('최신순을 다시 누르면 등록순', /_brOM=k==='t'\?\(\(_brOM==='new'\)\?'old':'new'\):k;/.test(SRC), true);
+  sc.eq('한글순 · 원어순 · 찾기 칸', /\['ko','한글순'\],\['or','원어순'\]/.test(SRC) && /<input id="brOQ" type="search"/.test(SRC), true);
+  sc.eq('찾기는 목록만 다시 그린다 (칸이 포커스를 잃지 않게)', /if\(e\.target\.id!=='brOQ'\)return;_brOQ=e\.target\.value;const L=\$\('brOList'\);if\(L\)L\.innerHTML=_brOrigListHTML\(\);/.test(SRC), true);
+  sc.eq('해설은 접혀 있다가 누르면 펼친다', /data-otog=/.test(SRC) && /#bibleRd \.br-onote\.open \.br-ontx\{max-height:60em;/.test(SRC), true);
+  sc.eq('줄을 눌러도 가지 않고 말씀으로 단추로만', /data-ogo="'\+id\+'">말씀으로</.test(SRC) && /if\(!g\|\|!g\.dataset\.go\)return;/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 13-20 — 해설 속 마크다운 표 (v26-1009-3 HB)');
+{
+  global.esc = global.esc || (x => String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'));
+  eval(slice('// 해설 글 → 화면.', '// ── 원어 목록 (v26-1009-3) ──') + ';global._brNoteHTML=_brNoteHTML;');
+  const md = '풀이\n| 헬라어 | 문법 | 의미 |\n| ----------- | --- | --- |\n| Τὸ κοράσιον | 중성 단수 명사 | 어린 소녀야 |\n| σοὶ | 2인칭 단수 여격 | 네게 |\n끝';
+  const h = _brNoteHTML(md);
+  sc.eq('표 하나 · 머리 칸 셋 · 줄 셋', [(h.match(/<table/g)||[]).length, (h.match(/<th>/g)||[]).length, (h.match(/<tr>/g)||[]).length], [1, 3, 3]);
+  sc.eq('구분줄(----)은 안 보인다', /---/.test(h), false);
+  sc.eq('표 밖 글은 그대로', h.startsWith('풀이<br>') && h.endsWith('끝'), true);
+  sc.eq('글은 이스케이프', _brNoteHTML('<b>x</b>'), '&lt;b&gt;x&lt;/b&gt;');
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
