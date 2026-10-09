@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1009-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1009-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -265,6 +265,28 @@ body[data-mode=P] .modechip{background:linear-gradient(135deg,#ff9f6f,#ff6fa5);b
 .pr-link{display:block;margin:10px auto 0;font-size:13px;color:#4f6bed;text-decoration:underline}
 .pr-empty{text-align:center;color:#6b7280;padding:40px 0}
 .setrow.fam{margin-top:12px}
+body.pmode .tabs{display:none}
+.pnav{position:fixed;left:0;right:0;bottom:0;z-index:9;max-width:640px;margin:0 auto;display:none;background:#fff;border-top:1px solid #e5e7eb;padding:6px 0 calc(env(safe-area-inset-bottom) + 6px);font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif}
+body.pmode .pnav{display:flex}
+.pnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;color:#6b7280;position:relative}.pnav button span{width:22px;height:22px}.pnav button span svg{width:100%;height:100%}
+.pnav button.on{color:#1f2430;font-weight:600}.pnav i{position:absolute;top:0;left:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:#dc2626;display:none}.pnav i.on{display:block}
+body.pmode .par{padding-bottom:calc(env(safe-area-inset-bottom) + 80px)}
+.mirbar{position:fixed;left:0;right:0;top:0;z-index:8;display:none;max-width:520px;margin:0 auto;background:rgba(31,36,48,.94);color:#fff;padding:calc(env(safe-area-inset-top) + 6px) 12px 8px;font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif}
+body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opacity:.92}.mirtxt b{font-weight:600}
+.mirbar .pr-kids{justify-content:center;margin:6px 0 0}.mirbar .pr-kids button{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}.mirbar .pr-kids button.on{background:#fff;color:#1f2430}
+.mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
+body.mirror .view{padding-top:calc(env(safe-area-inset-top) + 92px)}body.mirror #app{bottom:62px}
+.stp{font-size:13px;margin-left:4px;letter-spacing:1px}
+.ptitle{font-size:14px;color:var(--sub);margin:12px 2px 6px}
+body.pdark .par,body.pdark .pr-top{background:#111418;color:#e5e7eb}
+body.pdark .pr-sec,body.pdark .pr-seg,body.pdark .pr-kids button{background:#1b1f26;border-color:#2b313b;color:#e5e7eb}
+body.pdark .pr-seg button{color:#9aa3b2}body.pdark .pr-seg button.on,body.pdark .pr-kids button.on{background:#e5e7eb;color:#111418}
+body.pdark .pr-sec h3,body.pdark .pr-kpi small,body.pdark .pr-kpi em,body.pdark .pr-note,body.pdark .pr-meta,body.pdark .pr-tb th,body.pdark .pr-tb small,body.pdark .pr-al small,body.pdark .pr-top button{color:#9aa3b2}
+body.pdark .pr-tb td,body.pdark .pr-tb th,body.pdark .pr-al{border-color:#2b313b}body.pdark .pr-bar em,body.pdark .pr-gb{background:#2b313b}
+body.pdark .pr-cal i.e{background:#1b1f26;border-color:#2b313b}body.pdark .pr-cal i.n{background:#3a414d;color:#e5e7eb}
+body.pdark .pr-btns button{background:#1b1f26;border-color:#2b313b;color:#e5e7eb}body.pdark .pr-in{color:#4ade80}body.pdark .pr-link{color:#8ea2ff}
+body.pdark .pnav{background:#111418;border-color:#2b313b}body.pdark .pnav button{color:#9aa3b2}body.pdark .pnav button.on{color:#fff}
+
 body:has(.par.on) #trash{visibility:hidden}
 .smallnote{text-align:center;color:var(--sub);font-size:14px;margin:14px 0 4px}
 .linkbtn{display:block;margin:10px auto 0;color:var(--sub);font-size:14px;text-decoration:underline;padding:8px}
@@ -458,14 +480,16 @@ body:has(.par.on) #trash{visibility:hidden}
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
-<div class="par" id="par"><div class="pr-top"><span></span><b>용돈 보고서</b><button id="parX" aria-label="닫기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="pr-kids" id="parKids"></div><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div>
+<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">용돈 보고서</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
+<div class="mirbar" id="mirBar"><div class="mirtxt" id="mirTxt"></div><div class="pr-kids" id="mirKids"></div><div class="mirseg" id="mirSeg"><button data-v="vHome" class="on">홈</button><button data-v="vAlloc">계획세우기</button><button data-v="vLog">돌아보기</button></div></div>
+<nav class="pnav" id="pnav"><button data-p="rep" class="on"><span id="pnRep"></span>보고서</button><button data-p="mir"><span id="pnMir"></span>아이 화면</button><button data-p="mail"><span id="pnMail"></span>우체통<i id="pmDot"></i></button></nav>
 <div class="dim" id="dim"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1009-1";
+const APP_VERSION = "v. 26-1009-2";
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -770,7 +794,7 @@ function load(){
   return blank();
 }
 var _ro = false;   // 부모 보고서가 아이 상태로 잠깐 계산하는 동안은 저장하지 않는다
-function save(){ if(_ro) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); }
+function save(){ if(_ro || MIR) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); }
 
 /* ───────── 계산 ───────── */
 const ACCTS = [{k:'cash', n:'현금'}, {k:'card', n:'체크카드'}];
@@ -803,7 +827,7 @@ function txRow(t){
   if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${t.from==='cash'?'카드에 넣었어요':'현금으로 뺐어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
   const ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
-  return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
+  return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
 }
 const sortedTx = list => list.slice().sort((a,b) => a.date<b.date?1:a.date>b.date?-1:(b.at||0)-(a.at||0));
 
@@ -1852,7 +1876,7 @@ function fbLoad(){
   FBP = FB_JS.reduce((p, src) => p.then(() => (window.firebase && src.includes('-app-') ? null : one(src))), Promise.resolve()).then(() => {
     const app = firebase.apps.find(a => a.name==='wallet') || firebase.initializeApp(FB_CFG, 'wallet');
     const auth = app.auth(), db = app.firestore();
-    if(window.WALLET_EMU){ auth.useEmulator('http://127.0.0.1:9099'); db.useEmulator('127.0.0.1', 8080); }
+    if(window.WALLET_EMU){ auth.useEmulator('http://127.0.0.1:9099', {disableWarnings:true}); db.useEmulator('127.0.0.1', 8080); }
     FB = {app, auth, db, fv: firebase.firestore.FieldValue, ts: firebase.firestore.Timestamp};
     return FB;
   }).catch(e => { FBP = null; throw e; });
@@ -1987,10 +2011,10 @@ function kidCodeSheet(re){
 }
 
 /* 부모 보고서 (F-2) — 게임 화면이 아니라 보고서 */
-let PAR = {kids:[], sel:null, per:'week', unsub:null, more:false};
-function hideParent(){ const p = $('par'); if(p) p.classList.remove('on'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } }
+let PAR = {kids:[], sel:null, per:'week', unsub:null, unsubM:null, more:false, tab:'rep', msgs:[]};
+function hideParent(){ mirrorOff(); const p = $('par'); if(p) p.classList.remove('on'); document.body.classList.remove('pmode'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } if(PAR.unsubM){ PAR.unsubM(); PAR.unsubM = null; } }
 async function showParent(){
-  $('par').classList.add('on'); $('parBody').innerHTML = '<div class="pr-empty">불러오는 중…</div>';
+  document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep'); $('parBody').innerHTML = '<div class="pr-empty">불러오는 중…</div>';
   try{
     await fbLoad(); const u = FB.auth.currentUser || await authReady();
     if(!u || u.isAnonymous){ hideParent(); loginSheet(); return; }
@@ -1998,12 +2022,12 @@ async function showParent(){
     PAR.unsub = FB.db.collection('families/'+FAM.fid+'/kids').onSnapshot(qs => {
       PAR.kids = qs.docs.map(d => { const x = d.data(); let st = null; try{ st = migrate(JSON.parse(x.json)); }catch(e){} return {id:d.id, name:x.name, at:x.at && x.at.toDate ? x.at.toDate() : null, st}; });
       if(!PAR.sel || !PAR.kids.find(k => k.id===PAR.sel)) PAR.sel = PAR.kids[0] ? PAR.kids[0].id : null;
-      renderParent();
+      refreshParent();
     }, e => { $('parBody').innerHTML = `<div class="pr-empty">${fbErr(e)}</div>`; });
   }catch(e){ $('parBody').innerHTML = `<div class="pr-empty">${fbErr(e)}</div>`; }
 }
 // 아이 상태로 잠깐 바꿔 계산한다. 그동안 저장은 막는다(부모 폰의 기록을 덮지 않게).
-function withS(st, fn){ const keep = S, ka = curAcct; _ro = true; S = st; try{ return fn(); } finally{ S = keep; curAcct = ka; _ro = false; } }
+function withS(st, fn){ const keep = S, ka = curAcct, r0 = _ro; _ro = true; S = st; try{ return fn(); } finally{ S = keep; curAcct = ka; _ro = r0; } }
 const md2 = d => Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 function perRange(per){ const t = todayStr();
   if(per==='day') return {a:t, b:t, pa:dayShift(t,-1), pb:dayShift(t,-1), lb:'오늘', pl:'어제'};
@@ -2013,9 +2037,9 @@ function perRange(per){ const t = todayStr();
 function sumIO(a, b){ let i = 0, o = 0; S.tx.forEach(t => { if(t.date < a || t.date > b) return; if(t.t==='in') i += t.amt; else if(t.t==='out') o += t.amt; }); return {i, o}; }
 function renderParent(){
   const box = $('parBody'), k = PAR.kids.find(x => x.id===PAR.sel);
-  $('parKids').innerHTML = PAR.kids.length > 1 ? PAR.kids.map(x => `<button data-k="${esc(x.id)}" class="${x.id===PAR.sel?'on':''}">${esc(x.name||'아이')}</button>`).join('') : '';
-  if(!k){ box.innerHTML = `<div class="pr-sec"><h3>아직 연결된 아이 폰이 없어요</h3><p class="pr-note">아래 <b>아이 폰 연결하기</b>로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p></div>` + parTools(); return; }
-  if(!k.st){ box.innerHTML = `<div class="pr-empty">아이 기록을 읽지 못했어요</div>` + parTools(); return; }
+  $('parKids').innerHTML = kidTabsHtml();
+  if(!k){ box.innerHTML = `<div class="pr-sec"><h3>아직 연결된 아이 폰이 없어요</h3><p class="pr-note">아래 버튼으로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p><div class="pr-btns" style="margin-top:10px"><button id="prKidE">아이 폰 연결하기</button></div></div>`; return; }
+  if(!k.st){ box.innerHTML = `<div class="pr-empty">아이 기록을 읽지 못했어요</div>`; return; }
   const R = perRange(PAR.per);
   const html = withS(k.st, () => {
     const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o;
@@ -2051,21 +2075,21 @@ function renderParent(){
       <div class="pr-sec"><h3>기록 · ${R.lb} (${rows.length}건)</h3>${rows.length ? `<table class="pr-tb"><tr><th>날짜</th><th>내용</th><th>수단</th><th class="r">금액</th></tr>${shown.map(rowH).join('')}</table>${rows.length > shown.length ? '<button class="pr-link" id="prMore">'+(rows.length-shown.length)+'건 더 보기</button>' : ''}` : '<p class="pr-note">기록이 없어요</p>'}</div>
       <div class="pr-sec"><h3>최근 활동</h3>${acts.slice(0,10).map(a => `<div class="pr-al"><i class="${a.c}"></i><span>${esc(a.t)}</span><small>${md2(a.d)}</small></div>`).join('') || '<p class="pr-note">활동이 없어요</p>'}</div>`;
   });
-  box.innerHTML = `<div class="pr-meta">${esc(k.name||'아이')} · ${k.at ? '아이 폰에서 받은 때 '+k.at.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}</div>` + html + parTools();
+  box.innerHTML = `<div class="pr-meta">${esc(k.name||'아이')} · ${k.at ? '아이 폰에서 받은 때 '+k.at.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}</div>` + html;
 }
-function parTools(){ return `<div class="pr-sec"><h3>가족 관리</h3><div class="pr-btns"><button id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button id="prRe">아이 폰 다시 연결</button>' : ''}<button id="prPar">다른 부모님 초대</button><button id="prJoin">받은 초대 코드 넣기</button></div>
-  <p class="pr-note">연결 코드는 15분 동안 쓸 수 있어요. 아이 폰은 기록을 할 때마다 몇 초 안에 이 보고서로 보내요.</p><button class="pr-link" id="prOut">로그아웃</button></div>`; }
-$('par').addEventListener('click', async e => {
+$('par').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.per){ PAR.per = b.dataset.per; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
-  else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; renderParent(); }
+  else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; refreshParent(); }
   else if(b.id==='prMore'){ PAR.more = true; renderParent(); }
-  else if(b.id==='prKid') kidCodeSheet(false);
-  else if(b.id==='prRe') kidCodeSheet(true);
-  else if(b.id==='prPar'){ try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } }
-  else if(b.id==='prJoin') pinPad({title:'초대 코드', sub:'다른 부모님 폰에 나온 6자리', len:6, onOk:c => parentJoin(c)});
-  else if(b.id==='prOut' || b.id==='parX') b.id==='parX' ? hideParent() : famUnlink();
+  else if(b.id==='prKidE') kidCodeSheet(false);
+  else if(b.id==='prGear') pSettings();
+  else if(b.id==='prTh'){ PTH = PTH==='sys' ? 'light' : PTH==='light' ? 'dark' : 'sys'; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); toast({sys:'화면 밝기: 시스템 따라', light:'화면 밝기: 라이트', dark:'화면 밝기: 다크'}[PTH]); }
 });
+$('pnav').addEventListener('click', e => { const b = e.target.closest('button'); if(b){ buzz(8); setPTab(b.dataset.p); } });
+$('mirBar').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.k){ PAR.sel = b.dataset.k; mirrorOn(); }
+  else if(b.dataset.v){ goTab(b.dataset.v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x===b)); } });
 // 다른 부모님: 로그인한 뒤 코드로 같은 가족에 들어온다
 async function parentJoin(code){
   try{ await fbLoad(); const u = FB.auth.currentUser; if(!u || u.isAnonymous){ toast('먼저 로그인해 주세요'); return; }
@@ -2078,6 +2102,105 @@ async function parentJoin(code){
 // 부모 폰은 켜면 바로 보고서
 if(FAM && FAM.role==='parent') setTimeout(showParent, 50);
 if(FAM && FAM.role==='kid') setTimeout(famQueue, 1500);
+
+/* ───────── 부모 모드 (F-P) — 보고서 · 아이 화면(보기만) · 우체통 ───────── */
+// 부모 폰에서는 아이용 기입장을 숨기고 이 세 화면만 보인다. 부모 폰의 자기 저장(allowance.v1)은 읽지도 바꾸지도 않는다.
+const PTH_KEY = 'allowance.ptheme';
+let PTH = (() => { try{ return localStorage.getItem(PTH_KEY) || 'sys'; }catch(e){ return 'sys'; } })();
+const PTH_MQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+function applyPTheme(){ const dk = PTH==='dark' || (PTH==='sys' && PTH_MQ && PTH_MQ.matches); document.body.classList.toggle('pdark', !!dk); }
+if(PTH_MQ && PTH_MQ.addEventListener) PTH_MQ.addEventListener('change', applyPTheme);
+const PICO = {
+  rep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  mir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
+  mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
+  sun:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/></svg>',
+  gear:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.400 15a1.700 1.700 0 00.300 1.800l.1.1a2 2 0 01-2.800 2.800l-.1-.1a1.700 1.700 0 00-1.800-.3 1.700 1.700 0 00-1 1.500V21a2 2 0 01-4 0v-.1a1.700 1.700 0 00-1.100-1.500 1.700 1.700 0 00-1.800.3l-.1.1a2 2 0 01-2.800-2.800l.1-.1a1.700 1.700 0 00.300-1.800 1.700 1.700 0 00-1.500-1H3a2 2 0 010-4h.1a1.700 1.700 0 001.500-1.100 1.700 1.700 0 00-.3-1.800l-.1-.1a2 2 0 012.800-2.800l.1.1a1.700 1.700 0 001.800.3H9a1.700 1.700 0 001-1.500V3a2 2 0 014 0v.1a1.700 1.700 0 001 1.500 1.700 1.700 0 001.800-.3l.1-.1a2 2 0 012.800 2.800l-.1.1a1.700 1.700 0 00-.3 1.800V9a1.700 1.700 0 001.500 1H21a2 2 0 010 4h-.1a1.700 1.700 0 00-1.500 1z"/></svg>'
+};
+const curKid = () => PAR.kids.find(k => k.id===PAR.sel) || null;
+function kidTabsHtml(){ return PAR.kids.length > 1 ? PAR.kids.map(x => `<button data-k="${esc(x.id)}" class="${x.id===PAR.sel?'on':''}">${esc(x.name||'아이')}</button>`).join('') : ''; }
+function setPTab(t){
+  PAR.tab = t;
+  document.querySelectorAll('#pnav button').forEach(b => b.classList.toggle('on', b.dataset.p===t));
+  if(t==='mir'){ $('par').classList.remove('on'); mirrorOn(); }
+  else { mirrorOff(); $('par').classList.add('on'); $('prRep').style.display = t==='rep' ? '' : 'none'; $('prMail').style.display = t==='mail' ? '' : 'none';
+    $('prTitle').textContent = t==='rep' ? '용돈 보고서' : '우체통'; $('par').scrollTop = 0; t==='rep' ? renderParent() : renderPMail(); }
+}
+function refreshParent(){
+  $('parKids').innerHTML = kidTabsHtml();
+  if(PAR.tab==='mir') mirrorOn(true); else if(PAR.tab==='mail') renderPMail(); else renderParent();
+}
+
+/* 아이 화면 그대로 — 보기만 */
+var MIR = null;
+function mirrorOn(refresh){
+  const k = curKid();
+  if(!MIR) MIR = {keep:S, acct:curAcct};
+  _ro = true;
+  if(!k || !k.st){ document.body.classList.add('mirror'); $('mirTxt').textContent = k ? '아이 기록을 읽지 못했어요' : '아직 연결된 아이 폰이 없어요'; $('mirKids').innerHTML = kidTabsHtml(); return; }
+  const cur = document.querySelector('.view.on'), v = cur ? cur.id : 'vHome', y = cur ? cur.scrollTop : 0;
+  S = JSON.parse(JSON.stringify(k.st)); S.mute = true; curAcct = S.lastAcct;     // 부모 폰에서 아이 배경음악이 울리지 않게
+  document.body.classList.add('mirror');
+  $('mirTxt').innerHTML = `<b>${esc(k.name||'아이')}</b> 화면 · 보기만 할 수 있어요${k.at ? ' · '+k.at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})+' 기준' : ''}`;
+  $('mirKids').innerHTML = kidTabsHtml();
+  stampsFor(k.id); render(); renderMute();
+  if(refresh){ goTab(v); $(v).scrollTop = y; } else goTab('vHome');
+  document.querySelectorAll('#mirSeg button').forEach(b => b.classList.toggle('on', b.dataset.v===(refresh ? v : 'vHome')));
+}
+function mirrorOff(){
+  if(!MIR) return;
+  S = MIR.keep; curAcct = MIR.acct; MIR = null; _ro = false;
+  document.body.classList.remove('mirror'); closeSheet(); applyTheme();
+}
+// 보기만: 이동·보기 버튼만 통과시키고, 입력·수정은 막는다
+const MIR_OK = '#mirBar *, #pnav *, .tabs button, #mPrev, #mNext, #dashTog, #acctTabs button, #planSeg button, #giftBtn, #rwSeg button, #lvOpen, #dim, [data-tx], #sheet .grab';
+function mirBlock(e){
+  if(!MIR || !document.body.classList.contains('mirror')) return;
+  const t = e.target; if(!t.closest || !t.closest('#app, #sheet')) return;
+  if(t.closest(MIR_OK)) return;
+  if(!t.closest('button, input, label, select, textarea, .ac, [data-ga], [data-wa], .pk')) return;
+  e.preventDefault(); e.stopPropagation(); if(e.type==='click') toast('보기만 할 수 있어요');
+}
+['click','pointerdown','touchstart','input','change'].forEach(ev => document.addEventListener(ev, mirBlock, true));
+// 기록을 누르면: 보기만 창 (고치기·지우기 없이). 길게 누르면 칭찬 도장(F-3)
+document.addEventListener('click', e => { if(!MIR) return; const r = e.target.closest('#app [data-tx]'); if(!r) return; e.stopPropagation(); e.preventDefault(); if(mirLP===-1){ mirLP = 0; return; } mirTxSheet(r.dataset.tx); }, true);
+function mirTxSheet(id){
+  const t = S.tx.find(x => x.id===id); if(!t) return;
+  const isIn = t.t==='in', nm = t.t==='mv' ? acctName(t.from)+' → '+acctName(t.to) : isIn ? (t.memo||'용돈') : catOf(t.cat).n;
+  openSheet(`<h2>${t.t==='mv' ? '옮긴 돈' : isIn ? '받은 돈' : '쓴 돈'}</h2><div class="who"><span style="font-size:20px">${esc(nm)}</span></div>
+    <div class="disp ${isIn?'in':t.t==='mv'?'mvc':'out'}">${t.t==='mv'?'':isIn?'+':'−'}${nf(t.amt)}<small>원</small></div>
+    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${acctName(acctOf(t))}${t.note ? '<br>✎ '+esc(t.note) : ''}</div>
+    ${typeof stampSheet==='function' && t.t!=='mv' ? '<button class="gb purple" id="mStamp">칭찬 도장 찍기</button>' : ''}`);
+  if($('mStamp')) $('mStamp').onclick = () => stampSheet(id);
+}
+let mirLP = 0;
+document.addEventListener('pointerdown', e => { if(!MIR) return; const r = e.target.closest('#app [data-tx]'); if(!r || typeof stampSheet!=='function') return;
+  clearTimeout(mirLP); mirLP = setTimeout(() => { mirLP = -1; buzz(20); stampSheet(r.dataset.tx); }, 550); }, true);
+['pointerup','pointercancel','pointermove'].forEach(ev => document.addEventListener(ev, e => { if(ev==='pointermove' && Math.abs(e.movementY||0) < 4) return; if(mirLP > 0) clearTimeout(mirLP); }, true));
+
+/* 부모 설정 (우상단 톱니) */
+function pSettings(){
+  openSheet(`<h2>부모님 설정</h2>
+    <div class="note" style="text-align:left">${esc(FAM.email||'')}로 로그인했어요</div>
+    <div class="ptitle">화면 밝기 (보고서·우체통)</div><div class="rwseg" id="pthSeg"><button data-t="sys" class="${PTH==='sys'?'on':''}">시스템</button><button data-t="light" class="${PTH==='light'?'on':''}">라이트</button><button data-t="dark" class="${PTH==='dark'?'on':''}">다크</button></div>
+    <div class="ptitle">가족 관리</div><div class="stack-btns"><button class="gb blue sm" id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button class="gb blue sm" id="prRe">아이 폰 다시 연결 (폰을 바꿨을 때)</button>' : ''}<button class="gb gray sm" id="prPar">다른 부모님 초대</button><button class="gb gray sm" id="prJoin">받은 초대 코드 넣기</button></div>
+    <div class="note">연결 코드는 15분 동안 쓸 수 있어요.</div>
+    <button class="linkbtn" id="prOut">로그아웃</button>`);
+  $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
+  $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
+  $('prPar').onclick = async () => { try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } };
+  $('prJoin').onclick = () => pinPad({title:'초대 코드', sub:'다른 부모님 폰에 나온 6자리', len:6, onOk:c => parentJoin(c)});
+  $('prOut').onclick = famUnlink;
+}
+
+// 칭찬 도장 표시 — 우체통(F-3)이 채운다
+var STAMPS = {};
+function stampsFor(kidId){ STAMPS = {}; const list = (typeof mailOf==='function') ? mailOf(kidId) : []; list.forEach(m => { if(m.type==='stamp' && m.ref) (STAMPS[m.ref] = STAMPS[m.ref] || []).push(m.sticker||'⭐'); }); }
+const stampHtml = id => STAMPS[id] ? ' <span class="stp">'+STAMPS[id].slice(0,3).join('')+(STAMPS[id].length>3 ? '+'+(STAMPS[id].length-3) : '')+'</span>' : '';
+
+// 우체통(F-3)이 들어오기 전까지 자리만
+function renderPMail(){ $('parKids').innerHTML = kidTabsHtml(); $('prMail').innerHTML = '<div class="pr-sec"><h3>우체통</h3><p class="pr-note">쪽지 · 칭찬 도장 · 미션 · 용돈 요청 승인이 여기에 들어올 거예요. (준비 중)</p></div>'; }
+$('prTh').innerHTML = PICO.sun; $('prGear').innerHTML = PICO.gear; $('pnRep').innerHTML = PICO.rep; $('pnMir').innerHTML = PICO.mir; $('pnMail').innerHTML = PICO.mail;
 
 /* ───────── 백업 ───────── */
 function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, mode:S.mode, quizHide:S.quizHide, waits:S.waits, held:S.held, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
