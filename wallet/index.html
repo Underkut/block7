@@ -862,7 +862,7 @@ function monthShift(m, d){ let [y,mm] = m.split('-').map(Number); mm += d; while
 const wd = ['일','월','화','수','목','금','토'];
 
 function txRow(t){
-  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${acctName(t.to)}(으)로 옮겼어요 · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
+  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${byA(t.to)} 옮겼어요 · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
   const ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
   return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
@@ -1115,7 +1115,7 @@ function txSheet(id){
   if(t.t==='mv'){
     openSheet(`<h2>옮긴 돈</h2><div class="who"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span style="font-size:20px">${acctName(t.from)} → ${acctName(t.to)}</span></div>
       <div class="disp mvc">${nf(t.amt)}<small>원</small></div>
-      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${acctName(t.to)}(으)로 옮겼어요${t.note?'<br>✎ '+esc(t.note):''}</div>
+      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${byA(t.to)} 옮겼어요${t.note?'<br>✎ '+esc(t.note):''}</div>
       <div class="stack-btns"><button class="gb blue" id="tEdit">고치기</button><button class="gb gray" id="tDel">지우기</button></div>`);
     $('tEdit').onclick = () => moveFlow(t);
     $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
