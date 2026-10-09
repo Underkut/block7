@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6288,7 +6288,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-4";
+const APP_VERSION = "v. 26-1010-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14732,10 +14732,11 @@ function _brOrigWords(all){const by={};Object.keys(all||{}).forEach(id=>{const o
 function getBibleToRead(){if(!ST.bibleToRead)ST.bibleToRead={};return ST.bibleToRead;}
 function _brTRHas(b,c){return !!getBibleToRead()[(b+1)+'.'+c];}
 function _brTRToggle(b,c){const all=getBibleToRead(),k=(b+1)+'.'+c;if(all[k]){delete all[k];return false;}const os=Object.values(all).filter(x=>x&&x.o!=null).map(x=>x.o);
-  all[k]=Object.assign({b:b+1,c,at:Date.now()},os.length?{o:Math.max(...os)+1}:{});return true;}   // 옮긴 차례가 있으면 맨 끝 다음
+  all[k]=Object.assign({b:b+1,c,at:Date.now()},os.length?{o:Math.min(...os)-1}:{});return true;}   // 옮긴 차례가 있으면 맨 앞(화면 맨 오른쪽)
 // 차례: 사람이 옮긴 차례(o)가 있으면 그것, 없으면 넣은 때(at) — 끌어 옮기면 전부 o 를 다시 매긴다 (v26-1010-2)
-function _brTRKey(x){return x.o!=null?x.o:(x.at||0)/1e13;}
-function _brTRList(){const all=getBibleToRead();return Object.keys(all).filter(k=>all[k]).map(k=>all[k]).sort((x,y)=>_brTRKey(x)-_brTRKey(y)||(x.at||0)-(y.at||0));}
+// 새로 담은 것이 화면 맨 오른쪽 (v26-1010-5, HB) — 줄이 오른쪽부터 쌓이므로 목록 맨 앞 = 맨 오른쪽 = 가장 최근
+function _brTRKey(x){return x.o!=null?x.o:-(x.at||0)/1e13;}
+function _brTRList(){const all=getBibleToRead();return Object.keys(all).filter(k=>all[k]).map(k=>all[k]).sort((x,y)=>_brTRKey(x)-_brTRKey(y)||(y.at||0)-(x.at||0));}
 function _brTRSetOrder(keys){const all=getBibleToRead();keys.forEach((k,i)=>{if(all[k])all[k]=Object.assign({},all[k],{o:i});});}
 // ══ 인앱 성경 — 기록과 장절 끝 ══
 
