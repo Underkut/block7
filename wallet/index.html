@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1009-7 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -277,6 +277,12 @@ body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opa
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
 body.mirror .view{padding-top:14px}body.mirror #app{top:var(--mirH,120px);bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
+.pick1{color:var(--ink)}
+body.pmode.pdark:not(.mirror) .sheet .pick1,body.pmode.pdark:not(.mirror) .sheet .inp,body.pmode.pdark:not(.mirror) .sheet .stkrow button,body.pmode.pdark:not(.mirror) .sheet .pk,body.pmode.pdark:not(.mirror) .sheet .gtabs button{background:#2b313b;color:#e5e7eb;border-color:#3a414d;box-shadow:none}
+body.pmode.pdark:not(.mirror) .sheet .stkrow button.on{background:#5b4a1a}
+body.pmode.pdark:not(.mirror) .sheet .rwseg{background:#111418}body.pmode.pdark:not(.mirror) .sheet .rwseg button{color:#9aa3b2}body.pmode.pdark:not(.mirror) .sheet .rwseg button.on{background:#2b313b;color:#fff}
+body.pmode.pdark:not(.mirror) .sheet h2,body.pmode.pdark:not(.mirror) .sheet .disp{color:#e5e7eb}
+
 #vAlloc .acctabs{position:sticky;z-index:6;margin:-6px -4px 10px;padding:6px 4px 8px;background:#ffe9f1;border-radius:0 0 20px 20px}
 /* 아이폰(WebKit)은 붙는 자리를 스크롤 칸의 안쪽 여백만큼 아래로 잡는다 → 위쪽 틈으로 칸이 비쳐 보였다. 탭 위로 같은 색 가림막을 늘려 틈을 덮는다 */
 #vAlloc .acctabs::before{content:'';position:absolute;left:0;right:0;bottom:100%;height:140px;background:#ffe9f1;pointer-events:none}
@@ -522,7 +528,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1009-7";
+const APP_VERSION = "v. 26-1010-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2064,7 +2070,7 @@ async function ensureFamily(u){
   return u.uid;
 }
 async function makeCode(role, kidId, name){
-  const exp = FB.ts.fromMillis(Date.now() + 15*60000);
+  const exp = FB.ts.fromMillis(Date.now() + (role==='parent' ? 7*864e5 : 15*60000));   // 다른 부모님 초대는 7일, 아이 폰 연결은 15분
   for(let i=0;i<5;i++){ const c = String(Math.floor(100000 + Math.random()*900000));
     const ref = FB.db.doc('wjoins/'+c); const ex = await ref.get().catch(() => null);
     if(ex && ex.exists) continue;
@@ -2072,7 +2078,7 @@ async function makeCode(role, kidId, name){
   throw {code:'busy'};
 }
 function codeShow(c, who){
-  openSheet(`<h2>연결 코드</h2><div class="note">${who} 폰의 <b>용돈 친구들 → 설정 → ${who==='아이' ? '아이 폰 연결하기' : '부모님이에요'}</b>에서<br>이 코드를 넣어 주세요. 15분 동안 쓸 수 있어요.</div>
+  openSheet(`<h2>연결 코드</h2><div class="note">${who} 폰의 <b>용돈 친구들 → 설정 → ${who==='아이' ? '아이 폰 연결하기' : '부모님이에요'}</b>에서<br>이 코드를 넣어 주세요. ${who==='아이' ? '15분' : '7일'} 동안 쓸 수 있어요.</div>
     <div class="disp" style="letter-spacing:8px">${c.slice(0,3)} ${c.slice(3)}</div><button class="gb purple" id="cdOk">닫기</button>`);
   $('cdOk').onclick = closeSheet;
 }
@@ -2274,7 +2280,7 @@ function pSettings(){
     <div class="ptitle">화면 밝기 (보고서·우체통)</div><div class="rwseg" id="pthSeg"><button data-t="sys" class="${PTH==='sys'?'on':''}">시스템</button><button data-t="light" class="${PTH==='light'?'on':''}">라이트</button><button data-t="dark" class="${PTH==='dark'?'on':''}">다크</button></div>
     <div class="ptitle">알림</div><button class="gb blue sm" id="prNoti">알림 설정 (무엇을 · 언제)</button>
     <div class="ptitle">가족 관리</div><div class="stack-btns"><button class="gb blue sm" id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button class="gb blue sm" id="prRe">아이 폰 다시 연결 (폰을 바꿨을 때)</button>' : ''}<button class="gb gray sm" id="prPar">다른 부모님 초대</button><button class="gb gray sm" id="prJoin">받은 초대 코드 넣기</button></div>
-    <div class="note">연결 코드는 15분 동안 쓸 수 있어요.</div>
+    <div class="note">아이 폰 연결 코드는 15분, 다른 부모님 초대 코드는 7일 동안 쓸 수 있어요.</div>
     <button class="linkbtn" id="prOut">로그아웃</button>`);
   $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
   $('prNoti').onclick = notiSheet; $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
