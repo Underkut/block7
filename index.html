@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-1  [production]  -->
+<!-- BLOCK7  v. 26-1009-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5210,6 +5210,15 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd svg.br-inkov{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1;}
 #bibleRd .br-inksel{fill:var(--ac-tx);opacity:.16;}
 #bibleRd .br-inku{fill:var(--ac-tx);opacity:.8;}
+#bibleRd .br-origu{stroke:var(--tx3);stroke-width:1.3;stroke-dasharray:1.5 3;stroke-linecap:round;}
+#bibleRd .br-ow{font-family:var(--font-serif,serif);font-size:17px;color:var(--tx);}
+#bibleRd .br-on{font-size:11.5px;color:var(--tx3);margin-left:8px;}
+#bibleRd .br-obtn{display:flex;gap:6px;margin-top:6px;}
+#bibleRd .br-obtn button{font-size:12px;color:var(--ac-tx);padding:4px 10px;border-radius:999px;background:var(--s2);}
+#bibleRd .br-obtns{display:flex;gap:8px;}
+#bibleRd .br-obtns .br-go{flex:1;}
+#bibleRd .br-go.br-go2{background:var(--s2);color:var(--tx);}
+#brSOrig #brOrigTx{min-height:160px;}
 #bibleRd .br-ink{border-radius:1px;}
 #bibleRd .br-ink[data-h="1"]{background:var(--br-hl1);} #bibleRd .br-ink[data-h="2"]{background:var(--br-hl2);} #bibleRd .br-ink[data-h="3"]{background:var(--br-hl3);}
 #bibleRd .br-ink[data-h="4"]{background:var(--br-hl4);} #bibleRd .br-ink[data-h="5"]{background:var(--br-hl5);} #bibleRd .br-ink[data-h="6"]{background:var(--br-hl6);} #bibleRd .br-ink[data-h="7"]{background:var(--br-hl7);}
@@ -5310,7 +5319,7 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-mi .br-q{font-size:13.5px;line-height:1.55;color:var(--tx);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 #bibleRd .br-mi .br-memo{font-size:12.5px;color:var(--tx2);margin-top:4px;white-space:pre-line;}
 #bibleRd .br-empty{padding:26px 0;text-align:center;font-size:13px;color:var(--tx3);line-height:1.6;}
-#brMemoTx{width:100%;box-sizing:border-box;min-height:110px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--tx);
+#brMemoTx,#brOrigTx{width:100%;box-sizing:border-box;min-height:110px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--tx);
   font:inherit;font-size:16px;line-height:1.6;padding:10px 12px;resize:vertical;}
 #bibleRd .br-go{margin-top:12px;width:100%;padding:12px;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;font-size:14px;}
 #bibleRd .br-fbar{padding:12px 16px 8px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--bd2);flex:0 0 auto;}
@@ -6223,7 +6232,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-1";
+const APP_VERSION = "v. 26-1009-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9085,6 +9094,15 @@ try{
     </div>
   </div>
 
+  <!-- 원어 해설 (v26-1009-2) — GPT 답에서 필요한 부분을 붙여 둔다 -->
+  <div class="br-sheet" id="brSOrig" aria-label="원어 해설">
+    <div class="br-grab"></div>
+    <div class="br-shead"><span></span><h3 id="brOrigRef">원어 해설</h3><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
+    <div class="br-sbody">
+      <textarea id="brOrigTx" placeholder="GPT 답에서 남겨 둘 부분을 붙여 넣어 주세요"></textarea>
+      <div class="br-obtns"><button class="br-go br-go2" id="brOrigAgain">다시 찾기</button><button class="br-go" id="brOrigSave">저장</button></div>
+    </div>
+  </div>
   <div class="br-sheet" id="brSMemo" aria-label="메모">
     <div class="br-grab"></div>
     <div class="br-shead"><span></span><h3 id="brMemoRef">메모</h3><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
@@ -9129,7 +9147,7 @@ try{
   <div class="br-sheet" id="brSList" aria-label="내 기록">
     <div class="br-grab"></div>
     <div class="br-shead"><span></span><h3>내 기록</h3><button class="br-ic br-x" data-brclose aria-label="닫기"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg></button></div>
-    <div class="br-tabs" id="brLTabs" style="border:0;padding-top:0"><button data-t="mark">책갈피</button><button data-t="hl">표시</button><button data-t="memo">메모</button><button data-t="hist">읽은 곳</button></div>
+    <div class="br-tabs" id="brLTabs" style="border:0;padding-top:0"><button data-t="mark">책갈피</button><button data-t="hl">표시</button><button data-t="memo">메모</button><button data-t="hist">읽은 곳</button><button data-t="orig" class="even-only">원어</button></div>
     <div class="br-sbody"><div id="brLBody"></div></div>
   </div>
 
@@ -14634,6 +14652,21 @@ function _brInkHits(b,c,sps,g){const all=getBibleInk(),o=[];
 function _brInkQuery(ab,c,sps,vs){if(!sps||!sps.length)return'';
   const words=sps.map(sp=>(vs[sp.v-1]||'').slice(sp.a,sp.z+1)).join(' '),v0=sps[0].v,v1=sps[sps.length-1].v;
   return ab+c+':'+(v0===v1?v0:v0+'-'+v1)+" '"+words+"' 원어 해설";}
+// ── 원어찾기 기록 (v26-1009-2, HB) ──
+//   ST.bibleOrig = { "o…": {b:2, c:2, v:1, a:0, v2:1, z:1, w:'레위', q:"출2:1 '레위' 원어 해설", at, n:'붙여 둔 해설', u:고친 때} }
+//   누를 때마다 한 줄 (id) — 두 기기 것이 둘 다 산다 (bibleInk·bibleNotes 와 같은 병합). 해설(n)은 그 줄에 붙는다.
+function getBibleOrig(){if(!ST.bibleOrig)ST.bibleOrig={};return ST.bibleOrig;}
+function _brOrigAdd(b,c,sps,vs,q){if(!sps||!sps.length)return null;const s0=sps[0],s1=sps[sps.length-1];
+  const id='o'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  getBibleOrig()[id]={b:b+1,c,v:s0.v,a:s0.a,v2:s1.v,z:s1.z,w:sps.map(sp=>(vs[sp.v-1]||'').slice(sp.a,sp.z+1)).join(' '),q:q||'',at:Date.now()};
+  return id;}
+function _brOrigNote(id,text){const all=getBibleOrig();if(!all[id])return;const t=String(text||'').trim(),o=Object.assign({},all[id]);
+  if(t)o.n=t;else delete o.n;o.u=Date.now();all[id]=o;}
+// 단어별 묶음 — 최근 것이 앞, 해설은 가장 최근에 붙인 것
+function _brOrigWords(all){const by={};Object.keys(all||{}).forEach(id=>{const o=all[id];if(!o||!o.w)return;
+  const g=by[o.w]=by[o.w]||{w:o.w,ids:[],last:0,note:null,nu:0};g.ids.push(id);if((o.at||0)>g.last)g.last=o.at||0;
+  if(o.n&&(o.u||o.at||0)>=g.nu){g.note=o.n;g.nu=o.u||o.at||0;}});
+  return Object.values(by).sort((x,y)=>y.last-x.last);}
 // ══ 인앱 성경 — 기록과 장절 끝 ══
 
 // ══ 인앱 성경 — 본문 받기 (B-4: 앱이 켜지면 성경 전체를 받아 기기에 담는다) ══
@@ -14908,6 +14941,8 @@ function _brInkPaint(){
       const pick=m.p==='a'?idx[0]:m.p==='m'?idx[Math.floor((idx.length-1)/2)]:idx[idx.length-1],r=_brCharRect(m.v,pick);if(!r)return;const sz=fs*.82;
       const x=(m.p==='a'?r.left-sz*.12:m.p==='e'?r.right+sz*.14:r.left+r.width/2)-B.left,y=r.top-B.top+(m.p==='m'?-sz*.2:fs*.12);
       h+=_brInkSym(m.t,m.i||0,sz,m.s||1,m.mono?'var(--tx)':'var(--br-ink-'+m.t+')','translate('+x.toFixed(1)+' '+y.toFixed(1)+')');}});
+  _brOrigLines().forEach(L=>{const y=(L.b-B.top-fs*.06).toFixed(1);
+    h+='<line class="br-origu" x1="'+(L.l-B.left).toFixed(1)+'" y1="'+y+'" x2="'+(L.r-B.left).toFixed(1)+'" y2="'+y+'"/>';});
   ov.innerHTML=h;}
 // 돋보기 — 끄는 손가락에 가린 글자를 손가락 위에 크게. 고른 부분은 칠하고 지금 끝 글자에 막대
 function _brLoupe(x,y){const L=_brEl('brLoupe');if(!L)return;if(x==null||!_brInkSel){L.classList.remove('on');return;}
@@ -14944,9 +14979,27 @@ function _brInkDo(fn){fn();save();_brInkRefresh();_brInkSync();}
 function _brInkOrigin(){const sps=_brInkSpans();if(!sps.length)return;const{b,c}=_brCur,book=_brBooks()[b];
   const ab=(typeof _MEM_ABBR!=='undefined'&&_MEM_ABBR[book])||_bibleShort(book);
   const q=_brInkQuery(ab,c,sps,_brChVerses());
+  _brOrigSend(q);                                   // ⚠️ 복사가 먼저 (아이폰 PWA — 누른 그 자리에서)
+  _brOrigAdd(b,c,sps,_brChVerses(),q);save();}       // 기록은 그다음 (v26-1009-2)
+function _brOrigSend(q){
   const go=()=>BibleLinkProvider._openInApp(EVEN_DEEPER_GPT_URL+'?q='+encodeURIComponent(q));
   if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(q).catch(()=>_fallbackCopy(q)).finally(go);return;}
   _fallbackCopy(q);go();}
+// 해설 창 — 한 기록에 GPT 답에서 필요한 부분을 붙여 둔다
+let _brOrigId=null;
+function _brOrigOpen(id){const o=getBibleOrig()[id];if(!o)return;_brOrigId=id;
+  _brEl('brOrigRef').innerHTML='<b>'+esc(o.w)+'</b> · '+_bibleShort(_brBooks()[o.b-1])+' '+o.c+':'+(o.v===o.v2?o.v:o.v+'-'+o.v2);
+  _brEl('brOrigTx').value=o.n||'';_brOpenSheet('brSOrig');}
+// 본문 — 해설을 붙인 글자 아래 옅은 점선 (그리기는 _brInkPaint)
+function _brOrigLines(){const{b,c}=_brCur,all=getBibleOrig(),vs=_brChVerses(),o=[];
+  Object.keys(all).forEach(id=>{const r=all[id];if(!r||!r.n||r.b!==b+1||r.c!==c)return;
+    _brInkSpansFrom({s:{v:r.v,i:r.a},e:{v:r.v2||r.v,i:r.z}},vs).forEach(sp=>_brSpanLines(sp).forEach(L=>o.push(L)));});
+  return o;}
+function _brOrigHitAt(x,y){const pt=_brCharAt(x,y);if(!pt)return null;const{b,c}=_brCur,all=getBibleOrig();let best=null;
+  Object.keys(all).forEach(id=>{const r=all[id];if(!r||!r.n||r.b!==b+1||r.c!==c)return;const v2=r.v2||r.v;
+    const inR=(pt.v>r.v||(pt.v===r.v&&pt.i>=r.a))&&(pt.v<v2||(pt.v===v2&&pt.i<=r.z));
+    if(inR&&(!best||(r.u||r.at)>(all[best].u||all[best].at)))best=id;});
+  return best;}
 // 그은 곳을 톡 → 그 표시 하나를 고른다 (기호는 그 범위)
 function _brInkHitAt(x,y){const p=_brCharAt(x,y);if(!p)return null;const{b,c}=_brCur,all=getBibleInk();let best=null;
   Object.keys(all).forEach(id=>{const m=all[id];if(m&&m.b===b+1&&m.c===c&&m.v===p.v&&p.i>=m.a&&p.i<=m.z&&(!best||(m.at||0)>=(best.at||0)))best=m;});
@@ -15422,7 +15475,7 @@ function _brSyncAa(){
 }
 function _brSet(k,v){ST.settings[k]=v;save();_brApplyLook();_brSyncAa();}
 // ── 내 표시 목록 ── (줄마다 날짜 · 오른쪽 × · 휴대폰은 왼쪽으로 밀어 지우기)
-let _brLt='mark',_brLF='all',_brLO=null;
+let _brLt='mark',_brLF='all',_brLO=null,_brOM='r';
 const _BR_X='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>';
 function _brRow(go,del,dot,ref,date,q,extra){
   return '<div class="br-mrow" data-del="'+del+'"><div class="br-mbg">지우기</div>'
@@ -15437,6 +15490,20 @@ async function _brRenderList(){
   const EMPTY={mark:'절을 누르고 책갈피를 고르면 여기 모여요',hl:'절을 눌러 색을 고르거나, 글자 위를 옆으로 끌어 그으면 여기 모여요',memo:'절을 누르고 메모를 남기면 여기 모여요',hist:'아직 읽은 곳이 없어요'};
   const txt=async(bn,c,vs)=>{try{const d=await _brGet(bn);return vs.map(v=>(d.c[c-1]||[])[v-1]||'').join(' ');}catch(e){return'';}};
   let h='';
+  if(_brLt==='orig'){
+    // 원어 — 최근 순 / 단어별 (v26-1009-2). 줄을 누르면 그 절로 가서 그 글자를 골라 둔다
+    const all=getBibleOrig(),ref=o=>books[o.b-1]+' '+o.c+':'+(o.v===o.v2||!o.v2?o.v:o.v+'-'+o.v2);
+    const btn=id=>'<div class="br-obtn"><button data-onote="'+id+'">해설'+(all[id].n?' 고치기':' 붙이기')+'</button><button data-oagain="'+id+'">다시 찾기</button></div>';
+    h+='<div class="br-lf">'+[['r','최근 순'],['w','단어별']].map(([k,nm])=>'<button data-om="'+k+'" class="'+(_brOM===k?'on':'')+'">'+nm+'</button>').join('')+'</div>';
+    const ids=Object.keys(all).filter(id=>all[id]&&all[id].w).sort((x,y)=>(all[y].at||0)-(all[x].at||0));
+    if(_brOM==='w')_brOrigWords(all).forEach(g=>{const id=g.ids.slice().sort((x,y)=>(all[y].at||0)-(all[x].at||0))[0],o=all[id];
+      h+=_brRow('o:'+id,'origw:'+g.w,null,ref(o)+(g.ids.length>1?' 외 '+(g.ids.length-1)+'곳':''),_brDate(g.last),'<span class="br-ow">'+esc(g.w)+'</span>'+(g.ids.length>1?'<span class="br-on">'+g.ids.length+'번</span>':''),
+        (g.note?'<div class="br-memo">'+esc(g.note)+'</div>':'')+btn(id));});
+    else ids.forEach(id=>{const o=all[id];
+      h+=_brRow('o:'+id,'orig:'+id,null,ref(o),_brDate(o.at),'<span class="br-ow">'+esc(o.w)+'</span>',(o.n?'<div class="br-memo">'+esc(o.n)+'</div>':'')+btn(id));});
+    if(!ids.length)h+='<div class="br-empty">본문을 끌어 고른 뒤 \'원어찾기\' 를 누르면 여기 모여요</div>';
+    body.innerHTML=h;return;
+  }
   if(_brLt==='hist'){
     _brHistory().forEach(x=>{const vr=x.vr;
       h+=_brRow(x.b+'.'+x.c+'.'+(vr?vr[0]:0),'hist:'+x.b+'.'+x.c,null,
@@ -15478,6 +15545,8 @@ function _brListDelete(key){
   if(kind==='memo')_brNoteSave(rest,0,0,[],'');
   else if(kind==='hist'){const [b,c]=rest.split('.').map(Number);_brHistHide(b,c);}
   else if(kind==='ink'){delete getBibleInk()[rest];}
+  else if(kind==='orig'){delete getBibleOrig()[rest];}
+  else if(kind==='origw'){const all=getBibleOrig();Object.keys(all).forEach(id=>{if(all[id]&&all[id].w===rest)delete all[id];});}
   else _brSetMark(rest,kind==='mark'?{k:false}:{h:0});
   save();
 }
@@ -15610,7 +15679,9 @@ function _brBind(){
     if(lpFired){lpFired=false;e.stopPropagation();return;}
     if(inkFired){inkFired=false;e.stopPropagation();return;}
     // 그은 곳을 톡 → 그 표시 하나를 고쳐 쓰거나 지운다 (절을 고르고 있을 때는 절 고르기가 먼저)
-    if(!_brSel.size&&!e.target.closest('[data-memo]')){const m=_brInkHitAt(e.clientX,e.clientY);
+    if(!_brSel.size&&!e.target.closest('[data-memo]')){const oh=_brOrigHitAt(e.clientX,e.clientY);
+      if(oh){e.stopPropagation();dt=null;_brOrigOpen(oh);return;}   // 해설 붙인 글자 → 그 해설 (v26-1009-2)
+      const m=_brInkHitAt(e.clientX,e.clientY);
       if(m){e.stopPropagation();dt=null;_brInkSel={s:{v:m.v,i:m.a},e:{v:m.v,i:m.z}};_brInkOpen(m.g);return;}}
     const tv=e.target.closest('.br-v');
     if(tv&&!e.target.closest('[data-memo]')){
@@ -15670,6 +15741,9 @@ function _brBind(){
   $('brInkErase').onclick=()=>{const{b,c}=_brCur;_brInkDo(()=>_brInkErase(_brInkG,b,c,_brInkSpans()));};
   $('brInkAll').onclick=()=>{const{b,c}=_brCur,sps=_brInkSpans();_brInkDo(()=>['h','u','s'].forEach(g=>_brInkErase(g,b,c,sps)));};
   $('brInkOrig').onclick=_brInkOrigin;
+  $('brOrigSave').onclick=()=>{if(!_brOrigId)return;_brOrigNote(_brOrigId,$('brOrigTx').value);save();_brToast('해설을 붙여 두었어요');
+    _brCloseSheets();_brInkPaint();if(_brLt==='orig'&&$('brSList'))_brRenderList();};
+  $('brOrigAgain').onclick=()=>{const o=getBibleOrig()[_brOrigId];if(o&&o.q)_brOrigSend(o.q);};
   let rzT=0;window.addEventListener('resize',()=>{if(!_brOpen)return;clearTimeout(rzT);rzT=setTimeout(_brInkPaint,120);});
   $('brColors').addEventListener('click',e=>{
     const s=e.target.closest('.br-sw');if(!s)return;const c=+s.dataset.c;
@@ -15779,7 +15853,12 @@ function _brBind(){
     const lf=e.target.closest('[data-lf]');if(lf){_brLF=lf.dataset.lf;_brLO=null;_brRenderList();return;}
     const lo=e.target.closest('[data-lo]');if(lo){_brLO=_brLO===lo.dataset.lo?null:lo.dataset.lo;_brRenderList();return;}
     const x=e.target.closest('[data-rx]');if(x){e.stopPropagation();_brRowGone(x.closest('.br-mrow'));return;}
+    const om=e.target.closest('[data-om]');if(om){_brOM=om.dataset.om;_brRenderList();return;}
+    const on=e.target.closest('[data-onote]');if(on){e.stopPropagation();_brOrigOpen(on.dataset.onote);return;}
+    const oa=e.target.closest('[data-oagain]');if(oa){e.stopPropagation();const o=getBibleOrig()[oa.dataset.oagain];if(o&&o.q)_brOrigSend(o.q);return;}
     const g=e.target.closest('[data-go]');if(!g)return;
+    if(g.dataset.go.slice(0,2)==='o:'){const o=getBibleOrig()[g.dataset.go.slice(2)];if(!o)return;_brNextSrc='list';
+      _brShow(o.b-1,o.c,o.v).then(()=>{_brInkSel={s:{v:o.v,i:o.a},e:{v:o.v2||o.v,i:o.z}};_brInkOpen();});return;}
     const p=g.dataset.go.split('.');const [b,c,v]=p.map(Number);
     // 메모 탭: 그 절로 가서 그 메모를 연다 (HB 2026-10-06)
     _brNextSrc='list';
@@ -22470,6 +22549,7 @@ function defaultState(){
     bibleMarks:{},      // { "43.3.16": {h:형광펜1~5, m:'메모', k:책갈피ms} }  (책 번호 1~66)
     bibleReadLog:{},    // { "YYYY-MM-DD": [{b:43, c:3, time:"HH:MM", d:초}] }
     bibleNotes:{},      // { "n…": {b:43, c:3, v:[16,17], t:'메모', at, u} }  (v26-1006-5)
+    bibleOrig:{},       // { "o…": {b,c,v,a,v2,z,w,q,at,n} } 원어찾기 기록·해설 (v26-1009-2)
     bibleInk:{},        // { "k…": {b:43, c:3, v:16, g:'h'|'u'|'s', t, a, z, …} } 본문에 그은 표시 (v26-1007-19)
     settings:{
       autoCarryOver:false,   // carry unfinished tasks to next day automatically
@@ -22533,6 +22613,7 @@ if(!ST.verseThereLog)ST.verseThereLog={}; // There 기도·예배 시간 (v26-09
 if(!ST.bibleMarks)ST.bibleMarks={};       // 인앱 성경 — 형광펜·메모·책갈피 (v26-1006-4)
 if(!ST.bibleReadLog)ST.bibleReadLog={};   // 인앱 성경 — 읽은 장 (v26-1006-4)
 if(!ST.bibleNotes)ST.bibleNotes={};       // 인앱 성경 — 메모 (v26-1006-5)
+if(!ST.bibleOrig)ST.bibleOrig={};         // 인앱 성경 — 원어찾기 기록 (v26-1009-2)
 if(!ST.bibleInk)ST.bibleInk={};           // 인앱 성경 — 본문에 그은 표시 (v26-1007-19)
 _brMigrateNotes();                        // 옛 bibleMarks.m → bibleNotes
 // ── 암송 기록 마이그레이션: verseIdx → ref ──
@@ -41728,7 +41809,7 @@ function deleteSectionConfig(name){
 // 명제는 따로 없다 — 말씀 모음(verseCollections) 안에 함께 들어 있다.
 const _VERSE_BACKUP_KEYS=['verseCollections','memorizationLog','verseLikeLog',
   'verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog','verseThereLog',
-  'bibleMarks','bibleReadLog','bibleNotes','bibleInk'];
+  'bibleMarks','bibleReadLog','bibleNotes','bibleInk','bibleOrig'];
 // 이 제품의 '화면 취향' 만 뽑는다 (_psProject 가 저장할 때 하는 것과 같은 일).
 // ⚠️ ST.productSettings 를 그냥 읽지 않는다 — 그 칸은 저장할 때 채워지므로
 //    지금 화면에서 방금 바꾼 값이 아직 안 들어가 있을 수 있다.
@@ -44289,7 +44370,7 @@ function _fbCountByKind(o){
              +_fbCountArrays(o.verseDeeperLog||{},0)+_fbCountArrays(o.verseEvenDeeperLog||{},0)
              +_fbCountArrays(o.verseThereLog||{},0),
     // 인앱 성경 — 표시는 절 수, 읽기는 기록 수 (v26-1006-4)
-    bible:cnt(o.bibleMarks)+cnt(o.bibleNotes)+cnt(o.bibleInk)+_fbCountArrays(o.bibleReadLog||{},0)
+    bible:cnt(o.bibleMarks)+cnt(o.bibleNotes)+cnt(o.bibleInk)+cnt(o.bibleOrig)+_fbCountArrays(o.bibleReadLog||{},0)
   };
 }
 // 예전 이름 — 전체 개수가 필요한 곳을 위해 남겨 둔다
@@ -44332,7 +44413,7 @@ function _fbMerge(base,local,cloud,preferCloud){
     else if(k==='verseLikeLog'||k==='verseShareLog'||k==='verseDeeperLog'||k==='verseEvenDeeperLog'
             ||k==='verseKeepLog'||k==='verseThereLog'||k==='bibleReadLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     // 인앱 성경 표시 — 절마다 3자 비교. 두 기기가 서로 다른 절을 칠해도 다 산다 (v26-1006-4)
-    else if(k==='bibleMarks'||k==='bibleNotes'||k==='bibleInk')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+    else if(k==='bibleMarks'||k==='bibleNotes'||k==='bibleInk'||k==='bibleOrig')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
     else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
     else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
       _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
@@ -45849,7 +45930,8 @@ function applyRemoteState(remote){
   if(remote.bibleMarks)ST.bibleMarks=remote.bibleMarks;          // 인앱 성경 (v26-1006-4)
   if(remote.bibleReadLog)ST.bibleReadLog=remote.bibleReadLog;
   if(remote.bibleNotes)ST.bibleNotes=remote.bibleNotes;
-  if(remote.bibleInk)ST.bibleInk=remote.bibleInk;          // 본문에 그은 표시 (v26-1007-19)
+  if(remote.bibleInk)ST.bibleInk=remote.bibleInk;
+  if(remote.bibleOrig)ST.bibleOrig=remote.bibleOrig;      // 원어찾기 기록 (v26-1009-2)          // 본문에 그은 표시 (v26-1007-19)
   // 옛 기기가 bibleMarks.m 으로 남긴 메모를 옮긴다 (이름이 정해져 있어 겹치지 않는다)
   if(typeof _brMigrateNotes==='function')_brMigrateNotes();
   ST.contacts=Array.isArray(remote.contacts)?remote.contacts:[];
@@ -46609,7 +46691,7 @@ function _swSpareKinds(){
 // 설정까지 끌어오면 제품 칸막이(_PRODUCT_SCOPED)가 애써 갈라 둔 것을 도로 뭉갠다.
 const _SW_IMPORT_KEYS=['verseCollections','customVerses','memorizationLog',
   'verseLikeLog','verseShareLog','verseDeeperLog','verseEvenDeeperLog','verseKeepLog','verseThereLog',
-  'bibleMarks','bibleReadLog','bibleNotes','bibleInk'];
+  'bibleMarks','bibleReadLog','bibleNotes','bibleInk','bibleOrig'];
 // 말씀이 화면에 나오는 데 꼭 필요한 설정 둘 — 어느 모음을 켜 두었나, 어떻게 걸렀나.
 const _SW_IMPORT_SETTINGS=['activeColls','collFilters'];
 
