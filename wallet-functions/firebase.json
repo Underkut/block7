@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "source": "src",
+      "codebase": "wallet",
+      "runtime": "nodejs22"
+    }
+  ]
+}
