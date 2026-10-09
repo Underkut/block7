@@ -563,6 +563,17 @@ console.log('\n시나리오 13-21 — 보던 자리 · 해설 상자 (v26-1009-4
   sc.eq('굵게', _brNoteInline('**ἔγειρε**'), '<b>ἔγειρε</b>');
 }
 
+
+console.log('\n시나리오 13-22 — 책 늘어놓기 · 리듬 칸 길게 (v26-1009-5 HB)');
+{
+  sc.eq('책 고르기: 늘어놓기/갈래별 두 칸 단추', /data-blay="flat"/.test(SRC) && /data-blay="group"/.test(SRC) && /_brS\('bibleBookLay','flat'\)/.test(SRC), true);
+  sc.eq('갈래는 대시보드 지도와 같은 나눔 · 타일은 이름+장 수', /\(pk\.tab==='ot'\?_VMAP_GROUPS_OT:_VMAP_GROUPS_NT\)/.test(SRC), true);
+  const now = new Date('2026-10-09T12:00:00').getTime(), t = new Date('2026-10-07T22:00:00').getTime();
+  const S = _brDashStats({ '2026-10-07': [{ b: 19, c: 23, time: '22:00', d: 300, t }, { b: 19, c: 23, time: '22:10', d: 60, t: t + 6e5 }, { b: 43, c: 3, time: '22:20', d: 120, t: t + 12e5 }] }, {}, {}, now, 'all');
+  sc.eq('리듬 칸마다 어느 장을 얼마나 (수요일 밤)', S.gridBy['3.5'], { '18.23': 360, '42.3': 120 });
+  sc.eq('길게 누르거나 우클릭하면 펼친다', /tip\._lp=setTimeout\(\(\)=>showTipX\(el\),500\)/.test(SRC) && /addEventListener\('contextmenu',e=>\{const el=e\.target\.closest\('\[data-tipx\]'\)/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");

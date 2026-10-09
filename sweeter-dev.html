@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1009-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1009-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5307,6 +5307,13 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-pbody{overflow-y:auto;flex:1 1 auto;padding:14px 16px 30px;}
 #bibleRd .br-crumb{font-size:12px;color:var(--tx3);margin:0 0 10px 2px;}
 #bibleRd .br-bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;}
+#bibleRd .br-blay{display:flex;margin:0 0 10px auto;width:max-content;border:1px solid var(--bd);border-radius:999px;overflow:hidden;}
+#bibleRd .br-blay button{width:44px;height:30px;display:grid;place-items:center;color:var(--tx3);}
+#bibleRd .br-blay button+button{border-left:1px solid var(--bd);}
+#bibleRd .br-blay button.on{background:var(--s2);color:var(--tx);}
+#bibleRd .br-blay svg{width:15px;height:15px;}
+#bibleRd .br-bgrp{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;margin-bottom:10px;align-items:start;}
+#bibleRd .br-bgnm{font-size:12px;color:var(--tx2);padding-top:12px;text-align:right;word-break:keep-all;}
 #bibleRd .br-bgrid button{padding:11px 4px;border-radius:10px;background:var(--s1);font-size:13px;line-height:1.25;word-break:keep-all;}
 #bibleRd .br-bgrid button.cur{background:rgba(90,112,248,.14);color:var(--ac-tx);font-weight:600;}
 #bibleRd .br-bgrid button small{display:block;font-size:10px;color:var(--tx3);margin-top:2px;font-family:var(--font-number),monospace;}
@@ -5433,6 +5440,7 @@ html #bibleRd[data-rt="night"] #brDashP{--bd-q0:#1b1e28;--bd-q1:#262d55;--bd-q2:
 #brDashP .bd-empty{font-size:12.5px;color:var(--tx3);padding:6px 2px;line-height:1.6;}
 #brDashP .bd-tip{position:fixed;z-index:60;pointer-events:none;background:var(--tx);color:var(--bg);font-size:11.5px;padding:6px 9px;border-radius:7px;opacity:0;transition:opacity .12s;white-space:nowrap;line-height:1.45;}
 #brDashP .bd-tip.on{opacity:.95;}
+#brDashP .bd-tip.x{white-space:normal;max-width:240px;line-height:1.65;}   /* 길게 눌러 펼친 칸 — 읽은 장들 */
 @media (prefers-reduced-motion:reduce){#bibleRd .br-sheet,#bibleRd .br-pick,#bibleRd .br-scrim,#bibleRd .br-v,#bibleRd .br-toast{transition:none;}}
 /* ══════════════════════════════════════════════════════════
    제품별로 보이고 감추는 한 쌍 (v26-0921-7)
@@ -6256,7 +6264,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1009-4";
+const APP_VERSION = "v. 26-1009-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14602,8 +14610,9 @@ function _brDashStats(log,marks,notes,now,range,custom){
   // 시간대 (HB v26-1007-15 — 성경 대시보드만. BLOCK7 의 다른 시간 구분과 따로 간다)
   // 깊은밤(0~3시)은 **전날 밤의 연장**이라 앞날 요일에 넣는다 — 수요일 밤에 읽다 자정을 넘겨도 수요일 깊은밤
   const SLOTS=[[3,6,'새벽'],[6,9,'아침'],[9,12,'오전'],[12,18,'오후'],[18,21,'저녁'],[21,24,'밤'],[0,3,'깊은밤']];
-  const grid={};L.forEach(e=>{const dt=new Date(e.ms),h=dt.getHours(),si=SLOTS.findIndex(x=>h>=x[0]&&h<x[1]);
-    const dw=h<3?(dt.getDay()+6)%7:dt.getDay();const k=dw+'.'+si;grid[k]=(grid[k]||0)+(e.d||0);});
+  const grid={},gridBy={};L.forEach(e=>{const dt=new Date(e.ms),h=dt.getHours(),si=SLOTS.findIndex(x=>h>=x[0]&&h<x[1]);
+    const dw=h<3?(dt.getDay()+6)%7:dt.getDay();const k=dw+'.'+si;grid[k]=(grid[k]||0)+(e.d||0);
+    const gk=(e.b-1)+'.'+e.c;(gridBy[k]=gridBy[k]||{})[gk]=(gridBy[k][gk]||0)+(e.d||0);});
   // 이 기간에 펼친 장들 — 끝까지(모든 절)인지, 얼마나 봤는지 (지금까지 본 것을 합쳐서)
   const touched=[...new Set(L.map(e=>(e.b-1)+'.'+e.c))].filter(k=>ofBy[k]>0);
   const full=touched.filter(isDone).length;
@@ -14628,7 +14637,7 @@ function _brDashStats(log,marks,notes,now,range,custom){
   return {L,sec:sum(L),prevSec:sum(P),hasPrev:!!from&&P.length>0,today:{sec:sum(today),n:today.length},streak,best,last14,
     chapters:touched.filter(isDone).length,cnt,done:readSet,maxCnt:Math.max(1,...Object.values(cnt)),
     prog:{ot:Math.min(1,otN/OTV),nt:Math.min(1,ntN/NTV),all:Math.min(1,(otN+ntN)/(OTV+NTV))},cov,
-    byBook,bookN,topHour:top(hourSec),grid,slots:SLOTS,full,part:touched.length-full,avgSeen,src,dev,deeper,
+    byBook,bookN,topHour:top(hourSec),grid,gridBy,slots:SLOTS,full,part:touched.length-full,avgSeen,src,dev,deeper,
     next,never,marks:{hl,memo:memo.length,bm,hlTop:top(hlBy),memoTop:top(nb),recentBm}};
 }
 // ── 본문에 긋는 표시 (v26-1007-19, HB — 시안 FsJa1z2zfw4PHv9gCAwrrs 그대로) ──
@@ -15312,7 +15321,10 @@ function _brDashRender(){
   const DW=[0,1,2,3,4,5,6],DN=d=>d===0?'주일':DOW[d];
   let hm='<span></span>'+DW.map(d=>'<span class="h">'+DN(d)+'</span>').join('');
   S.slots.forEach((x,i)=>{hm+='<span class="d">'+x[2]+'</span>';DW.forEach(d=>{const v=S.grid[d+'.'+i]||0;
-    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+(d===0?'주일':DOW[d]+'요일')+' '+x[2]+' · '+_brFmtMin(v)+'"></i>';});});
+    // 길게 누르면(우클릭) 그 칸에서 읽은 장들 (v26-1009-5, HB)
+    const by=S.gridBy[d+'.'+i]||{},more=Object.keys(by).sort((p,q2)=>by[q2]-by[p]).slice(0,8).map(k=>{const[bb,cc]=k.split('.').map(Number);return esc(books[bb]+' '+cc+_brUnit(bb))+' · '+_brFmtMin(by[k]);});
+    const head=(d===0?'주일':DOW[d]+'요일')+' '+x[2]+' · '+_brFmtMin(v);
+    hm+='<i style="background:'+q(v,gm)+'" data-tip="'+head+'"'+(more.length?' data-tipx="'+esc('<b>'+head+'</b><br>'+more.join('<br>')+(Object.keys(by).length>8?'<br>…':''))+'"':'')+'></i>';});});
   $('bdHm').innerHTML=hm;
   // 오래 머문 책
   const top=bk.slice(0,6),bm=S.byBook[top[0]]||1;
@@ -15463,9 +15475,15 @@ function _brRenderPick(){
     const rec=_brRecent();
     if(rec.length>1)h+='<div class="br-crumb">최근 읽은 곳</div><div class="br-recent">'+rec.slice(0,6).map(x=>'<button data-go="'+x.b+'.'+x.c+'">'+_bibleShort(books[x.b])+' '+x.c+'</button>').join('')+'</div>';
     const [a,z]=pk.tab==='ot'?[0,_BR_OT]:[_BR_OT,66];
-    h+='<div class="br-bgrid">';
-    for(let i=a;i<z;i++)h+='<button data-b="'+i+'" class="'+(i===_brCur.b?'cur':'')+'">'+books[i]+'<small>'+_bibleChapters(books[i])+'</small></button>';
-    h+='</div>';
+    // 늘어놓기 / 갈래별(율법서·역사서…, 대시보드 지도와 같은 나눔) — HB v26-1009-5. 타일은 둘 다 이름 + 장 수
+    const lay=_brS('bibleBookLay','flat'),tile=i=>'<button data-b="'+i+'" class="'+(i===_brCur.b?'cur':'')+'">'+books[i]+'<small>'+_bibleChapters(books[i])+'</small></button>';
+    const GI='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="5" height="5" rx="1.3"/><rect x="9.5" y="3" width="5" height="5" rx="1.3"/><rect x="16" y="3" width="5" height="5" rx="1.3"/><rect x="3" y="9.5" width="5" height="5" rx="1.3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.3"/><rect x="16" y="9.5" width="5" height="5" rx="1.3"/><rect x="3" y="16" width="5" height="5" rx="1.3"/><rect x="9.5" y="16" width="5" height="5" rx="1.3"/><rect x="16" y="16" width="5" height="5" rx="1.3"/></svg>';
+    const RI='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="13" height="5" rx="1.5"/><rect x="3" y="9.5" width="18" height="5" rx="1.5"/><rect x="3" y="16" width="6.5" height="5" rx="1.5"/></svg>';
+    h+='<div class="br-blay" role="group" aria-label="책 늘어놓는 방식"><button data-blay="flat" class="'+(lay==='flat'?'on':'')+'" aria-label="늘어놓기">'+GI+'</button><button data-blay="group" class="'+(lay==='group'?'on':'')+'" aria-label="갈래별">'+RI+'</button></div>';
+    if(lay==='group'){let i=a;
+      (pk.tab==='ot'?_VMAP_GROUPS_OT:_VMAP_GROUPS_NT).forEach(([nm,n])=>{h+='<div class="br-bgrp"><div class="br-bgnm">'+nm+'</div><div class="br-bgrid">';
+        for(let k=0;k<n&&i<z;k++,i++)h+=tile(i);h+='</div></div>';});}
+    else{h+='<div class="br-bgrid">';for(let i=a;i<z;i++)h+=tile(i);h+='</div>';}
   }else if(pk.c==null){
     _brEl('brPTitle').textContent=books[pk.b];
     const read=new Set();const log=getBibleReadLog();
@@ -15885,6 +15903,7 @@ function _brBind(){
     _brHold=setTimeout(()=>{_brHold='done';$('brPick').classList.remove('on');_brNextSrc='pick';_brShow(_brPk.b,+c.dataset.c);},480);});
   ['pointerup','pointerleave','pointercancel'].forEach(t=>pb.addEventListener(t,()=>{if(_brHold&&_brHold!=='done')clearTimeout(_brHold);}));
   pb.addEventListener('click',e=>{
+    const bl=e.target.closest('[data-blay]');if(bl){ST.settings.bibleBookLay=bl.dataset.blay;save();_brRenderPick();return;}
     if(_brHold==='done'){_brHold=null;return;}_brHold=null;
     const g=e.target.closest('[data-go]');if(g){const [b,c]=g.dataset.go.split('.').map(Number);$('brPick').classList.remove('on');_brNextSrc='recent';_brShow(b,c);return;}
     const b=e.target.closest('[data-b]');if(b){_brPk.b=+b.dataset.b;if(_bibleChapters(_brBooks()[_brPk.b])===1)_brPk.c=1;_brRenderPick();return;}
@@ -15912,11 +15931,15 @@ function _brBind(){
     const [b,c,v]=g.dataset.go.split('.').map(Number);$('brDashP').classList.remove('on');_brNextSrc='dash';v?_brShow(b,c,v):_brShow(b,c);});
   // 값 풍선 — 손가락을 대거나 마우스를 올리면
   const tip=$('bdTip');
-  const showTip=el=>{if(!el){tip.classList.remove('on');return;}tip.innerHTML=el.dataset.tip;tip.classList.add('on');
+  const showTipX=el=>{const t=el.dataset.tip;el.dataset.tip=el.dataset.tipx;showTip(el);el.dataset.tip=t;tip.classList.add('x');};
+  const showTip=el=>{tip.classList.remove('x');if(!el){tip.classList.remove('on');return;}tip.innerHTML=el.dataset.tip;tip.classList.add('on');
     const r=el.getBoundingClientRect();let x=r.left+r.width/2-tip.offsetWidth/2;x=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,x));
     tip.style.left=x+'px';tip.style.top=Math.max(8,r.top-tip.offsetHeight-6)+'px';};
   $('brDashBody').addEventListener('pointerover',e=>showTip(e.target.closest('[data-tip]')));
-  $('brDashBody').addEventListener('pointerdown',e=>showTip(e.target.closest('[data-tip]')));
+  $('brDashBody').addEventListener('pointerdown',e=>{const el=e.target.closest('[data-tip]');showTip(el);
+    clearTimeout(tip._lp);if(el&&el.dataset.tipx)tip._lp=setTimeout(()=>showTipX(el),500);});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>$('brDashBody').addEventListener(t,()=>clearTimeout(tip._lp)));
+  $('brDashBody').addEventListener('contextmenu',e=>{const el=e.target.closest('[data-tipx]');if(!el)return;e.preventDefault();showTipX(el);});
   $('brDashBody').addEventListener('scroll',()=>tip.classList.remove('on'),{passive:true});
   $('brMini').onclick=()=>_brChrome(true);
   $('brScroll').addEventListener('scroll',_brOnScroll,{passive:true});
