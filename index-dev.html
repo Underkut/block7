@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6288,7 +6288,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-6";
+const APP_VERSION = "v. 26-1010-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -11347,10 +11347,24 @@ function _applySermonListSheet(coll,rows){
 //   why:'absent' 설교 목록에서 그 설교를 못 찾았다 (날짜·카테고리가 다르거나 줄이 없다)
 // ⚠️ 명제(pid)만 본다. 손으로 넣은 말씀에도 날짜가 있지만 설교가 아니다.
 // ⚠️ 새 것이 위로 — 결과 화면은 몇 줄만 보여 주므로 오늘 설교가 먼저 보여야 한다.
+//
+// ── 알리지 않는 예배 (v26-1010-7, HB) ──
+// 성찬예식·결혼예식은 영상을 올리지 않는 것이 보통이다. 그런데도 알림에 끼면
+// 목록이 그것들로 덮여, 정작 영상을 기다리는 설교가 묻힌다.
+// **목록과 개수 둘 다에서** 뺀다 — 세는 자리가 여기 하나뿐이라 여기서 거르면
+// 결과 화면·토스트가 저절로 함께 맞는다.
+// ⚠️ 띄어쓰기는 무시한다 ('성찬 예식' 도 같은 것 — 실제 시트에 둘 다 있다).
+// ⚠️ 예식을 더 두게 되면 이 줄에 적는다.
+const _NOVID_SKIP_CATS=['성찬예식','결혼예식'];
+function _sermonSkipNoVideo(cat){
+  const k=_sermonCatNorm(cat);
+  return _NOVID_SKIP_CATS.indexOf(k)>=0;
+}
 function _sermonNoVideo(coll,g){
   const grp=new Map();
   ((coll&&coll.verses)||[]).forEach(v=>{
     if(v.del||v.yt||!(v.pid||v.kind==='prop'))return;
+    if(_sermonSkipNoVideo(v.cat))return;   // 예식은 알리지 않는다
     const d=String(v.d||'');if(!d)return;
     const cat=String(v.cat||'').trim(),title=String(v.topic||'').trim();
     const k=d+'\u0001'+cat+'\u0001'+title;
