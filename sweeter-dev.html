@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1008-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1009-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2402,6 +2402,9 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
 .sm-item.urg-dim.urg-dim2{opacity:.42;filter:blur(2px);}
 .sm-item.done-st.urg-dim.urg-dim2{opacity:.2;}
 .sm-item.drag-active.urg-dim.urg-dim2{opacity:.2;filter:grayscale(1);}
+.sub-panel{transition:opacity .35s,filter .35s;}
+.sub-panel.urg-dim{opacity:.6;filter:blur(1.2px);}
+.sub-panel.urg-dim.urg-dim2{opacity:.42;filter:blur(2px);}
 
 .si-dh{display:none;color:var(--tx3);font-size:10px;flex-shrink:0;cursor:grab;}
 .si-inp{
@@ -6220,7 +6223,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1008-4";
+const APP_VERSION = "v. 26-1009-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -37724,6 +37727,13 @@ function _applyUrgentSpotlight(){
     const dim=hasUrgent && r.dataset.urgent!=='1';
     r.classList.toggle('urg-dim', dim);
     r.classList.toggle('urg-dim2', dim && strong);
+  });
+  // 하위 할일 판은 줄(wrap)의 형제라 위 목록에 안 들어간다 — 바로 앞 부모 줄을 따른다(HB 요청).
+  list.querySelectorAll('.sub-panel').forEach(pn=>{
+    const parent=pn.previousElementSibling?.querySelector?.('.big-item,.sm-item');
+    const dim=hasUrgent && !(parent&&parent.dataset.urgent==='1');
+    pn.classList.toggle('urg-dim', dim);
+    pn.classList.toggle('urg-dim2', dim && strong);
   });
 }
 let _urgSpotlightObs=null;
