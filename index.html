@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-10  [production]  -->
+<!-- BLOCK7  v. 26-1010-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-10";
+const APP_VERSION = "v. 26-1010-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9224,6 +9224,7 @@ try{
       <div class="br-row"><span class="br-lb">괄호</span><div class="br-seg" id="brSegRb"><button data-v="square">[ ]</button><button data-v="paren">( )</button><button data-v="none">없음</button></div></div>
       <div class="br-row"><span class="br-lb">위치</span><div class="br-seg" id="brSegRp"><button data-v="before">본문 앞</button><button data-v="after">본문 뒤</button></div></div>
       <div class="br-prev" id="brRefPrev"></div>
+      <div class="br-row" id="brDiagRow" style="display:none"><span class="br-lb">스크롤 기록 <small id="brDiagN" style="color:var(--tx3);font-weight:400"></small></span><div class="br-seg"><button id="brDiagCopy">복사</button><button id="brDiagClr">비우기</button></div></div>
     </div>
   </div>
 
@@ -15202,6 +15203,27 @@ function _brSessStep(){
     if(s.dwell[v]>=_BR_SEEN_MS)s.seen.add(v);
   });
 }
+// 스크롤 기록 (v26-1010-11) — 묶기는 _brBind 의 '스크롤 기록'
+const _brDiagRows=[];
+function _brDiagStuck(r){return r.maxTail>=40&&!r.edge;}
+function _brDiagSync(){const n=_brEl('brDiagN');if(!n)return;const k=_brDiagRows.filter(_brDiagStuck).length;n.textContent=_brDiagRows.length+'번 · 걸림 '+k;}
+function _brDiagText(){
+  const v=document.querySelector('#bibleRd .br-v');let ta='',co=false;
+  try{ta=v?getComputedStyle(v).touchAction:'';}catch(e){}
+  try{co=CSS.supports('-webkit-touch-callout','none');}catch(e){}
+  const sc=_brEl('brScroll'),p=n=>String(n).padStart(2,'0');
+  const head=['[성경 스크롤 기록] '+APP_VERSION,'UA '+navigator.userAgent,
+    'platform '+navigator.platform+' · touchPoints '+navigator.maxTouchPoints+' · callout '+co,
+    'br-ios '+_brEl('bibleRd').classList.contains('br-ios')+' · 본문 touch-action '+ta+' · 절나누기 '+_brS('bibleFlow','verse'),
+    '화면 '+innerWidth+'x'+innerHeight+' · dpr '+devicePixelRatio+' · vv '+(window.visualViewport?visualViewport.scale.toFixed(2):'-')+
+      ' · 단 '+(typeof _layMode==='function'?_layMode():'?')+' · 배율 '+(typeof _uiScaleGet==='function'?_uiScaleGet():'?')+' · 상자 '+(sc?sc.clientHeight+'/'+sc.scrollHeight:'-')];
+  const rows=_brDiagRows.map(r=>{const d=new Date(r.t0);
+    return (_brDiagStuck(r)?'⚠걸림 ':'')+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+
+      ' 손'+Math.round(r.fin)+' 스크롤'+Math.round(r.scr)+' 꼬리'+Math.round(r.maxTail)+' 첫'+(r.first||'-')+'ms 전환'+r.flips+
+      ' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+
+      ' @'+r.x+','+r.y+' '+r.tgt;});
+  return head.join('\n')+'\n'+(rows.length?rows.join('\n'):'(아직 기록 없음 — 본문을 스크롤해 보세요)');
+}
 // 창이 활성일 때만 센다 (HB 2026-10-07) — PC 에서 다른 프로그램을 누르면 그 순간 끊고,
 // 돌아오면 새로 잇는다. 휴대폰은 앱을 벗어날 때와 같다.
 // 본문이 아닌 것을 만지는 중인가 — 성경 안의 판·시트·메뉴가 열렸거나, 본문 한가운데를 다른 화면(There·담기 등)이 덮고 있다
@@ -15635,6 +15657,8 @@ function _brApplyLook(){
 }
 function _brSyncAa(){
   _brEl('brFsV').textContent=_brS('bibleFs',18);
+  {const r=_brEl('brDiagRow');if(r){let dev=false;try{dev=(typeof DEV_MODE!=='undefined'&&DEV_MODE)||(typeof _isDevAccount==='function'&&_isDevAccount());}catch(e){}
+    r.style.display=dev?'':'none';_brDiagSync();}}   // 스크롤 기록 — 개발자만 (v26-1010-11)
   const segs=[['brSegLh','bibleLh','1.85'],['brSegFont','bibleFont','serif'],['brSegFlow','bibleFlow','verse'],
     ['brSegRs','txtRefStyle','short'],['brSegRb','txtRefBracket','none'],['brSegRp','txtRefPos','after']];
   segs.forEach(([id,k,d])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===String(_brS(k,d)))));
@@ -15853,7 +15877,15 @@ function _brBind(){
   //    → 아이폰은 예전 manipulation 으로 되돌리고(#bibleRd.br-ios), 긋기는 **터치 이벤트**로 받는다
   //      (포인터 이벤트는 스크롤이 시작되면 끊기지만 터치 이벤트는 계속 온다). 다른 기기는 포인터 그대로.
   //    터치 리스너는 모두 passive — 막지 않는다 (v26-1007-16 스크롤 멈춤의 원인이 non-passive 였다).
-  const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  // ⚠️ v26-1010-11 (HB — v26-1010-10 뒤에도 아이패드 미니(A17 Pro·iPadOS 26.6.1)만 그대로 걸린다. 아이폰은 괜찮다):
+  //    이 판정을 이름표(UA·platform)에만 맡기지 않는다. 아이패드는 맥 행세를 하고 그 모양이 판마다 바뀐다 —
+  //    여기서 놓치면 본문이 pan-y 로 남아 **아이폰에서 고친 바로 그 증상**(방향을 바꾸면 막힘)이 아이패드에만 남는다.
+  //    iOS 웹킷만 아는 -webkit-touch-callout 을 함께 묻고, 그래도 아니면 '안드로이드가 아닌 터치 기기' 는 모두 이 길로.
+  //    (pan-y + 포인터 긋기는 안드로이드 몫이다 — 크롬은 스크롤이 시작되면 포인터를 끊는다)
+  const UA=navigator.userAgent||'',ANDROID=/Android/i.test(UA);
+  let callout=false;try{callout=!!(window.CSS&&CSS.supports&&CSS.supports('-webkit-touch-callout','none'));}catch(x){}
+  const TOUCH=(navigator.maxTouchPoints||0)>0||('ontouchstart' in window);
+  const IOS=!ANDROID&&(/iP(hone|ad|od)/.test(UA)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||callout||TOUCH);
   if(IOS)$('bibleRd').classList.add('br-ios');
   let ip=null,inkFired=false;
   const inkStart=(x,y,id,mouse,tgt)=>{
@@ -15886,6 +15918,31 @@ function _brBind(){
     $('brChap').addEventListener('touchend',()=>{if(ip&&ip.id==='t')inkEnd(false);},{passive:true});
     $('brChap').addEventListener('touchcancel',()=>{if(ip&&ip.id==='t')inkEnd(true);},{passive:true});
   }
+  // ── 스크롤 기록 (v26-1010-11, HB — 아이패드 미니에서만 걸림. 기기 없이 두 번 헛짚었다) ──
+  // 본문 위 손짓 하나마다 한 줄: 손가락이 움직인 길이 · 그동안 스크롤이 따라온 길이 · '꼬리'(스크롤이 멈춘 뒤에도
+  // 손가락만 움직인 길이 — 40px 넘으면 걸림) · 첫 스크롤까지 걸린 시간 · 누가 막았는지(defaultPrevented) · 손 밑 touch-action.
+  // 개발자 계정(과 개발본)에만 '글자와 화면' 맨 아래에 뜨고, 복사해서 붙여 주면 된다. 감시자는 전부 passive.
+  {const sc=$('brScroll');let g=null;
+    const desc=el=>{if(!el||!el.closest)return'?';const v=el.closest('.br-v');let ta='';try{ta=getComputedStyle(v||el).touchAction;}catch(x){}
+      return el.nodeName.toLowerCase()+(el.id?'#'+el.id:'')+(el.classList&&el.classList.length?'.'+[...el.classList].slice(0,2).join('.'):'')+(v?' 절'+v.dataset.v:'')+' ta='+ta;};
+    sc.addEventListener('touchstart',e=>{if(e.touches.length!==1){g=null;return;}const t=e.touches[0];
+      g={t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
+    sc.addEventListener('touchmove',e=>{if(!g||!e.touches[0])return;const y=e.touches[0].clientY,d=y-g.ly;g.ly=y;g.mv++;
+      g.fin+=Math.abs(d);g.tail+=Math.abs(d);if(g.tail>g.maxTail)g.maxTail=g.tail;
+      if(Math.abs(d)>=1){const sg=Math.sign(d);if(g.dir&&sg!==g.dir)g.flips++;g.dir=sg;}
+      if(g.can===null)g.can=e.cancelable;},{passive:true,capture:true});
+    window.addEventListener('touchmove',e=>{if(g&&e.defaultPrevented)g.prev++;},{passive:true});   // 맨 끝 — 누가 막았으면 여기서 보인다
+    sc.addEventListener('scroll',()=>{if(!g)return;const y=sc.scrollTop;if(y===g.ls)return;if(!g.first)g.first=Date.now()-g.t0;g.scr+=Math.abs(y-g.ls);g.ls=y;g.tail=0;},{passive:true});
+    $('brChap').addEventListener('pointercancel',()=>{if(g)g.pc++;},{passive:true});
+    const end=kind=>{if(!g)return;const r=g;g=null;if(r.fin<12)return;   // 톡 누르기는 적지 않는다
+      const y=sc.scrollTop,edge=y<=1||y>=sc.scrollHeight-sc.clientHeight-1;
+      _brDiagRows.push(Object.assign(r,{dur:Date.now()-r.t0,kind,edge}));if(_brDiagRows.length>40)_brDiagRows.shift();_brDiagSync();};
+    sc.addEventListener('touchend',()=>end('end'),{passive:true,capture:true});
+    sc.addEventListener('touchcancel',()=>end('CANCEL'),{passive:true,capture:true});
+    $('brDiagCopy').onclick=()=>{const t=_brDiagText();   // ⚠️ 아이폰 PWA — 누른 그 자리에서 곧장 복사를 시작한다
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>showToast('스크롤 기록을 복사했어요')).catch(()=>_copyTextFallback(t));
+      else _copyTextFallback(t);};
+    $('brDiagClr').onclick=()=>{_brDiagRows.length=0;_brDiagSync();};}
   // 두 번 톡톡(0.3초 안 · 같은 절) = 그 절 좋아요 (v26-1007-10, HB). 첫 번째 누르기가 바꾼
   // 고르기는 되돌린다 — 그래서 고르기를 늦추지 않고도 두 손짓이 갈린다.
   let dt=null;
