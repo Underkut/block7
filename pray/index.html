@@ -1,16 +1,23 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1010-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
-<html lang="ko">
+<!-- 기도노트 v. 26-1010-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d0e10">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="기도노트">
+<meta name="description" content="날마다 기도할 이름과 제목을 차례대로">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
 <title>기도노트</title>
 <script>
 // ⚠️ 기도노트의 집은 sweeter.my/pray/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
@@ -19,29 +26,2685 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1010-1';
+const APP_VERSION = 'v. 26-1010-2';
+</script>
+<script id="pray-core">
+// ═══════════════════════════════════════════════════════════
+//  색상 테마 엔진 — BLOCK7 index.html 에서 **그대로** 옮겨 온 것 (테마 17벌 · 계산 규칙)
+// ═══════════════════════════════════════════════════════════
+// ⚠️ BLOCK7 쪽에 테마를 더하거나 고치면 여기로도 옮겨 온다 — 두 앱이 같은 테마를 쓴다(HB 2026-10-10).
+//    고른 테마는 기도노트 기기에만 저장한다(BLOCK7·Sweeter 와 맞추지 않음).
+const THEME_GROUPS={
+  spark :{id:'spark' ,label:'SPARK' ,desc:'선명하고 생동감 있는 테마'},
+  breath:{id:'breath',label:'BREATH',desc:'부드럽고 차분한 테마'}
+};
+const THEME_PRESETS=[
+  {id:'11',group:'spark',name:'Bold Berry',
+   source:['#F9DBBD','#FFA5AB','#DA627D','#A53860','#450920'],
+   light:['#FFF1E5','#FFF8F2','#450920','#A53860','#DA627D'],
+   dark :['#260611','#450920','#F9DBBD','#FFA5AB','#DA627D']},
+  {id:'12',group:'spark',name:'Sunset Deep',
+   source:['#335C67','#FFF3B0','#E09F3E','#9E2A2B','#540B0E'],
+   light:['#FFF5C9','#FFF9DD','#335C67','#8C2022','#C47B13'],
+   dark :['#2B0609','#540B0E','#FFF3B0','#E09F3E','#6F9DA7']},
+  {id:'13',group:'spark',name:'Chocolate Delight',
+   source:['#210F04','#452103','#690500','#934B00','#BB6B00'],
+   light:['#FFF1D8','#FFF8EC','#210F04','#690500','#934B00'],
+   dark :['#160A03','#210F04','#FFE8B8','#E19925','#B74B36']},
+  {id:'lemonpie',group:'spark',name:'Lemon Meringue Pie',
+   source:['#3A2410','#8B5A2B','#D9A62E','#F2C230','#FFF8E4'],
+   light:['#F7DE58','#FCF0A0','#3A2410','#9A6220','#8B5A2B'],
+   dark :['#5C4028','#6E4E33','#FFF3D4','#F2C230','#E9B441']},
+  {id:'14',group:'spark',name:'Olive Garden Feast',
+   source:['#606C38','#283618','#FEFAE0','#DDA15E','#BC6C25'],
+   light:['#FEFAE0','#FFFFF3','#283618','#606C38','#BC6C25'],
+   dark :['#19220F','#283618','#FEFAE0','#DDA15E','#87964F']},
+  {id:'15',group:'spark',name:'Mulberry Forest',
+   source:['#134742','#611C35','#FEFFEA','#A5BDA5','#B6CBE2'],
+   light:['#FEFFEA','#FFFFF5','#134742','#611C35','#A5BDA5'],
+   dark :['#0C2A27','#134742','#FEFFEA','#D184A0','#B6CBE2']},
+  {id:'16',group:'spark',name:'Fiery Ocean',
+   source:['#780000','#C1121F','#FDF0D5','#003049','#669BBC'],
+   light:['#FDF0D5','#FFF8E8','#003049','#C1121F','#669BBC'],
+   dark :['#001F2D','#003049','#FDF0D5','#669BBC','#C1121F']},
+  {id:'17',group:'spark',name:'Black Cherry',
+   source:['#F3F1EF','#E0DBD8','#6C6A68','#9C0030','#0D0D0D'],
+   light:['#F3F1EF','#FFFFFF','#0D0D0D','#9C0030','#6C6A68'],
+   dark :['#0D0D0D','#242322','#F3F1EF','#D95A82','#A9A6A4']},
+  {id:'21',group:'breath',name:'Soft Whisper',
+   source:['#D5C5C8','#9DA3A4','#604D53','#DB7F8E','#FFDBDA'],
+   light:['#FFF3F4','#FFFAFA','#604D53','#B64B61','#9DA3A4'],
+   dark :['#372D30','#604D53','#FFDBDA','#E99AAA','#AEB8B9']},
+  {id:'22',group:'breath',name:'Mint Chocolate',
+   source:['#562C2C','#F2542D','#F5DFBB','#0E9594','#127475'],
+   light:['#FBF2E3','#FFFAF2','#562C2C','#127475','#F2542D'],
+   dark :['#28191A','#562C2C','#F5DFBB','#45BDBC','#F2542D']},
+  {id:'23',group:'breath',name:'Chestnut Gentleman',
+   source:['#5C7476','#BC641C','#632401','#C5B884','#000000'],
+   light:['#F2ECD9','#FBF8F0','#253436','#98470F','#5C7476'],
+   dark :['#12100E','#29241F','#E9DFC1','#D17A37','#87A0A2']},
+  {id:'dubaicookie',group:'breath',name:'Dubai Chewy Cookie',
+   source:['#7A4235','#4D3339','#8C873E','#D1C5A5','#A38A5F'],
+   light:['#E9E1CD','#F1EADA','#3B2A22','#7A4235','#6E692F'],
+   dark :['#4E3A33','#5F4A41','#EFE6CF','#A69F5E','#B99A6C']},
+  {id:'24',group:'breath',name:'Sunny Beach Day',
+   source:['#264653','#2A9D8F','#E9C46A','#F4A261','#E76F51'],
+   light:['#FFF6E4','#FFFBF2','#264653','#1E7D73','#E76F51'],
+   dark :['#1A323A','#264653','#FFF1CA','#E9C46A','#2A9D8F']},
+  {id:'25',group:'breath',name:'Dusk Horizon',
+   source:['#001B2E','#294C60','#ADB6C4','#FFEFD3','#FFC49B'],
+   light:['#FFEFD3','#FFF8EA','#001B2E','#294C60','#E18E61'],
+   dark :['#001B2E','#294C60','#FFEFD3','#FFC49B','#ADB6C4']},
+  {id:'26',group:'breath',name:'Sunset Breeze',
+   source:['#355070','#6D597A','#B56576','#E56B6F','#EAAC8B'],
+   light:['#FFF0E7','#FFF8F4','#355070','#9A4053','#E56B6F'],
+   dark :['#24384F','#355070','#F8D2BD','#EAAC8B','#C96A74']},
+  {id:'27',group:'breath',name:'Charcoal Orange',
+   source:['#2D3142','#4F5D75','#BFC0C0','#FFFFFF','#EF8354'],
+   light:['#FFFFFF','#F3F3F2','#2D3142','#4F5D75','#D85E32'],
+   dark :['#20232F','#2D3142','#FFFFFF','#EF8354','#BFC0C0']},
+  {id:'28',group:'breath',name:'Winter Blanket',
+   source:['#383F51','#DDDBF1','#3C4F76','#D1BEB0','#AB9F9D'],
+   light:['#F2F0FA','#FBFAFD','#383F51','#3C4F76','#AB9F9D'],
+   dark :['#272C39','#383F51','#F1EFFA','#DDDBF1','#D1BEB0']}
+];
+function themeById(id){
+  if(id==null)return null;
+  const s=String(id);
+  for(let i=0;i<THEME_PRESETS.length;i++)if(THEME_PRESETS[i].id===s)return THEME_PRESETS[i];
+  return null;  // 모르는 ID — 저장값은 그대로 두고 화면만 기본으로
+}
+// 화면에 보이는 번호. 그룹 자리(SPARK 10번대 · BREATH 20번대)에 목록 순서를 더한다.
+// 저장하지 않는 값이라 목록을 바꾸면 번호도 따라 바뀐다 — ID 는 건드리지 않는다.
+const _THEME_NO_BASE={spark:10,breath:20};
+function themeNo(p){
+  if(!p)return '';
+  const inGroup=THEME_PRESETS.filter(x=>x.group===p.group);
+  return String((_THEME_NO_BASE[p.group]||0)+inGroup.indexOf(p)+1);
+}
+// ── 색 계산 도구 ──
+function _thRgb(h){h=String(h).replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function _thHex(c){return '#'+c.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
+function _thMix(a,b,t){return [0,1,2].map(i=>a[i]+(b[i]-a[i])*t);}   // t=0 → a, t=1 → b
+function _thLin(c){c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function _thLum(c){return 0.2126*_thLin(c[0])+0.7152*_thLin(c[1])+0.0722*_thLin(c[2]);}
+function _thContrast(a,b){const x=_thLum(a),y=_thLum(b);return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05);}
+function _thRound(c){return [Math.round(c[0]),Math.round(c[1]),Math.round(c[2])];}
+// 이 색이 놓일 수 있는 여러 면 중 **가장 안 읽히는** 쪽의 대비
+function _thWorst(c,surfaces){
+  let m=99;for(let i=0;i<surfaces.length;i++)m=Math.min(m,_thContrast(c,surfaces[i]));
+  return m;
+}
+// 글자색을 배경 쪽으로 최대한 흐리게 밀되, 목표 대비는 지키는 지점을 찾는다.
+// (고정 비율로 섞으면 배경이 밝은 테마에서 보조 글자가 AA 밑으로 떨어진다)
+// ⚠️ 두 가지를 꼭 지켜야 한다 — 계산해 보고 알았다:
+//   ① 배경(bg) 하나만 보고 맞추면 **패널 위(s1/s2)** 에서 기준이 깨진다.
+//      보조 글자는 카드 안에도 올라가므로 놓일 수 있는 면을 전부 넣고 잰다.
+//   ② 정수로 반올림한 **뒤의** 색으로 재야 한다. 경계값까지 이분 탐색해 놓고
+//      나중에 반올림하면 4.50 이 4.49 로 떨어져 기준을 못 넘는다.
+function _thFade(text,toward,surfaces,target,maxT){
+  if(_thWorst(_thRound(text),surfaces)<target)return _thRound(text); // 원래 글자도 못 미치면 그대로
+  let lo=0,hi=maxT;
+  for(let i=0;i<16;i++){
+    const mid=(lo+hi)/2;
+    if(_thWorst(_thRound(_thMix(text,toward,mid)),surfaces)>=target)lo=mid; else hi=mid;
+  }
+  return _thRound(_thMix(text,toward,lo));
+}
+// 어떤 면 위에 글자를 얹을 때 흰색과 검정 중 더 잘 읽히는 쪽
+function _thOn(bg){
+  return _thContrast(bg,[255,255,255])>=_thContrast(bg,[17,17,17])?[255,255,255]:[17,17,17];
+}
+function _thRgba(c,a){return 'rgba('+c.map(v=>Math.round(v)).join(',')+','+(Math.round(a*1000)/1000)+')';}
+// ── 선택·활성 표시의 세기 (--ac-tint-k) ──
+// 고른 버튼·켜진 버튼은 대개 강조색을 아주 옅게(알파 .12~.16) 깐 배경으로 나타낸다.
+// 그런데 **같은 알파라도 강조색이 배경과 색조가 비슷하면**(크림색 위의 올리브 등)
+// 눈에는 그냥 배경으로 보여 고른 것과 안 고른 것이 구분되지 않는다.
+// 밝기 대비(_thContrast)로는 이 차이가 안 잡힌다 — 밝기는 거의 같고 '색'만 다르기
+// 때문이다. 그래서 여기서는 사람 눈에 가까운 CIELAB 색차(ΔE)로 재고,
+// 기본 테마가 내는 값(라이트 13 · 다크 15)에 못 미치면 **알파를 키운다.**
+// 색을 진하게 미는 방법은 못 쓴다 — 밀다 보면 0/255 에 걸려 색조가 날아간다.
+// 결과는 배수 하나(--ac-tint-k)로 내보내고 CSS 는 calc(.14*var(--ac-tint-k)) 로 쓴다.
+// 테마를 안 고른 사용자는 이 값이 1 이라 예전 화면과 한 픽셀도 다르지 않다.
+function _thLabF(t){return t>0.008856451679?Math.cbrt(t):(7.787037*t+16/116);}
+function _thLab(c){
+  const r=_thLin(c[0]),g=_thLin(c[1]),b=_thLin(c[2]);
+  const X=_thLabF((0.4124*r+0.3576*g+0.1805*b)/0.95047);
+  const Y=_thLabF(0.2126*r+0.7152*g+0.0722*b);
+  const Z=_thLabF((0.0193*r+0.1192*g+0.9505*b)/1.08883);
+  return [116*Y-16,500*(X-Y),200*(Y-Z)];
+}
+function _thDeltaE(a,b){
+  const A=_thLab(a),B=_thLab(b);
+  return Math.sqrt(Math.pow(A[0]-B[0],2)+Math.pow(A[1]-B[1],2)+Math.pow(A[2]-B[2],2));
+}
+// 틴트가 놓일 수 있는 여러 면 중 **가장 안 보이는** 쪽의 색차
+function _thTintDE(c,alpha,surfaces){
+  let m=99;
+  for(let i=0;i<surfaces.length;i++)m=Math.min(m,_thDeltaE(_thMix(surfaces[i],c,Math.min(1,alpha)),surfaces[i]));
+  return m;
+}
+// Lab → sRGB (채도를 올린 색을 다시 화면 색으로 되돌릴 때 쓴다)
+function _thLabFi(t){return t>0.20689655?t*t*t:(t-16/116)/7.787037;}
+function _thUnlin(c){return 255*(c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055);}
+function _thLabRgb(L){
+  const y=(L[0]+16)/116,x=y+L[1]/500,z=y-L[2]/200;
+  const X=_thLabFi(x)*0.95047,Y=_thLabFi(y),Z=_thLabFi(z)*1.08883;
+  return [_thUnlin( 3.2406*X-1.5372*Y-0.4986*Z),
+          _thUnlin(-0.9689*X+1.8758*Y+0.0415*Z),
+          _thUnlin( 0.0557*X-0.2040*Y+1.0570*Z)]
+         .map(v=>Math.max(0,Math.min(255,Math.round(v))));
+}
+// ── 글자용 강조색 (--ac-tx) ──
+// '켜진 항목은 강조색 글자' 로 나타내는 자리가 앱 곳곳에 있다(설정 탭·유저 모드·
+// 위젯 보기·정렬 토글…). 그런데 강조색이 본문/보조 글자색과 색조가 비슷하면
+// (28 윈터 블랭킷 다크: 강조 #dddbf1, 본문 #f1effa — 거의 같은 색)
+// 켜진 것과 꺼진 것이 구분되지 않는다.
+// 그래서 **채도를 올려**(같은 색조를 유지한 채) 글자색과 갈라 세우고,
+// 그래도 모자라면 밝기를 배경 쪽이 아니라 **글자색 반대쪽**으로 조금 민다.
+// ⚠️ 지금보다 안 읽히게 만들지는 않는다 — 후보의 최소 대비가 원래 강조색의
+//    대비(또는 4.0) 밑으로 내려가면 버린다.
+// 고르는 차례가 셋이다 (v26-0903-4, HB — 채도를 밀면 팔레트 통일성이 깨진다):
+//   ① 강조색(--ac)이 이미 글자색들과 충분히 갈라져 있으면 **그대로 쓴다**
+//   ② 아니면 그 테마의 **보조색(--sec)** 을 쓴다. 억지로 만든 색이 아니라
+//      팔레트가 원래 가진 색이라 통일성이 안 깨진다. 읽기 어려우면 **밝기만**
+//      배경 반대쪽으로 민다 — 색조·채도는 손대지 않는다.
+//      ('14 올리브 가든 피스트' 라이트: 보조색이 브라운 #bc6c25 다. HB 가
+//       "차라리 팔레트에 있는 브라운을 쓰라"고 짚어 준 자리다 → #ad6018)
+//   ③ 보조색도 안 되면(회색이라 글자색과 겹치는 테마가 있다) 그때서야
+//      예전처럼 강조색의 채도를 민다.
+// 기준값 34 로 30벌을 돌리면 15벌은 ①(손 안 댐) · 7벌은 ②(팔레트 보조색) ·
+// 6벌만 ③(채도 밀기)이다. 45 까지 올려 채도로만 해결하던 때는 20벌이 밀렸다.
+function _thReadable(c,faces,floor){
+  const con=x=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(x,faces[i]));return m;};
+  if(con(c)>=floor)return _thRound(c);
+  const L=_thLab(c);
+  let faceL=0;for(let i=0;i<faces.length;i++)faceL+=_thLab(faces[i])[0];
+  const dir=(faceL/faces.length>L[0])?-1:1;   // 면이 밝으면 더 어둡게, 어두우면 더 밝게
+  let best=_thRound(c);
+  for(let d=1;d<=60;d++){
+    const cand=_thLabRgb([Math.max(2,Math.min(98,L[0]+dir*d)),L[1],L[2]]);
+    if(con(cand)>=floor)return cand;
+    best=cand;
+  }
+  return best;
+}
+function _thAcText(ac,sec,texts,faces,target){
+  const worst0=c=>{let m=99;for(let i=0;i<texts.length;i++)m=Math.min(m,_thDeltaE(c,texts[i]));return m;};
+  const con0  =c=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(c,faces[i]));return m;};
+  if(worst0(ac)>=target)return _thRound(ac);           // ①
+  const secFit=_thReadable(sec,faces,Math.min(4.0,con0(ac)));
+  if(worst0(secFit)>=target&&worst0(secFit)>worst0(ac))return secFit;   // ②
+  return _thAcPush(ac,texts,faces,target);             // ③
+}
+function _thAcPush(ac,texts,faces,target){
+  const worst=c=>{let m=99;for(let i=0;i<texts.length;i++)m=Math.min(m,_thDeltaE(c,texts[i]));return m;};
+  const con  =c=>{let m=99;for(let i=0;i<faces.length;i++)m=Math.min(m,_thContrast(c,faces[i]));return m;};
+  if(worst(ac)>=target)return _thRound(ac);
+  const floor=Math.min(4.0,con(ac));
+  const L0=_thLab(ac);
+  // 밝기를 미는 방향은 '글자색에서 멀어지는 쪽' — 글자색이 밝으면 어둡게, 그 반대면 밝게
+  let txL=0;for(let i=0;i<texts.length;i++)txL+=_thLab(texts[i])[0];
+  const away=(txL/texts.length>L0[0])?-1:1;
+  let best=_thRound(ac),bw=worst(ac);
+  for(let d=0;d<=34;d+=2){
+    const dirs=(d===0)?[0]:[away,-away];
+    for(let di=0;di<dirs.length;di++){
+      for(let k=1;k<=3.2+1e-9;k+=0.1){
+        const c=_thLabRgb([Math.max(2,Math.min(98,L0[0]+dirs[di]*d)),L0[1]*k,L0[2]*k]);
+        if(con(c)<floor)continue;
+        const w=worst(c);
+        if(w>bw){bw=w;best=c;}
+        if(w>=target)return c;
+      }
+    }
+  }
+  return best;
+}
+// 보조 패널(s2)이 기본 패널(s1)과 눈에 띄게 다른 최소 비율.
+// 선택된 탭·줄의 표시가 이 색 하나로만 이뤄지므로(.tab.on · .keep-pick-row.on)
+// 색차가 너무 작으면 무엇을 골랐는지 알 수 없다.
+function _thPanelMix(sf,tx,base,target,maxR){
+  let r=base;
+  if(_thDeltaE(_thRound(_thMix(sf,tx,r)),sf)>=target)return r;
+  while(r<maxR){r+=0.005;if(_thDeltaE(_thRound(_thMix(sf,tx,r)),sf)>=target)break;}
+  return Math.min(r,maxR);
+}
+// 기준 색차를 넘길 때까지 알파에 곱할 배수를 찾는다 (1 ~ maxK)
+function _thTintK(ac,alpha,surfaces,target,maxK){
+  if(_thTintDE(ac,alpha,surfaces)>=target)return 1;
+  if(_thTintDE(ac,alpha*maxK,surfaces)<target)return maxK;
+  let lo=1,hi=maxK;
+  for(let i=0;i<14;i++){
+    const mid=(lo+hi)/2;
+    if(_thTintDE(ac,alpha*mid,surfaces)>=target)hi=mid; else lo=mid;
+  }
+  return hi;
+}
+// 다섯 색 → 앱이 쓰는 토큰 전부
+function _themeTokens(preset,mode){
+  const p=(mode==='light')?preset.light:preset.dark;
+  const isDark=(mode!=='light');
+  const bg=_thRgb(p[0]),sf=_thRgb(p[1]),tx=_thRgb(p[2]),ac=_thRgb(p[3]),sec=_thRgb(p[4]);
+  // 보조 패널 — 기본 패널에서 글자색 쪽으로 아주 조금.
+  // 다만 선택된 탭·줄은 이 색 하나로만 표시되므로 최소 색차(6)는 지킨다.
+  const s2=_thRound(_thMix(sf,tx,_thPanelMix(sf,tx,isDark?0.10:0.07,6.0,0.20)));
+  // 글자가 놓일 수 있는 세 면. 이 중 가장 안 읽히는 쪽을 기준으로 맞춘다.
+  const faces=[bg,sf,s2];
+  // 보조·비활성 글자: 배경 쪽으로 흐리게 하되 AA(4.5) / 3:1 은 지킨다
+  const tx2=_thFade(tx,bg,faces,4.5,0.62);
+  const tx3=_thFade(tx,bg,faces,3.0,0.82);
+  // 경계선 — 글자색을 배경에 거의 녹인 것. 강한 경계선은 3:1 을 지켜
+  // 패널과 배경이 거의 같은 색인 테마에서도 카드 윤곽이 보이게 한다.
+  const bd =_thRound(_thMix(tx,bg,isDark?0.80:0.84));
+  const bd2=_thFade(tx,bg,[bg,sf],3.0,0.72);
+  const onAc=_thOn(ac);
+  // 선택·활성 틴트의 세기. 기준 알파(.14 라이트 / .16 다크)에서 재고,
+  // 그 결과 배수를 CSS 의 모든 틴트 알파에 똑같이 곱한다.
+  // 소수 둘째 자리에서 **올림** — 내림하면 방금 맞춘 기준을 한 끗 차이로 놓친다
+  const tintK=Math.min(2.4,Math.ceil(_thTintK(ac,isDark?0.16:0.14,faces,isDark?15:13,2.4)*100)/100);
+  // 글자로 쓰는 강조색. 글자색들과 ΔE 34 이상 벌어지게 고른다 (_thAcText 주석 참고).
+  const acTx=_thAcText(ac,sec,[tx,tx2,tx3],faces,34);
+  // 위험색·주의색은 팔레트가 아니라 **공통 의미색**이다(빨강은 빨강, 주황은 주황).
+  // 다만 그 테마 배경에서 읽혀야 하므로 기준을 넘을 때까지 밝기만 민다.
+  let danger=isDark?[255,138,133]:[196,43,33];
+  for(let i=0;i<40&&_thWorst(_thRound(danger),faces)<4.5;i++){
+    danger=_thMix(danger,isDark?[255,255,255]:[0,0,0],0.05);
+  }
+  danger=_thRound(danger);
+  let warn=isDark?[240,176,72]:[176,104,16];
+  for(let i=0;i<40&&_thWorst(_thRound(warn),faces)<4.5;i++){
+    warn=_thMix(warn,isDark?[255,255,255]:[0,0,0],0.05);
+  }
+  warn=_thRound(warn);
+  const hx=_thHex;
+  return {
+    '--bg':hx(bg),'--s1':hx(sf),'--s2':hx(s2),
+    '--tx':hx(tx),'--tx2':hx(tx2),'--tx3':hx(tx3),
+    '--bd':hx(bd),'--bd2':hx(bd2),
+    '--ac':hx(ac),'--ac-rgb':ac.map(v=>Math.round(v)).join(','),
+    '--ac-tx':hx(acTx),
+    '--on-accent':hx(onAc),
+    '--ac-soft':_thRgba(ac,Math.min(0.5,(isDark?0.20:0.14)*tintK)),
+    '--ac-tint-k':String(tintK),
+    '--sec':hx(sec),'--sec-rgb':sec.map(v=>Math.round(v)).join(','),
+    '--chip-bg':_thRgba(sec,isDark?0.22:0.16),
+    '--tab-on-bg':hx(_thMix(sf,ac,Math.min(0.5,(isDark?0.22:0.14)*tintK))),
+    '--focus-ring':_thRgba(ac,0.55),
+    '--shadow-color':isDark?'rgba(0,0,0,.55)':'rgba(0,0,0,.16)',
+    '--header-bg':_thRgba(sf,0.94),
+    '--drag-ghost-bg':_thRgba(s2,0.88),
+    '--danger':hx(danger),'--del':hx(danger),'--ov':hx(danger),
+    '--so':hx(warn),
+    '--sun-red':hx(_thFade(danger,bg,faces,3.0,0.40)),
+    '--today-cell-border':_thRgba(ac,0.85),
+    '--today-cell-border-faded':_thRgba(ac,0.18),
+    '--fade-start-border':hx(bd),
+    '--bgd':hx(_thMix(danger,bg,isDark?0.55:0.30)),
+    '--bgd-tx':hx(_thFade(danger,bg,faces,4.5,0.20)),
+    '--theme-color':hx(bg)
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//  기도노트 핵심 — 화면 없이 도는 규칙 (tests/test_pray.js 가 이 덩어리를 떼어 시험한다)
+// ═══════════════════════════════════════════════════════════
+// ⚠️ 이 안에서는 document·window 를 만지지 않는다. 시험이 node 에서 그대로 돌린다.
+//
+// 데이터 한 덩어리(DB)를 localStorage 'pray.v1' 에 통째로 둔다.
+//   T  기도 대상 — 사람(person)과 항목(item: 모임·예배·부서…)
+//   G  묶음      — 지도의 색 띠. parent 가 있으면 작은 묶음. lines = 줄(한 가정)
+//   log 날마다 기도한 것 { 'YYYY-MM-DD': { d:[id], p:{id:그 전 last}, k:[내일로], s:초 } }
+//   snaps 판 보관 — 그날의 지도를 얼려 둔 것 (색 이름까지 함께)
+//
+// 숫자는 시트와 같은 뜻: 0 이 가장 높다. 긴급도 = 얼마나 자주, 중요도 = 목록에서 얼마나 위에.
+
+const PRAY_KEY = 'pray.v1';
+// 표시 색 — 순서 고정 (HB 2026-10-10). 빨강·회색만 뜻이 정해져 있다.
+const MARKS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray'];
+const MARK_FIXED = { red: '1순위', gray: '쉬는 분' };
+const MARK_COLOR_NAME = { red: '빨강', orange: '주황', yellow: '노랑', green: '초록', blue: '파랑', purple: '보라', pink: '핑크', gray: '회색' };
+const IV_DEFAULT = [1, 1, 2, 3, 7, 30];   // 긴급도 0~5 → 며칠마다
+const GRAY_IV = 30;                       // 쉬는 분은 한 달에 한 번
+const GROUP_IV_DEFAULT = 7;               // 긴급도를 안 정한 묶음은 일주일에 한 번
+const GROUP_COLORS = ['#5b3fa0', '#7a2846', '#138a8a', '#1f4f8f', '#3f7a2e', '#9a7712', '#b0173f', '#1e5fa8',
+  '#c0640a', '#2a8fc4', '#b8457f', '#4f545b', '#7a5235', '#5f6b2a', '#3a3f9e', '#475569'];
+const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
+const ROLE_WORDS = ['아빠', '엄마', '형', '누나', '언니', '오빠', '동생', '할머니', '할아버지'];
+
+// ── 날짜 ──
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function parseYmd(s) { const a = String(s).split('-').map(Number); return new Date(a[0], (a[1] || 1) - 1, a[2] || 1); }
+function daysBetween(a, b) { return Math.round((parseYmd(b) - parseYmd(a)) / 86400000); }
+function addDays(s, n) { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+// 이름 맞추기 열쇠 — 띄어쓰기를 빼고, 시트에 흔한 오타('에배')를 고쳐 같은 것으로 본다
+function nameKey(s) { return String(s || '').replace(/\s+/g, '').replace(/에배/g, '예배'); }
+function numOrNull(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = Number(String(v).trim());
+  return Number.isInteger(n) && n >= 0 && n <= 5 ? n : null;
+}
+
+// ── 빈 DB · 샘플 ──
+function emptyDB() {
+  return {
+    v: 1, rev: 0,
+    cats: [], subs: [], T: [], G: [],
+    marks: { orange: '', yellow: '', green: '', blue: '', purple: '', pink: '' },
+    log: {}, snaps: [], todo: [],
+    set: { mode: 'dark', preset: '', topLimit: 6, mapTitle: '', iv: IV_DEFAULT.slice(),
+           sorts: {}, ranks: {}, folds: {} }
+  };
+}
+// 처음 열었을 때 들어 있는 것 — **이름이 아닌 것만** (구분 · 상위 분류 · 모임 · 예배 · 부서).
+// 사람 이름은 공개 저장소에 넣지 않는다. 사람은 '시트에서 가져오기' 로 들어온다.
+// 전부 샘플이다 — HB 가 이름·순서를 고치고 지울 수 있다.
+const SEED_CATS = [['성도', true], ['방문자', true], ['모임', false], ['예배', false], ['예배위원', false], ['부서', false]];
+const SEED_SUBS = ['교회학교', '훈련 · 섬김', '예배 사역', '공간 · 환대', '전도 · 새가족', '기도'];
+const SEED_ITEMS = [
+  // [구분, 이름, 내용, 긴급도, 중요도, 상위 분류 번호(부서만)]
+  ['모임', '긴급기도', '완전한 인도하심, 장소, 성도 연합', 0, 0], ['모임', '토요 기도', '교회 중보, 성도 중보, 예배 중보', 1, 1],
+  ['모임', '토요 예배팀', '', 2, 2], ['모임', '토요 영상팀 (사진)', '', 2, 3], ['모임', '싱어 보컬 레슨', '', 3, 3],
+  ['모임', '베스퍼스 녹음', '', 3, 3], ['모임', '토요 중고등부 준비', '', 3, 3], ['모임', '시설케어팀 모임', '', 3, 4],
+  ['모임', '토요 유아유치부 준비', '', 4, 3], ['모임', '토요 초등부 준비', '', 4, 3], ['모임', '토요 청소', '', 4, 4],
+  ['부서', '예배팀', '', 2, 2, 2], ['부서', '예배인도자', '', 2, 2, 2], ['부서', '스데반 인턴십 2기', '', 2, 2, 1],
+  ['부서', '중고등부 예배팀', '', 2, 2, 2], ['부서', '중계, 음향팀', '', 2, 2, 2], ['부서', '영상팀', '', 2, 3, 2],
+  ['부서', '나라중보기도팀', '', 3, 2, 5], ['부서', '예배중보기도팀', '', 3, 2, 5], ['부서', '싱어팀', '', 3, 2, 2],
+  ['부서', '중고등부', '', 3, 3, 0], ['부서', '스데반 인턴십 1기', '', 3, 3, 1], ['부서', '송라이터스', '', 3, 4, 2],
+  ['부서', '시설케어팀', '', 3, 4, 1], ['부서', '유아유치부', '', 4, 3, 0], ['부서', '초등부', '', 4, 3, 0],
+  ['부서', '데코팀', '', 4, 4, 3], ['부서', '광고팀', '', 4, 4, 2], ['부서', '인형팀', '', 4, 4, 3],
+  ['부서', '카페', '', 3, 5, 3], ['부서', '새가족', '', 5, 5, 4], ['부서', '리셉션', '', 5, 5, 4],
+  ['부서', '전도팀', '', 1, 5, 4], ['부서', '청년부', '', 4, 4, -1], ['부서', '뉴성전기도팀', '', null, null, 5],
+  ['예배', '주일 1부 예배', '', 2, 0], ['예배', '주일 2부 예배', '', 2, 0], ['예배', '라이프라인 예배', '', 2, 0],
+  ['예배', '중고등부 예배', '', 3, 1], ['예배', '화요예배', '', 4, 1], ['예배', '수요제자예배', '', 4, 1],
+  ['예배', '금요예배', '', 4, 1], ['예배', '목요워십나잇', '', 4, 1], ['예배', '유아유치부 예배', '', 4, 1],
+  ['예배', '초등부 예배', '', 4, 1],
+  ['예배위원', '헌금위원', '', 4, 3], ['예배위원', '안내위원', '', 4, 3], ['예배위원', '봉독위원', '', 4, 3],
+  ['예배위원', '광고위원', '', 4, 3], ['예배위원', '성찬위원', '', 4, 3]
+];
+// 이름에 요일이 들어 있으면 그 요일에 나온다 ('토요 기도' → 토, '주일 1부 예배' → 일)
+function daysFromName(name) {
+  const s = String(name || '');
+  if (/^주일|\s주일/.test(s)) return [0];
+  const m = s.match(/^([월화수목금토일])요/);
+  return m ? [WEEK.indexOf(m[1])] : [];
+}
+function seedDB() {
+  const db = emptyDB();
+  db.cats = SEED_CATS.map(c => ({ id: uid(), name: c[0], person: c[1] }));
+  db.subs = SEED_SUBS.map(n => ({ id: uid(), name: n }));
+  const catId = n => db.cats.find(c => c.name === n).id;
+  SEED_ITEMS.forEach(r => {
+    const t = newTarget('item', r[1]);
+    t.cat = catId(r[0]); t.u = r[3]; t.i = r[4];
+    if (r[0] === '부서' && r[5] >= 0) t.sub = db.subs[r[5]].id;
+    if (r[2]) t.topics = r[2].split(',').map(x => x.trim()).filter(Boolean).map(newTopic);
+    t.days = daysFromName(r[1]);
+    db.T.push(t);
+  });
+  return db;
+}
+function newTarget(kind, name) {
+  return { id: uid(), kind: kind, name: String(name || '').trim(), cat: '', sub: '', u: null, i: null,
+           days: [], memo: '', mark: '', topics: [], note: '', last: '' };
+}
+function newGroup(name, color) {
+  return { id: uid(), kind: 'group', name: String(name || '').trim(), color: color || GROUP_COLORS[0], parent: '',
+           days: [], time: '', u: null, i: null, memo: '', mark: '', topics: [], note: '', last: '', lines: [] };
+}
+function newTopic(t) { return { id: uid(), t: String(t || '').trim(), at: ymd(), ans: '' }; }
+
+// 받은 DB 를 지금 모양으로 맞춘다 — 빠진 칸은 채우고 모르는 값은 버린다.
+function normDB(x) {
+  const d = emptyDB();
+  if (!x || typeof x !== 'object') return d;
+  ['cats', 'subs', 'T', 'G', 'snaps', 'todo'].forEach(k => { if (Array.isArray(x[k])) d[k] = x[k]; });
+  if (x.log && typeof x.log === 'object') d.log = x.log;
+  if (x.marks && typeof x.marks === 'object') MARKS.forEach(m => { if (!MARK_FIXED[m]) d.marks[m] = String(x.marks[m] || ''); });
+  if (x.set && typeof x.set === 'object') Object.assign(d.set, x.set);
+  if (!Array.isArray(d.set.iv) || d.set.iv.length !== 6) d.set.iv = IV_DEFAULT.slice();
+  ['sorts', 'ranks', 'folds'].forEach(k => { if (!d.set[k] || typeof d.set[k] !== 'object') d.set[k] = {}; });
+  d.rev = Number(x.rev) || 0;
+  d.T = d.T.filter(t => t && t.id).map(t => Object.assign(newTarget(t.kind === 'person' ? 'person' : 'item', ''), t));
+  d.G = d.G.filter(g => g && g.id).map(g => {
+    const n = Object.assign(newGroup('', ''), g); n.kind = 'group';
+    n.lines = (Array.isArray(g.lines) ? g.lines : []).map(normLine);
+    return n;
+  });
+  [...d.T, ...d.G].forEach(t => {
+    t.u = numOrNull(t.u); t.i = numOrNull(t.i);
+    if (!Array.isArray(t.days)) t.days = [];
+    if (!Array.isArray(t.topics)) t.topics = [];
+    if (MARKS.indexOf(t.mark) < 0) t.mark = '';
+  });
+  return d;
+}
+function normLine(l) {
+  const n = { id: (l && l.id) || uid(), segs: [], r: {}, text: '' };
+  if (l && Array.isArray(l.segs)) n.segs = l.segs.filter(Array.isArray).map(s => s.filter(Boolean));
+  if (l && l.r && typeof l.r === 'object') n.r = l.r;
+  if (l && l.text) n.text = String(l.text);
+  return n;
+}
+
+// ── 찾기 ──
+function findT(db, id) { return db.T.find(t => t.id === id) || null; }
+function findG(db, id) { return db.G.find(g => g.id === id) || null; }
+function findAny(db, id) { return findT(db, id) || findG(db, id); }
+function catOf(db, t) { return t && t.cat ? db.cats.find(c => c.id === t.cat) || null : null; }
+function subOf(db, t) { return t && t.sub ? db.subs.find(c => c.id === t.sub) || null : null; }
+function findPersonByName(db, name) { return db.T.find(t => t.kind === 'person' && t.name === name) || null; }
+function personOf(db, name) {
+  let p = findPersonByName(db, name);
+  if (!p) { p = newTarget('person', name); db.T.push(p); }
+  return p;
+}
+function linePids(l) { const a = []; (l.segs || []).forEach(s => s.forEach(p => a.push(p))); return a; }
+function groupPids(g) { const a = []; (g.lines || []).forEach(l => linePids(l).forEach(p => a.push(p))); return a; }
+function groupsOf(db, pid) { return db.G.filter(g => groupPids(g).indexOf(pid) >= 0); }
+function childrenOf(db, gid) { return db.G.filter(g => g.parent === gid); }
+function topGroups(db) { return db.G.filter(g => !g.parent || !findG(db, g.parent)); }
+// 묶음과 그 작은 묶음들에 든 사람 수 (겹치면 한 번)
+function groupHeadcount(db, g) {
+  const s = new Set(groupPids(g));
+  childrenOf(db, g.id).forEach(c => groupPids(c).forEach(p => s.add(p)));
+  return s.size;
+}
+
+// ── 줄(한 가정) 글 ⇄ 모양 ──
+// '김은중 / 김민욱 / 아빠 이상연 세중' → segs [[김은중],[김민욱],[이상연,세중]] · r {이상연:'아빠'}
+// 쉼표가 있거나 이름 같지 않은 말이 섞이면 메모 줄(text)로 둔다.
+function isNameToken(w) { return /^[가-힣A-Za-z][가-힣A-Za-z0-9]{0,9}$/.test(w); }
+function parseLineText(db, text) {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const line = { id: uid(), segs: [], r: {}, text: '' };
+  if (/[,，·]/.test(s)) { line.text = s; return line; }
+  const parts = s.split('/').map(x => x.trim()).filter(Boolean);
+  for (const part of parts) {
+    const toks = part.split(' ').filter(Boolean);
+    if (!toks.every(isNameToken)) { return { id: line.id, segs: [], r: {}, text: s }; }
+    const seg = []; let role = '';
+    toks.forEach((w, k) => {
+      if (ROLE_WORDS.indexOf(w) >= 0 && k < toks.length - 1) { role = w; return; }
+      const p = personOf(db, w); seg.push(p.id);
+      if (role) { line.r[p.id] = role; role = ''; }
+    });
+    if (seg.length) line.segs.push(seg);
+  }
+  if (!line.segs.length) { line.text = s; }
+  return line;
+}
+function lineToText(db, l) {
+  if (l.text && !(l.segs || []).length) return l.text;
+  return (l.segs || []).map(seg => seg.map(pid => {
+    const p = findT(db, pid); const nm = p ? p.name : '?';
+    // '인도'(셀 인도자)는 굵게 보이는 표시라 글에는 안 적는다 — 고칠 때 이름이 그대로면 되살린다
+    return (l.r && l.r[pid] && l.r[pid] !== '인도' ? l.r[pid] + ' ' : '') + nm;
+  }).join(' ')).join(' / ');
+}
+
+// ── 지우기 (되돌리기는 화면이 DB 를 통째로 되살린다) ──
+function removeTarget(db, id) {
+  db.T = db.T.filter(t => t.id !== id);
+  db.G.forEach(g => {
+    g.lines.forEach(l => { l.segs = l.segs.map(s => s.filter(p => p !== id)).filter(s => s.length); if (l.r) delete l.r[id]; });
+    g.lines = g.lines.filter(l => l.segs.length || l.text);
+  });
+}
+// 묶음을 지우면 그 안의 작은 묶음도 함께 지운다. 사람은 남는다(다른 묶음에도 있을 수 있다).
+function removeGroup(db, id) {
+  const kill = new Set([id]);
+  let grew = true;
+  while (grew) { grew = false; db.G.forEach(g => { if (g.parent && kill.has(g.parent) && !kill.has(g.id)) { kill.add(g.id); grew = true; } }); }
+  db.G = db.G.filter(g => !kill.has(g.id));
+  return kill.size;
+}
+function removeFromGroup(db, gid, pid) {
+  const g = findG(db, gid); if (!g) return;
+  g.lines.forEach(l => { l.segs = l.segs.map(s => s.filter(p => p !== pid)).filter(s => s.length); if (l.r) delete l.r[pid]; });
+  g.lines = g.lines.filter(l => l.segs.length || l.text);
+}
+
+// ── 오늘 목록 ──
+function intervalOf(db, t) {
+  if (t.mark === 'gray') return GRAY_IV;
+  if (typeof t.u === 'number') return (db.set.iv || IV_DEFAULT)[t.u];
+  if (t.kind === 'group') return GROUP_IV_DEFAULT;
+  return null;   // 사람인데 따로 정한 것이 없으면 묶음 줄 안에서 기도한다
+}
+function dayLog(db, date) { return db.log[date] || { d: [], p: {}, k: [], s: 0 }; }
+// 네 칸: 1순위(빨강·매일) · 매일(긴급도 0·1) · 오늘 요일 · 차례가 온 것.
+// 한 번 나온 것은 다음 칸에 안 나온다. 오늘 '기도함' 한 것은 **그대로 그 칸에 남는다**
+// (기도하기 전의 last 로 따져서) — 누른 순간 목록에서 사라지면 되돌릴 자리가 없다.
+function buildToday(db, date) {
+  const wd = parseYmd(date).getDay();
+  const L = dayLog(db, date);
+  const done = new Set(L.d || []);
+  const skip = new Set(L.k || []);
+  const lastOf = t => done.has(t.id) ? ((L.p || {})[t.id] !== undefined ? L.p[t.id] : '') : t.last;
+  const all = [...db.T, ...db.G];
+  const seen = new Set();
+  const sec = { top: [], daily: [], day: [], turn: [] };
+  const put = (k, t, late) => { seen.add(t.id); if (!skip.has(t.id)) sec[k].push({ t: t, done: done.has(t.id), late: late || 0 }); };
+  all.forEach(t => { if (t.mark === 'red') put('top', t); });
+  all.forEach(t => { if (!seen.has(t.id) && typeof t.u === 'number' && t.u <= 1) put('daily', t); });
+  all.forEach(t => { if (!seen.has(t.id) && (t.days || []).indexOf(wd) >= 0) put('day', t); });
+  all.forEach(t => {
+    if (seen.has(t.id)) return;
+    const iv = intervalOf(db, t); if (iv === null) return;
+    const last = lastOf(t);
+    if (!last) { if (slotDue(t.id, date, iv)) put('turn', t, 0); return; }
+    const gap = daysBetween(last, date);
+    if (gap >= iv) put('turn', t, gap - iv >= 1 ? gap - iv : 0);
+  });
+  return { sec: sec, listed: seen, skipped: skip };
+}
+// 한 번도 기도하지 않은 것은 주기 안에서 **제 날**에만 나온다 — 처음 가져온 날 전부가
+// 한꺼번에 몰리지 않게(2026-10-10 시험: 첫날 87개). 이름이 아니라 id 로 날을 나눈다.
+function slotDue(id, date, iv) {
+  if (iv <= 1) return true;
+  let h = 0; const s = String(id); for (let k = 0; k < s.length; k++) h = (h * 31 + s.charCodeAt(k)) >>> 0;
+  const a = String(date).split('-').map(Number);
+  const day = Math.floor(Date.UTC(a[0], a[1] - 1, a[2]) / 86400000);
+  return (day + h) % iv === 0;
+}
+function todayCount(r) { let n = 0, d = 0; Object.keys(r.sec).forEach(k => r.sec[k].forEach(e => { n++; if (e.done) d++; })); return { n: n, d: d }; }
+function toggleDone(db, id, date) {
+  const t = findAny(db, id); if (!t) return null;
+  const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
+  if (!L.p) L.p = {}; if (!L.d) L.d = [];
+  const at = L.d.indexOf(id);
+  if (at < 0) { L.d.push(id); L.p[id] = t.last || ''; t.last = date; return true; }
+  L.d.splice(at, 1); t.last = L.p[id] || ''; delete L.p[id]; return false;
+}
+function postpone(db, id, date) {
+  const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
+  if (!L.k) L.k = [];
+  if (L.k.indexOf(id) < 0) L.k.push(id);
+}
+function addPrayTime(db, date, secs) {
+  const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
+  L.s = (Number(L.s) || 0) + Math.max(0, Math.round(secs || 0));
+}
+
+// ── 정렬 · 내 순서 ──
+const SORT_IMP = (a, b) => ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || a.name.localeCompare(b.name, 'ko');
+const SORT_URG = (a, b) => ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || a.name.localeCompare(b.name, 'ko');
+const SORT_SUM = (a, b) => (((a.u == null ? 9 : a.u) + (a.i == null ? 9 : a.i)) - ((b.u == null ? 9 : b.u) + (b.i == null ? 9 : b.i))) || SORT_IMP(a, b);
+const SORT_NAME = (a, b) => a.name.localeCompare(b.name, 'ko');
+function sortTargets(list, mode, ranks) {
+  const arr = list.slice();
+  const R = ranks || {};
+  const rk = t => (R[t.id] == null ? Infinity : R[t.id]);
+  if (mode === 'name') arr.sort(SORT_NAME);
+  else if (mode === 'urg') arr.sort(SORT_URG);
+  else if (mode === 'sum') arr.sort(SORT_SUM);
+  else if (mode === 'mine') arr.sort((a, b) => (rk(a) - rk(b)) || SORT_IMP(a, b));
+  else arr.sort(SORT_IMP);
+  return arr;
+}
+// 끌어 옮긴 뒤 순서를 적는다. 화면에 보이던 줄들(shownIds)이 새 순서(newIds)가 되도록 —
+// 그 줄들이 원래 차지하던 순번 자리를 그대로 나눠 가진다. 안 보이던 줄의 자리는 그대로다.
+function applyRanks(ranks, shownIds, newIds) {
+  const R = ranks || {};
+  let slots = shownIds.map(id => R[id]).filter(v => v != null).sort((a, b) => a - b);
+  if (slots.length !== shownIds.length) {
+    const base = Object.keys(R).length ? Math.max.apply(null, Object.values(R)) + 1 : 0;
+    slots = shownIds.map((_, k) => base + k);
+  }
+  newIds.forEach((id, k) => { R[id] = slots[k]; });
+  return R;
+}
+function moveInArray(arr, from, to) { const a = arr.slice(); const x = a.splice(from, 1)[0]; a.splice(to, 0, x); return a; }
+
+// ── CSV / 붙여넣기 읽기 ──
+// 구글 시트에서 칸을 골라 복사하면 탭으로 나뉜 글이 온다 — 쉼표·탭 둘 다 받는다.
+function parseCSV(text) {
+  const src = String(text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+  const first = src.split('\n').slice(0, 5).join('\n');
+  const tabs = (first.match(/\t/g) || []).length, commas = (first.match(/,/g) || []).length;
+  const sep = tabs > 0 && tabs >= commas / 3 ? '\t' : ',';
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (q) {
+      if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+      else cell += c;
+    } else if (c === '"' && cell === '') q = true;
+    else if (c === sep) { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim()));
+}
+function detectFormat(rows) {
+  for (let r = 0; r < Math.min(rows.length, 6); r++) {
+    const h = rows[r] || [];
+    if (h.indexOf('구분') >= 0 && h.indexOf('항목') >= 0 && (h.indexOf('긴급도') >= 0 || h.indexOf('중요도') >= 0)) return 'sheet2';
+  }
+  return 'map';
+}
+
+// ── 가져오기 ①: 우선순위 표 (Sheet2 모양) ──
+// 열: 구분 · 항목 · 내용 · 긴급도 · 중요도. 사람 구분(성도·방문자)의 '내용' 은 실천,
+// 나머지의 '내용' 은 쉼표로 나눠 기도제목. 같은 구분·같은 이름이 있으면 고쳐 쓴다(지우지 않는다).
+// 오른쪽에 부서 이름을 덩어리로 모아 둔 칸이 있으면 덩어리 차례대로 상위 분류를 붙인다.
+function importSheet2(db, rows) {
+  let h = 0;
+  for (let r = 0; r < Math.min(rows.length, 6); r++) if ((rows[r] || []).indexOf('구분') >= 0) { h = r; break; }
+  const head = rows[h];
+  const col = n => head.indexOf(n);
+  const cC = col('구분'), cN = col('항목'), cM = col('내용'), cU = col('긴급도'), cI = col('중요도');
+  const res = { added: 0, updated: 0, subs: 0, cats: 0 };
+  const catByName = n => {
+    let c = db.cats.find(x => x.name === n);
+    if (!c) { c = { id: uid(), name: n, person: /성도|방문자|교인|새신자/.test(n) }; db.cats.push(c); res.cats++; }
+    return c;
+  };
+  for (let r = h + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const cn = (row[cC] || '').trim(), nm = (row[cN] || '').trim();
+    if (!cn || !nm) continue;
+    const c = catByName(cn);
+    const kind = c.person ? 'person' : 'item';
+    const key = nameKey(nm);
+    let t = db.T.find(x => nameKey(x.name) === key && (x.cat === c.id || (kind === 'person' && x.kind === 'person' && !x.cat)));
+    const isNew = !t;
+    if (isNew) { t = newTarget(kind, nm); db.T.push(t); }
+    t.cat = c.id; t.kind = kind;
+    if (cU >= 0) t.u = numOrNull(row[cU]);
+    if (cI >= 0) t.i = numOrNull(row[cI]);
+    const memo = cM >= 0 ? (row[cM] || '').trim() : '';
+    if (memo) {
+      if (kind === 'person') t.memo = memo;
+      else memo.split(',').map(x => x.trim()).filter(Boolean).forEach(x => { if (!t.topics.some(o => o.t === x)) t.topics.push(newTopic(x)); });
+    }
+    if (isNew && !t.days.length) t.days = daysFromName(nm);
+    if (isNew) res.added++; else res.updated++;
+  }
+  // 상위 분류 덩어리 — 부서 이름과 맞는 칸이 모인 열을 찾는다
+  const dept = db.cats.find(c => c.name === '부서');
+  if (dept) {
+    const deptNames = new Set(db.T.filter(t => t.cat === dept.id).map(t => nameKey(t.name)));
+    let best = -1, bestHits = 0;
+    const width = Math.max.apply(null, rows.map(r => r.length));
+    for (let c = 0; c < width; c++) {
+      if ([cC, cN, cM, cU, cI].indexOf(c) >= 0) continue;
+      let hits = 0; rows.forEach(r => { if (deptNames.has(nameKey(r[c] || ''))) hits++; });
+      if (hits > bestHits) { bestHits = hits; best = c; }
+    }
+    if (best >= 0 && bestHits >= 3) {
+      const blocks = []; let cur = null;
+      rows.forEach(r => {
+        const v = (r[best] || '').trim();
+        const isLegend = !v || v === '긴급도' || v === '중요도' || /^\d+$/.test(v);
+        if (isLegend) { if (cur) { blocks.push(cur); cur = null; } return; }
+        (cur || (cur = [])).push(v);
+      });
+      if (cur) blocks.push(cur);
+      const real = blocks.filter(b => b.some(v => deptNames.has(nameKey(v))));
+      real.forEach((b, k) => {
+        let s = db.subs[k];
+        if (!s) { s = { id: uid(), name: '분류 ' + (k + 1) }; db.subs.push(s); }
+        b.forEach(v => {
+          let t = db.T.find(x => x.cat === dept.id && nameKey(x.name) === nameKey(v));
+          if (!t) { t = newTarget('item', v); t.cat = dept.id; db.T.push(t); res.added++; }
+          t.sub = s.id;
+        });
+      });
+      res.subs = real.length;
+    }
+  }
+  return res;
+}
+
+// ── 가져오기 ②: 기도 지도 (24-0303 모양) ──
+// 서식(색)이 빠진 칸 배치만으로 '무엇이 묶음 제목인가' 를 다 알 수는 없다 → 읽은 대로
+// 덩어리(block)를 내놓고, 화면이 하나하나 '묶음 · 작은 묶음 · 이름 줄 · 빼기' 를 확인받는다.
+const GROUP_WORD = /(팀|부|셀|가족|파트|교사|모아|복음|리뉴얼|슬링샷|리더십|위원|모임|그룹|목장|구역|순)$/;
+const DAYTIME = /(^|\s)(주일|[월화수목금토일](?:요일)?)\s*(오전|오후|저녁|새벽|밤)?\s*\??$/;
+function splitDaytime(s) {
+  const m = String(s).match(DAYTIME);
+  if (!m) return null;
+  const day = m[2] === '주일' ? 0 : WEEK.indexOf(m[2][0]);
+  if (day < 0) return null;
+  const head = String(s).slice(0, m.index).trim();
+  if (!head) return null;
+  return { head: head, day: day, time: m[3] || '' };
+}
+function parseMapGrid(rows) {
+  const R = rows.map(r => r.map(x => String(x || '').replace(/\s+/g, ' ').trim()));
+  const used = R.map(r => r.map(() => false));
+  let title = '', date = '';
+  // 제목 줄: 맨 위쪽에서 'YY-MMDD' 날짜가 있는 줄
+  for (let r = 0; r < Math.min(R.length, 4); r++) {
+    const ci = R[r].findIndex(v => /^\d{2}-\d{4}$/.test(v));
+    if (ci >= 0) {
+      date = R[r][ci];
+      title = R[r].filter((v, k) => v && k !== ci).join(' ');
+      R[r].forEach((v, k) => { if (v) used[r][k] = true; });
+      break;
+    }
+  }
+  const blocks = [];
+  const width = Math.max.apply(null, R.map(r => r.length));
+  for (let c = 0; c < width; c++) {
+    let r = 0;
+    while (r < R.length) {
+      if (!(R[r][c]) || used[r][c]) { r++; continue; }
+      const start = r, cells = [];
+      while (r < R.length && R[r][c] && !used[r][c]) { cells.push(R[r][c]); r++; }
+      blocks.push({ id: 'b' + blocks.length, col: c, row: start, cells: cells, kind: guessKind(cells) });
+    }
+  }
+  blocks.sort((a, b) => (a.col - b.col) || (a.row - b.row));
+  return { title: title, date: date, blocks: blocks };
+}
+function guessKind(cells) {
+  const f = cells[0];
+  if (cells.length === 1) return (GROUP_WORD.test(f) && f.length <= 12) ? 'group' : 'lines';
+  if (splitDaytime(f)) return 'sub';
+  // 띄어쓰기 없는 한 낱말 제목('가족') 바로 아래 이름이 붙어 있으면 큰 묶음 제목이다
+  if (GROUP_WORD.test(f) && !/\s/.test(f) && f.length <= 8) return 'group';
+  // '13세 가족' 처럼 두 낱말이면 작은 묶음
+  if (/가족$/.test(f) || (GROUP_WORD.test(f) && f.split(' ').length <= 2 && f.length <= 10)) return 'sub';
+  return 'lines';
+}
+// '24-0303' → '2024-03-03'
+function sheetDate(s) { const m = String(s || '').match(/^(\d{2})-(\d{2})(\d{2})$/); return m ? '20' + m[1] + '-' + m[2] + '-' + m[3] : ''; }
+
+// 확인받은 덩어리로 묶음을 짓는다. db 에 바로 넣는다(사람은 이름이 같으면 같은 사람).
+// 돌려주는 값: 새로 지은 묶음 목록(G) — 'replace' 면 db.G 를 이것으로 바꾸고,
+// '판으로만' 이면 이것으로 판을 만든다.
+function buildGroupsFromBlocks(db, blocks) {
+  const G = [];
+  const heads = [];   // 묶음 제목들의 영역 {g, col, row, end}
+  const sorted = blocks.slice().sort((a, b) => (a.col - b.col) || (a.row - b.row));
+  let color = 0;
+  sorted.filter(b => b.kind === 'group').forEach(b => {
+    const g = newGroup(b.cells[0], GROUP_COLORS[color++ % GROUP_COLORS.length]);
+    G.push(g); heads.push({ g: g, col: b.col, row: b.row, end: Infinity });
+    // 제목 아래 나머지 칸이 있으면 그 묶음의 줄로
+    b.cells.slice(1).forEach(txt => { const l = parseLineText(db, txt); if (l) g.lines.push(l); });
+  });
+  heads.forEach(h => {
+    const next = heads.filter(o => o.col === h.col && o.row > h.row).sort((a, b) => a.row - b.row)[0];
+    if (next) h.end = next.row - 1;
+  });
+  let misc = null;
+  const ownerOf = b => {
+    const cand = heads.filter(h => h.col <= b.col && h.row < b.row && b.row <= h.end);
+    if (!cand.length) {
+      if (!misc) { misc = newGroup('묶음 없음', GROUP_COLORS[11]); G.push(misc); }
+      return misc;
+    }
+    cand.sort((a, b2) => (b2.col - a.col) || (b2.row - a.row));
+    return cand[0].g;
+  };
+  // 제목만 있는 작은 묶음('교사' 아래 빈 줄, 그 아래 이름들) — 같은 열에서 바로 이어지는
+  // 이름 줄 덩어리는 그 작은 묶음의 것이다.
+  let openSub = null;
+  sorted.filter(b => b.kind === 'sub' || b.kind === 'lines').forEach(b => {
+    const owner = ownerOf(b);
+    if (b.kind === 'lines' && openSub && openSub.col === b.col && openSub.owner === owner && b.row > openSub.row) {
+      b.cells.forEach(txt => { const l = parseLineText(db, txt); if (l) openSub.g.lines.push(l); });
+      return;
+    }
+    openSub = null;
+    if (b.kind === 'sub') {
+      const f = b.cells[0];
+      const dt = splitDaytime(f);
+      const sg = newGroup(dt ? dt.head : f, owner.color);
+      sg.parent = owner.id;
+      if (dt) {
+        sg.days = [dt.day]; sg.time = dt.time;
+        const lead = parseLineText(db, dt.head);
+        if (lead && lead.segs.length) { linePids(lead).forEach(p => { lead.r[p] = '인도'; }); sg.lines.push(lead); }
+      }
+      b.cells.slice(1).forEach(txt => { const l = parseLineText(db, txt); if (l) sg.lines.push(l); });
+      G.push(sg);
+      if (b.cells.length === 1) openSub = { g: sg, col: b.col, row: b.row, owner: owner };
+    } else {
+      b.cells.forEach(txt => { const l = parseLineText(db, txt); if (l) owner.lines.push(l); });
+    }
+  });
+  return G;
+}
+
+// ── 판 보관 ──
+function makeSnap(db, G, at, name) {
+  const groups = clone(G || db.G);
+  const P = {};
+  groups.forEach(g => groupPids(g).forEach(pid => { const p = findT(db, pid); if (p) P[pid] = { name: p.name, mark: p.mark || '' }; }));
+  return { id: uid(), at: at || ymd(), name: name || '', marks: clone(db.marks), G: groups, P: P };
+}
+function snapNames(snap) {
+  const s = new Set();
+  snap.G.forEach(g => groupPids(g).forEach(pid => { const p = snap.P[pid]; if (p) s.add(p.name); }));
+  return s;
+}
+function currentNames(db) {
+  const s = new Set();
+  db.G.forEach(g => groupPids(g).forEach(pid => { const p = findT(db, pid); if (p) s.add(p.name); }));
+  return s;
+}
+// a(옛 판) → b(새 판 또는 지금): 들어온 이름 · 빠진 이름
+function diffNames(a, b) {
+  const added = [], removed = [];
+  b.forEach(n => { if (!a.has(n)) added.push(n); });
+  a.forEach(n => { if (!b.has(n)) removed.push(n); });
+  return { added: added.sort((x, y) => x.localeCompare(y, 'ko')), removed: removed.sort((x, y) => x.localeCompare(y, 'ko')) };
+}
+
+// ── 응답 모아 보기 ──
+function answeredList(db) {
+  const out = [];
+  [...db.T, ...db.G].forEach(t => (t.topics || []).forEach(tp => { if (tp.ans) out.push({ t: t, tp: tp }); }));
+  return out;
+}
+
+// ── 백업 ──
+function exportBackup(db) { return JSON.stringify({ app: 'pray', v: 1, at: new Date().toISOString(), db: db }); }
+function readBackup(text) {
+  const o = JSON.parse(text);
+  if (!o || o.app !== 'pray' || !o.db) throw new Error('기도노트 백업 파일이 아닙니다');
+  return normDB(o.db);
+}
+</script>
+<script>
+// ── 테마 ──
+const TH_KEYS = ['--bg', '--s1', '--s2', '--tx', '--tx2', '--tx3', '--bd', '--bd2', '--ac', '--ac-rgb', '--ac-tx', '--on-accent',
+  '--ac-soft', '--sec', '--chip-bg', '--tab-on-bg', '--danger', '--shadow-color', '--header-bg'];
+function effMode(set) {
+  let m = (set && set.mode) || 'dark';
+  if (m === 'system') m = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  return m;
+}
+function applyTheme(set) {
+  const el = document.documentElement, mode = effMode(set);
+  el.dataset.mode = mode;
+  const p = themeById(set && set.preset);
+  let bg = mode === 'light' ? '#f6f3ec' : '#0d0e10';
+  if (!p) TH_KEYS.forEach(k => el.style.removeProperty(k));
+  else { const t = _themeTokens(p, mode); TH_KEYS.forEach(k => { if (t[k]) el.style.setProperty(k, t[k]); }); bg = t['--bg']; }
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', bg);
+}
+
+// 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
+try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
 <style>
-html,body{margin:0;height:100%;background:#0d0e10;color:#ebe7df;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif}
-.wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;box-sizing:border-box;text-align:center}
-img{width:96px;height:96px;border-radius:22px}
-h1{margin:0;font-weight:300;font-size:26px;letter-spacing:-.01em}
-p{margin:0;color:#9a968e;font-size:14px;line-height:1.7}
-small{color:#6f6b64;font-size:12px}
+/* ── 색: 기도노트 기본(테마를 안 고른 상태). 테마를 고르면 JS 가 같은 이름의 토큰을 덮는다 ── */
+:root{
+  --bg:#0d0e10; --s1:#15171b; --s2:#1d2025; --tx:#ece8e0; --tx2:#9d988f; --tx3:#77736c;
+  --bd:#24272d; --bd2:#34373e;
+  --ac:#dab87a; --ac-rgb:218,184,122; --ac-tx:#dab87a; --on-accent:#1c160a;
+  --ac-soft:rgba(218,184,122,.16); --sec:#a892d6; --chip-bg:rgba(168,146,214,.18);
+  --tab-on-bg:#2a2d33; --danger:#ff6b6b; --shadow-color:rgba(0,0,0,.55); --header-bg:rgba(13,14,16,.88);
+  --ans:#b9a3ea;
+  --mk-red:#ff6b6b; --mk-orange:#f5a35c; --mk-yellow:#f2cf5b; --mk-green:#6fd18b;
+  --mk-blue:#6fa8ff; --mk-purple:#b48cff; --mk-pink:#f07cc8; --mk-gray:#7c8089;
+  --font:'Pretendard Variable','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  --serif:'Noto Serif KR','AppleMyungjo',serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
+}
+html[data-mode="light"]{
+  --bg:#f6f3ec; --s1:#ffffff; --s2:#efebe2; --tx:#1f1b16; --tx2:#655f55; --tx3:#8e877c;
+  --bd:#e3ddd2; --bd2:#d0c9bc;
+  --ac:#9a7330; --ac-rgb:154,115,48; --ac-tx:#8a6528; --on-accent:#ffffff;
+  --ac-soft:rgba(154,115,48,.14); --sec:#6a4fb3; --chip-bg:rgba(106,79,179,.12);
+  --tab-on-bg:#e8e2d6; --danger:#c42b21; --shadow-color:rgba(0,0,0,.14); --header-bg:rgba(246,243,236,.88);
+  --ans:#6a4fb3;
+  --mk-red:#d6373a; --mk-orange:#d4731a; --mk-yellow:#a88406; --mk-green:#2f9a55;
+  --mk-blue:#2d6ad1; --mk-purple:#7a4fd4; --mk-pink:#c4428f; --mk-gray:#8b9099;
+}
+/* 긴급도(산호) · 중요도(청록) 칸 — 0 이 가장 진하다 */
+.u0{background:#f08a6e;color:#2a120b}.u1{background:#d97a62;color:#2a120b}.u2{background:#b5654f;color:#fff3ee}
+.u3{background:#7d4a3d;color:#fbe3da}.u4{background:#4f3530;color:#e9cfc6}.u5{background:#2c2422;color:#b9a59f}
+.i0{background:#74c7b4;color:#0b231d}.i1{background:#5fae9c;color:#0b231d}.i2{background:#3f8676;color:#f0fffb}
+.i3{background:#2c5d53;color:#d9f3ec}.i4{background:#223f39;color:#c7e3dc}.i5{background:#1b2725;color:#9fb8b2}
+.uX,.iX{background:var(--s2);color:var(--tx3)}
+html[data-mode="light"] .u0{background:#d9573a;color:#fff}html[data-mode="light"] .u1{background:#e27a60;color:#fff}
+html[data-mode="light"] .u2{background:#eda08b;color:#3b150b}html[data-mode="light"] .u3{background:#f5c4b6;color:#3b150b}
+html[data-mode="light"] .u4{background:#f9ddd4;color:#5a2a1e}html[data-mode="light"] .u5{background:#fbeee9;color:#7a4a3e}
+html[data-mode="light"] .i0{background:#1f8a72;color:#fff}html[data-mode="light"] .i1{background:#3fa58c;color:#fff}
+html[data-mode="light"] .i2{background:#79c4b1;color:#0b2a22}html[data-mode="light"] .i3{background:#a9dacd;color:#0b2a22}
+html[data-mode="light"] .i4{background:#cfeae3;color:#1f4a40}html[data-mode="light"] .i5{background:#e7f4f0;color:#3f6a60}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);overscroll-behavior:none}
+body{font-family:var(--font);font-size:15px;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere;
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;transition:background .3s,color .3s}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:center}
+.opt,.set-r,.bar,.sec-h,.throw,.rb,.tag,.pn{text-align:left}
+input,textarea,select{font:inherit;color:var(--tx)}
+svg{display:block;flex-shrink:0}
+.ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#app{position:fixed;inset:0;max-width:760px;margin:0 auto;overflow:hidden}
+.view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(var(--sat) + 8px) 0 calc(var(--sab) + 96px);display:none}
+.view.on{display:block;animation:vin .28s var(--ease)}
+@keyframes vin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── 머리 ── */
+.vh{padding:10px 20px 6px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.vh h1{margin:0;font-size:30px;font-weight:250;letter-spacing:-.015em;line-height:1.2}
+.vh .sub{font-size:13px;color:var(--tx2);letter-spacing:.01em}
+.vh-acts{display:flex;align-items:center;margin-right:-10px}
+.ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2);border-radius:22px;transition:background .15s,color .15s}
+.ib:active{background:var(--s2)}
+.ib.on{color:var(--ac-tx)}
+.date-l{padding:0 20px;font-size:13px;color:var(--tx2);letter-spacing:.02em}
+.prog{margin:12px 20px 0;height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .5s var(--ease)}
+.cta{margin:16px 20px 4px;height:50px;border-radius:25px;background:var(--ac);color:var(--on-accent);font-weight:600;font-size:15px;
+  display:flex;align-items:center;justify-content:center;gap:8px;width:calc(100% - 40px);transition:transform .12s,filter .2s;
+  box-shadow:0 6px 24px -10px rgba(var(--ac-rgb),.55)}
+.cta:active{transform:scale(.98)}
+.cta .ico{stroke-width:1.9}
+.ghost{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--bd2);color:var(--tx);font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.ghost:active{background:var(--s2)}
+.ghost.ac{border-color:var(--ac);color:var(--ac-tx)}
+.ghost.full{width:100%}
+
+/* ── 칸(섹션) ── */
+.sec-h{width:100%;display:flex;align-items:center;gap:8px;padding:22px 18px 8px;color:var(--tx2)}
+.sec-h .chev{transition:transform .25s var(--ease);width:14px;height:14px;stroke-width:2}
+.sec-h.fold .chev{transform:rotate(-90deg)}
+.sec-h b{font-size:13px;font-weight:600;color:var(--ac-tx);letter-spacing:.04em}
+.sec-h b.red{color:var(--mk-red)}
+.sec-h small{font-size:12px;color:var(--tx3)}
+.sec-h em{margin-left:auto;font-style:normal;font-size:12px;color:var(--tx3)}
+.label{padding:22px 20px 8px;font-size:12.5px;font-weight:600;color:var(--ac-tx);letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.label small{font-weight:400;color:var(--tx3);letter-spacing:0}
+.label .r{margin-left:auto}
+.hint{padding:6px 20px 0;font-size:12.5px;color:var(--tx3);line-height:1.6}
+
+/* ── 줄 (스와이프 · 끌기 공통) ── */
+.rows{position:relative}
+.row{position:relative;overflow:hidden;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.row-f{position:relative;z-index:1;display:flex;align-items:center;gap:6px;min-height:56px;padding:0 14px 0 8px;
+  background:var(--bg);border-bottom:1px solid var(--bd);transition:transform .28s var(--ease),background .2s}
+.row.swiping .row-f,.row.lifted .row-f{transition:none}
+.sw-acts{position:absolute;inset:0 0 1px auto;display:flex;align-items:stretch;justify-content:flex-end}
+.sw-act{min-width:84px;padding:0 14px;font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;justify-content:center}
+.sw-act.del{background:var(--danger)}
+.sw-act.later{background:#6f6b64}
+.sw-act.ac{background:var(--ac);color:var(--on-accent)}
+html[data-mode="light"] .sw-act.del{color:#fff}
+.row.lifted{z-index:20;overflow:visible}
+.row.lifted .row-f{background:var(--s1);border-radius:12px;border-bottom-color:transparent;
+  box-shadow:0 18px 40px -12px var(--shadow-color),0 0 0 1px var(--bd2);transform:scale(1.025)}
+.row.shift{transition:transform .2s var(--ease)}
+.row.gone{transition:height .26s var(--ease),opacity .2s;opacity:0}
+body.dragging,body.dragging *{cursor:grabbing!important}
+.chk{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.chk i{width:24px;height:24px;border-radius:12px;border:1.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;
+  transition:background .22s var(--ease),border-color .22s,transform .22s var(--ease)}
+.chk i svg{width:14px;height:14px;stroke:var(--on-accent);stroke-width:2.4;fill:none;opacity:0;transform:scale(.4);transition:opacity .18s,transform .25s var(--ease)}
+.row.done .chk i,.row.checking .chk i{background:var(--ac);border-color:var(--ac)}
+.row.done .chk i svg,.row.checking .chk i svg{opacity:1;transform:none}
+.row.checking .chk i{transform:scale(1.12)}
+.row.done .rb{opacity:.45}
+.rb{flex:1;min-width:0;padding:9px 0;cursor:pointer}
+.rt{display:flex;align-items:center;gap:7px;min-width:0}
+.rt .nm{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt .nm.rest{color:var(--tx3)}
+.mk{width:7px;height:7px;border-radius:4px;flex-shrink:0;background:var(--m)}
+.late{font-size:11px;color:var(--mk-orange);flex-shrink:0}
+.rm{font-size:12.5px;color:var(--tx2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmem{font-size:12.5px;color:var(--tx2);margin-top:3px;line-height:1.55;opacity:.9}
+.pills{display:flex;gap:4px;flex-shrink:0}
+.pl{min-width:22px;height:20px;border-radius:6px;font-size:11.5px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 5px}
+button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
+.bar{width:100%;min-height:44px;padding:0 20px 0 60px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2);border-bottom:1px solid var(--bd)}
+.bar:active{background:var(--s1)}
+.bar .chev{width:12px;height:12px;stroke-width:2;transition:transform .25s var(--ease)}
+.bar.open .chev{transform:rotate(90deg)}
+.grip{width:28px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx3);flex-shrink:0;margin-right:-6px}
+
+/* ── 빈 화면 · 카드 ── */
+.empty{margin:28px 20px;padding:28px 22px;border-radius:18px;background:var(--s1);text-align:center}
+.empty h3{margin:10px 0 6px;font-weight:400;font-size:18px}
+.empty p{margin:0 0 18px;color:var(--tx2);font-size:13.5px;line-height:1.7}
+.empty .btns{display:flex;flex-direction:column;gap:10px}
+.doneall{margin:24px 20px 0;padding:18px;border-radius:16px;background:var(--ac-soft);color:var(--ac-tx);text-align:center;font-size:14px}
+.legend{padding:22px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx3)}
+
+/* ── 아래 탭 ── */
+#tabbar{position:absolute;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px 8px calc(var(--sab) + 6px);background:var(--header-bg);-webkit-backdrop-filter:blur(18px) saturate(1.4);
+  backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid var(--bd)}
+.tb{height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--tx3);transition:color .2s}
+.tb .ico{width:22px;height:22px}
+.tb.on{color:var(--ac-tx)}
+
+/* ── 칩 · 고르기 ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 20px 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;height:34px;padding:0 13px;border-radius:17px;border:1px solid var(--bd2);font-size:13px;color:var(--tx2);
+  display:inline-flex;align-items:center;gap:6px;transition:background .18s,color .18s,border-color .18s}
+.chip.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent)}
+.chip .n{opacity:.7;font-size:12px}
+.chip .dot{width:8px;height:8px;border-radius:4px;background:var(--m)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--s1);border-radius:11px;padding:3px;margin:8px 20px 4px;gap:2px}
+.seg button{height:34px;border-radius:8px;font-size:13px;color:var(--tx2);transition:background .2s,color .2s}
+.seg button.on{background:var(--tab-on-bg);color:var(--tx)}
+.sorts{display:flex;align-items:center;gap:2px;padding:2px 14px 4px;overflow-x:auto;scrollbar-width:none}
+.sorts::-webkit-scrollbar{display:none}
+.sorts span{font-size:12px;color:var(--tx3);padding:0 6px}
+.sorts button{flex-shrink:0;height:36px;padding:0 9px;font-size:13px;color:var(--tx2)}
+.sorts button.on{color:var(--ac-tx);font-weight:600}
+.lh{display:flex;align-items:center;padding:6px 16px;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--bd)}
+.lh .f{flex:1}
+
+/* ── 지도 ── */
+.maptitle{padding:0 20px;font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--tx3);text-transform:uppercase}
+.masonry{column-count:2;column-gap:10px;padding:8px 14px 0}
+@media (min-width:600px){.masonry{column-count:3}}
+.gcard{break-inside:avoid;margin:0 0 10px;background:var(--s1);border-radius:12px;overflow:hidden;display:block;width:100%}
+.gh{width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--gc);color:#fff;font-size:13px;font-weight:600;letter-spacing:.02em}
+.gh .cnt{margin-left:auto;font-weight:400;opacity:.8;font-size:12px}
+.gb{padding:4px 8px 8px}
+.sgh{width:100%;margin-top:7px;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center;
+  background:color-mix(in srgb,var(--gc) 26%,var(--s1));color:var(--tx)}
+.sgh .dt{font-weight:500;color:var(--ac-tx);font-size:11.5px}
+.ln{display:flex;flex-wrap:wrap;gap:1px 6px;padding:3px 2px;font-size:13.5px;line-height:1.5}
+.ln.note{font-size:12px;color:var(--tx3)}
+.ln.flow{gap:1px 9px}
+.ln .sep{color:var(--tx3)}
+.pn{color:var(--pc,var(--tx));padding:0;border-radius:4px;transition:background .15s}
+.pn:active{background:var(--s2)}
+.pn.rest{color:var(--tx3)}
+.pn.lead{font-weight:650;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.pn.dim{opacity:.18}
+.pn.hit{background:var(--ac-soft);box-shadow:0 0 0 2px var(--ac-soft)}
+.pn .role{color:var(--tx3);font-size:12px;margin-right:3px}
+.search{margin:8px 20px 2px;display:flex;align-items:center;gap:8px;height:42px;padding:0 12px;border-radius:12px;background:var(--s1);color:var(--tx3)}
+.search input{flex:1;border:0;background:transparent;outline:none;font-size:15px}
+
+/* ── 겹 화면(전체화면) ── */
+#layers{position:absolute;inset:0;pointer-events:none;z-index:40}
+/* ⚠️ z-index 를 꼭 둔다 — 없으면 transform 이 풀린 뒤 아래 겹의 줄(.row-f, z-index:1)이 위 겹을 뚫고 보인다 */
+.layer{position:absolute;inset:0;z-index:1;isolation:isolate;background:var(--bg);pointer-events:auto;display:flex;flex-direction:column;
+  transform:translateX(104%);transition:transform .34s var(--ease);box-shadow:-20px 0 40px -20px var(--shadow-color)}
+.layer.in{transform:none}
+.layer.out{transform:translateX(104%)}
+.layer.edge{transition:none}
+.lhead{flex-shrink:0;display:flex;align-items:center;height:52px;margin-top:var(--sat);padding:0 6px;position:relative}
+.lh-title{position:absolute;left:56px;right:56px;text-align:center;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.lh-x{margin-left:auto}
+.lh-x .ico{width:18px;height:18px;stroke-width:1.8}
+.lbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--sab) + 40px)}
+.hero{padding:6px 20px 4px}
+.hero-name{width:100%;border:0;background:transparent;outline:none;font-family:var(--serif);font-size:32px;font-weight:400;letter-spacing:-.01em;padding:4px 0;border-bottom:1px solid transparent;transition:border-color .2s}
+.hero-name:focus{border-bottom-color:var(--bd2)}
+.hero-sub{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tag{height:30px;padding:0 12px;border-radius:15px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;background:var(--s1);color:var(--tx2);border:1px solid var(--bd)}
+.tag.g{background:var(--gc);color:#fff;border-color:transparent}
+.tag.add{border-style:dashed}
+.marks{display:flex;gap:2px;padding:4px 14px 0}
+.mkb{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.mkb i{width:20px;height:20px;border-radius:10px;background:var(--m);transition:transform .2s var(--ease),box-shadow .2s}
+.mkb.on i{transform:scale(1.08);box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--m)}
+.nums{display:flex;align-items:center;gap:6px;padding:6px 20px}
+.nums .k{width:52px;font-size:13px;color:var(--tx2)}
+.nb{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd2);font-size:14px;color:var(--tx2);transition:transform .15s}
+.nb:active{transform:scale(.94)}
+.nb.on{border-color:transparent}
+.days{display:flex;gap:5px;padding:6px 20px}
+.dy{width:38px;height:38px;border-radius:19px;border:1px solid var(--bd2);font-size:13px;color:var(--tx2);transition:background .18s,color .18s}
+.dy.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent)}
+.field{margin:6px 20px 0;width:calc(100% - 40px);min-height:46px;border:1px solid var(--bd);border-radius:12px;background:var(--s1);padding:11px 13px;font-size:15px;outline:none;resize:none;transition:border-color .2s;display:block}
+.field:focus{border-color:var(--ac)}
+textarea.field{min-height:72px;line-height:1.6}
+.addline{display:flex;align-items:center;gap:8px;margin:8px 20px 0;padding:0 6px 0 14px;border-radius:12px;border:1px dashed var(--bd2);min-height:46px}
+.addline input{flex:1;border:0;background:transparent;outline:none;font-size:15px;min-width:0}
+.addline .ib{width:38px;height:38px}
+.strip{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;padding:8px 20px 0}
+.strip i{height:16px;border-radius:4px;background:var(--s2)}
+.strip i.on{background:var(--ac)}
+.tp .rb{padding:12px 0}
+.tp .nm{white-space:normal}
+.tp.ans .nm{color:var(--ans)}
+.tp .ansd{font-size:12px;color:var(--ans);flex-shrink:0}
+.tcircle{width:44px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.tcircle i{width:20px;height:20px;border-radius:10px;border:1.5px solid var(--bd2);display:flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
+.tp.ans .tcircle i{background:var(--ans);border-color:var(--ans)}
+.tcircle svg{width:12px;height:12px;stroke:var(--bg);stroke-width:2.6;fill:none;opacity:0}
+.tp.ans .tcircle svg{opacity:1}
+.chips2{display:flex;flex-wrap:wrap;gap:6px;padding:4px 20px}
+.lnrow .rb{padding:10px 0}
+.lnrow .ln{padding:0;font-size:15px}
+.dot16{width:14px;height:14px;border-radius:7px;background:var(--gc);flex-shrink:0;margin:0 6px 0 8px}
+
+/* 설정 목록 */
+.set-g{margin:8px 16px 0;border-radius:14px;background:var(--s1);overflow:hidden}
+.set-r{width:100%;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--bd);font-size:15px}
+.set-r:last-child{border-bottom:0}
+.set-r .v{margin-left:auto;color:var(--tx2);font-size:14px;display:flex;align-items:center;gap:6px}
+.set-r .v .ico{width:16px;height:16px}
+.set-r.danger{color:var(--danger)}
+.step{display:flex;align-items:center;gap:4px;margin-left:auto}
+.step button{width:34px;height:34px;border-radius:17px;border:1px solid var(--bd2);font-size:17px;color:var(--tx2);display:flex;align-items:center;justify-content:center}
+.step b{min-width:34px;text-align:center;font-weight:500}
+.sw{position:relative;width:46px;height:28px;border-radius:14px;background:var(--bd2);transition:background .2s;flex-shrink:0;margin-left:auto}
+.sw::after{content:'';position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:11px;background:#fff;transition:transform .22s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw.on{background:var(--ac)}
+.sw.on::after{transform:translateX(18px)}
+.throw{width:100%;display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--bd);min-height:56px}
+.throw:last-child{border-bottom:0}
+.thsw{display:flex;border-radius:8px;overflow:hidden;box-shadow:0 0 0 1px var(--bd)}
+.thsw i{width:16px;height:28px}
+.throw .nm{flex:1;font-size:14.5px}
+.throw .no{font-size:12px;color:var(--tx3);width:24px}
+.throw .ok{color:var(--ac-tx)}
+
+/* 판(매트릭스) */
+.mx{padding:10px 16px 0}
+.mx-r{display:grid;grid-template-columns:30px repeat(6,1fr);gap:4px;margin-top:4px;align-items:center}
+.mx-h{height:24px;border-radius:5px;font-size:12px;display:flex;align-items:center;justify-content:center}
+.mx-c{height:48px;border-radius:9px;font-size:15px;font-weight:600;border:2px solid transparent;transition:transform .15s}
+.mx-c:active{transform:scale(.95)}
+.mx-c.sel{border-color:var(--tx)}
+.mx-c.z{background:var(--s1);color:var(--tx3);font-weight:400}
+.mx-c.a{background:rgba(var(--ac-rgb),.22);color:var(--tx)}
+.mx-c.b{background:rgba(var(--ac-rgb),.45);color:var(--tx)}
+.mx-c.c{background:var(--ac);color:var(--on-accent)}
+.mx-cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--tx3);margin-top:8px}
+
+/* 기록: 판 · 달력 */
+.snap .rb{padding:12px 0}
+.cal{padding:6px 16px 0}
+.cal-h{display:flex;align-items:center;justify-content:space-between;padding:4px 4px 10px}
+.cal-h b{font-weight:500;font-size:17px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-w{text-align:center;font-size:11.5px;color:var(--tx3);padding-bottom:2px}
+.cal-d{height:46px;border-radius:11px;font-size:13px;color:var(--tx2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1.5px solid transparent;background:var(--s1)}
+.cal-d.x{background:transparent}
+.cal-d.f{color:var(--tx3);opacity:.5}
+.cal-d.t{border-color:var(--ac);color:var(--ac-tx)}
+.cal-d.sel{border-color:var(--tx)}
+.cal-d.l1{background:rgba(var(--ac-rgb),.22);color:var(--tx)}
+.cal-d.l2{background:rgba(var(--ac-rgb),.45);color:var(--tx)}
+.cal-d.l3{background:var(--ac);color:var(--on-accent)}
+.cal-d small{font-size:10px;opacity:.75}
+
+/* ── 아래에서 올라오는 창 ── */
+.sh-wrap{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
+.sh-bd{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .28s}
+.sh-wrap.in .sh-bd{opacity:1}
+.sheet{position:relative;width:100%;max-width:760px;max-height:86vh;display:flex;flex-direction:column;background:var(--s1);
+  border-radius:20px 20px 0 0;padding-bottom:calc(var(--sab) + 12px);transform:translateY(102%);transition:transform .34s var(--ease);
+  box-shadow:0 -10px 40px -10px var(--shadow-color)}
+.sh-wrap.in .sheet{transform:none}
+.sheet.drag{transition:none}
+.sh-grab{height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:none;cursor:grab}
+.sh-grab i{width:38px;height:4px;border-radius:2px;background:var(--bd2)}
+.sh-t{padding:0 20px 8px;font-size:16px;font-weight:600;display:flex;align-items:center}
+.sh-t small{margin-left:8px;font-weight:400;color:var(--tx3);font-size:12.5px}
+.sh-b{overflow-y:auto;padding:0 0 4px}
+.opt{width:100%;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;font-size:15px;border-top:1px solid var(--bd)}
+.opt .d{font-size:12.5px;color:var(--tx3);margin-top:1px}
+.opt .ck{margin-left:auto;color:var(--ac-tx)}
+.opt.danger{color:var(--danger)}
+.pal{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:8px 20px 4px}
+.pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
+.pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
+.numpick{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:8px 20px}
+.numpick button{height:52px;border-radius:12px;font-size:18px;font-weight:600}
+.numpick button.sel{box-shadow:0 0 0 2px var(--s1),0 0 0 4px var(--tx)}
+.sh-acts{display:flex;gap:10px;padding:12px 20px 0}
+.sh-acts .cta{margin:0;width:auto;flex:1}
+
+/* ── 한 장씩 기도하기 ── */
+.focus{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.focus.on{display:flex;animation:fin .35s var(--ease)}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+.f-top{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--sat) + 8px) 6px 0 20px;position:relative;z-index:2}
+.f-time{font-size:13px;color:var(--tx3);font-variant-numeric:tabular-nums;min-width:60px}
+.f-pos{font-size:13px;color:var(--tx2)}
+.f-pos b{color:var(--ac-tx);font-weight:500}
+.f-stage{flex:1;position:relative;z-index:2}
+.f-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 32px;transition:transform .5s var(--ease),opacity .45s}
+.f-card.up{transform:translateY(-46px);opacity:0}
+.f-card.below{transform:translateY(46px);opacity:0}
+.f-cat{font-size:13px;color:var(--ac-tx);letter-spacing:.08em}
+.f-name{margin:10px 0 0;font-family:var(--serif);font-size:40px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
+.f-why{margin-top:12px;font-size:12.5px;color:var(--tx3)}
+.f-tps{list-style:none;margin:30px 0 0;padding:0;display:flex;flex-direction:column;gap:13px}
+.f-tps li{display:flex;align-items:baseline;gap:12px;font-size:18px;font-weight:300;line-height:1.5}
+.f-tps li::before{content:'';width:5px;height:5px;border-radius:3px;background:var(--ac);flex-shrink:0;transform:translateY(-3px)}
+.f-mem{margin-top:22px;font-size:15px;color:var(--tx2);line-height:1.7}
+.f-act{margin-top:26px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:14px;color:var(--tx2)}
+.f-act .ghost{height:38px;font-size:13px}
+.f-bot{position:relative;z-index:2;padding:0 24px calc(var(--sab) + 18px)}
+.f-btns{display:flex;gap:12px}
+.f-btns .ghost{flex:1;height:56px;border-radius:28px;font-size:15px}
+.f-btns .cta{flex:2;margin:0;height:56px;border-radius:28px;font-size:16px}
+.f-note{margin-top:12px;text-align:center;font-size:11.5px;color:var(--tx3)}
+.f-end{text-align:center}
+.f-end .f-name{font-size:30px}
+.pt{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:2px;background:var(--ac);opacity:0;animation:rise linear infinite;z-index:1}
+@keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:.55}100%{transform:translateY(-82vh);opacity:0}}
+
+/* ── 알림 ── */
+#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 82px);transform:translateY(20px);opacity:0;z-index:90;
+  background:var(--tx);color:var(--bg);border-radius:14px;padding:0 6px 0 16px;min-height:46px;display:flex;align-items:center;gap:10px;
+  font-size:14px;max-width:calc(100% - 32px);transition:transform .3s var(--ease),opacity .25s;pointer-events:none;box-shadow:0 10px 30px -8px var(--shadow-color)}
+#toast.on{opacity:1;transform:none;pointer-events:auto}
+#toast button{flex-shrink:0;white-space:nowrap;height:36px;padding:0 12px;border-radius:10px;font-weight:600;color:#7a5a22}
+html[data-mode="light"] #toast button{color:#e7c98f}
+#toast .msg{padding:12px 4px 12px 0}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <img src="icon.png" alt="">
-  <h1>기도노트</h1>
-  <p>곧 문을 엽니다.</p>
-  <small id="ver"></small>
+<div id="app">
+  <section class="view" id="v-today" aria-label="오늘 기도"></section>
+  <section class="view" id="v-map" aria-label="기도 지도"></section>
+  <section class="view" id="v-list" aria-label="목록"></section>
+  <section class="view" id="v-hist" aria-label="기록"></section>
+  <nav id="tabbar" aria-label="아래 메뉴">
+    <button class="tb on" data-a="tab" data-tab="today"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="4"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="4.5" y1="13" x2="2.5" y2="13"/><line x1="21.5" y1="13" x2="19.5" y2="13"/><line x1="6.3" y1="7.3" x2="5" y2="6"/><line x1="17.7" y1="7.3" x2="19" y2="6"/><line x1="3" y1="20" x2="21" y2="20"/></svg>오늘</button>
+    <button class="tb" data-a="tab" data-tab="map"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/></svg>지도</button>
+    <button class="tb" data-a="tab" data-tab="list"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>목록</button>
+    <button class="tb" data-a="tab" data-tab="hist"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>기록</button>
+  </nav>
+  <div id="layers"></div>
 </div>
+<div id="focus" class="focus" role="dialog" aria-label="한 장씩 기도하기"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 <script>
-document.getElementById('ver').textContent = APP_VERSION;
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+// ═══════════════════════════════════════════════════════════
+//  기도노트 화면
+// ═══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const ICONS = {
+  x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+  chev: '<polyline points="6 9 12 15 18 9"/>',
+  chevR: '<polyline points="9 6 15 12 9 18"/>',
+  check: '<polyline points="5 12.5 10 17 19 7.5"/>',
+  gear: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3" fill="var(--bg)"/><circle cx="15" cy="17" r="2.3" fill="var(--bg)"/>',
+  sort: '<path d="M7 5v14M4 16l3 3 3-3M17 19V5M14 8l3-3 3 3"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/>',
+  dots: '<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+  sun: '<circle cx="12" cy="13" r="4"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="4.5" y1="13" x2="2.5" y2="13"/><line x1="21.5" y1="13" x2="19.5" y2="13"/><line x1="6.3" y1="7.3" x2="5" y2="6"/><line x1="17.7" y1="7.3" x2="19" y2="6"/><line x1="3" y1="20" x2="21" y2="20"/>',
+  map: '<rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/>',
+  list: '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+  card: '<rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  grip: '<circle cx="9" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.2" fill="currentColor" stroke="none"/>',
+  up: '<path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+  down: '<path d="M12 4v11M8 11l4 4 4-4"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>',
+  theme: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>',
+  dots4: '<circle cx="8" cy="8" r="2.6"/><circle cx="16" cy="8" r="2.6"/><circle cx="8" cy="16" r="2.6"/><circle cx="16" cy="16" r="2.6"/>',
+  folder: '<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  frame: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M3.5 15l5-4 4 3 3-2 5 4"/>',
+  clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+  sheet: '<rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>'
+};
+function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
+
+// ── 상태 ──
+let DB = loadDB();
+let TODAY = ymd();
+const UI = {
+  tab: 'today', layers: [], listCat: 'all', listView: 'table', listGrouped: false, histTab: 'snap',
+  mapFilter: '', mapQuery: '', mapSearch: false, more: {}, showDone: {}, openG: {},
+  calMonth: TODAY.slice(0, 7), calDay: '', mx: null, imp: null
+};
+function loadDB() {
+  try { const raw = localStorage.getItem(PRAY_KEY); if (raw) return normDB(JSON.parse(raw)); } catch (e) { /* 깨진 저장값은 새로 시작 */ }
+  const d = seedDB();
+  try { localStorage.setItem(PRAY_KEY, JSON.stringify(d)); } catch (e) {}
+  return d;
 }
+let saveT = 0;
+function save() { DB.rev++; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+function saveNow() {
+  clearTimeout(saveT);
+  try { localStorage.setItem(PRAY_KEY, JSON.stringify(DB)); }
+  catch (e) { toast('저장하지 못했습니다 — 기기 저장 공간을 확인해 주세요'); }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { if (F.on) flushFocusTime(); saveNow(); }
+  else { const t = ymd(); if (t !== TODAY) { TODAY = t; refresh(); } }
+});
+window.addEventListener('pagehide', saveNow);
+
+// ── 테마 — applyTheme 은 머리(head)의 첫 스크립트에 있다 (첫 그림부터 제 색으로) ──
+if (window.matchMedia) matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (DB.set.mode === 'system') applyTheme(DB.set); });
+
+// ── 작은 도구 ──
+function markVar(m) { return m ? 'var(--mk-' + m + ')' : 'transparent'; }
+function markName(m, marks) { const M = marks || DB.marks; return MARK_FIXED[m] || (M && M[m]) || MARK_COLOR_NAME[m]; }
+// ⚠️ 비었을 때 이름을 'in' 으로 두면 겹 화면의 .in(올라온 상태)과 부딪힌다 → uX · iX
+function uCls(u) { return u == null ? 'uX' : 'u' + u; }
+function iCls(i) { return i == null ? 'iX' : 'i' + i; }
+function pill(t) { return '<span class="pl ' + uCls(t.u) + '">' + (t.u == null ? '–' : t.u) + '</span><span class="pl ' + iCls(t.i) + '">' + (t.i == null ? '–' : t.i) + '</span>'; }
+function dayName(d) { return d === 0 ? '주일' : WEEK[d] + '요일'; }
+function shortDate(s) { if (!s) return ''; const d = parseYmd(s); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
+function kindLabel(t) { return t.kind === 'group' ? '묶음' : (t.kind === 'person' ? '사람' : '기도 항목'); }
+function targetMeta(t) {
+  const out = [];
+  if (t.kind === 'group') {
+    out.push('묶음');
+    const p = t.parent && findG(DB, t.parent); if (p) out.push(p.name);
+    if (t.days.length) out.push(t.days.map(d => WEEK[d]).join('·') + (t.time ? ' ' + t.time : ''));
+  } else {
+    const c = catOf(DB, t); if (c) out.push(c.name);
+    const s = t.kind === 'item' && subOf(DB, t); if (s) out.push(s.name);
+    if (t.kind === 'person') { const gs = groupsOf(DB, t.id).slice(0, 2).map(g => g.name); if (gs.length) out.push(gs.join(' · ')); }
+    if (t.memo) out.push(t.memo);
+    else if (t.kind === 'item' && t.topics.length) out.push(t.topics.filter(x => !x.ans).map(x => x.t).join(', '));
+  }
+  return out.join(' · ');
+}
+function groupMembers(g, exclude) {
+  const names = [];
+  const pids = groupPids(g);
+  const seen = new Set();
+  pids.forEach(pid => { if (seen.has(pid) || (exclude && exclude.has(pid))) return; seen.add(pid); const p = findT(DB, pid); if (p) names.push(p.name); });
+  const kids = childrenOf(DB, g.id).map(c => c.name);
+  let s = '';
+  if (names.length) s = names.length > 9 ? names.slice(0, 8).join(' · ') + ' 외 ' + (names.length - 8) + '명' : names.join(' · ');
+  if (kids.length) s += (s ? '  ·  ' : '') + kids.join(' · ');
+  return s;
+}
+function copyText(text) {
+  // iOS 홈 화면 앱은 누른 그 순간에 **동기적으로** 복사해야 한다 (await 뒤에 하면 실패)
+  let ok = false;
+  try {
+    const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    ok = document.execCommand('copy'); ta.remove();
+  } catch (e) {}
+  if (!ok && navigator.clipboard) { navigator.clipboard.writeText(text).catch(() => {}); ok = true; }
+  return ok;
+}
+
+// ── 알림 · 되돌리기 ──
+let toastT = 0;
+function toast(msg, action, fn) {
+  const t = $('toast');
+  t.innerHTML = '<span class="msg">' + esc(msg) + '</span>' + (action ? '<button data-a="toast-act">' + esc(action) + '</button>' : '');
+  t._fn = fn || null;
+  t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('on'), action ? 5200 : 2600);
+}
+function withUndo(msg, mutate) {
+  const before = JSON.stringify(DB);
+  mutate();
+  save(); refresh();
+  toast(msg, '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+}
+function animateGone(row, cb) {
+  if (!row) { cb(); return; }
+  row.style.height = row.offsetHeight + 'px';
+  void row.offsetHeight;
+  row.classList.add('gone');
+  row.style.height = '0px';
+  setTimeout(cb, 250);
+}
+
+// ═══ 그리기 ═══
+function refresh(opt) {
+  renderView();
+  refreshLayers(opt && opt.skipTop);
+}
+function showTab(tab) {
+  UI.tab = tab;
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
+  document.querySelectorAll('.tb').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
+  renderView();
+}
+function renderView() {
+  const fn = { today: renderToday, map: renderMap, list: renderList, hist: renderHist }[UI.tab];
+  const el = $('v-' + UI.tab);
+  if (fn && el) el.innerHTML = fn();
+}
+function headActs(extra) {
+  return '<div class="vh-acts">' + (extra || '') + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
+}
+
+// ── ① 오늘 ──
+const TODAY_SECS = [['top', '1순위', '빨강 · 매일 · 맨 위'], ['daily', '매일', '긴급도 0 · 1'], ['day', '', '오늘 요일이 붙은 것'], ['turn', '차례가 온 것', '주기가 지난 것']];
+function renderToday() {
+  const r = buildToday(DB, TODAY);
+  const cnt = todayCount(r);
+  const wd = parseYmd(TODAY).getDay();
+  const mode = DB.set.sorts.today || 'imp';
+  const ranks = DB.set.ranks.today || {};
+  const d = parseYmd(TODAY);
+  let h = '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
+  h += '<div class="vh"><h1>오늘 기도</h1>' + headActs('<button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
+  if (!DB.T.length && !DB.G.length) return h + emptyStart();
+  h += '<div class="vh" style="padding-top:0"><span class="sub"><b style="color:var(--ac-tx);font-weight:600">' + cnt.d + '</b> / ' + cnt.n + ' 기도함</span></div>';
+  h += '<div class="prog"><i style="width:' + (cnt.n ? Math.round(cnt.d / cnt.n * 100) : 0) + '%"></i></div>';
+  if (cnt.n && cnt.d < cnt.n) h += '<button class="cta" data-a="focus">' + ico('card') + '한 장씩 기도하기</button>';
+  if (cnt.n && cnt.d === cnt.n) h += '<div class="doneall">오늘 기도를 다 마쳤습니다</div>';
+  if (!DB.T.some(t => t.kind === 'person') && !DB.G.length) h += '<button class="doneall" style="display:block;width:calc(100% - 40px);text-align:left;background:var(--s1);color:var(--tx2)" data-a="import">아직 사람 이름이 없습니다. 지금은 샘플로 넣어 둔 모임 · 예배 · 부서만 보입니다. <b style="color:var(--ac-tx);font-weight:600">시트에서 가져오기 ›</b></button>';
+  const indiv = r.listed;
+  TODAY_SECS.forEach(s => {
+    const k = s[0];
+    const list = r.sec[k];
+    if (!list.length) return;
+    const title = k === 'day' ? dayName(wd) : s[1];
+    const sorted = sortTargets(list.map(e => e.t), mode, ranks).map(t => list.find(e => e.t === t));
+    const open = sorted.filter(e => !e.done), fin = sorted.filter(e => e.done);
+    const fk = 'today:' + k, folded = !!DB.set.folds[fk];
+    h += '<button class="sec-h' + (folded ? ' fold' : '') + '" data-a="fold" data-k="' + fk + '" aria-expanded="' + !folded + '">' + ico('chev', 'chev') +
+      '<b class="' + (k === 'top' ? 'red' : '') + '">' + esc(title) + '</b><small>' + esc(s[2]) + '</small><em>' + (open.length ? '남은 ' + open.length + ' / ' + list.length : '다 했습니다') + '</em></button>';
+    if (folded) return;
+    const lim = (k === 'top' && !UI.more.top) ? (DB.set.topLimit || 6) : open.length;
+    h += '<div class="rows" data-sort="today:' + k + '">' + open.slice(0, lim).map(e => rowToday(e, indiv)).join('') + '</div>';
+    if (open.length > lim) h += '<button class="bar" data-a="more" data-k="top">' + ico('chevR', 'chev') + (open.length - lim) + '개 더 펼치기</button>';
+    else if (k === 'top' && UI.more.top && open.length > (DB.set.topLimit || 6)) h += '<button class="bar open" data-a="more" data-k="top">' + ico('chevR', 'chev') + '처음 ' + (DB.set.topLimit || 6) + '개만 보기</button>';
+    if (fin.length) {
+      const sd = !!UI.showDone[k];
+      h += '<button class="bar' + (sd ? ' open' : '') + '" data-a="showdone" data-k="' + k + '">' + ico('chevR', 'chev') + '기도함 ' + fin.length + '</button>';
+      if (sd) h += '<div class="rows">' + fin.map(e => rowToday(e, indiv)).join('') + '</div>';
+    }
+  });
+  if (!cnt.n) h += '<div class="empty"><h3>오늘은 차례가 온 기도가 없습니다</h3><p>목록에서 긴급도를 정하거나, 사람에게 빨강(1순위)을 칠하면 여기에 나옵니다.</p></div>';
+  h += '<div class="legend"><span class="pl u1">긴</span><span class="pl i1">중</span>긴급도 · 중요도 — 0 이 가장 높음 · 왼쪽으로 밀면 내일로 · 길게 눌러 순서 바꾸기</div>';
+  return h;
+}
+function rowToday(e, indiv) {
+  const t = e.t;
+  const mem = t.kind === 'group' ? groupMembers(t, indiv) : '';
+  const rest = t.mark === 'gray';
+  return '<div class="row' + (e.done ? ' done' : '') + '" data-id="' + t.id + '"' + (e.done ? '' : ' data-sw="1"') + '>' +
+    (e.done ? '' : '<div class="sw-acts"><button class="sw-act later" data-a="later" data-id="' + t.id + '">내일로</button></div>') +
+    '<div class="row-f"><button class="chk" data-a="check" data-id="' + t.id + '" aria-label="' + esc(t.name) + (e.done ? ' 기도함 취소' : ' 기도함') + '"><i><svg viewBox="0 0 24 24">' + ICONS.check + '</svg></i></button>' +
+    '<div class="rb" data-a="open" data-id="' + t.id + '"><div class="rt">' + (t.mark ? '<i class="mk" style="--m:' + markVar(t.mark) + '"></i>' : '') +
+    '<span class="nm' + (rest ? ' rest' : '') + '">' + esc(t.name) + '</span>' + (e.late ? '<span class="late">' + e.late + '일 밀림</span>' : '') + '</div>' +
+    '<div class="rm">' + esc(targetMeta(t)) + '</div>' + (mem ? '<div class="rmem">' + esc(mem) + '</div>' : '') + '</div>' +
+    '<div class="pills">' + pill(t) + '</div></div></div>';
+}
+function emptyStart() {
+  return '<div class="empty"><svg viewBox="0 0 24 24" class="ico" style="width:40px;height:40px;margin:0 auto;color:var(--ac)">' + ICONS.sheet + '</svg>' +
+    '<h3>기도할 이름을 불러올까요?</h3><p>예전에 쓰시던 구글 시트(우선순위 표 · 기도 지도)를 그대로 가져올 수 있습니다. 직접 하나씩 넣어도 됩니다.</p>' +
+    '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-target">직접 추가</button></div></div>';
+}
+
+// ── ② 한 장씩 기도하기 ──
+const F = { on: false, deck: [], i: 0, t0: 0, tick: 0, sent: {} };
+function openFocus() {
+  const r = buildToday(DB, TODAY);
+  const mode = DB.set.sorts.today || 'imp', ranks = DB.set.ranks.today || {};
+  const deck = [];
+  TODAY_SECS.forEach(s => {
+    const list = r.sec[s[0]];
+    sortTargets(list.map(e => e.t), mode, ranks).forEach(t => { const e = list.find(x => x.t === t); if (!e.done) deck.push({ id: t.id, sec: s[0] }); });
+  });
+  if (!deck.length) { toast('오늘 남은 기도가 없습니다'); return; }
+  F.on = true; F.deck = deck; F.i = 0; F.t0 = Date.now(); F.sent = {};
+  const el = $('focus');
+  el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span class="f-time" id="fTime">0:00</span><span class="f-pos" id="fPos"></span>' +
+    '<button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></div><div class="f-stage" id="fStage"></div>' +
+    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
+    '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>';
+  el.classList.add('on');
+  focusCard(false);
+  clearInterval(F.tick);
+  F.tick = setInterval(() => { const s = Math.floor((Date.now() - F.t0) / 1000); const n = $('fTime'); if (n) n.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+}
+function particles() {
+  let s = '';
+  for (let k = 0; k < 16; k++) {
+    const left = (6 + Math.random() * 88).toFixed(1), dur = (10 + Math.random() * 12).toFixed(1), delay = (-Math.random() * 20).toFixed(1), sz = Math.random() < .3 ? 4 : (Math.random() < .5 ? 3 : 2);
+    s += '<i class="pt" style="left:' + left + '%;width:' + sz + 'px;height:' + sz + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's"></i>';
+  }
+  return s;
+}
+function focusCardHTML() {
+  if (F.i >= F.deck.length) {
+    const secs = Math.floor((Date.now() - F.t0) / 1000);
+    return '<div class="f-card f-end"><div class="f-cat">오늘 기도</div><h2 class="f-name">다 마쳤습니다</h2><div class="f-why">' +
+      F.deck.length + '개 · ' + Math.max(1, Math.round(secs / 60)) + '분</div><div style="margin-top:28px"><button class="ghost" data-a="focus-close">닫기</button></div></div>';
+  }
+  const it = F.deck[F.i], t = findAny(DB, it.id);
+  if (!t) return '<div class="f-card"></div>';
+  let cat = kindLabel(t);
+  if (t.kind !== 'group') { const c = catOf(DB, t); if (c) cat = c.name; }
+  else { const p = t.parent && findG(DB, t.parent); if (p) cat = '묶음 · ' + p.name; }
+  const secName = { top: '1순위', daily: '매일', day: '오늘 요일', turn: '차례' }[it.sec];
+  const why = secName + (t.u != null ? ' · 긴급도 ' + t.u : '') + (t.i != null ? ' · 중요도 ' + t.i : '');
+  const tps = (t.topics || []).filter(x => !x.ans);
+  const mem = t.kind === 'group' ? groupMembers(t) : '';
+  const sent = F.sent[t.id];
+  return '<div class="f-card"><div class="f-cat">' + esc(cat) + '</div><h2 class="f-name">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
+    (tps.length ? '<ul class="f-tps">' + tps.map(x => '<li>' + esc(x.t) + '</li>').join('') + '</ul>' : '') +
+    (mem ? '<div class="f-mem">' + esc(mem) + '</div>' : '') +
+    (t.memo ? '<div class="f-act"><span>' + ico('phone') + '</span><span>실천 — ' + esc(t.memo) + '</span><button class="ghost' + (sent ? ' ac' : '') + '" data-a="todo" data-id="' + t.id + '">' + (sent ? 'BLOCK7 할일로 보냄 ✓' : 'BLOCK7 할일로 보내기') + '</button></div>' : '') +
+    '</div>';
+}
+function focusCard(anim) {
+  const st = $('fStage'); if (!st) return;
+  const pos = $('fPos'); if (pos) pos.innerHTML = F.i < F.deck.length ? '<b>' + (F.i + 1) + '</b> / ' + F.deck.length : '';
+  const btns = $('fBtns'); if (btns) btns.style.visibility = F.i < F.deck.length ? '' : 'hidden';
+  const old = st.firstElementChild;
+  const wrap = document.createElement('div'); wrap.innerHTML = focusCardHTML();
+  const card = wrap.firstElementChild;
+  if (anim && old) {
+    card.classList.add('below'); st.appendChild(card);
+    old.classList.add('up');
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove('below')));
+    setTimeout(() => old.remove(), 500);
+  } else { st.innerHTML = ''; st.appendChild(card); }
+}
+function focusNext(amen) {
+  if (F.i >= F.deck.length) return;
+  if (amen) { const id = F.deck[F.i].id; const L = dayLog(DB, TODAY); if ((L.d || []).indexOf(id) < 0) toggleDone(DB, id, TODAY); save(); }
+  F.i++;
+  focusCard(true);
+}
+function flushFocusTime() { if (!F.on) return; addPrayTime(DB, TODAY, (Date.now() - F.t0) / 1000); F.t0 = Date.now(); }
+function closeFocus() {
+  flushFocusTime(); save();
+  F.on = false; clearInterval(F.tick);
+  const el = $('focus'); el.classList.remove('on'); el.innerHTML = '';
+  refresh();
+}
+
+// ── 지도 그리기 (지금 지도 · 지난 판 둘 다) ──
+function mapSource(snap) {
+  if (snap) return {
+    G: snap.G, marks: snap.marks || {}, live: false,
+    person: pid => snap.P[pid] || null,
+    kids: gid => snap.G.filter(g => g.parent === gid),
+    tops: () => snap.G.filter(g => !g.parent || !snap.G.some(x => x.id === g.parent))
+  };
+  return {
+    G: DB.G, marks: DB.marks, live: true,
+    person: pid => findT(DB, pid),
+    kids: gid => childrenOf(DB, gid),
+    tops: () => topGroups(DB)
+  };
+}
+function mapCards(src, opt) {
+  const q = (opt && opt.q || '').trim(), filt = opt && opt.filter;
+  const hc = g => { const s = new Set(groupPids(g)); src.kids(g.id).forEach(c => groupPids(c).forEach(p => s.add(p))); return s.size; };
+  let tops = src.tops();
+  const mode = src.live ? (DB.set.sorts.map || 'mine') : 'mine';
+  if (mode === 'name') tops = tops.slice().sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  if (mode === 'size') tops = tops.slice().sort((a, b) => hc(b) - hc(a));
+  const lineHTML = l => {
+    if (l.text && !(l.segs || []).length) return '<div class="ln note">' + esc(l.text) + '</div>';
+    return '<div class="ln">' + (l.segs || []).map(seg => seg.map(pid => {
+      const p = src.person(pid); if (!p) return '';
+      const role = l.r && l.r[pid];
+      const cls = 'pn' + (p.mark === 'gray' ? ' rest' : '') + (role === '인도' ? ' lead' : '') +
+        (filt && p.mark !== filt ? ' dim' : '') + (q && p.name.indexOf(q) >= 0 ? ' hit' : '');
+      const style = p.mark && p.mark !== 'gray' ? ' style="--pc:' + markVar(p.mark) + '"' : '';
+      const inner = (role && role !== '인도' ? '<span class="role">' + esc(role) + '</span>' : '') + esc(p.name);
+      return src.live ? '<button class="' + cls + '"' + style + ' data-a="open" data-id="' + pid + '">' + inner + '</button>'
+                      : '<span class="' + cls + '"' + style + '>' + inner + '</span>';
+    }).join(' ')).join(' <span class="sep">/</span> ') + '</div>';
+  };
+  // 시트에서는 한 칸에 한 사람씩 세로로 적힌 줄이 많다(조명팀 · 키즈모아). 지도에서는
+  // 한 사람만 든 줄이 이어지면 한 줄로 흘려 보여 카드가 길어지지 않게 한다.
+  const solo = l => !(l.text && !(l.segs || []).length) && (l.segs || []).length === 1 && l.segs[0].length === 1;
+  const linesHTML = ls => {
+    let out = '', run = [];
+    const flush = () => { if (run.length) { out += lineHTML({ segs: [run.map(l => l.segs[0][0])], r: Object.assign({}, ...run.map(l => l.r || {})) }).replace('<div class="ln">', '<div class="ln flow">'); run = []; } };
+    ls.forEach(l => { if (solo(l)) run.push(l); else { flush(); out += lineHTML(l); } });
+    flush();
+    return out;
+  };
+  return '<div class="masonry">' + tops.map(g => {
+    const kids = src.kids(g.id);
+    const head = src.live ? '<button class="gh" data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">';
+    return '<div class="gcard" style="--gc:' + esc(g.color) + '">' + head + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' + (src.live ? '</button>' : '</div>') +
+      '<div class="gb">' + linesHTML(g.lines || []) +
+      kids.map(k => (src.live ? '<button class="sgh" data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh">') + esc(k.name) +
+        (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
+        (src.live ? '</button>' : '</div>') + linesHTML(k.lines || [])).join('') +
+      '</div></div>';
+  }).join('') + '</div>';
+}
+
+// ── ⑤ 지도 탭 ──
+function renderMap() {
+  let h = '<div class="vh"><h1>기도 지도</h1>' + headActs(
+    '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
+    '<button class="ib" data-a="map-menu" aria-label="지도 메뉴">' + ico('dots') + '</button>') + '</div>';
+  if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
+  if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
+  if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 묶음을 하나씩 만들 수 있습니다.</p>' +
+    '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">묶음 만들기</button></div></div>';
+  h += '<div class="chips">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter === m ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
+  if (UI.mapQuery) {
+    const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
+    h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
+  }
+  h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter });
+  return h;
+}
+
+// ── ⑦ 목록 탭 ──
+function listItems() {
+  if (UI.listCat === 'all') return DB.T.filter(t => t.cat || t.u != null);
+  if (UI.listCat === 'none') return DB.T.filter(t => !t.cat);
+  return DB.T.filter(t => t.cat === UI.listCat);
+}
+function renderList() {
+  let h = '<div class="vh"><h1>목록</h1>' + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
+  h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
+  const cats = [['all', '전체', DB.T.filter(t => t.cat || t.u != null).length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
+  const none = DB.T.filter(t => !t.cat).length;
+  if (none) cats.push(['none', '지도에만', none]);
+  h += '<div class="chips">' + cats.map(c => '<button class="chip' + (UI.listCat === c[0] ? ' on' : '') + '" data-a="list-cat" data-v="' + c[0] + '">' + esc(c[1]) + '<span class="n">' + c[2] + '</span></button>').join('') + '</div>';
+  const items = listItems();
+  if (UI.listView === 'matrix') return h + renderMatrix(items);
+  const mode = DB.set.sorts.list || 'sum';
+  h += '<div class="sorts"><span>정렬</span>' + [['sum', '합계'], ['urg', '긴급'], ['imp', '중요'], ['name', '이름'], ['mine', '내 순서']].map(s =>
+    '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="list-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') +
+    '<button class="' + (UI.listGrouped ? 'on' : '') + '" data-a="list-group" style="margin-left:auto">분류별</button></div>';
+  h += '<div class="lh"><span class="f">항목</span><span style="width:76px;text-align:center">긴급 · 중요</span></div>';
+  if (!items.length) return h + '<div class="hint" style="padding-top:20px">여기에 해당하는 항목이 없습니다.</div>';
+  const ranks = DB.set.ranks.list || {};
+  if (!UI.listGrouped) return h + '<div class="rows" data-sort="list">' + sortTargets(items, mode, ranks).map(rowList).join('') + '</div>' + listFoot();
+  // 분류별 — 구분마다, 부서는 상위 분류마다 접힌 묶음
+  const groups = [];
+  DB.cats.forEach(c => {
+    const inC = items.filter(t => t.cat === c.id);
+    if (!inC.length) return;
+    const hasSub = inC.some(t => t.sub);
+    if (!hasSub) groups.push([c.id, c.name, inC]);
+    else {
+      DB.subs.forEach(s => { const x = inC.filter(t => t.sub === s.id); if (x.length) groups.push([c.id + ':' + s.id, c.name + ' › ' + s.name, x]); });
+      const x = inC.filter(t => !t.sub || !subOf(DB, t)); if (x.length) groups.push([c.id + ':-', c.name + ' › 분류 없음', x]);
+    }
+  });
+  const noCat = items.filter(t => !t.cat); if (noCat.length) groups.push(['-', '구분 없음', noCat]);
+  h += groups.map(g => {
+    const op = !!UI.openG[g[0]];
+    return '<button class="bar' + (op ? ' open' : '') + '" style="padding-left:20px" data-a="list-og" data-k="' + esc(g[0]) + '">' + ico('chevR', 'chev') + '<span style="color:var(--tx)">' + esc(g[1]) + '</span><span style="color:var(--tx3)">' + g[2].length + '</span></button>' +
+      (op ? '<div class="rows" data-sort="list">' + sortTargets(g[2], mode, ranks).map(rowList).join('') + '</div>' : '');
+  }).join('');
+  return h + listFoot();
+}
+function listFoot() { return '<div class="legend">숫자 칸을 누르면 바꿉니다 · 왼쪽으로 밀면 지우기 · 길게 눌러 순서 바꾸기</div>'; }
+function rowList(t) {
+  return '<div class="row" data-id="' + t.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="target" data-id="' + t.id + '">지우기</button></div>' +
+    '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="open" data-id="' + t.id + '"><div class="rt">' + (t.mark ? '<i class="mk" style="--m:' + markVar(t.mark) + '"></i>' : '') +
+    '<span class="nm' + (t.mark === 'gray' ? ' rest' : '') + '">' + esc(t.name) + '</span></div><div class="rm">' + esc(targetMeta(t) || kindLabel(t)) + '</div></div>' +
+    '<div class="pills"><button class="pl ' + uCls(t.u) + '" data-a="pick-num" data-f="u" data-id="' + t.id + '" aria-label="긴급도 ' + (t.u == null ? '없음' : t.u) + ' 바꾸기">' + (t.u == null ? '–' : t.u) + '</button>' +
+    '<button class="pl ' + iCls(t.i) + '" data-a="pick-num" data-f="i" data-id="' + t.id + '" aria-label="중요도 ' + (t.i == null ? '없음' : t.i) + ' 바꾸기">' + (t.i == null ? '–' : t.i) + '</button></div></div></div>';
+}
+function renderMatrix(items) {
+  const cell = (u, i) => items.filter(t => t.u === u && t.i === i);
+  let h = '<div class="mx"><div class="mx-r"><span class="mx-h" style="font-size:10.5px;color:var(--tx3)">긴↓ 중→</span>' +
+    [0, 1, 2, 3, 4, 5].map(i => '<span class="mx-h ' + iCls(i) + '">' + i + '</span>').join('') + '</div>';
+  for (let u = 0; u <= 5; u++) {
+    h += '<div class="mx-r"><span class="mx-h ' + uCls(u) + '" style="height:48px">' + u + '</span>';
+    for (let i = 0; i <= 5; i++) {
+      const n = cell(u, i).length, sel = UI.mx && UI.mx[0] === u && UI.mx[1] === i;
+      h += '<button class="mx-c ' + (n === 0 ? 'z' : n <= 2 ? 'a' : n <= 5 ? 'b' : 'c') + (sel ? ' sel' : '') + '" data-a="mx" data-u="' + u + '" data-i="' + i + '" aria-label="긴급도 ' + u + ', 중요도 ' + i + ' — ' + n + '개">' + (n || '·') + '</button>';
+    }
+    h += '</div>';
+  }
+  h += '<div class="mx-cap"><span>왼쪽 위 = 급하고 중요함</span><span>오른쪽 아래 = 쉬는 중</span></div></div>';
+  const noNum = items.filter(t => t.u == null || t.i == null).length;
+  if (UI.mx) {
+    const sel = cell(UI.mx[0], UI.mx[1]);
+    h += '<div class="label">긴급도 ' + UI.mx[0] + ' · 중요도 ' + UI.mx[1] + '<small>' + sel.length + '개</small></div><div class="chips2">' +
+      sel.map(t => '<button class="tag" data-a="open" data-id="' + t.id + '">' + esc(t.name) + '</button>').join('') + '</div>';
+  } else h += '<div class="hint" style="padding-top:14px">칸을 누르면 그 칸의 목록이 나옵니다.' + (noNum ? ' 숫자를 아직 안 정한 항목 ' + noNum + '개는 판에 없습니다.' : '') + '</div>';
+  return h;
+}
+
+// ── ⑨ 기록 탭 ──
+function renderHist() {
+  let h = '<div class="vh"><h1>기록</h1>' + headActs() + '</div>';
+  h += '<div class="seg">' + [['snap', '판 보관'], ['days', '기도한 날'], ['ans', '응답']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
+  if (UI.histTab === 'snap') return h + renderSnaps();
+  if (UI.histTab === 'days') return h + renderCal();
+  return h + renderAnswers();
+}
+function renderSnaps() {
+  const mode = DB.set.sorts.snaps || 'new';
+  let list = DB.snaps.slice();
+  if (mode === 'new') list.sort((a, b) => b.at.localeCompare(a.at));
+  else if (mode === 'old') list.sort((a, b) => a.at.localeCompare(b.at));
+  else if (mode === 'name') list.sort((a, b) => (a.name || a.at).localeCompare(b.name || b.at, 'ko'));
+  let h = '<div class="hint">기도 지도를 날짜별로 얼려 둔 것 — 시트에서 탭을 복사하던 일을 대신합니다.</div>';
+  h += '<div style="padding:12px 20px 4px"><button class="ghost ac full" data-a="snap-now">' + ico('frame') + '지금 지도를 새 판으로 보관</button></div>';
+  if (!list.length) return h + '<div class="hint" style="padding-top:14px">아직 보관한 판이 없습니다. 예전 시트의 날짜 탭(22-0612 같은 것)도 \'시트에서 가져오기\' 로 판으로 넣을 수 있습니다.</div>';
+  h += '<div class="sorts"><span>정렬</span>' + [['new', '최신'], ['old', '오래된'], ['name', '이름'], ['mine', '내 순서']].map(s => '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="snap-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
+  const now = currentNames(DB);
+  return h + '<div class="rows" data-sort="snaps">' + list.map(s => {
+    const names = snapNames(s), df = diffNames(names, now);
+    return '<div class="row snap" data-id="' + s.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="snap" data-id="' + s.id + '">지우기</button></div>' +
+      '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="open-snap" data-id="' + s.id + '"><div class="rt"><span class="nm" style="font-variant-numeric:tabular-nums">' + esc(s.at) + '</span>' +
+      (s.name ? '<span style="color:var(--tx2);font-size:13px">' + esc(s.name) + '</span>' : '') + '</div><div class="rm">묶음 ' + s.G.length + ' · 이름 ' + names.size +
+      ' · 지금과 비교: 들어온 ' + df.added.length + ' · 빠진 ' + df.removed.length + '</div></div>' + ico('chevR') + '</div></div>';
+  }).join('') + '</div>';
+}
+function renderCal() {
+  const [y, m] = UI.calMonth.split('-').map(Number);
+  const first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate();
+  let total = 0, secs = 0;
+  let g = WEEK.map(w => '<span class="cal-w">' + w + '</span>').join('');
+  for (let k = 0; k < first.getDay(); k++) g += '<span class="cal-d x"></span>';
+  for (let d = 1; d <= days; d++) {
+    const ds = y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const L = DB.log[ds], n = L && L.d ? L.d.length : 0;
+    if (n) total++; if (L && L.s) secs += L.s;
+    const lv = n === 0 ? '' : n <= 3 ? ' l1' : n <= 9 ? ' l2' : ' l3';
+    g += '<button class="cal-d' + lv + (ds === TODAY ? ' t' : '') + (ds > TODAY ? ' f' : '') + (ds === UI.calDay ? ' sel' : '') + '" data-a="cal-day" data-v="' + ds + '">' + d + (n ? '<small>' + n + '</small>' : '') + '</button>';
+  }
+  let h = '<div class="cal"><div class="cal-h"><button class="ib" data-a="cal-nav" data-v="-1" aria-label="지난달">' + ico('chevR', '" style="transform:rotate(180deg)') + '</button><b>' + y + '년 ' + m + '월</b>' +
+    '<button class="ib" data-a="cal-nav" data-v="1" aria-label="다음달">' + ico('chevR') + '</button></div><div class="cal-g">' + g + '</div></div>';
+  h += '<div class="hint" style="padding-top:12px">이번 달 기도한 날 ' + total + '일' + (secs ? ' · 한 장씩 기도한 시간 ' + Math.round(secs / 60) + '분' : '') + '</div>';
+  if (UI.calDay) {
+    const L = DB.log[UI.calDay];
+    const ids = L && L.d ? L.d : [];
+    h += '<div class="label">' + shortDate(UI.calDay) + '<small>' + ids.length + '개' + (L && L.s ? ' · ' + Math.round(L.s / 60) + '분' : '') + '</small></div><div class="chips2">' +
+      (ids.length ? ids.map(id => { const t = findAny(DB, id); return t ? '<button class="tag" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>' : ''; }).join('') : '<span class="hint" style="padding:0">이날은 기록이 없습니다</span>') + '</div>';
+  }
+  return h;
+}
+function renderAnswers() {
+  const mode = DB.set.sorts.answers || 'recent';
+  let list = answeredList(DB);
+  const ranks = DB.set.ranks.answers || {};
+  if (mode === 'recent') list.sort((a, b) => b.tp.ans.localeCompare(a.tp.ans));
+  else if (mode === 'start') list.sort((a, b) => (a.tp.at || '').localeCompare(b.tp.at || ''));
+  else if (mode === 'name') list.sort((a, b) => a.t.name.localeCompare(b.t.name, 'ko'));
+  else list.sort((a, b) => ((ranks[a.tp.id] == null ? 1e9 : ranks[a.tp.id]) - (ranks[b.tp.id] == null ? 1e9 : ranks[b.tp.id])));
+  if (!list.length) return '<div class="empty"><svg viewBox="0 0 24 24" class="ico" style="width:40px;height:40px;margin:0 auto;color:var(--ans)"><line x1="12" y1="2.5" x2="12" y2="14"/><polyline points="8 10.5 12 14.5 16 10.5"/><path d="M4 16.5c2 2.5 5 4 8 4s6-1.5 8-4"/></svg>' +
+    '<h3>아직 응답 기록이 없습니다</h3><p>사람 카드에서 기도제목을 누르면 \'응답\' 으로 표시되고, 여기에 날짜와 함께 쌓입니다.</p></div>';
+  let h = '<div class="sorts"><span>정렬</span>' + [['recent', '최근 응답'], ['start', '시작한 날'], ['name', '이름'], ['mine', '내 순서']].map(s => '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="ans-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
+  return h + '<div class="rows" data-sort="answers">' + list.map(x => '<div class="row tp ans" data-id="' + x.tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act later" data-a="unanswer" data-tid="' + x.t.id + '" data-id="' + x.tp.id + '">응답 취소</button></div>' +
+    '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="' + (x.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + x.t.id + '"><div class="rt"><span class="nm">' + esc(x.tp.t) + '</span></div>' +
+    '<div class="rm">' + esc(x.t.name) + ' · ' + shortDate(x.tp.at) + ' 시작 → ' + shortDate(x.tp.ans) + ' 응답</div></div></div></div>').join('') + '</div>';
+}
+
+// ═══ 겹 화면 ═══
+function topLayerEl() { const els = [...$('layers').children].filter(e => !e.classList.contains('out')); return els[els.length - 1] || null; }
+function pushLayer(L) {
+  UI.layers.push(L);
+  const el = document.createElement('div');
+  el.className = 'layer';
+  $('layers').appendChild(el);
+  fillLayer(el, L);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
+}
+function popLayer() {
+  const el = topLayerEl(); if (!el) return;
+  UI.layers.pop();
+  el.classList.remove('in'); el.classList.add('out');
+  setTimeout(() => el.remove(), 360);
+  refresh({ skipTopEl: el });
+}
+function liveLayerEls() { return [...$('layers').children].filter(e => !e.classList.contains('out')); }
+function fillLayer(el, L) {
+  const fn = LAYERS[L.type];
+  if (!fn) return;
+  const r = fn(L);
+  if (r === null) { return; }
+  const body = el.querySelector('.lbody'), top = body ? body.scrollTop : 0;
+  el.innerHTML = '<div class="lhead">' + (r.menu ? '<button class="ib" data-a="' + r.menu + '" aria-label="메뉴">' + ico('dots') + '</button>' : '<span style="width:44px"></span>') +
+    '<div class="lh-title">' + esc(r.title) + '</div><button class="ib lh-x" data-a="pop" aria-label="닫기">' + ico('x') + '</button></div>' +
+    '<div class="lbody">' + r.body + '</div>';
+  const nb = el.querySelector('.lbody'); if (nb) nb.scrollTop = top;
+}
+function refreshLayers(skipTop) {
+  const els = liveLayerEls();
+  els.forEach((el, k) => {
+    if (skipTop && k === els.length - 1) return;
+    const L = UI.layers[k];
+    if (!L) return;
+    if (LAYER_GONE(L)) { return; }
+    fillLayer(el, L);
+  });
+}
+function LAYER_GONE(L) {
+  if (L.type === 'target') return !findT(DB, L.id);
+  if (L.type === 'group') return !findG(DB, L.id);
+  if (L.type === 'snap') return !DB.snaps.some(s => s.id === L.id);
+  return false;
+}
+function openTarget(id) { const t = findAny(DB, id); if (!t) return; if (t.kind === 'group') pushLayer({ type: 'group', id: id }); else pushLayer({ type: 'target', id: id }); }
+
+const LAYERS = {};
+// ③ 사람 · 기도 항목
+LAYERS.target = L => {
+  const t = findT(DB, L.id);
+  if (!t) return { title: '', body: '<div class="hint" style="padding-top:30px">지워진 항목입니다.</div>' };
+  const c = catOf(DB, t), s = subOf(DB, t);
+  let b = '<div class="hero"><input class="hero-name" value="' + esc(t.name) + '" data-f="name" data-id="' + t.id + '" aria-label="이름" autocomplete="off"><div class="hero-sub">' +
+    '<button class="tag" data-a="pick-cat" data-id="' + t.id + '">' + ico('folder') + esc(c ? c.name : '구분 없음') + '</button>';
+  if (t.kind === 'item') b += '<button class="tag" data-a="pick-sub" data-id="' + t.id + '">' + esc(s ? s.name : '분류 없음') + '</button>';
+  if (t.kind === 'person') {
+    groupsOf(DB, t.id).forEach(g => { b += '<button class="tag g" style="--gc:' + esc(g.color) + '" data-a="open-group" data-id="' + g.id + '">' + esc(g.name) + '</button>'; });
+    b += '<button class="tag add" data-a="join-group" data-id="' + t.id + '">+ 묶음</button>';
+  }
+  b += '</div></div>';
+  b += markPicker(t);
+  b += topicsBlock(t);
+  b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + t.id + '" placeholder="예) 전화 한번 하기 · 대화하며 풀기">' + esc(t.memo) + '</textarea>' +
+    '<div style="padding:10px 20px 0"' + (t.memo ? '' : ' hidden') + ' data-todo="1"><button class="ghost" data-a="todo" data-id="' + t.id + '">' + ico('up') + 'BLOCK7 할일로 보내기</button></div>';
+  b += prioBlock(t) + daysBlock(t) + stripBlock(t);
+  b += '<div class="label">메모</div><textarea class="field" rows="3" data-f="note" data-id="' + t.id + '" placeholder="마음에 두고 싶은 것">' + esc(t.note) + '</textarea>';
+  return { title: kindLabel(t), body: b, menu: 'target-menu' };
+};
+function markPicker(t) {
+  return '<div class="label">표시<small>' + (t.mark ? esc(markName(t.mark)) : '없음') + '</small><button class="r" data-a="marks" style="font-weight:400;color:var(--tx3);letter-spacing:0">색 이름 정하기</button></div><div class="marks">' +
+    MARKS.map(m => '<button class="mkb' + (t.mark === m ? ' on' : '') + '" data-a="set-mark" data-id="' + t.id + '" data-m="' + m + '" style="--m:' + markVar(m) + '" aria-label="' + esc(markName(m)) + '" aria-pressed="' + (t.mark === m) + '"><i></i></button>').join('') + '</div>';
+}
+function topicsBlock(t) {
+  return '<div class="label">기도제목<small>누르면 응답 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
+    (t.topics || []).map(tp => '<div class="row tp' + (tp.ans ? ' ans' : '') + '" data-id="' + tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="topic" data-tid="' + t.id + '" data-id="' + tp.id + '">지우기</button></div>' +
+      '<div class="row-f"><button class="tcircle" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '" aria-label="응답 표시"><i><svg viewBox="0 0 24 24">' + ICONS.check + '</svg></i></button>' +
+      '<div class="rb" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
+      (tp.ans ? '<span class="ansd">응답 · ' + shortDate(tp.ans) + '</span>' : '') + '</div></div>').join('') + '</div>' +
+    '<div class="addline"><input data-add="topic" data-id="' + t.id + '" placeholder="기도제목 더하기" enterkeyhint="done"><button class="ib" data-a="add-topic" data-id="' + t.id + '" aria-label="더하기">' + ico('plus') + '</button></div>';
+}
+function prioBlock(t) {
+  const row = (f, k) => '<div class="nums"><span class="k">' + k + '</span>' + [0, 1, 2, 3, 4, 5].map(n => {
+    const on = t[f] === n;
+    return '<button class="nb' + (on ? ' on ' + (f === 'u' ? 'u' : 'i') + n : '') + '" data-a="set-num" data-f="' + f + '" data-id="' + t.id + '" data-v="' + n + '" aria-pressed="' + on + '">' + n + '</button>';
+  }).join('') + '</div>';
+  const iv = intervalOf(DB, t);
+  const note = t.mark === 'red' ? '빨강(1순위)이라 숫자와 상관없이 매일, 맨 위에 나옵니다.'
+    : t.mark === 'gray' ? '쉬는 분이라 한 달에 한 번 차례가 옵니다.'
+    : iv === null ? '정하지 않음 — 묶음 줄 안에서 함께 기도합니다. 같은 숫자를 다시 누르면 비웁니다.'
+    : (iv === 1 ? '날마다' : iv + '일마다') + ' 차례가 옵니다. 같은 숫자를 다시 누르면 비웁니다.';
+  return '<div class="label">얼마나 자주 · 얼마나 위에</div>' + row('u', '긴급도') + row('i', '중요도') + '<div class="hint">' + note + '</div>';
+}
+function daysBlock(t) {
+  return '<div class="label">요일<small>고른 요일에는 꼭 나옵니다</small></div><div class="days">' + WEEK.map((w, d) =>
+    '<button class="dy' + (t.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + t.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>';
+}
+function stripBlock(t) {
+  let s = '';
+  for (let k = 13; k >= 0; k--) { const ds = addDays(TODAY, -k); const L = DB.log[ds]; s += '<i class="' + (L && L.d && L.d.indexOf(t.id) >= 0 ? 'on' : '') + '" title="' + ds + '"></i>'; }
+  return '<div class="label">기도한 날<small>' + (t.last ? '마지막 ' + shortDate(t.last) : '아직 없음') + '</small></div><div class="strip">' + s + '</div>' +
+    '<div class="hint" style="display:flex;justify-content:space-between"><span>2주 전</span><span>오늘</span></div>';
+}
+// ④ 묶음
+LAYERS.group = L => {
+  const g = findG(DB, L.id);
+  if (!g) return { title: '', body: '<div class="hint" style="padding-top:30px">지워진 묶음입니다.</div>' };
+  const parent = g.parent && findG(DB, g.parent);
+  const kids = childrenOf(DB, g.id);
+  let b = '<div class="hero"><input class="hero-name" value="' + esc(g.name) + '" data-f="name" data-id="' + g.id + '" aria-label="묶음 이름" autocomplete="off"><div class="hero-sub">' +
+    '<button class="tag g" style="--gc:' + esc(g.color) + '" data-a="pick-color" data-id="' + g.id + '">띠 색 바꾸기</button>' +
+    '<button class="tag" data-a="pick-parent" data-id="' + g.id + '">' + esc(parent ? '위 묶음 · ' + parent.name : '큰 묶음') + '</button>' +
+    '<span class="tag" style="border:0;background:transparent">' + groupHeadcount(DB, g) + '명</span></div></div>';
+  b += '<div class="label">가정 · 줄<small>연필로 고치기 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="lines:' + g.id + '">' +
+    g.lines.map(l => '<div class="row lnrow" data-id="' + l.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="line" data-gid="' + g.id + '" data-id="' + l.id + '">지우기</button></div>' +
+      '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="edit-line" data-gid="' + g.id + '" data-id="' + l.id + '">' + lineView(l) + '</div>' +
+      '<button class="ib" data-a="edit-line" data-gid="' + g.id + '" data-id="' + l.id + '" aria-label="줄 고치기">' + ico('edit') + '</button></div></div>').join('') + '</div>' +
+    '<div class="addline"><input data-add="line" data-id="' + g.id + '" placeholder="이름 — \'김은중 / 담당 교사 / 가족\' 처럼 / 로 나눌 수 있어요" enterkeyhint="done"><button class="ib" data-a="add-line" data-id="' + g.id + '" aria-label="줄 더하기">' + ico('plus') + '</button></div>' +
+    '<div style="padding:8px 20px 0"><button class="ghost" data-a="paste-lines" data-id="' + g.id + '">여러 줄 붙여넣기</button></div>';
+  if (!g.parent) {
+    b += '<div class="label">작은 묶음<small>' + kids.length + '</small></div><div class="rows" data-sort="subs:' + g.id + '">' + kids.map(k =>
+      '<div class="row" data-id="' + k.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="group" data-id="' + k.id + '">지우기</button></div>' +
+      '<div class="row-f"><i class="dot16" style="--gc:' + esc(k.color) + '"></i><div class="rb" data-a="open-group" data-id="' + k.id + '"><div class="rt"><span class="nm">' + esc(k.name) + '</span></div><div class="rm">' +
+      groupHeadcount(DB, k) + '명' + (k.days.length ? ' · ' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') : '') + '</div></div>' + ico('chevR') + '</div></div>').join('') + '</div>' +
+      '<div style="padding:8px 20px 0"><button class="ghost" data-a="add-sub" data-id="' + g.id + '">+ 작은 묶음</button></div>';
+  }
+  b += '<div class="label">요일 · 때</div><div class="days">' + WEEK.map((w, d) => '<button class="dy' + (g.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + g.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>' +
+    '<input class="field" data-f="time" data-id="' + g.id + '" value="' + esc(g.time) + '" placeholder="때 — 오전 · 오후 · 저녁" autocomplete="off">';
+  b += prioBlock(g) + markPicker(g) + topicsBlock(g);
+  b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + g.id + '" placeholder="이 묶음을 위해 할 일">' + esc(g.memo) + '</textarea>' +
+    '<div style="padding:10px 20px 0"' + (g.memo ? '' : ' hidden') + ' data-todo="1"><button class="ghost" data-a="todo" data-id="' + g.id + '">' + ico('up') + 'BLOCK7 할일로 보내기</button></div>';
+  b += stripBlock(g);
+  b += '<div class="label">메모</div><textarea class="field" rows="3" data-f="note" data-id="' + g.id + '">' + esc(g.note) + '</textarea>';
+  return { title: parent ? parent.name + ' › 작은 묶음' : '묶음', body: b, menu: 'group-menu' };
+};
+function lineView(l) {
+  if (l.text && !(l.segs || []).length) return '<div class="ln note" style="font-size:14px">' + esc(l.text) + '</div>';
+  return '<div class="ln">' + l.segs.map(seg => seg.map(pid => {
+    const p = findT(DB, pid); if (!p) return '';
+    const role = l.r && l.r[pid];
+    const style = p.mark && p.mark !== 'gray' ? ' style="--pc:' + markVar(p.mark) + '"' : '';
+    return '<button class="pn' + (p.mark === 'gray' ? ' rest' : '') + (role === '인도' ? ' lead' : '') + '"' + style + ' data-a="open" data-id="' + pid + '">' + (role && role !== '인도' ? '<span class="role">' + esc(role) + '</span>' : '') + esc(p.name) + '</button>';
+  }).join(' ')).join(' <span class="sep">/</span> ') + '</div>';
+}
+// 묶음 목록 (순서 바꾸기)
+LAYERS.groups = () => {
+  const tops = topGroups(DB);
+  const b = '<div class="hint">길게 눌러 지도의 순서를 바꿉니다 · 밀면 지우기 (작은 묶음도 함께)</div><div class="rows" data-sort="groups">' + tops.map(g =>
+    '<div class="row" data-id="' + g.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="group" data-id="' + g.id + '">지우기</button></div>' +
+    '<div class="row-f"><i class="dot16" style="--gc:' + esc(g.color) + '"></i><div class="rb" data-a="open-group" data-id="' + g.id + '"><div class="rt"><span class="nm">' + esc(g.name) + '</span></div><div class="rm">' +
+    groupHeadcount(DB, g) + '명 · 작은 묶음 ' + childrenOf(DB, g.id).length + '</div></div><span class="grip">' + ico('grip') + '</span></div></div>').join('') + '</div>' +
+    '<div style="padding:12px 20px 0"><button class="ghost" data-a="add-group">+ 묶음 만들기</button></div>';
+  return { title: '묶음 순서', body: b };
+};
+// 설정
+LAYERS.settings = () => {
+  const p = themeById(DB.set.preset);
+  const modeName = { dark: '다크', light: '라이트', system: '시스템' }[DB.set.mode] || '다크';
+  let b = '<div class="label">화면</div><div class="set-g"><button class="set-r" data-a="theme">' + ico('theme') + '색상 테마<span class="v">' + esc((p ? p.name : '기도노트 기본') + ' · ' + modeName) + ico('chevR') + '</span></button>' +
+    '<button class="set-r" data-a="marks">' + ico('dots4') + '표시 색 이름<span class="v">' + ico('chevR') + '</span></button></div>';
+  b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
+    '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
+    '<button class="set-r" data-a="groups">' + ico('map') + '묶음 순서 · 지우기<span class="v">' + topGroups(DB).length + ico('chevR') + '</span></button></div>';
+  b += '<div class="label">오늘 목록</div><div class="set-g"><div class="set-r">1순위 처음 보일 개수<span class="step"><button data-a="step" data-k="topLimit" data-v="-1" aria-label="줄이기">−</button><b>' + DB.set.topLimit + '</b><button data-a="step" data-k="topLimit" data-v="1" aria-label="늘리기">+</button></span></div></div>';
+  b += '<div class="label">긴급도마다 며칠에 한 번<small>0 이 가장 급함</small></div><div class="set-g">' + DB.set.iv.map((v, k) =>
+    '<div class="set-r"><span class="pl ' + uCls(k) + '">' + k + '</span>' + (v === 1 ? '날마다' : v + '일마다') + '<span class="step"><button data-a="step" data-k="iv" data-n="' + k + '" data-v="-1" aria-label="줄이기">−</button><b>' + v + '</b><button data-a="step" data-k="iv" data-n="' + k + '" data-v="1" aria-label="늘리기">+</button></span></div>').join('') + '</div>';
+  b += '<div class="label">지도</div><input class="field" data-f="maptitle" value="' + esc(DB.set.mapTitle) + '" placeholder="지도 제목 (예: SOULS OF HEAVENLY FAMILY)" autocomplete="off">';
+  b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="import">' + ico('down') + '시트에서 가져오기<span class="v">' + ico('chevR') + '</span></button>' +
+    '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
+    '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
+    '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  b += '<div class="hint" style="padding:20px 20px 0">자료는 이 기기에만 저장됩니다 (로그인·기기 사이 맞추기는 다음 단계). 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/</div>';
+  b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
+  return { title: '설정', body: b };
+};
+LAYERS.theme = () => {
+  const mode = DB.set.mode;
+  const em = effMode(DB.set);
+  const sw = cols => '<span class="thsw">' + cols.map(c => '<i style="background:' + c + '"></i>').join('') + '</span>';
+  let b = '<div class="seg">' + [['dark', '다크'], ['light', '라이트'], ['system', '시스템']].map(m => '<button class="' + (mode === m[0] ? 'on' : '') + '" data-a="set-mode" data-v="' + m[0] + '">' + m[1] + '</button>').join('') + '</div>';
+  b += '<div class="hint">BLOCK7 · Sweeter 와 같은 테마입니다. 여기서 고른 것은 기도노트에만 적용됩니다.</div>';
+  const def = em === 'light' ? ['#f6f3ec', '#ffffff', '#1f1b16', '#9a7330', '#6a4fb3'] : ['#0d0e10', '#15171b', '#ece8e0', '#dab87a', '#a892d6'];
+  b += '<div class="set-g" style="margin-top:12px"><button class="throw" data-a="set-preset" data-v="">' + sw(def) + '<span class="nm">기도노트 기본</span>' + (!DB.set.preset ? '<span class="ok">' + ico('check') + '</span>' : '') + '</button></div>';
+  Object.keys(THEME_GROUPS).forEach(gk => {
+    const gg = THEME_GROUPS[gk];
+    b += '<div class="label">' + esc(gg.label) + '<small>' + esc(gg.desc) + '</small></div><div class="set-g">' + THEME_PRESETS.filter(p => p.group === gk).map(p =>
+      '<button class="throw" data-a="set-preset" data-v="' + esc(p.id) + '"><span class="no">' + themeNo(p) + '</span>' + sw(em === 'light' ? p.light : p.dark) + '<span class="nm">' + esc(p.name) + '</span>' +
+      (DB.set.preset === p.id ? '<span class="ok">' + ico('check') + '</span>' : '') + '</button>').join('') + '</div>';
+  });
+  return { title: '색상 테마', body: b };
+};
+LAYERS.marks = () => {
+  const count = m => [...DB.T, ...DB.G].filter(t => t.mark === m).length;
+  let b = '<div class="hint">사람과 기도 대상에 칠하는 색입니다. 빨강 · 회색은 뜻이 정해져 있고, 나머지 여섯은 그때그때 이름을 붙여 쓰세요.</div><div class="set-g" style="margin-top:12px">';
+  MARKS.forEach(m => {
+    const fixed = MARK_FIXED[m];
+    b += '<div class="set-r" style="--m:' + markVar(m) + '"><i class="mk" style="width:14px;height:14px;border-radius:7px"></i>' +
+      (fixed ? '<span>' + esc(fixed) + '<div style="font-size:12px;color:var(--tx3)">' + (m === 'red' ? '매일, 오늘 목록 맨 위' : '한 달에 한 번 · 지도에서 흐리게') + '</div></span><span class="v">' + count(m) + ico('lock') + '</span>'
+        : '<label style="width:34px;font-size:13px;color:var(--tx3)" for="mk-' + m + '">' + MARK_COLOR_NAME[m] + '</label><input id="mk-' + m + '" data-f="markname" data-m="' + m + '" value="' + esc(DB.marks[m]) + '" placeholder="이름 붙이기" style="flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:15px;height:44px" autocomplete="off"><span class="v">' + count(m) + '</span>') + '</div>';
+  });
+  b += '</div><div class="hint" style="padding-top:12px">이름을 바꿔도 칠해 둔 사람은 그대로입니다. 판을 보관할 때 그때의 색 이름도 함께 남습니다.</div>';
+  return { title: '표시 색', body: b };
+};
+function catLayer(kind) {
+  const arr = kind === 'cats' ? DB.cats : DB.subs;
+  const used = id => DB.T.filter(t => (kind === 'cats' ? t.cat : t.sub) === id).length;
+  let b = '<div class="hint">' + (kind === 'cats' ? '목록의 구분입니다 (성도 · 모임 · 부서 …).' : '부서를 성격에 따라 묶는 위 분류입니다.') + ' 이름을 눌러 고치고, 길게 눌러 순서를 바꾸고, 밀어서 지웁니다.</div>';
+  b += '<div class="rows" data-sort="' + kind + '">' + arr.map(c => '<div class="row" data-id="' + c.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="' + kind + '" data-id="' + c.id + '">지우기</button></div>' +
+    '<div class="row-f" style="padding-left:20px"><input data-f="' + (kind === 'cats' ? 'catname' : 'subname') + '" data-id="' + c.id + '" value="' + esc(c.name) + '" style="flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:15px;height:44px" autocomplete="off">' +
+    '<span style="font-size:12.5px;color:var(--tx3);margin-right:8px">' + used(c.id) + '</span>' +
+    (kind === 'cats' ? '<button class="tag" data-a="cat-person" data-id="' + c.id + '" style="height:28px">' + (c.person ? '사람' : '항목') + '</button>' : '') +
+    '<span class="grip">' + ico('grip') + '</span></div></div>').join('') + '</div>';
+  b += '<div class="addline"><input data-add="' + kind + '" placeholder="' + (kind === 'cats' ? '새 구분' : '새 분류') + '" enterkeyhint="done"><button class="ib" data-a="add-' + kind + '" aria-label="더하기">' + ico('plus') + '</button></div>';
+  if (kind === 'cats') b += '<div class="hint" style="padding-top:12px">\'사람\' 구분(성도 · 방문자)에서 가져온 \'내용\' 은 실천으로, \'항목\' 구분의 \'내용\' 은 기도제목으로 들어갑니다.</div>';
+  return { title: kind === 'cats' ? '구분' : '부서 상위 분류', body: b };
+}
+LAYERS.cats = () => catLayer('cats');
+LAYERS.subcats = () => catLayer('subcats');
+// 지난 판 보기
+LAYERS.snap = L => {
+  const s = DB.snaps.find(x => x.id === L.id);
+  if (!s) return { title: '', body: '' };
+  const df = diffNames(snapNames(s), currentNames(DB));
+  let b = '<div class="hero"><div style="font-size:13px;color:var(--tx3);font-variant-numeric:tabular-nums">' + esc(s.at) + ' 판 · 읽기 전용</div>' +
+    '<input class="hero-name" style="font-size:24px" value="' + esc(s.name) + '" placeholder="판 이름 (선택)" data-f="snapname" data-id="' + s.id + '" autocomplete="off"></div>';
+  const used = MARKS.filter(m => Object.values(s.P).some(p => p.mark === m));
+  if (used.length) b += '<div class="chips2">' + used.map(m => '<span class="tag" style="--m:' + markVar(m) + '"><i class="mk"></i>' + esc(markName(m, s.marks)) + '</span>').join('') + '</div>';
+  b += '<div class="label">지금과 비교<small>들어온 ' + df.added.length + ' · 빠진 ' + df.removed.length + '</small></div>';
+  if (df.added.length) b += '<div class="hint"><b style="color:var(--tx2);font-weight:600">들어온 이름</b> ' + df.added.map(esc).join(', ') + '</div>';
+  if (df.removed.length) b += '<div class="hint"><b style="color:var(--tx2);font-weight:600">빠진 이름</b> ' + df.removed.map(esc).join(', ') + '</div>';
+  b += '<div class="label">그날의 지도</div>' + mapCards(mapSource(s), {});
+  return { title: '지난 판', body: b };
+};
+// ⑩ 가져오기
+LAYERS.import = () => {
+  const S = UI.imp || (UI.imp = { step: 1, text: '' });
+  let b = '';
+  if (S.step === 1) {
+    b += '<div class="hint">구글 시트에서 <b style="color:var(--tx2)">파일 → 다운로드 → CSV</b> 로 받은 파일을 고르거나, 시트에서 칸을 골라 복사한 것을 붙여 넣으세요. 우선순위 표(Sheet2)와 기도 지도(24-0303 같은 날짜 탭) 둘 다 읽습니다.</div>' +
+      '<div style="padding:14px 20px 0"><button class="ghost full" data-a="imp-file">' + ico('down') + 'CSV 파일 고르기</button><input type="file" id="impFile" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></div>' +
+      '<div class="label">또는 붙여넣기</div><textarea class="field" id="impText" rows="7" placeholder="여기에 붙여 넣기">' + esc(S.text) + '</textarea>' +
+      '<div style="padding:14px 20px 0"><button class="cta" style="margin:0;width:100%" data-a="imp-read">읽기</button></div>' +
+      '<div class="hint" style="padding-top:16px">가져온 자료는 이 기기에만 저장됩니다. 이미 있는 것은 이름이 같으면 고쳐 쓰고, 지우지는 않습니다.</div>';
+    return { title: '시트에서 가져오기', body: b };
+  }
+  if (S.fmt === 'sheet2') {
+    const head = S.rows.find(r => r.indexOf('구분') >= 0) || [];
+    const cC = head.indexOf('구분');
+    const counts = {};
+    S.rows.forEach(r => { const c = r[cC]; if (c && c !== '구분' && r[head.indexOf('항목')]) counts[c] = (counts[c] || 0) + 1; });
+    b += '<div class="label">우선순위 표로 읽었습니다</div><div class="set-g">' + Object.keys(counts).map(k => '<div class="set-r">' + esc(k) + '<span class="v">' + counts[k] + '</span></div>').join('') + '</div>' +
+      '<div class="hint" style="padding-top:12px">구분 · 항목 · 내용 · 긴급도 · 중요도를 가져옵니다. 오른쪽에 부서를 덩어리로 모아 둔 칸이 있으면 상위 분류를 붙입니다.</div>' +
+      '<div class="sh-acts"><button class="ghost" data-a="imp-back">뒤로</button><button class="cta" data-a="imp-go">가져오기</button></div>';
+    return { title: '시트에서 가져오기', body: b };
+  }
+  // 기도 지도
+  const P = S.parsed;
+  b += '<div class="label">기도 지도로 읽었습니다' + (P.date ? '<small>' + esc(P.date) + '</small>' : '') + '</div>';
+  if (P.title) b += '<div class="hint">제목 — ' + esc(P.title) + '</div>';
+  b += '<div class="seg" style="margin-top:12px"><button class="' + (S.mode === 'replace' ? 'on' : '') + '" data-a="imp-mode" data-v="replace">지금 지도로</button><button class="' + (S.mode === 'snap' ? 'on' : '') + '" data-a="imp-mode" data-v="snap">지난 판으로 보관</button></div>' +
+    '<div class="hint">' + (S.mode === 'replace' ? (DB.G.length ? '지금 지도는 먼저 판으로 보관한 뒤 바꿉니다. 사람 카드(기도제목·기록)는 그대로 남습니다.' : '이 시트가 지금 지도가 됩니다.') : '지금 지도는 그대로 두고, ' + (P.date ? sheetDate(P.date) : '오늘') + ' 판으로만 넣습니다.') + '</div>';
+  b += '<div class="label">이렇게 읽었습니다 — 맞나요?<small>틀린 것만 바꾸세요</small></div>';
+  const kinds = [['group', '묶음'], ['sub', '작은 묶음'], ['lines', '이름 줄'], ['skip', '빼기']];
+  b += P.blocks.map(bk => '<div style="padding:10px 20px;border-bottom:1px solid var(--bd)"><div style="display:flex;align-items:baseline;gap:8px"><b style="font-weight:600;font-size:15px;' + (bk.kind === 'skip' ? 'opacity:.4;text-decoration:line-through' : '') + '">' + esc(bk.cells[0]) + '</b>' +
+    (bk.cells.length > 1 ? '<span style="font-size:12.5px;color:var(--tx3)">+ ' + (bk.cells.length - 1) + '줄 · ' + esc(bk.cells.slice(1, 3).join(' / ')) + (bk.cells.length > 3 ? ' …' : '') + '</span>' : '') + '</div>' +
+    '<div class="seg" style="margin:8px 0 0">' + kinds.map(k => '<button class="' + (bk.kind === k[0] ? 'on' : '') + '" data-a="imp-kind" data-id="' + bk.id + '" data-v="' + k[0] + '">' + k[1] + '</button>').join('') + '</div></div>').join('');
+  b += '<div class="sh-acts" style="padding-bottom:10px"><button class="ghost" data-a="imp-back">뒤로</button><button class="cta" data-a="imp-go">가져오기</button></div>';
+  return { title: '시트에서 가져오기', body: b };
+};
+
+// ═══ 아래에서 올라오는 창 ═══
+let SHEET = null;
+function openSheet(html, onPick) {
+  closeSheet(true);
+  const w = document.createElement('div');
+  w.className = 'sh-wrap';
+  w.innerHTML = '<div class="sh-bd" data-a="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="sh-grab"><i></i></div>' + html + '</div>';
+  document.body.appendChild(w);
+  w._pick = onPick || null;
+  SHEET = w;
+  requestAnimationFrame(() => requestAnimationFrame(() => w.classList.add('in')));
+  return w;
+}
+function closeSheet(now) {
+  const w = SHEET; if (!w) return; SHEET = null;
+  if (now) { w.remove(); return; }
+  w.classList.remove('in'); setTimeout(() => w.remove(), 340);
+}
+function choose(title, opts, cur, fn, sub) {
+  return openSheet('<div class="sh-t">' + esc(title) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div><div class="sh-b">' + opts.map(o =>
+    '<button class="opt' + (o.danger ? ' danger' : '') + '" data-a="pick" data-v="' + esc(o.v) + '">' + (o.sw ? '<i class="dot16" style="--gc:' + esc(o.sw) + ';margin:0"></i>' : '') +
+    '<span><div>' + esc(o.label) + '</div>' + (o.desc ? '<div class="d">' + esc(o.desc) + '</div>' : '') + '</span>' + (String(o.v) === String(cur) ? '<span class="ck">' + ico('check') + '</span>' : '') + '</button>').join('') + '</div>', fn);
+}
+function askText(title, value, placeholder, fn, opt) {
+  const multi = opt && opt.multi;
+  const w = openSheet('<div class="sh-t">' + esc(title) + '</div>' + (multi
+    ? '<textarea class="field" id="askIn" rows="7" placeholder="' + esc(placeholder || '') + '">' + esc(value || '') + '</textarea>'
+    : '<input class="field" id="askIn" value="' + esc(value || '') + '" placeholder="' + esc(placeholder || '') + '" autocomplete="off" enterkeyhint="done">') +
+    (opt && opt.hint ? '<div class="hint">' + esc(opt.hint) + '</div>' : '') +
+    '<div class="sh-acts">' + (opt && opt.del ? '<button class="ghost" data-a="ask-del" style="color:var(--danger)">지우기</button>' : '') + '<button class="cta" data-a="ask-ok">' + esc((opt && opt.ok) || '저장') + '</button></div>', fn);
+  w._del = opt && opt.del;
+  setTimeout(() => { const i = $('askIn'); if (i) { i.focus(); if (!multi) i.setSelectionRange(i.value.length, i.value.length); } }, 360);
+  return w;
+}
+
+// ═══ 동작 ═══
+const ACT = {};
+function doAct(el, e) { const f = ACT[el.dataset.a]; if (f) f(el, e); }
+function closeAllLayers() { liveLayerEls().forEach(x => { x.classList.remove('in'); x.classList.add('out'); setTimeout(() => x.remove(), 360); }); UI.layers = []; }
+ACT.tab = el => { if (UI.layers.length) closeAllLayers(); showTab(el.dataset.tab); $('v-' + el.dataset.tab).scrollTop = 0; };
+ACT.pop = () => popLayer();
+ACT.settings = () => pushLayer({ type: 'settings' });
+ACT.theme = () => pushLayer({ type: 'theme' });
+ACT.marks = () => pushLayer({ type: 'marks' });
+ACT.cats = () => pushLayer({ type: 'cats' });
+ACT.subcats = () => pushLayer({ type: 'subcats' });
+ACT.groups = () => pushLayer({ type: 'groups' });
+ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' }); };
+ACT.open = el => openTarget(el.dataset.id);
+ACT['open-group'] = el => pushLayer({ type: 'group', id: el.dataset.id });
+ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
+ACT['sheet-close'] = () => closeSheet();
+ACT.pick = el => { const w = SHEET; const fn = w && w._pick; closeSheet(); if (fn) fn(el.dataset.v); };
+ACT['ask-ok'] = () => { const w = SHEET; const i = $('askIn'); const v = i ? i.value : ''; const fn = w && w._pick; closeSheet(); if (fn) fn(v); };
+ACT['ask-del'] = () => { const w = SHEET; const fn = w && w._del; closeSheet(); if (fn) fn(); };
+ACT['toast-act'] = () => { const t = $('toast'); const fn = t._fn; t._fn = null; t.classList.remove('on'); if (fn) fn(); };
+
+// 오늘
+ACT.fold = el => { const k = el.dataset.k; DB.set.folds[k] = !DB.set.folds[k]; save(); renderView(); };
+ACT.more = () => { UI.more.top = !UI.more.top; renderView(); };
+ACT.showdone = el => { const k = el.dataset.k; UI.showDone[k] = !UI.showDone[k]; renderView(); };
+ACT.check = el => {
+  const id = el.dataset.id, row = el.closest('.row');
+  const nowDone = toggleDone(DB, id, TODAY);
+  save();
+  if (nowDone && row) {
+    row.classList.add('checking');
+    if (navigator.vibrate) navigator.vibrate(8);
+    setTimeout(() => animateGone(row, () => { refresh(); }), 260);
+  } else refresh();
+};
+ACT.later = el => {
+  const id = el.dataset.id, row = el.closest('.row');
+  const before = JSON.stringify(DB);
+  postpone(DB, id, TODAY); save();
+  animateGone(row, () => { refresh(); toast('내일로 넘겼습니다', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); }); });
+};
+ACT['sort-today'] = () => choose('오늘 목록 정렬', [
+  { v: 'imp', label: '중요도 순', desc: '중요도 → 긴급도 → 이름' }, { v: 'urg', label: '긴급도 순' }, { v: 'name', label: '이름 순' },
+  { v: 'mine', label: '내 순서', desc: '줄을 길게 눌러 끌어 정한 순서' }], DB.set.sorts.today || 'imp', v => { DB.set.sorts.today = v; save(); renderView(); });
+ACT.focus = () => openFocus();
+ACT['focus-close'] = () => closeFocus();
+ACT['focus-amen'] = () => focusNext(true);
+ACT['focus-skip'] = () => focusNext(false);
+ACT.todo = el => {
+  const t = findAny(DB, el.dataset.id); if (!t || !t.memo) return;
+  const text = t.memo + ' — ' + t.name;
+  copyText(text);
+  DB.todo.push({ id: uid(), text: text, from: t.id, at: new Date().toISOString() }); save();
+  F.sent[t.id] = true;
+  if (el.closest('.f-card')) { el.classList.add('ac'); el.textContent = 'BLOCK7 할일로 보냄 ✓'; }
+  toast('복사했습니다 — BLOCK7 할일에 붙여 넣으세요 (자동으로 보내기는 로그인 단계에서)');
+};
+
+// 지도
+ACT['map-search'] = () => { UI.mapSearch = !UI.mapSearch; if (!UI.mapSearch) UI.mapQuery = ''; renderView(); if (UI.mapSearch) setTimeout(() => { const i = $('mapQ'); if (i) i.focus(); }, 30); };
+ACT['map-filter'] = el => { UI.mapFilter = UI.mapFilter === el.dataset.m ? '' : el.dataset.m; renderView(); };
+ACT['map-menu'] = () => choose('지도', [
+  { v: 'add', label: '묶음 만들기' }, { v: 'order', label: '묶음 순서 바꾸기 · 지우기' },
+  { v: 'mine', label: '보기: 내 순서', desc: '묶음 순서 화면에서 끌어 정한 순서' }, { v: 'name', label: '보기: 이름 순' }, { v: 'size', label: '보기: 사람 많은 순' },
+  { v: 'snap', label: '지금 지도를 판으로 보관' }, { v: 'import', label: '시트에서 가져오기' }], 'x', v => {
+  if (v === 'add') ACT['add-group']();
+  else if (v === 'order') pushLayer({ type: 'groups' });
+  else if (v === 'snap') ACT['snap-now']();
+  else if (v === 'import') ACT.import();
+  else { DB.set.sorts.map = v; save(); renderView(); }
+});
+ACT['add-group'] = () => askText('새 묶음', '', '묶음 이름 (예: 조명팀)', v => {
+  v = v.trim(); if (!v) return;
+  const g = newGroup(v, GROUP_COLORS[DB.G.length % GROUP_COLORS.length]); DB.G.push(g); save(); refresh(); pushLayer({ type: 'group', id: g.id });
+}, { ok: '만들기' });
+ACT['add-sub'] = el => askText('새 작은 묶음', '', '이름 (예: 13세 가족)', v => {
+  v = v.trim(); if (!v) return;
+  const p = findG(DB, el.dataset.id); const g = newGroup(v, p ? p.color : GROUP_COLORS[0]); g.parent = el.dataset.id; DB.G.push(g); save(); refresh(); pushLayer({ type: 'group', id: g.id });
+}, { ok: '만들기' });
+
+// 목록
+ACT['list-view'] = el => { UI.listView = el.dataset.v; renderView(); };
+ACT['list-cat'] = el => { UI.listCat = el.dataset.v; UI.mx = null; renderView(); };
+ACT['list-sort'] = el => { DB.set.sorts.list = el.dataset.v; save(); renderView(); };
+ACT['list-group'] = () => { UI.listGrouped = !UI.listGrouped; renderView(); };
+ACT['list-og'] = el => { UI.openG[el.dataset.k] = !UI.openG[el.dataset.k]; renderView(); };
+ACT.mx = el => { const u = +el.dataset.u, i = +el.dataset.i; UI.mx = UI.mx && UI.mx[0] === u && UI.mx[1] === i ? null : [u, i]; renderView(); };
+ACT['pick-num'] = el => {
+  const t = findAny(DB, el.dataset.id), f = el.dataset.f; if (!t) return;
+  const name = f === 'u' ? '긴급도' : '중요도';
+  openSheet('<div class="sh-t">' + esc(t.name) + '<small>' + name + ' — 0 이 가장 높음</small></div><div class="numpick">' + [0, 1, 2, 3, 4, 5].map(n =>
+    '<button class="' + (f === 'u' ? 'u' : 'i') + n + (t[f] === n ? ' sel' : '') + '" data-a="pick" data-v="' + n + '">' + n + '</button>').join('') + '</div>' +
+    '<div class="sh-acts"><button class="ghost" data-a="pick" data-v="">비우기</button></div>', v => { t[f] = v === '' ? null : +v; save(); refresh(); });
+};
+ACT['add-target'] = () => {
+  let kind = 'person', cat = (DB.cats.find(c => c.person) || {}).id || '';
+  const draw = () => '<div class="sh-t">새로 추가</div><input class="field" id="addName" placeholder="이름" autocomplete="off" enterkeyhint="done">' +
+    '<div class="seg" style="margin-top:12px"><button class="' + (kind === 'person' ? 'on' : '') + '" data-a="add-kind" data-v="person">사람</button><button class="' + (kind === 'item' ? 'on' : '') + '" data-a="add-kind" data-v="item">기도 항목</button></div>' +
+    '<div class="chips2" style="padding-top:8px">' + DB.cats.map(c => '<button class="chip' + (c.id === cat ? ' on' : '') + '" data-a="add-cat" data-v="' + c.id + '">' + esc(c.name) + '</button>').join('') + '</div>' +
+    '<div class="sh-acts"><button class="cta" data-a="add-ok">만들기</button></div>';
+  const w = openSheet(draw());
+  const redraw = () => { const nm = $('addName').value; w.querySelector('.sheet').innerHTML = '<div class="sh-grab"><i></i></div>' + draw(); $('addName').value = nm; };
+  w._kind = v => { kind = v; const c = DB.cats.find(x => x.person === (v === 'person')); if (c) cat = c.id; redraw(); };
+  w._cat = v => { cat = v; const c = DB.cats.find(x => x.id === v); if (c) kind = c.person ? 'person' : 'item'; redraw(); };
+  w._ok = () => { const nm = $('addName').value.trim(); if (!nm) { $('addName').focus(); return; } const t = newTarget(kind, nm); t.cat = cat; DB.T.push(t); save(); closeSheet(); refresh(); pushLayer({ type: 'target', id: t.id }); };
+  setTimeout(() => { const i = $('addName'); if (i) i.focus(); }, 360);
+};
+ACT['add-kind'] = el => SHEET && SHEET._kind && SHEET._kind(el.dataset.v);
+ACT['add-cat'] = el => SHEET && SHEET._cat && SHEET._cat(el.dataset.v);
+ACT['add-ok'] = () => SHEET && SHEET._ok && SHEET._ok();
+
+// 상세 (사람 · 항목 · 묶음 공통)
+ACT['set-mark'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.mark = t.mark === el.dataset.m ? '' : el.dataset.m; save(); refresh(); };
+ACT['set-num'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const f = el.dataset.f, v = +el.dataset.v; t[f] = t[f] === v ? null : v; save(); refresh(); };
+ACT['set-day'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const d = +el.dataset.v; const k = t.days.indexOf(d); if (k >= 0) t.days.splice(k, 1); else { t.days.push(d); t.days.sort(); } save(); refresh(); };
+ACT.answer = el => {
+  const t = findAny(DB, el.dataset.tid); if (!t) return;
+  const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return;
+  tp.ans = tp.ans ? '' : TODAY; save(); refresh();
+  if (tp.ans) toast('응답으로 적었습니다 — 기록 탭 \'응답\' 에 쌓입니다');
+};
+ACT.unanswer = el => { const t = findAny(DB, el.dataset.tid); if (!t) return; const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return; withUndo('응답 표시를 지웠습니다', () => { tp.ans = ''; }); };
+ACT['add-topic'] = el => { const inp = el.parentElement.querySelector('input'); addTopic(el.dataset.id, inp); };
+function addTopic(id, inp) {
+  const t = findAny(DB, id); const v = (inp.value || '').trim(); if (!t || !v) return;
+  v.split(/\n/).map(x => x.trim()).filter(Boolean).forEach(x => t.topics.push(newTopic(x)));
+  save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="topic"]'); if (n) n.focus(); }, 30);
+}
+ACT['pick-cat'] = el => {
+  const t = findT(DB, el.dataset.id); if (!t) return;
+  choose('구분', [{ v: '', label: '구분 없음' }].concat(DB.cats.map(c => ({ v: c.id, label: c.name, desc: c.person ? '사람' : '' }))), t.cat, v => { t.cat = v; if (!v || !(DB.cats.find(c => c.id === v) || {}).name) t.sub = t.sub; save(); refresh(); });
+};
+ACT['pick-sub'] = el => {
+  const t = findT(DB, el.dataset.id); if (!t) return;
+  choose('상위 분류', [{ v: '', label: '분류 없음' }].concat(DB.subs.map(s => ({ v: s.id, label: s.name }))), t.sub, v => { t.sub = v; save(); refresh(); });
+};
+ACT['join-group'] = el => {
+  const p = findT(DB, el.dataset.id); if (!p) return;
+  const opts = [];
+  topGroups(DB).forEach(g => { opts.push({ v: g.id, label: g.name, sw: g.color }); childrenOf(DB, g.id).forEach(k => opts.push({ v: k.id, label: '   ' + g.name + ' › ' + k.name, sw: k.color })); });
+  if (!opts.length) { toast('먼저 지도에서 묶음을 만들어 주세요'); return; }
+  choose(p.name + ' — 묶음에 넣기', opts, '', v => { const g = findG(DB, v); if (!g) return; g.lines.push({ id: uid(), segs: [[p.id]], r: {}, text: '' }); save(); refresh(); toast(g.name + ' 에 넣었습니다'); });
+};
+ACT['target-menu'] = () => {
+  const L = UI.layers[UI.layers.length - 1]; const t = findT(DB, L.id); if (!t) return;
+  choose(t.name, [{ v: 'kind', label: t.kind === 'person' ? '기도 항목으로 바꾸기' : '사람으로 바꾸기', desc: '사람만 지도의 묶음에 들어갑니다' }, { v: 'del', label: '지우기', danger: true, desc: '되돌리기를 잠깐 띄웁니다' }], '', v => {
+    if (v === 'kind') { t.kind = t.kind === 'person' ? 'item' : 'person'; save(); refresh(); }
+    if (v === 'del') { popLayer(); withUndo(t.name + ' 을(를) 지웠습니다', () => removeTarget(DB, t.id)); }
+  });
+};
+ACT['group-menu'] = () => {
+  const L = UI.layers[UI.layers.length - 1]; const g = findG(DB, L.id); if (!g) return;
+  const opts = [];
+  if (!g.parent) opts.push({ v: 'sub', label: '작은 묶음 만들기' });
+  opts.push({ v: 'paste', label: '여러 줄 붙여넣기' }, { v: 'del', label: '묶음 지우기', danger: true, desc: childrenOf(DB, g.id).length ? '작은 묶음 ' + childrenOf(DB, g.id).length + '개도 함께 · 사람 카드는 남습니다' : '사람 카드는 남습니다' });
+  choose(g.name, opts, '', v => {
+    if (v === 'sub') ACT['add-sub']({ dataset: { id: g.id } });
+    if (v === 'paste') ACT['paste-lines']({ dataset: { id: g.id } });
+    if (v === 'del') { popLayer(); withUndo(g.name + ' 묶음을 지웠습니다', () => removeGroup(DB, g.id)); }
+  });
+};
+ACT['pick-color'] = el => {
+  const g = findG(DB, el.dataset.id); if (!g) return;
+  const w = openSheet('<div class="sh-t">' + esc(g.name) + '<small>띠 색</small></div><div class="pal">' + GROUP_COLORS.map(c =>
+    '<button class="' + (c === g.color ? 'on' : '') + '" style="--c:' + c + '" data-a="pick" data-v="' + c + '" aria-label="' + c + '"></button>').join('') + '</div>' +
+    '<label class="set-r" style="margin:6px 4px 0;border:0">직접 고르기<input type="color" id="colIn" value="' + esc(g.color) + '" style="margin-left:auto;width:44px;height:34px;border:0;background:none;padding:0"></label>' +
+    (childrenOf(DB, g.id).length ? '<label class="set-r" style="margin:0 4px;border:0">작은 묶음도 같은 색으로<span class="sw on" id="colKids" data-on="1"></span></label>' : ''), v => setGroupColor(g, v));
+  const ci = w.querySelector('#colIn'); if (ci) ci.addEventListener('change', () => { setGroupColor(g, ci.value); closeSheet(); });
+  const ck = w.querySelector('#colKids'); if (ck) ck.addEventListener('click', () => { const on = ck.dataset.on !== '1'; ck.dataset.on = on ? '1' : '0'; ck.classList.toggle('on', on); });
+  w._kids = () => !ck || ck.dataset.on === '1';
+};
+function setGroupColor(g, c) {
+  const kids = SHEET && SHEET._kids ? SHEET._kids() : true;
+  const old = g.color; g.color = c;
+  if (kids) childrenOf(DB, g.id).forEach(k => { if (k.color === old || true) k.color = c; });
+  save(); refresh();
+}
+ACT['pick-parent'] = el => {
+  const g = findG(DB, el.dataset.id); if (!g) return;
+  if (childrenOf(DB, g.id).length) { toast('작은 묶음이 있는 묶음은 다른 묶음 안에 넣을 수 없습니다'); return; }
+  choose('위 묶음', [{ v: '', label: '없음 — 큰 묶음으로' }].concat(topGroups(DB).filter(x => x.id !== g.id).map(x => ({ v: x.id, label: x.name, sw: x.color }))), g.parent || '', v => { g.parent = v; save(); refresh(); });
+};
+ACT['add-line'] = el => { const inp = el.parentElement.querySelector('input'); addLine(el.dataset.id, inp); };
+function addLine(gid, inp) {
+  const g = findG(DB, gid); const v = (inp.value || '').trim(); if (!g || !v) return;
+  const l = parseLineText(DB, v); if (l) g.lines.push(l);
+  save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="line"]'); if (n) n.focus(); }, 30);
+}
+ACT['paste-lines'] = el => askText('여러 줄 붙여넣기', '', '한 줄에 한 가정씩\n예) 김은중 / 김민욱 / 아빠 이상연 세중', v => {
+  const g = findG(DB, el.dataset.id); if (!g) return;
+  let n = 0; v.split(/\n/).forEach(x => { const l = parseLineText(DB, x); if (l) { g.lines.push(l); n++; } });
+  save(); refresh(); if (n) toast(n + '줄을 넣었습니다');
+}, { multi: true, ok: '넣기', hint: '시트에서 칸을 골라 복사해 붙여 넣어도 됩니다. 이름이 같으면 같은 사람으로 봅니다.' });
+ACT['edit-line'] = el => {
+  const g = findG(DB, el.dataset.gid); if (!g) return; const l = g.lines.find(x => x.id === el.dataset.id); if (!l) return;
+  askText('줄 고치기', lineToText(DB, l), '이름 — / 로 나눌 수 있어요', v => {
+    const n = parseLineText(DB, v);
+    if (!n) { withUndo('줄을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }); return; }
+    // 인도 표시는 이름이 그대로면 남긴다
+    Object.keys(l.r || {}).forEach(pid => { if (l.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
+    n.id = l.id; const k = g.lines.indexOf(l); g.lines[k] = n; save(); refresh();
+  }, { del: () => withUndo('줄을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }), hint: '\'아빠 이상연\' 처럼 앞에 붙인 말은 이름 옆에 작게 나옵니다. 이름이 같으면 같은 사람입니다.' });
+};
+
+// 지우기 (스와이프)
+ACT.del = el => {
+  const k = el.dataset.k, id = el.dataset.id, row = el.closest('.row');
+  const go = (msg, fn) => animateGone(row, () => withUndo(msg, fn));
+  if (k === 'target') { const t = findT(DB, id); if (t) go(t.name + ' 을(를) 지웠습니다', () => removeTarget(DB, id)); }
+  else if (k === 'group') { const g = findG(DB, id); if (g) go(g.name + ' 묶음을 지웠습니다', () => removeGroup(DB, id)); }
+  else if (k === 'topic') { const t = findAny(DB, el.dataset.tid); if (t) go('기도제목을 지웠습니다', () => { t.topics = t.topics.filter(x => x.id !== id); }); }
+  else if (k === 'line') { const g = findG(DB, el.dataset.gid); if (g) go('줄을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== id); }); }
+  else if (k === 'snap') go('판을 지웠습니다', () => { DB.snaps = DB.snaps.filter(s => s.id !== id); });
+  else if (k === 'cats') { const c = DB.cats.find(x => x.id === id); if (c) go(c.name + ' 구분을 지웠습니다', () => { DB.cats = DB.cats.filter(x => x.id !== id); DB.T.forEach(t => { if (t.cat === id) t.cat = ''; }); }); }
+  else if (k === 'subcats') { const c = DB.subs.find(x => x.id === id); if (c) go(c.name + ' 분류를 지웠습니다', () => { DB.subs = DB.subs.filter(x => x.id !== id); DB.T.forEach(t => { if (t.sub === id) t.sub = ''; }); }); }
+};
+
+// 기록
+ACT['hist-tab'] = el => { UI.histTab = el.dataset.v; renderView(); };
+ACT['snap-sort'] = el => { DB.set.sorts.snaps = el.dataset.v; save(); renderView(); };
+ACT['ans-sort'] = el => { DB.set.sorts.answers = el.dataset.v; save(); renderView(); };
+ACT['snap-now'] = () => {
+  if (!DB.G.length) { toast('지도가 비어 있어 보관할 것이 없습니다'); return; }
+  DB.snaps.push(makeSnap(DB, null, TODAY, '')); save(); UI.histTab = 'snap'; refresh(); toast(TODAY + ' 판으로 보관했습니다');
+};
+ACT['cal-nav'] = el => { const [y, m] = UI.calMonth.split('-').map(Number); const d = new Date(y, m - 1 + (+el.dataset.v), 1); UI.calMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); UI.calDay = ''; renderView(); };
+ACT['cal-day'] = el => { UI.calDay = UI.calDay === el.dataset.v ? '' : el.dataset.v; renderView(); };
+
+// 설정
+ACT['set-mode'] = el => { DB.set.mode = el.dataset.v; save(); applyTheme(DB.set); refresh(); };
+ACT['set-preset'] = el => { DB.set.preset = el.dataset.v; save(); applyTheme(DB.set); refresh(); };
+ACT.step = el => {
+  const k = el.dataset.k, dv = +el.dataset.v;
+  if (k === 'topLimit') DB.set.topLimit = Math.max(1, Math.min(30, (DB.set.topLimit || 6) + dv));
+  if (k === 'iv') { const n = +el.dataset.n; DB.set.iv[n] = Math.max(1, Math.min(90, DB.set.iv[n] + dv)); }
+  save(); refresh();
+};
+ACT['cat-person'] = el => { const c = DB.cats.find(x => x.id === el.dataset.id); if (!c) return; c.person = !c.person; save(); refresh(); };
+ACT['add-cats'] = el => addCat('cats', el.parentElement.querySelector('input'));
+ACT['add-subcats'] = el => addCat('subcats', el.parentElement.querySelector('input'));
+function addCat(kind, inp) {
+  const v = (inp.value || '').trim(); if (!v) return;
+  (kind === 'cats' ? DB.cats : DB.subs).push(kind === 'cats' ? { id: uid(), name: v, person: false } : { id: uid(), name: v });
+  save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="' + kind + '"]'); if (n) n.focus(); }, 30);
+}
+ACT.backup = () => {
+  const text = exportBackup(DB), name = '기도노트-백업-' + TODAY.replace(/-/g, '') + '.json';
+  const blob = new Blob([text], { type: 'application/json' });
+  try {
+    const file = new File([blob], name, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: name }).catch(() => {}); return; }
+  } catch (e) {}
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('백업 파일을 내려받았습니다');
+};
+ACT.restore = () => { const f = $('restoreFile'); if (f) f.click(); };
+ACT.wipe = () => {
+  if (!confirm('기도노트를 처음 상태로 되돌립니다. 사람 · 묶음 · 기록이 모두 지워집니다 (샘플 구분 · 부서는 다시 들어옵니다). 계속할까요?')) return;
+  withUndo('처음 상태로 되돌렸습니다', () => { const keep = { mode: DB.set.mode, preset: DB.set.preset }; DB = seedDB(); DB.set.mode = keep.mode; DB.set.preset = keep.preset; });
+};
+
+// 가져오기
+ACT['imp-file'] = () => { const f = $('impFile'); if (f) f.click(); };
+ACT['imp-read'] = () => {
+  const ta = $('impText'); const text = ta ? ta.value : UI.imp.text;
+  if (!text.trim()) { toast('파일을 고르거나 붙여 넣어 주세요'); return; }
+  impParse(text);
+};
+function impParse(text) {
+  // ⚠️ 빈 줄을 지우지 말 것 — 지도 시트는 **빈 줄이 묶음의 경계**다 (지우면 묶음이 서로 붙는다)
+  const rows = parseCSV(text);
+  if (!rows.some(r => r.some(Boolean))) { toast('읽을 칸이 없습니다'); return; }
+  const fmt = detectFormat(rows);
+  UI.imp = { step: 2, text: text, rows: rows, fmt: fmt, mode: 'replace' };
+  if (fmt === 'map') UI.imp.parsed = parseMapGrid(rows);
+  refresh();
+}
+ACT['imp-back'] = () => { UI.imp.step = 1; refresh(); };
+ACT['imp-mode'] = el => { UI.imp.mode = el.dataset.v; refresh(); };
+ACT['imp-kind'] = el => { const b = UI.imp.parsed.blocks.find(x => x.id === el.dataset.id); if (b) { b.kind = el.dataset.v; refresh(); } };
+ACT['imp-go'] = () => {
+  const S = UI.imp;
+  const before = JSON.stringify(DB);
+  let msg = '';
+  if (S.fmt === 'sheet2') {
+    const r = importSheet2(DB, S.rows);
+    msg = '새로 ' + r.added + ' · 고침 ' + r.updated + (r.subs ? ' · 상위 분류 ' + r.subs : '');
+  } else {
+    const G = buildGroupsFromBlocks(DB, S.parsed.blocks);
+    if (S.parsed.title && !DB.set.mapTitle) DB.set.mapTitle = S.parsed.title;
+    if (S.mode === 'snap') {
+      DB.snaps.push(makeSnap(DB, G, sheetDate(S.parsed.date) || TODAY, S.parsed.title || ''));
+      msg = '판으로 보관했습니다 — 묶음 ' + G.length;
+    } else {
+      if (DB.G.length) DB.snaps.push(makeSnap(DB, null, TODAY, '가져오기 전 지도'));
+      DB.G = G;
+      if (S.parsed.date) DB.snaps.push(makeSnap(DB, null, sheetDate(S.parsed.date), S.parsed.title || ''));
+      const subs = G.filter(g => g.parent).length;
+      msg = '지도를 가져왔습니다 — 묶음 ' + (G.length - subs) + (subs ? ' · 작은 묶음 ' + subs : '') + ' · 이름 ' + currentNames(DB).size;
+    }
+  }
+  save();
+  const goMap = S.fmt === 'map' && S.mode !== 'snap';
+  UI.imp = null;
+  closeAllLayers();
+  if (goMap) showTab('map'); else if (S.fmt === 'map') { UI.histTab = 'snap'; showTab('hist'); } else showTab('list');
+  refresh();
+  toast(msg, '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+};
+
+// ── 입력 칸 ──
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.id === 'impFile' && el.files && el.files[0]) {
+    const rd = new FileReader(); rd.onload = () => impParse(String(rd.result || '')); rd.readAsText(el.files[0], 'utf-8'); el.value = ''; return;
+  }
+  if (el.id === 'restoreFile' && el.files && el.files[0]) {
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const nd = readBackup(String(rd.result || ''));
+        withUndo('백업을 불러왔습니다', () => { DB = nd; });
+        applyTheme(DB.set);
+      } catch (err) { toast(err.message || '불러오지 못했습니다'); }
+    };
+    rd.readAsText(el.files[0], 'utf-8'); el.value = ''; return;
+  }
+  const f = el.dataset && el.dataset.f; if (!f) return;
+  const v = el.value;
+  if (f === 'name') { const t = findAny(DB, el.dataset.id); if (!t) return; if (!v.trim()) { el.value = t.name; return; } t.name = v.trim(); }
+  else if (f === 'memo') { const t = findAny(DB, el.dataset.id); if (!t) return; t.memo = v.trim(); const tb = el.parentElement.querySelector('[data-todo]'); if (tb) tb.hidden = !t.memo; }
+  else if (f === 'note') { const t = findAny(DB, el.dataset.id); if (t) t.note = v; }
+  else if (f === 'time') { const t = findG(DB, el.dataset.id); if (t) t.time = v.trim(); }
+  else if (f === 'markname') DB.marks[el.dataset.m] = v.trim();
+  else if (f === 'catname') { const c = DB.cats.find(x => x.id === el.dataset.id); if (c && v.trim()) c.name = v.trim(); }
+  else if (f === 'subname') { const c = DB.subs.find(x => x.id === el.dataset.id); if (c && v.trim()) c.name = v.trim(); }
+  else if (f === 'maptitle') DB.set.mapTitle = v.trim();
+  else if (f === 'snapname') { const s = DB.snaps.find(x => x.id === el.dataset.id); if (s) s.name = v.trim(); }
+  save();
+  refresh({ skipTop: true });
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.live === 'mapq') {
+    UI.mapQuery = el.value;
+    const pos = el.selectionStart;
+    renderView();
+    const n = $('mapQ'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} }
+  }
+  if (el.id === 'impText' && UI.imp) UI.imp.text = el.value;
+});
+document.addEventListener('keydown', e => {
+  const el = e.target;
+  if (e.key === 'Enter' && el.dataset && el.dataset.add && !e.isComposing) {
+    e.preventDefault();
+    const k = el.dataset.add;
+    if (k === 'topic') addTopic(el.dataset.id, el);
+    else if (k === 'line') addLine(el.dataset.id, el);
+    else addCat(k, el);
+    return;
+  }
+  if (e.key === 'Enter' && el.id === 'askIn' && el.tagName === 'INPUT' && !e.isComposing) { e.preventDefault(); ACT['ask-ok'](); return; }
+  if (e.key === 'Enter' && el.id === 'addName' && !e.isComposing) { e.preventDefault(); ACT['add-ok'](); return; }
+  if (e.key === 'Enter' && el.classList && el.classList.contains('hero-name')) { el.blur(); return; }
+  if (e.key === 'Escape') {
+    if (SHEET) { closeSheet(); return; }
+    if (F.on) { closeFocus(); return; }
+    if (UI.layers.length) { popLayer(); return; }
+  }
+  if (F.on && !SHEET && !/INPUT|TEXTAREA/.test(el.tagName)) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); focusNext(true); }
+    else if (e.key === 'ArrowRight') focusNext(false);
+  }
+});
+
+// ═══ 손짓: 왼쪽 스와이프(지우기·내일로) · 길게 눌러 끌기(순서) · 가장자리 끌기(뒤로) · 창 끌어 닫기 ═══
+const GS = { st: null, suppress: 0, openRow: null };
+function closeOpenRow(except) {
+  const r = GS.openRow;
+  if (r && r !== except) { const f = r.querySelector('.row-f'); if (f) f.style.transform = ''; r.classList.remove('open'); GS.openRow = null; }
+}
+function actsWidth(row) { const a = row.querySelector('.sw-acts'); return a ? a.scrollWidth : 0; }
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (e.target.closest('input,textarea,select,.sw-act')) return;
+  const grab = e.target.closest('.sh-grab');
+  if (grab && SHEET) { GS.st = { mode: 'sheet', sheet: grab.parentElement, y0: e.clientY, pid: e.pointerId, dy: 0 }; grab.parentElement.classList.add('drag'); return; }
+  const layer = e.target.closest('.layer');
+  if (layer && e.clientX < 24 && layer === topLayerEl()) { GS.st = { mode: 'edge-p', layer: layer, x0: e.clientX, y0: e.clientY, pid: e.pointerId }; return; }
+  const row = e.target.closest('.row');
+  if (!row) { closeOpenRow(); return; }
+  if (GS.openRow && GS.openRow !== row) closeOpenRow();
+  const list = row.parentElement && row.parentElement.matches('[data-sort]') ? row.parentElement : null;
+  const st = { mode: 'pend', row: row, list: list, x0: e.clientX, y0: e.clientY, y: e.clientY, pid: e.pointerId,
+               sw: row.dataset.sw === '1', base: row.classList.contains('open') ? -actsWidth(row) : 0 };
+  if (list) st.timer = setTimeout(() => startDrag(st), 420);
+  GS.st = st;
+}, { passive: true });
+document.addEventListener('pointermove', e => {
+  const st = GS.st; if (!st || e.pointerId !== st.pid) return;
+  const dx = e.clientX - (st.x0 || 0), dy = e.clientY - st.y0;
+  if (st.mode === 'sheet') { st.dy = Math.max(0, dy); st.sheet.style.transform = 'translateY(' + st.dy + 'px)'; return; }
+  if (st.mode === 'edge-p') { if (dx > 10 && Math.abs(dx) > Math.abs(dy)) { st.mode = 'edge'; st.layer.classList.add('edge'); } else if (Math.abs(dy) > 10 || dx < -10) GS.st = null; return; }
+  if (st.mode === 'edge') { e.preventDefault(); st.layer.style.transform = 'translateX(' + Math.max(0, dx) + 'px)'; return; }
+  if (st.mode === 'pend') {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    clearTimeout(st.timer);
+    if (st.sw && Math.abs(dx) > Math.abs(dy) * 1.15 && (dx < 0 || st.base < 0)) { st.mode = 'swipe'; st.row.classList.add('swiping'); st.w = actsWidth(st.row); st.x = st.base; }
+    else { GS.st = null; return; }
+  }
+  if (st.mode === 'swipe') {
+    e.preventDefault();
+    let x = st.base + dx;
+    if (x > 0) x = x * 0.25;
+    st.x = x;
+    st.row.querySelector('.row-f').style.transform = 'translateX(' + x + 'px)';
+    return;
+  }
+  if (st.mode === 'drag') { e.preventDefault(); st.y = e.clientY; }
+}, { passive: false });
+function endGesture(e, cancel) {
+  const st = GS.st; if (!st || (e && e.pointerId !== st.pid)) return;
+  GS.st = null;
+  clearTimeout(st.timer);
+  if (st.mode === 'sheet') {
+    st.sheet.classList.remove('drag');
+    if (!cancel && st.dy > 90) { st.sheet.style.transform = ''; closeSheet(); } else st.sheet.style.transform = '';
+    GS.suppress = Date.now(); return;
+  }
+  if (st.mode === 'edge') {
+    st.layer.classList.remove('edge');
+    const dx = e ? e.clientX - st.x0 : 0;
+    st.layer.style.transform = '';
+    if (!cancel && dx > st.layer.offsetWidth * 0.28) popLayer();
+    GS.suppress = Date.now(); return;
+  }
+  if (st.mode === 'swipe') {
+    GS.suppress = Date.now();
+    st.row.classList.remove('swiping');
+    const f = st.row.querySelector('.row-f'), full = st.row.offsetWidth;
+    if (!cancel && st.x < -full * 0.55) {
+      f.style.transform = 'translateX(' + (-full) + 'px)';
+      const btn = st.row.querySelector('.sw-act'); setTimeout(() => { if (btn) doAct(btn); }, 140);
+    } else if (!cancel && st.x < -st.w * 0.45) { f.style.transform = 'translateX(' + (-st.w) + 'px)'; st.row.classList.add('open'); GS.openRow = st.row; }
+    else { f.style.transform = ''; st.row.classList.remove('open'); if (GS.openRow === st.row) GS.openRow = null; }
+    return;
+  }
+  if (st.mode === 'drag') { GS.suppress = Date.now(); dropDrag(st, cancel); }
+}
+document.addEventListener('pointerup', e => endGesture(e, false));
+document.addEventListener('pointercancel', e => endGesture(e, true));
+// iOS: 끌기·스와이프 중에는 화면이 같이 움직이지 않게 (passive:false 여야 막힌다)
+document.addEventListener('touchmove', e => { const st = GS.st; if (st && (st.mode === 'drag' || st.mode === 'swipe' || st.mode === 'edge' || st.mode === 'sheet')) e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', e => { if (e.target.closest('.row')) e.preventDefault(); });
+
+function startDrag(st) {
+  if (GS.st !== st || st.mode !== 'pend') return;
+  const rows = [...st.list.children].filter(r => r.classList.contains('row'));
+  if (rows.length < 2) return;
+  st.mode = 'drag';
+  closeOpenRow();
+  st.rows = rows; st.from = rows.indexOf(st.row); st.to = st.from;
+  st.rects = rows.map(r => r.getBoundingClientRect());
+  st.h = st.rects[st.from].height;
+  st.scroller = st.row.closest('.view,.lbody,.sh-b');
+  st.sc0 = st.scroller ? st.scroller.scrollTop : 0;
+  st.row.classList.add('lifted');
+  rows.forEach(r => { if (r !== st.row) r.classList.add('shift'); });
+  document.body.classList.add('dragging');
+  if (navigator.vibrate) navigator.vibrate(12);
+  const tick = () => {
+    if (GS.st !== st || st.mode !== 'drag') return;
+    const sc = st.scroller;
+    if (sc) {
+      const r = sc.getBoundingClientRect(); let v = 0;
+      if (st.y < r.top + 70) v = -Math.ceil((r.top + 70 - st.y) / 6);
+      else if (st.y > r.bottom - 150) v = Math.ceil((st.y - (r.bottom - 150)) / 6);
+      if (v) sc.scrollTop += v;
+    }
+    const scd = sc ? sc.scrollTop - st.sc0 : 0;
+    const dy = st.y - st.y0 + scd;
+    st.row.style.transform = 'translateY(' + dy + 'px)';
+    const center = st.rects[st.from].top + st.h / 2 + dy;
+    let to = st.from;
+    for (let k = 0; k < st.from; k++) { if (center < st.rects[k].top + st.rects[k].height / 2) { to = k; break; } }
+    if (to === st.from) for (let k = st.rows.length - 1; k > st.from; k--) { if (center > st.rects[k].top + st.rects[k].height / 2) { to = k; break; } }
+    if (to !== st.to) {
+      st.to = to;
+      st.rows.forEach((r, k) => {
+        if (r === st.row) return;
+        let off = 0;
+        if (st.from < st.to && k > st.from && k <= st.to) off = -st.h;
+        else if (st.from > st.to && k >= st.to && k < st.from) off = st.h;
+        r.style.transform = off ? 'translateY(' + off + 'px)' : '';
+      });
+      if (navigator.vibrate) navigator.vibrate(5);
+    }
+    st.raf = requestAnimationFrame(tick);
+  };
+  st.raf = requestAnimationFrame(tick);
+}
+function dropDrag(st, cancel) {
+  cancelAnimationFrame(st.raf);
+  let off = 0;
+  if (!cancel && st.to !== st.from) {
+    if (st.to > st.from) for (let k = st.from + 1; k <= st.to; k++) off += st.rects[k].height;
+    else for (let k = st.to; k < st.from; k++) off -= st.rects[k].height;
+  }
+  st.row.style.transition = 'transform .2s var(--ease)';
+  st.row.style.transform = cancel || st.to === st.from ? '' : 'translateY(' + off + 'px)';
+  if (cancel || st.to === st.from) st.rows.forEach(r => { if (r !== st.row) r.style.transform = ''; });
+  setTimeout(() => {
+    document.body.classList.remove('dragging');
+    st.rows.forEach(r => { r.classList.remove('shift', 'lifted'); r.style.transform = ''; r.style.transition = ''; });
+    if (!cancel && st.to !== st.from) {
+      const shown = st.rows.map(r => r.dataset.id);
+      onSorted(st.list.dataset.sort, moveInArray(shown, st.from, st.to), shown);
+    }
+  }, 210);
+}
+function reorderSubset(arr, ids) {
+  const pos = [], set = new Set(ids);
+  arr.forEach((x, k) => { if (set.has(x.id)) pos.push(k); });
+  const byId = {}; arr.forEach(x => { byId[x.id] = x; });
+  const out = arr.slice();
+  ids.forEach((id, k) => { if (pos[k] != null) out[pos[k]] = byId[id]; });
+  return out;
+}
+function onSorted(key, ids, shown) {
+  const [kind, arg] = key.split(':');
+  if (kind === 'today') {
+    DB.set.ranks.today = applyRanks(DB.set.ranks.today || {}, shown, ids);
+    if (DB.set.sorts.today !== 'mine') { DB.set.sorts.today = 'mine'; toast('오늘 목록을 \'내 순서\' 로 바꿨습니다'); }
+  } else if (kind === 'list') {
+    DB.set.ranks.list = applyRanks(DB.set.ranks.list || {}, shown, ids);
+    if (DB.set.sorts.list !== 'mine') { DB.set.sorts.list = 'mine'; toast('목록을 \'내 순서\' 로 바꿨습니다'); }
+  } else if (kind === 'topics') { const t = findAny(DB, arg); if (t) t.topics = reorderSubset(t.topics, ids); }
+  else if (kind === 'lines') { const g = findG(DB, arg); if (g) g.lines = reorderSubset(g.lines, ids); }
+  else if (kind === 'subs' || kind === 'groups') { DB.G = reorderSubset(DB.G, ids); if (kind === 'groups') DB.set.sorts.map = 'mine'; }
+  else if (kind === 'cats') DB.cats = reorderSubset(DB.cats, ids);
+  else if (kind === 'subcats') DB.subs = reorderSubset(DB.subs, ids);
+  else if (kind === 'snaps') { DB.snaps = reorderSubset(DB.snaps, ids); DB.set.sorts.snaps = 'mine'; }
+  else if (kind === 'answers') { DB.set.ranks.answers = applyRanks(DB.set.ranks.answers || {}, shown, ids); DB.set.sorts.answers = 'mine'; }
+  save(); refresh();
+}
+
+// ── 누르기 ──
+document.addEventListener('click', e => {
+  if (Date.now() - GS.suppress < 400) { e.preventDefault(); e.stopPropagation(); return; }
+  const el = e.target.closest('[data-a]');
+  if (GS.openRow) {
+    const inOpen = GS.openRow.contains(e.target);
+    if (!(el && el.classList.contains('sw-act') && inOpen)) { closeOpenRow(); e.preventDefault(); e.stopPropagation(); return; }
+  }
+  if (!el) return;
+  doAct(el, e);
+}, true);
+
+// ═══ 시작 ═══
+applyTheme(DB.set);
+showTab('today');
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
 </script>
 </body>
 </html>
