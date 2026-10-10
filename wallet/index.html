@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-13 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-14 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -340,9 +340,11 @@ body.pdark .pnav{background:#2a2420}body.pdark .pnav button.on{color:#ffa58a}
 .w-wt{display:flex;gap:10px;align-items:flex-start;font-size:14px}.w-wi{font-size:24px;line-height:1}.w-wt b{display:block}.w-wq{display:block;color:var(--w-ink);margin-top:2px}.w-wt small{display:block;color:var(--w-sub);font-size:11px}
 .par .pr-btns button{border:0;border-radius:14px;background:var(--w-track);color:var(--w-ink);padding:9px 0;font-size:13px}.par .pr-btns button.p{background:#e2725b;color:#fff}
 .w-chat{max-height:420px;overflow-y:auto;padding:2px 0}
-.w-send{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--w-line)}
-.w-send input{flex:1;min-width:0;border:1px solid var(--w-line);background:var(--w-track);color:var(--w-ink);border-radius:20px;padding:10px 14px;font:inherit;font-size:16px;outline:none;user-select:text;-webkit-user-select:text}
-.w-send input:focus{border-color:var(--w-acc)}
+.w-emo{display:flex;gap:4px;overflow-x:auto;margin:10px -4px 0;padding:10px 4px 2px;border-top:1px dashed var(--w-line);scrollbar-width:none}.w-emo::-webkit-scrollbar{display:none}
+.w-emo button{flex:none;width:38px;height:38px;border-radius:12px;font-size:22px;background:var(--w-track)}.w-emo button:active{transform:scale(.9)}
+.w-send{display:flex;gap:8px;align-items:flex-end;margin-top:8px}
+.w-send textarea{flex:1;resize:none;overflow-y:auto;line-height:1.4;max-height:50vh;display:block;min-width:0;border:1px solid var(--w-line);background:var(--w-track);color:var(--w-ink);border-radius:20px;padding:10px 14px;font:inherit;font-size:16px;outline:none;user-select:text;-webkit-user-select:text}
+.w-send textarea:focus{border-color:var(--w-acc)}
 .w-send button{flex:none;background:var(--w-acc);color:#fff;border-radius:20px;padding:10px 16px;font-size:14px;font-weight:600}
 .w-day{text-align:center;font-size:11px;color:var(--w-sub);margin:10px 0 4px}
 .w-msg{display:flex;gap:8px;align-items:flex-end;margin:6px 0}.w-msg>div{max-width:78%}.w-msg small{display:block;font-size:10.5px;color:var(--w-sub);margin:2px 6px}
@@ -678,7 +680,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-13";
+const APP_VERSION = "v. 26-1010-14";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2883,12 +2885,28 @@ function renderPMail(){
     ${wait.length ? `<div class="w-card w-hero"><div class="w-h"><span class="w-j">${ni}가 기다리고 있어요</span><small>${wait.length}개</small></div>${wait.map(wrow).join('')}</div>` : ''}
     <div class="w-acts" style="grid-template-columns:1fr 1fr"><button id="pmStamp"><i>👍</i>칭찬 도장</button><button id="pmMis"><i>🎯</i>미션 주기</button></div>
     <div class="w-card"><div class="w-h"><span class="w-j">아이와 이야기창</span><small>새 이야기는 아래쪽</small></div>${thread.length ? `<div class="w-chat">${thread.map(bubble).join('')}</div>` : `<p class="pr-note">아직 이야기가 없어요. 오늘 하루 수고했다고 한마디 보내 볼까요? 💌</p>`}
-      <form class="w-send" id="pmForm"><input id="pmTxt" maxlength="120" placeholder="${esc(ni)}에게 메시지 보내기" autocomplete="off" enterkeyhint="send"><button id="pmSend" aria-label="보내기">보내기</button></form></div>`
+      <div class="w-emo" id="pmEmo">${STK.concat(['😊','👏','💪','🍀','🌈','🐷']).map(x => `<button type="button">${x}</button>`).join('')}</div>
+      <form class="w-send" id="pmForm"><textarea id="pmTxt" rows="1" maxlength="120" placeholder="${esc(ni)}에게 메시지 보내기" autocomplete="off" enterkeyhint="send"></textarea><button id="pmSend" aria-label="보내기">보내기</button></form></div>`
     + (typeof alertsHtml==='function' ? alertsHtml(k) : '');
   const ch = box.querySelector('.w-chat'); if(ch) ch.scrollTop = ch.scrollHeight;
   // 새 쪽지가 와서 다시 그려져도 쓰던 글·커서를 잃지 않는다
-  const ti = $('pmTxt'); ti.value = PAR.draft || ''; ti.oninput = () => { PAR.draft = ti.value; }; if(PAR.draftFocus){ ti.focus(); PAR.draftFocus = false; }
-  ti.onfocus = () => { PAR.typing = true; }; ti.onblur = () => { PAR.typing = false; };
+  // 글이 길어지면 입력 칸이 위로 늘어난다(120자가 다 보이도록 — 화면 절반까지)
+  const ti = $('pmTxt'), grow = () => { ti.style.height = 'auto'; ti.style.height = Math.min(ti.scrollHeight + 2, Math.max(260, innerHeight*0.5)) + 'px'; };
+  const keepCaret = () => { PAR.caret = [ti.selectionStart, ti.selectionEnd]; };
+  ti.value = PAR.draft || ''; grow();
+  ti.oninput = () => { PAR.draft = ti.value; grow(); keepCaret(); };
+  ti.onkeyup = ti.onclick = ti.onselect = keepCaret;
+  if(PAR.draftFocus){ ti.focus(); const c = PAR.caret || [ti.value.length, ti.value.length]; try{ ti.setSelectionRange(c[0], c[1]); }catch(_){} PAR.draftFocus = false; }
+  ti.onfocus = () => { PAR.typing = true; }; ti.onblur = () => { PAR.typing = false; keepCaret(); };
+  // 엔터 = 보내기(줄바꿈은 Shift+엔터). 한글 조합 중 엔터는 무시
+  ti.onkeydown = e => { if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){ e.preventDefault(); $('pmForm').requestSubmit ? $('pmForm').requestSubmit() : $('pmSend').click(); } };
+  // 이모지: 누르면 커서 자리에 들어간다(몇 개든, 어디든). 누를 때 입력 칸의 커서를 빼앗지 않는다
+  $('pmEmo').onpointerdown = e => { if(e.target.closest('button')) e.preventDefault(); };
+  $('pmEmo').onclick = e => { const b = e.target.closest('button'); if(!b) return; buzz(6);
+    const v = ti.value, c = (document.activeElement===ti) ? [ti.selectionStart, ti.selectionEnd] : (PAR.caret || [v.length, v.length]);
+    const nv = v.slice(0, c[0]) + b.textContent + v.slice(c[1]); if(nv.length > 120){ toast('120자까지 쓸 수 있어요'); return; }
+    ti.value = nv; const at = c[0] + b.textContent.length; ti.focus(); try{ ti.setSelectionRange(at, at); }catch(_){}
+    PAR.draft = nv; PAR.caret = [at, at]; grow(); };
   $('pmForm').onsubmit = e => { e.preventDefault(); const t = $('pmTxt').value.trim(); if(!t){ $('pmTxt').focus(); return; }
     needPName(async () => { if($('sheet').classList.contains('on')) closeSheet(); if(await mailSend({type:'note', text:t.slice(0,120)}, '보냈어요!')){ PAR.draft = ''; PAR.draftFocus = true; renderPMail(); } }); };
   ms.filter(m => m.from==='kid' && !m.readPar).forEach(m => { m.readPar = true; mailUpd(m.id, {readPar:true}); });
