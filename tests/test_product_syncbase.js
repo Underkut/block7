@@ -149,7 +149,9 @@ console.log('\n시나리오 4 — 새 규칙이면 지워지지 않는다');
 console.log('\n시나리오 5 — 다른 아이디로 들어오면 남남');
 {
   Object.keys(STORE).forEach(k=>delete STORE[k]);
-  asProduct('b7v1',()=>_fbSetBase(J(fullState()),7,'hb'));
+  // 진짜 앱의 순서 — 기준점을 적은 **뒤에** ST 도 적힌다(도장). v26-1010-12 부터 기준점이 ST 보다
+  // 새것이면 버리므로 그 순서를 그대로 흉내낸다 (tests/test_stsaved.js)
+  asProduct('b7v1',()=>{_fbSetBase(J(fullState()),7,'hb');localStorage.setItem(_lsk('stsaved'),String(Date.now()+1000));});
   sc.eq('같은 계정이면 제 기준점을 되찾는다',
         asProduct('b7v1',()=>!!_fbLoadPersistedBase('hb')), true);
   sc.eq('다른 계정이면 안 쓴다',

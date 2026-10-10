@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-11  [production]  -->
+<!-- BLOCK7  v. 26-1010-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-11";
+const APP_VERSION = "v. 26-1010-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15205,8 +15205,16 @@ function _brSessStep(){
 }
 // 스크롤 기록 (v26-1010-11) — 묶기는 _brBind 의 '스크롤 기록'
 const _brDiagRows=[];
-function _brDiagStuck(r){return r.maxTail>=40&&!r.edge;}
+function _brDiagStuck(r){return (r.stuckMs||0)>=250;}   // 손은 가는데 글이 0.25초 넘게 멈췄다
 function _brDiagSync(){const n=_brEl('brDiagN');if(!n)return;const k=_brDiagRows.filter(_brDiagStuck).length;n.textContent=_brDiagRows.length+'번 · 걸림 '+k;}
+// 이 기기 앱 저장 칸 (v26-1010-12) — 사파리는 사이트마다 약 5MB, 한글은 한 글자 2바이트라 약 2.6M자. 기기 용량과 따로다.
+function _brDiagStore(){
+  let tot=0;const ks=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),v=localStorage.getItem(k)||'';tot+=k.length+v.length;ks.push([k,v.length]);}}catch(e){}
+  ks.sort((a,b)=>b[1]-a[1]);
+  return '저장 칸 '+(tot/1e6).toFixed(2)+'M자 (한도 약 2.6M자) · '+ks.slice(0,6).map(([k,n])=>k+' '+Math.round(n/1e3)+'k').join(' · ')+
+    ((typeof _lsTight!=='undefined'&&_lsTight)?' · ⚠ 이번에 ST 저장 실패':'');
+}
 function _brDiagText(){
   const v=document.querySelector('#bibleRd .br-v');let ta='',co=false;
   try{ta=v?getComputedStyle(v).touchAction:'';}catch(e){}
@@ -15216,10 +15224,11 @@ function _brDiagText(){
     'platform '+navigator.platform+' · touchPoints '+navigator.maxTouchPoints+' · callout '+co,
     'br-ios '+_brEl('bibleRd').classList.contains('br-ios')+' · 본문 touch-action '+ta+' · 절나누기 '+_brS('bibleFlow','verse'),
     '화면 '+innerWidth+'x'+innerHeight+' · dpr '+devicePixelRatio+' · vv '+(window.visualViewport?visualViewport.scale.toFixed(2):'-')+
-      ' · 단 '+(typeof _layMode==='function'?_layMode():'?')+' · 배율 '+(typeof _uiScaleGet==='function'?_uiScaleGet():'?')+' · 상자 '+(sc?sc.clientHeight+'/'+sc.scrollHeight:'-')];
+      ' · 단 '+(typeof _layMode==='function'?_layMode():'?')+' · 배율 '+(typeof _uiScaleGet==='function'?_uiScaleGet():'?')+' · 상자 '+(sc?sc.clientHeight+'/'+sc.scrollHeight:'-'),
+    _brDiagStore()];
   const rows=_brDiagRows.map(r=>{const d=new Date(r.t0);
     return (_brDiagStuck(r)?'⚠걸림 ':'')+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+
-      ' 손'+Math.round(r.fin)+' 스크롤'+Math.round(r.scr)+' 꼬리'+Math.round(r.maxTail)+' 첫'+(r.first||'-')+'ms 전환'+r.flips+
+      ' 손'+Math.round(r.fin)+' 스크롤'+Math.round(r.scr)+' 꼬리'+Math.round(r.maxTail)+' 멈춤'+(r.stuckMs||0)+'ms 첫'+(r.first||'-')+'ms 전환'+r.flips+
       ' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+
       ' @'+r.x+','+r.y+' '+r.tgt;});
   return head.join('\n')+'\n'+(rows.length?rows.join('\n'):'(아직 기록 없음 — 본문을 스크롤해 보세요)');
@@ -15926,13 +15935,16 @@ function _brBind(){
     const desc=el=>{if(!el||!el.closest)return'?';const v=el.closest('.br-v');let ta='';try{ta=getComputedStyle(v||el).touchAction;}catch(x){}
       return el.nodeName.toLowerCase()+(el.id?'#'+el.id:'')+(el.classList&&el.classList.length?'.'+[...el.classList].slice(0,2).join('.'):'')+(v?' 절'+v.dataset.v:'')+' ta='+ta;};
     sc.addEventListener('touchstart',e=>{if(e.touches.length!==1){g=null;return;}const t=e.touches[0];
-      g={t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
+      g={t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,tt:Date.now(),stuckMs:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
     sc.addEventListener('touchmove',e=>{if(!g||!e.touches[0])return;const y=e.touches[0].clientY,d=y-g.ly;g.ly=y;g.mv++;
       g.fin+=Math.abs(d);g.tail+=Math.abs(d);if(g.tail>g.maxTail)g.maxTail=g.tail;
+      // 걸림 = 손가락은 40px 넘게 갔는데 글이 **잠깐이라도 멈춰 있던 시간** (v26-1010-12 — 빠르게 밀면 한두 칸 사이에
+      // 꼬리가 생겼다 바로 따라잡는다. 그걸 걸림으로 세던 것이 HB 기록의 '걸림 8' 이었다). 장 끝에 닿은 것은 빼고.
+      if(g.tail>=40){const y0=sc.scrollTop;if(y0>1&&y0<sc.scrollHeight-sc.clientHeight-1){const ms=Date.now()-g.tt;if(ms>g.stuckMs)g.stuckMs=ms;}}
       if(Math.abs(d)>=1){const sg=Math.sign(d);if(g.dir&&sg!==g.dir)g.flips++;g.dir=sg;}
       if(g.can===null)g.can=e.cancelable;},{passive:true,capture:true});
     window.addEventListener('touchmove',e=>{if(g&&e.defaultPrevented)g.prev++;},{passive:true});   // 맨 끝 — 누가 막았으면 여기서 보인다
-    sc.addEventListener('scroll',()=>{if(!g)return;const y=sc.scrollTop;if(y===g.ls)return;if(!g.first)g.first=Date.now()-g.t0;g.scr+=Math.abs(y-g.ls);g.ls=y;g.tail=0;},{passive:true});
+    sc.addEventListener('scroll',()=>{if(!g)return;const y=sc.scrollTop;if(y===g.ls)return;if(!g.first)g.first=Date.now()-g.t0;g.scr+=Math.abs(y-g.ls);g.ls=y;g.tail=0;g.tt=Date.now();},{passive:true});
     $('brChap').addEventListener('pointercancel',()=>{if(g)g.pc++;},{passive:true});
     const end=kind=>{if(!g)return;const r=g;g=null;if(r.fin<12)return;   // 톡 누르기는 적지 않는다
       const y=sc.scrollTop,edge=y<=1||y>=sc.scrollHeight-sc.clientHeight-1;
@@ -22999,7 +23011,7 @@ _brMigrateNotes();                        // 옛 bibleMarks.m → bibleNotes
       });
     });
   }catch(err){}
-  if(changed){try{localStorage.setItem(LS_KEY,JSON.stringify(ST));}catch(err){}}
+  if(changed)_lsPutST();
 })();
 if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 연락처 매핑
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
@@ -23011,11 +23023,32 @@ Object.keys(_settingsDefaults).forEach(k=>{
 });
 syncSecsFromState();
 rawSave(); // persist any startTime/endTime backfill immediately, rather than waiting for the next unrelated save
+// ── 이 기기에 ST 적기 (v26-1010-12, HB — 읽기 계획 탭이 두 번 통째로 사라졌다) ──
+// ⚠️ 기기 저장 칸(localStorage)은 **기기 용량과 따로** 사이트마다 약 5MB 다(사파리는 한글 한 글자에 2바이트).
+//    차면 ST 저장이 **조용히** 실패하는데, 동기화 기준점(base)은 따로 적히므로 '기준점이 ST 보다 새것' 이 된다.
+//    그 상태로 앱을 다시 켜면 3자 병합이 그 차이 — **그사이 생긴 것 전부** — 를 "이 기기에서 지웠다" 로 읽고
+//    클라우드까지 지운다 (모든 기기가 따라 지워진다. 2026-08-31 사고와 같은 모양, 다른 길).
+//    → ① ST 를 적을 때마다 시각 도장(stsaved), 기준점 메타에도 시각(at) — 켤 때 기준점이 더 새것이면 믿지 않는다
+//      (_fbLoadPersistedBase) ② ST 저장이 실패하면 기준점부터 지워 자리를 비우고 한 번 더 적는다
+//      ③ 그런 세션에서는 기준점을 더 적지 않는다 (_lsTight) — ST 가 먼저다.
+//    ⚠️ ST 를 적는 곳은 모두 이 함수를 지난다. localStorage.setItem(LS_KEY 를 따로 쓰지 말 것 (tests/test_stsaved.js).
+var _lsTight=false,_lsWarned=false;   // var — 이 줄보다 먼저 도는 부팅 정리(위)도 부른다
+function _lsStKey(){return _lsk('stsaved');}
+function _lsDropBase(){try{localStorage.removeItem(_lsk('syncbase'));localStorage.removeItem(_lsk('syncmeta'));}catch(e){}}
+function _lsPutST(){
+  let json;try{json=JSON.stringify(ST);}catch(e){return false;}
+  const put=()=>{localStorage.setItem(LS_KEY,json);try{localStorage.setItem(_lsStKey(),String(Date.now()));}catch(e){}return true;};
+  try{return put();}catch(e){}
+  _lsTight=true;_lsDropBase();                 // 낡을 수 있는 기준점을 먼저 치운다 — 자리도 빈다
+  try{return put();}catch(e){}
+  if(!_lsWarned){_lsWarned=true;try{showToast('이 기기의 앱 저장 칸이 가득 차 기기에 적지 못했어요 — 클라우드에는 그대로 올라가요');}catch(e){}}
+  return false;
+}
 function rawSave(){
   // 기기별 설정(지금 보는 말씀 등)은 이 기기 저장소에도 따로 적어 둔다.
   // 클라우드에서 받은 값이 이걸 덮지 않게 하는 짝이 _dsOverlay 다.
   try{_dsCapture(ST.settings);}catch(e){}
-  try{localStorage.setItem(LS_KEY,JSON.stringify(ST));}catch(e){}
+  _lsPutST();
   if(typeof fbPushState==='function')fbPushState();
 }
 
@@ -44451,15 +44484,23 @@ function _fbSetBase(json,rev,uid){
   _fbLastSeenRev=(typeof rev==='number')?rev:0;
   // 앱을 껐다 켜도(오프라인 편집 후 재실행 등) 병합 기준점이 남도록 저장.
   // 용량 초과 등으로 실패해도 메모리 base로 이번 세션은 정상 동작한다.
+  // ⚠️ v26-1010-12: 메타에 적은 시각(at)을 켤 때 ST 도장과 견준다 (_lsPutST 위 설명).
+  //    ST 를 못 적는 세션(_lsTight)이면 기준점을 남기지 않는다 — 낡은 ST 와 새 기준점이 짝지어지면 지운 것으로 읽힌다.
+  //    적다가 하나라도 실패하면 둘 다 치운다 (기준점·메타가 어긋난 채 남지 않게).
   try{
+    if(typeof _lsTight!=='undefined'&&_lsTight)throw 0;
     localStorage.setItem(_FB_BASE_KEY,json||'');
-    localStorage.setItem(_FB_META_KEY,JSON.stringify({rev:_fbLastSeenRev,uid:uid||(_fbUser&&_fbUser.uid)||null}));
-  }catch(e){}
+    localStorage.setItem(_FB_META_KEY,JSON.stringify({rev:_fbLastSeenRev,uid:uid||(_fbUser&&_fbUser.uid)||null,at:Date.now()}));
+  }catch(e){try{localStorage.removeItem(_FB_BASE_KEY);localStorage.removeItem(_FB_META_KEY);}catch(e2){}}
 }
 function _fbLoadPersistedBase(uid){
   try{
     const meta=JSON.parse(localStorage.getItem(_FB_META_KEY)||'null');
     if(!meta||meta.uid!==uid)return null; // 다른 계정의 base는 무효
+    // ⚠️ 기준점이 이 기기 ST 보다 새것이면 믿지 않는다 (v26-1010-12). 그 차이는 '지운 것' 이 아니라
+    //    '이 기기에 못 적은 것' 이다. 기준점 없이 켜면 클라우드를 그대로 받는다 — 클라우드는 기준점보다 늘 같거나 새것이다.
+    //    옛 메타(at 없음)는 예전대로 믿는다.
+    if(meta.at){const st=+(localStorage.getItem(_lsk('stsaved'))||0);if(!(st>=meta.at))return null;}
     const json=localStorage.getItem(_FB_BASE_KEY);
     if(!json)return null;
     return{json,rev:(typeof meta.rev==='number')?meta.rev:0};
@@ -45444,7 +45485,7 @@ function _fbApplyStateToApp(stateObj){
   _fbApplyingRemote=true;
   try{
     applyRemoteState(stateObj);
-    try{localStorage.setItem(LS_KEY,JSON.stringify(ST));}catch(e){}
+    _lsPutST();
   _fbApplyRenders(stateObj);
   }finally{_fbApplyingRemote=false;}
 }
@@ -46494,7 +46535,7 @@ fbAuth.onAuthStateChanged(async user=>{
           }
         }finally{_fbApplyingRemote=false;}
         _fbSetBase(data.json,cloudRev,user.uid);
-        try{localStorage.setItem(LS_KEY,JSON.stringify(ST));}catch(e){}
+        _lsPutST();
       }else{
         // 원격 없음 → 현재 ST를 올림. switching이면 ST는 이미 기본값이라
         // 이전 계정 데이터가 새 계정에 새지 않는다.
