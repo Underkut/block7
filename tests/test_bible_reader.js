@@ -649,6 +649,35 @@ console.log('\n시나리오 13-27 — 성경이 열려 있는 동안 뒤 화면�
   sc.eq('뒤 화면 밖(전체화면 윗줄)이면 거짓', f("body>header,#verseBarWrap,#pageWrap,#swHome", true)(fake(false)), false);
 }
 
+console.log('\n시나리오 13-28 — 아이패드도 아이폰 길로 (v26-1010-11 HB — 아이패드 미니만 그대로 걸림)');
+{
+  // _brBind 의 판정 넉 줄을 그대로 떼어 가짜 기기들에 돌려 본다
+  const m = SRC.match(/  const UA=navigator\.userAgent\|\|'',ANDROID=[\s\S]*?const IOS=[^\n]*\n/);
+  sc.eq('판정 줄을 찾았다', !!m, true);
+  const judge = (nav, win, callout) => { const css = { supports: (p, v) => p === '-webkit-touch-callout' && callout };
+    return new Function('navigator','window','CSS', m[0] + 'return IOS;')(nav, Object.assign({ CSS: css }, win), css); };
+  const MAC = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)';
+  sc.eq('아이폰', judge({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)', platform: 'iPhone', maxTouchPoints: 5 }, { ontouchstart: null }, true), true);
+  sc.eq('아이패드 (맥 행세 · MacIntel)', judge({ userAgent: MAC, platform: 'MacIntel', maxTouchPoints: 5 }, { ontouchstart: null }, true), true);
+  sc.eq('아이패드 — platform 이 달라도 (예전 판정은 여기서 놓친다)', judge({ userAgent: MAC, platform: 'arm', maxTouchPoints: 5 }, {}, false), true);
+  sc.eq('아이패드 — 이름표가 다 어긋나도 웹킷 표지(-webkit-touch-callout)로', judge({ userAgent: 'X', platform: 'X', maxTouchPoints: 0 }, {}, true), true);
+  sc.eq('안드로이드는 그대로 포인터 길 (pan-y)', judge({ userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/120 Mobile', platform: 'Linux armv8l', maxTouchPoints: 5 }, { ontouchstart: null }, false), false);
+  sc.eq('맥(터치 없음)은 아니다', judge({ userAgent: MAC, platform: 'MacIntel', maxTouchPoints: 0 }, {}, false), false);
+  sc.eq('PC(터치 없음)도 아니다', judge({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', platform: 'Win32', maxTouchPoints: 0 }, {}, false), false);
+  // 스크롤 기록 — 개발자만, 감시자는 passive
+  sc.eq('기록 줄은 처음엔 숨김', /<div class="br-row" id="brDiagRow" style="display:none">/.test(SRC), true);
+  sc.eq('개발자 계정·개발본에서만 보인다', /dev=\(typeof DEV_MODE!=='undefined'&&DEV_MODE\)\|\|\(typeof _isDevAccount==='function'&&_isDevAccount\(\)\);/.test(SRC), true);
+  const diag = slice('// ── 스크롤 기록 (v26-1010-11', "$('brDiagClr').onclick");
+  const adds = diag.match(/addEventListener\('[a-z]+',[\s\S]*?\}(,\{[^}]*\})?\);/g) || [];
+  sc.eq('기록 감시자 일곱', adds.length, 7);
+  sc.eq('전부 passive', adds.every(a => /\{passive:true(,capture:true)?\}\);$/.test(a)), true);
+  sc.eq('기록은 막지 않는다', /preventDefault\(\)/.test(diag), false);
+  const stuck = new Function(SRC.match(/function _brDiagStuck\(r\)\{[^\n]*\}/)[0] + 'return _brDiagStuck;')();
+  sc.eq('꼬리 40px 넘으면 걸림', stuck({ maxTail: 60, edge: false }), true);
+  sc.eq('장 끝에 닿아서 멈춘 것은 걸림이 아니다', stuck({ maxTail: 60, edge: true }), false);
+  sc.eq('짧은 꼬리는 걸림이 아니다', stuck({ maxTail: 20, edge: false }), false);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
