@@ -306,15 +306,34 @@ function writeOp_(req) {
       plan.push({ sn: sn, at: at, cells: cells });
     });
     if (conflicts.length) return { ok: false, error: 'conflict', conflicts: conflicts };
-    // 2) 고치기
+    // 2) 고치기 — 도중에 구글 쪽 오류가 나면 **이미 고친 칸을 원래대로 되돌린다.**
+    //    두 탭(명제 DB · 성도 공유용) 가운데 한 탭만 바뀐 채 남으면 다음 동기화 때
+    //    다른 탭의 옛 값이 앱에 다시 올라온다 (Codex 리뷰 PR #560).
+    var undo = [];
+    try {
+      plan.forEach(function (p) {
+        var row = p.at.r + 1;
+        p.cells.forEach(function (x) {
+          var cell = p.sn.sh.getRange(row, x.c + 1);
+          var fmt = cell.getNumberFormat();
+          undo.push({ cell: cell, raw: x.raw, fmt: fmt, gid: p.sn.sh.getSheetId(), row: row, col: x.n });
+          put_(cell, x, tz, fmt);
+        });
+      });
+      SpreadsheetApp.flush();
+    } catch (err) {
+      var back = undoAll_(undo);
+      return { ok: false, error: back ? 'failed' : 'partial', detail: String((err && err.message) || err).slice(0, 200),
+               // 되돌리기도 못 했으면 바뀌었을 수 있는 칸을 알려 준다 — 앱이 그 행을 다시 읽어 보여 준다
+               cells: back ? [] : undo.map(function (u) { return { gid: u.gid, row: u.row, col: u.col }; }) };
+    }
     var done = plan.map(function (p) {
-      var row = p.at.r + 1;
-      p.cells.forEach(function (x) { put_(p.sn.sh.getRange(row, x.c + 1), x, tz); });
-      var values = {};
+      var row = p.at.r + 1, values = {};
       if (p.cells.length) {
-        SpreadsheetApp.flush();
-        var after = p.sn.sh.getRange(row, 1, 1, p.sn.lastCol).getDisplayValues()[0];
-        p.cells.forEach(function (x) { values[x.n] = after[x.c]; });
+        try {
+          var after = p.sn.sh.getRange(row, 1, 1, p.sn.lastCol).getDisplayValues()[0];
+          p.cells.forEach(function (x) { values[x.n] = after[x.c]; });
+        } catch (x) {}   // 다 썼다 — 고친 뒤의 모양을 못 읽었을 뿐이다 (앱이 다시 읽으면 된다)
       }
       return { gid: p.sn.sh.getSheetId(), name: p.sn.sh.getName(), row: row, moved: p.at.moved,
                wrote: p.cells.map(function (x) { return x.n; }), values: values };
@@ -326,18 +345,40 @@ function writeOp_(req) {
 }
 // 한 칸 쓰기 — 날짜 칸은 **날짜로**(시트의 정렬·필터가 깨지지 않게), 글자 칸은 시트가 숫자·날짜·
 // 수식으로 바꿔 버리지 않게 **글자 그대로** ('3:16' 이 시각이 되거나 '0123' 이 123 이 되지 않게).
-function put_(cell, x, tz) {
+function put_(cell, x, tz, fmt) {
   if (x.day) {
     cell.setValue(Utilities.parseDate(x.day.join('-'), tz, 'yyyy-M-d'));
     if (!(x.raw instanceof Date)) cell.setNumberFormat('yyyy-mm-dd');   // 글자로 적혀 있던 날짜 칸
     return;
   }
   var v = x.value, t = v.trim();
-  if (v === '') { cell.setValue(''); return; }
   if (typeof x.raw === 'number' && /^-?\d+(\.\d+)?$/.test(t)) { cell.setValue(Number(t)); return; }
   if (typeof x.raw === 'boolean' && /^(true|false)$/i.test(t)) { cell.setValue(/^true$/i.test(t)); return; }
+  putText_(cell, v, fmt);
+}
+// 글자 그대로 쓰기. 시트가 숫자·날짜로 바꾸면 작은따옴표를 붙여 다시 쓰고, 그때 시트가 멋대로
+// 바꿔 놓은 칸 서식(날짜 모양 등)도 원래대로 돌린다 (fmt — 쓰기 전 서식).
+function putText_(cell, v, fmt) {
+  if (v === '') { cell.setValue(''); return; }
   if (/^[=+\-@']/.test(v)) { cell.setValue("'" + v); return; }   // 수식·부호로 읽히지 않게
   cell.setValue(v);
   var got = cell.getValue();
-  if (typeof got !== 'string' || got !== v) cell.setValue("'" + v);   // 시트가 숫자·날짜로 바꿨다 → 글자로
+  if (typeof got !== 'string' || got !== v) {                      // 시트가 숫자·날짜로 바꿨다 → 글자로
+    cell.setValue("'" + v);
+    if (fmt != null && cell.getNumberFormat() !== fmt) cell.setNumberFormat(fmt);
+  }
+}
+// 되돌리기 — 고친 반대 순서로, 값을 먼저 그리고 서식(날짜 모양)을 원래대로. 서식이 나중인 것은
+// 값을 넣을 때 시트가 서식을 멋대로 바꾸기 때문이다. 하나라도 못 되돌리면 false.
+function undoAll_(undo) {
+  var ok = true;
+  for (var i = undo.length - 1; i >= 0; i--) {
+    var u = undo[i];
+    try {
+      if (typeof u.raw === 'string') putText_(u.cell, u.raw, u.fmt); else u.cell.setValue(u.raw);
+      u.cell.setNumberFormat(u.fmt);
+    } catch (x) { ok = false; }
+  }
+  try { SpreadsheetApp.flush(); } catch (x) { ok = false; }
+  return ok;
 }

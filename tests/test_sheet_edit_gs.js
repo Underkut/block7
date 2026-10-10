@@ -48,6 +48,10 @@ function shownOf(cell, tz) {
   return String(v);
 }
 let FLUSHES = 0, WRITES = [];
+// 구글 쪽 오류 흉내 — FAIL(탭, 행, 열, 값) 이 참이면 그 쓰기에서 던진다. FAIL_ALL 이면 모든 쓰기가.
+// FAIL_READ 면 쓰기가 한 번이라도 있은 뒤의 읽기가 던진다.
+let FAIL = null, FAIL_ALL = false, FAIL_READ = false;
+const BOOM = () => { throw new Error('Service Spreadsheets failed while accessing document with id x.'); };
 function makeSheet(ss, gid, name, rows) {
   // rows: 2차원 — 칸은 글자 · 숫자 · Date · {v,f,fmt,dv}
   const cells = rows.map(r => r.map(x => (x && typeof x === 'object' && !(x instanceof Date)) ? Object.assign({ fmt: 'General' }, x)
@@ -65,12 +69,13 @@ function makeSheet(ss, gid, name, rows) {
     getRange(r, c, nr = 1, nc = 1) {
       const grid = f => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => f(at(r + i, c + j))));
       return {
-        getDisplayValues: () => grid(x => shownOf(x, ss.tz)),
+        getDisplayValues: () => { if (FAIL_READ && WRITES.length) BOOM(); return grid(x => shownOf(x, ss.tz)); },
         getValues: () => grid(x => x.v),
         getFormulas: () => grid(x => x.f || ''),
         getDataValidations: () => grid(x => x.dv || null),
         getValue: () => at(r, c).v,
         setValue(val) {
+          if (FAIL_ALL || (FAIL && FAIL(name, r, c, val))) BOOM();
           const x = at(r, c);
           WRITES.push([name, r, c, val instanceof Date ? 'Date' : val]);
           delete x.f;
@@ -79,6 +84,7 @@ function makeSheet(ss, gid, name, rows) {
           return this;
         },
         setNumberFormat(f) { at(r, c).fmt = f; return this; },
+        getNumberFormat: () => at(r, c).fmt,
       };
     },
   };
@@ -164,7 +170,7 @@ const PROP = '1fDVyeYIxd4gEGK2s5OEzG6kmxRPbabBEzJ5uEpL';   // 흉내 파일 id (
 const VERSES = '1qkH4pWmuCAjtWuVIz1XIN6niUkCollw7YIlI5pk';
 function fresh() {
   for (const k in SHEETS) delete SHEETS[k];
-  WRITES = []; FLUSHES = 0; LOCK_BUSY = false; LOOKUP_DOWN = false;
+  WRITES = []; FLUSHES = 0; LOCK_BUSY = false; LOOKUP_DOWN = false; FAIL = null; FAIL_ALL = false; FAIL_READ = false;
   const db = ['P0001', 'P0002', 'P0003', 'P0004', 'P0005'].map((id, i) => rowOf(DB_HEAD, {
     '명제 ID': id, '날짜': kday(2026, 6, 21 + (i > 2 ? 7 : 0)), '카테고리': '주일예배', '설교 제목': '언덕 위의 도시',
     '설교 본문': '마태복음 5:13-16', '명제': TXT(id), '대표 문구 1': '빛과 소금', '주제 태그': '제자도',
@@ -400,6 +406,7 @@ console.log('\n시나리오 6 — 시트가 글자를 숫자·날짜·수식으�
   sc.eq("'0123' 이 123 이 되지 않는다", put('비고', '0123').raw, '0123');
   sc.eq("'3:16' 이 시각이 되지 않는다", put('관련 암송말씀', '3:16').raw, '3:16');
   sc.eq("글자 칸의 '2026-06-21' 은 글자 그대로", put('비고', '2026-06-21').raw, '2026-06-21');
+  sc.eq('…그리고 시트가 멋대로 바꾼 칸 서식(날짜 모양)도 원래대로', cellOf(PROP, 0, 3, 27).fmt, 'General');
   sc.eq("'TRUE' 도 글자 그대로", put('비고', 'TRUE').raw, 'TRUE');
   sc.eq("작은따옴표로 시작하는 글", put('비고', "'인용'").raw, "'인용'");
   sc.eq('보통 글은 한 번에', put('비고', '설교 후 기도').raw, '설교 후 기도');
@@ -437,6 +444,43 @@ console.log('\n시나리오 7 — 날짜 모양');
   sc.eq('여러 모양', ['2026-06-21', '2026. 6. 21', '2026.6.21.', '2026/6/21', '26-6-21', '2026년 6월 21일', '2026년6월21일'].map(s => P(s)),
     Array(7).fill([2026, 6, 21]));
   sc.eq('날짜가 아닌 것', ['', '다음 주일', '2026-13-01', '2026-02-29', '6/21', '2026-06'].map(s => P(s)), Array(6).fill(null));
+}
+
+// ══ 7-2. 쓰는 도중 구글 쪽 오류 — 고친 칸을 되돌린다 (Codex 리뷰 PR #560) ═══════════════
+console.log('\n시나리오 7-2 — 두 탭을 고치다 둘째 탭에서 구글 오류가 나면 첫 탭도 되돌린다');
+{
+  // 명제 DB(명제 글 · 날짜 칸 · 비어 있던 날짜 칸) → 성도 공유용(글자로 적힌 날짜 · 묵상 질문 ← 여기서 오류)
+  const req = () => ({ op: 'write', token: HB(), id: PROP, edits: [
+    { gid: 0, find: { match: { '명제 ID': 'P0004' } }, set: { '명제': { before: TXT('P0004'), value: '새 글' }, '날짜': { before: '2026-06-28', value: '2026-07-05' } } },
+    { gid: 0, find: { match: { '명제 ID': 'P0005' } }, set: { '날짜': { before: '', value: '2026-08-09' } } },
+    { gid: 777, find: { match: { '명제 ID': 'P0001' } }, set: { '날짜': { before: '2026-07-19', value: '2026-07-20' }, '묵상 질문': { before: '오늘 나는?', value: '새 질문' } } }] });
+  const QCOL = SH_HEAD.indexOf('묵상 질문') + 1;
+  // 비어 있던 날짜 칸 — 날짜를 넣으면 서식도 yyyy-mm-dd 로 바꾸므로 되돌릴 때 서식도 돌려야 한다
+  const emptyDate = () => { const x = cellOf(PROP, 0, 6, 2); x.v = ''; x.fmt = 'General'; };
+  fresh(); emptyDate();
+  const before = dump(PROP), locks = LOCKS;
+  let once = true;   // 잠깐의 구글 오류 — 한 번 던지고 그다음엔 된다 (되돌리기는 된다)
+  FAIL = (name, r, c) => { if (once && name === '성도 공유용' && c === QCOL) { once = false; return true; } return false; };
+  const r = call(req());
+  sc.eq('저장 못 했다고 알린다 (되돌렸으니 바뀐 칸 없음)', [r.ok, r.error, r.cells], [false, 'failed', []]);
+  sc.eq('앞서 고친 칸들(명제 DB 명제·날짜·빈 날짜 · 성도 공유용 날짜)이 값도 서식도 원래대로', dump(PROP) === before, true);
+  sc.eq('글자로 적혀 있던 날짜 칸은 다시 글자 · 서식도 그대로', [cellOf(PROP, 777, 3, 8).v, cellOf(PROP, 777, 3, 8).fmt], ['2026-07-19', 'General']);
+  sc.eq('비어 있던 날짜 칸은 다시 비고 · 서식도 그대로', [cellOf(PROP, 0, 6, 2).v, cellOf(PROP, 0, 6, 2).fmt], ['', 'General']);
+  sc.eq('잠금은 풀었다', LOCKS - locks === 1 && LOCKS === UNLOCKS, true);
+  // 되돌리기마저 안 되면 — 바뀌었을 수 있는 칸을 알려 준다 (앱이 그 행을 다시 읽는다)
+  fresh(); emptyDate();
+  FAIL = (name, r, c) => { if (name === '성도 공유용' && c === QCOL) { FAIL_ALL = true; return true; } return false; };
+  const p = call(req());
+  sc.eq('되돌리기도 못 하면 "일부만 바뀌었을 수 있음" 과 그 칸들', [p.ok, p.error, p.cells], [false, 'partial', [
+    { gid: 0, row: 5, col: '명제' }, { gid: 0, row: 5, col: '날짜' }, { gid: 0, row: 6, col: '날짜' },
+    { gid: 777, row: 3, col: '날짜' }, { gid: 777, row: 3, col: '묵상 질문' }]]);
+  // 다 쓴 뒤 '고친 뒤 모양' 만 못 읽었으면 — 저장은 된 것이다
+  fresh(); emptyDate();
+  FAIL_READ = true;
+  const q = call(req());
+  sc.eq('다 썼는데 고친 뒤 모양을 못 읽었을 뿐이면 "저장됨"', [q.ok, q.tabs.map(t => t.wrote)], [true, [['명제', '날짜'], ['날짜'], ['날짜', '묵상 질문']]]);
+  sc.eq('…시트에는 실제로 다 들어갔다', [shown(PROP, 0, 5, 9), shown(PROP, 0, 5, 2), shown(PROP, 777, 3, 8), shown(PROP, 777, 3, 6)],
+    ['새 글', '2026-07-05', '2026-07-20', '새 질문']);
 }
 
 // ══ 8. 앱 ↔ 문 — 앱(index.html)이 보내는 모양 그대로 문이 알아듣는가 ═══════════════
