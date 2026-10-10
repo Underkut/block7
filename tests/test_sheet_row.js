@@ -235,6 +235,19 @@ console.log('\n시나리오 5 — 다른 시트의 같은 명제 ID');
   COLLS=[{id:'cx',name:'말씀',google:[{id:'gx',url:'https://docs.google.com/spreadsheets/d/XXX/edit#gid=0'}],
     verses:[{ref:'요한복음 1:1',cat:'주일예배',topic:'말씀',krText:'태초에',src:'google',gid:'gx',row:7}]}];
   sc.eq('명제 ID 가 없는 말씀을 명제로 착각하지 않는다',_sheetUrlForVerse(shown(a.verses[0])),null);
+  // ⚠️ v26-1010-15, Codex 리뷰(PR #544) — **구독한** 다른 교회 명제를 길게 눌렀을 때.
+  //    구독 모음에는 시트 링크가 없다. 명제 ID 만으로 다른 모음까지 넘어가 찾으면,
+  //    내 시트에 같은 P0001 이 있을 때 **본문이 다른 남의 행**을 연다 → 본문까지 같을 때만 연다.
+  const sub={id:'cs',name:'구독: 이웃 교회',importCode:'123456',google:[],
+    verses:[{pid:'P0001',kind:'prop',ref:'시편 23:1',cat:'주일예배',topic:'목자',krText:'이웃 교회 명제',src:'google'}]};
+  COLLS=[sub,a];
+  sc.eq('구독 명제가 같은 ID 의 내 시트 행을 열지 않는다',_sheetUrlForVerse(shown(sub.verses[0])),null);
+  // 같은 명제(본문까지 같음)를 내 시트에서 받아 둔 경우 — 그 행이 맞는 행이다
+  const mine={id:'cm',name:'내 명제집',google:[{id:'gm',url:'https://docs.google.com/spreadsheets/d/MINE/edit#gid=0'}],
+    verses:[{pid:'P0001',kind:'prop',ref:'시편 23:1',cat:'주일예배',topic:'목자',krText:'이웃 교회 명제',src:'google',gid:'gm',row:9}]};
+  COLLS=[sub,mine];
+  const tm=_sheetUrlForVerse(shown(sub.verses[0]));
+  sc.eq('본문까지 같으면 그 시트의 행을 연다',[tm&&tm.url.includes('/d/MINE/'),tm&&tm.row],[true,9]);
 }
 
 sc.done();

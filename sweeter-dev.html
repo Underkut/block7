@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-14  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-15  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-14";
+const APP_VERSION = "v. 26-1010-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -22146,7 +22146,11 @@ function vgPickAxis(v){
 //    예전엔 명제도 **장절·대분류·소주제** 로 찾았다. 그런데 명제는 한 설교에서
 //    여럿 나와 그 셋이 다 같다 (_verseIdentity 주석) → 늘 그 설교의 **첫 명제** 를
 //    집어 그 행으로 갔다. 2026-10-10 실제 시트(명제 455개)로 돌려 보니 378개가 다른 행.
-//    → 명제는 **명제 ID 하나로만** 찾는다 (본문은 두 모음이 같은 ID 를 쓸 때만 가른다).
+//    → 명제는 **명제 ID 와 본문이 둘 다 같은 것**만 찾는다. 장절·대분류·소주제는 안 본다.
+//      ⚠️ v26-1010-15, Codex 리뷰(PR #544) — 명제 ID '만으로' 모음을 넘나들지 말 것.
+//      교회마다 P0001 부터 매긴다. 구독한 이웃 교회 명제(그 모음엔 시트 링크가 없다)를
+//      길게 누르면 내 시트의 같은 P0001 — **본문이 다른 남의 행** — 이 열렸다.
+//      본문까지 같으면 같은 명제라 어느 시트의 행이든 맞는 행이다.
 //      말씀은 예전 그대로 장절·대분류·소주제로 찾되, 명제는 집지 않고
 //      본문까지 같은 살아 있는 것을 먼저 고른다.
 //    ⚠️ 한 단계를 **모음 전부** 에서 찾아본 뒤에야 다음(더 헐거운) 단계로 내려간다 —
@@ -22159,8 +22163,7 @@ function _sheetUrlForVerse(v){
   const sameCT=x=>(x.cat||'')===(v.cat||'')&&(x.topic||'')===(v.topic||'');
   const steps=pid
     ? [x=>x.pid===pid&&x.krText===v.krText&&!x.del,
-       x=>x.pid===pid&&!x.del,
-       x=>x.pid===pid]
+       x=>x.pid===pid&&x.krText===v.krText]
     : [x=>!x.pid&&x.ref===v.ref&&sameCT(x)&&x.krText===v.krText&&!x.del,
        x=>!x.pid&&x.ref===v.ref&&sameCT(x),
        x=>!x.pid&&x.ref===v.ref];
