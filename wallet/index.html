@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-11 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-12 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -674,7 +674,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-11";
+const APP_VERSION = "v. 26-1010-12";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1400,11 +1400,18 @@ const dlabelOf = date => { const d = new Date(date+'T00:00:00'); return date===t
 /* ───────── 받았어요 / 썼어요 ───────── */
 function txFlow(kind, ex){
   let date = ex ? ex.date : todayStr(), acct = ex && ex.acct ? acctOf(ex) : S.lastAcct;
-  padSheet({ title: kind==='in' ? '얼마 받았어요?' : '얼마 썼어요?', init: ex?ex.amt:0, nextLabel:'다음으로 ▶', memo: ex&&ex.note ? ex.note : '',
+  const gbuy = kind==='out' && ex && ex.id && S.goals.some(g => g.k===ex.cat);      // 갖고 싶은 것을 산 기록: 칸 고르기 없이 그 목표에 그대로 둔다
+  padSheet({ title: kind==='in' ? '얼마 받았어요?' : '얼마 썼어요?', init: ex?ex.amt:0, nextLabel: gbuy ? '고쳤어요!' : '다음으로 ▶', memo: ex&&ex.note ? ex.note : '',
+    who: gbuy ? catOf(ex.cat) : null,
     extra: acctSeg(acct, kind==='in' ? '어디로 받았어요?' : '무엇으로 썼어요?') + dateRowHtml(date),
-    onDone: (amt, note) => pickStep(kind, amt, date, ex, note, acct) });
+    onDone: (amt, note) => gbuy ? goalTxSave(ex, amt, date, note, acct) : pickStep(kind, amt, date, ex, note, acct) });
   $('fDate').onchange = e => { date = e.target.value || todayStr(); $('dtxt').textContent = dlabelOf(date); };
   bindAcct(v => { acct = v; });
+}
+function goalTxSave(ex, amt, date, note, acct){
+  const i = S.tx.findIndex(t => t.id===ex.id); if(i<0) return;
+  S.tx[i] = Object.assign({}, S.tx[i], {amt, date, note: note||'', acct});
+  save(); month = date.slice(0,7); closeSheet(); buzz(20); render(); toast('고쳤어요 ('+acctName(acct)+' '+won(amt)+')');
 }
 function pickStep(kind, amt, date, ex, note, acct){
   let items = kind==='in' ? giverItems(ex ? ex.memo : null) : S.tiles.filter(c => !(S.hideT[okA(acct)]||[]).includes(c.k) || (ex && ex.cat===c.k)).map(c => ({key:c.k, n:c.n, ch:c.ch, on: !!ex && ex.cat===c.k}));
@@ -1842,9 +1849,13 @@ function goalBuy(k){
 }
 function goalDoneSheet(k){
   const g = S.goals.find(x => x.k===k); if(!g) return;
+  const recs = S.tx.filter(t => t.t==='out' && t.cat===g.k).sort((a,b) => (a.at||0)-(b.at||0)), paid = recs.reduce((n,t) => n + t.amt, 0);
   openSheet(`<h2>산 것</h2><div class="gprev" style="background:${gBg(g.img)}">${gImgHtml(g.img)}</div><div class="who"><span style="font-size:22px">${esc(g.n)}</span></div>
-    <div class="disp out">${nf(g.price)}<small>원</small></div><div class="note">${g.doneAt ? mdOf(g.doneAt)+'에 ' : ''}샀어요. 쓴 돈 기록은 그대로 남아요.</div>
-    <div class="stack-btns"><button class="gb gray warn" id="gDoneDel">목록에서 지우기</button></div>`);
+    <div class="disp out">${nf(paid || g.price)}<small>원</small></div><div class="note">${g.doneAt ? mdOf(g.doneAt)+'에 ' : ''}샀어요.${paid && paid!==g.price ? ' (값은 '+won(g.price)+'였어요)' : ''}</div>
+    ${recs.length ? `<div class="sgh"><i>🧾</i>낸 돈</div><div class="note sgn">현금 대신 카드로 냈거나 금액이 달랐으면 눌러서 고쳐요</div>`
+      + recs.map(t => `<button class="row card" data-gt="${t.id}"><span class="av" style="background:#f7f3ff">${AC_ICO[acctOf(t)]}</span><span class="mid"><div class="t">${byA(acctOf(t))} 냈어요</div><div class="s">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note ? ' · '+esc(t.note) : ''}</div></span><span class="a out">−${nf(t.amt)}<small>고치기 ›</small></span></button>`).join('') : ''}
+    <div class="stack-btns" style="margin-top:6px"><button class="gb gray warn" id="gDoneDel">목록에서 지우기</button></div><div class="note" style="margin-top:-4px">목록에서 지워도 쓴 돈 기록은 그대로 남아요.</div>`);
+  $('sheet').querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { const t = S.tx.find(x => x.id===b.dataset.gt); if(t) txFlow('out', t); });
   $('gDoneDel').onclick = () => { if(!confirm('"'+g.n+'" 을(를) 산 것 목록에서 지울까요?\n쓴 돈 기록은 그대로 남아요.')) return;
     S.gone[g.k] = {n:g.n, ch:g.img.t==='char' ? g.img.v : 'star'}; S.goals = S.goals.filter(x => x.k!==g.k); save(); closeSheet(); render(); toast('지웠어요'); };
 }
