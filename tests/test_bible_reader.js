@@ -673,9 +673,12 @@ console.log('\n시나리오 13-28 — 아이패드도 아이폰 길로 (v26-1010
   sc.eq('전부 passive', adds.every(a => /\{passive:true(,capture:true)?\}\);$/.test(a)), true);
   sc.eq('기록은 막지 않는다', /preventDefault\(\)/.test(diag), false);
   const stuck = new Function(SRC.match(/function _brDiagStuck\(r\)\{[^\n]*\}/)[0] + 'return _brDiagStuck;')();
-  sc.eq('꼬리 40px 넘으면 걸림', stuck({ maxTail: 60, edge: false }), true);
-  sc.eq('장 끝에 닿아서 멈춘 것은 걸림이 아니다', stuck({ maxTail: 60, edge: true }), false);
-  sc.eq('짧은 꼬리는 걸림이 아니다', stuck({ maxTail: 20, edge: false }), false);
+  // v26-1010-12 — 길이가 아니라 '멈춰 있던 시간' 으로 (빠르게 밀면 한두 칸 사이 꼬리가 생겼다 바로 따라잡는다 — HB 기록 '걸림 8')
+  sc.eq('글이 0.25초 넘게 멈춰 있었으면 걸림', stuck({ stuckMs: 400, maxTail: 90 }), true);
+  sc.eq('꼬리가 커도 금방 따라잡았으면 걸림이 아니다', stuck({ stuckMs: 40, maxTail: 200 }), false);
+  sc.eq('멈춤 시간은 장 끝이 아닐 때만 잰다', /if\(g\.tail>=40\)\{const y0=sc\.scrollTop;if\(y0>1&&y0<sc\.scrollHeight-sc\.clientHeight-1\)/.test(diag), true);
+  sc.eq('스크롤이 오면 멈춤 시계를 새로', /g\.tail=0;g\.tt=Date\.now\(\);/.test(diag), true);
+  sc.eq('복사본에 저장 칸 줄', /function _brDiagStore\(\)\{/.test(SRC) && /_brDiagStore\(\)\];/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
