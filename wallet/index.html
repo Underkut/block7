@@ -277,6 +277,8 @@ body[data-mode=P] .modechip{background:linear-gradient(135deg,#ff9f6f,#ff6fa5);b
 .pr-link{display:block;margin:10px auto 0;font-size:13px;color:#4f6bed;text-decoration:underline}
 .pr-empty{text-align:center;color:#6b7280;padding:40px 0}
 .setrow.fam{margin-top:12px}
+.bkrow{display:flex;align-items:center;gap:8px;background:#f7f3ff;border-radius:16px;padding:8px 8px 8px 14px;margin:8px 0}.bkrow .mid{flex:1;min-width:0}.bkrow .t{font-size:17px}.bkrow .s{font-size:12px;color:var(--sub)}
+.bkrow .gb.sm{width:auto;flex:none;padding:8px 12px;font-size:15px}
 .sgh{display:flex;align-items:center;gap:7px;font-size:16px;color:var(--ink);margin:22px 4px 10px}
 .sgh i{font-style:normal;font-size:18px}
 .shsc>h2+.sgh{margin-top:10px}
@@ -1016,7 +1018,7 @@ function load(){
   return blank();
 }
 var _ro = false;   // 부모 보고서가 아이 상태로 잠깐 계산하는 동안은 저장하지 않는다
-function save(){ if(_ro || MIR) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); }
+function save(){ if(_ro || MIR) return; try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast('저장하지 못했어요'); } famQueue(); bakSoon(); }
 
 /* ───────── 계산 ───────── */
 const ACCTS = [{k:'cash', n:'현금'}, {k:'card', n:'체크카드'}, {k:'bank', n:'통장'}];
@@ -2005,6 +2007,7 @@ function chkSheet(date){
     if(both) $('cSave').onclick = () => {
       const before = starsOf(); S.chk[date] = {s:D.s, g:D.g};
       const after = starsOf(), L = lvOf(after).lv, old = S.lvSeen, up = L > old; if(up) newGifts(old, L).forEach(g => S.gnew.push(g.id)); S.lvSeen = L; save(); closeSheet(); render();
+      clearTimeout(_bakT); _bakT = 0; autoBackup(date===todayStr() ? 'chk' : 'auto');       // 두 질문에 답한 순간 = 그날의 자동 백업
       if(up) setTimeout(() => lvUpSheet(L, old), 300);
       else if(after > before){ sfx('win'); toast('별 '+(after-before)+'개를 받았어요!'); }
       else toast('솔직하게 답해 줘서 고마워요');
@@ -2664,11 +2667,15 @@ function pSettings(){
     <div class="note" style="text-align:left">${esc(FAM.email||'')}로 로그인했어요</div>
     <div class="ptitle">화면 밝기 (보고서·우체통)</div><div class="rwseg" id="pthSeg"><button data-t="sys" class="${PTH==='sys'?'on':''}">시스템</button><button data-t="light" class="${PTH==='light'?'on':''}">라이트</button><button data-t="dark" class="${PTH==='dark'?'on':''}">다크</button></div>
     <div class="ptitle">알림</div><button class="gb blue sm" id="prNoti">알림 설정 (무엇을 · 언제)</button>
+    <div class="ptitle">기록 백업</div><button class="gb blue sm" id="prBak"><span class="bi">💾</span>${esc((curKid() && curKid().name) || '아이')} 기록 파일로 저장하기</button>
+    <div class="note" style="margin-top:6px">지금 보이는 아이 폰 기록을 파일로 저장해요. 아이 폰 설정의 '파일로 저장하기'와 같은 파일이라, 아이 폰의 '백업에서 불러오기'로 되살릴 수 있어요.</div>
     <div class="ptitle">가족 관리</div><div class="stack-btns"><button class="gb blue sm" id="prKid">아이 폰 연결하기</button>${PAR.kids.length ? '<button class="gb blue sm" id="prRe">아이 폰 다시 연결 (폰을 바꿨을 때)</button>' : ''}<button class="gb gray sm" id="prPar">다른 부모님 초대</button><button class="gb gray sm" id="prJoin">받은 초대 코드 넣기</button></div>
     <div class="note">아이 폰 연결 코드는 15분, 다른 부모님 초대 코드는 7일 동안 쓸 수 있어요.</div>
     <button class="gb gray sm" id="prTour" style="margin-top:10px">사용 설명 다시 보기</button>
     <button class="linkbtn" id="prOut">로그아웃</button><div class="note">용돈 친구들 ${APP_VERSION}</div>`);
   $('prTour').onclick = tourAgain;
+  $('prBak').onclick = () => { const k = curKid(); if(!k || !k.st){ toast('저장할 아이 기록이 아직 없어요'); return; }
+    saveTextFile(backupText(k.st), '용돈친구들-백업-'+(k.name||'아이')+'-'+todayStr()+'.json'); toast('아이 기록을 파일로 저장했어요'); };
   $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
   $('prNoti').onclick = notiSheet; $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
   $('prPar').onclick = async () => { try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } };
@@ -3110,7 +3117,67 @@ setTimeout(() => {
 }, 900);
 
 /* ───────── 백업 ───────── */
-function backupText(){ return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:S.tx, alloc:S.alloc, tiles:S.tiles, gone:S.gone, goals:S.goals, chk:S.chk, badges:S.badges, badgeInit:S.badgeInit, mode:S.mode, quizHide:S.quizHide, waits:S.waits, held:S.held, applied:S.applied, theme:S.theme, pin:S.pin, cps:S.cps, exp:S.exp, useExp:S.useExp, givers:S.givers}}); }
+function backupText(st){ st = st || S; return JSON.stringify({app:'allowance', v:3, at:Date.now(), data:{tx:st.tx, alloc:st.alloc, tiles:st.tiles, gone:st.gone, goals:st.goals, chk:st.chk, badges:st.badges, badgeInit:st.badgeInit, mode:st.mode, quizHide:st.quizHide, waits:st.waits, held:st.held, applied:st.applied, theme:st.theme, pin:st.pin, cps:st.cps, exp:st.exp, useExp:st.useExp, givers:st.givers}}); }
+function saveTextFile(text, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+
+/* ───────── 자동 백업 — 하루 한 칸, 30일 보관 (v26-1010-16) ─────────
+   이 폰 안(IndexedDB 'allowance.bak')에 날짜마다 한 칸씩 쌓는다. 언제 찍히나:
+   ① 아이가 '하루 마무리' 두 질문에 답하는 순간 → 그날 칸을 그때 상태로 찍고 '마무리 백업'(chk)으로 굳힌다(그 뒤 고쳐도 덮어쓰지 않는다)
+   ② 마무리 답을 안 한 날 → 기록이 바뀔 때마다 그날 칸을 새로 덮어써서, 날이 바뀌면 '그날 마지막 상태'로 남는다(auto)
+   30일이 지난 칸은 지운다. 빈 기록(tx 0개)은 찍지 않는다 — 비어 버린 폰이 좋은 백업을 밀어내지 못하게. 부모님 폰·부모님이 보는 화면(_ro)에서는 찍지 않는다. */
+const BAK_KEEP = 30;
+var _bakDb = null, _bakT = 0;
+function bakOpen(){
+  if(_bakDb) return _bakDb;
+  _bakDb = new Promise((res, rej) => { try{ const r = indexedDB.open('allowance.bak', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('snaps', {keyPath:'d'});
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error('blocked')); }catch(e){ rej(e); } });
+  _bakDb.catch(() => { _bakDb = null; });
+  return _bakDb;
+}
+const bakRun = (mode, fn) => bakOpen().then(db => new Promise((res, rej) => { const t = db.transaction('snaps', mode), r = fn(t.objectStore('snaps'));
+  t.oncomplete = () => res(r && r.result); t.onerror = t.onabort = () => rej(t.error); }));
+const bakGet = d => bakRun('readonly', st => st.get(d));
+const bakPut = rec => bakRun('readwrite', st => st.put(rec));
+const bakAll = () => bakRun('readonly', st => st.getAll()).then(l => (l || []).slice().sort((a,b) => a.d < b.d ? 1 : -1));
+async function bakPrune(){
+  const old = (await bakAll()).filter(r => /^\d{4}-\d{2}-\d{2}$/.test(r.d) && r.d < dayAdd(-(BAK_KEEP-1)));
+  if(old.length) await bakRun('readwrite', st => { old.forEach(r => st.delete(r.d)); });
+  return old.length;
+}
+async function autoBackup(kind){
+  if(_ro || MIR || (FAM && FAM.role==='parent') || !S.tx.length) return false;
+  try{
+    const d = todayStr(), cur = await bakGet(d);
+    if(kind==='auto' && cur && cur.kind==='chk') return false;          // 마무리로 굳힌 날은 그대로
+    await bakPut({d, at:Date.now(), kind, n:S.tx.length, text:backupText()});
+    await bakPrune(); return true;
+  }catch(e){ return false; }
+}
+function bakSoon(){ clearTimeout(_bakT); _bakT = setTimeout(() => { _bakT = 0; autoBackup('auto'); }, 4000); }
+function bakFlush(){ if(_bakT){ clearTimeout(_bakT); _bakT = 0; autoBackup('auto'); } }
+document.addEventListener('visibilitychange', () => { if(document.hidden) bakFlush(); });
+window.addEventListener('pagehide', bakFlush);
+setTimeout(() => autoBackup('auto'), 6000);                               // 앱을 연 날에도 칸이 하나는 생기게
+const bakWhen = r => { const x = new Date(r.d+'T00:00:00'); return (x.getMonth()+1)+'월 '+x.getDate()+'일 ('+'일월화수목금토'[x.getDay()]+')'; };
+const bakKind = r => r.kind==='chk' ? '하루 마무리 때' : r.kind==='undo' ? '불러오기 직전' : '그날 마지막 상태';
+async function bakInfo(el){
+  try{ const l = (await bakAll()).filter(r => r.d !== 'undo'); el.textContent = l.length ? '최근 '+bakWhen(l[0])+' · 지금 '+l.length+'일치 보관 중' : '아직 없어요 — 오늘 안에 저절로 만들어져요'; }
+  catch(e){ el.textContent = '이 폰에서는 자동 백업을 쓸 수 없어요'; }
+}
+async function bakSheet(){
+  let list = []; try{ list = await bakAll(); }catch(e){}
+  const undo = list.find(r => r.d==='undo'), days = list.filter(r => r.d!=='undo');
+  const row = r => `<div class="bkrow"><span class="mid"><div class="t">${r.d==='undo' ? '↩️ 되돌리기' : bakWhen(r)}</div><div class="s">${bakKind(r)} · ${fmtHM(r.at)} · 기록 ${r.n}개</div></span><button class="gb soft sm" data-bk="load" data-d="${r.d}">${r.d==='undo' ? '되돌리기' : '불러오기'}</button><button class="gb soft sm" data-bk="file" data-d="${r.d}" aria-label="파일로 저장">💾</button></div>`;
+  openSheet(`<h2>자동 백업</h2><div class="note">하루에 한 번, 하루 마무리 때(안 했으면 그날 마지막 상태로) 저절로 저장돼요.<br>최근 ${BAK_KEEP}일 동안 보관하고 오래된 것은 지워요.</div>
+    ${days.length || undo ? (undo ? row(undo) : '') + days.map(row).join('') : `<div class="empty" style="padding:14px">${face('pig')}아직 자동 백업이 없어요.<br>기록을 적으면 저절로 만들어져요.</div>`}
+    <div class="note" style="margin-top:10px">⚠️ 불러오면 지금 기록이 그 날 모습으로 바뀌어요.<br>(바뀌기 직전 모습은 '되돌리기'로 한 번 돌릴 수 있어요)</div>`);
+  $('sheet').querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { const r = list.find(x => x.d===b.dataset.d); if(!r) return;
+    if(b.dataset.bk==='file'){ saveTextFile(r.text, '용돈친구들-자동백업-'+(r.d==='undo' ? '불러오기직전' : r.d)+'.json'); toast('파일로 저장했어요'); }
+    else restoreFromText(r.text, r.d==='undo' ? '불러오기 직전 기록' : bakWhen(r)+' 자동 백업'); });
+}
+const fmtHM = ms => { const d = new Date(ms); return pad2(d.getHours())+':'+pad2(d.getMinutes()); };
 function markBackup(){ S.lastBackup = Date.now(); save(); }
 function backupSheet(){
   const last = S.lastBackup ? '마지막 백업: '+new Date(S.lastBackup).toLocaleDateString('ko-KR') : '아직 백업한 적이 없어요';
@@ -3125,6 +3192,7 @@ function backupSheet(){
     ${famRowHtml()}
     <div class="sgh"><i>🛡️</i>돈 기록 지키기</div>
     <div class="note sgn">기록은 <b>이 휴대폰 안에만</b> 있어요. 가끔 아빠한테 백업을 부탁해요!<br><small>${last}</small></div>
+    <button class="gb soft sm" id="bkAuto" style="margin-bottom:12px"><span class="bi">🗓️</span><span style="text-align:left;line-height:1.25">자동 백업 보기 · 불러오기<small id="bakInfo" style="display:block;font-size:12px;color:var(--sub);font-weight:400"></small></span></button>
     <div class="stack-btns t3"><button class="gb blue" id="bkCopy"><span class="bi">📋</span>기록 복사하기</button><button class="gb blue" id="bkFile"><span class="bi">💾</span>파일로 저장하기</button><button class="gb soft" id="bkOpen"><span class="bi">📂</span>백업에서 불러오기</button></div>
     <div class="sgh"><i>📖</i>도움말</div>
     <button class="gb soft sm" id="bkTour"><span class="bi">🐷</span>사용 설명 다시 보기</button>
@@ -3147,8 +3215,8 @@ function backupSheet(){
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
   };
-  $('bkFile').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([backupText()], {type:'application/json'}));
-    a.download = '용돈친구들-백업-'+todayStr()+'.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000); markBackup(); toast('파일로 저장했어요'); };
+  $('bkFile').onclick = () => { saveTextFile(backupText(), '용돈친구들-백업-'+todayStr()+'.json'); markBackup(); toast('파일로 저장했어요'); };
+  $('bkAuto').onclick = bakSheet; bakInfo($('bakInfo'));
   $('bkOpen').onclick = restoreSheet;
 }
 /* 미리듣기: 고른 곡과 상관없이 한 곡만 들어 본다(다시 누르면 멈춤). 듣는 동안 배경음악은 잠시 멈췄다가 이어진다 */
@@ -3234,16 +3302,18 @@ function restoreSheet(){
     <input type="file" id="rFile" accept=".json,application/json" style="margin:10px 0;width:100%;font-size:14px">
     <button class="gb purple" id="rGo">불러오기</button>`);
   $('rFile').onchange = e => { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = () => { $('rText').value = r.result; }; r.readAsText(f); };
-  $('rGo').onclick = () => {
-    let o; try{ o = JSON.parse($('rText').value.trim()); }catch(e){ toast('백업 내용이 이상해요'); return; }
+  $('rGo').onclick = () => restoreFromText($('rText').value.trim(), '');
+}
+function restoreFromText(text, label){
+    let o; try{ o = JSON.parse(text); }catch(e){ toast('백업 내용이 이상해요'); return; }
     const d = o && o.app==='allowance' && o.data; if(!d || !Array.isArray(d.tx)){ toast('용돈 친구들 백업이 아니에요'); return; }
     const tx = d.tx.filter(t => t && (t.t==='in'||t.t==='out'||t.t==='mv') && Number.isFinite(+t.amt) && +t.amt>0 && /^\d{4}-\d{2}-\d{2}$/.test(t.date||''))
       .map(t => ({id:String(t.id||uid()), t:t.t, amt:Math.round(+t.amt), memo:String(t.memo||'').slice(0,40), note:String(t.note||'').slice(0,60), ch:t.ch&&CH[t.ch]?t.ch:null, date:t.date, acct:okA(t.acct), from:okA(t.from), to:okA(t.to), cat:t.cat?String(t.cat):null, plan:t.plan?String(t.plan):null, at:+t.at||0}));
     const n = migrate({tx, alloc:d.alloc, tiles:d.tiles, custom:d.custom, gone:d.gone, goals:d.goals, chk:d.chk, badges:d.badges, badgeInit:d.badgeInit, mode:d.mode, quizHide:d.quizHide, waits:d.waits, held:d.held, applied:d.applied, theme:d.theme, pin:d.pin, cps:d.cps, exp:d.exp, useExp:d.useExp, givers:d.givers,
       plans: Array.isArray(d.plans) ? d.plans.filter(p=>p&&p.name&&Number.isFinite(+p.amt)).map(p=>({id:String(p.id||uid()), name:String(p.name), amt:Math.round(+p.amt), done:!!p.done})) : []});
-    if(!confirm('기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
+    if(!confirm((label ? label+'을(를) ' : '')+'기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
+    if(S.tx.length) bakPut({d:'undo', at:Date.now(), kind:'undo', n:S.tx.length, text:backupText()}).catch(() => {});      // 바뀌기 직전 모습을 한 번 남긴다
     S = Object.assign(n, {lastBackup:S.lastBackup}); save(); closeSheet(); render(); toast('불러왔어요!');
-  };
 }
 
 /* ───────── 소리 켜고 끄기 (홈 위쪽 스피커) ───────── */
