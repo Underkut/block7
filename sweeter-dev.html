@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5116,6 +5116,12 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
   --br-serif:'Noto Serif KR','AppleMyungjo',serif;
   padding-top:env(safe-area-inset-top,0px);-webkit-tap-highlight-color:transparent;}
 #bibleRd.on{display:flex;}
+/* 성경이 열려 있는 동안 뒤 화면은 손을 받지 않는다 (v26-1010-10, HB — 아이패드 미니에서만 스크롤이 걸린다).
+   아이패드(2·3단)는 성경 밑에 제 스크롤을 가진 단(.lay-col)·끌어 넓히는 경계선(touch-action:none)·
+   위젯 머리(touch-action:none)가 깔려 있고, 아이폰(1단)에는 없다. 사파리는 손이 닿은 자리마다
+   '누가 받을지' 를 밑의 층까지 훑어서 고르므로, 거기 끼어들 여지를 아예 없앤다. 눈에 보이는 것은 그대로다.
+   ⚠️ 뒤 화면의 바탕들만 적는다 — 팝업은 모두 body 바로 아래라 여기 안 걸린다 (성경 위에 뜨는 것까지 막으면 안 된다). */
+html.br-cover body>header,html.br-cover #verseBarWrap,html.br-cover #pageWrap,html.br-cover #swHome{pointer-events:none;}
 /* 앱은 기본이 어두운 판이고 밝은 판은 html[data-theme="light"] 로 켠다 */
 html[data-theme="light"] #bibleRd{--br-scrim:rgba(18,20,30,.38);
   --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);
@@ -6320,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-9";
+const APP_VERSION = "v. 26-1010-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15242,15 +15248,22 @@ function bibleOpen(b,c,v,v2){
   _brParked=false;
   _brLoadSerif();_brApplyLook();
   if(typeof _thereIconSync==='function'&&!_brEl('brThere').querySelector('svg'))_thereIconSync();
-  el.classList.add('on');_brOpen=true;
+  el.classList.add('on');_brOpen=true;_brCover(true);
   _brShow(b,c,v,v2);
 }
 function bibleClose(){
   _brSessEnd();
   _brCloseSheets();
   ['brPick','brFindP','brDashP'].forEach(id=>_brEl(id).classList.remove('on'));
-  _brEl('bibleRd').classList.remove('on');_brOpen=false;
+  _brEl('bibleRd').classList.remove('on');_brOpen=false;_brCover(false);
 }
+// 뒤 화면 쉬게 하기 (v26-1010-10, HB — 아이패드 미니에서만 스크롤 걸림). 성경이 열려 있는 동안
+// ① 뒤 화면의 바탕이 손을 받지 않고(html.br-cover — CSS 참고) ② 뒤에서 혼자 돌던 그리기(_rollTick·
+// _vcAutoTick — 아이패드 2·3단의 위젯)가 쉰다. 아무것도 숨기지 않으니 닫는 손짓 중에도 뒤가 그대로 비친다.
+// ⚠️ 여는 길(bibleOpen·_brUnpark)과 닫는 길(bibleClose)이 꼭 짝으로 부른다. 닫을 때 빠뜨리면 앱 바탕이 눌리지 않는다.
+const _BR_BASE_SEL='body>header,#verseBarWrap,#pageWrap,#swHome';
+function _brCover(on){try{document.documentElement.classList.toggle('br-cover',!!on);}catch(e){}}
+function _brCovered(el){return typeof _brOpen!=='undefined'&&_brOpen&&!!(el&&el.closest&&el.closest(_BR_BASE_SEL));}
 function _brIsOpen(){return _brOpen;}
 // ESC · 뒤로: 가장 위 것 하나만 닫는다
 function _brEsc(){
@@ -15462,7 +15475,7 @@ function _brDashRender(){
 }
 function _brUnpark(){
   if(!_brParked)return;_brParked=false;
-  _brEl('bibleRd').classList.add('on');_brOpen=true;_brNextSrc='resume';_brSessStart();
+  _brEl('bibleRd').classList.add('on');_brOpen=true;_brCover(true);_brNextSrc='resume';_brSessStart();
 }
 // ── 절 롱터치·우클릭 메뉴 (v26-1007-8, HB) ──
 // 누른 절(그 절이 이어진 선택에 들어 있으면 그 묶음)을 대상으로, 말씀 롱터치 메뉴와 같은 일을 한다.
@@ -15826,9 +15839,9 @@ function _brBind(){
     lpFired=false;const x=e.clientX,y=e.clientY;
     if(Date.now()-(_brScrollAt||0)<250)return;   // 관성 스크롤을 멈추려는 손 — 메뉴를 띄우지 않는다
     lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;_brVmOpen(+v.dataset.v,x,y);},500)};
-  });
+  },{passive:true});
   const lpCancel=e=>{if(!lp)return;if(e&&e.type==='pointermove'&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)<8)return;clearTimeout(lp.t);lp=null;};
-  ['pointermove','pointerup','pointercancel'].forEach(t=>$('brChap').addEventListener(t,lpCancel));
+  ['pointermove','pointerup','pointercancel'].forEach(t=>$('brChap').addEventListener(t,lpCancel,{passive:true}));
   $('brScroll').addEventListener('scroll',()=>{_brScrollAt=Date.now();lpCancel();},{passive:true});
   $('brChap').addEventListener('contextmenu',e=>{const v=e.target.closest('.br-v');if(!v)return;e.preventDefault();lpCancel();lpFired=true;_brVmOpen(+v.dataset.v,e.clientX,e.clientY);});
   $('brVMenuOv').addEventListener('pointerdown',e=>{e.preventDefault();_brVmClose();});
@@ -15859,10 +15872,13 @@ function _brBind(){
     if(cancel||!_brInkSpans().length){_brInkSel=null;_brInkPaint();return;}
     _brInkOpen();};
   // 마우스·펜·안드로이드 — 포인터
-  $('brChap').addEventListener('pointerdown',e=>{if(e.button>0||(IOS&&e.pointerType==='touch'))return;inkStart(e.clientX,e.clientY,e.pointerId,e.pointerType==='mouse',e.target);});
-  $('brChap').addEventListener('pointermove',e=>{if(!ip||e.pointerId!==ip.id)return;inkMove(e.clientX,e.clientY,()=>{try{$('brChap').setPointerCapture(e.pointerId);}catch(x){}});});
-  $('brChap').addEventListener('pointerup',e=>{if(ip&&e.pointerId===ip.id)inkEnd(false);});
-  $('brChap').addEventListener('pointercancel',e=>{if(ip&&e.pointerId===ip.id)inkEnd(true);});
+  // ⚠️ 포인터 감시자도 passive (v26-1010-10). 아이폰·아이패드 사파리는 pointer·mouse 감시자까지 '터치를 막을 수
+  //    있는 자' 로 세어, passive 가 아니면 손가락을 대고 처음 움직일 때마다 이 코드의 대답을 기다린 뒤에야 스크롤을 시작한다.
+  //    여기서는 아무것도 막지 않으므로 기다릴 까닭이 없다.
+  $('brChap').addEventListener('pointerdown',e=>{if(e.button>0||(IOS&&e.pointerType==='touch'))return;inkStart(e.clientX,e.clientY,e.pointerId,e.pointerType==='mouse',e.target);},{passive:true});
+  $('brChap').addEventListener('pointermove',e=>{if(!ip||e.pointerId!==ip.id)return;inkMove(e.clientX,e.clientY,()=>{try{$('brChap').setPointerCapture(e.pointerId);}catch(x){}});},{passive:true});
+  $('brChap').addEventListener('pointerup',e=>{if(ip&&e.pointerId===ip.id)inkEnd(false);},{passive:true});
+  $('brChap').addEventListener('pointercancel',e=>{if(ip&&e.pointerId===ip.id)inkEnd(true);},{passive:true});
   // 아이폰 — 터치 (passive)
   if(IOS){
     $('brChap').addEventListener('touchstart',e=>{if(e.touches.length!==1){ip=null;return;}const t=e.touches[0];inkStart(t.clientX,t.clientY,'t',false,e.target);},{passive:true});
@@ -29938,6 +29954,7 @@ function _rollTick(){
   document.querySelectorAll('.roll-v[data-roll-n]').forEach(el=>{
     const n=parseInt(el.getAttribute('data-roll-n'),10)||1;
     if(n<2)return;
+    if(_brCovered(el))return;   // 성경 밑에 깔린 위젯 머리는 쉰다 — 닫으면 다음 시계에 지금 줄로 (v26-1010-10)
     const i=_rollIdx(el,n);
     if(String(i)===el.getAttribute('data-roll-i'))return;   // 바뀐 것만 손댄다
     _rollShow(el,n,i);
@@ -30391,6 +30408,7 @@ function _vcAutoSlide(ids){
 }
 function _vcAutoTick(){
   if(!document.body.classList.contains('split-d'))return;   // 위젯이 안 보이는 화면이면 그릴 것이 없다
+  if(typeof _brOpen!=='undefined'&&_brOpen)return;          // 성경이 덮고 있어도 그렇다 — 닫으면 다음 시계에 넘긴다 (v26-1010-10)
   if(window._rpDragSession)return;                          // 위젯을 끌고 있는 중이면 손대지 않는다
   // 글자를 입력하는 중이면 미룬다 — 다시 그리면 입력이 끊긴다
   const t=document.activeElement;

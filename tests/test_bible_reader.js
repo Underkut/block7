@@ -621,6 +621,34 @@ console.log('\n시나리오 13-26 — 성경이 열려 있으면 상단 말씀 �
   sc.eq('덮개가 가리면 거짓 (손가락 아래 맨 위 요소로)', /topEl\.closest\('#bibleRd,#verseFull,\.modal-overlay,\.overlay'\)\)return false;/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-27 — 성경이 열려 있는 동안 뒤 화면은 쉰다 (v26-1010-10 HB — 아이패드 미니에서만 스크롤 걸림)');
+{
+  // ① 뒤 화면 바탕은 손을 받지 않는다 — 아이패드 2·3단의 단 스크롤·경계선(touch-action:none)이 끼어들지 못하게
+  sc.eq('html.br-cover 가 뒤 화면 바탕 넷을 pointer-events:none 으로', /html\.br-cover body>header,html\.br-cover #verseBarWrap,html\.br-cover #pageWrap,html\.br-cover #swHome\{pointer-events:none;\}/.test(SRC), true);
+  sc.eq('규칙의 대상과 _BR_BASE_SEL 이 같은 넷', /const _BR_BASE_SEL='body>header,#verseBarWrap,#pageWrap,#swHome';/.test(SRC), true);
+  // 여는 길·닫는 길이 짝으로 — 닫을 때 빠지면 앱 바탕이 눌리지 않는다
+  sc.eq('bibleOpen 이 덮는다', /el\.classList\.add\('on'\);_brOpen=true;_brCover\(true\);/.test(SRC), true);
+  sc.eq('_brUnpark 도 덮는다', /classList\.add\('on'\);_brOpen=true;_brCover\(true\);_brNextSrc='resume'/.test(SRC), true);
+  sc.eq('bibleClose 가 걷는다', /classList\.remove\('on'\);_brOpen=false;_brCover\(false\);/.test(SRC), true);
+  sc.eq('#bibleRd 를 켜고 끄는 곳은 이 셋뿐', (SRC.match(/_brOpen=(true|false);/g)||[]).length, 3);
+  // ② 뒤에서 혼자 돌던 그리기가 쉰다
+  sc.eq('_rollTick — 성경 밑의 줄은 건너뛴다', /if\(n<2\)return;\s*if\(_brCovered\(el\)\)return;/.test(SRC), true);
+  sc.eq('_vcAutoTick — 성경이 열려 있으면 넘기지 않는다', /function _vcAutoTick\(\)\{[\s\S]{0,200}if\(typeof _brOpen!=='undefined'&&_brOpen\)return;/.test(SRC), true);
+  // ③ 본문 포인터 감시자는 passive — 사파리는 pointer·mouse 감시자도 '막을 수 있는 자' 로 센다
+  const bind = slice('function _brBind(){', '// 넘기기: 옆으로 밀기');
+  const brPtr = bind.match(/\$\('brChap'\)\.addEventListener\('pointer(down|move|up|cancel)'[\s\S]*?\);\n/g)||[];
+  sc.eq('본문 포인터 감시자 넷 이상', brPtr.length >= 5, true);
+  sc.eq('전부 passive', brPtr.every(l=>/\{passive:true\}\);\n$/.test(l)), true);
+  sc.eq('롱터치 취소(lpCancel)도 passive', /addEventListener\(t,lpCancel,\{passive:true\}\)/.test(bind), true);
+  sc.eq('본문 감시자는 아무것도 막지 않는다 (passive 와 맞물림)', /\$\('brChap'\)\.addEventListener\('pointer[a-z]+',[^\n]*preventDefault/.test(bind), false);
+  // _brCovered 의 실제 판정
+  const f = new Function('_BR_BASE_SEL','_brOpen', SRC.match(/function _brCovered\(el\)\{[^\n]*\}/)[0] + '; return _brCovered;');
+  const fake = sel => ({ closest: s => (s === "body>header,#verseBarWrap,#pageWrap,#swHome" && sel) ? {} : null });
+  sc.eq('열려 있고 뒤 화면 안이면 참', f("body>header,#verseBarWrap,#pageWrap,#swHome", true)(fake(true)), true);
+  sc.eq('닫혀 있으면 거짓', f("body>header,#verseBarWrap,#pageWrap,#swHome", false)(fake(true)), false);
+  sc.eq('뒤 화면 밖(전체화면 윗줄)이면 거짓', f("body>header,#verseBarWrap,#pageWrap,#swHome", true)(fake(false)), false);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
