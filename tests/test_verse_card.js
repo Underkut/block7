@@ -1152,7 +1152,7 @@ console.log('\n시나리오 — 롱터치: 안드로이드는 붙잡은 채로, 
   // 우클릭(contextmenu)은 그 자체가 즉시 발생하는 제스처라 그대로 둔다
   sc.eq('우클릭은 그대로 즉시', fn.includes("cat.addEventListener('contextmenu',e=>{"), true);
   // click 에서 여는 길은 시험 페이지 6번과 같은 순서 — 동기 복사 먼저, 여는 것은 나중
-  const thenGo = SRC.slice(SRC.indexOf('function _sheetCopyThenGo(url){'), SRC.indexOf('// 시트 열기는 **기기에 따라'));
+  const thenGo = SRC.slice(SRC.indexOf('function _sheetCopyThenGo(t,v){'), SRC.indexOf('function _sheetIsPc('));
   sc.eq('click 길은 복사 먼저, 열기 나중',
         thenGo.indexOf('_fallbackCopy(txt)') > 0 && thenGo.indexOf('_fallbackCopy(txt)') < thenGo.indexOf('if(ok){go();return;}'), true);
 }
