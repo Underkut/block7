@@ -58,6 +58,19 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 ⚠️ 용돈 작업에는 '매 작업마다' 의 **산출물 3개·`version.txt` 가 해당하지 않는다** —
    그것들은 BLOCK7 전용이다. `wallet/index.html` 한 장만 고치면 된다.
 
+### 기도노트(`pray/`)도 따로 돈다 — 주소는 `sweeter.my/pray/`
+
+용돈 친구들과 같은 사정이다: `pray/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+산출물 3개·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+계획과 까닭은 `docs/ROADMAP.md` '기도노트' 장.
+
+- 깃헙 페이지가 `block7.my/pray/` 에도 같은 파일을 내보낸다 → 앱 첫 줄이 sweeter.my 로 넘긴다.
+- `sweeter.my` 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r pray`)가 함께 싣는다.
+  ⚠️ **그 줄이 빠지면 다음 Sweeter 배포 때 기도노트가 사라진다** (`tests/test_sweeter_prod.js` 가 지킨다).
+- 그래서 `pray/` 를 고치면 Sweeter 배포 워크플로도 돈다. Sweeter 배포 파일
+  (`make-sweeter-prod.sh` · `deploy-sweeter.yml` · `firebase.json`)을 고칠 때만 Sweeter 작업과 순서를 둔다.
+- ⚠️ **이름이 든 기도 자료는 저장소에 넣지 않는다** (공개 저장소). 시험 자료는 지어낸 이름으로.
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).

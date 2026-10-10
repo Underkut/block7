@@ -221,6 +221,29 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
   sc.eq('올리는 폴더는 build-sweeter', h.map(x=>x.public), ['build-sweeter']);
   sc.eq('functions 설정은 그대로 남아 있다', fb.functions.source, 'functions');
 
+  // 기도노트(sweeter.my/pray/) — 독립 앱이 같은 사이트에 얹혀 산다.
+  // ⚠️ 파이어베이스 배포는 사이트를 통째로 갈아 끼운다. 빌드가 pray/ 를 안 담으면
+  //    다음 Sweeter 배포 때 기도노트가 sweeter.my 에서 **사라진다.**
+  sc.eq('⭐ 빌드가 기도노트(pray/)를 함께 담는다', /^cp -r pray "\$OUT\/pray"$/m.test(mk), true);
+  sc.eq('기도노트 파일이 저장소에 있다',
+        fs.existsSync(path.join(__dirname,'..','pray','index.html')), true);
+  // 끝 '/' 없이 온 '/pray' 는 파이어베이스가 **폴더 첫 화면(pray/index.html)을 보고
+  // 저절로 '/pray/' 로 넘긴다** — 있는 파일이 rewrite('/:addr', 초대 주소)보다 먼저다.
+  // ⚠️ 'redirects' 에 "/pray" → "/pray/" 를 손으로 넣지 말 것. 로컬 엔진(superstatic)으로
+  //    돌려 보니 "/pray/" 까지 그 규칙에 걸려 **자기 자신으로 넘기기를 끝없이** 했다
+  //    (2026-10-10). 이미 저절로 되는 일을 규칙으로 덧대다 고리를 만든다.
+  sc.eq('⭐ /pray 를 손으로 넘기는 규칙이 없다 (고리 방지)',
+        (h[0].redirects||[]).some(r=>/^\/pray\/?$/.test(r.source||'')), false);
+  sc.eq('기도노트 서비스워커는 늘 새로 받는다',
+        (h[0].headers||[]).some(x=>x.source==='/pray/sw.js'), true);
+  const pwf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
+  sc.eq('기도노트를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'pray/**'"), true);
+  sc.eq('올리기 전에 pray/ 가 담겼는지 본다', pwf.includes('test -f build-sweeter/pray/index.html'), true);
+  // block7.my/pray/ 에도 같은 파일이 생긴다(깃헙 페이지) — 거기서 열리면 sweeter.my 로 넘긴다
+  const pray=fs.readFileSync(path.join(__dirname,'..','pray','index.html'),'utf8');
+  sc.eq('block7.my 로 열리면 sweeter.my/pray/ 로 넘긴다',
+        pray.includes("location.replace('https://sweeter.my/pray/'"), true);
+
   // 배포 워크플로 — 열쇠가 없어도 빨개지지 않아야 한다
   const wf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
   sc.eq('열쇠가 없으면 건너뛴다', wf.includes("steps.key.outputs.have == 'yes'"), true);
