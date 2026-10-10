@@ -1140,8 +1140,8 @@ console.log('\n시나리오 — 롱터치: 안드로이드는 붙잡은 채로, 
                        SRC.indexOf('function vfOpenSheetForCat('));
   sc.eq('안드로이드는 타이머에서 곧장 연다',
         fn.includes("if(/Android/i.test(navigator.userAgent||'')){held=true;vfOpenSheetForCat();return;}"), true);
-  sc.eq("아이폰·아이패드는 타이머에서 '놓으면 시트로' 만",
-        fn.includes('armed=true;_vfCatCue(cat,true);'), true);
+  sc.eq('아이폰·아이패드는 타이머에서 가운데 토스트만',
+        fn.includes('armed=true;_vfCatCue(true);'), true);
   sc.eq('아이폰·아이패드는 click 에서 연다 (복사가 되는 자리)',
         fn.includes('if(armed){disarm();vfOpenSheetForCat(true);return;}'), true);
   sc.eq('안드로이드 click 은 복사만 한 번 더', /if\(!held\)return;\s*held=false;\s*_sheetCopyPending\(\);/.test(fn), true);
