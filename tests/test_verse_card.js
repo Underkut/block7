@@ -855,7 +855,8 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq('시트 링크 만들기', SRC.includes('function _sheetUrlForVerse(v)'), true);
   sc.eq('개발자만', /function vfOpenSheetForCat\(\)\{\s*if\(!_isDevAccount\(\)\)return;/.test(SRC), true);
   sc.eq('그 줄을 골라 준다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);   // 0812-7: '강조 문구' G열까지
-  sc.eq('시트에서 가져올 때 행 번호를 적어 둔다', SRC.includes('d:_parseVDate(r[5]),row:i+1'), true);
+  // v26-1010-13 — 빈 줄까지 센 진짜 행 번호(_parseCsv 의 _r)를 먼저 쓴다 (tests/test_sheet_row.js)
+  sc.eq('시트에서 가져올 때 행 번호를 적어 둔다', SRC.includes('d:_parseVDate(r[5]),row:r._r||i+1'), true);
   // 설정 등급을 바꿔도 보던 탭에 머문다
   sc.eq('등급 바꾸기 전에 지금 탭을 붙잡는다',
         SRC.includes('const curId=_stabList()[_currentSettingsTabIdx]||\'\';'), true);
