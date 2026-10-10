@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-17  [production]  -->
+<!-- BLOCK7  v. 26-1010-18  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-17";
+const APP_VERSION = "v. 26-1010-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7236,6 +7236,18 @@ try{
           </div>
         </div>
       </div>
+
+      <!-- 시트 편집 문 — 개발자 계정만 (R-4b, v26-1010-18) -->
+      <div class="settings-section" id="sheetEditSection" style="display:none;">
+        <div class="settings-section-title">시트 편집 문</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">앱 안에서 구글 시트 칸을 고칠 때 거치는 문(구글 앱스 스크립트)이에요. <a href="https://block7.my/sheet-edit/" target="_blank" rel="noopener" style="color:var(--ac-tx);">설치 안내</a>대로 만들고 받은 <b>웹 앱 URL</b> 을 붙여 넣어 주세요. 한 기기에서만 하면 다른 기기와 Sweeter 에도 따라가요. (개발자 계정에서만 보여요)</div>
+        <input type="url" id="sheetEditUrlInput" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"
+          style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:12px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
+          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
+        <button class="settings-btn" id="sheetEditCheckBtn" onclick="sheetEditCheck()" style="width:100%;">연결 확인</button>
+        <div id="sheetEditStatus" style="font-size:11px;color:var(--tx3);text-align:center;margin-top:6px;min-height:16px;"></div>
+      </div>
+      <!-- /시트 편집 문 -->
 
       <div class="settings-section">
         <div class="settings-section-title">개발자에게 쪽지 보내기</div>
@@ -22519,6 +22531,97 @@ function _sheetCopyPending(keep){
     _fallbackCopy(txt);
   }
 }
+// ══ 시트 편집 문 — 구글 앱스 스크립트 웹 앱 (R-4b, v26-1010-18) ══
+// 앱 안 편집 창(R-4c)이 HB 의 구글 시트 칸을 고칠 때 거치는 문. 코드는 저장소의
+// sheet-edit/Code.gs 하나, 설치 안내는 block7.my/sheet-edit/ (HB 가 PC 에서 5분).
+// 설치해서 받은 웹 앱 주소를 설정(ST.settings.sheetEditUrl)에 붙여 둔다.
+//  · ⚠️ 주소는 저장소(공개)에 넣지 않는다 — 설정은 HB 의 클라우드 문서에만 있다.
+//  · 두 제품이 같이 쓴다 (_PRODUCT_SCOPED 에 넣지 않는다 — 같은 시트를 고치는 문이다).
+//    BLOCK7 에서 한 번 붙이면 다른 기기·Sweeter 에도 동기화로 따라간다.
+//  · 문은 부른 사람의 파이어베이스 로그인 표(ID 토큰)를 구글에 물어 HB 일 때만 움직인다.
+// (지키는 것: tests/test_sheet_edit_app.js · 문 쪽은 tests/test_sheet_edit_gs.js)
+const SHEET_EDIT_VER=1;   // 이 앱이 기대하는 문의 버전 (Code.gs 의 VERSION) — 낮으면 '새 버전으로 배포' 안내
+// 붙여 넣은 주소를 다듬는다 — 웹 앱 주소(…/exec)가 아니면 ''.
+// 여러 계정으로 로그인한 PC 에서 복사하면 /u/1/ 이 끼는데, 그 주소는 앱에서 안 열린다 → 뺀다.
+function _sheetEditUrlNorm(u){
+  const s=String(u==null?'':u).trim().replace(/\/u\/\d+\//,'/');
+  return /^https:\/\/script\.google\.com\/(macros|a\/macros\/[^/?#\s]+)\/s\/[A-Za-z0-9_-]{20,}\/exec$/.test(s)?s:'';
+}
+// 문 부르기. ⚠️ Content-Type 을 붙이지 않는다 — 붙이면 브라우저가 먼저 OPTIONS 로 묻는데
+// 앱스 스크립트는 그것을 받지 못한다. 로그인 표도 머리말(Authorization)이 아니라 본문에 싣는다.
+async function _sheetEditCall(req,url){
+  url=_sheetEditUrlNorm(url||(ST.settings&&ST.settings.sheetEditUrl));
+  if(!url)return {ok:false,error:'nourl'};
+  const u=(typeof firebase!=='undefined'&&firebase.auth)?firebase.auth().currentUser:null;
+  if(!u)return {ok:false,error:'nologin'};
+  let token='';
+  try{token=await u.getIdToken();}catch(e){return {ok:false,error:'nologin'};}
+  const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  const late=setTimeout(()=>{try{if(ctl)ctl.abort();}catch(e){}},25000);
+  try{
+    const r=await fetch(url,{method:'POST',body:JSON.stringify(Object.assign({},req,{token})),signal:ctl?ctl.signal:undefined});
+    let j=null;
+    try{j=await r.json();}catch(e){}
+    return (j&&typeof j==='object')?j:{ok:false,error:'noanswer'};   // 로그인 화면·오류 화면(HTML)이 왔다
+  }catch(e){
+    return {ok:false,error:'noanswer'};
+  }finally{clearTimeout(late);}
+}
+// 오류 이름 → 사람 말
+function _sheetEditErrText(j){
+  const e=j&&j.error;
+  return ({
+    nourl:'웹 앱 주소(…/exec 로 끝나는 것)를 붙여 넣어 주세요',
+    nologin:'로그인한 상태에서만 확인할 수 있어요',
+    noanswer:"문이 대답하지 않아요 — 배포할 때 액세스 권한을 '모든 사용자' 로 했는지 확인해 주세요",
+    auth:'로그인 확인에 실패했어요 — 로그아웃했다가 다시 로그인한 뒤 해 보세요',
+    owner:'이 계정으로는 쓸 수 없는 문이에요',
+    busy:'다른 저장이 끝나기를 기다리다 그만뒀어요 — 잠시 뒤 다시 해 주세요',
+    nosheet:'그 시트 파일을 열 수 없어요 — 문을 만든 계정이 시트 주인인지 확인해 주세요',
+    notab:'그 탭을 못 찾았어요 — 탭이 지워졌거나 다른 파일이에요',
+    notfound:'시트에서 그 행을 못 찾았어요',
+    nohead:'시트에서 그 열 이름을 못 찾았어요',
+    nocol:'시트에서 그 열 이름을 못 찾았어요',
+  })[e]||('문이 처리하지 못했어요 ('+(e||'?')+')');
+}
+// 연결 확인용 — 시트에서 가져온 명제 하나 (그 행을 읽어 본다)
+function _sheetEditProbe(){
+  for(const c of (getVerseCollections()||[])){
+    for(const v of ((c&&c.verses)||[])){
+      if(!v||!v.pid)continue;
+      const t=_sheetUrlForVerse(v);
+      const m=t&&t.url&&t.url.match(/\/d\/([a-zA-Z0-9-_]+)\/edit#gid=(\d+)/);
+      if(m)return {pid:v.pid,id:m[1],gid:+m[2]};
+    }
+  }
+  return null;
+}
+// 설정 → 계정 → 시트 편집 문 [연결 확인] — 주소를 저장하고, 문에 인사하고, 명제 한 줄을 읽어 본다.
+// 주소는 인사가 안 돼도 저장해 둔다 — 배포 설정을 고친 뒤 [연결 확인] 만 다시 누르면 되게.
+async function sheetEditCheck(){
+  const inp=document.getElementById('sheetEditUrlInput'),st=document.getElementById('sheetEditStatus');
+  const say=(t,good)=>{if(st){st.textContent=t;st.style.color=good?'var(--ac-tx)':'var(--tx3)';}};
+  const raw=inp?String(inp.value||'').trim():'';
+  if(!raw){
+    if(ST.settings.sheetEditUrl){ST.settings.sheetEditUrl='';save();}   // 비우면 문을 뗀다
+    say('주소를 비웠어요');return;
+  }
+  const url=_sheetEditUrlNorm(raw);
+  if(!url){say(_sheetEditErrText({error:'nourl'}));return;}
+  if(inp)inp.value=url;
+  if(ST.settings.sheetEditUrl!==url){ST.settings.sheetEditUrl=url;save();}
+  say('문에 묻는 중…');
+  const j=await _sheetEditCall({op:'ping'},url);
+  if(!j.ok){say(_sheetEditErrText(j));return;}
+  if(!(j.v>=SHEET_EDIT_VER)){say(`문이 옛 버전이에요 (v${j.v==null?'?':j.v}) — 설치 안내의 '코드가 바뀌었을 때' 대로 새 버전으로 배포해 주세요`);return;}
+  const p=_sheetEditProbe();
+  if(!p){say(`연결됐어요 ✓ ${j.who} 로 확인 (문 v${j.v})`,true);return;}
+  say('연결됐어요 — 시트 한 줄 읽어 보는 중…',true);
+  const r=await _sheetEditCall({op:'read',id:p.id,tabs:[{gid:p.gid,find:{match:{'명제 ID':p.pid}}}]},url);
+  const t=r&&r.ok&&r.tabs&&r.tabs[0];
+  if(t&&t.ok)say(`연결됐어요 ✓ ${j.who} · '${t.name}' ${t.row}행(${p.pid})을 읽었어요 (문 v${j.v})`,true);
+  else say('연결은 됐는데 시트를 못 읽었어요 — '+_sheetEditErrText(t&&!t.ok?t:r));
+}
 function _vgOpenFromReels(kind){
   const v=_vfCurrentVerse();if(!v)return;
   const val=kind==='cat'?((v.cat||'').trim())
@@ -33094,7 +33197,7 @@ function _syncDevVerBadge(){
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
   // 관리자 계정에서만 보이는 항목들 (일반 사용자에게는 필요 없거나 혼란만 줌)
-  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow']].forEach(([id])=>{
+  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow'],['sheetEditSection']].forEach(([id])=>{
     const el=document.getElementById(id);
     if(el)el.style.display=dev?'':'none';
   });
@@ -41193,6 +41296,7 @@ function renderSettingsPanel(){
   }
 
   document.getElementById('settingsUserEmail').textContent=(typeof _fbUser!=='undefined'&&_fbUser)?`로그인 계정: ${_fbUser.email}`:'개발 모드 — 로그인 없음';
+  {const se=document.getElementById('sheetEditUrlInput');if(se)se.value=s.sheetEditUrl||'';}
 
   // theme buttons active state
   const theme=s.theme||'dark';
@@ -45144,7 +45248,7 @@ const _DF_SET_LABEL={
   carryBadgeMode:'넘어온 할일 표시',carryCountSource:'넘어온 할일 세는 기준',
   periodBaseMode:'구간 기준',monthTitleFormat:'월 제목 표기',monthTitleYear:'월 제목에 연도',
   mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',showSmallBlocks:'스몰 블럭 보이기',
-  addInputPosition:'입력칸 위치',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',
+  addInputPosition:'입력칸 위치',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
   hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
   hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
   dviewMarkOn:'일간 표시 켜기',doneFxGlow:'완료 효과 Glow',doneFxRipple:'완료 효과 Ripple'};

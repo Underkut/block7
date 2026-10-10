@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>시트 편집 문 설치</title>
+<link rel="icon" href="../icon.png">
+<!--
+  BLOCK7 · Sweeter — 시트 편집 문(구글 앱스 스크립트 웹 앱) 설치 안내 (R-4b, HB 2026-10-10)
+  ─────────────────────────────────────────────────────────────────────────
+  앱 안 편집 창이 구글 시트 칸을 고칠 때 거치는 문. 코드는 같은 폴더의 Code.gs 하나이고,
+  이 페이지는 그것을 그대로 읽어 보여 주고 복사하게 한다 (코드를 여기에 따로 적지 않는다 —
+  두 벌이 되면 어긋난다).
+  ⚠️ 설치해서 받은 웹 앱 주소는 저장소(공개)에 넣지 않는다 — 앱 설정에만 둔다.
+  손으로 쓴 한 파일이다 (만드는 스크립트 없음). docs/ROADMAP.md 'R-4'.
+-->
+<style>
+:root{--bg:#ffffff;--tx:#1d1d1f;--tx2:#6e6e73;--bd:#e3e3e8;--card:#f6f6f8;--ac:#2f6f5e;--warn:#9a5b00;--warnbg:#fff6e5;}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#121214;--tx:#f2f2f4;--tx2:#a1a1a6;--bd:#2c2c30;--card:#1c1c1f;--ac:#82c9b3;--warn:#f0b35a;--warnbg:#2a2214;}
+}
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg);color:var(--tx);}
+body{font:15px/1.7 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  font-weight:300;-webkit-text-size-adjust:100%;word-break:keep-all;overflow-wrap:anywhere;}
+main{max-width:640px;margin:0 auto;padding:28px 16px 64px;}
+h1{font-size:20px;font-weight:500;margin:0 0 4px;letter-spacing:-.01em;}
+h2{font-size:15px;font-weight:600;margin:30px 0 8px;}
+.sub{color:var(--tx2);font-size:13px;margin:0 0 18px;}
+ol.steps{list-style:none;padding:0;margin:0;counter-reset:s;}
+ol.steps>li{counter-increment:s;position:relative;background:var(--card);border:1px solid var(--bd);
+  border-radius:12px;padding:12px 14px 12px 46px;margin:0 0 10px;}
+ol.steps>li::before{content:counter(s);position:absolute;left:14px;top:12px;width:22px;height:22px;border-radius:50%;
+  background:var(--ac);color:var(--bg);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+.t{font-weight:600;}
+b{font-weight:600;}
+.en{color:var(--tx2);font-size:12.5px;}
+.note{color:var(--tx2);font-size:13px;margin-top:6px;}
+.warn{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:8px;}
+code{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--bd);
+  border-radius:5px;padding:1px 5px;}
+a{color:var(--ac);}
+.btn{display:inline-block;font:inherit;font-size:14px;font-weight:500;color:var(--bg);background:var(--ac);border:0;
+  border-radius:9px;padding:8px 14px;cursor:pointer;text-decoration:none;margin-top:8px;}
+.btn.ghost{background:transparent;color:var(--ac);border:1px solid var(--bd);}
+#copyMsg{font-size:13px;color:var(--ac);margin-left:8px;}
+textarea{width:100%;height:240px;margin-top:10px;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:10px;resize:vertical;white-space:pre;}
+ul{padding-left:18px;margin:6px 0;}
+ul li{margin:3px 0;}
+</style>
+</head>
+<body>
+<main>
+  <h1>시트 편집 문 설치</h1>
+  <p class="sub">BLOCK7 · Sweeter 앱 안에서 구글 시트 칸을 고치려면 이 문(구글 앱스 스크립트)이 필요합니다.
+    <b>PC 크롬</b>에서, 시트 주인 계정(<b>denartist@gmail.com</b>)으로 로그인한 채로 하세요. 5분쯤 걸립니다.</p>
+
+  <ol class="steps">
+    <li><span class="t">새 프로젝트 만들기</span><br>
+      아래 단추로 앱스 스크립트를 열고, 왼쪽 위 <b>＋ 새 프로젝트</b> <span class="en">(New project)</span> 를 누릅니다.<br>
+      <a class="btn" href="https://script.google.com/home" target="_blank" rel="noopener">script.google.com 열기</a></li>
+
+    <li><span class="t">이름 붙이기</span><br>
+      위쪽 <b>제목 없는 프로젝트</b> 를 누르고 <code>BLOCK7 시트 편집 문</code> 이라고 쓴 뒤 <b>이름 바꾸기</b>.</li>
+
+    <li><span class="t">코드 붙여넣기</span><br>
+      편집기에 이미 있는 <code>function myFunction() { }</code> 을 <b>모두 지웁니다</b>
+      (편집기 안을 한 번 누르고 <b>Ctrl + A</b> → <b>Delete</b>).
+      그다음 아래 단추를 누르고 편집기에 <b>Ctrl + V</b>.<br>
+      <button class="btn" id="copyBtn" type="button">코드 복사</button><span id="copyMsg"></span>
+      <div class="note" id="codeInfo">코드를 불러오는 중…</div></li>
+
+    <li><span class="t">저장</span><br>
+      <b>Ctrl + S</b> (또는 위쪽 디스크 모양 아이콘).</li>
+
+    <li><span class="t">배포 시작</span><br>
+      오른쪽 위 파란 <b>배포</b> <span class="en">(Deploy)</span> → <b>새 배포</b> <span class="en">(New deployment)</span>.</li>
+
+    <li><span class="t">웹 앱 고르기</span><br>
+      왼쪽 '유형 선택' 옆 <b>톱니바퀴</b> → <b>웹 앱</b> <span class="en">(Web app)</span>.</li>
+
+    <li><span class="t">두 칸 정하기</span>
+      <ul>
+        <li>다음 사용자 인증 정보로 실행 <span class="en">(Execute as)</span> → <b>나</b> (denartist@gmail.com)</li>
+        <li>액세스 권한이 있는 사용자 <span class="en">(Who has access)</span> → <b>모든 사용자</b> <span class="en">(Anyone)</span></li>
+      </ul>
+      설명 칸은 비워 둬도 됩니다. <b>배포</b> 를 누릅니다.
+      <div class="warn">⚠️ <b>'Google 계정이 있는 모든 사용자'</b> 가 아니라 <b>'모든 사용자'</b> 입니다.
+        앞의 것을 고르면 앱이 문을 열지 못합니다. 누구나 문 앞까지는 올 수 있어도,
+        <b>HB 로그인 표가 없으면 아무것도 못 합니다</b> (아래 '무엇을 하나요').</div></li>
+
+    <li><span class="t">허락하기 (처음 한 번)</span><br>
+      <b>액세스 승인</b> <span class="en">(Authorize access)</span> → 계정 고르기 →
+      <b>'Google에서 확인하지 않은 앱'</b> 이 나오면 왼쪽 아래 <b>고급</b> <span class="en">(Advanced)</span> →
+      <b>BLOCK7 시트 편집 문(으)로 이동(안전하지 않음)</b> → <b>허용</b> <span class="en">(Allow)</span>.
+      항목을 고르는 화면이면 <b>모두 선택</b> 후 <b>계속</b>.
+      <div class="note">'확인하지 않은 앱' 은 HB 가 직접 만든 스크립트라 구글 심사를 받지 않았다는 뜻입니다.</div></li>
+
+    <li><span class="t">주소 복사</span><br>
+      '웹 앱' 아래 <b>URL</b> 옆 <b>복사</b> <span class="en">(Copy)</span> → <b>완료</b>.
+      <code>https://script.google.com/macros/s/…/exec</code> 모양입니다.</li>
+
+    <li><span class="t">살아 있나 보기</span><br>
+      새 탭 주소창에 붙여 넣고 엔터 → <b>'BLOCK7 시트 편집 문 — 살아 있어요 ✓'</b> 가 보이면 설치는 끝입니다.</li>
+
+    <li><span class="t">앱에 붙이기</span><br>
+      BLOCK7 → 설정(톱니) → <b>계정</b> 탭 아래쪽, '받은 쪽지' 다음의 <b>시트 편집 문</b> 칸에 붙여 넣고 <b>연결 확인</b> →
+      <b>'연결됐어요 ✓'</b> 가 뜨면 끝입니다. 한 기기에서만 하면 다른 기기와 Sweeter 에도 따라갑니다.
+      <div class="warn">⚠️ 이 주소는 저장소(공개)나 단톡방 같은 곳에 올리지 마세요. HB 로그인 없이는 아무것도 못 하지만, 굳이 알릴 이유가 없습니다.</div></li>
+  </ol>
+
+  <h2>코드가 바뀌었을 때</h2>
+  <p>앱이 <b>'문이 옛 버전이에요'</b> 라고 하면 — script.google.com → <b>BLOCK7 시트 편집 문</b> →
+    코드를 모두 지우고 위 <b>코드 복사</b> 로 새로 붙여넣기 → 저장 → <b>배포</b> → <b>배포 관리</b> <span class="en">(Manage deployments)</span> →
+    연필(수정) → 버전 <b>새 버전</b> <span class="en">(New version)</span> → <b>배포</b>. 주소는 그대로라 앱에서 고칠 것이 없습니다.</p>
+  <div class="warn">⚠️ <b>'새 배포'</b> 를 또 만들면 주소가 바뀝니다. 바뀐 코드는 <b>'배포 관리'</b> 에서 새 버전으로 올리세요.</div>
+
+  <h2>무엇을 하나요</h2>
+  <ul>
+    <li>앱 안 편집 창이 시트 칸을 고칠 때 이 문을 거칩니다. HB 계정으로 돌기 때문에 HB 시트에 쓸 수 있습니다.</li>
+    <li>허락하는 것 두 가지 — ① 구글 시트 보기·편집 (칸을 고치려고) ② 외부 서비스 연결 (부른 사람이 HB 인지 구글 로그인 확인 서버에 물으려고).</li>
+    <li>부른 사람이 <b>HB 로그인</b>이 아니면 아무것도 하지 않습니다.</li>
+    <li>하지 않는 것 — 행 만들기·지우기 · 머리글 줄 · '명제 ID' 같은 ID 열 · 수식 칸 · 한 번에 30칸 넘게.</li>
+    <li>고치기 전 값이 그사이 시트에서 바뀌었으면 <b>아무것도 고치지 않고</b> 알려 줍니다.</li>
+  </ul>
+
+  <h2>코드</h2>
+  <p class="note" style="margin-top:0">저장소의 <code>sheet-edit/Code.gs</code> 그대로입니다.
+    <a href="https://github.com/Underkut/block7/blob/main/sheet-edit/Code.gs" target="_blank" rel="noopener">깃허브에서 보기</a></p>
+  <textarea id="code" readonly spellcheck="false" aria-label="앱스 스크립트 코드"></textarea>
+</main>
+<script>
+(function(){
+  const ta=document.getElementById('code'), info=document.getElementById('codeInfo'),
+        btn=document.getElementById('copyBtn'), msg=document.getElementById('copyMsg');
+  // 코드는 같은 폴더의 Code.gs 를 그대로 읽는다 (여기 따로 적어 두면 두 벌이 되어 어긋난다)
+  fetch('Code.gs',{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error(r.status);return r.text();}).then(txt=>{
+    ta.value=txt;
+    const v=(txt.match(/var VERSION = (\d+);/)||[])[1];
+    info.textContent=`코드 ${txt.split('\n').length}줄 · 버전 v${v||'?'}`;
+  }).catch(()=>{
+    info.innerHTML='코드를 불러오지 못했어요. 새로고침하거나 <a href="https://github.com/Underkut/block7/blob/main/sheet-edit/Code.gs" target="_blank" rel="noopener">깃허브</a>에서 복사하세요.';
+  });
+  function said(t){msg.textContent=t;clearTimeout(said.t);said.t=setTimeout(()=>{msg.textContent='';},4000);}
+  function fallback(txt){
+    // 클립보드 길이 막혀 있으면 칸을 골라 둔다 — 그대로 Ctrl+C 하면 된다
+    ta.focus();ta.select();
+    let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    said(ok?'복사했어요 ✓ 이제 편집기에 Ctrl+V':'아래 칸이 골라져 있어요 — Ctrl+C 로 복사하세요');
+  }
+  btn.addEventListener('click',()=>{
+    const txt=ta.value;
+    if(!txt){said('코드를 아직 못 불러왔어요');return;}
+    if(navigator.clipboard&&window.isSecureContext){
+      navigator.clipboard.writeText(txt).then(()=>said('복사했어요 ✓ 이제 편집기에 Ctrl+V'),()=>fallback(txt));
+    }else fallback(txt);
+  });
+})();
+</script>
+</body>
+</html>
