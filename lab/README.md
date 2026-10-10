@@ -6,6 +6,10 @@
 | 폴더 | 무엇 | 합치는 법 |
 |---|---|---|
 | `vf-bg/` | 말씀 전체화면 **'내 배경'** — 내 사진으로 배경 만들기 + 템플릿 | `vf-bg/INTEGRATION.md` |
+| `sheet-link-lab.html` | 시트 앱이 **'그 행'** 으로 가는 주소 모양 찾기 — 휴대폰에서 단추를 눌러 앱이 몇 행에서 열리는지 본다 (v26-1010-13) | 통한 모양으로 `index.html` 의 `_sheetGo` 를 고친다 (`docs/ROADMAP.md` R-3) |
+
+`sheet-link-lab.html` 은 손으로 쓴 한 파일이다 (만드는 스크립트 없음).
+**https://block7.my/lab/sheet-link-lab.html** — 휴대폰 사파리·크롬에서 연다.
 
 ## 실험실을 어떻게 보나
 
