@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-14 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-15 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -680,7 +680,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-14";
+const APP_VERSION = "v. 26-1010-15";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2886,7 +2886,7 @@ function renderPMail(){
     <div class="w-acts" style="grid-template-columns:1fr 1fr"><button id="pmStamp"><i>👍</i>칭찬 도장</button><button id="pmMis"><i>🎯</i>미션 주기</button></div>
     <div class="w-card"><div class="w-h"><span class="w-j">아이와 이야기창</span><small>새 이야기는 아래쪽</small></div>${thread.length ? `<div class="w-chat">${thread.map(bubble).join('')}</div>` : `<p class="pr-note">아직 이야기가 없어요. 오늘 하루 수고했다고 한마디 보내 볼까요? 💌</p>`}
       <div class="w-emo" id="pmEmo">${STK.concat(['😊','👏','💪','🍀','🌈','🐷']).map(x => `<button type="button">${x}</button>`).join('')}</div>
-      <form class="w-send" id="pmForm"><textarea id="pmTxt" rows="1" maxlength="120" placeholder="${esc(ni)}에게 메시지 보내기" autocomplete="off" enterkeyhint="send"></textarea><button id="pmSend" aria-label="보내기">보내기</button></form></div>`
+      <form class="w-send" id="pmForm"><textarea id="pmTxt" rows="1" maxlength="120" placeholder="${esc(ni)}에게 메시지 보내기" autocomplete="off" enterkeyhint="enter"></textarea><button id="pmSend" aria-label="보내기">보내기</button></form></div>`
     + (typeof alertsHtml==='function' ? alertsHtml(k) : '');
   const ch = box.querySelector('.w-chat'); if(ch) ch.scrollTop = ch.scrollHeight;
   // 새 쪽지가 와서 다시 그려져도 쓰던 글·커서를 잃지 않는다
@@ -2898,8 +2898,9 @@ function renderPMail(){
   ti.onkeyup = ti.onclick = ti.onselect = keepCaret;
   if(PAR.draftFocus){ ti.focus(); const c = PAR.caret || [ti.value.length, ti.value.length]; try{ ti.setSelectionRange(c[0], c[1]); }catch(_){} PAR.draftFocus = false; }
   ti.onfocus = () => { PAR.typing = true; }; ti.onblur = () => { PAR.typing = false; keepCaret(); };
-  // 엔터 = 보내기(줄바꿈은 Shift+엔터). 한글 조합 중 엔터는 무시
-  ti.onkeydown = e => { if(e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){ e.preventDefault(); $('pmForm').requestSubmit ? $('pmForm').requestSubmit() : $('pmSend').click(); } };
+  // 폰 키보드의 엔터는 카톡·문자처럼 줄바꿈(보내기는 화면의 '보내기' 버튼). 컴퓨터 키보드만 엔터=보내기, Shift+엔터=줄바꿈. 한글 조합 중 엔터는 무시
+  const hardKb = matchMedia('(pointer:fine)').matches && !matchMedia('(pointer:coarse)').matches;
+  ti.onkeydown = e => { if(hardKb && e.key==='Enter' && !e.shiftKey && !e.isComposing && e.keyCode!==229){ e.preventDefault(); $('pmForm').requestSubmit ? $('pmForm').requestSubmit() : $('pmSend').click(); } };
   // 이모지: 누르면 커서 자리에 들어간다(몇 개든, 어디든). 누를 때 입력 칸의 커서를 빼앗지 않는다
   $('pmEmo').onpointerdown = e => { if(e.target.closest('button')) e.preventDefault(); };
   $('pmEmo').onclick = e => { const b = e.target.closest('button'); if(!b) return; buzz(6);
