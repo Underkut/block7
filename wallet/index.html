@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-4 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-5 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -277,18 +277,59 @@ body.mirror .mirbar{display:block}.mirtxt{font-size:12.5px;text-align:center;opa
 .mirseg{display:flex;gap:4px;margin-top:6px;background:rgba(255,255,255,.12);border-radius:8px;padding:3px}.mirseg button{flex:1;padding:6px 0;border-radius:6px;font-size:13px;color:#e5e7eb}.mirseg button.on{background:#fff;color:#1f2430}
 body.mirror .view{padding-top:14px}body.mirror #app{top:var(--mirH,120px);bottom:62px}
 .stp{font-size:13px;margin-left:4px;letter-spacing:1px}
+
+/* 부모 화면 — 따뜻한 가족 분위기 (v26-1010-5) */
+.par{--w-bg:#fbf6ef;--w-card:#fff;--w-ink:#3d3446;--w-sub:#8a7f92;--w-track:#f3ece4;--w-line:#f0e7dc;--w-acc:#e2725b;background:var(--w-bg)!important;color:var(--w-ink)}
+body.pdark .par{--w-bg:#1d1916;--w-card:#2a2420;--w-ink:#f3ebe3;--w-sub:#b3a69a;--w-track:#3a322c;--w-line:#3a322c;--w-acc:#ffa58a}
+.par .pr-top,body.pdark .par .pr-top{background:var(--w-bg)!important;color:var(--w-ink)}
+.par .pr-top b{font-family:'Jua',sans-serif;font-weight:400;font-size:19px}
+.w-j{font-family:'Jua',sans-serif;font-weight:400}
+.w-top{display:flex;align-items:center;gap:10px;margin:2px 2px 12px}.w-av{width:46px;height:46px;border-radius:50%;overflow:hidden;flex:none}.w-av svg{width:100%;display:block}
+.w-t{font-size:21px;display:block}.w-top small{display:block;font-size:12px;color:var(--w-sub)}
+.w-card{background:var(--w-card);border-radius:22px;padding:14px 16px;margin-bottom:11px;box-shadow:0 3px 12px rgba(120,90,60,.07)}
+.w-hero{background:linear-gradient(135deg,#fff3ea,#ffe9f0)}body.pdark .w-hero{background:linear-gradient(135deg,#3a2a24,#3a2530)}
+.w-say{font-size:15px;line-height:1.55}.w-say b{color:var(--w-acc)}
+.w-bal{display:flex;align-items:flex-end;gap:8px;margin:10px 0 6px}.w-n{font-size:34px;line-height:1}.w-bal small{font-size:12px;color:var(--w-sub);margin-bottom:4px}
+.w-stack{display:flex;height:10px;border-radius:6px;overflow:hidden;background:var(--w-track)}.w-stack i{display:block}
+.w-leg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--w-sub);margin-top:6px}.w-leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.w-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}
+.w-pill{border-radius:18px;padding:10px 6px;text-align:center;min-width:0}.w-pill small{display:block;font-size:11px;color:var(--w-sub)}.w-pill b{font-size:18px;display:block}.w-pill em{display:block;font-style:normal;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-pill.g{background:#eaf7ef}.w-pill.g em{color:#3c9a64}.w-pill.r{background:#ffeef0}.w-pill.r em{color:#d0607a}.w-pill.y{background:#fff6df}.w-pill.y em{color:#b8892a}
+body.pdark .w-pill.g{background:#22352a}body.pdark .w-pill.r{background:#3a2328}body.pdark .w-pill.y{background:#3a3222}
+body.pdark .w-pill.g em{color:#8fdcae}body.pdark .w-pill.r em{color:#ff9db0}body.pdark .w-pill.y em{color:#f3cf7a}
+.w-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}.w-h .w-j{font-size:17px}.w-h small{font-size:11.5px;color:var(--w-sub);text-align:right}
+.w-st{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.5;margin:6px 0}.w-st span:first-child{font-size:17px}
+.w-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}.w-acts button{background:var(--w-card);border-radius:18px;padding:10px 4px;text-align:center;font-size:12.5px;color:var(--w-ink);box-shadow:0 3px 12px rgba(120,90,60,.07)}.w-acts i{display:block;font-style:normal;font-size:22px;margin-bottom:2px}
+.w-cat{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}.w-ce{width:30px;height:30px;border-radius:10px;overflow:hidden;flex:none}.w-ce svg{width:100%;display:block}.w-cn{width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-cb{flex:1;height:9px;background:var(--w-track);border-radius:6px;overflow:hidden}.w-cb i{display:block;height:100%;border-radius:6px;background:#ffb59a}.w-cat b{width:66px;text-align:right;font-weight:500}
+.w-cal i{background:transparent!important;border:0!important;font-size:20px;height:26px;line-height:26px;color:var(--w-sub)!important}.w-cal i.e::after{content:'○';opacity:.35;font-size:13px}
+.w-goal{display:flex;align-items:center;gap:12px;margin:8px 0}.w-ring{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none}.w-ring span{width:40px;height:40px;border-radius:50%;background:var(--w-card);display:grid;place-items:center;font-size:12px;font-weight:600}
+.w-gt{flex:1;font-size:14px;min-width:0}.w-gt small{display:block;color:var(--w-sub);font-size:12px}
+.w-rec{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--w-line);font-size:14px}.w-rec:last-of-type{border:0}
+.w-ra{width:34px;height:34px;border-radius:50%;overflow:hidden;flex:none;display:grid;place-items:center;color:#5aa9ff}.w-ra svg{width:100%;display:block}
+.w-rm{flex:1;min-width:0}.w-rm small{display:block;color:var(--w-sub);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-rec b{font-weight:500}.w-in{color:#3c9a64}.w-out{color:#d0607a}.w-mv{color:var(--w-sub)}body.pdark .w-in{color:#8fdcae}body.pdark .w-out{color:#ff9db0}
+.par .pr-seg{background:#f1e8dc;border:0;border-radius:14px;padding:3px}.par .pr-seg button{border-radius:11px}.par .pr-seg button.on{background:#fff;color:var(--w-ink);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+body.pdark .par .pr-seg{background:#2a2420}body.pdark .par .pr-seg button.on{background:#3d342e;color:#fff}
+.par .pr-kids button{border:0;border-radius:16px;background:var(--w-card);color:var(--w-sub)}.par .pr-kids button.on{background:var(--w-ink);color:var(--w-bg)}
+.par .pr-sec{border:0;border-radius:22px;background:var(--w-card);box-shadow:0 3px 12px rgba(120,90,60,.07)}
+.par .pr-note{color:var(--w-sub)}.par .pr-link{color:var(--w-acc)}
+.pnav{background:#fff;border-top:0;border-radius:22px 22px 0 0;box-shadow:0 -3px 14px rgba(120,90,60,.08)}.pnav button.on{color:#e2725b}
+body.pdark .pnav{background:#2a2420}body.pdark .pnav button.on{color:#ffa58a}
+/* 부모 사용 설명: 다크에서도 비추는 곳이 또렷하게 — 밝은 테두리 + 은은한 빛 */
+#tour.tpar .tr-hole{box-shadow:0 0 0 3px #ffcf8a,0 0 22px 6px rgba(255,200,120,.55),0 0 0 9999px rgba(8,8,10,.74)}
 #tour{position:fixed;inset:0;z-index:80;opacity:0;transition:opacity .25s ease}#tour.on{opacity:1}
 .tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:left .38s cubic-bezier(.4,0,.2,1),top .38s cubic-bezier(.4,0,.2,1),width .38s cubic-bezier(.4,0,.2,1),height .38s cubic-bezier(.4,0,.2,1);pointer-events:none;will-change:left,top,width,height}
 .tr-bub.fade{opacity:0;transform:translateY(6px)}
 .tr-dots{display:flex;gap:5px;margin-right:auto;margin-left:4px}.tr-dots i{width:7px;height:7px;border-radius:50%;background:#e2d8f3;transition:all .25s}.tr-dots i.on{width:18px;border-radius:4px;background:var(--purple)}
-#tour.tpar .tr-hole{box-shadow:0 0 0 9999px rgba(10,12,16,.6)}
+
 .tr-bub{position:fixed;left:14px;right:14px;transition:top .38s cubic-bezier(.4,0,.2,1),opacity .2s ease,transform .25s ease;max-width:480px;margin:0 auto;background:#fff;border-radius:22px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
 .tr-f{width:46px;flex:none}.tr-f svg{width:100%;display:block}.tr-t{flex:1;min-width:0;font-size:17px;line-height:1.45;color:var(--ink)}
 .tr-b{width:100%;display:flex;align-items:center;gap:10px;justify-content:flex-end;font-size:14px;color:var(--sub)}
 .tr-b button{padding:8px 14px;border-radius:14px;color:var(--sub);font-size:15px}.tr-b button.go{background:var(--purple);color:#fff;box-shadow:0 3px 0 var(--purple-d)}
 
 #tour.tpar .tr-bub{font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;border-radius:12px}#tour.tpar .tr-t{font-size:15px;color:#1f2430}
-#tour.tpar .tr-b button.go{background:#4f6bed;box-shadow:none;border-radius:8px}
+#tour.tpar .tr-b button.go{background:#e2725b;box-shadow:none;border-radius:8px}
 
 .pick1{color:var(--ink)}
 body.pmode.pdark:not(.mirror) .sheet .pick1,body.pmode.pdark:not(.mirror) .sheet .inp,body.pmode.pdark:not(.mirror) .sheet .stkrow button,body.pmode.pdark:not(.mirror) .sheet .pk,body.pmode.pdark:not(.mirror) .sheet .gtabs button{background:#2b313b;color:#e5e7eb;border-color:#3a414d;box-shadow:none}
@@ -532,16 +573,16 @@ body:has(.par.on) #trash{visibility:hidden}
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
-<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">용돈 보고서</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
+<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">우리 아이</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
 <div class="mirbar" id="mirBar"><div class="mirtxt" id="mirTxt"></div><div class="pr-kids" id="mirKids"></div><div class="mirseg" id="mirSeg"><button data-v="vHome" class="on">홈</button><button data-v="vAlloc">계획세우기</button><button data-v="vLog">돌아보기</button></div></div>
-<nav class="pnav" id="pnav"><button data-p="rep" class="on"><span id="pnRep"></span>보고서</button><button data-p="mir"><span id="pnMir"></span>아이 화면</button><button data-p="mail"><span id="pnMail"></span>우체통<i id="pmDot"></i></button></nav>
+<nav class="pnav" id="pnav"><button data-p="rep" class="on"><span id="pnRep"></span>우리 아이</button><button data-p="mir"><span id="pnMir"></span>아이 화면</button><button data-p="mail"><span id="pnMail"></span>우체통<i id="pmDot"></i></button></nav>
 <div class="dim" id="dim"></div>
 <div class="sheet" id="sheet"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-4";
+const APP_VERSION = "v. 26-1010-5";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2145,44 +2186,55 @@ function sumIO(a, b){ let i = 0, o = 0; S.tx.forEach(t => { if(t.date < a || t.d
 function renderParent(){
   const box = $('parBody'), k = PAR.kids.find(x => x.id===PAR.sel);
   $('parKids').innerHTML = kidTabsHtml();
-  if(!k){ box.innerHTML = `<div class="pr-sec"><h3>아직 연결된 아이 폰이 없어요</h3><p class="pr-note">아래 버튼으로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p><div class="pr-btns" style="margin-top:10px"><button id="prKidE">아이 폰 연결하기</button></div></div>`; return; }
+  if(!k){ box.innerHTML = `<div class="w-card"><div class="w-h"><span class="w-j">아직 연결된 아이 폰이 없어요</span></div><p class="pr-note">아래 버튼으로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p><div class="pr-btns" style="margin-top:10px"><button id="prKidE">아이 폰 연결하기</button></div></div>`; return; }
   if(!k.st){ box.innerHTML = `<div class="pr-empty">아이 기록을 읽지 못했어요</div>`; return; }
-  const R = perRange(PAR.per);
+  const R = perRange(PAR.per), nm = esc(k.name||'아이'), ni = nm + (/[가-힣]$/.test(k.name||'') && ((k.name.charCodeAt(k.name.length-1)-0xAC00) % 28) ? '이' : '');
+  stampsFor(k.id);
   const html = withS(k.st, () => {
-    const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o;
+    const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o, bal = balance();
     const used = S.tiles.filter(c => sumA(a => alloc(c.k,a)) > 0), over = used.filter(c => AK.some(a => left(c.k,a) < 0));
-    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b){ const n = catOf(t.cat).n; cats[n] = (cats[n]||0) + t.amt; } });
-    const cl = Object.keys(cats).map(n => ({n, v:cats[n]})).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
+    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
+    const cl = Object.values(cats).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
     const L = lvOf(starsOf()), sk = streakOf();
-    // 정직 체크: 주 = 7칸, 그 밖 = 이번 달 날짜들
     const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number(todayStr().slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
-    const mark = v => v==='y' ? '✓' : v==='z' ? '○' : v==='n' ? '–' : '';
-    const cal = days.map(dd => { const c = S.chk[dd], cls = !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n';
-      return `<div><span>${PAR.per==='week' ? '월화수목금토일'[days.indexOf(dd)] : Number(dd.slice(8,10))}</span><i class="${dd>todayStr()?'e':cls}">${c ? mark(c.s)+mark(c.g) : ''}</i></div>`; }).join('');
-    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,12);
-    const rowH = t => { if(t.t==='mv') return `<tr><td>${md2(t.date)}</td><td>${acctName(t.from)} → ${acctName(t.to)}</td><td></td><td class="r pr-mv">${nf(t.amt)}</td></tr>`;
-      const isIn = t.t==='in', nm = isIn ? (t.memo||'용돈') : catOf(t.cat).n;
-      return `<tr><td>${md2(t.date)}</td><td>${esc(nm)}${t.note ? ' <small>· '+esc(t.note)+'</small>' : ''}</td><td>${ACS[acctOf(t)]}</td><td class="r ${isIn?'pr-in':''}">${isIn?'+':'−'}${nf(t.amt)}</td></tr>`; };
-    const goals = S.goals.filter(g => !g.done);
-    const acts = [];
-    S.tx.slice(-60).forEach(t => { if(t.t!=='mv') acts.push({at:t.at||0, d:t.date, c:t.t==='in'?'g':'b', t:(t.t==='in' ? '받은 돈 ' : '쓴 돈 ')+won(t.amt)+' · '+(t.t==='in' ? (t.memo||'용돈') : catOf(t.cat).n)}); });
-    Object.keys(S.chk).sort().slice(-14).forEach(dd => { const c = S.chk[dd]; acts.push({at:new Date(dd+'T21:00:00').getTime(), d:dd, c:(yes(c.s)&&yes(c.g))?'g':'o', t:'하루 마무리 · 쓴 돈 '+(mark(c.s)||'?')+' · 받은 돈 '+(mark(c.g)||'?')}); });
-    S.goals.filter(g => g.done && g.doneAt).forEach(g => acts.push({at:new Date(g.doneAt+'T20:00:00').getTime(), d:g.doneAt, c:'p', t:'목표 달성 · '+g.n+' ('+won(g.price)+')'}));
-    S.cps.filter(c => c.used).forEach(c => acts.push({at:new Date(c.used+'T20:00:00').getTime(), d:c.used, c:'p', t:'쿠폰 사용 · '+c.n}));
-    acts.sort((a,b) => b.at-a.at);
-    return `<div class="pr-sec"><h3>요약 · ${R.lb} ${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+'–'+md2(R.b) : Number(R.a.slice(5,7))+'월'}</h3><div class="pr-kpi">
-        <div><small>지금 가진 돈</small><b>${won(balance())}</b><em>${AK.filter(a => a!=='bank' || balOf(a)).map(a => ACS[a]+' '+nf(balOf(a))).join(' · ')}</em></div>
-        <div class="g"><small>받은 돈</small><b>${won(cur.i)}</b><em>${R.pl} ${won(prv.i)}</em></div>
-        <div class="r"><small>쓴 돈</small><b>${won(cur.o)}</b><em class="${d>0?'up':''}">${R.pl}보다 ${d>0 ? '+'+nf(d) : d<0 ? '−'+nf(-d) : '같음'}</em></div>
-        <div class="o"><small>계획 지킴 (지금)</small><b>${used.length ? (used.length-over.length)+' / '+used.length+'칸' : '계획 없음'}</b><em>${over.length ? over.map(c => c.n).join(', ')+' 초과' : used.length ? '모두 지키는 중' : ''}</em></div></div></div>
-      <div class="pr-sec"><h3>어디에 썼나 · ${R.lb}</h3>${cl.length ? cl.slice(0,6).map(x => `<div class="pr-bar"><span>${esc(x.n)}</span><em><i style="width:${Math.round(x.v/cmx*100)}%"></i></em><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
-      <div class="pr-sec"><h3>하루 마무리 (정직 체크)</h3><div class="pr-cal ${PAR.per==='month'?'m':''}">${cal}</div>
-        <p class="pr-note">왼쪽 = 쓴 돈, 오른쪽 = 받은 돈 · ✓ 다 적었어요 · ○ 없었어요 · – 아직 못 적었어요<br>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 별 ${starsOf()}개 · 연속 ${sk}일</p></div>
-      <div class="pr-sec"><h3>갖고 싶은 것</h3>${goals.length ? goals.map(g => { const sv = goalTotal(g), p = Math.min(100, Math.floor(sv/g.price*100)); return `<div class="pr-gl"><span>${esc(g.n)}</span><span>${nf(sv)} / ${won(g.price)} · ${p}%</span></div><em class="pr-gb"><i style="width:${p}%"></i></em>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
-      <div class="pr-sec"><h3>기록 · ${R.lb} (${rows.length}건)</h3>${rows.length ? `<table class="pr-tb"><tr><th>날짜</th><th>내용</th><th>수단</th><th class="r">금액</th></tr>${shown.map(rowH).join('')}</table>${rows.length > shown.length ? '<button class="pr-link" id="prMore">'+(rows.length-shown.length)+'건 더 보기</button>' : ''}` : '<p class="pr-note">기록이 없어요</p>'}</div>
-      <div class="pr-sec"><h3>최근 활동</h3>${acts.slice(0,10).map(a => `<div class="pr-al"><i class="${a.c}"></i><span>${esc(a.t)}</span><small>${md2(a.d)}</small></div>`).join('') || '<p class="pr-note">활동이 없어요</p>'}</div>`;
+    const full = days.filter(dd => { const c = S.chk[dd]; return c && yes(c.s) && yes(c.g); }).length;
+    const cal = days.map(dd => { const c = S.chk[dd], cls = dd > todayStr() || !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n';
+      return `<div><span>${PAR.per==='week' ? '월화수목금토일'[days.indexOf(dd)] : Number(dd.slice(8,10))}</span><i class="${cls}">${cls==='y' ? '💛' : cls==='h' ? '🤍' : cls==='n' ? '·' : ''}</i></div>`; }).join('');
+    const goals = S.goals.filter(g => !g.done).map(g => ({g, sv:goalTotal(g)})).sort((a,b) => (b.sv/b.g.price)-(a.sv/a.g.price));
+    // 이번 기간 이야기 — 잘한 점 · 함께 이야기해 볼 점 · 곧 이뤄요
+    const st = [];
+    if(full) st.push(['🌱','잘했어요', `하루 마무리를 ${full}일 정직하게 다 적었어요.`]);
+    else if(cur.o === 0 && cur.i === 0) st.push(['🌱','조용한 '+(PAR.per==='day'?'하루':'기간'), '아직 기록이 없어요. 오늘 저녁에 함께 적어 볼까요?']);
+    if(cur.o > 0 && prv.o > 0 && d < 0) st.push(['🌱','잘했어요', `${R.pl}보다 ${won(-d)} 덜 썼어요.`]);
+    if(over.length){ const c = over[0], ov = AK.reduce((s,a) => s + Math.max(0, -left(c.k,a)), 0); st.push(['💬','함께 이야기해 봐요', `${esc(c.n)} 칸에 계획보다 ${won(ov)} 더 썼어요.`]); }
+    else { const big = S.tx.filter(t => t.t==='out' && t.date >= R.a && t.date <= R.b).sort((a,b) => b.amt-a.amt)[0];
+      if(big && bal > 0 && big.amt >= bal*0.3) st.push(['💬','함께 이야기해 봐요', `한 번에 ${won(big.amt)}(${esc(catOf(big.cat).n)})을 썼어요.`]); }
+    if(goals.length){ const x = goals[0], rem = Math.max(0, x.g.price - x.sv); st.push(['🎁', rem ? '곧 이뤄요' : '다 모았어요', rem ? `${esc(x.g.n)}까지 ${won(rem)} 남았어요!` : `${esc(x.g.n)} 값을 다 모았어요!`]); }
+    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,6);
+    const dl = dd => { const t = todayStr(); return dd===t ? '오늘' : dd===dayShift(t,-1) ? '어제' : md2(dd); };
+    const rowH = t => {
+      if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${dl(t.date)}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
+      const isIn = t.t==='in', c = isIn ? null : catOf(t.cat), ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
+      return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${dl(t.date)} · ${ACS[acctOf(t)]}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
+    const parts = AK.map(a => ({a, v:Math.max(0, balOf(a))})), tot = parts.reduce((s,x) => s + x.v, 0) || 1, ACOL = {cash:'#8fcfa8', card:'#9cc8f5', bank:'#ffd98a'};
+    const period = PAR.per==='day' ? '오늘' : PAR.per==='week' ? '이번 주' : '이번 달';
+    return `<div class="w-card w-hero"><div class="w-say">${period} ${ni}는 <b>${won(cur.i)}</b>을 받고 <b>${won(cur.o)}</b>을 썼어요.${full ? `<br>하루 마무리를 <b>${full}일</b> 정직하게 했어요 💛` : ''}</div>
+        <div class="w-bal"><span class="w-j w-n">${nf(bal)}</span><small>원 · 지금 가진 돈</small></div>
+        <div class="w-stack">${parts.filter(x => x.v).map(x => `<i style="width:${x.v/tot*100}%;background:${ACOL[x.a]}"></i>`).join('')}</div>
+        <div class="w-leg">${parts.filter(x => x.v || x.a!=='bank').map(x => `<span><i style="background:${ACOL[x.a]}"></i>${ACS[x.a]} ${nf(balOf(x.a))}</span>`).join('')}</div></div>
+      <div class="w-pills"><div class="w-pill g"><small>받은 돈</small><b class="w-j">${nf(cur.i)}</b><em>${R.pl} ${nf(prv.i)}</em></div>
+        <div class="w-pill r"><small>쓴 돈</small><b class="w-j">${nf(cur.o)}</b><em>${R.pl}보다 ${d>0 ? '+'+nf(d) : d<0 ? '−'+nf(-d) : '같음'}</em></div>
+        <div class="w-pill y"><small>계획 지킴</small><b class="w-j">${used.length ? (used.length-over.length)+'/'+used.length+'칸' : '—'}</b><em>${over.length ? esc(over[0].n)+' 칸 조금 넘음' : used.length ? '모두 지키는 중' : '계획 없음'}</em></div></div>
+      ${st.length ? `<div class="w-card"><div class="w-h"><span class="w-j">${period} 이야기</span><small>꿀꿀이가 정리했어요</small></div>${st.slice(0,3).map(x => `<div class="w-st"><span>${x[0]}</span><span><b>${x[1]}</b> · ${x[2]}</span></div>`).join('')}</div>` : ''}
+      <div class="w-acts"><button id="wStamp"><i>👍</i>칭찬 도장</button><button id="wNote"><i>✉️</i>쪽지</button><button id="wMis"><i>🎯</i>미션 주기</button></div>
+      <div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${period}</small></div>${cl.length ? cl.slice(0,6).map(x => `<div class="w-cat"><span class="w-ce" style="background:${(CH[x.ch]||CH.star).bg}">${face(x.ch)}</span><span class="w-cn">${esc(x.n)}</span><span class="w-cb"><i style="width:${Math.round(x.v/cmx*100)}%"></i></span><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
+      <div class="w-card"><div class="w-h"><span class="w-j">정직한 하루 마무리</span><small>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 연속 ${sk}일</small></div><div class="pr-cal w-cal ${PAR.per==='month'?'m':''}">${cal}</div>
+        <p class="pr-note">💛 쓴 돈·받은 돈 다 적었어요 · 🤍 하나만 · · 아직 못 적었어요 · 별 ${starsOf()}개</p></div>
+      <div class="w-card"><div class="w-h"><span class="w-j">갖고 싶은 것</span></div>${goals.length ? goals.map(x => { const p = Math.min(100, Math.floor(x.sv/x.g.price*100)), rem = Math.max(0, x.g.price-x.sv), dd = x.g.due ? dayDiff(x.g.due) : 0;
+          return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
+      <div class="w-card"><div class="w-h"><span class="w-j">${period} 기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
   });
-  box.innerHTML = `<div class="pr-meta">${esc(k.name||'아이')} · ${k.at ? '아이 폰에서 받은 때 '+k.at.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}</div>` + html;
+  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : Number(R.a.slice(5,7))+'월'}${k.at ? ' · 아이 폰 소식 '+k.at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : ''}</small></span></div>` + html;
 }
 $('par').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
@@ -2190,6 +2242,9 @@ $('par').addEventListener('click', e => {
   else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; refreshParent(); }
   else if(b.id==='prMore'){ PAR.more = true; renderParent(); }
   else if(b.id==='prKidE') kidCodeSheet(false);
+  else if(b.id==='wStamp') stampPick();
+  else if(b.id==='wNote') needPName(() => noteSheet());
+  else if(b.id==='wMis') missionSheet();
   else if(b.id==='prGear') pSettings();
   else if(b.id==='prTh'){ PTH = PTH==='sys' ? 'light' : PTH==='light' ? 'dark' : 'sys'; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); toast({sys:'화면 밝기: 시스템 따라', light:'화면 밝기: 라이트', dark:'화면 밝기: 다크'}[PTH]); }
 });
@@ -2218,7 +2273,7 @@ const PTH_MQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : 
 function applyPTheme(){ const dk = PTH==='dark' || (PTH==='sys' && PTH_MQ && PTH_MQ.matches); document.body.classList.toggle('pdark', !!dk); }
 if(PTH_MQ && PTH_MQ.addEventListener) PTH_MQ.addEventListener('change', applyPTheme);
 const PICO = {
-  rep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  rep:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M12 17s-3-1.800-3-3.600a1.700 1.700 0 013-1 1.700 1.700 0 013 1C15 15.200 12 17 12 17z"/></svg>',
   mir:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg>',
   mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
   sun:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/></svg>',
@@ -2231,7 +2286,7 @@ function setPTab(t){
   document.querySelectorAll('#pnav button').forEach(b => b.classList.toggle('on', b.dataset.p===t));
   if(t==='mir'){ $('par').classList.remove('on'); mirrorOn(); }
   else { mirrorOff(); $('par').classList.add('on'); $('prRep').style.display = t==='rep' ? '' : 'none'; $('prMail').style.display = t==='mail' ? '' : 'none';
-    $('prTitle').textContent = t==='rep' ? '용돈 보고서' : '우체통'; $('par').scrollTop = 0; t==='rep' ? renderParent() : renderPMail(); }
+    $('prTitle').textContent = t==='rep' ? '우리 아이' : '우체통'; $('par').scrollTop = 0; t==='rep' ? renderParent() : renderPMail(); }
 }
 function refreshParent(){
   if(PAR.go) return applyGo();
@@ -2606,7 +2661,7 @@ const TOUR_KID = [
   {sel:'.tabs [data-v=vLog]', tab:'vHome', t:'<b>돌아보기</b>에서 한 달 동안 어디에 썼는지 그래프로 볼 수 있어. 그럼 시작해 볼까?'}
 ];
 const TOUR_PAR = [
-  {sel:'#pnav [data-p=rep]', ptab:'rep', t:'<b>보고서</b> — 아이의 가진 돈, 받은 돈·쓴 돈, 계획 지킴, 정직 체크 달력, 기록 표를 한눈에 봅니다.'},
+  {sel:'#pnav [data-p=rep]', ptab:'rep', t:'<b>우리 아이</b> — 아이의 가진 돈, 받은 돈·쓴 돈, 계획 지킴, 정직 체크 달력, 기록 표를 한눈에 봅니다.'},
   {sel:'#parSeg', ptab:'rep', t:'오늘 · 이번 주 · 이번 달로 기간을 바꿔 볼 수 있습니다.'},
   {sel:'#pnav [data-p=mir]', ptab:'rep', t:'<b>아이 화면</b> — 아이 폰 화면을 그대로 보여 줍니다(보기만). 기록을 <b>길게 누르면 칭찬 도장</b>을 찍을 수 있습니다.'},
   {sel:'#pnav [data-p=mail]', ptab:'rep', t:'<b>우체통</b> — 쪽지 · 칭찬 도장 · 미션을 보내고, 용돈 요청과 쿠폰 사용을 승인합니다. 알림 내역도 여기에 쌓입니다.'},
