@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-12 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-13 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -340,6 +340,10 @@ body.pdark .pnav{background:#2a2420}body.pdark .pnav button.on{color:#ffa58a}
 .w-wt{display:flex;gap:10px;align-items:flex-start;font-size:14px}.w-wi{font-size:24px;line-height:1}.w-wt b{display:block}.w-wq{display:block;color:var(--w-ink);margin-top:2px}.w-wt small{display:block;color:var(--w-sub);font-size:11px}
 .par .pr-btns button{border:0;border-radius:14px;background:var(--w-track);color:var(--w-ink);padding:9px 0;font-size:13px}.par .pr-btns button.p{background:#e2725b;color:#fff}
 .w-chat{max-height:420px;overflow-y:auto;padding:2px 0}
+.w-send{display:flex;gap:8px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--w-line)}
+.w-send input{flex:1;min-width:0;border:1px solid var(--w-line);background:var(--w-track);color:var(--w-ink);border-radius:20px;padding:10px 14px;font:inherit;font-size:16px;outline:none;user-select:text;-webkit-user-select:text}
+.w-send input:focus{border-color:var(--w-acc)}
+.w-send button{flex:none;background:var(--w-acc);color:#fff;border-radius:20px;padding:10px 16px;font-size:14px;font-weight:600}
 .w-day{text-align:center;font-size:11px;color:var(--w-sub);margin:10px 0 4px}
 .w-msg{display:flex;gap:8px;align-items:flex-end;margin:6px 0}.w-msg>div{max-width:78%}.w-msg small{display:block;font-size:10.5px;color:var(--w-sub);margin:2px 6px}
 .w-msg.me{justify-content:flex-end}.w-msg.me small{text-align:right}
@@ -674,7 +678,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-12";
+const APP_VERSION = "v. 26-1010-13";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2844,6 +2848,7 @@ function missionSheet(){
     draw(); });
 }
 function renderPMail(){
+  if(PAR.typing && $('pmTxt') && document.activeElement===$('pmTxt')) PAR.draftFocus = true;
   $('parKids').innerHTML = kidTabsHtml();
   const box = $('prMail'), k = curKid();
   if(!k){ box.innerHTML = '<div class="w-card"><div class="w-h"><span class="w-j">우체통</span></div><p class="pr-note">아이 폰을 연결하면 쪽지를 주고받을 수 있어요.</p></div>'; return; }
@@ -2876,10 +2881,16 @@ function renderPMail(){
     return sep + `<div class="w-msg ${mine?'me':''}">${mine ? '' : kidFace}<div><div class="w-bub">${body(m)}</div><small>${mine ? esc(m.fromName||'부모님')+' · ' : ''}${new Date(m.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}${mine && m.readKid ? ' · 읽음' : ''}</small></div></div>`; };
   box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}와 우리 가족</span><small>${unread ? '새 쪽지 '+unread+'개 · ' : ''}${wait.length ? '기다리는 일 '+wait.length+'개' : '기다리는 일 없음'}</small></span></div>
     ${wait.length ? `<div class="w-card w-hero"><div class="w-h"><span class="w-j">${ni}가 기다리고 있어요</span><small>${wait.length}개</small></div>${wait.map(wrow).join('')}</div>` : ''}
-    <div class="w-acts"><button id="pmStamp"><i>👍</i>칭찬 도장</button><button id="pmNote"><i>✉️</i>쪽지</button><button id="pmMis"><i>🎯</i>미션 주기</button></div>
-    <div class="w-card"><div class="w-h"><span class="w-j">주고받은 이야기</span><small>새 이야기는 아래쪽</small></div>${thread.length ? `<div class="w-chat">${thread.map(bubble).join('')}</div>` : `<p class="pr-note">아직 이야기가 없어요. 오늘 하루 수고했다고 쪽지 한 장 보내 볼까요? 💌</p>`}</div>`
+    <div class="w-acts" style="grid-template-columns:1fr 1fr"><button id="pmStamp"><i>👍</i>칭찬 도장</button><button id="pmMis"><i>🎯</i>미션 주기</button></div>
+    <div class="w-card"><div class="w-h"><span class="w-j">아이와 이야기창</span><small>새 이야기는 아래쪽</small></div>${thread.length ? `<div class="w-chat">${thread.map(bubble).join('')}</div>` : `<p class="pr-note">아직 이야기가 없어요. 오늘 하루 수고했다고 한마디 보내 볼까요? 💌</p>`}
+      <form class="w-send" id="pmForm"><input id="pmTxt" maxlength="120" placeholder="${esc(ni)}에게 메시지 보내기" autocomplete="off" enterkeyhint="send"><button id="pmSend" aria-label="보내기">보내기</button></form></div>`
     + (typeof alertsHtml==='function' ? alertsHtml(k) : '');
   const ch = box.querySelector('.w-chat'); if(ch) ch.scrollTop = ch.scrollHeight;
+  // 새 쪽지가 와서 다시 그려져도 쓰던 글·커서를 잃지 않는다
+  const ti = $('pmTxt'); ti.value = PAR.draft || ''; ti.oninput = () => { PAR.draft = ti.value; }; if(PAR.draftFocus){ ti.focus(); PAR.draftFocus = false; }
+  ti.onfocus = () => { PAR.typing = true; }; ti.onblur = () => { PAR.typing = false; };
+  $('pmForm').onsubmit = e => { e.preventDefault(); const t = $('pmTxt').value.trim(); if(!t){ $('pmTxt').focus(); return; }
+    needPName(async () => { if($('sheet').classList.contains('on')) closeSheet(); if(await mailSend({type:'note', text:t.slice(0,120)}, '보냈어요!')){ PAR.draft = ''; PAR.draftFocus = true; renderPMail(); } }); };
   ms.filter(m => m.from==='kid' && !m.readPar).forEach(m => { m.readPar = true; mailUpd(m.id, {readPar:true}); });
   pmDot();
 }
