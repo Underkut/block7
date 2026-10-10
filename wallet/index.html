@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-7 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-8 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -521,6 +521,29 @@ body:has(.par.on) #trash{visibility:hidden}
 .tabs button.mid.on{color:var(--purple-d)}
 .tabs button.mid.on .ti{transform:translateY(-16px) scale(1.1)}
 
+/* 계산기 */
+.calc{padding:14px 18px 14px;text-align:right;margin-bottom:12px}
+.cxe{min-height:22px;font-size:17px;color:var(--sub);word-break:break-all}
+.cxv{font-size:44px;line-height:1.15;word-break:break-all;margin-top:2px}
+.cxv.s{font-size:34px}.cxv.xs{font-size:26px}
+.cxm{margin-top:10px;padding-top:9px;border-top:2px dashed #efe9fa;font-size:16px;text-align:left;line-height:1.45}
+.cxm:empty{display:none}
+.cxm b.ok{color:var(--green-d);font-weight:normal}.cxm b.no{color:#d9462f;font-weight:normal}.cxm small{color:var(--sub);font-size:14px}
+.cxpick{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 8px;padding:2px 16px 8px;scrollbar-width:none}
+.cxpick::-webkit-scrollbar{display:none}
+.cxpick button{flex:none;background:#fff;border-radius:16px;padding:7px 12px;font-size:15px;box-shadow:0 3px 0 rgba(120,90,170,.14);white-space:nowrap}
+.cxpick button small{color:var(--sub);margin-left:5px;font-size:14px}
+.cxpick button:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(120,90,170,.14)}
+.cxkeys{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px}
+.cxkeys button{height:58px;border-radius:20px;background:#fff;font-size:26px;box-shadow:0 4px 0 rgba(120,90,170,.16)}
+.cxkeys button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(120,90,170,.16)}
+.cxkeys .op{background:#efe9fa;color:var(--purple-d);font-size:30px}
+.cxkeys .fn{background:#fff0d6;color:var(--orange-d);font-size:22px}
+.cxkeys .eq{background:var(--purple);color:#fff;font-size:30px;box-shadow:0 4px 0 var(--purple-d)}
+.cxact .gb[disabled]{opacity:.35}
+.cxh{display:flex;justify-content:space-between;gap:10px;width:100%;padding:9px 8px;border-bottom:1px solid #efe9fa;font-size:16px;color:var(--sub);text-align:left}
+.cxh b{color:var(--ink);font-weight:normal;white-space:nowrap}
+
 /* 꽃가루 */
 .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:80}
 .confetti i{position:absolute;top:-24px;width:14px;height:14px;border-radius:3px;animation:fall 1.8s ease-in forwards}
@@ -586,10 +609,24 @@ body:has(.par.on) #trash{visibility:hidden}
     <div id="list"></div>
   </section>
 
+  <!-- 계산기 -->
+  <section class="view" id="vCalc">
+    <div class="calc card">
+      <div class="cxe" id="cxExpr"></div>
+      <div class="cxv" id="cxVal">0</div>
+      <div class="cxm" id="cxMine"></div>
+    </div>
+    <div class="cxpick" id="cxPick"></div>
+    <div class="cxkeys" id="cxKeys"></div>
+    <div class="two cxact"><button class="gb green sm" id="cxIn">받았어요로 적기</button><button class="gb orange sm" id="cxOut">썼어요로 적기</button></div>
+    <div id="cxHist"></div>
+  </section>
+
   <nav class="tabs">
     <button data-v="vHome" class="on"><span class="ti" id="tiHome"></span>홈</button>
     <button data-v="vAlloc" class="mid"><span class="ti" id="tiAlloc"></span>계획세우기</button>
     <button data-v="vLog"><span class="ti" id="tiLog"></span>돌아보기</button>
+    <button data-v="vCalc"><span class="ti" id="tiCalc"></span>계산기</button>
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
@@ -602,7 +639,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-7";
+const APP_VERSION = "v. 26-1010-8";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -632,15 +669,20 @@ function unlockAudio(){
   return c.state==='running';
 }
 // 아이폰의 무음 스위치를 넘기 위한 '소리 없는 재생'(배경음악을 켰을 때만)
-let keepEl = null;
+let keepEl = null, keepUrl = '';
+// ⚠️ 멈출 때 pause() 만 하면 아이폰은 그 소리를 '잠깐 멈춘 노래'로 기억해 잠금화면·제어센터·워치의 '지금 재생 중' 칸에
+// 앱 이름을 계속 띄운다(재생 버튼까지). 소리 파일까지 떼어 내야(mediaDrop) 그 칸에서 빠진다.
+function mediaDrop(el){ if(!el) return; try{ el.pause(); if(el.hasAttribute('src')){ el.removeAttribute('src'); el.load(); } }catch(e){} }
 function keepAudio(on){
   try{
     if(on){
-      if(!keepEl){ const n = 2205, buf = new ArrayBuffer(44+n*2), v = new DataView(buf), w = (o,t) => { for(let i=0;i<t.length;i++) v.setUint8(o+i, t.charCodeAt(i)); };
+      if(!keepUrl){ const n = 2205, buf = new ArrayBuffer(44+n*2), v = new DataView(buf), w = (o,t) => { for(let i=0;i<t.length;i++) v.setUint8(o+i, t.charCodeAt(i)); };
         w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,22050,true); v.setUint32(28,44100,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
-        keepEl = new Audio(URL.createObjectURL(new Blob([buf], {type:'audio/wav'}))); keepEl.loop = true; }
+        keepUrl = URL.createObjectURL(new Blob([buf], {type:'audio/wav'})); }
+      if(!keepEl){ keepEl = new Audio(); keepEl.loop = true; }
+      if(keepEl.getAttribute('src')!==keepUrl) keepEl.src = keepUrl;
       keepEl.play().catch(()=>{});
-    }else if(keepEl) keepEl.pause();
+    }else mediaDrop(keepEl);
   }catch(e){}
 }
 function tone(dest, f, when, dur, type, vol, toF){
@@ -651,6 +693,7 @@ function tone(dest, f, when, dur, type, vol, toF){
 }
 function sfx(name, force){
   if(force!==true && (S.sfxVol<=0 || S.mute)) return;
+  if(document.hidden) return;
   const c = ac(); if(!c) return;
   const go = () => { const t = c.currentTime + .02, T = (f,at,d,ty,v,to) => tone(SFXG, f, t+at, d, ty||'sine', (v||.25)*1.8, to);
   switch(name){
@@ -669,7 +712,7 @@ function sfx(name, force){
 }
 /* ───────── 배경음악: wallet/bgm/ 폴더의 곡 (HB 가 올린 mp3 등). 곡 이름 = 파일 이름에서 확장자만 뺀 것 ───────── */
 const BGM_DIR = 'bgm/', BGM_API = 'https://api.github.com/repos/Underkut/block7/contents/wallet/bgm?ref=main', BGM_CACHE = 'allowance.bgmlist';
-let bgmList = [], bgmAudio = null, bgmPlaying = false, bgmCur = null, bgmFail = 0, bgmLoading = null, bgmLoaded = false;
+let bgmList = [], bgmAudio = null, bgmPlaying = false, bgmCur = null, bgmPos = 0, bgmFail = 0, bgmLoading = null, bgmLoaded = false;
 const titleOf = f => f.replace(/\.[^.]+$/, '').normalize('NFC');          // 맥에서 올린 한글(NFD)도 곱게
 const isSel = f => S.bgmSel === null || S.bgmSel.includes(f);
 const playlist = () => bgmList.filter(t => isSel(t.file));
@@ -701,28 +744,44 @@ function bgmEnsure(){
   bgmAudio.addEventListener('playing', () => { bgmFail = 0; });
   bgmAudio.addEventListener('error', () => { if(++bgmFail <= 3) setTimeout(bgmNextTrack, 400); else { bgmFail = 0; bgmStop(); } });   // 못 읽는 곡은 건너뛴다
 }
-function bgmPlayFile(f){
-  bgmEnsure(); bgmCur = f; bgmAudio.src = BGM_DIR + encodeURIComponent(f);        // 한글·공백·대소문자는 주소로 바꿔서
-  bgmAudio.loop = playlist().length === 1; bgmAudio.play().catch(()=>{}); renderTracks();
+function bgmPlayFile(f, at){
+  bgmEnsure(); bgmCur = f; bgmPos = 0; bgmAudio.src = BGM_DIR + encodeURIComponent(f) + (at > 1 ? '#t=' + Math.floor(at) : '');   // 한글·공백·대소문자는 주소로 바꿔서 · #t= 는 멈췄던 자리부터
+  bgmAudio.loop = playlist().length === 1;
+  bgmAudio.play().catch(e => { if(e && e.name==='NotAllowedError' && bgmPlaying){ bgmPlaying = false; bgmPos = at||0; keepAudio(false); renderTracks(); } });   // 손가락이 닿아야 소리를 허락하는 폰 → 다음 터치 때 다시
+  renderTracks();
 }
 function bgmNextTrack(){ const pl = playlist(); if(!pl.length) return; const i = pl.findIndex(t => t.file===bgmCur); bgmPlayFile(pl[(i+1) % pl.length].file); }
 function bgmStart(){
-  if(S.bgmVol<=0 || S.mute || bgmPlaying) return;
+  if(S.bgmVol<=0 || S.mute || bgmPlaying || document.hidden) return;
   bgmPlaying = true;
   bgmLoadList().then(() => {
     if(!bgmPlaying) return;
     const pl = playlist(); if(!pl.length || !ac()){ bgmPlaying = false; renderTracks(); return; }
     unlockAudio(); applyVols(); keepAudio(true);
-    if(bgmAudio && bgmCur && pl.some(t => t.file===bgmCur)) bgmAudio.play().catch(()=>{}); else bgmPlayFile(pl[0].file);
+    if(bgmCur && pl.some(t => t.file===bgmCur)) bgmPlayFile(bgmCur, bgmPos); else bgmPlayFile(pl[0].file);
   });
 }
-function bgmStop(){ bgmPlaying = false; if(bgmAudio) bgmAudio.pause(); keepAudio(false); renderTracks(); }
+function bgmStop(){
+  if(bgmAudio && bgmAudio.hasAttribute('src')){ try{ if(!bgmAudio.ended) bgmPos = bgmAudio.currentTime || 0; }catch(e){} }
+  bgmPlaying = false; mediaDrop(bgmAudio); keepAudio(false); renderTracks();
+}
 function bgmApplySel(){        // 고른 곡이 바뀌면 지금 곡이 빠졌는지 보고 이어간다
   if(!bgmPlaying) return;
   const pl = playlist(); if(!pl.length){ bgmStop(); return; }
   if(!pl.some(t => t.file===bgmCur)) bgmPlayFile(pl[0].file); else if(bgmAudio) bgmAudio.loop = pl.length === 1;
 }
-document.addEventListener('visibilitychange', () => { if(document.hidden) bgmStop(); else bgmStart(); });
+// 화면을 떠나면(잠금·홈 화면·다른 앱·다른 탭) 소리 장치를 통째로 내려놓는다 → 잠금화면·아이패드·워치에 '용돈 친구들' 재생 칸이 남지 않는다.
+// 소리 장치(AC)를 닫으면 거기 이어 둔 노래 요소도 다시 쓸 수 없으니 함께 버리고, 돌아오면 새로 만들어 멈췄던 자리부터 잇는다.
+function audioRelease(){
+  bgmStop();
+  if(typeof prevFile!=='undefined'){ mediaDrop(prevAudio); prevAudio = null; prevFile = null; }
+  mediaDrop(bgmAudio); bgmAudio = null; mediaDrop(keepEl); keepEl = null;
+  if(AC){ try{ AC.close().catch(()=>{}); }catch(e){} AC = SFXG = BGMG = PRVG = null; }
+  try{ if(navigator.audioSession) navigator.audioSession.type = 'auto'; }catch(e){}
+  try{ if(navigator.mediaSession){ navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } }catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if(document.hidden) audioRelease(); else bgmStart(); });
+window.addEventListener('pagehide', audioRelease);
 // 브라우저는 '손가락을 뗄 때' 소리를 허락한다 → 그때 깨우고 배경음악을 시작, 버튼은 눌렀다 뗄 때 톡 소리
 ['pointerup','touchend','click'].forEach(ev => document.addEventListener(ev, () => { if(!AC || AC.state!=='running') unlockAudio(); if(!bgmPlaying) bgmStart(); }, true));
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if(b && !b.closest('.pm') && !b.closest('.ac') && b.id!=='bkTest') sfx('tap'); }, true);
@@ -818,7 +877,8 @@ const PIG_BANK = `<svg viewBox="0 0 200 150"><ellipse cx="100" cy="140" rx="62" 
 const TAB_ICONS = {
   home:`<svg viewBox="0 0 32 32" fill="none"><path d="M5 15L16 5l11 10v11a2 2 0 01-2 2H7a2 2 0 01-2-2z" fill="#ffd0e1" stroke="#ff6fa5" stroke-width="2.2" stroke-linejoin="round"/><rect x="13" y="18" width="6" height="10" rx="1.5" fill="#ff6fa5"/></svg>`,
   plan:`<svg viewBox="0 0 32 32" fill="none"><rect x="6" y="6" width="20" height="23" rx="4" fill="#fff6c9" stroke="#fff" stroke-width="2"/><rect x="11" y="3" width="10" height="6" rx="2.5" fill="#ffb020" stroke="#fff" stroke-width="1.5"/><path d="M10.500 15.500l2.200 2.200L16.500 13.500M10.500 22.500l2.200 2.200L16.500 20.500" stroke="#ff6fa5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.500 16H23M19.500 23H23" stroke="#9b7bff" stroke-width="2.4" stroke-linecap="round"/></svg>`,
-  log:`<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11.5" fill="#d9ecff" stroke="#5aa9ff" stroke-width="2.2"/><path d="M16 9v7.500l5 3" stroke="#5aa9ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  log:`<svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11.5" fill="#d9ecff" stroke="#5aa9ff" stroke-width="2.2"/><path d="M16 9v7.500l5 3" stroke="#5aa9ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  calc:`<svg viewBox="0 0 32 32" fill="none"><rect x="6.500" y="3.500" width="19" height="25" rx="4.500" fill="#e3f7ec" stroke="#3cc98a" stroke-width="2.200"/><rect x="10" y="7.500" width="12" height="5" rx="1.600" fill="#3cc98a"/><circle cx="11.500" cy="17.200" r="1.700" fill="#3cc98a"/><circle cx="16" cy="17.200" r="1.700" fill="#3cc98a"/><circle cx="20.500" cy="17.200" r="1.700" fill="#ff6fa5"/><circle cx="11.500" cy="22.800" r="1.700" fill="#3cc98a"/><circle cx="16" cy="22.800" r="1.700" fill="#3cc98a"/><circle cx="20.500" cy="22.800" r="1.700" fill="#ff6fa5"/></svg>`
 };
 
 /* ───────── 칸·이름표 ───────── */
@@ -1082,7 +1142,118 @@ function renderLog(){
   rows.forEach(t => { if(t.date!==last){ last = t.date; const d = new Date(t.date+'T00:00:00'); h += `<div class="day">${d.getMonth()+1}월 ${d.getDate()}일 (${wd[d.getDay()]})</div>`; } h += txRow(t); });
   $('list').innerHTML = h;
 }
-function render(){ renderHome(); renderAlloc(); renderLog(); checkBadges(); applyTheme(); renderGiftDot(); renderMailBtn(); }
+function render(){ renderHome(); renderAlloc(); renderLog(); checkBadges(); applyTheme(); renderGiftDot(); renderMailBtn(); if($('vCalc').classList.contains('on')) cxRender(); }
+
+/* ───────── 계산기 (하단 맨 오른쪽 탭) — 기본 계산 + 내 돈과 이어 쓰기 ───────── */
+// 식은 [숫자, 기호, 숫자 …] 조각으로 들고 있다(숫자는 글자 그대로). 글자를 eval 하지 않는다.
+// rep: 마지막 숫자가 %·불러오기·= 로 생긴 것이면, 다음에 누르는 숫자가 그것을 이어 쓰지 않고 새로 시작한다.
+// hist: 방금 한 계산 5개 — 이 화면에서만 보이고 저장하지 않는다(부모님 화면에도 안 간다).
+const CX = {t:[], eq:null, rep:false, hist:[]}, CX_OPS = {'+':'+', '-':'−', '*':'×', '/':'÷'};
+const CX_KEYS = [['AC','c','fn'],['⌫','b','fn'],['%','p','fn'],['÷','/','op'],['7'],['8'],['9'],['×','*','op'],['4'],['5'],['6'],['−','-','op'],['1'],['2'],['3'],['+','+','op'],['00'],['0'],['.'],['=','=','eq']];
+let CX_CHIPS = [];
+const cxIsOp = x => Object.prototype.hasOwnProperty.call(CX_OPS, x);
+const cxRound = v => Math.round(v * 1e8) / 1e8;
+const cxFmt = x => { const m = String(x).match(/^(-?)(\d*)(\.?)(\d*)$/); if(!m) return String(x);
+  return m[1] + (m[2] ? Number(m[2]).toLocaleString('ko-KR') : (m[3] ? '0' : '')) + m[3] + m[4]; };
+const cxShow = t => t.map(x => cxIsOp(x) ? ' ' + CX_OPS[x] + ' ' : cxFmt(x)).join('').trim();
+function cxEval(t){              // × ÷ 먼저, 그다음 + −  (0으로 나누면 NaN)
+  const a = t.slice(); while(a.length && cxIsOp(a[a.length-1])) a.pop();
+  if(!a.length) return 0;
+  const st = [parseFloat(a[0]) || 0];
+  for(let i = 1; i < a.length; i += 2){
+    const op = a[i], n = parseFloat(a[i+1]); if(isNaN(n)) break;
+    if(op==='*') st[st.length-1] *= n;
+    else if(op==='/'){ if(n===0) return NaN; st[st.length-1] /= n; }
+    else st.push(op==='-' ? -n : n);
+  }
+  return cxRound(st.reduce((s,x) => s + x, 0));
+}
+function cxKey(k){
+  const t = CX.t, last = () => t[t.length-1], numLast = () => t.length > 0 && !cxIsOp(last());
+  if(k==='c'){ CX.t = []; CX.eq = null; CX.rep = false; return cxRender(); }
+  if(k==='b'){
+    CX.eq = null; CX.rep = false;
+    if(numLast()){ const v = last().slice(0, -1); if(v==='' || v==='-') t.pop(); else t[t.length-1] = v; } else t.pop();
+    return cxRender();
+  }
+  if(/^\d+$/.test(k) || k==='.'){
+    if(CX.eq){ CX.t = []; CX.eq = null; CX.rep = false; return cxKey(k); }
+    if(CX.rep && numLast()){ t.pop(); CX.rep = false; }
+    if(!numLast()){ t.push(k==='.' ? '0.' : k==='00' ? '0' : k); return cxRender(); }
+    let v = last();
+    if(k==='.'){ if(v.includes('.')) return; v += '.'; }
+    else{
+      if(v.replace(/[-.]/g, '').length + k.length > 12){ toast('숫자가 너무 길어요'); return; }
+      if(/^-?0$/.test(v)){ if(/[1-9]/.test(k)) v = v.slice(0, -1) + k; } else v += k;
+    }
+    t[t.length-1] = v; return cxRender();
+  }
+  if(cxIsOp(k)){
+    CX.eq = null; CX.rep = false;
+    if(!t.length) t.push('0');
+    if(cxIsOp(last())) t[t.length-1] = k; else { if(last().endsWith('.')) t[t.length-1] = last().slice(0, -1); t.push(k); }
+    return cxRender();
+  }
+  if(k==='p'){                     // 3,000 + 10% → 3,000의 10% 를 더한다 · 그냥 10% → 0.1
+    CX.eq = null; if(!numLast()) return;
+    const n = parseFloat(last()), pm = t.length >= 3 && (t[t.length-2]==='+' || t[t.length-2]==='-');
+    t[t.length-1] = String(cxRound(pm ? cxEval(t.slice(0, -2)) * n / 100 : n / 100)); CX.rep = true;
+    return cxRender();
+  }
+  if(k==='='){
+    if(CX.eq || !t.some(cxIsOp)) return;
+    const v = cxEval(t);
+    if(isNaN(v)){ sfx('err'); toast('0으로는 나눌 수 없어요'); return; }
+    if(Math.abs(v) >= 1e15){ toast('너무 큰 수예요'); return; }
+    const ex = cxShow(t.filter((x, i) => !(i===t.length-1 && cxIsOp(x))));
+    CX.hist.unshift({e:ex, v}); CX.hist = CX.hist.slice(0, 5);
+    CX.eq = ex; CX.t = [String(v)]; CX.rep = true;
+    return cxRender();
+  }
+}
+function cxPut(v){                 // 불러온 돈(가진 돈·갖고 싶은 것 값…)을 식의 마지막 숫자 자리에 넣는다
+  if(CX.eq){ CX.t = []; CX.eq = null; }
+  const t = CX.t;
+  if(t.length && !cxIsOp(t[t.length-1])) t[t.length-1] = String(v); else t.push(String(v));
+  CX.rep = true; cxRender();
+}
+const cxAmt = () => { const v = cxEval(CX.t); return !isNaN(v) && v > 0 && Number.isInteger(v) && v <= 9999999 ? v : 0; };
+function cxRender(){
+  const t = CX.t, v = cxEval(t), shown = t.length ? cxShow(t) : '0';
+  $('cxExpr').textContent = CX.eq ? CX.eq + ' =' : (t.some(cxIsOp) && t.length > 2 ? (isNaN(v) ? '0으로는 나눌 수 없어요' : '= ' + cxFmt(String(v))) : '');
+  const el = $('cxVal'); el.textContent = shown; el.className = 'cxv' + (shown.length > 16 ? ' xs' : shown.length > 10 ? ' s' : '');
+  // 내 돈과 견주기: 이만큼 쓰면 얼마 남는지 / 얼마 모자라는지
+  const amt = cxAmt(), bal = balance(), pend = pendAll();
+  $('cxMine').innerHTML = !amt ? '' : bal >= amt
+    ? `가진 돈 ${won(bal)}에서 ${won(amt)}을 쓰면 <b class="ok">${won(bal - amt)} 남아요</b>`
+    : `가진 돈 ${won(bal)}보다 <b class="no">${won(amt - bal)} 모자라요</b>` + (pend > 0 ? `<br><small>받을 예정인 돈 ${won(pend)}까지 합치면 ${bal + pend >= amt ? won(bal + pend - amt) + ' 남아요' : won(amt - bal - pend) + ' 모자라요'}</small>` : '');
+  $('cxIn').disabled = $('cxOut').disabled = !amt;
+  // 불러오기: 앱 안의 돈을 눌러서 식에 넣는다
+  const ch = [['가진 돈', bal]];
+  AK.forEach(a => { const b = balOf(a); if(b && b !== bal) ch.push([ACN[a], b]); });                 // 자산이 하나뿐이면 '가진 돈' 과 같아서 뺀다
+  const fr = availAll(); if(fr > 0 && fr !== bal) ch.push(['계획 안 세운 돈', fr]);
+  S.tiles.forEach(c => { const l = sumA(a => Math.max(0, left(c.k, a))); if(l > 0) ch.push([c.n + ' 남은 돈', l]); });
+  S.goals.filter(g => !g.done && g.price > 0).forEach(g => ch.push(['♥ ' + g.n, g.price]));
+  if(pend > 0) ch.push(['받을 예정인 돈', pend]);
+  CX_CHIPS = ch;
+  $('cxPick').innerHTML = ch.map((c, i) => `<button data-i="${i}">${esc(c[0])}<small>${nf(c[1])}</small></button>`).join('');
+  $('cxHist').innerHTML = CX.hist.length ? '<div class="sec">방금 한 계산 · 누르면 그 답을 다시 써요</div>' + CX.hist.map((h, i) => `<button class="cxh" data-h="${i}"><span>${esc(h.e)} =</span><b>${cxFmt(String(h.v))}</b></button>`).join('') : '';
+}
+function cxInit(){
+  $('cxKeys').innerHTML = CX_KEYS.map(k => `<button data-k="${k[1]||k[0]}" class="${k[2]||''}">${k[0]}</button>`).join('');
+  $('cxKeys').onclick = e => { const b = e.target.closest('button'); if(!b) return; buzz(6); cxKey(b.dataset.k); };
+  $('cxPick').onclick = e => { const b = e.target.closest('button'); if(!b || !CX_CHIPS[+b.dataset.i]) return; buzz(8); cxPut(CX_CHIPS[+b.dataset.i][1]); };
+  $('cxHist').onclick = e => { const b = e.target.closest('[data-h]'); if(!b || !CX.hist[+b.dataset.h]) return; buzz(8); cxPut(CX.hist[+b.dataset.h].v); };
+  $('cxOut').onclick = () => { const a = cxAmt(); if(a){ buzz(10); txFlow('out', {amt:a, date:todayStr()}); } };
+  $('cxIn').onclick = () => { const a = cxAmt(); if(a){ buzz(10); txFlow('in', {amt:a, date:todayStr()}); } };
+  // 컴퓨터 키보드로도 (숫자·+−×÷·Enter·Backspace·Esc)
+  document.addEventListener('keydown', e => {
+    if(!$('vCalc').classList.contains('on') || $('sheet').classList.contains('on') || document.body.classList.contains('pmode') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if(/^(INPUT|TEXTAREA|SELECT)$/.test((document.activeElement || {}).tagName || '')) return;
+    const k = ({Enter:'=', Backspace:'b', Escape:'c', Delete:'c', '%':'p', x:'*', X:'*'})[e.key] || e.key;
+    if(/^[0-9.+\-*\/=]$/.test(k) || k==='b' || k==='c' || k==='p'){ e.preventDefault(); cxKey(k); }
+  });
+}
 
 /* ───────── 시트 · 알림 · 꽃가루 ───────── */
 function openSheet(html){ delete $('sheet').dataset.p; $('sheet').innerHTML = '<div class="grab"></div>'+html; $('sheet').classList.add('on'); $('dim').classList.add('on'); $('sheet').scrollTop = 0; }
@@ -1134,6 +1305,7 @@ function goTab(v){
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.v===v));
   document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id===v));
   $(v).scrollTop = 0;
+  if(v==='vCalc') cxRender();
 }
 
 /* ───────── 숫자판 (키보드 없이 금액 입력) ───────── */
@@ -2860,7 +3032,7 @@ function backupSheet(){
 /* 미리듣기: 고른 곡과 상관없이 한 곡만 들어 본다(다시 누르면 멈춤). 듣는 동안 배경음악은 잠시 멈췄다가 이어진다 */
 let prevAudio = null, prevFile = null;
 function previewStop(){
-  if(prevAudio) prevAudio.pause();
+  mediaDrop(prevAudio);
   const had = prevFile; prevFile = null;
   if(had){ if(bgmPlaying && bgmAudio) bgmAudio.play().catch(()=>{}); else keepAudio(false); renderTracks(); }
 }
@@ -2962,7 +3134,7 @@ $('muteBtn').onclick = () => {
 /* ───────── 연결 ───────── */
 $('allocPig').innerHTML = face('pig');
 $('ctaFace').innerHTML = face('pig');
-$('tiHome').innerHTML = TAB_ICONS.home; $('tiAlloc').innerHTML = TAB_ICONS.plan; $('tiLog').innerHTML = TAB_ICONS.log;
+$('tiHome').innerHTML = TAB_ICONS.home; $('tiAlloc').innerHTML = TAB_ICONS.plan; $('tiLog').innerHTML = TAB_ICONS.log; $('tiCalc').innerHTML = TAB_ICONS.calc; cxInit();
 $('bIn').onclick = () => { buzz(10); txFlow('in'); };
 $('bOut').onclick = () => { buzz(10); txFlow('out'); };
 $('bMove').onclick = () => { buzz(10); moveFlow(); };
