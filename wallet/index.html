@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-10 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-11 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -674,7 +674,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-10";
+const APP_VERSION = "v. 26-1010-11";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -691,7 +691,7 @@ const LVL = [0, .12, .3, .5, .75, 1];                       // 효과음 0~5단�
 const BLVL = [0, .024, .056, .096, .16, .256];  // 배경음악: 3단계가 예전 1단계 소리(.096)
 function applyVols(){ if(SFXG) SFXG.gain.value = LVL[S.sfxVol]; if(BGMG) BGMG.gain.value = BLVL[S.bgmVol]; if(PRVG) PRVG.gain.value = BLVL[S.bgmVol || 3]; }
 function ac(){
-  if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)();
+  if(!AC){ try{ const C = window.AudioContext||window.webkitAudioContext; try{ AC = new C({sampleRate:32000}); }catch(e){ AC = new C(); }
       SFXG = AC.createGain(); SFXG.connect(AC.destination); BGMG = AC.createGain(); BGMG.connect(AC.destination); PRVG = AC.createGain(); PRVG.connect(AC.destination); applyVols(); }catch(e){ AC = null; return null; } }
   return AC;
 }
@@ -702,23 +702,6 @@ function unlockAudio(){
   if(c.state!=='running') c.resume().catch(()=>{});
   try{ const b = c.createBuffer(1,1,22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); }catch(e){}
   return c.state==='running';
-}
-// 아이폰의 무음 스위치를 넘기 위한 '소리 없는 재생'(배경음악을 켰을 때만)
-let keepEl = null, keepUrl = '';
-// ⚠️ 멈출 때 pause() 만 하면 아이폰은 그 소리를 '잠깐 멈춘 노래'로 기억해 잠금화면·제어센터·워치의 '지금 재생 중' 칸에
-// 앱 이름을 계속 띄운다(재생 버튼까지). 소리 파일까지 떼어 내야(mediaDrop) 그 칸에서 빠진다.
-function mediaDrop(el){ if(!el) return; try{ el.pause(); if(el.hasAttribute('src')){ el.removeAttribute('src'); el.load(); } }catch(e){} }
-function keepAudio(on){
-  try{
-    if(on){
-      if(!keepUrl){ const n = 2205, buf = new ArrayBuffer(44+n*2), v = new DataView(buf), w = (o,t) => { for(let i=0;i<t.length;i++) v.setUint8(o+i, t.charCodeAt(i)); };
-        w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,22050,true); v.setUint32(28,44100,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
-        keepUrl = URL.createObjectURL(new Blob([buf], {type:'audio/wav'})); }
-      if(!keepEl){ keepEl = new Audio(); keepEl.loop = true; }
-      if(keepEl.getAttribute('src')!==keepUrl) keepEl.src = keepUrl;
-      keepEl.play().catch(()=>{});
-    }else mediaDrop(keepEl);
-  }catch(e){}
 }
 function tone(dest, f, when, dur, type, vol, toF){
   const o = AC.createOscillator(), g = AC.createGain();
@@ -747,7 +730,7 @@ function sfx(name, force){
 }
 /* ───────── 배경음악: wallet/bgm/ 폴더의 곡 (HB 가 올린 mp3 등). 곡 이름 = 파일 이름에서 확장자만 뺀 것 ───────── */
 const BGM_DIR = 'bgm/', BGM_API = 'https://api.github.com/repos/Underkut/block7/contents/wallet/bgm?ref=main', BGM_CACHE = 'allowance.bgmlist';
-let bgmList = [], bgmAudio = null, bgmPlaying = false, bgmCur = null, bgmPos = 0, bgmFail = 0, bgmLoading = null, bgmLoaded = false;
+let bgmList = [], bgmPlaying = false, bgmCur = null, bgmPos = 0, bgmFail = 0, bgmLoading = null, bgmLoaded = false;
 const titleOf = f => f.replace(/\.[^.]+$/, '').normalize('NFC');          // 맥에서 올린 한글(NFD)도 곱게
 const isSel = f => S.bgmSel === null || S.bgmSel.includes(f);
 const playlist = () => bgmList.filter(t => isSel(t.file));
@@ -771,19 +754,40 @@ function bgmLoadList(force){
     .then(l => { bgmLoaded = true; bgmLoading = null; return l; });
   return bgmLoading;
 }
-function bgmEnsure(){
-  if(bgmAudio) return;
-  bgmAudio = new Audio(); bgmAudio.preload = 'auto';
-  const c = ac(); if(c){ try{ c.createMediaElementSource(bgmAudio).connect(BGMG); }catch(e){} }   // 소리 크기를 단계로 조절하려고 한 번 거친다
-  bgmAudio.addEventListener('ended', () => bgmNextTrack());
-  bgmAudio.addEventListener('playing', () => { bgmFail = 0; });
-  bgmAudio.addEventListener('error', () => { if(++bgmFail <= 3) setTimeout(bgmNextTrack, 400); else { bgmFail = 0; bgmStop(); } });   // 못 읽는 곡은 건너뛴다
+// ⚠️ 배경음악·미리듣기는 <audio>(소리 파일 재생기)를 쓰지 않는다 (v26-1010-11).
+// <audio> 로 틀면 아이폰·아이패드가 이 앱을 '음악 앱'으로 여겨 잠금화면·제어센터·워치의 '지금 재생 중' 칸에 올린다.
+// v26-1010-8 은 화면을 떠날 때 그 재생기를 치웠지만, 아이패드 크롬처럼 '떠난다'는 신호가 늦거나 안 오면 칸이 그대로 남았다.
+// 그래서 곡 파일을 받아 소리 장치(AC)가 직접 풀어 낸 소리를 튼다 — 이 소리는 그 칸에 아예 오르지 않는다(신호에 기대지 않는다).
+// 아이폰 무음 스위치는 audioSession 'playback'(unlockAudio)으로 넘는다. 예전의 '소리 없는 <audio> 반복 재생'은 지웠다 — 잠금화면 '0:00' 칸의 정체였다.
+let bgmSrc = null, bgmT0 = 0, bgmTok = 0;
+const bufCache = [];                       // 풀어 둔 곡은 최근 2개만 들고 있는다(곡 하나가 수십 MB)
+function bgmBuf(f){
+  const hit = bufCache.find(x => x.f===f); if(hit) return hit.p;
+  const c = ac(); if(!c) return Promise.reject(new Error('noac'));
+  const p = fetch(BGM_DIR + encodeURIComponent(f)).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error('http '+r.status)))     // 한글·공백·대소문자는 주소로 바꿔서
+    .then(ab => new Promise((res, rej) => { try{ const q = c.decodeAudioData(ab, res, rej); if(q && q.catch) q.catch(rej); }catch(e){ rej(e); } }));
+  bufCache.unshift({f, p}); if(bufCache.length > 2) bufCache.length = 2;
+  p.catch(() => { const i = bufCache.findIndex(x => x.p===p); if(i>=0) bufCache.splice(i,1); });
+  return p;
+}
+function bgmHalt(){                        // 지금 곡을 멈추고 자리만 기억한다(켜 둔 상태는 그대로)
+  bgmTok++;
+  if(!bgmSrc) return;
+  const s = bgmSrc; bgmSrc = null; s.onended = null;
+  try{ const d = s.buffer ? s.buffer.duration : 0; bgmPos = d ? Math.max(0, (AC.currentTime - bgmT0) % d) : 0; }catch(e){}
+  try{ s.stop(); }catch(e){} try{ s.disconnect(); }catch(e){}
 }
 function bgmPlayFile(f, at){
-  bgmEnsure(); bgmCur = f; bgmPos = 0; bgmAudio.src = BGM_DIR + encodeURIComponent(f) + (at > 1 ? '#t=' + Math.floor(at) : '');   // 한글·공백·대소문자는 주소로 바꿔서 · #t= 는 멈췄던 자리부터
-  bgmAudio.loop = playlist().length === 1;
-  bgmAudio.play().catch(e => { if(e && e.name==='NotAllowedError' && bgmPlaying){ bgmPlaying = false; bgmPos = at||0; keepAudio(false); renderTracks(); } });   // 손가락이 닿아야 소리를 허락하는 폰 → 다음 터치 때 다시
-  renderTracks();
+  bgmHalt(); bgmCur = f; bgmPos = 0; renderTracks();
+  const tok = bgmTok, c = ac(); if(!c) return;
+  bgmBuf(f).then(buf => {
+    if(tok!==bgmTok || !bgmPlaying || prevFile) return;          // 그사이 멈췄거나 다른 곡·미리듣기로 바뀌었다
+    const s = c.createBufferSource(); s.buffer = buf; s.loop = playlist().length === 1; s.connect(BGMG);
+    const off = at > 0 && at < buf.duration - 1 ? at : 0;        // 멈췄던 자리부터
+    s.onended = () => { if(bgmSrc===s){ bgmSrc = null; if(bgmPlaying) bgmNextTrack(); } };
+    s.start(0, off); bgmSrc = s; bgmT0 = c.currentTime - off; bgmFail = 0; renderTracks();
+  }).catch(() => { if(tok!==bgmTok || !bgmPlaying) return;      // 못 읽는 곡은 건너뛴다
+    if(++bgmFail <= 3) setTimeout(() => { if(bgmPlaying && tok===bgmTok) bgmNextTrack(); }, 400); else { bgmFail = 0; bgmStop(); } });
 }
 function bgmNextTrack(){ const pl = playlist(); if(!pl.length) return; const i = pl.findIndex(t => t.file===bgmCur); bgmPlayFile(pl[(i+1) % pl.length].file); }
 function bgmStart(){
@@ -792,28 +796,28 @@ function bgmStart(){
   bgmLoadList().then(() => {
     if(!bgmPlaying) return;
     const pl = playlist(); if(!pl.length || !ac()){ bgmPlaying = false; renderTracks(); return; }
-    unlockAudio(); applyVols(); keepAudio(true);
+    unlockAudio(); applyVols();
+    if(prevFile) return;                                          // 미리듣기 중이면 끝난 뒤에 이어진다
     if(bgmCur && pl.some(t => t.file===bgmCur)) bgmPlayFile(bgmCur, bgmPos); else bgmPlayFile(pl[0].file);
   });
 }
 function bgmStop(){
-  if(bgmAudio && bgmAudio.hasAttribute('src')){ try{ if(!bgmAudio.ended) bgmPos = bgmAudio.currentTime || 0; }catch(e){} }
-  bgmPlaying = false; mediaDrop(bgmAudio); keepAudio(false); renderTracks();
+  bgmHalt(); bgmPlaying = false;
+  try{ if(navigator.audioSession && !prevFile) navigator.audioSession.type = 'auto'; }catch(e){}
+  renderTracks();
 }
 function bgmApplySel(){        // 고른 곡이 바뀌면 지금 곡이 빠졌는지 보고 이어간다
   if(!bgmPlaying) return;
   const pl = playlist(); if(!pl.length){ bgmStop(); return; }
-  if(!pl.some(t => t.file===bgmCur)) bgmPlayFile(pl[0].file); else if(bgmAudio) bgmAudio.loop = pl.length === 1;
+  if(!pl.some(t => t.file===bgmCur)) bgmPlayFile(pl[0].file); else if(bgmSrc) bgmSrc.loop = pl.length === 1;
 }
-// 화면을 떠나면(잠금·홈 화면·다른 앱·다른 탭) 소리 장치를 통째로 내려놓는다 → 잠금화면·아이패드·워치에 '용돈 친구들' 재생 칸이 남지 않는다.
-// 소리 장치(AC)를 닫으면 거기 이어 둔 노래 요소도 다시 쓸 수 없으니 함께 버리고, 돌아오면 새로 만들어 멈췄던 자리부터 잇는다.
+// 화면을 떠나면(잠금·홈 화면·다른 앱·다른 탭) 소리를 멈추고 소리 장치를 재운다. 돌아오면 멈췄던 자리부터 잇는다.
+// (잠금화면 '지금 재생 중' 칸은 이것과 상관없이 생기지 않는다 — 위 ⚠️ 참고. 이건 배터리·소리 정리용)
 function audioRelease(){
   bgmStop();
-  if(typeof prevFile!=='undefined'){ mediaDrop(prevAudio); prevAudio = null; prevFile = null; }
-  mediaDrop(bgmAudio); bgmAudio = null; mediaDrop(keepEl); keepEl = null;
-  if(AC){ try{ AC.close().catch(()=>{}); }catch(e){} AC = SFXG = BGMG = PRVG = null; }
+  if(prevFile){ prvHalt(); prevFile = null; }
+  if(AC && AC.state==='running'){ try{ AC.suspend().catch(()=>{}); }catch(e){} }
   try{ if(navigator.audioSession) navigator.audioSession.type = 'auto'; }catch(e){}
-  try{ if(navigator.mediaSession){ navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = 'none'; } }catch(e){}
 }
 document.addEventListener('visibilitychange', () => { if(document.hidden) audioRelease(); else bgmStart(); });
 window.addEventListener('pagehide', audioRelease);
@@ -1479,7 +1483,8 @@ function expWhen(amt, who, note, ex, acct){
   if(ex && ex.date) opts.unshift(['그대로', ex.date]);
   openSheet(`<h2>언제 받을 것 같아요?</h2><div class="who">${avatar(chOfGiver(who))}<span style="font-size:19px">${esc(who)} · ${won(amt)}</span></div><div class="note" style="margin:2px 0 0">${acctName(acct)}으로 들어와요${note?'<br>✎ '+esc(note):''}</div>
     <div class="dgrid">${opts.map((o,i)=>`<button class="gb ${o[1]?'blue':'gray'} sm" data-i="${i}">${o[0]}${o[1]?`<small style="font-size:12px;opacity:.9"> ${md(o[1])}</small>`:''}</button>`).join('')}</div>
-    <label class="datebtn">${CAL_ICO}<span>달력에서 고르기</span><input type="date" id="eDate" min="${todayStr()}"></label>`);
+    <label class="datebtn">${CAL_ICO}<span id="eDateTxt">달력에서 고르기</span><input type="date" id="eDate" min="${todayStr()}"></label>
+    <button class="gb blue sm" id="eDateOk" style="display:none;margin-top:2px"></button>`);
   const done = date => {
     const rec = {id: ex&&ex.id ? ex.id : uid(), amt, who, ch: chOfGiver(who), note: note||'', acct, date, at: ex&&ex.at ? ex.at : Date.now()};
     const i = ex&&ex.id ? S.exp.findIndex(x=>x.id===ex.id) : -1;
@@ -1488,7 +1493,13 @@ function expWhen(amt, who, note, ex, acct){
     toast(i>=0 ? '예정을 고쳤어요' : '예정을 적었어요! 계획에 미리 넣어 볼 수 있어요');
   };
   $('sheet').querySelector('.dgrid').onclick = e => { const b = e.target.closest('button'); if(b) done(opts[+b.dataset.i][1]); };
-  $('eDate').onchange = e => { if(e.target.value) done(e.target.value); };
+  // ⚠️ 달력에서 날을 바꾸자마자 저장하지 않는다(v26-1010-11): 아이폰·아이패드는 빈 날짜 칸을 열면 저절로 '오늘'을 넣어서,
+  //    예전엔 달력을 열자마자 오늘로 저장되고 창이 닫혔다. 고른 날을 보여 주고 '○월 ○일로 정하기'를 눌러야 저장한다.
+  const ed = $('eDate'), showE = () => { const v = ed.value, ok = !!v && v >= ed.min;
+    $('eDateTxt').textContent = ok ? '다른 날 고르기' : '달력에서 고르기';
+    $('eDateOk').style.display = ok ? '' : 'none'; if(ok) $('eDateOk').textContent = '📅 '+md(v)+(v===todayStr() ? ' (오늘)' : '')+'로 정하기'; };
+  ed.onchange = ed.oninput = ed.onblur = showE;
+  $('eDateOk').onclick = () => { const v = ed.value; if(v && v >= ed.min) done(v); };
 }
 function expReceive(id){
   const e = S.exp.find(x=>x.id===id); if(!e) return;
@@ -1843,6 +1854,7 @@ function goalSheet(g){
   GD._src = GD.img.t==='data' ? 'photo' : GD.img.t==='url' ? 'link' : 'bank'; GD._grp = GD.img.t==='char' ? CH[GD.img.v].g : 'play'; GD._bad = false;
   renderGoalSheet();
 }
+const dueTxt = d => d ? mdOf(d)+'까지 사고 싶어요 (필요해요)' : '언제까지 사고 싶어요? 언제 필요해요?<small>안 정해도 돼요</small>';
 function renderGoalSheet(){
   const g = GD, editing = !!g.k;
   const body = g._src==='bank'
@@ -1857,9 +1869,9 @@ function renderGoalSheet(){
     <input class="inp" id="gName" maxlength="14" placeholder="무엇을 갖고 싶어요? (예: 게임기)" value="${esc(g.n)}" style="margin-top:10px">
     <input class="inp" id="gWhy" maxlength="60" placeholder="왜 갖고 싶어요? (꼭 써 주세요)" value="${esc(g.why||'')}" style="margin-top:8px;font-size:17px">
     <button class="fieldbtn ${g.price>0?'set':''}" id="gPrice" style="margin-top:8px"><span class="fi">💰</span><span>${g.price>0 ? '값 '+won(g.price) : '얼마예요? 눌러서 정하기'}</span></button>
-    <label class="fieldbtn datef ${g.due?'set':''}" style="margin-top:8px"><span class="fi">📅</span><span id="gDueTxt">${g.due ? mdOf(g.due)+'까지 사고 싶어요 (필요해요)' : '언제까지 사고 싶어요? 언제 필요해요?<small>안 정해도 돼요</small>'}</span><input type="date" id="gDueIn" min="${dayAdd(1)}" value="${g.due||''}"></label>
-    ${g.due ? '<button class="linkbtn" id="gDueClr" style="margin-top:0">목표일 지우기</button>' : ''}
-    <button class="gb purple" id="gSave" style="margin-top:${g.due ? 6 : 14}px">${editing ? '고쳤어요!' : '만들었어요!'}</button>
+    <label class="fieldbtn datef ${g.due?'set':''}" id="gDueBox" style="margin-top:8px"><span class="fi">📅</span><span id="gDueTxt">${dueTxt(g.due)}</span><input type="date" id="gDueIn" min="${dayAdd(1)}" value="${g.due||''}"></label>
+    <button class="linkbtn" id="gDueClr" style="margin-top:0;${g.due ? '' : 'display:none'}">목표일 지우기</button>
+    <button class="gb purple" id="gSave" style="margin-top:12px">${editing ? '고쳤어요!' : '만들었어요!'}</button>
     ${editing ? '<button class="linkbtn" id="gDel">이 목표 지우기</button>' : ''}`);
   const prev = () => { $('gPrev').style.background = gBg(g.img); $('gPrev').innerHTML = gImgHtml(g.img, true); };
   $('gName').oninput = e => { g.n = e.target.value; };
@@ -1880,8 +1892,17 @@ function renderGoalSheet(){
   }
   $('gPrice').onclick = () => { g.n = $('gName').value;
     padSheet({title:'값이 얼마예요?', init:g.price, nextLabel:'정했어요!', onDone: v => { g.price = v; renderGoalSheet(); }}); };
-  $('gDueIn').onchange = e => { g.n = $('gName').value; g.due = e.target.value || null; renderGoalSheet(); };
-  if(g.due) $('gDueClr').onclick = () => { g.n = $('gName').value; g.due = null; renderGoalSheet(); };
+  // ⚠️ 날짜를 고르는 동안에는 창을 다시 그리지 않는다(v26-1010-11) — 다시 그리면 열려 있던 달력이 닫힌다.
+  //    아이폰·아이패드는 빈 날짜 칸을 열면 1초쯤 뒤 저절로 '오늘'을 넣는다(아이가 고른 게 아니다). 예전엔 그걸 받아 창을 다시 그려서
+  //    '오늘'로 정해지고 달력이 사라졌다. 목표일은 내일부터라 그 '오늘'은 받지 않고, 고른 날만 글자로 바꿔 보여 준다.
+  const di = $('gDueIn');
+  const showDue = () => { $('gDueTxt').innerHTML = dueTxt(g.due); $('gDueBox').classList.toggle('set', !!g.due); $('gDueClr').style.display = g.due ? '' : 'none'; };
+  const takeDue = () => { const v = di.value; if(v==='' && g.due){ g.due = null; showDue(); } else if(v && v >= di.min && v !== g.due){ g.due = v; showDue(); } };
+  di.onchange = di.oninput = takeDue;
+  di.onblur = () => { takeDue(); const v = di.value;
+    if(v && v < di.min && v !== todayStr()) toast('목표일은 내일부터 고를 수 있어요');
+    if(v !== (g.due || '')) di.value = g.due || ''; };
+  $('gDueClr').onclick = () => { g.due = null; di.value = ''; showDue(); };
   $('gSave').onclick = () => {
     const typed = $('gName').value.trim(), name = (typed || (g.img.t==='char' ? CH[g.img.v].n : '')).slice(0,14);
     if(!name){ toast('이름을 써 주세요'); $('gName').focus(); return; }
@@ -3089,24 +3110,27 @@ function backupSheet(){
   $('bkOpen').onclick = restoreSheet;
 }
 /* 미리듣기: 고른 곡과 상관없이 한 곡만 들어 본다(다시 누르면 멈춤). 듣는 동안 배경음악은 잠시 멈췄다가 이어진다 */
-let prevAudio = null, prevFile = null;
+let prevFile = null, prvSrc = null, prvTok = 0;
+function prvHalt(){ prvTok++; if(prvSrc){ const s = prvSrc; prvSrc = null; s.onended = null; try{ s.stop(); }catch(e){} try{ s.disconnect(); }catch(e){} } }
 function previewStop(){
-  mediaDrop(prevAudio);
+  prvHalt();
   const had = prevFile; prevFile = null;
-  if(had){ if(bgmPlaying && bgmAudio) bgmAudio.play().catch(()=>{}); else keepAudio(false); renderTracks(); }
+  if(had){ if(bgmPlaying && bgmCur) bgmPlayFile(bgmCur, bgmPos); renderTracks(); }
 }
 function previewToggle(f){
   if(prevFile === f){ previewStop(); return; }
   if(S.mute){ toast('위쪽 스피커 버튼으로 소리를 먼저 켜 주세요'); return; }
   if(!ac()){ toast('이 폰에서는 소리를 낼 수 없어요'); return; }
-  unlockAudio(); applyVols(); keepAudio(true);
-  if(!prevAudio){ prevAudio = new Audio(); prevAudio.preload = 'auto';
-    try{ AC.createMediaElementSource(prevAudio).connect(PRVG); }catch(e){}
-    prevAudio.addEventListener('ended', () => previewStop());
-    prevAudio.addEventListener('error', () => { if(prevFile){ toast('이 곡은 재생할 수 없어요'); previewStop(); } }); }
-  if(bgmAudio && !bgmAudio.paused) bgmAudio.pause();
-  prevFile = f; prevAudio.src = BGM_DIR + encodeURIComponent(f); prevAudio.play().catch(() => previewStop());
-  renderTracks();
+  unlockAudio(); applyVols();
+  prvHalt(); bgmHalt();                                           // 듣는 동안 배경음악은 잠시 멈춘다(자리는 기억)
+  prevFile = f; renderTracks();
+  const tok = prvTok;
+  bgmBuf(f).then(buf => {
+    if(tok!==prvTok || prevFile!==f) return;
+    const s = AC.createBufferSource(); s.buffer = buf; s.connect(PRVG);
+    s.onended = () => { if(prvSrc===s) previewStop(); };
+    s.start(0); prvSrc = s;
+  }).catch(() => { if(tok===prvTok && prevFile===f){ toast('이 곡은 재생할 수 없어요'); previewStop(); } });
 }
 const PLAY_ICO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5.500v13l11-6.500z"/></svg>';
 const STOP_ICO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="5" width="4.500" height="14" rx="1.200"/><rect x="13.500" y="5" width="4.500" height="14" rx="1.200"/></svg>';
