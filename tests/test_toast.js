@@ -57,6 +57,17 @@ console.log('\n시나리오 3 — 진행 중 토스트는 결과가 나올 때�
   sc.eq('도는 표시가 있다', SRC.includes("const _TOAST_SPIN='<svg class=\"toast-spin\""), true);
   sc.eq('돌아간다', SRC.includes('@keyframes toastSpin{to{transform:rotate(360deg);}}'), true);
   sc.eq('숨 쉬듯 살짝', SRC.includes('@keyframes toastBreathe'), true);
+  // ── 넷 가운데 하나를 무작위로 (v26-1010-9, HB) ──
+  sc.eq('넷을 모아 둔다', /const _TOAST_SPINS=\[_TOAST_SPIN,_TOAST_SPIN_BOOK,_TOAST_SPIN_ROWS,_TOAST_SPIN_DOTS\]/.test(SRC), true);
+  sc.eq('무작위로 고른다', SRC.includes('_TOAST_SPINS[Math.floor(Math.random()*_TOAST_SPINS.length)]'), true);
+  sc.eq('띄울 때 그 길로 고른다', SRC.includes('const icon=busy?_toastSpin():ICONS[kind];'), true);
+  ['toastPage','toastRow','toastDot'].forEach(k=>
+    sc.eq(`${k} 가 돈다`, SRC.includes('@keyframes '+k), true));
+  // ⚠️ 넷 다 15×15 안에서 끝나야 토스트 크기가 안 춤춘다
+  sc.eq('줄·점도 15px 한 칸', (SRC.match(/\.toast-(rows|dots)\{width:15px;height:15px/g)||[]).length, 2);
+  // 움직임에 예민한 기기에서는 넷 다 멈춘다
+  sc.eq('모션 줄이기에서 멈춘다',
+        SRC.includes('.toast-spin,.toast-page,.toast-rows i,.toast-dots i{animation:none;}'), true);
   // 실제로 쓰는 자리 두 곳
   sc.eq('시트 불러오기가 쓴다', SRC.includes("showBusyToast('시트를 불러오고 있어요');"), true);
   sc.eq('전체 업데이트도 쓴다', SRC.includes("showBusyToast('말씀 모음을 업데이트하고 있어요');"), true);
