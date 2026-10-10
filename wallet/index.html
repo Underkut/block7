@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-15 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-16 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -680,7 +680,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-15";
+const APP_VERSION = "v. 26-1010-16";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2490,6 +2490,7 @@ async function showParent(){
 // 아이 상태로 잠깐 바꿔 계산한다. 그동안 저장은 막는다(부모 폰의 기록을 덮지 않게).
 function withS(st, fn){ const keep = S, ka = curAcct, r0 = _ro; _ro = true; S = st; try{ return fn(); } finally{ S = keep; curAcct = ka; _ro = r0; } }
 const md2 = d => Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
+const mdW = d => { const w = new Date(Number(d.slice(0,4)), Number(d.slice(5,7))-1, Number(d.slice(8,10))).getDay(); return md2(d)+' '+(w===0 ? '주일' : '일월화수목금토'[w]+'요일'); };
 function perRange(per){ const t = todayStr();
   if(per==='day') return {a:t, b:t, pa:dayShift(t,-1), pb:dayShift(t,-1), lb:'오늘', pl:'어제'};
   if(per==='week'){ const a = weekStart(); return {a, b:dayShift(a,6), pa:dayShift(a,-7), pb:dayShift(a,-1), lb:'이번 주', pl:'지난주'}; }
@@ -2879,7 +2880,7 @@ function renderPMail(){
   const thread = ms.slice(0,40).reverse();
   let lastDay = '';
   const bubble = m => { const mine = m.from==='parent', d = dstr(new Date(m.at)); let sep = '';
-    if(d!==lastDay){ lastDay = d; sep = `<div class="w-day">${d===todayStr() ? '오늘' : d===dayShift(todayStr(),-1) ? '어제' : md2(d)}</div>`; }
+    if(d!==lastDay){ lastDay = d; sep = `<div class="w-day">${d===todayStr() ? '오늘' : d===dayShift(todayStr(),-1) ? '어제' : mdW(d)}</div>`; }
     return sep + `<div class="w-msg ${mine?'me':''}">${mine ? '' : kidFace}<div><div class="w-bub">${body(m)}</div><small>${mine ? esc(m.fromName||'부모님')+' · ' : ''}${new Date(m.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}${mine && m.readKid ? ' · 읽음' : ''}</small></div></div>`; };
   box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}와 우리 가족</span><small>${unread ? '새 쪽지 '+unread+'개 · ' : ''}${wait.length ? '기다리는 일 '+wait.length+'개' : '기다리는 일 없음'}</small></span></div>
     ${wait.length ? `<div class="w-card w-hero"><div class="w-h"><span class="w-j">${ni}가 기다리고 있어요</span><small>${wait.length}개</small></div>${wait.map(wrow).join('')}</div>` : ''}
