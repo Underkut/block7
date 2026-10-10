@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-6 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-7 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -334,6 +334,10 @@ body.pdark .w-bub{background:#3a322c}body.pdark .w-msg.me .w-bub{background:#5a3
 .w-lk{font-size:12px;color:var(--w-acc);text-decoration:underline}
 .w-al{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--w-line);font-size:13px}.w-al:last-of-type{border:0}.w-al>span:first-child{font-size:17px}
 .w-am{flex:1;min-width:0}.w-am b{font-weight:500}.w-am small{display:block;color:var(--w-sub);font-size:11.5px}.w-al>small{color:var(--w-sub);font-size:11px;white-space:nowrap}
+
+.gwhy{font-size:14px;color:var(--sub);margin:4px 2px 0}
+.gperm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--sub);margin-top:8px}.gperm .gb.sm{width:auto;padding:7px 14px}
+.gperm.ok{color:#209a63}.gperm.wait{color:#c98a00}
 #tour{position:fixed;inset:0;z-index:80;opacity:0;transition:opacity .25s ease}#tour.on{opacity:1}
 .tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:left .38s cubic-bezier(.4,0,.2,1),top .38s cubic-bezier(.4,0,.2,1),width .38s cubic-bezier(.4,0,.2,1),height .38s cubic-bezier(.4,0,.2,1);pointer-events:none;will-change:left,top,width,height}
 .tr-bub.fade{opacity:0;transform:translateY(6px)}
@@ -598,7 +602,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-6";
+const APP_VERSION = "v. 26-1010-7";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -878,7 +882,7 @@ function migrate(o0){
   const seenGoal = new Set(), okImg = i => i && ((i.t==='char' && CH[i.v]) || (i.t==='data' && typeof i.v==='string' && /^data:image\//.test(i.v) && i.v.length<400000) || (i.t==='url' && typeof i.v==='string' && /^https?:\/\/\S+$/i.test(i.v)));
   o.goals = (Array.isArray(o.goals) ? o.goals : []).filter(x => x && x.k && x.n && +x.price>0 && !seenGoal.has(String(x.k)) && !o.tiles.some(t => t.k===String(x.k)) && seenGoal.add(String(x.k)))
     .map(x => ({k:String(x.k), n:String(x.n).slice(0,14), price:Math.round(+x.price), img: okImg(x.img) ? {t:x.img.t, v:x.img.v} : {t:'char', v:'star'},
-      due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||'') ? x.due : null, done:!!x.done, doneAt:/^\d{4}-\d{2}-\d{2}$/.test(x.doneAt||'') ? x.doneAt : null}));
+      due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||'') ? x.due : null, done:!!x.done, doneAt:/^\d{4}-\d{2}-\d{2}$/.test(x.doneAt||'') ? x.doneAt : null, why:String(x.why||'').slice(0,60), ok:!!x.ok}));
   o.exp = (Array.isArray(o.exp) ? o.exp : []).filter(e => e && Number.isFinite(+e.amt) && +e.amt>0)
     .map(e => ({id:String(e.id||uid()), amt:Math.round(+e.amt), who:String(e.who||'기타'), ch:CH[e.ch] ? e.ch : null, note:String(e.note||'').slice(0,60), acct:okA(e.acct), date:/^\d{4}-\d{2}-\d{2}$/.test(e.date||'') ? e.date : null, at:+e.at||0}));
   o.useExp = o.useExp !== false;
@@ -940,11 +944,14 @@ function monthShift(m, d){ let [y,mm] = m.split('-').map(Number); mm += d; while
 const wd = ['일','월','화','수','목','금','토'];
 
 function txRow(t){
-  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${byA(t.to)} 옮겼어요 · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
+  if(t.t==='mv') return `<button class="row card" data-tx="${t.id}"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span class="mid"><div class="t">${acctName(t.from)} → ${acctName(t.to)}</div><div class="s">${byA(t.to)} 옮겼어요 · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${tBand(t)}${t.note?' · '+esc(t.note):''}</div></span><span class="a mvc">${nf(t.amt)}</span></button>`;
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
   const ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
-  return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
+  return `<button class="row card" data-tx="${t.id}">${isIn ? avatar(ch) : catAvatar(c)}<span class="mid"><div class="t">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}</div><div class="s">${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'} · ${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${tBand(t)}${t.note?' · '+esc(t.note):''}</div></span><span class="a ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}</span></button>`;
 }
+const tAt = t => (t && t.at > 1e12 && dstr(new Date(t.at))===t.date) ? new Date(t.at) : null;   // 그날 적은 기록만 시각을 안다
+const tBand = t => { const d = tAt(t); if(!d) return ''; const h = d.getHours(); return ' '+(h<6 ? '새벽' : h<11 ? '아침' : h<14 ? '점심' : h<18 ? '오후' : h<22 ? '저녁' : '밤'); };
+const tHM = t => { const d = tAt(t); return d ? ' '+pad2(d.getHours())+':'+pad2(d.getMinutes()) : ''; };
 const sortedTx = list => list.slice().sort((a,b) => a.date<b.date?1:a.date>b.date?-1:(b.at||0)-(a.at||0));
 
 function renderHome(){
@@ -1194,7 +1201,7 @@ function txSheet(id){
   if(t.t==='mv'){
     openSheet(`<h2>옮긴 돈</h2><div class="who"><span class="av" style="background:#e6f1ff">${MV_ICO}</span><span style="font-size:20px">${acctName(t.from)} → ${acctName(t.to)}</span></div>
       <div class="disp mvc">${nf(t.amt)}<small>원</small></div>
-      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${byA(t.to)} 옮겼어요${t.note?'<br>✎ '+esc(t.note):''}</div>
+      <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${tHM(t)} · ${byA(t.to)} 옮겼어요${t.note?'<br>✎ '+esc(t.note):''}</div>
       <div class="stack-btns"><button class="gb blue" id="tEdit">고치기</button><button class="gb gray" id="tDel">지우기</button></div>`);
     $('tEdit').onclick = () => moveFlow(t);
     $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
@@ -1203,7 +1210,7 @@ function txSheet(id){
   const isIn = t.t==='in', c = isIn ? null : catOf(t.cat);
   openSheet(`<h2>${isIn ? '받은 돈' : '쓴 돈'}</h2><div class="who">${isIn ? avatar(giverCh(t.memo, t.ch)) : catAvatar(c)}<span style="font-size:20px">${esc(isIn ? (t.memo||'용돈') : c.n)}</span></div>
     <div class="disp ${isIn?'in':'out'}">${isIn?'+':'−'}${nf(t.amt)}<small>원</small></div>
-    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'}${t.note?'<br>✎ '+esc(t.note):''}</div>
+    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${tHM(t)} · ${byA(acctOf(t))} ${isIn?'받았어요':'썼어요'}${t.note?'<br>✎ '+esc(t.note):''}</div>
     <div class="stack-btns"><button class="gb blue" id="tEdit">고치기</button><button class="gb gray" id="tDel">지우기</button></div>`);
   $('tEdit').onclick = () => txFlow(t.t, t);
   $('tDel').onclick = () => { if(!confirm('이 기록을 지울까요?')) return; S.tx = S.tx.filter(x=>x.id!==id); save(); closeSheet(); render(); toast('지웠어요'); };
@@ -1539,7 +1546,11 @@ function renderGoals(){
     return `<div class="goal card" data-g="${g.k}"><div class="t1"><button class="ico" data-ga="edit" aria-label="고치기" style="background:${gBg(g.img)}">${gImgHtml(g.img)}</button><button class="gtx" data-ga="edit"><div class="nm">${esc(g.n)}</div><div class="pr">${won(g.price)}${g.due?' · '+mdOf(g.due)+'까지':''}</div></button>${full ? '' : '<span class="pmr2"><button class="m" data-ga="minus" aria-label="빼기">−</button><button class="p" data-ga="plus" aria-label="더 모으기">+</button></span>'}</div>
       <div class="row2"><span>모은 돈 <b>${nf(sv)}원</b>${parts.length>1 ? ' <small>('+parts.map(x => acctName(x.k)+' '+nf(alloc(g.k,x.k))).join(' · ')+')</small>' : ''}</span><span>${pct}%</span></div>
       <div class="gauge ${full?'g':''}"><i style="width:${pct}%"></i></div><div class="hint">${hint}</div>
-      ${full ? `<button class="gb green" data-ga="buy" style="margin-top:12px">샀어요! (${won(g.price)})</button>` : `<div class="hint" style="margin-top:2px;color:#b5a8cf">${acctName(curAcct)}에서 떼어 담아요</div>`}</div>`;
+      ${g.why ? `<div class="gwhy">💭 ${esc(g.why)}</div>` : ''}${g.due ? `<div class="gwhy">📅 ${mdOf(g.due)}까지 사고 싶어요</div>` : ''}
+      ${(() => { const pm = goalPerm(g);
+        return pm==='free' ? '' : pm==='ok' ? '<div class="gperm ok">✓ 부모님이 허락했어요</div>' : pm==='wait' ? '<div class="gperm wait">⏳ 부모님 허락을 기다리는 중이에요</div>'
+          : `<div class="gperm">${pm==='no' ? '부모님이 "다음에"라고 했어요. ' : '아직 허락 전이에요. '}<button class="gb sm purple" data-ga="ask">${pm==='no' ? '다시 물어보기' : '사도 돼요?'}</button></div>`; })()}
+      ${full ? (['ok','free'].includes(goalPerm(g)) ? `<button class="gb green" data-ga="buy" style="margin-top:12px">샀어요! (${won(g.price)})</button>` : '<div class="hint" style="margin-top:8px">다 모았어요! 부모님 허락을 받으면 살 수 있어요</div>') : `<div class="hint" style="margin-top:2px;color:#b5a8cf">${acctName(curAcct)}에서 떼어 담아요</div>`}</div>`;
   };
   box.innerHTML = (act.length ? act.map(card).join('') : `<div class="empty card" style="padding:18px 12px;margin-bottom:12px">${face('pig')}갖고 싶은 게 있나요?<br>값을 정하고 조금씩 모아 봐요!</div>`)
     + `<button class="addgoal" id="addGoal">+ 새 목표 만들기</button>`
@@ -1559,8 +1570,26 @@ function goalStep(k, dir){
   buzz(14); sfx(dir>0 ? 'plus' : 'minus'); save(); renderAlloc(); renderHome();
   if(dir > 0 && goalTotal(g) >= g.price){ confetti(); toast('와! '+g.n+' 값을 다 모았어요!'); }
 }
+// 허락: 가족과 연결돼 있으면 부모님 폰으로 '사도 돼요?', 아니면 부모님 비밀번호(있을 때만). 부모님이 없는 기기는 그냥 살 수 있다.
+function goalPerm(g){
+  if(g.ok) return 'ok';
+  if(FAM && FAM.role==='kid'){ const m = MAIL.filter(x => x.goal===g.k).sort((a,b) => b.at-a.at)[0]; return m ? (m.status==='open' ? 'wait' : m.status==='no' ? 'no' : m.status==='ok' ? 'ok' : 'none') : 'none'; }
+  return S.pin ? 'none' : 'free';
+}
+function goalAsk(k){
+  const g = S.goals.find(x => x.k===k); if(!g) return;
+  if(!g.why){ toast('먼저 왜 갖고 싶은지 써 주세요'); goalSheet(g); return; }
+  if(FAM && FAM.role==='kid'){
+    openSheet(`<h2>사도 돼요?</h2><div class="gprev" style="background:${gBg(g.img)}">${gImgHtml(g.img)}</div><div class="who"><span style="font-size:22px">${esc(g.n)} · ${won(g.price)}</span></div>
+      <div class="note">💭 ${esc(g.why)}${g.due ? '<br>📅 '+mdOf(g.due)+'까지 필요해요' : ''}</div><button class="gb purple" id="gaGo">부모님께 물어보기</button>`);
+    $('gaGo').onclick = async () => { if(await mailSend({type:'req', goal:g.k, amt:g.price, text:g.n+' — '+g.why+(g.due ? ' ('+mdOf(g.due)+'까지)' : ''), status:'open'}, '부모님께 물어봤어요. 기다려 볼까요?')){ closeSheet(); renderAlloc(); } };
+    return;
+  }
+  askPin('"'+esc(g.n)+'" 사도 될까요? 부모님이 허락해 주세요', () => { g.ok = true; save(); closeSheet(); render(); toast('허락 받았어요!'); });
+}
 function goalBuy(k){
   const g = S.goals.find(x => x.k===k); if(!g || goalTotal(g) < g.price) return;
+  const pm = goalPerm(g); if(pm!=='ok' && pm!=='free'){ toast('부모님 허락을 받아야 살 수 있어요'); goalAsk(k); return; }
   const extra = goalTotal(g) - g.price;
   openSheet(`<h2>샀어요?</h2><div class="gprev" style="background:${gBg(g.img)}">${gImgHtml(g.img)}</div><div class="who"><span style="font-size:22px">${esc(g.n)}</span></div>
     <div class="disp out">−${nf(g.price)}<small>원</small></div>
@@ -1601,13 +1630,15 @@ function renderGoalSheet(){
     <div class="gsrc" id="gSrc"><button data-s="bank" class="${g._src==='bank'?'on':''}">그림 고르기</button><button data-s="photo" class="${g._src==='photo'?'on':''}">사진 올리기</button><button data-s="link" class="${g._src==='link'?'on':''}">링크 붙이기</button></div>
     <div id="gBody">${body}</div>
     <input class="inp" id="gName" maxlength="14" placeholder="무엇을 갖고 싶어요? (예: 게임기)" value="${esc(g.n)}" style="margin-top:10px">
+    <input class="inp" id="gWhy" maxlength="60" placeholder="왜 갖고 싶어요? (꼭 써 주세요)" value="${esc(g.why||'')}" style="margin-top:8px;font-size:17px">
     <button class="gb ${g.price>0?'blue':'gray'} sm" id="gPrice" style="margin-top:10px">${g.price>0 ? '값 '+won(g.price) : '얼마예요? 눌러서 정하기'}</button>
-    <label class="datebtn" style="margin-top:6px">${CAL_ICO}<span id="gDueTxt">${g.due ? mdOf(g.due)+'까지 모을래요' : '목표일 정하기 (안 정해도 돼요)'}</span><input type="date" id="gDueIn" min="${dayAdd(1)}" value="${g.due||''}"></label>
+    <label class="datebtn" style="margin-top:6px">${CAL_ICO}<span id="gDueTxt">${g.due ? mdOf(g.due)+'까지 사고 싶어요 (필요해요)' : '언제까지 사고 싶어요? 언제 필요해요? (안 정해도 돼요)'}</span><input type="date" id="gDueIn" min="${dayAdd(1)}" value="${g.due||''}"></label>
     ${g.due ? '<button class="linkbtn" id="gDueClr" style="margin-top:0">목표일 지우기</button>' : ''}
     <button class="gb purple" id="gSave" style="margin-top:6px">${editing ? '고쳤어요!' : '만들었어요!'}</button>
     ${editing ? '<button class="linkbtn" id="gDel">이 목표 지우기</button>' : ''}`);
   const prev = () => { $('gPrev').style.background = gBg(g.img); $('gPrev').innerHTML = gImgHtml(g.img, true); };
   $('gName').oninput = e => { g.n = e.target.value; };
+  $('gWhy').oninput = e => { g.why = e.target.value; };
   $('gSrc').onclick = e => { const b = e.target.closest('button'); if(!b) return; g._src = b.dataset.s; buzz(6); g.n = $('gName').value; renderGoalSheet(); };
   if(g._src==='bank'){
     $('gTabs').onclick = e => { const b = e.target.closest('button'); if(!b) return; g._grp = b.dataset.g; buzz(6); g.n = $('gName').value; renderGoalSheet(); };
@@ -1630,8 +1661,10 @@ function renderGoalSheet(){
     const typed = $('gName').value.trim(), name = (typed || (g.img.t==='char' ? CH[g.img.v].n : '')).slice(0,14);
     if(!name){ toast('이름을 써 주세요'); $('gName').focus(); return; }
     if(!(g.price > 0)){ toast('값을 정해 주세요'); return; }
+    const why = $('gWhy').value.trim(); if(!why){ toast('왜 갖고 싶은지 써 주세요'); $('gWhy').focus(); return; }
     if(g.img.t==='url' && g._bad){ toast('링크 그림이 안 열려요. 다른 주소로 바꿔 주세요'); return; }
-    const rec = {k: g.k || 'g_'+uid(), n:name, price:g.price, img:{t:g.img.t, v:g.img.v}, due:g.due||null, done:false, doneAt:null};
+    const old = editing ? S.goals.find(x => x.k===g.k) : null;
+    const rec = {k: g.k || 'g_'+uid(), n:name, price:g.price, img:{t:g.img.t, v:g.img.v}, due:g.due||null, done:false, doneAt:null, why:why.slice(0,60), ok: !!(old && old.ok && old.price===g.price)};   // 값이 바뀌면 다시 허락받기
     if(editing){ const i = S.goals.findIndex(x => x.k===g.k); S.goals[i] = Object.assign({}, S.goals[i], rec); } else S.goals.push(rec);
     save(); closeSheet(); GD = null; planSeg = 'goals'; render(); toast(editing ? '고쳤어요' : '새 목표가 생겼어요! 조금씩 모아 봐요');
   };
@@ -1644,6 +1677,7 @@ $('goalList').onclick = e => {
   const b = e.target.closest('[data-ga]'), c = e.target.closest('[data-g]'); if(!b || !c) return;
   const a = b.dataset.ga, k = c.dataset.g;
   if(a==='plus') goalStep(k, 1); else if(a==='minus') goalStep(k, -1);
+  else if(a==='ask') goalAsk(k);
   else if(a==='buy') goalBuy(k);
   else if(a==='doneinfo') goalDoneSheet(k);
   else if(a==='edit'){ const g = S.goals.find(x => x.k===k); if(g) goalSheet(g); }
@@ -2229,9 +2263,9 @@ function renderParent(){
     const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,6);
     const dl = dd => { const t = todayStr(); return dd===t ? '오늘' : dd===dayShift(t,-1) ? '어제' : md2(dd); };
     const rowH = t => {
-      if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${dl(t.date)}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
+      if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${dl(t.date)}${tHM(t)}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
       const isIn = t.t==='in', c = isIn ? null : catOf(t.cat), ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
-      return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${dl(t.date)} · ${ACS[acctOf(t)]}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
+      return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${dl(t.date)}${tHM(t)} · ${ACS[acctOf(t)]}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
     const parts = AK.map(a => ({a, v:Math.max(0, balOf(a))})), tot = parts.reduce((s,x) => s + x.v, 0) || 1, ACOL = {cash:'#8fcfa8', card:'#9cc8f5', bank:'#ffd98a'};
     const period = PAR.per==='day' ? '오늘' : PAR.per==='week' ? '이번 주' : '이번 달';
     return `<div class="w-card w-hero"><div class="w-say">${period} ${ni}는 <b>${won(cur.i)}</b>을 받고 <b>${won(cur.o)}</b>을 썼어요.${full ? `<br>하루 마무리를 <b>${full}일</b> 정직하게 했어요 💛` : ''}</div>
@@ -2247,7 +2281,7 @@ function renderParent(){
       <div class="w-card"><div class="w-h"><span class="w-j">정직한 하루 마무리</span><small>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 연속 ${sk}일</small></div><div class="pr-cal w-cal ${PAR.per==='month'?'m':''}">${cal}</div>
         <p class="pr-note">💛 쓴 돈·받은 돈 다 적었어요 · 🤍 하나만 · · 아직 못 적었어요 · 별 ${starsOf()}개</p></div>
       <div class="w-card"><div class="w-h"><span class="w-j">갖고 싶은 것</span></div>${goals.length ? goals.map(x => { const p = Math.min(100, Math.floor(x.sv/x.g.price*100)), rem = Math.max(0, x.g.price-x.sv), dd = x.g.due ? dayDiff(x.g.due) : 0;
-          return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
+          return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)} ${x.g.ok ? '<em class="w-chip ok">허락</em>' : ''}${x.g.why ? '<small>💭 '+esc(x.g.why)+'</small>' : ''}${x.g.due ? '<small>📅 '+mdOf(x.g.due)+'까지</small>' : ''}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
       <div class="w-card"><div class="w-h"><span class="w-j">${period} 기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
   });
   box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : Number(R.a.slice(5,7))+'월'}${k.at ? ' · 아이 폰 소식 '+k.at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : ''}</small></span></div>` + html;
@@ -2351,7 +2385,7 @@ function mirTxSheet(id){
   const isIn = t.t==='in', nm = t.t==='mv' ? acctName(t.from)+' → '+acctName(t.to) : isIn ? (t.memo||'용돈') : catOf(t.cat).n;
   openSheet(`<h2>${t.t==='mv' ? '옮긴 돈' : isIn ? '받은 돈' : '쓴 돈'}</h2><div class="who"><span style="font-size:20px">${esc(nm)}</span></div>
     <div class="disp ${isIn?'in':t.t==='mv'?'mvc':'out'}">${t.t==='mv'?'':isIn?'+':'−'}${nf(t.amt)}<small>원</small></div>
-    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일 · ${acctName(acctOf(t))}${t.note ? '<br>✎ '+esc(t.note) : ''}</div>
+    <div class="note">${Number(t.date.slice(5,7))}월 ${Number(t.date.slice(8,10))}일${tHM(t)} · ${acctName(acctOf(t))}${t.note ? '<br>✎ '+esc(t.note) : ''}</div>
     ${typeof stampSheet==='function' && t.t!=='mv' ? '<button class="gb purple" id="mStamp">칭찬 도장 찍기</button>' : ''}`);
   $('sheet').dataset.p = '1'; if($('mStamp')) $('mStamp').onclick = () => stampSheet(id);
 }
@@ -2428,7 +2462,7 @@ function kidMailUpdate(){
   mailApply();
   if(!first && fresh.length){
     const m = fresh[0], who = m.from==='parent' ? (m.fromName||'부모님') : (m.okName||'부모님');
-    const txt = m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
+    const txt = m.from==='kid' && m.goal ? (m.status==='ok' ? who+'가 사도 된다고 허락했어요!' : who+'가 "다음에"라고 했어요') : m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
       : m.type==='stamp' ? who+'가 '+(m.sticker||'⭐')+' 도장을 찍었어요!' : m.type==='mission' ? (m.status==='ok' ? '미션 성공! '+who+'가 확인했어요' : who+'가 미션을 보냈어요') : who+'에게서 쪽지가 왔어요';
     sfx('win'); buzz([20,40,20]); toast(txt + (fresh.length>1 ? ' (+'+(fresh.length-1)+')' : ''));
   }
@@ -2441,6 +2475,7 @@ function mailApply(){
     if(m.status!=='ok' || S.applied.includes(m.id)) return;
     const who = m.okName || m.fromName || '부모님';
     if(m.type==='mission'){ if(m.amt > 0) S.tx.push({id:uid(), t:'in', amt:m.amt, memo:who, cat:null, date:today, at:Date.now(), note:('미션: '+(m.text||'')).slice(0,60), acct:'cash', plan:null, ch:null}); }
+    else if(m.type==='req' && m.goal){ const g = S.goals.find(x => x.k===m.goal); if(g) g.ok = true; }
     else if(m.type==='req') S.exp.push({id:uid(), amt:m.amt, who, ch:null, note:(m.text||'').slice(0,60), acct:'cash', date:null, at:Date.now()});
     else if(m.type==='cpreq'){ const c = S.cps.find(x => x.id===m.cpId); if(c && !c.used){ c.used = today; if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:c.amt, memo:who, cat:null, date:today, at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:null}); } }
     else return;
@@ -2461,6 +2496,7 @@ function kidMailSheet(keep){
     let body = '';
     if(m.type==='stamp') body = `<p>${esc(m.refLabel||'내 기록')}에 <b>도장</b>을 찍었어요</p><div class="mstk">${m.sticker||'⭐'}</div>${m.text ? '<p>'+esc(m.text)+'</p>' : ''}`;
     else if(m.type==='mission') body = `<p><span class="mtag">미션</span>${esc(m.text||'')}${m.amt ? ' → <b>'+won(m.amt)+'</b>' : ''}</p>${m.status==='open' ? `<button class="gb green sm" data-ma="done" data-id="${m.id}">다 했어요!</button>` : st(m)}`;
+    else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">허락</span>' : st(m)}`;
     else if(m.type==='req') body = `<p><span class="mtag">용돈 요청</span><b>${won(m.amt)}</b> · ${esc(m.text||'')}</p>${st(m)}${m.status==='ok' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : ''}`;
     else if(m.type==='cpreq') body = `<p><span class="mtag">쿠폰</span>${esc(m.text||'')}</p>${st(m)}`;
     else body = `${m.text ? '<p>'+esc(m.text)+'</p>' : ''}${m.sticker ? '<div class="mstk">'+m.sticker+'</div>' : ''}${!mine ? `<div class="mq"><button data-ma="re" data-t="고마워요!">고마워요!</button><button data-ma="re" data-t="사랑해요 ❤️">사랑해요 ❤️</button><button data-ma="re" data-t="알겠어요">알겠어요</button></div>` : ''}`;
@@ -2562,17 +2598,18 @@ function renderPMail(){
   const kidFace = `<span class="w-ma">${face('pig')}</span>`;
   // 기다리는 일 — 아이가 기다리고 있어요
   const wrow = m => {
-    const ic = m.type==='mission' ? '🎯' : m.type==='req' ? '🙏' : '🎟️';
-    const ttl = m.type==='mission' ? `미션 완료${m.amt ? ' · '+won(m.amt) : ''}` : m.type==='req' ? `용돈 요청 · ${won(m.amt)}` : '쿠폰 사용';
+    const ic = m.type==='mission' ? '🎯' : m.goal ? '🛍️' : m.type==='req' ? '🙏' : '🎟️';
+    const ttl = m.type==='mission' ? `미션 완료${m.amt ? ' · '+won(m.amt) : ''}` : m.goal ? `사도 돼요? · ${won(m.amt)}` : m.type==='req' ? `용돈 요청 · ${won(m.amt)}` : '쿠폰 사용';
     const btns = m.type==='mission'
       ? `<button data-pa="again" data-id="${m.id}">다시 해 보자</button><button class="p" data-pa="ok" data-id="${m.id}">잘했어! ${m.amt ? won(m.amt)+' 주기' : '확인'}</button>`
-      : `<button data-pa="no" data-id="${m.id}">다음에</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><button class="p" data-pa="ok" data-id="${m.id}">승인</button>`;
+      : `<button data-pa="no" data-id="${m.id}">다음에</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><button class="p" data-pa="ok" data-id="${m.id}">${m.goal ? '허락하기' : '승인'}</button>`;
     return `<div class="pr-w w-wait"><div class="w-wt"><span class="w-wi">${ic}</span><span><b>${ttl}</b><span class="w-wq">"${esc(m.text||'')}"</span><small>${fmtAt(m.at)}</small></span></div><div class="pr-btns">${btns}</div></div>`;
   };
   // 이야기 — 채팅처럼(아이는 왼쪽, 부모님은 오른쪽)
   const stl = m => m.status==='ok' ? '<em class="w-chip ok">승인</em>' : m.status==='no' ? '<em class="w-chip">다음에</em>' : m.status==='done' ? '<em class="w-chip">완료 보고</em>' : m.status==='open' ? '<em class="w-chip on">진행 중</em>' : '';
   const body = m => m.type==='stamp' ? `<span class="w-bs">${m.sticker||'⭐'}</span> <b>칭찬 도장</b> · ${esc(m.refLabel||'')}${m.text ? '<br>'+esc(m.text) : ''}`
     : m.type==='mission' ? `🎯 <b>미션</b> · ${esc(m.text||'')}${m.amt ? ' → '+won(m.amt) : ''} ${stl(m)}`
+    : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">허락</em>' : stl(m)}`
     : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}`
     : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}`
     : `${m.text ? esc(m.text) : ''}${m.sticker ? ' <span class="w-bs">'+m.sticker+'</span>' : ''}`;
