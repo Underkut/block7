@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-5 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1010-6 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -297,7 +297,7 @@ body.pdark .par{--w-bg:#1d1916;--w-card:#2a2420;--w-ink:#f3ebe3;--w-sub:#b3a69a;
 .w-pill.g{background:#eaf7ef}.w-pill.g em{color:#3c9a64}.w-pill.r{background:#ffeef0}.w-pill.r em{color:#d0607a}.w-pill.y{background:#fff6df}.w-pill.y em{color:#b8892a}
 body.pdark .w-pill.g{background:#22352a}body.pdark .w-pill.r{background:#3a2328}body.pdark .w-pill.y{background:#3a3222}
 body.pdark .w-pill.g em{color:#8fdcae}body.pdark .w-pill.r em{color:#ff9db0}body.pdark .w-pill.y em{color:#f3cf7a}
-.w-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}.w-h .w-j{font-size:17px}.w-h small{font-size:11.5px;color:var(--w-sub);text-align:right}
+.w-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}.w-h .w-j{font-size:17px;white-space:nowrap}.w-h small{font-size:11.5px;color:var(--w-sub);text-align:right}
 .w-st{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.5;margin:6px 0}.w-st span:first-child{font-size:17px}
 .w-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}.w-acts button{background:var(--w-card);border-radius:18px;padding:10px 4px;text-align:center;font-size:12.5px;color:var(--w-ink);box-shadow:0 3px 12px rgba(120,90,60,.07)}.w-acts i{display:block;font-style:normal;font-size:22px;margin-bottom:2px}
 .w-cat{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}.w-ce{width:30px;height:30px;border-radius:10px;overflow:hidden;flex:none}.w-ce svg{width:100%;display:block}.w-cn{width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -318,6 +318,22 @@ body.pdark .par .pr-seg{background:#2a2420}body.pdark .par .pr-seg button.on{bac
 body.pdark .pnav{background:#2a2420}body.pdark .pnav button.on{color:#ffa58a}
 /* 부모 사용 설명: 다크에서도 비추는 곳이 또렷하게 — 밝은 테두리 + 은은한 빛 */
 #tour.tpar .tr-hole{box-shadow:0 0 0 3px #ffcf8a,0 0 22px 6px rgba(255,200,120,.55),0 0 0 9999px rgba(8,8,10,.74)}
+
+.w-wait{background:rgba(255,255,255,.75);border-radius:16px;padding:10px 12px!important;margin:8px 0;border:0!important}body.pdark .w-wait{background:rgba(0,0,0,.18)}
+.w-wt{display:flex;gap:10px;align-items:flex-start;font-size:14px}.w-wi{font-size:24px;line-height:1}.w-wt b{display:block}.w-wq{display:block;color:var(--w-ink);margin-top:2px}.w-wt small{display:block;color:var(--w-sub);font-size:11px}
+.par .pr-btns button{border:0;border-radius:14px;background:var(--w-track);color:var(--w-ink);padding:9px 0;font-size:13px}.par .pr-btns button.p{background:#e2725b;color:#fff}
+.w-chat{max-height:420px;overflow-y:auto;padding:2px 0}
+.w-day{text-align:center;font-size:11px;color:var(--w-sub);margin:10px 0 4px}
+.w-msg{display:flex;gap:8px;align-items:flex-end;margin:6px 0}.w-msg>div{max-width:78%}.w-msg small{display:block;font-size:10.5px;color:var(--w-sub);margin:2px 6px}
+.w-msg.me{justify-content:flex-end}.w-msg.me small{text-align:right}
+.w-ma{width:30px;height:30px;border-radius:50%;overflow:hidden;flex:none;background:#ffdce8}.w-ma svg{width:100%;display:block}
+.w-bub{background:#f5efe8;border-radius:18px 18px 18px 6px;padding:9px 12px;font-size:14px;line-height:1.45}.w-msg.me .w-bub{background:#ffe4d8;border-radius:18px 18px 6px 18px}
+body.pdark .w-bub{background:#3a322c}body.pdark .w-msg.me .w-bub{background:#5a3a30}
+.w-bs{font-size:20px;vertical-align:middle}
+.w-chip{font-style:normal;font-size:11px;border-radius:8px;padding:1px 6px;background:var(--w-track);color:var(--w-sub);white-space:nowrap}.w-chip.ok{background:#8fcfa8;color:#fff}.w-chip.on{background:#ffd98a;color:#6b4c00}
+.w-lk{font-size:12px;color:var(--w-acc);text-decoration:underline}
+.w-al{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--w-line);font-size:13px}.w-al:last-of-type{border:0}.w-al>span:first-child{font-size:17px}
+.w-am{flex:1;min-width:0}.w-am b{font-weight:500}.w-am small{display:block;color:var(--w-sub);font-size:11.5px}.w-al>small{color:var(--w-sub);font-size:11px;white-space:nowrap}
 #tour{position:fixed;inset:0;z-index:80;opacity:0;transition:opacity .25s ease}#tour.on{opacity:1}
 .tr-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(40,28,64,.62);transition:left .38s cubic-bezier(.4,0,.2,1),top .38s cubic-bezier(.4,0,.2,1),width .38s cubic-bezier(.4,0,.2,1),height .38s cubic-bezier(.4,0,.2,1);pointer-events:none;will-change:left,top,width,height}
 .tr-bub.fade{opacity:0;transform:translateY(6px)}
@@ -582,7 +598,7 @@ body:has(.par.on) #trash{visibility:hidden}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-5";
+const APP_VERSION = "v. 26-1010-6";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2538,18 +2554,39 @@ function missionSheet(){
 function renderPMail(){
   $('parKids').innerHTML = kidTabsHtml();
   const box = $('prMail'), k = curKid();
-  if(!k){ box.innerHTML = '<div class="pr-sec"><h3>우체통</h3><p class="pr-note">아이 폰을 연결하면 쪽지를 주고받을 수 있어요.</p></div>'; return; }
-  const ms = PAR.msgs.filter(m => m.kidId===k.id && !(m.from==='kid' && m.hide && false));
+  if(!k){ box.innerHTML = '<div class="w-card"><div class="w-h"><span class="w-j">우체통</span></div><p class="pr-note">아이 폰을 연결하면 쪽지를 주고받을 수 있어요.</p></div>'; return; }
+  const nm = esc(k.name||'아이'), ni = nm + (/[가-힣]$/.test(k.name||'') && ((k.name.charCodeAt(k.name.length-1)-0xAC00) % 28) ? '이' : '');
+  const ms = PAR.msgs.filter(m => m.kidId===k.id);
   const wait = ms.filter(m => ((m.type==='req' || m.type==='cpreq') && m.status==='open') || (m.type==='mission' && m.status==='done'));
-  const wrow = m => m.type==='mission'
-    ? `<div class="pr-w"><div><b>미션 완료</b> · ${esc(m.text||'')}${m.amt ? ' → '+won(m.amt) : ''}<small>${fmtAt(m.at)}</small></div><div class="pr-btns"><button data-pa="again" data-id="${m.id}">다시 해 보자</button><button class="p" data-pa="ok" data-id="${m.id}">확인${m.amt ? ' · '+won(m.amt)+' 주기' : ''}</button></div></div>`
-    : `<div class="pr-w"><div><b>${m.type==='req' ? '용돈 요청 · '+won(m.amt) : '쿠폰 사용'}</b> · ${esc(m.text||'')}<small>${fmtAt(m.at)}</small></div><div class="pr-btns"><button data-pa="no" data-id="${m.id}">거절</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><button class="p" data-pa="ok" data-id="${m.id}">승인</button></div></div>`;
-  const stl = m => m.status==='ok' ? '승인' : m.status==='no' ? '거절' : m.status==='done' ? '완료 보고' : m.status==='open' ? '진행 중' : '';
-  const line = m => `<div class="pr-al"><i class="${m.from==='kid'?'g':'p'}"></i><span><b>${m.from==='kid' ? esc(k.name||'아이') : esc(m.fromName||'부모님')}</b> · ${MSG_TAG[m.type]||''}${m.type==='stamp' ? ' '+(m.sticker||'')+' '+esc(m.refLabel||'') : ''}${m.amt && m.type!=='stamp' ? ' '+won(m.amt) : ''}${m.text ? ' — '+esc(m.text) : ''}${m.sticker && m.type==='note' ? ' '+m.sticker : ''}${stl(m) ? ' <em class="pr-st">'+stl(m)+'</em>' : ''}${m.from==='parent' && m.readKid ? ' <em class="pr-st r">읽음</em>' : ''}</span><small>${fmtAt(m.at)}</small></div>`;
-  box.innerHTML = `<div class="pr-sec"><h3>기다리는 일</h3>${wait.length ? wait.map(wrow).join('') : '<p class="pr-note">지금은 없어요</p>'}</div>
-    <div class="pr-sec"><h3>보내기</h3><div class="pr-btns"><button id="pmNote">쪽지</button><button id="pmStamp">칭찬 도장</button><button id="pmMis">미션 주기</button></div><p class="pr-note">칭찬 도장은 '아이 화면'에서 기록을 길게 눌러도 찍을 수 있어요.</p></div>
-    <div class="pr-sec"><h3>주고받은 이야기</h3>${ms.length ? ms.slice(0,60).map(line).join('') : '<p class="pr-note">아직 없어요</p>'}</div>`
+  const unread = ms.filter(m => m.from==='kid' && !m.readPar).length;
+  const kidFace = `<span class="w-ma">${face('pig')}</span>`;
+  // 기다리는 일 — 아이가 기다리고 있어요
+  const wrow = m => {
+    const ic = m.type==='mission' ? '🎯' : m.type==='req' ? '🙏' : '🎟️';
+    const ttl = m.type==='mission' ? `미션 완료${m.amt ? ' · '+won(m.amt) : ''}` : m.type==='req' ? `용돈 요청 · ${won(m.amt)}` : '쿠폰 사용';
+    const btns = m.type==='mission'
+      ? `<button data-pa="again" data-id="${m.id}">다시 해 보자</button><button class="p" data-pa="ok" data-id="${m.id}">잘했어! ${m.amt ? won(m.amt)+' 주기' : '확인'}</button>`
+      : `<button data-pa="no" data-id="${m.id}">다음에</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><button class="p" data-pa="ok" data-id="${m.id}">승인</button>`;
+    return `<div class="pr-w w-wait"><div class="w-wt"><span class="w-wi">${ic}</span><span><b>${ttl}</b><span class="w-wq">"${esc(m.text||'')}"</span><small>${fmtAt(m.at)}</small></span></div><div class="pr-btns">${btns}</div></div>`;
+  };
+  // 이야기 — 채팅처럼(아이는 왼쪽, 부모님은 오른쪽)
+  const stl = m => m.status==='ok' ? '<em class="w-chip ok">승인</em>' : m.status==='no' ? '<em class="w-chip">다음에</em>' : m.status==='done' ? '<em class="w-chip">완료 보고</em>' : m.status==='open' ? '<em class="w-chip on">진행 중</em>' : '';
+  const body = m => m.type==='stamp' ? `<span class="w-bs">${m.sticker||'⭐'}</span> <b>칭찬 도장</b> · ${esc(m.refLabel||'')}${m.text ? '<br>'+esc(m.text) : ''}`
+    : m.type==='mission' ? `🎯 <b>미션</b> · ${esc(m.text||'')}${m.amt ? ' → '+won(m.amt) : ''} ${stl(m)}`
+    : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}`
+    : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}`
+    : `${m.text ? esc(m.text) : ''}${m.sticker ? ' <span class="w-bs">'+m.sticker+'</span>' : ''}`;
+  const thread = ms.slice(0,40).reverse();
+  let lastDay = '';
+  const bubble = m => { const mine = m.from==='parent', d = dstr(new Date(m.at)); let sep = '';
+    if(d!==lastDay){ lastDay = d; sep = `<div class="w-day">${d===todayStr() ? '오늘' : d===dayShift(todayStr(),-1) ? '어제' : md2(d)}</div>`; }
+    return sep + `<div class="w-msg ${mine?'me':''}">${mine ? '' : kidFace}<div><div class="w-bub">${body(m)}</div><small>${mine ? esc(m.fromName||'부모님')+' · ' : ''}${new Date(m.at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}${mine && m.readKid ? ' · 읽음' : ''}</small></div></div>`; };
+  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}와 우리 가족</span><small>${unread ? '새 쪽지 '+unread+'개 · ' : ''}${wait.length ? '기다리는 일 '+wait.length+'개' : '기다리는 일 없음'}</small></span></div>
+    ${wait.length ? `<div class="w-card w-hero"><div class="w-h"><span class="w-j">${ni}가 기다리고 있어요</span><small>${wait.length}개</small></div>${wait.map(wrow).join('')}</div>` : ''}
+    <div class="w-acts"><button id="pmStamp"><i>👍</i>칭찬 도장</button><button id="pmNote"><i>✉️</i>쪽지</button><button id="pmMis"><i>🎯</i>미션 주기</button></div>
+    <div class="w-card"><div class="w-h"><span class="w-j">주고받은 이야기</span><small>새 이야기는 아래쪽</small></div>${thread.length ? `<div class="w-chat">${thread.map(bubble).join('')}</div>` : `<p class="pr-note">아직 이야기가 없어요. 오늘 하루 수고했다고 쪽지 한 장 보내 볼까요? 💌</p>`}</div>`
     + (typeof alertsHtml==='function' ? alertsHtml(k) : '');
+  const ch = box.querySelector('.w-chat'); if(ch) ch.scrollTop = ch.scrollHeight;
   ms.filter(m => m.from==='kid' && !m.readPar).forEach(m => { m.readPar = true; mailUpd(m.id, {readPar:true}); });
   pmDot();
 }
@@ -2559,6 +2596,7 @@ $('prMail').addEventListener('click', e => {
   else if(b.id==='pmStamp') stampPick();
   else if(b.id==='pmMis') missionSheet();
   else if(b.id==='pmNoti') notiSheet();
+  else if(b.id==='pmAlMore'){ PAR.alMore = true; renderPMail(); }
   else if(b.dataset.pa){ const id = b.dataset.id, a = b.dataset.pa;
     needPName(() => {
       if(a==='ok') mailUpd(id, {status:'ok', okName:FAM.pname||'부모님', okAt:FB.fv.serverTimestamp()}).then(() => toast('승인했어요. 아이 폰에 바로 반영돼요'));
@@ -2621,9 +2659,9 @@ function notiSheet(){
 }
 // 알림 내역 (서버가 families/{가족}/alerts 에 적는다)
 function alertsHtml(k){
-  const a = (PAR.alerts||[]).filter(x => x.kidId===k.id).slice(0,30);
-  return `<div class="pr-sec"><h3>알림 내역</h3>${a.length ? a.map(x => `<div class="pr-al"><i class="${x.k==='spend'?'':x.k==='income'||x.k==='chk'?'g':x.k==='over'?'o':'p'}"></i><span><b>${esc(x.title)}</b>${x.body ? ' · '+esc(x.body) : ''}</span><small>${fmtAt(x.at)}</small></div>`).join('') : '<p class="pr-note">아직 없어요. 알림 서버가 켜지면 여기에 쌓여요.</p>'}
-    <div class="pr-btns" style="margin-top:8px"><button id="pmNoti">알림 설정</button></div></div>`;
+  const all = (PAR.alerts||[]).filter(x => x.kidId===k.id), a = PAR.alMore ? all.slice(0,40) : all.slice(0,5);
+  const ic = x => x.k==='spend' ? '🛍️' : x.k==='income' ? '💰' : x.k==='chk' ? '💛' : x.k==='over' ? '⚠️' : x.k==='goal' ? '🎉' : '💌';
+  return `<div class="w-card"><div class="w-h"><span class="w-j">알림 내역</span><button class="w-lk" id="pmNoti">알림 설정</button></div>${a.length ? a.map(x => `<div class="w-al"><span>${ic(x)}</span><span class="w-am"><b>${esc(x.title)}</b>${x.body ? '<small>'+esc(x.body)+'</small>' : ''}</span><small>${fmtAt(x.at)}</small></div>`).join('') + (all.length > a.length ? '<button class="pr-link" id="pmAlMore">더 보기 ('+(all.length-a.length)+'개)</button>' : '') : '<p class="pr-note">아직 없어요. 아이가 기록하면 여기에 쌓여요.</p>'}</div>`;
 }
 // 알림을 누르고 들어왔을 때: 그 화면으로
 function handleGo(url){
