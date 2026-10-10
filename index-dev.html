@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-13  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-14  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-13";
+const APP_VERSION = "v. 26-1010-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -22195,12 +22195,39 @@ function vfCatTap(){
 }
 // 개발자 계정에서만 대분류에 롱터치/우클릭을 붙인다.
 // 일반 사용자에게는 아무것도 달지 않아 지금 동작이 그대로 유지된다.
+//
+// ⚠️⚠️ v26-1010-14, HB 결정 — **아이폰·아이패드는 손을 뗄 때 넘어간다.**
+//    HB 가 휴대폰으로 시험해 보니(lab/sheet-link-lab.html) 시트 앱은 어떤 링크
+//    모양이든 행을 무시하고 마지막으로 보던 자리를 연다. 그 행으로 가는 길은
+//    '본문 복사 → 앱의 찾기에 붙여넣기' 하나뿐이다 (시험 6번 — 붙여넣기 성공).
+//    그런데 아이폰은 손가락이 닿아 있는 동안에는 웹앱의 복사를 막고 **손을 뗀
+//    click 에서만** 허락한다(0817-1). 붙잡은 채로 앱으로 넘어가면 그 click 은 오지
+//    않는다(0817-4) — 그래서 지금까지 아이폰에서는 복사가 한 번도 안 됐다.
+//    HB 가 두 길(붙잡고 넘어가기·복사 없음 / 손 뗄 때 넘어가기·복사 됨) 중 뒤를 골랐다.
+//      · 아이폰·아이패드(안드로이드가 아닌 터치) — 0.5초 붙잡으면 대분류 글자가
+//        '놓으면 시트로' 로 바뀌고, 손을 떼는 click 에서 **본문 전문을 복사하고**
+//        시트 앱으로 넘어간다. 손가락이 10px 넘게 움직이거나 터치가 끊기면 없던 일.
+//        ⚠️ 아이패드를 이름표(UA)로 가리지 않는다 — 맥 행세를 한다 (v26-1010-11).
+//      · 안드로이드 — 예전 그대로 붙잡은 채로 복사하고 넘어간다 (크롬은 허락한다).
+//      · PC — 우클릭. 웹이 그 행으로 정확히 가므로 복사가 필요 없다.
+//    ⚠️ 아이폰에서 여는 것을 다시 타이머로 옮기지 말 것 — 복사가 다시 조용히 실패한다.
+//    (지키는 것: tests/test_sheet_cat_touch.js)
+const _VF_CAT_CUE='놓으면 시트로';
+function _vfCatCue(cat,on){
+  if(on){
+    if(cat._cueText==null)cat._cueText=cat.textContent;
+    cat.textContent=_VF_CAT_CUE;
+  }else if(cat._cueText!=null){
+    cat.textContent=cat._cueText;cat._cueText=null;
+  }
+}
 function _initVfCatSheet(){
   const cat=document.getElementById('vfCat');
   if(!cat||cat._sheetBound)return;
   cat._sheetBound=true;
-  let t=null,held=false;
+  let t=null,held=false,armed=false,miss=null,x0=0,y0=0;
   const stopTimer=()=>{if(t){clearTimeout(t);t=null;}};
+  const disarm=()=>{armed=false;if(miss){clearTimeout(miss);miss=null;}_vfCatCue(cat,false);};
   cat.addEventListener('contextmenu',e=>{
     if(!_isDevAccount())return;
     e.preventDefault();e.stopPropagation();
@@ -22210,27 +22237,39 @@ function _initVfCatSheet(){
     if(!_isDevAccount())return;
     e.stopPropagation();          // 전체화면의 공용 롱터치 메뉴가 뜨지 않게
     _vfCatLongFired=false;held=false;
-    stopTimer();
-    // ⚠️ 화면 전환은 **여기서 곧장** 한다 — HB 가 원한 느낌은 "붙잡고 있으면
-    //    500ms 뒤 바로 앱으로 넘어간다"이다(v26-0817-2). 위치 이동
-    //    자체(location.href)는 제스처 제약이 없어 타이머 안에서도 잘 된다 —
-    //    문제는 그 안에서 **클립보드까지** 같이 하려던 것이었다.
-    //    복사는 아래 click 리스너로 따로 미룬다(0817-1 에서 확인한 대로,
-    //    아이폰은 touchend 가 아니라 click 만 클립보드를 허락한다).
-    //    location.href 로 앱 스킴을 불러도 이 페이지는 백그라운드로 갈 뿐
-    //    살아있어서, 손을 뗄 때 오는 click 이 여전히 정상적으로 발생한다.
-    t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;vfOpenSheetForCat();},500);
+    stopTimer();disarm();
+    const p=e.touches&&e.touches[0];x0=p?p.clientX:0;y0=p?p.clientY:0;
+    t=setTimeout(()=>{
+      t=null;_vfCatLongFired=true;
+      // 안드로이드 — 붙잡은 채로 복사하고 곧장 넘어간다 (v26-0817-2 의 느낌 그대로)
+      if(/Android/i.test(navigator.userAgent||'')){held=true;vfOpenSheetForCat();return;}
+      // 아이폰·아이패드 — 여기서는 '놓으면 시트로' 만 띄운다. 여는 것은 아래 click 에서.
+      if(!_sheetUrlForVerse(_vfCurrentVerse())){showToast('이 말씀은 구글 시트에서 가져온 것이 아니에요');return;}
+      armed=true;_vfCatCue(cat,true);
+    },500);
   },{passive:true});
-  ['touchend','touchmove','touchcancel'].forEach(ev=>
-    cat.addEventListener(ev,stopTimer,{passive:true}));
-  // 클립보드 복사만 여기, **click** 에서 한다 (화면은 이미 타이머에서 넘어갔다).
+  cat.addEventListener('touchmove',e=>{
+    const p=e.touches&&e.touches[0];
+    if(p&&Math.abs(p.clientX-x0)<=10&&Math.abs(p.clientY-y0)<=10)return;   // 손떨림은 봐준다
+    stopTimer();disarm();
+  },{passive:true});
+  cat.addEventListener('touchcancel',()=>{stopTimer();disarm();},{passive:true});
+  cat.addEventListener('touchend',()=>{
+    stopTimer();
+    // '놓으면 시트로' 상태로 뗐는데 click 이 오지 않으면(아이폰이 아주 긴 누름을
+    // 탭으로 안 쳐 줄 때) 복사 없이라도 연다 — 아무 일도 없는 것보다 낫다.
+    if(armed&&!miss)miss=setTimeout(()=>{miss=null;if(!armed)return;disarm();vfOpenSheetForCat();},600);
+  },{passive:true});
   cat.addEventListener('click',()=>{
+    // 손을 뗀 click — 아이폰은 **여기서만** 복사를 허락한다
+    if(armed){disarm();vfOpenSheetForCat(true);return;}
     if(!held)return;
     held=false;
-    _sheetCopyPending();
+    _sheetCopyPending();   // 안드로이드: 넘어간 뒤에라도 click 이 오면 한 번 더
   });
 }
-function vfOpenSheetForCat(){
+// fromClick — 손을 뗀 click 안에서 불렀다 (아이폰·아이패드). 그때만 복사가 된다.
+function vfOpenSheetForCat(fromClick){
   if(!_isDevAccount())return;
   const v=_vfCurrentVerse();
   const t=_sheetUrlForVerse(v);
@@ -22239,15 +22278,33 @@ function vfOpenSheetForCat(){
   //    HB 요청). "행 위치가 아직 정확하지 않다"는 안내도 마찬가지로 뺐다 —
   //    모바일은 애초에 행을 못 짚어 본문을 복사해 주는 쪽으로 바뀌었고
   //    (아래), PC 는 새 탭이 뜨자마자 바로 보이므로 안내가 필요 없다.
+  // 복사할 것은 **본문 전문** — 말씀은 본문, 명제는 명제 글 (HB 2026-10-10, 자르지 말 것).
+  //   명제 글은 실제 시트(455개)에서 줄바꿈이 없고 저마다 자기 행에만 있어
+  //   시트 앱의 찾기에 붙여넣으면 그 행 하나로 간다.
   _sheetPendingCopyText=(v&&v.krText)||'';
+  if(fromClick){_sheetCopyThenGo(t.url);return;}
   // ⚠️ 순서가 중요하다 — **복사를 먼저, 화면 전환을 나중에** (v26-0817-4).
   //    0817-2 는 복사를 click 에만 맡겼는데, 타이머에서 앱으로 넘어가 버리면
   //    그 click 이 아예 오지 않는다(터치가 touchcancel 로 끊긴다). 그래서
   //    "앱 전환은 되는데 복사는 안 되는" 상태가 됐다(HB 재신고).
   //    지금은 손가락이 아직 닿아 있는 이 시점에 한 번 복사하고(keep=true 라
   //    본문을 지우지 않는다), 혹시 click 이 오면 거기서 한 번 더 시도한다.
+  //    (아이폰은 이 길로 오지 않는다 — 위 _initVfCatSheet 주석)
   _sheetCopyPending(true);
   _sheetGo(t.url);
+}
+// 손을 뗀 click 안에서만 부른다. HB 가 붙여넣기를 확인한 시험 페이지 6번과
+// **같은 순서**다 — 동기 복사(_fallbackCopy)가 되면 곧장 열고, 안 되면
+// 비동기 복사가 끝난 뒤에 연다. (복사보다 먼저 열면 포커스를 잃어 복사가 실패한다)
+function _sheetCopyThenGo(url){
+  const txt=_sheetPendingCopyText;_sheetPendingCopyText='';
+  const go=()=>_sheetGo(url);
+  if(!txt){go();return;}
+  const ok=_fallbackCopy(txt);
+  _dlog('[시트복사] click 복사='+ok+'  글자수='+txt.length);
+  if(ok){go();return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(go,go);
+  else go();
 }
 // 시트 열기는 **기기에 따라 정반대로** 간다 (v26-0813-10/11, HB 확인).
 //
@@ -22261,9 +22318,11 @@ function vfOpenSheetForCat(){
 //    ⚠️ 0813-9 에서 이 경로를 웹으로 바꿨다가 모바일이 못 쓰게 됐다. 되돌리지 말 것.
 //    대신 앱이 셀을 못 짚는 것을 메우려고, 본문을 클립보드에 복사해 둔다
 //    (0813-11) — 시트 앱의 찾기에 붙여넣으면 그 구절로 바로 간다.
-//    ⏳ v26-1010-13 — 앱이 받아 주는 링크 모양이 있는지 **lab/sheet-link-lab.html**
-//    로 HB 가 휴대폰에서 시험한다 (docs/ROADMAP.md R-2). 결과를 보기 전에는
-//    이 함수의 모바일 길을 바꾸지 말 것 — 지금 "그 시트까지" 는 된다.
+//    ✅ v26-1010-13 시험 결과 (HB 2026-10-10, lab/sheet-link-lab.html): 링크 모양
+//    다섯 가지(#range · 한 칸 · ?gid · 물음표 · 보통 링크) **모두** 행으로 안 간다 —
+//    앱은 마지막으로 보던 시트·행을 연다. 링크로 행을 짚으려는 시도는 그만둔다.
+//    행으로 가는 길은 '본문 복사 → 앱의 찾기에 붙여넣기' 이고, 아이폰은 그 복사를
+//    손을 뗀 click 에서만 할 수 있다 → _initVfCatSheet 주석 (v26-1010-14).
 //
 // ⚠️ 여는 것(_sheetGo)과 복사하는 것(_sheetCopyPending)이 **왜 갈라져 있는가**
 //    (v26-0817-2). 붙어 있던 때(0813-11)는 모바일에서 복사가 실기기에서

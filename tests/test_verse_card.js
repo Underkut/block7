@@ -853,7 +853,7 @@ console.log('\n시나리오 9 — 화면 연결');
   sc.eq("'=' 켜진 채로", SRC.includes('_vgState.kind=kind;_vgState.val=val;_vgState.group=true;'), true);
   // 개발자 전용 — 대분류 롱터치로 그 말씀의 구글 시트 셀 열기
   sc.eq('시트 링크 만들기', SRC.includes('function _sheetUrlForVerse(v)'), true);
-  sc.eq('개발자만', /function vfOpenSheetForCat\(\)\{\s*if\(!_isDevAccount\(\)\)return;/.test(SRC), true);
+  sc.eq('개발자만', /function vfOpenSheetForCat\(fromClick\)\{\s*if\(!_isDevAccount\(\)\)return;/.test(SRC), true);
   sc.eq('그 줄을 골라 준다', SRC.includes('&range=A${hit.row}:G${hit.row}'), true);   // 0812-7: '강조 문구' G열까지
   // v26-1010-13 — 빈 줄까지 센 진짜 행 번호(_parseCsv 의 _r)를 먼저 쓴다 (tests/test_sheet_row.js)
   sc.eq('시트에서 가져올 때 행 번호를 적어 둔다', SRC.includes('d:_parseVDate(r[5]),row:r._r||i+1'), true);
@@ -1036,7 +1036,7 @@ console.log('\n시나리오 — 시트 열기: 즉시 전환 + 손 뗄 때 복�
   // ⚠️ v26-0817-4 — **복사가 먼저, 전환이 나중**이어야 한다.
   //    0817-2 는 복사를 click 에만 맡겼는데, 타이머에서 앱으로 넘어가면 그 click
   //    자체가 오지 않아(touchcancel) "전환은 되는데 복사는 안 되는" 상태가 됐다.
-  const openFn = SRC.slice(SRC.indexOf('function vfOpenSheetForCat(){'),
+  const openFn = SRC.slice(SRC.indexOf('function vfOpenSheetForCat(fromClick){'),
                            SRC.indexOf('// 시트 열기는 **기기에 따라'));
   sc.eq('붙잡고 있는 동안 한 번 복사한다', openFn.includes('_sheetCopyPending(true);'), true);
   sc.eq('복사가 화면 전환보다 먼저 온다',
@@ -1125,31 +1125,36 @@ console.log('\n시나리오 — Deeper·Even Deeper 토스트 없음');
   sc.eq('Even Deeper 는 여전히 복사 먼저, 열기는 나중', ed.includes('.finally(go);'), true);
 }
 
-// ═══ 롱터치 — 화면은 즉시(타이머), 억제 표시도 그때 같이 (v26-0817-2) ═══
-// ⚠️ 0817-1 에서는 여는 것 자체를 click(뗀 뒤)으로 미뤘는데, 그러면 "붙잡고
-//    있으면 바로 앱으로 넘어가던" 예전 느낌이 사라진다며 HB 가 재신고했다.
-//    화면 전환(location.href)은 클립보드와 달리 제스처 제약이 없으므로,
-//    타이머 콜백(붙잡은 채로) 안에서 곧장 vfOpenSheetForCat() 을 부른다 —
-//    억제 표시(_vfCatLongFired)도 자연히 같은 자리에서 같이 선다.
-//    복사만 click(뗀 뒤)으로 남겨 둔다.
-console.log('\n시나리오 — 롱터치는 타이머에서 곧장 연다');
+// ═══ 롱터치 — 안드로이드는 붙잡은 채로, 아이폰·아이패드는 손을 뗄 때 (v26-1010-14) ═══
+// ⚠️ 0817-2 는 모든 기기에서 타이머(붙잡은 채로) 안에서 곧장 열었다. 그런데 아이폰은
+//    손가락이 닿아 있는 동안 웹앱의 복사를 막고, 앱으로 넘어가면 손을 뗀 click 이
+//    오지 않아(0817-4) **아이폰에서는 복사가 한 번도 안 됐다.** 2026-10-10 HB 가
+//    휴대폰으로 시험해 보니(lab/sheet-link-lab.html) 시트 앱은 링크의 행을 무시하고,
+//    '누르면 복사하고 열기'(click) 는 붙여넣기가 된다 → HB 가 '손 뗄 때 넘어가기' 를 골랐다.
+//    아이폰·아이패드: 타이머는 '놓으면 시트로' 만 띄우고, click 에서 복사하고 연다.
+//    안드로이드: 예전 그대로 타이머에서 곧장 (크롬은 붙잡은 동안에도 복사를 허락한다).
+//    동작 자체는 tests/test_sheet_cat_touch.js 가 손가락 순서대로 흉내 내어 지킨다.
+console.log('\n시나리오 — 롱터치: 안드로이드는 붙잡은 채로, 아이폰은 손을 뗄 때');
 {
   const fn = SRC.slice(SRC.indexOf('function _initVfCatSheet(){'),
                        SRC.indexOf('function vfOpenSheetForCat('));
-  // 타이머 콜백 안에서 억제 표시와 함께 곧장 연다
-  sc.eq('타이머가 억제 표시와 함께 곧장 연다',
-        fn.includes('t=setTimeout(()=>{t=null;held=true;_vfCatLongFired=true;vfOpenSheetForCat();},500);'),
-        true);
-  // click 은 이제 복사만 한다 — vfOpenSheetForCat 을 다시 부르지 않는다
-  sc.eq('click 은 복사만 한다',
-        /addEventListener\('click',\(\)=>\{[\s\S]{0,80}_sheetCopyPending\(\);/.test(fn), true);
-  sc.eq('click 이 vfOpenSheetForCat 을 다시 부르지 않는다',
-        /addEventListener\('click',\(\)=>\{[\s\S]{0,120}vfOpenSheetForCat/.test(fn), false);
-  sc.eq('다 채우지 못했으면 아무 일도 안 한다', fn.includes('if(!held)return;'), true);
+  sc.eq('안드로이드는 타이머에서 곧장 연다',
+        fn.includes("if(/Android/i.test(navigator.userAgent||'')){held=true;vfOpenSheetForCat();return;}"), true);
+  sc.eq("아이폰·아이패드는 타이머에서 '놓으면 시트로' 만",
+        fn.includes('armed=true;_vfCatCue(cat,true);'), true);
+  sc.eq('아이폰·아이패드는 click 에서 연다 (복사가 되는 자리)',
+        fn.includes('if(armed){disarm();vfOpenSheetForCat(true);return;}'), true);
+  sc.eq('안드로이드 click 은 복사만 한 번 더', /if\(!held\)return;\s*held=false;\s*_sheetCopyPending\(\);/.test(fn), true);
+  // 억제 표시(_vfCatLongFired)는 여전히 타이머에서 미리 선다 — vfCatTap 이 click 에서 먼저 돈다
+  sc.eq('억제 표시는 타이머에서', fn.includes('t=null;_vfCatLongFired=true;'), true);
   // vfCatTap 은 여전히 HTML onclick 으로 먼저 등록된다 (등록 순서가 곧 억제 순서다)
   sc.eq('vfCatTap 은 inline onclick', SRC.includes('<div id="vfCat" onclick="vfCatTap()">'), true);
   // 우클릭(contextmenu)은 그 자체가 즉시 발생하는 제스처라 그대로 둔다
   sc.eq('우클릭은 그대로 즉시', fn.includes("cat.addEventListener('contextmenu',e=>{"), true);
+  // click 에서 여는 길은 시험 페이지 6번과 같은 순서 — 동기 복사 먼저, 여는 것은 나중
+  const thenGo = SRC.slice(SRC.indexOf('function _sheetCopyThenGo(url){'), SRC.indexOf('// 시트 열기는 **기기에 따라'));
+  sc.eq('click 길은 복사 먼저, 열기 나중',
+        thenGo.indexOf('_fallbackCopy(txt)') > 0 && thenGo.indexOf('_fallbackCopy(txt)') < thenGo.indexOf('if(ok){go();return;}'), true);
 }
 
 sc.done();
