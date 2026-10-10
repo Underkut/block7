@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-16  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1010-17  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-16";
+const APP_VERSION = "v. 26-1010-17";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -20816,6 +20816,9 @@ function _verseFullRender(){
   _vfSyncCounts();
   clearTimeout(_verseFullRender._prepTimer);
   _verseFullRender._prepTimer=setTimeout(()=>{if(_verseFullIsOpen())_vfPrepareNext();},60);
+  // 명제에 1초 머물면 그 시트를 미리 읽어 둔다 — 길게 눌러 시트로 갈 때 '명제 DB' 탭으로 곧장 (R-3c)
+  clearTimeout(_verseFullRender._warmTimer);
+  _verseFullRender._warmTimer=setTimeout(()=>{if(_verseFullIsOpen())_sheetMainWarm(_vfCurrentVerse());},1000);
 }
 // ── 장절 줄 ───────────────────────────────────────────────────────────
 // 말씀은 예전 그대로 한 줄. 명제는 **설교 본문이 셋까지** 들어오는데,
@@ -22207,9 +22210,11 @@ function vfCatTap(){
 //    click 에서만** 허락한다(0817-1). 붙잡은 채로 앱으로 넘어가면 그 click 은 오지
 //    않는다(0817-4) — 그래서 지금까지 아이폰에서는 복사가 한 번도 안 됐다.
 //    HB 가 두 길(붙잡고 넘어가기·복사 없음 / 손 뗄 때 넘어가기·복사 됨) 중 뒤를 골랐다.
-//      · 아이폰·아이패드(안드로이드가 아닌 터치) — 0.5초 붙잡으면 대분류 글자가
-//        '놓으면 시트로' 로 바뀌고, 손을 떼는 click 에서 **본문 전문을 복사하고**
-//        시트 앱으로 넘어간다. 손가락이 10px 넘게 움직이거나 터치가 끊기면 없던 일.
+//      · 아이폰·아이패드(안드로이드가 아닌 터치) — 0.5초 붙잡으면 화면 가운데에
+//        '놓으면 …' 토스트가 뜨고(v26-1010-16), 손을 떼는 click 에서 **본문 전문을 복사하고**
+//        시트 앱으로 넘어간다. 토스트가 뜬 **뒤에** 손가락이 10px 넘게 움직이거나 터치가
+//        끊기면 없던 일. (0.5초 **전에** 조금 움직였다 떼면 브라우저가 탭으로 치는 한 평범한
+//        탭 — 타일뷰 — 이다. 일반 사용자와 같은 동작이라 막지 않는다. Codex 리뷰 PR #551)
 //        ⚠️ 아이패드를 이름표(UA)로 가리지 않는다 — 맥 행세를 한다 (v26-1010-11).
 //      · 안드로이드 — 예전 그대로 붙잡은 채로 복사하고 넘어간다 (크롬은 허락한다).
 //      · PC — 우클릭. 웹이 그 행으로 정확히 가므로 복사가 필요 없다.
@@ -22247,10 +22252,22 @@ function _initVfCatSheet(){
       // 안드로이드 — 붙잡은 채로 복사하고 곧장 넘어간다 (v26-0817-2 의 느낌 그대로)
       if(/Android/i.test(navigator.userAgent||'')){held=true;vfOpenSheetForCat();return;}
       // 아이폰·아이패드 — 여기서는 '놓으면 시트로' 만 띄운다. 여는 것은 아래 click 에서.
-      if(!_sheetUrlForVerse(_vfCurrentVerse())){showToast('이 말씀은 구글 시트에서 가져온 것이 아니에요');return;}
+      const cv=_vfCurrentVerse(),ct=_sheetUrlForVerse(cv);
+      if(!ct){showToast('이 말씀은 구글 시트에서 가져온 것이 아니에요');return;}
+      // 명제면 붙잡은 동안 시트를 미리 읽어 둔다 — 손을 뗄 때 '명제 DB' 탭으로 넘기려고 (R-3c)
+      if(cv&&cv.pid&&ct.c)_sheetMainLoad(ct.c);
       armed=true;_vfCatCue(true);
     },500);
   },{passive:true});
+  // PC — 우클릭하려면 커서가 먼저 대분류에 올라온다. 그때 시트를 미리 읽어 두면
+  // 우클릭 때는 대개 주소가 이미 있어 예전처럼 곧장 연다 (R-3c).
+  cat.addEventListener('mouseenter',()=>{
+    if(!_isDevAccount()||!_sheetIsPc())return;
+    const cv=_vfCurrentVerse();
+    if(!cv||!cv.pid)return;
+    const ct=_sheetUrlForVerse(cv);
+    if(ct&&ct.c)_sheetMainLoad(ct.c);
+  });
   cat.addEventListener('touchmove',e=>{
     const p=e.touches&&e.touches[0];
     if(p&&Math.abs(p.clientX-x0)<=10&&Math.abs(p.clientY-y0)<=10)return;   // 손떨림은 봐준다
@@ -22285,9 +22302,10 @@ function vfOpenSheetForCat(fromClick){
   //   명제 글은 실제 시트(455개)에서 줄바꿈이 없고 저마다 자기 행에만 있어
   //   시트 앱의 찾기에 붙여넣으면 그 행 하나로 간다.
   _sheetPendingCopyText=(v&&v.krText)||'';
-  if(fromClick){_sheetCopyThenGo(t.url);return;}
-  // PC 의 명제는 늘 '명제 DB' 탭의 행으로 — 그 순간 시트를 새로 읽는다 (아래 _sheetPropMainUrl)
-  if(v&&v.pid&&t.c&&_sheetIsPc()){_sheetOpenPropMain(v,t);return;}
+  // 명제는 어느 기기든 늘 '명제 DB' 탭으로 연다 (v26-1010-16 PC · 1010-17 휴대폰 — 아래 _sheetMainBuild)
+  const prop=(v&&v.pid&&t.c)?v:null;
+  if(fromClick){_sheetCopyThenGo(t,prop);return;}
+  if(prop&&_sheetIsPc()){_sheetOpenPropMain(v,t);return;}
   // ⚠️ 순서가 중요하다 — **복사를 먼저, 화면 전환을 나중에** (v26-0817-4).
   //    0817-2 는 복사를 click 에만 맡겼는데, 타이머에서 앱으로 넘어가 버리면
   //    그 click 이 아예 오지 않는다(터치가 touchcancel 로 끊긴다). 그래서
@@ -22296,14 +22314,16 @@ function vfOpenSheetForCat(fromClick){
   //    본문을 지우지 않는다), 혹시 click 이 오면 거기서 한 번 더 시도한다.
   //    (아이폰은 이 길로 오지 않는다 — 위 _initVfCatSheet 주석)
   _sheetCopyPending(true);
+  if(prop){_sheetGoMain(v,t);return;}
   _sheetGo(t.url);
 }
 // 손을 뗀 click 안에서만 부른다. HB 가 붙여넣기를 확인한 시험 페이지 6번과
 // **같은 순서**다 — 동기 복사(_fallbackCopy)가 되면 곧장 열고, 안 되면
 // 비동기 복사가 끝난 뒤에 연다. (복사보다 먼저 열면 포커스를 잃어 복사가 실패한다)
-function _sheetCopyThenGo(url){
+// v — 명제면 넘긴다: 복사는 지금(동기로) 하고, 여는 것은 '명제 DB' 주소로 (_sheetGoMain).
+function _sheetCopyThenGo(t,v){
   const txt=_sheetPendingCopyText;_sheetPendingCopyText='';
-  const go=()=>_sheetGo(url);
+  const go=()=>{if(v)_sheetGoMain(v,t);else _sheetGo(t.url);};
   if(!txt){go();return;}
   const ok=_fallbackCopy(txt);
   _dlog('[시트복사] click 복사='+ok+'  글자수='+txt.length);
@@ -22317,39 +22337,100 @@ function _sheetIsPc(){
   if(/Android/i.test(ua))return false;
   return !(/iP(hone|ad|od)/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1));
 }
-// ── PC 에서 명제를 열 때 — 늘 '명제 DB' 탭의 행으로 (v26-1010-16, HB) ──
+// ── 명제는 늘 '명제 DB' 탭으로 (v26-1010-16 PC · v26-1010-17 휴대폰, HB) ──
 // 앱은 명제마다 **마지막으로 받아 온 탭** 의 행(gid·row)만 기억한다. 두 탭(명제 DB ·
-// 성도 공유용)에 다 있는 명제는 성도 공유용을 나중에 받아 그 탭으로 갔다 — HB: "갈 필요
-// 없는 탭이라 불편하다. 늘 명제 DB 로". 그래서 여는 **그 순간 그 모음의 시트를 새로 읽어**,
-// 그 명제가 있는 탭 가운데 **앱이 읽는 칸이 가장 많은 탭** 을 고른다 (명제 DB 8칸 ↔ 성도 공유용 4칸).
-// ⚠️ 저장은 한 글자도 안 바뀐다 — 읽기만 한다. 탭마다 행을 적어 두려면 명제 전부에 칸을 새로
-//    붙여야 하고(저장 모양·병합·동기화 집계가 다 바뀐다), gid 는 휴지통 판정(그 시트가 맡은 것)에도
-//    쓰여 가리키는 탭을 바꿀 수 없다 (docs/ROADMAP.md R-3b).
-//    덤 — 그사이 시트에 줄을 끼우거나 정렬해도 **늘 지금 행** 으로 간다.
-// 모바일은 하지 않는다 — 시트 앱이 탭·행을 무시한다 (R-2). 말씀도 그대로다.
-// (지키는 것: tests/test_sheet_prop_main.js)
-async function _sheetPropMainUrl(v,c){
+// 성도 공유용)에 다 있는 명제(실제 시트 455개 중 261개)는 성도 공유용을 나중에 받아
+// 그 탭으로 갔다 — HB: "갈 필요 없는 탭이라 불편하다. 늘 명제 DB 로".
+// 그래서 그 모음의 시트를 **새로 읽어**, 명제마다 그 명제가 있는 탭 가운데
+// **앱이 읽는 칸이 가장 많은 탭**(명제 DB 8칸 ↔ 성도 공유용 4칸)의 행을 고른다.
+//  · ⚠️ v26-1010-16 은 PC 만 이렇게 했다. 휴대폰은 시트 앱이 행을 무시하니 탭도
+//    무시하리라 여겼는데 아니었다 — 앱은 **탭 번호(gid)는 따른다** (HB "아직도 성도
+//    공유용"). 그래서 휴대폰도 '명제 DB' 탭 번호로 넘긴다 (행은 앱이 무시하지만 그대로 둔다).
+//  · 읽기는 **누르고 있는 동안 미리** 시작한다 — 아이폰은 '놓으면…' 토스트가 뜰 때,
+//    안드로이드는 0.5초에, PC 는 커서를 대분류에 올릴 때. 읽은 것은 모음마다 1분 들고 있다.
+//  · ⚠️ 저장은 한 글자도 안 바뀐다 — 읽기만 한다. 탭마다 행을 적어 두려면 명제 전부에
+//    칸을 새로 붙여야 하고(저장 모양·병합·동기화 집계가 다 바뀐다), gid 는 휴지통
+//    판정(그 시트가 맡은 것)에도 쓰여 가리키는 탭을 바꿀 수 없다 (docs/ROADMAP.md R-3b·3c).
+//  · 덤 — 그사이 시트에 줄을 끼우거나 정렬해도 **지금 행** 으로 간다.
+// 말씀은 그대로다. (지키는 것: tests/test_sheet_prop_main.js)
+// 들고 있는 시간 — PC 는 1분 (행으로 가므로, 그사이 시트에 줄을 끼웠으면 새로 읽어야 한다).
+// 휴대폰은 10분 — 시트 앱은 행은 무시하고 **탭 번호만** 따르므로 행이 좀 낡아도 탈이 없고,
+// 명제를 띄울 때마다 미리 읽으므로(_sheetMainWarm) 짧게 잡으면 데이터만 쓴다.
+function _sheetMainTtl(){return _sheetIsPc()?60000:600000;}
+const _sheetMainCache=new Map();   // 모음 id → {at, map(명제 ID → 주소)|null, p(Promise)}
+async function _sheetMainBuild(c){
   const links=((c&&c.google)||[]).filter(g=>g&&g.url&&!/\/spreadsheets\/d\/e\//.test(g.url));
-  if(!v||!v.pid||!links.length)return null;
   const got=await Promise.all(links.map(g=>_fetchSheetCsv(g.url).then(r=>({g,r}),()=>({g,r:null}))));
-  let best=null;
+  const best=new Map();   // 명제 ID → {g,row,score}
+  let read=0;
   got.forEach(({g,r})=>{
     if(!r||r.err||!r.text)return;
     const rows=_parseCsv(r.text);
     if(!rows.length||!_isPropSheet(rows[0]||[]))return;   // 설교 목록 · 말씀 시트는 건너뛴다
-    const it=_propRowsToItems(rows).find(x=>x.pid===v.pid);
-    if(!it||!it.row)return;
-    const score=Object.values(it._has||{}).filter(Boolean).length;
-    if(!best||score>best.score)best={g,row:it.row,score};   // 같으면 먼저 연결한 탭
+    read++;
+    _propRowsToItems(rows).forEach(it=>{
+      if(!it.pid||!it.row)return;
+      const score=Object.values(it._has||{}).filter(Boolean).length;
+      const b=best.get(it.pid);
+      if(!b||score>b.score)best.set(it.pid,{g,row:it.row,score});   // 같으면 먼저 연결한 탭
+    });
   });
-  if(!best)return null;
-  const idM=best.g.url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if(!idM)return null;
-  const gid=(best.g.url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
-  return`https://docs.google.com/spreadsheets/d/${idM[1]}/edit#gid=${gid}&range=A${best.row}:G${best.row}`;
+  if(!read)throw new Error('명제 시트를 하나도 못 읽었어요');
+  const map=new Map();
+  best.forEach((b,pid)=>{
+    const idM=b.g.url.match(/\/d\/([a-zA-Z0-9-_]+)/);if(!idM)return;
+    const gid=(b.g.url.match(/[#&?]gid=(\d+)/)||[])[1]||'0';
+    map.set(pid,`https://docs.google.com/spreadsheets/d/${idM[1]}/edit#gid=${gid}&range=A${b.row}:G${b.row}`);
+  });
+  return map;
 }
-// 새 탭은 **누른 그 자리에서 먼저** 연다 (나중에 열면 팝업 차단에 걸린다). 다 읽으면 그 주소로 넘긴다.
+// 읽기를 시작해 둔다 — 1분 안에 읽은 것이 있으면 그것을, 읽는 중이면 그 읽기를 쓴다.
+function _sheetMainLoad(c){
+  if(!c||!c.id)return null;
+  const hit=_sheetMainCache.get(c.id);
+  if(hit&&Date.now()-hit.at<_sheetMainTtl())return hit;
+  const ent={at:Date.now(),map:null,p:null};
+  ent.p=_sheetMainBuild(c).then(m=>{ent.map=m;return m;},
+    ()=>{if(_sheetMainCache.get(c.id)===ent)_sheetMainCache.delete(c.id);return null;});   // 실패는 들고 있지 않는다
+  _sheetMainCache.set(c.id,ent);
+  return ent;
+}
+// 1분 안에 **다 읽어 둔** 표(명제 ID → '명제 DB' 주소) — 아직 읽는 중이거나 없으면 null
+function _sheetMainReady(t){
+  const e=t&&t.c&&_sheetMainCache.get(t.c.id);
+  if(!e||!e.map||Date.now()-e.at>=_sheetMainTtl())return null;
+  return e.map;
+}
+// 휴대폰 — 명제를 전체화면에 띄우면(1초 머물면) 그 모음의 시트를 미리 읽어 둔다 (R-3c).
+// 손을 뗄 때 이미 '명제 DB' 주소가 있어야 **그 click 안에서** 곧장 넘어간다. 손을 뗀 뒤
+// 1~2초 지나서 넘기면 아이폰은 그 이동을 사용자가 한 것으로 보지 않아 막거나 '열까요?' 를
+// 물을 수 있다. 붙잡을 때 읽기 시작하는 것(위 touchstart)도 그대로 둔다 — 미리 읽기가
+// 실패했거나 10분이 지났을 때의 두 번째 기회다. PC 는 커서를 올릴 때 읽는다(mouseenter).
+function _sheetMainWarm(v){
+  try{
+    if(!v||!v.pid||!_isDevAccount()||_sheetIsPc())return;
+    const t=_sheetUrlForVerse(v);
+    if(t&&t.c)_sheetMainLoad(t.c);
+  }catch(e){}
+}
+// 휴대폰 — '명제 DB' 주소로 시트 앱을 연다. 아직 읽는 중이면 '시트를 여는 중…' 을 띄우고
+// 길어야 2.5초 기다린다. 못 읽거나 그 명제가 시트에 없으면 기억해 둔 주소로.
+function _sheetGoMain(v,t){
+  const ready=_sheetMainReady(t);
+  if(ready){_sheetGo(ready.get(v.pid)||t.url);return;}   // 다 읽었다 — 시트에 없으면 기억해 둔 주소로
+  const ent=_sheetMainLoad(t.c);
+  if(!ent){_sheetGo(t.url);return;}
+  showBusyToast('시트를 여는 중');
+  let done=false;
+  const go=u=>{if(done)return;done=true;clearTimeout(late);hideBusyToast();_sheetGo(u);};
+  const late=setTimeout(()=>go(t.url),2500);
+  ent.p.then(m=>go((m&&m.get(v.pid))||t.url),()=>go(t.url));
+}
+// PC — 커서를 올릴 때 미리 읽어 두었으면 예전처럼 곧장 연다. 못 읽었으면 새 탭을
+// **누른 그 자리에서 먼저** 띄워 두고(나중에 띄우면 팝업 차단에 걸린다) 다 읽으면 그 주소로.
 function _sheetOpenPropMain(v,t){
+  const ready=_sheetMainReady(t);
+  if(ready){_sheetGo(ready.get(v.pid)||t.url);return;}
   let w=null;
   try{w=window.open('','_blank');}catch(e){}
   if(!w){_sheetGo(t.url);return;}          // 새 탭이 막히면 예전처럼 (기억해 둔 탭·행)
@@ -22362,7 +22443,9 @@ function _sheetOpenPropMain(v,t){
     try{w.location.replace(u);}catch(e){try{w.location.href=u;}catch(_){}}
   };
   const late=setTimeout(()=>go(t.url),8000);   // 8초 넘게 못 읽으면 기억해 둔 주소로
-  _sheetPropMainUrl(v,t.c).then(u=>go(u||t.url),()=>go(t.url));
+  const ent=_sheetMainLoad(t.c);
+  if(!ent){go(t.url);return;}
+  ent.p.then(m=>go((m&&m.get(v.pid))||t.url),()=>go(t.url));
 }
 // 시트 열기는 **기기에 따라 정반대로** 간다 (v26-0813-10/11, HB 확인).
 //
