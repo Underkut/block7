@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- 기도노트 v. 26-1010-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="기도노트">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<title>기도노트</title>
+<script>
+// ⚠️ 기도노트의 집은 sweeter.my/pray/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
+//    block7.my/pray/ 에도 같은 파일이 생기는데, 기기 저장 칸은 주소마다 따로라
+//    거기서 쓰면 기록이 갈라진다 → 그 주소로 열리면 sweeter.my 로 넘긴다.
+if (/^(www\.)?block7\.my$/.test(location.hostname)) {
+  location.replace('https://sweeter.my/pray/' + location.search + location.hash);
+}
+const APP_VERSION = 'v. 26-1010-1';
+</script>
+<style>
+html,body{margin:0;height:100%;background:#0d0e10;color:#ebe7df;font-family:-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif}
+.wrap{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;box-sizing:border-box;text-align:center}
+img{width:96px;height:96px;border-radius:22px}
+h1{margin:0;font-weight:300;font-size:26px;letter-spacing:-.01em}
+p{margin:0;color:#9a968e;font-size:14px;line-height:1.7}
+small{color:#6f6b64;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img src="icon.png" alt="">
+  <h1>기도노트</h1>
+  <p>곧 문을 엽니다.</p>
+  <small id="ver"></small>
+</div>
+<script>
+document.getElementById('ver').textContent = APP_VERSION;
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+}
+</script>
+</body>
+</html>
