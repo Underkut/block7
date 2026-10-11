@@ -11,6 +11,7 @@
 //  ⑤ 우선순위 표(Sheet2 모양) 가져오기 — 다시 가져와도 겹치지도 지우지도 않는다
 //  ⑥ 기도 지도(날짜 탭 모양) 가져오기 — **빈 줄이 묶음의 경계**다 (2026-10-10 실제로 깨졌던 곳)
 //  ⑦ 지우기 · 내 순서 · 판 비교 · 백업 · 테마가 BLOCK7 과 같은지
+//  ⑩ 표시 색 잇기 — 소속에 이은 색은 칠하지 않아도 보이고, 직접 칠한 색이 먼저
 //  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -26,7 +27,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -345,6 +346,28 @@ const MAPCSV = [
   sc.eq('⑨ 같은 이름의 기도 항목은 다시 만들지 않는다', db.T.filter(t => t.name === '교회 부흥').length, 1);
   g.lines.push(A.makeEntry(db, '넷', ''));
   sc.eq('⑨ 나중에 = 구분 없이', db.T.find(t => t.name === '넷').cat, '');
+}
+{
+  // ⑩ 표시 색 잇기
+  const db = A.seedDB();
+  const vis = db.cats.find(c => c.name === '방문자');
+  const g = A.newGroup('중고등부'), k = A.newGroup('중고등부 방문'); k.parent = g.id; db.G.push(g, k);
+  k.lines.push(A.parseLineText(db, '하나 / 둘'));
+  const one = db.T.find(t => t.name === '하나'), two = db.T.find(t => t.name === '둘');
+  const c = A.markLinkCandidates(db, '방문');
+  sc.eq('⑩ 쓰는 글로 소속 후보를 찾는다 (구분 · 서브 그룹)', c.map(x => x.kind.split(' ·')[0] + ':' + x.name), ['구분:방문자', '서브 그룹:중고등부 방문']);
+  db.markLinks.orange = { t: 'group', id: k.id };
+  sc.eq('⑩ 서브 그룹에 이으면 그 사람들이 주황', [A.markOf(db, one), A.markOf(db, two)], ['orange', 'orange']);
+  two.mark = 'green';
+  sc.eq('⑩ 직접 칠한 색이 먼저', A.markOf(db, two), 'green');
+  db.markLinks.yellow = { t: 'cat', id: vis.id }; one.cat = vis.id;
+  sc.eq('⑩ 두 색에 걸리면 앞 색(색 차례)', A.markOf(db, one), 'orange');
+  db.markLinks.red = { t: 'cat', id: vis.id };
+  const back = A.normDB(JSON.parse(JSON.stringify(db)));
+  sc.eq('⑩ 저장했다 되살려도 남고, 빨강 · 회색은 잇지 않는다', [!!back.markLinks.orange, !!back.markLinks.yellow, !!back.markLinks.red], [true, true, false]);
+  const s = A.makeSnap(db, null, '2026-10-11', '');
+  sc.eq('⑩ 판에는 그때 보이던 색으로 얼린다', s.P[one.id].mark, 'orange');
+  sc.eq('⑩ 이은 소속 이름', A.markLinkName(db, db.markLinks.orange), '중고등부 방문');
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
