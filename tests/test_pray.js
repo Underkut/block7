@@ -27,7 +27,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -382,6 +382,21 @@ const MAPCSV = [
   sc.eq('⑨-2 이미 구분이 있는 사람은 그대로 (넷은 첫 구분 그대로)', [db.T.find(t => t.name === '넷').cat, db.T.find(t => t.name === '다섯').cat], [P.id, P.id]);
   const l3 = A.parseLineText(db, '여섯 / 일곱'); g.lines.push(l3); A.fillLineCats(db, l3, g);
   sc.eq('⑨-2 아무도 없으면 이 그룹에서 많이 쓴 구분', db.T.find(t => t.name === '여섯').cat, P2.id);
+}
+{
+  // ⑨-3 손으로 넣는 항목 — '/' 로만 나누고 띄어쓰기는 한 이름 (HB 2026-10-12)
+  const db = A.emptyDB();
+  const l = A.parseEntryText(db, '초등 바닥 / 간판 전기');
+  sc.eq('⑨-3 띄어쓰기는 한 이름 · / 로 두 항목', [l.segs.length, ...l.segs.map(s => db.T.find(t => t.id === s[0]).name)], [2, '초등 바닥', '간판 전기']);
+  sc.eq('⑨-3 쉼표는 예전처럼 메모 줄', A.parseEntryText(db, '교회, 나라').text, '교회, 나라');
+  sc.eq('⑨-3 같은 이름이면 같은 카드', A.parseEntryText(db, '초등 바닥').segs[0][0], l.segs[0][0]);
+  sc.eq('⑨-3 시트 가져오기 규칙(parseLineText)은 그대로 — 한 칸 한 가정', A.parseLineText(db, '아빠 이상연 세중').segs[0].length, 2);
+  // 예전 규칙으로 갈라져 생긴 카드 치우기
+  const g = A.newGroup('성전'); db.G.push(g);
+  const old = A.parseLineText(db, '유리 교체'); g.lines.push(old);
+  const keep = db.T.find(t => t.name === '유리'); keep.topics.push(A.newTopic('기도제목 있음'));
+  const n = A.parseEntryText(db, '유리 교체'); n.id = old.id; g.lines[0] = n;
+  sc.eq('⑨-3 고친 뒤 안 쓰이는 카드만 치운다 (기도제목 있는 카드는 남김)', [A.dropOrphans(db, A.groupPids({ lines: [old] })), !!db.T.find(t => t.name === '유리'), !!db.T.find(t => t.name === '교체')], [['교체'], true, false]);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
