@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-2';
+const APP_VERSION = 'v. 26-1012-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -627,6 +627,34 @@ function parseLineText(db, text) {
   if (!line.segs.length) { line.text = s; }
   return line;
 }
+// ── 손으로 넣는 항목 글 (HB 2026-10-12) ──
+// **'/' 로만 나눈다. 띄어쓰기는 한 이름 안의 것**이다 — '초등 바닥' · '간판 전기' 는 항목 하나.
+// (시트 가져오기 · 붙여넣기는 parseLineText 그대로 — 시트에서는 '아빠 이상연 세중' 처럼 한 칸에 한 가정 여러 명을 띄어 썼다)
+// 쉼표가 있으면 예전처럼 메모 줄. 한 조각이 40자를 넘으면 이름이 아니라 메모로 본다.
+function parseEntryText(db, text) {
+  const s = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const line = { id: uid(), segs: [], r: {}, text: '' };
+  if (/[,，·]/.test(s)) { line.text = s; return line; }
+  const parts = s.split('/').map(x => x.trim()).filter(Boolean);
+  if (!parts.length || parts.some(x => x.length > 40)) { line.text = s; return line; }
+  parts.forEach(nm => { const p = db.T.find(t => t.name === nm) || personOf(db, nm); line.segs.push([p.id]); });
+  return line;
+}
+// 고친 뒤 아무 데도 안 쓰이는 사람 카드를 치운다 — 예전 규칙에서 '초등 바닥' 이 '초등' · '바닥' 둘로 갈라져 생긴 것 같은.
+// ⚠️ 기도제목 · 메모 · 기록 · 색 · 긴급/중요 · 다른 항목 어느 하나라도 있으면 남긴다(구분은 자동으로 붙은 것이라 안 본다).
+function dropOrphans(db, ids) {
+  const used = new Set(); db.G.forEach(g => groupPids(g).forEach(p => used.add(p)));
+  const logged = new Set(); Object.values(db.log || {}).forEach(L => (L.d || []).forEach(x => logged.add(x)));
+  const gone = [];
+  [...new Set(ids || [])].forEach(id => {
+    const t = findT(db, id);
+    if (!t || t.kind !== 'person' || used.has(id) || logged.has(id)) return;
+    if ((t.topics || []).length || t.memo || t.note || t.mark || t.last || t.u != null || t.i != null || (t.days || []).length) return;
+    db.T = db.T.filter(x => x !== t); gone.push(t.name);
+  });
+  return gone;
+}
 // 사람 이름만으로 된 글인가 (parseLineText 처럼 사람 카드를 만들지 않고 보기만 한다)
 function looksLikeNames(text) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
@@ -668,7 +696,7 @@ function makeEntry(db, text, catId) {
     if (!t.cat) t.cat = c.id;
     return { id: uid(), segs: [[t.id]], r: {}, text: '' };
   }
-  const l = parseLineText(db, s);
+  const l = parseEntryText(db, s);
   if (l && c) linePids(l).forEach(pid => { const p = findT(db, pid); if (p && p.kind === 'person') p.cat = c.id; });
   return l;
 }
@@ -2739,7 +2767,7 @@ ACT['pick-parent'] = el => {
 ACT['add-line'] = el => { const inp = el.parentElement.querySelector('input'); addLine(el.dataset.id, inp); };
 function addLine(gid, inp) {
   const g = findG(DB, gid); const v = (inp.value || '').trim(); if (!g || !v) return;
-  const l = parseLineText(DB, v); if (l) g.lines.push(l);
+  const l = parseEntryText(DB, v); if (l) { g.lines.push(l); fillLineCats(DB, l, g); }
   save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="line"]'); if (n) n.focus(); }, 30);
 }
 ACT['paste-lines'] = el => askText('여러 항목 붙여넣기', '', '한 줄에 한 가정씩\n예) 김은중 / 김민욱 / 아빠 이상연 세중', v => {
@@ -2750,12 +2778,12 @@ ACT['paste-lines'] = el => askText('여러 항목 붙여넣기', '', '한 줄에
 ACT['edit-line'] = el => {
   const g = findG(DB, el.dataset.gid); if (!g) return; const l = g.lines.find(x => x.id === el.dataset.id); if (!l) return;
   askText('항목 고치기', lineToText(DB, l), '이름 — / 로 나눌 수 있어요', v => {
-    const n = parseLineText(DB, v);
+    const n = parseEntryText(DB, v);
     if (!n) { withUndo('항목을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }); return; }
     // 인도 표시는 이름이 그대로면 남긴다
     Object.keys(l.r || {}).forEach(pid => { if (l.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
-    n.id = l.id; if (l.link) n.link = l.link; const k = g.lines.indexOf(l); g.lines[k] = n; syncLine(DB, n); save(); refresh();
-  }, { del: () => withUndo('항목을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }), hint: '\'아빠 이상연\' 처럼 앞에 붙인 말은 이름 옆에 작게 나옵니다. 이름이 같으면 같은 사람입니다.' });
+    n.id = l.id; if (l.link) n.link = l.link; const k = g.lines.indexOf(l); g.lines[k] = n; fillLineCats(DB, n, g); syncLine(DB, n); dropOrphans(DB, linePids(l)); save(); refresh();
+  }, { del: () => withUndo('항목을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }), hint: '/ 로 나누면 여러 항목, 띄어쓰기는 한 이름 안의 것입니다 (\'초등 바닥\' = 항목 하나). 이름이 같으면 같은 사람입니다.' });
 };
 
 // 지우기 (스와이프)
@@ -3042,10 +3070,10 @@ function mapCommit(val) {
     if (E.isNew) { g.lines.splice(i, 1); UI.sel = 'g:' + g.id; save(); return false; }
     return true;   // 이미 있던 줄을 비우고 Enter 하면 그대로 둔다 (지우기는 ⌫)
   }
-  const old = g.lines[i], n = parseLineText(DB, v);
+  const old = g.lines[i], n = parseEntryText(DB, v);
   if (!n) return true;
   Object.keys(old.r || {}).forEach(pid => { if (old.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
-  n.id = old.id; if (old.link) n.link = old.link; g.lines[i] = n; fillLineCats(DB, n, g); syncLine(DB, n); save(); return true;
+  n.id = old.id; if (old.link) n.link = old.link; g.lines[i] = n; fillLineCats(DB, n, g); syncLine(DB, n); dropOrphans(DB, linePids(old)); save(); return true;
 }
 function mapEditKey(e, el) {
   if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중 Enter 는 글자 확정용
