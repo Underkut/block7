@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-1';
+const APP_VERSION = 'v. 26-1012-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1970,7 +1970,8 @@ function mapCards(src, opt) {
   // 줄은 이름 사이 빈 자리를 눌러도 같은 일(고치기)을 하도록 data-a 를 단다 — 이름 단추가 더 가까우면 그쪽이 받는다
   const selAttr = k => src.live ? ' data-sel="' + k + '"' + (k[0] === 'l' ? ' data-a="open"' : '') + (UI.sel === k ? ' aria-selected="true"' : '') : '';
   const selCls = k => src.live && UI.sel === k ? ' sel' : '';
-  const editor = (k, v, ph) => '<input class="mapin" data-mapin="' + k + '" value="' + esc(v) + '" placeholder="' + esc(ph) + '" autocomplete="off" spellcheck="false" enterkeyhint="done">';
+  // 새로 만드는 칸은 자판 Enter 자리에 '다음(>)' — 눌러서 같은 자리에 하나 더 이어 쓴다. 고치는 칸은 '완료(✓)' (HB 2026-10-12)
+  const editor = (k, v, ph) => '<input class="mapin" data-mapin="' + k + '" value="' + esc(v) + '" placeholder="' + esc(ph) + '" autocomplete="off" spellcheck="false" enterkeyhint="' + (UI.mapEdit && UI.mapEdit.isNew ? 'next' : 'done') + '">';
   const linkN = {};
   src.G.forEach(g => (g.lines || []).forEach(l => { if (l.link) linkN[l.link] = (linkN[l.link] || 0) + 1; }));
   const lk = l => l.link && linkN[l.link] > 1 ? '<span class="lk" title="연동된 항목">' + ico('link') + '</span>' : '';
@@ -3056,6 +3057,14 @@ function mapEditKey(e, el) {
     mapRender(); return;
   }
   if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); const kept = mapCommit(el.value); mapRender(); if (kept) mapOpen(k); return; }
+  // 휴대폰 · 태블릿: 새로 만드는 칸에서 Enter(자판의 '다음') = Tab 처럼 같은 자리에 하나 더. 빈 채로 누르면 마친다.
+  // PC(마우스)는 예전대로 Enter = 마침, Tab = 하나 더.
+  if (e.key === 'Enter' && UI.mapEdit && UI.mapEdit.isNew && PT !== 'mouse') {
+    e.preventDefault();
+    const kept = mapCommit(el.value);
+    if (kept) mapAddSibling(k); else mapRender();
+    return;
+  }
   if (e.key === 'Enter') { e.preventDefault(); mapCommit(el.value); mapRender(); return; }
   if (e.key === 'Tab' && !e.shiftKey) {
     e.preventDefault();
