@@ -11,6 +11,7 @@
 //  ⑤ 우선순위 표(Sheet2 모양) 가져오기 — 다시 가져와도 겹치지도 지우지도 않는다
 //  ⑥ 기도 지도(날짜 탭 모양) 가져오기 — **빈 줄이 묶음의 경계**다 (2026-10-10 실제로 깨졌던 곳)
 //  ⑦ 지우기 · 내 순서 · 판 비교 · 백업 · 테마가 BLOCK7 과 같은지
+//  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -24,7 +25,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -281,6 +282,49 @@ const MAPCSV = [
   sc.eq('⑦ ⭐ 테마 목록이 BLOCK7 과 글자까지 같다', cut(HTML) === cut(b7) && cut(HTML).length > 1000, true);
   sc.eq('⑦ 테마 17벌 · 라이트 다크 토큰 계산', [A.THEME_PRESETS.length >= 17, !!A._themeTokens(A.themeById('22'), 'light')['--bg']], [true, true]);
   sc.eq('⑦ 저장 칸 이름은 pray.v1 (BLOCK7 · Sweeter 칸과 겹치지 않는다)', A.PRAY_KEY, 'pray.v1');
+}
+{
+  // ⑧ 작은 묶음 연동
+  const db = A.emptyDB();
+  const a = A.newGroup('가조', '#111'), b = A.newGroup('나조', '#222'); db.G.push(a, b);
+  const s = A.newGroup('기도팀', '#111'); s.parent = a.id; db.G.push(s);
+  s.lines.push(A.parseLineText(db, '하나 둘'));
+  sc.eq('⑧ 연동하면 두 큰 묶음 밑에 같은 작은 묶음', [A.linkSub(db, s.id, b.id), A.kidsOf(db, a.id).map(g => g.name), A.kidsOf(db, b.id).map(g => g.name)], [true, ['기도팀'], ['기도팀']]);
+  sc.eq('⑧ 연동한 쪽 사람 수에도 든다', A.groupHeadcount(db, b), 2);
+  db.T.forEach(t => { t.u = 0; }); s.u = 0;
+  const today = A.buildToday(db, '2026-10-11'), ids = [].concat(...Object.values(today.sec).map(x => x.map(e => e.t.id)));
+  sc.eq('⑧ 오늘 목록에는 한 번만 (묶음은 하나)', ids.filter(x => x === s.id).length, 1);
+  const back = A.normDB(JSON.parse(JSON.stringify(db)));
+  sc.eq('⑧ 저장했다 되살려도 연동이 남는다', A.kidsOf(back, b.id).map(g => g.name), ['기도팀']);
+  sc.eq('⑧ 이상한 자리(없는 묶음 · 제 자리)는 버린다', A.normDB({ G: [{ id: 'p' }, { id: 'k', parent: 'p', also: ['p', 'zz', 'p2'] }, { id: 'p2' }] }).G[1].also, ['p2']);
+  const c = JSON.parse(JSON.stringify(db));
+  A.removeGroup(c, a.id);
+  sc.eq('⭐⑧ 제 자리 큰 묶음을 지워도 연동한 자리에 살아남는다', [A.kidsOf(c, b.id).map(g => g.name), A.findG(c, s.id).parent, A.findG(c, s.id).also], [['기도팀'], b.id, []]);
+  const d = JSON.parse(JSON.stringify(db));
+  sc.eq('⑧ 한 자리에서만 빼기 — 연동한 자리', [A.unplaceSub(d, s.id, b.id), A.kidsOf(d, b.id).length, A.kidsOf(d, a.id).length], ['unlinked', 0, 1]);
+  const e = JSON.parse(JSON.stringify(db));
+  sc.eq('⑧ 한 자리에서만 빼기 — 제 자리면 남은 자리가 제 자리가 된다', [A.unplaceSub(e, s.id, a.id), A.findG(e, s.id).parent, A.kidsOf(e, a.id).length], ['unlinked', b.id, 0]);
+  sc.eq('⑧ 마지막 자리에서 빼면 지운다', [A.unplaceSub(e, s.id, b.id), !!A.findG(e, s.id)], ['removed', false]);
+  const f = A.emptyDB(); const x = A.newGroup('x'), y = A.newGroup('y'), z = A.newGroup('z'); f.G.push(x, y, z);
+  const k = A.newGroup('k'); k.parent = x.id; f.G.push(k);
+  A.linkSub(f, k.id, y.id); A.moveSub(f, k.id, y.id, z.id);
+  sc.eq('⑧ 연동한 자리를 다른 곳으로 옮기면 제 자리는 그대로', [A.kidsOf(f, x.id).length, A.kidsOf(f, y.id).length, A.kidsOf(f, z.id).length], [1, 0, 1]);
+}
+{
+  // ⑧ 줄 연동
+  const db = A.emptyDB();
+  const a = A.newGroup('가조'), b = A.newGroup('나조'); db.G.push(a, b);
+  const l = A.parseLineText(db, '하나 / 둘'); a.lines.push(l);
+  const cp = A.copyLineLinked(db, l); b.lines.push(cp);
+  sc.eq('⑧ 연동한 줄은 다른 id · 같은 표', [cp.id !== l.id, cp.link === l.link && !!l.link], [true, true]);
+  const n = A.parseLineText(db, '하나 / 둘 / 셋'); n.id = l.id; n.link = l.link; a.lines[0] = n; A.syncLine(db, n);
+  sc.eq('⭐⑧ 한쪽을 고치면 다른 쪽도 같이', A.lineToText(db, b.lines[0]), '하나 / 둘 / 셋');
+  const back = A.normDB(JSON.parse(JSON.stringify(db)));
+  sc.eq('⑧ 저장했다 되살려도 이어져 있다', A.linkedLines(back, back.G[0].lines[0]).length, 1);
+  A.removeFromGroup(db, a.id, db.T.find(t => t.name === '셋').id);
+  sc.eq('⑧ 묶음에서 사람을 빼도 연동한 줄에 같이', A.lineToText(db, b.lines[0]), '하나 / 둘');
+  b.lines.splice(0, 1);
+  sc.eq('⑧ 연동한 줄 하나를 지워도 다른 줄은 남는다', A.lineToText(db, a.lines[0]), '하나 / 둘');
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
