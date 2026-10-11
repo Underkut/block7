@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-9';
+const APP_VERSION = 'v. 26-1012-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -672,6 +672,19 @@ function makeEntry(db, text, catId) {
   if (l && c) linePids(l).forEach(pid => { const p = findT(db, pid); if (p && p.kind === 'person') p.cat = c.id; });
   return l;
 }
+// 구분 칩 없이 넣은 항목(서브 그룹 머리 + · Tab · 고치기 · 붙여넣기)의 사람들에게 구분을 채운다 (HB 2026-10-11):
+// '/' 로 여러 이름을 넣으면 **구분이 이미 있는 첫 사람**의 구분을 나머지가 따른다. 아무도 없으면 칩이 먼저 고르던 구분(suggestCat).
+// ⚠️ 이미 구분이 있는 사람은 건드리지 않는다 — 다른 그룹에서 정해 둔 것을 덮지 않게.
+function fillLineCats(db, line, g) {
+  const ps = linePids(line).map(id => findT(db, id)).filter(p => p && p.kind === 'person');
+  if (!ps.length) return 0;
+  const isP = id => { const c = db.cats.find(x => x.id === id); return !!(c && c.person); };
+  const first = ps.find(p => p.cat && isP(p.cat));
+  const cat = first ? first.cat : suggestCat(db, g, lineToText(db, line));
+  if (!cat || !isP(cat)) return 0;
+  let n = 0; ps.forEach(p => { if (!p.cat) { p.cat = cat; n++; } });
+  return n;
+}
 function lineToText(db, l) {
   if (l.text && !(l.segs || []).length) return l.text;
   return (l.segs || []).map(seg => seg.map(pid => {
@@ -1116,6 +1129,11 @@ function measureScreen() {
     const land = window.innerWidth > window.innerHeight;
     const full = screen && screen.height ? (land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height)) : 0;
     GAP_INFO = '화면 ' + Math.round(full) + ' · 웹 화면 ' + Math.round(ph) + (full - ph > 1 ? ' · 아래 ' + Math.round(full - ph) + ' 은 iOS 몫' : '');
+    // 아래 메뉴 균형 (HB 2026-10-11): iOS 몫 띠가 있으면 그 띠가 곧 메뉴의 아래 여백이다 →
+    // 메뉴 안의 아래 여백(안전 영역)은 0 으로, 위 여백을 띠만큼 늘려 단추가 위아래 가운데에 오게 한다 (.iosgap)
+    const gap = Math.round(full - ph), on = full - ph > 1 && full - ph <= 90 && (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+    document.documentElement.classList.toggle('iosgap', !!on);
+    document.documentElement.style.setProperty('--gapb', (on ? gap : 0) + 'px');
   } catch (e) { GAP_INFO = ''; }
 }
 document.addEventListener('DOMContentLoaded', measureScreen);
@@ -1272,6 +1290,13 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .tb{height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--tx3);transition:color .2s}
 .tb .ico{width:22px;height:22px}
 .tb.on{color:var(--ac-tx)}
+/* iOS 26 홈 화면 앱: 웹 화면 아래에 iOS 몫 띠(--gapb)가 붙는다 — 그 띠를 메뉴의 아래 여백으로 쓰고,
+   메뉴 안 아래 여백은 0 · 위 여백은 띠만큼 → 단추의 위아래 여백이 같아진다 (HB 2026-10-11 사진의 연두 → 0, 분홍 ↑) */
+.iosgap #tabbar{padding-top:calc(var(--gapb) - 4px);padding-bottom:0}
+.iosgap .tb{height:48px}
+.iosgap #toast{bottom:calc(var(--gapb) + 64px)}
+.iosgap .lfoot{padding-bottom:6px}
+.iosgap .sheet{padding-bottom:6px}
 /* 오른쪽 아래 구석의 버전 — 누르면 새 버전을 찾아 받는다 */
 #verBtn{position:absolute;right:4px;top:2px;padding:2px 5px;font-size:9px;line-height:1.2;color:var(--tx3);opacity:.7;letter-spacing:.01em;font-variant-numeric:tabular-nums}
 #verBtn.busy{opacity:.35}
@@ -1583,6 +1608,15 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 
 /* 핀치로 열 바꾸기 — 손가락을 따라 판이 커지고 작아진다 */
 .masonry.mjs.pinching{transition:none;will-change:transform}
+
+/* 끌 때 오른쪽 위 구석에 나타나는 지우는 칸 */
+.md-trash{position:fixed;top:calc(var(--sat) + 10px);right:12px;z-index:59;display:flex;align-items:center;gap:7px;padding:12px 16px 12px 13px;border-radius:16px;
+  background:color-mix(in srgb,var(--danger) 16%,var(--s1));color:var(--danger);font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.28);
+  opacity:0;transform:translateY(-12px) scale(.92);transition:opacity .22s,transform .22s var(--ease),background .15s,color .15s;pointer-events:none}
+.md-trash svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.md-trash.on{opacity:1;transform:none}
+.md-trash.hot{background:var(--danger);color:#fff;transform:scale(1.08)}
+.md-drag.md-doom{opacity:.55;box-shadow:0 0 0 2px var(--danger),0 18px 40px -10px rgba(0,0,0,.55)}
 </style>
 </head>
 <body>
@@ -2709,7 +2743,7 @@ function addLine(gid, inp) {
 }
 ACT['paste-lines'] = el => askText('여러 항목 붙여넣기', '', '한 줄에 한 가정씩\n예) 김은중 / 김민욱 / 아빠 이상연 세중', v => {
   const g = findG(DB, el.dataset.id); if (!g) return;
-  let n = 0; v.split(/\n/).forEach(x => { const l = parseLineText(DB, x); if (l) { g.lines.push(l); n++; } });
+  let n = 0; v.split(/\n/).forEach(x => { const l = parseLineText(DB, x); if (l) { g.lines.push(l); fillLineCats(DB, l, g); n++; } });
   save(); refresh(); if (n) toast(n + '개 항목을 넣었습니다');
 }, { multi: true, ok: '넣기', hint: '시트에서 칸을 골라 복사해 붙여 넣어도 됩니다. 이름이 같으면 같은 사람으로 봅니다.' });
 ACT['edit-line'] = el => {
@@ -3010,7 +3044,7 @@ function mapCommit(val) {
   const old = g.lines[i], n = parseLineText(DB, v);
   if (!n) return true;
   Object.keys(old.r || {}).forEach(pid => { if (old.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
-  n.id = old.id; if (old.link) n.link = old.link; g.lines[i] = n; syncLine(DB, n); save(); return true;
+  n.id = old.id; if (old.link) n.link = old.link; g.lines[i] = n; fillLineCats(DB, n, g); syncLine(DB, n); save(); return true;
 }
 function mapEditKey(e, el) {
   if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중 Enter 는 글자 확정용
@@ -3340,10 +3374,19 @@ function mdStart(st) {
   document.body.classList.add('dragging');
   st.scroller = $('v-map');
   st.lock = 0; st.lx = st.x; st.ly = st.y;
+  // 지우는 자리 — 오른쪽 위 구석에 빨간 칸이 나타난다. 거기 놓으면 지운다(되돌리기 있음) (HB 2026-10-11)
+  const tr = document.createElement('div'); tr.className = 'md-trash';
+  tr.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.8c0-.4.4-.8.8-.8h4.4c.4 0 .8.4.8.8V7"/><path d="M6.5 7l.8 12.2c.1.9.8 1.6 1.7 1.6h6c.9 0 1.6-.7 1.7-1.6L17.5 7"/><path d="M10 11v6M14 11v6"/></svg><span>' + (st.kind === 'group' ? '그룹 지우기' : st.kind === 'sub' ? '서브 그룹 지우기' : '항목 지우기') + '</span>';
+  document.body.appendChild(tr); st.trashEl = tr;
+  requestAnimationFrame(() => tr.classList.add('on'));
   mdPut(st);
   if (navigator.vibrate) navigator.vibrate(8);
   const tick = () => {
     if (MD.st !== st || st.mode !== 'drag') return;
+    // 지우는 칸 위인가 — 칸보다 조금 넓게 받는다. 위에 있는 동안은 자리 옮기기 · 굴리기를 쉰다
+    const trr = tr.getBoundingClientRect(), hot = st.x > trr.left - 18 && st.y < trr.bottom + 18;
+    if (hot !== !!st.trash) { st.trash = hot; tr.classList.toggle('hot', hot); st.src.classList.toggle('md-doom', hot); if (hot && navigator.vibrate) navigator.vibrate(12); }
+    if (hot) { mdPut(st); st.raf = requestAnimationFrame(tick); return; }
     // 판 끝에 닿으면 저절로 굴러간다 — 끝에 가까울수록 빠르게 (Sweeter 와 같은 값)
     const sc = st.scroller, sr = sc.getBoundingClientRect();
     let v = 0;
@@ -3417,6 +3460,9 @@ function mdWhere(st) {
 function mdDrop(st, cancel) {
   cancelAnimationFrame(st.raf);
   document.body.classList.remove('dragging');
+  const tr = st.trashEl;
+  if (tr) { tr.classList.remove('on'); setTimeout(() => tr.remove(), 260); }
+  if (!cancel && st.trash) { mdTrash(st); return; }
   if (cancel) { mdLand(st, () => mapRenderFlip()); return; }
   // 손을 뗀 자리를 구멍의 자리에서 읽는다
   const ph = st.ph, p = selParts(st.k);
@@ -3497,6 +3543,26 @@ function mdLand(st, then) {
 // ⌥ 를 누르고 있으면 잡은 항목에 '+' 표시 (연동해서 놓기)
 function mdAlt(st, on) { if (st.alt === !!on && st.mode !== 'drag') return; st.alt = !!on; if (st.src && st.mode === 'drag') st.src.classList.toggle('md-copy', st.alt && st.kind !== 'group'); }
 ['keydown', 'keyup'].forEach(n => document.addEventListener(n, e => { if (e.key === 'Alt' && MD.st && MD.st.mouse) mdAlt(MD.st, n === 'keydown'); }));
+// 지우는 칸에 놓았다 — 항목이 칸 속으로 빨려 들어가며 사라지고, 알림에 '되돌리기'
+function mdTrash(st) {
+  const el = st.src, p = selParts(st.k), tr = st.trashEl.getBoundingClientRect();
+  el.style.transition = 'transform .28s cubic-bezier(.4,0,.6,1),opacity .28s';
+  el.style.transformOrigin = 'center';
+  el.style.transform = 'translate(' + (tr.left + tr.width / 2 - st.r0.left - st.r0.width / 2) + 'px,' + (tr.top + tr.height / 2 - st.r0.top - st.r0.height / 2) + 'px) scale(.15)';
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.remove(); st.ph.remove();
+    if (st.kind === 'line') {
+      const g = findG(DB, p.gid); if (g) withUndo('항목을 지웠습니다', () => { g.lines = g.lines.filter(l => l.id !== p.lid); });
+    } else {
+      const g = findG(DB, p.gid); if (!g) { mapRender(); return; }
+      if (g.parent && (g.also || []).length) withUndo(g.name + ' — 이 자리에서만 뺐습니다 (다른 자리엔 남음)', () => unplaceSub(DB, g.id, st.pl || g.parent));
+      else withUndo(g.name + (g.parent ? ' 서브 그룹을' : ' 그룹을') + ' 지웠습니다', () => removeGroup(DB, g.id));
+    }
+    UI.sel = '';
+    mapRenderFlip();
+  }, 280);
+}
 function mdUnlift(st) { if (st.src) st.src.classList.remove('md-lift'); }
 
 // ── 지도 세로 단 (그룹 카드 쌓기) ──
