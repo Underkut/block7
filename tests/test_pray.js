@@ -11,6 +11,7 @@
 //  ⑤ 우선순위 표(Sheet2 모양) 가져오기 — 다시 가져와도 겹치지도 지우지도 않는다
 //  ⑥ 기도 지도(날짜 탭 모양) 가져오기 — **빈 줄이 묶음의 경계**다 (2026-10-10 실제로 깨졌던 곳)
 //  ⑦ 지우기 · 내 순서 · 판 비교 · 백업 · 테마가 BLOCK7 과 같은지
+//  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -25,7 +26,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -325,6 +326,25 @@ const MAPCSV = [
   sc.eq('⑧ 묶음에서 사람을 빼도 연동한 줄에 같이', A.lineToText(db, b.lines[0]), '하나 / 둘');
   b.lines.splice(0, 1);
   sc.eq('⑧ 연동한 줄 하나를 지워도 다른 줄은 남는다', A.lineToText(db, a.lines[0]), '하나 / 둘');
+}
+{
+  // ⑨ 구분 칩
+  const db = A.seedDB();
+  const P = db.cats.find(c => c.person), P2 = db.cats.filter(c => c.person)[1], I = db.cats.find(c => !c.person);
+  const g = A.newGroup('가조'); db.G.push(g);
+  sc.eq('⑨ 이름인지 보기만 (사람 카드를 만들지 않는다)', [A.looksLikeNames('하나 / 둘'), A.looksLikeNames('교회, 나라'), db.T.filter(t => t.name === '하나').length], [true, false, 0]);
+  sc.eq('⑨ 처음엔 사람 구분 첫째 · 기도 제목이면 사람 아닌 구분 첫째', [A.suggestCat(db, g, '하나'), A.suggestCat(db, g, '교회, 나라를 위해')], [P.id, I.id]);
+  g.lines.push(A.makeEntry(db, '하나 / 둘', P2.id));
+  sc.eq('⑨ 사람 구분을 고르면 사람 카드에 그 구분', db.T.filter(t => t.name === '하나' || t.name === '둘').map(t => t.cat), [P2.id, P2.id]);
+  sc.eq('⑨ 같은 그룹 사람들이 가진 구분을 먼저 고른다', A.suggestCat(db, g, '셋'), P2.id);
+  const l = A.makeEntry(db, '교회 부흥', I.id); g.lines.push(l);
+  const it = db.T.find(t => t.name === '교회 부흥');
+  sc.eq('⑨ 사람 아닌 구분이면 글 전체가 기도 항목 하나', [it && it.kind, it && it.cat, l.segs.length, l.segs[0].length], ['item', I.id, 1, 1]);
+  sc.eq('⑨ 기도 항목은 사람 수에 안 든다', A.groupHeadcount(db, g), 2);
+  A.makeEntry(db, '교회 부흥', I.id);
+  sc.eq('⑨ 같은 이름의 기도 항목은 다시 만들지 않는다', db.T.filter(t => t.name === '교회 부흥').length, 1);
+  g.lines.push(A.makeEntry(db, '넷', ''));
+  sc.eq('⑨ 나중에 = 구분 없이', db.T.find(t => t.name === '넷').cat, '');
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
