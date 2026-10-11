@@ -27,7 +27,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -368,6 +368,20 @@ const MAPCSV = [
   const s = A.makeSnap(db, null, '2026-10-11', '');
   sc.eq('⑩ 판에는 그때 보이던 색으로 얼린다', s.P[one.id].mark, 'orange');
   sc.eq('⑩ 이은 소속 이름', A.markLinkName(db, db.markLinks.orange), '중고등부 방문');
+}
+{
+  // ⑨-2 칩 없이 넣은 '/' 항목 — 구분이 있는 첫 사람을 따른다
+  const db = A.seedDB();
+  const P = db.cats.find(c => c.person), P2 = db.cats.filter(c => c.person)[1];
+  const g = A.newGroup('가조'); db.G.push(g);
+  const l1 = A.parseLineText(db, '하나 / 둘 / 셋'); g.lines.push(l1);
+  db.T.find(t => t.name === '둘').cat = P2.id;
+  sc.eq('⑨-2 구분 있는 첫 사람(둘)을 나머지가 따른다', [A.fillLineCats(db, l1, g), ...['하나', '둘', '셋'].map(n => db.T.find(t => t.name === n).cat === P2.id)], [2, true, true, true]);
+  const o = A.parseLineText(db, '넷'); db.T.find(t => t.name === '넷').cat = P.id;
+  const l2 = A.parseLineText(db, '넷 / 다섯'); g.lines.push(l2); A.fillLineCats(db, l2, g);
+  sc.eq('⑨-2 이미 구분이 있는 사람은 그대로 (넷은 첫 구분 그대로)', [db.T.find(t => t.name === '넷').cat, db.T.find(t => t.name === '다섯').cat], [P.id, P.id]);
+  const l3 = A.parseLineText(db, '여섯 / 일곱'); g.lines.push(l3); A.fillLineCats(db, l3, g);
+  sc.eq('⑨-2 아무도 없으면 이 그룹에서 많이 쓴 구분', db.T.find(t => t.name === '여섯').cat, P2.id);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
