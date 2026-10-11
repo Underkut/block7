@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1011-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-2';
+const APP_VERSION = 'v. 26-1011-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -452,7 +452,7 @@ function newTarget(kind, name) {
 }
 function newGroup(name, color) {
   return { id: uid(), kind: 'group', name: String(name || '').trim(), color: color || GROUP_COLORS[0], parent: '',
-           days: [], time: '', u: null, i: null, memo: '', mark: '', topics: [], note: '', last: '', lines: [] };
+           days: [], time: '', u: null, i: null, memo: '', mark: '', topics: [], note: '', last: '', lines: [], also: [] };
 }
 function newTopic(t) { return { id: uid(), t: String(t || '').trim(), at: ymd(), ans: '' }; }
 
@@ -471,8 +471,12 @@ function normDB(x) {
   d.G = d.G.filter(g => g && g.id).map(g => {
     const n = Object.assign(newGroup('', ''), g); n.kind = 'group';
     n.lines = (Array.isArray(g.lines) ? g.lines : []).map(normLine);
+    n.also = Array.isArray(g.also) ? g.also.filter(x => typeof x === 'string' && x && x !== n.parent) : [];
     return n;
   });
+  // 연동해 둔 다른 자리(also)는 살아 있는 큰 묶음만 — 지워진 묶음 · 작은 묶음 자리는 버린다
+  const topIds = new Set(d.G.filter(g => !g.parent).map(g => g.id));
+  d.G.forEach(g => { g.also = g.parent ? [...new Set(g.also.filter(x => topIds.has(x)))] : []; });
   [...d.T, ...d.G].forEach(t => {
     t.u = numOrNull(t.u); t.i = numOrNull(t.i);
     if (!Array.isArray(t.days)) t.days = [];
@@ -486,6 +490,7 @@ function normLine(l) {
   if (l && Array.isArray(l.segs)) n.segs = l.segs.filter(Array.isArray).map(s => s.filter(Boolean));
   if (l && l.r && typeof l.r === 'object') n.r = l.r;
   if (l && l.text) n.text = String(l.text);
+  if (l && l.link) n.link = String(l.link);
   return n;
 }
 
@@ -506,10 +511,53 @@ function groupPids(g) { const a = []; (g.lines || []).forEach(l => linePids(l).f
 function groupsOf(db, pid) { return db.G.filter(g => groupPids(g).indexOf(pid) >= 0); }
 function childrenOf(db, gid) { return db.G.filter(g => g.parent === gid); }
 function topGroups(db) { return db.G.filter(g => !g.parent || !findG(db, g.parent)); }
+// 지도에서 이 묶음 밑에 보이는 작은 묶음 — 제 자리(parent) + 연동해 둔 자리(also)
+function kidsOf(db, gid) { return db.G.filter(g => g.parent === gid || (g.also || []).indexOf(gid) >= 0); }
+
+// ── 연동 복제 (HB 2026-10-11) ──
+// 작은 묶음: **같은 묶음 하나**가 여러 자리에 보인다(also). 이름 · 줄을 고치면 어디서나 같다.
+//   오늘 목록에는 한 번만 나온다(묶음은 하나다).
+// 줄: 자리마다 줄이 따로 있고 같은 link 표를 단다. 한 곳을 고치면 syncLine 이 나머지에 옮겨 적는다.
+//   (줄 하나가 두 묶음 배열에 같이 들어가면 저장 · 되살리기에서 둘로 갈라진다 → 표로 잇는다)
+function linkSub(db, gid, toTop) {
+  const g = findG(db, gid), t = findG(db, toTop);
+  if (!g || !g.parent || !t || t.parent || g.parent === toTop) return false;
+  if (!Array.isArray(g.also)) g.also = [];
+  if (g.also.indexOf(toTop) < 0) g.also.push(toTop);
+  return true;
+}
+// 작은 묶음을 한 자리(from)에서 다른 큰 묶음(toTop)으로 옮긴다 — 다른 자리의 연동은 그대로
+function moveSub(db, gid, from, toTop) {
+  const g = findG(db, gid), t = findG(db, toTop);
+  if (!g || !g.parent || !t || t.parent || from === toTop) return false;
+  g.also = (g.also || []).filter(x => x !== from && x !== toTop);
+  if (g.parent === from) g.parent = toTop; else if (g.parent !== toTop) g.also.push(toTop);
+  return true;
+}
+// 한 자리에서만 빼기 — 다른 자리에도 있으면 거기 남고, 마지막 자리면 묶음을 지운다.
+function unplaceSub(db, gid, from) {
+  const g = findG(db, gid); if (!g) return 'none';
+  const also = g.also || [];
+  if (also.indexOf(from) >= 0) { g.also = also.filter(x => x !== from); return 'unlinked'; }
+  if (g.parent === from && also.length) { g.parent = also[0]; g.also = also.slice(1); return 'unlinked'; }
+  removeGroup(db, gid); return 'removed';
+}
+function copyLineLinked(db, line) {
+  if (!line.link) line.link = uid();
+  return { id: uid(), segs: line.segs.map(s => s.slice()), r: Object.assign({}, line.r || {}), text: line.text || '', link: line.link };
+}
+function linkedLines(db, line) {
+  const out = []; if (!line || !line.link) return out;
+  db.G.forEach(g => g.lines.forEach(l => { if (l !== line && l.link === line.link) out.push(l); }));
+  return out;
+}
+function syncLine(db, line) {
+  linkedLines(db, line).forEach(l => { l.segs = line.segs.map(s => s.slice()); l.r = Object.assign({}, line.r || {}); l.text = line.text || ''; });
+}
 // 묶음과 그 작은 묶음들에 든 사람 수 (겹치면 한 번)
 function groupHeadcount(db, g) {
   const s = new Set(groupPids(g));
-  childrenOf(db, g.id).forEach(c => groupPids(c).forEach(p => s.add(p)));
+  kidsOf(db, g.id).forEach(c => groupPids(c).forEach(p => s.add(p)));
   return s.size;
 }
 
@@ -558,14 +606,22 @@ function removeTarget(db, id) {
 function removeGroup(db, id) {
   const kill = new Set([id]);
   let grew = true;
+  // 다른 큰 묶음에도 연동해 둔 작은 묶음은 지우지 않고 그 자리로 옮겨 산다
+  db.G.forEach(g => {
+    if (g.parent !== id) return;
+    const rest = (g.also || []).filter(x => x !== id);
+    if (rest.length) { g.parent = rest[0]; g.also = rest.slice(1); }
+  });
   while (grew) { grew = false; db.G.forEach(g => { if (g.parent && kill.has(g.parent) && !kill.has(g.id)) { kill.add(g.id); grew = true; } }); }
   db.G = db.G.filter(g => !kill.has(g.id));
+  db.G.forEach(g => { if (g.also && g.also.length) g.also = g.also.filter(x => !kill.has(x)); });
   return kill.size;
 }
 function removeFromGroup(db, gid, pid) {
   const g = findG(db, gid); if (!g) return;
   g.lines.forEach(l => { l.segs = l.segs.map(s => s.filter(p => p !== pid)).filter(s => s.length); if (l.r) delete l.r[pid]; });
   g.lines = g.lines.filter(l => l.segs.length || l.text);
+  g.lines.forEach(l => syncLine(db, l));   // 연동한 줄도 같이
 }
 
 // ── 오늘 목록 ──
@@ -934,6 +990,11 @@ function applyTheme(set) {
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', bg);
 }
 
+// 아이폰: 글자 칸을 누르면 화면이 저절로 커지고 마친 뒤에도 안 돌아온다(사파리는 되돌리는 길을 주지 않는다).
+// → 저절로 커지는 것만 막는다. 두 손가락으로 벌려 키우기는 아이폰이 그대로 허용한다 (HB 2026-10-11)
+if (/iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+  const vp = document.querySelector('meta[name="viewport"]'); if (vp && vp.content.indexOf('maximum-scale') < 0) vp.content += ',maximum-scale=1';
+}
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
 try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
@@ -1133,22 +1194,44 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .ghw{background:var(--gc)}
 .ghw .gh{flex:1}
 .sghw{margin-top:7px}.sghw .sgh{margin-top:0;flex:1}
-.madd{flex-shrink:0;width:34px;font-size:18px;font-weight:300;line-height:1;color:var(--tx3);border-radius:6px;transition:opacity .2s,background .15s}
-.madd.on-gh{color:rgba(255,255,255,.8)}
+.madd{flex-shrink:0;width:34px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:300;line-height:1;color:var(--tx3);border-radius:6px;transition:opacity .2s,background .15s}
+.madd svg{width:15px;height:15px}
+.madd.on-gh{color:rgba(255,255,255,.85)}
 .madd:active{background:rgba(127,127,127,.2)}
-.madd-sub{display:block;width:100%;margin-top:6px;padding:5px 8px;border-radius:6px;font-size:12px;color:var(--tx3);text-align:left;border:1px dashed var(--bd2);transition:opacity .2s}
 .madd-group{min-height:52px;font-size:13px;color:var(--tx3);border:1px dashed var(--bd2);background:transparent;transition:opacity .2s}
-/* PC: 마우스를 올린 카드에서만 + 가 보인다 · 휴대폰은 늘 보이되 흐리게 */
-@media (hover:hover) and (pointer:fine){
-  .gcard .madd,.gcard .madd-sub{opacity:0}
-  .gcard:hover .madd,.gcard:hover .madd-sub,.madd:focus-visible,.madd-sub:focus-visible{opacity:1}
-  .madd-group{opacity:.35}.madd-group:hover{opacity:1}
+/* 카드 맨 아래 줄 입력 칸 — 줄이 하나 더 있을 자리처럼 */
+.addw{padding:1px 2px 0}
+.addin{width:100%;border:0;outline:none;background:transparent;color:var(--tx);font:inherit;font-size:13.5px;line-height:1.5;padding:3px 0;caret-color:var(--ac)}
+.addin::placeholder{color:var(--tx3);opacity:.7}
+@media (any-hover:hover) and (any-pointer:fine){
+  body:not(.tch) .gcard .madd,body:not(.tch) .gcard .addin:placeholder-shown:not(:focus){opacity:0}
+  body:not(.tch) .gcard:hover .madd,body:not(.tch) .gcard:hover .addin:placeholder-shown,.madd:focus-visible{opacity:1}
+  body:not(.tch) .madd-group{opacity:.35}body:not(.tch) .madd-group:hover{opacity:1}
 }
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
 .ln.sel{background:var(--ac-soft);border-radius:6px;box-shadow:0 0 0 2px var(--ac)}
+/* 휴대폰에서는 고른 테두리를 안 보인다 (PC 키보드용) */
+.tch #v-map .sel{box-shadow:none;background:transparent}
+.tch #v-map .gh.sel{background:var(--gc)}
 .ln.ined{padding:2px}
-.mapin{width:100%;min-width:0;border:0;outline:none;background:var(--bg);color:var(--tx);border-radius:5px;padding:5px 7px;font:inherit;font-size:14px}
+/* 고치는 칸 — 구멍처럼 까맣게 뚫지 않고 그 띠의 색을 그대로 */
+.mapin{width:100%;min-width:0;border:0;outline:none;background:transparent;color:inherit;border-radius:0;padding:0 0 1px;font:inherit;caret-color:currentColor;box-shadow:inset 0 -1px 0 color-mix(in srgb,currentColor 35%,transparent)}
+.mapin::placeholder{color:currentColor;opacity:.45}
 .gh .mapin,.sgh .mapin{font-weight:600}
+.gh.ined{background:var(--gc)}
+.ln.ined{padding:3px 2px}
+.lk{display:inline-flex;align-items:center;color:var(--tx3);margin-left:2px}
+.lk .ico{width:12px;height:12px}
+.gh .lk,.sgh .lk{color:inherit;opacity:.7}
+/* 끌기 */
+#v-map .gcard{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#v-map .gcard input{-webkit-user-select:text;user-select:text}
+.md-lift{transform:scale(1.03);box-shadow:0 8px 24px rgba(0,0,0,.28);border-radius:8px;transition:transform .18s var(--ease),box-shadow .18s;position:relative;z-index:2;background:var(--s2)}
+.gcard.md-lift{background:var(--s1)}
+.md-src{opacity:.28;transition:opacity .15s}
+.md-ghost{position:fixed;z-index:60;pointer-events:none;margin:0;background:var(--s1);border-radius:10px;box-shadow:0 14px 34px rgba(0,0,0,.35);opacity:.95;max-height:260px;overflow:hidden;rotate:-1deg}
+.md-ghost.ln{padding:4px 8px}
+.md-ind{position:fixed;z-index:59;height:3px;border-radius:2px;background:var(--ac);pointer-events:none;opacity:0;transition:top .08s,left .08s,width .08s,opacity .12s}
 .kbhint{display:block;width:calc(100% - 28px);margin:2px 14px 4px;padding:7px 10px;border-radius:10px;background:var(--s1);color:var(--tx3);font-size:11.5px;line-height:1.8;text-align:left}
 .kbhint b{color:var(--tx2);font-weight:600;margin:0 2px 0 6px}
 .kbhint u{color:var(--ac-tx);text-decoration:none;margin-left:4px}
@@ -1362,6 +1445,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const ICONS = {
   x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
   chev: '<polyline points="6 9 12 15 18 9"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
   chevR: '<polyline points="9 6 15 12 9 18"/>',
   check: '<polyline points="5 12.5 10 17 19 7.5"/>',
   gear: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3" fill="var(--bg)"/><circle cx="15" cy="17" r="2.3" fill="var(--bg)"/>',
@@ -1660,13 +1744,13 @@ function mapSource(snap) {
   if (snap) return {
     G: snap.G, marks: snap.marks || {}, live: false,
     person: pid => snap.P[pid] || null,
-    kids: gid => snap.G.filter(g => g.parent === gid),
+    kids: gid => snap.G.filter(g => g.parent === gid || (g.also || []).indexOf(gid) >= 0),
     tops: () => snap.G.filter(g => !g.parent || !snap.G.some(x => x.id === g.parent))
   };
   return {
     G: DB.G, marks: DB.marks, live: true,
     person: pid => findT(DB, pid),
-    kids: gid => childrenOf(DB, gid),
+    kids: gid => kidsOf(DB, gid),
     tops: () => topGroups(DB)
   };
 }
@@ -1675,13 +1759,17 @@ function mapCards(src, opt) {
   const hc = g => { const s = new Set(groupPids(g)); src.kids(g.id).forEach(c => groupPids(c).forEach(p => s.add(p))); return s.size; };
   const tops = src.live ? mapTops() : src.tops();
   const edKey = src.live && UI.mapEdit ? UI.mapEdit.key : '';
-  const selAttr = k => src.live ? ' data-sel="' + k + '"' + (UI.sel === k ? ' aria-selected="true"' : '') : '';
+  // 줄은 이름 사이 빈 자리를 눌러도 같은 일(고치기)을 하도록 data-a 를 단다 — 이름 단추가 더 가까우면 그쪽이 받는다
+  const selAttr = k => src.live ? ' data-sel="' + k + '"' + (k[0] === 'l' ? ' data-a="open"' : '') + (UI.sel === k ? ' aria-selected="true"' : '') : '';
   const selCls = k => src.live && UI.sel === k ? ' sel' : '';
   const editor = (k, v, ph) => '<input class="mapin" data-mapin="' + k + '" value="' + esc(v) + '" placeholder="' + esc(ph) + '" autocomplete="off" spellcheck="false" enterkeyhint="done">';
+  const linkN = {};
+  src.G.forEach(g => (g.lines || []).forEach(l => { if (l.link) linkN[l.link] = (linkN[l.link] || 0) + 1; }));
+  const lk = l => l.link && linkN[l.link] > 1 ? '<span class="lk" title="연동된 줄">' + ico('link') + '</span>' : '';
   const lineHTML = (l, gid) => {
     const k = gid ? 'l:' + gid + ':' + l.id : '';
     if (k && edKey === k) return '<div class="ln ined sel"' + selAttr(k) + '>' + editor(k, UI.mapEdit.isNew ? '' : lineToText(DB, l), '이름 — / 로 나누기 · Tab 다음 줄 · Enter 마침') + '</div>';
-    if (l.text && !(l.segs || []).length) return '<div class="ln note' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + esc(l.text) + '</div>';
+    if (l.text && !(l.segs || []).length) return '<div class="ln note' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + esc(l.text) + lk(l) + '</div>';
     return '<div class="ln' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + (l.segs || []).map(seg => seg.map(pid => {
       const p = src.person(pid); if (!p) return '';
       const role = l.r && l.r[pid];
@@ -1691,7 +1779,7 @@ function mapCards(src, opt) {
       const inner = (role && role !== '인도' ? '<span class="role">' + esc(role) + '</span>' : '') + esc(p.name);
       return src.live ? '<button class="' + cls + '"' + style + ' data-a="open" data-id="' + pid + '">' + inner + '</button>'
                       : '<span class="' + cls + '"' + style + '>' + inner + '</span>';
-    }).join(' ')).join(' <span class="sep">/</span> ') + '</div>';
+    }).join(' ')).join(' <span class="sep">/</span> ') + lk(l) + '</div>';
   };
   // 시트에서는 한 칸에 한 사람씩 세로로 적힌 줄이 많다(조명팀 · 키즈모아). 지도에서는
   // 한 사람만 든 줄이 이어지면 한 줄로 흘려 보여 카드가 길어지지 않게 한다.
@@ -1705,22 +1793,28 @@ function mapCards(src, opt) {
     flush();
     return out;
   };
+  // 작은 묶음 만들기 — BLOCK7 의 '하위 할일' 그림 그대로
+  const SUBICO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 3.1v9.6a3.1 3.1 0 0 0 3.1 3.1h5"/><path d="M4.6 7.3h8.1"/><circle cx="15.3" cy="7.3" r="2.6"/><circle cx="15.3" cy="15.8" r="2.6"/></svg>';
   return '<div class="masonry">' + tops.map(g => {
     const kids = src.kids(g.id);
     const gk = 'g:' + g.id;
-    const head = edKey === gk ? '<div class="gh sel"' + selAttr(gk) + '>' + editor(gk, UI.mapEdit.isNew ? '' : g.name, '묶음 이름') + '</div>'
+    const head = edKey === gk ? '<div class="gh ined sel"' + selAttr(gk) + '>' + editor(gk, UI.mapEdit.isNew ? '' : g.name, '묶음 이름') + '</div>'
       : (src.live ? '<div class="ghw"><button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
-        (src.live ? '</button><button class="madd on-gh" data-a="map-add" data-k="line" data-id="' + g.id + '" aria-label="' + esc(g.name) + '에 줄 더하기">+</button></div>' : '</div>');
-    return '<div class="gcard" style="--gc:' + esc(g.color) + '">' + head +
+        (src.live ? '</button><button class="madd on-gh" data-a="map-add" data-k="sub" data-id="' + g.id + '" aria-label="' + esc(g.name) + '에 작은 묶음 더하기">' + SUBICO + '</button></div>' : '</div>');
+    const last = kids.length ? kids[kids.length - 1] : g;   // 맨 아래 입력 칸은 바로 위 덩어리에 줄을 더한다
+    return '<div class="gcard" data-gid="' + g.id + '" style="--gc:' + esc(g.color) + '">' + head +
       '<div class="gb">' + linesHTML(g.lines || [], g.id) +
       kids.map(k => {
         const kk = 'g:' + k.id;
-        if (edKey === kk) return '<div class="sgh sel"' + selAttr(kk) + '>' + editor(kk, UI.mapEdit.isNew ? '' : k.name, '작은 묶음 이름') + '</div>' + linesHTML(k.lines || [], k.id);
-        return (src.live ? '<div class="sghw"><button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh">') + esc(k.name) +
-        (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
-        (src.live ? '</button><button class="madd" data-a="map-add" data-k="line" data-id="' + k.id + '" aria-label="' + esc(k.name) + '에 줄 더하기">+</button></div>' : '</div>') + linesHTML(k.lines || [], k.id);
+        const linked = (k.also || []).length ? '<span class="lk">' + ico('link') + '</span>' : '';
+        const body = linesHTML(k.lines || [], k.id);
+        if (edKey === kk) return '<div class="sgb" data-gid="' + k.id + '" data-pl="' + g.id + '"><div class="sgh ined sel"' + selAttr(kk) + '>' + editor(kk, UI.mapEdit.isNew ? '' : k.name, '작은 묶음 이름') + '</div>' + body + '</div>';
+        return '<div class="sgb" data-gid="' + k.id + '" data-pl="' + g.id + '">' +
+          (src.live ? '<div class="sghw"><button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh">') + esc(k.name) + linked +
+          (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
+          (src.live ? '</button><button class="madd" data-a="map-add" data-k="line" data-id="' + k.id + '" aria-label="' + esc(k.name) + '에 줄 더하기">+</button></div>' : '</div>') + body + '</div>';
       }).join('') +
-      (src.live ? '<button class="madd-sub" data-a="map-add" data-k="sub" data-id="' + g.id + '">+ 작은 묶음</button>' : '') +
+      (src.live ? '<div class="addw" data-gid="' + last.id + '"><input class="addin" data-addin="' + last.id + '" placeholder="+ 줄" aria-label="' + esc(last.name) + '에 줄 더하기" autocomplete="off" spellcheck="false" enterkeyhint="next"></div>' : '') +
       '</div></div>';
   }).join('') + (src.live ? '<button class="gcard madd-group" data-a="map-add" data-k="group">+ 묶음</button>' : '') + '</div>';
 }
@@ -1739,7 +1833,7 @@ function renderMap() {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
-  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>L</b> 줄 <b>N</b> 묶음 <b>⇧N</b> 작은 묶음 · <u>모두 보기</u></button>';
+  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 묶음 <b>M</b> 작은 묶음 <b>,</b> 줄 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter });
   return h;
 }
@@ -2210,8 +2304,8 @@ ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' 
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
-  if (s) { if (KB) mapSelect(s.dataset.sel); else mapStartEdit(s.dataset.sel, false); return; }
-  openTarget(el.dataset.id);
+  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapStartEdit(s.dataset.sel, false); return; }
+  if (el.dataset.id) openTarget(el.dataset.id);
 };
 ACT['map-add'] = el => {
   const k = el.dataset.k, id = el.dataset.id;
@@ -2230,13 +2324,13 @@ ACT['layer-cancel'] = () => {
 };
 ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
   ['↑ ↓', '고르기 (묶음 · 작은 묶음 · 줄)'], ['← →', '앞 · 뒤 묶음으로'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
-  ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], ['L', '고른 묶음에 줄 더하기 (줄을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
-  ['⌥ ↑ ↓', '위아래로 옮기기 · 줄은 끝에서 옆 묶음으로'], ['N', '새 묶음'], ['⇧ N', '고른 묶음 안에 새 작은 묶음'], ['Esc', '고치기 취소 · 고르기 풀기'],
+  ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], [',', '고른 묶음에 줄 더하기 (줄을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기 (묶음 · 작은 묶음 · 줄 어디서나)'], ['끌기', '눌러 끌면 옮기기 — 다른 묶음으로 놓으면 옮기기 · 연동 중 고르기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
+  ['⌥ ↑ ↓', '위아래로 옮기기 · 줄은 끝에서 옆 묶음으로'], ['N', '새 묶음'], ['M', '고른 묶음 안에 새 작은 묶음'], ['Esc', '고치기 취소 · 고르기 풀기'],
   ['두 번 누르기', '상세 열기 (이름이면 사람 카드)']
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
-  '<div class="hint" style="padding:12px 20px">⌘N · ⌘⇧N 은 크롬 · 사파리가 먼저 가져가(새 창 · 시크릿 창) 웹 페이지가 막을 수 없습니다. 그래서 N · ⇧N 한 글자로 둡니다.</div></div>');
+  '<div class="hint" style="padding:12px 20px">⌘N 은 크롬 · 사파리가 먼저 가져가(새 창) 웹 페이지가 막을 수 없어 한 글자로 둡니다. 한글 입력 상태여도 같은 자리 글쇠면 됩니다.</div></div>');
 ACT['open-group'] = el => {
-  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (KB) mapSelect(el.dataset.sel); else mapStartEdit(el.dataset.sel, false); return; }
+  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapStartEdit(el.dataset.sel, false); return; }
   pushLayer({ type: 'group', id: el.dataset.id });
 };
 ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
@@ -2425,7 +2519,7 @@ ACT['edit-line'] = el => {
     if (!n) { withUndo('줄을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }); return; }
     // 인도 표시는 이름이 그대로면 남긴다
     Object.keys(l.r || {}).forEach(pid => { if (l.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
-    n.id = l.id; const k = g.lines.indexOf(l); g.lines[k] = n; save(); refresh();
+    n.id = l.id; if (l.link) n.link = l.link; const k = g.lines.indexOf(l); g.lines[k] = n; syncLine(DB, n); save(); refresh();
   }, { del: () => withUndo('줄을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }), hint: '\'아빠 이상연\' 처럼 앞에 붙인 말은 이름 옆에 작게 나옵니다. 이름이 같으면 같은 사람입니다.' });
 };
 
@@ -2579,6 +2673,12 @@ document.addEventListener('input', e => {
 document.addEventListener('keydown', e => {
   const el = e.target;
   if (el.dataset && el.dataset.mapin) { mapEditKey(e, el); return; }
+  if (el.dataset && el.dataset.addin) {
+    if (e.isComposing || e.keyCode === 229) return;
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey && el.value.trim())) { e.preventDefault(); const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, true); return; }
+    if (e.key === 'Escape') { e.preventDefault(); el.value = ''; el.blur(); return; }
+    return;
+  }
   if (mapKey(e)) return;
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && UI.layers.length && !SHEET) {
     const L = UI.layers[UI.layers.length - 1]; if (L && L.snap) { e.preventDefault(); ACT['layer-ok'](); return; }
@@ -2609,7 +2709,12 @@ document.addEventListener('keydown', e => {
 // 고르는 단위: 'g:묶음id'(큰·작은 묶음 머리) · 'l:묶음id:줄id'(줄). 화면 차례 그대로 위아래로 오간다.
 // Enter = 고치기/마침 · Tab = 같은 수준에 하나 더(이어서 입력) · ⇧Enter = 상세 · ⌫ = 지우기 · ⌥↑↓ = 옮기기
 // N = 새 묶음 · ⇧N = 고른 묶음 안에 작은 묶음. ⌘N 은 브라우저가 먼저 가져가 막을 수 없다(크롬 · 사파리).
-const KB = !!(window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches);
+// ⚠️ 기기 짐작(KB)은 화면 배치 · 안내 줄에만 쓴다. **누르기 동작은 방금 쓴 포인터(PT)로 가른다** —
+//    터치 화면 노트북처럼 '마우스 기기' 로 안 잡히는 PC 에서 우클릭 · 클릭이 휴대폰처럼 돌던 일 (HB 2026-10-11)
+const KB = !!(window.matchMedia && matchMedia('(any-hover: hover) and (any-pointer: fine)').matches);
+let PT = KB ? 'mouse' : 'touch';
+document.body.classList.toggle('tch', PT !== 'mouse');
+document.addEventListener('pointerdown', e => { PT = e.pointerType || 'mouse'; document.body.classList.toggle('tch', PT !== 'mouse'); }, true);
 function mapTops() {
   let tops = topGroups(DB);
   const mode = DB.set.sorts.map || 'mine';
@@ -2622,9 +2727,9 @@ function mapNav() {
   const out = [];
   mapTops().forEach(g => {
     out.push('g:' + g.id); g.lines.forEach(l => out.push('l:' + g.id + ':' + l.id));
-    childrenOf(DB, g.id).forEach(k => { out.push('g:' + k.id); k.lines.forEach(l => out.push('l:' + k.id + ':' + l.id)); });
+    kidsOf(DB, g.id).forEach(k => { out.push('g:' + k.id); k.lines.forEach(l => out.push('l:' + k.id + ':' + l.id)); });
   });
-  return out;
+  return [...new Set(out)];   // 연동한 작은 묶음은 두 자리에 보이지만 고르기 차례에는 한 번
 }
 function selParts(k) { const a = String(k || '').split(':'); return { t: a[0], gid: a[1], lid: a[2] }; }
 function mapRender(focus) {
@@ -2702,7 +2807,7 @@ function mapCommit(val) {
   const old = g.lines[i], n = parseLineText(DB, v);
   if (!n) return true;
   Object.keys(old.r || {}).forEach(pid => { if (old.r[pid] === '인도' && linePids(n).indexOf(pid) >= 0) n.r[pid] = '인도'; });
-  n.id = old.id; g.lines[i] = n; save(); return true;
+  n.id = old.id; if (old.link) n.link = old.link; g.lines[i] = n; syncLine(DB, n); save(); return true;
 }
 function mapEditKey(e, el) {
   if (e.isComposing || e.keyCode === 229) return;   // 한글 조합 중 Enter 는 글자 확정용
@@ -2766,7 +2871,8 @@ function mapDelete(k) {
   const p = selParts(k);
   if (p.t === 'g') {
     const g = findG(DB, p.gid); if (!g) return;
-    withUndo(g.name + ' 묶음을 지웠습니다', () => removeGroup(DB, g.id));
+    if (g.parent && (g.also || []).length) withUndo(g.name + ' — 이 자리에서만 뺐습니다 (다른 자리엔 남음)', () => unplaceSub(DB, g.id, UI.selPl && kidsOf(DB, UI.selPl).indexOf(g) >= 0 ? UI.selPl : g.parent));
+    else withUndo(g.name + ' 묶음을 지웠습니다', () => removeGroup(DB, g.id));
   } else {
     const g = findG(DB, p.gid); if (!g) return;
     withUndo('줄을 지웠습니다', () => { g.lines = g.lines.filter(l => l.id !== p.lid); });
@@ -2781,10 +2887,15 @@ function mapKey(e) {
   if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return false;
   const mod = e.metaKey || e.ctrlKey;
   const key = e.key;
-  if ((key === 'n' || key === 'N' || key === 'ㅜ') && !e.altKey) {   // ⌘N 은 브라우저가 대개 먼저 가져간다 — 오면 받는다
-    e.preventDefault(); mapNewGroup(e.shiftKey); return true;
+  // 글쇠 자리(e.code)로 본다 — 한글 입력 상태면 e.key 가 'Process' · 'ㅜ' 로 온다
+  const code = e.code || '';
+  if ((code === 'KeyN' || key === 'n' || key === 'N' || key === 'ㅜ') && !e.altKey && !e.shiftKey) {   // ⌘N 은 브라우저가 대개 먼저 가져간다 — 오면 받는다
+    e.preventDefault(); mapNewGroup(false); return true;
   }
-  if ((key === 'l' || key === 'L' || key === 'ㅣ') && !e.altKey && !mod) {
+  if ((code === 'KeyM' || key === 'm' || key === 'M' || key === 'ㅡ' || ((code === 'KeyN' || key === 'N') && e.shiftKey)) && !e.altKey && !mod) {
+    e.preventDefault(); mapNewGroup(true); return true;
+  }
+  if ((code === 'Comma' || key === ',') && !e.altKey && !mod) {
     e.preventDefault();
     const p = selParts(UI.sel);
     if (!p.gid) { toast('줄을 넣을 묶음을 먼저 고르세요'); return true; }
@@ -2818,30 +2929,226 @@ function mapKey(e) {
   return false;
 }
 document.addEventListener('dblclick', e => {
-  if (UI.tab !== 'map' || !KB || UI.layers.length) return;
+  if (UI.tab !== 'map' || PT !== 'mouse' || UI.layers.length) return;
   const pn = e.target.closest('#v-map .pn');
   if (pn && pn.dataset.id) { openTarget(pn.dataset.id); return; }
   const s = e.target.closest('#v-map [data-sel]');
   if (s) mapOpen(s.dataset.sel);
 });
-// 길게 누르기(휴대폰) · 오른쪽 누르기(PC) = 상세. 글자든 빈 자리든 그 줄 어디서나
-const LP = { t: 0, x: 0, y: 0, k: '' };
+// 카드 맨 아래 '+ 줄' 칸 — 쓰고 Enter 하면 바로 위 덩어리에 줄이 붙고, 칸은 비워져 이어 쓸 수 있다
+function mapAddFromInput(gid, v, refocus) {
+  const g = findG(DB, gid); if (!g) return;
+  let n = 0;
+  String(v || '').split(/\n/).forEach(x => { const l = parseLineText(DB, x); if (l) { g.lines.push(l); n++; } });
+  if (!n) return;
+  UI.sel = 'l:' + g.id + ':' + g.lines[g.lines.length - 1].id; UI.mapEdit = null;
+  save(); renderView();
+  // 아이폰은 같은 손짓 안에서 바로 focus 해야 자판이 안 내려간다
+  if (refocus) { const i = document.querySelector('#v-map [data-addin="' + gid + '"]'); if (i) { i.focus(); i.scrollIntoView({ block: 'nearest' }); } }
+}
+
+// ═══ 지도 끌어 옮기기 · 길게 눌러 상세 (HB 2026-10-11) ═══
+// 두 '길게 누르기' 를 가르는 법 — 아이폰 홈 화면처럼:
+//   휴대폰: 0.45초 누르고 있으면 항목이 살짝 떠오른다(진동). 거기서
+//           · 손을 그대로 떼면 → 상세
+//           · 손가락을 움직이면 → 끌기 (놓는 자리에 옮긴다)
+//           누르자마자 움직이면 그냥 화면 넘기기다.
+//   PC: 눌러서 바로 끌면 끌기(기다릴 필요 없음) · 오른쪽 누르기 = 상세 · 두 번 누르기 = 상세.
+// 다른 묶음으로 놓으면 '옮기기 / 연동해서 함께 두기' 를 묻는다. 같은 묶음 안이면 순서만 바꾼다.
+const MD = { st: null };
+const MD_HOLD = 450;
+function mdKind(k) { const p = selParts(k); if (p.t === 'l') return 'line'; const g = findG(DB, p.gid); return g && g.parent ? 'sub' : 'group'; }
+function mdSrcEl(st) {
+  if (st.kind === 'group') return st.el.closest('.gcard');
+  if (st.kind === 'sub') return st.el.closest('.sgb');
+  return st.el;
+}
 document.addEventListener('pointerdown', e => {
-  if (UI.tab !== 'map' || UI.layers.length || e.pointerType === 'mouse') return;
-  const s = e.target.closest('#v-map [data-sel]'); if (!s || e.target.closest('.mapin')) return;
-  LP.x = e.clientX; LP.y = e.clientY; LP.k = s.dataset.sel; clearTimeout(LP.t);
-  LP.t = setTimeout(() => { LP.t = 0; GS.suppress = Date.now(); if (navigator.vibrate) navigator.vibrate(12); mapOpen(LP.k); }, 480);
+  if (UI.tab !== 'map' || UI.layers.length || SHEET) return;
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  let s = e.target.closest('#v-map [data-sel]');
+  // 카드 양옆 여백을 눌러도 그 높이의 줄로 친다 ('그 행의 여백 어디서나')
+  if (!s && e.target.matches && e.target.matches('#v-map .gb')) s = [...e.target.querySelectorAll('.ln[data-sel]')].find(x => { const r = x.getBoundingClientRect(); return e.clientY >= r.top && e.clientY <= r.bottom; }) || null;
+  if (!s || e.target.closest('input,.madd')) return;
+  const b = s.closest('.sgb'); UI.selPl = b ? b.dataset.pl : '';
+  const st = { k: s.dataset.sel, el: s, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, pid: e.pointerId,
+               mouse: e.pointerType === 'mouse', mode: 'pend', pl: b ? b.dataset.pl : '' };
+  st.kind = mdKind(st.k);
+  if (!st.mouse) st.timer = setTimeout(() => mdLift(st), MD_HOLD);
+  MD.st = st;
 }, { passive: true });
-document.addEventListener('pointermove', e => { if (LP.t && (Math.abs(e.clientX - LP.x) > 8 || Math.abs(e.clientY - LP.y) > 8)) { clearTimeout(LP.t); LP.t = 0; } }, { passive: true });
-['pointerup', 'pointercancel'].forEach(n => document.addEventListener(n, () => { clearTimeout(LP.t); LP.t = 0; }));
+document.addEventListener('pointermove', e => {
+  const st = MD.st; if (!st || e.pointerId !== st.pid) return;
+  st.x = e.clientX; st.y = e.clientY;
+  const d = Math.hypot(st.x - st.x0, st.y - st.y0);
+  if (st.mode === 'pend') {
+    if (st.mouse) { if (d > 6) mdStart(st); return; }
+    if (d > 8) { clearTimeout(st.timer); MD.st = null; }   // 떠오르기 전에 움직이면 화면 넘기기
+    return;
+  }
+  if (st.mode === 'lift') { if (d > 6) mdStart(st); return; }
+}, { passive: true });
+function mdEnd(e, cancel) {
+  const st = MD.st; if (!st || (e && e.pointerId !== st.pid)) return;
+  MD.st = null; clearTimeout(st.timer);
+  if (st.mode === 'lift') {
+    st.src.classList.remove('md-lift');
+    GS.suppress = Date.now();
+    if (!cancel) mapOpen(st.k);
+    return;
+  }
+  if (st.mode === 'drag') { GS.suppress = Date.now(); mdDrop(st, cancel); }
+}
+document.addEventListener('pointerup', e => mdEnd(e, false));
+document.addEventListener('pointercancel', e => mdEnd(e, true));
+function mdLift(st) {
+  if (MD.st !== st || st.mode !== 'pend') return;
+  if (UI.mapEdit) {   // 고치던 칸이 있으면 먼저 적는다 — 다시 그려지므로 잡은 항목을 새로 찾는다
+    const i = document.querySelector('#v-map [data-mapin]'); if (i) { mapCommit(i.value); mapRender(); }
+    st.el = document.querySelector('#v-map [data-sel="' + st.k + '"]'); if (!st.el) { MD.st = null; return; }
+  }
+  st.mode = 'lift'; st.src = mdSrcEl(st);
+  st.src.classList.add('md-lift');
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+function mdStart(st) {
+  st.mode = 'drag';
+  st.src = st.src || mdSrcEl(st);
+  st.src.classList.remove('md-lift');
+  const r = st.src.getBoundingClientRect();
+  const gh = st.src.cloneNode(true);
+  gh.classList.add('md-ghost'); gh.removeAttribute('data-sel');
+  gh.querySelectorAll('[data-sel],[data-a],[data-addin]').forEach(x => { x.removeAttribute('data-sel'); x.removeAttribute('data-a'); x.removeAttribute('data-addin'); });
+  gh.style.cssText += ';width:' + r.width + 'px;left:' + r.left + 'px;top:' + r.top + 'px;' + '--gc:' + getComputedStyle(st.src).getPropertyValue('--gc');
+  st.ox = st.x0 - r.left; st.oy = st.y0 - r.top;
+  document.body.appendChild(gh); st.ghost = gh;
+  const ind = document.createElement('div'); ind.className = 'md-ind'; document.body.appendChild(ind); st.ind = ind;
+  st.src.classList.add('md-src');
+  document.body.classList.add('dragging');
+  st.scroller = $('v-map');
+  if (navigator.vibrate) navigator.vibrate(8);
+  const tick = () => {
+    if (MD.st !== st || st.mode !== 'drag') return;
+    const sc = st.scroller, sr = sc.getBoundingClientRect();
+    let v = 0;
+    if (st.y < sr.top + 60) v = -Math.ceil((sr.top + 60 - st.y) / 5);
+    else if (st.y > sr.bottom - 110) v = Math.ceil((st.y - (sr.bottom - 110)) / 5);
+    if (v) sc.scrollTop += v;
+    gh.style.transform = 'translate(' + (st.x - st.ox - r.left) + 'px,' + (st.y - st.oy - r.top) + 'px)';
+    const t = mdTarget(st); st.tg = t;
+    if (t) {
+      const y = t.before ? t.rect.top - 3 : t.rect.bottom + 1;
+      ind.style.cssText = 'opacity:1;left:' + t.rect.left + 'px;top:' + y + 'px;width:' + t.rect.width + 'px';
+    } else ind.style.opacity = '0';
+    st.raf = requestAnimationFrame(tick);
+  };
+  st.raf = requestAnimationFrame(tick);
+}
+// 손가락 밑 자리 → 놓을 곳. 돌려주는 값: { gid(놓을 묶음), ref(이 앞/뒤), before, first, rect(표시선) }
+function mdTarget(st) {
+  const el = document.elementFromPoint(st.x, st.y);
+  if (!el || !el.closest('#v-map')) return null;
+  const card = el.closest('.gcard');
+  if (st.kind === 'group') {
+    if (!card || card === st.src) return null;
+    const r = card.getBoundingClientRect();
+    if (card.classList.contains('madd-group')) return { end: true, before: true, rect: r };
+    return { gid: card.dataset.gid, before: st.y < r.top + r.height / 2, rect: r };
+  }
+  if (!card || !card.dataset.gid) return null;
+  const top = card.dataset.gid;
+  if (st.kind === 'sub') {
+    const b = el.closest('.sgb');
+    if (b === st.src) return null;
+    if (b) { const r = b.getBoundingClientRect(); return { top: top, ref: b.dataset.gid, before: st.y < r.top + r.height / 2, rect: r }; }
+    const subs = [...card.querySelectorAll('.sgb')].filter(x => x !== st.src);
+    if (!subs.length || el.closest('.addw')) {
+      const r = (subs.length ? subs[subs.length - 1] : (card.querySelector('.gb .ln:last-of-type') || card.querySelector('.ghw,.gh'))).getBoundingClientRect();
+      return { top: top, ref: '', before: false, rect: r };
+    }
+    return { top: top, ref: subs[0].dataset.gid, before: true, rect: subs[0].getBoundingClientRect() };
+  }
+  // 줄
+  const ln = el.closest('.ln[data-sel]');
+  if (ln === st.src) return null;
+  if (ln) { const p = selParts(ln.dataset.sel), r = ln.getBoundingClientRect(); return { gid: p.gid, ref: p.lid, before: st.y < r.top + r.height / 2, rect: r }; }
+  const head = el.closest('.ghw,.sghw');
+  if (head) { const h = head.querySelector('[data-sel]'); if (h) return { gid: selParts(h.dataset.sel).gid, ref: '', first: true, before: false, rect: head.getBoundingClientRect() }; }
+  const add = el.closest('.addw');
+  if (add) return { gid: add.dataset.gid, ref: '', before: true, rect: add.getBoundingClientRect() };
+  return null;
+}
+function mdDrop(st, cancel) {
+  cancelAnimationFrame(st.raf);
+  document.body.classList.remove('dragging');
+  st.ind.remove();
+  const t = cancel ? null : st.tg;
+  const done = () => { st.ghost.remove(); st.src.classList.remove('md-src'); };
+  if (!t) { st.ghost.style.transition = 'transform .2s var(--ease),opacity .2s'; st.ghost.style.transform = ''; st.ghost.style.opacity = '0'; setTimeout(done, 200); return; }
+  done();
+  const p = selParts(st.k);
+  if (st.kind === 'group') {
+    const ids = mapTops().map(g => g.id).filter(id => id !== p.gid);
+    let at = t.end ? ids.length : ids.indexOf(t.gid) + (t.before ? 0 : 1);
+    ids.splice(at, 0, p.gid);
+    const order = [], seen = new Set();
+    const put = g => { if (g && !seen.has(g.id)) { seen.add(g.id); order.push(g); } };
+    ids.forEach(id => { put(findG(DB, id)); childrenOf(DB, id).forEach(put); });
+    DB.G.forEach(put);
+    DB.G = order; DB.set.sorts.map = 'mine'; UI.sel = 'g:' + p.gid;
+    save(); mapRender(); return;
+  }
+  if (st.kind === 'sub') {
+    const g = findG(DB, p.gid), to = findG(DB, t.top), from = findG(DB, st.pl); if (!g || !to) return;
+    // DB.G 안의 자리 = 그 묶음 안 차례. ref 앞/뒤, 없으면 그 묶음 작은 묶음들 맨 뒤
+    const place = () => {
+      DB.G = DB.G.filter(x => x !== g);
+      let at;
+      if (t.ref) { const r = findG(DB, t.ref); at = DB.G.indexOf(r) + (t.before ? 0 : 1); }
+      else { at = DB.G.indexOf(to); kidsOf(DB, to.id).forEach(x => { at = Math.max(at, DB.G.indexOf(x)); }); at++; }
+      DB.G.splice(at, 0, g);
+    };
+    const fin = msg => { UI.sel = 'g:' + g.id; UI.selPl = to.id; save(); mapRender(); if (msg) toast(msg); };
+    if (st.pl === to.id || kidsOf(DB, to.id).indexOf(g) >= 0) { place(); fin(st.pl === to.id ? '' : '이미 ' + to.name + ' 에도 있어 차례만 바꿨습니다'); return; }
+    choose('「' + g.name + '」 → ' + to.name, [
+      { v: 'move', label: '옮기기', desc: (from ? from.name : '') + ' 에서 빼서 ' + to.name + ' 로' },
+      { v: 'link', label: '연동해서 함께 두기', desc: '두 곳에 같은 작은 묶음 — 한쪽을 고치면 다른 쪽도 바뀝니다' }
+    ], null, v => {
+      if (v === 'move') { moveSub(DB, g.id, st.pl, to.id); place(); fin(to.name + ' 로 옮겼습니다'); }
+      else if (v === 'link') { linkSub(DB, g.id, to.id); place(); fin(to.name + ' 에도 연동해 두었습니다'); }
+    });
+    return;
+  }
+  // 줄
+  const sg = findG(DB, p.gid), tg = findG(DB, t.gid); if (!sg || !tg) return;
+  const l = sg.lines.find(x => x.id === p.lid); if (!l) return;
+  const insert = (line) => {
+    let at = t.first ? 0 : tg.lines.length;
+    if (t.ref) { const i = tg.lines.findIndex(x => x.id === t.ref); if (i >= 0) at = i + (t.before ? 0 : 1); }
+    else if (t.before && !t.first) at = tg.lines.length;
+    tg.lines.splice(at, 0, line);
+    UI.sel = 'l:' + tg.id + ':' + line.id;
+  };
+  if (sg === tg) { sg.lines = sg.lines.filter(x => x !== l); insert(l); save(); mapRender(); return; }
+  choose('줄 → ' + tg.name, [
+    { v: 'move', label: '옮기기', desc: sg.name + ' 에서 빼서 ' + tg.name + ' 로' },
+    { v: 'link', label: '연동해서 함께 두기', desc: '두 곳에 같은 줄 — 한쪽을 고치면 다른 쪽도 바뀝니다' }
+  ], null, v => {
+    if (v === 'move') { sg.lines = sg.lines.filter(x => x !== l); insert(l); save(); mapRender(); toast(tg.name + ' 로 옮겼습니다'); }
+    else if (v === 'link') { insert(copyLineLinked(DB, l)); save(); mapRender(); toast(tg.name + ' 에도 연동해 두었습니다'); }
+  });
+}
+// 오른쪽 누르기(PC) = 상세 — 묶음 · 작은 묶음 · 줄 어디서나. 휴대폰의 길게 누르기 메뉴는 막는다(위 손짓이 맡는다)
 document.addEventListener('contextmenu', e => {
   const s = e.target.closest('#v-map [data-sel]'); if (!s) return;
-  e.preventDefault(); if (e.pointerType !== 'touch' && !LP.k) {}
-  if (KB) { mapSelect(s.dataset.sel); mapOpen(s.dataset.sel); }
+  e.preventDefault();
+  if (PT !== 'mouse' || e.target.closest('input')) return;
+  mapSelect(s.dataset.sel); mapOpen(s.dataset.sel);
 });
 // 고치는 칸 밖을 누르면 그대로 적고 마친다
 document.addEventListener('focusout', e => {
   const el = e.target;
+  if (el && el.dataset && el.dataset.addin && el.value.trim()) { const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, false); return; }
   if (!(el && el.dataset && el.dataset.mapin) || !UI.mapEdit) return;
   setTimeout(() => { if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); } }, 0);
 });
@@ -2923,7 +3230,7 @@ function endGesture(e, cancel) {
 document.addEventListener('pointerup', e => endGesture(e, false));
 document.addEventListener('pointercancel', e => endGesture(e, true));
 // iOS: 끌기·스와이프 중에는 화면이 같이 움직이지 않게 (passive:false 여야 막힌다)
-document.addEventListener('touchmove', e => { const st = GS.st; if (st && (st.mode === 'drag' || st.mode === 'swipe' || st.mode === 'edge' || st.mode === 'sheet')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { const st = GS.st; if ((st && (st.mode === 'drag' || st.mode === 'swipe' || st.mode === 'edge' || st.mode === 'sheet')) || (MD.st && MD.st.mode !== 'pend')) e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.row')) e.preventDefault(); });
 
 function startDrag(st) {
