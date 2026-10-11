@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1011-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-1';
+const APP_VERSION = 'v. 26-1011-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1129,6 +1129,21 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .pn.dim{opacity:.18}
 .pn.hit{background:var(--ac-soft);box-shadow:0 0 0 2px var(--ac-soft)}
 .pn .role{color:var(--tx3);font-size:12px;margin-right:3px}
+.ghw,.sghw{position:relative;display:flex;align-items:stretch}
+.ghw{background:var(--gc)}
+.ghw .gh{flex:1}
+.sghw{margin-top:7px}.sghw .sgh{margin-top:0;flex:1}
+.madd{flex-shrink:0;width:34px;font-size:18px;font-weight:300;line-height:1;color:var(--tx3);border-radius:6px;transition:opacity .2s,background .15s}
+.madd.on-gh{color:rgba(255,255,255,.8)}
+.madd:active{background:rgba(127,127,127,.2)}
+.madd-sub{display:block;width:100%;margin-top:6px;padding:5px 8px;border-radius:6px;font-size:12px;color:var(--tx3);text-align:left;border:1px dashed var(--bd2);transition:opacity .2s}
+.madd-group{min-height:52px;font-size:13px;color:var(--tx3);border:1px dashed var(--bd2);background:transparent;transition:opacity .2s}
+/* PC: 마우스를 올린 카드에서만 + 가 보인다 · 휴대폰은 늘 보이되 흐리게 */
+@media (hover:hover) and (pointer:fine){
+  .gcard .madd,.gcard .madd-sub{opacity:0}
+  .gcard:hover .madd,.gcard:hover .madd-sub,.madd:focus-visible,.madd-sub:focus-visible{opacity:1}
+  .madd-group{opacity:.35}.madd-group:hover{opacity:1}
+}
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
 .ln.sel{background:var(--ac-soft);border-radius:6px;box-shadow:0 0 0 2px var(--ac)}
 .ln.ined{padding:2px}
@@ -1683,7 +1698,7 @@ function mapCards(src, opt) {
   const solo = l => !(l.text && !(l.segs || []).length) && (l.segs || []).length === 1 && l.segs[0].length === 1;
   // ⚠️ 키보드로 고치는 PC(마우스)에서는 줄을 하나하나 둔다 — 한 줄로 흘리면 줄 단위로 고르고 옮길 수 없다
   const linesHTML = (ls, gid) => {
-    if (src.live && KB) return ls.map(l => lineHTML(l, gid)).join('');
+    if (src.live) return ls.map(l => lineHTML(l, gid)).join('');
     let out = '', run = [];
     const flush = () => { if (run.length) { out += lineHTML({ segs: [run.map(l => l.segs[0][0])], r: Object.assign({}, ...run.map(l => l.r || {})) }).replace('<div class="ln">', '<div class="ln flow">'); run = []; } };
     ls.forEach(l => { if (solo(l)) run.push(l); else { flush(); out += lineHTML(l); } });
@@ -1694,18 +1709,20 @@ function mapCards(src, opt) {
     const kids = src.kids(g.id);
     const gk = 'g:' + g.id;
     const head = edKey === gk ? '<div class="gh sel"' + selAttr(gk) + '>' + editor(gk, UI.mapEdit.isNew ? '' : g.name, '묶음 이름') + '</div>'
-      : (src.live ? '<button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' + (src.live ? '</button>' : '</div>');
+      : (src.live ? '<div class="ghw"><button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
+        (src.live ? '</button><button class="madd on-gh" data-a="map-add" data-k="line" data-id="' + g.id + '" aria-label="' + esc(g.name) + '에 줄 더하기">+</button></div>' : '</div>');
     return '<div class="gcard" style="--gc:' + esc(g.color) + '">' + head +
       '<div class="gb">' + linesHTML(g.lines || [], g.id) +
       kids.map(k => {
         const kk = 'g:' + k.id;
         if (edKey === kk) return '<div class="sgh sel"' + selAttr(kk) + '>' + editor(kk, UI.mapEdit.isNew ? '' : k.name, '작은 묶음 이름') + '</div>' + linesHTML(k.lines || [], k.id);
-        return (src.live ? '<button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh">') + esc(k.name) +
+        return (src.live ? '<div class="sghw"><button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh">') + esc(k.name) +
         (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
-        (src.live ? '</button>' : '</div>') + linesHTML(k.lines || [], k.id);
+        (src.live ? '</button><button class="madd" data-a="map-add" data-k="line" data-id="' + k.id + '" aria-label="' + esc(k.name) + '에 줄 더하기">+</button></div>' : '</div>') + linesHTML(k.lines || [], k.id);
       }).join('') +
+      (src.live ? '<button class="madd-sub" data-a="map-add" data-k="sub" data-id="' + g.id + '">+ 작은 묶음</button>' : '') +
       '</div></div>';
-  }).join('') + '</div>';
+  }).join('') + (src.live ? '<button class="gcard madd-group" data-a="map-add" data-k="group">+ 묶음</button>' : '') + '</div>';
 }
 
 // ── ⑤ 지도 탭 ──
@@ -1722,7 +1739,7 @@ function renderMap() {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
-  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 묶음 <b>⇧N</b> 작은 묶음 · <u>모두 보기</u></button>';
+  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>L</b> 줄 <b>N</b> 묶음 <b>⇧N</b> 작은 묶음 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter });
   return h;
 }
@@ -2192,9 +2209,15 @@ ACT.groups = () => pushLayer({ type: 'groups' });
 ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' }); };
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
-  const s = KB && el.closest && el.closest('#v-map [data-sel]');
-  if (s) { mapSelect(s.dataset.sel); return; }
+  const s = el.closest && el.closest('#v-map [data-sel]');
+  if (s) { if (KB) mapSelect(s.dataset.sel); else mapStartEdit(s.dataset.sel, false); return; }
   openTarget(el.dataset.id);
+};
+ACT['map-add'] = el => {
+  const k = el.dataset.k, id = el.dataset.id;
+  if (k === 'group') { UI.sel = ''; mapNewGroup(false); return; }
+  if (k === 'sub') { UI.sel = 'g:' + id; mapNewGroup(true); return; }
+  mapAddLine(id);
 };
 ACT['layer-ok'] = () => {
   const a = document.activeElement; if (a && a.blur) a.blur();   // 쓰던 칸을 먼저 저장(change)
@@ -2207,13 +2230,13 @@ ACT['layer-cancel'] = () => {
 };
 ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
   ['↑ ↓', '고르기 (묶음 · 작은 묶음 · 줄)'], ['← →', '앞 · 뒤 묶음으로'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
-  ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
+  ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], ['L', '고른 묶음에 줄 더하기 (줄을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
   ['⌥ ↑ ↓', '위아래로 옮기기 · 줄은 끝에서 옆 묶음으로'], ['N', '새 묶음'], ['⇧ N', '고른 묶음 안에 새 작은 묶음'], ['Esc', '고치기 취소 · 고르기 풀기'],
   ['두 번 누르기', '상세 열기 (이름이면 사람 카드)']
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
   '<div class="hint" style="padding:12px 20px">⌘N · ⌘⇧N 은 크롬 · 사파리가 먼저 가져가(새 창 · 시크릿 창) 웹 페이지가 막을 수 없습니다. 그래서 N · ⇧N 한 글자로 둡니다.</div></div>');
 ACT['open-group'] = el => {
-  if (KB && el.closest && el.closest('#v-map') && el.dataset.sel) { mapSelect(el.dataset.sel); return; }
+  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (KB) mapSelect(el.dataset.sel); else mapStartEdit(el.dataset.sel, false); return; }
   pushLayer({ type: 'group', id: el.dataset.id });
 };
 ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
@@ -2634,6 +2657,14 @@ function mapAddSibling(k) {
     mapStartEdit('l:' + g.id + ':' + l.id, true);
   }
 }
+// 묶음에 줄 하나 — 줄을 고른 상태면 그 바로 뒤, 아니면 끝에
+function mapAddLine(gid, afterLid) {
+  const g = findG(DB, gid); if (!g) return;
+  const l = { id: uid(), segs: [], r: {}, text: '' };
+  const i = afterLid ? g.lines.findIndex(x => x.id === afterLid) : -1;
+  if (i >= 0) g.lines.splice(i + 1, 0, l); else g.lines.push(l);
+  mapStartEdit('l:' + g.id + ':' + l.id, true);
+}
 function mapNewGroup(sub) {
   if (sub) {
     const p = selParts(UI.sel); let g = p.gid && findG(DB, p.gid);
@@ -2753,6 +2784,12 @@ function mapKey(e) {
   if ((key === 'n' || key === 'N' || key === 'ㅜ') && !e.altKey) {   // ⌘N 은 브라우저가 대개 먼저 가져간다 — 오면 받는다
     e.preventDefault(); mapNewGroup(e.shiftKey); return true;
   }
+  if ((key === 'l' || key === 'L' || key === 'ㅣ') && !e.altKey && !mod) {
+    e.preventDefault();
+    const p = selParts(UI.sel);
+    if (!p.gid) { toast('줄을 넣을 묶음을 먼저 고르세요'); return true; }
+    mapAddLine(p.gid, p.t === 'l' ? p.lid : ''); return true;
+  }
   if (mod) return false;
   const nav = mapNav();
   if (!nav.length) return false;
@@ -2786,6 +2823,21 @@ document.addEventListener('dblclick', e => {
   if (pn && pn.dataset.id) { openTarget(pn.dataset.id); return; }
   const s = e.target.closest('#v-map [data-sel]');
   if (s) mapOpen(s.dataset.sel);
+});
+// 길게 누르기(휴대폰) · 오른쪽 누르기(PC) = 상세. 글자든 빈 자리든 그 줄 어디서나
+const LP = { t: 0, x: 0, y: 0, k: '' };
+document.addEventListener('pointerdown', e => {
+  if (UI.tab !== 'map' || UI.layers.length || e.pointerType === 'mouse') return;
+  const s = e.target.closest('#v-map [data-sel]'); if (!s || e.target.closest('.mapin')) return;
+  LP.x = e.clientX; LP.y = e.clientY; LP.k = s.dataset.sel; clearTimeout(LP.t);
+  LP.t = setTimeout(() => { LP.t = 0; GS.suppress = Date.now(); if (navigator.vibrate) navigator.vibrate(12); mapOpen(LP.k); }, 480);
+}, { passive: true });
+document.addEventListener('pointermove', e => { if (LP.t && (Math.abs(e.clientX - LP.x) > 8 || Math.abs(e.clientY - LP.y) > 8)) { clearTimeout(LP.t); LP.t = 0; } }, { passive: true });
+['pointerup', 'pointercancel'].forEach(n => document.addEventListener(n, () => { clearTimeout(LP.t); LP.t = 0; }));
+document.addEventListener('contextmenu', e => {
+  const s = e.target.closest('#v-map [data-sel]'); if (!s) return;
+  e.preventDefault(); if (e.pointerType !== 'touch' && !LP.k) {}
+  if (KB) { mapSelect(s.dataset.sel); mapOpen(s.dataset.sel); }
 });
 // 고치는 칸 밖을 누르면 그대로 적고 마친다
 document.addEventListener('focusout', e => {
