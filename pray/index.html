@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1011-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0d0e10">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-7';
+const APP_VERSION = 'v. 26-1011-8';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1077,32 +1077,39 @@ function applyTheme(set) {
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', bg);
 }
 
-// 아이폰: 글자 칸을 누르면 화면이 저절로 커지고 마친 뒤에도 안 돌아온다(사파리는 되돌리는 길을 주지 않는다).
-// → 저절로 커지는 것만 막는다. 두 손가락으로 벌려 키우기는 아이폰이 그대로 허용한다 (HB 2026-10-11)
-if (/iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-  const vp = document.querySelector('meta[name="viewport"]'); if (vp && vp.content.indexOf('maximum-scale') < 0) vp.content += ',maximum-scale=1';
-}
+// 아이폰: 글자 칸을 누르면 화면이 저절로 커지는 것은 viewport 의 maximum-scale=1 로 막는다 (HTML 머리에 박아 둠).
+// ⚠️ 예전(v26-1011-3)엔 여기서 **열린 뒤에** viewport 를 고쳤다. iOS 홈 화면 앱은 열린 뒤 viewport 가 바뀌면
+//    화면 높이를 잘못 잡는 일이 있어(아래 빈 띠의 유력한 까닭) 처음부터 박아 두는 BLOCK7 방식으로 바꿨다.
 // ── 홈 화면 앱(아이폰 · 아이패드)에서 아래가 비는 것 막기 (HB 2026-10-11, 사진: 아래 메뉴 밑에 빈 띠) ──
 // 상태 표시줄을 비치게 한(black-translucent) 홈 화면 앱에서 iOS 가 페이지 높이를 **화면 − 위 상태 표시줄** 로
 // 잡는 일이 있다. 그래서 position:fixed; inset:0 인 앱 판이 화면 끝까지 안 닿고, 아래에 위 여백만큼 빈 띠가 생겼다.
 // → 실제 화면 높이와 페이지 높이의 차이(--gapb)를 재서 앱 판 · 아래 창 · 알림을 그만큼 아래로 늘린다.
 // ⚠️ 화면 폭을 다 쓰는 홈 화면 앱일 때만, 차이가 0~90px 일 때만 고친다 — 화면 나누기(아이패드) ·
 //    자판이 올라온 때 등 '진짜로 작은 창' 은 건드리지 않는다.
+// ⚠️ v26-1011-7 에선 window.innerHeight 로 쟀는데 고쳐지지 않았다 — 기기에서 innerHeight 는 화면 전체(852)를
+//    말하면서 position:fixed 는 짧은 상자(805)에 맞춰 그려졌다. 그래서 **fixed 상자를 직접 재는** 막대(probe)로 잰다.
+let GAP_INFO = '';
 function fixBottomGap() {
-  let gap = 0;
+  let gap = 0, ph = 0, fullH = 0;
   try {
+    const pr = document.createElement('div');
+    pr.style.cssText = 'position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none';
+    (document.body || document.documentElement).appendChild(pr);
+    ph = pr.getBoundingClientRect().height; pr.remove();
     const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
     if (standalone && screen && screen.width && screen.height) {
       const sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
       const land = window.innerWidth > window.innerHeight;
-      const fullW = land ? sh : sw, fullH = land ? sw : sh;
-      const h = window.innerHeight;
-      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH - h > 0 && fullH - h <= 90) gap = fullH - h;
+      const fullW = land ? sh : sw; fullH = land ? sw : sh;
+      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH - ph > 0.5 && fullH - ph <= 90) gap = Math.round(fullH - ph);
     }
   } catch (e) { gap = 0; }
   document.documentElement.style.setProperty('--gapb', gap + 'px');
+  GAP_INFO = '화면 ' + Math.round(fullH || 0) + ' · 판 ' + Math.round(ph) + ' · 창 ' + window.innerHeight + ' · 보정 ' + gap;
 }
-fixBottomGap();
+document.addEventListener('DOMContentLoaded', fixBottomGap);
+window.addEventListener('load', () => { fixBottomGap(); setTimeout(fixBottomGap, 600); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(fixBottomGap, 200); });
 window.addEventListener('resize', fixBottomGap);
 window.addEventListener('orientationchange', () => setTimeout(fixBottomGap, 300));
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
@@ -2312,7 +2319,7 @@ LAYERS.settings = () => {
     '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
-  b += '<div class="hint" style="padding:20px 20px 0">자료는 이 기기에만 저장됩니다 (로그인·기기 사이 맞추기는 다음 단계). 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/</div>';
+  b += '<div class="hint" style="padding:20px 20px 0">자료는 이 기기에만 저장됩니다 (로그인·기기 사이 맞추기는 다음 단계). 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
   return { title: '설정', body: b };
 };
