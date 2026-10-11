@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1011-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-6';
+const APP_VERSION = 'v. 26-1011-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1082,6 +1082,29 @@ function applyTheme(set) {
 if (/iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
   const vp = document.querySelector('meta[name="viewport"]'); if (vp && vp.content.indexOf('maximum-scale') < 0) vp.content += ',maximum-scale=1';
 }
+// ── 홈 화면 앱(아이폰 · 아이패드)에서 아래가 비는 것 막기 (HB 2026-10-11, 사진: 아래 메뉴 밑에 빈 띠) ──
+// 상태 표시줄을 비치게 한(black-translucent) 홈 화면 앱에서 iOS 가 페이지 높이를 **화면 − 위 상태 표시줄** 로
+// 잡는 일이 있다. 그래서 position:fixed; inset:0 인 앱 판이 화면 끝까지 안 닿고, 아래에 위 여백만큼 빈 띠가 생겼다.
+// → 실제 화면 높이와 페이지 높이의 차이(--gapb)를 재서 앱 판 · 아래 창 · 알림을 그만큼 아래로 늘린다.
+// ⚠️ 화면 폭을 다 쓰는 홈 화면 앱일 때만, 차이가 0~90px 일 때만 고친다 — 화면 나누기(아이패드) ·
+//    자판이 올라온 때 등 '진짜로 작은 창' 은 건드리지 않는다.
+function fixBottomGap() {
+  let gap = 0;
+  try {
+    const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (standalone && screen && screen.width && screen.height) {
+      const sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
+      const land = window.innerWidth > window.innerHeight;
+      const fullW = land ? sh : sw, fullH = land ? sw : sh;
+      const h = window.innerHeight;
+      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH - h > 0 && fullH - h <= 90) gap = fullH - h;
+    }
+  } catch (e) { gap = 0; }
+  document.documentElement.style.setProperty('--gapb', gap + 'px');
+}
+fixBottomGap();
+window.addEventListener('resize', fixBottomGap);
+window.addEventListener('orientationchange', () => setTimeout(fixBottomGap, 300));
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
 try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
@@ -1133,7 +1156,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 input,textarea,select{font:inherit;color:var(--tx)}
 svg{display:block;flex-shrink:0}
 .ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-#app{position:fixed;inset:0;max-width:1240px;margin:0 auto;overflow:hidden}
+#app{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;max-width:1240px;margin:0 auto;overflow:hidden}
 /* PC 에서는 지도만 넓게 쓰고(기도 계획을 세우는 큰 판), 나머지 화면은 읽기 좋은 폭으로 */
 .view:not(#v-map){padding-left:max(0px,calc((100% - 760px) / 2));padding-right:max(0px,calc((100% - 760px) / 2))}
 #tabbar{padding-left:max(8px,calc((100% - 760px) / 2));padding-right:max(8px,calc((100% - 760px) / 2))}
@@ -1260,14 +1283,14 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 @media (min-width:600px){.masonry{column-count:3}}
 @media (min-width:980px){.masonry{column-count:4}}
 .gcard{break-inside:avoid;margin:0 0 10px;background:var(--s1);border-radius:12px;overflow:hidden;display:block;width:100%}
-.gh{width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--gc);color:#fff;font-size:13px;font-weight:600;letter-spacing:.02em}
-.gh .cnt{margin-left:auto;font-weight:400;opacity:.8;font-size:12px}
+.gh{width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--gc);color:#fff;font-size:calc(13px * var(--mz,1));font-weight:600;letter-spacing:.02em}
+.gh .cnt{margin-left:auto;font-weight:400;opacity:.8;font-size:calc(12px * var(--mz,1))}
 .gb{padding:4px 8px 8px}
-.sgh{width:100%;margin-top:7px;padding:3px 8px;border-radius:6px;font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center;
+.sgh{width:100%;margin-top:7px;padding:3px 8px;border-radius:6px;font-size:calc(12px * var(--mz,1));font-weight:600;display:flex;gap:6px;align-items:center;
   background:color-mix(in srgb,var(--sc,var(--gc)) 45%,var(--s1));color:var(--tx)}
-.sgh .dt{font-weight:500;color:var(--ac-tx);font-size:11.5px}
-.ln{display:flex;flex-wrap:wrap;gap:1px 6px;padding:3px 2px;font-size:13.5px;line-height:1.5}
-.ln.note{font-size:12px;color:var(--tx3)}
+.sgh .dt{font-weight:500;color:var(--ac-tx);font-size:calc(11.5px * var(--mz,1))}
+.ln{display:flex;flex-wrap:wrap;gap:1px 6px;padding:3px 2px;font-size:calc(13.5px * var(--mz,1));line-height:1.5}
+.ln.note{font-size:calc(12px * var(--mz,1));color:var(--tx3)}
 .ln.flow{gap:1px 9px}
 .ln .sep{color:var(--tx3)}
 .pn{color:var(--pc,var(--tx));padding:0;border-radius:4px;transition:background .15s}
@@ -1276,7 +1299,7 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .pn.lead{font-weight:650;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .pn.dim{opacity:.18}
 .pn.hit{background:var(--ac-soft);box-shadow:0 0 0 2px var(--ac-soft)}
-.pn .role{color:var(--tx3);font-size:12px;margin-right:3px}
+.pn .role{color:var(--tx3);font-size:calc(12px * var(--mz,1));margin-right:3px}
 .ghw,.sghw{position:relative;display:flex;align-items:stretch}
 .ghw{background:var(--gc)}
 .ghw .gh{flex:1}
@@ -1285,10 +1308,10 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .madd svg{width:13.5px;height:13.5px}
 .madd.on-gh{color:rgba(255,255,255,.85)}
 .madd:active{background:rgba(127,127,127,.2)}
-.madd-group{min-height:52px;font-size:13px;color:var(--tx3);border:1px dashed var(--bd2);background:transparent;transition:opacity .2s}
+.madd-group{min-height:52px;font-size:calc(13px * var(--mz,1));color:var(--tx3);border:1px dashed var(--bd2);background:transparent;transition:opacity .2s}
 /* 카드 맨 아래 줄 입력 칸 — 줄이 하나 더 있을 자리처럼 */
 .addw{padding:1px 2px 0}
-.addin{width:100%;border:0;outline:none;background:transparent;color:var(--tx);font:inherit;font-size:13.5px;line-height:1.5;padding:3px 0;caret-color:var(--ac)}
+.addin{width:100%;border:0;outline:none;background:transparent;color:var(--tx);font:inherit;font-size:calc(13.5px * var(--mz,1));line-height:1.5;padding:3px 0;caret-color:var(--ac)}
 .addin::placeholder{color:var(--tx3);opacity:.7}
 /* 구분 칩 — 입력 칸 바로 밑 한 줄, 넘치면 옆으로 민다 */
 .achips{display:flex;gap:5px;overflow-x:auto;padding:4px 0 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
@@ -1459,7 +1482,7 @@ textarea.field{min-height:72px;line-height:1.6}
 .cal-d small{font-size:10px;opacity:.75}
 
 /* ── 아래에서 올라오는 창 ── */
-.sh-wrap{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
+.sh-wrap{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
 .sh-bd{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .28s}
 .sh-wrap.in .sh-bd{opacity:1}
 .sheet{position:relative;width:100%;max-width:760px;max-height:86vh;display:flex;flex-direction:column;background:var(--s1);
@@ -1486,7 +1509,7 @@ textarea.field{min-height:72px;line-height:1.6}
 .sh-acts .cta{margin:0;width:auto;flex:1}
 
 /* ── 한 장씩 기도하기 ── */
-.focus{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.focus{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 .focus.on{display:flex;animation:fin .35s var(--ease)}
 @keyframes fin{from{opacity:0}to{opacity:1}}
 .f-top{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--sat) + 8px) 6px 0 20px;position:relative;z-index:2}
@@ -1517,7 +1540,7 @@ textarea.field{min-height:72px;line-height:1.6}
 @keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:.55}100%{transform:translateY(-82vh);opacity:0}}
 
 /* ── 알림 ── */
-#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 82px);transform:translateY(20px);opacity:0;z-index:90;
+#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 82px - var(--gapb,0px));transform:translateY(20px);opacity:0;z-index:90;
   background:var(--tx);color:var(--bg);border-radius:14px;padding:0 6px 0 16px;min-height:46px;display:flex;align-items:center;gap:10px;
   font-size:14px;max-width:calc(100% - 32px);transition:transform .3s var(--ease),opacity .25s;pointer-events:none;box-shadow:0 10px 30px -8px var(--shadow-color)}
 #toast.on{opacity:1;transform:none;pointer-events:auto}
@@ -1539,6 +1562,9 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .mk-link span{flex:1}
 .mk-link button{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
 .mk-link button .ico{width:14px;height:14px;color:var(--tx3)}
+
+/* 핀치로 열 바꾸기 — 손가락을 따라 판이 커지고 작아진다 */
+.masonry.mjs.pinching{transition:none;will-change:transform}
 </style>
 </head>
 <body>
@@ -3281,6 +3307,7 @@ function mdStart(st) {
   el.before(ph); st.ph = ph;
   // 카드 밖으로 꺼내 띄운다 — 카드에서 물려받던 색은 직접 쥐여 준다
   el.style.setProperty('--gc', cs.getPropertyValue('--gc'));
+  el.style.setProperty('--mz', cs.getPropertyValue('--mz') || '1');   // 카드 밖에서도 같은 글자 크기
   el.style.cssText += ';position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:60;transition:none';
   el.classList.add('md-drag');
   if (st.alt && st.kind !== 'group') el.classList.add('md-copy');
@@ -3443,7 +3470,7 @@ function mdLand(st, then) {
   el.classList.add('md-landing');
   setTimeout(() => {
     ph.replaceWith(el);
-    ['position', 'left', 'top', 'width', 'margin', 'z-index', 'transition', 'transform'].concat(st.kind === 'group' ? [] : ['--gc']).forEach(k => el.style.removeProperty(k));
+    ['position', 'left', 'top', 'width', 'margin', 'z-index', 'transition', 'transform', '--mz'].concat(st.kind === 'group' ? [] : ['--gc']).forEach(k => el.style.removeProperty(k));
     el.classList.remove('md-drag', 'md-landing', 'md-copy');
     if (then) then();
   }, MD_SLIDE);
@@ -3456,7 +3483,6 @@ function mdUnlift(st) { if (st.src) st.src.classList.remove('md-lift'); }
 // ── 지도 세로 단 (그룹 카드 쌓기) ──
 // CSS 다단(column-count)은 카드 하나만 움직여도 모든 카드를 다시 나눠 담아 끌 때 깜빡였다.
 // → 단을 직접 만들고, 카드를 차례대로 '가장 짧은 단' 에 쌓는다 (차례 = 왼쪽에서 오른쪽 · 위에서 아래로 읽는 순서).
-function mapColCount(w) { return w >= 940 ? 4 : w >= 560 ? 3 : 2; }
 function mapOrder() { const m = document.querySelector('#v-map .mjs'); return m && m._order ? m._order.slice() : []; }
 function mapDistribute(cols, order, hs) {
   const h = cols.map(() => 0);
@@ -3470,6 +3496,7 @@ function mapLayout() {
   const m = document.querySelector('#v-map .mjs'); if (!m) return;
   const cards = m._order || [...m.children].filter(x => x.classList.contains('gcard'));
   const n = mapColCount(m.clientWidth);
+  m.style.setProperty('--mz', mapFontScale(m.clientWidth, n).toFixed(3));   // 열이 적으면 글자도 크게
   m.innerHTML = '';
   const cols = []; for (let i = 0; i < n; i++) { const c = document.createElement('div'); c.className = 'mcol'; m.appendChild(c); cols.push(c); }
   cards.forEach(c => cols[0].appendChild(c));     // 같은 폭에서 높이를 잰다
@@ -3478,6 +3505,89 @@ function mapLayout() {
   m._order = cards; m._n = n;
 }
 window.addEventListener('resize', () => { const m = document.querySelector('#v-map .mjs'); if (m && m._n !== mapColCount(m.clientWidth)) mapLayout(); });
+// ── 지도 열 개수 — 폭 따라 2 · 3 · 4 열이 기본, 휴대폰에서 핀치로 바꾼다 (HB 2026-10-11) ──
+// 고른 값은 '기본이 몇 열인 폭에서 몇 열로' 로 이 기기에만 남긴다 → 아이패드를 돌려 기본이 바뀌어도 그 폭의 선택이 따로 산다.
+// 열을 줄이면 글자도 커진다(--mz). 한 단 폭이 늘어난 만큼 다 키우면 1열에서 너무 커서 0.55 제곱으로 누그러뜨린다.
+const MAPCOL_KEY = 'pray.mapcols';
+function mapColDefault(w) { return w >= 940 ? 4 : w >= 560 ? 3 : 2; }
+function mapColPref() { try { return JSON.parse(localStorage.getItem(MAPCOL_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function mapColMax(w) { return Math.max(2, Math.min(5, Math.floor((w - 28) / 108))); }   // 한 단이 너무 좁으면 그룹 이름이 한 글자씩 꺾인다
+function mapColCount(w) { const d = mapColDefault(w), o = +mapColPref()[d]; return o >= 1 && o <= mapColMax(w) ? o : d; }
+function mapColW(w, n) { return (w - 28 - (n - 1) * 10) / n; }
+function mapFontScale(w, n) { return Math.max(.78, Math.min(1.6, Math.pow(mapColW(w, n) / mapColW(w, mapColDefault(w)), .55))); }
+
+// ── 핀치 — Sweeter 그리드처럼 '손을 뗀 뒤에 바뀌는' 것이 아니라 **손을 따라** 판이 커지고 작아진다.
+//    손을 떼면 가장 가까운 열 개수로 붙고(스냅), 카드들은 커진 모습에서 새 자리로 미끄러져 들어간다.
+//    너무 벌리거나 오므리면 끝에서 고무줄처럼 버틴다.
+const PZ = { on: false };
+function pzDist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+function pzMid(t) { return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 }; }
+document.addEventListener('touchstart', e => {
+  if (UI.tab !== 'map' || UI.layers.length || SHEET || e.touches.length !== 2) return;
+  const m = document.querySelector('#v-map .mjs'); if (!m || !e.target.closest('#v-map')) return;
+  // 길게 누르기 · 끌기는 접는다 — 두 손가락이면 핀치다
+  if (MD.st) { clearTimeout(MD.st.timer); if (MD.st.mode === 'lift') mdUnlift(MD.st); if (MD.st.mode !== 'drag') MD.st = null; }
+  if (MD.st) return;
+  const w = m.clientWidth, n = m._n || mapColCount(w), r = m.getBoundingClientRect(), mid = pzMid(e.touches);
+  Object.assign(PZ, { on: true, m: m, w: w, n0: n, d0: pzDist(e.touches), mid0: mid, s: 1, ox: mid.x - r.left, oy: mid.y - r.top });
+  // 붙을 수 있는 열들 — 지금 한 단 폭에 견준 배율
+  PZ.lo = mapColW(w, Math.min(mapColMax(w), 5)) / mapColW(w, n);
+  PZ.hi = mapColW(w, 1) / mapColW(w, n);
+  m.style.transformOrigin = PZ.ox + 'px ' + PZ.oy + 'px';
+  m.classList.add('pinching');
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!PZ.on) return;
+  if (e.touches.length < 2) return;
+  e.preventDefault();
+  let s = pzDist(e.touches) / PZ.d0;
+  // 끝에서는 고무줄처럼 — 넘친 만큼의 1/3 만 따라간다
+  if (s > PZ.hi) s = PZ.hi * Math.pow(s / PZ.hi, 1 / 3);
+  if (s < PZ.lo) s = PZ.lo * Math.pow(s / PZ.lo, 1 / 3);
+  const mid = pzMid(e.touches);
+  PZ.s = s;
+  PZ.m.style.transform = 'translate(' + (mid.x - PZ.mid0.x) + 'px,' + (mid.y - PZ.mid0.y) + 'px) scale(' + s + ')';
+}, { passive: false });
+['touchend', 'touchcancel'].forEach(n => document.addEventListener(n, e => { if (PZ.on && e.touches.length < 2) pzEnd(); }));
+// 사파리 기본 확대(제스처)는 지도에서 막는다 — 우리가 맡는다
+['gesturestart', 'gesturechange'].forEach(n => document.addEventListener(n, e => { if (UI.tab === 'map' && !UI.layers.length && e.target.closest && e.target.closest('#v-map')) e.preventDefault(); }, { passive: false }));
+function pzEnd() {
+  PZ.on = false;
+  GS.suppress = Date.now();   // 손을 떼며 생기는 누르기는 삼킨다
+  const m = PZ.m, w = PZ.w, n0 = PZ.n0, s = PZ.s;
+  // 가장 가까운 열 — 배율을 로그로 견준다 (2배 · 반배가 같은 거리)
+  let best = n0, bd = Infinity;
+  for (let n = 1; n <= mapColMax(w); n++) { const d = Math.abs(Math.log(s) - Math.log(mapColW(w, n) / mapColW(w, n0))); if (d < bd) { bd = d; best = n; } }
+  const sc = $('v-map');
+  if (best === n0) {
+    m.style.transition = 'transform ' + (MD_SLIDE / 1000) + 's ' + MD_EASE;
+    m.style.transform = '';
+    setTimeout(() => { m.classList.remove('pinching'); m.style.transition = ''; m.style.transformOrigin = ''; }, MD_SLIDE);
+    return;
+  }
+  // 1) 지금 눈에 보이는 카드 자리(커진 채로)를 잰다 · 손가락 가운데 밑 카드를 닻으로
+  const cards = [...m.querySelectorAll('.gcard')];
+  const was = new Map(cards.map(c => [c, c.getBoundingClientRect()]));
+  const under = document.elementFromPoint(PZ.mid0.x, PZ.mid0.y);
+  const anchor = (under && under.closest('#v-map .gcard')) || cards[0];
+  // 2) 열 바꾸기 — 이 폭의 기본 열에 대해 고른 값을 남긴다
+  const pref = mapColPref(); const d = mapColDefault(w);
+  if (best === d) delete pref[d]; else pref[d] = best;
+  try { localStorage.setItem(MAPCOL_KEY, JSON.stringify(pref)); } catch (e) { /* 이 기기에서만 못 남김 */ }
+  m.classList.remove('pinching'); m.style.transform = ''; m.style.transformOrigin = ''; m.style.transition = '';
+  mapLayout();
+  // 3) 닻 카드가 손가락 밑 그 높이에 그대로 있게 스크롤을 맞춘다
+  if (anchor && was.get(anchor)) sc.scrollTop += anchor.getBoundingClientRect().top - was.get(anchor).top;
+  // 4) 커진 모습에서 새 자리 · 새 크기로 미끄러져 들어간다 (FLIP — 자리와 크기를 함께)
+  cards.forEach(c => {
+    const o = was.get(c), nr = c.getBoundingClientRect(); if (!o || !nr.width) return;
+    c.style.transformOrigin = '0 0'; c.style.transition = 'none';
+    c.style.transform = 'translate(' + (o.left - nr.left) + 'px,' + (o.top - nr.top) + 'px) scale(' + (o.width / nr.width) + ')';
+    requestAnimationFrame(() => { c.style.transition = 'transform ' + (MD_SLIDE / 1000) + 's ' + MD_EASE; c.style.transform = ''; });
+  });
+  setTimeout(() => cards.forEach(c => { c.style.transition = ''; c.style.transformOrigin = ''; }), MD_SLIDE + 30);
+  if (navigator.vibrate) navigator.vibrate(8);
+}
 // 다시 그리면서 카드가 옮겨 간 자리로 미끄러지게 (손을 뗀 뒤 단이 다시 짜일 때)
 function mapRenderFlip() {
   const was = {}; document.querySelectorAll('#v-map .gcard[data-gid]').forEach(c => { was[c.dataset.gid] = c.getBoundingClientRect(); });
