@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1011-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1011-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1011-8';
+const APP_VERSION = 'v. 26-1011-9';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1075,43 +1075,51 @@ function applyTheme(set) {
   if (!p) TH_KEYS.forEach(k => el.style.removeProperty(k));
   else { const t = _themeTokens(p, mode); TH_KEYS.forEach(k => { if (t[k]) el.style.setProperty(k, t[k]); }); bg = t['--bg']; }
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', bg);
+  if (typeof syncCanvasColor === 'function') syncCanvasColor();
 }
 
 // 아이폰: 글자 칸을 누르면 화면이 저절로 커지는 것은 viewport 의 maximum-scale=1 로 막는다 (HTML 머리에 박아 둠).
 // ⚠️ 예전(v26-1011-3)엔 여기서 **열린 뒤에** viewport 를 고쳤다. iOS 홈 화면 앱은 열린 뒤 viewport 가 바뀌면
 //    화면 높이를 잘못 잡는 일이 있어(아래 빈 띠의 유력한 까닭) 처음부터 박아 두는 BLOCK7 방식으로 바꿨다.
-// ── 홈 화면 앱(아이폰 · 아이패드)에서 아래가 비는 것 막기 (HB 2026-10-11, 사진: 아래 메뉴 밑에 빈 띠) ──
-// 상태 표시줄을 비치게 한(black-translucent) 홈 화면 앱에서 iOS 가 페이지 높이를 **화면 − 위 상태 표시줄** 로
-// 잡는 일이 있다. 그래서 position:fixed; inset:0 인 앱 판이 화면 끝까지 안 닿고, 아래에 위 여백만큼 빈 띠가 생겼다.
-// → 실제 화면 높이와 페이지 높이의 차이(--gapb)를 재서 앱 판 · 아래 창 · 알림을 그만큼 아래로 늘린다.
-// ⚠️ 화면 폭을 다 쓰는 홈 화면 앱일 때만, 차이가 0~90px 일 때만 고친다 — 화면 나누기(아이패드) ·
-//    자판이 올라온 때 등 '진짜로 작은 창' 은 건드리지 않는다.
-// ⚠️ v26-1011-7 에선 window.innerHeight 로 쟀는데 고쳐지지 않았다 — 기기에서 innerHeight 는 화면 전체(852)를
-//    말하면서 position:fixed 는 짧은 상자(805)에 맞춰 그려졌다. 그래서 **fixed 상자를 직접 재는** 막대(probe)로 잰다.
+// ── 홈 화면 앱(아이폰 · 아이패드) 아래 빈 띠 (HB 2026-10-11, 세 번째 사진까지) ──
+// ⚠️ **iOS 26 WebKit 의 잘못**이다(WebKit Bug 301108 로 알려짐). 상태 표시줄을 비치게 한(black-translucent) 홈 화면 앱은
+//    웹 화면 자체가 '화면 − 위 상태 표시줄' 높이로 만들어진다 — 아이폰 844 화면에 797, 아이패드 1133 에 1101.
+//    그 아래 띠는 **웹 화면 바깥**이라 페이지가 무엇을 그려도 안 보인다. 다른 개발자들도 확인했다:
+//    100vh · lvh · 높이 늘리기 · bottom 음수 · 칠한 띠 전부 797 에서 잘린다.
+//    (v26-1011-7 · 8 에서 앱 판을 아래로 늘렸는데 같은 까닭으로 안 먹었다 → 되돌렸다. 늘린 만큼 아래가 화면 밖으로 밀릴 수도 있었다.)
+// → 고칠 수 있는 것은 **그 띠의 색** 하나다. 띠는 페이지의 바탕색(html)을 보인다 → html 바탕을 아래 메뉴와 같은 색으로 칠해
+//    메뉴가 화면 끝까지 이어진 것처럼 보이게 한다. 페이지 자체(body)는 제 바탕색을 그대로 칠하므로 화면 안은 달라지지 않는다.
+// ⚠️ 위 상태 표시줄을 불투명(default)으로 바꾸면 아래는 붙지만 위가 앱과 따로 노는 회색 띠가 된다 — 고르지 않았다.
+function syncCanvasColor() {
+  try {
+    // 테마 변수에서 바로 읽는다 — 계산된 색은 바뀌는 중(전환 효과)이면 옛 색이 섞여 나왔다
+    const cs = getComputedStyle(document.documentElement);
+    const rgb = c => {
+      c = String(c || '').trim();
+      const h = c.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+      if (h) { let x = h[1]; if (x.length === 3) x = x.replace(/./g, d => d + d); return [0, 2, 4].map(i => parseInt(x.substr(i, 2), 16)); }
+      return (c.match(/[\d.]+/g) || []).map(Number);
+    };
+    const f = rgb(cs.getPropertyValue('--header-bg')), b = rgb(cs.getPropertyValue('--bg'));
+    if (f.length < 3 || b.length < 3) return;
+    const a = f.length > 3 ? f[3] : 1, mix = k => Math.round(f[k] * a + b[k] * (1 - a));
+    document.documentElement.style.backgroundColor = 'rgb(' + mix(0) + ',' + mix(1) + ',' + mix(2) + ')';
+  } catch (e) { /* 띠 색만 못 맞춤 */ }
+}
+// 설정 맨 아래에 흐리게 보이는 숫자 — 화면 · 웹 화면 높이 (아래 띠가 iOS 탓인지 사진 한 장으로 가린다)
 let GAP_INFO = '';
-function fixBottomGap() {
-  let gap = 0, ph = 0, fullH = 0;
+function measureScreen() {
   try {
     const pr = document.createElement('div');
     pr.style.cssText = 'position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none';
-    (document.body || document.documentElement).appendChild(pr);
-    ph = pr.getBoundingClientRect().height; pr.remove();
-    const standalone = navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
-    if (standalone && screen && screen.width && screen.height) {
-      const sw = Math.min(screen.width, screen.height), sh = Math.max(screen.width, screen.height);
-      const land = window.innerWidth > window.innerHeight;
-      const fullW = land ? sh : sw; fullH = land ? sw : sh;
-      if (Math.abs(window.innerWidth - fullW) <= 2 && fullH - ph > 0.5 && fullH - ph <= 90) gap = Math.round(fullH - ph);
-    }
-  } catch (e) { gap = 0; }
-  document.documentElement.style.setProperty('--gapb', gap + 'px');
-  GAP_INFO = '화면 ' + Math.round(fullH || 0) + ' · 판 ' + Math.round(ph) + ' · 창 ' + window.innerHeight + ' · 보정 ' + gap;
+    document.body.appendChild(pr); const ph = pr.getBoundingClientRect().height; pr.remove();
+    const land = window.innerWidth > window.innerHeight;
+    const full = screen && screen.height ? (land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height)) : 0;
+    GAP_INFO = '화면 ' + Math.round(full) + ' · 웹 화면 ' + Math.round(ph) + (full - ph > 1 ? ' · 아래 ' + Math.round(full - ph) + ' 은 iOS 몫' : '');
+  } catch (e) { GAP_INFO = ''; }
 }
-document.addEventListener('DOMContentLoaded', fixBottomGap);
-window.addEventListener('load', () => { fixBottomGap(); setTimeout(fixBottomGap, 600); });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(fixBottomGap, 200); });
-window.addEventListener('resize', fixBottomGap);
-window.addEventListener('orientationchange', () => setTimeout(fixBottomGap, 300));
+document.addEventListener('DOMContentLoaded', measureScreen);
+window.addEventListener('resize', measureScreen);
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
 try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
@@ -1163,7 +1171,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 input,textarea,select{font:inherit;color:var(--tx)}
 svg{display:block;flex-shrink:0}
 .ico{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-#app{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;max-width:1240px;margin:0 auto;overflow:hidden}
+#app{position:fixed;inset:0;max-width:1240px;margin:0 auto;overflow:hidden}
 /* PC 에서는 지도만 넓게 쓰고(기도 계획을 세우는 큰 판), 나머지 화면은 읽기 좋은 폭으로 */
 .view:not(#v-map){padding-left:max(0px,calc((100% - 760px) / 2));padding-right:max(0px,calc((100% - 760px) / 2))}
 #tabbar{padding-left:max(8px,calc((100% - 760px) / 2));padding-right:max(8px,calc((100% - 760px) / 2))}
@@ -1264,6 +1272,9 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .tb{height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--tx3);transition:color .2s}
 .tb .ico{width:22px;height:22px}
 .tb.on{color:var(--ac-tx)}
+/* 오른쪽 아래 구석의 버전 — 누르면 새 버전을 찾아 받는다 */
+#verBtn{position:absolute;right:4px;top:2px;padding:2px 5px;font-size:9px;line-height:1.2;color:var(--tx3);opacity:.7;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+#verBtn.busy{opacity:.35}
 
 /* ── 칩 · 고르기 ── */
 .chips{display:flex;gap:6px;overflow-x:auto;padding:4px 20px 6px;scrollbar-width:none}
@@ -1489,7 +1500,7 @@ textarea.field{min-height:72px;line-height:1.6}
 .cal-d small{font-size:10px;opacity:.75}
 
 /* ── 아래에서 올라오는 창 ── */
-.sh-wrap{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
+.sh-wrap{position:fixed;inset:0;z-index:70;display:flex;align-items:flex-end;justify-content:center}
 .sh-bd{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .28s}
 .sh-wrap.in .sh-bd{opacity:1}
 .sheet{position:relative;width:100%;max-width:760px;max-height:86vh;display:flex;flex-direction:column;background:var(--s1);
@@ -1516,7 +1527,7 @@ textarea.field{min-height:72px;line-height:1.6}
 .sh-acts .cta{margin:0;width:auto;flex:1}
 
 /* ── 한 장씩 기도하기 ── */
-.focus{position:fixed;inset:0 0 calc(0px - var(--gapb,0px)) 0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
+.focus{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 .focus.on{display:flex;animation:fin .35s var(--ease)}
 @keyframes fin{from{opacity:0}to{opacity:1}}
 .f-top{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--sat) + 8px) 6px 0 20px;position:relative;z-index:2}
@@ -1547,7 +1558,7 @@ textarea.field{min-height:72px;line-height:1.6}
 @keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:.55}100%{transform:translateY(-82vh);opacity:0}}
 
 /* ── 알림 ── */
-#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 82px - var(--gapb,0px));transform:translateY(20px);opacity:0;z-index:90;
+#toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;bottom:calc(var(--sab) + 82px);transform:translateY(20px);opacity:0;z-index:90;
   background:var(--tx);color:var(--bg);border-radius:14px;padding:0 6px 0 16px;min-height:46px;display:flex;align-items:center;gap:10px;
   font-size:14px;max-width:calc(100% - 32px);transition:transform .3s var(--ease),opacity .25s;pointer-events:none;box-shadow:0 10px 30px -8px var(--shadow-color)}
 #toast.on{opacity:1;transform:none;pointer-events:auto}
@@ -1585,6 +1596,7 @@ html[data-mode="light"] #toast button{color:#e7c98f}
     <button class="tb" data-a="tab" data-tab="map"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/></svg>지도</button>
     <button class="tb" data-a="tab" data-tab="list"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>목록</button>
     <button class="tb" data-a="tab" data-tab="hist"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>기록</button>
+    <button id="verBtn" data-a="ver-check" aria-label="새 버전 찾기"></button>
   </nav>
   <div id="layers"></div>
 </div>
@@ -3811,6 +3823,43 @@ document.addEventListener('click', e => {
   if (!el) return;
   doAct(el, e);
 }, true);
+
+// ═══ 새 버전 (HB 2026-10-11) ═══
+// 아래 메뉴 오른쪽 구석의 버전을 누르면 서버의 새 버전을 찾아, 있으면 받아서 다시 연다.
+// ⚠️ 아이패드 홈 화면 앱은 껐다 켜도 옛 판을 붙들고 있었다 — '/pray/' 주소는 '안 담아 두기' 규칙(*.html)에
+//    안 걸려 최대 1시간 담아 둔 것을 썼다. 서비스워커가 이제 늘 다시 묻지만(sw.js), 손으로 받는 길도 둔다.
+async function latestVersion() {
+  const r = await fetch('index.html?ver=' + Date.now(), { cache: 'no-store' });
+  const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/);
+  return m ? m[1] : '';
+}
+async function updateApp() {
+  saveNow();
+  try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) await reg.update(); } catch (e) { /* 그냥 다시 연다 */ }
+  try { const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('pray-')).map(k => caches.delete(k))); } catch (e) { /* 담아 둔 것이 없으면 그만 */ }
+  location.reload();
+}
+ACT['ver-check'] = async el => {
+  if (el.classList.contains('busy')) return;
+  el.classList.add('busy');
+  try {
+    const v = await latestVersion();
+    if (!v) throw new Error('no version');
+    if (v === APP_VERSION) toast('지금이 최신 버전입니다 · ' + APP_VERSION);
+    else { toast('새 버전 ' + v + ' 을 받는 중…'); await updateApp(); }
+  } catch (e) { toast('새 버전을 찾지 못했습니다 — 인터넷 연결을 확인해 주세요'); }
+  el.classList.remove('busy');
+};
+// 앱으로 돌아올 때(그리고 처음 열고 조금 뒤) 조용히 한 번 묻고, 새 버전이면 알림에 '받기' 를 띄운다
+let VER_ASKED = 0;
+function quietVersionCheck() {
+  if (Date.now() - VER_ASKED < 5 * 60 * 1000 || location.protocol !== 'https:') return;
+  VER_ASKED = Date.now();
+  latestVersion().then(v => { if (v && v !== APP_VERSION) toast('새 버전 ' + v + ' 이 있습니다', '받기', updateApp); }).catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) quietVersionCheck(); });
+setTimeout(quietVersionCheck, 4000);
+{ const vb = $('verBtn'); if (vb) vb.textContent = APP_VERSION.replace(/^v\.\s*/, 'v'); }
 
 // ═══ 시작 ═══
 applyTheme(DB.set);
