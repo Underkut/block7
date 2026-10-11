@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1010-16 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1011-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -320,6 +320,11 @@ body.pdark .w-pill.g em{color:#8fdcae}body.pdark .w-pill.r em{color:#ff9db0}body
 .w-st{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.5;margin:6px 0}.w-st span:first-child{font-size:17px}
 .w-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:11px}.w-acts button{background:var(--w-card);border-radius:18px;padding:10px 4px;text-align:center;font-size:12.5px;color:var(--w-ink);box-shadow:0 3px 12px rgba(120,90,60,.07)}.w-acts i{display:block;font-style:normal;font-size:22px;margin-bottom:2px}
 .w-cat{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:13px}.w-ce{width:30px;height:30px;border-radius:10px;overflow:hidden;flex:none}.w-ce svg{width:100%;display:block}.w-cn{width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-as{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;margin:6px 0;border-radius:16px;background:var(--w-track);color:var(--w-ink);text-align:left}.w-as.on{outline:2px solid var(--w-acc)}
+.w-asn{width:62px;flex:none;font-size:14px}.w-asn small{display:block;font-size:11px;color:var(--w-sub)}.w-asb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.w-asb em{display:block;height:8px;border-radius:5px;background:var(--w-card);overflow:hidden}.w-asb em i{display:block;height:100%;border-radius:5px}.w-asb em.o i{background:#f2879f}.w-asb em.i i{background:#8fcfa8}
+.w-asv{flex:none;text-align:right;min-width:68px;font-size:14px;line-height:1.25}.w-asv b{display:block;font-weight:600}.w-asv small{display:block;font-size:11px;color:var(--w-sub)}.w-asv small.w-in{color:#3c9a64}
+.w-af{display:flex;gap:6px;margin:0 0 8px}.w-af button{flex:1;padding:6px 0;border-radius:12px;background:var(--w-track);color:var(--w-sub);font-size:12.5px}.w-af button.on{background:var(--w-ink);color:var(--w-bg)}
 .w-cb{flex:1;height:9px;background:var(--w-track);border-radius:6px;overflow:hidden}.w-cb i{display:block;height:100%;border-radius:6px;background:#ffb59a}.w-cat b{width:66px;text-align:right;font-weight:500}
 .w-cal i{background:transparent!important;border:0!important;font-size:20px;height:26px;line-height:26px;color:var(--w-sub)!important}.w-cal i.e::after{content:'○';opacity:.35;font-size:13px}
 .w-goal{display:flex;align-items:center;gap:12px;margin:8px 0}.w-ring{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none}.w-ring span{width:40px;height:40px;border-radius:50%;background:var(--w-card);display:grid;place-items:center;font-size:12px;font-weight:600}
@@ -445,6 +450,13 @@ body:has(.par.on) #trash{visibility:hidden}
 .mvc{color:var(--blue-d)}
 /* 대시보드 */
 .dash{margin-bottom:12px;overflow:hidden}
+.lgseg{display:flex;gap:6px;margin:0 0 10px}.lgseg button{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:8px 2px;border-radius:14px;background:#fff;font-size:14px;color:var(--sub);box-shadow:0 3px 0 #ddd3ee;white-space:nowrap;transition:background-color .15s,color .15s}
+.lgseg button svg{width:20px;height:20px;flex:none}.lgseg button.on{background:var(--purple);color:#fff;box-shadow:0 3px 0 var(--purple-d)}.lgseg button:active{transform:translateY(2px)}
+.dt small{font-size:12px;color:var(--sub)}.lgall{float:right;font-size:13px;color:var(--purple);text-decoration:underline}
+.asr{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;margin:6px 0;border-radius:16px;background:#f7f3ff;text-align:left}.asr.on{outline:3px solid var(--purple)}.asr:active{transform:translateY(2px)}
+.asi{width:30px;flex:none}.asi svg{width:30px;height:30px;display:block}.asn{width:74px;flex:none;font-size:15px;line-height:1.2}.asn small{display:block;font-size:11px;color:var(--sub)}
+.asb{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}.asb em{display:block;height:8px;border-radius:5px;background:#ece5fa;overflow:hidden}.asb em i{display:block;height:100%;border-radius:5px}.asb em.o i{background:#ff6fa5}.asb em.i i{background:#3cc98a}
+.asv{flex:none;text-align:right;font-size:15px;line-height:1.25;min-width:64px}.asv b{font-weight:400;display:block}.asv small{display:block;font-size:11px;color:var(--sub)}.asv small.in{color:var(--green-d);font-size:12px}
 .dh{display:flex;align-items:center;gap:8px;width:100%;padding:14px 16px;font-size:19px;text-align:left}
 .dsum{flex:1;text-align:right;font-size:13px;color:var(--sub)}
 .dh .chev{width:22px;height:22px;color:var(--purple);margin-left:auto;transition:transform .2s;flex:none}
@@ -647,6 +659,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
   <!-- 기록 -->
   <section class="view" id="vLog">
     <div class="mon"><button id="mPrev" aria-label="이전 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span id="mLabel"></span><button id="mNext" aria-label="다음 달"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div>
+    <div class="lgseg" id="logSeg"></div>
     <div class="dash card" id="dash"></div>
     <div class="msum" id="mSum"></div>
     <div id="list"></div>
@@ -682,7 +695,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1010-16";
+const APP_VERSION = "v. 26-1011-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1137,9 +1150,12 @@ const shortWon = n => {                     // 그래프 위 작은 글씨: 25,3
   if(n >= 9950){ const r = Math.round(n/1000)*1000, m = Math.floor(r/10000), c = (r%10000)/1000; return m+'만'+(c ? c+'천' : ''); }
   if(n >= 1000){ const r = Math.round(n/100)*100, c = Math.floor(r/1000), b = (r%1000)/100; return c+'천'+(b ? b+'백' : ''); }
   return String(n); };
+// 돌아보기의 자산 고르기: 'all' 이면 전체, 아니면 그 자산(현금·체크카드·통장)으로 낸·받은 돈만 센다(돈 옮기기는 받은/쓴 돈이 아님)
+let logA = 'all';
+const inA = t => logA==='all' || acctOf(t)===logA;
 function mstats(m){
   let inc = 0, sp = 0; const cats = {}, days = {};
-  S.tx.forEach(t => { if(t.date.slice(0,7)!==m) return;
+  S.tx.forEach(t => { if(t.date.slice(0,7)!==m || (t.t!=='mv' && !inA(t))) return;
     if(t.t==='in') inc += t.amt;
     else if(t.t==='out'){ sp += t.amt; const n = catOf(t.cat).n; cats[n] = (cats[n]||0) + t.amt; days[t.date] = (days[t.date]||0) + t.amt; } });
   return {inc, sp, days, list: Object.keys(cats).map(n => ({n, v:cats[n]})).sort((a,b) => b.v-a.v)};
@@ -1178,20 +1194,31 @@ function insights(st){
   else out.push(`${lbl}에는 받은 돈도 없어요.`);
   return out;
 }
+// 자산별로 보면 — 이 달에 자산마다 받은 돈·쓴 돈. 줄을 누르면 그 자산만 본다
+function acctSumHtml(m){
+  const rows = AK.map(a => { let i = 0, o = 0; S.tx.forEach(t => { if(t.date.slice(0,7)!==m || t.t==='mv' || acctOf(t)!==a) return; if(t.t==='in') i += t.amt; else o += t.amt; }); return {a, i, o}; });
+  const mx = Math.max(1, ...rows.map(r => Math.max(r.i, r.o))), tot = rows.reduce((n,r) => n + r.o, 0);
+  return rows.map(r => `<button class="asr ${logA===r.a?'on':''}" data-la="${r.a}"><span class="asi">${AC_ICO[r.a]}</span><span class="asn">${acctName(r.a)}<small>지금 ${won(balOf(r.a))}</small></span>
+    <span class="asb"><em class="o"><i style="width:${r.o/mx*100}%"></i></em><em class="i"><i style="width:${r.i/mx*100}%"></i></em></span>
+    <span class="asv"><b class="out">${r.o ? '−'+nf(r.o) : '0'}</b><small class="in">${r.i ? '+'+nf(r.i) : ''}</small>${tot && r.o ? `<small>쓴 돈의 ${Math.round(r.o/tot*100)}%</small>` : ''}</span></button>`).join('');
+}
+function renderLogSeg(){
+  $('logSeg').innerHTML = [['all','전체']].concat(ACCTS.map(a => [a.k, a.n])).map(([k,n]) => `<button data-la="${k}" class="${logA===k?'on':''}">${k==='all' ? '' : AC_ICO[k]}${n}</button>`).join('');
+}
 function renderDash(){
   const open = S.dashOpen, st = mstats(month), faces = ['bear','bunny','hamster'];
   $('dash').innerHTML = `<button class="dh" id="dashTog" aria-expanded="${open}"><span>내 돈 대시보드</span><span class="dsum">${open?'':'받은 '+won(st.inc)+' · 쓴 '+won(st.sp)}</span><svg class="chev ${open?'up':''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`
-    + (open ? `<div class="dbody"><div class="dt">어디에 썼을까?</div>${pieHtml(st)}<div class="dt">달마다 비교</div>${barsHtml()}<div class="dt">꿀꿀이의 한마디</div>${insights(st).map((t,i)=>`<div class="ins"><span class="f">${face(faces[i])}</span><span>${t}</span></div>`).join('')}</div>` : '');
+    + (open ? `<div class="dbody">${logA==='all' ? `<div class="dt">자산별로 보면 <small>— 누르면 그 자산만 봐요</small></div>${acctSumHtml(month)}` : `<div class="dt">${acctName(logA)}만 보는 중 <button class="lgall" data-la="all">전체 보기</button></div>`}<div class="dt">어디에 썼을까?</div>${pieHtml(st)}<div class="dt">달마다 비교</div>${barsHtml()}<div class="dt">꿀꿀이의 한마디</div>${insights(st).map((t,i)=>`<div class="ins"><span class="f">${face(faces[i])}</span><span>${t}</span></div>`).join('')}</div>` : '');
 }
 function renderLog(){
   const [y,m] = month.split('-');
   $('mLabel').textContent = y+'년 '+Number(m)+'월';
   $('mNext').style.visibility = month >= todayStr().slice(0,7) ? 'hidden' : 'visible';
-  renderDash();
-  const rows = sortedTx(S.tx.filter(t => t.date.slice(0,7)===month));
+  renderLogSeg(); renderDash();
+  const rows = sortedTx(S.tx.filter(t => t.date.slice(0,7)===month && (t.t==='mv' ? (logA==='all' || t.from===logA || t.to===logA) : inA(t))));
   const inS = rows.filter(t=>t.t==='in').reduce((a,t)=>a+t.amt,0), outS = rows.filter(t=>t.t==='out').reduce((a,t)=>a+t.amt,0);
-  $('mSum').innerHTML = rows.length ? `받은 돈 <b class="in">${won(inS)}</b> · 쓴 돈 <b class="out">${won(outS)}</b>` : '';
-  if(!rows.length){ $('list').innerHTML = `<div class="empty">${face('hamster')}${S.tx.length?'이 달에는 기록이 없어요.':'아직 기록이 없어요.'}</div>`; return; }
+  $('mSum').innerHTML = rows.length ? `${logA==='all' ? '' : acctName(logA)+' · '}받은 돈 <b class="in">${won(inS)}</b> · 쓴 돈 <b class="out">${won(outS)}</b>` : '';
+  if(!rows.length){ $('list').innerHTML = `<div class="empty">${face('hamster')}${S.tx.length ? (logA==='all' ? '이 달에는 기록이 없어요.' : '이 달 '+acctName(logA)+' 기록이 없어요.') : '아직 기록이 없어요.'}</div>`; return; }
   let h = '', last = '';
   rows.forEach(t => { if(t.date!==last){ last = t.date; const d = new Date(t.date+'T00:00:00'); h += `<div class="day">${d.getMonth()+1}월 ${d.getDate()}일 (${wd[d.getDay()]})</div>`; } h += txRow(t); });
   $('list').innerHTML = h;
@@ -2466,7 +2493,7 @@ function kidCodeSheet(re){
 }
 
 /* 부모 보고서 (F-2) — 게임 화면이 아니라 보고서 */
-let PAR = {kids:[], sel:null, per:'week', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
+let PAR = {kids:[], sel:null, per:'week', acct:'all', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
 function hideParent(){ mirrorOff(); const p = $('par'); if(p) p.classList.remove('on'); document.body.classList.remove('pmode'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } if(PAR.unsubM){ PAR.unsubM(); PAR.unsubM = null; } if(PAR.unsubA){ PAR.unsubA(); PAR.unsubA = null; } }
 async function showParent(){
   document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep');
@@ -2510,7 +2537,11 @@ function renderParent(){
   const html = withS(k.st, () => {
     const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o, bal = balance();
     const used = S.tiles.filter(c => sumA(a => alloc(c.k,a)) > 0), over = used.filter(c => AK.some(a => left(c.k,a) < 0));
-    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
+    const pa = PAR.acct, inPA = t => pa==='all' || acctOf(t)===pa;
+    const AS = AK.map(a => { let i = 0, o = 0, pi = 0, po = 0; S.tx.forEach(t => { if(t.t==='mv' || acctOf(t)!==a) return;
+      if(t.date >= R.a && t.date <= R.b){ if(t.t==='in') i += t.amt; else o += t.amt; } else if(t.date >= R.pa && t.date <= R.pb){ if(t.t==='in') pi += t.amt; else po += t.amt; } }); return {a, i, o, pi, po}; });
+    const amx = Math.max(1, ...AS.map(x => Math.max(x.i, x.o)));
+    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b && inPA(t)){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
     const cl = Object.values(cats).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
     const L = lvOf(starsOf()), sk = streakOf();
     const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number(todayStr().slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
@@ -2527,7 +2558,7 @@ function renderParent(){
     else { const big = S.tx.filter(t => t.t==='out' && t.date >= R.a && t.date <= R.b).sort((a,b) => b.amt-a.amt)[0];
       if(big && bal > 0 && big.amt >= bal*0.3) st.push(['💬','함께 이야기해 봐요', `한 번에 ${won(big.amt)}(${esc(catOf(big.cat).n)})을 썼어요.`]); }
     if(goals.length){ const x = goals[0], rem = Math.max(0, x.g.price - x.sv); st.push(['🎁', rem ? '곧 이뤄요' : '다 모았어요', rem ? `${esc(x.g.n)}까지 ${won(rem)} 남았어요!` : `${esc(x.g.n)} 값을 다 모았어요!`]); }
-    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b)), shown = PAR.more ? rows : rows.slice(0,6);
+    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b && (t.t==='mv' ? (pa==='all' || t.from===pa || t.to===pa) : inPA(t)))), shown = PAR.more ? rows : rows.slice(0,6);
     const dl = dd => { const t = todayStr(); return dd===t ? '오늘' : dd===dayShift(t,-1) ? '어제' : md2(dd); };
     const rowH = t => {
       if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${dl(t.date)}${tHM(t)}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
@@ -2544,17 +2575,22 @@ function renderParent(){
         <div class="w-pill y"><small>계획 지킴</small><b class="w-j">${used.length ? (used.length-over.length)+'/'+used.length+'칸' : '—'}</b><em>${over.length ? esc(over[0].n)+' 칸 조금 넘음' : used.length ? '모두 지키는 중' : '계획 없음'}</em></div></div>
       ${st.length ? `<div class="w-card"><div class="w-h"><span class="w-j">${period} 이야기</span><small>꿀꿀이가 정리했어요</small></div>${st.slice(0,3).map(x => `<div class="w-st"><span>${x[0]}</span><span><b>${x[1]}</b> · ${x[2]}</span></div>`).join('')}</div>` : ''}
       <div class="w-acts"><button id="wStamp"><i>👍</i>칭찬 도장</button><button id="wNote"><i>✉️</i>쪽지</button><button id="wMis"><i>🎯</i>미션 주기</button></div>
-      <div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${period}</small></div>${cl.length ? cl.slice(0,6).map(x => `<div class="w-cat"><span class="w-ce" style="background:${(CH[x.ch]||CH.star).bg}">${face(x.ch)}</span><span class="w-cn">${esc(x.n)}</span><span class="w-cb"><i style="width:${Math.round(x.v/cmx*100)}%"></i></span><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
+      <div class="w-card"><div class="w-h"><span class="w-j">자산별로 보면</span><small>${period} · ${R.pl}와 비교</small></div>
+        ${AS.map(x => { const dd = x.o - x.po; return `<button class="w-as ${pa===x.a?'on':''}" data-pacct="${x.a}"><span class="w-asn">${ACS[x.a]}<small>지금 ${nf(balOf(x.a))}</small></span><span class="w-asb"><em class="o"><i style="width:${x.o/amx*100}%"></i></em><em class="i"><i style="width:${x.i/amx*100}%"></i></em></span><span class="w-asv"><b class="w-out">${x.o ? '−'+nf(x.o) : '0'}</b><small class="w-in">${x.i ? '+'+nf(x.i) : ''}</small><small>${x.o||x.po ? (dd>0 ? '▲'+nf(dd) : dd<0 ? '▼'+nf(-dd) : '같음') : ''}</small></span></button>`; }).join('')}
+        <p class="pr-note">빨강 쓴 돈 · 초록 받은 돈 · ▲▼ ${R.pl}보다 더/덜 쓴 돈. 줄을 누르면 아래 '어디에 썼을까'와 기록이 그 자산만 보여요.</p></div>
+      <div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${period}${pa==='all' ? '' : ' · '+ACS[pa]+'만'}</small></div>
+        <div class="w-af">${[['all','전체']].concat(AK.map(a => [a, ACS[a]])).map(([k,n]) => `<button data-pacct="${k}" class="${pa===k?'on':''}">${n}</button>`).join('')}</div>${cl.length ? cl.slice(0,6).map(x => `<div class="w-cat"><span class="w-ce" style="background:${(CH[x.ch]||CH.star).bg}">${face(x.ch)}</span><span class="w-cn">${esc(x.n)}</span><span class="w-cb"><i style="width:${Math.round(x.v/cmx*100)}%"></i></span><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
       <div class="w-card"><div class="w-h"><span class="w-j">정직한 하루 마무리</span><small>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 연속 ${sk}일</small></div><div class="pr-cal w-cal ${PAR.per==='month'?'m':''}">${cal}</div>
         <p class="pr-note">💛 쓴 돈·받은 돈 다 적었어요 · 🤍 하나만 · · 아직 못 적었어요 · 별 ${starsOf()}개</p></div>
       <div class="w-card"><div class="w-h"><span class="w-j">갖고 싶은 것</span></div>${goals.length ? goals.map(x => { const p = Math.min(100, Math.floor(x.sv/x.g.price*100)), rem = Math.max(0, x.g.price-x.sv), dd = x.g.due ? dayDiff(x.g.due) : 0;
           return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)} ${x.g.ok ? '<em class="w-chip ok">허락</em>' : ''}${x.g.why ? '<small>💭 '+esc(x.g.why)+'</small>' : ''}${x.g.due ? '<small>📅 '+mdOf(x.g.due)+'까지</small>' : ''}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
-      <div class="w-card"><div class="w-h"><span class="w-j">${period} 기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
+      <div class="w-card"><div class="w-h"><span class="w-j">${period} ${pa==='all' ? '' : ACS[pa]+' '}기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
   });
   box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : Number(R.a.slice(5,7))+'월'}${k.at ? ' · 아이 폰 소식 '+k.at.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : ''}</small></span></div>` + html;
 }
 $('par').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.pacct){ PAR.acct = PAR.acct===b.dataset.pacct && b.dataset.pacct!=='all' ? 'all' : b.dataset.pacct; PAR.more = false; renderParent(); return; }
   if(b.dataset.per){ PAR.per = b.dataset.per; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
   else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; refreshParent(); }
   else if(b.id==='prMore'){ PAR.more = true; renderParent(); }
@@ -2635,7 +2671,7 @@ function mirrorOff(){
   document.body.classList.remove('mirror'); closeSheet(); applyTheme();
 }
 // 보기만: 이동·보기 버튼만 통과시키고, 입력·수정은 막는다
-const MIR_OK = '#mirBar *, #pnav *, .tabs button, #mPrev, #mNext, #dashTog, #acctTabs button, #planSeg button, #giftBtn, #rwSeg button, #lvOpen, #dim, [data-tx], #sheet .grab, #sheet .shx, #sheet .shx *';
+const MIR_OK = '#logSeg *, #dash [data-la], #dash [data-la] *, #mirBar *, #pnav *, .tabs button, #mPrev, #mNext, #dashTog, #acctTabs button, #planSeg button, #giftBtn, #rwSeg button, #lvOpen, #dim, [data-tx], #sheet .grab, #sheet .shx, #sheet .shx *';
 function mirBlock(e){
   if(!MIR || !document.body.classList.contains('mirror')) return;
   const t = e.target; if(!t.closest || !t.closest('#app, #sheet')) return;
@@ -3342,7 +3378,9 @@ $('pendChip').onclick = () => { buzz(8); goTab('vAlloc'); setTimeout(() => { con
 $('gear').onclick = backupSheet;
 renderMute();
 $('recent').onclick = $('list').onclick = e => { const b = e.target.closest('[data-tx]'); if(b) txSheet(b.dataset.tx); };
-$('dash').onclick = e => { if(!e.target.closest('#dashTog')) return; S.dashOpen = !S.dashOpen; save(); buzz(8); renderDash(); };
+const setLogA = a => { logA = a; buzz(8); renderLog(); };
+$('logSeg').onclick = e => { const b = e.target.closest('[data-la]'); if(b) setLogA(b.dataset.la); };
+$('dash').onclick = e => { const la = e.target.closest('[data-la]'); if(la){ setLogA(logA===la.dataset.la ? 'all' : la.dataset.la); return; } if(!e.target.closest('#dashTog')) return; S.dashOpen = !S.dashOpen; save(); buzz(8); renderDash(); };
 $('mPrev').onclick = () => { month = monthShift(month,-1); renderLog(); };
 $('mNext').onclick = () => { if(month < todayStr().slice(0,7)){ month = monthShift(month,1); renderLog(); } };
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { buzz(8); goTab(b.dataset.v); });
