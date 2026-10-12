@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-9';
+const APP_VERSION = 'v. 26-1012-10';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1411,6 +1411,16 @@ svg{display:block;flex-shrink:0}
 .ib:active{background:var(--s2)}
 .ib.on{color:var(--ac-tx)}
 .brand{position:sticky;top:0;z-index:5;display:flex;align-items:baseline;gap:9px;padding:calc(var(--sat) + 8px) 20px 4px;margin-top:calc(var(--sat) * -1 - 8px);background:var(--bg);pointer-events:none}
+.mk-fold{display:none}
+@media (max-width:600px){
+  .mk-fold{display:flex;align-items:center;gap:6px;padding:4px 20px;height:34px;font-size:13px;color:var(--tx2)}
+  .mk-fold .chev{width:14px;height:14px;transition:transform .2s}
+  .mk-fold.open .chev{transform:rotate(90deg)}
+  .mk-dots{display:flex;gap:4px;margin-left:4px}
+  .mk-dots .dot{width:9px;height:9px;border-radius:50%;background:var(--m);display:block}
+  .chips.mk-chips{display:none}
+  .chips.mk-chips.open{display:flex}
+}
 .brand b{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:13px;font-weight:700;letter-spacing:.26em;color:var(--tx)}
 .brand span{font-size:11.5px;font-weight:400;letter-spacing:.04em;color:var(--tx3)}
 .date-l{padding:0 20px;font-size:13px;color:var(--tx2);letter-spacing:.02em}
@@ -2294,7 +2304,8 @@ function renderMap() {
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<div class="chips">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
+  h += '<button class="mk-fold' + (UI.mkOpen ? ' open' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '">' + ico('chevR', 'chev') + '표시색' + (UI.mapFilter.length ? '<span class="mk-dots">' + UI.mapFilter.map(m => '<i class="dot" style="--m:' + markVar(m) + '"></i>').join('') + '</span>' : '') + '</button>';
+  h += '<div class="chips mk-chips' + (UI.mkOpen ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
   if (UI.mapQuery) {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
@@ -2894,6 +2905,7 @@ ACT['add-sub'] = el => askText('새 서브 그룹', '', '이름 (예: 13세 가�
 }, { ok: '만들기' });
 
 // 목록
+ACT['mk-fold'] = () => { UI.mkOpen = !UI.mkOpen; renderView(); };
 ACT['list-view'] = el => { UI.listView = el.dataset.v; renderView(); };
 ACT['list-cat'] = el => { UI.listCat = el.dataset.v; UI.mx = null; renderView(); };
 ACT['list-sort'] = el => { const v = el.dataset.v, cur = DB.set.sorts.list || 'sum'; DB.set.sorts.list = v === 'new' ? (cur === 'new' ? 'reg' : 'new') : v; save(); renderView(); };
