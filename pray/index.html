@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
 <title>기도노트</title>
 <script>
 // ⚠️ 기도노트의 집은 sweeter.my/pray/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-10';
+const APP_VERSION = 'v. 26-1013-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -831,6 +831,52 @@ function addPraySession(db, startMs, secs, src, sid) {
   return e;
 }
 
+// ── 실행취소 · 재실행 (HB 2026-10-13) ──
+// 한 칸 = DB 내용 전체를 얼린 글(JSON). 견주고 되돌리는 것은 **사람이 한 일**뿐이다:
+//  · rev(이 기기 저장 횟수)는 칸에 넣지 않는다 — 되돌려도 늘기만 한다
+//  · 기도 시간(log 의 s · ses)도 칸에 넣지 않는다 — 시간을 잰 것은 되돌릴 일이 아니고,
+//    넣으면 There 를 멈출 때마다 칸이 생겨 '눌러도 아무 일 없는 되돌리기' 가 된다
+function histKey(db) {
+  const c = Object.assign({}, db); delete c.rev;
+  const lg = {};
+  Object.keys(db.log || {}).forEach(d => { const L = db.log[d] || {}; const x = {}; Object.keys(L).forEach(k => { if (k !== 's' && k !== 'ses') x[k] = L[k]; });
+    // 시간만 적힌 날(기도한 것 · 미룬 것 없음)은 없는 날과 같다 — 시간을 잴 때 빈 날 칸이 새로 생긴다
+    const empty = Object.keys(x).every(k => (Array.isArray(x[k]) ? !x[k].length : x[k] && typeof x[k] === 'object' ? !Object.keys(x[k]).length : !x[k]));
+    if (!empty) lg[d] = x; });
+  c.log = lg;
+  return JSON.stringify(c);
+}
+// 칸(snap)의 모습으로 되돌린 새 DB — rev 와 기도 시간은 지금(cur) 것을 지킨다
+function histRestore(cur, snap) {
+  const n = normDB(JSON.parse(snap));
+  n.rev = cur.rev;
+  const lg = n.log || (n.log = {});
+  Object.keys(cur.log || {}).forEach(d => {
+    const L = cur.log[d] || {};
+    if (!('s' in L) && !('ses' in L)) return;
+    const x = lg[d] || (lg[d] = { d: [], p: {}, k: [] });
+    if ('s' in L) x.s = L.s;
+    if ('ses' in L) x.ses = JSON.parse(JSON.stringify(L.ses));
+  });
+  return n;
+}
+// 칸 쌓기. 0.6초 안에 이어진 저장은 한 칸으로 (글자 치기 · 끌기 한 번이 여러 번 저장해도 되돌리기는 한 번)
+function makeHist(maxN, maxBytes) {
+  const H = { past: [], future: [], last: '', at: 0, bytes: 0 };
+  const trim = () => { while (H.past.length > maxN || (H.bytes > maxBytes && H.past.length > 1)) H.bytes -= H.past.shift().length; };
+  H.reset = key => { H.past = []; H.future = []; H.last = key; H.at = 0; H.bytes = 0; };
+  H.record = (key, now) => {
+    if (key === H.last) return false;
+    if (!(H.at && now - H.at < 600 && H.past.length)) { H.past.push(H.last); H.bytes += H.last.length; trim(); }
+    H.at = now; H.last = key;
+    H.future = [];
+    return true;
+  };
+  H.undo = () => { if (!H.past.length) return null; const s = H.past.pop(); H.bytes -= s.length; H.future.push(H.last); H.last = s; H.at = 0; return s; };
+  H.redo = () => { if (!H.future.length) return null; const s = H.future.pop(); H.past.push(H.last); H.bytes += H.last.length; H.last = s; H.at = 0; return s; };
+  return H;
+}
+
 // ── 정렬 · 내 순서 ──
 const SORT_IMP = (a, b) => ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || a.name.localeCompare(b.name, 'ko');
 const SORT_URG = (a, b) => ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || a.name.localeCompare(b.name, 'ko');
@@ -1342,6 +1388,43 @@ try {
   }
 } catch (e) { /* 막대 재기가 맡는다 */ }
 window.addEventListener('resize', measureScreen);
+// ── 화면 진단 기록 (HB 2026-10-13) — 아래 띠 A · B 색이 같았다 달랐다 하는 까닭을 찾으려고.
+//    재는 때(처음 · 크기 바뀜 · 앱 나갔다 옴 · 테마)마다 숫자와 색을 적어 두고, 설정 '화면 진단 기록 복사' 로 보낸다.
+//    이 기기에만 40개까지 (pray.diag). 이름 · 기도 자료는 담지 않는다.
+const DIAG_KEY = 'pray.diag';
+function diagSnap(ev) {
+  try {
+    const d = document.documentElement, cs = getComputedStyle(d), bg = el => el ? getComputedStyle(el).backgroundColor : '-';
+    const pr = document.createElement('div');
+    pr.style.cssText = 'position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    (document.body || d).appendChild(pr); const pcs = getComputedStyle(pr), ph = pr.getBoundingClientRect().height, sat = pcs.paddingTop, sab = pcs.paddingBottom; pr.remove();
+    const tm = document.querySelector('meta[name="theme-color"]'), tb = document.getElementById('tabbar');
+    const tbr = tb ? tb.getBoundingClientRect() : null, m = document.querySelector('#v-map .mjs');
+    let set = {}; try { set = (JSON.parse(localStorage.getItem(PRAY_KEY) || '{}').set) || {}; } catch (e) {}
+    const r = {
+      t: new Date().toTimeString().slice(0, 8), ev: ev, vis: document.visibilityState,
+      win: innerWidth + 'x' + innerHeight, scr: screen.width + 'x' + screen.height, probe: Math.round(ph), vv: window.visualViewport ? Math.round(visualViewport.height) : '-',
+      sat: sat, sab: sab, sa: !!navigator.standalone, dm: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches),
+      iosgap: d.classList.contains('iosgap'), gapb: cs.getPropertyValue('--gapb').trim(), theme: tm ? tm.getAttribute('content') : '-',
+      html: bg(d), body: bg(document.body), app: bg(document.getElementById('app')), tab: bg(tb), tabBottom: tbr ? Math.round(tbr.bottom) : '-',
+      tabsolid: cs.getPropertyValue('--tabsolid').trim(), hdr: cs.getPropertyValue('--header-bg').trim(), pbg: cs.getPropertyValue('--bg').trim(),
+      mode: set.mode || '', preset: set.preset || '', layers: typeof UI !== 'undefined' ? UI.layers.length : '-',
+      mapW: m ? m.clientWidth : '-', mapN: m ? m._n : '-', cols: localStorage.getItem('pray.mapcols') || ''
+    };
+    let a = []; try { a = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]'); } catch (e) {}
+    a.push(r); if (a.length > 40) a = a.slice(-40);
+    localStorage.setItem(DIAG_KEY, JSON.stringify(a));
+  } catch (e) { /* 진단만 못 적음 */ }
+}
+function diagText() {
+  diagSnap('복사');
+  let a = []; try { a = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]'); } catch (e) {}
+  return '[기도노트 화면 진단 ' + APP_VERSION + ' · ' + new Date().toISOString().slice(0, 10) + ']\n' + navigator.userAgent + '\n' + a.map(r => JSON.stringify(r)).join('\n');
+}
+window.addEventListener('load', () => setTimeout(() => diagSnap('처음'), 600));
+window.addEventListener('resize', () => { clearTimeout(diagSnap._t); diagSnap._t = setTimeout(() => diagSnap('크기'), 400); });
+document.addEventListener('visibilitychange', () => setTimeout(() => diagSnap(document.visibilityState === 'visible' ? '돌아옴' : '나감'), 300));
+window.addEventListener('pageshow', e => setTimeout(() => diagSnap(e.persisted ? '되살아남' : '보임'), 300));
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
 try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
@@ -1410,19 +1493,21 @@ svg{display:block;flex-shrink:0}
 .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2);border-radius:22px;transition:background .15s,color .15s}
 .ib:active{background:var(--s2)}
 .ib.on{color:var(--ac-tx)}
-.brand{position:sticky;top:0;z-index:5;display:flex;align-items:baseline;gap:9px;padding:calc(var(--sat) + 8px) 20px 4px;margin-top:calc(var(--sat) * -1 - 8px);background:var(--bg);pointer-events:none}
-.mk-fold{display:none}
+.ib.off{opacity:.28}
+.vh h1.br{display:flex;align-items:baseline;gap:10px;white-space:nowrap;min-width:0}
+.vh h1.br b{font-family:'Cormorant Garamond','Noto Serif KR',Georgia,'Times New Roman',serif;font-weight:500;font-size:30px;letter-spacing:.16em;line-height:1.15;color:var(--tx)}
+.vh h1.br span{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;font-weight:500;letter-spacing:.06em;color:var(--tx3)}
+.vh{flex-wrap:wrap-reverse}
+.vh-acts{margin-left:auto}
+@media (max-width:600px){.vh h1.br b{font-size:26px;letter-spacing:.13em}.ib{width:40px}}
+.mk-fold{display:none!important}
+.mkico{width:26px;height:16px;display:block;opacity:.8;transition:opacity .15s}
+.mk-fold.on .mkico{opacity:1}
 @media (max-width:600px){
-  .mk-fold{display:flex;align-items:center;gap:6px;padding:4px 20px;height:34px;font-size:13px;color:var(--tx2)}
-  .mk-fold .chev{width:14px;height:14px;transition:transform .2s}
-  .mk-fold.open .chev{transform:rotate(90deg)}
-  .mk-dots{display:flex;gap:4px;margin-left:4px}
-  .mk-dots .dot{width:9px;height:9px;border-radius:50%;background:var(--m);display:block}
+  .mk-fold{display:flex!important}
   .chips.mk-chips{display:none}
   .chips.mk-chips.open{display:flex}
 }
-.brand b{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:13px;font-weight:700;letter-spacing:.26em;color:var(--tx)}
-.brand span{font-size:11.5px;font-weight:400;letter-spacing:.04em;color:var(--tx3)}
 .date-l{padding:0 20px;font-size:13px;color:var(--tx2);letter-spacing:.02em}
 .prog{margin:12px 20px 0;height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .5s var(--ease)}
@@ -1594,6 +1679,10 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
   body:not(.tch) .madd-group{opacity:.35}body:not(.tch) .madd-group:hover{opacity:1}
 }
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
+/* 그룹 머리를 고르면 테두리는 머리 줄 **전체**(오른쪽 서브 그룹 단추까지)에 · 카드의 둥근 위 모서리를 따라 (HB 2026-10-13) */
+.gh.sel{border-radius:12px 12px 0 0}
+.ghw:has(>.gh.sel)::after{content:'';position:absolute;inset:0;border-radius:12px 12px 0 0;box-shadow:inset 0 0 0 2px var(--tx);pointer-events:none;z-index:2}
+.ghw>.gh.sel{box-shadow:none}
 /* 테두리는 안쪽에 — 바깥에 두면 위아래 서브 그룹 띠가 덮어 가렸다 (HB 2026-10-11) */
 .ln.sel{background:var(--ac-soft);border-radius:6px;box-shadow:inset 0 0 0 1.5px var(--ac);position:relative;z-index:1}
 /* 휴대폰에서는 고른 테두리를 안 보인다 (PC 키보드용) */
@@ -1670,7 +1759,10 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .nb{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd2);font-size:14px;color:var(--tx2);transition:transform .15s}
 .nb:active{transform:scale(.94)}
 .nb.on{border-color:transparent}
-.days{display:flex;gap:5px;padding:6px 20px}
+.days{display:flex;gap:5px;padding:6px 20px;align-items:center;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.dy-all{margin-left:auto;padding:6px 4px 6px 10px;font-size:12px;color:var(--tx3);letter-spacing:.02em}
+.dy-all.on{color:var(--ac-tx);font-weight:600}
+.tp-in{width:100%;border:0;outline:none;background:transparent;color:var(--tx);font:inherit;padding:0;box-shadow:inset 0 -1px 0 var(--ac)}
 .dy{width:38px;height:38px;border-radius:19px;border:1px solid var(--bd2);font-size:13px;color:var(--tx2);transition:background .18s,color .18s}
 .dy.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent)}
 .field{margin:6px 20px 0;width:calc(100% - 40px);min-height:46px;border:1px solid var(--bd);border-radius:12px;background:var(--s1);padding:11px 13px;font-size:15px;outline:none;resize:none;transition:border-color .2s;display:block}
@@ -1833,7 +1925,10 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .mk-link button .ico{width:14px;height:14px;color:var(--tx3)}
 
 /* 핀치로 열 바꾸기 — 손가락을 따라 판이 커지고 작아진다 */
-.masonry.mjs.pinching{transition:none;will-change:transform}
+.masonry.mjs.pinching{transition:none;will-change:transform;position:relative;z-index:1}
+/* 핀치 중 옛 모습이 뒤에 남아 겹쳐 보였다 (HB 2026-10-13 아이패드 사진) — 아이패드 사파리가 판 뒤를 다시 칠하지 않는다.
+   핀치 동안 판 뒤에 불투명한 바탕을 한 장 깔아 그 자리를 새로 칠하게 한다 */
+#v-map.pz::before{content:'';position:fixed;inset:0;background:var(--bg);z-index:0;pointer-events:none}
 
 /* 끌 때 오른쪽 위 구석에 나타나는 지우는 칸 */
 .md-trash{position:fixed;top:calc(var(--sat) + 8px);right:8px;z-index:59;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:min(58vw,230px);height:112px;border-radius:22px;
@@ -1926,6 +2021,8 @@ const ICONS = {
   sheet: '<rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/>',
   cloud: '<path d="M7 18h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>'
 };
 function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
@@ -1947,7 +2044,33 @@ function loadDB() {
   return d;
 }
 let saveT = 0;
-function save() { DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); syncSoon(); }
+// 실행취소 칸 — 100번까지 · 합쳐 40MB 까지 (이름 수백 명 지도 한 칸이 대략 0.1~0.3MB). 이 탭이 살아 있는 동안만 (HB 2026-10-13)
+const HIST = makeHist(100, 40e6);
+HIST.reset(histKey(DB));
+let HIST_SKIP = false;
+function histNote() {
+  try {
+    if (HIST_SKIP) { HIST.last = histKey(DB); return; }
+    if (HIST.record(histKey(DB), Date.now())) paintUndo();
+  } catch (e) { /* 되돌리기 칸만 못 적음 */ }
+}
+function paintUndo() {
+  document.querySelectorAll('[data-a="undo"]').forEach(b => b.classList.toggle('off', !HIST.past.length));
+  document.querySelectorAll('[data-a="redo"]').forEach(b => b.classList.toggle('off', !HIST.future.length));
+}
+function histGo(redo) {
+  if (UI.mapEdit) { const i = document.querySelector('#v-map [data-mapin]'); if (i) mapCommit(i.value); else UI.mapEdit = null; }
+  const snap = redo ? HIST.redo() : HIST.undo();
+  if (!snap) { toast(redo ? '다시 할 것이 없습니다' : '되돌릴 것이 없습니다'); return; }
+  if (SHEET) closeSheet(true);
+  DB = histRestore(DB, snap); EFFC = null;
+  HIST_SKIP = true; save(); HIST_SKIP = false;
+  applyTheme(DB.set);
+  while (UI.layers.length && LAYER_GONE(UI.layers[UI.layers.length - 1])) popLayer();
+  refresh(); paintUndo();
+  toast(redo ? '다시 했습니다' : '되돌렸습니다');
+}
+function save() { histNote(); DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); syncSoon(); }
 // 보이는 표시 색 — 직접 칠한 색, 없으면 소속에 이어 둔 색 (core markOf). 저장할 때마다 다시 센다
 let EFFC = null;
 function mk(t) { if (!EFFC) EFFC = effMarkMap(DB); return markOf(DB, t, EFFC); }
@@ -2060,9 +2183,14 @@ function renderView() {
   if (fn && el) el.innerHTML = fn();
   if (UI.tab === 'map') mapLayout();
 }
-function brand(page) { return '<div class="brand"><b>BLUE ROOM</b><span>' + page + '</span></div>'; }
+// 표시색 접기 단추 — 빨강 원 뒤로 주황 · 초록 · 파랑 초승달 (HB 그림, 2026-10-13). 폰에서만 보인다
+const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['#4aa1f7', 18.6], ['#82d454', 15.2], ['#f2b13e', 11.8], ['#d93a26', 7.6]].map((c, k) =>
+  '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--bg)" stroke-width="' + (k ? 1.4 : 0) + '"/>').join('') + '</svg>';
+function brand(page) { return '<h1 class="br" aria-label="BLUE ROOM — ' + page + '"><b>BLUE ROOM</b><span>' + page + '</span></h1>'; }
 function headActs(extra) {
-  return '<div class="vh-acts">' + (extra || '') + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
+  return '<div class="vh-acts">' + (extra || '') +
+    '<button class="ib' + (HIST.past.length ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
+    '<button class="ib' + (HIST.future.length ? '' : ' off') + '" data-a="redo" aria-label="재실행 (⌘⇧Z)" title="재실행 ⌘⇧Z · ⌘Y">' + ico('redo') + '</button>' + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
 }
 
 // ── ① 오늘 ──
@@ -2074,8 +2202,8 @@ function renderToday() {
   const mode = DB.set.sorts.today || 'imp';
   const ranks = DB.set.ranks.today || {};
   const d = parseYmd(TODAY);
-  let h = brand('Today') + '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
-  h += '<div class="vh"><h1>오늘 기도</h1>' + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
+  let h = '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
+  h += '<div class="vh">' + brand('Today') + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
   if (!DB.T.length && !DB.G.length) return h + emptyStart();
   h += '<div class="vh" style="padding-top:0"><span class="sub"><b style="color:var(--ac-tx);font-weight:600">' + cnt.d + '</b> / ' + cnt.n + ' 기도함</span></div>';
   h += '<div class="prog"><i style="width:' + (cnt.n ? Math.round(cnt.d / cnt.n * 100) : 0) + '%"></i></div>';
@@ -2296,21 +2424,21 @@ function mapCards(src, opt) {
 
 // ── ⑤ 지도 탭 ──
 function renderMap() {
-  let h = brand('Map') + '<div class="vh"><div class="vh-t"><h1>기도 지도</h1><button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
+  let h = '<div class="vh"><div class="vh-t">' + brand('Map') + '<button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
+    (DB.G.length ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '') +
     '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
     '<button class="ib" data-a="map-menu" aria-label="지도 메뉴">' + ico('dots') + '</button>') + '</div>';
   if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<button class="mk-fold' + (UI.mkOpen ? ' open' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '">' + ico('chevR', 'chev') + '표시색' + (UI.mapFilter.length ? '<span class="mk-dots">' + UI.mapFilter.map(m => '<i class="dot" style="--m:' + markVar(m) + '"></i>').join('') + '</span>' : '') + '</button>';
-  h += '<div class="chips mk-chips' + (UI.mkOpen ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
+  h += '<div class="chips mk-chips' + (UI.mkOpen || UI.mapFilter.length ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
   if (UI.mapQuery) {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
-  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
+  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter });
   return h;
 }
@@ -2322,7 +2450,7 @@ function listItems() {
   return DB.T.filter(t => t.cat === UI.listCat);
 }
 function renderList() {
-  let h = brand('List') + '<div class="vh"><h1>목록</h1>' + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
+  let h = '<div class="vh">' + brand('List') + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
   h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
   const cats = [['all', '전체', DB.T.filter(t => t.cat || t.u != null).length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
   const none = DB.T.filter(t => !t.cat).length;
@@ -2390,7 +2518,7 @@ function renderMatrix(items) {
 
 // ── ⑨ 기록 탭 ──
 function renderHist() {
-  let h = brand('His Story') + '<div class="vh"><h1>기록</h1>' + headActs() + '</div>';
+  let h = '<div class="vh">' + brand('His Story') + headActs() + '</div>';
   h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   if (UI.histTab === 'snap') return h + renderSnaps();
   if (UI.histTab === 'days') return h + renderCal();
@@ -2535,10 +2663,10 @@ function markPicker(t) {
     MARKS.map(m => '<button class="mkb' + (t.mark === m ? ' on' : '') + '" data-a="set-mark" data-id="' + t.id + '" data-m="' + m + '" style="--m:' + markVar(m) + '" aria-label="' + esc(markName(m)) + '" aria-pressed="' + (t.mark === m) + '"><i></i></button>').join('') + '</div>';
 }
 function topicsBlock(t) {
-  return '<div class="label">기도제목<small>누르면 응답 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
+  return '<div class="label">기도제목<small>동그라미 = 응답 · 글자를 누르면 고치기 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
     (t.topics || []).map(tp => '<div class="row tp' + (tp.ans ? ' ans' : '') + '" data-id="' + tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="topic" data-tid="' + t.id + '" data-id="' + tp.id + '">지우기</button></div>' +
       '<div class="row-f"><button class="tcircle" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '" aria-label="응답 표시"><i><svg viewBox="0 0 24 24">' + ICONS.check + '</svg></i></button>' +
-      '<div class="rb" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
+      '<div class="rb" data-a="tp-edit" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
       (tp.ans ? '<span class="ansd">응답 · ' + shortDate(tp.ans) + '</span>' : '') + '</div></div>').join('') + '</div>' +
     '<div class="addline"><input data-add="topic" data-id="' + t.id + '" placeholder="기도제목 더하기" enterkeyhint="done"><button class="ib" data-a="add-topic" data-id="' + t.id + '" aria-label="더하기">' + ico('plus') + '</button></div>';
 }
@@ -2554,9 +2682,14 @@ function prioBlock(t) {
     : (iv === 1 ? '날마다' : iv + '일마다') + ' 차례가 옵니다. 같은 숫자를 다시 누르면 비웁니다.';
   return '<div class="label">얼마나 자주 · 얼마나 위에</div>' + row('u', '긴급도') + row('i', '중요도') + '<div class="hint">' + note + '</div>';
 }
+// 요일 단추 줄 — 맨 오른쪽 '매일' 은 전부 켜기 · 한 번 더 누르면 전부 끄기. 손가락 · 마우스로 쭉 긁으면 여러 개 (HB 2026-10-13)
+function daysRow(t) {
+  const all = t.days.length === 7;
+  return '<div class="days" data-days="' + t.id + '">' + WEEK.map((w, d) => '<button class="dy' + (t.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + t.id + '" data-v="' + d + '">' + w + '</button>').join('') +
+    '<button class="dy-all' + (all ? ' on' : '') + '" data-a="day-all" data-id="' + t.id + '" aria-pressed="' + all + '">매일</button></div>';
+}
 function daysBlock(t) {
-  return '<div class="label">요일<small>고른 요일에는 꼭 나옵니다</small></div><div class="days">' + WEEK.map((w, d) =>
-    '<button class="dy' + (t.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + t.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>';
+  return '<div class="label">요일<small>고른 요일에는 꼭 나옵니다 · 쭉 긁으면 여러 개</small></div>' + daysRow(t);
 }
 function stripBlock(t) {
   let s = '';
@@ -2587,7 +2720,7 @@ LAYERS.group = L => {
       groupHeadcount(DB, k) + '명' + (k.days.length ? ' · ' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') : '') + '</div></div>' + ico('chevR') + '</div></div>').join('') + '</div>' +
       '<div style="padding:8px 20px 0"><button class="ghost" data-a="add-sub" data-id="' + g.id + '">+ 서브 그룹</button></div>';
   }
-  b += '<div class="label">요일 · 때</div><div class="days">' + WEEK.map((w, d) => '<button class="dy' + (g.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + g.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>' +
+  b += '<div class="label">요일 · 때</div>' + daysRow(g) +
     '<input class="field" data-f="time" data-id="' + g.id + '" value="' + esc(g.time) + '" placeholder="때 — 오전 · 오후 · 저녁" autocomplete="off">';
   b += prioBlock(g) + markPicker(g) + topicsBlock(g);
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + g.id + '" placeholder="이 그룹을 위해 할 일">' + esc(g.memo) + '</textarea>' +
@@ -2634,6 +2767,7 @@ LAYERS.settings = () => {
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
   b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div>';
+  b += '<div class="label">화면 진단<small>아래 띠 색이 다를 때 눌러 복사해 보내 주세요</small></div><div class="set-g"><button class="set-r" data-a="diag-copy">' + ico('link') + '화면 진단 기록 복사</button></div>';
   b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
   return { title: '설정', body: b };
@@ -2803,14 +2937,30 @@ ACT.cats = () => pushLayer({ type: 'cats' });
 ACT.subcats = () => pushLayer({ type: 'subcats' });
 ACT.groups = () => pushLayer({ type: 'groups' });
 ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' }); };
+// 휴대폰 · 태블릿 지도: 한 번 톡 = 고치기, **두 번 톡 = 상세** (HB 2026-10-13). 꾹 눌렀다 떼기도 그대로 상세.
+//   ⚠️ 첫 톡에서 바로 고치기를 시작한다 — 아이폰은 기다렸다 focus 하면 자판이 안 뜬다. 두 번째 톡이 오면 고치기를 접고 연다.
+const MTAP = { k: '', t: 0 };
+function mapTapEdit(k) { MTAP.k = k; MTAP.t = Date.now(); mapStartEdit(k, false); }
+document.addEventListener('pointerup', e => {
+  if (PT === 'mouse' || !MTAP.k || Date.now() - MTAP.t > 380 || Date.now() - MTAP.t < 30) return;
+  const s = e.target.closest && e.target.closest('#v-map [data-sel]');
+  if (!s || s.dataset.sel !== MTAP.k) return;
+  const k = MTAP.k; MTAP.k = '';
+  e.preventDefault(); GS.suppress = Date.now();
+  if (UI.mapEdit && UI.mapEdit.key === k && !UI.mapEdit.isNew) UI.mapEdit = null;   // 막 시작한 고치기 — 바뀐 것 없음
+  const a = document.activeElement; if (a && a.blur) a.blur();
+  mapRender(); mapOpen(k);
+}, true);
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
-  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapStartEdit(s.dataset.sel, false); return; }
+  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapTapEdit(s.dataset.sel); return; }
   if (el.dataset.id) openTarget(el.dataset.id);
 };
 ACT['map-add'] = el => {
   const k = el.dataset.k, id = el.dataset.id;
+  // 고치던 칸이 있으면 먼저 적고 새로 만든다 (HB 2026-10-13 — 서브 그룹 입력 중 서브 그룹 단추)
+  if (UI.mapEdit) { const i = document.querySelector('#v-map [data-mapin]'); if (i) mapCommit(i.value); else UI.mapEdit = null; }
   if (k === 'group') { UI.sel = ''; mapNewGroup(false); return; }
   if (k === 'sub') { UI.sel = 'g:' + id; mapNewGroup(true); return; }
   mapAddLine(id);
@@ -2825,14 +2975,14 @@ ACT['layer-cancel'] = () => {
   popLayer(); toast('바꾼 것을 되돌렸습니다');
 };
 ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
-  ['↑ ↓', '고르기 (그룹 · 서브 그룹 · 항목)'], ['← →', '앞 · 뒤 그룹으로'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
+  ['↑ ↓ ← →', '화면에 보이는 자리대로 위 · 아래 · 왼쪽 · 오른쪽으로 고르기'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
   ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], [',', '고른 그룹에 항목 더하기 (항목을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기 (그룹 · 서브 그룹 · 항목 어디서나)'], ['끌기', '눌러 끌면 옮기기 — 다른 그룹으로 놓으면 옮기기 · 연동 중 고르기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
   ['⌥ ↑ ↓', '위아래로 옮기기 · 항목은 끝에서 옆 그룹으로'], ['N', '새 그룹'], ['M', '고른 그룹 안에 새 서브 그룹'], ['Esc', '고치기 취소 · 고르기 풀기'],
   ['두 번 누르기', '상세 열기 (이름이면 사람 카드)']
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
   '<div class="hint" style="padding:12px 20px">⌘N 은 크롬 · 사파리가 먼저 가져가(새 창) 웹 페이지가 막을 수 없어 한 글자로 둡니다. 한글 입력 상태여도 같은 자리 글쇠면 됩니다.</div></div>');
 ACT['open-group'] = el => {
-  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapStartEdit(el.dataset.sel, false); return; }
+  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapTapEdit(el.dataset.sel); return; }
   pushLayer({ type: 'group', id: el.dataset.id });
 };
 ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
@@ -2939,6 +3089,51 @@ ACT['add-ok'] = () => SHEET && SHEET._ok && SHEET._ok();
 // 상세 (사람 · 항목 · 묶음 공통)
 ACT['set-mark'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.mark = t.mark === el.dataset.m ? '' : el.dataset.m; save(); refresh(); };
 ACT['set-num'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const f = el.dataset.f, v = +el.dataset.v; t[f] = t[f] === v ? null : v; save(); refresh(); };
+// ⚠️ 아이폰은 누른 그 자리에서 바로 복사해야 한다 (await 뒤면 실패)
+ACT['diag-copy'] = () => {
+  const txt = diagText();
+  const fall = () => { const ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); toast(ok ? '진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요' : '복사하지 못했습니다'); };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast('진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요'), fall); else fall(); } catch (e) { fall(); }
+};
+ACT.undo = () => histGo(false);
+ACT.redo = () => histGo(true);
+// ⌘Z 실행취소 · ⌘⇧Z / ⌘Y 재실행 (윈도우는 Ctrl). 글자를 치는 칸 안에서는 그 칸의 글자 되돌리기에 맡긴다
+document.addEventListener('keydown', e => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+  const code = e.code || '', k = (e.key || '').toLowerCase();
+  const z = code === 'KeyZ' || k === 'z', y = code === 'KeyY' || k === 'y';
+  if (!z && !y) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) && !(t.dataset && t.dataset.mapin && !t.value)) return;
+  if (F.on) return;
+  e.preventDefault(); e.stopPropagation();
+  histGo(y || e.shiftKey);
+}, true);
+ACT['day-all'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.days = t.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6]; save(); refresh(); };
+// 요일 긁기 — 처음 누른 요일의 반대 상태를 지나간 요일 모두에 칠한다. 움직였으면 손을 뗄 때 한 번에 적는다
+const DYP = { st: null };
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest && e.target.closest('.days .dy'); if (!b) return;
+  const t = findAny(DB, b.dataset.id); if (!t) return;
+  DYP.st = { t: t, val: !b.classList.contains('on'), seen: new Set([+b.dataset.v]), moved: false, first: b, row: b.parentElement };
+});
+document.addEventListener('pointermove', e => {
+  const st = DYP.st; if (!st) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest && el.closest('.dy');
+  if (!b || b.parentElement !== st.row) return;
+  const d = +b.dataset.v;
+  if (st.seen.has(d) && st.moved) return;
+  if (!st.moved && b === st.first) return;
+  if (!st.moved) { st.moved = true; st.first.classList.toggle('on', st.val); }
+  st.seen.add(d); b.classList.toggle('on', st.val);
+});
+const dyEnd = () => {
+  const st = DYP.st; DYP.st = null; if (!st || !st.moved) return;
+  const set = new Set(st.t.days); st.seen.forEach(d => { if (st.val) set.add(d); else set.delete(d); });
+  st.t.days = [...set].sort(); GS.suppress = Date.now(); save(); refresh();
+};
+document.addEventListener('pointerup', dyEnd);
+document.addEventListener('pointercancel', () => { if (DYP.st && DYP.st.moved) dyEnd(); else DYP.st = null; });
 ACT['set-day'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const d = +el.dataset.v; const k = t.days.indexOf(d); if (k >= 0) t.days.splice(k, 1); else { t.days.push(d); t.days.sort(); } save(); refresh(); };
 ACT.answer = el => {
   const t = findAny(DB, el.dataset.tid); if (!t) return;
@@ -2947,6 +3142,19 @@ ACT.answer = el => {
   if (tp.ans) toast('응답으로 적었습니다 — 기록 탭 \'응답\' 에 쌓입니다');
 };
 ACT.unanswer = el => { const t = findAny(DB, el.dataset.tid); if (!t) return; const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return; withUndo('응답 표시를 지웠습니다', () => { tp.ans = ''; }); };
+// 기도제목 글자를 누르면 그 자리에서 고친다 — Enter · 바깥 누르기 = 적기, Esc = 그대로 (HB 2026-10-13)
+ACT['tp-edit'] = el => {
+  const t = findAny(DB, el.dataset.tid); if (!t) return;
+  const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return;
+  const nm = el.querySelector('.nm'); if (!nm || el.querySelector('input')) return;
+  const inp = document.createElement('input'); inp.className = 'tp-in'; inp.value = tp.t; inp.setAttribute('enterkeyhint', 'done');
+  nm.replaceWith(inp); inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (er) {}
+  let done = false;
+  const fin = ok => { if (done) return; done = true; const v = inp.value.trim(); if (ok && v && v !== tp.t) { tp.t = v; save(); } refresh(); };
+  inp.addEventListener('keydown', e => { if (e.isComposing || e.keyCode === 229) return; if (e.key === 'Enter') { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fin(false); } });
+  inp.addEventListener('blur', () => fin(true));
+  inp.addEventListener('click', e => e.stopPropagation());
+};
 ACT['add-topic'] = el => { const inp = el.parentElement.querySelector('input'); addTopic(el.dataset.id, inp); };
 function addTopic(id, inp) {
   const t = findAny(DB, id); const v = (inp.value || '').trim(); if (!t || !v) return;
@@ -3399,6 +3607,27 @@ function mapDelete(k) {
   mapRender();
 }
 // 지도 탭에서 고르기 · 단축키. 처리했으면 true
+// 고른 것에서 화살표 쪽으로 가장 가까운 것. 같은 단(세로) · 같은 줄(가로)에 겹치는 것을 먼저 고른다
+function mapSpatial(cur, key, nav) {
+  const v = $('v-map'); if (!v) return '';
+  const R = k => { const el = v.querySelector('[data-sel="' + k + '"]'); return el ? el.getBoundingClientRect() : null; };
+  const c = R(cur); if (!c) return nav[0];
+  const vert = key === 'ArrowDown' || key === 'ArrowUp', dir = key === 'ArrowDown' || key === 'ArrowRight' ? 1 : -1;
+  const cx = (c.left + c.right) / 2, cy = (c.top + c.bottom) / 2;
+  let best = '', bs = Infinity;
+  nav.forEach(k => {
+    if (k === cur) return;
+    const r = R(k); if (!r || !r.width) return;
+    const x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
+    let main, side, over;
+    if (vert) { main = (y - cy) * dir; side = Math.abs(x - cx); over = Math.min(r.right, c.right) - Math.max(r.left, c.left) > 4; if (dir > 0 ? r.top < c.bottom - 2 : r.bottom > c.top + 2) return; }
+    else { main = (x - cx) * dir; side = Math.abs(y - cy); over = Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top) > 2; if (dir > 0 ? r.left < c.right - 2 : r.right > c.left + 2) return; }
+    if (main <= 0 || (vert && !over)) return;   // 위아래는 같은 단 안에서만 — 단 끝이면 그대로
+    const sc = (over ? 0 : 100000) + main + side * (vert ? 2 : 0.6);
+    if (sc < bs) { bs = sc; best = k; }
+  });
+  return best;
+}
 function mapKey(e) {
   if (UI.tab !== 'map' || UI.layers.length || SHEET || F.on) return false;
   const t = e.target;
@@ -3423,19 +3652,13 @@ function mapKey(e) {
   const nav = mapNav();
   if (!nav.length) return false;
   let i = nav.indexOf(UI.sel);
-  if (key === 'ArrowDown' || key === 'ArrowUp') {
+  // 화살표 = **화면에 보이는 자리** 그대로 위 · 아래 · 왼쪽 · 오른쪽 (HB 2026-10-13). ⌥↑↓ 는 예전대로 옮기기
+  if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowRight' || key === 'ArrowLeft') {
     e.preventDefault();
-    if (e.altKey && UI.sel) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
-    i = i < 0 ? 0 : Math.max(0, Math.min(nav.length - 1, i + (key === 'ArrowDown' ? 1 : -1)));
-    UI.sel = nav[i]; mapRender(); return true;
-  }
-  if (key === 'ArrowRight' || key === 'ArrowLeft') {
-    e.preventDefault();
-    const heads = nav.map((k, n) => [k, n]).filter(x => x[0][0] === 'g' && !(findG(DB, x[0].slice(2)) || {}).parent);
-    let h;
-    if (key === 'ArrowRight') { h = heads.findIndex(x => x[1] > i); if (h < 0) h = heads.length - 1; }
-    else { h = -1; heads.forEach((x, n) => { if (x[1] < i) h = n; }); if (h < 0) h = 0; }
-    if (heads[h]) { UI.sel = heads[h][0]; mapRender(); }
+    if (e.altKey && UI.sel && (key === 'ArrowDown' || key === 'ArrowUp')) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
+    if (i < 0) { UI.sel = nav[0]; mapRender(); return true; }
+    const nx = mapSpatial(UI.sel, key, nav);
+    if (nx) { UI.sel = nx; mapRender(); }
     return true;
   }
   if (!UI.sel || i < 0) { if (key === 'Enter' || key === 'Tab') { e.preventDefault(); UI.sel = nav[0]; mapRender(); return true; } return false; }
@@ -3573,6 +3796,8 @@ function mdEnd(e, cancel) {
   }
   if (st.mode === 'drag') { GS.suppress = Date.now(); mdDrop(st, cancel); }
 }
+let MADD_DOWN = 0;
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('[data-a="map-add"]')) MADD_DOWN = Date.now(); }, true);
 document.addEventListener('pointerup', e => mdEnd(e, false));
 document.addEventListener('pointercancel', e => mdEnd(e, true));
 function mdLift(st) {
@@ -3861,8 +4086,11 @@ function mapDistribute(cols, order, hs) {
 function mapLayout() {
   const m = document.querySelector('#v-map .mjs'); if (!m) return;
   const cards = m._order || [...m.children].filter(x => x.classList.contains('gcard'));
-  const n = mapColCount(m.clientWidth);
-  m.style.setProperty('--mz', mapFontScale(m.clientWidth, n).toFixed(3));   // 열이 적으면 글자도 크게
+  // 안 보이는 동안(폭 0 · 앱 나갔다 오는 중)에 잰 폭으로 열을 정하지 않는다 — 고른 열이 풀려 보였다 (HB 2026-10-13)
+  const w = m.clientWidth >= 200 ? m.clientWidth : (m._w || m.clientWidth);
+  const n = mapColCount(w);
+  m._w = w;
+  m.style.setProperty('--mz', mapFontScale(w, n).toFixed(3));   // 열이 적으면 글자도 크게
   m.innerHTML = '';
   const cols = []; for (let i = 0; i < n; i++) { const c = document.createElement('div'); c.className = 'mcol'; m.appendChild(c); cols.push(c); }
   cards.forEach(c => cols[0].appendChild(c));     // 같은 폭에서 높이를 잰다
@@ -3870,7 +4098,11 @@ function mapLayout() {
   mapDistribute(cols, cards, hs);
   m._order = cards; m._n = n;
 }
-window.addEventListener('resize', () => { const m = document.querySelector('#v-map .mjs'); if (m && m._n !== mapColCount(m.clientWidth)) mapLayout(); });
+window.addEventListener('resize', () => { const m = document.querySelector('#v-map .mjs'); if (m && m.clientWidth >= 200 && m._n !== mapColCount(m.clientWidth)) mapLayout(); });
+// 앱을 나갔다 오면 폭이 제자리로 돌아온 뒤 한 번 더 맞춘다 (iOS 는 나가는 동안 화면을 돌려 사진을 찍으며 폭을 바꾼다)
+const mapReLayout = () => setTimeout(() => { const m = document.querySelector('#v-map .mjs'); if (UI.tab === 'map' && m && m.clientWidth >= 200 && m._n !== mapColCount(m.clientWidth)) mapLayout(); }, 350);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') mapReLayout(); });
+window.addEventListener('pageshow', mapReLayout);
 // ── 지도 열 개수 — 폭 따라 2 · 3 · 4 열이 기본, 휴대폰에서 핀치로 바꾼다 (HB 2026-10-11) ──
 // 고른 값은 '기본이 몇 열인 폭에서 몇 열로' 로 이 기기에만 남긴다 → 아이패드를 돌려 기본이 바뀌어도 그 폭의 선택이 따로 산다.
 // 열을 줄이면 글자도 커진다(--mz). 한 단 폭이 늘어난 만큼 다 키우면 1열에서 너무 커서 0.55 제곱으로 누그러뜨린다.
@@ -3901,6 +4133,7 @@ document.addEventListener('touchstart', e => {
   PZ.hi = mapColW(w, 1) / mapColW(w, n);
   m.style.transformOrigin = PZ.ox + 'px ' + PZ.oy + 'px';
   m.classList.add('pinching');
+  if (!MT.on) $('v-map').classList.add('pz');
 }, { passive: true });
 document.addEventListener('touchmove', e => {
   if (!PZ.on) return;
@@ -3919,6 +4152,7 @@ document.addEventListener('touchmove', e => {
 ['gesturestart', 'gesturechange'].forEach(n => document.addEventListener(n, e => { if (UI.tab === 'map' && !UI.layers.length && e.target.closest && e.target.closest('#v-map')) e.preventDefault(); }, { passive: false }));
 function pzEnd() {
   PZ.on = false;
+  setTimeout(() => { const v = $('v-map'); if (v && !PZ.on) v.classList.remove('pz'); }, MD_SLIDE + 40);
   GS.suppress = Date.now();   // 손을 떼며 생기는 누르기는 삼킨다
   const m = PZ.m, w = PZ.w, n0 = PZ.n0, s = PZ.s;
   // 가장 가까운 열 — 배율을 로그로 견준다 (2배 · 반배가 같은 거리)
@@ -3981,6 +4215,7 @@ document.addEventListener('focusout', e => {
     const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, false); return;
   }
   if (!(el && el.dataset && el.dataset.mapin) || !UI.mapEdit) return;
+  if (Date.now() - MADD_DOWN < 700) return;   // 더하기 단추를 누르는 중 — 그 단추가 적고 새로 만든다 (다시 그리면 누른 단추가 사라진다)
   setTimeout(() => { if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); } }, 0);
 });
 
@@ -4289,6 +4524,8 @@ async function writeCloud(who, cdb, expect) {
 }
 function applyCloud(cdb) {
   DB = fromCloud(cdb, DB); EFFC = null;
+  // 다른 기기에서 온 변경이 들어오면 그 앞 칸들은 버린다 — 되돌리기가 상대 기기의 편집을 지우지 않게
+  HIST.reset(histKey(DB)); paintUndo();
   const t = $('toast'); if (t && t._fn) { t._fn = null; t.classList.remove('on'); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
   saveNow(); refresh();
 }
