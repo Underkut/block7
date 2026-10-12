@@ -688,6 +688,13 @@ console.log('\n시나리오 13-29 — 성경이 열린 동안 뒤 문서는 굴�
   sc.eq('기록 — 프레임 간격은 손짓 동안만 잰다', /const frame=t=>\{if\(!g\)\{raf=0;return;\}/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-30 — 아이폰·아이패드는 뒤 문서를 잠갔으니 본문 사슬 막기를 뺀다 (v26-1012-3)');
+{
+  sc.eq('잠긴 동안 iOS 본문은 overscroll auto', /html\.br-cover #bibleRd\.br-ios \.br-scroll\{overscroll-behavior:auto;\}/.test(SRC), true);
+  sc.eq('다른 기기는 contain 그대로', /#bibleRd \.br-scroll\{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;/.test(SRC), true);
+  sc.eq('걸림 시작 한 장을 남긴다', /if\(ms>=250&&!g\.snap\)/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
