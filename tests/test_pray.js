@@ -14,6 +14,7 @@
 //  ⑩ 표시 색 잇기 — 소속에 이은 색은 칠하지 않아도 보이고, 직접 칠한 색이 먼저
 //  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
+//  ⑬ 실행취소 · 재실행 — 사람이 한 일만 되돌리고, 기도 시간 · rev 는 지킨다
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -33,7 +34,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, syncPlan, addPraySession, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -540,6 +541,40 @@ const MAPCSV = [
   const m = A.merge3(base, L, R);
   sc.eq('⭐⑫ 두 기기에서 따로 잰 것이 맞출 때 둘 다 남고 합계도 더해진다', [m.log['2026-10-12'].ses.length, m.log['2026-10-12'].s], [3, 155]);
   sc.eq('⑫ 0초는 남기지 않는다', A.addPraySession(A.emptyDB(), t0, 0.2, 'map'), null);
+}
+// ⑬ 실행취소 · 재실행 (2026-10-13)
+{
+  const db = A.emptyDB(); db.rev = 5;
+  const H = A.makeHist(100, 1e8); H.reset(A.histKey(db));
+  const a = A.newTarget('person', '가나'); db.T.push(a); db.rev++;
+  sc.eq('⑬ 바뀌면 한 칸', H.record(A.histKey(db), 1000), true);
+  sc.eq('⑬ 저장만 다시(rev 만 늘어남)는 칸이 안 생긴다', (db.rev++, H.record(A.histKey(db), 3000)), false);
+  A.addPraySession(db, new Date(2026, 9, 13, 7, 0).getTime(), 90, 'map');
+  sc.eq('⭐⑬ 기도 시간만 쌓인 저장은 칸이 안 생긴다 (There 멈출 때)', H.record(A.histKey(db), 5000), false);
+  db.T[0].name = '가나다';
+  H.record(A.histKey(db), 9000);
+  db.T[0].u = 0; H.record(A.histKey(db), 9300);   // 0.6초 안 — 같은 칸
+  sc.eq('⑬ 0.6초 안에 이어진 저장은 한 칸', H.past.length, 2);
+  const u1 = A.histRestore(db, H.undo());
+  sc.eq('⑬ 되돌리기 — 이름 · 숫자가 함께 돌아간다', [u1.T[0].name, u1.T[0].u], ['가나', null]);
+  sc.eq('⭐⑬ 되돌려도 rev 는 그대로 · 기도 시간은 남는다', [u1.rev, u1.log['2026-10-13'].s, u1.log['2026-10-13'].ses.length], [db.rev, 90, 1]);
+  const u2 = A.histRestore(u1, H.undo());
+  sc.eq('⑬ 한 번 더 — 처음(빈 것)으로', u2.T.length, 0);
+  sc.eq('⭐⑬ 처음으로 돌아가도 그날 기도 시간은 지킨다', u2.log['2026-10-13'].s, 90);
+  sc.eq('⑬ 더 없으면 null', H.undo(), null);
+  const r1 = A.histRestore(u2, H.redo());
+  sc.eq('⑬ 재실행', r1.T.map(t => t.name), ['가나']);
+  const r2 = A.histRestore(r1, H.redo());
+  sc.eq('⑬ 재실행 두 번', [r2.T[0].name, r2.T[0].u], ['가나다', 0]);
+  A.histRestore(r2, H.undo());
+  r2.T[0].name = '새길'; H.record(A.histKey(r2), 20000);
+  sc.eq('⑬ 되돌린 뒤 새로 고치면 재실행 칸은 버린다', H.future.length, 0);
+  const H2 = A.makeHist(3, 1e8); H2.reset('0');
+  ['1', '2', '3', '4', '5'].forEach((k, i) => H2.record(k, i * 1000));
+  sc.eq('⑬ 개수 상한 — 오래된 것부터 버린다', H2.past, ['2', '3', '4']);
+  const H3 = A.makeHist(100, 10); H3.reset('aaaa');
+  ['bbbb', 'cccc', 'dddd', 'eeee'].forEach((k, i) => H3.record(k, i * 1000));
+  sc.eq('⑬ 크기 상한 — 넘치면 오래된 것부터', H3.past, ['cccc', 'dddd']);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {

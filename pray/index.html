@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-10';
+const APP_VERSION = 'v. 26-1013-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -831,6 +831,52 @@ function addPraySession(db, startMs, secs, src, sid) {
   return e;
 }
 
+// ── 실행취소 · 재실행 (HB 2026-10-13) ──
+// 한 칸 = DB 내용 전체를 얼린 글(JSON). 견주고 되돌리는 것은 **사람이 한 일**뿐이다:
+//  · rev(이 기기 저장 횟수)는 칸에 넣지 않는다 — 되돌려도 늘기만 한다
+//  · 기도 시간(log 의 s · ses)도 칸에 넣지 않는다 — 시간을 잰 것은 되돌릴 일이 아니고,
+//    넣으면 There 를 멈출 때마다 칸이 생겨 '눌러도 아무 일 없는 되돌리기' 가 된다
+function histKey(db) {
+  const c = Object.assign({}, db); delete c.rev;
+  const lg = {};
+  Object.keys(db.log || {}).forEach(d => { const L = db.log[d] || {}; const x = {}; Object.keys(L).forEach(k => { if (k !== 's' && k !== 'ses') x[k] = L[k]; });
+    // 시간만 적힌 날(기도한 것 · 미룬 것 없음)은 없는 날과 같다 — 시간을 잴 때 빈 날 칸이 새로 생긴다
+    const empty = Object.keys(x).every(k => (Array.isArray(x[k]) ? !x[k].length : x[k] && typeof x[k] === 'object' ? !Object.keys(x[k]).length : !x[k]));
+    if (!empty) lg[d] = x; });
+  c.log = lg;
+  return JSON.stringify(c);
+}
+// 칸(snap)의 모습으로 되돌린 새 DB — rev 와 기도 시간은 지금(cur) 것을 지킨다
+function histRestore(cur, snap) {
+  const n = normDB(JSON.parse(snap));
+  n.rev = cur.rev;
+  const lg = n.log || (n.log = {});
+  Object.keys(cur.log || {}).forEach(d => {
+    const L = cur.log[d] || {};
+    if (!('s' in L) && !('ses' in L)) return;
+    const x = lg[d] || (lg[d] = { d: [], p: {}, k: [] });
+    if ('s' in L) x.s = L.s;
+    if ('ses' in L) x.ses = JSON.parse(JSON.stringify(L.ses));
+  });
+  return n;
+}
+// 칸 쌓기. 0.6초 안에 이어진 저장은 한 칸으로 (글자 치기 · 끌기 한 번이 여러 번 저장해도 되돌리기는 한 번)
+function makeHist(maxN, maxBytes) {
+  const H = { past: [], future: [], last: '', at: 0, bytes: 0 };
+  const trim = () => { while (H.past.length > maxN || (H.bytes > maxBytes && H.past.length > 1)) H.bytes -= H.past.shift().length; };
+  H.reset = key => { H.past = []; H.future = []; H.last = key; H.at = 0; H.bytes = 0; };
+  H.record = (key, now) => {
+    if (key === H.last) return false;
+    if (!(H.at && now - H.at < 600 && H.past.length)) { H.past.push(H.last); H.bytes += H.last.length; trim(); }
+    H.at = now; H.last = key;
+    H.future = [];
+    return true;
+  };
+  H.undo = () => { if (!H.past.length) return null; const s = H.past.pop(); H.bytes -= s.length; H.future.push(H.last); H.last = s; H.at = 0; return s; };
+  H.redo = () => { if (!H.future.length) return null; const s = H.future.pop(); H.past.push(H.last); H.bytes += H.last.length; H.last = s; H.at = 0; return s; };
+  return H;
+}
+
 // ── 정렬 · 내 순서 ──
 const SORT_IMP = (a, b) => ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || a.name.localeCompare(b.name, 'ko');
 const SORT_URG = (a, b) => ((a.u == null ? 9 : a.u) - (b.u == null ? 9 : b.u)) || ((a.i == null ? 9 : a.i) - (b.i == null ? 9 : b.i)) || a.name.localeCompare(b.name, 'ko');
@@ -1447,6 +1493,7 @@ svg{display:block;flex-shrink:0}
 .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2);border-radius:22px;transition:background .15s,color .15s}
 .ib:active{background:var(--s2)}
 .ib.on{color:var(--ac-tx)}
+.ib.off{opacity:.28}
 .vh h1.br{display:flex;align-items:baseline;gap:10px;white-space:nowrap;min-width:0}
 .vh h1.br b{font-family:'Cormorant Garamond','Noto Serif KR',Georgia,'Times New Roman',serif;font-weight:500;font-size:30px;letter-spacing:.16em;line-height:1.15;color:var(--tx)}
 .vh h1.br span{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;font-weight:500;letter-spacing:.06em;color:var(--tx3)}
@@ -1974,6 +2021,8 @@ const ICONS = {
   sheet: '<rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/>',
   cloud: '<path d="M7 18h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
   user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>'
 };
 function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
@@ -1995,7 +2044,33 @@ function loadDB() {
   return d;
 }
 let saveT = 0;
-function save() { DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); syncSoon(); }
+// 실행취소 칸 — 100번까지 · 합쳐 40MB 까지 (이름 수백 명 지도 한 칸이 대략 0.1~0.3MB). 이 탭이 살아 있는 동안만 (HB 2026-10-13)
+const HIST = makeHist(100, 40e6);
+HIST.reset(histKey(DB));
+let HIST_SKIP = false;
+function histNote() {
+  try {
+    if (HIST_SKIP) { HIST.last = histKey(DB); return; }
+    if (HIST.record(histKey(DB), Date.now())) paintUndo();
+  } catch (e) { /* 되돌리기 칸만 못 적음 */ }
+}
+function paintUndo() {
+  document.querySelectorAll('[data-a="undo"]').forEach(b => b.classList.toggle('off', !HIST.past.length));
+  document.querySelectorAll('[data-a="redo"]').forEach(b => b.classList.toggle('off', !HIST.future.length));
+}
+function histGo(redo) {
+  if (UI.mapEdit) { const i = document.querySelector('#v-map [data-mapin]'); if (i) mapCommit(i.value); else UI.mapEdit = null; }
+  const snap = redo ? HIST.redo() : HIST.undo();
+  if (!snap) { toast(redo ? '다시 할 것이 없습니다' : '되돌릴 것이 없습니다'); return; }
+  if (SHEET) closeSheet(true);
+  DB = histRestore(DB, snap); EFFC = null;
+  HIST_SKIP = true; save(); HIST_SKIP = false;
+  applyTheme(DB.set);
+  while (UI.layers.length && LAYER_GONE(UI.layers[UI.layers.length - 1])) popLayer();
+  refresh(); paintUndo();
+  toast(redo ? '다시 했습니다' : '되돌렸습니다');
+}
+function save() { histNote(); DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); syncSoon(); }
 // 보이는 표시 색 — 직접 칠한 색, 없으면 소속에 이어 둔 색 (core markOf). 저장할 때마다 다시 센다
 let EFFC = null;
 function mk(t) { if (!EFFC) EFFC = effMarkMap(DB); return markOf(DB, t, EFFC); }
@@ -2113,7 +2188,9 @@ const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['
   '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--bg)" stroke-width="' + (k ? 1.4 : 0) + '"/>').join('') + '</svg>';
 function brand(page) { return '<h1 class="br" aria-label="BLUE ROOM — ' + page + '"><b>BLUE ROOM</b><span>' + page + '</span></h1>'; }
 function headActs(extra) {
-  return '<div class="vh-acts">' + (extra || '') + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
+  return '<div class="vh-acts">' + (extra || '') +
+    '<button class="ib' + (HIST.past.length ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
+    '<button class="ib' + (HIST.future.length ? '' : ' off') + '" data-a="redo" aria-label="재실행 (⌘⇧Z)" title="재실행 ⌘⇧Z · ⌘Y">' + ico('redo') + '</button>' + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
 }
 
 // ── ① 오늘 ──
@@ -3018,6 +3095,20 @@ ACT['diag-copy'] = () => {
   const fall = () => { const ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); toast(ok ? '진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요' : '복사하지 못했습니다'); };
   try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast('진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요'), fall); else fall(); } catch (e) { fall(); }
 };
+ACT.undo = () => histGo(false);
+ACT.redo = () => histGo(true);
+// ⌘Z 실행취소 · ⌘⇧Z / ⌘Y 재실행 (윈도우는 Ctrl). 글자를 치는 칸 안에서는 그 칸의 글자 되돌리기에 맡긴다
+document.addEventListener('keydown', e => {
+  if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+  const code = e.code || '', k = (e.key || '').toLowerCase();
+  const z = code === 'KeyZ' || k === 'z', y = code === 'KeyY' || k === 'y';
+  if (!z && !y) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) && !(t.dataset && t.dataset.mapin && !t.value)) return;
+  if (F.on) return;
+  e.preventDefault(); e.stopPropagation();
+  histGo(y || e.shiftKey);
+}, true);
 ACT['day-all'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.days = t.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6]; save(); refresh(); };
 // 요일 긁기 — 처음 누른 요일의 반대 상태를 지나간 요일 모두에 칠한다. 움직였으면 손을 뗄 때 한 번에 적는다
 const DYP = { st: null };
@@ -4433,6 +4524,8 @@ async function writeCloud(who, cdb, expect) {
 }
 function applyCloud(cdb) {
   DB = fromCloud(cdb, DB); EFFC = null;
+  // 다른 기기에서 온 변경이 들어오면 그 앞 칸들은 버린다 — 되돌리기가 상대 기기의 편집을 지우지 않게
+  HIST.reset(histKey(DB)); paintUndo();
   const t = $('toast'); if (t && t._fn) { t._fn = null; t.classList.remove('on'); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
   saveNow(); refresh();
 }
