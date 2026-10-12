@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1012-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1012-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5149,6 +5149,10 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 #bibleRd .br-ttl .br-t svg{width:12px;height:12px;color:var(--tx3);}
 #bibleRd .br-ttl .br-s{font-size:10.5px;color:var(--tx3);letter-spacing:.02em;}
 #bibleRd .br-scroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;position:relative;}
+/* v26-1012-3 (HB 기록 — 아이패드 미니: 걸림이 장 **처음·끝 가까이**에 몰린다, 손가락은 가는데 글이 수 초 그대로).
+   아이폰·아이패드는 뒤 문서를 잠가 두었으니(html.br-cover) 사슬 막기(contain)가 할 일이 없다 — 그 장치를 빼서
+   가장자리 근처에서 사파리가 손짓을 놓는 길을 하나 없앤다. 다른 기기는 그대로. */
+html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior:auto;}
 #bibleRd .br-page{max-width:640px;margin:0 auto;padding:22px 20px 120px;}
 #bibleRd .br-chhead{display:flex;align-items:baseline;gap:8px;margin:4px 0 18px;}
 #bibleRd .br-chhead .br-bk{font-size:13px;color:var(--tx3);}
@@ -6330,7 +6334,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1012-2";
+const APP_VERSION = "v. 26-1012-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15260,7 +15264,7 @@ function _brDiagText(){
     return (_brDiagStuck(r)?'⚠걸림 ':'')+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+
       ' 손'+Math.round(r.fin)+' 스크롤'+Math.round(r.scr)+' 꼬리'+Math.round(r.maxTail)+' 멈춤'+(r.stuckMs||0)+'ms 첫'+(r.first||'-')+'ms 전환'+r.flips+
       ' 프레임'+Math.round(r.fx||0)+'ms 바뀜'+(r.mut||0)+(r.dy?' 문서'+r.dy:'')+(r.dvv?' 확대창'+r.dvv:'')+
-      (Object.keys(r.oth||{}).length?' 딴스크롤['+Object.entries(r.oth).map(([k,n])=>k+'×'+n).join(',')+']':'')+' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+
+      (Object.keys(r.oth||{}).length?' 딴스크롤['+Object.entries(r.oth).map(([k,n])=>k+'×'+n).join(',')+']':'')+' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+(r.snap?' 〔'+r.snap+'〕':'')+
       ' @'+r.x+','+r.y+' '+r.tgt;});
   return head.join('\n')+'\n'+(rows.length?rows.join('\n'):'(아직 기록 없음 — 본문을 스크롤해 보세요)');
 }
@@ -15966,12 +15970,15 @@ function _brBind(){
     const desc=el=>{if(!el||!el.closest)return'?';const v=el.closest('.br-v');let ta='';try{ta=getComputedStyle(v||el).touchAction;}catch(x){}
       return el.nodeName.toLowerCase()+(el.id?'#'+el.id:'')+(el.classList&&el.classList.length?'.'+[...el.classList].slice(0,2).join('.'):'')+(v?' 절'+v.dataset.v:'')+' ta='+ta;};
     sc.addEventListener('touchstart',e=>{if(e.touches.length!==1){g=null;return;}const t=e.touches[0];
-      _brDiagArm();g={fx:0,oth:{},mut:0,dy0:window.scrollY,vv0:(window.visualViewport?visualViewport.offsetTop:0),t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,tt:Date.now(),stuckMs:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
+      _brDiagArm();g={snap:'',sh0:sc.scrollHeight,fx:0,oth:{},mut:0,dy0:window.scrollY,vv0:(window.visualViewport?visualViewport.offsetTop:0),t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,tt:Date.now(),stuckMs:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
     sc.addEventListener('touchmove',e=>{if(!g||!e.touches[0])return;const y=e.touches[0].clientY,d=y-g.ly;g.ly=y;g.mv++;
       g.fin+=Math.abs(d);g.tail+=Math.abs(d);if(g.tail>g.maxTail)g.maxTail=g.tail;
       // 걸림 = 손가락은 40px 넘게 갔는데 글이 **잠깐이라도 멈춰 있던 시간** (v26-1010-12 — 빠르게 밀면 한두 칸 사이에
       // 꼬리가 생겼다 바로 따라잡는다. 그걸 걸림으로 세던 것이 HB 기록의 '걸림 8' 이었다). 장 끝에 닿은 것은 빼고.
-      if(g.tail>=40){const y0=sc.scrollTop;if(y0>1&&y0<sc.scrollHeight-sc.clientHeight-1){const ms=Date.now()-g.tt;if(ms>g.stuckMs)g.stuckMs=ms;}}
+      if(g.tail>=40){const y0=sc.scrollTop;if(y0>1&&y0<sc.scrollHeight-sc.clientHeight-1){const ms=Date.now()-g.tt;if(ms>g.stuckMs)g.stuckMs=ms;
+        // 걸림이 막 시작된 순간 한 장 (v26-1012-3) — 어디쯤(위에서 %)·손가락 밑 맨 위 요소·헤더 접힘·스크롤 길이
+        if(ms>=250&&!g.snap){const t0=e.touches[0];let top='?';try{const el=document.elementFromPoint(t0.clientX,t0.clientY);top=el?(el.closest('#brScroll')?'본문':(el.id?'#'+el.id:(typeof el.className==='string'?'.'+el.className.split(' ')[0]:el.nodeName))+' ta='+getComputedStyle(el).touchAction):'없음';}catch(x){}
+          const mx=sc.scrollHeight-sc.clientHeight;g.snap='@'+Math.round(y0)+'/'+mx+'('+Math.round(y0/Math.max(1,mx)*100)+'%) 위='+top+' 머리'+(typeof _brP==='number'?_brP.toFixed(2):'?')+(sc.scrollHeight!==g.sh0?' 길이바뀜'+g.sh0+'→'+sc.scrollHeight:'');}}}
       if(Math.abs(d)>=1){const sg=Math.sign(d);if(g.dir&&sg!==g.dir)g.flips++;g.dir=sg;}
       if(g.can===null)g.can=e.cancelable;},{passive:true,capture:true});
     window.addEventListener('touchmove',e=>{if(g&&e.defaultPrevented)g.prev++;},{passive:true});   // 맨 끝 — 누가 막았으면 여기서 보인다
