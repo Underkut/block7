@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
 <title>기도노트</title>
 <script>
 // ⚠️ 기도노트의 집은 sweeter.my/pray/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
@@ -1410,19 +1410,20 @@ svg{display:block;flex-shrink:0}
 .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2);border-radius:22px;transition:background .15s,color .15s}
 .ib:active{background:var(--s2)}
 .ib.on{color:var(--ac-tx)}
-.brand{position:sticky;top:0;z-index:5;display:flex;align-items:baseline;gap:9px;padding:calc(var(--sat) + 8px) 20px 4px;margin-top:calc(var(--sat) * -1 - 8px);background:var(--bg);pointer-events:none}
-.mk-fold{display:none}
+.vh h1.br{display:flex;align-items:baseline;gap:10px;white-space:nowrap;min-width:0}
+.vh h1.br b{font-family:'Cormorant Garamond','Noto Serif KR',Georgia,'Times New Roman',serif;font-weight:500;font-size:30px;letter-spacing:.16em;line-height:1.15;color:var(--tx)}
+.vh h1.br span{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;font-weight:500;letter-spacing:.06em;color:var(--tx3)}
+.vh{flex-wrap:wrap-reverse}
+.vh-acts{margin-left:auto}
+@media (max-width:600px){.vh h1.br b{font-size:26px;letter-spacing:.13em}.ib{width:40px}}
+.mk-fold{display:none!important}
+.mkico{width:26px;height:16px;display:block;opacity:.8;transition:opacity .15s}
+.mk-fold.on .mkico{opacity:1}
 @media (max-width:600px){
-  .mk-fold{display:flex;align-items:center;gap:6px;padding:4px 20px;height:34px;font-size:13px;color:var(--tx2)}
-  .mk-fold .chev{width:14px;height:14px;transition:transform .2s}
-  .mk-fold.open .chev{transform:rotate(90deg)}
-  .mk-dots{display:flex;gap:4px;margin-left:4px}
-  .mk-dots .dot{width:9px;height:9px;border-radius:50%;background:var(--m);display:block}
+  .mk-fold{display:flex!important}
   .chips.mk-chips{display:none}
   .chips.mk-chips.open{display:flex}
 }
-.brand b{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:13px;font-weight:700;letter-spacing:.26em;color:var(--tx)}
-.brand span{font-size:11.5px;font-weight:400;letter-spacing:.04em;color:var(--tx3)}
 .date-l{padding:0 20px;font-size:13px;color:var(--tx2);letter-spacing:.02em}
 .prog{margin:12px 20px 0;height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .5s var(--ease)}
@@ -2060,7 +2061,10 @@ function renderView() {
   if (fn && el) el.innerHTML = fn();
   if (UI.tab === 'map') mapLayout();
 }
-function brand(page) { return '<div class="brand"><b>BLUE ROOM</b><span>' + page + '</span></div>'; }
+// 표시색 접기 단추 — 빨강 원 뒤로 주황 · 초록 · 파랑 초승달 (HB 그림, 2026-10-13). 폰에서만 보인다
+const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['#4aa1f7', 18.6], ['#82d454', 15.2], ['#f2b13e', 11.8], ['#d93a26', 7.6]].map((c, k) =>
+  '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--bg)" stroke-width="' + (k ? 1.4 : 0) + '"/>').join('') + '</svg>';
+function brand(page) { return '<h1 class="br" aria-label="BLUE ROOM — ' + page + '"><b>BLUE ROOM</b><span>' + page + '</span></h1>'; }
 function headActs(extra) {
   return '<div class="vh-acts">' + (extra || '') + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
 }
@@ -2074,8 +2078,8 @@ function renderToday() {
   const mode = DB.set.sorts.today || 'imp';
   const ranks = DB.set.ranks.today || {};
   const d = parseYmd(TODAY);
-  let h = brand('Today') + '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
-  h += '<div class="vh"><h1>오늘 기도</h1>' + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
+  let h = '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
+  h += '<div class="vh">' + brand('Today') + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
   if (!DB.T.length && !DB.G.length) return h + emptyStart();
   h += '<div class="vh" style="padding-top:0"><span class="sub"><b style="color:var(--ac-tx);font-weight:600">' + cnt.d + '</b> / ' + cnt.n + ' 기도함</span></div>';
   h += '<div class="prog"><i style="width:' + (cnt.n ? Math.round(cnt.d / cnt.n * 100) : 0) + '%"></i></div>';
@@ -2296,16 +2300,16 @@ function mapCards(src, opt) {
 
 // ── ⑤ 지도 탭 ──
 function renderMap() {
-  let h = brand('Map') + '<div class="vh"><div class="vh-t"><h1>기도 지도</h1><button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
+  let h = '<div class="vh"><div class="vh-t">' + brand('Map') + '<button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
+    (DB.G.length ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '') +
     '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
     '<button class="ib" data-a="map-menu" aria-label="지도 메뉴">' + ico('dots') + '</button>') + '</div>';
   if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<button class="mk-fold' + (UI.mkOpen ? ' open' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '">' + ico('chevR', 'chev') + '표시색' + (UI.mapFilter.length ? '<span class="mk-dots">' + UI.mapFilter.map(m => '<i class="dot" style="--m:' + markVar(m) + '"></i>').join('') + '</span>' : '') + '</button>';
-  h += '<div class="chips mk-chips' + (UI.mkOpen ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
+  h += '<div class="chips mk-chips' + (UI.mkOpen || UI.mapFilter.length ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
   if (UI.mapQuery) {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
@@ -2322,7 +2326,7 @@ function listItems() {
   return DB.T.filter(t => t.cat === UI.listCat);
 }
 function renderList() {
-  let h = brand('List') + '<div class="vh"><h1>목록</h1>' + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
+  let h = '<div class="vh">' + brand('List') + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
   h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
   const cats = [['all', '전체', DB.T.filter(t => t.cat || t.u != null).length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
   const none = DB.T.filter(t => !t.cat).length;
@@ -2390,7 +2394,7 @@ function renderMatrix(items) {
 
 // ── ⑨ 기록 탭 ──
 function renderHist() {
-  let h = brand('His Story') + '<div class="vh"><h1>기록</h1>' + headActs() + '</div>';
+  let h = '<div class="vh">' + brand('His Story') + headActs() + '</div>';
   h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   if (UI.histTab === 'snap') return h + renderSnaps();
   if (UI.histTab === 'days') return h + renderCal();
@@ -2811,6 +2815,8 @@ ACT.open = el => {
 };
 ACT['map-add'] = el => {
   const k = el.dataset.k, id = el.dataset.id;
+  // 고치던 칸이 있으면 먼저 적고 새로 만든다 (HB 2026-10-13 — 서브 그룹 입력 중 서브 그룹 단추)
+  if (UI.mapEdit) { const i = document.querySelector('#v-map [data-mapin]'); if (i) mapCommit(i.value); else UI.mapEdit = null; }
   if (k === 'group') { UI.sel = ''; mapNewGroup(false); return; }
   if (k === 'sub') { UI.sel = 'g:' + id; mapNewGroup(true); return; }
   mapAddLine(id);
@@ -3573,6 +3579,8 @@ function mdEnd(e, cancel) {
   }
   if (st.mode === 'drag') { GS.suppress = Date.now(); mdDrop(st, cancel); }
 }
+let MADD_DOWN = 0;
+document.addEventListener('pointerdown', e => { if (e.target.closest && e.target.closest('[data-a="map-add"]')) MADD_DOWN = Date.now(); }, true);
 document.addEventListener('pointerup', e => mdEnd(e, false));
 document.addEventListener('pointercancel', e => mdEnd(e, true));
 function mdLift(st) {
@@ -3981,6 +3989,7 @@ document.addEventListener('focusout', e => {
     const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, false); return;
   }
   if (!(el && el.dataset && el.dataset.mapin) || !UI.mapEdit) return;
+  if (Date.now() - MADD_DOWN < 700) return;   // 더하기 단추를 누르는 중 — 그 단추가 적고 새로 만든다 (다시 그리면 누른 단추가 사라진다)
   setTimeout(() => { if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); } }, 0);
 });
 
