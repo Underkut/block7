@@ -100,6 +100,19 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   (`make-sweeter-prod.sh` · `deploy-sweeter.yml` · `firebase.json`)을 고칠 때만 Sweeter 작업과 순서를 둔다.
 - ⚠️ **이름이 든 기도 자료는 저장소에 넣지 않는다** (공개 저장소). 시험 자료는 지어낸 이름으로.
 
+### 공부 친구들(`study/`)도 따로 돈다 — 주소는 `block7.my/study/`
+
+용돈 친구들과 같은 사정이다: `study/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+산출물 3개·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+계획과 까닭은 `docs/ROADMAP.md` '공부 친구들' 장. 핵심 규칙은 `<script id="study-core">`
+덩어리에 모아 두었고 `tests/test_study.js` 가 그것만 떼어 시험한다 — 계획·진도·알림·별 셈을
+고치면 시험부터 고친다.
+
+- 가족·클라우드는 **용돈 친구들과 같은 칸**(`families/{가족}`)을 쓴다. 두 앱을 잇는 것은
+  `kidId` 하나와 우체통의 '허락권' 쪽지뿐이다 — **한 앱이 다른 앱의 상태를 직접 고치지 않는다.**
+- 알림 서버는 `wallet-functions/`(묶음 이름 `wallet`)에 함께 산다. 그 폴더를 고치면 HB 가
+  서버를 다시 올려야 한다 (`docs/study/firebase-setup.md`).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).
