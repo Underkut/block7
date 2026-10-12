@@ -1675,7 +1675,10 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .nb{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd2);font-size:14px;color:var(--tx2);transition:transform .15s}
 .nb:active{transform:scale(.94)}
 .nb.on{border-color:transparent}
-.days{display:flex;gap:5px;padding:6px 20px}
+.days{display:flex;gap:5px;padding:6px 20px;align-items:center;touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.dy-all{margin-left:auto;padding:6px 4px 6px 10px;font-size:12px;color:var(--tx3);letter-spacing:.02em}
+.dy-all.on{color:var(--ac-tx);font-weight:600}
+.tp-in{width:100%;border:0;outline:none;background:transparent;color:var(--tx);font:inherit;padding:0;box-shadow:inset 0 -1px 0 var(--ac)}
 .dy{width:38px;height:38px;border-radius:19px;border:1px solid var(--bd2);font-size:13px;color:var(--tx2);transition:background .18s,color .18s}
 .dy.on{background:var(--ac);border-color:var(--ac);color:var(--on-accent)}
 .field{margin:6px 20px 0;width:calc(100% - 40px);min-height:46px;border:1px solid var(--bd);border-radius:12px;background:var(--s1);padding:11px 13px;font-size:15px;outline:none;resize:none;transition:border-color .2s;display:block}
@@ -2543,10 +2546,10 @@ function markPicker(t) {
     MARKS.map(m => '<button class="mkb' + (t.mark === m ? ' on' : '') + '" data-a="set-mark" data-id="' + t.id + '" data-m="' + m + '" style="--m:' + markVar(m) + '" aria-label="' + esc(markName(m)) + '" aria-pressed="' + (t.mark === m) + '"><i></i></button>').join('') + '</div>';
 }
 function topicsBlock(t) {
-  return '<div class="label">기도제목<small>누르면 응답 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
+  return '<div class="label">기도제목<small>동그라미 = 응답 · 글자를 누르면 고치기 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
     (t.topics || []).map(tp => '<div class="row tp' + (tp.ans ? ' ans' : '') + '" data-id="' + tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="topic" data-tid="' + t.id + '" data-id="' + tp.id + '">지우기</button></div>' +
       '<div class="row-f"><button class="tcircle" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '" aria-label="응답 표시"><i><svg viewBox="0 0 24 24">' + ICONS.check + '</svg></i></button>' +
-      '<div class="rb" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
+      '<div class="rb" data-a="tp-edit" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
       (tp.ans ? '<span class="ansd">응답 · ' + shortDate(tp.ans) + '</span>' : '') + '</div></div>').join('') + '</div>' +
     '<div class="addline"><input data-add="topic" data-id="' + t.id + '" placeholder="기도제목 더하기" enterkeyhint="done"><button class="ib" data-a="add-topic" data-id="' + t.id + '" aria-label="더하기">' + ico('plus') + '</button></div>';
 }
@@ -2562,9 +2565,14 @@ function prioBlock(t) {
     : (iv === 1 ? '날마다' : iv + '일마다') + ' 차례가 옵니다. 같은 숫자를 다시 누르면 비웁니다.';
   return '<div class="label">얼마나 자주 · 얼마나 위에</div>' + row('u', '긴급도') + row('i', '중요도') + '<div class="hint">' + note + '</div>';
 }
+// 요일 단추 줄 — 맨 오른쪽 '매일' 은 전부 켜기 · 한 번 더 누르면 전부 끄기. 손가락 · 마우스로 쭉 긁으면 여러 개 (HB 2026-10-13)
+function daysRow(t) {
+  const all = t.days.length === 7;
+  return '<div class="days" data-days="' + t.id + '">' + WEEK.map((w, d) => '<button class="dy' + (t.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + t.id + '" data-v="' + d + '">' + w + '</button>').join('') +
+    '<button class="dy-all' + (all ? ' on' : '') + '" data-a="day-all" data-id="' + t.id + '" aria-pressed="' + all + '">매일</button></div>';
+}
 function daysBlock(t) {
-  return '<div class="label">요일<small>고른 요일에는 꼭 나옵니다</small></div><div class="days">' + WEEK.map((w, d) =>
-    '<button class="dy' + (t.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + t.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>';
+  return '<div class="label">요일<small>고른 요일에는 꼭 나옵니다 · 쭉 긁으면 여러 개</small></div>' + daysRow(t);
 }
 function stripBlock(t) {
   let s = '';
@@ -2595,7 +2603,7 @@ LAYERS.group = L => {
       groupHeadcount(DB, k) + '명' + (k.days.length ? ' · ' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') : '') + '</div></div>' + ico('chevR') + '</div></div>').join('') + '</div>' +
       '<div style="padding:8px 20px 0"><button class="ghost" data-a="add-sub" data-id="' + g.id + '">+ 서브 그룹</button></div>';
   }
-  b += '<div class="label">요일 · 때</div><div class="days">' + WEEK.map((w, d) => '<button class="dy' + (g.days.indexOf(d) >= 0 ? ' on' : '') + '" data-a="set-day" data-id="' + g.id + '" data-v="' + d + '">' + w + '</button>').join('') + '</div>' +
+  b += '<div class="label">요일 · 때</div>' + daysRow(g) +
     '<input class="field" data-f="time" data-id="' + g.id + '" value="' + esc(g.time) + '" placeholder="때 — 오전 · 오후 · 저녁" autocomplete="off">';
   b += prioBlock(g) + markPicker(g) + topicsBlock(g);
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + g.id + '" placeholder="이 그룹을 위해 할 일">' + esc(g.memo) + '</textarea>' +
@@ -2811,10 +2819,24 @@ ACT.cats = () => pushLayer({ type: 'cats' });
 ACT.subcats = () => pushLayer({ type: 'subcats' });
 ACT.groups = () => pushLayer({ type: 'groups' });
 ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' }); };
+// 휴대폰 · 태블릿 지도: 한 번 톡 = 고치기, **두 번 톡 = 상세** (HB 2026-10-13). 꾹 눌렀다 떼기도 그대로 상세.
+//   ⚠️ 첫 톡에서 바로 고치기를 시작한다 — 아이폰은 기다렸다 focus 하면 자판이 안 뜬다. 두 번째 톡이 오면 고치기를 접고 연다.
+const MTAP = { k: '', t: 0 };
+function mapTapEdit(k) { MTAP.k = k; MTAP.t = Date.now(); mapStartEdit(k, false); }
+document.addEventListener('pointerup', e => {
+  if (PT === 'mouse' || !MTAP.k || Date.now() - MTAP.t > 380 || Date.now() - MTAP.t < 30) return;
+  const s = e.target.closest && e.target.closest('#v-map [data-sel]');
+  if (!s || s.dataset.sel !== MTAP.k) return;
+  const k = MTAP.k; MTAP.k = '';
+  e.preventDefault(); GS.suppress = Date.now();
+  if (UI.mapEdit && UI.mapEdit.key === k && !UI.mapEdit.isNew) UI.mapEdit = null;   // 막 시작한 고치기 — 바뀐 것 없음
+  const a = document.activeElement; if (a && a.blur) a.blur();
+  mapRender(); mapOpen(k);
+}, true);
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
-  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapStartEdit(s.dataset.sel, false); return; }
+  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapTapEdit(s.dataset.sel); return; }
   if (el.dataset.id) openTarget(el.dataset.id);
 };
 ACT['map-add'] = el => {
@@ -2842,7 +2864,7 @@ ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드<
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
   '<div class="hint" style="padding:12px 20px">⌘N 은 크롬 · 사파리가 먼저 가져가(새 창) 웹 페이지가 막을 수 없어 한 글자로 둡니다. 한글 입력 상태여도 같은 자리 글쇠면 됩니다.</div></div>');
 ACT['open-group'] = el => {
-  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapStartEdit(el.dataset.sel, false); return; }
+  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapTapEdit(el.dataset.sel); return; }
   pushLayer({ type: 'group', id: el.dataset.id });
 };
 ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
@@ -2949,6 +2971,31 @@ ACT['add-ok'] = () => SHEET && SHEET._ok && SHEET._ok();
 // 상세 (사람 · 항목 · 묶음 공통)
 ACT['set-mark'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.mark = t.mark === el.dataset.m ? '' : el.dataset.m; save(); refresh(); };
 ACT['set-num'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const f = el.dataset.f, v = +el.dataset.v; t[f] = t[f] === v ? null : v; save(); refresh(); };
+ACT['day-all'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.days = t.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6]; save(); refresh(); };
+// 요일 긁기 — 처음 누른 요일의 반대 상태를 지나간 요일 모두에 칠한다. 움직였으면 손을 뗄 때 한 번에 적는다
+const DYP = { st: null };
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest && e.target.closest('.days .dy'); if (!b) return;
+  const t = findAny(DB, b.dataset.id); if (!t) return;
+  DYP.st = { t: t, val: !b.classList.contains('on'), seen: new Set([+b.dataset.v]), moved: false, first: b, row: b.parentElement };
+});
+document.addEventListener('pointermove', e => {
+  const st = DYP.st; if (!st) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY), b = el && el.closest && el.closest('.dy');
+  if (!b || b.parentElement !== st.row) return;
+  const d = +b.dataset.v;
+  if (st.seen.has(d) && st.moved) return;
+  if (!st.moved && b === st.first) return;
+  if (!st.moved) { st.moved = true; st.first.classList.toggle('on', st.val); }
+  st.seen.add(d); b.classList.toggle('on', st.val);
+});
+const dyEnd = () => {
+  const st = DYP.st; DYP.st = null; if (!st || !st.moved) return;
+  const set = new Set(st.t.days); st.seen.forEach(d => { if (st.val) set.add(d); else set.delete(d); });
+  st.t.days = [...set].sort(); GS.suppress = Date.now(); save(); refresh();
+};
+document.addEventListener('pointerup', dyEnd);
+document.addEventListener('pointercancel', () => { if (DYP.st && DYP.st.moved) dyEnd(); else DYP.st = null; });
 ACT['set-day'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const d = +el.dataset.v; const k = t.days.indexOf(d); if (k >= 0) t.days.splice(k, 1); else { t.days.push(d); t.days.sort(); } save(); refresh(); };
 ACT.answer = el => {
   const t = findAny(DB, el.dataset.tid); if (!t) return;
@@ -2957,6 +3004,19 @@ ACT.answer = el => {
   if (tp.ans) toast('응답으로 적었습니다 — 기록 탭 \'응답\' 에 쌓입니다');
 };
 ACT.unanswer = el => { const t = findAny(DB, el.dataset.tid); if (!t) return; const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return; withUndo('응답 표시를 지웠습니다', () => { tp.ans = ''; }); };
+// 기도제목 글자를 누르면 그 자리에서 고친다 — Enter · 바깥 누르기 = 적기, Esc = 그대로 (HB 2026-10-13)
+ACT['tp-edit'] = el => {
+  const t = findAny(DB, el.dataset.tid); if (!t) return;
+  const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return;
+  const nm = el.querySelector('.nm'); if (!nm || el.querySelector('input')) return;
+  const inp = document.createElement('input'); inp.className = 'tp-in'; inp.value = tp.t; inp.setAttribute('enterkeyhint', 'done');
+  nm.replaceWith(inp); inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (er) {}
+  let done = false;
+  const fin = ok => { if (done) return; done = true; const v = inp.value.trim(); if (ok && v && v !== tp.t) { tp.t = v; save(); } refresh(); };
+  inp.addEventListener('keydown', e => { if (e.isComposing || e.keyCode === 229) return; if (e.key === 'Enter') { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fin(false); } });
+  inp.addEventListener('blur', () => fin(true));
+  inp.addEventListener('click', e => e.stopPropagation());
+};
 ACT['add-topic'] = el => { const inp = el.parentElement.querySelector('input'); addTopic(el.dataset.id, inp); };
 function addTopic(id, inp) {
   const t = findAny(DB, id); const v = (inp.value || '').trim(); if (!t || !v) return;
