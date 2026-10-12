@@ -1595,6 +1595,10 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
   body:not(.tch) .madd-group{opacity:.35}body:not(.tch) .madd-group:hover{opacity:1}
 }
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
+/* 그룹 머리를 고르면 테두리는 머리 줄 **전체**(오른쪽 서브 그룹 단추까지)에 · 카드의 둥근 위 모서리를 따라 (HB 2026-10-13) */
+.gh.sel{border-radius:12px 12px 0 0}
+.ghw:has(>.gh.sel)::after{content:'';position:absolute;inset:0;border-radius:12px 12px 0 0;box-shadow:inset 0 0 0 2px var(--tx);pointer-events:none;z-index:2}
+.ghw>.gh.sel{box-shadow:none}
 /* 테두리는 안쪽에 — 바깥에 두면 위아래 서브 그룹 띠가 덮어 가렸다 (HB 2026-10-11) */
 .ln.sel{background:var(--ac-soft);border-radius:6px;box-shadow:inset 0 0 0 1.5px var(--ac);position:relative;z-index:1}
 /* 휴대폰에서는 고른 테두리를 안 보인다 (PC 키보드용) */
@@ -2314,7 +2318,7 @@ function renderMap() {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
-  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
+  if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter });
   return h;
 }
@@ -2831,7 +2835,7 @@ ACT['layer-cancel'] = () => {
   popLayer(); toast('바꾼 것을 되돌렸습니다');
 };
 ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
-  ['↑ ↓', '고르기 (그룹 · 서브 그룹 · 항목)'], ['← →', '앞 · 뒤 그룹으로'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
+  ['↑ ↓ ← →', '화면에 보이는 자리대로 위 · 아래 · 왼쪽 · 오른쪽으로 고르기'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
   ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], [',', '고른 그룹에 항목 더하기 (항목을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기 (그룹 · 서브 그룹 · 항목 어디서나)'], ['끌기', '눌러 끌면 옮기기 — 다른 그룹으로 놓으면 옮기기 · 연동 중 고르기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
   ['⌥ ↑ ↓', '위아래로 옮기기 · 항목은 끝에서 옆 그룹으로'], ['N', '새 그룹'], ['M', '고른 그룹 안에 새 서브 그룹'], ['Esc', '고치기 취소 · 고르기 풀기'],
   ['두 번 누르기', '상세 열기 (이름이면 사람 카드)']
@@ -3405,6 +3409,27 @@ function mapDelete(k) {
   mapRender();
 }
 // 지도 탭에서 고르기 · 단축키. 처리했으면 true
+// 고른 것에서 화살표 쪽으로 가장 가까운 것. 같은 단(세로) · 같은 줄(가로)에 겹치는 것을 먼저 고른다
+function mapSpatial(cur, key, nav) {
+  const v = $('v-map'); if (!v) return '';
+  const R = k => { const el = v.querySelector('[data-sel="' + k + '"]'); return el ? el.getBoundingClientRect() : null; };
+  const c = R(cur); if (!c) return nav[0];
+  const vert = key === 'ArrowDown' || key === 'ArrowUp', dir = key === 'ArrowDown' || key === 'ArrowRight' ? 1 : -1;
+  const cx = (c.left + c.right) / 2, cy = (c.top + c.bottom) / 2;
+  let best = '', bs = Infinity;
+  nav.forEach(k => {
+    if (k === cur) return;
+    const r = R(k); if (!r || !r.width) return;
+    const x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2;
+    let main, side, over;
+    if (vert) { main = (y - cy) * dir; side = Math.abs(x - cx); over = Math.min(r.right, c.right) - Math.max(r.left, c.left) > 4; if (dir > 0 ? r.top < c.bottom - 2 : r.bottom > c.top + 2) return; }
+    else { main = (x - cx) * dir; side = Math.abs(y - cy); over = Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top) > 2; if (dir > 0 ? r.left < c.right - 2 : r.right > c.left + 2) return; }
+    if (main <= 0 || (vert && !over)) return;   // 위아래는 같은 단 안에서만 — 단 끝이면 그대로
+    const sc = (over ? 0 : 100000) + main + side * (vert ? 2 : 0.6);
+    if (sc < bs) { bs = sc; best = k; }
+  });
+  return best;
+}
 function mapKey(e) {
   if (UI.tab !== 'map' || UI.layers.length || SHEET || F.on) return false;
   const t = e.target;
@@ -3429,19 +3454,13 @@ function mapKey(e) {
   const nav = mapNav();
   if (!nav.length) return false;
   let i = nav.indexOf(UI.sel);
-  if (key === 'ArrowDown' || key === 'ArrowUp') {
+  // 화살표 = **화면에 보이는 자리** 그대로 위 · 아래 · 왼쪽 · 오른쪽 (HB 2026-10-13). ⌥↑↓ 는 예전대로 옮기기
+  if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowRight' || key === 'ArrowLeft') {
     e.preventDefault();
-    if (e.altKey && UI.sel) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
-    i = i < 0 ? 0 : Math.max(0, Math.min(nav.length - 1, i + (key === 'ArrowDown' ? 1 : -1)));
-    UI.sel = nav[i]; mapRender(); return true;
-  }
-  if (key === 'ArrowRight' || key === 'ArrowLeft') {
-    e.preventDefault();
-    const heads = nav.map((k, n) => [k, n]).filter(x => x[0][0] === 'g' && !(findG(DB, x[0].slice(2)) || {}).parent);
-    let h;
-    if (key === 'ArrowRight') { h = heads.findIndex(x => x[1] > i); if (h < 0) h = heads.length - 1; }
-    else { h = -1; heads.forEach((x, n) => { if (x[1] < i) h = n; }); if (h < 0) h = 0; }
-    if (heads[h]) { UI.sel = heads[h][0]; mapRender(); }
+    if (e.altKey && UI.sel && (key === 'ArrowDown' || key === 'ArrowUp')) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
+    if (i < 0) { UI.sel = nav[0]; mapRender(); return true; }
+    const nx = mapSpatial(UI.sel, key, nav);
+    if (nx) { UI.sel = nx; mapRender(); }
     return true;
   }
   if (!UI.sel || i < 0) { if (key === 'Enter' || key === 'Tab') { e.preventDefault(); UI.sel = nav[0]; mapRender(); return true; } return false; }
