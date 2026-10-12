@@ -160,4 +160,18 @@ function mk(o) {
   sc.eq('⑧ 용돈 친구들이 허락권(grant)을 받는다 — 용돈 +N원은 받을 예정 돈으로', /m\.type==='grant' && m\.kind==='money'/.test(WL), true);
 }
 
+// ── ⑨ 간단 등록: 하루 분량만 (전체 쪽 · 현재 쪽 없음) ──
+{
+  const st = A.blankState();
+  st.books.push(A.normBook({id: 'o1', open: true, subj: 'math', name: '쎈', unit: 'j', ppj: 2, first: 5, last: 9, cur: 1, perDay: 2, days: [1, 3, 5], time: '16:00', dur: 30, chapters: [{t: 'x', from: 1, to: 2}]}));
+  const b = st.books[0];
+  sc.eq('⑨ 간단 문제집은 범위·단원을 지운다', [b.open, b.first, b.cur, b.chapters.length], [true, 1, 1, 0]);
+  const q = A.questsFor(st, MON, MON)[0];
+  sc.eq('⑨ 퀘스트에는 범위 없이 분량만 (하루 2쪽 = 1장)', q.sub, '1장');
+  sc.eq('⑨ 끝나는 날은 계산하지 않는다', A.finishDate(st, b, MON), null);
+  A.runStart(st, q, at(MON, '16:00')); A.finishRun(st, at(MON, '16:20'), {result: 'all'});
+  sc.eq('⑨ 한 만큼 다음 분량이 이어진다 (수요일 3쪽부터)', A.projectBook(st, b, MON, 3)['2026-10-14'].from, 3);
+  sc.eq('⑨ 예전처럼 범위를 적은 문제집은 그대로', A.normBook({id: 'o2', name: 'a', first: 8, last: 60, cur: 34}).open, false);
+}
+
 sc.done();
