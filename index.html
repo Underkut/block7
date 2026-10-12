@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1012-1  [production]  -->
+<!-- BLOCK7  v. 26-1012-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5122,6 +5122,10 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
    '누가 받을지' 를 밑의 층까지 훑어서 고르므로, 거기 끼어들 여지를 아예 없앤다. 눈에 보이는 것은 그대로다.
    ⚠️ 뒤 화면의 바탕들만 적는다 — 팝업은 모두 body 바로 아래라 여기 안 걸린다 (성경 위에 뜨는 것까지 막으면 안 된다). */
 html.br-cover body>header,html.br-cover #verseBarWrap,html.br-cover #pageWrap,html.br-cover #swHome{pointer-events:none;}
+/* v26-1012-2 (HB — Sweeter·아이패드 미니에서 여전히 걸림. 기록: 손가락은 가는데 글이 0.4~1.7초 멈춤, 막은 코드 없음).
+   성경이 열린 동안 **뒤 문서 자체가 스크롤되지 않게** 잠근다. 2·3단·Sweeter 홈은 문서가 화면보다 길어 사파리가 손짓을
+   그쪽(보이지 않는 뒤 문서)으로 넘길 여지가 있다. 성경은 고정 덮개라 문서를 굴릴 일이 없다. 닫으면 클래스와 함께 풀린다. */
+html.br-cover,html.br-cover body{overflow:hidden;overscroll-behavior:none;}
 /* 앱은 기본이 어두운 판이고 밝은 판은 html[data-theme="light"] 로 켠다 */
 html[data-theme="light"] #bibleRd{--br-scrim:rgba(18,20,30,.38);
   --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);
@@ -6326,7 +6330,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1012-1";
+const APP_VERSION = "v. 26-1012-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -15250,11 +15254,13 @@ function _brDiagText(){
     'br-ios '+_brEl('bibleRd').classList.contains('br-ios')+' · 본문 touch-action '+ta+' · 절나누기 '+_brS('bibleFlow','verse'),
     '화면 '+innerWidth+'x'+innerHeight+' · dpr '+devicePixelRatio+' · vv '+(window.visualViewport?visualViewport.scale.toFixed(2):'-')+
       ' · 단 '+(typeof _layMode==='function'?_layMode():'?')+' · 배율 '+(typeof _uiScaleGet==='function'?_uiScaleGet():'?')+' · 상자 '+(sc?sc.clientHeight+'/'+sc.scrollHeight:'-'),
+    '문서 '+(document.scrollingElement?document.scrollingElement.scrollHeight+'/'+document.scrollingElement.clientHeight+' y'+Math.round(window.scrollY):'-')+' · 잠금 '+getComputedStyle(document.documentElement).overflowY,
     _brDiagStore()];
   const rows=_brDiagRows.map(r=>{const d=new Date(r.t0);
     return (_brDiagStuck(r)?'⚠걸림 ':'')+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())+
       ' 손'+Math.round(r.fin)+' 스크롤'+Math.round(r.scr)+' 꼬리'+Math.round(r.maxTail)+' 멈춤'+(r.stuckMs||0)+'ms 첫'+(r.first||'-')+'ms 전환'+r.flips+
-      ' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+
+      ' 프레임'+Math.round(r.fx||0)+'ms 바뀜'+(r.mut||0)+(r.dy?' 문서'+r.dy:'')+(r.dvv?' 확대창'+r.dvv:'')+
+      (Object.keys(r.oth||{}).length?' 딴스크롤['+Object.entries(r.oth).map(([k,n])=>k+'×'+n).join(',')+']':'')+' 이동'+r.mv+' '+r.dur+'ms can'+(r.can===null?'-':r.can?1:0)+' 막힘'+r.prev+' pc'+r.pc+(r.edge?' 끝':'')+(r.kind!=='end'?' '+r.kind:'')+
       ' @'+r.x+','+r.y+' '+r.tgt;});
   return head.join('\n')+'\n'+(rows.length?rows.join('\n'):'(아직 기록 없음 — 본문을 스크롤해 보세요)');
 }
@@ -15960,7 +15966,7 @@ function _brBind(){
     const desc=el=>{if(!el||!el.closest)return'?';const v=el.closest('.br-v');let ta='';try{ta=getComputedStyle(v||el).touchAction;}catch(x){}
       return el.nodeName.toLowerCase()+(el.id?'#'+el.id:'')+(el.classList&&el.classList.length?'.'+[...el.classList].slice(0,2).join('.'):'')+(v?' 절'+v.dataset.v:'')+' ta='+ta;};
     sc.addEventListener('touchstart',e=>{if(e.touches.length!==1){g=null;return;}const t=e.touches[0];
-      g={t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,tt:Date.now(),stuckMs:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
+      _brDiagArm();g={fx:0,oth:{},mut:0,dy0:window.scrollY,vv0:(window.visualViewport?visualViewport.offsetTop:0),t0:Date.now(),x:Math.round(t.clientX),y:Math.round(t.clientY),ly:t.clientY,tgt:desc(e.target),mv:0,fin:0,scr:0,ls:sc.scrollTop,tail:0,maxTail:0,tt:Date.now(),stuckMs:0,first:0,can:null,prev:0,pc:0,flips:0,dir:0};},{passive:true,capture:true});
     sc.addEventListener('touchmove',e=>{if(!g||!e.touches[0])return;const y=e.touches[0].clientY,d=y-g.ly;g.ly=y;g.mv++;
       g.fin+=Math.abs(d);g.tail+=Math.abs(d);if(g.tail>g.maxTail)g.maxTail=g.tail;
       // 걸림 = 손가락은 40px 넘게 갔는데 글이 **잠깐이라도 멈춰 있던 시간** (v26-1010-12 — 빠르게 밀면 한두 칸 사이에
@@ -15971,7 +15977,16 @@ function _brBind(){
     window.addEventListener('touchmove',e=>{if(g&&e.defaultPrevented)g.prev++;},{passive:true});   // 맨 끝 — 누가 막았으면 여기서 보인다
     sc.addEventListener('scroll',()=>{if(!g)return;const y=sc.scrollTop;if(y===g.ls)return;if(!g.first)g.first=Date.now()-g.t0;g.scr+=Math.abs(y-g.ls);g.ls=y;g.tail=0;g.tt=Date.now();},{passive:true});
     $('brChap').addEventListener('pointercancel',()=>{if(g)g.pc++;},{passive:true});
-    const end=kind=>{if(!g)return;const r=g;g=null;if(r.fin<12)return;   // 톡 누르기는 적지 않는다
+    // v26-1012-2 — 걸릴 때 **다른 무엇이 움직였나**: 다른 스크롤 상자(문서 포함)·프레임 간격(메인 스레드가 막혔나)·성경 안의 바뀜
+    let raf=0,lastF=0;const frame=t=>{if(!g){raf=0;return;}if(lastF){const d=t-lastF;if(d>g.fx)g.fx=d;}lastF=t;raf=requestAnimationFrame(frame);};
+    window._brDiagArm=()=>{lastF=0;if(!raf)raf=requestAnimationFrame(frame);};
+    document.addEventListener('scroll',e=>{if(!g)return;const t=e.target;if(t===sc)return;
+      const n=(t===document||t===document.documentElement||t===document.body)?'문서':(t.id?'#'+t.id:(t.className&&typeof t.className==='string'?'.'+t.className.split(' ')[0]:t.nodeName));
+      g.oth[n]=(g.oth[n]||0)+1;},{passive:true,capture:true});
+    if(window.visualViewport)visualViewport.addEventListener('scroll',()=>{if(g)g.oth['화면확대창']=(g.oth['화면확대창']||0)+1;},{passive:true});
+    try{new MutationObserver(ms=>{if(g)g.mut+=ms.length;}).observe($('bibleRd'),{attributes:true,attributeFilter:['style','class'],childList:true,subtree:true});}catch(x){}
+    const end=kind=>{if(!g)return;const r=g;g=null;if(r.fin<12)return;
+      r.dy=Math.round(window.scrollY-r.dy0);r.dvv=Math.round((window.visualViewport?visualViewport.offsetTop:0)-r.vv0);   // 톡 누르기는 적지 않는다
       const y=sc.scrollTop,edge=y<=1||y>=sc.scrollHeight-sc.clientHeight-1;
       _brDiagRows.push(Object.assign(r,{dur:Date.now()-r.t0,kind,edge}));if(_brDiagRows.length>40)_brDiagRows.shift();_brDiagSync();};
     sc.addEventListener('touchend',()=>end('end'),{passive:true,capture:true});
