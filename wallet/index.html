@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1011-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1012-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -415,6 +415,7 @@ body.pdark .nmin select{background:#111418;border-color:#2b313b}
 .pick1{display:block;width:100%;text-align:left;padding:11px 12px;margin:6px 0;border-radius:14px;background:#fff;font-size:15px;box-shadow:0 2px 0 #e5ddf3}
 .pr-w{padding:8px 0;border-bottom:1px solid #e5e7eb;font-size:13px}.pr-w:last-child{border:0}.pr-w small{display:block;color:#6b7280;font-size:11px}.pr-w .pr-btns{margin-top:6px}
 .pr-btns button.p{background:#4f6bed;color:#fff;border-color:#4f6bed}
+.splitrow{display:flex;gap:8px;flex:1 1 100%;width:100%}.splitrow>button{flex:1 1 0;min-width:0}.pr-btns button.p.alt,.par .pr-btns button.p.alt{background:#fff;color:#4f6bed;border:1px solid #4f6bed}.par .pr-btns button.p.alt{color:#e2725b;border-color:#e2725b}.gb.alt{background:#fff;color:#7c4dff;border:2px solid #7c4dff}
 .pr-st{font-style:normal;font-size:11px;color:#4f6bed;border:1px solid #c7d0fb;border-radius:8px;padding:0 5px;margin-left:4px}.pr-st.r{color:#6b7280;border-color:#e5e7eb}
 body.pdark .pr-w{border-color:#2b313b}body.pdark .pr-w small{color:#9aa3b2}body.pdark .pr-st{color:#8ea2ff;border-color:#3b4a8a}
 body.pmode:not(.mirror) .sheet{font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;background:#fff}
@@ -695,7 +696,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1011-1";
+const APP_VERSION = "v. 26-1012-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1863,7 +1864,12 @@ function goalAsk(k){
     $('gaGo').onclick = async () => { if(await mailSend({type:'req', goal:g.k, amt:g.price, text:g.n+' — '+g.why+(g.due ? ' ('+mdOf(g.due)+'까지)' : ''), status:'open'}, '부모님께 물어봤어요. 기다려 볼까요?')){ closeSheet(); renderAlloc(); } };
     return;
   }
-  askPin('"'+esc(g.n)+'" 사도 될까요? 부모님이 허락해 주세요', () => { g.ok = true; save(); closeSheet(); render(); toast('허락 받았어요!'); });
+  askPin('"'+esc(g.n)+'" 사도 될까요? 부모님이 허락해 주세요', () => {
+    openSheet(`<h2>"${esc(g.n)}" · ${won(g.price)}</h2><div class="note">부모님, 허락하시겠어요?</div><div class="splitrow"><button class="gb purple" id="gpOk">허락하기</button><button class="gb alt" id="gpEd">수정해서 허락</button></div>`);
+    const done = () => { g.ok = true; save(); closeSheet(); render(); toast('허락 받았어요!'); };
+    $('gpOk').onclick = done;
+    $('gpEd').onclick = () => padSheet({title:'허락할 금액', init:g.price, extra:'<div class="note">아이가 말한 금액: <b>'+won(g.price)+'</b></div>', nextLabel:'이 금액으로 허락하기', onDone: amt => { g.price = amt; done(); }});
+  });
 }
 function goalBuy(k){
   const g = S.goals.find(x => x.k===k); if(!g || goalTotal(g) < g.price) return;
@@ -2222,10 +2228,14 @@ function couponUse(id){
 function couponUsePin(id){
   const c = S.cps.find(x => x.id===id); if(!c || cpState(c)!=='ready') return;
   askPin('"'+esc(c.n)+(c.kind==='money' ? ' +'+nf(c.amt)+'원' : '')+'" 쿠폰을 써요', () => {
-    c.used = todayStr();
-    if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:c.amt, memo:'부모님', cat:null, date:todayStr(), at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:'bear'});
-    save(); closeSheet(); render(); confetti(); sfx('win'); toast(c.kind==='money' ? c.amt+'원이 들어왔어요!' : '쿠폰을 썼어요. 즐거운 시간!');
-    setTimeout(() => rewardSheet('cp'), 900);
+    const use = (amt) => { c.used = todayStr();
+    if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:amt, memo:'부모님', cat:null, date:todayStr(), at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:'bear'});
+    save(); closeSheet(); render(); confetti(); sfx('win'); toast(c.kind==='money' ? amt+'원이 들어왔어요!' : '쿠폰을 썼어요. 즐거운 시간!');
+    setTimeout(() => rewardSheet('cp'), 900); };
+    if(c.kind!=='money') return use(c.amt);
+    openSheet(`<h2>"${esc(c.n)}" +${nf(c.amt)}원</h2><div class="note">부모님, 승인하시겠어요?</div><div class="splitrow"><button class="gb purple" id="cpOk">승인하기</button><button class="gb alt" id="cpEd">수정해서 승인</button></div>`);
+    $('cpOk').onclick = () => use(c.amt);
+    $('cpEd').onclick = () => padSheet({title:'줄 금액', init:c.amt, extra:'<div class="note">쿠폰 금액: <b>'+won(c.amt)+'</b></div>', nextLabel:'이 금액으로 승인하기', onDone: amt => use(amt)});
   });
 }
 $('giftBtn').innerHTML = GIFT_ICO; $('giftBtn').onclick = () => rewardSheet();
@@ -2735,6 +2745,8 @@ const msgOf = d => { const x = d.data(); return Object.assign({id:d.id}, x, {at:
 function mailOf(kidId){ return (FAM && FAM.role==='parent') ? PAR.msgs.filter(m => m.kidId===kidId) : MAIL; }
 const msgPath = id => 'families/'+FAM.fid+'/msgs/'+id;
 const fmtAt = ms => { const d = new Date(ms), t = todayStr(); return dstr(d)===t ? d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : (d.getMonth()+1)+'/'+d.getDate(); };
+// 고쳐서 승인 — 부모님이 아이가 요청한 금액을 고쳐 허락한 기록(m.edited, 원래 금액 m.amt0)
+const editedTxt = m => m.edited && m.amt0 != null && m.amt0 !== m.amt ? ' ('+won(m.amt0)+' → '+won(m.amt)+')' : '';
 const MSG_TAG = {note:'쪽지', stamp:'칭찬 도장', mission:'미션', req:'용돈 요청', cpreq:'쿠폰'};
 async function mailSend(o, okMsg){
   try{ await fbLoad(); const u = FB.auth.currentUser || await authReady(); if(!u) throw {code:'auth'};
@@ -2769,7 +2781,7 @@ function kidMailUpdate(){
   mailApply();
   if(!first && fresh.length){
     const m = fresh[0], who = m.from==='parent' ? (m.fromName||'부모님') : (m.okName||'부모님');
-    const txt = m.from==='kid' && m.goal ? (m.status==='ok' ? who+'가 사도 된다고 허락했어요!' : who+'가 "다음에"라고 했어요') : m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
+    const txt = m.from==='kid' && m.goal ? (m.status==='ok' ? who+'가 '+(m.edited ? '금액을 고쳐서 ' : '')+'사도 된다고 허락했어요!' : who+'가 "다음에"라고 했어요') : m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 '+(m.edited ? '고쳐서 ' : '')+'승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
       : m.type==='stamp' ? who+'가 '+(m.sticker||'⭐')+' 도장을 찍었어요!' : m.type==='mission' ? (m.status==='ok' ? '미션 성공! '+who+'가 확인했어요' : who+'가 미션을 보냈어요') : who+'에게서 쪽지가 왔어요';
     sfx('win'); buzz([20,40,20]); toast(txt + (fresh.length>1 ? ' (+'+(fresh.length-1)+')' : ''));
   }
@@ -2782,9 +2794,9 @@ function mailApply(){
     if(m.status!=='ok' || S.applied.includes(m.id)) return;
     const who = m.okName || m.fromName || '부모님';
     if(m.type==='mission'){ if(m.amt > 0) S.tx.push({id:uid(), t:'in', amt:m.amt, memo:who, cat:null, date:today, at:Date.now(), note:('미션: '+(m.text||'')).slice(0,60), acct:'cash', plan:null, ch:null}); }
-    else if(m.type==='req' && m.goal){ const g = S.goals.find(x => x.k===m.goal); if(g) g.ok = true; }
+    else if(m.type==='req' && m.goal){ const g = S.goals.find(x => x.k===m.goal); if(g){ g.ok = true; if(m.edited && m.amt > 0) g.price = m.amt; } }
     else if(m.type==='req') S.exp.push({id:uid(), amt:m.amt, who, ch:null, note:(m.text||'').slice(0,60), acct:'cash', date:null, at:Date.now()});
-    else if(m.type==='cpreq'){ const c = S.cps.find(x => x.id===m.cpId); if(c && !c.used){ c.used = today; if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:c.amt, memo:who, cat:null, date:today, at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:null}); } }
+    else if(m.type==='cpreq'){ const c = S.cps.find(x => x.id===m.cpId); if(c && !c.used){ c.used = today; if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:(m.edited && m.amt > 0 ? m.amt : c.amt), memo:who, cat:null, date:today, at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:null}); } }
     else return;
     S.applied.push(m.id); ch++;
   });
@@ -2797,13 +2809,13 @@ function renderMailBtn(){
 }
 function kidMailSheet(keep){
   const list = MAIL.filter(m => !m.hide);
-  const st = m => m.status==='ok' ? '<span class="mchip ok">승인</span>' : m.status==='no' ? '<span class="mchip no">다음에</span>' : m.status==='done' ? '<span class="mchip">확인 기다리는 중</span>' : m.status==='open' && m.from==='kid' ? '<span class="mchip">기다리는 중</span>' : '';
+  const st = m => m.status==='ok' ? '<span class="mchip ok">'+(m.edited ? '고쳐서 승인'+editedTxt(m) : '승인')+'</span>' : m.status==='no' ? '<span class="mchip no">다음에</span>' : m.status==='done' ? '<span class="mchip">확인 기다리는 중</span>' : m.status==='open' && m.from==='kid' ? '<span class="mchip">기다리는 중</span>' : '';
   const card = m => {
     const mine = m.from==='kid', who = mine ? '나' : (m.fromName||'부모님');
     let body = '';
     if(m.type==='stamp') body = `<p>${esc(m.refLabel||'내 기록')}에 <b>도장</b>을 찍었어요</p><div class="mstk">${m.sticker||'⭐'}</div>${m.text ? '<p>'+esc(m.text)+'</p>' : ''}`;
     else if(m.type==='mission') body = `<p><span class="mtag">미션</span>${esc(m.text||'')}${m.amt ? ' → <b>'+won(m.amt)+'</b>' : ''}</p>${m.status==='open' ? `<button class="gb green sm" data-ma="done" data-id="${m.id}">다 했어요!</button>` : st(m)}`;
-    else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">허락</span>' : st(m)}`;
+    else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</span>' : st(m)}`;
     else if(m.type==='req') body = `<p><span class="mtag">용돈 요청</span><b>${won(m.amt)}</b> · ${esc(m.text||'')}</p>${st(m)}${m.status==='ok' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : ''}`;
     else if(m.type==='cpreq') body = `<p><span class="mtag">쿠폰</span>${esc(m.text||'')}</p>${st(m)}`;
     else body = `${m.text ? '<p>'+esc(m.text)+'</p>' : ''}${m.sticker ? '<div class="mstk">'+m.sticker+'</div>' : ''}${!mine ? `<div class="mq"><button data-ma="re" data-t="고마워요!">고마워요!</button><button data-ma="re" data-t="사랑해요 ❤️">사랑해요 ❤️</button><button data-ma="re" data-t="알겠어요">알겠어요</button></div>` : ''}`;
@@ -2909,14 +2921,14 @@ function renderPMail(){
     const ttl = m.type==='mission' ? `미션 완료${m.amt ? ' · '+won(m.amt) : ''}` : m.goal ? `사도 돼요? · ${won(m.amt)}` : m.type==='req' ? `용돈 요청 · ${won(m.amt)}` : '쿠폰 사용';
     const btns = m.type==='mission'
       ? `<button data-pa="again" data-id="${m.id}">다시 해 보자</button><button class="p" data-pa="ok" data-id="${m.id}">잘했어! ${m.amt ? won(m.amt)+' 주기' : '확인'}</button>`
-      : `<button data-pa="no" data-id="${m.id}">다음에</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><button class="p" data-pa="ok" data-id="${m.id}">${m.goal ? '허락하기' : '승인'}</button>`;
+      : `<button data-pa="no" data-id="${m.id}">다음에</button><button data-pa="reply" data-id="${m.id}">쪽지로 답하기</button><span class="splitrow"><button class="p" data-pa="ok" data-id="${m.id}">${m.goal ? '허락하기' : '승인하기'}</button>${m.amt > 0 ? `<button class="p alt" data-pa="edit" data-id="${m.id}">${m.goal ? '수정해서 허락' : '수정해서 승인'}</button>` : ''}</span>`;
     return `<div class="pr-w w-wait"><div class="w-wt"><span class="w-wi">${ic}</span><span><b>${ttl}</b><span class="w-wq">"${esc(m.text||'')}"</span><small>${fmtAt(m.at)}</small></span></div><div class="pr-btns">${btns}</div></div>`;
   };
   // 이야기 — 채팅처럼(아이는 왼쪽, 부모님은 오른쪽)
-  const stl = m => m.status==='ok' ? '<em class="w-chip ok">승인</em>' : m.status==='no' ? '<em class="w-chip">다음에</em>' : m.status==='done' ? '<em class="w-chip">완료 보고</em>' : m.status==='open' ? '<em class="w-chip on">진행 중</em>' : '';
+  const stl = m => m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 승인'+editedTxt(m) : '승인')+'</em>' : m.status==='no' ? '<em class="w-chip">다음에</em>' : m.status==='done' ? '<em class="w-chip">완료 보고</em>' : m.status==='open' ? '<em class="w-chip on">진행 중</em>' : '';
   const body = m => m.type==='stamp' ? `<span class="w-bs">${m.sticker||'⭐'}</span> <b>칭찬 도장</b> · ${esc(m.refLabel||'')}${m.text ? '<br>'+esc(m.text) : ''}`
     : m.type==='mission' ? `🎯 <b>미션</b> · ${esc(m.text||'')}${m.amt ? ' → '+won(m.amt) : ''} ${stl(m)}`
-    : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">허락</em>' : stl(m)}`
+    : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</em>' : stl(m)}`
     : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}`
     : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}`
     : `${m.text ? esc(m.text) : ''}${m.sticker ? ' <span class="w-bs">'+m.sticker+'</span>' : ''}`;
@@ -2970,6 +2982,11 @@ $('prMail').addEventListener('click', e => {
       else if(a==='no') mailUpd(id, {status:'no', okName:FAM.pname||'부모님', okAt:FB.fv.serverTimestamp()}).then(() => toast('거절했어요'));
       else if(a==='again') mailUpd(id, {status:'open'}).then(() => toast('다시 해 보자고 보냈어요'));
       else if(a==='reply') noteSheet();
+      else if(a==='edit'){ const m = PAR.msgs.find(x => x.id===id); if(!m || m.status!=='open') return;
+        padSheet({title:m.goal ? '허락할 금액' : m.type==='cpreq' ? '줄 금액' : '줄 금액', init:m.amt, extra:'<div class="note">아이가 말한 금액: <b>'+won(m.amt)+'</b></div>', nextLabel:m.goal ? '이 금액으로 허락하기' : '이 금액으로 승인하기', onDone: amt => {
+          const o = {status:'ok', okName:FAM.pname||'부모님', okAt:FB.fv.serverTimestamp()};
+          if(amt!==m.amt){ o.amt = amt; o.amt0 = m.amt; o.edited = true; }
+          closeSheet(); mailUpd(id, o).then(() => toast((amt!==m.amt ? '금액을 고쳐서 ' : '')+(m.goal ? '허락' : '승인')+'했어요. 아이 폰에 바로 반영돼요')); }}); }
     }); }
 });
 
