@@ -477,7 +477,8 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
   sc.eq('분포 ⇄ 흐름 전환이 있다', SRC.includes('id="vDashViewTabs"'), true);
   // v26-0906-5 — 지도·연결·리듬 셋이 더 붙어 화면이 다섯이 됐다
   sc.eq("전환은 흐름이 맨 왼쪽", SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],"), true);
-  sc.eq("화면이 다섯", (SRC.match(/const _VDASH_VIEWS=\[\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\]\];/)||[]).length, 1);
+  // v26-1013 — 여섯째 'There' (세 앱 머문 시간 — tests/test_there_dash.js)
+  sc.eq("화면이 여섯", (SRC.match(/const _VDASH_VIEWS=\[\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\[[^\]]*\],\['there','There'\]\];/)||[]).length, 1);
   sc.eq('흐름을 그리는 곳이 있다', SRC.includes('function renderVDashTrend(){'), true);
   // v26-0907-3, HB 3-2 — 기간은 다섯 화면이 함께 쓰는 **한 벌**이 됐다.
   // '직접' 날짜 칸도 그 칩이 있는 화면에서만 나온다.
@@ -511,12 +512,13 @@ console.log('\n시나리오 6 — 화면 쪽 표시 (index.html 원본에서 확
         SRC.indexOf('id="vDashViewTabs"') < SRC.indexOf('id="vDashCommon"'), true);
   sc.eq('가로선은 공통 상자 아래(=#vDashBody 위)에 있다',
         /id="vDashBody"[^>]*border-top:1px solid var\(--bd2\)/.test(SRC), true);
-  sc.eq('그릴 때마다 공통 상자를 채운다',
-        /const cm=document\.getElementById\('vDashCommon'\);\s*\n\s*if\(cm\)\{cm\.innerHTML=_vDashCommonHTML\(\);/.test(SRC), true);
+  // v26-1013 — There 탭은 공통 두 줄을 쓰지 않아 감추고, 나머지 다섯은 예전대로 채운다
+  sc.eq('그릴 때마다 공통 상자를 채운다 (There 만 감춘다)',
+        /if\(cm\)\{cm\.style\.display=view==='there'\?'none':''; if\(view!=='there'\)\{cm\.innerHTML=_vDashCommonHTML\(\);/.test(SRC), true);
   // ⚠️ #vDashBody 바깥이라 _vTrBindRails 의 기본 훑는 자리에 안 걸린다 —
   //    슬라이더를 따로 걸지 않으면 기간 슬라이더가 안 끌린다.
   sc.eq('공통 상자의 슬라이더도 따로 건다',
-        /if\(cm\)\{cm\.innerHTML=_vDashCommonHTML\(\); _vTrBindRails\(cm\);\}/.test(SRC), true);
+        /cm\.innerHTML=_vDashCommonHTML\(\); _vTrBindRails\(cm\);\}\}/.test(SRC), true);
   // 다섯 화면 어디에도 기간·갈래 줄이 남아 있으면 안 된다 (두 벌이 되면 어긋난다)
   sc.eq('지도·연결에는 범위만 남았다',
         /function _vDashScopeCtlHTML\(\)\{\s*\n\s*return _vDashKindRowHTML\(\);\s*\n\}/.test(SRC), true);

@@ -1394,11 +1394,32 @@ HB: 기도 지도가 계획을 세울 때 주로 입력·편집하는 큰 판이
 | T-2 | BLOCK7 · Sweeter There 기록에 **app**(block7/sweeter) · **src**(어느 단추) 더하기 — 옛 기록은 비어 있는 대로 | ✅ v26-1012-1 (BLOCK7) · HB 승인 2026-10-12 · `tests/test_there.js` 13 |
 | | src 이름: gnb(BLOCK7 위 메뉴) · home(Sweeter 홈 위) · bar(상단 말씀 영역) · full(말씀 전체화면) · widget(말씀 위젯) · tile(Sweeter 타일) · bible(성경 화면 위) · bible-menu(성경 절 메뉴). 기도노트는 map · focus | |
 | T-3 | 기도노트 로그인 켜기 — HB 파이어베이스 콘솔(규칙 붙이기, `docs/pray/firestore-rules.md`) | ⏳ HB 컴퓨터 앞에서 |
-| T-4 | 한 판에서 셋을 읽기 — `users/{uid}.verseThereLog` + `pray/{uid}` 의 ses. 어느 앱에 둘지(Sweeter 대시보드 / BLOCK7 리듬) 정하기 | ⏳ T-2 · T-3 뒤 |
+| T-4 | 한 판에서 셋을 읽기 — `users/{uid}.verseThereLog` + `pray/{uid}` 의 ses → **아래 'There 대시보드 만들기' 장** | ✅ v26-1013-1 · pray v. 26-1013-2 · ⏳ HB 실기기 |
 - **왜 로그인 뒤인가**: 셋의 기록이 각자 다른 곳(BLOCK7 · Sweeter = `users/{uid}`, 기도노트 = `pray/{uid}`)에 산다. 한 화면이 셋을 읽으려면
   **같은 계정으로 클라우드에 올라가 있어야** 한다. 로그인 전에는 기도노트 기록이 그 기기 안에만 있어 읽을 길이 없다.
   지금 할 수 있는 것은 **기록을 미리 제대로 남겨 두는 것**(T-1 · T-2) — 그래야 대시보드를 만든 날 이미 몇 주치가 있다.
 - 피한 길: 기도노트가 `users/{uid}`(BLOCK7 · Sweeter 상태 문서)에 직접 쓰기 — 데이터 계층을 건드려 지우는 사고의 길이 생긴다(P-7 과 같은 까닭).
+
+#### There 대시보드 만들기 (HB 2026-10-13 "로그인은 이미 붙었잖아. 대시보드 3가지 안 모두 진행해")
+시안: https://claude.ai/artifact/92KzL3Lwh2FsSCj2hUVsXL (주 · 달 · 하루)
+
+| 단계 | 무엇 | 상태 |
+|---|---|---|
+| D-0 | 기도노트 손보기 — 폰에서 BLUE ROOM 이 둘째 줄로 밀림 · 지도 '…' 메뉴 지우기 · There 단추 높이 · 기록 아이콘을 서랍장으로 | ✅ pray v. 26-1013-2 |
+| D-1 | 대시보드 덩어리 `<script id="there-dash">` — 세 앱 기록을 한 모양으로 모으기 · 주/달/하루 셈 · 그리기. **두 파일(pray · index.html)에 같은 글자로** 넣고 시험이 같은지 본다 | ⏳ |
+| D-2 | 기도노트에 붙이기 — 기록 › 기도한 날 달력 머리 오른쪽 파이 단추 · 지도 There 롱터치/우클릭 · 달력 숫자를 네 갈래(BLOCK7 · Sweeter · 성경 · 기도노트) 합으로 | ✅ pray v. 26-1013-2 (달력 아래 합계 줄 오른쪽 파이 · 날 고르면 '그날 자세히') |
+| D-3 | BLOCK7 · Sweeter 에 붙이기 — 대시보드 '리듬' 옆 There 탭 · Sweeter 홈 There 오른쪽 파이 단추 · GNB/홈/성경 There 롱터치/우클릭 | ✅ v26-1013-1 (BLOCK7 · Sweeter) · 시험 test_vdash · test_vtrend 를 '화면 여섯' 으로 |
+
+- **왜 한 덩어리를 두 파일에 똑같이**: 앱마다 단일 파일 배포가 규칙이고, 기도노트(sweeter.my/pray)와 BLOCK7(block7.my)은
+  주소가 달라 아이폰 홈 화면 앱끼리 서로 열면 사파리로 튕긴다 → 각 앱이 **제 안에서** 같은 판을 연다.
+  덩어리가 갈라지면 두 판이 다르게 보이므로 `tests/test_there_dash.js` 가 두 파일의 덩어리 글자가 같은지 본다.
+- **읽기만 한다**: 기도노트는 `users/{uid}/data/state` 의 json 에서 `verseThereLog` 만, BLOCK7 · Sweeter 는 `pray/{uid}` 덩어리에서 `log` 만 읽는다.
+  상대 칸에 쓰는 길은 만들지 않는다 (P-7 · 데이터 계층 원칙). 받은 것은 이 기기에 잠깐 남겨(캐시) 달력이 바로 그린다.
+- **갈래 넷**: BLOCK7 · Sweeter(앱 칸 app) · 성경(src 가 bible · bible-menu) · 기도노트. 10-12 전 BLOCK7 · Sweeter 기록은 app 이 비어 있어 BLOCK7 로 센다.
+  기도노트 10-12 전 기록은 날 합계(s)만 있어 '시간만 남은 기록' 한 줄로 센다.
+- 들어가는 길: BLOCK7 대시보드 여섯째 탭 'There'(설정의 There 그림) · Sweeter 홈 There 오른쪽 파이 · 기도노트 기록 › 기도한 날 합계 줄 파이 ·
+  네 There 단추(BLOCK7 위 메뉴 · Sweeter 홈 · 성경 좌상단 · 기도노트 지도) 길게 누르기/오른쪽 누르기 = 전체 화면 대시보드.
+- BLOCK7 은 받은 기도노트 기록을 이 기기에 남기지 않는다(열 때마다 읽기 — 달력이 없어 필요 없다). 기도노트는 달력 때문에 `pray.thereCache` 에 5분 남긴다.
 
 ### HB 가 기기에서 볼 것 (2~5단계)
 1. sweeter.my/pray/ → 홈 화면에 추가 → 설정 › 시트에서 가져오기로 Sheet2 · 24-0303 두 장 (붙여넣기 또는 CSV)

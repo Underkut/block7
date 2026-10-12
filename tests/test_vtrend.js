@@ -740,8 +740,9 @@ console.log('\n시나리오 13 — 리듬: 가로 요일 · 세로 두 겹(시�
 
 console.log('\n시나리오 12-3 — 화면 다섯과 설정 칩');
 {
-  sc.eq('화면이 다섯',
-    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬']];"), true);
+  // v26-1013 — 여섯째 'There' 가 붙었다 (세 앱 머문 시간, tests/test_there_dash.js)
+  sc.eq('화면이 여섯 (There 가 리듬 다음)',
+    SRC.includes("const _VDASH_VIEWS=[['trend','흐름'],['pie','분포'],['map','지도'],['link','연결'],['rhythm','리듬'],['there','There']];"), true);
   ['map','link','rhythm'].forEach(v=>{
     // v26-0907-3 — 화면마다 return 으로 빠져나가지 않는다. 다섯 화면이 다
     // 슬라이더를 갖게 되어, 그린 **뒤에** 레일에 손가락을 붙여야 하기 때문이다.
@@ -950,7 +951,7 @@ console.log('\n시나리오 24 — 7 대시보드 5개 탭 아이콘');
     return gaps.every(g=>g>35) && new Set(gaps).size===4;   // 겹치지도, 가지런하지도 않다
   })(), true);
   sc.eq('탭 렌더에서 라벨 앞에 아이콘을 붙인다',
-        SRC.includes('`${_VDASH_TAB_ICON[v]||\'\'}${l}</span>`).join(\'\');'), true);
+        SRC.includes("(_VDASH_TAB_ICON[v]||'')}${l}</span>`).join('');"), true);
   sc.eq('탭을 세로로 쌓는 CSS(아이콘 위·글자 아래)',
         SRC.includes('.vdash-vtab{display:flex;flex-direction:column;align-items:center;gap:2px;'), true);
 }
