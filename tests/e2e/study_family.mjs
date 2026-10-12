@@ -57,7 +57,7 @@ await par.click('#sheet [data-close]');
 const kid = await ctx('kid');
 await kid.clock.install({time: new Date('2026-10-12T16:00:00+09:00')});
 await kid.goto(B + '/study/');
-await kid.click('[data-a="newBook"]'); await kid.fill('#beName', '디딤돌 5-2'); await kid.fill('#beFirst', '8'); await kid.fill('#beLast', '111'); await kid.fill('#beCur', '34'); await kid.click('#beSave');
+await kid.click('[data-a="newBook"]'); await kid.fill('#beName', '디딤돌 5-2'); await kid.click('#beSave');
 await kid.click('[data-a="start"]'); await kid.clock.runFor(1000);
 await kid.evaluate(() => { S.run.acc = 30 * 60000; S.run.seg = Date.now(); save(); });
 await kid.click('#tmEnd'); await kid.click('#dnGo');

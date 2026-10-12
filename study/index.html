@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1013-2 -->
+<!-- 공부 친구들 v. 26-1013-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -260,15 +260,16 @@ function blankState() {
 }
 function normBook(b) {
   if (!b || typeof b !== 'object' || !b.id || !b.name) return null;
-  const first = clampInt(b.first, 1, 2000, 1), last = clampInt(b.last, first, 3000, Math.max(first, 100));
+  const open = b.open === true;   // 간단 등록: 전체 쪽 · 현재 쪽 없이 '하루 분량'만
+  const first = open ? 1 : clampInt(b.first, 1, 2000, 1), last = open ? 3000 : clampInt(b.last, first, 3000, Math.max(first, 100));
   return {
-    id: String(b.id), subj: subjOf(b.subj).k, name: String(b.name).slice(0, 30),
+    id: String(b.id), open, subj: subjOf(b.subj).k, name: String(b.name).slice(0, 30),
     unit: b.unit === 'j' ? 'j' : 'p', ppj: clampInt(b.ppj, 1, 8, 2),
     first, last, cur: clampInt(b.cur, first, last + 1, first),
     perDay: clampInt(b.perDay, 1, 200, 2),
     days: [...new Set((Array.isArray(b.days) ? b.days : []).map(Number).filter(d => d >= 0 && d <= 6))].sort(),
     time: hmToMin(b.time) === null ? '' : b.time, dur: clampInt(b.dur, 0, 240, 30),
-    chapters: (Array.isArray(b.chapters) ? b.chapters : []).filter(c => c && c.t).map(c => ({t: String(c.t).slice(0, 30), from: clampInt(c.from, 1, 3000, 1), to: clampInt(c.to, 1, 3000, 1)})),
+    chapters: open ? [] : (Array.isArray(b.chapters) ? b.chapters : []).filter(c => c && c.t).map(c => ({t: String(c.t).slice(0, 30), from: clampInt(c.from, 1, 3000, 1), to: clampInt(c.to, 1, 3000, 1)})),
     active: b.active !== false, made: b.made || ''
   };
 }
@@ -297,6 +298,7 @@ function amountText(book, from, to) {
   return n + '쪽';
 }
 function rangeText(book, from, to) {
+  if (book.open) return amountText(book, from, to);
   const r = from === to ? from + '쪽' : from + '~' + to + '쪽';
   return book.unit === 'j' ? amountText(book, from, to) + ' (' + r + ')' : r;
 }
@@ -325,6 +327,7 @@ function projectBook(st, book, today, nDays) {
   return out;
 }
 function finishDate(st, book, today) {
+  if (book.open) return null;
   if (book.cur > book.last) return null;
   if (!book.days.length || !book.active) return null;
   const left = book.last - book.cur + 1, per = book.perDay, need = Math.ceil(left / per);
@@ -489,7 +492,7 @@ const mondayOf = s => addDays(s, -((dowOf(s) + 6) % 7));
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1013-2';
+const APP_VERSION = 'v. 26-1013-3';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -672,7 +675,7 @@ function renderPlan() {
   const books = S.books.map(b => { const sj = subjOf(b.subj), fin = finishDate(S, b, t), tot = b.last - b.first + 1, dn = Math.min(tot, b.cur - b.first);
     return `<div class="bk ${b.active ? '' : 'off'}" data-book="${b.id}"><div class="sj" style="background:${sj.bg};color:${sj.fg}">${sj.n}</div><div style="flex:1;min-width:0">
       <div class="j" style="font-size:16px">${esc(b.name)}</div><div style="font-size:13px;color:var(--sub)">${b.days.map(x => DOW[x]).join('·') || '요일 없음'} · 하루 ${perDayText(b)}${b.time ? ' · ' + b.time : ''}</div>
-      <div class="bar"><i style="width:${Math.round(dn / tot * 100)}%"></i></div><div style="font-size:12px;color:var(--sub);margin-top:3px">${b.cur > b.last ? '다 끝냈어요!' : (b.cur) + '쪽부터 · ' + (fin ? '끝나는 날 ' + fin.slice(5).replace('-', '/') : b.active ? '' : '쉬는 중')}</div></div></div>`; }).join('');
+      ${b.open ? '' : `<div class="bar"><i style="width:${Math.round(dn / tot * 100)}%"></i></div>`}<div style="font-size:12px;color:var(--sub);margin-top:3px">${b.open ? (b.active ? '' : '쉬는 중') : b.cur > b.last ? '다 끝냈어요!' : (b.cur) + '쪽부터 · ' + (fin ? '끝나는 날 ' + fin.slice(5).replace('-', '/') : b.active ? '' : '쉬는 중')}</div></div></div>`; }).join('');
   $('main').innerHTML = `<div class="h2"><b>내 계획</b><span class="seg"><button data-a="pv" data-v="week" class="${PLANV === 'week' ? 'on' : ''}">주간</button><button data-a="pv" data-v="month" class="${PLANV === 'month' ? 'on' : ''}">월간</button></span></div>
     ${body}<div class="h2"><b>내 문제집</b><small>${S.books.length}권</small></div>${books || '<div class="empty">아직 없어요</div>'}
     <div class="add"><button data-a="newBook">+ 문제집</button><button data-a="newTask">+ 숙제 · 할일</button></div>`;
@@ -735,7 +738,7 @@ function questSheet(key, date) {
 /* ───────── 문제집 등록 · 고치기 ───────── */
 function bookEditor(id) {
   const b0 = id ? S.books.find(x => x.id === id) : null;
-  const B = b0 ? JSON.parse(JSON.stringify(b0)) : {id: 'b' + sid(), subj: 'math', name: '', unit: 'p', ppj: 2, first: 1, last: 100, cur: 1, perDay: 2, days: [1, 3, 5], time: '16:00', dur: 30, chapters: [], active: true, made: todayStr()};
+  const B = b0 ? JSON.parse(JSON.stringify(b0)) : {id: 'b' + sid(), open: true, subj: 'math', name: '', unit: 'p', ppj: 2, first: 1, last: 100, cur: 1, perDay: 2, days: [1, 3, 5], time: '16:00', dur: 30, chapters: [], active: true, made: todayStr()};
   const draw = () => {
     const unitN = B.unit === 'j' ? B.perDay / B.ppj : B.perDay;
     sheet(b0 ? '문제집 고치기' : '새 문제집 등록', `
@@ -745,38 +748,40 @@ function bookEditor(id) {
         <span class="seg" style="flex:none"><button data-u="p" class="${B.unit === 'p' ? 'on' : ''}">쪽</button><button data-u="j" class="${B.unit === 'j' ? 'on' : ''}">장</button></span></div>
         ${B.unit === 'j' ? `<div class="row" style="margin-top:8px"><span style="flex:none">1장 =</span><input class="inp num" id="bePpj" type="number" inputmode="numeric" min="1" max="8" value="${B.ppj}" style="flex:none"><span>쪽</span></div>` : ''}
         <div class="hint">'장' 으로 고르면 1장 = 2쪽(앞뒤)으로 셉니다. 문제집마다 다르게 정할 수 있어요.</div></div>
-      <div class="box"><div class="lab">공부할 쪽</div><div class="row"><input class="inp num" id="beFirst" type="number" inputmode="numeric" value="${B.first}"><span style="flex:none">쪽부터</span><input class="inp num" id="beLast" type="number" inputmode="numeric" value="${B.last}"><span style="flex:none">쪽까지</span></div>
+      ${B.open ? '' : `<div class="box"><div class="lab">공부할 쪽</div><div class="row"><input class="inp num" id="beFirst" type="number" inputmode="numeric" value="${B.first}"><span style="flex:none">쪽부터</span><input class="inp num" id="beLast" type="number" inputmode="numeric" value="${B.last}"><span style="flex:none">쪽까지</span></div>
         <div class="row" style="margin-top:8px"><span style="flex:none">다음에 할 쪽</span><input class="inp num" id="beCur" type="number" inputmode="numeric" value="${B.cur}" style="flex:none"><span></span></div>
-        <div class="hint">이미 푼 곳이 있으면 '다음에 할 쪽' 을 바꿔 주세요.</div></div>
-      <div class="box chs"><div class="row" style="justify-content:space-between"><div class="lab" style="margin:0">단원 (선택)</div><button class="pill" id="beChAdd" style="flex:none;padding:4px 10px;font-size:14px">+ 단원</button></div>
-        <div id="beChs" style="margin-top:8px">${B.chapters.map((c, i) => `<div class="chr"><input class="inp" data-ci="${i}" data-f="t" value="${esc(c.t)}" placeholder="단원 이름"><input class="inp" type="number" inputmode="numeric" data-ci="${i}" data-f="from" value="${c.from}"><input class="inp" type="number" inputmode="numeric" data-ci="${i}" data-f="to" value="${c.to}"><button data-cdel="${i}" aria-label="단원 지우기">✕</button></div>`).join('') || '<div class="hint" style="margin:0">단원을 넣으면 퀘스트에 단원 이름이 보여요.</div>'}</div></div>
+        <div class="hint">이미 푼 곳이 있으면 '다음에 할 쪽' 을 바꿔 주세요.</div></div>`}
+      ${B.open ? '' : `<div class="box chs"><div class="row" style="justify-content:space-between"><div class="lab" style="margin:0">단원 (선택)</div><button class="pill" id="beChAdd" style="flex:none;padding:4px 10px;font-size:14px">+ 단원</button></div>
+        <div id="beChs" style="margin-top:8px">${B.chapters.map((c, i) => `<div class="chr"><input class="inp" data-ci="${i}" data-f="t" value="${esc(c.t)}" placeholder="단원 이름"><input class="inp" type="number" inputmode="numeric" data-ci="${i}" data-f="from" value="${c.from}"><input class="inp" type="number" inputmode="numeric" data-ci="${i}" data-f="to" value="${c.to}"><button data-cdel="${i}" aria-label="단원 지우기">✕</button></div>`).join('') || '<div class="hint" style="margin:0">단원을 넣으면 퀘스트에 단원 이름이 보여요.</div>'}</div></div>`}
       <div class="lab">무슨 요일에?</div><div class="days" id="beDays">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="${B.days.includes(d) ? 'on' : ''}" data-d="${d}">${DOW[d]}</button>`).join('')}</div>
       <div class="row" style="margin-top:12px;align-items:stretch"><div class="box" style="margin:0"><div class="hint" style="margin:0 0 4px">하루에</div>${stepper('bePer', 0, (Number.isInteger(unitN) ? unitN : unitN.toFixed(1)) + (B.unit === 'j' ? '장' : '쪽'))}</div>
         <div class="box" style="margin:0"><div class="hint" style="margin:0 0 4px">얼마 동안</div>${stepper('beDur', 0, B.dur + '분')}</div></div>
       <div class="box" style="margin-top:12px"><div class="row"><span class="lab" style="margin:0;flex:none">공부 시각</span><input class="inp" id="beTime" type="time" value="${B.time}"></div><div class="hint">이 시각에 '공부 시간이에요!' 알림이 와요. 비우면 알림 없이 목록에만 나와요.</div></div>
-      <div class="tip" id="beFin"></div>
+      <div class="tip" id="beFin" ${B.open ? 'style="display:none"' : ''}></div>
+      <button class="linkbtn" id="beMode">${B.open ? '쪽 범위 · 단원도 적기 (선택)' : '간단하게 — 하루 분량만 적기'}</button>
       <div style="margin-top:14px"><button class="big" id="beSave">${b0 ? '저장' : '등록하기'}</button></div>
       ${b0 ? `<button class="linkbtn" id="beAct">${B.active ? '잠시 쉬기 (계획에서 빼기)' : '다시 하기 (계획에 넣기)'}</button><button class="linkbtn" id="beDel">이 문제집 지우기</button>` : ''}`, {keep: true});
     const sync = () => {
-      B.name = $('beName').value; B.first = +$('beFirst').value || 1; B.last = +$('beLast').value || B.first; B.cur = +$('beCur').value || B.first;
+      B.name = $('beName').value; if ($('beFirst')) { B.first = +$('beFirst').value || 1; B.last = +$('beLast').value || B.first; B.cur = +$('beCur').value || B.first; }
       if ($('bePpj')) B.ppj = Math.max(1, Math.min(8, +$('bePpj').value || 2));
       B.time = $('beTime').value || '';
       document.querySelectorAll('#beChs [data-ci]').forEach(inp => { const c = B.chapters[+inp.dataset.ci]; if (c) c[inp.dataset.f] = inp.dataset.f === 't' ? inp.value : +inp.value || 0; });
     };
-    const fin = () => { sync(); const nb = normBook(Object.assign({}, B, {name: B.name || '?'})); const f = nb && finishDate(S, nb, todayStr());
+    const fin = () => { if (B.open) return; sync(); const nb = normBook(Object.assign({}, B, {name: B.name || '?'})); const f = nb && finishDate(S, nb, todayStr());
       $('beFin').innerHTML = !nb.days.length ? '요일을 하나 이상 골라 주세요.' : nb.cur > nb.last ? '이 문제집은 다 끝냈어요!' : f ? `이대로 하면 <b class="j" style="font-size:16px">${parseYmd(f).getMonth() + 1}월 ${parseYmd(f).getDate()}일</b>에 다 끝내요! (남은 ${nb.last - nb.cur + 1}쪽 · 주 ${nb.days.length}번)` : ''; };
     fin();
+    $('beMode').onclick = () => { sync(); B.open = !B.open; if (!B.open && B.last < 100) { B.first = 1; B.last = 100; B.cur = 1; } draw(); };
     $('sheet').querySelectorAll('input').forEach(i => i.addEventListener('input', fin));
     $('beSubj').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); B.subj = b.dataset.s; draw(); };
     $('sheet').querySelectorAll('[data-u]').forEach(b => b.onclick = () => { sync(); B.unit = b.dataset.u; if (B.unit === 'j' && B.perDay % B.ppj) B.perDay = Math.max(B.ppj, Math.round(B.perDay / B.ppj) * B.ppj); draw(); });
     $('beDays').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; const d = +b.dataset.d; B.days = B.days.includes(d) ? B.days.filter(x => x !== d) : [...B.days, d]; b.classList.toggle('on'); sfx('tap'); fin(); };
     bindStep('bePer', () => B.unit === 'j' ? B.perDay / B.ppj : B.perDay, v => { v = Math.max(1, Math.min(60, v)); B.perDay = B.unit === 'j' ? v * B.ppj : v; fin(); }, v => v + (B.unit === 'j' ? '장' : '쪽'));
     bindStep('beDur', () => B.dur / 5, v => { B.dur = Math.max(5, Math.min(180, v * 5)); }, v => v * 5 + '분');
-    $('beChAdd').onclick = () => { sync(); const l = B.chapters[B.chapters.length - 1]; B.chapters.push({t: '', from: l ? l.to + 1 : B.first, to: l ? l.to + 20 : B.first + 19}); draw(); };
+    if ($('beChAdd')) $('beChAdd').onclick = () => { sync(); const l = B.chapters[B.chapters.length - 1]; B.chapters.push({t: '', from: l ? l.to + 1 : B.first, to: l ? l.to + 20 : B.first + 19}); draw(); };
     $('sheet').querySelectorAll('[data-cdel]').forEach(b => b.onclick = () => { sync(); B.chapters.splice(+b.dataset.cdel, 1); draw(); });
     $('beSave').onclick = () => { sync(); if (!B.name.trim()) { toast('문제집 이름을 써 주세요'); $('beName').focus(); return; }
       if (!B.days.length) { toast('요일을 하나 이상 골라 주세요'); return; }
-      if (B.last < B.first) { toast('쪽 범위를 확인해 주세요'); return; }
+      if (!B.open && B.last < B.first) { toast('쪽 범위를 확인해 주세요'); return; }
       B.chapters = B.chapters.filter(c => String(c.t).trim());
       const nb = normBook(B); const i = S.books.findIndex(x => x.id === nb.id); if (i >= 0) S.books[i] = nb; else S.books.push(nb);
       save(); closeSheet(); render(); sfx('ok'); toast(b0 ? '저장했어요' : '문제집을 등록했어요!'); };
@@ -865,8 +870,8 @@ function doneSheet() {
         <div class="j" style="font-size:30px">다 했다!</div><div style="color:var(--sub)">${esc(q ? q.title : '')}</div></div>
       <div class="tstats"><div><small>공부한 시간</small><b>${minTxt(sec)}</b></div><div><small>잠시 멈춤</small><b>${r.pauses}번</b></div><div><small>쉰 시간</small><b>${minTxt(runRestMs(r, now) / 1000)}</b></div></div>
       ${book ? `<div class="box"><div class="lab">얼마나 했어요?</div><div class="res" id="dnRes">${[['all', '다 했어요'], ['part', '조금 남았어요'], ['more', '더 했어요']].map(x => `<button data-r="${x[0]}" class="${DONE.result === x[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
-        ${DONE.result === 'all' ? `<div class="row" style="margin-top:10px;justify-content:space-between"><span>한 곳</span><b class="j" style="font-size:17px;text-align:right">${esc(rangeText(book, DONE.from, DONE.to))}</b></div>`
-          : `<div class="row" style="margin-top:10px"><span style="flex:none">어디까지 했어요?</span>${stepper('dnTo', 0, DONE.to + '쪽')}</div>`}</div>` : ''}
+        ${DONE.result === 'all' ? `<div class="row" style="margin-top:10px;justify-content:space-between"><span>${book.open ? '한 양' : '한 곳'}</span><b class="j" style="font-size:17px;text-align:right">${esc(rangeText(book, DONE.from, DONE.to))}</b></div>`
+          : `<div class="row" style="margin-top:10px"><span style="flex:none">${book.open ? '얼마나 했어요?' : '어디까지 했어요?'}</span>${stepper('dnTo', 0, book.open ? amountText(book, DONE.from, DONE.to) : DONE.to + '쪽')}</div>`}</div>` : ''}
       <div class="box"><div class="row"><span style="flex:none">채점해 보니 틀린 문제</span>${stepper('dnWrong', 0, DONE.wrong == null ? '안 셌어요' : DONE.wrong + '개')}</div></div>
       <div class="box"><div class="lab">오늘 공부는</div><div class="res moods" id="dnMood">${[['easy', '쉬웠어'], ['ok', '딱 좋아'], ['hard', '어려워']].map(x => `<button data-m="${x[0]}" class="${DONE.mood === x[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
         <input class="inp" id="dnNote" maxlength="60" placeholder="부모님께 한마디 (선택)" value="${esc(DONE.note)}" style="margin-top:10px"></div>
@@ -874,7 +879,7 @@ function doneSheet() {
       <div style="text-align:center;font-size:14px;color:var(--sub);margin:4px 0 10px">지금 받는 것 <b class="j" style="color:var(--ink)">코인 +${sessionsOn(S, r.key, r.date).length ? 0 : COIN_DONE}</b>${sendable ? ' · 확인 받으면 <b class="j" style="color:var(--ink)">별</b>' : ''}</div>
       <button class="big" id="dnGo">${sendable ? '엄마 아빠에게 보내기' : '기록하기'}</button><button class="linkbtn" id="dnBack">아직 안 끝났어요 (타이머로)</button>`, {keep: true});
     if ($('dnRes')) $('dnRes').onclick = e => { const b = e.target.closest('[data-r]'); if (!b) return; syncD(); DONE.result = b.dataset.r; if (DONE.result === 'all') DONE.to = r.to; draw(); };
-    if (book && $('dnTo')) bindStep('dnTo', () => DONE.to, v => { DONE.to = Math.max(DONE.from, Math.min(book.last, v)); }, v => v + '쪽');
+    if (book && $('dnTo')) bindStep('dnTo', () => DONE.to, v => { DONE.to = Math.max(DONE.from, Math.min(book.last, v)); }, v => book.open ? amountText(book, DONE.from, DONE.to) : v + '쪽');
     bindStep('dnWrong', () => DONE.wrong == null ? -1 : DONE.wrong, v => { DONE.wrong = v < 0 ? null : Math.min(99, v); }, () => DONE.wrong == null ? '안 셌어요' : DONE.wrong + '개');
     $('dnMood').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; syncD(); DONE.mood = DONE.mood === b.dataset.m ? '' : b.dataset.m; draw(); };
     if ($('dnPhoto')) $('dnPhoto').onchange = async e => { const f = e.target.files[0]; if (!f) return; syncD(); try { DONE.photo = await shrinkPhoto(f); draw(); } catch (er) { toast('사진을 못 읽었어요'); } };
@@ -1248,7 +1253,7 @@ function parentWeek(body, st) {
 function parentPlan(body, st) {
   const t = todayStr();
   body.innerHTML = `<div class="pc"><h3>문제집</h3>${st.books.length ? `<table><thead><tr><th>문제집</th><th>요일 · 하루</th><th>진도</th><th>끝나는 날</th></tr></thead><tbody>${st.books.map(b => { const f = finishDate(st, b, t), tot = b.last - b.first + 1;
-      return `<tr style="${b.active ? '' : 'opacity:.55'}"><td>${esc(subjOf(b.subj).n)} · ${esc(b.name)}</td><td>${b.days.map(d => DOW[d]).join('')} · ${perDayText(b)}${b.time ? '<br>' + b.time + ' · ' + b.dur + '분' : ''}</td><td>${Math.round(Math.min(tot, b.cur - b.first) / tot * 100)}% (${Math.min(b.cur, b.last)}쪽)</td><td>${b.cur > b.last ? '끝' : f ? md(f) : '—'}</td></tr>`; }).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
+      return `<tr style="${b.active ? '' : 'opacity:.55'}"><td>${esc(subjOf(b.subj).n)} · ${esc(b.name)}</td><td>${b.days.map(d => DOW[d]).join('')} · ${perDayText(b)}${b.time ? '<br>' + b.time + ' · ' + b.dur + '분' : ''}</td><td>${b.open ? '—' : Math.round(Math.min(tot, b.cur - b.first) / tot * 100) + '% (' + Math.min(b.cur, b.last) + '쪽)'}</td><td>${b.open ? '—' : b.cur > b.last ? '끝' : f ? md(f) : '—'}</td></tr>`; }).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
     <p class="pnote" style="margin-top:8px">계획은 아이 폰에서 세워요. (부모님이 계획을 보내는 기능은 다음에)</p></div>
     <div class="pc"><h3>앞으로 7일</h3><table><tbody>${[...Array(7)].map((_, i) => { const d = addDays(t, i), qs = questsFor(st, d, t); return `<tr><td style="width:72px">${md(d)}</td><td>${qs.length ? qs.map(q => esc(subjOf(q.subj).n) + ' ' + esc(q.kind === 'book' ? rangeText(q.book, q.from, q.to) : q.title) + (q.time ? ' · ' + q.time : '')).join('<br>') : '<span class="pnote">쉬는 날</span>'}</td></tr>`; }).join('')}</tbody></table></div>`;
 }
