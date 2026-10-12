@@ -669,7 +669,7 @@ console.log('\n시나리오 13-28 — 아이패드도 아이폰 길로 (v26-1010
   sc.eq('개발자 계정·개발본에서만 보인다', /dev=\(typeof DEV_MODE!=='undefined'&&DEV_MODE\)\|\|\(typeof _isDevAccount==='function'&&_isDevAccount\(\)\);/.test(SRC), true);
   const diag = slice('// ── 스크롤 기록 (v26-1010-11', "$('brDiagClr').onclick");
   const adds = diag.match(/addEventListener\('[a-z]+',[\s\S]*?\}(,\{[^}]*\})?\);/g) || [];
-  sc.eq('기록 감시자 일곱', adds.length, 7);
+  sc.eq('기록 감시자 아홉 (v26-1012-2: 다른 스크롤·확대창 더함)', adds.length, 9);
   sc.eq('전부 passive', adds.every(a => /\{passive:true(,capture:true)?\}\);$/.test(a)), true);
   sc.eq('기록은 막지 않는다', /preventDefault\(\)/.test(diag), false);
   const stuck = new Function(SRC.match(/function _brDiagStuck\(r\)\{[^\n]*\}/)[0] + 'return _brDiagStuck;')();
@@ -679,6 +679,13 @@ console.log('\n시나리오 13-28 — 아이패드도 아이폰 길로 (v26-1010
   sc.eq('멈춤 시간은 장 끝이 아닐 때만 잰다', /if\(g\.tail>=40\)\{const y0=sc\.scrollTop;if\(y0>1&&y0<sc\.scrollHeight-sc\.clientHeight-1\)/.test(diag), true);
   sc.eq('스크롤이 오면 멈춤 시계를 새로', /g\.tail=0;g\.tt=Date\.now\(\);/.test(diag), true);
   sc.eq('복사본에 저장 칸 줄', /function _brDiagStore\(\)\{/.test(SRC) && /_brDiagStore\(\)\];/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-29 — 성경이 열린 동안 뒤 문서는 굴러가지 않는다 (v26-1012-2 HB — Sweeter·아이패드 미니)');
+{
+  sc.eq('html.br-cover 가 문서 스크롤을 잠근다', /html\.br-cover,html\.br-cover body\{overflow:hidden;overscroll-behavior:none;\}/.test(SRC), true);
+  sc.eq('기록 — 다른 스크롤 상자를 센다(캡처·passive)', /document\.addEventListener\('scroll',e=>\{if\(!g\)return;[\s\S]{0,400}\},\{passive:true,capture:true\}\);/.test(SRC), true);
+  sc.eq('기록 — 프레임 간격은 손짓 동안만 잰다', /const frame=t=>\{if\(!g\)\{raf=0;return;\}/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
