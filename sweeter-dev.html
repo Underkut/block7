@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1013-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6338,7 +6338,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-2";
+const APP_VERSION = "v. 26-1013-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9248,7 +9248,7 @@ try{
       <div class="br-row"><span class="br-lb">괄호</span><div class="br-seg" id="brSegRb"><button data-v="square">[ ]</button><button data-v="paren">( )</button><button data-v="none">없음</button></div></div>
       <div class="br-row"><span class="br-lb">위치</span><div class="br-seg" id="brSegRp"><button data-v="before">본문 앞</button><button data-v="after">본문 뒤</button></div></div>
       <div class="br-prev" id="brRefPrev"></div>
-      <div class="br-row" id="brDiagRow" style="display:none"><span class="br-lb">스크롤 기록 <small id="brDiagN" style="color:var(--tx3);font-weight:400"></small></span><div class="br-seg"><button id="brDiagCopy">복사</button><button id="brDiagClr">비우기</button></div></div>
+      <div class="br-row" id="brDiagRow" style="display:none"><span class="br-lb">스크롤 기록 <small id="brDiagN" style="color:var(--tx3);font-weight:400"></small></span><div class="br-seg"><button id="brDiagFrz">접기 끔</button><button id="brDiagCopy">복사</button><button id="brDiagClr">비우기</button></div></div>
     </div>
   </div>
 
@@ -15248,7 +15248,7 @@ function _brSessStep(){
 // 스크롤 기록 (v26-1010-11) — 묶기는 _brBind 의 '스크롤 기록'
 const _brDiagRows=[];
 function _brDiagStuck(r){return (r.stuckMs||0)>=250;}   // 손은 가는데 글이 0.25초 넘게 멈췄다
-function _brDiagSync(){const n=_brEl('brDiagN');if(!n)return;const k=_brDiagRows.filter(_brDiagStuck).length;n.textContent=_brDiagRows.length+'번 · 걸림 '+k;}
+function _brDiagSync(){const f=_brEl('brDiagFrz');if(f)f.classList.toggle('on',_brChromeFreeze());const n=_brEl('brDiagN');if(!n)return;const k=_brDiagRows.filter(_brDiagStuck).length;n.textContent=_brDiagRows.length+'번 · 걸림 '+k;}
 // 이 기기 앱 저장 칸 (v26-1010-12) — 사파리는 사이트마다 약 5MB, 한글은 한 글자 2바이트라 약 2.6M자. 기기 용량과 따로다.
 function _brDiagStore(){
   let tot=0;const ks=[];
@@ -15264,7 +15264,7 @@ function _brDiagText(){
   const sc=_brEl('brScroll'),p=n=>String(n).padStart(2,'0');
   const head=['[성경 스크롤 기록] '+APP_VERSION,'UA '+navigator.userAgent,
     'platform '+navigator.platform+' · touchPoints '+navigator.maxTouchPoints+' · callout '+co,
-    'br-ios '+_brEl('bibleRd').classList.contains('br-ios')+' · 본문 touch-action '+ta+' · 절나누기 '+_brS('bibleFlow','verse'),
+    'br-ios '+_brEl('bibleRd').classList.contains('br-ios')+' · 접기 '+(_brChromeFreeze()?'끔(시험)':'켬')+' · 본문 touch-action '+ta+' · 절나누기 '+_brS('bibleFlow','verse'),
     '화면 '+innerWidth+'x'+innerHeight+' · dpr '+devicePixelRatio+' · vv '+(window.visualViewport?visualViewport.scale.toFixed(2):'-')+
       ' · 단 '+(typeof _layMode==='function'?_layMode():'?')+' · 배율 '+(typeof _uiScaleGet==='function'?_uiScaleGet():'?')+' · 상자 '+(sc?sc.clientHeight+'/'+sc.scrollHeight:'-'),
     '문서 '+(document.scrollingElement?document.scrollingElement.scrollHeight+'/'+document.scrollingElement.clientHeight+' y'+Math.round(window.scrollY):'-')+' · 잠금 '+getComputedStyle(document.documentElement).overflowY,
@@ -15434,11 +15434,15 @@ function _brChromeApply(anim){
   h.classList.toggle('mini',p>.5);n.classList.toggle('hide',p>.5);
 }
 function _brChrome(show){_brP=show?0:1;_brChromeApply(true);}
+function _brChromeFreeze(){try{return localStorage.getItem(_lsk('brChromeOff'))==='1';}catch(e){return false;}}
 function _brOnScroll(){
   clearTimeout(_brOnScroll._pt);_brOnScroll._pt=setTimeout(_brPosSave,400);   // 보던 자리 (v26-1009-4)
   const sc=_brEl('brScroll'),y=sc.scrollTop,dy=y-_brLastY;_brLastY=y;
   const h=_brEl('brHead');const H=Math.max(1,(h?h.offsetHeight:52)-26);
   if(dy)_brDir=Math.sign(dy);
+  // 시험 스위치 (v26-1013-3, 개발자만 — '스크롤 기록' 줄): 머리·바닥 접기를 멈추고 늘 펼쳐 둔다.
+  // 아이패드에서 스크롤마다 머리·바닥 모양을 바꾸는 것이 걸림의 까닭인지 기기에서 가려 보려는 것.
+  if(_brChromeFreeze()){_brProgSync();if(_brP!==0){_brP=0;_brChromeApply(false);}return;}
   const span=H*_BR_CHROME_SPAN;
   _brP=Math.max(0,Math.min(1,_brP+dy/span));
   if(y<=span)_brP=Math.min(_brP,Math.max(0,y/span));    // 맨 위 가까이에서는 늘 그만큼 펼친다
@@ -16010,7 +16014,9 @@ function _brBind(){
     $('brDiagCopy').onclick=()=>{const t=_brDiagText();   // ⚠️ 아이폰 PWA — 누른 그 자리에서 곧장 복사를 시작한다
       if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>showToast('스크롤 기록을 복사했어요')).catch(()=>_copyTextFallback(t));
       else _copyTextFallback(t);};
-    $('brDiagClr').onclick=()=>{_brDiagRows.length=0;_brDiagSync();};}
+    $('brDiagClr').onclick=()=>{_brDiagRows.length=0;_brDiagSync();};
+    $('brDiagFrz').onclick=()=>{const on=!_brChromeFreeze();try{localStorage.setItem(_lsk('brChromeOff'),on?'1':'0');}catch(e){}
+      _brDiagSync();_brP=0;_brChromeApply(true);_brToast(on?'시험: 머리·바닥 접기를 껐어요':'머리·바닥 접기를 다시 켰어요');};}
   // 두 번 톡톡(0.3초 안 · 같은 절) = 그 절 좋아요 (v26-1007-10, HB). 첫 번째 누르기가 바꾼
   // 고르기는 되돌린다 — 그래서 고르기를 늦추지 않고도 두 손짓이 갈린다.
   let dt=null;

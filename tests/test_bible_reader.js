@@ -695,6 +695,13 @@ console.log('\n시나리오 13-30 — 아이폰·아이패드는 뒤 문서를 �
   sc.eq('걸림 시작 한 장을 남긴다', /if\(ms>=250&&!g\.snap\)/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-31 — 머리·바닥 접기 시험 스위치 (v26-1013-3, 개발자만)');
+{
+  sc.eq('스위치가 켜지면 스크롤마다 접지 않는다', /if\(_brChromeFreeze\(\)\)\{_brProgSync\(\);if\(_brP!==0\)\{_brP=0;_brChromeApply\(false\);\}return;\}/.test(SRC), true);
+  sc.eq('기기 전용 키 (_lsk)', /localStorage\.getItem\(_lsk\('brChromeOff'\)\)==='1'/.test(SRC), true);
+  sc.eq('스위치는 개발자 줄 안에만', /id="brDiagRow"[^\n]*id="brDiagFrz"/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
