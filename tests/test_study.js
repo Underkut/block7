@@ -1,0 +1,147 @@
+// 공부 친구들(study/index.html) 핵심 규칙 — 화면 없이 도는 덩어리(<script id="study-core">)를 떼어 시험한다.
+//
+// 지키는 것:
+//  ① 쪽 · 장 — 저장은 언제나 쪽, '장' 은 보여 주는 단위 (1장 = ppj 쪽)
+//  ② 계획 → 날짜별 분량: 오늘 안 한 몫은 오늘에 남고, 다음 요일부터 이어진다 · 끝나는 날
+//  ③ 끝! → 기록: 진도는 실제로 한 쪽까지, 앞으로만 간다 · 코인은 하루 한 퀘스트에 한 번 · 지우면 되돌린다
+//  ④ 타이머: 잠시 멈춤 시간은 공부 시간에 들어가지 않는다
+//  ⑤ 알림: 정한 시각부터 90분까지만 · 미루기 · '오늘은 못 해요' · 공부 중이면 안 울린다 · 서버 예약 목록
+//  ⑥ 별은 부모님 확인 때만 · 같은 확인은 한 번만 반영 · 레벨
+//  ⑦ 망가진 저장을 읽어도 죽지 않는다
+const fs = require('fs'), path = require('path'), vm = require('vm');
+const { makeScorer } = require('./_load');
+const sc = makeScorer();
+
+const HTML = fs.readFileSync(path.join(__dirname, '..', 'study', 'index.html'), 'utf8');
+const m = HTML.match(/<script id="study-core">([\s\S]*?)<\/script>/);
+if (!m) { console.error('study-core 덩어리를 못 찾았습니다'); process.exit(2); }
+process.env.TZ = 'Asia/Seoul';
+const ctx = { console, Date, Math, JSON };
+vm.createContext(ctx);
+vm.runInContext(m[1] + `
+this.A = { STUDY_KEY, SUBJ, blankState, normState, normBook, amountText, rangeText, perDayText, chapterOf, projectBook, finishDate, questsFor, questOf,
+  runStart, runPause, runResume, runStudyMs, runRestMs, finishRun, removeSession, dueAlarm, snooze, cleanOld, upcomingAlarms,
+  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE };`, ctx);
+const A = ctx.A;
+const MON = '2026-10-12';   // 월요일
+const at = (d, hm) => A.atOf(d, hm);
+
+function mk(o) {
+  const st = A.blankState();
+  st.books.push(A.normBook(Object.assign({id: 'b1', subj: 'math', name: '디딤돌', unit: 'p', first: 8, last: 60, cur: 34, perDay: 4, days: [1, 3, 5], time: '16:00', dur: 30,
+    chapters: [{t: '분수의 곱셈', from: 34, to: 59}]}, o || {})));
+  return st;
+}
+
+// ── ① 쪽 · 장 ──
+{
+  const st = mk({unit: 'j', ppj: 2});
+  const b = st.books[0];
+  sc.eq('① 장 단위: 4쪽 = 2장, 범위는 쪽으로 함께', A.rangeText(b, 34, 37), '2장 (34~37쪽)');
+  sc.eq('① 쪽 단위 그대로', A.rangeText(mk().books[0], 34, 37), '34~37쪽');
+  sc.eq('① 하루 분량 표시', [A.perDayText(b), A.perDayText(mk().books[0])], ['2장', '4쪽']);
+  sc.eq('① 1장 = 3쪽인 문제집도', A.amountText(A.normBook(Object.assign({}, b, {ppj: 3})), 1, 6), '2장');
+  sc.eq('① 단원 찾기', A.chapterOf(b, 40).t, '분수의 곱셈');
+}
+
+// ── ② 계획 → 날짜별 ──
+{
+  const st = mk();
+  const pr = A.projectBook(st, st.books[0], MON, 14);
+  sc.eq('② 월·수·금만, 4쪽씩 이어진다', Object.keys(pr).slice(0, 4), ['2026-10-12', '2026-10-14', '2026-10-16', '2026-10-19']);
+  sc.eq('② 오늘 34~37 → 수요일 38~41', [pr['2026-10-12'].from, pr['2026-10-12'].to, pr['2026-10-14'].from, pr['2026-10-14'].to], [34, 37, 38, 41]);
+  sc.eq('② 마지막 쪽에서 멈춘다 (60쪽)', Object.values(A.projectBook(st, st.books[0], MON, 60)).pop().to, 60);
+  // 오늘 안 하고 하루 지나면 그 몫이 다음 요일로 밀린다
+  const tue = A.projectBook(st, st.books[0], '2026-10-13', 7);
+  sc.eq('② 월요일을 건너뛰면 수요일이 34쪽부터', tue['2026-10-14'].from, 34);
+  // 34~60 = 27쪽 → 7번 (4쪽씩) → 월수금 7번째 = 10/26(월)
+  sc.eq('② 끝나는 날', A.finishDate(st, st.books[0], MON), '2026-10-26');
+  const q = A.questsFor(st, MON, MON);
+  sc.eq('② 오늘 퀘스트 — 단원 이름 + 범위', [q.length, q[0].sub, q[0].time], [1, '분수의 곱셈 · 34~37쪽', '16:00']);
+  sc.eq('② 화요일은 쉬는 날', A.questsFor(st, '2026-10-13', MON).length, 0);
+  st.tasks.push({id: 't1', title: '받아쓰기', date: '2026-10-13', time: '', dur: 20, subj: 'kor'});
+  sc.eq('② 한 번짜리 숙제는 그날에만', [A.questsFor(st, '2026-10-13', MON).length, A.questsFor(st, '2026-10-14', MON).filter(x => x.kind === 'task').length], [1, 0]);
+  const off = mk({active: false});
+  sc.eq('② 쉬는 문제집은 계획에 없다', A.questsFor(off, MON, MON).length, 0);
+}
+
+// ── ③ ④ 타이머 → 기록 ──
+{
+  const st = mk();
+  const q = A.questsFor(st, MON, MON)[0], t0 = at(MON, '16:05');
+  A.runStart(st, q, t0, 1);
+  A.runPause(st, t0 + 10 * 60000);
+  A.runResume(st, t0 + 13 * 60000);
+  const end = t0 + 34 * 60000;
+  sc.eq('④ 멈춘 3분은 공부 시간에서 빠진다', [A.runStudyMs(st.run, end) / 60000, A.runRestMs(st.run, end) / 60000], [31, 3]);
+  const s = A.finishRun(st, end, {result: 'all', from: 34, to: 37, wrong: 2, mood: 'ok'});
+  sc.eq('③ 기록: 31분 · 멈춤 1번 · 미룸 1번', [s.sec, s.pauses, s.rest, s.snoozes, s.wrong], [1860, 1, 180, 1, 2]);
+  sc.eq('③ 진도가 38쪽으로', st.books[0].cur, 38);
+  sc.eq('③ 코인 +10', [st.coins, s.coins], [A.COIN_DONE, A.COIN_DONE]);
+  sc.eq('③ 오늘 퀘스트는 끝남으로', A.questsFor(st, MON, MON)[0].done, true);
+  sc.eq('③ 수요일 계획은 38쪽부터', A.projectBook(st, st.books[0], MON, 3)['2026-10-14'].from, 38);
+  // 같은 날 한 번 더(다시 하기) → 코인은 또 안 준다
+  A.runStart(st, A.questsFor(st, MON, MON)[0], end + 60000);
+  const s2 = A.finishRun(st, end + 20 * 60000, {result: 'all'});
+  sc.eq('③ 같은 퀘스트 두 번째는 코인 없음', [s2.coins, st.coins], [0, A.COIN_DONE]);
+  // 지우기 → 코인·진도 되돌림
+  A.removeSession(st, s2.id); A.removeSession(st, s.id);
+  sc.eq('③ 기록을 지우면 코인과 진도가 돌아온다', [st.coins, st.books[0].cur], [0, 34]);
+  // 조금만 했으면 그만큼만
+  A.runStart(st, A.questsFor(st, MON, MON)[0], t0);
+  A.finishRun(st, t0 + 600000, {result: 'part', from: 34, to: 35});
+  sc.eq('③ 조금 남았어요 → 36쪽부터', st.books[0].cur, 36);
+  // 진도는 뒤로 가지 않는다
+  st.books[0].cur = 50; A.runStart(st, {key: 'b:b1', date: MON, from: 34, to: 37}, t0); A.finishRun(st, t0 + 1000, {result: 'all', from: 34, to: 37});
+  sc.eq('③ 이미 더 나간 진도는 그대로', st.books[0].cur, 50);
+}
+
+// ── ⑤ 알림 ──
+{
+  const st = mk();
+  sc.eq('⑤ 정한 시각 전에는 없다', A.dueAlarm(st, at(MON, '15:59'), MON), null);
+  sc.eq('⑤ 16:00 에 울린다', A.dueAlarm(st, at(MON, '16:00'), MON).key, 'b:b1');
+  sc.eq('⑤ 90분 지나면 더 안 띄운다', A.dueAlarm(st, at(MON, '17:31'), MON), null);
+  const q = A.dueAlarm(st, at(MON, '16:00'), MON);
+  const until = A.snooze(st, q, 5, at(MON, '16:00'));
+  sc.eq('⑤ 5분 미루면 16:05 까지 조용', [A.dueAlarm(st, at(MON, '16:03'), MON), until === at(MON, '16:05')], [null, true]);
+  sc.eq('⑤ 16:05 에 다시', A.dueAlarm(st, at(MON, '16:05'), MON).key, 'b:b1');
+  sc.eq('⑤ 서버 예약도 미룬 시각으로', A.upcomingAlarms(st, at(MON, '16:01'), MON, 1).map(x => x.at), [at(MON, '16:05')]);
+  A.runStart(st, q, at(MON, '16:06'));
+  sc.eq('⑤ 공부 중이면 안 울린다', [A.dueAlarm(st, at(MON, '16:07'), MON), A.upcomingAlarms(st, at(MON, '16:01'), MON, 1).length], [null, 0]);
+  st.run = null; st.dismiss['b:b1|' + MON] = 1;
+  sc.eq('⑤ 오늘은 못 해요 → 안 울린다', A.dueAlarm(st, at(MON, '16:10'), MON), null);
+  const st2 = mk();
+  const up = A.upcomingAlarms(st2, at(MON, '09:00'), MON, 7);
+  sc.eq('⑤ 일주일 예약: 월·수·금 16:00', up.map(x => x.k.split('|')[1]), ['2026-10-12', '2026-10-14', '2026-10-16']);
+  sc.eq('⑤ 예약 글: 시각 · 과목 · 범위', [up[0].title, up[0].body], ['16:00 수학 공부 시간이에요!', '디딤돌 · 분수의 곱셈 · 34~37쪽 · 30분']);
+  sc.eq('⑤ 시각이 없는 숙제는 예약하지 않는다', (() => { st2.tasks.push({id: 't', title: 'x', date: MON, time: '', dur: 0, subj: 'etc'}); return A.upcomingAlarms(st2, at(MON, '09:00'), MON, 1).length; })(), 1);
+  st2.snooze['b:b1|2026-09-01'] = {until: 1, n: 1}; A.cleanOld(st2, MON);
+  sc.eq('⑤ 오래된 미루기 기록은 치운다', Object.keys(st2.snooze).length, 0);
+}
+
+// ── ⑥ 별 · 레벨 · 부모님 확인 ──
+{
+  const st = mk();
+  A.runStart(st, A.questsFor(st, MON, MON)[0], at(MON, '16:00'));
+  const s = A.finishRun(st, at(MON, '16:30'), {result: 'all'});
+  sc.eq('⑥ 끝냈다고 별이 생기지는 않는다', A.starsOf(st), 0);
+  const r = {id: 'r1', sid: s.id, status: 'ok', stars: 2, coins: 20, stamp: '참 잘했어요', text: '끝까지 했구나', by: '아빠'};
+  sc.eq('⑥ 부모님 확인 → 별 2 · 코인 +20 · 도장', [A.applyReview(st, r), A.starsOf(st), st.coins, s.stamp, s.status], [true, 2, A.COIN_DONE + 20, '참 잘했어요', 'ok']);
+  sc.eq('⑥ 같은 확인은 두 번 반영하지 않는다', [A.applyReview(st, r), A.starsOf(st), st.coins], [false, 2, A.COIN_DONE + 20]);
+  sc.eq('⑥ 없는 기록에 온 확인은 무시', A.applyReview(st, {id: 'r2', sid: 'nope', status: 'ok'}), false);
+  sc.eq('⑥ 레벨: 별 5개면 Lv.2, 12개면 Lv.3', [A.levelOf(4).lv, A.levelOf(5).lv, A.levelOf(11).lv, A.levelOf(12).lv], [1, 2, 2, 3]);
+  sc.eq('⑥ 약속 모으기 — 확인 받은 것만 센다', A.promiseProgress(st, {need: 3, since: 0}), {n: 1, need: 3, done: false});
+  sc.eq('⑥ 약속을 만든 뒤의 것만', A.promiseProgress(st, {need: 3, since: at(MON, '17:00')}).n, 0);
+  const w = A.weekStats(st, A.mondayOf('2026-10-15'));
+  sc.eq('⑥ 주간 통계: 수학 1번 · 4쪽', [w.rows[0].subj, w.rows[0].n, w.rows[0].pages, w.rows[0].ok], ['math', 1, 4, 1]);
+}
+
+// ── ⑦ 망가진 저장 ──
+{
+  const bad = A.normState({books: [null, {id: 'x'}, {id: 'b', name: '책', first: 'a', last: -3, days: [9, 1, 1, 'z'], time: '25:99'}], tasks: [{id: 1}], sessions: 'nope', coins: -5});
+  sc.eq('⑦ 이상한 값은 버리거나 고친다', [bad.books.length, bad.books[0].days, bad.books[0].time, bad.tasks.length, bad.sessions.length, bad.coins], [1, [1], '', 0, 0, 0]);
+  sc.eq('⑦ 빈 저장 → 처음 상태', A.normState(null).books.length, 0);
+}
+
+sc.done();
