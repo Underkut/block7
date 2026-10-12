@@ -1282,7 +1282,8 @@ HB: 기도 지도가 계획을 세울 때 주로 입력·편집하는 큰 판이
 | 단계 | 내용 | 상태 |
 |---|---|---|
 | T-1 | 기도노트 기도 한 번씩 · 어디서(src) 남기기 | ✅ v26-1012-8 |
-| T-2 | BLOCK7 · Sweeter There 기록에 **app**(block7/sweeter) · **src**(어느 단추) 더하기 — 옛 기록은 비어 있는 대로 | ⏳ HB 결정 대기 (BLOCK7 작업 · 산출물 3개) |
+| T-2 | BLOCK7 · Sweeter There 기록에 **app**(block7/sweeter) · **src**(어느 단추) 더하기 — 옛 기록은 비어 있는 대로 | ✅ v26-1012-1 (BLOCK7) · HB 승인 2026-10-12 · `tests/test_there.js` 13 |
+| | src 이름: gnb(BLOCK7 위 메뉴) · home(Sweeter 홈 위) · bar(상단 말씀 영역) · full(말씀 전체화면) · widget(말씀 위젯) · tile(Sweeter 타일) · bible(성경 화면 위) · bible-menu(성경 절 메뉴). 기도노트는 map · focus | |
 | T-3 | 기도노트 로그인 켜기 — HB 파이어베이스 콘솔(규칙 붙이기, `docs/pray/firestore-rules.md`) | ⏳ HB 컴퓨터 앞에서 |
 | T-4 | 한 판에서 셋을 읽기 — `users/{uid}.verseThereLog` + `pray/{uid}` 의 ses. 어느 앱에 둘지(Sweeter 대시보드 / BLOCK7 리듬) 정하기 | ⏳ T-2 · T-3 뒤 |
 - **왜 로그인 뒤인가**: 셋의 기록이 각자 다른 곳(BLOCK7 · Sweeter = `users/{uid}`, 기도노트 = `pray/{uid}`)에 산다. 한 화면이 셋을 읽으려면

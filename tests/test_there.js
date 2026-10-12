@@ -165,8 +165,9 @@ console.log('시나리오 11 — 단추 자리 (T-4)');
   // GNB: BLOCK7 은 **상단 말씀 영역을 켰을 때만** (v26-1006-6, HB — 1단에서도 롤링 피커 옆에)
   sc.eq('BLOCK7 GNB 는 상단 말씀이 켜졌을 때만 (body.vb-on)', /body\.vb-on \.gnb-there,body\.vb-on \.gnb-bible\{display:block;\}/.test(SRC), true);
   // GNB 두 곳 모두 말씀 없이 연다
-  sc.eq('BLOCK7 GNB — 말씀 없이', /id="gnbThereBtn" onclick="openThere\(''\)"/.test(SRC), true);
-  sc.eq('Sweeter GNB — 말씀 없이', /id="swThereBtn"[\s\S]{0,120}onclick="openThere\(''\)"/.test(SRC), true);
+  // (v26-1012-1 부터 어디서 열었는지 {src} 를 함께 넘긴다 — 말씀 자리는 여전히 빈칸)
+  sc.eq('BLOCK7 GNB — 말씀 없이 · src gnb', /id="gnbThereBtn" onclick="openThere\('',\{src:'gnb'\}\)"/.test(SRC), true);
+  sc.eq('Sweeter GNB — 말씀 없이 · src home', /id="swThereBtn"[\s\S]{0,120}onclick="openThere\('',\{src:'home'\}\)"/.test(SRC), true);
 }
 
 console.log('시나리오 12 — 리듬: 기도 시간을 **시간마다 분으로** 나눠 담는다 (T-5)');
@@ -188,6 +189,27 @@ console.log('시나리오 13 — 리듬의 There 는 p.kind 를 건드리지 않
   sc.eq("There 칩은 rhyThere 만 켠다", SRC.includes(".replace(`vTrSet('kind','there')`,`vTrSet('rhyThere','1')`)"), true);
   sc.eq('다른 범위를 고르면 There 를 내려놓는다', /if\(key==='kind'\)p\.rhyThere='';/.test(SRC), true);
   sc.eq('_VDASH_KINDS 에는 There 가 없다', /_VDASH_KINDS=\[[^;]*'there'/.test(SRC), false);
+}
+
+
+console.log('시나리오 13 — 어디서 열었나: app(제품) · src(단추) (v26-1012-1, 통합 There 대시보드)');
+{
+  ST.verseThereLog = {}; SAVED = 0;
+  NOW = new Date('2026-10-12T07:00:00').getTime();
+  Date.now = () => NOW;
+  global.APP_PRODUCT = 'sweeter';
+  _thereBegin('', 'tile');
+  NOW += 90 * 1000;
+  const en = _thereCommit();
+  sc.eq('제품 · 단추가 함께 남는다', [en.app, en.src, en.d], ['sweeter', 'tile', 90]);
+  global.APP_PRODUCT = 'block7';
+  _thereBegin('요한복음 3:16');
+  NOW += 20 * 1000;
+  const e2 = _thereCommit();
+  sc.eq('단추를 안 넘긴 길은 빈칸 (= 모름) · 제품은 그대로', [e2.app, e2.src], ['block7', '']);
+  sc.eq('예전 모양(ref · time · t · d · sec)은 그대로', Object.keys(e2).slice(0, 5), ['ref', 'time', 't', 'd', 'sec']);
+  delete global.APP_PRODUCT;
+  Date.now = realNow;
 }
 
 sc.done();
