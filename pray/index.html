@@ -1342,6 +1342,43 @@ try {
   }
 } catch (e) { /* 막대 재기가 맡는다 */ }
 window.addEventListener('resize', measureScreen);
+// ── 화면 진단 기록 (HB 2026-10-13) — 아래 띠 A · B 색이 같았다 달랐다 하는 까닭을 찾으려고.
+//    재는 때(처음 · 크기 바뀜 · 앱 나갔다 옴 · 테마)마다 숫자와 색을 적어 두고, 설정 '화면 진단 기록 복사' 로 보낸다.
+//    이 기기에만 40개까지 (pray.diag). 이름 · 기도 자료는 담지 않는다.
+const DIAG_KEY = 'pray.diag';
+function diagSnap(ev) {
+  try {
+    const d = document.documentElement, cs = getComputedStyle(d), bg = el => el ? getComputedStyle(el).backgroundColor : '-';
+    const pr = document.createElement('div');
+    pr.style.cssText = 'position:fixed;top:0;bottom:0;left:0;width:1px;visibility:hidden;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)';
+    (document.body || d).appendChild(pr); const pcs = getComputedStyle(pr), ph = pr.getBoundingClientRect().height, sat = pcs.paddingTop, sab = pcs.paddingBottom; pr.remove();
+    const tm = document.querySelector('meta[name="theme-color"]'), tb = document.getElementById('tabbar');
+    const tbr = tb ? tb.getBoundingClientRect() : null, m = document.querySelector('#v-map .mjs');
+    let set = {}; try { set = (JSON.parse(localStorage.getItem(PRAY_KEY) || '{}').set) || {}; } catch (e) {}
+    const r = {
+      t: new Date().toTimeString().slice(0, 8), ev: ev, vis: document.visibilityState,
+      win: innerWidth + 'x' + innerHeight, scr: screen.width + 'x' + screen.height, probe: Math.round(ph), vv: window.visualViewport ? Math.round(visualViewport.height) : '-',
+      sat: sat, sab: sab, sa: !!navigator.standalone, dm: !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches),
+      iosgap: d.classList.contains('iosgap'), gapb: cs.getPropertyValue('--gapb').trim(), theme: tm ? tm.getAttribute('content') : '-',
+      html: bg(d), body: bg(document.body), app: bg(document.getElementById('app')), tab: bg(tb), tabBottom: tbr ? Math.round(tbr.bottom) : '-',
+      tabsolid: cs.getPropertyValue('--tabsolid').trim(), hdr: cs.getPropertyValue('--header-bg').trim(), pbg: cs.getPropertyValue('--bg').trim(),
+      mode: set.mode || '', preset: set.preset || '', layers: typeof UI !== 'undefined' ? UI.layers.length : '-',
+      mapW: m ? m.clientWidth : '-', mapN: m ? m._n : '-', cols: localStorage.getItem('pray.mapcols') || ''
+    };
+    let a = []; try { a = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]'); } catch (e) {}
+    a.push(r); if (a.length > 40) a = a.slice(-40);
+    localStorage.setItem(DIAG_KEY, JSON.stringify(a));
+  } catch (e) { /* 진단만 못 적음 */ }
+}
+function diagText() {
+  diagSnap('복사');
+  let a = []; try { a = JSON.parse(localStorage.getItem(DIAG_KEY) || '[]'); } catch (e) {}
+  return '[기도노트 화면 진단 ' + APP_VERSION + ' · ' + new Date().toISOString().slice(0, 10) + ']\n' + navigator.userAgent + '\n' + a.map(r => JSON.stringify(r)).join('\n');
+}
+window.addEventListener('load', () => setTimeout(() => diagSnap('처음'), 600));
+window.addEventListener('resize', () => { clearTimeout(diagSnap._t); diagSnap._t = setTimeout(() => diagSnap('크기'), 400); });
+document.addEventListener('visibilitychange', () => setTimeout(() => diagSnap(document.visibilityState === 'visible' ? '돌아옴' : '나감'), 300));
+window.addEventListener('pageshow', e => setTimeout(() => diagSnap(e.persisted ? '되살아남' : '보임'), 300));
 // 첫 그림 전에 저장된 테마를 얹는다 (기본색으로 한 번 그려졌다 바뀌지 않게)
 try { const _raw = localStorage.getItem(PRAY_KEY); applyTheme(_raw ? (JSON.parse(_raw).set || null) : null); } catch (e) { /* 기본 색으로 */ }
 </script>
@@ -1841,7 +1878,10 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .mk-link button .ico{width:14px;height:14px;color:var(--tx3)}
 
 /* 핀치로 열 바꾸기 — 손가락을 따라 판이 커지고 작아진다 */
-.masonry.mjs.pinching{transition:none;will-change:transform}
+.masonry.mjs.pinching{transition:none;will-change:transform;position:relative;z-index:1}
+/* 핀치 중 옛 모습이 뒤에 남아 겹쳐 보였다 (HB 2026-10-13 아이패드 사진) — 아이패드 사파리가 판 뒤를 다시 칠하지 않는다.
+   핀치 동안 판 뒤에 불투명한 바탕을 한 장 깔아 그 자리를 새로 칠하게 한다 */
+#v-map.pz::before{content:'';position:fixed;inset:0;background:var(--bg);z-index:0;pointer-events:none}
 
 /* 끌 때 오른쪽 위 구석에 나타나는 지우는 칸 */
 .md-trash{position:fixed;top:calc(var(--sat) + 8px);right:8px;z-index:59;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:min(58vw,230px);height:112px;border-radius:22px;
@@ -2650,6 +2690,7 @@ LAYERS.settings = () => {
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
   b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div>';
+  b += '<div class="label">화면 진단<small>아래 띠 색이 다를 때 눌러 복사해 보내 주세요</small></div><div class="set-g"><button class="set-r" data-a="diag-copy">' + ico('link') + '화면 진단 기록 복사</button></div>';
   b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
   return { title: '설정', body: b };
@@ -2971,6 +3012,12 @@ ACT['add-ok'] = () => SHEET && SHEET._ok && SHEET._ok();
 // 상세 (사람 · 항목 · 묶음 공통)
 ACT['set-mark'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.mark = t.mark === el.dataset.m ? '' : el.dataset.m; save(); refresh(); };
 ACT['set-num'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; const f = el.dataset.f, v = +el.dataset.v; t[f] = t[f] === v ? null : v; save(); refresh(); };
+// ⚠️ 아이폰은 누른 그 자리에서 바로 복사해야 한다 (await 뒤면 실패)
+ACT['diag-copy'] = () => {
+  const txt = diagText();
+  const fall = () => { const ta = document.createElement('textarea'); ta.value = txt; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); toast(ok ? '진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요' : '복사하지 못했습니다'); };
+  try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast('진단 기록을 복사했습니다 — 대화창에 붙여 보내 주세요'), fall); else fall(); } catch (e) { fall(); }
+};
 ACT['day-all'] = el => { const t = findAny(DB, el.dataset.id); if (!t) return; t.days = t.days.length === 7 ? [] : [0, 1, 2, 3, 4, 5, 6]; save(); refresh(); };
 // 요일 긁기 — 처음 누른 요일의 반대 상태를 지나간 요일 모두에 칠한다. 움직였으면 손을 뗄 때 한 번에 적는다
 const DYP = { st: null };
@@ -3948,8 +3995,11 @@ function mapDistribute(cols, order, hs) {
 function mapLayout() {
   const m = document.querySelector('#v-map .mjs'); if (!m) return;
   const cards = m._order || [...m.children].filter(x => x.classList.contains('gcard'));
-  const n = mapColCount(m.clientWidth);
-  m.style.setProperty('--mz', mapFontScale(m.clientWidth, n).toFixed(3));   // 열이 적으면 글자도 크게
+  // 안 보이는 동안(폭 0 · 앱 나갔다 오는 중)에 잰 폭으로 열을 정하지 않는다 — 고른 열이 풀려 보였다 (HB 2026-10-13)
+  const w = m.clientWidth >= 200 ? m.clientWidth : (m._w || m.clientWidth);
+  const n = mapColCount(w);
+  m._w = w;
+  m.style.setProperty('--mz', mapFontScale(w, n).toFixed(3));   // 열이 적으면 글자도 크게
   m.innerHTML = '';
   const cols = []; for (let i = 0; i < n; i++) { const c = document.createElement('div'); c.className = 'mcol'; m.appendChild(c); cols.push(c); }
   cards.forEach(c => cols[0].appendChild(c));     // 같은 폭에서 높이를 잰다
@@ -3957,7 +4007,11 @@ function mapLayout() {
   mapDistribute(cols, cards, hs);
   m._order = cards; m._n = n;
 }
-window.addEventListener('resize', () => { const m = document.querySelector('#v-map .mjs'); if (m && m._n !== mapColCount(m.clientWidth)) mapLayout(); });
+window.addEventListener('resize', () => { const m = document.querySelector('#v-map .mjs'); if (m && m.clientWidth >= 200 && m._n !== mapColCount(m.clientWidth)) mapLayout(); });
+// 앱을 나갔다 오면 폭이 제자리로 돌아온 뒤 한 번 더 맞춘다 (iOS 는 나가는 동안 화면을 돌려 사진을 찍으며 폭을 바꾼다)
+const mapReLayout = () => setTimeout(() => { const m = document.querySelector('#v-map .mjs'); if (UI.tab === 'map' && m && m.clientWidth >= 200 && m._n !== mapColCount(m.clientWidth)) mapLayout(); }, 350);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') mapReLayout(); });
+window.addEventListener('pageshow', mapReLayout);
 // ── 지도 열 개수 — 폭 따라 2 · 3 · 4 열이 기본, 휴대폰에서 핀치로 바꾼다 (HB 2026-10-11) ──
 // 고른 값은 '기본이 몇 열인 폭에서 몇 열로' 로 이 기기에만 남긴다 → 아이패드를 돌려 기본이 바뀌어도 그 폭의 선택이 따로 산다.
 // 열을 줄이면 글자도 커진다(--mz). 한 단 폭이 늘어난 만큼 다 키우면 1열에서 너무 커서 0.55 제곱으로 누그러뜨린다.
@@ -3988,6 +4042,7 @@ document.addEventListener('touchstart', e => {
   PZ.hi = mapColW(w, 1) / mapColW(w, n);
   m.style.transformOrigin = PZ.ox + 'px ' + PZ.oy + 'px';
   m.classList.add('pinching');
+  if (!MT.on) $('v-map').classList.add('pz');
 }, { passive: true });
 document.addEventListener('touchmove', e => {
   if (!PZ.on) return;
@@ -4006,6 +4061,7 @@ document.addEventListener('touchmove', e => {
 ['gesturestart', 'gesturechange'].forEach(n => document.addEventListener(n, e => { if (UI.tab === 'map' && !UI.layers.length && e.target.closest && e.target.closest('#v-map')) e.preventDefault(); }, { passive: false }));
 function pzEnd() {
   PZ.on = false;
+  setTimeout(() => { const v = $('v-map'); if (v && !PZ.on) v.classList.remove('pz'); }, MD_SLIDE + 40);
   GS.suppress = Date.now();   // 손을 떼며 생기는 누르기는 삼킨다
   const m = PZ.m, w = PZ.w, n0 = PZ.n0, s = PZ.s;
   // 가장 가까운 열 — 배율을 로그로 견준다 (2배 · 반배가 같은 거리)
