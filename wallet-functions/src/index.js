@@ -117,7 +117,7 @@ async function onMsg(fid, id) {
   const m = md.data(); const ms = await members(fid);
   const kid = ms.find((x) => x.role === "kid" && x.kidId === m.kidId);
   const kidName = (kid && kid.name) || "아이";
-  const tag = { note: "쪽지", stamp: "칭찬 도장", mission: "미션", req: "용돈 요청", cpreq: "쿠폰 사용 요청" }[m.type] || "우체통";
+  const tag = { note: "쪽지", stamp: "칭찬 도장", mission: "미션", req: "용돈 요청", cpreq: "쿠폰 사용 요청", grant: "허락권" }[m.type] || "우체통";
   if (m.from === "kid" || (m.type === "mission" && m.status === "done")) {
     const title = m.type === "mission" ? `${kidName} · 미션 완료!` : `${kidName} · ${tag}`;
     const body = (m.amt && m.type !== "stamp" ? won(m.amt) + " · " : "") + (m.text || m.sticker || "");
@@ -127,9 +127,10 @@ async function onMsg(fid, id) {
   }
   // 부모님 → 아이
   const who = m.okName || m.fromName || "부모님";
-  const title = m.status === "ok" ? `${who}가 ${tag}을 승인했어요!` : m.status === "no" ? `${who}가 ${tag}에 답했어요` : m.type === "stamp" ? `${who}가 ${m.sticker || "⭐"} 도장을 찍었어요!` : `${who}에게서 ${tag}가 왔어요`;
+  const title = m.type === "grant" ? `${who}가 허락권을 보냈어요!` : m.status === "ok" ? `${who}가 ${tag}을 승인했어요!` : m.status === "no" ? `${who}가 ${tag}에 답했어요` : m.type === "stamp" ? `${who}가 ${m.sticker || "⭐"} 도장을 찍었어요!` : `${who}에게서 ${tag}가 왔어요`;
   const kids = ms.filter((x) => x.role === "kid" && x.kidId === m.kidId);
-  return { n: 1, sent: await push(fid, kids, title, m.text || m.refLabel || "", APP + "?go=mail") };
+  const body = m.type === "grant" ? (m.kind === "money" ? `용돈 +${won(m.amt)}` : (m.text || "") + (m.amt ? ` (${won(m.amt)}까지)` : "")) : m.text || m.refLabel || "";
+  return { n: 1, sent: await push(fid, kids, title, body, APP + "?go=mail") };
 }
 
 exports.walletPing = onRequest({ region: REGION, cors: true }, async (req, res) => {
@@ -166,3 +167,6 @@ exports.walletEvening = onSchedule({ schedule: "0 21 * * *", timeZone: TZ, regio
     if (lines.length) await push(f.id, ps, "오늘의 용돈 요약", lines.join("\n"), APP + "?go=rep");
   }
 });
+
+// 공부 친구들 (study/) — 같은 묶음으로 함께 올린다
+Object.assign(exports, require("./study"));

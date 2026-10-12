@@ -144,4 +144,20 @@ function mk(o) {
   sc.eq('⑦ 빈 저장 → 처음 상태', A.normState(null).books.length, 0);
 }
 
+// ── ⑧ 가족 · 서버 — 정해 둔 모양이 바뀌지 않았는지 ──
+{
+  const ver = [...HTML.matchAll(/v\. \d{2}-\d{4}-\d+/g)].map(x => x[0]);
+  sc.eq('⑧ 버전 두 곳이 같다 (2번째 줄 · APP_VERSION)', ver[0] === HTML.match(/const APP_VERSION = '([^']+)'/)[1], true);
+  sc.eq('⑧ 파이어베이스 앱 이름은 study (BLOCK7 · 용돈 친구들 로그인과 안 섞이게)', /initializeApp\(FB_CFG, 'study'\)/.test(HTML), true);
+  sc.eq('⑧ 아이 계정 주소는 kid.block7.my', /KID_DOMAIN = 'kid\.block7\.my'/.test(HTML), true);
+  const md = fs.readFileSync(path.join(__dirname, '..', 'docs', 'study', 'firebase-setup.md'), 'utf8');
+  sc.eq('⑧ 규칙 덩어리에 공부 칸 다섯(study · sphotos · sreviews · spromises · sremind)',
+    ['match /study/{kid}', 'match /sphotos/{sid}', 'match /sreviews/{rid}', 'match /spromises/{pid}', 'match /sremind/{rid}'].map(k => md.includes(k)), [true, true, true, true, true]);
+  sc.eq('⑧ 아이·부모 알림 토큰(stokens)을 스스로 고칠 수 있다', md.includes("hasOnly(['pname', 'notify', 'tokens', 'stokens'])"), true);
+  const W = fs.readFileSync(path.join(__dirname, '..', 'wallet-functions', 'src', 'index.js'), 'utf8');
+  sc.eq('⑧ 알림 서버가 공부 친구들 몫을 함께 내보낸다', W.includes('require("./study")'), true);
+  const WL = fs.readFileSync(path.join(__dirname, '..', 'wallet', 'index.html'), 'utf8');
+  sc.eq('⑧ 용돈 친구들이 허락권(grant)을 받는다 — 용돈 +N원은 받을 예정 돈으로', /m\.type==='grant' && m\.kind==='money'/.test(WL), true);
+}
+
 sc.done();

@@ -1,6 +1,6 @@
 // 공부 친구들 — 오프라인에서도 열리게 하는 서비스워커 + 공부 시간 알림(S-4) 받기.
 // ⚠️ 알림 누르기(notificationclick)는 importScripts 보다 **먼저** 등록한다 (용돈 친구들 wallet/sw.js 와 같은 까닭).
-const C = 'study-v1';
+const C = 'study-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon.png', 'icon-192.png'];
 self.addEventListener('notificationclick', e => {
   const d = (e.notification && e.notification.data) || {}, f = d.FCM_MSG || {};
