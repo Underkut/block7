@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1010-18  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1012-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6326,7 +6326,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1010-18";
+const APP_VERSION = "v. 26-1012-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7893,7 +7893,7 @@ try{
   <div class="logo" id="logoHome" style="cursor:pointer;">BLOCK<b>7</b></div>
   <!-- There — 할일뷰 2·3단에서만, 로고 바로 오른쪽 (v26-0923-5 T-4, HB 3-4).
        특정 말씀 없이 연다 (ref 빈칸) — 합계에는 든다. 자리(left)는 renderLayout 이 잰다. -->
-  <button class="gnb-there" id="gnbThereBtn" onclick="openThere('')" aria-label="There" title="There"><span class="there-ic" data-there-ic></span></button>
+  <button class="gnb-there" id="gnbThereBtn" onclick="openThere('',{src:'gnb'})" aria-label="There" title="There"><span class="there-ic" data-there-ic></span></button>
   <!-- 성경 — There 오른쪽 (v26-1006-6, HB 8-2). 마지막 읽던 곳을 연다. -->
   <button class="gnb-bible" id="gnbBibleBtn" onclick="bibleOpenLast('gnb')" aria-label="성경" title="성경"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg></button>
   <button class="rp-gear" id="gnbLayoutBtn" style="display:none;" onclick="openRpConfig()" title="위젯 설정">
@@ -9307,7 +9307,7 @@ try{
       <button class="sw-iconbtn" id="swDeeperBtn" aria-label="성경" title="성경"
               onclick="bibleOpenLast()"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></svg></button>
       <button class="sw-iconbtn" id="swThereBtn" aria-label="There" title="There"
-              onclick="openThere('')"><span class="there-ic" data-there-ic></span></button>
+              onclick="openThere('',{src:'home'})"><span class="there-ic" data-there-ic></span></button>
       <button class="sw-iconbtn" id="swFilterBtn" aria-label="말씀 모음"
               title="말씀 모음 설정" onclick="swOpenCollFilter()">
         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round">
@@ -12776,7 +12776,7 @@ function _vbThereEl(v){
   b.setAttribute('aria-label','There');
   b.dataset.ref=_reactKey(v)||'';
   b.innerHTML=_thereIcHTML();
-  b.onclick=e=>{e.stopPropagation();openThere(b.dataset.ref);};
+  b.onclick=e=>{e.stopPropagation();openThere(b.dataset.ref,{src:'bar'});};
   return b;
 }
 
@@ -14145,7 +14145,11 @@ function recordVerseShare(ref){
 // ══ There — 기도·예배 시간 기록 (v26-0923-5, HB) ══════════════════════
 // There 전체화면이 **열려 있던 시간**을 남긴다. 화면에는 안 보이고, 대시보드
 // 리듬의 'There' 가 읽는다.
-//   ST.verseThereLog = {"YYYY-MM-DD":[{ref,time:"HH:MM",t:시작ms,d:초,sec}]}
+//   ST.verseThereLog = {"YYYY-MM-DD":[{ref,time:"HH:MM",t:시작ms,d:초,sec,app,src}]}
+// · app · src (v26-1012-1, HB — 통합 There 대시보드를 위해 '어디서'): app = 'block7' | 'sweeter'
+//   (두 제품이 같은 칸을 같이 쓰므로 어느 쪽에서 열었는지 남긴다), src = 어느 단추에서 열었나 —
+//   gnb(BLOCK7 위 메뉴) · home(Sweeter 홈 위) · bar(상단 말씀 영역) · full(말씀 전체화면) · widget(말씀 위젯) ·
+//   tile(Sweeter 타일) · bible(성경 화면 위) · bible-menu(성경 절 메뉴). 그 전 기록은 둘 다 없다(빈칸 = 모름).
 // · 모양이 좋아요·공유와 같다 → 병합(_mgLogFlat)·백업·가져오기를 그대로 탄다.
 //   항목마다 시작 시각(t, ms)이 들어 있어 같은 내용이 둘로 겹칠 일이 없다.
 // · 날짜는 **시작한 날**이다. 자정을 넘겨 기도해도 한 건이 두 날로 쪼개지지 않는다.
@@ -14157,8 +14161,8 @@ function recordVerseShare(ref){
 const THERE_MIN_SEC=10;
 let _thereSess=null;          // 지금 열려 있는 한 번 {ref,t0,key,time,sec}
 function getThereLog(){ if(!ST.verseThereLog)ST.verseThereLog={}; return ST.verseThereLog; }
-function _thereBegin(ref){
-  _thereSess={ref:ref||'',t0:Date.now(),key:_calKey(),time:_nowHM(),sec:_secIdNowAll()};
+function _thereBegin(ref,src){
+  _thereSess={ref:ref||'',src:src||'',t0:Date.now(),key:_calKey(),time:_nowHM(),sec:_secIdNowAll()};
 }
 // 지금 세션을 끝내고 남긴다. 남긴 항목(없으면 null)을 돌려준다.
 function _thereCommit(){
@@ -14168,7 +14172,7 @@ function _thereCommit(){
   if(!(d>=THERE_MIN_SEC))return null;
   const log=getThereLog();
   if(!log[s.key])log[s.key]=[];
-  const en={ref:s.ref,time:s.time,t:s.t0,d,sec:s.sec};
+  const en={ref:s.ref,time:s.time,t:s.t0,d,sec:s.sec,app:(typeof APP_PRODUCT==='string'?APP_PRODUCT:''),src:s.src||''};
   log[s.key].push(en);
   rawSave();
   return en;
@@ -15567,7 +15571,7 @@ function _brVmRun(act){
     const ov=document.getElementById('keepPickOverlay'),md=document.getElementById('keepPickModal');
     if(ov)ov.style.zIndex='5150';if(md)md.style.zIndex='5160';openKeepPicker(ref);
   }else if(act==='mem')_reactWithToast('mem',ref);
-  else if(act==='there'){if(typeof openThere==='function')openThere(ref);}
+  else if(act==='there'){if(typeof openThere==='function')openThere(ref,{src:'bible-menu'});}
   // Deeper — 이미 앱 안 성경이므로 **대한성서공회 사이트**(개역개정)로 그 절을 연다
   else if(act==='deeper'){recordVerseDeeper(ref);BibleLinkProvider.open(BibleLinkProvider.createBskUrlFromRef(ref));}
   else if(act==='even')openEvenDeeperFromRef(ref);
@@ -16136,7 +16140,7 @@ function _brBind(){
   document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});
   // 헤더 좌상단 — There · 대시보드
   // 우상단 There = 지금 화면에 보이는 장절 (HB v26-1007-11). 하나도 안 잡히면 장만
-  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere(_brViewRef());};
+  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere(_brViewRef(),{src:'bible'});};
   $('brDash').onclick=_brOpenDash;
   $('brDashClose').onclick=()=>$('brDashP').classList.remove('on');
   $('bdChips').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brDashRange=b.dataset.r;_brDashRender();};
@@ -18477,7 +18481,7 @@ function openThere(ref,opts){
   opts=opts||{};
   const el=document.getElementById('thereFx');if(!el||_tf.run)return;
   _tfWire();
-  _tf.preview=!!opts.preview;_tf.ref=ref||'';_tf.sec=-1;
+  _tf.preview=!!opts.preview;_tf.ref=ref||'';_tf.src=opts.src||'';_tf.sec=-1;
   const tune=document.getElementById('tfTune');if(tune)tune.style.display=_tf.preview?'':'none';
   el.style.transition='';el.style.transform='';el.style.opacity='';
   _tfApplyTheme(el);
@@ -18486,7 +18490,7 @@ function openThere(ref,opts){
   _tfSize();_tf.P=[];_tfBuildSprites();_tfSyncUI();
   _tf.run=true;_tf.t0=_tf.last=performance.now();
   _tf.raf=requestAnimationFrame(_tfFrame);
-  if(!_tf.preview)_thereBegin(_tf.ref);
+  if(!_tf.preview)_thereBegin(_tf.ref,_tf.src);
 }
 function closeThere(){
   const el=document.getElementById('thereFx');if(!el||!_tf.run)return;
@@ -18504,7 +18508,7 @@ function _thereRecorded(){
 // 말씀 전체화면 우하단 단추
 function openThereFromVf(){
   const v=_vfCurrentVerse();
-  openThere(_reactKey(v));
+  openThere(_reactKey(v),{src:'full'});
 }
 // 설정창 '세팅하러 가기'
 function openThereTune(){openThere('',{preview:true});}
@@ -18513,7 +18517,7 @@ function openThereTune(){openThere('',{preview:true});}
 document.addEventListener('visibilitychange',()=>{
   if(!_tf.run||_tf.preview)return;
   if(document.visibilityState==='hidden'){if(_thereCommit())_thereRecorded();}
-  else if(!_thereSess)_thereBegin(_tf.ref);
+  else if(!_thereSess)_thereBegin(_tf.ref,_tf.src);
 });
 window.addEventListener('pagehide',()=>{if(_tf.run&&!_tf.preview)_thereCommit();});
 // ── 말씀 공유 (우하단 종이비행기 → 이미지 / 텍스트) ──
@@ -31123,7 +31127,7 @@ function vcAct(id,kind){
   const cfg=_vcGet(id);const v=_vcCurrent(cfg,id);
   if(!v)return;
   if(kind==='share'){openVfShareFor(v);return;}
-  if(kind==='there'){openThere(_vcReactKeyOf(v));return;}
+  if(kind==='there'){openThere(_vcReactKeyOf(v),{src:'widget'});return;}
   if(kind==='like'||kind==='mem')_reactWithToast(kind,_vcReactKeyOf(v));
   else if(kind==='deeper')openDeeperFromRef(v.k||v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.k||v.ref);
@@ -49504,7 +49508,7 @@ function _swInitGestures(){
     // There — 지금 보이는 칸이 말씀이면 그 말씀으로, 아니면 말씀 없이
     if(e.target.closest('[data-swthere]')){
       const t=_SW_TILES[i],cur=_swStrip(t)[t.p];
-      openThere((cur&&cur.kind==='val'&&cur.v&&cur.v.verse)?_reactKey(cur.v.verse):'');
+      openThere((cur&&cur.kind==='val'&&cur.v&&cur.v.verse)?_reactKey(cur.v.verse):'',{src:'tile'});
       e.preventDefault();return;
     }
     if(e.target.closest('[data-swkeep]')){
