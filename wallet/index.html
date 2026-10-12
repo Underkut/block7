@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1012-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1013-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -696,7 +696,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1012-1";
+const APP_VERSION = "v. 26-1013-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2747,7 +2747,9 @@ const msgPath = id => 'families/'+FAM.fid+'/msgs/'+id;
 const fmtAt = ms => { const d = new Date(ms), t = todayStr(); return dstr(d)===t ? d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : (d.getMonth()+1)+'/'+d.getDate(); };
 // 고쳐서 승인 — 부모님이 아이가 요청한 금액을 고쳐 허락한 기록(m.edited, 원래 금액 m.amt0)
 const editedTxt = m => m.edited && m.amt0 != null && m.amt0 !== m.amt ? ' ('+won(m.amt0)+' → '+won(m.amt)+')' : '';
-const MSG_TAG = {note:'쪽지', stamp:'칭찬 도장', mission:'미션', req:'용돈 요청', cpreq:'쿠폰'};
+const MSG_TAG = {note:'쪽지', stamp:'칭찬 도장', mission:'미션', req:'용돈 요청', cpreq:'쿠폰', grant:'허락권'};
+// 허락권(type:'grant') — 공부 친구들(study/)에서 부모님이 보낸다. kind 'allow' = 내 돈으로 사도 된다는 허락(amt=한도) · 'money' = 용돈 +amt원(받을 예정 돈으로 한 번만)
+const grantTxt = m => m.kind==='money' ? '용돈 +'+won(m.amt) : (m.text||'')+(m.amt ? ' ('+won(m.amt)+'까지)' : '');
 async function mailSend(o, okMsg){
   try{ await fbLoad(); const u = FB.auth.currentUser || await authReady(); if(!u) throw {code:'auth'};
     const kid = FAM.role==='kid';
@@ -2782,7 +2784,7 @@ function kidMailUpdate(){
   if(!first && fresh.length){
     const m = fresh[0], who = m.from==='parent' ? (m.fromName||'부모님') : (m.okName||'부모님');
     const txt = m.from==='kid' && m.goal ? (m.status==='ok' ? who+'가 '+(m.edited ? '금액을 고쳐서 ' : '')+'사도 된다고 허락했어요!' : who+'가 "다음에"라고 했어요') : m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 '+(m.edited ? '고쳐서 ' : '')+'승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
-      : m.type==='stamp' ? who+'가 '+(m.sticker||'⭐')+' 도장을 찍었어요!' : m.type==='mission' ? (m.status==='ok' ? '미션 성공! '+who+'가 확인했어요' : who+'가 미션을 보냈어요') : who+'에게서 쪽지가 왔어요';
+      : m.type==='grant' ? who+'가 허락권을 보냈어요: '+grantTxt(m) : m.type==='stamp' ? who+'가 '+(m.sticker||'⭐')+' 도장을 찍었어요!' : m.type==='mission' ? (m.status==='ok' ? '미션 성공! '+who+'가 확인했어요' : who+'가 미션을 보냈어요') : who+'에게서 쪽지가 왔어요';
     sfx('win'); buzz([20,40,20]); toast(txt + (fresh.length>1 ? ' (+'+(fresh.length-1)+')' : ''));
   }
   renderMailBtn(); if(!MIR) render();
@@ -2796,6 +2798,7 @@ function mailApply(){
     if(m.type==='mission'){ if(m.amt > 0) S.tx.push({id:uid(), t:'in', amt:m.amt, memo:who, cat:null, date:today, at:Date.now(), note:('미션: '+(m.text||'')).slice(0,60), acct:'cash', plan:null, ch:null}); }
     else if(m.type==='req' && m.goal){ const g = S.goals.find(x => x.k===m.goal); if(g){ g.ok = true; if(m.edited && m.amt > 0) g.price = m.amt; } }
     else if(m.type==='req') S.exp.push({id:uid(), amt:m.amt, who, ch:null, note:(m.text||'').slice(0,60), acct:'cash', date:null, at:Date.now()});
+    else if(m.type==='grant' && m.kind==='money' && m.amt > 0) S.exp.push({id:uid(), amt:m.amt, who, ch:null, note:('허락권(공부 친구들)'+(m.text && m.text!=='용돈' ? ': '+m.text : '')).slice(0,60), acct:'cash', date:null, at:Date.now()});
     else if(m.type==='cpreq'){ const c = S.cps.find(x => x.id===m.cpId); if(c && !c.used){ c.used = today; if(c.kind==='money') S.tx.push({id:uid(), t:'in', amt:(m.edited && m.amt > 0 ? m.amt : c.amt), memo:who, cat:null, date:today, at:Date.now(), note:'쿠폰: '+c.n, acct:'cash', plan:null, ch:null}); } }
     else return;
     S.applied.push(m.id); ch++;
@@ -2818,6 +2821,7 @@ function kidMailSheet(keep){
     else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</span>' : st(m)}`;
     else if(m.type==='req') body = `<p><span class="mtag">용돈 요청</span><b>${won(m.amt)}</b> · ${esc(m.text||'')}</p>${st(m)}${m.status==='ok' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : ''}`;
     else if(m.type==='cpreq') body = `<p><span class="mtag">쿠폰</span>${esc(m.text||'')}</p>${st(m)}`;
+    else if(m.type==='grant') body = `<p><span class="mtag">허락권</span><b>${esc(grantTxt(m))}</b>${m.until ? ' · '+esc(m.until.slice(5).replace('-','/'))+'까지' : ''}</p>${m.kind==='money' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : m.doneAt ? '<span class="mchip ok">썼어요</span>' : `<button class="gb green sm" data-ma="used" data-id="${m.id}">썼어요!</button>`}`;
     else body = `${m.text ? '<p>'+esc(m.text)+'</p>' : ''}${m.sticker ? '<div class="mstk">'+m.sticker+'</div>' : ''}${!mine ? `<div class="mq"><button data-ma="re" data-t="고마워요!">고마워요!</button><button data-ma="re" data-t="사랑해요 ❤️">사랑해요 ❤️</button><button data-ma="re" data-t="알겠어요">알겠어요</button></div>` : ''}`;
     return `<div class="mc ${mine?'mine':''} ${m.readKid||mine?'':'new'}"><span class="mav">${face(mine ? 'pig' : 'bear')}</span><div class="mb"><div class="mh"><b>${esc(who)}</b><small>${fmtAt(m.at)}</small>
       ${!mine ? `<button class="mk ${m.keep?'on':''}" data-ma="keep" data-id="${m.id}" aria-label="보관">♥</button>` : ''}<button class="mx" data-ma="hide" data-id="${m.id}" aria-label="지우기">✕</button></div>${body}</div></div>`;
@@ -2833,6 +2837,7 @@ function kidMailSheet(keep){
     const a = b.dataset.ma, id = b.dataset.id, m = MAIL.find(x => x.id===id);
     if(a==='re') mailSend({type:'note', text:b.dataset.t}, '보냈어요!');
     else if(a==='done'){ mailUpd(id, {status:'done', doneAt:FB.fv.serverTimestamp()}); toast('부모님께 알렸어요. 확인하면 용돈이 들어와요!'); }
+    else if(a==='used'){ if(!confirm('이 허락권을 썼나요?')) return; mailUpd(id, {doneAt:FB.fv.serverTimestamp()}); toast('썼어요! 공부 친구들에도 표시돼요'); }
     else if(a==='keep'){ mailUpd(id, {keep:!m.keep}); }
     else if(a==='hide'){ if(!confirm('이 쪽지를 지울까요?'+(m && m.type==='stamp' ? '\n(기록에 붙은 도장은 그대로 남아요)' : ''))) return; mailUpd(id, {hide:true}); }
   });
@@ -2931,6 +2936,7 @@ function renderPMail(){
     : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</em>' : stl(m)}`
     : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}`
     : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}`
+    : m.type==='grant' ? `🎫 <b>허락권</b> · ${esc(grantTxt(m))} ${m.kind==='money' ? '' : m.doneAt ? '<em class="w-chip ok">썼어요</em>' : '<em class="w-chip">안 씀</em>'}`
     : `${m.text ? esc(m.text) : ''}${m.sticker ? ' <span class="w-bs">'+m.sticker+'</span>' : ''}`;
   const thread = ms.slice(0,40).reverse();
   let lastDay = '';

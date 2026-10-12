@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1013-1 -->
+<!-- 공부 친구들 v. 26-1013-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -210,7 +210,7 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .pchips button.on{border:2px solid var(--red);background:#FFF0EC;color:#B53A22}
 .pinp{width:100%;border:1px solid #D5D9E0;border-radius:10px;padding:9px 10px;font-size:15px}
 .pnote{font-size:12.5px;color:#5B6473;line-height:1.5}
-.pphoto{width:100%;border-radius:10px;border:1px solid #D5D9E0;margin-top:8px}
+.pphoto{width:100%;max-height:420px;object-fit:contain;background:#00000008;border-radius:10px;border:1px solid #D5D9E0;margin-top:8px}
 @media (prefers-color-scheme: dark){ #parent{background:#14171C;color:#E6E9EE} #parent .ph,.pc{background:#1E2229;border-color:#2C313A} .pc td{border-color:#2C313A} .pbtn,.pchips button,.pinp,#parent .kids button{background:#1E2229;color:#E6E9EE;border-color:#3A404B} .pbtn.dk{background:#E6E9EE;color:#14171C} #parent .ptabs button.on{color:#fff;border-bottom-color:#fff} .pnote,.pc th,.pc .kv span:nth-child(odd){color:#9AA3B2} }
 </style>
 </head>
@@ -489,7 +489,7 @@ const mondayOf = s => addDays(s, -((dowOf(s) + 6) % 7));
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1013-1';
+const APP_VERSION = 'v. 26-1013-2';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -952,6 +952,519 @@ function renderReward() {
     <div class="h2"><b>별 모으는 법</b></div><div class="box" style="font-size:14px;line-height:1.7">· 퀘스트를 끝내고 부모님께 보내요<br>· 부모님이 확인하면 별을 받아요 (오래 켜 둔 시간은 세지 않아요)<br>· 별이 쌓이면 레벨이 오르고 친구가 자라요</div>`;
 }
 
+/* ───────── 가족 · 아이 계정 (S-3) ─────────
+ * 용돈 친구들과 **같은 가족 칸**(families/{가족}) 을 쓴다. 두 앱을 잇는 것은 kidId 하나.
+ *   아이 계정 = 부모님이 만든 '아이디 + 숫자 6자리' (속으로는 이메일 로그인, 주소는 아이디@kid.block7.my)
+ *   families/{f}/members/{아이uid} {role:'kid', kidId, name, login}  ·  wusers/{아이uid} {fid, kidId, name, role:'kid', login}
+ *   families/{f}/study/{kidId}    아이 폰의 공부 상태 사본(한 방향 — 아이 폰이 원본)
+ *   families/{f}/sphotos/{기록id}  채점 사진 (문서 한도 때문에 따로)
+ *   families/{f}/sreviews/{id}    부모님 확인 {kidId, sid, status:'ok'|'redo', stars, coins, stamp, text, by} — 아이 폰이 한 번만 반영
+ *   families/{f}/spromises/{id}   부모님이 정한 약속 (S-5)
+ *   families/{f}/msgs/{id}        type:'grant' 허락권 — 용돈 친구들 우체통과 같은 칸 (S-5)
+ * ⚠️ 파이어베이스 앱 이름을 'study' 로 따로 둔다 — 같은 주소의 BLOCK7 · 용돈 친구들과 로그인 상태가 섞이지 않게. */
+const FB_CFG = {apiKey:'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain:'block7-8f24e.firebaseapp.com', projectId:'block7-8f24e', storageBucket:'block7-8f24e.firebasestorage.app', messagingSenderId:'517626689480', appId:'1:517626689480:web:92ea52eeebc24277ef72fd'};
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FAM_KEY = 'study.fam', KID_DOMAIN = 'kid.block7.my';
+let FB = null, FBP = null;
+function fbLoad() {
+  if (FB) return Promise.resolve(FB);
+  if (FBP) return FBP;
+  const one = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('net')); document.head.appendChild(s); });
+  FBP = FB_JS.reduce((p, src) => p.then(() => (window.firebase && src.includes('-app-') ? null : (window.firebase && src.includes('-auth-') && firebase.auth) || (window.firebase && src.includes('-firestore-') && firebase.firestore) ? null : one(src))), Promise.resolve()).then(() => {
+    const app = firebase.apps.find(a => a.name === 'study') || firebase.initializeApp(FB_CFG, 'study');
+    const auth = app.auth(), db = app.firestore();
+    if (window.STUDY_EMU) { auth.useEmulator('http://127.0.0.1:9099', {disableWarnings: true}); db.useEmulator('127.0.0.1', 8080); }
+    FB = {app, auth, db, fv: firebase.firestore.FieldValue, ts: firebase.firestore.Timestamp};
+    return FB;
+  }).catch(e => { FBP = null; throw e; });
+  return FBP;
+}
+const authReady = () => new Promise(res => { const u = FB.auth.onAuthStateChanged(x => { u(); res(x); }); });
+const curUser = async () => { await fbLoad(); return FB.auth.currentUser || await authReady(); };
+function famLoad() { try { const o = JSON.parse(localStorage.getItem(FAM_KEY) || 'null'); if (o && o.fid && (o.role === 'kid' || o.role === 'parent')) return o; } catch (e) {} return null; }
+function famSave() { try { FAM ? localStorage.setItem(FAM_KEY, JSON.stringify(FAM)) : localStorage.removeItem(FAM_KEY); } catch (e) {} }
+var FAM = famLoad();
+const fbErr = e => { const c = (e && e.code) || ''; if (/network|unavailable/.test(c) || (e && e.message === 'net')) return '인터넷 연결을 확인해 주세요';
+  if (/permission/.test(c)) return '권한이 없어요 (서버 규칙을 확인해 주세요)'; if (/invalid-email/.test(c)) return '아이디나 이메일 모양이 이상해요';
+  if (/wrong-password|invalid-credential|user-not-found|invalid-login/.test(c)) return '아이디(이메일) 또는 비밀번호가 달라요'; if (/email-already/.test(c)) return '이미 있는 아이디예요. 다른 아이디로 해 주세요';
+  if (/weak-password/.test(c)) return '비밀번호는 6자 이상이어야 해요'; if (/too-many/.test(c)) return '너무 여러 번 틀렸어요. 잠시 뒤에 해 주세요';
+  if (/admin-restricted|operation-not-allowed/.test(c)) return '아직 서버에서 이 로그인이 켜지지 않았어요';
+  return '잠시 뒤에 다시 해 주세요'; };
+const kidEmail = id => String(id).trim().toLowerCase() + '@' + KID_DOMAIN;
+const okLogin = id => /^[a-z0-9]{3,12}$/.test(String(id).trim().toLowerCase());
+const isKid = () => !!(FAM && FAM.role === 'kid');
+const isParentView = () => !!(FAM && FAM.role === 'parent');
+const canSend = () => isKid();
+
+/* 아이 폰 → 클라우드 사본 (2초 모아서 한 번) */
+let cT = 0, cBusy = false, cAgain = false;
+saveHooks.push(() => { if (isKid()) { clearTimeout(cT); cT = setTimeout(cloudPush, 2000); } });
+function cloudJson() { const o = Object.assign({}, S, {run: S.run ? {key: S.run.key, date: S.run.date, startAt: S.run.startAt} : null}); return JSON.stringify(o); }
+async function cloudPush() {
+  if (!isKid()) return;
+  if (cBusy) { cAgain = true; return; }
+  // 대량 손실 방어: 이 폰이 비었는데 클라우드엔 기록이 있으면 올리지 않는다
+  if (!S.sessions.length && !S.books.length && (FAM.cloudN || 0) > 0) { FAM.blocked = true; famSave(); return; }
+  cBusy = true;
+  try {
+    const u = await curUser(); if (!u) throw {code: 'auth'};
+    await FB.db.doc('families/' + FAM.fid + '/study/' + FAM.kidId).set({json: cloudJson(), n: S.sessions.length, books: S.books.length, name: FAM.name || '', v: APP_VERSION, at: FB.fv.serverTimestamp()});
+    FAM.last = Date.now(); FAM.cloudN = S.sessions.length + S.books.length; FAM.blocked = false; FAM.err = ''; famSave();
+    if (typeof syncReminders === 'function') syncReminders();
+  } catch (e) { FAM.err = fbErr(e); famSave(); }
+  cBusy = false; if (cAgain) { cAgain = false; cloudPush(); }
+}
+/* 끝! → 부모님께 보내기 */
+async function sendSession(sess, photo) {
+  sess.status = 'sent'; sess.sentAt = Date.now(); save();
+  toast('보냈어요! 부모님이 확인하면 별을 받아요 · 코인 +' + sess.coins, 3200);
+  try {
+    await curUser();
+    if (photo) { await FB.db.doc('families/' + FAM.fid + '/sphotos/' + sess.id).set({kidId: FAM.kidId, data: photo, at: FB.fv.serverTimestamp()}); sess.photo = true; save(); }
+    await cloudPush();
+    if (typeof ping === 'function') ping('/report', {kidId: FAM.kidId, sid: sess.id});
+  } catch (e) { toast('보내기를 다 못 했어요 — ' + fbErr(e) + '. 인터넷이 되면 다시 올라가요'); }
+}
+/* 부모님 확인 · 약속 · 허락권 받기 (아이 폰) */
+let kidUnsubs = [], REV = [], PROMS = [], GRANTS = [];
+async function kidListen() {
+  if (!isKid() || kidUnsubs.length) return;
+  try {
+    const u = await curUser(); if (!u) return;
+    const col = n => FB.db.collection('families/' + FAM.fid + '/' + n).where('kidId', '==', FAM.kidId);
+    const at = x => x && x.toMillis ? x.toMillis() : 0;
+    kidUnsubs.push(col('sreviews').onSnapshot(qs => {
+      REV = qs.docs.map(d => Object.assign({id: d.id}, d.data()));
+      let n = 0, last = null; REV.forEach(r => { if (applyReview(S, r)) { n++; last = r; } });
+      if (n) { save(); render(); confetti(); sfx('win'); buzz([30, 60, 30]);
+        toast(last.status === 'ok' ? (last.by || '부모님') + '가 확인했어요! 별 +' + (last.stars || 1) + (last.stamp ? ' · ' + last.stamp : '') : (last.by || '부모님') + '가 한 번 더 해 보재요', 3600); }
+    }, () => {}));
+    kidUnsubs.push(col('spromises').onSnapshot(qs => { PROMS = qs.docs.map(d => Object.assign({id: d.id}, d.data(), {since: at(d.data().at)})); if (TAB === 'reward') render(); }, () => {}));
+    kidUnsubs.push(col('msgs').onSnapshot(qs => {
+      const before = new Set(GRANTS.map(g => g.id)), first = !GRANTS.length && !kidListen.got;
+      GRANTS = qs.docs.map(d => Object.assign({id: d.id}, d.data(), {at: at(d.data().at)})).filter(m => m.type === 'grant').sort((a, b) => b.at - a.at);
+      kidListen.got = true;
+      const fresh = GRANTS.filter(g => !before.has(g.id));
+      if (!first && fresh.length) { confetti(); sfx('win'); toast('허락권이 왔어요: ' + fresh[0].text, 3600); }
+      if (TAB === 'reward') render(); header();
+    }, () => {}));
+  } catch (e) {}
+}
+function kidStop() { kidUnsubs.forEach(f => f()); kidUnsubs = []; REV = []; PROMS = []; GRANTS = []; }
+
+/* 아이 로그인 */
+function kidLoginSheet() {
+  sheet('아이 계정으로 로그인', `<div class="box"><div class="hint" style="margin-top:0">부모님이 만들어 준 <b>아이디</b>와 <b>숫자 6자리</b>를 넣어요.</div>
+      <div class="lab" style="margin-top:10px">아이디</div><input class="inp" id="klId" autocapitalize="none" autocomplete="username" maxlength="12" placeholder="예) ruru">
+      <div class="lab" style="margin-top:10px">숫자 6자리</div><input class="inp" id="klPw" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" placeholder="● ● ● ● ● ●" style="letter-spacing:6px"></div>
+    <button class="big" id="klGo">들어가기</button><div class="hint" style="text-align:center">계정이 없으면 부모님 폰에서 만들어요 (부모님 로그인 → 아이 계정)</div>`);
+  $('klGo').onclick = async () => {
+    const id = $('klId').value.trim().toLowerCase(), pw = $('klPw').value.trim();
+    if (!okLogin(id)) { toast('아이디는 영어 소문자·숫자 3~12자예요'); return; }
+    if (!/^\d{6}$/.test(pw)) { toast('숫자 6자리를 넣어 주세요'); return; }
+    $('klGo').disabled = true; toast('들어가는 중…');
+    try {
+      await fbLoad(); const r = await FB.auth.signInWithEmailAndPassword(kidEmail(id), pw);
+      const w = await FB.db.doc('wusers/' + r.user.uid).get();
+      if (!w.exists || w.data().role !== 'kid') { await FB.auth.signOut(); throw {code: 'invalid-credential'}; }
+      const j = w.data();
+      const cs = await FB.db.doc('families/' + j.fid + '/study/' + j.kidId).get();
+      const cloud = cs.exists ? cs.data() : null, cloudN = cloud ? (cloud.n || 0) + (cloud.books || 0) : 0;
+      const link = () => { FAM = {fid: j.fid, role: 'kid', kidId: j.kidId, name: j.name || '', login: id, at: Date.now(), cloudN}; famSave(); kidListen(); };
+      const useCloud = () => { let o; try { o = JSON.parse(cloud.json); } catch (e) { o = null; } const keep = S.run; S = normState(o); if (!S.run && keep) S.run = keep; if (S.run && !S.run.seg) S.run = null; link(); save(); closeSheet(); render(); toast('클라우드 기록을 되살렸어요!'); };
+      const useLocal = () => { link(); FAM.cloudN = 0; famSave(); cloudPush(); closeSheet(); render(); toast('들어왔어요! 이제 부모님께 보낼 수 있어요'); };
+      if (!S.nick && j.name) S.nick = j.name;
+      if (!cloud || !cloudN) return useLocal();
+      if (!S.sessions.length && !S.books.length) return useCloud();
+      sheet('어느 기록을 쓸까요?', `<div class="box">이 폰에도, 클라우드에도 기록이 있어요. 하나를 고르면 다른 하나는 사라져요.</div>
+        <button class="big ghost" id="kcLocal">이 폰 기록 (문제집 ${S.books.length} · 기록 ${S.sessions.length})</button><div style="height:10px"></div><button class="big" id="kcCloud">클라우드 기록 (문제집 ${cloud.books || 0} · 기록 ${cloud.n || 0})</button>`);
+      $('kcLocal').onclick = () => { if (confirm('클라우드 기록을 이 폰 기록으로 바꿀까요?')) useLocal(); };
+      $('kcCloud').onclick = () => { if (confirm('이 폰 기록을 클라우드 기록으로 바꿀까요?')) useCloud(); };
+    } catch (e) { toast(fbErr(e)); if ($('klGo')) $('klGo').disabled = false; }
+  };
+}
+/* 부모님 로그인 (용돈 친구들 · BLOCK7 계정 그대로) */
+function parentLoginSheet(mode) {
+  mode = mode || 'in';
+  sheet(mode === 'in' ? '부모님 로그인' : '부모님 가입', `<div class="box"><div class="hint" style="margin-top:0">용돈 친구들 · BLOCK7 계정이 있으면 그대로 써요. 같은 가족으로 이어져요.</div>
+      <input class="inp" id="plEm" type="email" inputmode="email" autocomplete="username" placeholder="이메일" style="margin-top:10px">
+      <input class="inp" id="plPw" type="password" autocomplete="${mode === 'in' ? 'current-password' : 'new-password'}" placeholder="비밀번호 (6자 이상)" style="margin-top:8px"></div>
+    <button class="big" id="plGo">${mode === 'in' ? '로그인' : '가입하기'}</button><button class="linkbtn" id="plSw">${mode === 'in' ? '처음이에요 — 가입하기' : '이미 계정이 있어요 — 로그인'}</button>`);
+  $('plSw').onclick = () => parentLoginSheet(mode === 'in' ? 'up' : 'in');
+  $('plGo').onclick = async () => {
+    const em = $('plEm').value.trim(), pw = $('plPw').value; if (!em || !pw) { toast('이메일과 비밀번호를 써 주세요'); return; }
+    if (em.toLowerCase().endsWith('@' + KID_DOMAIN)) { toast('아이 계정은 \'아이 계정으로 로그인\' 에서 들어가요'); return; }
+    $('plGo').disabled = true;
+    try { await fbLoad(); const r = mode === 'in' ? await FB.auth.signInWithEmailAndPassword(em, pw) : await FB.auth.createUserWithEmailAndPassword(em, pw);
+      const fid = await ensureFamily(r.user); FAM = {fid, role: 'parent', email: em, at: Date.now()}; famSave(); closeSheet(); showParent(); toast('부모님으로 들어왔어요'); }
+    catch (e) { toast(fbErr(e)); if ($('plGo')) $('plGo').disabled = false; }
+  };
+}
+async function ensureFamily(u) {
+  const w = await FB.db.doc('wusers/' + u.uid).get();
+  if (w.exists && w.data().role === 'kid') { await FB.auth.signOut(); throw {code: 'invalid-credential'}; }
+  if (w.exists && w.data().fid) return w.data().fid;
+  const f = FB.db.doc('families/' + u.uid);
+  if (!(await f.get().catch(() => null) || {}).exists) await f.set({owner: u.uid, at: FB.fv.serverTimestamp()});
+  await FB.db.doc('families/' + u.uid + '/members/' + u.uid).set({role: 'parent', email: u.email || ''});
+  await FB.db.doc('wusers/' + u.uid).set({fid: u.uid});
+  return u.uid;
+}
+function famLogout() {
+  if (!confirm(isKid() ? '로그아웃할까요?\n이 폰의 기록은 그대로 남아요.' : '로그아웃할까요?')) return;
+  const was = FAM; FAM = null; famSave(); kidStop(); parentStop(); closeFull('parent'); closeSheet();
+  fbLoad().then(() => FB.auth.signOut()).catch(() => {});
+  toast('로그아웃했어요'); render(); return was;
+}
+function famSettings() {
+  const box = $('stFam'); if (!box) return;
+  if (!FAM) box.innerHTML = `<div class="box"><div class="lab">가족과 연결</div><div class="hint" style="margin-top:0">연결하면 부모님께 공부를 보내고, 확인과 칭찬을 받아요.</div>
+    <div class="row" style="margin-top:10px"><button class="pill on" id="fKid">아이 계정으로 로그인</button><button class="pill" id="fPar">부모님이에요</button></div></div>`;
+  else if (isKid()) { const ago = FAM.last ? Math.max(0, Math.round((Date.now() - FAM.last) / 60000)) : null;
+    box.innerHTML = `<div class="box"><div class="lab">가족과 연결됨 · ${esc(FAM.login || '')}</div><div class="hint" style="margin-top:0">${FAM.blocked ? '⚠️ 이 폰 기록이 비어 있어서 올리지 않고 있어요' : FAM.err && !FAM.last ? esc(FAM.err) : ago === null ? '곧 올려요' : '마지막으로 올린 때: ' + (ago < 1 ? '방금' : ago < 60 ? ago + '분 전' : Math.round(ago / 60) + '시간 전')}</div>
+      <button class="linkbtn" id="fOut">로그아웃</button></div>`; }
+  else box.innerHTML = `<div class="box"><div class="lab">부모님으로 로그인됨</div><div class="hint" style="margin-top:0">${esc(FAM.email || '')}</div><div class="row" style="margin-top:8px"><button class="pill on" id="fRep">부모 화면 열기</button></div><button class="linkbtn" id="fOut">로그아웃</button></div>`;
+  if ($('fKid')) $('fKid').onclick = kidLoginSheet;
+  if ($('fPar')) $('fPar').onclick = () => parentLoginSheet();
+  if ($('fOut')) $('fOut').onclick = famLogout;
+  if ($('fRep')) $('fRep').onclick = () => { closeSheet(); showParent(); };
+  if (typeof pushSettings === 'function') pushSettings();
+}
+
+/* ───────── 부모 화면 — 게임이 아니라 보고서 ───────── */
+const PAR = {tab: 'todo', sel: null, kids: [], study: {}, revs: [], proms: [], grants: [], mem: [], photos: {}, unsubs: []};
+const STAMPS = ['참 잘했어요', '꼼꼼해', '끝까지 했네', '스스로 시작!', '집중 최고', '멋져'];
+async function parentStart() {
+  if (PAR.unsubs.length) return;
+  try {
+    const u = await curUser(); if (!u) return;
+    const c = n => FB.db.collection('families/' + FAM.fid + '/' + n);
+    const at = x => x && x.toMillis ? x.toMillis() : 0;
+    PAR.unsubs.push(c('members').onSnapshot(qs => { PAR.mem = qs.docs.map(d => Object.assign({uid: d.id}, d.data())); parentKids(); }, e => parentErr(e)));
+    PAR.unsubs.push(c('study').onSnapshot(qs => { PAR.study = {}; qs.docs.forEach(d => { const x = d.data(); let st = null; try { st = normState(JSON.parse(x.json)); } catch (e) {} PAR.study[d.id] = {st, at: at(x.at), name: x.name || ''}; }); parentKids(); }, e => parentErr(e)));
+    PAR.unsubs.push(c('kids').onSnapshot(qs => { PAR.wkids = qs.docs.map(d => ({id: d.id, name: d.data().name || ''})); parentKids(); }, () => {}));
+    PAR.unsubs.push(c('sreviews').onSnapshot(qs => { PAR.revs = qs.docs.map(d => Object.assign({id: d.id}, d.data(), {at: at(d.data().at)})); parentRender(); }, () => {}));
+    PAR.unsubs.push(c('spromises').onSnapshot(qs => { PAR.proms = qs.docs.map(d => Object.assign({id: d.id}, d.data(), {since: at(d.data().at)})); parentRender(); }, () => {}));
+    PAR.unsubs.push(c('msgs').onSnapshot(qs => { PAR.grants = qs.docs.map(d => Object.assign({id: d.id}, d.data(), {at: at(d.data().at)})).filter(m => m.type === 'grant'); parentRender(); }, () => {}));
+  } catch (e) { parentErr(e); }
+}
+function parentErr(e) { const b = $('pBody'); if (b) b.innerHTML = `<div class="pc"><h3>불러오지 못했어요</h3><p class="pnote">${esc(fbErr(e))}</p></div>`; }
+function parentStop() { PAR.unsubs.forEach(f => f()); PAR.unsubs = []; PAR.study = {}; PAR.revs = []; }
+function parentKids() {
+  const m = new Map();
+  (PAR.wkids || []).forEach(k => m.set(k.id, {id: k.id, name: k.name}));
+  PAR.mem.filter(x => x.role === 'kid').forEach(x => { const o = m.get(x.kidId) || {id: x.kidId, name: x.name}; if (x.login) { o.login = x.login; o.uid = x.uid; } if (!o.name) o.name = x.name; m.set(x.kidId, o); });
+  Object.keys(PAR.study).forEach(id => { if (!m.has(id)) m.set(id, {id, name: PAR.study[id].name}); });
+  PAR.kids = [...m.values()];
+  if (!PAR.sel || !m.has(PAR.sel)) PAR.sel = (PAR.kids.find(k => PAR.study[k.id]) || PAR.kids[0] || {}).id || null;
+  parentRender();
+}
+function showParent() {
+  if (!isParentView()) return;
+  const el = $('parent'); el.classList.add('on'); if (!FULLS.includes('parent')) FULLS.unshift('parent');
+  el.innerHTML = `<div class="ph"><div class="r1"><b id="pTitle">공부 보고서</b><span style="display:flex;gap:4px"><button class="fx" id="pGear" aria-label="설정" style="color:inherit">${ICO.gear}</button></span></div>
+    <div class="kids" id="pKids"></div><div class="ptabs" id="pTabs">${[['todo', '확인할 것'], ['week', '주간 보고서'], ['plan', '계획'], ['reward', '보상'], ['acct', '아이 계정']].map(t => `<button data-t="${t[0]}">${t[1]}</button>`).join('')}</div></div><div class="pb" id="pBody"><p class="pnote">불러오는 중…</p></div>`;
+  $('pGear').onclick = settingsSheet;
+  $('pTabs').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; PAR.tab = b.dataset.t; parentRender(); window.scrollTo(0, 0); };
+  $('pKids').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; PAR.sel = b.dataset.k; parentRender(); };
+  parentStart(); parentRender();
+}
+const kidName = id => ((PAR.kids.find(k => k.id === id) || {}).name) || '아이';
+const kst = () => (PAR.study[PAR.sel] || {}).st || null;
+function parentRender() {
+  const body = $('pBody'); if (!body || !isParentView()) return;
+  $('pKids').innerHTML = PAR.kids.length > 1 ? PAR.kids.map(k => `<button data-k="${esc(k.id)}" class="${k.id === PAR.sel ? 'on' : ''}">${esc(k.name || '아이')}</button>`).join('') : '';
+  $('pTabs').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.t === PAR.tab));
+  $('pTitle').textContent = (PAR.sel ? kidName(PAR.sel) + '의 ' : '') + '공부';
+  const st = kst();
+  const pending = st ? st.sessions.filter(s => s.status === 'sent' && !PAR.revs.some(r => r.sid === s.id)).sort((a, b) => b.endAt - a.endAt) : [];
+  const dot = $('pTabs').querySelector('[data-t="todo"]'); if (dot) dot.innerHTML = '확인할 것' + (pending.length ? ` <span style="background:#E04E3A;color:#fff;border-radius:999px;padding:1px 7px;font-size:12px">${pending.length}</span>` : '');
+  if (PAR.tab === 'acct') return parentAcct(body);
+  if (!PAR.kids.length) { body.innerHTML = `<div class="pc"><h3>아직 아이가 없어요</h3><p class="pnote">'아이 계정' 탭에서 아이 계정을 만들어 주세요. 아이 폰의 공부 친구들 → 설정 → '아이 계정으로 로그인' 에서 그 아이디로 들어가면 여기에 공부가 보여요.</p></div>`; return; }
+  if (!st) { body.innerHTML = `<div class="pc"><h3>${esc(kidName(PAR.sel))}의 공부 기록이 아직 없어요</h3><p class="pnote">아이 폰에서 아이 계정으로 로그인하면 올라와요.</p></div>`; return; }
+  if (PAR.tab === 'todo') return parentTodo(body, st, pending);
+  if (PAR.tab === 'week') return parentWeek(body, st);
+  if (PAR.tab === 'plan') return parentPlan(body, st);
+  if (PAR.tab === 'reward' && typeof parentReward === 'function') return parentReward(body, st);
+}
+const qName = (st, s) => { const b = s.key.startsWith('b:') ? st.books.find(x => keyOfBook(x) === s.key) : null, t = !b ? st.tasks.find(x => keyOfTask(x) === s.key) : null;
+  return {b, t, subj: b ? b.subj : t ? t.subj : 'etc', title: b ? b.name : t ? t.title : '공부', range: b ? rangeText(b, s.from, s.to) : '', plan: b ? b.dur : t ? t.dur : 0, ch: b ? chapterOf(b, s.from) : null}; };
+const hm = ms => { const d = new Date(ms); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
+const md = s => { const d = parseYmd(s); return (d.getMonth() + 1) + '/' + d.getDate() + '(' + DOW[d.getDay()] + ')'; };
+function sessKv(st, s) {
+  const q = qName(st, s), mood = {easy: '쉬웠어요', ok: '딱 좋았어요', hard: '어려웠어요'}[s.mood] || '';
+  return `<div class="kv"><span>날짜</span><span>${md(s.date)} ${hm(s.startAt)} 시작${s.snoozes ? ' (' + s.snoozes + '번 미룸)' : ''}</span>
+    ${q.range ? `<span>분량</span><span>${esc(q.range)} · ${{all: '다 했어요', part: '조금 남았어요', more: '더 했어요'}[s.result] || ''}${s.planTo && s.to !== s.planTo ? ' (계획 ' + s.planFrom + '~' + s.planTo + '쪽)' : ''}</span>` : ''}
+    <span>시간</span><span>${minTxt(s.sec)}${q.plan ? ' / 계획 ' + q.plan + '분' : ''}</span><span>멈춤</span><span>${s.pauses}번 · ${minTxt(s.rest)}</span>
+    ${s.wrong != null ? `<span>틀린 문제</span><span>${s.wrong}개</span>` : ''}${mood ? `<span>기분</span><span>${mood}</span>` : ''}${s.note ? `<span>한마디</span><span>"${esc(s.note)}"</span>` : ''}</div>`;
+}
+function parentTodo(body, st, pending) {
+  const done = st.sessions.filter(s => s.status === 'ok' || s.status === 'redo' || PAR.revs.some(r => r.sid === s.id)).sort((a, b) => b.endAt - a.endAt).slice(0, 8);   // 아이 폰이 반영하기 전에도 보이게
+  const saved = st.sessions.filter(s => s.status === 'saved' && s.date >= addDays(todayStr(), -7));
+  body.innerHTML = (pending.length ? pending.map(s => { const q = qName(st, s);
+    return `<div class="pc" data-sid="${s.id}"><div style="display:flex;justify-content:space-between;align-items:baseline"><h3>${esc(subjOf(q.subj).n)} · ${esc(q.title)}${q.ch ? ' · ' + esc(q.ch.t) : ''}</h3><span class="pnote">${md(s.date)}</span></div>
+      ${sessKv(st, s)}${s.photo ? `<div data-ph="${s.id}"><button class="pbtn" style="margin-top:8px">채점 사진 보기</button></div>` : ''}
+      <div class="pnote" style="margin-top:12px">칭찬 도장</div><div class="pchips" data-g="stamp">${STAMPS.map((x, i) => `<button data-v="${x}" class="${i ? '' : 'on'}">${x}</button>`).join('')}</div>
+      <div class="pnote" style="margin-top:10px">별</div><div class="pchips" data-g="stars">${[1, 2, 3].map(n => `<button data-v="${n}" class="${n === 1 ? 'on' : ''}">별 ${n}개</button>`).join('')}</div>
+      <div class="pnote" style="margin-top:10px">보너스 코인</div><div class="pchips" data-g="coins">${[0, 10, 20, 50].map(n => `<button data-v="${n}" class="${n ? '' : 'on'}">${n ? '+' + n : '없음'}</button>`).join('')}</div>
+      ${typeof grantChips === 'function' ? grantChips() : ''}
+      <input class="pinp" data-g="text" maxlength="120" placeholder="한마디 (선택) — 예) 어려운데 끝까지 했구나!" style="margin-top:10px">
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-top:12px"><button class="pbtn" data-act="redo">다시 해 볼까?</button><button class="pbtn dk" data-act="ok">확인 · 보내기</button></div></div>`; }).join('')
+    : `<div class="pc"><h3>확인할 것이 없어요</h3><p class="pnote">아이가 공부를 끝내고 '보내기' 를 누르면 여기에 와요.</p></div>`) +
+    (saved.length ? `<div class="pc"><h3>보내지 않고 기록만 한 것</h3>${saved.map(s => { const q = qName(st, s); return `<div class="pnote">${md(s.date)} · ${esc(q.title)} ${esc(q.range)} · ${minTxt(s.sec)}</div>`; }).join('')}</div>` : '') +
+    (done.length ? `<div class="pc"><h3>최근 확인한 것</h3><table><tbody>${done.map(s => { const q = qName(st, s), r = PAR.revs.find(x => x.sid === s.id) || {};
+      return `<tr><td>${md(s.date)}</td><td>${esc(q.title)}</td><td>${(r.status || s.status) === 'redo' ? '다시 해 볼까?' : esc(r.stamp || '확인') + (r.stars ? ' · 별 ' + r.stars : '')}</td></tr>`; }).join('')}</tbody></table></div>` : '');
+  body.querySelectorAll('.pchips').forEach(g => g.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (g.dataset.multi) b.classList.toggle('on'); else g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+  body.querySelectorAll('[data-ph]').forEach(p => p.onclick = async () => { p.innerHTML = '<p class="pnote">사진 불러오는 중…</p>';
+    try { const d = await FB.db.doc('families/' + FAM.fid + '/sphotos/' + p.dataset.ph).get(); p.innerHTML = d.exists ? `<img class="pphoto" src="${d.data().data}" alt="채점 사진">` : '<p class="pnote">사진이 없어요</p>'; } catch (e) { p.innerHTML = '<p class="pnote">' + esc(fbErr(e)) + '</p>'; } });
+  body.querySelectorAll('[data-act]').forEach(b => b.onclick = () => reviewSend(b.closest('[data-sid]'), b.dataset.act));
+}
+async function reviewSend(card, act) {
+  const sid = card.dataset.sid, pick = g => { const b = card.querySelector('[data-g="' + g + '"] .on'); return b ? b.dataset.v : null; };
+  const text = card.querySelector('[data-g="text"]').value.trim();
+  if (act === 'redo' && !text && !confirm('한마디 없이 \'다시 해 볼까?\' 를 보낼까요?\n(무엇을 다시 하면 좋을지 써 주면 아이가 알기 쉬워요)')) return;
+  const r = {kidId: PAR.sel, sid, status: act, stars: act === 'ok' ? +pick('stars') || 1 : 0, coins: act === 'ok' ? +pick('coins') || 0 : 0, stamp: act === 'ok' ? pick('stamp') || '' : '',
+    text, by: FAM.pname || '부모님', at: FB.fv.serverTimestamp()};
+  card.querySelectorAll('button').forEach(b => b.disabled = true);
+  try {
+    const ref = await FB.db.collection('families/' + FAM.fid + '/sreviews').add(r);
+    if (act === 'ok' && typeof grantFromCard === 'function') await grantFromCard(card, sid);
+    if (typeof ping === 'function') ping('/review', {id: ref.id});
+    toast(act === 'ok' ? '확인을 보냈어요' : '\'다시 해 볼까?\' 를 보냈어요');
+  } catch (e) { toast(fbErr(e)); card.querySelectorAll('button').forEach(b => b.disabled = false); }
+}
+function parentWeek(body, st) {
+  const t = todayStr(); PAR.w0 = PAR.w0 || mondayOf(t);
+  const w = weekStats(st, PAR.w0), end = addDays(PAR.w0, 6);
+  const days = [...Array(7)].map((_, i) => { const d = addDays(PAR.w0, i), qs = questsFor(st, d, d < t ? t : t); return {d, qs, ss: st.sessions.filter(s => s.date === d)}; });
+  const tot = w.rows.reduce((a, r) => ({n: a.n + r.n, sec: a.sec + r.sec, ok: a.ok + r.ok}), {n: 0, sec: 0, ok: 0});
+  body.innerHTML = `<div class="pc"><div style="display:flex;justify-content:space-between;align-items:center"><button class="pbtn" id="pwPrev">‹</button><h3 style="margin:0">${md(PAR.w0)} ~ ${md(end)}</h3><button class="pbtn" id="pwNext">›</button></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;text-align:center"><div><div class="pnote">끝낸 퀘스트</div><b style="font-size:20px">${tot.n}</b></div><div><div class="pnote">공부 시간</div><b style="font-size:20px">${minTxt(tot.sec)}</b></div><div><div class="pnote">확인한 것</div><b style="font-size:20px">${tot.ok}</b></div></div></div>
+    <div class="pc"><h3>과목별</h3>${w.rows.length ? `<table><thead><tr><th>과목</th><th>횟수</th><th>쪽</th><th>시간</th></tr></thead><tbody>${w.rows.map(r => `<tr><td>${subjOf(r.subj).n}</td><td>${r.n}</td><td>${r.pages || '—'}</td><td>${minTxt(r.sec)}</td></tr>`).join('')}</tbody></table>` : '<p class="pnote">이번 주 기록이 없어요</p>'}</div>
+    <div class="pc"><h3>날마다</h3><table><tbody>${days.map(x => `<tr><td style="width:72px">${md(x.d)}</td><td>${x.ss.length ? x.ss.map(s => { const q = qName(st, s); return esc(subjOf(q.subj).n) + ' ' + (q.range ? esc(q.range) : esc(q.title)) + ' · ' + minTxt(s.sec); }).join('<br>') : (x.d <= t ? '<span class="pnote">기록 없음</span>' : x.qs.length ? '<span class="pnote">계획 ' + x.qs.length + '개</span>' : '<span class="pnote">쉬는 날</span>')}</td></tr>`).join('')}</tbody></table></div>`;
+  $('pwPrev').onclick = () => { PAR.w0 = addDays(PAR.w0, -7); parentRender(); };
+  $('pwNext').onclick = () => { PAR.w0 = addDays(PAR.w0, 7); parentRender(); };
+}
+function parentPlan(body, st) {
+  const t = todayStr();
+  body.innerHTML = `<div class="pc"><h3>문제집</h3>${st.books.length ? `<table><thead><tr><th>문제집</th><th>요일 · 하루</th><th>진도</th><th>끝나는 날</th></tr></thead><tbody>${st.books.map(b => { const f = finishDate(st, b, t), tot = b.last - b.first + 1;
+      return `<tr style="${b.active ? '' : 'opacity:.55'}"><td>${esc(subjOf(b.subj).n)} · ${esc(b.name)}</td><td>${b.days.map(d => DOW[d]).join('')} · ${perDayText(b)}${b.time ? '<br>' + b.time + ' · ' + b.dur + '분' : ''}</td><td>${Math.round(Math.min(tot, b.cur - b.first) / tot * 100)}% (${Math.min(b.cur, b.last)}쪽)</td><td>${b.cur > b.last ? '끝' : f ? md(f) : '—'}</td></tr>`; }).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
+    <p class="pnote" style="margin-top:8px">계획은 아이 폰에서 세워요. (부모님이 계획을 보내는 기능은 다음에)</p></div>
+    <div class="pc"><h3>앞으로 7일</h3><table><tbody>${[...Array(7)].map((_, i) => { const d = addDays(t, i), qs = questsFor(st, d, t); return `<tr><td style="width:72px">${md(d)}</td><td>${qs.length ? qs.map(q => esc(subjOf(q.subj).n) + ' ' + esc(q.kind === 'book' ? rangeText(q.book, q.from, q.to) : q.title) + (q.time ? ' · ' + q.time : '')).join('<br>') : '<span class="pnote">쉬는 날</span>'}</td></tr>`; }).join('')}</tbody></table></div>`;
+}
+function parentAcct(body) {
+  body.innerHTML = `<div class="pc"><h3>아이 계정</h3>${PAR.kids.length ? `<table><tbody>${PAR.kids.map(k => `<tr><td>${esc(k.name || '아이')}</td><td>${k.login ? '아이디 <b>' + esc(k.login) + '</b>' : '<span class="pnote">계정 없음</span>'}</td><td style="text-align:right">${k.login ? `<button class="pbtn" data-pw="${esc(k.uid)}">숫자 다시 정하기</button>` : `<button class="pbtn" data-mk="${esc(k.id)}">계정 만들기</button>`}</td></tr>`).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
+    <button class="pbtn dk" id="paNew" style="margin-top:12px;width:100%">새 아이 계정 만들기</button>
+    <p class="pnote" style="margin-top:10px">아이디 + 숫자 6자리로 아이가 어느 폰 · 태블릿에서든 들어와요. 이메일 · 구글 계정은 필요 없어요.<br>용돈 친구들에 이미 있는 아이는 '계정 만들기' 를 누르면 같은 아이로 이어져요.</p></div>
+    <div class="pc"><h3>이 폰</h3><p class="pnote">${esc(FAM.email || '')}</p><div style="display:flex;gap:8px;margin-top:8px"><button class="pbtn" id="paName">부르는 이름: ${esc(FAM.pname || '부모님')}</button><button class="pbtn" id="paOut">로그아웃</button></div></div>`;
+  body.querySelectorAll('[data-mk]').forEach(b => b.onclick = () => kidAccountSheet(b.dataset.mk));
+  body.querySelectorAll('[data-pw]').forEach(b => b.onclick = () => kidPwSheet(b.dataset.pw));
+  $('paNew').onclick = () => kidAccountSheet(null);
+  $('paOut').onclick = famLogout;
+  $('paName').onclick = () => { const n = prompt('아이에게 보일 이름 (예: 엄마, 아빠)', FAM.pname || ''); if (n == null) return; FAM.pname = n.trim().slice(0, 8) || ''; famSave(); parentRender(); };
+}
+function kidAccountSheet(kidId) {
+  const k = kidId ? PAR.kids.find(x => x.id === kidId) : null;
+  sheet('아이 계정 만들기', `<div class="box">${k ? `<div class="lab">${esc(k.name || '아이')}</div><div class="hint" style="margin-top:0">용돈 친구들의 그 아이와 같은 아이로 이어져요.</div>` : `<div class="lab">아이 이름</div><input class="inp" id="kaName" maxlength="10" placeholder="예) 루루">`}
+      <div class="lab" style="margin-top:12px">아이디 (영어 소문자 · 숫자 3~12자)</div><input class="inp" id="kaId" autocapitalize="none" maxlength="12" placeholder="예) ruru">
+      <div class="lab" style="margin-top:12px">숫자 6자리</div><input class="inp" id="kaPw" inputmode="numeric" maxlength="6" placeholder="예) 260512" style="letter-spacing:4px">
+      <div class="hint">아이와 함께 정하고 적어 두세요. 잊으면 여기서 다시 정할 수 있어요.</div></div>
+    <button class="big" id="kaGo">만들기</button>`);
+  $('kaGo').onclick = async () => {
+    const name = k ? k.name : $('kaName').value.trim(), id = $('kaId').value.trim().toLowerCase(), pw = $('kaPw').value.trim();
+    if (!name) { toast('아이 이름을 써 주세요'); return; }
+    if (!okLogin(id)) { toast('아이디는 영어 소문자·숫자 3~12자예요'); return; }
+    if (!/^\d{6}$/.test(pw)) { toast('숫자 6자리를 넣어 주세요'); return; }
+    $('kaGo').disabled = true; toast('만드는 중…');
+    try { await makeKidAccount(k ? k.id : 'k_' + sid(), name, id, pw); closeSheet(); toast('만들었어요! 아이 폰에서 ' + id + ' 로 들어가요', 4000); }
+    catch (e) { toast(fbErr(e)); if ($('kaGo')) $('kaGo').disabled = false; }
+  };
+}
+/* 아이 계정은 두 번째 파이어베이스 앱으로 만든다 — 부모님 로그인이 풀리지 않게.
+ * 만든 아이 계정이 스스로 가족 연결 코드(wjoins)로 자기 member 문서를 쓴다 → 용돈 친구들의 보안 규칙 그대로 통과 */
+async function makeKidAccount(kidId, name, login, pin) {
+  await fbLoad();
+  const exp = FB.ts.fromMillis(Date.now() + 15 * 60000);
+  let code = null;
+  for (let i = 0; i < 5 && !code; i++) { const c = String(Math.floor(100000 + Math.random() * 900000)); const ex = await FB.db.doc('wjoins/' + c).get().catch(() => null); if (ex && ex.exists) continue;
+    await FB.db.doc('wjoins/' + c).set({fid: FAM.fid, role: 'kid', exp, kidId, name}); code = c; }
+  if (!code) throw {code: 'busy'};
+  const app2 = firebase.initializeApp(FB_CFG, 'studymk' + Date.now());
+  try {
+    const a2 = app2.auth(), d2 = app2.firestore();
+    if (window.STUDY_EMU) { a2.useEmulator('http://127.0.0.1:9099', {disableWarnings: true}); d2.useEmulator('127.0.0.1', 8080); }
+    await a2.setPersistence(firebase.auth.Auth.Persistence.NONE);
+    const cr = await a2.createUserWithEmailAndPassword(kidEmail(login), pin);
+    await d2.doc('families/' + FAM.fid + '/members/' + cr.user.uid).set({role: 'kid', kidId, name, code, login, app: 'study'});
+    await d2.doc('wusers/' + cr.user.uid).set({fid: FAM.fid, kidId, name, role: 'kid', login});
+    await a2.signOut();
+  } finally { FB.db.doc('wjoins/' + code).delete().catch(() => {}); app2.delete().catch(() => {}); }
+}
+function kidPwSheet(uid) {
+  const k = PAR.kids.find(x => x.uid === uid) || {};
+  sheet('숫자 다시 정하기', `<div class="box"><div class="lab">${esc(k.name || '아이')} · ${esc(k.login || '')}</div><div class="lab" style="margin-top:10px">새 숫자 6자리</div><input class="inp" id="kpPw" inputmode="numeric" maxlength="6" style="letter-spacing:4px"></div><button class="big" id="kpGo">바꾸기</button>`);
+  $('kpGo').onclick = async () => { const pw = $('kpPw').value.trim(); if (!/^\d{6}$/.test(pw)) { toast('숫자 6자리를 넣어 주세요'); return; }
+    $('kpGo').disabled = true;
+    const r = typeof ping === 'function' ? await ping('/kidpw', {uid, pin: pw}) : null;
+    if (r && r.ok) { closeSheet(); toast('바꿨어요'); } else { toast('아직 서버가 준비되지 않았어요 (알림 서버를 올려야 해요)'); $('kpGo').disabled = false; } };
+}
+if (isKid()) setTimeout(kidListen, 800);
+if (isParentView()) setTimeout(showParent, 50);
+/* ───────── 알림 (S-4) — 정한 시각에 서버가 보낸다 ─────────
+ * 아이 폰은 앞으로 3일의 알림 시각을 sremind/{id} 에 적어 둔다 → 서버(studyTick, 1분마다)가 그 시각에 푸시하고 지운다.
+ * 미루기·오늘은 못 해요·끝내기를 하면 다시 적는다(syncReminders). 앱이 열려 있으면 앱 안 알림 화면이 먼저 뜬다. */
+const FN_URL = () => window.STUDY_EMU ? 'http://127.0.0.1:5001/block7-8f24e/asia-northeast3/studyPing' : 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/studyPing';
+const VAPID = 'BORlzx8_k0YgJyVlwh-RmPmXkXkX6X3w2R-FlFkd1uXIb15waShnzjiE1tW3iwOI86Fyn1tw32uD5tKOwa2jtog';
+const APP_URL = location.origin + location.pathname.replace(/index\.html$/, '');
+async function ping(path, body) {
+  try { const u = FB && FB.auth.currentUser; if (!u || !FAM) return null;
+    const r = await fetch(FN_URL() + path, {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + await u.getIdToken()}, body: JSON.stringify(Object.assign({fid: FAM.fid}, body))});
+    return r.ok ? await r.json().catch(() => ({ok: true})) : null; } catch (e) { return null; }
+}
+let FCMP = null;
+function fcmLoad() {
+  if (FCMP) return FCMP;
+  FCMP = fbLoad().then(() => (firebase.messaging ? null : new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js'; s.onload = res; s.onerror = () => rej(new Error('net')); document.head.appendChild(s); })))
+    .then(() => { const m = firebase.messaging(FB.app); m.onMessage(p => { const d = p.data || {}, n = p.notification || {}; if (d.url) handleGo(d.url); else toast((n.title || '알림') + (n.body ? ' — ' + n.body : '')); }); return m; })
+    .catch(e => { FCMP = null; throw e; });
+  return FCMP;
+}
+const memRef = () => FB.db.doc('families/' + FAM.fid + '/members/' + FB.auth.currentUser.uid);
+async function pushOn() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) { toast('이 폰에서는 알림을 켤 수 없어요. 아이폰은 홈 화면에 추가한 앱에서 켜 주세요', 3600); return false; }
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('알림이 허락되지 않았어요. 폰 설정에서 허락해 주세요'); return false; }
+    await curUser(); const m = await fcmLoad();
+    const reg = await navigator.serviceWorker.getRegistration('./') || await navigator.serviceWorker.register('sw.js');
+    const tok = await m.getToken({vapidKey: VAPID, serviceWorkerRegistration: reg});
+    if (!tok) throw {code: 'token'};
+    await memRef().update({stokens: FB.fv.arrayUnion(tok)});
+    FAM.push = tok; famSave(); toast('이 폰으로 알림을 받아요'); syncReminders(); return true;
+  } catch (e) { toast('알림을 켜지 못했어요 — ' + fbErr(e)); return false; }
+}
+async function pushOff() {
+  try { await curUser(); if (FAM.push) await memRef().update({stokens: FB.fv.arrayRemove(FAM.push)}); FAM.push = null; famSave(); await syncReminders(true); toast('이 폰 알림을 껐어요'); } catch (e) { toast(fbErr(e)); }
+}
+function pushSettings() {
+  const box = $('stPush'); if (!box || !FAM) { if (box) box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="box"><div class="lab">알림</div><div class="hint" style="margin-top:0">${isKid() ? '앱을 닫아 두어도 공부 시각에 [시작] [미루기] 알림이 와요.' : '아이가 공부를 보내면 알림이 와요.'} 아이폰은 '홈 화면에 추가' 한 앱에서만 받을 수 있어요.</div>
+    <div class="row" style="margin-top:8px">${FAM.push ? '<button class="pill" id="puOff">이 폰 알림 끄기</button>' : '<button class="pill on" id="puOn">이 폰으로 알림 받기</button>'}</div></div>`;
+  if ($('puOn')) $('puOn').onclick = async () => { if (await pushOn()) pushSettings(); };
+  if ($('puOff')) $('puOff').onclick = async () => { await pushOff(); pushSettings(); };
+}
+const remId = (uid, k) => uid.slice(0, 12) + '_' + k.replace(/[^A-Za-z0-9-]/g, '_');
+let rsT = 0, rsBusy = false;
+function onSnooze() { clearTimeout(rsT); rsT = setTimeout(syncReminders, 300); }
+async function syncReminders(clearAll) {
+  if (!isKid() || rsBusy) return;
+  if (!FAM.push && !clearAll && !FAM.hadRem) return;
+  rsBusy = true;
+  try {
+    const u = await curUser(); if (!u) return;
+    const want = clearAll || !FAM.push ? [] : upcomingAlarms(S, Date.now(), todayStr(), 3);
+    const col = FB.db.collection('sremind');
+    const have = await col.where('uid', '==', u.uid).get();
+    const wantIds = new Map(want.map(w => [remId(u.uid, w.k), w]));
+    const b = FB.db.batch(); let n = 0;
+    have.docs.forEach(d => { const w = wantIds.get(d.id); if (!w || d.data().at.toMillis() !== w.at || d.data().body !== w.body) { b.delete(d.ref); n++; } else wantIds.delete(d.id); });
+    wantIds.forEach((w, id) => { const [key, date] = w.k.split('|');
+      b.set(col.doc(id), {uid: u.uid, fid: FAM.fid, kidId: FAM.kidId, at: FB.ts.fromMillis(w.at), title: w.title, body: w.body, url: APP_URL + '?go=alarm&k=' + encodeURIComponent(key) + '&d=' + date}); n++; });
+    if (n) await b.commit();
+    FAM.hadRem = want.length > 0; famSave();
+  } catch (e) {} finally { rsBusy = false; }
+}
+/* 알림을 누르고 들어왔을 때 */
+function handleGo(url) {
+  let q; try { q = new URL(url, location.href).searchParams; } catch (e) { return; }
+  const go = q.get('go'); if (!go) return;
+  if (go === 'alarm' && !isParentView()) {
+    const t = todayStr(), d = q.get('d') || t, qq = questOf(S, q.get('k') || '', d, t);
+    if (!qq || qq.done || d !== t) { render(); return; }
+    if (q.get('act') === 'start') { closeAlarm(); return startQuest(qq.key); }
+    if (FULLS.includes('timer')) return;
+    showAlarm(qq, q.get('act') === 'snooze');
+  } else if (go === 'review' && isParentView()) { PAR.tab = 'todo'; showParent(); }
+  else if (go === 'reward') { TAB = 'reward'; render(); }
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.go) handleGo(e.data.go); });
+if (location.search.includes('go=')) { const u = location.href; history.replaceState(null, '', location.pathname); setTimeout(() => handleGo(u), 700); }
+// 공부를 끝내거나 계획이 바뀌면 예약을 다시 맞춘다 (cloudPush 뒤에 불린다). 하루가 바뀌어도 한 번.
+setInterval(() => { if (isKid() && FAM.push) syncReminders(); }, 6 * 3600e3);
+
+/* ───────── 보상 (S-5) — 별 · 약속 · 허락권 ─────────
+ * 허락권 = 용돈 친구들 우체통(families/{f}/msgs)의 type:'grant' 쪽지. 부모님만 만든다.
+ *   kind:'allow' 내 돈으로 사도 된다는 허락(text, amt=한도) · kind:'money' 용돈 +amt원 (용돈 친구들이 '받을 예정 돈' 으로 한 번만 넣는다)
+ *   용돈 친구들에서 썼어요 → doneAt. 공부 친구들은 읽기만 한다. */
+const GRANT_PRESET = [['', '없음'], ['allow|간식 하나 허락|3000', '간식 하나 허락'], ['money|용돈|1000', '용돈 +1,000원'], ['allow|게임 30분 허락|0', '게임 30분'], ['custom', '직접 쓰기…']];
+const grantLine = g => (g.kind === 'money' ? '용돈 +' + nf(g.amt) + '원' : esc(g.text) + (g.amt ? ' (' + nf(g.amt) + '원까지)' : ''));
+function rewardExtra() {
+  if (!isKid()) return `<div class="box" style="margin-top:12px;font-size:14px;line-height:1.6">설정 → <b>아이 계정으로 로그인</b> 하면 부모님이 보내 준 <b>허락권</b>과 <b>약속</b>이 여기에 모여요.</div>`;
+  const open = GRANTS.filter(g => !g.doneAt), used = GRANTS.filter(g => g.doneAt).slice(0, 5);
+  const prom = PROMS.filter(p => p.status !== 'given');
+  return `<div class="h2"><b>허락권</b><small>용돈 친구들에서 써요</small></div>
+    ${open.length ? open.map(g => `<div class="grant"><small>${esc(g.fromName || '부모님')}가 보낸 허락권 · ${md(ymd(new Date(g.at || Date.now())))}</small><b>${grantLine(g)}</b>${g.until ? `<small>${md(g.until)}까지</small>` : ''}</div>`).join('') : '<div class="empty">아직 없어요. 부모님이 확인할 때 보내 줄 수 있어요</div>'}
+    ${used.length ? used.map(g => `<div class="grant used"><small>썼어요</small><b style="font-size:17px">${grantLine(g)}</b></div>`).join('') : ''}
+    <div class="h2"><b>모으는 중인 약속</b></div>
+    ${prom.length ? prom.map(p => { const pr = promiseProgress(S, p); return `<div class="box prm"><div class="row" style="justify-content:space-between"><b class="j" style="font-size:16px">${esc(p.title)}</b><small style="flex:none;color:var(--sub)">${esc(p.byName || '부모님')}와 약속</small></div>
+      <div class="hint" style="margin-top:2px">확인 받은 퀘스트 ${p.need}개${p.reward ? ' → ' + esc(p.reward) : ''}</div><div class="bars">${[...Array(Math.min(p.need, 20))].map((_, i) => `<i class="${i < Math.round(pr.n / p.need * Math.min(p.need, 20)) ? 'on' : ''}"></i>`).join('')}</div>
+      <div class="row" style="justify-content:space-between;margin-top:6px"><small style="color:var(--sub)">${pr.n} / ${p.need}</small>${pr.done ? `<button class="go mint" data-a="promTell" data-p="${p.id}" style="flex:none">다 모았어요! 알리기</button>` : '<span></span>'}</div></div>`; }).join('') : '<div class="empty">부모님과 약속을 정하면 여기에 보여요</div>'}`;
+}
+function onRewardAction(a) {
+  if (a.dataset.a === 'promTell') { const p = PROMS.find(x => x.id === a.dataset.p); ping('/promise', {kidId: FAM.kidId, pid: a.dataset.p}); toast('부모님께 알렸어요!'); confetti(); sfx('win'); if (p) a.disabled = true; }
+}
+/* 부모님: 확인 카드의 허락권 고르기 */
+function grantChips() {
+  return `<div class="pnote" style="margin-top:10px">허락권 얹기 (용돈 친구들로 가요)</div><div class="pchips" data-g="grant">${GRANT_PRESET.map((g, i) => `<button data-v="${g[0]}" class="${i ? '' : 'on'}">${g[1]}</button>`).join('')}</div>`;
+}
+function askGrant(v) {
+  if (v === 'custom') {
+    const text = prompt('무엇을 허락할까요? (예: 머리핀 사도 돼요)'); if (!text) return null;
+    const amt = parseInt(prompt('얼마까지? (숫자만, 없으면 0)', '0') || '0', 10) || 0;
+    return {kind: 'allow', text: text.trim().slice(0, 30), amt};
+  }
+  const [kind, text, amt] = v.split('|'); return {kind, text, amt: +amt || 0};
+}
+async function grantSend(kidId, g, ref) {
+  const t = todayStr(), until = addDays(t, (7 - dowOf(t)) % 7);   // 이번 주 일요일까지
+  await FB.db.collection('families/' + FAM.fid + '/msgs').add({kidId, from: 'parent', fromName: FAM.pname || '부모님', type: 'grant', kind: g.kind, text: g.text, amt: g.amt || 0,
+    until, src: 'study', ref: ref || '', status: 'ok', okName: FAM.pname || '부모님', readKid: false, readPar: true, sticker: '', at: FB.fv.serverTimestamp()})
+    .then(r => wping(r.id));
+}
+/* 용돈 친구들 알림 서버에도 알린다 → 아이 폰의 용돈 친구들로 '허락권이 왔어요' 푸시 */
+async function wping(id) {
+  try { const u = FB.auth.currentUser; if (!u) return;
+    await fetch(window.STUDY_EMU ? 'http://127.0.0.1:5001/block7-8f24e/asia-northeast3/walletPing/msg' : 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/walletPing/msg',
+      {method: 'POST', headers: {'Content-Type': 'application/json', Authorization: 'Bearer ' + await u.getIdToken()}, body: JSON.stringify({fid: FAM.fid, id})}); } catch (e) {}
+}
+async function grantFromCard(card, sid) {
+  const b = card.querySelector('[data-g="grant"] .on'); if (!b || !b.dataset.v) return;
+  const g = askGrant(b.dataset.v); if (!g) return;
+  await grantSend(PAR.sel, g, sid);
+}
+function parentReward(body, st) {
+  const L = levelOf(starsOf(st)), proms = PAR.proms.filter(p => p.kidId === PAR.sel), grants = PAR.grants.filter(g => g.kidId === PAR.sel).sort((a, b) => b.at - a.at);
+  body.innerHTML = `<div class="pc"><h3>지금</h3><div class="kv"><span>레벨</span><span>Lv.${L.lv} ${esc(L.title)} (다음까지 별 ${L.need - L.rem}개)</span><span>별</span><span>${starsOf(st)}개</span><span>코인</span><span>${nf(coinsLeft(st))}개 (꾸미기에 써요)</span></div></div>
+    <div class="pc"><h3>약속 모으기</h3>${proms.length ? `<table><tbody>${proms.map(p => { const pr = promiseProgress(st, p); return `<tr><td>${esc(p.title)}${p.reward ? '<br><span class="pnote">' + esc(p.reward) + '</span>' : ''}</td><td>${pr.n} / ${p.need}</td><td style="text-align:right">${p.status === 'given' ? '<span class="pnote">줬어요</span>' : pr.done ? `<button class="pbtn dk" data-give="${p.id}">허락권 주기</button>` : `<button class="pbtn" data-pdel="${p.id}">지우기</button>`}</td></tr>`; }).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px"><input class="pinp" id="prT" maxlength="24" placeholder="약속 — 예) 머리핀 사도 돼요"><input class="pinp" id="prN" inputmode="numeric" placeholder="퀘스트 수" value="10"></div>
+      <div class="pchips" data-g="pg" style="margin-top:8px">${GRANT_PRESET.slice(1).map((g, i) => `<button data-v="${g[0]}" class="${i ? '' : 'on'}">${g[1]}</button>`).join('')}</div>
+      <button class="pbtn dk" id="prAdd" style="width:100%;margin-top:10px">약속 만들기</button><p class="pnote" style="margin-top:6px">만든 뒤에 부모님이 확인한 퀘스트만 세요. 다 모이면 여기서 허락권을 줘요.</p></div>
+    <div class="pc"><h3>허락권</h3>${grants.length ? `<table><tbody>${grants.slice(0, 15).map(g => `<tr><td>${md(ymd(new Date(g.at || Date.now())))}</td><td>${grantLine(g)}</td><td>${g.doneAt ? '썼어요' : '안 씀'}</td></tr>`).join('')}</tbody></table>` : '<p class="pnote">아직 없어요</p>'}
+      <div class="pchips" data-g="ng" style="margin-top:10px">${GRANT_PRESET.slice(1).map((g, i) => `<button data-v="${g[0]}" class="${i ? '' : 'on'}">${g[1]}</button>`).join('')}</div><button class="pbtn" id="grNow" style="width:100%;margin-top:8px">허락권 바로 보내기</button>
+      <p class="pnote" style="margin-top:6px">허락권은 아이 폰의 <b>용돈 친구들</b> 우체통으로 가요. '용돈 +N원' 은 받을 예정 돈으로 들어가요.</p></div>`;
+  body.querySelectorAll('.pchips').forEach(g => g.onclick = e => { const b = e.target.closest('button'); if (!b) return; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); });
+  const pickG = g => { const b = body.querySelector('[data-g="' + g + '"] .on'); return b ? askGrant(b.dataset.v) : null; };
+  $('prAdd').onclick = async () => { const title = $('prT').value.trim(), need = Math.max(1, Math.min(100, parseInt($('prN').value, 10) || 10)); if (!title) { toast('약속을 써 주세요'); return; }
+    const g = pickG('pg'); if (!g) return;
+    try { await FB.db.collection('families/' + FAM.fid + '/spromises').add({kidId: PAR.sel, title, need, reward: g.kind === 'money' ? '용돈 +' + nf(g.amt) + '원' : g.text, grant: g, byName: FAM.pname || '부모님', status: 'open', at: FB.fv.serverTimestamp()}); toast('약속을 만들었어요'); }
+    catch (e) { toast(fbErr(e)); } };
+  body.querySelectorAll('[data-give]').forEach(b => b.onclick = async () => { const p = PAR.proms.find(x => x.id === b.dataset.give); if (!p) return; b.disabled = true;
+    try { await grantSend(PAR.sel, p.grant || {kind: 'allow', text: p.title, amt: 0}, 'p:' + p.id); await FB.db.doc('families/' + FAM.fid + '/spromises/' + p.id).update({status: 'given'}); toast('허락권을 보냈어요!'); }
+    catch (e) { toast(fbErr(e)); b.disabled = false; } });
+  body.querySelectorAll('[data-pdel]').forEach(b => b.onclick = async () => { if (!confirm('이 약속을 지울까요?')) return; try { await FB.db.doc('families/' + FAM.fid + '/spromises/' + b.dataset.pdel).delete(); } catch (e) { toast(fbErr(e)); } });
+  $('grNow').onclick = async () => { const g = pickG('ng'); if (!g) return; if (!confirm(kidName(PAR.sel) + '에게 "' + (g.kind === 'money' ? '용돈 +' + nf(g.amt) + '원' : g.text) + '" 허락권을 보낼까요?')) return;
+    try { await grantSend(PAR.sel, g, ''); toast('보냈어요!'); } catch (e) { toast(fbErr(e)); } };
+}
 /* ───────── 시작 ───────── */
 $('hGear').innerHTML = ICO.gear; $('hGear').onclick = settingsSheet;
 $('hCoinI').innerHTML = ICO.coin; $('hStarI').innerHTML = ICO.star;
