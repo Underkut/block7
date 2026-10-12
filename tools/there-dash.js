@@ -336,6 +336,7 @@ const TDASH = (function () {
     return { redraw: draw, state: S };
   }
   // 전체 화면으로 연다 — 우상단 × 하나 (UI 원칙). esc:false 면 Esc 는 앱의 닫기 표가 맡는다
+  const VNAME = { day: 'Today', week: 'Week', month: 'Month' };
   let OV = null;
   function open(opts) {
     close(true);
@@ -343,11 +344,25 @@ const TDASH = (function () {
     opts = opts || {};
     const ov = document.createElement('div');
     ov.className = 'tdash tdash-ov'; ov.id = 'tdashOv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'There 대시보드');
-    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span>' + esc(opts.sub || '세 앱 모아 보기') + '</span></div>' +
+    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub>' + (VNAME[opts.view || 'week'] || '') + '</span></div>' +
       '<button class="tdash-x" data-tdx="1" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div><div class="tdash-body"></div>';
     document.body.appendChild(ov);
     ov.querySelector('[data-tdx]').onclick = e => { e.stopPropagation(); close(); };
-    const m = mount(ov.querySelector('.tdash-body'), opts);
+    const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
+    // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
+    const m = mount(ov.querySelector('.tdash-body'), Object.assign({}, opts, { onView: v => { sub.textContent = VNAME[v] || ''; if (onV) onV(v); } }));
+    // 왼쪽 가장자리에서 오른쪽으로 밀어 닫기 — 손가락을 따라 밀려 나간다 (HB 2026-10-13)
+    let sx = 0, sy = 0, on = false, dx = 0;
+    ov.addEventListener('touchstart', e => { const t = e.touches[0]; on = e.touches.length === 1 && t.clientX < 28; sx = t.clientX; sy = t.clientY; dx = 0; if (on) ov.style.transition = 'none'; }, { passive: true });
+    ov.addEventListener('touchmove', e => {
+      if (!on) return; const t = e.touches[0]; dx = t.clientX - sx;
+      if (Math.abs(t.clientY - sy) > Math.abs(dx) && dx < 30) { on = false; ov.style.transform = ''; ov.style.transition = ''; return; }
+      if (dx > 0) { e.preventDefault(); ov.style.transform = 'translateX(' + dx + 'px)'; }
+    }, { passive: false });
+    ov.addEventListener('touchend', () => {
+      if (!on) return; on = false; ov.style.transition = 'transform .22s,opacity .22s';
+      if (dx > Math.min(110, innerWidth * 0.28)) { ov.style.transform = 'translateX(100%)'; close(); } else ov.style.transform = '';
+    });
     const key = e => { if (e.key === 'Escape' && OV === ov && opts.esc !== false) { e.preventDefault(); e.stopPropagation(); close(); } };
     document.addEventListener('keydown', key, true);
     OV = ov; ov._key = key; ov._onClose = opts.onClose;
