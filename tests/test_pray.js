@@ -33,7 +33,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, syncPlan, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, syncPlan, addPraySession, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -526,6 +526,20 @@ const MAPCSV = [
     sc.eq('⑪-11 덩어리 하나가 한글이어도 1MiB 안 (25만 자 × 3바이트)', A.SYNC_CHUNK * 3 < 1048576 - 4096, true);
     sc.eq('⑪-11 빈 글도 덩어리 하나', A.splitChunks('', 10), ['']);
   }
+}
+{
+  // ⑫ 기도 한 번 한 번 — 어디서 · 언제 · 얼마나 (통합 There 대시보드용, 2026-10-12)
+  const base = A.emptyDB();
+  const t0 = new Date(2026, 9, 12, 7, 5).getTime();
+  const L = JSON.parse(JSON.stringify(base)), R = JSON.parse(JSON.stringify(base));
+  const e = A.addPraySession(L, t0, 65, 'map');
+  sc.eq('⑫ 한 번의 모양 (시작한 날 · HH:MM · 초 · 어디서)', [Object.keys(L.log)[0], e.time, e.d, e.src, L.log['2026-10-12'].s], ['2026-10-12', '07:05', 65, 'map', 65]);
+  A.addPraySession(L, t0 + 600000, 30, 'focus', 'f1'); A.addPraySession(L, t0 + 600000, 20, 'focus', 'f1');
+  sc.eq('⑫ 한 장씩은 같은 한 번에 이어 붙는다', L.log['2026-10-12'].ses.map(x => x.src + x.d), ['map65', 'focus50']);
+  A.addPraySession(R, t0 + 3600000, 40, 'map');
+  const m = A.merge3(base, L, R);
+  sc.eq('⭐⑫ 두 기기에서 따로 잰 것이 맞출 때 둘 다 남고 합계도 더해진다', [m.log['2026-10-12'].ses.length, m.log['2026-10-12'].s], [3, 155]);
+  sc.eq('⑫ 0초는 남기지 않는다', A.addPraySession(A.emptyDB(), t0, 0.2, 'map'), null);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {

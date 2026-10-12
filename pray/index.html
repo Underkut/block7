@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-7';
+const APP_VERSION = 'v. 26-1012-8';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -812,6 +812,23 @@ function postpone(db, id, date) {
 function addPrayTime(db, date, secs) {
   const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
   L.s = (Number(L.s) || 0) + Math.max(0, Math.round(secs || 0));
+}
+// ── 기도 한 번 한 번의 기록 (HB 2026-10-12 — 통합 There 대시보드를 위해 '어디서' 까지) ──
+// log[시작한 날].ses = [{id, t:시작ms, time:'HH:MM', d:초, src}] · src: 'map'(지도 There) | 'focus'(한 장씩)
+// 모양은 BLOCK7 · Sweeter 의 There 기록({ref,time,t,d,sec})과 맞췄다 — 나중에 한 판에서 같이 읽는다.
+// · 날의 합계 s 도 함께 더한다(예전 화면 · 예전 기기가 그대로 읽게).
+// · sid 를 주면 같은 한 번에 이어 붙인다 — 한 장씩은 앱을 잠깐 벗어날 때마다 끊어 적기 때문.
+// · 기기끼리 맞출 때: ses 는 id 가 있는 목록이라 두 기기 것이 **둘 다** 남고(mergeIds), s 는 더해진다(m3 의 key 's').
+function addPraySession(db, startMs, secs, src, sid) {
+  secs = Math.max(0, Math.round(secs || 0)); if (!secs) return null;
+  const st = new Date(startMs), date = ymd(st);
+  const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
+  L.s = (Number(L.s) || 0) + secs;
+  if (!Array.isArray(L.ses)) L.ses = [];
+  let e = sid ? L.ses.find(x => x && x.id === sid) : null;
+  if (e) e.d = (Number(e.d) || 0) + secs;
+  else { e = { id: sid || uid(), t: startMs, time: String(st.getHours()).padStart(2, '0') + ':' + String(st.getMinutes()).padStart(2, '0'), d: secs, src: src || '' }; L.ses.push(e); }
+  return e;
 }
 
 // ── 정렬 · 내 순서 ──
@@ -1813,8 +1830,9 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .vh-t{display:flex;align-items:flex-end;gap:2px;min-width:0}
 .there-b{width:auto;min-width:44px;padding:0 10px;gap:6px;color:var(--tx3);margin-bottom:-4px}
 .there-b .there-ic{font-size:21px}
-.there-b.on{color:var(--ac-tx)}
-.there-b .mt-clk{font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.there-b.on{color:var(--tx3)}
+/* 재는 동안에도 눈에 띄지 않게 (HB 2026-10-12 — 빨갛게 튀지 않게) — 그림 그대로 · 시간은 작고 흐리게 */
+.there-b .mt-clk{font-size:11.5px;font-weight:300;color:var(--tx3);opacity:.55;font-variant-numeric:tabular-nums;letter-spacing:.03em}
 .there-ic{display:inline-block;width:1em;height:1em;line-height:0}
 .there-ic svg{width:100%;height:100%;display:block}
 .mt-bg{position:absolute;inset:0;background:var(--mt-bg,#0e0d12);opacity:0;transition:opacity .8s ease;pointer-events:none;overflow:hidden}
@@ -2099,7 +2117,7 @@ function openFocus() {
     sortTargets(list.map(e => e.t), mode, ranks).forEach(t => { const e = list.find(x => x.t === t); if (!e.done) deck.push({ id: t.id, sec: s[0] }); });
   });
   if (!deck.length) { toast('오늘 남은 기도가 없습니다'); return; }
-  F.on = true; F.deck = deck; F.i = 0; F.t0 = Date.now(); F.sent = {};
+  F.on = true; F.deck = deck; F.i = 0; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {};
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span class="f-time" id="fTime">0:00</span><span class="f-pos" id="fPos"></span>' +
     '<button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></div><div class="f-stage" id="fStage"></div>' +
@@ -2160,7 +2178,7 @@ function focusNext(amen) {
   F.i++;
   focusCard(true);
 }
-function flushFocusTime() { if (!F.on) return; addPrayTime(DB, TODAY, (Date.now() - F.t0) / 1000); F.t0 = Date.now(); }
+function flushFocusTime() { if (!F.on) return; addPraySession(DB, F.start || F.t0, (Date.now() - F.t0) / 1000, 'focus', F.sid); F.t0 = Date.now(); }
 function closeFocus() {
   flushFocusTime(); save();
   F.on = false; clearInterval(F.tick);
@@ -4582,7 +4600,7 @@ function thereStop(why) {
   const bg = $('mtBg'), top = $('mtTop');
   if (bg) bg.classList.remove('on'); if (top) top.classList.remove('on');
   setTimeout(() => { if (!MT.on) { MT.P = []; MT.Q = []; [$('mtCv'), $('mtTop')].forEach(cv => { if (cv) cv.getContext('2d').clearRect(0, 0, MT.W, MT.H); }); } }, 700);
-  if (secs >= 10) { addPrayTime(DB, TODAY, secs); save(); toast('기도 ' + mtWords(secs) + ' 기록했습니다'); }
+  if (secs >= 10) { addPraySession(DB, MT.t0, secs, 'map'); save(); toast('기도 ' + mtWords(secs) + ' 기록했습니다'); }
   else if (why === 'button') toast('10초가 안 되어 기록하지 않았습니다');
   if (UI.tab === 'map' && !UI.layers.length) { const b = document.querySelector('#v-map .there-b'); if (b) { b.classList.remove('on'); const c = $('mtClk'); if (c) c.remove(); } }
 }
