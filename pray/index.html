@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-5';
+const APP_VERSION = 'v. 26-1012-6';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1098,6 +1098,144 @@ function readBackup(text) {
   if (!o || o.app !== 'pray' || !o.db) throw new Error('기도노트 백업 파일이 아닙니다');
   return normDB(o.db);
 }
+
+// ── 기기 사이 맞추기 (P-6) — 3자 병합 · 대량 손실 방어 · 덩어리 나누기 ──
+// 기준점(base) = 이 기기가 마지막으로 클라우드와 맞춘 모습. 셋 다 cloudOf 모양(테마 · rev 뺀 것)으로 견준다.
+// 규칙: 한쪽만 고친 것은 고친 쪽 · 둘 다 고친 것은 칸 단위로 · 고침과 지움이 부딪히면 **고친 쪽**(지우지 않는 쪽으로 기운다).
+//   id 가 있는 배열(사람 · 그룹 · 줄 · 기도제목 · 판 · 구분 …)은 id 로 맞춘다.
+//   기도 시간(log 의 s)은 양쪽에서 늘어난 만큼 더하고, 마지막 기도한 날(last)은 늦은 날.
+// ⚠️ 기준점은 uid 와 함께 둔다(화면 쪽 loadBase). 남의 기준점으로 병합하면 '전부 지웠다' 로 읽힌다(BLOCK7 2026-08-31 사고).
+const DEVICE_SET = ['mode', 'preset'];   // 이 기기에만 두는 설정 — 색상 테마 (HB 2026-10-10 확정)
+const SYNC_CHUNK = 250000;                // 덩어리 하나의 글자 수 — 한글 3바이트여도 문서 한 장(1MiB) 안
+const BULK_MIN = 10, BULK_RATIO = 0.3;    // 사람 · 그룹이 이만큼 넘게 **그리고** 이 비율 넘게 사라지면 멈추고 묻는다
+function cloudOf(db) { const c = clone(db); delete c.rev; DEVICE_SET.forEach(k => { delete c.set[k]; }); return c; }
+// 클라우드 모양을 이 기기 DB 로 — 이 기기 테마는 그대로
+function fromCloud(cdb, local) {
+  const d = normDB(cdb);
+  DEVICE_SET.forEach(k => { if (local && local.set && local.set[k] !== undefined) d.set[k] = local.set[k]; else delete d.set[k]; });
+  if (!d.set.mode) d.set.mode = 'dark';
+  if (d.set.preset === undefined) d.set.preset = '';
+  d.rev = ((local && local.rev) || 0) + 1;
+  return d;
+}
+function deq(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  if (Array.isArray(a)) { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (!deq(a[i], b[i])) return false; return true; }
+  const ka = Object.keys(a).filter(k => a[k] !== undefined), kb = Object.keys(b).filter(k => b[k] !== undefined);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (b[k] === undefined || !deq(a[k], b[k])) return false;
+  return true;
+}
+function isPlain(x) { return !!x && typeof x === 'object' && !Array.isArray(x); }
+function hasId(e) { return isPlain(e) && typeof e.id === 'string' && e.id !== ''; }
+// 차례 합치기 — 이 기기에서 (셋 다 가진 것의) 차례를 안 바꿨으면 클라우드 차례, 바꿨으면 이 기기 차례.
+// 한쪽에만 있는 것은 제 목록에서 바로 앞에 있던 것 뒤에 끼운다.
+function mergeOrder(b, l, r, keep) {
+  const sb = new Set(b), sl = new Set(l), sr = new Set(r);
+  const inAll = x => sb.has(x) && sl.has(x) && sr.has(x);
+  const lMoved = !deq(l.filter(inAll), b.filter(inAll));
+  const prim = lMoved ? l : r, other = lMoved ? r : l;
+  const out = [], seen = new Set();
+  prim.forEach(x => { if (keep.has(x) && !seen.has(x)) { out.push(x); seen.add(x); } });
+  other.forEach((x, i) => {
+    if (!keep.has(x) || seen.has(x)) return;
+    let at = 0;
+    for (let j = i - 1; j >= 0; j--) { const k = out.indexOf(other[j]); if (k >= 0) { at = k + 1; break; } }
+    out.splice(at, 0, x); seen.add(x);
+  });
+  return out;
+}
+function mergeIds(b, l, r) {
+  const mb = new Map(b.map(e => [e.id, e])), ml = new Map(l.map(e => [e.id, e])), mr = new Map(r.map(e => [e.id, e]));
+  const keep = new Set(), val = new Map();
+  [...new Set([...ml.keys(), ...mr.keys(), ...mb.keys()])].forEach(id => {
+    const B = mb.get(id), L = ml.get(id), R = mr.get(id);
+    let v;
+    if (L && R) v = m3(B, L, R, '');
+    else if (L) v = B && deq(L, B) ? undefined : L;    // 클라우드가 지웠다 — 이 기기도 안 고쳤으면 지우고, 고쳤으면 살린다
+    else if (R) v = B && deq(R, B) ? undefined : R;    // 이 기기가 지웠다 — 같은 규칙
+    if (v !== undefined) { keep.add(id); val.set(id, v); }
+  });
+  return mergeOrder(b.map(e => e.id), l.map(e => e.id), r.map(e => e.id), keep).map(id => val.get(id));
+}
+// 값 목록(요일 · 연동 자리 · 기도한 id …) — 양쪽에 다 있거나, 한쪽이 새로 넣은 것만 남는다
+function mergeVals(b, l, r) {
+  const sb = new Set(b), sl = new Set(l), sr = new Set(r), keep = new Set();
+  [...sl, ...sr].forEach(x => { if ((sl.has(x) && sr.has(x)) || !sb.has(x)) keep.add(x); });
+  return mergeOrder(b, l, r, keep);
+}
+function hasDup(a) { return new Set(a).size !== a.length; }
+function m3(b, l, r, key) {
+  if (deq(l, r)) return l;
+  if (deq(l, b)) return r;
+  if (deq(r, b)) return l;
+  if (l === undefined) return r;   // 한쪽이 지우고 한쪽이 고침 → 고친 쪽
+  if (r === undefined) return l;
+  if (Array.isArray(l) && Array.isArray(r)) {
+    const B = Array.isArray(b) ? b : [], all = B.concat(l, r);
+    if (key === 'iv' && l.length === r.length && B.length === l.length) return l.map((v, i) => m3(B[i], v, r[i], ''));
+    if (all.length && all.every(hasId)) return mergeIds(B, l, r);
+    if (all.every(e => e === null || typeof e !== 'object') && !hasDup(l) && !hasDup(r) && !hasDup(B)) return mergeVals(B, l, r);
+    return l;
+  }
+  if (isPlain(l) && isPlain(r)) {
+    const B = isPlain(b) ? b : {}, out = {};
+    [...new Set([...Object.keys(l), ...Object.keys(r), ...Object.keys(B)])].forEach(k => {
+      const v = m3(B[k], l[k], r[k], k);
+      if (v !== undefined) out[k] = v;
+    });
+    return out;
+  }
+  if (key === 's' && typeof l === 'number' && typeof r === 'number') return l + r - (typeof b === 'number' ? b : 0);
+  if (key === 'last' && typeof l === 'string' && typeof r === 'string') return l > r ? l : r;
+  return l;   // 같은 칸을 둘 다 다르게 — 이 기기 것
+}
+function merge3(base, local, remote) { return m3(base, local, remote, ''); }
+// 사람 · 그룹 id (샘플 항목은 안 센다 — 빈 기기가 샘플을 지우는 것은 손실이 아니다)
+function keyIds(db) { return [...(db.T || []).filter(t => t.kind === 'person'), ...(db.G || [])].map(x => x.id); }
+function bulkLoss(from, to) {
+  const a = keyIds(from), m = new Set(keyIds(to));
+  const lost = a.filter(id => !m.has(id)).length;
+  return { lost: lost, of: a.length, big: lost > BULK_MIN && lost > a.length * BULK_RATIO };
+}
+// 사람 · 그룹 · 기도 기록 · 판 · 보낸 할일이 하나도 없으면 '빈 기기' (샘플만 든 것)
+function isBlankDB(db) {
+  return !db || (!(db.T || []).some(t => t.kind === 'person') && !(db.G || []).length && !Object.keys(db.log || {}).length &&
+    !(db.snaps || []).length && !(db.todo || []).length);
+}
+// 무엇을 할지 — 화면 없이 정한다 (tests/test_pray.js ⑪ 이 이 표를 돈다)
+//   push 이 기기 것을 올림 · pull 클라우드 것을 받기만 · merge 합친 것을 받고 올림 · same 할 일 없음
+//   ask  기준점 없이 둘 다 자료가 있음 → 사람이 고른다 · bulk 많이 사라짐 → 사람이 고른다
+function syncPlan(base, local, remote) {
+  if (!remote) return { act: 'push', db: local };
+  if (deq(local, remote)) return { act: 'same', db: remote };
+  if (!base) {
+    if (isBlankDB(local)) return { act: 'pull', db: remote };
+    if (isBlankDB(remote)) return { act: 'push', db: local };
+    return { act: 'ask', db: null };
+  }
+  const merged = merge3(base, local, remote);
+  const fromL = bulkLoss(local, merged), fromR = bulkLoss(remote, merged);
+  // 한쪽이 통째로 빈 기기가 됐다 — 수가 적어도(10 아래) 묻는다. 저장이 깨져 샘플로 다시 시작한 기기가 이 모양이다
+  // (e2e ⑧ 에서 사람 5명짜리가 방어를 그냥 지나쳐 실제로 걸렸다). '처음 상태로 되돌리기' 도 여기서 한 번 묻는다.
+  const lBlank = !isBlankDB(base) && isBlankDB(local) && !isBlankDB(remote);
+  const rBlank = !isBlankDB(base) && isBlankDB(remote) && !isBlankDB(local);
+  if (fromR.big || lBlank) return { act: 'bulk', side: 'local', db: merged, fromL: fromL, fromR: fromR };
+  if (fromL.big || rBlank) return { act: 'bulk', side: 'remote', db: merged, fromL: fromL, fromR: fromR };
+  return { act: deq(merged, remote) ? 'pull' : 'merge', db: merged };
+}
+// 글을 덩어리로 — 이모지(서로게이트 한 쌍) 가운데를 자르지 않는다. 반쪽 글자는 서버가 깨뜨린다.
+function splitChunks(s, size) {
+  const out = []; let i = 0;
+  while (i < s.length) {
+    let j = Math.min(s.length, i + size);
+    if (j < s.length) { const c = s.charCodeAt(j - 1); if (c >= 0xD800 && c <= 0xDBFF) j--; }
+    out.push(s.slice(i, j)); i = j;
+  }
+  return out.length ? out : [''];
+}
 </script>
 <script>
 // ── 테마 ──
@@ -1525,6 +1663,7 @@ textarea.field{min-height:72px;line-height:1.6}
 
 /* 설정 목록 */
 .set-g{margin:8px 16px 0;border-radius:14px;background:var(--s1);overflow:hidden}
+.set-r[hidden]{display:none}
 .set-r{width:100%;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--bd);font-size:15px}
 .set-r:last-child{border-bottom:0}
 .set-r .v{margin-left:auto;color:var(--tx2);font-size:14px;display:flex;align-items:center;gap:6px}
@@ -1587,7 +1726,8 @@ textarea.field{min-height:72px;line-height:1.6}
 .sh-grab{height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:none;cursor:grab}
 .sh-grab i{width:38px;height:4px;border-radius:2px;background:var(--bd2)}
 .sh-t{padding:0 20px 8px;font-size:16px;font-weight:600;display:flex;align-items:center}
-.sh-t small{margin-left:8px;font-weight:400;color:var(--tx3);font-size:12.5px}
+.sh-t{flex-wrap:wrap}
+.sh-t small{flex-basis:100%;margin-top:4px;font-weight:400;color:var(--tx3);font-size:12.5px;line-height:1.5}
 .sh-b{overflow-y:auto;padding:0 0 4px}
 .opt{width:100%;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;font-size:15px;border-top:1px solid var(--bd)}
 .opt .d{font-size:12.5px;color:var(--tx3);margin-top:1px}
@@ -1720,12 +1860,16 @@ const ICONS = {
   frame: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M3.5 15l5-4 4 3 3-2 5 4"/>',
   clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
   sheet: '<rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="10" y1="4" x2="10" y2="20"/>',
+  cloud: '<path d="M7 18h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.2 9.6 4.2 4.2 0 0 0 7 18z"/>',
+  user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.3 3.8-5 7-5s5.8 1.7 7 5"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>'
 };
 function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
 
 // ── 상태 ──
 let DB = loadDB();
+// 기기 사이 맞추기 상태 (아래 '로그인 · 기기 사이 맞추기') — save() 가 부르므로 맨 앞에 둔다
+const SY = { user: null, status: 'off', err: '', busy: false, again: false, t: 0, unsub: null, pending: null, at: 0, cache: null, watching: false };
 let TODAY = ymd();
 const UI = {
   tab: 'today', layers: [], listCat: 'all', listView: 'table', listGrouped: false, histTab: 'snap',
@@ -1739,7 +1883,7 @@ function loadDB() {
   return d;
 }
 let saveT = 0;
-function save() { DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+function save() { DB.rev++; EFFC = null; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); syncSoon(); }
 // 보이는 표시 색 — 직접 칠한 색, 없으면 소속에 이어 둔 색 (core markOf). 저장할 때마다 다시 센다
 let EFFC = null;
 function mk(t) { if (!EFFC) EFFC = effMarkMap(DB); return markOf(DB, t, EFFC); }
@@ -2404,7 +2548,7 @@ LAYERS.groups = () => {
 LAYERS.settings = () => {
   const p = themeById(DB.set.preset);
   const modeName = { dark: '다크', light: '라이트', system: '시스템' }[DB.set.mode] || '다크';
-  let b = '<div class="label">화면</div><div class="set-g"><button class="set-r" data-a="theme">' + ico('theme') + '색상 테마<span class="v">' + esc((p ? p.name : '기도노트 기본') + ' · ' + modeName) + ico('chevR') + '</span></button>' +
+  let b = accountBlock() + '<div class="label">화면</div><div class="set-g"><button class="set-r" data-a="theme">' + ico('theme') + '색상 테마<span class="v">' + esc((p ? p.name : '기도노트 기본') + ' · ' + modeName) + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="marks">' + ico('dots4') + '표시 색 이름<span class="v">' + ico('chevR') + '</span></button></div>';
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
@@ -2417,7 +2561,7 @@ LAYERS.settings = () => {
     '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
-  b += '<div class="hint" style="padding:20px 20px 0">자료는 이 기기에만 저장됩니다 (로그인·기기 사이 맞추기는 다음 단계). 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
+  b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
   return { title: '설정', body: b };
 };
@@ -2850,8 +2994,9 @@ function addCat(kind, inp) {
   (kind === 'cats' ? DB.cats : DB.subs).push(kind === 'cats' ? { id: uid(), name: v, person: false } : { id: uid(), name: v });
   save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="' + kind + '"]'); if (n) n.focus(); }, 30);
 }
-ACT.backup = () => {
-  const text = exportBackup(DB), name = '기도노트-백업-' + TODAY.replace(/-/g, '') + '.json';
+ACT.backup = () => shareBackup(DB, '기도노트-백업-' + TODAY.replace(/-/g, '') + '.json');
+function shareBackup(db, name) {
+  const text = exportBackup(db);
   const blob = new Blob([text], { type: 'application/json' });
   try {
     const file = new File([blob], name, { type: 'application/json' });
@@ -3949,6 +4094,292 @@ document.addEventListener('click', e => {
   if (!el) return;
   doAct(el, e);
 }, true);
+
+// ═══ 로그인 · 기기 사이 맞추기 (P-6, HB 2026-10-12) ═══
+// Sweeter · BLOCK7 과 **같은 계정**(같은 파이어베이스 프로젝트 · 같은 이메일) → uid 가 같다.
+// ⚠️ 로그인 상태는 따로 둔다(앱 이름 'pray'). 같은 sweeter.my 라 기본 앱을 쓰면 Sweeter 와 로그인이 묶이는데,
+//    Sweeter 는 로그아웃하면 그 기기 자료를 비운다 — 여기서 로그아웃 · 계정 바꾸기가 열린 Sweeter 탭을 건드리면 안 된다.
+//    대신 같은 브라우저에 Sweeter 로그인이 있으면 '그 계정으로 계속' 한 번에 (updateCurrentUser).
+// 클라우드 칸: pray/{uid} (머리: wid · 덩어리 수) + pray/{uid}/c/{0,1…} (글 덩어리). users/{uid} 는 안 건드린다.
+// 병합 규칙은 core(merge3 · syncPlan) — tests/test_pray.js ⑪.
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const SYNC_KEY = 'pray.sync', BASE_KEY = 'pray.syncbase', BEFORE_KEY = 'pray.v1.before';
+let FB = null, FBP = null;
+function fbLoad() {
+  if (FB) return Promise.resolve(FB);
+  if (FBP) return FBP;
+  const one = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('net')); document.head.appendChild(s); });
+  FBP = FB_JS.reduce((p, src) => p.then(() => (window.firebase && src.includes('-app-') ? null : one(src))), Promise.resolve()).then(() => {
+    const app = firebase.apps.find(a => a.name === 'pray') || firebase.initializeApp(FB_CFG, 'pray');
+    const auth = app.auth(), db = app.firestore();
+    if (window.PRAY_EMU) { auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true }); db.useEmulator('127.0.0.1', 8080); }
+    FB = { app: app, auth: auth, db: db, fv: firebase.firestore.FieldValue };
+    return FB;
+  }).catch(e => { FBP = null; throw e; });
+  return FBP;
+}
+function fbErr(e) {
+  const c = (e && e.code) || '';
+  if (/network|unavailable/.test(c) || (e && e.message === 'net')) return '인터넷 연결을 확인해 주세요';
+  if (/permission/.test(c)) return '서버 권한이 아직 없습니다 (보안 규칙을 확인해 주세요)';
+  if (/invalid-email/.test(c)) return '이메일 모양이 맞지 않습니다';
+  if (/wrong-password|invalid-credential|user-not-found|invalid-login/.test(c)) return '이메일 또는 비밀번호가 다릅니다';
+  if (/too-many-requests/.test(c)) return '여러 번 틀렸습니다 — 잠시 뒤에 다시 해 주세요';
+  if (/user-token-expired|requires-recent-login|user-disabled/.test(c)) return '다시 로그인해 주세요';
+  return '잠시 뒤에 다시 해 주세요';
+}
+// 이 기기에 남기는 것 — 로그인했던 계정(다음에 열 때 파이어베이스를 불러올지) · 기준점(uid 와 함께)
+function syncMeta() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || 'null') || {}; } catch (e) { return {}; } }
+function setSyncMeta(o) { try { o ? localStorage.setItem(SYNC_KEY, JSON.stringify(o)) : localStorage.removeItem(SYNC_KEY); } catch (e) {} }
+function loadBase(uid) {
+  try { const o = JSON.parse(localStorage.getItem(BASE_KEY) || 'null'); if (o && o.uid === uid && o.db) return o; } catch (e) {}
+  return null;   // ⚠️ 다른 계정의 기준점은 없는 것으로 — 그것으로 병합하면 '전부 지웠다' 로 읽힌다
+}
+function setBase(uid, wid, cdb) {
+  try { localStorage.setItem(BASE_KEY, JSON.stringify({ uid: uid, wid: wid, db: cdb })); }
+  catch (e) { try { localStorage.removeItem(BASE_KEY); } catch (e2) {} }   // 못 남기면 차라리 없앤다 (낡은 기준점보다 안전)
+  SY.cache = { wid: wid, db: cdb };
+}
+function stashBefore(cdb) { try { localStorage.setItem(BEFORE_KEY, JSON.stringify({ at: new Date().toISOString(), db: cdb })); } catch (e) {} }
+function counts(cdb) { return { p: (cdb.T || []).filter(t => t.kind === 'person').length, g: (cdb.G || []).length }; }
+
+function setStatus(st, err) { SY.status = st; SY.err = err || ''; if (st === 'ok') SY.at = Date.now(); paintSync(); }
+function syncText() {
+  if (!SY.user) return SY.status === 'out' ? '다시 로그인해 주세요' : '';
+  if (SY.status === 'sync') return '맞추는 중…';
+  if (SY.status === 'offline') return '인터넷 없음 — 연결되면 맞춥니다';
+  if (SY.status === 'err') return SY.err;
+  if (SY.status === 'ask') return '고를 것이 있습니다';
+  if (SY.status === 'ok') { const m = Math.round((Date.now() - SY.at) / 60000); return '맞춤 · ' + (m < 1 ? '방금' : m < 60 ? m + '분 전' : Math.round(m / 60) + '시간 전'); }
+  return '';
+}
+// 설정을 통째로 다시 그리지 않고 글자만 — 지도 제목 칸에 쓰는 중이어도 커서가 안 날아가게
+function paintSync() { const el = $('syncSt'); if (el) el.textContent = syncText(); const r = $('syncAsk'); if (r) r.hidden = !SY.pending; }
+function accountBlock() {
+  if (!SY.user) return '<div class="label">계정</div><div class="set-g"><button class="set-r" data-a="login">' + ico('user') + '로그인' +
+    '<span class="v">' + (SY.status === 'out' ? '다시 로그인해 주세요' : 'Sweeter 와 같은 계정') + ico('chevR') + '</span></button></div>';
+  let b = '<div class="label">계정</div><div class="set-g"><div class="set-r">' + ico('user') + esc(SY.user.email || '') + '</div>' +
+    '<button class="set-r" data-a="sync-now">' + ico('cloud') + '기기 사이 맞추기<span class="v" id="syncSt">' + esc(syncText()) + '</span></button>' +
+    '<button class="set-r danger" id="syncAsk" data-a="sync-ask"' + (SY.pending ? '' : ' hidden') + '>맞추기 멈춤 — 눌러서 고르기</button>';
+  let st = null; try { st = JSON.parse(localStorage.getItem(BEFORE_KEY) || 'null'); } catch (e) {}
+  if (st && st.db) b += '<button class="set-r" data-a="sync-before">' + ico('up') + '맞추기 전에 남겨 둔 자료<span class="v">' + esc(shortDate(ymd(new Date(st.at)))) + ' · 백업 파일로</span></button>';
+  return b + '<button class="set-r" data-a="logout">로그아웃</button></div>';
+}
+
+// 고치는 중이면 받은 것을 그리지 않는다 — 쓰던 글자 · 열린 상세의 '취소'(열 때 모습으로 되돌림) · 끌기가 깨진다
+function uiBusy() {
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return true;
+  return !!(SHEET || UI.mapEdit || F.on || document.body.classList.contains('dragging') || UI.layers.some(L => L && L.snap));
+}
+function syncSoon(ms) {
+  if (!SY.user || SY.pending) return;
+  clearTimeout(SY.t); SY.t = setTimeout(syncNow, ms == null ? 2000 : ms);
+}
+// 클라우드 읽기 — 머리의 wid 가 아는 것과 같으면 덩어리를 다시 받지 않는다
+async function readCloud(uid) {
+  const ref = FB.db.doc('pray/' + uid);
+  for (let k = 0; k < 4; k++) {
+    const m = await ref.get();
+    if (!m.exists) return { wid: '', db: null };
+    const meta = m.data();
+    if (SY.cache && SY.cache.wid === meta.wid) return { wid: meta.wid, db: SY.cache.db };
+    const parts = await Promise.all(Array.from({ length: meta.n || 0 }, (_, i) => ref.collection('c').doc(String(i)).get()));
+    if (parts.every(p => p.exists && p.data().wid === meta.wid)) {   // 쓰는 도중에 읽은 덩어리는 버리고 다시
+      const db = cloudOf(normDB(JSON.parse(parts.map(p => p.data().s).join(''))));
+      SY.cache = { wid: meta.wid, db: db };
+      return { wid: meta.wid, db: db };
+    }
+  }
+  throw new Error('읽는 중에 계속 바뀌었습니다');
+}
+// 클라우드 쓰기 — 머리의 wid 가 내가 병합한 그 판일 때만 (트랜잭션). 아니면 null → 다시 받아 병합.
+// ⚠️ 이게 없으면 두 기기가 동시에 쓸 때 나중 것이 앞의 것을 덮고, 앞 기기는 '내가 넣은 것을 상대가 지웠다' 로 읽는다.
+async function writeCloud(who, cdb, expect) {
+  const json = JSON.stringify(cdb), parts = splitChunks(json, SYNC_CHUNK), nw = uid(), ref = FB.db.doc('pray/' + who), c = counts(cdb);
+  const ok = await FB.db.runTransaction(async tx => {
+    const s = await tx.get(ref);
+    const cur = s.exists ? (s.data().wid || '') : '';
+    if (cur !== (expect || '')) return false;
+    const oldN = s.exists ? (s.data().n || 0) : 0;
+    tx.set(ref, { wid: nw, n: parts.length, len: json.length, people: c.p, groups: c.g, v: APP_VERSION, at: FB.fv.serverTimestamp() });
+    parts.forEach((p, i) => tx.set(ref.collection('c').doc(String(i)), { wid: nw, s: p }));
+    for (let i = parts.length; i < oldN; i++) tx.delete(ref.collection('c').doc(String(i)));
+    return true;
+  });
+  return ok ? nw : null;
+}
+function applyCloud(cdb) {
+  DB = fromCloud(cdb, DB); EFFC = null;
+  const t = $('toast'); if (t && t._fn) { t._fn = null; t.classList.remove('on'); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
+  saveNow(); refresh();
+}
+async function syncNow() {
+  clearTimeout(SY.t);
+  if (!SY.user || SY.pending) return;
+  if (SY.busy) { SY.again = true; return; }
+  if (navigator.onLine === false) { setStatus('offline'); return; }
+  SY.busy = true; setStatus('sync');
+  const uid = SY.user.uid;
+  try {
+    for (let k = 0; k < 4; k++) {
+      const got = await readCloud(uid);
+      if (!SY.user || SY.user.uid !== uid) return;   // 그 사이에 로그아웃
+      const base = loadBase(uid);
+      const plan = syncPlan(base ? base.db : null, cloudOf(DB), got.db);
+      const needsApply = plan.act === 'pull' || plan.act === 'merge' || plan.act === 'ask' || plan.act === 'bulk';
+      if (needsApply && uiBusy()) { setStatus('ok'); syncSoon(1500); return; }   // 고치는 중 — 끝난 뒤에
+      if (plan.act === 'ask' || plan.act === 'bulk') { SY.pending = { plan: plan, wid: got.wid, remote: got.db, local: cloudOf(DB) }; setStatus('ask'); askSync(); return; }
+      if (plan.act === 'same') { setBase(uid, got.wid, got.db); break; }
+      if (plan.act === 'pull') { applyCloud(plan.db); setBase(uid, got.wid, plan.db); break; }
+      if (plan.act === 'merge') applyCloud(plan.db);
+      const nw = await writeCloud(uid, plan.db, got.wid);
+      if (nw) { setBase(uid, nw, plan.db); break; }
+      // 그 사이에 다른 기기가 썼다 — 다시 받아 병합한다 (합친 것은 이미 이 기기에 있으니 잃지 않는다)
+    }
+    setStatus('ok');
+  } catch (e) {
+    setStatus(navigator.onLine === false ? 'offline' : 'err', fbErr(e));
+    if (SY.user) syncSoon(60000);
+  } finally {
+    SY.busy = false;
+    if (SY.again) { SY.again = false; syncSoon(300); }
+  }
+}
+function askSync() {
+  const P = SY.pending; if (!P) return;
+  const plan = P.plan, L = counts(P.local), R = P.remote ? counts(P.remote) : { p: 0, g: 0 };
+  const nums = c => '사람 ' + c.p + ' · 그룹 ' + c.g;
+  let title, sub, opts;
+  if (plan.act === 'ask') {
+    title = '이 기기와 클라우드에 둘 다 자료가 있습니다'; sub = '처음 맞출 때 한 번만 묻습니다';
+    opts = [{ v: 'cloud', label: '클라우드 자료 쓰기', desc: nums(R) + ' — 이 기기 자료(' + nums(L) + ')는 한 벌 남겨 둡니다' },
+            { v: 'local', label: '이 기기 자료 올리기', desc: nums(L) + ' — 클라우드 자료는 이 기기에 한 벌 남겨 둡니다' }];
+  } else if (plan.side === 'local') {
+    title = '이 기기에서 사람 · 그룹이 한꺼번에 많이 사라졌습니다'; sub = '클라우드와 맞추면 ' + plan.fromR.lost + '개가 지워집니다';
+    opts = [{ v: 'merged', label: '이 기기대로 클라우드에서도 지우기', desc: '지운 것이 맞으면' },
+            { v: 'cloud', label: '클라우드 것으로 되살리기', desc: nums(R) }];
+  } else {
+    title = '클라우드에서 사람 · 그룹이 한꺼번에 많이 사라졌습니다'; sub = '맞추면 이 기기에서 ' + plan.fromL.lost + '개가 지워집니다';
+    opts = [{ v: 'merged', label: '클라우드대로 이 기기에서도 지우기', desc: '다른 기기에서 지운 것이 맞으면' },
+            { v: 'local', label: '이 기기 것 지키기', desc: nums(L) + ' — 클라우드에 다시 올립니다' }];
+  }
+  choose(title, opts, '', resolveSync, sub);
+}
+async function resolveSync(v) {
+  const P = SY.pending; if (!P || !SY.user) return;
+  SY.pending = null; paintSync();
+  const uid = SY.user.uid, now = cloudOf(DB);
+  // 고르는 사이에 이 기기가 바뀌었으면 다시 본다 (고른 것이 낡은 모습을 덮지 않게)
+  if (v !== 'local' && !deq(now, P.local)) { syncNow(); return; }
+  setStatus('sync');
+  try {
+    if (v === 'cloud') { stashBefore(now); applyCloud(P.remote); setBase(uid, P.wid, P.remote); toast('클라우드 자료로 맞췄습니다'); }
+    else {
+      const out = v === 'local' ? now : P.plan.db;
+      if (v === 'local') { if (P.remote) stashBefore(P.remote); } else { stashBefore(now); applyCloud(out); }
+      const nw = await writeCloud(uid, out, P.wid);
+      if (!nw) { syncNow(); return; }   // 그 사이에 다른 기기가 썼다 — 다시 받아 본다
+      setBase(uid, nw, out); toast(v === 'local' ? '이 기기 자료를 올렸습니다' : '맞췄습니다');
+    }
+    setStatus('ok');
+  } catch (e) { setStatus('err', fbErr(e)); }
+}
+
+function startSync(user) {
+  const was = SY.user && SY.user.uid;
+  SY.user = user; SY.pending = null;
+  setSyncMeta({ uid: user.uid, email: user.email || '' });
+  if (was !== user.uid) SY.cache = null;
+  if (SY.unsub) SY.unsub();
+  // 다른 기기가 쓰면 머리 문서의 wid 가 바뀐다 → 받아서 맞춘다
+  SY.unsub = FB.db.doc('pray/' + user.uid).onSnapshot(s => {
+    const w = s.exists ? (s.data().wid || '') : '';
+    if (!SY.cache || SY.cache.wid !== w) syncSoon(200);
+  }, e => setStatus('err', fbErr(e)));
+  syncSoon(0); refreshAccount();
+}
+function stopSync(status) {
+  if (SY.unsub) { SY.unsub(); SY.unsub = null; }
+  clearTimeout(SY.t); SY.user = null; SY.pending = null; SY.cache = null;
+  setStatus(status || 'off'); refreshAccount();
+}
+// 설정이 열려 있으면 계정 칸을 다시 그린다 (글을 쓰는 중이면 그만 — 커서가 날아간다)
+function refreshAccount() {
+  const a = document.activeElement;
+  if (UI.layers.some(L => L.type === 'settings') && !(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA'))) refreshLayers();
+}
+function watchAuth() {
+  if (SY.watching) return; SY.watching = true;
+  FB.auth.onAuthStateChanged(u => {
+    if (u) { if (!SY.user || SY.user.uid !== u.uid) startSync(u); }
+    else stopSync(syncMeta().uid ? 'out' : 'off');   // 로그인했던 기기인데 세션이 끊겼다 (비밀번호를 바꿨다 등)
+  });
+}
+function bootSync() { fbLoad().then(watchAuth).catch(() => setStatus('offline')); }
+if (syncMeta().uid) bootSync();   // 로그인한 적 없는 기기는 파이어베이스를 아예 안 부른다 (가볍게 · 오프라인 그대로)
+window.addEventListener('online', () => { if (syncMeta().uid) { if (!FB) bootSync(); else syncSoon(0); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && SY.user) syncSoon(300); });
+
+// 같은 브라우저(sweeter.my)에 Sweeter 로그인이 있으면 그 계정 — Sweeter 는 기본 앱 이름을 쓴다
+async function sweeterUser() {
+  await fbLoad();
+  let def = firebase.apps.find(a => a.name === '[DEFAULT]');
+  if (!def) { def = firebase.initializeApp(FB_CFG); if (window.PRAY_EMU) def.auth().useEmulator('http://127.0.0.1:9099', { disableWarnings: true }); }
+  const u = await new Promise(res => { const off = def.auth().onAuthStateChanged(x => { off(); res(x); }); });
+  return u && !u.isAnonymous && u.email ? u : null;
+}
+ACT.login = () => {
+  openSheet('<div class="sh-t">로그인<small>Sweeter · BLOCK7 과 같은 이메일 · 비밀번호 — 같은 계정이면 자료가 한 칸에 모입니다</small></div>' +
+    '<div class="sh-b" id="lgSw"></div>' +
+    '<input class="field" id="lgEmail" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="이메일" enterkeyhint="next">' +
+    '<input class="field" id="lgPw" type="password" autocomplete="current-password" placeholder="비밀번호" enterkeyhint="go">' +
+    '<div class="hint" id="lgErr" style="color:var(--danger)"></div>' +
+    '<div class="sh-acts"><button class="ghost" data-a="login-reset">비밀번호를 잊었어요</button><button class="cta" data-a="login-go">로그인</button></div>');
+  sweeterUser().then(u => {
+    const box = $('lgSw'); if (!u || !box) return;
+    box.innerHTML = '<button class="opt" data-a="login-sw"><span style="flex:1"><div>Sweeter 계정으로 계속</div><div class="d">' + esc(u.email) + '</div></span>' + ico('chevR') + '</button>';
+  }).catch(() => {});
+};
+async function loginDone(p) {
+  const err = $('lgErr'), go = document.querySelector('[data-a="login-go"]');
+  if (err) err.textContent = ''; if (go) go.disabled = true;
+  try { await fbLoad(); watchAuth(); await p(); closeSheet(); toast('로그인했습니다 — 자료를 맞춥니다'); }
+  catch (e) { if ($('lgErr')) $('lgErr').textContent = fbErr(e); }
+  if (go) go.disabled = false;
+}
+ACT['login-go'] = () => {
+  const em = ($('lgEmail') || {}).value, pw = ($('lgPw') || {}).value;
+  if (!em || !pw) { $('lgErr').textContent = '이메일과 비밀번호를 써 주세요'; return; }
+  loginDone(() => FB.auth.signInWithEmailAndPassword(em.trim(), pw));
+};
+ACT['login-sw'] = () => loginDone(async () => { const u = await sweeterUser(); if (!u) throw { code: 'auth/user-token-expired' }; await FB.auth.updateCurrentUser(u); });
+ACT['login-reset'] = async () => {
+  const em = (($('lgEmail') || {}).value || '').trim();
+  if (!em) { $('lgErr').textContent = '이메일을 먼저 써 주세요'; return; }
+  try { await fbLoad(); await FB.auth.sendPasswordResetEmail(em); $('lgErr').textContent = ''; toast('비밀번호를 바꾸는 메일을 보냈습니다'); }
+  catch (e) { $('lgErr').textContent = fbErr(e); }
+};
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  if (e.target.id === 'lgEmail') { e.preventDefault(); const p = $('lgPw'); if (p) p.focus(); }
+  else if (e.target.id === 'lgPw') { e.preventDefault(); ACT['login-go'](); }
+});
+ACT['sync-now'] = () => { if (SY.pending) askSync(); else syncNow(); };
+ACT['sync-ask'] = () => askSync();
+ACT['sync-before'] = () => {
+  let st = null; try { st = JSON.parse(localStorage.getItem(BEFORE_KEY) || 'null'); } catch (e) {}
+  if (st && st.db) shareBackup(fromCloud(st.db, DB), '기도노트-맞추기전-' + st.at.slice(0, 10).replace(/-/g, '') + '.json');
+};
+ACT.logout = () => {
+  if (!confirm('로그아웃할까요?\n이 기기의 자료는 그대로 남고, 다른 기기와 맞추기만 멈춥니다.')) return;
+  saveNow(); setSyncMeta(null);   // 기준점은 uid 와 함께 남겨 둔다 — 같은 계정으로 다시 들어오면 이어서 맞춘다
+  stopSync('off');
+  if (FB) FB.auth.signOut().catch(() => {});
+  toast('로그아웃했습니다');
+};
 
 // ═══ 새 버전 (HB 2026-10-11) ═══
 // 아래 메뉴 오른쪽 구석의 버전을 누르면 서버의 새 버전을 찾아, 있으면 받아서 다시 연다.

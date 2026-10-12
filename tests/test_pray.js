@@ -14,6 +14,7 @@
 //  ⑩ 표시 색 잇기 — 소속에 이은 색은 칠하지 않아도 보이고, 직접 칠한 색이 먼저
 //  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
+//  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -31,7 +32,8 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
-  exportBackup, readBackup, _themeTokens, themeById };`, ctx);
+  exportBackup, readBackup, _themeTokens, themeById,
+  cloudOf, fromCloud, merge3, syncPlan, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -397,6 +399,133 @@ const MAPCSV = [
   const keep = db.T.find(t => t.name === '유리'); keep.topics.push(A.newTopic('기도제목 있음'));
   const n = A.parseEntryText(db, '유리 교체'); n.id = old.id; g.lines[0] = n;
   sc.eq('⑨-3 고친 뒤 안 쓰이는 카드만 치운다 (기도제목 있는 카드는 남김)', [A.dropOrphans(db, A.groupPids({ lines: [old] })), !!db.T.find(t => t.name === '유리'), !!db.T.find(t => t.name === '교체')], [['교체'], true, false]);
+}
+// ── ⑪ 기기 사이 맞추기 (P-6, 2026-10-12) ──
+// 아이폰 · 아이패드가 같은 계정으로 클라우드 한 칸을 같이 쓴다. 기준점(base) = 마지막으로 맞춘 모습.
+{
+  const C = x => A.cloudOf(x);
+  const J = x => JSON.parse(JSON.stringify(x));
+  const people = (db, names) => names.map(n => { const t = A.newTarget('person', n); db.T.push(t); return t; });
+  const base0 = A.seedDB(); people(base0, ['가온', '나래']);
+  const g0 = A.newGroup('청년 셀'); g0.lines.push({ id: 'l1', segs: [[base0.T.find(t => t.name === '가온').id]], r: {}, text: '' }); base0.G.push(g0);
+  const base = C(A.normDB(J(base0)));
+  const name = (db, n) => db.T.find(t => t.name === n);
+
+  // 1) 두 기기가 서로 다른 사람을 넣었다 → 둘 다 산다
+  {
+    const L = J(base), R = J(base);
+    people(L, ['다솜']); people(R, ['라온']);
+    const m = A.merge3(base, L, R);
+    sc.eq('⑪-1 두 기기가 각자 넣은 사람이 둘 다 산다', ['다솜', '라온'].map(n => !!name(m, n)), [true, true]);
+    sc.eq('⑪-1 반대 방향으로 합쳐도 같은 사람들', A.merge3(base, R, L).T.map(t => t.name).sort(), m.T.map(t => t.name).sort());
+  }
+  // 2) 같은 사람의 다른 칸 → 칸마다 고친 쪽
+  {
+    const L = J(base), R = J(base);
+    name(L, '가온').mark = 'red'; name(R, '가온').memo = '군 입대';
+    const m = A.merge3(base, L, R);
+    sc.eq('⑪-2 같은 사람의 다른 칸은 둘 다 남는다 (색 · 메모)', [name(m, '가온').mark, name(m, '가온').memo], ['red', '군 입대']);
+  }
+  // 3) 지우기
+  {
+    const L = J(base), R = J(base);
+    L.T = L.T.filter(t => t.name !== '나래');
+    sc.eq('⑪-3 한쪽이 지우고 다른 쪽이 안 건드렸으면 지워진다', !!name(A.merge3(base, L, R), '나래'), false);
+    const R2 = J(base); name(R2, '나래').topics.push(A.newTopic('취업'));
+    sc.eq('⑪-3 지움과 고침이 부딪히면 고친 쪽이 산다 (지우지 않는 쪽)', !!name(A.merge3(base, L, R2), '나래'), true);
+  }
+  // 4) 같은 날 기도 기록 — 기도한 id 는 합치고, 기도 시간은 늘어난 만큼 더한다
+  {
+    const b = J(base); b.log['2026-10-12'] = { d: [], p: {}, k: [], s: 60 };
+    const L = J(b), R = J(b);
+    const ga = name(L, '가온').id, na = name(L, '나래').id;
+    L.log['2026-10-12'].d.push(ga); L.log['2026-10-12'].s = 160;
+    R.log['2026-10-12'].d.push(na); R.log['2026-10-12'].s = 90;
+    const lg = A.merge3(b, L, R).log['2026-10-12'];
+    sc.eq('⑪-4 같은 날 두 기기에서 기도한 사람이 다 남는다', lg.d.slice().sort(), [ga, na].sort());
+    sc.eq('⑪-4 기도 시간은 양쪽에서 늘어난 만큼 더한다 (60 + 100 + 30)', lg.s, 190);
+    const L2 = J(base), R2 = J(base);
+    name(L2, '가온').last = '2026-10-11'; name(R2, '가온').last = '2026-10-12';
+    sc.eq('⑪-4 마지막 기도한 날은 늦은 날', name(A.merge3(base, L2, R2), '가온').last, '2026-10-12');
+  }
+  // 5) 순서 — 이 기기에서 그룹 차례를 바꿨으면 그 차례, 상대가 넣은 그룹은 제 앞 그룹 뒤에
+  {
+    const b = J(base); ['A', 'B', 'C'].forEach(n => b.G.push(A.newGroup(n)));
+    const L = J(b), R = J(b);
+    L.G.reverse();
+    const ng = A.newGroup('새 그룹'); const ci = R.G.findIndex(g => g.name === 'B'); R.G.splice(ci + 1, 0, ng);
+    const m = A.merge3(b, L, R);
+    sc.eq('⑪-5 이 기기에서 바꾼 차례를 지키고, 상대의 새 그룹은 제 앞(B) 뒤에', m.G.map(g => g.name), ['C', 'B', '새 그룹', 'A', '청년 셀']);
+    const L3 = J(b), R3 = J(b); R3.G.reverse();
+    sc.eq('⑪-5 이 기기가 차례를 안 바꿨으면 클라우드 차례', A.merge3(b, L3, R3).G.map(g => g.name), R3.G.map(g => g.name));
+  }
+  // 6) 같은 길이 배열(긴급도 주기 iv)은 자리마다 — 겹치는 숫자(1, 1)가 하나로 줄면 안 된다
+  {
+    const L = J(base), R = J(base); L.set.iv[2] = 3; R.set.iv[5] = 14;
+    sc.eq('⑪-6 긴급도 주기는 자리마다 합친다 (여섯 칸 그대로)', A.merge3(base, L, R).set.iv, [1, 1, 3, 3, 7, 14]);
+  }
+  // 7) 테마는 이 기기에만 — 클라우드에 안 올라가고, 받을 때 이 기기 테마를 지킨다
+  {
+    const d = A.seedDB(); d.set.mode = 'light'; d.set.preset = 'p3';
+    const c = A.cloudOf(d);
+    sc.eq('⑪-7 클라우드 모양에는 테마 · rev 가 없다', ['mode' in c.set, 'preset' in c.set, 'rev' in c], [false, false, false]);
+    const mine = A.seedDB(); mine.set.mode = 'system'; mine.set.preset = 'p9';
+    const got = A.fromCloud(c, mine);
+    sc.eq('⑪-7 받아도 이 기기 테마 그대로', [got.set.mode, got.set.preset], ['system', 'p9']);
+    sc.eq('⑪-7 다른 설정(1순위 개수)은 함께', A.fromCloud(Object.assign(J(c), { set: Object.assign(J(c.set), { topLimit: 9 }) }), mine).set.topLimit, 9);
+  }
+  // 8) 첫 로그인 표 (기준점 없음)
+  {
+    const seed = C(A.seedDB()), full = J(base);
+    sc.eq('⑪-8 클라우드가 비었으면 이 기기 것을 올린다', A.syncPlan(null, full, null).act, 'push');
+    sc.eq('⑪-8 이 기기가 빈 기기(샘플만)면 클라우드 것을 받는다', A.syncPlan(null, seed, full).act, 'pull');
+    sc.eq('⑪-8 클라우드가 샘플뿐이면 이 기기 것을 올린다', A.syncPlan(null, full, seed).act, 'push');
+    const other = J(base); people(other, ['마루']);
+    sc.eq('⑪-8 ⭐ 둘 다 자료가 있으면 묻는다 (기준점 없이 합치면 샘플이 둘씩 된다)', A.syncPlan(null, full, other).act, 'ask');
+    sc.eq('⑪-8 같으면 할 일 없음', A.syncPlan(null, full, J(full)).act, 'same');
+  }
+  // 9) 대량 손실 방어
+  {
+    const big0 = A.seedDB(); people(big0, Array.from({ length: 30 }, (_, i) => '사람' + i));
+    const big = C(A.normDB(J(big0)));
+    // 로컬 저장이 깨져 샘플로 다시 시작한 기기가 기준점은 갖고 있다 → '전부 지웠다' 로 읽힌다
+    const broken = C(A.seedDB());
+    const p1 = A.syncPlan(big, broken, J(big));
+    sc.eq('⑪-9 ⭐ 깨져서 비어 버린 기기가 클라우드를 비우지 못한다 (멈추고 묻는다)', [p1.act, p1.side, p1.fromR.lost], ['bulk', 'local', 30]);
+    const cut = J(big); cut.T = cut.T.filter(t => !/^사람(1\d|2\d)$/.test(t.name));
+    const p2 = A.syncPlan(big, J(big), cut);
+    sc.eq('⑪-9 클라우드에서 한꺼번에 20명이 사라져도 멈추고 묻는다', [p2.act, p2.side, p2.fromL.lost], ['bulk', 'remote', 20]);
+    const few = J(big); few.T = few.T.filter(t => !/^사람[0-4]$/.test(t.name));
+    sc.eq('⑪-9 몇 명(5)은 그대로 맞춘다', A.syncPlan(big, J(big), few).act, 'pull');
+    // 사람이 적어도(5명) 이 기기가 통째로 빈 기기가 됐으면 묻는다 — e2e ⑧ 에서 실제로 방어를 지나쳤던 모양
+    const small0 = A.seedDB(); people(small0, ['일', '이', '삼', '사', '오']);
+    const small = C(A.normDB(J(small0)));
+    const p3 = A.syncPlan(small, C(A.seedDB()), J(small));
+    sc.eq('⑪-9 ⭐ 사람 5명뿐이어도 깨진 기기가 클라우드를 비우지 못한다', [p3.act, p3.side], ['bulk', 'local']);
+    const p4 = A.syncPlan(small, J(small), C(A.seedDB()));
+    sc.eq('⑪-9 클라우드가 통째로 비어도 묻는다', [p4.act, p4.side], ['bulk', 'remote']);
+    // 빈 기기가 먼저 로그인해 샘플을 올려 둔 뒤, 자료 있는 기기가 덮었다 → 빈 기기는 그것을 받는다(묻지 않음)
+    const seedA = C(A.seedDB());
+    sc.eq('⑪-9 샘플 기기가 자료를 받을 때는 묻지 않는다 (샘플 항목은 손실로 안 센다)', A.syncPlan(seedA, J(seedA), big).act, 'pull');
+  }
+  // 10) 맞춘 뒤에는 두 기기가 같은 모습이 된다
+  {
+    const L = J(base), R = J(base);
+    people(L, ['바다']); name(R, '나래').mark = 'blue'; R.G[0].name = '청년 1셀';
+    const p = A.syncPlan(base, L, R);
+    sc.eq('⑪-10 서로 다르게 고쳤으면 합쳐서 올린다', p.act, 'merge');
+    const p2 = A.syncPlan(base, R, p.db);
+    sc.eq('⑪-10 상대 기기는 합친 것을 그대로 받는다 (같은 모습)', [p2.act, A.deq(p2.db, p.db)], ['pull', true]);
+  }
+  // 11) 덩어리 나누기 — 문서 한 장(1MiB)을 넘지 않게, 이모지 가운데를 자르지 않게
+  {
+    const s = '가'.repeat(9) + '😀' + '나'.repeat(9);
+    const parts = A.splitChunks(s, 10);
+    sc.eq('⑪-11 이어 붙이면 그대로', parts.join(''), s);
+    sc.eq('⑪-11 반쪽 이모지로 끝나는 덩어리가 없다', parts.some(x => { const c = x.charCodeAt(x.length - 1); return c >= 0xD800 && c <= 0xDBFF; }), false);
+    sc.eq('⑪-11 덩어리 하나가 한글이어도 1MiB 안 (25만 자 × 3바이트)', A.SYNC_CHUNK * 3 < 1048576 - 4096, true);
+    sc.eq('⑪-11 빈 글도 덩어리 하나', A.splitChunks('', 10), ['']);
+  }
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
