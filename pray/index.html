@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-6';
+const APP_VERSION = 'v. 26-1012-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1808,6 +1808,33 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .md-trash.on{opacity:1;transform:none}
 .md-trash.hot{background:var(--danger);color:#fff;transform:scale(1.08)}
 .md-drag.md-doom{opacity:.55;box-shadow:0 0 0 2px var(--danger),0 18px 40px -10px rgba(0,0,0,.55)}
+
+/* ── 지도 There (HB 2026-10-12) — 지도 뒤에 약하게 깔리는 There 판 ── */
+.vh-t{display:flex;align-items:flex-end;gap:2px;min-width:0}
+.there-b{width:auto;min-width:44px;padding:0 10px;gap:6px;color:var(--tx3);margin-bottom:-4px}
+.there-b .there-ic{font-size:21px}
+.there-b.on{color:var(--ac-tx)}
+.there-b .mt-clk{font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.there-ic{display:inline-block;width:1em;height:1em;line-height:0}
+.there-ic svg{width:100%;height:100%;display:block}
+.mt-bg{position:absolute;inset:0;background:var(--mt-bg,#0e0d12);opacity:0;transition:opacity .8s ease;pointer-events:none;overflow:hidden}
+.mt-bg.on{opacity:1}
+.mt-bg .mt-haze{position:absolute;inset:-10%;will-change:transform;
+  background:radial-gradient(40% 30% at 30% 80%,var(--mt-g1),transparent 70%),radial-gradient(35% 28% at 70% 20%,var(--mt-g2),transparent 70%),radial-gradient(50% 40% at 50% 50%,var(--mt-g1),transparent 70%);
+  animation:mtDrift 14s ease-in-out infinite alternate}
+@keyframes mtDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-3%,2%) scale(1.06)}100%{transform:translate(2%,-2%) scale(1.02)}}
+.mt-bg canvas,.mt-top{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mt-top{z-index:20;opacity:0;transition:opacity .8s ease}
+.mt-top.on{opacity:1}
+/* 카드는 살짝 비치게 — 빛이 카드 뒤로 지나가는 것이 어렴풋이 보이도록 */
+.there-on #v-map .gcard:not(.madd-group){background:color-mix(in srgb,var(--s1) 86%,transparent)}
+.there-on #v-map .chip{background:color-mix(in srgb,var(--bg) 40%,transparent)}
+@media (prefers-reduced-motion:reduce){.mt-bg .mt-haze{animation:none}}
+/* 설정 — There 단추 그림 고르기 */
+.there-pick{display:flex;gap:0}
+.there-pick .tpk{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;color:var(--tx2);font-size:11.5px}
+.there-pick .tpk .there-ic{font-size:24px}
+.there-pick .tpk.on{color:var(--ac-tx);background:var(--ac-soft)}
 </style>
 </head>
 <body>
@@ -1982,6 +2009,7 @@ function refresh(opt) {
   refreshLayers(opt && opt.skipTop);
 }
 function showTab(tab) {
+  if (MT.on && tab !== 'map') thereStop('page');
   UI.tab = tab;
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + tab));
   document.querySelectorAll('.tb').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
@@ -2062,6 +2090,7 @@ function emptyStart() {
 // ── ② 한 장씩 기도하기 ──
 const F = { on: false, deck: [], i: 0, t0: 0, tick: 0, sent: {} };
 function openFocus() {
+  if (MT.on) thereStop('page');
   const r = buildToday(DB, TODAY);
   const mode = DB.set.sorts.today || 'imp', ranks = DB.set.ranks.today || {};
   const deck = [];
@@ -2228,7 +2257,8 @@ function mapCards(src, opt) {
 
 // ── ⑤ 지도 탭 ──
 function renderMap() {
-  let h = '<div class="vh"><h1>기도 지도</h1>' + headActs(
+  let h = '<div class="vh"><div class="vh-t"><h1>기도 지도</h1><button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
+    (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
     '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
     '<button class="ib" data-a="map-menu" aria-label="지도 메뉴">' + ico('dots') + '</button>') + '</div>';
   if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
@@ -2388,6 +2418,7 @@ function renderAnswers() {
 // ═══ 겹 화면 ═══
 function topLayerEl() { const els = [...$('layers').children].filter(e => !e.classList.contains('out')); return els[els.length - 1] || null; }
 function pushLayer(L) {
+  if (MT.on) thereStop('page');   // 설정 · 상세 · 어떤 창이든 열리면 There 는 끝
   // 상세(사람·항목·묶음)는 열 때의 모습을 기억해 둔다 → '취소' 로 되돌린다
   if (L.type === 'target' || L.type === 'group') L.snap = JSON.stringify(DB);
   UI.layers.push(L);
@@ -2561,6 +2592,8 @@ LAYERS.settings = () => {
     '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
+    THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div>';
   b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
   return { title: '설정', body: b };
@@ -2676,6 +2709,7 @@ LAYERS.import = () => {
 // ═══ 아래에서 올라오는 창 ═══
 let SHEET = null;
 function openSheet(html, onPick) {
+  if (MT.on) thereStop('page');
   closeSheet(true);
   const w = document.createElement('div');
   w.className = 'sh-wrap';
@@ -3174,7 +3208,7 @@ function mapRender(focus) {
   else if (UI.sel) { const s = v.querySelector('[data-sel="' + UI.sel + '"]'); if (s) s.scrollIntoView({ block: 'nearest' }); }
 }
 function mapSelect(k) { UI.sel = k; UI.mapEdit = null; document.querySelectorAll('#v-map .sel').forEach(x => x.classList.remove('sel')); const s = document.querySelector('#v-map [data-sel="' + k + '"]'); if (s) s.classList.add('sel'); }
-function mapStartEdit(k, isNew) { UI.sel = k; UI.mapEdit = { key: k, isNew: !!isNew }; mapRender(); }
+function mapStartEdit(k, isNew) { if (MT.on) thereStop('input'); UI.sel = k; UI.mapEdit = { key: k, isNew: !!isNew }; mapRender(); }
 // 같은 수준에 하나 더 — 고른 것 바로 뒤에
 function mapAddSibling(k) {
   const p = selParts(k);
@@ -4417,6 +4451,148 @@ function quietVersionCheck() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) quietVersionCheck(); });
 setTimeout(quietVersionCheck, 4000);
 { const vb = $('verBtn'); if (vb) vb.textContent = APP_VERSION.replace(/^v\.\s*/, 'v'); }
+
+// ═══ 지도 There — 기도 시간 재기 (HB 2026-10-12) ═══
+// 지도 제목 옆 There 를 누르면 기도 시간을 잰다. 지도는 그대로 쓰면서 그 뒤에 BLOCK7 · Sweeter 의 There 판이
+// **약하게** 깔리고(어둡게 가라앉은 바탕 · 안개 · 오르내리는 빛), 지도 위로도 빛 몇 개가 천천히 지나간다.
+// 끝: There 다시 누르기 · 설정이나 상세(어떤 창이든) · 글 칸에 쓰기 시작 · 다른 탭 · 앱을 벗어남.
+// 기록: 오늘의 기도 시간(addPrayTime — '한 장씩' 과 같은 칸, 기기끼리 맞출 때 더해진다). 10초 미만은 버린다.
+// 그림 세 가지는 BLOCK7 · Sweeter 와 같다 (설정 맨 아래 'There 단추').
+const THERE_ICONS = {
+  // 두 손 모음 — Phosphor Icons 'hands-praying-fill' (MIT). 기본값.
+  hands:{name:'기도하는 손',svg:'<svg viewBox="-18 -18 292 292" aria-hidden="true"><path fill="currentColor" d="m235.32 180l-36.24-36.25l-36.46-120.29A21.76 21.76 0 0 0 128 12.93a21.76 21.76 0 0 0-34.62 10.53l-36.46 120.3L20.68 180a16 16 0 0 0 0 22.62l32.69 32.69a16 16 0 0 0 22.63 0L124.28 187a41 41 0 0 0 3.72-4.29a41 41 0 0 0 3.72 4.29L180 235.32a16 16 0 0 0 22.63 0l32.69-32.69a16 16 0 0 0 0-22.63M120 158.75a23.85 23.85 0 0 1-7 17L88.68 200L56 167.32l13.65-13.66a8 8 0 0 0 2-3.34l37-122.22A5.78 5.78 0 0 1 120 29.78Zm47.44 41.38L143 175.72a23.85 23.85 0 0 1-7-17v-129a5.78 5.78 0 0 1 11.31-1.68l37 122.22a8 8 0 0 0 2 3.34l14.49 14.49Z"/></svg>'},
+  // 보좌 — 다리 없이 등받이를 길게 (HB '난장이 같다' → 위엄 있게)
+  throne:{name:'보좌',svg:'<svg viewBox="0.6 0.4 22.8 22.8" aria-hidden="true"><g fill="currentColor" fill-rule="evenodd">'+
+    '<path d="M6 3.2 7.3 2l1.3 1.2V5h1.6V3.4L12 1.6l1.8 1.8V5h1.6V3.2L16.7 2 18 3.2V16.8H6Z M12 7.4 10.1 9.4 12 11.4 13.9 9.4Z"/>'+
+    '<path d="M3 14.6h2.4v4.2H3Z M18.6 14.6H21v4.2h-2.4Z"/><path d="M4.4 19.4h15.2V22H4.4Z"/><path d="M6.4 17.4h11.2v1.4H6.4Z"/></g></svg>'},
+  // 불꽃 — 두 갈래로 오르는 불꽃 (새로 그림)
+  flame:{name:'불꽃',svg:'<svg viewBox="1.8 1.2 21.4 21.4" aria-hidden="true"><g fill="currentColor">'+
+    '<path d="M10.6 1.6c.9 2.4.3 4.6-1.3 6.8C7.5 10.9 5.6 13 5.6 16.1c0 3.1 2.2 5.6 5.1 6.2-1.4-1.2-2.1-2.8-2-4.6.1-2.4 1.6-4 2.9-5.9 1.7-2.4 2.3-5.5-1-10.2Z"/>'+
+    '<path d="M14.2 6.4c.4 2-.2 3.6-1.3 5.2-1.4 2-3 3.8-3 6.2 0 2.4 1.6 4.2 3.8 4.6 3.2-.2 5.7-2.8 5.7-6 0-2.1-.9-3.7-2.2-5.2.2 1.4-.2 2.6-1.1 3.4-.5.5-1.3.3-1.4-.4-.3-1.9.7-4.8-.5-7.8Z"/></g></svg>'}
+};
+const THERE_ORDER = ['hands', 'throne', 'flame'];
+function thereKey() { const k = DB.set.thereIcon; return THERE_ICONS[k] ? k : 'hands'; }
+function thereIc() { return '<span class="there-ic">' + THERE_ICONS[thereKey()].svg + '</span>'; }
+const MT = { on: false, t0: 0, raf: 0, tick: 0, last: 0, P: [], Q: [], up: null, down: null, W: 0, H: 0, light: false };
+function mtSecs() { return MT.on ? Math.floor((Date.now() - MT.t0) / 1000) : 0; }
+function mtClock(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function mtWords(s) { const m = Math.floor(s / 60), x = s % 60; return (m ? m + '분' : '') + (m && x ? ' ' : '') + (x || !m ? x + '초' : ''); }
+// 빛 한 알 — BLOCK7 There 의 것과 같은 모양(가우스로 번지는 빛 + 작은 심지)
+function mtSprite(hex, dh) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; let H = 0, S = 0;
+  if (mx !== mn) { const d = mx - mn; S = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); H = (mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4) * 60; }
+  const h = ((H + dh) % 360 + 360) % 360, k = n => (n + h / 30) % 12, a = S * Math.min(l, 1 - l), f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  const c = [f(0), f(8), f(4)].map(v => Math.round(v * 255)), Z = 96, m = Z / 2, o = document.createElement('canvas');
+  o.width = o.height = Z; const x = o.getContext('2d');
+  const gr = x.createRadialGradient(m, m, 0, m, m, m);
+  for (let i = 0; i <= 10; i++) { const t = i / 10; gr.addColorStop(t, 'rgba(' + c + ',' + (Math.exp(-t * t * 9) * 0.55).toFixed(3) + ')'); }
+  x.fillStyle = gr; x.fillRect(0, 0, Z, Z);
+  const kk = x.createRadialGradient(m, m, 0, m, m, m * 0.14);
+  kk.addColorStop(0, 'rgba(' + c.map(v => Math.min(255, v + 30)) + ',0.95)'); kk.addColorStop(1, 'rgba(' + c + ',0)');
+  x.fillStyle = kk; x.fillRect(0, 0, Z, Z);
+  return o;
+}
+function mtSpawn(up, anywhere, small) {
+  const H = MT.H, L = H * (0.12 + Math.pow(Math.random(), 2.2) * 0.95);
+  const set = up ? MT.up : MT.down;
+  return { img: set[(Math.random() * set.length) | 0], up: up, x: Math.random() * MT.W, y0: up ? H + 6 - Math.random() * H * 0.06 : -6 + Math.random() * H * 0.06,
+    d: anywhere ? Math.random() * L : 0, L: L, v: (small ? 10 : 18) + Math.random() * (small ? 26 : 50), ph: Math.random() * 6.28,
+    sz: small ? 4 + Math.random() * 9 : 6 + Math.random() * (up ? 20 : 16), a: 0.3 + Math.random() * 0.6, tw: 0.5 + Math.random() * 2 };
+}
+function mtSize() {
+  MT.W = window.innerWidth; MT.H = window.innerHeight;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  ['mtCv', 'mtTop'].forEach(id => { const cv = $(id); if (!cv) return; cv.width = Math.round(MT.W * dpr); cv.height = Math.round(MT.H * dpr); cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0); });
+}
+function mtDraw(cv, list, want, alpha, small, el, dt) {
+  if (!cv) return;
+  const cx = cv.getContext('2d'), W = MT.W, H = MT.H;
+  cx.clearRect(0, 0, W, H); cx.globalCompositeOperation = MT.light ? 'source-over' : 'lighter';
+  while (list.length < want) list.push(mtSpawn(list.length % 2 === 0, true, small));
+  if (list.length > want) list.length = want;
+  for (const p of list) {
+    p.d += p.v * dt * 0.8;
+    const y = p.up ? p.y0 - p.d : p.y0 + p.d, x = p.x + Math.sin(el * 0.6 + p.ph) * 6;
+    const k = p.d / p.L, fade = Math.min(1, k * 12) * Math.pow(1 - k, 1.6);
+    const a = alpha * p.a * (0.55 + 0.45 * Math.sin(el * p.tw + p.ph)) * fade;
+    if (a > 0.01) { cx.globalAlpha = Math.min(1, a); cx.drawImage(p.img, x - p.sz / 2, y - p.sz / 2, p.sz, p.sz); }
+    if (p.d >= p.L) Object.assign(p, mtSpawn(p.up, false, small));
+  }
+  cx.globalAlpha = 1; cx.globalCompositeOperation = 'source-over';
+}
+function mtFrame(now) {
+  if (!MT.on) return;
+  const dt = Math.min(0.05, (now - MT.last) / 1000); MT.last = now;
+  const el = (now - MT.f0) / 1000, area = MT.W * MT.H;
+  // 바탕은 BLOCK7 There 의 절반쯤(양 · 밝기), 지도 위는 아주 조금
+  mtDraw($('mtCv'), MT.P, Math.min(1200, Math.round(area / 1500)), MT.light ? 0.9 : 1.05, false, el, dt);
+  mtDraw($('mtTop'), MT.Q, Math.min(60, Math.round(area / 14000)), MT.light ? 0.45 : 0.5, true, el, dt);
+  MT.raf = requestAnimationFrame(mtFrame);
+}
+// 바탕색 — 다크는 그 테마의 다크 바탕을 한층 가라앉힌 것(BLOCK7 There 와 같은 계산), 라이트는 바탕에 테마색을 살짝
+function mtColors(box) {
+  const mode = effMode(DB.set), pr = themeById(DB.set.preset);
+  MT.light = mode === 'light';
+  let bg = MT.light ? [246, 243, 236] : [14, 13, 18], ac = [150, 130, 200], sec = [200, 170, 110];
+  try {
+    if (pr) {
+      const t = _themeTokens(pr, MT.light ? 'light' : 'dark'), h = t['--bg'];
+      bg = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+      ac = String(t['--ac-rgb']).split(',').map(Number);
+      if (t['--sec-rgb']) sec = String(t['--sec-rgb']).split(',').map(Number);
+    }
+  } catch (e) { /* 기본 색 */ }
+  const mix = (a, b, k) => a.map((v, i) => Math.round(v * (1 - k) + b[i] * k));
+  const base = MT.light ? mix(bg, ac, 0.07) : mix(bg, [6, 5, 9], 0.42);
+  box.style.setProperty('--mt-bg', 'rgb(' + base + ')');
+  box.style.setProperty('--mt-g1', 'rgba(' + ac + ',' + (MT.light ? .14 : .20) + ')');
+  box.style.setProperty('--mt-g2', 'rgba(' + sec + ',' + (MT.light ? .12 : .16) + ')');
+  MT.up = [mtSprite(MT.light ? '#c99a4a' : '#dab87a', 0), mtSprite(MT.light ? '#c99a4a' : '#dab87a', -8), mtSprite('#dab87a', -16)];
+  MT.down = [mtSprite(MT.light ? '#8a6cc8' : '#a892d6', 0), mtSprite('#a892d6', -12), mtSprite('#a892d6', -50)];
+}
+function thereStart() {
+  if (MT.on || UI.tab !== 'map') return;
+  const app = $('app');
+  let bg = $('mtBg');
+  if (!bg) {
+    bg = document.createElement('div'); bg.id = 'mtBg'; bg.className = 'mt-bg';
+    bg.innerHTML = '<div class="mt-haze"></div><canvas id="mtCv"></canvas>';
+    app.insertBefore(bg, app.firstChild);
+    const top = document.createElement('canvas'); top.id = 'mtTop'; top.className = 'mt-top';
+    app.insertBefore(top, $('tabbar'));
+  }
+  mtColors(bg);
+  MT.on = true; MT.t0 = Date.now(); MT.f0 = MT.last = performance.now(); MT.P = []; MT.Q = [];
+  mtSize();
+  document.body.classList.add('there-on');
+  requestAnimationFrame(() => { bg.classList.add('on'); $('mtTop').classList.add('on'); });
+  MT.raf = requestAnimationFrame(mtFrame);
+  clearInterval(MT.tick);
+  MT.tick = setInterval(() => { const c = $('mtClk'); if (c) c.textContent = mtClock(mtSecs()); }, 1000);
+  renderView();
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+// why: 'button' 은 사람이 껐다 — 짧아도 알려 준다. 나머지(창 · 글 칸 · 탭 · 앱 벗어남)는 기록할 것이 있을 때만 알린다.
+function thereStop(why) {
+  if (!MT.on) return;
+  const secs = mtSecs();
+  MT.on = false; cancelAnimationFrame(MT.raf); clearInterval(MT.tick);
+  document.body.classList.remove('there-on');
+  const bg = $('mtBg'), top = $('mtTop');
+  if (bg) bg.classList.remove('on'); if (top) top.classList.remove('on');
+  setTimeout(() => { if (!MT.on) { MT.P = []; MT.Q = []; [$('mtCv'), $('mtTop')].forEach(cv => { if (cv) cv.getContext('2d').clearRect(0, 0, MT.W, MT.H); }); } }, 700);
+  if (secs >= 10) { addPrayTime(DB, TODAY, secs); save(); toast('기도 ' + mtWords(secs) + ' 기록했습니다'); }
+  else if (why === 'button') toast('10초가 안 되어 기록하지 않았습니다');
+  if (UI.tab === 'map' && !UI.layers.length) { const b = document.querySelector('#v-map .there-b'); if (b) { b.classList.remove('on'); const c = $('mtClk'); if (c) c.remove(); } }
+}
+ACT.there = () => { if (MT.on) thereStop('button'); else thereStart(); };
+ACT['there-icon'] = el => { DB.set.thereIcon = THERE_ICONS[el.dataset.v] ? el.dataset.v : 'hands'; save(); refresh(); };
+// 글 칸에 쓰기 시작하면 끝 (지도 안 찾기 칸 · 이름 칸 · 맨 아래 칸 · 창 안의 칸 모두)
+document.addEventListener('focusin', e => { if (MT.on && e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) thereStop('input'); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && MT.on) thereStop('away'); });
+window.addEventListener('pagehide', () => { if (MT.on) thereStop('away'); });
+window.addEventListener('resize', () => { if (MT.on) mtSize(); });
 
 // ═══ 시작 ═══
 applyTheme(DB.set);
