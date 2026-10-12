@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1013-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4340,7 +4340,9 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vdash-vtab svg{opacity:.8;}
 .vdash-vtab.on{font-weight:700;color:var(--ac-tx);}
 .vdash-vtab.on svg{opacity:1;}
-.vdash-thic .there-ic{font-size:15px;opacity:.8;}
+/* There 그림이 글자처럼 줄에 얹혀 아래로 처졌다 — 다른 탭 svg 처럼 14px 상자로 (HB 2026-10-13) */
+.vdash-thic{display:block;width:14px;height:14px;line-height:0;}
+.vdash-thic .there-ic{display:block;font-size:14px;opacity:.8;}
 .vdash-vtab.on .vdash-thic .there-ic{opacity:1;}
 /* ── 흐름(추이) ── */
 /* 소제목(갈래·범위·무엇을·기간·모양)은 **한 칸에 세로로 맞춘다** (v26-0906-1, HB 4).
@@ -6336,7 +6338,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-1";
+const APP_VERSION = "v. 26-1013-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26560,7 +26562,7 @@ function renderVDashThere(){
 }
 // 전체 화면으로 — There 단추 길게 누르기 · 오른쪽 누르기 · Sweeter 홈 파이 단추 (Esc 는 _ESC_CLOSERS 가 맡는다)
 function openThereDash(view){
-  const o=_tdOpts(view);o.esc=false;o.sub='세 앱 모아 보기';
+  const o=_tdOpts(view);o.esc=false;
   TDASH.open(o);
 }
 // There 단추에 '길게 누르기 · 오른쪽 누르기 = 대시보드' 를 단다. 짧게 누르기(There 열기)는 그대로.
@@ -50719,6 +50721,7 @@ const TDASH = (function () {
     return { redraw: draw, state: S };
   }
   // 전체 화면으로 연다 — 우상단 × 하나 (UI 원칙). esc:false 면 Esc 는 앱의 닫기 표가 맡는다
+  const VNAME = { day: 'Today', week: 'Week', month: 'Month' };
   let OV = null;
   function open(opts) {
     close(true);
@@ -50726,11 +50729,25 @@ const TDASH = (function () {
     opts = opts || {};
     const ov = document.createElement('div');
     ov.className = 'tdash tdash-ov'; ov.id = 'tdashOv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'There 대시보드');
-    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span>' + esc(opts.sub || '세 앱 모아 보기') + '</span></div>' +
+    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub>' + (VNAME[opts.view || 'week'] || '') + '</span></div>' +
       '<button class="tdash-x" data-tdx="1" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div><div class="tdash-body"></div>';
     document.body.appendChild(ov);
     ov.querySelector('[data-tdx]').onclick = e => { e.stopPropagation(); close(); };
-    const m = mount(ov.querySelector('.tdash-body'), opts);
+    const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
+    // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
+    const m = mount(ov.querySelector('.tdash-body'), Object.assign({}, opts, { onView: v => { sub.textContent = VNAME[v] || ''; if (onV) onV(v); } }));
+    // 왼쪽 가장자리에서 오른쪽으로 밀어 닫기 — 손가락을 따라 밀려 나간다 (HB 2026-10-13)
+    let sx = 0, sy = 0, on = false, dx = 0;
+    ov.addEventListener('touchstart', e => { const t = e.touches[0]; on = e.touches.length === 1 && t.clientX < 28; sx = t.clientX; sy = t.clientY; dx = 0; if (on) ov.style.transition = 'none'; }, { passive: true });
+    ov.addEventListener('touchmove', e => {
+      if (!on) return; const t = e.touches[0]; dx = t.clientX - sx;
+      if (Math.abs(t.clientY - sy) > Math.abs(dx) && dx < 30) { on = false; ov.style.transform = ''; ov.style.transition = ''; return; }
+      if (dx > 0) { e.preventDefault(); ov.style.transform = 'translateX(' + dx + 'px)'; }
+    }, { passive: false });
+    ov.addEventListener('touchend', () => {
+      if (!on) return; on = false; ov.style.transition = 'transform .22s,opacity .22s';
+      if (dx > Math.min(110, innerWidth * 0.28)) { ov.style.transform = 'translateX(100%)'; close(); } else ov.style.transform = '';
+    });
     const key = e => { if (e.key === 'Escape' && OV === ov && opts.esc !== false) { e.preventDefault(); e.stopPropagation(); close(); } };
     document.addEventListener('keydown', key, true);
     OV = ov; ov._key = key; ov._onClose = opts.onClose;
