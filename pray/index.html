@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1012-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1012-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1012-8';
+const APP_VERSION = 'v. 26-1012-10';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -843,6 +843,7 @@ function sortTargets(list, mode, ranks) {
   if (mode === 'name') arr.sort(SORT_NAME);
   else if (mode === 'urg') arr.sort(SORT_URG);
   else if (mode === 'sum') arr.sort(SORT_SUM);
+  else if (mode === 'new' || mode === 'reg') { const ix = new Map(); (typeof DB !== 'undefined' ? DB.T : []).forEach((t, k) => ix.set(t.id, k)); const g = t => (ix.has(t.id) ? ix.get(t.id) : 0); arr.sort((a, b) => mode === 'new' ? g(b) - g(a) : g(a) - g(b)); }
   else if (mode === 'mine') arr.sort((a, b) => (rk(a) - rk(b)) || SORT_IMP(a, b));
   else arr.sort(SORT_IMP);
   return arr;
@@ -1077,11 +1078,12 @@ function buildGroupsFromBlocks(db, blocks) {
 }
 
 // ── 판 보관 ──
-function makeSnap(db, G, at, name) {
+function hhmm() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function makeSnap(db, G, at, name, now) {
   const groups = clone(G || db.G);
   const P = {}, eff = effMarkMap(db);
   groups.forEach(g => groupPids(g).forEach(pid => { const p = findT(db, pid); if (p) P[pid] = { name: p.name, mark: markOf(db, p, eff) }; }));
-  return { id: uid(), at: at || ymd(), name: name || '', marks: clone(db.marks), G: groups, P: P };
+  return { id: uid(), at: at || ymd(), time: now ? hhmm() : '', name: name || '', marks: clone(db.marks), G: groups, P: P };
 }
 function snapNames(snap) {
   const s = new Set();
@@ -1408,6 +1410,19 @@ svg{display:block;flex-shrink:0}
 .ib{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2);border-radius:22px;transition:background .15s,color .15s}
 .ib:active{background:var(--s2)}
 .ib.on{color:var(--ac-tx)}
+.brand{position:sticky;top:0;z-index:5;display:flex;align-items:baseline;gap:9px;padding:calc(var(--sat) + 8px) 20px 4px;margin-top:calc(var(--sat) * -1 - 8px);background:var(--bg);pointer-events:none}
+.mk-fold{display:none}
+@media (max-width:600px){
+  .mk-fold{display:flex;align-items:center;gap:6px;padding:4px 20px;height:34px;font-size:13px;color:var(--tx2)}
+  .mk-fold .chev{width:14px;height:14px;transition:transform .2s}
+  .mk-fold.open .chev{transform:rotate(90deg)}
+  .mk-dots{display:flex;gap:4px;margin-left:4px}
+  .mk-dots .dot{width:9px;height:9px;border-radius:50%;background:var(--m);display:block}
+  .chips.mk-chips{display:none}
+  .chips.mk-chips.open{display:flex}
+}
+.brand b{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:13px;font-weight:700;letter-spacing:.26em;color:var(--tx)}
+.brand span{font-size:11.5px;font-weight:400;letter-spacing:.04em;color:var(--tx3)}
 .date-l{padding:0 20px;font-size:13px;color:var(--tx2);letter-spacing:.02em}
 .prog{margin:12px 20px 0;height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .5s var(--ease)}
@@ -1467,6 +1482,9 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .mk{width:7px;height:7px;border-radius:4px;flex-shrink:0;background:var(--m)}
 .late{font-size:11px;color:var(--mk-orange);flex-shrink:0}
 .rm{font-size:12.5px;color:var(--tx2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rows.tdy .rm,.rows.tdy .rmem{color:var(--tx3)}
+.rows.nonote .rm,.rows.nonote .rmem{display:none}
+button.pl{cursor:pointer}
 .rmem{font-size:12.5px;color:var(--tx2);margin-top:3px;line-height:1.55;opacity:.9}
 .pills{display:flex;gap:4px;flex-shrink:0}
 .pl{min-width:22px;height:20px;border-radius:6px;font-size:11.5px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 5px}
@@ -1818,10 +1836,10 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .masonry.mjs.pinching{transition:none;will-change:transform}
 
 /* 끌 때 오른쪽 위 구석에 나타나는 지우는 칸 */
-.md-trash{position:fixed;top:calc(var(--sat) + 10px);right:12px;z-index:59;display:flex;align-items:center;gap:7px;padding:12px 16px 12px 13px;border-radius:16px;
+.md-trash{position:fixed;top:calc(var(--sat) + 8px);right:8px;z-index:59;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:min(58vw,230px);height:112px;border-radius:22px;
   background:color-mix(in srgb,var(--danger) 16%,var(--s1));color:var(--danger);font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.28);
   opacity:0;transform:translateY(-12px) scale(.92);transition:opacity .22s,transform .22s var(--ease),background .15s,color .15s;pointer-events:none}
-.md-trash svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.md-trash svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .md-trash.on{opacity:1;transform:none}
 .md-trash.hot{background:var(--danger);color:#fff;transform:scale(1.08)}
 .md-drag.md-doom{opacity:.55;box-shadow:0 0 0 2px var(--danger),0 18px 40px -10px rgba(0,0,0,.55)}
@@ -1884,7 +1902,8 @@ const ICONS = {
   link: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
   chevR: '<polyline points="9 6 15 12 9 18"/>',
   check: '<polyline points="5 12.5 10 17 19 7.5"/>',
-  gear: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.3" fill="var(--bg)"/><circle cx="15" cy="17" r="2.3" fill="var(--bg)"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
+  note: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/>',
   sort: '<path d="M7 5v14M4 16l3 3 3-3M17 19V5M14 8l3-3 3 3"/>',
   plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/>',
@@ -1917,7 +1936,7 @@ let DB = loadDB();
 const SY = { user: null, status: 'off', err: '', busy: false, again: false, t: 0, unsub: null, pending: null, at: 0, cache: null, watching: false };
 let TODAY = ymd();
 const UI = {
-  tab: 'today', layers: [], listCat: 'all', listView: 'table', listGrouped: false, histTab: 'snap',
+  tab: 'today', layers: [], listCat: 'all', listView: 'table', listGrouped: false, histTab: 'days',
   mapFilter: [], mapQuery: '', mapSearch: false, more: {}, showDone: {}, openG: {},
   calMonth: TODAY.slice(0, 7), calDay: '', mx: null, imp: null, sel: '', mapEdit: null
 };
@@ -1952,6 +1971,7 @@ function markName(m, marks) { const M = marks || DB.marks; return MARK_FIXED[m] 
 // ⚠️ 비었을 때 이름을 'in' 으로 두면 겹 화면의 .in(올라온 상태)과 부딪힌다 → uX · iX
 function uCls(u) { return u == null ? 'uX' : 'u' + u; }
 function iCls(i) { return i == null ? 'iX' : 'i' + i; }
+function pillBtn(t) { return '<button class="pl ' + uCls(t.u) + '" data-a="pick-num" data-f="u" data-id="' + t.id + '" aria-label="긴급도 ' + (t.u == null ? '없음' : t.u) + ' 바꾸기">' + (t.u == null ? '–' : t.u) + '</button><button class="pl ' + iCls(t.i) + '" data-a="pick-num" data-f="i" data-id="' + t.id + '" aria-label="중요도 ' + (t.i == null ? '없음' : t.i) + ' 바꾸기">' + (t.i == null ? '–' : t.i) + '</button>'; }
 function pill(t) { return '<span class="pl ' + uCls(t.u) + '">' + (t.u == null ? '–' : t.u) + '</span><span class="pl ' + iCls(t.i) + '">' + (t.i == null ? '–' : t.i) + '</span>'; }
 function dayName(d) { return d === 0 ? '주일' : WEEK[d] + '요일'; }
 function shortDate(s) { if (!s) return ''; const d = parseYmd(s); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
@@ -2040,6 +2060,7 @@ function renderView() {
   if (fn && el) el.innerHTML = fn();
   if (UI.tab === 'map') mapLayout();
 }
+function brand(page) { return '<div class="brand"><b>BLUE ROOM</b><span>' + page + '</span></div>'; }
 function headActs(extra) {
   return '<div class="vh-acts">' + (extra || '') + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
 }
@@ -2053,8 +2074,8 @@ function renderToday() {
   const mode = DB.set.sorts.today || 'imp';
   const ranks = DB.set.ranks.today || {};
   const d = parseYmd(TODAY);
-  let h = '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
-  h += '<div class="vh"><h1>오늘 기도</h1>' + headActs('<button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
+  let h = brand('Today') + '<div class="date-l">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '</div>';
+  h += '<div class="vh"><h1>오늘 기도</h1>' + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
   if (!DB.T.length && !DB.G.length) return h + emptyStart();
   h += '<div class="vh" style="padding-top:0"><span class="sub"><b style="color:var(--ac-tx);font-weight:600">' + cnt.d + '</b> / ' + cnt.n + ' 기도함</span></div>';
   h += '<div class="prog"><i style="width:' + (cnt.n ? Math.round(cnt.d / cnt.n * 100) : 0) + '%"></i></div>';
@@ -2074,13 +2095,13 @@ function renderToday() {
       '<b class="' + (k === 'top' ? 'red' : '') + '">' + esc(title) + '</b><small>' + esc(s[2]) + '</small><em>' + (open.length ? '남은 ' + open.length + ' / ' + list.length : '다 했습니다') + '</em></button>';
     if (folded) return;
     const lim = (k === 'top' && !UI.more.top) ? (DB.set.topLimit || 6) : open.length;
-    h += '<div class="rows" data-sort="today:' + k + '">' + open.slice(0, lim).map(e => rowToday(e, indiv)).join('') + '</div>';
+    h += '<div class="rows tdy' + (DB.set.hideNote ? ' nonote' : '') + '" data-sort="today:' + k + '">' + open.slice(0, lim).map(e => rowToday(e, indiv)).join('') + '</div>';
     if (open.length > lim) h += '<button class="bar" data-a="more" data-k="top">' + ico('chevR', 'chev') + (open.length - lim) + '개 더 펼치기</button>';
     else if (k === 'top' && UI.more.top && open.length > (DB.set.topLimit || 6)) h += '<button class="bar open" data-a="more" data-k="top">' + ico('chevR', 'chev') + '처음 ' + (DB.set.topLimit || 6) + '개만 보기</button>';
     if (fin.length) {
       const sd = !!UI.showDone[k];
       h += '<button class="bar' + (sd ? ' open' : '') + '" data-a="showdone" data-k="' + k + '">' + ico('chevR', 'chev') + '기도함 ' + fin.length + '</button>';
-      if (sd) h += '<div class="rows">' + fin.map(e => rowToday(e, indiv)).join('') + '</div>';
+      if (sd) h += '<div class="rows tdy' + (DB.set.hideNote ? ' nonote' : '') + '">' + fin.map(e => rowToday(e, indiv)).join('') + '</div>';
     }
   });
   if (!cnt.n) h += '<div class="empty"><h3>오늘은 차례가 온 기도가 없습니다</h3><p>목록에서 긴급도를 정하거나, 사람에게 빨강(1순위)을 칠하면 여기에 나옵니다.</p></div>';
@@ -2097,7 +2118,7 @@ function rowToday(e, indiv) {
     '<div class="rb" data-a="open" data-id="' + t.id + '"><div class="rt">' + (mk(t) ? '<i class="mk" style="--m:' + markVar(mk(t)) + '"></i>' : '') +
     '<span class="nm' + (rest ? ' rest' : '') + '">' + esc(t.name) + '</span>' + (e.late ? '<span class="late">' + e.late + '일 밀림</span>' : '') + '</div>' +
     '<div class="rm">' + esc(targetMeta(t)) + '</div>' + (mem ? '<div class="rmem">' + esc(mem) + '</div>' : '') + '</div>' +
-    '<div class="pills">' + pill(t) + '</div></div></div>';
+    '<div class="pills">' + pillBtn(t) + '</div></div></div>';
 }
 function emptyStart() {
   return '<div class="empty"><svg viewBox="0 0 24 24" class="ico" style="width:40px;height:40px;margin:0 auto;color:var(--ac)">' + ICONS.sheet + '</svg>' +
@@ -2275,7 +2296,7 @@ function mapCards(src, opt) {
 
 // ── ⑤ 지도 탭 ──
 function renderMap() {
-  let h = '<div class="vh"><div class="vh-t"><h1>기도 지도</h1><button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
+  let h = brand('Map') + '<div class="vh"><div class="vh-t"><h1>기도 지도</h1><button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
     '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
     '<button class="ib" data-a="map-menu" aria-label="지도 메뉴">' + ico('dots') + '</button>') + '</div>';
@@ -2283,7 +2304,8 @@ function renderMap() {
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<div class="chips">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
+  h += '<button class="mk-fold' + (UI.mkOpen ? ' open' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '">' + ico('chevR', 'chev') + '표시색' + (UI.mapFilter.length ? '<span class="mk-dots">' + UI.mapFilter.map(m => '<i class="dot" style="--m:' + markVar(m) + '"></i>').join('') + '</span>' : '') + '</button>';
+  h += '<div class="chips mk-chips' + (UI.mkOpen ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>';
   if (UI.mapQuery) {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
@@ -2300,7 +2322,7 @@ function listItems() {
   return DB.T.filter(t => t.cat === UI.listCat);
 }
 function renderList() {
-  let h = '<div class="vh"><h1>목록</h1>' + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
+  let h = brand('List') + '<div class="vh"><h1>목록</h1>' + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
   h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
   const cats = [['all', '전체', DB.T.filter(t => t.cat || t.u != null).length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
   const none = DB.T.filter(t => !t.cat).length;
@@ -2309,8 +2331,8 @@ function renderList() {
   const items = listItems();
   if (UI.listView === 'matrix') return h + renderMatrix(items);
   const mode = DB.set.sorts.list || 'sum';
-  h += '<div class="sorts"><span>정렬</span>' + [['sum', '합계'], ['urg', '긴급'], ['imp', '중요'], ['name', '이름'], ['mine', '내 순서']].map(s =>
-    '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="list-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') +
+  h += '<div class="sorts"><span>정렬</span>' + [['sum', '합계'], ['urg', '긴급'], ['imp', '중요'], ['new', mode === 'reg' ? '등록순' : '최신순'], ['name', '이름'], ['mine', '내 순서']].map(s =>
+    '<button class="' + ((mode === s[0] || (s[0] === 'new' && mode === 'reg')) ? 'on' : '') + '" data-a="list-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') +
     '<button class="' + (UI.listGrouped ? 'on' : '') + '" data-a="list-group" style="margin-left:auto">분류별</button></div>';
   h += '<div class="lh"><span class="f">항목</span><span style="width:76px;text-align:center">긴급 · 중요</span></div>';
   if (!items.length) return h + '<div class="hint" style="padding-top:20px">여기에 해당하는 항목이 없습니다.</div>';
@@ -2368,8 +2390,8 @@ function renderMatrix(items) {
 
 // ── ⑨ 기록 탭 ──
 function renderHist() {
-  let h = '<div class="vh"><h1>기록</h1>' + headActs() + '</div>';
-  h += '<div class="seg">' + [['snap', '판 보관'], ['days', '기도한 날'], ['ans', '응답']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
+  let h = brand('His Story') + '<div class="vh"><h1>기록</h1>' + headActs() + '</div>';
+  h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   if (UI.histTab === 'snap') return h + renderSnaps();
   if (UI.histTab === 'days') return h + renderCal();
   return h + renderAnswers();
@@ -2377,18 +2399,18 @@ function renderHist() {
 function renderSnaps() {
   const mode = DB.set.sorts.snaps || 'new';
   let list = DB.snaps.slice();
-  if (mode === 'new') list.sort((a, b) => b.at.localeCompare(a.at));
-  else if (mode === 'old') list.sort((a, b) => a.at.localeCompare(b.at));
+  if (mode === 'new') list.sort((a, b) => (b.at + (b.time || '')).localeCompare(a.at + (a.time || '')));
+  else if (mode === 'old') list.sort((a, b) => (a.at + (a.time || '')).localeCompare(b.at + (b.time || '')));
   else if (mode === 'name') list.sort((a, b) => (a.name || a.at).localeCompare(b.name || b.at, 'ko'));
   let h = '<div class="hint">기도 지도를 날짜별로 얼려 둔 것 — 시트에서 탭을 복사하던 일을 대신합니다.</div>';
-  h += '<div style="padding:12px 20px 4px"><button class="ghost ac full" data-a="snap-now">' + ico('frame') + '지금 지도를 새 판으로 보관</button></div>';
+  h += '<div style="padding:12px 20px 4px"><button class="ghost ac full" data-a="snap-now">' + ico('frame') + '지금 지도를 보관</button></div>';
   if (!list.length) return h + '<div class="hint" style="padding-top:14px">아직 보관한 판이 없습니다. 예전 시트의 날짜 탭(22-0612 같은 것)도 \'시트에서 가져오기\' 로 판으로 넣을 수 있습니다.</div>';
   h += '<div class="sorts"><span>정렬</span>' + [['new', '최신'], ['old', '오래된'], ['name', '이름'], ['mine', '내 순서']].map(s => '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="snap-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   const now = currentNames(DB);
   return h + '<div class="rows" data-sort="snaps">' + list.map(s => {
     const names = snapNames(s), df = diffNames(names, now);
     return '<div class="row snap" data-id="' + s.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="snap" data-id="' + s.id + '">지우기</button></div>' +
-      '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="open-snap" data-id="' + s.id + '"><div class="rt"><span class="nm" style="font-variant-numeric:tabular-nums">' + esc(s.at) + '</span>' +
+      '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="open-snap" data-id="' + s.id + '"><div class="rt"><span class="nm" style="font-variant-numeric:tabular-nums">' + esc(s.at) + (s.time ? ' <small style="color:var(--tx3);font-weight:400">' + esc(s.time) + '</small>' : '') + '</span>' +
       (s.name ? '<span style="color:var(--tx2);font-size:13px">' + esc(s.name) + '</span>' : '') + '</div><div class="rm">그룹 ' + s.G.length + ' · 이름 ' + names.size +
       ' · 지금과 비교: 들어온 ' + df.added.length + ' · 빠진 ' + df.removed.length + '</div></div>' + ico('chevR') + '</div></div>';
   }).join('') + '</div>';
@@ -2840,6 +2862,7 @@ ACT.later = el => {
   postpone(DB, id, TODAY); save();
   animateGone(row, () => { refresh(); toast('내일로 넘겼습니다', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); }); });
 };
+ACT['note-today'] = () => { DB.set.hideNote = !DB.set.hideNote; save(); renderView(); };
 ACT['sort-today'] = () => choose('오늘 목록 정렬', [
   { v: 'imp', label: '중요도 순', desc: '중요도 → 긴급도 → 이름' }, { v: 'urg', label: '긴급도 순' }, { v: 'name', label: '이름 순' },
   { v: 'mine', label: '내 순서', desc: '줄을 길게 눌러 끌어 정한 순서' }], DB.set.sorts.today || 'imp', v => { DB.set.sorts.today = v; save(); renderView(); });
@@ -2882,9 +2905,10 @@ ACT['add-sub'] = el => askText('새 서브 그룹', '', '이름 (예: 13세 가�
 }, { ok: '만들기' });
 
 // 목록
+ACT['mk-fold'] = () => { UI.mkOpen = !UI.mkOpen; renderView(); };
 ACT['list-view'] = el => { UI.listView = el.dataset.v; renderView(); };
 ACT['list-cat'] = el => { UI.listCat = el.dataset.v; UI.mx = null; renderView(); };
-ACT['list-sort'] = el => { DB.set.sorts.list = el.dataset.v; save(); renderView(); };
+ACT['list-sort'] = el => { const v = el.dataset.v, cur = DB.set.sorts.list || 'sum'; DB.set.sorts.list = v === 'new' ? (cur === 'new' ? 'reg' : 'new') : v; save(); renderView(); };
 ACT['list-group'] = () => { UI.listGrouped = !UI.listGrouped; renderView(); };
 ACT['list-og'] = el => { UI.openG[el.dataset.k] = !UI.openG[el.dataset.k]; renderView(); };
 ACT.mx = el => { const u = +el.dataset.u, i = +el.dataset.i; UI.mx = UI.mx && UI.mx[0] === u && UI.mx[1] === i ? null : [u, i]; renderView(); };
@@ -3024,7 +3048,7 @@ ACT['snap-sort'] = el => { DB.set.sorts.snaps = el.dataset.v; save(); renderView
 ACT['ans-sort'] = el => { DB.set.sorts.answers = el.dataset.v; save(); renderView(); };
 ACT['snap-now'] = () => {
   if (!DB.G.length) { toast('지도가 비어 있어 보관할 것이 없습니다'); return; }
-  DB.snaps.push(makeSnap(DB, null, TODAY, '')); save(); UI.histTab = 'snap'; refresh(); toast(TODAY + ' 판으로 보관했습니다');
+  DB.snaps.push(makeSnap(DB, null, TODAY, '', true)); save(); UI.histTab = 'snap'; refresh(); toast(TODAY + ' ' + (DB.snaps[DB.snaps.length - 1].time || '') + ' 지도를 보관했습니다');
 };
 ACT['cal-nav'] = el => { const [y, m] = UI.calMonth.split('-').map(Number); const d = new Date(y, m - 1 + (+el.dataset.v), 1); UI.calMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); UI.calDay = ''; renderView(); };
 ACT['cal-day'] = el => { UI.calDay = UI.calDay === el.dataset.v ? '' : el.dataset.v; renderView(); };
@@ -3641,7 +3665,7 @@ function mdStart(st) {
   const tick = () => {
     if (MD.st !== st || st.mode !== 'drag') return;
     // 지우는 칸 위인가 — 칸보다 조금 넓게 받는다. 위에 있는 동안은 자리 옮기기 · 굴리기를 쉰다
-    const trr = tr.getBoundingClientRect(), hot = st.x > trr.left - 18 && st.y < trr.bottom + 18;
+    const trr = tr.getBoundingClientRect(), hot = st.x > trr.left - 60 && st.y < trr.bottom + 60;
     if (hot !== !!st.trash) { st.trash = hot; tr.classList.toggle('hot', hot); st.src.classList.toggle('md-doom', hot); if (hot && navigator.vibrate) navigator.vibrate(12); }
     if (hot) { mdPut(st); st.raf = requestAnimationFrame(tick); return; }
     // 판 끝에 닿으면 저절로 굴러간다 — 끝에 가까울수록 빠르게 (Sweeter 와 같은 값)
