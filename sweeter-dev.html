@@ -35020,7 +35020,7 @@ function _prayLoadGroups(){
   return _prayGLoad;
 }
 const _PRAY_HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
-function _prayPickClose(level){document.querySelectorAll('.pray-pick').forEach(p=>{if(+p.dataset.lv>=level)p.remove();});document.querySelectorAll('.pray-pick .pp-row.on').forEach(r=>{if(+r.closest('.pray-pick').dataset.lv>=level)r.classList.remove('on');});}
+function _prayPickClose(level){document.querySelectorAll('.pray-pick').forEach(p=>{if(+p.dataset.pp>=level)p.remove();});document.querySelectorAll('.pray-pick .pp-row.on').forEach(r=>{if(+r.closest('.pray-pick').dataset.pp>=level)r.classList.remove('on');});}
 // 옆에 판을 놓는다 — 오른쪽에 자리가 없으면 왼쪽, 그것도 없으면 화면 안 오른쪽 끝
 // 가로는 앞 판(메뉴)의 옆, 세로는 고른 줄의 높이에 맞춘다
 function _prayPlace(el,box,row){
@@ -35030,7 +35030,7 @@ function _prayPlace(el,box,row){
 }
 function _prayPanel(level,box,row,html){
   _prayPickClose(level);
-  const el=document.createElement('div');el.className='pray-pick';el.dataset.lv=level;el.innerHTML=html;
+  const el=document.createElement('div');el.className='pray-pick';el.dataset.pp=level;el.innerHTML=html;
   el._pos=()=>_prayPlace(el,box,row);
   document.body.appendChild(el);el._pos();
   return el;
@@ -35062,8 +35062,8 @@ function _prayOpenKids(g,from,row){
   box.querySelectorAll('.pp-row').forEach(row=>row.addEventListener('click',e=>{e.stopPropagation();
     const k=+row.dataset.k;if(k<0)_praySend(g.id,g.name);else _praySend(g.kids[k].id,g.kids[k].name);}));
 }
-function _prayPickHover(){if(_PRAY_HOVER&&!document.querySelector('.pray-pick[data-lv="1"]'))_prayOpenGroups();}
-function _prayPickTap(e){if(e)e.stopPropagation();if(document.querySelector('.pray-pick[data-lv="1"]')&&!_PRAY_HOVER){_prayPickClose(1);return;}_prayOpenGroups();}
+function _prayPickHover(){if(_PRAY_HOVER&&!document.querySelector('.pray-pick[data-pp="1"]'))_prayOpenGroups();}
+function _prayPickTap(e){if(e)e.stopPropagation();if(document.querySelector('.pray-pick[data-pp="1"]')&&!_PRAY_HOVER){_prayPickClose(1);return;}_prayOpenGroups();}
 // 다른 메뉴 줄에 마우스가 가면 판을 닫는다
 document.addEventListener('mouseover',e=>{
   if(!document.querySelector('.pray-pick'))return;
@@ -44079,7 +44079,7 @@ function _appConfirmResolve(ok){
 // HB — "동기화 토스트가 몇 초 만에 사라져서 뭐가 바뀌었는지 놓친다.
 //       대분류별로도 알려주면 좋겠고, 확인을 눌러야 닫히면 좋겠다."
 // → showBusyToast 로 진행 중 표시를 하다가, 끝나면 토스트 대신 이 화면을 띄운다.
-function _esc(s){
+function _escHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 // r.groups = [{coll, source, byCat:Map<cat,{added,restored,updated,removed}>, blocked}]
@@ -44096,7 +44096,7 @@ function showSyncResultModal(r){
   }
   const totalChg=(r.added||0)+(r.restored||0)+(r.updated||0)+(r.removed||0);
   const lines=[];
-  lines.push(`<div style="color:var(--tx3);font-size:12px;margin-bottom:10px;">${_esc(r.src)} 확인 완료</div>`);
+  lines.push(`<div style="color:var(--tx3);font-size:12px;margin-bottom:10px;">${_escHtml(r.src)} 확인 완료</div>`);
   if(!totalChg){
     lines.push(`<div>새로운 내용이 없어요 — 이미 최신 상태예요.</div>`);
   }else{
@@ -44115,8 +44115,8 @@ function showSyncResultModal(r){
       lines.push('<div style="border-top:1px solid var(--bd,#3332);margin:6px 0 8px;"></div>');
       groups.forEach(g=>{
         lines.push(`<div style="font-size:11px;font-weight:700;margin:8px 0 3px;">
-          <span style="color:var(--ac,var(--accent,#c8752e));">${_esc(g.coll||'말씀 모음')}</span>
-          <span style="color:var(--tx3);font-weight:500;"> · ${_esc(g.source||'')}</span>
+          <span style="color:var(--ac,var(--accent,#c8752e));">${_escHtml(g.coll||'말씀 모음')}</span>
+          <span style="color:var(--tx3);font-weight:500;"> · ${_escHtml(g.source||'')}</span>
         </div>`);
         const cats=[...(g.byCat instanceof Map?g.byCat:new Map())]
           .filter(([,v])=>v.added||v.restored||v.updated||v.removed)
@@ -44128,7 +44128,7 @@ function showSyncResultModal(r){
           if(v.updated)parts.push(`수정 ${v.updated}`);
           if(v.removed)parts.push(`휴지통 ${v.removed}`);
           lines.push(`<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0 2px 10px;font-size:12.5px;">
-            <span style="color:var(--tx);">${_esc(cat)}</span>
+            <span style="color:var(--tx);">${_escHtml(cat)}</span>
             <span style="color:var(--tx3);white-space:nowrap;">${parts.join(', ')}</span>
           </div>`);
         });
@@ -44168,8 +44168,8 @@ function _syncNoVideoHTML(list){
   // 설교 제목이 길어서 한 줄에 까닭까지 두면 폰에서 제목이 잘린다 → 까닭은 아랫줄
   const rows=a.slice(0,_SYNC_NOVID_MAX).map(o=>
     `<div style="padding:3px 0 3px 10px;">
-      <div style="font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(md(o.d)+' '+o.cat+(o.title?' · '+o.title:''))}</div>
-      <div style="font-size:11px;color:var(--tx3);">${_esc(whyTx(o))}</div>
+      <div style="font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(md(o.d)+' '+o.cat+(o.title?' · '+o.title:''))}</div>
+      <div style="font-size:11px;color:var(--tx3);">${_escHtml(whyTx(o))}</div>
     </div>`).join('');
   const more=a.length>_SYNC_NOVID_MAX?`<div style="padding:2px 0 0 10px;font-size:11.5px;color:var(--tx3);">그 밖에 ${a.length-_SYNC_NOVID_MAX}편</div>`:'';
   return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd,#3332);">
@@ -44205,7 +44205,7 @@ function _syncIncludeInit(r){
 }
 // 아이콘 위, 글자 아래의 작은 버튼 한 칸
 function _syncGoBtn(id,label,icon){
-  return `<button type="button" class="sync-go" id="${id}">${icon}<span>${_esc(label)}</span></button>`;
+  return `<button type="button" class="sync-go" id="${id}">${icon}<span>${_escHtml(label)}</span></button>`;
 }
 // 방금 넣은 것만 걸러 전체화면으로 — 윗줄에 '지금 추가된 말씀/명제' 가 뜬다.
 // ⚠️ openVerseFull() 이 앞머리에서 _vfClearNav() 를 부른다. 목록은 **연 뒤에** 심는다.
@@ -44250,7 +44250,7 @@ function _syncIncludeRender(msg){
     return;
   }
   const n=_syncIncPend.hidden,total=_syncIncPend.total;
-  const head=msg?`<b>${_esc(msg)}</b> `:'';
+  const head=msg?`<b>${_escHtml(msg)}</b> `:'';
   const say=msg
     ? `${head}${n}개는 <b>다시 목록에 포함되지 않은 상태</b>예요.`
     : `새로 들어온 ${total}개 가운데 ${n}개는 <b>보여주는 현재 말씀모음 목록에 아직 포함 안되었어요.</b>`;
@@ -44386,12 +44386,12 @@ function renderPlusList(){
   };
   if(_plusListTab==='comp'){
     _plusGroups(id).forEach(g=>{
-      addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_esc(g.key)}`+
+      addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_escHtml(g.key)}`+
              (g.isProp?`<span class="coll-propmark" style="margin-left:4px;">명제</span>`:'')+`</span>`+
              `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap;">${g.n}개</span>`,
              ()=>plusRemoveCat(g.key));
       g.topics.forEach(t=>{
-        addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_esc(t.key)}</span>`+
+        addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_escHtml(t.key)}</span>`+
                `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);">${t.n}</span>`,
                ()=>plusRemoveTopic(g.key,t.key));
       });
@@ -44413,8 +44413,8 @@ function renderPlusList(){
       const ref=v.ref||(v.refs&&v.refs.length?v.refs[0]:'')||'(장절 없음)';
       const snip=String(v.krText||'').slice(0,26);
       addRow(`<span style="flex:1;min-width:0;">`+
-             `<span style="font-size:12px;font-weight:700;color:var(--tx);">${_esc(ref)}</span><br>`+
-             `<span style="font-size:11px;color:var(--tx3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(snip)}…</span>`+
+             `<span style="font-size:12px;font-weight:700;color:var(--tx);">${_escHtml(ref)}</span><br>`+
+             `<span style="font-size:11px;color:var(--tx3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(snip)}…</span>`+
              `</span>`,
              ()=>plusRemoveKeys([_plusKeyOf(v)]));
     });
