@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-13';
+const APP_VERSION = 'v. 26-1013-14';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2683,16 +2683,16 @@ function renderMap() {
 
 // ── ⑦ 목록 탭 ──
 function listItems() {
-  if (UI.listCat === 'all') return DB.T.filter(t => t.cat || t.u != null);
+  if (UI.listCat === 'all') return DB.T.slice();   // 전체 = 구분이 없어도 다 (HB 2026-10-13 — 구분 없는 항목이 표에서 빠졌다)
   if (UI.listCat === 'none') return DB.T.filter(t => !t.cat);
   return DB.T.filter(t => t.cat === UI.listCat);
 }
 function renderList() {
   let h = '<div class="vh">' + brand('List') + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
   h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
-  const cats = [['all', '전체', DB.T.filter(t => t.cat || t.u != null).length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
+  const cats = [['all', '전체', DB.T.length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
   const none = DB.T.filter(t => !t.cat).length;
-  if (none) cats.push(['none', '지도에만', none]);
+  if (none) cats.push(['none', '구분 없음', none]);
   h += '<div class="chips">' + cats.map(c => '<button class="chip' + (UI.listCat === c[0] ? ' on' : '') + '" data-a="list-cat" data-v="' + c[0] + '">' + esc(c[1]) + '<span class="n">' + c[2] + '</span></button>').join('') + '</div>';
   const items = listItems();
   if (UI.listView === 'matrix') return h + renderMatrix(items);
@@ -3595,7 +3595,7 @@ function addTopic(id, inp) {
 }
 ACT['pick-cat'] = el => {
   const t = findT(DB, el.dataset.id); if (!t) return;
-  choose('구분', [{ v: '', label: '구분 없음' }].concat(DB.cats.map(c => ({ v: c.id, label: c.name, desc: c.person ? '사람' : '' }))), t.cat, v => { t.cat = v; if (!v || !(DB.cats.find(c => c.id === v) || {}).name) t.sub = t.sub; save(); refresh(); });
+  choose('구분', [{ v: '', label: '구분 없음' }].concat(DB.cats.map(c => ({ v: c.id, label: c.name }))), t.cat, v => { t.cat = v; if (!v || !(DB.cats.find(c => c.id === v) || {}).name) t.sub = t.sub; save(); refresh(); });
 };
 ACT['pick-sub'] = el => {
   const t = findT(DB, el.dataset.id); if (!t) return;
