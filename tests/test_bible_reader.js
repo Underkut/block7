@@ -716,6 +716,14 @@ console.log('\n시나리오 13-33 — 사파리가 글자 자리를 안 주면 �
   sc.eq('기록에 옆 끌기와 긋기 시작 결과', /if\(r\.fin<12&&r\.hx<12\)return;/.test(SRC) && /window\._brInkDiag=\(st\?'시작O':'시작X'\)/.test(SRC), true);
 }
 
+console.log('\n시나리오 13-34 — 긋기 돋보기 크기 1~2배 (v26-1013-9 HB)');
+{
+  sc.eq('설정 줄 — 1배~2배 다섯 칸', /id="brSegLz"><button data-v="1">1배<\/button>[\s\S]{0,200}<button data-v="2">2배<\/button>/.test(SRC), true);
+  sc.eq('돋보기는 --lz 로 키운다 (1~2로 가둠)', /const lz=Math\.max\(1,Math\.min\(2,\+_brS\('bibleLoupe',1\)\|\|1\)\);L\.style\.setProperty\('--lz',lz\);/.test(SRC), true);
+  sc.eq('글자 크기가 배율을 따른다', /font-size:calc\(22px\*var\(--lz,1\)\)/.test(SRC), true);
+  sc.eq('누르면 저장·표시 맞춤', /\['brSegLz','bibleLoupe','1'\]/.test(SRC) && /\['brSegLz','bibleLoupe'\],/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
