@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-11';
+const APP_VERSION = 'v. 26-1013-12';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1587,26 +1587,16 @@ svg{display:block;flex-shrink:0}
 .vh{flex-wrap:wrap}
 .vh-acts{margin-left:auto}
 @media (max-width:600px){.vh{--bfs:26px}.vh h1.br b{letter-spacing:.13em}.ib{width:40px}.vh-acts .ib{width:36px}}
-.mk-fold{display:none!important}
 .mkrow{display:flex;align-items:center;min-height:0}
 .mkrow .chips{flex:1;min-width:0}
-.mk-fold-row{flex-shrink:0;margin:0 11px 0 auto}
-/* 폭 601 이상(태블릿 · PC): 표시색은 접어 두고 그 줄 오른쪽 끝 단추로 편다 (HB 2026-10-13) */
-@media (min-width:601px){
-  .mk-fold-row{display:flex!important}
-  .chips.mk-chips{display:none}
-  .chips.mk-chips.open{display:flex}
-}
-.kb-i{flex-shrink:0;margin-right:11px}
-.mkrow .mk-fold-row:has(+.kb-i){margin-right:0}
+/* 표시색 알약은 어느 기기에서나 접어 두고, 위 단추 줄의 단추로 편다 (HB 2026-10-13) */
+.chips.mk-chips{display:none}
+.chips.mk-chips.open{display:flex}
 .mkico{width:26px;height:16px;display:block;opacity:.35;transition:opacity .45s}   /* 접힌 상태는 옅게 (HB 2026-10-13) */
 .mk-fold.on .mkico{opacity:1}
-@media (max-width:600px){
-  .mk-fold{display:flex!important}
-  .mk-fold-row{display:none!important}
-  .chips.mk-chips{display:none}
-  .chips.mk-chips.open{display:flex}
-}
+/* PC 단축키 i — BLUE ROOM 줄, 꺾쇠 바로 왼쪽에 늘 */
+.vh>.kb-i{margin-left:auto;margin-right:0}
+.vh>.kb-i+.vh-more{margin-left:0}
 .vh-td{flex:1 0 100%;display:flex;align-items:baseline;min-width:0}
 /* 첫 줄 바탕선을 BLUE ROOM 바탕선에 맞춘 뒤 한 줄만큼 올린다 → 아래 줄이 바탕선, 위 줄 머리가 대문자 머리에 닿는다 */
 .vdate{margin-left:auto;text-align:right;font-size:calc(var(--bfs) * .34);line-height:1.12;color:var(--tx2);letter-spacing:.03em;
@@ -1817,6 +1807,9 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .vh-acts [data-bk]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .22s var(--ease),background .15s,color .3s,opacity .3s}
 .vh-acts [data-bk].bdrag{transition:none;z-index:5;transform:scale(1.18);color:var(--ac-tx);opacity:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
+/* 터치 기기에서는 '고른' 테두리가 필요 없다 — 손가락은 고르지 않고 바로 고친다 (HB 2026-10-13: 그룹 이름은 고친 뒤 테두리가 남았다) */
+body.tch #v-map .sel:not(.ined){box-shadow:none}
+body.tch #v-map .ghw:has(>.gh.sel)::after{display:none}
 /* 그룹 머리를 고르면 테두리는 머리 줄 **전체**(오른쪽 서브 그룹 단추까지)에 · 카드의 둥근 위 모서리를 따라 (HB 2026-10-13) */
 .gh.sel{border-radius:12px 12px 0 0}
 .ghw:has(>.gh.sel)::after{content:'';position:absolute;inset:0;border-radius:12px 12px 0 0;box-shadow:inset 0 0 0 2px var(--tx);pointer-events:none;z-index:2}
@@ -2370,9 +2363,9 @@ function applyRoom() {
 }
 function brand(page) { return '<h1 class="br" aria-label="' + roomName() + ' — ' + page + '"><b>' + roomName() + '</b><span>' + page + '</span></h1>'; }
 // 머리 오른쪽 단추들 — 평소엔 BLUE ROOM 줄 오른쪽 끝의 옅은 꺾쇠 하나. 누르면 일반색이 되며 아래 줄이 위에서 스며 내려온다 (HB 2026-10-13)
-function headActs(extra) {
+function headActs(extra, pre) {
   const open = !!(UI.actsOpen && UI.actsOpen[UI.tab]), c = HIST.can(UI.tab);
-  return '<button class="ib vh-more' + (open ? ' open' : ' dim') + '" data-a="acts" aria-expanded="' + open + '" aria-label="단추 펼치기">' + ico('chevD') + '</button>' +
+  return (pre || '') + '<button class="ib vh-more' + (open ? ' open' : ' dim') + '" data-a="acts" aria-expanded="' + open + '" aria-label="단추 펼치기">' + ico('chevD') + '</button>' +
     '<div class="vh-acts' + (open ? ' open' : '') + '">' + (extra || '') +
     '<button class="ib' + (c.undo ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
     '<button class="ib' + (c.redo ? '' : ' off') + '" data-a="redo" aria-label="재실행 (⌘⇧Z)" title="재실행 ⌘⇧Z · ⌘Y">' + ico('redo') + '</button></div>';
@@ -2671,13 +2664,12 @@ function renderMap() {
   let h = '<div class="vh"><div class="vh-t">' + brand('Map') + '<button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
     mapBtns() +
-    '') + '</div>';
+    '', KB && !TOUCHDEV ? '<button class="ib kb-i' + (kbHintMode() === 2 ? ' on' : kbHintMode() === 1 ? '' : ' dim') + '" data-a="kb-i" aria-label="단축키 안내">' + ico('info') + '</button>' : '') + '</div>';
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
   h += '<div class="mkrow"><div class="chips mk-chips' + (UI.mkOpen || UI.mapFilter.length ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
-    '<button class="ib mk-fold mk-fold-row' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' +
-    (KB && !TOUCHDEV ? '<button class="ib kb-i' + (kbHintMode() === 2 ? ' on' : kbHintMode() === 1 ? '' : ' dim') + '" data-a="kb-i" aria-label="단축키 안내">' + ico('info') + '</button>' : '') + '</div>';
+ '</div>';
   if (UI.mapQuery) {
     // 이름 · 기도 항목 · 그룹 · 서브 그룹 이름 어디서나 찾는다 (HB 2026-10-13)
     const q = UI.mapQuery, hits = DB.T.filter(t => t.name.indexOf(q) >= 0 && groupsOf(DB, t.id).length), gh = DB.G.filter(g => (g.name || '').indexOf(q) >= 0);
@@ -3215,10 +3207,27 @@ document.addEventListener('pointerup', e => {
   const a = document.activeElement; if (a && a.blur) a.blur();
   mapRender(); mapOpen(k);
 }, true);
+// PC 지도: 한 번 누르면 고르기, **고른 것을 한 번 더 누르면 고치기** (HB 2026-10-13). 두 번 빨리 누르면(더블클릭) 상세 —
+// 그래서 고치기는 0.3초 기다렸다 시작하고, 그 사이 더블클릭이 오면 접는다. 고른 지 0.45초 안의 누름은 더블클릭의 둘째 누름으로 본다.
+const MCLK = { t: 0, at: 0 };
+// PC: 지도의 여백을 누르면 고른 테두리를 숨긴다 — 자리는 기억했다가 화살표를 누르면 그 자리에서 다시 보인다 (HB 2026-10-13)
+// (고치던 칸은 먼저 blur 로 적힌다 — click 은 그 뒤에 온다)
+document.addEventListener('click', e => {
+  if (UI.tab !== 'map' || PT !== 'mouse' || UI.layers.length || SHEET || UI.mapEdit) return;
+  const t = e.target; if (!t.closest || !t.closest('#v-map')) return;
+  if (t.closest('[data-sel],button,input,textarea,a,.chip,.pk,.vh,.mkrow')) return;
+  if (!UI.sel) return;
+  UI.selMem = UI.sel; UI.sel = '';
+  document.querySelectorAll('#v-map .sel').forEach(x => x.classList.remove('sel'));
+});
+function mapMouseClick(k) {
+  if (UI.sel === k && !UI.mapEdit && Date.now() - MCLK.at > 450) { clearTimeout(MCLK.t); MCLK.t = setTimeout(() => { if (UI.sel === k && !UI.mapEdit) mapStartEdit(k, false); }, 300); return; }
+  mapSelect(k); MCLK.at = Date.now();
+}
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
-  if (s) { if (PT === 'mouse') mapSelect(s.dataset.sel); else mapTapEdit(s.dataset.sel); return; }
+  if (s) { if (PT === 'mouse') mapMouseClick(s.dataset.sel); else mapTapEdit(s.dataset.sel); return; }
   if (el.dataset.id) openTarget(el.dataset.id);
 };
 ACT['map-add'] = el => {
@@ -3255,7 +3264,7 @@ const kbHelpOpen = () => openSheet('<div class="sh-t">기도 지도 — 키보�
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
   '<div class="hint" style="padding:12px 20px">⌘N 은 크롬 · 사파리가 먼저 가져가(새 창) 웹 페이지가 막을 수 없어 한 글자로 둡니다. 한글 입력 상태여도 같은 자리 글쇠면 됩니다.</div></div>');
 ACT['open-group'] = el => {
-  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapSelect(el.dataset.sel); else mapTapEdit(el.dataset.sel); return; }
+  if (el.closest && el.closest('#v-map') && el.dataset.sel) { if (PT === 'mouse') mapMouseClick(el.dataset.sel); else mapTapEdit(el.dataset.sel); return; }
   pushLayer({ type: 'group', id: el.dataset.id });
 };
 ACT['open-snap'] = el => pushLayer({ type: 'snap', id: el.dataset.id });
@@ -4078,7 +4087,7 @@ function mapKey(e) {
   if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowRight' || key === 'ArrowLeft') {
     e.preventDefault();
     if (e.altKey && UI.sel && (key === 'ArrowDown' || key === 'ArrowUp')) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
-    if (i < 0) { mapSelectShow(nav[0]); return true; }
+    if (i < 0) { mapSelectShow(UI.selMem && nav.indexOf(UI.selMem) >= 0 ? UI.selMem : nav[0]); UI.selMem = ''; return true; }   // 여백을 눌러 숨겼던 그 자리에서 다시
     const nx = mapSpatial(UI.sel, key, nav);
     if (nx) mapSelectShow(nx);
     return true;
@@ -4093,6 +4102,7 @@ function mapKey(e) {
 }
 document.addEventListener('dblclick', e => {
   if (UI.tab !== 'map' || PT !== 'mouse' || UI.layers.length) return;
+  clearTimeout(MCLK.t);
   const pn = e.target.closest('#v-map .pn');
   if (pn && pn.dataset.id) { openTarget(pn.dataset.id); return; }
   const s = e.target.closest('#v-map [data-sel]');
