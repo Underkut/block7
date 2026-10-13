@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-15 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-14';
+const APP_VERSION = 'v. 26-1013-15';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2249,7 +2249,8 @@ function pillBtn(t) { return '<button class="pl ' + uCls(t.u) + '" data-a="pick-
 function pill(t) { return '<span class="pl ' + uCls(t.u) + '">' + (t.u == null ? '–' : t.u) + '</span><span class="pl ' + iCls(t.i) + '">' + (t.i == null ? '–' : t.i) + '</span>'; }
 function dayName(d) { return d === 0 ? '주일' : WEEK[d] + '요일'; }
 function shortDate(s) { if (!s) return ''; const d = parseYmd(s); return (d.getMonth() + 1) + '월 ' + d.getDate() + '일'; }
-function kindLabel(t) { return t.kind === 'group' ? '그룹' : (t.kind === 'person' ? '사람' : '기도 항목'); }
+// 사람 · 기도 항목 종류는 화면에서 가리지 않는다 (HB 2026-10-13) — 상세 머리 · 목록 아래 줄에 비워 둔다
+function kindLabel(t) { return t.kind === 'group' ? '그룹' : ''; }
 function targetMeta(t) {
   const out = [];
   if (t.kind === 'group') {
