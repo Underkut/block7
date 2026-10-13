@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1013-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1013-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -408,7 +408,7 @@ body.pdark .nmin select{background:#111418;border-color:#2b313b}
 .mstk{font-size:34px;line-height:1.1}.mq{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.mq button{padding:6px 10px;border-radius:12px;background:#f3eefc;color:var(--purple);font-size:14px}
 .mtag{display:inline-block;background:#ff6fa5;color:#fff;border-radius:8px;padding:1px 7px;font-size:12px;margin-right:6px}
 .mchip{display:inline-block;background:#efe9fa;color:var(--sub);border-radius:10px;padding:2px 9px;font-size:13px}.mchip.ok{background:#3cc98a;color:#fff}.mchip.no{background:#cfc7e0;color:#fff}
-.msub{font-size:12px;color:var(--sub)}.msec{font-size:14px;color:var(--sub);margin:12px 4px 2px}
+.msub{font-size:12px;color:var(--sub)}.msub.cm{font-size:14px;color:var(--ink,#1f2430);background:#fff7e0;border-radius:10px;padding:7px 10px;margin:6px 0 0}.gcm{font-size:14px;background:#fff7e0;border-radius:10px;padding:7px 10px;margin-top:6px}.edcm{width:100%;box-sizing:border-box;margin-top:8px;font-size:16px}.msec{font-size:14px;color:var(--sub);margin:12px 4px 2px}
 .msend{display:flex;gap:6px;margin:4px 0 8px}.msend button{flex:1;padding:10px 0;border-radius:16px;background:#fff;color:var(--purple);font-size:15px;box-shadow:0 3px 0 #d9ceee}
 .stkrow{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.stkrow button{width:44px;height:44px;border-radius:14px;background:#fff;font-size:24px;box-shadow:0 3px 0 #d9ceee}.stkrow button.on{background:#ffe9a8;box-shadow:0 3px 0 #e0b800}
 .stkrow.big button{width:56px;height:56px;font-size:30px}.stkrow.names button{width:auto;padding:0 14px;font-size:16px;color:var(--purple)}
@@ -687,7 +687,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
-<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">우리 아이</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day">오늘</button><button data-per="week" class="on">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
+<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">우리 아이</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day" class="on">오늘</button><button data-per="week">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
 <div class="mirbar" id="mirBar"><div class="mirtxt" id="mirTxt"></div><div class="pr-kids" id="mirKids"></div><div class="mirseg" id="mirSeg"><button data-v="vHome" class="on">홈</button><button data-v="vAlloc">계획세우기</button><button data-v="vLog">돌아보기</button></div></div>
 <nav class="pnav" id="pnav"><button data-p="rep" class="on"><span id="pnRep"></span>우리 아이</button><button data-p="mir"><span id="pnMir"></span>아이 화면</button><button data-p="mail"><span id="pnMail"></span>우체통<i id="pmDot"></i></button></nav>
 <div class="dim" id="dim"></div>
@@ -696,7 +696,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1013-1";
+const APP_VERSION = "v. 26-1013-2";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -1827,7 +1827,7 @@ function renderGoals(){
       <div class="gauge ${full?'g':''}"><i style="width:${pct}%"></i></div><div class="hint">${hint}</div>
       ${g.why ? `<div class="gwhy">💭 ${esc(g.why)}</div>` : ''}${dueLine ? `<div class="gwhy ${dd < 0 ? 'late' : ''}" ${dd < 0 ? 'data-ga="edit"' : ''}>${dueLine}</div>` : ''}
       ${(() => { const pm = goalPerm(g);
-        return pm==='free' ? '' : pm==='ok' ? '<div class="gperm ok">✓ 부모님이 허락했어요</div>' : pm==='wait' ? '<div class="gperm wait">⏳ 부모님 허락을 기다리는 중이에요</div>'
+        return pm==='free' ? '' : pm==='ok' ? '<div class="gperm ok">✓ 부모님이 허락했어요</div>'+(() => { const gm = FAM && FAM.role==='kid' ? MAIL.filter(x => x.goal===g.k).sort((a,b) => b.at-a.at)[0] : null; return gm && gm.cm ? '<div class="gcm">💬 '+esc(gm.cm)+'</div>' : ''; })() : pm==='wait' ? '<div class="gperm wait">⏳ 부모님 허락을 기다리는 중이에요</div>'
           : `<div class="gperm">${pm==='no' ? '부모님이 "다음에"라고 했어요. ' : '아직 허락 전이에요. '}<button class="gb sm purple" data-ga="ask">${pm==='no' ? '다시 물어보기' : '사도 돼요?'}</button></div>`; })()}
       ${full ? (['ok','free'].includes(goalPerm(g)) ? `<button class="gb green" data-ga="buy" style="margin-top:12px">샀어요! (${won(g.price)})</button>` : '<div class="hint" style="margin-top:8px">다 모았어요! 부모님 허락을 받으면 살 수 있어요</div>') : `<div class="hint" style="margin-top:2px;color:#b5a8cf">${acctName(curAcct)}에서 떼어 담아요</div>`}</div>`;
   };
@@ -2503,7 +2503,7 @@ function kidCodeSheet(re){
 }
 
 /* 부모 보고서 (F-2) — 게임 화면이 아니라 보고서 */
-let PAR = {kids:[], sel:null, per:'week', acct:'all', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
+let PAR = {kids:[], sel:null, per:'day', acct:'all', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
 function hideParent(){ mirrorOff(); const p = $('par'); if(p) p.classList.remove('on'); document.body.classList.remove('pmode'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } if(PAR.unsubM){ PAR.unsubM(); PAR.unsubM = null; } if(PAR.unsubA){ PAR.unsubA(); PAR.unsubA = null; } }
 async function showParent(){
   document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep');
@@ -2747,6 +2747,7 @@ const msgPath = id => 'families/'+FAM.fid+'/msgs/'+id;
 const fmtAt = ms => { const d = new Date(ms), t = todayStr(); return dstr(d)===t ? d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : (d.getMonth()+1)+'/'+d.getDate(); };
 // 고쳐서 승인 — 부모님이 아이가 요청한 금액을 고쳐 허락한 기록(m.edited, 원래 금액 m.amt0)
 const editedTxt = m => m.edited && m.amt0 != null && m.amt0 !== m.amt ? ' ('+won(m.amt0)+' → '+won(m.amt)+')' : '';
+const cmHtml = m => m && m.cm ? '<p class="msub cm">💬 '+esc(m.cm)+'</p>' : '';
 const MSG_TAG = {note:'쪽지', stamp:'칭찬 도장', mission:'미션', req:'용돈 요청', cpreq:'쿠폰', grant:'허락권'};
 // 허락권(type:'grant') — 공부 친구들(study/)에서 부모님이 보낸다. kind 'allow' = 내 돈으로 사도 된다는 허락(amt=한도) · 'money' = 용돈 +amt원(받을 예정 돈으로 한 번만)
 const grantTxt = m => m.kind==='money' ? '용돈 +'+won(m.amt) : (m.text||'')+(m.amt ? ' ('+won(m.amt)+'까지)' : '');
@@ -2785,7 +2786,7 @@ function kidMailUpdate(){
     const m = fresh[0], who = m.from==='parent' ? (m.fromName||'부모님') : (m.okName||'부모님');
     const txt = m.from==='kid' && m.goal ? (m.status==='ok' ? who+'가 '+(m.edited ? '금액을 고쳐서 ' : '')+'사도 된다고 허락했어요!' : who+'가 "다음에"라고 했어요') : m.from==='kid' ? (m.status==='ok' ? who+'가 '+(MSG_TAG[m.type]||'')+'을 '+(m.edited ? '고쳐서 ' : '')+'승인했어요!' : who+'가 '+(MSG_TAG[m.type]||'')+'에 답했어요')
       : m.type==='grant' ? who+'가 허락권을 보냈어요: '+grantTxt(m) : m.type==='stamp' ? who+'가 '+(m.sticker||'⭐')+' 도장을 찍었어요!' : m.type==='mission' ? (m.status==='ok' ? '미션 성공! '+who+'가 확인했어요' : who+'가 미션을 보냈어요') : who+'에게서 쪽지가 왔어요';
-    sfx('win'); buzz([20,40,20]); toast(txt + (fresh.length>1 ? ' (+'+(fresh.length-1)+')' : ''));
+    sfx('win'); buzz([20,40,20]); toast(txt + (m.from==='kid' && m.cm ? ' — "'+m.cm+'"' : '') + (fresh.length>1 ? ' (+'+(fresh.length-1)+')' : ''));
   }
   renderMailBtn(); if(!MIR) render();
   if($('sheet').classList.contains('on') && $('kmail')) kidMailSheet(true);
@@ -2818,9 +2819,9 @@ function kidMailSheet(keep){
     let body = '';
     if(m.type==='stamp') body = `<p>${esc(m.refLabel||'내 기록')}에 <b>도장</b>을 찍었어요</p><div class="mstk">${m.sticker||'⭐'}</div>${m.text ? '<p>'+esc(m.text)+'</p>' : ''}`;
     else if(m.type==='mission') body = `<p><span class="mtag">미션</span>${esc(m.text||'')}${m.amt ? ' → <b>'+won(m.amt)+'</b>' : ''}</p>${m.status==='open' ? `<button class="gb green sm" data-ma="done" data-id="${m.id}">다 했어요!</button>` : st(m)}`;
-    else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</span>' : st(m)}`;
-    else if(m.type==='req') body = `<p><span class="mtag">용돈 요청</span><b>${won(m.amt)}</b> · ${esc(m.text||'')}</p>${st(m)}${m.status==='ok' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : ''}`;
-    else if(m.type==='cpreq') body = `<p><span class="mtag">쿠폰</span>${esc(m.text||'')}</p>${st(m)}`;
+    else if(m.type==='req' && m.goal) body = `<p><span class="mtag">사도 돼요?</span>${esc(m.text||'')} · <b>${won(m.amt)}</b></p>${m.status==='ok' ? '<span class="mchip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</span>' : st(m)}${cmHtml(m)}`;
+    else if(m.type==='req') body = `<p><span class="mtag">용돈 요청</span><b>${won(m.amt)}</b> · ${esc(m.text||'')}</p>${st(m)}${cmHtml(m)}${m.status==='ok' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : ''}`;
+    else if(m.type==='cpreq') body = `<p><span class="mtag">쿠폰</span>${esc(m.text||'')}</p>${st(m)}${cmHtml(m)}`;
     else if(m.type==='grant') body = `<p><span class="mtag">허락권</span><b>${esc(grantTxt(m))}</b>${m.until ? ' · '+esc(m.until.slice(5).replace('-','/'))+'까지' : ''}</p>${m.kind==='money' ? '<p class="msub">받을 예정 돈에 들어갔어요</p>' : m.doneAt ? '<span class="mchip ok">썼어요</span>' : `<button class="gb green sm" data-ma="used" data-id="${m.id}">썼어요!</button>`}`;
     else body = `${m.text ? '<p>'+esc(m.text)+'</p>' : ''}${m.sticker ? '<div class="mstk">'+m.sticker+'</div>' : ''}${!mine ? `<div class="mq"><button data-ma="re" data-t="고마워요!">고마워요!</button><button data-ma="re" data-t="사랑해요 ❤️">사랑해요 ❤️</button><button data-ma="re" data-t="알겠어요">알겠어요</button></div>` : ''}`;
     return `<div class="mc ${mine?'mine':''} ${m.readKid||mine?'':'new'}"><span class="mav">${face(mine ? 'pig' : 'bear')}</span><div class="mb"><div class="mh"><b>${esc(who)}</b><small>${fmtAt(m.at)}</small>
@@ -2933,9 +2934,9 @@ function renderPMail(){
   const stl = m => m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 승인'+editedTxt(m) : '승인')+'</em>' : m.status==='no' ? '<em class="w-chip">다음에</em>' : m.status==='done' ? '<em class="w-chip">완료 보고</em>' : m.status==='open' ? '<em class="w-chip on">진행 중</em>' : '';
   const body = m => m.type==='stamp' ? `<span class="w-bs">${m.sticker||'⭐'}</span> <b>칭찬 도장</b> · ${esc(m.refLabel||'')}${m.text ? '<br>'+esc(m.text) : ''}`
     : m.type==='mission' ? `🎯 <b>미션</b> · ${esc(m.text||'')}${m.amt ? ' → '+won(m.amt) : ''} ${stl(m)}`
-    : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</em>' : stl(m)}`
-    : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}`
-    : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}`
+    : m.goal ? `🛍️ <b>사도 돼요?</b> · ${won(m.amt)} — ${esc(m.text||'')} ${m.status==='ok' ? '<em class="w-chip ok">'+(m.edited ? '고쳐서 허락'+editedTxt(m) : '허락')+'</em>' : stl(m)}${m.cm ? '<br>💬 '+esc(m.cm) : ''}`
+    : m.type==='req' ? `🙏 <b>용돈 요청</b> · ${won(m.amt)} — ${esc(m.text||'')} ${stl(m)}${m.cm ? '<br>💬 '+esc(m.cm) : ''}`
+    : m.type==='cpreq' ? `🎟️ <b>쿠폰</b> · ${esc(m.text||'')} ${stl(m)}${m.cm ? '<br>💬 '+esc(m.cm) : ''}`
     : m.type==='grant' ? `🎫 <b>허락권</b> · ${esc(grantTxt(m))} ${m.kind==='money' ? '' : m.doneAt ? '<em class="w-chip ok">썼어요</em>' : '<em class="w-chip">안 씀</em>'}`
     : `${m.text ? esc(m.text) : ''}${m.sticker ? ' <span class="w-bs">'+m.sticker+'</span>' : ''}`;
   const thread = ms.slice(0,40).reverse();
@@ -2989,8 +2990,8 @@ $('prMail').addEventListener('click', e => {
       else if(a==='again') mailUpd(id, {status:'open'}).then(() => toast('다시 해 보자고 보냈어요'));
       else if(a==='reply') noteSheet();
       else if(a==='edit'){ const m = PAR.msgs.find(x => x.id===id); if(!m || m.status!=='open') return;
-        padSheet({title:m.goal ? '허락할 금액' : m.type==='cpreq' ? '줄 금액' : '줄 금액', init:m.amt, extra:'<div class="note">아이가 말한 금액: <b>'+won(m.amt)+'</b></div>', nextLabel:m.goal ? '이 금액으로 허락하기' : '이 금액으로 승인하기', onDone: amt => {
-          const o = {status:'ok', okName:FAM.pname||'부모님', okAt:FB.fv.serverTimestamp()};
+        padSheet({title:m.goal ? '허락할 금액' : m.type==='cpreq' ? '줄 금액' : '줄 금액', init:m.amt, extra:'<div class="note">아이가 말한 금액: <b>'+won(m.amt)+'</b></div><input class="inp edcm" id="edCm" maxlength="80" placeholder="아이에게 한마디 (안 써도 돼요)">', nextLabel:m.goal ? '이 금액으로 허락하기' : '이 금액으로 승인하기', onDone: amt => {
+          const o = {status:'ok', okName:FAM.pname||'부모님', okAt:FB.fv.serverTimestamp()}, cm = (($('edCm')||{}).value||'').trim().slice(0,80); if(cm) o.cm = cm;
           if(amt!==m.amt){ o.amt = amt; o.amt0 = m.amt; o.edited = true; }
           closeSheet(); mailUpd(id, o).then(() => toast((amt!==m.amt ? '금액을 고쳐서 ' : '')+(m.goal ? '허락' : '승인')+'했어요. 아이 폰에 바로 반영돼요')); }}); }
     }); }
