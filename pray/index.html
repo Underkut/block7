@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-12';
+const APP_VERSION = 'v. 26-1013-13';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3394,6 +3394,10 @@ ACT['map-pick-mode'] = () => {
   btnTone(b, UI.pickMode === 2 ? 'on' : UI.pickMode === 1 ? '' : 'dim');
   if (b) b.setAttribute('aria-label', '오늘 기도할 것 고르기 — ' + ['꺼짐', '고르는 중', '고른 것만 보는 중'][UI.pickMode]);
   mapMorph(m => { m.classList.remove('pk0', 'pk1', 'pk2'); m.classList.add('pk' + UI.pickMode); });
+  // '고른 것만'(2) 으로 갈 때 · 다시 모두(0) 로 돌아올 때는 접고 펴는 것이 끝난 뒤 지금 화면에 맞게 다시 놓는다.
+  // 고르는 중(1) 으로 들어갈 때는 그대로 — 자리가 그대로여야 무엇이 흐려졌는지 바로 알아본다.
+  clearTimeout(UI.reflowT);
+  if (UI.pickMode !== 1) UI.reflowT = setTimeout(mapReflow, UI.pickMode === 2 ? 600 : 720);
 };
 // + 는 켜지고 꺼지는 것들이 옅어지기만 한다 (자리는 그대로)
 ACT['map-add-mode'] = () => {
@@ -4553,7 +4557,8 @@ function mapDistribute(cols, order, hs) {
   order.forEach(c => {
     let k = 0; h.forEach((x, n) => { if (x < h[k] - 1) k = n; });
     if (c.parentElement !== cols[k] || c.nextElementSibling) cols[k].appendChild(c);
-    h[k] += (hs ? hs.get(c) : c.offsetHeight) + 10;
+    const hh = hs ? hs.get(c) : c.offsetHeight;
+    h[k] += hh ? hh + 10 : 0;   // 숨은 카드(높이 0)는 자리를 안 차지한다 — 타겟 '고른 것만' 에서 빈 틈이 생기던 것
   });
 }
 function mapLayout() {
@@ -4666,6 +4671,18 @@ function pzEnd() {
   if (navigator.vibrate) navigator.vibrate(8);
 }
 // 다시 그리면서 카드가 옮겨 간 자리로 미끄러지게 (손을 뗀 뒤 단이 다시 짜일 때)
+// 다시 그리지 않고 열만 다시 나눈다 — 카드는 지금 자리에서 새 자리로 천천히 미끄러진다 (HB 2026-10-13: 타겟 전환 뒤 빈 틈 · 한쪽만 긴 단)
+function mapReflow() {
+  const m = document.querySelector('#v-map .mjs'); if (!m || UI.mapEdit) return;
+  const was = new Map(); m.querySelectorAll('.gcard').forEach(c => { if (c.getClientRects().length) was.set(c, c.getBoundingClientRect()); });
+  mapLayout();
+  if (mxQuiet()) return;
+  was.forEach((o, c) => {
+    const n = c.getBoundingClientRect(), dx = o.left - n.left, dy = o.top - n.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    c.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 650, easing: MX_EASE });
+  });
+}
 function mapRenderFlip() {
   const was = {}; document.querySelectorAll('#v-map .gcard[data-gid]').forEach(c => { was[c.dataset.gid] = c.getBoundingClientRect(); });
   mapRender();
