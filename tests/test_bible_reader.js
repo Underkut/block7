@@ -708,6 +708,14 @@ console.log('\n시나리오 13-32 — 본문 가로는 굴리지도 넘기지도
   sc.eq('iOS 에서 푸는 것은 세로만', /overscroll-behavior:auto;\}/.test(SRC.slice(SRC.indexOf('html.br-cover #bibleRd'),SRC.indexOf('html.br-cover #bibleRd')+120)), false);
 }
 
+console.log('\n시나리오 13-33 — 사파리가 글자 자리를 안 주면 직접 잰다 (v26-1013-8 HB — 아이폰 긋기 무반응)');
+{
+  sc.eq('글자 자리가 없으면 _brCharAtGeo', /if\(!node\|\|node\.nodeType!==3\|\|!node\.parentElement\)\{_brCharHow='geo';return _brCharAtGeo\(x,y\);\}/.test(SRC), true);
+  sc.eq('본문 밖 글자면 그때도', /if\(!tx\)\{_brCharHow='geo';return _brCharAtGeo\(x,y\);\}/.test(SRC), true);
+  sc.eq('직접 재기는 줄부터 고른다 (손가락마다 절 전체를 훑지 않게)', /function _brCharAtGeo\(x,y\)\{[\s\S]{0,600}getClientRects\(\)/.test(SRC), true);
+  sc.eq('기록에 옆 끌기와 긋기 시작 결과', /if\(r\.fin<12&&r\.hx<12\)return;/.test(SRC) && /window\._brInkDiag=\(st\?'시작O':'시작X'\)/.test(SRC), true);
+}
+
 console.log('\n시나리오 14 — 시안에서 겪은 것');
 {
   const css = slice("   인앱 성경 (v26-1006-4, HB", "@media (prefers-reduced-motion:reduce){#bibleRd");
