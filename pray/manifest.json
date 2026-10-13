@@ -1,7 +1,7 @@
 {
   "id": "/pray/",
-  "name": "기도노트",
-  "short_name": "기도노트",
+  "name": "BLUE ROOM",
+  "short_name": "BLUE ROOM",
   "description": "날마다 기도할 이름과 제목을 차례대로",
   "start_url": "./",
   "scope": "./",

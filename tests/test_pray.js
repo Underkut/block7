@@ -15,6 +15,7 @@
 //  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
 //  ⑬ 실행취소 · 재실행 — 사람이 한 일만 되돌리고, 기도 시간 · rev 는 지킨다
+//  ⑭ BLOCK7 → 기도노트 우체통 — 고른 그룹(서브 그룹)의 맨 위 기도 항목으로 · 없는 그룹은 넣지 않고 셈
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -34,7 +35,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -575,6 +576,28 @@ const MAPCSV = [
   const H3 = A.makeHist(100, 10); H3.reset('aaaa');
   ['bbbb', 'cccc', 'dddd', 'eeee'].forEach((k, i) => H3.record(k, i * 1000));
   sc.eq('⑬ 크기 상한 — 넘치면 오래된 것부터', H3.past, ['cccc', 'dddd']);
+}
+// ⑭ BLOCK7 에서 '기도 노트로' 보낸 것 받기
+{
+  const db = A.emptyDB();
+  const g = A.newGroup('가족', '#e09a28'); db.G.push(g);
+  const sub = A.newGroup('13세', '#e09a28'); sub.parent = g.id; db.G.push(sub);
+  const old = A.newTarget('person', '가나'); db.T.push(old);
+  g.lines = [{ id: 'x1', segs: [[old.id]], r: {}, text: '' }];
+  const r = A.inboxApply(db, [
+    { id: 'm1', gid: g.id, text: '  병원  심방 ', at: 1 },
+    { id: 'm2', gid: sub.id, text: '수련회 준비', at: 2 },
+    { id: 'm3', gid: 'gone', text: '사라진 그룹', at: 3 },
+    { id: 'm4', gid: g.id, text: '   ', at: 4 }
+  ]);
+  sc.eq('⭐⑭ 넣은 수 · 그룹이 없어 못 넣은 수', [r.n, r.lost], [2, 1]);
+  const t = db.T.find(x => x.name === '병원 심방');
+  sc.eq('⭐⑭ 그룹의 맨 위 항목으로 (원래 있던 줄은 아래로)', [g.lines.length, g.lines[0].segs[0][0] === t.id, g.lines[1].id], [2, true, 'x1']);
+  sc.eq('⑭ 기도 항목(사람 아님) · 구분 · 표시색 비움', [t.kind, t.cat || '', t.mark || ''], ['item', '', '']);
+  sc.eq('⑭ 서브 그룹으로 보낸 것은 서브 그룹에 (그룹 줄에는 안 생김)', [sub.lines.length, g.lines.some(l => db.T.find(x => x.id === l.segs[0][0]).name === '수련회 준비')], [1, false]);
+  A.inboxApply(db, [{ id: 'm5', gid: g.id, text: '병원 심방', at: 5 }]);
+  sc.eq('⑭ 같은 이름의 기도 항목은 카드를 같이 쓴다 (항목은 하나 · 줄은 둘)', [db.T.filter(x => x.name === '병원 심방').length, g.lines.length], [1, 3]);
+  sc.eq('⑭ 빈 우체통은 아무 일 없음', A.inboxApply(db, []), { n: 0, lost: 0 });
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
