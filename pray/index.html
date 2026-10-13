@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-15 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-15';
+const APP_VERSION = 'v. 26-1013-16';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3194,20 +3194,15 @@ ACT.cats = () => pushLayer({ type: 'cats' });
 ACT.subcats = () => pushLayer({ type: 'subcats' });
 ACT.groups = () => pushLayer({ type: 'groups' });
 ACT.import = () => { UI.imp = { step: 1, text: '' }; pushLayer({ type: 'import' }); };
-// 휴대폰 · 태블릿 지도: 한 번 톡 = 고치기, **두 번 톡 = 상세** (HB 2026-10-13). 꾹 눌렀다 떼기도 그대로 상세.
-//   ⚠️ 첫 톡에서 바로 고치기를 시작한다 — 아이폰은 기다렸다 focus 하면 자판이 안 뜬다. 두 번째 톡이 오면 고치기를 접고 연다.
+// 휴대폰 · 태블릿 지도: 한 번 톡 = 상세, **두 번 톡 = 고치기** (HB 2026-10-13). 꾹 눌렀다 떼기는 아무 일도 없다 (꾹 누르고 끌면 옮기기).
+//   ⚠️ 첫 톡은 두 번째 톡을 0.3초 기다렸다 상세를 연다. 두 번째 톡이 오면 상세를 접고 그 톡 안에서 바로 고치기를 시작한다 —
+//      아이폰은 같은 손짓 안에서 focus 해야 자판이 뜬다.
 const MTAP = { k: '', t: 0 };
-function mapTapEdit(k) { MTAP.k = k; MTAP.t = Date.now(); mapStartEdit(k, false); }
-document.addEventListener('pointerup', e => {
-  if (PT === 'mouse' || !MTAP.k || Date.now() - MTAP.t > 380 || Date.now() - MTAP.t < 30) return;
-  const s = e.target.closest && e.target.closest('#v-map [data-sel]');
-  if (!s || s.dataset.sel !== MTAP.k) return;
-  const k = MTAP.k; MTAP.k = '';
-  e.preventDefault(); GS.suppress = Date.now();
-  if (UI.mapEdit && UI.mapEdit.key === k && !UI.mapEdit.isNew) UI.mapEdit = null;   // 막 시작한 고치기 — 바뀐 것 없음
-  const a = document.activeElement; if (a && a.blur) a.blur();
-  mapRender(); mapOpen(k);
-}, true);
+function mapTapEdit(k, who) {
+  if (MTAP.t && MTAP.k === k) { clearTimeout(MTAP.t); MTAP.t = 0; MTAP.k = ''; mapStartEdit(k, false); return; }
+  clearTimeout(MTAP.t); MTAP.k = k;
+  MTAP.t = setTimeout(() => { MTAP.t = 0; MTAP.k = ''; if (who) openTarget(who); else mapOpen(k); }, 300);
+}
 // PC 지도: 한 번 누르면 고르기, **고른 것을 한 번 더 누르면 고치기** (HB 2026-10-13). 두 번 빨리 누르면(더블클릭) 상세 —
 // 그래서 고치기는 0.3초 기다렸다 시작하고, 그 사이 더블클릭이 오면 접는다. 고른 지 0.45초 안의 누름은 더블클릭의 둘째 누름으로 본다.
 const MCLK = { t: 0, at: 0 };
@@ -3228,7 +3223,7 @@ function mapMouseClick(k) {
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
-  if (s) { if (PT === 'mouse') mapMouseClick(s.dataset.sel); else mapTapEdit(s.dataset.sel); return; }
+  if (s) { if (PT === 'mouse') mapMouseClick(s.dataset.sel); else mapTapEdit(s.dataset.sel, el.dataset.id); return; }
   if (el.dataset.id) openTarget(el.dataset.id);
 };
 ACT['map-add'] = el => {
@@ -3261,7 +3256,7 @@ const kbHelpOpen = () => openSheet('<div class="sh-t">기도 지도 — 키보�
   ['↑ ↓ ← →', '화면에 보이는 자리대로 위 · 아래 · 왼쪽 · 오른쪽으로 고르기'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
   ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], [',', '고른 그룹에 항목 더하기 (항목을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기 (그룹 · 서브 그룹 · 항목 어디서나)'], ['끌기', '눌러 끌면 옮기기 — 다른 그룹으로 놓으면 옮기기 · 연동 중 고르기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
   ['⌥ ↑ ↓', '위아래로 옮기기 · 항목은 끝에서 옆 그룹으로'], ['N', '새 그룹'], ['M', '고른 그룹 안에 새 서브 그룹'], ['Esc', '고치기 취소 · 고르기 풀기'],
-  ['두 번 누르기', '상세 열기 (이름이면 사람 카드)']
+  ['두 번 누르기', '상세 열기 (이름이면 사람 카드) · 휴대폰은 한 번 톡이 상세, 두 번 톡이 고치기']
 ].map(r => '<div class="opt"><b style="min-width:92px;font-weight:600">' + r[0] + '</b><span>' + r[1] + '</span></div>').join('') +
   '<div class="hint" style="padding:12px 20px">⌘N 은 크롬 · 사파리가 먼저 가져가(새 창) 웹 페이지가 막을 수 없어 한 글자로 둡니다. 한글 입력 상태여도 같은 자리 글쇠면 됩니다.</div></div>');
 ACT['open-group'] = el => {
@@ -4269,7 +4264,7 @@ function mdEnd(e, cancel) {
   if (st.mode === 'lift') {
     st.src.classList.remove('md-lift');
     GS.suppress = Date.now();
-    if (!cancel) { if (st.who) openTarget(st.who); else mapOpen(st.k); }
+    
     return;
   }
   if (st.mode === 'drag') { GS.suppress = Date.now(); mdDrop(st, cancel); }
