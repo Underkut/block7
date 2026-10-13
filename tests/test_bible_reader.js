@@ -690,7 +690,7 @@ console.log('\n시나리오 13-29 — 성경이 열린 동안 뒤 문서는 굴�
 
 console.log('\n시나리오 13-30 — 아이폰·아이패드는 뒤 문서를 잠갔으니 본문 사슬 막기를 뺀다 (v26-1012-3)');
 {
-  sc.eq('잠긴 동안 iOS 본문은 overscroll auto', /html\.br-cover #bibleRd\.br-ios \.br-scroll\{overscroll-behavior:auto;\}/.test(SRC), true);
+  sc.eq('잠긴 동안 iOS 본문은 overscroll auto', /html\.br-cover #bibleRd\.br-ios \.br-scroll\{overscroll-behavior-y:auto;\}/.test(SRC), true);
   sc.eq('다른 기기는 contain 그대로', /#bibleRd \.br-scroll\{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;/.test(SRC), true);
   sc.eq('걸림 시작 한 장을 남긴다', /if\(ms>=250&&!g\.snap\)/.test(SRC), true);
 }
@@ -700,6 +700,12 @@ console.log('\n시나리오 13-31 — 머리·바닥 접기 시험 스위치 (v2
   sc.eq('스위치가 켜지면 스크롤마다 접지 않는다', /if\(_brChromeFreeze\(\)\)\{_brProgSync\(\);if\(_brP!==0\)\{_brP=0;_brChromeApply\(false\);\}return;\}/.test(SRC), true);
   sc.eq('기기 전용 키 (_lsk)', /localStorage\.getItem\(_lsk\('brChromeOff'\)\)==='1'/.test(SRC), true);
   sc.eq('스위치는 개발자 줄 안에만', /id="brDiagRow"[^\n]*id="brDiagFrz"/.test(SRC), true);
+}
+
+console.log('\n시나리오 13-32 — 본문 가로는 굴리지도 넘기지도 않는다 (v26-1013-7 HB — 긋기 안 됨)');
+{
+  sc.eq('가로 막기', /#bibleRd \.br-scroll\{overflow-x:hidden;overscroll-behavior-x:none;\}/.test(SRC), true);
+  sc.eq('iOS 에서 푸는 것은 세로만', /overscroll-behavior:auto;\}/.test(SRC.slice(SRC.indexOf('html.br-cover #bibleRd'),SRC.indexOf('html.br-cover #bibleRd')+120)), false);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
