@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-5  [production]  -->
+<!-- BLOCK7  v. 26-1013-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3024,6 +3024,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .pray-pick .pp-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pray-pick .pp-self{color:var(--tx3);font-size:12px}
 .pray-pick .pp-msg{padding:12px 14px;font-size:12px;color:var(--tx3);white-space:normal;line-height:1.6}
+.pray-pick .pp-load{display:flex;align-items:center;gap:9px;white-space:nowrap;color:var(--tx2)}
 
 /* ── Event add modal ── */
 .event-modal-overlay{position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.45);}
@@ -6353,7 +6354,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-5";
+const APP_VERSION = "v. 26-1013-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34989,6 +34990,9 @@ function openMemoFromMenu(){
 //    쪽지 한 줄(arrayUnion) — 기도노트가 열릴 때 트랜잭션으로 꺼내 제 병합 길로 넣는다.
 //    BLOCK7 의 상태 문서(users/{uid})는 건드리지 않는다. (docs/ROADMAP.md 'BLOCK7 할일 → 기도노트로')
 let _prayG=null,_prayGAt=0,_prayGLoad=null;
+// ⚠️ BLOCK7 의 fbDB 는 로그인 덩어리((async function(){…})()) 안의 이름이라 여기서는 안 보인다 —
+//    그걸 부르다 오류가 나 '불러오는 중…' 에서 멈췄다 (v26-1013-6, HB). 기본 앱의 firestore() 를 직접 쓴다(같은 것).
+function _prayDb(){return firebase.firestore();}
 function _prayUid(){try{const u=(typeof firebase!=='undefined'&&firebase.auth)?firebase.auth().currentUser:null;return u?u.uid:'';}catch(e){return'';}}
 // 기도노트 지도와 같은 차례 — 위 그룹(부모가 없거나 부모가 지워진 것) · 그 밑 서브 그룹(제 자리 + 연동해 둔 자리)
 function _prayTree(G){
@@ -35003,9 +35007,9 @@ function _prayLoadGroups(){
   if(!uid)return Promise.resolve({err:'로그인하면 기도노트 그룹이 보여요'});
   if(_prayG&&_prayG.uid===uid&&Date.now()-_prayGAt<60000)return Promise.resolve({g:_prayG.t});
   if(_prayGLoad)return _prayGLoad;
-  const ref=fbDB.doc('pray/'+uid);
   _prayGLoad=(async()=>{
     try{
+      const ref=_prayDb().doc('pray/'+uid);
       const m=await ref.get();
       if(!m.exists)return{err:'같은 계정으로 로그인한 기도노트(BLUE ROOM) 자료가 아직 없어요'};
       const meta=m.data();
@@ -35014,10 +35018,12 @@ function _prayLoadGroups(){
       const t=_prayTree((JSON.parse(parts.map(p=>p.data().s).join(''))||{}).G);
       _prayG={uid,t};_prayGAt=Date.now();
       return{g:t};
-    }catch(e){return{err:'기도노트 그룹을 못 읽었어요'};}
-    finally{_prayGLoad=null;}
+    }catch(e){return{err:(e&&e.code==='permission-denied')?'기도노트 서버 권한이 아직 없어요 (기도노트 설정 › 계정 확인)':'기도노트 그룹을 못 읽었어요'};}
   })();
-  return _prayGLoad;
+  // 너무 오래 걸리면(인터넷이 끊겼을 때 등) 기다리게 두지 않는다
+  const p=_prayGLoad;
+  return Promise.race([p,new Promise(r=>setTimeout(()=>r({err:'기도노트가 응답하지 않아요. 인터넷을 확인하고 다시 열어 주세요'}),15000))])
+    .finally(()=>{if(_prayGLoad===p)_prayGLoad=null;});
 }
 const _PRAY_HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
 function _prayPickClose(level){document.querySelectorAll('.pray-pick').forEach(p=>{if(+p.dataset.pp>=level)p.remove();});document.querySelectorAll('.pray-pick .pp-row.on').forEach(r=>{if(+r.closest('.pray-pick').dataset.pp>=level)r.classList.remove('on');});}
@@ -35039,8 +35045,9 @@ const _ppDot=c=>'<i class="pp-dot" style="--pc:'+esc(c||'')+'"></i>';
 async function _prayOpenGroups(){
   const menu=document.getElementById('taskMenu'),item=document.getElementById('prayMenuItem');
   if(!menu||menu.style.display==='none'||!item)return;
-  const box=_prayPanel(1,menu,item,'<div class="pp-msg">기도노트 그룹을 불러오는 중…</div>');
-  const r=await _prayLoadGroups();
+  // 기다리는 동안은 토스트의 '바쁨' 그림(책장 · 줄 · 점 · 원) 중 하나 — 말씀 모음 불러올 때와 같다
+  const box=_prayPanel(1,menu,item,'<div class="pp-msg pp-load">'+_toastSpin()+'<span>기도노트 그룹을 불러오는 중…</span></div>');
+  let r;try{r=await _prayLoadGroups();}catch(e){r={err:'기도노트 그룹을 못 읽었어요'};}
   if(!box.isConnected)return;
   if(r.err||!r.g.length){box.innerHTML='<div class="pp-msg">'+esc(r.err||'기도노트에 그룹이 아직 없어요')+'</div>';box._pos();return;}
   box.innerHTML=r.g.map((g,i)=>'<div class="pp-row" data-i="'+i+'">'+_ppDot(g.color)+'<span class="pp-nm">'+esc(g.name)+'</span>'+
@@ -35080,7 +35087,7 @@ async function _praySend(gid,name){
   if(!text||!uid||DEV_MODE){showToast('기도노트로 못 보냈어요');return;}
   const note={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),gid:gid,text:text,at:Date.now(),from:APP_PRODUCT};
   try{
-    await fbDB.doc('pray/'+uid+'/c/inbox').set({items:firebase.firestore.FieldValue.arrayUnion(note)},{merge:true});
+    await _prayDb().doc('pray/'+uid+'/c/inbox').set({items:firebase.firestore.FieldValue.arrayUnion(note)},{merge:true});
     showToast('기도노트 \''+name+'\' 맨 위로 보냈어요');
   }catch(e){showToast('기도노트로 못 보냈어요 — 인터넷 · 로그인을 확인해 주세요');}
 }

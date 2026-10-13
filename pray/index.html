@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-9';
+const APP_VERSION = 'v. 26-1013-10';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2042,6 +2042,11 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 @media (prefers-reduced-motion:reduce){.mt-bg .mt-haze{animation:none}}
 /* 설정 — There 단추 그림 고르기 */
 .there-pick{display:flex;gap:0}
+.room-pick{display:flex;gap:0}
+.room-pick .rpk{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px;color:var(--tx3);font-size:10.5px;letter-spacing:.06em;transition:color .3s}
+.room-pick .rpk img{width:46px;height:46px;border-radius:11px;opacity:.55;transition:opacity .3s,box-shadow .3s}
+.room-pick .rpk.on{color:var(--tx)}
+.room-pick .rpk.on img{opacity:1;box-shadow:0 0 0 2px var(--ac)}
 .there-pick .tpk{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;color:var(--tx2);font-size:11.5px}
 .there-pick .tpk .there-ic{font-size:24px}
 .there-pick .tpk.on{color:var(--ac-tx);background:var(--ac-soft)}
@@ -2274,7 +2279,25 @@ function renderView() {
 // 표시색 접기 단추 — 빨강 원 뒤로 주황 · 초록 · 파랑 초승달 (HB 그림, 2026-10-13). 폰에서만 보인다
 const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['#4aa1f7', 18.6], ['#82d454', 15.2], ['#f2b13e', 11.8], ['#d93a26', 7.6]].map((c, k) =>
   '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--bg)" stroke-width="' + (k ? 1.4 : 0) + '"/>').join('') + '</svg>';
-function brand(page) { return '<h1 class="br" aria-label="BLUE ROOM — ' + page + '"><b>BLUE ROOM</b><span>' + page + '</span></h1>'; }
+// ── 앱 이름 · 아이콘 세 가지 (HB 2026-10-13) — 설정에서 기기마다 고른다. 차례는 THRONE · BLUE · WAR ──
+// 앱 안 글자 · 탭 이름 · 파비콘은 바로 바뀐다. 홈 화면 아이콘 · 이름은 아이폰이 '홈 화면에 추가' 할 때 한 번만 읽으므로
+// 바꾼 뒤 홈 화면에서 지우고 다시 추가해야 한다 (그때 읽는 머리 태그 · manifest 를 여기서 갈아 끼워 둔다).
+const ROOMS = { throne: { name: 'THRONE ROOM', icon: 'icon-throne', mf: 'manifest-throne.json' },
+                blue: { name: 'BLUE ROOM', icon: 'icon', mf: 'manifest.json' },
+                war: { name: 'WAR ROOM', icon: 'icon-war', mf: 'manifest-war.json' } };
+const ROOM_ORDER = ['throne', 'blue', 'war'];
+function roomKey() { const k = devPref('room', 'blue'); return ROOMS[k] ? k : 'blue'; }
+function roomName() { return ROOMS[roomKey()].name; }
+function applyRoom() {
+  const r = ROOMS[roomKey()];
+  document.title = r.name;
+  const q = sel => document.querySelector(sel);
+  if (q('meta[name="apple-mobile-web-app-title"]')) q('meta[name="apple-mobile-web-app-title"]').setAttribute('content', r.name);
+  if (q('link[rel="icon"]')) q('link[rel="icon"]').setAttribute('href', r.icon + '.png');
+  if (q('link[rel="apple-touch-icon"]')) q('link[rel="apple-touch-icon"]').setAttribute('href', r.icon + '.png');
+  if (q('link[rel="manifest"]')) q('link[rel="manifest"]').setAttribute('href', r.mf);
+}
+function brand(page) { return '<h1 class="br" aria-label="' + roomName() + ' — ' + page + '"><b>' + roomName() + '</b><span>' + page + '</span></h1>'; }
 function headActs(extra) {
   return '<div class="vh-acts">' + (extra || '') +
     '<button class="ib' + (HIST.past.length ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
@@ -2575,7 +2598,6 @@ function renderMap() {
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
     mapBtns() +
     '') + '</div>';
-  if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
@@ -2917,11 +2939,11 @@ LAYERS.settings = () => {
   b += '<div class="label">오늘 목록</div><div class="set-g"><div class="set-r">1순위 처음 보일 개수<span class="step"><button data-a="step" data-k="topLimit" data-v="-1" aria-label="줄이기">−</button><b>' + DB.set.topLimit + '</b><button data-a="step" data-k="topLimit" data-v="1" aria-label="늘리기">+</button></span></div></div>';
   b += '<div class="label">긴급도마다 며칠에 한 번<small>0 이 가장 급함</small></div><div class="set-g">' + DB.set.iv.map((v, k) =>
     '<div class="set-r"><span class="pl ' + uCls(k) + '">' + k + '</span>' + (v === 1 ? '날마다' : v + '일마다') + '<span class="step"><button data-a="step" data-k="iv" data-n="' + k + '" data-v="-1" aria-label="줄이기">−</button><b>' + v + '</b><button data-a="step" data-k="iv" data-n="' + k + '" data-v="1" aria-label="늘리기">+</button></span></div>').join('') + '</div>';
-  b += '<div class="label">지도</div><input class="field" data-f="maptitle" value="' + esc(DB.set.mapTitle) + '" placeholder="지도 제목 (예: SOULS OF HEAVENLY FAMILY)" autocomplete="off">';
-  b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="import">' + ico('down') + '시트에서 가져오기<span class="v">' + ico('chevR') + '</span></button>' +
-    '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
+  b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  b += '<div class="label">앱 이름<small>이 기기에만 · 홈 화면 아이콘은 다시 추가해야 바뀜</small></div><div class="set-g room-pick">' +
+    ROOM_ORDER.map(k => '<button class="rpk' + (k === roomKey() ? ' on' : '') + '" data-a="room" data-v="' + k + '"><img src="' + ROOMS[k].icon + '-192.png" alt=""><span>' + ROOMS[k].name + '</span></button>').join('') + '</div>';
   b += '<div class="label">첫 화면<small>앱을 열면 처음 보이는 페이지 · 이 기기에만</small></div><div class="seg" style="margin:0 20px">' +
     [['today', '오늘'], ['map', '지도'], ['list', '목록'], ['hist', '기록']].map(t => '<button class="' + (devPref('startTab', 'today') === t[0] ? 'on' : '') + '" data-a="start-tab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
   b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
@@ -3333,6 +3355,12 @@ function slideOut(e, then) {
   const a = e.animate([{ height: h + 'px', marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom }, { height: '0px', marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }], { duration: 420, delay: 80, easing: MX_EASE, fill: 'forwards' });
   a.onfinish = then;
 }
+ACT.room = el => {
+  setDevPref('room', el.dataset.v); applyRoom();
+  el.parentElement.querySelectorAll('.rpk').forEach(b => b.classList.toggle('on', b === el));
+  document.querySelectorAll('h1.br').forEach(h => { const b = h.querySelector('b'); if (b) b.textContent = roomName(); h.setAttribute('aria-label', roomName() + ' — ' + (h.querySelector('span') || {}).textContent); });
+  toast(roomName() + ' — 홈 화면 아이콘은 지우고 다시 추가하면 바뀝니다');
+};
 ACT['start-tab'] = el => { setDevPref('startTab', el.dataset.v); el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); };
 ACT['mk-fold'] = () => {
   UI.mkOpen = !UI.mkOpen;
@@ -5284,6 +5312,7 @@ window.addEventListener('resize', () => { if (MT.on) mtSize(); });
 
 // ═══ 시작 ═══
 applyTheme(DB.set);
+applyRoom();
 showTab(['today', 'map', 'list', 'hist'].indexOf(devPref('startTab', 'today')) >= 0 ? devPref('startTab', 'today') : 'today');   // 첫 화면 — 설정에서 기기마다 고른다
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
 </script>

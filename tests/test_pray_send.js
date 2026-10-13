@@ -28,8 +28,11 @@ sc.eq('③ 빈 자료', [_prayTree([]).length, _prayTree(null).length, _prayTree
 // ④ 쓰는 자리 — 보내기 함수 안의 Firestore 쓰기는 우체통 한 곳뿐
 const s0 = SRC.indexOf('async function _praySend('), s1 = SRC.indexOf('// ═══════ 할일 → 기도노트로 끝', s0);
 const body = SRC.slice(s0, s1);
-sc.eq('⭐④ 보내기는 우체통(c/inbox)에 arrayUnion 한 줄', [/fbDB\.doc\('pray\/'\+uid\+'\/c\/inbox'\)\.set\(\{items:firebase\.firestore\.FieldValue\.arrayUnion\(note\)\},\{merge:true\}\)/.test(body)], [true]);
+sc.eq('⭐④ 보내기는 우체통(c/inbox)에 arrayUnion 한 줄', [/_prayDb\(\)\.doc\('pray\/'\+uid\+'\/c\/inbox'\)\.set\(\{items:firebase\.firestore\.FieldValue\.arrayUnion\(note\)\},\{merge:true\}\)/.test(body)], [true]);
 sc.eq('⭐④ 기도노트 덩어리(c/0 …) · users 문서는 쓰지 않는다', [(body.match(/\.set\(|\.update\(|\.delete\(/g) || []).length, /users\//.test(body)], [1, false]);
 const L0 = SRC.indexOf('function _prayLoadGroups(){'), L1 = SRC.indexOf('const _PRAY_HOVER', L0);
 sc.eq('⭐④ 그룹 읽기는 읽기만 (set · update · delete 없음)', /\.set\(|\.update\(|\.delete\(/.test(SRC.slice(L0, L1)), false);
+// ⑤ ⭐ BLOCK7 의 fbDB 는 로그인 덩어리 안의 이름이라 여기서 쓰면 멈춘다 (v26-1013-6 '불러오는 중…' 에서 멈춤)
+const P0 = SRC.indexOf('// ═══════ 할일 → 기도노트(BLUE ROOM)로 보내기'), P1 = SRC.indexOf('// ═══════ 할일 → 기도노트로 끝', P0);
+sc.eq('⭐⑤ 기도노트 보내기 덩어리는 fbDB 를 쓰지 않는다', /\bfbDB\b/.test(SRC.slice(P0, P1).replace(/\/\/.*$/gm, '')), false);
 sc.done();
