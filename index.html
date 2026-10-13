@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-3  [production]  -->
+<!-- BLOCK7  v. 26-1013-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3664,7 +3664,10 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .vw-scope-c .roll-h,.vw-scope-c .roll-item,.vw-scope-c .roll-v{text-align:center;}
 /* 카드의 범위 단추는 헤더 **한가운데**에 선다. 좌우 자리(22px)가 같으므로
    가운데를 flex:1 로 두면 이름이 길어져도 아이콘이 한가운데를 지킨다. */
-.vw-scope-c{flex:1;min-width:0;justify-content:center;}
+.vw-scope-wrap{flex:1;min-width:0;display:flex;justify-content:center;}
+.vw-scope-c{flex:0 1 auto;min-width:0;justify-content:center;}
+/* ⚠️ 헤더는 위젯을 끌어 옮기는 손잡이다. 범위 단추가 가운데를 통째로(flex:1) 덮으면 잡을 자리가 줄어든다
+   (v26-1013-4, HB). 단추는 **아이콘 · 글자가 있는 곳만** 차지하고, 양옆 빈 자리는 다시 손잡이가 된다. */
 .vw-scope .roll-h,.vw-scope .roll-v{font-size:10px;line-height:1.5;}
 .vw-scope:active{opacity:.5;}
 @media (hover:hover){.vw-scope:hover{color:var(--ac-tx);}}
@@ -6338,7 +6341,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-3";
+const APP_VERSION = "v. 26-1013-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -31516,9 +31519,10 @@ function _vcScopeBtnHTML(id,cfg,fl,withName){
                  :(fl?[fl]:(withName?_vcScopeParts(sc):[]));
   // 아이콘만 서 있는 카드에서만 '+N' 을 덧붙인다 (이름을 보여 주면 이미 안다)
   const extra=parts.length?0:_vcScopeCount(sc)-1;
-  return`<button class="vw-scope${withName?'':' vw-scope-c'}" onclick="event.stopPropagation();openVwScope('${id}')" title="무엇을 볼지 고르기">
+  const btn=`<button class="vw-scope${withName?'':' vw-scope-c'}" onclick="event.stopPropagation();openVwScope('${id}')" title="무엇을 볼지 고르기">
       ${txt?'':`<span class="vw-ic">${_vcScopeIcon(sc)}</span>`}${_rollHTML(parts,'flex:1;min-width:0;',Object.assign({key:'w'+id},_vcRollOpt(cfg)))}${extra>0?`<span class="vw-more">+${extra}</span>`:''}
     </button>`;
+  return withName?btn:`<span class="vw-scope-wrap">${btn}</span>`;
 }
 // ── 말씀 목록 모습 한 벌 ──
 // 카드와 같은 인스턴스가 목록으로 보일 때의 HTML. 높이는 카드 높이와 따로
