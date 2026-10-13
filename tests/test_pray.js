@@ -15,6 +15,8 @@
 //  ⑨ 지도 맨 아래 칸 — 구분 칩: 앱이 먼저 고르는 구분 · 사람 구분이면 사람, 아니면 기도 항목 하나
 //  ⑧ 연동 복제 — 작은 묶음은 한 묶음이 두 자리에 · 줄은 link 표로 이어 한쪽을 고치면 같이 (2026-10-11)
 //  ⑬ 실행취소 · 재실행 — 사람이 한 일만 되돌리고, 기도 시간 · rev 는 지킨다
+//  ⑮ '/' 나누기 — 앞뒤가 숫자면 날짜라 안 나눈다 · 쉼표 · 긴 글도 항목 하나(메모 줄이 아니다)
+//  ⑯ 실행취소는 페이지마다 — 한 페이지에서 되돌려도 다른 페이지에서 한 일은 그대로
 //  ⑭ BLOCK7 → 기도노트 우체통 — 고른 그룹(서브 그룹)의 맨 위 기도 항목으로 · 없는 그룹은 넣지 않고 셈
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -35,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -345,7 +347,7 @@ const MAPCSV = [
   const l = A.makeEntry(db, '교회 부흥', I.id); g.lines.push(l);
   const it = db.T.find(t => t.name === '교회 부흥');
   sc.eq('⑨ 사람 아닌 구분이면 글 전체가 기도 항목 하나', [it && it.kind, it && it.cat, l.segs.length, l.segs[0].length], ['item', I.id, 1, 1]);
-  sc.eq('⑨ 기도 항목은 사람 수에 안 든다', A.groupHeadcount(db, g), 2);
+  sc.eq('⑨ 기도 항목도 그룹 숫자에 든다 (HB 2026-10-13 — 안 들면 소속이 안 된 것처럼 보였다)', A.groupHeadcount(db, g), 3);
   A.makeEntry(db, '교회 부흥', I.id);
   sc.eq('⑨ 같은 이름의 기도 항목은 다시 만들지 않는다', db.T.filter(t => t.name === '교회 부흥').length, 1);
   g.lines.push(A.makeEntry(db, '넷', ''));
@@ -392,7 +394,7 @@ const MAPCSV = [
   const db = A.emptyDB();
   const l = A.parseEntryText(db, '초등 바닥 / 간판 전기');
   sc.eq('⑨-3 띄어쓰기는 한 이름 · / 로 두 항목', [l.segs.length, ...l.segs.map(s => db.T.find(t => t.id === s[0]).name)], [2, '초등 바닥', '간판 전기']);
-  sc.eq('⑨-3 쉼표는 예전처럼 메모 줄', A.parseEntryText(db, '교회, 나라').text, '교회, 나라');
+  sc.eq('⑨-3 쉼표가 있어도 항목 하나 (HB 2026-10-13 — 메모 줄은 그룹 소속 · 숫자에서 빠졌다)', (l => [l.text, l.segs.length, db.T.find(t => t.id === l.segs[0][0]).name])(A.parseEntryText(db, '교회, 나라')), ['', 1, '교회, 나라']);
   sc.eq('⑨-3 같은 이름이면 같은 카드', A.parseEntryText(db, '초등 바닥').segs[0][0], l.segs[0][0]);
   sc.eq('⑨-3 시트 가져오기 규칙(parseLineText)은 그대로 — 한 칸 한 가정', A.parseLineText(db, '아빠 이상연 세중').segs[0].length, 2);
   // 예전 규칙으로 갈라져 생긴 카드 치우기
@@ -576,6 +578,48 @@ const MAPCSV = [
   const H3 = A.makeHist(100, 10); H3.reset('aaaa');
   ['bbbb', 'cccc', 'dddd', 'eeee'].forEach((k, i) => H3.record(k, i * 1000));
   sc.eq('⑬ 크기 상한 — 넘치면 오래된 것부터', H3.past, ['cccc', 'dddd']);
+}
+// ⑮ '/' 나누기
+{
+  sc.eq('⭐⑮ 10/21 은 날짜 — 안 나눈다', A.splitSlash('10/21 수요예배'), ['10/21 수요예배']);
+  sc.eq('⑮ 3 / 4 처럼 띄어도 숫자 사이면 안 나눈다', A.splitSlash('3 / 4 대교구'), ['3 / 4 대교구']);
+  sc.eq('⑮ 이름 사이는 나눈다', A.splitSlash('이흥배 / 황성수/시온'), ['이흥배', '황성수', '시온']);
+  sc.eq('⑮ 한쪽만 숫자면 나눈다', A.splitSlash('셀 2/김철수'), ['셀 2', '김철수']);
+  const db = A.emptyDB();
+  const l1 = A.parseEntryText(db, '10/21 수요예배');
+  sc.eq('⭐⑮ 날짜 든 항목은 한 칸', [l1.segs.length, A.lineToText(db, l1)], [1, '10/21 수요예배']);
+  const l2 = A.parseEntryText(db, '정치, 법, 선거');
+  sc.eq('⭐⑮ 쉼표가 있어도 메모 줄이 아니라 항목 하나', [l2.text, l2.segs.length], ['', 1]);
+}
+// ⑯ 페이지마다 따로인 실행취소
+{
+  const db = A.emptyDB();
+  const H = A.makePageHist(60, 1e8); H.reset(A.histKey(db));
+  const a = A.newTarget('person', '가나'); db.T.push(a); H.record('today', A.histKey(db), 1000);
+  const b = A.newTarget('person', '다라'); db.T.push(b); H.record('list', A.histKey(db), 5000);
+  sc.eq('⑯ 페이지마다 따로 — 오늘에 하나 · 목록에 하나 · 지도엔 없음', [H.can('today').undo, H.can('list').undo, H.can('map').undo], [true, true, false]);
+  const k = H.undo('today', A.histKey(db));
+  const u = A.histRestore(db, k);
+  sc.eq('⭐⑯ 오늘에서 되돌리면 오늘 것만 — 목록에서 넣은 다라는 남는다', u.T.map(t => t.name).sort(), ['다라']);
+  H.sync(A.histKey(u));
+  sc.eq('⑯ 되돌린 것은 그 페이지의 재실행으로', [H.can('today').redo, H.can('list').redo], [true, false]);
+  const r = A.histRestore(u, H.redo('today', A.histKey(u)));
+  sc.eq('⑯ 재실행하면 다시 둘', r.T.map(t => t.name).sort(), ['가나', '다라']);
+  // 같은 칸을 두 페이지가 차례로 고쳤으면 — 나중 것을 지키고, 앞 페이지 되돌리기는 그 칸을 건드리지 않는다
+  const db2 = A.emptyDB(); const t = A.newTarget('person', '마바'); db2.T.push(t);
+  const H2 = A.makePageHist(60, 1e8); H2.reset(A.histKey(db2));
+  t.memo = '오늘'; H2.record('today', A.histKey(db2), 1000);
+  t.memo = '목록'; H2.record('list', A.histKey(db2), 5000);
+  const u2 = A.histRestore(db2, H2.undo('today', A.histKey(db2)));
+  sc.eq('⭐⑯ 뒤에 다른 페이지가 고친 칸은 앞 페이지 되돌리기가 덮지 않는다', u2.T[0].memo, '목록');
+  // 다른 기기에서 온 것은 기록하지 않고(sync), 되돌려도 남는다
+  const db3 = A.emptyDB(); const H3 = A.makePageHist(60, 1e8); H3.reset(A.histKey(db3));
+  db3.T.push(A.newTarget('person', '사아')); H3.record('map', A.histKey(db3), 1000);
+  db3.T.push(A.newTarget('person', '다른 기기')); H3.sync(A.histKey(db3));
+  const u3 = A.histRestore(db3, H3.undo('map', A.histKey(db3)));
+  sc.eq('⭐⑯ 다른 기기에서 온 것은 되돌리기로 안 지워진다', u3.T.map(t => t.name), ['다른 기기']);
+  sc.eq('⑯ 0.6초 안에 이어진 저장은 한 칸', (() => { const d = A.emptyDB(), h = A.makePageHist(60, 1e8); h.reset(A.histKey(d)); d.T.push(A.newTarget('person', 'x')); h.record('today', A.histKey(d), 1000); d.T[0].memo = 'y'; h.record('today', A.histKey(d), 1300); return h.pages.today.past.length; })(), 1);
+  sc.eq('⑯ 개수 상한', (() => { const d = A.emptyDB(), h = A.makePageHist(3, 1e8); h.reset(A.histKey(d)); for (let i = 0; i < 6; i++) { d.T.push(A.newTarget('person', 'n' + i)); h.record('today', A.histKey(d), i * 1000); } return h.pages.today.past.length; })(), 3);
 }
 // ⑭ BLOCK7 에서 '기도 노트로' 보낸 것 받기
 {
