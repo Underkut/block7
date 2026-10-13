@@ -2,8 +2,8 @@
 // ⚠️ 언제나 **네트워크 먼저**. 새 버전이 올라가면 다음 열기에 바로 받는다.
 //    못 받을 때(비행기 모드 등)만 저장해 둔 것을 내준다.
 // ⚠️ 범위가 /pray/ 라 sweeter.my 의 Sweeter(범위 /)와 섞이지 않는다.
-const C = 'pray-v4';   // v4: 아이콘 · 이름 BLUE ROOM (2026-10-13)
-const FILES = ['./', 'index.html', 'manifest.json', 'icon.png', 'icon-192.png'];
+const C = 'pray-v5';   // v5: 앱 이름 · 아이콘 세 가지 (2026-10-13)
+const FILES = ['./', 'index.html', 'manifest.json', 'icon.png', 'icon-192.png', 'icon-throne-192.png', 'icon-war-192.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).catch(() => {}).then(() => self.skipWaiting()));
 });
