@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-6  [production]  -->
+<!-- BLOCK7  v. 26-1013-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -5172,7 +5172,10 @@ html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,
 /* v26-1012-3 (HB 기록 — 아이패드 미니: 걸림이 장 **처음·끝 가까이**에 몰린다, 손가락은 가는데 글이 수 초 그대로).
    아이폰·아이패드는 뒤 문서를 잠가 두었으니(html.br-cover) 사슬 막기(contain)가 할 일이 없다 — 그 장치를 빼서
    가장자리 근처에서 사파리가 손짓을 놓는 길을 하나 없앤다. 다른 기기는 그대로. */
-html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior:auto;}
+html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
+/* v26-1013-7 (HB — 본문 긋기가 안 된다): 가로는 처음부터 굴릴 것이 없다. 위 줄이 가로까지 'auto' 로 풀어
+   옆으로 끄는 손짓(긋기)을 사파리가 뒤 문서의 가로 출렁임으로 넘길 여지가 생겼다 → 가로는 아예 막는다. */
+#bibleRd .br-scroll{overflow-x:hidden;overscroll-behavior-x:none;}
 #bibleRd .br-page{max-width:640px;margin:0 auto;padding:22px 20px 120px;}
 #bibleRd .br-chhead{display:flex;align-items:baseline;gap:8px;margin:4px 0 18px;}
 #bibleRd .br-chhead .br-bk{font-size:13px;color:var(--tx3);}
@@ -6354,7 +6357,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-6";
+const APP_VERSION = "v. 26-1013-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
