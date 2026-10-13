@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-5';
+const APP_VERSION = 'v. 26-1013-6';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1688,8 +1688,18 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .pk::before{content:'';width:11px;height:11px;border-radius:50%;box-sizing:border-box;border:1.6px solid currentColor}
 .pk.on::before{background:currentColor}
 .pkdim{opacity:.38}
-.pkbar{display:block;margin:2px 14px 6px;padding:2px 6px;color:var(--tx3);font-size:12px;text-align:left}
-.pkbar u{color:var(--ac-tx);text-decoration:none;margin-left:6px}
+.gcard,.ghw,.sgb{transition:opacity .35s ease}
+.pk,.pk::before{transition:background .25s,color .25s}
+.ib.dim{color:var(--tx3);opacity:.6}
+.ib{transition:background .15s,color .3s,opacity .3s}
+/* 위 단추 끌어 순서 바꾸기 */
+.vh-acts [data-bk]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .22s var(--ease),background .15s,color .3s,opacity .3s}
+.vh-acts [data-bk].bdrag{transition:none;z-index:5;transform:scale(1.18);color:var(--ac-tx);opacity:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+/* 부드러운 전환 — 가라앉았다(디졸브) 떠오른다 */
+.masonry{transition:opacity .15s ease,transform .15s ease}
+.masonry.fx-out{opacity:0;transform:translateY(5px)}
+@keyframes fxUp{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:no-preference){.masonry.fx .gcard{animation:fxUp .5s var(--ease) backwards;animation-delay:calc(var(--i,0) * 38ms)}}
 .gh.sel,.sgh.sel{box-shadow:inset 0 0 0 2px var(--tx)}
 /* 그룹 머리를 고르면 테두리는 머리 줄 **전체**(오른쪽 서브 그룹 단추까지)에 · 카드의 둥근 위 모서리를 따라 (HB 2026-10-13) */
 .gh.sel{border-radius:12px 12px 0 0}
@@ -2375,7 +2385,7 @@ function mapCards(src, opt) {
   const showG = g => !filt || (g.lines || []).some(hitL);
   const hc = g => { const s = new Set(groupPids(g)); src.kids(g.id).forEach(c => groupPids(c).forEach(p => s.add(p))); return [...s].filter(id => { const p = src.person(id); return !p || p.kind !== 'item'; }).length; };
   const tops = src.live ? mapTops() : src.tops();
-  const pk = opt && opt.pick && src.live ? opt.pick : null, pkOn = !!(pk && pk.ids.size), pkHide = pkOn && !pk.edit;
+  const pk = opt && opt.pick && src.live ? opt.pick : null, pkOn = !!(pk && pk.ids.size), pkHide = pkOn && pk.mode === 2;
   const pkDot = (id, on) => '<button class="pk' + (on ? ' on' : '') + '" data-a="map-pick" data-id="' + id + '" aria-pressed="' + on + '" aria-label="오늘 기도할 것으로 고르기"></button>';
   const depth = opt && opt.depth || 3;   // 1 그룹만 · 2 서브 그룹까지 · 3 항목까지 (3줄 단추)
   const edKey = src.live && UI.mapEdit ? UI.mapEdit.key : '';
@@ -2417,18 +2427,18 @@ function mapCards(src, opt) {
   };
   // 작은 묶음 만들기 — BLOCK7 의 '하위 할일' 그림 그대로
   const SUBICO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 3.1v9.6a3.1 3.1 0 0 0 3.1 3.1h5"/><path d="M4.6 7.3h8.1"/><circle cx="15.3" cy="7.3" r="2.6"/><circle cx="15.3" cy="15.8" r="2.6"/></svg>';
-  return '<div class="masonry' + (src.live ? ' mjs' : '') + (opt && opt.addOff ? ' addoff' : '') + '">' + tops.map(g => {
+  return '<div class="masonry' + (src.live ? ' mjs' : '') + (opt && opt.addOff ? ' addoff' : '') + (opt && opt.fx ? ' fx' : '') + '">' + tops.map((g, gi) => {
     let kids = src.kids(g.id).filter(showG);
     const gSel = !!pk && pk.ids.has(g.id);
     if (pkHide) { kids = kids.filter(k => pk.ids.has(k.id)); if (!gSel && !kids.length) return ''; }
     if (filt && !showG(g) && !kids.length) return '';
     const gk = 'g:' + g.id;
     const head = edKey === gk ? '<div class="gh ined sel"' + selAttr(gk) + '>' + editor(gk, UI.mapEdit.isNew ? '' : g.name, '그룹 이름') + '</div>'
-      : (src.live ? '<div class="ghw' + (pk && pkOn && pk.edit && !gSel ? ' pkdim' : '') + '">' + (pk && pk.edit ? pkDot(g.id, gSel) : '') + '<button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
+      : (src.live ? '<div class="ghw' + (pk && pkOn && pk.edit && !gSel ? ' pkdim' : '') + '">' + (pk && pk.mode === 1 ? pkDot(g.id, gSel) : '') + '<button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
         (src.live ? '</button><button class="madd on-gh" data-a="map-add" data-k="sub" data-id="' + g.id + '" aria-label="' + esc(g.name) + '에 서브 그룹 더하기">' + SUBICO + '</button></div>' : '</div>');
     const last = kids.length ? kids[kids.length - 1] : g;   // 맨 아래 입력 칸은 바로 위 덩어리에 줄을 더한다
     const cardDim = pk && pkOn && pk.edit && !gSel && !kids.some(k => pk.ids.has(k.id));
-    return '<div class="gcard' + (cardDim ? ' pkdim' : '') + '" data-gid="' + g.id + '" style="--gc:' + esc(g.color) + '">' + head +
+    return '<div class="gcard' + (cardDim ? ' pkdim' : '') + '" data-gid="' + g.id + '" style="--gc:' + esc(g.color) + ';--i:' + gi + '">' + head +
       (depth < 2 ? '' : '<div class="gb">' + (depth < 3 || (pkHide && !gSel) ? '' : linesHTML(g.lines || [], g.id)) +
       kids.map(k => {
         const kk = 'g:' + k.id;
@@ -2438,7 +2448,7 @@ function mapCards(src, opt) {
         if (edKey === kk) return '<div class="sgb" data-gid="' + k.id + '" data-pl="' + g.id + '"><div class="sgh ined sel"' + sc + selAttr(kk) + '>' + editor(kk, UI.mapEdit.isNew ? '' : k.name, '서브 그룹 이름') + '</div>' + body + '</div>';
         const kSel = !!pk && pk.ids.has(k.id);
         return '<div class="sgb' + (pk && pkOn && pk.edit && !kSel ? ' pkdim' : '') + '" data-gid="' + k.id + '" data-pl="' + g.id + '">' +
-          (src.live ? '<div class="sghw"' + sc + '>' + (pk && pk.edit ? pkDot(k.id, kSel) : '') + '<button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh"' + sc + '>') + esc(k.name) + linked +
+          (src.live ? '<div class="sghw"' + sc + '>' + (pk && pk.mode === 1 ? pkDot(k.id, kSel) : '') + '<button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh"' + sc + '>') + esc(k.name) + linked +
           (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
           (src.live ? '</button><button class="madd" data-a="map-add" data-k="line" data-id="' + k.id + '" aria-label="' + esc(k.name) + '에 항목 더하기">+</button></div>' : '</div>') + body + '</div>';
       }).join('') +
@@ -2467,7 +2477,7 @@ function renderMapKeepQ() {
 // 고른 것은 그날만 지킨다 (다음 날 저절로 풀림). 그룹 점은 그 안 서브 그룹도 함께.
 function pickIds() { const p = DB.set.mapPick; return p && p.d === TODAY && Array.isArray(p.ids) ? p.ids : []; }
 function pickSet(ids) { DB.set.mapPick = ids.length ? { d: TODAY, ids } : null; save(); }
-function mapDepth() { const n = DB.set.mapDepth; return n === 1 || n === 2 ? n : 3; }
+function mapDepth() { const n = devPref('mapDepth', 3); return n === 1 || n === 2 ? n : 3; }
 function depthIco(n) {
   const L = [['4', '7', '20'], ['4', '12', '20'], ['4', '17', '14']];
   return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + L.slice(0, n).map(l => '<line x1="' + l[0] + '" y1="' + l[1] + '" x2="' + l[2] + '" y2="' + l[1] + '"/>').join('') + '</svg>';
@@ -2476,18 +2486,33 @@ function depthIco(n) {
 function mapNeedDepth(k) {
   const p = String(k).split(':'); let n = 1;
   if (p[0] === 'l') n = 3; else if (p[0] === 'g') { const g = findG(DB, p[1]); if (g && g.parent) n = 2; }
-  if (mapDepth() < n) { DB.set.mapDepth = n; save(); }
+  if (mapDepth() < n) setDevPref('mapDepth', n);
 }
 
 // ── ⑤ 지도 탭 ──
+// 지도 위 단추 — 순서는 이 기기에서 끌어 바꾼다. 켜짐/꺼짐은 색으로만:
+//  3줄 · + : 꺼짐 = 흐린 색 · 켜짐 = 일반색   타겟 : 꺼짐 흐림(모두 보임) · 일반색(고르는 중) · 강조색(고른 것만)
+const MAPBTN_DEF = ['depth', 'fold', 'add', 'pick', 'search'];
+function mapBtnOrder() {
+  const o = devPref('mapBtns', []), base = Array.isArray(o) ? o.filter((k, i) => MAPBTN_DEF.indexOf(k) >= 0 && o.indexOf(k) === i) : [];
+  MAPBTN_DEF.forEach(k => { if (base.indexOf(k) < 0) base.push(k); });
+  return base;
+}
+function mapBtns() {
+  const has = DB.G.length, pm = UI.pickMode || 0;
+  const B = {
+    depth: has ? '<button class="ib" data-bk="depth" data-a="map-depth" aria-label="지도 펼침 단계 — ' + ['그룹만', '서브 그룹까지', '항목까지'][mapDepth() - 1] + '">' + depthIco(mapDepth()) + '</button>' : '',
+    fold: has ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-bk="fold" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '',
+    add: has && TOUCHDEV ? '<button class="ib' + (UI.addMode ? '' : ' dim') + '" data-bk="add" data-a="map-add-mode" aria-pressed="' + !!UI.addMode + '" aria-label="더하기 켜고 끄기">' + ico('plus') + '</button>' : '',
+    pick: has ? '<button class="ib' + (pm === 2 ? ' on' : pm === 1 ? '' : ' dim') + '" data-bk="pick" data-a="map-pick-mode" aria-label="오늘 기도할 것 고르기 — ' + ['꺼짐', '고르는 중', '고른 것만 보는 중'][pm] + '">' + ico('target') + '</button>' : '',
+    search: '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-bk="search" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>'
+  };
+  return mapBtnOrder().map(k => B[k] || '').join('');
+}
 function renderMap() {
   let h = '<div class="vh"><div class="vh-t">' + brand('Map') + '<button class="ib there-b' + (MT.on ? ' on' : '') + '" data-a="there" aria-label="기도 시간 재기 (There)">' + thereIc() +
     (MT.on ? '<span class="mt-clk" id="mtClk">' + mtClock(mtSecs()) + '</span>' : '') + '</button></div>' + headActs(
-    (DB.G.length ? '<button class="ib on" data-a="map-depth" aria-label="지도 펼침 단계 — ' + ['그룹만', '서브 그룹까지', '항목까지'][mapDepth() - 1] + '">' + depthIco(mapDepth()) + '</button>' : '') +
-    (DB.G.length ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '') +
-    (DB.G.length && !KB ? '<button class="ib' + (UI.addMode ? ' on' : '') + '" data-a="map-add-mode" aria-pressed="' + !!UI.addMode + '" aria-label="더하기 켜고 끄기">' + ico('plus') + '</button>' : '') +
-    (DB.G.length ? '<button class="ib' + (UI.pickMode ? ' on' : '') + '" data-a="map-pick-mode" aria-pressed="' + !!UI.pickMode + '" aria-label="오늘 기도할 것 고르기">' + ico('target') + '</button>' : '') +
-    '<button class="ib' + (UI.mapSearch ? ' on' : '') + '" data-a="map-search" aria-label="이름 찾기">' + ico('search') + '</button>' +
+    mapBtns() +
     '') + '</div>';
   if (DB.set.mapTitle) h += '<div class="maptitle">' + esc(DB.set.mapTitle) + '</div>';
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
@@ -2499,8 +2524,7 @@ function renderMap() {
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
   if (KB) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
-  if (!UI.pickMode && pickIds().length) h += '<button class="pkbar" data-a="map-pick-clear">오늘 고른 ' + pickIds().length + '곳만 보는 중<u>모두 보기</u></button>';
-  h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter, depth: mapDepth(), pick: { ids: new Set(pickIds()), edit: !!UI.pickMode }, addOff: !KB && !UI.addMode });
+  h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter, depth: mapDepth(), pick: { ids: new Set(pickIds()), mode: UI.pickMode || 0 }, addOff: TOUCHDEV && !UI.addMode, fx: (() => { const f = !!UI.fx; UI.fx = false; return f; })() });
   return h;
 }
 
@@ -3125,18 +3149,52 @@ ACT['add-sub'] = el => askText('새 서브 그룹', '', '이름 (예: 13세 가�
 }, { ok: '만들기' });
 
 // 목록
-ACT['map-pick-mode'] = () => { UI.pickMode = !UI.pickMode; mapKeepScroll(renderView); };
-ACT['map-add-mode'] = () => { UI.addMode = !UI.addMode; mapKeepScroll(renderView); };
-ACT['map-pick-clear'] = () => { pickSet([]); mapKeepScroll(renderView); };
+// 부드러운 전환 — 지도 알맹이가 살짝 가라앉았다가(디졸브) 카드가 차례로 떠오른다 (HB 2026-10-13 '기도앱이니까')
+function mapSoft(fn) {
+  const v = $('v-map'), m = v && v.querySelector('.masonry');
+  if (!v || UI.tab !== 'map' || !m || matchMedia('(prefers-reduced-motion:reduce)').matches) { mapKeepScroll(fn); return; }
+  const y = v.scrollTop; m.classList.add('fx-out');
+  setTimeout(() => {
+    UI.fx = true; fn();
+    const w = $('v-map'); if (w) w.scrollTop = y;
+    setTimeout(() => { const n = document.querySelector('#v-map .masonry'); if (n) n.classList.remove('fx'); }, 1100);
+  }, 150);
+}
+// 켜짐/꺼짐 색은 단추를 먼저 바꿔 색이 스르르 변하게 한다 (다시 그리면 색이 뚝 바뀐다)
+function btnTone(el, cls) { if (!el) return; el.classList.remove('dim', 'on'); if (cls) el.classList.add(cls); }
+ACT['map-pick-mode'] = el => {
+  UI.pickMode = ((UI.pickMode || 0) + 1) % 3;   // 0 꺼짐(모두 보임) → 1 고르는 중 → 2 고른 것만
+  btnTone(el, UI.pickMode === 2 ? 'on' : UI.pickMode === 1 ? '' : 'dim');
+  mapSoft(renderView);
+};
+ACT['map-add-mode'] = el => { UI.addMode = !UI.addMode; btnTone(el, UI.addMode ? '' : 'dim'); mapSoft(renderView); };
 ACT['map-pick'] = el => {
   const g = findG(DB, el.dataset.id); if (!g) return;
   const ids = new Set(pickIds()), on = ids.has(g.id);
   const fam = [g.id].concat(g.parent ? [] : kidsOf(DB, g.id).map(k => k.id));   // 그룹이면 서브 그룹도 함께
   fam.forEach(id => on ? ids.delete(id) : ids.add(id));
-  pickSet([...ids]); mapKeepScroll(renderView);
+  pickSet([...ids]); mapPickPaint();
 };
+// 점을 누를 땐 다시 그리지 않고 그 자리에서 칠한다 — 흐려짐이 스르르 바뀐다
+function mapPickPaint() {
+  const v = $('v-map'); if (!v) return;
+  const ids = new Set(pickIds()), any = ids.size > 0;
+  v.querySelectorAll('.pk').forEach(b => { const on = ids.has(b.dataset.id); b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  v.querySelectorAll('.gcard[data-gid]').forEach(c => {
+    const gSel = ids.has(c.dataset.gid), ks = [...c.querySelectorAll('.sgb')];
+    c.classList.toggle('pkdim', any && !gSel && !ks.some(k => ids.has(k.dataset.gid)));
+    const gh = c.querySelector('.ghw'); if (gh) gh.classList.toggle('pkdim', any && !gSel);
+    ks.forEach(k => k.classList.toggle('pkdim', any && !ids.has(k.dataset.gid)));
+  });
+}
 function mapKeepScroll(fn) { const v = $('v-map'), y = v ? v.scrollTop : 0; fn(); const w = $('v-map'); if (w) w.scrollTop = y; }
-ACT['map-depth'] = () => { DB.set.mapDepth = mapDepth() === 3 ? 2 : mapDepth() === 2 ? 1 : 3; save(); renderView(); };
+// 3줄 — 그룹만 → 서브 그룹까지 → 항목까지 → 다시 그룹만 (기기마다 따로 기억)
+ACT['map-depth'] = el => {
+  const n = mapDepth() === 1 ? 2 : mapDepth() === 2 ? 3 : 1;
+  setDevPref('mapDepth', n);
+  if (el) { el.innerHTML = depthIco(n); el.setAttribute('aria-label', '지도 펼침 단계 — ' + ['그룹만', '서브 그룹까지', '항목까지'][n - 1]); }
+  mapSoft(renderView);
+};
 ACT['mk-fold'] = () => { UI.mkOpen = !UI.mkOpen; renderView(); };
 ACT['list-view'] = el => { UI.listView = el.dataset.v; renderView(); };
 ACT['list-cat'] = el => { UI.listCat = el.dataset.v; UI.mx = null; renderView(); };
@@ -3510,6 +3568,8 @@ document.addEventListener('keydown', e => {
 // N = 새 묶음 · ⇧N = 고른 묶음 안에 작은 묶음. ⌘N 은 브라우저가 먼저 가져가 막을 수 없다(크롬 · 사파리).
 // ⚠️ 기기 짐작(KB)은 화면 배치 · 안내 줄에만 쓴다. **누르기 동작은 방금 쓴 포인터(PT)로 가른다** —
 //    터치 화면 노트북처럼 '마우스 기기' 로 안 잡히는 PC 에서 우클릭 · 클릭이 휴대폰처럼 돌던 일 (HB 2026-10-11)
+// 터치 화면이 있는 기기 (아이패드 · 폰) — '+' 단추는 여기에만 (HB 2026-10-13 — 아이패드에 안 나오던 것)
+const TOUCHDEV = (navigator.maxTouchPoints || 0) > 0;
 const KB = !!(window.matchMedia && matchMedia('(any-hover: hover) and (any-pointer: fine)').matches);
 let PT = KB ? 'mouse' : 'touch';
 document.body.classList.toggle('tch', PT !== 'mouse');
@@ -3819,6 +3879,47 @@ ACT['add-pick'] = el => {
   }
   inp.value = ''; mapAddFromInput(gid, v, true, el.dataset.v);
 };
+
+// ═══ 지도 위 단추 — 길게 눌렀다가 옆으로 끌면 순서가 바뀐다 (HB 2026-10-13, 이 기기에만 기억) ═══
+const BD = { t: 0, st: null, swallow: 0 };
+document.addEventListener('pointerdown', e => {
+  const b = e.target.closest && e.target.closest('#v-map .vh-acts [data-bk]');
+  if (!b || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  const st = { b, id: e.pointerId, x0: e.clientX, y0: e.clientY, on: false };
+  BD.st = st;
+  BD.t = setTimeout(() => {
+    if (BD.st !== st) return;
+    st.on = true; st.items = [...b.parentElement.querySelectorAll('[data-bk]')].filter(x => x.offsetParent);
+    st.rects = st.items.map(x => x.getBoundingClientRect()); st.i0 = st.items.indexOf(b); st.to = st.i0;
+    b.classList.add('bdrag'); try { b.setPointerCapture(st.id); } catch (er) {}
+    if (navigator.vibrate) navigator.vibrate(8);
+  }, 380);
+});
+document.addEventListener('pointermove', e => {
+  const st = BD.st; if (!st || e.pointerId !== st.id) return;
+  if (!st.on) { if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 8) { clearTimeout(BD.t); BD.st = null; } return; }
+  const dx = e.clientX - st.x0; st.b.style.transform = 'translateX(' + dx + 'px) scale(1.18)';
+  const cx = st.rects[st.i0].left + st.rects[st.i0].width / 2 + dx;
+  let to = st.i0;
+  st.rects.forEach((r, i) => { const mid = r.left + r.width / 2; if (i > st.i0 && cx > mid) to = Math.max(to, i); if (i < st.i0 && cx < mid) to = Math.min(to, i); });
+  if (to !== st.to) {
+    st.to = to;
+    st.items.forEach((x, i) => { if (i === st.i0) return; const sh = st.i0 < to && i > st.i0 && i <= to ? -1 : st.i0 > to && i < st.i0 && i >= to ? 1 : 0; x.style.transform = sh ? 'translateX(' + sh * st.rects[st.i0].width + 'px)' : ''; });
+  }
+}, { passive: true });
+function bdEnd(e) {
+  const st = BD.st; if (!st || (e && e.pointerId !== st.id)) return;
+  clearTimeout(BD.t); BD.st = null;
+  if (!st.on) return;
+  BD.swallow = Date.now();   // 손을 뗄 때 따라오는 '눌림' 은 버린다
+  if (st.to !== st.i0 && e && e.type === 'pointerup') {
+    const keys = st.items.map(x => x.dataset.bk), k = keys.splice(st.i0, 1)[0]; keys.splice(st.to, 0, k);
+    setDevPref('mapBtns', keys.concat(mapBtnOrder().filter(x => keys.indexOf(x) < 0)));   // 지금 안 보이는 단추 자리는 뒤에
+  }
+  mapKeepScroll(renderView);
+}
+document.addEventListener('pointerup', bdEnd); document.addEventListener('pointercancel', bdEnd);
+document.addEventListener('click', e => { if (Date.now() - BD.swallow < 400 && e.target.closest && e.target.closest('[data-bk]')) { e.stopPropagation(); e.preventDefault(); } }, true);
 
 // ═══ 지도 끌어 옮기기 · 길게 눌러 상세 (HB 2026-10-11) ═══
 // 두 '길게 누르기' 를 가르는 법 — 아이폰 홈 화면처럼:
@@ -4188,6 +4289,10 @@ window.addEventListener('pageshow', mapReLayout);
 // 고른 값은 '기본이 몇 열인 폭에서 몇 열로' 로 이 기기에만 남긴다 → 아이패드를 돌려 기본이 바뀌어도 그 폭의 선택이 따로 산다.
 // 열을 줄이면 글자도 커진다(--mz). 한 단 폭이 늘어난 만큼 다 키우면 1열에서 너무 커서 0.55 제곱으로 누그러뜨린다.
 const MAPCOL_KEY = 'pray.mapcols';
+// 이 기기에만 두는 지도 취향 — 펼침 단계 · 위 단추 순서 (HB 2026-10-13). 클라우드로 맞추지 않는다
+const DEVPREF_KEY = 'pray.dev';
+function devPref(k, def) { try { const o = JSON.parse(localStorage.getItem(DEVPREF_KEY) || '{}') || {}; return o[k] === undefined ? def : o[k]; } catch (e) { return def; } }
+function setDevPref(k, v) { try { const o = JSON.parse(localStorage.getItem(DEVPREF_KEY) || '{}') || {}; o[k] = v; localStorage.setItem(DEVPREF_KEY, JSON.stringify(o)); } catch (e) { /* 이 기기에서 못 남김 */ } }
 function mapColDefault(w) { return w >= 940 ? 4 : w >= 560 ? 3 : 2; }
 function mapColPref() { try { return JSON.parse(localStorage.getItem(MAPCOL_KEY) || '{}') || {}; } catch (e) { return {}; } }
 function mapColMax(w) { return Math.max(2, Math.min(5, Math.floor((w - 28) / 108))); }   // 한 단이 너무 좁으면 그룹 이름이 한 글자씩 꺾인다
