@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1013-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3012,6 +3012,18 @@ body.split-d #todayView.animating{overflow:hidden;}
 /* touch-action:none — 메뉴가 떠 있는 동안 바깥을 끌어도 뒤쪽 할일 뷰가
    따라 스크롤되지 않게 한다 (설정창 오버레이와 같은 방식) */
 .task-menu-overlay{position:fixed;inset:0;z-index:199;touch-action:none;}
+/* ── 할일 메뉴 '기도 노트로' 의 오른쪽 판 (v26-1013-5) — 그룹 → 서브 그룹. 메뉴와 같은 모습 ── */
+.pray-chev{display:flex;color:var(--tx3);margin-left:10px}
+.pray-pick{position:fixed;z-index:201;background:var(--s1);border:1px solid var(--bd2);border-radius:12px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);padding:4px;min-width:170px;max-width:240px;max-height:min(70vh,460px);overflow-y:auto;
+  animation:menuIn .15s ease}
+.pray-pick .pp-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--tx2);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.pray-pick .pp-row:hover,.pray-pick .pp-row.on{background:var(--s2);color:var(--tx)}
+.pray-pick .pp-dot{width:8px;height:8px;border-radius:4px;flex-shrink:0;background:var(--pc,var(--tx3))}
+.pray-pick .pp-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pray-pick .pp-self{color:var(--tx3);font-size:12px}
+.pray-pick .pp-msg{padding:12px 14px;font-size:12px;color:var(--tx3);white-space:normal;line-height:1.6}
 
 /* ── Event add modal ── */
 .event-modal-overlay{position:fixed;inset:0;z-index:299;background:rgba(0,0,0,.45);}
@@ -6341,7 +6353,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-4";
+const APP_VERSION = "v. 26-1013-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9026,6 +9038,9 @@ try{
   </div>
   <div class="task-menu-item" id="memoMenuItem" onclick="openMemoFromMenu()">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3.2h9.6v13.6H5.2z"/><path d="M7.6 6.8h4.8M7.6 10h4.8M7.6 13.2h3"/></svg></span><span id="memoMenuLabel">메모</span>
+  </div>
+  <div class="task-menu-item" id="prayMenuItem" onclick="_prayPickTap(event)" onmouseenter="_prayPickHover()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="1"/></svg></span><span style="flex:1">기도 노트로</span><span class="pray-chev"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-title">이동</div>
@@ -34967,6 +34982,110 @@ function openMemoFromMenu(){
 }
 // ═══════ 하위 할일 · 메모 끝 ═══════
 
+// ═══════ 할일 → 기도노트(BLUE ROOM)로 보내기 (v26-1013-5, HB) ═══════
+// 메뉴의 '기도 노트로' 에 마우스를 올리면(PC) · 누르면(터치) 오른쪽 판에 기도노트 그룹, 서브 그룹이 있으면 한 판 더.
+// 고르면 그 그룹(서브 그룹)의 **맨 위 항목**으로 들어간다. 그룹 이름을 고르면 서브 그룹 밖, 그룹 바로 아래.
+// ⚠️ 기도노트 자료(pray/{uid} 덩어리)는 **읽기만** 한다. 보내기는 그 앱의 우체통(pray/{uid}/c/inbox)에
+//    쪽지 한 줄(arrayUnion) — 기도노트가 열릴 때 트랜잭션으로 꺼내 제 병합 길로 넣는다.
+//    BLOCK7 의 상태 문서(users/{uid})는 건드리지 않는다. (docs/ROADMAP.md 'BLOCK7 할일 → 기도노트로')
+let _prayG=null,_prayGAt=0,_prayGLoad=null;
+function _prayUid(){try{const u=(typeof firebase!=='undefined'&&firebase.auth)?firebase.auth().currentUser:null;return u?u.uid:'';}catch(e){return'';}}
+// 기도노트 지도와 같은 차례 — 위 그룹(부모가 없거나 부모가 지워진 것) · 그 밑 서브 그룹(제 자리 + 연동해 둔 자리)
+function _prayTree(G){
+  G=Array.isArray(G)?G:[];
+  const ids=new Set(G.map(g=>g.id));
+  return G.filter(g=>!g.parent||!ids.has(g.parent)).map(g=>({id:g.id,name:g.name||'',color:g.color||'',
+    kids:G.filter(k=>k.parent===g.id||(k.also||[]).indexOf(g.id)>=0).map(k=>({id:k.id,name:k.name||'',color:k.color||g.color||''}))}));
+}
+function _prayLoadGroups(){
+  if(DEV_MODE)return Promise.resolve({err:'개발본은 클라우드가 꺼져 있어 기도노트를 못 읽어요'});
+  const uid=_prayUid();
+  if(!uid)return Promise.resolve({err:'로그인하면 기도노트 그룹이 보여요'});
+  if(_prayG&&_prayG.uid===uid&&Date.now()-_prayGAt<60000)return Promise.resolve({g:_prayG.t});
+  if(_prayGLoad)return _prayGLoad;
+  const ref=fbDB.doc('pray/'+uid);
+  _prayGLoad=(async()=>{
+    try{
+      const m=await ref.get();
+      if(!m.exists)return{err:'같은 계정으로 로그인한 기도노트(BLUE ROOM) 자료가 아직 없어요'};
+      const meta=m.data();
+      const parts=await Promise.all(Array.from({length:meta.n||0},(_,i)=>ref.collection('c').doc(String(i)).get()));
+      if(!parts.every(p=>p.exists&&p.data().wid===meta.wid))return{err:'기도노트가 저장하는 중이에요. 잠시 뒤에 다시 열어 주세요'};
+      const t=_prayTree((JSON.parse(parts.map(p=>p.data().s).join(''))||{}).G);
+      _prayG={uid,t};_prayGAt=Date.now();
+      return{g:t};
+    }catch(e){return{err:'기도노트 그룹을 못 읽었어요'};}
+    finally{_prayGLoad=null;}
+  })();
+  return _prayGLoad;
+}
+const _PRAY_HOVER=matchMedia('(hover:hover) and (pointer:fine)').matches;
+function _prayPickClose(level){document.querySelectorAll('.pray-pick').forEach(p=>{if(+p.dataset.lv>=level)p.remove();});document.querySelectorAll('.pray-pick .pp-row.on').forEach(r=>{if(+r.closest('.pray-pick').dataset.lv>=level)r.classList.remove('on');});}
+// 옆에 판을 놓는다 — 오른쪽에 자리가 없으면 왼쪽, 그것도 없으면 화면 안 오른쪽 끝
+// 가로는 앞 판(메뉴)의 옆, 세로는 고른 줄의 높이에 맞춘다
+function _prayPlace(el,box,row){
+  const a=box.getBoundingClientRect(),y=(row||box).getBoundingClientRect().top,w=el.offsetWidth,h=el.offsetHeight,W=document.documentElement.clientWidth,H=window.innerHeight;
+  let x=a.right+4;if(x+w>W-8)x=a.left-w-4;if(x<8)x=Math.max(8,W-w-8);
+  el.style.left=x+'px';el.style.top=Math.max(8,Math.min(y-5,H-h-8))+'px';
+}
+function _prayPanel(level,box,row,html){
+  _prayPickClose(level);
+  const el=document.createElement('div');el.className='pray-pick';el.dataset.lv=level;el.innerHTML=html;
+  el._pos=()=>_prayPlace(el,box,row);
+  document.body.appendChild(el);el._pos();
+  return el;
+}
+const _ppDot=c=>'<i class="pp-dot" style="--pc:'+esc(c||'')+'"></i>';
+async function _prayOpenGroups(){
+  const menu=document.getElementById('taskMenu'),item=document.getElementById('prayMenuItem');
+  if(!menu||menu.style.display==='none'||!item)return;
+  const box=_prayPanel(1,menu,item,'<div class="pp-msg">기도노트 그룹을 불러오는 중…</div>');
+  const r=await _prayLoadGroups();
+  if(!box.isConnected)return;
+  if(r.err||!r.g.length){box.innerHTML='<div class="pp-msg">'+esc(r.err||'기도노트에 그룹이 아직 없어요')+'</div>';box._pos();return;}
+  box.innerHTML=r.g.map((g,i)=>'<div class="pp-row" data-i="'+i+'">'+_ppDot(g.color)+'<span class="pp-nm">'+esc(g.name)+'</span>'+
+    (g.kids.length?'<span class="pray-chev"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>':'')+'</div>').join('');
+  box._pos();
+  box.querySelectorAll('.pp-row').forEach(row=>{
+    const g=r.g[+row.dataset.i];
+    // PC: 올리면 서브 그룹 판 · 누르면 이 그룹으로. 터치: 서브 그룹이 있으면 누를 때 판을 열고, 그 판 맨 위가 '이 그룹 바로 아래'
+    row.addEventListener('mouseenter',()=>{if(!_PRAY_HOVER)return;box.querySelectorAll('.pp-row.on').forEach(x=>x.classList.remove('on'));
+      if(g.kids.length){row.classList.add('on');_prayOpenKids(g,box,row);}else _prayPickClose(2);});
+    row.addEventListener('click',e=>{e.stopPropagation();
+      if(_PRAY_HOVER||!g.kids.length){_praySend(g.id,g.name);return;}
+      box.querySelectorAll('.pp-row.on').forEach(x=>x.classList.remove('on'));row.classList.add('on');_prayOpenKids(g,box,row);});
+  });
+}
+function _prayOpenKids(g,from,row){
+  const head=_PRAY_HOVER?'':'<div class="pp-row" data-k="-1">'+_ppDot(g.color)+'<span class="pp-nm">'+esc(g.name)+' <span class="pp-self">바로 아래</span></span></div><div class="task-menu-sep"></div>';
+  const box=_prayPanel(2,from,row,head+g.kids.map((k,i)=>'<div class="pp-row" data-k="'+i+'">'+_ppDot(k.color)+'<span class="pp-nm">'+esc(k.name)+'</span></div>').join(''));
+  box.querySelectorAll('.pp-row').forEach(row=>row.addEventListener('click',e=>{e.stopPropagation();
+    const k=+row.dataset.k;if(k<0)_praySend(g.id,g.name);else _praySend(g.kids[k].id,g.kids[k].name);}));
+}
+function _prayPickHover(){if(_PRAY_HOVER&&!document.querySelector('.pray-pick[data-lv="1"]'))_prayOpenGroups();}
+function _prayPickTap(e){if(e)e.stopPropagation();if(document.querySelector('.pray-pick[data-lv="1"]')&&!_PRAY_HOVER){_prayPickClose(1);return;}_prayOpenGroups();}
+// 다른 메뉴 줄에 마우스가 가면 판을 닫는다
+document.addEventListener('mouseover',e=>{
+  if(!document.querySelector('.pray-pick'))return;
+  const t=e.target;if(!t||!t.closest)return;
+  if(t.closest('.pray-pick')||t.closest('#prayMenuItem'))return;
+  if(t.closest('#taskMenu'))_prayPickClose(1);
+});
+async function _praySend(gid,name){
+  const ctx=_taskMenuCtx;if(!ctx)return;
+  const item=_taskArrOf(ctx.type,ctx.secId)[ctx.idx];
+  const text=item?String(item.text||'').replace(/\s+/g,' ').trim():'';
+  const uid=_prayUid();
+  closeTaskMenu();
+  if(!text||!uid||DEV_MODE){showToast('기도노트로 못 보냈어요');return;}
+  const note={id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),gid:gid,text:text,at:Date.now(),from:APP_PRODUCT};
+  try{
+    await fbDB.doc('pray/'+uid+'/c/inbox').set({items:firebase.firestore.FieldValue.arrayUnion(note)},{merge:true});
+    showToast('기도노트 \''+name+'\' 맨 위로 보냈어요');
+  }catch(e){showToast('기도노트로 못 보냈어요 — 인터넷 · 로그인을 확인해 주세요');}
+}
+// ═══════ 할일 → 기도노트로 끝 ═══════
+
 function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
   const wrap=makeSwipeWrap(
@@ -38524,6 +38643,7 @@ function deleteEventFromMenu(){
 
 function closeTaskMenu(){
   _secPickBack(true);
+  _prayPickClose(0);
   document.getElementById('taskMenu').style.display='none';
   document.getElementById('taskMenuOverlay').style.display='none';
   document.getElementById('taskMenu').style.transform='';
@@ -43959,7 +44079,7 @@ function _appConfirmResolve(ok){
 // HB — "동기화 토스트가 몇 초 만에 사라져서 뭐가 바뀌었는지 놓친다.
 //       대분류별로도 알려주면 좋겠고, 확인을 눌러야 닫히면 좋겠다."
 // → showBusyToast 로 진행 중 표시를 하다가, 끝나면 토스트 대신 이 화면을 띄운다.
-function _escHtml(s){
+function _esc(s){
   return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 // r.groups = [{coll, source, byCat:Map<cat,{added,restored,updated,removed}>, blocked}]
@@ -43976,7 +44096,7 @@ function showSyncResultModal(r){
   }
   const totalChg=(r.added||0)+(r.restored||0)+(r.updated||0)+(r.removed||0);
   const lines=[];
-  lines.push(`<div style="color:var(--tx3);font-size:12px;margin-bottom:10px;">${_escHtml(r.src)} 확인 완료</div>`);
+  lines.push(`<div style="color:var(--tx3);font-size:12px;margin-bottom:10px;">${_esc(r.src)} 확인 완료</div>`);
   if(!totalChg){
     lines.push(`<div>새로운 내용이 없어요 — 이미 최신 상태예요.</div>`);
   }else{
@@ -43995,8 +44115,8 @@ function showSyncResultModal(r){
       lines.push('<div style="border-top:1px solid var(--bd,#3332);margin:6px 0 8px;"></div>');
       groups.forEach(g=>{
         lines.push(`<div style="font-size:11px;font-weight:700;margin:8px 0 3px;">
-          <span style="color:var(--ac,var(--accent,#c8752e));">${_escHtml(g.coll||'말씀 모음')}</span>
-          <span style="color:var(--tx3);font-weight:500;"> · ${_escHtml(g.source||'')}</span>
+          <span style="color:var(--ac,var(--accent,#c8752e));">${_esc(g.coll||'말씀 모음')}</span>
+          <span style="color:var(--tx3);font-weight:500;"> · ${_esc(g.source||'')}</span>
         </div>`);
         const cats=[...(g.byCat instanceof Map?g.byCat:new Map())]
           .filter(([,v])=>v.added||v.restored||v.updated||v.removed)
@@ -44008,7 +44128,7 @@ function showSyncResultModal(r){
           if(v.updated)parts.push(`수정 ${v.updated}`);
           if(v.removed)parts.push(`휴지통 ${v.removed}`);
           lines.push(`<div style="display:flex;justify-content:space-between;gap:10px;padding:2px 0 2px 10px;font-size:12.5px;">
-            <span style="color:var(--tx);">${_escHtml(cat)}</span>
+            <span style="color:var(--tx);">${_esc(cat)}</span>
             <span style="color:var(--tx3);white-space:nowrap;">${parts.join(', ')}</span>
           </div>`);
         });
@@ -44048,8 +44168,8 @@ function _syncNoVideoHTML(list){
   // 설교 제목이 길어서 한 줄에 까닭까지 두면 폰에서 제목이 잘린다 → 까닭은 아랫줄
   const rows=a.slice(0,_SYNC_NOVID_MAX).map(o=>
     `<div style="padding:3px 0 3px 10px;">
-      <div style="font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(md(o.d)+' '+o.cat+(o.title?' · '+o.title:''))}</div>
-      <div style="font-size:11px;color:var(--tx3);">${_escHtml(whyTx(o))}</div>
+      <div style="font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(md(o.d)+' '+o.cat+(o.title?' · '+o.title:''))}</div>
+      <div style="font-size:11px;color:var(--tx3);">${_esc(whyTx(o))}</div>
     </div>`).join('');
   const more=a.length>_SYNC_NOVID_MAX?`<div style="padding:2px 0 0 10px;font-size:11.5px;color:var(--tx3);">그 밖에 ${a.length-_SYNC_NOVID_MAX}편</div>`:'';
   return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd,#3332);">
@@ -44085,7 +44205,7 @@ function _syncIncludeInit(r){
 }
 // 아이콘 위, 글자 아래의 작은 버튼 한 칸
 function _syncGoBtn(id,label,icon){
-  return `<button type="button" class="sync-go" id="${id}">${icon}<span>${_escHtml(label)}</span></button>`;
+  return `<button type="button" class="sync-go" id="${id}">${icon}<span>${_esc(label)}</span></button>`;
 }
 // 방금 넣은 것만 걸러 전체화면으로 — 윗줄에 '지금 추가된 말씀/명제' 가 뜬다.
 // ⚠️ openVerseFull() 이 앞머리에서 _vfClearNav() 를 부른다. 목록은 **연 뒤에** 심는다.
@@ -44130,7 +44250,7 @@ function _syncIncludeRender(msg){
     return;
   }
   const n=_syncIncPend.hidden,total=_syncIncPend.total;
-  const head=msg?`<b>${_escHtml(msg)}</b> `:'';
+  const head=msg?`<b>${_esc(msg)}</b> `:'';
   const say=msg
     ? `${head}${n}개는 <b>다시 목록에 포함되지 않은 상태</b>예요.`
     : `새로 들어온 ${total}개 가운데 ${n}개는 <b>보여주는 현재 말씀모음 목록에 아직 포함 안되었어요.</b>`;
@@ -44266,12 +44386,12 @@ function renderPlusList(){
   };
   if(_plusListTab==='comp'){
     _plusGroups(id).forEach(g=>{
-      addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_escHtml(g.key)}`+
+      addRow(`<span style="font-size:13px;font-weight:700;color:var(--tx);">${_esc(g.key)}`+
              (g.isProp?`<span class="coll-propmark" style="margin-left:4px;">명제</span>`:'')+`</span>`+
              `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);white-space:nowrap;">${g.n}개</span>`,
              ()=>plusRemoveCat(g.key));
       g.topics.forEach(t=>{
-        addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_escHtml(t.key)}</span>`+
+        addRow(`<span style="font-size:12.5px;color:var(--tx2);padding-left:12px;">${_esc(t.key)}</span>`+
                `<span style="margin-left:auto;font-size:11.5px;color:var(--tx3);">${t.n}</span>`,
                ()=>plusRemoveTopic(g.key,t.key));
       });
@@ -44293,8 +44413,8 @@ function renderPlusList(){
       const ref=v.ref||(v.refs&&v.refs.length?v.refs[0]:'')||'(장절 없음)';
       const snip=String(v.krText||'').slice(0,26);
       addRow(`<span style="flex:1;min-width:0;">`+
-             `<span style="font-size:12px;font-weight:700;color:var(--tx);">${_escHtml(ref)}</span><br>`+
-             `<span style="font-size:11px;color:var(--tx3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escHtml(snip)}…</span>`+
+             `<span style="font-size:12px;font-weight:700;color:var(--tx);">${_esc(ref)}</span><br>`+
+             `<span style="font-size:11px;color:var(--tx3);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_esc(snip)}…</span>`+
              `</span>`,
              ()=>plusRemoveKeys([_plusKeyOf(v)]));
     });
