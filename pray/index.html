@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-10';
+const APP_VERSION = 'v. 26-1013-11';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -563,8 +563,8 @@ function syncLine(db, line) {
 function groupHeadcount(db, g) {
   const s = new Set(groupPids(g));
   kidsOf(db, g.id).forEach(c => groupPids(c).forEach(p => s.add(p)));
-  // '명' 이라 사람만 센다 — 기도 제목(항목 카드)이 그룹 안에 있어도 사람 수에는 안 든다
-  return [...s].filter(id => { const t = findT(db, id); return !t || t.kind === 'person'; }).length;
+  // 사람 · 기도 항목을 가리지 않고 그 안의 **항목 수**를 센다 (HB 2026-10-13 — 기도 항목이 숫자에 안 들어 '소속이 안 된 것' 처럼 보였다)
+  return [...s].filter(id => !!findT(db, id)).length;
 }
 
 // ── 표시 색 잇기 (HB 2026-10-11) ──
@@ -606,13 +606,15 @@ function markLinkCandidates(db, q) {
 // ── 줄(한 가정) 글 ⇄ 모양 ──
 // '김은중 / 김민욱 / 아빠 이상연 세중' → segs [[김은중],[김민욱],[이상연,세중]] · r {이상연:'아빠'}
 // 쉼표가 있거나 이름 같지 않은 말이 섞이면 메모 줄(text)로 둔다.
+// '/' 로 나눈다 — 단 **앞뒤가 숫자**면 날짜 · 분수(10/21 · 3 / 4)라 나누지 않는다 (HB 2026-10-13)
+function splitSlash(s) { return String(s || '').split(/(?<!\d\s*)\/|\/(?!\s*\d)/).map(x => x.trim()).filter(Boolean); }
 function isNameToken(w) { return /^[가-힣A-Za-z][가-힣A-Za-z0-9]{0,9}$/.test(w); }
 function parseLineText(db, text) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
   if (!s) return null;
   const line = { id: uid(), segs: [], r: {}, text: '' };
   if (/[,，·]/.test(s)) { line.text = s; return line; }
-  const parts = s.split('/').map(x => x.trim()).filter(Boolean);
+  const parts = splitSlash(s);
   for (const part of parts) {
     const toks = part.split(' ').filter(Boolean);
     if (!toks.every(isNameToken)) { return { id: line.id, segs: [], r: {}, text: s }; }
@@ -630,14 +632,14 @@ function parseLineText(db, text) {
 // ── 손으로 넣는 항목 글 (HB 2026-10-12) ──
 // **'/' 로만 나눈다. 띄어쓰기는 한 이름 안의 것**이다 — '초등 바닥' · '간판 전기' 는 항목 하나.
 // (시트 가져오기 · 붙여넣기는 parseLineText 그대로 — 시트에서는 '아빠 이상연 세중' 처럼 한 칸에 한 가정 여러 명을 띄어 썼다)
-// 쉼표가 있으면 예전처럼 메모 줄. 한 조각이 40자를 넘으면 이름이 아니라 메모로 본다.
+// ⚠️ 쉼표 · 긴 글도 **항목 하나**로 넣는다 (HB 2026-10-13). 예전엔 메모 줄(text)로 들어가 — 누를 수도 없고 그룹 숫자에도
+//    안 들어, '그룹에 소속이 안 된 채로 들어간다' 로 보였다. 메모 줄은 이제 시트 가져오기에서만 생긴다. 200자 넘는 조각만 메모로.
 function parseEntryText(db, text) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
   if (!s) return null;
   const line = { id: uid(), segs: [], r: {}, text: '' };
-  if (/[,，·]/.test(s)) { line.text = s; return line; }
-  const parts = s.split('/').map(x => x.trim()).filter(Boolean);
-  if (!parts.length || parts.some(x => x.length > 40)) { line.text = s; return line; }
+  const parts = splitSlash(s);
+  if (!parts.length || parts.some(x => x.length > 200)) { line.text = s; return line; }
   parts.forEach(nm => { const p = db.T.find(t => t.name === nm) || personOf(db, nm); line.segs.push([p.id]); });
   return line;
 }
@@ -659,7 +661,7 @@ function dropOrphans(db, ids) {
 function looksLikeNames(text) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
   if (!s || /[,，·]/.test(s)) return false;
-  return s.split('/').map(x => x.trim()).filter(Boolean).every(part => part.split(' ').filter(Boolean).every(isNameToken));
+  return splitSlash(s).every(part => part.split(' ').filter(Boolean).every(isNameToken));
 }
 // ── 지도 맨 아래 칸에서 항목 넣기 — 구분 칩 (HB 2026-10-11) ──
 // 앱이 먼저 구분 하나를 골라 둔다: ①이미 있는 사람이면 그 사람의 구분 ②이 그룹(위 · 아래 그룹 포함)
@@ -854,6 +856,52 @@ function addPraySession(db, startMs, secs, src, sid) {
 //  · rev(이 기기 저장 횟수)는 칸에 넣지 않는다 — 되돌려도 늘기만 한다
 //  · 기도 시간(log 의 s · ses)도 칸에 넣지 않는다 — 시간을 잰 것은 되돌릴 일이 아니고,
 //    넣으면 There 를 멈출 때마다 칸이 생겨 '눌러도 아무 일 없는 되돌리기' 가 된다
+// 되돌리기용 3자 병합 — 동기화의 m3 와 같되 '더 큰 값' · '시간 더하기' 같은 특례가 없다(정확히 거꾸로 돌려야 하므로)
+function u3(b, l, r) {
+  if (deq(l, r)) return l;
+  if (deq(l, b)) return r;
+  if (deq(r, b)) return l;
+  if (l === undefined) return r;
+  if (r === undefined) return l;
+  if (Array.isArray(l) && Array.isArray(r)) {
+    const B = Array.isArray(b) ? b : [], all = B.concat(l, r);
+    if (all.length && all.every(hasId)) return mergeIds(B, l, r);
+    if (all.every(e => e === null || typeof e !== 'object') && !hasDup(l) && !hasDup(r) && !hasDup(B)) return mergeVals(B, l, r);
+    return l;
+  }
+  if (isPlain(l) && isPlain(r)) {
+    const B = isPlain(b) ? b : {}, out = {};
+    [...new Set([...Object.keys(l), ...Object.keys(r), ...Object.keys(B)])].forEach(k => { const v = u3(B[k], l[k], r[k]); if (v !== undefined) out[k] = v; });
+    return out;
+  }
+  return l;
+}
+// 한 일(from → to)을 지금(cur)에서 거꾸로 — 그 뒤 다른 페이지 · 다른 기기에서 바뀐 것은 그대로 둔다
+function histRevert(curKey, fromKey, toKey) { return JSON.stringify(u3(JSON.parse(fromKey), JSON.parse(curKey), JSON.parse(toKey))); }
+// 페이지마다 따로인 실행취소 칸 (HB 2026-10-13). 오늘에서 한 일은 오늘 페이지의 되돌리기로만 되돌린다.
+function makePageHist(maxN, maxBytes) {
+  const H = { pages: {}, last: '', at: 0, page: '' };
+  const P = k => H.pages[k] || (H.pages[k] = { past: [], future: [] });
+  const size = () => Object.values(H.pages).reduce((n, p) => n + p.past.concat(p.future).reduce((m, e) => m + e.a.length + e.b.length, 0), 0);
+  const trim = p => {
+    while (p.past.length > maxN) p.past.shift();
+    while (size() > maxBytes) { const big = Object.values(H.pages).sort((x, y) => y.past.length - x.past.length)[0]; if (!big || !big.past.length) break; big.past.shift(); }
+  };
+  H.reset = key => { H.pages = {}; H.last = key; H.at = 0; H.page = ''; };
+  H.sync = key => { H.last = key; H.at = 0; };   // 남이 바꾼 것(다른 기기 · 우체통 · 되돌리기 결과) — 기록하지 않고 기준만 옮긴다
+  H.can = page => ({ undo: P(page).past.length > 0, redo: P(page).future.length > 0 });
+  H.record = (page, key, now) => {
+    if (key === H.last) return false;
+    const p = P(page), top = p.past[p.past.length - 1];
+    if (top && H.page === page && H.at && now - H.at < 600) top.a = key;   // 0.6초 안에 이어진 저장은 한 칸
+    else { p.past.push({ b: H.last, a: key }); trim(p); }
+    H.at = now; H.page = page; H.last = key; p.future = [];
+    return true;
+  };
+  H.undo = (page, cur) => { const p = P(page), e = p.past.pop(); if (!e) return null; p.future.push(e); H.at = 0; return histRevert(cur, e.a, e.b); };
+  H.redo = (page, cur) => { const p = P(page), e = p.future.pop(); if (!e) return null; p.past.push(e); H.at = 0; return histRevert(cur, e.b, e.a); };
+  return H;
+}
 function histKey(db) {
   const c = Object.assign({}, db); delete c.rev;
   const lg = {};
@@ -905,6 +953,7 @@ function sortTargets(list, mode, ranks) {
   const R = ranks || {};
   const rk = t => (R[t.id] == null ? Infinity : R[t.id]);
   if (mode === 'name') arr.sort(SORT_NAME);
+  else if (mode === 'nameR') arr.sort((a, b) => SORT_NAME(b, a));
   else if (mode === 'urg') arr.sort(SORT_URG);
   else if (mode === 'sum') arr.sort(SORT_SUM);
   else if (mode === 'new' || mode === 'reg') { const ix = new Map(); (typeof DB !== 'undefined' ? DB.T : []).forEach((t, k) => ix.set(t.id, k)); const g = t => (ix.has(t.id) ? ix.get(t.id) : 0); arr.sort((a, b) => mode === 'new' ? g(b) - g(a) : g(a) - g(b)); }
@@ -1517,7 +1566,11 @@ svg{display:block;flex-shrink:0}
 .vh{--bfs:30px;padding:10px 20px 6px;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .vh h1{margin:0;font-size:30px;font-weight:250;letter-spacing:-.015em;line-height:1.2}
 .vh .sub{font-size:13px;color:var(--tx2);letter-spacing:.01em}
-.vh-acts{display:flex;align-items:center;margin-right:-9px}
+.vh-acts{display:none;align-items:center;margin-right:-9px;flex-basis:100%;justify-content:flex-end}
+.vh-acts.open{display:flex}
+.vh-more{margin-left:auto;margin-right:-9px}
+.vh-more .ico{transition:transform .45s cubic-bezier(.33,0,.15,1)}
+.vh-more.open .ico{transform:rotate(180deg)}
 /* 머리 오른쪽 단추는 한 단계 작게 (90% — HB 2026-10-13). 아이콘 그림 굵기 · 모양은 그대로 */
 .vh-acts .ib{width:40px;height:40px}
 .vh-acts .ib .ico{width:18px;height:18px}
@@ -1638,7 +1691,7 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .legend{padding:22px 20px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--tx3)}
 
 /* ── 아래 탭 ── */
-#tabbar{position:absolute;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);
+#tabbar{position:absolute;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);
   padding:6px 8px calc(var(--sab) + 6px);background:var(--header-bg);-webkit-backdrop-filter:blur(18px) saturate(1.4);
   backdrop-filter:blur(18px) saturate(1.4);border-top:1px solid var(--bd)}
 .tb{height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--tx3);transition:color .5s ease}
@@ -1689,7 +1742,17 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 @media (min-width:980px){.masonry{column-count:4}}
 .gcard{break-inside:avoid;margin:0 0 10px;background:var(--s1);border-radius:12px;overflow:hidden;display:block;width:100%}
 .gh{width:100%;display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--gc);color:#fff;font-size:calc(13px * var(--mz,1));font-weight:600;letter-spacing:.02em}
-.gh .cnt{margin-left:auto;font-weight:400;opacity:.8;font-size:calc(12px * var(--mz,1))}
+.gh .cnt{margin-left:auto;font-weight:400;opacity:.5;font-size:calc(12px * var(--mz,1))}   /* 숫자는 늘 옅게 */
+/* 띠는 오른쪽 끝까지 — + 단추는 띠 위 오른쪽에 얹고, + 가 보일 때만 글 자리를 비운다(숫자 · 글이 스르륵 왼쪽으로) (HB 2026-10-13) */
+.ghw .madd,.sghw .madd{position:absolute;right:0;top:0;bottom:0;z-index:1}
+.ghw .gh,.sghw .sgh{transition:padding-right .4s ease}
+.ghw .gh{padding-right:10px}.sghw .sgh{padding-right:8px}
+.masonry:not(.addoff) .ghw .gh,.masonry:not(.addoff) .sghw .sgh{padding-right:36px}
+@media (any-hover:hover) and (any-pointer:fine){
+  body:not(.tch) .masonry .gcard:not(:hover) .ghw .gh{padding-right:10px}
+  body:not(.tch) .masonry .gcard:not(:hover) .sghw .sgh{padding-right:8px}
+}
+.gh.hit,.sgh.hit{box-shadow:inset 0 -2px 0 var(--ac)}
 .gb{padding:4px 8px 8px}
 .sgh{width:100%;margin-top:7px;padding:3px 8px;border-radius:6px;font-size:calc(12px * var(--mz,1));font-weight:600;display:flex;gap:6px;align-items:center;
   background:color-mix(in srgb,var(--sc,var(--gc)) 45%,var(--s1));color:var(--tx)}
@@ -1870,6 +1933,10 @@ textarea.field{min-height:72px;line-height:1.6}
 .set-r:last-child{border-bottom:0}
 .set-r .v{margin-left:auto;color:var(--tx2);font-size:14px;display:flex;align-items:center;gap:6px}
 .set-r .v .ico{width:16px;height:16px}
+.set-r .xch{transition:transform .45s cubic-bezier(.33,0,.15,1)}
+.set-r.xr.open .xch{transform:rotate(180deg)}
+.xp{border-bottom:1px solid var(--bd)}
+.xp .there-pick{padding:2px 0 6px}
 .set-r.danger{color:var(--danger)}
 .step{display:flex;align-items:center;gap:4px;margin-left:auto}
 .step button{width:34px;height:34px;border-radius:17px;border:1px solid var(--bd2);font-size:17px;color:var(--tx2);display:flex;align-items:center;justify-content:center}
@@ -2063,6 +2130,7 @@ html[data-mode="light"] #toast button{color:#e7c98f}
     <button class="tb" data-a="tab" data-tab="map"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/></svg>지도</button>
     <button class="tb" data-a="tab" data-tab="list"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg>목록</button>
     <button class="tb" data-a="tab" data-tab="hist"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="1.8"/><line x1="3.5" y1="12" x2="20.5" y2="12"/><line x1="10" y1="8" x2="14" y2="8"/><line x1="10" y1="16" x2="14" y2="16"/></svg>기록</button>
+    <button class="tb" data-a="settings" aria-label="설정"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>설정</button>
     <button id="verBtn" data-a="ver-check" aria-label="새 버전 찾기"></button>
   </nav>
   <div id="layers"></div>
@@ -2080,6 +2148,7 @@ const ICONS = {
   chev: '<polyline points="6 9 12 15 18 9"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
   chevR: '<polyline points="9 6 15 12 9 18"/>',
+  chevD: '<polyline points="6 9.5 12 15.5 18 9.5"/>',
   check: '<polyline points="5 12.5 10 17 19 7.5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
   note: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/>',
@@ -2132,22 +2201,24 @@ function loadDB() {
 }
 let saveT = 0;
 // 실행취소 칸 — 100번까지 · 합쳐 40MB 까지 (이름 수백 명 지도 한 칸이 대략 0.1~0.3MB). 이 탭이 살아 있는 동안만 (HB 2026-10-13)
-const HIST = makeHist(100, 40e6);
+// 페이지마다 따로 (HB 2026-10-13) — 오늘에서 한 일은 오늘의 되돌리기로만. 되돌릴 때 다른 페이지에서 한 일은 그대로 둔다
+const HIST = makePageHist(60, 40e6);
 HIST.reset(histKey(DB));
 let HIST_SKIP = false;
 function histNote() {
   try {
-    if (HIST_SKIP) { HIST.last = histKey(DB); return; }
-    if (HIST.record(histKey(DB), Date.now())) paintUndo();
+    if (HIST_SKIP) { HIST.sync(histKey(DB)); return; }
+    if (HIST.record(UI.tab, histKey(DB), Date.now())) paintUndo();
   } catch (e) { /* 되돌리기 칸만 못 적음 */ }
 }
 function paintUndo() {
-  document.querySelectorAll('[data-a="undo"]').forEach(b => b.classList.toggle('off', !HIST.past.length));
-  document.querySelectorAll('[data-a="redo"]').forEach(b => b.classList.toggle('off', !HIST.future.length));
+  const c = HIST.can(UI.tab);
+  document.querySelectorAll('[data-a="undo"]').forEach(b => b.classList.toggle('off', !c.undo));
+  document.querySelectorAll('[data-a="redo"]').forEach(b => b.classList.toggle('off', !c.redo));
 }
 function histGo(redo) {
   if (UI.mapEdit) { const i = document.querySelector('#v-map [data-mapin]'); if (i) mapCommit(i.value); else UI.mapEdit = null; }
-  const snap = redo ? HIST.redo() : HIST.undo();
+  const snap = redo ? HIST.redo(UI.tab, histKey(DB)) : HIST.undo(UI.tab, histKey(DB));
   if (!snap) { toast(redo ? '다시 할 것이 없습니다' : '되돌릴 것이 없습니다'); return; }
   if (SHEET) closeSheet(true);
   DB = histRestore(DB, snap); EFFC = null;
@@ -2298,10 +2369,13 @@ function applyRoom() {
   if (q('link[rel="manifest"]')) q('link[rel="manifest"]').setAttribute('href', r.mf);
 }
 function brand(page) { return '<h1 class="br" aria-label="' + roomName() + ' — ' + page + '"><b>' + roomName() + '</b><span>' + page + '</span></h1>'; }
+// 머리 오른쪽 단추들 — 평소엔 BLUE ROOM 줄 오른쪽 끝의 옅은 꺾쇠 하나. 누르면 일반색이 되며 아래 줄이 위에서 스며 내려온다 (HB 2026-10-13)
 function headActs(extra) {
-  return '<div class="vh-acts">' + (extra || '') +
-    '<button class="ib' + (HIST.past.length ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
-    '<button class="ib' + (HIST.future.length ? '' : ' off') + '" data-a="redo" aria-label="재실행 (⌘⇧Z)" title="재실행 ⌘⇧Z · ⌘Y">' + ico('redo') + '</button>' + '<button class="ib" data-a="settings" aria-label="설정">' + ico('gear') + '</button></div>';
+  const open = !!(UI.actsOpen && UI.actsOpen[UI.tab]), c = HIST.can(UI.tab);
+  return '<button class="ib vh-more' + (open ? ' open' : ' dim') + '" data-a="acts" aria-expanded="' + open + '" aria-label="단추 펼치기">' + ico('chevD') + '</button>' +
+    '<div class="vh-acts' + (open ? ' open' : '') + '">' + (extra || '') +
+    '<button class="ib' + (c.undo ? '' : ' off') + '" data-a="undo" aria-label="실행취소 (⌘Z)" title="실행취소 ⌘Z">' + ico('undo') + '</button>' +
+    '<button class="ib' + (c.redo ? '' : ' off') + '" data-a="redo" aria-label="재실행 (⌘⇧Z)" title="재실행 ⌘⇧Z · ⌘Y">' + ico('redo') + '</button></div>';
 }
 
 // ── ① 오늘 ──
@@ -2313,7 +2387,7 @@ function renderToday() {
   const mode = DB.set.sorts.today || 'imp';
   const ranks = DB.set.ranks.today || {};
   const d = parseYmd(TODAY);
-  let h = '<div class="vh"><div class="vh-td">' + brand('Today') + '<div class="vdate" aria-label="' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + dayName(wd) + '">' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일<br>' + dayName(wd) + '</div></div>' + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
+  let h = '<div class="vh">' + brand('Today') + headActs('<button class="ib' + (DB.set.hideNote ? '' : ' on') + '" data-a="note-today" aria-label="보조 설명 켜고 끄기">' + ico('note') + '</button><button class="ib" data-a="sort-today" aria-label="정렬">' + ico('sort') + '</button>') + '</div>';
   if (!DB.T.length && !DB.G.length) return h + emptyStart();
   h += '<div class="vh" style="padding-top:0"><span class="sub"><b style="color:var(--ac-tx);font-weight:600">' + cnt.d + '</b> / ' + cnt.n + ' 기도함</span></div>';
   h += '<div class="prog"><i style="width:' + (cnt.n ? Math.round(cnt.d / cnt.n * 100) : 0) + '%"></i></div>';
@@ -2465,7 +2539,7 @@ function mapCards(src, opt) {
   // 색으로 걸러 보기 (여러 색 함께) — 맞는 이름이 하나라도 든 항목만, 그런 항목이 있는 그룹 · 서브 그룹만 보인다
   const hitL = l => !filt || (l.segs || []).some(seg => seg.some(pid => { const p = src.person(pid); return p && filt.indexOf(mk(p)) >= 0; }));
   const showG = g => !filt || (g.lines || []).some(hitL);
-  const hc = g => { const s = new Set(groupPids(g)); src.kids(g.id).forEach(c => groupPids(c).forEach(p => s.add(p))); return [...s].filter(id => { const p = src.person(id); return !p || p.kind !== 'item'; }).length; };
+  const hc = g => { const s = new Set(groupPids(g)); src.kids(g.id).forEach(c => groupPids(c).forEach(p => s.add(p))); return [...s].filter(id => !!src.person(id)).length; };
   const tops = src.live ? mapTops() : src.tops();
   const pk = opt && opt.pick && src.live ? opt.pick : null, pkOn = !!(pk && pk.ids.size);
   const pkDot = (id, on) => '<button class="pk' + (on ? ' on' : '') + '" data-a="map-pick" data-id="' + id + '" aria-pressed="' + on + '" aria-label="오늘 기도할 것으로 고르기"></button>';
@@ -2517,7 +2591,7 @@ function mapCards(src, opt) {
     if (filt && !showG(g) && !kids.length) return '';
     const gk = 'g:' + g.id;
     const head = edKey === gk ? '<div class="gh ined sel"' + selAttr(gk) + '>' + editor(gk, UI.mapEdit.isNew ? '' : g.name, '그룹 이름') + '</div>'
-      : (src.live ? '<div class="ghw">' + (pk ? pkDot(g.id, gSel) : '') + '<button class="gh' + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
+      : (src.live ? '<div class="ghw">' + (pk ? pkDot(g.id, gSel) : '') + '<button class="gh' + (q && (g.name || '').indexOf(q) >= 0 ? ' hit' : '') + selCls(gk) + '"' + selAttr(gk) + ' data-a="open-group" data-id="' + g.id + '">' : '<div class="gh">') + esc(g.name) + '<span class="cnt">' + hc(g) + '</span>' +
         (src.live ? '</button><button class="madd on-gh" data-a="map-add" data-k="sub" data-id="' + g.id + '" aria-label="' + esc(g.name) + '에 서브 그룹 더하기">' + SUBICO + '</button></div>' : '</div>');
     const last = kids.length ? kids[kids.length - 1] : g;   // 맨 아래 입력 칸은 바로 위 덩어리에 줄을 더한다
     // pkx = 고른 것이 있는데 이 카드(서브 그룹)는 안 골랐다 · pkgo = 그룹 자신은 안 골랐다 (제 줄만 가린다)
@@ -2532,7 +2606,7 @@ function mapCards(src, opt) {
         if (edKey === kk) return '<div class="sgb" data-gid="' + k.id + '" data-pl="' + g.id + '"><div class="sgh ined sel"' + sc + selAttr(kk) + '>' + editor(kk, UI.mapEdit.isNew ? '' : k.name, '서브 그룹 이름') + '</div>' + body + '</div>';
         const kSel = !!pk && pk.ids.has(k.id);
         return '<div class="sgb' + (pkOn && !kSel ? ' pkx' : '') + '" data-gid="' + k.id + '" data-pl="' + g.id + '">' +
-          (src.live ? '<div class="sghw"' + sc + '>' + (pk ? pkDot(k.id, kSel) : '') + '<button class="sgh' + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh"' + sc + '>') + esc(k.name) + linked +
+          (src.live ? '<div class="sghw"' + sc + '>' + (pk ? pkDot(k.id, kSel) : '') + '<button class="sgh' + (q && (k.name || '').indexOf(q) >= 0 ? ' hit' : '') + selCls(kk) + '"' + selAttr(kk) + ' data-a="open-group" data-id="' + k.id + '">' : '<div class="sgh"' + sc + '>') + esc(k.name) + linked +
           (k.days && k.days.length ? '<span class="dt">' + k.days.map(d => WEEK[d]).join('·') + (k.time ? ' ' + esc(k.time) : '') + '</span>' : '') +
           (src.live ? '</button><button class="madd" data-a="map-add" data-k="line" data-id="' + k.id + '" aria-label="' + esc(k.name) + '에 항목 더하기">+</button></div>' : '</div>') + body + '</div>';
       }).join('') +
@@ -2605,8 +2679,10 @@ function renderMap() {
     '<button class="ib mk-fold mk-fold-row' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' +
     (KB && !TOUCHDEV ? '<button class="ib kb-i' + (kbHintMode() === 2 ? ' on' : kbHintMode() === 1 ? '' : ' dim') + '" data-a="kb-i" aria-label="단축키 안내">' + ico('info') + '</button>' : '') + '</div>';
   if (UI.mapQuery) {
-    const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
-    h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
+    // 이름 · 기도 항목 · 그룹 · 서브 그룹 이름 어디서나 찾는다 (HB 2026-10-13)
+    const q = UI.mapQuery, hits = DB.T.filter(t => t.name.indexOf(q) >= 0 && groupsOf(DB, t.id).length), gh = DB.G.filter(g => (g.name || '').indexOf(q) >= 0);
+    const n = hits.length + gh.length;
+    h += '<div class="hint">' + (n ? n + '곳 — ' + gh.slice(0, 6).map(g => '<b style="color:var(--tx2)">' + esc(g.name) + '</b>').concat(hits.slice(0, 12).map(p => esc(p.name) + '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')')).join(', ') : '찾는 것이 없습니다') + '</div>';
   }
   if (KB && !TOUCHDEV && kbHintMode() === 1) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter, depth: mapDepth(), pick: { ids: new Set(pickIds()), mode: UI.pickMode || 0 }, addOff: TOUCHDEV && !UI.addMode });
@@ -2629,8 +2705,8 @@ function renderList() {
   const items = listItems();
   if (UI.listView === 'matrix') return h + renderMatrix(items);
   const mode = DB.set.sorts.list || 'sum';
-  h += '<div class="sorts"><span>정렬</span>' + [['sum', '합계'], ['urg', '긴급'], ['imp', '중요'], ['new', mode === 'reg' ? '등록순' : '최신순'], ['name', '이름'], ['mine', '내 순서']].map(s =>
-    '<button class="' + ((mode === s[0] || (s[0] === 'new' && mode === 'reg')) ? 'on' : '') + '" data-a="list-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') +
+  h += '<div class="sorts">' + [['sum', '전체'], ['urg', '긴급'], ['imp', '중요'], ['new', mode === 'reg' ? '등록순' : '최신순'], ['name', mode === 'nameR' ? '이름역순' : '이름순'], ['mine', '내 순서']].map(s =>
+    '<button class="' + ((mode === s[0] || (s[0] === 'new' && mode === 'reg') || (s[0] === 'name' && mode === 'nameR')) ? 'on' : '') + '" data-a="list-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') +
     '<button class="' + (UI.listGrouped ? 'on' : '') + '" data-a="list-group" style="margin-left:auto">분류별</button></div>';
   h += '<div class="lh"><span class="f">항목</span><span style="width:76px;text-align:center">긴급 · 중요</span></div>';
   if (!items.length) return h + '<div class="hint" style="padding-top:20px">여기에 해당하는 항목이 없습니다.</div>';
@@ -2688,7 +2764,7 @@ function renderMatrix(items) {
 
 // ── ⑨ 기록 탭 ──
 function renderHist() {
-  let h = '<div class="vh">' + brand('His Story') + headActs() + '</div>';
+  let h = '<div class="vh">' + brand('His Story') + '</div>';   // 기록은 되돌릴 것이 없어 꺾쇠도 없다
   h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   if (UI.histTab === 'snap') return h + renderSnaps();
   if (UI.histTab === 'days') return h + renderCal();
@@ -2824,7 +2900,7 @@ LAYERS.target = L => {
   let b = '<div class="hero"><input class="hero-name" value="' + esc(t.name) + '" data-f="name" data-id="' + t.id + '" aria-label="이름" autocomplete="off"><div class="hero-sub">' +
     '<button class="tag" data-a="pick-cat" data-id="' + t.id + '">' + ico('folder') + esc(c ? c.name : '구분 없음') + '</button>';
   if (t.kind === 'item') b += '<button class="tag" data-a="pick-sub" data-id="' + t.id + '">' + esc(s ? s.name : '분류 없음') + '</button>';
-  if (t.kind === 'person') {
+  {   // 사람 · 기도 항목 모두 소속 그룹을 보여 준다 (HB 2026-10-13)
     groupsOf(DB, t.id).forEach(g => { b += '<button class="tag g" style="--gc:' + esc(g.color) + '" data-a="open-group" data-id="' + g.id + '">' + esc(g.name) + '</button>'; });
     b += '<button class="tag add" data-a="join-group" data-id="' + t.id + '">+ 그룹</button>';
   }
@@ -2931,7 +3007,23 @@ LAYERS.groups = () => {
 LAYERS.settings = () => {
   const p = themeById(DB.set.preset);
   const modeName = { dark: '다크', light: '라이트', system: '시스템' }[DB.set.mode] || '다크';
-  let b = accountBlock() + '<div class="label">화면</div><div class="set-g"><button class="set-r" data-a="theme">' + ico('theme') + '색상 테마<span class="v">' + esc((p ? p.name : '기도노트 기본') + ' · ' + modeName) + ico('chevR') + '</span></button>' +
+  // 차례 (HB 2026-10-13): 계정 · 자료 · 앱 이름 · 화면(색상 테마 · 첫 화면 · There 단추 · 표시 색 이름) · 분류 · 오늘 목록 · 긴급도 · 화면 진단
+  let b = accountBlock();
+  b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
+    '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
+    '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  b += '<div class="label">앱 이름<small>이 기기에만 · 홈 화면 아이콘은 다시 추가해야 바뀜</small></div><div class="set-g room-pick">' +
+    ROOM_ORDER.map(k => '<button class="rpk' + (k === roomKey() ? ' on' : '') + '" data-a="room" data-v="' + k + '"><img src="' + ROOMS[k].icon + '-192.png" alt=""><span>' + ROOMS[k].name + '</span></button>').join('') + '</div>';
+  // '첫 화면' · 'There 단추' 는 새 창 없이 그 자리에서 아래로 펼쳐 고른다
+  const xo = k => !!(UI.xopen && UI.xopen[k]);
+  const startNm = { today: '오늘', map: '지도', list: '목록', hist: '기록' }[devPref('startTab', 'today')] || '오늘';
+  b += '<div class="label">화면</div><div class="set-g"><button class="set-r" data-a="theme">' + ico('theme') + '색상 테마<span class="v">' + esc((p ? p.name : '기도노트 기본') + ' · ' + modeName) + ico('chevR') + '</span></button>' +
+    '<button class="set-r xr' + (xo('start') ? ' open' : '') + '" data-a="xrow" data-x="start" aria-expanded="' + xo('start') + '">' + ico('sun') + '첫 화면<span class="v"><span class="xv">' + startNm + '</span>' + ico('chevD', 'xch') + '</span></button>' +
+    '<div class="xp" data-xp="start"' + (xo('start') ? '' : ' hidden') + '><div class="seg" style="margin:4px 14px 10px">' +
+    [['today', '오늘'], ['map', '지도'], ['list', '목록'], ['hist', '기록']].map(t => '<button class="' + (devPref('startTab', 'today') === t[0] ? 'on' : '') + '" data-a="start-tab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div></div>' +
+    '<button class="set-r xr' + (xo('there') ? ' open' : '') + '" data-a="xrow" data-x="there" aria-expanded="' + xo('there') + '"><span class="there-ic" style="font-size:20px;width:20px;display:inline-flex;justify-content:center">' + THERE_ICONS[thereKey()].svg + '</span>There 단추<span class="v"><span class="xv">' + esc(THERE_ICONS[thereKey()].name) + '</span>' + ico('chevD', 'xch') + '</span></button>' +
+    '<div class="xp" data-xp="there"' + (xo('there') ? '' : ' hidden') + '><div class="there-pick">' +
+    THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div></div>' +
     '<button class="set-r" data-a="marks">' + ico('dots4') + '표시 색 이름<span class="v">' + ico('chevR') + '</span></button></div>';
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
@@ -2939,15 +3031,6 @@ LAYERS.settings = () => {
   b += '<div class="label">오늘 목록</div><div class="set-g"><div class="set-r">1순위 처음 보일 개수<span class="step"><button data-a="step" data-k="topLimit" data-v="-1" aria-label="줄이기">−</button><b>' + DB.set.topLimit + '</b><button data-a="step" data-k="topLimit" data-v="1" aria-label="늘리기">+</button></span></div></div>';
   b += '<div class="label">긴급도마다 며칠에 한 번<small>0 이 가장 급함</small></div><div class="set-g">' + DB.set.iv.map((v, k) =>
     '<div class="set-r"><span class="pl ' + uCls(k) + '">' + k + '</span>' + (v === 1 ? '날마다' : v + '일마다') + '<span class="step"><button data-a="step" data-k="iv" data-n="' + k + '" data-v="-1" aria-label="줄이기">−</button><b>' + v + '</b><button data-a="step" data-k="iv" data-n="' + k + '" data-v="1" aria-label="늘리기">+</button></span></div>').join('') + '</div>';
-  b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
-    '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
-    '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
-  b += '<div class="label">앱 이름<small>이 기기에만 · 홈 화면 아이콘은 다시 추가해야 바뀜</small></div><div class="set-g room-pick">' +
-    ROOM_ORDER.map(k => '<button class="rpk' + (k === roomKey() ? ' on' : '') + '" data-a="room" data-v="' + k + '"><img src="' + ROOMS[k].icon + '-192.png" alt=""><span>' + ROOMS[k].name + '</span></button>').join('') + '</div>';
-  b += '<div class="label">첫 화면<small>앱을 열면 처음 보이는 페이지 · 이 기기에만</small></div><div class="seg" style="margin:0 20px">' +
-    [['today', '오늘'], ['map', '지도'], ['list', '목록'], ['hist', '기록']].map(t => '<button class="' + (devPref('startTab', 'today') === t[0] ? 'on' : '') + '" data-a="start-tab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
-  b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
-    THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div>';
   b += '<div class="label">화면 진단<small>아래 띠 색이 다를 때 눌러 복사해 보내 주세요</small></div><div class="set-g"><button class="set-r" data-a="diag-copy">' + ico('link') + '화면 진단 기록 복사</button></div>';
   b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
@@ -3361,7 +3444,28 @@ ACT.room = el => {
   document.querySelectorAll('h1.br').forEach(h => { const b = h.querySelector('b'); if (b) b.textContent = roomName(); h.setAttribute('aria-label', roomName() + ' — ' + (h.querySelector('span') || {}).textContent); });
   toast(roomName() + ' — 홈 화면 아이콘은 지우고 다시 추가하면 바뀝니다');
 };
-ACT['start-tab'] = el => { setDevPref('startTab', el.dataset.v); el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); };
+ACT.acts = () => {
+  UI.actsOpen = UI.actsOpen || {};
+  const open = UI.actsOpen[UI.tab] = !UI.actsOpen[UI.tab];
+  const v = $('v-' + UI.tab); if (!v) return;
+  const b = v.querySelector('.vh-more'), row = v.querySelector('.vh-acts');
+  if (b) { b.classList.toggle('open', open); b.classList.toggle('dim', !open); b.setAttribute('aria-expanded', open); }
+  if (!row) return;
+  if (open) { row.classList.add('open'); slideIn(row); }
+  else slideOut(row, () => { row.getAnimations().forEach(a => a.cancel()); row.style.overflow = ''; row.classList.remove('open'); });
+};
+ACT['start-tab'] = el => {
+  setDevPref('startTab', el.dataset.v); el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
+  const v = document.querySelector('[data-x="start"] .xv'); if (v) v.textContent = el.textContent;
+};
+// 설정의 펼치는 줄 — 새 창 없이 그 아래가 스르륵 열린다 (첫 화면 · There 단추)
+ACT.xrow = el => {
+  const k = el.dataset.x, box = document.querySelector('[data-xp="' + k + '"]'); if (!box) return;
+  UI.xopen = UI.xopen || {}; const open = UI.xopen[k] = !UI.xopen[k];
+  el.classList.toggle('open', open); el.setAttribute('aria-expanded', open);
+  if (open) { box.hidden = false; slideIn(box); }
+  else slideOut(box, () => { box.getAnimations().forEach(a => a.cancel()); box.style.overflow = ''; box.hidden = true; });
+};
 ACT['mk-fold'] = () => {
   UI.mkOpen = !UI.mkOpen;
   const row = document.querySelector('#v-map .mk-chips');
@@ -3373,7 +3477,7 @@ ACT['mk-fold'] = () => {
 };
 ACT['list-view'] = el => { UI.listView = el.dataset.v; renderView(); };
 ACT['list-cat'] = el => { UI.listCat = el.dataset.v; UI.mx = null; renderView(); };
-ACT['list-sort'] = el => { const v = el.dataset.v, cur = DB.set.sorts.list || 'sum'; DB.set.sorts.list = v === 'new' ? (cur === 'new' ? 'reg' : 'new') : v; save(); renderView(); };
+ACT['list-sort'] = el => { const v = el.dataset.v, cur = DB.set.sorts.list || 'sum'; DB.set.sorts.list = v === 'new' ? (cur === 'new' ? 'reg' : 'new') : v === 'name' ? (cur === 'name' ? 'nameR' : 'name') : v; save(); renderView(); };
 ACT['list-group'] = () => { UI.listGrouped = !UI.listGrouped; renderView(); };
 ACT['list-og'] = el => { UI.openG[el.dataset.k] = !UI.openG[el.dataset.k]; renderView(); };
 ACT.mx = el => { const u = +el.dataset.u, i = +el.dataset.i; UI.mx = UI.mx && UI.mx[0] === u && UI.mx[1] === i ? null : [u, i]; renderView(); };
@@ -3493,8 +3597,7 @@ ACT['join-group'] = el => {
 };
 ACT['target-menu'] = () => {
   const L = UI.layers[UI.layers.length - 1]; const t = findT(DB, L.id); if (!t) return;
-  choose(t.name, [{ v: 'kind', label: t.kind === 'person' ? '기도 항목으로 바꾸기' : '사람으로 바꾸기', desc: '사람만 지도의 그룹에 들어갑니다' }, { v: 'del', label: '지우기', danger: true, desc: '되돌리기를 잠깐 띄웁니다' }], '', v => {
-    if (v === 'kind') { t.kind = t.kind === 'person' ? 'item' : 'person'; save(); refresh(); }
+  choose(t.name, [{ v: 'del', label: '지우기', danger: true, desc: '되돌리기를 잠깐 띄웁니다' }], '', v => {
     if (v === 'del') { popLayer(); withUndo(t.name + ' 을(를) 지웠습니다', () => removeTarget(DB, t.id)); }
   });
 };
@@ -4889,7 +4992,7 @@ async function writeCloud(who, cdb, expect) {
 function applyCloud(cdb) {
   DB = fromCloud(cdb, DB); EFFC = null;
   // 다른 기기에서 온 변경이 들어오면 그 앞 칸들은 버린다 — 되돌리기가 상대 기기의 편집을 지우지 않게
-  HIST.reset(histKey(DB)); paintUndo();
+  HIST.sync(histKey(DB)); paintUndo();   // 다른 기기에서 온 것은 어느 페이지의 일도 아니다 — 되돌리기는 내 일만 거꾸로 돌리므로 칸을 비우지 않는다
   const t = $('toast'); if (t && t._fn) { t._fn = null; t.classList.remove('on'); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
   saveNow(); refresh();
 }
@@ -4981,6 +5084,7 @@ async function takeInbox() {
   } catch (e) { return; }
   if (!got.length) return;
   const r = inboxApply(DB, got.slice().sort((a, b) => (a.at || 0) - (b.at || 0)));
+  HIST.sync(histKey(DB));   // BLOCK7 에서 온 것은 이 페이지에서 한 일이 아니다
   if (r.n) { saveNow(); refresh(); syncSoon(300); }
   toast(r.n ? 'BLOCK7 에서 ' + r.n + '개 들어왔습니다' + (r.lost ? ' · ' + r.lost + '개는 그룹이 없어 못 넣음' : '') : '보낸 그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
 }
