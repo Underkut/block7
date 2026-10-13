@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1013-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="기도노트">
+<meta name="apple-mobile-web-app-title" content="BLUE ROOM">
 <meta name="description" content="날마다 기도할 이름과 제목을 차례대로">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+KR:wght@400;500&display=swap" rel="stylesheet">
-<title>기도노트</title>
+<title>BLUE ROOM</title>
 <script>
 // ⚠️ 기도노트의 집은 sweeter.my/pray/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
 //    block7.my/pray/ 에도 같은 파일이 생기는데, 기기 저장 칸은 주소마다 따로라
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-8';
+const APP_VERSION = 'v. 26-1013-9';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -686,6 +686,24 @@ function suggestCat(db, g, text) {
 // 글 하나를 구분과 함께 항목(줄)으로 만든다. catId '' = 나중에(구분 없이).
 // · 사람 구분: 이름으로 읽어 사람 카드에 그 구분을 단다
 // · 사람 아닌 구분: 글 전체가 기도 항목 카드 하나 (같은 이름이 있으면 그것을 쓴다)
+// ── BLOCK7 에서 '기도 노트로' 보낸 것 받기 (HB 2026-10-13) ──
+// items: [{id, gid, text, at, from}] — 고른 그룹(서브 그룹)의 **맨 위** 항목으로. 구분 · 표시색은 비워 둔 기도 항목(사람 아님).
+// 그룹이 그새 지워졌으면 넣지 않고 그 수를 돌려준다(lost). 같은 이름의 기도 항목이 있으면 그 카드를 같이 쓴다.
+function inboxApply(db, items) {
+  let n = 0, lost = 0;
+  (items || []).forEach(it => {
+    const s = String(it && it.text || '').replace(/\s+/g, ' ').trim();
+    if (!s) return;
+    const g = findG(db, it.gid);
+    if (!g) { lost++; return; }
+    let t = db.T.find(x => x.kind === 'item' && x.name === s);
+    if (!t) { t = newTarget('item', s); db.T.push(t); }
+    g.lines = g.lines || [];
+    g.lines.unshift({ id: uid(), segs: [[t.id]], r: {}, text: '' });
+    n++;
+  });
+  return { n, lost };
+}
 function makeEntry(db, text, catId) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
   if (!s) return null;
@@ -1484,8 +1502,9 @@ svg{display:block;flex-shrink:0}
   padding:calc(var(--sat) + 8px) 0 calc(var(--sab) + 96px);display:none}
 .view.on{display:block}
 /* ⚠️ BLUE ROOM 글자(h1.br b)는 네 페이지 같은 자리에 **가만히** 있는다 (HB 2026-10-13) — 그 밖의 것만 스며 나온다 */
-.view.on>:not(.vh),.view.on .vh-acts,.view.on .vdate,.view.on .there-b{animation:vin .62s cubic-bezier(.25,.1,.25,1) .1s backwards}
-.view.on h1.br span{animation:vfade .62s ease .1s backwards}
+/* ⚠️ 아래 메뉴로 **들어올 때만**(.enter) — .on 에 걸면 화면을 다시 그릴 때마다(PC 화살표 · 고치기) 전부 다시 스며 나와 깜빡였다 */
+.view.enter>:not(.vh),.view.enter .vh-acts,.view.enter .there-b{animation:vin .62s cubic-bezier(.25,.1,.25,1) .1s backwards}
+.view.enter h1.br span,.view.enter .vdate{animation:vfade .62s ease .1s backwards}   /* 날짜는 자리 그대로 옅어지기만 */
 @keyframes vin{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 @keyframes vfade{from{opacity:0}}
 /* 아래 메뉴로 옮겨 갈 때 — 앞 화면은 조용히 옅어지고(겹쳐 번지지 않게 빨리), 새 화면이 천천히 스며 나온다 (HB 2026-10-13) */
@@ -1519,13 +1538,15 @@ svg{display:block;flex-shrink:0}
 .mkrow{display:flex;align-items:center;min-height:0}
 .mkrow .chips{flex:1;min-width:0}
 .mk-fold-row{flex-shrink:0;margin:0 11px 0 auto}
-/* 태블릿(터치 · 폭 601 이상): 표시색은 접어 두고 그 줄 오른쪽 끝 단추로 편다 (HB 2026-10-13) */
+/* 폭 601 이상(태블릿 · PC): 표시색은 접어 두고 그 줄 오른쪽 끝 단추로 편다 (HB 2026-10-13) */
 @media (min-width:601px){
-  body.tchdev .mk-fold-row{display:flex!important}
-  body.tchdev .chips.mk-chips{display:none}
-  body.tchdev .chips.mk-chips.open{display:flex}
+  .mk-fold-row{display:flex!important}
+  .chips.mk-chips{display:none}
+  .chips.mk-chips.open{display:flex}
 }
-.mkico{width:26px;height:16px;display:block;opacity:.8;transition:opacity .15s}
+.kb-i{flex-shrink:0;margin-right:11px}
+.mkrow .mk-fold-row:has(+.kb-i){margin-right:0}
+.mkico{width:26px;height:16px;display:block;opacity:.35;transition:opacity .45s}   /* 접힌 상태는 옅게 (HB 2026-10-13) */
 .mk-fold.on .mkico{opacity:1}
 @media (max-width:600px){
   .mk-fold{display:flex!important}
@@ -1536,7 +1557,7 @@ svg{display:block;flex-shrink:0}
 .vh-td{flex:1 0 100%;display:flex;align-items:baseline;min-width:0}
 /* 첫 줄 바탕선을 BLUE ROOM 바탕선에 맞춘 뒤 한 줄만큼 올린다 → 아래 줄이 바탕선, 위 줄 머리가 대문자 머리에 닿는다 */
 .vdate{margin-left:auto;text-align:right;font-size:calc(var(--bfs) * .34);line-height:1.12;color:var(--tx2);letter-spacing:.03em;
-  transform:translateY(-1.12em);font-variant-numeric:tabular-nums}
+  position:relative;top:-1.12em;font-variant-numeric:tabular-nums}   /* ⚠️ transform 이면 들어올 때 움직임이 그 자리를 덮어 끝에 톡 튀었다 */
 .prog{margin:12px 20px 0;height:2px;background:var(--s2);border-radius:2px;overflow:hidden}
 .prog i{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .5s var(--ease)}
 .cta{margin:16px 20px 4px;height:50px;border-radius:25px;background:var(--ac);color:var(--on-accent);font-weight:600;font-size:15px;
@@ -2059,6 +2080,7 @@ const ICONS = {
   note: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/>',
   sort: '<path d="M7 5v14M4 16l3 3 3-3M17 19V5M14 8l3-3 3 3"/>',
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="1"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/>',
+  info: '<circle cx="12" cy="12" r="8.5"/><line x1="12" y1="11" x2="12" y2="16.2"/><circle cx="12" cy="7.9" r=".5" fill="currentColor"/>',
   plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><line x1="16" y1="16" x2="20.5" y2="20.5"/>',
   dots: '<circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
@@ -2234,7 +2256,11 @@ function showTab(tab) {
   const prev = document.querySelector('.view.on');
   if (prev && prev.id !== 'v-' + tab) { prev.classList.add('out'); clearTimeout(prev._out); prev._out = setTimeout(() => prev.classList.remove('out'), 280); }
   UI.tab = tab;
-  document.querySelectorAll('.view').forEach(v => { v.classList.toggle('on', v.id === 'v-' + tab); if (v.id === 'v-' + tab) v.classList.remove('out'); });
+  document.querySelectorAll('.view').forEach(v => {
+    const me = v.id === 'v-' + tab;
+    v.classList.toggle('on', me);
+    if (me) { v.classList.remove('out'); v.classList.add('enter'); clearTimeout(v._en); v._en = setTimeout(() => v.classList.remove('enter'), 800); }
+  });
   document.querySelectorAll('.tb').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   renderView();
 }
@@ -2554,12 +2580,13 @@ function renderMap() {
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
   h += '<div class="mkrow"><div class="chips mk-chips' + (UI.mkOpen || UI.mapFilter.length ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
-    (TOUCHDEV ? '<button class="ib mk-fold mk-fold-row' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '') + '</div>';
+    '<button class="ib mk-fold mk-fold-row' + (UI.mkOpen ? ' on' : '') + '" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' +
+    (KB && !TOUCHDEV ? '<button class="ib kb-i' + (kbHintMode() === 2 ? ' on' : kbHintMode() === 1 ? '' : ' dim') + '" data-a="kb-i" aria-label="단축키 안내">' + ico('info') + '</button>' : '') + '</div>';
   if (UI.mapQuery) {
     const hits = DB.T.filter(t => t.kind === 'person' && t.name.indexOf(UI.mapQuery) >= 0);
     h += '<div class="hint">' + (hits.length ? hits.length + '명 — ' + hits.slice(0, 12).map(p => esc(p.name) + (groupsOf(DB, p.id).length ? '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')' : '')).join(', ') : '찾는 이름이 없습니다') + '</div>';
   }
-  if (KB && !TOUCHDEV) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
+  if (KB && !TOUCHDEV && kbHintMode() === 1) h += '<button class="kbhint" data-a="kb-help">' + '<b>↑↓←→</b> 고르기 <b>Enter</b> 고치기 <b>Tab</b> 같은 자리에 더하기 <b>⇧Enter</b> 상세 <b>⌫</b> 지우기 <b>⌥↑↓</b> 옮기기 <b>N</b> 그룹 <b>M</b> 서브 그룹 <b>,</b> 항목 <b>우클릭</b> 상세 <b>끌기</b> 옮기기 · <u>모두 보기</u></button>';
   h += mapCards(mapSource(null), { q: UI.mapQuery, filter: UI.mapFilter, depth: mapDepth(), pick: { ids: new Set(pickIds()), mode: UI.pickMode || 0 }, addOff: TOUCHDEV && !UI.addMode });
   return h;
 }
@@ -2895,6 +2922,8 @@ LAYERS.settings = () => {
     '<button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  b += '<div class="label">첫 화면<small>앱을 열면 처음 보이는 페이지 · 이 기기에만</small></div><div class="seg" style="margin:0 20px">' +
+    [['today', '오늘'], ['map', '지도'], ['list', '목록'], ['hist', '기록']].map(t => '<button class="' + (devPref('startTab', 'today') === t[0] ? 'on' : '') + '" data-a="start-tab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
   b += '<div class="label">There 단추<small>지도 제목 옆 · 누르면 기도 시간</small></div><div class="set-g there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div>';
   b += '<div class="label">화면 진단<small>아래 띠 색이 다를 때 눌러 복사해 보내 주세요</small></div><div class="set-g"><button class="set-r" data-a="diag-copy">' + ico('link') + '화면 진단 기록 복사</button></div>';
@@ -3104,7 +3133,16 @@ ACT['layer-cancel'] = () => {
   if (L && L.snap) { DB = normDB(JSON.parse(L.snap)); save(); }
   popLayer(); toast('바꾼 것을 되돌렸습니다');
 };
-ACT['kb-help'] = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
+function kbHintMode() { const n = devPref('kbHint', 0); return n === 1 || n === 2 ? n : 0; }
+// i 단추: 0 숨김(옅음) → 1 위 한 줄(일반색) → 2 모두 보기 창(강조색) → 창을 닫으면 0
+ACT['kb-i'] = () => {
+  const n = (kbHintMode() + 1) % 3; setDevPref('kbHint', n);
+  const b = document.querySelector('#v-map .kb-i'); btnTone(b, n === 2 ? 'on' : n === 1 ? '' : 'dim');
+  if (n === 1) { mapKeepScroll(renderView); slideIn(document.querySelector('#v-map .kbhint')); }
+  else if (n === 2) ACT['kb-help']();
+};
+ACT['kb-help'] = () => { kbHelpOpen(); setDevPref('kbHint', 2); btnTone(document.querySelector('#v-map .kb-i'), 'on'); if (SHEET) SHEET._onClose = () => { setDevPref('kbHint', 0); mapKeepScroll(renderView); }; };
+const kbHelpOpen = () => openSheet('<div class="sh-t">기도 지도 — 키보드</div><div class="sh-b kbtable">' + [
   ['↑ ↓ ← →', '화면에 보이는 자리대로 위 · 아래 · 왼쪽 · 오른쪽으로 고르기'], ['Enter', '고치기 시작 · 고치는 중이면 마침'],
   ['Tab', '같은 자리(같은 수준)에 하나 더 — 이어서 입력'], [',', '고른 그룹에 항목 더하기 (항목을 골랐으면 그 바로 뒤)'], ['오른쪽 누르기', '상세 열기 (그룹 · 서브 그룹 · 항목 어디서나)'], ['끌기', '눌러 끌면 옮기기 — 다른 그룹으로 놓으면 옮기기 · 연동 중 고르기'], ['⇧ Enter', '상세 화면 열기'], ['⌫ / Delete', '지우기 (되돌리기 있음)'],
   ['⌥ ↑ ↓', '위아래로 옮기기 · 항목은 끝에서 옆 그룹으로'], ['N', '새 그룹'], ['M', '고른 그룹 안에 새 서브 그룹'], ['Esc', '고치기 취소 · 고르기 풀기'],
@@ -3295,6 +3333,7 @@ function slideOut(e, then) {
   const a = e.animate([{ height: h + 'px', marginTop: cs.marginTop, marginBottom: cs.marginBottom, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom }, { height: '0px', marginTop: '0px', marginBottom: '0px', paddingTop: '0px', paddingBottom: '0px' }], { duration: 420, delay: 80, easing: MX_EASE, fill: 'forwards' });
   a.onfinish = then;
 }
+ACT['start-tab'] = el => { setDevPref('startTab', el.dataset.v); el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el)); };
 ACT['mk-fold'] = () => {
   UI.mkOpen = !UI.mkOpen;
   const row = document.querySelector('#v-map .mk-chips');
@@ -3708,6 +3747,8 @@ function mapRender(focus) {
   else if (UI.sel) { const s = v.querySelector('[data-sel="' + UI.sel + '"]'); if (s) s.scrollIntoView({ block: 'nearest' }); }
 }
 function mapSelect(k) { UI.sel = k; UI.mapEdit = null; document.querySelectorAll('#v-map .sel').forEach(x => x.classList.remove('sel')); const s = document.querySelector('#v-map [data-sel="' + k + '"]'); if (s) s.classList.add('sel'); }
+// 고르기만 바뀔 때는 다시 그리지 않는다 (PC 화살표로 옮길 때 화면 전체가 깜빡이던 것, HB 2026-10-13)
+function mapSelectShow(k) { mapSelect(k); const s = document.querySelector('#v-map [data-sel="' + k + '"]'); if (s) s.scrollIntoView({ block: 'nearest' }); }
 function mapStartEdit(k, isNew) { mapNeedDepth(k); if (MT.on) thereStop('input'); UI.sel = k; UI.mapEdit = { key: k, isNew: !!isNew }; mapRender(); }
 // 같은 수준에 하나 더 — 고른 것 바로 뒤에
 function mapAddSibling(k) {
@@ -3906,9 +3947,9 @@ function mapKey(e) {
   if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'ArrowRight' || key === 'ArrowLeft') {
     e.preventDefault();
     if (e.altKey && UI.sel && (key === 'ArrowDown' || key === 'ArrowUp')) { mapMove(UI.sel, key === 'ArrowDown' ? 1 : -1); return true; }
-    if (i < 0) { UI.sel = nav[0]; mapRender(); return true; }
+    if (i < 0) { mapSelectShow(nav[0]); return true; }
     const nx = mapSpatial(UI.sel, key, nav);
-    if (nx) { UI.sel = nx; mapRender(); }
+    if (nx) mapSelectShow(nx);
     return true;
   }
   if (!UI.sel || i < 0) { if (key === 'Enter' || key === 'Tab') { e.preventDefault(); UI.sel = nav[0]; mapRender(); return true; } return false; }
@@ -3916,7 +3957,7 @@ function mapKey(e) {
   if (key === 'Enter' || key === 'F2') { e.preventDefault(); mapStartEdit(UI.sel, false); return true; }
   if (key === 'Tab' && !e.shiftKey) { e.preventDefault(); mapAddSibling(UI.sel); return true; }
   if (key === 'Backspace' || key === 'Delete') { e.preventDefault(); mapDelete(UI.sel); return true; }
-  if (key === 'Escape') { e.preventDefault(); UI.sel = ''; mapRender(); return true; }
+  if (key === 'Escape') { e.preventDefault(); UI.sel = ''; document.querySelectorAll('#v-map .sel').forEach(x => x.classList.remove('sel')); return true; }
   return false;
 }
 document.addEventListener('dblclick', e => {
@@ -4896,6 +4937,25 @@ async function resolveSync(v) {
   } catch (e) { setStatus('err', fbErr(e)); }
 }
 
+// 우체통(pray/{uid}/c/inbox) — 쪽지를 **트랜잭션으로 꺼내(비우고)** 넣는다. 두 기기가 같이 열려 있어도 한 기기만 넣는다.
+// ⚠️ 덩어리 읽기 · 지우기는 숫자 이름(c/0, c/1 …)만 다루므로 inbox 와 섞이지 않는다 (docs/ROADMAP.md 'BLOCK7 할일 → 기도노트로')
+async function takeInbox() {
+  if (!SY.user || !FB) return;
+  if (uiBusy()) { clearTimeout(SY.tin); SY.tin = setTimeout(takeInbox, 3000); return; }
+  const ref = FB.db.doc('pray/' + SY.user.uid + '/c/inbox');
+  let got = [];
+  try {
+    got = await FB.db.runTransaction(async tx => {
+      const s = await tx.get(ref); const it = s.exists ? (s.data().items || []) : [];
+      if (it.length) tx.set(ref, { items: [] });
+      return it;
+    });
+  } catch (e) { return; }
+  if (!got.length) return;
+  const r = inboxApply(DB, got.slice().sort((a, b) => (a.at || 0) - (b.at || 0)));
+  if (r.n) { saveNow(); refresh(); syncSoon(300); }
+  toast(r.n ? 'BLOCK7 에서 ' + r.n + '개 들어왔습니다' + (r.lost ? ' · ' + r.lost + '개는 그룹이 없어 못 넣음' : '') : '보낸 그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
+}
 function startSync(user) {
   const was = SY.user && SY.user.uid;
   SY.user = user; SY.pending = null;
@@ -4907,10 +4967,13 @@ function startSync(user) {
     const w = s.exists ? (s.data().wid || '') : '';
     if (!SY.cache || SY.cache.wid !== w) syncSoon(200);
   }, e => setStatus('err', fbErr(e)));
+  if (SY.unin) SY.unin();
+  SY.unin = FB.db.doc('pray/' + user.uid + '/c/inbox').onSnapshot(s => { if (s.exists && (s.data().items || []).length) takeInbox(); }, () => {});
   syncSoon(0); refreshAccount();
 }
 function stopSync(status) {
   if (SY.unsub) { SY.unsub(); SY.unsub = null; }
+  if (SY.unin) { SY.unin(); SY.unin = null; }
   clearTimeout(SY.t); SY.user = null; SY.pending = null; SY.cache = null;
   setStatus(status || 'off'); refreshAccount();
 }
@@ -5221,7 +5284,7 @@ window.addEventListener('resize', () => { if (MT.on) mtSize(); });
 
 // ═══ 시작 ═══
 applyTheme(DB.set);
-showTab('today');
+showTab(['today', 'map', 'list', 'hist'].indexOf(devPref('startTab', 'today')) >= 0 ? devPref('startTab', 'today') : 'today');   // 첫 화면 — 설정에서 기기마다 고른다
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
 </script>
 <script id="there-dash">
