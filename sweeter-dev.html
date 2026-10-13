@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1013-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -5300,7 +5300,7 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 /* ── 본문에 긋기 (v26-1007-19) ── */
 #bibleRd #brChap{position:relative;}
 #bibleRd svg.br-inkov{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:1;}
-#bibleRd .br-inksel{fill:var(--ac-tx);opacity:.16;}
+#bibleRd .br-inksel{fill:var(--ac);fill-opacity:.32;stroke:var(--ac);stroke-width:1.5;}   /* 고른 자리를 또렷하게 (v26-1013-10 HB) */
 #bibleRd .br-inku{fill:var(--ac-tx);opacity:.8;}
 #bibleRd .br-origu{stroke:var(--tx3);stroke-width:1.3;stroke-dasharray:1.5 3;stroke-linecap:round;}
 #bibleRd .br-ow{font-family:var(--font-serif,serif);font-size:17px;color:var(--tx);}
@@ -5340,8 +5340,11 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-ink[data-h="4"]{background:var(--br-hl4);} #bibleRd .br-ink[data-h="5"]{background:var(--br-hl5);} #bibleRd .br-ink[data-h="6"]{background:var(--br-hl6);} #bibleRd .br-ink[data-h="7"]{background:var(--br-hl7);}
 #bibleRd .br-loupe{position:fixed;z-index:40;pointer-events:none;transform:translate(-50%,-100%);background:var(--br-sheet);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:calc(6px*var(--lz,1)) calc(12px*var(--lz,1));font-family:var(--font-serif,serif);font-size:calc(22px*var(--lz,1));white-space:nowrap;display:none;color:var(--tx);}
 #bibleRd .br-loupe.on{display:block;}
-#bibleRd .br-loupe b{background:rgba(90,112,248,.18);font-weight:400;}
-#bibleRd .br-loupe i{font-style:normal;border-right:2px solid var(--ac-tx);margin-right:-1px;}
+#bibleRd .br-loupe{color:var(--tx3);}   /* 고르지 않은 글자는 흐리게 (v26-1013-10) */
+#bibleRd .br-loupe b{background:var(--ac);color:#fff;font-weight:600;border-radius:4px;padding:0 1px;box-shadow:0 0 0 2px var(--ac);}
+#bibleRd .br-lzw{display:flex;align-items:center;gap:10px;flex:1;max-width:220px;}
+#bibleRd .br-lzw span{min-width:40px;text-align:right;font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums;}
+#bibleRd .br-loupe i{font-style:normal;border-right:3px solid var(--danger,#e5484d);margin-right:-2px;}
 #bibleRd .br-shead.br-inkhd{grid-template-columns:auto minmax(0,1fr) auto 40px;gap:2px;}
 #bibleRd .br-adj{display:flex;}
 #bibleRd .br-adj button{width:30px;height:34px;font-size:20px;line-height:1;color:var(--tx2);border-radius:8px;touch-action:manipulation;}
@@ -6357,7 +6360,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-9";
+const APP_VERSION = "v. 26-1013-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9263,7 +9266,7 @@ try{
       <div class="br-row"><span class="br-lb">글자 크기</span><div class="br-stepper"><button id="brFsDn" aria-label="작게">가</button><span id="brFsV">18</span><button id="brFsUp" aria-label="크게" style="font-size:18px">가</button></div></div>
       <div class="br-row"><span class="br-lb">줄 간격</span><div class="br-seg" id="brSegLh"><button data-v="1.6">좁게</button><button data-v="1.85">보통</button><button data-v="2.15">넓게</button></div></div>
       <div class="br-row"><span class="br-lb">글씨체</span><div class="br-seg" id="brSegFont"><button data-v="serif">명조</button><button data-v="sans">고딕</button></div></div>
-      <div class="br-row"><span class="br-lb">긋기 돋보기</span><div class="br-seg" id="brSegLz"><button data-v="1">1배</button><button data-v="1.25">1.25</button><button data-v="1.5">1.5</button><button data-v="1.75">1.75</button><button data-v="2">2배</button></div></div>
+      <div class="br-row"><span class="br-lb">긋기 돋보기</span><div class="br-lzw"><input type="range" class="uiscale-slider" id="brLz" min="1" max="3" step="0.25" value="2" aria-label="긋기 돋보기 크기"><span id="brLzV">2배</span></div></div>
       <div class="br-row"><span class="br-lb">절 나누기</span><div class="br-seg" id="brSegFlow"><button data-v="verse">절마다 줄</button><button data-v="flow">이어 읽기</button></div></div>
       <div class="br-row" style="align-items:flex-start"><span class="br-lb" style="padding-top:9px">화면</span><div class="br-themes" id="brThemes"><button class="br-th" data-t="auto"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10.5 18h3"/></svg></i>앱과 같게</button><button class="br-th" data-t="light"><i>가</i>밝게</button><button class="br-th" data-t="paper"><i>가</i>종이</button><button class="br-th" data-t="night"><i>가</i>어둡게</button></div></div>
       <div class="br-sub">복사할 때 장절 형식 <small>말씀 설정 › 공유 › 공유 텍스트와 같은 설정이에요</small></div>
@@ -15165,13 +15168,17 @@ function _brInkPaint(){
   ov.innerHTML=h;}
 // 돋보기 — 끄는 손가락에 가린 글자를 손가락 위에 크게. 고른 부분은 칠하고 지금 끝 글자에 막대
 function _brLoupe(x,y){const L=_brEl('brLoupe');if(!L)return;if(x==null||!_brInkSel){L.classList.remove('on');return;}
-  const lz0=Math.max(1,Math.min(2,+_brS('bibleLoupe',1)||1));   // 크게 볼수록 앞뒤 글자를 줄여 화면 안에 (2배면 앞 4·뒤 3)
-  const vs=_brChVerses(),t=vs[_brInkSel.e.v-1]||'',i=_brInkSel.e.i,a=Math.max(0,i-Math.round(7/lz0)),z=Math.min(t.length,i+Math.round(6/lz0));
+  // 커서 앞뒤로 **늘 다섯 자 이상** (HB v26-1013-10). 폭은 글자 수를 따라가고, 화면보다 넓어지면 배율을 그만큼 낮춘다.
+  const vs=_brChVerses(),t=vs[_brInkSel.e.v-1]||'',i=_brInkSel.e.i,a=Math.max(0,i-5),z=Math.min(t.length,i+6);
   const sp=_brInkSpans().find(q=>q.v===_brInkSel.e.v);let h='';
-  for(let k=a;k<z;k++){const ch=t[k]===' '?'&nbsp;':esc(t[k]),inS=sp&&k>=sp.a&&k<=sp.z;h+=(inS?'<b>':'')+(k===i?'<i>'+ch+'</i>':ch)+(inS?'</b>':'');}
+  let open=false;for(let k=a;k<z;k++){const ch=t[k]===' '?'&nbsp;':esc(t[k]),inS=!!(sp&&k>=sp.a&&k<=sp.z);   // 이어진 글자는 한 띠로
+    if(inS&&!open){h+='<b>';open=true;}else if(!inS&&open){h+='</b>';open=false;}h+=(k===i?'<i>'+ch+'</i>':ch);}
+  if(open)h+='</b>';
   // 크기 — '글자와 화면' 의 돋보기 (1~2배, v26-1013-9 HB). 커지면 위로 자라고, 화면 밖으로 안 나가게 실제 폭으로 가둔다
-  const lz=Math.max(1,Math.min(2,+_brS('bibleLoupe',1)||1));L.style.setProperty('--lz',lz);
-  L.innerHTML=h;L.classList.add('on');const W=document.documentElement.clientWidth,hw=Math.min(W/2-4,L.offsetWidth/2+4);
+  const W=document.documentElement.clientWidth;let lz=_brLzGet();L.style.setProperty('--lz',lz);
+  L.innerHTML=h;L.classList.add('on');
+  const w0=L.offsetWidth;if(w0>W-20){lz=Math.max(.8,lz*(W-20)/w0);L.style.setProperty('--lz',lz);}   // 실제 폭을 재서 화면에 맞춘다
+  const hw=Math.min(W/2-4,L.offsetWidth/2+4);
   L.style.left=Math.min(W-hw,Math.max(hw,x))+'px';L.style.top=(y-56)+'px';}
 // 바닥 메뉴
 function _brInkOpen(g){if(g)_brInkG=g;_brInkSync();_brOpenSheet('brSInk',false);_brInkPaint();}
@@ -15756,11 +15763,15 @@ function _brApplyLook(){
   }
   _brInkPaint();   // 글자 크기·줄 간격·흐름이 바뀌면 밑줄·기호 자리도 바뀐다
 }
+function _brLzGet(){return Math.max(1,Math.min(3,+_brS('bibleLoupe',2)||2));}   // 처음 쓰는 사람은 2배 (HB v26-1013-10)
+function _brLzPaint(v){const sl=_brEl('brLz'),lb=_brEl('brLzV');if(!sl)return;sl.value=String(v);
+  const f=(v-1)/2*100;sl.style.background='linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)';
+  if(lb)lb.textContent=(Math.round(v*100)/100)+'배';}
 function _brSyncAa(){
-  _brEl('brFsV').textContent=_brS('bibleFs',18);
+  _brEl('brFsV').textContent=_brS('bibleFs',18);_brLzPaint(_brLzGet());
   {const r=_brEl('brDiagRow');if(r){let dev=false;try{dev=(typeof DEV_MODE!=='undefined'&&DEV_MODE)||(typeof _isDevAccount==='function'&&_isDevAccount());}catch(e){}
     r.style.display=dev?'':'none';_brDiagSync();}}   // 스크롤 기록 — 개발자만 (v26-1010-11)
-  const segs=[['brSegLz','bibleLoupe','1'],['brSegLh','bibleLh','1.85'],['brSegFont','bibleFont','serif'],['brSegFlow','bibleFlow','verse'],
+  const segs=[['brSegLh','bibleLh','1.85'],['brSegFont','bibleFont','serif'],['brSegFlow','bibleFlow','verse'],
     ['brSegRs','txtRefStyle','short'],['brSegRb','txtRefBracket','none'],['brSegRp','txtRefPos','after']];
   segs.forEach(([id,k,d])=>document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===String(_brS(k,d)))));
   document.querySelectorAll('#brThemes .br-th').forEach(b=>b.classList.toggle('on',b.dataset.t===_brS('bibleTheme','auto')));
@@ -16214,8 +16225,10 @@ function _brBind(){
   $('brAa').onclick=()=>{_brSyncAa();_brOpenSheet('brSAa');};
   $('brFsDn').onclick=()=>_brSet('bibleFs',Math.max(14,_brS('bibleFs',18)-1));
   $('brFsUp').onclick=()=>_brSet('bibleFs',Math.min(30,_brS('bibleFs',18)+1));
-  [['brSegLz','bibleLoupe'],['brSegLh','bibleLh'],['brSegFont','bibleFont'],['brSegFlow','bibleFlow'],['brSegRs','txtRefStyle'],['brSegRb','txtRefBracket'],['brSegRp','txtRefPos']]
+  [['brSegLh','bibleLh'],['brSegFont','bibleFont'],['brSegFlow','bibleFlow'],['brSegRs','txtRefStyle'],['brSegRb','txtRefBracket'],['brSegRp','txtRefPos']]
     .forEach(([id,k])=>$(id).onclick=e=>{const b=e.target.closest('button');if(b)_brSet(k,b.dataset.v);});
+  $('brLz').addEventListener('input',e=>_brLzPaint(+e.target.value));
+  $('brLz').addEventListener('change',e=>{ST.settings.bibleLoupe=+e.target.value;save();_brLzPaint(_brLzGet());});
   $('brThemes').onclick=e=>{const b=e.target.closest('.br-th');if(b)_brSet('bibleTheme',b.dataset.t);};
   // 내 표시 — 하단 네 단추가 그 갈래를 바로 연다 (시트 안에서도 갈래를 바꿀 수 있다)
   document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});

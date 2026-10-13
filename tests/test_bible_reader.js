@@ -716,12 +716,15 @@ console.log('\n시나리오 13-33 — 사파리가 글자 자리를 안 주면 �
   sc.eq('기록에 옆 끌기와 긋기 시작 결과', /if\(r\.fin<12&&r\.hx<12\)return;/.test(SRC) && /window\._brInkDiag=\(st\?'시작O':'시작X'\)/.test(SRC), true);
 }
 
-console.log('\n시나리오 13-34 — 긋기 돋보기 크기 1~2배 (v26-1013-9 HB)');
+console.log('\n시나리오 13-34 — 긋기 돋보기: 슬라이더 1~3배·처음 2배·앞뒤 다섯 자·고른 자리 또렷이 (v26-1013-10 HB)');
 {
-  sc.eq('설정 줄 — 1배~2배 다섯 칸', /id="brSegLz"><button data-v="1">1배<\/button>[\s\S]{0,200}<button data-v="2">2배<\/button>/.test(SRC), true);
-  sc.eq('돋보기는 --lz 로 키운다 (1~2로 가둠)', /const lz=Math\.max\(1,Math\.min\(2,\+_brS\('bibleLoupe',1\)\|\|1\)\);L\.style\.setProperty\('--lz',lz\);/.test(SRC), true);
-  sc.eq('글자 크기가 배율을 따른다', /font-size:calc\(22px\*var\(--lz,1\)\)/.test(SRC), true);
-  sc.eq('누르면 저장·표시 맞춤', /\['brSegLz','bibleLoupe','1'\]/.test(SRC) && /\['brSegLz','bibleLoupe'\],/.test(SRC), true);
+  sc.eq('슬라이더 1~3, 0.25 칸, 처음 2', /id="brLz" min="1" max="3" step="0\.25" value="2"/.test(SRC), true);
+  sc.eq('처음 쓰는 사람은 2배', /function _brLzGet\(\)\{return Math\.max\(1,Math\.min\(3,\+_brS\('bibleLoupe',2\)\|\|2\)\);\}/.test(SRC), true);
+  sc.eq('놓을 때 저장', /\$\('brLz'\)\.addEventListener\('change',e=>\{ST\.settings\.bibleLoupe=\+e\.target\.value;save\(\);/.test(SRC), true);
+  sc.eq('커서 앞뒤 다섯 자', /a=Math\.max\(0,i-5\),z=Math\.min\(t\.length,i\+6\);/.test(SRC), true);
+  sc.eq('화면보다 넓으면 배율을 낮춘다', SRC.includes('if(w0>W-20){lz=Math.max(.8,lz*(W-20)/w0);'), true);
+  sc.eq('돋보기 — 고른 글자는 진한 바탕·흰 글자', /#bibleRd \.br-loupe b\{background:var\(--ac\);color:#fff;/.test(SRC), true);
+  sc.eq('본문 — 고른 자리 테두리까지', /#bibleRd \.br-inksel\{fill:var\(--ac\);fill-opacity:\.32;stroke:var\(--ac\);/.test(SRC), true);
 }
 
 console.log('\n시나리오 14 — 시안에서 겪은 것');
