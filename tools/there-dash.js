@@ -129,12 +129,14 @@ const TDASH = (function () {
 /* 탭 · 날짜 · 요약은 세로로 밀어도 올라가지 않는다 (HB 2026-10-15) — 전체 화면은 위 THERE 줄 높이(--tdtop)만큼 아래에 붙는다 */
 .tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;padding-bottom:12px}
 .tdash-stick::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(var(--bg),rgba(13,14,16,0));pointer-events:none}
-.tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);width:max-content;max-width:min(86vw,440px);padding:22px 30px;border-radius:16px;
-  background:#22252b;color:#a9a59d;font:400 17.5px/1.75 'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
-  border:1px solid #33363e;transition:opacity .22s,transform .22s;z-index:100001;box-shadow:0 10px 36px rgba(0,0,0,.5)}
-.tdash-toast b{color:#ece8e0;font-weight:700}
-.tdash-toast small{display:block;margin-top:6px;font-size:14px;color:#7f7b73}
-.tdash-toast.on{opacity:.97;transform:translate(-50%,-50%) scale(1)}
+.tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);width:max-content;max-width:min(86vw,440px);padding:24px 34px;border-radius:18px;
+  /* 기도 쪽이라 명조로 격식 있게, 상자는 살짝 비치는 유리 (HB 2026-10-15) */
+  background:rgba(38,41,48,.55);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
+  color:#b9b4aa;font:400 17.5px/1.85 'Noto Serif KR','Nanum Myeongjo','AppleMyungjo','Batang','Times New Roman',serif;letter-spacing:.01em;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 14px 44px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.14);transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);z-index:100001}
+.tdash-toast b{color:#f4f0e8;font-weight:700}
+.tdash-toast small{display:block;margin-top:8px;font-size:14px;color:#8d887e}
+.tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -345,7 +347,7 @@ const TDASH = (function () {
     // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
     return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
-      navH + '<div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
+      '<div data-pane2="1">' + navH + '</div><div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
   }
 
@@ -384,12 +386,12 @@ const TDASH = (function () {
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
     const EASE = 'cubic-bezier(.4,0,.2,1)';
     const still = () => { try { return !el.querySelectorAll || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
-    const panes = () => (el.querySelectorAll ? [].slice.call(el.querySelectorAll('[data-pane]')) : []);
+    const panes = withNav => (el.querySelectorAll ? [].slice.call(el.querySelectorAll(withNav ? '[data-pane],[data-pane2]' : '[data-pane]')) : []);
     // BLOCK7 날짜 넘김(navigateDate)과 같은 결 — 나가는 판은 가던 방향으로 **끝까지**(폭 100%) 나가며 옅어지고,
     // 그동안 새 판은 반대쪽 바깥에서 대기했다가 들어온다. (조금만 나가고 반대에서 조금 들어오면 나가던 화면이 되돌아오는 것처럼 보인다)
     // dir: +1 = 앞으로(다음 · 오른쪽 탭) → 나가는 판은 왼쪽으로, 들어오는 판은 오른쪽에서
     const W = () => el.clientWidth || 360, OUT = 'cubic-bezier(.4,0,.2,1)';
-    const animIn = dir => { if (still()) return; panes().forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * W()) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: OUT })); };
+    const animIn = (dir, withNav) => { if (still()) return; panes(withNav).forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * W()) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: OUT })); };
     const exitFrom = (dir, x0, op0, done) => {
       panes().forEach(p => { p.getAnimations().forEach(a => a.cancel()); p.style.transition = 'none'; p.style.opacity = ''; p.style.transform = '';
         p.animate([{ opacity: op0, transform: 'translateX(' + x0 + 'px)' }, { opacity: 0, transform: 'translateX(' + (-dir * W()) + 'px)' }], { duration: 190, easing: OUT, fill: 'forwards' }); });
@@ -399,6 +401,19 @@ const TDASH = (function () {
       if (still() || S.busy) { mutate(); draw(); return; }
       S.busy = true;
       exitFrom(dir, 0, 1, () => { mutate(); draw(); animIn(dir); S.busy = false; });
+    };
+    // 탭을 바꿀 때 — 날짜 줄까지 함께, **차분하게**: 짧게 비켜서며 천천히 옅어지고, 새 판이 느리게 스며 들어온다 (HB 2026-10-15)
+    const CALM = 'cubic-bezier(.25,.1,.25,1)', DRIFT = 28;
+    const tabTransit = (dir, mutate) => {
+      if (still() || S.busy) { mutate(); draw(); return; }
+      S.busy = true;
+      panes(true).forEach(p => { p.getAnimations().forEach(a => a.cancel());
+        p.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (-dir * DRIFT) + 'px)' }], { duration: 300, easing: 'ease-in-out', fill: 'forwards' }); });
+      setTimeout(() => {
+        mutate(); draw();
+        panes(true).forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * DRIFT) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 620, easing: CALM }));
+        S.busy = false;
+      }, 300);
     };
     // BLOCK7 토스트와 같은 기준 — 화면 한가운데, 글자 수 × 200ms(3초~9초), 어디를 눌러도 닫힌다. 뜻 단위로 줄을 바꾸고 중요한 말은 굵게
     const toast = html => {
@@ -425,11 +440,11 @@ const TDASH = (function () {
           if (S.at === S.today) return;
           transit(S.today > S.at ? 1 : -1, () => { setAt(S.today); after(); });
         } else {                                 // 다른 탭은 그 탭에서 마지막으로 보던 날로
-          transit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
+          tabTransit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
         }
         return;
       }
-      if (a === 'day') { e.stopPropagation(); transit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
+      if (a === 'day') { e.stopPropagation(); tabTransit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
       else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
     // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점 + 안내)

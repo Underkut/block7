@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3944,6 +3944,8 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .btnprev{pointer-events:none;flex-shrink:0;vertical-align:middle;margin-right:4px;
   display:inline-flex;align-items:center;justify-content:center;}
 .settings-close{background:none;border:none;color:var(--tx2);font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.settings-info{background:none;border:none;color:var(--tx3);padding:0 8px;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;transition:color .15s;}
+.settings-info:hover,.settings-info:active{color:var(--tx);}
 .settings-body{
   overflow:hidden;padding:0;
   -webkit-overflow-scrolling:touch;
@@ -6367,7 +6369,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-6";
+const APP_VERSION = "v. 26-1015-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6673,6 +6675,9 @@ try{
           <button class="uilv-btn" id="uiLvMid" data-tip="미드" aria-label="미드" onclick="setUiLevel('mid')"></button>
           <button class="uilv-btn" id="uiLvPower" data-tip="파워" aria-label="파워" onclick="setUiLevel('power')"></button>
       </div>
+      <button class="settings-info" onclick="openSwKbHelp()" aria-label="자판 단축키" title="자판 단축키">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7.6"/><path d="M10 9v4.6"/><circle cx="10" cy="6.3" r=".5" fill="currentColor"/></svg>
+      </button>
       <button class="settings-close" onclick="closeSettings()">×</button>
     </div>
     <!-- Tab bar sits between header and body, sticky within the panel -->
@@ -50523,33 +50528,37 @@ const _SWKB_HELP=[
 // 표만 갈아 끼운다. 팝업을 두 벌 두면 ESC 표·× 규칙·padding-top 예외를 전부
 // 두 번씩 지켜야 한다 (v26-0921-13).
 const _B7KB_HELP=[
-  ['sec','위젯 사이 (2단·3단)'],
-  ['W','다음 위젯 · Shift+W 이전'],
-  ['↑ ↓ ← →','고른 뒤 — 옆·위아래 위젯으로'],
-  ['Enter','그 위젯 안으로'],
-  ['Esc','위젯 놓기 — 화살표가 예전 것으로'],
-  ['sec','위젯 안'],
-  ['[  ]','달 넘기기 · 카드 넘기기 · 주 넘기기'],
-  ['[  ]','위젯을 안 골랐으면 날짜 넘기기'],
   ['sec','할일'],
   ['N','새 할일 · Shift+N 작은 할일'],
-  ['Space','한 일 ↔ 안 한 일 (고른 것 전부)'],
+  ['↑ ↓','할일 고르기 · Shift+↑↓ 여러 개'],
   ['Enter · E','글자 고치기'],
+  ['Space','한 일 ↔ 안 한 일 (고른 것 전부)'],
   ['F · U','중요 표시 · 긴급 표시'],
   ['M','메모 열기'],
   ['D','내일로 미루기'],
   ['Delete','지우기 (하나씩만)'],
   ['Esc','고른 것 놓기'],
-  ['sec','예전부터 있던 것'],
-  ['↑ ↓','할일 고르기 · Shift+↑↓ 여러 개'],
+  ['sec','되돌리기'],
+  ['⌘Z','실행취소 (Windows 는 Ctrl+Z)'],
+  ['⌘⇧Z','다시 실행 (Windows 는 Ctrl+Shift+Z)'],
+  ['⌘Z','글자를 치는 중에는 그 칸의 글자만 되돌린다'],
+  ['sec','옮기기'],
   ['⌘⇧↑ ↓','고른 할일을 위아래로 옮기기'],
   ['⌘⇧⌥↑ ↓','구간을 넘어 옮기기'],
+  ['sec','날짜 · 뷰'],
   ['← →','앞뒤 날짜 · 주 · 달'],
   ['⌘⇧8 9 0','일간 · 주간 · 월간 뷰'],
   ['⌘⇧← →','뷰 넘기기'],
+  ['[  ]','위젯을 안 골랐으면 날짜 넘기기'],
+  ['sec','위젯 (2단·3단)'],
+  ['W','다음 위젯 · Shift+W 이전'],
+  ['↑ ↓ ← →','고른 뒤 — 옆·위아래 위젯으로'],
+  ['Enter','그 위젯 안으로'],
+  ['[  ]','위젯 안에서 달 · 카드 · 주 넘기기'],
+  ['Esc','위젯 놓기 — 화살표가 예전 것으로'],
   ['sec','그 밖'],
   ['Esc','열린 팝업·메뉴 닫기 (한 겹씩 · 글자를 치는 중에도)'],
-  ['? · ⌘/','이 표 (⌘/ 는 글자를 치는 중에도)'],
+  ['? · ⌘/','이 표 (⌘/ 는 글자를 치는 중에도) · 설정 우상단 ⓘ 로도 연다'],
 ];
 // 지금 보고 있는 화면의 표를 고른다
 function _kbHelpRows(){
@@ -50591,6 +50600,26 @@ document.addEventListener('keydown',e=>{
   if(e.defaultPrevented)return;
   if(_kbHelpKey(e)){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();}
 },true);
+// ⌘Z 실행취소 · ⌘⇧Z 다시 실행 (v26-1015-7, HB). 맥은 ⌘, 윈도·리눅스는 Ctrl.
+// ⚠️ 글자를 치는 칸(입력칸·메모)에서는 건드리지 않는다 — 브라우저가 그 칸의 글자 되돌리기를 하고,
+//    그 결과는 입력 이벤트로 이미 저장된다. 앱 전체 되돌리기는 칸 밖(할일을 고르거나 아무것도 안 고른 때)에서만 돈다.
+// ⚠️ 팝업이 떠 있으면 돌지 않는다 (뒤의 화면이 몰래 바뀐다). 글쇠는 e.code — 한글 자판이어도 'KeyZ' 는 같다.
+document.addEventListener('keydown',e=>{
+  if(e.code!=='KeyZ'||!(e.metaKey||e.ctrlKey)||e.altKey||e.defaultPrevented)return;
+  if(e.isComposing||e.keyCode===229)return;
+  if(typeof _swOn==='function'&&_swOn()&&typeof _swBoardOn==='function'&&_swBoardOn())return;   // Sweeter 판에는 되돌릴 할일이 없다
+  const t=e.target,tag=t&&t.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||(t&&t.isContentEditable))return;
+  if(_kbOverlayOpen())return;
+  e.preventDefault();
+  if(e.shiftKey){
+    if(!REDO_STACK.length){showToast('다시 할 것이 없어요');return;}
+    doRedo();showToast('다시 실행했어요');
+  }else{
+    if(!UNDO_STACK.length){showToast('되돌릴 것이 없어요');return;}
+    doUndo();showToast('실행취소했어요');
+  }
+});
 function openSwKbHelp(){
   _swKbHelpFill();
   const o=document.getElementById('swKbHelpOverlay'),m=document.getElementById('swKbHelpModal');
@@ -50987,12 +51016,14 @@ const TDASH = (function () {
 /* 탭 · 날짜 · 요약은 세로로 밀어도 올라가지 않는다 (HB 2026-10-15) — 전체 화면은 위 THERE 줄 높이(--tdtop)만큼 아래에 붙는다 */
 .tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;padding-bottom:12px}
 .tdash-stick::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(var(--bg),rgba(13,14,16,0));pointer-events:none}
-.tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);width:max-content;max-width:min(86vw,440px);padding:22px 30px;border-radius:16px;
-  background:#22252b;color:#a9a59d;font:400 17.5px/1.75 'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
-  border:1px solid #33363e;transition:opacity .22s,transform .22s;z-index:100001;box-shadow:0 10px 36px rgba(0,0,0,.5)}
-.tdash-toast b{color:#ece8e0;font-weight:700}
-.tdash-toast small{display:block;margin-top:6px;font-size:14px;color:#7f7b73}
-.tdash-toast.on{opacity:.97;transform:translate(-50%,-50%) scale(1)}
+.tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);width:max-content;max-width:min(86vw,440px);padding:24px 34px;border-radius:18px;
+  /* 기도 쪽이라 명조로 격식 있게, 상자는 살짝 비치는 유리 (HB 2026-10-15) */
+  background:rgba(38,41,48,.55);-webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5);
+  color:#b9b4aa;font:400 17.5px/1.85 'Noto Serif KR','Nanum Myeongjo','AppleMyungjo','Batang','Times New Roman',serif;letter-spacing:.01em;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 14px 44px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.14);transition:opacity .45s cubic-bezier(.4,0,.2,1),transform .45s cubic-bezier(.4,0,.2,1);z-index:100001}
+.tdash-toast b{color:#f4f0e8;font-weight:700}
+.tdash-toast small{display:block;margin-top:8px;font-size:14px;color:#8d887e}
+.tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -51203,7 +51234,7 @@ const TDASH = (function () {
     // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
     return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
-      navH + '<div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
+      '<div data-pane2="1">' + navH + '</div><div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
   }
 
@@ -51242,12 +51273,12 @@ const TDASH = (function () {
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
     const EASE = 'cubic-bezier(.4,0,.2,1)';
     const still = () => { try { return !el.querySelectorAll || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
-    const panes = () => (el.querySelectorAll ? [].slice.call(el.querySelectorAll('[data-pane]')) : []);
+    const panes = withNav => (el.querySelectorAll ? [].slice.call(el.querySelectorAll(withNav ? '[data-pane],[data-pane2]' : '[data-pane]')) : []);
     // BLOCK7 날짜 넘김(navigateDate)과 같은 결 — 나가는 판은 가던 방향으로 **끝까지**(폭 100%) 나가며 옅어지고,
     // 그동안 새 판은 반대쪽 바깥에서 대기했다가 들어온다. (조금만 나가고 반대에서 조금 들어오면 나가던 화면이 되돌아오는 것처럼 보인다)
     // dir: +1 = 앞으로(다음 · 오른쪽 탭) → 나가는 판은 왼쪽으로, 들어오는 판은 오른쪽에서
     const W = () => el.clientWidth || 360, OUT = 'cubic-bezier(.4,0,.2,1)';
-    const animIn = dir => { if (still()) return; panes().forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * W()) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: OUT })); };
+    const animIn = (dir, withNav) => { if (still()) return; panes(withNav).forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * W()) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: OUT })); };
     const exitFrom = (dir, x0, op0, done) => {
       panes().forEach(p => { p.getAnimations().forEach(a => a.cancel()); p.style.transition = 'none'; p.style.opacity = ''; p.style.transform = '';
         p.animate([{ opacity: op0, transform: 'translateX(' + x0 + 'px)' }, { opacity: 0, transform: 'translateX(' + (-dir * W()) + 'px)' }], { duration: 190, easing: OUT, fill: 'forwards' }); });
@@ -51257,6 +51288,19 @@ const TDASH = (function () {
       if (still() || S.busy) { mutate(); draw(); return; }
       S.busy = true;
       exitFrom(dir, 0, 1, () => { mutate(); draw(); animIn(dir); S.busy = false; });
+    };
+    // 탭을 바꿀 때 — 날짜 줄까지 함께, **차분하게**: 짧게 비켜서며 천천히 옅어지고, 새 판이 느리게 스며 들어온다 (HB 2026-10-15)
+    const CALM = 'cubic-bezier(.25,.1,.25,1)', DRIFT = 28;
+    const tabTransit = (dir, mutate) => {
+      if (still() || S.busy) { mutate(); draw(); return; }
+      S.busy = true;
+      panes(true).forEach(p => { p.getAnimations().forEach(a => a.cancel());
+        p.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(' + (-dir * DRIFT) + 'px)' }], { duration: 300, easing: 'ease-in-out', fill: 'forwards' }); });
+      setTimeout(() => {
+        mutate(); draw();
+        panes(true).forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * DRIFT) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 620, easing: CALM }));
+        S.busy = false;
+      }, 300);
     };
     // BLOCK7 토스트와 같은 기준 — 화면 한가운데, 글자 수 × 200ms(3초~9초), 어디를 눌러도 닫힌다. 뜻 단위로 줄을 바꾸고 중요한 말은 굵게
     const toast = html => {
@@ -51283,11 +51327,11 @@ const TDASH = (function () {
           if (S.at === S.today) return;
           transit(S.today > S.at ? 1 : -1, () => { setAt(S.today); after(); });
         } else {                                 // 다른 탭은 그 탭에서 마지막으로 보던 날로
-          transit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
+          tabTransit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
         }
         return;
       }
-      if (a === 'day') { e.stopPropagation(); transit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
+      if (a === 'day') { e.stopPropagation(); tabTransit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
       else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
     // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점 + 안내)
