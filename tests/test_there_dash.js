@@ -64,4 +64,15 @@ const T = ctx.T;
     sc.eq('⭐⑤ ' + f + ' 의 덩어리가 원본과 같다 (다르면 ./tools/sync-there-dash.sh)', b === SRC, true);
   });
 }
+// ⑥ Map 기도 — 한 번 누른 것(같은 시작 · 같은 이름)은 한 줄 · 합계(collect)에는 안 들어간다 (기도 지도 ses 안의 몫)
+{
+  const t0 = new Date(2026, 9, 15, 7, 5).getTime();
+  const pray = { '2026-10-15': { s: 600, ses: [{ id: 's', t: t0, time: '07:00', d: 600, src: 'map' }],
+    mp: [{ id: 'm1', a: t0, t: t0 + 120000, pid: 'p1', d: 60, n: '가나', k: '가족' }, { id: 'm2', a: t0, t: t0 + 120000, pid: 'p2', d: 60, n: '다라', k: '가족' },
+         { id: 'm3', a: t0 + 200000, t: t0 + 260000, pid: 'p1', d: 60, n: '가나', k: '가나' }, null] } };
+  const mp = T.mapPrayers(pray, '2026-10-15', '2026-10-15');
+  sc.eq('⭐⑥ 가족 한 줄(두 이름 · 2분) + 가나 한 줄', mp.map(x => [x.k, x.names.join(','), x.d, x.time]), [['가족', '가나,다라', 120, '07:05'], ['가나', '가나', 60, '07:08']]);
+  sc.eq('⭐⑥ 합계는 지도 There 그대로 (Map 기도를 다시 더하지 않는다)', T.collect({}, pray).reduce((a, x) => a + x.d, 0), 600);
+  sc.eq('⑥ 기간 밖 · 옛 기록(mp 없음)은 빈 목록', [T.mapPrayers(pray, '2026-10-16', '2026-10-20').length, T.mapPrayers({ '2026-10-01': { s: 5 } }).length], [0, 0]);
+}
 sc.done();

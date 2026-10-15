@@ -653,7 +653,9 @@ const MAPCSV = [
   sc.eq('⭐⑰ 두 이름 · 30초씩 · 지워진 이름은 뺀다', r.map(e => e.d), [30, 30]);
   sc.eq('⭐⑰ 둘 다 기도함 (이미 한 것도 그대로 기도함)', [L.d.indexOf(a.id) >= 0, L.d.indexOf(b.id) >= 0], [true, true]);
   sc.eq('⭐⑰ 시간 합계는 그대로 (두 번 세지 않는다)', L.s || 0, 0);
-  sc.eq('⑰ 정리하면 mp 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-15'].mp.length, 2);
+  const r2 = A.addMapPrayer(db, '2026-10-15', [a.id], 70000, 130000, '가족');
+  sc.eq('⑰ 대시보드용 — 시작 · 사람 이름 · 누른 것 이름', [r2[0].a, r2[0].n, r2[0].k, r[0].k], [70000, '가나', '가족', '가나']);
+  sc.eq('⑰ 정리하면 mp 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-15'].mp.length, 3);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
