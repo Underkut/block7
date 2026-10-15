@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2906,6 +2906,8 @@ body.split-d #todayView.animating{overflow:hidden;}
 .task-menu-side:hover,.task-menu-side:active{color:var(--tx);background:var(--s1);}
 .task-menu-item.on{color:var(--ac-tx);}
 .task-menu-item.on .task-menu-icon{color:var(--ac-tx);}
+/* 연락할 일로 표시됨 — 할일 줄의 연락 아이콘과 같은 초록 */
+#contactTaskToggleItem.on,#contactTaskToggleItem.on .task-menu-icon{color:#2f9e5e;}
 .task-menu-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:18px;}
 .task-menu-icon svg{display:block;}
 .task-menu-sep{height:1px;background:var(--bd);margin:3px 4px;}
@@ -6360,7 +6362,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-2";
+const APP_VERSION = "v. 26-1015-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35481,7 +35483,7 @@ function makeBigItem(id,i,b,secColor){
     const arr=getBigs(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSecBody(id);updateTotal();}
-    else if(contactBadgeCountChanged(div,inp.value)){renderSecBody(id);}
+    else if(_autoContactMark(arr[i],_origText)||contactBadgeCountChanged(div,inp.value)){renderSecBody(id);}
     autoSizeInput(inp);
     refreshTaskViewsLive(); // 텍스트 수정·빈값 삭제가 W/M 표시에도 즉시 반영
     // 반복 할일의 글자를 바꿨으면 "어디까지 바꿀까"를 묻는다 (글자는 이미 이 날짜
@@ -35702,7 +35704,7 @@ function makeSmItem(id,i,sm,secColor){
     const arr=getSmalls(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();}
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSmList(id,secColor);updateSmCnt(id);}
-    else if(contactBadgeCountChanged(div,inp.value)){renderSmList(id,secColor);}
+    else if(_autoContactMark(arr[i],_origText)||contactBadgeCountChanged(div,inp.value)){renderSmList(id,secColor);}
     autoSizeInput(inp);
     refreshTaskViewsLive();
     _taskTextCommit('small',id,i,_origText,inp.value);
@@ -38974,6 +38976,13 @@ function toggleUrgentRank(){
   refreshTaskViewsLive();
 }
 
+// 글에 '@' 가 새로 들어가면 '연락할 일' 로 자동 표시 — 편집을 마칠 때 한 번만.
+// 이미 '@' 가 있던 글은 건드리지 않는다 (사용자가 표시를 일부러 끈 것을 되살리지 않으려고).
+function _autoContactMark(item,origText){
+  if(!item||item.contactTask)return false;
+  if(String(item.text||'').indexOf('@')<0||String(origText||'').indexOf('@')>=0)return false;
+  item.contactTask=true;rawSave();return true;
+}
 function toggleTaskContact(){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
@@ -50944,7 +50953,7 @@ const TDASH = (function () {
       '<button data-td="next" aria-label="다음"' + (atEnd ? ' disabled' : '') + '>' + CHEV(1) + '</button></div>';
   }
   function html(S) {
-    const seg = [['day', '하루'], ['week', '주'], ['month', '달']];
+    const seg = [['day', 'D'], ['week', 'W'], ['month', 'M']];
     let h = '<div class="tdash-in"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + '" data-td="view" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div></div>';
     h += S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);

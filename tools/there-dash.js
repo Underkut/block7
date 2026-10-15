@@ -322,7 +322,7 @@ const TDASH = (function () {
       '<button data-td="next" aria-label="다음"' + (atEnd ? ' disabled' : '') + '>' + CHEV(1) + '</button></div>';
   }
   function html(S) {
-    const seg = [['day', '하루'], ['week', '주'], ['month', '달']];
+    const seg = [['day', 'D'], ['week', 'W'], ['month', 'M']];
     let h = '<div class="tdash-in"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + '" data-td="view" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div></div>';
     h += S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);
