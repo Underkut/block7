@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-4';
+const APP_VERSION = 'v. 26-1015-5';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -5543,6 +5543,8 @@ function thereStop(why) {
   setTimeout(() => { if (!MT.on) { MT.P = []; MT.Q = []; [$('mtCv'), $('mtTop')].forEach(cv => { if (cv) cv.getContext('2d').clearRect(0, 0, MT.W, MT.H); }); } }, 700);
   if (secs >= 10) { addPraySession(DB, MT.t0, secs, 'map'); save(); toast('기도 ' + mtWords(secs) + ' 기록했습니다'); }
   else if (why === 'button') toast('10초가 안 되어 기록하지 않았습니다');
+  // Map 기도로 잠시 숨긴 것 · 흐림을 되살린다 (HB 2026-10-15 — 숨긴 채 남아 있었다)
+  if (MPH.keys.size || MPH.on) { MPH.keys.clear(); MPH.on = null; const v = $('v-map'); if (v) v.classList.remove('mp-focus'); if (UI.tab === 'map') mapKeepScroll(renderView); }
   if (UI.tab === 'map' && !UI.layers.length) { const b = document.querySelector('#v-map .there-b'); if (b) { b.classList.remove('on'); const c = $('mtClk'); if (c) c.remove(); } }
 }
 ACT.there = () => { if (MT.on) thereStop('button'); else thereStart(); };
