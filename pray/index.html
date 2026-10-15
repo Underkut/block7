@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-15 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-15';
+const APP_VERSION = 'v. 26-1015-16';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3639,25 +3639,59 @@ function mapMorph(change) {
   top(outs).forEach(e => mxRun(e, false));
   top(ins).forEach(e => mxRun(e, true));
 }
-// 표시 색 알약을 켜고 끌 때 — 박스(카드) · 서브 그룹 · 항목 이름이 **한 덩어리로 디졸브**된다 (HB 2026-10-15).
-// 필터는 다시 그려야 하므로(mapMorph 는 이름표만 바꾸는 것용), 그리기 전 판을 통째로 복제해 제 자리에 얹어 두고
-// 그것은 옅어지며 사라지고 새로 그린 판은 스며 나온다. 카드를 따로따로 움직이면(자리 옮기기·접기) 박스가 탁탁 튀었다.
+// 표시 색 알약을 켜고 끌 때 (HB 2026-10-15) — **바뀌는 것만** 부드럽게. 지도 전체를 깜빡이지 않는다.
+//  · 자리가 바뀌는 그룹 박스 → 옛 자리에서 새 자리로 ease 로 미끄러진다 (FLIP) · 박스 높이도 같이 늘고 준다
+//  · 새로 나오는 박스 · 서브 그룹 · 항목 줄 → 스며 나온다 / 사라지는 것 → 제 자리에서 옅어진다
+//  · 항목 이름이 또렷 ↔ 흐림으로 바뀌는 것 → 부드럽게 바뀐다
+// 필터는 다시 그려야 하므로(mapMorph 는 이름표만 바꾸는 것용) 그리기 전 자리·크기·복제본을 적어 둔다.
 function mapFlip(change) {
   const m = document.querySelector('#v-map .mjs');
   if (!m || mxQuiet() || !m.animate) { change(); return; }
-  const r = m.getBoundingClientRect(), host = $('v-map');
-  const ghost = m.cloneNode(true);
-  const mz = m.style.getPropertyValue('--mz');
+  const host = $('v-map'), mz = m.style.getPropertyValue('--mz');
+  const D = 560, FADE = 420;
+  const note = (root, sel, key) => { const mp = new Map(); root.querySelectorAll(sel).forEach(e => mp.set(key(e), { r: e.getBoundingClientRect(), clone: e.cloneNode(true), card: (e.closest('.gcard') || {}).dataset ? e.closest('.gcard').dataset.gid : '', sub: e.closest('.sgb') ? e.closest('.sgb').dataset.gid : '' })); return mp; };
+  const kCard = e => e.dataset.gid, kLine = e => e.dataset.sel;
+  const oCards = note(m, '.gcard[data-gid]', kCard), oSubs = note(m, '.sgb[data-gid]', kCard), oLines = note(m, '.ln[data-sel]', kLine);
+  const pnOld = new Map();
+  m.querySelectorAll('.ln[data-sel]').forEach(l => l.querySelectorAll('.pn[data-id]').forEach(b => pnOld.set(l.dataset.sel + '|' + b.dataset.id, b.classList.contains('dim'))));
   change();
-  const nm = document.querySelector('#v-map .mjs');
-  if (!nm || !host) return;
-  ghost.style.cssText += ';position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;pointer-events:none;z-index:5;--mz:' + mz;
-  ghost.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
-  host.appendChild(ghost);
-  const D = 620, E = 'cubic-bezier(.4,0,.2,1)';
-  const a = ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: D, easing: E, fill: 'forwards' });
-  a.onfinish = a.oncancel = () => ghost.remove();
-  nm.animate([{ opacity: 0 }, { opacity: 1 }], { duration: D, easing: E });
+  const nm = document.querySelector('#v-map .mjs'); if (!nm || !host) return;
+  const ghost = (o, card) => {
+    const g = o.clone;
+    g.style.cssText += ';position:fixed;left:' + o.r.left + 'px;top:' + o.r.top + 'px;width:' + o.r.width + 'px;height:' + o.r.height + 'px;margin:0;pointer-events:none;z-index:5;--mz:' + mz;
+    if (card && card.style) g.style.setProperty('--gc', card.style.getPropertyValue('--gc'));
+    g.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    host.appendChild(g);
+    const a = g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: FADE - 100, easing: 'ease-in', fill: 'forwards' });
+    a.onfinish = a.oncancel = () => g.remove();
+  };
+  const seenCards = new Set(), seenSubs = new Set(), seenLines = new Set();
+  // 박스(카드): 미끄러지고 높이가 변한다 / 새 것은 스며 나온다
+  nm.querySelectorAll('.gcard[data-gid]').forEach(c => {
+    const id = c.dataset.gid, o = oCards.get(id); seenCards.add(id);
+    if (!o) { c.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE + 120, delay: 140, easing: 'ease-out', fill: 'backwards' }); return; }
+    const r = c.getBoundingClientRect(), dx = o.r.left - r.left, dy = o.r.top - r.top, dh = o.r.height - r.height;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) c.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: D, easing: MX_EASE });
+    if (Math.abs(dh) > 1) {
+      c.style.overflow = 'hidden';
+      const a = c.animate([{ height: o.r.height + 'px' }, { height: r.height + 'px' }], { duration: D, easing: MX_EASE });
+      a.onfinish = a.oncancel = () => { c.style.overflow = ''; };
+    }
+  });
+  // 서브 그룹 박스 · 항목 줄: 있던 카드 안에서 새로 나오면 스며 나오고, 사라지면 그 자리에서 옅어진다
+  nm.querySelectorAll('.sgb[data-gid]').forEach(e => { const id = e.dataset.gid; seenSubs.add(id); if (!oSubs.has(id) && oCards.has((e.closest('.gcard') || { dataset: {} }).dataset.gid)) e.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE + 120, delay: 160, easing: 'ease-out', fill: 'backwards' }); });
+  nm.querySelectorAll('.ln[data-sel]').forEach(l => {
+    seenLines.add(l.dataset.sel);
+    const cg = (l.closest('.gcard') || { dataset: {} }).dataset.gid, was = oLines.has(l.dataset.sel);
+    if (!was) { if (oCards.has(cg)) l.animate([{ opacity: 0 }, { opacity: 1 }], { duration: FADE + 120, delay: 160, easing: 'ease-out', fill: 'backwards' }); return; }
+    l.querySelectorAll('.pn[data-id]').forEach(b => {
+      const w = pnOld.get(l.dataset.sel + '|' + b.dataset.id), now = b.classList.contains('dim');
+      if (w !== undefined && w !== now) b.animate([{ opacity: w ? 0.18 : 1 }, { opacity: now ? 0.18 : 1 }], { duration: D, easing: 'ease-in-out' });
+    });
+  });
+  oCards.forEach((o, id) => { if (!seenCards.has(id)) ghost(o); });
+  oSubs.forEach((o, id) => { if (!seenSubs.has(id) && seenCards.has(o.card)) ghost(o, nm.querySelector('.gcard[data-gid="' + o.card + '"]')); });
+  oLines.forEach((o, k) => { if (!seenLines.has(k) && seenCards.has(o.card) && (!o.sub || seenSubs.has(o.sub))) ghost(o, nm.querySelector('.gcard[data-gid="' + o.card + '"]')); });
 }
 function mxRun(e, open) {
   e.getAnimations().forEach(a => a.cancel());

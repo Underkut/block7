@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-7  [production]  -->
+<!-- BLOCK7  v. 26-1015-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2956,6 +2956,8 @@ body.split-d #todayView.animating{overflow:hidden;}
 .secpick-top{display:flex;align-items:center;gap:8px;}
 .secpick-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .secpick-name{font-size:13px;font-weight:500;color:var(--tx2);}
+.secpick-row.off .secpick-name{opacity:.55;}
+.secpick-off{margin-left:6px;font-size:10px;color:var(--tx3);letter-spacing:.02em;}
 .secpick-n{margin-left:auto;color:var(--tx3);font-family:var(--font-number);font-size:11px;}
 .secpick-n.zero{opacity:.4;}
 .secpick-items{margin-top:3px;padding-left:15px;font-size:11px;line-height:1.45;
@@ -3360,7 +3362,8 @@ body.split-d.lay3.wk-cr #colL{grid-row:1/3;}
 #weeklyPane{position:relative;z-index:1;}
 #weeklyPane.wk-hide{transform:translateY(-115%);opacity:0;transition:transform .3s ease,opacity .28s;}
 /* GNB 날짜 클러스터: 2/3단에선 실행취소 버튼과 간격 확보 (3-4) */
-body.split-d.lay2 #hdrDateNav,body.split-d.lay3 #hdrDateNav{margin-right:26px;}
+/* D 뿐 아니라 W·M 에서도 같은 자리 — 예전엔 D(split-d)에서만 걸려 W·M 은 날짜 묶음이 오른쪽으로 26px 밀려 보였다 */
+body.lay-multi #hdrDateNav,body.split-d.lay2 #hdrDateNav,body.split-d.lay3 #hdrDateNav{margin-right:26px;}
 /* GNB 햄버거: 로고에서 오른쪽으로 고정 오프셋 (로고 폭 + 10px) */
 /* ⚠️ 여기 있던 header{position:relative;} 를 지웠다 (v26-0903-3).
    미디어쿼리 밖의 맨몸 규칙이라 **모든 화면에서** 위쪽 header{position:sticky}
@@ -3944,6 +3947,7 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .btnprev{pointer-events:none;flex-shrink:0;vertical-align:middle;margin-right:4px;
   display:inline-flex;align-items:center;justify-content:center;}
 .settings-close{background:none;border:none;color:var(--tx2);font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.settings-hd-r{display:flex;align-items:center;gap:4px;}
 .settings-info{background:none;border:none;color:var(--tx3);padding:0 8px;cursor:pointer;display:flex;align-items:center;-webkit-tap-highlight-color:transparent;transition:color .15s;}
 .settings-info:hover,.settings-info:active{color:var(--tx);}
 .settings-body{
@@ -6369,7 +6373,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-7";
+const APP_VERSION = "v. 26-1015-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6675,10 +6679,13 @@ try{
           <button class="uilv-btn" id="uiLvMid" data-tip="미드" aria-label="미드" onclick="setUiLevel('mid')"></button>
           <button class="uilv-btn" id="uiLvPower" data-tip="파워" aria-label="파워" onclick="setUiLevel('power')"></button>
       </div>
-      <button class="settings-info" onclick="openSwKbHelp()" aria-label="자판 단축키" title="자판 단축키">
-        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7.6"/><path d="M10 9v4.6"/><circle cx="10" cy="6.3" r=".5" fill="currentColor"/></svg>
-      </button>
-      <button class="settings-close" onclick="closeSettings()">×</button>
+      <!-- ⓘ 와 × 는 한 묶음 — 따로 두면 flex 가 ⓘ 를 가운데(등급 아이콘 자리)로 밀어 겹쳤다 -->
+      <div class="settings-hd-r">
+        <button class="settings-info" onclick="openSwKbHelp()" aria-label="자판 단축키" title="자판 단축키">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7.6"/><path d="M10 9v4.6"/><circle cx="10" cy="6.3" r=".5" fill="currentColor"/></svg>
+        </button>
+        <button class="settings-close" onclick="closeSettings()">×</button>
+      </div>
     </div>
     <!-- Tab bar sits between header and body, sticky within the panel -->
     <div class="settings-tab-bar" id="settingsTabBar">
@@ -40233,13 +40240,10 @@ function _daySecTasks(key,secId){
 }
 // 판에 세울 구간들. 지금 이 할일이 있는 구간을 사용자가 꺼 두었더라도 맨 앞에
 // 넣는다 — 안 그러면 "그냥 누르면 어디로 가는지" 를 판이 못 보여준다.
+// ⚠️ 지금 화면에 열려 있는 구간만이 아니라 **모든 구간**을 보여 준다 (v26-1015-8, HB) —
+//    끄어 둔 구간으로도 보낼 수 있어야 한다. 꺼진 구간은 판에서 '꺼짐' 으로 표시한다 (_secPickRender).
 function _secPickSecs(hereSec){
-  const vis=SECS.filter(sec=>ST.vis&&ST.vis.includes(sec.id));
-  if(hereSec&&!vis.some(sec=>sec.id===hereSec)){
-    const here=SECS.find(sec=>sec.id===hereSec);
-    if(here)return[here,...vis];
-  }
-  return vis;
+  return SECS.slice();
 }
 // 줄 하나가 뜻하는 목적지. 날짜 지정 줄은 날짜를 고른 뒤에야 알 수 있어 여기선 null.
 function _secPickSpecFor(row){
@@ -40274,9 +40278,10 @@ function _secPickRender(){
     const n=bigs.length+smalls.length;
     const items=[...bigs.map(b=>`<span>${esc(b.text)}</span>`),
                  ...smalls.map(x=>`<span class="sm">${esc(x.text)}</span>`)].join(' · ');
-    h+=`<div class="secpick-row${sec.id===hereSec?' here beat':''}" data-sec="${esc(sec.id)}">`+
+    const off=!(ST.vis&&ST.vis.includes(sec.id));
+    h+=`<div class="secpick-row${sec.id===hereSec?' here beat':''}${off?' off':''}" data-sec="${esc(sec.id)}">`+
          `<div class="secpick-top"><span class="secpick-dot" style="background:${esc(sec.color)}"></span>`+
-         `<span class="secpick-name">${esc(sec.name)}</span>`+
+         `<span class="secpick-name">${esc(sec.name)}</span>${off?'<span class="secpick-off">꺼짐</span>':''}`+
          `<span class="secpick-n${n?'':' zero'}">${n}</span></div>`+
          (n?`<div class="secpick-items">${items}</div>`:'')+
        `</div>`;
