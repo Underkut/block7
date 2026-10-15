@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2956,8 +2956,6 @@ body.split-d #todayView.animating{overflow:hidden;}
 .secpick-top{display:flex;align-items:center;gap:8px;}
 .secpick-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .secpick-name{font-size:13px;font-weight:500;color:var(--tx2);}
-.secpick-row.off .secpick-name{opacity:.55;}
-.secpick-off{margin-left:6px;font-size:10px;color:var(--tx3);letter-spacing:.02em;}
 .secpick-n{margin-left:auto;color:var(--tx3);font-family:var(--font-number);font-size:11px;}
 .secpick-n.zero{opacity:.4;}
 .secpick-items{margin-top:3px;padding-left:15px;font-size:11px;line-height:1.45;
@@ -6373,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-9";
+const APP_VERSION = "v. 26-1015-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40263,7 +40261,7 @@ function _daySecTasks(key,secId){
 // 판에 세울 구간들. 지금 이 할일이 있는 구간을 사용자가 꺼 두었더라도 맨 앞에
 // 넣는다 — 안 그러면 "그냥 누르면 어디로 가는지" 를 판이 못 보여준다.
 // ⚠️ 지금 화면에 열려 있는 구간만이 아니라 **모든 구간**을 보여 준다 (v26-1015-8, HB) —
-//    끄어 둔 구간으로도 보낼 수 있어야 한다. 꺼진 구간은 판에서 '꺼짐' 으로 표시한다 (_secPickRender).
+//    끄어 둔 구간으로도 보낼 수 있어야 한다. 표시는 따로 하지 않는다 (HB: 지저분하다).
 function _secPickSecs(hereSec){
   return SECS.slice();
 }
@@ -40300,10 +40298,9 @@ function _secPickRender(){
     const n=bigs.length+smalls.length;
     const items=[...bigs.map(b=>`<span>${esc(b.text)}</span>`),
                  ...smalls.map(x=>`<span class="sm">${esc(x.text)}</span>`)].join(' · ');
-    const off=!(ST.vis&&ST.vis.includes(sec.id));
-    h+=`<div class="secpick-row${sec.id===hereSec?' here beat':''}${off?' off':''}" data-sec="${esc(sec.id)}">`+
+    h+=`<div class="secpick-row${sec.id===hereSec?' here beat':''}" data-sec="${esc(sec.id)}">`+
          `<div class="secpick-top"><span class="secpick-dot" style="background:${esc(sec.color)}"></span>`+
-         `<span class="secpick-name">${esc(sec.name)}</span>${off?'<span class="secpick-off">꺼짐</span>':''}`+
+         `<span class="secpick-name">${esc(sec.name)}</span>`+
          `<span class="secpick-n${n?'':' zero'}">${n}</span></div>`+
          (n?`<div class="secpick-items">${items}</div>`:'')+
        `</div>`;
