@@ -35,7 +35,7 @@ function makeEnv(items, todayK) {
     },
     save() {}, beforeSave() {},
     renderSecBody() {}, updateTotal() {}, refreshTaskViewsLive() {},
-    closeTaskMenu() {}, cancelDragKeepingItem() {},
+    closeTaskMenu() {}, cancelDragKeepingItem() {}, _tmSubReset() {},
     showToast: t => log.toasts.push(t),
     _toastWithJump: t => log.toasts.push(t),
     _moveDateToastMsg: () => '날짜로 이동했어요',

@@ -1,0 +1,105 @@
+// 할일 메뉴 '완료 후 다음 할일' + 글에 '@' 가 새로 들어가면 연락할 일 자동 표시 (HB 2026-10-15)
+//
+// 규칙
+//  ① 누른 할일은 완료로 체크한다 (하위 할일도 따라 완료 · 긴급 표시는 풀린다) — 제자리에 남는다
+//  ② 고른 날짜 / 구간에 새 할일이 하나 생긴다. 글은 '(원래 글) 완료했고, 이제' — 글 끝 공백은 한 칸으로
+//  ③ 새 할일은 처음부터 하는 일이다: 완료 아님 · 이월 횟수 없음 · 연락할 일 표시는 물려받는다
+//  ④ 화면이 그 날로 가고 새 입력창에 커서가 글 맨 끝에 놓인다
+//  ⑤ '@' 자동 표시는 편집을 마칠 때 **새로** 생긴 '@' 에만 — 이미 있던 글은 건드리지 않는다
+const { slice, makeScorer } = require('./_load');
+const sc = makeScorer();
+const SRC = slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
+  slice('// 글에 \'@\' 가 새로 들어가면', 'function toggleTaskContact(){');
+
+const T = '2026-10-15';
+function makeEnv(items) {
+  const ST = { days: {} };
+  const log = { go: [], focus: [], render: [] };
+  let cur = T;   // goToDate 가 보는 날을 바꾼다
+  const inp = { value: '', focus() { log.focus.push('focus'); }, setSelectionRange(a, b) { log.sel = [a, b]; }, scrollIntoView() {} };
+  const env = {
+    ST,
+    _taskMenuCtx: { type: 'big', secId: 'am', idx: 0 },
+    viewDate: new Date(2026, 9, 15),
+    tKey: d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : cur,
+    addDays: (d, n) => { const x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; },
+    getBigs: (k, id) => { const d = (ST.days[k] = ST.days[k] || { big: {}, small: {} }); return (d.big[id] = d.big[id] || []); },
+    getSmalls: (k, id) => { const d = (ST.days[k] = ST.days[k] || { big: {}, small: {} }); return (d.small[id] = d.small[id] || []); },
+    save() {}, rawSave() {}, beforeSave() {},
+    renderSecBody: id => log.render.push(id), updateTotal() {}, refreshTaskViewsLive() {},
+    closeTaskMenu() {}, goToDate: k => { cur = k; log.go.push(k); },
+    _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
+    _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
+    _datePickArmed: () => true, _secPickOn: () => false, _secPickOpen() {},
+    document: { querySelector: () => inp },
+    setTimeout: f => f(),
+  };
+  env.getBigs(T, 'am').push(...items);
+  const names = Object.keys(env);
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDonePicked,_autoContactMark};';
+  const api = new Function(...names, body)(...names.map(n => env[n]));
+  return { ST, api, log, inp };
+}
+const at = (ST, k, sec) => ((ST.days[k] && ST.days[k].big && ST.days[k].big[sec || 'am']) || []);
+
+console.log('시나리오 1 — 내일로: 원래 할일은 완료, 내일에 새 할일');
+{
+  const { ST, api, log, inp } = makeEnv([{ text: '김집사님께 전화  ', done: false, urgent: true, urgentRank: 1, contactTask: true, manualCarryCount: 2,
+    subs: [{ text: 'a', done: false }] }]);
+  inp.value = '김집사님께 전화 완료했고, 이제';
+  api.nextAfterDoneTo(1);
+  const old = at(ST, T)[0], nu = at(ST, '2026-10-16')[0];
+  sc.eq('원래 할일은 제자리에서 완료', [at(ST, T).length, old.done], [1, true]);
+  sc.eq('하위도 따라 완료 · 긴급은 풀림', [old.subs[0].done, old.urgent], [true, undefined]);
+  sc.eq('새 할일 글: 끝 공백을 한 칸으로 줄이고 이어 붙인다', nu.text, '김집사님께 전화 완료했고, 이제');
+  sc.eq('새 할일은 완료 아님 · 이월 횟수 없음', [nu.done, nu.manualCarryCount, nu.autoCarryCount], [false, undefined, undefined]);
+  sc.eq('연락할 일 표시는 물려받는다', nu.contactTask, true);
+  sc.eq('화면이 그 날로 간다', log.go, ['2026-10-16']);
+  sc.eq('커서가 글 맨 끝', log.sel, [inp.value.length, inp.value.length]);
+}
+
+console.log('\n시나리오 2 — 다음 주로 · 오늘 다른 구간으로');
+{
+  let e = makeEnv([{ text: '보고서', done: false }]);
+  e.api.nextAfterDoneTo(7);
+  sc.eq('다음 주 같은 구간에 새 할일', at(e.ST, '2026-10-22')[0].text, '보고서 완료했고, 이제');
+  e = makeEnv([{ text: '보고서', done: false }]);
+  e.api.nextAfterDoneTo(0, 'pm');
+  sc.eq('오늘 오후 구간에 새 할일', at(e.ST, T, 'pm').map(x => x.text), ['보고서 완료했고, 이제']);
+  sc.eq('같은 날이라 화면 이동은 없다', e.log.go, []);
+  sc.eq('받는 구간도 다시 그린다', e.log.render.includes('pm'), true);
+}
+
+console.log('\n시나리오 3 — 날짜 지정');
+{
+  const e = makeEnv([{ text: '심방', done: false }]);
+  e.api.nextAfterDonePicked('2026-11-02');
+  sc.eq('고른 날짜에 새 할일', at(e.ST, '2026-11-02')[0].text, '심방 완료했고, 이제');
+  sc.eq('그 날로 간다', e.log.go, ['2026-11-02']);
+  sc.eq('원래 것은 완료', at(e.ST, T)[0].done, true);
+}
+
+console.log('\n시나리오 4 — 이미 완료한 할일도 문제없다 · 없는 할일은 아무 일 없다');
+{
+  const e = makeEnv([{ text: '끝낸 일', done: true }]);
+  e.api.nextAfterDoneTo(1);
+  sc.eq('이미 완료 그대로', at(e.ST, T)[0].done, true);
+  sc.eq('새 할일은 생긴다', at(e.ST, '2026-10-16').length, 1);
+  const f = makeEnv([]);
+  f.api.nextAfterDoneTo(1);
+  sc.eq('할일이 없으면(이미 사라짐) 만들지 않는다', Object.keys(f.ST.days).filter(k => k !== T && at(f.ST, k).length), []);
+}
+
+console.log("\n시나리오 5 — '@' 자동 연락 표시");
+{
+  const { api } = makeEnv([]);
+  let it = { text: '@홍길동 전화', done: false };
+  sc.eq("새로 생긴 '@' 는 표시한다", [api._autoContactMark(it, '전화'), it.contactTask], [true, true]);
+  it = { text: '@홍길동 전화 급함', done: false };
+  sc.eq("이미 '@' 가 있던 글은 건드리지 않는다 (직접 끈 표시를 되살리지 않는다)", [api._autoContactMark(it, '@홍길동 전화'), it.contactTask], [false, undefined]);
+  it = { text: '그냥 일', done: false };
+  sc.eq("'@' 가 없으면 아무것도 안 한다", [api._autoContactMark(it, '그냥'), it.contactTask], [false, undefined]);
+  it = { text: 'a@b', done: false, contactTask: true };
+  sc.eq('이미 표시된 것은 그대로', api._autoContactMark(it, 'a'), false);
+}
+sc.done();

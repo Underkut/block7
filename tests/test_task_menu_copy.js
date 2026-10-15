@@ -10,14 +10,14 @@ const DUP  = slice('function _freshTaskCopy(', '// 메뉴가 열릴 때마다');
 const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
 const DUPRUN = SUBHELP + '\n' + DUP;   // 실행용 (글자 검사는 DUP 그대로)
 
-console.log('시나리오 1 — 메뉴를 이동·복제 덩어리로 나눈다');
+console.log('시나리오 1 — 이동·복제 목적지가 각각 한 뎁스 판 안에 있다');
 {
-  const moveTitle = MENU.indexOf('>이동</div>');
+  const moveTitle = MENU.indexOf('id="tmSub_move"');
   const tomorrowMove = MENU.indexOf('onclick="moveTaskTo(1)"');
   const weekMove = MENU.indexOf('onclick="moveTaskTo(7)"');
   const yesterdayMove = MENU.indexOf('onclick="moveTaskTo(-1)"');
   const pickedDate = MENU.indexOf('id="dateLabelRow"');
-  const copyTitle = MENU.indexOf('>복제</div>');
+  const copyTitle = MENU.indexOf('id="tmSub_dup"');
   const todayCopy = MENU.indexOf('onclick="duplicateTaskTo(0)"');
   const tomorrowCopy = MENU.indexOf('onclick="duplicateTaskTo(1)"');
   const weekCopy = MENU.indexOf('onclick="duplicateTaskTo(7)"');
@@ -34,13 +34,13 @@ console.log('시나리오 1 — 메뉴를 이동·복제 덩어리로 나눈다'
       pickedDate < copyTitle && copyTitle < todayCopy && todayCopy < tomorrowCopy &&
       tomorrowCopy < weekCopy && weekCopy < yesterdayCopy && yesterdayCopy < dateCopy,
     true);
-  sc.eq('매일 반복은 복제 다음 덩어리', daily>=0 && dateCopy < daily, true);
+  sc.eq('매일 반복은 세 줄(이동·복제·완료 후 다음 할일) 다음 덩어리', daily>=0 && MENU.indexOf('id="tmGrp_next"') < daily && daily < moveTitle && dateCopy>0, true);
 }
 
 console.log('\n시나리오 2 — 복제 다섯 줄의 아이콘이 서로 다르다');
 {
   // 뒷장(복제)은 같고 앞의 기호(오늘 ● · 내일 ▶ · 다음 주 ▶▶ · 어제 ◀ · 달력)를 다르게 그린다.
-  const copyBlock = MENU.slice(MENU.indexOf('>복제</div>'), MENU.indexOf('id="dailyToggleItem"'));
+  const copyBlock = MENU.slice(MENU.indexOf('id="tmSub_dup"'), MENU.indexOf('id="tmSub_next"'));
   const icons = [...copyBlock.matchAll(/<svg[\s\S]*?<\/svg>/g)].map(m=>m[0]);
   sc.eq('복제 칸 아이콘 5개', icons.length, 5);
   sc.eq('다섯 모두 서로 다른 그림', new Set(icons).size, 5);
