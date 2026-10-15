@@ -12,9 +12,9 @@ const SRC = slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec
   slice('// 글에 \'@\' 가 새로 들어가면', 'function toggleTaskContact(){');
 
 const T = '2026-10-15';
-function makeEnv(items) {
+function makeEnv(items, tabId) {
   const ST = { days: {} };
-  const log = { go: [], focus: [], render: [] };
+  const log = { go: [], focus: [], render: [], toast: [], nav: [] };
   let cur = T;   // goToDate 가 보는 날을 바꾼다
   const inp = { value: '', focus() { log.focus.push('focus'); }, setSelectionRange(a, b) { log.sel = [a, b]; }, scrollIntoView() {} };
   const env = {
@@ -27,11 +27,17 @@ function makeEnv(items) {
     getSmalls: (k, id) => { const d = (ST.days[k] = ST.days[k] || { big: {}, small: {} }); return (d.small[id] = d.small[id] || []); },
     save() {}, rawSave() {}, beforeSave() {},
     renderSecBody: id => log.render.push(id), updateTotal() {}, refreshTaskViewsLive() {},
+    showToast: t => log.toast.push(t),
+    _moveLabel: (d, from, to) => (d === 7 ? '다음 주' : d === 1 ? '내일' : '오늘') + ' ' + to + '로',
+    _withSecRo: (d, sec) => d + ' ' + sec + '로',
+    _dayLabel: k => k,
+    _dayKeyDiff: (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000),
+    navigateDate: n => { log.nav.push(n); cur = log.nav.length ? cur : cur; },
     closeTaskMenu() {}, goToDate: k => { cur = k; log.go.push(k); },
     _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
     _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
     _datePickArmed: () => true, _secPickOn: () => false, _secPickOpen() {},
-    document: { querySelector: () => inp },
+    document: { querySelector: sel => (sel === '.tab.on' ? { id: tabId } : inp), activeElement: null },
     setTimeout: f => f(),
   };
   env.getBigs(T, 'am').push(...items);
@@ -56,6 +62,19 @@ console.log('시나리오 1 — 내일로: 원래 할일은 완료, 내일에 �
   sc.eq('연락할 일 표시는 물려받는다', nu.contactTask, true);
   sc.eq('화면이 그 날로 간다', log.go, ['2026-10-16']);
   sc.eq('커서가 글 맨 끝', log.sel, [inp.value.length, inp.value.length]);
+  sc.eq('토스트로 무슨 일인지 알린다 (완료 체크 · 새 할일이 생긴 곳 · 이어서 적기)',
+    /완료 체크했어요/.test(log.toast[0]) && /내일 am로 다음 할일을 만들었어요/.test(log.toast[0]) && /이어서 적어 주세요/.test(log.toast[0]), true);
+}
+
+console.log('\n시나리오 1-2 — D 탭에서는 날짜 넘김(navigateDate)으로 스르륵, 그 밖은 바로 이동');
+{
+  const e = makeEnv([{ text: '심방', done: false }], 'tabD');
+  e.inp.value = '심방 완료했고, 이제';
+  e.api.nextAfterDoneTo(7);
+  sc.eq('D 탭: navigateDate(+7)', [e.log.nav, e.log.go], [[7], []]);
+  const f = makeEnv([{ text: '심방', done: false }], 'tabW');
+  f.api.nextAfterDoneTo(1);
+  sc.eq('W 탭: goToDate', [f.log.nav, f.log.go], [[], ['2026-10-16']]);
 }
 
 console.log('\n시나리오 2 — 다음 주로 · 오늘 다른 구간으로');
