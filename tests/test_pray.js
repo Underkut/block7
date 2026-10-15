@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -656,6 +656,25 @@ const MAPCSV = [
   const r2 = A.addMapPrayer(db, '2026-10-15', [a.id], 70000, 130000, '가족');
   sc.eq('⑰ 대시보드용 — 시작 · 사람 이름 · 누른 것 이름', [r2[0].a, r2[0].n, r2[0].k, r[0].k], [70000, '가나', '가족', '가나']);
   sc.eq('⑰ 정리하면 mp 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-15'].mp.length, 3);
+}
+// ⑱ BLOCK7 할일로 보내기 (R-4) — BLOCK7 상태를 읽기만: 시간구간(없으면 BLOCK7 기본 여섯) · 그날 그 구간 할일 · 쪽지 모양
+{
+  sc.eq('⭐⑱ secs 가 비면 BLOCK7 기본 여섯', A.b7Secs({}).map(s => s.id), ['dawn', 'am', 'morn', 'pm', 'eve', 'night']);
+  sc.eq('⑱ BLOCK7 이 고친 구간', A.b7Secs({ secs: [{ id: 'x', name: '아침', color: '#123', startTime: '05:00', endTime: '09:00' }, null, { name: 'id 없음' }] }), [{ id: 'x', name: '아침', color: '#123', start: '05:00', end: '09:00' }]);
+  const st = { days: { '2026-10-16': { big: { pm: [{ text: ' 심방 ', done: false }, { text: '', done: false }, { text: '끝낸 일', done: true }] }, small: { pm: [{ text: '작은 일' }] } } } };
+  sc.eq('⭐⑱ 큰 할일 + 작은 할일 · 빈 글 빼기 · 끝낸 표시', A.b7Todos(st, '2026-10-16', 'pm'), [{ text: '심방', done: false }, { text: '끝낸 일', done: true }, { text: '작은 일', done: false }]);
+  sc.eq('⑱ 없는 날 · 없는 구간 · 이상한 자료', [A.b7Todos(st, '2026-10-17', 'pm').length, A.b7Todos(st, '2026-10-16', 'am').length, A.b7Todos(null, 'x', 'y').length], [0, 0, 0]);
+  const n = A.b7Note('2026-10-16', 'pm', '  가족   심방 ', 5);
+  sc.eq('⭐⑱ 쪽지 모양 (BLOCK7 받기와 같은 잣대)', [n.date, n.sec, n.text, n.at, typeof n.id], ['2026-10-16', 'pm', '가족 심방', 5, 'string']);
+  sc.eq('⑱ 날짜 · 구간 · 글이 없으면 쪽지 없음', [A.b7Note('10-16', 'pm', 'a'), A.b7Note('2026-10-16', '', 'a'), A.b7Note('2026-10-16', 'pm', '  ')], [null, null, null]);
+  // BLOCK7 의 DEFAULT_SECS 와 같은가 — 갈라지면 secs 가 빈 계정에서 엉뚱한 구간 id 로 보낸다
+  const b7 = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const m2 = b7.match(/const DEFAULT_SECS=\[([\s\S]*?)\];/);
+  const ids = [...m2[1].matchAll(/id:'([a-z]+)'/g)].map(x => x[1]);
+  sc.eq('⭐⑱ 기본 여섯이 BLOCK7 DEFAULT_SECS 와 같은 id · 차례', A.B7_SECS.map(s => s.id), ids);
+  // 기도노트는 BLOCK7 상태 문서를 읽기만 — users/ 로 가는 줄에 쓰기가 없다
+  const writesUsers = HTML.split('\n').filter(l => /'users\/'/.test(l) && /\.(set|update|delete)\(/.test(l));
+  sc.eq('⭐⑱ 기도노트는 users/ 문서를 쓰지 않는다', writesUsers.length, 0);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
