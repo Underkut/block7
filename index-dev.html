@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6367,7 +6367,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-5";
+const APP_VERSION = "v. 26-1015-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9054,14 +9054,14 @@ try{
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 3.2h9.6v13.6H5.2z"/><path d="M7.6 6.8h4.8M7.6 10h4.8M7.6 13.2h3"/></svg></span><span id="memoMenuLabel">메모</span>
   </div>
   <div class="task-menu-item" id="prayMenuItem" onclick="_prayPickTap(event)" onmouseenter="_prayPickHover()">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="1"/></svg></span><span style="flex:1">기도 노트로</span><span class="pray-chev"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>
+    <span class="task-menu-icon"><span class="there-ic" data-there-ic style="width:15px;height:15px"></span></span><span style="flex:1">기도 노트로</span><span class="pray-chev"><svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item tm-grp" id="tmGrp_move" data-grp="move" onclick="_tmSubTap(event,'move',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>이동<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
   </div>
-  <div class="task-menu-item tm-grp" id="tmGrp_dup" data-grp="dup" onclick="_tmSubTap(event,'dup',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><circle cx="11.3" cy="11.5" r="3.6" fill="currentColor" stroke="none"/></svg></span>복제<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
+  <div class="task-menu-item tm-grp" id="tmGrp_dup" data-grp="dup" onclick="_tmSubTap(event,'dup',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.2" y="7.2" width="9.3" height="9.3" rx="1.9"/><path d="M4.4 12.8V5.9a1.5 1.5 0 0 1 1.5-1.5h6.9"/></svg></span>복제<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
   </div>
-  <div class="task-menu-item tm-grp" id="tmGrp_next" data-grp="next" onclick="_tmSubTap(event,'next',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.5 7 14l6.5-8"/><path d="M11 14.5h5.5"/></svg></span>완료 후 다음 할일<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
+  <div class="task-menu-item tm-grp" id="tmGrp_next" data-grp="next" onclick="_tmSubTap(event,'next',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.8 7.2 14.8 13.2 7.4"/><path d="M16.9 3.2 15.9 8.7 11.5 5.1Z" fill="currentColor" stroke-width="1.1"/></svg></span>완료 후 다음 할일<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
@@ -33882,7 +33882,7 @@ function _openGhostInput(secId, type, pos){
       if(!v)return;
       beforeSave();
       if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
-      else getBigs(dayKey,secId).push({text:v,done:false});
+      else getBigs(dayKey,secId).push(_newTask(v));
       save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
       // 날짜가 넘어간 뒤라면 지금 화면은 다른 날이므로 목록을 다시 그리지 않는다
       if(dayKey!==tKey())return;
@@ -33915,7 +33915,7 @@ function _openGhostInput(secId, type, pos){
         inp.value='';committed=false;
         beforeSave();
         if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
-        else getBigs(dayKey,secId).push({text:v,done:false});
+        else getBigs(dayKey,secId).push(_newTask(v));
         save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
         if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
           committed=true;ghost.remove();
@@ -33964,7 +33964,7 @@ function _openGhostInput(secId, type, pos){
       if(!v)return;
       beforeSave();
       if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
-      else getSmalls(dayKey,secId).push({text:v,done:false});
+      else getSmalls(dayKey,secId).push(_newTask(v));
       save();
       if(dayKey!==tKey())return;   // 날짜가 넘어갔으면 지금 화면은 다른 날이다
       renderSmList(secId,secColor);updateSmCnt(secId);refreshTaskViewsLive();
@@ -34013,7 +34013,7 @@ function _openGhostInput(secId, type, pos){
         inp.value='';committed=false;
         beforeSave();
         if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
-        else getSmalls(dayKey,secId).push({text:v,done:false});
+        else getSmalls(dayKey,secId).push(_newTask(v));
         save();
         if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
           committed=true;ghost.remove();
@@ -34082,13 +34082,13 @@ function renderSecBody(id){
       beforeSave();
       const _inlineType=document.getElementById(`tii-${id}`)?.dataset.itype||'big';
       if(_inlineType==='big'){
-        getBigs(tKey(),id).push({text:v,done:false});
+        getBigs(tKey(),id).push(_newTask(v));
         save();inlineInp.value='';
         const bigList=document.getElementById(`bl-${id}`);
         if(bigList){bigList.innerHTML='';getBigs(tKey(),id).forEach((b,ii)=>bigList.appendChild(makeBigWrap(id,ii,b,secColor)));}
         updateTotal();updateSecSummary(id);
       } else {
-        getSmalls(tKey(),id).push({text:v,done:false});
+        getSmalls(tKey(),id).push(_newTask(v));
         save();inlineInp.value='';
         renderSmList(id,secColor);updateSmCnt(id);
       }
@@ -35616,7 +35616,7 @@ function makeBigGhost(id,secColor){
     if(justEntered){justEntered=false;return;} // iOS fires blur after enter — skip
     const v=(buf||inp.value).trim();
     if(v){
-      beforeSave();getBigs(tKey(),id).push({text:v,done:false});
+      beforeSave();getBigs(tKey(),id).push(_newTask(v));
       save();inp.value='';buf='';
       renderSecBody(id);updateTotal();
       setTimeout(()=>document.querySelector(`#ba-${id} .ba-inp`)?.focus(),30);
@@ -35629,7 +35629,7 @@ function makeBigGhost(id,secColor){
       buf=''; // clear buf FIRST to prevent onblur from re-adding
       inp.value='';
       justEntered=true;
-      beforeSave();getBigs(tKey(),id).push({text:v,done:false});
+      beforeSave();getBigs(tKey(),id).push(_newTask(v));
       save();updateTotal();updateSecSummary(id);
       const bigList=document.getElementById(`bl-${id}`);
       if(bigList){
@@ -35824,7 +35824,7 @@ function makeSmInlineGhost(id,secColor){
   inp.onblur=()=>{
     const v=(buf||inp.value).trim();
     if(v){
-      beforeSave();getSmalls(tKey(),id).push({text:v,done:false});
+      beforeSave();getSmalls(tKey(),id).push(_newTask(v));
       save();inp.value='';buf='';
       renderSmList(id,secColor);updateSmCnt(id);
       setTimeout(()=>document.querySelector(`#sgi-${id}`)?.focus(),20);
@@ -35834,7 +35834,7 @@ function makeSmInlineGhost(id,secColor){
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
       const v=(buf||inp.value).trim();if(!v)return;
-      beforeSave();getSmalls(tKey(),id).push({text:v,done:false});
+      beforeSave();getSmalls(tKey(),id).push(_newTask(v));
       save();inp.value='';buf='';
       renderSmList(id,secColor);updateSmCnt(id);
       setTimeout(()=>document.querySelector(`#sgi-${id}`)?.focus(),20);
@@ -37834,6 +37834,7 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   // 옮길 곳에 이미 할일이 몇 개 있는지 줄 오른쪽에 적어 둔다 (v26-0904-3, HB).
   // 화면을 옮기지 않고도 그 날 사정을 알 수 있다.
   _fillTaskMenuCounts();
+  if(typeof _thereIconSync==='function')_thereIconSync();   // 기도 노트로 줄의 기도손 그림 (There 와 같은 그림)
   _tmSubReset();             // 지난번에 열어 둔 한 뎁스 판도 남아 있지 않게
   _secPickBack(true);        // 지난번에 열어 둔 구간 판이 남아 있지 않게
                              // (true = 높이는 여기서 재지 않는다. 아래 주석 참고)
@@ -39024,6 +39025,12 @@ function toggleUrgentRank(){
   refreshTaskViewsLive();
 }
 
+// 새로 적는 할일 — 글에 '@' 가 들어 있으면 처음부터 '연락할 일' 로 표시한다 (고치는 경우는 아래 _autoContactMark).
+function _newTask(text){
+  const it={text:text,done:false};
+  if(String(text||'').indexOf('@')>=0)it.contactTask=true;
+  return it;
+}
 // 글에 '@' 가 새로 들어가면 '연락할 일' 로 자동 표시 — 편집을 마칠 때 한 번만.
 // 이미 '@' 가 있던 글은 건드리지 않는다 (사용자가 표시를 일부러 끈 것을 되살리지 않으려고).
 function _autoContactMark(item,origText){
@@ -50980,10 +50987,12 @@ const TDASH = (function () {
 /* 탭 · 날짜 · 요약은 세로로 밀어도 올라가지 않는다 (HB 2026-10-15) — 전체 화면은 위 THERE 줄 높이(--tdtop)만큼 아래에 붙는다 */
 .tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;padding-bottom:12px}
 .tdash-stick::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(var(--bg),rgba(13,14,16,0));pointer-events:none}
-.tdash-toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);max-width:min(88vw,420px);padding:11px 16px;border-radius:12px;
-  background:#22252b;color:#ece8e0;font:13px/1.5 'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
-  transition:opacity .28s,transform .28s cubic-bezier(.22,.8,.24,1);z-index:100001;box-shadow:0 8px 28px rgba(0,0,0,.45)}
-.tdash-toast.on{opacity:1;transform:translate(-50%,0)}
+.tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);width:max-content;max-width:min(86vw,440px);padding:22px 30px;border-radius:16px;
+  background:#22252b;color:#a9a59d;font:400 17.5px/1.75 'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
+  border:1px solid #33363e;transition:opacity .22s,transform .22s;z-index:100001;box-shadow:0 10px 36px rgba(0,0,0,.5)}
+.tdash-toast b{color:#ece8e0;font-weight:700}
+.tdash-toast small{display:block;margin-top:6px;font-size:14px;color:#7f7b73}
+.tdash-toast.on{opacity:.97;transform:translate(-50%,-50%) scale(1)}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -51048,7 +51057,7 @@ const TDASH = (function () {
 .tdash-ses em{font-style:normal;font-size:14px;font-variant-numeric:tabular-nums}
 .tdash-note{font-size:11.5px;color:#6c6962;line-height:1.6}
 .tdash-empty{padding:28px 0;text-align:center;color:var(--tx3);font-size:13.5px}
-.tdash-ov{position:fixed;inset:0;z-index:99990;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+.tdash-ov{position:fixed;inset:0;z-index:99990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s}
 .tdash-ov.in{opacity:1;transform:none}
 .tdash-top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:10px 10px 6px 20px}
@@ -51130,7 +51139,7 @@ const TDASH = (function () {
     return h;
   }
   // 위쪽 고정 영역의 끝 표시 — 이 앞(탭 · 날짜 · 요약)은 세로로 밀어도 올라가지 않고, 뒤는 밀린다 (HB 2026-10-15)
-  const FIX = '<!--tdfix-->';
+  const FIX = '<!--tdfix-->', NAVEND = '<!--tdnav-->';   // NAVEND 앞(날짜 줄)은 밀어 넘길 때도 움직이지 않는다
   const HEAT = ['#17191d', '#2a3646', '#3b4e66', '#4f86c6', '#9cc0e8'];
   function heat(s, max) { if (!s) return 0; const r = s / max; return r > .75 ? 4 : r > .45 ? 3 : r > .2 ? 2 : 1; }
   function viewMonth(S) {
@@ -51184,15 +51193,17 @@ const TDASH = (function () {
   }
   function nav(S, title, sub, atEnd) {
     return '<div class="tdash-nav"><button data-td="prev" aria-label="이전">' + CHEV(-1) + '</button><div><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></div>' +
-      '<button data-td="next" aria-label="다음"' + (atEnd ? ' disabled' : '') + '>' + CHEV(1) + '</button></div>';
+      '<button data-td="next" aria-label="다음"' + (atEnd ? ' disabled' : '') + '>' + CHEV(1) + '</button></div>' + NAVEND;
   }
   function html(S) {
     const seg = [['day', 'D'], ['week', 'W'], ['month', 'M']];
     const v = S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);
-    const i = v.indexOf(FIX), fix = i >= 0 ? v.slice(0, i) : v, rest = i >= 0 ? v.slice(i + FIX.length) : '';
+    const n = v.indexOf(NAVEND), navH = n >= 0 ? v.slice(0, n) : '', v2 = n >= 0 ? v.slice(n + NAVEND.length) : v;
+    const i = v2.indexOf(FIX), fix = i >= 0 ? v2.slice(0, i) : v2, rest = i >= 0 ? v2.slice(i + FIX.length) : '';
+    // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
     return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
-      '<div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
+      navH + '<div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
   }
 
@@ -51229,22 +51240,33 @@ const TDASH = (function () {
       el.innerHTML = html(S); el.scrollTop = sy;
     };
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
-    const EASE = 'cubic-bezier(.22,.8,.24,1)';
+    const EASE = 'cubic-bezier(.4,0,.2,1)';
     const still = () => { try { return !el.querySelectorAll || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
     const panes = () => (el.querySelectorAll ? [].slice.call(el.querySelectorAll('[data-pane]')) : []);
-    const animIn = (dir, dist) => { if (still()) return; panes().forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * dist) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE })); };
+    // BLOCK7 날짜 넘김(navigateDate)과 같은 결 — 나가는 판은 가던 방향으로 **끝까지**(폭 100%) 나가며 옅어지고,
+    // 그동안 새 판은 반대쪽 바깥에서 대기했다가 들어온다. (조금만 나가고 반대에서 조금 들어오면 나가던 화면이 되돌아오는 것처럼 보인다)
     // dir: +1 = 앞으로(다음 · 오른쪽 탭) → 나가는 판은 왼쪽으로, 들어오는 판은 오른쪽에서
-    const transit = (dir, mutate, dist, from) => {
-      dist = dist || 36;
+    const W = () => el.clientWidth || 360, OUT = 'cubic-bezier(.4,0,.2,1)';
+    const animIn = dir => { if (still()) return; panes().forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * W()) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: OUT })); };
+    const exitFrom = (dir, x0, op0, done) => {
+      panes().forEach(p => { p.getAnimations().forEach(a => a.cancel()); p.style.transition = 'none'; p.style.opacity = ''; p.style.transform = '';
+        p.animate([{ opacity: op0, transform: 'translateX(' + x0 + 'px)' }, { opacity: 0, transform: 'translateX(' + (-dir * W()) + 'px)' }], { duration: 190, easing: OUT, fill: 'forwards' }); });
+      setTimeout(done, 190);
+    };
+    const transit = (dir, mutate) => {
       if (still() || S.busy) { mutate(); draw(); return; }
       S.busy = true;
-      panes().forEach(p => { p.getAnimations().forEach(a => a.cancel()); p.animate([{ opacity: from == null ? 1 : from, transform: 'translateX(' + (from == null ? 0 : -dir * dist) + 'px)' }, { opacity: 0, transform: 'translateX(' + (-dir * dist) + 'px)' }], { duration: 150, easing: 'ease-in', fill: 'forwards' }); });
-      setTimeout(() => { mutate(); draw(); animIn(dir, dist); S.busy = false; }, 150);
+      exitFrom(dir, 0, 1, () => { mutate(); draw(); animIn(dir); S.busy = false; });
     };
-    const toast = msg => {
+    // BLOCK7 토스트와 같은 기준 — 화면 한가운데, 글자 수 × 200ms(3초~9초), 어디를 눌러도 닫힌다. 뜻 단위로 줄을 바꾸고 중요한 말은 굵게
+    const toast = html => {
       try {
-        if (!TOAST) { TOAST = document.createElement('div'); TOAST.className = 'tdash-toast'; document.body.appendChild(TOAST); }
-        TOAST.textContent = msg; TOAST.classList.add('on'); clearTimeout(TOAST_TM); TOAST_TM = setTimeout(() => TOAST.classList.remove('on'), 3600);
+        if (!TOAST) {
+          TOAST = document.createElement('div'); TOAST.className = 'tdash-toast'; document.body.appendChild(TOAST);
+          document.addEventListener('pointerdown', () => { clearTimeout(TOAST_TM); TOAST.classList.remove('on'); }, true);
+        }
+        TOAST.innerHTML = html; TOAST.classList.add('on'); clearTimeout(TOAST_TM);
+        TOAST_TM = setTimeout(() => TOAST.classList.remove('on'), Math.min(9000, Math.max(3000, (TOAST.textContent || '').length * 200)));
       } catch (e) {}
     };
     const VN = { day: 'D (일간)', week: 'W (주간)', month: 'M (월간)' };
@@ -51261,19 +51283,19 @@ const TDASH = (function () {
           if (S.at === S.today) return;
           transit(S.today > S.at ? 1 : -1, () => { setAt(S.today); after(); });
         } else {                                 // 다른 탭은 그 탭에서 마지막으로 보던 날로
-          transit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); }, 26);
+          transit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
         }
         return;
       }
-      if (a === 'day') { e.stopPropagation(); transit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }, 26); }
+      if (a === 'day') { e.stopPropagation(); transit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
       else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
     // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점 + 안내)
     let lpAt = 0, lpTm = 0, lpX = 0, lpY = 0;
     const togglePin = v => {
       S.pin = S.pin === v ? null : v; lpAt = Date.now(); save(); draw();
-      toast(S.pin ? VN[v] + ' 탭을 첫 화면으로 고정했어요. 앞으로 There 대시보드를 열면 늘 ' + VN[v].split(' ')[0] + '부터 보여요. 다시 길게 누르면 풀려요.'
-        : VN[v] + ' 탭 고정을 풀었어요. 앞으로는 마지막으로 본 탭으로 열려요.');
+      toast(S.pin ? '<b>' + VN[v] + ' 탭</b>을 첫 화면으로<br><b>고정했어요</b><br>앞으로 There 대시보드를 열면<br>늘 <b>' + VN[v].split(' ')[0] + '</b>부터 보여요<small>다시 길게 누르면 풀려요</small>'
+        : '<b>' + VN[v] + ' 탭</b>의<br><b>고정을 풀었어요</b><br>앞으로는 <b>마지막으로 본 탭</b>으로<br>There 대시보드가 열려요');
     };
     const segBtn = e => e.target.closest && e.target.closest('.tdash-seg [data-td="view"]');
     el.addEventListener('pointerdown', e => {
@@ -51311,10 +51333,10 @@ const TDASH = (function () {
       const k = x > 0 ? -1 : 1;                 // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
       if ((Math.abs(x) < Math.max(60, w * 0.25) && !fast) || (k === 1 && atEnd())) { release(); return; }
       if (still()) { step(k); after(); draw(); return; }
-      // 손가락이 있던 자리에서 이어서 나간다 → 새 판이 반대쪽에서 들어온다
+      // 손가락이 있던 자리에서 이어서 끝까지 나간다 → 새 판이 반대쪽 바깥에서 들어온다 (BLOCK7 날짜 넘김과 같다)
       S.busy = true;
-      panes().forEach(p => { p.style.transition = 'none'; p.style.opacity = ''; p.style.transform = ''; p.animate([{ opacity: 1 - Math.min(Math.abs(x) / w, 0.55), transform: 'translateX(' + x + 'px)' }, { opacity: 0, transform: 'translateX(' + (x > 0 ? 1 : -1) * w * 0.45 + 'px)' }], { duration: 150, easing: 'ease-in', fill: 'forwards' }); });
-      setTimeout(() => { step(k); after(); draw(); animIn(k, 60); S.busy = false; }, 150);
+      const k0 = x > 0 ? -1 : 1;
+      exitFrom(k0, x, 1 - Math.min(Math.abs(x) / w, 0.55), () => { step(k); after(); draw(); animIn(k); S.busy = false; });
     }, { passive: true });
     el.addEventListener('touchcancel', () => { if (lock) release(); sOn = false; }, { passive: true });
     save();

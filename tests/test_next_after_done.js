@@ -5,11 +5,11 @@
 //  ② 고른 날짜 / 구간에 새 할일이 하나 생긴다. 글은 '(원래 글) 완료했고, 이제' — 글 끝 공백은 한 칸으로
 //  ③ 새 할일은 처음부터 하는 일이다: 완료 아님 · 이월 횟수 없음 · 연락할 일 표시는 물려받는다
 //  ④ 화면이 그 날로 가고 새 입력창에 커서가 글 맨 끝에 놓인다
-//  ⑤ '@' 자동 표시는 편집을 마칠 때 **새로** 생긴 '@' 에만 — 이미 있던 글은 건드리지 않는다
+//  ⑤ '@' 자동 표시는 새로 적을 때(_newTask)와, 편집을 마칠 때 **새로** 생긴 '@' 에만 — 이미 있던 글은 건드리지 않는다
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 const SRC = slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
-  slice('// 글에 \'@\' 가 새로 들어가면', 'function toggleTaskContact(){');
+  slice('// 새로 적는 할일 — 글에', 'function toggleTaskContact(){');
 
 const T = '2026-10-15';
 function makeEnv(items, tabId) {
@@ -42,7 +42,7 @@ function makeEnv(items, tabId) {
   };
   env.getBigs(T, 'am').push(...items);
   const names = Object.keys(env);
-  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDonePicked,_autoContactMark};';
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDonePicked,_autoContactMark,_newTask};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log, inp };
 }
@@ -120,5 +120,13 @@ console.log("\n시나리오 5 — '@' 자동 연락 표시");
   sc.eq("'@' 가 없으면 아무것도 안 한다", [api._autoContactMark(it, '그냥'), it.contactTask], [false, undefined]);
   it = { text: 'a@b', done: false, contactTask: true };
   sc.eq('이미 표시된 것은 그대로', api._autoContactMark(it, 'a'), false);
+}
+
+console.log("\n시나리오 6 — 새로 적을 때도 '@' 가 있으면 처음부터 연락할 일");
+{
+  const { api } = makeEnv([]);
+  sc.eq("'@' 가 든 새 할일은 연락할 일", api._newTask('@홍길동 전화'), { text: '@홍길동 전화', done: false, contactTask: true });
+  sc.eq("'@' 가 없으면 평범한 새 할일", api._newTask('장보기'), { text: '장보기', done: false });
+  sc.eq('글 중간의 @ 도 같다', api._newTask('내일 a@b 에게 메일').contactTask, true);
 }
 sc.done();
