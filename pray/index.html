@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-3';
+const APP_VERSION = 'v. 26-1015-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2070,8 +2070,10 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .mk-sug{display:flex;flex-direction:column;padding:2px 0 6px 52px;border-bottom:1px solid var(--bd)}
 .mk-sug[hidden]{display:none}
 .mp-gone{display:none!important}
-#v-map [data-sel]{transition:filter .55s ease,opacity .55s ease}
-#v-map.mp-focus [data-sel]:not(.mp-keep){filter:blur(3px);opacity:.28}
+/* 흐림은 카드 단위로만 — 줄마다 filter 를 걸면(수백 개) There 그림과 겹쳐 아이폰이 멈췄다 (HB 2026-10-15). 고른 카드 안의 나머지 줄은 옅게만 */
+#v-map .gcard,#v-map .ln,#v-map .sgb{transition:filter .55s ease,opacity .55s ease}
+#v-map.mp-focus .gcard:not(.mp-in){filter:blur(3px);opacity:.3}
+#v-map.mp-focus .mp-in .ln:not(.mp-keep),#v-map.mp-focus .mp-in .sgb:not(.mp-keep):not(.mp-up),#v-map.mp-focus .mp-in .gh:not(.mp-keep){opacity:.22}
 .mk-sug button{display:flex;align-items:baseline;gap:8px;padding:7px 4px;text-align:left;font-size:14px;border-radius:8px}
 .mk-sug button:hover{background:color-mix(in srgb,var(--tx) 6%,transparent)}
 .mk-sug small{color:var(--tx3);font-size:12px}
@@ -2535,11 +2537,37 @@ function focusCard(anim) {
     setTimeout(() => old.remove(), 500);
   } else { st.innerHTML = ''; st.appendChild(card); }
 }
-function focusNext(amen) {
+function focusNext(amen, go) {
   if (F.i >= F.deck.length) return;
-  if (amen) { const id = F.deck[F.i].id; const L = dayLog(DB, TODAY); if ((L.d || []).indexOf(id) < 0) toggleDone(DB, id, TODAY); save(); }
+  // 지도에서 들어온 한 장: 한 그룹이 끝나는 아멘이면 다음 그룹을 묻는다 (HB 2026-10-15)
+  const cur = F.deck[F.i], nx = F.deck[F.i + 1];
+  if (amen && !go && cur.sec === 'map' && nx && nx.tg !== cur.tg) {
+    const ng = findG(DB, nx.tg);
+    choose('다음 그룹은 ' + (ng ? ng.name : '') + ' 입니다', [{ v: 'go', label: '이어서 기도하기', sw: ng && ng.color }, { v: 'pick', label: '다른 그룹 보기' }], '', v => {
+      if (v === 'go') focusNext(true, true);
+      else { focusDone(); focusPickGroup(); }
+    }, '이어서 기도하시겠어요?');
+    return;
+  }
+  if (amen) focusDone();
   F.i++;
   focusCard(true);
+}
+function focusDone() { const id = F.deck[F.i] && F.deck[F.i].id; if (!id) return; const L = dayLog(DB, TODAY); if ((L.d || []).indexOf(id) < 0) toggleDone(DB, id, TODAY); save(); }
+// 그룹 · 서브 그룹 고르기 (띠 색과 함께) — 고르면 그 그룹 첫 이름으로. 오늘 목록에서 온 한 장이면 지도 차례로 바꿔 탄다
+function focusPickGroup() {
+  const opts = []; const add = (g, d) => { opts.push({ v: g.id, label: (d ? '　'.repeat(d) + '└ ' : '') + g.name, sw: g.color }); kidsOf(DB, g.id).forEach(k => add(k, d + 1)); };
+  mapTops().forEach(g => add(g, 0));
+  if (!opts.length) { toast('지도가 비어 있습니다'); return; }
+  const it = F.deck[F.i];
+  choose('그룹 고르기', opts, it && it.sec === 'map' ? it.g : '', v => {
+    let deck = F.deck; if (!it || it.sec !== 'map') deck = mapDeck();
+    const under = new Set([v]); const sub = id => kidsOf(DB, id).forEach(c => { under.add(c.id); sub(c.id); }); sub(v);
+    const i = deck.findIndex(d => under.has(d.g));
+    if (i < 0) { toast('그 그룹에는 기도할 이름이 없습니다'); return; }
+    if (deck !== F.deck) { flushFocusTime(); F.deck = deck; }
+    F.i = i; focusCard(true);
+  });
 }
 function flushFocusTime() { if (!F.on) return; addPraySession(DB, F.start || F.t0, (Date.now() - F.t0) / 1000, 'focus', F.sid); F.t0 = Date.now(); }
 function closeFocus() {
@@ -3343,8 +3371,8 @@ ACT['sort-today'] = () => choose('오늘 목록 정렬', [
   { v: 'mine', label: '내 순서', desc: '줄을 길게 눌러 끌어 정한 순서' }], DB.set.sorts.today || 'imp', v => { DB.set.sorts.today = v; save(); renderView(); });
 ACT.focus = () => openFocus();
 ACT['focus-close'] = () => closeFocus();
-// 한 장 화면의 지도 단추 — 한 장을 닫고 지금 보던 이름이 있는 지도로 (아래 탭의 '지도' 와 같은 일)
-ACT['focus-map'] = () => { const it = F.deck[F.i]; closeFocus(); const b = document.querySelector('.tb[data-tab="map"]'); if (b) b.click(); if (it && it.l) { const k = 'l:' + it.g + ':' + it.l; setTimeout(() => { if (UI.tab === 'map') mapSelectShow(k); }, 60); } };
+// 한 장 화면의 지도 단추 — 그룹 · 서브 그룹을 띠 색과 함께 요약해 보여 주고 고르면 그 그룹으로 (HB 2026-10-15)
+ACT['focus-map'] = () => focusPickGroup();
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
 ACT.todo = el => {
@@ -4761,10 +4789,10 @@ function mapHoldMenu(k, who) {
 // 지도 차례대로 이름 펼치기 — 그룹마다 항목 먼저, 다음 서브 그룹. 같은 이름은 처음 나온 자리에만.
 function mapDeck() {
   const out = [], seen = new Set(), done = new Set();
-  const walk = g => { if (done.has(g.id)) return; done.add(g.id);
-    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id }); } }));
-    kidsOf(DB, g.id).forEach(walk); };
-  mapTops().forEach(walk);
+  const walk = (g, top) => { if (done.has(g.id)) return; done.add(g.id);
+    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id, tg: top }); } }));
+    kidsOf(DB, g.id).forEach(k => walk(k, top)); };
+  mapTops().forEach(g => walk(g, g.id));
   return out;
 }
 // 고치는 칸 밖을 누르면 그대로 적고 마친다
@@ -4985,10 +5013,14 @@ function mpApply() {
 }
 function mpPaint() {
   const v = $('v-map'); if (!v) return;
-  v.querySelectorAll('.mp-keep').forEach(x => x.classList.remove('mp-keep'));
+  v.querySelectorAll('.mp-keep,.mp-in,.mp-up').forEach(x => x.classList.remove('mp-keep', 'mp-in', 'mp-up'));
   if (!MPH.on) { v.classList.remove('mp-focus'); return; }
   const el = mpEl(MPH.on.k);
-  if (el) { el.classList.add('mp-keep'); el.querySelectorAll('[data-sel]').forEach(x => x.classList.add('mp-keep')); }
+  if (el) {
+    el.classList.add('mp-keep'); el.querySelectorAll('[data-sel],.ln,.sgb,.gh').forEach(x => x.classList.add('mp-keep'));
+    const c = el.closest('.gcard'); if (c) c.classList.add('mp-in');
+    const b = el.closest('.sgb'); if (b && b !== el) b.classList.add('mp-up');
+  }
   v.classList.add('mp-focus');
 }
 function mpPids(el) {
