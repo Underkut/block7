@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-10';
+const APP_VERSION = 'v. 26-1015-11';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1757,7 +1757,7 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .mk-chips{gap:5px}
 .mk-chips .chip{height:27px;padding:0 10px;border-radius:14px;font-size:11px;gap:5px}
 .mk-chips .chip .dot{width:6.5px;height:6.5px}
-.mk-chips .chip-all{width:27px;padding:0;justify-content:center}.mk-chips .chip-all .dot{width:9px;height:9px}
+.mk-chips .chip-all{width:36px;padding:0;justify-content:center}.mk-chips .chip-all .mkico{width:19px;height:11.7px;opacity:.55}.mk-chips .chip-all.on .mkico{opacity:1}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--s1);border-radius:11px;padding:3px;margin:8px 20px 4px;gap:2px}
 .seg button{height:34px;border-radius:8px;font-size:13px;color:var(--tx2);transition:background .2s,color .2s}
 .seg button.on{background:var(--tab-on-bg);color:var(--tx)}
@@ -2814,7 +2814,7 @@ function renderMap() {
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<div class="mkrow"><div class="chips mk-chips' + (mkRowOpen() ? ' open' : '') + '"><button class="chip chip-all' + (mkAllOn() ? ' on' : '') + '" data-a="map-filter-all" style="--m:var(--tx2)" aria-pressed="' + mkAllOn() + '" aria-label="쉬는 분 빼고 전체 고르기 · 해제"><i class="dot"></i></button>' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
+  h += '<div class="mkrow"><div class="chips mk-chips' + (mkRowOpen() ? ' open' : '') + '"><button class="chip chip-all' + (mkAllOn() ? ' on' : '') + '" data-a="map-filter-all" style="--m:var(--tx2)" aria-pressed="' + mkAllOn() + '" aria-label="쉬는 분 빼고 전체 고르기 · 해제">' + MKICO + '</button>' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
  '</div>';
   if (UI.mapQuery) {
     // 이름 · 기도 항목 · 그룹 · 서브 그룹 이름 어디서나 찾는다 (HB 2026-10-13)
@@ -3736,8 +3736,13 @@ ACT.acts = () => {
   const b = v.querySelector('.vh-more'), row = v.querySelector('.vh-acts');
   if (b) { b.classList.toggle('open', open); b.classList.toggle('dim', !open); b.setAttribute('aria-expanded', open); }
   if (!row) return;
-  if (open) { row.classList.add('open'); slideIn(row); }
-  else slideOut(row, () => { row.getAnimations().forEach(a => a.cancel()); row.style.overflow = ''; row.classList.remove('open'); });
+  // 단추 줄은 윗줄과의 줄 간격(10px)을 달고 있다 — 접힐 때 이 간격이 마지막에 한꺼번에 사라져 덜컥였다 → 간격도 함께 줄이고 늘린다
+  const vh = row.parentElement;
+  if (open) { row.classList.add('open'); slideIn(row); if (vh && !mxQuiet()) vh.animate([{ marginBottom: '-10px' }, { marginBottom: '0px' }], { duration: 460, easing: MX_EASE }); }
+  else {
+    if (vh && !mxQuiet()) vh.animate([{ marginBottom: '0px' }, { marginBottom: '-10px' }], { duration: 420, delay: 80, easing: MX_EASE, fill: 'forwards' });
+    slideOut(row, () => { row.getAnimations().forEach(a => a.cancel()); if (vh) vh.getAnimations().forEach(a => a.cancel()); row.style.overflow = ''; row.classList.remove('open'); });
+  }
   // 지도: 표시 색 알약 줄도 함께 접히고 펴진다 (HB 2026-10-15)
   const pr = UI.tab === 'map' && UI.mkOpen && !UI.mapFilter.length ? v.querySelector('.mk-chips') : null;
   if (pr) {
