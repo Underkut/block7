@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-5';
+const APP_VERSION = 'v. 26-1015-6';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2018,6 +2018,14 @@ textarea.field{min-height:72px;line-height:1.6}
 .pal{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:8px 20px 4px}
 .pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
 .pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
+.npop{position:fixed;z-index:80;background:var(--s1);border:1px solid var(--bd2);border-radius:14px;padding:6px 6px 8px;box-shadow:0 10px 30px rgba(0,0,0,.28);
+  opacity:0;transform:translateY(6px) scale(.97);transition:opacity .15s ease,transform .15s ease;pointer-events:auto;-webkit-user-select:none;user-select:none;touch-action:none}
+.npop.in{opacity:1;transform:none}
+.npop .np-t{font-size:11px;color:var(--tx3);text-align:center;padding:0 0 5px}
+.npop .np-r{display:flex;gap:5px}
+.npop button{width:40px;height:44px;border-radius:10px;font-size:17px;font-weight:600;transition:transform .1s ease}
+.npop button.sel{box-shadow:0 0 0 2px var(--s1),0 0 0 3px var(--tx3)}
+.npop button.hov{transform:translateY(-6px) scale(1.12);box-shadow:0 0 0 2px var(--s1),0 0 0 4px var(--tx)}
 .numpick{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:8px 20px}
 .numpick button{height:52px;border-radius:12px;font-size:18px;font-weight:600}
 .numpick button.sel{box-shadow:0 0 0 2px var(--s1),0 0 0 4px var(--tx)}
@@ -2789,7 +2797,7 @@ function renderList() {
   }).join('');
   return h + listFoot();
 }
-function listFoot() { return '<div class="legend">숫자 칸을 누르면 바꿉니다 · 왼쪽으로 밀면 지우기 · 길게 눌러 순서 바꾸기</div>'; }
+function listFoot() { return '<div class="legend">숫자 칸을 눌러 바꿉니다(휴대폰은 누른 채 밀어 고르기) · 왼쪽으로 밀면 지우기 · 길게 눌러 순서 바꾸기</div>'; }
 function rowList(t) {
   return '<div class="row" data-id="' + t.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="target" data-id="' + t.id + '">지우기</button></div>' +
     '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="open" data-id="' + t.id + '"><div class="rt">' + (mk(t) ? '<i class="mk" style="--m:' + markVar(mk(t)) + '"></i>' : '') +
@@ -3574,6 +3582,62 @@ ACT['pick-num'] = el => {
     '<button class="' + (f === 'u' ? 'u' : 'i') + n + (t[f] === n ? ' sel' : '') + '" data-a="pick" data-v="' + n + '">' + n + '</button>').join('') + '</div>' +
     '<div class="sh-acts"><button class="ghost" data-a="pick" data-v="">비우기</button></div>', v => { t[f] = v === '' ? null : +v; save(); refresh(); });
 };
+// ── 숫자 칸 원터치 (HB 2026-10-15) — 터치 기기: 숫자를 누른 채로 있으면 그 위에 숫자 판이 뜨고,
+//    손가락을 밀어 고른 뒤 떼면 저장. 밀지 않고 떼면 판이 남아 한 번 더 눌러 고른다. PC 는 예전처럼 눌러서 아래 창.
+//    누르자마자 움직이면(0.15초 안) 화면 넘기기 — 판을 띄우지 않는다.
+const NP = { st: null, el: null };
+function npClose() { if (NP.el) { const e = NP.el; NP.el = null; e.classList.remove('in'); setTimeout(() => e.remove(), 160); } NP.st = null; }
+function npShow(st) {
+  const t = findAny(DB, st.id); if (!t) return;
+  if (GS.st) { clearTimeout(GS.st.timer); GS.st = null; }
+  const f = st.f, vals = ['', 0, 1, 2, 3, 4, 5];
+  const el = document.createElement('div'); el.className = 'npop';
+  el.innerHTML = '<div class="np-t">' + (f === 'u' ? '긴급도' : '중요도') + '</div><div class="np-r">' + vals.map(n =>
+    '<button class="' + (n === '' ? (f === 'u' ? 'uX' : 'iX') : (f === 'u' ? 'u' : 'i') + n) + ((t[f] == null ? '' : t[f]) === n ? ' sel' : '') + '" data-v="' + n + '">' + (n === '' ? '–' : n) + '</button>').join('') + '</div>';
+  document.body.appendChild(el);
+  const r = st.pill.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, vw = document.documentElement.clientWidth;
+  el.style.left = Math.max(8, Math.min(vw - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  el.style.top = Math.max(8, r.top - h - 10) + 'px';
+  requestAnimationFrame(() => el.classList.add('in'));
+  NP.el = el; st.mode = 'open';
+  if (navigator.vibrate) navigator.vibrate(8);
+}
+function npHit(x, y) { const b = NP.el && document.elementFromPoint(x, y); return b && b.closest && b.closest('.npop button'); }
+function npMark(x, y) { if (!NP.el) return null; const b = npHit(x, y); NP.el.querySelectorAll('button').forEach(z => z.classList.toggle('hov', z === b)); return b; }
+function npSave(id, f, v) { const t = findAny(DB, id); if (!t) return; t[f] = v === '' ? null : +v; save(); refresh(); if (navigator.vibrate) navigator.vibrate(6); }
+window.addEventListener('pointerdown', e => {
+  if (NP.el && !NP.st) {   // 남아 있는 판 — 숫자를 누르면 고르기, 밖을 누르면 닫기
+    const b = e.target.closest && e.target.closest('.npop button');
+    const keep = NP.keep; npClose(); GS.suppress = Date.now();
+    if (b && keep) npSave(keep.id, keep.f, b.dataset.v);
+    e.preventDefault(); e.stopPropagation(); return;
+  }
+  if (e.pointerType === 'mouse') return;
+  const pill = e.target.closest && e.target.closest('.pl[data-a="pick-num"]'); if (!pill) return;
+  const st = { pill: pill, id: pill.dataset.id, f: pill.dataset.f, x0: e.clientX, y0: e.clientY, pid: e.pointerId, mode: 'pend', moved: false };
+  st.timer = setTimeout(() => { if (NP.st === st) npShow(st); }, 150);
+  NP.st = st;
+}, true);
+window.addEventListener('pointermove', e => {
+  const st = NP.st; if (!st || e.pointerId !== st.pid) return;
+  if (st.mode === 'pend') { if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 8) { clearTimeout(st.timer); NP.st = null; } return; }
+  if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 6) st.moved = true;
+  npMark(e.clientX, e.clientY);
+}, true);
+window.addEventListener('pointerup', e => {
+  const st = NP.st; if (!st || e.pointerId !== st.pid) return;
+  clearTimeout(st.timer); NP.st = null;
+  if (st.mode !== 'open') return;   // 판이 뜨기 전에 뗐다 — 예전처럼 누르기(아래 창)
+  GS.suppress = Date.now();
+  // 뗀 자리 좌표는 기기마다 믿기 어렵다 — 마지막으로 손가락 밑에 있던(떠오른) 숫자를 쓴다
+  const b = (NP.el && NP.el.querySelector('button.hov')) || (st.moved ? npHit(e.clientX, e.clientY) : null);
+  if (b) { npClose(); npSave(st.id, st.f, b.dataset.v); return; }
+  if (st.moved) { npClose(); return; }   // 판 밖에서 뗐다 — 바꾸지 않고 닫기
+  NP.keep = { id: st.id, f: st.f };   // 밀지 않고 뗐다 — 판을 남겨 한 번 더 눌러 고른다
+}, true);
+window.addEventListener('pointercancel', e => { const st = NP.st; if (!st || e.pointerId !== st.pid) return; clearTimeout(st.timer); if (st.mode === 'open') npClose(); NP.st = null; }, true);
+document.addEventListener('touchmove', e => { if (NP.st && NP.st.mode === 'open') e.preventDefault(); }, { passive: false });
+document.addEventListener('contextmenu', e => { if (NP.st && e.target.closest && e.target.closest('.pl')) e.preventDefault(); });
 ACT['add-target'] = () => {
   let kind = 'person', cat = (DB.cats.find(c => c.person) || {}).id || '';
   const draw = () => '<div class="sh-t">새로 추가</div><input class="field" id="addName" placeholder="이름" autocomplete="off" enterkeyhint="done">' +
