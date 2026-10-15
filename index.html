@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-8  [production]  -->
+<!-- BLOCK7  v. 26-1015-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6373,7 +6373,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-8";
+const APP_VERSION = "v. 26-1015-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -39963,11 +39963,32 @@ function _moveDateToastMsg(dateStr,secId,verb){
 //   · 아무것도 안 누르면 지금 날짜에 그대로 머문다 (예전과 같다)
 //   · '보러 가기' 를 누를 때만 그 날짜로 넘어가고, 넘어가면 돌아오는 줄이 뜬다
 // mark 는 도착한 곳에서 반짝일 할일의 자리 {key,secId,type,idx}.
+// ── 구간 열어 보이기 (v26-1015-9, HB) ──
+// 옮기거나 복제한 곳이 **지금 열려 있지 않은 구간**(구간 설정에서 꺼 둠 · 접어 둠)이면 '보러 가기' 가 그 구간 판을
+// 켜고 펼쳐서 보여 준다. '완료 후 다음 할일' 은 늘 그 구간을 열어 보여 준다 (_revealSec).
+function _secClosed(secId){
+  return !!secId&&(!(ST.vis||[]).includes(secId)||(ST.collapsed||[]).includes(secId));
+}
+function _revealSec(secId){
+  if(!secId||!_secClosed(secId))return false;
+  beforeSave();
+  if(!(ST.vis||[]).includes(secId)){
+    ST.preset=null;ST.prevVis=null;
+    ST.vis=[...(ST.vis||[]),secId].sort((a,b)=>SECS.findIndex(x=>x.id===a)-SECS.findIndex(x=>x.id===b));
+  }
+  ST.collapsed=(ST.collapsed||[]).filter(i=>i!==secId);
+  save();
+  if(typeof renderSecs==='function')renderSecs();
+  return true;
+}
 function _toastWithJump(msg,toKey,mark){
   const backKey=tKey();
-  if(!toKey||toKey===backKey){showToast(msg);return;}
+  const closed=!!(mark&&_secClosed(mark.secId));       // 같은 날이어도 닫힌 구간이면 '보러 가기' 를 준다
+  if(!toKey||(toKey===backKey&&!closed)){showToast(msg);return;}
   showToast(msg,false,{label:'보러 가기',onClick:()=>{
+    if(mark)_revealSec(mark.secId);
     _pendingTaskFlash=mark||null;
+    if(toKey===backKey){_flashPendingTask();return;}
     goToDate(toKey);
     _flashPendingTask();
     showToast(_dayLabel(toKey)+'로 왔어요',false,
@@ -40180,6 +40201,7 @@ function nextAfterDoneTo(days,toSec,dateStr){
   dest.push(nu);
   const ni=dest.length-1;
   save();
+  _revealSec(destSec);        // 꺼 둔 · 접어 둔 구간이어도 늘 열어서 보여 준다
   renderSecBody(secId);
   if(destSec!==secId&&toKey===fromKey)renderSecBody(destSec);
   updateTotal();

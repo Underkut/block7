@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-17 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-16';
+const APP_VERSION = 'v. 26-1015-17';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2446,7 +2446,8 @@ function renderView() {
 }
 // 표시색 접기 단추 — 빨강 원 뒤로 주황 · 초록 · 파랑 초승달 (HB 그림, 2026-10-13). 폰에서만 보인다
 const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['#4aa1f7', 18.6], ['#82d454', 15.2], ['#f2b13e', 11.8], ['#d93a26', 7.6]].map((c, k) =>
-  '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--bg)" stroke-width="' + (k ? 1.4 : 0) + '"/>').join('') + '</svg>';
+  // 겹침 테두리는 눈에 안 튀는 회색 · 가늘게 — 파랑(맨 뒤)에도 똑같이 (HB 2026-10-15). 예전엔 배경색(흰색/검정)이고 파랑만 없었다
+  '<circle cx="' + c[1] + '" cy="8" r="' + (k === 3 ? 6.6 : 6.1) + '" fill="' + c[0] + '" stroke="var(--tx3)" stroke-opacity=".5" stroke-width=".7"/>').join('') + '</svg>';
 // ── 앱 이름 · 아이콘 세 가지 (HB 2026-10-13) — 설정에서 기기마다 고른다. 차례는 THRONE · BLUE · WAR ──
 // 앱 안 글자 · 탭 이름 · 파비콘은 바로 바뀐다. 홈 화면 아이콘 · 이름은 아이폰이 '홈 화면에 추가' 할 때 한 번만 읽으므로
 // 바꾼 뒤 홈 화면에서 지우고 다시 추가해야 한다 (그때 읽는 머리 태그 · manifest 를 여기서 갈아 끼워 둔다).
