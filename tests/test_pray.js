@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -642,6 +642,18 @@ const MAPCSV = [
   A.inboxApply(db, [{ id: 'm5', gid: g.id, text: '병원 심방', at: 5 }]);
   sc.eq('⑭ 같은 이름의 기도 항목은 카드를 같이 쓴다 (항목은 하나 · 줄은 둘)', [db.T.filter(x => x.name === '병원 심방').length, g.lines.length], [1, 3]);
   sc.eq('⑭ 빈 우체통은 아무 일 없음', A.inboxApply(db, []), { n: 0, lost: 0 });
+}
+// ⑰ Map 기도 — 앞 기록부터 지금까지를 이름 수로 나눈다 · 시간 합계(s)는 건드리지 않는다(There 기록이 센다) · 이미 기도함은 안 뒤집는다
+{
+  const db = A.emptyDB();
+  const a = A.newTarget('person', '가나'), b = A.newTarget('person', '다라'); db.T.push(a, b);
+  A.toggleDone(db, b.id, '2026-10-15');
+  const r = A.addMapPrayer(db, '2026-10-15', [a.id, b.id, a.id, 'gone'], 1000, 61000);
+  const L = db.log['2026-10-15'];
+  sc.eq('⭐⑰ 두 이름 · 30초씩 · 지워진 이름은 뺀다', r.map(e => e.d), [30, 30]);
+  sc.eq('⭐⑰ 둘 다 기도함 (이미 한 것도 그대로 기도함)', [L.d.indexOf(a.id) >= 0, L.d.indexOf(b.id) >= 0], [true, true]);
+  sc.eq('⭐⑰ 시간 합계는 그대로 (두 번 세지 않는다)', L.s || 0, 0);
+  sc.eq('⑰ 정리하면 mp 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-15'].mp.length, 2);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
