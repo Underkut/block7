@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1013-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1013-16';
+const APP_VERSION = 'v. 26-1015-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2433,6 +2433,7 @@ function emptyStart() {
 }
 
 // ── ② 한 장씩 기도하기 ──
+const MAP_ICO = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/></svg>';
 const F = { on: false, deck: [], i: 0, t0: 0, tick: 0, sent: {} };
 function openFocus() {
   if (MT.on) thereStop('page');
@@ -2444,10 +2445,24 @@ function openFocus() {
     sortTargets(list.map(e => e.t), mode, ranks).forEach(t => { const e = list.find(x => x.t === t); if (!e.done) deck.push({ id: t.id, sec: s[0] }); });
   });
   if (!deck.length) { toast('오늘 남은 기도가 없습니다'); return; }
-  F.on = true; F.deck = deck; F.i = 0; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {};
+  focusStart(deck, 0);
+}
+// 지도에서 고른 자리부터 한 장씩 — 끝까지 넘기면 지도 차례대로 이어진다
+function openFocusMap(k, who) {
+  if (MT.on) thereStop('page');
+  const deck = mapDeck(); if (!deck.length) { toast('지도에 기도할 이름이 없습니다'); return; }
+  const p = selParts(k), under = new Set([p.gid]);
+  if (p.t !== 'l') { const add = id => kidsOf(DB, id).forEach(c => { under.add(c.id); add(c.id); }); add(p.gid); }
+  let i = who ? deck.findIndex(d => d.id === who) : -1;
+  if (i < 0 && p.t === 'l') { const l = (findG(DB, p.gid).lines || []).find(x => x.id === p.lid); const ids = l ? linePids(l) : []; i = deck.findIndex(d => ids.indexOf(d.id) >= 0); }
+  if (i < 0) i = deck.findIndex(d => under.has(d.g));
+  focusStart(deck, Math.max(0, i));
+}
+function focusStart(deck, at) {
+  F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {};
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span class="f-time" id="fTime">0:00</span><span class="f-pos" id="fPos"></span>' +
-    '<button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></div><div class="f-stage" id="fStage"></div>' +
+    '<span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
     '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
     '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>';
   el.classList.add('on');
@@ -2474,7 +2489,8 @@ function focusCardHTML() {
   let cat = kindLabel(t);
   if (t.kind !== 'group') { const c = catOf(DB, t); if (c) cat = c.name; }
   else { const p = t.parent && findG(DB, t.parent); if (p) cat = '그룹 · ' + p.name; }
-  const secName = { top: '1순위', daily: '매일', day: '오늘 요일', turn: '차례' }[it.sec];
+  const secName = { top: '1순위', daily: '매일', day: '오늘 요일', turn: '차례', map: '기도 지도' }[it.sec];
+  if (it.sec === 'map') { const g = findG(DB, it.g); if (g) cat = g.name; }
   const why = secName + (t.u != null ? ' · 긴급도 ' + t.u : '') + (t.i != null ? ' · 중요도 ' + t.i : '');
   const tps = (t.topics || []).filter(x => !x.ans);
   const mem = t.kind === 'group' ? groupMembers(t) : '';
@@ -3070,6 +3086,16 @@ function markSugRender(inp) {
   box.hidden = !c.length;
   box.innerHTML = c.map(x => '<button data-a="mark-link" data-m="' + m + '" data-t="' + x.t + '" data-id="' + x.id + '"><span>' + esc(x.name) + '</span><small>' + esc(x.kind) + '</small></button>').join('');
 }
+// 이미 이름을 붙인 색도 길게 누르기(휴대폰) · 오른쪽 누르기(PC)로 그 이름의 소속 후보를 다시 띄운다 (HB 2026-10-15)
+const MKH = { t: 0 };
+document.addEventListener('contextmenu', e => { const i = e.target.closest && e.target.closest('input[data-f="markname"]'); if (!i) return; e.preventDefault(); markSugRender(i); });
+document.addEventListener('pointerdown', e => {
+  const i = e.target.closest && e.target.closest('input[data-f="markname"]'); if (!i || e.pointerType === 'mouse') return;
+  clearTimeout(MKH.t); const x0 = e.clientX, y0 = e.clientY;
+  MKH.t = setTimeout(() => { markSugRender(i); if (navigator.vibrate) navigator.vibrate(8); }, 450);
+  const stop = ev => { if (ev.type !== 'pointermove' || Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) { clearTimeout(MKH.t); ['pointermove', 'pointerup', 'pointercancel'].forEach(n => document.removeEventListener(n, stop)); } };
+  ['pointermove', 'pointerup', 'pointercancel'].forEach(n => document.addEventListener(n, stop));
+}, true);
 function catLayer(kind) {
   const arr = kind === 'cats' ? DB.cats : DB.subs;
   const used = id => DB.T.filter(t => (kind === 'cats' ? t.cat : t.sub) === id).length;
@@ -3296,6 +3322,8 @@ ACT['sort-today'] = () => choose('오늘 목록 정렬', [
   { v: 'mine', label: '내 순서', desc: '줄을 길게 눌러 끌어 정한 순서' }], DB.set.sorts.today || 'imp', v => { DB.set.sorts.today = v; save(); renderView(); });
 ACT.focus = () => openFocus();
 ACT['focus-close'] = () => closeFocus();
+// 한 장 화면의 지도 단추 — 한 장을 닫고 지금 보던 이름이 있는 지도로 (아래 탭의 '지도' 와 같은 일)
+ACT['focus-map'] = () => { const it = F.deck[F.i]; closeFocus(); const b = document.querySelector('.tb[data-tab="map"]'); if (b) b.click(); if (it && it.l) { const k = 'l:' + it.g + ':' + it.l; setTimeout(() => { if (UI.tab === 'map') mapSelectShow(k); }, 60); } };
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
 ACT.todo = el => {
@@ -4264,7 +4292,7 @@ function mdEnd(e, cancel) {
   if (st.mode === 'lift') {
     st.src.classList.remove('md-lift');
     GS.suppress = Date.now();
-    
+    mapHoldMenu(st.k, st.who);
     return;
   }
   if (st.mode === 'drag') { GS.suppress = Date.now(); mdDrop(st, cancel); }
@@ -4282,6 +4310,7 @@ function mdLift(st) {
   st.mode = 'lift'; st.src = mdSrcEl(st);
   st.src.classList.add('md-lift');
   if (navigator.vibrate) navigator.vibrate(10);
+  toast('끌어서 다른 자리로 옮길 수 있습니다 · 그대로 떼면 메뉴가 열립니다');
 }
 // ── 끌기 모양: Sweeter 홈 타일 · 저장 목록과 같은 방식 (HB 2026-10-11) ──
 //   ① 잡은 항목 **그 자체**가 손가락에 붙어 떠서 따라온다
@@ -4695,8 +4724,27 @@ document.addEventListener('contextmenu', e => {
   e.preventDefault();
   if (PT !== 'mouse' || e.target.closest('input')) return;
   mapSelect(s.dataset.sel);
-  const pn = e.target.closest('.pn'); if (pn && pn.dataset.id) openTarget(pn.dataset.id); else mapOpen(s.dataset.sel);
+  const pn = e.target.closest('.pn'); mapHoldMenu(s.dataset.sel, pn && pn.dataset.id || '');
 });
+// 길게 눌렀다 떼기(휴대폰) · 오른쪽 누르기(PC) 메뉴 (HB 2026-10-15)
+function mapHoldMenu(k, who) {
+  const p = selParts(k), g = findG(DB, p.gid); if (!g) return;
+  let name = g.name;
+  if (p.t === 'l') { const l = (g.lines || []).find(x => x.id === p.lid); const t = who && findT(DB, who); name = t ? t.name : (l ? lineToText(DB, l) : ''); }
+  choose(name, [{ v: 'focus', label: '한 장씩 기도하기', desc: '여기서부터 지도 차례대로' }, { v: 'todo', label: 'BLOCK7 할일로 보내기' }], '', v => {
+    if (v === 'focus') openFocusMap(k, who);
+    else if (v === 'todo') { copyText(name); DB.todo.push({ id: uid(), text: name, from: who || p.gid, at: new Date().toISOString() }); save(); toast('복사했습니다 — BLOCK7 할일에 붙여 넣으세요 (시간 골라 보내기는 다음 단계에서)'); }
+  });
+}
+// 지도 차례대로 이름 펼치기 — 그룹마다 항목 먼저, 다음 서브 그룹. 같은 이름은 처음 나온 자리에만.
+function mapDeck() {
+  const out = [], seen = new Set(), done = new Set();
+  const walk = g => { if (done.has(g.id)) return; done.add(g.id);
+    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id }); } }));
+    kidsOf(DB, g.id).forEach(walk); };
+  mapTops().forEach(walk);
+  return out;
+}
 // 고치는 칸 밖을 누르면 그대로 적고 마친다
 document.addEventListener('focusout', e => {
   const el = e.target;
