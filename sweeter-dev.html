@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6371,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-10";
+const APP_VERSION = "v. 26-1015-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35544,6 +35544,10 @@ function makeBigItem(id,i,b,secColor){
     _taskTextCommit('big',id,i,_origText,inp.value);
   };
   inp.onkeydown=e=>{
+    // Enter = 편집을 마치고 그 줄을 고른 채로 빠져나온다 (Tab 은 예전처럼 다음 칸으로) — v26-1015-11, HB
+    if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      e.preventDefault();_finishEditKeepRow('big',id,i,inp);return;
+    }
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
       const arr=getBigs(tKey(),id);
@@ -35763,6 +35767,9 @@ function makeSmItem(id,i,sm,secColor){
     _taskTextCommit('small',id,i,_origText,inp.value);
   };
   inp.onkeydown=e=>{
+    if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+      e.preventDefault();_finishEditKeepRow('small',id,i,inp);return;
+    }
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
       const arr=getSmalls(tKey(),id);
@@ -36946,14 +36953,27 @@ function parseItemKey(k){const [type,secId,idxStr]=k.split(':');return{type,secI
 
 // Build the single flat ordering: for each currently-visible (expanded)
 // section in display order, all big items first, then all small items.
+// 글자 고치던 중 Enter — 저장(blur 가 한다)하고 입력칸을 빠져나와 그 줄을 '고른 줄' 로 둔다.
+// 이후 화살표로 이어서 고르고, Space 로 완료 · E/Enter 로 다시 고칠 수 있다.
+function _finishEditKeepRow(type,secId,idx,inp){
+  inp.blur();
+  setTimeout(()=>{
+    ACTIVE.clear();
+    ACTIVE.add(itemKey(type,secId,idx));
+    _anchorKey=itemKey(type,secId,idx);
+    refreshActiveVisuals();
+  },0);
+}
 function buildFlatList(){
   const k=tKey();
   const list=[];
   SECS.filter(s=>ST.vis.includes(s.id)).forEach(sec=>{
+    // 화면에 안 보이는 줄(숨겨진 완료 · 접힌 구간)은 화살표 이동 대상에서 뺀다 (v26-1015-11, HB)
+    const shown=(t,i)=>{const el=getRowEl(t,sec.id,i);return !!el&&el.getClientRects().length>0;};
     const bigs=getBigs(k,sec.id);
-    bigs.forEach((b,i)=>list.push({type:'big',secId:sec.id,idx:i}));
+    bigs.forEach((b,i)=>{if(shown('big',i))list.push({type:'big',secId:sec.id,idx:i});});
     const smalls=getSmalls(k,sec.id);
-    smalls.forEach((s,i)=>list.push({type:'small',secId:sec.id,idx:i}));
+    smalls.forEach((s,i)=>{if(shown('small',i))list.push({type:'small',secId:sec.id,idx:i});});
   });
   return list;
 }
