@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1013-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6360,7 +6360,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1013-10";
+const APP_VERSION = "v. 26-1015-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -50564,7 +50564,9 @@ if(DEV_MODE){
 //    (tests/test_there_dash.js 가 세 벌이 같은지 본다).
 // 세 앱의 There(머문 시간) 기록을 한 모양으로 모아 주 · 달 · 하루로 보여 준다. **읽기만 한다.**
 //   thereLog = BLOCK7 · Sweeter 의 verseThereLog  {"YYYY-MM-DD":[{ref,time,t,d,sec,app,src}]}
-//   prayLog  = 기도노트 DB.log                    {"YYYY-MM-DD":{d,p,k,s,ses:[{id,t,time,d,src}]}}
+//   prayLog  = 기도노트 DB.log                    {"YYYY-MM-DD":{d,p,k,s,ses:[{id,t,time,d,src}],mp:[{id,a,t,pid,d,n,k}]}}
+//   mp = Map 기도(지도 There 안에서 누른 그룹 · 항목에 머문 시간). **합계에 더하지 않는다** — 그 시간은 지도 There(ses)에 이미 들어 있다.
+//        '무엇을 위해 기도했나' 로만 보여 준다 (k = 누른 그룹 · 항목 이름, n = 사람 이름, a = 시작 ms).
 // 갈래 넷: block7 · sweeter · bible(src 가 bible · bible-menu) · pray.
 //   10-12 전 BLOCK7 · Sweeter 기록은 app 이 비어 있다 → block7 로 센다.
 //   기도노트 10-12 전 기록은 날 합계(s)만 있다 → '시간만 남은 기록' 한 줄로 센다.
@@ -50627,6 +50629,33 @@ const TDASH = (function () {
     });
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || ((a.t || 0) - (b.t || 0)));
     return out;
+  }
+  // Map 기도 — 한 번 누른 것(같은 a · k)을 한 줄로: [{date,time,k,names,d}]
+  function mapPrayers(prayLog, from, to) {
+    const out = [];
+    Object.keys(prayLog || {}).forEach(date => {
+      if (!isDate(date) || (from && date < from) || (to && date > to)) return;
+      const mp = (prayLog[date] || {}).mp; if (!Array.isArray(mp)) return;
+      const by = {};
+      mp.forEach(e => {
+        if (!e) return;
+        const d = Math.max(0, Math.round(+e.d || 0));
+        const key = (+e.a || +e.t || 0) + '|' + (e.k || e.n || '');
+        const o = by[key] || (by[key] = { date: date, t: +e.a || +e.t || 0, k: String(e.k || e.n || '이름 없음'), names: [], d: 0 });
+        o.d += d; if (e.n && o.names.indexOf(e.n) < 0) o.names.push(String(e.n));
+      });
+      Object.keys(by).forEach(x => { const o = by[x]; if (o.t) { const dt = new Date(o.t); o.time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); } else o.time = ''; out.push(o); });
+    });
+    out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
+    return out;
+  }
+  // 기간 안의 Map 기도를 이름(k)마다 모아 오래 한 순서로
+  function mapTop(S, a, b, n) {
+    const m = {}; mapPrayers(S.data.prayLog, a, b).forEach(x => { const o = m[x.k] || (m[x.k] = { s: 0, n: 0 }); o.s += x.d; o.n++; });
+    const ks = Object.keys(m).sort((x, y) => m[y].s - m[x].s).slice(0, n || 5);
+    if (!ks.length) return '';
+    return '<div class="tdash-sec"><h4 style="color:#5b8fcc">무엇을 위해 기도했나 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· Map 기도</span></h4>' +
+      ks.map(k => '<div class="tdash-li"><span>' + esc(k) + '</span><small>' + dur(m[k].s) + ' · ' + m[k].n + '번</small></div>').join('') + '</div>';
   }
   // 날마다 합계 {date:{s, by:{app:초}}}
   function dayTotals(ss) {
@@ -50794,6 +50823,7 @@ const TDASH = (function () {
     h += topRefs(ss, S.refLabel);
     const pm = sumBy(ss.filter(x => x.app === 'pray'), srcName), pk = Object.keys(pm).sort((x, y) => pm[y].s - pm[x].s);
     if (pk.length) h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">기도노트</h4>' + pk.map(k => '<div class="tdash-li"><span>' + esc(k) + '</span><small>' + dur(pm[k].s) + ' · ' + pm[k].n + '번</small></div>').join('') + '</div>';
+    h += mapTop(S, a, b, 5);
     return h;
   }
   const HEAT = ['#17191d', '#2a3646', '#3b4e66', '#4f86c6', '#9cc0e8'];
@@ -50817,7 +50847,7 @@ const TDASH = (function () {
     if (!tot) return h + '<div class="tdash-empty">이 달에는 기록이 없습니다</div>';
     const by = {}; ss.forEach(x => { by[x.app] = (by[x.app] || 0) + x.d; });
     h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>';
-    h += bySrc(ss) + bySlot(ss);
+    h += bySrc(ss) + bySlot(ss) + mapTop(S, a, b, 7);
     if (ss.some(x => (x.app === 'block7' && !x.src) || x.old)) h += '<span class="tdash-note">10월 12일 전 기록은 \'어디서\' 가 남아 있지 않아 따로 모았습니다.</span>';
     return h;
   }
@@ -50837,6 +50867,14 @@ const TDASH = (function () {
     h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x =>
       '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
       esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+    // 지도 There 안에서 누른 것들 — 위 '기도 지도' 시간 안에 든 몫이라 합계에는 다시 더하지 않는다
+    const mp = mapPrayers(S.data.prayLog, d, d);
+    if (mp.length) {
+      const sum = mp.reduce((s, x) => s + x.d, 0);
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x =>
+        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0"><b>' + esc(x.k) + '</b>' +
+        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+    }
     return h;
   }
   function nav(S, title, sub, atEnd) {
@@ -50937,7 +50975,7 @@ const TDASH = (function () {
     ov.classList.remove('in'); setTimeout(() => ov.remove(), 240);
   }
   const isOpen = () => !!OV;
-  return { collect, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
+  return { collect, mapPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
 })();
 </script>
 </body>
