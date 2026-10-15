@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-19 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-20 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-19';
+const APP_VERSION = 'v. 26-1015-20';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2183,6 +2183,7 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 .md-trash svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
 .md-trash.on{opacity:.9}
 .md-trash.hot{background:color-mix(in srgb,var(--danger) 50%,transparent);width:140px;height:140px}
+.md-drag.pkoff .pk{display:none}
 .md-drag.md-doom{opacity:.55;box-shadow:0 0 0 2px var(--danger),0 18px 40px -10px rgba(0,0,0,.55)}
 
 /* ── 지도 There (HB 2026-10-12) — 지도 뒤에 약하게 깔리는 There 판 ── */
@@ -4768,6 +4769,8 @@ function mdStart(st) {
   el.style.setProperty('--gc', cs.getPropertyValue('--gc'));
   el.style.setProperty('--mz', cs.getPropertyValue('--mz') || '1');   // 카드 밖에서도 같은 글자 크기
   el.style.cssText += ';position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;width:' + r.width + 'px;margin:0;z-index:60;transition:none';
+  // 카드 밖(body)으로 나오면 '.masonry:not(.pk1) .pk' 숨김 규칙이 안 닿아, 타겟을 안 켰는데도 원 표시가 떴다 → 떠날 때의 타겟 상태를 들고 간다
+  { const mm = el.closest('.masonry'); if (mm && !mm.classList.contains('pk1')) el.classList.add('pkoff'); }
   el.classList.add('md-drag');
   if (st.alt && st.kind !== 'group') el.classList.add('md-copy');
   document.body.appendChild(el);
@@ -4942,7 +4945,7 @@ function mdLand(st, then) {
   setTimeout(() => {
     ph.replaceWith(el);
     ['position', 'left', 'top', 'width', 'margin', 'z-index', 'transition', 'transform', '--mz'].concat(st.kind === 'group' ? [] : ['--gc']).forEach(k => el.style.removeProperty(k));
-    el.classList.remove('md-drag', 'md-landing', 'md-copy');
+    el.classList.remove('md-drag', 'md-landing', 'md-copy', 'pkoff');
     if (then) then();
   }, MD_SLIDE);
 }
