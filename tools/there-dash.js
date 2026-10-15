@@ -128,6 +128,8 @@ const TDASH = (function () {
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
 .tdash-seg button.on{background:#272a32;color:var(--tx);font-weight:500}
+.tdash-seg button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tdash-seg button.pin::before{content:"";position:absolute;top:2px;left:50%;width:3.5px;height:3.5px;margin-left:-1.75px;border-radius:50%;background:#dab87a}
 .tdash-nav{display:flex;align-items:center;justify-content:space-between}
 .tdash-nav button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
 .tdash-nav button[disabled]{opacity:.25;cursor:default}
@@ -324,7 +326,7 @@ const TDASH = (function () {
   function html(S) {
     const seg = [['day', 'D'], ['week', 'W'], ['month', 'M']];
     let h = '<div class="tdash-in"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
-      seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + '" data-td="view" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div></div>';
+      seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>';
     h += S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);
     if (S.note) h += '<span class="tdash-note">' + esc(S.note) + '</span>';
     return h + '</div>';
@@ -336,8 +338,26 @@ const TDASH = (function () {
   function mount(el, opts) {
     injectCSS();
     opts = opts || {};
-    const S = { view: opts.view || 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}) };
-    S.at = opts.at || S.today;
+    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}) };
+    // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭 · 탭마다 마지막으로 본 날 / 주 / 달. 이 기기의 localStorage 에만 둔다.
+    //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
+    const KEY = (opts.store || 'tdash') + '.v1';
+    const mem = (function () { try { const m = JSON.parse(localStorage.getItem(KEY) || '{}'); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; } })();
+    const VIEWS = ['day', 'week', 'month'], okView = v => VIEWS.indexOf(v) >= 0;
+    const okDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+    S.pin = okView(mem.pin) ? mem.pin : null;
+    S.ats = {}; VIEWS.forEach(v => { S.ats[v] = okDate(mem.at && mem.at[v]) && mem.at[v] <= S.today ? mem.at[v] : S.today; });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, at: S.ats })); } catch (e) {} };
+    // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
+    S.view = okView(opts.view) ? opts.view : S.pin || (okView(mem.last) ? mem.last : 'week');
+    if (okDate(opts.at)) S.ats[S.view] = opts.at <= S.today ? opts.at : S.today;
+    S.at = S.ats[S.view];
+    const setAt = d => { S.at = d > S.today ? S.today : d; S.ats[S.view] = S.at; };
+    const step = k => {
+      if (S.view === 'day') setAt(add(S.at, k));
+      else if (S.view === 'week') setAt(add(weekStart(S.at), 7 * k));
+      else { const d = parse(monthStart(S.at)); setAt(ymd(new Date(d.getFullYear(), d.getMonth() + k, 1))); }
+    };
     const draw = () => {
       S.ss = collect(S.data.thereLog, S.data.prayLog);
       el.classList.add('tdash');
@@ -347,19 +367,46 @@ const TDASH = (function () {
     el.onclick = e => {
       const b = e.target.closest && e.target.closest('[data-td]'); if (!b || b.disabled) return;
       const a = b.dataset.td;
-      if (a === 'view') { S.view = b.dataset.v; if (S.at > S.today) S.at = S.today; }
-      else if (a === 'day') { S.view = 'day'; S.at = b.dataset.v; }
-      else if (a === 'prev' || a === 'next') {
-        const k = a === 'prev' ? -1 : 1;
-        if (S.view === 'day') S.at = add(S.at, k);
-        else if (S.view === 'week') S.at = add(weekStart(S.at), 7 * k);
-        else { const d = parse(monthStart(S.at)); S.at = ymd(new Date(d.getFullYear(), d.getMonth() + k, 1)); }
-        if (S.at > S.today) S.at = S.today;
-      } else return;
+      if (Date.now() - lpAt < 700) { e.stopPropagation(); return; }   // 길게 눌러 고정한 뒤 따라오는 클릭
+      if (a === 'view') {
+        const v = b.dataset.v;
+        if (v === S.view) setAt(S.today);        // 이미 열린 탭을 다시 누르면 오늘 기준
+        else { S.view = v; S.at = S.ats[v]; }    // 다른 탭은 그 탭에서 마지막으로 보던 날로
+      }
+      else if (a === 'day') { S.view = 'day'; setAt(b.dataset.v); }
+      else if (a === 'prev' || a === 'next') step(a === 'prev' ? -1 : 1);
+      else return;
       e.stopPropagation();
+      save();
       if (opts.onView) opts.onView(S.view);
       draw();
     };
+    // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점)
+    let lpAt = 0, lpTm = 0, lpX = 0, lpY = 0;
+    const togglePin = v => { S.pin = S.pin === v ? null : v; lpAt = Date.now(); save(); draw(); };
+    const segBtn = e => e.target.closest && e.target.closest('.tdash-seg [data-td="view"]');
+    el.addEventListener('pointerdown', e => {
+      const b = segBtn(e); if (!b || e.pointerType === 'mouse') return;
+      lpX = e.clientX; lpY = e.clientY; clearTimeout(lpTm);
+      lpTm = setTimeout(() => { lpTm = 0; if (navigator.vibrate) navigator.vibrate(10); togglePin(b.dataset.v); }, 520);
+    });
+    el.addEventListener('pointermove', e => { if (lpTm && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTm); lpTm = 0; } });
+    ['pointerup', 'pointercancel'].forEach(n => el.addEventListener(n, () => { clearTimeout(lpTm); lpTm = 0; }));
+    el.addEventListener('contextmenu', e => { const b = segBtn(e); if (!b) return; e.preventDefault(); e.stopPropagation(); clearTimeout(lpTm); lpTm = 0; togglePin(b.dataset.v); });
+    // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
+    let sx = 0, sy = 0, sOn = false;
+    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32; sx = t.clientX; sy = t.clientY; }, { passive: true });
+    el.addEventListener('touchmove', e => { if (!sOn) return; const t = e.touches[0]; if (Math.abs(t.clientY - sy) > 40 && Math.abs(t.clientY - sy) > Math.abs(t.clientX - sx)) sOn = false; }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if (!sOn) return; sOn = false;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+      step(dx > 0 ? -1 : 1);                    // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
+      save();
+      if (opts.onView) opts.onView(S.view);
+      draw();
+    }, { passive: true });
+    save();
     draw();
     if (opts.load) {
       S.status = '다른 앱 기록을 받는 중…'; draw();
@@ -382,7 +429,7 @@ const TDASH = (function () {
     opts = opts || {};
     const ov = document.createElement('div');
     ov.className = 'tdash tdash-ov'; ov.id = 'tdashOv'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'There 대시보드');
-    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub>' + (VNAME[opts.view || 'week'] || '') + '</span></div>' +
+    ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub></span></div>' +
       '<button class="tdash-x" data-tdx="1" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div><div class="tdash-body"></div>';
     document.body.appendChild(ov);
     ov.querySelector('[data-tdx]').onclick = e => { e.stopPropagation(); close(); };
@@ -405,6 +452,7 @@ const TDASH = (function () {
     document.addEventListener('keydown', key, true);
     OV = ov; ov._key = key; ov._onClose = opts.onClose;
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('in')));
+    sub.textContent = VNAME[m.state.view] || '';
     return m;
   }
   function close(now) {
