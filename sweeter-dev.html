@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1015-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6360,7 +6360,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-1";
+const APP_VERSION = "v. 26-1015-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35130,6 +35130,65 @@ async function _praySend(gid,name){
   }catch(e){showToast('기도노트로 못 보냈어요 — 인터넷 · 로그인을 확인해 주세요');}
 }
 // ═══════ 할일 → 기도노트로 끝 ═══════
+// ═══════ 기도노트 → 할일 받기 (v26-1015-2, HB — docs/ROADMAP.md 'P-8 나머지' R-3) ═══════
+// 기도노트의 '할일로 보내기' 가 남긴 쪽지(pray/{uid}/c/b7inbox 의 items: [{id,date,sec,text,at}])를
+// **트랜잭션으로 꺼내(비우고)** 그날 그 시간구간의 큰 할일로 넣는다 — 사람이 손으로 할일을 넣은 것과 같은 길
+// (beforeSave · getBigs().push · save). 그래서 동기화는 늘 하던 대로 3자 병합으로 돈다.
+// ⚠️ 기도노트가 users/{uid} 를 직접 쓰지 않게 하려고 만든 길이다. 여기서도 기도노트 덩어리는 건드리지 않는다.
+// ⚠️ 첫 클라우드 읽기가 성공한 뒤에만 받는다(_fbInitLoaded) — 빈 기기가 클라우드를 받기 전에 넣으면 안 된다.
+//    그 이름은 로그인 덩어리 안에 있어 여기서 안 보인다 → 그 덩어리가 '준비됐나' 를 묻는 함수를 넘겨 준다(_prayTodoReady).
+// · BLOCK7 만 받는다(Sweeter 는 할일이 없다). 개발본은 클라우드가 꺼져 있다.
+// · 아이폰 · 아이패드가 같이 열려 있어도 꺼내기(비우기)를 이긴 기기 하나만 넣는다.
+const _PRAY_TODO_MAX=50;
+// 쪽지 → 넣을 자리. 날짜 모양이 틀리거나 글이 비면 버린다. 없는 시간구간이면 첫 구간으로(지워진 구간 — 잃지 않게).
+function _prayTodoPlace(items,secIds){
+  const ids=Array.isArray(secIds)?secIds:[];
+  return (Array.isArray(items)?items:[]).slice(0,_PRAY_TODO_MAX).map(n=>{
+    if(!n||typeof n!=='object')return null;
+    const date=String(n.date||''),text=String(n.text||'').replace(/\s+/g,' ').trim().slice(0,200);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!text)return null;
+    const sec=ids.indexOf(n.sec)>=0?n.sec:(ids[0]||'');
+    return sec?{date,sec,text}:null;
+  }).filter(Boolean);
+}
+let _prayTodoUnsub=null,_prayTodoBusy=false,_prayTodoReady=()=>false;
+async function _prayTodoPull(){
+  if(_prayTodoBusy||DEV_MODE||APP_PRODUCT!=='block7'||!_prayTodoReady())return 0;
+  const uid=_prayUid();if(!uid)return 0;
+  _prayTodoBusy=true;
+  try{
+    const ref=_prayDb().doc('pray/'+uid+'/c/b7inbox');
+    const items=await _prayDb().runTransaction(async tx=>{
+      const d=await tx.get(ref);
+      const it=d.exists?(d.data().items||[]):[];
+      if(it.length)tx.set(ref,{items:[]});
+      return it;
+    });
+    const put=_prayTodoPlace(items,SECS.map(s=>s.id));
+    if(!put.length)return 0;
+    beforeSave();
+    put.forEach(p=>getBigs(p.date,p.sec).push({text:p.text,done:false}));
+    save();
+    // ⚠️ _fbApplyRenders 는 로그인 덩어리 안이라 여기서 못 부른다 — 지금 보는 판만 다시 그린다. 글자를 치는 중이면 그 칸을 지키려고 건너뛴다
+    try{const ae=document.activeElement;if(!(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))){const v=currentViewKey();if(v==='weekly')renderWeekly();else if(v==='monthly')renderMonthly();else{renderToday();refreshTaskViewsLive();}}}catch(e){}
+    showToast(put.length===1?`기도노트에서 할일이 왔어요 — ${put[0].text}`:`기도노트에서 할일 ${put.length}개가 왔어요`);
+    return put.length;
+  }catch(e){console.warn('기도노트 할일 받기 실패',e);return 0;}
+  finally{_prayTodoBusy=false;}
+}
+// 열려 있는 동안 쪽지가 오면 바로 받는다 (쪽지함 하나만 지켜본다 — 읽기 한 번 값)
+function _prayTodoWatch(ready){
+  if(_prayTodoUnsub){_prayTodoUnsub();_prayTodoUnsub=null;}
+  if(typeof ready==='function')_prayTodoReady=ready;
+  if(DEV_MODE||APP_PRODUCT!=='block7')return;
+  const uid=_prayUid();if(!uid)return;
+  try{
+    _prayTodoUnsub=_prayDb().doc('pray/'+uid+'/c/b7inbox').onSnapshot(d=>{
+      if(d.exists&&(d.data().items||[]).length)_prayTodoPull();
+    },()=>{});
+  }catch(e){}
+}
+// ═══════ 기도노트 → 할일 받기 끝 ═══════
 
 function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
@@ -47037,7 +47096,7 @@ window.fbStartListening=function(uid){
       _fbInitLoaded=true;
       // 초기 읽기가 실패했던 기기 — 이제야 쓰기가 열렸으니 기다리던 초대를 받는다.
       // ⚠️ 이 스냅샷이 ST 에 반영된 **뒤**라야 한다 (지금은 아직 옛 ST).
-      setTimeout(()=>{try{_joinApply(true);}catch(e){}},0);
+      setTimeout(()=>{try{_joinApply(true);}catch(e){}try{_prayTodoPull();}catch(e){}},0);
     }
 
     // ⚠️ rev 필드가 없는 문서 = 아직 업데이트되지 않은 옛 버전 기기가
@@ -47156,7 +47215,10 @@ fbAuth.onAuthStateChanged(async user=>{
     // 받는다(_fbInitLoaded). 실패한 기기는 쓰기가 막혀 있는데, 그 길에 사람이
     // 누르지도 않은 변경을 얹으면 안 된다(7-2-3). 못 받으면 적어 둔 채 다음 부팅에.
     try{_joinApply(_fbInitLoaded);}catch(e){}
+    // 기도노트가 보낸 할일 — 받는 조건(_fbInitLoaded)은 _prayTodoPull 안에서 본다
+    try{_prayTodoWatch(()=>_fbInitLoaded);}catch(e){}
   } else {
+    if(_prayTodoUnsub){try{_prayTodoUnsub();}catch(e){}_prayTodoUnsub=null;}
     // 로그아웃: 다음 로그인에 이전 계정 데이터가 새지 않도록 로컬을 완전히 비움
     window._fbUser=null;
     try{_syncDevVerBadge();}catch(e){}
