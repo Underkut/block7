@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-7';
+const APP_VERSION = 'v. 26-1015-8';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -850,6 +850,31 @@ function addPraySession(db, startMs, secs, src, sid) {
   else { e = { id: sid || uid(), t: startMs, time: String(st.getHours()).padStart(2, '0') + ':' + String(st.getMinutes()).padStart(2, '0'), d: secs, src: src || '' }; L.ses.push(e); }
   return e;
 }
+// ── BLOCK7 할일로 보내기 (R-4, HB 2026-10-15) — BLOCK7 상태 문서(users/{uid}/data/state 의 json)를 **읽기만** 해 그린다 ──
+// 보내기는 쪽지함 pray/{uid}/c/b7inbox 에 쪽지 한 줄 — BLOCK7 이 꺼내 제 길로 넣는다 (docs/ROADMAP.md 'P-8 나머지' R-3 · R-4).
+// BLOCK7 이 시간구간을 한 번도 고치지 않았으면 상태에 secs 가 비어 있다 → BLOCK7 의 기본 여섯(DEFAULT_SECS)과 같은 것을 쓴다.
+const B7_SECS = [
+  { id: 'dawn', name: '새벽', color: '#8c78f0', startTime: '03:00', endTime: '06:00' }, { id: 'am', name: '오전', color: '#28d880', startTime: '06:00', endTime: '12:00' },
+  { id: 'morn', name: '점심', color: '#f0aa28', startTime: '12:00', endTime: '13:00' }, { id: 'pm', name: '오후', color: '#3eaaf8', startTime: '13:00', endTime: '18:00' },
+  { id: 'eve', name: '저녁', color: '#f060a0', startTime: '18:00', endTime: '20:00' }, { id: 'night', name: '밤', color: '#a880f8', startTime: '20:00', endTime: '03:00' }
+];
+function b7Secs(st) {
+  const a = st && Array.isArray(st.secs) && st.secs.length ? st.secs : B7_SECS;
+  return a.filter(x => x && x.id).map(x => ({ id: String(x.id), name: String(x.name || ''), color: String(x.color || '#888'), start: String(x.startTime || ''), end: String(x.endTime || '') }));
+}
+// 그날 그 구간의 할일 (큰 할일 + 작은 할일, 글이 빈 것은 뺀다)
+function b7Todos(st, date, sec) {
+  const d = st && st.days && st.days[date]; if (!d) return [];
+  const pick = a => (Array.isArray(a) ? a : []).filter(x => x && String(x.text || '').trim()).map(x => ({ text: String(x.text).trim(), done: !!x.done }));
+  return pick(d.big && d.big[sec]).concat(pick(d.small && d.small[sec]));
+}
+// 쪽지 한 줄 — BLOCK7 의 받기(_prayTodoPlace)와 같은 잣대: 날짜 모양 · 빈 글 · 200자
+function b7Note(date, sec, text, at) {
+  text = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date)) || !sec || !text) return null;
+  return { id: uid(), date: String(date), sec: String(sec), text: text, at: at || Date.now() };
+}
+
 // ── Map 기도 (HB 2026-10-15) — There 를 켠 지도에서 이름을 눌러 '기도함' 으로 적기 ──
 // 한 이름마다 얼마나 기도했는지는 모르므로, **바로 앞 Map 기도(없으면 There 시작)부터 지금까지**를 고른 이름 수로 나눈다.
 // log[날].mp = [{id, a:시작ms, t:적은ms, pid, d:초, n:이름, k:누른 그룹 · 항목 이름}] — n · k 는 대시보드가 이름을 알게(BLOCK7 은 사람 목록을 안 읽는다) — 시간 합계(s)에는 **더하지 않는다.** 그 시간은 There 를 멈출 때
@@ -2019,6 +2044,49 @@ textarea.field{min-height:72px;line-height:1.6}
 .pal{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:8px 20px 4px}
 .pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
 .pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
+#layers.top{z-index:65}
+.b7nav{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 2px}
+.b7nav b{font-size:15px;font-weight:500}
+.b7secs{display:flex;flex-direction:column;gap:8px;padding:8px 16px 16px}
+.b7sec{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:11px 12px;border-radius:12px;background:var(--s1);border-left:4px solid var(--sc);transition:box-shadow .2s,background .2s;width:100%}
+.b7sec.on{box-shadow:0 0 0 2px var(--sc);background:color-mix(in srgb,var(--sc) 12%,var(--s1))}
+.b7sh{width:80px;flex-shrink:0;display:flex;flex-direction:column}
+.b7sh b{font-size:14px;font-weight:600}
+.b7sh small{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:-.02em}
+.b7tl{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.b7t{color:var(--tx);overflow-wrap:anywhere}
+.b7t.d{color:var(--tx3);text-decoration:line-through}
+.b7t.p{color:var(--tx2)}
+.b7t i{font-style:normal;font-size:11px;color:var(--tx3);margin-left:6px}
+.b7t.n{color:var(--sc);font-weight:600}
+.b7t.n::before{content:'+ '}
+.b7e{color:var(--tx3);font-size:12.5px}
+.b7wk{display:grid;grid-template-columns:42px repeat(7,minmax(0,1fr));gap:3px;padding:8px 10px 0}
+.b7wd{font-size:11px;color:var(--tx3);text-align:center;display:flex;flex-direction:column;padding-bottom:4px}
+.b7wd b{font-size:13px;color:var(--tx2);font-weight:500}
+.b7wd.t b{color:var(--tx);text-decoration:underline;text-underline-offset:3px}
+.b7wn{font-size:11.5px;font-weight:600;color:var(--sc);display:flex;align-items:center}
+.b7wc{min-height:52px;border-radius:6px;background:color-mix(in srgb,var(--sc) 9%,var(--s1));padding:3px;display:flex;flex-direction:column;gap:2px;text-align:left;overflow:hidden}
+.b7wc.past{opacity:.55}
+.b7wc i{font-style:normal;font-size:10px;line-height:1.25;color:var(--tx2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.b7wc i.d{color:var(--tx3);text-decoration:line-through}
+.b7wc i.p{color:var(--sc)}
+.b7wc em{font-style:normal;font-size:10px;color:var(--tx3)}
+.b7mo{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:8px 12px 0}
+.b7mw{font-size:11px;color:var(--tx3);text-align:center}
+.b7mc{aspect-ratio:1/1.1;border-radius:8px;background:var(--s1);display:flex;flex-direction:column;align-items:flex-start;padding:5px;position:relative}
+.b7mc.past{opacity:.55}
+.b7mc.t{box-shadow:0 0 0 1.5px var(--tx)}
+.b7mc b{font-size:12px;font-weight:500}
+.b7mc small{position:absolute;top:5px;right:6px;font-size:10.5px;color:var(--tx2)}
+.b7mc span{margin-top:auto;display:flex;gap:2px}
+.b7mc span i{width:5px;height:5px;border-radius:3px;display:block}
+.b7ft{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
+.b7ft .b7in{margin:0;width:100%}
+.b7fr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.b7fr small{flex:1;min-width:0;font-size:12.5px;color:var(--tx2)}
+.b7fr .cta{flex:none;width:auto;padding:0 26px}
+.b7fr .cta[disabled]{opacity:.4}
 .npop{position:fixed;z-index:80;background:var(--s1);border:1px solid var(--bd2);border-radius:14px;padding:6px 6px 8px;box-shadow:0 10px 30px rgba(0,0,0,.28);
   opacity:0;transform:translateY(6px) scale(.97);transition:opacity .15s ease,transform .15s ease;pointer-events:auto;-webkit-user-select:none;user-select:none;touch-action:none}
 .npop.in{opacity:1;transform:none}
@@ -2172,6 +2240,7 @@ const ICONS = {
   chev: '<polyline points="6 9 12 15 18 9"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
   chevR: '<polyline points="9 6 15 12 9 18"/>',
+  chevL: '<polyline points="15 6 9 12 15 18"/>',
   chevD: '<polyline points="6 9.5 12 15.5 18 9.5"/>',
   check: '<polyline points="5 12.5 10 17 19 7.5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/>',
@@ -2921,7 +2990,7 @@ function pushLayer(L) {
 function popLayer() {
   const el = topLayerEl(); if (!el) return;
   UI.layers.pop();
-  if (!UI.layers.length) $('layers').classList.remove('has');
+  if (!UI.layers.length) $('layers').classList.remove('has', 'top');
   el.classList.remove('in'); el.classList.add('out');
   setTimeout(() => el.remove(), 360);
   refresh({ skipTopEl: el });
@@ -2936,7 +3005,7 @@ function fillLayer(el, L) {
   el.innerHTML = '<div class="lhead">' + (r.menu ? '<button class="ib" data-a="' + r.menu + '" aria-label="메뉴">' + ico('dots') + '</button>' : '<span style="width:44px"></span>') +
     '<div class="lh-title">' + esc(r.title) + '</div><button class="ib lh-x" data-a="pop" aria-label="닫기">' + ico('x') + '</button></div>' +
     '<div class="lbody">' + r.body + '</div>' +
-    (L.snap ? '<div class="lfoot"><button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button></div>' : '');
+    (L.snap ? '<div class="lfoot"><button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button></div>' : r.foot ? '<div class="lfoot">' + r.foot + '</div>' : '');
   const nb = el.querySelector('.lbody'); if (nb) nb.scrollTop = top;
 }
 function refreshLayers(skipTop) {
@@ -3386,12 +3455,125 @@ ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
 ACT.todo = el => {
   const t = findAny(DB, el.dataset.id); if (!t || !t.memo) return;
-  const text = t.memo + ' — ' + t.name;
-  copyText(text);
-  DB.todo.push({ id: uid(), text: text, from: t.id, at: new Date().toISOString() }); save();
-  F.sent[t.id] = true;
-  if (el.closest('.f-card')) { el.classList.add('ac'); el.textContent = 'BLOCK7 할일로 보냄 ✓'; }
-  toast('복사했습니다 — BLOCK7 할일에 붙여 넣으세요 (자동으로 보내기는 로그인 단계에서)');
+  openB7Todo(t.memo + ' — ' + t.name, t.id);
+};
+// ═══ BLOCK7 할일로 보내기 — D · W · M (R-4, HB 2026-10-15) ═══
+// 시간구간은 **빈 구간까지 모두** 보인다. 고른 날 · 구간 + 아래 이름 칸(고칠 수 있음)으로 쪽지함에 보낸다.
+// W · M 에서 고르면 그날 D 로 넘어간다. 로그인 전이면 복사만.
+const B7 = { st: null, at: 0, uid: '', load: null, pend: [] };
+function b7Load(force) {
+  if (!SY.user) return Promise.resolve({ err: 'login' });
+  if (!force && B7.st && B7.uid === SY.user.uid && Date.now() - B7.at < 60000) return Promise.resolve({ ok: 1 });
+  if (B7.load) return B7.load;
+  B7.load = (async () => {
+    try {
+      await fbLoad(); const uid = SY.user.uid;
+      const r = await Promise.all([FB.db.doc('users/' + uid + '/data/state').get(), FB.db.doc('pray/' + uid + '/c/b7inbox').get()]);
+      let st = {}; if (r[0].exists) { try { st = JSON.parse((r[0].data() || {}).json || '{}') || {}; } catch (e) { st = {}; } }
+      B7.st = st; B7.pend = r[1].exists ? (r[1].data().items || []) : []; B7.uid = uid; B7.at = Date.now();
+      return { ok: 1 };
+    } catch (e) { return { err: fbErr(e) }; } finally { B7.load = null; }
+  })();
+  return B7.load;
+}
+function b7L() { return UI.layers.find(x => x.type === 'b7todo'); }
+function b7Paint() { const k = UI.layers.findIndex(x => x.type === 'b7todo'); if (k < 0) return; const el = liveLayerEls()[k]; if (el) fillLayer(el, UI.layers[k]); }
+function openB7Todo(text, from) {
+  pushLayer({ type: 'b7todo', text: text || '', from: from || '', tab: 'D', date: TODAY, sec: '', msg: B7.st && SY.user && B7.uid === SY.user.uid ? '' : 'loading' });
+  if (F.on) $('layers').classList.add('top');   // 한 장 화면(위에 떠 있다) 위로
+  b7Load().then(r => { const L = b7L(); if (!L) return; L.msg = r.err || ''; b7Paint(); });
+}
+const B7WK = ['일', '월', '화', '수', '목', '금', '토'];
+function b7DayLabel(d) { const x = parseYmd(d); return (x.getMonth() + 1) + '월 ' + x.getDate() + '일 ' + (x.getDay() ? B7WK[x.getDay()] + '요일' : '주일') + (d === TODAY ? ' · 오늘' : ''); }
+function b7Pend(date, sec) { return B7.pend.filter(n => n && n.date === date && (sec == null || n.sec === sec)); }
+function b7Nav(title) { return '<div class="b7nav"><button class="ib" data-a="b7t-move" data-v="-1" aria-label="이전">' + ico('chevL') + '</button><b>' + esc(title) + '</b><button class="ib" data-a="b7t-move" data-v="1" aria-label="다음">' + ico('chevR') + '</button></div>'; }
+function b7ViewD(L) {
+  const secs = b7Secs(B7.st);
+  return b7Nav(b7DayLabel(L.date)) + '<div class="b7secs">' + secs.map(s => {
+    const td = b7Todos(B7.st, L.date, s.id), pd = b7Pend(L.date, s.id), on = L.sec === s.id;
+    const items = td.map(t => '<span class="b7t' + (t.done ? ' d' : '') + '">' + esc(t.text) + '</span>').join('') +
+      pd.map(n => '<span class="b7t p">' + esc(n.text) + '<i>보냄 · BLOCK7 을 열면 들어갑니다</i></span>').join('') +
+      (on ? '<span class="b7t n">' + esc(L.text || '새 할일') + '</span>' : '');
+    return '<button class="b7sec' + (on ? ' on' : '') + '" style="--sc:' + esc(s.color) + '" data-a="b7t-sec" data-v="' + esc(s.id) + '" aria-pressed="' + on + '">' +
+      '<div class="b7sh"><b>' + esc(s.name) + '</b><small>' + esc(s.start && s.end ? s.start + '–' + s.end : '') + '</small></div>' +
+      '<div class="b7tl">' + (items || '<span class="b7e">비어 있음</span>') + '</div></button>';
+  }).join('') + '</div>';
+}
+function b7Week(d) { const x = parseYmd(d); return addDays(d, -((x.getDay() + 6) % 7)); }
+function b7ViewW(L) {
+  const secs = b7Secs(B7.st), a = b7Week(L.date), days = Array.from({ length: 7 }, (_, i) => addDays(a, i));
+  const pa = parseYmd(a), pb = parseYmd(days[6]);
+  let g = '<span></span>' + days.map(d => { const x = parseYmd(d); return '<span class="b7wd' + (d === TODAY ? ' t' : '') + '">' + (x.getDay() ? B7WK[x.getDay()] : '주일') + '<b>' + x.getDate() + '</b></span>'; }).join('');
+  secs.forEach(s => {
+    g += '<span class="b7wn" style="--sc:' + esc(s.color) + '">' + esc(s.name) + '</span>';
+    days.forEach(d => {
+      const td = b7Todos(B7.st, d, s.id), pd = b7Pend(d, s.id);
+      const all = td.map(t => '<i' + (t.done ? ' class="d"' : '') + '>' + esc(t.text) + '</i>').concat(pd.map(n => '<i class="p">' + esc(n.text) + '</i>'));
+      g += '<button class="b7wc' + (d < TODAY ? ' past' : '') + '" style="--sc:' + esc(s.color) + '" data-a="b7t-cell" data-d="' + d + '" data-s="' + esc(s.id) + '" aria-label="' + esc(b7DayLabel(d) + ' ' + s.name) + '">' + all.slice(0, 2).join('') + (all.length > 2 ? '<em>+' + (all.length - 2) + '</em>' : '') + '</button>';
+    });
+  });
+  return b7Nav((pa.getMonth() + 1) + '월 ' + pa.getDate() + '일 – ' + (pb.getMonth() !== pa.getMonth() ? (pb.getMonth() + 1) + '월 ' : '') + pb.getDate() + '일') +
+    '<div class="b7wk">' + g + '</div><div class="hint" style="padding-top:10px">칸을 누르면 그날 하루 판에서 그 시간 구간이 골라집니다.</div>';
+}
+function b7ViewM(L) {
+  const x = parseYmd(L.date), a = ymd(new Date(x.getFullYear(), x.getMonth(), 1)), n = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate(), secs = b7Secs(B7.st);
+  let g = B7WK.map(w => '<span class="b7mw">' + w + '</span>').join('');
+  for (let k = 0; k < parseYmd(a).getDay(); k++) g += '<span></span>';
+  for (let i = 0; i < n; i++) {
+    const d = addDays(a, i);
+    const cnt = secs.reduce((t, s) => t + b7Todos(B7.st, d, s.id).filter(z => !z.done).length, 0) + b7Pend(d).length;
+    const dots = secs.filter(s => b7Todos(B7.st, d, s.id).length || b7Pend(d, s.id).length).slice(0, 4).map(s => '<i style="background:' + esc(s.color) + '"></i>').join('');
+    g += '<button class="b7mc' + (d === TODAY ? ' t' : '') + (d < TODAY ? ' past' : '') + '" data-a="b7t-cell" data-d="' + d + '" data-s="" aria-label="' + esc(b7DayLabel(d)) + '"><b>' + (i + 1) + '</b>' + (cnt ? '<small>' + cnt + '</small>' : '') + '<span>' + dots + '</span></button>';
+  }
+  return b7Nav(x.getFullYear() + '년 ' + (x.getMonth() + 1) + '월') + '<div class="b7mo">' + g + '</div><div class="hint" style="padding-top:10px">날짜를 누르면 그날 하루 판으로 갑니다. 숫자 = 남은 할일.</div>';
+}
+LAYERS.b7todo = L => {
+  const seg = '<div class="seg">' + [['D', 'D'], ['W', 'W'], ['M', 'M']].map(t => '<button class="' + (L.tab === t[0] ? 'on' : '') + '" data-a="b7t-tab" data-v="' + t[0] + '">' + t[1] + '</button>').join('') + '</div>';
+  const inp = '<input class="field b7in" id="b7tIn" value="' + esc(L.text) + '" placeholder="할일 이름" autocomplete="off" enterkeyhint="send">';
+  if (L.msg === 'login') return { title: 'BLOCK7 할일로 보내기', body: '<div class="hint" style="padding-top:24px">로그인하면 BLOCK7 의 시간표가 보이고, 고른 날 · 시간 구간으로 바로 보낼 수 있습니다.<br>(설정 › 계정 — BLOCK7 과 같은 이메일)</div>',
+    foot: inp + '<button class="cta" data-a="b7t-copy" style="flex:none;padding:0 18px">복사</button>' };
+  let b = seg;
+  if (L.msg === 'loading') b += '<div class="hint" style="padding-top:24px">BLOCK7 시간표를 불러오는 중…</div>';
+  else {
+    if (L.msg) b += '<div class="hint" style="padding-top:12px;color:var(--danger)">' + esc(L.msg) + ' — 다시 열어 주세요</div>';
+    b += L.tab === 'W' ? b7ViewW(L) : L.tab === 'M' ? b7ViewM(L) : b7ViewD(L);
+  }
+  const sec = L.sec && b7Secs(B7.st).find(s => s.id === L.sec);
+  const wd = parseYmd(L.date), where = sec ? (wd.getMonth() + 1) + '/' + wd.getDate() + '(' + (wd.getDay() ? B7WK[wd.getDay()] : '주일') + ') ' + sec.name : '';
+  return { title: 'BLOCK7 할일로 보내기', body: b,
+    foot: '<div class="b7ft">' + inp + '<div class="b7fr"><small>' + (where ? esc(where) + '에 넣습니다' : 'D 판에서 시간 구간을 고르세요') + '</small><button class="cta" data-a="b7t-send"' + (sec ? '' : ' disabled') + '>보내기</button></div></div>' };
+};
+document.addEventListener('input', e => { if (e.target && e.target.id === 'b7tIn') { const L = b7L(); if (L) { L.text = e.target.value; const n = document.querySelector('.b7sec.on .b7t.n'); if (n) n.textContent = L.text || '새 할일'; } } });
+document.addEventListener('keydown', e => { if (e.target && e.target.id === 'b7tIn' && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['b7t-send'](); } });
+ACT['b7t-tab'] = el => { const L = b7L(); if (!L) return; L.tab = el.dataset.v; b7Paint(); };
+ACT['b7t-move'] = el => {
+  const L = b7L(); if (!L) return; const k = +el.dataset.v;
+  if (L.tab === 'D') L.date = addDays(L.date, k);
+  else if (L.tab === 'W') L.date = addDays(L.date, 7 * k);
+  else { const x = parseYmd(L.date); L.date = ymd(new Date(x.getFullYear(), x.getMonth() + k, 1)); }
+  b7Paint();
+};
+ACT['b7t-sec'] = el => { const L = b7L(); if (!L) return; L.sec = L.sec === el.dataset.v ? '' : el.dataset.v; b7Paint(); };
+ACT['b7t-cell'] = el => { const L = b7L(); if (!L) return; L.tab = 'D'; L.date = el.dataset.d; L.sec = el.dataset.s || ''; b7Paint(); };
+ACT['b7t-copy'] = () => { const L = b7L(); if (!L || !L.text.trim()) return; copyText(L.text.trim()); toast('복사했습니다 — BLOCK7 할일에 붙여 넣으세요'); };
+let B7SENDING = false;
+ACT['b7t-send'] = async () => {
+  const L = b7L(); if (!L || B7SENDING) return;
+  if (!L.sec) { toast('D 판에서 시간 구간을 먼저 고르세요'); return; }
+  const n = b7Note(L.date, L.sec, L.text); if (!n) { toast('할일 이름을 적어 주세요'); const i = $('b7tIn'); if (i) i.focus(); return; }
+  B7SENDING = true;
+  try {
+    await fbLoad();
+    await FB.db.doc('pray/' + SY.user.uid + '/c/b7inbox').set({ items: FB.fv.arrayUnion(n) }, { merge: true });
+    B7.pend.push(n);
+    DB.todo.push({ id: uid(), text: n.text, from: L.from, at: new Date().toISOString(), b7: { date: n.date, sec: n.sec } }); save();
+    if (L.from) F.sent[L.from] = true;
+    const sec = b7Secs(B7.st).find(s => s.id === n.sec);
+    popLayer();
+    toast('BLOCK7 할일로 보냈습니다 — ' + b7DayLabel(n.date).replace(' · 오늘', '') + ' ' + (sec ? sec.name : ''));
+    if (F.on) focusCard(false);
+  } catch (e) { toast(fbErr(e)); }
+  finally { B7SENDING = false; }
 };
 
 // 지도
@@ -4848,7 +5030,7 @@ function mapHoldMenu(k, who) {
   if (p.t === 'l') { const l = (g.lines || []).find(x => x.id === p.lid); const t = who && findT(DB, who); name = t ? t.name : (l ? lineToText(DB, l) : ''); }
   choose(name, [{ v: 'focus', label: '한 장씩 기도하기', desc: '여기서부터 지도 차례대로' }, { v: 'todo', label: 'BLOCK7 할일로 보내기' }], '', v => {
     if (v === 'focus') openFocusMap(k, who);
-    else if (v === 'todo') { copyText(name); DB.todo.push({ id: uid(), text: name, from: who || p.gid, at: new Date().toISOString() }); save(); toast('복사했습니다 — BLOCK7 할일에 붙여 넣으세요 (시간 골라 보내기는 다음 단계에서)'); }
+    else if (v === 'todo') openB7Todo(name, who || p.gid);
   });
 }
 // 지도 차례대로 이름 펼치기 — 그룹마다 항목 먼저, 다음 서브 그룹. 같은 이름은 처음 나온 자리에만.
