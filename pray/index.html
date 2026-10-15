@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-8';
+const APP_VERSION = 'v. 26-1015-9';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1757,6 +1757,7 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .mk-chips{gap:5px}
 .mk-chips .chip{height:27px;padding:0 10px;border-radius:14px;font-size:11px;gap:5px}
 .mk-chips .chip .dot{width:6.5px;height:6.5px}
+.mk-chips .chip-all{width:27px;padding:0;justify-content:center}.mk-chips .chip-all .dot{width:9px;height:9px}
 .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--s1);border-radius:11px;padding:3px;margin:8px 20px 4px;gap:2px}
 .seg button{height:34px;border-radius:8px;font-size:13px;color:var(--tx2);transition:background .2s,color .2s}
 .seg button.on{background:var(--tab-on-bg);color:var(--tx)}
@@ -1829,7 +1830,9 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 }
 /* 터치 기기는 '+' 가 꺼져 있을 때 PC 에서 마우스를 안 올린 모습과 같다 — 더하기 단추 · 이름 칸이 안 보이고, + 그룹 칸은 아예 없다 */
 .madd,.addin,.madd-group{transition:opacity .5s ease,visibility 0s}
-.masonry.addoff .madd,.masonry.addoff .addin{opacity:0;pointer-events:none}
+.masonry.addoff .madd{opacity:0;pointer-events:none}
+/* 그룹 맨 아래 빈 행은 '+' 가 꺼져 있어도 눌리면 바로 입력 (HB 2026-10-15) */
+.masonry.addoff .addin:not(:focus){opacity:0}
 .masonry.addoff .madd-group{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .5s ease,visibility 0s linear .5s}
 /* 타겟 — 이름 앞 ●/○ (그룹 머리는 흰색, 서브 그룹은 제 색) · 안 고른 것은 흐리게 */
 .pk{flex-shrink:0;width:26px;display:flex;align-items:center;justify-content:center;color:#fff}
@@ -2811,7 +2814,7 @@ function renderMap() {
   if (UI.mapSearch) h += '<label class="search">' + ico('search') + '<input id="mapQ" type="search" placeholder="이름 찾기" value="' + esc(UI.mapQuery) + '" data-live="mapq" autocomplete="off"></label>';
   if (!DB.G.length) return h + '<div class="empty"><h3>아직 지도가 비어 있습니다</h3><p>예전 기도 지도 시트(24-0303 같은 탭)를 가져오거나, 그룹을 하나씩 만들 수 있습니다.</p>' +
     '<div class="btns"><button class="cta" style="margin:0;width:100%" data-a="import">시트에서 가져오기</button><button class="ghost full" data-a="add-group">그룹 만들기</button></div></div>';
-  h += '<div class="mkrow"><div class="chips mk-chips' + (UI.mkOpen || UI.mapFilter.length ? ' open' : '') + '">' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
+  h += '<div class="mkrow"><div class="chips mk-chips' + (mkRowOpen() ? ' open' : '') + '"><button class="chip chip-all' + (mkAllOn() ? ' on' : '') + '" data-a="map-filter-all" style="--m:var(--tx2)" aria-pressed="' + mkAllOn() + '" aria-label="쉬는 분 빼고 전체 고르기 · 해제"><i class="dot"></i></button>' + MARKS.map(m => '<button class="chip' + (UI.mapFilter.indexOf(m) >= 0 ? ' on' : '') + '" data-a="map-filter" data-m="' + m + '" style="--m:' + markVar(m) + '"><i class="dot"></i>' + esc(markName(m)) + '</button>').join('') + '</div>' +
  '</div>';
   if (UI.mapQuery) {
     // 이름 · 기도 항목 · 그룹 · 서브 그룹 이름 어디서나 찾는다 (HB 2026-10-13)
@@ -3592,6 +3595,11 @@ ACT['map-search'] = () => {
 };
 // 여러 색을 함께 고를 수 있다 — 누르면 켜고 다시 누르면 끈다
 ACT['map-filter'] = el => { const m = el.dataset.m, f = UI.mapFilter; UI.mapFilter = f.indexOf(m) >= 0 ? f.filter(x => x !== m) : f.concat(m); renderView(); };
+// 알약 줄 펼침 — 위 단추 줄이 펼쳐져 있을 때만 (꺾쇠로 단추 줄을 접으면 알약 줄도 함께) · 색으로 거르는 중이면 늘 보인다
+function mkRowOpen() { return !!(UI.mkOpen && UI.actsOpen && UI.actsOpen.map) || UI.mapFilter.length > 0; }
+function mkAllList() { return MARKS.filter(m => m !== 'gray'); }
+function mkAllOn() { return mkAllList().every(m => UI.mapFilter.indexOf(m) >= 0); }
+ACT['map-filter-all'] = () => { UI.mapFilter = mkAllOn() ? [] : mkAllList().concat(UI.mapFilter.indexOf('gray') >= 0 ? ['gray'] : []); renderView(); };
 function mapFiltering() { return UI.mapFilter.length > 0; }
 ACT['map-menu'] = () => choose('지도', [
   { v: 'add', label: '그룹 만들기' }, { v: 'order', label: '그룹 순서 바꾸기 · 지우기' },
@@ -3730,6 +3738,12 @@ ACT.acts = () => {
   if (!row) return;
   if (open) { row.classList.add('open'); slideIn(row); }
   else slideOut(row, () => { row.getAnimations().forEach(a => a.cancel()); row.style.overflow = ''; row.classList.remove('open'); });
+  // 지도: 표시 색 알약 줄도 함께 접히고 펴진다 (HB 2026-10-15)
+  const pr = UI.tab === 'map' && UI.mkOpen && !UI.mapFilter.length ? v.querySelector('.mk-chips') : null;
+  if (pr) {
+    if (open) { pr.classList.add('open'); slideIn(pr); }
+    else slideOut(pr, () => { pr.getAnimations().forEach(a => a.cancel()); pr.style.overflow = ''; pr.classList.remove('open'); });
+  }
 };
 ACT['start-tab'] = el => {
   setDevPref('startTab', el.dataset.v); el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
