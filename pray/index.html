@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-12';
+const APP_VERSION = 'v. 26-1015-13';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3594,12 +3594,12 @@ ACT['map-search'] = () => {
   setTimeout(() => { const i = $('mapQ'); if (i) i.focus(); }, 30);
 };
 // 여러 색을 함께 고를 수 있다 — 누르면 켜고 다시 누르면 끈다
-ACT['map-filter'] = el => { const m = el.dataset.m, f = UI.mapFilter; UI.mapFilter = f.indexOf(m) >= 0 ? f.filter(x => x !== m) : f.concat(m); renderView(); };
+ACT['map-filter'] = el => { const m = el.dataset.m, f = UI.mapFilter; mapFlip(() => { UI.mapFilter = f.indexOf(m) >= 0 ? f.filter(x => x !== m) : f.concat(m); renderView(); }); };
 // 알약 줄 펼침 — 위 단추 줄이 펼쳐져 있을 때만 (꺾쇠로 단추 줄을 접으면 알약 줄도 함께) · 색으로 거르는 중이면 늘 보인다
 function mkRowOpen() { return !!(UI.mkOpen && UI.actsOpen && UI.actsOpen.map) || UI.mapFilter.length > 0; }
 function mkAllList() { return MARKS.filter(m => m !== 'gray'); }
 function mkAllOn() { return mkAllList().every(m => UI.mapFilter.indexOf(m) >= 0); }
-ACT['map-filter-all'] = () => { UI.mapFilter = mkAllOn() ? [] : mkAllList().concat(UI.mapFilter.indexOf('gray') >= 0 ? ['gray'] : []); renderView(); };
+ACT['map-filter-all'] = () => { mapFlip(() => { UI.mapFilter = mkAllOn() ? [] : mkAllList().concat(UI.mapFilter.indexOf('gray') >= 0 ? ['gray'] : []); renderView(); }); };
 function mapFiltering() { return UI.mapFilter.length > 0; }
 ACT['map-menu'] = () => choose('지도', [
   { v: 'add', label: '그룹 만들기' }, { v: 'order', label: '그룹 순서 바꾸기 · 지우기' },
@@ -3638,6 +3638,33 @@ function mapMorph(change) {
   const top = S => [...S].filter(e => { for (let p = e.parentElement; p && p !== m; p = p.parentElement) if (S.has(p)) return false; return true; });
   top(outs).forEach(e => mxRun(e, false));
   top(ins).forEach(e => mxRun(e, true));
+}
+// 표시 색 알약을 켜고 끌 때 — 그룹 카드가 제자리로 미끄러지고, 새로 나오는 것은 스며들고, 사라지는 것은 옅어진다 (HB 2026-10-15).
+// 필터는 다시 그려야 하므로(mapMorph 는 이름표만 바꾸는 것용) 그리기 전 자리를 적어 두었다가 그린 뒤 옛 자리에서 새 자리로 잇는다 (FLIP).
+function mapFlip(change) {
+  const m = document.querySelector('#v-map .mjs');
+  if (!m || mxQuiet() || !m.animate) { change(); return; }
+  const old = new Map();
+  m.querySelectorAll('.gcard[data-gid]').forEach(c => old.set(c.dataset.gid, { r: c.getBoundingClientRect(), clone: c.cloneNode(true) }));
+  const mz = m.style.getPropertyValue('--mz');
+  change();
+  const nm = document.querySelector('#v-map .mjs'); if (!nm) return;
+  const seen = new Set();
+  nm.querySelectorAll('.gcard[data-gid]').forEach(c => {
+    const id = c.dataset.gid, o = old.get(id); seen.add(id);
+    if (!o) { c.animate([{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 440, delay: 120, easing: 'ease-out', fill: 'backwards' }); return; }
+    const r = c.getBoundingClientRect(), dx = o.r.left - r.left, dy = o.r.top - r.top;
+    if (Math.abs(dx) > 1 || Math.abs(dy) > 1) c.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)' }, { transform: 'none' }], { duration: 520, easing: MX_EASE });
+  });
+  const host = $('v-map');
+  old.forEach((o, id) => {
+    if (seen.has(id) || !host) return;
+    const g = o.clone;
+    g.style.cssText += ';position:fixed;left:' + o.r.left + 'px;top:' + o.r.top + 'px;width:' + o.r.width + 'px;margin:0;pointer-events:none;z-index:5;--mz:' + mz;
+    host.appendChild(g);
+    const a = g.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'ease-in', fill: 'forwards' });
+    a.onfinish = a.oncancel = () => g.remove();
+  });
 }
 function mxRun(e, open) {
   e.getAnimations().forEach(a => a.cancel());
@@ -6004,7 +6031,16 @@ const TDASH = (function () {
   word-break:keep-all;line-height:1.45;font-size:14px}
 .tdash *{box-sizing:border-box}
 .tdash button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.tdash-in{max-width:560px;margin:0 auto;padding:4px 20px 48px;display:flex;flex-direction:column;gap:22px}
+.tdash-in{max-width:560px;margin:0 auto;padding:4px 20px 48px;display:flex;flex-direction:column;gap:22px;touch-action:pan-y}
+.tdash-pane{display:flex;flex-direction:column;gap:22px}
+.tdash-rest:empty{display:none}
+/* 탭 · 날짜 · 요약은 세로로 밀어도 올라가지 않는다 (HB 2026-10-15) — 전체 화면은 위 THERE 줄 높이(--tdtop)만큼 아래에 붙는다 */
+.tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;padding-bottom:12px}
+.tdash-stick::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(var(--bg),rgba(13,14,16,0));pointer-events:none}
+.tdash-toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);max-width:min(88vw,420px);padding:11px 16px;border-radius:12px;
+  background:#22252b;color:#ece8e0;font:13px/1.5 'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif;text-align:center;word-break:keep-all;opacity:0;pointer-events:none;
+  transition:opacity .28s,transform .28s cubic-bezier(.22,.8,.24,1);z-index:100001;box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.tdash-toast.on{opacity:1;transform:translate(-50%,0)}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -6079,6 +6115,7 @@ const TDASH = (function () {
 .tdash-x{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
 .tdash-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 `;
+  let TOAST = null, TOAST_TM = 0;
   function injectCSS() {
     if (document.getElementById('tdash-css')) return;
     const st = document.createElement('style'); st.id = 'tdash-css'; st.textContent = CSS; document.head.appendChild(st);
@@ -6135,7 +6172,7 @@ const TDASH = (function () {
     const max = Math.max(1, ...days.map(d => (dt[d] || {}).s || 0));
     const pa = parse(a), pb = parse(b);
     let h = nav(S, (pa.getMonth() + 1) + '월 ' + pa.getDate() + '일 – ' + (pb.getMonth() + 1 !== pa.getMonth() + 1 ? (pb.getMonth() + 1) + '월 ' : '') + pb.getDate() + '일', '머문 날 ' + days.filter(d => dt[d]).length + ' / 7', b >= S.today);
-    h += '<div style="display:flex;flex-direction:column;gap:4px">' + bigNum(tot) + cmpLine(tot, prev, '지난주') + '</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:4px">' + bigNum(tot) + cmpLine(tot, prev, '지난주') + '</div>' + FIX;
     if (!tot) return h + '<div class="tdash-empty">이 주에는 기록이 없습니다</div>';
     h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>';
     h += '<div class="tdash-card"><div class="tdash-ct">날마다<small>막대를 누르면 그날</small></div><div class="tdash-cols">' + days.map(d => {
@@ -6149,6 +6186,8 @@ const TDASH = (function () {
     h += mapTop(S, a, b, 5);
     return h;
   }
+  // 위쪽 고정 영역의 끝 표시 — 이 앞(탭 · 날짜 · 요약)은 세로로 밀어도 올라가지 않고, 뒤는 밀린다 (HB 2026-10-15)
+  const FIX = '<!--tdfix-->';
   const HEAT = ['#17191d', '#2a3646', '#3b4e66', '#4f86c6', '#9cc0e8'];
   function heat(s, max) { if (!s) return 0; const r = s / max; return r > .75 ? 4 : r > .45 ? 3 : r > .2 ? 2 : 1; }
   function viewMonth(S) {
@@ -6157,7 +6196,7 @@ const TDASH = (function () {
     const days = []; for (let d = a; d <= b; d = add(d, 1)) days.push(d);
     const upto = days.filter(d => d <= S.today).length;
     let h = nav(S, pd.getFullYear() + '년 ' + (pd.getMonth() + 1) + '월', '머문 날 ' + days.filter(d => dt[d]).length + ' / ' + upto, b >= S.today);
-    h += '<div style="display:flex;flex-direction:column;gap:4px">' + bigNum(tot) + cmpLine(tot, prev, '지난달') + '</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:4px">' + bigNum(tot) + cmpLine(tot, prev, '지난달') + '</div>' + FIX;
     const max = Math.max(1, ...days.map(d => (dt[d] || {}).s || 0));
     let g = WK.map(w => '<span class="w">' + w + '</span>').join('');
     for (let k = 0; k < pd.getDay(); k++) g += '<span class="x"></span>';
@@ -6177,7 +6216,7 @@ const TDASH = (function () {
   function viewDay(S) {
     const d = S.at, ss = inRange(S.ss, d, d), tot = total(ss), pd = parse(d);
     let h = nav(S, (pd.getMonth() + 1) + '월 ' + pd.getDate() + '일 ' + (pd.getDay() ? WK[pd.getDay()] + '요일' : '주일'), (tot ? dur(tot) + ' · ' + ss.length + '번' : '기록 없음'), d >= S.today);
-    if (!tot) return h + '<div class="tdash-empty">이날은 기록이 없습니다</div>';
+    if (!tot) return h + FIX + '<div class="tdash-empty">이날은 기록이 없습니다</div>';
     const timed = ss.filter(x => /^\d{1,2}:\d{2}/.test(x.time));
     if (timed.length) {
       h += '<div><div class="tdash-tl">' + timed.map(x => {
@@ -6186,7 +6225,7 @@ const TDASH = (function () {
       }).join('') + '</div><div class="tdash-tlh"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>24시</span></div></div>';
     }
     const by = {}; ss.forEach(x => { by[x.app] = (by[x.app] || 0) + x.d; });
-    h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>';
+    h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>' + FIX;
     h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x =>
       '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
       esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
@@ -6206,11 +6245,12 @@ const TDASH = (function () {
   }
   function html(S) {
     const seg = [['day', 'D'], ['week', 'W'], ['month', 'M']];
-    let h = '<div class="tdash-in"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
-      seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>';
-    h += S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);
-    if (S.note) h += '<span class="tdash-note">' + esc(S.note) + '</span>';
-    return h + '</div>';
+    const v = S.view === 'day' ? viewDay(S) : S.view === 'month' ? viewMonth(S) : viewWeek(S);
+    const i = v.indexOf(FIX), fix = i >= 0 ? v.slice(0, i) : v, rest = i >= 0 ? v.slice(i + FIX.length) : '';
+    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
+      seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
+      '<div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
+      '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
   }
 
   // ── 판 하나를 el 안에 연다 ──
@@ -6245,26 +6285,53 @@ const TDASH = (function () {
       const sy = el.scrollTop;
       el.innerHTML = html(S); el.scrollTop = sy;
     };
+    // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
+    const EASE = 'cubic-bezier(.22,.8,.24,1)';
+    const still = () => { try { return !el.querySelectorAll || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
+    const panes = () => (el.querySelectorAll ? [].slice.call(el.querySelectorAll('[data-pane]')) : []);
+    const animIn = (dir, dist) => { if (still()) return; panes().forEach(p => p.animate([{ opacity: 0, transform: 'translateX(' + (dir * dist) + 'px)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: EASE })); };
+    // dir: +1 = 앞으로(다음 · 오른쪽 탭) → 나가는 판은 왼쪽으로, 들어오는 판은 오른쪽에서
+    const transit = (dir, mutate, dist, from) => {
+      dist = dist || 36;
+      if (still() || S.busy) { mutate(); draw(); return; }
+      S.busy = true;
+      panes().forEach(p => { p.getAnimations().forEach(a => a.cancel()); p.animate([{ opacity: from == null ? 1 : from, transform: 'translateX(' + (from == null ? 0 : -dir * dist) + 'px)' }, { opacity: 0, transform: 'translateX(' + (-dir * dist) + 'px)' }], { duration: 150, easing: 'ease-in', fill: 'forwards' }); });
+      setTimeout(() => { mutate(); draw(); animIn(dir, dist); S.busy = false; }, 150);
+    };
+    const toast = msg => {
+      try {
+        if (!TOAST) { TOAST = document.createElement('div'); TOAST.className = 'tdash-toast'; document.body.appendChild(TOAST); }
+        TOAST.textContent = msg; TOAST.classList.add('on'); clearTimeout(TOAST_TM); TOAST_TM = setTimeout(() => TOAST.classList.remove('on'), 3600);
+      } catch (e) {}
+    };
+    const VN = { day: 'D (일간)', week: 'W (주간)', month: 'M (월간)' };
+    const atEnd = () => S.view === 'day' ? S.at >= S.today : S.view === 'week' ? add(weekStart(S.at), 6) >= S.today : monthEnd(S.at) >= S.today;
+    const after = () => { save(); if (opts.onView) opts.onView(S.view); };
     el.onclick = e => {
       const b = e.target.closest && e.target.closest('[data-td]'); if (!b || b.disabled) return;
       const a = b.dataset.td;
       if (Date.now() - lpAt < 700) { e.stopPropagation(); return; }   // 길게 눌러 고정한 뒤 따라오는 클릭
       if (a === 'view') {
         const v = b.dataset.v;
-        if (v === S.view) setAt(S.today);        // 이미 열린 탭을 다시 누르면 오늘 기준
-        else { S.view = v; S.at = S.ats[v]; }    // 다른 탭은 그 탭에서 마지막으로 보던 날로
+        e.stopPropagation();
+        if (v === S.view) {                      // 이미 열린 탭을 다시 누르면 오늘 기준
+          if (S.at === S.today) return;
+          transit(S.today > S.at ? 1 : -1, () => { setAt(S.today); after(); });
+        } else {                                 // 다른 탭은 그 탭에서 마지막으로 보던 날로
+          transit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); }, 26);
+        }
+        return;
       }
-      else if (a === 'day') { S.view = 'day'; setAt(b.dataset.v); }
-      else if (a === 'prev' || a === 'next') step(a === 'prev' ? -1 : 1);
-      else return;
-      e.stopPropagation();
-      save();
-      if (opts.onView) opts.onView(S.view);
-      draw();
+      if (a === 'day') { e.stopPropagation(); transit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }, 26); }
+      else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
-    // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점)
+    // 탭 글자를 길게 누르기 · 우클릭 = 열 때 첫 화면으로 고정 / 해제 (고정한 탭 위에 점 + 안내)
     let lpAt = 0, lpTm = 0, lpX = 0, lpY = 0;
-    const togglePin = v => { S.pin = S.pin === v ? null : v; lpAt = Date.now(); save(); draw(); };
+    const togglePin = v => {
+      S.pin = S.pin === v ? null : v; lpAt = Date.now(); save(); draw();
+      toast(S.pin ? VN[v] + ' 탭을 첫 화면으로 고정했어요. 앞으로 There 대시보드를 열면 늘 ' + VN[v].split(' ')[0] + '부터 보여요. 다시 길게 누르면 풀려요.'
+        : VN[v] + ' 탭 고정을 풀었어요. 앞으로는 마지막으로 본 탭으로 열려요.');
+    };
     const segBtn = e => e.target.closest && e.target.closest('.tdash-seg [data-td="view"]');
     el.addEventListener('pointerdown', e => {
       const b = segBtn(e); if (!b || e.pointerType === 'mouse') return;
@@ -6274,19 +6341,39 @@ const TDASH = (function () {
     el.addEventListener('pointermove', e => { if (lpTm && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTm); lpTm = 0; } });
     ['pointerup', 'pointercancel'].forEach(n => el.addEventListener(n, () => { clearTimeout(lpTm); lpTm = 0; }));
     el.addEventListener('contextmenu', e => { const b = segBtn(e); if (!b) return; e.preventDefault(); e.stopPropagation(); clearTimeout(lpTm); lpTm = 0; togglePin(b.dataset.v); });
-    // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
-    let sx = 0, sy = 0, sOn = false;
-    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32; sx = t.clientX; sy = t.clientY; }, { passive: true });
-    el.addEventListener('touchmove', e => { if (!sOn) return; const t = e.touches[0]; if (Math.abs(t.clientY - sy) > 40 && Math.abs(t.clientY - sy) > Math.abs(t.clientX - sx)) sOn = false; }, { passive: true });
+    // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 손가락을 따라 판이 움직이고,
+    // 놓을 때 폭의 4분의 1 넘게(또는 빠르게) 밀었으면 넘어가고 아니면 제자리로 돌아온다.
+    // 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
+    let sx = 0, sy = 0, sOn = false, lock = false, dx = 0, st = 0;
+    const follow = x => {
+      const w = el.clientWidth || 360, k = x < 0 && atEnd() ? 0.22 : 1;     // 더 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게
+      const px = x * k, op = 1 - Math.min(Math.abs(px) / w, 0.55);
+      panes().forEach(p => { p.style.transition = 'none'; p.style.transform = 'translateX(' + px + 'px)'; p.style.opacity = op; });
+    };
+    const release = fn => panes().forEach(p => { p.style.transition = fn ? 'none' : 'transform .26s ' + EASE + ',opacity .26s'; p.style.transform = ''; p.style.opacity = ''; });
+    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32 && !S.busy; lock = false; dx = 0; sx = t.clientX; sy = t.clientY; st = Date.now(); }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (!sOn) return; const t = e.touches[0]; dx = t.clientX - sx; const dy = t.clientY - sy;
+      if (!lock) {
+        if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { sOn = false; return; }     // 세로로 밀고 있다 = 스크롤
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) lock = true; else return;
+      }
+      follow(dx);
+    }, { passive: true });
     el.addEventListener('touchend', e => {
       if (!sOn) return; sOn = false;
-      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-      if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
-      step(dx > 0 ? -1 : 1);                    // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
-      save();
-      if (opts.onView) opts.onView(S.view);
-      draw();
+      const t = e.changedTouches[0], x = t.clientX - sx, y = t.clientY - sy;
+      if (Math.abs(x) < 24 || Math.abs(x) < Math.abs(y) * 1.6) { release(); return; }
+      const w = el.clientWidth || 360, fast = Math.abs(x) >= 40 && Math.abs(x) / Math.max(1, Date.now() - st) > 0.5;
+      const k = x > 0 ? -1 : 1;                 // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
+      if ((Math.abs(x) < Math.max(60, w * 0.25) && !fast) || (k === 1 && atEnd())) { release(); return; }
+      if (still()) { step(k); after(); draw(); return; }
+      // 손가락이 있던 자리에서 이어서 나간다 → 새 판이 반대쪽에서 들어온다
+      S.busy = true;
+      panes().forEach(p => { p.style.transition = 'none'; p.style.opacity = ''; p.style.transform = ''; p.animate([{ opacity: 1 - Math.min(Math.abs(x) / w, 0.55), transform: 'translateX(' + x + 'px)' }, { opacity: 0, transform: 'translateX(' + (x > 0 ? 1 : -1) * w * 0.45 + 'px)' }], { duration: 150, easing: 'ease-in', fill: 'forwards' }); });
+      setTimeout(() => { step(k); after(); draw(); animIn(k, 60); S.busy = false; }, 150);
     }, { passive: true });
+    el.addEventListener('touchcancel', () => { if (lock) release(); sOn = false; }, { passive: true });
     save();
     draw();
     if (opts.load) {
@@ -6313,6 +6400,7 @@ const TDASH = (function () {
     ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub></span></div>' +
       '<button class="tdash-x" data-tdx="1" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div><div class="tdash-body"></div>';
     document.body.appendChild(ov);
+    ov.style.setProperty('--tdtop', ov.querySelector('.tdash-top').offsetHeight + 'px');   // 고정 영역이 붙는 높이
     ov.querySelector('[data-tdx]').onclick = e => { e.stopPropagation(); close(); };
     const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
     // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
