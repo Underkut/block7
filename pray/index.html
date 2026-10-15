@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-18 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-19 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-18';
+const APP_VERSION = 'v. 26-1015-19';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1843,8 +1843,9 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .masonry.d1 .gb:not(.mx-out),.masonry.d2 .ln:not(.mx-out),.masonry.d2 .addw:not(.mx-out){display:none}
 .masonry:not(.pk1) .pk:not(.mx-out){display:none}
 /* 오늘 기도한 그룹 · 서브 그룹 — 1: 채도·대비를 낮춰 덜 보이게 / 2: 거기에 항목 줄을 접는다 (색은 그대로 유지) */
-.masonry.dm1 .dn,.masonry.dm2 .dn{filter:saturate(.5) contrast(.88)}
-.masonry.dm1 .gcard.dn .sgb.dn,.masonry.dm2 .gcard.dn .sgb.dn{filter:none}
+.masonry.dm1 .dn,.masonry.dm2 .dn,.masonry.dm3 .dn{filter:saturate(.5) contrast(.88);opacity:.62}
+.masonry.dm1 .gcard.dn .sgb.dn,.masonry.dm2 .gcard.dn .sgb.dn,.masonry.dm3 .gcard.dn .sgb.dn{filter:none;opacity:1}
+.masonry.dm3 .gcard.dn:not(.mx-out),.masonry.dm3 .sgb.dn:not(.mx-out){display:none}
 .masonry.dm2 .gcard.dn .ln:not(.mx-out),.masonry.dm2 .gcard.dn .addw:not(.mx-out),.masonry.dm2 .sgb.dn .ln:not(.mx-out){display:none}
 .masonry.pk2 .gcard.pkx:not(.mx-out),.masonry.pk2 .sgb.pkx:not(.mx-out),.masonry.pk2 .gcard.pkgo>.gb>.ln:not(.mx-out){display:none}
 .masonry.pk1 .gcard.pkx,.masonry.pk1 .gcard:not(.pkx) .sgb.pkx,.masonry.pk1 .gcard.pkgo:not(.pkx)>.ghw{opacity:.38}
@@ -2782,9 +2783,11 @@ function renderMapKeepQ() {
 function pickIds() { const p = DB.set.mapPick; return p && p.d === TODAY && Array.isArray(p.ids) ? p.ids : []; }
 function pickSet(ids) { DB.set.mapPick = ids.length ? { d: TODAY, ids } : null; save(); }
 // ── 오늘 기도한 그룹 보기 (HB 2026-10-15) — 맨 왼쪽 체크 단추, 누를 때마다 0 → 1 → 2 → 0
-//   0 그대로(옅은 색 단추) · 1 오늘 이미 기도한 그룹의 채도·대비를 낮춰 덜 보이게 · 2 거기에 더해 그 그룹 안의 항목 줄을 생략(그룹·서브 그룹만 남김, 1 의 색은 유지)
+//   0 그대로(옅은 색 단추) · 1 오늘 이미 기도한 그룹의 채도·대비·투명도를 낮춰 덜 보이게 · 2 거기에 더해 그 그룹 안의 항목 줄을 생략(그룹·서브 그룹만 남김, 1 의 색은 유지) · 3 그 그룹을 아예 숨김(체크에 가로선 아이콘)
 // '기도한 그룹' = 그 그룹(큰 그룹은 서브 그룹까지)의 이름이 모두 오늘 기도함(log[오늘].d)에 든 것. 이름이 하나도 없는 그룹은 아니다.
-function doneMode() { const n = devPref('doneMode', 0); return n === 1 || n === 2 ? n : 0; }
+function doneMode() { const n = devPref('doneMode', 0); return n === 1 || n === 2 || n === 3 ? n : 0; }
+const DONE_LBL = ['그대로', '흐리게', '그룹만 남기기', '숨기기'];
+function doneIco(n) { return n === 3 ? '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 12 10.5 16.5 18 6"/><line x1="3.2" y1="14.6" x2="20.8" y2="12.2"/></svg>' : ico('check'); }
 function doneSet() { return new Set((DB.log[TODAY] && DB.log[TODAY].d) || []); }
 function groupDoneToday(g, kids, ds) {
   const pids = groupPids(g).concat((kids || []).reduce((a, k) => a.concat(groupPids(k)), []));
@@ -2815,7 +2818,7 @@ function mapBtns() {
   const has = DB.G.length, pm = UI.pickMode || 0;
   const dm = doneMode();
   const B = {
-    done: has ? '<button class="ib' + (dm === 2 ? ' on' : dm === 1 ? '' : ' dim') + '" data-bk="done" data-a="map-done-mode" aria-label="오늘 기도한 것 — ' + ['그대로', '흐리게', '그룹만 남기기'][dm] + '">' + ico('check') + '</button>' : '',
+    done: has ? '<button class="ib' + (dm >= 2 ? ' on' : dm === 1 ? '' : ' dim') + '" data-bk="done" data-a="map-done-mode" aria-label="오늘 기도한 것 — ' + DONE_LBL[dm] + '">' + doneIco(dm) + '</button>' : '',
     depth: has ? '<button class="ib' + (mapDepth() === 3 ? ' dim' : '') + '" data-bk="depth" data-a="map-depth" aria-label="지도 펼침 단계 — ' + ['그룹만', '서브 그룹까지', '항목까지'][mapDepth() - 1] + '">' + depthIco(mapDepth()) + '</button>' : '',
     fold: has ? '<button class="ib mk-fold' + (UI.mkOpen ? ' on' : '') + '" data-bk="fold" data-a="mk-fold" aria-expanded="' + !!UI.mkOpen + '" aria-label="표시색 펼치기">' + MKICO + '</button>' : '',
     add: has && TOUCHDEV ? '<button class="ib' + (UI.addMode ? '' : ' dim') + '" data-bk="add" data-a="map-add-mode" aria-pressed="' + !!UI.addMode + '" aria-label="더하기 켜고 끄기">' + ico('plus') + '</button>' : '',
@@ -3770,11 +3773,11 @@ function mapPickPaint() {
 }
 function mapKeepScroll(fn) { const v = $('v-map'), y = v ? v.scrollTop : 0; fn(); const w = $('v-map'); if (w) w.scrollTop = y; }
 ACT['map-done-mode'] = () => {
-  const n = (doneMode() + 1) % 3; setDevPref('doneMode', n);
+  const n = (doneMode() + 1) % 4; setDevPref('doneMode', n);
   const b = mapBtnEl('done');
-  btnTone(b, n === 2 ? 'on' : n === 1 ? '' : 'dim');
-  if (b) b.setAttribute('aria-label', '오늘 기도한 것 — ' + ['그대로', '흐리게', '그룹만 남기기'][n]);
-  mapMorph(m => { m.classList.remove('dm0', 'dm1', 'dm2'); m.classList.add('dm' + n); });
+  btnTone(b, n >= 2 ? 'on' : n === 1 ? '' : 'dim');
+  if (b) { b.setAttribute('aria-label', '오늘 기도한 것 — ' + DONE_LBL[n]); b.innerHTML = doneIco(n); }
+  mapMorph(m => { m.classList.remove('dm0', 'dm1', 'dm2', 'dm3'); m.classList.add('dm' + n); });
   clearTimeout(UI.reflowT); UI.reflowT = setTimeout(mapReflow, 720);
 };
 // 3줄 — 그룹만 → 서브 그룹까지 → 항목까지 → 다시 그룹만 (기기마다 따로 기억). 줄이 하나씩 스르륵
