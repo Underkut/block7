@@ -73,12 +73,10 @@ console.log('\n시나리오 3 — 판에 세울 구간');
 {
   const SECS=[{id:'dawn',name:'새벽'},{id:'am',name:'오전'},{id:'pm',name:'오후'}];
   const mk=vis=>new Function('ST','SECS',`${PICKS}; return _secPickSecs;`)({vis},SECS);
-  sc.eq('화면에 보이는 구간만', mk(['am','pm'])('am').map(s=>s.id), ['am','pm']);
-  // 사용자가 그 구간을 꺼 뒀더라도, 지금 할일이 있는 구간은 보여줘야
-  // "그냥 누르면 어디로 가는지" 를 판이 말해 줄 수 있다
-  sc.eq('숨겨 둔 구간에 있던 할일이면 그 구간을 맨 앞에',
-    mk(['am','pm'])('dawn').map(s=>s.id), ['dawn','am','pm']);
-  sc.eq('보이는 구간이면 끼워 넣지 않는다', mk(['am','pm'])('pm').map(s=>s.id), ['am','pm']);
+  // v26-1015-8 (HB) — 판은 화면에 열린 구간만이 아니라 **모든 구간**을 보여 준다 (꺼 둔 구간으로도 보낼 수 있다)
+  sc.eq('꺼 둔 구간까지 모든 구간', mk(['am','pm'])('am').map(s=>s.id), ['dawn','am','pm']);
+  sc.eq('지금 할일이 있는 구간이 꺼져 있어도 같은 차례', mk(['am','pm'])('dawn').map(s=>s.id), ['dawn','am','pm']);
+  sc.eq('모두 켜져 있어도 같다', mk(['dawn','am','pm'])('pm').map(s=>s.id), ['dawn','am','pm']);
 }
 
 console.log('\n시나리오 4 — 줄 하나가 뜻하는 목적지');
