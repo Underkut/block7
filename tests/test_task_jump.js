@@ -29,13 +29,14 @@ console.log('\n시나리오 2 — 안 누르면 머문다 · 누를 때만 넘�
 {
   const build = (nowKey) => {
     const log=[];
-    const make = new Function('tKey','showToast','goToDate','_dayLabel','_flashPendingTask',
+    const make = new Function('tKey','showToast','goToDate','_dayLabel','_flashPendingTask','_secClosed','_revealSec',
       `${JUMP}; return _toastWithJump;`);
     const fn = make(()=>nowKey,
       (msg,busy,action)=>{log.push({msg,busy,action});},
       (k)=>log.push({goto:k}),
       (d,short)=>short?`짧은${d}`:`긴${d}`,
-      ()=>log.push({flash:true}));
+      ()=>log.push({flash:true}),
+      ()=>false,()=>false);   // 구간 열기(_secClosed·_revealSec)는 test_next_after_done.js 가 지킨다
     return {fn,log};
   };
 

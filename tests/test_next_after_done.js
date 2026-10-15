@@ -36,6 +36,7 @@ function makeEnv(items, tabId) {
     closeTaskMenu() {}, goToDate: k => { cur = k; log.go.push(k); },
     _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
     _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
+    _revealSec: id => { log.reveal = (log.reveal || []).concat(id); return false; },
     _datePickArmed: () => true, _secPickOn: () => false, _secPickOpen() {},
     document: { querySelector: sel => (sel === '.tab.on' ? { id: tabId } : inp), activeElement: null },
     setTimeout: f => f(),
@@ -128,5 +129,25 @@ console.log("\n시나리오 6 — 새로 적을 때도 '@' 가 있으면 처음�
   sc.eq("'@' 가 든 새 할일은 연락할 일", api._newTask('@홍길동 전화'), { text: '@홍길동 전화', done: false, contactTask: true });
   sc.eq("'@' 가 없으면 평범한 새 할일", api._newTask('장보기'), { text: '장보기', done: false });
   sc.eq('글 중간의 @ 도 같다', api._newTask('내일 a@b 에게 메일').contactTask, true);
+}
+
+console.log('\n시나리오 7 — 꺼 둔 · 접어 둔 구간은 열어서 보여 준다 (_revealSec · _secClosed)');
+{
+  const SRC2 = slice('// ── 구간 열어 보이기', 'function _toastWithJump(');
+  const mk = (vis, collapsed) => {
+    const ST = { vis: vis.slice(), collapsed: collapsed.slice(), preset: 'x', prevVis: ['a'] };
+    const SECS = [{ id: 'dawn' }, { id: 'am' }, { id: 'pm' }];
+    let saves = 0, rendered = 0;
+    const api = new Function('ST', 'SECS', 'beforeSave', 'save', 'renderSecs', SRC2 + '\nreturn {_secClosed,_revealSec};')(ST, SECS, () => {}, () => { saves++; }, () => { rendered++; });
+    return { ST, api, n: () => ({ saves, rendered }) };
+  };
+  let e = mk(['am', 'pm'], []);
+  sc.eq('꺼 둔 구간은 닫힘', [e.api._secClosed('dawn'), e.api._secClosed('am')], [true, false]);
+  sc.eq('꺼 둔 구간을 켜고 차례대로 끼운다', [e.api._revealSec('dawn'), e.ST.vis, e.ST.preset], [true, ['dawn', 'am', 'pm'], null]);
+  sc.eq('다시 그린다', e.n().rendered, 1);
+  e = mk(['am', 'pm'], ['pm']);
+  sc.eq('접어 둔 구간은 펼친다', [e.api._secClosed('pm'), e.api._revealSec('pm'), e.ST.collapsed], [true, true, []]);
+  e = mk(['am'], []);
+  sc.eq('이미 열려 있으면 아무 일 없다', [e.api._revealSec('am'), e.n().saves], [false, 0]);
 }
 sc.done();
