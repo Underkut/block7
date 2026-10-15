@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1015-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1015-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1015-1';
+const APP_VERSION = 'v. 26-1015-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -849,6 +849,23 @@ function addPraySession(db, startMs, secs, src, sid) {
   if (e) e.d = (Number(e.d) || 0) + secs;
   else { e = { id: sid || uid(), t: startMs, time: String(st.getHours()).padStart(2, '0') + ':' + String(st.getMinutes()).padStart(2, '0'), d: secs, src: src || '' }; L.ses.push(e); }
   return e;
+}
+// ── Map 기도 (HB 2026-10-15) — There 를 켠 지도에서 이름을 눌러 '기도함' 으로 적기 ──
+// 한 이름마다 얼마나 기도했는지는 모르므로, **바로 앞 Map 기도(없으면 There 시작)부터 지금까지**를 고른 이름 수로 나눈다.
+// log[날].mp = [{id, t:적은ms, pid, d:초}] — 시간 합계(s)에는 **더하지 않는다.** 그 시간은 There 를 멈출 때
+// 지도 There 기록(ses, src 'map')으로 이미 합계에 들어간다 — 여기서 또 더하면 두 번 센다.
+// 기도함(d)은 오늘 이미 적힌 것이면 그대로 둔다 (한 번 더 누르면 지워지는 toggleDone 을 그냥 부르지 않는다).
+function addMapPrayer(db, date, ids, fromMs, toMs) {
+  const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
+  if (!Array.isArray(L.d)) L.d = [];
+  const pids = [...new Set(ids || [])].filter(id => findAny(db, id));
+  if (!pids.length) return [];
+  const each = Math.max(0, Math.round((toMs - fromMs) / 1000 / pids.length));
+  if (!Array.isArray(L.mp)) L.mp = [];
+  return pids.map(pid => {
+    if (L.d.indexOf(pid) < 0) toggleDone(db, pid, date);
+    const e = { id: uid(), t: toMs, pid: pid, d: each }; L.mp.push(e); return e;
+  });
 }
 
 // ── 실행취소 · 재실행 (HB 2026-10-13) ──
@@ -2052,6 +2069,7 @@ html[data-mode="light"] #toast button{color:#e7c98f}
 /* 표시 색 — 소속 잇기 */
 .mk-sug{display:flex;flex-direction:column;padding:2px 0 6px 52px;border-bottom:1px solid var(--bd)}
 .mk-sug[hidden]{display:none}
+.mp-gone{display:none!important}
 .mk-sug button{display:flex;align-items:baseline;gap:8px;padding:7px 4px;text-align:left;font-size:14px;border-radius:8px}
 .mk-sug button:hover{background:color-mix(in srgb,var(--tx) 6%,transparent)}
 .mk-sug small{color:var(--tx3);font-size:12px}
@@ -3165,8 +3183,8 @@ LAYERS.import = () => {
 
 // ═══ 아래에서 올라오는 창 ═══
 let SHEET = null;
-function openSheet(html, onPick) {
-  if (MT.on) thereStop('page');
+function openSheet(html, onPick, keepThere) {
+  if (MT.on && !keepThere) thereStop('page');
   closeSheet(true);
   const w = document.createElement('div');
   w.className = 'sh-wrap';
@@ -3249,6 +3267,7 @@ function mapMouseClick(k) {
 ACT.open = el => {
   // PC 지도에서는 한 번 누르면 고르기, 두 번 누르면 열기 (dblclick 이 연다)
   const s = el.closest && el.closest('#v-map [data-sel]');
+  if (s && MT.on) return;   // There 중에는 Map 기도 창이 받는다 (아래 'Map 기도')
   if (s) { if (PT === 'mouse') mapMouseClick(s.dataset.sel); else mapTapEdit(s.dataset.sel, el.dataset.id); return; }
   if (el.dataset.id) openTarget(el.dataset.id);
 };
@@ -4588,6 +4607,7 @@ function mapDistribute(cols, order, hs) {
 }
 function mapLayout() {
   const m = document.querySelector('#v-map .mjs'); if (!m) return;
+  mpApply();
   const cards = m._order || [...m.children].filter(x => x.classList.contains('gcard'));
   // 안 보이는 동안(폭 0 · 앱 나갔다 오는 중)에 잰 폭으로 열을 정하지 않는다 — 고른 열이 풀려 보였다 (HB 2026-10-13)
   const w = m.clientWidth >= 200 ? m.clientWidth : (m._w || m.clientWidth);
@@ -4943,6 +4963,49 @@ document.addEventListener('click', e => {
   if (!el) return;
   doAct(el, e);
 }, true);
+
+// ═══ Map 기도 — There 를 켠 지도에서 이름 누르기 (HB 2026-10-15) ═══
+// 항목 → 그 항목의 이름들 · 그룹/서브 그룹 → 그 아래 **지금 화면에 보이는** 이름들(색으로 걸러 보는 중이면 걸러진 것만).
+// 바로 적지 않고 아래 창으로 한 번 묻는다 — There 는 끄지 않는다. 아멘 하면 적고, 그 자리를 There 가 끝날 때까지 숨긴다.
+const MPH = { keys: new Set(), last: 0 };
+function mpEl(k) {
+  const s = document.querySelector('#v-map [data-sel="' + k + '"]'); if (!s) return null;
+  const p = selParts(k); if (p.t === 'l') return s;
+  const g = findG(DB, p.gid); return g && g.parent ? s.closest('.sgb') || s : s.closest('.gcard') || s;
+}
+function mpApply() {
+  if (!MT.on) { if (MPH.keys.size) { MPH.keys.clear(); MPH.last = 0; } return; }
+  MPH.keys.forEach(k => { const el = mpEl(k); if (el) el.classList.add('mp-gone'); });
+}
+function mpPids(el) {
+  return [...new Set([...el.querySelectorAll('.pn[data-id]')].filter(x => !x.classList.contains('dim') && !x.closest('.mp-gone') && x.getClientRects().length).map(x => x.dataset.id))];
+}
+document.addEventListener('click', e => {
+  if (!MT.on || UI.tab !== 'map' || UI.layers.length || SHEET) return;
+  if (Date.now() - GS.suppress < 400) return;
+  const s = e.target.closest && e.target.closest('#v-map [data-sel]'); if (!s || e.target.closest('button.pk,input')) return;
+  e.preventDefault(); e.stopPropagation();
+  const k = s.dataset.sel, el = mpEl(k); if (!el) return;
+  const ids = mpPids(el); if (!ids.length) { toast('기도할 이름이 보이지 않습니다'); return; }
+  const p = selParts(k), g = findG(DB, p.gid);
+  const title = p.t === 'l' ? ids.map(id => (findT(DB, id) || {}).name).join(' · ') : g.name;
+  const w = openSheet('<div class="sh-t">' + esc(title) + (p.t === 'l' ? '' : '<small>' + ids.length + '명 · 개</small>') + '</div>' +
+    (p.t === 'l' ? '' : '<div class="hint" style="padding:0 20px">' + esc(ids.map(id => (findT(DB, id) || {}).name).join(' · ')) + '</div>') +
+    '<div class="sh-acts" style="flex-direction:column;align-items:stretch"><button class="cta" data-a="mp-amen">아멘</button>' +
+    '<div class="hint" style="text-align:center;padding:8px 0 0;font-size:12px">Map 기도로 기록되고, 지금 화면에서는 잠시 숨깁니다</div></div>', null, true);
+  w._mp = { k: k, ids: ids, name: title };
+}, true);
+ACT['mp-amen'] = () => {
+  const w = SHEET, M = w && w._mp; if (!M) return;
+  closeSheet();
+  const now = Date.now(), from = Math.max(MPH.last || 0, MT.t0 || now);
+  addMapPrayer(DB, TODAY, M.ids, from, now); MPH.last = now; save();
+  MPH.keys.add(M.k);
+  const el = mpEl(M.k);
+  const done = () => { mapKeepScroll(renderView); };
+  if (el) animateGone(el, done); else done();
+  toast(M.name + (/[가-힣]$/.test(M.name) && (M.name.charCodeAt(M.name.length - 1) - 0xAC00) % 28 ? '을' : '를') + ' 위해 기도했습니다');
+};
 
 // ═══ 로그인 · 기기 사이 맞추기 (P-6, HB 2026-10-12) ═══
 // Sweeter · BLOCK7 과 **같은 계정**(같은 파이어베이스 프로젝트 · 같은 이메일) → uid 가 같다.
