@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1018-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1018-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1018-5';
+const APP_VERSION = 'v. 26-1018-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1987,11 +1987,15 @@ textarea.field{min-height:72px;line-height:1.6}
 .stabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;padding:6px 14px 8px;background:var(--bg);border-bottom:1px solid var(--bd)}
 .stab{flex:1;height:36px;border-radius:10px;font-size:13.5px;color:var(--tx3);transition:background .25s,color .25s}
 .stab.on{background:var(--s2);color:var(--tx);font-weight:600}
-.stab-vp{overflow:hidden;touch-action:pan-y;transition:height .46s cubic-bezier(.22,.8,.24,1)}
+.stab-vp{overflow:hidden;touch-action:pan-y;min-height:calc(100vh - 150px);transition:height .46s cubic-bezier(.22,.8,.24,1)}
 .stab-track{display:flex;align-items:flex-start;transition:transform .46s cubic-bezier(.22,.8,.24,1);will-change:transform}
 .stab-pane{flex:0 0 100%;min-width:0;box-sizing:border-box}
 .stab-vp:not(.moving) .stab-pane:not(.on){height:0;overflow:hidden;visibility:hidden}
 @media (prefers-reduced-motion:reduce){.stab-vp,.stab-track{transition:none}}
+.tgl{margin-left:auto;flex-shrink:0;width:56px;height:32px;border-radius:16px;background:var(--bd2);position:relative;transition:background .25s}
+.tgl i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:13px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.35);transition:transform .25s var(--ease)}
+.tgl.on{background:var(--ac)}.tgl.on i{transform:translateX(24px)}
+.rsub{display:block;font-size:11.5px;color:var(--tx3);margin-top:2px}
 .rng{flex:1;min-width:90px;max-width:46%;margin-left:auto;height:36px;accent-color:var(--ac);touch-action:pan-y;cursor:pointer}
 .rngv{min-width:42px;text-align:right;font-weight:500;color:var(--tx2);font-variant-numeric:tabular-nums}
 .step{display:flex;align-items:center;gap:4px;margin-left:auto}
@@ -2136,6 +2140,8 @@ textarea.field{min-height:72px;line-height:1.6}
 .f-card{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:0 32px;transition:transform .5s var(--ease),opacity .45s}
 .f-card.up{transform:translateY(-46px);opacity:0}
 .f-card.below{transform:translateY(46px);opacity:0}
+.f-card.xl{transform:translateX(-100%);opacity:0}.f-card.xr{transform:translateX(100%);opacity:0}
+.f-name[data-a]{cursor:pointer}
 .f-cat{font-size:13px;color:var(--ac-tx);letter-spacing:.08em}
 .f-name{margin:10px 0 0;font-family:var(--serif);font-size:40px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
 .f-why{margin-top:12px;font-size:12.5px;color:var(--tx3)}
@@ -2157,7 +2163,7 @@ textarea.field{min-height:72px;line-height:1.6}
 
 /* ── 알림 ── */
 /* 토스트는 늘 화면 한가운데 — 뜻 단위로 줄을 바꾼다(\n). 모든 앱 공통 지침 (CLAUDE.md '토스트') */
-#toast{position:fixed;left:50%;top:50%;width:max-content;max-width:min(86vw,420px);transform:translate(-50%,-50%) scale(.96);opacity:0;z-index:90;
+#toast{position:fixed;left:50%;top:50%;width:max-content;max-width:min(86vw,420px);transform:translate(-50%,-50%) scale(.96);opacity:0;z-index:300;
   background:var(--tx);color:var(--bg);border-radius:16px;padding:18px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
   font-size:15px;line-height:1.65;white-space:pre-line;word-break:keep-all;transition:transform .3s var(--ease),opacity .25s;pointer-events:none;box-shadow:0 14px 40px -8px var(--shadow-color)}
 #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
@@ -2596,7 +2602,7 @@ function focusStart(deck, at) {
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span class="f-time" id="fTime">0:00</span><span class="f-pos" id="fPos"></span>' +
     '<span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
-    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
+    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
     '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>';
   el.classList.add('on');
   focusCard(false);
@@ -2628,23 +2634,27 @@ function focusCardHTML() {
   const tps = (t.topics || []).filter(x => !x.ans);
   const mem = t.kind === 'group' ? groupMembers(t) : '';
   const sent = F.sent[t.id];
-  return '<div class="f-card"><div class="f-cat">' + esc(cat) + '</div><h2 class="f-name">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
+  return '<div class="f-card"><div class="f-cat">' + esc(cat) + '</div><h2 class="f-name" data-a="focus-detail" data-id="' + t.id + '" role="button" aria-label="' + esc(t.name) + ' 상세 보기">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
     (tps.length ? '<ul class="f-tps">' + tps.map(x => '<li>' + esc(x.t) + '</li>').join('') + '</ul>' : '') +
     (mem ? '<div class="f-mem">' + esc(mem) + '</div>' : '') +
     (t.memo ? '<div class="f-act"><span>' + ico('phone') + '</span><span>실천 — ' + esc(t.memo) + '</span><button class="ghost' + (sent ? ' ac' : '') + '" data-a="todo" data-id="' + t.id + '">' + (sent ? 'BLOCK7 할일로 보냄 ✓' : 'BLOCK7 할일로 보내기') + '</button></div>' : '') +
     '</div>';
 }
-function focusCard(anim) {
+// dir: 0 = 위아래로 스르륵(예전) · -1/+1 = 옆으로(이전 / 아멘·다음 — 손가락으로 밀 때와 같은 결). 나가는 판은 가던 쪽으로 끝까지 나가고 새 판은 반대쪽에서 들어온다
+function focusCard(anim, dir) {
   const st = $('fStage'); if (!st) return;
+  const pv = $('fPrev'); if (pv) pv.style.visibility = F.i > 0 && F.i < F.deck.length ? '' : 'hidden';
   const pos = $('fPos'); if (pos) pos.innerHTML = F.i < F.deck.length ? '<b>' + (F.i + 1) + '</b> / ' + F.deck.length : '';
   const btns = $('fBtns'); if (btns) btns.style.visibility = F.i < F.deck.length ? '' : 'hidden';
   const old = st.firstElementChild;
   const wrap = document.createElement('div'); wrap.innerHTML = focusCardHTML();
   const card = wrap.firstElementChild;
   if (anim && old) {
-    card.classList.add('below'); st.appendChild(card);
-    old.classList.add('up');
-    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove('below')));
+    const inCls = dir ? (dir > 0 ? 'xr' : 'xl') : 'below', outCls = dir ? (dir > 0 ? 'xl' : 'xr') : 'up';
+    card.classList.add(inCls); st.appendChild(card);
+    old.style.transition = ''; old.style.transform = ''; old.style.opacity = '';
+    old.classList.add(outCls);
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove(inCls)));
     setTimeout(() => old.remove(), 500);
   } else { st.innerHTML = ''; st.appendChild(card); }
 }
@@ -2653,6 +2663,7 @@ function focusNext(amen, go) {
   // 지도에서 들어온 한 장: 한 그룹이 끝나는 아멘이면 다음 그룹을 묻는다 (HB 2026-10-15)
   const cur = F.deck[F.i], nx = F.deck[F.i + 1];
   if (amen && !go && cur.sec === 'map' && nx && nx.tg !== cur.tg) {
+    const keepDir = F.swipeDir; F.swipeDir = 0; const card0 = $('fStage') && $('fStage').firstElementChild; if (card0) { card0.style.transform = ''; card0.style.opacity = ''; }
     const ng = findG(DB, nx.tg);
     choose('다음 그룹은 ' + (ng ? ng.name : '') + ' 입니다', [{ v: 'go', label: '이어서 기도하기', sw: ng && ng.color }, { v: 'pick', label: '다른 그룹 보기' }, { v: 'exit', label: '나가기' }], '', v => {
       if (v === 'go') focusNext(true, true);
@@ -2663,7 +2674,8 @@ function focusNext(amen, go) {
   }
   if (amen) focusDone();
   F.i++;
-  focusCard(true);
+  const d = F.swipeDir || 0; F.swipeDir = 0;
+  focusCard(true, d);
 }
 function focusDone() { const id = F.deck[F.i] && F.deck[F.i].id; if (!id) return; const L = dayLog(DB, TODAY); if ((L.d || []).indexOf(id) < 0) toggleDone(DB, id, TODAY); save(); }
 // 그룹 · 서브 그룹 고르기 (띠 색과 함께) — 고르면 그 그룹 첫 이름으로. 오늘 목록에서 온 한 장이면 지도 차례로 바꿔 탄다
@@ -3208,8 +3220,9 @@ LAYERS.groups = () => {
   return { title: '그룹 순서', body: b };
 };
 // ── 설정 탭 (HB 2026-10-18) — 계정·자료 / 화면 / 목록 / 기타. 탭을 누르거나 좌우로 밀어 옮긴다(손가락을 따라가고, 놓으면 이어서 넘어간다) ──
-const STAB_NAMES = ['계정·자료', '화면', '목록', '기타'];
-function settingsTabsHTML(P) {
+const STAB_NAMES = ['화면', '목록', '계정·자료'];
+function settingsTabsHTML(P0) {
+  const P = [P0[1], P0[2], P0[0] + P0[3]];   // 화면 · 목록 · 계정·자료(기타 포함)
   const i = Math.min(Math.max(UI.setTab || 0, 0), P.length - 1);
   return '<div class="stabs">' + STAB_NAMES.map((n, k) => '<button class="stab' + (k === i ? ' on' : '') + '" data-a="stab" data-v="' + k + '">' + n + '</button>').join('') + '</div>' +
     '<div class="stab-vp" id="stabVp"><div class="stab-track" id="stabTrack" style="transform:translateX(-' + (i * 100) + '%)">' +
@@ -3286,7 +3299,7 @@ LAYERS.settings = () => {
     '<div class="xp" data-xp="there"' + (xo('there') ? '' : ' hidden') + '><div class="there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div></div>' +
     '<button class="set-r" data-a="marks">' + MKICO + '표시색 이름<span class="v">' + ico('chevR') + '</span></button>' +
-    '<div class="set-r">' + ico('sun') + 'There 중 화면 꺼짐 막기<span class="seg" style="margin:0 0 0 auto;width:auto"><button class="' + (awakePref() ? '' : 'on') + '" data-a="awake-set" data-v="0">끔</button><button class="' + (awakePref() ? 'on' : '') + '" data-a="awake-set" data-v="1">켬</button></span></div>' +
+    '<div class="set-r">' + ico('sun') + '<span>There 중 화면 꺼짐 막기' + (awakeSupported() ? '' : '<small class="rsub">이 기기에서는 쓸 수 없어요</small>') + '</span><button class="tgl' + (awakePref() && awakeSupported() ? ' on' : '') + '" data-a="awake-toggle" role="switch" aria-checked="' + (awakePref() && awakeSupported()) + '" aria-label="There 중 화면 꺼짐 막기"><i></i></button></div>' +
     '<div class="set-r">' + ico('check') + '기도한 그룹 흐림<input type="range" class="rng" min="10" max="90" step="1" value="' + doneOp() + '" data-live="doneop" aria-label="기도한 그룹 투명도"><b id="doneOpV" class="rngv">' + doneOp() + '%</b></div>' + donePrevHTML() + '</div>';
   P.push(b); b = '';   // ② 화면
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
@@ -3591,6 +3604,43 @@ ACT['focus-close'] = () => closeFocus();
 ACT['focus-map'] = () => focusPickGroup();
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
+ACT['focus-prev'] = () => focusPrev();
+ACT['focus-detail'] = el => { if (!el.dataset.id) return; openTarget(el.dataset.id); if (F.on) $('layers').classList.add('top'); };   // 한 장 화면 위에 상세 (HB 2026-10-18)
+function focusPrev() { if (F.i <= 0 || F.i > F.deck.length) return; F.i--; focusCard(true, -1); }
+// 한 장 기도를 손가락으로 — 오른쪽으로 밀면 '이전', 왼쪽으로 밀면 '아멘'. 손가락을 따라 카드가 움직이고 놓으면 이어서 나간다 (CLAUDE.md '화면 전환')
+(function () {
+  let st = null;
+  document.addEventListener('touchstart', e => {
+    const g = e.target.closest && e.target.closest('#fStage'); if (!g || !F.on || F.i >= F.deck.length || e.touches.length !== 1) { st = null; return; }
+    if (e.target.closest('button,a')) { st = null; }
+    const t = e.touches[0]; if (t.clientX < 28 || t.clientX > innerWidth - 28) { st = null; return; }
+    st = { x0: t.clientX, y0: t.clientY, t0: Date.now(), lock: false, dx: 0 };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x0, dy = t.clientY - st.y0;
+    const card = $('fStage') && $('fStage').firstElementChild; if (!card) { st = null; return; }
+    if (!st.lock) {
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { st = null; return; }
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) { st.lock = true; card.style.transition = 'none'; } else return;
+    }
+    const atStart = dx > 0 && F.i === 0;                    // 첫 장에서 오른쪽으로는 뻑뻑하게
+    st.dx = dx * (atStart ? 0.22 : 1);
+    card.style.transform = 'translateX(' + st.dx + 'px)'; card.style.opacity = String(1 - Math.min(Math.abs(st.dx) / innerWidth, 0.55));
+  }, { passive: true });
+  const end = () => {
+    if (!st) return; const s2 = st; st = null; if (!s2.lock) return;
+    const card = $('fStage') && $('fStage').firstElementChild; if (!card) return;
+    const fast = Math.abs(s2.dx) >= 40 && Math.abs(s2.dx) / Math.max(1, Date.now() - s2.t0) > 0.5, far = Math.abs(s2.dx) > innerWidth * 0.25;
+    if (far || fast) {
+      if (s2.dx < 0) { card.style.transition = ''; focusAmenSwipe(); return; }
+      if (F.i > 0) { card.style.transition = ''; focusPrev(); return; }
+    }
+    card.style.transition = ''; card.style.transform = ''; card.style.opacity = '';   // 못 미치면 제자리로
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+})();
+function focusAmenSwipe() { F.swipeDir = 1; focusNext(true); }
 ACT.todo = el => {
   const t = findAny(DB, el.dataset.id); if (!t || !t.memo) return;
   openB7Todo(t.memo + ' — ' + t.name, t.id);
@@ -5287,6 +5337,7 @@ document.addEventListener('pointerdown', e => {
   if (e.target.closest('input,textarea,select,.sw-act')) return;
   const grab = e.target.closest('.sh-grab') || (e.target.closest('.sh-x') ? null : (e.target.closest('.sheet') && e.target.closest('.sh-t:has(.sh-x)')));   // 손잡이 · (× 가 있는) 제목줄 모두 끌어 내려 닫는다
   if (grab && SHEET) { GS.st = { mode: 'sheet', sheet: grab.closest('.sheet'), y0: e.clientY, pid: e.pointerId, dy: 0 }; GS.st.sheet.classList.add('drag'); return; }
+  { const lh = e.target.closest('.lhead'), ly = lh && lh.parentElement; if (lh && !e.target.closest('button') && ly && ly.classList.contains('layer') && ly === topLayerEl()) { GS.st = { mode: 'lhead', layer: ly, y0: e.clientY, pid: e.pointerId, dy: 0 }; ly.classList.add('edge'); return; } }   // 헤더를 끌어 내려 닫는다 (설정 · 상세 등 모든 창)
   const layer = e.target.closest('.layer');
   if (layer && e.clientX < 24 && layer === topLayerEl()) { GS.st = { mode: 'edge-p', layer: layer, x0: e.clientX, y0: e.clientY, pid: e.pointerId }; return; }
   const row = e.target.closest('.row');
@@ -5301,6 +5352,7 @@ document.addEventListener('pointerdown', e => {
 document.addEventListener('pointermove', e => {
   const st = GS.st; if (!st || e.pointerId !== st.pid) return;
   const dx = e.clientX - (st.x0 || 0), dy = e.clientY - st.y0;
+  if (st.mode === 'lhead') { st.dy = Math.max(0, dy); st.layer.style.transform = 'translateY(' + st.dy + 'px)'; st.layer.style.opacity = String(1 - Math.min(st.dy / 600, 0.35)); return; }
   if (st.mode === 'sheet') { st.dy = Math.max(0, dy); st.sheet.style.transform = 'translateY(' + st.dy + 'px)'; return; }
   if (st.mode === 'edge-p') { if (dx > 10 && Math.abs(dx) > Math.abs(dy)) { st.mode = 'edge'; st.layer.classList.add('edge'); } else if (Math.abs(dy) > 10 || dx < -10) GS.st = null; return; }
   if (st.mode === 'edge') { e.preventDefault(); st.layer.style.transform = 'translateX(' + Math.max(0, dx) + 'px)'; return; }
@@ -5324,6 +5376,12 @@ function endGesture(e, cancel) {
   const st = GS.st; if (!st || (e && e.pointerId !== st.pid)) return;
   GS.st = null;
   clearTimeout(st.timer);
+  if (st.mode === 'lhead') {
+    const ly = st.layer; ly.classList.remove('edge');
+    if (!cancel && st.dy > 90) { ly.style.transition = 'transform .3s cubic-bezier(.4,0,.2,1),opacity .3s'; ly.style.transform = 'translateY(100%)'; ly.style.opacity = '0'; popLayer(); }
+    else { ly.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s'; ly.style.transform = ''; ly.style.opacity = ''; setTimeout(() => { ly.style.transition = ''; }, 320); }
+    GS.suppress = Date.now(); return;
+  }
   if (st.mode === 'sheet') {
     st.sheet.classList.remove('drag');
     if (!cancel && st.dy > 90) { st.sheet.style.transform = ''; closeSheet(); } else st.sheet.style.transform = '';
@@ -5352,7 +5410,7 @@ function endGesture(e, cancel) {
 document.addEventListener('pointerup', e => endGesture(e, false));
 document.addEventListener('pointercancel', e => endGesture(e, true));
 // iOS: 끌기·스와이프 중에는 화면이 같이 움직이지 않게 (passive:false 여야 막힌다)
-document.addEventListener('touchmove', e => { const st = GS.st; if ((st && (st.mode === 'drag' || st.mode === 'swipe' || st.mode === 'edge' || st.mode === 'sheet')) || (MD.st && MD.st.mode !== 'pend')) e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => { const st = GS.st; if ((st && (st.mode === 'drag' || st.mode === 'swipe' || st.mode === 'edge' || st.mode === 'sheet' || st.mode === 'lhead')) || (MD.st && MD.st.mode !== 'pend')) e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => { if (e.target.closest('.row')) e.preventDefault(); });
 
 function startDrag(st) {
@@ -5988,12 +6046,12 @@ function awakeOn() {
   navigator.wakeLock.request('screen').then(l => { WAKE = l; l.addEventListener('release', () => { if (WAKE === l) WAKE = null; }); if (!MT.on) awakeOff(); }).catch(() => {});
 }
 function awakeOff() { const l = WAKE; WAKE = null; if (l) try { l.release(); } catch (e) {} }
-ACT['awake-set'] = el => {
-  const on = el.dataset.v === '1';
-  if (on && !awakeSupported()) { toast('이 기기·브라우저에서는\n화면 켜 두기를 지원하지 않아요'); return; }
+ACT['awake-toggle'] = el => {
+  if (!awakeSupported()) { toast('이 기기·브라우저에서는\n화면 켜 두기를 지원하지 않아요'); return; }
+  const on = !awakePref();
   setDevPref('awake', on);
-  el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
-  toast(on ? 'There 중에는 화면이 꺼지지 않아요\n(앱을 벗어나면 풀려요)' : 'There 중에도 화면이 자동으로\n잠길 수 있어요');
+  el.classList.toggle('on', on); el.setAttribute('aria-checked', on);
+  toast(on ? 'There 중에는 화면이 꺼지지 않아요\n(앱을 벗어나면 풀려요)' : 'There 중에도 화면이\n자동으로 잠길 수 있어요');
 };
 function thereStart() {
   if (MT.on || UI.tab !== 'map') return;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1018-1  [production]  -->
+<!-- BLOCK7  v. 26-1018-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6371,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1018-1";
+const APP_VERSION = "v. 26-1018-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40140,8 +40140,9 @@ function _tmSubOpen(kind,row,float){
   pan.style.display='';
   if(float){
     pan.classList.add('task-menu-sub-float');
+    pan.style.left='0px';pan.style.top='0px';          // 재기 전에 한쪽으로 치워 둔다 — 자리를 정하기 전 폭이 줄어들어 읽히지 않게
     const r=menu.getBoundingClientRect(),rr=row?row.getBoundingClientRect():r;
-    const pw=pan.offsetWidth||196;
+    const pw=Math.max(196,pan.offsetWidth||0);
     let left=r.right+6;
     if(left+pw>window.innerWidth)left=r.left-pw-6;
     if(left<8)left=8;
@@ -40159,9 +40160,12 @@ function _tmSlide(el,dx){
   if(!el||!el.animate||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;
   el.animate([{opacity:0,transform:'translateX('+dx+'px)'},{opacity:1,transform:'none'}],{duration:260,easing:'cubic-bezier(.22,.8,.24,1)'});
 }
+// 오른쪽에 떠 나가는 판은 **넓은 화면(마우스)** 에서만 — 폰 폭에서는 메뉴 옆 자리가 없어 판이 메뉴에 가리고 잘렸다 (HB 신고 2026-10-18).
+// 좁은 화면은 어떤 손이든 메뉴 자리에서 바뀐다.
+function _tmFloatOK(){return window.innerWidth>=700;}
 function _tmSubTap(e,kind,row){
   if(e)e.stopPropagation();
-  const float=e&&e.pointerType?e.pointerType==='mouse':!_isTouchDevice();
+  const float=_tmFloatOK()&&(e&&e.pointerType?e.pointerType==='mouse':!_isTouchDevice());
   _tmSubOpen(kind,row,float);
 }
 function _tmSubScheduleClose(){
@@ -40187,7 +40191,7 @@ function _wireTmSub(){
   if(!menu)return;
   _tmSubWired=true;
   menu.querySelectorAll('.tm-grp').forEach(row=>{
-    row.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')_tmSubOpen(row.dataset.grp,row,true);});
+    row.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&_tmFloatOK())_tmSubOpen(row.dataset.grp,row,true);});
     row.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')_tmSubScheduleClose();});
   });
   menu.querySelectorAll('.tm-subgrp').forEach(p=>{
@@ -40307,7 +40311,7 @@ function _secPickSpecFor(row){
 //    **그 순간의 포인터 종류**로 가른다: 마우스면 오른쪽에 띄우고, 손가락이면
 //    메뉴 자리에서 바꾼다.
 let _secPickByMouse=false;
-function _secPickFloat(){return _secPickByMouse||!_isTouchDevice();}
+function _secPickFloat(){return (_secPickByMouse||!_isTouchDevice())&&_tmFloatOK();}
 function _secPickRender(){
   const spec=_secPickSpec,board=document.getElementById('secPickBoard');
   if(!spec||!board||!_taskMenuCtx)return;
