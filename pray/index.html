@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1018-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1018-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1018-1';
+const APP_VERSION = 'v. 26-1018-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1984,6 +1984,8 @@ textarea.field{min-height:72px;line-height:1.6}
 .xp{border-bottom:1px solid var(--bd)}
 .xp .there-pick{padding:2px 0 6px}
 .set-r.danger{color:var(--danger)}
+.rng{flex:1;min-width:90px;max-width:46%;margin-left:auto;height:36px;accent-color:var(--ac);touch-action:pan-y;cursor:pointer}
+.rngv{min-width:42px;text-align:right;font-weight:500;color:var(--tx2);font-variant-numeric:tabular-nums}
 .step{display:flex;align-items:center;gap:4px;margin-left:auto}
 .step button{width:34px;height:34px;border-radius:17px;border:1px solid var(--bd2);font-size:17px;color:var(--tx2);display:flex;align-items:center;justify-content:center}
 .step b{min-width:34px;text-align:center;font-weight:500}
@@ -2045,6 +2047,9 @@ textarea.field{min-height:72px;line-height:1.6}
 .sh-grab i{width:38px;height:4px;border-radius:2px;background:var(--bd2)}
 .sh-t{padding:0 20px 8px;font-size:16px;font-weight:600;display:flex;align-items:center}
 .sh-t{flex-wrap:wrap}
+.sh-x{margin-left:auto;width:36px;height:36px;margin-right:-10px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.sh-x svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.sh-t:has(.sh-x){touch-action:none}
 .sh-t small{flex-basis:100%;margin-top:4px;font-weight:400;color:var(--tx3);font-size:12.5px;line-height:1.5}
 .sh-b{overflow-y:auto;padding:0 0 4px}
 .opt{width:100%;min-height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;font-size:15px;border-top:1px solid var(--bd)}
@@ -2410,7 +2415,8 @@ function toast(msg, action, fn) {
   t.style.bottom = UI.layers.length ? 'calc(var(--sab) + 92px)' : '';   // 확인·취소 줄 위로
   t.classList.add('on');
   clearTimeout(toastT);
-  toastT = setTimeout(() => t.classList.remove('on'), action ? 5200 : 2600);
+  // BLOCK7 와 같은 기준 — 글자 수 × 200ms (일반 3초 · 되돌리기 줄이 있으면 6초부터, 9초 상한)
+  toastT = setTimeout(() => t.classList.remove('on'), Math.min(9000, Math.max(action ? 6000 : 3000, String(msg).length * 200)));
 }
 function withUndo(msg, mutate) {
   const before = JSON.stringify(DB);
@@ -2635,8 +2641,8 @@ function focusNext(amen, go) {
     const ng = findG(DB, nx.tg);
     choose('다음 그룹은 ' + (ng ? ng.name : '') + ' 입니다', [{ v: 'go', label: '이어서 기도하기', sw: ng && ng.color }, { v: 'pick', label: '다른 그룹 보기' }, { v: 'exit', label: '나가기' }], '', v => {
       if (v === 'go') focusNext(true, true);
-      else if (v === 'exit') { focusDone(); closeFocus(); }
-      else { focusDone(); focusPickGroup(); }
+      else if (v === 'exit') focusExit(cur);
+      else { focusDone(); focusPickGroup(() => focusNext(true)); }   // 고르지 않고 닫으면 이 메뉴로 돌아온다
     }, '이어서 기도하시겠어요?');
     return;
   }
@@ -2646,7 +2652,14 @@ function focusNext(amen, go) {
 }
 function focusDone() { const id = F.deck[F.i] && F.deck[F.i].id; if (!id) return; const L = dayLog(DB, TODAY); if ((L.d || []).indexOf(id) < 0) toggleDone(DB, id, TODAY); save(); }
 // 그룹 · 서브 그룹 고르기 (띠 색과 함께) — 고르면 그 그룹 첫 이름으로. 오늘 목록에서 온 한 장이면 지도 차례로 바꿔 탄다
-function focusPickGroup() {
+// 나가기 — 지금 이름까지 기도함으로 기록하고 닫는다. 무슨 일이 있었는지 토스트로 알린다 (HB 2026-10-18)
+function focusExit(cur) {
+  const secs = Math.max(0, Math.round((Date.now() - (F.start || F.t0)) / 1000));
+  const g = cur && findG(DB, cur.tg || cur.g), nm = (findAny(DB, cur && cur.id) || {}).name;
+  focusDone(); closeFocus();
+  toast((g ? '‘' + g.name + '’ 그룹' : '이 그룹') + '까지 마치고 나왔어요. ' + (nm ? '마지막 이름 ' + nm + '까지 ' : '') + '기도함으로 기록했고, 기도한 시간(' + (secs < 60 ? '1분 미만' : Math.round(secs / 60) + '분') + ')도 저장했어요.');
+}
+function focusPickGroup(back) {
   const opts = []; const add = (g, d) => { opts.push({ v: g.id, label: (d ? '　'.repeat(d) + '└ ' : '') + g.name, sw: g.color }); kidsOf(DB, g.id).forEach(k => add(k, d + 1)); };
   mapTops().forEach(g => add(g, 0));
   if (!opts.length) { toast('지도가 비어 있습니다'); return; }
@@ -2658,7 +2671,7 @@ function focusPickGroup() {
     if (i < 0) { toast('그 그룹에는 기도할 이름이 없습니다'); return; }
     if (deck !== F.deck) { flushFocusTime(); F.deck = deck; }
     F.i = i; focusCard(true);
-  });
+  }, '', { x: true, onClose: back });
 }
 function flushFocusTime() { if (!F.on) return; addPraySession(DB, F.start || F.t0, (Date.now() - F.t0) / 1000, 'focus', F.sid); F.t0 = Date.now(); }
 function closeFocus() {
@@ -2792,8 +2805,8 @@ function pickSet(ids) { DB.set.mapPick = ids.length ? { d: TODAY, ids } : null; 
 function doneMode() { const n = devPref('doneMode', 0); return n === 1 || n === 2 || n === 3 ? n : 0; }
 const DONE_LBL = ['그대로', '흐리게', '그룹만 남기기', '숨기기'];
 function doneIco(n) { return n === 3 ? '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 12 10.5 16.5 18 6"/><line x1="3.2" y1="14.6" x2="20.8" y2="12.2"/></svg>' : ico('check'); }
-// 지도 체크 단추 1단계 이후 '오늘 기도한 그룹' 의 투명도(%) — 기기마다 설정에서 조정 (HB 2026-10-18). 기본 62 는 지금 값
-function doneOp() { const n = Number(devPref('doneOp', 62)); return n >= 20 && n <= 100 ? Math.round(n) : 62; }
+// 지도 체크 단추 1단계 이후 '오늘 기도한 그룹' 의 투명도(%) — 기기마다 설정에서 조정 (HB 2026-10-18). 기본 30 (HB 2026-10-18)
+function doneOp() { const n = Number(devPref('doneOp', 30)); return n >= 0 && n <= 100 ? Math.round(n) : 30; }
 function applyDoneOp() { document.documentElement.style.setProperty('--dn-op', String(doneOp() / 100)); }
 function doneSet() { return new Set((DB.log[TODAY] && DB.log[TODAY].d) || []); }
 function groupDoneToday(g, kids, ds) {
@@ -3191,7 +3204,7 @@ LAYERS.settings = () => {
     '<div class="xp" data-xp="there"' + (xo('there') ? '' : ' hidden') + '><div class="there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div></div>' +
     '<button class="set-r" data-a="marks">' + MKICO + '표시색 이름<span class="v">' + ico('chevR') + '</span></button>' +
-    '<div class="set-r">' + ico('check') + '기도한 그룹 흐림<span class="step"><button data-a="done-op" data-v="-5" aria-label="더 흐리게">−</button><b id="doneOpV">' + doneOp() + '%</b><button data-a="done-op" data-v="5" aria-label="덜 흐리게">+</button></span></div></div>';
+    '<div class="set-r">' + ico('check') + '기도한 그룹 흐림<input type="range" class="rng" min="0" max="100" step="1" value="' + doneOp() + '" data-live="doneop" aria-label="기도한 그룹 투명도"><b id="doneOpV" class="rngv">' + doneOp() + '%</b></div></div>';
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="groups">' + ico('map') + '그룹 순서 · 지우기<span class="v">' + topGroups(DB).length + ico('chevR') + '</span></button></div>';
@@ -3341,8 +3354,14 @@ function closeSheet(now) {
   if (now) { w.remove(); return; }
   w.classList.remove('in'); setTimeout(() => w.remove(), 340);
 }
-function choose(title, opts, cur, fn, sub) {
-  return openSheet('<div class="sh-t">' + esc(title) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div><div class="sh-b">' + opts.map(o =>
+// more = { x: true(제목줄 우측 끝 × 단추 · 제목줄을 끌어 내려도 닫힘), onClose: 고르지 않고 닫았을 때 할 일 }
+function choose(title, opts, cur, fn, sub, more) {
+  const w = chooseSheet(title, opts, cur, fn, sub, more);
+  if (more && more.onClose) w._onClose = more.onClose;
+  return w;
+}
+function chooseSheet(title, opts, cur, fn, sub, more) {
+  return openSheet('<div class="sh-t">' + esc(title) + (more && more.x ? '<button class="sh-x" data-a="sheet-close" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>' : '') + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div><div class="sh-b">' + opts.map(o =>
     '<button class="opt' + (o.danger ? ' danger' : '') + '" data-a="pick" data-v="' + esc(o.v) + '">' + (o.sw ? '<i class="dot16" style="--gc:' + esc(o.sw) + ';margin:0"></i>' : '') +
     '<span><div>' + esc(o.label) + '</div>' + (o.desc ? '<div class="d">' + esc(o.desc) + '</div>' : '') + '</span>' + (String(o.v) === String(cur) ? '<span class="ck">' + ico('check') + '</span>' : '') + '</button>').join('') + '</div>', fn);
 }
@@ -3787,11 +3806,6 @@ ACT['map-done-mode'] = () => {
   if (b) { b.setAttribute('aria-label', '오늘 기도한 것 — ' + DONE_LBL[n]); b.innerHTML = doneIco(n); }
   mapMorph(m => { m.classList.remove('dm0', 'dm1', 'dm2', 'dm3'); m.classList.add('dm' + n); });
   clearTimeout(UI.reflowT); UI.reflowT = setTimeout(mapReflow, 720);
-};
-ACT['done-op'] = el => {
-  const n = Math.max(20, Math.min(100, doneOp() + (+el.dataset.v || 0)));
-  setDevPref('doneOp', n); applyDoneOp();
-  const v = $('doneOpV'); if (v) v.textContent = n + '%';
 };
 // 3줄 — 그룹만 → 서브 그룹까지 → 항목까지 → 다시 그룹만 (기기마다 따로 기억). 줄이 하나씩 스르륵
 ACT['map-depth'] = () => {
@@ -4250,6 +4264,7 @@ document.addEventListener('input', e => {
     UI.mapQuery = el.value;
     renderMapKeepQ();
   }
+  if (el.dataset && el.dataset.live === 'doneop') { setDevPref('doneOp', +el.value); applyDoneOp(); const v = $('doneOpV'); if (v) v.textContent = el.value + '%'; }   // 끌면서 바로 지도에 보인다
   if (el.id === 'impText' && UI.imp) UI.imp.text = el.value;
 });
 document.addEventListener('keydown', e => {
@@ -5182,8 +5197,8 @@ function actsWidth(row) { const a = row.querySelector('.sw-acts'); return a ? a.
 document.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   if (e.target.closest('input,textarea,select,.sw-act')) return;
-  const grab = e.target.closest('.sh-grab');
-  if (grab && SHEET) { GS.st = { mode: 'sheet', sheet: grab.parentElement, y0: e.clientY, pid: e.pointerId, dy: 0 }; grab.parentElement.classList.add('drag'); return; }
+  const grab = e.target.closest('.sh-grab') || (e.target.closest('.sh-x') ? null : (e.target.closest('.sheet') && e.target.closest('.sh-t:has(.sh-x)')));   // 손잡이 · (× 가 있는) 제목줄 모두 끌어 내려 닫는다
+  if (grab && SHEET) { GS.st = { mode: 'sheet', sheet: grab.closest('.sheet'), y0: e.clientY, pid: e.pointerId, dy: 0 }; GS.st.sheet.classList.add('drag'); return; }
   const layer = e.target.closest('.layer');
   if (layer && e.clientX < 24 && layer === topLayerEl()) { GS.st = { mode: 'edge-p', layer: layer, x0: e.clientX, y0: e.clientY, pid: e.pointerId }; return; }
   const row = e.target.closest('.row');
