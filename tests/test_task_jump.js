@@ -179,8 +179,8 @@ console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
   const menu = slice('<!-- Task move mini menu -->', '<!-- (date input now lives inline');
   // v26-0917-1 에 이동 칸의 '오늘 다른 구간으로' 가 늘어 여덟이 됐다
   // v26-1015-4 에 '완료 후 다음 할일' 이 셋(내일 · 다음 주 · 오늘 다른 구간) 늘어 열하나가 됐다
-  sc.eq('개수를 붙인 줄 열하나 (이동 4 · 복제 4 · 완료 후 다음 할일 3)',
-    (menu.match(/data-cnt-days=/g)||[]).length, 11);
+  sc.eq('개수를 붙인 줄 열둘 (이동 5 · 복제 4 · 완료 후 다음 할일 3)',
+    (menu.match(/data-cnt-days=/g)||[]).length, 12);
   sc.eq('날짜 지정 줄에는 개수를 안 붙인다 (어느 날인지 아직 모른다)',
     menu.slice(menu.indexOf('id="dateLabelRow"'), menu.indexOf('id="dateLabelRow"')+400)
       .includes('data-cnt-days'), false);
@@ -207,7 +207,7 @@ console.log('\n시나리오 6 — 메뉴·토스트·반짝임의 겉모습');
 
 console.log('\n시나리오 7 — 이동·복제 네 길이 모두 같은 안내를 쓴다');
 {
-  const move = slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'");
+  const move = slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'");
   const movePick = slice('function moveTaskToPickedDate(', '// 복제 칸의 \'날짜 지정\'');
   const dup = slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다');
   const dupPick = slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');

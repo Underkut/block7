@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1013-3 -->
+<!-- 공부 친구들 v. 26-1018-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -492,7 +492,7 @@ const mondayOf = s => addDays(s, -((dowOf(s) + 6) % 7));
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1013-3';
+const APP_VERSION = 'v. 26-1018-1';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -567,6 +567,8 @@ function save() { try { localStorage.setItem(STUDY_KEY, JSON.stringify(S)); } ca
 /* ───────── 작은 도구 ───────── */
 let toastT = 0;
 function toast(t, ms) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), ms || 2400); }
+// 토스트는 어디를 눌러도 닫힌다 (HB 2026-10-18)
+document.addEventListener('pointerdown', () => { const t = $('toast'); if (t && t.classList.contains('on')) { clearTimeout(toastT); t.classList.remove('on'); } }, true);
 let AC = null;
 function tone(seq) {
   if (!S.sfx) return;
