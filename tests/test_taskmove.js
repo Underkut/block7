@@ -151,4 +151,13 @@ console.log('\n시나리오 6 — 옮기기와 복제는 성격 표시 목록을
   sc.eq('세 가지 표시가 모두 들어 있다', marks(moved), ['daily', 'flag', 'contactTask']);
 }
 
+
+console.log("\n시나리오 — '어제 완료' (완료 체크하고 어제로)");
+{
+  const { ST, api } = makeEnv([marked()], T);
+  api.moveTaskTo(-1, undefined, true);
+  const it = at(ST, '2026-09-15')[0];
+  sc.eq('어제로 옮겨지고 완료 체크', [at(ST, T).length, it && it.done], [0, true]);
+  sc.eq('긴급 표시는 풀린다 · 연락할 일 표시는 유지', [it.urgent, it.contactTask], [undefined, true]);
+}
 sc.done();

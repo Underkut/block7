@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1015-11  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1018-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6371,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1015-11";
+const APP_VERSION = "v. 26-1018-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9093,6 +9093,9 @@ try{
   </div>
   <div class="task-menu-item" data-act="move" data-cnt-days="-1" onclick="moveTaskTo(-1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M14 4.5v11L5 10z"/></svg></span>어제로
+  </div>
+  <div class="task-menu-item" data-act="move" data-cnt-days="-1" data-done="1" onclick="moveTaskTo(-1,undefined,true)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M15 4.5v11L7 10z"/><rect x="4" y="4.5" width="2" height="11" rx=".5"/></svg></span>어제 완료
   </div>
   <div class="task-menu-item" id="todaySecRow" data-act="move" data-cnt-days="0"
        data-secpick="always" onclick="_secPickOpenFromRow(this)">
@@ -39734,7 +39737,7 @@ function _dayKeyDiff(fromKey,toKey){
 
 // toSec — 보낼 시간 구간. 안 주면 예전 그대로 **할일이 있던 구간**으로 간다
 // (v26-0917-1 에서 구간 판이 생기기 전까지는 그 길밖에 없었다).
-function moveTaskTo(days,toSec){
+function moveTaskTo(days,toSec,markDone){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
@@ -39747,6 +39750,8 @@ function moveTaskTo(days,toSec){
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=src[idx];
   if(!item){closeTaskMenu();return;}
+  // '어제 완료' — 완료 체크하고(하위도 따라 완료 · 긴급 표시는 풀린다) 그대로 옮긴다. 되돌리기 한 번에 둘 다 풀린다 (위 beforeSave 한 번)
+  if(markDone&&!item.done){item.done=true;_subSetAll(item,true);if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);}
   src.splice(idx,1);
   const newItem=_movedTaskCopy(item,days);
   const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
@@ -39759,7 +39764,7 @@ function moveTaskTo(days,toSec){
   refreshTaskViewsLive();
   closeTaskMenu();
   // brief flash to confirm
-  _toastWithJump(`${_moveLabel(days,secId,destSec)} 이동했어요`,toKey,
+  _toastWithJump(`${_moveLabel(days,secId,destSec)}${markDone?' 완료 체크해서':''} 이동했어요`,toKey,
     {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
@@ -40292,8 +40297,9 @@ function _secPickSpecFor(row){
   const days=parseInt(row.dataset.cntDays,10);
   if(isNaN(days))return null;
   const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
-  return {act,days,toKey:tKey(addDays(viewDate,days)),
-          label:(act==='dup'?'복제':act==='next'?'완료 후 다음 할일':'이동')+' · '+base};
+  const done=row.dataset.done==='1';
+  return {act,days,done,toKey:tKey(addDays(viewDate,days)),
+          label:(act==='dup'?'복제':act==='next'?'완료 후 다음 할일':'이동')+' · '+(done?'어제 완료':base)};
 }
 // 판을 연 손이 마우스였는가 (v26-1007-3, HB 신고).
 // ⚠️ 기기로 가르면 안 된다 — 터치 화면이 달린 노트북·윈도 PC 는 _isTouchDevice()
@@ -40416,7 +40422,7 @@ function _secPickChoose(secId){
   }else{
     if(spec.act==='dup')duplicateTaskTo(spec.days,secId);
     else if(spec.act==='next')nextAfterDoneTo(spec.days,secId);
-    else moveTaskTo(spec.days,secId);
+    else moveTaskTo(spec.days,secId,spec.done);
   }
 }
 // 목적지 줄에 판을 건다. 메뉴를 열 때마다 부르지만 배선은 한 번만 한다.

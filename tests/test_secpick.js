@@ -19,13 +19,13 @@ const PICKS = slice('function _secPickSecs(', '// 줄 하나가 뜻하는 목적
 const SPECF = slice('function _secPickSpecFor(', 'function _secPickRender(');
 const EURO  = slice("// '오전으로' · '오후로'", '// ─ Toast ─');
 const LABEL = slice("// '내일 오전으로' · '다음 주 밤으로'", '// 복제된 할일은');
-const MOVE  = slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'");
+const MOVE  = slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'");
 
 console.log('시나리오 1 — 목적지 줄마다 어디로 가는지 적혀 있다');
 {
   const acts = [...MENU.matchAll(/data-act="(move|dup)"/g)].map(m => m[1]);
-  sc.eq('이동 5줄 · 복제 5줄', {move:acts.filter(a=>a==='move').length, dup:acts.filter(a=>a==='dup').length},
-    {move:5, dup:5});
+  sc.eq('이동 6줄(어제 완료 포함) · 복제 5줄', {move:acts.filter(a=>a==='move').length, dup:acts.filter(a=>a==='dup').length},
+    {move:6, dup:5});
   // 날짜 지정 두 줄은 달력이 먼저다 — 날짜를 알아야 그 날 구간을 보여줄 수 있다
   sc.eq('날짜 지정 세 줄은 달력 먼저 (이동 · 복제 · 완료 후 다음 할일)', (MENU.match(/data-when="pick"/g)||[]).length, 3);
   sc.eq('오늘 다른 구간으로 줄', MENU.includes('id="todaySecRow"'), true);
@@ -84,9 +84,10 @@ console.log('\n시나리오 4 — 줄 하나가 뜻하는 목적지');
   const spec=new Function('tKey','addDays','viewDate',`${SPECF}; return _secPickSpecFor;`)
     ((d)=>'K'+d,(_,n)=>n,0);
   const row=(act,days)=>({dataset:{act,cntDays:String(days)}});
-  sc.eq('이동 · 내일', spec(row('move',1)), {act:'move',days:1,toKey:'K1',label:'이동 · 내일'});
-  sc.eq('복제 · 어제', spec(row('dup',-1)), {act:'dup',days:-1,toKey:'K-1',label:'복제 · 어제'});
+  sc.eq('이동 · 내일', spec(row('move',1)), {act:'move',days:1,done:false,toKey:'K1',label:'이동 · 내일'});
+  sc.eq('복제 · 어제', spec(row('dup',-1)), {act:'dup',days:-1,done:false,toKey:'K-1',label:'복제 · 어제'});
   sc.eq('이동 · 오늘', spec(row('move',0)).label, '이동 · 오늘');
+  { const r = row('move',-1); r.dataset.done='1'; sc.eq('어제 완료 줄', [spec(r).label, spec(r).done], ['이동 · 어제 완료', true]); }
   sc.eq('이동 · 다음 주', spec(row('move',7)).label, '이동 · 다음 주');
   sc.eq('날짜를 모르는 줄은 null', spec({dataset:{act:'move'}}), null);
 }
@@ -168,7 +169,7 @@ console.log('\n시나리오 6 — 구간을 안 주면 예전 그대로 옮긴�
 console.log('\n시나리오 7 — 네 길이 모두 구간을 받는다');
 {
   const four = [
-    ['이동',           slice('function moveTaskTo(days,toSec)', "// '내일 오전으로' · '다음 주 밤으로'")],
+    ['이동',           slice('function moveTaskTo(days,toSec,markDone)', "// '내일 오전으로' · '다음 주 밤으로'")],
     ['복제',           slice('function duplicateTaskTo(days,toSec)', '// 메뉴가 열릴 때마다')],
     ['이동(날짜 지정)', slice('function moveTaskToPickedDate(dateStr,toSec)', "// 복제 칸의 '날짜 지정'")],
     ['복제(날짜 지정)', slice('function duplicateTaskToPickedDate(dateStr,toSec)', '// "8월 17일 월요일')],

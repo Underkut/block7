@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1018-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1018-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1018-3';
+const APP_VERSION = 'v. 26-1018-5';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1984,6 +1984,14 @@ textarea.field{min-height:72px;line-height:1.6}
 .xp .there-pick{padding:2px 0 6px}
 .set-r.danger{color:var(--danger)}
 .set-prev{padding:6px 16px 16px;border-bottom:1px solid var(--bd)}.set-prev .masonry{display:flex;gap:10px;align-items:flex-start}.set-prev .pv{flex:1;min-width:0}.set-prev small{display:block;margin:0 0 4px 2px;font-size:11px;color:var(--tx3)}.set-prev .gcard{pointer-events:none}
+.stabs{position:sticky;top:0;z-index:3;display:flex;gap:4px;padding:6px 14px 8px;background:var(--bg);border-bottom:1px solid var(--bd)}
+.stab{flex:1;height:36px;border-radius:10px;font-size:13.5px;color:var(--tx3);transition:background .25s,color .25s}
+.stab.on{background:var(--s2);color:var(--tx);font-weight:600}
+.stab-vp{overflow:hidden;touch-action:pan-y;transition:height .46s cubic-bezier(.22,.8,.24,1)}
+.stab-track{display:flex;align-items:flex-start;transition:transform .46s cubic-bezier(.22,.8,.24,1);will-change:transform}
+.stab-pane{flex:0 0 100%;min-width:0;box-sizing:border-box}
+.stab-vp:not(.moving) .stab-pane:not(.on){height:0;overflow:hidden;visibility:hidden}
+@media (prefers-reduced-motion:reduce){.stab-vp,.stab-track{transition:none}}
 .rng{flex:1;min-width:90px;max-width:46%;margin-left:auto;height:36px;accent-color:var(--ac);touch-action:pan-y;cursor:pointer}
 .rngv{min-width:42px;text-align:right;font-weight:500;color:var(--tx2);font-variant-numeric:tabular-nums}
 .step{display:flex;align-items:center;gap:4px;margin-left:auto}
@@ -2348,8 +2356,9 @@ function saveNow() {
   catch (e) { toast('저장하지 못했습니다 — 기기 저장 공간을 확인해 주세요'); }
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') { if (F.on) flushFocusTime(); saveNow(); }
-  else { const t = ymd(); if (t !== TODAY) { TODAY = t; refresh(); } }
+  // 한 장 기도: 다른 앱으로 나가거나 화면이 꺼지면 시간 재기를 멈춘다 — There 와 같다 (HB 2026-10-18). 돌아오면 거기서 다시 센다
+  if (document.visibilityState === 'hidden') { if (F.on) { flushFocusTime(); F.paused = true; } saveNow(); }
+  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); } const t = ymd(); if (t !== TODAY) { TODAY = t; refresh(); } }
 });
 window.addEventListener('pagehide', saveNow);
 
@@ -2418,6 +2427,12 @@ function toast(msg, action, fn) {
   // BLOCK7 와 같은 기준 — 글자 수 × 200ms (일반 3초 · 되돌리기 줄이 있으면 6초부터, 9초 상한)
   toastT = setTimeout(() => t.classList.remove('on'), Math.min(9000, Math.max(action ? 6000 : 3000, String(msg).length * 200)));
 }
+// 토스트는 어디를 눌러도(토스트 안이든 밖이든) 바로 닫힌다 — 안의 동작 단추(되돌리기 등)는 제 일을 한다 (HB 2026-10-18)
+document.addEventListener('pointerdown', e => {
+  const t = $('toast'); if (!t || !t.classList.contains('on')) return;
+  if (e.target.closest && e.target.closest('#toast button')) return;
+  clearTimeout(toastT); t.classList.remove('on');
+}, true);
 function withUndo(msg, mutate) {
   const before = JSON.stringify(DB);
   mutate();
@@ -2552,7 +2567,7 @@ function emptyStart() {
 
 // ── ② 한 장씩 기도하기 ──
 const MAP_ICO = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/></svg>';
-const F = { on: false, deck: [], i: 0, t0: 0, tick: 0, sent: {} };
+const F = { on: false, deck: [], i: 0, t0: 0, tick: 0, sent: {}, tot: 0, paused: false };
 function openFocus() {
   if (MT.on) thereStop('page');
   const r = buildToday(DB, TODAY);
@@ -2577,7 +2592,7 @@ function openFocusMap(k, who) {
   focusStart(deck, Math.max(0, i));
 }
 function focusStart(deck, at) {
-  F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {};
+  F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false;
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span class="f-time" id="fTime">0:00</span><span class="f-pos" id="fPos"></span>' +
     '<span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
@@ -2586,7 +2601,7 @@ function focusStart(deck, at) {
   el.classList.add('on');
   focusCard(false);
   clearInterval(F.tick);
-  F.tick = setInterval(() => { const s = Math.floor((Date.now() - F.t0) / 1000); const n = $('fTime'); if (n) n.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+  F.tick = setInterval(() => { const s = Math.floor(focusSecs()); const n = $('fTime'); if (n) n.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
 }
 function particles() {
   let s = '';
@@ -2598,7 +2613,7 @@ function particles() {
 }
 function focusCardHTML() {
   if (F.i >= F.deck.length) {
-    const secs = Math.floor((Date.now() - F.t0) / 1000);
+    const secs = Math.floor(focusSecs());
     return '<div class="f-card f-end"><div class="f-cat">오늘 기도</div><h2 class="f-name">다 마쳤습니다</h2><div class="f-why">' +
       F.deck.length + '개 · ' + Math.max(1, Math.round(secs / 60)) + '분</div><div style="margin-top:28px"><button class="ghost" data-a="focus-close">닫기</button></div></div>';
   }
@@ -2654,7 +2669,7 @@ function focusDone() { const id = F.deck[F.i] && F.deck[F.i].id; if (!id) return
 // 그룹 · 서브 그룹 고르기 (띠 색과 함께) — 고르면 그 그룹 첫 이름으로. 오늘 목록에서 온 한 장이면 지도 차례로 바꿔 탄다
 // 나가기 — 지금 이름까지 기도함으로 기록하고 닫는다. 무슨 일이 있었는지 토스트로 알린다 (HB 2026-10-18)
 function focusExit(cur) {
-  const secs = Math.max(0, Math.round((Date.now() - (F.start || F.t0)) / 1000));
+  const secs = Math.round(focusSecs());
   const g = cur && findG(DB, cur.tg || cur.g), nm = (findAny(DB, cur && cur.id) || {}).name;
   focusDone(); closeFocus();
   toast((g ? '‘' + g.name + '’ 그룹' : '이 그룹') + '까지 마치고 나왔어요.\n' + (nm ? '마지막 이름 ' + nm + '까지 기도함으로 기록했고,\n' : '기도함으로 기록했고,\n') + '기도한 시간(' + (secs < 60 ? '1분 미만' : Math.round(secs / 60) + '분') + ')도 저장했어요.');
@@ -2673,7 +2688,9 @@ function focusPickGroup(back) {
     F.i = i; focusCard(true);
   }, '', { x: true, onClose: back });
 }
-function flushFocusTime() { if (!F.on) return; addPraySession(DB, F.start || F.t0, (Date.now() - F.t0) / 1000, 'focus', F.sid); F.t0 = Date.now(); }
+// 쉰 동안(F.paused)은 세지 않는다. F.tot = 이번 한 장 기도에 지금까지 쌓은 초 (나가기 토스트가 쓴다)
+function focusSecs() { return F.tot + (F.paused ? 0 : Math.max(0, (Date.now() - F.t0) / 1000)); }
+function flushFocusTime() { if (!F.on) return; const d = F.paused ? 0 : (Date.now() - F.t0) / 1000; if (d > 0) { addPraySession(DB, F.start || F.t0, d, 'focus', F.sid); F.tot += d; } F.t0 = Date.now(); }
 function closeFocus() {
   flushFocusTime(); save();
   F.on = false; clearInterval(F.tick);
@@ -3190,6 +3207,62 @@ LAYERS.groups = () => {
     '<div style="padding:12px 20px 0"><button class="ghost" data-a="add-group">+ 그룹 만들기</button></div>';
   return { title: '그룹 순서', body: b };
 };
+// ── 설정 탭 (HB 2026-10-18) — 계정·자료 / 화면 / 목록 / 기타. 탭을 누르거나 좌우로 밀어 옮긴다(손가락을 따라가고, 놓으면 이어서 넘어간다) ──
+const STAB_NAMES = ['계정·자료', '화면', '목록', '기타'];
+function settingsTabsHTML(P) {
+  const i = Math.min(Math.max(UI.setTab || 0, 0), P.length - 1);
+  return '<div class="stabs">' + STAB_NAMES.map((n, k) => '<button class="stab' + (k === i ? ' on' : '') + '" data-a="stab" data-v="' + k + '">' + n + '</button>').join('') + '</div>' +
+    '<div class="stab-vp" id="stabVp"><div class="stab-track" id="stabTrack" style="transform:translateX(-' + (i * 100) + '%)">' +
+    P.map((h, k) => '<div class="stab-pane' + (k === i ? ' on' : '') + '">' + h + '</div>').join('') + '</div></div>';
+}
+function stabSettle(k) {
+  const vp = $('stabVp'), tr = $('stabTrack'); if (!vp || !tr) return;
+  const panes = [...tr.children];
+  UI.setTab = k;
+  vp.classList.add('moving');
+  if (vp.style.height === '') vp.style.height = (panes.find(p => p.classList.contains('on')) || panes[k]).offsetHeight + 'px';
+  vp.getBoundingClientRect();
+  vp.style.height = panes[k].offsetHeight + 'px';
+  tr.style.transition = ''; tr.style.transform = 'translateX(-' + (k * 100) + '%)';
+  panes.forEach((p, i) => p.classList.toggle('on', i === k));
+  document.querySelectorAll('.stab').forEach((b, i) => b.classList.toggle('on', i === k));
+  clearTimeout(UI.stabT);
+  UI.stabT = setTimeout(() => { vp.classList.remove('moving'); vp.style.height = ''; }, mxQuiet() ? 0 : 480);
+}
+(function () {
+  let st = null;
+  const W = () => ($('stabVp') || {}).clientWidth || 360;
+  document.addEventListener('touchstart', e => {
+    const vp = e.target.closest && e.target.closest('.stab-vp'); if (!vp || e.touches.length !== 1) { st = null; return; }
+    if (e.target.closest('input,textarea,select,.seg')) { st = null; return; }
+    const t = e.touches[0]; if (t.clientX < 28) { st = null; return; }   // 왼쪽 가장자리는 '뒤로' 끌기 몫
+    st = { x0: t.clientX, y0: t.clientY, i: UI.setTab || 0, t0: Date.now(), lock: false, dx: 0 };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x0, dy = t.clientY - st.y0;
+    if (!st.lock) {
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { st = null; return; }
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        st.lock = true; const vp = $('stabVp'), tr = $('stabTrack'); if (!vp || !tr) { st = null; return; }
+        clearTimeout(UI.stabT); vp.classList.add('moving');
+        vp.style.height = ([...tr.children][st.i]).offsetHeight + 'px'; tr.style.transition = 'none';
+      } else return;
+    }
+    const n = $('stabTrack').children.length, atEdge = (dx > 0 && st.i === 0) || (dx < 0 && st.i === n - 1);
+    st.dx = dx * (atEdge ? 0.22 : 1);   // 더 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게
+    $('stabTrack').style.transform = 'translateX(calc(-' + (st.i * 100) + '% + ' + st.dx + 'px))';
+  }, { passive: true });
+  const end = () => {
+    if (!st) return; const s2 = st; st = null; if (!s2.lock) return;
+    const n = $('stabTrack').children.length, w = W(), fast = Math.abs(s2.dx) >= 40 && Math.abs(s2.dx) / Math.max(1, Date.now() - s2.t0) > 0.5;
+    let k = s2.i;
+    if ((Math.abs(s2.dx) > w * 0.25 || fast) && s2.dx < 0 && s2.i < n - 1) k = s2.i + 1;
+    else if ((Math.abs(s2.dx) > w * 0.25 || fast) && s2.dx > 0 && s2.i > 0) k = s2.i - 1;
+    UI.setTab = s2.i; stabSettle(k);
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+})();
 // 설정
 LAYERS.settings = () => {
   const p = themeById(DB.set.preset);
@@ -3199,6 +3272,7 @@ LAYERS.settings = () => {
   b += '<div class="label">자료</div><div class="set-g"><button class="set-r" data-a="backup">' + ico('up') + '백업 파일로 내보내기</button>' +
     '<button class="set-r" data-a="restore">' + ico('down') + '백업 파일 불러오기</button>' +
     '<button class="set-r danger" data-a="wipe">처음 상태로 되돌리기</button></div>';
+  const P = [b]; b = '';   // 설정 탭 — ① 계정·자료
   b += '<div class="label">앱 이름<small>이 기기에만 · 홈 화면 아이콘은 다시 추가해야 바뀜</small></div><div class="set-g room-pick">' +
     ROOM_ORDER.map(k => '<button class="rpk' + (k === roomKey() ? ' on' : '') + '" data-a="room" data-v="' + k + '"><img src="' + ROOMS[k].icon + '-192.png" alt=""><span>' + ROOMS[k].name + '</span></button>').join('') + '</div>';
   // '첫 화면' · 'There 단추' 는 새 창 없이 그 자리에서 아래로 펼쳐 고른다
@@ -3212,17 +3286,21 @@ LAYERS.settings = () => {
     '<div class="xp" data-xp="there"' + (xo('there') ? '' : ' hidden') + '><div class="there-pick">' +
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div></div>' +
     '<button class="set-r" data-a="marks">' + MKICO + '표시색 이름<span class="v">' + ico('chevR') + '</span></button>' +
+    '<div class="set-r">' + ico('sun') + 'There 중 화면 꺼짐 막기<span class="seg" style="margin:0 0 0 auto;width:auto"><button class="' + (awakePref() ? '' : 'on') + '" data-a="awake-set" data-v="0">끔</button><button class="' + (awakePref() ? 'on' : '') + '" data-a="awake-set" data-v="1">켬</button></span></div>' +
     '<div class="set-r">' + ico('check') + '기도한 그룹 흐림<input type="range" class="rng" min="10" max="90" step="1" value="' + doneOp() + '" data-live="doneop" aria-label="기도한 그룹 투명도"><b id="doneOpV" class="rngv">' + doneOp() + '%</b></div>' + donePrevHTML() + '</div>';
+  P.push(b); b = '';   // ② 화면
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="groups">' + ico('map') + '그룹 순서 · 지우기<span class="v">' + topGroups(DB).length + ico('chevR') + '</span></button></div>';
   b += '<div class="label">오늘 목록</div><div class="set-g"><div class="set-r">1순위 처음 보일 개수<span class="step"><button data-a="step" data-k="topLimit" data-v="-1" aria-label="줄이기">−</button><b>' + DB.set.topLimit + '</b><button data-a="step" data-k="topLimit" data-v="1" aria-label="늘리기">+</button></span></div></div>';
   b += '<div class="label">긴급도마다 며칠에 한 번<small>0 이 가장 급함</small></div><div class="set-g">' + DB.set.iv.map((v, k) =>
     '<div class="set-r"><span class="pl ' + uCls(k) + '">' + k + '</span>' + (v === 1 ? '날마다' : v + '일마다') + '<span class="step"><button data-a="step" data-k="iv" data-n="' + k + '" data-v="-1" aria-label="줄이기">−</button><b>' + v + '</b><button data-a="step" data-k="iv" data-n="' + k + '" data-v="1" aria-label="늘리기">+</button></span></div>').join('') + '</div>';
+  P.push(b); b = '';   // ③ 목록
   b += '<div class="label">화면 진단<small>아래 띠 색이 다를 때 눌러 복사해 보내 주세요</small></div><div class="set-g"><button class="set-r" data-a="diag-copy">' + ico('link') + '화면 진단 기록 복사</button></div>';
   b += '<div class="hint" style="padding:20px 20px 0">' + (SY.user ? '로그인한 기기끼리 자료를 맞춥니다. 색상 테마는 기기마다 따로입니다.' : '로그인하지 않으면 자료는 이 기기에만 저장됩니다.') + ' 가끔 백업 파일로 내보내 두세요.<br>기도노트 ' + esc(APP_VERSION) + ' · sweeter.my/pray/<br><span style="opacity:.6">' + esc(GAP_INFO) + '</span></div>';
   b += '<input type="file" id="restoreFile" accept=".json,application/json" hidden>';
-  return { title: '설정', body: b };
+  P.push(b);   // ④ 기타
+  return { title: '설정', body: settingsTabsHTML(P) };
 };
 LAYERS.theme = () => {
   const mode = DB.set.mode;
@@ -3388,6 +3466,7 @@ function askText(title, value, placeholder, fn, opt) {
 // ═══ 동작 ═══
 const ACT = {};
 function doAct(el, e) { const f = ACT[el.dataset.a]; if (f) f(el, e); }
+ACT.stab = el => stabSettle(+el.dataset.v);
 ACT['mark-link'] = el => {
   const m = el.dataset.m, k = { t: el.dataset.t, id: el.dataset.id };
   DB.markLinks[m] = k; DB.marks[m] = markLinkName(DB, k);
@@ -5175,10 +5254,11 @@ function mapHoldMenu(k, who) {
   });
 }
 // 지도 차례대로 이름 펼치기 — 그룹마다 항목 먼저, 다음 서브 그룹. 같은 이름은 처음 나온 자리에만.
+// 지도에서 표시 색으로 걸러 둔 채 들어가면 걸러서 켜진 이름만 기도한다 — 그룹 끝 메뉴도 그 기준으로 나온다 (HB 2026-10-18)
 function mapDeck() {
   const out = [], seen = new Set(), done = new Set();
   const walk = (g, top) => { if (done.has(g.id)) return; done.add(g.id);
-    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id, tg: top }); } }));
+    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid) && (!UI.mapFilter.length || UI.mapFilter.indexOf(mk(findT(DB, pid))) >= 0)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id, tg: top }); } }));
     kidsOf(DB, g.id).forEach(k => walk(k, top)); };
   mapTops().forEach(g => walk(g, g.id));
   return out;
@@ -5898,6 +5978,23 @@ function mtColors(box) {
   MT.up = [mtSprite(MT.light ? '#c99a4a' : '#dab87a', 0), mtSprite(MT.light ? '#c99a4a' : '#dab87a', -8), mtSprite('#dab87a', -16)];
   MT.down = [mtSprite(MT.light ? '#8a6cc8' : '#a892d6', 0), mtSprite('#a892d6', -12), mtSprite('#a892d6', -50)];
 }
+// ── There 중 화면 자동 잠금 막기 (HB 2026-10-18) — 설정에서 켜고 끈다, 처음엔 끔. 화면 켜 두기(Screen Wake Lock)는
+//    아이폰 홈 화면 앱도 iOS 16.4 부터 지원한다. 앱을 벗어나면 기기가 저절로 풀고, There 가 끝나면(thereStop) 우리가 푼다.
+let WAKE = null;
+function awakeSupported() { return !!(navigator.wakeLock && navigator.wakeLock.request); }
+function awakePref() { return devPref('awake', false) === true; }
+function awakeOn() {
+  if (!awakePref() || !awakeSupported() || WAKE) return;
+  navigator.wakeLock.request('screen').then(l => { WAKE = l; l.addEventListener('release', () => { if (WAKE === l) WAKE = null; }); if (!MT.on) awakeOff(); }).catch(() => {});
+}
+function awakeOff() { const l = WAKE; WAKE = null; if (l) try { l.release(); } catch (e) {} }
+ACT['awake-set'] = el => {
+  const on = el.dataset.v === '1';
+  if (on && !awakeSupported()) { toast('이 기기·브라우저에서는\n화면 켜 두기를 지원하지 않아요'); return; }
+  setDevPref('awake', on);
+  el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
+  toast(on ? 'There 중에는 화면이 꺼지지 않아요\n(앱을 벗어나면 풀려요)' : 'There 중에도 화면이 자동으로\n잠길 수 있어요');
+};
 function thereStart() {
   if (MT.on || UI.tab !== 'map') return;
   const app = $('app');
@@ -5918,13 +6015,14 @@ function thereStart() {
   clearInterval(MT.tick);
   MT.tick = setInterval(() => { const c = $('mtClk'); if (c) c.textContent = mtClock(mtSecs()); }, 1000);
   renderView();
+  awakeOn();
   if (navigator.vibrate) navigator.vibrate(10);
 }
 // why: 'button' 은 사람이 껐다 — 짧아도 알려 준다. 나머지(창 · 글 칸 · 탭 · 앱 벗어남)는 기록할 것이 있을 때만 알린다.
 function thereStop(why) {
   if (!MT.on) return;
   const secs = mtSecs();
-  MT.on = false; cancelAnimationFrame(MT.raf); clearInterval(MT.tick);
+  MT.on = false; cancelAnimationFrame(MT.raf); clearInterval(MT.tick); awakeOff();
   document.body.classList.remove('there-on');
   const bg = $('mtBg'), top = $('mtTop');
   if (bg) bg.classList.remove('on'); if (top) top.classList.remove('on');
