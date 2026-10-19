@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-4';
+const APP_VERSION = 'v. 26-1019-5';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2161,7 +2161,10 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .f-card.below{transform:translateY(46px);opacity:0}
 .f-card.xl{transform:translateX(-100%);opacity:0}.f-card.xr{transform:translateX(100%);opacity:0}
 .f-name[data-a]{cursor:pointer}
-.f-cat{font-size:13px;color:var(--ac-tx);letter-spacing:.08em}
+.f-cat{font-size:13px;color:var(--ac-tx);letter-spacing:.08em;display:flex;align-items:center;gap:2px}
+.f-add{width:30px;height:30px;margin:-8px -10px -8px 0;display:inline-flex;align-items:center;justify-content:center;color:var(--ac-tx);opacity:.6;transition:opacity .2s}
+.f-add:hover,.f-add:active{opacity:1}
+.f-add .ico{width:15px;height:15px;stroke-width:1.8}
 .f-name{margin:10px 0 0;font-family:var(--serif);font-size:40px;font-weight:400;line-height:1.25;letter-spacing:-.01em}
 .f-why{margin-top:12px;font-size:12.5px;color:var(--tx3)}
 .f-tps{list-style:none;margin:30px 0 0;padding:0;display:flex;flex-direction:column;gap:13px}
@@ -2654,7 +2657,9 @@ function focusCardHTML() {
   const tps = (t.topics || []).filter(x => !x.ans);
   const mem = t.kind === 'group' ? groupMembers(t) : '';
   const sent = F.sent[t.id];
-  return '<div class="f-card"><div class="f-cat">' + esc(cat) + '</div><h2 class="f-name" data-a="focus-detail" data-id="' + t.id + '" role="button" aria-label="' + esc(t.name) + ' 상세 보기">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
+  // 지도에서 들어온 한 장: 그룹 이름 바로 옆 작은 + = 이 그룹에 나란히 항목 더하기 (O-3, HB 2026-10-19)
+  const addB = it.sec === 'map' && findG(DB, it.g) ? '<button class="f-add" data-a="focus-add" aria-label="‘' + esc(cat) + '’에 기도 항목 더하기">' + ico('plus') + '</button>' : '';
+  return '<div class="f-card"><div class="f-cat">' + esc(cat) + addB + '</div><h2 class="f-name" data-a="focus-detail" data-id="' + t.id + '" role="button" aria-label="' + esc(t.name) + ' 상세 보기">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
     (tps.length ? '<ul class="f-tps">' + tps.map(x => '<li>' + esc(x.t) + '</li>').join('') + '</ul>' : '') +
     (mem ? '<div class="f-mem">' + esc(mem) + '</div>' : '') +
     (t.memo ? '<div class="f-act"><span>' + ico('phone') + '</span><span>실천 — ' + esc(t.memo) + '</span><button class="ghost' + (sent ? ' ac' : '') + '" data-a="todo" data-id="' + t.id + '">' + (sent ? 'BLOCK7 할일로 보냄 ✓' : 'BLOCK7 할일로 보내기') + '</button></div>' : '') +
@@ -3639,6 +3644,34 @@ ACT['focus-map'] = () => focusPickGroup();
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
 ACT['focus-prev'] = () => focusPrev();
+// 한 장 기도 중 같은 그룹 · 서브 그룹에 항목 더하기 (O-3) — 지금 줄 바로 뒤에 넣고, 덱에도 지금 카드 바로 뒤에 끼운다(곧 다음 차례)
+function focusAddLine(v, detail) {
+  const it = F.deck[F.i], g = it && findG(DB, it.g); if (!g) return;
+  const l = makeEntry(DB, v, suggestCat(DB, g, v)); if (!l) { toast('이름을 적어 주세요'); return; }
+  const at = g.lines.findIndex(x => x.id === it.l);
+  if (at >= 0) g.lines.splice(at + 1, 0, l); else g.lines.push(l);
+  const seen = new Set(F.deck.map(d => d.id)), add = linePids(l).filter(pid => !seen.has(pid) && findT(DB, pid)).map(pid => ({ id: pid, sec: 'map', g: g.id, l: l.id, tg: it.tg }));
+  let k = F.i; while (k + 1 < F.deck.length && F.deck[k + 1].l === it.l && F.deck[k + 1].g === it.g) k++;
+  F.deck.splice(k + 1, 0, ...add);
+  save();
+  const pos = $('fPos'); if (pos) pos.innerHTML = '<b>' + (F.i + 1) + '</b> / ' + F.deck.length;
+  const nm = add.length ? add.map(a => (findT(DB, a.id) || {}).name).join(' · ') : String(v).trim();
+  if (detail && add.length) { openTarget(add[0].id); $('layers').classList.add('top'); document.body.classList.add('f-layer'); return; }
+  toast('‘' + g.name + '’에 ' + nm + '\n' + (add.length ? '더했어요. 바로 다음 차례에 나와요' : '메모 줄로 더했어요'));
+}
+ACT['focus-add'] = () => {
+  const it = F.deck[F.i], g = it && findG(DB, it.g); if (!g) return;
+  const w = openSheet('<div class="sh-t">‘' + esc(g.name) + '’에 더하기<small>지금 이름 바로 뒤에 나란히 들어갑니다</small></div>' +
+    '<input class="field" id="fAddIn" placeholder="이름 또는 기도 항목" autocomplete="off" enterkeyhint="done">' +
+    '<div class="sh-acts"><button class="ghost" data-a="focus-add-go" data-v="detail">자세히</button><button class="cta" data-a="focus-add-go" data-v="">더하기</button></div>');
+  w.querySelector('#fAddIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['focus-add-go']({ dataset: { v: '' } }); } });
+  try { w.querySelector('#fAddIn').focus(); } catch (e) {}   // 아이폰은 누른 손짓 안에서 바로 focus 해야 자판이 뜬다
+};
+ACT['focus-add-go'] = el => {
+  const i = $('fAddIn'), v = i ? i.value.trim() : '';
+  if (!v) { if (i) i.focus(); return; }
+  closeSheet(); focusAddLine(v, el.dataset.v === 'detail');
+};
 ACT['focus-detail'] = el => { if (!el.dataset.id) return; openTarget(el.dataset.id); if (F.on) { $('layers').classList.add('top'); document.body.classList.add('f-layer'); } };   // 한 장 화면 위에 상세 (HB 2026-10-18)
 function focusPrev() { if (F.i <= 0 || F.i > F.deck.length) return; focusCardLog(false); F.i--; focusCard(true, -1); }
 // 한 장 기도를 손가락으로 — 오른쪽으로 밀면 '이전', 왼쪽으로 밀면 '아멘'. 손가락을 따라 카드가 움직이고 놓으면 이어서 나간다 (CLAUDE.md '화면 전환')
