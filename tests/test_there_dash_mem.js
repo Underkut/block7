@@ -1,7 +1,7 @@
 // There 대시보드 — 기기별 기억 · 탭 고정 · 다시 누르면 오늘 · 좌우 밀기 (HB 2026-10-15)
 //
 // 규칙
-//  ① 열 때 탭: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
+//  ① 열 때 탭: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주 · 부른 쪽이 '권하기만'(soft) 하면 고정이 이긴다
 //  ② 탭을 길게 누르기(터치) · 우클릭(마우스) = 고정 / 해제. 고정한 탭 글자 위에 점(.pin). 한 번에 하나.
 //  ③ 탭마다 마지막으로 본 날 / 주 / 달을 따로 기억한다 (탭을 바꿔도 다른 탭의 날짜로 점프하지 않는다)
 //  ④ 이미 열린 탭을 다시 누르면 오늘 기준
@@ -156,5 +156,20 @@ console.log('\n시나리오 6 — 기억은 이 기기(localStorage) 의 store �
   mem['tst.v1'] = JSON.stringify({ pin: 'year', last: 'x', at: { day: '2099-01-01', week: 'oops' } });
   const d3 = mk();
   sc.eq('엉뚱한 값과 미래 날짜는 걸러낸다', [d3.S.view, d3.S.pin, d3.S.ats.day, d3.S.ats.week], ['week', null, TODAY, TODAY]);
+}
+// ①-soft 기도노트 기록 › 합계 줄 = '달' 을 권하기만 — 고정이 이긴다 (HB 2026-10-19 디버그: 점은 보이는데 늘 달로 열림)
+{
+  for (const k in mem) delete mem[k];
+  mem['tst.v1'] = JSON.stringify({ pin: 'day', last: 'week', at: { day: '2026-10-14' } });
+  const a = mk({ view: 'month', soft: true, at: '2026-09-01' });
+  sc.eq('⭐①-soft 하루로 고정했으면 권한 달이 아니라 하루 · 날짜도 하루 탭 것 그대로', [a.m.state.view, a.m.state.at], ['day', '2026-10-14']);
+  const b = mk({ view: 'month', at: '2026-09-01' });
+  sc.eq('①-soft 콕 집은 것(soft 아님)은 예전대로 그 탭', [b.m.state.view, b.m.state.at], ['month', '2026-09-01']);
+  mem['tst.v1'] = JSON.stringify({ pin: null, last: 'week' });
+  const c = mk({ view: 'month', soft: true, at: '2026-09-01' });
+  sc.eq('①-soft 고정이 없으면 권한 탭 · 날짜', [c.m.state.view, c.m.state.at], ['month', '2026-09-01']);
+  mem['tst.v1'] = JSON.stringify({ pin: 'month', last: 'week' });
+  const d = mk({ view: 'month', soft: true, at: '2026-09-01' });
+  sc.eq('①-soft 권한 탭이 고정과 같으면 그 날짜로', [d.m.state.view, d.m.state.at], ['month', '2026-09-01']);
 }
 sc.done();

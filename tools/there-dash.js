@@ -368,8 +368,12 @@ const TDASH = (function () {
     S.ats = {}; VIEWS.forEach(v => { S.ats[v] = okDate(mem.at && mem.at[v]) && mem.at[v] <= S.today ? mem.at[v] : S.today; });
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, at: S.ats })); } catch (e) {} };
     // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
-    S.view = okView(opts.view) ? opts.view : S.pin || (okView(mem.last) ? mem.last : 'week');
-    if (okDate(opts.at)) S.ats[S.view] = opts.at <= S.today ? opts.at : S.today;
+    //   opts.soft = 부른 쪽은 그 탭을 '권할' 뿐 — 고정한 탭이 있으면 고정이 이긴다 (HB 2026-10-19:
+    //   기도노트 기록 › 기도한 날 합계 줄이 '달' 을 콕 집어 열어서, 고정(점)은 보이는데 늘 달로 열렸다).
+    //   그때 날짜(opts.at)도 권한 탭에만 쓴다 — 하루로 고정했는데 '그달 1일' 로 열리면 안 된다.
+    const soft = !!opts.soft && !!S.pin && opts.view !== S.pin;
+    S.view = okView(opts.view) && !soft ? opts.view : S.pin || (okView(mem.last) ? mem.last : 'week');
+    if (okDate(opts.at) && !soft) S.ats[S.view] = opts.at <= S.today ? opts.at : S.today;
     S.at = S.ats[S.view];
     const setAt = d => { S.at = d > S.today ? S.today : d; S.ats[S.view] = S.at; };
     const step = k => {
