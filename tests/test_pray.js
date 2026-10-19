@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -691,6 +691,22 @@ const MAPCSV = [
   sc.eq('⭐⑲ 시간 합계(s)는 그대로 (한 장 기도 ses 가 센다)', L.s || 0, 0);
   sc.eq('⑲ 1초 못 되게 스친 것 · 이름 없는 것은 안 남긴다', [A.addFocusCard(db, '2026-10-19', 'S3', a.id, 0, 0, 0.3, false, ''), A.addFocusCard(db, '2026-10-19', 'S3', '', 0, 0, 9, true, '')], [null, null]);
   sc.eq('⑲ 정리(normDB)해도 fc 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-19'].fc.length, 3);
+}
+// ⑳ 하루의 시작 (O-4) — 이 시각 전은 어제 · 자정~오전 9시 · 기본 3시 · 기도 기록 날짜도 따른다
+{
+  const at = (h, m) => new Date(2026, 9, 19, h, m || 0).getTime();
+  A.setDayStart(3);
+  sc.eq('⭐⑳ 기본 3시 — 새벽 2시 반은 어제 · 3시는 오늘', [A.dayOf(at(2, 30)), A.dayOf(at(3, 0)), A.dayOf(at(23, 59))], ['2026-10-18', '2026-10-19', '2026-10-19']);
+  A.setDayStart(0);
+  sc.eq('⑳ 자정이면 달력 날짜 그대로', A.dayOf(at(0, 10)), '2026-10-19');
+  A.setDayStart(9);
+  sc.eq('⑳ 오전 9시면 8시 59분까지 어제', [A.dayOf(at(8, 59)), A.dayOf(at(9, 0))], ['2026-10-18', '2026-10-19']);
+  sc.eq('⑳ 범위 밖 · 이상한 값은 3시', [A.dayStartOk(10), A.dayStartOk(-1), A.dayStartOk('x'), A.dayStartOk(2.5), A.dayStartOk(0)], [3, 3, 3, 3, 0]);
+  A.setDayStart(3);
+  const db = A.emptyDB();
+  A.addPraySession(db, at(1, 40), 600, 'map');
+  sc.eq('⭐⑳ 새벽 1시 40분에 시작한 기도는 어제 기록으로', [Object.keys(db.log), db.log['2026-10-18'].s], [['2026-10-18'], 600]);
+  sc.eq('⑳ 처음 쓰는 DB 의 기본값은 3시 · 정리하면 범위 안으로', [A.normDB({}).set.dayStart, A.normDB({ set: { dayStart: 12 } }).set.dayStart, A.normDB({ set: { dayStart: 0 } }).set.dayStart], [3, 3, 0]);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
