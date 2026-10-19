@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-6';
+const APP_VERSION = 'v. 26-1019-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -571,7 +571,7 @@ function groupHeadcount(db, g) {
   const s = new Set(groupPids(g));
   kidsOf(db, g.id).forEach(c => groupPids(c).forEach(p => s.add(p)));
   // 사람 · 기도 항목을 가리지 않고 그 안의 **항목 수**를 센다 (HB 2026-10-13 — 기도 항목이 숫자에 안 들어 '소속이 안 된 것' 처럼 보였다)
-  return [...s].filter(id => !!findT(db, id)).length;
+  return [...s].filter(id => { const t = findT(db, id); return !!t && !isShelved(t); }).length;
 }
 
 // ── 표시 색 잇기 (HB 2026-10-11) ──
@@ -796,7 +796,7 @@ function buildToday(db, date) {
   const done = new Set(L.d || []);
   const skip = new Set(L.k || []);
   const lastOf = t => done.has(t.id) ? ((L.p || {})[t.id] !== undefined ? L.p[t.id] : '') : t.last;
-  const all = [...db.T, ...db.G];
+  const all = [...db.T.filter(t => !isShelved(t)), ...db.G];   // 보관 · 응답한 항목은 오늘 목록에 안 나온다 (O-5)
   const seen = new Set();
   const sec = { top: [], daily: [], day: [], turn: [] };
   const put = (k, t, late) => { seen.add(t.id); if (!skip.has(t.id)) sec[k].push({ t: t, done: done.has(t.id), late: late || 0 }); };
@@ -1283,11 +1283,51 @@ function diffNames(a, b) {
 }
 
 // ── 응답 모아 보기 ──
+// 응답 모아 보기 — 기도 제목 응답 { t, tp } + 기도 항목 자체의 응답 { t, tp: null, at } (O-5)
 function answeredList(db) {
   const out = [];
   [...db.T, ...db.G].forEach(t => (t.topics || []).forEach(tp => { if (tp.ans) out.push({ t: t, tp: tp }); }));
+  db.T.forEach(t => { if (t.ansAt) out.push({ t: t, tp: null, at: t.ansAt }); });
   return out;
 }
+
+// ── 보관 · 항목 응답 (O-5, HB 2026-10-19) ──
+// t.arch = 보관한 날 · t.ansAt = 항목 전체가 응답된 날. 둘 중 하나라도 있으면 지도 · 오늘 · 목록 · 한 장 · 검색에서 빠진다.
+// 그룹 줄(segs)은 건드리지 않는다 — 표시만 감춘다. 풀면 칸을 비우는 것뿐이라 원래 자리로 돌아온다.
+// 푸는 것은 칸을 지우지 않고 '' 로 둔다 — 병합에서 '풀었다' 가 '모른다(옛 자료)' 와 같게 읽혀 푼 쪽이 이긴다(m3 특례).
+function isShelved(t) { return !!(t && t.kind !== 'group' && (t.arch || t.ansAt)); }
+function liveT(db) { return db.T.filter(t => !isShelved(t)); }
+function shelve(db, id, date) { const t = findT(db, id); if (!t) return false; t.arch = date; return true; }
+function unshelve(db, id) { const t = findT(db, id); if (!t) return false; t.arch = ''; return true; }
+function answerTarget(db, id, date) { const t = findT(db, id); if (!t) return false; t.ansAt = date; return true; }
+function unanswerTarget(db, id) { const t = findT(db, id); if (!t) return false; t.ansAt = ''; return true; }
+// 그 항목이 들어 있는 그룹 이름들 (보관함 · 응답 탭에 '어디 있던 것' 으로)
+function groupNamesOf(db, id) { return db.G.filter(g => (g.lines || []).some(l => linePids(l).indexOf(id) >= 0)).map(g => g.name); }
+// 이름 안의 날짜 — 확실한 꼴만 (HB): 10/16 · 10.16 · 10월 16일 · 2026.10.16 · 2026-10-16 · 26.10.16
+//   연도가 없으면 오늘과 가장 가까운 해. 날짜 꼴이 둘 이상 · 이름이 '1/2' 처럼 한 자리 숫자 꼴 하나뿐이면 '' (애매 — 제안하지 않는다)
+function nameDate(name, today) {
+  const s = String(name || ''), hits = [];
+  const re = /(?:^|[^\d])(?:(\d{4}|\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})|(\d{1,2})\s*월\s*(\d{1,2})\s*일|(\d{1,2})[/.](\d{1,2}))(?![\d.])/g;
+  let m;
+  while ((m = re.exec(s))) {
+    if (m[1]) hits.push({ y: m[1].length === 2 ? 2000 + +m[1] : +m[1], mo: +m[2], d: +m[3], raw: m[0] });
+    else if (m[4]) hits.push({ y: 0, mo: +m[4], d: +m[5], raw: m[0] });
+    else { const one = m[6].length === 1 && m[7].length === 1; if (one && m[0].indexOf('.') >= 0) return '';   // '3.5배' 같은 소수 — 점으로 쓴 한 자리 둘은 날짜로 안 본다
+      hits.push({ y: 0, mo: +m[6], d: +m[7], raw: m[0], short: one }); }
+  }
+  if (hits.length !== 1) return '';
+  const h = hits[0];
+  if (h.short && s.replace(/\s+/g, '') === h.raw.replace(/\s+/g, '')) return '';
+  if (h.mo < 1 || h.mo > 12 || h.d < 1 || h.d > 31) return '';
+  const ok = (y) => { const dt = new Date(y, h.mo - 1, h.d); return dt.getMonth() === h.mo - 1 ? ymd(dt) : ''; };
+  if (h.y) return ok(h.y);
+  const ty = parseYmd(today).getFullYear(), tms = parseYmd(today).getTime();
+  let best = '', bd = Infinity;
+  [ty - 1, ty, ty + 1].forEach(y => { const v = ok(y); if (!v) return; const d = Math.abs(parseYmd(v).getTime() - tms); if (d < bd) { bd = d; best = v; } });
+  return best;
+}
+// 이름의 날짜가 하루 이상 지난, 아직 보관 · 응답 안 된 항목 — 보관을 **제안만** 한다
+function staleByName(db, today) { return db.T.filter(t => !isShelved(t) && (() => { const d = nameDate(t.name, today); return d && d < today; })()); }
 
 // ── 백업 ──
 function exportBackup(db) { return JSON.stringify({ app: 'pray', v: 1, at: new Date().toISOString(), db: db }); }
@@ -1366,6 +1406,13 @@ function mergeVals(b, l, r) {
 }
 function hasDup(a) { return new Set(a).size !== a.length; }
 function m3(b, l, r, key) {
+  // 보관 · 항목 응답 (O-5, HB 2026-10-19): 같은 칸을 두 기기가 다르게 — 한쪽이 풀었으면(빈 칸) **푼 쪽(보이는 쪽)** 이 이긴다.
+  //   둘 다 다른 날짜로 넣었으면 늦은 날짜. 칸이 없는 것(옛 자료)은 빈 칸과 같다.
+  if (key === 'arch' || key === 'ansAt') {
+    const u = v => (typeof v === 'string' ? v : ''), L = u(l), R = u(r), B = u(b);
+    if (L === R) return l; if (L === B) return r; if (R === B) return l;
+    return !L || !R ? '' : (L > R ? L : R);
+  }
   if (deq(l, r)) return l;
   if (deq(l, b)) return r;
   if (deq(r, b)) return l;
@@ -1932,6 +1979,7 @@ body.tch #v-map .ghw:has(>.gh.sel)::after{display:none}
 .lfoot{flex-shrink:0;display:flex;gap:10px;padding:10px 20px calc(var(--sab) + 12px);border-top:1px solid var(--bd);background:var(--header-bg);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .lfoot .ghost{flex:1;height:48px;border-radius:24px}
 .lfoot .cta{flex:2;margin:0;height:48px}
+.lfoot .lf-shelf{flex:0 0 auto;padding:0 18px;color:var(--tx2)}
 .search{margin:8px 20px 2px;display:flex;align-items:center;gap:8px;height:42px;padding:0 12px;border-radius:12px;background:var(--s1);color:var(--tx3)}
 .search input{flex:1;border:0;background:transparent;outline:none;font-size:15px}
 
@@ -2140,6 +2188,14 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .b7fr small{flex:1;min-width:0;font-size:12.5px;color:var(--tx2)}
 .b7fr .cta{flex:none;width:auto;padding:0 26px}
 .b7fr .cta[disabled]{opacity:.4}
+.row.shelf .row-f{gap:4px;padding-right:10px}
+.shb{font-size:12.5px;color:var(--tx2);padding:8px 8px;border-radius:8px;flex-shrink:0}
+.shb.del{color:var(--danger)}
+.sh-note{margin:10px 20px 0;padding:10px 12px;border-radius:10px;background:var(--s1);font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:10px}
+.sh-note span{flex:1;min-width:0}
+.sh-note button{flex:none;font-size:13px;color:var(--ac-tx);padding:6px 4px}
+.akind{font-size:11px;color:var(--tx3);border-radius:5px;padding:1px 6px;margin-right:7px;background:var(--s2);flex-shrink:0;font-weight:500}
+.akind.item{color:var(--ans);background:color-mix(in srgb,var(--ans) 14%,transparent)}
 .dspick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:4px 14px 12px}
 .dspick button{height:36px;border-radius:9px;background:var(--s2);font-size:13px;color:var(--tx2);transition:background .2s,color .2s}
 .dspick button.on{background:var(--tab-on-bg);color:var(--tx);font-weight:600;box-shadow:0 0 0 1.5px var(--ac-tx)}
@@ -2400,7 +2456,7 @@ function saveNow() {
 document.addEventListener('visibilitychange', () => {
   // 한 장 기도: 다른 앱으로 나가거나 화면이 꺼지면 시간 재기를 멈춘다 — There 와 같다 (HB 2026-10-18). 돌아오면 거기서 다시 센다
   if (document.visibilityState === 'hidden') { if (F.on) { if (!F.paused) F.cacc += (Date.now() - F.ct0) / 1000; flushFocusTime(); F.paused = true; } saveNow(); }
-  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } if (syncToday()) refresh(); }
+  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } if (syncToday()) { refresh(); setTimeout(() => { try { staleNudge(); } catch (e) {} }, 800); } }
 });
 window.addEventListener('pagehide', saveNow);
 
@@ -2438,7 +2494,7 @@ function groupMembers(g, exclude) {
   const names = [];
   const pids = groupPids(g);
   const seen = new Set();
-  pids.forEach(pid => { if (seen.has(pid) || (exclude && exclude.has(pid))) return; seen.add(pid); const p = findT(DB, pid); if (p) names.push(p.name); });
+  pids.forEach(pid => { if (seen.has(pid) || (exclude && exclude.has(pid))) return; seen.add(pid); const p = findT(DB, pid); if (p && !isShelved(p)) names.push(p.name); });
   const kids = childrenOf(DB, g.id).map(c => c.name);
   let s = '';
   if (names.length) s = names.length > 9 ? names.slice(0, 8).join(' · ') + ' 외 ' + (names.length - 8) + '명' : names.join(' · ');
@@ -2774,7 +2830,7 @@ function mapSource(snap) {
   };
   return {
     G: DB.G, marks: DB.marks, live: true,
-    person: pid => findT(DB, pid),
+    person: pid => { const t = findT(DB, pid); return t && !isShelved(t) ? t : null; },   // 보관 · 응답한 항목은 지도에 안 그린다 (줄은 그대로)
     kids: gid => kidsOf(DB, gid),
     tops: () => topGroups(DB)
   };
@@ -2802,6 +2858,7 @@ function mapCards(src, opt) {
     const k = gid ? 'l:' + gid + ':' + l.id : '';
     if (k && edKey === k) return '<div class="ln ined sel"' + selAttr(k) + '>' + editor(k, UI.mapEdit.isNew ? '' : lineToText(DB, l), '이름 — / 로 나누기 · Tab 다음 항목 · Enter 마침') + '</div>';
     if (l.text && !(l.segs || []).length) return '<div class="ln note' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + esc(l.text) + lk(l) + '</div>';
+    if (src.live && (l.segs || []).length && !linePids(l).some(pid => src.person(pid))) return '';   // 줄의 이름이 모두 보관 · 응답 — 줄째 감춘다
     return '<div class="ln' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + (l.segs || []).map(seg => seg.map(pid => {
       const p = src.person(pid); if (!p) return '';
       const role = l.r && l.r[pid];
@@ -2901,7 +2958,7 @@ function donePrevHTML() {
 }
 function doneSet() { return new Set((DB.log[TODAY] && DB.log[TODAY].d) || []); }
 function groupDoneToday(g, kids, ds) {
-  const pids = groupPids(g).concat((kids || []).reduce((a, k) => a.concat(groupPids(k)), []));
+  const pids = groupPids(g).concat((kids || []).reduce((a, k) => a.concat(groupPids(k)), [])).filter(id => !isShelved(findT(DB, id)));   // 보관한 이름은 셈에서 뺀다
   return pids.length > 0 && pids.every(id => ds.has(id));
 }
 function mapDepth() { const n = devPref('mapDepth', 3); return n === 1 || n === 2 ? n : 3; }
@@ -2950,7 +3007,7 @@ function renderMap() {
  '</div>';
   if (UI.mapQuery) {
     // 이름 · 기도 항목 · 그룹 · 서브 그룹 이름 어디서나 찾는다 (HB 2026-10-13)
-    const q = UI.mapQuery, hits = DB.T.filter(t => t.name.indexOf(q) >= 0 && groupsOf(DB, t.id).length), gh = DB.G.filter(g => (g.name || '').indexOf(q) >= 0);
+    const q = UI.mapQuery, hits = liveT(DB).filter(t => t.name.indexOf(q) >= 0 && groupsOf(DB, t.id).length), gh = DB.G.filter(g => (g.name || '').indexOf(q) >= 0);
     const n = hits.length + gh.length;
     h += '<div class="hint">' + (n ? n + '곳 — ' + gh.slice(0, 6).map(g => '<b style="color:var(--tx2)">' + esc(g.name) + '</b>').concat(hits.slice(0, 12).map(p => esc(p.name) + '(' + groupsOf(DB, p.id).map(g => esc(g.name)).join('·') + ')')).join(', ') : '찾는 것이 없습니다') + '</div>';
   }
@@ -2961,15 +3018,16 @@ function renderMap() {
 
 // ── ⑦ 목록 탭 ──
 function listItems() {
-  if (UI.listCat === 'all') return DB.T.slice();   // 전체 = 구분이 없어도 다 (HB 2026-10-13 — 구분 없는 항목이 표에서 빠졌다)
-  if (UI.listCat === 'none') return DB.T.filter(t => !t.cat);
-  return DB.T.filter(t => t.cat === UI.listCat);
+  if (UI.listCat === 'all') return liveT(DB);   // 전체 = 구분이 없어도 다 (HB 2026-10-13 — 구분 없는 항목이 표에서 빠졌다)
+  if (UI.listCat === 'none') return liveT(DB).filter(t => !t.cat);
+  return liveT(DB).filter(t => t.cat === UI.listCat);
 }
 function renderList() {
   let h = '<div class="vh">' + brand('List') + headActs('<button class="ib" data-a="add-target" aria-label="추가">' + ico('plus') + '</button>') + '</div>';
   h += '<div class="seg"><button class="' + (UI.listView === 'table' ? 'on' : '') + '" data-a="list-view" data-v="table">표</button><button class="' + (UI.listView === 'matrix' ? 'on' : '') + '" data-a="list-view" data-v="matrix">판</button></div>';
-  const cats = [['all', '전체', DB.T.length]].concat(DB.cats.map(c => [c.id, c.name, DB.T.filter(t => t.cat === c.id).length]));
-  const none = DB.T.filter(t => !t.cat).length;
+  const LT = liveT(DB);
+  const cats = [['all', '전체', LT.length]].concat(DB.cats.map(c => [c.id, c.name, LT.filter(t => t.cat === c.id).length]));
+  const none = LT.filter(t => !t.cat).length;
   if (none) cats.push(['none', '구분 없음', none]);
   h += '<div class="chips">' + cats.map(c => '<button class="chip' + (UI.listCat === c[0] ? ' on' : '') + '" data-a="list-cat" data-v="' + c[0] + '">' + esc(c[1]) + '<span class="n">' + c[2] + '</span></button>').join('') + '</div>';
   const items = listItems();
@@ -3035,10 +3093,25 @@ function renderMatrix(items) {
 // ── ⑨ 기록 탭 ──
 function renderHist() {
   let h = '<div class="vh">' + brand('His Story') + '</div>';   // 기록은 되돌릴 것이 없어 꺾쇠도 없다
-  h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
+  h += '<div class="seg">' + [['days', '기도한 날'], ['ans', '응답'], ['shelf', '보관'], ['snap', '지도 보관']].map(s => '<button class="' + (UI.histTab === s[0] ? 'on' : '') + '" data-a="hist-tab" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
   if (UI.histTab === 'snap') return h + renderSnaps();
   if (UI.histTab === 'days') return h + renderCal();
+  if (UI.histTab === 'shelf') return h + renderShelf();
   return h + renderAnswers();
+}
+// 보관함 (O-5) — 보관한 기도 항목. 행마다 '보관 풀기' · '완전히 지우기'. 어느 그룹에 있던 것인지도
+function renderShelf() {
+  const list = DB.T.filter(t => t.arch).sort((a, b) => b.arch.localeCompare(a.arch) || a.name.localeCompare(b.name, 'ko'));
+  const stale = staleByName(DB, TODAY);
+  let h = '<div class="hint">지도 · 오늘 · 목록에서 뺀 기도 항목입니다. 지우지 않았으니 기도 기록은 그대로 남고, 꺼내면 원래 그룹 · 자리로 돌아갑니다.</div>';
+  if (stale.length) h += '<div style="padding:10px 20px 2px"><button class="ghost full" data-a="stale-open">' + ico('clock') + '이름의 날짜가 지난 항목 ' + stale.length + '개 — 보관할까요?</button></div>';
+  if (!list.length) return h + '<div class="hint" style="padding-top:18px">아직 보관한 항목이 없습니다. 기도 항목 상세 맨 아래 \'보관\' 으로 넣습니다.</div>';
+  return h + '<div class="rows">' + list.map(t => {
+    const gs = groupNamesOf(DB, t.id);
+    return '<div class="row shelf"><div class="row-f" style="padding-left:20px"><div class="rb" data-a="open" data-id="' + t.id + '"><div class="rt"><span class="nm">' + esc(t.name) + '</span></div>' +
+      '<div class="rm">' + (gs.length ? esc(gs.join(' · ')) + ' · ' : '그룹 없음 · ') + shortDate(t.arch) + ' 보관</div></div>' +
+      '<button class="shb" data-a="unshelve" data-id="' + t.id + '">꺼내기</button><button class="shb del" data-a="purge" data-id="' + t.id + '">지우기</button></div></div>';
+  }).join('') + '</div>';
 }
 function renderSnaps() {
   const mode = DB.set.sorts.snaps || 'new';
@@ -3094,18 +3167,23 @@ function renderCal() {
 }
 function renderAnswers() {
   const mode = DB.set.sorts.answers || 'recent';
-  let list = answeredList(DB);
+  // 두 가지 — 기도 제목의 응답(tp) · 기도 항목 자체의 응답(tp 없음, O-5). 같은 모양으로 맞춰 정렬한다
+  let list = answeredList(DB).map(x => x.tp ? { t: x.t, tp: x.tp, id: x.tp.id, ans: x.tp.ans, start: x.tp.at || '', title: x.tp.t }
+    : { t: x.t, tp: null, id: 'T:' + x.t.id, ans: x.at, start: '', title: x.t.name });
   const ranks = DB.set.ranks.answers || {};
-  if (mode === 'recent') list.sort((a, b) => b.tp.ans.localeCompare(a.tp.ans));
-  else if (mode === 'start') list.sort((a, b) => (a.tp.at || '').localeCompare(b.tp.at || ''));
+  if (mode === 'recent') list.sort((a, b) => b.ans.localeCompare(a.ans));
+  else if (mode === 'start') list.sort((a, b) => a.start.localeCompare(b.start));
   else if (mode === 'name') list.sort((a, b) => a.t.name.localeCompare(b.t.name, 'ko'));
-  else list.sort((a, b) => ((ranks[a.tp.id] == null ? 1e9 : ranks[a.tp.id]) - (ranks[b.tp.id] == null ? 1e9 : ranks[b.tp.id])));
+  else list.sort((a, b) => ((ranks[a.id] == null ? 1e9 : ranks[a.id]) - (ranks[b.id] == null ? 1e9 : ranks[b.id])));
   if (!list.length) return '<div class="empty"><svg viewBox="0 0 24 24" class="ico" style="width:40px;height:40px;margin:0 auto;color:var(--ans)"><line x1="12" y1="2.5" x2="12" y2="14"/><polyline points="8 10.5 12 14.5 16 10.5"/><path d="M4 16.5c2 2.5 5 4 8 4s6-1.5 8-4"/></svg>' +
-    '<h3>아직 응답 기록이 없습니다</h3><p>사람 카드에서 기도제목을 누르면 \'응답\' 으로 표시되고, 여기에 날짜와 함께 쌓입니다.</p></div>';
+    '<h3>아직 응답 기록이 없습니다</h3><p>사람 카드에서 기도제목을 누르면 \'응답\' 으로 표시되고, 여기에 날짜와 함께 쌓입니다. 기도 항목 전체도 상세에서 응답으로 저장할 수 있습니다.</p></div>';
   let h = '<div class="sorts"><span>정렬</span>' + [['recent', '최근 응답'], ['start', '시작한 날'], ['name', '이름'], ['mine', '내 순서']].map(s => '<button class="' + (mode === s[0] ? 'on' : '') + '" data-a="ans-sort" data-v="' + s[0] + '">' + s[1] + '</button>').join('') + '</div>';
-  return h + '<div class="rows" data-sort="answers">' + list.map(x => '<div class="row tp ans" data-id="' + x.tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act later" data-a="unanswer" data-tid="' + x.t.id + '" data-id="' + x.tp.id + '">응답 취소</button></div>' +
-    '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="' + (x.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + x.t.id + '"><div class="rt"><span class="nm">' + esc(x.tp.t) + '</span></div>' +
-    '<div class="rm">' + esc(x.t.name) + ' · ' + shortDate(x.tp.at) + ' 시작 → ' + shortDate(x.tp.ans) + ' 응답</div></div></div></div>').join('') + '</div>';
+  return h + '<div class="rows" data-sort="answers">' + list.map(x => '<div class="row tp ans" data-id="' + esc(x.id) + '" data-sw="1"><div class="sw-acts">' +
+    (x.tp ? '<button class="sw-act later" data-a="unanswer" data-tid="' + x.t.id + '" data-id="' + x.tp.id + '">응답 취소</button>'
+      : '<button class="sw-act later" data-a="unanswer-item" data-id="' + x.t.id + '">응답 풀기</button>') + '</div>' +
+    '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="' + (x.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + x.t.id + '"><div class="rt">' +
+    '<span class="akind' + (x.tp ? '' : ' item') + '">' + (x.tp ? '기도 제목' : '기도 항목') + '</span><span class="nm">' + esc(x.title) + '</span></div>' +
+    '<div class="rm">' + (x.tp ? esc(x.t.name) + '의 기도 제목 · ' + (x.start ? shortDate(x.start) + ' 시작 → ' : '') : (groupNamesOf(DB, x.t.id).length ? esc(groupNamesOf(DB, x.t.id).join(' · ')) + ' · ' : '')) + shortDate(x.ans) + ' 응답</div></div></div></div>').join('') + '</div>';
 }
 
 // ═══ 겹 화면 ═══
@@ -3140,7 +3218,8 @@ function fillLayer(el, L) {
   el.innerHTML = '<div class="lhead">' + (r.menu ? '<button class="ib" data-a="' + r.menu + '" aria-label="메뉴">' + ico('dots') + '</button>' : '<span style="width:44px"></span>') +
     '<div class="lh-title">' + esc(r.title) + '</div><button class="ib lh-x" data-a="pop" aria-label="닫기">' + ico('x') + '</button></div>' +
     '<div class="lbody">' + r.body + '</div>' +
-    (L.snap ? '<div class="lfoot"><button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button></div>' : r.foot ? '<div class="lfoot">' + r.foot + '</div>' : '');
+    (L.snap ? '<div class="lfoot"><button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button>' +
+      (L.type === 'target' && findT(DB, L.id) && !isShelved(findT(DB, L.id)) ? '<button class="ghost lf-shelf" data-a="shelve-target" data-id="' + L.id + '">보관</button>' : '') + '</div>' : r.foot ? '<div class="lfoot">' + r.foot + '</div>' : '');
   const nb = el.querySelector('.lbody'); if (nb) nb.scrollTop = top;
 }
 function refreshLayers(skipTop) {
@@ -3163,6 +3242,21 @@ function openTarget(id) { const t = findAny(DB, id); if (!t) return; if (t.kind 
 
 const LAYERS = {};
 // ③ 사람 · 기도 항목
+// 상세 맨 위 안내 (O-5) — 보관함에 있음 / 응답으로 저장됨 / 이름의 날짜가 지남(보관 제안)
+function shelfNote(t) {
+  if (t.arch) return '<div class="sh-note">' + ico('clock') + '<span>보관함에 있는 항목이에요 · ' + shortDate(t.arch) + '</span><button data-a="unshelve" data-id="' + t.id + '">꺼내기</button></div>';
+  if (t.ansAt) return '<div class="sh-note">' + ico('check') + '<span>응답으로 저장된 항목이에요 · ' + shortDate(t.ansAt) + '</span><button data-a="unanswer-item" data-id="' + t.id + '">응답 풀기</button></div>';
+  const d = nameDate(t.name, TODAY);
+  if (d && d < TODAY) return '<div class="sh-note">' + ico('clock') + '<span>이름의 날짜(' + shortDate(d) + ')가 지났어요<br>지도에서 뺄까요?</span><button data-a="shelve-target" data-id="' + t.id + '">보관</button></div>';
+  return '';
+}
+// 기도 제목 아래 — 항목 전체를 응답으로 저장. 기도 제목이 모두 응답됐으면 묻는 모양으로 (저절로 바꾸지 않는다, HB)
+function answerItemBlock(t) {
+  if (t.ansAt || t.arch) return '';
+  const tps = t.topics || [], all = tps.length > 0 && tps.every(x => x.ans);
+  return all ? '<div class="sh-note" style="margin-top:12px">' + ico('check') + '<span>기도 제목이 모두 응답됐어요<br>이 항목도 응답으로 저장할까요?</span><button data-a="answer-item" data-id="' + t.id + '">응답으로 저장</button></div>'
+    : '<div style="padding:10px 20px 0"><button class="ghost" data-a="answer-item" data-id="' + t.id + '">' + ico('check') + '이 기도 항목 전체를 응답으로</button></div>';
+}
 LAYERS.target = L => {
   const t = findT(DB, L.id);
   if (!t) return { title: '', body: '<div class="hint" style="padding-top:30px">지워진 항목입니다.</div>' };
@@ -3176,7 +3270,9 @@ LAYERS.target = L => {
   }
   b += '</div></div>';
   b += markPicker(t);
+  b += shelfNote(t);
   b += topicsBlock(t);
+  b += answerItemBlock(t);
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + t.id + '" placeholder="예) 전화 한번 하기 · 대화하며 풀기">' + esc(t.memo) + '</textarea>' +
     '<div style="padding:10px 20px 0"' + (t.memo ? '' : ' hidden') + ' data-todo="1"><button class="ghost" data-a="todo" data-id="' + t.id + '">' + ico('up') + 'BLOCK7 할일로 보내기</button></div>';
   b += prioBlock(t) + daysBlock(t) + stripBlock(t);
@@ -4278,6 +4374,7 @@ ACT.answer = el => {
   tp.ans = tp.ans ? '' : TODAY; save(); refresh();
   if (tp.ans) toast('응답으로 적었습니다 — 기록 탭 \'응답\' 에 쌓입니다');
 };
+ACT['unanswer-item'] = el => { const t = findT(DB, el.dataset.id); if (!t) return; withUndo('‘' + t.name + '’ 응답을 풀었어요\n지도 · 목록에 다시 나옵니다', () => { unanswerTarget(DB, t.id); }); layerSnapNow(t.id); };
 ACT.unanswer = el => { const t = findAny(DB, el.dataset.tid); if (!t) return; const tp = t.topics.find(x => x.id === el.dataset.id); if (!tp) return; withUndo('응답 표시를 지웠습니다', () => { tp.ans = ''; }); };
 // 기도제목 글자를 누르면 그 자리에서 고친다 — Enter · 바깥 누르기 = 적기, Esc = 그대로 (HB 2026-10-13)
 ACT['tp-edit'] = el => {
@@ -4387,6 +4484,54 @@ ACT.del = el => {
 };
 
 // 기록
+// ── 보관 · 항목 응답 (O-5) ──
+function b7TargetLayerPop(id) { const L = UI.layers[UI.layers.length - 1]; if (L && L.type === 'target' && L.id === id) { L.snap = null; popLayer(); } }
+ACT['shelve-target'] = el => {
+  const t = findT(DB, el.dataset.id); if (!t) return;
+  if (!confirm('‘' + t.name + '’ 을(를) 지도에서 뺍니다.\n보관함에서 다시 꺼낼 수 있어요.')) return;
+  const a = document.activeElement; if (a && a.blur) a.blur();   // 쓰던 칸은 먼저 적는다
+  setTimeout(() => {
+    const before = JSON.stringify(DB);
+    shelve(DB, t.id, TODAY); save(); b7TargetLayerPop(t.id); refresh();
+    toast('‘' + t.name + '’ 을(를) 보관했어요\n기록 › 보관에서 꺼낼 수 있어요', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+  }, 0);
+};
+// 상세 안에서 풀었으면 그 상세의 '취소' 가 되돌리지 않게 기준을 지금으로
+function layerSnapNow(id) { const L = UI.layers[UI.layers.length - 1]; if (L && L.type === 'target' && L.id === id && L.snap) L.snap = JSON.stringify(DB); }
+ACT.unshelve = el => { const t = findT(DB, el.dataset.id); if (!t) return; withUndo('‘' + t.name + '’ 을(를) 꺼냈어요\n원래 그룹 · 자리로 돌아갔습니다', () => { unshelve(DB, t.id); }); layerSnapNow(t.id); };
+ACT.purge = el => {
+  const t = findT(DB, el.dataset.id); if (!t) return;
+  if (!confirm('‘' + t.name + '’ 을(를) 완전히 지울까요?\n그룹 줄에서도 빠집니다. (기도한 날 기록은 남습니다)')) return;
+  withUndo('‘' + t.name + '’ 을(를) 지웠어요', () => { removeTarget(DB, t.id); });
+};
+ACT['answer-item'] = el => {
+  const t = findT(DB, el.dataset.id); if (!t) return;
+  const a = document.activeElement; if (a && a.blur) a.blur();
+  setTimeout(() => {
+    const before = JSON.stringify(DB);
+    answerTarget(DB, t.id, TODAY); save(); b7TargetLayerPop(t.id); refresh();
+    toast('‘' + t.name + '’ 을(를) 응답으로 저장했어요\n기록 › 응답에 있어요', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+  }, 0);
+};
+// 이름의 날짜가 지난 항목 — 고르면 하나씩 보관 (자동 보관은 없다)
+function staleSheet() {
+  const st = staleByName(DB, TODAY); if (!st.length) { toast('이름의 날짜가 지난 항목이 없어요'); return; }
+  choose('이름의 날짜가 지났어요', st.map(t => ({ v: t.id, label: t.name, desc: (groupNamesOf(DB, t.id).join(' · ') || '그룹 없음') + ' · ' + shortDate(nameDate(t.name, TODAY)) + ' 지남 — 누르면 보관' }))
+    .concat(st.length > 1 ? [{ v: '*', label: '모두 보관 (' + st.length + '개)' }] : []), '', v => {
+    const before = JSON.stringify(DB), ids = v === '*' ? st.map(t => t.id) : [v];
+    ids.forEach(id => shelve(DB, id, TODAY)); save(); refresh();
+    toast((ids.length > 1 ? ids.length + '개를' : '‘' + (findT(DB, ids[0]) || {}).name + '’ 을(를)') + ' 보관했어요\n기록 › 보관에서 꺼낼 수 있어요', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+  }, '보관은 지우는 것이 아닙니다 — 언제든 꺼낼 수 있어요');
+}
+ACT['stale-open'] = () => staleSheet();
+// 하루에 한 번(기기마다) — 이름의 날짜가 지난 항목이 있으면 알린다
+function staleNudge() {
+  const K = 'pray.staleAsk';
+  try { if (localStorage.getItem(K) === TODAY) return; } catch (e) { return; }
+  const n = staleByName(DB, TODAY).length; if (!n) return;
+  try { localStorage.setItem(K, TODAY); } catch (e) {}
+  toast('이름의 날짜가 지난 항목이 ' + n + '개 있어요\n지도에서 뺄까요?', '보기', staleSheet);
+}
 ACT['hist-tab'] = el => { UI.histTab = el.dataset.v; renderView(); };
 ACT['snap-sort'] = el => { DB.set.sorts.snaps = el.dataset.v; save(); renderView(); };
 ACT['ans-sort'] = el => { DB.set.sorts.answers = el.dataset.v; save(); renderView(); };
@@ -5427,7 +5572,7 @@ function mapHoldMenu(k, who) {
 function mapDeck() {
   const out = [], seen = new Set(), done = new Set();
   const walk = (g, top) => { if (done.has(g.id)) return; done.add(g.id);
-    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid) && (!UI.mapFilter.length || UI.mapFilter.indexOf(mk(findT(DB, pid))) >= 0)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id, tg: top }); } }));
+    (g.lines || []).forEach(l => linePids(l).forEach(pid => { if (!seen.has(pid) && findT(DB, pid) && !isShelved(findT(DB, pid)) && (!UI.mapFilter.length || UI.mapFilter.indexOf(mk(findT(DB, pid))) >= 0)) { seen.add(pid); out.push({ id: pid, sec: 'map', g: g.id, l: l.id, tg: top }); } }));
     kidsOf(DB, g.id).forEach(k => walk(k, top)); };
   mapTops().forEach(g => walk(g, g.id));
   return out;
@@ -6274,6 +6419,7 @@ applyTheme(DB.set);
 applyRoom();
 applyDoneOp();
 showTab(['today', 'map', 'list', 'hist'].indexOf(devPref('startTab', 'today')) >= 0 ? devPref('startTab', 'today') : 'today');   // 첫 화면 — 설정에서 기기마다 고른다
+setTimeout(() => { try { staleNudge(); } catch (e) {} }, 1800);   // 이름의 날짜가 지난 항목 — 하루 한 번 보관 제안 (O-5)
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
 </script>
 <script id="there-dash">
