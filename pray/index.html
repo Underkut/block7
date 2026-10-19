@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-2';
+const APP_VERSION = 'v. 26-1019-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3030,7 +3030,7 @@ function renderCal() {
   let h = '<div class="cal"><div class="cal-h"><button class="ib" data-a="cal-nav" data-v="-1" aria-label="지난달">' + ico('chevR', '" style="transform:rotate(180deg)') + '</button><b>' + y + '년 ' + m + '월</b>' +
     '<button class="ib" data-a="cal-nav" data-v="1" aria-label="다음달">' + ico('chevR') + '</button></div><div class="cal-g">' + g + '</div></div>';
   // 이달 합계 줄 — 오른쪽 파이 단추 = There 대시보드 (이달로)
-  h += '<button class="cal-sum" data-a="there-dash" data-v="month" data-at="' + UI.calMonth + '-01" aria-label="There 대시보드 — 이번 달">' +
+  h += '<button class="cal-sum" data-a="there-dash" data-v="month" data-soft="1" data-at="' + UI.calMonth + '-01" aria-label="There 대시보드 — 이번 달">' +
     '<span>이번 달 머문 날 ' + total + '일' + (secs ? ' · ' + TDASH.dur(secs) : '') + '<small>' + (SY.user ? (c ? 'BLOCK7 · Sweeter · 성경 · 기도노트 합' : 'BLOCK7 · Sweeter 기록을 받는 중…') : '기도노트만 — 로그인하면 네 앱 합') + '</small></span>' + ico('pie') + '</button>';
   if (UI.calDay) {
     const L = DB.log[UI.calDay];
@@ -6150,18 +6150,18 @@ function thereRefresh(force) {
   if (!force && c && Date.now() - c.at < 5 * 60000) return;
   THERE_BUSY = loadWordThere().then(() => { THERE_BUSY = null; if (UI.tab === 'hist' && UI.histTab === 'days') renderView(); }, () => { THERE_BUSY = null; });
 }
-function openThereDash(view, at) {
+function openThereDash(view, at, soft) {
   if (MT.on) thereStop('page');
   const c = thereCache();
   TDASH.open({
-    today: TODAY, view: view || undefined, store: 'pray.tdash', at: at && at <= TODAY ? at : undefined,
+    today: TODAY, view: view || undefined, soft: !!soft, store: 'pray.tdash', at: at && at <= TODAY ? at : undefined,
     local: { prayLog: DB.log, thereLog: c ? c.log : null },
     load: SY.user ? () => loadWordThere().then(l => ({ thereLog: l })) : null,
     note: SY.user ? '' : '로그인하면 BLOCK7 · Sweeter · 성경 기록도 함께 보입니다 (설정 › 계정).',
     onClose: () => { if (UI.tab === 'hist') renderView(); }
   });
 }
-ACT['there-dash'] = el => openThereDash(el.dataset.v, el.dataset.at);
+ACT['there-dash'] = el => openThereDash(el.dataset.v, el.dataset.at, el.dataset.soft === '1');
 // 지도 There 단추 — 길게 누르기 · 오른쪽 누르기 = 대시보드 (짧게 누르기는 예전대로 시간 재기)
 (function () {
   let tm = 0, x0 = 0, y0 = 0;
@@ -6560,8 +6560,12 @@ const TDASH = (function () {
     S.ats = {}; VIEWS.forEach(v => { S.ats[v] = okDate(mem.at && mem.at[v]) && mem.at[v] <= S.today ? mem.at[v] : S.today; });
     const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, at: S.ats })); } catch (e) {} };
     // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
-    S.view = okView(opts.view) ? opts.view : S.pin || (okView(mem.last) ? mem.last : 'week');
-    if (okDate(opts.at)) S.ats[S.view] = opts.at <= S.today ? opts.at : S.today;
+    //   opts.soft = 부른 쪽은 그 탭을 '권할' 뿐 — 고정한 탭이 있으면 고정이 이긴다 (HB 2026-10-19:
+    //   기도노트 기록 › 기도한 날 합계 줄이 '달' 을 콕 집어 열어서, 고정(점)은 보이는데 늘 달로 열렸다).
+    //   그때 날짜(opts.at)도 권한 탭에만 쓴다 — 하루로 고정했는데 '그달 1일' 로 열리면 안 된다.
+    const soft = !!opts.soft && !!S.pin && opts.view !== S.pin;
+    S.view = okView(opts.view) && !soft ? opts.view : S.pin || (okView(mem.last) ? mem.last : 'week');
+    if (okDate(opts.at) && !soft) S.ats[S.view] = opts.at <= S.today ? opts.at : S.today;
     S.at = S.ats[S.view];
     const setAt = d => { S.at = d > S.today ? S.today : d; S.ats[S.view] = S.at; };
     const step = k => {
