@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-1';
+const APP_VERSION = 'v. 26-1019-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2649,7 +2649,9 @@ function focusCard(anim, dir) {
   const pv = $('fPrev'); if (pv) pv.style.visibility = F.i > 0 && F.i < F.deck.length ? '' : 'hidden';
   const pos = $('fPos'); if (pos) pos.innerHTML = F.i < F.deck.length ? '<b>' + (F.i + 1) + '</b> / ' + F.deck.length : '';
   const btns = $('fBtns'); if (btns) btns.style.visibility = F.i < F.deck.length ? '' : 'hidden';
-  const old = st.firstElementChild;
+  // 빠르게 넘기면 나가던 카드가 아직 안 지워진 채 다음 카드가 또 들어와 겹쳐 보였다 → 새 카드를 넣기 전에 남은 옛 카드를 먼저 모두 치우고 맨 위 한 장만 '나가는 카드' 로 둔다 (HB 신고 2026-10-19)
+  while (st.children.length > 1) st.firstElementChild.remove();
+  const old = st.lastElementChild;
   const wrap = document.createElement('div'); wrap.innerHTML = focusCardHTML();
   const card = wrap.firstElementChild;
   if (anim && old) {
@@ -2658,7 +2660,7 @@ function focusCard(anim, dir) {
     old.style.transition = ''; old.style.transform = ''; old.style.opacity = '';
     old.classList.add(outCls);
     requestAnimationFrame(() => requestAnimationFrame(() => card.classList.remove(inCls)));
-    setTimeout(() => old.remove(), 500);
+    setTimeout(() => { old.remove(); while (st.children.length > 1 && st.firstElementChild !== card) st.firstElementChild.remove(); }, 520);
   } else { st.innerHTML = ''; st.appendChild(card); }
 }
 function focusNext(amen, go) {
@@ -3639,6 +3641,33 @@ function focusPrev() { if (F.i <= 0 || F.i > F.deck.length) return; F.i--; focus
       if (F.i > 0) { card.style.transition = ''; focusPrev(); return; }
     }
     card.style.transition = ''; card.style.transform = ''; card.style.opacity = '';   // 못 미치면 제자리로
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+})();
+// 한 장 기도도 왼쪽 가장자리에서 오른쪽으로 밀어 닫는다 — 손가락을 따라 밀려 나간다 (HB 2026-10-19). 창(상세 · 설정)이 떠 있을 때는 그 창의 몫.
+(function () {
+  let st = null;
+  document.addEventListener('touchstart', e => {
+    const f = e.target.closest && e.target.closest('#focus'); const t = e.touches[0];
+    if (!f || !F.on || UI.layers.length || SHEET || e.touches.length !== 1 || t.clientX >= 28) { st = null; return; }
+    st = { x0: t.clientX, y0: t.clientY, lock: false, dx: 0, t0: Date.now() };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x0, dy = t.clientY - st.y0, f = $('focus');
+    if (!st.lock) {
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { st = null; return; }
+      if (dx > 12 && dx > Math.abs(dy) * 1.2) { st.lock = true; f.style.transition = 'none'; } else return;
+    }
+    st.dx = Math.max(0, dx); f.style.transform = 'translateX(' + st.dx + 'px)';
+  }, { passive: true });
+  const end = () => {
+    if (!st) return; const s2 = st; st = null; if (!s2.lock) return; const f = $('focus');
+    const fast = s2.dx >= 40 && s2.dx / Math.max(1, Date.now() - s2.t0) > 0.5;
+    if (s2.dx > Math.min(110, innerWidth * 0.28) || fast) {
+      f.style.transition = 'transform .26s cubic-bezier(.4,0,.2,1)'; f.style.transform = 'translateX(100%)';
+      setTimeout(() => { closeFocus(); f.style.transition = ''; f.style.transform = ''; }, 260);
+    } else { f.style.transition = 'transform .28s cubic-bezier(.22,.8,.24,1)'; f.style.transform = ''; setTimeout(() => { f.style.transition = ''; }, 300); }
   };
   document.addEventListener('touchend', end, { passive: true });
   document.addEventListener('touchcancel', end, { passive: true });
