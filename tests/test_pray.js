@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -707,6 +707,64 @@ const MAPCSV = [
   A.addPraySession(db, at(1, 40), 600, 'map');
   sc.eq('⭐⑳ 새벽 1시 40분에 시작한 기도는 어제 기록으로', [Object.keys(db.log), db.log['2026-10-18'].s], [['2026-10-18'], 600]);
   sc.eq('⑳ 처음 쓰는 DB 의 기본값은 3시 · 정리하면 범위 안으로', [A.normDB({}).set.dayStart, A.normDB({ set: { dayStart: 12 } }).set.dayStart, A.normDB({ set: { dayStart: 0 } }).set.dayStart], [3, 3, 0]);
+}
+// ㉑ 보관 · 항목 응답 (O-5, HB 2026-10-19) — 지운 것이 아니라 감춘 것 · 두 기기 병합
+{
+  const mk = () => {
+    const db = A.emptyDB();
+    const a = A.newTarget('person', '가나'), b = A.newTarget('item', '10/16 수업 준비'), c = A.newTarget('person', '다라');
+    a.mark = 'red'; b.mark = 'red'; c.mark = 'red';
+    db.T.push(a, b, c);
+    const g = A.newGroup('가족', '#e09a28'); g.lines = [{ id: 'L1', segs: [[a.id], [b.id]], r: {}, text: '' }, { id: 'L2', segs: [[b.id]], r: {}, text: '' }]; db.G.push(g);
+    const g2 = A.newGroup('교회', '#36c'); g2.lines = [{ id: 'L3', segs: [[b.id], [c.id]], r: {}, text: '' }]; db.G.push(g2);
+    db.log['2026-10-15'] = { d: [b.id], p: {}, k: [], s: 120 };
+    return { db, a, b, c, g, g2 };
+  };
+  const ids = r => Object.keys(r.sec).reduce((o, k) => o.concat(r.sec[k].map(e => e.t.name)), []);
+  { const { db, b } = mk();
+    A.shelve(db, b.id, '2026-10-19');
+    sc.eq('⭐㉑ 보관 — 오늘 목록 · 살아 있는 목록에서 빠진다', [ids(A.buildToday(db, '2026-10-19')).indexOf('10/16 수업 준비'), A.liveT(db).map(t => t.name)], [-1, ['가나', '다라']]);
+    sc.eq('⭐㉑ 보관 — 그룹 줄 · 기도 기록은 그대로 (두 그룹 모두)', [db.G[0].lines.map(l => A.linePids ? l.segs.flat().length : l.segs.length), db.G[1].lines[0].segs.length, db.log['2026-10-15'].d.length], [[2, 1], 2, 1]);
+    sc.eq('㉑ 어디 있던 것 — 그룹 이름', A.groupNamesOf(db, b.id), ['가족', '교회']);
+    A.unshelve(db, b.id);
+    sc.eq('⭐㉑ 풀면 원래대로', [A.isShelved(b), ids(A.buildToday(db, '2026-10-19')).indexOf('10/16 수업 준비') >= 0, b.arch], [false, true, '']);
+  }
+  { const { db, a } = mk();
+    A.answerTarget(db, a.id, '2026-10-19');
+    const al = A.answeredList(db);
+    sc.eq('⭐㉑ 항목 응답 — 응답 목록에 기도 항목으로 · 오늘 목록에서 빠짐', [al.length, al[0].tp, al[0].at, A.isShelved(a), ids(A.buildToday(db, '2026-10-19')).indexOf('가나')], [1, null, '2026-10-19', true, -1]);
+    A.unanswerTarget(db, a.id);
+    sc.eq('㉑ 응답 풀기', [A.answeredList(db).length, A.isShelved(a)], [0, false]);
+  }
+  // 두 기기 — 같은 기준점에서 갈라진다
+  const fork = () => { const { db, a, b } = mk(); const base = JSON.parse(JSON.stringify(db)); return { base, L: JSON.parse(JSON.stringify(db)), R: JSON.parse(JSON.stringify(db)), a: a.id, b: b.id }; };
+  const T_ = (db, id) => db.T.find(t => t.id === id);
+  { const f = fork(); A.shelve(f.L, f.b, '2026-10-19'); A.answerTarget(f.R, f.b, '2026-10-19');
+    const m = A.merge3(f.base, f.L, f.R);
+    sc.eq('⭐㉑ 두 기기: 한쪽 보관 · 한쪽 응답 → 둘 다 남는다', [T_(m, f.b).arch, T_(m, f.b).ansAt], ['2026-10-19', '2026-10-19']); }
+  { const f = fork(); A.shelve(f.base, f.b, '2026-10-18'); A.shelve(f.L, f.b, '2026-10-18'); A.shelve(f.R, f.b, '2026-10-18');
+    A.unshelve(f.L, f.b); A.shelve(f.R, f.b, '2026-10-19');
+    sc.eq('⭐㉑ 두 기기: 한쪽 풀기 · 한쪽 다시 보관 → 풀기(보이는 쪽)가 이긴다', [T_(A.merge3(f.base, f.L, f.R), f.b).arch, T_(A.merge3(f.base, f.R, f.L), f.b).arch], ['', '']); }
+  { const f = fork(); A.shelve(f.L, f.b, '2026-10-18'); A.shelve(f.R, f.b, '2026-10-19');
+    sc.eq('㉑ 두 기기: 다른 날짜로 둘 다 보관 → 늦은 날짜', [T_(A.merge3(f.base, f.L, f.R), f.b).arch, T_(A.merge3(f.base, f.R, f.L), f.b).arch], ['2026-10-19', '2026-10-19']); }
+  { const f = fork(); A.shelve(f.L, f.b, '2026-10-19');
+    sc.eq('㉑ 한쪽만 보관 — 다른 쪽(옛 자료 · 칸 없음)이 그대로면 보관이 산다', T_(A.merge3(f.base, f.R, f.L), f.b).arch, '2026-10-19'); }
+  { const f = fork(); A.shelve(f.base, f.a, '2026-10-17'); A.shelve(f.L, f.a, '2026-10-17'); A.shelve(f.R, f.a, '2026-10-17');
+    f.L.T = f.L.T.filter(t => t.id !== f.a); T_(f.R, f.a).note = '다른 기기에서 고침';
+    sc.eq('㉑ 보관함에서 완전히 지움 vs 다른 기기의 고침 → 고친 쪽이 산다 (예전 규칙)', !!T_(A.merge3(f.base, f.L, f.R), f.a), true); }
+  { const f = fork(); A.answerTarget(f.base, f.a, '2026-10-17'); A.answerTarget(f.L, f.a, '2026-10-17'); A.answerTarget(f.R, f.a, '2026-10-17');
+    A.unanswerTarget(f.L, f.a); T_(f.R, f.a).memo = '전화';
+    const m = A.merge3(f.base, f.L, f.R);
+    sc.eq('㉑ 응답 풀기 + 다른 기기 메모 고침 → 둘 다', [T_(m, f.a).ansAt, T_(m, f.a).memo], ['', '전화']); }
+  // 이름의 날짜 — 확실한 꼴만
+  const nd = n => A.nameDate(n, '2026-10-19');
+  sc.eq('⭐㉑ 날짜 꼴 읽기', ['10/16 수업 준비', '10.16', '시험 10월 16일', '2026.10.16 모임', '2026-10-16', '26.10.16 셀', '1/2 수련회', '3/5 기도회'].map(nd), ['2026-10-16', '2026-10-16', '2026-10-16', '2026-10-16', '2026-10-16', '2026-10-16', '2027-01-02', '2027-03-05']);
+  sc.eq('㉑ 연도 없으면 가까운 해 (1월에 12/30 은 작년 · 12월에 1/3 은 내년)', [A.nameDate('12/30 송년회', '2027-01-05'), A.nameDate('1/3 신년', '2026-12-28')], ['2026-12-30', '2027-01-03']);
+  sc.eq('⭐㉑ 애매하면 제안 안 함', ['1/2', '가나', '10/16 · 10/23 두 번', '13/40 엉터리', '2/30', '3.5배', '010-1234-5678', '100.5'].map(nd), ['', '', '', '', '', '', '', '']);
+  { const { db, b } = mk(); const t2 = A.newTarget('item', '10/25 수련회'); db.T.push(t2);
+    sc.eq('⭐㉑ 지난 날짜만 제안 · 오늘 · 앞날은 아님 · 보관한 것은 아님', A.staleByName(db, '2026-10-19').map(t => t.name), ['10/16 수업 준비']);
+    A.shelve(db, b.id, '2026-10-19');
+    sc.eq('㉑ 보관하면 제안 목록에서 빠짐', A.staleByName(db, '2026-10-19').length, 0); }
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
