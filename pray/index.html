@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1018-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1018-7';
+const APP_VERSION = 'v. 26-1019-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2072,6 +2072,9 @@ textarea.field{min-height:72px;line-height:1.6}
 .pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
 .pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
 #layers.top{z-index:65}
+/* 한 장 기도(#focus, 맨 위 z-index)를 덮고 상세 · 설정 창이 뜰 때 — #app 이 통째로 하나의 층이라 안쪽 z-index 로는 못 이긴다. 앱을 위로 올리고 창 말고는 감춘다 (HB 신고 2026-10-19) */
+body.f-layer #app{z-index:70}
+body.f-layer #app>:not(#layers){visibility:hidden}
 .b7nav{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 2px}
 .b7nav b{font-size:15px;font-weight:500}
 .b7secs{display:flex;flex-direction:column;gap:8px;padding:8px 16px 16px}
@@ -3071,7 +3074,7 @@ function pushLayer(L) {
 function popLayer() {
   const el = topLayerEl(); if (!el) return;
   UI.layers.pop();
-  if (!UI.layers.length) $('layers').classList.remove('has', 'top');
+  if (!UI.layers.length) { $('layers').classList.remove('has', 'top'); document.body.classList.remove('f-layer'); }
   el.classList.remove('in'); el.classList.add('out');
   setTimeout(() => el.remove(), 360);
   refresh({ skipTopEl: el });
@@ -3605,7 +3608,7 @@ ACT['focus-map'] = () => focusPickGroup();
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
 ACT['focus-prev'] = () => focusPrev();
-ACT['focus-detail'] = el => { if (!el.dataset.id) return; openTarget(el.dataset.id); if (F.on) $('layers').classList.add('top'); };   // 한 장 화면 위에 상세 (HB 2026-10-18)
+ACT['focus-detail'] = el => { if (!el.dataset.id) return; openTarget(el.dataset.id); if (F.on) { $('layers').classList.add('top'); document.body.classList.add('f-layer'); } };   // 한 장 화면 위에 상세 (HB 2026-10-18)
 function focusPrev() { if (F.i <= 0 || F.i > F.deck.length) return; F.i--; focusCard(true, -1); }
 // 한 장 기도를 손가락으로 — 오른쪽으로 밀면 '이전', 왼쪽으로 밀면 '아멘'. 손가락을 따라 카드가 움직이고 놓으면 이어서 나간다 (CLAUDE.md '화면 전환')
 (function () {
@@ -3668,7 +3671,7 @@ function b7L() { return UI.layers.find(x => x.type === 'b7todo'); }
 function b7Paint() { const k = UI.layers.findIndex(x => x.type === 'b7todo'); if (k < 0) return; const el = liveLayerEls()[k]; if (el) fillLayer(el, UI.layers[k]); }
 function openB7Todo(text, from) {
   pushLayer({ type: 'b7todo', text: text || '', from: from || '', tab: 'D', date: TODAY, sec: '', msg: B7.st && SY.user && B7.uid === SY.user.uid ? '' : 'loading' });
-  if (F.on) $('layers').classList.add('top');   // 한 장 화면(위에 떠 있다) 위로
+  if (F.on) { $('layers').classList.add('top'); document.body.classList.add('f-layer'); }   // 한 장 화면(위에 떠 있다) 위로
   b7Load().then(r => { const L = b7L(); if (!L) return; L.msg = r.err || ''; b7Paint(); });
 }
 const B7WK = ['일', '월', '화', '수', '목', '금', '토'];
