@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1019-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-5';
+const APP_VERSION = 'v. 26-1019-6';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -375,6 +375,12 @@ const ROLE_WORDS = ['아빠', '엄마', '형', '누나', '언니', '오빠', '�
 // ── 날짜 ──
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 function ymd(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// ── 하루의 시작 (O-4, HB 2026-10-19) — 이 시각 전까지는 '어제' 다. 설정에서 자정~오전 9시, 기본 오전 3시.
+//    값은 DB.set.dayStart (기기끼리 맞춘다). setDayStart 로 바꾸고, '오늘' 과 기록 날짜는 모두 dayOf 로 정한다.
+let DAY_START = 3;
+function dayStartOk(h) { h = Number(h); return Number.isInteger(h) && h >= 0 && h <= 9 ? h : 3; }
+function setDayStart(h) { DAY_START = dayStartOk(h); return DAY_START; }
+function dayOf(ms) { return ymd(new Date((ms == null ? Date.now() : +ms) - DAY_START * 3600000)); }
 function parseYmd(s) { const a = String(s).split('-').map(Number); return new Date(a[0], (a[1] || 1) - 1, a[2] || 1); }
 function daysBetween(a, b) { return Math.round((parseYmd(b) - parseYmd(a)) / 86400000); }
 function addDays(s, n) { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); }
@@ -394,7 +400,7 @@ function emptyDB() {
     cats: [], subs: [], T: [], G: [], markLinks: {},
     marks: { orange: '', yellow: '', green: '', blue: '', purple: '', pink: '' },
     log: {}, snaps: [], todo: [],
-    set: { mode: 'dark', preset: '', topLimit: 6, mapTitle: '', iv: IV_DEFAULT.slice(),
+    set: { mode: 'dark', preset: '', topLimit: 6, dayStart: 3, mapTitle: '', iv: IV_DEFAULT.slice(),
            sorts: {}, ranks: {}, folds: {} }
   };
 }
@@ -454,7 +460,7 @@ function newGroup(name, color) {
   return { id: uid(), kind: 'group', name: String(name || '').trim(), color: color || GROUP_COLORS[0], parent: '',
            days: [], time: '', u: null, i: null, memo: '', mark: '', topics: [], note: '', last: '', lines: [], also: [] };
 }
-function newTopic(t) { return { id: uid(), t: String(t || '').trim(), at: ymd(), ans: '' }; }
+function newTopic(t) { return { id: uid(), t: String(t || '').trim(), at: dayOf(), ans: '' }; }
 
 // 받은 DB 를 지금 모양으로 맞춘다 — 빠진 칸은 채우고 모르는 값은 버린다.
 function normDB(x) {
@@ -470,6 +476,7 @@ function normDB(x) {
   });
   if (x.set && typeof x.set === 'object') Object.assign(d.set, x.set);
   if (!Array.isArray(d.set.iv) || d.set.iv.length !== 6) d.set.iv = IV_DEFAULT.slice();
+  d.set.dayStart = dayStartOk(d.set.dayStart);
   ['sorts', 'ranks', 'folds'].forEach(k => { if (!d.set[k] || typeof d.set[k] !== 'object') d.set[k] = {}; });
   d.rev = Number(x.rev) || 0;
   d.T = d.T.filter(t => t && t.id).map(t => Object.assign(newTarget(t.kind === 'person' ? 'person' : 'item', ''), t));
@@ -841,7 +848,7 @@ function addPrayTime(db, date, secs) {
 // · 기기끼리 맞출 때: ses 는 id 가 있는 목록이라 두 기기 것이 **둘 다** 남고(mergeIds), s 는 더해진다(m3 의 key 's').
 function addPraySession(db, startMs, secs, src, sid) {
   secs = Math.max(0, Math.round(secs || 0)); if (!secs) return null;
-  const st = new Date(startMs), date = ymd(st);
+  const st = new Date(startMs), date = dayOf(startMs);   // 하루의 시작 전(새벽 2시 등)에 시작한 기도는 어제 것
   const L = db.log[date] || (db.log[date] = { d: [], p: {}, k: [], s: 0 });
   L.s = (Number(L.s) || 0) + secs;
   if (!Array.isArray(L.ses)) L.ses = [];
@@ -1255,7 +1262,7 @@ function makeSnap(db, G, at, name, now) {
   const groups = clone(G || db.G);
   const P = {}, eff = effMarkMap(db);
   groups.forEach(g => groupPids(g).forEach(pid => { const p = findT(db, pid); if (p) P[pid] = { name: p.name, mark: markOf(db, p, eff) }; }));
-  return { id: uid(), at: at || ymd(), time: now ? hhmm() : '', name: name || '', marks: clone(db.marks), G: groups, P: P };
+  return { id: uid(), at: at || dayOf(), time: now ? hhmm() : '', name: name || '', marks: clone(db.marks), G: groups, P: P };
 }
 function snapNames(snap) {
   const s = new Set();
@@ -2133,6 +2140,9 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .b7fr small{flex:1;min-width:0;font-size:12.5px;color:var(--tx2)}
 .b7fr .cta{flex:none;width:auto;padding:0 26px}
 .b7fr .cta[disabled]{opacity:.4}
+.dspick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:4px 14px 12px}
+.dspick button{height:36px;border-radius:9px;background:var(--s2);font-size:13px;color:var(--tx2);transition:background .2s,color .2s}
+.dspick button.on{background:var(--tab-on-bg);color:var(--tx);font-weight:600;box-shadow:0 0 0 1.5px var(--ac-tx)}
 .npop{position:fixed;z-index:80;background:var(--s1);border:1px solid var(--bd2);border-radius:14px;padding:6px 6px 8px;box-shadow:0 10px 30px rgba(0,0,0,.28);
   opacity:0;transform:translateY(6px) scale(.97);transition:opacity .15s ease,transform .15s ease;pointer-events:auto;-webkit-user-select:none;user-select:none;touch-action:none}
 .npop.in{opacity:1;transform:none}
@@ -2333,7 +2343,11 @@ function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0
 let DB = loadDB();
 // 기기 사이 맞추기 상태 (아래 '로그인 · 기기 사이 맞추기') — save() 가 부르므로 맨 앞에 둔다
 const SY = { user: null, status: 'off', err: '', busy: false, again: false, t: 0, unsub: null, pending: null, at: 0, cache: null, watching: false };
-let TODAY = ymd();
+setDayStart(DB.set.dayStart);
+let TODAY = dayOf();
+// 설정이 바뀌었거나(이 기기 · 다른 기기에서 받음) 하루의 시작을 지나면 '오늘' 을 다시 정한다
+function syncToday() { setDayStart(DB.set.dayStart); const t = dayOf(); if (t === TODAY) return false; TODAY = t; return true; }
+setInterval(() => { if (!document.hidden && syncToday()) refresh(); }, 60000);   // 열어 둔 채 하루의 시작(예: 새벽 3시)을 지나면
 const UI = {
   tab: 'today', layers: [], listCat: 'all', listView: 'table', listGrouped: false, histTab: 'days',
   mapFilter: [], mapQuery: '', mapSearch: false, more: {}, showDone: {}, openG: {},
@@ -2386,7 +2400,7 @@ function saveNow() {
 document.addEventListener('visibilitychange', () => {
   // 한 장 기도: 다른 앱으로 나가거나 화면이 꺼지면 시간 재기를 멈춘다 — There 와 같다 (HB 2026-10-18). 돌아오면 거기서 다시 센다
   if (document.visibilityState === 'hidden') { if (F.on) { if (!F.paused) F.cacc += (Date.now() - F.ct0) / 1000; flushFocusTime(); F.paused = true; } saveNow(); }
-  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } const t = ymd(); if (t !== TODAY) { TODAY = t; refresh(); } }
+  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } if (syncToday()) refresh(); }
 });
 window.addEventListener('pagehide', saveNow);
 
@@ -2478,6 +2492,7 @@ function animateGone(row, cb) {
 
 // ═══ 그리기 ═══
 function refresh(opt) {
+  syncToday();   // 다른 기기에서 하루의 시작을 바꿨을 수 있다
   renderView();
   refreshLayers(opt && opt.skipTop);
 }
@@ -3344,6 +3359,11 @@ LAYERS.settings = () => {
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="groups">' + ico('map') + '그룹 순서 · 지우기<span class="v">' + topGroups(DB).length + ico('chevR') + '</span></button></div>';
+  const dsNm = h => h === 0 ? '자정' : '오전 ' + h + '시';
+  b += '<div class="label">하루의 시작<small>이 시각 전은 어제로 칩니다</small></div><div class="set-g">' +
+    '<button class="set-r xr' + (xo('daystart') ? ' open' : '') + '" data-a="xrow" data-x="daystart" aria-expanded="' + xo('daystart') + '">' + ico('sun') + '하루의 시작<span class="v"><span class="xv">' + dsNm(DAY_START) + '</span>' + ico('chevD', 'xch') + '</span></button>' +
+    '<div class="xp" data-xp="daystart"' + (xo('daystart') ? '' : ' hidden') + '><div class="dspick">' +
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(h => '<button class="' + (h === DAY_START ? 'on' : '') + '" data-a="day-start" data-v="' + h + '">' + (h === 0 ? '자정' : h + '시') + '</button>').join('') + '</div></div></div>';
   b += '<div class="label">오늘 목록</div><div class="set-g"><div class="set-r">1순위 처음 보일 개수<span class="step"><button data-a="step" data-k="topLimit" data-v="-1" aria-label="줄이기">−</button><b>' + DB.set.topLimit + '</b><button data-a="step" data-k="topLimit" data-v="1" aria-label="늘리기">+</button></span></div></div>';
   b += '<div class="label">긴급도마다 며칠에 한 번<small>0 이 가장 급함</small></div><div class="set-g">' + DB.set.iv.map((v, k) =>
     '<div class="set-r"><span class="pl ' + uCls(k) + '">' + k + '</span>' + (v === 1 ? '날마다' : v + '일마다') + '<span class="step"><button data-a="step" data-k="iv" data-n="' + k + '" data-v="-1" aria-label="줄이기">−</button><b>' + v + '</b><button data-a="step" data-k="iv" data-n="' + k + '" data-v="1" aria-label="늘리기">+</button></span></div>').join('') + '</div>';
@@ -4096,6 +4116,11 @@ ACT['start-tab'] = el => {
   const v = document.querySelector('[data-x="start"] .xv'); if (v) v.textContent = el.textContent;
 };
 // 설정의 펼치는 줄 — 새 창 없이 그 아래가 스르륵 열린다 (첫 화면 · There 단추)
+ACT['day-start'] = el => {
+  const h = dayStartOk(+el.dataset.v); if (h === DB.set.dayStart) return;
+  DB.set.dayStart = h; save(); const moved = syncToday(); refresh();
+  toast('하루의 시작을 ' + (h === 0 ? '자정' : '오전 ' + h + '시') + '로 했어요\n' + (moved ? '그래서 지금은 ' + shortDate(TODAY) + ' 로 봅니다' : '그 전까지는 어제로 칩니다'));
+};
 ACT.xrow = el => {
   const k = el.dataset.x, box = document.querySelector('[data-xp="' + k + '"]'); if (!box) return;
   UI.xopen = UI.xopen || {}; const open = UI.xopen[k] = !UI.xopen[k];
