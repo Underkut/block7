@@ -7,6 +7,8 @@
 //   prayLog  = 기도노트 DB.log                    {"YYYY-MM-DD":{d,p,k,s,ses:[{id,t,time,d,src}],mp:[{id,a,t,pid,d,n,k}]}}
 //   mp = Map 기도(지도 There 안에서 누른 그룹 · 항목에 머문 시간). **합계에 더하지 않는다** — 그 시간은 지도 There(ses)에 이미 들어 있다.
 //        '무엇을 위해 기도했나' 로만 보여 준다 (k = 누른 그룹 · 항목 이름, n = 사람 이름, a = 시작 ms).
+//   fc = 한 장 기도 카드 [{id,s,pid,n,k,a,t,d,amen}] — 이름마다 머문 시간 · 아멘 여부 (k = 그룹 또는 오늘 목록 칸).
+//        이것도 **합계에 더하지 않는다** — 한 장 기도 기록(ses, src 'focus')에 이미 들어 있다.
 // 갈래 넷: block7 · sweeter · bible(src 가 bible · bible-menu) · pray.
 //   10-12 전 BLOCK7 · Sweeter 기록은 app 이 비어 있다 → block7 로 센다.
 //   기도노트 10-12 전 기록은 날 합계(s)만 있다 → '시간만 남은 기록' 한 줄로 센다.
@@ -89,12 +91,30 @@ const TDASH = (function () {
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
     return out;
   }
-  // 기간 안의 Map 기도를 이름(k)마다 모아 오래 한 순서로
+  // 한 장 기도 카드 — 날짜 · 처음 본 차례대로 [{date,time,n,k,d,amen}]
+  function focusPrayers(prayLog, from, to) {
+    const out = [];
+    Object.keys(prayLog || {}).forEach(date => {
+      if (!isDate(date) || (from && date < from) || (to && date > to)) return;
+      const fc = (prayLog[date] || {}).fc; if (!Array.isArray(fc)) return;
+      fc.forEach(e => {
+        if (!e) return;
+        const d = Math.max(0, Math.round(+e.d || 0)), a = +e.a || +e.t || 0;
+        let time = ''; if (a) { const dt = new Date(a); time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); }
+        out.push({ date: date, t: a, time: time, n: String(e.n || '이름 없음'), k: String(e.k || ''), d: d, amen: !!e.amen });
+      });
+    });
+    out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
+    return out;
+  }
+  // 기간 안의 Map 기도 · 한 장 기도를 이름마다 모아 오래 한 순서로
   function mapTop(S, a, b, n) {
-    const m = {}; mapPrayers(S.data.prayLog, a, b).forEach(x => { const o = m[x.k] || (m[x.k] = { s: 0, n: 0 }); o.s += x.d; o.n++; });
+    const m = {}; const put = (k, d) => { const o = m[k] || (m[k] = { s: 0, n: 0 }); o.s += d; o.n++; };
+    mapPrayers(S.data.prayLog, a, b).forEach(x => put(x.k, x.d));
+    focusPrayers(S.data.prayLog, a, b).forEach(x => put(x.n, x.d));
     const ks = Object.keys(m).sort((x, y) => m[y].s - m[x].s).slice(0, n || 5);
     if (!ks.length) return '';
-    return '<div class="tdash-sec"><h4 style="color:#5b8fcc">무엇을 위해 기도했나 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· Map 기도</span></h4>' +
+    return '<div class="tdash-sec"><h4 style="color:#5b8fcc">무엇을 위해 기도했나 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· Map 기도 · 한 장 기도</span></h4>' +
       ks.map(k => '<div class="tdash-li"><span>' + esc(k) + '</span><small>' + dur(m[k].s) + ' · ' + m[k].n + '번</small></div>').join('') + '</div>';
   }
   // 날마다 합계 {date:{s, by:{app:초}}}
@@ -333,6 +353,14 @@ const TDASH = (function () {
         '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0"><b>' + esc(x.k) + '</b>' +
         (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
     }
+    // 한 장 기도로 누구를 — 이름마다 머문 시간 · 아멘 / 넘김 (위 '한 장씩 기도하기' 시간 안의 몫)
+    const fc = focusPrayers(S.data.prayLog, d, d);
+    if (fc.length) {
+      const sum = fc.reduce((s, x) => s + x.d, 0), am = fc.filter(x => x.amen).length;
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x =>
+        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0"><b>' + esc(x.n) + '</b>' +
+        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em></div>').join('') + '</div>';
+    }
     return h;
   }
   function nav(S, title, sub, atEnd) {
@@ -558,5 +586,5 @@ const TDASH = (function () {
     ov.classList.remove('in'); setTimeout(() => ov.remove(), 240);
   }
   const isOpen = () => !!OV;
-  return { collect, mapPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
+  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
 })();
