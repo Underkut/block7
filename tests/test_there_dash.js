@@ -75,4 +75,15 @@ const T = ctx.T;
   sc.eq('⭐⑥ 합계는 지도 There 그대로 (Map 기도를 다시 더하지 않는다)', T.collect({}, pray).reduce((a, x) => a + x.d, 0), 600);
   sc.eq('⑥ 기간 밖 · 옛 기록(mp 없음)은 빈 목록', [T.mapPrayers(pray, '2026-10-16', '2026-10-20').length, T.mapPrayers({ '2026-10-01': { s: 5 } }).length], [0, 0]);
 }
+// ⑦ 한 장 기도 카드(fc) — 이름 · 그룹 · 아멘 · 차례 · 합계에는 안 더한다 (O-2)
+{
+  const t0 = new Date(2026, 9, 19, 6, 30).getTime();
+  const pray = { '2026-10-19': { s: 120, ses: [{ id: 'F', t: t0, time: '06:30', d: 120, src: 'focus' }],
+    fc: [{ id: 'b', s: 'F', pid: 'p2', n: '다라', k: '가족', a: t0 + 40000, t: t0 + 50000, d: 10, amen: false },
+         { id: 'a', s: 'F', pid: 'p1', n: '가나', k: '가족', a: t0, t: t0 + 40000, d: 40, amen: true }, null] } };
+  const fc = T.focusPrayers(pray, '2026-10-19', '2026-10-19');
+  sc.eq('⭐⑦ 처음 본 차례 · 이름 · 그룹 · 아멘', fc.map(x => [x.time, x.n, x.k, x.d, x.amen]), [['06:30', '가나', '가족', 40, true], ['06:30', '다라', '가족', 10, false]]);
+  sc.eq('⭐⑦ 합계는 한 장 기도 시간 그대로', T.collect({}, pray).reduce((a, x) => a + x.d, 0), 120);
+  sc.eq('⑦ 기간 밖 · fc 없는 날은 빈 목록', [T.focusPrayers(pray, '2026-10-20', '2026-10-21').length, T.focusPrayers({ '2026-10-01': { s: 3 } }).length], [0, 0]);
+}
 sc.done();

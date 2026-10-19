@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -675,6 +675,22 @@ const MAPCSV = [
   // 기도노트는 BLOCK7 상태 문서를 읽기만 — users/ 로 가는 줄에 쓰기가 없다
   const writesUsers = HTML.split('\n').filter(l => /'users\/'/.test(l) && /\.(set|update|delete)\(/.test(l));
   sc.eq('⭐⑱ 기도노트는 users/ 문서를 쓰지 않는다', writesUsers.length, 0);
+}
+// ⑲ 한 장 기도 카드 기록 (O-2) — 이름마다 머문 시간 · 아멘 · 합계(s)는 건드리지 않는다
+{
+  const db = A.emptyDB();
+  const a = A.newTarget('person', '가나'), b = A.newTarget('person', '다라'); db.T.push(a, b);
+  A.addFocusCard(db, '2026-10-19', 'S1', a.id, 1000, 31000, 30, true, '가족');
+  A.addFocusCard(db, '2026-10-19', 'S1', b.id, 31000, 41000, 10, false, '가족');
+  A.addFocusCard(db, '2026-10-19', 'S1', a.id, 41000, 46000, 5, false, '가족');   // 이전으로 돌아와 다시 봄
+  A.addFocusCard(db, '2026-10-19', 'S1', b.id, 46000, 46200, 0.2, false, '가족');  // 스친 것
+  A.addFocusCard(db, '2026-10-19', 'S2', a.id, 90000, 99000, 9, false, '1순위');   // 다른 한 번
+  const L = db.log['2026-10-19'];
+  sc.eq('⭐⑲ 같은 한 번 안의 같은 이름은 한 줄에 더한다 · 아멘은 한 번이라도 하면 남는다', L.fc.filter(x => x.s === 'S1').map(x => [x.n, x.d, x.amen, x.k]), [['가나', 35, true, '가족'], ['다라', 10, false, '가족']]);
+  sc.eq('⑲ 다른 한 번은 따로', L.fc.filter(x => x.s === 'S2').map(x => [x.n, x.d, x.k]), [['가나', 9, '1순위']]);
+  sc.eq('⭐⑲ 시간 합계(s)는 그대로 (한 장 기도 ses 가 센다)', L.s || 0, 0);
+  sc.eq('⑲ 1초 못 되게 스친 것 · 이름 없는 것은 안 남긴다', [A.addFocusCard(db, '2026-10-19', 'S3', a.id, 0, 0, 0.3, false, ''), A.addFocusCard(db, '2026-10-19', 'S3', '', 0, 0, 9, true, '')], [null, null]);
+  sc.eq('⑲ 정리(normDB)해도 fc 가 남는다', A.normDB(JSON.parse(JSON.stringify(db))).log['2026-10-19'].fc.length, 3);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
