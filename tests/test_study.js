@@ -8,6 +8,7 @@
 //  ⑤ 알림: 정한 시각부터 90분까지만 · 미루기 · '오늘은 못 해요' · 공부 중이면 안 울린다 · 서버 예약 목록
 //  ⑥ 별은 부모님 확인 때만 · 같은 확인은 한 번만 반영 · 레벨
 //  ⑦ 망가진 저장을 읽어도 죽지 않는다
+//  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -21,7 +22,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { STUDY_KEY, SUBJ, blankState, normState, normBook, amountText, rangeText, perDayText, chapterOf, projectBook, finishDate, questsFor, questOf,
   runStart, runPause, runResume, runStudyMs, runRestMs, finishRun, removeSession, dueAlarm, snooze, cleanOld, upcomingAlarms,
-  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE };`, ctx);
+  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName };`, ctx);
 const A = ctx.A;
 const MON = '2026-10-12';   // 월요일
 const at = (d, hm) => A.atOf(d, hm);
@@ -183,5 +184,34 @@ function mk(o) {
   sc.eq('⭐⑫ simple 문제집은 분량 글이 비어 있다 · 아닌 것은 예전처럼', qs.map(q => [q.title, q.sub]).sort(), [['단어', '2쪽'], ['디딤돌 2쪽', '']]);
   sc.eq('⑫ 저장 · 불러오기에도 simple 이 남는다', A.normState(JSON.parse(JSON.stringify(st))).books.map(b => b.simple), [true, false]);
   sc.eq('⑫ 범위가 있는 문제집에는 simple 이 붙지 않는다', A.normBook({id: 'x', name: 'a', simple: true, first: 1, last: 9}).simple, false);
+}
+// ── ⑬ 백업 파일 이름 (D-4, HB 2026-10-21) ──
+{
+  const at2 = (d, h, m) => new Date(2026, 9, d, h, m);
+  const on = now => ({ email: 'jimin@kid.block7.my', online: true, dev: 'phn', now });
+  const st = A.blankState();
+  sc.eq('⑬ 첫 저장', A.bakName(st, on(at2(21, 15, 34))), 'St-jim-phn-26-1021-1.json');
+  sc.eq('⑬ 같은 날 연속은 2', A.bakName(st, on(at2(21, 15, 35))), 'St-jim-phn-26-1021-2.json');
+  // 다른 기기(같은 아이 계정)는 클라우드 사본 → normState 로 받는다 — 번호표가 살아 있어야 이어진다
+  const other = A.normState(JSON.parse(JSON.stringify(st)));
+  sc.eq('⑬ 번호표가 저장 · 클라우드를 지나도 남는다 → 다른 기기는 3', A.bakName(other, Object.assign(on(at2(21, 16, 0)), { dev: 'pad' })), 'St-jim-pad-26-1021-3.json');
+  sc.eq('⑬ 날짜가 바뀌면 1부터', A.bakName(other, on(at2(22, 7, 0))), 'St-jim-phn-26-1022-1.json');
+  const before = JSON.stringify(other.bak);
+  sc.eq('⑬ 오프라인은 off+HHMM', A.bakName(other, { email: 'jimin@kid.block7.my', online: false, dev: 'phn', now: at2(22, 9, 5) }), 'St-jim-phn-26-1022-off0905.json');
+  sc.eq('⑬ 오프라인은 번호표를 안 건드린다', JSON.stringify(other.bak), before);
+  sc.eq('⑬ 가족 연결 안 됨 = usr · off', A.bakName(A.blankState(), { email: '', online: false, dev: 'pc', now: at2(21, 23, 59) }), 'St-usr-pc-26-1021-off2359.json');
+  sc.eq('⑬ 망가진 번호표는 버린다', A.normState({ bak: { d: 'x', n: 'y' } }).bak, undefined);
+  sc.eq('⑬ 기기 판정 (아이폰 · 아이패드 · 안드 폰 · 맥)', [
+    A.bakDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', 5, 390, 844),
+    A.bakDevice('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5, 820, 1180),
+    A.bakDevice('Mozilla/5.0 (Linux; Android 14; SM-S918N) Mobile', 5, 412, 915),
+    A.bakDevice('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0, 1512, 982)], ['phn', 'pad', 'phn', 'pc']);
+}
+// ── ⑭ 화면: 파일로 저장 · 불러오기 · 오늘 탭 설정 입구 (D-4) ──
+{
+  sc.eq('⑭ 설정에 파일로 저장 · 파일 불러오기', ['id="stFile"', 'id="stOpen"'].every(x => HTML.includes(x)), true);
+  sc.eq('⑭ 파일 저장은 새 이름 · 공유는 기다리지 않고 바로', /function saveBackupFile\(\) \{[^]*?bakName\(S,[^]*?navigator\.share\(/.test(HTML) && !/await[^;]{0,60}navigator\.share/.test(HTML), true);
+  sc.eq('⑭ 오늘 머리줄에도 설정 톱니', /else top\.innerHTML = `[^`]*data-top="gear"/.test(HTML), true);
+  sc.eq('⑭ 연결 안 된 동안 오늘 화면에 \'가족과 연결하기\'', HTML.includes('data-a="famGo"'), true);
 }
 sc.done();
