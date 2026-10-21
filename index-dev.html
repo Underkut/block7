@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1021-1  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1021-2  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6371,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1021-1";
+const APP_VERSION = "v. 26-1021-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9142,6 +9142,9 @@ try{
   </div>
   <div class="task-menu-item" data-act="next" data-cnt-days="7" onclick="nextAfterDoneTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
+  </div>
+  <div class="task-menu-item" data-act="next" onclick="nextAfterDoneYesterday()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11"/><path d="M11.5 6 15.5 10l-4 4"/></svg></span>어제 했고, 이제 오늘
   </div>
   <div class="task-menu-item" id="nextSecRow" data-act="next" data-cnt-days="0"
        data-secpick="always" onclick="_secPickOpenFromRow(this)">
@@ -35517,8 +35520,9 @@ function makeBigItem(id,i,b,secColor){
   const contactTaskBadge=document.createElement('span');
   contactTaskBadge.className='blk-contact-task-badge';
   if(b.contactTask){
-    contactTaskBadge.innerHTML=`<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`;
-    contactTaskBadge.title='연락할 일';
+    contactTaskBadge.innerHTML=_contactTaskSvg(11);
+    contactTaskBadge.title='연락할 일 — 눌러서 연락처 메뉴 열기';
+    _wireContactTaskBadge(contactTaskBadge,()=>b.text);
   }
 
   const inp=document.createElement('input');
@@ -35539,7 +35543,7 @@ function makeBigItem(id,i,b,secColor){
     const arr=getBigs(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();updateTotal();}
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSecBody(id);updateTotal();}
-    else if(_autoContactMark(arr[i],_origText)||contactBadgeCountChanged(div,inp.value)){renderSecBody(id);}
+    else if(_autoContactMark(arr[i],_origText)){renderSecBody(id);}
     autoSizeInput(inp);
     refreshTaskViewsLive(); // 텍스트 수정·빈값 삭제가 W/M 표시에도 즉시 반영
     // 반복 할일의 글자를 바꿨으면 "어디까지 바꿀까"를 묻는다 (글자는 이미 이 날짜
@@ -35610,7 +35614,6 @@ function makeBigItem(id,i,b,secColor){
 
   div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,
              makeSubToggleBadge('big',id,i,b,12),inp);
-  makeContactBadges(b.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
   _attachSubMemoBadges(div,'big',id,i,b,12);
   div.append(del);
@@ -35743,8 +35746,9 @@ function makeSmItem(id,i,sm,secColor){
   const contactTaskBadge=document.createElement('span');
   contactTaskBadge.className='blk-contact-task-badge';
   if(sm.contactTask){
-    contactTaskBadge.innerHTML=`<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>`;
-    contactTaskBadge.title='연락할 일';
+    contactTaskBadge.innerHTML=_contactTaskSvg(10);
+    contactTaskBadge.title='연락할 일 — 눌러서 연락처 메뉴 열기';
+    _wireContactTaskBadge(contactTaskBadge,()=>sm.text);
   }
 
   const inp=document.createElement('input');
@@ -35764,7 +35768,7 @@ function makeSmItem(id,i,sm,secColor){
     const arr=getSmalls(tKey(),id);
     if(arr[i]){arr[i].text=inp.value;rawSave();}
     if(inp.value.trim()===''){beforeSave();arr.splice(i,1);save();renderSmList(id,secColor);updateSmCnt(id);}
-    else if(_autoContactMark(arr[i],_origText)||contactBadgeCountChanged(div,inp.value)){renderSmList(id,secColor);}
+    else if(_autoContactMark(arr[i],_origText)){renderSmList(id,secColor);}
     autoSizeInput(inp);
     refreshTaskViewsLive();
     _taskTextCommit('small',id,i,_origText,inp.value);
@@ -35815,7 +35819,6 @@ function makeSmItem(id,i,sm,secColor){
   // "too many" information elsewhere.
   div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,
              makeSubToggleBadge('small',id,i,sm,11),inp);
-  makeContactBadges(sm.text).forEach(cb=>div.appendChild(cb));
   div.append(spacer,dailyBadge,carryBadge);
   _attachSubMemoBadges(div,'small',id,i,sm,11);
 
@@ -37960,6 +37963,21 @@ function renderTaskTextHTML(text){
 }
 
 const CONTACT_BADGE_SVG='<svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="6.5" r="3.2"/><path d="M3.8 17c.8-3.2 3.3-4.8 6.2-4.8s5.4 1.6 6.2 4.8"/></svg>';
+
+// 연락할 일 표시(초록 사람 모양) — 눌러서 @닉네임의 연락처 메뉴(전화·문자·…)를 연다.
+// @ 로 부른 사람이 없으면 연락처 목록 창을 연다.
+function _contactTaskSvg(px){return CONTACT_BADGE_SVG.replace('width="11" height="11"','width="'+px+'" height="'+px+'"');}
+function _wireContactTaskBadge(el,getText){
+  el.style.cursor='pointer';
+  el.addEventListener('click',e=>{
+    e.stopPropagation();e.preventDefault();
+    const c=findMentionedContacts(getText())[0];
+    if(c)openContactMenu(c,{x:e.clientX,y:e.clientY});
+    else openContactsModal();
+  });
+  el.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();});
+}
 
 // Returns an array of badge elements (possibly empty) for a task text.
 function makeContactBadges(text){
@@ -40207,7 +40225,7 @@ function _wireTmSub(){
 // ── 완료 후 다음 할일 ──
 // 누른 할일은 완료로 체크하고, 고른 날짜·구간에 새 할일을 하나 만든다. 새 할일의 글은
 // '(원래 글) 완료했고, 이제' — 화면이 그 날로 가서 그 입력창에 커서가 끝에 놓인다.
-function nextAfterDoneTo(days,toSec,dateStr){
+function nextAfterDoneTo(days,toSec,dateStr,tail){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
@@ -40222,7 +40240,7 @@ function nextAfterDoneTo(days,toSec,dateStr){
     _subSetAll(item,true);
     if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);
   }
-  const nu={text:String(item.text||'').replace(/\s+$/,'')+' 완료했고, 이제',done:false};
+  const nu={text:String(item.text||'').replace(/\s+$/,'')+(tail||' 완료했고, 이제'),done:false};
   if(item.contactTask)nu.contactTask=true;
   const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
   dest.push(nu);
@@ -40247,6 +40265,8 @@ function nextAfterDoneTo(days,toSec,dateStr){
     setTimeout(()=>_focusNewTaskInput(toKey,destSec,type,ni,0,nu.text),onD?420:120);   // 넘김이 끝난 뒤에 커서를 둔다
   }else _focusNewTaskInput(toKey,destSec,type,ni,0,nu.text);
 }
+// 어제 한 일을 오늘 이어서 — 누른 할일은 완료로 두고, 같은 구간 '오늘'에 새 할일을 만든다
+function nextAfterDoneYesterday(){nextAfterDoneTo(0,undefined,todayKey(),' 어제 했고, 이제 오늘');}
 function nextAfterDonePicked(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   if(!_datePickArmed('nextDatePickerInput'))return;
@@ -46655,6 +46675,19 @@ function _cfCutRaw(v){
 }
 // ⚠️ 이 창의 핵심 — 두 기기가 **각각 무엇을 했는지** 를 한 줄씩 적는다.
 //    예전엔 값 두 벌을 JSON 통짜로 뿌려서, 다르다는 것만 알 뿐 고를 수가 없었다.
+// '2026-10-19@night' 같은 앱 안쪽 표시를 사람 말로 — 날짜 + 구간 이름
+function _cfIsStamp(rec){return rec&&rec.entityType==='setting'&&/verseLastShownSec$/.test(String(rec.entityId||''));}
+function _cfStampNice(v){
+  if(v==null||v==='')return '(아직 없음)';
+  const m=/^(\d{4}-\d{2}-\d{2})@(.*)$/.exec(String(v));
+  if(!m)return _dfVal(v);
+  let nm='';
+  try{const x=(SECS||[]).find(q=>q.id===m[2]);if(x)nm=x.name;}catch(e){}
+  if(!nm)nm=({dawn:'새벽',morn:'아침',am:'오전',pm:'오후',eve:'저녁',night:'밤'})[m[2]]||'';
+  const day=_dfDay(m[1]);
+  return nm?`${day} ${nm} 구간`:`${day} (구간 표시 없음)`;
+}
+const _CF_STAMP_NOTE='위쪽 말씀이 구간(새벽·오전·밤 등)마다 바뀌도록 해 두셨을 때, 앱이 "마지막으로 말씀을 바꿔 보여 준 때"를 적어 두는 칸이에요. 특정 할일이나 말씀과는 관계가 없어요. 어느 쪽을 골라도 위쪽 말씀이 한 번 더 바뀌거나 그대로일 뿐, 없어지는 것은 없어요.';
 function _cfExplain(rec){
   const res={local:[],remote:[],note:''};
   try{
@@ -46708,6 +46741,11 @@ function _cfExplain(rec){
       res.remote=run(o=>_dfContact1(rec.base,rec.remote,o));
       return res;
     }
+    if(_cfIsStamp(rec)){
+      const L=v=>[`위쪽 말씀을 마지막으로 바꾼 때가 ${_cfStampNice(v)}이라고 적혀 있어요`];
+      res.local=L(rec.local);res.remote=L(rec.remote);
+      return res;
+    }
     const nice=(t==='setting'||t==='task-field');
     res.local=_dfDeepLines('',rec.base,rec.local,6,nice);
     res.remote=_dfDeepLines('',rec.base,rec.remote,6,nice);
@@ -46732,6 +46770,7 @@ function _cfBaseLine(rec){
   }
   if(t==='collection'||t==='contact')return null;      // 이름은 제목줄에 이미 있다
   if(typeof rec.base==='object')return null;           // 덩어리는 옆의 설명이 대신한다
+  if(_cfIsStamp(rec))return _cfStampNice(rec.base);
   return _dfValS(rec.base);
 }
 function _cfCardHTML(rec){
@@ -46784,6 +46823,7 @@ function _cfCardHTML(rec){
   return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:11px 12px;margin-bottom:10px;font-size:11px;color:var(--tx2);line-height:1.7;word-break:break-word;overflow-wrap:anywhere;${done?'opacity:.5;':''}">
     <div style="font-weight:700;color:var(--tx);">${title}</div>
     ${when}
+    ${_cfIsStamp(rec)?`<div style="margin-top:6px;color:var(--tx3);font-size:10px;">${_cfEsc(_CF_STAMP_NOTE)}</div>`:''}
     ${beforeBlock}
     ${auto?`<div style="margin-top:8px;color:var(--tx);">${_cfEsc(ex.note||'')}</div>`
           :side('local',ex.local)+side('remote',ex.remote)}
@@ -46812,16 +46852,12 @@ function cfRender(){
        어느 쪽이 맞는지 앱이 혼자 정할 수 없어서 여쭤봐요. 모두 <b style="color:var(--tx);">${open.length}건</b>이에요
        ${kindLine?`(${_cfEsc(kindLine)})`:''}.
      </div>
-     <div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
-       <div style="color:var(--tx);font-weight:700;margin-bottom:2px;">걱정 안 하셔도 돼요</div>
-       · <b style="color:var(--tx);">아무것도 지워지지 않았어요.</b> 양쪽 것을 다 갖고 있어요.<br>
-       · 고르신 뒤에도 되돌릴 수 있어요.<br>
-       · 지금 안 정하셔도 괜찮아요. 오른쪽 위 × 로 닫으면 그대로 남아 있어요.
-     </div>
-     <div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:10px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;">
-       <div style="color:var(--tx);font-weight:700;margin-bottom:2px;">읽는 법</div>
-       칸마다 <b style="color:var(--tx);">원래는 이랬어요</b> → <b style="color:var(--tx);">어느 기기에서 무엇을 했는지</b> 차례로 적혀 있어요.<br>
-       <b style="color:var(--tx);">잘 모르겠으면 「둘 다 남기기」</b> 를 누르세요. 두 가지가 나란히 남을 뿐, 없어지는 것은 없어요.
+     <div style="font-size:11px;color:var(--tx3);line-height:1.9;margin-bottom:12px;padding:0 2px 10px;border-bottom:1px dashed var(--bd2);">
+       <div style="color:var(--tx3);font-weight:600;font-size:10px;letter-spacing:.04em;margin-bottom:3px;">ⓘ 안내 (누르는 곳이 아니에요)</div>
+       <b style="color:var(--tx2);">걱정 안 하셔도 돼요.</b> 아무것도 지워지지 않았고 양쪽 것을 다 갖고 있어요.
+       고르신 뒤에도 되돌릴 수 있고, 지금 안 정하셔도 오른쪽 위 × 로 닫으면 그대로 남아 있어요.<br>
+       <b style="color:var(--tx2);">읽는 법.</b> 아래 칸마다 「원래는 이랬어요」 → 「어느 기기에서 무엇을 했는지」 순서로 적혀 있어요.
+       잘 모르겠으면 「둘 다 남기기」 를 누르세요. 두 가지가 나란히 남을 뿐이에요.
      </div>`+
     (mergeable?`<button class="settings-btn" style="width:100%;margin-bottom:12px;background:var(--ac);color:var(--on-accent);border-color:var(--ac);" onclick="cfMergeAll()">${mergeable}건을 한꺼번에 「둘 다 남기기」</button>`:'')+
     open.map(_cfCardHTML).join('');
