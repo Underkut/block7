@@ -33,6 +33,7 @@ function makeEnv(items, tabId) {
     _dayLabel: k => k,
     _dayKeyDiff: (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000),
     navigateDate: n => { log.nav.push(n); cur = log.nav.length ? cur : cur; },
+    todayKey: () => '2026-10-20',
     closeTaskMenu() {}, goToDate: k => { cur = k; log.go.push(k); },
     _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
     _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
@@ -43,7 +44,7 @@ function makeEnv(items, tabId) {
   };
   env.getBigs(T, 'am').push(...items);
   const names = Object.keys(env);
-  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDonePicked,_autoContactMark,_newTask};';
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDonePicked,_autoContactMark,_newTask};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log, inp };
 }
@@ -149,5 +150,14 @@ console.log('\n시나리오 7 — 꺼 둔 · 접어 둔 구간은 열어서 보�
   sc.eq('접어 둔 구간은 펼친다', [e.api._secClosed('pm'), e.api._revealSec('pm'), e.ST.collapsed], [true, true, []]);
   e = mk(['am'], []);
   sc.eq('이미 열려 있으면 아무 일 없다', [e.api._revealSec('am'), e.n().saves], [false, 0]);
+}
+console.log("\n시나리오 8 — '어제 했고, 이제 오늘': 원래는 완료, 오늘(같은 구간)에 새 할일");
+{
+  const { ST, api, inp } = makeEnv([{ text: '운동 ', done: false, contactTask: true }]);
+  inp.value = '운동 어제 했고, 이제 오늘';
+  api.nextAfterDoneYesterday();
+  sc.eq('원래 할일은 완료', at(ST, T)[0].done, true);
+  const nu = at(ST, '2026-10-20')[0];
+  sc.eq('오늘에 새 할일 · 글 · 연락할 일 물려받음', [nu.text, nu.done, nu.contactTask], ['운동 어제 했고, 이제 오늘', false, true]);
 }
 sc.done();

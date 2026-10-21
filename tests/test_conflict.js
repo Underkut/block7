@@ -365,6 +365,14 @@ console.log('\n시나리오 21 — 고를 수 있게 풀어 쓴다');
   sc.eq('둘 다 남기기를 권한다', _cfCardHTML(u).includes('아무것도 안 없어져요'), true);
   sc.eq('원래 모습을 먼저 보여 준다', _cfCardHTML(t).includes('원래는 이랬어요'), true);
 
+  // 앱 안쪽 표시('날짜@구간')는 암호가 아니라 사람 말로 — 어느 할일 것도 아님을 밝힌다
+  global.SECS = [{ id: 'night', name: '밤' }, { id: 'morn', name: '아침' }];
+  const st = { entityType: 'setting', entityId: 'settings/verseLastShownSec', conflictId: 's1',
+    base: '2026-10-18@am', local: '2026-10-19@night', remote: '2026-10-19@morn', localDeviceLabel: '아이폰', remoteDeviceLabel: '다른 기기' };
+  const hs = _cfCardHTML(st);
+  sc.eq('암호(@night)가 새어 나오지 않는다 (자세히 보기 밖)', hs.split('자세히 보기')[0].includes('@night'), false);
+  sc.eq('밤 구간으로 읽는다', hs.includes('10월 19일') && hs.includes('밤 구간'), true);
+  sc.eq('무슨 설정인지 · 할일과 무관함을 말한다', hs.includes('특정 할일이나 말씀과는 관계가 없어요'), true);
   // 알려만 주는 것 — 고르는 버튼 대신 설명 한 줄
   const bulk = { entityType: 'bulk', entityId: 'bulk/days', base: 100, local: 30, remote: 100 };
   sc.eq('대량 손실은 말로 알린다', S.explain(bulk).note.includes('할일·일정'), true);
