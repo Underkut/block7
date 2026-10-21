@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1021-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1021-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1021-2';
+const APP_VERSION = 'v. 26-1021-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1995,6 +1995,10 @@ body.tch #v-map .ghw:has(>.gh.sel)::after{display:none}
 /* 끌기 */
 #v-map .gcard{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #v-map .gcard input{-webkit-user-select:text;user-select:text}
+/* A15 (HB 2026-10-21 아이폰): 끄는 동안 잡은 항목은 카드 밖(body)으로 꺼내 띄우는데, 거기와 화면의 다른 글자(토스트 등)는 선택이 막혀 있지 않아
+   길게 누르기가 '글자 고르기' 로 읽혀 화면 전체가 선택되고 손짓을 빼앗겼다 → 떠오르거나 끄는 동안에는 화면 전체에서 선택 · 길게 누르기 메뉴를 막는다 */
+body.md-on,body.md-on *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+#toast{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .md-lift{transform:scale(1.03);box-shadow:0 8px 24px rgba(0,0,0,.28);border-radius:8px;transition:transform .18s var(--ease),box-shadow .18s;position:relative;z-index:2;background:var(--s2)}
 .gcard.md-lift{background:var(--s1)}
 /* 잡은 항목 — 카드 밖으로 꺼내 손가락을 따라 떠서 움직인다 (Sweeter 방식 · 원근은 살짝 키우고 기울이고 그림자로) */
@@ -2606,7 +2610,9 @@ function refresh(opt) {
   renderView();
   refreshLayers(opt && opt.skipTop);
 }
+function npCloseSafe() { try { npClose(); } catch (e) { /* 처음 그릴 때는 아직 없다 */ } }
 function showTab(tab) {
+  npCloseSafe();   // ③ 탭을 바꾸면 숫자 판을 닫는다 (A14)
   if (MT.on && tab !== 'map') thereStop('page');
   const prev = document.querySelector('.view.on');
   if (prev && prev.id !== 'v-' + tab) { prev.classList.add('out'); clearTimeout(prev._out); prev._out = setTimeout(() => prev.classList.remove('out'), 280); }
@@ -2623,8 +2629,18 @@ function renderView() {
   EFFC = null;
   const fn = { today: renderToday, map: renderMap, list: renderList, hist: renderHist }[UI.tab];
   const el = $('v-' + UI.tab);
+  // A13 — 지도 이름 칸을 치는 도중 다시 그리면(동기화 도착 · 1분 시계 등) 칸이 새것으로 바뀐다.
+  //   옛 칸이 포커스를 잃으며 '바깥을 눌렀다' 로 읽혀 적고 닫혔다 → 띠만 남고 칸이 사라짐 (HB 2026-10-21).
+  //   치던 글자 · 커서 · 포커스를 새 칸으로 그대로 옮긴다.
+  const ed = UI.tab === 'map' && UI.mapEdit && el && el.querySelector('[data-mapin]');
+  const keep = ed && { v: ed.value, f: document.activeElement === ed, a: ed.selectionStart, b: ed.selectionEnd };
   if (fn && el) el.innerHTML = fn();
   if (UI.tab === 'map') mapLayout();
+  if (keep) {
+    const ni = el.querySelector('[data-mapin]');
+    if (!ni) UI.mapEdit = null;   // 고치던 것이 (다른 기기에서) 지워졌다
+    else { ni.value = keep.v; if (keep.f) { ni.focus({ preventScroll: true }); try { ni.setSelectionRange(keep.a, keep.b); } catch (er) {} } }
+  }
 }
 // 표시색 접기 단추 — 빨강 원 뒤로 주황 · 초록 · 파랑 초승달 (HB 그림, 2026-10-13). 폰에서만 보인다
 const MKICO = '<svg class="mkico" viewBox="0 0 26 16" aria-hidden="true">' + [['#4aa1f7', 18.6], ['#82d454', 15.2], ['#f2b13e', 11.8], ['#d93a26', 7.6]].map((c, k) =>
@@ -3283,6 +3299,7 @@ function renderAnswers() {
 // ═══ 겹 화면 ═══
 function topLayerEl() { const els = [...$('layers').children].filter(e => !e.classList.contains('out')); return els[els.length - 1] || null; }
 function pushLayer(L) {
+  npCloseSafe();
   if (MT.on) thereStop('page');   // 설정 · 상세 · 어떤 창이든 열리면 There 는 끝
   // 상세(사람·항목·묶음)는 열 때의 모습을 기억해 둔다 → '취소' 로 되돌린다
   if (L.type === 'target' || L.type === 'group') L.snap = JSON.stringify(DB);
@@ -3693,6 +3710,7 @@ LAYERS.import = () => {
 // ═══ 아래에서 올라오는 창 ═══
 let SHEET = null;
 function openSheet(html, onPick, keepThere) {
+  npCloseSafe();
   if (MT.on && !keepThere) thereStop('page');
   closeSheet(true);
   const w = document.createElement('div');
@@ -4369,6 +4387,7 @@ const NP = { st: null, el: null };
 function npClose() { if (NP.el) { const e = NP.el; NP.el = null; e.classList.remove('in'); setTimeout(() => e.remove(), 160); } NP.st = null; }
 function npShow(st) {
   const t = findAny(DB, st.id); if (!t) return;
+  document.querySelectorAll('.npop').forEach(x => x.remove()); NP.el = null;   // 혹시 남은 판은 먼저 치운다 (A14 — 판이 둘 겹쳐 하나가 영영 남았다)
   if (GS.st) { clearTimeout(GS.st.timer); GS.st = null; }
   const f = st.f, vals = ['', 0, 1, 2, 3, 4, 5];
   const el = document.createElement('div'); el.className = 'npop';
@@ -4385,7 +4404,13 @@ function npShow(st) {
 function npHit(x, y) { const b = NP.el && document.elementFromPoint(x, y); return b && b.closest && b.closest('.npop button'); }
 function npMark(x, y) { if (!NP.el) return null; const b = npHit(x, y); NP.el.querySelectorAll('button').forEach(z => z.classList.toggle('hov', z === b)); return b; }
 function npSave(id, f, v) { const t = findAny(DB, id); if (!t) return; t[f] = v === '' ? null : +v; save(); refresh(); if (navigator.vibrate) navigator.vibrate(6); }
+// ⚠️ A14 (HB 2026-10-21 iPad): 누르는 동안 줄이 다시 그려지거나 기기가 손가락 번호를 바꾸면 '뗐다' 를 놓쳐
+//    판이 '열린 채(st.mode open)' 로 남았다 → 그 뒤 어디를 눌러도 닫히지 않고 탭을 바꿔도 떠 있었다.
+//    그래서 ① 새로 누를 때 열린 채 남은 것을 '남겨 둔 판' 으로 본다 ② 뗌 · 취소 · 잡기 풀림은 번호가 달라도 받는다
+//    ③ 탭 · 창 · 앱 벗어남 · 다시 그리기 때 닫는다 ④ 10초 넘게 아무 손짓이 없으면 닫는다.
+function npStale(e) { return NP.st && NP.st.mode === 'open' && NP.st.pid !== e.pointerId; }
 window.addEventListener('pointerdown', e => {
+  if (npStale(e)) { NP.keep = NP.keep || { id: NP.st.id, f: NP.st.f }; clearTimeout(NP.st.timer); NP.st = null; }
   if (NP.el && !NP.st) {   // 남아 있는 판 — 숫자를 누르면 고르기, 밖을 누르면 닫기
     const b = e.target.closest && e.target.closest('.npop button');
     const keep = NP.keep; npClose(); GS.suppress = Date.now();
@@ -4396,16 +4421,19 @@ window.addEventListener('pointerdown', e => {
   const pill = e.target.closest && e.target.closest('.pl[data-a="pick-num"]'); if (!pill) return;
   const st = { pill: pill, id: pill.dataset.id, f: pill.dataset.f, x0: e.clientX, y0: e.clientY, pid: e.pointerId, mode: 'pend', moved: false };
   st.timer = setTimeout(() => { if (NP.st === st) npShow(st); }, 150);
-  NP.st = st;
+  NP.st = st; npTouch();
 }, true);
+let NPW = 0;
+function npTouch() { clearTimeout(NPW); NPW = setTimeout(() => { if (NP.el || NP.st) npClose(); }, 10000); }   // ④
 window.addEventListener('pointermove', e => {
   const st = NP.st; if (!st || e.pointerId !== st.pid) return;
+  npTouch();
   if (st.mode === 'pend') { if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 8) { clearTimeout(st.timer); NP.st = null; } return; }
   if (Math.hypot(e.clientX - st.x0, e.clientY - st.y0) > 6) st.moved = true;
   npMark(e.clientX, e.clientY);
 }, true);
 window.addEventListener('pointerup', e => {
-  const st = NP.st; if (!st || e.pointerId !== st.pid) return;
+  const st = NP.st; if (!st || (e.pointerId !== st.pid && st.mode !== 'open')) return;   // ② 판이 떠 있으면 번호가 달라도 뗀 것으로
   clearTimeout(st.timer); NP.st = null;
   if (st.mode !== 'open') return;   // 판이 뜨기 전에 뗐다 — 예전처럼 누르기(아래 창)
   GS.suppress = Date.now();
@@ -4415,7 +4443,12 @@ window.addEventListener('pointerup', e => {
   if (st.moved) { npClose(); return; }   // 판 밖에서 뗐다 — 바꾸지 않고 닫기
   NP.keep = { id: st.id, f: st.f };   // 밀지 않고 뗐다 — 판을 남겨 한 번 더 눌러 고른다
 }, true);
-window.addEventListener('pointercancel', e => { const st = NP.st; if (!st || e.pointerId !== st.pid) return; clearTimeout(st.timer); if (st.mode === 'open') npClose(); NP.st = null; }, true);
+function npCancel(e) { const st = NP.st; if (!st || (e.pointerId !== st.pid && st.mode !== 'open')) return; clearTimeout(st.timer); if (st.mode === 'open') npClose(); NP.st = null; }
+window.addEventListener('pointercancel', npCancel, true);
+window.addEventListener('lostpointercapture', npCancel, true);   // ② 잡은 단추가 다시 그려져 사라지면 오는 신호
+document.addEventListener('visibilitychange', () => { if (document.hidden) npClose(); });   // ③
+// 판이 떠 있는 동안 숫자 칸 누르기(click)가 아래 창을 또 열지 않게 — 판과 아래 창이 겹쳐 보였다
+window.addEventListener('click', e => { if ((NP.el || NP.st) && e.target.closest && e.target.closest('.pl[data-a="pick-num"]')) { e.preventDefault(); e.stopPropagation(); } }, true);
 document.addEventListener('touchmove', e => { if (NP.st && NP.st.mode === 'open') e.preventDefault(); }, { passive: false });
 document.addEventListener('contextmenu', e => { if (NP.st && e.target.closest && e.target.closest('.pl')) e.preventDefault(); });
 ACT['add-target'] = () => {
@@ -5232,7 +5265,7 @@ document.addEventListener('pointermove', e => {
 }, { passive: true });
 function mdEnd(e, cancel) {
   const st = MD.st; if (!st || (e && e.pointerId !== st.pid)) return;
-  MD.st = null; clearTimeout(st.timer);
+  MD.st = null; clearTimeout(st.timer); mdNoSelect(false);
   if (st.mode === 'lift') {
     st.src.classList.remove('md-lift');
     GS.suppress = Date.now();
@@ -5249,10 +5282,11 @@ function mdLift(st) {
   if (MD.st !== st || st.mode !== 'pend') return;
   if (UI.mapEdit) {   // 고치던 칸이 있으면 먼저 적는다 — 다시 그려지므로 잡은 항목을 새로 찾는다
     const i = document.querySelector('#v-map [data-mapin]'); if (i) { mapCommit(i.value); mapRender(); }
-    st.el = document.querySelector('#v-map [data-sel="' + st.k + '"]'); if (!st.el) { MD.st = null; return; }
+    st.el = document.querySelector('#v-map [data-sel="' + st.k + '"]'); if (!st.el) { MD.st = null; mdNoSelect(false); return; }
   }
   st.mode = 'lift'; st.src = mdSrcEl(st);
   st.src.classList.add('md-lift');
+  mdNoSelect(true);   // A15
   if (navigator.vibrate) navigator.vibrate(10);
   toast('끌어서 다른 자리로 옮길 수 있습니다 · 그대로 떼면 메뉴가 열립니다');
 }
@@ -5297,7 +5331,13 @@ function mdFlip(st, mutate) {
     go(r, o.left - n.left - bx, o.top - n.top - by);
   });
 }
+function mdNoSelect(on) {
+  document.body.classList.toggle('md-on', !!on);
+  if (on) try { const sel = window.getSelection && window.getSelection(); if (sel && sel.rangeCount) sel.removeAllRanges(); } catch (e) {}
+}
+document.addEventListener('selectstart', e => { if (MD.st && MD.st.mode !== 'pend') e.preventDefault(); });
 function mdStart(st) {
+  mdNoSelect(true);
   if (mapFiltering()) { mdUnlift(st); MD.st = null; toast('색으로 걸러 보는 중에는 옮길 수 없습니다'); return; }
   st.mode = 'drag';
   st.src = st.src || mdSrcEl(st);
@@ -5517,7 +5557,7 @@ function mdTrash(st) {
     mapRenderFlip();
   }, 280);
 }
-function mdUnlift(st) { if (st.src) st.src.classList.remove('md-lift'); }
+function mdUnlift(st) { if (st.src) st.src.classList.remove('md-lift'); mdNoSelect(false); }
 
 // ── 지도 세로 단 (그룹 카드 쌓기) ──
 // CSS 다단(column-count)은 카드 하나만 움직여도 모든 카드를 다시 나눠 담아 끌 때 깜빡였다.
@@ -5702,7 +5742,10 @@ document.addEventListener('focusout', e => {
   }
   if (!(el && el.dataset && el.dataset.mapin) || !UI.mapEdit) return;
   if (Date.now() - MADD_DOWN < 700) return;   // 더하기 단추를 누르는 중 — 그 단추가 적고 새로 만든다 (다시 그리면 누른 단추가 사라진다)
-  setTimeout(() => { if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); } }, 0);
+  setTimeout(() => {
+    if (!el.isConnected) return;   // 다시 그려져 없어진 칸 — 새 칸이 이어받았다 (A13)
+    if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); }
+  }, 0);
 });
 
 // ═══ 손짓: 왼쪽 스와이프(지우기·내일로) · 길게 눌러 끌기(순서) · 가장자리 끌기(뒤로) · 창 끌어 닫기 ═══
