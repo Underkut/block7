@@ -13,7 +13,7 @@ const { makeScorer, SRC } = require('./_load');
 const sc = makeScorer();
 
 const fn = SRC.slice(SRC.indexOf('function exportBackup(){'),
-                     SRC.indexOf('// Filename format: B7bak-'));
+                     SRC.indexOf('// 백업 파일 이름 (v26-1021-3'));
 // v26-0921-8 — 백업의 '속' 은 _backupPayload() 로 빠졌다 (제품마다 담는 것이 다르다).
 const pay = SRC.slice(SRC.indexOf('function _backupPayload(){'),
                       SRC.indexOf('function exportBackup(){'));
@@ -51,7 +51,7 @@ console.log('\n시나리오 3 — 제스처를 잃지 않는다');
 }
 
 const dl = SRC.slice(SRC.indexOf('function _backupDownload(json,name){'),
-                     SRC.indexOf('// Filename format: B7bak-'));
+                     SRC.indexOf('// 백업 파일 이름 (v26-1021-3'));
 console.log('\n시나리오 4 — 예전 방식(PC·안드로이드)은 그대로 동작한다');
 {
   sc.eq('blob 을 만든다', dl.includes("new Blob([json],{type:'application/json'})"), true);

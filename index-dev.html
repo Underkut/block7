@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1021-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1021-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6371,7 +6371,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1021-2";
+const APP_VERSION = "v. 26-1021-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -43259,29 +43259,52 @@ function _backupDownload(json,name){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
   showToast('백업 파일을 다운로드했어요');
 }
-// Filename format: B7bak-{이메일 앞 3글자}-{YY}-{MMDD}-{그날의 백업번호}
-// e.g. B7bak-hbk-26-0627-1.json
+// 백업 파일 이름 (v26-1021-3, HB 2026-10-21 — 다섯 앱 같은 양식)
+//   {앱}-{이메일 앞 3글자}-{기기}-{YY}-{MMDD}-{그날의 백업번호}.json
+//   e.g. B7-hbk-phn-26-1021-1.json  ·  Sweeter 는 Sw-…
+//   오프라인(로그인 안 됨 · 인터넷 끊김)이면 번호 대신 off+HHMM — 번호표는 올리지 않는다
+//   e.g. B7-hbk-phn-26-1021-off1534.json  (개발본은 파이어베이스가 꺼져 있어 늘 off)
+// 기기 칸: 아이패드 · 안드로이드 태블릿 = pad, 아이폰 · 안드로이드 폰 = phn, 그 밖 = pc
+function _bakDevice(){
+  const u=navigator.userAgent||'',touch=(navigator.maxTouchPoints||0)>1;
+  if(/iPad/.test(u)||(/Macintosh/.test(u)&&touch))return 'pad';
+  if(/iPhone|iPod/.test(u))return 'phn';
+  if(/Android/.test(u))return /Mobile/.test(u)?'phn':'pad';
+  // 그 밖의 터치 기기는 화면의 짧은 변으로 (윈도우 · 맥 · 크롬북 노트북은 터치여도 pc)
+  if(touch&&!/Windows|Macintosh|X11|CrOS/.test(u)){
+    const s=Math.min(screen.width||0,screen.height||0);
+    if(s)return s<600?'phn':'pad';
+  }
+  return 'pc';
+}
 function buildBackupFilename(){
   const d=new Date();
   const yy=String(d.getFullYear()).slice(-2);
   const mmdd=`${z(d.getMonth()+1)}${z(d.getDate())}`;
+  const app=APP_PRODUCT==='sweeter'?'Sw':'B7';
 
   // First 3 characters of the email's local part (before @), lowercased,
   // alphanumeric only. Falls back to "usr" in dev mode / no email.
   const email=(typeof _fbUser!=='undefined'&&_fbUser&&_fbUser.email)?_fbUser.email:'';
   const localPart=email.split('@')[0]||'usr';
   const emailTag=(localPart.replace(/[^a-zA-Z0-9]/g,'').slice(0,3)||'usr').toLowerCase();
+  const head=`${app}-${emailTag}-${_bakDevice()}-${yy}-${mmdd}`;
+
+  // 번호표를 기기끼리 맞출 수 없으면(로그인 안 됨 · 인터넷 끊김) 시각으로 — 번호표는 그대로 둔다
+  const online=!!(typeof _fbUser!=='undefined'&&_fbUser)&&navigator.onLine!==false;
+  if(!online)return `${head}-off${z(d.getHours())}${z(d.getMinutes())}.json`;
 
   // Daily backup counter — now tracked inside ST.settings (which syncs
   // across devices via Firestore) instead of localStorage, so a backup
   // made on another device counts toward the same day's serial number.
   // (Old per-device localStorage counters are migrated once, taking the
   // max so we never go backwards.)
+  // Sweeter 는 칸 이름 앞에 Sw- — 번호는 앱마다 따로 센다 (BLOCK7 칸 이름은 예전 그대로)
   const counterDateKey=`${yy}${mmdd}`;
   if(!ST.settings.backupCounts||typeof ST.settings.backupCounts!=='object')ST.settings.backupCounts={};
-  const bkKey=`${emailTag}-${counterDateKey}`;
+  const bkKey=(app==='B7'?'':app+'-')+`${emailTag}-${counterDateKey}`;
   // 1회 마이그레이션: 옛 localStorage 값이 더 크면 그 값을 이어받는다
-  try{
+  if(app==='B7')try{
     const legacy=parseInt(localStorage.getItem(`b7backupCount-${emailTag}-${counterDateKey}`)||'0',10);
     if(legacy>(ST.settings.backupCounts[bkKey]||0))ST.settings.backupCounts[bkKey]=legacy;
   }catch(e){}
@@ -43289,7 +43312,7 @@ function buildBackupFilename(){
   ST.settings.backupCounts[bkKey]=n;
   save(); // 클라우드 동기화 (다른 기기에서도 이 번호가 반영됨)
 
-  return `B7bak-${emailTag}-${yy}-${mmdd}-${n}.json`;
+  return `${head}-${n}.json`;
 }
 
 function importBackup(file){
