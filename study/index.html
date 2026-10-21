@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1021-1 -->
+<!-- 공부 친구들 v. 26-1021-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -356,7 +356,33 @@ function normState(o) {
   s.promisesSeen = Array.isArray(o.promisesSeen) ? o.promisesSeen : [];
   ['kind', 'nick', 'made', 'lastBackup'].forEach(k => { if (o[k] !== undefined) s[k] = o[k]; });
   s.sfx = o.sfx !== false;
+  if (o.bak && /^\d{6}$/.test(o.bak.d) && Number.isInteger(o.bak.n) && o.bak.n > 0) s.bak = {d: o.bak.d, n: o.bak.n};   // 백업 번호표 (D-4)
   return s;
+}
+
+/* 백업 파일 이름 (D-4, HB 2026-10-21 — 다섯 앱 같은 양식)
+   St-{아이디 앞 3글자}-{기기}-{YY}-{MMDD}-{그날 번호}.json   예) St-jim-phn-26-1021-1.json
+   번호표 st.bak = {d:'YYMMDD', n} 는 기록과 함께 클라우드 사본에 실려, 같은 아이 계정으로 들어온 다른 기기에서도 이어진다.
+   오프라인(가족 연결 안 됨 · 인터넷 끊김)이면 번호 대신 off+HHMM — 번호표는 그대로.
+   ⚠️ 이름은 누른 순간 동기로 정한다(아이폰 공유 시트는 await 뒤면 거절된다).
+   기기: 아이패드 · 안드로이드 태블릿 = pad, 아이폰 · 안드로이드 폰 = phn, 그 밖 = pc */
+function bakDevice(ua, touch, sw, sh) {
+  const u = ua || '', t = (touch || 0) > 1;
+  if (/iPad/.test(u) || (/Macintosh/.test(u) && t)) return 'pad';
+  if (/iPhone|iPod/.test(u)) return 'phn';
+  if (/Android/.test(u)) return /Mobile/.test(u) ? 'phn' : 'pad';
+  if (t && !/Windows|Macintosh|X11|CrOS/.test(u)) { const m = Math.min(sw || 0, sh || 0); if (m) return m < 600 ? 'phn' : 'pad'; }
+  return 'pc';
+}
+function bakName(st, o) {
+  const d = o.now, p2 = n => String(n).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2), md = p2(d.getMonth() + 1) + p2(d.getDate());
+  const tag = (String(o.email || '').split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'usr').toLowerCase();
+  const head = 'St-' + tag + '-' + o.dev + '-' + yy + '-' + md;
+  if (!o.online) return head + '-off' + p2(d.getHours()) + p2(d.getMinutes()) + '.json';
+  const key = yy + md, n = (st.bak && st.bak.d === key ? st.bak.n : 0) + 1;
+  st.bak = {d: key, n};
+  return head + '-' + n + '.json';
 }
 
 /* 쪽 · 장 표시 */
@@ -561,7 +587,7 @@ const mondayOf = s => addDays(s, -((dowOf(s) + 6) % 7));
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1021-1';
+const APP_VERSION = 'v. 26-1021-2';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -689,7 +715,7 @@ function header() {
   const d = new Date(), top = $('top');
   if (TAB === 'reward') top.innerHTML = `<div class="hi"><b>내 별</b></div><button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button>`;
   else if (TAB === 'plan') top.innerHTML = `<div class="hi"><button class="bk" data-top="back" aria-label="내 별로 돌아가기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>내 별</button><b>계획</b></div><span></span>`;
-  else top.innerHTML = `<div class="hi"><small>${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일</small><b>${esc(callName())}, 안녕!</b></div><span class="starchip" aria-label="별 ${starsOf(S)}개">${STAR(22, '#FFC845', '#E0A400')}${nf(starsOf(S))}</span>`;
+  else top.innerHTML = `<div class="hi"><small>${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일</small><b>${esc(callName())}, 안녕!</b></div><span style="display:flex;align-items:center;gap:2px"><span class="starchip" aria-label="별 ${starsOf(S)}개">${STAR(22, '#FFC845', '#E0A400')}${nf(starsOf(S))}</span><button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button></span>`;
 }
 $('top').addEventListener('click', e => { const b = e.target.closest('[data-top]'); if (!b) return;
   if (b.dataset.top === 'gear') settingsSheet(); else { TAB = 'reward'; sfx('tap'); render(); window.scrollTo(0, 0); } });
@@ -724,7 +750,7 @@ function renderToday() {
   $('main').innerHTML = `<div class="say2"><div class="me">${buddySvg(S.kind, stageOf(L.lv), {})}</div><p>${sayLine(qs)}</p></div>
     <div class="h2"><b>오늘 할 것</b></div>
     ${qs.length ? qs.map(q => questCard(q, t)).join('') : ''}
-    <button class="addone" data-a="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>할 것 넣기</button>`;
+    <button class="addone" data-a="add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>할 것 넣기</button>${typeof FAM !== 'undefined' && !FAM ? '<button class="linkbtn" data-a="famGo" style="margin-top:18px">가족과 연결하기 ›</button>' : ''}`;
 }
 function renderPlan() {
   const t = todayStr();
@@ -773,6 +799,7 @@ $('main').addEventListener('click', e => {
     if (k === 'newBook') return bookEditor(null);
     if (k === 'newTask') return taskEditor(null);
     if (k === 'add') return simpleEditor(null);
+    if (k === 'famGo') { settingsSheet(); const f = $('stFam'); if (f) setTimeout(() => f.scrollIntoView({block: 'center', behavior: 'smooth'}), 60); return; }
     if (k === 'plan') { TAB = 'plan'; sfx('tap'); render(); window.scrollTo(0, 0); return; }
     if (k === 'pv') { PLANV = a.dataset.v; return renderPlan(); }
     if (k === 'wPrev' || k === 'wNext') { WEEK0 = addDays(WEEK0 || mondayOf(t), k === 'wPrev' ? -7 : 7); return renderPlan(); }
@@ -1058,19 +1085,47 @@ function settingsSheet() {
       <div class="lab" style="margin-top:12px">부르는 이름</div><input class="inp" id="stNick" maxlength="8" placeholder="예) 루루" value="${esc(S.nick)}"><div class="hint">캐릭터 그림은 아직 임시예요. 곧 더 예쁘게 바뀌어요.</div></div>
     <div class="box"><label class="row" style="justify-content:space-between"><span class="lab" style="margin:0">효과음 · 알림 소리</span><input type="checkbox" id="stSfx" ${S.sfx ? 'checked' : ''} style="flex:none;width:22px;height:22px"></label></div>
     <div id="stFam"></div><div id="stPush"></div>
-    <div class="box"><div class="lab">백업</div><div class="hint" style="margin-top:0">폰을 바꾸거나 앱을 지우기 전에 복사해 두세요. ${S.lastBackup ? '마지막 백업: ' + new Date(S.lastBackup).toLocaleDateString('ko-KR') : ''}</div>
-      <div class="row" style="margin-top:8px"><button class="pill" id="stCopy">백업 복사</button><button class="pill" id="stLoad">불러오기</button></div></div>
+    <div class="box"><div class="lab">백업</div><div class="hint" style="margin-top:0">폰을 바꾸거나 앱을 지우기 전에 파일로 저장해 두세요. ${S.lastBackup ? '마지막 백업: ' + new Date(S.lastBackup).toLocaleDateString('ko-KR') : ''}</div>
+      <div class="row" style="margin-top:8px"><button class="pill on" id="stFile">파일로 저장</button><button class="pill" id="stOpen">파일 불러오기</button></div>
+      <div class="row" style="margin-top:6px"><button class="pill" id="stCopy">글로 복사</button><button class="pill" id="stLoad">글 붙여 넣기</button></div>
+      <input type="file" id="stFileIn" accept=".json,application/json,text/plain" style="display:none"></div>
     <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:8px">공부 친구들 ${APP_VERSION}</div>`);
   $('stKind').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; S.kind = b.dataset.k; save(); $('stKind').querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b)); render(); };
   $('stNick').onchange = () => { S.nick = $('stNick').value.trim().slice(0, 8); save(); render(); };
   $('stSfx').onchange = () => { S.sfx = $('stSfx').checked; save(); };
-  $('stCopy').onclick = () => { const txt = JSON.stringify({app: 'study', v: 1, at: Date.now(), data: S});
+  $('stFile').onclick = saveBackupFile;
+  $('stOpen').onclick = () => $('stFileIn').click();
+  $('stFileIn').onchange = () => { const f = $('stFileIn').files[0]; if (!f) return; const r = new FileReader();
+    r.onload = () => loadBackupText(String(r.result || '')); r.onerror = () => toast('파일을 읽지 못했어요'); r.readAsText(f); $('stFileIn').value = ''; };
+  $('stCopy').onclick = () => { const txt = backupText();
     const done = () => { S.lastBackup = Date.now(); save(); toast('복사했어요. 메모나 카톡 나에게 보내기에 붙여 넣어 두세요'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => prompt('아래 글을 길게 눌러 복사해 주세요', txt)); else { prompt('아래 글을 길게 눌러 복사해 주세요', txt); done(); } };
-  $('stLoad').onclick = () => { const txt = prompt('백업한 글을 붙여 넣어 주세요'); if (!txt) return;
-    try { const o = JSON.parse(txt); if (o.app !== 'study' || !o.data) throw 0; if (!confirm('지금 기록을 백업으로 바꿀까요?')) return; S = normState(o.data); save(); closeSheet(); render(); toast('불러왔어요'); }
-    catch (e) { toast('공부 친구들 백업이 아니에요'); } };
+  $('stLoad').onclick = () => { const txt = prompt('백업한 글을 붙여 넣어 주세요'); if (txt) loadBackupText(txt); };
   if (typeof famSettings === 'function') famSettings();
+}
+const backupText = () => JSON.stringify({app: 'study', v: 1, at: Date.now(), data: S});
+// 불러오기 — 파일이든 붙여 넣은 글이든 같은 길. 이 폰의 백업 번호표는 지킨다(옛 파일의 번호로 되돌아가지 않게)
+function loadBackupText(txt) {
+  let o; try { o = JSON.parse(txt); } catch (e) { o = null; }
+  if (!o || o.app !== 'study' || !o.data) { toast('공부 친구들 백업이 아니에요'); return; }
+  if (!confirm('지금 기록을 백업으로 바꿀까요?')) return;
+  const bak = S.bak; S = normState(o.data); if (bak) S.bak = bak;
+  save(); closeSheet(); render(); toast('불러왔어요');
+}
+// 파일로 저장 (D-4) — 아이폰은 공유 시트('파일에 저장'), 그 밖은 내려받기. ⚠️ navigator.share 는 누른 순간 동기로 부른다
+function saveBackupFile() {
+  const kid = typeof isKid === 'function' && isKid();
+  const name = bakName(S, {email: kid ? FAM.login : (FAM && FAM.email) || '', online: kid && navigator.onLine !== false, now: new Date(),
+    dev: bakDevice(navigator.userAgent, navigator.maxTouchPoints, screen.width, screen.height)});
+  S.lastBackup = Date.now(); save();
+  const txt = backupText(), ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios && navigator.canShare && navigator.share) {
+    try { const file = new File([txt], name, {type: 'application/json'});
+      if (navigator.canShare({files: [file]})) { navigator.share({files: [file]}).then(() => toast('파일로 저장했어요'), () => {}); return; } } catch (e) {}
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([txt], {type: 'application/json'})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('파일로 저장했어요\n' + name, 3600);
 }
 
 /* ───────── 내 별 (S-8) — 별 병 · 이번 주 · 부모님 한마디 · 약속 · 허락권 · 계획 보기 ───────── */
