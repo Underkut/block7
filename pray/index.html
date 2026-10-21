@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1019-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1021-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1019-7';
+const APP_VERSION = 'v. 26-1021-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -917,6 +917,27 @@ function addMapPrayer(db, date, ids, fromMs, toMs, label) {
   });
 }
 
+// ── 기도한 시간 고치기 (H-2, HB 2026-10-21) ──
+// 기록 한 줄(ses)의 시간을 바꾸면 날 합계(s)도 같은 차이만큼 바꾼다. 지우기는 줄을 빼지 않고 d=0 (병합에서 되살아나 합계와 어긋나지 않게).
+// 10-12 전 기록처럼 줄 없이 합계만 있는 몫('시간만 남은 기록')은 합계에서 줄들을 뺀 나머지를 바꾼다.
+// 기도노트 것만 고친다 — BLOCK7 · Sweeter · 성경 기록은 그 앱 것이라 읽기만.
+function sesSum(L) { return (Array.isArray(L && L.ses) ? L.ses : []).reduce((a, e) => a + (e ? Math.max(0, Number(e.d) || 0) : 0), 0); }
+function editPraySession(db, date, sid, secs) {
+  const L = db.log[date]; if (!L || !Array.isArray(L.ses)) return null;
+  const e = L.ses.find(x => x && x.id === sid); if (!e) return null;
+  secs = Math.max(0, Math.min(86400, Math.round(Number(secs) || 0)));
+  const was = Math.max(0, Number(e.d) || 0);
+  e.d = secs; L.s = Math.max(0, (Number(L.s) || 0) + secs - was);
+  return { was: was, now: secs };
+}
+function legacyRest(L) { return Math.max(0, Math.round(Number(L && L.s) || 0) - sesSum(L)); }
+function editLegacyRest(db, date, secs) {
+  const L = db.log[date]; if (!L) return null;
+  secs = Math.max(0, Math.min(86400, Math.round(Number(secs) || 0)));
+  const was = legacyRest(L); L.s = Math.max(0, (Number(L.s) || 0) + secs - was);
+  return { was: was, now: secs };
+}
+
 // ── 실행취소 · 재실행 (HB 2026-10-13) ──
 // 한 칸 = DB 내용 전체를 얼린 글(JSON). 견주고 되돌리는 것은 **사람이 한 일**뿐이다:
 //  · rev(이 기기 저장 횟수)는 칸에 넣지 않는다 — 되돌려도 늘기만 한다
@@ -1434,6 +1455,8 @@ function m3(b, l, r, key) {
     return out;
   }
   if (key === 's' && typeof l === 'number' && typeof r === 'number') return l + r - (typeof b === 'number' ? b : 0);
+  // 기도 기록 한 줄의 시간(d, 초)도 두 기기가 다르게 고쳤으면 두 변화를 다 반영한다 — 날 합계 s 와 같은 셈이라 둘이 어긋나지 않는다 (H-2, 2026-10-21)
+  if (key === 'd' && typeof l === 'number' && typeof r === 'number') return Math.max(0, l + r - (typeof b === 'number' ? b : 0));
   if (key === 'last' && typeof l === 'string' && typeof r === 'string') return l > r ? l : r;
   return l;   // 같은 칸을 둘 다 다르게 — 이 기기 것
 }
@@ -2194,6 +2217,15 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .sh-note{margin:10px 20px 0;padding:10px 12px;border-radius:10px;background:var(--s1);font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:10px}
 .sh-note span{flex:1;min-width:0}
 .sh-note button{flex:none;font-size:13px;color:var(--ac-tx);padding:6px 4px}
+.pt-row .pt-t{width:46px;flex-shrink:0;font-variant-numeric:tabular-nums;color:var(--tx3);font-size:13px}
+.pt-step{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px 4px}
+.pt-step>button{width:52px;height:48px;border-radius:12px;background:var(--s2);font-size:16px;color:var(--tx2)}
+.pt-num{display:flex;align-items:baseline;gap:4px;margin:0 6px}
+.pt-num input{width:82px;height:56px;border:1px solid var(--bd2);border-radius:12px;background:var(--s1);text-align:center;font-size:26px;font-weight:600;color:var(--tx);outline:none}
+.pt-num span{font-size:14px;color:var(--tx3)}
+.pt-time{display:flex;align-items:center;gap:10px;padding:6px 20px 0}
+.pt-time label{font-size:13px;color:var(--tx2);flex-shrink:0}
+.pt-time .field{margin:0;width:auto;flex:1}
 .akind{font-size:11px;color:var(--tx3);border-radius:5px;padding:1px 6px;margin-right:7px;background:var(--s2);flex-shrink:0;font-weight:500}
 .akind.item{color:var(--ans);background:color-mix(in srgb,var(--ans) 14%,transparent)}
 .dspick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:4px 14px 12px}
@@ -3161,9 +3193,48 @@ function renderCal() {
     h += '<div class="label">' + shortDate(UI.calDay) + '<small>' + ids.length + '개' + (o ? ' · ' + TDASH.dur(o.s) : '') + '</small>' +
       (o ? '<button class="r" data-a="there-dash" data-v="day" data-at="' + UI.calDay + '" style="font-weight:400;color:var(--tx3);letter-spacing:0">그날 자세히</button>' : '') + '</div><div class="chips2">' +
       (ids.length ? ids.map(id => { const t = findAny(DB, id); return t ? '<button class="tag" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>' : ''; }).join('') : '<span class="hint" style="padding:0">이날은 기도한 항목 기록이 없습니다</span>') + '</div>';
+      h += prayTimesHTML(UI.calDay);
   }
   if (SY.user) thereRefresh(false);
   return h;
+}
+// 그날 기도노트가 잰 기도 시간 — 줄마다 누르면 고치기 · 지우기 (H-2). BLOCK7 · Sweeter · 성경 몫은 그 앱 것이라 여기 없다
+const PT_SRC = { map: '기도 지도 (There)', focus: '한 장씩 기도하기', manual: '직접 적은 시간' };
+function prayTimesHTML(date) {
+  const L = DB.log[date] || {}, rows = (Array.isArray(L.ses) ? L.ses : []).filter(e => e && Number(e.d) > 0).sort((a, b) => (a.t || 0) - (b.t || 0)), rest = legacyRest(L);
+  const mm = s => { const m = Math.round(s / 60); return m < 1 ? '1분 미만' : m < 60 ? m + '분' : Math.floor(m / 60) + '시간' + (m % 60 ? ' ' + m % 60 + '분' : ''); };
+  let h = '<div class="label">기도노트에서 잰 시간<small>눌러서 고치기 · 지우기</small><button class="r" data-a="pt-add" data-v="' + date + '" style="font-weight:400;color:var(--tx3);letter-spacing:0">+ 더하기</button></div>';
+  if (!rows.length && !rest) return h + '<div class="hint" style="padding-top:2px">이날 기도노트에서 잰 기도 시간이 없습니다.</div>';
+  return h + '<div class="set-g">' + rows.map(e => '<button class="set-r pt-row" data-a="pt-edit" data-d="' + date + '" data-v="' + esc(e.id) + '"><span class="pt-t">' + esc(e.time || '—') + '</span>' + esc(PT_SRC[e.src] || '기도') + '<span class="v">' + mm(e.d) + ico('chevR') + '</span></button>').join('') +
+    (rest ? '<button class="set-r pt-row" data-a="pt-edit" data-d="' + date + '" data-v=""><span class="pt-t">—</span>시간만 남은 기록<span class="v">' + mm(rest) + ico('chevR') + '</span></button>' : '') + '</div>';
+}
+// 분 고르기 창 — 고치기와 더하기가 같이 쓴다
+function ptSheet(title, sub, mins, opt) {
+  const w = openSheet('<div class="sh-t">' + esc(title) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
+    (opt.time ? '<div class="pt-time"><label for="ptAt">시작한 때</label><input type="time" id="ptAt" class="field" value="' + opt.time + '"></div>' : '') +
+    '<div class="pt-step"><button data-a="pt-step" data-v="-5">−5</button><button data-a="pt-step" data-v="-1">−1</button>' +
+    '<label class="pt-num"><input id="ptMin" type="number" inputmode="numeric" min="0" max="1440" value="' + mins + '" aria-label="분"><span>분</span></label>' +
+    '<button data-a="pt-step" data-v="1">+1</button><button data-a="pt-step" data-v="5">+5</button></div>' +
+    '<div class="sh-acts">' + (opt.del ? '<button class="ghost" data-a="pt-del" style="color:var(--danger)">지우기</button>' : '') + '<button class="cta" data-a="pt-ok">저장</button></div>');
+  w._pt = opt; return w;
+}
+function ptApply(mins) {
+  const w = SHEET, o = w && w._pt; if (!o) return;
+  const secs = Math.max(0, Math.round(mins)) * 60;
+  if (o.add) {
+    if (!secs) { toast('몇 분인지 적어 주세요'); return; }
+    const tv = ($('ptAt') && $('ptAt').value) || '12:00', hm = tv.split(':').map(Number), d = parseYmd(o.date);
+    d.setHours(hm[0] || 0, hm[1] || 0, 0, 0); if ((hm[0] || 0) < DAY_START) d.setDate(d.getDate() + 1);   // 하루의 시작 전 시각 = 그날 밤(다음 달력 날) 새벽
+    closeSheet();
+    const e = addPraySession(DB, d.getTime(), secs, 'manual'); save(); refresh();
+    toast(shortDate(o.date) + '에 ' + Math.round(secs / 60) + '분을 더했어요\nThere 대시보드에도 들어갑니다', '되돌리기', () => { editPraySession(DB, dayOf(e.t), e.id, 0); save(); refresh(); toast('되돌렸습니다'); });
+    return;
+  }
+  closeSheet();
+  if (o.id) editPraySession(DB, o.date, o.id, secs); else editLegacyRest(DB, o.date, secs);
+  save(); refresh();
+  const back = () => { if (o.id) editPraySession(DB, o.date, o.id, o.was); else editLegacyRest(DB, o.date, o.was); save(); refresh(); toast('되돌렸습니다'); };
+  toast(secs ? '기도 시간을 ' + Math.round(o.was / 60) + '분 → ' + Math.round(secs / 60) + '분으로 고쳤어요\nThere 대시보드에도 그대로' : '그 기도 시간을 지웠어요\nThere 대시보드에서도 빠집니다', '되돌리기', back);
 }
 function renderAnswers() {
   const mode = DB.set.sorts.answers || 'recent';
@@ -3634,6 +3705,20 @@ function askText(title, value, placeholder, fn, opt) {
 // ═══ 동작 ═══
 const ACT = {};
 function doAct(el, e) { const f = ACT[el.dataset.a]; if (f) f(el, e); }
+// 기도한 시간 고치기 (H-2) — 단추 동작은 ACT 가 생긴 뒤에 단다
+ACT['pt-step'] = el => { const i = $('ptMin'); if (!i) return; i.value = Math.max(0, Math.min(1440, (parseInt(i.value, 10) || 0) + +el.dataset.v)); };
+ACT['pt-edit'] = el => {
+  const date = el.dataset.d, id = el.dataset.v, L = DB.log[date] || {};
+  const e = id ? (L.ses || []).find(x => x && x.id === id) : null;
+  const secs = e ? Number(e.d) || 0 : legacyRest(L);
+  ptSheet(shortDate(date) + (e ? ' ' + (e.time || '') : '') + ' 기도 시간', e ? (PT_SRC[e.src] || '기도') : '10월 12일 전 기록 — 줄 없이 합계만 남은 몫', Math.round(secs / 60), { date: date, id: id, was: secs, del: true });
+};
+ACT['pt-add'] = el => {
+  const now = new Date(), hh = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  ptSheet(shortDate(el.dataset.v) + ' 기도 시간 더하기', '재지 못한 기도를 직접 적습니다', 10, { date: el.dataset.v, add: true, time: hh });
+};
+ACT['pt-ok'] = () => { const i = $('ptMin'); ptApply(parseInt(i && i.value, 10) || 0); };
+ACT['pt-del'] = () => { if (!confirm('이 기도 시간을 지울까요?')) return; ptApply(0); };
 ACT.stab = el => stabSettle(+el.dataset.v);
 ACT['mark-link'] = el => {
   const m = el.dataset.m, k = { t: el.dataset.t, id: el.dataset.id };
@@ -6447,7 +6532,7 @@ const TDASH = (function () {
   const APP = {}; APPS.forEach(a => { APP[a[0]] = { name: a[1], color: a[2] }; });
   const SRC = {
     gnb: 'BLOCK7 위 메뉴', home: 'Sweeter 홈', bar: '상단 말씀 영역', full: '말씀 전체화면', widget: '말씀 위젯',
-    tile: 'Sweeter 타일', bible: '성경 화면', 'bible-menu': '성경 절 메뉴', map: '기도 지도', focus: '한 장씩 기도하기'
+    tile: 'Sweeter 타일', bible: '성경 화면', 'bible-menu': '성경 절 메뉴', map: '기도 지도', focus: '한 장씩 기도하기', manual: '직접 적은 기도 시간'
   };
   const SLOTS = [['새벽', 4, 7], ['아침', 7, 10], ['낮', 10, 14], ['오후', 14, 18], ['저녁', 18, 22], ['밤', 22, 28]];
   const WK = ['일', '월', '화', '수', '목', '금', '토'];

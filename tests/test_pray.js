@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -765,6 +765,35 @@ const MAPCSV = [
     sc.eq('⭐㉑ 지난 날짜만 제안 · 오늘 · 앞날은 아님 · 보관한 것은 아님', A.staleByName(db, '2026-10-19').map(t => t.name), ['10/16 수업 준비']);
     A.shelve(db, b.id, '2026-10-19');
     sc.eq('㉑ 보관하면 제안 목록에서 빠짐', A.staleByName(db, '2026-10-19').length, 0); }
+}
+// ㉒ 기도한 시간 고치기 (H-2) — 줄과 날 합계를 같은 차이로 · 지우기 = 0 · 두 기기 병합 · 대시보드 합계와 맞음
+{
+  const D = '2026-10-20', at = (h) => new Date(2026, 9, 20, h).getTime();
+  const mk = () => { const db = A.emptyDB(); const e1 = A.addPraySession(db, at(7), 600, 'map'), e2 = A.addPraySession(db, at(21), 300, 'focus'); return { db, e1: e1.id, e2: e2.id }; };
+  { const { db, e1 } = mk();
+    sc.eq('⭐㉒ 10분 → 4분: 줄과 합계가 같이', [A.editPraySession(db, D, e1, 240), db.log[D].s, A.sesSum(db.log[D])], [{ was: 600, now: 240 }, 540, 540]);
+    A.editPraySession(db, D, e1, 0);
+    sc.eq('⭐㉒ 지우기 = 0 (줄은 남김)', [db.log[D].ses.length, db.log[D].s], [2, 300]);
+    sc.eq('㉒ 이상한 값 · 없는 줄', [A.editPraySession(db, D, e1, -50) && db.log[D].s, A.editPraySession(db, D, 'nope', 9), A.editPraySession(db, '2026-01-01', e1, 9)], [300, null, null]);
+  }
+  { const db = A.emptyDB(); db.log[D] = { d: [], p: {}, k: [], s: 900, ses: [{ id: 'x', t: at(8), time: '08:00', d: 300, src: 'map' }] };
+    sc.eq('㉒ 시간만 남은 기록(옛 몫) 고치기', [A.legacyRest(db.log[D]), A.editLegacyRest(db, D, 120), db.log[D].s, A.legacyRest(db.log[D])], [600, { was: 600, now: 120 }, 420, 120]);
+  }
+  const fork = () => { const m = mk(); return { base: JSON.parse(JSON.stringify(m.db)), L: JSON.parse(JSON.stringify(m.db)), R: JSON.parse(JSON.stringify(m.db)), e1: m.e1, e2: m.e2 }; };
+  const tot = db => { const L = db.log[D]; return [L.s, A.sesSum(L)]; };
+  { const f = fork(); A.editPraySession(f.L, D, f.e1, 300); A.addPraySession(f.R, at(12), 120, 'map');
+    const m = A.merge3(f.base, f.L, f.R);
+    sc.eq('⭐㉒ 한쪽은 줄이고 한쪽은 새 기도 → 합계 = 줄 합 (300+300+120)', tot(m), [720, 720]); }
+  { const f = fork(); A.editPraySession(f.L, D, f.e1, 300); A.editPraySession(f.R, D, f.e1, 900);
+    const m1 = A.merge3(f.base, f.L, f.R), m2 = A.merge3(f.base, f.R, f.L);
+    sc.eq('⭐㉒ 같은 줄을 두 기기가 다르게 → 두 변화 다(−5분 +5분 = 그대로) · 합계와 줄이 어긋나지 않음 · 어느 쪽에서 합쳐도 같음', [tot(m1), tot(m2)], [[900, 900], [900, 900]]); }
+  { const f = fork(); A.editPraySession(f.L, D, f.e1, 0); A.editPraySession(f.R, D, f.e2, 600);
+    sc.eq('㉒ 한쪽 지움 · 한쪽 다른 줄 늘림', tot(A.merge3(f.base, f.L, f.R)), [600, 600]); }
+  { const { db, e1 } = mk(); A.editPraySession(db, D, e1, 60);
+    // 대시보드(TDASH.collect)는 줄을 세고 남는 합계를 '시간만 남은 기록' 으로 — 고친 뒤 둘이 맞아 남는 몫이 생기지 않는다
+    const html = fs.readFileSync(path.join(__dirname, '..', 'tools', 'there-dash.js'), 'utf8'); const c2 = { console }; vm.createContext(c2); vm.runInContext(html + '\nthis.T = TDASH;', c2);
+    const ss = c2.T.collect({}, db.log);
+    sc.eq('⭐㉒ 고친 뒤 대시보드 합계 = 고친 값 · 남는 몫 없음', [ss.reduce((a, x) => a + x.d, 0), ss.some(x => x.old)], [360, false]); }
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
