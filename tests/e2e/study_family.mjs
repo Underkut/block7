@@ -33,11 +33,13 @@ async function ctx(name) {
 }
 const wait = (p, fn, arg, ms) => p.waitForFunction(fn, arg, {timeout: ms || 15000});
 const shot = (p, n) => p.screenshot({path: OUT + '/' + n + '.png'});
+// S-8(v. 26-1021-1): 설정 톱니는 '내 별' 탭 머리줄에 있다
+const gear = async p => { await p.click('[data-tab="reward"]'); await p.click('[data-top="gear"]'); };
 
 // ── 부모님 가입 → 아이 계정 만들기 ──
 const par = await ctx('parent');
 await par.goto(B + '/study/');
-await par.click('#hGear'); await par.click('#fPar'); await par.click('#plSw');
+await gear(par); await par.click('#fPar'); await par.click('#plSw');
 await par.fill('#plEm', 'mom@test.com'); await par.fill('#plPw', 'secret123'); await par.click('#plGo');
 await wait(par, () => document.getElementById('parent').classList.contains('on'));
 await par.click('[data-t="acct"]'); await par.click('#paNew');
@@ -57,12 +59,12 @@ await par.click('#sheet [data-close]');
 const kid = await ctx('kid');
 await kid.clock.install({time: new Date('2026-10-12T16:00:00+09:00')});
 await kid.goto(B + '/study/');
-await kid.click('[data-a="newBook"]'); await kid.fill('#beName', '디딤돌 5-2'); await kid.click('#beSave');
+await kid.click('[data-tab="today"]'); await kid.click('[data-a="add"]'); await kid.fill('#seT', '디딤돌 5-2'); await kid.click('#seQ [data-q="all"]'); await kid.click('#seGo');
 await kid.click('[data-a="start"]'); await kid.clock.runFor(1000);
 await kid.evaluate(() => { S.run.acc = 30 * 60000; S.run.seg = Date.now(); save(); });
 await kid.click('#tmEnd'); await kid.click('#dnGo');
 check('아이: 로그인 전에는 \'기록하기\' (보내기 없음)', await kid.evaluate(() => S.sessions[0].status === 'saved'));
-await kid.click('#hGear'); await kid.click('#fKid');
+await gear(kid); await kid.click('#fKid');
 await kid.fill('#klId', 'ruru'); await kid.fill('#klPw', '999999'); await kid.click('#klGo'); await kid.waitForTimeout(1500);
 check('아이: 숫자가 틀리면 못 들어간다', (await kid.textContent('#toast')).includes('달라요'), await kid.textContent('#toast'));
 await kid.fill('#klPw', '123456'); await kid.click('#klGo');
@@ -73,11 +75,11 @@ await wait(kid, () => FAM.last > 0, null, 15000);
 check('아이: 이 폰 기록이 클라우드에 올라감 (빈 클라우드라 묻지 않음)', true);
 
 // 새 공부 → 보내기 (사진 포함)
-await kid.evaluate(() => { S.tasks.push({id: 'tx1', title: '받아쓰기', date: todayStr(), time: '', dur: 10, subj: 'kor'}); save(); render(); });
+await kid.evaluate(() => { S.tasks.push({id: 'tx1', title: '받아쓰기', date: todayStr(), time: '', dur: 10, subj: 'kor'}); save(); TAB = 'today'; render(); });
 await kid.click('[data-a="start"][data-k="t:tx1"]');
 await kid.evaluate(() => { S.run.acc = 12 * 60000; save(); });
 await kid.click('#tmEnd');
-check('아이: 로그인 뒤에는 \'엄마 아빠에게 보내기\'', (await kid.textContent('#dnGo')).includes('보내기'));
+check('아이: 로그인 뒤에는 \'엄마 · 아빠가 확인하면 별\'', (await kid.textContent('.dz-note')).includes('확인하면'));
 await kid.setInputFiles('#dnPhoto', {name: 'p.png', mimeType: 'image/png', buffer: fs.readFileSync(new URL('../../study/icon-192.png', import.meta.url))});
 await kid.waitForTimeout(500);
 await kid.click('#dnGo'); await kid.clock.runFor(3000); await kid.waitForTimeout(2500);
@@ -136,7 +138,7 @@ check('알림 끄면 예약도 지운다', rem2 === 0, rem2);
 // ── 빈 기기로 아이 로그인 → 클라우드에서 되살린다 (클라우드를 비우지 않는다) ──
 const kid2 = await ctx('kid2');
 await kid2.goto(B + '/study/');
-await kid2.click('#hGear'); await kid2.click('#fKid'); await kid2.fill('#klId', 'ruru'); await kid2.fill('#klPw', '123456'); await kid2.click('#klGo');
+await gear(kid2); await kid2.click('#fKid'); await kid2.fill('#klId', 'ruru'); await kid2.fill('#klPw', '123456'); await kid2.click('#klGo');
 await wait(kid2, () => FAM && FAM.role === 'kid');
 await kid2.waitForTimeout(3500);
 const k2 = await kid2.evaluate(() => ({books: S.books.length, sess: S.sessions.length, stars: starsOf(S), coins: S.coins}));
