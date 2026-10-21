@@ -174,4 +174,14 @@ function mk(o) {
   sc.eq('⑨ 예전처럼 범위를 적은 문제집은 그대로', A.normBook({id: 'o2', name: 'a', first: 8, last: 60, cur: 34}).open, false);
 }
 
+// ⑫ S-8 단순 '넣기' 문제집 — 이름이 곧 할 것 · 분량을 따로 안 보임 · 저장해도 남음 · 예전 문제집은 그대로
+{
+  const st = A.blankState();
+  st.books.push(A.normBook({id: 's1', open: true, simple: true, subj: 'math', name: '디딤돌 2쪽', perDay: 1, days: [0, 1, 2, 3, 4, 5, 6], time: '', dur: 30}));
+  st.books.push(A.normBook({id: 's2', open: true, subj: 'eng', name: '단어', perDay: 2, days: [0, 1, 2, 3, 4, 5, 6], dur: 20}));
+  const qs = A.questsFor(st, '2026-10-21', '2026-10-21');
+  sc.eq('⭐⑫ simple 문제집은 분량 글이 비어 있다 · 아닌 것은 예전처럼', qs.map(q => [q.title, q.sub]).sort(), [['단어', '2쪽'], ['디딤돌 2쪽', '']]);
+  sc.eq('⑫ 저장 · 불러오기에도 simple 이 남는다', A.normState(JSON.parse(JSON.stringify(st))).books.map(b => b.simple), [true, false]);
+  sc.eq('⑫ 범위가 있는 문제집에는 simple 이 붙지 않는다', A.normBook({id: 'x', name: 'a', simple: true, first: 1, last: 9}).simple, false);
+}
 sc.done();
