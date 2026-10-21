@@ -18,6 +18,7 @@
 //  ⑮ '/' 나누기 — 앞뒤가 숫자면 날짜라 안 나눈다 · 쉼표 · 긴 글도 항목 하나(메모 줄이 아니다)
 //  ⑯ 실행취소는 페이지마다 — 한 페이지에서 되돌려도 다른 페이지에서 한 일은 그대로
 //  ⑭ BLOCK7 → 기도노트 우체통 — 고른 그룹(서브 그룹)의 맨 위 기도 항목으로 · 없는 그룹은 넣지 않고 셈
+//  ⑱ 백업 파일 이름 — Pr-{이메일3}-{기기}-{YY}-{MMDD}-{번호} · 두 기기 번호 이어짐(병합은 큰 값) · 오프라인 off · 날짜 바뀌면 1
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -36,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
-  exportBackup, readBackup, _themeTokens, themeById,
+  exportBackup, readBackup, bakDevice, bakName, _themeTokens, themeById,
   cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
@@ -816,6 +817,50 @@ const MAPCSV = [
 {
   const files = fs.readdirSync(path.join(__dirname, '..', 'pray'));
   sc.eq('⭐ pray/ 에 시트 자료 파일이 없다 (이름이 든 자료는 저장소에 넣지 않는다)', files.filter(f => /\.(csv|tsv|xlsx?)$/i.test(f)), []);
+}
+
+
+// ── ⑱ 백업 파일 이름 (D-2, HB 2026-10-21) ──
+{
+  const at = (d, h, m) => new Date(2026, 9, d, h, m);
+  const on = (now, dev) => ({ email: 'hbkim@gmail.com', online: true, dev: dev || 'phn', now });
+  const db = A.emptyDB();
+  sc.eq('⑱-1 같은 날 첫 저장', A.bakName(db, on(at(21, 15, 34))), 'Pr-hbk-phn-26-1021-1.json');
+  sc.eq('⑱-1 연속 저장은 2', A.bakName(db, on(at(21, 15, 40))), 'Pr-hbk-phn-26-1021-2.json');
+  sc.eq('⑱-1 번호표는 날짜 + 번호 하나', JSON.parse(JSON.stringify(db.set.bak)), { d: '261021', n: 2 });
+  // 두 기기 — 폰이 1 을 쓰고 맞춘 뒤, 패드는 2
+  const base = A.emptyDB(), phone = JSON.parse(JSON.stringify(base));
+  A.bakName(phone, on(at(21, 9, 0)));
+  const pad = A.merge3(base, base, phone);
+  sc.eq('⑱-2 폰 1 → 맞춘 패드는 2', A.bakName(pad, on(at(21, 9, 5), 'pad')), 'Pr-hbk-pad-26-1021-2.json');
+  // 맞추기 전에 두 기기가 각자 저장(폰 2개 · 패드 1개) → 병합은 큰 번호를 남겨 다음은 3
+  const b2 = A.emptyDB(), L = JSON.parse(JSON.stringify(b2)), R = JSON.parse(JSON.stringify(b2));
+  A.bakName(L, on(at(21, 10, 0))); A.bakName(L, on(at(21, 10, 1))); A.bakName(R, on(at(21, 10, 2), 'pad'));
+  const m1 = A.merge3(b2, L, R), m2 = A.merge3(b2, R, L);
+  sc.eq('⑱-3 병합은 큰 번호 (양쪽 방향 같음)', [m1.set.bak.n, m2.set.bak.n], [2, 2]);
+  sc.eq('⑱-3 병합 뒤 다음 저장은 3', A.bakName(m1, on(at(21, 10, 5))), 'Pr-hbk-phn-26-1021-3.json');
+  // 날짜가 다르면 늦은 날 것이 이긴다(어제 5번이 오늘 1번을 덮지 않는다)
+  const b3 = A.emptyDB(), Y = JSON.parse(JSON.stringify(b3)), T = JSON.parse(JSON.stringify(b3));
+  for (let i = 0; i < 5; i++) A.bakName(Y, on(at(20, 22, i)));
+  A.bakName(T, on(at(21, 8, 0)));
+  sc.eq('⑱-4 늦은 날짜가 이긴다', JSON.parse(JSON.stringify(A.merge3(b3, Y, T).set.bak)), { d: '261021', n: 1 });
+  sc.eq('⑱-4 날짜가 바뀌면 1부터', A.bakName(Y, on(at(21, 8, 1))), 'Pr-hbk-phn-26-1021-1.json');
+  // 오프라인 — 번호 대신 시각, 번호표는 그대로
+  const before = JSON.stringify(db.set.bak);
+  sc.eq('⑱-5 오프라인은 off+HHMM', A.bakName(db, { email: 'hbkim@gmail.com', online: false, dev: 'phn', now: at(21, 9, 5) }), 'Pr-hbk-phn-26-1021-off0905.json');
+  sc.eq('⑱-5 번호표 안 건드림', JSON.stringify(db.set.bak), before);
+  sc.eq('⑱-5 로그인 안 됨 = usr · off', A.bakName(A.emptyDB(), { email: '', online: false, dev: 'pc', now: at(21, 23, 59) }), 'Pr-usr-pc-26-1021-off2359.json');
+  // 옛 백업 · 옛 자료(번호표 없음)도 그대로 읽힌다
+  sc.eq('⑱-6 번호표가 없는 옛 자료도 1부터', A.bakName(A.normDB({ set: {} }), on(at(21, 1, 0))), 'Pr-hbk-phn-26-1021-1.json');
+  // 기기 판정
+  const k = (ua, t, w, h) => A.bakDevice(ua, t, w, h);
+  sc.eq('⑱-7 기기 판정 (아이폰 · 아이패드 · 맥 · 안드 폰 · 안드 태블릿 · 터치 윈도우)', [
+    k('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', 5, 390, 844),
+    k('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 5, 820, 1180),
+    k('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 0, 1512, 982),
+    k('Mozilla/5.0 (Linux; Android 14; SM-S918N) Mobile', 5, 412, 915),
+    k('Mozilla/5.0 (Linux; Android 14; SM-X710)', 5, 800, 1280),
+    k('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 10, 1920, 1080)], ['phn', 'pad', 'pc', 'phn', 'pad', 'pc']);
 }
 
 sc.done();
