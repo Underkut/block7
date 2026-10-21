@@ -153,7 +153,7 @@ function mk(o) {
   const md = fs.readFileSync(path.join(__dirname, '..', 'docs', 'study', 'firebase-setup.md'), 'utf8');
   sc.eq('⑧ 규칙 덩어리에 공부 칸 다섯(study · sphotos · sreviews · spromises · sremind)',
     ['match /study/{kid}', 'match /sphotos/{sid}', 'match /sreviews/{rid}', 'match /spromises/{pid}', 'match /sremind/{rid}'].map(k => md.includes(k)), [true, true, true, true, true]);
-  sc.eq('⑧ 아이·부모 알림 토큰(stokens)을 스스로 고칠 수 있다', md.includes("hasOnly(['pname', 'notify', 'tokens', 'stokens'])"), true);
+  sc.eq('⑧ 아이·부모 알림 토큰(stokens)을 스스로 고칠 수 있다', md.includes("hasOnly(['pname', 'notify', 'tokens', 'stokens', 'bak'])"), true);
   const W = fs.readFileSync(path.join(__dirname, '..', 'wallet-functions', 'src', 'index.js'), 'utf8');
   sc.eq('⑧ 알림 서버가 공부 친구들 몫을 함께 내보낸다', W.includes('require("./study")'), true);
   const WL = fs.readFileSync(path.join(__dirname, '..', 'wallet', 'index.html'), 'utf8');

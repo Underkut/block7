@@ -43,7 +43,7 @@
           (request.resource.data.role == 'parent' && wFull() && fid == request.auth.uid)
           || wJoinOk(fid, request.resource.data));
         allow update: if wIn() && uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pname', 'notify', 'tokens', 'stokens']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pname', 'notify', 'tokens', 'stokens', 'bak']);
         allow delete: if wParent(fid) || (wIn() && uid == request.auth.uid);
       }
       match /msgs/{mid} {
