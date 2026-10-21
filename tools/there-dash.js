@@ -22,7 +22,7 @@ const TDASH = (function () {
   const APP = {}; APPS.forEach(a => { APP[a[0]] = { name: a[1], color: a[2] }; });
   const SRC = {
     gnb: 'BLOCK7 위 메뉴', home: 'Sweeter 홈', bar: '상단 말씀 영역', full: '말씀 전체화면', widget: '말씀 위젯',
-    tile: 'Sweeter 타일', bible: '성경 화면', 'bible-menu': '성경 절 메뉴', map: '기도 지도', focus: '한 장씩 기도하기'
+    tile: 'Sweeter 타일', bible: '성경 화면', 'bible-menu': '성경 절 메뉴', map: '기도 지도', focus: '한 장씩 기도하기', manual: '직접 적은 기도 시간'
   };
   const SLOTS = [['새벽', 4, 7], ['아침', 7, 10], ['낮', 10, 14], ['오후', 14, 18], ['저녁', 18, 22], ['밤', 22, 28]];
   const WK = ['일', '월', '화', '수', '목', '금', '토'];
