@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1021-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1021-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1021-1';
+const APP_VERSION = 'v. 26-1021-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -915,6 +915,23 @@ function addMapPrayer(db, date, ids, fromMs, toMs, label) {
     const p = findAny(db, pid), n = (p && p.name) || '';
     const e = { id: uid(), a: fromMs, t: toMs, pid: pid, d: each, n: n, k: String(label || n) }; L.mp.push(e); return e;
   });
+}
+
+// ── 기도 제목 ↔ 기도 항목 연동 (H-3 · HB 12, 2026-10-21) ──
+// 기도 제목 글이 **다른** 기도 항목 이름과 똑같으면 그 항목에 잇는다(tp.ref = 그 id). 이름이 나중에 바뀌어도 id 로 이어진다.
+// 같은 이름이 둘 이상이면 어느 것인지 몰라 잇지 않는다(애매하면 안 잇는다). 자기 자신 · 그룹은 잇지 않는다.
+function topicMatch(db, owner, text) {
+  const v = String(text || '').replace(/\s+/g, ' ').trim(); if (!v) return null;
+  const c = db.T.filter(t => t.id !== (owner && owner.id) && t.name.replace(/\s+/g, ' ').trim() === v);
+  return c.length === 1 ? c[0] : null;
+}
+function linkTopic(db, owner, tp) { const m = topicMatch(db, owner, tp.t); if (m) tp.ref = m.id; else delete tp.ref; return m; }
+// 그리는 쪽이 쓰는 것 — 이어 둔 항목(살아 있으면), 아니면 지금 이름이 같은 항목.
+// 그래서 기도 제목을 먼저 적고 같은 이름의 항목을 나중에 만들어도 이어진다 · 옛 기도 제목도 그렇다
+function topicLink(db, owner, tp) {
+  if (!tp) return null;
+  if (tp.ref) { const t = findT(db, tp.ref); if (t && t.id !== (owner && owner.id)) return t; }
+  return topicMatch(db, owner, tp.t);
 }
 
 // ── 기도한 시간 고치기 (H-2, HB 2026-10-21) ──
@@ -2226,6 +2243,9 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .pt-time{display:flex;align-items:center;gap:10px;padding:6px 20px 0}
 .pt-time label{font-size:13px;color:var(--tx2);flex-shrink:0}
 .pt-time .field{margin:0;width:auto;flex:1}
+.tp-link .rt{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tp-link .tp-lk{width:14px;height:14px;color:var(--tx3)}
+.tp-sh{font-size:11px;color:var(--tx3)}
 .akind{font-size:11px;color:var(--tx3);border-radius:5px;padding:1px 6px;margin-right:7px;background:var(--s2);flex-shrink:0;font-weight:500}
 .akind.item{color:var(--ans);background:color-mix(in srgb,var(--ans) 14%,transparent)}
 .dspick{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:4px 14px 12px}
@@ -2267,6 +2287,8 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .f-why{margin-top:12px;font-size:12.5px;color:var(--tx3)}
 .f-tps{list-style:none;margin:30px 0 0;padding:0;display:flex;flex-direction:column;gap:13px}
 .f-tps li{display:flex;align-items:baseline;gap:12px;font-size:18px;font-weight:300;line-height:1.5}
+.f-tps li.lk button{font:inherit;color:var(--pc,var(--tx));text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--pc,var(--tx)) 45%,transparent);text-underline-offset:5px;text-align:left}
+.f-tps li.lk::before{background:var(--pc,var(--ac))}
 .f-tps li::before{content:'';width:5px;height:5px;border-radius:3px;background:var(--ac);flex-shrink:0;transform:translateY(-3px)}
 .f-mem{margin-top:22px;font-size:15px;color:var(--tx2);line-height:1.7}
 .f-act{margin-top:26px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;font-size:14px;color:var(--tx2)}
@@ -2763,7 +2785,8 @@ function focusCardHTML() {
   // 지도에서 들어온 한 장: 그룹 이름 바로 옆 작은 + = 이 그룹에 나란히 항목 더하기 (O-3, HB 2026-10-19)
   const addB = it.sec === 'map' && findG(DB, it.g) ? '<button class="f-add" data-a="focus-add" aria-label="‘' + esc(cat) + '’에 기도 항목 더하기">' + ico('plus') + '</button>' : '';
   return '<div class="f-card"><div class="f-cat">' + esc(cat) + addB + '</div><h2 class="f-name" data-a="focus-detail" data-id="' + t.id + '" role="button" aria-label="' + esc(t.name) + ' 상세 보기">' + esc(t.name) + '</h2><div class="f-why">' + esc(why) + '</div>' +
-    (tps.length ? '<ul class="f-tps">' + tps.map(x => '<li>' + esc(x.t) + '</li>').join('') + '</ul>' : '') +
+    (tps.length ? '<ul class="f-tps">' + tps.map(x => { const p = topicLink(DB, t, x); if (!p) return '<li>' + esc(x.t) + '</li>';
+      const m = mk(p); return '<li class="lk"' + (m && m !== 'gray' ? ' style="--pc:' + markVar(m) + '"' : '') + '><button data-a="focus-detail" data-id="' + p.id + '">' + esc(p.name) + '</button></li>'; }).join('') + '</ul>' : '') +   // 이어진 항목은 표시색으로 · 누르면 그 상세 (H-3)
     (mem ? '<div class="f-mem">' + esc(mem) + '</div>' : '') +
     (t.memo ? '<div class="f-act"><span>' + ico('phone') + '</span><span>실천 — ' + esc(t.memo) + '</span><button class="ghost' + (sent ? ' ac' : '') + '" data-a="todo" data-id="' + t.id + '">' + (sent ? 'BLOCK7 할일로 보냄 ✓' : 'BLOCK7 할일로 보내기') + '</button></div>' : '') +
     '</div>';
@@ -3354,11 +3377,19 @@ function markPicker(t) {
   return '<div class="label">표시<small>' + (t.mark ? esc(markName(t.mark)) : mk(t) ? esc(markName(mk(t))) + ' · 소속으로 이어진 색' : '없음') + '</small><button class="r" data-a="marks" style="font-weight:400;color:var(--tx3);letter-spacing:0">색 이름 정하기</button></div><div class="marks">' +
     MARKS.map(m => '<button class="mkb' + (t.mark === m ? ' on' : '') + '" data-a="set-mark" data-id="' + t.id + '" data-m="' + m + '" style="--m:' + markVar(m) + '" aria-label="' + esc(markName(m)) + '" aria-pressed="' + (t.mark === m) + '"><i></i></button>').join('') + '</div>';
 }
+// 기도 제목 한 줄의 글 — 다른 기도 항목에 이어졌으면 그 항목처럼(표시색 이름 단추) 그리고, 누르면 그 상세로 (H-3)
+function topicBody(t, tp) {
+  const p = topicLink(DB, t, tp);
+  if (!p) return '<div class="rb" data-a="tp-edit" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>';
+  const m = mk(p), style = m && m !== 'gray' ? ' style="--pc:' + markVar(m) + '"' : '';
+  return '<div class="rb tp-link"><div class="rt"><button class="pn' + (m === 'gray' ? ' rest' : '') + '"' + style + ' data-a="open" data-id="' + p.id + '" aria-label="' + esc(p.name) + ' 상세 보기">' + esc(p.name) + '</button>' +
+    (isShelved(p) ? '<small class="tp-sh">' + (p.ansAt ? '응답됨' : '보관') + '</small>' : '') + ico('link', 'tp-lk') + '</div></div>';
+}
 function topicsBlock(t) {
-  return '<div class="label">기도제목<small>동그라미 = 응답 · 글자를 누르면 고치기 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
+  return '<div class="label">기도제목<small>동그라미 = 응답 · 이어진 이름은 누르면 그 상세</small></div><div class="rows" data-sort="topics:' + t.id + '">' +
     (t.topics || []).map(tp => '<div class="row tp' + (tp.ans ? ' ans' : '') + '" data-id="' + tp.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="topic" data-tid="' + t.id + '" data-id="' + tp.id + '">지우기</button></div>' +
       '<div class="row-f"><button class="tcircle" data-a="answer" data-tid="' + t.id + '" data-id="' + tp.id + '" aria-label="응답 표시"><i><svg viewBox="0 0 24 24">' + ICONS.check + '</svg></i></button>' +
-      '<div class="rb" data-a="tp-edit" data-tid="' + t.id + '" data-id="' + tp.id + '"><div class="rt"><span class="nm">' + esc(tp.t) + '</span></div></div>' +
+      topicBody(t, tp) +
       (tp.ans ? '<span class="ansd">응답 · ' + shortDate(tp.ans) + '</span>' : '') + '</div></div>').join('') + '</div>' +
     '<div class="addline"><input data-add="topic" data-id="' + t.id + '" placeholder="기도제목 더하기" enterkeyhint="done"><button class="ib" data-a="add-topic" data-id="' + t.id + '" aria-label="더하기">' + ico('plus') + '</button></div>';
 }
@@ -4469,7 +4500,7 @@ ACT['tp-edit'] = el => {
   const inp = document.createElement('input'); inp.className = 'tp-in'; inp.value = tp.t; inp.setAttribute('enterkeyhint', 'done');
   nm.replaceWith(inp); inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (er) {}
   let done = false;
-  const fin = ok => { if (done) return; done = true; const v = inp.value.trim(); if (ok && v && v !== tp.t) { tp.t = v; save(); } refresh(); };
+  const fin = ok => { if (done) return; done = true; const v = inp.value.trim(); if (ok && v && v !== tp.t) { tp.t = v; linkTopic(DB, t, tp); save(); } refresh(); };
   inp.addEventListener('keydown', e => { if (e.isComposing || e.keyCode === 229) return; if (e.key === 'Enter') { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); fin(false); } });
   inp.addEventListener('blur', () => fin(true));
   inp.addEventListener('click', e => e.stopPropagation());
@@ -4477,7 +4508,7 @@ ACT['tp-edit'] = el => {
 ACT['add-topic'] = el => { const inp = el.parentElement.querySelector('input'); addTopic(el.dataset.id, inp); };
 function addTopic(id, inp) {
   const t = findAny(DB, id); const v = (inp.value || '').trim(); if (!t || !v) return;
-  v.split(/\n/).map(x => x.trim()).filter(Boolean).forEach(x => t.topics.push(newTopic(x)));
+  v.split(/\n/).map(x => x.trim()).filter(Boolean).forEach(x => { const tp = newTopic(x); linkTopic(DB, t, tp); t.topics.push(tp); });   // 다른 항목 이름이면 잇는다 (H-3)
   save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="topic"]'); if (n) n.focus(); }, 30);
 }
 ACT['pick-cat'] = el => {

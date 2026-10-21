@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
   exportBackup, readBackup, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -794,6 +794,23 @@ const MAPCSV = [
     const html = fs.readFileSync(path.join(__dirname, '..', 'tools', 'there-dash.js'), 'utf8'); const c2 = { console }; vm.createContext(c2); vm.runInContext(html + '\nthis.T = TDASH;', c2);
     const ss = c2.T.collect({}, db.log);
     sc.eq('⭐㉒ 고친 뒤 대시보드 합계 = 고친 값 · 남는 몫 없음', [ss.reduce((a, x) => a + x.d, 0), ss.some(x => x.old)], [360, false]); }
+}
+// ㉓ 기도 제목 ↔ 기도 항목 연동 (H-3) — 이름이 같으면 잇는다 · 애매하면 안 잇는다 · 이름이 바뀌어도 id 로
+{
+  const db = A.emptyDB();
+  const ga = A.newTarget('person', '가나'), da = A.newTarget('person', '다라'), x1 = A.newTarget('item', '수술 회복'), x2 = A.newTarget('person', '마바'), x3 = A.newTarget('person', '마바');
+  db.T.push(ga, da, x1, x2, x3);
+  const tp1 = A.newTopic(' 다라 '), tp2 = A.newTopic('수술  회복'), tp3 = A.newTopic('마바'), tp4 = A.newTopic('가나'), tp5 = A.newTopic('취업');
+  sc.eq('⭐㉓ 이름이 같으면 잇는다 (앞뒤 · 겹친 띄어쓰기 무시)', [A.linkTopic(db, ga, tp1) && tp1.ref, A.linkTopic(db, ga, tp2) && tp2.ref], [da.id, x1.id]);
+  sc.eq('⭐㉓ 같은 이름이 둘이면 · 자기 자신이면 · 없는 이름이면 안 잇는다', [A.linkTopic(db, ga, tp3), 'ref' in tp3, A.linkTopic(db, ga, tp4), 'ref' in tp4, A.linkTopic(db, ga, tp5), 'ref' in tp5], [null, false, null, false, null, false]);
+  da.name = '다라 집사';
+  sc.eq('⭐㉓ 이어진 항목 이름이 바뀌어도 id 로 이어진다', A.topicLink(db, ga, tp1) && A.topicLink(db, ga, tp1).name, '다라 집사');
+  const old = { id: 'o', t: '수술 회복', at: '', ans: '' };   // 이 기능 전에 적힌 기도 제목(ref 칸 없음)
+  sc.eq('㉓ 옛 기도 제목도 이름이 같으면 이어진 것으로 본다', A.topicLink(db, ga, old) && A.topicLink(db, ga, old).id, x1.id);
+  const later = A.newTarget('item', '취업'); db.T.push(later);
+  sc.eq('⭐㉓ 기도 제목을 먼저 적고 같은 이름의 항목을 나중에 만들어도 이어진다', A.topicLink(db, ga, tp5) && A.topicLink(db, ga, tp5).id, later.id);
+  db.T = db.T.filter(t => t.id !== x1.id);
+  sc.eq('㉓ 이어진 항목을 지우면 글로 돌아간다', A.topicLink(db, ga, tp2), null);
 }
 // 공개 저장소 지킴 — pray/ 에 시트 파일(CSV)이 들어오면 안 된다
 {
