@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1021-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1021-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1021-3';
+const APP_VERSION = 'v. 26-1021-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1374,6 +1374,31 @@ function readBackup(text) {
   if (!o || o.app !== 'pray' || !o.db) throw new Error('기도노트 백업 파일이 아닙니다');
   return normDB(o.db);
 }
+// ── 백업 파일 이름 (D-2, HB 2026-10-21 — 다섯 앱 같은 양식) ──
+//   Pr-{이메일 앞 3글자}-{기기}-{YY}-{MMDD}-{그날의 번호}.json  예) Pr-hbk-phn-26-1021-1.json
+//   번호표는 db.set.bak = { d: 'YYMMDD', n } — 자료와 함께 기기끼리 맞춰져 번호가 이어진다(병합은 늦은 날 · 큰 번호, m3 'bak').
+//   오프라인(로그인 안 됨 · 인터넷 끊김)이면 번호 대신 off+HHMM — 번호표는 건드리지 않는다.
+//   ⚠️ 이름은 누른 순간 **동기로** 정한다 — 아이폰 공유 시트는 await 뒤에 부르면 거절된다(클라우드에 번호를 묻지 않는 까닭).
+//   기기: 아이패드 · 안드로이드 태블릿 = pad, 아이폰 · 안드로이드 폰 = phn, 그 밖 = pc
+function bakDevice(ua, touch, sw, sh) {
+  const u = ua || '', t = (touch || 0) > 1;
+  if (/iPad/.test(u) || (/Macintosh/.test(u) && t)) return 'pad';
+  if (/iPhone|iPod/.test(u)) return 'phn';
+  if (/Android/.test(u)) return /Mobile/.test(u) ? 'phn' : 'pad';
+  if (t && !/Windows|Macintosh|X11|CrOS/.test(u)) { const m = Math.min(sw || 0, sh || 0); if (m) return m < 600 ? 'phn' : 'pad'; }
+  return 'pc';
+}
+function bakName(db, o) {
+  const d = o.now, p2 = n => String(n).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2), md = p2(d.getMonth() + 1) + p2(d.getDate());
+  const tag = (String(o.email || '').split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'usr').toLowerCase();
+  const head = 'Pr-' + tag + '-' + o.dev + '-' + yy + '-' + md;
+  if (!o.online) return head + '-off' + p2(d.getHours()) + p2(d.getMinutes()) + '.json';
+  const key = yy + md, b = db.set.bak;
+  const n = (b && b.d === key ? (Number(b.n) || 0) : 0) + 1;
+  db.set.bak = { d: key, n: n };
+  return head + '-' + n + '.json';
+}
 
 // ── 기기 사이 맞추기 (P-6) — 3자 병합 · 대량 손실 방어 · 덩어리 나누기 ──
 // 기준점(base) = 이 기기가 마지막으로 클라우드와 맞춘 모습. 셋 다 cloudOf 모양(테마 · rev 뺀 것)으로 견준다.
@@ -1450,6 +1475,11 @@ function m3(b, l, r, key) {
     const u = v => (typeof v === 'string' ? v : ''), L = u(l), R = u(r), B = u(b);
     if (L === R) return l; if (L === B) return r; if (R === B) return l;
     return !L || !R ? '' : (L > R ? L : R);
+  }
+  // 백업 번호표 (D-2): 두 기기가 같은 날 따로 저장했으면 큰 번호, 날이 다르면 늦은 날 — 번호가 뒤로 가지 않게
+  if (key === 'bak' && isPlain(l) && isPlain(r)) {
+    const ld = String(l.d || ''), rd = String(r.d || '');
+    return ld !== rd ? (ld > rd ? l : r) : { d: ld, n: Math.max(Number(l.n) || 0, Number(r.n) || 0) };
   }
   if (deq(l, r)) return l;
   if (deq(l, b)) return r;
@@ -4708,7 +4738,12 @@ function addCat(kind, inp) {
   (kind === 'cats' ? DB.cats : DB.subs).push(kind === 'cats' ? { id: uid(), name: v, person: false } : { id: uid(), name: v });
   save(); refresh(); setTimeout(() => { const n = document.querySelector('.layer:last-child input[data-add="' + kind + '"]'); if (n) n.focus(); }, 30);
 }
-ACT.backup = () => shareBackup(DB, '기도노트-백업-' + TODAY.replace(/-/g, '') + '.json');
+ACT.backup = () => {
+  const name = bakName(DB, { email: SY.user && SY.user.email, online: !!SY.user && navigator.onLine !== false, now: new Date(),
+    dev: bakDevice(navigator.userAgent, navigator.maxTouchPoints, screen.width, screen.height) });
+  if (!/-off\d{4}\.json$/.test(name)) { HIST_SKIP = true; save(); HIST_SKIP = false; }   // 번호표만 바뀐 것 — 되돌리기 칸에 남기지 않는다
+  shareBackup(DB, name);
+};
 function shareBackup(db, name) {
   const text = exportBackup(db);
   const blob = new Blob([text], { type: 'application/json' });
