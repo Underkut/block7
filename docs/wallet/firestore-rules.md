@@ -47,7 +47,7 @@ Authentication → 로그인 방법 → 익명 → 사용 설정.
           (request.resource.data.role == 'parent' && wFull() && fid == request.auth.uid)
           || wJoinOk(fid, request.resource.data));
         allow update: if wIn() && uid == request.auth.uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pname', 'notify', 'tokens']);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pname', 'notify', 'tokens', 'bak']);
         allow delete: if wParent(fid) || (wIn() && uid == request.auth.uid);
       }
       match /msgs/{mid} {

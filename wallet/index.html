@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1018-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1021-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -696,7 +696,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1018-1";
+const APP_VERSION = "v. 26-1021-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2721,9 +2721,9 @@ function pSettings(){
     <div class="note">아이 폰 연결 코드는 15분, 다른 부모님 초대 코드는 7일 동안 쓸 수 있어요.</div>
     <button class="gb gray sm" id="prTour" style="margin-top:10px">사용 설명 다시 보기</button>
     <button class="linkbtn" id="prOut">로그아웃</button><div class="note">용돈 친구들 ${APP_VERSION}</div>`);
-  $('prTour').onclick = tourAgain;
+  $('prTour').onclick = tourAgain; bakPeek();
   $('prBak').onclick = () => { const k = curKid(); if(!k || !k.st){ toast('저장할 아이 기록이 아직 없어요'); return; }
-    saveTextFile(backupText(k.st), '용돈친구들-백업-'+(k.name||'아이')+'-'+todayStr()+'.json'); toast('아이 기록을 파일로 저장했어요'); };
+    saveTextFile(backupText(k.st), bakNamePar(k)); toast('아이 기록을 파일로 저장했어요'); };
   $('pthSeg').onclick = e => { const b = e.target.closest('button'); if(!b) return; PTH = b.dataset.t; try{ localStorage.setItem(PTH_KEY, PTH); }catch(err){} applyPTheme(); pSettings(); };
   $('prNoti').onclick = notiSheet; $('prKid').onclick = () => kidCodeSheet(false); if($('prRe')) $('prRe').onclick = () => kidCodeSheet(true);
   $('prPar').onclick = async () => { try{ codeShow(await makeCode('parent'), '다른 부모님'); }catch(err){ toast(fbErr(err)); } };
@@ -3183,6 +3183,69 @@ function backupText(st){ st = st || S; return JSON.stringify({app:'allowance', v
 function saveTextFile(text, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'}));
   a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 
+/* ───────── 백업 파일 이름 (D-3, HB 2026-10-21 — 다섯 앱 같은 양식) ─────────
+   Wa-{가족 주인 이메일 앞 3글자}-{아이 이름}-{기기}-{YY}-{MMDD}-{그날 번호}.json   예) Wa-hbk-지민-phn-26-1021-1.json
+   번호는 아이마다 · 날마다 1부터. 아이 폰은 S.bak, 부모 폰은 제 members 문서의 bak[아이id] 에 {d:'YYMMDD', n} 을 적고,
+   셀 때는 아는 번호표(아이 폰 것 · 부모님들 것) 중 가장 큰 것 + 1 → 아이 폰 1 → 부모 폰 2 로 이어진다.
+   ⚠️ 이름은 누른 순간 동기로 정한다(아이폰 공유 · 내려받기는 await 뒤면 막힌다) → 남의 번호표는 설정을 열 때 미리 받아 둔다(bakPeek).
+   오프라인(가족 연결 안 됨 · 인터넷 끊김)이면 번호 대신 off+HHMM, 번호표는 그대로. 자동 백업은 auto, 불러오기 직전은 undo(날짜 = 찍은 날).
+   기기: 아이패드 · 안드로이드 태블릿 = pad, 아이폰 · 안드로이드 폰 = phn, 그 밖 = pc */
+function bakDevice(ua, touch, sw, sh){
+  const u = ua || '', t = (touch || 0) > 1;
+  if(/iPad/.test(u) || (/Macintosh/.test(u) && t)) return 'pad';
+  if(/iPhone|iPod/.test(u)) return 'phn';
+  if(/Android/.test(u)) return /Mobile/.test(u) ? 'phn' : 'pad';
+  if(t && !/Windows|Macintosh|X11|CrOS/.test(u)){ const m = Math.min(sw || 0, sh || 0); if(m) return m < 600 ? 'phn' : 'pad'; }
+  return 'pc';
+}
+const bakDev = () => bakDevice(navigator.userAgent, navigator.maxTouchPoints, screen.width, screen.height);
+const bakTag = email => (String(email || '').split('@')[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'usr').toLowerCase();
+const bakKidName = n => String(n || '').replace(/[\s\\/:*?"<>|.\-]+/g, '') || '아이';
+const bakKey = d => String(d.getFullYear()).slice(-2) + pad2(d.getMonth()+1) + pad2(d.getDate());
+const bakTop = (list, key) => (list || []).reduce((m, b) => b && b.d===key ? Math.max(m, Number(b.n) || 0) : m, 0);
+function bakFile(o){   // o: {email, kid, now, tail} — tail 이 없으면 오프라인(off+HHMM)
+  const k = bakKey(o.now), tail = o.tail==null ? 'off' + pad2(o.now.getHours()) + pad2(o.now.getMinutes()) : o.tail;
+  return 'Wa-' + bakTag(o.email) + '-' + bakKidName(o.kid) + '-' + bakDev() + '-' + k.slice(0, 2) + '-' + k.slice(2) + '-' + tail + '.json';
+}
+const bakOnline = () => !!FAM && navigator.onLine !== false;
+// 아이 폰: 내 번호표 + 부모님 번호표(미리 받아 둔 것) — 부르는 쪽이 저장(markBackup)한다
+function bakNameKid(){
+  const now = new Date(), kid = FAM && FAM.role==='kid' ? FAM.name : '', email = FAM && FAM.pemail;
+  if(!bakOnline() || FAM.role!=='kid') return bakFile({email, kid, now});
+  const key = bakKey(now), n = bakTop([S.bak].concat(FAM.pbak || []), key) + 1;
+  S.bak = {d:key, n};
+  return bakFile({email, kid, now, tail:n});
+}
+// 부모 폰: 아이 폰 번호표(클라우드 사본) + 부모님들 번호표 → 제 members 문서에 적는다
+function bakNamePar(k){
+  const now = new Date(), email = PAR.bakMail || (FAM && FAM.email);
+  if(!bakOnline()) return bakFile({email, kid:k.name, now});
+  const key = bakKey(now), mine = PAR.bak || (PAR.bak = {});
+  const n = bakTop([k.st && k.st.bak, mine[k.id]].concat((PAR.bakSeen && PAR.bakSeen[k.id]) || []), key) + 1;
+  mine[k.id] = {d:key, n};
+  fbLoad().then(() => memRef().update({['bak.'+k.id]: {d:key, n}})).catch(() => {});
+  return bakFile({email, kid:k.name, now, tail:n});
+}
+// 자동 백업 칸을 파일로 — 번호 대신 auto / undo, 날짜는 그 칸을 찍은 날
+function bakAutoName(r){
+  const undo = r.d==='undo', now = undo ? new Date(r.at) : new Date(r.d + 'T12:00:00');
+  const kid = FAM ? (FAM.role==='kid' ? FAM.name : '') : '';
+  return bakFile({email: FAM && (FAM.pemail || PAR.bakMail || FAM.email), kid, now, tail: undo ? 'undo' : 'auto'});
+}
+// 가족 주인 이메일 · 부모님 번호표를 미리 받아 둔다(설정을 열 때) — 실패해도 조용히(그때는 아는 것만으로 센다)
+async function bakPeek(){
+  if(!FAM) return;
+  try{
+    await fbLoad(); const me = FB.auth.currentUser; if(!me) return;
+    const qs = await FB.db.collection('families/'+FAM.fid+'/members').get();
+    const ms = qs.docs.map(d => Object.assign({uid:d.id}, d.data())).filter(m => m.role==='parent');
+    const owner = ms.find(m => m.uid===FAM.fid) || ms[0], mail = (owner && owner.email) || '';
+    if(FAM.role==='kid'){ FAM.pemail = mail; FAM.pbak = ms.map(m => m.bak && m.bak[FAM.kidId]).filter(Boolean); famSave(); return; }
+    PAR.bakMail = mail; PAR.bakSeen = {};
+    ms.forEach(m => Object.keys(m.bak || {}).forEach(id => (PAR.bakSeen[id] = PAR.bakSeen[id] || []).push(m.bak[id])));
+  }catch(e){}
+}
+
 /* ───────── 자동 백업 — 하루 한 칸, 30일 보관 (v26-1010-16) ─────────
    이 폰 안(IndexedDB 'allowance.bak')에 날짜마다 한 칸씩 쌓는다. 언제 찍히나:
    ① 아이가 '하루 마무리' 두 질문에 답하는 순간 → 그날 칸을 그때 상태로 찍고 '마무리 백업'(chk)으로 굳힌다(그 뒤 고쳐도 덮어쓰지 않는다)
@@ -3236,7 +3299,7 @@ async function bakSheet(){
     ${days.length || undo ? (undo ? row(undo) : '') + days.map(row).join('') : `<div class="empty" style="padding:14px">${face('pig')}아직 자동 백업이 없어요.<br>기록을 적으면 저절로 만들어져요.</div>`}
     <div class="note" style="margin-top:10px">⚠️ 불러오면 지금 기록이 그 날 모습으로 바뀌어요.<br>(바뀌기 직전 모습은 '되돌리기'로 한 번 돌릴 수 있어요)</div>`);
   $('sheet').querySelectorAll('[data-bk]').forEach(b => b.onclick = () => { const r = list.find(x => x.d===b.dataset.d); if(!r) return;
-    if(b.dataset.bk==='file'){ saveTextFile(r.text, '용돈친구들-자동백업-'+(r.d==='undo' ? '불러오기직전' : r.d)+'.json'); toast('파일로 저장했어요'); }
+    if(b.dataset.bk==='file'){ saveTextFile(r.text, bakAutoName(r)); toast('파일로 저장했어요'); }
     else restoreFromText(r.text, r.d==='undo' ? '불러오기 직전 기록' : bakWhen(r)+' 자동 백업'); });
 }
 const fmtHM = ms => { const d = new Date(ms); return pad2(d.getHours())+':'+pad2(d.getMinutes()); };
@@ -3277,8 +3340,8 @@ function backupSheet(){
     const fb = () => { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); let r = false; try{ r = document.execCommand('copy'); }catch(e){} ta.remove(); r ? ok() : toast('복사 못 했어요. 파일로 저장해 주세요'); };
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, fb); else fb();
   };
-  $('bkFile').onclick = () => { saveTextFile(backupText(), '용돈친구들-백업-'+todayStr()+'.json'); markBackup(); toast('파일로 저장했어요'); };
-  $('bkAuto').onclick = bakSheet; bakInfo($('bakInfo'));
+  $('bkFile').onclick = () => { saveTextFile(backupText(), bakNameKid()); markBackup(); toast('파일로 저장했어요'); };
+  $('bkAuto').onclick = bakSheet; bakInfo($('bakInfo')); bakPeek();
   $('bkOpen').onclick = restoreSheet;
 }
 /* 미리듣기: 고른 곡과 상관없이 한 곡만 들어 본다(다시 누르면 멈춤). 듣는 동안 배경음악은 잠시 멈췄다가 이어진다 */
@@ -3375,7 +3438,7 @@ function restoreFromText(text, label){
       plans: Array.isArray(d.plans) ? d.plans.filter(p=>p&&p.name&&Number.isFinite(+p.amt)).map(p=>({id:String(p.id||uid()), name:String(p.name), amt:Math.round(+p.amt), done:!!p.done})) : []});
     if(!confirm((label ? label+'을(를) ' : '')+'기록 '+n.tx.length+'개, 칸 '+n.tiles.length+'개를 불러와요.\n지금 기록은 모두 바뀌어요. 계속할까요?')) return;
     if(S.tx.length) bakPut({d:'undo', at:Date.now(), kind:'undo', n:S.tx.length, text:backupText()}).catch(() => {});      // 바뀌기 직전 모습을 한 번 남긴다
-    S = Object.assign(n, {lastBackup:S.lastBackup}); save(); closeSheet(); render(); toast('불러왔어요!');
+    S = Object.assign(n, {lastBackup:S.lastBackup, bak:S.bak}); save(); closeSheet(); render(); toast('불러왔어요!');
 }
 
 /* ───────── 소리 켜고 끄기 (홈 위쪽 스피커) ───────── */
