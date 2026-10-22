@@ -107,7 +107,7 @@ console.log('\n시나리오 3 — 완료한 할일을 옮겨도 완료가 풀리
 console.log("\n시나리오 4 — '날짜 지정' 이동도 메뉴와 똑같이 굴러간다");
 {
   const { ST, api } = makeEnv([marked()], T);
-  api.moveTaskToPickedDate('2026-09-20');
+  api.moveTaskToPickedDate('2026-09-20', 'am');
   const it = at(ST, '2026-09-20')[0];
   sc.eq('원래 날짜에서 사라진다', at(ST, T).length, 0);
   sc.eq('연락할 일 표시가 따라간다', it.contactTask, true);
@@ -116,7 +116,7 @@ console.log("\n시나리오 4 — '날짜 지정' 이동도 메뉴와 똑같이 
 }
 {
   const { ST, api } = makeEnv([marked()], T);
-  api.moveTaskToPickedDate('2026-09-17');
+  api.moveTaskToPickedDate('2026-09-17', 'am');
   sc.eq("내일을 고르면 '내일로' 와 같이 수동 이월을 올린다",
         at(ST, '2026-09-17')[0].manualCarryCount, 3);
 }
@@ -136,7 +136,7 @@ console.log('\n시나리오 5 — 복제도 성격 표시를 물려받되 진행
 }
 {
   const { ST, api } = makeEnv([marked()], T);
-  api.duplicateTaskToPickedDate('2026-09-25');
+  api.duplicateTaskToPickedDate('2026-09-25', 'am');
   sc.eq("'날짜 지정' 복제도 연락할 일 표시를 물려받는다",
         at(ST, '2026-09-25')[0].contactTask, true);
 }

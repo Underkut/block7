@@ -94,7 +94,7 @@ console.log('\n시나리오 2 — 다음 주로 · 오늘 다른 구간으로');
 console.log('\n시나리오 3 — 날짜 지정');
 {
   const e = makeEnv([{ text: '심방', done: false }]);
-  e.api.nextAfterDonePicked('2026-11-02');
+  e.api.nextAfterDonePicked('2026-11-02', 'am');
   sc.eq('고른 날짜에 새 할일', at(e.ST, '2026-11-02')[0].text, '심방 완료했고, 이제');
   sc.eq('그 날로 간다', e.log.go, ['2026-11-02']);
   sc.eq('원래 것은 완료', at(e.ST, T)[0].done, true);
