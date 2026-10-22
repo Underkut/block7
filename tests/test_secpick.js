@@ -182,8 +182,8 @@ console.log('\n시나리오 7 — 네 길이 모두 구간을 받는다');
   });
   // 달력이 먼저, 판이 그 다음
   const mp=four[2][1], dp=four[3][1];
-  sc.eq('이동 날짜 지정은 날짜부터', /toSec===undefined&&_secPickOn\(\)/.test(mp), true);
-  sc.eq('복제 날짜 지정도 날짜부터', /toSec===undefined&&_secPickOn\(\)/.test(dp), true);
+  sc.eq('이동 날짜 지정은 날짜부터', /toSec===undefined\)\{\s*_secPickOpen/.test(mp), true);
+  sc.eq('복제 날짜 지정도 날짜부터', /toSec===undefined\)\{\s*_secPickOpen/.test(dp), true);
 }
 
 console.log('\n시나리오 8 — 설정과 여는 방법');

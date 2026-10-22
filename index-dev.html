@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1022-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1022-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -791,7 +791,7 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
 .sw-iconbtn .there-ic svg,.gnb-there .there-ic svg{transform-origin:50% 12%;}
 .sw-iconbtn .there-ic[data-k="hands"] svg{transform:scale(.9);}   /* BLOCK7 로고 옆 기도손은 괜찮다 (HB) */
 .sw-iconbtn .there-ic[data-k="throne"] svg,
-.sw-iconbtn .there-ic[data-k="flame"] svg{transform:scale(.8);}
+.sw-iconbtn .there-ic[data-k="flame"] svg{transform:scale(.68);}
 /* BLOCK7 로고 옆은 반대였다 — 줄인 보좌 · 불꽃이 옆 성경보다 작고 위로 떠 보였다 (HB v26-1022-1, 보좌 > 불꽃 > 기도손 순).
    재 보니 그림 가운데가 성경보다 보좌 1.2px · 불꽃 1px 위. 줄이지 않고 제 크기로 두면 가운데가 성경과 맞는다 */
 .gnb-there .there-ic[data-k="flame"] svg{transform:scale(.92);}
@@ -6382,7 +6382,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1022-2";
+const APP_VERSION = "v. 26-1022-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9168,7 +9168,7 @@ try{
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
   </div>
   <div class="task-menu-item" data-act="next" onclick="nextAfterDoneYesterday()">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h11"/><path d="M11.5 6 15.5 10l-4 4"/></svg></span>어제 했고, 이제 오늘
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><g transform="rotate(180 10 10)"><path d="M15 4.5v11L7 10z"/><rect x="4" y="4.5" width="2" height="11" rx=".5"/></g></svg></span>어제 했고, 이제 오늘
   </div>
   <div class="task-menu-item" id="nextSecRow" data-act="next" data-cnt-days="0"
        data-secpick="always" onclick="_secPickOpenFromRow(this)">
@@ -40077,7 +40077,7 @@ function moveTaskToPickedDate(dateStr,toSec){
   // 구간 판이 켜져 있으면 **달력이 먼저, 판이 그 다음**이다. 날짜를 알아야
   // 그 날 구간에 무엇이 있는지 보여줄 수 있다. 판에서 구간을 고르면 toSec 을
   // 들고 여기로 다시 들어온다.
-  if(toSec===undefined&&_secPickOn()){
+  if(toSec===undefined){
     _secPickOpen({act:'move',dateStr,toKey:dateStr,label:'이동 · 날짜 지정'},
       document.getElementById('dateLabelRow'));
     return;
@@ -40107,7 +40107,7 @@ function moveTaskToPickedDate(dateStr,toSec){
 function duplicateTaskToPickedDate(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   if(!_datePickArmed('dupDatePickerInput'))return;
-  if(toSec===undefined&&_secPickOn()){
+  if(toSec===undefined){
     _secPickOpen({act:'dup',dateStr,toKey:dateStr,label:'복제 · 날짜 지정'},
       document.getElementById('dupDateLabelRow'));
     return;
@@ -40424,7 +40424,7 @@ function nextAfterDoneYesterday(){nextAfterDoneTo(0,undefined,todayKey(),' 어�
 function nextAfterDonePicked(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   if(!_datePickArmed('nextDatePickerInput'))return;
-  if(toSec===undefined&&_secPickOn()){
+  if(toSec===undefined){
     _secPickOpen({act:'next',dateStr,toKey:dateStr,label:'완료 후 다음 할일 · 날짜 지정'},
       document.getElementById('nextDateLabelRow'));
     return;

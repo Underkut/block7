@@ -135,7 +135,7 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
     rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('jump'),
     (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy,()=>false);
 
-  dup('2026-09-20');
+  dup('2026-09-20','am');
   sc.eq('원본은 그 자리에 남는다', from.length, 1);
   sc.eq('고른 날짜에 새 할일로 들어간다', to[0], {text:'세금 내기',done:false,flag:true});
   sc.eq('복제라고 안내하며 갈 곳도 알려 준다', calls.at(-1),
