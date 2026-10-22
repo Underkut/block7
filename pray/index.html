@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1021-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1022-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1021-4';
+const APP_VERSION = 'v. 26-1022-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2662,12 +2662,13 @@ function renderView() {
   // A13 — 지도 이름 칸을 치는 도중 다시 그리면(동기화 도착 · 1분 시계 등) 칸이 새것으로 바뀐다.
   //   옛 칸이 포커스를 잃으며 '바깥을 눌렀다' 로 읽혀 적고 닫혔다 → 띠만 남고 칸이 사라짐 (HB 2026-10-21).
   //   치던 글자 · 커서 · 포커스를 새 칸으로 그대로 옮긴다.
-  const ed = UI.tab === 'map' && UI.mapEdit && el && el.querySelector('[data-mapin]');
+  //   ⚠️ 같은 칸일 때만 — Enter 로 다음 새 칸을 열면 옛 칸(다른 key)의 글자가 새 칸에 복사됐다 (HB 2026-10-22 발견)
+  const ed = UI.tab === 'map' && UI.mapEdit && el && el.querySelector('[data-mapin="' + UI.mapEdit.key + '"]');
   const keep = ed && { v: ed.value, f: document.activeElement === ed, a: ed.selectionStart, b: ed.selectionEnd };
   if (fn && el) el.innerHTML = fn();
   if (UI.tab === 'map') mapLayout();
   if (keep) {
-    const ni = el.querySelector('[data-mapin]');
+    const ni = el.querySelector('[data-mapin="' + UI.mapEdit.key + '"]');
     if (!ni) UI.mapEdit = null;   // 고치던 것이 (다른 기기에서) 지워졌다
     else { ni.value = keep.v; if (keep.f) { ni.focus({ preventScroll: true }); try { ni.setSelectionRange(keep.a, keep.b); } catch (er) {} } }
   }
@@ -3838,6 +3839,30 @@ document.addEventListener('click', e => {
   UI.selMem = UI.sel; UI.sel = '';
   document.querySelectorAll('#v-map .sel').forEach(x => x.classList.remove('sel'));
 });
+// 터치: 지도에서 그룹 밖 빈 곳을 톡 누르면 새 그룹 이름 칸이 바로 열린다 — '+' 를 켜지 않아도 (HB 2026-10-22)
+// 그룹 맨 아래 빈 행을 누르면 항목 입력이 되는 것과 같은 결. 쓰던 칸이 있었으면 그 누름은 칸을 닫는 데만 쓴다.
+// 끌기 · 스크롤 · 길게 누르기 · 두 손가락과 헷갈리지 않게 '짧고 안 움직인 한 손가락 누름' 만 받는다.
+// iOS 는 빈 div 에 click 을 안 보낼 때가 있어 touchend 에서 받는다 (같은 손짓 안이라 자판도 바로 뜬다).
+const MGAP = { st: null };
+document.addEventListener('touchstart', e => {
+  MGAP.st = null;
+  if (UI.tab !== 'map' || UI.layers.length || SHEET || MT.on || e.touches.length !== 1) return;
+  const t = e.target; if (!t.closest || !t.closest('#v-map') || t.closest('.gcard,[data-sel],button,input,textarea,a,.chip,.pk,.vh,.mkrow')) return;
+  const a = document.activeElement;
+  if (UI.mapEdit || (a && a.matches && a.matches('input,textarea'))) return;
+  const v = $('v-map'), p = e.touches[0];
+  MGAP.st = { x: p.clientX, y: p.clientY, at: Date.now(), top: v.scrollTop };
+}, { passive: true, capture: true });
+document.addEventListener('touchend', e => {
+  const s = MGAP.st; MGAP.st = null;
+  if (!s || e.touches.length || UI.tab !== 'map' || UI.layers.length || SHEET || MT.on || UI.mapEdit || MD.st) return;
+  const p = e.changedTouches[0], v = $('v-map'), m = v.querySelector('.masonry.mjs');
+  if (!p || !m || Math.hypot(p.clientX - s.x, p.clientY - s.y) > 10 || Date.now() - s.at > 450 || Math.abs(v.scrollTop - s.top) > 2) return;
+  if (UI.mapQuery || (UI.mapFilter && UI.mapFilter.length)) return;   // 찾기 · 거르기 중에는 '+ 그룹' 칸도 없다
+  if (p.clientY < m.getBoundingClientRect().top) return;              // 위 머리줄 · 칩 줄은 빈 곳이 아니다
+  e.preventDefault();
+  UI.sel = ''; mapNewGroup(false);
+}, { capture: true });
 function mapMouseClick(k) {
   if (UI.sel === k && !UI.mapEdit && Date.now() - MCLK.at > 450) { clearTimeout(MCLK.t); MCLK.t = setTimeout(() => { if (UI.sel === k && !UI.mapEdit) mapStartEdit(k, false); }, 300); return; }
   mapSelect(k); MCLK.at = Date.now();
