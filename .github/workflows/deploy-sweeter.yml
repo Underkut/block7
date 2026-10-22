@@ -74,3 +74,6 @@ jobs:
           projectId: block7-8f24e
           channelId: live
           target: sweeter7
+          # 'latest' 를 쓰면 2026-10-22 에 15.34.1 이 들어와 serviceusage.services.get 권한(403)을 따로 묻다 실패했다.
+          # 전날 성공한 15.34.0 으로 묶어 둔다. 올리려면 서비스 계정에 'Service Usage Consumer' 역할을 먼저 준다.
+          firebaseToolsVersion: 15.34.0
