@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1021-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1022-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -790,8 +790,11 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
    상자를 아래까지 꽉 채워 더 많이, 기도손은 조금. */
 .sw-iconbtn .there-ic svg,.gnb-there .there-ic svg{transform-origin:50% 12%;}
 .sw-iconbtn .there-ic[data-k="hands"] svg{transform:scale(.9);}   /* BLOCK7 로고 옆 기도손은 괜찮다 (HB) */
-.sw-iconbtn .there-ic[data-k="throne"] svg,.gnb-there .there-ic[data-k="throne"] svg,
-.sw-iconbtn .there-ic[data-k="flame"] svg,.gnb-there .there-ic[data-k="flame"] svg{transform:scale(.8);}
+.sw-iconbtn .there-ic[data-k="throne"] svg,
+.sw-iconbtn .there-ic[data-k="flame"] svg{transform:scale(.8);}
+/* BLOCK7 로고 옆은 반대였다 — 줄인 보좌 · 불꽃이 옆 성경보다 작고 위로 떠 보였다 (HB v26-1022-1, 보좌 > 불꽃 > 기도손 순).
+   재 보니 그림 가운데가 성경보다 보좌 1.2px · 불꽃 1px 위. 줄이지 않고 제 크기로 두면 가운데가 성경과 맞는다 */
+.gnb-there .there-ic[data-k="flame"] svg{transform:scale(.92);}
 /* Sweeter 타일 — 우하단 구석. 점(.sw-pips)은 그만큼 왼쪽으로 비켜선다 */
 .sw-there{position:relative;flex:0 0 auto;background:none;border:0;padding:0;margin:0 0 0 8px;
   cursor:pointer;color:var(--tx3);line-height:0;-webkit-tap-highlight-color:transparent;}
@@ -6371,7 +6374,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1021-3";
+const APP_VERSION = "v. 26-1022-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
