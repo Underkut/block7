@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1022-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1022-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2340,6 +2340,14 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
   cursor:text;
 }
 .bi-inp::placeholder{color:var(--tx3);font-weight:400;font-size:14px;}
+/* 행보다 긴 할일 — 흐르기 (H-6). 처음 · 끝에서 잠깐 쉬며 오갔다 돌아온다. 거리 · 시간은 JS 가 잰다 (_ovfRun) */
+.bi-inp.mq,.si-inp.mq{animation:taskMq var(--mq-dur,8s) ease-in-out infinite;}
+@keyframes taskMq{0%,14%{text-indent:0}46%,62%{text-indent:var(--mq-x,0px)}94%,100%{text-indent:0}}
+/* 긴 할일 고치기 — 여러 줄 칸 (H-6). 글꼴은 원래 칸에서 그대로 옮겨 온다 */
+.task-lta{flex:1 1 0;min-width:0;align-self:center;display:block;resize:none;border:0;outline:0;background:transparent;
+  margin:0;padding:1px 2px;line-height:1.38;overflow:hidden;-webkit-appearance:none;border-radius:0;
+  transition:height .26s cubic-bezier(.22,.8,.24,1);cursor:text;}
+.lta-on>.row-spacer{display:none;}
 /* Prevent iOS's long-press text-selection callout from racing our
    custom long-press handler. Short taps still focus/place the caret
    normally; only the OS's selection-bubble UI is suppressed. */
@@ -6374,7 +6382,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1022-1";
+const APP_VERSION = "v. 26-1022-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6920,6 +6928,19 @@ try{
         </div>
         <div class="theme-summary" id="themeSummary"></div>
         <button class="settings-btn" style="width:100%;margin-top:10px;" onclick="openThemePicker()">테마 선택</button>
+      </div>
+
+      <!-- 긴 할일 (H-6, v26-1022-2) — 행보다 긴 할일 글자를 어떻게 보일지 -->
+      <div class="settings-section" id="secTaskOverflow" data-lv="mp" data-prod="b7">
+        <div class="settings-row-text" style="margin-bottom:10px;">
+          <div class="settings-row-label lv1">긴 할일</div>
+          <div class="settings-row-desc">할일 글자가 행보다 길어 잘릴 때 어떻게 보일지 골라요. 고칠 때는 어느 것이든 여러 줄로 펴져요.</div>
+        </div>
+        <div class="theme-pick-row">
+          <button class="theme-pick-btn" id="taskOvf_shrink" onclick="updateSetting('taskOverflow','shrink')">글자 줄이기</button>
+          <button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">옆으로 흐르기</button>
+          <button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button>
+        </div>
       </div>
 
       <!-- 요일 표기 -->
@@ -23511,7 +23532,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink'};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -35465,6 +35486,136 @@ function autoSizeInput(inp){
   // exactly matching the "sometimes clipped, sometimes fine" symptom.
   // This second pass costs nothing visible and corrects it if needed.
   requestAnimationFrame(measure);
+  if(inp.classList.contains('bi-inp')||inp.classList.contains('si-inp'))_ovfQueue(inp);
+}
+
+// ── 행보다 긴 할일 (H-6, HB 2026-10-22) ──
+// 설정 '긴 할일'(taskOverflow) 대로 — 'shrink' 글자를 줄여 다 보이게(기본) · 'scroll' 천천히 옆으로 흘려 다 보이게 · 'clip' 예전처럼 잘림.
+// 줄이는 데는 바닥이 있다(본디 크기의 절반, 10px 아래로는 안 감) — 그래도 길면 줄인 채로 흐른다(잘리는 글자가 없게).
+// 움직임 줄이기(prefers-reduced-motion)면 흐르기 대신 줄이기.
+// 쓸 수 있는 폭은 **행에서** 잰다: 칸 폭 + 오른쪽 빈자리(.row-spacer − 최소 8px) − 행이 넘친 만큼.
+//   글자 칸에서 재면 줄일수록 칸도 줄어 계속 작아진다 (CLAUDE.md '폭은 컨테이너에서 잰다').
+// 줄마다 읽고 쓰면 줄 수만큼 레이아웃을 다시 한다 → 다 읽고 나서 몰아 쓴다. autoSizeInput 의 두 번째 잼(rAF) 뒤에 돈다.
+const _ovfQ=new Set();let _ovfRaf=0;
+function _ovfQueue(inp){_ovfQ.add(inp);if(!_ovfRaf)_ovfRaf=requestAnimationFrame(()=>requestAnimationFrame(_ovfRun));}
+function _ovfMode(){
+  const m=ST.settings&&ST.settings.taskOverflow,v=(m==='scroll'||m==='clip')?m:'shrink';
+  return v==='scroll'&&window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches?'shrink':v;
+}
+function _ovfClear(inp){
+  if(!inp.style.fontSize&&!inp.style.maxWidth&&!inp.classList.contains('mq'))return false;
+  inp.style.fontSize='';inp.style.maxWidth='';inp.classList.remove('mq');
+  inp.style.removeProperty('--mq-x');inp.style.removeProperty('--mq-dur');
+  return true;
+}
+function _ovfRun(){
+  _ovfRaf=0;
+  if(!_measureCtx)_measureCtx=document.createElement('canvas').getContext('2d');
+  const mode=_ovfMode(),list=[..._ovfQ];_ovfQ.clear();
+  // 읽기
+  const R=list.map(inp=>{
+    if(!inp.isConnected||inp._lta||!inp.offsetParent)return null;   // 고치는 중(여러 줄 칸) · 안 보이는 줄은 건너뛴다
+    const row=inp.closest('.big-item,.sm-item');if(!row)return null;
+    const sp=[...row.children].find(c=>c.classList.contains('row-spacer'));
+    const cs=getComputedStyle(inp);
+    if(!inp.style.fontSize)inp._baseFs=parseFloat(cs.fontSize);
+    const base=inp._baseFs||parseFloat(cs.fontSize);
+    _measureCtx.font=`${cs.fontWeight} ${base}px ${cs.fontFamily}`;
+    const tw=_measureCtx.measureText(inp.value||'').width;
+    const avail=inp.offsetWidth+(sp?Math.max(0,sp.offsetWidth-8):0)-Math.max(0,row.scrollWidth-row.clientWidth);
+    return {inp,base,tw,avail:Math.floor(avail),focus:document.activeElement===inp};
+  });
+  // 쓰기
+  R.forEach(r=>{
+    if(!r)return;
+    const {inp,base,tw,avail}=r,pad=11;
+    const ovf=!!inp.value&&avail>40&&tw+pad>avail+.5;
+    inp.classList.toggle('ovf',ovf);
+    if(!ovf||mode==='clip'||r.focus){
+      if(_ovfClear(inp))inp.style.width=Math.max(20,Math.ceil(tw)+(r.focus?18:11))+'px';
+      return;
+    }
+    let fs=base;
+    if(mode==='shrink')fs=Math.max(Math.max(10,base*.5),Math.floor(base*(avail-pad)/tw*10)/10);
+    const w=tw*fs/base;
+    inp.style.fontSize=fs<base?fs+'px':'';
+    inp.style.maxWidth=avail+'px';
+    inp.style.width=Math.min(avail,Math.ceil(w)+pad)+'px';
+    const dist=Math.ceil(w-(avail-6));
+    if(dist>0){   // 다 안 들어간다 — 흐르기(또는 줄여도 모자람)
+      inp.style.setProperty('--mq-x',(-dist)+'px');
+      inp.style.setProperty('--mq-dur',Math.max(6,Math.min(30,4+dist/22)).toFixed(1)+'s');
+      inp.classList.add('mq');
+    }else{inp.classList.remove('mq');inp.style.removeProperty('--mq-x');inp.style.removeProperty('--mq-dur');}
+  });
+}
+// 화면 폭이 바뀌면(돌리기 · 창 크기 · 나눠 보기) 다시 잰다 · 웹폰트가 늦게 들어와 글자 폭이 달라져도
+{let t=0;window.addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>resizeAllInputs(),150);});}
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>resizeAllInputs());
+function _syncTaskOvfBtns(){
+  const v=(ST.settings&&ST.settings.taskOverflow)||'shrink';
+  ['shrink','scroll','clip'].forEach(k=>document.getElementById('taskOvf_'+k)?.classList.toggle('active',v===k));
+}
+
+// ── 긴 할일 고치기 — 여러 줄 칸 (H-6, HB 2026-10-22) ──
+// 한 줄 칸(input)은 줄을 못 바꿔, 넘치는 할일은 고치는 동안에도 잘려 보였다.
+// 넘치는 할일(.ovf)을 누르면 그 자리에 여러 줄 칸(textarea)을 펴서 고친다 — 행이 필요한 줄 수만큼 높아진다.
+//   ⚠️ 행을 감싼 .swipe-wrap 이 overflow:hidden 이라 위아래로 띄워 겹치면 잘린다 → 행 자체가 늘어나 아래 줄들이 비켜 준다.
+// 저장 · 반복 할일의 '어디까지 바꿀까' · Enter/Tab/Esc 는 원래 칸의 처리를 그대로 쓴다(값을 옮겨 적고 그 칸에서 일어난 것처럼 부른다).
+// ⚠️ 원래 칸으로 focus 를 되돌릴 때 onfocus 를 잠깐 뗀다 — onfocus 가 '고치기 시작한 글'(_origText)을 새 글로 덮으면
+//    반복 할일의 '어디까지 바꿀까' 를 못 묻는다. 칸을 옮길 때의 blur 도 같은 까닭으로 뗀다(아직 고친 것이 없다).
+// ⚠️ focus 를 옮기지 못하면(아이폰이 막는 경우) 아무것도 바꾸지 않고 원래 한 줄 칸으로 고친다.
+function _longEditOpen(inp){
+  if(inp._lta||!inp.classList.contains('ovf'))return;
+  const row=inp.closest('.big-item,.sm-item');if(!row)return;
+  _ovfClear(inp);
+  const cs=getComputedStyle(inp),h0=inp.offsetHeight;
+  const ta=document.createElement('textarea');
+  ta.className='task-lta';ta.rows=1;ta.value=inp.value;
+  ta.setAttribute('enterkeyhint','done');ta.spellcheck=false;
+  ta.style.fontSize=cs.fontSize;ta.style.fontWeight=cs.fontWeight;ta.style.fontFamily=cs.fontFamily;ta.style.color=cs.color;
+  inp.after(ta);row.classList.add('lta-on');
+  const ob=inp.onblur;inp.onblur=null;
+  try{ta.focus({preventScroll:true});}catch(e){}
+  if(document.activeElement!==ta){inp.onblur=ob;ta.remove();row.classList.remove('lta-on');return;}
+  inp.style.display='none';inp._lta=ta;
+  inp.onblur=ob;
+  const n=ta.value.length;try{ta.setSelectionRange(n,n);}catch(e){}
+  const fit=anim=>{
+    const was=ta.style.height;ta.style.transition='none';ta.style.height='auto';
+    const h=ta.scrollHeight;ta.style.height=was||h0+'px';void ta.offsetHeight;
+    ta.style.transition=anim&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'':'none';
+    ta.style.height=h+'px';
+  };
+  ta.style.height=h0+'px';fit(true);
+  let closing=false;
+  const close=()=>{
+    closing=true;inp._lta=null;
+    inp.style.display='';row.classList.remove('lta-on');ta.remove();
+    autoSizeInput(inp);
+  };
+  const back=()=>{   // 원래 칸으로 — onfocus 를 떼고
+    const of=inp.onfocus;inp.onfocus=null;
+    try{inp.focus({preventScroll:true});}catch(e){}
+    inp.onfocus=of;
+  };
+  ta.oninput=()=>{
+    if(/[\r\n]/.test(ta.value)){const c=ta.selectionStart;ta.value=ta.value.replace(/[\r\n]+/g,' ');try{ta.setSelectionRange(c,c);}catch(e){}}
+    inp.value=ta.value;if(inp.oninput)inp.oninput();
+    fit(false);
+  };
+  ta.onkeydown=e=>{
+    if((e.key==='Enter'||e.key==='Tab'||e.key==='Escape')&&!e.isComposing&&e.keyCode!==229){
+      e.preventDefault();inp.value=ta.value;
+      close();back();
+      if(inp.onkeydown)inp.onkeydown(e);
+    }
+  };
+  ta.onblur=()=>{
+    if(closing)return;
+    inp.value=ta.value;close();
+    if(inp.onblur)inp.onblur();
+  };
 }
 
 // 긴급 표시 아이콘 — 사이렌 몸통(고정) + 후광(opacity/scale 디졸브).
@@ -35539,7 +35690,7 @@ function makeBigItem(id,i,b,secColor){
   let _escRestoring=false;  // ESC 복원 중엔 onblur의 빈값 삭제 로직 건너뜀
 
   inp.oninput=()=>{getBigs(tKey(),id)[i].text=inp.value;saveText();updateTotal();autoSizeInput(inp);};
-  inp.onfocus=()=>{_origText=inp.value;autoSizeInput(inp);clearActive();};
+  inp.onfocus=()=>{_origText=inp.value;autoSizeInput(inp);clearActive();_longEditOpen(inp);};
   inp.onblur=()=>{
     if(navigating){navigating=false;return;}
     if(_escRestoring){_escRestoring=false;return;} // ESC 복원 — 삭제/재렌더 안 함
@@ -35764,7 +35915,7 @@ function makeSmItem(id,i,sm,secColor){
   let _origText=sm.text||''; // ESC 복원용
   let _escRestoring=false;
   inp.oninput=()=>{getSmalls(tKey(),id)[i].text=inp.value;saveText();autoSizeInput(inp);};
-  inp.onfocus=()=>{_origText=inp.value;autoSizeInput(inp);clearActive();};
+  inp.onfocus=()=>{_origText=inp.value;autoSizeInput(inp);clearActive();_longEditOpen(inp);};
   inp.onblur=()=>{
     if(navigating){navigating=false;return;}
     if(_escRestoring){_escRestoring=false;return;} // ESC 복원 — 삭제/재렌더 안 함
@@ -41950,6 +42101,7 @@ function renderSettingsPanel(){
   document.getElementById('dowBtnLetterLord').classList.toggle('active',dowFmt==='letter-lord');
   document.getElementById('dowBtnLetterSun').classList.toggle('active',dowFmt==='letter-sun');
   document.getElementById('dowBtnKorean').classList.toggle('active',dowFmt==='korean');
+  _syncTaskOvfBtns();
 
   renderPresetList();
   renderSectionEditor();
@@ -42042,6 +42194,7 @@ function updateSetting(key,value){
     if(typeof _vgState!=='undefined'&&_vgState.kind==='tag'&&typeof _vgSyncFilterLabel==='function')_vgSyncFilterLabel();
     else if(typeof _vgSyncExcl==='function')_vgSyncExcl();
   }
+  if(key==='taskOverflow'){_syncTaskOvfBtns();resizeAllInputs();}
   if(key==='addInputPosition'){
     ['A','C'].forEach(p=>{
       const el=document.getElementById(`addPos${p}`);
