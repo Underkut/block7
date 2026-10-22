@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1022-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1022-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6383,7 +6383,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1022-4";
+const APP_VERSION = "v. 26-1022-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -45789,12 +45789,24 @@ function _mgLogNested(b,l,c,baseKnown){ // memorizationLog: {날짜:{구간:[항
 //      · 한쪽이라도 짧아졌다(삭제·재정렬) → **예전 규칙 그대로** 통째로 간다
 //        (고유번호 없이 그것까지 자동으로 정하려 들면 지운 할일이 되살아난다)
 //    이 물러섬이 이 함수의 안전장치다. 없애지 말 것.
+// ══ 빈 칸은 '지움' 이 아니다 (v26-1022-5, HB 신고 "코드 고치고 나면 오늘 할일이 싹 사라진다") ══
+// ⚠️ 화면을 그리는 getBigs/getSmalls/getEvents 는 **없던 구간에 빈 배열 [] 을 만든다.**
+//    새 버전이 나와 앱이 다시 켜지면 클라우드가 오기 전에 로컬로 오늘을 먼저 그린다 →
+//    다른 기기가 넣은 오늘 할일은 아직 없고 그 자리에 [] 만 생긴다. 기준점에는 그 구간이
+//    없었으니(undefined) 예전 규칙은 "[] ≠ 없음 → 이 기기가 바꿨다", 클라우드도 바꿨으니
+//    "둘 다 바꿈 → 손에 든 쪽" 으로 **빈 칸이 이겨 오늘 할일을 통째로 지웠다.**
+//    충돌 창에 '이 기기 0개 / 다른 기기 N개' 로 남던 것이 그것이다.
+//  · 기준점에 그 구간이 없었으면(또는 기준점을 모르는 복구 길이면) **빈 쪽은 상대를 따른다.**
+//  ⚠️ 기준점에 할일이 **있었는데** [] 가 된 것은 그대로 '지움' 이다 (시험 시나리오 4).
+//  ⚠️ 양쪽 다 비어 있지 않으면 예전 규칙 그대로 — 여기서 합치면 두 기기가 따로 돌린
+//     '미완료 넘기기' 처럼 같은 할일을 각자 만든 것이 두 벌이 된다.
 function _mgTaskArray(b,l,c,baseKnown){
   if(l===undefined)return c;
   if(c===undefined)return l;
   if(!Array.isArray(l)||!Array.isArray(c))return _mgWhole(b,l,c,baseKnown);
   const lj=_mgJ(l),cj=_mgJ(c);
   if(lj===cj)return l;
+  if(!baseKnown||b==null){if(!l.length)return c;if(!c.length)return l;}
   if(!baseKnown||!Array.isArray(b))return _mgWhole(b,l,c,baseKnown);
   const bj=_mgJ(b);
   if(lj===bj)return c;                       // 나는 안 바꿈 → 상대 것
@@ -45829,6 +45841,8 @@ function _mgDay(b,l,c,baseKnown){
     let v;
     if(k==='big'||k==='small'||k==='events'){
       v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgTaskArray(b2,l2,c2,baseKnown));
+    }else if(k==='trash'&&(!baseKnown||bv==null)&&Array.isArray(lv)&&Array.isArray(cv)&&(!lv.length||!cv.length)){
+      v=lv.length?lv:cv;   // getDay 가 만든 빈 휴지통이 상대 것을 지우지 않게 (v26-1022-5)
     }else{
       v=_mgWhole(bv,lv,cv,baseKnown);
     }
@@ -46430,6 +46444,7 @@ function _cfMake(type,path,field,base,local,remote,label,opts){
 function _cfScanSection(dateKey,kind,sec,b,l,c,out,opts){
   if(!Array.isArray(l)||!Array.isArray(c))return;
   if(!_cfDiffer(l,c))return;
+  if(b==null&&(!l.length||!c.length))return;   // 빈 칸은 상대를 따른다 — 충돌 아님 (v26-1022-5, _mgTaskArray 와 같은 경계)
   const path=`${dateKey}/${kind}/${sec}`;
   const where=`${dateKey} · ${_cfKindLabel(kind)} · ${_cfSecLabel(sec)}`;
   if(!Array.isArray(b)){
@@ -46723,8 +46738,11 @@ const _CF_VERSE_BULK=['verseCollections','memorizationLog','verseLogs'];
 function _cfMine(r){
   if(!(typeof _swOn==='function'&&_swOn()))return true;   // BLOCK7 은 전부 본다
   if(!r)return false;
-  if(r.kind==='collection')return true;
-  if(r.kind==='bulk'||r.kind==='shrink'){
+  // ⚠️ 충돌 기록(_cfMake)의 갈래 이름은 entityType 이다 (v26-1022-5). 예전엔 없는 칸 kind 만 봐서
+  //    Sweeter 에서 말씀 충돌까지 전부 감춰졌다 — 토스트는 뜨는데 늘 "0건".
+  const t=r.entityType||r.kind;
+  if(t==='collection')return true;
+  if(t==='bulk'||t==='shrink'){
     const what=String(r.entityId||'').split('/')[1]||'';
     return _CF_VERSE_BULK.includes(what);
   }
@@ -46735,13 +46753,16 @@ function _cfOpenCount(){return _cfOpen().length;}
 // 같은 자리의 충돌은 번호가 같으므로 덮어쓴다 — 두 번 쌓이지 않는다.
 function _cfStore(list){
   if(!list||!list.length)return 0;
-  let added=0;
+  // ⚠️ 알림은 **이 앱에서 보이는 것**(_cfMine)만 센다 (v26-1022-5, HB "0건이라는 토스트는 뭐야").
+  //    Sweeter 는 할일 충돌을 감추는데, 예전엔 그것도 '새로 생김' 으로 세어 토스트를 띄우고
+  //    숫자는 감춘 것을 빼고 세어 "겹친 변경 0건" 이 나왔다.
+  let added=0,addedMine=0;
   list.forEach(rec=>{
     const at=_cfList.findIndex(r=>r.conflictId===rec.conflictId);
     if(at>=0){
       if(_cfList[at].resolvedAt)return;    // 이미 사람이 정한 것은 다시 묻지 않는다
       _cfList[at]=rec;
-    }else{_cfList.push(rec);added++;}
+    }else{_cfList.push(rec);added++;if(_cfMine(rec))addedMine++;}
   });
   if(_cfList.length>_CF_MAX)_cfList=_cfList.slice(-_CF_MAX);
   _cfSaveLocal();
@@ -46749,7 +46770,7 @@ function _cfStore(list){
   _cfSyncVisibility();
   // 사람에게 알리는 것은 **진짜 충돌이 새로 생겼을 때만.** 기기를 바꿨다는
   // 이유만으로 팝업이 뜨면 아무도 안 본다.
-  if(added&&Date.now()-_cfToastAt>60000){
+  if(addedMine&&_cfOpenCount()&&Date.now()-_cfToastAt>60000){
     _cfToastAt=Date.now();
     try{
       showToast(`다른 기기와 겹친 변경 ${_cfOpenCount()}건이 있어요`,false,

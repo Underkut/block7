@@ -399,4 +399,36 @@ console.log('\n시나리오 22 — 충돌 토스트의 계정 탭 바로가기')
   sc.eq('계정 탭을 반짝이라고 함께 넘긴다', _openSettingsCalls[0] && _openSettingsCalls[0].flashTabId, 'account');
 }
 
+// ═══ 0건 토스트 (v26-1022-5, HB "겹친 변경 0건이 있어요는 왜 보여 줘?") ═══
+// Sweeter 는 할일 충돌을 감춘다. 예전엔 감춘 것도 '새로 생김' 으로 세어 토스트를 띄우고
+// 숫자는 감춘 것을 빼고 세어 "0건" 이 나왔다. 이제 보이는 것이 새로 생겼을 때만 띄운다.
+console.log('\n시나리오 0건 — 감춘 충돌로는 토스트를 띄우지 않는다');
+{
+  global._swOn = () => true;                         // Sweeter 로 연 것처럼
+  _toastCalls = []; S.setList([]); S.resetToastCooldown();
+  S.store([{ conflictId: 'sw:task', entityType: 'section', entityId: '2026-10-22/big/am',
+    base: null, local: [], remote: [{ text: 'A' }], choice: null, resolvedAt: null }]);
+  sc.eq('할일 충돌만 생기면 토스트 없음', _toastCalls.length, 0);
+  sc.eq('기록은 남는다(BLOCK7 에서 정할 수 있게)', S.list().length, 1);
+  S.resetToastCooldown();
+  S.store([{ conflictId: 'sw:coll', entityType: 'collection', entityId: 'verseCollections/c1',
+    base: { id: 'c1' }, local: { id: 'c1', name: 'a' }, remote: { id: 'c1', name: 'b' }, choice: null, resolvedAt: null }]);
+  sc.eq('말씀 쪽 충돌은 토스트', _toastCalls.length, 1);
+  sc.eq('숫자는 1건', /1건/.test(_toastCalls[0] && _toastCalls[0].msg), true);
+  delete global._swOn;
+}
+
+// ═══ 빈 칸 (v26-1022-5) — 화면이 만든 [] 는 충돌이 아니다 ═══
+// 새 버전으로 다시 켜진 기기가 오늘을 먼저 그리며 [] 를 만들고, 다른 기기는 오늘 할일을 넣었다.
+// 병합은 이제 다른 기기 것을 받는다 → '이 기기 0개 / 다른 기기 N개' 충돌로 남기지 않는다.
+console.log('\n시나리오 빈 칸 — 기준에 없던 구간의 [] 는 충돌로 잡히지 않는다');
+{
+  const base = { days: { '2026-10-21': day([{ text: '어제' }]) } };
+  const local = clone(base); local.days['2026-10-22'] = day([]);
+  const cloud = clone(base); cloud.days['2026-10-22'] = day([{ text: '설교 준비' }, { text: '심방' }]);
+  const r = detect(base, local, cloud);
+  sc.eq('충돌 없음', r.list.length, 0);
+  sc.eq('병합은 다른 기기 것을 받는다', r.merged.days['2026-10-22'].big.am.length, 2);
+}
+
 sc.done();

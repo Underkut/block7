@@ -165,7 +165,8 @@ console.log('\n시나리오 8 — 빈 기기가 남의 데이터를 지우던 �
 
   // ⚠️ 고치기 전 동작 — 빈 로컬이 이겨 전부 사라졌다 (이 단언이 사고를 고정한다)
   const before=_fbMerge(null,clone(fresh),clone(cloud),false);
-  sc.eq('고치기 전에는 할일이 사라졌다',before.days['2026-08-13'].big.night.length,0);
+  // v26-1022-5 부터는 엔진 자체가 빈 칸에 지지 않는다 (시나리오 11) — 할일은 방어 없이도 산다
+  sc.eq('빈 칸은 방어 없이도 할일을 지우지 못한다',before.days['2026-08-13'].big.night.length,4);
   sc.eq('고치기 전에는 강조도 꺼졌다',before.settings.hiPen,false);
   sc.eq('고치기 전에도 로그는 살았다',before.verseLikeLog['2026-08-13'].length,1);
 }
@@ -227,6 +228,55 @@ console.log('\n시나리오 10 — 절반 넘게 사라지면 클라우드를 �
   const m2=_fbMergeGuarded(cloud,del,clone(cloud),false);
   sc.eq('사람이 지운 것은 그대로 지워진다',m2.days['2026-08-13'].big.night.length,0);
   global._fbBaseJson=null;
+}
+
+// ═══ 시나리오 11: 새 버전으로 다시 켜진 기기의 '빈 칸' 이 오늘 할일을 지우던 것 (v26-1022-5) ═══
+// HB 신고: "코드 고치고 나면 오늘자 할일이 싹 사라진다. 충돌 창을 보면 이 기기는 비어 있고
+//          다른 기기에 원래 것들이 있다."
+// 길: 맥의 기준점은 어제 것(오늘 구간 없음) → 아이폰이 오늘 할일을 넣음(클라우드) →
+//     새 버전이 나와 맥이 다시 켜짐 → 클라우드가 오기 전에 로컬로 오늘을 그리며
+//     getBigs 가 오늘 구간에 [] 를 만듦 → 부팅 병합 (사람이 막 연 기기 = 손에 든 쪽 우선)
+console.log('\n시나리오 11 — 화면이 만든 빈 칸은 다른 기기의 오늘 할일을 지우지 못한다');
+{
+  const T='2026-10-22';
+  const base={days:{'2026-10-21':{big:{am:[{text:'어제 일',done:true}]},small:{},trash:[]}}};
+  const cloud=clone(base);   // 아이폰: 오늘 할일 셋
+  cloud.days[T]={big:{am:[{text:'설교 준비',done:false},{text:'심방',done:false}],pm:[{text:'주보',done:false}]},
+                 small:{am:[{text:'전화',done:false}]},trash:[{text:'지운 것'}],events:{am:[{text:'회의'}]}};
+  const local=clone(base);   // 맥: 화면이 만든 빈 껍데기
+  local.days[T]={big:{am:[],pm:[]},small:{am:[]},trash:[],events:{am:[]}};
+  const m=_fbMerge(base,local,cloud,false);   // false = 손에 든 쪽(로컬) 우선 — 사고 때와 같은 조건
+  sc.eq('빅 오전 할일이 살아 있다',m.days[T].big.am.map(x=>x.text),['설교 준비','심방']);
+  sc.eq('빅 오후 할일이 살아 있다',m.days[T].big.pm.map(x=>x.text),['주보']);
+  sc.eq('스몰 할일이 살아 있다',m.days[T].small.am.length,1);
+  sc.eq('일정이 살아 있다',m.days[T].events.am.length,1);
+  sc.eq('휴지통도 살아 있다',m.days[T].trash.length,1);
+  // 날짜 자체가 기준점에 없을 때도 같다
+  const base2={days:{}};
+  const m2=_fbMerge(base2,{days:{[T]:local.days[T]}},{days:{[T]:cloud.days[T]}},false);
+  sc.eq('기준점에 날짜가 없어도 살아 있다',m2.days[T].big.am.length,2);
+  // 기준점을 모르는 복구 길(옛 버전 기기가 쓴 문서)도 같다
+  const m3=_fbMerge(null,local,cloud,false);
+  sc.eq('기준점을 모를 때도 빈 칸이 지지 않는다',m3.days[T].big.am.length,2);
+  // 반대쪽 — 이 기기가 넣고 클라우드가 빈 칸이어도 이 기기 것이 산다
+  const m4=_fbMerge(base,cloud,local,true);
+  sc.eq('클라우드 쪽 빈 칸도 지우지 못한다',m4.days[T].big.am.length,2);
+}
+
+console.log('\n시나리오 12 — 그래도 사람이 실제로 지운 것은 지워진다');
+{
+  const T='2026-10-22';
+  const base={days:{[T]:{big:{am:[{text:'A',done:false},{text:'B',done:false}]},small:{},trash:[]}}};
+  const local=clone(base);local.days[T].big.am=[];          // 맥에서 둘 다 지움
+  const cloud=clone(base);                                   // 아이폰은 그대로
+  const m=_fbMerge(base,local,cloud,false);
+  sc.eq('기준점에 있던 할일을 비우면 지워진다',m.days[T].big.am.length,0);
+  // 양쪽이 기준점에 없던 구간에 **서로 다른** 것을 넣었으면 예전 규칙 그대로(두 벌 만들지 않는다)
+  const b2={days:{[T]:{big:{},small:{},trash:[]}}};
+  const l2=clone(b2);l2.days[T].big.am=[{text:'넘긴 일',done:false}];
+  const c2=clone(b2);c2.days[T].big.am=[{text:'넘긴 일',done:false,carried:1}];
+  const m2=_fbMerge(b2,l2,c2,false);
+  sc.eq('양쪽 다 찬 구간은 한쪽만(겹치지 않음)',m2.days[T].big.am.length,1);
 }
 
 sc.done();
