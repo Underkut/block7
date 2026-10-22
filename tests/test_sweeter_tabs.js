@@ -148,6 +148,17 @@ console.log('\n시나리오 5 — 충돌 목록 거르기');
   sc.eq('Sweeter 는 말씀 쪽만', _cfOpen().map(r=>r.conflictId), ['3','6','7']);
   sc.eq('개수도 따라간다', _cfOpenCount(), 3);
   sc.eq('정해 둔 것은 양쪽 다 안 나온다', _cfOpen().some(r=>r.conflictId==='8'), false);
+  // ⚠️ 실제 기록(_cfMake)은 갈래를 entityType 에 적는다 — 그 모양으로도 걸러야 한다 (v26-1022-5)
+  _cfList=[
+    {conflictId:'a',entityType:'section',entityId:'2026-10-22/big/am'},
+    {conflictId:'b',entityType:'setting',entityId:'settings/bigLimit'},
+    {conflictId:'c',entityType:'collection',entityId:'verseCollections/c1'},
+    {conflictId:'d',entityType:'bulk',entityId:'bulk/days'},
+    {conflictId:'e',entityType:'shrink',entityId:'shrink/verseLogs'}
+  ];
+  sc.eq('실제 모양 — Sweeter 는 말씀 쪽만', _cfOpen().map(r=>r.conflictId), ['c','e']);
+  APP_PRODUCT='block7';
+  sc.eq('⭐ 실제 모양 — BLOCK7 은 전부', _cfOpenCount(), 5);
 }
 
 // ═══ 5-2. 일반설정창의 '계정' 탭은 Sweeter 에서 빈 채로 남지 않는다 ═══
