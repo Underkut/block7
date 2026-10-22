@@ -1,0 +1,16 @@
+{
+  "id": "/timer/",
+  "name": "타이머",
+  "short_name": "타이머",
+  "description": "원을 끌어 정하는 타이머 · 프리셋 · 이어달리기 · 탁상 모드",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0c0f",
+  "theme_color": "#0b0c0f",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
