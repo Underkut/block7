@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1022-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1022-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1022-2';
+const APP_VERSION = 'v. 26-1022-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -486,6 +486,12 @@ function normDB(x) {
     n.also = Array.isArray(g.also) ? g.also.filter(x => typeof x === 'string' && x && x !== n.parent) : [];
     return n;
   });
+  // 두 단까지만 (H-5) — 두 기기가 엇갈려 '그룹을 다른 그룹에 넣기' 와 '그 그룹에 서브 그룹 더하기'(또는 서로를 서로에 넣기)를 하면
+  //   칸 단위 병합이 세 단 · 고리를 만든다. 그러면 그 묶음은 그룹도 서브 그룹도 아니라 지도에서 통째로 안 보인다.
+  //   → 제 아래에 무엇이 있는 묶음은 그룹으로 되돌린다. 아무것도 지우지 않고 다 보이게 하는 쪽.
+  { const has = new Set(d.G.map(g => g.id)), up = new Set();
+    d.G.forEach(g => { if (g.parent && has.has(g.parent)) up.add(g.parent); g.also.forEach(x => up.add(x)); });
+    d.G.forEach(g => { if (g.parent && up.has(g.id)) g.parent = ''; }); }
   // 연동해 둔 다른 자리(also)는 살아 있는 큰 묶음만 — 지워진 묶음 · 작은 묶음 자리는 버린다
   const topIds = new Set(d.G.filter(g => !g.parent).map(g => g.id));
   d.G.forEach(g => { g.also = g.parent ? [...new Set(g.also.filter(x => topIds.has(x)))] : []; });
@@ -553,6 +559,39 @@ function unplaceSub(db, gid, from) {
   if (also.indexOf(from) >= 0) { g.also = also.filter(x => x !== from); return 'unlinked'; }
   if (g.parent === from && also.length) { g.parent = also[0]; g.also = also.slice(1); return 'unlinked'; }
   removeGroup(db, gid); return 'removed';
+}
+// ── 그룹 ↔ 서브 그룹 (H-5, HB 2026-10-22) — 지도에서 끌어 넣고 꺼내기 ──
+// 두 단까지만이다(그룹 › 서브 그룹 › 항목). 그래서 넣을 수 있는 것은 제 아래에 서브 그룹이 없는 그룹뿐.
+// 줄(항목)은 계급이 그대로다 — 그룹이 서브 그룹이 되어도, 서브 그룹이 그룹이 되어도 안의 항목은 항목.
+// 'ok' · 'kids'(제 서브 그룹이 있다) · 'no'(넣을 자리가 아니다)
+function canNest(db, gid, toTop) {
+  const g = findG(db, gid), t = findG(db, toTop);
+  if (!g || !t || g === t || g.parent || t.parent) return 'no';
+  return kidsOf(db, gid).length ? 'kids' : 'ok';
+}
+// 묶음 순서에서 그룹 덩어리(그룹 + 제 서브 그룹들)의 바로 뒤
+function blockEnd(db, top) { let at = db.G.indexOf(top); childrenOf(db, top.id).forEach(x => { at = Math.max(at, db.G.indexOf(x)); }); return at + 1; }
+function nestGroup(db, gid, toTop) {
+  if (canNest(db, gid, toTop) !== 'ok') return false;
+  const g = findG(db, gid);
+  db.G = db.G.filter(x => x !== g);
+  db.G.splice(blockEnd(db, findG(db, toTop)), 0, g);   // 넣은 그룹의 서브 그룹들 맨 끝
+  g.parent = toTop; g.also = [];
+  return true;
+}
+// 'ok' · 'linked'(여러 그룹에 연동돼 있다 — 어느 자리를 남길지 모호해 올리지 않는다) · 'no'
+function canPromote(db, gid) {
+  const g = findG(db, gid);
+  if (!g || !g.parent || !findG(db, g.parent)) return 'no';
+  return (g.also || []).length ? 'linked' : 'ok';
+}
+function promoteSub(db, gid) {
+  if (canPromote(db, gid) !== 'ok') return false;
+  const g = findG(db, gid), p = findG(db, g.parent);
+  db.G = db.G.filter(x => x !== g);
+  db.G.splice(blockEnd(db, p), 0, g);   // 있던 그룹 바로 다음 자리 — 눈에서 멀어지지 않게
+  g.parent = ''; g.also = [];
+  return true;
 }
 function copyLineLinked(db, line) {
   if (!line.link) line.link = uid();
@@ -2043,6 +2082,16 @@ body.md-on,body.md-on *{-webkit-user-select:none!important;user-select:none!impo
 .md-ph{border-radius:8px;background:color-mix(in srgb,var(--ac) 12%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--ac) 45%,transparent)}
 .md-ph-group{border-radius:12px;margin:0 0 10px}
 .md-ph-sub{margin-top:7px}
+body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓을 자리를 가리지 않게 (손가락 밑을 읽는 elementFromPoint) */
+/* 그룹 ↔ 서브 그룹 끌기 (H-5) — 넣을 그룹 테두리 · 올릴 서브 그룹 테두리 · 손가락 위 한 줄 안내 */
+.gcard.md-into{outline:2.5px solid var(--ac);outline-offset:2px;transition:outline-color .15s}
+.gcard.md-into-no{outline:2px dashed var(--tx3);outline-offset:2px}
+.sgb.md-drag.md-up{box-shadow:0 0 0 2.5px var(--ac),0 18px 40px -10px rgba(0,0,0,.55)}
+.md-ph.md-ph-off{opacity:.3;transition:opacity .2s}
+.md-hint{position:fixed;z-index:62;left:0;top:0;transform:translate(-50%,-100%);padding:6px 12px;border-radius:999px;background:var(--ac);color:var(--on-accent);
+  font-size:12.5px;line-height:1.4;font-weight:600;text-align:center;white-space:pre;pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.md-hint.on{opacity:1}
+.md-hint.no{background:var(--tx);color:var(--bg);font-weight:500}
 /* 지도 세로 단 — JS 가 카드를 가장 짧은 단에 쌓는다 (끌 때 깜빡이지 않게) */
 .masonry.mjs{column-count:auto;display:flex;gap:10px;align-items:flex-start}
 .mcol{flex:1;min-width:0}
@@ -5378,7 +5427,7 @@ function mdLift(st) {
   st.src.classList.add('md-lift');
   mdNoSelect(true);   // A15
   if (navigator.vibrate) navigator.vibrate(10);
-  toast('끌어서 다른 자리로 옮길 수 있습니다 · 그대로 떼면 메뉴가 열립니다');
+  toast('끌어서 다른 자리로 옮길 수 있습니다 · 그대로 떼면 메뉴가 열립니다'); st.liftT = TOAST_ON;
 }
 // ── 끌기 모양: Sweeter 홈 타일 · 저장 목록과 같은 방식 (HB 2026-10-11) ──
 //   ① 잡은 항목 **그 자체**가 손가락에 붙어 떠서 따라온다
@@ -5395,6 +5444,63 @@ const MD_SLIDE = 420, MD_EASE = 'cubic-bezier(.45,-0.05,.3,1.22)';
 const MD_EDGE = 74, MD_EDGE_MAX = 15, MD_LIFT = 'scale(1.035) rotate(-.6deg)';
 function mdPut(st) {
   st.src.style.transform = 'translate(' + (st.x - st.x0) + 'px,' + (st.y - st.y0) + 'px) ' + MD_LIFT;
+  if (st.hint) { st.hint.style.left = Math.max(110, Math.min(window.innerWidth - 110, st.x)) + 'px'; st.hint.style.top = Math.max(60, st.y - 56) + 'px'; }
+}
+// ── 그룹 ↔ 서브 그룹 (H-5, HB 2026-10-22) ──
+// 그룹을 끌어 다른 그룹 카드의 **가운데**에 두면 그 안으로 넣기(서브 그룹이 된다). 카드의 위 · 아래 가장자리
+//   (높이의 4분의 1, 14~40px)는 예전처럼 자리 바꾸기 — 가장자리를 따로 두지 않으면 자리 바꾸기를 할 수 없다.
+// 서브 그룹을 끌어 카드 밖 여백(또는 '+ 그룹' 칸)에 두면 그룹으로 올리기.
+// 안 되는 경우(제 서브 그룹이 있는 그룹 · 여러 그룹에 연동된 서브 그룹)도 손가락 위 안내로 **미리** 말한다 — 놓고 나서야 알면 헷갈린다.
+function mdHint(st, text, ok) {
+  if (!text) { if (st.hint) st.hint.classList.remove('on'); return; }
+  if (!st.hint) { st.hint = document.createElement('div'); st.hint.className = 'md-hint'; document.body.appendChild(st.hint); }
+  st.hint.textContent = text; st.hint.classList.toggle('no', !ok);
+  mdPut(st); requestAnimationFrame(() => st.hint && st.hint.classList.add('on'));
+}
+function mdZone(st) {
+  let into = null, out = false;
+  const under = document.elementFromPoint(st.x, st.y), gid = selParts(st.k).gid;
+  if (under && under.closest('#v-map') && !under.closest('.md-ph')) {
+    const c = under.closest('.gcard');
+    if (st.kind === 'group' && c && c.dataset.gid && c.dataset.gid !== gid) {
+      const r = c.getBoundingClientRect(), e = Math.max(14, Math.min(40, r.height / 4));
+      if (st.y > r.top + e && st.y < r.bottom - e) into = c;
+    } else if (st.kind === 'sub') {
+      const m = $('v-map').querySelector('.masonry');
+      out = (!c || c.classList.contains('madd-group')) && !under.closest('.vh') && !!m && st.y >= m.getBoundingClientRect().top;
+    }
+  }
+  if (into !== (st.into || null)) {
+    if (st.into) st.into.classList.remove('md-into', 'md-into-no');
+    st.into = into;
+    if (into) {
+      const t = findG(DB, into.dataset.gid), ok = canNest(DB, gid, into.dataset.gid) === 'ok';
+      into.classList.add(ok ? 'md-into' : 'md-into-no');
+      mdHint(st, ok ? '‘' + (t ? t.name : '') + '’ 안으로 넣기' : '서브 그룹이 있는 그룹은\n다른 그룹 안에 넣을 수 없어요', ok);
+      if (ok && navigator.vibrate) navigator.vibrate(6);
+    } else mdHint(st, '');
+  }
+  if (out !== !!st.out) {
+    st.out = out; st.src.classList.toggle('md-up', out); if (st.ph) st.ph.classList.toggle('md-ph-off', out);
+    if (out) { const ok = canPromote(DB, gid) === 'ok'; mdHint(st, ok ? '그룹으로 올리기' : '여러 그룹에 연동된 서브 그룹은\n그룹으로 올릴 수 없어요', ok); if (ok && navigator.vibrate) navigator.vibrate(6); }
+    else mdHint(st, '');
+  }
+}
+function mdZoneOff(st) {
+  if (st.into) st.into.classList.remove('md-into', 'md-into-no');
+  if (st.hint) { const h = st.hint; h.classList.remove('on'); setTimeout(() => h.remove(), 200); st.hint = null; }
+  if (st.ph) st.ph.classList.remove('md-ph-off');
+  if (st.src) st.src.classList.remove('md-up');
+}
+// 넣기 · 올리기를 한 뒤 — 띄운 것을 걷고 다시 그린 다음, 새 자리의 그것이 손을 뗀 자리에서 미끄러져 들어간다
+function mdLandNew(st, sel, apply) {
+  const from = st.src.getBoundingClientRect();
+  st.src.remove();
+  apply(); save(); mapRenderFlip();
+  const n = document.querySelector(sel); if (!n || mxQuiet()) return;
+  const r = n.getBoundingClientRect();
+  n.style.transition = 'none'; n.style.transform = 'translate(' + (from.left - r.left) + 'px,' + (from.top - r.top) + 'px)';
+  requestAnimationFrame(() => { n.style.transition = 'transform ' + (MD_SLIDE / 1000) + 's ' + MD_EASE; n.style.transform = ''; });
 }
 // 비켜 주는 움직임. 카드도 미끄러지므로 카드 안의 것들은 **카드 안에서의** 차이만 준다 —
 // 안 그러면 카드의 움직임이 두 번 더해진다.
@@ -5428,6 +5534,8 @@ function mdNoSelect(on) {
 document.addEventListener('selectstart', e => { if (MD.st && MD.st.mode !== 'pend') e.preventDefault(); });
 function mdStart(st) {
   mdNoSelect(true);
+  // 떠오를 때의 안내는 끌기 시작하면 할 일을 다 했다 — 화면 한가운데 남아 있으면 그 밑에 놓을 수 없었다 (H-5 에서 발견)
+  if (st.liftT && TOAST_ON === st.liftT) toastHide();
   if (mapFiltering()) { mdUnlift(st); MD.st = null; toast('색으로 걸러 보는 중에는 옮길 수 없습니다'); return; }
   st.mode = 'drag';
   st.src = st.src || mdSrcEl(st);
@@ -5470,7 +5578,8 @@ function mdStart(st) {
     // 지우는 칸 위인가 — 칸보다 조금 넓게 받는다. 위에 있는 동안은 자리 옮기기 · 굴리기를 쉰다
     const hot = Math.hypot(window.innerWidth - st.x, st.y) <= (st.trash ? 140 : 120);   // 구석에서 반지름 120 (붙으면 140)
     if (hot !== !!st.trash) { st.trash = hot; tr.classList.toggle('hot', hot); st.src.classList.toggle('md-doom', hot); if (hot && navigator.vibrate) navigator.vibrate(12); }
-    if (hot) { mdPut(st); st.raf = requestAnimationFrame(tick); return; }
+    if (hot) { if (st.into || st.out) { mdZoneOff(st); st.into = null; st.out = false; } mdPut(st); st.raf = requestAnimationFrame(tick); return; }
+    if (st.kind !== 'line') mdZone(st);
     // 판 끝에 닿으면 저절로 굴러간다 — 끝에 가까울수록 빠르게 (Sweeter 와 같은 값)
     const sc = st.scroller, sr = sc.getBoundingClientRect();
     let v = 0;
@@ -5507,8 +5616,14 @@ function mdWhere(st) {
     if (!ref || (before ? ref.previousElementSibling === ph : ref.nextElementSibling === ph)) return null;
     return () => { if (before) ref.before(ph); else ref.after(ph); };
   };
+  if ((st.kind === 'group' && st.into) || (st.kind === 'sub' && st.out)) { st.edge = null; return null; }   // 넣기 · 올리기 자리 (mdZone)
   if (st.kind === 'group') {
-    if (!card) return null;
+    if (!card) { st.edge = null; return null; }
+    // 가장자리에 0.28초 머물러야 자리를 바꾼다 (H-5) — 가운데(넣기)로 가는 길에 위 가장자리를 스치기만 해도
+    //   카드가 비켜나 버려 손가락이 가운데에 닿을 때 그 카드가 없었다 (터치 시험에서 실제로)
+    if (!st.edge || st.edge.c !== card) { st.edge = { c: card, at: Date.now() }; return null; }
+    if (Date.now() - st.edge.at < 280) return null;
+    st.edge = null;
     const o = st.order, i = o.indexOf(ph);
     if (card.classList.contains('madd-group')) {   // '+ 그룹' 칸 위 → 맨 끝(그 칸 바로 앞)
       if (i === o.length - 2) return null;
@@ -5546,8 +5661,28 @@ function mdDrop(st, cancel) {
   document.body.classList.remove('dragging');
   const tr = st.trashEl;
   if (tr) { tr.classList.remove('on'); setTimeout(() => tr.remove(), 260); }
+  const into = st.into, out = st.out; mdZoneOff(st);
   if (!cancel && st.trash) { mdTrash(st); return; }
   if (cancel) { mdLand(st, () => mapRenderFlip()); return; }
+  // 그룹 → 다른 그룹 안 · 서브 그룹 → 그룹으로 (H-5). 되돌리기는 알림에
+  if (st.kind === 'group' && into) {
+    const gid = selParts(st.k).gid, to = findG(DB, into.dataset.gid), g = findG(DB, gid);
+    if (to && g && canNest(DB, gid, to.id) === 'ok') {
+      const before = JSON.stringify(DB);
+      mdLandNew(st, '#v-map .sgb[data-gid="' + gid + '"]', () => { nestGroup(DB, gid, to.id); DB.set.sorts.map = 'mine'; UI.sel = 'g:' + gid; UI.selPl = to.id; });
+      toast('‘' + g.name + '’ 을(를) ' + to.name + ' 안에 넣었어요\n서브 그룹이 되었습니다', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); mapRenderFlip(); toast('되돌렸습니다'); });
+      return;
+    }
+    // 넣을 수 없으면 가장자리에 놓은 것과 같다 — 자리만 (안내는 끄는 동안 이미 보였다)
+  }
+  if (st.kind === 'sub' && out) {
+    const gid = selParts(st.k).gid, g = findG(DB, gid);
+    if (!g || canPromote(DB, gid) !== 'ok') { mdLand(st, () => mapRenderFlip()); return; }
+    const before = JSON.stringify(DB);
+    mdLandNew(st, '#v-map .gcard[data-gid="' + gid + '"]', () => { promoteSub(DB, gid); DB.set.sorts.map = 'mine'; UI.sel = 'g:' + gid; UI.selPl = ''; });
+    toast('‘' + g.name + '’ 을(를) 그룹으로 올렸어요\n안의 항목은 그대로입니다', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); mapRenderFlip(); toast('되돌렸습니다'); });
+    return;
+  }
   // 손을 뗀 자리를 구멍의 자리에서 읽는다
   const ph = st.ph, p = selParts(st.k);
   let apply = null, ask = null;

@@ -19,6 +19,7 @@
 //  ⑯ 실행취소는 페이지마다 — 한 페이지에서 되돌려도 다른 페이지에서 한 일은 그대로
 //  ⑭ BLOCK7 → 기도노트 우체통 — 고른 그룹(서브 그룹)의 맨 위 기도 항목으로 · 없는 그룹은 넣지 않고 셈
 //  ⑱ 백업 파일 이름 — Pr-{이메일3}-{기기}-{YY}-{MMDD}-{번호} · 두 기기 번호 이어짐(병합은 큰 값) · 오프라인 off · 날짜 바뀌면 1
+//  ㉔ 그룹 ↔ 서브 그룹 끌기(H-5) — 넣기는 제 서브 그룹이 없을 때만 · 올리기는 연동 안 된 것만 · 항목은 그대로 · 두 기기가 엇갈려도 두 단 · 모두 보임
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -33,7 +34,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, SEED_ITEMS, THEME_PRESETS,
   emptyDB, seedDB, normDB, newTarget, newGroup, newTopic, daysFromName, nameKey, ymd, addDays, daysBetween,
-  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
+  findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
@@ -861,6 +862,58 @@ const MAPCSV = [
     k('Mozilla/5.0 (Linux; Android 14; SM-S918N) Mobile', 5, 412, 915),
     k('Mozilla/5.0 (Linux; Android 14; SM-X710)', 5, 800, 1280),
     k('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 10, 1920, 1080)], ['phn', 'pad', 'pc', 'phn', 'pad', 'pc']);
+}
+
+// ㉔ 그룹 ↔ 서브 그룹 (H-5, HB 2026-10-22) — 지도에서 끌어 그룹을 다른 그룹 안에 넣고, 서브 그룹을 여백에 놓아 그룹으로
+{
+  const ln = id => ({ id: 'L' + id, segs: [[id]], r: {}, text: '' });
+  const mk = () => {
+    const db = A.emptyDB();
+    const g1 = A.newGroup('청년부', '#111'), g2 = A.newGroup('찬양팀', '#222'), g3 = A.newGroup('교사', '#333'), s1 = A.newGroup('1청', '#444');
+    g1.id = 'g1'; g2.id = 'g2'; g3.id = 'g3'; s1.id = 's1'; s1.parent = 'g1';
+    g2.lines = [ln('p1'), ln('p2')]; s1.lines = [ln('p3')];
+    db.G.push(g1, s1, g2, g3);
+    return db;
+  };
+  const ids = db => db.G.map(g => g.id);
+  // 지도에 실제로 보이는 묶음 — 그룹 + 그 아래 서브 그룹 (렌더와 같은 길)
+  const seen = db => { const out = []; A.topGroups(db).forEach(t => { out.push(t.id); A.kidsOf(db, t.id).forEach(k => out.push(k.id)); }); return out.sort(); };
+  let db = mk();
+  sc.eq('㉔ 넣을 수 있는지 — 됨 · 제 서브 그룹이 있음 · 자기 자신 · 서브 그룹 안으로', [A.canNest(db, 'g2', 'g1'), A.canNest(db, 'g1', 'g2'), A.canNest(db, 'g2', 'g2'), A.canNest(db, 'g2', 's1')], ['ok', 'kids', 'no', 'no']);
+  sc.eq('⭐㉔ 그룹을 넣으면 서브 그룹 · 항목은 그대로 제 것', [A.nestGroup(db, 'g2', 'g1'), db.G.find(g => g.id === 'g2').parent, db.G.find(g => g.id === 'g2').lines.map(l => l.id)], [true, 'g1', ['Lp1', 'Lp2']]);
+  sc.eq('㉔ 넣은 그룹의 서브 그룹들 맨 끝에 선다', ids(db), ['g1', 's1', 'g2', 'g3']);
+  sc.eq('㉔ 그룹 목록에서 빠지고 넣은 그룹 아래 보인다', [A.topGroups(db).map(g => g.id), A.kidsOf(db, 'g1').map(g => g.id)], [['g1', 'g3'], ['s1', 'g2']]);
+  sc.eq('㉔ 제 서브 그룹이 있는 그룹은 안 넣는다 (아무것도 안 바뀜)', [A.nestGroup(db, 'g1', 'g3'), ids(db), db.G.find(g => g.id === 'g1').parent], [false, ['g1', 's1', 'g2', 'g3'], '']);
+  db = mk();
+  sc.eq('⭐㉔ 서브 그룹을 올리면 그룹 · 항목은 그대로 · 있던 그룹 바로 다음', [A.canPromote(db, 's1'), A.promoteSub(db, 's1'), db.G.find(g => g.id === 's1').parent, db.G.find(g => g.id === 's1').lines.map(l => l.id), A.topGroups(db).map(g => g.id)], ['ok', true, '', ['Lp3'], ['g1', 's1', 'g2', 'g3']]);
+  sc.eq('㉔ 그룹은 올릴 것이 없다', A.canPromote(db, 'g1'), 'no');
+  db = mk(); A.linkSub(db, 's1', 'g3');
+  sc.eq('㉔ 여러 그룹에 연동된 서브 그룹은 안 올린다 (연동 그대로)', [A.canPromote(db, 's1'), A.promoteSub(db, 's1'), db.G.find(g => g.id === 's1').parent, db.G.find(g => g.id === 's1').also], ['linked', false, 'g1', ['g3']]);
+  // 넣었다가 다시 올리면 처음 모양 (항목 · 색 그대로)
+  db = mk(); const was = JSON.stringify(db.G.find(g => g.id === 'g2'));
+  A.nestGroup(db, 'g2', 'g3'); A.promoteSub(db, 'g2');
+  sc.eq('㉔ 넣었다 다시 올리면 그 그룹 그대로', JSON.stringify(db.G.find(g => g.id === 'g2')), was);
+  // 두 기기 엇갈림 — 세 단 · 고리가 생겨도 normDB 가 두 단으로 맞춰 모두 보이게
+  const all = ['g1', 'g2', 'g3', 's1'];
+  { const B = mk(), L = JSON.parse(JSON.stringify(B)), R = JSON.parse(JSON.stringify(B));
+    A.nestGroup(L, 'g3', 'g2');                                  // 아이폰: 교사를 찬양팀 안으로
+    const n = A.newGroup('싱어', '#555'); n.id = 'sx'; n.parent = 'g3'; R.G.push(n);   // 아이패드: 교사에 서브 그룹 '싱어'
+    const m = A.normDB(A.merge3(B, L, R));
+    sc.eq('⭐㉔ 넣기 vs 그 그룹에 서브 그룹 더하기 → 세 단 대신 넣은 그룹이 그룹으로 남는다 · 모두 보인다', [m.G.find(g => g.id === 'g3').parent, m.G.find(g => g.id === 'sx').parent, seen(m)], ['', 'g3', all.concat('sx').sort()]); }
+  { const B = mk(), L = JSON.parse(JSON.stringify(B)), R = JSON.parse(JSON.stringify(B));
+    A.nestGroup(L, 'g3', 'g2'); A.nestGroup(R, 'g2', 'g3');      // 서로를 서로 안에
+    const m = A.normDB(A.merge3(B, L, R));
+    sc.eq('⭐㉔ 서로를 서로 안에 넣기(고리) → 둘 다 그룹 · 모두 보인다 · 항목 그대로', [m.G.find(g => g.id === 'g2').parent, m.G.find(g => g.id === 'g3').parent, seen(m), m.G.find(g => g.id === 'g2').lines.length], ['', '', all, 2]); }
+  { const B = mk(), L = JSON.parse(JSON.stringify(B)), R = JSON.parse(JSON.stringify(B));
+    A.promoteSub(L, 's1'); A.moveSub(R, 's1', 'g1', 'g3');      // 한쪽은 올리기 · 한쪽은 다른 그룹으로 옮기기
+    const m = A.normDB(A.merge3(B, L, R));
+    sc.eq('㉔ 올리기 vs 옮기기 → 어느 쪽이든 모두 보이고 항목 그대로', [seen(m), m.G.find(g => g.id === 's1').lines.length], [all, 1]); }
+  { const B = mk(), L = JSON.parse(JSON.stringify(B)), R = JSON.parse(JSON.stringify(B));
+    A.nestGroup(L, 'g2', 'g1');
+    R.G.find(g => g.id === 'g2').lines.push(ln('p9'));            // 아이패드는 그 그룹에 항목 더하기
+    const m = A.normDB(A.merge3(B, L, R));
+    sc.eq('㉔ 넣기 vs 그 그룹에 항목 더하기 → 서브 그룹이 되고 항목은 셋 다', [m.G.find(g => g.id === 'g2').parent, m.G.find(g => g.id === 'g2').lines.map(l => l.id)], ['g1', ['Lp1', 'Lp2', 'Lp9']]); }
+  const ok = mk(); sc.eq('㉔ 보통 자료는 normDB 가 손대지 않는다', JSON.stringify(A.normDB(JSON.parse(JSON.stringify(ok))).G.map(g => [g.id, g.parent])), JSON.stringify(ok.G.map(g => [g.id, g.parent])));
 }
 
 sc.done();
