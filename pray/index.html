@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1022-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1022-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1022-1';
+const APP_VERSION = 'v. 26-1022-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2604,20 +2604,35 @@ function copyText(text) {
 
 // ── 알림 · 되돌리기 ──
 let toastT = 0;
-function toast(msg, action, fn) {
+// opt.keep — 앱이 스스로 띄우는 알림(toastBg)이 이것을 덮지 않고 닫힐 때까지 기다린다 (보관 제안처럼 읽어야 하는 것)
+// opt.onHide — 어떻게든 사라질 때 한 번 (시간 · 누름 · 단추 · 다른 토스트가 덮음)
+let TOAST_ON = null; const TOAST_Q = [];
+function toast(msg, action, fn, opt) {
   const t = $('toast');
+  toastHidden();   // 덮이는 것도 '사라짐' 이다
   t.innerHTML = '<span class="msg">' + esc(msg) + '</span>' + (action ? '<button data-a="toast-act">' + esc(action) + '</button>' : '');
   t._fn = fn || null;
   t.classList.add('on');
+  TOAST_ON = opt || {};
   clearTimeout(toastT);
   // BLOCK7 와 같은 기준 — 글자 수 × 200ms (일반 3초 · 되돌리기 줄이 있으면 6초부터, 9초 상한)
-  toastT = setTimeout(() => t.classList.remove('on'), Math.min(9000, Math.max(action ? 6000 : 3000, String(msg).length * 200)));
+  toastT = setTimeout(toastHide, Math.min(9000, Math.max(action ? 6000 : 3000, String(msg).length * 200)));
 }
+function toastHide() { clearTimeout(toastT); const t = $('toast'); if (t) t.classList.remove('on'); toastHidden(); }
+function toastHidden() {
+  const o = TOAST_ON; TOAST_ON = null; if (!o) return;
+  if (o.onHide) try { o.onHide(); } catch (e) {}
+  if (TOAST_Q.length) setTimeout(() => { if (!TOAST_ON && TOAST_Q.length) toast.apply(null, TOAST_Q.shift()); }, 350);
+}
+// 사람이 한 일의 대답이 아니라 앱이 스스로 알리는 것(새 버전 · BLOCK7 에서 온 것) — 읽어야 하는 토스트 위에 덮지 않고 줄을 선다 (HB 2026-10-22)
+function toastBg(msg, action, fn) { if (TOAST_ON && TOAST_ON.keep) TOAST_Q.push([msg, action, fn]); else toast(msg, action, fn); }
 // 토스트는 어디를 눌러도(토스트 안이든 밖이든) 바로 닫힌다 — 안의 동작 단추(되돌리기 등)는 제 일을 한다 (HB 2026-10-18)
+let LAST_TOUCH = 0;
 document.addEventListener('pointerdown', e => {
+  LAST_TOUCH = Date.now();
   const t = $('toast'); if (!t || !t.classList.contains('on')) return;
   if (e.target.closest && e.target.closest('#toast button')) return;
-  clearTimeout(toastT); t.classList.remove('on');
+  toastHide();
 }, true);
 function withUndo(msg, mutate) {
   const before = JSON.stringify(DB);
@@ -3916,7 +3931,7 @@ ACT['sheet-close'] = () => closeSheet();
 ACT.pick = el => { const w = SHEET; const fn = w && w._pick; if (w) w._onClose = null; closeSheet(); if (fn) fn(el.dataset.v); };
 ACT['ask-ok'] = () => { const w = SHEET; const i = $('askIn'); const v = i ? i.value : ''; const fn = w && w._pick; closeSheet(); if (fn) fn(v); };
 ACT['ask-del'] = () => { const w = SHEET; const fn = w && w._del; closeSheet(); if (fn) fn(); };
-ACT['toast-act'] = () => { const t = $('toast'); const fn = t._fn; t._fn = null; t.classList.remove('on'); if (fn) fn(); };
+ACT['toast-act'] = () => { const t = $('toast'); const fn = t._fn; t._fn = null; toastHide(); if (fn) fn(); };
 
 // 오늘
 ACT.fold = el => { const k = el.dataset.k; DB.set.folds[k] = !DB.set.folds[k]; save(); renderView(); };
@@ -4729,13 +4744,28 @@ function staleSheet() {
 }
 ACT['stale-open'] = () => staleSheet();
 // 하루에 한 번(기기마다) — 이름의 날짜가 지난 항목이 있으면 알린다
+// ⚠️ 번쩍 지나가던 것 (HB 2026-10-22): 열고 4초 뒤 '새 버전이 있습니다' 가 덮거나, 열자마자 화면에 손이 닿아 닫혔다.
+//    그런데 띄우는 순간 '오늘 물었음' 으로 적어서 그날은 다시 안 나왔다. 그래서
+//    ① 손이 1.5초 쉬고 다른 토스트가 없을 때 띄운다 ② 떠 있는 동안 앱이 스스로 띄우는 알림은 줄을 선다(toastBg)
+//    ③ 2.5초 넘게 보였거나 '보기' 를 눌렀을 때만 '오늘 물었음' — 아니면 20초 뒤 · 앱으로 돌아올 때 다시 (하루 세 번까지)
+const STALE = { day: '', tries: 0, t: 0, at: 0 };
+const STALE_SEEN_MS = 2500;
 function staleNudge() {
   const K = 'pray.staleAsk';
   try { if (localStorage.getItem(K) === TODAY) return; } catch (e) { return; }
+  if (STALE.day !== TODAY) { STALE.day = TODAY; STALE.tries = 0; }
+  if (STALE.at || STALE.tries >= 3) return;
   const n = staleByName(DB, TODAY).length; if (!n) return;
-  try { localStorage.setItem(K, TODAY); } catch (e) {}
-  toast('이름의 날짜가 지난 항목이 ' + n + '개 있어요\n지도에서 뺄까요?', '보기', staleSheet);
+  clearTimeout(STALE.t);
+  if (document.hidden || TOAST_ON || Date.now() - LAST_TOUCH < 1500) { STALE.t = setTimeout(staleNudge, 1500); return; }
+  STALE.tries++; STALE.at = Date.now();
+  const seen = () => { try { localStorage.setItem(K, TODAY); } catch (e) {} };
+  toast('이름의 날짜가 지난 항목이 ' + n + '개 있어요\n지도에서 뺄까요?', '보기', () => { seen(); staleSheet(); }, { keep: true, onHide: () => {
+    const long = Date.now() - STALE.at >= STALE_SEEN_MS; STALE.at = 0;
+    if (long) seen(); else STALE.t = setTimeout(staleNudge, 20000);
+  } });
 }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { clearTimeout(STALE.t); STALE.t = setTimeout(staleNudge, 1800); } });
 ACT['hist-tab'] = el => { UI.histTab = el.dataset.v; renderView(); };
 ACT['snap-sort'] = el => { DB.set.sorts.snaps = el.dataset.v; save(); renderView(); };
 ACT['ans-sort'] = el => { DB.set.sorts.answers = el.dataset.v; save(); renderView(); };
@@ -6192,7 +6222,7 @@ function applyCloud(cdb) {
   DB = fromCloud(cdb, DB); EFFC = null;
   // 다른 기기에서 온 변경이 들어오면 그 앞 칸들은 버린다 — 되돌리기가 상대 기기의 편집을 지우지 않게
   HIST.sync(histKey(DB)); paintUndo();   // 다른 기기에서 온 것은 어느 페이지의 일도 아니다 — 되돌리기는 내 일만 거꾸로 돌리므로 칸을 비우지 않는다
-  const t = $('toast'); if (t && t._fn) { t._fn = null; t.classList.remove('on'); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
+  const t = $('toast'); if (t && t._fn) { t._fn = null; toastHide(); }   // 받기 전 모습으로 되돌리면 받은 것이 지워진다
   saveNow(); refresh();
 }
 async function syncNow() {
@@ -6285,7 +6315,7 @@ async function takeInbox() {
   const r = inboxApply(DB, got.slice().sort((a, b) => (a.at || 0) - (b.at || 0)));
   HIST.sync(histKey(DB));   // BLOCK7 에서 온 것은 이 페이지에서 한 일이 아니다
   if (r.n) { saveNow(); refresh(); syncSoon(300); }
-  toast(r.n ? 'BLOCK7 에서 ' + r.n + '개 들어왔습니다' + (r.lost ? ' · ' + r.lost + '개는 그룹이 없어 못 넣음' : '') : '보낸 그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
+  toastBg(r.n ? 'BLOCK7 에서 ' + r.n + '개 들어왔습니다' + (r.lost ? ' · ' + r.lost + '개는 그룹이 없어 못 넣음' : '') : '보낸 그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
 }
 function startSync(user) {
   const was = SY.user && SY.user.uid;
@@ -6414,7 +6444,7 @@ let VER_ASKED = 0;
 function quietVersionCheck() {
   if (Date.now() - VER_ASKED < 5 * 60 * 1000 || location.protocol !== 'https:') return;
   VER_ASKED = Date.now();
-  latestVersion().then(v => { if (v && v !== APP_VERSION) toast('새 버전 ' + v + ' 이 있습니다', '받기', updateApp); }).catch(() => {});
+  latestVersion().then(v => { if (v && v !== APP_VERSION) toastBg('새 버전 ' + v + ' 이 있습니다', '받기', updateApp); }).catch(() => {});
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) quietVersionCheck(); });
 setTimeout(quietVersionCheck, 4000);
