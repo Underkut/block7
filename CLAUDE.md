@@ -84,6 +84,14 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - 알림 서버는 `wallet-functions/`(묶음 이름 `wallet`)에 함께 산다. 그 폴더를 고치면 HB 가
   서버를 다시 올려야 한다 (`docs/study/firebase-setup.md`).
 
+### 타이머(`timer/`)도 따로 돈다 — 주소는 `block7.my/timer/`
+
+용돈 친구들과 같은 사정이다: `timer/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+산출물 3개·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+계획과 까닭은 `docs/ROADMAP.md` '타이머' 장. 핵심 규칙(시간 표시·세 바퀴 끌기·저장 읽기)은
+`<script id="timer-core">` 에 모아 두었고 `tests/test_timer.js` 가 그것만 떼어 시험한다.
+저장은 그 기기 안뿐이다(`localStorage` 의 `b7timer_v1`, 내 소리 파일은 IndexedDB `b7timer`).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).
