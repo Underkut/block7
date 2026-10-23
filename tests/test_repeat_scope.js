@@ -274,6 +274,36 @@ console.log('\n시나리오 12 — 끝날·뺀 날은 규칙을 다시 저장해
   sc.eq('뺀 날이 살아 있다', ST.days['2026-09-09'].events.am[0].repeat.ex, ['2026-09-12']);
 }
 
+console.log('\n시나리오 12-2 — 모두 고치기는 하루만 고쳐 둔 날을 원래 자리로 돌린다 (구글과 같다, HB 2026-10-24)');
+{
+  // 오늘 하루만 고친 뒤(따로 선 일정 + 원본의 뺀 날) '모두 고치기' → 따로 선 것은 사라지고 그 날은 다시 원본이 비친다
+  // 사람이 '이 날만 지움' 한 날(2026-09-12)은 그대로 빠져 있어야 한다
+  const { ST, api } = makeEnv({
+    '2026-09-09': { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: rep({ ex: ['2026-09-12'] }) }] } }
+  }, T);
+  api._evEditApply({ text: '기도회(장소 변경)', time: '10:00', repeat: rep(), secId: 'am', dateKey: '2026-09-09', editIdx: 0, occ: T }, 'one');
+  sc.eq('하루만 고치면 그 날이 뺀 날에 든다', ST.days['2026-09-09'].events.am[0].repeat.ex.slice().sort(), ['2026-09-12', T].sort());
+  api._evEditApply({ text: '연합 기도회', time: '09:00', repeat: rep(), secId: 'am', dateKey: '2026-09-09', editIdx: 0, occ: T }, 'all');
+  sc.eq('따로 선 것은 사라진다', (ST.days[T].events.am || []).length, 0);
+  sc.eq('그 날은 뺀 날에서 풀린다 · 사람이 지운 날은 그대로', ST.days['2026-09-09'].events.am[0].repeat.ex, ['2026-09-12']);
+  sc.eq('그 날에 다시 원본이 비친다', api.eventRepeatsOnDate(ST.days['2026-09-09'].events.am[0], '2026-09-09', T), true);
+}
+
+console.log('\n시나리오 12-3 — 하루만·이후 모두 고친 것은 원본의 구글 캘린더를 물려받는다 (HB 2026-10-24)');
+{
+  const mkG = () => ({ '2026-09-09': { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: rep(), g: { c: 'church', i: 'b7eve1', u: 'u', h: 'h', d: 60 } }] } } });
+  const a = makeEnv(mkG(), T);
+  a.api._evEditApply({ text: '기도회(장소 변경)', time: '10:00', repeat: rep(), secId: 'am', dateKey: '2026-09-09', editIdx: 0, occ: T }, 'one');
+  sc.eq('하루만 고친 것 → 원본 캘린더', a.ST.days[T].events.am[0].gc, 'church');
+  sc.eq('따로 선 것은 고리를 갖지 않는다 (새로 넣는다)', a.ST.days[T].events.am[0].g, undefined);
+  const b = makeEnv(mkG(), T);
+  b.api._evEditApply({ text: '기도회(새벽)', time: '06:00', repeat: rep(), secId: 'am', dateKey: '2026-09-09', editIdx: 0, occ: T }, 'future');
+  sc.eq('이후 모두 → 새 묶음도 원본 캘린더', b.ST.days[T].events.am[0].gc, 'church');
+  const c = makeEnv({ '2026-09-09': { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: rep() }] } } }, T);
+  c.api._evEditApply({ text: '기도회(장소 변경)', time: '10:00', repeat: rep(), secId: 'am', dateKey: '2026-09-09', editIdx: 0, occ: T }, 'one');
+  sc.eq('구글과 상관없는 일정은 캘린더 표시가 없다', c.ST.days[T].events.am[0].gc, undefined);
+}
+
 console.log('\n시나리오 13 — 주간·월간뷰는 앞날을 비추기만 한다 (저장하지 않는다)');
 {
   const { ST, api } = makeEnv({

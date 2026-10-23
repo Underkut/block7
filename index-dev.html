@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3269,6 +3269,11 @@ body.split-d #todayView.animating{overflow:hidden;}
 .nav-btn:hover{color:var(--ac-tx);}
 .mttl{font-size:16px;font-weight:700;flex:1;text-align:center;}
 .mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:-2px;}
+/* M뷰 칸 높이를 손잡이로 정했을 때 — 넘치는 것은 칸 아래쪽부터 가린다 */
+.mcg.mcg-fixed .mcc{overflow-x:visible;overflow-y:clip;min-height:0;}   /* 위아래만 자른다 — 여러 날 띠의 글은 옆 칸으로 흘러야 한다 */
+.m-grip{display:flex;justify-content:center;align-items:center;height:18px;margin:2px 0 0;cursor:ns-resize;touch-action:none;-webkit-tap-highlight-color:transparent;}
+.m-grip span{width:34px;height:3px;border-radius:2px;background:var(--bd2);transition:background .2s,width .2s;}
+.m-grip:hover span,.m-grip.on span{background:var(--tx3);width:48px;}
 .mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:var(--font-mono);}
 .mcdow.sun-red{color:var(--sun-red);}
 .mcc{background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:5px;min-height:50px;}
@@ -6383,7 +6388,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-5";
+const APP_VERSION = "v. 26-1024-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9700,7 +9705,16 @@ function gcalPlan(o){
       return;
     }
     const g=G.get(key);
-    if(!g)return;                        // 범위 밖이거나 못 찾음 — 이번엔 손대지 않는다
+    if(!g){
+      // 빠른 첫 걸음(o.quick — 구글을 아직 안 읽음): BLOCK7 이 지웠다가 되살린 것은 구글을 읽지 않고도 안다 → 바로 되살린다 (v26-1024-6)
+      if(o.quick&&goneKeys.has(key)&&!e.ev.g.ro&&!ro.has(c)){
+        const d=e.ev.g.d||(e.ev.time?60:1);
+        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz):gcalPatchBody(e.k,e.ev,d,o.dsh);
+        body.status='confirmed';
+        remote.push({t:'restore',c,gid:e.ev.g.i,id:e.ev.id,ref:e.ev,k:e.k,d,key,body});
+      }
+      return;                            // 범위 밖이거나 못 찾음 — 이번엔 손대지 않는다
+    }
     const gev=g.ev;
     if(gev.status==='cancelled'){
       // BLOCK7 이 지웠던 것인데 BLOCK7 에 다시 있다 = 실행취소로 되살렸다 → 구글도 되살린다 (v26-1024-5, HB)
@@ -23889,7 +23903,7 @@ function applySnapshot(snap){
   ST.vis=s.vis;ST.prevVis=s.prevVis;ST.preset=s.preset;
   ST.collapsed=s.collapsed||[];ST.days=s.days;
   rawSave();
-  if(typeof _gcalOnSave==='function')_gcalOnSave();   // 실행취소·다시실행도 구글과 맞춘다 (되살린 일정 → 구글도 되살림)
+  if(typeof _gcalOnSave==='function')_gcalOnSave(300,true);   // 실행취소·다시실행도 구글과 맞춘다 (되살린 일정 → 구글도 되살림) — 한 번 누르는 일이라 바로
   _applyingHistory=false;
   renderToday();
   // 실행취소/다시실행 결과도 주간·월간 표시에 즉시 반영
@@ -38941,8 +38955,8 @@ function submitEventModal(){
   if(_eventModalEditIdx!==null){
     const _cur=getEvents(_eventModalDateKey||tKey(),_eventModalSecId)[_eventModalEditIdx];
     if(_cur&&_evInSeries(_cur)){
-      _gcalPickApply(_cur);   // 고른 캘린더는 묶음의 원본에 (범위와 상관없이)
-      const payload={text,time,repeat,secId:_eventModalSecId,
+      const payload={cal:(typeof _eventModalCal==='undefined')?null:_eventModalCal,   // 고른 캘린더 — 범위(하루만·이후·모두)에 맞는 일정에 적는다
+        text,time,repeat,secId:_eventModalSecId,
         dateKey:_eventModalDateKey||tKey(),editIdx:_eventModalEditIdx,
         occ:_eventModalOccKey||_eventModalDateKey||tKey()};
       closeEventModal();
@@ -39418,11 +39432,12 @@ function _gcalTomb(k,ev){
   if(!day.gdel.includes(key))day.gdel.push(key);
 }
 // save() 마다 불린다 — 일정을 고친 뒤 몇 초 기다렸다 맞춘다
-function _gcalOnSave(){if(_gcalApplying||!_gcalCfg().on)return;_gcalKick(1500);}   // 고치고 1.5초 뒤 (예전 8초)
-function _gcalKick(ms){
+function _gcalOnSave(ms,now){if(_gcalApplying||!_gcalCfg().on)return;_gcalKick(ms||1500,now);}   // 고치고 1.5초 뒤 (예전 8초)
+// now=true 는 한 번 누르는 일(실행취소 등) — 맞추기 사이 4초 간격을 기다리지 않는다 (v26-1024-6)
+function _gcalKick(ms,now){
   if(!_gcalCfg().on)return;
   clearTimeout(_gcalKickT);
-  _gcalKickT=setTimeout(()=>{if(Date.now()-_gcalLast<4000)return _gcalKick(4000-(Date.now()-_gcalLast));gcalSync();},ms||0);   // 맞추기 사이는 4초 이상 (예전 20초)
+  _gcalKickT=setTimeout(()=>{if(!now&&Date.now()-_gcalLast<4000)return _gcalKick(4000-(Date.now()-_gcalLast));gcalSync();},ms||0);   // 맞추기 사이는 4초 이상 (예전 20초)
 }
 // 구글에 쓰기 — 판단(gcalPlan)이 정한 remote 목록을 실행하고, BLOCK7 에 남길 고리·걷을 지움 표시를 돌려준다
 async function _gcalRunRemote(ops,errs){
@@ -39508,11 +39523,12 @@ async function gcalSync(opt){
     const off=_gcalCals?known.map(c=>c.id).filter(id=>!sel.includes(id)):[];
     const base={days:ST.days,writeCal:cfg.writeCal,roCals:ro,today,dsh:_gcalDsh(),secFor:t=>_secIdForTime(t),defSec:_gcalDefSec(),tz:_gcalTz(),
       gone:Object.keys(cfg.gone||{})};
-    // ① 먼저 보내기 — BLOCK7 에서 새로 만든 것은 구글을 읽기 전에 바로 넣는다 (넣기는 구글 쪽 내용을 몰라도 된다, v26-1024-4)
+    // ① 먼저 보내기 — 구글 쪽 내용을 몰라도 되는 것은 구글을 읽기 전에 바로 한다 (v26-1024-4)
+    //    새로 만든 것(넣기) · 지운 것(지움 표시) · 실행취소로 되살린 것(되살리기, v26-1024-6)
     {
-      const quick=gcalPlan(Object.assign({},base,{gevents:[],cals:sel}));
-      const ins=quick.remote.filter(x=>x.t==='ins');
-      if(ins.length){const q=await _gcalRunRemote(ins,errs);_gcalApplyLocal([],q.links,[]);}
+      const quick=gcalPlan(Object.assign({},base,{gevents:[],cals:sel,quick:true}));
+      const qs=quick.remote.filter(x=>x.t==='ins'||x.t==='del'||x.t==='restore');
+      if(qs.length){const q=await _gcalRunRemote(qs,errs);_gcalApplyLocal([],q.links,q.untomb);}
     }
     // ② 고른 캘린더를 한꺼번에 읽는다 (예전엔 하나씩 차례로 — 캘린더가 많으면 그만큼 늦었다)
     const ok=[],gevents=[];
@@ -39550,7 +39566,7 @@ async function gcalSync(opt){
     // 구글이 받지 않은 것은 설정창 상태 줄에 남긴다 — 화면을 찍어 보내면 무엇이 막혔는지 바로 안다
     if(errs.length){console.warn('gcal 거절',errs);_gcalMsg+=` · 구글이 받지 않은 것 ${errs.length}개 (${errs[0].slice(0,120)})`;}
     _gcalBusy=false;_gcalRenderStatus();
-    if(_gcalAgain){_gcalAgain=false;_gcalKick(1500);}
+    if(_gcalAgain){_gcalAgain=false;_gcalKick(300,true);}   // 맞추는 동안 고친 것 — 끝나자마자
   }
 }
 // 로그인·첫 클라우드 읽기가 끝난 뒤 한 번 불린다 (onAuthStateChanged). ready() 가 거짓이면 쓰기가 막힌 기기라 맞추지 않는다
@@ -39798,9 +39814,9 @@ function _gcalSegHTML(slot,kind){
   }
   return `<div class="gspan" style="position:relative;height:${K.H}px;margin:1px -${rb}px 2px -${lb}px;background:${bg};border-radius:${rad};">${lbl}</div>`;
 }
-function _gcalPickApply(ev){
-  if(_eventModalCal===null||!ev)return;
-  const v=_eventModalCal;
+function _gcalPickApply(ev){_gcalPickApplyV(ev,_eventModalCal);}
+function _gcalPickApplyV(ev,v){
+  if(v===null||v===undefined||!ev)return;
   if(ev.g&&ev.g.c){if(v===ev.g.c||v==='-')delete ev.gc;else ev.gc=v;}
   else if(ev.repeat&&(ev.repeat.daily||ev.repeat.weekly))ev.gc=v;   // 예전 반복은 골라야 간다 — 기본 캘린더여도 적어 둔다
   else{if(v===_gcalCfg().writeCal)delete ev.gc;else ev.gc=v;}
@@ -40475,7 +40491,7 @@ function _evEditApply(p,scope){
     // (구글 캘린더의 RECURRENCE-ID 예외와 같은 자리)
     const dayArr=getEvents(p.occ,p.secId);
     const kept=dayArr.filter(ev=>!(ev&&ev.rid===rid&&!(ev.repeat&&_repRule(ev.repeat))));
-    kept.push({id:'ev'+Date.now(),time:p.time,text:p.text,rid});
+    kept.push(_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text,rid},root?root.ev:target,p.cal));
     ST.days[p.occ].events[p.secId]=_sortEventsKeepingTimeless(kept);
   };
 
@@ -40486,6 +40502,7 @@ function _evEditApply(p,scope){
     if(!root||p.occ<=root.k){
       const base=root?root.ev:target;
       base.text=p.text;base.time=p.time;
+      if(p.cal!=null&&typeof _gcalPickApplyV==='function')_gcalPickApplyV(base,p.cal);
       const rule=_repKeepMarks(p.repeat,base.repeat);
       if(rule)base.repeat=rule;else delete base.repeat;
     } else {
@@ -40496,7 +40513,7 @@ function _evEditApply(p,scope){
       _repPurgeEvents(rid,p.occ,true);
       const rule=_repKeepMarks(p.repeat,null);
       if(rule){rule.until=undefined;delete rule.until;rule.ex=[];}
-      const fresh={id:'ev'+Date.now(),time:p.time,text:p.text,rid:_newRid()};
+      const fresh=_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text,rid:_newRid()},root.ev,p.cal);
       if(rule)fresh.repeat=rule;
       const dayArr=getEvents(p.occ,p.secId);
       dayArr.push(fresh);
@@ -40505,9 +40522,14 @@ function _evEditApply(p,scope){
   } else { // all
     const base=root?root.ev:target;
     base.text=p.text;base.time=p.time;
+    if(p.cal!=null&&typeof _gcalPickApplyV==='function')_gcalPickApplyV(base,p.cal);
     const rule=_repKeepMarks(p.repeat,base.repeat);
     if(rule)base.repeat=rule;else delete base.repeat;
     // 하루만 따로 고쳐 둔 것들은 되돌린다 (구글도 '모든 일정' 을 고르면 초기화한다)
+    // 그 날들은 원본의 '뺀 날' 에서도 풀어야 다시 원본이 비친다 — 안 풀면 그 날이 통째로 빈다 (v26-1024-6, HB).
+    // 사람이 '이 날만 지움' 한 날은 따로 선 일정이 없으므로 그대로 빠져 있다.
+    const _ovDays=_evOverrideDays(rid);
+    if(base.repeat&&Array.isArray(base.repeat.ex)&&_ovDays.size)base.repeat.ex=base.repeat.ex.filter(d=>!_ovDays.has(d));
     _repPurgeEvents(rid,null,true);
   }
   save();
@@ -40515,6 +40537,26 @@ function _evEditApply(p,scope){
   if(p.secId!==_eventModalSecId&&_eventModalSecId)renderSecEvents(_eventModalSecId);
   refreshTaskViewsLive();
   showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+}
+
+// 반복 묶음에서 하루만 따로 선 일정(규칙 없이 rid 로만 매인 것)이 있는 날짜들
+function _evOverrideDays(rid){
+  const out=new Set();if(!rid)return out;
+  Object.keys(ST.days||{}).forEach(k=>{
+    const bag=ST.days[k]&&ST.days[k].events;if(!bag)return;
+    Object.keys(bag).forEach(sid=>(Array.isArray(bag[sid])?bag[sid]:[]).forEach(ev=>{
+      if(ev&&ev.rid===rid&&!(ev.repeat&&_repRule(ev.repeat)))out.add(k);
+    }));
+  });
+  return out;
+}
+// 묶음에서 갈라져 나온 새 일정(하루만 · 이후 모두)은 원본의 구글 캘린더를 물려받는다 —
+// 안 그러면 '기본 캘린더' 로 들어간다 (v26-1024-6, HB). 고리(g)는 물려받지 않는다: 구글에는 새 일정이다.
+function _evInheritCal(ev,src,pick){
+  if(pick!=null&&pick!==''){ev.gc=pick;return ev;}   // 입력창에서 고른 것이 먼저
+  const c=src&&((src.gc&&src.gc!=='-')?src.gc:(src.g&&src.g.c));
+  if(c)ev.gc=c;else if(src&&src.gc==='-')ev.gc='-';
+  return ev;
 }
 
 // ═══════ 일정 — 범위에 따라 지우기 ═══════
@@ -42303,7 +42345,7 @@ function renderMonthly(){
       if(!_mLanes)_mLanes=_gcalMonthLanes(y,m,fd,dim);
       const _sl=_mLanes[k]||[];
       const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id)).filter(ev=>!(ev._spanN>1));
-      cellBody=_sl.map(x=>_gcalSegHTML(x,'m')).join('')+evs.slice(0,Math.max(0,2-_sl.filter(Boolean).length)).map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
+      cellBody=_sl.map(x=>_gcalSegHTML(x,'m')).join('')+evs.map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
     } else if(wmMode==='mem'){
       // 좋아요·암송·Deeper 이벤트를 메뉴 순서(좋아요/암송/Deeper)로 줄바꿈 표시.
       // 상위 항목이 0개면 그 줄을 비우지 않고 아래 항목이 첫 줄을 채운다.
@@ -42314,7 +42356,9 @@ function renderMonthly(){
       ${cellBody}
     </div>`;
   }
-  h+='</div><div id="monthSwipeCatcher" style="min-height:200px;"></div>';el.innerHTML=h;
+  // 칸 높이 손잡이 — 끌면 칸이 늘거나 줄고(줄이면 아래 일정부터 가려짐), 두 번 누르면 내용에 맞춤 (v26-1024-6, HB)
+  h+='</div><div class="m-grip" id="mGrip" title="끌어서 칸 높이 · 두 번 누르면 내용에 맞춤"><span></span></div><div id="monthSwipeCatcher" style="min-height:200px;"></div>';el.innerHTML=h;
+  _mGridApplyH(Math.ceil((fd+dim)/7));
 
   // A/★ section-visibility buttons — same row used on D/W views, minus
   // the +/- expand-all button, refreshing renderMonthly() on change.
@@ -42359,6 +42403,54 @@ function chM(dir){
 // background), excluding the day cells and the A/★ button row. A full
 // #pageContent slide visual plays on commit, matching D/W view's feel.
 let _monthlySwipeAttached=false;
+// ── M뷰 칸 높이 (v26-1024-6, HB) ──
+// 기본은 '내용에 맞춤' — 칸이 늘어나 일정이 다 보인다. 손잡이를 끌면 그 높이로 고정된다:
+// 늘리면 여백이 생기고, 줄이면 칸 아래쪽부터 가려진다. 두 번 누르면 다시 '내용에 맞춤'.
+// 화면 크기가 기기마다 달라 이 기기에만 기억한다 (_lsk).
+function _mGridH(){try{const v=Number(localStorage.getItem(_lsk('mGridH')));return v>0?v:null;}catch(e){return null;}}
+function _mGridSetH(v){try{if(v)localStorage.setItem(_lsk('mGridH'),String(Math.round(v)));else localStorage.removeItem(_lsk('mGridH'));}catch(e){}}
+function _mGridApplyH(rows){
+  const g=document.getElementById('mGridArea'),grip=document.getElementById('mGrip');if(!g)return;
+  // 줄인 칸에서 다 못 들어가는 줄은 반쯤 잘려 보이지 않게 통째로 감춘다 (아래 줄부터)
+  const fit=()=>{
+    const fixed=g.classList.contains('mcg-fixed');
+    g.querySelectorAll('.mcc').forEach(c=>{
+      const kids=[...c.children].filter(x=>!x.classList.contains('mcd'));
+      if(!fixed){kids.forEach(x=>{x.style.visibility='';});return;}
+      const lim=c.getBoundingClientRect().bottom-4;
+      kids.forEach(x=>{x.style.visibility=(x.getBoundingClientRect().bottom<=lim)?'':'hidden';});
+    });
+  };
+  const put=H=>{
+    if(H){g.classList.add('mcg-fixed');g.style.height=H+'px';g.style.gridTemplateRows=`auto repeat(${rows},minmax(0,1fr))`;}
+    else{g.classList.remove('mcg-fixed');g.style.height='';g.style.gridTemplateRows='';}
+    fit();
+  };
+  put(_mGridH());
+  if(!grip)return;
+  let sy=0,h0=0,dragging=false,lastTap=0;
+  const minH=()=>{const hd=g.querySelector('.mcdow');return(hd?hd.offsetHeight:16)+rows*30;};
+  grip.addEventListener('pointerdown',e=>{
+    e.preventDefault();e.stopPropagation();
+    const now=Date.now();
+    if(now-lastTap<350){lastTap=0;put(null);_mGridSetH(null);showToast('칸 높이를\n내용에 맞췄어요');return;}
+    lastTap=now;
+    dragging=true;sy=e.clientY;h0=g.getBoundingClientRect().height;
+    try{grip.setPointerCapture(e.pointerId);}catch(_){}
+    grip.classList.add('on');
+  });
+  grip.addEventListener('pointermove',e=>{
+    if(!dragging)return;e.preventDefault();
+    const H=Math.max(minH(),h0+(e.clientY-sy));
+    if(Math.abs(e.clientY-sy)>3)put(H);
+  });
+  const end=e=>{
+    if(!dragging)return;dragging=false;grip.classList.remove('on');
+    if(Math.abs(e.clientY-sy)>3)_mGridSetH(Math.max(minH(),h0+(e.clientY-sy)));
+  };
+  grip.addEventListener('pointerup',end);grip.addEventListener('pointercancel',end);
+  ['touchstart','touchmove'].forEach(t=>grip.addEventListener(t,e=>e.stopPropagation(),{passive:true}));
+}
 function initMonthlySwipe(){
   if(_monthlySwipeAttached)return;
   _monthlySwipeAttached=true;
@@ -42374,7 +42466,7 @@ function initMonthlySwipe(){
   function isExcluded(target){
     // 날짜 칸(.mcc)·요일머리(.mcdow)도 좌우 스와이프로 지난달/다음달 이동을 받는다.
     // (칸 탭은 click 으로, 롱터치는 별도 핸들러로 처리되어 서로 방해하지 않는다)
-    const hit=target.closest('.add-btn,.preset-btn,.preset-sep,button,.mttl,.wmview-btns,#mViewTopStrip');
+    const hit=target.closest('.add-btn,.preset-btn,.preset-sep,button,.mttl,.wmview-btns,#mViewTopStrip,.m-grip');
     return hit!==null;
   }
 
