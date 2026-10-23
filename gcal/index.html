@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BLOCK7 캘린더 연결</title>
+<style>
+:root{--bg:#fafafa;--tx:#666}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--tx:#9a9a9a}}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--tx);
+  font:300 14px/1.7 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;text-align:center;padding:0 16px}
+</style>
+</head>
+<body>
+<p id="m">구글 캘린더를 잇는 중이에요…</p>
+<script>
+// 구글 동의 화면이 돌려보내는 자리 (v26-1023-2).
+// 돌아올 주소를 block7.my 안에 두어야 구글 '승인된 도메인' 을 HB 의 도메인 하나로 끝낼 수 있다.
+// 받은 code·state 를 서버(gcal-functions /fin)에 넘기고, 서버가 알려 준 앱 주소로 돌아간다.
+(async()=>{
+  const q=new URLSearchParams(location.search);
+  let ret='https://block7.my/',res='err';
+  try{
+    const r=await fetch('https://asia-northeast3-block7-8f24e.cloudfunctions.net/gcal/fin',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code:q.get('code')||'',state:q.get('state')||'',error:q.get('error')||''})});
+    const j=await r.json();
+    if(j.ret)ret=j.ret;if(j.result)res=j.result;
+  }catch(e){}
+  const u=new URL(ret);u.searchParams.set('gcal',res);
+  location.replace(u.toString());
+})();
+</script>
+</body>
+</html>
