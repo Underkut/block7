@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 타이머 v. 26-1023-1 -->
+<!-- 타이머 v. 26-1023-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -75,7 +75,30 @@ svg{display:block}
 .presets::-webkit-scrollbar{display:none}
 .chip{flex:none;display:flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:19px;background:var(--s2);font-size:13px;white-space:nowrap;position:relative;-webkit-touch-callout:none;transition:transform .24s cubic-bezier(.22,.8,.24,1),box-shadow .2s,opacity .2s}
 .chip.pdrag{transition:box-shadow .2s;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.22);background:var(--s1)}
-.presets.dragging .chip:not(.pdrag){opacity:.85}
+.chip.phole{visibility:hidden}
+/* 들어 올린 칩 — 화면 어디로든 따라다니는 떠 있는 복사본 */
+.pghost{position:fixed;margin:0;z-index:58;pointer-events:none;background:var(--s1)!important;color:var(--tx)!important;box-shadow:0 10px 26px rgba(0,0,0,.26);transition:none;will-change:transform}
+/* 놓는 자리: 가운데 연필(고치기) · 맨 위 붉은 반원(지우기) */
+#pdz{position:fixed;inset:0;z-index:55;pointer-events:none}
+#pdz .dimz{position:absolute;inset:0;background:rgba(0,0,0,.16);opacity:0;transition:opacity .25s ease}
+#pdz.on .dimz{opacity:1}
+#pdz .ed{position:absolute;left:50%;top:40%;width:124px;height:124px;margin:-62px 0 0 -62px;border-radius:34px;background:var(--s1);color:var(--tx2);display:grid;place-items:center;box-shadow:0 12px 32px rgba(0,0,0,.16);opacity:0;transform:scale(.82);transition:opacity .22s ease,transform .32s cubic-bezier(.22,.8,.24,1),background .18s,color .18s}
+#pdz.on .ed{opacity:1;transform:scale(1)}
+#pdz .ed.hot{transform:scale(1.1);background:var(--tx);color:var(--bg)}
+#pdz .del{position:absolute;left:50%;top:0;width:176px;height:calc(88px + env(safe-area-inset-top,0px));margin-left:-88px;border-radius:0 0 88px 88px;background:#e5484d;color:#fff;display:flex;justify-content:center;align-items:flex-end;padding-bottom:26px;opacity:.86;transform:translateY(-102%);transform-origin:50% 0;transition:transform .34s cubic-bezier(.22,.8,.24,1),opacity .18s}
+#pdz.on .del{transform:none}
+#pdz.on .del.hot{transform:scale(1.14);opacity:1}
+/* 확인 카드 — 기기 기본 창 대신 */
+.cfm{position:fixed;inset:0;z-index:72;display:grid;place-items:center;background:rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .2s ease;padding:0 24px}
+.cfm.on{opacity:1;pointer-events:auto}
+.cfm .card{width:min(100%,300px);background:var(--s1);border-radius:22px;padding:22px 16px 14px;text-align:center;box-shadow:0 18px 44px rgba(0,0,0,.22);transform:scale(.94);transition:transform .28s cubic-bezier(.22,.8,.24,1)}
+.cfm.on .card{transform:scale(1)}
+.cfm .msg{font-size:15px;line-height:1.6;white-space:pre-line;color:var(--tx)}
+.cfm .msg small{display:block;font-size:12.5px;color:var(--tx3);margin-top:4px}
+.cfm .btns{display:flex;gap:8px;margin-top:18px}
+.cfm .btns button{flex:1;height:44px;border-radius:13px;font-size:14px;font-weight:400}
+.cfm .no{background:var(--s2);color:var(--tx2)}
+.cfm .yes{background:#e5484d;color:#fff}
 .chip .dot{width:10px;height:10px;border-radius:50%}
 .chip small{color:var(--tx3);font-size:12px}
 .chip.add{color:var(--tx2)}
@@ -234,7 +257,6 @@ body.lv-simple .mainrow{gap:48px}
 body.lv-simple .mainrow .ic{color:var(--tx3)}
 body.lv-simple .chip{background:none;padding:0 9px;color:var(--tx2);font-size:13px}
 body.lv-simple .chip.on{box-shadow:none;color:var(--tx)}
-body.lv-simple .chip.pdrag{background:var(--s1);box-shadow:0 8px 20px rgba(0,0,0,.22)}
 body.lv-simple .chip .dot{width:6px;height:6px}
 body.lv-simple .chip small{display:none}
 body.lv-simple .rstrip .rbar{height:3px}
@@ -256,7 +278,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 .sounds button.on{background:var(--tx);color:var(--bg)}
 .lnk{color:var(--ac);font-size:12px;text-decoration:underline;text-underline-offset:2px}
 @media (prefers-reduced-motion: reduce){
-  .track,.sheet,.toast,.tog::after,.desk .bgl,.desk .info{transition:none!important}
+  .track,.sheet,.toast,.tog::after,.desk .bgl,.desk .info,#pdz *,.cfm,.cfm .card{transition:none!important}
   .flash.go{animation:flash1 2.4s ease-in-out infinite}
   @keyframes flash1{0%,100%{opacity:0}40%{opacity:.6}}
   .play.pulse{animation:none}
@@ -291,7 +313,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
           <button class="ic" id="deskBtn" aria-label="탁상 모드로 크게"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-6.5 6.5"/><path d="M10 20H4v-6"/><path d="M4 20l6.5-6.5"/></svg></button>
         </div>
         <div class="presets" id="presets" data-noswipe></div>
-        <div class="hint">누르면 바로 시작 · 길게 눌러 떼면 고치기 · 길게 눌러 끌면 순서 바꾸기</div>
+        <div class="hint">누르면 바로 시작 · 길게 눌러 끌면 순서 바꾸기 · 고치기 · 지우기</div>
       </div></section>
 
       <section class="page" id="pg1">
@@ -331,12 +353,18 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
     <button class="ex" data-dk="out" aria-label="탁상 모드 나가기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8V3H4v18h11v-5"/><path d="M10.5 12h8"/><path d="M16 9.5l2.5 2.5-2.5 2.5"/></svg></button>
   </div>
 </div>
+<div id="pdz" aria-hidden="true">
+  <div class="dimz"></div>
+  <div class="del" id="pdzDel"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15"/><path d="M9.5 7V4.8h5V7"/><path d="M6.5 7l.9 12.2h9.2L17.5 7"/></svg></div>
+  <div class="ed" id="pdzEd"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5l4 4L8.5 19.5H4.5v-4z"/><path d="M13 7l4 4"/></svg></div>
+</div>
+<div class="cfm" id="cfm" role="alertdialog" aria-modal="true"><div class="card"><div class="msg" id="cfmMsg"></div><div class="btns"><button class="no" id="cfmNo">그대로 둘게요</button><button class="yes" id="cfmYes">지우기</button></div></div></div>
 <div class="flash" id="flash"></div>
 <div class="toast" id="toast" role="status"></div>
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-1';
+const APP_VERSION='v. 26-1023-2';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -919,89 +947,114 @@ function openSheet(title,body,foot,onClose){
 }
 function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');if(onSheetClose){const f=onSheetClose;onSheetClose=null;f();}}
 $('sheetX').onclick=closeSheet;$('scrim').onclick=closeSheet;
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('sheet').classList.contains('on'))closeSheet();else if($('desk').classList.contains('on'))exitDesk();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('cfm').classList.contains('on'))closeCfm(false);else if($('sheet').classList.contains('on'))closeSheet();else if($('desk').classList.contains('on'))exitDesk();}});
 
 // ── 프리셋: 누르면 바로 시작 · 길게 누르면 떠오른다 ──
-// 기도노트 지도 단추와 같은 손짓 (아이폰 홈 화면처럼):
-//   0.45초 누르고 있으면 칩이 살짝 떠오른다(진동). 거기서
-//     · 손을 그대로 떼면 → 고치기 창
-//     · 옆으로 끌면 → 순서 바꾸기. 이웃 칩이 부드럽게 비켜 주고, 놓은 자리로 내려앉는다
-//   누르자마자 움직이면 그냥 프리셋 줄 넘기기다. PC 는 오른쪽 누르기 = 고치기.
+// 0.45초 누르고 있으면 칩이 떠올라 손가락을 따라다닌다(진동). 동시에 놓는 자리 둘이 나타난다:
+//   · 화면 가운데 둥근 사각(연필) → 놓으면 고치기
+//   · 화면 맨 위 붉은 반원 → 놓으면 확인 카드를 거쳐 지우기
+//   · 프리셋 줄 안에서 옆으로 → 순서 바꾸기 (이웃이 비켜 준다)
+//   · 그 밖에 놓거나 그냥 떼면 → 제자리로 돌아간다
+// 누르자마자 움직이면 그냥 프리셋 줄 넘기기. PC 는 오른쪽 누르기 = 고치기.
 const PD={st:null,t:0,swallow:0};
 const PD_HOLD=450,PD_LIFT=1.08;
 (function presetPress(){
-  const box=$('presets');
-  const cancelLift=st=>{st.items.forEach(x=>{x.style.transform='';});st.c.classList.remove('pdrag');box.classList.remove('dragging');};
+  const box=$('presets'),zones=$('pdz'),zEd=$('pdzEd'),zDel=$('pdzDel');
+  const clearShift=st=>st.items.forEach((x,i)=>{if(i!==st.i0)x.style.transform='';});
+  function lift(st){
+    const c=st.c;
+    st.on=true;st.items=[...box.querySelectorAll('[data-pid]')];
+    st.rects=st.items.map(x=>x.getBoundingClientRect());st.mids=st.rects.map(r=>r.left+r.width/2);
+    st.i0=st.items.indexOf(c);st.to=st.i0;st.sl0=box.scrollLeft;st.over='';
+    st.shift=st.rects[st.i0].width+(parseFloat(getComputedStyle(box).columnGap)||8);
+    st.row=box.getBoundingClientRect();
+    const r=st.rects[st.i0],g=c.cloneNode(true);
+    g.classList.add('pghost');g.removeAttribute('data-pid');
+    Object.assign(g.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'});
+    document.body.appendChild(g);st.g=g;
+    c.classList.add('phole');box.classList.add('dragging');
+    g.style.transform=`scale(${PD_LIFT})`;
+    zones.classList.add('on');
+    try{box.setPointerCapture(st.id);}catch(er){}
+    if(navigator.vibrate)try{navigator.vibrate(8);}catch(er){}
+    st.raf=requestAnimationFrame(edgeTick);
+  }
   box.addEventListener('pointerdown',e=>{
     const c=e.target.closest('[data-pid]');if(!c||(e.pointerType==='mouse'&&e.button!==0))return;
-    const st={c,id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,on:false,moved:false};
+    const st={c,id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,y:e.clientY,on:false,moved:false};
     PD.st=st;clearTimeout(PD.t);
-    PD.t=setTimeout(()=>{
-      if(PD.st!==st)return;
-      st.on=true;st.items=[...box.querySelectorAll('[data-pid]')];
-      st.rects=st.items.map(x=>x.getBoundingClientRect());st.mids=st.rects.map(r=>r.left+r.width/2);
-      st.i0=st.items.indexOf(c);st.to=st.i0;st.sl0=box.scrollLeft;
-      st.shift=st.rects[st.i0].width+(parseFloat(getComputedStyle(box).columnGap)||8);
-      c.classList.add('pdrag');box.classList.add('dragging');c.style.transform=`scale(${PD_LIFT})`;
-      try{c.setPointerCapture(st.id);}catch(er){}
-      if(navigator.vibrate)try{navigator.vibrate(8);}catch(er){}
-      st.raf=requestAnimationFrame(edgeTick);
-    },PD_HOLD);
+    PD.t=setTimeout(()=>{if(PD.st===st)lift(st);},PD_HOLD);
   });
-  // 끄는 중 — 칩은 손가락을 따라가고, 넘어선 이웃은 한 칸씩 비켜 준다
+  // 놓는 자리 위인가 (손가락 기준, 조금 넉넉하게)
+  function overZone(st){
+    const e=zEd.getBoundingClientRect(),d=zDel.getBoundingClientRect(),x=st.x,y=st.y;
+    if(x>e.left-18&&x<e.right+18&&y>e.top-18&&y<e.bottom+18)return 'ed';
+    if(y<d.bottom+22&&Math.abs(x-(d.left+d.width/2))<d.width/2+16)return 'del';
+    return '';
+  }
   function follow(){
     const st=PD.st;if(!st||!st.on)return;
-    const dx=st.x-st.x0+(box.scrollLeft-st.sl0);
-    st.c.style.transform=`translateX(${dx}px) scale(${PD_LIFT})`;
-    const to=dragSlot(st.mids,st.i0,st.mids[st.i0]+dx);
+    const gx=st.x-st.x0,gy=st.y-st.y0,over=overZone(st);
+    if(over!==st.over){st.over=over;zEd.classList.toggle('hot',over==='ed');zDel.classList.toggle('hot',over==='del');
+      if(over&&navigator.vibrate)try{navigator.vibrate(6);}catch(er){}}
+    st.g.style.transform=`translate(${gx}px,${gy}px) scale(${over?.92:PD_LIFT})`;
+    st.g.style.transition='transform .12s ease-out';
+    // 줄 안에 있을 때만 순서를 바꾼다
+    const inRow=!over&&st.y>st.row.top-28&&st.y<st.row.bottom+28;
+    const to=inRow?dragSlot(st.mids,st.i0,st.mids[st.i0]+gx+(box.scrollLeft-st.sl0)):st.i0;
     if(to===st.to)return;st.to=to;
     st.items.forEach((x,i)=>{if(i===st.i0)return;
       const sh=st.i0<to&&i>st.i0&&i<=to?-1:st.i0>to&&i<st.i0&&i>=to?1:0;
       x.style.transform=sh?`translateX(${sh*st.shift}px)`:'';});
   }
-  // 줄 끝에 닿으면 프리셋 줄이 스스로 넘어간다
+  // 줄 끝에 닿으면 프리셋 줄이 스스로 넘어간다 (줄 높이에 있을 때만)
   function edgeTick(){
     const st=PD.st;if(!st||!st.on)return;
-    const b=box.getBoundingClientRect();let v=0;
-    if(st.moved){if(st.x<b.left+40)v=-6;else if(st.x>b.right-40)v=6;}
+    let v=0;
+    if(st.moved&&st.y>st.row.top-28&&st.y<st.row.bottom+28){if(st.x<st.row.left+40)v=-6;else if(st.x>st.row.right-40)v=6;}
     if(v){const before=box.scrollLeft;box.scrollLeft+=v;if(box.scrollLeft!==before)follow();}
     st.raf=requestAnimationFrame(edgeTick);
   }
   box.addEventListener('pointermove',e=>{
     const st=PD.st;if(!st||e.pointerId!==st.id)return;
-    st.x=e.clientX;
+    st.x=e.clientX;st.y=e.clientY;
     if(!st.on){if(Math.hypot(e.clientX-st.x0,e.clientY-st.y0)>8){clearTimeout(PD.t);PD.st=null;}return;}
-    if(Math.abs(e.clientX-st.x0)>6)st.moved=true;
+    if(Math.hypot(e.clientX-st.x0,e.clientY-st.y0)>6)st.moved=true;
     follow();
   });
   // 떠오른 뒤에는 화면이 같이 끌려가지 않게 (아이폰)
-  box.addEventListener('touchmove',e=>{if(PD.st&&PD.st.on)e.preventDefault();},{passive:false});
+  document.addEventListener('touchmove',e=>{if(PD.st&&PD.st.on)e.preventDefault();},{passive:false});
+  const done=st=>{st.g.remove();st.c.classList.remove('phole');box.classList.remove('dragging');zones.classList.remove('on');zEd.classList.remove('hot');zDel.classList.remove('hot');};
+  // 떠 있는 칩을 어떤 화면 자리로 보내고 나서 정리
+  function flyTo(st,rect,scale,fade,after){
+    if(quiet()){done(st);after&&after();return;}
+    const r=st.rects[st.i0],tx=rect?(rect.left+rect.width/2)-(r.left+r.width/2):0,ty=rect?(rect.top+rect.height/2)-(r.top+r.height/2):0;
+    st.g.style.transition='transform .28s cubic-bezier(.22,.8,.24,1),opacity .28s ease';
+    st.g.style.transform=`translate(${tx}px,${ty}px) scale(${scale})`;if(fade)st.g.style.opacity='0';
+    setTimeout(()=>{done(st);after&&after();},290);
+  }
   function end(e){
     const st=PD.st;if(!st||(e&&e.pointerId!==st.id))return;
     clearTimeout(PD.t);PD.st=null;
     if(!st.on)return;
     cancelAnimationFrame(st.raf);PD.swallow=Date.now();   // 손을 뗄 때 따라오는 '눌림' 은 버린다
-    const ok=e&&e.type==='pointerup';
-    if(ok&&!st.moved){cancelLift(st);editPreset(st.c.dataset.pid);return;}
-    if(!ok||st.to===st.i0){cancelLift(st);return;}
-    // 놓은 자리로 — 이웃은 이미 새 자리에 있으니 그대로, 든 칩만 지금 보이는 곳에서 내려앉는다
-    const id=st.c.dataset.pid,from=st.c.getBoundingClientRect();
+    const ok=e&&e.type==='pointerup',id=st.c.dataset.pid,over=ok?overZone(st):'';
+    if(over==='ed'){clearShift(st);flyTo(st,zEd.getBoundingClientRect(),.4,true,()=>editPreset(id));return;}
+    if(over==='del'){clearShift(st);flyTo(st,zDel.getBoundingClientRect(),.4,true,()=>askDelete(id));return;}
+    if(!ok||st.to===st.i0){clearShift(st);flyTo(st,null,1,false);return;}
+    // 놓은 자리로 — 이웃은 이미 새 자리에 있으니 그대로 그리고, 떠 있던 칩만 새 칸으로 내려앉는다
     const ids=moveItem(st.items.map(x=>x.dataset.pid),st.i0,st.to);
     S.presets=ids.map(P).filter(Boolean).concat(S.presets.filter(p=>!ids.includes(p.id)));
-    save();box.classList.remove('dragging');drawPresets();
+    save();drawPresets();
     const nc=box.querySelector(`[data-pid="${id}"]`);
-    if(nc&&!quiet()){
-      const to=nc.getBoundingClientRect();
-      nc.style.transition='none';nc.style.transform=`translateX(${(from.left+from.width/2)-(to.left+to.width/2)}px) scale(${PD_LIFT})`;nc.classList.add('pdrag');
-      nc.getBoundingClientRect();
-      nc.style.transition='';nc.style.transform='';
-      setTimeout(()=>nc.classList.remove('pdrag'),260);
-    }
+    if(nc){nc.classList.add('phole');flyTo(st,nc.getBoundingClientRect(),1,false,()=>nc.classList.remove('phole'));}else done(st);
     if(tab===1)renderRoutines();
   }
   box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
   box.addEventListener('scroll',()=>{const st=PD.st;if(st&&!st.on){clearTimeout(PD.t);PD.st=null;}},{passive:true});
-  box.addEventListener('contextmenu',e=>{const c=e.target.closest('[data-pid]');if(c){e.preventDefault();if(PD.st){clearTimeout(PD.t);if(PD.st.on)cancelLift(PD.st);PD.st=null;}PD.swallow=Date.now();editPreset(c.dataset.pid);}});
+  box.addEventListener('contextmenu',e=>{const c=e.target.closest('[data-pid]');if(!c)return;e.preventDefault();
+    if(PD.st){clearTimeout(PD.t);if(PD.st.on){const st=PD.st;cancelAnimationFrame(st.raf);clearShift(st);done(st);}PD.st=null;}
+    PD.swallow=Date.now();editPreset(c.dataset.pid);});
   box.addEventListener('click',e=>{
     if(Date.now()-PD.swallow<450){e.preventDefault();return;}
     if(e.target.closest('#addPreset')){const m=Math.round(R().total/60000)||5;editPreset(null,m);return;}
@@ -1041,11 +1094,29 @@ function editPreset(id,initMin){
     const i=S.presets.findIndex(x=>x.id===p.id);if(i>=0)S.presets[i]=p;else S.presets.push(p);
     save();drawPresets();closeSheet();toast(`${pLabel(p)} 프리셋을\n${id?'고쳤어요':'만들었어요'}`);
   };
-  if(id)$('pDel').onclick=()=>{
-    S.presets=S.presets.filter(x=>x.id!==id);S.routines.forEach(r=>r.items=r.items.filter(x=>x!==id));
-    save();drawPresets();closeSheet();toast(`${pLabel(p)} 프리셋을 지웠어요\n이어달리기에서도 빠졌어요`);
-  };
+  if(id)$('pDel').onclick=()=>{closeSheet();askDelete(id);};
 }
+// 프리셋 지우기 — 늘 확인 카드를 거친다
+function askDelete(id){
+  const p=P(id);if(!p)return;
+  const used=S.routines.some(r=>r.items.includes(id));
+  confirmCard(`<b style="font-weight:500">${esc(pLabel(p))}${p.name?' '+p.min+'분':''}</b> 프리셋을 지울까요?${used?'<small>이어달리기에서도 빠져요</small>':''}`,'지우기',()=>deletePreset(id));
+}
+function deletePreset(id){
+  const p=P(id);if(!p)return;
+  S.presets=S.presets.filter(x=>x.id!==id);S.routines.forEach(r=>r.items=r.items.filter(x=>x!==id));
+  const r=S.run;if(r.pid===id)r.pid=null;if(r.rt&&r.rt.seq.includes(id))r.rt=null;
+  save();drawPresets();drawAll();if(tab===1)renderRoutines();
+  toast(`${pLabel(p)} 프리셋을 지웠어요${S.routines.length?'\n이어달리기에서도 빠졌어요':''}`);
+}
+// 확인 카드 (기기 기본 창 대신) — 바깥을 누르거나 ESC 면 그대로 둔다
+let cfmOk=null;
+function confirmCard(html,yes,onOk){
+  $('cfmMsg').innerHTML=html;$('cfmYes').textContent=yes;cfmOk=onOk;$('cfm').classList.add('on');
+}
+function closeCfm(ok){const f=cfmOk;cfmOk=null;$('cfm').classList.remove('on');if(ok&&f)f();}
+$('cfmYes').onclick=()=>closeCfm(true);$('cfmNo').onclick=()=>closeCfm(false);
+$('cfm').addEventListener('click',e=>{if(e.target===$('cfm'))closeCfm(false);});
 
 // ── 이어달리기 ──
 function rtMinutes(rt){return rt.items.reduce((a,id)=>a+(P(id)?P(id).min:0),0)*rt.rep;}
