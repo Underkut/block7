@@ -178,13 +178,13 @@ D: 이어지는 날 칩에 `~10.26 · 2/3일` · W·M: 구글처럼 이어진 �
 | T-3 | 이어달리기: 프리셋 여럿을 줄 세움 · 다음이 켜질 때 **바로 시작 / 시작 버튼 눌러야** (설정) · 반복 횟수 · 어디까지 왔나 줄 | ✅ timer v. 26-1022-1 · `tests/test_timer.js` |
 | T-4 | 테마: BLOCK7·Sweeter 테마 전부(기본 + SPARK 7 + BREATH 8, 각 라이트·다크) · 설정 등급(이지·미드·파워) | ✅ timer v. 26-1022-1 · `tests/test_timer.js` |
 | T-5 | 기록 — 오늘·이번 주 몇 분, 프리셋별 | ✅ timer v. 26-1022-1 · `tests/test_timer.js` |
-| T-6 | 잠금 화면에서도 끝 알림 — 서버 푸시. HB 가 서버를 올려야 한다 | ✅ 코드 · ⏳ HB 서버 올리기 — 아래 'T-6' |
+| T-6 | 잠금 화면에서도 끝 알림 — 서버 푸시. HB 가 서버를 올려야 한다 | ✅ 서버 올림 · ⏳ HB 실기기(화면 끈 채 끝) — 아래 'T-6' |
 
 **T-6 잠금 화면 알림 (HB 2026-10-24 "1분 정도면 괜찮아, 시작해")**
 | 단계 | 무엇 | 상태 |
 |---|---|---|
 | T-6a | 서버 `wallet-functions/src/timer.js` — `timerPing`(HTTP: /set · /clear · /test) + `timerDue`(공부 친구들 `studyTick` 이 1분마다 함께 부름) · 앱: 설정 스위치 · 시작/멈춤/±/처음으로마다 끝 시각을 서버에 · 서비스워커가 알림을 받음 · `tests/test_timer.js` ⑨ | ✅ 코드 timer v. 26-1024-3 · `tests/test_timer_push.js` 22 |
-| T-6b | HB: Cloud Shell 에서 `firebase deploy --only functions:wallet` (공부 친구들과 같은 명령) → 설정에서 켜기 → 시험 알림 | ⏳ HB |
+| T-6b | HB: Cloud Shell 에서 `firebase deploy --only functions:wallet` (공부 친구들과 같은 명령) → 설정에서 켜기 → 시험 알림 | ✅ 2026-10-24 HB 서버 올림 · 시험 알림 옴 |
 | T-6c | HB 실기기: 아이폰 홈 화면 앱 · 화면 끈 채 타이머 끝 | ⏳ HB |
 - **왜 공부 친구들 틱에 얹었나**: 예약 작업(Cloud Scheduler)은 계정당 3개까지 무료이고 이미 그 넘게 쓴다 → 따로 만들면 한 달 ₩140 남짓이 더 붙는다.
   타이머 몫은 `timer.js` 에 따로 두고 `studyTick` 끝에서 한 줄로 부른다 — 공부 쪽 알림과 서로 실패를 넘기지 않게 try 로 감쌌다.
