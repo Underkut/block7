@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-1  [production]  -->
+<!-- BLOCK7  v. 26-1024-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6383,7 +6383,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-1";
+const APP_VERSION = "v. 26-1024-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -24007,6 +24007,9 @@ function getDisplayEvents(k,secId){
   const own=getEvents(k,secId)
     .map((ev,i)=>({...ev,_ownIdx:i}))
     .filter(ev=>eventOccursOnOwnDate(ev,k));
+  // 구글의 여러 날 일정 — 첫날에 저장된 것을 이어지는 날에도 비춘다 (저장은 첫날 하나뿐, v26-1024-2)
+  own.forEach(ev=>{const n=_gcalSpanN(ev);if(n>1){ev._spanFrom=k;ev._spanI=1;ev._spanN=n;}});
+  const spans=[];
 
   const virtual=[];
   Object.keys(ST.days).forEach(originKey=>{
@@ -24017,6 +24020,9 @@ function getDisplayEvents(k,secId){
     originEvents.forEach((ev,idx)=>{
       if(ev.repeat&&eventRepeatsOnDate(ev,originKey,k)){
         virtual.push({...ev,_virtualFrom:originKey,_virtualIdx:idx});
+      }else if(ev.g&&!ev.repeat){
+        const n=_gcalSpanN(ev);
+        if(n>1){const i=gcalDayDiff(originKey,k);if(i<n)spans.push({...ev,_virtualFrom:originKey,_virtualIdx:idx,_spanFrom:originKey,_spanI:i+1,_spanN:n});}
       }
     });
   });
@@ -24029,7 +24035,7 @@ function getDisplayEvents(k,secId){
   // elsewhere. Virtual (repeated-from-another-day) events have no
   // stored position on THIS date, so they're appended after own,
   // sorted by time among themselves.
-  return [...own,...sortEventsByTime(virtual)];
+  return [...spans,...own,...sortEventsByTime(virtual)];
 }
 
 // Default sort: by time ascending, with timeless events first (so
@@ -24072,7 +24078,7 @@ function renderSecEvents(secId, animate=false){
         chip.className='ev-chip'+(ev.repeat?' ev-chip-repeat':'');
         chip.dataset.idx=i;
         if(!ev._virtualFrom)chip.dataset.ownidx=ev._ownIdx;
-        const _t1=ev.time?`${formatEventTime(ev.time)} ${ev.text}`:ev.text;
+        const _t1=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${ev.text}`:ev.text)+_gcalSpanTag(ev);
         chip.innerHTML=_t1.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+(ev.repeat?REPEAT_MARK_HTML:'');
         chip.style.opacity='0';
         chip.style.transition=`opacity .2s ease ${i*40}ms`;
@@ -24095,7 +24101,7 @@ function renderSecEvents(secId, animate=false){
     chip.className='ev-chip'+(ev.repeat?' ev-chip-repeat':'');
     chip.dataset.idx=i;
     if(!ev._virtualFrom)chip.dataset.ownidx=ev._ownIdx;
-    const _t2=ev.time?`${formatEventTime(ev.time)} ${ev.text}`:ev.text;
+    const _t2=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${ev.text}`:ev.text)+_gcalSpanTag(ev);
     chip.innerHTML=_t2.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+(ev.repeat?REPEAT_MARK_HTML:'');
     _gcalTintChip(chip,ev);
     attachEventChipInteraction(chip,secId,i,ev);
@@ -25317,6 +25323,7 @@ function _rpMonthGridHTML(y,m,fixedH){
   };
   const weekFadeClass=diff=>diff===0?null:` mcc-grey-${Math.min(Math.abs(diff)-1,4)}`;
   let h=`<div class="rp-mcg mcg"${sizedStyle}>${DOW.map((d,i)=>`<div class="mcdow${i===0&&ST.settings.sundayRed!==false?' sun-red':''}">${d}</div>`).join('')}${Array(fd).fill('<div class="mcc empty"></div>').join('')}`;
+  let _mLanes=null;   // 여러 날 일정의 띠 자리 (일정 모드에서만 만든다)
   for(let d=1;d<=dim;d++){
     const cellDate=new Date(y,m,d);
     const k=`${y}-${z(m+1)}-${z(d)}`;const day=ST.days[k];
@@ -25333,8 +25340,10 @@ function _rpMonthGridHTML(y,m,fixedH){
       const dotHtml=bigs.map((b,i)=>`<div class="mcdot${i>=6?' ov':''}${b.done?' dn':''}${b.flag?' flag':''}"></div>`).join('');
       cellBody=`<div class="mcdots">${dotHtml}</div>${smt?`<div class="mcsc">${smt}</div>`:''}`;
     }else if(wmMode==='event'){
-      const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id));
-      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
+      if(!_mLanes)_mLanes=_gcalMonthLanes(y,m,fd,dim);
+      const _sl=_mLanes[k]||[];
+      const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id)).filter(ev=>!(ev._spanN>1));
+      cellBody=_sl.map(x=>_gcalSegHTML(x,'m')).join('')+evs.slice(0,Math.max(0,2-_sl.filter(Boolean).length)).map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
     }else if(wmMode==='mem'){
       // 좋아요·암송·Deeper 이벤트를 메뉴 순서로 줄바꿈 표시 (0개 항목은 생략, 빈 줄 없이 압축)
       cellBody=_mviewEventCountsHTML(k);
@@ -39567,6 +39576,87 @@ function _gcalPickRender(ev){
   };
   draw();
 }
+// ── 여러 날 일정 (v26-1024-2, HB) ──
+// 저장은 구글의 시작 날 하나뿐이다. 며칠짜리인지는 고리의 d(종일=날 수 · 시각=분)로 알고,
+// getDisplayEvents 가 이어지는 날에도 '비춰' 보여 준다(반복 일정과 같은 길 — 저장·동기화는 그대로).
+// 몇 날에 걸치나 — 시각 있는 일정은 BLOCK7 의 하루(하루 시작 시각 기준)를 넘을 때만
+function _gcalSpanN(ev){
+  if(!ev||!ev.g||ev.repeat)return 1;
+  const d=ev.g.d|0;
+  if(!ev.time)return Math.min(62,Math.max(1,d||1));
+  const dsh=(ST.settings&&ST.settings.dayStartHour)||0;
+  const[h,mi]=ev.time.split(':').map(Number);
+  let st=h*60+mi;if(dsh>0&&h<dsh)st+=1440;
+  return Math.min(62,Math.max(1,Math.ceil((st-dsh*60+Math.max(0,d))/1440)));
+}
+function _gcalMD(k){const[,m,d]=k.split('-').map(Number);return m+'.'+d;}
+// D 칩 꼬리: 첫날 ' ~10.26' · 이어지는 날 ' ~10.26 · 2/3일'
+function _gcalSpanTag(ev){
+  if(!ev||!(ev._spanN>1))return '';
+  const end=_gcalMD(gcalAddDays(ev._spanFrom,ev._spanN-1));
+  return ev._spanI>1?` ~${end} · ${ev._spanI}/${ev._spanN}일`:` ~${end}`;
+}
+// W·M 한 줄(한 주)의 띠 자리 — 구글처럼 겹치지 않게 칸(lane)을 나눈다. 돌려주는 것: {날짜: [칸마다 {r,ci} 또는 null]}
+function _gcalLanes(keys,secIds){
+  const runs=new Map();
+  keys.forEach((k,ci)=>{
+    if(!k)return;
+    secIds.forEach(sid=>getDisplayEvents(k,sid).forEach(ev=>{
+      if(!(ev._spanN>1))return;
+      const id=ev._spanFrom+'|'+ev.id;
+      const r=runs.get(id);
+      if(!r)runs.set(id,{ev,a:ci,b:ci,i0:ev._spanI});else r.b=ci;
+    }));
+  });
+  const list=[...runs.values()].sort((x,y)=>(x.a-y.a)||((y.b-y.a)-(x.b-x.a)));
+  const lastCol=[];
+  list.forEach(r=>{let l=lastCol.findIndex(c=>c<r.a);if(l<0){l=lastCol.length;lastCol.push(0);}lastCol[l]=r.b;r.l=l;});
+  const out={};
+  keys.forEach((k,ci)=>{
+    if(!k)return;
+    const arr=new Array(lastCol.length).fill(null);
+    const eL=ci===0||!keys[ci-1],eR=ci===keys.length-1||!keys[ci+1];   // 줄 끝 — 띠가 칸 밖으로 비어져 나가지 않게
+    list.forEach(r=>{if(ci>=r.a&&ci<=r.b)arr[r.l]={r,ci,eL,eR,eRb:r.b===keys.length-1||!keys[r.b+1]};});
+    // 끝의 빈 칸은 그리지 않는다 (그 아래 칸이 쓰는 줄이 없으면 높이만 먹는다)
+    while(arr.length&&!arr[arr.length-1])arr.pop();
+    out[k]=arr;
+  });
+  return out;
+}
+// 월간: 주(줄)마다 모아 띠 자리를 정한다
+function _gcalMonthLanes(y,m,fd,dim){
+  const out={};
+  for(let r=0;r*7-fd<dim;r++){
+    const keys=[];
+    for(let c=0;c<7;c++){const d=r*7+c-fd+1;keys.push(d>=1&&d<=dim?`${y}-${z(m+1)}-${z(d)}`:null);}
+    Object.assign(out,_gcalLanes(keys,(SECS||[]).map(x=>x.id)));
+  }
+  return out;
+}
+// 띠 한 칸. 칸 안쪽 여백만큼 양옆으로 비어져 나가 이웃 칸과 이어 보인다.
+// 글은 그 줄의 첫 칸에만 쓰고, 이어지는 칸들 위로 흘러가게 폭을 계산한다.
+const _GSPAN={w:{B:8,H:14,F:10},m:{B:7,H:11,F:8}};   // B=칸 안쪽 여백+테두리+틈 반, H=띠 높이, F=글자
+function _gcalSegHTML(slot,kind){
+  const K=_GSPAN[kind]||_GSPAN.w;
+  if(!slot)return `<div style="height:${K.H}px;margin:1px 0 2px;"></div>`;
+  const{r,ci,eL,eR,eRb}=slot,ev=r.ev,len=r.b-r.a+1,first=ci===r.a;
+  const realA=ci===r.a&&r.i0===1;                          // 정말 시작하는 날
+  const realZ=ci===r.b&&(r.i0+(r.b-r.a))===ev._spanN;      // 정말 끝나는 날
+  const lb=(realA||eL)?0:K.B,rb=(realZ||eR)?0:K.B;
+  const col=_gcalEvColor(ev);
+  const bg=col?`color-mix(in srgb, ${col} 24%, transparent)`:'color-mix(in srgb, var(--ac) 20%, transparent)';
+  const rad=`${realA?4:0}px ${realZ?4:0}px ${realZ?4:0}px ${realA?4:0}px`;
+  let lbl='';
+  if(first){
+    // 첫 칸 띠 폭 S 기준으로, 이 줄에서 띠가 끝나는 곳까지 (글 왼쪽 5px · 오른쪽 3px 비움)
+    const eb=(r.b===r.a)?0:((((r.i0+(r.b-r.a))===ev._spanN)||eRb)?0:K.B);
+    const rb0=(len===1)?rb:K.B;
+    const sub=len*(lb+rb0)-(len-1)*2*K.B-lb-((len===1)?0:eb)+8;
+    lbl=`<span style="position:absolute;left:5px;top:0;z-index:2;width:calc(${len} * 100% - ${sub}px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      font-size:${K.F}px;line-height:${K.H}px;color:${col||'var(--ac-tx)'};">${esc(ev.text||'')}</span>`;
+  }
+  return `<div class="gspan" style="position:relative;height:${K.H}px;margin:1px -${rb}px 2px -${lb}px;background:${bg};border-radius:${rad};">${lbl}</div>`;
+}
 function _gcalPickApply(ev){
   if(_eventModalCal===null||!ev)return;
   const v=_eventModalCal;
@@ -41352,8 +41442,11 @@ function renderWeekly(hostEl){
       return`<div class="wh${isToday?' tc':''}${isSun?' sun-red':''}" style="cursor:pointer" onclick="goToDate('${dk}')"><span class="num">${d.getDate()}</span> ${DOW[d.getDay()]}</div>`;
     }).join('')}`;
   const wmMode=ST.settings.wmViewMode||'todo';
+  // 여러 날 일정의 띠 자리 — 구간 줄마다 (v26-1024-2)
+  const _wkKeys=dates.map(d=>`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`);
   vis.forEach(sec=>{
     const isCurrentSection=isNowWithinSection(sec);
+    const _lanes=wmMode==='event'?_gcalLanes(_wkKeys,[sec.id]):null;
     // D뷰 섹션 헤더의 ▲(숨기기) 버튼과 완전히 동일한 로직: ST.vis에서 빼면
     // addRowWeekly에 이미 있는 "숨은 섹션 복귀" 알약(●이름/카운트, D뷰와
     // 같은 디자인·위치)에 자동으로 나타난다 — 별도 UI를 새로 만들 필요가 없다.
@@ -41375,7 +41468,8 @@ function renderWeekly(hostEl){
         const more=(bigs.length>2?bigs.length-2:0)+(sms.length>2?sms.length-2:0);
         if(more)h+=`<div class="wmore">+${more}</div>`;
       } else if(wmMode==='event'){
-        const evs=getDisplayEvents(k,sec.id);
+        h+=(_lanes[k]||[]).map(sl=>_gcalSegHTML(sl,'w')).join('');
+        const evs=getDisplayEvents(k,sec.id).filter(ev=>!(ev._spanN>1));
         evs.slice(0,3).forEach(ev=>{
           const timePart=ev.time?formatEventTime(ev.time)+' ':'';
           const lbl=`${timePart}${ev.text||''}`;
@@ -42044,6 +42138,7 @@ function renderMonthly(){
     <div class="mnav"><button class="nav-btn" onclick="chM(-1)">‹</button><div class="mttl" style="text-align:center;">${monthTitleHTML(y,m)}</div><button class="nav-btn" onclick="chM(1)">›</button></div>
   ${_makeWMViewBtnsHTML()}
   <div class="mcg" id="mGridArea">${DOW.map((d,i)=>`<div class="mcdow${i===0&&ST.settings.sundayRed!==false?' sun-red':''}">${d}</div>`).join('')}${Array(fd).fill('<div class="mcc empty"></div>').join('')}`;
+  let _mLanes=null;   // 여러 날 일정의 띠 자리 (일정 모드에서만 만든다)
   for(let d=1;d<=dim;d++){
     const cellDate=new Date(y,m,d);
     const k=`${y}-${z(m+1)}-${z(d)}`;const day=ST.days[k];
@@ -42062,8 +42157,10 @@ function renderMonthly(){
       const dotHtml=bigs.map((b,i)=>`<div class="mcdot${i>=6?' ov':''}${b.done?' dn':''}${b.flag?' flag':''}"></div>`).join('');
       cellBody=`<div class="mcdots">${dotHtml}</div>${smt?`<div class="mcsc">${smt}</div>`:''}`;
     } else if(wmMode==='event'){
-      const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id));
-      cellBody=evs.slice(0,2).map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
+      if(!_mLanes)_mLanes=_gcalMonthLanes(y,m,fd,dim);
+      const _sl=_mLanes[k]||[];
+      const evs=SECS.flatMap(s=>getDisplayEvents(k,s.id)).filter(ev=>!(ev._spanN>1));
+      cellBody=_sl.map(x=>_gcalSegHTML(x,'m')).join('')+evs.slice(0,Math.max(0,2-_sl.filter(Boolean).length)).map(ev=>`<div style="font-size:8px;color:${_gcalEvColor(ev)||'var(--ac-tx)'};line-height:1.2;">${esc(ev.text||'')}</div>`).join('');
     } else if(wmMode==='mem'){
       // 좋아요·암송·Deeper 이벤트를 메뉴 순서(좋아요/암송/Deeper)로 줄바꿈 표시.
       // 상위 항목이 0개면 그 줄을 비우지 않고 아래 항목이 첫 줄을 채운다.

@@ -136,6 +136,21 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
     const a = _gcalEvColor(ev); ST.settings.gcal.color = false; const b = _gcalEvColor(ev); delete ST.settings.gcal.color; return [a, b]; });
   ok('⑩ 색 켜짐 → 캘린더 색 · 꺼짐 → 없음', col[0] === '#4285f4' && col[1] === '', col);
 
+  // ⑪ 여러 날 종일 일정 — 이어지는 날에도 비춰 보이고(저장은 첫날 하나), W·M 은 띠 하나에 글 한 번 (v26-1024-2)
+  const sp = await p.evaluate(D1 => {
+    const sid = _gcalDefSec(); getEvents(D1, sid).push({ id: 'sp1', time: null, text: '수련회', g: { c: 'me@x', i: 'spx', u: 'u', h: '', d: 3 } });
+    const D3 = gcalAddDays(D1, 2), D4 = gcalAddDays(D1, 3);
+    const on = k => getDisplayEvents(k, sid).filter(e => e.id === 'sp1').map(e => e.text + _gcalSpanTag(e));
+    const stored = Object.keys(ST.days).filter(k => (ST.days[k].events[sid] || []).some(e => e.id === 'sp1')).length;
+    const keys = [D1, gcalAddDays(D1, 1), D3, D4];
+    const lanes = _gcalLanes(keys, [sid]);
+    const html = keys.map(k => (lanes[k] || []).map(x => _gcalSegHTML(x, 'w')).join(''));
+    return { a: on(D1), b: on(D3), c: on(D4), stored, labels: html.map(h => (h.match(/수련회/g) || []).length) };
+  }, D1);
+  ok('⑪ 첫날 ~끝날 · 셋째 날 3/3일 · 넷째 날 없음', sp.a[0].endsWith('~' + sp.a[0].split('~')[1]) && /3\/3일$/.test(sp.b[0]) && sp.c.length === 0, sp);
+  ok('⑪ 저장은 첫날 하나뿐', sp.stored === 1, sp);
+  ok('⑪ W 띠: 글은 첫 칸에만 한 번', JSON.stringify(sp.labels) === JSON.stringify([1, 0, 0, 0]), sp.labels);
+
   // 설정창 줄
   const ui = await p.evaluate(() => { _gcalCals = [{ id: 'me@x', name: '내 캘린더', role: 'owner', primary: true }, { id: 'hol', name: '대한민국의 휴일', role: 'reader' }]; _gcalRenderSettings(); const folded = document.getElementById('gcalCalList').style.display === 'none'; gcalToggleList(); return [folded, document.getElementById('gcalCalList').style.display === '', document.querySelectorAll('#gcalCalList .settings-row').length, document.getElementById('gcalWriteSel').options.length, document.getElementById('gcalConnectBtn').textContent]; });
   ok('설정창: 목록은 접혀 있다가 펼쳐진다 · 캘린더 두 줄 · 쓸 캘린더는 쓸 수 있는 것만(+보내지 않음) · 연결 끊기 단추', JSON.stringify(ui) === JSON.stringify([true, true, 2, 2, '연결 끊기']), ui);
