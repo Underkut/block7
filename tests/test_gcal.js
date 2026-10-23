@@ -278,6 +278,32 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   sc.eq('⑭ BLOCK7 이 만든 원본은 가져오지 않는다', pb7.local.length, 0);
 }
 
+// ⑰ 구글에서 하루만 고친 회차는 EXDATE 로 보내지 않는다 (v26-1024-9, HB: BLOCK7 에서 다른 날을 고쳤더니 구글의 고친 회차가 지워졌다)
+{
+  const M17 = { c: 'me', ev: { id: 'gm1', status: 'confirmed', updated: 'u1', summary: '구역모임', recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=SA'],
+    start: { dateTime: '2026-10-24T19:00:00+09:00', timeZone: 'Asia/Seoul' }, end: { dateTime: '2026-10-24T21:00:00+09:00', timeZone: 'Asia/Seoul' } } };
+  const X17 = { c: 'me', ev: { id: 'gm1_20261031T100000Z', status: 'confirmed', updated: 'u5', recurringEventId: 'gm1', summary: '구역모임 (장소 변경)',
+    originalStartTime: { dateTime: '2026-10-31T19:00:00+09:00' }, start: { dateTime: '2026-10-31T19:00:00+09:00' }, end: { dateTime: '2026-10-31T21:00:00+09:00' } } };
+  const P17 = A.gcalParseRecur(M17.ev, 0);
+  const rf = A.gcalRf(P17, ['2026-10-31']);
+  const mk = ex => { const ev = { id: 'evM', time: '19:00', text: '구역모임', rid: 'rM', repeat: { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5], ex },
+    g: { c: 'me', i: 'gm1', u: 'u1', d: 120, rf } }; ev.g.h = A.gcalHashEv('2026-10-24', Object.assign({}, ev, { repeat: Object.assign({}, ev.repeat, { ex: ['2026-10-31'] }) }), 0); return ev; };
+  const ov = { id: 'gOv', time: '19:00', text: '구역모임 (장소 변경)', rid: 'rM', g: { c: 'me', i: 'gm1_20261031T100000Z', u: 'u5', d: 120, h: A.gcalHash('2026-10-31', '19:00', '구역모임 (장소 변경)') } };
+  // BLOCK7 에서 11/7 을 하루만 고쳤다 → 원본 뺀 날에 11/7 추가
+  const days = { '2026-10-24': day('pm', [mk(['2026-10-31', '2026-11-07'])]), '2026-10-31': day('pm', [ov]) };
+  const p = A.gcalPlan(base({ days, gevents: [M17, X17], tz: 'Asia/Seoul' }));
+  const pa = p.remote.find(x => x.t === 'patch');
+  sc.eq('⑰ 원본 고치기: 11/7 은 EXDATE · 구글에서 고친 10/31 은 EXDATE 로 안 보낸다', pa && J(pa.body.recurrence),
+    J(['RRULE:FREQ=WEEKLY;BYDAY=SA', 'EXDATE;TZID=Asia/Seoul:20261107T190000']));
+  // 구글도 바뀌고(규칙 지문) BLOCK7 도 바뀐 때 — 구글을 따르되 BLOCK7 이 뺀 날(11/7)은 잃지 않는다
+  const X18 = { c: 'me', ev: Object.assign({}, X17.ev, { id: 'gm1_20261114T100000Z', originalStartTime: { dateTime: '2026-11-14T19:00:00+09:00' },
+    start: { dateTime: '2026-11-14T19:00:00+09:00' }, end: { dateTime: '2026-11-14T21:00:00+09:00' }, summary: '구역모임 (휴강)', status: 'cancelled' }) };
+  const p2 = A.gcalPlan(base({ days, gevents: [M17, X17, X18], tz: 'Asia/Seoul' }));
+  const st = p2.local.find(x => x.t === 'set');
+  sc.eq('⑰ 둘 다 바뀌면: 구글이 지운 11/14 도, BLOCK7 이 뺀 11/7 도 뺀 날에 남는다', st && J(st.patch.repeat.ex), J(['2026-10-31', '2026-11-07', '2026-11-14']));
+  sc.eq('⑰ 그때 BLOCK7 이 뺀 날은 다음 차례에 구글로 간다 (지문을 구글 쪽으로 남겨 둔다)', st && st.patch.g.h !== A.gcalHashEv('2026-10-24', Object.assign({}, days['2026-10-24'].events.pm[0], { repeat: st.patch.repeat }), 0), true);
+}
+
 // ⑦ 두 벌 접기
 {
   const days = { '2026-10-24': day('am', [linkedEv('ga', 'abc'), linkedEv('e1', 'abc')]) };
