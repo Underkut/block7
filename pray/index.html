@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1022-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1023-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1022-3';
+const APP_VERSION = 'v. 26-1023-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2262,6 +2262,15 @@ textarea.field{min-height:72px;line-height:1.6}
 .opt .d{font-size:12.5px;color:var(--tx3);margin-top:1px}
 .opt .ck{margin-left:auto;color:var(--ac-tx)}
 .opt.danger{color:var(--danger)}
+.st-head{padding:0 20px 14px;text-align:center}.st-head h3{font-size:16px;font-weight:600}.st-head p{margin-top:5px;font-size:12.5px;color:var(--tx3);line-height:1.5}
+.st-list{background:var(--s2);margin:0 12px;border-radius:14px;overflow:hidden}
+.st-lh{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 6px;font-size:12px;color:var(--tx2)}.st-lh button{color:var(--ac-tx);font-size:12px;padding:4px 0}
+.st-row{display:flex;align-items:center;gap:14px;padding:10px 16px;border-top:1px solid var(--bd);cursor:pointer}
+.st-row .n{font-size:15px}.st-row .d{font-size:12px;color:var(--tx3);margin-top:1px}
+.st-cb{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--bd2);flex:none;display:flex;align-items:center;justify-content:center}
+.st-row.on .st-cb{background:var(--ac);border-color:var(--ac)}.st-row.on .st-cb:after{content:"";width:10px;height:5px;border:2px solid var(--on-accent);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.st-foot{padding:14px 16px 8px;margin-top:12px;border-top:1px solid var(--bd)}.st-foot .cta{width:100%;margin:0}.st-foot .cta:disabled{opacity:.4}
+.st-note{text-align:center;font-size:11.5px;color:var(--tx3);margin-top:8px}
 .pal{display:grid;grid-template-columns:repeat(8,1fr);gap:10px;padding:8px 20px 4px}
 .pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
 .pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
@@ -4784,13 +4793,30 @@ ACT['answer-item'] = el => {
 // 이름의 날짜가 지난 항목 — 고르면 하나씩 보관 (자동 보관은 없다)
 function staleSheet() {
   const st = staleByName(DB, TODAY); if (!st.length) { toast('이름의 날짜가 지난 항목이 없어요'); return; }
-  choose('이름의 날짜가 지났어요', st.map(t => ({ v: t.id, label: t.name, desc: (groupNamesOf(DB, t.id).join(' · ') || '그룹 없음') + ' · ' + shortDate(nameDate(t.name, TODAY)) + ' 지남 — 누르면 보관' }))
-    .concat(st.length > 1 ? [{ v: '*', label: '모두 보관 (' + st.length + '개)' }] : []), '', v => {
-    const before = JSON.stringify(DB), ids = v === '*' ? st.map(t => t.id) : [v];
-    ids.forEach(id => shelve(DB, id, TODAY)); save(); refresh();
-    toast((ids.length > 1 ? ids.length + '개를' : '‘' + (findT(DB, ids[0]) || {}).name + '’ 을(를)') + ' 보관했어요\n기록 › 보관에서 꺼낼 수 있어요', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
-  }, '보관은 지우는 것이 아닙니다 — 언제든 꺼낼 수 있어요');
+  // 세 칸 (HB 2026-10-23): 안내 · 고르는 목록(체크박스, 처음엔 전부 체크) · 아래 실행 단추. 눌러서 바로 보관하지 않고 골라서 한 번에.
+  const rows = st.map(t => '<div class="st-row on" data-a="stale-tg" data-id="' + t.id + '" role="checkbox" aria-checked="true"><span class="st-cb"></span><div><div class="n">' + esc(t.name) + '</div>' +
+    '<div class="d">' + esc((groupNamesOf(DB, t.id).join(' · ') || '그룹 없음') + ' · ' + shortDate(nameDate(t.name, TODAY)) + ' 지남') + '</div></div></div>').join('');
+  const w = openSheet('<div class="st-head"><h3>이름의 날짜가 지났어요</h3><p>보관은 지우는 것이 아닙니다<br>언제든 기록 › 보관에서 꺼낼 수 있어요</p></div>' +
+    '<div class="sh-b"><div class="st-list"><div class="st-lh"><span id="stCnt"></span><button data-a="stale-all" id="stAll"></button></div>' + rows + '</div></div>' +
+    '<div class="st-foot"><button class="cta" data-a="stale-go" id="stGo"></button><div class="st-note">선택하지 않은 항목은 그대로 지도에 남아요</div></div>');
+  staleSync(w);
 }
+function staleSync(w) {
+  const all = w.querySelectorAll('.st-row'), n = w.querySelectorAll('.st-row.on').length;
+  w.querySelector('#stCnt').textContent = all.length + '개 중 ' + n + '개 선택';
+  w.querySelector('#stAll').textContent = n === all.length ? '전체 해제' : '전체 선택';
+  const go = w.querySelector('#stGo'); go.textContent = n ? n + '개 보관' : '보관할 항목을 골라 주세요'; go.disabled = !n;
+}
+ACT['stale-tg'] = el => { el.classList.toggle('on'); el.setAttribute('aria-checked', el.classList.contains('on')); staleSync(SHEET); };
+ACT['stale-all'] = () => { const w = SHEET, on = w.querySelectorAll('.st-row.on').length !== w.querySelectorAll('.st-row').length; w.querySelectorAll('.st-row').forEach(r => { r.classList.toggle('on', on); r.setAttribute('aria-checked', on); }); staleSync(w); };
+ACT['stale-go'] = () => {
+  const w = SHEET; if (!w) return;
+  const ids = [...w.querySelectorAll('.st-row.on')].map(r => r.dataset.id); if (!ids.length) return;
+  closeSheet();
+  const before = JSON.stringify(DB);
+  ids.forEach(id => shelve(DB, id, TODAY)); save(); refresh();
+  toast((ids.length > 1 ? ids.length + '개를' : '‘' + (findT(DB, ids[0]) || {}).name + '’ 을(를)') + ' 보관했어요\n기록 › 보관에서 꺼낼 수 있어요', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+};
 ACT['stale-open'] = () => staleSheet();
 // 하루에 한 번(기기마다) — 이름의 날짜가 지난 항목이 있으면 알린다
 // ⚠️ 번쩍 지나가던 것 (HB 2026-10-22): 열고 4초 뒤 '새 버전이 있습니다' 가 덮거나, 열자마자 화면에 손이 닿아 닫혔다.
