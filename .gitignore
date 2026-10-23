@@ -6,3 +6,6 @@ build-sweeter/
 
 # 용돈 친구들 알림 서버 — npm install 로 생기는 것
 wallet-functions/src/node_modules/
+
+# 구글 캘린더 연결 서버 — npm install 로 생기는 것
+gcal-functions/src/node_modules/
