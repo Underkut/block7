@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1024-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1024-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -590,6 +590,10 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 /* 탭 */
 .tabs{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:flex;align-items:flex-end;background:#fff;border-radius:26px 26px 0 0;
   box-shadow:0 -4px 18px rgba(120,90,170,.14);padding:6px 10px calc(env(safe-area-inset-bottom) + 6px);z-index:5}
+/* 아래 메뉴 오른쪽 위 구석의 작은 버전 — 누르면 새 버전을 찾아 받는다(개발자용). 새 버전이 있으면 점이 붙는다 */
+.verb{position:absolute;right:12px;top:3px;padding:2px 4px;font-size:9px;line-height:1.2;color:#9a90a8;opacity:.75;letter-spacing:.01em;font-variant-numeric:tabular-nums;font-family:system-ui,sans-serif;font-weight:400;cursor:pointer;z-index:2;-webkit-tap-highlight-color:transparent}
+.verb.busy{opacity:.3}.verb.new::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:#e2725b;margin-left:3px;vertical-align:middle}
+body.pdark .verb{color:#8a8f99}.pr-top .verb{width:auto;height:auto;display:block;top:auto;bottom:-6px;right:0;color:var(--w-sub)}
 .tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:14px;color:var(--sub);padding:4px 0;white-space:nowrap}
 .tabs button .ti{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;transition:all .15s}
 .tabs button .ti svg{width:30px;height:30px}
@@ -706,7 +710,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
     <div id="cxHist"></div>
   </section>
 
-  <nav class="tabs">
+  <nav class="tabs"><span class="verb" role="button" tabindex="0" aria-label="새 버전 찾기"></span>
     <button data-v="vHome" class="on"><span class="ti" id="tiHome"></span>홈</button>
     <button data-v="vAlloc" class="mid"><span class="ti" id="tiAlloc"></span>계획세우기</button>
     <button data-v="vLog"><span class="ti" id="tiLog"></span>돌아보기</button>
@@ -714,7 +718,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
   </nav>
 </div>
 <div id="trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span></span></div>
-<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">우리 아이</b><button id="prGear" aria-label="부모님 설정"></button></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day" class="on">오늘</button><button data-per="week">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
+<div class="par" id="par"><div class="pr-top"><button id="prTh" aria-label="화면 밝기"></button><b id="prTitle">우리 아이</b><button id="prGear" aria-label="부모님 설정"></button><span class="verb" role="button" tabindex="0" aria-label="새 버전 찾기"></span></div><div class="pr-kids" id="parKids"></div><div id="prRep"><div class="pr-seg" id="parSeg"><button data-per="day" class="on">오늘</button><button data-per="week">이번 주</button><button data-per="month">이번 달</button></div><div id="parBody"></div></div><div id="prMail" style="display:none"></div></div>
 <div class="mirbar" id="mirBar"><div class="mirtxt" id="mirTxt"></div><div class="pr-kids" id="mirKids"></div><div class="mirseg" id="mirSeg"><button data-v="vHome" class="on">홈</button><button data-v="vAlloc">계획세우기</button><button data-v="vLog">돌아보기</button></div></div>
 <nav class="pnav" id="pnav"><button data-p="rep" class="on"><span id="pnRep"></span>우리 아이</button><button data-p="mir"><span id="pnMir"></span>아이 화면</button><button data-p="mail"><span id="pnMail"></span>우체통<i id="pmDot"></i></button></nav>
 <div class="dim" id="dim"></div>
@@ -723,7 +727,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1024-1";
+const APP_VERSION = "v. 26-1024-2";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -3579,6 +3583,36 @@ $('mNext').onclick = () => { if(month < todayStr().slice(0,7)){ month = monthShi
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { buzz(8); goTab(b.dataset.v); });
 try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+/* ───────── 새 버전 (2026-10-24) — 기도노트와 같은 방식
+   아래 메뉴 구석의 버전을 누르면 서버의 새 버전을 찾아, 있으면 받아서 다시 연다.
+   앱으로 돌아올 때(그리고 처음 열고 조금 뒤) 조용히 한 번 묻고, 새 버전이면 그 글자에 점만 붙인다(아이 화면을 가리지 않게). */
+async function latestVersion(){
+  const r = await fetch('index.html?ver=' + Date.now(), {cache:'no-store'});
+  const m = (await r.text()).match(/const APP_VERSION = "([^"]+)"/);
+  return m ? m[1] : '';
+}
+async function updateApp(){
+  try{ const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration('./'); if(reg) await reg.update(); }catch(e){}
+  try{ const ks = await caches.keys(); await Promise.all(ks.filter(k => k.startsWith('wallet-')).map(k => caches.delete(k))); }catch(e){}
+  location.reload();
+}
+const verEls = () => document.querySelectorAll('.verb');
+verEls().forEach(el => { el.textContent = APP_VERSION.replace(/^v\.\s*/, 'v');
+  el.addEventListener('click', async e => { e.stopPropagation(); if(el.classList.contains('busy')) return;
+    verEls().forEach(x => x.classList.add('busy'));
+    try{ const v = await latestVersion(); if(!v) throw 0;
+      if(v === APP_VERSION) toast('지금이 최신 버전이에요 · ' + APP_VERSION);
+      else { toast('새 버전 ' + v + '을 받는 중…'); await updateApp(); } }
+    catch(err){ toast('새 버전을 찾지 못했어요 · 인터넷 연결을 확인해 주세요'); }
+    verEls().forEach(x => x.classList.remove('busy')); }); });
+let VER_ASKED = 0;
+function quietVersionCheck(){
+  if(Date.now() - VER_ASKED < 5*60*1000 || location.protocol !== 'https:') return;
+  VER_ASKED = Date.now();
+  latestVersion().then(v => { if(v && v !== APP_VERSION) verEls().forEach(x => { x.classList.add('new'); x.title = '새 버전 ' + v; }); }).catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden) quietVersionCheck(); });
+setTimeout(quietVersionCheck, 4000);
 render();
 </script>
 </body>
