@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1023-12 -->
+<!-- KAIROS v. 26-1023-13 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -388,7 +388,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-12';
+const APP_VERSION='v. 26-1023-13';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -628,7 +628,7 @@ function sizeDial(){
 function drawAll(){
   const r=R(), ms=remainMs(), col=colorHex(r.color);
   sizeDial();
-  drawDial($('dial'),dialSize,(dragging&&C().lv==='simple')?dragVal:ms/60000,col,r.state!=='run'||dragging,{total:r.total/60000,run:r.state==='run'});
+  drawDial($('dial'),dialSize,(dragging&&C().lv==='simple')?dragVis:ms/60000,col,r.state!=='run'||dragging,{total:r.total/60000,run:r.state==='run'});
   if(C().lv==='power'){const t=Math.floor(ms%1000/100);$('digits').innerHTML=(r.state==='run'?fmt(Math.floor(ms/1000)*1000):fmt(ms))+`<small>.${r.state==='run'?t:0}</small>`;}
   else $('digits').textContent=fmt(ms);
   if(C().lv==='power')drawTech(r,ms);
@@ -794,7 +794,7 @@ $('dial').addEventListener('pointerdown',e=>{
   dragging=true;wasRun=r.state==='run';
   const cur=remainMs()/60000;
   const base=Math.floor(Math.max(0,cur-1e-6)/LAP)*LAP;
-  dragVal=Math.min(MAXMIN,base+m);prevRaw=m;lastWhole=-1;
+  dragVal=Math.min(MAXMIN,base+m);prevRaw=m;lastWhole=-1;dragVis=-1;
   applyDrag();
 });
 $('dial').addEventListener('pointermove',e=>{
@@ -802,14 +802,24 @@ $('dial').addEventListener('pointermove',e=>{
   const {m}=rawMin(e);dragVal=dragStep(dragVal,prevRaw,m);prevRaw=m;
   applyDrag();
 });
-const endDrag=()=>{if(!dragging)return;dragging=false;
+const endDrag=()=>{if(!dragging)return;dragging=false;dragVis=-1;
   const r=R();
   if(wasRun&&r.left>0){setRun({state:'run',endAt:Date.now()+r.left});loop();}
   else if(r.left<=0&&wasRun){setRun({state:'idle'});}
   drawAll();drawPresets();};
 $('dial').addEventListener('pointerup',endDrag);$('dial').addEventListener('pointercancel',endDrag);
+// 심플의 파이는 숫자를 바로 따라가지 않고 목표(자석에 붙었으면 눈금, 아니면 손가락)로 미끄러져 간다
+let dragGoal=0,dragVis=-1,visRaf=0;
+function easeVis(){
+  if(visRaf||!dragging)return;
+  const step=()=>{visRaf=0;if(!dragging){dragVis=-1;return;}
+    const d=dragGoal-dragVis;dragVis=Math.abs(d)<.01?dragGoal:dragVis+d*.3;drawAll();
+    if(dragVis!==dragGoal)visRaf=requestAnimationFrame(step);};
+  visRaf=requestAnimationFrame(step);
+}
 function applyDrag(){
-  const sn=+C().snap||0,near=sn?Math.round(dragVal/sn)*sn:0,whole=(sn&&Math.abs(dragVal-near)<=sn*.2)?near:Math.round(dragVal);
+  const sn=+C().snap||0,near=sn?Math.round(dragVal/sn)*sn:0,stuck=sn&&Math.abs(dragVal-near)<=sn*.2,whole=stuck?near:Math.round(dragVal);
+  dragGoal=stuck?near:dragVal;if(dragVis<0)dragVis=dragGoal;easeVis();
   if(whole!==lastWhole){lastWhole=whole;if(C().vib&&navigator.vibrate)try{navigator.vibrate(4);}catch(e){}}
   const ms=whole*60000,r=R();
   Object.assign(r,{state:wasRun?'pause':'idle',left:ms,total:ms,endAt:0,pid:null,label:wasRun?r.label:''});
