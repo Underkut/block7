@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1023-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1024-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -344,6 +344,32 @@ body.pdark .pnav{background:#2a2420}body.pdark .pnav button.on{color:#ffa58a}
 /* 부모 사용 설명: 다크에서도 비추는 곳이 또렷하게 — 밝은 테두리 + 은은한 빛 */
 #tour.tpar .tr-hole{box-shadow:0 0 0 3px #ffcf8a,0 0 22px 6px rgba(255,200,120,.55),0 0 0 9999px rgba(8,8,10,.74)}
 
+/* 우리 아이 (2026-10-24) — 한눈에 · 꿀꿀이 한마디 · 어디에 썼을까(파이+막대) · 날짜별 기록 */
+.w-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.w-nums small{display:block;font-size:11.5px;color:var(--w-sub)}
+.w-nums b{display:block;font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.w-nums em{display:block;font-style:normal;font-size:11px;color:var(--w-sub);white-space:nowrap}
+.w-nums em.w-out{color:#d0607a}.w-nums em.w-in{color:#3c9a64}body.pdark .w-nums em.w-out{color:#ff9db0}body.pdark .w-nums em.w-in{color:#8fdcae}
+.w-nb{border-left:1px dashed rgba(180,140,120,.35);padding-left:10px}
+.w-days{display:grid;gap:3px;margin:14px 0 2px}.w-days.m{gap:1px}
+.w-dy{display:flex;flex-direction:column;align-items:center;background:none;border:0;padding:0;color:var(--w-sub);min-width:0}.w-dy.fut{opacity:.35}
+.w-db{position:relative;height:62px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.w-db i{display:block;width:16px;max-width:70%;border-radius:6px 6px 3px 3px;background:#f6a7b8}.w-days.m .w-db{height:52px}.w-days.m .w-db i{width:100%;max-width:7px;border-radius:3px 3px 1px 1px}
+.w-db u{position:absolute;top:2px;left:50%;width:8px;height:8px;margin-left:11px;border-radius:50%;background:#8fcfa8}.w-days.m .w-db u{width:5px;height:5px;margin-left:-2.5px}
+.w-db em{position:absolute;left:-6px;right:-6px;text-align:center;font-style:normal;font-size:9.5px;color:#d0607a;white-space:nowrap}
+.w-dl{font-size:11.5px;margin-top:4px;height:15px}.w-days.m .w-dl{font-size:9.5px}.w-dy.td .w-dl{color:var(--w-ink);font-weight:700}
+.w-dh{font-size:15px;height:20px;line-height:20px}.w-dh s{text-decoration:none;font-size:10px;opacity:.5}
+.w-days.m .w-dh{height:10px;line-height:10px}.w-dh s.y,.w-dh s.h,.w-dh s.n,.w-cap s.y{display:inline-block;width:6px;height:6px;border-radius:50%;opacity:1;vertical-align:middle}
+.w-dh s.y,.w-cap s.y{background:#ffc93c}.w-dh s.h{background:#e6dcd2}.w-dh s.n{background:none;border:1px solid #d9cdc1;width:4px;height:4px}.w-dh s.e{display:none}
+.w-cap{font-size:11px;color:var(--w-sub);text-align:center;margin:4px 0 0}.w-cap.l{text-align:left;font-size:12.5px;margin-top:12px}.w-cap b{font-weight:400}
+.w-hero .w-stack{margin-top:12px;height:8px}
+.w-rp{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--w-line)}.w-rp button{flex:1;background:var(--w-track);color:var(--w-ink);border-radius:14px;padding:8px 0;font-size:12.5px}
+.w-gl>span:last-child{flex:1;min-width:0}.w-gl small{display:block;font-size:12px;color:var(--w-sub)}
+.w-gb{display:flex;align-items:center;gap:8px;margin-top:4px}.w-gb>span{flex:1;height:8px;border-radius:5px;background:var(--w-track);overflow:hidden}.w-gb i{display:block;height:100%;border-radius:5px}.w-gb small{width:34px;text-align:right}
+.w-af button{line-height:1.25}.w-af button b{display:block;font-size:13px;font-weight:600;color:var(--w-ink)}.w-af button.on b{color:var(--w-bg)}
+.w-wh{display:flex;align-items:center;gap:12px}.w-pie{width:96px;height:96px;border-radius:50%;flex:none;display:grid;place-items:center}
+.w-pie span{width:58px;height:58px;border-radius:50%;background:var(--w-card);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}.w-pie small{font-size:10px;color:var(--w-sub)}.w-pie b{font-size:13px;font-weight:600}
+.w-cl{flex:1;min-width:0}.w-cl .w-cat{margin:5px 0;gap:6px;font-size:12.5px}.w-cl .w-ce{width:24px;height:24px;border-radius:8px}.w-cl .w-cn{width:44px}.w-cl .w-cat b{width:auto;min-width:46px}
+.w-dg{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--w-line);padding:10px 0 3px;font-size:12px;color:var(--w-sub)}.w-dg b{font-weight:500}
+.w-card .w-rec{padding:6px 0;border:0}.w-card .w-ra{width:28px;height:28px}
 .w-wait{background:rgba(255,255,255,.75);border-radius:16px;padding:10px 12px!important;margin:8px 0;border:0!important}body.pdark .w-wait{background:rgba(0,0,0,.18)}
 .w-wt{display:flex;gap:10px;align-items:flex-start;font-size:14px}.w-wi{font-size:24px;line-height:1}.w-wt b{display:block}.w-wq{display:block;color:var(--w-ink);margin-top:2px}.w-wt small{display:block;color:var(--w-sub);font-size:11px}
 .par .pr-btns button{border:0;border-radius:14px;background:var(--w-track);color:var(--w-ink);padding:9px 0;font-size:13px}.par .pr-btns button.p{background:#e2725b;color:#fff}
@@ -697,7 +723,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1023-2";
+const APP_VERSION = "v. 26-1024-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2537,6 +2563,9 @@ const md2 = d => Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
 function sinceTxt(d){ const t = new Date(), y = new Date(t.getFullYear(), t.getMonth(), t.getDate()-1), ds = dstr(d);
   const day = ds===dstr(t) ? '오늘' : ds===dstr(y) ? '어제' : (d.getMonth()+1)+'월 '+d.getDate()+'일';
   return day+' '+d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'}); }
+// 짧게: 방금 · 12분 전 · 3시간 전(오늘) · 어제 오후 10:55 · 10월 20일 오후 3:40
+function agoTxt(d){ const m = Math.floor((Date.now() - d.getTime()) / 6e4);
+  return m < 1 ? '방금' : m < 60 ? m+'분 전' : dstr(d)===todayStr() ? Math.floor(m/60)+'시간 전' : sinceTxt(d); }
 const mdW = d => { const w = new Date(Number(d.slice(0,4)), Number(d.slice(5,7))-1, Number(d.slice(8,10))).getDay(); return md2(d)+' '+(w===0 ? '주일' : '일월화수목금토'[w]+'요일'); };
 /* ───────── 기간 넘기기 (P-2) — off: 0 = 지금, -1 = 하나 전 … (미래는 없다). tests/test_wallet_period.js */
 function perRange(per, off, today){ off = Math.min(0, off|0); today = today || todayStr();
@@ -2568,63 +2597,74 @@ function renderParent(){
   const R = perRange(PAR.per, PAR.off), nm = esc(k.name||'아이'), ni = nm + (/[가-힣]$/.test(k.name||'') && ((k.name.charCodeAt(k.name.length-1)-0xAC00) % 28) ? '이' : '');
   stampsFor(k.id);
   const html = withS(k.st, () => {
-    const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o, bal = balance();
+    const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o, bal = balance(), T = todayStr();
     const used = S.tiles.filter(c => sumA(a => alloc(c.k,a)) > 0), over = used.filter(c => AK.some(a => left(c.k,a) < 0));
-    const pa = PAR.acct, inPA = t => pa==='all' || acctOf(t)===pa;
-    const AS = AK.map(a => { let i = 0, o = 0, pi = 0, po = 0; S.tx.forEach(t => { if(t.t==='mv' || acctOf(t)!==a) return;
-      if(t.date >= R.a && t.date <= R.b){ if(t.t==='in') i += t.amt; else o += t.amt; } else if(t.date >= R.pa && t.date <= R.pb){ if(t.t==='in') pi += t.amt; else po += t.amt; } }); return {a, i, o, pi, po}; });
-    const amx = Math.max(1, ...AS.map(x => Math.max(x.i, x.o)));
-    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b && inPA(t)){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
-    const cl = Object.values(cats).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
+    const pa = PAR.acct, inPA = t => pa==='all' || acctOf(t)===pa, inR = t => t.date >= R.a && t.date <= R.b;
     const L = lvOf(starsOf()), sk = streakOf();
-    const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number((R.cur ? todayStr() : R.b).slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
+    const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number(R.b.slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
     const full = days.filter(dd => { const c = S.chk[dd]; return c && yes(c.s) && yes(c.g); }).length;
-    const cal = days.map(dd => { const c = S.chk[dd], cls = dd > todayStr() || !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n';
-      return `<div><span>${PAR.per==='week' ? '월화수목금토일'[days.indexOf(dd)] : Number(dd.slice(8,10))}</span><i class="${cls}">${cls==='y' ? '💛' : cls==='h' ? '🤍' : cls==='n' ? '·' : ''}</i></div>`; }).join('');
+    const ck = dd => { const c = S.chk[dd]; return dd > T || !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n'; };
     const goals = S.goals.filter(g => !g.done).map(g => ({g, sv:goalTotal(g)})).sort((a,b) => (b.sv/b.g.price)-(a.sv/a.g.price));
-    // 이번 기간 이야기 — 잘한 점 · 함께 이야기해 볼 점 · 곧 이뤄요
+    // ① 한눈에 — 받은 돈 · 쓴 돈 · 지금 가진 돈, 날마다 쓴 돈 막대(초록 점 = 받은 날, 하트 = 하루 마무리)
+    let chart = '';
+    if(PAR.per!=='day'){
+      const dv = days.map(dd => { let i = 0, o = 0; S.tx.forEach(t => { if(t.date!==dd) return; if(t.t==='in') i += t.amt; else if(t.t==='out') o += t.amt; }); return {dd, i, o}; });
+      const mx = Math.max(1, ...dv.map(x => x.o)), wk = PAR.per==='week';
+      chart = `<div class="w-days ${wk ? '' : 'm'}" style="grid-template-columns:repeat(${days.length},minmax(0,1fr))">${dv.map((x, n) => { const fut = x.dd > T, c = ck(x.dd), h = Math.round(x.o/mx*56);
+        const lab = wk ? '월화수목금토일'[n] : (n===0 || (n+1) % 5===0 ? n+1 : '');
+        const hrt = fut ? '' : wk ? (c==='y' ? '💛' : c==='h' ? '🤍' : '<s>○</s>') : `<s class="${c}"></s>`;
+        return `<button class="w-dy ${fut ? 'fut' : ''} ${x.dd===T ? 'td' : ''}" data-pday="${x.dd}"${fut ? ' disabled' : ''}><span class="w-db">${x.i ? '<u></u>' : ''}${wk && x.o ? `<em style="bottom:${h+2}px">${nf(x.o)}</em>` : ''}<i style="height:${x.o ? Math.max(3,h) : 0}px"></i></span><span class="w-dl">${lab}</span><span class="w-dh">${hrt}</span></button>`; }).join('')}</div>
+        <p class="w-cap">막대 쓴 돈 · <b class="w-in">●</b> 받은 날 · ${wk ? '💛' : '<s class="y"></s>'} 하루 마무리 · 날을 누르면 그날로</p>`;
+    } else { const c = ck(R.a); chart = `<p class="w-cap l">하루 마무리 ${c==='y' ? '💛 쓴 돈·받은 돈 다 적었어요' : c==='h' ? '🤍 하나만 적었어요' : R.a > T ? '' : '· 아직 못 적었어요'}</p>`; }
+    const parts = AK.map(a => ({a, v:Math.max(0, balOf(a))})), tot = parts.reduce((s,x) => s + x.v, 0) || 1, ACOL = {cash:'#8fcfa8', card:'#9cc8f5', bank:'#ffd98a'};
+    const hero = `<div class="w-card w-hero"><div class="w-nums"><div><small>받은 돈</small><b class="w-j w-in">+${nf(cur.i)}</b><em>${R.pl} ${nf(prv.i)}</em></div>
+        <div><small>쓴 돈</small><b class="w-j w-out">−${nf(cur.o)}</b><em class="${d>0 ? 'w-out' : d<0 ? 'w-in' : ''}">${R.pl}보다 ${d>0 ? nf(d)+'↑' : d<0 ? nf(-d)+'↓' : '같음'}</em></div>
+        <div class="w-nb"><small>지금 가진 돈</small><b class="w-j">${nf(bal)}</b><em>원</em></div></div>${chart}
+        <div class="w-stack">${parts.filter(x => x.v).map(x => `<i style="width:${x.v/tot*100}%;background:${ACOL[x.a]}"></i>`).join('')}</div>
+        <div class="w-leg">${parts.filter(x => x.v || x.a!=='bank').map(x => `<span><i style="background:${ACOL[x.a]}"></i>${ACS[x.a]} ${nf(balOf(x.a))}</span>`).join('')}</div></div>`;
+    // ② 꿀꿀이 한마디 — 잘한 점 · 이야기해 볼 점 · 갖고 싶은 것, 읽고 바로 답하기
     const st = [];
     if(full) st.push(['🌱','잘했어요', `하루 마무리를 ${full}일 정직하게 다 적었어요.`]);
     else if(cur.o === 0 && cur.i === 0) st.push(['🌱','조용한 '+(PAR.per==='day'?'하루':'기간'), R.cur ? '아직 기록이 없어요. 오늘 저녁에 함께 적어 볼까요?' : '이때는 적은 기록이 없어요.']);
     if(cur.o > 0 && prv.o > 0 && d < 0) st.push(['🌱','잘했어요', `${R.pl}보다 ${won(-d)} 덜 썼어요.`]);
-    if(over.length){ const c = over[0], ov = AK.reduce((s,a) => s + Math.max(0, -left(c.k,a)), 0); st.push(['💬','함께 이야기해 봐요', `${esc(c.n)} 칸에 계획보다 ${won(ov)} 더 썼어요.`]); }
-    else { const big = S.tx.filter(t => t.t==='out' && t.date >= R.a && t.date <= R.b).sort((a,b) => b.amt-a.amt)[0];
-      if(big && bal > 0 && big.amt >= bal*0.3) st.push(['💬','함께 이야기해 봐요', `한 번에 ${won(big.amt)}(${esc(catOf(big.cat).n)})을 썼어요.`]); }
-    if(goals.length){ const x = goals[0], rem = Math.max(0, x.g.price - x.sv); st.push(['🎁', rem ? '곧 이뤄요' : '다 모았어요', rem ? `${esc(x.g.n)}까지 ${won(rem)} 남았어요!` : `${esc(x.g.n)} 값을 다 모았어요!`]); }
-    const rows = sortedTx(S.tx.filter(t => t.date >= R.a && t.date <= R.b && (t.t==='mv' ? (pa==='all' || t.from===pa || t.to===pa) : inPA(t)))), shown = PAR.more ? rows : rows.slice(0,6);
-    const dl = dd => { const t = todayStr(); return dd===t ? '오늘' : dd===dayShift(t,-1) ? '어제' : md2(dd); };
+    if(over.length){ const c = over[0], ov = AK.reduce((s,a) => s + Math.max(0, -left(c.k,a)), 0); st.push(['💬','이야기해 봐요', `${esc(c.n)} 칸에 계획보다 ${won(ov)} 더 썼어요.`]); }
+    else { const big = S.tx.filter(t => t.t==='out' && inR(t)).sort((a,b) => b.amt-a.amt)[0];
+      if(big && bal > 0 && big.amt >= bal*0.3) st.push(['💬','이야기해 봐요', `한 번에 ${won(big.amt)}(${esc(catOf(big.cat).n)})을 썼어요.`]); }
+    const gl = goals.map(x => { const p = Math.min(100, Math.floor(x.sv/x.g.price*100)), rem = Math.max(0, x.g.price-x.sv), dd = x.g.due ? dayDiff(x.g.due) : 0;
+      return `<div class="w-st w-gl"><span>🎁</span><span><b>${esc(x.g.n)}</b>${x.g.ok ? ' <em class="w-chip ok">허락</em>' : ''} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${x.g.due ? '<small>📅 '+mdOf(x.g.due)+'까지'+(rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : '')+'</small>' : ''}${x.g.why ? '<small>💭 '+esc(x.g.why)+'</small>' : ''}<span class="w-gb"><span><i style="width:${p}%;background:${p>=100 ? '#8fcfa8' : '#f48fb1'}"></i></span><small>${p}%</small></span></span></div>`; }).join('');
+    const talk = `<div class="w-card"><div class="w-h"><span class="w-j">꿀꿀이 한마디</span><small>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 연속 ${sk}일 · 별 ${starsOf()}개</small></div>
+        ${st.slice(0,2).map(x => `<div class="w-st"><span>${x[0]}</span><span><b>${x[1]}</b> · ${x[2]}</span></div>`).join('')}${gl}
+        <div class="w-rp"><button id="wStamp">👍 칭찬 도장</button><button id="wNote">✉️ 쪽지</button><button id="wMis">🎯 미션 주기</button></div></div>`;
+    // ③ 어디에 썼을까 — 자산 버튼에 금액, 파이와 막대는 같은 색
+    const ao = {all:0}; AK.forEach(a => ao[a] = 0); S.tx.forEach(t => { if(t.t==='out' && inR(t)){ ao.all += t.amt; ao[acctOf(t)] = (ao[acctOf(t)]||0) + t.amt; } });
+    const cats = {}; S.tx.forEach(t => { if(t.t==='out' && inR(t) && inPA(t)){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
+    let cl = Object.values(cats).sort((a,b) => b.v-a.v);
+    if(cl.length > 6){ const rest = cl.slice(5).reduce((s,x) => s + x.v, 0); cl = cl.slice(0,5).concat([{n:'그 밖', ch:null, v:rest}]); }
+    const PIE = ['#ff9f8a','#ffcf6e','#8fcfa8','#9cc8f5','#c6a8f0','#d8cfc6'], ct = cl.reduce((s,x) => s + x.v, 0), cmx = cl.length ? cl[0].v : 1;
+    let acc = 0; const pie = cl.map((x, n) => { const a0 = acc; acc += x.v/ct*100; return `${PIE[n]} ${a0}% ${acc}%`; }).join(',');
+    const where = `<div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${R.lb}${pa==='all' ? '' : ' · '+ACS[pa]+'만'}</small></div>
+        <div class="w-af">${[['all','전체']].concat(AK.map(a => [a, ACS[a]])).map(([kk,n]) => `<button data-pacct="${kk}" class="${pa===kk?'on':''}">${n}<b>${nf(ao[kk]||0)}</b></button>`).join('')}</div>
+        ${cl.length ? `<div class="w-wh"><div class="w-pie" style="background:conic-gradient(${pie})"><span><small>쓴 돈</small><b>${nf(ct)}</b></span></div><div class="w-cl">${cl.map((x, n) => `<div class="w-cat"><span class="w-ce" style="background:${x.ch ? (CH[x.ch]||CH.star).bg : 'var(--w-track)'}">${x.ch ? face(x.ch) : ''}</span><span class="w-cn">${esc(x.n)}</span><span class="w-cb"><i style="width:${Math.round(x.v/cmx*100)}%;background:${PIE[n]}"></i></span><b>${nf(x.v)}</b></div>`).join('')}</div></div>` : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>`;
+    // ④ 기록 — 날짜별로 묶고 그날 합계
+    const rows = sortedTx(S.tx.filter(t => inR(t) && (t.t==='mv' ? (pa==='all' || t.from===pa || t.to===pa) : inPA(t)))), shown = PAR.more ? rows : rows.slice(0,8);
+    const dl = dd => dd===T ? '오늘' : dd===dayShift(T,-1) ? '어제' : md2(dd);
     const rowH = t => {
-      if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${dl(t.date)}${tHM(t)}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
+      if(t.t==='mv') return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:#eaf3ff">⇄</span><span class="w-rm">${acctName(t.from)} → ${acctName(t.to)}<small>${tHM(t).trim()}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="w-mv">${nf(t.amt)}</b></div>`;
       const isIn = t.t==='in', c = isIn ? null : catOf(t.cat), ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
-      return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${dl(t.date)}${tHM(t)} · ${ACS[acctOf(t)]}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
-    const parts = AK.map(a => ({a, v:Math.max(0, balOf(a))})), tot = parts.reduce((s,x) => s + x.v, 0) || 1, ACOL = {cash:'#8fcfa8', card:'#9cc8f5', bank:'#ffd98a'};
-    const period = R.lb;
-    return `<div class="w-card w-hero"><div class="w-say">${period} ${ni}는 <b>${won(cur.i)}</b>을 받고 <b>${won(cur.o)}</b>을 썼어요.${full ? `<br>하루 마무리를 <b>${full}일</b> 정직하게 했어요 💛` : ''}</div>
-        <div class="w-bal"><span class="w-j w-n">${nf(bal)}</span><small>원 · 지금 가진 돈</small></div>
-        <div class="w-stack">${parts.filter(x => x.v).map(x => `<i style="width:${x.v/tot*100}%;background:${ACOL[x.a]}"></i>`).join('')}</div>
-        <div class="w-leg">${parts.filter(x => x.v || x.a!=='bank').map(x => `<span><i style="background:${ACOL[x.a]}"></i>${ACS[x.a]} ${nf(balOf(x.a))}</span>`).join('')}</div></div>
-      <div class="w-pills"><div class="w-pill g"><small>받은 돈</small><b class="w-j">${nf(cur.i)}</b><em>${R.pl} ${nf(prv.i)}</em></div>
-        <div class="w-pill r"><small>쓴 돈</small><b class="w-j">${nf(cur.o)}</b><em>${R.pl}보다 ${d>0 ? '+'+nf(d) : d<0 ? '−'+nf(-d) : '같음'}</em></div>
-        <div class="w-pill y"><small>계획 지킴</small><b class="w-j">${used.length ? (used.length-over.length)+'/'+used.length+'칸' : '—'}</b><em>${over.length ? esc(over[0].n)+' 칸 조금 넘음' : used.length ? '모두 지키는 중' : '계획 없음'}</em></div></div>
-      ${st.length ? `<div class="w-card"><div class="w-h"><span class="w-j">${period} 이야기</span><small>꿀꿀이가 정리했어요</small></div>${st.slice(0,3).map(x => `<div class="w-st"><span>${x[0]}</span><span><b>${x[1]}</b> · ${x[2]}</span></div>`).join('')}</div>` : ''}
-      <div class="w-acts"><button id="wStamp"><i>👍</i>칭찬 도장</button><button id="wNote"><i>✉️</i>쪽지</button><button id="wMis"><i>🎯</i>미션 주기</button></div>
-      <div class="w-card"><div class="w-h"><span class="w-j">자산별로 보면</span><small>${period} · ${wa(R.pl)} 비교</small></div>
-        ${AS.map(x => { const dd = x.o - x.po; return `<button class="w-as ${pa===x.a?'on':''}" data-pacct="${x.a}"><span class="w-asn">${ACS[x.a]}<small>지금 ${nf(balOf(x.a))}</small></span><span class="w-asb"><em class="o"><i style="width:${x.o/amx*100}%"></i></em><em class="i"><i style="width:${x.i/amx*100}%"></i></em></span><span class="w-asv"><b class="w-out">${x.o ? '−'+nf(x.o) : '0'}</b><small class="w-in">${x.i ? '+'+nf(x.i) : ''}</small><small>${x.o||x.po ? (dd>0 ? '▲'+nf(dd) : dd<0 ? '▼'+nf(-dd) : '같음') : ''}</small></span></button>`; }).join('')}
-        <p class="pr-note">빨강 쓴 돈 · 초록 받은 돈 · ▲▼ ${R.pl}보다 더/덜 쓴 돈. 줄을 누르면 아래 '어디에 썼을까'와 기록이 그 자산만 보여요.</p></div>
-      <div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${period}${pa==='all' ? '' : ' · '+ACS[pa]+'만'}</small></div>
-        <div class="w-af">${[['all','전체']].concat(AK.map(a => [a, ACS[a]])).map(([k,n]) => `<button data-pacct="${k}" class="${pa===k?'on':''}">${n}</button>`).join('')}</div>${cl.length ? cl.slice(0,6).map(x => `<div class="w-cat"><span class="w-ce" style="background:${(CH[x.ch]||CH.star).bg}">${face(x.ch)}</span><span class="w-cn">${esc(x.n)}</span><span class="w-cb"><i style="width:${Math.round(x.v/cmx*100)}%"></i></span><b>${won(x.v)}</b></div>`).join('') : '<p class="pr-note">쓴 돈이 없어요</p>'}</div>
-      <div class="w-card"><div class="w-h"><span class="w-j">정직한 하루 마무리</span><small>Lv.${L.lv} ${LV_TITLES[L.lv-1]} · 연속 ${sk}일</small></div><div class="pr-cal w-cal ${PAR.per==='month'?'m':''}">${cal}</div>
-        <p class="pr-note">💛 쓴 돈·받은 돈 다 적었어요 · 🤍 하나만 · · 아직 못 적었어요 · 별 ${starsOf()}개</p></div>
-      <div class="w-card"><div class="w-h"><span class="w-j">갖고 싶은 것</span></div>${goals.length ? goals.map(x => { const p = Math.min(100, Math.floor(x.sv/x.g.price*100)), rem = Math.max(0, x.g.price-x.sv), dd = x.g.due ? dayDiff(x.g.due) : 0;
-          return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)} ${x.g.ok ? '<em class="w-chip ok">허락</em>' : ''}${x.g.why ? '<small>💭 '+esc(x.g.why)+'</small>' : ''}${x.g.due ? '<small>📅 '+mdOf(x.g.due)+'까지</small>' : ''}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
-      <div class="w-card"><div class="w-h"><span class="w-j">${period} ${pa==='all' ? '' : ACS[pa]+' '}기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
+      return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${[tHM(t).trim(), ACS[acctOf(t)], t.note ? esc(t.note) : ''].filter(Boolean).join(' · ')}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
+    let lastD = '', recs = '';
+    shown.forEach(t => { if(PAR.per!=='day' && t.date!==lastD){ lastD = t.date; let i = 0, o = 0; rows.forEach(r => { if(r.date!==t.date) return; if(r.t==='in') i += r.amt; else if(r.t==='out') o += r.amt; });
+      recs += `<button class="w-dg" data-pday="${t.date}"><span>${dl(t.date)} · ${'일월화수목금토'[new Date(t.date+'T00:00:00').getDay()]}</span><span>${i ? `<b class="w-in">+${nf(i)}</b>` : ''}${i && o ? ' · ' : ''}${o ? `<b class="w-out">−${nf(o)}</b>` : ''}</span></button>`; }
+      recs += rowH(t); });
+    const list = `<div class="w-card"><div class="w-h"><span class="w-j">기록 ${rows.length}건</span><small>${PAR.per==='day' ? '아이 화면에서 길게 누르면 칭찬 도장' : '날을 누르면 그날만'}</small></div>${rows.length ? recs + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
+    return hero + talk + where + list;
   });
   const first = k.st.tx.reduce((m, t) => t.date && t.date < m ? t.date : m, todayStr());
   const ym = R.a.slice(0,4)===todayStr().slice(0,4) ? '' : R.a.slice(0,4)+'년 ';
   const when = PAR.per==='day' ? mdW(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : ym+Number(R.a.slice(5,7))+'월';
   const nav = k2 => `<button class="w-nv" data-pnav="${k2}" aria-label="${k2 < 0 ? '이전' : '다음'}"${perCan(PAR.per, PAR.off, k2, first) ? '' : ' disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${k2 < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}"/></svg></button>`;
   PAR.first = first;
-  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span class="w-tt"><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${when}${k.at ? ' · 아이 폰에서 '+sinceTxt(k.at)+'에 마지막으로 소식을 받았어요' : ''}</small></span>${nav(-1)}${nav(1)}</div><div id="prPane">` + html + '</div>';
+  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span class="w-tt"><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${when}${k.at ? ' · 소식 '+agoTxt(k.at) : ''}</small></span>${nav(-1)}${nav(1)}</div><div id="prPane">` + html + '</div>';
 }
 /* 우리 아이 — 기간 앞뒤로 넘기기. 머리줄은 그대로, 그 아래 판(#prPane)만 손가락을 따라 움직인다 */
 const parStill = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return true; } };
@@ -2663,6 +2703,8 @@ function parTransit(dir, mutate, x0){
 $('par').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.pacct){ PAR.acct = PAR.acct===b.dataset.pacct && b.dataset.pacct!=='all' ? 'all' : b.dataset.pacct; PAR.more = false; renderParent(); return; }
+  if(b.dataset.pday){ const dd = b.dataset.pday; if(PAR.per==='day') return;
+    parTransit(1, () => { PAR.per = 'day'; PAR.off = Math.min(0, dayDiff(dd)); PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x.dataset.per==='day')); renderParent(); }); return; }
   if(b.dataset.pnav){ const k = Number(b.dataset.pnav); if(parCan(k)) parTransit(k, () => parStep(k)); return; }
   if(b.dataset.per && b.dataset.per===PAR.per){ if(PAR.off < 0) parTransit(1, () => { PAR.off = 0; PAR.more = false; renderParent(); }); return; }
   if(b.dataset.per){ PAR.per = b.dataset.per; PAR.off = 0; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
