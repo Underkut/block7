@@ -304,6 +304,35 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   sc.eq('⑰ 그때 BLOCK7 이 뺀 날은 다음 차례에 구글로 간다 (지문을 구글 쪽으로 남겨 둔다)', st && st.patch.g.h !== A.gcalHashEv('2026-10-24', Object.assign({}, days['2026-10-24'].events.pm[0], { repeat: st.patch.repeat }), 0), true);
 }
 
+// ⑱ BLOCK7 '이 날만 고치기' → 구글 회차를 그 자리에서 고친다(예외) — 따로 선 새 일정 + EXDATE 가 아니라 (v26-1024-10, HB)
+{
+  const M18 = { c: 'me', ev: { id: 'b7evm', status: 'confirmed', updated: 'u1', summary: '구역모임', recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=SA'],
+    start: { dateTime: '2026-10-24T19:00:00+09:00', timeZone: 'Asia/Seoul' }, end: { dateTime: '2026-10-24T21:00:00+09:00', timeZone: 'Asia/Seoul' } } };
+  const P18 = A.gcalParseRecur(M18.ev, 0);
+  const master = { id: 'evM', time: '19:00', text: '구역모임', rid: 'rM', repeat: { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5], ex: ['2026-10-31'] },
+    g: { c: 'me', i: 'b7evm', u: 'u1', d: 120, rf: A.gcalRf(P18, []) } };
+  master.g.h = A.gcalHashEv('2026-10-24', Object.assign({}, master, { repeat: Object.assign({}, master.repeat, { ex: [] }) }), 0);
+  const one = { id: 'evOne', time: '19:00', text: '구역모임 (우리 집)', rid: 'rM' };   // _evEditApply 'one' 이 만든 것
+  const days = { '2026-10-24': day('pm', [master]), '2026-10-31': day('pm', [one]) };
+  const p = A.gcalPlan(base({ days, gevents: [M18], tz: 'Asia/Seoul' }));
+  const ip = p.remote.find(x => x.t === 'instPatch'), pm = p.remote.find(x => x.t === 'patch'), ins = p.remote.find(x => x.t === 'ins');
+  sc.eq('⑱ 그 회차를 고친다 (회차 id = 원본id_원래시작 UTC)', ip && J([ip.gid, ip.body.summary, ip.id]), J(['b7evm_20261031T100000Z', '구역모임 (우리 집)', 'evOne']));
+  sc.eq('⑱ 따로 선 새 일정으로 넣지 않는다', !!ins, false);
+  sc.eq('⑱ 원본을 고칠 때 그 날을 EXDATE 로 보내지 않는다 (보내면 고친 회차가 지워진다)', pm ? J(pm.body.recurrence) : 'no-patch', J(['RRULE:FREQ=WEEKLY;BYDAY=SA']));
+  const pq = A.gcalPlan(base({ days, gevents: [], tz: 'Asia/Seoul', quick: true }));
+  sc.eq('⑱ 빠른 첫 걸음에서도 같은 길', J(pq.remote.map(x => x.t)), J(['instPatch']));
+  // 모두 고치기(하루만 고친 회차를 BLOCK7 이 지움 + 뺀 날 풀림) — 구글을 아직 안 읽은 빠른 첫 걸음에서도 지우지 않고 되돌린다
+  const mAll2 = Object.assign({}, master, { repeat: Object.assign({}, master.repeat, { ex: [] }) });
+  const pr = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [mAll2]), '2026-10-31': day('pm', [], { gdel: ['me|b7evm_20261031T100000Z'] }) }, gevents: [], tz: 'Asia/Seoul', quick: true }));
+  sc.eq('⑱ 모두 고치기: 구글을 읽기 전에도 회차를 지우지 않고 원본 모양으로', J(pr.remote.map(x => [x.t, x.gid, x.body && x.body.summary])), J([['reinst', 'b7evm_20261031T100000Z', '구역모임']]));
+  const pd = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [master]), '2026-10-31': day('pm', [], { gdel: ['me|b7evm_20261031T100000Z'] }) }, gevents: [], tz: 'Asia/Seoul', quick: true }));
+  sc.eq('⑱ 이 날만 지우기(원본이 그 날을 뺌)는 그대로 지운다', J(pd.remote.map(x => x.t)), J(['del']));
+  // 하루 종일 반복이면 회차 id 는 날짜만
+  const mAll = Object.assign({}, master, { time: null, g: Object.assign({}, master.g) });
+  const pAll = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [mAll]), '2026-10-31': day('pm', [Object.assign({}, one, { time: null })]) }, gevents: [], tz: 'Asia/Seoul', quick: true }));
+  sc.eq('⑱ 하루 종일 반복의 회차 id', pAll.remote[0] && pAll.remote[0].gid, 'b7evm_20261031');
+}
+
 // ⑦ 두 벌 접기
 {
   const days = { '2026-10-24': day('am', [linkedEv('ga', 'abc'), linkedEv('e1', 'abc')]) };

@@ -44,6 +44,11 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
       if (m === 'GET') return G.ev[id] ? J(G.ev[id]) : J({}, 404);
       G.writes++;
       if (m === 'POST') { if (G.ev[body.id]) return J({}, 409); G.ev[body.id] = Object.assign({ status: 'confirmed', updated: G.stamp(), cal: mm[1] }, body); return J(G.ev[body.id]); }
+      if (m === 'PATCH' && !G.ev[id]) {   // 반복의 회차를 고치면 구글은 '예외' 를 만든다 (원본id_원래시작)
+        const mi = id.replace(/_\d{8}(T\d{6}Z)?$/, ''), mst = G.ev[mi];
+        if (mst && mst.recurrence) { const suf = id.slice(mi.length + 1); const os = suf.includes('T') ? { dateTime: suf.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z$/, '$1-$2-$3T$4:$5:$6Z') } : { date: suf.replace(/^(\d{4})(\d\d)(\d\d)$/, '$1-$2-$3') };
+          G.ev[id] = Object.assign({ id, cal: mst.cal, status: 'confirmed', recurringEventId: mi, originalStartTime: os, summary: mst.summary }, body, { updated: G.stamp() }); return J(G.ev[id]); }
+      }
       if (m === 'PATCH') { const e = G.ev[id]; if (!e) return J({}, 404); Object.assign(e, body, { updated: G.stamp() }); return J(e); }
       if (m === 'DELETE') { const e = G.ev[id]; if (!e) return J({}, 410); e.status = 'cancelled'; e.updated = G.stamp(); return J(null, 204); }
       return J({}, 400);
@@ -244,6 +249,30 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('⑯ 구글에서 지운 것도 20초 안에 (' + (dtD / 1000).toFixed(1) + '초)', dtD < 20000, dtD);
   const wq = await p.evaluate(() => __G.writes); await new Promise(r => setTimeout(r, 16000));
   ok('⑯ 바뀐 것이 없으면 조용하다 (구글에 쓰지 않음)', (await p.evaluate(() => __G.writes)) === wq);
+
+  // ⑰ 반복 '이 날만 고치기' → 구글 회차가 그 자리에서 고쳐진다(예외) · '모두 고치기' → 같은 구글 일정의 이름만 (v26-1024-10, HB)
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); getEvents(D1, sid).push({ id: 'ev' + Date.now(), time: '09:00', text: '새벽기도', repeat: { weekly: true }, rid: 'rDawn' }); save(); }, D1);
+  await sync();
+  const gDawn = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '새벽기도' && e.recurrence));
+  const D8b = await p.evaluate(D1 => gcalAddDays(D1, 7), D1);
+  await p.evaluate(([D1, D8]) => { const sid = _secIdForTime('09:00'); const arr = getEvents(D1, sid); const i = arr.findIndex(e => e.text === '새벽기도');
+    _evEditApply({ text: '새벽기도 (특별)', time: '09:00', repeat: arr[i].repeat, secId: sid, dateKey: D1, editIdx: i, occ: D8 }, 'one'); }, [D1, D8b]);
+  await sync(); await sync();
+  const after = await p.evaluate(() => Object.values(__G.ev).filter(e => /새벽기도/.test(e.summary || '')).map(e => ({ id: e.id, s: e.summary, st: e.status, rec: e.recurrence, re: e.recurringEventId })));
+  const exc = after.find(x => x.s === '새벽기도 (특별)');
+  ok('⑰ 이 날만 고치기 → 구글 반복의 회차가 고쳐진다 (따로 선 새 일정이 아님)', exc && exc.re === gDawn.id && after.filter(x => !x.re && !x.rec).length === 0, after);
+  const mNow = after.find(x => x.id === gDawn.id);
+  ok('⑰ 원본은 그 날을 EXDATE 로 지우지 않는다 · 원본은 그대로 한 개', mNow && mNow.st === 'confirmed' && !(mNow.rec || []).some(l => /^EXDATE/.test(l)), mNow);
+  const locDawn = await p.evaluate(() => { const o = []; Object.keys(ST.days).forEach(k => Object.values(ST.days[k].events || {}).forEach(a => (a || []).forEach(e => { if (/새벽기도/.test(e.text)) o.push({ k, t: e.text, rep: !!(e.repeat && e.repeat.weekly), gi: e.g && e.g.i }); }))); return o; });
+  ok('⑰ BLOCK7: 반복 하나 + 그 날 고친 일정 하나 (두 벌 안 생김)', locDawn.length === 2 && locDawn.filter(x => x.rep).length === 1, locDawn);
+  // 모두 고치기
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); const arr = getEvents(D1, sid); const i = arr.findIndex(e => e.text === '새벽기도');
+    _evEditApply({ text: '새벽 기도회', time: '09:00', repeat: arr[i].repeat, secId: sid, dateKey: D1, editIdx: i, occ: D1 }, 'all'); }, D1);
+  await sync(); await sync();
+  const all2 = await p.evaluate(id => ({ m: __G.ev[id], others: Object.values(__G.ev).filter(e => e.id !== id && /새벽/.test(e.summary || '') && e.status !== 'cancelled' && !e.recurringEventId) }), gDawn.id);
+  ok('⑰ 모두 고치기 → 같은 구글 일정(같은 id)의 이름만 바뀐다 · 새 일정 없음', all2.m.summary === '새벽 기도회' && all2.m.status === 'confirmed' && all2.others.length === 0, all2);
+  const excAfter = await p.evaluate(id => Object.values(__G.ev).filter(e => e.recurringEventId === id).map(e => [e.summary, e.status]), gDawn.id);
+  ok('⑰ 모두 고치기 → 그 날 고친 회차는 원본 모양으로 돌아간다 (지워져 비지 않는다)', excAfter.length === 1 && excAfter[0][0] === '새벽 기도회' && excAfter[0][1] === 'confirmed', excAfter);
 
   // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
   await new Promise(r => setTimeout(r, 4500));
