@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-11  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-12  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4921,12 +4921,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 화면 크기 슬라이더 */
 .uiscale-slider{
   -webkit-appearance:none;appearance:none;
-  flex:1;height:4px;border-radius:2px;background:var(--bd2);
-  outline:none;margin:10px 0;
+  /* ⚠️ 예전엔 칸 자체가 4px 이고 손잡이(20px)가 그 밖으로 넘쳐, 손잡이를 잡아도 손가락이 칸 밖에 닿곤 했다 →
+     설정창의 좌우 넘기기가 그 몸짓을 가로채 화면이 끌려갔다 (HB 2026-10-24, 맨 왼쪽에 있을 때 특히).
+     이제 칸은 손잡이 높이(24px) 그대로 잡히고, 4px 막대는 안쪽 길(track)로 그린다 — 보이는 모양은 같다. */
+  flex:1;height:24px;background:transparent;
+  outline:none;margin:0;touch-action:pan-y;
 }
+.uiscale-slider::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--sl-fill,var(--bd2));}
+.uiscale-slider::-moz-range-track{height:4px;border-radius:2px;background:var(--sl-fill,var(--bd2));}
 .uiscale-slider::-webkit-slider-thumb{
   -webkit-appearance:none;appearance:none;
-  width:20px;height:20px;border-radius:50%;
+  width:20px;height:20px;border-radius:50%;margin-top:-8px;
   background:var(--ac);border:none;cursor:pointer;
   box-shadow:0 1px 4px rgba(0,0,0,.3);
 }
@@ -6395,7 +6400,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-11";
+const APP_VERSION = "v. 26-1024-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6960,12 +6965,12 @@ try{
       <div class="settings-section" id="secEvChipMax" data-lv="mp" data-prod="b7">
         <div class="settings-row-text" style="margin-bottom:10px;">
           <div class="settings-row-label lv1">긴 일정 이름</div>
-          <div class="settings-row-desc">할일행 위에 보이는 일정 이름을 몇 글자까지 보일지 정해요. 넘치는 뒷부분은 … 으로 줄여요. 눌러서 고칠 때는 이름 전체가 나와요.</div>
+          <div class="settings-row-desc">할일행 위에 보이는 일정 이름을 몇 글자까지 보일지 정해요(3~12자). 넘치는 뒷부분은 … 으로 줄여요. 눌러서 고칠 때는 이름 전체가 나와요.</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
-          <input type="range" class="uiscale-slider" id="evChipMaxSlider" min="6" max="31" step="1" value="31"
+          <input type="range" class="uiscale-slider" id="evChipMaxSlider" min="3" max="12" step="1" value="12"
             oninput="evChipMaxInput(this)" onchange="evChipMaxCommit(this)">
-          <span id="evChipMaxLabel" style="font-size:12px;color:var(--tx2);min-width:56px;text-align:right;font-family:var(--font-number);">제한 없음</span>
+          <span id="evChipMaxLabel" style="font-size:12px;color:var(--tx2);min-width:40px;text-align:right;font-family:var(--font-number);">12자</span>
         </div>
         <div class="evchip-preview" id="evChipPreview"></div>
       </div>
@@ -16388,7 +16393,7 @@ function _brApplyLook(){
 }
 function _brLzGet(){return Math.max(1,Math.min(3,+_brS('bibleLoupe',2)||2));}   // 처음 쓰는 사람은 2배 (HB v26-1013-10)
 function _brLzPaint(v){const sl=_brEl('brLz'),lb=_brEl('brLzV');if(!sl)return;sl.value=String(v);
-  const f=(v-1)/2*100;sl.style.background='linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)';
+  const f=(v-1)/2*100;sl.style.setProperty('--sl-fill','linear-gradient(to right, var(--ac) '+f+'%, var(--bd2) '+f+'%)');
   if(lb)lb.textContent=(Math.round(v*100)/100)+'배';}
 function _brSyncAa(){
   _brEl('brFsV').textContent=_brS('bibleFs',18);_brLzPaint(_brLzGet());
@@ -24073,7 +24078,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:0};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:12};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -24451,11 +24456,12 @@ function renderSecEvents(secId, animate=false){
 }
 
 // ── 긴 일정 이름 (v26-1024-9, HB) — 할일행 머리의 일정 칩 글자 수 ──
-// ST.settings.evChipMax: 0 = 제한 없음(예전 그대로) · 6~30 = 그 글자 수까지 보이고 … 로 줄임.
+// ST.settings.evChipMax: 3~12 — 그 글자 수까지 보이고 … 로 줄임 (HB 2026-10-24: 3~12, 제한 없음 없이).
+//   값이 없거나(0, 예전 기본) 범위 밖이면 12 로 본다.
 // 시각(앞의 '19:30')과 여러 날 꼬리표(~10.26)는 세지 않는다 — 이름만 줄인다.
+function _evChipN(){const v=(ST.settings&&ST.settings.evChipMax)|0;return v?Math.max(3,Math.min(12,v)):12;}
 function _evChipCut(t){
-  const n=(ST.settings&&ST.settings.evChipMax)|0;
-  if(!n)return String(t||'');
+  const n=_evChipN();
   const a=Array.from(String(t||''));
   return a.length>n?a.slice(0,n).join('')+'…':a.join('');
 }
@@ -24471,19 +24477,19 @@ function _evChipPreview(){
     return `<div class="evp-row"><span class="evp-sec"><i style="background:${x.col}"></i>${esc(x.sec)}</span><span class="ev-chip">${esc(t)}</span></div>`;
   }).join('');
 }
-function _evChipLabel(n){const el=document.getElementById('evChipMaxLabel');if(el)el.textContent=n?n+'자':'제한 없음';}
+function _evChipLabel(n){const el=document.getElementById('evChipMaxLabel');if(el)el.textContent=n+'자';}
 function _evChipSync(){
-  const n=(ST.settings&&ST.settings.evChipMax)|0;
-  const sl=document.getElementById('evChipMaxSlider');if(sl)sl.value=String(n||31);
+  const n=_evChipN();
+  const sl=document.getElementById('evChipMaxSlider');if(sl)sl.value=String(n);
   _evChipLabel(n);_evChipPreview();
 }
 function evChipMaxInput(el){
-  const v=Number(el.value),n=v>=31?0:v;
+  const n=Math.max(3,Math.min(12,Number(el.value)||12));
   ST.settings.evChipMax=n;      // 미리보기만 바로 — 저장은 손을 뗄 때
   _evChipLabel(n);_evChipPreview();
 }
 function evChipMaxCommit(el){
-  const v=Number(el.value),n=v>=31?0:v;
+  const n=Math.max(3,Math.min(12,Number(el.value)||12));
   updateSetting('evChipMax',n);
   try{renderToday();}catch(e){}
 }
@@ -25571,7 +25577,7 @@ const _UI_SCALE_MAX=50;
 // 트랙 채움 + 라벨 갱신 (드래그 중 실시간)
 function _uiScaleSliderPaint(sl,pct){
   const fill=Math.max(0,Math.min(100,pct*100/_UI_SCALE_MAX));
-  sl.style.background=`linear-gradient(to right, var(--ac) ${fill}%, var(--bd2) ${fill}%)`;
+  sl.style.setProperty('--sl-fill',`linear-gradient(to right, var(--ac) ${fill}%, var(--bd2) ${fill}%)`);   // 채운 부분은 4px 막대(track)에 (칸 전체가 아니라)
   const lab=document.getElementById('uiScaleLabel');
   if(lab)lab.textContent=pct<=0?'기본':`+${pct}%`;
 }
@@ -31441,7 +31447,7 @@ function setVcRollSec(id,idx){
 function vcRollSecInput(sl){
   const i=Math.max(0,Math.min(VC_ROLL_SECS.length-1,parseInt(sl.value,10)||0));
   const fill=i*100/(VC_ROLL_SECS.length-1);
-  sl.style.background=`linear-gradient(to right, var(--ac) ${fill}%, var(--bd2) ${fill}%)`;
+  sl.style.setProperty('--sl-fill',`linear-gradient(to right, var(--ac) ${fill}%, var(--bd2) ${fill}%)`);   // 채운 부분은 4px 막대(track)에 (칸 전체가 아니라)
   const lab=document.getElementById('vcRollSecLabel');
   if(lab)lab.textContent=_rollSecLabel(VC_ROLL_SECS[i]);
 }
@@ -44189,6 +44195,8 @@ function _initSettingsSwipe(){
   body.addEventListener('touchstart',e=>{
     active=false;tracking=false;dx=0;dir=0;
     if(e.target.closest('input,textarea,select'))return; // don't hijack form-control touches
+    // 슬라이더가 든 줄 — 손잡이가 막대 끝에 걸려 손가락이 막대 밖(같은 줄)에 닿아도 넘기기로 가로채지 않는다 (HB 2026-10-24)
+    {const row=e.target.closest('div');if(row&&row.querySelector&&row.querySelector(':scope > input[type="range"]'))return;}
     active=true;
     const t=e.touches[0];sx=t.clientX;sy=t.clientY;
   },{passive:true});
