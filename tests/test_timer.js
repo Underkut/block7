@@ -7,6 +7,7 @@
 //  ④ 남은 바퀴 칩 — 60분 딱이면 없음, 61분이면 ＋1바퀴
 //  ⑤ 이어달리기 차례 — 되풀이 반영
 //  ⑥ 망가진 · 낡은 저장을 읽어도 죽지 않는다 · 모르는 칸은 기본값 · 지운 프리셋은 이어달리기에서도 빠진다
+//  ⑧ 프리셋 끌어 옮기기 — 가운데를 넘어야 자리가 바뀐다 · 여러 칸 · 제자리
 //  ⑦ 같은 주소의 다른 앱(공부 · 용돈 · BLOCK7)과 저장 이름이 겹치지 않는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -18,7 +19,7 @@ if (!m) { console.error('timer-core 덩어리를 못 찾았습니다'); process.
 const ctx = { console, Math, JSON, Number, Object, Set, Array, String, isFinite };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { APP_VERSION, KEY, COLORS, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
+this.A = { APP_VERSION, KEY, COLORS, dragSlot, moveItem, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
 const A = ctx.A;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
@@ -86,5 +87,17 @@ sc.eq('⑦ 저장 이름이 다른 앱과 겹치지 않는다', A.KEY, 'b7timer_
 sc.eq('⑦ 버전 형식', /^v\. \d{2}-\d{4}-\d+$/.test(A.APP_VERSION), true);
 sc.eq('⑦ 2번째 줄 주석과 APP_VERSION 이 같다', HTML.split('\n')[1].includes(A.APP_VERSION), true);
 sc.eq('⑦ 색 = 구글 레드 + 성경 7색', A.COLORS.map(c => c.hex), ['#EA4335', '#ff7b72', '#ffa95e', '#ffd640', '#78d68c', '#6eb4ff', '#be96ff', '#ff8caa']);
+
+// ⑧ 끌어 옮기기
+{
+  const mids = [50, 150, 250, 350];   // 칸 넷의 가운데
+  sc.eq('⑧ 이웃 가운데를 못 넘으면 제자리', A.dragSlot(mids, 1, 240), 1);
+  sc.eq('⑧ 오른쪽 이웃 가운데를 넘으면 한 칸', A.dragSlot(mids, 1, 260), 2);
+  sc.eq('⑧ 두 칸 넘기면 두 칸', A.dragSlot(mids, 0, 360), 3);
+  sc.eq('⑧ 왼쪽으로', A.dragSlot(mids, 3, 140), 1);
+  sc.eq('⑧ 맨 앞으로 옮기면 나머지가 한 칸씩 밀린다', A.moveItem(['a', 'b', 'c', 'd'], 2, 0), ['c', 'a', 'b', 'd']);
+  sc.eq('⑧ 맨 뒤로', A.moveItem(['a', 'b', 'c', 'd'], 0, 3), ['b', 'c', 'd', 'a']);
+  sc.eq('⑧ 원본은 그대로', (() => { const a = ['a', 'b']; A.moveItem(a, 0, 1); return a; })(), ['a', 'b']);
+}
 
 sc.done();

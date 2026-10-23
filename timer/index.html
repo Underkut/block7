@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 타이머 v. 26-1022-1 -->
+<!-- 타이머 v. 26-1023-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -73,7 +73,9 @@ svg{display:block}
 @keyframes pulse{50%{box-shadow:0 0 0 10px transparent;transform:scale(1.05)}}
 .presets{display:flex;gap:8px;overflow-x:auto;width:100%;padding:4px 0 2px;scrollbar-width:none;flex:none}
 .presets::-webkit-scrollbar{display:none}
-.chip{flex:none;display:flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:19px;background:var(--s2);font-size:13px;white-space:nowrap}
+.chip{flex:none;display:flex;align-items:center;gap:7px;height:38px;padding:0 13px;border-radius:19px;background:var(--s2);font-size:13px;white-space:nowrap;position:relative;-webkit-touch-callout:none;transition:transform .24s cubic-bezier(.22,.8,.24,1),box-shadow .2s,opacity .2s}
+.chip.pdrag{transition:box-shadow .2s;z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.22);background:var(--s1)}
+.presets.dragging .chip:not(.pdrag){opacity:.85}
 .chip .dot{width:10px;height:10px;border-radius:50%}
 .chip small{color:var(--tx3);font-size:12px}
 .chip.add{color:var(--tx2)}
@@ -232,6 +234,7 @@ body.lv-simple .mainrow{gap:48px}
 body.lv-simple .mainrow .ic{color:var(--tx3)}
 body.lv-simple .chip{background:none;padding:0 9px;color:var(--tx2);font-size:13px}
 body.lv-simple .chip.on{box-shadow:none;color:var(--tx)}
+body.lv-simple .chip.pdrag{background:var(--s1);box-shadow:0 8px 20px rgba(0,0,0,.22)}
 body.lv-simple .chip .dot{width:6px;height:6px}
 body.lv-simple .chip small{display:none}
 body.lv-simple .rstrip .rbar{height:3px}
@@ -288,7 +291,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
           <button class="ic" id="deskBtn" aria-label="탁상 모드로 크게"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-6.5 6.5"/><path d="M10 20H4v-6"/><path d="M4 20l6.5-6.5"/></svg></button>
         </div>
         <div class="presets" id="presets" data-noswipe></div>
-        <div class="hint">프리셋을 누르면 바로 시작 · 길게 누르면 고치기</div>
+        <div class="hint">누르면 바로 시작 · 길게 눌러 떼면 고치기 · 길게 눌러 끌면 순서 바꾸기</div>
       </div></section>
 
       <section class="page" id="pg1">
@@ -333,7 +336,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1022-1';
+const APP_VERSION='v. 26-1023-1';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -365,6 +368,15 @@ function dragStep(val,prevRaw,raw){
   let d=raw-prevRaw;if(d>30)d-=60;if(d<-30)d+=60;
   return Math.max(0,Math.min(MAXMIN,val+d));
 }
+// 프리셋 끌어 옮기기 — 끄는 칸의 가운데(cx)가 이웃 칸의 가운데를 넘으면 그 자리로.
+// mids: 끌기 시작할 때 잰 칸마다의 가운데 x · i0: 끄는 칸
+function dragSlot(mids,i0,cx){
+  let to=i0;
+  mids.forEach((m,i)=>{if(i>i0&&cx>m)to=Math.max(to,i);if(i<i0&&cx<m)to=Math.min(to,i);});
+  return to;
+}
+// i0 자리의 것을 to 자리로 (나머지는 한 칸씩 밀린다)
+function moveItem(arr,i0,to){const a=arr.slice(),x=a.splice(i0,1)[0];a.splice(to,0,x);return a;}
 // 이어달리기 → 실제로 도는 차례 (되풀이 반영)
 function routineSeq(rt){const seq=[];for(let k=0;k<(rt.rep||1);k++)seq.push(...rt.items);return seq;}
 
@@ -909,17 +921,91 @@ function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.rem
 $('sheetX').onclick=closeSheet;$('scrim').onclick=closeSheet;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('sheet').classList.contains('on'))closeSheet();else if($('desk').classList.contains('on'))exitDesk();}});
 
-// ── 프리셋: 누르면 바로 시작 · 길게 누르면 고치기 ──
+// ── 프리셋: 누르면 바로 시작 · 길게 누르면 떠오른다 ──
+// 기도노트 지도 단추와 같은 손짓 (아이폰 홈 화면처럼):
+//   0.45초 누르고 있으면 칩이 살짝 떠오른다(진동). 거기서
+//     · 손을 그대로 떼면 → 고치기 창
+//     · 옆으로 끌면 → 순서 바꾸기. 이웃 칩이 부드럽게 비켜 주고, 놓은 자리로 내려앉는다
+//   누르자마자 움직이면 그냥 프리셋 줄 넘기기다. PC 는 오른쪽 누르기 = 고치기.
+const PD={st:null,t:0,swallow:0};
+const PD_HOLD=450,PD_LIFT=1.08;
 (function presetPress(){
-  let lt=0,long=false;
   const box=$('presets');
-  box.addEventListener('pointerdown',e=>{const c=e.target.closest('[data-pid]');if(!c)return;long=false;lt=setTimeout(()=>{long=true;editPreset(c.dataset.pid);},520);});
-  ['pointerup','pointercancel','pointerleave'].forEach(ev=>box.addEventListener(ev,()=>clearTimeout(lt)));
-  box.addEventListener('scroll',()=>clearTimeout(lt),{passive:true});
-  box.addEventListener('contextmenu',e=>{const c=e.target.closest('[data-pid]');if(c){e.preventDefault();clearTimeout(lt);if(!long){long=true;editPreset(c.dataset.pid);}}});
+  const cancelLift=st=>{st.items.forEach(x=>{x.style.transform='';});st.c.classList.remove('pdrag');box.classList.remove('dragging');};
+  box.addEventListener('pointerdown',e=>{
+    const c=e.target.closest('[data-pid]');if(!c||(e.pointerType==='mouse'&&e.button!==0))return;
+    const st={c,id:e.pointerId,x0:e.clientX,y0:e.clientY,x:e.clientX,on:false,moved:false};
+    PD.st=st;clearTimeout(PD.t);
+    PD.t=setTimeout(()=>{
+      if(PD.st!==st)return;
+      st.on=true;st.items=[...box.querySelectorAll('[data-pid]')];
+      st.rects=st.items.map(x=>x.getBoundingClientRect());st.mids=st.rects.map(r=>r.left+r.width/2);
+      st.i0=st.items.indexOf(c);st.to=st.i0;st.sl0=box.scrollLeft;
+      st.shift=st.rects[st.i0].width+(parseFloat(getComputedStyle(box).columnGap)||8);
+      c.classList.add('pdrag');box.classList.add('dragging');c.style.transform=`scale(${PD_LIFT})`;
+      try{c.setPointerCapture(st.id);}catch(er){}
+      if(navigator.vibrate)try{navigator.vibrate(8);}catch(er){}
+      st.raf=requestAnimationFrame(edgeTick);
+    },PD_HOLD);
+  });
+  // 끄는 중 — 칩은 손가락을 따라가고, 넘어선 이웃은 한 칸씩 비켜 준다
+  function follow(){
+    const st=PD.st;if(!st||!st.on)return;
+    const dx=st.x-st.x0+(box.scrollLeft-st.sl0);
+    st.c.style.transform=`translateX(${dx}px) scale(${PD_LIFT})`;
+    const to=dragSlot(st.mids,st.i0,st.mids[st.i0]+dx);
+    if(to===st.to)return;st.to=to;
+    st.items.forEach((x,i)=>{if(i===st.i0)return;
+      const sh=st.i0<to&&i>st.i0&&i<=to?-1:st.i0>to&&i<st.i0&&i>=to?1:0;
+      x.style.transform=sh?`translateX(${sh*st.shift}px)`:'';});
+  }
+  // 줄 끝에 닿으면 프리셋 줄이 스스로 넘어간다
+  function edgeTick(){
+    const st=PD.st;if(!st||!st.on)return;
+    const b=box.getBoundingClientRect();let v=0;
+    if(st.moved){if(st.x<b.left+40)v=-6;else if(st.x>b.right-40)v=6;}
+    if(v){const before=box.scrollLeft;box.scrollLeft+=v;if(box.scrollLeft!==before)follow();}
+    st.raf=requestAnimationFrame(edgeTick);
+  }
+  box.addEventListener('pointermove',e=>{
+    const st=PD.st;if(!st||e.pointerId!==st.id)return;
+    st.x=e.clientX;
+    if(!st.on){if(Math.hypot(e.clientX-st.x0,e.clientY-st.y0)>8){clearTimeout(PD.t);PD.st=null;}return;}
+    if(Math.abs(e.clientX-st.x0)>6)st.moved=true;
+    follow();
+  });
+  // 떠오른 뒤에는 화면이 같이 끌려가지 않게 (아이폰)
+  box.addEventListener('touchmove',e=>{if(PD.st&&PD.st.on)e.preventDefault();},{passive:false});
+  function end(e){
+    const st=PD.st;if(!st||(e&&e.pointerId!==st.id))return;
+    clearTimeout(PD.t);PD.st=null;
+    if(!st.on)return;
+    cancelAnimationFrame(st.raf);PD.swallow=Date.now();   // 손을 뗄 때 따라오는 '눌림' 은 버린다
+    const ok=e&&e.type==='pointerup';
+    if(ok&&!st.moved){cancelLift(st);editPreset(st.c.dataset.pid);return;}
+    if(!ok||st.to===st.i0){cancelLift(st);return;}
+    // 놓은 자리로 — 이웃은 이미 새 자리에 있으니 그대로, 든 칩만 지금 보이는 곳에서 내려앉는다
+    const id=st.c.dataset.pid,from=st.c.getBoundingClientRect();
+    const ids=moveItem(st.items.map(x=>x.dataset.pid),st.i0,st.to);
+    S.presets=ids.map(P).filter(Boolean).concat(S.presets.filter(p=>!ids.includes(p.id)));
+    save();box.classList.remove('dragging');drawPresets();
+    const nc=box.querySelector(`[data-pid="${id}"]`);
+    if(nc&&!quiet()){
+      const to=nc.getBoundingClientRect();
+      nc.style.transition='none';nc.style.transform=`translateX(${(from.left+from.width/2)-(to.left+to.width/2)}px) scale(${PD_LIFT})`;nc.classList.add('pdrag');
+      nc.getBoundingClientRect();
+      nc.style.transition='';nc.style.transform='';
+      setTimeout(()=>nc.classList.remove('pdrag'),260);
+    }
+    if(tab===1)renderRoutines();
+  }
+  box.addEventListener('pointerup',end);box.addEventListener('pointercancel',end);
+  box.addEventListener('scroll',()=>{const st=PD.st;if(st&&!st.on){clearTimeout(PD.t);PD.st=null;}},{passive:true});
+  box.addEventListener('contextmenu',e=>{const c=e.target.closest('[data-pid]');if(c){e.preventDefault();if(PD.st){clearTimeout(PD.t);if(PD.st.on)cancelLift(PD.st);PD.st=null;}PD.swallow=Date.now();editPreset(c.dataset.pid);}});
   box.addEventListener('click',e=>{
+    if(Date.now()-PD.swallow<450){e.preventDefault();return;}
     if(e.target.closest('#addPreset')){const m=Math.round(R().total/60000)||5;editPreset(null,m);return;}
-    const c=e.target.closest('[data-pid]');if(!c||long){long=false;return;}
+    const c=e.target.closest('[data-pid]');if(!c)return;
     const p=P(c.dataset.pid);loadPreset(p,{run:true});toast(`${pLabel(p)}${p.name?' '+p.min+'분':''}\n바로 시작했어요`);
   });
 })();
