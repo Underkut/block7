@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6395,7 +6395,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-10";
+const APP_VERSION = "v. 26-1024-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40030,9 +40030,12 @@ function gcalToggleList(){_gcalRenderSettings._open=!_gcalRenderSettings._open;_
 function gcalSetColor(v){_gcalSetCfg({color:!!v});try{renderToday();}catch(e){}try{refreshTaskViewsLive();}catch(e){}}
 // 일정에 입힐 캘린더 색 — 설정 '캘린더 색 입히기' 가 켜져 있고(처음엔 켜짐) 구글에서 온(보낸) 일정일 때만
 function _gcalEvColor(ev){
-  if(!ev||!ev.g||!ev.g.c)return '';
+  if(!ev)return '';
+  // 고른 캘린더(gc)가 먼저 — 등록하자마자, 구글에 가기 전에도 그 색으로 (v26-1024-11, HB). 옮기는 중이면 옮겨 갈 곳 색
+  const cal=(ev.gc&&ev.gc!=='-')?ev.gc:(ev.g&&ev.g.c);
+  if(!cal)return '';
   const cfg=_gcalCfg();if(!cfg.on||cfg.color===false)return '';
-  const m=(cfg.meta||{})[ev.g.c],c=m&&m.col;
+  const m=(cfg.meta||{})[cal],c=m&&m.col;
   return/^#[0-9a-fA-F]{6}$/.test(c||'')?c:'';
 }
 // D뷰 일정 칩 — 테두리와 옅은 바탕에 캘린더 색
@@ -40160,7 +40163,7 @@ function _gcalPickApplyV(ev,v){
   if(v===null||v===undefined||!ev)return;
   if(ev.g&&ev.g.c){if(v===ev.g.c||v==='-')delete ev.gc;else ev.gc=v;}
   else if(ev.repeat&&(ev.repeat.daily||ev.repeat.weekly))ev.gc=v;   // 예전 반복은 골라야 간다 — 기본 캘린더여도 적어 둔다
-  else{if(v===_gcalCfg().writeCal)delete ev.gc;else ev.gc=v;}
+  else ev.gc=v;   // 기본 캘린더를 골라도 적어 둔다 — 등록하자마자 그 캘린더 색이 보이게. 구글에 이어지면 걷힌다(clearGc)
 }
 
 function closeTaskMenu(){

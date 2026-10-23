@@ -274,6 +274,25 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   const excAfter = await p.evaluate(id => Object.values(__G.ev).filter(e => e.recurringEventId === id).map(e => [e.summary, e.status]), gDawn.id);
   ok('⑰ 모두 고치기 → 그 날 고친 회차는 원본 모양으로 돌아간다 (지워져 비지 않는다)', excAfter.length === 1 && excAfter[0][0] === '새벽 기도회' && excAfter[0][1] === 'confirmed', excAfter);
 
+  // ⑱ 등록하자마자 고른 캘린더 색 (구글에 가기 전에도) (v26-1024-11, HB)
+  const colNow = await p.evaluate(D1 => {
+    window.__noSync = true;
+    openEventModal(_secIdForTime('10:00'), null, D1); document.getElementById('eventTextInput').value = '색 확인';
+    document.querySelector('#eventCalPick [data-cal="ch@x"]').click(); submitEventModal();
+    let ev = null; Object.values(ST.days).forEach(d => Object.values(d.events || {}).forEach(a => (a || []).forEach(e => { if (e.text === '색 확인') ev = e; })));
+    return [!!ev.g, _gcalEvColor(ev), (ST.settings.gcal.meta['ch@x'] || {}).col];
+  }, D1);
+  ok('⑱ 구글에 이어지기 전(고리 없음)인데도 고른 캘린더 색', colNow[0] === false && colNow[1] && colNow[1] === colNow[2], colNow);
+  const colDef = await p.evaluate(D1 => {
+    openEventModal(_secIdForTime('10:00'), null, D1); document.getElementById('eventTextInput').value = '기본 색 확인'; submitEventModal();
+    let ev = null; Object.values(ST.days).forEach(d => Object.values(d.events || {}).forEach(a => (a || []).forEach(e => { if (e.text === '기본 색 확인') ev = e; })));
+    return [_gcalEvColor(ev), (ST.settings.gcal.meta[ST.settings.gcal.writeCal] || {}).col];
+  }, D1);
+  ok('⑱ 기본 캘린더 그대로 두어도 바로 그 색', colDef[0] && colDef[0] === colDef[1], colDef);
+  await sync();
+  const colAfter = await p.evaluate(() => { let ev = null; Object.values(ST.days).forEach(d => Object.values(d.events || {}).forEach(a => (a || []).forEach(e => { if (e.text === '색 확인') ev = e; }))); return [ev.g && ev.g.c, ev.gc, _gcalEvColor(ev)]; });
+  ok('⑱ 구글에 이어진 뒤에도 같은 색 · 고른 표시는 걷힌다', colAfter[0] === 'ch@x' && colAfter[1] === undefined && colAfter[2] === colNow[1], colAfter);
+
   // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
   await new Promise(r => setTimeout(r, 4500));
   const t0 = Date.now();
