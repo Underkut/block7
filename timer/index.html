@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 타이머 v. 26-1023-7 -->
+<!-- 타이머 v. 26-1023-8 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -243,6 +243,23 @@ html.isdark #pdz .dimz{background:rgba(255,255,255,.35)}
 .desk.dimmed .sun .core{fill:currentColor}
 
 /* ── 타이머 화면 모양: 심플(기본) · 미드 · 파워 ── */
+/* 줄 차례 — 미드·파워는 예전 그대로(±줄이 단추 위), 심플은 ±줄과 프리셋 줄이 단추 아래 한 자리를 나눠 쓴다 */
+.rstrip{order:1}.dialwrap{order:2}.readout{order:3}.tech{order:4}.adj{order:5}.mainrow{order:6}.presets{order:7}.hint{order:8}
+.swap{display:contents}
+.dots{display:none}
+body.lv-simple .swap{display:grid;order:7;width:100%;min-width:0;margin-top:4px}
+body.lv-simple .swap>*{grid-area:1/1;min-width:0;transition:opacity .22s ease,transform .3s cubic-bezier(.22,.8,.24,1),visibility 0s}
+body.lv-simple .swap>.off{opacity:0;transform:translateY(8px);visibility:hidden;pointer-events:none;transition:opacity .15s ease-in,transform .15s ease-in,visibility 0s .15s}
+body.lv-simple .adj{align-self:center;justify-self:center;width:100%}
+body.lv-simple .mainrow .ic{transition:opacity .2s ease}
+body.lv-simple .mainrow .ic.off{opacity:0;pointer-events:none}
+body.lv-simple .mainrow #deskBtn{opacity:0;pointer-events:none}
+body.lv-simple.tab0 .top h1{visibility:hidden}
+body.lv-simple .tabs{display:none}
+body.lv-simple .dots{display:flex;justify-content:center;gap:2px;flex:none;padding:4px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+.dots button{width:28px;height:28px;display:grid;place-items:center}
+.dots i{display:block;width:6px;height:6px;border-radius:50%;background:var(--tx3);opacity:.4;transition:opacity .2s,transform .2s}
+.dots button.on i{opacity:1;background:var(--tx2);transform:scale(1.15)}
 .tech{display:none}
 body.lv-simple .top h1{font-weight:300;color:var(--tx2);font-size:14px}
 body.lv-simple .tabs{border-top:0}
@@ -254,6 +271,7 @@ body.lv-simple .sub{color:var(--tx3);font-size:12.5px}
 body.lv-simple .adj{gap:0;max-width:300px}
 body.lv-simple .adj button{background:none!important;color:var(--tx3);height:36px;font-weight:300}
 body.lv-simple .adj button.hot{color:var(--c)}
+body.lv-simple[data-st="done"] .adj button[disabled]{display:none}
 body.lv-simple .play{background:none!important;color:var(--c);width:56px;height:56px}
 body.lv-simple .mainrow{gap:48px}
 body.lv-simple .mainrow .ic{color:var(--tx3)}
@@ -280,6 +298,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 .sounds button.on{background:var(--tx);color:var(--bg)}
 .lnk{color:var(--ac);font-size:12px;text-decoration:underline;text-underline-offset:2px}
 @media (prefers-reduced-motion: reduce){
+  body.lv-simple .swap>*,.dots i,
   .track,.sheet,.toast,.tog::after,.desk .bgl,.desk .info,#pdz *,.cfm,.cfm .card{transition:none!important}
   .flash.go{animation:flash1 2.4s ease-in-out infinite}
   @keyframes flash1{0%,100%{opacity:0}40%{opacity:.6}}
@@ -306,15 +325,17 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
           <div class="sub" id="sub"></div>
         </div>
         <div class="tech" id="tech"></div>
-        <div class="adj" id="adj">
-          <button data-d="-5">−5</button><button data-d="-1">−1</button><button data-d="1">+1</button><button data-d="5">+5</button>
-        </div>
         <div class="mainrow">
           <button class="ic" id="resetBtn" aria-label="처음으로"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
           <button class="play" id="playBtn" aria-label="시작"></button>
           <button class="ic" id="deskBtn" aria-label="탁상 모드로 크게"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-6.5 6.5"/><path d="M10 20H4v-6"/><path d="M4 20l6.5-6.5"/></svg></button>
         </div>
-        <div class="presets" id="presets" data-noswipe></div>
+        <div class="swap" id="swap">
+          <div class="adj" id="adj">
+          <button data-d="-5">−5</button><button data-d="-1">−1</button><button data-d="1">+1</button><button data-d="5">+5</button>
+          </div>
+          <div class="presets" id="presets" data-noswipe></div>
+        </div>
         <div class="hint">누르면 바로 시작 · 길게 눌러 끌면 순서 바꾸기 · 고치기 · 지우기</div>
       </div></section>
 
@@ -334,6 +355,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
     <button data-t="1"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/><path d="M8 12h8M13.5 9l2.5 3-2.5 3"/></svg>이어달리기</button>
     <button data-t="2"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 20V12M10 20V6M15 20v-9M20 20V9"/></svg>기록</button>
   </nav>
+  <nav class="dots" id="dots" aria-label="화면"><button data-t="0" class="on" aria-label="타이머"><i></i></button><button data-t="1" aria-label="이어달리기"><i></i></button><button data-t="2" aria-label="기록"><i></i></button></nav>
 </div>
 
 <div class="scrim" id="scrim"></div>
@@ -366,7 +388,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-7';
+const APP_VERSION='v. 26-1023-8';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -617,7 +639,18 @@ function drawAll(){
   else if(r.state==='done')sub='끝났어요 · +1 · +5 로 더 할 수 있어요';
   else if(r.state==='wait')sub=`다음: ${r.label||fmt(r.total)} · 시작을 누르세요`;
   else sub=ms>0?`${r.label?r.label+' · ':''}지금 시작하면 ${clock(Date.now()+ms)}에 끝나요`:'원을 끌어 시간을 정하세요';
+  if(C().lv==='simple'){   // 심플은 짧게 — 그때 필요한 한 마디만
+    sub=r.state==='run'?`${clock(r.endAt)}에 끝나요`:r.state==='pause'?'멈춤':r.state==='done'?'끝났어요':r.state==='wait'?`다음: ${r.label||fmt(r.total)}`:(ms>0?(r.label||''):'원을 끌어 시간을 정하세요');
+  }
   $('sub').textContent=sub;
+  // 심플: 같은 자리에 그때 필요한 것 하나만 (A안, HB 2026-10-23)
+  //   시작 전 → ▶ + 프리셋 줄 · 도는 중 → ❚❚ + ±줄 · 잠깐 멈춤 → ↺ ▶ + ±줄 · 끝 → ↺ ↻ + '더' 단추
+  {
+    const st=r.state,showAdj=st==='run'||st==='pause'||st==='done';
+    $('adj').classList.toggle('off',!showAdj);$('presets').classList.toggle('off',showAdj);
+    $('resetBtn').classList.toggle('off',!(st==='pause'||st==='done'||st==='wait'));
+    document.body.dataset.st=st;
+  }
   // 단추
   const pb=$('playBtn');pb.style.background=col;document.body.style.setProperty('--c',col);
   const running=r.state==='run';
@@ -916,12 +949,13 @@ function goTab(i,anim=true){
   tab=Math.max(0,Math.min(2,i));
   const tr=$('track');tr.style.transition=anim&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'transform .3s cubic-bezier(.22,.8,.24,1)':'none';
   tr.style.transform=`translateX(${-tab*100}%)`;
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',+b.dataset.t===tab));
+  document.querySelectorAll('#tabs button,#dots button').forEach(b=>b.classList.toggle('on',+b.dataset.t===tab));
+  document.body.classList.toggle('tab0',tab===0);
   $('title').textContent=TITLES[tab];
   if(tab===1)renderRoutines();if(tab===2)renderStats();
   if(tab===0)requestAnimationFrame(drawAll);
 }
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>goTab(+b.dataset.t));
+document.querySelectorAll('#tabs button,#dots button').forEach(b=>b.onclick=()=>goTab(+b.dataset.t));
 (function swipe(){
   const pg=$('pager'),tr=$('track');let sx=0,sy=0,st=0,mode=0,w=1;
   pg.addEventListener('touchstart',e=>{if(e.target.closest('[data-noswipe]')){mode=-1;return;}const t=e.touches[0];sx=t.clientX;sy=t.clientY;st=Date.now();mode=0;w=pg.clientWidth;},{passive:true});
@@ -1312,7 +1346,9 @@ function exitDesk(){
 }
 function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>$('desk').classList.remove('ctlon'),4000);}
 $('deskBtn').onclick=()=>enterDesk();
-$('pg0').addEventListener('click',e=>{if(e.target.closest('button,canvas,.presets,input'))return;if(R().state==='run')enterDesk();});
+// 도는 중 여백 톡 = 다시 탁상. ⚠️ 단추를 누르면 그 안 그림이 곧바로 새로 그려져 눌린 것이 화면에서 떨어진다 —
+// 떨어진 것은 '단추 안' 인지 알 수 없으니 여백으로 치지 않는다 (예전엔 ▶ 를 누르자마자 탁상으로 들어갔다)
+$('pg0').addEventListener('click',e=>{if(!e.target.isConnected||e.target.closest('button,canvas,.presets,input'))return;if(R().state==='run')enterDesk();});
 // 빈 곳 한 번 = 단추 보이기 · 두 번 = 나가기
 let lastTap=0;
 $('desk').addEventListener('click',e=>{
