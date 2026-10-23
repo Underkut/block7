@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3269,6 +3269,11 @@ body.split-d #todayView.animating{overflow:hidden;}
 .mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:-2px;}
 /* M뷰 칸 높이를 손잡이로 정했을 때 — 넘치는 것은 칸 아래쪽부터 가린다 */
 .mcg.mcg-fixed .mcc{overflow-x:visible;overflow-y:clip;min-height:0;}   /* 위아래만 자른다 — 여러 날 띠의 글은 옆 칸으로 흘러야 한다 */
+.evchip-preview{margin-top:12px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);display:flex;flex-direction:column;gap:7px;}
+.evchip-preview .evp-row{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;}
+.evchip-preview .evp-sec{font-size:12px;font-weight:600;color:var(--tx2);flex-shrink:0;display:flex;align-items:center;gap:5px;}
+.evchip-preview .evp-sec i{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.evchip-preview .ev-chip{cursor:default;}
 .m-grip{display:flex;justify-content:center;align-items:center;height:16px;margin:2px 0 0;cursor:ns-resize;touch-action:none;-webkit-tap-highlight-color:transparent;}
 .m-grip span{width:22px;height:2px;border-radius:1px;background:var(--bd2);opacity:.55;transition:background .2s,width .2s,opacity .2s;}   /* 작고 얇게 (HB 2026-10-24) — 누르는 자리(16px 높이)는 그대로 넉넉히 */
 .m-grip:hover span,.m-grip.on span{background:var(--tx3);width:30px;opacity:.8;}
@@ -6390,7 +6395,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-8";
+const APP_VERSION = "v. 26-1024-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6949,6 +6954,20 @@ try{
           <button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">옆으로 흐르기</button>
           <button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button>
         </div>
+      </div>
+
+      <!-- 긴 일정 이름 (v26-1024-9, HB) — 할일행 머리의 일정 칩을 몇 글자까지 보일지 -->
+      <div class="settings-section" id="secEvChipMax" data-lv="mp" data-prod="b7">
+        <div class="settings-row-text" style="margin-bottom:10px;">
+          <div class="settings-row-label lv1">긴 일정 이름</div>
+          <div class="settings-row-desc">할일행 위에 보이는 일정 이름을 몇 글자까지 보일지 정해요. 넘치는 뒷부분은 … 으로 줄여요. 눌러서 고칠 때는 이름 전체가 나와요.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <input type="range" class="uiscale-slider" id="evChipMaxSlider" min="6" max="31" step="1" value="31"
+            oninput="evChipMaxInput(this)" onchange="evChipMaxCommit(this)">
+          <span id="evChipMaxLabel" style="font-size:12px;color:var(--tx2);min-width:56px;text-align:right;font-family:var(--font-number);">제한 없음</span>
+        </div>
+        <div class="evchip-preview" id="evChipPreview"></div>
       </div>
 
       <!-- 요일 표기 -->
@@ -9593,7 +9612,7 @@ function gcalBody(k,ev,d,dsh){return Object.assign({summary:String(ev.text||'')}
 // 못 옮기는 것은 null — 하루 시작 시각보다 이른 시각(새벽 1시 + 하루 시작 3시)은 요일이 하루 밀려 뜻이 틀어진다.
 const GCAL_DOW=['SU','MO','TU','WE','TH','FR','SA'];
 function gcalYmd(k){return k.replace(/-/g,'');}
-function gcalRecur(k,ev,dsh,tz){
+function gcalRecur(k,ev,dsh,tz,skip){
   const r=ev&&ev.repeat;
   if(!r||!(r.daily||r.weekly))return null;
   if(ev.time&&dsh>0&&Number(ev.time.slice(0,2))<dsh)return null;
@@ -9612,7 +9631,9 @@ function gcalRecur(k,ev,dsh,tz){
     if(ev.time){const[uy,um,ud]=until.split('-').map(Number);rule+=';UNTIL='+new Date(uy,um-1,ud,23,59,59).toISOString().replace(/[-:]/g,'').replace(/\.\d+/,'');}
     else rule+=';UNTIL='+gcalYmd(until);
   }
-  const ex=new Set((Array.isArray(r.ex)?r.ex:[]).filter(x=>typeof x==='string'&&x>=k&&(!until||x<=until)));
+  // skip = 구글 쪽 '예외 회차'(하루만 고친 것)가 서 있는 날 — BLOCK7 에선 뺀 날이지만 구글에 EXDATE 로 보내면
+  //        구글이 그 고친 회차를 지워 버린다 (v26-1024-9, HB). 그 날은 구글 예외가 그대로 맡는다.
+  const ex=new Set((Array.isArray(r.ex)?r.ex:[]).filter(x=>typeof x==='string'&&x>=k&&(!until||x<=until)&&!(skip&&skip.has(x))));
   if(!days.includes(odow)||!weeks.includes(Math.ceil(d/7)))ex.add(k);   // 원본 날이 규칙 밖
   const out=['RRULE:'+rule];
   [...ex].sort().forEach(x=>out.push(ev.time?`EXDATE;TZID=${tz||'Asia/Seoul'}:${gcalYmd(x)}T${hm}`:`EXDATE;VALUE=DATE:${gcalYmd(x)}`));
@@ -9626,9 +9647,9 @@ function gcalHashEv(k,ev,dsh){
   return rc?base+'#'+rc.join('~'):base;
 }
 // 반복 일정 본문 — 구글은 반복하는 시각 일정에 시간대(timeZone)를 꼭 달라고 한다
-function gcalSeriesBody(k,ev,d,dsh,tz){
+function gcalSeriesBody(k,ev,d,dsh,tz,skip){
   const b=gcalBody(k,ev,d,dsh);
-  b.recurrence=gcalRecur(k,ev,dsh,tz)||[];
+  b.recurrence=gcalRecur(k,ev,dsh,tz,skip)||[];
   if(b.start.dateTime){b.start.timeZone=tz||'Asia/Seoul';b.end.timeZone=tz||'Asia/Seoul';}
   return b;
 }
@@ -9734,6 +9755,8 @@ function gcalExModified(master,x){
 function gcalRf(P,ex){const r=P.repeat;return JSON.stringify([P.k,P.time,P.text,!!r.daily,r.daysOfWeek,!!r.weekly,r.weeksOfMonth,r.until||'',ex]);}
 // 구글 회차 id 모양: 원본id_20261031 · 원본id_20261031T010000Z → 원본 id
 function gcalInstMaster(i){const m=/^(.+)_\d{8}(T\d{6}Z?)?$/.exec(String(i||''));return m?m[1]:null;}
+// 회차 id 의 원래 날짜 (원본id_20261031T100000Z → 2026-10-31, 이 기기 시각으로)
+function gcalInstDate(i){const m=/_(\d{8}(T\d{6}Z?)?)$/.exec(String(i||''));return m?gcalDateOf(m[1]):null;}
 
 // 반복이 켜져 있나 (반복 묶음이 남긴 빈 껍데기 repeat:{} 는 한 번짜리로 본다)
 function _gcalRepOn(r){return !!(r&&(r.daily||r.weekly));}
@@ -9784,6 +9807,13 @@ function gcalPlan(o){
     m.rf=gcalRf(m.P,m.ex);
   });
   const mastOf=(c,i)=>{const r=gcalInstMaster(i);return r?M.get(gcalGKey(c,r)):null;};
+  // 이 반복 원본의 '구글 예외 회차' 가 서 있는 날들 — BLOCK7 의 하루만 고친 일정 중 구글 회차에 이어진 것 + 구글 목록의 고친 예외
+  const excDays=e=>{
+    const out=new Set(),gi=e.ev.g&&e.ev.g.i;if(!gi)return out;
+    L.forEach(x=>{if(x!==e&&x.ev.rid&&x.ev.rid===e.ev.rid&&gcalInstMaster(x.ev.g.i)===gi){const d=gcalInstDate(x.ev.g.i);if(d)out.add(d);}});
+    const m=M.get(e.key);if(m)(m.mods||[]).forEach(x=>{if(x.ok)out.add(x.ok);});
+    return out;
+  };
   // 1) BLOCK7 에서 사람이 지운 것 → 구글에서도 지운다
   col.tombs.forEach(t=>{
     const c=t.key.slice(0,t.key.indexOf('|')),gid=t.key.slice(t.key.indexOf('|')+1);
@@ -9835,7 +9865,7 @@ function gcalPlan(o){
       // 빠른 첫 걸음(o.quick — 구글을 아직 안 읽음): BLOCK7 이 지웠다가 되살린 것은 구글을 읽지 않고도 안다 → 바로 되살린다 (v26-1024-6)
       if(o.quick&&goneKeys.has(key)&&!e.ev.g.ro&&!ro.has(c)){
         const d=e.ev.g.d||(e.ev.time?60:1);
-        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz):gcalPatchBody(e.k,e.ev,d,o.dsh);
+        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz,excDays(e)):gcalPatchBody(e.k,e.ev,d,o.dsh);
         body.status='confirmed';
         remote.push({t:'restore',c,gid:e.ev.g.i,id:e.ev.id,ref:e.ev,k:e.k,d,key,body});
       }
@@ -9847,7 +9877,7 @@ function gcalPlan(o){
       // 구글에서 사람이 지운 것과는 이 기록(o.gone)으로 가른다. 기록이 없으면 예전처럼 BLOCK7 에서 지운다.
       if(goneKeys.has(key)&&!e.ev.g.ro&&!ro.has(c)){
         const d=e.ev.g.d||(e.ev.time?60:1);
-        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz):gcalPatchBody(e.k,e.ev,d,o.dsh);
+        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz,excDays(e)):gcalPatchBody(e.k,e.ev,d,o.dsh);
         body.status='confirmed';
         remote.push({t:'restore',c,gid:e.ev.g.i,id:e.ev.id,ref:e.ev,k:e.k,d,key,body});
         return;
@@ -9866,11 +9896,14 @@ function gcalPlan(o){
       // 구글 반복이 바뀌었다(규칙·제목·시각·뺀 날) → BLOCK7 반복을 따른다. 뺀 날은 범위 밖 BLOCK7 것을 남긴다
       const P=mst.P;
       const exs=new Set(mst.ex);((e.ev.repeat&&e.ev.repeat.ex)||[]).forEach(x=>{if(x<W.from||x>W.to)exs.add(x);});
-      const repeat=Object.assign({},P.repeat,{ex:[...exs].filter(x=>x>=P.k).sort()});if(!repeat.until)delete repeat.until;
-      const nev=Object.assign({},e.ev,{text:P.text,time:P.time,repeat});
+      const gRepeat=Object.assign({},P.repeat,{ex:[...exs].filter(x=>x>=P.k).sort()});if(!gRepeat.until)delete gRepeat.until;
+      // BLOCK7 도 고쳤으면(chL) BLOCK7 이 뺀 날도 남긴다 — 지문(h)은 구글 쪽 것으로 두어 다음 차례에 그 날이 구글로 간다
+      const repeat=Object.assign({},gRepeat);
+      if(chL){const all=new Set(gRepeat.ex);((e.ev.repeat&&e.ev.repeat.ex)||[]).forEach(x=>{if(x>=P.k)all.add(x);});repeat.ex=[...all].sort();}
+      const gev2=Object.assign({},e.ev,{text:P.text,time:P.time,repeat:gRepeat});
       const sec=(P.time&&o.secFor(P.time))||(P.k===e.k?e.sec:o.defSec);
       local.push({t:'set',id:e.ev.id,ref:e.ev,k:P.k,sec,patch:{text:P.text,time:P.time,repeat,
-        g:Object.assign({},e.ev.g,{u:gev.updated,h:gcalHashEv(P.k,nev,o.dsh),d:P.d,rf:mst.rf})}});
+        g:Object.assign({},e.ev.g,{u:gev.updated,h:gcalHashEv(P.k,gev2,o.dsh),d:P.d,rf:mst.rf})}});
       return;
     }
     if(mst&&e.ev.g.rf===undefined)local.push({t:'meta',id:e.ev.id,ref:e.ev,patch:{g:Object.assign({},e.ev.g,{rf:mst.rf})}});
@@ -9886,7 +9919,7 @@ function gcalPlan(o){
     }else if(chL&&!e.ev.g.ro&&!ro.has(c)&&(!_gcalRepOn(e.ev.repeat)||gcalRecur(e.k,e.ev,o.dsh,o.tz))){   // BLOCK7 만 바뀌었다 → 구글을 고친다
       const d=(!e.ev.time===!(gev.start&&gev.start.date))?e.ev.g.d:(e.ev.time?60:1);
       const body=gcalPatchBody(e.k,e.ev,d,o.dsh);
-      if(_gcalRepOn(e.ev.repeat)){const sb=gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz);body.recurrence=sb.recurrence;
+      if(_gcalRepOn(e.ev.repeat)){const sb=gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz,excDays(e));body.recurrence=sb.recurrence;
         if(body.start.dateTime){body.start.timeZone=sb.start.timeZone;body.end.timeZone=sb.end.timeZone;}}
       remote.push({t:'patch',c,gid:gev.id,id:e.ev.id,ref:e.ev,k:e.k,d,body});
     }
@@ -24004,7 +24037,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink'};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:0};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -24348,7 +24381,7 @@ function renderSecEvents(secId, animate=false){
         chip.className='ev-chip'+(ev.repeat?' ev-chip-repeat':'');
         chip.dataset.idx=i;
         if(!ev._virtualFrom)chip.dataset.ownidx=ev._ownIdx;
-        const _t1=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${ev.text}`:ev.text)+_gcalSpanTag(ev);
+        const _t1=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${_evChipCut(ev.text)}`:_evChipCut(ev.text))+_gcalSpanTag(ev);
         chip.innerHTML=_t1.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+(ev.repeat?REPEAT_MARK_HTML:'');
         chip.style.opacity='0';
         chip.style.transition=`opacity .2s ease ${i*40}ms`;
@@ -24371,7 +24404,7 @@ function renderSecEvents(secId, animate=false){
     chip.className='ev-chip'+(ev.repeat?' ev-chip-repeat':'');
     chip.dataset.idx=i;
     if(!ev._virtualFrom)chip.dataset.ownidx=ev._ownIdx;
-    const _t2=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${ev.text}`:ev.text)+_gcalSpanTag(ev);
+    const _t2=((ev.time&&!(ev._spanI>1))?`${formatEventTime(ev.time)} ${_evChipCut(ev.text)}`:_evChipCut(ev.text))+_gcalSpanTag(ev);
     chip.innerHTML=_t2.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+(ev.repeat?REPEAT_MARK_HTML:'');
     _gcalTintChip(chip,ev);
     attachEventChipInteraction(chip,secId,i,ev);
@@ -24379,6 +24412,44 @@ function renderSecEvents(secId, animate=false){
   });
   const sortBtn=document.getElementById(`tssort-${secId}`);
   if(sortBtn)sortBtn.style.display=events.length>=2?'':'none';
+}
+
+// ── 긴 일정 이름 (v26-1024-9, HB) — 할일행 머리의 일정 칩 글자 수 ──
+// ST.settings.evChipMax: 0 = 제한 없음(예전 그대로) · 6~30 = 그 글자 수까지 보이고 … 로 줄임.
+// 시각(앞의 '19:30')과 여러 날 꼬리표(~10.26)는 세지 않는다 — 이름만 줄인다.
+function _evChipCut(t){
+  const n=(ST.settings&&ST.settings.evChipMax)|0;
+  if(!n)return String(t||'');
+  const a=Array.from(String(t||''));
+  return a.length>n?a.slice(0,n).join('')+'…':a.join('');
+}
+// 미리보기 — BLOCK7 을 쓰는 사람의 한 주에 있을 법한 긴 이름 셋 (예배 · 소그룹 · 사역 준비)
+const _EVCHIP_SAMPLES=[
+  {sec:'오전',col:'#3ecf8e',time:'10:30',text:'추수감사주일 연합예배 찬양팀 리허설 · 본당 무대'},
+  {sec:'저녁',col:'#e07a5f',time:null,text:'19.3 청년부 수련회 준비 모임 — 장소 답사 후 저녁 식사'},
+  {sec:'밤',col:'#8b7cf6',time:'21:00',text:'구역장 기도회 · 다음 주 나눔 본문 마태복음 5장 미리 읽기'}];
+function _evChipPreview(){
+  const box=document.getElementById('evChipPreview');if(!box)return;
+  box.innerHTML=_EVCHIP_SAMPLES.map(x=>{
+    const t=(x.time?formatEventTime(x.time)+' ':'')+_evChipCut(x.text);
+    return `<div class="evp-row"><span class="evp-sec"><i style="background:${x.col}"></i>${esc(x.sec)}</span><span class="ev-chip">${esc(t)}</span></div>`;
+  }).join('');
+}
+function _evChipLabel(n){const el=document.getElementById('evChipMaxLabel');if(el)el.textContent=n?n+'자':'제한 없음';}
+function _evChipSync(){
+  const n=(ST.settings&&ST.settings.evChipMax)|0;
+  const sl=document.getElementById('evChipMaxSlider');if(sl)sl.value=String(n||31);
+  _evChipLabel(n);_evChipPreview();
+}
+function evChipMaxInput(el){
+  const v=Number(el.value),n=v>=31?0:v;
+  ST.settings.evChipMax=n;      // 미리보기만 바로 — 저장은 손을 뗄 때
+  _evChipLabel(n);_evChipPreview();
+}
+function evChipMaxCommit(el){
+  const v=Number(el.value),n=v>=31?0:v;
+  updateSetting('evChipMax',n);
+  try{renderToday();}catch(e){}
 }
 
 // ── 시각 없는 일정을 다른 시간구간으로 옮기기 (v26-0817-12, HB 9) ──
@@ -42100,11 +42171,14 @@ function initWeeklySwipe(){
     // cells themselves, the A/★ button row, and the .wscr scroll
     // container. Swiping is only "live" on the empty catcher area
     // below the grid, or incidental background of the header row.
+    // 주 칸(.wc · .wscr)은 이제 막지 않는다 (v26-1024-9, HB) — 대신 아래 onMove 에서 '옆으로 밀리는 칸이 끝에 닿았을 때만'
+    // 주를 넘긴다. 폰에서는 일주일이 화면보다 넓어 칸을 옆으로 밀어 보는데, 그 끝에서 더 밀면 지난주/다음주로 간다.
     const hit=target.closest(
-      '.wc,.wscr,#addRowWeekly,.add-btn,.preset-btn,.preset-sep,button,.mttl,.wmview-btns,#wViewTopStrip'
+      '#addRowWeekly,.add-btn,.preset-btn,.preset-sep,button,.mttl,.wmview-btns,#wViewTopStrip'
     );
     return hit!==null;
   }
+  let scr=null;   // 손가락이 닿은 옆으로 밀리는 칸 (.wscr)
 
   function onStart(e){
     const target=e.target;
@@ -42114,6 +42188,7 @@ function initWeeklySwipe(){
     if(isExcluded(target)){blocked=true;return;}
     const t=e.touches[0];
     sx=t.clientX;sy=t.clientY;
+    scr=target.closest('.wscr');
   }
   function onMove(e){
     if(!active||blocked||committed)return;
@@ -42123,6 +42198,11 @@ function initWeeklySwipe(){
     if(!tracking){
       if(Math.abs(ddx)<6&&Math.abs(ddy)<6)return;
       if(Math.abs(ddy)>Math.abs(ddx)*1.3){blocked=true;return;}
+      if(scr){
+        // 칸이 그 쪽으로 더 밀릴 수 있으면 칸이 먼저 (주 넘김은 끝에 닿은 뒤)
+        const max=scr.scrollWidth-scr.clientWidth;
+        if(max>1&&((ddx>0&&scr.scrollLeft>1)||(ddx<0&&scr.scrollLeft<max-1))){blocked=true;return;}
+      }
       tracking=true;
       pc.style.transition='none';
     }
@@ -43118,6 +43198,7 @@ function closeAccountSensitiveModals(){
 function renderSettingsPanel(){
   const s=ST.settings;
   try{_gcalRenderSettings();}catch(e){}
+  try{_evChipSync();}catch(e){}
   setTimeout(_syncCondRows,0);   // 값들을 다 채운 뒤 보이기/감추기를 맞춘다
   document.getElementById('setAutoCarry').checked=!!s.autoCarryOver;
   const carryDebugEl=document.getElementById('carryDebugInfo');
