@@ -184,6 +184,20 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   sc.eq('⑫ 구글에서 반복 전체를 지우면 BLOCK7 반복도 지운다', J(pCan.local.map(x => [x.t, x.id])), [['del', 'evR1']]);
 }
 
+// ⑬ 실행취소로 되살림 (v26-1024-5) — BLOCK7 이 지운 기록(gone)이 있으면 구글을 되살리고, 없으면 구글에서 지운 것으로 본다
+{
+  const days = { '2026-10-24': day('am', [linkedEv('e1', 'abc')]) };
+  const gs = [{ c: 'me', ev: gev('abc', { status: 'cancelled' }) }];
+  const pR = A.gcalPlan(base({ days, gevents: gs, gone: ['me|abc'] }));
+  sc.eq('⑬ BLOCK7 이 지웠던 것 → 구글을 되살린다 (확정으로) · BLOCK7 은 그대로', J([pR.remote.map(x => [x.t, x.gid, x.body.status, x.body.summary]), pR.local.length]),
+    [[['restore', 'abc', 'confirmed', '회의']], 0]);
+  const pD = A.gcalPlan(base({ days, gevents: gs }));
+  sc.eq('⑬ 기록이 없으면 구글에서 지운 것 → BLOCK7 에서도 지운다', J([pD.remote.length, pD.local.map(x => x.t)]), [0, ['del']]);
+  const rdays = { '2026-09-05': day('am', [{ id: 'evR', time: '09:00', text: '반복', repeat: { weekly: true }, g: { c: 'me', i: 'b7evr', u: 'u1', d: 60, h: 'x' } }]) };
+  const pS = A.gcalPlan(base({ days: rdays, gevents: [{ c: 'me', ev: { id: 'b7evr', status: 'cancelled' } }], gone: ['me|b7evr'], tz: 'Asia/Seoul' }));
+  sc.eq('⑬ 반복 전체를 되살릴 때는 규칙까지', J(pS.remote.map(x => [x.t, x.body.recurrence])), [['restore', ['RRULE:FREQ=WEEKLY;BYDAY=SA']]]);
+}
+
 // ⑦ 두 벌 접기
 {
   const days = { '2026-10-24': day('am', [linkedEv('ga', 'abc'), linkedEv('e1', 'abc')]) };
