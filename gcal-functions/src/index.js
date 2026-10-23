@@ -26,6 +26,9 @@ const db = getFirestore();
 const REGION = "asia-northeast3";
 const CLIENT_ID = defineSecret("GCAL_CLIENT_ID");
 const CLIENT_SECRET = defineSecret("GCAL_CLIENT_SECRET");
+// 붙여 넣을 때 딸려 온 빈칸·줄바꿈을 걷는다 (v26-1024 — HB 가 '401 invalid_client' 를 만났다)
+const cid = () => String(CLIENT_ID.value() || "").trim();
+const csec = () => String(CLIENT_SECRET.value() || "").trim();
 const SCOPES = [
   "openid", "email",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
@@ -74,7 +77,7 @@ exports.gcal = onRequest(
         if (!s || s.exp < Date.now()) { back(res, s && s.ret, "expired"); return; }
         if (q.error || !q.code) { back(res, s.ret, "cancel"); return; }
         const t = await google("https://oauth2.googleapis.com/token", {
-          code: String(q.code), client_id: CLIENT_ID.value(), client_secret: CLIENT_SECRET.value(),
+          code: String(q.code), client_id: cid(), client_secret: csec(),
           redirect_uri: redirectUri(), grant_type: "authorization_code",
         });
         if (!t.ok || !t.j.refresh_token) { console.error("gcal code exchange", t.status, t.j); back(res, s.ret, "err"); return; }
@@ -96,7 +99,7 @@ exports.gcal = onRequest(
         await db.doc(`gcalStates/${state}`).set({ uid, ret, exp: Date.now() + 15 * 60e3 });
         const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
         u.search = new URLSearchParams({
-          client_id: CLIENT_ID.value(), redirect_uri: redirectUri(), response_type: "code",
+          client_id: cid(), redirect_uri: redirectUri(), response_type: "code",
           scope: SCOPES.join(" "), access_type: "offline", prompt: "consent",
           include_granted_scopes: "true", state,
         }).toString();
@@ -112,7 +115,7 @@ exports.gcal = onRequest(
       if (path === "/token") {
         if (!tok) { res.status(404).json({ error: "not connected" }); return; }
         const t = await google("https://oauth2.googleapis.com/token", {
-          refresh_token: tok.rt, client_id: CLIENT_ID.value(), client_secret: CLIENT_SECRET.value(), grant_type: "refresh_token",
+          refresh_token: tok.rt, client_id: cid(), client_secret: csec(), grant_type: "refresh_token",
         });
         if (!t.ok) {
           // 사용자가 구글 쪽에서 권한을 거둬 갔다 → 맡긴 열쇠도 버린다. 앱은 '다시 연결' 을 보여 준다

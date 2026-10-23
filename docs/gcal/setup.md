@@ -62,6 +62,22 @@ firebase deploy --only functions:gcal
 - 성공 표시: `gcal(asia-northeast3)` 가 **Successful create operation**
 - ⚠️ 배포 중에 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
 
+### 연결할 때 "401 오류: invalid_client" 가 나오면
+
+서버에 넣은 **클라이언트 ID 가 구글의 것과 다르다**는 뜻이에요. Cloud Shell 에서:
+
+```
+firebase functions:secrets:access GCAL_CLIENT_ID
+```
+- 나온 값이 콘솔 **클라이언트** 화면의 ID 와 글자 하나까지 같아야 해요 (`숫자-영문.apps.googleusercontent.com` 모양 하나만).
+- 다르면(보안 비밀번호가 들어가 있거나, 앞뒤가 잘렸거나) 다시 넣고 **반드시 다시 올리기** — 서버는 올릴 때의 값을 기억해요:
+```
+firebase functions:secrets:set GCAL_CLIENT_ID
+firebase functions:secrets:set GCAL_CLIENT_SECRET
+cd ~/block7 && git pull && cd gcal-functions && firebase deploy --only functions:gcal
+```
+- 값이 맞는데도 나오면 클라이언트를 만든 지 얼마 안 된 것일 수 있어요 — 구글이 퍼뜨리는 데 5분~몇 시간 걸려요.
+
 ## 확인 (아이폰 홈 화면 BLOCK7 에서)
 
 1. 설정 → **계정** 탭 → **구글 캘린더** → **구글 캘린더 연결하기**
