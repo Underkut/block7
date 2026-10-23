@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1023-10 -->
+<!-- KAIROS v. 26-1023-11 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -388,7 +388,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-10';
+const APP_VERSION='v. 26-1023-11';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -809,7 +809,7 @@ const endDrag=()=>{if(!dragging)return;dragging=false;
   drawAll();drawPresets();};
 $('dial').addEventListener('pointerup',endDrag);$('dial').addEventListener('pointercancel',endDrag);
 function applyDrag(){
-  const sn=+C().snap||0,whole=sn?Math.round(dragVal/sn)*sn:Math.round(dragVal);
+  const sn=+C().snap||0,near=sn?Math.round(dragVal/sn)*sn:0,whole=(sn&&Math.abs(dragVal-near)<=sn*.2)?near:Math.round(dragVal);
   if(whole!==lastWhole){lastWhole=whole;if(C().vib&&navigator.vibrate)try{navigator.vibrate(4);}catch(e){}}
   const ms=whole*60000,r=R();
   Object.assign(r,{state:wasRun?'pause':'idle',left:ms,total:ms,endAt:0,pid:null,label:wasRun?r.label:''});
@@ -1257,7 +1257,7 @@ function openSettings(){
     <div class="srow"><div class="tx"><div class="l">화면 깜빡임</div><div class="d">끝나면 화면 전체가 타이머 색으로 깜빡여요 — 누를 때까지. 소리를 꺼 둔 자리에서 좋아요</div></div>${tog('flash')}</div>
     <div class="srow"><div class="tx"><div class="l">진동</div><div class="d">${isIOS?'아이폰 웹앱에서는 진동을 쓸 수 없어요 (애플이 막아 둠). 안드로이드에서만 울립니다.':'끝날 때 진동 · 원을 끌 때 1분마다 톡'}</div></div>${tog('vib',isIOS)}</div>
     <div class="srow"><div class="tx"><div class="l">시작하면 탁상 모드</div><div class="d">1초 뒤 원이 그대로 미끄러져 커져요. 두 번 톡 = 나가기 · 도는 중에 여백을 톡 = 다시 들어가기 (⤢ 단추도)</div></div>${tog('deskAuto')}</div>
-    <div class="srow"><div class="tx"><div class="l">원 끌 때 딱딱 맞추기</div><div class="d">시간을 끌어 정할 때 5분 또는 10분 단위로 달라붙어요. 끄면 1분 단위로 자유롭게</div></div>${seg('snap',[['10','10분'],['5','5분'],['0','끔']])}</div>
+    <div class="srow"><div class="tx"><div class="l">원 끌 때 딱딱 맞추기</div><div class="d">1분 단위로 부드럽게 끌다가, 5분 또는 10분 눈금 가까이 오면 자석처럼 붙어요. 끄면 붙지 않아요</div></div>${seg('snap',[['10','10분'],['5','5분'],['0','끔']])}</div>
     <div class="srow"><div class="tx"><div class="l">원 방향</div><div class="d">구글 타이머(타임타이머)는 시계 반대 방향</div></div>${seg('dir',[['cw','시계 방향'],['ccw','시계 반대']])}</div>
     <div class="srow"><div class="tx"><div class="l">잠금 화면에서도 끝 알림</div><div class="d">앱이 꺼져 있어도 서버가 끝나는 시각에 푸시를 보냅니다. 서버를 올린 뒤 켜져요 — 준비 중</div></div>${tog('lock',true)}</div>
     <div>
