@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1023-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1023-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -304,7 +304,8 @@ body.pdark .par{--w-bg:#1d1916;--w-card:#2a2420;--w-ink:#f3ebe3;--w-sub:#b3a69a;
 .par .pr-top b{font-family:'Jua',sans-serif;font-weight:400;font-size:19px}
 .w-j{font-family:'Jua',sans-serif;font-weight:400}
 .w-top{display:flex;align-items:center;gap:10px;margin:2px 2px 12px}.w-av{width:46px;height:46px;border-radius:50%;overflow:hidden;flex:none}.w-av svg{width:100%;display:block}
-.w-t{font-size:21px;display:block}.w-top small{display:block;font-size:12px;color:var(--w-sub)}
+.w-t{font-size:21px;display:block}.w-tt{flex:1;min-width:0}.w-nv{flex:none;width:34px;height:34px;display:grid;place-items:center;color:var(--w-ink);background:none;border:0;padding:0;align-self:flex-start;margin-top:6px}.w-nv svg{width:20px;height:20px}.w-nv:disabled{opacity:.18}
+#parBody{overflow-x:hidden;overflow-x:clip;touch-action:pan-y}.w-top small{display:block;font-size:12px;color:var(--w-sub)}
 .w-card{background:var(--w-card);border-radius:22px;padding:14px 16px;margin-bottom:11px;box-shadow:0 3px 12px rgba(120,90,60,.07)}
 .w-hero{background:linear-gradient(135deg,#fff3ea,#ffe9f0)}body.pdark .w-hero{background:linear-gradient(135deg,#3a2a24,#3a2530)}
 .w-say{font-size:15px;line-height:1.55}.w-say b{color:var(--w-acc)}
@@ -696,7 +697,7 @@ body.pmode.pdark:not(.mirror) .shx{color:#6b7280}
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1023-1";
+const APP_VERSION = "v. 26-1023-2";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2505,7 +2506,7 @@ function kidCodeSheet(re){
 }
 
 /* 부모 보고서 (F-2) — 게임 화면이 아니라 보고서 */
-let PAR = {kids:[], sel:null, per:'day', acct:'all', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
+let PAR = {kids:[], sel:null, per:'day', off:0, first:null, acct:'all', unsub:null, unsubM:null, unsubA:null, more:false, tab:'rep', msgs:[], alerts:[], go:null};
 function hideParent(){ mirrorOff(); const p = $('par'); if(p) p.classList.remove('on'); document.body.classList.remove('pmode'); if(PAR.unsub){ PAR.unsub(); PAR.unsub = null; } if(PAR.unsubM){ PAR.unsubM(); PAR.unsubM = null; } if(PAR.unsubA){ PAR.unsubA(); PAR.unsubA = null; } }
 async function showParent(){
   document.body.classList.add('pmode'); applyPTheme(); setPTab(PAR.tab || 'rep');
@@ -2537,18 +2538,34 @@ function sinceTxt(d){ const t = new Date(), y = new Date(t.getFullYear(), t.getM
   const day = ds===dstr(t) ? '오늘' : ds===dstr(y) ? '어제' : (d.getMonth()+1)+'월 '+d.getDate()+'일';
   return day+' '+d.toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'}); }
 const mdW = d => { const w = new Date(Number(d.slice(0,4)), Number(d.slice(5,7))-1, Number(d.slice(8,10))).getDay(); return md2(d)+' '+(w===0 ? '주일' : '일월화수목금토'[w]+'요일'); };
-function perRange(per){ const t = todayStr();
-  if(per==='day') return {a:t, b:t, pa:dayShift(t,-1), pb:dayShift(t,-1), lb:'오늘', pl:'어제'};
-  if(per==='week'){ const a = weekStart(); return {a, b:dayShift(a,6), pa:dayShift(a,-7), pb:dayShift(a,-1), lb:'이번 주', pl:'지난주'}; }
-  const a = t.slice(0,8)+'01', pm = monthShift(t.slice(0,7),-1);
-  return {a, b:t.slice(0,8)+'31', pa:pm+'-01', pb:pm+'-31', lb:'이번 달', pl:'지난달'}; }
+/* ───────── 기간 넘기기 (P-2) — off: 0 = 지금, -1 = 하나 전 … (미래는 없다). tests/test_wallet_period.js */
+function perRange(per, off, today){ off = Math.min(0, off|0); today = today || todayStr();
+  const P = n => String(n).padStart(2,'0'), D = s => new Date(Number(s.slice(0,4)), Number(s.slice(5,7))-1, Number(s.slice(8,10)));
+  const S_ = d => d.getFullYear()+'-'+P(d.getMonth()+1)+'-'+P(d.getDate()), add = (s, n) => { const d = D(s); d.setDate(d.getDate()+n); return S_(d); };
+  if(per==='day'){ const a = add(today, off), d = D(a);
+    return {a, b:a, pa:add(a,-1), pb:add(a,-1), off, cur:!off,
+      lb: off===0 ? '오늘' : off===-1 ? '어제' : off===-2 ? '그저께' : (d.getMonth()+1)+'월 '+d.getDate()+'일',
+      pl: off===0 ? '어제' : off===-1 ? '그저께' : '전날'}; }
+  if(per==='week'){ const t = D(today), a = add(today, -((t.getDay()+6) % 7) + off*7);
+    return {a, b:add(a,6), pa:add(a,-7), pb:add(a,-1), off, cur:!off,
+      lb: off===0 ? '이번 주' : off===-1 ? '지난주' : (-off)+'주 전', pl: off===0 ? '지난주' : '그 전 주'}; }
+  const t = D(today), m = new Date(t.getFullYear(), t.getMonth()+off, 1), pm = new Date(m.getFullYear(), m.getMonth()-1, 1);
+  const a = S_(m), last = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+  return {a, b:a.slice(0,8)+P(last), pa:S_(pm), pb:S_(pm).slice(0,8)+P(new Date(pm.getFullYear(), pm.getMonth()+1, 0).getDate()), off, cur:!off,
+    lb: off===0 ? '이번 달' : off===-1 ? '지난달' : (m.getFullYear()===t.getFullYear() ? '' : m.getFullYear()+'년 ')+(m.getMonth()+1)+'월',
+    pl: off===0 ? '지난달' : '그 전 달'}; }
+// 받침이 있으면 '과', 없으면 '와' (지난달과 · 지난주와)
+const wa = s => { const c = s.charCodeAt(s.length-1) - 0xAC00; return s + (c >= 0 && c < 11172 && c % 28 ? '과' : '와'); };
+// 더 넘길 수 있나 — 앞(+1)은 지금까지, 뒤(-1)는 첫 기록이 든 기간까지
+function perCan(per, off, k, first, today){ if(k > 0) return off < 0; return !!first && perRange(per, off-1, today).b >= first; }
+/* ───────── 기간 넘기기 끝 */
 function sumIO(a, b){ let i = 0, o = 0; S.tx.forEach(t => { if(t.date < a || t.date > b) return; if(t.t==='in') i += t.amt; else if(t.t==='out') o += t.amt; }); return {i, o}; }
 function renderParent(){
   const box = $('parBody'), k = PAR.kids.find(x => x.id===PAR.sel);
   $('parKids').innerHTML = kidTabsHtml();
   if(!k){ box.innerHTML = `<div class="w-card"><div class="w-h"><span class="w-j">아직 연결된 아이 폰이 없어요</span></div><p class="pr-note">아래 버튼으로 코드를 만들고, 아이 폰의 용돈 친구들 → 설정 → <b>아이 폰 연결하기</b>에 넣어 주세요.</p><div class="pr-btns" style="margin-top:10px"><button id="prKidE">아이 폰 연결하기</button></div></div>`; return; }
   if(!k.st){ box.innerHTML = `<div class="pr-empty">아이 기록을 읽지 못했어요</div>`; return; }
-  const R = perRange(PAR.per), nm = esc(k.name||'아이'), ni = nm + (/[가-힣]$/.test(k.name||'') && ((k.name.charCodeAt(k.name.length-1)-0xAC00) % 28) ? '이' : '');
+  const R = perRange(PAR.per, PAR.off), nm = esc(k.name||'아이'), ni = nm + (/[가-힣]$/.test(k.name||'') && ((k.name.charCodeAt(k.name.length-1)-0xAC00) % 28) ? '이' : '');
   stampsFor(k.id);
   const html = withS(k.st, () => {
     const cur = sumIO(R.a, R.b), prv = sumIO(R.pa, R.pb), d = cur.o - prv.o, bal = balance();
@@ -2560,7 +2577,7 @@ function renderParent(){
     const cats = {}; S.tx.forEach(t => { if(t.t==='out' && t.date >= R.a && t.date <= R.b && inPA(t)){ const c = catOf(t.cat); (cats[c.k] = cats[c.k] || {n:c.n, ch:c.ch, v:0}).v += t.amt; } });
     const cl = Object.values(cats).sort((a,b) => b.v-a.v), cmx = cl.length ? cl[0].v : 1;
     const L = lvOf(starsOf()), sk = streakOf();
-    const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number(todayStr().slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
+    const days = PAR.per==='week' ? Array.from({length:7}, (_,i) => dayShift(R.a,i)) : PAR.per==='day' ? [R.a] : Array.from({length:Number((R.cur ? todayStr() : R.b).slice(8,10))}, (_,i) => R.a.slice(0,8)+pad2(i+1));
     const full = days.filter(dd => { const c = S.chk[dd]; return c && yes(c.s) && yes(c.g); }).length;
     const cal = days.map(dd => { const c = S.chk[dd], cls = dd > todayStr() || !c ? 'e' : (yes(c.s)&&yes(c.g)) ? 'y' : (yes(c.s)||yes(c.g)) ? 'h' : 'n';
       return `<div><span>${PAR.per==='week' ? '월화수목금토일'[days.indexOf(dd)] : Number(dd.slice(8,10))}</span><i class="${cls}">${cls==='y' ? '💛' : cls==='h' ? '🤍' : cls==='n' ? '·' : ''}</i></div>`; }).join('');
@@ -2568,7 +2585,7 @@ function renderParent(){
     // 이번 기간 이야기 — 잘한 점 · 함께 이야기해 볼 점 · 곧 이뤄요
     const st = [];
     if(full) st.push(['🌱','잘했어요', `하루 마무리를 ${full}일 정직하게 다 적었어요.`]);
-    else if(cur.o === 0 && cur.i === 0) st.push(['🌱','조용한 '+(PAR.per==='day'?'하루':'기간'), '아직 기록이 없어요. 오늘 저녁에 함께 적어 볼까요?']);
+    else if(cur.o === 0 && cur.i === 0) st.push(['🌱','조용한 '+(PAR.per==='day'?'하루':'기간'), R.cur ? '아직 기록이 없어요. 오늘 저녁에 함께 적어 볼까요?' : '이때는 적은 기록이 없어요.']);
     if(cur.o > 0 && prv.o > 0 && d < 0) st.push(['🌱','잘했어요', `${R.pl}보다 ${won(-d)} 덜 썼어요.`]);
     if(over.length){ const c = over[0], ov = AK.reduce((s,a) => s + Math.max(0, -left(c.k,a)), 0); st.push(['💬','함께 이야기해 봐요', `${esc(c.n)} 칸에 계획보다 ${won(ov)} 더 썼어요.`]); }
     else { const big = S.tx.filter(t => t.t==='out' && t.date >= R.a && t.date <= R.b).sort((a,b) => b.amt-a.amt)[0];
@@ -2581,7 +2598,7 @@ function renderParent(){
       const isIn = t.t==='in', c = isIn ? null : catOf(t.cat), ch = isIn ? giverCh(t.memo, t.ch) : c.ch;
       return `<div class="w-rec" data-tx="${t.id}"><span class="w-ra" style="background:${(CH[ch]||CH.star).bg}">${face(ch)}</span><span class="w-rm">${esc(isIn ? (t.memo||'용돈') : c.n)}${stampHtml(t.id)}<small>${dl(t.date)}${tHM(t)} · ${ACS[acctOf(t)]}${t.note ? ' · '+esc(t.note) : ''}</small></span><b class="${isIn?'w-in':'w-out'}">${isIn?'+':'−'}${nf(t.amt)}</b></div>`; };
     const parts = AK.map(a => ({a, v:Math.max(0, balOf(a))})), tot = parts.reduce((s,x) => s + x.v, 0) || 1, ACOL = {cash:'#8fcfa8', card:'#9cc8f5', bank:'#ffd98a'};
-    const period = PAR.per==='day' ? '오늘' : PAR.per==='week' ? '이번 주' : '이번 달';
+    const period = R.lb;
     return `<div class="w-card w-hero"><div class="w-say">${period} ${ni}는 <b>${won(cur.i)}</b>을 받고 <b>${won(cur.o)}</b>을 썼어요.${full ? `<br>하루 마무리를 <b>${full}일</b> 정직하게 했어요 💛` : ''}</div>
         <div class="w-bal"><span class="w-j w-n">${nf(bal)}</span><small>원 · 지금 가진 돈</small></div>
         <div class="w-stack">${parts.filter(x => x.v).map(x => `<i style="width:${x.v/tot*100}%;background:${ACOL[x.a]}"></i>`).join('')}</div>
@@ -2591,7 +2608,7 @@ function renderParent(){
         <div class="w-pill y"><small>계획 지킴</small><b class="w-j">${used.length ? (used.length-over.length)+'/'+used.length+'칸' : '—'}</b><em>${over.length ? esc(over[0].n)+' 칸 조금 넘음' : used.length ? '모두 지키는 중' : '계획 없음'}</em></div></div>
       ${st.length ? `<div class="w-card"><div class="w-h"><span class="w-j">${period} 이야기</span><small>꿀꿀이가 정리했어요</small></div>${st.slice(0,3).map(x => `<div class="w-st"><span>${x[0]}</span><span><b>${x[1]}</b> · ${x[2]}</span></div>`).join('')}</div>` : ''}
       <div class="w-acts"><button id="wStamp"><i>👍</i>칭찬 도장</button><button id="wNote"><i>✉️</i>쪽지</button><button id="wMis"><i>🎯</i>미션 주기</button></div>
-      <div class="w-card"><div class="w-h"><span class="w-j">자산별로 보면</span><small>${period} · ${R.pl}와 비교</small></div>
+      <div class="w-card"><div class="w-h"><span class="w-j">자산별로 보면</span><small>${period} · ${wa(R.pl)} 비교</small></div>
         ${AS.map(x => { const dd = x.o - x.po; return `<button class="w-as ${pa===x.a?'on':''}" data-pacct="${x.a}"><span class="w-asn">${ACS[x.a]}<small>지금 ${nf(balOf(x.a))}</small></span><span class="w-asb"><em class="o"><i style="width:${x.o/amx*100}%"></i></em><em class="i"><i style="width:${x.i/amx*100}%"></i></em></span><span class="w-asv"><b class="w-out">${x.o ? '−'+nf(x.o) : '0'}</b><small class="w-in">${x.i ? '+'+nf(x.i) : ''}</small><small>${x.o||x.po ? (dd>0 ? '▲'+nf(dd) : dd<0 ? '▼'+nf(-dd) : '같음') : ''}</small></span></button>`; }).join('')}
         <p class="pr-note">빨강 쓴 돈 · 초록 받은 돈 · ▲▼ ${R.pl}보다 더/덜 쓴 돈. 줄을 누르면 아래 '어디에 썼을까'와 기록이 그 자산만 보여요.</p></div>
       <div class="w-card"><div class="w-h"><span class="w-j">어디에 썼을까?</span><small>${period}${pa==='all' ? '' : ' · '+ACS[pa]+'만'}</small></div>
@@ -2602,12 +2619,53 @@ function renderParent(){
           return `<div class="w-goal"><span class="w-ring" style="background:conic-gradient(${p>=100?'#8fcfa8':'#f48fb1'} ${p}%, var(--w-track) 0)"><span>${p}%</span></span><span class="w-gt">${esc(x.g.n)} ${x.g.ok ? '<em class="w-chip ok">허락</em>' : ''}${x.g.why ? '<small>💭 '+esc(x.g.why)+'</small>' : ''}${x.g.due ? '<small>📅 '+mdOf(x.g.due)+'까지</small>' : ''}<small>${nf(x.sv)} / ${won(x.g.price)} · ${rem ? won(rem)+' 남았어요' : '다 모았어요!'}${rem && dd > 0 ? ' · 하루 '+won(Math.ceil(rem/dd))+'씩' : ''}</small></span></div>`; }).join('') : '<p class="pr-note">모으는 중인 목표가 없어요</p>'}</div>
       <div class="w-card"><div class="w-h"><span class="w-j">${period} ${pa==='all' ? '' : ACS[pa]+' '}기록 (${rows.length}건)</span><small>아이 화면에서 길게 누르면 칭찬 도장</small></div>${rows.length ? shown.map(rowH).join('') + (rows.length > shown.length ? '<button class="pr-link" id="prMore">전체 기록 보기 ('+(rows.length-shown.length)+'건 더)</button>' : '') : '<p class="pr-note">기록이 없어요</p>'}</div>`;
   });
-  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${PAR.per==='day' ? md2(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : Number(R.a.slice(5,7))+'월'}${k.at ? ' · 아이 폰에서 '+sinceTxt(k.at)+'에 마지막으로 소식을 받았어요' : ''}</small></span></div>` + html;
+  const first = k.st.tx.reduce((m, t) => t.date && t.date < m ? t.date : m, todayStr());
+  const ym = R.a.slice(0,4)===todayStr().slice(0,4) ? '' : R.a.slice(0,4)+'년 ';
+  const when = PAR.per==='day' ? mdW(R.a) : PAR.per==='week' ? md2(R.a)+' – '+md2(R.b) : ym+Number(R.a.slice(5,7))+'월';
+  const nav = k2 => `<button class="w-nv" data-pnav="${k2}" aria-label="${k2 < 0 ? '이전' : '다음'}"${perCan(PAR.per, PAR.off, k2, first) ? '' : ' disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${k2 < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}"/></svg></button>`;
+  PAR.first = first;
+  box.innerHTML = `<div class="w-top"><span class="w-av" style="background:${CH.pig.bg}">${face('pig')}</span><span class="w-tt"><span class="w-j w-t">${ni}의 ${R.lb}</span><small>${when}${k.at ? ' · 아이 폰에서 '+sinceTxt(k.at)+'에 마지막으로 소식을 받았어요' : ''}</small></span>${nav(-1)}${nav(1)}</div><div id="prPane">` + html + '</div>';
 }
+/* 우리 아이 — 기간 앞뒤로 넘기기. 머리줄은 그대로, 그 아래 판(#prPane)만 손가락을 따라 움직인다 */
+const parStill = () => { try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return true; } };
+const parCan = k => perCan(PAR.per, PAR.off, k, PAR.first);
+let parBusy = false;
+function parStep(k){ PAR.off = Math.min(0, PAR.off + k); PAR.more = false; renderParent(); }
+const parW = () => $('parBody').clientWidth || 360, PEASE = 'cubic-bezier(.22,.8,.24,1)';
+// dir +1 = 앞으로(나중 기간): 나가는 판은 왼쪽으로, 새 판은 오른쪽에서 들어온다
+function parTransit(dir, mutate, x0){
+  const pane = $('prPane');
+  if(parStill() || parBusy || !pane || !pane.animate){ mutate(); return; }
+  parBusy = true; x0 = x0 || 0;
+  const op0 = 1 - Math.min(Math.abs(x0) / parW(), .55);
+  pane.style.transition = 'none'; pane.style.transform = ''; pane.style.opacity = '';
+  pane.animate([{opacity:op0, transform:`translateX(${x0}px)`}, {opacity:0, transform:`translateX(${-dir*parW()}px)`}], {duration:150, easing:'ease-in', fill:'forwards'});
+  setTimeout(() => { mutate(); const np = $('prPane');
+    if(np) np.animate([{opacity:0, transform:`translateX(${dir*parW()}px)`}, {opacity:1, transform:'none'}], {duration:300, easing:PEASE});
+    parBusy = false; }, 150);
+}
+(() => { const el = $('parBody'); let sx = 0, sy = 0, on = false, lock = false, st = 0;
+  const follow = x => { const p = $('prPane'); if(!p) return; const k = parCan(x < 0 ? 1 : -1) ? 1 : .22;     // 더 갈 데 없는 쪽은 고무줄처럼
+    const px = x * k; p.style.transition = 'none'; p.style.transform = `translateX(${px}px)`; p.style.opacity = 1 - Math.min(Math.abs(px) / parW(), .55); };
+  const release = () => { const p = $('prPane'); if(!p) return; p.style.transition = `transform .26s ${PEASE},opacity .26s`; p.style.transform = ''; p.style.opacity = ''; };
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; on = e.touches.length===1 && !parBusy && !!$('prPane') && !e.target.closest('.w-emo'); lock = false; sx = t.clientX; sy = t.clientY; st = Date.now(); }, {passive:true});
+  el.addEventListener('touchmove', e => { if(!on) return; const t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if(!lock){ if(Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)){ on = false; return; }     // 세로 = 스크롤
+      if(Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)*1.2) lock = true; else return; }
+    follow(dx); }, {passive:true});
+  el.addEventListener('touchend', e => { if(!on) return; on = false; if(!lock) return;
+    const t = e.changedTouches[0], x = t.clientX - sx, y = t.clientY - sy, k = x > 0 ? -1 : 1;     // 오른쪽으로 밀면 이전
+    const fast = Math.abs(x) >= 40 && Math.abs(x) / Math.max(1, Date.now() - st) > .5;
+    if(Math.abs(x) < Math.abs(y)*1.2 || (Math.abs(x) < parW()*.25 && !fast) || !parCan(k)){ release(); return; }
+    buzz(6); parTransit(k, () => parStep(k), x); }, {passive:true});
+  el.addEventListener('touchcancel', () => { if(lock) release(); on = false; }, {passive:true});
+})();
 $('par').addEventListener('click', e => {
   const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.pacct){ PAR.acct = PAR.acct===b.dataset.pacct && b.dataset.pacct!=='all' ? 'all' : b.dataset.pacct; PAR.more = false; renderParent(); return; }
-  if(b.dataset.per){ PAR.per = b.dataset.per; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
+  if(b.dataset.pnav){ const k = Number(b.dataset.pnav); if(parCan(k)) parTransit(k, () => parStep(k)); return; }
+  if(b.dataset.per && b.dataset.per===PAR.per){ if(PAR.off < 0) parTransit(1, () => { PAR.off = 0; PAR.more = false; renderParent(); }); return; }
+  if(b.dataset.per){ PAR.per = b.dataset.per; PAR.off = 0; PAR.more = false; document.querySelectorAll('#parSeg button').forEach(x => x.classList.toggle('on', x===b)); renderParent(); }
   else if(b.dataset.k){ PAR.sel = b.dataset.k; PAR.more = false; refreshParent(); }
   else if(b.id==='prMore'){ PAR.more = true; renderParent(); }
   else if(b.id==='prKidE') kidCodeSheet(false);
