@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1023-11 -->
+<!-- KAIROS v. 26-1023-12 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -388,7 +388,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-11';
+const APP_VERSION='v. 26-1023-12';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -628,7 +628,7 @@ function sizeDial(){
 function drawAll(){
   const r=R(), ms=remainMs(), col=colorHex(r.color);
   sizeDial();
-  drawDial($('dial'),dialSize,ms/60000,col,r.state!=='run'||dragging,{total:r.total/60000,run:r.state==='run'});
+  drawDial($('dial'),dialSize,(dragging&&C().lv==='simple')?dragVal:ms/60000,col,r.state!=='run'||dragging,{total:r.total/60000,run:r.state==='run'});
   if(C().lv==='power'){const t=Math.floor(ms%1000/100);$('digits').innerHTML=(r.state==='run'?fmt(Math.floor(ms/1000)*1000):fmt(ms))+`<small>.${r.state==='run'?t:0}</small>`;}
   else $('digits').textContent=fmt(ms);
   if(C().lv==='power')drawTech(r,ms);
@@ -697,7 +697,7 @@ function drawStrip(){
 function drawPresets(){
   const r=R();
   $('presets').innerHTML=S.presets.map(p=>`<button class="chip${r.pid===p.id&&!r.rt?' on':''}" data-pid="${p.id}"><span class="dot" style="background:${colorHex(p.color)}"></span>${esc(pLabel(p))}${p.name?`<small>${p.min}분</small>`:''}</button>`).join('')
-    +`<button class="chip add" id="addPreset">＋ 지금 시간으로 만들기</button>`;
+    +`<button class="chip add" id="addPreset" aria-label="지금 시간으로 만들기">＋${C().lv==='simple'?'':' 지금 시간으로 만들기'}</button>`;
 }
 
 // ── 타이머 동작 ──
@@ -1296,7 +1296,7 @@ function openSettings(){
 }
 function applyLv(){}
 function reopenSettings(){const b=$('sheetBody'),y=b.scrollTop;if(!$('sheet').classList.contains('on'))return;openSettings();b.scrollTop=y;}
-function applyLook(){document.body.classList.remove('lv-simple','lv-mid','lv-power');document.body.classList.add('lv-'+C().lv);drawAll();if($('desk').classList.contains('on'))drawDesk();}
+function applyLook(){document.body.classList.remove('lv-simple','lv-mid','lv-power');document.body.classList.add('lv-'+C().lv);drawAll();drawPresets();if($('desk').classList.contains('on'))drawDesk();}
 $('gear').onclick=openSettings;
 
 // ── 탁상 모드 — 거치대에 세워 두고 멀리서 보는 화면 ──
