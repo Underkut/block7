@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1023-13 -->
+<!-- KAIROS v. 26-1024-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -175,29 +175,59 @@ html.isdark #pdz .dimz{background:rgba(255,255,255,.35)}
 .addrow{display:flex;flex-wrap:wrap;gap:6px}
 .addrow .chip{height:34px;font-size:12px}
 
-/* 설정 */
-.srow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bd)}
+/* 설정 — 맨 위 모양 고르기, 그 아래 묶음 카드. 줄 앞 그림은 선만 */
+.looks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:2px}
+.look{background:var(--bg);border-radius:18px;padding:14px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:5px;transition:box-shadow .2s,transform .12s}
+.look:active{transform:scale(.97)}
+.look canvas{width:64px;height:64px;margin-bottom:4px}
+.look b{font-weight:400;font-size:13.5px}
+.look small{font-size:10.5px;color:var(--tx3);line-height:1.35;text-align:center}
+.look.on{box-shadow:inset 0 0 0 1.5px var(--tx)}
+.sgh{font-size:12px;color:var(--tx3);letter-spacing:.06em;margin:24px 6px 8px}
+.sgrp{background:var(--bg);border-radius:18px;padding:0 14px}
+.srow{display:flex;align-items:center;gap:12px;padding:14px 0}
+.sgrp>*+.srow{border-top:1px solid var(--bd)}
+.srow .si{flex:none;color:var(--tx3);align-self:flex-start;margin-top:-1px}
 .srow .tx{flex:1;min-width:0}
-.srow .l{font-size:14px;font-weight:400}
+.srow .l{font-size:14.5px;font-weight:400;line-height:1.3}
 .srow .d{font-size:12px;color:var(--tx3);margin-top:3px;line-height:1.5}
-.lv-hide{display:none!important}
+.srow .d em{font-style:normal;color:var(--tx2)}
+.srow.stack{flex-wrap:wrap;row-gap:10px}
+.srow.stack .seg{flex:0 0 calc(100% - 32px);margin-left:32px}
+.srow.stack .seg button{flex:1}
+.srow.fh{cursor:pointer}
+.srow .sv{font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px;white-space:nowrap;max-width:44%;overflow:hidden;text-overflow:ellipsis}
+.srow .chev{flex:none;color:var(--tx3);margin-left:-4px;transition:transform .3s var(--ease-in)}
+.srow.fh.open .chev{transform:rotate(90deg)}
+.tdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s var(--ease-in)}
+.fold.open{grid-template-rows:1fr}
+.fold>div{overflow:hidden;min-height:0}
+.fold .fi{padding:2px 0 16px}
+.sgl{font-size:11px;color:var(--tx3);letter-spacing:.04em;margin:12px 0 7px}
+.sgl:first-child{margin-top:2px}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:999px;background:var(--s2);color:var(--tx3);margin-left:4px;vertical-align:2px;font-weight:400}
+.mine{margin-top:14px;font-size:12.5px;color:var(--tx2);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px}
+.mine span{display:flex;gap:12px}
+.mine small{flex-basis:100%;font-size:11.5px;color:var(--tx3)}
+.howto{margin:0;padding:0 0 0 16px;font-size:12.5px;color:var(--tx2);line-height:1.7}
+.howto li+li{margin-top:6px}
+.howto b{color:var(--tx);font-weight:500}
+.sfoot{text-align:center;font-size:11.5px;color:var(--tx3);line-height:1.8;margin:26px 0 6px}
 .tog{width:46px;height:28px;border-radius:14px;background:var(--s2);position:relative;flex:none;transition:background .2s}
-.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--tx3);transition:transform .2s var(--ease-in),background .2s}
-.tog.on{background:var(--ac)}
-.tog.on::after{transform:translateX(18px);background:#fff}
+.sgrp .tog{background:color-mix(in srgb,var(--tx) 12%,transparent)}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s var(--ease-in)}
+.tog.on,.sgrp .tog.on{background:var(--ac)}
+.tog.on::after{transform:translateX(18px)}
 .tog[disabled]{opacity:.35}
-.seg{display:flex;background:var(--s2);border-radius:11px;padding:3px;gap:2px;flex:none}
-.seg button{padding:0 11px;height:30px;border-radius:8px;font-size:12px;color:var(--tx2)}
+.seg{display:flex;background:color-mix(in srgb,var(--tx) 7%,transparent);border-radius:11px;padding:3px;gap:2px;flex:none}
+.seg button{padding:0 11px;height:32px;border-radius:8px;font-size:12.5px;color:var(--tx2);transition:background .2s,color .2s}
 .seg button.on{background:var(--s1);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.lvset{display:flex;gap:2px}
-.thgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
-.th{border-radius:12px;height:62px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:7px;text-align:left}
+.thgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.th{border-radius:12px;height:58px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:7px 8px;text-align:left;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tx) 8%,transparent)}
 .th .n{font-size:10px;line-height:1.2;font-weight:400}
 .th .a{position:absolute;top:8px;right:8px;width:14px;height:14px;border-radius:50%}
 .th.on::after{content:"";position:absolute;inset:0;border-radius:12px;box-shadow:inset 0 0 0 2px var(--tx)}
-.thg{font-size:11px;color:var(--tx3);letter-spacing:.08em;margin-top:14px}
-.sian{background:var(--bg);border-radius:14px;padding:12px 14px;margin-top:18px;font-size:12.5px;color:var(--tx2);line-height:1.7}
-.sian b{color:var(--tx);font-weight:500}
 
 /* 끝날 때 화면 깜빡임 · 토스트 · 탁상 모드 */
 .flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:60}
@@ -281,22 +311,68 @@ body.lv-simple .chip .dot{width:6px;height:6px}
 body.lv-simple .chip small{display:none}
 body.lv-simple .rstrip .rbar{height:3px}
 
-body.lv-power .digits,body.lv-power .sub,body.lv-power .lapchip,body.lv-power .adj button,body.lv-power .chip,body.lv-power .rstrip,body.lv-power .desk .info{font-family:var(--f-mono)}
+/* 미드 — 한 덩이 문자판 · ± 는 한 줄 묶음 · 시작 단추는 색 그림자 · 프리셋은 길이만큼의 작은 파이 */
+.chip .pie{display:none}
+body.lv-mid .tpage{gap:12px}
+body.lv-mid .digits{font-size:clamp(50px,15vw,68px);letter-spacing:-.02em}
+body.lv-mid .sub{color:var(--tx2)}
+body.lv-mid .lapchip{padding:2px 10px}
+body.lv-mid .adj{gap:0;max-width:340px;background:var(--s2);border-radius:16px;padding:3px}
+body.lv-mid .adj button{background:none;height:40px;border-radius:13px;color:var(--tx2);position:relative;font-weight:300;font-size:15.5px}
+body.lv-mid .adj button+button::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:1px;background:var(--bd)}
+body.lv-mid .adj button.hot{color:#fff;font-weight:400}
+body.lv-mid[data-st="done"] .adj{gap:6px;background:none;padding:0}
+body.lv-mid[data-st="done"] .adj button[disabled]{display:none}
+body.lv-mid .adj button.hot::before,body.lv-mid .adj button.hot+button::before{display:none}
+body.lv-mid .mainrow{gap:44px;margin-top:2px}
+body.lv-mid .play{width:72px;height:72px;box-shadow:0 12px 26px -8px color-mix(in srgb,var(--c) 70%,transparent)}
+body.lv-mid .chip.pc{background:var(--s1);box-shadow:0 1px 2px rgba(0,0,0,.06),0 0 0 1px color-mix(in srgb,var(--tx) 5%,transparent);height:40px;border-radius:20px;padding:0 15px 0 10px;gap:8px}
+body.lv-mid .chip.pc .dot{display:none}
+body.lv-mid .chip.pc .pie{display:block;width:18px;height:18px;border-radius:50%;flex:none;background:color-mix(in srgb,var(--pc) 20%,transparent)}
+body.lv-mid .chip.pc .pie i{display:block;width:100%;height:100%;border-radius:50%;background:conic-gradient(var(--pc) var(--p),transparent 0)}
+body.lv-mid .pc.on{box-shadow:inset 0 0 0 1.5px var(--pc)}
+body.lv-mid .pc.add{background:none;box-shadow:inset 0 0 0 1px var(--bd);padding:0 15px}
+body.lv-mid .hint{opacity:.85}
+
+/* 파워 — 계기판: 고정폭 글꼴 · 각진 모서리 · 판독표는 숫자판처럼 */
+body.lv-power .digits,body.lv-power .sub,body.lv-power .lapchip,body.lv-power .adj button,body.lv-power .chip.pc,body.lv-power .rstrip,body.lv-power .desk .info{font-family:var(--f-mono)}
 body.lv-power .digits{font-weight:300;letter-spacing:-.03em;font-size:clamp(40px,12vw,56px)}
 body.lv-power .digits small{font-size:.42em;color:var(--tx3);margin-left:2px}
 body.lv-power .sub{font-size:11.5px;letter-spacing:.04em;color:var(--tx3)}
 body.lv-power .lapchip{border-radius:3px;font-size:10px;letter-spacing:.12em}
-body.lv-power .adj button,body.lv-power .chip{border-radius:4px}
-body.lv-power .play{border-radius:10px}
-body.lv-power .tech{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;width:100%;max-width:380px;background:var(--bd);border:1px solid var(--bd);border-radius:4px;overflow:hidden;font-family:var(--f-mono)}
-body.lv-power .tech div{background:var(--bg);padding:5px 8px;display:flex;flex-direction:column;gap:1px}
-body.lv-power .tech span{font-size:9px;letter-spacing:.14em;color:var(--tx3)}
-body.lv-power .tech b{font-weight:400;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--tx)}
+body.lv-power .readout{gap:4px}
+body.lv-power .stag{font-style:normal;font-size:10px;letter-spacing:.16em;padding:2px 7px;border-radius:4px;margin-right:8px;vertical-align:1px;background:var(--s2);color:var(--tx2)}
+body.lv-power .stag.run{background:var(--c);color:#fff}
+body.lv-power .adj{flex:none;gap:1px;max-width:380px;background:var(--bd);border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--bd)}
+body.lv-power .adj button{border-radius:0;background:var(--s1);height:42px;font-size:14px;color:var(--tx)}
+body.lv-power .adj button:active{transform:none;background:var(--s2)}
+body.lv-power .adj button[disabled]{opacity:1;color:var(--tx3)}
+body.lv-power .adj button.hot{color:#fff}
+body.lv-power .mainrow{gap:40px}
+body.lv-power .play{width:64px;height:64px;border-radius:18px}
+body.lv-power .chip.pc{border-radius:8px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);padding:0 12px 0 10px;gap:8px;font-size:12.5px}
+body.lv-power .chip.pc .dot{width:3px;height:16px;border-radius:2px}
+body.lv-power .pc.on{box-shadow:inset 0 0 0 1.5px var(--tx)}
+body.lv-power .pc.add{box-shadow:inset 0 0 0 1px var(--bd);background:none}
+/* 들어 올린 칩은 어느 모양이든 같은 그림자로 뜬다 */
+body.lv-mid .pc.pghost,body.lv-power .pc.pghost{box-shadow:0 10px 26px rgba(0,0,0,.26)}
+body.lv-power .tech{display:block;width:100%;max-width:380px;font-family:var(--f-mono);padding:12px 2px 2px;border-top:1px solid var(--bd)}
+.tech .tg{display:grid;grid-template-columns:repeat(3,1fr);row-gap:10px}
+.tech .tg div{padding:0 10px;border-left:1px solid var(--bd);display:flex;flex-direction:column;gap:2px;min-width:0}
+.tech .tg div:nth-child(3n+1){border-left:0;padding-left:0}
+.tech span{font-size:9px;letter-spacing:.16em;color:var(--tx3)}
+.tech b{font-weight:400;font-size:14px;font-variant-numeric:tabular-nums;color:var(--tx);white-space:nowrap}
+.tech .tp{display:flex;align-items:center;gap:10px;margin-top:12px}
+.tech .tp .tr{flex:1;height:3px;background:var(--s2);border-radius:2px;position:relative;overflow:hidden}
+.tech .tp .tr i{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.tech .tp .tr u{position:absolute;top:0;bottom:0;width:1px;background:var(--bg)}
+.tech .tp b{font-size:12px;min-width:48px;text-align:right}
 body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04em}
-.sounds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 2px}
-.sounds button{height:40px;border-radius:10px;background:var(--s2);font-size:13px;color:var(--tx2)}
+.sounds{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sounds button{height:40px;border-radius:11px;background:var(--s1);font-size:13px;color:var(--tx2);transition:background .2s,color .2s,transform .12s}
+.sounds button:active{transform:scale(.96)}
 .sounds button.on{background:var(--tx);color:var(--bg)}
-.lnk{color:var(--ac);font-size:12px;text-decoration:underline;text-underline-offset:2px}
+.lnk{color:var(--ac);font-size:12.5px}
 @media (prefers-reduced-motion: reduce){
   body.lv-simple .swap>*,.dots i,
   .track,.sheet,.toast,.tog::after,.desk .bgl,.desk .info,#pdz *,.cfm,.cfm .card{transition:none!important}
@@ -388,7 +464,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-13';
+const APP_VERSION='v. 26-1024-1';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -569,7 +645,7 @@ const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim
 // ── 원 그리기 — 심플 · 미드 · 파워 (60분 한 바퀴 · 세 바퀴까지) ──
 function drawDial(cv,size,minutes,color,showKnob,ex){
   ex=ex||{};
-  const dpr=Math.min(3,window.devicePixelRatio||1),look=C().lv;
+  const dpr=Math.min(3,window.devicePixelRatio||1),look=ex.look||C().lv;
   if(cv.width!==Math.round(size*dpr)){cv.width=Math.round(size*dpr);cv.height=Math.round(size*dpr);cv.style.width=size+'px';cv.style.height=size+'px';}
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,size,size);
   const cx=size/2,cy=size/2;
@@ -588,35 +664,61 @@ function drawDial(cv,size,minutes,color,showKnob,ex){
     if(rem>0)pie(r,color,rem);
     return;
   }
-  const power=look==='power';
-  const rFace=size*.40,rW=size*.365,rNum=size*.465;
-  disc(rFace,s1);
-  if(power){
-    // 십자선 · 바깥 진행 고리 · 초침
-    g.strokeStyle=bd;g.lineWidth=1;g.beginPath();g.moveTo(cx-rFace,cy);g.lineTo(cx+rFace,cy);g.moveTo(cx,cy-rFace);g.lineTo(cx,cy+rFace);g.stroke();
-    g.beginPath();g.arc(cx,cy,rFace*.5,0,Math.PI*2);g.stroke();
-  }
-  g.lineCap=power?'butt':'round';
-  for(let i=0;i<(power?120:60);i++){
-    const mm=power?i/2:i,big=mm%5===0,half=power&&i%2===1;
-    const [x1,y1]=pt(mm,rFace-2),[x2,y2]=pt(mm,rFace-(big?size*.034:half?size*.008:size*.016));
-    g.strokeStyle=big?tx2:tx3;g.lineWidth=big?1.6:1;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
-  }
-  g.fillStyle=tx2;g.font=power?`400 ${Math.round(size*.036)}px ${css('--f-mono')}`:`300 ${Math.round(size*.046)}px ${getComputedStyle(document.body).fontFamily}`;
-  g.textAlign='center';g.textBaseline='middle';
-  for(let i=0;i<60;i+=5){const [x,y]=pt(i,rNum);g.fillText(power?String(i).padStart(2,'0'):String(i),x,y);}
-  if(laps>0)disc(rW,mix(color,s1,.62));
-  if(rem>0)pie(rW,color,rem);
-  if(power){
-    const ro=size*.425,tot=ex.total||0,f=tot>0?Math.max(0,Math.min(1,1-minutes/tot)):0;
-    g.lineWidth=2;g.strokeStyle=bd;g.beginPath();g.arc(cx,cy,ro,0,Math.PI*2);g.stroke();
-    if(f>0){g.strokeStyle=color;g.beginPath();const a0=-Math.PI/2;g.arc(cx,cy,ro,a0,a0+dir*f*Math.PI*2,dir<0);g.stroke();}
-    if(ex.run){const sec=(Date.now()/1000)%60,[hx,hy]=pt(sec,rW);g.strokeStyle=tx;g.lineWidth=1;g.beginPath();g.moveTo(cx,cy);g.lineTo(hx,hy);g.stroke();}
-    disc(size*.012,tx);
+  const dark=document.documentElement.classList.contains('isdark');
+  const line=(a,b,w,c)=>{g.strokeStyle=c;g.lineWidth=w;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();};
+  const shade=(blur,y,a)=>{g.shadowColor=`rgba(0,0,0,${dark?a*2.6:a})`;g.shadowBlur=blur*dpr;g.shadowOffsetY=y*dpr;};
+  const noShade=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0;};
+  const font=(w,px,mono)=>`${w} ${Math.round(px)}px ${mono?css('--f-mono'):getComputedStyle(document.body).fontFamily}`;
+  // 바늘 선 — 부채꼴의 움직이는 쪽 가장자리를 조금 짙게 (원이 '판' 이 아니라 '물건' 으로 보이게)
+  const hand=(r,w)=>{if(rem<=0||rem>=LAP)return;line([cx,cy],pt(rem,r),w,mix(color,'#000000',.18));};
+  if(look==='mid'){
+    // 미드 — 문자판 한 덩이: 둥근 판(그림자) 위에 숫자 · 눈금 · 부채꼴이 다 들어 있다
+    const rB=size*.475,rTk=size*.392,rW=size*.352,rNum=size*.432;
+    shade(size*.05,size*.012,.07);disc(rB,s1);noShade();
+    disc(rTk,mix(s1,tx,dark?.035:.025));
+    g.lineCap='round';
+    for(let i=0;i<60;i++){const big=i%5===0;line(pt(i,rTk-size*.006),pt(i,rTk-(big?size*.03:size*.016)),big?1.5:1,big?tx2:mix(tx3,s1,.35));}
+    g.fillStyle=tx3;g.font=font(300,size*.043);g.textAlign='center';g.textBaseline='middle';
+    for(let i=0;i<60;i+=5){const [x,y]=pt(i,rNum);g.fillStyle=i%15===0?tx2:tx3;g.fillText(String(i),x,y+size*.002);}
+    if(laps>0)disc(rW,mix(color,s1,.66));
+    if(rem>0)pie(rW,color,rem);
+    hand(rW,1.5);
+    if(showKnob&&m>0){const [kx,ky]=pt(rem,rW);shade(size*.02,size*.005,.18);g.fillStyle=s1;g.beginPath();g.arc(kx,ky,size*.034,0,Math.PI*2);g.fill();noShade();
+      g.fillStyle=color;g.beginPath();g.arc(kx,ky,size*.016,0,Math.PI*2);g.fill();}
+    shade(size*.02,size*.006,.14);disc(size*.052,s1);noShade();disc(size*.02,color);
     return;
   }
-  if(showKnob&&m>0){const [kx,ky]=pt(rem,rW);g.fillStyle=color;g.beginPath();g.arc(kx,ky,size*.028,0,Math.PI*2);g.fill();g.fillStyle=s1;g.beginPath();g.arc(kx,ky,size*.012,0,Math.PI*2);g.fill();}
-  disc(size*.05,bg);disc(size*.03,mix(color,bg,.15));
+  // 파워 — 계기판: 바깥 진행 고리 · 30초 눈금 · 처음 정한 자리 표시 · 초침
+  const rO=size*.478,rB=size*.452,rNum=size*.372,rW=size*.33,tot=ex.total||0;
+  const f=tot>0?Math.max(0,Math.min(1,1-minutes/tot)):0,a0=-Math.PI/2;
+  g.lineCap='butt';
+  g.lineWidth=size*.012;g.strokeStyle=mix(bd,bg,.2);g.beginPath();g.arc(cx,cy,rO,0,Math.PI*2);g.stroke();
+  if(f>0){g.strokeStyle=color;g.beginPath();g.arc(cx,cy,rO,a0,a0+dir*f*Math.PI*2,dir<0);g.stroke();}
+  for(let q=1;q<4;q++)line(pt(q*15,rO-size*.009),pt(q*15,rO+size*.009),1,bg);   // 진행 고리 4분의 1 마디
+  disc(rB,s1);
+  g.strokeStyle=bd;g.lineWidth=1;g.beginPath();g.arc(cx,cy,rB-.5,0,Math.PI*2);g.stroke();
+  // 십자선 · 안쪽 고리 (아주 옅게)
+  const hair=mix(bd,s1,.35);
+  line([cx-rW,cy],[cx+rW,cy],1,hair);line([cx,cy-rW],[cx,cy+rW],1,hair);
+  g.strokeStyle=hair;g.beginPath();g.arc(cx,cy,rW*.5,0,Math.PI*2);g.stroke();
+  for(let i=0;i<120;i++){const mm=i/2,big=mm%5===0,half=i%2===1;
+    line(pt(mm,rB-size*.012),pt(mm,rB-size*(big?.052:half?.02:.032)),big?1.6:1,big?tx:half?mix(tx3,s1,.4):tx3);}
+  g.font=font(400,size*.036,true);g.textAlign='center';g.textBaseline='middle';
+  for(let i=0;i<60;i+=5){const [x,y]=pt(i,rNum);g.fillStyle=i===0?tx:tx2;g.fillText(String(i).padStart(2,'0'),x,y+size*.002);}
+  if(laps>0)disc(rW,mix(color,s1,.7));
+  if(rem>0)pie(rW,color,rem);
+  hand(rW,1.5);
+  // 처음 정한 자리 — 테 위 작은 세모 (얼마나 왔는지 한눈에)
+  if(tot>0&&f>.002){
+    let tm=tot%LAP;if(tm<1e-6&&tot>0)tm=LAP;
+    const ang=dir*tm/60*Math.PI*2,[tx_,ty_]=pt(tm,rB-size*.004),s=size*.022;
+    g.save();g.translate(tx_,ty_);g.rotate(ang);g.fillStyle=color;g.beginPath();g.moveTo(0,s*.9);g.lineTo(-s*.62,-s*.3);g.lineTo(s*.62,-s*.3);g.closePath();g.fill();g.restore();
+  }
+  if(ex.run){
+    const sec=(Date.now()/1000)%60,tip=pt(sec,rB-size*.06),tail=pt(sec+30,size*.07);
+    g.lineCap='round';line(tail,tip,1.2,tx);g.fillStyle=color;g.beginPath();g.arc(tip[0],tip[1],size*.011,0,Math.PI*2);g.fill();
+  }
+  disc(size*.026,tx);disc(size*.01,s1);
 }
 let dialSize=300;
 function sizeDial(){
@@ -642,7 +744,10 @@ function drawAll(){
   if(C().lv==='simple'){   // 심플은 짧게 — 그때 필요한 한 마디만
     sub=r.state==='run'?`${clock(r.endAt)}에 끝나요`:r.state==='pause'?'멈춤':r.state==='done'?'끝났어요':r.state==='wait'?`다음: ${r.label||fmt(r.total)}`:(ms>0?(r.label||''):'원을 끌어 시간을 정하세요');
   }
-  $('sub').textContent=sub;
+  if(C().lv==='power'){   // 파워는 앞에 상태 꼬리표
+    const tag={run:'RUN',pause:'HOLD',done:'DONE',wait:'NEXT',idle:'READY'}[r.state];
+    $('sub').innerHTML=`<i class="stag${r.state==='run'?' run':''}">${tag}</i>${esc(sub)}`;
+  }else $('sub').textContent=sub;
   // 심플: 같은 자리에 그때 필요한 것 하나만 (A안, HB 2026-10-23)
   //   시작 전 → ▶ + 프리셋 줄 · 도는 중 → ❚❚ + ±줄 · 잠깐 멈춤 → ↺ ▶ + ±줄 · 끝 → ↺ ↻ + '더' 단추
   {
@@ -670,13 +775,15 @@ function drawAll(){
   drawStrip();
   if($('desk').classList.contains('on'))drawDesk();
 }
+// 파워 판독표 — 시작 · 끝 · 정한 시간 / 흐른 시간 · 바퀴 · 차례, 그 아래 진행 막대(4분의 1 마디)
 function drawTech(r,ms){
-  const run=r.state==='run',tot=r.total||0,el=Math.max(0,tot-ms);
-  const st=run?clock(r.endAt-tot):'--:--',en=run?clock(r.endAt):(ms>0?clock(Date.now()+ms):'--:--');
+  const run=r.state==='run',tot=r.total||0,el=Math.max(0,tot-ms),pc=tot?el/tot*100:0;
+  const hm24=t=>{const d=new Date(t);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+  const st=run?hm24(r.endAt-tot):'--:--',en=run?hm24(r.endAt):(ms>0?hm24(Date.now()+ms):'--:--');
   const lap=ms>0?Math.ceil(ms/60000/LAP-1e-9):0;
-  const cells=[['START',st.replace(/^오[전후] /,'')],['END',en.replace(/^오[전후] /,'')],['ELAPSED',fmt(el)],
-    ['PROGRESS',(tot?el/tot*100:0).toFixed(1)+'%'],['LAP',lap+'/3'],['SEQ',r.rt?`${r.rt.idx+1}/${r.rt.seq.length}`:'—']];
-  $('tech').innerHTML=cells.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('');
+  const cells=[['START',st],['END',en],['SET',fmt(tot)],['ELAPSED',fmt(el)],['LAP',lap+'/3'],['SEQ',r.rt?`${r.rt.idx+1}/${r.rt.seq.length}`:'—']];
+  $('tech').innerHTML=`<div class="tg">${cells.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>`
+    +`<div class="tp"><span>PROGRESS</span><div class="tr"><i style="width:${pc.toFixed(2)}%;background:var(--c)"></i><u style="left:25%"></u><u style="left:50%"></u><u style="left:75%"></u></div><b>${pc.toFixed(1)}%</b></div>`;
 }
 function drawStrip(){
   const r=R(),st=$('rstrip');
@@ -696,8 +803,10 @@ function drawStrip(){
 }
 function drawPresets(){
   const r=R();
-  $('presets').innerHTML=S.presets.map(p=>`<button class="chip${r.pid===p.id&&!r.rt?' on':''}" data-pid="${p.id}"><span class="dot" style="background:${colorHex(p.color)}"></span>${esc(pLabel(p))}${p.name?`<small>${p.min}분</small>`:''}</button>`).join('')
-    +`<button class="chip add" id="addPreset" aria-label="지금 시간으로 만들기">＋${C().lv==='simple'?'':' 지금 시간으로 만들기'}</button>`;
+  // 미드는 점 대신 그 길이만큼의 작은 파이(한 시간 = 꽉 찬 원), 파워는 세로 막대 — 모양마다 CSS 가 하나만 보인다
+  const flip=C().dir==='ccw'?' style="transform:scaleX(-1)"':'';
+  $('presets').innerHTML=S.presets.map(p=>{const c=colorHex(p.color);return `<button class="chip pc${r.pid===p.id&&!r.rt?' on':''}" data-pid="${p.id}" style="--pc:${c}"><span class="dot" style="background:${c}"></span><span class="pie"${flip}><i style="--p:${Math.min(100,p.min/LAP*100).toFixed(1)}%"></i></span>${esc(pLabel(p))}${p.name?`<small>${p.min}분</small>`:''}</button>`;}).join('')
+    +`<button class="chip pc add" id="addPreset" aria-label="지금 시간으로 만들기">＋${C().lv==='simple'?'':' 지금 시간으로 만들기'}</button>`;
 }
 
 // ── 타이머 동작 ──
@@ -1245,51 +1354,112 @@ function renderStats(){
   const b=$('clrEx');if(b)b.onclick=()=>{S.log=S.log.filter(l=>!l.ex);save();renderStats();toast('예시 기록을 지웠어요\n이제 실제 기록만 보여요');};
 }
 
-// ── 설정 (이지 · 미드 · 파워) ──
+// ── 설정 — 묶음 카드: 모양 · 원 · 끝날 때 · 도는 동안 · 테마 · 쓰는 법 ──
 function tog(k,disabled){return `<button class="tog${C()[k]?' on':''}" data-tog="${k}" ${disabled?'disabled':''} aria-label="켜기/끄기"></button>`;}
 function seg(k,opts){return `<div class="seg">${opts.map(([v,l])=>`<button data-seg="${k}" data-v="${v}" class="${C()[k]===v?'on':''}">${l}</button>`).join('')}</div>`;}
 const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-function openSettings(){
-  const groups=[['base','기본'],['spark','SPARK — 선명하고 생동감 있는'],['breath','BREATH — 부드럽고 차분한']];
+// 줄 앞 작은 그림 — 선만, 테두리 · 상자 없이
+const SI=(d)=>`<svg class="si" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const ICO={
+  dir:'<path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M18 3v4h-4"/>',
+  snap:'<path d="M6 4v7a6 6 0 0 0 12 0V4"/><path d="M6 8h3M15 8h3"/>',
+  sound:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10.5 20.5a1.6 1.6 0 0 0 3 0"/>',
+  grow:'<path d="M4 18h2M8.5 18v-3M13 18v-6M17.5 18V8"/>',
+  voice:'<path d="M5 6.5h14v9H11l-4 3v-3H5z"/><path d="M9 11h.01M12 11h.01M15 11h.01"/>',
+  flash:'<path d="M13 3L5.5 13H12l-1 8 7.5-10H12z"/>',
+  vib:'<rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4.5 9v6M19.5 9v6"/>',
+  lock:'<rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  wake:'<circle cx="12" cy="12" r="3.6"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+  desk:'<path d="M14 4h6v6"/><path d="M20 4l-6.5 6.5"/><path d="M10 20H4v-6"/><path d="M4 20l6.5-6.5"/>',
+  next:'<circle cx="5.5" cy="12" r="2.5"/><circle cx="18.5" cy="12" r="2.5"/><path d="M8 12h8M13.5 9l2.5 3-2.5 3"/>',
+  mode:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" stroke="none"/>',
+  theme:'<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-1 .8-1.6 1.8-1.6h2.1a4 4 0 0 0 4-4C20.5 6.6 16.7 3.5 12 3.5z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/>',
+  help:'<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.6a2.4 2.4 0 1 1 3.3 2.2c-.6.3-1 .8-1 1.5v.5"/><path d="M12 16.8h.01"/>'
+};
+const CHEV='<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+// 한 줄 — ctl 이 오른쪽(스위치) · below 가 아래(고르기 줄)
+const srow=(ic,l,d,ctl,below)=>`<div class="srow${below?' stack':''}">${SI(ICO[ic])}<div class="tx"><div class="l">${l}</div>${d?`<div class="d">${d}</div>`:''}</div>${ctl||''}${below||''}</div>`;
+// 접었다 펴는 줄 — 펴 둔 것은 다시 그려도 펴진 채로
+const FOLD=new Set();
+const foldRow=(k,ic,l,d,val,inner)=>`<div class="srow fh${FOLD.has(k)?' open':''}" data-fold="${k}" role="button" aria-expanded="${FOLD.has(k)}">${SI(ICO[ic])}<div class="tx"><div class="l">${l}</div>${d?`<div class="d">${d}</div>`:''}</div><span class="sv" id="sv-${k}">${val}</span>${CHEV}</div>
+  <div class="fold${FOLD.has(k)?' open':''}" id="fold-${k}"><div><div class="fi">${inner}</div></div></div>`;
+// 끝 소리 묶음 — 결이 같은 것끼리
+const SOUND_GROUPS=[['맑은 소리',['chime','kalimba','bell','epiano','marimba','glock','box','harp','guitar']],['깊은 울림',['bowl','temple','church']],['자연',['wave','rain','bird']],['또렷한 알림',['beep','kitchen']],['그 밖',['mine','none']]];
+function soundsHTML(){
+  const seen=new Set(SOUND_GROUPS.flatMap(g=>g[1])),rest=Object.keys(SOUNDS).filter(k=>!seen.has(k));
+  const gs=SOUND_GROUPS.map(([n,ks],i)=>[n,i===SOUND_GROUPS.length-1?rest.concat(ks):ks]);
+  return gs.map(([n,ks])=>`<div class="sgl">${n}</div><div class="sounds">${ks.filter(k=>SOUNDS[k]).map(k=>`<button data-snd="${k}" class="${C().sound===k?'on':''}">${SOUNDS[k][0]}</button>`).join('')}</div>`).join('')
+    +`<div class="mine">${C().myName?`내 소리 — ${esc(C().myName)}<span><button class="lnk" data-mine="pick">바꾸기</button><button class="lnk" data-mine="del">지우기</button></span>`:`<button class="lnk" data-mine="pick">휴대폰의 소리 파일로 '내 소리' 만들기</button><small>찬양 한 소절 · 녹음한 목소리도 돼요 (15MB 아래)</small>`}</div>`;
+}
+const curTheme=()=>THEMES.find(t=>t.id===C().theme)||THEMES[0];
+function themeVal(){const t=curTheme(),p=resolvedDark()?t.dark:t.light;return `<i class="tdot" style="background:${p[3]}"></i>${esc(t.name)}`;}
+function themesHTML(){
+  const groups=[['base','기본'],['spark','SPARK · 선명하게'],['breath','BREATH · 차분하게']],dark=resolvedDark();
   const no=t=>t.group==='base'?'0':String((t.group==='spark'?10:20)+THEMES.filter(x=>x.group===t.group).indexOf(t)+1);
-  const dark=resolvedDark();
-  const themeHTML=groups.map(([g,l])=>`<div class="thg">${l}</div><div class="thgrid">${THEMES.filter(t=>t.group===g).map(t=>{const p=dark?t.dark:t.light;return `<button class="th${C().theme===t.id?' on':''}" data-th="${t.id}" style="background:${p[0]};color:${p[2]}"><span class="a" style="background:${p[3]}"></span><span class="n">${no(t)} · ${esc(t.name)}</span></button>`;}).join('')}</div>`).join('');
+  return groups.map(([g,l])=>`<div class="sgl">${l}</div><div class="thgrid">${THEMES.filter(t=>t.group===g).map(t=>{const p=dark?t.dark:t.light;
+    return `<button class="th${C().theme===t.id?' on':''}" data-th="${t.id}" style="background:${p[0]};color:${p[2]}"><span class="a" style="background:${p[3]}"></span><span class="n">${no(t)} · ${esc(t.name)}</span></button>`;}).join('')}</div>`).join('');
+}
+const LOOKS=[['simple','심플','원과 숫자만'],['mid','미드','눈금 · 숫자'],['power','파워','계기판 · 초침']];
+function drawLooks(){
+  const col=colorHex(R().color);
+  document.querySelectorAll('#sheetBody canvas[data-look]').forEach(cv=>drawDial(cv,64,cv.dataset.look==='power'?17:20,col,true,{look:cv.dataset.look,total:30,run:cv.dataset.look==='power'}));
+}
+function openSettings(){
   const body=`
-    <div class="srow"><div class="tx"><div class="l">보이는 양</div><div class="d">타이머 화면의 모양 — 심플은 원과 숫자만, 파워는 눈금 · 초침 · 판독표까지</div></div>${seg('lv',[['simple','심플'],['mid','미드'],['power','파워']])}</div>
-    <div class="srow"><div class="tx"><div class="l">화면 꺼짐 막기</div><div class="d">타이머가 도는 동안과 탁상 모드에서 화면이 잠기지 않아요.${isIOS?' 아이폰은 화면이 꺼지면 끝 소리를 못 냅니다 — 켜 두세요.':''}</div></div>${tog('wake')}</div>
-    <div class="srow"><div class="tx"><div class="l">이어달리기 — 다음 타이머</div><div class="d">앞의 것이 끝나면</div></div>${seg('autoNext',[[true,'바로 시작'],[false,'버튼 눌러 시작']])}</div>
-    <div class="srow" style="flex-wrap:wrap"><div class="tx"><div class="l">끝 소리</div><div class="d">고르면 한 번 들려 드려요 · 화면을 누를 때까지 되풀이</div></div>
-      <div class="sounds" style="flex-basis:100%">${Object.entries(SOUNDS).map(([k,v])=>`<button data-snd="${k}" class="${C().sound===k?'on':''}">${v[0]}</button>`).join('')}</div>
-      <div class="d" style="flex-basis:100%;margin-top:6px">${C().myName?`내 소리: ${esc(C().myName)} · <button class="lnk" data-mine="pick">바꾸기</button> · <button class="lnk" data-mine="del">지우기</button>`:`<button class="lnk" data-mine="pick">휴대폰의 소리 파일로 '내 소리' 만들기</button> — 찬양 한 소절 · 녹음한 목소리도 돼요`}</div>
-      <input type="file" id="myFile" accept="audio/*" hidden></div>
-    <div class="srow"><div class="tx"><div class="l">음성 안내</div><div class="d">끝나면 소리 다음에 "집중 25분, 끝났어요. 다음은 쉬기 5분, 시작했어요." 처럼 읽어 줘요</div></div>${tog('voice')}</div>
-    <div class="srow"><div class="tx"><div class="l">작게 시작해 점점 크게</div><div class="d">누를 때까지 되풀이하며 조금씩 커져요</div></div>${tog('grow')}</div>
-    <div class="srow"><div class="tx"><div class="l">화면 깜빡임</div><div class="d">끝나면 화면 전체가 타이머 색으로 깜빡여요 — 누를 때까지. 소리를 꺼 둔 자리에서 좋아요</div></div>${tog('flash')}</div>
-    <div class="srow"><div class="tx"><div class="l">진동</div><div class="d">${isIOS?'아이폰 웹앱에서는 진동을 쓸 수 없어요 (애플이 막아 둠). 안드로이드에서만 울립니다.':'끝날 때 진동 · 원을 끌 때 1분마다 톡'}</div></div>${tog('vib',isIOS)}</div>
-    <div class="srow"><div class="tx"><div class="l">시작하면 탁상 모드</div><div class="d">1초 뒤 원이 그대로 미끄러져 커져요. 두 번 톡 = 나가기 · 도는 중에 여백을 톡 = 다시 들어가기 (⤢ 단추도)</div></div>${tog('deskAuto')}</div>
-    <div class="srow"><div class="tx"><div class="l">원 끌 때 딱딱 맞추기</div><div class="d">1분 단위로 부드럽게 끌다가, 5분 또는 10분 눈금 가까이 오면 자석처럼 붙어요. 끄면 붙지 않아요</div></div>${seg('snap',[['10','10분'],['5','5분'],['0','끔']])}</div>
-    <div class="srow"><div class="tx"><div class="l">원 방향</div><div class="d">구글 타이머(타임타이머)는 시계 반대 방향</div></div>${seg('dir',[['cw','시계 방향'],['ccw','시계 반대']])}</div>
-    <div class="srow"><div class="tx"><div class="l">잠금 화면에서도 끝 알림</div><div class="d">앱이 꺼져 있어도 서버가 끝나는 시각에 푸시를 보냅니다. 서버를 올린 뒤 켜져요 — 준비 중</div></div>${tog('lock',true)}</div>
-    <div>
-      <div class="srow" style="border-bottom:0"><div class="tx"><div class="l">테마</div><div class="d">BLOCK7 · Sweeter 와 같은 16가지. 원 색은 테마와 따로 — 프리셋 색이 주인공</div></div>${seg('mode',[['system','시스템'],['light','라이트'],['dark','다크']])}</div>
-      ${themeHTML}
+    <div class="looks" role="radiogroup" aria-label="타이머 모양">${LOOKS.map(([k,n,d])=>`<button class="look${C().lv===k?' on':''}" data-lv="${k}" role="radio" aria-checked="${C().lv===k}"><canvas data-look="${k}" width="64" height="64"></canvas><b>${n}</b><small>${d}</small></button>`).join('')}</div>
+
+    <div class="sgh">원</div>
+    <div class="sgrp">
+      ${srow('dir','도는 방향','구글 타이머 · 타임타이머는 반대 방향이에요','',seg('dir',[['cw','시계 방향'],['ccw','반대 방향']]))}
+      ${srow('snap','눈금에 붙이기','1분씩 끌리다가 눈금 가까이 오면 자석처럼 붙어요','',seg('snap',[['10','10분'],['5','5분'],['0','안 붙임']]))}
     </div>
-    <div class="sian">
-      · 원을 끌면 시간이 정해져요. 12시를 지나 계속 돌리면 두 바퀴 · 세 바퀴(180분)까지.<br>
-      · 탁상 모드에서 한 번 톡 = 단추 · 두 번 톡 = 나가기 · 도는 중에 여백을 톡 = 다시 들어가기.<br>
-      · 끝 알림(소리 · 깜빡임 · 진동)은 화면을 누를 때까지 계속돼요.<br>
-      <b>아이폰</b> — 진동이 없고, 화면이 꺼지거나 다른 앱으로 가면 끝 소리를 놓쳐요(시간은 맞아요). 화면 꺼짐 막기를 켜 두세요.<br>
-      <b>저장</b> — 이 기기 안에만.<br>
-      <span style="color:var(--tx3)">KAIROS ${APP_VERSION}</span></div>`;
+
+    <div class="sgh">끝날 때</div>
+    <div class="sgrp">
+      ${foldRow('snd','sound','끝 소리','화면을 누를 때까지 되풀이해요',esc((SOUNDS[C().sound]||SOUNDS.chime)[0]),soundsHTML())}
+      ${srow('grow','점점 크게','작게 시작해 되풀이할수록 커져요',tog('grow'))}
+      ${srow('voice','음성 안내','"집중 25분, 끝났어요" 하고 읽어 줘요',tog('voice'))}
+      ${srow('flash','화면 깜빡임','타이머 색으로 — 소리를 끈 자리에서 좋아요',tog('flash'))}
+      ${srow('vib','진동',isIOS?'아이폰 웹앱은 진동을 쓸 수 없어요 (애플이 막아 둠)':'끝날 때 울리고, 원을 끌 때 1분마다 톡',tog('vib',isIOS))}
+      ${srow('lock','잠금 화면 알림 <span class="badge">준비 중</span>','앱이 꺼져 있어도 서버가 끝나는 시각에 알려 줘요',tog('lock',true))}
+    </div>
+
+    <div class="sgh">도는 동안</div>
+    <div class="sgrp">
+      ${srow('wake','화면 켜 두기','도는 동안과 탁상 모드에서 화면이 꺼지지 않아요'+(isIOS?'<br><em>아이폰은 화면이 꺼지면 끝 소리를 놓쳐요 — 켜 두세요</em>':''),tog('wake'))}
+      ${srow('desk','시작하면 탁상 모드','1초 뒤 원이 화면 가득 커져요 · 두 번 톡 하면 나와요',tog('deskAuto'))}
+      ${srow('next','이어달리기 다음 순서','앞의 타이머가 끝나면','',seg('autoNext',[[true,'바로 시작'],[false,'눌러서 시작']]))}
+    </div>
+
+    <div class="sgh">테마</div>
+    <div class="sgrp">
+      ${srow('mode','밝은 · 어두운 화면','','',seg('mode',[['system','기기 따라'],['light','밝게'],['dark','어둡게']]))}
+      ${foldRow('th','theme','색 테마','원 색은 테마와 따로 — 프리셋 색 그대로',themeVal(),themesHTML())}
+    </div>
+
+    <div class="sgh">도움말</div>
+    <div class="sgrp">
+      ${foldRow('help','help','쓰는 법','','',`<ul class="howto">
+        <li>원을 끌면 시간이 정해져요. 12시를 지나 계속 돌리면 두 바퀴 · 세 바퀴(180분)까지.</li>
+        <li>프리셋은 누르면 바로 시작. 길게 눌러 끌면 순서를 바꾸고, 가운데 연필에 놓으면 고치기 · 맨 위에 놓으면 지우기.</li>
+        <li>탁상 모드 — 한 번 톡 = 단추 · 두 번 톡 = 나가기. 도는 중에 여백을 톡 = 다시 들어가기.</li>
+        <li>끝 알림(소리 · 깜빡임 · 진동)은 화면을 누를 때까지 계속돼요.</li>
+        <li><b>아이폰</b> — 진동이 없고, 화면이 꺼지거나 다른 앱으로 가면 끝 소리를 놓쳐요(시간은 맞아요). '화면 켜 두기' 를 켜 두세요.</li></ul>`)}
+    </div>
+    <div class="sfoot">KAIROS ${APP_VERSION}<br>설정과 기록은 이 기기 안에만 저장돼요</div>
+    <input type="file" id="myFile" accept="audio/*" hidden>`;
   openSheet('설정',body,'');
+  drawLooks();
   $('myFile').onchange=e=>{const fl=e.target.files&&e.target.files[0];setMine(fl).then(reopenSettings);};
-  applyLv();
   $('sheetBody').onclick=e=>{
     const t=e.target.closest('[data-tog]'),s=e.target.closest('[data-seg]'),th=e.target.closest('[data-th]'),sn=e.target.closest('[data-snd]');
-    const mi=e.target.closest('[data-mine]');
+    const mi=e.target.closest('[data-mine]'),lv=e.target.closest('[data-lv]'),fh=e.target.closest('[data-fold]');
     if(mi){if(mi.dataset.mine==='pick')$('myFile').click();else delMine().then(reopenSettings);return;}
+    if(fh){const k=fh.dataset.fold,on=!FOLD.has(k);on?FOLD.add(k):FOLD.delete(k);fh.classList.toggle('open',on);fh.setAttribute('aria-expanded',on);$('fold-'+k).classList.toggle('open',on);return;}
+    if(lv){C().lv=lv.dataset.lv;save();$('sheetBody').querySelectorAll('[data-lv]').forEach(b=>{b.classList.toggle('on',b===lv);b.setAttribute('aria-checked',b===lv);});applyLook();return;}
     if(sn){if(sn.dataset.snd==='mine'&&!MY){$('myFile').click();return;}
-      C().sound=sn.dataset.snd;save();$('sheetBody').querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',b===sn));unlockAudio();cutAudio();playOnce(C().sound,.35);}
+      C().sound=sn.dataset.snd;save();$('sheetBody').querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',b===sn));$('sv-snd').textContent=SOUNDS[C().sound][0];
+      unlockAudio();cutAudio();playOnce(C().sound,.35);}
     if(t&&!t.disabled){const k=t.dataset.tog;C()[k]=!C()[k];t.classList.toggle('on',C()[k]);save();
       if(k==='wake')syncWake();
       if(k==='voice'&&C().voice){unlockAudio();speak('집중 25분, 끝났어요. 다음은 쉬기 5분, 시작했어요.');}
@@ -1297,14 +1467,12 @@ function openSettings(){
       if(k==='vib'&&C().vib&&navigator.vibrate)try{navigator.vibrate(200);}catch(e){}}
     if(s){const k=s.dataset.seg;let v=s.dataset.v;if(v==='true')v=true;if(v==='false')v=false;C()[k]=v;save();
       s.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===s));
-      if(k==='lv')applyLook();
-      if(k==='mode'){applyTheme();openSettings();}
-      if(k==='dir')drawAll();
+      if(k==='mode'){applyTheme();reopenSettings();}
+      if(k==='dir'){drawAll();drawPresets();drawLooks();}
       if(k==='autoNext')renderRoutines();}
-    if(th){C().theme=th.dataset.th;save();applyTheme();$('sheetBody').querySelectorAll('.th').forEach(b=>b.classList.toggle('on',b===th));}
+    if(th){C().theme=th.dataset.th;save();applyTheme();$('sheetBody').querySelectorAll('.th').forEach(b=>b.classList.toggle('on',b===th));$('sv-th').innerHTML=themeVal();drawLooks();}
   };
 }
-function applyLv(){}
 function reopenSettings(){const b=$('sheetBody'),y=b.scrollTop;if(!$('sheet').classList.contains('on'))return;openSettings();b.scrollTop=y;}
 function applyLook(){document.body.classList.remove('lv-simple','lv-mid','lv-power');document.body.classList.add('lv-'+C().lv);drawAll();drawPresets();if($('desk').classList.contains('on'))drawDesk();}
 $('gear').onclick=openSettings;
