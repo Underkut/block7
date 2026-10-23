@@ -147,4 +147,34 @@ console.log('시나리오 8 — 태그 그림 설정은 제품별');
   sc.eq('태그 그림 종류도 제품별',B7._PRODUCT_SCOPED.includes('vfArtStyle'),true);
 }
 
+// ═══ 9. 말씀 푸시 — 두 앱이 따로 켜고 따로 울린다 (v26-1024-13, HB 결정 (가)) ═══
+// 서버(wallet-functions/src/b7push.js)는 BLOCK7 몫을 settings.versePush 에서,
+// Sweeter 몫을 productSettings.sweeter.versePush 에서 읽는다.
+console.log('시나리오 9 — 말씀 푸시는 제품별 · Sweeter 는 물려받지 않는다');
+{
+  const b7vp={enabled:true,interval:{on:true,from:'06:00',to:'18:00',everyMin:10}};
+  const cloud={settings:{versePush:b7vp,versePushPool:[{ref:'요 3:16'}],uiLevel:'power'},productSettings:{}};
+  sc.eq('목록에 있다',[B7._PRODUCT_SCOPED.includes('versePush'),B7._PRODUCT_SCOPED.includes('versePushPool')],[true,true]);
+  sc.eq('BLOCK7 은 그대로 본다',B7._psOverlay(clone(cloud.settings),{}).versePush,b7vp);
+  const sw=SW._psOverlay(clone(cloud.settings),cloud.productSettings);
+  sc.eq('Sweeter 는 BLOCK7 의 켜짐을 물려받지 않는다(비어 있음 = 꺼짐)',sw.versePush,undefined);
+  sc.eq('…다른 설정은 예전처럼 물려받아 보여준다',sw.uiLevel,'power');
+  sc.eq('…말씀 목록은 물려받아도 된다(Sweeter 가 다시 계산)',sw.versePushPool,[{ref:'요 3:16'}]);
+  // Sweeter 에서 켜고 저장
+  const swvp={enabled:true,timesOn:true,times:['21:00']};
+  const out=SW._psProject({settings:Object.assign({},sw,{versePush:swvp}),productSettings:{}},cloud);
+  sc.eq('BLOCK7 의 말씀 푸시는 그대로',out.settings.versePush,b7vp);
+  sc.eq('Sweeter 몫은 제 칸에',out.productSettings.sweeter.versePush,swvp);
+  // 아무것도 안 켠 Sweeter 가 저장해도 BLOCK7 것을 Sweeter 칸으로 베끼지 않는다
+  const out2=SW._psProject({settings:sw,productSettings:{}},cloud);
+  sc.eq('안 켠 Sweeter 의 저장 → Sweeter 칸에 말씀 푸시 없음',out2.productSettings.sweeter.versePush,undefined);
+  sc.eq('…BLOCK7 것은 그대로 남는다',out2.settings.versePush,b7vp);
+  // 다시 열면 제 것
+  const back=SW._psOverlay(clone(out.settings),out.productSettings);
+  sc.eq('Sweeter 를 다시 열면 제 설정',back.versePush,swvp);
+  // 예전에 BLOCK7 값을 이미 들고 있던 Sweeter 기기 — 받는 순간 비워진다
+  const stale=SW._psOverlay(Object.assign({},cloud.settings,{versePush:b7vp}),{sweeter:{uiLevel:'easy'}});
+  sc.eq('옛 Sweeter 기기가 들고 있던 BLOCK7 값은 받을 때 비운다',stale.versePush,undefined);
+}
+
 sc.done();

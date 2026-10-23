@@ -172,3 +172,5 @@ exports.walletEvening = onSchedule({ schedule: "0 21 * * *", timeZone: TZ, regio
 Object.assign(exports, require("./study"));
 // 타이머 KAIROS (timer/) 잠금 화면 알림 — HTTP 하나만 내보낸다 (1분 틱은 studyTick 이 함께 돈다)
 exports.timerPing = require("./timer").timerPing;
+// BLOCK7·Sweeter 말씀 · 할일 알림 (예전 versepush · block7Notify 를 대신한다)
+exports.b7push = require("./b7push").b7push;

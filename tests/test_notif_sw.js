@@ -48,7 +48,7 @@ function makeEnv(opts) {
   const sandbox = {
     self: {
       addEventListener: (t, fn) => { (env.handlers[t] = env.handlers[t] || []).push(fn); },
-      registration: { showNotification: () => Promise.resolve() },
+      registration: { showNotification: () => Promise.resolve(), scope: opts.scope },
       crypto: { randomUUID: () => 'uuid-' + (++env.uuidN || (env.uuidN = 1)) },
       BroadcastChannel: null
     },
@@ -292,6 +292,27 @@ console.log('\n시나리오 11 — 진단 기록이 하나의 번호로 이어�
   sc.eq('ref 추출 결과가 적힌다', /ref 추출 성공/.test(joined), true);
   sc.eq('열린 client 수가 적힌다', /열린 client 0개/.test(joined), true);
   sc.eq('openWindow 결과가 적힌다', /openWindow 성공/.test(joined), true);
+}
+
+// ═══ 9. 알림을 누르면 **그 워커가 사는 앱**이 열린다 (v26-1024-13) ═══
+// 예전엔 주소가 block7.my 로 박혀 있어 sweeter.my 의 알림을 누르면 BLOCK7 이 열렸다.
+console.log('\n시나리오 9 — Sweeter 알림은 sweeter.my 로');
+{
+  const env = makeEnv({ clients: [], scope: 'https://sweeter.my/' });
+  const ev = clickEvent({ ref: '시편 23:1' });
+  env.fire('notificationclick', ev);
+  await ev.waited();
+  sc.eq('sweeter.my 에서 연다', env.opened[0].indexOf('https://sweeter.my/?verse=') === 0, true);
+  const b7 = makeEnv({ clients: [], scope: 'https://block7.my/' });
+  const ev2 = clickEvent({ ref: '시편 23:1' });
+  b7.fire('notificationclick', ev2);
+  await ev2.waited();
+  sc.eq('block7.my 는 그대로 block7.my', b7.opened[0].indexOf('https://block7.my/?verse=') === 0, true);
+  const todo = makeEnv({ clients: [], scope: 'https://block7.my/' });
+  const ev3 = clickEvent({ type: 'todo', tag: 'b7-morning' });
+  todo.fire('notificationclick', ev3);
+  await ev3.waited();
+  sc.eq('할일 알림(장절 없음)은 앱 첫 화면', todo.opened[0], 'https://block7.my/');
 }
 
 sc.done();
