@@ -1,7 +1,7 @@
 {
   "id": "/timer/",
-  "name": "타이머",
-  "short_name": "타이머",
+  "name": "KAIROS",
+  "short_name": "KAIROS",
   "description": "원을 끌어 정하는 타이머 · 프리셋 · 이어달리기 · 탁상 모드",
   "start_url": "./",
   "scope": "./",

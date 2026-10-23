@@ -1,4 +1,4 @@
-// 타이머 — 오프라인에서도 열리게 하는 서비스워커. 늘 새것을 먼저 받고, 못 받으면 저장해 둔 것을 쓴다.
+// KAIROS — 오프라인에서도 열리게 하는 서비스워커. 늘 새것을 먼저 받고, 못 받으면 저장해 둔 것을 쓴다.
 const C = 'timer-v1';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon.png', 'icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
