@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1024-1 -->
+<!-- KAIROS v. 26-1024-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -13,7 +13,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500&family=IBM+Plex+Mono:wght@300;400&display=swap">
+<script>
+// 켜지는 순간 깜빡임 막기 — 첫 그림부터 제 색으로. 테마 색은 applyTheme 이 b7timer_paint 에 라이트 · 다크 두 벌로 적어 둔다.
+// 'boot' 동안은 모든 전환을 끈다 (켜자마자 단추들이 사라지는 애니메이션이 보였다)
+(function(){const de=document.documentElement;de.classList.add('boot');
+  try{const k=JSON.parse(localStorage.getItem('b7timer_paint')||'null');if(!k)return;
+    const dark=k.mode==='dark'||(k.mode!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches),v=dark?k.D:k.L;if(!v)return;
+    for(const n in v)de.style.setProperty(n,v[n]);de.style.colorScheme=dark?'dark':'light';if(dark)de.classList.add('isdark');}catch(e){}})();
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@200;300;400;500&family=IBM+Plex+Mono:wght@300;400&display=fallback">
 <style>
 /* 한 화면 앱: 위 제목줄 · 가운데 좌우로 넘기는 세 판(타이머·이어달리기·기록) · 아래 탭. 원이 주인공, 나머지는 물러선다 */
 :root{
@@ -373,6 +381,112 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 .sounds button:active{transform:scale(.96)}
 .sounds button.on{background:var(--tx);color:var(--bg)}
 .lnk{color:var(--ac);font-size:12.5px}
+/* ── 태블릿 세로 — 520px 띠에 갇히지 않게: 원 · 숫자 · 단추를 화면에 맞춰 키운다 ── */
+@media (min-width:700px) and (orientation:portrait){
+  .app{max-width:860px}
+  .top{height:60px}
+  .top h1{font-size:17px}
+  #pg0 .tpage{gap:18px;min-height:0}
+  #pg0 .dialwrap{max-height:min(80vw,60vh,720px)}
+  #pg0 .digits{font-size:clamp(76px,11vw,112px)}
+  #pg0 .sub{font-size:15px}
+  #pg0 .lapchip{font-size:13px}
+  #pg0 .adj{max-width:500px}
+  #pg0 .adj button{height:50px;font-size:18px}
+  #pg0 .play{width:88px;height:88px}
+  #pg0 .play svg{width:32px;height:32px}
+  #pg0 .mainrow{gap:64px}
+  #pg0 .mainrow .ic svg{width:26px;height:26px}
+  #pg0 .chip{height:46px;font-size:15px;padding:0 18px}
+  #pg0 .chip.pc{height:46px}
+  body.lv-mid #pg0 .chip.pc{border-radius:23px}
+  #pg0 .chip .pie{width:22px;height:22px}
+  #pg0 .presets{padding-top:8px}
+  #pg0 .presets>:first-child{margin-left:auto}#pg0 .presets>:last-child{margin-right:auto}   /* 자리가 남으면 가운데, 넘치면 넘기기 */
+  #pg0 .hint{font-size:12px}
+  body.lv-simple #pg0 .digits{font-size:clamp(68px,10vw,100px)}
+  body.lv-simple #pg0 .play{width:72px;height:72px}
+  body.lv-simple #pg0 .adj{max-width:440px}
+  body.lv-simple #pg0 .chip{padding:0 12px}
+  body.lv-power #pg0 .digits{font-size:clamp(64px,9vw,92px)}
+  body.lv-power #pg0 .tech{max-width:520px}
+  body.lv-power #pg0 .tech b{font-size:17px}
+  body.lv-power #pg0 .play{border-radius:24px}
+  #pg1,#pg2{padding-left:max(24px,calc((100% - 640px)/2));padding-right:max(24px,calc((100% - 640px)/2))}
+  .tabs button{height:64px;font-size:12px}
+}
+
+/* ── 가로 화면 (폰 · 태블릿) — 왼쪽은 원이 높이를 다 쓰고, 오른쪽에 숫자 · 단추 · 프리셋을 세로 가운데로 ── */
+@media (orientation:landscape) and (min-width:600px){
+  .app{max-width:none}
+  #pg0 .tpage{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,1fr);grid-template-rows:1fr repeat(7,auto) 1fr;column-gap:clamp(16px,4vw,64px);row-gap:0;min-height:0;justify-items:center;align-items:center}
+  #pg0 .tpage>*{grid-column:2;max-width:460px}
+  #pg0 .dialwrap{grid-column:1;grid-row:1/-1;max-width:none;max-height:none;height:100%;align-self:stretch}
+  #pg0 .rstrip{grid-row:2;margin-bottom:18px}
+  #pg0 .readout{grid-row:3}
+  #pg0 .tech{grid-row:4;margin-top:16px}
+  #pg0 .adj{grid-row:5;margin-top:18px}
+  #pg0 .mainrow{grid-row:6;margin-top:18px}
+  #pg0 .presets,#pg0 .swap{grid-row:7;margin-top:18px}
+  #pg0 .hint{grid-row:8;margin-top:12px}
+  body.lv-simple #pg0 .swap>*{grid-area:1/1;margin-top:0}   /* 심플은 ± 줄과 프리셋이 한 칸을 나눠 쓴다 — 위의 줄 번호가 안쪽까지 닿지 않게 */
+  #pg0 .presets>:first-child{margin-left:auto}#pg0 .presets>:last-child{margin-right:auto}
+  #pg1,#pg2{padding-left:max(24px,calc((100% - 720px)/2));padding-right:max(24px,calc((100% - 720px)/2))}
+}
+/* 태블릿 가로 — 오른쪽 칸도 크게 */
+@media (orientation:landscape) and (min-width:600px) and (min-height:600px){
+  .top{height:60px}
+  .top h1{font-size:17px}
+  #pg0 .tpage>*{max-width:500px}
+  #pg0 .digits{font-size:clamp(72px,8vw,112px)}
+  #pg0 .sub{font-size:15px}
+  #pg0 .adj button{height:50px;font-size:18px}
+  #pg0 .play{width:84px;height:84px}
+  #pg0 .play svg{width:30px;height:30px}
+  #pg0 .mainrow{gap:56px}
+  #pg0 .chip{height:46px;font-size:15px}
+  #pg0 .chip.pc{height:46px}
+  body.lv-mid #pg0 .chip.pc{border-radius:23px}
+  #pg0 .chip .pie{width:22px;height:22px}
+  body.lv-simple #pg0 .digits{font-size:clamp(64px,7vw,100px)}
+  body.lv-simple #pg0 .play{width:72px;height:72px}
+  body.lv-simple #pg0 .chip{padding:0 12px}
+  body.lv-power #pg0 .digits{font-size:clamp(60px,6.5vw,92px)}
+  body.lv-power #pg0 .tech b{font-size:16px}
+  .tabs button{height:60px;font-size:12px}
+}
+/* 폰 가로 — 높이가 모자라니 제목줄은 띄워 두고(점 둘만 오른쪽 위), 탭은 낮게 한 줄로 */
+@media (orientation:landscape) and (min-width:600px) and (max-height:599px){
+  /* 점 둘은 왼쪽 위 — 원 칸의 모서리는 원이 둥글어 비어 있다 (오른쪽 위는 이어달리기 줄과 겹쳤다) */
+  .top{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:auto;height:44px;z-index:5;padding-right:0;padding-left:max(4px,env(safe-area-inset-left,0px))}
+  .top h1,.top>span.ic{display:none}
+  .page{padding-block:6px 4px}
+  #pg1,#pg2{padding-top:44px}
+  #pg0 .tpage{grid-template-columns:minmax(0,1fr) minmax(280px,1.15fr)}
+  #pg0 .tpage>*{max-width:400px}
+  #pg0 .digits{font-size:clamp(40px,12vh,56px)}
+  body.lv-power #pg0 .digits{font-size:clamp(36px,10vh,48px)}
+  #pg0 .rstrip{margin-bottom:8px}
+  #pg0 .tech{margin-top:8px}
+  #pg0 .tech .tg{row-gap:6px}#pg0 .tech .tp{margin-top:6px}
+  #pg0 .adj{margin-top:10px}
+  #pg0 .adj button{height:36px}
+  #pg0 .mainrow{margin-top:8px}
+  #pg0 .play{width:56px;height:56px}
+  body.lv-mid #pg0 .play{width:58px;height:58px}
+  body.lv-power #pg0 .play{width:54px;height:54px;border-radius:15px}
+  #pg0 .presets,#pg0 .swap{margin-top:10px}
+  #pg0 .hint{display:none}
+  #pg0 .chip.pc{height:36px}
+  body.lv-power #pg0 .tech{padding-top:8px}
+  body.lv-power #pg0 .tech b{font-size:13px}
+  body.lv-power #pg0 .adj button{height:34px}
+  body.lv-power #pg0 .tech .tg{row-gap:4px}body.lv-power #pg0 .tech .tp{margin-top:4px}body.lv-power #pg0 .mainrow{margin-top:6px}body.lv-power #pg0 .rstrip{margin-bottom:5px}
+  .tabs button{height:42px;flex-direction:row;gap:8px;font-size:12px}
+  .tabs button svg{width:18px;height:18px}
+  body.lv-simple .dots{padding:0 0 max(2px,env(safe-area-inset-bottom,0px))}
+}
+html.boot *,html.boot *::before,html.boot *::after{transition:none!important;animation:none!important}
 @media (prefers-reduced-motion: reduce){
   body.lv-simple .swap>*,.dots i,
   .track,.sheet,.toast,.tog::after,.desk .bgl,.desk .info,#pdz *,.cfm,.cfm .card{transition:none!important}
@@ -383,6 +497,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 </style>
 </head>
 <body>
+<script>try{document.body.className='lv-'+((JSON.parse(localStorage.getItem('b7timer_v1')||'null')||{}).cfg||{}).lv+' tab0';if(!/lv-(simple|mid|power)/.test(document.body.className))throw 0;}catch(e){document.body.className='lv-simple tab0';}</script>
 <div class="app" id="app">
   <div class="top">
     <span class="ic" aria-hidden="true"></span>
@@ -464,7 +579,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1024-1';
+const APP_VERSION='v. 26-1024-2';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -627,10 +742,12 @@ function resolvedDark(){
 }
 function applyTheme(){
   const th=THEMES.find(t=>t.id===C().theme)||THEMES[0];
-  const dark=resolvedDark(), p=dark?th.dark:th.light;
-  const [bg,sf,tx,ac]=p, st=document.documentElement.style;
-  const v={'--bg':bg,'--s1':sf,'--s2':mix(sf,tx,dark?.10:.07),'--tx':tx,'--tx2':mix(tx,bg,.38),'--tx3':mix(tx,bg,.56),'--bd':mix(tx,bg,dark?.84:.86),'--ac':ac};
+  const dark=resolvedDark(), st=document.documentElement.style;
+  const vars=(p,dk)=>{const [bg,sf,tx,ac]=p;return {'--bg':bg,'--s1':sf,'--s2':mix(sf,tx,dk?.10:.07),'--tx':tx,'--tx2':mix(tx,bg,.38),'--tx3':mix(tx,bg,.56),'--bd':mix(tx,bg,dk?.84:.86),'--ac':ac};};
+  const L=vars(th.light,false),D=vars(th.dark,true),v=dark?D:L;
   for(const k in v)st.setProperty(k,v[k]);
+  try{localStorage.setItem('b7timer_paint',JSON.stringify({mode:C().mode,L,D}));}catch(e){}
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute('content',v['--bg']));
   st.colorScheme=dark?'dark':'light';document.documentElement.classList.toggle('isdark',dark);
   drawAll();
 }
@@ -1556,6 +1673,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawAll);
   const r=R();
   if(r.state==='run'){if(Date.now()>=r.endAt){r.state='done';r.left=0;}else loop();}
   applyLook();applyTheme();drawPresets();renderRoutines();goTab(0,false);syncWake();
+  requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('boot')));
 })();
 if(C().myName)loadMine();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});

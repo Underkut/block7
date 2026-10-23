@@ -8,6 +8,8 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (u.origin !== location.origin && !/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) return;
   if (!u.pathname.includes('/timer/') && u.origin === location.origin) return;
-  e.respondWith(fetch(e.request).then(r => { const cp = r.clone(); caches.open(C).then(c => c.put(e.request, cp)).catch(() => {}); return r; })
-    .catch(() => caches.match(e.request)));
+  const net = () => fetch(e.request).then(r => { const cp = r.clone(); caches.open(C).then(c => c.put(e.request, cp)).catch(() => {}); return r; });
+  // 글꼴은 저장해 둔 것부터 꺼낸다 — 켤 때마다 네트워크를 기다리면 글자가 늦게 바뀌며 깜빡인다
+  if (u.origin !== location.origin) { e.respondWith(caches.match(e.request).then(hit => hit || net())); return; }
+  e.respondWith(net().catch(() => caches.match(e.request)));
 });
