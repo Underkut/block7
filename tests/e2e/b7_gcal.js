@@ -151,6 +151,24 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('⑪ 저장은 첫날 하나뿐', sp.stored === 1, sp);
   ok('⑪ W 띠: 글은 첫 칸에만 한 번', JSON.stringify(sp.labels) === JSON.stringify([1, 0, 0, 0]), sp.labels);
 
+  // ⑫ BLOCK7 반복 → 구글 반복 (v26-1024-3): 보내기 · 이 날만 지우기(EXDATE) · 전체 지우기
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); getEvents(D1, sid).push({ id: 'ev' + Date.now(), time: '09:00', text: '아침 기도', repeat: { daily: true, daysOfWeek: [0,1,2,3,4,5,6], weekly: false, weeksOfMonth: [1,2,3,4,5] }, rid: 'rTest1' }); save(); }, D1);
+  await sync();
+  const rg = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '아침 기도'));
+  ok('⑫ 반복 일정이 구글 반복으로 (DAILY · 시간대)', rg && JSON.stringify(rg.recurrence) === '["RRULE:FREQ=DAILY"]' && rg.start.timeZone === 'Asia/Seoul', rg);
+  const w1 = await p.evaluate(() => __G.writes); await sync();
+  ok('⑫ 그대로면 다시 안 쓴다 (원본을 따로 물어 맞춘다)', (await p.evaluate(() => __G.writes)) === w1);
+  const D3 = await p.evaluate(D1 => gcalAddDays(D1, 2), D1);
+  await p.evaluate(([D1, D3]) => { const sid = _secIdForTime('09:00'); const arr = getEvents(D1, sid); const idx = arr.findIndex(e => e.text === '아침 기도');
+    _evDeleteApply({ dateKey: D1, idx, secId: sid, occ: D3 }, 'one'); }, [D1, D3]);
+  await sync();
+  const rg2 = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '아침 기도'));
+  ok('⑫ 이 날만 지우기 → 구글 원본에 EXDATE', rg2.recurrence.length === 2 && rg2.recurrence[1] === 'EXDATE;TZID=Asia/Seoul:' + D3.replace(/-/g, '') + 'T090000', rg2.recurrence);
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); const arr = getEvents(D1, sid); const idx = arr.findIndex(e => e.text === '아침 기도');
+    _evDeleteApply({ dateKey: D1, idx, secId: sid, occ: D1 }, 'all'); }, D1);
+  await sync();
+  ok('⑫ 반복 전체 지우기 → 구글 반복도 지워진다', (await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '아침 기도').status)) === 'cancelled');
+
   // 설정창 줄
   const ui = await p.evaluate(() => { _gcalCals = [{ id: 'me@x', name: '내 캘린더', role: 'owner', primary: true }, { id: 'hol', name: '대한민국의 휴일', role: 'reader' }]; _gcalRenderSettings(); const folded = document.getElementById('gcalCalList').style.display === 'none'; gcalToggleList(); return [folded, document.getElementById('gcalCalList').style.display === '', document.querySelectorAll('#gcalCalList .settings-row').length, document.getElementById('gcalWriteSel').options.length, document.getElementById('gcalConnectBtn').textContent]; });
   ok('설정창: 목록은 접혀 있다가 펼쳐진다 · 캘린더 두 줄 · 쓸 캘린더는 쓸 수 있는 것만(+보내지 않음) · 연결 끊기 단추', JSON.stringify(ui) === JSON.stringify([true, true, 2, 2, '연결 끊기']), ui);
