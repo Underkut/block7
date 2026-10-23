@@ -35,6 +35,7 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
       if (path === '/users/me/calendarList') return J({ items: [{ id: 'me@x', summary: '내 캘린더', accessRole: 'owner', primary: true, backgroundColor: '#4285f4' }, { id: 'ch@x', summary: '교회', accessRole: 'owner', backgroundColor: '#e67c73' }] });
       const mv = path.match(/^\/calendars\/([^/]+)\/events\/([^/]+)\/move$/);
       if (mv && m === 'POST') { G.writes++; const e = G.ev[mv[2]]; if (!e) return J({}, 404); e.cal = u.searchParams.get('destination'); e.updated = 'u' + (++G.n); return J(e); }
+      if (/\/instances$/.test(path)) return J({ items: [] });
       const mm = path.match(/^\/calendars\/([^/]+)\/events(?:\/(.+))?$/);
       if (!mm) return J({}, 404);
       const id = mm[2], body = opt.body ? JSON.parse(opt.body) : null;
@@ -191,6 +192,32 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await p.evaluate(() => doUndo()); await sync();
   const r2 = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '되살릴 반복'));
   ok('⑭ 반복 전체 지움 → 실행취소 → 구글 반복도 규칙째 되살아남', r1 === 'cancelled' && r2.status === 'confirmed' && r2.recurrence && r2.recurrence[0].startsWith('RRULE:FREQ=WEEKLY'), [r1, r2]);
+
+  // ⑮ 구글에서 만든 반복 → BLOCK7 반복 하나 · 고친 회차 → 하루만 고친 일정 · 구글에서 규칙 바꾸면 따라옴 (v26-1024-7)
+  await p.evaluate(D1 => {
+    const tm = window.__tm, D8 = gcalAddDays(D1, 7);
+    __G.ev.gs1 = { id: 'gs1', cal: 'me@x', status: 'confirmed', updated: 'u' + (++__G.n), summary: '셀모임', recurrence: ['RRULE:FREQ=WEEKLY'],
+      start: { dateTime: tm(D1, 19), timeZone: 'Asia/Seoul' }, end: { dateTime: tm(D1, 21), timeZone: 'Asia/Seoul' } };
+    const ok = D8.replace(/-/g, '');
+    __G.ev['gs1_' + ok] = { id: 'gs1_' + ok, cal: 'me@x', status: 'confirmed', updated: 'u' + (++__G.n), recurringEventId: 'gs1', summary: '셀모임 (우리 집)',
+      originalStartTime: { dateTime: tm(D8, 19) }, start: { dateTime: tm(D8, 20) }, end: { dateTime: tm(D8, 22) } };
+  }, D1);
+  await sync();
+  const cell = await p.evaluate(D1 => { const o = []; Object.keys(ST.days).forEach(k => Object.values(ST.days[k].events || {}).forEach(a => (a || []).forEach(e => { if (/셀모임/.test(e.text)) o.push({ k, text: e.text, rep: !!(e.repeat && (e.repeat.daily || e.repeat.weekly)), rid: e.rid, ex: e.repeat && e.repeat.ex, time: e.time }); }))); return o; }, D1);
+  const cm = cell.find(x => x.rep), co = cell.find(x => !x.rep);
+  const D8 = await p.evaluate(D1 => gcalAddDays(D1, 7), D1);
+  ok('⑮ 구글 매주 반복 → BLOCK7 반복 하나 (원본과 같은 회차는 따로 안 생김)', cell.length === 2 && cm && cm.k === D1 && cm.time === '19:00', cell);
+  ok('⑮ 고친 회차 → 같은 묶음의 하루만 고친 일정 · 원본은 그 날을 뺀다', co && co.rid === cm.rid && co.k === D8 && co.time === '20:00' && JSON.stringify(cm.ex) === JSON.stringify([D8]), cell);
+  const D15 = await p.evaluate(D1 => gcalAddDays(D1, 14), D1);
+  ok('⑮ 2주 뒤에 원본이 비친다', await p.evaluate(([D1, D15]) => SECS.some(s => getDisplayEvents(D15, s.id).some(e => e.text === '셀모임')), [D1, D15]));
+  // 구글에서 규칙 바꿈 (매주 → 둘째·넷째 주 같은 요일)
+  await p.evaluate(D1 => { const [y, m, d] = D1.split('-').map(Number); const dw = ['SU','MO','TU','WE','TH','FR','SA'][new Date(y, m - 1, d).getDay()];
+    __G.ev.gs1.recurrence = ['RRULE:FREQ=MONTHLY;BYDAY=2' + dw + ',4' + dw]; __G.ev.gs1.updated = 'u' + (++__G.n); }, D1);
+  await sync();
+  const wk = await p.evaluate(() => { let r = null; Object.values(ST.days).forEach(d => Object.values(d.events || {}).forEach(a => (a || []).forEach(e => { if (e.text === '셀모임' && e.repeat) r = e.repeat; }))); return r; });
+  ok('⑮ 구글에서 바꾼 규칙(둘째·넷째 주)을 BLOCK7 이 따른다', wk && wk.weekly && JSON.stringify(wk.weeksOfMonth) === '[2,4]', wk);
+  const w15 = await p.evaluate(() => __G.writes); await sync();
+  ok('⑮ 따른 뒤에는 조용하다', (await p.evaluate(() => __G.writes)) === w15);
 
   // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
   await new Promise(r => setTimeout(r, 4500));

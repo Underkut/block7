@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3271,9 +3271,9 @@ body.split-d #todayView.animating{overflow:hidden;}
 .mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:-2px;}
 /* M뷰 칸 높이를 손잡이로 정했을 때 — 넘치는 것은 칸 아래쪽부터 가린다 */
 .mcg.mcg-fixed .mcc{overflow-x:visible;overflow-y:clip;min-height:0;}   /* 위아래만 자른다 — 여러 날 띠의 글은 옆 칸으로 흘러야 한다 */
-.m-grip{display:flex;justify-content:center;align-items:center;height:18px;margin:2px 0 0;cursor:ns-resize;touch-action:none;-webkit-tap-highlight-color:transparent;}
-.m-grip span{width:34px;height:3px;border-radius:2px;background:var(--bd2);transition:background .2s,width .2s;}
-.m-grip:hover span,.m-grip.on span{background:var(--tx3);width:48px;}
+.m-grip{display:flex;justify-content:center;align-items:center;height:16px;margin:2px 0 0;cursor:ns-resize;touch-action:none;-webkit-tap-highlight-color:transparent;}
+.m-grip span{width:22px;height:2px;border-radius:1px;background:var(--bd2);transition:background .2s,width .2s;}   /* 작고 얇게 (HB 2026-10-24) — 누르는 자리(16px 높이)는 그대로 넉넉히 */
+.m-grip:hover span,.m-grip.on span{background:var(--tx3);width:30px;}
 .mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:var(--font-mono);}
 .mcdow.sun-red{color:var(--sun-red);}
 .mcc{background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:5px;min-height:50px;}
@@ -6388,7 +6388,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-6";
+const APP_VERSION = "v. 26-1024-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9655,6 +9655,84 @@ function gcalCollect(days){
   return{linked,plain,tombs};
 }
 
+// ── 구글 반복 → BLOCK7 반복 (v26-1024-7, 3단계 ②) ──
+// gcalRecur 의 거꾸로. BLOCK7 말로 옮길 수 있는 것만 옮기고, 못 옮기면 null (→ 예전처럼 낱개로 펼쳐 가져온다).
+//   DAILY · DAILY;BYDAY · WEEKLY(;BYDAY) · MONTHLY;BYDAY=1TU,3TU(몇째 주 × 요일이 빈틈없는 곱) · UNTIL · COUNT(→끝날) · EXDATE
+//   못 옮기는 것: INTERVAL>1(격주) · BYMONTHDAY(매월 15일) · YEARLY · -1SU(마지막 주) · RDATE · 하루 시작보다 이른 시각
+const GCAL_ALL7=[0,1,2,3,4,5,6],GCAL_ALL5=[1,2,3,4,5];
+// eventRepeatsOnDate 와 같은 뜻 (끝날·뺀 날은 보지 않는다) — COUNT 를 끝날로 바꿀 때 쓴다
+function gcalRuleHits(rep,originK,k){
+  if(k<originK)return false;
+  const[y,m,d]=k.split('-').map(Number),dow=new Date(y,m-1,d).getDay(),wk=Math.ceil(d/7);
+  const[oy,om,od]=originK.split('-').map(Number),odow=new Date(oy,om-1,od).getDay();
+  const weeks=rep.weeksOfMonth!==undefined?rep.weeksOfMonth:GCAL_ALL5;
+  if(rep.daily){const days=rep.daysOfWeek!==undefined?rep.daysOfWeek:GCAL_ALL7;if(!days.includes(dow))return false;return rep.weekly?weeks.includes(wk):true;}
+  if(rep.weekly)return dow===odow&&weeks.includes(wk);
+  return false;
+}
+// RFC 5545 날짜 값 → BLOCK7 날짜 키 ('20261031' · '20261031T090000' · '20261031T000000Z')
+function gcalDateOf(v){
+  const m=/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(String(v||'').trim());if(!m)return null;
+  if(m[7])return gcalKeyOf(new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5],+m[6])));
+  return m[1]+'-'+m[2]+'-'+m[3];
+}
+function gcalParseRecur(gev,dsh){
+  if(!gev||!Array.isArray(gev.recurrence))return null;
+  const f=gcalFromG(gev.start,gev.end,dsh);if(!f)return null;
+  if(f.time&&dsh>0&&Number(f.time.slice(0,2))<dsh)return null;
+  let rr=null;const ex=new Set();
+  for(const line of gev.recurrence){
+    const L=String(line);
+    if(/^RRULE:/i.test(L)){if(rr)return null;rr=L.slice(6);}
+    else if(/^EXDATE/i.test(L)){L.slice(L.indexOf(':')+1).split(',').forEach(v=>{const k=gcalDateOf(v);if(k)ex.add(k);});}
+    else return null;
+  }
+  if(!rr)return null;
+  const P={};rr.split(';').forEach(kv=>{const i=kv.indexOf('=');if(i>0)P[kv.slice(0,i).toUpperCase()]=kv.slice(i+1).toUpperCase();});
+  if(Object.keys(P).some(x=>!['FREQ','INTERVAL','UNTIL','COUNT','BYDAY','WKST'].includes(x)))return null;
+  if(P.INTERVAL&&P.INTERVAL!=='1')return null;
+  const[y,m,d]=f.k.split('-').map(Number),odow=new Date(y,m-1,d).getDay();
+  const by=P.BYDAY?P.BYDAY.split(','):[];
+  const plain=by.map(x=>GCAL_DOW.indexOf(x));
+  const uniq=a=>[...new Set(a)].sort((p,q)=>p-q);
+  let rep;
+  if(P.FREQ==='DAILY'){
+    if(plain.some(x=>x<0))return null;
+    rep={daily:true,daysOfWeek:by.length?uniq(plain):GCAL_ALL7.slice(),weekly:false,weeksOfMonth:GCAL_ALL5.slice()};
+  }else if(P.FREQ==='WEEKLY'){
+    const days=by.length?plain:[odow];if(days.some(x=>x<0))return null;
+    const u=uniq(days);
+    rep=(u.length===1&&u[0]===odow)?{daily:false,daysOfWeek:GCAL_ALL7.slice(),weekly:true,weeksOfMonth:GCAL_ALL5.slice()}
+                                   :{daily:true,daysOfWeek:u,weekly:false,weeksOfMonth:GCAL_ALL5.slice()};
+  }else if(P.FREQ==='MONTHLY'){
+    if(!by.length)return null;
+    const pairs=by.map(x=>{const mm=/^([1-5])(SU|MO|TU|WE|TH|FR|SA)$/.exec(x);return mm?[+mm[1],GCAL_DOW.indexOf(mm[2])]:null;});
+    if(pairs.some(p=>!p))return null;
+    const ws=uniq(pairs.map(p=>p[0])),ds=uniq(pairs.map(p=>p[1]));
+    if(ws.length*ds.length!==new Set(pairs.map(p=>p.join())).size)return null;   // 빈틈없는 곱이어야 BLOCK7 말이 된다
+    rep=(ds.length===1&&ds[0]===odow)?{daily:false,daysOfWeek:GCAL_ALL7.slice(),weekly:true,weeksOfMonth:ws}
+                                     :{daily:true,daysOfWeek:ds,weekly:true,weeksOfMonth:ws};
+  }else return null;
+  if(P.UNTIL){const u=gcalDateOf(P.UNTIL);if(!u)return null;rep.until=u;}
+  if(P.COUNT){
+    const n=Number(P.COUNT);let cnt=0,k=f.k,last=f.k;
+    for(let i=0;i<3700&&cnt<n;i++){if(i===0||gcalRuleHits(rep,f.k,k)){cnt++;last=k;}k=gcalAddDays(k,1);}
+    if(cnt<n)return null;
+    if(!rep.until||last<rep.until)rep.until=last;
+  }
+  rep.ex=[...ex].filter(x=>x>=f.k).sort();
+  return{k:f.k,time:f.time,d:f.d,text:String(gev.summary||'(제목 없음)'),repeat:rep};
+}
+// 예외가 원본과 다른가 (제목 또는 시작이 원래 자리와 다르면 '하루만 고친 것')
+function gcalStamp(s){return!s?'':(s.dateTime?String(new Date(s.dateTime).getTime()):String(s.date||''));}
+function gcalExModified(master,x){
+  return String(x.summary||'')!==String(master.summary||'')||gcalStamp(x.start)!==gcalStamp(x.originalStartTime);
+}
+// 구글 쪽 반복의 지문 — 규칙 + 뺀 날. 원본의 updated 는 예외만 바뀔 때 안 바뀔 수 있어 이것도 본다
+function gcalRf(P,ex){const r=P.repeat;return JSON.stringify([P.k,P.time,P.text,!!r.daily,r.daysOfWeek,!!r.weekly,r.weeksOfMonth,r.until||'',ex]);}
+// 구글 회차 id 모양: 원본id_20261031 · 원본id_20261031T010000Z → 원본 id
+function gcalInstMaster(i){const m=/^(.+)_\d{8}(T\d{6}Z?)?$/.exec(String(i||''));return m?m[1]:null;}
+
 // 반복이 켜져 있나 (반복 묶음이 남긴 빈 껍데기 repeat:{} 는 한 번짜리로 본다)
 function _gcalRepOn(r){return !!(r&&(r.daily||r.weekly));}
 // 이 기능보다 먼저 만든 반복 일정은 저절로 보내지 않는다 — 켜자마자 매일 기도 같은 오래된 반복이
@@ -9668,6 +9746,8 @@ function _gcalRepNew(ev){const m=/^ev(\d{12,})/.exec(String(ev&&ev.id||''));retu
 //   local : {t:'add',k,sec,ev} · {t:'set',id,ref,k,sec,patch} · {t:'del',id,ref} · {t:'untomb',k,key}
 //   remote: {t:'ins',c,id,ref,k,body,d} · {t:'patch',c,gid,id,ref,body} · {t:'move',c,to,gid,id,ref} · {t:'del',c,gid,k,key}
 //           · {t:'restore',c,gid,id,ref,k,d,key,body}  — BLOCK7 이 지웠다가 실행취소로 되살린 것 (o.gone = BLOCK7 이 구글에서 지운 고리들)
+//           · {t:'reinst',c,gid,k,key,body} — 하루만 고친 구글 예외를 원본 모양으로 되돌린다 ('모두 고치기')
+//   local 에 더: {t:'meta',id,ref,patch} — 자리는 그대로 두고 칸만 고친다 (rid · 고리 지문)
 //   ref 는 넘겨받은 그 일정 객체 자체다 — 같은 id 두 벌(두 기기가 같은 것을 가져옴)을 가려 지우려면 id 로는 모자라다
 function gcalPlan(o){
   const W=gcalWindow(o.today);
@@ -9685,6 +9765,23 @@ function gcalPlan(o){
   });
   const tombKeys=new Set(col.tombs.map(t=>t.key));
   const goneKeys=new Set(o.gone||[]);
+  // 0) 구글 반복 원본과 그 예외들 (구글을 펼치지 않고 읽는다 — v26-1024-7)
+  const M=new Map();
+  G.forEach((g,key)=>{if(Array.isArray(g.ev.recurrence)&&!g.ev.recurringEventId&&g.ev.status!=='cancelled')M.set(key,{g,P:gcalParseRecur(g.ev,o.dsh),xs:[],mods:[]});});
+  G.forEach((g,key)=>{const r=g.ev.recurringEventId;if(!r)return;const m=M.get(gcalGKey(g.c,r));if(m)m.xs.push({key,g});});
+  M.forEach(m=>{
+    if(!m.P)return;
+    const ex=new Set(m.P.repeat.ex);
+    m.xs.forEach(x=>{
+      const of=x.g.ev.originalStartTime?gcalFromG(x.g.ev.originalStartTime,null,o.dsh):null;if(!of)return;
+      x.ok=of.k;
+      if(x.g.ev.status==='cancelled'){ex.add(of.k);return;}
+      if(gcalExModified(m.g.ev,x.g.ev)){ex.add(of.k);m.mods.push(x);}
+    });
+    m.ex=[...ex].filter(x=>x>=m.P.k).sort();
+    m.rf=gcalRf(m.P,m.ex);
+  });
+  const mastOf=(c,i)=>{const r=gcalInstMaster(i);return r?M.get(gcalGKey(c,r)):null;};
   // 1) BLOCK7 에서 사람이 지운 것 → 구글에서도 지운다
   col.tombs.forEach(t=>{
     const c=t.key.slice(0,t.key.indexOf('|')),gid=t.key.slice(t.key.indexOf('|')+1);
@@ -9693,6 +9790,20 @@ function gcalPlan(o){
     if(!cals.has(c))return;              // 지금 안 보는 캘린더는 건드리지 않는다
     const g=G.get(t.key);
     if(g&&g.ev.status==='cancelled'){local.push({t:'untomb',k:t.k,key:t.key});return;}
+    // 하루만 고친 구글 예외인데, BLOCK7 원본이 그 날을 다시 따른다('모두 고치기') → 지우지 말고 원본 모양으로 되돌린다
+    // (지우면 '취소된 회차' 로 남아 구글에서 그 날이 빈다)
+    if(g&&g.ev.recurringEventId&&g.ev.originalStartTime){
+      const lm=L.get(gcalGKey(c,g.ev.recurringEventId));
+      const of=gcalFromG(g.ev.originalStartTime,null,o.dsh);
+      if(lm&&of&&_gcalRepOn(lm.ev.repeat)&&!((lm.ev.repeat.ex||[]).includes(of.k))){
+        const os=g.ev.originalStartTime,dur=lm.ev.g.d||(lm.ev.time?60:1);
+        const body={status:'confirmed',summary:String(lm.ev.text||''),start:Object.assign({},os)};
+        body.end=os.date?{date:gcalAddDays(os.date,dur)}
+          :Object.assign({dateTime:new Date(new Date(os.dateTime).getTime()+dur*60000).toISOString()},os.timeZone?{timeZone:os.timeZone}:{});
+        remote.push({t:'reinst',c,gid,k:t.k,key:t.key,body});
+        return;
+      }
+    }
     remote.push({t:'del',c,gid,k:t.k,key:t.key});
   });
   // 2) 고리 있는 BLOCK7 일정
@@ -9705,6 +9816,19 @@ function gcalPlan(o){
       return;
     }
     const g=G.get(key);
+    // 예전에 낱개로 가져온 회차(원본id_날짜) — 그 원본을 이제 반복으로 가져오므로 BLOCK7 에서만 치운다 (구글은 그대로)
+    // 단 구글 목록에 '예외' 로 올라온 것(하루만 고친 것)은 남겨 BLOCK7 의 '하루만 고친 일정' 이 된다
+    if(!_gcalRepOn(e.ev.repeat)){
+      const mm=mastOf(c,e.ev.g.i);
+      // ⚠️ 대신할 반복이 **이번에 확실히 있을 때만** 치운다 (BLOCK7 에 이미 있거나, 이번에 가져온다) — 아니면 그 날들이 빈다
+      const mk=mm?gcalGKey(c,mm.g.ev.id):'';
+      const covered=mm&&mm.P&&(L.has(mk)||(!tombKeys.has(mk)&&!String(mm.g.ev.id).startsWith('b7ev')));
+      if(covered&&!(g&&g.ev.recurringEventId)){local.push({t:'del',id:e.ev.id,ref:e.ev,migr:true});return;}
+      if(g&&g.ev.recurringEventId&&g.ev.status!=='cancelled'){
+        const lm=L.get(gcalGKey(c,g.ev.recurringEventId));
+        if(lm&&lm.ev.rid&&e.ev.rid!==lm.ev.rid)local.push({t:'meta',id:e.ev.id,ref:e.ev,patch:{rid:lm.ev.rid}});
+      }
+    }
     if(!g){
       // 빠른 첫 걸음(o.quick — 구글을 아직 안 읽음): BLOCK7 이 지웠다가 되살린 것은 구글을 읽지 않고도 안다 → 바로 되살린다 (v26-1024-6)
       if(o.quick&&goneKeys.has(key)&&!e.ev.g.ro&&!ro.has(c)){
@@ -9728,8 +9852,26 @@ function gcalPlan(o){
       }
       cancels.push(e);return;
     }
-    const chG=gev.updated!==e.ev.g.u;
+    const mst=M.get(key);
+    if(mst&&!mst.P){
+      // 구글에서 BLOCK7 이 못 옮기는 반복(격주 등)으로 바꿨다 → BLOCK7 반복은 거두고 낱개로 받는다 (구글 쪽에서 바꾼 일)
+      if(_gcalRepOn(e.ev.repeat))local.push({t:'del',id:e.ev.id,ref:e.ev,migr:true});
+      return;
+    }
+    const chG=gev.updated!==e.ev.g.u||!!(mst&&e.ev.g.rf!==undefined&&mst.rf!==e.ev.g.rf);
     const chL=gcalHashEv(e.k,e.ev,o.dsh)!==e.ev.g.h;
+    if(mst&&chG){
+      // 구글 반복이 바뀌었다(규칙·제목·시각·뺀 날) → BLOCK7 반복을 따른다. 뺀 날은 범위 밖 BLOCK7 것을 남긴다
+      const P=mst.P;
+      const exs=new Set(mst.ex);((e.ev.repeat&&e.ev.repeat.ex)||[]).forEach(x=>{if(x<W.from||x>W.to)exs.add(x);});
+      const repeat=Object.assign({},P.repeat,{ex:[...exs].filter(x=>x>=P.k).sort()});if(!repeat.until)delete repeat.until;
+      const nev=Object.assign({},e.ev,{text:P.text,time:P.time,repeat});
+      const sec=(P.time&&o.secFor(P.time))||(P.k===e.k?e.sec:o.defSec);
+      local.push({t:'set',id:e.ev.id,ref:e.ev,k:P.k,sec,patch:{text:P.text,time:P.time,repeat,
+        g:Object.assign({},e.ev.g,{u:gev.updated,h:gcalHashEv(P.k,nev,o.dsh),d:P.d,rf:mst.rf})}});
+      return;
+    }
+    if(mst&&e.ev.g.rf===undefined)local.push({t:'meta',id:e.ev.id,ref:e.ev,patch:{g:Object.assign({},e.ev.g,{rf:mst.rf})}});
     if(chG){                             // 구글이 바뀌었다 → 구글 것을 따른다 (둘 다 바뀌어도 구글이 이긴다)
       const f=gcalFromG(gev.start,gev.end,o.dsh);if(!f)return;
       const text=String(gev.summary||'(제목 없음)');
@@ -9752,6 +9894,31 @@ function gcalPlan(o){
   if(cancels.length>GCAL_DEL_CAP&&cancels.length>L.size*GCAL_DEL_RATIO&&!o.force){
     blocked={n:cancels.length,total:L.size};
   }else cancels.forEach(e=>local.push({t:'del',id:e.ev.id,ref:e.ev}));
+  // 3-0) 구글 반복 원본 → BLOCK7 반복 하나 · 하루만 고친 예외 → 같은 rid 의 '하루만 고친 일정'
+  M.forEach((m,key)=>{
+    if(!m.P)return;
+    const g=m.g,lm=L.get(key);
+    let rid=lm?lm.ev.rid:null;
+    if(!lm){
+      if(tombKeys.has(key)||String(g.ev.id).startsWith('b7ev'))return;   // BLOCK7 이 만든 원본은 BLOCK7 상태로 온다
+      const id=gcalB7IdFor(g.c,g.ev.id);rid='r'+id;
+      const repeat=Object.assign({},m.P.repeat,{ex:m.ex});if(!repeat.until)delete repeat.until;
+      const ev={id,time:m.P.time,text:m.P.text,rid,repeat};
+      const g2={c:g.c,i:g.ev.id,u:g.ev.updated,h:gcalHashEv(m.P.k,ev,o.dsh),d:m.P.d,rf:m.rf,r:1};
+      if(ro.has(g.c))g2.ro=1;
+      ev.g=g2;
+      local.push({t:'add',k:m.P.k,sec:(m.P.time&&o.secFor(m.P.time))||o.defSec,ev});
+    }
+    if(!rid)return;
+    m.mods.forEach(x=>{
+      if(L.has(x.key)||tombKeys.has(x.key))return;
+      const f=gcalFromG(x.g.ev.start,x.g.ev.end,o.dsh);if(!f)return;
+      const text=String(x.g.ev.summary||'(제목 없음)');
+      const g2={c:g.c,i:x.g.ev.id,u:x.g.ev.updated,h:gcalHashEv(f.k,{text,time:f.time},o.dsh),d:f.d};
+      if(ro.has(g.c))g2.ro=1;
+      local.push({t:'add',k:f.k,sec:(f.time&&o.secFor(f.time))||o.defSec,ev:{id:gcalB7IdFor(g.c,x.g.ev.id),time:f.time,text,rid,g:g2}});
+    });
+  });
   // 3) 구글에만 있는 것 → 가져온다
   G.forEach((g,key)=>{
     if(L.has(key)||tombKeys.has(key))return;
@@ -9760,7 +9927,8 @@ function gcalPlan(o){
     // 'b7ev' 로 시작하는 원본 id 는 BLOCK7 이 만든 것이다(gcalGidFor) — 이 기기에 아직 그 원본이 안 왔어도 건너뛴다.
     const rid=gev.recurringEventId;
     if(rid&&(L.has(gcalGKey(g.c,rid))||tombKeys.has(gcalGKey(g.c,rid))||String(rid).startsWith('b7ev')))return;
-    if(gev.recurrence)return;            // 반복 원본 자체(따로 불러온 것) — 고리 없는 원본은 3단계 ②에서
+    if(rid&&(M.get(gcalGKey(g.c,rid))||{}).P)return;   // 반복으로 가져온 원본의 예외 — 위(3-0)에서 다뤘다
+    if(gev.recurrence)return;            // 반복 원본 — 옮길 수 있으면 위에서, 못 옮기면 낱개(instances)로 따로 온다
     const f=gcalFromG(gev.start,gev.end,o.dsh);if(!f||!inWin(f.k))return;
     const text=String(gev.summary||'(제목 없음)');
     const g2={c:g.c,i:gev.id,u:gev.updated,h:gcalHashEv(f.k,{text,time:f.time},o.dsh),d:f.d};
@@ -39379,12 +39547,26 @@ async function _gcalListCals(){
   }
   return out;
 }
-// 한 캘린더의 범위 안 일정 전부 (반복은 낱개로 펼쳐서 · 취소된 것까지). 실패하면 null — 그 캘린더는 이번에 아무것도 지우지 않는다
+// 한 캘린더의 범위 안 일정 전부 (취소된 것까지). 실패하면 null — 그 캘린더는 이번에 아무것도 지우지 않는다
+// 반복은 **펼치지 않고** 받는다 — 원본(규칙) · 예외(하루만 고친·지운 회차) · 한 번짜리가 따로 온다 (v26-1024-7)
+function _gcalWinQ(W){
+  const[fy,fm,fd]=W.from.split('-').map(Number),[ty,tm,td]=W.to.split('-').map(Number);
+  return{showDeleted:'true',maxResults:'2500',timeMin:new Date(fy,fm-1,fd).toISOString(),timeMax:new Date(ty,tm-1,td+2).toISOString()};
+}
+// BLOCK7 말로 못 옮기는 반복(격주 등)만 낱개로 펼쳐 받는다
+async function _gcalFetchInst(c,mid,W){
+  const out=[];let pt='';
+  do{
+    const r=await _gcalApi('GET','/calendars/'+_gcalE(c)+'/events/'+_gcalE(mid)+'/instances',null,Object.assign(_gcalWinQ(W),pt?{pageToken:pt}:{}));
+    if(!r.ok)return out;
+    (r.j.items||[]).forEach(ev=>out.push({c,ev}));
+    pt=r.j.nextPageToken||'';
+  }while(pt);
+  return out;
+}
 async function _gcalFetchCal(c,W){
   const out=[];let pt='';
-  const[fy,fm,fd]=W.from.split('-').map(Number),[ty,tm,td]=W.to.split('-').map(Number);
-  const q={singleEvents:'true',showDeleted:'true',maxResults:'2500',
-    timeMin:new Date(fy,fm-1,fd).toISOString(),timeMax:new Date(ty,tm-1,td+2).toISOString()};
+  const q=_gcalWinQ(W);
   do{
     const r=await _gcalApi('GET','/calendars/'+_gcalE(c)+'/events',null,Object.assign({},q,pt?{pageToken:pt}:{}));
     if(!r.ok)return null;
@@ -39467,6 +39649,10 @@ async function _gcalRunRemote(ops,errs){
       }
       if(r.ok&&r.j.id){links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{i:r.j.id,u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});_gcalGone(op.key,false);}
       else bad(op,r);
+    }else if(op.t==='reinst'){
+      // 하루만 고친 구글 예외를 원본 모양으로 되돌린다 ('모두 고치기')
+      const r=await _gcalApi('PATCH','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid),op.body);
+      if(r.ok||r.status===404||r.status===410)untomb.push({k:op.k,key:op.key});else bad(op,r);
     }else if(op.t==='del'){
       const r=await _gcalApi('DELETE','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid));
       if(r.ok||r.status===404||r.status===410){untomb.push({k:op.k,key:op.key});_gcalGone(op.key,true);}
@@ -39495,6 +39681,9 @@ function _gcalApplyLocal(localOps,links,untomb){
         Object.assign(ev,op.patch);
         const arr=getEvents(op.k,op.sec);arr.push(ev);
         ST.days[op.k].events[op.sec]=_sortEventsKeepingTimeless(arr);n++;
+      }else if(op.t==='meta'){
+        const f=_gcalFind(op.ref,op.id);if(!f)return;
+        Object.assign(f.arr[f.i],op.patch);n++;
       }else if(op.t==='untomb')untomb.push({k:op.k,key:op.key});
     });
     links.forEach(x=>{const f=_gcalFind(x.ref,x.id);if(f){f.arr[f.i].g=x.g;if(x.clearGc)delete f.arr[f.i].gc;n++;}});
@@ -39534,7 +39723,11 @@ async function gcalSync(opt){
     const ok=[],gevents=[];
     const got=await Promise.all(sel.map(c=>_gcalFetchCal(c,W).catch(()=>null)));
     got.forEach((r,i)=>{if(r){ok.push(sel[i]);gevents.push(...r);}});
+    // 못 옮기는 반복만 펼쳐 받는다 (격주 · 매월 15일 · 매년 …)
+    const odd=gevents.filter(x=>Array.isArray(x.ev.recurrence)&&!x.ev.recurringEventId&&x.ev.status!=='cancelled'&&!gcalParseRecur(x.ev,_gcalDsh()));
+    (await Promise.all(odd.slice(0,40).map(x=>_gcalFetchInst(x.c,x.ev.id,W).catch(()=>[])))).forEach(a=>gevents.push(...a));
     const have=new Set(gevents.map(x=>gcalGKey(x.c,x.ev.id)));
+    const masters=new Set(gevents.filter(x=>Array.isArray(x.ev.recurrence)).map(x=>gcalGKey(x.c,x.ev.id)));
     const _lk=gcalCollect(ST.days).linked;
     const getOne=async e=>{
       const r=await _gcalApi('GET','/calendars/'+_gcalE(e.ev.g.c)+'/events/'+_gcalE(e.ev.g.i));
@@ -39545,7 +39738,9 @@ async function gcalSync(opt){
     const reps=_lk.filter(e=>ok.includes(e.ev.g.c)&&_gcalRepOn(e.ev.repeat)&&!have.has(e.key)).slice(0,60);
     reps.forEach(e=>have.add(e.key));
     // 범위 안의 고리 일정인데 구글 목록에 없다 → 하나씩 물어본다 (구글에서 범위 밖으로 옮겼을 수 있다)
-    const miss=_lk.filter(e=>ok.includes(e.ev.g.c)&&e.k>=W.from&&e.k<=W.to&&!have.has(e.key)).slice(0,20);
+    // (예전에 낱개로 가져온 회차인데 그 원본이 목록에 있으면 묻지 않는다 — 판단이 '옮겨 오기' 로 치운다)
+    const miss=_lk.filter(e=>ok.includes(e.ev.g.c)&&e.k>=W.from&&e.k<=W.to&&!have.has(e.key)
+      &&!(gcalInstMaster(e.ev.g.i)&&masters.has(gcalGKey(e.ev.g.c,gcalInstMaster(e.ev.g.i))))).slice(0,20);
     await Promise.all(reps.concat(miss).map(e=>getOne(e).catch(()=>null)));
     const mk=force=>gcalPlan(Object.assign({},base,{days:ST.days,gevents,cals:ok,offCals:off,force}));
     let plan=mk(!!opt.force);

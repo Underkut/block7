@@ -21,7 +21,7 @@ process.env.TZ = 'Asia/Seoul';
 const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, isNaN };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { gcalFromG, gcalToG, gcalPlan, gcalGidFor, gcalB7IdFor, gcalHash, gcalHashEv, gcalWindow, gcalCollect, gcalRecur };`, ctx);
+this.A = { gcalFromG, gcalToG, gcalPlan, gcalGidFor, gcalB7IdFor, gcalHash, gcalHashEv, gcalWindow, gcalCollect, gcalRecur, gcalParseRecur, gcalRf };`, ctx);
 const A = ctx.A;
 const J = (v) => JSON.parse(JSON.stringify(v));
 
@@ -172,7 +172,7 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
     start: { dateTime: '2026-09-05T09:00:00+09:00' }, end: { dateTime: '2026-09-05T10:00:00+09:00' } } };
   const inst = { c: 'me', ev: gev('b7evr1_20261031T000000Z', { recurringEventId: 'b7evr1' }) };
   const p0 = A.gcalPlan(base({ days: { '2026-09-05': day('am', [linkedR([])]) }, gevents: [master, inst], tz: 'Asia/Seoul' }));
-  sc.eq('⑫ 그대로면 할 일 없음 · 구글이 펼친 낱개는 가져오지 않는다', [p0.local.length, p0.remote.length], [0, 0]);
+  sc.eq('⑫ 그대로면 할 일 없음(처음 한 번 규칙 지문만 적는다) · 구글이 펼친 낱개는 가져오지 않는다', [p0.local.filter(x => x.t !== 'meta').length, p0.remote.length, p0.local.map(x => x.t)], [0, 0, ['meta']]);
   const p1 = A.gcalPlan(base({ days: { '2026-09-05': day('am', [linkedR(['2026-10-31'])]) }, gevents: [master, inst], tz: 'Asia/Seoul' }));
   sc.eq('⑫ 이 날만 지움 → 구글 원본에 EXDATE', J(p1.remote.map(x => [x.t, x.gid, x.body.recurrence])),
     [['patch', 'b7evr1', ['RRULE:FREQ=WEEKLY;BYDAY=SA', 'EXDATE;TZID=Asia/Seoul:20261031T090000']]]);
@@ -196,6 +196,86 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   const rdays = { '2026-09-05': day('am', [{ id: 'evR', time: '09:00', text: '반복', repeat: { weekly: true }, g: { c: 'me', i: 'b7evr', u: 'u1', d: 60, h: 'x' } }]) };
   const pS = A.gcalPlan(base({ days: rdays, gevents: [{ c: 'me', ev: { id: 'b7evr', status: 'cancelled' } }], gone: ['me|b7evr'], tz: 'Asia/Seoul' }));
   sc.eq('⑬ 반복 전체를 되살릴 때는 규칙까지', J(pS.remote.map(x => [x.t, x.body.recurrence])), [['restore', ['RRULE:FREQ=WEEKLY;BYDAY=SA']]]);
+}
+
+// ⑭ 구글 반복 → BLOCK7 반복 (v26-1024-7, 3단계 ②) — 2026-10-24 토요일(넷째 주)
+{
+  const M = (rec, over) => Object.assign({ id: 'gm1', status: 'confirmed', updated: 'u1', summary: '구역모임', recurrence: rec,
+    start: { dateTime: '2026-10-24T19:00:00+09:00', timeZone: 'Asia/Seoul' }, end: { dateTime: '2026-10-24T21:00:00+09:00', timeZone: 'Asia/Seoul' } }, over);
+  const PR = (rec, over) => { const r = A.gcalParseRecur(M(rec, over), 0); return r ? J(r.repeat) : null; };
+  const R7 = { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5] };
+  sc.eq('⑭ WEEKLY → BLOCK7 매주', PR(['RRULE:FREQ=WEEKLY;BYDAY=SA']), Object.assign({}, R7, { ex: [] }));
+  sc.eq('⑭ DAILY → 매일', PR(['RRULE:FREQ=DAILY']), { daily: true, daysOfWeek: [0,1,2,3,4,5,6], weekly: false, weeksOfMonth: [1,2,3,4,5], ex: [] });
+  sc.eq('⑭ WEEKLY;BYDAY=MO,WE → 매일 + 요일', PR(['RRULE:FREQ=WEEKLY;BYDAY=MO,WE']), { daily: true, daysOfWeek: [1, 3], weekly: false, weeksOfMonth: [1,2,3,4,5], ex: [] });
+  sc.eq('⑭ MONTHLY;BYDAY=2SA,4SA → 매주 + 몇째 주', PR(['RRULE:FREQ=MONTHLY;BYDAY=2SA,4SA']), Object.assign({}, R7, { weeksOfMonth: [2, 4], ex: [] }));
+  sc.eq('⑭ UNTIL · EXDATE', PR(['RRULE:FREQ=WEEKLY;BYDAY=SA;UNTIL=20261231T145959Z', 'EXDATE;TZID=Asia/Seoul:20261031T190000,20261107T190000']),
+    Object.assign({}, R7, { until: '2026-12-31', ex: ['2026-10-31', '2026-11-07'] }));
+  sc.eq('⑭ COUNT=3 → 끝날 (셋째 회)', PR(['RRULE:FREQ=WEEKLY;BYDAY=SA;COUNT=3']), Object.assign({}, R7, { until: '2026-11-07', ex: [] }));
+  sc.eq('⑭ 못 옮기는 것: 격주 · 매월 24일 · 매년 · 마지막 토요일', [PR(['RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=SA']), PR(['RRULE:FREQ=MONTHLY;BYMONTHDAY=24']),
+    PR(['RRULE:FREQ=YEARLY']), PR(['RRULE:FREQ=MONTHLY;BYDAY=-1SA'])], [null, null, null, null]);
+  // 오가도 같은 뜻: BLOCK7 → 구글 → BLOCK7
+  [{ daily: true }, { daily: true, daysOfWeek: [1, 3] }, { weekly: true }, { weekly: true, weeksOfMonth: [2, 4] }, { daily: true, daysOfWeek: [0, 6], weekly: true, weeksOfMonth: [4] }].forEach(rp => {
+    const rec = A.gcalRecur('2026-10-24', { time: '19:00', repeat: rp }, 0, 'Asia/Seoul');
+    const back = A.gcalParseRecur(M(rec), 0).repeat;
+    const hits = r => { const out = []; for (let i = 0; i < 70; i++) { const d = new Date(2026, 9, 24 + i); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const dow = d.getDay(), wk = Math.ceil(d.getDate() / 7), days = r.daysOfWeek || [0,1,2,3,4,5,6], weeks = r.weeksOfMonth || [1,2,3,4,5];
+      const on = r.daily ? (days.includes(dow) && (!r.weekly || weeks.includes(wk))) : (r.weekly && dow === 6 && weeks.includes(wk)); if (on) out.push(k); } return out; };
+    sc.eq('⑭ 오가도 같은 날들: ' + JSON.stringify(rp), hits(back), hits(rp));
+  });
+
+  // 가져오기: 원본 하나 → 반복 하나 · 지운 회차 → 뺀 날 · 고친 회차 → 하루만 고친 일정
+  const master = { c: 'me', ev: M(['RRULE:FREQ=WEEKLY;BYDAY=SA']) };
+  const xDel = { c: 'me', ev: { id: 'gm1_20261031T100000Z', status: 'cancelled', recurringEventId: 'gm1', originalStartTime: { dateTime: '2026-10-31T19:00:00+09:00' } } };
+  const xMod = { c: 'me', ev: { id: 'gm1_20261107T100000Z', status: 'confirmed', updated: 'u5', recurringEventId: 'gm1', summary: '구역모임 (장소 변경)',
+    originalStartTime: { dateTime: '2026-11-07T19:00:00+09:00' }, start: { dateTime: '2026-11-07T20:00:00+09:00' }, end: { dateTime: '2026-11-07T22:00:00+09:00' } } };
+  const xSame = { c: 'me', ev: { id: 'gm1_20261114T100000Z', status: 'confirmed', updated: 'u6', recurringEventId: 'gm1', summary: '구역모임',
+    originalStartTime: { dateTime: '2026-11-14T19:00:00+09:00' }, start: { dateTime: '2026-11-14T19:00:00+09:00' }, end: { dateTime: '2026-11-14T21:00:00+09:00' } } };
+  const p = A.gcalPlan(base({ gevents: [master, xDel, xMod, xSame], tz: 'Asia/Seoul' }));
+  const adds = p.local.filter(x => x.t === 'add');
+  sc.eq('⑭ 반복 하나 + 하루만 고친 일정 하나만 들어온다 (원본과 같은 회차는 따로 안 들어온다)', adds.length, 2);
+  const rp = adds.find(x => x.ev.repeat).ev, ov = adds.find(x => !x.ev.repeat).ev;
+  sc.eq('⑭ 반복: 매주 · 뺀 날 = 지운 날 + 고친 날', J([rp.repeat.weekly, rp.repeat.ex, rp.time, rp.text]), [true, ['2026-10-31', '2026-11-07'], '19:00', '구역모임']);
+  sc.eq('⑭ 하루만 고친 일정: 같은 묶음(rid) · 고친 시각·제목', J([ov.rid === rp.rid, ov.time, ov.text, adds.find(x => !x.ev.repeat).k]), [true, '20:00', '구역모임 (장소 변경)', '2026-11-07']);
+  sc.eq('⑭ 구글로는 아무것도 안 보낸다', p.remote.length, 0);
+
+  // 옮겨 오기: 예전에 낱개로 가져온 회차는 BLOCK7 에서만 치운다 · 고친 회차였던 것은 남아 rid 를 얻는다
+  const oldInst = (gid, k, text) => ({ id: A.gcalB7IdFor('me', gid), time: '19:00', text, g: { c: 'me', i: gid, u: 'u', h: A.gcalHash(k, '19:00', text), d: 120 } });
+  const daysOld = { '2026-10-24': day('pm', [oldInst('gm1_20261024T100000Z', '2026-10-24', '구역모임')]),
+                    '2026-11-07': day('pm', [oldInst('gm1_20261107T100000Z', '2026-11-07', '구역모임 (장소 변경)')]) };
+  const pm = A.gcalPlan(base({ days: daysOld, gevents: [master, xMod], tz: 'Asia/Seoul' }));
+  sc.eq('⑭ 옮겨 오기: 예전 낱개 회차는 치우고(구글엔 손대지 않음) 반복을 가져온다', J([pm.local.filter(x => x.t === 'del' && x.migr).length, pm.local.filter(x => x.t === 'add' && x.ev.repeat).length, pm.remote.length]), [1, 1, 0]);
+
+  const pt = A.gcalPlan(base({ days: Object.assign({}, daysOld, { '2026-09-01': day('pm', [], { gdel: ['me|gm1'] }) }), gevents: [master, xMod], tz: 'Asia/Seoul' }));
+  sc.eq('⑭ 옮겨 오기는 대신할 반복이 있을 때만 (반복을 BLOCK7 에서 지운 표시가 있으면 낱개를 안 치운다)', pt.local.filter(x => x.migr).length, 0);
+  // 구글에서 규칙을 바꿨다 (매주 → 둘째·넷째 주) → BLOCK7 반복이 따른다
+  const linkedM = (rf, extra) => Object.assign({ id: 'evM', time: '19:00', text: '구역모임', rid: 'rM', repeat: { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5], ex: [] },
+    g: { c: 'me', i: 'gm1', u: 'u1', d: 120, rf } }, extra);
+  const P0 = A.gcalParseRecur(M(['RRULE:FREQ=WEEKLY;BYDAY=SA']), 0);
+  const ev0 = linkedM(A.gcalRf(P0, []));
+  ev0.g.h = A.gcalHashEv('2026-10-24', ev0, 0);
+  const masterNew = { c: 'me', ev: M(['RRULE:FREQ=MONTHLY;BYDAY=2SA,4SA'], { updated: 'u9' }) };
+  const pc = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [ev0]) }, gevents: [masterNew], tz: 'Asia/Seoul' }));
+  const st = pc.local.find(x => x.t === 'set');
+  sc.eq('⑭ 구글에서 바꾼 규칙(둘째·넷째 주)을 BLOCK7 반복이 따른다', st && J(st.patch.repeat.weeksOfMonth), J([2, 4]));
+  // 예외만 바뀌어 원본 updated 가 그대로여도 (회차 하나를 구글에서 지움) 지문으로 알아챈다
+  const pe = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [ev0]) }, gevents: [master, xDel], tz: 'Asia/Seoul' }));
+  const se = pe.local.find(x => x.t === 'set');
+  sc.eq('⑭ 구글에서 회차 하나 지움(원본 updated 그대로) → BLOCK7 뺀 날에 든다', se && J(se.patch.repeat.ex), J(['2026-10-31']));
+  // '모두 고치기' 로 하루만 고친 예외를 지울 때 그 날을 다시 원본이 따르면 → DELETE 가 아니라 원본 모양으로 되돌린다
+  const evAll = linkedM(A.gcalRf(P0, ['2026-11-07']));
+  evAll.g.h = 'changed';
+  const daysAll = { '2026-10-24': day('pm', [evAll]), '2026-11-07': day('pm', [], { gdel: ['me|gm1_20261107T100000Z'] }) };
+  const pa = A.gcalPlan(base({ days: daysAll, gevents: [master, xMod], tz: 'Asia/Seoul' }));
+  sc.eq('⑭ 모두 고치기: 하루만 고친 구글 예외는 지우지 않고 원본 모양으로', J(pa.remote.filter(x => x.t !== 'patch').map(x => [x.t, x.gid, x.body.summary, x.body.status])),
+    [['reinst', 'gm1_20261107T100000Z', '구역모임', 'confirmed']]);
+  // 못 옮기는 구글 반복(격주) → 반복으로는 안 가져오고, 낱개(instances)로 온 회차를 예전처럼 가져온다
+  const bi = { c: 'me', ev: M(['RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=SA'], { id: 'gb' }) };
+  const biI = { c: 'me', ev: gev('gb_20261024T100000Z', { recurringEventId: 'gb', start: { dateTime: '2026-10-24T19:00:00+09:00' }, end: { dateTime: '2026-10-24T21:00:00+09:00' } }) };
+  const pb = A.gcalPlan(base({ gevents: [bi, biI], tz: 'Asia/Seoul' }));
+  sc.eq('⑭ 격주는 낱개로 (반복으로 안 옮김)', J(pb.local.filter(x => x.t === 'add').map(x => [!!x.ev.repeat, x.ev.g.i])), [[false, 'gb_20261024T100000Z']]);
+  // BLOCK7 이 만든 원본(b7ev…)은 이 기기에 아직 없어도 새로 가져오지 않는다
+  const pb7 = A.gcalPlan(base({ gevents: [{ c: 'me', ev: M(['RRULE:FREQ=DAILY'], { id: 'b7ev123' }) }], tz: 'Asia/Seoul' }));
+  sc.eq('⑭ BLOCK7 이 만든 원본은 가져오지 않는다', pb7.local.length, 0);
 }
 
 // ⑦ 두 벌 접기
