@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-3  [production]  -->
+<!-- BLOCK7  v. 26-1024-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6383,7 +6383,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-3";
+const APP_VERSION = "v. 26-1024-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -39396,18 +39396,78 @@ function _gcalTomb(k,ev){
   if(!day.gdel.includes(key))day.gdel.push(key);
 }
 // save() 마다 불린다 — 일정을 고친 뒤 몇 초 기다렸다 맞춘다
-function _gcalOnSave(){if(_gcalApplying||!_gcalCfg().on)return;_gcalKick(8000);}
+function _gcalOnSave(){if(_gcalApplying||!_gcalCfg().on)return;_gcalKick(1500);}   // 고치고 1.5초 뒤 (예전 8초)
 function _gcalKick(ms){
   if(!_gcalCfg().on)return;
   clearTimeout(_gcalKickT);
-  _gcalKickT=setTimeout(()=>{if(Date.now()-_gcalLast<20000)return _gcalKick(20000-(Date.now()-_gcalLast));gcalSync();},ms||0);
+  _gcalKickT=setTimeout(()=>{if(Date.now()-_gcalLast<4000)return _gcalKick(4000-(Date.now()-_gcalLast));gcalSync();},ms||0);   // 맞추기 사이는 4초 이상 (예전 20초)
 }
+// 구글에 쓰기 — 판단(gcalPlan)이 정한 remote 목록을 실행하고, BLOCK7 에 남길 고리·걷을 지움 표시를 돌려준다
+async function _gcalRunRemote(ops,errs){
+  const links=[],untomb=[];
+  const bad=(op,r)=>{if(r&&!r.ok)errs.push(`${op.t} ${r.status}${r.j&&r.j.error&&r.j.error.message?' '+r.j.error.message:''}`);};
+  for(const op of ops){
+    if(op.t==='ins'){
+      let r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events',op.body);
+      if(r.status===409)r=await _gcalApi('GET','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.body.id));
+      if(r.ok&&r.j.id)links.push({ref:op.ref,id:op.id,clearGc:1,g:Object.assign({c:op.c,i:r.j.id,u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d},op.rep?{r:1}:{})});
+      else bad(op,r);
+    }else if(op.t==='move'){
+      const r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid)+'/move',null,{destination:op.to});
+      if(r.ok)links.push({ref:op.ref,id:op.id,clearGc:1,g:Object.assign({},op.ref.g,{c:op.to,u:r.j.updated})});
+      else bad(op,r);
+    }else if(op.t==='patch'){
+      const r=await _gcalApi('PATCH','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid),op.body);
+      if(r.ok)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});
+      else if(r.status===403)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{ro:1})});
+      else bad(op,r);
+    }else if(op.t==='del'){
+      const r=await _gcalApi('DELETE','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid));
+      if(r.ok||r.status===404||r.status===410)untomb.push({k:op.k,key:op.key});
+      else if(r.status!==403)bad(op,r);
+      // 403(남의 캘린더) 이면 표시를 남겨 둔다 — 다시 가져오지 않게 하는 표시로 쓴다
+    }
+  }
+  return{links,untomb};
+}
+// BLOCK7 고치기 — 되돌리기 목록에는 넣지 않는다(beforeSave 를 안 부른다)
+function _gcalApplyLocal(localOps,links,untomb){
+  _gcalApplying=true;
+  let n=0;
+  try{
+    (localOps||[]).forEach(op=>{
+      if(op.t==='add'){
+        if(_gcalFind(null,op.ev.id))return;            // 그 사이 다른 기기에서 같은 것이 들어왔다
+        const arr=getEvents(op.k,op.sec);arr.push(op.ev);
+        ST.days[op.k].events[op.sec]=_sortEventsKeepingTimeless(arr);n++;
+      }else if(op.t==='del'){
+        const f=_gcalFind(op.ref,op.id);if(!f)return;
+        f.arr.splice(f.i,1);n++;
+      }else if(op.t==='set'){
+        const f=_gcalFind(op.ref,op.id);if(!f)return;
+        const ev=f.arr.splice(f.i,1)[0];
+        Object.assign(ev,op.patch);
+        const arr=getEvents(op.k,op.sec);arr.push(ev);
+        ST.days[op.k].events[op.sec]=_sortEventsKeepingTimeless(arr);n++;
+      }else if(op.t==='untomb')untomb.push({k:op.k,key:op.key});
+    });
+    links.forEach(x=>{const f=_gcalFind(x.ref,x.id);if(f){f.arr[f.i].g=x.g;if(x.clearGc)delete f.arr[f.i].gc;n++;}});
+    untomb.forEach(x=>{
+      const day=ST.days[x.k];if(!day||!Array.isArray(day.gdel))return;
+      day.gdel=day.gdel.filter(t=>t!==x.key);if(!day.gdel.length)delete day.gdel;n++;
+    });
+    if(n){save();try{renderToday();}catch(e){}try{refreshTaskViewsLive();}catch(e){}}
+  }finally{_gcalApplying=false;}
+}
+let _gcalAgain=false;
 async function gcalSync(opt){
   opt=opt||{};
   const cfg=_gcalCfg();
-  if(!cfg.on||!_gcalUsable()||_gcalBusy)return;
+  if(!cfg.on||!_gcalUsable())return;
+  if(_gcalBusy){_gcalAgain=true;return;}   // 맞추는 중에 또 고쳤다 → 끝나면 한 번 더 (예전엔 그냥 버려졌다)
   if(typeof navigator!=='undefined'&&navigator.onLine===false)return;
   _gcalBusy=true;_gcalLast=Date.now();_gcalMsg='맞추는 중…';_gcalRenderStatus();
+  const errs=[];
   try{
     const today=todayKey(),W=gcalWindow(today);
     const sel=(cfg.cals||[]).slice();
@@ -39415,85 +39475,51 @@ async function gcalSync(opt){
     const known=_gcalCals||[];
     const ro=known.filter(c=>c.role!=='owner'&&c.role!=='writer').map(c=>c.id);
     const off=_gcalCals?known.map(c=>c.id).filter(id=>!sel.includes(id)):[];
+    const base={days:ST.days,writeCal:cfg.writeCal,roCals:ro,today,dsh:_gcalDsh(),secFor:t=>_secIdForTime(t),defSec:_gcalDefSec(),tz:_gcalTz()};
+    // ① 먼저 보내기 — BLOCK7 에서 새로 만든 것은 구글을 읽기 전에 바로 넣는다 (넣기는 구글 쪽 내용을 몰라도 된다, v26-1024-4)
+    {
+      const quick=gcalPlan(Object.assign({},base,{gevents:[],cals:sel}));
+      const ins=quick.remote.filter(x=>x.t==='ins');
+      if(ins.length){const q=await _gcalRunRemote(ins,errs);_gcalApplyLocal([],q.links,[]);}
+    }
+    // ② 고른 캘린더를 한꺼번에 읽는다 (예전엔 하나씩 차례로 — 캘린더가 많으면 그만큼 늦었다)
     const ok=[],gevents=[];
-    for(const c of sel){const r=await _gcalFetchCal(c,W);if(r){ok.push(c);gevents.push(...r);}}
-    // 범위 안의 고리 일정인데 구글 목록에 없다 → 하나씩 물어본다 (구글에서 범위 밖으로 옮겼을 수 있다)
+    const got=await Promise.all(sel.map(c=>_gcalFetchCal(c,W).catch(()=>null)));
+    got.forEach((r,i)=>{if(r){ok.push(sel[i]);gevents.push(...r);}});
     const have=new Set(gevents.map(x=>gcalGKey(x.c,x.ev.id)));
     const _lk=gcalCollect(ST.days).linked;
+    const getOne=async e=>{
+      const r=await _gcalApi('GET','/calendars/'+_gcalE(e.ev.g.c)+'/events/'+_gcalE(e.ev.g.i));
+      if(r.ok)gevents.push({c:e.ev.g.c,ev:r.j});
+      else if(r.status===404||r.status===410)gevents.push({c:e.ev.g.c,ev:{id:e.ev.g.i,status:'cancelled'}});
+    };
     // 반복 원본 — 구글 목록(낱개로 펼친 것)에는 원본이 없어서 하나씩 묻는다. 원본 날이 범위 밖이어도 (v26-1024-3)
-    for(const e of _lk.filter(e=>ok.includes(e.ev.g.c)&&_gcalRepOn(e.ev.repeat)&&!have.has(e.key)).slice(0,60)){
-      const r=await _gcalApi('GET','/calendars/'+_gcalE(e.ev.g.c)+'/events/'+_gcalE(e.ev.g.i));
-      if(r.ok)gevents.push({c:e.ev.g.c,ev:r.j});
-      else if(r.status===404||r.status===410)gevents.push({c:e.ev.g.c,ev:{id:e.ev.g.i,status:'cancelled'}});
-      have.add(e.key);
-    }
+    const reps=_lk.filter(e=>ok.includes(e.ev.g.c)&&_gcalRepOn(e.ev.repeat)&&!have.has(e.key)).slice(0,60);
+    reps.forEach(e=>have.add(e.key));
+    // 범위 안의 고리 일정인데 구글 목록에 없다 → 하나씩 물어본다 (구글에서 범위 밖으로 옮겼을 수 있다)
     const miss=_lk.filter(e=>ok.includes(e.ev.g.c)&&e.k>=W.from&&e.k<=W.to&&!have.has(e.key)).slice(0,20);
-    for(const e of miss){
-      const r=await _gcalApi('GET','/calendars/'+_gcalE(e.ev.g.c)+'/events/'+_gcalE(e.ev.g.i));
-      if(r.ok)gevents.push({c:e.ev.g.c,ev:r.j});
-      else if(r.status===404||r.status===410)gevents.push({c:e.ev.g.c,ev:{id:e.ev.g.i,status:'cancelled'}});
-    }
-    const mk=force=>gcalPlan({days:ST.days,gevents,cals:ok,offCals:off,writeCal:cfg.writeCal,roCals:ro,today,
-      dsh:ST.settings.dayStartHour||0,secFor:t=>_secIdForTime(t),defSec:_gcalDefSec(),force,tz:_gcalTz()});
+    await Promise.all(reps.concat(miss).map(e=>getOne(e).catch(()=>null)));
+    const mk=force=>gcalPlan(Object.assign({},base,{days:ST.days,gevents,cals:ok,offCals:off,force}));
     let plan=mk(!!opt.force);
     if(plan.blocked&&!_gcalNoAsk){
       if(confirm(`구글 캘린더에서 일정 ${plan.blocked.n}개가 한꺼번에 사라졌어요.\nBLOCK7 에서도 지울까요?\n\n(취소하면 이번에는 그대로 두고, 앱을 다시 열 때 다시 여쭤요)`))plan=mk(true);
       else _gcalNoAsk=true;
     }
-    // ③ 구글 고치기
-    const links=[],untomb=[];
-    for(const op of plan.remote){
-      if(op.t==='ins'){
-        let r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events',op.body);
-        if(r.status===409)r=await _gcalApi('GET','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.body.id));
-        if(r.ok&&r.j.id)links.push({ref:op.ref,id:op.id,clearGc:1,g:{c:op.c,i:r.j.id,u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d}});
-      }else if(op.t==='move'){
-        const r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid)+'/move',null,{destination:op.to});
-        if(r.ok)links.push({ref:op.ref,id:op.id,clearGc:1,g:Object.assign({},op.ref.g,{c:op.to,u:r.j.updated})});
-      }else if(op.t==='patch'){
-        const r=await _gcalApi('PATCH','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid),op.body);
-        if(r.ok)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});
-        else if(r.status===403)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{ro:1})});
-      }else if(op.t==='del'){
-        const r=await _gcalApi('DELETE','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid));
-        if(r.ok||r.status===404||r.status===410)untomb.push({k:op.k,key:op.key});
-        // 403(남의 캘린더) 이면 표시를 남겨 둔다 — 다시 가져오지 않게 하는 표시로 쓴다
-      }
-    }
-    // ④ ST 고치기
-    _gcalApplying=true;
-    let n=0;
-    try{
-      plan.local.forEach(op=>{
-        if(op.t==='add'){
-          if(_gcalFind(null,op.ev.id))return;            // 그 사이 다른 기기에서 같은 것이 들어왔다
-          const arr=getEvents(op.k,op.sec);arr.push(op.ev);
-          ST.days[op.k].events[op.sec]=_sortEventsKeepingTimeless(arr);n++;
-        }else if(op.t==='del'){
-          const f=_gcalFind(op.ref,op.id);if(!f)return;
-          f.arr.splice(f.i,1);n++;
-        }else if(op.t==='set'){
-          const f=_gcalFind(op.ref,op.id);if(!f)return;
-          const ev=f.arr.splice(f.i,1)[0];
-          Object.assign(ev,op.patch);
-          const arr=getEvents(op.k,op.sec);arr.push(ev);
-          ST.days[op.k].events[op.sec]=_sortEventsKeepingTimeless(arr);n++;
-        }else if(op.t==='untomb')untomb.push({k:op.k,key:op.key});
-      });
-      links.forEach(x=>{const f=_gcalFind(x.ref,x.id);if(f){f.arr[f.i].g=x.g;if(x.clearGc)delete f.arr[f.i].gc;n++;}});
-      untomb.forEach(x=>{
-        const day=ST.days[x.k];if(!day||!Array.isArray(day.gdel))return;
-        day.gdel=day.gdel.filter(t=>t!==x.key);if(!day.gdel.length)delete day.gdel;n++;
-      });
-      if(n){save();try{renderToday();}catch(e){}try{refreshTaskViewsLive();}catch(e){}}
-    }finally{_gcalApplying=false;}
+    // ③ 구글 고치기 · ④ BLOCK7 고치기
+    const res=await _gcalRunRemote(plan.remote,errs);
+    _gcalApplyLocal(plan.local,res.links,res.untomb);
     const d=new Date();
     _gcalMsg=`마지막으로 맞춘 때 ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`+(ok.length<sel.length?` · 캘린더 ${sel.length-ok.length}개를 못 읽었어요`:'');
   }catch(e){
     console.warn('gcal sync',e);
     if(e&&e.status===404){_gcalConnected=false;_gcalMsg='구글 연결이 끊겼어요. 다시 연결해 주세요';}
     else _gcalMsg='맞추지 못했어요 — 잠시 뒤 다시 해 볼게요';
-  }finally{_gcalBusy=false;_gcalRenderStatus();}
+  }finally{
+    // 구글이 받지 않은 것은 설정창 상태 줄에 남긴다 — 화면을 찍어 보내면 무엇이 막혔는지 바로 안다
+    if(errs.length){console.warn('gcal 거절',errs);_gcalMsg+=` · 구글이 받지 않은 것 ${errs.length}개 (${errs[0].slice(0,120)})`;}
+    _gcalBusy=false;_gcalRenderStatus();
+    if(_gcalAgain){_gcalAgain=false;_gcalKick(1500);}
+  }
 }
 // 로그인·첫 클라우드 읽기가 끝난 뒤 한 번 불린다 (onAuthStateChanged). ready() 가 거짓이면 쓰기가 막힌 기기라 맞추지 않는다
 function _gcalBoot(ready){
