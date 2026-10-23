@@ -2,6 +2,7 @@
  *
  * studyTick (1분마다, 서울)  sremind/{id} 중 시각이 된 것을 아이 폰에 푸시하고 지운다.
  *                           타이머(KAIROS) 잠금 화면 알림도 같은 틱에서 함께 돈다 (timer.js · timerDue).
+ *                           BLOCK7·Sweeter 말씀 · 할일 알림도 (b7push.js · b7Due).
  *                           알림에는 [시작] [미루기] 단추가 붙는다(안드로이드). 2시간 넘게 밀린 것은 보내지 않고 지운다.
  * studyPing (HTTP)
  *   POST /report  {fid, kidId, sid}  아이가 공부를 보냈다 → 부모님께
@@ -98,10 +99,13 @@ exports.studyPing = onRequest({ region: REGION, cors: true }, async (req, res) =
 });
 
 // timeoutSeconds 120: 타이머(KAIROS) 알림이 끝 시각까지 최대 1분 기다렸다 보낸다 (timer.js)
-exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Seoul", region: REGION, timeoutSeconds: 120 }, async () => {
-  // KAIROS 잠금 화면 알림 — 예약 작업을 하나 더 만들지 않고 이 틱에 얹는다. 서로 실패를 넘기지 않게 따로 감싼다
+// memory 512MiB: BLOCK7 알림(b7push.js)이 큰 상태 문서를 읽어 푼다 — 기본 256MiB 는 빠듯하다
+exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Seoul", region: REGION, timeoutSeconds: 120, memory: "512MiB" }, async () => {
+  // KAIROS 잠금 화면 알림 · BLOCK7·Sweeter 알림 — 예약 작업을 하나 더 만들지 않고 이 틱에 얹는다.
+  // 서로 실패를 넘기지 않게 따로 감싼다
   const timer = require("./timer").timerDue().catch((e) => console.warn("timerDue", e.message));
-  try { await studyDue(); } finally { await timer; }
+  const b7 = require("./b7push").b7Due().catch((e) => console.warn("b7Due", e.message));
+  try { await studyDue(); } finally { await timer; await b7; }
 });
 async function studyDue() {
   const now = Date.now();

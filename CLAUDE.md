@@ -202,11 +202,13 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   로그인 두 벌이 오가면 확인할 것이 갑절이 된다. 켜는 자리는 **제 도메인(`sweeter.my`)에
   서는 `build-sweeter/`** 이고, 그것은 저장소에 커밋하지 않는다 (위 '산출물' 참고).
   (`tests/test_sweeter_home.js` 시나리오 15 · `tests/test_sweeter_prod.js` 시나리오 6 이 지킨다)
-- **Sweeter 에서 알림(푸시)을 켜지 말 것 — 아직.**
-  발송 서버(`versepush`)는 클라우드의 `settings.notify` 를 보는데 그 칸은 BLOCK7 것이다.
-  Sweeter 몫은 `productSettings.sweeter` 에 들어 있어 서버가 보지 못한다 →
-  켜면 **한 알림에 두 앱이 같이 울린다.** 서버가 제품을 알아보게 만든 뒤에 풀 것.
-  (새 도메인은 알림 권한이 `default` 라 저절로 켜지지는 않는다)
+- **알림(푸시)은 두 앱이 따로 켜고 따로 울린다** (v26-1024-13, HB 결정).
+  발송 서버는 `wallet-functions/src/b7push.js` 하나다(예전 `versepush` · `block7Notify` 를 대신함, `docs/push/setup.md`).
+  BLOCK7 말씀은 `settings.versePush`, Sweeter 말씀은 `productSettings.sweeter.versePush` 를 보고,
+  기기 등록(`pushTokens`)의 `product` 로 제 앱 기기에만 보낸다. 할일 알림은 BLOCK7 만.
+  ⚠️ `versePush` 는 `_PS_OWN` — Sweeter 가 BLOCK7 의 '켜짐' 을 **물려받지 않는다.** 물려받으면 다음 저장 때
+  BLOCK7 설정이 Sweeter 칸으로 베껴져 등록도 안 한 Sweeter 몫이 울린다 (`tests/test_prodsettings.js` 시나리오 9).
+  ⚠️ 서버는 1분마다 **예약표(`b7plan`)만** 본다. 사용자 상태 문서 전체를 1분마다 읽는 서버를 다시 만들지 말 것.
 - **클라우드 문서(`users/{uid}`)는 두 제품이 같이 쓴다 — 제품별로 가르지 말 것.**
   HB 가 정한 모양이다(2026-09-19): 같은 아이디로 두 앱에 들어오면 말씀 모음이
   양쪽에 같이 보이고, 다른 아이디로 들어오면 남남이다. 제품별로 가르는 것은

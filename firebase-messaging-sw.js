@@ -30,8 +30,10 @@
 //     - Date.now() 만으로는 중복을 가를 수 없다(같은 밀리초·시계 되돌림).
 // ══════════════════════════════════════════════════════════════
 
-var SW_VER = 'v. 26-0828-7';
-var APP_URL = 'https://block7.my/';
+var SW_VER = 'v. 26-1024-13';
+// 알림을 누르면 열 주소 — 이 워커가 사는 곳 그대로(block7.my 또는 sweeter.my).
+// ⚠️ 예전엔 block7.my 로 박혀 있어 Sweeter 알림을 누르면 BLOCK7 이 열렸다 (v26-1024-13).
+var APP_URL = (self.registration && self.registration.scope) || 'https://block7.my/';
 var LOG_URL = '/__notif_log';
 
 // 이 워커가 마지막으로 처리한 클릭 의도. 앱이 "준비됐다"고 알려 오면 다시 보낸다.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-12  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-13  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6400,7 +6400,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-12";
+const APP_VERSION = "v. 26-1024-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6410,6 +6410,7 @@ const _PRODUCT_SCOPED=[
   'uiLevel','verseUiLevel','uiLevelIconSet',                    // 유저 등급 · 아이콘
   'theme','themePresetId',                                      // 화면 스타일
   'notify','verseAlarm',                                        // 알림 (두 앱이 같이 울리면 안 된다)
+  'versePush','versePushPool',                                  // 말씀 푸시 — 두 앱이 따로 켜고 따로 울린다 (v26-1024-13, HB (가))
   'vfTextScale','vListHeightRatio','vfThemes','vfThemeBySec',   // 전체화면 표시
   'vfArtOn','vfArtStyle','propTitleDissolve','propTitleTyping', // 전체화면 시각 효과
   'verseBarOn','verseMode','verseSneakStyle',                   // 상단 말씀 표시 방식
@@ -6417,6 +6418,10 @@ const _PRODUCT_SCOPED=[
   'verseWidgetTag','verseWidgetTextSize','verseWidgetRefSize',  // 말씀 위젯
   'swTiles','swTilesV'                                          // Sweeter 홈의 타일 구성·판 번호
 ];
+// 위 목록 가운데 **물려받지 않는** 것 — 제 칸이 비었으면 BLOCK7 값을 보여주지 않고 비워 둔다(기본값).
+// 말씀 푸시: Sweeter 가 BLOCK7 의 '켜짐' 을 물려받으면, 이 기기를 등록하지도 않았는데 켜진 것처럼 보이고
+// 다음 저장 때 BLOCK7 설정이 Sweeter 칸으로 복사되어 서버가 Sweeter 몫까지 보낸다 (v26-1024-13).
+const _PS_OWN=['versePush'];
 // ══ 기기별로만 두는 설정 (v26-0828-7) ═════════════════════════════════════
 // ⚠️ 바로 위의 _PRODUCT_SCOPED 와는 **다른 것**이다. 저건 BLOCK7 과 Sweeter 를 가르고,
 //    이건 아이폰과 맥을 가른다. 둘을 섞지 말 것.
@@ -6476,7 +6481,7 @@ function _dsProject(state,prior){
 // ⚠️ 계정 설정(notify.enabled · versePush)은 **그대로 둔다.** 이 스위치는 이 기기의
 //    푸시 등록(pushTokens)만 넣었다 뺐다 한다 → 한 기기를 꺼도 다른 기기는 그대로다.
 //    예전에는 계정 설정을 껐기 때문에 한 기기에서 끄면 전부 꺼졌다.
-// ⚠️ 서버(versepush · block7Notify)는 계정 설정과 pushTokens 만 본다. 그래서
+// ⚠️ 서버(b7push — 예전 versepush · block7Notify)는 계정 설정과 pushTokens 만 본다. 그래서
 //    서버를 한 줄도 고치지 않고 기기별 끄기가 된다 — 등록이 없으면 그 기기엔 안 간다.
 const _DEV_NOTIF_KEY='b7v1_notifdev';
 function _devNotifOn(){
@@ -6490,10 +6495,12 @@ function _psIsDefault(){return APP_PRODUCT===APP_PRODUCT_DEFAULT;}
 // 읽기 쪽 — 클라우드에서 받은 설정 위에 이 제품 몫을 덮어씌운다.
 function _psOverlay(settings,productSettings){
   if(_psIsDefault())return settings;
-  const mine=(productSettings||{})[APP_PRODUCT];
-  if(!mine)return settings;
+  const mine=(productSettings||{})[APP_PRODUCT]||{};
   const out=Object.assign({},settings);
-  _PRODUCT_SCOPED.forEach(k=>{if(mine[k]!==undefined)out[k]=mine[k];});
+  _PRODUCT_SCOPED.forEach(k=>{
+    if(mine[k]!==undefined)out[k]=mine[k];
+    else if(_PS_OWN.includes(k))delete out[k];   // 물려받지 않는다 — 기본값(꺼짐)으로
+  });
   return out;
 }
 // 쓰기 쪽 — 클라우드에 올릴 모양으로 되돌린다.
@@ -7726,6 +7733,16 @@ try{
             <input type="checkbox" id="setDevNotifyV" onchange="setDeviceNotify(this.checked)">
             <span class="settings-toggle-track"></span>
           </label>
+        </div>
+        <!-- 서버 시험 (v26-1024-13) — Sweeter 에는 일반설정창의 '알림 테스트' 가 없어서 여기에도 둔다. 관리자 계정만 -->
+        <div class="settings-row" id="vpServerTestRow" style="margin-top:14px;display:none;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">서버 시험 알림</div>
+            <div class="settings-row-desc">이 앱에 등록된 기기로 서버가 직접 보내요. 누르고 8초 안에 홈 화면으로 나가면 배너로 와요.</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="sendTestPush()">서버</button>
+          </div>
         </div>
         <div class="settings-row" id="vpDiagRow" style="margin-top:14px;">
           <div class="settings-row-text">
@@ -11045,6 +11062,8 @@ function _syncVersePushPool(){
       const e={ref:v.ref||'',krText:v.krText||'',cat:v.cat||'',topic:v.topic||''};
       const k=_pushKey(v);
       if(k)e.key=k;
+      // 성경 안의 자리 — 서버가 '성경순' 으로 돌 때 쓴다 (예전 서버는 성경순을 몰라 랜덤으로 보냈다, v26-1024-13)
+      if(typeof _bibleRankOfRef==='function'&&e.ref){const br=_bibleRankOfRef(e.ref);if(br<9999000000)e.br=br;}
       return e;
     }).filter(v=>v.krText);
     const prev=JSON.stringify(ST.settings.versePushPool||[]);
@@ -14362,6 +14381,7 @@ function _vpSave(v){
   ST.settings.versePush=v;
   if(typeof _syncVersePushPool==='function')_syncVersePushPool();
   save();_syncVersePushUI();
+  _pushReplan();
 }
 // ── 말씀 알림 스위치 ──
 // 할일 알림과 완전히 독립. 여기서 ST.settings.notify 는 절대 건드리지 않는다.
@@ -34031,7 +34051,7 @@ function _syncDevVerBadge(){
 function _syncDevInboxVisibility(){
   const dev=_isDevAccount();
   // 관리자 계정에서만 보이는 항목들 (일반 사용자에게는 필요 없거나 혼란만 줌)
-  [['devInboxSection'],['notifyTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow'],['sheetEditSection']].forEach(([id])=>{
+  [['devInboxSection'],['notifyTestRow'],['vpServerTestRow'],['dataRecoverySection'],['vpDiagRow'],['vpDiagBody'],['vpClickTestRow'],['sheetEditSection']].forEach(([id])=>{
     const el=document.getElementById(id);
     if(el)el.style.display=dev?'':'none';
   });
@@ -46475,6 +46495,9 @@ async function _ensurePushToken(){
     await tokCol.doc(token).set({
       token,
       devId,
+      // 어느 앱의 기기인가 — 서버(b7push)가 BLOCK7 알림은 BLOCK7 기기로, Sweeter 알림은 Sweeter 기기로만 보낸다.
+      // 표시가 없는 옛 등록은 서버가 BLOCK7 로 본다 (v26-1024-13)
+      product:APP_PRODUCT,
       label:_deviceLabel(),
       ua:navigator.userAgent.slice(0,180),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -46541,6 +46564,7 @@ async function onNotifyMasterToggle(on){
   if(!on){
     ST.settings.notify=Object.assign({},ST.settings.notify,{enabled:false});
     save();
+    _pushReplan();
     await _releasePushTokenIfIdle();
     refreshNotifyUI();
     return;
@@ -46553,6 +46577,7 @@ async function onNotifyMasterToggle(on){
   }
   ST.settings.notify=Object.assign({},_NOTIFY_DEFAULTS,ST.settings.notify,{enabled:true});
   save();
+  _pushReplan();
   showToast('할일 알림이 켜졌어요');
   refreshNotifyUI();
 }
@@ -46561,6 +46586,44 @@ function updateNotifySub(key,value){
   ST.settings.notify[key]=value;
   save();
   _syncCondRows();   // 시간구간 시작 알림 → 구간 알림 제목 문구 보이기/감추기
+  _pushReplan();
+}
+// ── 알림 서버에 '예약을 다시 짜 주세요' (v26-1024-13) ──
+// 서버(b7push)는 1분마다 예약표만 본다. 알림 설정을 바꾸면 그 사람 예약을 곧바로 다시 짜게 알린다.
+// 저장이 클라우드에 닿은 뒤에 서버가 읽도록 6초 모았다 한 번만 부른다(설정을 연달아 만져도 한 번).
+// 못 불러도 괜찮다 — 서버가 30분마다 바뀐 사람을 스스로 찾는다.
+let _pushReplanTimer=null;
+function _pushReplan(){
+  if(DEV_MODE||!window._fbUser||typeof firebase==='undefined')return;
+  clearTimeout(_pushReplanTimer);
+  _pushReplanTimer=setTimeout(async()=>{
+    try{
+      const idTok=await firebase.auth().currentUser.getIdToken();
+      await fetch(B7PUSH_FN+'/replan',{method:'POST',headers:{Authorization:'Bearer '+idTok},keepalive:true});
+    }catch(e){}
+  },6000);
+}
+// ── 기기 등록에 앱 표시 (v26-1024-13) ──
+// 서버는 표시 없는 옛 등록을 BLOCK7 로 본다 → Sweeter 기기의 옛 등록만 한 번 고쳐 적는다.
+// (BLOCK7 은 표시가 없어도 BLOCK7 이라 할 일이 없다)
+async function _pushTagProduct(tries){
+  try{
+    if(_psIsDefault()||DEV_MODE)return;
+    if(localStorage.getItem(_lsk('ptag')))return;
+    if(typeof Notification==='undefined'||Notification.permission!=='granted')return;
+    if(!window._fbUser||!window._fbDB){
+      if((tries||0)<6)setTimeout(()=>_pushTagProduct((tries||0)+1),10000);   // 로그인을 조금 기다린다
+      return;
+    }
+    const reg=await navigator.serviceWorker.getRegistration('firebase-messaging-sw.js');
+    if(!reg)return;
+    const tok=await firebase.messaging().getToken({vapidKey:FCM_VAPID_KEY,serviceWorkerRegistration:reg}).catch(()=>null);
+    if(!tok)return;
+    const ref=window._fbDB.collection('users').doc(window._fbUser.uid).collection('pushTokens').doc(tok);
+    const snap=await ref.get();
+    if(snap.exists&&(snap.data()||{}).product!==APP_PRODUCT)await ref.update({product:APP_PRODUCT});
+    localStorage.setItem(_lsk('ptag'),'1');
+  }catch(e){}
 }
 // Foreground messages (app open & visible): FCM doesn't show a system
 // banner in this state, so surface them as an in-app toast instead.
@@ -46579,6 +46642,7 @@ function initForegroundPush(){
     // register() 는 여러 번 불러도 안전하고, 새 워커가 있는지도 함께 확인해준다.
     if(typeof Notification!=='undefined'&&Notification.permission==='granted'&&navigator.serviceWorker){
       navigator.serviceWorker.register('firebase-messaging-sw.js').catch(()=>{});
+      _pushTagProduct(0);
     }
     // ── 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) ──
     // ⚠️ 이때 브라우저는 알림을 자동으로 띄우지 않는다. 그래서 데스크탑 크롬에서
@@ -46626,17 +46690,23 @@ async function testLocalNotification(){
     showToast('기기 알림을 표시했어요 (알림센터 확인)');
   }catch(e){console.warn('기기 테스트 실패:',e);showToast('기기 알림 테스트에 실패했어요. 알림 권한을 확인해주세요');}
 }
-// 서버 테스트: Cloud Function(block7TestPush)을 호출해 실제 FCM 발송
+// 서버 테스트: 알림 서버(b7push /test)를 불러 실제 FCM 발송
 // 전체 경로(토큰→서버→APNs→기기)를 검증. 서버가 8초 기다렸다 보내니
 // 그 사이 홈 화면으로 나가면 배너로 도착하는 것까지 볼 수 있어요.
+// ⚠️ 이 앱(BLOCK7 / Sweeter)의 기기에만 간다 (v26-1024-13).
+//    새 서버를 아직 안 올렸으면(404·연결 실패) 옛 block7TestPush 로 한 번 더 — BLOCK7 만.
+const B7PUSH_FN='https://asia-northeast3-block7-8f24e.cloudfunctions.net/b7push';
 async function sendTestPush(){
   try{
     if(!window._fbUser||typeof firebase==='undefined'){showToast('로그인 상태에서만 테스트할 수 있어요');return;}
-    showToast('알림을 요청했어요 — 8초 안에 홈 화면으로 나가면 배너로 표시돼요');
+    showToast('알림을 요청했어요\n8초 안에 홈 화면으로 나가면 배너로 표시돼요');
     const idTok=await firebase.auth().currentUser.getIdToken();
-    const r=await fetch('https://asia-northeast3-block7-8f24e.cloudfunctions.net/block7TestPush?delay=8',{
-      headers:{Authorization:'Bearer '+idTok}
-    });
+    const auth={headers:{Authorization:'Bearer '+idTok}};
+    let r=await fetch(B7PUSH_FN+'/test?delay=8&product='+APP_PRODUCT,auth).catch(()=>null);
+    if((!r||r.status===404)&&_psIsDefault()){
+      r=await fetch('https://asia-northeast3-block7-8f24e.cloudfunctions.net/block7TestPush?delay=8',auth);
+    }
+    if(!r)throw new Error('연결 실패');
     const j=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(j.error||('HTTP '+r.status));
     showToast(`발송 완료: 성공 ${j.success}/${j.total}`+(j.errors&&j.errors.length?` · ${j.errors[0]}`:''));
