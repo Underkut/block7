@@ -32,14 +32,16 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
       url = String(url); opt = opt || {};
       if (!url.startsWith('https://www.googleapis.com/calendar/v3')) return real(url, opt);
       const u = new URL(url), path = decodeURIComponent(u.pathname.replace('/calendar/v3', '')), m = opt.method || 'GET';
-      if (path === '/users/me/calendarList') return J({ items: [{ id: 'me@x', summary: '내 캘린더', accessRole: 'owner', primary: true, backgroundColor: '#4285f4' }] });
+      if (path === '/users/me/calendarList') return J({ items: [{ id: 'me@x', summary: '내 캘린더', accessRole: 'owner', primary: true, backgroundColor: '#4285f4' }, { id: 'ch@x', summary: '교회', accessRole: 'owner', backgroundColor: '#e67c73' }] });
+      const mv = path.match(/^\/calendars\/([^/]+)\/events\/([^/]+)\/move$/);
+      if (mv && m === 'POST') { G.writes++; const e = G.ev[mv[2]]; if (!e) return J({}, 404); e.cal = u.searchParams.get('destination'); e.updated = 'u' + (++G.n); return J(e); }
       const mm = path.match(/^\/calendars\/([^/]+)\/events(?:\/(.+))?$/);
       if (!mm) return J({}, 404);
       const id = mm[2], body = opt.body ? JSON.parse(opt.body) : null;
-      if (m === 'GET' && !id) return J({ items: Object.values(G.ev) });
+      if (m === 'GET' && !id) return J({ items: Object.values(G.ev).filter(e => (e.cal || 'me@x') === mm[1]) });
       if (m === 'GET') return G.ev[id] ? J(G.ev[id]) : J({}, 404);
       G.writes++;
-      if (m === 'POST') { if (G.ev[body.id]) return J({}, 409); G.ev[body.id] = Object.assign({ status: 'confirmed', updated: 'u' + (++G.n) }, body); return J(G.ev[body.id]); }
+      if (m === 'POST') { if (G.ev[body.id]) return J({}, 409); G.ev[body.id] = Object.assign({ status: 'confirmed', updated: 'u' + (++G.n), cal: mm[1] }, body); return J(G.ev[body.id]); }
       if (m === 'PATCH') { const e = G.ev[id]; if (!e) return J({}, 404); Object.assign(e, body, { updated: 'u' + (++G.n) }); return J(e); }
       if (m === 'DELETE') { const e = G.ev[id]; if (!e) return J({}, 410); e.status = 'cancelled'; e.updated = 'u' + (++G.n); return J(null, 204); }
       return J({}, 400);
@@ -47,7 +49,7 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
     // 로그인·서버 대신
     _gcalUsable = () => true;
     _gcalFn = async (path) => (path === '/token' ? { access_token: 't', expires_in: 3600, email: 'hb@example.com' } : {});
-    ST.settings.gcal = { on: true, cals: ['me@x'], writeCal: 'me@x' };
+    ST.settings.gcal = { on: true, cals: ['me@x', 'ch@x'], writeCal: 'me@x' };
   });
   const all = () => p.evaluate(() => { const o = []; Object.keys(ST.days).forEach(k => Object.keys(ST.days[k].events || {}).forEach(s => (ST.days[k].events[s] || []).forEach(e => o.push({ k, s, id: e.id, text: e.text, time: e.time, g: e.g })))); return o; });
   const sync = () => p.evaluate(async () => { _gcalBusy = false; await gcalSync(); });
@@ -102,9 +104,41 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await sync();
   ok('⑦ 구글에서 지우면 BLOCK7 에서도 지워진다', !(await all()).some(e => e.id === 'ev12345'));
 
+  // ⑨ 입력창 캘린더 고르기 → 그 캘린더로 · 시계 끄면 종일 (v26-1024-1)
+  await p.evaluate(D1 => {
+    openEventModal(_secIdForTime('09:00'), null, D1);
+    document.getElementById('eventTextInput').value = '21 구역모임';
+    setEventTimeToggle(false);
+    document.querySelector('#eventCalPick [data-cal="ch@x"]').click();
+    submitEventModal();
+  }, D1);
+  await sync();
+  const ch = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '21 구역모임'));
+  ok('⑨ 고른 캘린더(교회)에 종일로 들어간다', ch && ch.cal === 'ch@x' && ch.start.date === D1 && !ch.start.dateTime, ch);
+  const chips = await p.evaluate(() => [...document.querySelectorAll('#eventCalPick [data-cal]')].map(x => x.dataset.cal));
+  ok('⑨ 고를 수 있는 것: 쓸 수 있는 켠 캘린더 + BLOCK7 에만', JSON.stringify(chips) === JSON.stringify(['me@x', 'ch@x', '-']), chips);
+  // 고리 붙은 그 일정을 다시 열어 '내 캘린더' 로 바꾸면 구글에서 옮겨진다
+  await p.evaluate(() => {
+    let at = null; Object.keys(ST.days).forEach(k => Object.keys(ST.days[k].events || {}).forEach(s => (ST.days[k].events[s] || []).forEach((e, i) => { if (e.text === '21 구역모임') at = { k, s, i }; })));
+    openEventModal(at.s, at.i, at.k);
+    document.querySelector('#eventCalPick [data-cal="me@x"]').click();
+    submitEventModal();
+  });
+  await sync();
+  const ch2 = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '21 구역모임'));
+  const loc2 = (await all()).find(e => e.text === '21 구역모임');
+  ok('⑨ 다른 캘린더를 고르면 구글에서 옮겨지고 고리도 따라간다', ch2.cal === 'me@x' && loc2.g.c === 'me@x', [ch2, loc2]);
+  const allDaySec = await p.evaluate(() => _gcalDefSec());
+  ok('⑨ 종일 일정 구간: 시간 개념 없는 구간 (없으면 보이는 맨 위)', allDaySec === (await p.evaluate(() => { const n = SECS.find(_secNoTime); const v = SECS.filter(x => ST.vis.includes(x.id)); return (n || v[0] || SECS[0]).id; })));
+
+  // ⑩ 색 입히기 — 켜면 칩에 색 · 끄면 없음
+  const col = await p.evaluate(() => { const ev = { g: { c: 'me@x' } };
+    const a = _gcalEvColor(ev); ST.settings.gcal.color = false; const b = _gcalEvColor(ev); delete ST.settings.gcal.color; return [a, b]; });
+  ok('⑩ 색 켜짐 → 캘린더 색 · 꺼짐 → 없음', col[0] === '#4285f4' && col[1] === '', col);
+
   // 설정창 줄
-  const ui = await p.evaluate(() => { _gcalCals = [{ id: 'me@x', name: '내 캘린더', role: 'owner', primary: true }, { id: 'hol', name: '대한민국의 휴일', role: 'reader' }]; _gcalRenderSettings(); return [document.querySelectorAll('#gcalCalList .settings-row').length, document.getElementById('gcalWriteSel').options.length, document.getElementById('gcalConnectBtn').textContent]; });
-  ok('설정창: 캘린더 두 줄 · 쓸 캘린더는 쓸 수 있는 것만(+보내지 않음) · 연결 끊기 단추', JSON.stringify(ui) === JSON.stringify([2, 2, '연결 끊기']), ui);
+  const ui = await p.evaluate(() => { _gcalCals = [{ id: 'me@x', name: '내 캘린더', role: 'owner', primary: true }, { id: 'hol', name: '대한민국의 휴일', role: 'reader' }]; _gcalRenderSettings(); const folded = document.getElementById('gcalCalList').style.display === 'none'; gcalToggleList(); return [folded, document.getElementById('gcalCalList').style.display === '', document.querySelectorAll('#gcalCalList .settings-row').length, document.getElementById('gcalWriteSel').options.length, document.getElementById('gcalConnectBtn').textContent]; });
+  ok('설정창: 목록은 접혀 있다가 펼쳐진다 · 캘린더 두 줄 · 쓸 캘린더는 쓸 수 있는 것만(+보내지 않음) · 연결 끊기 단추', JSON.stringify(ui) === JSON.stringify([true, true, 2, 2, '연결 끊기']), ui);
 
   console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
   await b.close(); process.exit(fail ? 1 : 0);

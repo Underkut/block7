@@ -121,6 +121,23 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   sc.eq('⑥ 쓸 캘린더를 안 정했으면 안 보낸다', A.gcalPlan(base({ days, writeCal: '' })).remote.length, 0);
 }
 
+// ⑩ 입력창에서 고른 캘린더 (v26-1024-1)
+{
+  const days = { '2026-10-24': day('am', [
+    { id: 'a1', time: '09:00', text: '교회', gc: 'church' },
+    { id: 'a2', time: '10:00', text: '나만', gc: '-' },
+    { id: 'a3', time: '11:00', text: '기본' },
+    { id: 'a4', time: '12:00', text: '안 보는 곳', gc: 'off' },
+  ]) };
+  const p = A.gcalPlan(base({ days, cals: ['me', 'church'] }));
+  sc.eq('⑩ 고른 캘린더로 · 고르지 않으면 쓸 캘린더로 · BLOCK7 에만(-) · 안 보는 캘린더는 안 보낸다', J(p.remote.map(x => [x.id, x.c])), [['a1', 'church'], ['a3', 'me']]);
+  const mv = { '2026-10-24': day('am', [linkedEv('e1', 'abc', { gc: 'church' })]) };
+  const pm = A.gcalPlan(base({ days: mv, cals: ['me', 'church'], gevents: [{ c: 'me', ev: gev('abc') }] }));
+  sc.eq('⑩ 고리 있는 일정의 캘린더를 바꾸면 구글에서 옮긴다', J(pm.remote.map(x => [x.t, x.c, x.to, x.gid])), [['move', 'me', 'church', 'abc']]);
+  const pr = A.gcalPlan(base({ days: mv, cals: ['me', 'church'], roCals: ['church'], gevents: [{ c: 'me', ev: gev('abc') }] }));
+  sc.eq('⑩ 읽기 전용 캘린더로는 옮기지 않는다', pr.remote.length, 0);
+}
+
 // ⑦ 두 벌 접기
 {
   const days = { '2026-10-24': day('am', [linkedEv('ga', 'abc'), linkedEv('e1', 'abc')]) };
