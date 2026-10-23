@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-7  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-8  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2146,10 +2146,8 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
   position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);
   width:12px;height:8px;pointer-events:none;line-height:0;
 }
-  display:inline-block;width:2px;height:16px;
-  border-radius:1px;margin-right:4px;
-  background:var(--ac);vertical-align:middle;
-}
+/* ⚠️ 여기 이름 없는 CSS 네 줄(옛 끌기 표시선의 남은 것, v26-1018-1)이 있어서 바로 아래 .ts-sort-event 규칙이
+   통째로 무시됐다 → 시계 아이콘만 헤더 글자색(거의 흰색)으로 진했다 (HB 2026-10-24). 지웠다. */
 .ts-sort-event{
   display:flex;align-items:center;justify-content:center;
   background:none;border:none;color:var(--tx3);cursor:pointer;
@@ -3272,8 +3270,8 @@ body.split-d #todayView.animating{overflow:hidden;}
 /* M뷰 칸 높이를 손잡이로 정했을 때 — 넘치는 것은 칸 아래쪽부터 가린다 */
 .mcg.mcg-fixed .mcc{overflow-x:visible;overflow-y:clip;min-height:0;}   /* 위아래만 자른다 — 여러 날 띠의 글은 옆 칸으로 흘러야 한다 */
 .m-grip{display:flex;justify-content:center;align-items:center;height:16px;margin:2px 0 0;cursor:ns-resize;touch-action:none;-webkit-tap-highlight-color:transparent;}
-.m-grip span{width:22px;height:2px;border-radius:1px;background:var(--bd2);transition:background .2s,width .2s;}   /* 작고 얇게 (HB 2026-10-24) — 누르는 자리(16px 높이)는 그대로 넉넉히 */
-.m-grip:hover span,.m-grip.on span{background:var(--tx3);width:30px;}
+.m-grip span{width:22px;height:2px;border-radius:1px;background:var(--bd2);opacity:.55;transition:background .2s,width .2s,opacity .2s;}   /* 작고 얇게 (HB 2026-10-24) — 누르는 자리(16px 높이)는 그대로 넉넉히 */
+.m-grip:hover span,.m-grip.on span{background:var(--tx3);width:30px;opacity:.8;}
 .mcdow{text-align:center;font-size:8px;font-weight:700;color:var(--tx3);padding:4px 0;font-family:var(--font-mono);}
 .mcdow.sun-red{color:var(--sun-red);}
 .mcc{background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:5px;min-height:50px;}
@@ -3888,8 +3886,12 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
 .settings-verbadge{position:absolute;right:8px;z-index:3;
   bottom:calc(env(safe-area-inset-bottom,0px) + 7px);
   font-size:9.5px;color:var(--tx2);opacity:.9;font-family:var(--font-number);
-  pointer-events:none;letter-spacing:.02em;
+  pointer-events:auto;letter-spacing:.02em;
   background:var(--s1);padding:1px 5px;border-radius:99px;}
+/* 누르면 새 버전을 찾아 받는다 (v26-1024-8, HB — 기도노트와 같다). 글자는 작아도 누르는 자리는 넉넉히 */
+.settings-verbadge.settings-verbadge{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.settings-verbadge::after{content:'';position:absolute;inset:-8px -6px;}
+.settings-verbadge.busy{opacity:.4;}
 @media(min-width:720px){
   .settings-panel{border-radius:16px;max-height:80vh;}
 }
@@ -6388,7 +6390,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-7";
+const APP_VERSION = "v. 26-1024-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -39570,10 +39572,24 @@ async function _gcalFetchCal(c,W){
   do{
     const r=await _gcalApi('GET','/calendars/'+_gcalE(c)+'/events',null,Object.assign({},q,pt?{pageToken:pt}:{}));
     if(!r.ok)return null;
-    (r.j.items||[]).forEach(ev=>out.push({c,ev}));
+    (r.j.items||[]).forEach(ev=>{out.push({c,ev});_gcalSeen(ev.updated);});
     pt=r.j.nextPageToken||'';
   }while(pt);
   return out;
+}
+// ── 구글 쪽 바뀜 알아채기 (v26-1024-8, HB '구글에서 고친 것이 늦거나 안 온다') ──
+// 예전: 열어 둔 동안 3분마다 · 앱으로 돌아와도 1분 안이면 안 봤다 → 구글에서 고치고 바로 돌아오면 3분까지 기다렸다.
+// 지금: 돌아오면 바로 · 열어 둔 동안 15초마다 '지난번 뒤로 바뀐 것 있나' 만 묻는다(아주 작은 물음) → 있으면 그때 다 맞춘다.
+// 기준 시각은 **구글이 준 시각**(updated 의 가장 큰 값)이다 — 이 기기 시계가 틀려도 놓치지 않는다.
+let _gcalSeenMax='';
+function _gcalSeen(u){if(typeof u==='string'&&u>_gcalSeenMax)_gcalSeenMax=u;}
+async function _gcalProbe(){
+  const cfg=_gcalCfg();
+  if(!_gcalSeenMax||!cfg.on||!_gcalUsable()||_gcalBusy)return false;
+  const since=_gcalSeenMax;
+  const rs=await Promise.all((cfg.cals||[]).map(c=>_gcalApi('GET','/calendars/'+_gcalE(c)+'/events',null,
+    {updatedMin:since,showDeleted:'true',maxResults:'5',fields:'items(id,updated)'}).catch(()=>null)));
+  return rs.some(r=>r&&r.ok&&(r.j.items||[]).some(ev=>typeof ev.updated==='string'&&ev.updated>since));
 }
 // 하루 종일 일정이 들어갈 구간 — '시간 개념 없음' 구간이 있으면 그곳(보이는 것 먼저), 없으면 보이는 맨 위 구간 (v26-1024-1)
 function _gcalDefSec(){
@@ -39624,19 +39640,23 @@ function _gcalKick(ms,now){
 // 구글에 쓰기 — 판단(gcalPlan)이 정한 remote 목록을 실행하고, BLOCK7 에 남길 고리·걷을 지움 표시를 돌려준다
 async function _gcalRunRemote(ops,errs){
   const links=[],untomb=[];
+  const seen=r=>{if(r&&r.ok&&r.j)_gcalSeen(r.j.updated);};
   const bad=(op,r)=>{if(r&&!r.ok)errs.push(`${op.t} ${r.status}${r.j&&r.j.error&&r.j.error.message?' '+r.j.error.message:''}`);};
   for(const op of ops){
     if(op.t==='ins'){
       let r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events',op.body);
       if(r.status===409)r=await _gcalApi('GET','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.body.id));
+      seen(r);
       if(r.ok&&r.j.id)links.push({ref:op.ref,id:op.id,clearGc:1,g:Object.assign({c:op.c,i:r.j.id,u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d},op.rep?{r:1}:{})});
       else bad(op,r);
     }else if(op.t==='move'){
       const r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid)+'/move',null,{destination:op.to});
+      seen(r);
       if(r.ok)links.push({ref:op.ref,id:op.id,clearGc:1,g:Object.assign({},op.ref.g,{c:op.to,u:r.j.updated})});
       else bad(op,r);
     }else if(op.t==='patch'){
       const r=await _gcalApi('PATCH','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid),op.body);
+      seen(r);
       if(r.ok)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});
       else if(r.status===403)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{ro:1})});
       else bad(op,r);
@@ -39775,8 +39795,17 @@ function _gcalBoot(ready){
   if(back==='ok')_gcalAfterConnect();
   else if(back)showToast(back==='cancel'?'구글 캘린더 연결을\n취소했어요':'구글 캘린더에\n연결하지 못했어요\n다시 해 주세요');
   if(!_gcalBoot._t){
-    _gcalBoot._t=setInterval(()=>{if(document.visibilityState==='visible'&&Date.now()-_gcalLast>180000)gcalSync();},30000);
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&Date.now()-_gcalLast>60000)_gcalKick(1500);});
+    // 열어 둔 동안 15초마다: 3분 넘게 안 맞췄으면 다 맞추고, 아니면 '바뀐 것 있나' 만 묻는다
+    _gcalBoot._t=setInterval(async()=>{
+      if(document.visibilityState!=='visible'||_gcalBusy||!_gcalCfg().on)return;
+      if(Date.now()-_gcalLast>180000){gcalSync();return;}
+      try{if(await _gcalProbe())_gcalKick(0,true);}catch(e){}
+    },15000);
+    // 앱으로 돌아오면(다른 앱 · 다른 탭 · 창 전환) 바로 맞춘다 — 구글에서 고치고 돌아온 때가 바로 이 때다
+    const back=()=>{if(document.visibilityState==='visible')_gcalKick(300,true);};
+    document.addEventListener('visibilitychange',back);
+    window.addEventListener('focus',back);
+    window.addEventListener('pageshow',back);
   }
   _gcalKick(3000);
 }
@@ -46520,6 +46549,28 @@ function _upSetTries(want,n){
   try{sessionStorage.setItem(_lsk('upTry'),JSON.stringify({v:want,n}));}catch(e){}
 }
 function _upClearTries(){try{sessionStorage.removeItem(_lsk('upTry'));}catch(e){}}
+// 버전 배지를 누르면 — 서버의 버전표를 묻고, 새 것이 있으면 바로 받아 다시 연다 (v26-1024-8, HB)
+// 저절로 보는 길(_upCheck)은 10분에 한 번이라, 기다리지 않고 받고 싶을 때 쓴다.
+async function _verTap(el){
+  if(_verTap.busy)return;
+  _verTap.busy=true;if(el)el.classList.add('busy');
+  try{
+    const r=await fetch(_UP_FILE+'?t='+Date.now(),{cache:'no-store'});
+    const want=r.ok?(await r.text()).trim():'';
+    if(!/^v\. \d\d-\d{4}-\d+$/.test(want))throw new Error('bad');
+    if(_verCmp(want,APP_VERSION)!==1){showToast('지금이 최신 버전이에요\n'+APP_VERSION);return;}
+    if(window._fbHasPending&&window._fbHasPending()){showToast('아직 올리는 중인 편집이 있어요\n잠시 뒤 다시 눌러 주세요');return;}
+    _upClearTries();_upReloading=true;
+    showToast('새 버전 '+want+' 을\n받는 중이에요');
+    _upReloadFresh();
+  }catch(e){showToast('새 버전을 찾지 못했어요\n인터넷 연결을 확인해 주세요');}
+  finally{_verTap.busy=false;if(el)el.classList.remove('busy');}
+}
+document.addEventListener('click',e=>{
+  const b=e.target&&e.target.closest&&e.target.closest('.settings-verbadge');
+  if(!b)return;
+  e.preventDefault();e.stopPropagation();_verTap(b);
+},true);
 // 캐시를 새 것으로 갈아끼운 뒤 다시 읽는다. _fbMaybeSelfUpdate 도 이 길을 쓴다.
 async function _upReloadFresh(){
   try{await fetch(location.href,{cache:'reload',credentials:'same-origin'});}catch(e){}

@@ -21,11 +21,12 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await p.evaluate(() => {
     // 가짜 구글 — 캘린더 하나, 일정은 id 로
     const G = window.__G = { ev: {}, n: 0, writes: 0 };
+    G.stamp = () => new Date(Date.now() + (++G.n)).toISOString();   // 구글처럼 '고친 시각' 은 시각 문자열
     const tm = (k, h) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d, h).toISOString(); };
     window.__tm = tm;
     const T = tKey(), D1 = (() => { const [y, m, d] = T.split('-').map(Number); const x = new Date(y, m - 1, d + 1); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; })();
     window.__D1 = D1;
-    G.ev.gx1 = { id: 'gx1', status: 'confirmed', updated: 'u' + (++G.n), summary: '치과', start: { dateTime: tm(D1, 10) }, end: { dateTime: tm(D1, 11) } };
+    G.ev.gx1 = { id: 'gx1', status: 'confirmed', updated: G.stamp(), summary: '치과', start: { dateTime: tm(D1, 10) }, end: { dateTime: tm(D1, 11) } };
     const J = (o, s) => new Response(s === 204 ? null : JSON.stringify(o), { status: s || 200, headers: { 'Content-Type': 'application/json' } });
     const real = window.fetch;
     window.fetch = async (url, opt) => {
@@ -34,17 +35,17 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
       const u = new URL(url), path = decodeURIComponent(u.pathname.replace('/calendar/v3', '')), m = opt.method || 'GET';
       if (path === '/users/me/calendarList') return J({ items: [{ id: 'me@x', summary: '내 캘린더', accessRole: 'owner', primary: true, backgroundColor: '#4285f4' }, { id: 'ch@x', summary: '교회', accessRole: 'owner', backgroundColor: '#e67c73' }] });
       const mv = path.match(/^\/calendars\/([^/]+)\/events\/([^/]+)\/move$/);
-      if (mv && m === 'POST') { G.writes++; const e = G.ev[mv[2]]; if (!e) return J({}, 404); e.cal = u.searchParams.get('destination'); e.updated = 'u' + (++G.n); return J(e); }
+      if (mv && m === 'POST') { G.writes++; const e = G.ev[mv[2]]; if (!e) return J({}, 404); e.cal = u.searchParams.get('destination'); e.updated = G.stamp(); return J(e); }
       if (/\/instances$/.test(path)) return J({ items: [] });
       const mm = path.match(/^\/calendars\/([^/]+)\/events(?:\/(.+))?$/);
       if (!mm) return J({}, 404);
       const id = mm[2], body = opt.body ? JSON.parse(opt.body) : null;
-      if (m === 'GET' && !id) return J({ items: Object.values(G.ev).filter(e => (e.cal || 'me@x') === mm[1]) });
+      if (m === 'GET' && !id) { const um = u.searchParams.get('updatedMin'); return J({ items: Object.values(G.ev).filter(e => (e.cal || 'me@x') === mm[1] && (!um || e.updated >= um)) }); }
       if (m === 'GET') return G.ev[id] ? J(G.ev[id]) : J({}, 404);
       G.writes++;
-      if (m === 'POST') { if (G.ev[body.id]) return J({}, 409); G.ev[body.id] = Object.assign({ status: 'confirmed', updated: 'u' + (++G.n), cal: mm[1] }, body); return J(G.ev[body.id]); }
-      if (m === 'PATCH') { const e = G.ev[id]; if (!e) return J({}, 404); Object.assign(e, body, { updated: 'u' + (++G.n) }); return J(e); }
-      if (m === 'DELETE') { const e = G.ev[id]; if (!e) return J({}, 410); e.status = 'cancelled'; e.updated = 'u' + (++G.n); return J(null, 204); }
+      if (m === 'POST') { if (G.ev[body.id]) return J({}, 409); G.ev[body.id] = Object.assign({ status: 'confirmed', updated: G.stamp(), cal: mm[1] }, body); return J(G.ev[body.id]); }
+      if (m === 'PATCH') { const e = G.ev[id]; if (!e) return J({}, 404); Object.assign(e, body, { updated: G.stamp() }); return J(e); }
+      if (m === 'DELETE') { const e = G.ev[id]; if (!e) return J({}, 410); e.status = 'cancelled'; e.updated = G.stamp(); return J(null, 204); }
       return J({}, 400);
     };
     // 로그인·서버 대신
@@ -83,7 +84,7 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('④ BLOCK7 에서 고친 제목이 구글로', (await p.evaluate(() => __G.ev[_gcalFind(null, 'ev12345').arr[_gcalFind(null, 'ev12345').i].g.i].summary)) === '은행 — 서류');
 
   // ⑤
-  await p.evaluate(D1 => { const e = __G.ev.gx1; e.start = { dateTime: __tm(D1, 19) }; e.end = { dateTime: __tm(D1, 20) }; e.updated = 'u' + (++__G.n); }, D1);
+  await p.evaluate(D1 => { const e = __G.ev.gx1; e.start = { dateTime: __tm(D1, 19) }; e.end = { dateTime: __tm(D1, 20) }; e.updated = __G.stamp(); }, D1);
   await sync();
   L = await all();
   const mv = L.filter(e => e.g && e.g.i === 'gx1');
@@ -101,7 +102,7 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('⑥ 지움 표시는 걷힌다 · 다시 안 들어온다', (await p.evaluate(() => Object.values(ST.days).every(d => !d.gdel))) && !(await all()).some(e => e.g && e.g.i === 'gx1'));
 
   // ⑦
-  await p.evaluate(() => { const e = Object.values(__G.ev).find(e => e.summary === '은행 — 서류'); e.status = 'cancelled'; e.updated = 'u' + (++__G.n); });
+  await p.evaluate(() => { const e = Object.values(__G.ev).find(e => e.summary === '은행 — 서류'); e.status = 'cancelled'; e.updated = __G.stamp(); });
   await sync();
   ok('⑦ 구글에서 지우면 BLOCK7 에서도 지워진다', !(await all()).some(e => e.id === 'ev12345'));
 
@@ -196,10 +197,10 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   // ⑮ 구글에서 만든 반복 → BLOCK7 반복 하나 · 고친 회차 → 하루만 고친 일정 · 구글에서 규칙 바꾸면 따라옴 (v26-1024-7)
   await p.evaluate(D1 => {
     const tm = window.__tm, D8 = gcalAddDays(D1, 7);
-    __G.ev.gs1 = { id: 'gs1', cal: 'me@x', status: 'confirmed', updated: 'u' + (++__G.n), summary: '셀모임', recurrence: ['RRULE:FREQ=WEEKLY'],
+    __G.ev.gs1 = { id: 'gs1', cal: 'me@x', status: 'confirmed', updated: __G.stamp(), summary: '셀모임', recurrence: ['RRULE:FREQ=WEEKLY'],
       start: { dateTime: tm(D1, 19), timeZone: 'Asia/Seoul' }, end: { dateTime: tm(D1, 21), timeZone: 'Asia/Seoul' } };
     const ok = D8.replace(/-/g, '');
-    __G.ev['gs1_' + ok] = { id: 'gs1_' + ok, cal: 'me@x', status: 'confirmed', updated: 'u' + (++__G.n), recurringEventId: 'gs1', summary: '셀모임 (우리 집)',
+    __G.ev['gs1_' + ok] = { id: 'gs1_' + ok, cal: 'me@x', status: 'confirmed', updated: __G.stamp(), recurringEventId: 'gs1', summary: '셀모임 (우리 집)',
       originalStartTime: { dateTime: tm(D8, 19) }, start: { dateTime: tm(D8, 20) }, end: { dateTime: tm(D8, 22) } };
   }, D1);
   await sync();
@@ -212,12 +213,37 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('⑮ 2주 뒤에 원본이 비친다', await p.evaluate(([D1, D15]) => SECS.some(s => getDisplayEvents(D15, s.id).some(e => e.text === '셀모임')), [D1, D15]));
   // 구글에서 규칙 바꿈 (매주 → 둘째·넷째 주 같은 요일)
   await p.evaluate(D1 => { const [y, m, d] = D1.split('-').map(Number); const dw = ['SU','MO','TU','WE','TH','FR','SA'][new Date(y, m - 1, d).getDay()];
-    __G.ev.gs1.recurrence = ['RRULE:FREQ=MONTHLY;BYDAY=2' + dw + ',4' + dw]; __G.ev.gs1.updated = 'u' + (++__G.n); }, D1);
+    __G.ev.gs1.recurrence = ['RRULE:FREQ=MONTHLY;BYDAY=2' + dw + ',4' + dw]; __G.ev.gs1.updated = __G.stamp(); }, D1);
   await sync();
   const wk = await p.evaluate(() => { let r = null; Object.values(ST.days).forEach(d => Object.values(d.events || {}).forEach(a => (a || []).forEach(e => { if (e.text === '셀모임' && e.repeat) r = e.repeat; }))); return r; });
   ok('⑮ 구글에서 바꾼 규칙(둘째·넷째 주)을 BLOCK7 이 따른다', wk && wk.weekly && JSON.stringify(wk.weeksOfMonth) === '[2,4]', wk);
   const w15 = await p.evaluate(() => __G.writes); await sync();
   ok('⑮ 따른 뒤에는 조용하다', (await p.evaluate(() => __G.writes)) === w15);
+
+  // ⑯ 구글에서 고친 것이 저절로 온다 (v26-1024-8, HB) — 맞추기를 손으로 부르지 않는다
+  await p.evaluate(() => _gcalBoot(() => true));
+  await new Promise(r => setTimeout(r, 5000));
+  const D2 = await p.evaluate(D1 => gcalAddDays(D1, 1), D1);
+  await p.evaluate(D2 => { __G.ev.gnew = { id: 'gnew', cal: 'me@x', status: 'confirmed', updated: __G.stamp(), summary: '구글에서 만든 일정',
+    start: { dateTime: __tm(D2, 15) }, end: { dateTime: __tm(D2, 16) } }; }, D2);
+  let t16 = Date.now();
+  await p.waitForFunction(() => Object.values(ST.days).some(d => Object.values(d.events || {}).some(a => (a || []).some(e => e.text === '구글에서 만든 일정'))), null, { timeout: 40000 }).catch(() => null);
+  const dtP = Date.now() - t16;
+  ok('⑯ 열어 둔 채로: 구글에서 만든 일정이 20초 안에 저절로 들어온다 (' + (dtP / 1000).toFixed(1) + '초)', dtP < 20000, dtP);
+  await new Promise(r => setTimeout(r, 4500));
+  await p.evaluate(() => { const e = __G.ev.gnew; e.summary = '구글에서 고친 일정'; e.updated = __G.stamp(); });
+  t16 = Date.now();
+  await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));   // 앱으로 돌아옴
+  await p.waitForFunction(() => Object.values(ST.days).some(d => Object.values(d.events || {}).some(a => (a || []).some(e => e.text === '구글에서 고친 일정'))), null, { timeout: 40000 }).catch(() => null);
+  const dtV = Date.now() - t16;
+  ok('⑯ 앱으로 돌아오면 바로 (' + (dtV / 1000).toFixed(1) + '초)', dtV < 3000, dtV);
+  await p.evaluate(() => { const e = __G.ev.gnew; e.status = 'cancelled'; e.updated = __G.stamp(); });
+  t16 = Date.now();
+  await p.waitForFunction(() => !Object.values(ST.days).some(d => Object.values(d.events || {}).some(a => (a || []).some(e => e.text === '구글에서 고친 일정'))), null, { timeout: 40000 }).catch(() => null);
+  const dtD = Date.now() - t16;
+  ok('⑯ 구글에서 지운 것도 20초 안에 (' + (dtD / 1000).toFixed(1) + '초)', dtD < 20000, dtD);
+  const wq = await p.evaluate(() => __G.writes); await new Promise(r => setTimeout(r, 16000));
+  ok('⑯ 바뀐 것이 없으면 조용하다 (구글에 쓰지 않음)', (await p.evaluate(() => __G.writes)) === wq);
 
   // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
   await new Promise(r => setTimeout(r, 4500));
