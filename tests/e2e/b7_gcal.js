@@ -169,6 +169,29 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await sync();
   ok('⑫ 반복 전체 지우기 → 구글 반복도 지워진다', (await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '아침 기도').status)) === 'cancelled');
 
+  // ⑭ 지웠다가 실행취소 → 구글도 되살아난다 (v26-1024-5, HB 신고) · 반복 전체도
+  await p.evaluate(D1 => { openEventModal(_secIdForTime('10:00'), null, D1); document.getElementById('eventTextInput').value = '되살릴 일정'; submitEventModal(); }, D1);
+  await sync();
+  await p.evaluate(() => { let at = null; Object.keys(ST.days).forEach(k => Object.keys(ST.days[k].events || {}).forEach(s => (ST.days[k].events[s] || []).forEach((e, i) => { if (e.text === '되살릴 일정') at = { k, s, i }; })));
+    beforeSave(); _gcalTomb(at.k, getEvents(at.k, at.s)[at.i]); getEvents(at.k, at.s).splice(at.i, 1); save(); });
+  await sync();
+  const gst = () => p.evaluate(t => Object.values(__G.ev).find(e => e.summary === t).status, '되살릴 일정');
+  const s1 = await gst();
+  await p.evaluate(() => doUndo());
+  await sync();
+  ok('⑭ 지움 → 구글 지워짐 → 실행취소 → 구글 되살아남 · BLOCK7 에도 남아 있음', s1 === 'cancelled' && (await gst()) === 'confirmed' && (await all()).some(e => e.text === '되살릴 일정'), [s1, await gst()]);
+  await sync();
+  ok('⑭ 되살린 뒤에는 조용하다 (또 지우거나 또 되살리지 않음)', (await gst()) === 'confirmed' && (await all()).filter(e => e.text === '되살릴 일정').length === 1);
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); getEvents(D1, sid).push({ id: 'ev' + Date.now(), time: '08:00', text: '되살릴 반복', repeat: { weekly: true }, rid: 'rUndo' }); save(); }, D1);
+  await sync();
+  await p.evaluate(D1 => { const sid = _secIdForTime('09:00'); const arr = getEvents(D1, sid); const idx = arr.findIndex(e => e.text === '되살릴 반복');
+    _evDeleteApply({ dateKey: D1, idx, secId: sid, occ: D1 }, 'all'); }, D1);
+  await sync();
+  const r1 = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '되살릴 반복').status);
+  await p.evaluate(() => doUndo()); await sync();
+  const r2 = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '되살릴 반복'));
+  ok('⑭ 반복 전체 지움 → 실행취소 → 구글 반복도 규칙째 되살아남', r1 === 'cancelled' && r2.status === 'confirmed' && r2.recurrence && r2.recurrence[0].startsWith('RRULE:FREQ=WEEKLY'), [r1, r2]);
+
   // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
   await new Promise(r => setTimeout(r, 4500));
   const t0 = Date.now();

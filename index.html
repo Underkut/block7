@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-4  [production]  -->
+<!-- BLOCK7  v. 26-1024-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6383,7 +6383,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-4";
+const APP_VERSION = "v. 26-1024-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9662,6 +9662,7 @@ function _gcalRepNew(ev){const m=/^ev(\d{12,})/.exec(String(ev&&ev.id||''));retu
 // 돌려주는 것 = {local:[…], remote:[…], blocked:{n,total}|null}
 //   local : {t:'add',k,sec,ev} · {t:'set',id,ref,k,sec,patch} · {t:'del',id,ref} · {t:'untomb',k,key}
 //   remote: {t:'ins',c,id,ref,k,body,d} · {t:'patch',c,gid,id,ref,body} · {t:'move',c,to,gid,id,ref} · {t:'del',c,gid,k,key}
+//           · {t:'restore',c,gid,id,ref,k,d,key,body}  — BLOCK7 이 지웠다가 실행취소로 되살린 것 (o.gone = BLOCK7 이 구글에서 지운 고리들)
 //   ref 는 넘겨받은 그 일정 객체 자체다 — 같은 id 두 벌(두 기기가 같은 것을 가져옴)을 가려 지우려면 id 로는 모자라다
 function gcalPlan(o){
   const W=gcalWindow(o.today);
@@ -9678,6 +9679,7 @@ function gcalPlan(o){
     else L.set(e.key,e);
   });
   const tombKeys=new Set(col.tombs.map(t=>t.key));
+  const goneKeys=new Set(o.gone||[]);
   // 1) BLOCK7 에서 사람이 지운 것 → 구글에서도 지운다
   col.tombs.forEach(t=>{
     const c=t.key.slice(0,t.key.indexOf('|')),gid=t.key.slice(t.key.indexOf('|')+1);
@@ -9700,7 +9702,18 @@ function gcalPlan(o){
     const g=G.get(key);
     if(!g)return;                        // 범위 밖이거나 못 찾음 — 이번엔 손대지 않는다
     const gev=g.ev;
-    if(gev.status==='cancelled'){cancels.push(e);return;}
+    if(gev.status==='cancelled'){
+      // BLOCK7 이 지웠던 것인데 BLOCK7 에 다시 있다 = 실행취소로 되살렸다 → 구글도 되살린다 (v26-1024-5, HB)
+      // 구글에서 사람이 지운 것과는 이 기록(o.gone)으로 가른다. 기록이 없으면 예전처럼 BLOCK7 에서 지운다.
+      if(goneKeys.has(key)&&!e.ev.g.ro&&!ro.has(c)){
+        const d=e.ev.g.d||(e.ev.time?60:1);
+        const body=_gcalRepOn(e.ev.repeat)?gcalSeriesBody(e.k,e.ev,d,o.dsh,o.tz):gcalPatchBody(e.k,e.ev,d,o.dsh);
+        body.status='confirmed';
+        remote.push({t:'restore',c,gid:e.ev.g.i,id:e.ev.id,ref:e.ev,k:e.k,d,key,body});
+        return;
+      }
+      cancels.push(e);return;
+    }
     const chG=gev.updated!==e.ev.g.u;
     const chL=gcalHashEv(e.k,e.ev,o.dsh)!==e.ev.g.h;
     if(chG){                             // 구글이 바뀌었다 → 구글 것을 따른다 (둘 다 바뀌어도 구글이 이긴다)
@@ -23876,6 +23889,7 @@ function applySnapshot(snap){
   ST.vis=s.vis;ST.prevVis=s.prevVis;ST.preset=s.preset;
   ST.collapsed=s.collapsed||[];ST.days=s.days;
   rawSave();
+  if(typeof _gcalOnSave==='function')_gcalOnSave();   // 실행취소·다시실행도 구글과 맞춘다 (되살린 일정 → 구글도 되살림)
   _applyingHistory=false;
   renderToday();
   // 실행취소/다시실행 결과도 주간·월간 표시에 즉시 반영
@@ -39388,6 +39402,14 @@ function _gcalFind(ref,id){
   return hit||byId;
 }
 // 사람이 BLOCK7 에서 고리 있는 일정을 지울 때 부른다 → 다음 맞추기에서 구글에서도 지운다
+// BLOCK7 이 구글에서 지운 고리의 기록 — 설정(gcal.gone)에 둔다. 실행취소는 날짜 칸(ST.days)만 되돌리므로
+// 이 기록은 남는다 → 되살린 일정을 '구글에서 사람이 지운 것' 과 가를 수 있다. 30일 지난 것은 버린다.
+function _gcalGone(key,on){
+  const g=Object.assign({},_gcalCfg().gone||{}),now=Date.now();
+  if(on)g[key]=now;else delete g[key];
+  Object.keys(g).forEach(x=>{if(!(now-g[x]<30*864e5))delete g[x];});
+  _gcalApplying=true;try{ST.settings.gcal=Object.assign({},_gcalCfg(),{gone:g});save();}finally{_gcalApplying=false;}
+}
 function _gcalTomb(k,ev){
   if(!ev||!ev.g||!ev.g.c||!ev.g.i)return;
   const day=getDay(k);
@@ -39421,9 +39443,18 @@ async function _gcalRunRemote(ops,errs){
       if(r.ok)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});
       else if(r.status===403)links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{ro:1})});
       else bad(op,r);
+    }else if(op.t==='restore'){
+      // 지워진 구글 일정을 '확정' 으로 되돌린다. 구글이 아예 비웠으면(404·410) 새로 넣고 고리를 바꾼다
+      let r=await _gcalApi('PATCH','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid),op.body);
+      if(!r.ok&&(r.status===404||r.status===410)){
+        const nb=Object.assign({},op.body);delete nb.status;['start','end'].forEach(x=>{nb[x]=Object.assign({},nb[x]);Object.keys(nb[x]).forEach(y=>{if(nb[x][y]===null)delete nb[x][y];});});
+        r=await _gcalApi('POST','/calendars/'+_gcalE(op.c)+'/events',nb);
+      }
+      if(r.ok&&r.j.id){links.push({ref:op.ref,id:op.id,g:Object.assign({},op.ref.g,{i:r.j.id,u:r.j.updated,h:gcalHashEv(op.k,op.ref,_gcalDsh()),d:op.d})});_gcalGone(op.key,false);}
+      else bad(op,r);
     }else if(op.t==='del'){
       const r=await _gcalApi('DELETE','/calendars/'+_gcalE(op.c)+'/events/'+_gcalE(op.gid));
-      if(r.ok||r.status===404||r.status===410)untomb.push({k:op.k,key:op.key});
+      if(r.ok||r.status===404||r.status===410){untomb.push({k:op.k,key:op.key});_gcalGone(op.key,true);}
       else if(r.status!==403)bad(op,r);
       // 403(남의 캘린더) 이면 표시를 남겨 둔다 — 다시 가져오지 않게 하는 표시로 쓴다
     }
@@ -39475,7 +39506,8 @@ async function gcalSync(opt){
     const known=_gcalCals||[];
     const ro=known.filter(c=>c.role!=='owner'&&c.role!=='writer').map(c=>c.id);
     const off=_gcalCals?known.map(c=>c.id).filter(id=>!sel.includes(id)):[];
-    const base={days:ST.days,writeCal:cfg.writeCal,roCals:ro,today,dsh:_gcalDsh(),secFor:t=>_secIdForTime(t),defSec:_gcalDefSec(),tz:_gcalTz()};
+    const base={days:ST.days,writeCal:cfg.writeCal,roCals:ro,today,dsh:_gcalDsh(),secFor:t=>_secIdForTime(t),defSec:_gcalDefSec(),tz:_gcalTz(),
+      gone:Object.keys(cfg.gone||{})};
     // ① 먼저 보내기 — BLOCK7 에서 새로 만든 것은 구글을 읽기 전에 바로 넣는다 (넣기는 구글 쪽 내용을 몰라도 된다, v26-1024-4)
     {
       const quick=gcalPlan(Object.assign({},base,{gevents:[],cals:sel}));
