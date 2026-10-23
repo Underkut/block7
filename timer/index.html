@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1024-2 -->
+<!-- KAIROS v. 26-1024-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -579,7 +579,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1024-2';
+const APP_VERSION='v. 26-1024-3';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -620,6 +620,13 @@ function dragSlot(mids,i0,cx){
 }
 // i0 자리의 것을 to 자리로 (나머지는 한 칸씩 밀린다)
 function moveItem(arr,i0,to){const a=arr.slice(),x=a.splice(i0,1)[0];a.splice(to,0,x);return a;}
+// 잠금 화면 알림 — 지금 상태에서 서버에 맡길 것. null = 서버에서 지우기 (도는 중이 아니거나 스위치가 꺼짐)
+// next: 이어달리기의 다음 것 이름 — 서버는 지금 것의 끝만 알아서, 다음은 앱을 열어야 이어진다
+function pushPlan(r,cfg,next){
+  if(!cfg||!cfg.lock||!cfg.lockTok||!cfg.dev||!r||r.state!=='run'||!(r.endAt>0))return null;
+  const min=Math.round((r.total||0)/60000);
+  return {at:r.endAt,title:`${r.label?r.label+' ':''}${min}분, 끝났어요`,body:next?`다음은 ${next} — 앱을 열면 이어져요`:'KAIROS'};
+}
 // 이어달리기 → 실제로 도는 차례 (되풀이 반영)
 function routineSeq(rt){const seq=[];for(let k=0;k<(rt.rep||1);k++)seq.push(...rt.items);return seq;}
 
@@ -927,7 +934,7 @@ function drawPresets(){
 }
 
 // ── 타이머 동작 ──
-function setRun(o){Object.assign(S.run,o);save();drawAll();drawPresets();syncWake();}
+function setRun(o){Object.assign(S.run,o);save();drawAll();drawPresets();syncWake();syncPush();}
 let deskT=0;
 function deskSoon(){clearTimeout(deskT);if(!C().deskAuto)return;deskT=setTimeout(()=>{if(R().state==='run'&&!$('desk').classList.contains('on'))enterDesk();},1000);}
 function start(){
@@ -1169,7 +1176,71 @@ async function syncWake(){
     else if(!want&&wake){await wake.release();wake=null;}
   }catch(e){wake=null;}
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const r=R();if(r.state==='run'&&Date.now()>=r.endAt)finish();else{drawAll();loop();}}syncWake();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')syncPush(true);if(document.visibilityState==='visible'){const r=R();if(r.state==='run'&&Date.now()>=r.endAt)finish();else{drawAll();loop();}}syncWake();});
+
+// ── 잠금 화면 알림 (T-6) — 끝나는 시각을 서버에 맡겨 두면 화면이 꺼져 있어도 푸시가 온다 ──
+// 로그인 없이 기기 번호(cfg.dev) + 알림 주소(cfg.lockTok) 만. 서버: wallet-functions/src/timer.js (timerPing · studyTick 이 1분마다)
+const PUSH_URL='https://asia-northeast3-block7-8f24e.cloudfunctions.net/timerPing';
+const FB_CFG={apiKey:'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE',authDomain:'block7-8f24e.firebaseapp.com',projectId:'block7-8f24e',storageBucket:'block7-8f24e.firebasestorage.app',messagingSenderId:'517626689480',appId:'1:517626689480:web:92ea52eeebc24277ef72fd'};
+const VAPID='BORlzx8_k0YgJyVlwh-RmPmXkXkX6X3w2R-FlFkd1uXIb15waShnzjiE1tW3iwOI86Fyn1tw32uD5tKOwa2jtog';
+const PKEY='b7timer_push';   // 서버에 마지막으로 맡긴 것 — 같은 것을 또 보내지 않게
+let pushSig=(()=>{try{return localStorage.getItem(PKEY)||'';}catch(e){return '';}})(),pushT=0,pushBusy=null;
+// ⚠️ text/plain — 사전 확인(preflight) 없는 단순 요청이라 앱이 뒤로 가는 순간에도(keepalive) 끝까지 간다
+async function pingT(path,body){
+  try{const r=await fetch(PUSH_URL+path,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(body),keepalive:true});
+    return r.ok?await r.json().catch(()=>({ok:true})):null;}catch(e){return null;}
+}
+function nextName(){const r=R();if(!r.rt||r.rt.idx+1>=r.rt.seq.length||!C().autoNext)return '';const p=P(r.rt.seq[r.rt.idx+1]);return p?`${pLabel(p)}${p.name?' '+p.min+'분':''}`:'';}
+// 상태가 바뀔 때마다 (setRun) — 잠깐 모았다가 한 번에. now=true 면 바로 (앱이 뒤로 갈 때)
+function syncPush(now){clearTimeout(pushT);if(now)doPush();else pushT=setTimeout(doPush,250);}
+async function doPush(){
+  if(pushBusy){await pushBusy.catch(()=>{});}
+  const plan=pushPlan(R(),C(),nextName()),sig=plan?plan.at+'|'+plan.title+'|'+plan.body:'';
+  if(sig===pushSig||(!plan&&!C().dev))return;
+  pushBusy=pingT(plan?'/set':'/clear',plan?Object.assign({dev:C().dev,tok:C().lockTok},plan):{dev:C().dev});
+  const ok=await pushBusy;pushBusy=null;
+  if(ok){pushSig=sig;try{localStorage.setItem(PKEY,sig);}catch(e){}}
+}
+let FCMP=null;
+function fcmLoad(){
+  if(FCMP)return FCMP;
+  const one=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>no(new Error('net'));document.head.appendChild(s);});
+  const base='https://www.gstatic.com/firebasejs/10.12.2/';
+  FCMP=(window.firebase?Promise.resolve():one(base+'firebase-app-compat.js')).then(()=>firebase.messaging?null:one(base+'firebase-messaging-compat.js'))
+    .then(()=>firebase.messaging(firebase.apps.find(a=>a.name==='timer')||firebase.initializeApp(FB_CFG,'timer')))
+    .catch(e=>{FCMP=null;throw e;});
+  return FCMP;
+}
+async function fcmToken(){
+  const m=await fcmLoad();
+  const reg=await navigator.serviceWorker.getRegistration('./')||await navigator.serviceWorker.register('sw.js');
+  await navigator.serviceWorker.ready;
+  return m.getToken({vapidKey:VAPID,serviceWorkerRegistration:reg});
+}
+// 켜기 — ⚠️ 아이폰은 알림 허락을 손가락이 닿은 그 순간에 물어야 한다 → 맨 앞에서 await 없이 requestPermission
+async function lockOn(btn){
+  if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window)){
+    toast(isIOS?'아이폰은 홈 화면에 추가한 KAIROS 에서만\n알림을 켤 수 있어요':'이 브라우저는 알림을 받을 수 없어요');return;}
+  const ask=Notification.requestPermission();
+  btn.disabled=true;
+  try{
+    if(await ask!=='granted'){toast('알림이 허락되지 않았어요\n폰 설정 → 알림에서 KAIROS 를 허락해 주세요');return;}
+    const tok=await fcmToken();if(!tok)throw new Error('token');
+    if(!C().dev)C().dev=(uid()+uid()+uid()).replace(/[^a-z0-9]/g,'').slice(0,16).padEnd(8,'0');
+    Object.assign(C(),{lock:true,lockTok:tok,lockAt:Date.now()});save();btn.classList.add('on');
+    pushSig='~';syncPush(true);   // 지금 도는 것이 있으면 바로 맡긴다
+    const t=await pingT('/test',{tok});
+    toast(t&&t.ok?'잠금 화면 알림을 켰어요\n시험 알림을 한 통 보냈어요':t?'켰어요\n시험 알림은 못 보냈어요 — 잠시 뒤 다시 켜 보세요':'켰어요\n알림 서버가 아직 준비되지 않았어요 — 서버를 올리면 그때부터 와요');
+  }catch(e){toast('알림을 켜지 못했어요\n'+(e&&e.message==='net'?'인터넷 연결을 확인해 주세요':'잠시 뒤 다시 해 주세요'));}
+  finally{btn.disabled=false;}
+}
+function lockOff(btn){C().lock=false;save();btn.classList.remove('on');syncPush(true);toast('잠금 화면 알림을 껐어요');}
+// 알림 주소는 가끔 바뀐다 → 켜 둔 기기는 일주일에 한 번 몰래 새로 받아 둔다
+function lockRefresh(){
+  if(!C().lock||!('Notification' in window)||Notification.permission!=='granted')return;
+  if(Date.now()-(C().lockAt||0)<7*864e5)return;
+  fcmToken().then(tok=>{if(tok){const ch=tok!==C().lockTok;Object.assign(C(),{lockTok:tok,lockAt:Date.now()});save();if(ch){pushSig='~';syncPush();}}}).catch(()=>{});
+}
 
 // ── 토스트: 화면 한가운데 · 뜻 단위로 줄바꿈 · 아무 데나 누르면 닫힘 ──
 let toastT=0;
@@ -1538,12 +1609,12 @@ function openSettings(){
       ${srow('voice','음성 안내','"집중 25분, 끝났어요" 하고 읽어 줘요',tog('voice'))}
       ${srow('flash','화면 깜빡임','타이머 색으로 — 소리를 끈 자리에서 좋아요',tog('flash'))}
       ${srow('vib','진동',isIOS?'아이폰 웹앱은 진동을 쓸 수 없어요 (애플이 막아 둠)':'끝날 때 울리고, 원을 끌 때 1분마다 톡',tog('vib',isIOS))}
-      ${srow('lock','잠금 화면 알림 <span class="badge">준비 중</span>','앱이 꺼져 있어도 서버가 끝나는 시각에 알려 줘요',tog('lock',true))}
+      ${srow('lock','잠금 화면 알림','화면이 꺼져 있거나 다른 앱에 있어도 끝나면 알림이 와요'+(isIOS?'<br><em>아이폰은 홈 화면에 추가한 KAIROS 에서만 돼요</em>':''),tog('lock'))}
     </div>
 
     <div class="sgh">도는 동안</div>
     <div class="sgrp">
-      ${srow('wake','화면 켜 두기','도는 동안과 탁상 모드에서 화면이 꺼지지 않아요'+(isIOS?'<br><em>아이폰은 화면이 꺼지면 끝 소리를 놓쳐요 — 켜 두세요</em>':''),tog('wake'))}
+      ${srow('wake','화면 켜 두기','도는 동안과 탁상 모드에서 화면이 꺼지지 않아요'+(isIOS?'<br><em>아이폰은 화면이 꺼지면 끝 소리를 놓쳐요 — 켜 두거나 잠금 화면 알림을 켜세요</em>':''),tog('wake'))}
       ${srow('desk','시작하면 탁상 모드','1초 뒤 원이 화면 가득 커져요 · 두 번 톡 하면 나와요',tog('deskAuto'))}
       ${srow('next','이어달리기 다음 순서','앞의 타이머가 끝나면','',seg('autoNext',[[true,'바로 시작'],[false,'눌러서 시작']]))}
     </div>
@@ -1561,7 +1632,7 @@ function openSettings(){
         <li>프리셋은 누르면 바로 시작. 길게 눌러 끌면 순서를 바꾸고, 가운데 연필에 놓으면 고치기 · 맨 위에 놓으면 지우기.</li>
         <li>탁상 모드 — 한 번 톡 = 단추 · 두 번 톡 = 나가기. 도는 중에 여백을 톡 = 다시 들어가기.</li>
         <li>끝 알림(소리 · 깜빡임 · 진동)은 화면을 누를 때까지 계속돼요.</li>
-        <li><b>아이폰</b> — 진동이 없고, 화면이 꺼지거나 다른 앱으로 가면 끝 소리를 놓쳐요(시간은 맞아요). '화면 켜 두기' 를 켜 두세요.</li></ul>`)}
+        <li><b>아이폰</b> — 진동이 없고, 화면이 꺼지거나 다른 앱으로 가면 끝 소리를 놓쳐요(시간은 맞아요). '화면 켜 두기' 나 '잠금 화면 알림' 을 켜 두세요.</li></ul>`)}
     </div>
     <div class="sfoot">KAIROS ${APP_VERSION}<br>설정과 기록은 이 기기 안에만 저장돼요</div>
     <input type="file" id="myFile" accept="audio/*" hidden>`;
@@ -1577,6 +1648,7 @@ function openSettings(){
     if(sn){if(sn.dataset.snd==='mine'&&!MY){$('myFile').click();return;}
       C().sound=sn.dataset.snd;save();$('sheetBody').querySelectorAll('[data-snd]').forEach(b=>b.classList.toggle('on',b===sn));$('sv-snd').textContent=SOUNDS[C().sound][0];
       unlockAudio();cutAudio();playOnce(C().sound,.35);}
+    if(t&&!t.disabled&&t.dataset.tog==='lock'){if(C().lock)lockOff(t);else lockOn(t);return;}
     if(t&&!t.disabled){const k=t.dataset.tog;C()[k]=!C()[k];t.classList.toggle('on',C()[k]);save();
       if(k==='wake')syncWake();
       if(k==='voice'&&C().voice){unlockAudio();speak('집중 25분, 끝났어요. 다음은 쉬기 5분, 시작했어요.');}
@@ -1674,6 +1746,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawAll);
   if(r.state==='run'){if(Date.now()>=r.endAt){r.state='done';r.left=0;}else loop();}
   applyLook();applyTheme();drawPresets();renderRoutines();goTab(0,false);syncWake();
   requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.remove('boot')));
+  syncPush();setTimeout(lockRefresh,4000);
 })();
 if(C().myName)loadMine();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});

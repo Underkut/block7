@@ -8,6 +8,7 @@
 //  ⑤ 이어달리기 차례 — 되풀이 반영
 //  ⑥ 망가진 · 낡은 저장을 읽어도 죽지 않는다 · 모르는 칸은 기본값 · 지운 프리셋은 이어달리기에서도 빠진다
 //  ⑧ 프리셋 끌어 옮기기 — 가운데를 넘어야 자리가 바뀐다 · 여러 칸 · 제자리
+//  ⑨ 잠금 화면 알림 — 도는 중일 때만 · 스위치 · 알림 주소 · 기기 번호가 다 있을 때만 서버에 맡긴다
 //  ⑦ 같은 주소의 다른 앱(공부 · 용돈 · BLOCK7)과 저장 이름이 겹치지 않는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -19,7 +20,7 @@ if (!m) { console.error('timer-core 덩어리를 못 찾았습니다'); process.
 const ctx = { console, Math, JSON, Number, Object, Set, Array, String, isFinite };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { APP_VERSION, KEY, COLORS, dragSlot, moveItem, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
+this.A = { pushPlan, APP_VERSION, KEY, COLORS, dragSlot, moveItem, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
 const A = ctx.A;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
@@ -98,6 +99,20 @@ sc.eq('⑦ 색 = 구글 레드 + 성경 7색', A.COLORS.map(c => c.hex), ['#EA43
   sc.eq('⑧ 맨 앞으로 옮기면 나머지가 한 칸씩 밀린다', A.moveItem(['a', 'b', 'c', 'd'], 2, 0), ['c', 'a', 'b', 'd']);
   sc.eq('⑧ 맨 뒤로', A.moveItem(['a', 'b', 'c', 'd'], 0, 3), ['b', 'c', 'd', 'a']);
   sc.eq('⑧ 원본은 그대로', (() => { const a = ['a', 'b']; A.moveItem(a, 0, 1); return a; })(), ['a', 'b']);
+}
+
+// ⑨ 잠금 화면 알림
+{
+  const cfg = { lock: true, lockTok: 'tok', dev: 'abc123' }, run = { state: 'run', endAt: 1e12, total: 25 * 60000, label: '집중' };
+  const p = A.pushPlan(run, cfg, '');
+  sc.eq('⑨ 도는 중 → 끝 시각 · "집중 25분, 끝났어요"', [p.at, p.title, p.body], [1e12, '집중 25분, 끝났어요', 'KAIROS']);
+  sc.eq('⑨ 이름 없는 타이머 → "10분, 끝났어요"', A.pushPlan({ state: 'run', endAt: 5, total: 10 * 60000, label: '' }, cfg).title, '10분, 끝났어요');
+  sc.eq('⑨ 이어달리기 다음 것을 적는다', A.pushPlan(run, cfg, '쉬기 5분').body, '다음은 쉬기 5분 — 앱을 열면 이어져요');
+  sc.eq('⑨ 멈춤이면 지운다(null)', A.pushPlan(Object.assign({}, run, { state: 'pause' }), cfg), null);
+  sc.eq('⑨ 끝난 뒤 · 기다림이면 지운다', [A.pushPlan(Object.assign({}, run, { state: 'done' }), cfg), A.pushPlan(Object.assign({}, run, { state: 'wait' }), cfg)], [null, null]);
+  sc.eq('⑨ 스위치를 끄면 지운다', A.pushPlan(run, Object.assign({}, cfg, { lock: false })), null);
+  sc.eq('⑨ 알림 주소 · 기기 번호가 없으면 맡기지 않는다', [A.pushPlan(run, Object.assign({}, cfg, { lockTok: '' })), A.pushPlan(run, Object.assign({}, cfg, { dev: '' }))], [null, null]);
+  sc.eq('⑨ 새 설정 기본값은 꺼짐', A.CFG_DEFAULT.lock, false);
 }
 
 sc.done();

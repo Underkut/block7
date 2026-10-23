@@ -120,6 +120,7 @@ firebase deploy --only functions:wallet
 
 - `block7` 폴더가 없다고 나오면 첫 줄 대신 `git clone https://github.com/Underkut/block7.git && cd block7/wallet-functions/src && npm install && cd ..`
 - 성공 표시: `studyPing(asia-northeast3)` · `studyTick(asia-northeast3)` 두 줄이 **Successful create operation**
+- 타이머(KAIROS) 잠금 화면 알림(`timerPing`)도 같은 명령으로 함께 올라가요 (2026-10-24~). 처음엔 `timerPing(asia-northeast3)` 이 **create**, `studyTick` 은 **update** 로 나와요.
 - ⚠️ 배포 중에 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
 - "API 를 켤까요?(enable)" 를 물으면 **Y** (studyTick 은 1분마다 도는 예약 작업이라 Cloud Scheduler 를 써요 — 한 달 몇십 원 수준)
 
