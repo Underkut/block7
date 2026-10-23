@@ -5,7 +5,8 @@
  *
  * gcal (HTTP, asia-northeast3)
  *   POST /start  {ret}  (Bearer 파이어베이스 ID 토큰)  구글 동의 화면 주소를 만들어 준다
- *   GET  /cb            구글이 돌려보내는 자리 → 갱신 토큰을 gcalTokens/{uid} 에 맡기고 앱으로 돌려보낸다
+ *   POST /fin {code,state,error}  구글이 block7.my/gcal/ 로 돌려보낸 것을 그 쪽지가 넘겨준다
+ *                       → 갱신 토큰을 gcalTokens/{uid} 에 맡기고 {ret, result} (돌아갈 앱 주소)를 알려 준다
  *   POST /token         (Bearer) 한 시간짜리 열쇠(access token)를 새로 받아 준다
  *   POST /status        (Bearer) 연결됐는지 · 어느 구글 계정인지
  *   POST /off           (Bearer) 연결 끊기 — 구글에 열쇠를 돌려주고 지운다
@@ -33,7 +34,10 @@ const SCOPES = [
 const APP_DEFAULT = "https://block7.my/";
 // 돌아갈 주소는 BLOCK7 운영본 자리만 받는다 (아무 데로나 돌려보내는 문이 되지 않게)
 const okRet = (u) => typeof u === "string" && /^https:\/\/(block7\.my|underkut\.github\.io\/block7)\//.test(u);
-const redirectUri = () => `https://${REGION}-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/gcal/cb`;
+// 구글이 돌려보내는 자리는 block7.my 안에 둔다 (v26-1023-2) — 구글 '앱 게시' 는 승인된 도메인을
+// HB 소유 도메인으로 요구하는데 cloudfunctions.net 은 HB 것이 아니다. 그 쪽지(gcal/index.html)가 /fin 을 부른다.
+const REDIRECT_URI = "https://block7.my/gcal/";
+const redirectUri = () => REDIRECT_URI;
 
 async function uidOf(req) {
   const h = req.headers.authorization || "";
@@ -51,9 +55,7 @@ async function google(url, params) {
   return { ok: r.ok, status: r.status, j };
 }
 function back(res, ret, result) {
-  const u = new URL(okRet(ret) ? ret : APP_DEFAULT);
-  u.searchParams.set("gcal", result);
-  res.redirect(302, u.toString());
+  res.json({ ret: okRet(ret) ? ret : APP_DEFAULT, result });
 }
 
 exports.gcal = onRequest(
@@ -61,17 +63,18 @@ exports.gcal = onRequest(
   async (req, res) => {
     const path = (req.path || "/").replace(/\/+$/, "") || "/";
     try {
-      // ── 구글 동의 화면에서 돌아오는 자리 (로그인 토큰 없이 온다 → state 로 누구인지 안다)
-      if (path === "/cb") {
-        const st = String(req.query.state || "");
+      // ── 구글 동의 화면에서 돌아온 것 (로그인 토큰 없이 온다 → state 로 누구인지 안다)
+      if (path === "/fin" && req.method === "POST") {
+        const q = req.body || {};
+        const st = String(q.state || "");
         const ref = st ? db.doc(`gcalStates/${st.replace(/[^a-zA-Z0-9]/g, "")}`) : null;
         const snap = ref ? await ref.get() : null;
         const s = snap && snap.exists ? snap.data() : null;
         if (ref && s) await ref.delete();
         if (!s || s.exp < Date.now()) { back(res, s && s.ret, "expired"); return; }
-        if (req.query.error || !req.query.code) { back(res, s.ret, "cancel"); return; }
+        if (q.error || !q.code) { back(res, s.ret, "cancel"); return; }
         const t = await google("https://oauth2.googleapis.com/token", {
-          code: String(req.query.code), client_id: CLIENT_ID.value(), client_secret: CLIENT_SECRET.value(),
+          code: String(q.code), client_id: CLIENT_ID.value(), client_secret: CLIENT_SECRET.value(),
           redirect_uri: redirectUri(), grant_type: "authorization_code",
         });
         if (!t.ok || !t.j.refresh_token) { console.error("gcal code exchange", t.status, t.j); back(res, s.ret, "err"); return; }
