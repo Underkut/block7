@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 타이머 v. 26-1023-8 -->
+<!-- KAIROS v. 26-1023-9 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -8,8 +8,8 @@
 <meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="타이머">
-<title>타이머</title>
+<meta name="apple-mobile-web-app-title" content="KAIROS">
+<title>KAIROS</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -310,7 +310,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 <div class="app" id="app">
   <div class="top">
     <span class="ic" aria-hidden="true"></span>
-    <h1 id="title">타이머</h1>
+    <h1 id="title">KAIROS</h1>
     <button class="ic" id="gear" aria-label="설정"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </div>
 
@@ -388,7 +388,7 @@ body.lv-power .hint{font-family:var(--f-mono);font-size:10px;letter-spacing:.04e
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1023-8';
+const APP_VERSION='v. 26-1023-9';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -944,7 +944,7 @@ function toast(msg){
 document.addEventListener('pointerdown',e=>{if($('toast').classList.contains('on')&&!e.target.closest('.sheet'))$('toast').classList.remove('on');});
 
 // ── 탭 — 손가락을 따라 넘어간다 ──
-let tab=0;const TITLES=['타이머','이어달리기','기록'];
+let tab=0;const TITLES=['KAIROS','이어달리기','기록'];
 function goTab(i,anim=true){
   tab=Math.max(0,Math.min(2,i));
   const tr=$('track');tr.style.transition=anim&&!matchMedia('(prefers-reduced-motion: reduce)').matches?'transform .3s cubic-bezier(.22,.8,.24,1)':'none';
@@ -1269,7 +1269,7 @@ function openSettings(){
       · 끝 알림(소리 · 깜빡임 · 진동)은 화면을 누를 때까지 계속돼요.<br>
       <b>아이폰</b> — 진동이 없고, 화면이 꺼지거나 다른 앱으로 가면 끝 소리를 놓쳐요(시간은 맞아요). 화면 꺼짐 막기를 켜 두세요.<br>
       <b>저장</b> — 이 기기 안에만.<br>
-      <span style="color:var(--tx3)">타이머 ${APP_VERSION}</span></div>`;
+      <span style="color:var(--tx3)">KAIROS ${APP_VERSION}</span></div>`;
   openSheet('설정',body,'');
   $('myFile').onchange=e=>{const fl=e.target.files&&e.target.files[0];setMine(fl).then(reopenSettings);};
   applyLv();
