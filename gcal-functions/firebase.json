@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "source": "src",
+      "codebase": "gcal",
+      "runtime": "nodejs22"
+    }
+  ]
+}
