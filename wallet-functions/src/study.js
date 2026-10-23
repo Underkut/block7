@@ -1,6 +1,7 @@
 /* 공부 친구들 알림 서버 (S-3·S-4) — 용돈 친구들 서버와 같은 묶음(codebase: wallet)에 산다.
  *
  * studyTick (1분마다, 서울)  sremind/{id} 중 시각이 된 것을 아이 폰에 푸시하고 지운다.
+ *                           타이머(KAIROS) 잠금 화면 알림도 같은 틱에서 함께 돈다 (timer.js · timerDue).
  *                           알림에는 [시작] [미루기] 단추가 붙는다(안드로이드). 2시간 넘게 밀린 것은 보내지 않고 지운다.
  * studyPing (HTTP)
  *   POST /report  {fid, kidId, sid}  아이가 공부를 보냈다 → 부모님께
@@ -96,7 +97,13 @@ exports.studyPing = onRequest({ region: REGION, cors: true }, async (req, res) =
   } catch (e) { console.warn("studyPing", e.message); res.status(500).send("err"); }
 });
 
-exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Seoul", region: REGION }, async () => {
+// timeoutSeconds 120: 타이머(KAIROS) 알림이 끝 시각까지 최대 1분 기다렸다 보낸다 (timer.js)
+exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Seoul", region: REGION, timeoutSeconds: 120 }, async () => {
+  // KAIROS 잠금 화면 알림 — 예약 작업을 하나 더 만들지 않고 이 틱에 얹는다. 서로 실패를 넘기지 않게 따로 감싼다
+  const timer = require("./timer").timerDue().catch((e) => console.warn("timerDue", e.message));
+  try { await studyDue(); } finally { await timer; }
+});
+async function studyDue() {
   const now = Date.now();
   const qs = await db().collection("sremind").where("at", "<=", Timestamp.fromMillis(now)).limit(300).get();
   if (qs.empty) return;
@@ -121,4 +128,4 @@ exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Se
     } catch (e) { console.warn("studyTick", e.message); }
     await d.ref.delete().catch(() => {});
   }
-});
+}
