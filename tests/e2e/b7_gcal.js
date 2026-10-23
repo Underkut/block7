@@ -169,6 +169,14 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await sync();
   ok('⑫ 반복 전체 지우기 → 구글 반복도 지워진다', (await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '아침 기도').status)) === 'cancelled');
 
+  // ⑬ 빠르기 (v26-1024-4): 입력창에서 저장 → 구글에 생기기까지 (손대지 않고 저절로 도는 길로)
+  await new Promise(r => setTimeout(r, 4500));
+  const t0 = Date.now();
+  await p.evaluate(D1 => { openEventModal(_secIdForTime('10:00'), null, D1); document.getElementById('eventTextInput').value = '빠르기 확인'; submitEventModal(); }, D1);
+  await p.waitForFunction(() => Object.values(__G.ev).some(e => e.summary === '빠르기 확인'), null, { timeout: 30000 }).catch(() => null);
+  const dt = Date.now() - t0;
+  ok('⑬ 저장하고 5초 안에 구글에 생긴다 (' + (dt / 1000).toFixed(1) + '초)', dt < 5000, dt);
+
   // 설정창 줄
   const ui = await p.evaluate(() => { _gcalCals = [{ id: 'me@x', name: '내 캘린더', role: 'owner', primary: true }, { id: 'hol', name: '대한민국의 휴일', role: 'reader' }]; _gcalRenderSettings(); const folded = document.getElementById('gcalCalList').style.display === 'none'; gcalToggleList(); return [folded, document.getElementById('gcalCalList').style.display === '', document.querySelectorAll('#gcalCalList .settings-row').length, document.getElementById('gcalWriteSel').options.length, document.getElementById('gcalConnectBtn').textContent]; });
   ok('설정창: 목록은 접혀 있다가 펼쳐진다 · 캘린더 두 줄 · 쓸 캘린더는 쓸 수 있는 것만(+보내지 않음) · 연결 끊기 단추', JSON.stringify(ui) === JSON.stringify([true, true, 2, 2, '연결 끊기']), ui);
