@@ -174,3 +174,5 @@ Object.assign(exports, require("./study"));
 exports.timerPing = require("./timer").timerPing;
 // BLOCK7·Sweeter 말씀 · 할일 알림 (예전 versepush · block7Notify 를 대신한다)
 exports.b7push = require("./b7push").b7push;
+// BLOCK7 시리로 할일 넣기 — 아이폰 단축어가 부른다 (쪽지함 pray/{uid}/c/b7inbox 에 한 줄)
+exports.b7siri = require("./b7siri").b7siri;
