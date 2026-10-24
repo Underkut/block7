@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1024-3 -->
+<!-- 공부 친구들 v. 26-1024-4 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -17,7 +17,9 @@
 <style>
 :root{--bg:#FFF8EE;--ink:#2A2540;--sub:#6B6580;--muted:#8C8599;--line:#EFE4D2;--soft:#F2EFEA;--dash:#CFC3AE;--today:#FFC845;--sh:0 3px 0 var(--line);--card:#fff;--red:#FF6F59;--mint:#1FA88A;--sun:#FFC83D;--sky:#4C8DFF;--pur:#A66BFF;--mint-d:#137A63}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Gowun Dodum',system-ui,sans-serif;font-size:15px;overscroll-behavior:none}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Gowun Dodum',system-ui,sans-serif;font-size:15px}
+/* 스크롤이 딱딱하던 까닭: overscroll-behavior:none 이 아이폰 고무줄 튕김을 막았다 (샤론 1024 ④) — 이제 기기 고유의 관성 · 튕김을 그대로 쓴다 */
+html{-webkit-text-size-adjust:100%}
 body{min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 button{font:inherit;color:inherit;cursor:pointer}
 input,select,textarea{font:inherit;color:var(--ink)}
@@ -84,8 +86,9 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .linkbtn{border:none;background:none;color:var(--sub);text-decoration:underline;font-size:14px;padding:10px;display:block;margin:4px auto 0}
 .tip{background:#DDF5EE;color:#0F5E4C;border-radius:16px;padding:11px 13px;font-size:14px;line-height:1.5}
 /* 전체 화면 창 */
-.full{position:fixed;inset:0;background:var(--bg);z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom));display:none}
-.full.on{display:block}
+.full{position:fixed;inset:0;background:var(--bg);z-index:40;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  visibility:hidden;opacity:0;transform:translateY(32px);pointer-events:none;transition:opacity .2s ease-in,transform .26s cubic-bezier(.4,0,1,1),visibility 0s linear .26s}
+.full.on{visibility:visible;opacity:1;transform:none;pointer-events:auto;transition:opacity .22s ease-out,transform .38s cubic-bezier(.22,.8,.24,1),visibility 0s}
 .fhead{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:calc(8px + env(safe-area-inset-top)) 8px 6px}
 .fhead h1{margin:0;font-family:Jua;font-weight:normal;font-size:20px;text-align:center;flex:1}
 .fx{width:44px;height:44px;border:none;background:none;display:flex;align-items:center;justify-content:center;flex:none}
@@ -163,7 +166,39 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .prm .bars i.on{background:#FF8FA3}
 /* 알림 띠 */
 #toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:max-content;white-space:pre-line;background:var(--ink);color:#fff;border-radius:16px;padding:11px 16px;font-size:15px;max-width:88vw;z-index:90;opacity:0;pointer-events:none;transition:opacity .2s;text-align:center;line-height:1.4}
-#toast.on{opacity:1}
+#toast.on{opacity:1;animation:toastIn .32s cubic-bezier(.22,.8,.24,1)}
+@keyframes toastIn{from{transform:translate(-50%,-50%) scale(.88)}to{transform:translate(-50%,-50%) scale(1)}}
+/* 누르는 손맛 — 눌리면 살짝 작아지고, 바닥 그림자가 있는 단추는 꾹 들어간다 */
+button{transition:transform .16s cubic-bezier(.22,.8,.24,1),box-shadow .16s,background-color .15s,color .15s;touch-action:manipulation}
+button:active:not(:disabled){transform:scale(.96)}
+.go:active,.bigq:active,.big:active,.dz-go:active,.tz-done:active{transform:translateY(3px)!important;box-shadow:0 0 0 transparent!important}
+.q{transition:transform .18s cubic-bezier(.22,.8,.24,1)}
+.q:active{transform:scale(.985)}
+/* 방금 끝낸 칸: 체크가 그려지고 통 튄다 · 방금 넣은 칸: 스르륵 들어오며 잠깐 빛난다 */
+.q.just{animation:justDone .7s cubic-bezier(.22,.8,.24,1)}
+.q.just .sj{animation:popIn .6s cubic-bezier(.3,1.6,.5,1)}
+.q.just .sj path{stroke-dasharray:24;stroke-dashoffset:24;animation:drawCk .45s .2s ease-out forwards}
+@keyframes justDone{0%{transform:scale(.97)}40%{transform:scale(1.02)}100%{transform:none}}
+@keyframes popIn{0%{transform:scale(.4) rotate(-20deg)}100%{transform:none}}
+@keyframes drawCk{to{stroke-dashoffset:0}}
+.q.newin{animation:newIn .55s cubic-bezier(.22,.8,.24,1),glow 1.6s .2s ease-out}
+@keyframes newIn{from{transform:translateY(-10px) scale(.96);opacity:0}to{transform:none;opacity:1}}
+@keyframes glow{0%{box-shadow:0 0 0 0 rgba(255,200,69,.0),0 3px 0 var(--line)}25%{box-shadow:0 0 0 4px rgba(255,200,69,.75),0 3px 0 var(--line)}100%{box-shadow:0 0 0 0 rgba(255,200,69,0),0 3px 0 var(--line)}}
+/* 반짝 터짐 조각 */
+.burst{position:fixed;inset:0;pointer-events:none;z-index:96;overflow:hidden}
+.burst i{position:absolute;border-radius:50%;will-change:transform,opacity}
+.burst i.st{border-radius:0;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+/* 잘했어 화면 — 별이 굴러 들어오고 글자 · 단추가 차례로 */
+.dz>svg{animation:starIn .8s cubic-bezier(.3,1.5,.5,1)}
+.dz-h{animation:rise .5s .15s cubic-bezier(.22,.8,.24,1) backwards}
+.dz-s,.dz-note{animation:rise .5s .25s cubic-bezier(.22,.8,.24,1) backwards}
+.dz-go,.dz-more{animation:rise .5s .35s cubic-bezier(.22,.8,.24,1) backwards}
+@keyframes starIn{0%{transform:scale(.2) rotate(-120deg);opacity:0}60%{opacity:1}100%{transform:none}}
+@keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.starchip .n{display:inline-block;min-width:1ch;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:95;overflow:hidden}
 .confetti i{position:absolute;top:-20px;width:10px;height:14px;animation:fall 1.6s ease-in forwards}
 @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
@@ -204,6 +239,36 @@ input,select,textarea{font:inherit;color:var(--ink)}
 .seg2 button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(42,37,64,.12)}
 .addrow{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;height:48px;border-radius:14px;border:2px dashed var(--dash);background:transparent;color:var(--sub);font-family:Jua;font-size:16px}
 .addrow svg{width:18px;height:18px}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0}
+.srow>span{flex:1;min-width:0;font-family:Jua;font-size:16px}
+.srow small{display:block;font-family:'Gowun Dodum',sans-serif;font-size:12.5px;color:var(--sub)}
+.sl{width:52%;flex:none;display:flex;align-items:center;gap:8px}
+.sl b{width:22px;text-align:center;font-family:Jua;font-weight:normal;font-size:15px;color:var(--sub)}
+.sl input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:36px;background:transparent;margin:0;touch-action:pan-y}
+.sl input[type=range]::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(90deg,#3CC7A8 var(--p,0%),var(--soft) var(--p,0%))}
+.sl input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;margin-top:-9px;box-shadow:0 1px 3px rgba(42,37,64,.25),0 0 0 4px #3CC7A8 inset;transition:transform .15s}
+.sl input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
+.sl input[type=range]::-moz-range-track{height:10px;border-radius:5px;background:var(--soft)}
+.sl input[type=range]::-moz-range-progress{height:10px;border-radius:5px;background:#3CC7A8}
+.sl input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid #3CC7A8}
+.trkh{display:flex;align-items:center;justify-content:space-between;margin:12px 2px 8px;font-family:Jua;font-size:15px}
+.trkh small{font-family:'Gowun Dodum',sans-serif;font-size:12px;color:var(--sub);margin-left:4px}
+.trkh button{border:none;background:none;color:var(--sub);font-size:13px;text-decoration:underline;text-underline-offset:3px;min-height:36px}
+.trks{display:flex;flex-direction:column;gap:6px;max-height:30vh;overflow-y:auto;overscroll-behavior:contain}
+.trk{display:flex;align-items:center;gap:4px;background:var(--bg);border-radius:14px;padding:2px 6px 2px 0;transition:box-shadow .2s,background .2s}
+.trk.lift{position:relative;z-index:2;background:#fff;box-shadow:0 8px 20px rgba(42,37,64,.16)}
+.trk .hd{width:36px;height:44px;display:grid;place-items:center;color:#C9BFAE;touch-action:none;cursor:grab;flex:none}
+.trk .sel{flex:1;min-width:0;display:flex;align-items:center;gap:10px;text-align:left;border:none;background:none;padding:10px 2px;font-size:15px}
+.trk .tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk .ck{width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 2.5px #D9D0C2;background:#fff;flex:none;position:relative;transition:background .15s,box-shadow .15s}
+.trk.on .ck{background:#3CC7A8;box-shadow:none}
+.trk.on .ck::after{content:'';position:absolute;left:7px;top:3px;width:5px;height:10px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
+.trk .pv{width:38px;height:38px;border-radius:50%;border:none;background:#fff;display:grid;place-items:center;color:var(--ink);flex:none;box-shadow:0 2px 0 var(--line)}
+.trk .pv.on{background:var(--ink);color:#fff}
+.eq{display:inline-flex;align-items:flex-end;gap:2px;height:14px;flex:none}
+.eq b{width:3px;background:#3CC7A8;border-radius:2px;animation:eq .9s ease-in-out infinite}
+.eq b:nth-child(2){animation-delay:.2s}.eq b:nth-child(3){animation-delay:.4s}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
 input.sw{appearance:none;-webkit-appearance:none;flex:none;width:48px;height:28px;border-radius:999px;background:#E3DCD0;position:relative;margin:0;transition:background .2s;cursor:pointer}
 input.sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .2s cubic-bezier(.22,.8,.24,1)}
 input.sw:checked{background:#3CC7A8}
@@ -361,7 +426,7 @@ const clampInt = (v, lo, hi, def) => { v = Math.round(Number(v)); return Number.
 
 function blankState() {
   return {v: 1, books: [], tasks: [], sessions: [], run: null, snooze: {}, dismiss: {}, coins: 0, spent: 0,
-    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSeen: '', art: 'A', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, lastBackup: 0};
+    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSeen: '', art: 'A', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, sfxVol: 4, bgmVol: 2, bgmSel: null, bgmOrder: null, lastBackup: 0};
 }
 function normBook(b) {
   if (!b || typeof b !== 'object' || !b.id || !b.name) return null;
@@ -402,6 +467,10 @@ function normState(o) {
   s.promisesSeen = Array.isArray(o.promisesSeen) ? o.promisesSeen : [];
   ['kind', 'nick', 'made', 'lastBackup'].forEach(k => { if (o[k] !== undefined) s[k] = o[k]; });
   s.sfx = o.sfx !== false;
+  // 소리 0~5단계 (샤론 1024 ④ — 용돈 친구들과 같은 모양). 옛 '효과음 켜고 끄기'(sfx) 는 4단계 / 끔 으로 옮겨 읽는다
+  const lv = (v, d) => Number.isInteger(v) && v >= 0 && v <= 5 ? v : d;
+  s.sfxVol = lv(o.sfxVol, s.sfx ? 4 : 0); s.bgmVol = lv(o.bgmVol, 2);
+  s.bgmSel = Array.isArray(o.bgmSel) ? o.bgmSel.map(String) : null; s.bgmOrder = Array.isArray(o.bgmOrder) ? o.bgmOrder.map(String) : null;
   if (o.bak && /^\d{6}$/.test(o.bak.d) && Number.isInteger(o.bak.n) && o.bak.n > 0) s.bak = {d: o.bak.d, n: o.bak.n};   // 백업 번호표 (D-4)
   return s;
 }
@@ -656,7 +725,7 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1024-3';
+const APP_VERSION = 'v. 26-1024-4';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -679,15 +748,16 @@ const ICO = {
 /* 캐릭터 — 그림 파일 없이 코드(SVG)로. 그림 스타일 다섯 가지(샤론 1024 ③, 시안 https://claude.ai/artifact/AsNgA7r8oJc9XFdfuMRdMU)
  *   A 파스텔 플랫 · B 연필 선 · C 스티커 (2D) / D 말랑 클레이 · E 반짝 피규어 (3D). 처음 쓰는 사람은 A.
  * 단계 1(아기)~5(어른)는 크기로 자란다(발은 땅에 붙은 채). 같은 모양(뼈대) 위에 스타일마다 칠하는 법만 다르다.
- * 햄스터는 곰돌이와 헷갈리지 않게 따로 그린다: 감자 같은 몸 · 불룩한 흰 볼 · 머리 위 작은 분홍 귀 · 앞니 · 해바라기씨 든 분홍 앞발. */
+ * 햄스터는 곰돌이와 헷갈리지 않게 따로 그린다: 감자 같은 몸 · 불룩한 흰 볼 · 머리 위 작은 분홍 귀 · 앞니 · 해바라기씨 든 분홍 앞발.
+ * 고양이: 위로 말려 올라간 꼬리 · 이마 줄무늬 · 수염 · 볼 방울(입 양쪽 흰 동그라미). 여우: 끝이 흰 복슬 꼬리 · 검은 귀 끝 · 뾰족한 흰 볼털 가면 (샤론 1024 ④). */
 const ART_STYLES = [['A', '플랫'], ['B', '연필'], ['C', '스티커'], ['D', '클레이'], ['E', '피규어']];
 const ART_PAL = {
   rabbit: {ear: 'long', fur: '#FFF9F5', inner: '#FFFFFF', earC: '#FFF9F5', earIn: '#FFC3CF', limb: '#FFF9F5', nose: '#F08BA0', eye: '#2B2433', m: 'w'},
-  cat: {ear: 'tri', fur: '#F6C38F', inner: '#FFF4E6', earC: '#F6C38F', earIn: '#F6A7B2', limb: '#F6C38F', nose: '#EC8A98', eye: '#2B2433', m: 'w', whisk: 1},
+  cat: {ear: 'tri', fur: '#F6C38F', inner: '#FFF4E6', earC: '#F6C38F', earIn: '#F6A7B2', limb: '#F6C38F', nose: '#EC8A98', eye: '#2B2433', m: 'w', cat: 1},
   hamster: {ear: 'ham', fur: '#F2B35E', inner: '#FFFDF8', earC: '#F2B35E', earIn: '#FFB3C0', limb: '#FFC2CB', nose: '#F28499', eye: '#2B2433', m: 'w', ham: 1},
   dog: {ear: 'flop', fur: '#F3E2CD', inner: '#FFFAF3', earC: '#A87656', earIn: '#A87656', limb: '#F3E2CD', nose: '#3D3029', eye: '#2B2433', m: 's', muz: 1},
   bear: {ear: 'round', fur: '#B98560', inner: '#EFD6B9', earC: '#B98560', earIn: '#EFD6B9', limb: '#B98560', nose: '#3D2B22', eye: '#241C1A', m: 's', muz: 1},
-  fox: {ear: 'tri', fur: '#F39556', inner: '#FFF7EE', earC: '#F39556', earIn: '#5A3A2C', limb: '#5A3A2C', nose: '#2E211B', eye: '#2B2433', m: 'w', muz: 1},
+  fox: {ear: 'tri', fur: '#F28A47', inner: '#FFF8F0', earC: '#F28A47', earIn: '#FFE9DA', limb: '#4E3226', nose: '#2E211B', eye: '#2B2433', m: 'w', fox: 1},
   panda: {ear: 'round', fur: '#FFFFFF', inner: '#FFFFFF', earC: '#363244', earIn: '#363244', limb: '#363244', nose: '#363244', eye: '#141119', m: 's', patch: 1}
 };
 let ART_N = 0;   // 한 화면에 여럿 그려도 그라데이션 · 필터 이름이 겹치지 않게
@@ -702,7 +772,11 @@ function artSvg(kind, stage, style) {
   if (P.ear === 'long') { add('ellipse', 'cx="76" cy="44" rx="15" ry="36" transform="rotate(-12 76 80)"', 'earC', 'sl'); add('ellipse', 'cx="76" cy="49" rx="7" ry="24" transform="rotate(-12 76 80)"', 'earIn');
     add('ellipse', 'cx="124" cy="44" rx="15" ry="36" transform="rotate(12 124 80)"', 'earC', 'sl'); add('ellipse', 'cx="124" cy="49" rx="7" ry="24" transform="rotate(12 124 80)"', 'earIn'); }
   if (P.ear === 'tri') { add('path', 'd="M48 74 C46 52 51 32 58 19 C71 27 83 39 92 50 Z"', 'earC', 'sl'); add('path', 'd="M58 62 C57 49 59 39 62 32 C69 37 75 43 80 50 Z"', 'earIn');
-    add('path', 'd="M152 74 C154 52 149 32 142 19 C129 27 117 39 108 50 Z"', 'earC', 'sl'); add('path', 'd="M142 62 C143 49 141 39 138 32 C131 37 125 43 120 50 Z"', 'earIn'); }
+    add('path', 'd="M152 74 C154 52 149 32 142 19 C129 27 117 39 108 50 Z"', 'earC', 'sl'); add('path', 'd="M142 62 C143 49 141 39 138 32 C131 37 125 43 120 50 Z"', 'earIn');
+    if (P.fox) { add('path', 'd="M50.5 37 C51.5 30 54.5 24 58 19 C64 23 70 28 75.5 33.5 C66 31 58 32.5 50.5 37 Z"', 'limb'); add('path', 'd="M149.5 37 C148.5 30 145.5 24 142 19 C136 23 130 28 124.5 33.5 C134 31 142 32.5 149.5 37 Z"', 'limb'); } }
+  if (P.cat) add('tail');
+  if (P.fox) { add('path', 'd="M128 172 C156 182 186 164 184 130 C182 104 164 92 152 104 C168 118 164 146 136 154 Z"', 'fur', 'sl');
+    add('path', 'd="M152 104 C160 94 178 98 183 120 C184 124 184 127 184 130 C178 120 168 112 156 109 C154 108 153 106 152 104 Z"', 'inner', 'l'); }
   if (P.ear === 'round') ['54', '146'].forEach(x => { add('circle', `cx="${x}" cy="54" r="19"`, 'earC', 'sl'); add('circle', `cx="${x}" cy="55" r="10"`, 'earIn'); });
   if (P.ear === 'ham') ['66', '134'].forEach(x => { add('circle', `cx="${x}" cy="49" r="13"`, 'earC', 'sl'); add('circle', `cx="${x}" cy="50" r="8.5"`, 'earIn'); });
   if (!P.ham) { add('ellipse', 'cx="65" cy="152" rx="11" ry="15" transform="rotate(28 65 152)"', 'limb', 'sl'); add('ellipse', 'cx="135" cy="152" rx="11" ry="15" transform="rotate(-28 135 152)"', 'limb', 'sl'); }
@@ -718,14 +792,21 @@ function artSvg(kind, stage, style) {
   if (P.patch) { add('ellipse', 'cx="78" cy="103" rx="14" ry="17" transform="rotate(-28 78 103)"', 'earC'); add('ellipse', 'cx="122" cy="103" rx="14" ry="17" transform="rotate(28 122 103)"', 'earC'); }
   if (P.ham) { add('ellipse', 'cx="100" cy="128" rx="44" ry="23"', 'inner'); if (Y !== 'B') cheeks(); }
   if (P.muz) add('ellipse', 'cx="100" cy="116" rx="22" ry="15"', 'inner');
+  if (P.fox) add('path', 'd="M36 102 L54 109 C62 117 74 116 84 108 C90 104 96 103.5 100 103.5 C104 103.5 110 104 116 108 C126 116 138 117 146 109 L164 102 C160 128 136 146 100 146 C64 146 40 128 36 102 Z"', 'inner', 'sl');
+  if (P.cat) { add('path', 'd="M92 45 L94.5 57 M100 43 L100 57 M108 45 L105.5 57"', 'stripe'); ['93', '107'].forEach(x => add('circle', `cx="${x}" cy="116" r="7.5"`, 'inner')); }
   add('sheen');
   const shape = (p, extra) => `<${p[0]} ${p[1]}${extra || ''}/>`;
-  const body = parts.map(p => p[0] === 'ao' ? (Y === 'D' ? `<ellipse cx="100" cy="146" rx="46" ry="9" fill="#3A2A2A" opacity=".16" filter="url(#${u}b5)"/>` : '')
+  const TAIL = 'M132 170 C160 177 175 155 167 131 C163 119 169 108 178 111';
+  const tailSvg = () => (Y === 'B' ? `<path d="${TAIL}" fill="none" stroke="#4A3A31" stroke-width="18.2" stroke-linecap="round"/>` : '')
+    + `<path d="${TAIL}" fill="none" stroke="${fill('fur')}" stroke-width="13" stroke-linecap="round"/><path d="M168 122 l9 -3 M165 134 l9 1" stroke="${artMix(P.fur, '#8A5A2B', .38)}" stroke-width="3.2" stroke-linecap="round"/>`;
+  const body = parts.map(p => p[0] === 'tail' ? tailSvg()
+    : p[2] === 'stripe' ? `<path ${p[1]} fill="none" stroke="${artMix(P.fur, '#8A5A2B', .38)}" stroke-width="3.6" stroke-linecap="round" opacity=".85"/>`
+    : p[0] === 'ao' ? (Y === 'D' ? `<ellipse cx="100" cy="146" rx="46" ry="9" fill="#3A2A2A" opacity=".16" filter="url(#${u}b5)"/>` : '')
     : p[0] === 'sheen' ? (Y === 'D' ? `<ellipse cx="80" cy="66" rx="24" ry="12" transform="rotate(-18 80 66)" fill="#fff" opacity=".4" filter="url(#${u}b5)"/>`
       : Y === 'E' ? `<ellipse cx="74" cy="62" rx="18" ry="8" transform="rotate(-24 74 62)" fill="#fff" opacity=".8" filter="url(#${u}b1)"/><circle cx="98" cy="50" r="3.2" fill="#fff" opacity=".75"/>`
       : Y === 'C' ? '<path d="M60 78 Q66 58 88 50" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".55"/>' : '')
     : shape(p, ` fill="${fill(p[2])}"${Y === 'B' && p[3].includes('l') ? LN : ''}`)).join('');
-  const sil = Y === 'C' ? `<g fill="#fff" stroke="#fff" stroke-width="15" stroke-linejoin="round" filter="url(#${u}sh)">${parts.filter(p => p[3].includes('s')).map(p => shape(p)).join('')}</g>` : '';
+  const sil = Y === 'C' ? `<g fill="#fff" stroke="#fff" stroke-width="15" stroke-linejoin="round" filter="url(#${u}sh)">${P.cat ? `<path d="${TAIL}" fill="none" stroke-width="28" stroke-linecap="round"/>` : ''}${parts.filter(p => p[3].includes('s')).map(p => shape(p)).join('')}</g>` : '';
   const ground = Y === 'A' ? '<ellipse cx="100" cy="190" rx="46" ry="6" fill="#2A2540" opacity=".08"/>'
     : Y === 'B' ? '<path d="M58 191 Q78 187 100 190 Q122 193 142 189" fill="none" stroke="#4A3A31" stroke-width="2" stroke-linecap="round" opacity=".35"/>'
     : Y === 'D' ? `<ellipse cx="100" cy="189" rx="48" ry="8" fill="#3A2A2A" opacity=".18" filter="url(#${u}b5)"/>`
@@ -738,7 +819,7 @@ function artSvg(kind, stage, style) {
     : ['64', '136'].map(x => `<ellipse cx="${x}" cy="${P.ham ? 124 : 119}" rx="10" ry="6" fill="#FF8FA6" opacity="${Y === 'C' ? .5 : .42}"${D3 ? ` filter="url(#${u}b1)"` : ''}/>`).join('');
   const mouth = P.m === 'w' ? 'M92 116 Q96 120.5 100 116 Q104 120.5 108 116' : 'M94 116 Q100 121.5 106 116';
   const teeth = P.ham ? '<path d="M96.5 118.5 h7 v5 a2 2 0 0 1 -2 2 h-3 a2 2 0 0 1 -2 -2 Z M100 118.5 v7" fill="#fff" stroke="#4A3B32" stroke-width="1.3" stroke-linejoin="round"/>' : '';
-  const whisk = P.whisk && Y === 'B' ? '<path d="M56 112 L40 108 M56 118 L40 121 M144 112 L160 108 M144 118 L160 121" fill="none" stroke="#4A3A31" stroke-width="2" stroke-linecap="round"/>' : '';
+  const whisk = P.cat ? `<path d="M80 114 L56 109 M80 119 L55 121 M120 114 L144 109 M120 119 L145 121" fill="none" stroke="${Y === 'B' ? '#4A3A31' : Y === 'E' ? '#FFFFFF' : '#9C7B62'}" stroke-width="${Y === 'B' ? 2 : 1.6}" stroke-linecap="round" opacity="${Y === 'B' ? 1 : .75}"/>` : '';
   const seed = P.ham ? `<path d="M100 148 C106.5 153.5 107.5 164 100 171 C92.5 164 93.5 153.5 100 148 Z" fill="#3E3733"/><path d="M100 151 V168 M96.6 155 V164 M103.4 155 V164" stroke="#EDE6D8" stroke-width="1.3" stroke-linecap="round"/>
     <ellipse cx="90.5" cy="162" rx="7.5" ry="6" fill="${fill('limb')}"${Y === 'B' ? LN : ''}/><ellipse cx="109.5" cy="162" rx="7.5" ry="6" fill="${fill('limb')}"${Y === 'B' ? LN : ''}/>` : '';
   const face = `${blush}${eyes}<ellipse cx="100" cy="111" rx="${P.ham ? 4 : 5}" ry="${P.ham ? 3 : 3.6}" fill="${P.nose}"${Y === 'B' ? ' stroke="#4A3A31" stroke-width="1.4"' : ''}/>
@@ -768,21 +849,223 @@ let toastT = 0;
 function toast(t, ms) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), ms || 2400); }
 // 토스트는 어디를 눌러도 닫힌다 (HB 2026-10-18)
 document.addEventListener('pointerdown', () => { const t = $('toast'); if (t && t.classList.contains('on')) { clearTimeout(toastT); t.classList.remove('on'); } }, true);
-let AC = null;
-function tone(seq) {
-  if (!S.sfx) return;
-  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
-    let t = AC.currentTime;
-    seq.forEach(([f, d]) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.35, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .02); t += d * .85; });
-  } catch (e) {}
+/* ───────── 소리 — 용돈 친구들(wallet)의 소리 장치를 그대로 옮겨 왔다 (샤론 1024 ④) ─────────
+ * 효과음은 휴대폰이 직접 만든다(파일 없음). 배경음악은 용돈 친구들과 **같은 폴더** wallet/bgm/ 의 곡을 함께 쓴다 —
+ * 같은 사이트(block7.my)라 ../wallet/bgm/ 으로 바로 읽힌다. HB 가 그 폴더에 곡을 올리면 두 앱에 같이 나온다.
+ * ⚠️ <audio> 로 틀지 않는다(아이폰 잠금화면 '지금 재생 중' 칸에 올라간다) — 곡을 받아 소리 장치가 직접 튼다. 까닭은 wallet 주석 참고.
+ * 부모님 화면에서는 배경음악을 틀지 않는다. */
+let AC = null, SFXG = null, BGMG = null, PRVG = null;
+const LVL = [0, .12, .3, .5, .75, 1];                        // 효과음 0~5단계
+const BLVL = [0, .024, .056, .096, .16, .256];               // 배경음악 0~5단계
+function applyVols() { if (SFXG) SFXG.gain.value = LVL[S.sfxVol]; if (BGMG) BGMG.gain.value = BLVL[S.bgmVol]; if (PRVG) PRVG.gain.value = BLVL[S.bgmVol || 3]; }
+function ac() {
+  if (!AC) { try { const C = window.AudioContext || window.webkitAudioContext; try { AC = new C({sampleRate: 32000}); } catch (e) { AC = new C(); }
+      SFXG = AC.createGain(); SFXG.connect(AC.destination); BGMG = AC.createGain(); BGMG.connect(AC.destination); PRVG = AC.createGain(); PRVG.connect(AC.destination); applyVols(); } catch (e) { AC = null; return null; } }
+  return AC;
 }
-const sfx = k => tone({tap: [[660, .08]], ok: [[523, .12], [659, .12], [784, .2]], win: [[523, .1], [659, .1], [784, .1], [1047, .3]], bell: [[880, .25], [660, .25], [880, .25], [660, .4]], pause: [[440, .15], [330, .2]]}[k] || [[600, .1]]);
+// 휴대폰은 '손가락을 뗀 순간'에만 소리를 허락한다 → 그때 깨운다
+function unlockAudio() {
+  const c = ac(); if (!c) return false;
+  try { if (navigator.audioSession && S.bgmVol > 0) navigator.audioSession.type = 'playback'; } catch (e) {}
+  if (c.state !== 'running') c.resume().catch(() => {});
+  try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {}
+  return c.state === 'running';
+}
+function tone(dest, f, when, dur, type, vol, toF) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, when); if (toF) o.frequency.exponentialRampToValueAtTime(toF, when + dur);
+  g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(vol, when + Math.min(.015, dur / 3)); g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  o.connect(g); g.connect(dest); o.start(when); o.stop(when + dur + .05);
+}
+// 효과음 — wallet 의 것(tap · plus · minus · coin · win · lift · land · err)에 공부 친구들 몫(check · star · open · bell)을 더했다
+function sfx(name, force) {
+  if (force !== true && S.sfxVol <= 0) return;
+  if (document.hidden) return;
+  const c = ac(); if (!c) return;
+  const go = () => { const t = c.currentTime + .02, T = (f, at, d, ty, v, to) => tone(SFXG, f, t + at, d, ty || 'sine', (v || .25) * 1.8, to);
+    switch (name) {
+      case 'tap': T(660, 0, .05, 'sine', .12); break;
+      case 'ok': case 'plus': T(523, 0, .08, 'triangle', .28); T(784, .07, .12, 'triangle', .28); break;
+      case 'pause': case 'minus': T(523, 0, .08, 'triangle', .25); T(392, .07, .12, 'triangle', .25); break;
+      case 'coin': T(988, 0, .07, 'square', .1); T(1319, .07, .28, 'square', .1); break;
+      case 'win': [523, 659, 784, 1047].forEach((f, i) => T(f, i * .09, .16, 'triangle', .28)); T(1319, .4, .4, 'triangle', .25); break;
+      case 'lift': T(440, 0, .14, 'sine', .3, 880); break;
+      case 'land': T(170, 0, .16, 'sine', .5, 60); T(880, .02, .06, 'triangle', .12); break;
+      case 'err': T(170, 0, .12, 'square', .1); T(125, .11, .16, 'square', .1); break;
+      case 'check': T(784, 0, .07, 'triangle', .26); T(1175, .06, .18, 'triangle', .26); T(1568, .12, .2, 'sine', .1); break;
+      case 'star': [1319, 1568, 2093, 2637].forEach((f, i) => T(f, i * .06, .14, 'triangle', .14)); break;
+      case 'open': T(392, 0, .1, 'sine', .14, 587); break;
+      case 'bell': [880, 660, 880, 660].forEach((f, i) => T(f, i * .25, .24, 'triangle', .32)); break;
+    } };
+  if (c.state === 'running') go(); else c.resume().then(go).catch(() => {});
+}
+/* 배경음악 — wallet/bgm/ 폴더 (목록은 GitHub 에 물어서 알아낸다 · 곡이 있는 목록만 3분 기억) */
+const BGM_DIR = '../wallet/bgm/', BGM_API = 'https://api.github.com/repos/Underkut/block7/contents/wallet/bgm?ref=main', BGM_CACHE = 'study.bgmlist';
+let bgmList = [], bgmPlaying = false, bgmCur = null, bgmPos = 0, bgmFail = 0, bgmLoading = null, bgmLoaded = false, bgmErr = '';
+const titleOf = f => f.replace(/\.[^.]+$/, '').normalize('NFC');
+const isSel = f => S.bgmSel === null || S.bgmSel.includes(f);
+const playlist = () => bgmList.filter(t => isSel(t.file));
+const bgmOrder = l => { const o = S.bgmOrder || [], rank = f => { const i = o.indexOf(f); return i < 0 ? 1e9 : i; };
+  return l.slice().sort((a, b) => rank(a.file) - rank(b.file) || titleOf(a.file).localeCompare(titleOf(b.file), 'ko')); };
+const bgmAllowed = () => !(typeof isParentView === 'function' && isParentView());
+function bgmLoadList(force) {
+  if (bgmLoading && !force) return bgmLoading;
+  let cached = null; try { cached = JSON.parse(localStorage.getItem(BGM_CACHE) || 'null'); } catch (e) {}
+  if (cached && cached.l && cached.l.length && !force && Date.now() - cached.t < 180000) { bgmList = bgmOrder(cached.l); bgmLoaded = true; bgmErr = ''; return Promise.resolve(bgmList); }
+  bgmLoading = fetch(BGM_API + (force ? '&t=' + Date.now() : '')).then(r => r.status === 404 ? [] : r.ok ? r.json() : Promise.reject(r.status))
+    .then(j => { const l = (Array.isArray(j) ? j : []).filter(x => x && x.type === 'file' && /\.(mp3|m4a|aac|wav)$/i.test(x.name)).map(x => x.name)
+        .sort((a, b) => titleOf(a).localeCompare(titleOf(b), 'ko')).map(f => ({file: f, title: titleOf(f)}));
+      bgmList = bgmOrder(l); bgmErr = '';
+      try { if (l.length) localStorage.setItem(BGM_CACHE, JSON.stringify({t: Date.now(), l})); else localStorage.removeItem(BGM_CACHE); } catch (e) {} return l; })
+    .catch(e => { bgmErr = (e === 403 || e === 429) ? '요청이 너무 많았어요. 잠시 뒤에 다시 눌러 주세요' : (typeof e === 'number' ? 'GitHub 오류 ' + e : '인터넷 연결을 확인해 주세요');
+      if (cached && cached.l) bgmList = bgmOrder(cached.l); return bgmList; })
+    .then(l => { bgmLoaded = true; bgmLoading = null; return l; });
+  return bgmLoading;
+}
+let bgmSrc = null, bgmT0 = 0, bgmTok = 0;
+const bufCache = [];                         // 풀어 둔 곡은 최근 2개만
+function bgmBuf(f) {
+  const hit = bufCache.find(x => x.f === f); if (hit) return hit.p;
+  const c = ac(); if (!c) return Promise.reject(new Error('noac'));
+  const p = fetch(BGM_DIR + encodeURIComponent(f)).then(r => r.ok ? r.arrayBuffer() : Promise.reject(new Error('http ' + r.status)))
+    .then(ab => new Promise((res, rej) => { try { const q = c.decodeAudioData(ab, res, rej); if (q && q.catch) q.catch(rej); } catch (e) { rej(e); } }));
+  bufCache.unshift({f, p}); if (bufCache.length > 2) bufCache.length = 2;
+  p.catch(() => { const i = bufCache.findIndex(x => x.p === p); if (i >= 0) bufCache.splice(i, 1); });
+  return p;
+}
+function bgmHalt() {
+  bgmTok++;
+  if (!bgmSrc) return;
+  const s = bgmSrc; bgmSrc = null; s.onended = null;
+  try { const d = s.buffer ? s.buffer.duration : 0; bgmPos = d ? Math.max(0, (AC.currentTime - bgmT0) % d) : 0; } catch (e) {}
+  try { s.stop(); } catch (e) {} try { s.disconnect(); } catch (e) {}
+}
+function bgmPlayFile(f, at) {
+  bgmHalt(); bgmCur = f; bgmPos = 0; renderTracks();
+  const tok = bgmTok, c = ac(); if (!c) return;
+  bgmBuf(f).then(buf => {
+    if (tok !== bgmTok || !bgmPlaying || prevFile) return;
+    const s = c.createBufferSource(); s.buffer = buf; s.loop = playlist().length === 1; s.connect(BGMG);
+    const off = at > 0 && at < buf.duration - 1 ? at : 0;
+    s.onended = () => { if (bgmSrc === s) { bgmSrc = null; if (bgmPlaying) bgmNextTrack(); } };
+    s.start(0, off); bgmSrc = s; bgmT0 = c.currentTime - off; bgmFail = 0; renderTracks();
+  }).catch(() => { if (tok !== bgmTok || !bgmPlaying) return;
+    if (++bgmFail <= 3) setTimeout(() => { if (bgmPlaying && tok === bgmTok) bgmNextTrack(); }, 400); else { bgmFail = 0; bgmStop(); } });
+}
+function bgmNextTrack() { const pl = playlist(); if (!pl.length) return; const i = pl.findIndex(t => t.file === bgmCur); bgmPlayFile(pl[(i + 1) % pl.length].file); }
+function bgmStart() {
+  if (S.bgmVol <= 0 || bgmPlaying || document.hidden || !bgmAllowed()) return;
+  bgmPlaying = true;
+  bgmLoadList().then(() => {
+    if (!bgmPlaying) return;
+    const pl = playlist(); if (!pl.length || !ac()) { bgmPlaying = false; renderTracks(); return; }
+    unlockAudio(); applyVols();
+    if (prevFile) return;
+    if (bgmCur && pl.some(t => t.file === bgmCur)) bgmPlayFile(bgmCur, bgmPos); else bgmPlayFile(pl[0].file);
+  });
+}
+function bgmStop() {
+  bgmHalt(); bgmPlaying = false;
+  try { if (navigator.audioSession && !prevFile) navigator.audioSession.type = 'auto'; } catch (e) {}
+  renderTracks();
+}
+function bgmApplySel() {
+  if (!bgmPlaying) return;
+  const pl = playlist(); if (!pl.length) { bgmStop(); return; }
+  if (!pl.some(t => t.file === bgmCur)) bgmPlayFile(pl[0].file); else if (bgmSrc) bgmSrc.loop = pl.length === 1;
+}
+function audioRelease() {
+  bgmStop();
+  if (prevFile) { prvHalt(); prevFile = null; }
+  if (AC && AC.state === 'running') { try { AC.suspend().catch(() => {}); } catch (e) {} }
+  try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) audioRelease(); else bgmStart(); });
+window.addEventListener('pagehide', audioRelease);
+['pointerup', 'touchend', 'click'].forEach(ev => document.addEventListener(ev, () => { if (!AC || AC.state !== 'running') unlockAudio(); if (!bgmPlaying) bgmStart(); }, true));
+// 단추는 누르면 '톡' (wallet 과 같다). 자기 소리가 따로 있는 단추는 data-snd 로 뺀다
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b && !b.disabled && !b.closest('[data-snd]')) sfx('tap'); }, true);
+/* 미리듣기 — 한 곡만 들어 본다(다시 누르면 멈춤). 듣는 동안 배경음악은 잠시 멈췄다가 이어진다 */
+let prevFile = null, prvSrc = null, prvTok = 0;
+function prvHalt() { prvTok++; if (prvSrc) { const s = prvSrc; prvSrc = null; s.onended = null; try { s.stop(); } catch (e) {} try { s.disconnect(); } catch (e) {} } }
+function previewStop() {
+  prvHalt();
+  const had = prevFile; prevFile = null;
+  if (had) { if (bgmPlaying && bgmCur) bgmPlayFile(bgmCur, bgmPos); renderTracks(); }
+}
+function previewToggle(f) {
+  if (prevFile === f) { previewStop(); return; }
+  if (!ac()) { toast('이 폰에서는 소리를 낼 수 없어요'); return; }
+  unlockAudio(); applyVols();
+  prvHalt(); bgmHalt();
+  prevFile = f; renderTracks();
+  const tok = prvTok;
+  bgmBuf(f).then(buf => {
+    if (tok !== prvTok || prevFile !== f) return;
+    const s = AC.createBufferSource(); s.buffer = buf; s.connect(PRVG);
+    s.onended = () => { if (prvSrc === s) previewStop(); };
+    s.start(0); prvSrc = s;
+  }).catch(() => { if (tok === prvTok && prevFile === f) { toast('이 곡은 재생할 수 없어요'); previewStop(); } });
+}
+const PLAY_ICO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
+const STOP_ICO = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4.5" height="14" rx="1.2"/><rect x="13.5" y="5" width="4.5" height="14" rx="1.2"/></svg>';
+const GRIP_ICO = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
+function trkReorder(list) {        // 왼쪽 손잡이를 잡고 위아래로 끌어 순서 바꾸기
+  let d = null;
+  list.addEventListener('pointerdown', e => {
+    const h = e.target.closest('.hd'); if (!h || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const row = h.closest('.trk'); d = {id: e.pointerId, row, y0: e.clientY};
+    row.classList.add('lift'); try { h.setPointerCapture(e.pointerId); } catch (_) {} buzz(15); sfx('lift'); e.preventDefault();
+  });
+  list.addEventListener('pointermove', e => {
+    if (!d || e.pointerId !== d.id) return;
+    const r = d.row;
+    r.style.transform = 'translateY(' + (e.clientY - d.y0) + 'px) scale(1.02)';
+    for (let n = 0; n < 4; n++) {
+      const c = r.getBoundingClientRect(), mid = c.top + c.height / 2, nx = r.nextElementSibling, pv = r.previousElementSibling;
+      if (nx && mid > nx.getBoundingClientRect().top + nx.offsetHeight / 2) { const t0 = r.offsetTop; nx.after(r); d.y0 += r.offsetTop - t0; buzz(6); }
+      else if (pv && mid < pv.getBoundingClientRect().top + pv.offsetHeight / 2) { const t0 = r.offsetTop; pv.before(r); d.y0 += r.offsetTop - t0; buzz(6); }
+      else break;
+      r.style.transform = 'translateY(' + (e.clientY - d.y0) + 'px) scale(1.02)';
+    }
+  });
+  const end = e => {
+    if (!d || (e && e.pointerId !== d.id)) return; const r = d.row; d = null;
+    r.style.transform = ''; r.classList.remove('lift'); sfx('land');
+    S.bgmOrder = [...list.querySelectorAll('.trk')].map(x => x.dataset.f); save();
+    bgmList = bgmOrder(bgmList); bgmApplySel(); renderTracks();
+  };
+  list.addEventListener('pointerup', end); list.addEventListener('pointercancel', end);
+}
+function renderTracks() {
+  const box = $('trkBox'); if (!box || !FULLS.includes('sheet')) return;
+  if (S.bgmVol <= 0) { box.innerHTML = ''; return; }
+  if (!bgmList.length) {
+    box.innerHTML = `<div class="hint" style="margin:10px 0 0">${!bgmLoaded ? '곡 목록을 불러오는 중…' : bgmErr ? '곡 목록을 불러오지 못했어요 · ' + esc(bgmErr) : '아직 곡이 없어요'}</div><button class="linkbtn" id="trkReload" data-snd>곡 목록 새로 불러오기</button>`;
+    $('trkReload').onclick = () => { bgmLoaded = false; renderTracks(); bgmLoadList(true).then(renderTracks); };
+    return;
+  }
+  const all = S.bgmSel === null || bgmList.every(t => isSel(t.file));
+  box.innerHTML = `<div class="trkh"><span>들을 곡 <small>≡ 를 끌어 순서 바꾸기</small></span><button id="trkAll">${all ? '모두 고름' : '모두 고르기'}</button></div>
+    <div class="trks">${bgmList.map(t => `<div class="trk ${isSel(t.file) ? 'on' : ''}" data-f="${esc(t.file)}"><span class="hd" aria-label="순서 바꾸기">${GRIP_ICO}</span><button class="sel" aria-pressed="${isSel(t.file)}"><i class="ck"></i><span class="tt">${esc(t.title)}</span>${bgmPlaying && bgmCur === t.file && prevFile === null ? '<i class="eq" aria-label="지금 나오는 곡"><b></b><b></b><b></b></i>' : ''}</button><button class="pv ${prevFile === t.file ? 'on' : ''}" data-snd aria-label="${prevFile === t.file ? '미리듣기 멈춤' : '미리듣기'}">${prevFile === t.file ? STOP_ICO : PLAY_ICO}</button></div>`).join('')}</div>`;
+  $('trkAll').onclick = () => { S.bgmSel = null; save(); bgmApplySel(); renderTracks(); };
+  const list = box.querySelector('.trks'); trkReorder(list);
+  list.onclick = e => {
+    const row = e.target.closest('.trk'); if (!row) return; const f = row.dataset.f;
+    if (e.target.closest('.pv')) { buzz(8); previewToggle(f); return; }
+    if (!e.target.closest('.sel')) return; buzz(8);
+    const cur = bgmList.map(t => t.file).filter(x => isSel(x)), next = cur.includes(f) ? cur.filter(x => x !== f) : cur.concat(f);
+    if (!next.length) { toast('곡을 하나는 골라 주세요'); sfx('err'); return; }
+    S.bgmSel = next.length === bgmList.length ? null : bgmList.map(t => t.file).filter(x => next.includes(x));
+    save(); bgmApplySel(); renderTracks(); };
+}
 const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
 function confetti() {
   const c = document.createElement('div'); c.className = 'confetti';
   const col = ['#FFC83D', '#FF8FA3', '#4C8DFF', '#1FA88A', '#A66BFF', '#E04E3A'];
   for (let i = 0; i < 46; i++) { const p = document.createElement('i'); p.style.left = Math.random() * 100 + 'vw'; p.style.background = col[i % col.length]; p.style.animationDelay = Math.random() * .5 + 's'; p.style.borderRadius = i % 3 ? '2px' : '50%'; c.appendChild(p); }
   document.body.appendChild(c); setTimeout(() => c.remove(), 2400);
+  if (typeof burst === 'function') burst(innerWidth / 2, innerHeight * .38, 44, 170);
 }
 /* 전체 화면 창 (닫기는 우상단 × 하나) */
 const FULLS = [];
@@ -801,6 +1084,7 @@ function closeFull(id) {
   const i = FULLS.indexOf(id); if (i >= 0) FULLS.splice(i, 1);
   if (!FULLS.length) document.body.style.overflow = '';
   if (id === 'timer') timerStop();
+  if (id === 'sheet' && prevFile) previewStop();
 }
 const sheet = (title, html, opt) => openFull('sheet', title, html, opt);
 const closeSheet = () => closeFull('sheet');
@@ -808,7 +1092,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && FULLS.leng
 function stepper(id, val, label) { return `<div class="step" data-step="${id}"><button type="button" data-d="-1" aria-label="줄이기">−</button><b id="${id}">${label != null ? label : val}</b><button type="button" data-d="1" aria-label="늘리기">+</button></div>`; }
 function bindStep(id, get, set, fmt) {
   const box = document.querySelector('[data-step="' + id + '"]'); if (!box) return;
-  box.querySelectorAll('button').forEach(b => b.onclick = () => { set(get() + Number(b.dataset.d)); $(id).textContent = fmt ? fmt(get()) : get(); sfx('tap'); });
+  box.querySelectorAll('button').forEach(b => b.onclick = () => { set(get() + Number(b.dataset.d)); $(id).textContent = fmt ? fmt(get()) : get(); });
 }
 /* ───────── 화면 그리기 ───────── */
 let TAB = 'today', PLANV = 'week', WEEK0 = null, MONTH0 = null;
@@ -819,10 +1103,10 @@ function header() {
   const d = new Date(), top = $('top');
   if (TAB === 'reward') top.innerHTML = `<div class="hi"><b>내 별</b></div><button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button>`;
   else if (TAB === 'plan') top.innerHTML = `<div class="hi"><button class="bk" data-top="back" aria-label="내 별로 돌아가기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>내 별</button><b>계획</b></div><span></span>`;
-  else top.innerHTML = `<div class="hi"><small>${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일</small><b>${esc(callName())}, 안녕!</b></div><span style="display:flex;align-items:center;gap:2px"><span class="starchip" aria-label="별 ${starsOf(S)}개">${STAR(22, '#FFC845', '#E0A400')}${nf(starsOf(S))}</span><button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button></span>`;
+  else top.innerHTML = `<div class="hi"><small>${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일</small><b>${esc(callName())}, 안녕!</b></div><span style="display:flex;align-items:center;gap:2px"><span class="starchip" aria-label="별 ${starsOf(S)}개">${STAR(22, '#FFC845', '#E0A400')}<span class="n">${nf(STAR_SHOWN !== null && STAR_SHOWN < starsOf(S) ? STAR_SHOWN : starsOf(S))}</span></span><button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button></span>`;
 }
 $('top').addEventListener('click', e => { const b = e.target.closest('[data-top]'); if (!b) return;
-  if (b.dataset.top === 'gear') settingsSheet(); else { TAB = 'reward'; sfx('tap'); render(); window.scrollTo(0, 0); } });
+  if (b.dataset.top === 'gear') settingsSheet(); else goTab('reward'); });
 function statusChip(s) {
   if (!s) return '';
   if (s.status === 'ok') return s.stamp ? `<span class="stamp">${esc(s.stamp)}</span>` : '<span class="chip ok">확인 완료</span>';
@@ -924,6 +1208,7 @@ function render() {
   document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === TAB));
   document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === (TAB === 'plan' ? 'reward' : TAB)));   // 계획은 '내 별' 안에 있다
   if (TAB === 'plan') renderPlan(); else if (TAB === 'reward') renderReward(); else renderToday();
+  if (typeof afterRender === 'function') afterRender();
 }
 /* 화면 누르기 — 한 곳에서 받는다 */
 $('main').addEventListener('click', e => {
@@ -936,13 +1221,12 @@ $('main').addEventListener('click', e => {
     if (k === 'newTask') return taskEditor(null);
     if (k === 'add') return simpleEditor(null);
     if (k === 'hwAdd') { if (!S.hwMode && $('hwPick')) { toast('먼저 숙제를 언제 할지\n골라 주세요'); $('hwPick').scrollIntoView({behavior: 'smooth', block: 'center'}); $('hwPick').classList.remove('nudge'); void $('hwPick').offsetWidth; $('hwPick').classList.add('nudge'); return; } return hwEditor(null); }
-    if (k === 'hwMode') { S.hwMode = a.dataset.v === 'eve' ? 'eve' : 'day'; save(); sfx('ok'); toast(HWMODE_TOAST[S.hwMode] + '\n바꾸고 싶으면 설정에서 바꿔요', 7000); foldAway($('hwPick'), render); return; }
+    if (k === 'hwMode') { S.hwMode = a.dataset.v === 'eve' ? 'eve' : 'day'; save(); sfx('ok'); burstAt(a, 18, 70); toast(HWMODE_TOAST[S.hwMode] + '\n바꾸고 싶으면 설정에서 바꿔요', 7000); foldAway($('hwPick'), render); return; }
     if (k === 'hwDone') return hwFinish(a.dataset.k);
     if (k === 'famGo') { settingsSheet(); const f = $('stFam'); if (f) setTimeout(() => f.scrollIntoView({block: 'center', behavior: 'smooth'}), 60); return; }
-    if (k === 'plan') { TAB = 'plan'; sfx('tap'); render(); window.scrollTo(0, 0); return; }
+    if (k === 'plan') return goTab('plan');
     if (k === 'pv') { PLANV = a.dataset.v; return renderPlan(); }
-    if (k === 'wPrev' || k === 'wNext') { WEEK0 = addDays(WEEK0 || sundayOf(t), k === 'wPrev' ? -7 : 7); return renderPlan(); }
-    if (k === 'mPrev' || k === 'mNext') { const m = parseYmd((MONTH0 || t.slice(0, 7)) + '-01'); m.setMonth(m.getMonth() + (k === 'mPrev' ? -1 : 1)); MONTH0 = ymd(m).slice(0, 7); return renderPlan(); }
+    if (k === 'wPrev' || k === 'wNext' || k === 'mPrev' || k === 'mNext') { const dir = /Next/.test(k) ? 1 : -1; return swapMain(dir, () => planStep(dir)); }
     if (typeof onRewardAction === 'function') return onRewardAction(a);
     return;
   }
@@ -950,7 +1234,7 @@ $('main').addEventListener('click', e => {
   const dy = e.target.closest('[data-day]'); if (dy) return daySheet(dy.dataset.day);
   const q = e.target.closest('[data-q]'); if (q) return questSheet(q.dataset.q, q.dataset.d);
 });
-document.querySelectorAll('.nav button').forEach(b => b.onclick = () => { TAB = b.dataset.tab; sfx('tap'); render(); window.scrollTo(0, 0); });
+document.querySelectorAll('.nav button').forEach(b => b.onclick = () => goTab(b.dataset.tab));
 
 function daySheet(d) {
   const t = todayStr(), qs = questsFor(S, d, t), dd = parseYmd(d);
@@ -1021,7 +1305,7 @@ function bookEditor(id) {
     $('sheet').querySelectorAll('input').forEach(i => i.addEventListener('input', fin));
     $('beSubj').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); const k = subjTap(b); if (!k) return; B.subj = k; draw(); };
     $('sheet').querySelectorAll('[data-u]').forEach(b => b.onclick = () => { sync(); B.unit = b.dataset.u; if (B.unit === 'j' && B.perDay % B.ppj) B.perDay = Math.max(B.ppj, Math.round(B.perDay / B.ppj) * B.ppj); draw(); });
-    $('beDays').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; const d = +b.dataset.d; B.days = B.days.includes(d) ? B.days.filter(x => x !== d) : [...B.days, d]; b.classList.toggle('on'); sfx('tap'); fin(); };
+    $('beDays').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; const d = +b.dataset.d; B.days = B.days.includes(d) ? B.days.filter(x => x !== d) : [...B.days, d]; b.classList.toggle('on'); fin(); };
     bindStep('bePer', () => B.unit === 'j' ? B.perDay / B.ppj : B.perDay, v => { v = Math.max(1, Math.min(60, v)); B.perDay = B.unit === 'j' ? v * B.ppj : v; fin(); }, v => v + (B.unit === 'j' ? '장' : '쪽'));
     bindStep('beDur', () => B.dur / 5, v => { B.dur = Math.max(5, Math.min(180, v * 5)); }, v => v * 5 + '분');
     if ($('beChAdd')) $('beChAdd').onclick = () => { sync(); const l = B.chapters[B.chapters.length - 1]; B.chapters.push({t: '', from: l ? l.to + 1 : B.first, to: l ? l.to + 20 : B.first + 19}); draw(); };
@@ -1062,9 +1346,9 @@ function hwEditor(id) {
       <button class="bigq" id="hwGo">${h0 ? '저장' : '넣기'}</button>
       ${h0 ? '<button class="linkbtn" id="hwDel">지우기</button>' : ''}`, {keep: true});
     const sync = () => { H.title = $('hwT').value; };
-    $('hwS').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); const k = subjTap(b); if (!k) return; H.subj = k; sfx('tap'); draw(); };
+    $('hwS').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); const k = subjTap(b); if (!k) return; H.subj = k; draw(); };
     if (eve) {
-      $('hwD').onclick = e => { const b = e.target.closest('[data-d]'); if (!b || b.disabled) return; sync(); H.due = b.dataset.d; sfx('tap'); draw(); };
+      $('hwD').onclick = e => { const b = e.target.closest('[data-d]'); if (!b || b.disabled) return; sync(); H.due = b.dataset.d; draw(); };
       $('hwP').onclick = () => { sync(); wk0 = addDays(wk0, -7); draw(); };
       $('hwN').onclick = () => { sync(); wk0 = addDays(wk0, 7); draw(); };
     }
@@ -1072,7 +1356,7 @@ function hwEditor(id) {
       if (!name) { toast('무슨 숙제인지 써 주세요'); $('hwT').focus(); return; }
       if (eve && !H.due) { toast('제출 날짜를 골라 주세요'); return; }
       if (h0) Object.assign(h0, {title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: h0.done ? h0.doDate : eve ? hwDoDate('eve', t, H.due) : h0.doDate});
-      else S.hw.push({id: 'h' + sid(), title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: hwDoDate(eve ? 'eve' : 'now', t, H.due), done: ''});
+      else { const nid = 'h' + sid(); JUST_ADD = 'h:' + nid; S.hw.push({id: nid, title: name.slice(0, 40), subj: H.subj, due: eve ? H.due : '', doDate: hwDoDate(eve ? 'eve' : 'now', t, H.due), done: ''}); }
       save(); closeSheet(); render(); sfx('ok');
       const dd = eve ? hwDoDate('eve', t, H.due) : t;
       toast(h0 ? '고쳤어요' : dd === t ? '넣었어요!\n오늘의 숙제에 있어요' : '넣었어요!\n' + (parseYmd(dd).getMonth() + 1) + '/' + parseYmd(dd).getDate() + ' ' + DOW[dowOf(dd)] + '요일에 나와요'); };
@@ -1088,7 +1372,7 @@ function hwNotice() {
   if (!left.length) { S.hwSeen = t; save(); return; }
   const el = document.createElement('div'); el.className = 'hwnote'; el.setAttribute('role', 'alertdialog');
   el.innerHTML = `<div><b class="j" style="font-size:19px">아직 남은 숙제가 있어요</b>\n${left.map(h => '· ' + esc(h.title)).join('\n')}\n오늘 꼭 해 볼까?<button type="button">확인</button></div>`;
-  el.querySelector('button').onclick = () => { S.hwSeen = t; save(); el.remove(); sfx('tap'); };
+  el.querySelector('button').onclick = () => { S.hwSeen = t; save(); el.remove(); };
   document.body.appendChild(el);
 }
 /* ───────── 할 것 넣기 (S-8) — 무엇을 · 언제 두 가지만. 시각 · 몇 분은 접어 둔다 ─────────
@@ -1115,20 +1399,22 @@ function simpleEditor(ref) {
       <button class="bigq" id="seGo">${editing ? '저장' : '넣기'}</button>
       ${editing ? '<button class="linkbtn" id="seDel">지우기</button>' : ''}`, {keep: true});
     const sync = () => { E.title = $('seT').value; if ($('seTm')) E.time = $('seTm').value || ''; };
-    $('seS').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); const k = subjTap(b); if (!k) return; E.subj = k; sfx('tap'); draw(); };
+    $('seS').onclick = e => { const b = e.target.closest('[data-s]'); if (!b) return; sync(); const k = subjTap(b); if (!k) return; E.subj = k; draw(); };
     $('seD').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; sync(); const d = +b.dataset.d;
       if (E.once) { E.once = false; E.days = [d]; } else E.days = E.days.includes(d) ? E.days.filter(x => x !== d) : [...E.days, d];
-      if (!E.days.length) { E.once = true; E.date = t; } sfx('tap'); draw(); };
+      if (!E.days.length) { E.once = true; E.date = t; } draw(); };
     $('seQ').onclick = e => { const b = e.target.closest('[data-q]'); if (!b) return; sync(); const k = b.dataset.q;
-      if (k === 'once') { E.once = true; } else { E.once = false; E.days = k === 'wk' ? [1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6]; } sfx('tap'); draw(); };
+      if (k === 'once') { E.once = true; } else { E.once = false; E.days = k === 'wk' ? [1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6]; } draw(); };
     $('seM').onclick = () => { sync(); more = !more; draw(); };
     if (more) bindStep('seDur', () => E.dur / 5, v => { E.dur = Math.max(5, Math.min(180, v * 5)); }, v => v * 5 + '분');
     $('seGo').onclick = () => { sync(); const name = E.title.trim();
       if (!name) { toast('무엇을 할지 써 주세요'); $('seT').focus(); return; }
       if (b0) S.books = S.books.filter(x => x.id !== b0.id);
       if (t0) S.tasks = S.tasks.filter(x => x.id !== t0.id);
-      if (E.once) { S.tasks.push({id: t0 ? t0.id : 't' + sid(), title: name, date: E.date, time: E.time, dur: E.dur, subj: E.subj}); S.tasks = normState(S).tasks; }
-      else S.books.push(normBook({id: b0 ? b0.id : 'b' + sid(), open: true, simple: true, subj: E.subj, name: name, unit: 'p', perDay: 1, days: E.days, time: E.time, dur: E.dur, active: true, made: b0 ? b0.made : t}));
+      const nid = (E.once ? t0 && t0.id : b0 && b0.id) || (E.once ? 't' : 'b') + sid();
+      if (!editing) JUST_ADD = (E.once ? 't:' : 'b:') + nid;
+      if (E.once) { S.tasks.push({id: nid, title: name, date: E.date, time: E.time, dur: E.dur, subj: E.subj}); S.tasks = normState(S).tasks; }
+      else S.books.push(normBook({id: nid, open: true, simple: true, subj: E.subj, name: name, unit: 'p', perDay: 1, days: E.days, time: E.time, dur: E.dur, active: true, made: b0 ? b0.made : t}));
       save(); closeSheet(); render(); sfx('ok');
       toast(editing ? '고쳤어요' : E.once ? '넣었어요!' : '넣었어요! ' + [0, 1, 2, 3, 4, 5, 6].filter(d => E.days.includes(d)).map(d => DOW[d]).join('·') + '요일마다 나와요');
       if (typeof onSnooze === 'function') onSnooze(); };
@@ -1240,7 +1526,7 @@ function doneSheet() {
     $('dnMood').onclick = e => { const b = e.target.closest('[data-m]'); if (!b) return; syncD(); DONE.mood = DONE.mood === b.dataset.m ? '' : b.dataset.m; draw(); };
     if ($('dnPhoto')) $('dnPhoto').onchange = async e => { const f = e.target.files[0]; if (!f) return; syncD(); try { DONE.photo = await shrinkPhoto(f); draw(); } catch (er) { toast('사진을 못 읽었어요'); } };
     $('dnBack').onclick = () => { syncD(); if (S.run.quick) { S.run = null; DONE = null; save(); closeFull('timer'); render(); return; } delete S.run.stopAt; save(); openTimer(); };
-    $('dnGo').onclick = () => { syncD(); const sess = finishRun(S, S.run.stopAt || Date.now(), DONE), photo = DONE.photo; DONE = null; save();
+    $('dnGo').onclick = () => { syncD(); const sess = finishRun(S, S.run.stopAt || Date.now(), DONE), photo = DONE.photo; DONE = null; save(); JUST_DONE = sess.key;
       closeFull('timer'); confetti(); sfx('win'); buzz([30, 50, 30]);
       if (sendable && typeof sendSession === 'function') sendSession(sess, photo); else toast('기록했어요!');
       render(); };
@@ -1292,7 +1578,11 @@ function buddyPick() {
 function settingsSheet() {
   sheet('설정', `<div class="box"><div class="lab">내 친구</div><div id="stBuddy">${buddyPick()}</div>
       <div class="lab" style="margin-top:16px"><label for="stNick">부르는 이름</label></div><input class="inp" id="stNick" maxlength="8" placeholder="예) 루루" value="${esc(S.nick)}"></div>
-    <div class="box"><label class="row" style="justify-content:space-between"><span class="lab" style="margin:0">효과음 · 알림 소리</span><input type="checkbox" class="sw" id="stSfx" ${S.sfx ? 'checked' : ''}></label></div>
+    <div class="box"><div class="lab">소리</div>
+      <div class="srow"><span>효과음<small>누를 때 · 알림 소리</small></span><div class="sl"><input type="range" id="slSfx" min="0" max="5" step="1" value="${S.sfxVol}" aria-label="효과음 크기"><b id="slSfxV"></b></div></div>
+      <div class="srow"><span>배경 음악<small>용돈 친구들과 같은 곡</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
+      <div id="trkBox"></div>
+      <button class="addrow" id="sndTest" data-snd style="margin-top:12px"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z"/><path d="M16.5 9a4 4 0 010 6"/></svg>소리 들어 보기</button></div>
     <div class="box"><div class="lab">숙제는 언제 할까요?</div><div class="seg2" id="stHw">${[['day', '그날 바로'], ['eve', '제출 전날']].map(x => `<button data-v="${x[0]}" class="${S.hwMode === x[0] ? 'on' : ''}" aria-pressed="${S.hwMode === x[0]}">${x[1]}</button>`).join('')}</div>
       <div class="hint" id="stHwH">${S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : S.hwMode === 'day' ? '숙제를 넣은 날 바로 오늘의 숙제에 나와요.' : '아직 안 골랐어요.'} 이미 넣은 숙제는 그대로예요.</div></div>
     ${S.books.length || S.tasks.length ? `<div class="box"><div class="lab">오늘의 할일</div><button class="addrow" id="stAdd">${PLUS}할 것 넣기</button><div class="hint">요일마다 하는 공부 · 한 번만 하는 할일을 넣어요.</div></div>` : ''}
@@ -1304,11 +1594,20 @@ function settingsSheet() {
     <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:8px">공부 친구들 ${APP_VERSION}</div>`);
   $('stBuddy').onclick = e => { const b = e.target.closest('[data-k],[data-art]'); if (!b) return;
     if (b.dataset.k) S.kind = b.dataset.k; else S.art = b.dataset.art;
-    save(); sfx('tap'); $('stBuddy').innerHTML = buddyPick(); render(); };
+    save(); $('stBuddy').innerHTML = buddyPick(); render(); };
   $('stNick').onchange = () => { S.nick = $('stNick').value.trim().slice(0, 8); save(); render(); };
-  $('stSfx').onchange = () => { S.sfx = $('stSfx').checked; save(); };
+  const bindSl = (id, key, onChange) => { const el = $(id), lab = $(id + 'V');
+    const paint = () => { lab.textContent = +el.value === 0 ? '끔' : el.value; el.style.setProperty('--p', (el.value / 5 * 100) + '%'); }; paint();
+    el.oninput = () => { S[key] = +el.value; paint(); applyVols(); };
+    el.onchange = () => { S.sfx = S.sfxVol > 0; save(); onChange(); }; };
+  bindSl('slSfx', 'sfxVol', () => { unlockAudio(); sfx('ok'); });
+  bindSl('slBgm', 'bgmVol', () => { if (S.bgmVol > 0) { unlockAudio(); bgmStart(); } else bgmStop(); renderTracks(); });
+  renderTracks(); bgmLoadList().then(renderTracks);
+  $('sndTest').onclick = () => { unlockAudio(); sfx('win', true);
+    setTimeout(() => { const st = AC ? AC.state : 'none';
+      toast(st === 'running' ? '소리를 냈어요!\n안 들리면 폰의 미디어 볼륨 ·\n무음 모드를 확인해 주세요' : '이 폰이 소리를 막고 있어요 (' + st + ')'); }, 500); };
   if ($('stAdd')) $('stAdd').onclick = () => simpleEditor(null);
-  $('stHw').onclick = e => { const b = e.target.closest('[data-v]'); if (!b || b.dataset.v === S.hwMode) return; S.hwMode = b.dataset.v; save(); sfx('tap'); render();
+  $('stHw').onclick = e => { const b = e.target.closest('[data-v]'); if (!b || b.dataset.v === S.hwMode) return; S.hwMode = b.dataset.v; save(); render();
     $('stHw').querySelectorAll('[data-v]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $('stHwH').textContent = (S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : '숙제를 넣은 날 바로 오늘의 숙제에 나와요.') + ' 이미 넣은 숙제는 그대로예요.';
     toast(HWMODE_TOAST[S.hwMode]); };
@@ -1577,6 +1876,7 @@ function parentKids() {
 }
 function showParent() {
   if (!isParentView()) return;
+  bgmStop();   // 부모님 화면에서는 배경음악을 틀지 않는다
   const el = $('parent'); el.classList.add('on'); if (!FULLS.includes('parent')) FULLS.unshift('parent');
   el.innerHTML = `<div class="ph"><div class="r1"><b id="pTitle">공부 보고서</b><span style="display:flex;gap:4px"><button class="fx" id="pGear" aria-label="설정" style="color:inherit">${ICO.gear}</button></span></div>
     <div class="kids" id="pKids"></div><div class="ptabs" id="pTabs">${[['todo', '확인할 것'], ['week', '주간 보고서'], ['plan', '계획'], ['reward', '보상'], ['acct', '아이 계정']].map(t => `<button data-t="${t[0]}">${t[1]}</button>`).join('')}</div></div><div class="pb" id="pBody"><p class="pnote">불러오는 중…</p></div>`;
@@ -1887,7 +2187,136 @@ function parentReward(body, st) {
 document.querySelector('[data-tab="today"]').insertAdjacentHTML('afterbegin', ICO.home);
 document.querySelector('[data-tab="reward"]').insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.6l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>');
 cleanOld(S, todayStr()); save();
-render(); setTimeout(hwNotice, 600);
+/* ───────── 움직임 · 리액션 (샤론 1024 ④) ─────────
+ * CLAUDE.md '화면 전환' 을 따른다: 좌우로 넘기는 것은 손가락을 따라가고(폭의 1/4 또는 빠른 튕김 40px 넘으면 넘어감, 아니면 제자리),
+ * 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게. 버튼으로 바꿀 때도 같은 결(나가기 150ms ease-in → 들어오기 300ms).
+ * 움직임 줄이기(prefers-reduced-motion) 면 전부 끈다. */
+const EASE_IN = 'cubic-bezier(.4,0,1,1)', EASE_OUT = 'cubic-bezier(.22,.8,.24,1)';
+const TAB_ORDER = {today: 0, reward: 1, plan: 2};
+let mxBusy = false;
+function swapMain(dir, apply, fromDrag) {
+  const m = $('main');
+  if (quiet() || !m.animate) { m.style.transform = m.style.opacity = ''; apply(); return; }
+  mxBusy = true;
+  const from = fromDrag ? {transform: m.style.transform || 'none', opacity: m.style.opacity || 1} : {transform: 'none', opacity: 1};
+  const out = m.animate([from, {transform: `translateX(${-dir * 30}%)`, opacity: 0}], {duration: fromDrag ? 130 : 150, easing: EASE_IN, fill: 'forwards'});
+  out.onfinish = () => { m.style.transform = m.style.opacity = ''; apply(); out.cancel();
+    m.animate([{transform: `translateX(${dir * 30}%)`, opacity: 0}, {transform: 'none', opacity: 1}], {duration: 300, easing: EASE_OUT}).onfinish = () => { mxBusy = false; }; };
+}
+function goTab(tab) {
+  if (tab === TAB) return;
+  const dir = TAB_ORDER[tab] > TAB_ORDER[TAB] ? 1 : -1;
+  swapMain(dir, () => { TAB = tab; ENTER = true; render(); window.scrollTo(0, 0); });
+}
+// 넘기면 어디로 가나 — 오늘 ↔ 내 별, 계획 안에서는 지난/다음 주(달)
+function swipeTarget(dir) {
+  if (TAB === 'today') return dir > 0 ? () => { TAB = 'reward'; ENTER = true; render(); window.scrollTo(0, 0); } : null;
+  if (TAB === 'reward') return dir < 0 ? () => { TAB = 'today'; ENTER = true; render(); window.scrollTo(0, 0); } : null;
+  if (TAB === 'plan') return () => planStep(dir);
+  return null;
+}
+function planStep(dir) {
+  const t = todayStr();
+  if (PLANV === 'week') WEEK0 = addDays(WEEK0 || sundayOf(t), dir * 7);
+  else { const m = parseYmd((MONTH0 || t.slice(0, 7)) + '-01'); m.setMonth(m.getMonth() + dir); MONTH0 = ymd(m).slice(0, 7); }
+  renderPlan();
+}
+(function swipeMain() {
+  const m = $('main'); let d = null;
+  m.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || FULLS.length || mxBusy || e.target.closest('input,textarea,select,.trks,[data-noswipe]')) { d = null; return; }
+    const t = e.touches[0]; d = {x: t.clientX, y: t.clientY, t: Date.now(), on: false, dx: 0};
+  }, {passive: true});
+  m.addEventListener('touchmove', e => {
+    if (!d) return;
+    const t = e.touches[0], dx = t.clientX - d.x, dy = t.clientY - d.y;
+    if (!d.on) { if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; if (Math.abs(dy) >= Math.abs(dx)) { d = null; return; } d.on = true; d.x = t.clientX; }
+    e.preventDefault();
+    const x = t.clientX - d.x, can = swipeTarget(x < 0 ? 1 : -1), v = can ? x : x / 4;      // 갈 데 없으면 고무줄
+    d.dx = x; m.style.transform = `translateX(${v}px)`; m.style.opacity = 1 - Math.min(.45, Math.abs(v) / innerWidth * .9);
+  }, {passive: false});
+  const end = () => {
+    if (!d || !d.on) { d = null; return; }
+    const moved = Math.abs(d.dx), dir = d.dx < 0 ? 1 : -1, go = swipeTarget(dir), fast = Date.now() - d.t < 280 && moved > 40;
+    d = null;
+    if (go && (moved > m.clientWidth / 4 || fast)) { buzz(6); swapMain(dir, go, true); return; }
+    const a = m.animate([{transform: m.style.transform || 'none', opacity: m.style.opacity || 1}, {transform: 'none', opacity: 1}], {duration: 260, easing: EASE_OUT});
+    m.style.transform = m.style.opacity = ''; a.onfinish = null;
+  };
+  m.addEventListener('touchend', end); m.addEventListener('touchcancel', end);
+})();
+// 전체 화면 창(설정 · 넣기 …)은 맨 위에서 아래로 끌어 내리면 닫힌다 — 아이폰 시트처럼
+(function pullToClose() {
+  const el = $('sheet'); let d = null;
+  el.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || el.scrollTop > 0 || e.target.closest('input,textarea,select,.trks,.sl,[data-noswipe]')) { d = null; return; }
+    const t = e.touches[0]; d = {y: t.clientY, x: t.clientX, t: Date.now(), on: false, dy: 0};
+  }, {passive: true});
+  el.addEventListener('touchmove', e => {
+    if (!d) return;
+    const t = e.touches[0], dy = t.clientY - d.y, dx = t.clientX - d.x;
+    if (!d.on) { if (Math.abs(dy) < 8) return; if (dy < 0 || Math.abs(dx) > Math.abs(dy) || el.scrollTop > 0) { d = null; return; } d.on = true; d.y = t.clientY; el.style.transition = 'none'; }
+    e.preventDefault(); d.dy = Math.max(0, t.clientY - d.y);
+    el.style.transform = `translateY(${d.dy}px)`; el.style.opacity = 1 - Math.min(.4, d.dy / innerHeight);
+  }, {passive: false});
+  const end = () => {
+    if (!d || !d.on) { d = null; return; }
+    const close = d.dy > innerHeight * .22 || (Date.now() - d.t < 300 && d.dy > 60); d = null;
+    el.style.transition = ''; el.style.transform = ''; el.style.opacity = '';
+    if (close) { buzz(6); closeSheet(); }
+  };
+  el.addEventListener('touchend', end); el.addEventListener('touchcancel', end);
+})();
+/* 리액션 */
+let ENTER = false, JUST_DONE = '', JUST_ADD = '', STAR_SHOWN = null;
+// 고른 칸은 톡 튀어 오른다 — 창을 다시 그려도 같은 칸을 찾아서
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('button'); if (!b || quiet()) return;
+  const scope = b.parentElement && b.parentElement.closest('[id]'), sid0 = scope && scope.id;
+  const at = [...b.attributes].find(a => a.name.startsWith('data-') && !['data-snd', 'data-close'].includes(a.name));
+  if (!sid0 || !at) return;
+  setTimeout(() => { const box = document.getElementById(sid0), el = box && box.querySelector(`[${at.name}="${CSS.escape(at.value)}"]`);
+    if (el && (el.classList.contains('on') || el.getAttribute('aria-pressed') === 'true') && el.animate)
+      el.animate([{transform: 'scale(.9)'}, {transform: 'scale(1.07)', offset: .55}, {transform: 'scale(1)'}], {duration: 340, easing: EASE_OUT}); }, 0);
+}, true);
+// 반짝 터짐 — 별 · 동그라미 조각이 (x, y) 에서 퍼졌다가 떨어진다
+function burst(x, y, n, spread) {
+  if (quiet() || !document.body.animate) return;
+  const box = document.createElement('div'); box.className = 'burst'; document.body.appendChild(box);
+  const col = ['#FFC845', '#FF8FA3', '#3CC7A8', '#6FA8FF', '#B48CF2', '#FF8A5C'];
+  for (let i = 0; i < (n || 22); i++) {
+    const p = document.createElement('i'), a = Math.random() * Math.PI * 2, r = (spread || 90) * (.45 + Math.random() * .7), s = 6 + Math.random() * 8;
+    p.className = i % 3 ? '' : 'st'; p.style.cssText = `left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${col[i % col.length]}`;
+    box.appendChild(p);
+    const dx = Math.cos(a) * r, dy = Math.sin(a) * r - 30;
+    p.animate([{transform: 'translate(-50%,-50%) scale(.3) rotate(0deg)', opacity: 1},
+      {transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1) rotate(${Math.random() * 200}deg)`, opacity: 1, offset: .45},
+      {transform: `translate(calc(-50% + ${dx * 1.1}px), calc(-50% + ${dy + 70}px)) scale(.6) rotate(${Math.random() * 360}deg)`, opacity: 0}],
+      {duration: 800 + Math.random() * 500, easing: 'cubic-bezier(.15,.7,.35,1)', fill: 'forwards'});
+  }
+  setTimeout(() => box.remove(), 1500);
+}
+const burstAt = (el, n, spread) => { if (!el) return; const r = el.getBoundingClientRect(); burst(r.left + r.width / 2, r.top + r.height / 2, n, spread); };
+// 별 수가 늘면 머리줄 별 칩이 숫자를 세며 통통 튄다
+function starTick() {
+  const chip = document.querySelector('.starchip'), now = starsOf(S); if (!chip) { STAR_SHOWN = now; return; }
+  const was = STAR_SHOWN; STAR_SHOWN = now;
+  if (was === null || now <= was || quiet()) return;
+  const num = chip.querySelector('.n'); let k = 0, steps = Math.min(20, now - was);
+  const tick = () => { k++; if (num) num.textContent = nf(Math.round(was + (now - was) * k / steps)); if (k < steps) setTimeout(tick, 45); };
+  tick(); chip.animate([{transform: 'scale(1)'}, {transform: 'scale(1.25)', offset: .3}, {transform: 'scale(1)'}], {duration: 600, easing: EASE_OUT});
+  burstAt(chip, 14, 50); sfx('star');
+}
+// 그린 뒤 — 들어오는 목록 · 방금 끝낸 칸 · 방금 넣은 칸
+function afterRender() {
+  const m = $('main');
+  if (ENTER && !quiet()) [...m.children].slice(0, 12).forEach((c, i) => c.animate && c.animate([{transform: 'translateY(14px)', opacity: 0}, {transform: 'none', opacity: 1}], {duration: 380, delay: 40 + i * 35, easing: EASE_OUT, fill: 'backwards'}));
+  ENTER = false;
+  if (JUST_DONE) { const c = m.querySelector(`[data-q="${JUST_DONE}"]`); JUST_DONE = ''; if (c) { c.classList.add('just'); setTimeout(() => burstAt(c.querySelector('.sj'), 16, 60), 250); } }
+  if (JUST_ADD) { const c = m.querySelector(`[data-q="${JUST_ADD}"]`); JUST_ADD = ''; if (c) { c.classList.add('newin'); c.scrollIntoView({block: 'nearest', behavior: quiet() ? 'auto' : 'smooth'}); } }
+  starTick();
+}
+ENTER = true; render(); setTimeout(hwNotice, 600);
 if (S.run) setTimeout(() => S.run.stopAt ? doneSheet() : openTimer(), 300);
 setInterval(checkAlarm, 15000); setTimeout(checkAlarm, 1500);
 let lastDay = todayStr();
