@@ -31,6 +31,7 @@ firebase deploy --only functions:wallet
 
 - `block7` 폴더가 없다고 나오면 첫 줄 대신 `git clone https://github.com/Underkut/block7.git && cd block7/wallet-functions/src && npm install && cd ..`
 - 성공 표시: `b7push(asia-northeast3)` 가 **Successful create operation**, `studyTick(asia-northeast3)` 가 **Successful update operation**
+- 같은 묶음이라 **시리로 할일 넣기 서버**(`b7siri`)도 함께 올라가요 — `b7siri(asia-northeast3)` 도 **Successful create operation** (`docs/siri/setup.md`)
 - ⚠️ 배포 중에 **삭제(deletion)를 묻는 화면이 나오면 반드시 N**
 
 올리고 **1~2분 안에** 서버가 모든 사람의 알림 예약을 한 번 짜요. 그다음부터는 1분마다 '지금 보낼 사람' 만 봐요.

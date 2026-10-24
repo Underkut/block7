@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-1";
+const APP_VERSION = "v. 26-1025-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7182,6 +7182,29 @@ try{
           <select id="gcalWriteSel" onchange="gcalSetWrite(this.value)" style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:9px 10px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;"></select>
         </div>
         <button class="settings-btn" id="gcalConnectBtn" onclick="gcalConnect()" style="width:100%;">구글 캘린더 연결하기</button>
+        </div>
+      </div>
+
+      <!-- 시리로 할일 넣기 (v26-1025-2) — 그리는 것은 _siriRenderSettings · 받는 것은 기도노트 쪽지함 길 -->
+      <div class="sg" id="siriSection">
+        <div class="sg-h">시리로 할일 넣기</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:10px;">“시리야, 블럭세븐 할일” 하고 <b style="font-weight:500;">날 → 구간 → 할일</b> 차례로 말하면 그 자리에 들어가요. 예: “내일 오전 우유 사기”</div>
+        <div class="settings-row-desc" id="siriStatus" style="margin-bottom:10px;"></div>
+        <div class="settings-btn-row">
+          <button class="settings-btn" id="siriCopyBtn" onclick="siriCopyUrl()" style="flex:1;display:none;">주소 복사</button>
+          <button class="settings-btn" id="siriMakeBtn" onclick="siriMakeKey()" style="flex:1;">주소 만들기</button>
+        </div>
+        <div class="settings-row sr-fold" role="button" aria-expanded="false" onclick="sgFold(this)" style="margin-top:6px;"><div class="settings-row-text"><div class="settings-row-label" style="font-size:13px;">단축어 만드는 법</div><div class="settings-row-desc">아이폰 ‘단축어’ 앱에 한 번만 만들어 두면 돼요</div></div><svg class="sr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="sg-fold"><div><div class="settings-row-desc" id="siriHow" style="line-height:1.75;padding:4px 0 6px;">
+          1. 위 <b style="font-weight:500;">주소 복사</b> 를 눌러요<br>
+          2. ‘단축어’ 앱 → 오른쪽 위 <b style="font-weight:500;">+</b> → <b style="font-weight:500;">입력 요청</b> 추가 → 질문 칸에 ‘무엇을 넣을까요?’<br>
+          3. <b style="font-weight:500;">URL 콘텐츠 가져오기</b> 추가 → URL 칸에 붙여 넣기<br>
+          4. 그 동작을 펼쳐(<b style="font-weight:500;">더 보기</b>) 방법 <b style="font-weight:500;">POST</b> → 본문 요청 <b style="font-weight:500;">JSON</b> → 새로운 필드 추가 → 텍스트 → 키 <b style="font-weight:500;">text</b> · 값은 ‘제공된 입력’<br>
+          5. <b style="font-weight:500;">결과 보기</b> 추가 — 시리가 받은 말을 읽어 줘요<br>
+          6. 맨 위 이름을 <b style="font-weight:500;">블럭세븐 할일</b> 로 바꾸고 완료<br>
+          <span style="color:var(--tx3);">날을 빼면 오늘 · 구간을 빼면 오늘은 지금 구간, 다른 날은 첫 구간이에요. 날은 오늘 · 내일 · 모레 · 글피 · ‘10월 30일’ · ‘30일’, 구간은 내 구간 이름(새벽 · 오전 · 점심 …)으로 말해요.</span>
+        </div></div></div>
         </div>
       </div>
 
@@ -36100,6 +36123,7 @@ async function _praySend(gid,name){
 // 기도노트의 '할일로 보내기' 가 남긴 쪽지(pray/{uid}/c/b7inbox 의 items: [{id,date,sec,text,at}])를
 // **트랜잭션으로 꺼내(비우고)** 그날 그 시간구간의 큰 할일로 넣는다 — 사람이 손으로 할일을 넣은 것과 같은 길
 // (beforeSave · getBigs().push · save). 그래서 동기화는 늘 하던 대로 3자 병합으로 돈다.
+// · 시리 쪽지(v26-1025-2, 서버 b7siri 가 넣음 — {from:'siri',say,at,date,text})도 같은 길로 받는다. 말 풀기는 아래 '시리 → 할일'.
 // ⚠️ 기도노트가 users/{uid} 를 직접 쓰지 않게 하려고 만든 길이다. 여기서도 기도노트 덩어리는 건드리지 않는다.
 // ⚠️ 첫 클라우드 읽기가 성공한 뒤에만 받는다(_fbInitLoaded) — 빈 기기가 클라우드를 받기 전에 넣으면 안 된다.
 //    그 이름은 로그인 덩어리 안에 있어 여기서 안 보인다 → 그 덩어리가 '준비됐나' 를 묻는 함수를 넘겨 준다(_prayTodoReady).
@@ -36107,14 +36131,18 @@ async function _praySend(gid,name){
 // · 아이폰 · 아이패드가 같이 열려 있어도 꺼내기(비우기)를 이긴 기기 하나만 넣는다.
 const _PRAY_TODO_MAX=50;
 // 쪽지 → 넣을 자리. 날짜 모양이 틀리거나 글이 비면 버린다. 없는 시간구간이면 첫 구간으로(지워진 구간 — 잃지 않게).
-function _prayTodoPlace(items,secIds){
+// parse(쪽지) — 시리 쪽지처럼 들은 말(say)을 날 · 구간 · 내용으로 풀어 줄 함수(_siriPlace). 못 풀면 쪽지의 date · text 그대로(잃지 않게).
+function _prayTodoPlace(items,secIds,parse){
   const ids=Array.isArray(secIds)?secIds:[];
   return (Array.isArray(items)?items:[]).slice(0,_PRAY_TODO_MAX).map(n=>{
     if(!n||typeof n!=='object')return null;
+    let p=null;try{p=typeof parse==='function'?parse(n):null;}catch(e){}
+    if(p)n=Object.assign({},n,p);
     const date=String(n.date||''),text=String(n.text||'').replace(/\s+/g,' ').trim().slice(0,200);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!text)return null;
     const sec=ids.indexOf(n.sec)>=0?n.sec:(ids[0]||'');
-    return sec?{date,sec,text}:null;
+    if(!sec)return null;
+    return n.from?{date,sec,text,from:String(n.from)}:{date,sec,text};
   }).filter(Boolean);
 }
 let _prayTodoUnsub=null,_prayTodoBusy=false,_prayTodoReady=()=>false;
@@ -36130,14 +36158,14 @@ async function _prayTodoPull(){
       if(it.length)tx.set(ref,{items:[]});
       return it;
     });
-    const put=_prayTodoPlace(items,SECS.map(s=>s.id));
+    const put=_prayTodoPlace(items,SECS.map(s=>s.id),_siriPlace);
     if(!put.length)return 0;
     beforeSave();
     put.forEach(p=>getBigs(p.date,p.sec).push({text:p.text,done:false}));
     save();
     // ⚠️ _fbApplyRenders 는 로그인 덩어리 안이라 여기서 못 부른다 — 지금 보는 판만 다시 그린다. 글자를 치는 중이면 그 칸을 지키려고 건너뛴다
     try{const ae=document.activeElement;if(!(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))){const v=currentViewKey();if(v==='weekly')renderWeekly();else if(v==='monthly')renderMonthly();else{renderToday();refreshTaskViewsLive();}}}catch(e){}
-    showToast(put.length===1?`기도노트에서 할일이 왔어요 — ${put[0].text}`:`기도노트에서 할일 ${put.length}개가 왔어요`);
+    showToast(_todoInboxToast(put,todayKey(),id=>(SECS.find(s=>s.id===id)||{}).name||''));
     return put.length;
   }catch(e){console.warn('기도노트 할일 받기 실패',e);return 0;}
   finally{_prayTodoBusy=false;}
@@ -36155,6 +36183,153 @@ function _prayTodoWatch(ready){
   }catch(e){}
 }
 // ═══════ 기도노트 → 할일 받기 끝 ═══════
+// ═══════ 시리 → 할일 (v26-1025-2, HB — docs/ROADMAP.md '시리로 할일 넣기') ═══════
+// 아이폰 '단축어' 가 들은 말을 서버(b7siri)로 보내면, 서버는 위 쪽지함에 {from:'siri',say,at,date,text} 한 줄을 넣는다.
+// 꺼내 넣는 것은 위 '기도노트 → 할일 받기' 가 한다 — 여기는 ① 들은 말을 날 · 구간 · 내용으로 풀기 ② 받았다는 토스트 ③ 설정 칸.
+// 말하는 차례: 날(오늘 · 내일 · 모레 · 글피 · N월 N일 · N일) → 구간(사람이 정한 이름, 없으면 아침 · 낮 같은 낱말) → 내용.
+// ⚠️ 말한 시각(at)으로 푼다 — 밤에 '오늘' 이라 하고 다음 날 아침에 앱을 열어도 말한 그날이다.
+// ⚠️ 구간 이름은 사람마다 바꿀 수 있어 서버는 모른다 → 풀기는 앱만 한다 (시리 대답은 들은 말을 되읽기만).
+const _SIRI_DAYS=[['내일\\s?모레',2],['오늘',0],['내일',1],['모레',2],['글피',3]];
+// 구간 이름이 안 맞을 때 낱말 → 그 시각이 든 구간 (구간 이름을 바꾼 사람도 '아침' · '저녁' 이 통하게)
+const _SIRI_TIMEWORDS=[['새벽',240],['아침',480],['오전',540],['정오',720],['점심',750],['낮',780],['오후',900],['저녁',1140],['밤',1320]];
+const _SIRI_SEP='(?:[\\s,，·]+|$)';                        // 낱말 경계 — '새벽기도' 는 '새벽' 으로 쪼개지 않는다
+const _SIRI_DPART='(?:날)?(?:에는|에|엔|은|는|까지)?';      // 내일은 · 26일날 · 모레까지
+const _SIRI_SPART='(?:\\s?(?:때|쯤|중))?(?:에는|에|엔|은|는)?'; // 점심때 · 저녁에 · 오전 중에
+const _SIRI_WD='일월화수목금토';
+function _siriYmd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _siriT2m(t){const m=/^(\d{1,2}):(\d{2})$/.exec(String(t||'').trim());return m&&+m[1]<24&&+m[2]<60?(+m[1])*60+(+m[2]):null;}
+// 그 분(0~1439)이 든 구간 — isNowWithinSection 과 같은 판정을 시각만 받아서
+function _siriSecAt(secs,min){
+  return (secs||[]).find(s=>{
+    if(!s||s.noTime)return false;
+    const a=_siriT2m(s.startTime),b=_siriT2m(s.endTime);
+    if(a===null||b===null)return false;
+    if(a===b)return true;
+    return a<b?(min>=a&&min<b):(min>=a||min<b);
+  })||null;
+}
+function _siriDate(y,mo,d){const x=new Date(y,mo-1,d);return x.getMonth()===mo-1&&x.getDate()===d?x:null;}   // 2월 30일 같은 날은 없음
+// 들은 말 → {date,sec,text}. secs = SECS · vis = ST.vis(펼친 구간) · startH = 하루 시작 시각
+function _siriParse(say,at,secs,vis,startH){
+  const raw=String(say==null?'':say).replace(/\s+/g,' ').trim().replace(/^[\s,，.·]+/,'').replace(/[\s.。]+$/,'');
+  const list=Array.isArray(secs)?secs.filter(x=>x&&x.id):[];
+  if(!raw||!list.length)return null;
+  const when=new Date(Number(at)||Date.now());
+  const day=new Date(when.getFullYear(),when.getMonth(),when.getDate());
+  if((Number(startH)||0)>0&&when.getHours()<Number(startH))day.setDate(day.getDate()-1);   // logicalNow 와 같다
+  const today=_siriYmd(day);
+  let s=raw,date=today,m=null,gotDay=false;
+  // ① 날
+  for(const [w,n] of _SIRI_DAYS){
+    if((m=new RegExp('^(?:'+w+')'+_SIRI_DPART+_SIRI_SEP).exec(s))){
+      const d=new Date(day);d.setDate(d.getDate()+n);date=_siriYmd(d);s=s.slice(m[0].length);gotDay=true;break;
+    }
+  }
+  if(!gotDay&&(m=new RegExp('^(\\d{1,2})\\s?월\\s?(\\d{1,2})\\s?일'+_SIRI_DPART+_SIRI_SEP).exec(s))){
+    // 지난 날짜면 내년
+    let d=_siriDate(day.getFullYear(),+m[1],+m[2]);
+    if(d&&d<day)d=_siriDate(day.getFullYear()+1,+m[1],+m[2]);
+    if(d){date=_siriYmd(d);s=s.slice(m[0].length);gotDay=true;}
+  }else if(!gotDay&&(m=new RegExp('^(\\d{1,2})\\s?일'+_SIRI_DPART+_SIRI_SEP).exec(s))){
+    // 지난 날이면 다음 달
+    let d=_siriDate(day.getFullYear(),day.getMonth()+1,+m[1]);
+    if(d&&d<day)d=_siriDate(day.getFullYear()+(day.getMonth()===11?1:0),(day.getMonth()+1)%12+1,+m[1]);
+    if(d){date=_siriYmd(d);s=s.slice(m[0].length);gotDay=true;}
+  }
+  // ② 구간 — 사람이 정한 이름 먼저(긴 이름부터), 없으면 낱말을 시각으로
+  let sec=null;
+  const named=list.map(x=>({x,k:String(x.name||'').trim()})).filter(o=>o.k).sort((a,b)=>b.k.length-a.k.length);
+  for(const o of named){
+    const re=new RegExp('^'+o.k.split(/\s+/).map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s?')+_SIRI_SPART+_SIRI_SEP);
+    if((m=re.exec(s))){sec=o.x;s=s.slice(m[0].length);break;}
+  }
+  if(!sec){
+    for(const [w,min] of _SIRI_TIMEWORDS){
+      if((m=new RegExp('^'+w+_SIRI_SPART+_SIRI_SEP).exec(s))){const hit=_siriSecAt(list,min);if(hit){sec=hit;s=s.slice(m[0].length);}break;}
+    }
+  }
+  // ③ 구간을 말하지 않았으면 — 오늘은 지금 구간, 다른 날은 펼친 첫 구간 (_currentSecId 와 같은 고르기)
+  if(!sec){
+    const vs=Array.isArray(vis)?vis:list.map(x=>x.id);
+    const shown=list.filter(x=>vs.indexOf(x.id)>=0&&!x.noTime);
+    if(date===today)sec=_siriSecAt(shown,when.getHours()*60+when.getMinutes());
+    if(!sec)sec=shown[0]||list.find(x=>!x.noTime)||list[0];
+  }
+  // ④ 내용 — 비면 들은 말 전체(잃지 않게)
+  const text=s.replace(/^[\s,，·]+/,'').trim()||raw;
+  return {date,sec:sec.id,text:text.slice(0,200)};
+}
+// 'YYYY-MM-DD' → 오늘 · 내일 · 모레 · 10월 30일 (금)
+function _siriDayLabel(date,today){
+  const p=k=>{const a=String(k).split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);};
+  const d=p(date),n=Math.round((d-p(today))/864e5);
+  if(n===0)return'오늘';if(n===1)return'내일';if(n===2)return'모레';
+  return (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+_SIRI_WD[d.getDay()]+')';
+}
+// 받은 쪽지 토스트 — 기도노트 것은 예전 글 그대로
+function _todoInboxToast(put,today,secName){
+  const n=put.length,siri=put.filter(p=>p.from==='siri').length;
+  if(!siri)return n===1?`기도노트에서 할일이 왔어요 — ${put[0].text}`:`기도노트에서 할일 ${n}개가 왔어요`;
+  if(siri<n)return`할일 ${n}개가 왔어요\n시리 · 기도노트`;
+  if(n===1)return`시리로 할일이 왔어요\n${_siriDayLabel(put[0].date,today)} · ${secName(put[0].sec)}\n${put[0].text}`;
+  return`시리로 할일 ${n}개가 왔어요`;
+}
+// ── 시리: 앱에 잇는 자리 ──
+// 쪽지함 받기가 쪽지마다 부른다. 시리 쪽지가 아니면 null(그 쪽지의 date · sec 그대로)
+function _siriPlace(n){
+  if(!n||n.from!=='siri'||typeof n.say!=='string')return null;
+  return _siriParse(n.say,n.at,SECS,ST.vis,(ST.settings||{}).dayStartHour);
+}
+// 설정 → 계정 '시리로 할일 넣기'. 주소(열쇠가 든 서버 주소)는 서버가 만들고, 이 기기에는 복사하려고만 둔다(_lsk — 계정마다).
+const B7SIRI_FN='https://asia-northeast3-block7-8f24e.cloudfunctions.net/b7siri';
+let _siriBusy=false,_siriMsg='';
+function _siriSaved(){
+  try{
+    const v=JSON.parse(localStorage.getItem(_lsk('siri'))||'null'),u=_prayUid();
+    return v&&v.url&&u&&v.uid===u?v:null;
+  }catch(e){return null;}
+}
+function _siriRenderSettings(){
+  const box=document.getElementById('siriSection');if(!box)return;
+  if(APP_PRODUCT!=='block7'){box.style.display='none';return;}   // Sweeter 에는 할일이 없다
+  const st=document.getElementById('siriStatus'),mk=document.getElementById('siriMakeBtn'),cp=document.getElementById('siriCopyBtn');
+  const sv=DEV_MODE?null:_siriSaved(),login=!!_prayUid();
+  if(st)st.textContent=DEV_MODE?'개발본에서는 쓸 수 없어요 (운영본에서만)'
+    :!login?'로그인하면 쓸 수 있어요'
+    :_siriBusy?'주소를 만드는 중…'
+    :_siriMsg||(sv?`주소 준비됨 · ${new Date(sv.at).getMonth()+1}월 ${new Date(sv.at).getDate()}일에 만듦`:'아직 주소가 없어요 — 먼저 주소를 만드세요');
+  if(cp)cp.style.display=sv?'':'none';
+  if(mk){mk.textContent=sv?'새로 만들기':'주소 만들기';mk.disabled=DEV_MODE||_siriBusy||!login;}
+}
+function siriMakeKey(){
+  if(DEV_MODE||_siriBusy||APP_PRODUCT!=='block7')return;
+  if(!_prayUid()){showToast('로그인한 뒤에\n만들 수 있어요');return;}
+  if(_siriSaved())appConfirm('새 주소를 만들면\n예전 주소로 만든 단축어는 멈춰요.\n새로 만들까요?',_siriMakeKeyNow);
+  else _siriMakeKeyNow();
+}
+async function _siriMakeKeyNow(){
+  const u=firebase.auth().currentUser;if(!u)return;
+  _siriBusy=true;_siriMsg='';_siriRenderSettings();
+  try{
+    const tok=await u.getIdToken();
+    const r=await fetch(B7SIRI_FN+'/key',{method:'POST',headers:{Authorization:'Bearer '+tok}});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.key)throw new Error(j.error||('HTTP '+r.status));
+    try{localStorage.setItem(_lsk('siri'),JSON.stringify({uid:u.uid,url:B7SIRI_FN+'?k='+j.key,at:Date.now()}));}catch(e){}
+    showToast('시리 주소를 만들었어요\n‘주소 복사’ 를 눌러\n단축어에 붙여 넣으세요');
+  }catch(e){
+    console.warn('시리 주소 만들기 실패',e);
+    _siriMsg='주소를 만들지 못했어요 — 서버가 아직 준비되지 않았거나 인터넷이 끊겼어요';
+  }finally{_siriBusy=false;_siriRenderSettings();}
+}
+// ⚠️ 복사는 누른 그 순간 동기적으로 시작해야 한다 (아이폰 홈 화면 앱)
+function siriCopyUrl(){
+  const sv=_siriSaved();if(!sv){_siriRenderSettings();return;}
+  const ok=()=>showToast('주소를 복사했어요\n단축어 ‘URL 콘텐츠 가져오기’ 의\nURL 칸에 붙여 넣으세요');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(sv.url).then(ok).catch(()=>_copyTextFallback(sv.url));
+  else _copyTextFallback(sv.url);
+}
+// ═══════ 시리 → 할일 끝 ═══════
 
 function makeBigWrap(id,i,b,secColor){
   const item=makeBigItem(id,i,b,secColor);
@@ -43575,6 +43750,7 @@ function closeAccountSensitiveModals(){
 function renderSettingsPanel(){
   const s=ST.settings;
   try{_gcalRenderSettings();}catch(e){}
+  try{_siriRenderSettings();}catch(e){}
   try{_evChipSync();}catch(e){}
   setTimeout(_syncCondRows,0);   // 값들을 다 채운 뒤 보이기/감추기를 맞춘다
   document.getElementById('setAutoCarry').checked=!!s.autoCarryOver;

@@ -38,6 +38,6 @@ sc.eq('⑥ 사람이 넣는 길 그대로', /beforeSave\(\);[\s\S]*getBigs\(p\.d
 // 개발본 · Sweeter 개발본에도 같은 덩어리가 있다(만드는 도구가 그대로 옮긴다)
 ['index-dev.html', 'sweeter-dev.html'].forEach(f => {
   const t = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-  sc.eq(f + ' 에도 받기 덩어리', t.indexOf('function _prayTodoPlace(items,secIds)') >= 0, true);
+  sc.eq(f + ' 에도 받기 덩어리', t.indexOf('function _prayTodoPlace(items,secIds,parse)') >= 0, true);
 });
 sc.done();
