@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-13  [production]  -->
+<!-- BLOCK7  v. 26-1024-14  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -726,6 +726,35 @@ header{
 #thereFx .tf-sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#cfc8d8;transition:transform .2s;}
 #thereFx .tf-sw.on{background:#8a74b8;}
 #thereFx .tf-sw.on::after{transform:translateX(14px);}
+/* ── There 말씀 (v. 26-1024-14, HB) ── 보던 말씀이 입자 사이에 떠 있다.
+   자리는 십자가 **아래** — 십자가가 위로 비켜서고 말씀이 그 아래 가운데(HB 고른 C).
+   말씀 없이 연 There(GNB·Sweeter 홈)는 십자가가 예전처럼 한가운데 그대로다 (.has-word 없음).
+   글자는 테마와 상관없이 밝은 글자 + 어두운 번짐 (입자 위에서 읽히게). 일렁임은 JS 가 글자에만 준다. */
+#tfCross{transition:top .5s cubic-bezier(.22,.8,.24,1),transform .5s cubic-bezier(.22,.8,.24,1);}
+#thereFx.has-word #tfCross{top:25%;transform:translate(-50%,-50%) scale(.85);}
+#thereFx .tf-word{position:absolute;left:30px;right:30px;top:calc(25% + 72px);bottom:calc(13% + env(safe-area-inset-bottom));
+  max-width:640px;margin:0 auto;display:flex;flex-direction:column;justify-content:center;align-items:center;pointer-events:none;z-index:1;}
+#thereFx .tf-wmv{position:relative;display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-height:100%;transition:opacity .6s ease;}
+#thereFx .tf-wmv.pre{opacity:0;transform:translateY(-12px);transition:none;}
+#thereFx .tf-wmv.pre .tf-wmeta{opacity:0;}
+#thereFx .tf-wtx{width:100%;text-align:center;font-family:var(--tfw-font,inherit);font-weight:var(--tfw-fw,300);line-height:1.85;
+  word-break:keep-all;color:#ece6dc;text-shadow:0 0 14px rgba(14,13,18,.9),0 0 3px rgba(14,13,18,.9);}
+#thereFx .tf-wtx .l{display:block;}
+#thereFx .tf-wtx.prop{line-height:1.7;}
+#thereFx .tf-wmeta{display:flex;flex-direction:column;align-items:center;gap:8px;transition:opacity .9s ease .35s;}
+#thereFx .tf-wref{font-size:12.5px;letter-spacing:.2em;color:#8d8698;text-shadow:0 0 8px rgba(14,13,18,.9);text-align:center;}
+#thereFx .tf-wdots{display:flex;gap:12px;font-size:11px;color:#8d8698;font-variant-numeric:tabular-nums;}
+#thereFx .tf-wdots i{font-style:normal;opacity:.4;transition:opacity .3s;}
+#thereFx .tf-wdots i.on{opacity:1;color:#ece6dc;}
+/* 세팅 판의 '말씀' 묶음 — 일렁임은 켠 것만 펼친다 */
+#thereFx .tf-rows{max-height:min(62vh,560px);overflow-y:auto;overscroll-behavior:contain;}
+#thereFx .tf-sec{margin-top:8px;padding-top:8px;border-top:1px solid #2a2733;color:#8d8698;font-size:11px;letter-spacing:.12em;}
+#thereFx .tf-sub{padding-left:10px;border-left:1px solid #2a2733;margin:4px 0 2px;}
+#thereFx .tf-sub.off{display:none;}
+#thereFx .tf-gc{display:flex;gap:10px;align-items:center;margin:6px 0 2px;color:#8d8698;}
+#thereFx .tf-gc button{width:18px;height:18px;border-radius:50%;padding:0;background:var(--c);box-shadow:0 0 6px var(--c);opacity:.55;}
+#thereFx .tf-gc button.on{opacity:1;outline:1.5px solid #e8e2d8;outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){#thereFx .tf-wmv,#thereFx .tf-wmeta,#tfCross{transition:none;}}
 /* There 버튼 그림 — 글자색을 따라간다 (선택한 하나만 쓰인다) */
 .there-ic{display:inline-block;width:1em;height:1em;line-height:0;}
 .there-ic svg{width:100%;height:100%;display:block;}
@@ -6400,7 +6429,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-13";
+const APP_VERSION = "v. 26-1024-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8875,6 +8904,10 @@ try{
   <canvas id="tfCv"></canvas>
   <svg id="tfCross" aria-hidden="true"><path id="tfCrossP" fill="currentColor"/></svg>
   <div class="tf-clock" id="tfClock" style="display:none;"></div>
+  <div class="tf-word" id="tfWord" style="display:none;">
+    <div class="tf-wmv" id="tfWmv"><div class="tf-wtx" id="tfWtx"></div>
+      <div class="tf-wmeta" id="tfWmeta"><div class="tf-wref" id="tfWref"></div><div class="tf-wdots" id="tfWdots"></div></div></div>
+  </div>
   <button class="modal-x tf-x" onclick="closeThere()" aria-label="닫기">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
@@ -8893,6 +8926,31 @@ try{
       </div>
       <div class="tf-line"><span>시간 표시</span><div class="tf-sw" id="tfK_t" role="switch" onclick="thereTuneClock()"></div></div>
       <div class="tf-line"><span style="color:#8d8698;font-size:11px;">슬라이더 기본값으로</span><button onclick="thereTuneReset()">되돌리기</button></div>
+      <!-- 말씀 (v. 26-1024-14, HB) — 값은 이 기기에만. 호흡 · 촛불은 둘 다 켤 수 있다 -->
+      <div class="tf-sec">말씀</div>
+      <div class="tf-line"><span>말씀 표시</span><div class="tf-sw" id="tfW_wv" role="switch" onclick="thereWordSw('wv')"></div></div>
+      <label class="tf-sl">말씀 크기<input type="range" id="tfW_ws" min="0.7" max="1.6" step="0.1"><output></output></label>
+      <div class="tf-line"><span>호흡 일렁임</span><div class="tf-sw" id="tfW_fb" role="switch" onclick="thereWordSw('fb')"></div></div>
+      <div class="tf-sub" id="tfWsub_fb">
+        <label class="tf-sl">한 번 숨<input type="range" id="tfW_bT" min="3" max="16" step="0.5"><output></output></label>
+        <label class="tf-sl">들숨 길이<input type="range" id="tfW_br" min="20" max="80" step="5"><output></output></label>
+        <label class="tf-sl">들이쉰 채<input type="range" id="tfW_bu" min="0" max="3" step="0.1"><output></output></label>
+        <label class="tf-sl">내쉰 채<input type="range" id="tfW_bd" min="0" max="3" step="0.1"><output></output></label>
+        <label class="tf-sl">어두울 때<input type="range" id="tfW_blo" min="10" max="100" step="5"><output></output></label>
+        <label class="tf-sl">밝을 때<input type="range" id="tfW_bhi" min="10" max="100" step="5"><output></output></label>
+        <label class="tf-sl">빛 번짐<input type="range" id="tfW_bg" min="0" max="100" step="5"><output></output></label>
+        <div class="tf-gc" data-k="bcol"><span>빛 색</span></div>
+      </div>
+      <div class="tf-line"><span>촛불 일렁임</span><div class="tf-sw" id="tfW_fc" role="switch" onclick="thereWordSw('fc')"></div></div>
+      <div class="tf-sub" id="tfWsub_fc">
+        <label class="tf-sl">평소 밝기<input type="range" id="tfW_cb" min="40" max="100" step="5"><output></output></label>
+        <label class="tf-sl">흔들림 세기<input type="range" id="tfW_ca" min="0" max="40" step="1"><output></output></label>
+        <label class="tf-sl">빠르기<input type="range" id="tfW_cs" min="0.3" max="3" step="0.1"><output></output></label>
+        <label class="tf-sl" title="1분에 몇 번">크게 흔들림<input type="range" id="tfW_cg" min="0" max="20" step="1"><output></output></label>
+        <label class="tf-sl">빛 번짐<input type="range" id="tfW_cgl" min="0" max="100" step="5"><output></output></label>
+        <div class="tf-gc" data-k="ccol"><span>빛 색</span></div>
+      </div>
+      <div class="tf-line"><span style="color:#8d8698;font-size:11px;">말씀 세팅 기본값으로</span><button onclick="thereWordReset()">되돌리기</button></div>
     </div>
   </div>
 </div>
@@ -13464,7 +13522,7 @@ function _vbThereEl(v){
   b.setAttribute('aria-label','There');
   b.dataset.ref=_reactKey(v)||'';
   b.innerHTML=_thereIcHTML();
-  b.onclick=e=>{e.stopPropagation();openThere(b.dataset.ref,{src:'bar'});};
+  b.onclick=e=>{e.stopPropagation();openThere(b.dataset.ref,{src:'bar',word:_thereWordFromVerse(v)});};
   return b;
 }
 
@@ -16274,11 +16332,15 @@ function _brVmOpen(v,x,y){
 }
 function _brVmClose(){_brEl('brVMenu').classList.remove('on');_brEl('brVMenuOv').classList.remove('on');}
 // 지금 화면에 보이는 절들 → '요한복음 3:16-18'. 절의 절반 이상(또는 화면을 꽉 채운 긴 절)이 보이면 넣는다
-function _brViewRef(){
+function _brViewVs(){
   const sc=_brEl('brScroll'),vs=[];
   if(sc){const top=sc.getBoundingClientRect().top,bot=top+sc.clientHeight;
     sc.querySelectorAll('.br-v').forEach(el=>{const r=el.getBoundingClientRect(),vis=Math.min(r.bottom,bot)-Math.max(r.top,top);
       if(vis>0&&vis>=Math.min(r.height,sc.clientHeight)*0.5)vs.push(+el.dataset.v);});}
+  return vs;
+}
+function _brViewRef(){
+  const vs=_brViewVs();
   const head=_brBooks()[_brCur.b]+' '+_brCur.c;
   return vs.length?head+':'+_brVerseList(vs):head+':1';
 }
@@ -16293,7 +16355,7 @@ function _brVmRun(act){
     const ov=document.getElementById('keepPickOverlay'),md=document.getElementById('keepPickModal');
     if(ov)ov.style.zIndex='5150';if(md)md.style.zIndex='5160';openKeepPicker(ref);
   }else if(act==='mem')_reactWithToast('mem',ref);
-  else if(act==='there'){if(typeof openThere==='function')openThere(ref,{src:'bible-menu'});}
+  else if(act==='there'){if(typeof openThere==='function')openThere(ref,{src:'bible-menu',word:_thereWordFromBible(_brBooks()[_brCur.b],_brCur.c,vs,ch)});}
   // Deeper — 이미 앱 안 성경이므로 **대한성서공회 사이트**(개역개정)로 그 절을 연다
   else if(act==='deeper'){recordVerseDeeper(ref);BibleLinkProvider.open(BibleLinkProvider.createBskUrlFromRef(ref));}
   else if(act==='even')openEvenDeeperFromRef(ref);
@@ -16882,7 +16944,12 @@ function _brBind(){
   document.querySelectorAll('#brNav .br-lt').forEach(b=>b.onclick=()=>{_brLt=b.dataset.lt;_brRenderList();_brOpenSheet('brSList');});
   // 헤더 좌상단 — There · 대시보드
   // 우상단 There = 지금 화면에 보이는 장절 (HB v26-1007-11). 하나도 안 잡히면 장만
-  $('brThere').onclick=()=>{if(typeof openThere==='function')openThere(_brViewRef(),{src:'bible'});};
+  // 화면에는 그 절들을 한 절씩 띄운다 (v. 26-1024-14, HB)
+  $('brThere').onclick=()=>{
+    if(typeof openThere!=='function')return;
+    const d=_BR_MEM.get(_brCur.b+1),ch=d?d.c[_brCur.c-1]:[],vs=_brViewVs();
+    openThere(_brViewRef(),{src:'bible',word:_thereWordFromBible(_brBooks()[_brCur.b],_brCur.c,vs.length?vs:[1],ch)});
+  };
   $('brDash').onclick=_brOpenDash;
   $('brDashClose').onclick=()=>$('brDashP').classList.remove('on');
   $('bdChips').onclick=e=>{const b=e.target.closest('button');if(!b)return;_brDashRange=b.dataset.r;_brDashRender();};
@@ -19050,6 +19117,87 @@ function _tfGet(k){
   return _TF_SL_DEF[_tfDevKind()][k];
 }
 
+// ══ There 말씀 — 보던 말씀을 There 화면에 함께 (v. 26-1024-14, HB) ══
+// 들어온 곳에 말씀이 있었으면(전체화면 · 말씀카드 · 상단 말씀 · 성경 · Sweeter 타일) 그 말씀을,
+// 명제면 명제 문장을 띄운다. 여러 절(성경)은 한 절씩 좌우로 넘긴다.
+// ⚠️ **화면만이다.** 기록(verseThereLog)·횟수는 예전 그대로 ref 하나로 남는다 — 여기서 기록을 건드리지 말 것.
+// 모양: {prop:bool, pages:[{ref, text, n?}]}  (n = 성경 절 번호, 넘김 점에 쓴다)
+function _thereStripHanja(t){
+  // 성경 본문의 한자 괄호 — 독생자(獨生子) → 독생자. 성경 화면에서는 그대로 둔다
+  return String(t||'').replace(/\s*\([㐀-鿿豈-﫿][㐀-鿿豈-﫿\s·,]*\)/g,'').replace(/\s{2,}/g,' ').trim();
+}
+function _thereWordFromVerse(v){
+  if(!v)return null;
+  const text=String(v.krText||'').trim();if(!text)return null;
+  const refs=Array.isArray(v.refs)?v.refs.filter(Boolean):[];
+  return{prop:!!(v.pid||v.kind==='prop'),pages:[{ref:refs.length>1?refs.join(' · '):(v.ref||''),text}]};
+}
+function _thereWordFromBible(book,c,vs,ch){
+  const pages=(vs||[]).map(n=>({ref:book+' '+c+':'+n,n,text:_thereStripHanja(ch&&ch[n-1])})).filter(p=>p.text);
+  return pages.length?{prop:false,pages}:null;
+}
+// ── 말씀 세팅 (이 기기에만 — 다른 There 세팅과 같은 칸 _lsk('thereFx')) ──
+// 일렁임 기본값은 HB 가 정한 값 (2026-10-24 일렁임 페이지). 호흡 · 촛불은 따로 켜고 끄며 둘 다 켤 수 있다.
+const _TF_W_DEF={wv:true,ws:1,fb:false,fc:true,
+  bT:5.5,br:25,bu:0,bd:0,blo:100,bhi:40,bg:100,bcol:'white',
+  cb:50,ca:5,cs:3,cg:20,cgl:70,ccol:'candle'};
+const _TF_GLOW={white:'255,246,230',gold:'218,184,122',heaven:'168,146,214',candle:'255,179,92'};
+function _tfW(k){
+  const K=_tfLoad(),d=_TF_W_DEF[k];
+  if(K[k]==null)return d;
+  if(typeof d==='boolean')return !!K[k];
+  if(typeof d==='string')return _TF_GLOW[K[k]]?K[k]:d;
+  const v=+K[k];return isFinite(v)?v:d;
+}
+// 호흡: 들숨(밝아짐) → 들이쉰 채 → 날숨(어두워짐) → 내쉰 채. 어두울 때 · 밝을 때는 작은 쪽이 아래다
+// (HB 가 '어두울 때 100 · 밝을 때 40' 으로 정했다 — 일렁임 페이지도 이렇게 읽었고 그 모습으로 골랐다).
+function _tfBreathAt(t,b){
+  const hold=b.up+b.dn,T=Math.max(b.T,hold+1),move=T-hold,r=Math.min(95,Math.max(5,b.r));
+  const rise=move*r/100,fall=move-rise,ease=x=>(1-Math.cos(Math.PI*x))/2;
+  let x=((t%T)+T)%T,e;
+  if(x<rise)e=ease(x/rise);
+  else if((x-=rise)<b.up)e=1;
+  else if((x-=b.up)<fall)e=1-ease(x/fall);
+  else e=0;
+  const lo=Math.min(b.lo,b.hi)/100,hi=Math.max(b.lo,b.hi)/100;
+  return{op:lo+(hi-lo)*e,k:e};
+}
+// 촛불: 느린 · 중간 · 빠른 흔들림을 겹치고, 가끔 바람이 스친 듯 깊게 깜빡인다. st 는 바람 상태(부르는 쪽이 들고 있다)
+const _TF_NOISE=(()=>{const a=new Float32Array(256);for(let i=0;i<256;i++)a[i]=Math.random()*2-1;return a;})();
+function _tfNoise(x){const i=Math.floor(x),f=x-i,a=_TF_NOISE[i&255],b=_TF_NOISE[(i+1)&255],u=f*f*(3-2*f);return a+(b-a)*u;}
+function _tfCandleAt(t,c,st,rnd){
+  rnd=rnd||Math.random;
+  const sp=c.sp,n=0.55*_tfNoise(t*0.9*sp)+0.3*_tfNoise(t*2.3*sp+17)+0.15*_tfNoise(t*6.1*sp+41);
+  let op=c.base/100+(c.amp/100)*n*1.4;
+  if(c.gust>0){
+    if(st.next==null)st.next=t+rnd()*60/c.gust;
+    if(!st.g&&t>=st.next){st.g={t0:t,d:0.5+rnd()*0.8};st.next=t-Math.log(1-rnd())*60/c.gust;}
+  }else{st.g=null;st.next=null;}
+  if(st.g){
+    const x=(t-st.g.t0)/st.g.d;
+    if(x>=1||x<0)st.g=null;
+    else op-=(c.amp/100)*2*Math.sin(Math.PI*x)*(0.55+0.45*Math.sin(t*2*Math.PI*9));
+  }
+  op=Math.max(0.05,Math.min(1,op));
+  const span=c.amp*2.8/100;
+  return{op,k:span>0?Math.max(0,Math.min(1,(op-(c.base-c.amp*1.4)/100)/span)):0};
+}
+// 둘 다 켜면 밝기는 곱하고, 빛 번짐은 각자의 색으로 두 겹 (glows: [반지름px, 진하기, 'r,g,b'])
+function _tfFlickerAt(t,P,st,rnd){
+  let op=1;const glows=[];
+  if(P.breath){const b=_tfBreathAt(t,P.breath);op*=b.op;
+    if(P.breath.glow>0)glows.push([8+16*b.k,(P.breath.glow/100)*(0.15+0.85*b.k),P.breath.col]);}
+  if(P.candle){const c=_tfCandleAt(t,P.candle,st,rnd);op*=c.op;
+    if(P.candle.glow>0)glows.push([8+16*c.k,(P.candle.glow/100)*(0.15+0.85*c.k),P.candle.col]);}
+  return{op,glows};
+}
+function _tfFlickerParams(quiet){
+  return{wv:_tfW('wv'),
+    breath:(!quiet&&_tfW('fb'))?{T:_tfW('bT'),r:_tfW('br'),up:_tfW('bu'),dn:_tfW('bd'),lo:_tfW('blo'),hi:_tfW('bhi'),glow:_tfW('bg'),col:_TF_GLOW[_tfW('bcol')]}:null,
+    candle:(!quiet&&_tfW('fc'))?{base:_tfW('cb'),amp:_tfW('ca'),sp:_tfW('cs'),gust:_tfW('cg'),glow:_tfW('cgl'),col:_TF_GLOW[_tfW('ccol')]}:null};
+}
+// ══ There 말씀 끝 ══
+
 // ── 그리기 ──
 const _tf={run:false,raf:0,last:0,t0:0,W:0,H:0,P:[],up:null,down:null,preview:false,ref:'',sec:-1,wired:false};
 function _tfHex2Hsl(h){
@@ -19117,6 +19265,9 @@ function _tfFrame(now){
   const el=(now-_tf.t0)/1000;
   cx.clearRect(0,0,W,H);cx.globalCompositeOperation='lighter';
   const A=_tfGet('a'),V=_tfGet('v');
+  // 말씀이 떠 있으면 글 둘레의 입자를 옅게 (감추면 천천히 돌아온다)
+  _tfWd.mask+=((_tfWd.word&&_tfWd.on&&_tfWd.rect?1:0)-_tfWd.mask)*Math.min(1,dt*3);
+  const wm=_tfWd.mask,wr=_tfWd.rect;
   const want=Math.min(2400,Math.round(W*H/800*_tfGet('n')));
   while(_tf.P.length<want)_tf.P.push(_tfSpawn(_tf.P.length%2===0,true));
   if(_tf.P.length>want)_tf.P.length=want;
@@ -19124,11 +19275,24 @@ function _tfFrame(now){
     p.d+=p.v*dt*V;
     const y=p.up?p.y0-p.d:p.y0+p.d,x=p.x+Math.sin(el*0.6+p.ph)*6;
     const k=p.d/p.L,fade=Math.min(1,k*12)*Math.pow(1-k,1.6);
-    const a=A*p.a*(0.55+0.45*Math.sin(el*p.tw+p.ph))*fade;
+    let a=A*p.a*(0.55+0.45*Math.sin(el*p.tw+p.ph))*fade;
+    if(wm>0.01&&wr){
+      const ddx=Math.max(wr.x0-x,0,x-wr.x1),ddy=Math.max(wr.y0-y,0,y-wr.y1),d=Math.hypot(ddx,ddy);
+      if(d<28)a*=1-(1-(0.16+0.84*d/28))*wm;
+    }
     if(a>0.01){cx.globalAlpha=Math.min(1,a);cx.drawImage(p.img,x-p.sz/2,y-p.sz/2,p.sz,p.sz);}
     if(p.d>=p.L)Object.assign(p,_tfSpawn(p.up,false));
   }
   cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
+  // 말씀 일렁임 — 글자에만 (장절 · 입자는 그대로)
+  if(_tfWd.word&&_tf.fp){
+    const tx=_tfWd.tx||(_tfWd.tx=document.getElementById('tfWtx')),f=_tfFlickerAt(el,_tf.fp,_tfWd.st);
+    if(tx){
+      tx.style.opacity=f.op.toFixed(3);
+      tx.style.textShadow=f.glows.map(g=>'0 0 '+g[0].toFixed(1)+'px rgba('+g[2]+','+g[1].toFixed(3)+')')
+        .concat('0 0 14px rgba(14,13,18,.9)','0 0 3px rgba(14,13,18,.9)').join(',');
+    }
+  }
   const s=el|0;
   if(s!==_tf.sec){_tf.sec=s;const ck=document.getElementById('tfClock');if(ck&&_tfGet('t'))ck.textContent=_thereClock(s);}
   _tf.raf=requestAnimationFrame(_tfFrame);
@@ -19151,6 +19315,7 @@ function _tfSyncUI(){
   const ck=document.getElementById('tfClock');
   if(ck){ck.style.display=on?'':'none';if(on)ck.textContent=_thereClock(Math.max(0,_tf.sec));}
   _tfDrawCross();
+  _tfWordSyncUI();
 }
 function _tfWire(){
   if(_tf.wired)return;_tf.wired=true;
@@ -19175,7 +19340,18 @@ function _tfWire(){
   });
   // 왼쪽 가장자리 → 오른쪽 = 닫기 (말씀 전체화면과 같은 장치)
   _initEdgeBack(el,()=>closeThere());
-  window.addEventListener('resize',()=>{if(_tf.run)_tfSize();});
+  window.addEventListener('resize',()=>{if(_tf.run){_tfSize();_tfWordFit();}});
+  // 말씀 — 세팅 판의 슬라이더 · 넘기기 · 누르기 · PC 화살표
+  Object.keys(_TF_W_SL).forEach(k=>{
+    const inp=document.getElementById('tfW_'+k);if(!inp)return;
+    inp.addEventListener('input',()=>{_tfLoad()[k]=+inp.value;_tfStore();_tfWordChanged(k==='ws');});
+  });
+  _tfWordWire(el);
+  el.addEventListener('keydown',e=>{
+    if(!_tf.run||!_tfWordMulti()||e.target.closest('input'))return;
+    if(e.key==='ArrowRight'){e.preventDefault();_tfWordGo(1);}
+    else if(e.key==='ArrowLeft'){e.preventDefault();_tfWordGo(-1);}
+  });
 }
 function thereTuneClock(){const K=_tfLoad();K.t=!K.t;_tfStore();_tfSyncUI();}
 function thereTuneReset(){const K=_tfLoad();_TF_SL.forEach(k=>delete K[k]);_tfStore();_tfSyncUI();}
@@ -19184,6 +19360,175 @@ function thereTuneFold(){
   t.classList.toggle('fold');
   const b=document.getElementById('tfFoldBtn');if(b)b.textContent=t.classList.contains('fold')?'펼치기':'접기';
 }
+
+// ── There 말씀 그리기 (v. 26-1024-14, HB) ──
+const _tfWd={src:null,word:null,i:0,on:true,mask:0,rect:null,st:{},ot:0};
+function _tfQuiet(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+// 열 때 한 번 — 말씀이 있으면 십자가를 위로 비켜 세우고, 0.7초 뒤 말씀이 위에서 살짝 내려앉으며 떠오른다
+function _tfWordSet(word){
+  _tfWd.src=(word&&word.pages&&word.pages.length)?word:null;
+  _tfWd.i=0;_tfWd.on=true;_tfWd.st={};_tfWd.mask=0;_tfWd.rect=null;
+  _tf.fp=_tfFlickerParams(_tfQuiet());
+  _tfWordApply(true);
+}
+function _tfWordApply(intro){
+  const fx=document.getElementById('thereFx'),box=document.getElementById('tfWord'),mv=document.getElementById('tfWmv');
+  if(!fx||!box||!mv)return;
+  _tfWd.word=(_tfWd.src&&_tfW('wv'))?_tfWd.src:null;
+  fx.classList.toggle('has-word',!!_tfWd.word);
+  clearTimeout(_tfWd.ot);
+  if(!_tfWd.word){box.style.display='none';_tfWd.rect=null;return;}
+  box.style.display='';
+  // 글꼴 · 굵기는 말씀 전체화면에서 고른 것
+  try{
+    const t=_vfTheme();
+    box.style.setProperty('--tfw-font',t.font==='serif'?VF_SERIF:VF_SANS);
+    box.style.setProperty('--tfw-fw',String(t.fw||300));
+    if(t.font==='serif')_vfEnsureFont('serif').then(()=>{if(_tf.run)_tfWordFit();});
+  }catch(e){}
+  mv.style.transition='none';mv.style.transform='';mv.style.opacity=_tfWd.on?'':'0';
+  _tfWordRender();
+  if(!intro||_tfQuiet()){mv.classList.remove('pre');mv.style.transition='';return;}
+  mv.classList.add('pre');void mv.offsetWidth;
+  _tfWd.ot=setTimeout(()=>{
+    mv.style.transition='opacity 1.4s ease,transform 1.6s cubic-bezier(.22,.8,.24,1)';
+    mv.classList.remove('pre');
+    _tfWd.ot=setTimeout(()=>{mv.style.transition='';_tfWordRect();},1700);
+  },700);
+}
+function _tfWordRender(){
+  const w=_tfWd.word;if(!w)return;
+  const p=w.pages[_tfWd.i]||w.pages[0],n=w.pages.length;
+  const ref=document.getElementById('tfWref'),dots=document.getElementById('tfWdots'),tx=document.getElementById('tfWtx');
+  ref.textContent=p.ref||'';ref.style.display=p.ref?'':'none';
+  dots.innerHTML=n>1?w.pages.map((q,j)=>'<i class="'+(j===_tfWd.i?'on':'')+'">'+(q.n!=null?q.n:j+1)+'</i>').join(''):'';
+  dots.style.display=n>1?'':'none';
+  tx.classList.toggle('prop',!!w.prop);
+  tx.setAttribute('data-raw',p.text||'');
+  _tfWordFit();
+}
+// 정해진 높이 안에 들어오는 가장 큰 글자. 말씀은 전체화면처럼 뜻 단위로 줄을 끊고(_vfWrapFit),
+// 명제는 산문이라 흘려 두고 높이만 맞춘다 (전체화면과 같은 갈래)
+function _tfWordFit(){
+  const w=_tfWd.word;if(!w)return;
+  const box=document.getElementById('tfWord'),tx=document.getElementById('tfWtx'),meta=document.getElementById('tfWmeta');
+  const raw=tx.getAttribute('data-raw')||'';
+  const availW=tx.clientWidth,availH=Math.max(60,box.clientHeight-meta.offsetHeight-16);
+  if(availW<40)return;
+  const maxS=Math.round(Math.max(18,Math.min(30,availW/14))*_tfW('ws')),minS=Math.max(11,Math.round(maxS*0.5));
+  if(w.prop){
+    tx.textContent=raw;let sz=maxS;tx.style.fontSize=sz+'px';
+    while(tx.scrollHeight>availH&&sz>minS){sz--;tx.style.fontSize=sz+'px';}
+  }else{
+    const cs=getComputedStyle(tx);
+    _vfCanvas=_vfCanvas||document.createElement('canvas');
+    const ctx=_vfCanvas.getContext('2d'),words=raw.split(/\s+/).filter(Boolean);
+    let pick=null;
+    for(let sz=maxS;sz>=minS;sz--){
+      ctx.font=cs.fontWeight+' '+sz+'px '+cs.fontFamily;
+      const lines=_vfWrapFit(words,ctx,availW);pick={sz,lines};
+      if(!lines.some(l=>ctx.measureText(l).width>availW+0.5)&&lines.length*sz*_VF_LH<=availH)break;
+    }
+    if(!pick)return;
+    tx.style.fontSize=pick.sz+'px';
+    tx.innerHTML=pick.lines.map(l=>'<span class="l">'+esc(l)+'</span>').join('');
+  }
+  _tfWordRect();
+}
+// 글 둘레에서는 입자를 옅게 그린다 — 그 자리 (캔버스 기준)
+function _tfWordRect(){
+  const tx=document.getElementById('tfWtx'),cv=document.getElementById('tfCv');
+  if(!_tfWd.word||!tx||!cv){_tfWd.rect=null;return;}
+  const r=tx.getBoundingClientRect(),f=cv.getBoundingClientRect();
+  _tfWd.rect={x0:r.left-f.left,y0:r.top-f.top,x1:r.right-f.left,y1:r.bottom-f.top};
+}
+// 한 번 누르면 감추고, 다시 누르면 보인다 (입자만 보며 기도하고 싶을 때)
+function _tfWordToggle(){
+  if(!_tfWd.word)return;
+  _tfWd.on=!_tfWd.on;
+  const mv=document.getElementById('tfWmv');if(mv)mv.style.opacity=_tfWd.on?'':'0';
+  showToast(_tfWd.on?'말씀을 다시 띄웠어요':'말씀을 감췄어요\n한 번 더 누르면 다시 보여요');
+}
+// 여러 절 — 나가고(150ms, ease-in) → 그리고 → 들어온다(300ms). 다음 절은 왼쪽으로 나가고 오른쪽에서 들어온다
+function _tfWordGo(dir){
+  const w=_tfWd.word;if(!w)return;
+  const j=_tfWd.i+dir;if(j<0||j>=w.pages.length)return;
+  const mv=document.getElementById('tfWmv'),W=window.innerWidth;
+  if(_tfQuiet()){_tfWd.i=j;_tfWordRender();mv.style.transform='';mv.style.opacity='';return;}
+  mv.style.transition='transform .15s ease-in,opacity .15s ease-in';
+  mv.style.transform='translateX('+(-dir*W*0.5)+'px)';mv.style.opacity='0';
+  setTimeout(()=>{
+    _tfWd.i=j;_tfWordRender();
+    mv.style.transition='none';mv.style.transform='translateX('+(dir*W*0.3)+'px)';void mv.offsetWidth;
+    mv.style.transition='transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s';
+    mv.style.transform='';mv.style.opacity='';
+    setTimeout(_tfWordRect,320);
+  },150);
+}
+function _tfWordMulti(){return !!(_tfWd.word&&_tfWd.on&&_tfWd.word.pages.length>1);}
+// 손가락을 따라간다 — 폭의 1/4, 또는 빠른 튕김 40px 넘게 밀면 넘어가고, 못 미치면 제자리로.
+// 끝 쪽은 고무줄처럼 뻑뻑하게. 왼쪽 가장자리(28px)는 '닫기' 손짓(_initEdgeBack) 몫이라 비켜선다.
+function _tfWordWire(el){
+  let g=null;
+  const mvEl=()=>document.getElementById('tfWmv');
+  el.addEventListener('pointerdown',e=>{
+    g=null;
+    if(!_tf.run||!_tfWd.word||e.target.closest('.tf-tune,.tf-x')||e.clientX<30)return;
+    g={x:e.clientX,y:e.clientY,t:performance.now(),dx:0,drag:false,id:e.pointerId};
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!g||e.pointerId!==g.id)return;
+    const mx=e.clientX-g.x,my=e.clientY-g.y;
+    if(!g.drag&&Math.abs(mx)>8&&Math.abs(mx)>Math.abs(my)&&_tfWordMulti())g.drag=true;
+    if(!g.drag)return;
+    let dx=mx;const last=_tfWd.word.pages.length-1;
+    if((_tfWd.i===0&&dx>0)||(_tfWd.i===last&&dx<0))dx*=0.3;
+    g.dx=dx;
+    const mv=mvEl();mv.style.transition='none';
+    mv.style.transform='translateX('+dx+'px)';mv.style.opacity=String(1-Math.min(.9,Math.abs(dx)/window.innerWidth*1.4));
+  });
+  const end=e=>{
+    if(!g||e.pointerId!==g.id)return;
+    const G=g;g=null;
+    if(!G.drag){
+      if(e.type==='pointerup'&&Math.abs(e.clientX-G.x)<8&&Math.abs(e.clientY-G.y)<8)_tfWordToggle();
+      return;
+    }
+    const dir=G.dx<0?1:-1,j=_tfWd.i+dir,fast=Math.abs(G.dx)>40&&performance.now()-G.t<300;
+    if(j>=0&&j<_tfWd.word.pages.length&&(Math.abs(G.dx)>window.innerWidth/4||fast))_tfWordGo(dir);
+    else{const mv=mvEl();mv.style.transition='transform .25s cubic-bezier(.22,.8,.24,1),opacity .25s';mv.style.transform='';mv.style.opacity='';}
+  };
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+// 세팅 판 '말씀' 묶음
+const _TF_W_SL={ws:v=>'×'+v.toFixed(1),bT:v=>v.toFixed(1)+'초',br:v=>v+'%',bu:v=>v.toFixed(1)+'초',bd:v=>v.toFixed(1)+'초',
+  blo:v=>v+'%',bhi:v=>v+'%',bg:v=>v+'%',cb:v=>v+'%',ca:v=>v+'%',cs:v=>v.toFixed(1)+'배',cg:v=>v?v+'번':'없음',cgl:v=>v+'%'};
+const _TF_GLOW_NAME={white:'흰빛',gold:'금빛',heaven:'보랏빛',candle:'촛불빛'};
+function _tfWordSyncUI(){
+  Object.keys(_TF_W_SL).forEach(k=>{
+    const inp=document.getElementById('tfW_'+k);if(!inp)return;
+    inp.value=_tfW(k);const o=inp.nextElementSibling;if(o)o.textContent=_TF_W_SL[k](+_tfW(k));
+  });
+  ['wv','fb','fc'].forEach(k=>document.getElementById('tfW_'+k)?.classList.toggle('on',_tfW(k)));
+  ['fb','fc'].forEach(k=>document.getElementById('tfWsub_'+k)?.classList.toggle('off',!_tfW(k)));
+  document.querySelectorAll('#tfTune .tf-gc').forEach(box=>{
+    const k=box.dataset.k;
+    if(!box.querySelector('button'))Object.keys(_TF_GLOW).forEach(c=>{
+      const b=document.createElement('button');b.type='button';b.dataset.c=c;
+      b.style.setProperty('--c','rgb('+_TF_GLOW[c]+')');b.setAttribute('aria-label',_TF_GLOW_NAME[c]);b.title=_TF_GLOW_NAME[c];
+      b.onclick=()=>{_tfLoad()[k]=c;_tfStore();_tfWordChanged(false);};
+      box.appendChild(b);
+    });
+    box.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.c===_tfW(k)));
+  });
+}
+function _tfWordChanged(refit){
+  _tf.fp=_tfFlickerParams(_tfQuiet());
+  _tfWordSyncUI();
+  if(refit)_tfWordApply(false);
+}
+function thereWordSw(k){const K=_tfLoad();K[k]=!_tfW(k);_tfStore();_tfWordChanged(k==='wv');}
+function thereWordReset(){const K=_tfLoad();Object.keys(_TF_W_DEF).forEach(k=>delete K[k]);_tfStore();_tfWordChanged(true);}
 
 // ── 테마 입히기 (v26-0923-8, HB) ──
 // HB: "각자 적용되고 있던 테마와 너무 다른 느낌". 라이트 모드를 쓰는 중이어도
@@ -19219,6 +19564,8 @@ function _tfApplyTheme(el){
 function _thereIsOpen(){return !!_tf.run;}
 // ref: 반응 키(말씀=장절, 명제=명제 키). 빈칸이면 특정 말씀 없이 (GNB).
 // opts.preview: 설정창에서 세팅하러 들어온 것 — 기록하지 않고 세팅 판을 띄운다.
+// opts.word: 화면에 띄울 말씀 ({prop,pages:[{ref,text,n?}]} — _thereWordFromVerse · _thereWordFromBible).
+//   없으면 예전처럼 입자와 십자가만. 기록에는 쓰지 않는다 (기록은 ref 하나).
 function openThere(ref,opts){
   opts=opts||{};
   const el=document.getElementById('thereFx');if(!el||_tf.run)return;
@@ -19231,6 +19578,7 @@ function openThere(ref,opts){
   void el.offsetWidth;el.classList.add('on');
   _tfSize();_tf.P=[];_tfBuildSprites();_tfSyncUI();
   _tf.run=true;_tf.t0=_tf.last=performance.now();
+  _tfWordSet(opts.word||null);
   _tf.raf=requestAnimationFrame(_tfFrame);
   if(!_tf.preview)_thereBegin(_tf.ref,_tf.src);
 }
@@ -19250,10 +19598,13 @@ function _thereRecorded(){
 // 말씀 전체화면 우하단 단추
 function openThereFromVf(){
   const v=_vfCurrentVerse();
-  openThere(_reactKey(v),{src:'full'});
+  openThere(_reactKey(v),{src:'full',word:_thereWordFromVerse(v)});
 }
-// 설정창 '세팅하러 가기'
-function openThereTune(){openThere('',{preview:true});}
+// 설정창 '세팅하러 가기' — 말씀 크기 · 일렁임을 맞춰 보게 지금 말씀을 견본으로 띄운다
+function openThereTune(){
+  let v=null;try{v=getVerseByIdx(ST.settings.verseCurrentIdx);}catch(e){}
+  openThere('',{preview:true,word:_thereWordFromVerse(v)||{prop:false,pages:[{ref:'시편 23:1',text:'여호와는 나의 목자시니 내가 부족함이 없으리로다'}]}});
+}
 // 앱을 벗어나거나 화면이 꺼지면 **그 순간이 마침** (HB). 돌아오면 새로 시작한다.
 // ⚠️ 화면은 열어 둔 채 둔다 — 돌아와서 이어 기도할 수 있게. 기록만 끊어 남긴다.
 document.addEventListener('visibilitychange',()=>{
@@ -31973,7 +32324,7 @@ function vcAct(id,kind){
   const cfg=_vcGet(id);const v=_vcCurrent(cfg,id);
   if(!v)return;
   if(kind==='share'){openVfShareFor(v);return;}
-  if(kind==='there'){openThere(_vcReactKeyOf(v),{src:'widget'});return;}
+  if(kind==='there'){openThere(_vcReactKeyOf(v),{src:'widget',word:_thereWordFromVerse(v)});return;}
   if(kind==='like'||kind==='mem')_reactWithToast(kind,_vcReactKeyOf(v));
   else if(kind==='deeper')openDeeperFromRef(v.k||v.ref);
   else if(kind==='even')openEvenDeeperFromRef(v.k||v.ref);
@@ -51723,7 +52074,8 @@ function _swInitGestures(){
     // There — 지금 보이는 칸이 말씀이면 그 말씀으로, 아니면 말씀 없이
     if(e.target.closest('[data-swthere]')){
       const t=_SW_TILES[i],cur=_swStrip(t)[t.p];
-      openThere((cur&&cur.kind==='val'&&cur.v&&cur.v.verse)?_reactKey(cur.v.verse):'',{src:'tile'});
+      const tv=(cur&&cur.kind==='val'&&cur.v&&cur.v.verse)?cur.v.verse:null;
+      openThere(tv?_reactKey(tv):'',{src:'tile',word:_thereWordFromVerse(tv)});
       e.preventDefault();return;
     }
     if(e.target.closest('[data-swkeep]')){
