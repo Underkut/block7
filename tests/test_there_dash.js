@@ -6,6 +6,7 @@
 //  ③ 기도노트 ses 와 합계 s 를 **두 번 세지 않는다** (s 는 ses 를 이미 품고 있다)
 //  ④ 날마다 합계 · 주(월요일부터) · 달 경계
 //  ⑤ 덩어리가 index.html · index-dev.html · sweeter-dev.html · pray/index.html 에 원본과 같은 글자로 있다
+//  ⑧ 전체 화면(아이폰): 시계 줄은 THERE 줄이 덮고 · 고정 영역 바탕은 양옆 여백까지 · 열린 동안 페이지 바탕/theme-color 는 대시보드 색, 닫으면 되돌림
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
 const sc = makeScorer();
@@ -85,5 +86,30 @@ const T = ctx.T;
   sc.eq('⭐⑦ 처음 본 차례 · 이름 · 그룹 · 아멘', fc.map(x => [x.time, x.n, x.k, x.d, x.amen]), [['06:30', '가나', '가족', 40, true], ['06:30', '다라', '가족', 10, false]]);
   sc.eq('⭐⑦ 합계는 한 장 기도 시간 그대로', T.collect({}, pray).reduce((a, x) => a + x.d, 0), 120);
   sc.eq('⑦ 기간 밖 · fc 없는 날은 빈 목록', [T.focusPrayers(pray, '2026-10-20', '2026-10-21').length, T.focusPrayers({ '2026-10-01': { s: 3 } }).length], [0, 0]);
+}
+// ⑧ 전체 화면 — 아이폰 홈 화면 앱 사진 (HB 2026-10-25): 맨 위 구멍 · 큰 숫자 옆 '(' · 아래 띠 색
+{
+  const rule = sel => { const m = SRC.match(new RegExp('\\n' + sel.replace(/[.]/g, '\\.') + '\\{([^}]*)\\}')); return m ? m[1] : ''; };
+  const ov = rule('.tdash-ov'), top = rule('.tdash-top'), stick = rule('.tdash-stick'), inn = rule('.tdash-in');
+  sc.eq('⭐⑧ 덮개는 위를 비우지 않는다 (스크롤 여백은 내용과 함께 밀려 시계 줄 뒤로 달력이 비쳤다)', /safe-area-inset-top/.test(ov), false);
+  sc.eq('⭐⑧ 시계 줄은 THERE 줄이 제 바탕으로 덮는다', /padding:calc\(10px \+ env\(safe-area-inset-top/.test(top) && /background:var\(--bg\)/.test(top), true);
+  const pad = (inn.match(/padding:\S+ (\d+)px/) || [])[1];
+  sc.eq('⭐⑧ 고정 영역 바탕은 양옆 여백까지 (안 칠하면 오늘 칸 테두리가 \'(\' 로 비쳤다)', [(stick.match(/margin:0 -(\d+)px/) || [])[1], (stick.match(/padding:0 (\d+)px/) || [])[1]], [pad, pad]);
+  sc.eq('⑧ 열린 동안 html · body 바탕 = 대시보드 색 (!important — 앱의 body 바탕을 이긴다)', /html\.tdash-on,html\.tdash-on body\{background:#0d0e10 !important\}/.test(SRC), true);
+  // pageTint 를 떼어 가짜 문서에서 돌린다
+  const m = SRC.match(/  const TINT = [\s\S]*?\n  function pageTint\(on\) \{[\s\S]*?\n  \}\n/);
+  const cls = new Set(), meta = { c: '#012f47', getAttribute() { return this.c; }, setAttribute(k, v) { this.c = v; } };
+  let obs = null;
+  const tc = { document: { documentElement: { classList: { toggle: (k, on) => on ? cls.add(k) : cls.delete(k) } }, querySelector: q => /theme-color/.test(q) ? meta : null },
+    window: { MutationObserver: function (fn) { obs = { fn: fn, on: false }; this.observe = () => { obs.on = true; }; this.disconnect = () => { obs.on = false; }; } } };
+  vm.createContext(tc);
+  vm.runInContext((m ? m[0] : '') + '\nthis.pageTint = pageTint;', tc);
+  tc.pageTint(true);
+  sc.eq('⭐⑧ 열면 html.tdash-on · theme-color 대시보드 색', [cls.has('tdash-on'), meta.c], [true, '#0d0e10']);
+  meta.c = '#123456'; if (obs && obs.on) obs.fn();   // 열린 사이 앱이 띠 색을 다시 맞춤(돌리기 등)
+  sc.eq('⑧ 열린 사이 앱이 theme-color 를 고쳐도 다시 덮는다', meta.c, '#0d0e10');
+  tc.pageTint(true); tc.pageTint(false);              // 열린 채 다시 열기(open 은 close(true) 먼저) → 닫기
+  sc.eq('⭐⑧ 닫으면 앱이 마지막에 둔 색으로 되돌린다 · 감시도 멈춤', [cls.has('tdash-on'), meta.c, !!(obs && obs.on)], [false, '#123456', false]);
+  sc.eq('⑧ open 은 칠하고 close 는 되돌린다', [/fit\(\); window\.addEventListener\('resize', fit\); ov\._fit = fit;\n    pageTint\(true\);/.test(SRC), /removeEventListener\('resize', ov\._fit\);\n    pageTint\(false\);/.test(SRC)], [true, true]);
 }
 sc.done();

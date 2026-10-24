@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-20  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-20";
+const APP_VERSION = "v. 26-1025-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -53145,7 +53145,9 @@ const TDASH = (function () {
 .tdash-pane{display:flex;flex-direction:column;gap:22px}
 .tdash-rest:empty{display:none}
 /* 탭 · 날짜 · 요약은 세로로 밀어도 올라가지 않는다 (HB 2026-10-15) — 전체 화면은 위 THERE 줄 높이(--tdtop)만큼 아래에 붙는다 */
-.tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;padding-bottom:12px}
+/* 바탕은 양옆 여백(20px)까지 칠한다 (HB 2026-10-25 아이폰 사진 '(' 자국) — 안 칠하면 달력 맨 왼쪽 칸의 오늘 테두리(칸 밖 3.5px)가
+   밀려 올라가며 그 여백으로 비쳐, 큰 숫자 왼쪽에 '(' 처럼 남았다 */
+.tdash-stick{position:sticky;top:var(--tdtop,0px);z-index:1;background:var(--bg);display:flex;flex-direction:column;gap:22px;margin:0 -20px;padding:0 20px 12px}
 .tdash-stick::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(var(--bg),rgba(13,14,16,0));pointer-events:none}
 .tdash-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.97);width:max-content;max-width:min(86vw,440px);padding:24px 34px;border-radius:18px;
   /* 기도 쪽이라 명조로 격식 있게, 상자는 살짝 비치는 유리 (HB 2026-10-15) */
@@ -53220,9 +53222,17 @@ const TDASH = (function () {
 .tdash-note{font-size:11.5px;color:#6c6962;line-height:1.6}
 .tdash-empty{padding:28px 0;text-align:center;color:var(--tx3);font-size:13.5px}
 .tdash-ov{position:fixed;inset:0;z-index:99990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s}
+  padding:0 0 env(safe-area-inset-bottom,0px);opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s}
 .tdash-ov.in{opacity:1;transform:none}
-.tdash-top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:10px 10px 6px 20px}
+/* 위 시계 줄(안전 영역)은 THERE 줄이 제 바탕으로 덮는다 (HB 2026-10-25 아이폰 '맨 위 구멍').
+   ⚠️ 예전엔 안전 영역을 .tdash-ov 의 padding-top 으로 비웠다 — 스크롤 상자의 여백은 내용과 함께 밀려 올라가는 자리라
+      아래로 밀면 달력이 시계 줄 뒤로 비쳤고, 아이폰 사파리는 sticky top:0 을 그 여백 아래(47pt)에 붙여 틈이 그대로 남았다. */
+.tdash-top{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 10px 6px 20px}
+/* 열려 있는 동안 페이지 바탕도 대시보드 색으로 (HB 2026-10-25 '하단에 색 다른 것') — 아이폰 홈 화면 앱(iOS 26)은 웹 화면 아래에
+   iOS 몫 띠가 붙고, 그 띠는 **페이지 바탕색**(html 위에 body 를 겹친 색)으로 칠해지는 것으로 본다 — 기도노트 '아래 띠 4차' 에서
+   body 를 메뉴색으로 바꾸자 띠가 따라왔다. 화면을 다 덮은 대시보드는 띠에 안 닿는다 →
+   기도노트는 body 를 아래 메뉴색으로 칠해 두어(.iosgap) 대시보드 아래로 남청색 띠가 보였다. BLOCK7 의 html.vf-open 과 같은 길 */
+html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
 .tdash-logo{display:flex;align-items:baseline;gap:10px}
 .tdash-logo b{font-family:'Cormorant Garamond',Georgia,'Times New Roman',serif;font-weight:500;font-size:28px;letter-spacing:.16em}
 .tdash-logo span{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;color:var(--tx3)}
@@ -53540,6 +53550,24 @@ const TDASH = (function () {
     }
     return { redraw: draw, state: S };
   }
+  // 열려 있는 동안 페이지 바탕 · theme-color 를 대시보드 색으로 (아이폰 홈 화면 앱 아래 띠 · 안드로이드 상태 표시줄). 닫으면 되돌린다.
+  //   앱이 그사이 theme-color 를 고치면(돌려서 띠 색을 다시 맞추는 기도노트 syncCanvasColor 등) 그 값을 되돌릴 값으로 받고 다시 덮는다.
+  const TINT = { m: null, was: null, mo: null };
+  function pageTint(on) {
+    try {
+      document.documentElement.classList.toggle('tdash-on', on);
+      if (TINT.mo) { TINT.mo.disconnect(); TINT.mo = null; }
+      if (TINT.m) { TINT.m.setAttribute('content', TINT.was); TINT.m = null; }
+      const m = on && document.querySelector('meta[name="theme-color"]'); if (!m) return;
+      const BG = '#0d0e10';
+      TINT.m = m; TINT.was = m.getAttribute('content'); m.setAttribute('content', BG);
+      const MO = window.MutationObserver;
+      if (MO) {
+        TINT.mo = new MO(() => { const c = m.getAttribute('content'); if (c !== BG) { TINT.was = c; m.setAttribute('content', BG); } });
+        TINT.mo.observe(m, { attributes: true, attributeFilter: ['content'] });
+      }
+    } catch (e) { /* 띠 색만 못 맞춤 */ }
+  }
   // 전체 화면으로 연다 — 우상단 × 하나 (UI 원칙). esc:false 면 Esc 는 앱의 닫기 표가 맡는다
   const VNAME = { day: 'Today', week: 'Week', month: 'Month' };
   let OV = null;
@@ -53552,7 +53580,10 @@ const TDASH = (function () {
     ov.innerHTML = '<div class="tdash-top"><div class="tdash-logo"><b>THERE</b><span data-tdsub></span></div>' +
       '<button class="tdash-x" data-tdx="1" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button></div><div class="tdash-body"></div>';
     document.body.appendChild(ov);
-    ov.style.setProperty('--tdtop', ov.querySelector('.tdash-top').offsetHeight + 'px');   // 고정 영역이 붙는 높이
+    // 고정 영역이 붙는 높이 = THERE 줄(시계 줄 포함). 돌리면 시계 줄 높이가 바뀌므로 다시 잰다
+    const fit = () => ov.style.setProperty('--tdtop', ov.querySelector('.tdash-top').offsetHeight + 'px');
+    fit(); window.addEventListener('resize', fit); ov._fit = fit;
+    pageTint(true);
     ov.querySelector('[data-tdx]').onclick = e => { e.stopPropagation(); close(); };
     const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
     // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
@@ -53579,6 +53610,8 @@ const TDASH = (function () {
   function close(now) {
     const ov = OV; if (!ov) return; OV = null;
     document.removeEventListener('keydown', ov._key, true);
+    window.removeEventListener('resize', ov._fit);
+    pageTint(false);
     if (ov._onClose) try { ov._onClose(); } catch (e) {}
     if (now) { ov.remove(); return; }
     ov.classList.remove('in'); setTimeout(() => ov.remove(), 240);
