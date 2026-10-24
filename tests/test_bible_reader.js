@@ -345,9 +345,9 @@ console.log('\n시나리오 13-10 — v26-1007-10 (HB) 직접 기간 · 큰 하�
   const A = _brDashStats(log, {}, {}, now, 'all');
   sc.eq('직접 기간은 고른 날만 센다', JSON.stringify(C) !== JSON.stringify(A), true);
   sc.eq('좋아요·암송은 큰 토스트로', /_reactWithToast\('like',ref\)/.test(SRC) && /_reactWithToast\('mem',ref\)/.test(SRC), true);
-  sc.eq('롱터치 메뉴 There 는 그 절로 연다 (· src bible-menu, v26-1012-1)', /act==='there'[^]{0,80}openThere\(ref,\{src:'bible-menu'\}\)/.test(SRC), true);
+  sc.eq('롱터치 메뉴 There 는 그 절로 연다 (· src bible-menu, v26-1012-1 · 화면에 그 절, v26-1024-14)', /act==='there'[^]{0,80}openThere\(ref,\{src:'bible-menu',word:_thereWordFromBible\(/.test(SRC), true);
   sc.eq('절은 두 번 톡 쳐도 확대되지 않는다 · 가로 끌기는 긋기 몫 (pan-y, v26-1008-1)', /#bibleRd \.br-v\{[^}]*touch-action:pan-y;/.test(SRC), true);
-  sc.eq('우상단 There 는 화면에 보이는 장절로 (v26-1007-11 · src bible, v26-1012-1)', /\$\('brThere'\)\.onclick=\(\)=>\{if\(typeof openThere==='function'\)openThere\(_brViewRef\(\),\{src:'bible'\}\);\}/.test(SRC), true);
+  sc.eq('우상단 There 는 화면에 보이는 장절로 (v26-1007-11 · src bible, v26-1012-1 · 화면에 그 절들, v26-1024-14)', /\$\('brThere'\)\.onclick=\(\)=>\{[^]{0,200}openThere\(_brViewRef\(\),\{src:'bible',word:_thereWordFromBible\(/.test(SRC), true);
   sc.eq('본문 파일이 바뀌었으니 기기 저장본을 새로 받는다 (대상 2:24)', /BIBLE_DATA_REV='krv-2'/.test(SRC), true);
 }
 
