@@ -11,6 +11,7 @@
 //  ⑮ 오늘의 숙제: 그날 바로 · 제출 전날 · 끝낸 것은 다음 날 안 보임 · 못 끝낸 것은 남음 · 내가 만든 과목이 저장을 지나도 남음
 //  ⑯ 숙제를 끝내면 기록이 생겨 부모님 확인 · 별로 이어진다 · 지우면 되돌린다 · '다시 해 볼까?' 면 다시 할 것으로 · 고르는 칸은 처음 한 번
 //  ⑰ 캐릭터 그림 스타일 A~E — 처음엔 A · 햄스터는 따로 그린다
+//  ⑱ 소리 단계 · 배경음악 폴더 · 스크롤 · 넘기기 · 리액션 · 고양이 · 여우
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -277,5 +278,16 @@ function mk(o) {
   sc.eq('⑰ 고른 스타일은 남고 모르는 값은 A', [A.normState({art: 'D'}).art, A.normState({art: 'Z'}).art], ['D', 'A']);
   sc.eq('⑰ 설정에 동물 · 그림 스타일 고르기', /data-art="\$\{x\[0\]\}"/.test(HTML) && /data-k="\$\{k\[0\]\}"/.test(HTML), true);
   sc.eq('⑰ 햄스터는 곰돌이와 다른 뼈대(볼 · 앞니 · 씨앗)', /hamster: \{ear: 'ham'[^}]*ham: 1\}/.test(HTML) && /const teeth = P\.ham/.test(HTML) && /const seed = P\.ham/.test(HTML), true);
+}
+// ── ⑱ 손맛 · 소리 · 리액션 · 동물 다듬기 (샤론 1024 ④) ──
+{
+  sc.eq('⑱ 소리 0~5단계 — 옛 효과음 켜짐은 4, 꺼짐은 0 · 배경음악 기본 2', [A.blankState().sfxVol, A.normState({}).sfxVol, A.normState({sfx: false}).sfxVol, A.normState({}).bgmVol, A.normState({sfxVol: 1, bgmVol: 0}).bgmVol], [4, 4, 0, 2, 0]);
+  sc.eq('⑱ 이상한 소리 값은 기본으로', [A.normState({sfxVol: 9}).sfxVol, A.normState({bgmVol: -1}).bgmVol, A.normState({bgmSel: 'x'}).bgmSel], [4, 2, null]);
+  sc.eq('⑱ 배경음악은 용돈 친구들 폴더를 함께 쓴다', HTML.includes("BGM_DIR = '../wallet/bgm/'") && HTML.includes('contents/wallet/bgm?ref=main'), true);
+  sc.eq('⑱ <audio> 로 틀지 않는다 (잠금화면 칸)', /new Audio\(|createElement\('audio'\)|<audio\s/.test(HTML), false);
+  sc.eq('⑱ 스크롤 튕김을 막지 않는다', /html,body\{[^}]*overscroll-behavior:none/.test(HTML), false);
+  sc.eq('⑱ 넘기기는 손가락을 따라간다 · 창은 끌어 내려 닫는다', /function swipeMain\(\)/.test(HTML) && /function pullToClose\(\)/.test(HTML) && /moved > m\.clientWidth \/ 4 \|\| fast/.test(HTML), true);
+  sc.eq('⑱ 움직임 줄이기면 끈다', /prefers-reduced-motion: reduce/.test(HTML) && /if \(quiet\(\) \|\| !m\.animate\)/.test(HTML), true);
+  sc.eq('⑱ 고양이(꼬리 · 줄무늬 · 수염) · 여우(꼬리 · 귀 끝 · 볼털 가면)', /cat: \{[^}]*cat: 1\}/.test(HTML) && /fox: \{[^}]*fox: 1\}/.test(HTML) && /if \(P\.cat\) add\('tail'\)/.test(HTML) && /if \(P\.fox\) add\('path', 'd="M36 102/.test(HTML), true);
 }
 sc.done();
