@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1024-6 -->
+<!-- 공부 친구들 v. 26-1024-7 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -259,7 +259,7 @@ svg.bd.hop{animation:bdHop .6s cubic-bezier(.3,1.4,.5,1)!important}
 .top{padding-top:calc(22px + env(safe-area-inset-top));padding-bottom:4px;align-items:flex-end}
 .hi small{display:block;font-size:14px;color:var(--sub)}
 .hi b{font-family:Jua;font-weight:normal;font-size:28px;line-height:1.2}
-.hi .bk{border:none;background:none;font-family:Jua;font-size:17px;color:var(--sub);padding:6px 0;display:flex;align-items:center;gap:2px}
+.hi .backb{border:none;background:none;font-family:Jua;font-size:17px;color:var(--sub);padding:6px 0;display:flex;align-items:center;gap:2px}
 .starchip{display:flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:7px 14px;box-shadow:0 2px 0 var(--line);font-family:Jua;font-size:19px}
 .say2{display:flex;align-items:center;gap:12px;background:#fff;border-radius:24px;padding:10px 16px 10px 10px;box-shadow:0 3px 0 var(--line);margin-top:10px}
 .say2 .me{width:62px;flex:none}
@@ -793,7 +793,7 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1024-6';
+const APP_VERSION = 'v. 26-1024-7';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -820,7 +820,7 @@ const ICO = {
  * 고양이: 위로 말려 올라간 꼬리 · 이마 줄무늬 · 수염 · 볼 방울(입 양쪽 흰 동그라미). 여우: 끝이 흰 복슬 꼬리 · 검은 귀 끝 · 뾰족한 흰 볼털 가면 (샤론 1024 ④). */
 const ART_STYLES = [['A', '플랫'], ['B', '연필'], ['C', '스티커'], ['D', '클레이'], ['E', '피규어']];
 const ART_PAL = {
-  rabbit: {ear: 'long', fur: '#FFF9F5', inner: '#FFFFFF', earC: '#FFF9F5', earIn: '#FFC3CF', limb: '#FFF9F5', nose: '#F08BA0', eye: '#2B2433', m: 'w', bun: 1},
+  rabbit: {ear: 'long', fur: '#FFFFFF', inner: '#FFFFFF', earC: '#FFFFFF', earIn: '#FFC3CF', limb: '#FFFFFF', nose: '#F08BA0', eye: '#2B2433', m: 'w', bun: 1},
   cat: {ear: 'tri', fur: '#F6C38F', inner: '#FFF4E6', earC: '#F6C38F', earIn: '#F6A7B2', limb: '#F6C38F', nose: '#EC8A98', eye: '#2B2433', m: 'w', cat: 1},
   hamster: {ear: 'ham', fur: '#F2B35E', inner: '#FFFDF8', earC: '#F2B35E', earIn: '#FFB3C0', limb: '#FFC2CB', nose: '#F28499', eye: '#2B2433', m: 'w', ham: 1},
   dog: {ear: 'flop', fur: '#F3E2CD', inner: '#FFFAF3', earC: '#A87656', earIn: '#A87656', limb: '#F3E2CD', nose: '#3D3029', eye: '#2B2433', m: 's', muz: 1, pup: 1},
@@ -889,9 +889,11 @@ function artSvg(kind, stage, style, o) {
   add('sheen');
   const shape = (p, extra) => `<${p[0]} ${p[1]}${extra || ''}/>`;
   const TAIL = 'M132 170 C160 177 175 155 167 131 C163 119 169 108 178 111', DTAIL = 'M134 172 C150 170 160 160 156 145';
-  const RARM = {R: 'M124 150 L167 110', L: 'M76 150 L33 110'};   // 어깨 → 손 (어깨 쪽은 몸 · 머리 뒤에 숨는다)
-  const limbTube = d => (Y === 'B' ? `<path d="${d}" fill="none" stroke="#4A3A31" stroke-width="26.2" stroke-linecap="round"/>` : '')
-    + `<path d="${d}" fill="none" stroke="${fill('limb')}" stroke-width="21" stroke-linecap="round"/>`;
+  // 들어 올린 팔 = 짧은 팔 + 둥근 손. 어깨 쪽은 몸 · 머리 뒤에 숨는다 (길게 뻗으면 몽둥이 같았다 — 샤론 1024 ⑦)
+  const RARM = {R: ['M128 150 L157 128', 161, 124], L: ['M72 150 L43 128', 39, 124]};
+  const limbTube = ([d, hx, hy]) => (Y === 'B' ? `<path d="${d}" fill="none" stroke="#4A3A31" stroke-width="23.2" stroke-linecap="round"/>` : '')
+    + `<path d="${d}" fill="none" stroke="${fill('limb')}" stroke-width="18" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="12.5" fill="${fill('limb')}"${LNB}/>`
+    + `<ellipse cx="${hx}" cy="${hy + 1}" rx="5" ry="4" fill="${P.ham || P.patch || P.bun ? '#FFB3C0' : col('inner')}" opacity=".9"/>`;
   const tube = (d, w, stripes) => (Y === 'B' ? `<path d="${d}" fill="none" stroke="#4A3A31" stroke-width="${w + 5.2}" stroke-linecap="round"/>` : '')
     + `<path d="${d}" fill="none" stroke="${fill('fur')}" stroke-width="${w}" stroke-linecap="round"/>` + (stripes || '');
   const draw = p => p[0] === 'rarm' ? limbTube(RARM[p[1]])
@@ -903,17 +905,20 @@ function artSvg(kind, stage, style, o) {
       : Y === 'E' ? `<ellipse cx="74" cy="62" rx="18" ry="8" transform="rotate(-24 74 62)" fill="#fff" opacity=".8" filter="url(#${u}b1)"/><circle cx="98" cy="50" r="3.2" fill="#fff" opacity=".75"/>`
       : Y === 'C' ? '<path d="M60 78 Q66 58 88 50" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".55"/>' : '')
     : shape(p, ` fill="${fill(p[2])}"${Y === 'B' && p[3].includes('l') ? LN : ''}`);
-  const outline = p => p[0] === 'rarm' ? `<path d="${RARM[p[1]]}" fill="none" stroke-width="36" stroke-linecap="round"/>` : p[0] === 'tail' ? `<path d="${TAIL}" fill="none" stroke-width="28" stroke-linecap="round"/>` : p[0] === 'dtail' ? `<path d="${DTAIL}" fill="none" stroke-width="25" stroke-linecap="round"/>` : p[3].includes('s') ? shape(p) : '';
-  const SILG = `fill="#fff" stroke="#fff" stroke-width="15" stroke-linejoin="round" filter="url(#${u}sh)"`;
+  // 바깥 테두리 — 스티커(C)는 흰 테두리, 털이 흰 동물(토끼 · 판다)은 A · D · E 에서 옅은 테두리(크림 바탕에 묻히지 않게, 샤론 1024 ⑦)
+  const RIM = Y !== 'C' && Y !== 'B' && P.fur === '#FFFFFF', PAD = Y === 'C' ? 15 : 5;
+  const outline = p => p[0] === 'rarm' ? `<path d="${RARM[p[1]][0]}" fill="none" stroke-width="${18 + PAD}" stroke-linecap="round"/><circle cx="${RARM[p[1]][1]}" cy="${RARM[p[1]][2]}" r="12.5"/>`
+    : p[0] === 'tail' ? `<path d="${TAIL}" fill="none" stroke-width="${13 + PAD}" stroke-linecap="round"/>` : p[0] === 'dtail' ? `<path d="${DTAIL}" fill="none" stroke-width="${10 + PAD}" stroke-linecap="round"/>` : p[3].includes('s') ? shape(p) : '';
+  const SILG = Y === 'C' ? `fill="#fff" stroke="#fff" stroke-width="15" stroke-linejoin="round" filter="url(#${u}sh)"` : `fill="#E6D9CB" stroke="#E6D9CB" stroke-width="5" stroke-linejoin="round"`, EDGE = Y === 'C' || RIM;
   // 같은 묶음(g)끼리 이어 그린다
   let body = '';
   for (let i = 0; i < parts.length;) {
     const g = parts[i][4]; let j = i; while (j < parts.length && parts[j][4] === g) j++;
     const run = parts.slice(i, j), inner = run.map(draw).join('');
-    body += g ? `<g class="bd-${g}">${Y === 'C' ? `<g ${SILG}>${run.map(outline).join('')}</g>` : ''}${inner}</g>` : inner;
+    body += g ? `<g class="bd-${g}">${EDGE ? `<g ${SILG}>${run.map(outline).join('')}</g>` : ''}${inner}</g>` : inner;
     i = j;
   }
-  const sil = Y === 'C' ? `<g ${SILG}>${parts.filter(p => !p[4]).map(outline).join('')}</g>` : '';
+  const sil = EDGE ? `<g ${SILG}>${parts.filter(p => !p[4]).map(outline).join('')}</g>` : '';
   const ground = peek ? '' : Y === 'A' ? '<ellipse cx="100" cy="190" rx="46" ry="6" fill="#2A2540" opacity=".08"/>'
     : Y === 'B' ? '<path d="M58 191 Q78 187 100 190 Q122 193 142 189" fill="none" stroke="#4A3A31" stroke-width="2" stroke-linecap="round" opacity=".35"/>'
     : Y === 'D' ? `<ellipse cx="100" cy="189" rx="48" ry="8" fill="#3A2A2A" opacity=".18" filter="url(#${u}b5)"/>`
@@ -1229,7 +1234,7 @@ const muteBtn = () => `<button class="ib mute${S.mute ? ' off' : ''}" data-top="
 function header() {
   const d = new Date(), top = $('top');
   if (TAB === 'reward') top.innerHTML = `<div class="hi"><b>내 별</b></div><span style="display:flex;align-items:center;gap:2px">${muteBtn()}<button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button></span>`;
-  else if (TAB === 'plan') top.innerHTML = `<div class="hi"><button class="bk" data-top="back" aria-label="내 별로 돌아가기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>내 별</button><b>계획</b></div><span class="hbd">${myBuddy('read')}</span>`;
+  else if (TAB === 'plan') top.innerHTML = `<div class="hi"><button class="backb" data-top="back" aria-label="내 별로 돌아가기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>내 별</button><b>계획</b></div><span class="hbd">${myBuddy('read')}</span>`;
   else top.innerHTML = `<div class="hi"><small>${d.getMonth() + 1}월 ${d.getDate()}일 ${DOW[d.getDay()]}요일</small><b>${esc(callName())}, 안녕!</b></div><span style="display:flex;align-items:center;gap:2px"><span class="starchip" aria-label="별 ${starsOf(S)}개">${STAR(22, '#FFC845', '#E0A400')}<span class="n">${nf(STAR_SHOWN !== null && STAR_SHOWN < starsOf(S) ? STAR_SHOWN : starsOf(S))}</span></span>${muteBtn()}<button class="ib" data-top="gear" aria-label="설정">${ICO.gear}</button></span>`;
 }
 $('top').addEventListener('click', e => { const b = e.target.closest('[data-top]'); if (!b) return;
@@ -2369,21 +2374,25 @@ function planStep(dir) { planShift(dir); renderPlan(); }
 const renderBody = () => TAB === 'plan' ? renderPlan() : TAB === 'reward' ? renderReward() : renderToday();
 // 다음 판을 옆에 미리 그린다 — #main 이름을 잠깐 빌려 그 판의 그리기 함수를 그대로 쓰고, 상태는 되돌려 놓는다.
 // 맨 위로 올렸을 때 #main 이 놓일 자리에 둔다 → 넘어간 뒤 맨 위로 올리면 같은 그림이 같은 자리에 있어 이음매가 없다
+// ⚠️ 머리줄(#top)까지 한 판에 그린다 — 탭마다 머리줄 높이가 달라서, #main 만 넘기면 넘긴 뒤 내용이 위아래로 덜컥였다 (샤론 1024 ⑦)
 function nextPanel(go, dir) {
-  const m = $('main'), r = m.getBoundingClientRect(), keep = {TAB, WEEK0, MONTH0};
-  const nx = document.createElement('div'); nx.className = 'wrap nextpanel'; nx.setAttribute('aria-hidden', 'true');
-  nx.style.cssText = `left:${r.left}px;width:${r.width}px;top:${r.top + window.scrollY}px;transform:translateX(${dir * r.width}px)`;
-  document.body.appendChild(nx);                       // 먼저 붙여야 $('main') 이 이 판을 찾는다
-  m.id = 'main-cur'; nx.id = 'main';
-  try { go(); renderBody(); } catch (e) { nx.remove(); return null; } finally { TAB = keep.TAB; WEEK0 = keep.WEEK0; MONTH0 = keep.MONTH0; nx.id = ''; m.id = 'main'; }
+  const tp = $('top'), m = $('main'), r = tp.getBoundingClientRect(), keep = {TAB, WEEK0, MONTH0};
+  const nx = document.createElement('div'); nx.className = 'nextpanel'; nx.setAttribute('aria-hidden', 'true');
+  nx.style.cssText = `left:0;width:100%;top:${r.top + window.scrollY}px;transform:translateX(${dir * innerWidth}px)`;
+  nx.innerHTML = '<div class="top"></div><main class="wrap"></main>';
+  document.body.appendChild(nx);                       // 먼저 붙여야 $('top') · $('main') 이 이 판을 찾는다
+  const [t2, m2] = nx.children; tp.id = 'top-cur'; m.id = 'main-cur'; t2.id = 'top'; m2.id = 'main';
+  try { go(); header(); renderBody(); } catch (e) { nx.remove(); return null; }
+  finally { TAB = keep.TAB; WEEK0 = keep.WEEK0; MONTH0 = keep.MONTH0; t2.id = m2.id = ''; tp.id = 'top'; m.id = 'main'; }
   return nx;
 }
+const slideCur = v => { $('top').style.transform = $('main').style.transform = v; };
 // 손가락으로 넘기기 — 두 판이 붙어서 함께 움직이고(옅어지지 않는다), 놓으면 손가락 방향 그대로 끝까지 간다.
 // ⚠️ 예전엔 놓는 순간 '-30% 로 나가기' 를 따로 틀어서, 이미 그보다 멀리 끈 판이 가운데로 되돌아갔다가 사라졌다(샤론 1024 ⑥ '튕김').
 // 놓을 때는 언제나 '지금 자리 → 끝' 으로만 움직인다. 제자리로 돌아오는 건 덜 밀었을 때뿐.
 (function swipeMain() {
-  const m = $('main'), area = document; let d = null;
-  const clear = () => { if (d && d.nx) d.nx.remove(); m.style.transform = ''; };
+  const area = document, cur = () => [$('top'), $('main')]; let d = null;     // 머리줄 + 본문이 한 판
+  const clear = () => { if (d && d.nx) d.nx.remove(); slideCur(''); };
   area.addEventListener('touchstart', e => {
     if (e.touches.length !== 1 || FULLS.length || mxBusy || e.target.closest('input,textarea,select,.trks,.nav,.full,.hwnote,[data-noswipe]')) { d = null; return; }
     const t = e.touches[0]; d = {x: t.clientX, y: t.clientY, t: Date.now(), on: false, dx: 0, dir: 0, go: null, nx: null};
@@ -2393,28 +2402,28 @@ function nextPanel(go, dir) {
     const t = e.touches[0], dx = t.clientX - d.x, dy = t.clientY - d.y;
     if (!d.on) { if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return; if (Math.abs(dy) >= Math.abs(dx)) { d = null; return; } d.on = true; d.x = t.clientX; d.t = Date.now(); }
     e.preventDefault();
-    const x = t.clientX - d.x, dir = x < 0 ? 1 : -1, W = m.clientWidth;
+    const x = t.clientX - d.x, dir = x < 0 ? 1 : -1, W = innerWidth;
     if (dir !== d.dir) { if (d.nx) d.nx.remove(); d.dir = dir; d.go = swipeTarget(dir); d.nx = d.go && !quiet() ? nextPanel(d.go, dir) : null; }
     const v = d.go ? x : x / 4;                                                  // 갈 데 없으면 고무줄
-    d.dx = x; m.style.transform = `translateX(${v}px)`;
+    d.dx = x; slideCur(`translateX(${v}px)`);
     if (d.nx) d.nx.style.transform = `translateX(${v + dir * W}px)`;
   }, {passive: false});
   const end = () => {
     if (!d || !d.on) { d = null; return; }
-    const W = m.clientWidth, moved = Math.abs(d.dx), dir = d.dir, go = d.go, nx = d.nx, x = d.go ? d.dx : d.dx / 4;
+    const W = innerWidth, moved = Math.abs(d.dx), dir = d.dir, go = d.go, nx = d.nx, x = d.go ? d.dx : d.dx / 4;
     const fast = Date.now() - d.t < 300 && moved > 40; d = null;
     if (go && (moved > W / 4 || fast)) {
       buzz(6); mxBusy = true;
-      const finish = () => { m.getAnimations().forEach(a => a.cancel()); if (nx) nx.remove(); m.style.transform = '';
+      const finish = () => { cur().forEach(el => el.getAnimations().forEach(a => a.cancel())); if (nx) nx.remove(); slideCur('');
         go(); ENTER = false; render(); window.scrollTo(0, 0); mxBusy = false; };
       if (quiet() || !nx) { finish(); return; }
       const dur = Math.max(150, Math.min(320, (W - moved) / W * 420));
-      m.animate([{transform: `translateX(${x}px)`}, {transform: `translateX(${-dir * W}px)`}], {duration: dur, easing: EASE_OUT, fill: 'forwards'});
+      cur().forEach(el => el.animate([{transform: `translateX(${x}px)`}, {transform: `translateX(${-dir * W}px)`}], {duration: dur, easing: EASE_OUT, fill: 'forwards'}));
       nx.animate([{transform: `translateX(${x + dir * W}px)`}, {transform: 'translateX(0)'}], {duration: dur, easing: EASE_OUT, fill: 'forwards'}).onfinish = finish;
       return;
     }
     // 덜 밀었다 — 제자리로
-    m.animate([{transform: `translateX(${x}px)`}, {transform: 'none'}], {duration: 240, easing: EASE_OUT}); m.style.transform = '';
+    cur().forEach(el => el.animate([{transform: `translateX(${x}px)`}, {transform: 'none'}], {duration: 240, easing: EASE_OUT})); slideCur('');
     if (nx) { const a = nx.animate([{transform: `translateX(${x + dir * W}px)`}, {transform: `translateX(${dir * W}px)`}], {duration: 240, easing: EASE_OUT, fill: 'forwards'}); a.onfinish = () => nx.remove(); }
   };
   area.addEventListener('touchend', end); area.addEventListener('touchcancel', () => { clear(); d = null; });
