@@ -19,35 +19,23 @@ console.log('시나리오 1 — .lv1 수정자 CSS');
         SRC.includes('.settings-row-label{font-size:13px;font-weight:500;color:var(--tx2);}'), true);
 }
 
-console.log('\n시나리오 2 — 지정된 11곳에만 .lv1 이 붙었다');
+console.log('\n시나리오 2 — 일반 설정창은 묶음 제목이 1뎁스를 맡는다 (v26-1024-15, HB 설정창 정리)');
 {
-  const targets = ['연락처','하루 할일 보고','시간 구간 할일 보고','알림에 스몰 블럭 포함','알림 테스트',
-                    '글자 크기','색상 테마','밝기','요일 표기','이월 횟수 표시','레이아웃 분할 기준'];
-  targets.forEach(t=>{
-    sc.eq(`'${t}' 에 lv1 이 붙었다`,
-          SRC.includes(`<div class="settings-row-label lv1">${t}</div>`), true);
-  });
+  // 예전엔 11곳의 항목 이름에 .lv1 을 붙여 '제목처럼' 보이게 했다. 이제 일반 설정창은
+  // 묶음(.sg) = 작은 제목(.sg-h) + 카드 로 나뉘어, 1뎁스는 묶음 제목이 맡고 줄 이름은 한 서식이다.
+  // .lv1 규칙(위 시나리오 1)은 말씀 설정창이 아직 쓴다 — 지우지 않는다.
+  const panel = slice('<div class="settings-panel sp2" id="settingsPanel">', '<!-- /settings-tab-track -->');
+  sc.eq('일반 설정창 안에는 lv1 제목 흉내가 없다', panel.includes('settings-row-label lv1'), false);
+  ['하루','못 끝낸 할일','입력','블럭','끝냈을 때','모양','할일 글자','주간 · 월간','넘기기','위 단추','설정창','할일','이 기기','색 묶음','시간 구간']
+    .forEach(t => sc.eq(`묶음 제목 '${t}'`, panel.includes(`<div class="sg-h">${t}</div>`), true));
 }
 
-console.log('\n시나리오 3 — 옆에 있던 진짜 소제목·항목 이름은 그대로 2뎁스');
+console.log('\n시나리오 3 — 하위 줄은 들여 쓴다(.sub) — 예전에 lv1 을 안 붙이던 그 줄들');
 {
-  // '언제부터 가져올지'(옛 '가져올 대상') — HB 재지시로 소제목이 아니라
-  // 바로 아래 '자동'·'지금'과 같은 항목 이름 서식(2뎁스, lv1 아님)을 쓴다.
-  sc.eq("'언제부터 가져올지'는 항목 이름 서식(settings-row-label)",
-        SRC.includes('<div class="settings-row-label" style="margin-bottom:6px;">언제부터 가져올지</div>'), true);
-  sc.eq("'언제부터 가져올지'에는 lv1 을 안 붙였다(제목이 아니다)",
-        SRC.includes('<div class="settings-row-label lv1" style="margin-bottom:6px;">언제부터 가져올지</div>'), false);
-  // '하루 시작 시각'은 이번에 새로 1뎁스로 올렸다
-  sc.eq("'하루 시작 시각'에 lv1 이 붙었다",
-        SRC.includes('<div class="settings-row-label lv1">하루 시작 시각</div>'), true);
-  // '자동'(진짜 항목 이름, 미완료 할일 가져오기 섹션의 하위 토글)은 기본 스타일 그대로
-  sc.eq("'자동'에는 lv1 을 안 붙였다", SRC.includes('<div class="settings-row-label lv1">자동</div>'), false);
-  // '알림 시각'도 '하루 할일 보고' 아래 하위 항목이라 기본 스타일 그대로
-  sc.eq("'알림 시각'에는 lv1 을 안 붙였다", SRC.includes('<div class="settings-row-label lv1">알림 시각</div>'), false);
-  // '주일을 RED 표시'도 '요일 표기' 섹션의 하위 토글이라 기본 스타일 그대로
-  sc.eq("'주일을 RED 표시'에는 lv1 을 안 붙였다", SRC.includes('<div class="settings-row-label lv1">주일을 RED 표시</div>'), false);
-  // '스몰 블럭 사용'도 '블럭' 섹션의 하위 토글이라 기본 스타일 그대로 (다른 탭의 '알림에 스몰 블럭 포함'과 다른 항목)
-  sc.eq("'스몰 블럭 사용'에는 lv1 을 안 붙였다", SRC.includes('<div class="settings-row-label lv1">스몰 블럭 사용</div>'), false);
+  const panel = slice('<div class="settings-panel sp2" id="settingsPanel">', '<!-- /settings-tab-track -->');
+  const sub = t => new RegExp('<div class="settings-row(?: stack)? sub"[^>]*>(?:(?!<div class="settings-row[ "]).){0,700}>' + t + '</div>', 's').test(panel);
+  ['보낼 시각','셀 것','주일을 빨갛게','스몰 블럭 경고','연도도 보이기','스몰 블럭도 넣기'].forEach(t => sc.eq(`'${t}' 는 하위 줄`, sub(t), true));
+  sc.eq("'하루 할일 요약'(윗줄)은 들여 쓰지 않는다", sub('하루 할일 요약'), false);
 }
 
 sc.done();

@@ -61,27 +61,24 @@ console.log('\n시나리오 1-3 — PC 로 오른쪽에 띄웠을 땐 되돌아�
         SRC.includes('.task-menu-sub-float #logoMenuSubBack,.task-menu-sub-float #logoMenuSubSep{display:none;}'), true);
 }
 
-console.log('\n시나리오 2-1 — 시간 구간 할일 보고 (이름+구분선)');
+console.log('\n시나리오 2-1 — 구간 시작 알림 (옛 이름: 시간 구간 할일 보고)');
 {
+  // v26-1024-15 (HB 설정창 정리) — 이름이 '구간 시작 알림' 이 되고, 줄 사이 구분선(div-line)은
+  //    카드가 저절로 긋는다(.sg-card 안 줄 사이 가는 선). 뜻은 같다: 따로 떨어진 한 줄이다.
   sc.eq("'시간구간 시작 알림' 이름은 사라졌다", SRC.includes('>시간구간 시작 알림<'), false);
-  sc.eq("새 이름 '시간 구간 할일 보고'", SRC.includes('>시간 구간 할일 보고<'), true);
-  const notify = slice('id="stab-notify"', '<div class="settings-tab-content" id="stab-view">');
-  const i = notify.indexOf('시간 구간 할일 보고');
-  const before = notify.slice(Math.max(0,i-360), i);
-  sc.eq('그 바로 위에 구분선(div-line)이 있다', before.includes('<div class="div-line"'), true);
+  sc.eq("새 이름 '구간 시작 알림'", SRC.includes('>구간 시작 알림<'), true);
+  const notify = slice('id="stab-notify"', 'id="stab-account"');
+  sc.eq('카드 안의 줄이다(위아래 선은 카드가 긋는다)', /<div class="sg-card">[\s\S]*구간 시작 알림/.test(notify), true);
 }
 
-console.log('\n시나리오 2-2 — 스몰 블럭 포함을 알림 테스트 앞으로');
+console.log('\n시나리오 2-2 — 스몰 블럭도 넣기를 시험 보내기 앞으로');
 {
-  const notify = slice('id="stab-notify"', '<div class="settings-tab-content" id="stab-view">');
-  const iSmall = notify.indexOf('알림에 스몰 블럭 포함');
+  const notify = slice('id="stab-notify"', 'id="stab-account"');
+  const iSmall = notify.indexOf('스몰 블럭도 넣기');
   const iTest = notify.indexOf('id="notifyTestRow"');
-  sc.eq('스몰 블럭 포함이 알림 테스트보다 앞', iSmall>-1 && iTest>-1 && iSmall<iTest, true);
-  // 원래 있던 자리(구간 알림 제목 문구 앞)에는 더 이상 없다
-  const iSecTitle = notify.indexOf('구간 알림 제목 문구');
-  sc.eq('구간 알림 제목 문구보다는 뒤로 옮겨졌다', iSmall>iSecTitle, true);
-  const between = notify.slice(iSmall-260, iTest+260);
-  sc.eq('스몰 블럭 포함 위에 구분선', (between.match(/<div class="div-line"/g)||[]).length>=2, true);
+  sc.eq('스몰 블럭도 넣기가 시험 보내기보다 앞', iSmall>-1 && iTest>-1 && iSmall<iTest, true);
+  const iSecTitle = notify.indexOf('구간 알림 끝말');
+  sc.eq('구간 알림 끝말보다는 뒤', iSmall>iSecTitle, true);
 }
 
 console.log('\n시나리오 4 — 말씀 롱터치 메뉴: 화면별 전체 화면·본문 복사');
