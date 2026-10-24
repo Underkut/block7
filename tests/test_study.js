@@ -15,6 +15,7 @@
 //  ⑲ 캐릭터를 실제로 그려서 동물마다 제 모습 · 자세 · 움직임 묶음 확인
 //  ⑳ 소리 끄기 · 넘기기
 //  ㉑ 계획에 숙제 · 넘기기(되돌아 튕김 없음) · 공부 중 화면 닫기
+//  ㉒ 넘길 때 머리줄 함께 · 짧은 팔 · 흰 동물 테두리 · 뒤로 단추
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -304,7 +305,7 @@ function mk(o) {
   sc.eq('⑲ 토끼 = 솜꼬리 · 정수리 털 / 강아지 = 눈 얼룩 · 혀 · 목걸이 · 꼬리 / 곰돌이 = 리본 · 발바닥 / 판다 = 물방울 무늬 · 대나무',
     [rab.includes('cx="141" cy="171" r="12"'), rab.includes('cx="100" cy="41.5" r="7"'), dog.includes('cx="123" cy="99"'), dog.includes('M96.5 119.5'), dog.includes('#E2574C'), dog.includes('M134 172 C150'), bear.includes('#6FA8FF'), bear.includes('cy="183" rx="8"'), pan.includes('M66 96 C72 88'), pan.includes('#4FA03A')],
     Array(10).fill(true));
-  sc.eq('⑲ 자세: 손 흔들기는 오른팔이 올라간다 · 만세는 두 팔 · 잠은 z · 빼꼼은 몸 없이 앞발', [draw('bear', {pose: 'wave'}).includes('M124 150 L167 110'), draw('bear', {pose: 'cheer'}).includes('M76 150 L33 110'), draw('bear', {pose: 'sleep'}).includes('bd-z'), draw('bear', {pose: 'peek'}).includes('cx="100" cy="153"'), draw('bear', {pose: 'peek'}).includes('cy="144" rx="15"')], [true, true, true, false, true]);
+  sc.eq('⑲ 자세: 손 흔들기는 오른팔이 올라간다 · 만세는 두 팔 · 잠은 z · 빼꼼은 몸 없이 앞발', [draw('bear', {pose: 'wave'}).includes('M128 150 L157 128'), draw('bear', {pose: 'cheer'}).includes('M72 150 L43 128'), draw('bear', {pose: 'sleep'}).includes('bd-z'), draw('bear', {pose: 'peek'}).includes('cx="100" cy="153"'), draw('bear', {pose: 'peek'}).includes('cy="144" rx="15"')], [true, true, true, false, true]);
   sc.eq('⑲ 판다는 손을 쓰는 자세면 대나무를 내려놓는다', [draw('panda', {pose: 'wave'}).includes('#4FA03A'), draw('panda', {pose: 'read'}).includes('#4FA03A')], [false, false]);
   sc.eq('⑲ 움직이는 친구엔 live, 아니면 없다 · 움직이는 부분은 묶음으로', [draw('cat', {live: true}).includes('class="bd p-stand live'), draw('cat').includes(' live'), draw('cat', {live: true}).includes('class="bd-tail"'), draw('cat', {live: true}).includes('class="bd-earL"')], [true, false, true, true]);
   sc.eq('⑲ 다섯 스타일 × 일곱 동물 × 여섯 자세 모두 그려진다', ['A', 'B', 'C', 'D', 'E'].every(y => ['rabbit', 'cat', 'hamster', 'dog', 'bear', 'fox', 'panda'].every(k => ['stand', 'wave', 'cheer', 'read', 'sleep', 'peek'].every(po => /^<svg[\s\S]*<\/svg>$/.test(draw(k, {pose: po}, y))))), true);
@@ -332,5 +333,16 @@ function mk(o) {
   sc.eq('㉑ 손으로 넘길 땐 옅어지지 않고 두 판이 붙어 간다', /function nextPanel\(/.test(HTML) && !/swipeMain[\s\S]{0,1500}style\.opacity = 1 -/.test(HTML), true);
   sc.eq('㉑ 놓으면 지금 자리 → 끝 (가운데로 되돌아가지 않는다)', /\{transform: `translateX\(\$\{x\}px\)`\}, \{transform: `translateX\(\$\{-dir \* W\}px\)`\}/.test(HTML), true);
   sc.eq('㉑ 공부 중 화면: 손잡이 · 끌어 내리기 · 가장자리 밀기', /class="grab" id="tmMin"/.test(HTML) && /dismissable\(\$\('timer'\)/.test(HTML) && /d\.edge = /.test(HTML) === false && /edge: t\.clientX < 28/.test(HTML), true);
+}
+// ── ㉒ 넘길 때 머리줄도 같이 · 짧은 팔 · 흰 동물 테두리 · 뒤로 단추 (샤론 1024 ⑦) ──
+{
+  sc.eq('㉒ 다음 판에 머리줄까지 그린다(넘긴 뒤 세로 덜컥 없음)', /function nextPanel[\s\S]{0,900}t2\.id = 'top'[\s\S]{0,200}header\(\); renderBody\(\)/.test(HTML) && /slideCur\(`translateX/.test(HTML), true);
+  sc.eq('㉒ 계획 \'‹ 내 별\' 은 문제집 카드(bk)와 다른 이름', /class="backb" data-top="back"/.test(HTML) && !/class="bk" data-top="back"/.test(HTML), true);
+  const am = HTML.match(/const ART_STYLES[\s\S]*?\nconst buddySvg/);
+  const g = {}; vm.createContext(g); vm.runInContext(am[0].replace(/\nconst buddySvg$/, '') + '\nthis.artSvg = artSvg;', g);
+  const w = g.artSvg('bear', 5, 'A', {pose: 'wave'});
+  sc.eq('㉒ 들어 올린 팔은 짧고 끝에 둥근 손', /M128 150 L157 128/.test(w) && /<circle cx="161" cy="124" r="12.5"/.test(w), true);
+  sc.eq('㉒ 흰 털 동물은 A · D · E 에서 옅은 테두리, 다른 동물 · 연필 선엔 없다',
+    ['A', 'D', 'E'].every(y => g.artSvg('rabbit', 5, y).includes('fill="#E6D9CB"') && g.artSvg('panda', 5, y).includes('fill="#E6D9CB"')) && !g.artSvg('bear', 5, 'A').includes('#E6D9CB') && !g.artSvg('rabbit', 5, 'B').includes('#E6D9CB'), true);
 }
 sc.done();
