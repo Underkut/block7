@@ -28,6 +28,9 @@ let _toastCalls = [];
 global.showToast = (msg, busy, action) => { _toastCalls.push({ msg, busy, action }); };
 let _openSettingsCalls = [];
 global.openSettings = (tabId, flashTabId) => { _openSettingsCalls.push({ tabId, flashTabId }); };
+// v26-1024-17 — 토스트 단추는 openAccountSettings 를 거친다 (Sweeter 는 설정창 계정 탭으로).
+// 여기서는 BLOCK7 쪽 길을 흉내 낸다 — index.html 의 그 함수와 같은 모양.
+global.openAccountSettings = (flash) => openSettings('account', flash ? 'account' : undefined);
 global._deviceId = () => 'dev-mac';
 global._deviceLabel = () => '맥';
 global.ST = {};

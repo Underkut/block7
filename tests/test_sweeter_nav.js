@@ -221,7 +221,7 @@ console.log('\n시나리오 6 — 메뉴 한 줄');
   sc.eq('그림도 바뀐다', EL.logoMenuSisterIcon._src, 'icon-sweeter.png');
   sc.eq('BLOCK7 쪽 안내말도 한 가지뿐', EL.logoMenuSister.title, 'Sweeter 열기');
   // ⚠️ 길이 둘이었던 흔적이 남아 있으면 안 된다 — HB 가 헷갈린다고 했다.
-  //    (톱니의 '길게 누르면 일반 설정' 은 **다른 자리**라 그대로 둔다)
+  //    (톱니의 '길게 누르면 계정' 은 **다른 자리**라 그대로 둔다)
   sc.eq('형제 줄에 롱터치를 달지 않는다', /sisterLp/.test(SRC), false);
   sc.eq('형제 줄 안내말에 롱터치 이야기가 없다', /길게 누르면.*주소|주소.*길게 누르면/.test(SRC), false);
 }
@@ -234,9 +234,16 @@ console.log('\n시나리오 7 — 로고·톱니·파비콘');
   // 좌상단 로고 — BLOCK7 과 같은 손버릇
   sc.eq('로고 탭=말씀메뉴 · 롱터치=전체 업데이트',
         SRC.includes('attachRepeatBtnInteraction(brand,()=>openLogoMenu(brand),()=>verseSyncAllNow())'), true);
-  // 톱니 — 탭=말씀설정 · 롱터치=일반설정(계정·로그아웃)
-  sc.eq('⭐ 톱니 탭=말씀설정 · 롱터치=일반설정',
-        SRC.includes('attachRepeatBtnInteraction(setBtn,()=>openVerseSettingsFromLogo(),()=>openSettings())'), true);
+  // 톱니 — 탭=설정 · 롱터치=설정 '계정' 탭 바로 (v26-1024-17, HB 설정창 정리 ⑥)
+  //   예전 롱터치(일반 설정창)는 Sweeter 에선 할일 탭뿐 · 계정 탭은 비어 있었다(_swMergeAccountTab 이 옮겨 감)
+  sc.eq('⭐ 톱니 탭=설정 · 롱터치=계정 탭',
+        SRC.includes('attachRepeatBtnInteraction(setBtn,()=>openVerseSettingsFromLogo(),()=>openAccountSettings(true))'), true);
+  const oa = SRC.slice(SRC.indexOf('function openAccountSettings('), SRC.indexOf('function openSettings('));
+  sc.eq('Sweeter 는 설정창 계정 탭으로', /_swOn\(\)[\s\S]*_vsetGoTab\('account'/.test(oa), true);
+  sc.eq('BLOCK7 은 일반 설정창 계정 탭 그대로', oa.includes("openSettings('account'"), true);
+  sc.eq("'겹친 변경' 토스트도 같은 길로", SRC.includes("{label:'설정 → 계정으로',onClick:()=>{openAccountSettings(true);}}"), true);
+  sc.eq("빈 탭으로 가는 openSettings('account') 직접 호출은 남지 않았다",
+        (SRC.match(/openSettings\('account',/g) || []).length, 1);
   sc.eq("'기존 화면' 단추는 없앴다", SRC.includes('>기존 화면<'), false);
   // 제목 롱터치(가져오기)는 뗐다 — 로고 묶음의 '전체 업데이트' 와 겹친다
   sc.eq('제목 롱터치는 뗐다', /ttl\.dataset\.swlp/.test(SRC), false);
