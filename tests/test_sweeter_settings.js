@@ -28,19 +28,20 @@ console.log('시나리오 1 — 탭 목록');
   sc.eq('말씀 위젯 탭 없음', t.includes('widget'), false);
   // '계정' 은 거꾸로 — Sweeter 에만 붙는다 (v26-0921-8, HB 4-5)
   sc.eq('계정 탭이 붙는다', t.includes('account'), true);
-  sc.eq('나머지는 그대로', t, ['view','alarm','full','share','coll','account']);
+  // v26-1024-16 (HB 설정창 정리) — 세 창 공통 차례: 모음 → 화면 → 전체화면 → 공유 → 알림 → 계정
+  sc.eq('나머지는 공통 차례로', t, ['coll','view','full','share','alarm','account']);
 
   // ⭐ BLOCK7 은 예전 그대로여야 한다 — '계정' 은 일반설정창에 이미 있으므로 여긴 없다
   APP_PRODUCT='block7';
-  sc.eq('⭐ BLOCK7 은 일곱 탭 그대로',
-        _vstabList(), ['top','widget','view','alarm','full','share','coll']);
+  sc.eq('⭐ BLOCK7 은 일곱 탭 (공통 차례)',
+        _vstabList(), ['coll','top','widget','view','full','share','alarm']);
   sc.eq('⭐ BLOCK7 말씀설정창엔 계정 탭 없음', _vstabList().includes('account'), false);
 
   // 등급 규칙은 두 제품에서 그대로 걸린다
   LV='easy';
-  sc.eq('BLOCK7 이지: 위젯·공유가 빠진다', _vstabList(), ['top','view','alarm','full','coll']);
+  sc.eq('BLOCK7 이지: 위젯·공유가 빠진다', _vstabList(), ['coll','top','view','full','alarm']);
   APP_PRODUCT='sweeter';
-  sc.eq('Sweeter 이지: 넷 + 계정', _vstabList(), ['view','alarm','full','coll','account']);
+  sc.eq('Sweeter 이지: 넷 + 계정', _vstabList(), ['coll','view','full','alarm','account']);
   LV='power';
 }
 
@@ -54,9 +55,10 @@ console.log('\n시나리오 2 — 열 때 어느 탭으로 가나');
   sc.eq("'top' 을 못 박지 않는다",
         SRC.includes("switchVerseSettingsTab('top',null,'direct')"), false);
   APP_PRODUCT='sweeter';
-  sc.eq('Sweeter 의 첫 탭은 뷰', _vstabList()[0], 'view');
+  // v26-1024-16 — 두 제품 다 '모음' 이 첫 탭 (어디서 뽑나가 먼저)
+  sc.eq('Sweeter 의 첫 탭은 모음', _vstabList()[0], 'coll');
   APP_PRODUCT='block7';
-  sc.eq('BLOCK7 의 첫 탭은 예전 그대로', _vstabList()[0], 'top');
+  sc.eq('BLOCK7 의 첫 탭도 모음', _vstabList()[0], 'coll');
 }
 
 // ═══ 3. 설정창 이름 ═══

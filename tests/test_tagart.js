@@ -372,10 +372,11 @@ console.log('\n시나리오 8 — 전체화면과 공유 이미지가 같은 그
 console.log('\n시나리오 9 — 설정창');
 {
   sc.eq('전체화면 탭 안이다',
-    SRC.indexOf('id="vstab-full"') < SRC.indexOf('<div class="settings-section-title">이미지 삽입')
-    && SRC.indexOf('<div class="settings-section-title">이미지 삽입') < SRC.indexOf('id="vstab-share"'), true);
+    // v26-1024-16 (HB 설정창 정리) — '이미지 삽입' > '태그 그림', 칸은 묶음(.sg)
+    SRC.indexOf('id="vstab-full"') < SRC.indexOf('<div class="sg-h">태그 그림')
+    && SRC.indexOf('<div class="sg-h">태그 그림') < SRC.indexOf('id="vstab-share"'), true);
   sc.eq('그림체 줄은 켰을 때만 나온다', SRC.includes('data-cond="vfArt"'), true);
-  sc.eq('등급은 파워 전용', /data-lv="p">\s*<div class="settings-section-title">이미지 삽입/.test(SRC), true);
+  sc.eq('등급은 파워 전용', /data-lv="p">\s*<div class="sg-h">태그 그림/.test(SRC), true);
   // ⚠️ 설정창을 다시 열 때 버튼이 저장값과 어긋나면 안 된다 (0813-5 와 같은 함정)
   sc.eq('설정창을 그릴 때 버튼 상태를 맞춘다',
     slice('function renderVerseSettingsModal(){', '_renderVfThemeChips();').includes('_vfArtSyncUI();'), true);

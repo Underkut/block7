@@ -157,7 +157,8 @@ console.log('\n시나리오 8 — 14-1 설정창 항목 (태그 전용, 그대�
 {
   // v26-0819-2 — 구글시트 스펙대로 '태그 목록' > '태그 타일뷰' 로 이름이 바뀌었다
   sc.eq('말씀설정 뷰탭에 있다',
-        /<div class="settings-section" data-lv="mp">\s*<div class="settings-section-title">태그 타일뷰<\/div>/.test(SRC), true);
+        // v26-1024-16 (HB 설정창 정리) — 칸은 묶음(.sg), 제목은 묶음 제목(.sg-h)
+        /<div class="sg" data-lv="mp">\s*<div class="sg-h">태그 타일뷰<\/div>/.test(SRC), true);
   sc.eq('켬/끔 스위치', SRC.includes(`id="setVgTagExclOn" onchange="updateSetting('vgTagExcludeOn',this.checked)"`), true);
   sc.eq('기준 스테퍼도 있다', SRC.includes('id="setVgExclVal"'), true);
   sc.eq('설정창 스테퍼는 설정창 전용 함수를 부른다',
@@ -165,8 +166,8 @@ console.log('\n시나리오 8 — 14-1 설정창 항목 (태그 전용, 그대�
   sc.eq('스테퍼는 기존 .hi-step 을 쓴다',
         /<div class="hi-step">\s*<button id="setVgExclMinus"/.test(SRC), true);
   sc.eq('뷰탭(vstab-view) 안이다',
-        SRC.indexOf('id="vstab-view"') < SRC.indexOf('<div class="settings-section-title">태그 타일뷰')
-        && SRC.indexOf('<div class="settings-section-title">태그 타일뷰') < SRC.indexOf('id="vstab-alarm"'), true);
+        SRC.indexOf('id="vstab-view"') < SRC.indexOf('<div class="sg-h">태그 타일뷰')
+        && SRC.indexOf('<div class="sg-h">태그 타일뷰') < SRC.indexOf('id="vstab-full"'), true);
   // 성경 축은 설정창에 없다 — HB 14B 는 타일뷰만 요청했다
   sc.eq('성경 전용 설정창 UI 는 없다', SRC.includes('id="setVgBookExclOn"'), false);
 }

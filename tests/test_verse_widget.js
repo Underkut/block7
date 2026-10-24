@@ -60,12 +60,14 @@ console.log('\n시나리오 3 — 바뀐 문구');
   // v26-0819-2 — 둘 다 신설된 '말씀 위젯' 탭으로 옮겨 가면서 '말씀 위젯' 접두사가 빠졌다
   // (탭 이름이 이미 '말씀 위젯'이라 제목에 반복할 필요가 없다)
   const wtab = SRC.slice(SRC.indexOf('id="vstab-widget"'), SRC.indexOf('id="vstab-view"'));
-  sc.eq('말씀 위젯 탭에 보여줄 항목', /<div class="settings-section-title">보여줄 항목<\/div>/.test(wtab), true);
-  sc.eq('말씀 위젯 탭에 글자 크기', /<div class="settings-section-title">글자 크기<\/div>/.test(wtab), true);
-  sc.eq('자동으로 다음 구절', SRC.includes('>자동으로 다음 구절<'), true);
+  // v26-1024-16 (HB 설정창 정리) — 묶음 제목(.sg-h). '보여줄 항목' > '줄마다 보일 것'
+  sc.eq('위젯 탭에 줄마다 보일 것', /<div class="sg-h">줄마다 보일 것<\/div>/.test(wtab), true);
+  sc.eq('위젯 탭에 글자 크기', /<div class="sg-h">글자 크기<\/div>/.test(wtab), true);
+  sc.eq("'자동으로 다음 구절' > '다음 구절로'", SRC.includes('>다음 구절로<'), true);
   sc.eq("'매일 자동으로' 는 사라졌다", SRC.includes('매일 자동으로 다음 구절'), false);
-  sc.eq('매 시간구간 토글', SRC.includes('setVerseRotateBySec'), true);
-  sc.eq('예시 문구', SRC.includes('예: 새벽 오전 점심 오후 저녁 밤'), true);
+  // 스위치 둘 → 한 줄 고르기. 저장 값(verseRotateBySec)은 그대로 쓴다
+  sc.eq('구간마다 고르기', SRC.includes("setVerseNext('sec')") && SRC.includes("updateSetting('verseRotateBySec',m==='sec')"), true);
+  sc.eq('예시 문구', SRC.includes('구간마다: 새벽 오전 점심 오후 저녁 밤'), true);
 }
 
 // ═══ 4. 위젯 기본값 — 본문·장절만 켜짐 ═══

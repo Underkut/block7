@@ -656,11 +656,12 @@ console.log('\n시나리오 20 — 대표 문구 글씨체를 고를 자리 (v26
         SRC_DEV.includes('grid-template-columns:repeat(auto-fill,minmax(74px,1fr))'), true);
   sc.eq('켜고 끄는 함수', SRC_DEV.includes('function togglePropTitleFont(k){'), true);
   sc.eq('설정창에 자리가 있다', SRC_DEV.includes('id="ptFontRow"'), true);
-  sc.eq('제목은 명제 타이틀',
-        SRC_DEV.includes('<div class="settings-section-title">명제 타이틀</div>'), true);
+  // v26-1024-16 (HB 설정창 정리) — '명제 타이틀' > '명제 제목', 칸은 묶음(.sg)
+  sc.eq('제목은 명제 제목',
+        SRC_DEV.includes('<div class="sg-h">명제 제목</div>'), true);
   // ⚠️ HB — 파워 등급에만 보인다
   sc.eq('파워 등급',
-        /data-lv="p">\s*<div class="settings-section-title">명제 타이틀</.test(SRC_DEV), true);
+        /id="ptTitleSettings" data-lv="p">\s*<div class="sg-h">명제 제목</.test(SRC_DEV), true);
   sc.eq('처음 쓰는 사람은 붓 하나', SRC_DEV.includes("propTitleFonts:['brush']"), true);
   sc.eq('저장값과 맞춘다', SRC_DEV.includes('function _ptSyncFontUI(){'), true);
   // ⚠️ 설정창을 다시 열 때 반드시 맞춰 준다 (안 맞추면 정반대로 저장된다)

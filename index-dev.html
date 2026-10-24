@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-15  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-16  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4047,7 +4047,9 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
    ⚠️ 예전의 position:absolute 는 버튼이 제목 줄보다 키가 커서 아래 설명과
    겹쳤다. 절을 flex 로 두고 제목·버튼을 같은 줄에 실제로 앉히면 겹치지 않는다.
    설명·글씨체 칸은 폭 100% 라 반드시 다음 줄로 접힌다. */
-#ptTitleSettings{display:flex;flex-wrap:wrap;align-items:center;}
+#ptTitleSettings:not(.sg){display:flex;flex-wrap:wrap;align-items:center;}
+/* v26-1024-16 — 묶음 카드가 된 뒤: 디졸브 · 타이핑은 카드 맨 위 오른쪽 */
+.sg#ptTitleSettings .pt-motion-row{display:flex;justify-content:flex-end;gap:6px;margin:0 0 8px;}
 #ptTitleSettings>.settings-section-title{flex:0 1 auto;}
 #ptTitleSettings>.pt-motion-row{flex:0 0 auto;margin:0 0 12px auto;display:flex;align-items:center;gap:6px;}
 #ptTitleSettings>.settings-row-desc,#ptTitleSettings>#ptFontRow{flex:0 0 100%;}
@@ -4375,7 +4377,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sp2 .settings-title{grid-column:2;grid-row:1;font-size:16px;font-weight:600;letter-spacing:-.01em;}
 .sp2 .settings-hd-r{grid-column:3;grid-row:1;justify-self:end;}
 .sp2 .settings-hd>.settings-close{grid-column:3;grid-row:1;justify-self:end;}
-.sp2 .settings-tab{font-size:13.5px;font-weight:500;padding:11px 4px 10px;}
+.sp2 .settings-tab{font-size:13.5px;font-weight:500;padding:11px 4px 10px;white-space:nowrap;}
 .sp2 .settings-tab-content{padding:0 16px 34px;}
 .sg{margin:0;}
 .sg-h{font-size:12px;font-weight:500;letter-spacing:.06em;color:var(--tx3);margin:22px 6px 8px;display:flex;align-items:center;gap:6px;}
@@ -4389,6 +4391,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg-card>*{border-top:1px solid var(--bd);}
 .sg-card>.sg-top,.sg-card>.sg-fold,.sg-card.sg-pad>*{border-top:0;}
 .sg-card>.settings-row,.sg-fold .settings-row{padding:13px 0;gap:12px;align-items:center;}
+.sg-card.sg-pad>.settings-row{padding:10px 0;}
+.sg-card.sg-pad>.settings-row+.settings-row{border-top:1px solid var(--bd);}
+.sg-card.sg-pad>.settings-row.stack{flex-wrap:wrap;row-gap:10px;}
+.sg-card.sg-pad>.settings-row.stack>.sr-ctl{flex:0 0 100%;margin-left:0;}
+/* 모음 카드 안: 모음별 거르개 묶음은 카드가 이미 감싸 주니 위 여백을 줄인다 (예전 26+26 은 카드 안에서 빈 구멍으로 보였다) */
+.sg-card .coll-filter-panels{margin-top:12px;padding-top:16px;}
+.sg .sg-seg.sr-seg{flex:none;width:132px;}
+.sg .sg-chips>.preset-btn.on{background:var(--ac)!important;color:var(--on-accent,#fff)!important;box-shadow:none;}
+.sg .sg-chips>.preset-btn{height:32px;padding:0 12px!important;font-size:12.5px!important;}
+.sg .settings-subtitle{font-size:12px;font-weight:500;letter-spacing:0;color:var(--tx2);margin:14px 0 8px;}
+.sg .sg-card .settings-subtitle:first-child{margin-top:0;}
 .sg .sr-ic{flex:none;width:20px;height:20px;color:var(--tx3);align-self:flex-start;margin-top:1px;}
 .sg .settings-row-label,.sg .settings-row-label.lv1{font-size:14.5px;font-weight:500;color:var(--tx);letter-spacing:-.005em;line-height:1.35;}
 .sg .settings-row-desc{font-size:12px;color:var(--tx3);line-height:1.55;margin-top:3px;}
@@ -6504,7 +6517,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-15";
+const APP_VERSION = "v. 26-1024-16";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7288,7 +7301,7 @@ try{
 
 <!-- 말씀 설정 모달 (일반 설정창과 별개이며 화면 곳곳의 말씀 진입점에서 연다) -->
 <div class="settings-overlay" id="verseSettingsOverlay" style="display:none" onclick="closeVerseSettingsModal(event)">
-  <div class="settings-panel" id="verseSettingsPanel">
+  <div class="settings-panel sp2" id="verseSettingsPanel">
     <div class="settings-verbadge" id="verseSettingsVerBadge" style="display:none;"></div>
     <div class="settings-hd">
       <div class="settings-title">말씀 설정</div>
@@ -7301,60 +7314,88 @@ try{
       <button class="settings-close" onclick="closeVerseSettingsModal()">×</button>
     </div>
     <div class="settings-tab-bar" id="verseSettingsTabBar">
-      <button class="settings-tab on" onclick="switchVerseSettingsTab('top',this)"><span class="vstab-pair"><span>상단</span><span>말씀</span></span></button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('widget',this)"><span class="vstab-pair"><span>말씀</span><span>위젯</span></span></button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('view',this)">뷰</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('alarm',this)">알림</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)"><span class="vstab-pair"><span>전체</span><span>화면</span></span></button>
+      <!-- 탭 차례 = VERSE_SETTINGS_TABS 차례 (applyVerseUiLevel 이 자리로 짝짓는다). 세 창 공통 — 탭 이름은 한 단어 (v26-1024-16, HB) -->
+      <button class="settings-tab on" onclick="switchVerseSettingsTab('coll',this)">모음</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('top',this)">상단</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('widget',this)">위젯</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('view',this)">화면</button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('full',this)">전체화면</button>
       <button class="settings-tab" onclick="switchVerseSettingsTab('share',this)">공유</button>
-      <button class="settings-tab" onclick="switchVerseSettingsTab('coll',this)"><span class="vstab-pair"><span>말씀</span><span>모음</span></span></button>
+      <button class="settings-tab" onclick="switchVerseSettingsTab('alarm',this)">알림</button>
       <!-- 계정 — Sweeter 에서만 보인다(_vstabList). BLOCK7 은 일반설정창에 그대로 있다 -->
       <button class="settings-tab" onclick="switchVerseSettingsTab('account',this)">계정</button>
     </div>
     <div class="settings-body">
       <div class="settings-tab-track" id="verseSettingsTabTrack" style="--stab-count:8;">
 
+      <!-- ═══ 모음 — 맨 앞 (v26-1024-16, HB 설정창 정리: 어디서 뽑나가 먼저, 어디에 보이나가 뒤) ═══ -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-coll">
+        <!-- 말씀 모음 -->
+        <div class="sg">
+        <!-- v26-0907-9, HB 94(8) — 대시보드→여기(vDashOpenCollSettings)는 이미
+             있었는데 되돌아가는 길이 없었다. 우상단에 파이 아이콘으로 추가. -->
+        <div class="sg-h">
+          <span style="flex:1;">지금 쓰는 모음</span>
+          <span class="vset-dashbtn" onclick="vsetGoDashboard()" title="대시보드" aria-label="대시보드">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>
+          </span>
+        </div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">여기서 뽑아 알림 · 말씀 카드 · 상단 말씀에 써요</div>
+        <div id="collBtnRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+        <!-- 말씀 목록 기간 기준 (말씀 모음 필터의 주간/월간/연간에도 적용) -->
+        <div class="settings-row" style="margin-top:4px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">주간 · 월간 · 연간을 세는 법</div>
+            <div class="settings-row-desc">달력대로: 이번 주 주일 ~ 오늘 · 이번 달 1일 ~ · 올해 1월 1일 ~ · 최근 며칠: 7 · 30 · 365일</div>
+          </div>
+        </div>
+        <div class="sg-seg" style="margin:6px 0 12px;">
+          <button class="preset-btn" id="setPeriodBaseCalendar" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('periodBaseMode','calendar')">달력대로</button>
+          <button class="preset-btn" id="setPeriodBaseRolling" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('periodBaseMode','rolling')">최근 며칠</button>
+        </div>
+
+        <!-- 구독한 말씀 모음 (큰 토글 버튼) -->
+        <div id="subCollList" class="sub-coll-list"></div>
+
+        <!-- 켜진 각 모음의 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) -->
+        <div id="collFilterPanels" class="coll-filter-panels"></div>
+        </div>
+      </div>
+      </div><!-- /vstab-coll -->
+
       <!-- ═══ 상단 말씀 (v26-0819-2, 구글시트 '말씀설정창' 탭 기준 신설) ═══ -->
       <div class="vsettings-tab-content settings-tab-content" id="vstab-top">
 
       <!-- 뎁스1 -->
-      <div class="settings-section" id="verseSettingsAnchor">
-        <div class="settings-section-title">자동으로 다음 구절</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">둘 다 꺼두면 직접 넘기거나 뽑은 구절이 그대로 유지돼요.</div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">매일</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setVerseBarAutoRotate" onchange="updateSetting('verseBarAutoRotate',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
+      <div class="sg" id="verseSettingsAnchor">
+        <div class="sg-h">다음 구절로</div>
+        <div class="sg-card sg-pad">
+        <!-- v26-1024-16 (HB) — 스위치 둘(매일 · 매 시간구간)을 한 줄 고르기로. 속은 두 값 그대로:
+             그대로 = 둘 다 끔 · 하루에 한 번 = verseBarAutoRotate · 구간마다 = verseRotateBySec 도 켬.
+             (둘 다 켠 것과 '구간마다 만' 켠 것은 renderVerseBar 에서 똑같이 움직인다 — 구간 쪽이 덮는다) -->
+        <div class="settings-row stack">
+          <div class="settings-row-text"><div class="settings-row-label">언제 바꿀까</div><div class="settings-row-desc">그대로: 직접 넘기거나 뽑은 구절이 남아요 · 구간마다: 새벽 오전 점심 오후 저녁 밤</div></div>
+          <div class="sr-ctl"><div class="sg-seg"><button class="settings-btn" id="vNextOff" onclick="setVerseNext('off')">그대로</button><button class="settings-btn" id="vNextDay" onclick="setVerseNext('day')">하루에 한 번</button><button class="settings-btn" id="vNextSec" onclick="setVerseNext('sec')">구간마다</button></div></div>
         </div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">매 시간구간</div>
-            <div class="settings-row-desc">예: 새벽 오전 점심 오후 저녁 밤</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setVerseRotateBySec" onchange="updateSetting('verseRotateBySec',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
+      </div>
       </div>
 
       <!-- 뎁스1 (신규) — 풀/스닉픽 표시 항목을 한 제목 아래로 묶었다 -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">보여줄 항목</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">보일 것</div>
+        <div class="sg-card sg-pad">
 
-        <div class="settings-subtitle subtitle-lg" data-lv="mp">풀 모드</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
+        <div class="settings-subtitle subtitle-lg" data-lv="mp">펼쳤을 때</div>
+        <div class="sg-chips" data-lv="mp">
           <button class="preset-btn on" id="setVerseFullCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseFullTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseFullRef" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullRef',this.classList.toggle('on'))">장절</button>
           <button class="preset-btn on" id="setVerseFullTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseFullTag',this.classList.toggle('on'))">태그</button>
         </div>
 
-        <div class="settings-subtitle subtitle-lg" data-lv="p">스닉픽 서식</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="p">한 줄일 때 · 모양</div>
         <div style="display:flex;gap:8px;" data-lv="p">
           <div id="vsneak-style-a" onclick="setVerseSneakStyle('color')"
             style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--bd2);cursor:pointer;background:var(--s2);text-align:center;">
@@ -7367,8 +7408,8 @@ try{
           </div>
         </div>
 
-        <div class="settings-subtitle subtitle-lg" data-lv="mp">스닉픽 모드</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" data-lv="mp">
+        <div class="settings-subtitle subtitle-lg" data-lv="mp">한 줄일 때 · 보일 것</div>
+        <div class="sg-chips" data-lv="mp">
           <button class="preset-btn on" id="setVerseSneakCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseSneakTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseSneakFirstWord" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseSneakFirstWord',this.classList.toggle('on'))">본문</button>
@@ -7377,7 +7418,7 @@ try{
         </div>
         <div class="settings-row-desc" data-lv="mp" style="margin:6px 0 0;">켜 둔 항목들이 한 줄에 다 들어가도록 맞추고, 남는 자리만큼 본문을 보여준 뒤 나머지는 …으로 줄여요.</div>
 
-        <div class="settings-subtitle subtitle-lg" data-lv="p">한 줄 최대 가로 폭</div>
+        <div class="settings-subtitle subtitle-lg" data-lv="p">한 줄 최대 폭</div>
         <div style="display:flex;align-items:center;gap:12px;" data-lv="p">
           <input type="range" class="uiscale-slider" id="setVerseSneakMaxW" min="300" max="1000" step="100" value="700"
             oninput="setVerseSneakMaxW(this.value)">
@@ -7385,16 +7426,18 @@ try{
         </div>
         <div class="settings-row-desc" data-lv="p" style="margin:6px 0 0;">그 한 줄의 최대 가로 폭이에요 (말씀 영역 상자가 아니라 글자 줄의 폭). 기기 화면이 더 좁으면 화면 폭을 따라가요. <b>이 값은 이 기기에만 저장돼요.</b></div>
       </div>
+      </div>
 
       </div><!-- /vstab-top -->
 
       <!-- ═══ 말씀 위젯 (v26-0819-2 신설 — 뷰탭에서 옮겨 왔다) ═══ -->
       <div class="vsettings-tab-content settings-tab-content" id="vstab-widget">
 
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">보여줄 항목</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">좋아요·암송·Deeper·Even Deeper 목록의 각 줄에 무엇을 보여줄지 골라요.</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">줄마다 보일 것</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">좋아요 · 암송 · Deeper · Even Deeper 목록의 줄마다</div>
+        <div class="sg-chips">
           <button class="preset-btn on" id="setVerseWidgetCat" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetCat',this.classList.toggle('on'))">대분류</button>
           <button class="preset-btn on" id="setVerseWidgetTopic" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTopic',this.classList.toggle('on'))">소주제</button>
           <button class="preset-btn on" id="setVerseWidgetText" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetText',this.classList.toggle('on'))">본문</button>
@@ -7402,12 +7445,14 @@ try{
           <button class="preset-btn on" id="setVerseWidgetTag" style="width:auto;padding:0 10px;font-size:11px;" onclick="updateSetting('verseWidgetTag',this.classList.toggle('on'))">태그</button>
         </div>
       </div>
+      </div>
 
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">글자 크기</div>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">글자 크기</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row">
           <div class="settings-row-text"><div class="settings-row-label">본문</div></div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
+          <div class="sg-seg sr-seg">
             <button class="preset-btn on" id="setVWTextSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',1)">1</button>
             <button class="preset-btn" id="setVWTextSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',2)">2</button>
             <button class="preset-btn" id="setVWTextSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetTextSize',3)">3</button>
@@ -7415,12 +7460,13 @@ try{
         </div>
         <div class="settings-row">
           <div class="settings-row-text"><div class="settings-row-label">장절</div></div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
+          <div class="sg-seg sr-seg">
             <button class="preset-btn on" id="setVWRefSize1" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',1)">1</button>
             <button class="preset-btn" id="setVWRefSize2" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',2)">2</button>
             <button class="preset-btn" id="setVWRefSize3" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('verseWidgetRefSize',3)">3</button>
           </div>
         </div>
+      </div>
       </div>
 
       </div><!-- /vstab-widget -->
@@ -7430,14 +7476,15 @@ try{
 
       <!-- ── 할일뷰 말씀 표시 (버튼탭에서 옮겨 옴 — 말씀 관련이라 여기가 맞다) ──
            ⚠️ Sweeter 에는 할일뷰가 없다 → data-prod="b7" 로 감춘다 (v26-0921-7, HB 4-3) -->
-      <div class="settings-section" data-prod="b7">
-        <div class="settings-section-title">할일뷰 말씀 표시</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">구간 제목 옆에 표시할 말씀 기록을 골라요. 암송은 구간별로, 나머지는 그날 첫 구간에 표시돼요.</div>
+      <div class="sg" data-prod="b7">
+        <div class="sg-h">구간 제목 옆 말씀 기록</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">할일뷰 구간 제목 옆에 — 암송은 구간마다, 나머지는 그날 첫 구간에</div>
         <!-- 전체 스위치(신규) — 아래 네 개의 켬/끔은 그대로 둔 채 통째로 보일지만 정한다.
              이지/미드는 아래 네 줄 자체가 안 보이니(data-lv="p"), 대신 이 소제목 오른쪽에
              무엇이 있는지 작은 아이콘으로만 미리 보여준다(v26-0819-3, HB 3-3). -->
         <div style="display:flex;align-items:center;gap:8px;margin:16px 0 7px;">
-          <div class="settings-subtitle subtitle-lg" style="margin:0;flex:1;">할일뷰에 표시</div>
+          <div class="settings-subtitle subtitle-lg" style="margin:0;flex:1;">말씀 기록 보이기</div>
           <span data-lv="em" style="display:flex;gap:5px;color:var(--tx3);"><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M10 17C4 12.5 2 9.5 2 6.8 2 4.6 3.7 3 5.8 3 7.2 3 8.6 3.8 10 5.4 11.4 3.8 12.8 3 14.2 3 16.3 3 18 4.6 18 6.8 18 9.5 16 12.5 10 17Z"/></svg><svg width="8" height="9" viewBox="0 0 16 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" style="display:block;"><path d="M3 9.3l3.1 3.1L13.3 4.2"/></svg><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg><svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4 5 L10 11 L16 5"/><path d="M4 11 L10 17 L16 11"/></svg></span>
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkOn" onchange="updateSetting('dviewMarkOn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
@@ -7460,33 +7507,37 @@ try{
           <label class="settings-toggle"><input type="checkbox" id="setDviewMarkEven" onchange="updateSetting('dviewMarkEven',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
       </div>
+      </div>
 
       <!-- ── M뷰 암송 표시 방식 ── -->
       <!-- ⚠️ Sweeter 에는 월간뷰가 없다 → data-prod="b7" (v26-0921-7, HB 4-3) -->
-      <div class="settings-section" data-lv="p" data-prod="b7">
-        <div class="settings-section-title">월간 뷰 암송 표시</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰 날짜 칸에 암송 기록을 어떻게 표시할지 선택해요.</div>
-        <div style="display:flex;gap:8px;">
-          <button id="mviewMemCross" class="settings-btn on" style="flex:1;display:flex;align-items:center;justify-content:center;gap:5px;" onclick="updateSetting('mviewMemMode','cross')"><svg width="9" height="11" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 9.1l2.8 2.8L11.6 4.1"/></svg></button>
-          <button id="mviewMemAbbr" class="settings-btn" style="flex:1;" onclick="updateSetting('mviewMemMode','abbr')">약어</button>
+      <div class="sg" data-lv="p" data-prod="b7">
+        <div class="sg-h">월간 뷰 암송</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰 날짜 칸에 암송한 날을 어떻게</div>
+        <div class="sg-seg">
+          <button id="mviewMemCross" class="settings-btn on" style="display:flex;align-items:center;justify-content:center;gap:5px;" onclick="updateSetting('mviewMemMode','cross')"><svg width="9" height="11" viewBox="0 0 14 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 9.1l2.8 2.8L11.6 4.1"/></svg></button>
+          <button id="mviewMemAbbr" class="settings-btn" onclick="updateSetting('mviewMemMode','abbr')">약어</button>
         </div>
+      </div>
       </div>
 
       <!-- ── 태그 타일뷰 간추리기 (HB 14-1) — 타일뷰 좌상단 '제외' 와 같은 값 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">태그 타일뷰</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">태그 타일뷰</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row">
           <div class="settings-row-text">
-            <div class="settings-row-label">구절 수량 적은 태그 감추기</div>
-            <div class="settings-row-desc">타일뷰 좌상단 태그 목록에서 구절 수가 기준 이하인 태그를 빼요. 네비게이토 180 은 태그 400개 중 240개가 구절 하나뿐이라, 켜 두면 목록이 훨씬 짧아져요. 타일뷰의 '제외' 버튼과 같은 값이에요.</div>
+            <div class="settings-row-label">구절 적은 태그 감추기</div>
+            <div class="settings-row-desc">타일뷰 왼쪽 위 태그 목록에서 빼요 — 네비게이토 180 은 태그 400개 중 240개가 구절 하나라 켜면 훨씬 짧아져요. 타일뷰 '제외' 단추와 같은 값</div>
           </div>
           <label class="settings-toggle"><input type="checkbox" id="setVgTagExclOn" onchange="updateSetting('vgTagExcludeOn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
         <!-- 켰을 때만 나오는 줄 — 기준 개수 -->
         <div class="settings-row" id="setVgExclStepWrap">
           <div class="settings-row-text">
-            <div class="settings-row-label">기준 개수</div>
-            <div class="settings-row-desc">구절이 이 개수 <b>이하</b>인 태그를 빼요. 1이면 구절 하나뿐인 태그만 빠져요.</div>
+            <div class="settings-row-label">이 개수 이하면 감추기</div>
+            <div class="settings-row-desc">1 이면 구절 하나뿐인 태그만 빠져요</div>
           </div>
           <div class="hi-step">
             <button id="setVgExclMinus" onclick="vgStepTagExcl(-1)" aria-label="기준 줄이기">−</button>
@@ -7495,106 +7546,26 @@ try{
           </div>
         </div>
       </div>
+      </div>
 
       <!-- ── There 버튼 그림 (v26-0923-5, HB) — 세 벌 중 하나. 처음엔 기도하는 손.
            미드·파워만 (v26-0923-9, HB) ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">There 버튼</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">기도·예배 시간을 여는 There 버튼의 그림을 골라요.</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">There 단추</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">기도 · 예배 시간을 여는 단추의 그림</div>
         <div id="thereIconPick" style="display:flex;gap:8px;"></div>
+      </div>
       </div>
 
       </div><!-- /vstab-view -->
 
-      <div class="vsettings-tab-content settings-tab-content" id="vstab-alarm">
-
-<!-- ── 말씀 푸시 알림 ── -->
-      <div class="settings-section">
-        <div class="settings-section-title">말씀 푸시 알림</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">앱을 닫아둬도 정해진 시각에 말씀이 도착해요. 홈 화면에 설치하고 알림을 허용해야 해요.</div>
-
-        <div class="settings-row">
-          <div class="settings-row-text"><div class="settings-row-label">정해진 시각에 알림</div></div>
-          <label class="settings-toggle"><input type="checkbox" id="vpTimesOn" onchange="setVersePush('timesOn',this.checked)"><span class="settings-toggle-track"></span></label>
-        </div>
-        <div id="vpTimesBody" style="display:none;margin-top:6px;">
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-            <div id="vpTimeList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-            <button class="settings-btn" style="width:34px;padding:6px 0;font-size:15px;line-height:1;" onclick="vpAddTime()">+</button>
-          </div>
-        </div>
-
-        <div class="settings-row" style="margin-top:14px;">
-          <div class="settings-row-text"><div class="settings-row-label">일정 간격으로 알림</div></div>
-          <label class="settings-toggle"><input type="checkbox" id="vpIntervalOn" onchange="setVersePushInterval('on',this.checked)"><span class="settings-toggle-track"></span></label>
-        </div>
-        <div id="vpIntervalRow" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;">
-          <span id="vpFromWrap"></span>
-          <span style="font-size:11px;color:var(--tx3);">부터</span>
-          <span id="vpToWrap"></span>
-          <span style="font-size:11px;color:var(--tx3);">까지</span>
-          <select id="vpEvery" onchange="setVersePushInterval('everyMin',+this.value)" style="background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:6px 8px;color:var(--tx);font-size:12px;"></select>
-          <span style="font-size:11px;color:var(--tx3);">마다</span>
-        </div>
-
-        <div class="settings-subtitle" data-lv="mp">요일</div>
-        <div id="vpDayRow" data-lv="mp" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
-        <div class="settings-row-desc" id="vpSummary" style="margin-top:10px;font-size:10px;font-family:var(--font-number);"></div>
-
-        <!-- v26-0819-2 — 시트 '순서변경': 시각·간격·요일을 정한 뒤 맨 마지막에 고른다 -->
-        <div class="settings-subtitle" data-lv="p">어떤 순서로</div>
-        <div id="vpOrderRow" data-lv="p" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
-
-        <!-- 기기별 알림 스위치 (v26-0828-7) — 계정 설정은 그대로 두고 이 기기만 뺀다 -->
-        <div class="settings-row" style="margin-top:14px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">이 기기에서 알림 받기</div>
-            <div class="settings-row-desc">끄면 <b>이 기기에서만</b> 알림이 안 와요. 다른 기기는 그대로 받아요. (할일 알림도 함께 꺼져요)</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setDevNotifyV" onchange="setDeviceNotify(this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <!-- 서버 시험 (v26-1024-13) — Sweeter 에는 일반설정창의 '알림 테스트' 가 없어서 여기에도 둔다. 관리자 계정만 -->
-        <div class="settings-row" id="vpServerTestRow" style="margin-top:14px;display:none;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">서버 시험 알림</div>
-            <div class="settings-row-desc">이 앱에 등록된 기기로 서버가 직접 보내요. 누르고 8초 안에 홈 화면으로 나가면 배너로 와요.</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="settings-btn" onclick="sendTestPush()">서버</button>
-          </div>
-        </div>
-        <div class="settings-row" id="vpDiagRow" style="margin-top:14px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">알림 진단 기록</div>
-            <div class="settings-row-desc">알림을 눌렀는데 말씀 전체화면이 안 열릴 때, 그 순간 무슨 일이 있었는지 확인해요. 열어두면 저절로 새로고침돼요.</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="settings-btn" onclick="vpDiagToggle()">보기</button>
-            <button class="settings-btn" onclick="vpDiagCopy()">복사</button>
-          </div>
-        </div>
-        <div class="settings-row" id="vpClickTestRow" style="margin-top:8px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">말씀 클릭 경로 테스트</div>
-            <div class="settings-row-desc">지금 목록에 있는 말씀 하나로 진짜와 같은 알림을 띄워요. 그 알림을 <b>직접 눌러</b> 전체화면까지 가는지 봅니다. ('기기' 테스트는 표시만 확인해요)</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="settings-btn" onclick="testVerseClickPath()">시작</button>
-          </div>
-        </div>
-        <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:var(--font-number);font-size:10px;line-height:1.55;color:var(--tx2);"></div>
-      </div>
-
-            </div>
-
       <div class="vsettings-tab-content settings-tab-content" id="vstab-full">
 <!-- ── 전체화면 본문 크기 ── -->
-      <div class="settings-section">
-        <div class="settings-section-title">글자 크기</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">말씀 전체화면 본문에만 적용돼요. 작게 할수록 줄 간격이 넓어져 여백이 살아나요.</div>
+      <div class="sg">
+        <div class="sg-h">글자 크기</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">전체화면 본문만 — 작을수록 줄 간격이 넓어져 여백이 살아요</div>
         <div class="ts-row ts-row-eq">
           <button id="vfTs50" class="ts-btn" style="font-size:9px;" onclick="setVfTextScale(0.5)">태초에…</button>
           <button id="vfTs60" class="ts-btn" style="font-size:11px;" onclick="setVfTextScale(0.6)">태초에…</button>
@@ -7602,11 +7573,13 @@ try{
           <button id="vfTs100" class="ts-btn on" style="font-size:16px;" onclick="setVfTextScale(1)">태초에…</button>
         </div>
       </div>
+      </div>
 
       <!-- ── 강조 표시 ── -->
       <!-- 자리: 글자 크기 → 강조 표시 → 테마 (본문을 어떻게 보여줄지끼리 모은다) -->
-      <div class="settings-section">
-        <div class="settings-section-title">강조 표시</div>
+      <div class="sg">
+        <div class="sg-h">강조 표시</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. 전체화면과 말씀카드에 함께 적용돼요. 여러 개를 골라도 되고, 전부 끄면 강조가 없어요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
         <!-- 네 가지를 붙여 놓은 한 덩어리. 복수 선택이라 라디오가 아니다.
              두 개 이상 켜면 오른쪽에 '겹쳐쓰기'가 나타난다 (자리가 좁으면 아래로 접힌다) -->
@@ -7650,12 +7623,14 @@ try{
         </div>
         <div class="settings-row-desc" id="setHiOverlapDesc" style="margin-top:8px;"></div>
       </div>
+      </div>
 
       <!-- ── 명제 타이틀 글씨체 (v26-0901-5, HB) ──
            자리: 강조 표시 → **명제 타이틀** → 테마 (HB 지정).
            ⚠️ 명제집을 쓰는 사람만 보면 되는 것이라 파워 등급이다. -->
-      <div class="settings-section" id="ptTitleSettings" data-lv="p">
-        <div class="settings-section-title">명제 타이틀</div>
+      <div class="sg" id="ptTitleSettings" data-lv="p">
+        <div class="sg-h">명제 제목</div>
+        <div class="sg-card sg-pad">
         <div class="pt-motion-row">
           <button id="ptMotionDissolve" class="settings-btn on" style="border-radius:999px;padding:4px 10px;font-size:11px;" onclick="togglePropTitleMotion('dissolve')">디졸브</button>
           <button id="ptMotionTyping" class="settings-btn on" style="border-radius:999px;padding:4px 10px;font-size:11px;" onclick="togglePropTitleMotion('typing')">타이핑</button>
@@ -7665,81 +7640,95 @@ try{
              무리(명조·고딕·손글씨)로 묶는 것은 _ptSyncFontUI 가 한다 -->
         <div id="ptFontRow"></div>
       </div>
+      </div>
 
       <!-- ── 전체화면 테마 ── -->
-      <div class="settings-section">
-        <div class="settings-section-title">테마</div>
+      <div class="sg">
+        <div class="sg-h">테마</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">전체화면·타일뷰·공유 이미지에 함께 적용돼요. 하나만 고르면 하루 종일 그 패턴, 둘 이상 고르면 아래에서 시간구간마다 배정할 수 있어요.</div>
         <div id="vfThemeChips" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
         <div id="vfSecAssign" style="margin-top:12px;"></div>
+      </div>
       </div>
 
       <!-- ── 태그 그림 (v26-0825-3) ──
            그림체 고르는 줄은 켰을 때만 나온다 → data-cond="vfArt" + _vfArtSyncUI().
            ⚠️ style.display 를 건드리지 않는다 (설정창 등급의 .lv-hide 와 싸운다). -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">이미지 삽입</div>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">태그 그림</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀에 붙은 태그 하나를 골라 본문 바로 위에 옅게 띄워요. 열 때마다 다른 태그로 바뀌고, 본문이 길면 그림도 따라 올라가요. 그림이 없는 태그만 붙은 말씀에는 아무것도 안 나와요.</div>
-        <button id="vfArtOnBtn" class="settings-btn" style="width:100%;" onclick="toggleVfArt()">태그 그림 넣기</button>
+        <button id="vfArtOnBtn" class="settings-btn sr-go" onclick="toggleVfArt()">태그 그림 넣기</button>
         <div data-cond="vfArt" style="margin-top:10px;">
           <div class="settings-subtitle subtitle-lg">그림체</div>
-          <div style="display:flex;gap:8px;">
-            <button id="vfArtStMin" class="settings-btn" style="flex:1;padding:10px 6px;" onclick="setVfArtStyle('minimal')">
+          <div class="sg-seg">
+            <button id="vfArtStMin" class="settings-btn" style="padding:10px 6px;" onclick="setVfArtStyle('minimal')">
               <span class="vfart-pv" id="vfArtPvMin"></span>minimal
             </button>
-            <button id="vfArtStOrg" class="settings-btn" style="flex:1;padding:10px 6px;" onclick="setVfArtStyle('organic')">
+            <button id="vfArtStOrg" class="settings-btn" style="padding:10px 6px;" onclick="setVfArtStyle('organic')">
               <span class="vfart-pv" id="vfArtPvOrg"></span>organic
             </button>
           </div>
         </div>
       </div>
+      </div>
 
       <!-- ── 전체화면 우측 카운터 집계 범위 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">반응 카운터</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">말씀 전체화면 오른쪽의 좋아요·암송·Deeper·Even 횟수를 내 기록만 볼지, 모든 구독자 합계로 볼지 정해요.</div>
-        <div style="display:flex;gap:8px;">
-          <button id="vcntScopeMine" class="settings-btn" style="flex:1;" onclick="setVerseCountScope('mine')">내 것만</button>
-          <button id="vcntScopeAll" class="settings-btn on" style="flex:1;" onclick="setVerseCountScope('all')">구독자 전체</button>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">반응 횟수</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">전체화면 오른쪽 좋아요 · 암송 · Deeper · Even 숫자</div>
+        <div class="sg-seg">
+          <button id="vcntScopeMine" class="settings-btn" onclick="setVerseCountScope('mine')">내 것만</button>
+          <button id="vcntScopeAll" class="settings-btn on" onclick="setVerseCountScope('all')">구독자 전체</button>
         </div>
+      </div>
       </div>
 
       <!-- ── Deeper 로 열 성경 (v26-1006-4) — 기본은 앱 안 성경 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">Deeper 로 열 성경</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">Deeper 를 누르면 그 말씀이 있는 장을 어디서 열지 정해요. 앱 안 성경은 개역한글이고 인터넷이 없어도 열려요.</div>
-        <div style="display:flex;gap:8px;">
-          <button id="deeperOpenApp" class="settings-btn on" style="flex:1;" onclick="setDeeperOpen('app')">앱 안 성경</button>
-          <button id="deeperOpenBsk" class="settings-btn" style="flex:1;" onclick="setDeeperOpen('bsk')">대한성서공회 사이트</button>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">Deeper 로 열 성경</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">앱 안 성경은 개역한글 — 인터넷이 없어도 열려요</div>
+        <div class="sg-seg">
+          <button id="deeperOpenApp" class="settings-btn on" onclick="setDeeperOpen('app')">앱 안 성경</button>
+          <button id="deeperOpenBsk" class="settings-btn" onclick="setDeeperOpen('bsk')">대한성서공회</button>
         </div>
+      </div>
       </div>
 
       <!-- ── Deeper·Even Deeper 링크를 열 브라우저 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">링크 열기</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">성경 사이트 열 곳</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">Deeper 를 눌렀을 때 성경 사이트를 어디서 열지 정해요. 홈 화면에 설치한 앱에서만 적용되고, 고른 브라우저가 없으면 앱 안에서 열려요. (Even Deeper 는 ChatGPT 앱으로 이어져야 해서 이 설정을 따르지 않아요)</div>
-        <div style="display:flex;gap:8px;">
-          <button id="lnkModeSafari" class="settings-btn on" style="flex:1;" onclick="setLinkOpenMode('safari')">사파리</button>
-          <button id="lnkModeChrome" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('chrome')">크롬</button>
-          <button id="lnkModeInApp" class="settings-btn" style="flex:1;" onclick="setLinkOpenMode('inapp')">앱 안에서</button>
+        <div class="sg-seg">
+          <button id="lnkModeSafari" class="settings-btn on" onclick="setLinkOpenMode('safari')">사파리</button>
+          <button id="lnkModeChrome" class="settings-btn" onclick="setLinkOpenMode('chrome')">크롬</button>
+          <button id="lnkModeInApp" class="settings-btn" onclick="setLinkOpenMode('inapp')">앱 안에서</button>
         </div>
+      </div>
       </div>
 
       <!-- ── There 전체화면 세팅 (v26-0923-5, HB) — 파워만 ──
            실제 There 화면을 띄우고 그 위의 판에서 고른다. 값은 **이 기기에만** 남는다
            (_lsk('thereFx')). 세팅하러 들어간 동안은 기록하지 않는다. -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">There 전체화면 세팅</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">밝기·입자 양·속도·십자가·색을 실제 화면을 보면서 맞춰요. 이 기기에만 저장돼요.</div>
-        <button class="settings-btn" style="width:100%;" onclick="openThereTune()">세팅하러 가기</button>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">There 화면</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">밝기 · 입자 · 속도 · 십자가 · 색을 실제 화면을 보면서 — 이 기기에만</div>
+        <button class="settings-btn sr-go" onclick="openThereTune()">There 화면 맞추기</button>
+      </div>
       </div>
 
             </div>
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-share">
 <!-- ── 공유 이미지 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">공유 이미지 요소</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">이미지에 넣을 것</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:10px;">이미지 카드에 넣을 항목을 골라요. 버튼이 놓인 자리가 이미지에서 그것이 나오는 자리예요. 강조는 '전체화면' 탭에서 정한 그대로 들어가요.</div>
         <!-- 미리보기를 가운데 두고 네 귀퉁이에 버튼 — 어디에 나오는지 눈으로 알 수 있게 -->
         <div class="img-corners">
@@ -7760,14 +7749,16 @@ try{
         <!-- 태그 그림은 자리가 **랜덤**이라 네 귀퉁이 중 하나로 못 박아 둘 수 없다.
              그래서 미리보기 아래에 한 줄로 따로 둔다. (v26-0825-3) -->
         <button id="imgArt" class="settings-btn on" style="width:100%;margin-top:10px;" onclick="toggleImgIncl('imgInclArt','imgArt')">그림</button>
-        <div class="settings-row-desc" style="margin-top:6px;">말씀설정 '전체화면' 탭에서 <b>이미지 삽입</b>을 켰을 때만 나와요.</div>
+        <div class="settings-row-desc" style="margin-top:6px;">말씀 설정 › 전체화면 › <b>태그 그림</b>을 켰을 때만 나와요.</div>
+      </div>
       </div>
 
       <!-- ── 공유 이미지 크기 ── -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">공유 이미지 크기</div>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">이미지 크기</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">말씀영역·위젯에서 공유할 때 쓰는 크기예요. 전체화면·타일뷰에서는 보던 화면 그대로 저장돼요.</div>
-        <div class="settings-subtitle subtitle-lg">모바일</div>
+        <div class="settings-subtitle subtitle-lg">폰</div>
         <div style="display:flex;gap:6px;">
           <button id="ssM_fhd" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','fhd')">FHD+</button>
           <button id="ssM_qhd" class="settings-btn on" style="flex:1;" onclick="setShareSize('mobile','qhd')">QHD+</button>
@@ -7786,21 +7777,23 @@ try{
         </div>
         <div class="settings-row-desc" id="shareSizeInfo" style="margin-top:8px;font-family:var(--font-number);font-size:10px;"></div>
       </div>
+      </div>
 
       <!-- ── 공유 텍스트 ── -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">공유 텍스트</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">글로 공유할 때</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">본문·장절은 항상 포함돼요.</div>
-        <div class="settings-subtitle subtitle-lg">추가 항목</div>
-        <div style="display:flex;gap:8px;">
-          <button id="txtCat" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclCat','txtCat')">대분류</button>
-          <button id="txtTopic" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTopic','txtTopic')">소주제</button>
-          <button id="txtTag" class="settings-btn" style="flex:1;" onclick="toggleTxtIncl('txtInclTag','txtTag')">태그</button>
+        <div class="settings-subtitle subtitle-lg">덧붙일 것</div>
+        <div class="sg-seg">
+          <button id="txtCat" class="settings-btn" onclick="toggleTxtIncl('txtInclCat','txtCat')">대분류</button>
+          <button id="txtTopic" class="settings-btn" onclick="toggleTxtIncl('txtInclTopic','txtTopic')">소주제</button>
+          <button id="txtTag" class="settings-btn" onclick="toggleTxtIncl('txtInclTag','txtTag')">태그</button>
         </div>
         <div class="settings-subtitle subtitle-lg">장절 형식</div>
-        <div style="display:flex;gap:8px;">
-          <button id="txtRefShort" class="settings-btn on" style="flex:1;" onclick="setTxtRefStyle('short')">시 23:1</button>
-          <button id="txtRefLong" class="settings-btn" style="flex:1;" onclick="setTxtRefStyle('long')">시편 23편 1절</button>
+        <div class="sg-seg">
+          <button id="txtRefShort" class="settings-btn on" onclick="setTxtRefStyle('short')">시 23:1</button>
+          <button id="txtRefLong" class="settings-btn" onclick="setTxtRefStyle('long')">시편 23편 1절</button>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;">
           <button id="txtBrSquare" class="settings-btn" style="flex:1;" onclick="setTxtRefBracket('square')">[ ]</button>
@@ -7812,42 +7805,99 @@ try{
           <button id="txtPosAfter" class="settings-btn on" style="flex:1;" onclick="setTxtRefPos('after')">본문 뒤</button>
         </div>
       </div>
+      </div>
 
       </div><!-- /vstab-share -->
 
-      <div class="vsettings-tab-content settings-tab-content" id="vstab-coll">
-        <!-- 말씀 모음 -->
-        <div class="settings-section">
-        <!-- v26-0907-9, HB 94(8) — 대시보드→여기(vDashOpenCollSettings)는 이미
-             있었는데 되돌아가는 길이 없었다. 우상단에 파이 아이콘으로 추가. -->
-        <div class="settings-section-title" style="display:flex;align-items:center;gap:6px;">
-          <span style="flex:1;">말씀 모음</span>
-          <span class="vset-dashbtn" onclick="vsetGoDashboard()" title="대시보드" aria-label="대시보드">
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 2.5 V10 L16.3 13.7" fill="none"/></svg>
-          </span>
-        </div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">선택한 말씀 모음에서 성경 구절을 뽑아서 알림, 말씀카드, 상단말씀에 사용합니다.</div>
-        <div id="collBtnRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <!-- ═══ 알림 — 맨 뒤 (계정 앞) ═══ -->
+      <div class="vsettings-tab-content settings-tab-content" id="vstab-alarm">
 
-        <!-- 말씀 목록 기간 기준 (말씀 모음 필터의 주간/월간/연간에도 적용) -->
-        <div class="settings-row" style="margin-top:4px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">기간 기준</div>
-            <div class="settings-row-desc">주간/월간/연간 필터를 어떻게 셀지 정해요. 기준날짜: 이번 주 주일~오늘 / 이번 달 1일~오늘 / 올해 1월 1일~오늘. 만 기간: 최근 7일 / 30일 / 365일</div>
+<!-- ── 말씀 푸시 알림 ── -->
+      <div class="sg">
+        <div class="sg-h">말씀 알림</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:8px;">앱을 닫아 둬도 와요 — 아이폰은 홈 화면에 추가하고 알림을 허락해야 해요</div>
+
+        <div class="settings-row">
+          <div class="settings-row-text"><div class="settings-row-label">정해진 시각에</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="vpTimesOn" onchange="setVersePush('timesOn',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div id="vpTimesBody" style="display:none;margin-top:6px;">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+            <div id="vpTimeList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            <button class="settings-btn" style="width:34px;padding:6px 0;font-size:15px;line-height:1;" onclick="vpAddTime()">+</button>
           </div>
         </div>
-        <div style="display:flex;gap:6px;margin:6px 0 12px;">
-          <button class="preset-btn" id="setPeriodBaseCalendar" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('periodBaseMode','calendar')">기준날짜</button>
-          <button class="preset-btn" id="setPeriodBaseRolling" style="width:auto;padding:0 12px;font-size:11px;" onclick="updateSetting('periodBaseMode','rolling')">만 기간</button>
+
+        <div class="settings-row" style="margin-top:14px;">
+          <div class="settings-row-text"><div class="settings-row-label">일정 간격으로</div></div>
+          <label class="settings-toggle"><input type="checkbox" id="vpIntervalOn" onchange="setVersePushInterval('on',this.checked)"><span class="settings-toggle-track"></span></label>
+        </div>
+        <div id="vpIntervalRow" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px;">
+          <span id="vpFromWrap"></span>
+          <span style="font-size:11px;color:var(--tx3);">부터</span>
+          <span id="vpToWrap"></span>
+          <span style="font-size:11px;color:var(--tx3);">까지</span>
+          <select id="vpEvery" onchange="setVersePushInterval('everyMin',+this.value)" style="background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:6px 8px;color:var(--tx);font-size:12px;"></select>
+          <span style="font-size:11px;color:var(--tx3);">마다</span>
         </div>
 
-        <!-- 구독한 말씀 모음 (큰 토글 버튼) -->
-        <div id="subCollList" class="sub-coll-list"></div>
+        <div class="settings-subtitle" data-lv="mp">요일</div>
+        <div id="vpDayRow" data-lv="mp" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;"></div>
+        <div class="settings-row-desc" id="vpSummary" style="margin-top:10px;font-size:10px;font-family:var(--font-number);"></div>
 
-        <!-- 켜진 각 모음의 하위 필터 (전체/대분류별/소주제별/성경별, 복수선택) -->
-        <div id="collFilterPanels" class="coll-filter-panels"></div>
+        <!-- v26-0819-2 — 시트 '순서변경': 시각·간격·요일을 정한 뒤 맨 마지막에 고른다 -->
+        <div class="settings-subtitle" data-lv="p">어떤 순서로</div>
+        <div id="vpOrderRow" data-lv="p" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;"></div>
+
+        <!-- 기기별 알림 스위치 (v26-0828-7) — 계정 설정은 그대로 두고 이 기기만 뺀다 -->
+        <div class="settings-row" style="margin-top:14px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">이 기기에서 받기</div>
+            <div class="settings-row-desc">끄면 <b>이 기기만</b> 조용해요 — 다른 기기는 그대로 · 할일 알림도 함께</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="setDevNotifyV" onchange="setDeviceNotify(this.checked)">
+            <span class="settings-toggle-track"></span>
+          </label>
         </div>
-      </div><!-- /vstab-coll -->
+        <!-- 서버 시험 (v26-1024-13) — Sweeter 에는 일반설정창의 '알림 테스트' 가 없어서 여기에도 둔다. 관리자 계정만 -->
+        <div class="settings-row" id="vpServerTestRow" style="margin-top:14px;display:none;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">서버 시험 보내기</div>
+            <div class="settings-row-desc">이 앱에 등록된 기기로 서버가 직접 보내요. 누르고 8초 안에 홈 화면으로 나가면 배너로 와요.</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="sendTestPush()">서버</button>
+          </div>
+        </div>
+        <div class="settings-row" id="vpDiagRow" style="margin-top:14px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">알림 기록</div>
+            <div class="settings-row-desc">알림을 눌렀는데 말씀 전체화면이 안 열릴 때, 그 순간 무슨 일이 있었는지 확인해요. 열어두면 저절로 새로고침돼요.</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="vpDiagToggle()">보기</button>
+            <button class="settings-btn" onclick="vpDiagCopy()">복사</button>
+          </div>
+        </div>
+        <div class="settings-row" id="vpClickTestRow" style="margin-top:8px;">
+          <div class="settings-row-text">
+            <div class="settings-row-label">눌러서 열리는지 시험</div>
+            <div class="settings-row-desc">지금 목록에 있는 말씀 하나로 진짜와 같은 알림을 띄워요. 그 알림을 <b>직접 눌러</b> 전체화면까지 가는지 봅니다. ('기기' 테스트는 표시만 확인해요)</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;">
+            <button class="settings-btn" onclick="testVerseClickPath()">시작</button>
+          </div>
+        </div>
+        <div id="vpDiagBody" style="display:none;margin-top:6px;background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:8px;max-height:240px;overflow:auto;font-family:var(--font-number);font-size:10px;line-height:1.55;color:var(--tx2);"></div>
+      </div>
+      </div>
+
+            </div><!-- /vstab-alarm -->
+
+
+
 
       <!-- ═══ 계정 (Sweeter 전용) ═══
            비어 있는 것이 맞다. _swMergeAccountTab() 이 일반설정창 '계정' 탭의
@@ -8705,7 +8755,7 @@ try{
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
   </button>
   <div class="tf-tune" id="tfTune" style="display:none;">
-    <div class="tf-top"><span>There 전체화면 세팅</span><button onclick="thereTuneFold()" id="tfFoldBtn">접기</button></div>
+    <div class="tf-top"><span>There 화면 맞추기</span><button onclick="thereTuneFold()" id="tfFoldBtn">접기</button></div>
     <div class="tf-rows">
       <label class="tf-sl">밝기<input type="range" id="tfK_a" min="0.2" max="2.5" step="0.1"><output></output></label>
       <label class="tf-sl">입자 양<input type="range" id="tfK_n" min="0.2" max="3" step="0.1"><output></output></label>
@@ -13995,7 +14045,8 @@ document.addEventListener('keydown',e=>{
   e.preventDefault();
   closeVerseSettingsModal();     // ×와 같은 길 (v26-1007-2)
 });
-const VERSE_SETTINGS_TABS=['top','widget','view','alarm','full','share','coll','account'];
+// 세 창 공통 차례 — 어디서 뽑나(모음) → 어디에 보이나 → 알림 → 계정 (v26-1024-16, HB 설정창 정리)
+const VERSE_SETTINGS_TABS=['coll','top','widget','view','full','share','alarm','account'];
 // 이 등급에서 보이는 탭들. 이지는 '말씀 위젯'·'공유' 탭 자체를 감춘다
 // (구글시트 '말씀설정창' 탭의 "(이지유저에는 안 보임)").
 // ⚠️ 일반설정창의 _stabList() 와 같은 함정 — 자리(idx)는 항상 **보이는 목록** 기준이다.
@@ -14141,11 +14192,30 @@ const _VSET_ITEM_BTNS=[
   ['setVerseWidgetText','verseWidgetText'],['setVerseWidgetRef','verseWidgetRef'],
   ['setVerseWidgetTag','verseWidgetTag']
 ];
+// ── 상단 › 다음 구절로 (v26-1024-16, HB 설정창 정리) ──
+// 스위치 둘(매일 · 매 시간구간)을 한 줄 고르기로 보였다. **저장 값은 예전 두 칸 그대로**다 —
+//   그대로 = 둘 다 끔 · 하루에 한 번 = 매일만 · 구간마다 = 매 시간구간도 켬.
+// 예전에 '매 시간구간만' 켠 기기는 구간마다로 보인다(renderVerseBar 에서 구간 쪽이 덮어 똑같이 움직인다).
+function _verseNextMode(s){
+  s=s||ST.settings;
+  if(s.verseRotateBySec)return 'sec';
+  return s.verseBarAutoRotate!==false?'day':'off';
+}
+function _syncVerseNextBtns(){
+  const m=_verseNextMode();
+  [['vNextOff','off'],['vNextDay','day'],['vNextSec','sec']].forEach(([id,v])=>document.getElementById(id)?.classList.toggle('on',m===v));
+}
+function setVerseNext(m){
+  if(m!=='off'&&m!=='day'&&m!=='sec')return;
+  updateSetting('verseBarAutoRotate',m!=='off');
+  updateSetting('verseRotateBySec',m==='sec');
+  _syncVerseNextBtns();
+}
 function renderVerseSettingsModal(){
   const s=ST.settings;
   const el=id=>document.getElementById(id);
   if(el('setVerseBarOn'))el('setVerseBarOn').checked=!!s.verseBarOn;
-  if(el('setVerseBarAutoRotate'))el('setVerseBarAutoRotate').checked=s.verseBarAutoRotate!==false;
+  _syncVerseNextBtns();
   // ⚠️ 이 항목들은 <input type=checkbox> 가 아니라 **버튼**(.preset-btn)이다.
   //    켜짐은 `.on` **클래스**로 보인다 → `.checked` 를 넣으면 아무 일도 일어나지
   //    않는다. 그래서 설정창을 열 때마다 저장값과 무관하게 **다 켜진 것처럼** 보였고,
@@ -32725,8 +32795,8 @@ function renderVcSettings(){
       ${swRow('verseCardLike','좋아요',rIcon('like'))}${swRow('verseCardMem','암송',rIcon('mem'))}${swRow('verseCardDeeper','Deeper',rIcon('deeper'))}${swRow('verseCardEven','Even Deeper',rIcon('even'))}${swRow('verseCardShare','공유',rIcon('share'))}${swRow('verseCardThere','There',`<span style="display:inline-flex;align-items:center;justify-content:center;width:15px;flex-shrink:0;color:var(--tx2);">${_thereIcHTML().replace('class="there-ic"','class="there-ic" style="width:13px;height:13px;"')}</span>`)}
     </div>
     <div class="settings-section">
-      <div class="settings-row-desc">반응 카운터와 링크 열기는 <b>전체화면 설정을 그대로 따라가요.</b><br>
-        지금은 반응 카운터 <b>${scopeTxt}</b> · 링크 열기 <b>${lnkTxt}</b> 예요.</div>
+      <div class="settings-row-desc">반응 횟수와 성경 사이트 열 곳은 <b>전체화면 설정을 그대로 따라가요.</b><br>
+        지금은 반응 횟수 <b>${scopeTxt}</b> · 성경 사이트 <b>${lnkTxt}</b> 예요.</div>
     </div>`;
 }
 function setVcShow(id,key,on){
@@ -43460,7 +43530,7 @@ function renderSettingsPanel(){
   _chk('setLoopViews',s.loopViews===true);
   refreshNotifyUI();
   _chk('setVerseBarOn',!!s.verseBarOn);
-  _chk('setVerseBarAutoRotate',s.verseBarAutoRotate!==false);
+  _syncVerseNextBtns();
   // 같은 표를 말씀 설정창과 함께 쓴다 (한쪽만 고치면 다른 창에서 어긋난다)
   _VSET_ITEM_BTNS.forEach(([id,key])=>document.getElementById(id)?.classList.toggle('on',s[key]!==false));
   _initSneakMaxWPicker();
@@ -43469,7 +43539,6 @@ function renderSettingsPanel(){
     document.getElementById('setVWTextSize'+n)?.classList.toggle('on',vwT===n);
     document.getElementById('setVWRefSize'+n)?.classList.toggle('on',vwR===n);
   });
-  document.getElementById('setVerseRotateBySec')&&(document.getElementById('setVerseRotateBySec').checked=!!s.verseRotateBySec);
   _syncHiUI();
   const pbm=s.periodBaseMode||'calendar';
   document.getElementById('setPeriodBaseCalendar')?.classList.toggle('on',pbm==='calendar');

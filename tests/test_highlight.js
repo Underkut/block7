@@ -203,12 +203,13 @@ console.log('\n시나리오 9 — 화면 설정 (전체화면 탭)');
   const full = SRC.slice(SRC.indexOf('id="vstab-full"'), SRC.indexOf('id="vstab-share"'));
   sc.eq('전체화면 탭에 있다', full.includes('>강조 표시</div>'), true);
   sc.eq('뷰 탭에는 없다',
-        SRC.slice(SRC.indexOf('id="vstab-top"'), SRC.indexOf('id="vstab-alarm"')).includes('setHiBold'), false);
-  sc.eq('차례는 글자 크기 → 강조 표시 → 명제 타이틀 → 테마',
-        [...full.matchAll(/<div class="settings-section-title">([^<]+)</g)].map(m => m[1]).slice(0, 4),
-        ['글자 크기', '강조 표시', '명제 타이틀', '테마']);
-  // 제목은 소제목이 아니라 구역 제목(굵게)
-  sc.eq('구역 제목으로', full.includes('<div class="settings-section-title">강조 표시</div>'), true);
+        SRC.slice(SRC.indexOf('id="vstab-view"'), SRC.indexOf('id="vstab-full"')).includes('setHiBold'), false);
+  // v26-1024-16 (HB 설정창 정리) — 칸은 묶음(.sg), 제목은 묶음 제목(.sg-h). '명제 타이틀' > '명제 제목'
+  sc.eq('차례는 글자 크기 → 강조 표시 → 명제 제목 → 테마',
+        [...full.matchAll(/<div class="sg-h">([^<]+)</g)].map(m => m[1]).slice(0, 4),
+        ['글자 크기', '강조 표시', '명제 제목', '테마']);
+  // 제목은 소제목이 아니라 묶음 제목
+  sc.eq('묶음 제목으로', full.includes('<div class="sg-h">강조 표시</div>'), true);
   sc.eq('소제목이 아니다', /font-weight:600;color:var\(--tx2\);">강조 표시</.test(SRC), false);
   // 0812-15: 붙여 놓은 한 덩어리(세그먼티드) · 복수 선택 · 아이콘
   const seg = full.slice(full.indexOf('class="hi-seg"'), full.indexOf('hi-step-wrap'));
