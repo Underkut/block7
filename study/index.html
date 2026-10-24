@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1024-2 -->
+<!-- 공부 친구들 v. 26-1024-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -208,8 +208,18 @@ input.sw{appearance:none;-webkit-appearance:none;flex:none;width:48px;height:28p
 input.sw::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .2s cubic-bezier(.22,.8,.24,1)}
 input.sw:checked{background:#3CC7A8}
 input.sw:checked::after{transform:translateX(20px)}
-#stKind .pill{background:#fff;box-shadow:0 2px 0 var(--line)}
-#stKind .pill.on{background:#FFF0C2;color:var(--ink);box-shadow:inset 0 0 0 2.5px var(--today)}
+/* 내 친구 고르기 (샤론 1024 ③) */
+.bpv{display:flex;align-items:center;gap:14px;background:var(--bg);border-radius:18px;padding:8px 16px 8px 8px}
+.bpv-me{width:84px;flex:none}
+.bpv b{display:block;font-family:Jua;font-weight:normal;font-size:20px}
+.bpv small{font-size:13px;color:var(--sub)}
+.bsub{font-size:13px;color:var(--sub);margin:14px 2px 8px}
+.bgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.bgrid.art{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.bgrid button{border:none;background:var(--bg);border-radius:16px;padding:6px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:Jua;font-size:14px;color:var(--ink)}
+.bgrid button span{width:52px;display:block}
+.bgrid.art button span{width:46px}
+.bgrid button.on{background:#FFF0C2;box-shadow:inset 0 0 0 2.5px var(--today)}
 .hwwk{display:flex;align-items:center;gap:4px}.hwwk .days7{flex:1;min-width:0}.hwwk>button{flex:none;width:30px;height:48px;border:none;background:transparent;color:var(--sub);font-size:24px}
 .days7 button small{display:block;font-size:11px;font-family:inherit;opacity:.8}.days7 button:disabled{opacity:.35}
 .hwnote{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(40,30,20,.35);padding:16px}
@@ -351,7 +361,7 @@ const clampInt = (v, lo, hi, def) => { v = Math.round(Number(v)); return Number.
 
 function blankState() {
   return {v: 1, books: [], tasks: [], sessions: [], run: null, snooze: {}, dismiss: {}, coins: 0, spent: 0,
-    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSeen: '', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, lastBackup: 0};
+    applied: [], promisesSeen: [], subjects: [], hw: [], hwMode: '', hwSeen: '', art: 'A', kind: 'rabbit', nick: '', made: Date.now(), sfx: true, lastBackup: 0};
 }
 function normBook(b) {
   if (!b || typeof b !== 'object' || !b.id || !b.name) return null;
@@ -380,6 +390,7 @@ function normState(o) {
     .map(h => ({id: String(h.id), title: String(h.title).slice(0, 40), subj: subjOf(h.subj).k, due: isD(h.due) ? h.due : '', doDate: h.doDate, done: isD(h.done) ? h.done : ''}));
   s.hwMode = o.hwMode === 'eve' || o.hwMode === 'day' ? o.hwMode : '';   // '' = 아직 안 고름 → 오늘 화면에 고르는 칸 (옛 'now' 는 저절로 들어간 값이라 다시 묻는다)
   s.hwSeen = isD(o.hwSeen) ? o.hwSeen : '';
+  s.art = ['A', 'B', 'C', 'D', 'E'].includes(o.art) ? o.art : 'A';   // 캐릭터 그림 스타일 — 처음엔 A 파스텔 플랫 (샤론 1024 ③)
   s.books = (Array.isArray(o.books) ? o.books : []).map(normBook).filter(Boolean);
   s.tasks = (Array.isArray(o.tasks) ? o.tasks : []).filter(t => t && t.id && t.title && /^\d{4}-\d{2}-\d{2}$/.test(t.date))
     .map(t => ({id: String(t.id), title: String(t.title).slice(0, 40), date: t.date, time: hmToMin(t.time) === null ? '' : t.time, dur: clampInt(t.dur, 0, 240, 0), subj: subjOf(t.subj).k}));
@@ -645,7 +656,7 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1024-2';
+const APP_VERSION = 'v. 26-1024-3';
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
@@ -665,50 +676,85 @@ const ICO = {
   cam: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
 };
 
-/* 캐릭터 — 그림 파일 없이 코드로. 단계 1(아기)~5(어른). ⚠️ 임시 그림이다: 딸이 마음에 안 들어 해서 S-6 에서 화풍부터 다시 정한다 */
-function buddySvg(kind, stage, o) {
-  o = o || {}; const st = Math.max(1, Math.min(5, stage || 3));
-  const T = {1:[50,74,46,8,8],2:[46,64,52,20,7],3:[42,58,62,32,6.3],4:[39,56,70,42,5.7],5:[37,56,76,52,5.2]}[st];
-  const [hr, bw, bh, lh, er] = T, G = 248, legTop = G - 6 - lh, bodyTop = legTop + 8 - bh, hy = bodyTop - hr * 0.7;
-  const PAL = {rabbit:['#FFF6F1','#FFF6F1','#FFB3C1','#FFE3E8',0], cat:['#FFC48A','#FFC48A','#FF9EAF','#FFF1DC',0], hamster:['#F5BE72','#F5BE72','#FF9EAF','#FFF4E2',1],
-    dog:['#E2B183','#9C6B47','#9C6B47','#FFF1DF',1], bear:['#B07A52','#B07A52','#E8C7A5','#EBCFAE',1], fox:['#FF8F3D','#FF8F3D','#FFF1E2','#FFF1E2',1], panda:['#FFFFFF','#3B3466','#3B3466','#FFFFFF',0]};
-  const [fur, ear, earIn, inner, muz] = PAL[kind] || PAL.rabbit;
-  const ell = (cx, cy, rx, ry) => `M${cx - rx},${cy} a${rx},${ry} 0 1,0 ${2 * rx},0 a${rx},${ry} 0 1,0 ${-2 * rx},0 `;
-  const tri = (a, b, c) => `M${a} L${b} L${c} Z `;
-  let eb = '', ei = '', ef = '', pt = '';
-  if (kind === 'cat' || kind === 'fox') { const k = kind === 'fox' ? 1.5 : 1.3;
-    eb = tri([100 - hr * .9, hy - hr * .3], [100 - hr * .72, hy - hr * k], [100 - hr * .12, hy - hr * .9]) + tri([100 + hr * .9, hy - hr * .3], [100 + hr * .72, hy - hr * k], [100 + hr * .12, hy - hr * .9]);
-    ei = tri([100 - hr * .72, hy - hr * .6], [100 - hr * .66, hy - hr * (k - .22)], [100 - hr * .36, hy - hr * .86]) + tri([100 + hr * .72, hy - hr * .6], [100 + hr * .66, hy - hr * (k - .22)], [100 + hr * .36, hy - hr * .86]);
-  } else if (kind === 'bear' || kind === 'panda') {
-    eb = ell(100 - hr * .72, hy - hr * .72, hr * .3, hr * .3) + ell(100 + hr * .72, hy - hr * .72, hr * .3, hr * .3);
-    ei = ell(100 - hr * .72, hy - hr * .72, hr * .15, hr * .15) + ell(100 + hr * .72, hy - hr * .72, hr * .15, hr * .15);
-    if (kind === 'panda') pt = ell(100 - hr * .36, hy + hr * .06, hr * .2, hr * .25) + ell(100 + hr * .36, hy + hr * .06, hr * .2, hr * .25);
-  } else if (kind === 'hamster') {
-    eb = ell(100 - hr * .68, hy - hr * .8, hr * .22, hr * .22) + ell(100 + hr * .68, hy - hr * .8, hr * .22, hr * .22);
-    ei = ell(100 - hr * .68, hy - hr * .8, hr * .11, hr * .11) + ell(100 + hr * .68, hy - hr * .8, hr * .11, hr * .11);
-  } else if (kind === 'dog') ef = ell(100 - hr * .95, hy + hr * .05, hr * .26, hr * .56) + ell(100 + hr * .95, hy + hr * .05, hr * .26, hr * .56);
-  else { const ry = hr * (st === 1 ? .5 : .7), cy = hy - hr - ry * .6;
-    eb = ell(100 - hr * .38, cy, hr * .24, ry) + ell(100 + hr * .38, cy, hr * .24, ry); ei = ell(100 - hr * .38, cy + 4, hr * .11, ry * .68) + ell(100 + hr * .38, cy + 4, hr * .11, ry * .68); }
-  const lw = bw * .3, top = o.top || fur, ey = hy + hr * .06, ed = hr * .36, ny = hy + hr * .32, px = 100 + hr * .55, py = hy - hr * .72;
-  return `<svg viewBox="0 0 200 260" width="100%" aria-hidden="true"><g stroke="#3B3466" stroke-width="3.2" stroke-linejoin="round" stroke-linecap="round">
-<ellipse cx="100" cy="250" rx="${bw * .62}" ry="7" fill="#3B3466" fill-opacity=".12" stroke="none"/>
-${o.bag ? `<rect x="${100 - bw / 2 - 9}" y="${bodyTop + 6}" width="${bw + 18}" height="${bh * .8}" rx="12" fill="#A66BFF"/>` : ''}
-<rect x="${100 - lw - 2}" y="${legTop}" width="${lw}" height="${lh + 6}" rx="${lw / 2}" fill="${o.bottom || fur}"/><rect x="102" y="${legTop}" width="${lw}" height="${lh + 6}" rx="${lw / 2}" fill="${o.bottom || fur}"/>
-<ellipse cx="${100 - lw / 2 - 4}" cy="${G - 4}" rx="${lw * .72}" ry="7" fill="${o.shoes || '#3B3466'}"/><ellipse cx="${104 + lw / 2}" cy="${G - 4}" rx="${lw * .72}" ry="7" fill="${o.shoes || '#3B3466'}"/>
-<rect x="${100 - bw / 2 - 9}" y="${bodyTop + 10}" width="15" height="${bh * .58}" rx="7.5" fill="${top}" transform="rotate(${o.wave ? 150 : 16} ${100 - bw / 2} ${bodyTop + 12})"/>
-<rect x="${100 + bw / 2 - 6}" y="${bodyTop + 10}" width="15" height="${bh * .58}" rx="7.5" fill="${top}" transform="rotate(-16 ${100 + bw / 2} ${bodyTop + 12})"/>
-<rect x="${100 - bw / 2}" y="${bodyTop}" width="${bw}" height="${bh}" rx="${bw * .42}" fill="${top}"/>
-${o.top ? '' : `<ellipse cx="100" cy="${bodyTop + bh * .58}" rx="${bw * .27}" ry="${bh * .27}" fill="${inner}" stroke="none"/>`}
-<path d="${eb}" fill="${ear}"/><path d="${ei}" fill="${earIn}" stroke="none"/>
-<circle cx="100" cy="${hy}" r="${hr}" fill="${fur}"/><path d="${ef}" fill="${ear}"/><path d="${pt}" fill="#3B3466" stroke="none"/>
-${muz ? `<ellipse cx="100" cy="${hy + hr * .4}" rx="${hr * .36}" ry="${hr * .25}" fill="${inner}" stroke="none"/>` : ''}
-<ellipse cx="${100 - hr * .6}" cy="${hy + hr * .36}" rx="${hr * (st === 1 ? .19 : .15)}" ry="${hr * .1}" fill="#FF8FA3" fill-opacity=".55" stroke="none"/><ellipse cx="${100 + hr * .6}" cy="${hy + hr * .36}" rx="${hr * (st === 1 ? .19 : .15)}" ry="${hr * .1}" fill="#FF8FA3" fill-opacity=".55" stroke="none"/>
-${o.sleep ? `<path d="M${100 - ed - er},${ey} q${er},${er} ${2 * er},0 M${100 + ed - er},${ey} q${er},${er} ${2 * er},0" fill="none" stroke-width="2.6"/>`
-  : `<circle cx="${100 - ed}" cy="${ey}" r="${er}" fill="#2B2652" stroke="none"/><circle cx="${100 + ed}" cy="${ey}" r="${er}" fill="#2B2652" stroke="none"/><circle cx="${100 - ed + er * .35}" cy="${ey - er * .38}" r="${er * .38}" fill="#fff" stroke="none"/><circle cx="${100 + ed + er * .35}" cy="${ey - er * .38}" r="${er * .38}" fill="#fff" stroke="none"/>`}
-<ellipse cx="100" cy="${ny}" rx="5" ry="3.6" fill="#2B2652" stroke="none"/><path d="M92,${ny + 6} Q96,${ny + 11} 100,${ny + 4} Q104,${ny + 11} 108,${ny + 6}" fill="none" stroke-width="2.6"/>
-${o.pin !== false && st > 1 ? `<path d="${tri([px, py], [px - 13, py - 9], [px - 13, py + 9]) + tri([px, py], [px + 13, py - 9], [px + 13, py + 9])}" fill="#FF5C8A"/><circle cx="${px}" cy="${py}" r="4.5" fill="#FFC83D"/>` : ''}
-</g></svg>`;
+/* 캐릭터 — 그림 파일 없이 코드(SVG)로. 그림 스타일 다섯 가지(샤론 1024 ③, 시안 https://claude.ai/artifact/AsNgA7r8oJc9XFdfuMRdMU)
+ *   A 파스텔 플랫 · B 연필 선 · C 스티커 (2D) / D 말랑 클레이 · E 반짝 피규어 (3D). 처음 쓰는 사람은 A.
+ * 단계 1(아기)~5(어른)는 크기로 자란다(발은 땅에 붙은 채). 같은 모양(뼈대) 위에 스타일마다 칠하는 법만 다르다.
+ * 햄스터는 곰돌이와 헷갈리지 않게 따로 그린다: 감자 같은 몸 · 불룩한 흰 볼 · 머리 위 작은 분홍 귀 · 앞니 · 해바라기씨 든 분홍 앞발. */
+const ART_STYLES = [['A', '플랫'], ['B', '연필'], ['C', '스티커'], ['D', '클레이'], ['E', '피규어']];
+const ART_PAL = {
+  rabbit: {ear: 'long', fur: '#FFF9F5', inner: '#FFFFFF', earC: '#FFF9F5', earIn: '#FFC3CF', limb: '#FFF9F5', nose: '#F08BA0', eye: '#2B2433', m: 'w'},
+  cat: {ear: 'tri', fur: '#F6C38F', inner: '#FFF4E6', earC: '#F6C38F', earIn: '#F6A7B2', limb: '#F6C38F', nose: '#EC8A98', eye: '#2B2433', m: 'w', whisk: 1},
+  hamster: {ear: 'ham', fur: '#F2B35E', inner: '#FFFDF8', earC: '#F2B35E', earIn: '#FFB3C0', limb: '#FFC2CB', nose: '#F28499', eye: '#2B2433', m: 'w', ham: 1},
+  dog: {ear: 'flop', fur: '#F3E2CD', inner: '#FFFAF3', earC: '#A87656', earIn: '#A87656', limb: '#F3E2CD', nose: '#3D3029', eye: '#2B2433', m: 's', muz: 1},
+  bear: {ear: 'round', fur: '#B98560', inner: '#EFD6B9', earC: '#B98560', earIn: '#EFD6B9', limb: '#B98560', nose: '#3D2B22', eye: '#241C1A', m: 's', muz: 1},
+  fox: {ear: 'tri', fur: '#F39556', inner: '#FFF7EE', earC: '#F39556', earIn: '#5A3A2C', limb: '#5A3A2C', nose: '#2E211B', eye: '#2B2433', m: 'w', muz: 1},
+  panda: {ear: 'round', fur: '#FFFFFF', inner: '#FFFFFF', earC: '#363244', earIn: '#363244', limb: '#363244', nose: '#363244', eye: '#141119', m: 's', patch: 1}
+};
+let ART_N = 0;   // 한 화면에 여럿 그려도 그라데이션 · 필터 이름이 겹치지 않게
+const artMix = (x, y, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(x), B = p(y); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+function artSvg(kind, stage, style) {
+  const P = ART_PAL[kind] || ART_PAL.rabbit, st = Math.max(1, Math.min(5, stage || 3)), Y = ART_STYLES.some(x => x[0] === style) ? style : 'A';
+  const u = 'ag' + (++ART_N), D3 = Y === 'D' || Y === 'E', LN = ' stroke="#4A3A31" stroke-width="2.6" stroke-linejoin="round"';
+  const col = r => Y === 'B' ? artMix(P[r], '#FFFFFF', .28) : P[r];
+  const fill = r => D3 ? `url(#${u}${r})` : col(r);
+  const parts = [], add = (tag, a, r, f) => parts.push([tag, a, r, f || '']);
+  // 뼈대 — [모양, 자리, 색 역할, s = 스티커 테두리에 들어감 · l = 연필 선]
+  if (P.ear === 'long') { add('ellipse', 'cx="76" cy="44" rx="15" ry="36" transform="rotate(-12 76 80)"', 'earC', 'sl'); add('ellipse', 'cx="76" cy="49" rx="7" ry="24" transform="rotate(-12 76 80)"', 'earIn');
+    add('ellipse', 'cx="124" cy="44" rx="15" ry="36" transform="rotate(12 124 80)"', 'earC', 'sl'); add('ellipse', 'cx="124" cy="49" rx="7" ry="24" transform="rotate(12 124 80)"', 'earIn'); }
+  if (P.ear === 'tri') { add('path', 'd="M48 74 C46 52 51 32 58 19 C71 27 83 39 92 50 Z"', 'earC', 'sl'); add('path', 'd="M58 62 C57 49 59 39 62 32 C69 37 75 43 80 50 Z"', 'earIn');
+    add('path', 'd="M152 74 C154 52 149 32 142 19 C129 27 117 39 108 50 Z"', 'earC', 'sl'); add('path', 'd="M142 62 C143 49 141 39 138 32 C131 37 125 43 120 50 Z"', 'earIn'); }
+  if (P.ear === 'round') ['54', '146'].forEach(x => { add('circle', `cx="${x}" cy="54" r="19"`, 'earC', 'sl'); add('circle', `cx="${x}" cy="55" r="10"`, 'earIn'); });
+  if (P.ear === 'ham') ['66', '134'].forEach(x => { add('circle', `cx="${x}" cy="49" r="13"`, 'earC', 'sl'); add('circle', `cx="${x}" cy="50" r="8.5"`, 'earIn'); });
+  if (!P.ham) { add('ellipse', 'cx="65" cy="152" rx="11" ry="15" transform="rotate(28 65 152)"', 'limb', 'sl'); add('ellipse', 'cx="135" cy="152" rx="11" ry="15" transform="rotate(-28 135 152)"', 'limb', 'sl'); }
+  add('ellipse', P.ham ? 'cx="100" cy="150" rx="54" ry="37"' : 'cx="100" cy="153" rx="40" ry="33"', 'fur', 'sl');
+  add('ellipse', P.ham ? 'cx="100" cy="160" rx="36" ry="24"' : 'cx="100" cy="161" rx="25" ry="20"', 'inner');
+  if (P.ham) ['86', '114'].forEach(x => add('ellipse', `cx="${x}" cy="185" rx="10" ry="6"`, 'limb', 'sl'));
+  else ['80', '120'].forEach(x => add('ellipse', `cx="${x}" cy="182" rx="15" ry="9"`, 'limb', 'sl'));
+  add('ao');
+  const cheeks = () => ['58', '142'].forEach(x => add('circle', `cx="${x}" cy="121" r="22"`, 'inner', 'sl'));
+  if (P.ham && Y === 'B') cheeks();   // 연필 선은 볼을 머리 뒤에 — 앞에 두면 선이 안경처럼 보인다
+  add('ellipse', 'cx="100" cy="94" rx="62" ry="53"', 'fur', 'sl');
+  if (P.ear === 'flop') { add('ellipse', 'cx="45" cy="92" rx="15" ry="30" transform="rotate(16 45 92)"', 'earC', 'sl'); add('ellipse', 'cx="155" cy="92" rx="15" ry="30" transform="rotate(-16 155 92)"', 'earC', 'sl'); }
+  if (P.patch) { add('ellipse', 'cx="78" cy="103" rx="14" ry="17" transform="rotate(-28 78 103)"', 'earC'); add('ellipse', 'cx="122" cy="103" rx="14" ry="17" transform="rotate(28 122 103)"', 'earC'); }
+  if (P.ham) { add('ellipse', 'cx="100" cy="128" rx="44" ry="23"', 'inner'); if (Y !== 'B') cheeks(); }
+  if (P.muz) add('ellipse', 'cx="100" cy="116" rx="22" ry="15"', 'inner');
+  add('sheen');
+  const shape = (p, extra) => `<${p[0]} ${p[1]}${extra || ''}/>`;
+  const body = parts.map(p => p[0] === 'ao' ? (Y === 'D' ? `<ellipse cx="100" cy="146" rx="46" ry="9" fill="#3A2A2A" opacity=".16" filter="url(#${u}b5)"/>` : '')
+    : p[0] === 'sheen' ? (Y === 'D' ? `<ellipse cx="80" cy="66" rx="24" ry="12" transform="rotate(-18 80 66)" fill="#fff" opacity=".4" filter="url(#${u}b5)"/>`
+      : Y === 'E' ? `<ellipse cx="74" cy="62" rx="18" ry="8" transform="rotate(-24 74 62)" fill="#fff" opacity=".8" filter="url(#${u}b1)"/><circle cx="98" cy="50" r="3.2" fill="#fff" opacity=".75"/>`
+      : Y === 'C' ? '<path d="M60 78 Q66 58 88 50" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".55"/>' : '')
+    : shape(p, ` fill="${fill(p[2])}"${Y === 'B' && p[3].includes('l') ? LN : ''}`)).join('');
+  const sil = Y === 'C' ? `<g fill="#fff" stroke="#fff" stroke-width="15" stroke-linejoin="round" filter="url(#${u}sh)">${parts.filter(p => p[3].includes('s')).map(p => shape(p)).join('')}</g>` : '';
+  const ground = Y === 'A' ? '<ellipse cx="100" cy="190" rx="46" ry="6" fill="#2A2540" opacity=".08"/>'
+    : Y === 'B' ? '<path d="M58 191 Q78 187 100 190 Q122 193 142 189" fill="none" stroke="#4A3A31" stroke-width="2" stroke-linecap="round" opacity=".35"/>'
+    : Y === 'D' ? `<ellipse cx="100" cy="189" rx="48" ry="8" fill="#3A2A2A" opacity=".18" filter="url(#${u}b5)"/>`
+    : Y === 'E' ? `<ellipse cx="100" cy="190" rx="50" ry="8" fill="#000" opacity=".3" filter="url(#${u}b6)"/>` : '';
+  // 얼굴 — 스타일마다 눈이 다르다
+  const E = {A: [5, 6.5, 1.8, 0], B: [4, 5, 1.3, 0], C: [7, 8.5, 2.8, 1.3], D: [6, 7.5, 2.3, 0], E: [7.5, 9, 3, 1.5]}[Y];
+  const eyeFill = Y === 'E' ? `url(#${u}eye)` : P.eye;
+  const eyes = ['78', '122'].map(x => `<ellipse cx="${x}" cy="101" rx="${E[0]}" ry="${E[1]}" fill="${eyeFill}"/><circle cx="${+x + E[0] * .38}" cy="${101 - E[1] * .42}" r="${E[2]}" fill="#fff"/>${E[3] ? `<circle cx="${+x - E[0] * .4}" cy="${101 + E[1] * .45}" r="${E[3]}" fill="#fff" opacity=".85"/>` : ''}`).join('');
+  const blush = Y === 'B' ? '<path d="M58 121 L62 115 M64 122 L68 116 M132 122 L136 116 M138 121 L142 115" fill="none" stroke="#F08A9C" stroke-width="2.2" stroke-linecap="round"/>'
+    : ['64', '136'].map(x => `<ellipse cx="${x}" cy="${P.ham ? 124 : 119}" rx="10" ry="6" fill="#FF8FA6" opacity="${Y === 'C' ? .5 : .42}"${D3 ? ` filter="url(#${u}b1)"` : ''}/>`).join('');
+  const mouth = P.m === 'w' ? 'M92 116 Q96 120.5 100 116 Q104 120.5 108 116' : 'M94 116 Q100 121.5 106 116';
+  const teeth = P.ham ? '<path d="M96.5 118.5 h7 v5 a2 2 0 0 1 -2 2 h-3 a2 2 0 0 1 -2 -2 Z M100 118.5 v7" fill="#fff" stroke="#4A3B32" stroke-width="1.3" stroke-linejoin="round"/>' : '';
+  const whisk = P.whisk && Y === 'B' ? '<path d="M56 112 L40 108 M56 118 L40 121 M144 112 L160 108 M144 118 L160 121" fill="none" stroke="#4A3A31" stroke-width="2" stroke-linecap="round"/>' : '';
+  const seed = P.ham ? `<path d="M100 148 C106.5 153.5 107.5 164 100 171 C92.5 164 93.5 153.5 100 148 Z" fill="#3E3733"/><path d="M100 151 V168 M96.6 155 V164 M103.4 155 V164" stroke="#EDE6D8" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="90.5" cy="162" rx="7.5" ry="6" fill="${fill('limb')}"${Y === 'B' ? LN : ''}/><ellipse cx="109.5" cy="162" rx="7.5" ry="6" fill="${fill('limb')}"${Y === 'B' ? LN : ''}/>` : '';
+  const face = `${blush}${eyes}<ellipse cx="100" cy="111" rx="${P.ham ? 4 : 5}" ry="${P.ham ? 3 : 3.6}" fill="${P.nose}"${Y === 'B' ? ' stroke="#4A3A31" stroke-width="1.4"' : ''}/>
+    ${D3 ? '<ellipse cx="98.6" cy="109.8" rx="1.8" ry="1" fill="#fff" opacity=".6"/>' : ''}<path d="${mouth}" fill="none" stroke="#4A3B32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>${teeth}${whisk}${seed}
+    ${Y === 'E' ? '<ellipse cx="92" cy="152" rx="8" ry="4" transform="rotate(-20 92 152)" fill="#fff" opacity=".55"/>' : ''}`;
+  // 3D 빛 — 역할마다 둥근 그라데이션
+  const grad = (r, c) => { const hi = artMix(c, '#FFFFFF', Y === 'E' ? .72 : .5), sh = Y === 'E' ? artMix(c, '#2A1B22', .4) : artMix(c, '#5A4038', .24);
+    return r === 'earIn' ? `<radialGradient id="${u}${r}" cx=".5" cy=".38" r=".72"><stop offset="0" stop-color="${hi}"/><stop offset="1" stop-color="${c}"/></radialGradient>`
+      : `<radialGradient id="${u}${r}" cx="${Y === 'E' ? .34 : .36}" cy="${Y === 'E' ? .26 : .3}" r="${Y === 'E' ? .92 : .85}"><stop offset="0" stop-color="${r === 'inner' ? '#fff' : hi}"/><stop offset="${Y === 'E' ? .42 : .55}" stop-color="${c}"/><stop offset="1" stop-color="${sh}"/></radialGradient>`; };
+  const defs = (D3 ? ['fur', 'inner', 'earC', 'earIn', 'limb'].map(r => grad(r, P[r])).join('') + [1, 5, 6].map(n => `<filter id="${u}b${n}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${n}"/></filter>`).join('') : '')
+    + (Y === 'E' ? `<radialGradient id="${u}eye" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#5A5470"/><stop offset="1" stop-color="#0B0A10"/></radialGradient>` : '')
+    + (Y === 'C' ? `<filter id="${u}sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#2A2540" flood-opacity=".22"/></filter>` : '');
+  const k = [.78, .85, .92, .97, 1][st - 1];
+  return `<svg viewBox="0 0 200 200" width="100%" aria-hidden="true">${defs ? '<defs>' + defs + '</defs>' : ''}${ground}<g transform="translate(100 190) scale(${k}) translate(-100 -190)">${sil}${body}${face}</g></svg>`;
 }
+const buddySvg = (kind, stage) => artSvg(kind, stage, S.art);
 const KINDS = [['rabbit', '토끼'], ['cat', '고양이'], ['hamster', '햄스터'], ['dog', '강아지'], ['bear', '곰돌이'], ['fox', '여우'], ['panda', '판다']];
 const stageOf = lv => lv < 5 ? 1 : lv < 10 ? 2 : lv < 20 ? 3 : lv < 35 ? 4 : 5;
 
@@ -1236,9 +1282,16 @@ function closeAlarm() { ring(false); closeFull('alarm'); ALQ = null; }
 function ring(on) { clearInterval(ringT); if (!on) return; const go = () => { sfx('bell'); buzz([200, 100, 200]); }; go(); ringT = setInterval(go, 4000); setTimeout(() => clearInterval(ringT), 60000); }
 
 /* ───────── 설정 ───────── */
+// 내 친구 고르기 — 큰 미리보기 하나 · 동물 일곱 · 그림 스타일 다섯. 고르면 그 자리에서 다시 그린다 (샤론 1024 ③)
+function buddyPick() {
+  const L = levelOf(starsOf(S)), kn = (KINDS.find(k => k[0] === S.kind) || KINDS[0])[1], an = (ART_STYLES.find(x => x[0] === S.art) || ART_STYLES[0])[1];
+  return `<div class="bpv"><div class="bpv-me">${buddySvg(S.kind, stageOf(L.lv))}</div><div><b>${esc(kn)}</b><small>${esc(an)} 스타일</small></div></div>
+    <div class="bsub">동물</div><div class="bgrid" role="group" aria-label="동물">${KINDS.map(k => `<button class="${S.kind === k[0] ? 'on' : ''}" data-k="${k[0]}" aria-pressed="${S.kind === k[0]}"><span>${buddySvg(k[0], 3)}</span>${k[1]}</button>`).join('')}</div>
+    <div class="bsub">그림 스타일</div><div class="bgrid art" role="group" aria-label="그림 스타일">${ART_STYLES.map(x => `<button class="${S.art === x[0] ? 'on' : ''}" data-art="${x[0]}" aria-pressed="${S.art === x[0]}"><span>${artSvg(S.kind, 3, x[0])}</span>${x[1]}</button>`).join('')}</div>`;
+}
 function settingsSheet() {
-  sheet('설정', `<div class="box"><div class="lab">내 친구</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px" id="stKind">${KINDS.map(k => `<button class="pill ${S.kind === k[0] ? 'on' : ''}" data-k="${k[0]}" style="padding:6px 2px;display:flex;flex-direction:column;align-items:center"><span style="width:44px">${buddySvg(k[0], 3, {pin: false})}</span>${k[1]}</button>`).join('')}</div>
-      <div class="lab" style="margin-top:12px">부르는 이름</div><input class="inp" id="stNick" maxlength="8" placeholder="예) 루루" value="${esc(S.nick)}"><div class="hint">캐릭터 그림은 아직 임시예요. 곧 더 예쁘게 바뀌어요.</div></div>
+  sheet('설정', `<div class="box"><div class="lab">내 친구</div><div id="stBuddy">${buddyPick()}</div>
+      <div class="lab" style="margin-top:16px"><label for="stNick">부르는 이름</label></div><input class="inp" id="stNick" maxlength="8" placeholder="예) 루루" value="${esc(S.nick)}"></div>
     <div class="box"><label class="row" style="justify-content:space-between"><span class="lab" style="margin:0">효과음 · 알림 소리</span><input type="checkbox" class="sw" id="stSfx" ${S.sfx ? 'checked' : ''}></label></div>
     <div class="box"><div class="lab">숙제는 언제 할까요?</div><div class="seg2" id="stHw">${[['day', '그날 바로'], ['eve', '제출 전날']].map(x => `<button data-v="${x[0]}" class="${S.hwMode === x[0] ? 'on' : ''}" aria-pressed="${S.hwMode === x[0]}">${x[1]}</button>`).join('')}</div>
       <div class="hint" id="stHwH">${S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : S.hwMode === 'day' ? '숙제를 넣은 날 바로 오늘의 숙제에 나와요.' : '아직 안 골랐어요.'} 이미 넣은 숙제는 그대로예요.</div></div>
@@ -1249,7 +1302,9 @@ function settingsSheet() {
       <div class="row" style="margin-top:6px"><button class="pill" id="stCopy">글로 복사</button><button class="pill" id="stLoad">글 붙여 넣기</button></div>
       <input type="file" id="stFileIn" accept=".json,application/json,text/plain" style="display:none"></div>
     <div style="text-align:center;color:var(--sub);font-size:12px;margin-top:8px">공부 친구들 ${APP_VERSION}</div>`);
-  $('stKind').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; S.kind = b.dataset.k; save(); $('stKind').querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b)); render(); };
+  $('stBuddy').onclick = e => { const b = e.target.closest('[data-k],[data-art]'); if (!b) return;
+    if (b.dataset.k) S.kind = b.dataset.k; else S.art = b.dataset.art;
+    save(); sfx('tap'); $('stBuddy').innerHTML = buddyPick(); render(); };
   $('stNick').onchange = () => { S.nick = $('stNick').value.trim().slice(0, 8); save(); render(); };
   $('stSfx').onchange = () => { S.sfx = $('stSfx').checked; save(); };
   if ($('stAdd')) $('stAdd').onclick = () => simpleEditor(null);

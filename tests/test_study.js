@@ -10,6 +10,7 @@
 //  ⑦ 망가진 저장을 읽어도 죽지 않는다
 //  ⑮ 오늘의 숙제: 그날 바로 · 제출 전날 · 끝낸 것은 다음 날 안 보임 · 못 끝낸 것은 남음 · 내가 만든 과목이 저장을 지나도 남음
 //  ⑯ 숙제를 끝내면 기록이 생겨 부모님 확인 · 별로 이어진다 · 지우면 되돌린다 · '다시 해 볼까?' 면 다시 할 것으로 · 고르는 칸은 처음 한 번
+//  ⑰ 캐릭터 그림 스타일 A~E — 처음엔 A · 햄스터는 따로 그린다
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -269,5 +270,12 @@ function mk(o) {
   sc.eq('⑯ 주간 통계에 숙제 과목', A.weekStats(st, MON).rows.map(r => r.subj), ['kor']);
   st.hw = []; sc.eq('⑯ 숙제를 지워도 통계 과목은 기록에서', A.weekStats(st, MON).rows.map(r => r.subj), ['kor']);
   sc.eq('⑯ 한 주는 일요일부터', [A.sundayOf(MON), A.sundayOf(A.addDays(MON, -1))], [A.addDays(MON, -1), A.addDays(MON, -1)]);
+}
+// ── ⑰ 캐릭터 그림 스타일 (샤론 1024 ③) ──
+{
+  sc.eq('⑰ 처음 쓰는 사람은 A 파스텔 플랫', [A.blankState().art, A.normState({}).art, A.normState({kind: 'cat'}).art], ['A', 'A', 'A']);
+  sc.eq('⑰ 고른 스타일은 남고 모르는 값은 A', [A.normState({art: 'D'}).art, A.normState({art: 'Z'}).art], ['D', 'A']);
+  sc.eq('⑰ 설정에 동물 · 그림 스타일 고르기', /data-art="\$\{x\[0\]\}"/.test(HTML) && /data-k="\$\{k\[0\]\}"/.test(HTML), true);
+  sc.eq('⑰ 햄스터는 곰돌이와 다른 뼈대(볼 · 앞니 · 씨앗)', /hamster: \{ear: 'ham'[^}]*ham: 1\}/.test(HTML) && /const teeth = P\.ham/.test(HTML) && /const seed = P\.ham/.test(HTML), true);
 }
 sc.done();
