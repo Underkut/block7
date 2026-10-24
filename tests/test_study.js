@@ -8,6 +8,7 @@
 //  ⑤ 알림: 정한 시각부터 90분까지만 · 미루기 · '오늘은 못 해요' · 공부 중이면 안 울린다 · 서버 예약 목록
 //  ⑥ 별은 부모님 확인 때만 · 같은 확인은 한 번만 반영 · 레벨
 //  ⑦ 망가진 저장을 읽어도 죽지 않는다
+//  ⑮ 오늘의 숙제: 그날 바로 · 제출 전날 · 끝낸 것은 다음 날 안 보임 · 못 끝낸 것은 남음 · 내가 만든 과목이 저장을 지나도 남음
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -22,7 +23,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { STUDY_KEY, SUBJ, blankState, normState, normBook, amountText, rangeText, perDayText, chapterOf, projectBook, finishDate, questsFor, questOf,
   runStart, runPause, runResume, runStudyMs, runRestMs, finishRun, removeSession, dueAlarm, snooze, cleanOld, upcomingAlarms,
-  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName };`, ctx);
+  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName, addSubject, pickSubj, subjOf, hwDoDate, hwFor, hwLeftover, hwClean };`, ctx);
 const A = ctx.A;
 const MON = '2026-10-12';   // 월요일
 const at = (d, hm) => A.atOf(d, hm);
@@ -213,5 +214,32 @@ function mk(o) {
   sc.eq('⑭ 파일 저장은 새 이름 · 공유는 기다리지 않고 바로', /function saveBackupFile\(\) \{[^]*?bakName\(S,[^]*?navigator\.share\(/.test(HTML) && !/await[^;]{0,60}navigator\.share/.test(HTML), true);
   sc.eq('⑭ 오늘 머리줄에도 설정 톱니', /else top\.innerHTML = `[^`]*data-top="gear"/.test(HTML), true);
   sc.eq('⑭ 연결 안 된 동안 오늘 화면에 \'가족과 연결하기\'', HTML.includes('data-a="famGo"'), true);
+}
+// ── ⑮ 오늘의 숙제 · 내가 만든 과목 ──
+{
+  const TUE = A.addDays(MON, 1), FRI = A.addDays(MON, 4);
+  sc.eq('⑮ 그날 바로 → 오늘', A.hwDoDate('now', MON, FRI), MON);
+  sc.eq('⑮ 제출 전날 → 제출 하루 전', A.hwDoDate('eve', MON, FRI), A.addDays(FRI, -1));
+  sc.eq('⑮ 내일 제출이면 오늘 · 오늘 제출이어도 오늘', [A.hwDoDate('eve', MON, TUE), A.hwDoDate('eve', MON, MON)], [MON, MON]);
+  const st = A.blankState();
+  st.hw.push({id: 'h1', title: '일기', subj: 'kor', due: '', doDate: MON, done: ''}, {id: 'h2', title: '익힘책', subj: 'math', due: FRI, doDate: A.addDays(FRI, -1), done: ''});
+  sc.eq('⑮ 할 날 전에는 안 보인다', A.hwFor(st, MON).map(h => h.id), ['h1']);
+  st.hw[0].done = MON;
+  sc.eq('⑮ 끝낸 날에는 보인다', A.hwFor(st, MON).map(h => h.id), ['h1']);
+  sc.eq('⑮ 끝낸 다음 날은 안 보인다', A.hwFor(st, TUE).map(h => h.id), []);
+  st.hw[0].done = '';
+  sc.eq('⑮ 못 끝낸 것은 다음 날 남고 알림 대상', [A.hwFor(st, TUE).map(h => h.id), A.hwLeftover(st, TUE).map(h => h.id)], [['h1'], ['h1']]);
+  st.hw[0].done = MON; A.hwClean(st, A.addDays(MON, 40));
+  sc.eq('⑮ 끝낸 지 30일 지나면 지운다', st.hw.map(h => h.id), ['h2']);
+  const k = A.addSubject(st, '한자');
+  sc.eq('⑮ 같은 이름은 새로 안 만든다', [A.addSubject(st, '한자'), A.addSubject(st, '수학')], [k, 'math']);
+  st.books.push(A.normBook({id: 'bx', subj: k, name: '한자 쓰기', open: true, days: [1]}));
+  st.hw[0].subj = k;
+  const back = A.normState(JSON.parse(JSON.stringify(st)));
+  sc.eq('⑮ 내가 만든 과목이 저장을 지나도 남는다', [back.books[0].subj, back.hw[0].subj, A.subjOf(k).n], [k, k, '한자']);
+  sc.eq('⑮ 고르는 줄에 기타는 없다', A.pickSubj().some(x => x.k === 'etc'), false);
+  sc.eq('⑮ 옛 기록의 기타는 그대로 읽힌다', A.subjOf('etc').n, '기타');
+  sc.eq('⑮ 숙제 방식 기본은 그날 바로', [A.blankState().hwMode, A.normState({hwMode: 'eve'}).hwMode, A.normState({hwMode: 'x'}).hwMode], ['now', 'eve', 'now']);
+  sc.eq('⑮ 할 것 넣기 버튼은 할 것이 없을 때만', HTML.includes("${!S.books.length && !S.tasks.length ? `<button class=\"addone\" data-a=\"add\">"), true);
 }
 sc.done();
