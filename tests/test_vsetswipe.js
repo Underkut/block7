@@ -36,8 +36,9 @@ console.log('\n시나리오 4 — 여는 곳에서 스와이프를 붙이고 트
   const fn = slice('function openVerseSettingsModal(){', '}');
   // v26-0921-6 — 'top' 을 못 박지 않는다. Sweeter 에는 '상단 말씀' 탭이 없어서
   //   그 이름으로 부르면 idx<0 으로 돌아 나가 **아무 탭도 안 열린다.**
-  sc.eq("보이는 첫 탭으로 애니메이션 없이 연다('direct')",
-        fn.includes("switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct');"), true);
+  // v26-1024-19 — 마지막에 쓰던 탭(없으면 보이는 첫 탭)
+  sc.eq("기억한 탭으로 애니메이션 없이 연다('direct')",
+        fn.includes("switchVerseSettingsTab(_vsetStartTab(),null,'direct');"), true);
   sc.eq('스와이프 핸들러를 붙인다', fn.includes('_initVerseSettingsSwipe();'), true);
 }
 

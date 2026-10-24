@@ -179,7 +179,8 @@ console.log('\n시나리오 6 — 붙박이');
     sc.eq('HTML 에 손잡이가 있다: '+id, new RegExp(`<div class="sg" id="${id}"`).test(SRC), true));
   sc.eq("'모양' 묶음 안에 밝기 · 색 테마 · 글자 크기",
         ['secBrightness','secColorTheme','secUiScale'].every(id=>{const a=SRC.indexOf('id="sgLook"'),b=SRC.indexOf('id="sgTaskText"'),i=SRC.indexOf(`id="${id}"`);return a<i&&i<b;}), true);
-  sc.eq('보이는 첫 탭은 Sweeter 도 뷰', SRC.includes("switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct')"), true);
+  // v26-1024-19 — 기억한 탭이 목록에 없으면 보이는 첫 탭 (Sweeter 에 없는 '상단' 을 기억해도 안전)
+  sc.eq('기억한 탭이 없으면 보이는 첫 탭', SRC.includes("return list.includes(want)?want:(list[0]||'view');"), true);
   sc.eq('설정창을 열 때도 병합한다', /openVerseSettingsModal\(\)\{\s*\n\s*_swMergeViewTab\(\);[\s\S]{0,120}_swMergeAccountTab\(\);/.test(SRC), true);
   // ⚠️ 여는 함수 안에 중괄호를 들이지 않는다 — 여러 테스트가 slice(…, '}') 로
   //    이 함수를 떠 가서, 중괄호가 하나 생기면 거기서 잘려 엉뚱하게 실패한다.

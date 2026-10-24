@@ -50,8 +50,10 @@ console.log('\n시나리오 2 — 열 때 어느 탭으로 가나');
 {
   // 'top' 을 못 박으면 Sweeter 에서 **아무 탭도 안 열린다** (그 탭이 없으니
   // switchVerseSettingsTab 이 idx<0 으로 그냥 돌아 나간다).
-  sc.eq('⭐ 보이는 첫 탭으로 연다',
-        SRC.includes("switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct')"), true);
+  // v26-1024-19 — 마지막에 쓰던 탭(_vsetStartTab). 그 탭이 지금 목록에 없으면 보이는 첫 탭
+  sc.eq('⭐ 기억한 탭 · 없으면 보이는 첫 탭으로 연다',
+        SRC.includes("switchVerseSettingsTab(_vsetStartTab(),null,'direct')")
+        && SRC.includes("return list.includes(want)?want:(list[0]||'view');"), true);
   sc.eq("'top' 을 못 박지 않는다",
         SRC.includes("switchVerseSettingsTab('top',null,'direct')"), false);
   APP_PRODUCT='sweeter';

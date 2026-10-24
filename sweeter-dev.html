@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-18  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-19  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6536,7 +6536,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-18";
+const APP_VERSION = "v. 26-1024-19";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13895,7 +13895,8 @@ function openVerseSettingsModal(){
   _vsetTitleSync();
   // ⚠️ 'top' 을 못 박지 않는다 — Sweeter 에서는 그 탭이 아예 없어서
   //    switchVerseSettingsTab('top') 이 그냥 돌아 나가고 **아무 탭도 안 열린다.**
-  switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct');
+  //    v26-1024-19 — 첫 탭 대신 **이 기기에서 마지막에 쓰던 탭** (_vsetStartTab)
+  switchVerseSettingsTab(_vsetStartTab(),null,'direct');
   document.getElementById('verseSettingsOverlay').classList.add('open');
   _initVerseSettingsSwipe();
 }
@@ -14094,6 +14095,7 @@ function switchVerseSettingsTab(id,btn,direction){
   const idx=list.indexOf(id);
   if(idx<0)return;
   _currentVerseSettingsTabIdx=idx;
+  if(btn)_setTabMemPut('v',id);   // 탭 단추를 누른 것 — 다음에 이 탭으로 연다 (v26-1024-19)
 
   const track=document.getElementById('verseSettingsTabTrack');
   if(track){
@@ -14165,6 +14167,7 @@ function _initVerseSettingsSwipe(){
     const commit=target!==null&&Math.abs(dx)>=COMMIT;
     if(commit&&!target.wrap){
       switchVerseSettingsTab(_vstabList()[target.idx],null,dir);
+      _setTabMemPut('v',_vstabList()[target.idx]);
     }else if(commit&&target.wrap){
       const d=dir;
       body.style.transition='transform .22s cubic-bezier(.4,0,.2,1),opacity .18s';
@@ -14172,6 +14175,7 @@ function _initVerseSettingsSwipe(){
       body.style.opacity='0';
       setTimeout(()=>{
         switchVerseSettingsTab(_vstabList()[target.idx],null,'direct');
+        _setTabMemPut('v',_vstabList()[target.idx]);
         body.style.transition='none';
         body.style.transform=`translateX(${d>0?'100%':'-100%'})`;
         body.offsetWidth;
@@ -31016,14 +31020,20 @@ let _vsetBackTo=null, _vsetBackId=null;
 //    가지만 단추의 'on' 표시가 등급(_vstabList)에 따라 어긋날 수 있다.
 // ⚠️ 40ms 를 기다리는 것은 openVerseSettingsModal 이 먼저 'top' 탭으로
 //    자리를 잡기 때문이다. 그 전에 누르면 도로 'top' 으로 끌려간다.
+// v26-1024-19 — 정해 둔 탭으로 보내는 길이라 '마지막 탭' 기억과 상관없다:
+//    열 때부터 그 탭(_vsetWantTab), 단추를 누를 때도 기억하지 않는다(_setTabJump).
 function _vsetGoTab(id,flash){
+  _vsetWantTab=id;
   openVerseSettingsModal();
   setTimeout(()=>{
     const bar=document.getElementById('verseSettingsTabBar');
     const btn=bar?[...bar.querySelectorAll('.settings-tab,.vsettings-tab')]
       .find(b=>(b.getAttribute('onclick')||'').includes("'"+id+"'")):null;
-    if(btn)btn.click();
-    else if(typeof switchVerseSettingsTab==='function')switchVerseSettingsTab(id,null);
+    _setTabJump=true;
+    try{
+      if(btn)btn.click();
+      else if(typeof switchVerseSettingsTab==='function')switchVerseSettingsTab(id,null);
+    }finally{_setTabJump=false;}
     if(flash)_vsetFlashTab(btn);
   },40);
 }
@@ -43446,6 +43456,26 @@ function resizeAllInputs(){
 //  SETTINGS PAGE
 // ═══════════════════════════════════════════════════════════
 
+// ── 설정창은 이 기기에서 마지막에 쓰던 탭으로 열린다 (v26-1024-19, HB) ──
+// 일반 설정 · 말씀 설정(= Sweeter '설정') 따로, 기기마다 따로 — 이름은 _lsk 라 제품 · 빌드도 갈린다.
+// 기억하는 것은 **사람이 탭을 누르거나 밀어 넘긴 것만**이다.
+// 특정 탭으로 보내는 단추(openSettings('account') · _vsetGoTab · openAccountSettings …)는
+// 기억과 상관없이 제 탭으로 가고, 기억도 바꾸지 않는다 (_setTabJump 가 그동안 막는다).
+// 기억한 탭이 지금 등급에서 안 보이면(이지에서 위젯 · 공유 …) 첫 탭으로.
+let _setTabJump=false;       // 단추가 정해 둔 탭으로 보내는 중 — 기억하지 않는다
+let _vsetWantTab=null;       // _vsetGoTab 이 열 탭 — 여는 순간 그 탭으로 (기억한 탭이 잠깐 비치지 않게)
+function _setTabMemKey(kind){return _lsk(kind==='v'?'vsetTab':'setTab');}
+function _setTabMemGet(kind){try{return localStorage.getItem(_setTabMemKey(kind))||'';}catch(e){return '';}}
+function _setTabMemPut(kind,id){
+  if(_setTabJump||!id)return;
+  try{localStorage.setItem(_setTabMemKey(kind),id);}catch(e){}
+}
+function _vsetStartTab(){
+  const list=_vstabList();
+  const want=_vsetWantTab||_setTabMemGet('v');
+  _vsetWantTab=null;
+  return list.includes(want)?want:(list[0]||'view');
+}
 // '계정' 으로 바로 가는 길 하나 (v26-1024-17). BLOCK7 은 일반 설정창의 계정 탭,
 // Sweeter 는 계정 칸이 '설정'(말씀설정창)의 마지막 탭으로 옮겨져 있으니 그쪽으로.
 // ⚠️ Sweeter 에서 openSettings('account') 를 부르면 **빈 탭**이 열린다 — 이 함수로 갈 것.
@@ -43474,8 +43504,14 @@ function openSettings(tabId,flashTabId){
       if(bar){
         const btn=[...bar.querySelectorAll('.settings-tab')]
           .find(b=>b.getAttribute('onclick')?.includes(`'${tabId}'`));
+        _setTabJump=true;    // 단추가 정해 준 탭 — 기억은 그대로 둔다
         if(btn)switchSettingsTab(tabId,btn,'direct');
+        _setTabJump=false;
       }
+    }else{
+      // v26-1024-19 — 이 기기에서 마지막에 쓰던 탭 (안 보이는 탭이면 첫 탭 그대로)
+      const mem=_setTabMemGet('g');
+      if(mem&&_stabList().includes(mem))switchSettingsTab(mem,null,'direct');
     }
     // 토스트를 타고 건너온 경우, 봐야 할 탭 버튼을 3번 반짝여 눈에 띄게 한다.
     if(flashTabId)_flashSettingsTab(flashTabId);
@@ -44439,6 +44475,7 @@ function switchSettingsTab(id,btn,direction){
   const idx=list.indexOf(id);
   if(idx<0)return;
   _currentSettingsTabIdx=idx;
+  if(btn)_setTabMemPut('g',id);   // 탭 단추를 누른 것 — 다음에 이 탭으로 연다 (v26-1024-19)
 
   // Slide the track to show the correct panel
   const track=document.getElementById('settingsTabTrack');
@@ -44523,6 +44560,7 @@ function _initSettingsSwipe(){
       // Adjacent tab: animated track slide continues naturally from
       // wherever the finger left it.
       switchSettingsTab(_stabList()[target.idx],null,dir);
+      _setTabMemPut('g',_stabList()[target.idx]);
     }else if(commit&&target.wrap){
       // Wrap (first↔last): the track can't slide past its own ends, so
       // reuse the exact D/W/M out/in visual on the body instead —
@@ -44534,6 +44572,7 @@ function _initSettingsSwipe(){
       body.style.opacity='0';
       setTimeout(()=>{
         switchSettingsTab(_stabList()[target.idx],null,'direct'); // 'direct' → track jumps with no transition
+        _setTabMemPut('g',_stabList()[target.idx]);
         body.style.transition='none';
         body.style.transform=`translateX(${d>0?'100%':'-100%'})`;
         body.offsetWidth;
