@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1024-7 -->
+<!-- 공부 친구들 v. 26-1024-8 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -336,6 +336,10 @@ input.sw:checked::after{transform:translateX(20px)}
 .bgrid button{border:none;background:var(--bg);border-radius:16px;padding:6px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:Jua;font-size:14px;color:var(--ink)}
 .bgrid button span{width:52px;display:block}
 .bgrid.art button span{width:46px}
+.icpick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.icpick button{border:none;background:var(--bg);border-radius:16px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;font-family:Jua;font-size:13.5px;color:var(--ink)}
+.icpick img{width:56px;height:56px;border-radius:13px;box-shadow:0 2px 6px rgba(42,37,64,.15)}
+.icpick button.on{background:#FFF0C2;box-shadow:inset 0 0 0 2.5px var(--today)}
 .bgrid button.on{background:#FFF0C2;box-shadow:inset 0 0 0 2.5px var(--today)}
 .hwwk{display:flex;align-items:center;gap:4px}.hwwk .days7{flex:1;min-width:0}.hwwk>button{flex:none;width:30px;height:48px;border:none;background:transparent;color:var(--sub);font-size:24px}
 .days7 button small{display:block;font-size:11px;font-family:inherit;opacity:.8}.days7 button:disabled{opacity:.35}
@@ -793,8 +797,21 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1024-7';
+const APP_VERSION = 'v. 26-1024-8';
 const $ = id => document.getElementById(id);
+// ── 앱 아이콘 여섯 가지 (샤론 1024 ⑧, 기도노트와 같은 방식) — 설정에서 이 기기마다 고른다. 처음은 '연필과 지우개'.
+// 아이폰은 '홈 화면에 추가' 할 때 머리 태그 · manifest 를 한 번만 읽는다 → 바꾼 뒤 홈 화면에서 지우고 다시 추가해야 바뀐다.
+// 그래서 여기서 앱을 열자마자 고른 아이콘의 태그로 갈아 끼워 둔다. 기록(S)에 넣지 않는다 — 클라우드로 다른 기기에 옮겨 가지 않게.
+const ICONS = [['pencil', '연필과 지우개', 'icon'], ['book', '펼친 책', 'icon-book'], ['note', '펼친 노트', 'icon-note'], ['stack', '책 더미', 'icon-stack'], ['bag', '책가방', 'icon-bag'], ['cap', '학사모', 'icon-cap']];
+const ICON_KEY = 'study.icon';
+function iconKey() { let k = ''; try { k = localStorage.getItem(ICON_KEY) || ''; } catch (e) {} return ICONS.some(x => x[0] === k) ? k : 'pencil'; }
+function applyIcon() {
+  const it = ICONS.find(x => x[0] === iconKey()), q = sel => document.querySelector(sel);
+  if (q('link[rel="icon"]')) q('link[rel="icon"]').setAttribute('href', it[2] + '-192.png');
+  if (q('link[rel="apple-touch-icon"]')) q('link[rel="apple-touch-icon"]').setAttribute('href', it[2] + '.png');
+  if (q('link[rel="manifest"]')) q('link[rel="manifest"]').setAttribute('href', it[0] === 'pencil' ? 'manifest.json' : 'manifest-' + it[0] + '.json');
+}
+applyIcon();
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const todayStr = () => ymd(new Date());
 const nf = n => Number(n || 0).toLocaleString('ko-KR');
@@ -1725,6 +1742,8 @@ function buddyPick() {
 function settingsSheet() {
   sheet('설정', `<div class="box"><div class="lab">내 친구</div><div id="stBuddy">${buddyPick()}</div>
       <div class="lab" style="margin-top:16px"><label for="stNick">부르는 이름</label></div><input class="inp" id="stNick" maxlength="8" placeholder="예) 루루" value="${esc(S.nick)}"></div>
+    <div class="box"><div class="lab">앱 아이콘</div><div class="icpick" id="stIcon" role="group" aria-label="앱 아이콘">${ICONS.map(x => `<button class="${iconKey() === x[0] ? 'on' : ''}" data-ic="${x[0]}" aria-pressed="${iconKey() === x[0]}"><img src="${x[2]}-192.png" alt="">${x[1]}</button>`).join('')}</div>
+      <div class="hint">이 기기에만 바뀌어요. 홈 화면 아이콘은 지우고 다시 '홈 화면에 추가' 하면 바뀌어요.</div></div>
     <div class="box"><div class="lab">소리</div>
       <div class="srow"><span>효과음<small>누를 때 · 알림 소리</small></span><div class="sl"><input type="range" id="slSfx" min="0" max="5" step="1" value="${S.sfxVol}" aria-label="효과음 크기"><b id="slSfxV"></b></div></div>
       <div class="srow"><span>배경 음악<small>용돈 친구들과 같은 곡</small></span><div class="sl"><input type="range" id="slBgm" min="0" max="5" step="1" value="${S.bgmVol}" aria-label="배경 음악 크기"><b id="slBgmV"></b></div></div>
@@ -1754,6 +1773,10 @@ function settingsSheet() {
     setTimeout(() => { const st = AC ? AC.state : 'none';
       toast(st === 'running' ? '소리를 냈어요!\n안 들리면 폰의 미디어 볼륨 ·\n무음 모드를 확인해 주세요' : '이 폰이 소리를 막고 있어요 (' + st + ')'); }, 500); };
   if ($('stAdd')) $('stAdd').onclick = () => simpleEditor(null);
+  $('stIcon').onclick = e => { const b = e.target.closest('[data-ic]'); if (!b || b.dataset.ic === iconKey()) return;
+    try { localStorage.setItem(ICON_KEY, b.dataset.ic); } catch (e) {} applyIcon();
+    $('stIcon').querySelectorAll('[data-ic]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    toast('아이콘을 바꿨어요\n홈 화면 아이콘은 지우고\n다시 추가하면 바뀌어요', 6000); };
   $('stHw').onclick = e => { const b = e.target.closest('[data-v]'); if (!b || b.dataset.v === S.hwMode) return; S.hwMode = b.dataset.v; save(); render();
     $('stHw').querySelectorAll('[data-v]').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
     $('stHwH').textContent = (S.hwMode === 'eve' ? '숙제를 넣을 때 제출 날짜를 고르면, 그 하루 전에 오늘의 숙제에 나와요.' : '숙제를 넣은 날 바로 오늘의 숙제에 나와요.') + ' 이미 넣은 숙제는 그대로예요.';

@@ -1,0 +1,32 @@
+{
+  "id": "/study/",
+  "name": "공부 친구들",
+  "short_name": "공부 친구들",
+  "description": "문제집 계획 · 공부 타이머 · 부모님 확인과 칭찬",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#33467E",
+  "theme_color": "#FFF8EE",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-cap-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-cap.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-cap.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

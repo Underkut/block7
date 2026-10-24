@@ -345,4 +345,11 @@ function mk(o) {
   sc.eq('㉒ 흰 털 동물은 A · D · E 에서 옅은 테두리, 다른 동물 · 연필 선엔 없다',
     ['A', 'D', 'E'].every(y => g.artSvg('rabbit', 5, y).includes('fill="#E6D9CB"') && g.artSvg('panda', 5, y).includes('fill="#E6D9CB"')) && !g.artSvg('bear', 5, 'A').includes('#E6D9CB') && !g.artSvg('rabbit', 5, 'B').includes('#E6D9CB'), true);
 }
+// ── ㉓ 앱 아이콘 고르기 (샤론 1024 ⑧) ──
+{
+  const fs2 = require('fs'), dir = path.join(__dirname, '..', 'study');
+  const ic = [['pencil', 'icon', 'manifest.json'], ['book', 'icon-book', 'manifest-book.json'], ['note', 'icon-note', 'manifest-note.json'], ['stack', 'icon-stack', 'manifest-stack.json'], ['bag', 'icon-bag', 'manifest-bag.json'], ['cap', 'icon-cap', 'manifest-cap.json']];
+  sc.eq('㉓ 여섯 아이콘 파일 · manifest 가 모두 있고 manifest 가 제 그림을 가리킨다', ic.every(([, f, m]) => fs2.existsSync(path.join(dir, f + '.png')) && fs2.existsSync(path.join(dir, f + '-192.png')) && JSON.parse(fs2.readFileSync(path.join(dir, m), 'utf8')).icons.every(x => x.src.startsWith(f))), true);
+  sc.eq('㉓ 처음은 연필과 지우개 · 고른 값은 이 기기에만(기록 S 밖)', /return ICONS\.some\(x => x\[0\] === k\) \? k : 'pencil'/.test(HTML) && /localStorage\.setItem\(ICON_KEY/.test(HTML) && !/S\.icon/.test(HTML), true);
+}
 sc.done();
