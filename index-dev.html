@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-19  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-20  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -4465,6 +4465,23 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg-fold>div{overflow:hidden;min-height:0;}
 .sg-fold .settings-row{padding-left:32px;border-top:1px solid var(--bd);}
 .sg-fold .settings-row-label{font-size:13.5px;font-weight:400;display:flex;align-items:center;gap:6px;}
+/* 묶음 접기 (v26-1024-20, S-5) — 제목 줄을 누르면 묶음 전체가 스르륵. 접혀 있으면 끝에 지금 값 한 줄 + ›
+   ⚠️ 여백은 접히는 겹(.sg-fin) **안쪽**에만 둔다 — 바깥에 있으면 다 접힌 뒤에 한꺼번에 사라져 덜컥한다. */
+.sg-foldable>.sg-h{cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;margin-top:16px;margin-bottom:2px;user-select:none;white-space:nowrap;gap:12px;}
+.settings-tab-content>.sg-foldable:first-child>.sg-h{margin-top:10px;}
+.sg-foldable>.sg-h .sg-sum{margin-left:auto;margin-right:-6px;min-width:0;flex:0 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  font-size:12px;letter-spacing:0;color:var(--tx2);opacity:1;transition:opacity .2s;}
+.sg-foldable.open>.sg-h .sg-sum{opacity:0;}
+.sg-foldable>.sg-h .sg-chev{flex:none;color:var(--tx3);transition:transform .3s cubic-bezier(.22,.8,.24,1);}
+/* 제목 바로 아래 설명은 접히는 겹 안으로 들어가므로 예전 '.sg-h+.sg-note' 자리를 여기서 */
+.sg-fin>.sg-note:first-child{margin:0 6px 10px;}
+.sg-foldable.open>.sg-h .sg-chev{transform:rotate(90deg);}
+.sg-fbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.22,.8,.24,1);}
+.sg-foldable.open>.sg-fbody{grid-template-rows:1fr;}
+.sg-fin{overflow:hidden;min-height:0;padding-top:6px;opacity:0;transition:opacity .22s;}
+.sg-foldable.open .sg-fin{opacity:1;}
+.sg-foldable.sg-noanim>.sg-fbody,.sg-foldable.sg-noanim .sg-fin,.sg-foldable.sg-noanim .sg-chev,.sg-foldable.sg-noanim .sg-sum{transition:none;}
+@media (prefers-reduced-motion:reduce){.sg-fbody,.sg-fin,.sg-foldable .sg-chev,.sg-foldable .sg-sum{transition:none;}}
 /* 계정 탭 맨 위 로그인 카드 */
 .sg-acct{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:14px;margin-top:16px;}
 .sg-av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(var(--ac-rgb),.14);color:var(--ac-tx);}
@@ -6536,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-19";
+const APP_VERSION = "v. 26-1024-20";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -13893,6 +13910,7 @@ function openVerseSettingsModal(){
   applyVerseUiLevel();
   _syncDevVerBadge();
   _vsetTitleSync();
+  _sgFoldInit();                // 묶음 접기 — 기기 폭 · 이 기기 기억대로 (v26-1024-20)
   // ⚠️ 'top' 을 못 박지 않는다 — Sweeter 에서는 그 탭이 아예 없어서
   //    switchVerseSettingsTab('top') 이 그냥 돌아 나가고 **아무 탭도 안 열린다.**
   //    v26-1024-19 — 첫 탭 대신 **이 기기에서 마지막에 쓰던 탭** (_vsetStartTab)
@@ -43491,6 +43509,7 @@ function openSettings(tabId,flashTabId){
   renderSettingsPanel();
   _syncDevVerBadge();
   applyUiLevel();          // 등급에 맞게 보일 것만 남긴다
+  _sgFoldInit();           // 묶음 접기 — 기기 폭 · 이 기기 기억대로 (v26-1024-20)
   document.getElementById('settingsOverlay').classList.add('open');
   setTimeout(()=>{
     // Always reset track position (no animation) before showing
@@ -44464,6 +44483,122 @@ function sgFold(row){
   const f=row.nextElementSibling;if(!f||!f.classList.contains('sg-fold'))return;
   const on=!row.classList.contains('open');
   row.classList.toggle('open',on);f.classList.toggle('open',on);row.setAttribute('aria-expanded',String(on));
+}
+// ── 묶음 접기 — 기기 폭에 따라 (v26-1024-20, HB S-5) ──
+// HB: "폰에서는 접으면 좋겠는 게 많고, 태블릿은 좀 괜찮고, PC 는 다 괜찮다."
+// 길고 덜 바꾸는 묶음만 이 표에 둔다. 'phone' = 폰에서 접혀 열림 · 'tablet' = 태블릿까지 접힘.
+// PC(폭 1024 이상)는 처음에 다 편다. 탭의 본론(시간 구간 · 말씀 알림 · 지금 쓰는 모음 · 모양)은 넣지 않는다.
+// 열쇠는 묶음 제목(.sg-h) — 제목을 바꾸면 여기도 바꾼다 (tests/test_sgfold.js 가 표의 제목이 실제로 있는지 본다).
+// 사람이 한 번 접거나 펴면 **그 기기가 기억**한다(_lsk('sgFold')) — 기기 폭 기본값보다 먼저.
+// 접힌 제목 줄 끝에는 지금 고른 값이 한 줄로 나온다(_sgFoldSum) — 열지 않아도 무엇인지 보이게.
+const _SG_FOLD={
+  // 일반 설정
+  '못 끝낸 할일':'phone','입력':'phone','할일 글자':'phone','주간 · 월간':'phone','넘기기':'phone','개발자에게 쪽지':'phone',
+  // 말씀 설정 (= Sweeter 설정)
+  '보일 것':'phone','구간 제목 옆 말씀 기록':'phone','태그 그림':'phone',
+  '이미지에 넣을 것':'phone','이미지 크기':'phone','글로 공유할 때':'phone',
+  '명제 제목':'tablet','테마':'tablet'
+};
+// 요약을 고른 단추 글자로 만들 수 없는 묶음만 따로
+const _SG_FOLD_SUM={
+  '테마':()=>{try{return _vfSelectedPatterns().map(k=>VF_PATTERNS[k].label).join(' · ');}catch(e){return '';}}
+};
+function _sgDevClass(){
+  const w=document.documentElement.clientWidth||window.innerWidth||1200;   // 안드로이드: screen.width 아님
+  return w<600?'phone':w<1024?'tablet':'pc';
+}
+function _sgTitle(g){
+  const h=g.querySelector(':scope>.sg-h');if(!h)return '';
+  let t='';h.childNodes.forEach(n=>{
+    if(n.nodeType===3)t+=n.textContent;
+    else if(n.nodeType===1&&!n.matches('.sg-badge,.sg-sum,.sg-chev,button,svg,.vset-dashbtn'))t+=n.textContent;
+  });
+  return t.replace(/\s+/g,' ').trim();
+}
+function _sgFoldMem(){try{return JSON.parse(localStorage.getItem(_lsk('sgFold'))||'{}')||{};}catch(e){return {};}}
+function _sgFoldMemPut(k,open){
+  const m=_sgFoldMem();m[k]=open?1:0;
+  try{localStorage.setItem(_lsk('sgFold'),JSON.stringify(m));}catch(e){}
+}
+// 접기 기본값: 그 기기 폭에서 접어 둘 묶음인가
+function _sgFoldDefaultOpen(rule,dev){
+  if(dev==='pc')return true;
+  if(dev==='tablet')return rule!=='tablet';
+  return false;                     // 폰은 표에 있는 묶음을 다 접는다
+}
+// 설정창을 열 때마다 부른다 — 처음이면 묶음을 감싸고, 기억이 없는 묶음은 지금 기기 폭대로 둔다
+function _sgFoldInit(){
+  const dev=_sgDevClass(),mem=_sgFoldMem();
+  document.querySelectorAll('#settingsPanel .sg, #verseSettingsPanel .sg').forEach(g=>{
+    const k=_sgTitle(g),rule=_SG_FOLD[k];
+    if(!rule)return;
+    if(!g.classList.contains('sg-foldable')){
+      // 제목 줄 아래 전부를 한 겹 감싼다 — 높이가 스르륵 접히고 펴진다 (grid 0fr ↔ 1fr)
+      const h=g.querySelector(':scope>.sg-h');if(!h)return;
+      const body=document.createElement('div');body.className='sg-fbody';
+      const inner=document.createElement('div');inner.className='sg-fin';
+      while(h.nextSibling)inner.appendChild(h.nextSibling);
+      body.appendChild(inner);g.appendChild(body);
+      h.insertAdjacentHTML('beforeend','<span class="sg-sum"></span><svg class="sg-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');
+      h.setAttribute('role','button');h.tabIndex=0;
+      h.addEventListener('click',e=>{if(e.target.closest('button:not(.sg-h),.vset-dashbtn'))return;sgGroupToggle(g);});
+      h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sgGroupToggle(g);}});
+      g.classList.add('sg-foldable');g.dataset.fold=rule;
+    }
+    const open=(k in mem)?!!mem[k]:_sgFoldDefaultOpen(rule,dev);
+    g.classList.add('sg-noanim');                 // 열 때 맞추는 것은 전환 없이
+    g.classList.toggle('open',open);
+    g.querySelector(':scope>.sg-h').setAttribute('aria-expanded',String(open));
+    requestAnimationFrame(()=>g.classList.remove('sg-noanim'));
+  });
+  _sgFoldSumAll();
+  // 값이 바뀌면 접힌 제목 줄의 요약도 따라간다 — 패널마다 한 번만 단다
+  ['settingsPanel','verseSettingsPanel'].forEach(id=>{
+    const p=document.getElementById(id);
+    if(!p||p._sgSumWired)return;p._sgSumWired=true;
+    const later=()=>requestAnimationFrame(()=>setTimeout(_sgFoldSumAll,0));
+    p.addEventListener('click',later);p.addEventListener('change',later);
+  });
+}
+function sgGroupToggle(g){
+  const open=!g.classList.contains('open');
+  g.classList.toggle('open',open);
+  g.querySelector(':scope>.sg-h')?.setAttribute('aria-expanded',String(open));
+  _sgFoldMemPut(_sgTitle(g),open);
+  if(!open)_sgFoldSum(g);
+}
+// 접힌 묶음의 지금 값 — 고른 단추 글자를 차례로 (없으면 켜진 스위치 수)
+function _sgFoldSum(g){
+  const el=g.querySelector(':scope>.sg-h>.sg-sum');if(!el)return;
+  const k=_sgTitle(g);
+  let t='';
+  if(_SG_FOLD_SUM[k])t=_SG_FOLD_SUM[k]();
+  else{
+    const shown=x=>{for(let e=x;e&&e!==g;e=e.parentElement){
+      if(e.classList.contains('lv-hide')||e.classList.contains('cond-hide')||e.style.display==='none')return false;}return true;};
+    // 화면에 놓인 차례대로: 고른 단추는 그 글자, 켜진 스위치는 그 줄 이름
+    const seen=[];let toggles=0;
+    g.querySelectorAll('.sg-fin .on, .sg-fin .active, .sg-fin .settings-toggle input[type=checkbox]').forEach(b=>{
+      if(!shown(b))return;
+      let s='';
+      if(b.matches('input')){
+        toggles++;
+        if(!b.checked)return;
+        s=b.closest('.settings-row')?.querySelector('.settings-row-label')?.textContent||'';
+      }else{
+        if(!b.matches('button,.preset-btn,.preset-chip,[onclick]'))return;
+        s=b.textContent||b.getAttribute('aria-label')||b.title||'';
+      }
+      s=s.replace(/\s+/g,' ').trim();
+      if(s&&!seen.includes(s))seen.push(s);
+    });
+    if(seen.length)t=seen.slice(0,4).join(' · ')+(seen.length>4?' …':'');
+    else if(toggles)t='모두 꺼짐';
+  }
+  el.textContent=t;
+}
+function _sgFoldSumAll(){
+  document.querySelectorAll('.sg.sg-foldable').forEach(_sgFoldSum);
 }
 // 세 창 공통 차례 — 할일 → 화면 → 구간 → 알림 → 계정 (v26-1024-15, HB). '버튼' 탭은 '화면 › 위 단추' 로 접어 넣었다.
 const SETTINGS_TABS=['general','view','sections','notify','account'];
