@@ -723,7 +723,8 @@ console.log('\n시나리오 13-34 — 긋기 돋보기: 슬라이더 1~3배·처
   sc.eq('놓을 때 저장', /\$\('brLz'\)\.addEventListener\('change',e=>\{ST\.settings\.bibleLoupe=\+e\.target\.value;save\(\);/.test(SRC), true);
   sc.eq('커서 앞뒤 다섯 자', /a=Math\.max\(0,i-5\),z=Math\.min\(t\.length,i\+6\);/.test(SRC), true);
   sc.eq('화면보다 넓으면 배율을 낮춘다', SRC.includes('if(w0>W-20){lz=Math.max(.8,lz*(W-20)/w0);'), true);
-  sc.eq('돋보기 — 고른 글자는 진한 바탕·흰 글자', /#bibleRd \.br-loupe b\{background:var\(--ac\);color:#fff;/.test(SRC), true);
+  // v26-1024-18 — 흰 글자 고정 > 강조색 위 글자색(--on-accent): 밝은 강조색 테마(레몬파이)에서 흰 글자가 안 보였다
+  sc.eq('돋보기 — 고른 글자는 강조색 바탕·그 위 글자색', /#bibleRd \.br-loupe b\{background:var\(--ac\);color:var\(--on-accent,#fff\);/.test(SRC), true);
   sc.eq('본문 — 고른 자리 테두리까지', /#bibleRd \.br-inksel\{fill:var\(--ac\);fill-opacity:\.32;stroke:var\(--ac\);/.test(SRC), true);
 }
 

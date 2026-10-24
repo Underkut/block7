@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-17  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-18  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4411,10 +4411,8 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 /* 한 줄 고르기 — 예전 단추(.theme-pick-btn .active / .settings-btn .on / .preset-btn .on) 그대로 받아 모양만 */
 .sg .sg-seg{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(var(--tx-rgb,120,128,150),.08);background:color-mix(in srgb,var(--tx) 7%,transparent);}
 .sg .sg-seg>button{flex:1 1 0;min-width:0;height:32px;padding:0 6px;margin:0;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--tx2);font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .2s,color .2s;width:auto;}
-.sg .sg-seg>button.on,.sg .sg-seg>button.active{background:var(--s1);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.14);}
-@media (hover:hover){.sg .sg-seg>button:hover{color:var(--tx);}}
 .sg .sg-seg>.uilv-set-btn{height:36px;}
-.sg .sg-seg>.uilv-set-btn.on{color:var(--ac-tx);}
+@media (hover:hover){.sg .sg-seg>button:not(.on):not(.active):hover{color:var(--tx);}}
 /* 끝말 칩 — 렌더러가 인라인 모양을 주므로 여기서만 덮는다 */
 .sg .sg-chips{display:flex;flex-wrap:wrap;gap:6px;}
 .sg .sg-chips>button{border:0!important;border-radius:16px!important;background:var(--s1)!important;box-shadow:inset 0 0 0 1px var(--bd);color:var(--tx2)!important;}
@@ -4431,6 +4429,27 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg .settings-btn.sr-go{flex:none;width:100%;height:40px;padding:0 14px;}
 .sg .sr-btns{display:flex;gap:6px;flex:none;}
 .sg .settings-btn-danger{color:var(--danger,#e5484d);}
+/* ── 고른 것 = 강조색으로 꽉 채움 (v26-1024-18, HB "선택된 버튼이 뭔지 잘 안 보인다") ──
+   한 줄 고르기 · 낱 단추 · 칩 · 요일 … 설정창 안의 '고른 상태' 는 **이 한 가지 모양**이다
+   (스위치 켜짐 · 끝말 칩과 같은 말). 예전엔 고른 칸을 패널색(--s1)으로 살짝 띄웠는데,
+   어두운 테마 · 스파크/브리드 테마에선 카드 바탕과 대비가 1.0~1.2 라 **같은 색**이었다.
+   ⚠️ 옅은 틴트나 그림자로 되돌리지 말 것 — 40 가지 테마 × 밝기를 전부 재서 고른 결론이다
+      (tests/test_selected_contrast.js 가 테마마다 강조색 ↔ 카드 바탕 대비를 잰다). */
+.sg .sg-seg>button.on,.sg .sg-seg>button.active,
+.sg .settings-btn.on,.sg .theme-pick-btn.active,.sg .preset-btn.on{
+  background:var(--ac);color:var(--on-accent,#fff);box-shadow:none;border-color:var(--ac);}
+.sg .sg-seg>button.on,.sg .sg-seg>button.active{font-weight:600;}
+/* 강조 표시 네 칸 · 글자 크기 칸도 같은 말 — 형광펜 미리보기는 강조색으로 그려 있어 고르면 글자색으로 바꾼다 */
+.sg .hi-seg button.on,.sg .ts-btn.on{background:var(--ac);color:var(--on-accent,#fff);border-color:var(--ac);}
+.sg .hi-seg button.on svg rect{fill:currentColor;}
+/* 구간 프리셋 칩도 채운다 — 테두리만 굵게 하면 안 고른 칩의 진한 테두리(--bd2)와 거의 같아
+   어두운 테마 몇 개에서 대비 2.4 대 2.37 이었다. 안의 구간 색 점은 글자색 고리를 둘러 강조색 위에서도 보이게 */
+.sg .preset-chip.active{background:var(--ac);border-color:var(--ac);color:var(--on-accent,#fff);font-weight:600;}
+.sg .preset-chip.active .preset-chip-dot{box-shadow:0 0 0 1.5px var(--on-accent,#fff);}
+/* 미리보기 카드(한 줄일 때 · 모양)는 채우면 미리보기가 안 보인다 → 전체화면 테마 칩과 같은 말:
+   고른 것은 강조색 두 겹 고리, 안 고른 것은 옅게. (1px 테두리 색만 바꾸던 것은 진한 테두리와 구별이 안 됐다) */
+.sg #vsneak-style-a,.sg #vsneak-style-b{opacity:.5;transition:opacity .2s;}
+.sg #vsneak-style-a.on,.sg #vsneak-style-b.on{opacity:1;box-shadow:0 0 0 2px var(--ac);}
 .sg .settings-number{width:52px;height:34px;padding:0 6px;border:0;border-radius:10px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);font-size:14px;}
 .sg .settings-select.sr-select{width:auto;max-width:48%;margin:0;padding:7px 12px;border:0;border-radius:10px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);font-size:13px;flex:none;}
 .sg .sr-slider{display:flex;align-items:center;gap:12px;}
@@ -4527,7 +4546,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vdash-subbtn{display:inline-flex;align-items:center;padding:2px 10px;border-radius:99px;
   border:1px solid var(--bd2);font-size:11px;color:var(--tx3);cursor:pointer;
   margin-left:4px;-webkit-tap-highlight-color:transparent;}
-.vdash-subbtn.on{border-color:var(--ac);background:var(--ac);color:#fff;font-weight:700;}
+.vdash-subbtn.on{border-color:var(--ac);background:var(--ac);color:var(--on-accent,#fff);font-weight:700;}
 .vdash-subbtn:active{opacity:.6;}
 .vtr-chip.vdash-sub-b{color:var(--ac-tx);font-weight:700;opacity:.75;
   text-decoration:line-through;text-decoration-thickness:1px;}
@@ -4788,7 +4807,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vg-depthchip{display:inline-flex;align-items:center;justify-content:center;min-width:24px;
   padding:2.5px 10px;border-radius:99px;border:1px solid var(--bd2);font-size:11px;
   font-weight:600;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;}
-.vg-depthchip.on{border-color:var(--ac);background:var(--ac);color:#fff;}
+.vg-depthchip.on{border-color:var(--ac);background:var(--ac);color:var(--on-accent,#fff);}
 .vg-depthchip:active{opacity:.55;}
 /* 고른 점이 없으면 뎁스가 할 일이 없다 — 그 줄 전체를 옅게 둔다.
    ⚠️ 고른 칩(.on)까지 덮으면 꺼진 것처럼 보인다. 그 하나는 또렷하게 남긴다
@@ -4868,7 +4887,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vp-facetchip{display:inline-flex;align-items:center;padding:4px 11px;border-radius:99px;
   background:var(--s2,rgba(127,127,127,.16));font-size:11px;color:var(--tx2);cursor:pointer;
   -webkit-tap-highlight-color:transparent;white-space:nowrap;}
-.vp-facetchip.on{background:var(--ac);color:#fff;font-weight:700;}
+.vp-facetchip.on{background:var(--ac);color:var(--on-accent,#fff);font-weight:700;}
 /* 1-1-1 — 칩 안의 개수. 이름보다 한 단계 옅게 둬 이름이 먼저 읽히게 */
 .vp-facetn{margin-left:5px;font-size:10px;opacity:.65;font-family:var(--font-number);}
 .vp-facetchip.on .vp-facetn{opacity:.85;}
@@ -4903,7 +4922,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .vgp-rank-knob{position:absolute;left:3.5px;width:17px;height:17px;margin-top:-8.5px;
   border-radius:50%;background:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.35),0 0 0 2px var(--s1);
   display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;
-  color:#fff;font-family:var(--font-number);}
+  color:var(--on-accent,#fff);font-family:var(--font-number);}
 .vgp-rank.dragging .vgp-rank-knob{transform:scale(1.15);}
 .vgp-note{font-size:10px;color:var(--tx3);line-height:1.5;margin-bottom:4px;}
 .vgp-note b{color:var(--ac-tx);font-weight:700;}
@@ -5309,7 +5328,7 @@ html[data-theme="light"] #bibleRd{--br-scrim:rgba(18,20,30,.38);
   --br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);--br-hl6:rgba(255,120,110,.36);--br-hl7:rgba(255,165,90,.36);--br-ink-star:#b8912f;--br-ink-heart:#b5576a;--br-ink-check:#4c8565;}
 html #bibleRd[data-rt="light"]{--bg:#ffffff;--s1:#ffffff;--s2:#f1f2f6;--bd:#e3e5ec;--bd2:#eceef3;--tx:#1a1d28;--tx2:#5b6378;--tx3:#9aa1b4;--ac-tx:#4a5fe0;--br-sheet:#fff;--br-scrim:rgba(18,20,30,.38);color-scheme:light;
   --br-hl1:rgba(255,214,64,.42);--br-hl2:rgba(120,214,140,.38);--br-hl3:rgba(110,180,255,.36);--br-hl4:rgba(255,140,170,.36);--br-hl5:rgba(190,150,255,.36);--br-hl6:rgba(255,120,110,.36);--br-hl7:rgba(255,165,90,.36);--br-ink-star:#b8912f;--br-ink-heart:#b5576a;--br-ink-check:#4c8565;}
-html #bibleRd[data-rt="paper"]{--bg:#f3ecdc;--s1:#faf5e9;--s2:#ebe2cd;--bd:#ddd1b6;--bd2:#e6dcc4;--tx:#3b3226;--tx2:#6f6350;--tx3:#a0927a;--ac:#b07a34;--ac-tx:#8a5a1e;--br-sheet:#fbf6ea;--br-scrim:rgba(18,20,30,.38);color-scheme:light;
+html #bibleRd[data-rt="paper"]{--bg:#f3ecdc;--s1:#faf5e9;--s2:#ebe2cd;--bd:#ddd1b6;--bd2:#e6dcc4;--tx:#3b3226;--tx2:#6f6350;--tx3:#a0927a;--ac:#b07a34;--on-accent:#fff;--ac-tx:#8a5a1e;--br-sheet:#fbf6ea;--br-scrim:rgba(18,20,30,.38);color-scheme:light;
   --br-hl1:rgba(255,206,60,.45);--br-hl2:rgba(120,200,130,.38);--br-hl3:rgba(110,170,240,.34);--br-hl4:rgba(250,130,160,.34);--br-hl5:rgba(180,140,240,.34);--br-hl6:rgba(255,120,110,.34);--br-hl7:rgba(255,165,90,.34);--br-ink-star:#b8912f;--br-ink-heart:#b5576a;--br-ink-check:#4c8565;}
 html #bibleRd[data-rt="night"]{--br-scrim:rgba(0,0,0,.55);--br-hl1:rgba(255,206,60,.26);--br-hl2:rgba(110,210,130,.24);--br-hl3:rgba(100,170,255,.26);--br-hl4:rgba(255,120,160,.24);--br-hl5:rgba(180,140,255,.26);--br-hl6:rgba(255,120,110,.26);--br-hl7:rgba(255,165,90,.26);--br-ink-star:#d4b469;--br-ink-heart:#d88593;--br-ink-check:#86b99a;--bg:#000;--s1:#0c0d10;--s2:#17181d;--bd:#26282f;--bd2:#1c1e24;--tx:#d9dce8;--tx2:#8a92b0;--tx3:#646b85;--ac-tx:#8c9bff;--br-sheet:#121317;color-scheme:dark;}
 #bibleRd button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -5388,14 +5407,14 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-trdel svg{width:17px;height:17px;}
 #bibleRd .br-trdel.on{opacity:1;transform:translate(-50%,0) scale(1);}
 #bibleRd .br-trdel.hot{background:var(--danger,#e5484d);color:#fff;border-style:solid;transform:translate(-50%,0) scale(1.08);}
-#bibleRd .br-trt.cur{background:var(--ac);border-color:var(--ac);color:#fff;}
+#bibleRd .br-trt.cur{background:var(--ac);border-color:var(--ac);color:var(--on-accent,#fff);}
 #bibleRd .br-trt.br-trplus{min-width:34px;padding:0;color:var(--tx3);font-weight:400;font-size:18px;background:var(--bg);}
 #bibleRd .br-crumbx{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 #bibleRd .br-trpk{flex:0 0 auto;font-size:12px;padding:5px 10px;border-radius:999px;background:var(--s2);color:var(--ac-tx);}
-#bibleRd .br-trpk.on{background:var(--ac);color:#fff;}
+#bibleRd .br-trpk.on{background:var(--ac);color:var(--on-accent,#fff);}
 #bibleRd .br-ngrid button.tr{box-shadow:inset 0 -3px 0 var(--ac);}
 #bibleRd .br-ngrid.trpick button{outline:1px dashed var(--bd);outline-offset:-3px;}
-#bibleRd .br-ngrid.trpick button.tr{background:var(--ac);color:#fff;outline:0;}
+#bibleRd .br-ngrid.trpick button.tr{background:var(--ac);color:var(--on-accent,#fff);outline:0;}
 #bibleRd .br-progl{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--bd2);pointer-events:none;}
 #bibleRd .br-progl i{display:block;height:100%;width:0;background:var(--ac);border-radius:0 2px 2px 0;transition:width .12s linear;}
 #bibleRd #brHead{position:absolute;left:0;right:0;top:env(safe-area-inset-top,0px);z-index:12;
@@ -5498,7 +5517,7 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-loupe{position:fixed;z-index:40;pointer-events:none;transform:translate(-50%,-100%);background:var(--br-sheet);border:1px solid var(--bd);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:calc(6px*var(--lz,1)) calc(12px*var(--lz,1));font-family:var(--font-serif,serif);font-size:calc(22px*var(--lz,1));white-space:nowrap;display:none;color:var(--tx);}
 #bibleRd .br-loupe.on{display:block;}
 #bibleRd .br-loupe{color:var(--tx3);}   /* 고르지 않은 글자는 흐리게 (v26-1013-10) */
-#bibleRd .br-loupe b{background:var(--ac);color:#fff;font-weight:600;border-radius:4px;padding:0 1px;box-shadow:0 0 0 2px var(--ac);}
+#bibleRd .br-loupe b{background:var(--ac);color:var(--on-accent,#fff);font-weight:600;border-radius:4px;padding:0 1px;box-shadow:0 0 0 2px var(--ac);}
 #bibleRd .br-lzw{display:flex;align-items:center;gap:10px;flex:1;max-width:220px;}
 #bibleRd .br-lzw span{min-width:40px;text-align:right;font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums;}
 #bibleRd .br-loupe i{font-style:normal;border-right:3px solid var(--danger,#e5484d);margin-right:-2px;}
@@ -5571,7 +5590,7 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-bgrid button small{display:block;font-size:10px;color:var(--tx3);margin-top:2px;font-family:var(--font-number),monospace;}
 #bibleRd .br-ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px;}
 #bibleRd .br-ngrid button{aspect-ratio:1;max-width:100%;border-radius:10px;background:var(--s1);font-family:var(--font-number),monospace;font-size:14px;}
-#bibleRd .br-ngrid button.cur{background:var(--ac);color:#fff;}
+#bibleRd .br-ngrid button.cur{background:var(--ac);color:var(--on-accent,#fff);}
 #bibleRd .br-ngrid button.read{color:var(--ac-tx);}
 #bibleRd .br-recent{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px 14px;padding:0 16px;overscroll-behavior-x:contain;}   /* 한 줄 · 좌우로 밀어 본다 (v26-1009-7) */
 #bibleRd .br-recent::-webkit-scrollbar{display:none;}
@@ -5605,7 +5624,7 @@ html.br-cover #bibleRd.br-ios .br-scroll{overscroll-behavior-y:auto;}
 #bibleRd .br-empty{padding:26px 0;text-align:center;font-size:13px;color:var(--tx3);line-height:1.6;}
 #brMemoTx,#brOrigTx{width:100%;box-sizing:border-box;min-height:110px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--tx);
   font:inherit;font-size:16px;line-height:1.6;padding:10px 12px;resize:vertical;}
-#bibleRd .br-go{margin-top:12px;width:100%;padding:12px;border-radius:10px;background:var(--ac);color:#fff;font-weight:600;font-size:14px;}
+#bibleRd .br-go{margin-top:12px;width:100%;padding:12px;border-radius:10px;background:var(--ac);color:var(--on-accent,#fff);font-weight:600;font-size:14px;}
 #bibleRd .br-fbar{padding:12px 16px 8px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--bd2);flex:0 0 auto;}
 #brFq{width:100%;box-sizing:border-box;border:1px solid var(--bd);border-radius:10px;background:var(--s1);color:var(--tx);font:inherit;font-size:16px;padding:10px 12px;}
 #bibleRd .br-frow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
@@ -6517,7 +6536,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-17";
+const APP_VERSION = "v. 26-1024-18";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14175,8 +14194,8 @@ function setVerseSneakStyle(style){
   save();
   const aEl=document.getElementById('vsneak-style-a');
   const bEl=document.getElementById('vsneak-style-b');
-  if(aEl)aEl.style.borderColor=style==='color'?'var(--ac)':'var(--bd2)';
-  if(bEl)bEl.style.borderColor=style==='mono'?'var(--ac)':'var(--bd2)';
+  if(aEl){aEl.style.borderColor=style==='color'?'var(--ac)':'var(--bd2)';aEl.classList.toggle('on',style==='color');}
+  if(bEl){bEl.style.borderColor=style==='mono'?'var(--ac)':'var(--bd2)';bEl.classList.toggle('on',style==='mono');}
   renderVerseBar();
 }
 // 말씀 설정창의 '보여줄 항목' 버튼들 — [버튼id, 설정키].
@@ -14250,6 +14269,8 @@ function renderVerseSettingsModal(){
   const sneakStyle=s.verseSneakStyle||'color';
   el('vsneak-style-a')?.style.setProperty('border-color',sneakStyle==='color'?'var(--ac)':'var(--bd2)');
   el('vsneak-style-b')?.style.setProperty('border-color',sneakStyle==='mono'?'var(--ac)':'var(--bd2)');
+  el('vsneak-style-a')?.classList.toggle('on',sneakStyle==='color');
+  el('vsneak-style-b')?.classList.toggle('on',sneakStyle==='mono');
   // ⚠️ 이 아래 세 묶음(할일뷰 말씀 표시·태그 목록 간추리기·말씀 위젯 글자 크기)은
   //    예전엔 일반 설정창(renderSettingsPanel)에서만 맞춰 줬다. 두 창이 문서에
   //    같이 떠 있어서 일반 설정창을 먼저 한 번이라도 열면 여기도 우연히 맞았지만,
@@ -20858,7 +20879,7 @@ function _renderVfSecAssign(){
     const chips=ordered.map(k=>{
       const on=cur.indexOf(k)>=0;
       return `<span onclick="toggleVfSecPattern('${s.id}','${k}')" style="cursor:pointer;font-size:11px;text-align:center;padding:5px 4px;border-radius:7px;-webkit-tap-highlight-color:transparent;
-        background:${on?'var(--ac)':'transparent'};color:${on?'#fff':'var(--tx3)'};border:1px solid ${on?'var(--ac)':'var(--bd2)'};">${VF_PATTERNS[k].label}</span>`;
+        background:${on?'var(--ac)':'transparent'};color:${on?'var(--on-accent,#fff)':'var(--tx3)'};border:1px solid ${on?'var(--ac)':'var(--bd2)'};">${VF_PATTERNS[k].label}</span>`;
     }).join('');
     return `<div style="padding:9px 0;border-top:1px solid var(--bd2);">
       <div style="display:flex;align-items:baseline;gap:7px;margin-bottom:6px;">
@@ -40311,7 +40332,7 @@ function _gcalPickRender(ev){
     box.innerHTML=opts.map(o=>{
       const on=o.id===_eventModalCal;
       return `<span data-cal="${esc(o.id)}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;
-        -webkit-tap-highlight-color:transparent;background:${on?'var(--ac)':'transparent'};color:${on?'#fff':'var(--tx3)'};
+        -webkit-tap-highlight-color:transparent;background:${on?'var(--ac)':'transparent'};color:${on?'var(--on-accent,#fff)':'var(--tx3)'};
         border:1px solid ${on?'var(--ac)':'var(--bd2)'};">${o.col?`<span style="width:7px;height:7px;border-radius:50%;background:${esc(o.col)}"></span>`:''}${esc(o.n)}</span>`;
     }).join('');
     box.querySelectorAll('[data-cal]').forEach(el=>{el.onclick=()=>{_eventModalCal=el.getAttribute('data-cal');draw();};});
@@ -42591,7 +42612,7 @@ function _renderSecPick(boxId,curSec,onPick){
     const on=(s.id===curSec);
     return `<span data-sec="${s.id}" style="cursor:pointer;font-size:11px;padding:5px 10px;border-radius:999px;
       -webkit-tap-highlight-color:transparent;background:${on?'var(--ac)':'transparent'};
-      color:${on?'#fff':'var(--tx3)'};border:1px solid ${on?'var(--ac)':'var(--bd2)'};">${esc(s.name)}</span>`;
+      color:${on?'var(--on-accent,#fff)':'var(--tx3)'};border:1px solid ${on?'var(--ac)':'var(--bd2)'};">${esc(s.name)}</span>`;
   }).join('');
   box.querySelectorAll('[data-sec]').forEach(el=>{
     el.onclick=()=>{onPick(el.getAttribute('data-sec'));};
@@ -43575,6 +43596,8 @@ function renderSettingsPanel(){
   const sneakStyle=s.verseSneakStyle||'tone-down';
   document.getElementById('vsneak-style-a')?.style.setProperty('border-color',sneakStyle==='color'?'var(--ac)':'var(--bd2)');
   document.getElementById('vsneak-style-b')?.style.setProperty('border-color',sneakStyle==='mono'?'var(--ac)':'var(--bd2)');
+  document.getElementById('vsneak-style-a')?.classList.toggle('on',sneakStyle==='color');
+  document.getElementById('vsneak-style-b')?.classList.toggle('on',sneakStyle==='mono');
   renderVerseAlarmSettings();
 
   const carryMode=s.carryBadgeMode||'number';
