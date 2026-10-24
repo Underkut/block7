@@ -14,6 +14,7 @@
 //  ⑱ 소리 단계 · 배경음악 폴더 · 스크롤 · 넘기기 · 리액션 · 고양이 · 여우
 //  ⑲ 캐릭터를 실제로 그려서 동물마다 제 모습 · 자세 · 움직임 묶음 확인
 //  ⑳ 소리 끄기 · 넘기기
+//  ㉑ 계획에 숙제 · 넘기기(되돌아 튕김 없음) · 공부 중 화면 닫기
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -28,7 +29,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { STUDY_KEY, SUBJ, blankState, normState, normBook, amountText, rangeText, perDayText, chapterOf, projectBook, finishDate, questsFor, questOf,
   runStart, runPause, runResume, runStudyMs, runRestMs, finishRun, removeSession, dueAlarm, snooze, cleanOld, upcomingAlarms,
-  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName, addSubject, pickSubj, subjOf, hwDoDate, hwFor, hwLeftover, hwClean, hwQuest, keyOfHw, sundayOf };`, ctx);
+  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName, addSubject, pickSubj, subjOf, hwDoDate, hwFor, hwLeftover, hwClean, hwQuest, keyOfHw, sundayOf, hwOn };`, ctx);
 const A = ctx.A;
 const MON = '2026-10-12';   // 월요일
 const at = (d, hm) => A.atOf(d, hm);
@@ -287,7 +288,7 @@ function mk(o) {
   sc.eq('⑱ 배경음악은 용돈 친구들 폴더를 함께 쓴다', HTML.includes("BGM_DIR = '../wallet/bgm/'") && HTML.includes('contents/wallet/bgm?ref=main'), true);
   sc.eq('⑱ <audio> 로 틀지 않는다 (잠금화면 칸)', /new Audio\(|createElement\('audio'\)|<audio\s/.test(HTML), false);
   sc.eq('⑱ 스크롤 튕김을 막지 않는다', /html,body\{[^}]*overscroll-behavior:none/.test(HTML), false);
-  sc.eq('⑱ 넘기기는 손가락을 따라간다 · 창은 끌어 내려 닫는다', /function swipeMain\(\)/.test(HTML) && /function pullToClose\(\)/.test(HTML) && /moved > m\.clientWidth \/ 4 \|\| fast/.test(HTML), true);
+  sc.eq('⑱ 넘기기는 손가락을 따라간다 · 창은 끌어 내려 닫는다', /function swipeMain\(\)/.test(HTML) && /function dismissable\(/.test(HTML) && /dismissable\(\$\('sheet'\)/.test(HTML) && /moved > W \/ 4 \|\| fast/.test(HTML), true);
   sc.eq('⑱ 움직임 줄이기면 끈다', /prefers-reduced-motion: reduce/.test(HTML) && /if \(quiet\(\) \|\| !m\.animate\)/.test(HTML), true);
 }
 // ── ⑲ 캐릭터 그림 — 실제로 그려 보고 동물마다 제 모습이 있는지 본다 (샤론 1024 ③④⑤) ──
@@ -303,7 +304,7 @@ function mk(o) {
   sc.eq('⑲ 토끼 = 솜꼬리 · 정수리 털 / 강아지 = 눈 얼룩 · 혀 · 목걸이 · 꼬리 / 곰돌이 = 리본 · 발바닥 / 판다 = 물방울 무늬 · 대나무',
     [rab.includes('cx="141" cy="171" r="12"'), rab.includes('cx="100" cy="41.5" r="7"'), dog.includes('cx="123" cy="99"'), dog.includes('M96.5 119.5'), dog.includes('#E2574C'), dog.includes('M134 172 C150'), bear.includes('#6FA8FF'), bear.includes('cy="183" rx="8"'), pan.includes('M66 96 C72 88'), pan.includes('#4FA03A')],
     Array(10).fill(true));
-  sc.eq('⑲ 자세: 손 흔들기는 오른팔이 올라간다 · 만세는 두 팔 · 잠은 z · 빼꼼은 몸 없이 앞발', [draw('bear', {pose: 'wave'}).includes('rotate(40 156 122)'), draw('bear', {pose: 'cheer'}).includes('rotate(-40 44 122)'), draw('bear', {pose: 'sleep'}).includes('bd-z'), draw('bear', {pose: 'peek'}).includes('cx="100" cy="153"'), draw('bear', {pose: 'peek'}).includes('cy="144" rx="15"')], [true, true, true, false, true]);
+  sc.eq('⑲ 자세: 손 흔들기는 오른팔이 올라간다 · 만세는 두 팔 · 잠은 z · 빼꼼은 몸 없이 앞발', [draw('bear', {pose: 'wave'}).includes('M124 150 L167 110'), draw('bear', {pose: 'cheer'}).includes('M76 150 L33 110'), draw('bear', {pose: 'sleep'}).includes('bd-z'), draw('bear', {pose: 'peek'}).includes('cx="100" cy="153"'), draw('bear', {pose: 'peek'}).includes('cy="144" rx="15"')], [true, true, true, false, true]);
   sc.eq('⑲ 판다는 손을 쓰는 자세면 대나무를 내려놓는다', [draw('panda', {pose: 'wave'}).includes('#4FA03A'), draw('panda', {pose: 'read'}).includes('#4FA03A')], [false, false]);
   sc.eq('⑲ 움직이는 친구엔 live, 아니면 없다 · 움직이는 부분은 묶음으로', [draw('cat', {live: true}).includes('class="bd p-stand live'), draw('cat').includes(' live'), draw('cat', {live: true}).includes('class="bd-tail"'), draw('cat', {live: true}).includes('class="bd-earL"')], [true, false, true, true]);
   sc.eq('⑲ 다섯 스타일 × 일곱 동물 × 여섯 자세 모두 그려진다', ['A', 'B', 'C', 'D', 'E'].every(y => ['rabbit', 'cat', 'hamster', 'dog', 'bear', 'fox', 'panda'].every(k => ['stand', 'wave', 'cheer', 'read', 'sleep', 'peek'].every(po => /^<svg[\s\S]*<\/svg>$/.test(draw(k, {pose: po}, y))))), true);
@@ -315,5 +316,21 @@ function mk(o) {
   sc.eq('⑳ 머리줄 별과 톱니 사이에 스피커', /<\/span><\/span>\$\{muteBtn\(\)\}<button class="ib" data-top="gear"/.test(HTML), true);
   sc.eq('⑳ 끄면 효과음 · 배경음악 모두 멈춘다', /S\.sfxVol <= 0 \|\| S\.mute/.test(HTML) && /S\.bgmVol <= 0 \|\| S\.mute/.test(HTML), true);
   sc.eq('⑳ 손으로 넘길 땐 차르르 없이 · 화면 어디서나', !/TAB = 'reward'; ENTER = true; render\(\); window\.scrollTo/.test(HTML) && /area = document/.test(HTML), true);
+}
+// ── ㉑ 계획에 숙제 · 넘기기 튕김 · 공부 중 화면 닫기 · 팔 (샤론 1024 ⑥) ──
+{
+  const TUE = A.addDays(MON, 1), WED = A.addDays(MON, 2), FRI = A.addDays(MON, 4);
+  const st = A.blankState();
+  st.hw.push({id: 'a', title: '일기', subj: 'kor', due: '', doDate: MON, done: ''},          // 월요일에 할 것 — 못 하면 오늘에 남음
+    {id: 'b', title: '익힘책', subj: 'math', due: FRI, doDate: A.addDays(FRI, -1), done: ''},  // 목요일에 할 것 · 금요일 제출
+    {id: 'c', title: '받아쓰기', subj: 'kor', due: '', doDate: MON, done: MON});               // 월요일에 끝냄
+  const on = (d, today) => A.hwOn(st, d, today).map(x => x.h.id + (x.due ? '!' : x.done ? '✓' : ''));
+  sc.eq('㉑ 할 날 · 끝낸 날에 보인다', [on(MON, MON), on(A.addDays(FRI, -1), MON)], [['a', 'c✓'], ['b']]);
+  sc.eq('㉑ 제출 날엔 제출 표시', on(FRI, MON), ['b!']);
+  sc.eq('㉑ 못 한 숙제는 지난 날이 아니라 오늘에 남는다', [on(MON, WED), on(WED, WED)], [['c✓'], ['a']]);
+  sc.eq('㉑ 계획 주간 · 월간 · 그날 보기 · 부모님 7일에 숙제', (HTML.match(/hwOn\(S, d, t\)/g) || []).length >= 3 && /hwOn\(st, d, t\)/.test(HTML), true);
+  sc.eq('㉑ 손으로 넘길 땐 옅어지지 않고 두 판이 붙어 간다', /function nextPanel\(/.test(HTML) && !/swipeMain[\s\S]{0,1500}style\.opacity = 1 -/.test(HTML), true);
+  sc.eq('㉑ 놓으면 지금 자리 → 끝 (가운데로 되돌아가지 않는다)', /\{transform: `translateX\(\$\{x\}px\)`\}, \{transform: `translateX\(\$\{-dir \* W\}px\)`\}/.test(HTML), true);
+  sc.eq('㉑ 공부 중 화면: 손잡이 · 끌어 내리기 · 가장자리 밀기', /class="grab" id="tmMin"/.test(HTML) && /dismissable\(\$\('timer'\)/.test(HTML) && /d\.edge = /.test(HTML) === false && /edge: t\.clientX < 28/.test(HTML), true);
 }
 sc.done();
