@@ -12,6 +12,8 @@
 //  ⑯ 숙제를 끝내면 기록이 생겨 부모님 확인 · 별로 이어진다 · 지우면 되돌린다 · '다시 해 볼까?' 면 다시 할 것으로 · 고르는 칸은 처음 한 번
 //  ⑰ 캐릭터 그림 스타일 A~E — 처음엔 A · 햄스터는 따로 그린다
 //  ⑱ 소리 단계 · 배경음악 폴더 · 스크롤 · 넘기기 · 리액션 · 고양이 · 여우
+//  ⑲ 캐릭터를 실제로 그려서 동물마다 제 모습 · 자세 · 움직임 묶음 확인
+//  ⑳ 소리 끄기 · 넘기기
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -277,7 +279,6 @@ function mk(o) {
   sc.eq('⑰ 처음 쓰는 사람은 A 파스텔 플랫', [A.blankState().art, A.normState({}).art, A.normState({kind: 'cat'}).art], ['A', 'A', 'A']);
   sc.eq('⑰ 고른 스타일은 남고 모르는 값은 A', [A.normState({art: 'D'}).art, A.normState({art: 'Z'}).art], ['D', 'A']);
   sc.eq('⑰ 설정에 동물 · 그림 스타일 고르기', /data-art="\$\{x\[0\]\}"/.test(HTML) && /data-k="\$\{k\[0\]\}"/.test(HTML), true);
-  sc.eq('⑰ 햄스터는 곰돌이와 다른 뼈대(볼 · 앞니 · 씨앗)', /hamster: \{ear: 'ham'[^}]*ham: 1\}/.test(HTML) && /const teeth = P\.ham/.test(HTML) && /const seed = P\.ham/.test(HTML), true);
 }
 // ── ⑱ 손맛 · 소리 · 리액션 · 동물 다듬기 (샤론 1024 ④) ──
 {
@@ -288,6 +289,31 @@ function mk(o) {
   sc.eq('⑱ 스크롤 튕김을 막지 않는다', /html,body\{[^}]*overscroll-behavior:none/.test(HTML), false);
   sc.eq('⑱ 넘기기는 손가락을 따라간다 · 창은 끌어 내려 닫는다', /function swipeMain\(\)/.test(HTML) && /function pullToClose\(\)/.test(HTML) && /moved > m\.clientWidth \/ 4 \|\| fast/.test(HTML), true);
   sc.eq('⑱ 움직임 줄이기면 끈다', /prefers-reduced-motion: reduce/.test(HTML) && /if \(quiet\(\) \|\| !m\.animate\)/.test(HTML), true);
-  sc.eq('⑱ 고양이(꼬리 · 줄무늬 · 수염) · 여우(꼬리 · 귀 끝 · 볼털 가면)', /cat: \{[^}]*cat: 1\}/.test(HTML) && /fox: \{[^}]*fox: 1\}/.test(HTML) && /if \(P\.cat\) add\('tail'\)/.test(HTML) && /if \(P\.fox\) add\('path', 'd="M36 102/.test(HTML), true);
+}
+// ── ⑲ 캐릭터 그림 — 실제로 그려 보고 동물마다 제 모습이 있는지 본다 (샤론 1024 ③④⑤) ──
+{
+  const am = HTML.match(/const ART_STYLES[\s\S]*?\nconst buddySvg/);
+  const g = {}; vm.createContext(g); vm.runInContext(am[0].replace(/\nconst buddySvg$/, '') + '\nthis.artSvg = artSvg; this.ART_STYLES = ART_STYLES;', g);
+  const draw = (k, o, y) => g.artSvg(k, 5, y || 'A', o || {});
+  const ham = draw('hamster'), bear = draw('bear');
+  sc.eq('⑲ 햄스터 = 앞니 · 씨앗, 곰돌이엔 없다', [ham.includes('M96.5 118.5'), ham.includes('#3E3733'), bear.includes('M96.5 118.5')], [true, true, false]);
+  const cat = draw('cat'), fox = draw('fox');
+  sc.eq('⑲ 고양이 = 꼬리 · 줄무늬 · 수염 / 여우 = 흰 끝 꼬리 · 볼털 가면', [cat.includes('M132 170 C160 177'), cat.includes('M92 45 L94.5 57'), cat.includes('M80 114 L56 109'), fox.includes('M152 104 C160 94'), fox.includes('M36 102 L54 109')], [true, true, true, true, true]);
+  const rab = draw('rabbit'), dog = draw('dog'), pan = draw('panda');
+  sc.eq('⑲ 토끼 = 솜꼬리 · 정수리 털 / 강아지 = 눈 얼룩 · 혀 · 목걸이 · 꼬리 / 곰돌이 = 리본 · 발바닥 / 판다 = 물방울 무늬 · 대나무',
+    [rab.includes('cx="141" cy="171" r="12"'), rab.includes('cx="100" cy="41.5" r="7"'), dog.includes('cx="123" cy="99"'), dog.includes('M96.5 119.5'), dog.includes('#E2574C'), dog.includes('M134 172 C150'), bear.includes('#6FA8FF'), bear.includes('cy="183" rx="8"'), pan.includes('M66 96 C72 88'), pan.includes('#4FA03A')],
+    Array(10).fill(true));
+  sc.eq('⑲ 자세: 손 흔들기는 오른팔이 올라간다 · 만세는 두 팔 · 잠은 z · 빼꼼은 몸 없이 앞발', [draw('bear', {pose: 'wave'}).includes('rotate(40 156 122)'), draw('bear', {pose: 'cheer'}).includes('rotate(-40 44 122)'), draw('bear', {pose: 'sleep'}).includes('bd-z'), draw('bear', {pose: 'peek'}).includes('cx="100" cy="153"'), draw('bear', {pose: 'peek'}).includes('cy="144" rx="15"')], [true, true, true, false, true]);
+  sc.eq('⑲ 판다는 손을 쓰는 자세면 대나무를 내려놓는다', [draw('panda', {pose: 'wave'}).includes('#4FA03A'), draw('panda', {pose: 'read'}).includes('#4FA03A')], [false, false]);
+  sc.eq('⑲ 움직이는 친구엔 live, 아니면 없다 · 움직이는 부분은 묶음으로', [draw('cat', {live: true}).includes('class="bd p-stand live'), draw('cat').includes(' live'), draw('cat', {live: true}).includes('class="bd-tail"'), draw('cat', {live: true}).includes('class="bd-earL"')], [true, false, true, true]);
+  sc.eq('⑲ 다섯 스타일 × 일곱 동물 × 여섯 자세 모두 그려진다', ['A', 'B', 'C', 'D', 'E'].every(y => ['rabbit', 'cat', 'hamster', 'dog', 'bear', 'fox', 'panda'].every(k => ['stand', 'wave', 'cheer', 'read', 'sleep', 'peek'].every(po => /^<svg[\s\S]*<\/svg>$/.test(draw(k, {pose: po}, y))))), true);
+  sc.eq('⑲ 스티커(C)는 움직이는 묶음 안에도 흰 테두리를 함께', /class="bd-armR"><g fill="#fff" stroke="#fff"/.test(draw('bear', {pose: 'wave'}, 'C')), true);
+}
+// ── ⑳ 소리 끄기 · 넘기기 (샤론 1024 ⑤) ──
+{
+  sc.eq('⑳ 소리 끄기는 저장되고 처음엔 켜짐', [A.blankState().mute, A.normState({}).mute, A.normState({mute: true}).mute, A.normState({mute: 'yes'}).mute], [false, false, true, false]);
+  sc.eq('⑳ 머리줄 별과 톱니 사이에 스피커', /<\/span><\/span>\$\{muteBtn\(\)\}<button class="ib" data-top="gear"/.test(HTML), true);
+  sc.eq('⑳ 끄면 효과음 · 배경음악 모두 멈춘다', /S\.sfxVol <= 0 \|\| S\.mute/.test(HTML) && /S\.bgmVol <= 0 \|\| S\.mute/.test(HTML), true);
+  sc.eq('⑳ 손으로 넘길 땐 차르르 없이 · 화면 어디서나', !/TAB = 'reward'; ENTER = true; render\(\); window\.scrollTo/.test(HTML) && /area = document/.test(HTML), true);
 }
 sc.done();
