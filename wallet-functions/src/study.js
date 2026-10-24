@@ -44,7 +44,11 @@ async function members(fid) { const qs = await db().collection(`families/${fid}/
 function sessLine(st, sid) {
   const s = (st.sessions || []).find((x) => x.id === sid); if (!s) return null;
   const b = (st.books || []).find((x) => "b:" + x.id === s.key), t = !b ? (st.tasks || []).find((x) => "t:" + x.id === s.key) : null;
-  const subj = SUBJ[(b || t || {}).subj] || "공부", name = b ? b.name : t ? t.title : "";
+  const h = String(s.key).startsWith("h:") ? (st.hw || []).find((x) => "h:" + x.id === s.key) || { title: s.ht, subj: s.hs } : null;   // 오늘의 숙제 (샤론 1024 ②)
+  const k = (b || t || h || {}).subj, own = (st.subjects || []).find((x) => x.k === k);   // 아이가 직접 만든 과목
+  const subj = SUBJ[k] || (own && own.n) || "공부";
+  if (h) return { subj, text: "숙제 · " + (h.title || "") };
+  const name = b ? b.name : t ? t.title : "";
   const min = Math.round((s.sec || 0) / 60);
   const range = b ? (s.from === s.to ? s.from + "쪽" : s.from + "~" + s.to + "쪽") : "";
   return { subj, text: [name, range, min + "분"].filter(Boolean).join(" · ") };

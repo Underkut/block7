@@ -9,6 +9,7 @@
 //  ⑥ 별은 부모님 확인 때만 · 같은 확인은 한 번만 반영 · 레벨
 //  ⑦ 망가진 저장을 읽어도 죽지 않는다
 //  ⑮ 오늘의 숙제: 그날 바로 · 제출 전날 · 끝낸 것은 다음 날 안 보임 · 못 끝낸 것은 남음 · 내가 만든 과목이 저장을 지나도 남음
+//  ⑯ 숙제를 끝내면 기록이 생겨 부모님 확인 · 별로 이어진다 · 지우면 되돌린다 · '다시 해 볼까?' 면 다시 할 것으로 · 고르는 칸은 처음 한 번
 //  ⑬ 백업 파일 이름 St-{아이디3}-{기기}-{YY}-{MMDD}-{번호} · 연속 · 날짜 바뀜 · 오프라인 · 번호표가 저장 · 클라우드를 지나도 남는다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -23,7 +24,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { STUDY_KEY, SUBJ, blankState, normState, normBook, amountText, rangeText, perDayText, chapterOf, projectBook, finishDate, questsFor, questOf,
   runStart, runPause, runResume, runStudyMs, runRestMs, finishRun, removeSession, dueAlarm, snooze, cleanOld, upcomingAlarms,
-  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName, addSubject, pickSubj, subjOf, hwDoDate, hwFor, hwLeftover, hwClean };`, ctx);
+  starsOf, levelOf, coinsLeft, applyReview, promiseProgress, weekStats, mondayOf, addDays, dowOf, atOf, COIN_DONE, bakDevice, bakName, addSubject, pickSubj, subjOf, hwDoDate, hwFor, hwLeftover, hwClean, hwQuest, keyOfHw, sundayOf };`, ctx);
 const A = ctx.A;
 const MON = '2026-10-12';   // 월요일
 const at = (d, hm) => A.atOf(d, hm);
@@ -218,7 +219,7 @@ function mk(o) {
 // ── ⑮ 오늘의 숙제 · 내가 만든 과목 ──
 {
   const TUE = A.addDays(MON, 1), FRI = A.addDays(MON, 4);
-  sc.eq('⑮ 그날 바로 → 오늘', A.hwDoDate('now', MON, FRI), MON);
+  sc.eq('⑮ 그날 바로 → 오늘', A.hwDoDate('day', MON, FRI), MON);
   sc.eq('⑮ 제출 전날 → 제출 하루 전', A.hwDoDate('eve', MON, FRI), A.addDays(FRI, -1));
   sc.eq('⑮ 내일 제출이면 오늘 · 오늘 제출이어도 오늘', [A.hwDoDate('eve', MON, TUE), A.hwDoDate('eve', MON, MON)], [MON, MON]);
   const st = A.blankState();
@@ -239,7 +240,34 @@ function mk(o) {
   sc.eq('⑮ 내가 만든 과목이 저장을 지나도 남는다', [back.books[0].subj, back.hw[0].subj, A.subjOf(k).n], [k, k, '한자']);
   sc.eq('⑮ 고르는 줄에 기타는 없다', A.pickSubj().some(x => x.k === 'etc'), false);
   sc.eq('⑮ 옛 기록의 기타는 그대로 읽힌다', A.subjOf('etc').n, '기타');
-  sc.eq('⑮ 숙제 방식 기본은 그날 바로', [A.blankState().hwMode, A.normState({hwMode: 'eve'}).hwMode, A.normState({hwMode: 'x'}).hwMode], ['now', 'eve', 'now']);
+  sc.eq('⑮ 숙제 방식은 처음엔 안 고른 상태 · 옛 now 는 다시 묻는다', [A.blankState().hwMode, A.normState({hwMode: 'eve'}).hwMode, A.normState({hwMode: 'now'}).hwMode], ['', 'eve', '']);
+  sc.eq('⑮ 고른 day 는 남는다', A.normState({hwMode: 'day'}).hwMode, 'day');
   sc.eq('⑮ 할 것 넣기 버튼은 할 것이 없을 때만', HTML.includes("${!S.books.length && !S.tasks.length ? `<button class=\"addone\" data-a=\"add\">"), true);
+}
+// ── ⑯ 숙제 → 기록 → 부모님 확인 · 별 ──
+{
+  const TUE = A.addDays(MON, 1);
+  const st = A.blankState();
+  st.hw.push({id: 'h1', title: '일기', subj: 'kor', due: '', doDate: MON, done: ''});
+  const q = A.hwQuest(st, st.hw[0], MON);
+  sc.eq('⑯ 숙제도 퀘스트 모양', [q.key, q.kind, q.done], ['h:h1', 'hw', false]);
+  sc.eq('⑯ 열쇠로 찾아진다', A.questOf(st, 'h:h1', MON, MON).title, '일기');
+  A.runStart(st, q, at(MON, '17:00'));
+  const s1 = A.finishRun(st, at(MON, '17:00'), {});
+  sc.eq('⑯ 끝내면 기록 · 숙제는 끝낸 날 · 코인', [st.sessions.length, st.hw[0].done, s1.ht, s1.hs, st.coins], [1, MON, '일기', 'kor', A.COIN_DONE]);
+  sc.eq('⑯ 끝낸 다음 날은 안 보인다', A.hwFor(st, TUE).length, 0);
+  sc.eq('⑯ 부모님 확인 → 별', [A.applyReview(st, {id: 'r1', sid: s1.id, status: 'ok', stars: 2}), A.starsOf(st)], [true, 2]);
+  const st2 = A.blankState();
+  st2.hw.push({id: 'h2', title: '익힘책', subj: 'math', due: '', doDate: MON, done: ''});
+  A.runStart(st2, A.hwQuest(st2, st2.hw[0], MON), at(MON, '17:00')); const s2 = A.finishRun(st2, at(MON, '17:00'), {});
+  A.applyReview(st2, {id: 'r2', sid: s2.id, status: 'redo'});
+  sc.eq("⑯ '다시 해 볼까?' 면 다시 할 것 · 다음 날도 남는다", [st2.hw[0].done, A.hwFor(st2, TUE).length, A.hwLeftover(st2, TUE).length], ['', 1, 1]);
+  A.runStart(st2, A.hwQuest(st2, st2.hw[0], TUE), at(TUE, '17:00')); const s3 = A.finishRun(st2, at(TUE, '17:00'), {});
+  sc.eq('⑯ 다시 끝내면 다시 끝', st2.hw[0].done, TUE);
+  A.removeSession(st2, s3.id);
+  sc.eq('⑯ 기록을 지우면 숙제는 다시 할 것 (다시 해 볼까 기록은 끝낸 걸로 안 셈)', st2.hw[0].done, '');
+  sc.eq('⑯ 주간 통계에 숙제 과목', A.weekStats(st, MON).rows.map(r => r.subj), ['kor']);
+  st.hw = []; sc.eq('⑯ 숙제를 지워도 통계 과목은 기록에서', A.weekStats(st, MON).rows.map(r => r.subj), ['kor']);
+  sc.eq('⑯ 한 주는 일요일부터', [A.sundayOf(MON), A.sundayOf(A.addDays(MON, -1))], [A.addDays(MON, -1), A.addDays(MON, -1)]);
 }
 sc.done();
