@@ -807,7 +807,7 @@ console.log('\n시나리오 9 — 화면 연결');
   const seg = SRC.slice(b, b + 12000);
   // v26-0904-10 — 맨 위에 '자동 넘김'(첫 항목)과 '제목 표시'가 들어왔다
   const order = ['>자동 넘김<', '>제목 표시<', '>테마<', '>글자 크기<',
-                 '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 카운터와 링크 열기는']
+                 '왼쪽 아래 — 필터', '오른쪽 아래 — 말씀 반응', '반응 횟수와 성경 사이트 열 곳은']
     .map(t => seg.indexOf(t));
   sc.eq('설정 팝업 일곱 구역이 이 순서로', order.every((n, i) => n >= 0 && (i === 0 || n > order[i - 1])), true);
   sc.eq('카드마다 좌·우 하단 켜고 끄기', SRC.includes('function setVcShow(id,key,on)'), true);
