@@ -13,7 +13,7 @@ global.document = { querySelectorAll: () => [], getElementById: () => null };
 eval(
   slice('const UI_LEVELS=', 'function applyUiLevel(') +
   ';Object.assign(globalThis,{UI_LEVELS,_UILV_KEY,uiLevel,_stabList,SETTINGS_TABS:' +
-  JSON.stringify(['general','notify','view','buttons','sections','account']) + '});'
+  JSON.stringify(['general','view','sections','notify','account']) + '});'
 );
 
 // data-lv="..." 를 가진 줄에서 [등급문자, 그 줄 전체] 를 뽑는다
@@ -58,18 +58,22 @@ console.log('\n시나리오 3 — 등급별 보임/숨김');
   sc.eq('p — 파워에서만 보임', shown('power', 'p'), true);
 }
 
-// ═══ 4. 탭 — 이지는 '버튼' 탭 자체가 없다 ═══
+// ═══ 4. 탭 — v26-1024-15 (HB 설정창 정리): '버튼' 탭은 '화면 › 위 단추' 묶음(data-lv="mp")이 됐다 ═══
 console.log('\n시나리오 4 — 탭 목록');
 {
   ST.settings.uiLevel = 'easy';
-  sc.eq('이지 탭', _stabList(), ['general', 'notify', 'view', 'sections', 'account']);
+  sc.eq('이지 탭', _stabList(), ['general', 'view', 'sections', 'notify', 'account']);
   ST.settings.uiLevel = 'mid';
-  sc.eq('미드 탭', _stabList(), ['general', 'notify', 'view', 'buttons', 'sections', 'account']);
+  sc.eq('미드 탭', _stabList(), ['general', 'view', 'sections', 'notify', 'account']);
   ST.settings.uiLevel = 'power';
-  sc.eq('파워 탭 수', _stabList().length, 6);
+  sc.eq('파워 탭 수', _stabList().length, 5);
   // 트랙 이동은 "보이는 탭 목록"의 자리로 계산해야 한다
   ST.settings.uiLevel = 'easy';
-  sc.eq('이지에서 계정탭은 다섯 번째(0부터 4)', _stabList().indexOf('account'), 4);
+  sc.eq('계정탭은 다섯 번째(0부터 4)', _stabList().indexOf('account'), 4);
+  sc.eq("이지에선 '위 단추' 묶음이 감춰진다(옛 버튼 탭 규칙)", /<div class="sg" id="sgTopBtns" data-lv="mp">/.test(SRC), true);
+  sc.eq('탭 단추 차례 = SETTINGS_TABS 차례',
+    [...SRC.slice(SRC.indexOf('id="settingsTabBar"'), SRC.indexOf('id="settingsTabTrack"')).matchAll(/switchSettingsTab\('(\w+)'/g)].map(m=>m[1]),
+    ['general','view','sections','notify','account']);
 }
 
 // ═══ 4-2. 유저 모드 — 아이콘 두 벌 ═══
@@ -84,11 +88,11 @@ console.log('\n시나리오 4-2 — 유저 모드(동물 / 사각)');
         (art.match(/easy:/g) || []).length === 2 &&
         (art.match(/mid:/g) || []).length === 2 &&
         (art.match(/power:/g) || []).length === 2, true);
-  sc.eq('설정창 뷰탭 첫 항목이 유저 모드', SRC.includes('<div class="settings-section-title">유저 모드</div>'), true);
+  // v26-1024-15 — '유저 모드' 는 '화면 › 설정창 › 등급 아이콘 모양' 으로 (화면 탭 맨 아래)
+  sc.eq('화면 탭에 등급 아이콘 모양', SRC.includes('<div class="settings-row-label">등급 아이콘 모양</div>'), true);
   sc.eq('아이콘 간격은 두 벌 같게 (10.5px)', (SRC.match(/gap:10\.5px/g) || []).length >= 2, true);
   // 고르는 자리는 파워에서만 보인다
-  const sec = SRC.slice(SRC.indexOf('유저 모드 — 설정창 헤더'), SRC.indexOf('유저 모드</div>'));
-  sc.eq('유저 모드 항목은 파워 전용', sec.includes('data-lv="p"'), true);
+  sc.eq('등급 아이콘 모양 묶음은 파워 전용', SRC.includes('<div class="sg" id="sgLvIcon" data-lv="p">'), true);
   sc.eq('기본값은 동물', /uiLevelIconSet:'animal'/.test(SRC), true);
   sc.eq("'square' 를 고른 것만 사각", SRC.includes("uiLevelIconSet==='square')?'square':'animal'"), true);
 }
@@ -112,9 +116,10 @@ console.log('\n시나리오 4-3 — 선 그림 토글은 색만으로');
 // ═══ 5. 표에서 옮기기로 한 것들이 실제로 옮겨졌나 ═══
 console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
 {
-  const notifyTab = SRC.slice(SRC.indexOf('id="stab-notify"'), SRC.indexOf('id="stab-view"'));
-  const secTab = SRC.slice(SRC.indexOf('id="stab-sections"'), SRC.indexOf('id="stab-account"'));
-  const btnTab = SRC.slice(SRC.indexOf('id="stab-buttons"'), SRC.indexOf('id="stab-sections"'));
+  // v26-1024-15 — 탭 차례가 할일 · 화면 · 구간 · 알림 · 계정 이 됐다. '버튼' 탭은 '화면 › 위 단추'
+  const notifyTab = SRC.slice(SRC.indexOf('id="stab-notify"'), SRC.indexOf('id="stab-account"'));
+  const secTab = SRC.slice(SRC.indexOf('id="stab-sections"'), SRC.indexOf('id="stab-notify"'));
+  const btnTab = SRC.slice(SRC.indexOf('id="sgTopBtns"'), SRC.indexOf('id="sgLvIcon"'));
   // v26-0819-2 — 뷰탭이 vstab-general 에서 vstab-view 로 갈라져 나왔다
   const vsGeneral = SRC.slice(SRC.indexOf('id="vstab-view"'), SRC.indexOf('id="vstab-alarm"'));
 
@@ -123,11 +128,11 @@ console.log('\n시나리오 5 — 옮긴 항목·바꾼 문구');
   sc.eq('할일뷰 말씀 표시 → 말씀 설정창으로', vsGeneral.includes('setDviewMarkLike'), true);
   sc.eq('버튼탭에는 더 이상 없다', btnTab.includes('setDviewMarkLike'), false);
 
-  sc.eq('푸시 알림 → 하루 할일 보고', notifyTab.includes('하루 할일 보고'), true);
-  sc.eq('아침 하루 요약 → 알림 시각', notifyTab.includes('>알림 시각<'), true);
+  sc.eq('하루 할일 보고 → 하루 할일 요약 (v26-1024-15)', notifyTab.includes('하루 할일 요약'), true);
+  sc.eq('알림 시각 → 보낼 시각 (v26-1024-15)', notifyTab.includes('>보낼 시각<'), true);
   sc.eq("'할일 알림' 제목은 지웠다", notifyTab.includes('>할일 알림<'), false);
   sc.eq('화면 크기 → 글자 크기', SRC.includes('>글자 크기<'), true);
-  sc.eq('스몰 블럭 보이기 → 스몰 블럭 사용', SRC.includes('>스몰 블럭 사용<'), true);
+  sc.eq('스몰 블럭 사용 → 스몰 블럭 쓰기 (v26-1024-15)', SRC.includes('>스몰 블럭 쓰기<'), true);
 }
 
 // ═══ 말씀 설정창 '보여줄 항목' 버튼 (0813-5) ═══

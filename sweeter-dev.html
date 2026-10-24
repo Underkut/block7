@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1024-14  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1024-15  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4363,6 +4363,81 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 }
 .settings-tab.stab-flash{animation:stabFlash 3s ease-out 1;border-radius:0;}
 @media (prefers-reduced-motion:reduce){.settings-tab.stab-flash{animation:none;}}
+/* ══ 설정창 새 모양 (v26-1024-15, HB — 타이머 설정창처럼 · 세 창 공통 규칙) ══
+   ① 머리줄 하나: 왼쪽 이지 · 미드 · 파워 · 가운데 제목 · 오른쪽 ×   (.sp2 를 단 창만)
+   ② 묶음(.sg) = 작은 제목(.sg-h) + 카드(.sg-card). 줄은 예전 .settings-row 를 그대로 쓰고
+      앞에 선 그림(.sr-ic)을 단다 — 테두리 · 상자 없이 (UI 원칙).
+   ③ 고르기 줄(.stack)은 글 아래 한 줄로 내린다(.sr-ctl) — 옆에 두면 제목이 두 줄로 꺾였다.
+   ④ 고르기는 한 줄 묶음(.sg-seg) · 끝말 칩은 .sg-chips · 접기는 .sr-fold + .sg-fold.
+   ⚠️ 묶음 · 카드 규칙은 .sg 아래에만 건다 — Sweeter 가 '모양' 묶음을 말씀설정창으로 옮겨 가도 같은 생김. */
+.sp2 .settings-hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 14px 10px;border-bottom:0;}
+.sp2 .uilv-row{position:static;transform:none;grid-column:1;grid-row:1;justify-self:start;padding-left:4px;}
+.sp2 .settings-title{grid-column:2;grid-row:1;font-size:16px;font-weight:600;letter-spacing:-.01em;}
+.sp2 .settings-hd-r{grid-column:3;grid-row:1;justify-self:end;}
+.sp2 .settings-hd>.settings-close{grid-column:3;grid-row:1;justify-self:end;}
+.sp2 .settings-tab{font-size:13.5px;font-weight:500;padding:11px 4px 10px;}
+.sp2 .settings-tab-content{padding:0 16px 34px;}
+.sg{margin:0;}
+.sg-h{font-size:12px;font-weight:500;letter-spacing:.06em;color:var(--tx3);margin:22px 6px 8px;display:flex;align-items:center;gap:6px;}
+.settings-tab-content>.sg:first-child>.sg-h{margin-top:16px;}
+.sg-badge{font-size:10px;letter-spacing:0;font-weight:500;padding:1px 7px;border-radius:99px;background:var(--s2);color:var(--tx3);}
+.sg-note{font-size:11.5px;color:var(--tx3);line-height:1.6;margin:8px 6px 0;}
+.sg-h+.sg-note{margin:-2px 6px 10px;}
+.sg.sg-empty{display:none;}
+.sg-card{background:var(--bg);border-radius:16px;padding:0 14px;}
+.sg-card.sg-pad{padding:14px;}
+.sg-card>*{border-top:1px solid var(--bd);}
+.sg-card>.sg-top,.sg-card>.sg-fold,.sg-card.sg-pad>*{border-top:0;}
+.sg-card>.settings-row,.sg-fold .settings-row{padding:13px 0;gap:12px;align-items:center;}
+.sg .sr-ic{flex:none;width:20px;height:20px;color:var(--tx3);align-self:flex-start;margin-top:1px;}
+.sg .settings-row-label,.sg .settings-row-label.lv1{font-size:14.5px;font-weight:500;color:var(--tx);letter-spacing:-.005em;line-height:1.35;}
+.sg .settings-row-desc{font-size:12px;color:var(--tx3);line-height:1.55;margin-top:3px;}
+.sg-card>.settings-row.sub{padding-left:32px;}
+.sg-card>.settings-row.stack{flex-wrap:wrap;row-gap:10px;}
+.sg-card>.settings-row.stack>.sr-ctl{flex:0 0 calc(100% - 32px);margin-left:32px;min-width:0;display:flex;flex-direction:column;gap:8px;}
+/* 한 줄 고르기 — 예전 단추(.theme-pick-btn .active / .settings-btn .on / .preset-btn .on) 그대로 받아 모양만 */
+.sg .sg-seg{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(var(--tx-rgb,120,128,150),.08);background:color-mix(in srgb,var(--tx) 7%,transparent);}
+.sg .sg-seg>button{flex:1 1 0;min-width:0;height:32px;padding:0 6px;margin:0;border:0;border-radius:8px;background:none;box-shadow:none;color:var(--tx2);font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .2s,color .2s;width:auto;}
+.sg .sg-seg>button.on,.sg .sg-seg>button.active{background:var(--s1);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.14);}
+@media (hover:hover){.sg .sg-seg>button:hover{color:var(--tx);}}
+.sg .sg-seg>.uilv-set-btn{height:36px;}
+.sg .sg-seg>.uilv-set-btn.on{color:var(--ac-tx);}
+/* 끝말 칩 — 렌더러가 인라인 모양을 주므로 여기서만 덮는다 */
+.sg .sg-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.sg .sg-chips>button{border:0!important;border-radius:16px!important;background:var(--s1)!important;box-shadow:inset 0 0 0 1px var(--bd);color:var(--tx2)!important;}
+.sg .sg-chips>button.active{background:var(--ac)!important;color:var(--on-accent,#fff)!important;box-shadow:none;}
+/* 스위치 — 꺼짐은 옅은 바탕, 손잡이에 살짝 그림자 */
+.sg .settings-toggle{width:46px;height:28px;}
+.sg .settings-toggle-track{border-radius:14px;background:rgba(127,127,127,.28);background:color-mix(in srgb,var(--tx) 14%,transparent);}
+.sg .settings-toggle-track::after{width:22px;height:22px;box-shadow:0 1px 3px rgba(0,0,0,.22);}
+.sg .settings-toggle input:checked + .settings-toggle-track{background:var(--ac);}
+.sg .settings-toggle input:checked + .settings-toggle-track::after{transform:translateX(18px);}
+/* 줄 안의 작은 단추 · 넓은 단추 · 숫자 · 고르기 상자 */
+.sg .settings-btn{border:0;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);color:var(--tx);border-radius:10px;font-size:12.5px;}
+.sg .settings-btn.sr-btn{flex:none;padding:0 14px;height:34px;}
+.sg .settings-btn.sr-go{flex:none;width:100%;height:40px;padding:0 14px;}
+.sg .sr-btns{display:flex;gap:6px;flex:none;}
+.sg .settings-btn-danger{color:var(--danger,#e5484d);}
+.sg .settings-number{width:52px;height:34px;padding:0 6px;border:0;border-radius:10px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);font-size:14px;}
+.sg .settings-select.sr-select{width:auto;max-width:48%;margin:0;padding:7px 12px;border:0;border-radius:10px;background:var(--s1);box-shadow:inset 0 0 0 1px var(--bd);font-size:13px;flex:none;}
+.sg .sr-slider{display:flex;align-items:center;gap:12px;}
+.sg .sr-slider>span{font-size:12.5px;color:var(--tx2);min-width:40px;text-align:right;font-family:var(--font-number);}
+.sg .theme-summary{margin:0;}
+/* 접기 — 줄을 누르면 아래가 스르륵 펴진다 */
+.sg .sr-fold{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.sg .sr-val{font-size:13px;color:var(--tx2);white-space:nowrap;flex:none;}
+.sg .sr-chev{flex:none;color:var(--tx3);margin-left:-4px;transition:transform .3s cubic-bezier(.22,.8,.24,1);}
+.sg .sr-fold.open .sr-chev{transform:rotate(90deg);}
+.sg-fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.22,.8,.24,1);}
+.sg-fold.open{grid-template-rows:1fr;}
+.sg-fold>div{overflow:hidden;min-height:0;}
+.sg-fold .settings-row{padding-left:32px;border-top:1px solid var(--bd);}
+.sg-fold .settings-row-label{font-size:13.5px;font-weight:400;display:flex;align-items:center;gap:6px;}
+/* 계정 탭 맨 위 로그인 카드 */
+.sg-acct{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:14px;margin-top:16px;}
+.sg-av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(var(--ac-rgb),.14);color:var(--ac-tx);}
+.sg-acct .settings-row-label{word-break:break-all;}
+@media (prefers-reduced-motion:reduce){.sg-fold,.sg .sr-chev,.sg .sg-seg>button{transition:none;}}
 /* ⚠️ --vset-pad-top 은 이 padding-top 과 **같은 값이어야 한다.** 붙어 따라오는
       이름줄(.cf-name)이 이 값만큼 스스로를 끌어올려 탭 바 밑에 딱 붙는다.
       한쪽만 고치면 그 틈으로 내용이 비친다. (tests/test_plus.js 가 지킨다) */
@@ -6429,7 +6504,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1024-14";
+const APP_VERSION = "v. 26-1024-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6732,7 +6807,7 @@ try{
 
 <!-- ── SETTINGS PANEL ── -->
 <div class="settings-overlay" id="settingsOverlay" style="display:none" onclick="closeSettingsOnBg(event)">
-  <div class="settings-panel" id="settingsPanel">
+  <div class="settings-panel sp2" id="settingsPanel">
     <div class="settings-verbadge" id="settingsVerBadge" style="display:none;"></div>
     <div class="settings-hd">
       <div class="settings-title">설정</div>
@@ -6752,426 +6827,108 @@ try{
     </div>
     <!-- Tab bar sits between header and body, sticky within the panel -->
     <div class="settings-tab-bar" id="settingsTabBar">
-      <button class="settings-tab on" onclick="switchSettingsTab('general',this)">일반</button>
-      <button class="settings-tab" onclick="switchSettingsTab('notify',this)">알림</button>
-      <button class="settings-tab" onclick="switchSettingsTab('view',this)">뷰</button>
-      <button class="settings-tab" onclick="switchSettingsTab('buttons',this)">버튼</button>
+      <!-- 탭 차례 = SETTINGS_TABS 차례 (applyUiLevel 이 자리로 짝짓는다). 세 창 공통 — 탭 이름은 한 단어 (v26-1024-15, HB) -->
+      <button class="settings-tab on" onclick="switchSettingsTab('general',this)">할일</button>
+      <button class="settings-tab" onclick="switchSettingsTab('view',this)">화면</button>
       <button class="settings-tab" onclick="switchSettingsTab('sections',this)">구간</button>
+      <button class="settings-tab" onclick="switchSettingsTab('notify',this)">알림</button>
       <button class="settings-tab" onclick="switchSettingsTab('account',this)">계정</button>
     </div>
     <div class="settings-body">
-      <div class="settings-tab-track" id="settingsTabTrack" style="--stab-count:6;">
+      <div class="settings-tab-track" id="settingsTabTrack" style="--stab-count:5;">
 
       <div class="settings-tab-content" id="stab-general">
 
-      <!-- 미완료 할일 가져오기 (순서: 언제부터 가져올지 → 지금 → 자동) -->
-      <div class="settings-section">
-        <!-- v26-0818-1, HB 3: 예전엔 이 제목이 settings-row-label(=항목 이름과 같은 굵기)이라
-             다른 탭 제목들과 스텝이 안 맞았다. settings-section-title 로 통일. -->
-        <div class="settings-section-title">미완료 할일 가져오기</div>
-        <div class="settings-row-label" style="margin-bottom:6px;">언제부터 가져올지</div>
-        <div class="theme-pick-row" id="carryScopeRow">
-          <button class="theme-pick-btn" id="carryScopeYesterday" onclick="setCarryScope('yesterday')">어제</button>
-          <button class="theme-pick-btn" id="carryScopeWeek" onclick="setCarryScope('week')">이번주</button>
-          <button class="theme-pick-btn" id="carryScopeMonth" onclick="setCarryScope('month')">이번달</button>
-          <button class="theme-pick-btn" id="carryScopeCustom" onclick="setCarryScope('custom')">직접선택</button>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">하루</div>
+        <div class="sg-card">
+          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M7 17a5 5 0 0 1 10 0"/><path d="M12 5v5M9.5 7.5L12 5l2.5 2.5"/></svg><div class="settings-row-text"><div class="settings-row-label">하루가 바뀌는 시각</div><div class="settings-row-desc">이 시각 전까지는 어제로 쳐요 — 새벽 2시까지 일하면 어제 할일</div></div><select class="settings-select sr-select" id="setDayStart" onchange="updateSetting('dayStartHour',parseInt(this.value))">
+          ${''}
+        </select></div>
+          <div class="settings-row stack" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><div class="settings-row-text"><div class="settings-row-label">시간 고르는 단위</div><div class="settings-row-desc">일정 · 알림 · 구간 시각을 몇 분씩 고를지 (하루가 바뀌는 시각은 늘 1시간 단위)</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="timeStep1" onclick="setTimeStep(1)">1분</button><button class="theme-pick-btn" id="timeStep10" onclick="setTimeStep(10)">10분</button><button class="theme-pick-btn" id="timeStep15" onclick="setTimeStep(15)">15분</button><button class="theme-pick-btn" id="timeStep30" onclick="setTimeStep(30)">30분</button><button class="theme-pick-btn" id="timeStep60" onclick="setTimeStep(60)">1시간</button></div></div></div>
         </div>
-        <div id="carryCustomRow" style="display:none;gap:8px;align-items:center;margin:10px 0 0;flex-wrap:wrap;">
+      </div>
+      <div class="sg">
+        <div class="sg-h">못 끝낸 할일</div>
+        <div class="sg-card">
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h12M13 8l4 4-4 4"/><path d="M5 6v12"/></svg><div class="settings-row-text"><div class="settings-row-label">다음날로 자동 넘기기</div><div class="settings-row-desc">하루가 끝나면 못 끝낸 할일을 다음날로</div></div><label class="settings-toggle"><input type="checkbox" id="setAutoCarry" onchange="updateSetting('autoCarryOver',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row stack"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H7M11 8l-4 4 4 4"/><path d="M19 6v12"/></svg><div class="settings-row-text"><div class="settings-row-label">지금 오늘로 가져오기</div><div class="settings-row-desc">고른 기간의 못 끝낸 할일을 지금 오늘로</div></div><div class="sr-ctl"><div class="sg-seg" id="carryScopeRow"><button class="theme-pick-btn" id="carryScopeYesterday" onclick="setCarryScope('yesterday')">어제</button><button class="theme-pick-btn" id="carryScopeWeek" onclick="setCarryScope('week')">이번 주</button><button class="theme-pick-btn" id="carryScopeMonth" onclick="setCarryScope('month')">이번 달</button><button class="theme-pick-btn" id="carryScopeCustom" onclick="setCarryScope('custom')">직접</button></div>
+            <div id="carryCustomRow" style="display:none;gap:8px;align-items:center;margin:10px 0 0;flex-wrap:wrap;">
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);">시작
             <input type="date" id="carryCustomFrom" onchange="save()" style="font-size:12px;padding:3px 5px;background:var(--s2);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);color-scheme:dark;"></label>
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);">마침
             <input type="date" id="carryCustomTo" onchange="save()" style="font-size:12px;padding:3px 5px;background:var(--s2);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);color-scheme:dark;"></label>
         </div>
-        <div class="settings-row" style="margin-top:12px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">지금</div>
-            <div class="settings-row-desc">위에서 고른 기간의 미완료 할일을 지금 바로 오늘로 가져와요</div>
-          </div>
-          <button class="settings-btn" onclick="runCarryNow()" style="flex-shrink:0;">가져오기</button>
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label" style="font-size:13px;">자동</div>
-            <div class="settings-row-desc">하루가 끝날 때 완료하지 못한 할일을 다음날로 자동으로 넘겨요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setAutoCarry" onchange="updateSetting('autoCarryOver',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="settings-row-desc" id="carryDebugInfo" style="margin-top:6px;"></div>
-      </div>
-
-      <!-- 하루 시작 시각 -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">하루 시작 시각</div>
-            <div class="settings-row-desc">이 시각 이전은 전날로 취급해요 (예: 새벽 3시까지 작업하면 어제 할일로 기록)</div>
-          </div>
-        </div>
-        <select class="settings-select" id="setDayStart" onchange="updateSetting('dayStartHour',parseInt(this.value))">
-          ${''}
-        </select>
-      </div>
-
-      <!-- 시간 설정 단위 -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">시간 설정 단위</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">일정 등록, 알림 시각, 시간구간의 시각을 몇 분 단위로 고를지 정해요. 1시간을 고르면 분 선택 칸이 아예 사라져요. (하루 시작 시각은 항상 1시간 단위)</div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="timeStep1" onclick="setTimeStep(1)">1분</button>
-          <button class="theme-pick-btn" id="timeStep10" onclick="setTimeStep(10)">10분</button>
-          <button class="theme-pick-btn" id="timeStep15" onclick="setTimeStep(15)">15분</button>
-          <button class="theme-pick-btn" id="timeStep30" onclick="setTimeStep(30)">30분</button>
-          <button class="theme-pick-btn" id="timeStep60" onclick="setTimeStep(60)">1시간</button>
+            <button class="settings-btn sr-go" onclick="runCarryNow()">가져오기</button>
+            <div class="settings-row-desc" id="carryDebugInfo"></div></div></div>
+          <div class="settings-row stack" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V7M10 17V10M14 17v-4M18 17v-2"/></svg><div class="settings-row-text"><div class="settings-row-label">넘긴 횟수 표시</div><div class="settings-row-desc">며칠째 넘어왔는지 옆에 — 오래될수록 진하게</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="carryModeNumber" onclick="updateSetting('carryBadgeMode','number')">숫자</button><button class="theme-pick-btn" id="carryModeIcon" onclick="updateSetting('carryBadgeMode','icon')"><span class="carry-preview-dot"></span><span class="carry-preview-diamond"></span></button></div></div></div>
+          <div class="settings-row stack sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V7M10 17V10M14 17v-4M18 17v-2"/></svg><div class="settings-row-text"><div class="settings-row-label">셀 것</div><div class="settings-row-desc">자동으로 넘긴 것(a) · 직접 내일로 보낸 것(b)</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="carrySrcBoth" onclick="updateSetting('carryCountSource','both')">모두 a+b</button><button class="theme-pick-btn" id="carrySrcAuto" onclick="updateSetting('carryCountSource','auto')">자동만 a</button><button class="theme-pick-btn" id="carrySrcManual" onclick="updateSetting('carryCountSource','manual')">직접만 b</button></div></div></div>
         </div>
       </div>
-
-      <!-- 할일 입력 위치 (표에는 없던 항목 — 기능은 그대로 두고 파워에서만 보인다) -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">할일 입력 위치</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">+ 버튼을 눌렀을 때 입력창이 나타나는 위치예요</div>
-        <div style="display:flex;gap:8px;">
-          <button id="addPosC" class="settings-btn" onclick="updateSetting('addInputPosition','C')" style="flex:1;">목록 위</button>
-          <button id="addPosA" class="settings-btn" onclick="updateSetting('addInputPosition','A')" style="flex:1;">목록 아래</button>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">입력</div>
+        <div class="sg-card">
+          <div class="settings-row stack" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5l4 4L9 19H5v-4z"/></svg><div class="settings-row-text"><div class="settings-row-label">새 할일 입력창 위치</div><div class="settings-row-desc">＋를 눌렀을 때</div></div><div class="sr-ctl"><div class="sg-seg"><button class="settings-btn" id="addPosC" onclick="updateSetting('addInputPosition','C')">목록 위</button><button class="settings-btn" id="addPosA" onclick="updateSetting('addInputPosition','A')">목록 아래</button></div></div></div>
+          <div class="settings-row" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="5" rx="1.5"/><rect x="4" y="14" width="16" height="5" rx="1.5"/><path d="M12 10v4"/></svg><div class="settings-row-text"><div class="settings-row-label">옮길 때 구간 고르기</div><div class="settings-row-desc">옮기기 · 복제할 때 구간을 한 번 더 골라요. 꺼도 메뉴 줄을 길게 누르면(PC 는 오른쪽 클릭) 나와요</div></div><label class="settings-toggle"><input type="checkbox" id="setMoveSecPicker" onchange="updateSetting('moveSecPicker',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4h3l1.5 4-2 1.2a10 10 0 0 0 5.3 5.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A15 15 0 0 1 5 6a2 2 0 0 1 2-2z"/></svg><div class="settings-row-text"><div class="settings-row-label">연락처</div><div class="settings-row-desc">할일에 @이름 → 전화 · 문자 · 이메일 · 카톡</div></div><button class="settings-btn sr-btn" onclick="openContactsModal()">관리</button></div>
         </div>
       </div>
-
-      <!-- 연락처 -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">연락처</div>
-            <div class="settings-row-desc">닉네임을 등록하면 할일 텍스트에 @닉네임으로 전화·문자·이메일·카톡을 연결할 수 있어요</div>
-          </div>
-          <button class="settings-btn" onclick="openContactsModal()" style="flex-shrink:0;">관리</button>
+      <div class="sg">
+        <div class="sg-h">블럭</div>
+        <div class="sg-card">
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/></svg><div class="settings-row-text"><div class="settings-row-label">빅 블럭 경고</div><div class="settings-row-desc">하루에 이 개수를 넘으면 경고 색</div></div><input type="number" class="settings-number" id="setBigLimit" min="1" max="20" onchange="updateSetting('bigLimit',parseInt(this.value)||6)"></div>
+          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 쓰기</div><div class="settings-row-desc">구간마다 스몰 블럭 칸을 보여요</div></div><label class="settings-toggle"><input type="checkbox" id="setShowSmallBlocks" onchange="updateSetting('showSmallBlocks',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row sub" data-lv="mp" data-cond="smallBlocks"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 경고</div><div class="settings-row-desc">한 구간에 이 개수를 넘으면 경고 색</div></div><input type="number" class="settings-number" id="setSmallLimit" min="1" max="20" onchange="updateSetting('smallLimit',parseInt(this.value)||2)"></div>
         </div>
       </div>
-
-      </div>
-      <div class="settings-tab-content" id="stab-notify">
-
-      <!-- 알림 (푸시) — 하위 항목은 '하루 할일 보고'를 켰을 때만 나온다 -->
-      <div class="settings-section">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">하루 할일 보고</div>
-            <div class="settings-row-desc" id="notifyStatusDesc">아이폰은 홈 화면에 추가된 상태에서만 알림을 받을 수 있어요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setNotifyEnabled" onchange="onNotifyMasterToggle(this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
+      <div class="sg" data-lv="p">
+        <div class="sg-h">끝냈을 때</div>
+        <div class="sg-card">
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v4M12 16v4M4 12h4M16 12h4M7 7l2 2M15 15l2 2M7 17l2-2M15 9l2-2"/></svg><div class="settings-row-text"><div class="settings-row-label">빛 번짐 (Glow)</div><div class="settings-row-desc">체크한 자리에서 빛이 번져요</div></div><label class="settings-toggle"><input type="checkbox" id="setDoneFxGlow" onchange="updateSetting('doneFxGlow',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M3 18c2-3 4-3 6 0s4 3 6 0 4-3 6 0" opacity=".5"/></svg><div class="settings-row-text"><div class="settings-row-label">물결 (Ripple)</div><div class="settings-row-desc">가라앉듯 자리 잡고 물결이 퍼져요</div></div><label class="settings-toggle"><input type="checkbox" id="setDoneFxRipple" onchange="updateSetting('doneFxRipple',this.checked)"><span class="settings-toggle-track"></span></label></div>
         </div>
-        <div class="settings-row" data-notif-sub="on">
-          <div class="settings-row-text">
-            <div class="settings-row-label">알림 시각</div>
-            <div class="settings-row-desc">설정한 시각에 오늘의 할일·일정을 정리해서 알려줘요</div>
-          </div>
-          <span id="morningTimeSlot" style="display:inline-flex;"></span>
-        </div>
-        <div class="settings-row" data-notif-sub="on" data-lv="p">
-          <div class="settings-row-text">
-            <div class="settings-row-label">알림 문구</div>
-            <div class="settings-row-desc">'오늘' 뒤에 붙는 문구예요 (예: 오늘 화이팅!). 직접 입력한 문구는 길게 눌러 삭제할 수 있어요.</div>
-          </div>
-        </div>
-        <div class="theme-pick-row" id="morningSfxRow" data-notif-sub="on" data-lv="p" style="flex-wrap:wrap;row-gap:8px;"></div>
-        <!-- v26-0818-1, HB 2-1: 이름을 바꾸고 위에 구분선을 붙였다 -->
-        <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
-        <div class="settings-row" data-notif-sub="on" data-lv="mp">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">시간 구간 할일 보고</div>
-            <div class="settings-row-desc">각 시간구간이 시작될 때 그 구간의 할일·일정을 알려줘요. 미완료 할일이나 일정이 있는 구간만 알려요.</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setNotifySections" onchange="updateNotifySub('sections',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <!-- 구간탭에서 옮겨 옴 — 시간 구간 할일 보고를 켰을 때만 나온다 -->
-        <div class="settings-row" data-notif-sub="sections" data-lv="p">
-          <div class="settings-row-text">
-            <div class="settings-row-label">구간 알림 제목 문구</div>
-            <div class="settings-row-desc">구간 이름 뒤에 붙는 공용 문구예요 (예: 오전 화이팅!). 구간탭에서 각 구간의 '알림문구'를 채우면 그 구간은 그 문구가 우선해요. 직접 입력한 문구는 길게 눌러 삭제.</div>
-          </div>
-        </div>
-        <div class="theme-pick-row" id="sectionSfxRow" data-notif-sub="sections" data-lv="p" style="flex-wrap:wrap;row-gap:8px;"></div>
-        <!-- v26-0818-1, HB 2-2: '알림에 스몰 블럭 포함'을 여기(알림 테스트 바로 위)로 옮기고 위아래에 구분선을 붙였다 -->
-        <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
-        <div class="settings-row" data-notif-sub="on" data-lv="mp">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">알림에 스몰 블럭 포함</div>
-            <div class="settings-row-desc">끄면 알림 내용에 빅 블럭·일정만 나와요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setNotifyIncludeSmall" onchange="updateNotifySub('includeSmall',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="div-line" data-notif-sub="on" data-lv="mp"></div>
-        <!-- 기기별 알림 스위치 (v26-0828-7) — 계정 설정은 그대로 두고 이 기기만 뺀다 -->
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">이 기기에서 알림 받기</div>
-            <div class="settings-row-desc">끄면 <b>이 기기에서만</b> 알림이 안 와요. 다른 기기는 그대로 받아요. (말씀 알림도 함께 꺼져요)</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setDevNotify" onchange="setDeviceNotify(this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="settings-row" id="notifyTestRow" style="display:none;">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">알림 테스트</div>
-            <div class="settings-row-desc">기기: 이 기기의 알림 표시만 확인. 서버: 실제 푸시 발송 전체 경로 확인 — 누르고 8초 안에 홈으로 나가면 배너로 볼 수 있어요.</div>
-          </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
-            <button class="settings-btn" onclick="testLocalNotification()">기기</button>
-            <button class="settings-btn" onclick="sendTestPush()">서버</button>
-          </div>
-        </div>
+        <div class="sg-note">오래 넘어온 할일일수록 끝낼 때 조금 더 크게 반응해요. 둘 다 켜면 그때그때 하나.</div>
       </div>
 
       </div>
 
       <div class="settings-tab-content" id="stab-view">
 
-      <!-- 유저 모드 — 설정창 헤더의 이지/미드/파워 아이콘 모양 고르기 (파워에서만) -->
-      <div class="settings-section" id="secUiLevelSet" data-lv="p">
-        <div class="settings-section-title">유저 모드</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">설정창 위쪽의 이지·미드·파워 아이콘 모양이에요.</div>
-        <div style="display:flex;gap:8px;">
-          <button class="settings-btn uilv-set-btn" id="uiLvSetAnimal" onclick="setUiLevelIconSet('animal')" aria-label="동물"></button>
-          <button class="settings-btn uilv-set-btn" id="uiLvSetSquare" onclick="setUiLevelIconSet('square')" aria-label="사각"></button>
+      <div class="sg" id="sgLook">
+        <div class="sg-h">모양</div>
+        <div class="sg-card">
+          <div class="settings-row stack" id="secBrightness"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">밝은 · 어두운 화면</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="themeBtnLight" onclick="updateSetting('theme','light')">밝게</button><button class="theme-pick-btn" id="themeBtnDark" onclick="updateSetting('theme','dark')">어둡게</button><button class="theme-pick-btn" id="themeBtnSystem" onclick="updateSetting('theme','system')">기기 따라</button></div></div></div>
+          <div class="settings-row stack" id="secColorTheme"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-1 .8-1.6 1.8-1.6h2.1a4 4 0 0 0 4-4C20.5 6.6 16.7 3.5 12 3.5z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="8.5" r="1"/></svg><div class="settings-row-text"><div class="settings-row-label">색 테마</div><div class="settings-row-desc">앱 전체 색 — 밝기는 위를 따라요</div></div><div class="sr-ctl"><div class="theme-summary" id="themeSummary"></div>
+            <button class="settings-btn sr-go" onclick="openThemePicker()">테마 고르기</button></div></div>
+          <div class="settings-row stack" id="secUiScale"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19l5-14 5 14M7 14h6"/><path d="M16 19l2.5-7 2.5 7M17 16.5h3"/></svg><div class="settings-row-text"><div class="settings-row-label">글자 크기</div><div class="settings-row-desc">이 기기에만 · 휴대폰 · 태블릿 전용 (PC 는 브라우저 확대 ⌘ +)</div></div><div class="sr-ctl"><div class="sr-slider"><input type="range" class="uiscale-slider" id="uiScaleSlider" min="0" max="50" step="1" value="0" oninput="uiScaleSlideInput(this)" onchange="uiScaleSlideCommit(this)"><span id="uiScaleLabel" style="font-family:var(--font-number);">기본</span></div></div></div>
         </div>
       </div>
-
-      <!-- 화면 크기 (뷰포트 스케일 — 모바일·태블릿 전용) -->
-      <div class="settings-section" id="secUiScale">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">글자 크기</div>
-          <div class="settings-row-desc">글자가 작아 보이면 전체 화면을 키워보세요. 누르는 즉시 적용되고, 이 설정은 기기마다 따로 저장돼요. 휴대폰·태블릿 전용이고, 데스크탑에서는 브라우저 확대(Cmd/Ctrl +)를 사용하세요.</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <input type="range" class="uiscale-slider" id="uiScaleSlider" min="0" max="50" step="1" value="0"
-            oninput="uiScaleSlideInput(this)" onchange="uiScaleSlideCommit(this)">
-          <span id="uiScaleLabel" style="font-size:12px;color:var(--tx2);min-width:44px;text-align:right;font-family:var(--font-number);">기본</span>
+      <div class="sg" id="sgTaskText" data-lv="mp" data-prod="b7">
+        <div class="sg-h">할일 글자</div>
+        <div class="sg-card">
+          <div class="settings-row stack" id="secTaskOverflow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 12h16M4 16h9"/><path d="M16 16h4M18 14l2 2-2 2"/></svg><div class="settings-row-text"><div class="settings-row-label">긴 할일</div><div class="settings-row-desc">한 줄을 넘칠 때 — 고칠 때는 늘 여러 줄</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="taskOvf_shrink" onclick="updateSetting('taskOverflow','shrink')">줄여서</button><button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">흐르게</button><button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button></div></div></div>
+          <div class="settings-row stack" id="secEvChipMax"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="8" rx="4"/><path d="M8 12h6"/></svg><div class="settings-row-text"><div class="settings-row-label">일정 이름 길이</div><div class="settings-row-desc">할일 줄 위 일정 칩의 글자 수 — 넘치면 …, 누르면 전체</div></div><div class="sr-ctl"><div class="sr-slider"><input type="range" class="uiscale-slider" id="evChipMaxSlider" min="3" max="12" step="1" value="12" oninput="evChipMaxInput(this)" onchange="evChipMaxCommit(this)"><span id="evChipMaxLabel" style="font-family:var(--font-number);">12자</span></div>
+            <div class="evchip-preview" id="evChipPreview"></div></div></div>
         </div>
       </div>
-
-      <!-- 밝기 — 색상 테마보다 먼저 온다 (v26-0823-1, HB). 버튼은 라이트·다크·시스템 순 -->
-      <div class="settings-section" id="secBrightness">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">밝기</div>
-          <div class="settings-row-desc">화면을 어둡게, 밝게, 또는 기기 설정에 맞춰요.</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="themeBtnLight" onclick="updateSetting('theme','light')">라이트</button>
-          <button class="theme-pick-btn" id="themeBtnDark" onclick="updateSetting('theme','dark')">다크</button>
-          <button class="theme-pick-btn" id="themeBtnSystem" onclick="updateSetting('theme','system')">시스템</button>
+      <div class="sg" id="sgWeekMonth" data-lv="mp">
+        <div class="sg-h">주간 · 월간</div>
+        <div class="sg-card">
+          <div class="settings-row stack" id="secDow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg><div class="settings-row-text"><div class="settings-row-label">요일 표기</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="dowBtnLetterLord" onclick="updateSetting('dowFormat','letter-lord')">L M T W</button><button class="theme-pick-btn" id="dowBtnLetterSun" onclick="updateSetting('dowFormat','letter-sun')">S M T W</button><button class="theme-pick-btn" id="dowBtnKorean" onclick="updateSetting('dowFormat','korean')">일 월 화</button></div></div></div>
+          <div class="settings-row sub"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16"/><circle cx="8.5" cy="14.5" r="1.4" fill="currentColor" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">주일을 빨갛게</div><div class="settings-row-desc">일요일 날짜 · 요일을 붉게</div></div><label class="settings-toggle"><input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row stack" data-lv="p" id="secMonthTitle"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">달 이름</div><div class="settings-row-desc">월간 뷰 · 월간 위젯의 달 제목</div></div><div class="sr-ctl"><div class="sg-seg" id="monthTitleFormatBtns"></div></div></div>
+          <div class="settings-row sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">연도도 보이기</div><div class="settings-row-desc">달 이름 위에 작게</div></div><label class="settings-toggle"><input type="checkbox" id="setMonthTitleYear" onchange="updateSetting('monthTitleYear',this.checked)"><span class="settings-toggle-track"></span></label></div>
         </div>
       </div>
-
-      <!-- 색상 테마 — 15개를 여기 다 펼치지 않는다. 요약만 보이고 전용 화면에서 고른다 -->
-      <div class="settings-section" id="secColorTheme">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">색상 테마</div>
-          <div class="settings-row-desc">앱 전체의 색을 한 번에 바꿔요. 밝기(다크·라이트)는 그대로 따라가요.</div>
-        </div>
-        <div class="theme-summary" id="themeSummary"></div>
-        <button class="settings-btn" style="width:100%;margin-top:10px;" onclick="openThemePicker()">테마 선택</button>
-      </div>
-
-      <!-- 긴 할일 (H-6, v26-1022-2) — 행보다 긴 할일 글자를 어떻게 보일지 -->
-      <div class="settings-section" id="secTaskOverflow" data-lv="mp" data-prod="b7">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">긴 할일</div>
-          <div class="settings-row-desc">할일 글자가 행보다 길어 잘릴 때 어떻게 보일지 골라요. 고칠 때는 어느 것이든 여러 줄로 펴져요.</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="taskOvf_shrink" onclick="updateSetting('taskOverflow','shrink')">글자 줄이기</button>
-          <button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">옆으로 흐르기</button>
-          <button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button>
-        </div>
-      </div>
-
-      <!-- 긴 일정 이름 (v26-1024-9, HB) — 할일행 머리의 일정 칩을 몇 글자까지 보일지 -->
-      <div class="settings-section" id="secEvChipMax" data-lv="mp" data-prod="b7">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">긴 일정 이름</div>
-          <div class="settings-row-desc">할일행 위에 보이는 일정 이름을 몇 글자까지 보일지 정해요(3~12자). 넘치는 뒷부분은 … 으로 줄여요. 눌러서 고칠 때는 이름 전체가 나와요.</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-          <input type="range" class="uiscale-slider" id="evChipMaxSlider" min="3" max="12" step="1" value="12"
-            oninput="evChipMaxInput(this)" onchange="evChipMaxCommit(this)">
-          <span id="evChipMaxLabel" style="font-size:12px;color:var(--tx2);min-width:40px;text-align:right;font-family:var(--font-number);">12자</span>
-        </div>
-        <div class="evchip-preview" id="evChipPreview"></div>
-      </div>
-
-      <!-- 요일 표기 -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">요일 표기</div>
-          <div class="settings-row-desc">주간·월간 보기에서 요일을 어떻게 표시할지 골라요</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="dowBtnLetterLord" onclick="updateSetting('dowFormat','letter-lord')">L M T W T F S</button>
-          <button class="theme-pick-btn" id="dowBtnLetterSun" onclick="updateSetting('dowFormat','letter-sun')">S M T W T F S</button>
-          <button class="theme-pick-btn" id="dowBtnKorean" onclick="updateSetting('dowFormat','korean')">일 월 화 수</button>
-        </div>
-        <div class="settings-row" style="margin-top:14px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">주일을 RED 표시</div>
-            <div class="settings-row-desc">일요일 날짜·요일을 붉은색으로 강조해요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- ── 월 제목 표기 ── -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">월 제목 표기</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">월간 뷰와 월간 위젯의 월 제목 양식을 선택해요.</div>
-        <div style="display:flex;gap:6px;" id="monthTitleFormatBtns"></div>
-        <div class="settings-row" style="margin-top:10px;">
-          <div class="settings-row-text">
-            <div class="settings-row-label">년도 표시</div>
-            <div class="settings-row-desc">월 제목 위에 년도 4자리를 작게 표시해요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setMonthTitleYear" onchange="updateSetting('monthTitleYear',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 이월 횟수 표시 -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-row-text" style="margin-bottom:10px;">
-          <div class="settings-row-label lv1">이월 횟수 표시</div>
-          <div class="settings-row-desc">할 일이 며칠째 이어지고 있는지 옆에 표시해요. 늘어날수록 색이 진해져요.</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="carryModeNumber" onclick="updateSetting('carryBadgeMode','number')">숫자</button>
-          <button class="theme-pick-btn" id="carryModeIcon" onclick="updateSetting('carryBadgeMode','icon')">
-            <span class="carry-preview-dot"></span><span class="carry-preview-diamond"></span>
-          </button>
-        </div>
-        <div class="settings-row-text" style="margin:14px 0 10px;">
-          <div class="settings-row-label">횟수에 포함할 항목</div>
-          <div class="settings-row-desc">자동 이월된 횟수(a)와 메뉴로 직접 내일로 넘긴 횟수(b) 중 무엇을 셀지 골라요</div>
-        </div>
-        <div class="theme-pick-row">
-          <button class="theme-pick-btn" id="carrySrcBoth" onclick="updateSetting('carryCountSource','both')">합계(a+b)</button>
-          <button class="theme-pick-btn" id="carrySrcAuto" onclick="updateSetting('carryCountSource','auto')">자동만(a)</button>
-          <button class="theme-pick-btn" id="carrySrcManual" onclick="updateSetting('carryCountSource','manual')">수동만(b)</button>
-        </div>
-      </div>
-
-      <!-- 옮길 구간 고르기 (v26-0917-1, HB) -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">옮길 구간 고르기</div>
-            <div class="settings-row-desc">옮기거나 복제할 때 어느 시간 구간으로 보낼지 고를 수 있어요. 그 날짜의 구간마다 무슨 할 일이 있는지도 함께 보여줘요. 켜면 휴대폰에서는 한 번 더 눌러야 해요 — 꺼 두어도 메뉴 줄을 길게 누르면(PC 는 오른쪽 클릭) 볼 수 있어요.</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setMoveSecPicker" onchange="updateSetting('moveSecPicker',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- 완료 효과 — 이월된 할 일을 끝냈을 때의 미세 애니메이션 -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">완료 효과</div>
-        <div class="settings-row-desc" style="margin-bottom:8px;">오래 이월된 할 일을 체크(또는 스와이프로 완료)하면 이월된 정도에 맞춰 살짝 반응해요. 문구 없이 빛과 움직임만으로 표현돼요.</div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">Glow</div>
-            <div class="settings-row-desc">체크 지점에서 빛이 번져나가요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setDoneFxGlow" onchange="updateSetting('doneFxGlow',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">Ripple</div>
-            <div class="settings-row-desc">항목이 가라앉듯 자리잡고 파문이 퍼져요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setDoneFxRipple" onchange="updateSetting('doneFxRipple',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <div class="settings-row-desc" style="margin-top:6px;">둘 다 켜면 완료할 때마다 무작위로 하나가 재생돼요.</div>
-      </div>
-
-      <!-- 블럭 기준 & 보이기 (일반탭에서 이동) -->
-      <div class="settings-section">
-        <div class="settings-section-title">블럭</div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">빅 블럭 초과 기준</div>
-            <div class="settings-row-desc">하루 빅 블럭 개수가 이 숫자를 넘으면 경고 색으로 표시해요</div>
-          </div>
-          <input type="number" class="settings-number" id="setBigLimit" min="1" max="20" onchange="updateSetting('bigLimit',parseInt(this.value)||6)">
-        </div>
-        <div class="settings-row" data-lv="mp">
-          <div class="settings-row-text">
-            <div class="settings-row-label">스몰 블럭 사용</div>
-            <div class="settings-row-desc">각 시간구간 내 스몰 블럭 영역을 표시해요</div>
-          </div>
-          <label class="settings-toggle">
-            <input type="checkbox" id="setShowSmallBlocks" onchange="updateSetting('showSmallBlocks',this.checked)">
-            <span class="settings-toggle-track"></span>
-          </label>
-        </div>
-        <!-- 스몰 블럭 사용을 켰을 때만 나온다 -->
-        <div class="settings-row" data-lv="mp" data-cond="smallBlocks">
-          <div class="settings-row-text">
-            <div class="settings-row-label">스몰 블럭 초과 기준</div>
-            <div class="settings-row-desc">한 시간대의 스몰 블럭 개수가 이 숫자를 넘으면 경고 색으로 표시해요</div>
-          </div>
-          <input type="number" class="settings-number" id="setSmallLimit" min="1" max="20" onchange="updateSetting('smallLimit',parseInt(this.value)||2)">
-        </div>
-      </div>
-
-      <!-- 뷰 전환 (버튼탭에서 이동) -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-section-title">뷰 전환</div>
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label">양 끝에서 순환</div>
-            <div class="settings-row-desc">켜면 D뷰에서 반대로 슬라이드하면 M뷰가, M뷰에서 반대로 슬라이드하면 D뷰가 나와요. 끄면 양 끝에서 튕겨요.</div>
-          </div>
-          <label class="settings-toggle"><input type="checkbox" id="setLoopViews" onchange="updateSetting('loopViews',this.checked)"><span class="settings-toggle-track"></span></label>
-        </div>
-      </div>
-
-      <!-- 레이아웃 분할 기준 -->
-      <div class="settings-section" data-lv="p">
-        <div class="settings-row">
-          <div class="settings-row-text">
-            <div class="settings-row-label lv1">레이아웃 분할 기준</div>
-            <div class="settings-row-desc">화면 가로폭이 이 값 이상이면 2단(할일+위젯), 3단(컬럼 3개) 레이아웃으로 바뀌어요. 3단 값은 항상 2단 값보다 100 이상 커야 해요.</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:10px;">
-          <button id="layFormAuto" class="settings-btn on" style="flex:1;" onclick="setLayFormMode('auto')">자동</button>
-          <button id="layFormPhone" class="settings-btn" style="flex:1;" onclick="setLayFormMode('phone')">항상 1단</button>
-          <button id="layFormWide" class="settings-btn" style="flex:1;" onclick="setLayFormMode('wide')">넓게 허용</button>
-        </div>
-        <div class="settings-row-desc" id="layFormInfo" style="margin-top:6px;font-family:var(--font-number);font-size:10px;"></div>
-        <div style="display:flex;gap:14px;margin-top:8px;align-items:flex-end;">
+      <div class="sg" id="sgSwipe" data-lv="p">
+        <div class="sg-h">넘기기</div>
+        <div class="sg-card">
+          <div class="settings-row" id="secViewSwitch"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/></svg><div class="settings-row-text"><div class="settings-row-label">끝에서 처음으로 이어 넘기기</div><div class="settings-row-desc">D뷰에서 더 밀면 M뷰, M뷰에서 더 밀면 D뷰 — 끄면 끝에서 튕겨요</div></div><label class="settings-toggle"><input type="checkbox" id="setLoopViews" onchange="updateSetting('loopViews',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row stack" id="secLayoutSplit"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M9 5v14M15 5v14"/></svg><div class="settings-row-text"><div class="settings-row-label">2단 · 3단으로 나뉘는 폭</div><div class="settings-row-desc">화면이 이 폭보다 넓으면 할일 옆에 위젯 · 3단 (3단은 2단보다 100 이상)</div></div><div class="sr-ctl"><div class="sg-seg"><button id="layFormAuto" class="settings-btn on" onclick="setLayFormMode('auto')">자동</button>
+          <button id="layFormPhone" class="settings-btn" onclick="setLayFormMode('phone')">항상 1단</button>
+          <button id="layFormWide" class="settings-btn" onclick="setLayFormMode('wide')">넓게 허용</button></div>
+            <div class="settings-row-desc" id="layFormInfo" style="margin-top:6px;font-family:var(--font-number);font-size:10px;"></div>
+            <div style="display:flex;gap:14px;margin-top:8px;align-items:flex-end;">
           <div>
             <div class="settings-subtitle" style="margin:0 0 4px;">2단 시작</div>
             <div class="event-roll-wrap" style="width:88px;">
@@ -7186,17 +6943,14 @@ try{
               <span class="event-roll-display" id="bp3Display" style="font-size:14px;"></span>
             </div>
           </div>
+        </div></div></div>
         </div>
       </div>
-
-      </div>
-
-      <div class="settings-tab-content" id="stab-buttons">
-
-      <!-- 버튼 사용 여부 — 이름 앞에 실제로 화면에 나오는 버튼 모양을 그대로 보여준다 -->
-      <div class="settings-section">
-        <div class="settings-section-title">D뷰</div>
-        <div class="settings-row" data-lv="p">
+      <div class="sg" id="sgTopBtns" data-lv="mp">
+        <div class="sg-h">위 단추</div>
+        <div class="sg-card">
+          <div class="settings-row sr-fold" role="button" aria-expanded="false" onclick="sgFold(this)"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="8" rx="4"/><circle cx="8" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></svg><div class="settings-row-text"><div class="settings-row-label">D뷰 단추</div><div class="settings-row-desc">날짜 줄 오른쪽 작은 단추들</div></div><span class="sr-val">8개</span><svg class="sr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+          <div class="sg-fold"><div><div class="settings-row" data-lv="p">
           <div class="settings-row-text">
             <div class="settings-row-label"><span class="preset-btn btnprev">A</span> A 버튼 (전체 펼치기)</div>
           </div>
@@ -7258,12 +7012,9 @@ try{
           <div class="settings-row-text"><div class="settings-row-label"><span class="preset-btn btnprev"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span> 연락 버튼</div></div>
           <label class="settings-toggle"><input type="checkbox" id="setShowContactFilterBtn" onchange="updateSetting('showContactFilterBtn',this.checked)"><span class="settings-toggle-track"></span></label>
         </div>
-      </div>
-
-      <!-- W/M뷰 버튼 표시 -->
-      <div class="settings-section">
-        <div class="settings-section-title">W/M뷰</div>
-        <div class="settings-row" data-lv="mp">
+          </div></div>
+          <div class="settings-row sr-fold" role="button" aria-expanded="false" onclick="sgFold(this)"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="8" rx="4"/><circle cx="8" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></svg><div class="settings-row-text"><div class="settings-row-label">주간 · 월간 단추</div></div><span class="sr-val">3개</span><svg class="sr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+          <div class="sg-fold"><div><div class="settings-row" data-lv="mp">
           <div class="settings-row-text">
             <div class="settings-row-label"><span class="wmview-btn btnprev"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,11 8,16 17,5"/></svg></span> 할일 버튼</div>
           </div>
@@ -7290,6 +7041,14 @@ try{
             <span class="settings-toggle-track"></span>
           </label>
         </div>
+          </div></div>
+        </div>
+      </div>
+      <div class="sg" id="sgLvIcon" data-lv="p">
+        <div class="sg-h">설정창</div>
+        <div class="sg-card">
+          <div class="settings-row stack" id="secUiLevelSet"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="12" r="2.5"/><circle cx="17" cy="12" r="2.5"/><path d="M12 7v10"/></svg><div class="settings-row-text"><div class="settings-row-label">등급 아이콘 모양</div><div class="settings-row-desc">맨 위 이지 · 미드 · 파워 그림</div></div><div class="sr-ctl"><div class="sg-seg"><button class="settings-btn uilv-set-btn" id="uiLvSetAnimal" onclick="setUiLevelIconSet('animal')" aria-label="동물"></button><button class="settings-btn uilv-set-btn" id="uiLvSetSquare" onclick="setUiLevelIconSet('square')" aria-label="사각"></button></div></div></div>
+        </div>
       </div>
 
       </div>
@@ -7297,45 +7056,63 @@ try{
       <div class="settings-tab-content" id="stab-sections">
 
       <!-- 색상 프리셋 -->
-      <div class="settings-section" data-lv="mp">
-        <div class="settings-section-title">색상 프리셋</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">시간 구간 6개의 색을 한 번에 바꿔요. 순서·이름은 그대로 유지돼요.</div>
+      <div class="sg" data-lv="mp">
+        <div class="sg-h">색 묶음</div>
+        <div class="sg-note">구간 6개 색을 한 번에 바꿔요. 이름 · 순서는 그대로예요.</div>
         <div id="presetList" class="preset-chip-row"></div>
       </div>
 
       <!-- 시간구간 커스터마이징 -->
-      <div class="settings-section">
-        <div class="settings-section-title">시간 구간</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">이름·색상을 바꾸거나, 구간 사이의 경계선에서 시각을 정할 수 있어요. ★는 별표 버튼에 포함될 구간이에요. ⠿는 직접 추가한 구간만 순서를 옮길 수 있어요.</div>
+      <div class="sg">
+        <div class="sg-h">시간 구간</div>
+        <div class="sg-note">이름 · 색을 바꾸고, 구간 사이 경계선에서 시각을 정해요. ★ = 별표 단추에 들어갈 구간 · ⠿ = 직접 더한 구간만 순서를 옮겨요.</div>
         <div id="secEditorList"></div>
         <button class="settings-add-sec-btn" data-lv="mp" onclick="addNewSection()">+ 시간 구간 추가</button>
         <div id="secArchiveList" class="sec-arc-list" data-lv="mp"></div>
 
-        <div class="settings-row-desc" data-lv="p" style="margin:16px 0 8px;">전체 구성 저장 — 이름·색·순서·개수·★ 여부를 통째로 저장해두고 나중에 불러올 수 있어요</div>
+        <div class="sg-h" data-lv="p">구성 저장</div>
+        <div class="sg-note" data-lv="p">이름 · 색 · 순서 · 개수 · ★ 를 통째로 저장해 두고 나중에 불러와요.</div>
         <div id="sectionConfigList" class="preset-chip-row" data-lv="p"></div>
         <button class="settings-add-sec-btn" data-lv="p" onclick="saveCurrentSectionConfig()">+ 지금 구성을 이름으로 저장</button>
       </div>
 
       </div>
 
+      <div class="settings-tab-content" id="stab-notify">
+
+      <div class="sg">
+        <div class="sg-h">할일</div>
+        <div class="sg-card">
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10.5 20.5a1.6 1.6 0 0 0 3 0"/></svg><div class="settings-row-text"><div class="settings-row-label">하루 할일 요약</div><div class="settings-row-desc"><span id="notifyStatusDesc">정한 시각에 오늘 할일 · 일정을 한 번에 — 아이폰은 홈 화면에 추가한 앱에서만</span></div></div><label class="settings-toggle"><input type="checkbox" id="setNotifyEnabled" onchange="onNotifyMasterToggle(this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row sub" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><div class="settings-row-text"><div class="settings-row-label">보낼 시각</div></div><span id="morningTimeSlot" style="display:inline-flex;"></span></div>
+          <div class="settings-row stack sub" data-lv="p" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><div class="settings-row-text"><div class="settings-row-label">제목 끝말</div><div class="settings-row-desc">'오늘' 뒤에 붙는 말 (예: 오늘 화이팅!) — 직접 넣은 말은 길게 눌러 고치기 · 지우기</div></div><div class="sr-ctl"><div class="sg-chips" id="morningSfxRow"></div></div></div>
+          <div class="settings-row" data-lv="mp" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M12 8v3l2 1"/></svg><div class="settings-row-text"><div class="settings-row-label">구간 시작 알림</div><div class="settings-row-desc">구간이 시작될 때 그 구간 할일 · 일정을 (남은 게 있을 때만)</div></div><label class="settings-toggle"><input type="checkbox" id="setNotifySections" onchange="updateNotifySub('sections',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row stack sub" data-lv="p" data-notif-sub="sections"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><div class="settings-row-text"><div class="settings-row-label">구간 알림 끝말</div><div class="settings-row-desc">구간 이름 뒤에 붙는 말 — 구간 탭에서 구간마다 '알림 문구' 를 정하면 그게 먼저</div></div><div class="sr-ctl"><div class="sg-chips" id="sectionSfxRow"></div></div></div>
+          <div class="settings-row sub" data-lv="mp" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭도 넣기</div><div class="settings-row-desc">끄면 빅 블럭 · 일정만</div></div><label class="settings-toggle"><input type="checkbox" id="setNotifyIncludeSmall" onchange="updateNotifySub('includeSmall',this.checked)"><span class="settings-toggle-track"></span></label></div>
+        </div>
+      </div>
+      <div class="sg">
+        <div class="sg-h">이 기기</div>
+        <div class="sg-card">
+          <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3.5" width="10" height="17" rx="2"/><path d="M11 17.5h2"/></svg><div class="settings-row-text"><div class="settings-row-label">이 기기에서 받기</div><div class="settings-row-desc">끄면 <b>이 기기만</b> 조용해요 — 다른 기기는 그대로 · 말씀 알림도 함께</div></div><label class="settings-toggle"><input type="checkbox" id="setDevNotify" onchange="setDeviceNotify(this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row" id="notifyTestRow" style="display:none;"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6M10 4v5l-4.5 8.5A2 2 0 0 0 7.3 20h9.4a2 2 0 0 0 1.8-2.5L14 9V4"/></svg><div class="settings-row-text"><div class="settings-row-label">시험 보내기</div><div class="settings-row-desc">이 기기: 표시만 · 서버: 실제 발송 길 전체 (누르고 8초 안에 홈으로 나가면 배너)</div></div><div class="sr-btns"><button class="settings-btn sr-btn" onclick="testLocalNotification()">이 기기</button><button class="settings-btn sr-btn" onclick="sendTestPush()">서버</button></div></div>
+        </div>
+      </div>
+
+      </div>
 
       <div class="settings-tab-content" id="stab-account">
 
-      <!-- 백업 및 복원 -->
-      <div class="settings-section">
-        <div class="settings-section-title">백업 및 복원</div>
-        <div class="settings-row-desc" id="backupScopeDesc" style="margin-bottom:10px;">할일·일정·구간·설정과 말씀 데이터를 파일로 저장하거나, 저장해둔 파일을 불러올 수 있어요</div>
-        <div class="settings-btn-row">
-          <button class="settings-btn settings-btn-flat-icon" onclick="exportBackup()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5v8m-3-3 3 3 3-3"/><path d="M3.5 12v2.5h11V12"/></svg><span>백업 다운로드</span></button>
-          <button class="settings-btn settings-btn-flat-icon" onclick="document.getElementById('importFileInput2').click()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V3m-3 3 3-3 3 3"/><path d="M3.5 12v2.5h11V12"/></svg><span>백업 불러오기</span></button>
-        </div>
-        <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
+      <!-- 로그인 카드 — 맨 위 -->
+      <div class="sg" id="sgAccount">
+        <div class="sg-acct"><div class="sg-av" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="9" r="3.6"/><path d="M5 19.5a7 7 0 0 1 14 0"/></svg></div><div class="settings-row-text"><div class="settings-row-label" id="settingsUserEmail"></div><div class="settings-row-desc">이 계정으로 기기들이 함께 써요</div></div><button class="settings-btn settings-btn-danger sr-btn" onclick="authSignOut()">로그아웃</button></div>
       </div>
 
       <!-- 구글 캘린더 양방향 (v26-1023-1) — 그리는 것은 _gcalRenderSettings -->
-      <div class="settings-section" id="gcalSection">
-        <div class="settings-section-title">구글 캘린더</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">구글 캘린더의 일정을 시간구간의 일정으로 가져오고, BLOCK7 에서 만들거나 고친 일정도 구글로 보내요. 양쪽 어디서 고쳐도 서로 따라가요.</div>
+      <div class="sg" id="gcalSection">
+        <div class="sg-h">구글 캘린더</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:10px;">구글 일정 ↔ BLOCK7 구간 일정 — 어디서 고쳐도 서로 따라가요.</div>
         <div class="settings-row-desc" id="gcalStatus" style="margin-bottom:10px;"></div>
         <div class="settings-row" id="gcalColorRow" style="display:none;">
           <div class="settings-row-text">
@@ -7356,40 +7133,74 @@ try{
           <select id="gcalWriteSel" onchange="gcalSetWrite(this.value)" style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:9px 10px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;"></select>
         </div>
         <button class="settings-btn" id="gcalConnectBtn" onclick="gcalConnect()" style="width:100%;">구글 캘린더 연결하기</button>
+        </div>
+      </div>
+
+      <!-- 백업 -->
+      <div class="sg" id="sgBackup">
+        <div class="sg-h">백업</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" id="backupScopeDesc" style="margin-bottom:10px;">할일 · 일정 · 구간 · 설정 · 말씀을 파일로 저장하거나 불러와요</div>
+        <div class="settings-btn-row">
+          <button class="settings-btn settings-btn-flat-icon" onclick="exportBackup()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5v8m-3-3 3 3 3-3"/><path d="M3.5 12v2.5h11V12"/></svg><span>내려받기</span></button>
+          <button class="settings-btn settings-btn-flat-icon" onclick="document.getElementById('importFileInput2').click()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V3m-3 3 3-3 3 3"/><path d="M3.5 12v2.5h11V12"/></svg><span>불러오기</span></button>
+        </div>
+        <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
+        </div>
       </div>
 
       <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
-      <div class="settings-section" id="syncConflictSection" style="display:none;">
-        <div class="settings-section-title">두 기기가 다르게 고쳤어요</div>
+      <div class="sg" id="syncConflictSection" style="display:none;">
+        <div class="sg-h">두 기기가 다르게 고친 것</div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">이 기기와 다른 기기에서 같은 것을 서로 다르게 고치셨어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.</div>
-        <button class="settings-btn" onclick="openSyncConflicts()">무엇이 다른지 보고 정하기</button>
+        <button class="settings-btn sr-go" onclick="openSyncConflicts()">무엇이 다른지 보고 정하기</button>
+        </div>
       </div>
 
       <!-- 데이터 복구 (로컬 ↔ 클라우드 비교) — 개발자 계정에서만 보임 -->
-      <div class="settings-section" id="dataRecoverySection" data-lv="p" style="display:none;">
-        <div class="settings-section-title">데이터 복구</div>
-        <div class="settings-row-desc" style="margin-bottom:10px;">이 기기에 저장된 로컬 데이터와 클라우드(서버) 데이터를 비교해요. 동기화 문제로 클라우드가 예전 상태로 덮어써졌을 때, 로컬이 더 최신이면 강제로 다시 업로드할 수 있어요.</div>
+      <div class="sg" id="dataRecoverySection" data-lv="p" style="display:none;">
+        <div class="sg-h">데이터 복구 <span class="sg-badge">개발자</span></div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:10px;">이 기기와 클라우드를 견줘요. 동기화 탓에 클라우드가 예전 것으로 덮였을 때, 이 기기가 더 새것이면 다시 올릴 수 있어요.</div>
         <button class="settings-btn" id="dataRecoveryCheckBtn" onclick="checkDataRecovery()">로컬 ↔ 클라우드 비교하기</button>
         <div id="dataRecoveryResult" style="display:none;margin-top:10px;"></div>
         <button class="settings-btn" style="margin-top:6px;" onclick="showAutoBackups()">자동 백업 보기 (동기화 충돌 시 저장)</button>
         <div id="autoBackupList" style="display:none;margin-top:10px;"></div>
         <button class="settings-btn" style="margin-top:6px;" onclick="mergeDuplicateVerses()">중복 구절 정리 (약칭·정식 합치기)</button>
-      </div>
-
-      <!-- 계정 -->
-      <div class="settings-section">
-        <div class="settings-section-title">계정</div>
-        <div class="settings-row-desc" id="settingsUserEmail" style="margin-bottom:10px;"></div>
-        <button class="settings-btn settings-btn-danger" onclick="authSignOut()">로그아웃</button>
+        </div>
       </div>
 
       <!-- 개발자에게 쪽지 -->
-      <div class="settings-section" id="devInboxSection" style="display:none;">
-        <div class="settings-section-title dev-head" id="devInboxHead" onclick="devInboxToggleAll()">
+      <div class="sg" id="sgDevNote">
+        <div class="sg-h">개발자에게 쪽지</div>
+        <div class="sg-card sg-pad">
+        <input type="email" id="devNoteEmail" placeholder="회신받을 이메일 (선택)"
+          style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
+          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
+        <textarea id="devNoteText" placeholder="남기고 싶은 말을 적어주세요"
+          style="width:100%;height:88px;resize:none;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;line-height:1.6;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
+          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'"></textarea>
+        <div style="margin-bottom:8px;">
+          <button class="settings-btn" onclick="document.getElementById('devNoteFile').click()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            파일 첨부<span id="devNoteFileCount" style="color:var(--ac-tx);font-size:10px;"></span>
+          </button>
+        </div>
+        <input type="file" id="devNoteFile" multiple style="display:none" onchange="devNoteHandleFile(this)">
+        <div id="devNoteFileList" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
+        <button class="settings-btn" id="devNoteSendBtn" onclick="devNoteSend()" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">보내기</button>
+        <div id="devNoteStatus" style="font-size:11px;color:var(--tx3);text-align:center;margin-top:6px;min-height:16px;"></div>
+        </div>
+      </div>
+
+      <!-- 개발자에게 쪽지 -->
+      <div class="sg" id="devInboxSection" style="display:none;">
+        <div class="sg-h dev-head" id="devInboxHead" onclick="devInboxToggleAll()">
           <span>받은 쪽지</span><span class="dev-badge" id="devInboxBadge">0</span>
           <span class="dev-head-caret">▾</span>
         </div>
-        <div id="devInboxWrap">
+        <div class="sg-card sg-pad" id="devInboxWrap">
           <div class="settings-row-desc" style="margin-bottom:8px;">사용자가 보낸 쪽지와 첨부를 확인해요. 쪽지를 옆으로 밀면 삭제돼요. (개발자 계정에서만 보여요)</div>
           <div style="display:flex;gap:8px;">
             <button class="settings-btn" id="devInboxLoadBtn" onclick="devInboxLoad()" style="flex:1;">불러오기</button>
@@ -7407,36 +7218,18 @@ try{
       </div>
 
       <!-- 시트 편집 문 — 개발자 계정만 (R-4b, v26-1010-18) -->
-      <div class="settings-section" id="sheetEditSection" style="display:none;">
-        <div class="settings-section-title">시트 편집 문</div>
+      <div class="sg" id="sheetEditSection" style="display:none;">
+        <div class="sg-h">시트 편집 문 <span class="sg-badge">개발자</span></div>
+        <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">앱 안에서 구글 시트 칸을 고칠 때 거치는 문(구글 앱스 스크립트)이에요. <a href="https://block7.my/sheet-edit/" target="_blank" rel="noopener" style="color:var(--ac-tx);">설치 안내</a>대로 만들고 받은 <b>웹 앱 URL</b> 을 붙여 넣어 주세요. 한 기기에서만 하면 다른 기기와 Sweeter 에도 따라가요. (개발자 계정에서만 보여요)</div>
         <input type="url" id="sheetEditUrlInput" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"
           style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:12px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
           onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
         <button class="settings-btn" id="sheetEditCheckBtn" onclick="sheetEditCheck()" style="width:100%;">연결 확인</button>
         <div id="sheetEditStatus" style="font-size:11px;color:var(--tx3);text-align:center;margin-top:6px;min-height:16px;"></div>
+        </div>
       </div>
       <!-- /시트 편집 문 -->
-
-      <div class="settings-section">
-        <div class="settings-section-title">개발자에게 쪽지 보내기</div>
-        <input type="email" id="devNoteEmail" placeholder="회신받을 이메일 (선택)"
-          style="width:100%;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
-          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'">
-        <textarea id="devNoteText" placeholder="남기고 싶은 말을 적어주세요"
-          style="width:100%;height:88px;resize:none;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:300;line-height:1.6;outline:none;margin-bottom:8px;box-sizing:border-box;transition:border-color .15s;"
-          onfocus="this.style.borderColor='var(--ac)'" onblur="this.style.borderColor='var(--bd2)'"></textarea>
-        <div style="margin-bottom:8px;">
-          <button class="settings-btn" onclick="document.getElementById('devNoteFile').click()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:5px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            파일 첨부<span id="devNoteFileCount" style="color:var(--ac-tx);font-size:10px;"></span>
-          </button>
-        </div>
-        <input type="file" id="devNoteFile" multiple style="display:none" onchange="devNoteHandleFile(this)">
-        <div id="devNoteFileList" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
-        <button class="settings-btn" id="devNoteSendBtn" onclick="devNoteSend()" style="width:100%;background:var(--ac);color:var(--on-accent);border-color:var(--ac);">보내기</button>
-        <div id="devNoteStatus" style="font-size:11px;color:var(--tx3);text-align:center;margin-top:6px;min-height:16px;"></div>
-      </div>
 
       <div class="settings-version" id="settingsVersion2"></div>
 
@@ -43719,12 +43512,13 @@ function renderSettingsPanel(){
     opt.value=h;
     const ampm=h<12?'오전':'오후';
     const disp=h===0?12:(h>12?h-12:h);
-    opt.textContent=h===0?'밤 12시 (자정, 기본값)':`${ampm} ${disp}시`;
+    opt.textContent=h===0?'밤 12시 (기본)':`${ampm} ${disp}시`;
     if(h===(s.dayStartHour||0))opt.selected=true;
     sel.appendChild(opt);
   }
 
-  document.getElementById('settingsUserEmail').textContent=(typeof _fbUser!=='undefined'&&_fbUser)?`로그인 계정: ${_fbUser.email}`:'개발 모드 — 로그인 없음';
+  // 계정 탭 맨 위 로그인 카드 — 이름 자리에 이메일만 (v26-1024-15)
+  document.getElementById('settingsUserEmail').textContent=(typeof _fbUser!=='undefined'&&_fbUser)?_fbUser.email:'개발 모드 — 로그인 없음';
   {const se=document.getElementById('sheetEditUrlInput');if(se)se.value=s.sheetEditUrl||'';}
 
   // theme buttons active state
@@ -44389,15 +44183,14 @@ function setUiLevel(v){
   ST.settings.uiLevel=v;
   rawSave();
   applyUiLevel();
-  // 보고 있던 탭이 사라졌으면(이지에서 버튼탭) 첫 탭으로 옮긴다
+  // 보고 있던 탭이 사라졌으면 첫 탭으로 옮긴다
   const list=_stabList();
   switchSettingsTab(list.includes(curId)?curId:list[0],null,'direct');
 }
-// 이 등급에서 보이는 탭들 (이지는 '버튼' 탭 자체를 감춘다)
+// 이 등급에서 보이는 탭들. 예전엔 이지에서 '버튼' 탭을 감췄다 — 이제 그 탭은 '화면 › 위 단추'
+// 묶음(data-lv="mp")이 되어 등급은 묶음이 맡는다 (v26-1024-15).
 function _stabList(){
-  const lv=uiLevel();
   return SETTINGS_TABS.filter(id=>{
-    if(id==='buttons'&&lv==='easy')return false;
     // Sweeter 는 '계정' 탭의 내용을 제 설정창으로 **옮겨 갔다**(_swMergeAccountTab).
     // 그대로 두면 여기 빈 탭이 남는다 (v26-0921-8, HB 4-5).
     if(id==='account'&&typeof _swOn==='function'&&_swOn())return false;
@@ -44482,6 +44275,7 @@ function applyVerseUiLevel(){
   const track=document.getElementById('verseSettingsTabTrack');
   if(track)track.style.setProperty('--stab-count',vis.length);
   _syncVerseCondRows();
+  _sgEdges(document.getElementById('verseSettingsPanel'));   // Sweeter 는 '모양' 묶음을 여기로 옮겨 온다
 }
 // 말씀설정창의 조건부 줄 — data-cond="dviewMark" 는 '할일뷰에 표시'가 꺼지면
 // **접히지 않고 흐리게만**(cond-dim) 된다(v26-0819-3, HB 3-2 — 말씀카드 설정의
@@ -44507,8 +44301,32 @@ function _syncCondRows(){
   const small=!!(ST.settings||{}).showSmallBlocks;
   document.querySelectorAll('#settingsPanel [data-cond="smallBlocks"]')
     .forEach(el=>el.classList.toggle('cond-hide',!small));
+  _sgEdges(document.getElementById('settingsPanel'));
 }
-const SETTINGS_TABS=['general','notify','view','buttons','sections','account'];
+// ── 설정창 묶음 카드 (v26-1024-15, HB — 타이머 설정창처럼 · 세 창 공통 규칙) ──
+// 묶음(.sg) = 작은 제목(.sg-h) + 카드(.sg-card). 카드 안 줄 사이에만 가는 선을 긋는다.
+// 등급 · 조건으로 감춘 줄이 앞에 있어도 **보이는 첫 줄**에는 위 선을 긋지 않고(.sg-top),
+// 보이는 줄이 하나도 없는 묶음은 제목까지 감춘다(.sg-empty).
+function _sgEdges(root){
+  (root||document).querySelectorAll('.sg-card').forEach(card=>{
+    let first=true;
+    [...card.children].forEach(el=>{
+      const hid=el.classList.contains('lv-hide')||el.classList.contains('cond-hide')||el.style.display==='none';
+      el.classList.toggle('sg-top',!hid&&first);
+      if(!hid&&!el.classList.contains('sg-fold'))first=false;
+    });
+    const g=card.closest('.sg');
+    if(g&&!card.classList.contains('sg-pad'))g.classList.toggle('sg-empty',first);
+  });
+}
+// 접었다 펴는 줄 — 높이가 스르륵 (CSS grid-template-rows 0fr → 1fr)
+function sgFold(row){
+  const f=row.nextElementSibling;if(!f||!f.classList.contains('sg-fold'))return;
+  const on=!row.classList.contains('open');
+  row.classList.toggle('open',on);f.classList.toggle('open',on);row.setAttribute('aria-expanded',String(on));
+}
+// 세 창 공통 차례 — 할일 → 화면 → 구간 → 알림 → 계정 (v26-1024-15, HB). '버튼' 탭은 '화면 › 위 단추' 로 접어 넣었다.
+const SETTINGS_TABS=['general','view','sections','notify','account'];
 let _currentSettingsTabIdx=0;
 
 function switchSettingsTab(id,btn,direction){
@@ -46750,9 +46568,9 @@ function refreshNotifyUI(){
     }else if(Notification.permission==='denied'){
       desc.textContent='알림 권한이 거부되어 있어요. 기기 설정에서 이 앱의 알림을 허용해주세요.';
     }else if(s.enabled){
-      desc.textContent='알림이 켜져 있어요.';
+      desc.textContent='켜져 있어요 — 정한 시각에 오늘 할일 · 일정을 한 번에';
     }else{
-      desc.textContent='아이폰은 홈 화면에 추가된 상태에서만 알림을 받을 수 있어요';
+      desc.textContent='정한 시각에 오늘 할일 · 일정을 한 번에 — 아이폰은 홈 화면에 추가한 앱에서만';
     }
   }
 }
@@ -52780,7 +52598,11 @@ function _swMergeAccountTab(){
 //    · 완료 효과 · 블럭 · 뷰 전환 · 레이아웃 분할 기준 — 여기까지는 HB 가 정한 목록.
 //    **옮길 구간 고르기**도 뺀다 — HB 목록엔 없지만(`data-lv="p"` 라 눈에 안 띈다)
 //    '할일을 어느 시간 구간으로 옮길까' 라서 Sweeter 에는 고를 구간 자체가 없다.
-const _SW_VIEWTAB_MOVE=['secUiLevelSet','secUiScale','secBrightness','secColorTheme'];
+// v26-1024-15 — 일반설정창이 묶음 카드가 되어, 낱칸 넷이 아니라 **묶음째** 옮긴다:
+//   '모양'(밝기 · 색 테마 · 글자 크기)은 맨 위에, '설정창'(등급 아이콘 모양)은 맨 아래에.
+//   세 창 공통 규칙 — 같은 줄은 어느 창에서나 같은 묶음 · 같은 생김.
+const _SW_VIEWTAB_MOVE=['sgLook'];
+const _SW_VIEWTAB_TAIL=['sgLvIcon'];
 // 옮겨 온 칸들의 **값**을 채운다.
 // ⚠️ 값을 채우는 것은 예나 지금이나 renderSettingsPanel() 이다. Sweeter 는
 //    일반설정창을 안 여는 것이 보통이라, 여기서 한 번 불러 주지 않으면
@@ -52802,6 +52624,12 @@ function _swMergeViewTab(){
     const el=document.getElementById(id);
     if(!el)return;
     dst.insertBefore(el,anchor);            // 같은 anchor 앞에 차례로 → 순서 유지
+    moved++;
+  });
+  _SW_VIEWTAB_TAIL.forEach(id=>{            // 이것들은 **맨 아래**로
+    const el=document.getElementById(id);
+    if(!el)return;
+    dst.appendChild(el);
     moved++;
   });
   if(!moved)return;

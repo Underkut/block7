@@ -220,8 +220,9 @@ console.log('\n시나리오 8 — 적용 경로');
 // ═══ 9. 설정 화면 ═══
 console.log('\n시나리오 9 — 설정 화면 구조');
 {
-  sc.eq('뷰 탭 항목명은 "색상 테마"',
-        SRC.includes('<div class="settings-row-label lv1">색상 테마</div>'), true);
+  // v26-1024-15 (HB 설정창 정리) — '뷰' 탭은 '화면', 항목명은 '색 테마'
+  sc.eq('화면 탭 항목명은 "색 테마"',
+        SRC.includes('<div class="settings-row-label">색 테마</div>'), true);
   sc.eq('뷰 탭에 17개를 펼치지 않는다(요약 + 버튼)',
         SRC.includes('id="themeSummary"') && SRC.includes('onclick="openThemePicker()"'), true);
   sc.eq('요약에 그룹·번호·이름을 함께 보인다',
@@ -233,9 +234,10 @@ console.log('\n시나리오 9 — 설정 화면 구조');
   sc.eq('밝기 버튼은 라이트 → 다크 → 시스템 순',
         SRC.indexOf('id="themeBtnLight"') < SRC.indexOf('id="themeBtnDark"') &&
         SRC.indexOf('id="themeBtnDark"') < SRC.indexOf('id="themeBtnSystem"'), true);
-  sc.eq('뷰 탭에서 밝기가 색상 테마보다 먼저 온다',
-        SRC.indexOf('<div class="settings-row-label lv1">밝기</div>') <
-        SRC.indexOf('<div class="settings-row-label lv1">색상 테마</div>'), true);
+  sc.eq('화면 탭에서 밝기가 색 테마보다 먼저 온다',
+        SRC.indexOf('<div class="settings-row-label">밝은 · 어두운 화면</div>') > -1 &&
+        SRC.indexOf('<div class="settings-row-label">밝은 · 어두운 화면</div>') <
+        SRC.indexOf('<div class="settings-row-label">색 테마</div>'), true);
   // '기본' 미리보기가 라이트·다크를 제대로 보여주려면 기본값 선언을 재사용해야 한다
   sc.eq('기본값 토큰을 재사용하는 선택자가 있다',
         SRC.includes(':root,.theme-defaults-dark {') && SRC.includes('html[data-theme="light"],.theme-defaults-light {'), true);

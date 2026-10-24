@@ -141,7 +141,7 @@ const URL1 = 'https://script.google.com/macros/s/AKfycbz1234567890abcdefghijklmn
 
   console.log('\n시나리오 6 — 화면: 개발자 계정에만 · 설정을 열면 저장된 주소');
   {
-    const html = SRC.slice(SRC.indexOf('<div class="settings-section" id="sheetEditSection"'), SRC.indexOf('<!-- /시트 편집 문 -->'));
+    const html = SRC.slice(SRC.indexOf('id="sheetEditSection"'), SRC.indexOf('<!-- /시트 편집 문 -->'));
     sc.eq('처음엔 숨겨 둔다', /id="sheetEditSection" style="display:none;"/.test(html), true);
     sc.eq('입력칸 · 연결 확인 · 알림줄', ['id="sheetEditUrlInput"', 'onclick="sheetEditCheck()"', 'id="sheetEditStatus"'].map(s => html.includes(s)), [true, true, true]);
     sc.eq('설치 안내로 가는 길', html.includes('https://block7.my/sheet-edit/'), true);

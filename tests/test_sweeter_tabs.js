@@ -41,13 +41,10 @@ function _lvApplyIn(root,level){
 }
 function _cfSyncVisibility(){}
 
-// BLOCK7 일반설정창 '뷰' 탭에 실제로 있는 칸들 (docs/MAP.md 순서대로)
+// BLOCK7 일반설정창 '화면' 탭의 묶음들 (v26-1024-15, HB 설정창 정리 — 낱칸이 아니라 묶음째 옮긴다)
 const VIEW_SECTIONS=[
-  ['secUiLevelSet',{'data-lv':'p'}], ['secUiScale',{}], ['secBrightness',{}],
-  ['secColorTheme',{}], ['secDow',{'data-lv':'mp'}], ['secMonthTitle',{'data-lv':'p'}],
-  ['secCarryBadge',{'data-lv':'p'}], ['secMoveSec',{'data-lv':'p'}],
-  ['secDoneFx',{'data-lv':'p'}], ['secBlock',{}], ['secViewSwitch',{'data-lv':'p'}],
-  ['secLayoutSplit',{'data-lv':'p'}]
+  ['sgLook',{}], ['sgTaskText',{'data-lv':'mp'}], ['sgWeekMonth',{'data-lv':'mp'}],
+  ['sgSwipe',{'data-lv':'p'}], ['sgTopBtns',{'data-lv':'mp'}], ['sgLvIcon',{'data-lv':'p'}]
 ];
 function build(){
   Object.keys(REG).forEach(k=>delete REG[k]);
@@ -71,18 +68,15 @@ console.log('시나리오 1 — Sweeter 뷰 탭 병합');
   APP_PRODUCT='sweeter';
   const {sv,vv}=build();
   _swMergeViewTab();
-  sc.eq('가져온 넷이 맨 위에', ids(vv).slice(0,4),
-        ['secUiLevelSet','secUiScale','secBrightness','secColorTheme']);
-  sc.eq('원래 있던 것은 그 뒤에', ids(vv).slice(4), ['vsecDviewMark','vsecTagTile']);
-  // ⚠️ 제외 항목 — 달력·할일 전용이라 넘어오면 안 된다
-  ['secDow','secMonthTitle','secCarryBadge','secMoveSec','secDoneFx',
-   'secBlock','secViewSwitch','secLayoutSplit'].forEach(id=>
+  sc.eq("'모양' 묶음이 맨 위에", ids(vv)[0], 'sgLook');
+  sc.eq('원래 있던 것은 그 뒤에', ids(vv).slice(1,3), ['vsecDviewMark','vsecTagTile']);
+  sc.eq("'설정창'(등급 아이콘 모양) 묶음은 맨 아래", ids(vv)[ids(vv).length-1], 'sgLvIcon');
+  // ⚠️ 제외 묶음 — 달력·할일 전용이라 넘어오면 안 된다
+  ['sgTaskText','sgWeekMonth','sgSwipe','sgTopBtns'].forEach(id=>
     sc.eq('안 넘어온다: '+id, ids(vv).includes(id), false));
-  sc.eq('제외 항목은 제자리에', ids(sv),
-        ['secDow','secMonthTitle','secCarryBadge','secMoveSec','secDoneFx',
-         'secBlock','secViewSwitch','secLayoutSplit']);
+  sc.eq('제외 묶음은 제자리에', ids(sv), ['sgTaskText','sgWeekMonth','sgSwipe','sgTopBtns']);
   sc.eq('등급을 다시 맞춘다(파워라 다 보인다)',
-        REG.secUiLevelSet.classList.contains('lv-hide'), false);
+        REG.sgLvIcon.classList.contains('lv-hide'), false);
 }
 
 // ═══ 2. ⭐ BLOCK7 은 한 칸도 안 움직인다 ═══
@@ -164,7 +158,7 @@ console.log('\n시나리오 5 — 충돌 목록 거르기');
 // ═══ 5-2. 일반설정창의 '계정' 탭은 Sweeter 에서 빈 채로 남지 않는다 ═══
 console.log('\n시나리오 5-2 — 빈 탭이 남지 않는다');
 {
-  var SETTINGS_TABS=['general','notify','view','buttons','sections','account'];
+  var SETTINGS_TABS=['general','view','sections','notify','account'];
   var _UILV='power';
   function uiLevel(){ return _UILV; }
   eval(sliceDev('function _stabList(){', '\n// 어떤 상자 안의 data-lv')
@@ -173,20 +167,18 @@ console.log('\n시나리오 5-2 — 빈 탭이 남지 않는다');
   sc.eq('⭐ BLOCK7 은 여섯 탭 그대로', _stabList(), SETTINGS_TABS);
   APP_PRODUCT='sweeter';
   sc.eq('Sweeter 는 계정 탭이 빠진다', _stabList(),
-        ['general','notify','view','buttons','sections']);
-  _UILV='easy';
-  sc.eq('이지 규칙도 그대로 걸린다', _stabList(), ['general','notify','view','sections']);
-  _UILV='power';
+        ['general','view','sections','notify']);
 }
 
 // ═══ 6. 붙박이 — 코드가 이 약속을 지키고 있나 ═══
 console.log('\n시나리오 6 — 붙박이');
 {
-  sc.eq('옮길 칸 목록은 한 곳에',
-        SRC.includes("const _SW_VIEWTAB_MOVE=['secUiLevelSet','secUiScale','secBrightness','secColorTheme'];"), true);
-  ['secUiLevelSet','secUiScale','secBrightness','secColorTheme'].forEach(id=>
-    sc.eq('HTML 에 손잡이가 있다: '+id, SRC.includes(`class="settings-section" id="${id}"`)
-      || SRC.includes(`class="settings-section" id="${id}" data-lv`), true));
+  sc.eq('옮길 묶음 목록은 한 곳에',
+        SRC.includes("const _SW_VIEWTAB_MOVE=['sgLook'];") && SRC.includes("const _SW_VIEWTAB_TAIL=['sgLvIcon'];"), true);
+  ['sgLook','sgLvIcon'].forEach(id=>
+    sc.eq('HTML 에 손잡이가 있다: '+id, new RegExp(`<div class="sg" id="${id}"`).test(SRC), true));
+  sc.eq("'모양' 묶음 안에 밝기 · 색 테마 · 글자 크기",
+        ['secBrightness','secColorTheme','secUiScale'].every(id=>{const a=SRC.indexOf('id="sgLook"'),b=SRC.indexOf('id="sgTaskText"'),i=SRC.indexOf(`id="${id}"`);return a<i&&i<b;}), true);
   sc.eq('보이는 첫 탭은 Sweeter 도 뷰', SRC.includes("switchVerseSettingsTab(_vstabList()[0]||'view',null,'direct')"), true);
   sc.eq('설정창을 열 때도 병합한다', /openVerseSettingsModal\(\)\{\s*\n\s*_swMergeViewTab\(\);[\s\S]{0,120}_swMergeAccountTab\(\);/.test(SRC), true);
   // ⚠️ 여는 함수 안에 중괄호를 들이지 않는다 — 여러 테스트가 slice(…, '}') 로

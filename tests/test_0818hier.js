@@ -58,8 +58,10 @@ console.log('\n시나리오 3 — 유일하게 항목 이름을 제목 자리에
 {
   // "미완료 할일 가져오기" 는 예전에 settings-row-label(=항목 이름과 같은 스타일)로
   // 그려져 있어서, 진짜 제목들과 스텝이 안 맞았다.
-  sc.eq("'미완료 할일 가져오기' 가 이제 진짜 제목 클래스를 쓴다",
-        /class="settings-section-title">미완료 할일 가져오기</.test(SRC), true);
+  // v26-1024-15 (HB — 설정창 정리) — 이름이 '못 끝낸 할일' 이 되고, 제목은 묶음 제목(.sg-h)이 맡는다.
+  //    지키는 뜻은 같다: 항목 이름 서식으로 제목 흉내를 내지 않는다.
+  sc.eq("'못 끝낸 할일' 이 묶음 제목 클래스를 쓴다",
+        /class="sg-h">못 끝낸 할일</.test(SRC), true);
   sc.eq('예전처럼 row-label 로 감싸 제목 흉내를 내던 자리는 없앴다',
         /<div class="settings-row-text" style="margin-bottom:10px;">\s*<div class="settings-row-label">미완료 할일 가져오기/.test(SRC), false);
 }

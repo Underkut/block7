@@ -190,7 +190,8 @@ console.log('\n시나리오 8 — 설정과 여는 방법');
 {
   sc.eq('처음 쓰는 사람은 꺼져 있다', /moveSecPicker:false/.test(SRC), true);
   sc.eq('파워 등급에서만 보인다',
-    /data-lv="p">[\s\S]{0,400}옮길 구간 고르기/.test(SRC), true);
+    // v26-1024-15 — 줄 앞에 선 그림이 붙어 거리가 늘었다. 그 줄 안에서만 찾는다
+    /<div class="settings-row"[^>]*data-lv="p"[^>]*>(?:(?!<div class="settings-row[ "]).){0,900}옮길 때 구간 고르기/s.test(SRC), true);
   sc.eq('스위치가 설정에 이어져 있다',
     SRC.includes("updateSetting('moveSecPicker',this.checked)"), true);
   sc.eq('설정창을 열 때 상태를 맞춘다',
