@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-11  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-12  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-11";
+const APP_VERSION = "v. 26-1025-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7185,8 +7185,8 @@ try{
         </div>
       </div>
 
-      <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
-      <div class="sg" id="syncConflictSection" style="display:none;">
+      <!-- 동기화 충돌 — 늘 보인다 · 처음엔 접힘 (v26-1025-12, HB). 예전엔 0건이면 숨어서 '없어졌다' 로 보였다 -->
+      <div class="sg" id="syncConflictSection">
         <div class="sg-h">두 기기가 다르게 고친 것</div>
         <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">이 기기와 다른 기기에서 같은 것을 서로 다르게 고치셨어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.</div>
@@ -43836,7 +43836,7 @@ function renderSettingsPanel(){
   _syncCarryScopeBtns();
   _syncTimeStepBtns();
   _syncDevInboxVisibility();
-  // 동기화 충돌 칸은 **열린 충돌이 있을 때만** 보인다.
+  // 동기화 충돌 칸의 설명 · 건수를 맞춘다 (칸은 늘 보인다, v26-1025-12).
   // (동기화 코드는 if(!DEV_MODE) 안에 있어 창구를 통해 부른다)
   if(typeof window._cfSyncVisibility==='function')window._cfSyncVisibility();
   if(document.getElementById('setMonthTitleYear'))document.getElementById('setMonthTitleYear').checked=s.monthTitleYear!==false;
@@ -44698,12 +44698,13 @@ const _SG_FOLD={
   '이미지에 넣을 것':'phone','이미지 크기':'phone','글로 공유할 때':'phone',
   '명제 제목':'tablet','테마':'tablet',
   // 계정 탭 (v26-1025-8, HB) — 'all' = 폭과 상관없이 처음엔 접힘
-  '구글 캘린더':'all','데이터 복구':'all'
+  '구글 캘린더':'all','데이터 복구':'all','두 기기가 다르게 고친 것':'all'
 };
 // 요약을 고른 단추 글자로 만들 수 없는 묶음만 따로
 const _SG_FOLD_SUM={
   '테마':()=>{try{return _vfSelectedPatterns().map(k=>VF_PATTERNS[k].label).join(' · ');}catch(e){return '';}},
-  '구글 캘린더':()=>{const e=document.getElementById('gcalStatus');return e?e.textContent.trim():'';}
+  '구글 캘린더':()=>{const e=document.getElementById('gcalStatus');return e?e.textContent.trim():'';},
+  '두 기기가 다르게 고친 것':()=>{try{const n=_cfOpenCount();return n?n+'건':'없음';}catch(e){return '';}}
 };
 function _sgDevClass(){
   const w=document.documentElement.clientWidth||window.innerWidth||1200;   // 안드로이드: screen.width 아님
@@ -48872,9 +48873,11 @@ function _cfSyncVisibility(){
   const sec=document.getElementById('syncConflictSection');
   if(!sec)return;
   const n=_cfOpenCount();
-  sec.style.display=n?'':'none';
+  // 늘 보인다 (v26-1025-12, HB) — 0건이면 그렇다고 적는다. 접힌 제목 줄 끝 'N건 · 없음' 도 따라간다
   const d=document.getElementById('syncConflictDesc');
-  if(d&&n)d.textContent=`이 기기와 다른 기기에서 같은 것을 서로 다르게 고치신 것이 ${n}건 있어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.`;
+  if(d)d.textContent=n?`이 기기와 다른 기기에서 같은 것을 서로 다르게 고치신 것이 ${n}건 있어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.`
+    :'지금은 정할 것이 없어요. 두 기기에서 같은 것을 서로 다르게 고치시면 여기 모여요.';
+  try{if(sec.classList.contains('sg-foldable'))_sgFoldSum(sec);}catch(e){}
 }
 // 병합에서 진짜 충돌이 나왔으면 진 쪽을 보관한다.
 // ⚠️ 병합 결과 자체는 건드리지 않는다 — 이 단계에서 동작을 바꾸면 7장의 사고가 재발한다.
