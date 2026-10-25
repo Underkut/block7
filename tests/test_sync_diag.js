@@ -23,4 +23,11 @@ const SZ = new Function('_fbBytes', slice('function _fbSizeRows(obj){', 'functio
 const rows = SZ({ days: { '2026-10-25': { trash: [{ text: '가'.repeat(100) }] } }, verseCollections: [{ name: 'TLC', verses: ['나'.repeat(3000)], sheet: 'x' }], settings: { a: 'x', big: '다'.repeat(2000) }, tiny: 1 });
 sc.eq('④ 크기 — 큰 것부터 · 모음마다 · 설정 큰 항목 · 휴지통', [rows[0].k, rows.some(r => /모음 「TLC」 \(verses 9KB/.test(r.k)), rows.some(r => r.k === '  settings.big'), rows.some(r => /휴지통/.test(r.k) && r.b > 300)], ['verseCollections', true, true, true]);
 sc.eq('④ 비교 화면에 크기 칸', /\$\{_fbSizeBlock\(local\)\}/.test(SRC), true);
+const IB = slice('function _inboxDiagBlock(inbox){', '// 이 기기의 올리기 상태');
+const ib = (inbox, last, unsub) => new Function('_prayTodoLast', '_prayTodoUnsub', '_cfEsc', '_dfWhen', IB + '; return _inboxDiagBlock;')(last, unsub, x => String(x), () => '방금')(inbox);
+sc.eq('⑤ 쪽지함 — 기다리는 쪽지 · 지켜보기 · 마지막 받기 · 지금 받기 단추', [
+  /기다리는 쪽지 1개[\s\S]*시리 — 내일 오전 테스트 1/.test(ib({ items: [{ from: 'siri', say: '내일 오전 테스트 1' }] }, null, null)),
+  /지켜보기: 켜짐/.test(ib({ items: [] }, null, () => {})), /읽지 못함 — permission-denied/.test(ib({ err: 'permission-denied' }, null, null)),
+  /넣은 1개[\s\S]*→ 2026-10-26 · am · 테스트 1/.test(ib({ items: [] }, { at: 1, got: 1, put: ['2026-10-26 · am · 테스트 1'] }, null)),
+  /실패 — x/.test(ib({ items: [] }, { at: 1, err: 'x' }, null)), /_prayTodoPull\(\)\.then/.test(IB)], [true, true, true, true, true, true]);
 sc.done();
