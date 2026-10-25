@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-7";
+const APP_VERSION = "v. 26-1025-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7162,6 +7162,42 @@ try{
         <div class="sg-acct"><div class="sg-av" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="9" r="3.6"/><path d="M5 19.5a7 7 0 0 1 14 0"/></svg></div><div class="settings-row-text"><div class="settings-row-label" id="settingsUserEmail"></div><div class="settings-row-desc">이 계정으로 기기들이 함께 써요</div></div><button class="settings-btn settings-btn-danger sr-btn" onclick="authSignOut()">로그아웃</button></div>
       </div>
 
+      <!-- 백업 -->
+      <div class="sg" id="sgBackup">
+        <div class="sg-h">백업</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" id="backupScopeDesc" style="margin-bottom:10px;">할일 · 일정 · 구간 · 설정 · 말씀을 파일로 저장하거나 불러와요</div>
+        <div class="settings-btn-row">
+          <button class="settings-btn settings-btn-flat-icon" onclick="exportBackup()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5v8m-3-3 3 3 3-3"/><path d="M3.5 12v2.5h11V12"/></svg><span>내려받기</span></button>
+          <button class="settings-btn settings-btn-flat-icon" onclick="document.getElementById('importFileInput2').click()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V3m-3 3 3-3 3 3"/><path d="M3.5 12v2.5h11V12"/></svg><span>불러오기</span></button>
+        </div>
+        <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
+        </div>
+      </div>
+
+      <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
+      <div class="sg" id="syncConflictSection" style="display:none;">
+        <div class="sg-h">두 기기가 다르게 고친 것</div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">이 기기와 다른 기기에서 같은 것을 서로 다르게 고치셨어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.</div>
+        <button class="settings-btn sr-go" onclick="openSyncConflicts()">무엇이 다른지 보고 정하기</button>
+        </div>
+      </div>
+
+      <!-- 데이터 복구 (로컬 ↔ 클라우드 비교) — 개발자 계정에서만 보임 -->
+      <div class="sg" id="dataRecoverySection" data-lv="p" style="display:none;">
+        <div class="sg-h">데이터 복구 <span class="sg-badge">개발자</span></div>
+        <div class="sg-card sg-pad">
+        <div class="settings-row-desc" style="margin-bottom:10px;">이 기기와 클라우드를 견줘요. 동기화 탓에 클라우드가 예전 것으로 덮였을 때, 이 기기가 더 새것이면 다시 올릴 수 있어요.</div>
+        <button class="settings-btn" id="dataRecoveryCheckBtn" onclick="checkDataRecovery()">로컬 ↔ 클라우드 비교하기</button>
+        <div id="dataRecoveryResult" style="display:none;margin-top:10px;"></div>
+        <button class="settings-btn" style="margin-top:6px;" onclick="showAutoBackups()">자동 백업 보기 (동기화 충돌 시 저장)</button>
+        <div id="autoBackupList" style="display:none;margin-top:10px;"></div>
+        <button class="settings-btn" style="margin-top:6px;" onclick="mergeDuplicateVerses()">중복 구절 정리 (약칭·정식 합치기)</button>
+        </div>
+      </div>
+
+      <!-- 구글 캘린더 · 시리 — 데이터 복구 아래 (v26-1025-8, HB) -->
       <!-- 구글 캘린더 양방향 (v26-1023-1) — 그리는 것은 _gcalRenderSettings -->
       <div class="sg" id="gcalSection">
         <div class="sg-h">구글 캘린더</div>
@@ -7210,41 +7246,6 @@ try{
           6. 맨 위 이름을 <b style="font-weight:500;">블럭세븐 할일</b> 로 바꾸고 완료<br>
           <span style="color:var(--tx3);">날을 빼면 오늘 · 구간을 빼면 오늘은 지금 구간, 다른 날은 첫 구간이에요. 날은 오늘 · 내일 · 모레 · 글피 · ‘10월 30일’ · ‘30일’, 구간은 내 구간 이름(새벽 · 오전 · 점심 …)으로 말해요.</span>
         </div></div></div>
-        </div>
-      </div>
-
-      <!-- 백업 -->
-      <div class="sg" id="sgBackup">
-        <div class="sg-h">백업</div>
-        <div class="sg-card sg-pad">
-        <div class="settings-row-desc" id="backupScopeDesc" style="margin-bottom:10px;">할일 · 일정 · 구간 · 설정 · 말씀을 파일로 저장하거나 불러와요</div>
-        <div class="settings-btn-row">
-          <button class="settings-btn settings-btn-flat-icon" onclick="exportBackup()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 2.5v8m-3-3 3 3 3-3"/><path d="M3.5 12v2.5h11V12"/></svg><span>내려받기</span></button>
-          <button class="settings-btn settings-btn-flat-icon" onclick="document.getElementById('importFileInput2').click()"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11V3m-3 3 3-3 3 3"/><path d="M3.5 12v2.5h11V12"/></svg><span>불러오기</span></button>
-        </div>
-        <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
-        </div>
-      </div>
-
-      <!-- 동기화 충돌 — 해결하지 않은 것이 있을 때만 보인다 -->
-      <div class="sg" id="syncConflictSection" style="display:none;">
-        <div class="sg-h">두 기기가 다르게 고친 것</div>
-        <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:10px;" id="syncConflictDesc">이 기기와 다른 기기에서 같은 것을 서로 다르게 고치셨어요. 아무것도 지워지지 않았고 양쪽 다 갖고 있어요.</div>
-        <button class="settings-btn sr-go" onclick="openSyncConflicts()">무엇이 다른지 보고 정하기</button>
-        </div>
-      </div>
-
-      <!-- 데이터 복구 (로컬 ↔ 클라우드 비교) — 개발자 계정에서만 보임 -->
-      <div class="sg" id="dataRecoverySection" data-lv="p" style="display:none;">
-        <div class="sg-h">데이터 복구 <span class="sg-badge">개발자</span></div>
-        <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:10px;">이 기기와 클라우드를 견줘요. 동기화 탓에 클라우드가 예전 것으로 덮였을 때, 이 기기가 더 새것이면 다시 올릴 수 있어요.</div>
-        <button class="settings-btn" id="dataRecoveryCheckBtn" onclick="checkDataRecovery()">로컬 ↔ 클라우드 비교하기</button>
-        <div id="dataRecoveryResult" style="display:none;margin-top:10px;"></div>
-        <button class="settings-btn" style="margin-top:6px;" onclick="showAutoBackups()">자동 백업 보기 (동기화 충돌 시 저장)</button>
-        <div id="autoBackupList" style="display:none;margin-top:10px;"></div>
-        <button class="settings-btn" style="margin-top:6px;" onclick="mergeDuplicateVerses()">중복 구절 정리 (약칭·정식 합치기)</button>
         </div>
       </div>
 
@@ -44682,11 +44683,14 @@ const _SG_FOLD={
   // 말씀 설정 (= Sweeter 설정)
   '보일 것':'phone','구간 제목 옆 말씀 기록':'phone','태그 그림':'phone',
   '이미지에 넣을 것':'phone','이미지 크기':'phone','글로 공유할 때':'phone',
-  '명제 제목':'tablet','테마':'tablet'
+  '명제 제목':'tablet','테마':'tablet',
+  // 계정 탭 (v26-1025-8, HB) — 'all' = 폭과 상관없이 처음엔 접힘
+  '구글 캘린더':'all','데이터 복구':'all'
 };
 // 요약을 고른 단추 글자로 만들 수 없는 묶음만 따로
 const _SG_FOLD_SUM={
-  '테마':()=>{try{return _vfSelectedPatterns().map(k=>VF_PATTERNS[k].label).join(' · ');}catch(e){return '';}}
+  '테마':()=>{try{return _vfSelectedPatterns().map(k=>VF_PATTERNS[k].label).join(' · ');}catch(e){return '';}},
+  '구글 캘린더':()=>{const e=document.getElementById('gcalStatus');return e?e.textContent.trim():'';}
 };
 function _sgDevClass(){
   const w=document.documentElement.clientWidth||window.innerWidth||1200;   // 안드로이드: screen.width 아님
@@ -44707,6 +44711,7 @@ function _sgFoldMemPut(k,open){
 }
 // 접기 기본값: 그 기기 폭에서 접어 둘 묶음인가
 function _sgFoldDefaultOpen(rule,dev){
+  if(rule==='all')return false;     // 어느 기기든 처음엔 접힘
   if(dev==='pc')return true;
   if(dev==='tablet')return rule!=='tablet';
   return false;                     // 폰은 표에 있는 묶음을 다 접는다
@@ -47460,6 +47465,10 @@ async function _upCheck(){
 // ⚠️ 부팅 직후가 아니라 4초 뒤다. 첫 그림·로그인·클라우드 읽기와 다투지 않게.
 setTimeout(()=>{_upCheck();},4000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck();});
+// 열어만 두고 안 만지는 창도 11분마다 묻는다 (v26-1025-8, HB). 2026-10-25 맥미니의 옛 창이 화면 전환 없이 켜져만 있어
+// 새 버전을 못 받았고, 시리 쪽지를 꺼내 간 뒤 압축 문서를 못 읽어 할일이 그 창에 갇혔다. 새로 고침은 _upApply 가
+// 안전할 때만 한다(못 올린 편집 · 글자 치는 중이면 다음 기회). 간격은 _UP_MIN_MS(10분)보다 조금 길게 — 타이머가 앞당겨지면 건너뛰므로.
+setInterval(()=>{_upCheck();},11*60*1000);
 
 if(!DEV_MODE){
 (async function(){

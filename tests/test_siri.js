@@ -121,7 +121,8 @@ console.log('\n⑧ 토스트');
 
 console.log('\n⑨ 설정 칸');
 {
-  const ACC = SRC.slice(SRC.indexOf('<div class="settings-tab-content" id="stab-account">'), SRC.indexOf('<!-- 백업 -->'));
+  const ACC = SRC.slice(SRC.indexOf('<div class="settings-tab-content" id="stab-account">'), SRC.indexOf('<!-- 개발자에게 쪽지 -->', SRC.indexOf('id="stab-account"')) + 1);
+  sc.eq('차례: 데이터 복구 → 구글 캘린더 → 시리 (v26-1025-8)', ACC.indexOf('id="dataRecoverySection"') < ACC.indexOf('id="gcalSection"') && ACC.indexOf('id="gcalSection"') < ACC.indexOf('id="siriSection"'), true);
   sc.eq('계정 탭 안에 묶음', /<div class="sg" id="siriSection">/.test(ACC), true);
   const UI = slice("// 설정 → 계정 '시리로 할일 넣기'", '// ═══════ 시리 → 할일 끝');
   sc.eq('Sweeter 에서 감춘다 · 개발본에서 못 쓴다', [/APP_PRODUCT!=='block7'\)\{box\.style\.display='none'/.test(UI), /DEV_MODE\?'개발본에서는 쓸 수 없어요/.test(UI)], [true, true]);
