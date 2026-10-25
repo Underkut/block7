@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 공부 친구들 v. 26-1024-8 -->
+<!-- 공부 친구들 v. 26-1025-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -217,6 +217,25 @@ svg.bd.live.p-cheer{animation:bdBounce 1.5s ease-in-out infinite}
 @keyframes bdZ{0%{transform:translate(-4px,8px);opacity:0}25%{opacity:1}100%{transform:translate(6px,-12px);opacity:0}}
 svg.bd.hop{animation:bdHop .6s cubic-bezier(.3,1.4,.5,1)!important}
 @keyframes bdHop{0%{transform:none}30%{transform:translateY(-16%) scale(.94,1.08)}62%{transform:translateY(0) scale(1.08,.92)}100%{transform:none}}
+/* 공부 중 응원단 — 시계 양옆에서 춤추며 화이팅 (HB 2026-10-25). 잠깐 쉬는 중엔 멈춘다 */
+.tring .cheerer{position:absolute;bottom:-10px;width:78px;pointer-events:none;transform-origin:50% 100%}
+.tring .cheerer svg{display:block;width:100%;height:auto}
+.tring .cheerer.l{left:-52px}
+.tring .cheerer.r{right:-52px}
+.tring .cheerer.r svg{transform:scaleX(-1)}
+#timer:not(.pz) .tring .cheerer.l{animation:tzDance .9s ease-in-out infinite}
+#timer:not(.pz) .tring .cheerer.r{animation:tzDance .9s ease-in-out infinite;animation-delay:-.45s}
+@keyframes tzDance{0%,100%{transform:translateY(0) rotate(-7deg)}25%{transform:translateY(-14px) rotate(0) scale(.96,1.06)}50%{transform:translateY(0) rotate(7deg)}75%{transform:translateY(-14px) rotate(0) scale(.96,1.06)}}
+.tring .yell{position:absolute;top:-6px;padding:5px 12px;border-radius:999px;background:#fff;box-shadow:0 2px 0 var(--line);font-family:Jua;font-size:17px;color:#2F6FD1;white-space:nowrap;pointer-events:none;opacity:0}
+.tring .yell.l{left:-30px}
+.tring .yell.r{right:-30px}
+#timer:not(.pz) .tring .yell.on{animation:tzYell 2.4s ease-out forwards}
+@keyframes tzYell{0%{opacity:0;transform:translateY(10px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.12)}30%{transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+.tring .spark{position:absolute;bottom:40px;width:12px;height:12px;pointer-events:none;opacity:0}
+.tring .spark.l{left:-6px}.tring .spark.r{right:-6px}
+#timer:not(.pz) .tring .spark{animation:tzSpark 1.8s ease-out infinite}
+#timer:not(.pz) .tring .spark.r{animation-delay:-.9s}
+@keyframes tzSpark{0%{opacity:0;transform:translateY(0) scale(.4) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-70px) scale(1.1) rotate(160deg)}}
 /* 친구가 놓이는 자리 */
 .peekwrap{position:relative;margin-top:30px}
 .peeker{position:absolute;width:66px;top:-35px;right:30px;z-index:2;pointer-events:auto}
@@ -797,7 +816,7 @@ const sundayOf = s => addDays(s, -dowOf(s));   // 아이 화면의 한 주는 �
 </script>
 <script>
 /* ───────── 공부 친구들 — 화면 ───────── */
-const APP_VERSION = 'v. 26-1024-8';
+const APP_VERSION = 'v. 26-1025-1';
 const $ = id => document.getElementById(id);
 // ── 앱 아이콘 여섯 가지 (샤론 1024 ⑧, 기도노트와 같은 방식) — 설정에서 이 기기마다 고른다. 처음은 '연필과 지우개'.
 // 아이폰은 '홈 화면에 추가' 할 때 머리 태그 · manifest 를 한 번만 읽는다 → 바꾼 뒤 홈 화면에서 지우고 다시 추가해야 바뀐다.
@@ -1634,7 +1653,10 @@ function openTimer() {
   openFull('timer', null, `<div class="tz"><div class="tz-top"><button class="grab" id="tmMin" aria-label="내리기 (시계는 계속 가요)"><i></i><i></i></button></div>
     <span class="tz-sj" style="color:${sj.fg}">${sj.n}</span><div class="tz-t">${esc(q ? q.title : '공부')}</div>
     <div class="tring"><svg viewBox="0 0 280 280" role="img" aria-label="공부한 시간"><circle cx="140" cy="140" r="122" fill="#fff" stroke="#CFE3FA" stroke-width="20"/><circle id="tmArc" cx="140" cy="140" r="122" fill="none" stroke="#2F6FD1" stroke-width="20" stroke-linecap="round" stroke-dasharray="766.5" stroke-dashoffset="766.5" transform="rotate(-90 140 140)"/></svg>
-      <div class="in"><div class="clk" id="tmClk">0:00</div><small id="tmLeft"></small></div></div>
+      <div class="in"><div class="clk" id="tmClk">0:00</div><small id="tmLeft"></small></div>
+      <span class="cheerer l">${myBuddy('cheer')}</span><span class="cheerer r">${myBuddy('cheer')}</span>
+      <span class="spark l"><svg viewBox="0 0 24 24"><path d="M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#FFC845"/></svg></span><span class="spark r"><svg viewBox="0 0 24 24"><path d="M12 1l3 8 8 3-8 3-3 8-3-8-8-3 8-3z" fill="#FF8FA3"/></svg></span>
+      <span class="yell l" id="tmYl"></span><span class="yell r" id="tmYr"></span></div>
     <div class="tz-say" id="tmBub"></div>
     <div class="tz-dwrap"><span class="peeker">${myBuddy('peek')}</span><button class="tz-done" id="tmEnd">다 했어요!</button></div><button class="tz-link" id="tmPause">잠깐 쉬기</button><button class="tz-quit" id="tmQuit">그만두기 (기록 안 해요)</button></div>`);
   $('tmMin').onclick = timerMinimize;
@@ -1647,6 +1669,16 @@ function openTimer() {
 // 공부 중 화면 내리기 — 위 손잡이 누르기 · 끌어 내리기 · 왼쪽 가장자리에서 밀기 (샤론 1024 ⑥). 시계는 계속 간다
 function timerMinimize() { closeFull('timer'); render(); toast('시계는 계속 가요\n오늘 화면에서 \'이어 하기\''); }
 function timerStop() { clearInterval(tmT); tmT = 0; try { wakeL && wakeL.release(); } catch (e) {} wakeL = null; }
+// 응원 구호 — 3초마다 왼쪽·오른쪽 번갈아 한마디 (움직임 줄이기면 말풍선은 안 띄운다)
+const YELLS = ['화이팅!', '아자아자!', '힘내라 힘!', '잘하고 있어!', '집중 집중!', '최고야!', '파이팅!'];
+let tmYn = 0;
+function tmYell(now, r) {
+  if (r.pausedAt || quiet()) return;
+  const k = Math.floor(runStudyMs(r, now) / 3000);
+  if (k === tmYn) return; tmYn = k;
+  const el = $(k % 2 ? 'tmYl' : 'tmYr'); if (!el) return;
+  el.textContent = YELLS[k % YELLS.length]; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+}
 function timerTick() {
   const r = S.run; if (!r || !$('tmClk')) return timerStop();
   const now = Date.now(), sec = runStudyMs(r, now) / 1000, q = runQuest(), goal = (q && q.dur ? q.dur : 30) * 60, over = sec > goal;
@@ -1656,6 +1688,7 @@ function timerTick() {
   $('tmLeft').textContent = over ? '목표보다 ' + Math.floor((sec - goal) / 60) + '분 더!' : (goal / 60) + '분 중';
   $('tmPause').textContent = r.pausedAt ? '다시 시작' : '잠깐 쉬기';
   $('timer').classList.toggle('pz', !!r.pausedAt);
+  tmYell(now, r);
   $('tmBub').innerHTML = r.pausedAt ? '잠깐 쉬는 중… ' + mmss((now - r.pausedAt) / 1000) + '<br>다 쉬면 \'다시 시작\'' : over ? '와, 목표를 넘었어!<br>다 하면 아래를 눌러 줘' : '천천히, 집중해서!<br>다 하면 아래를 눌러 줘';
 }
 /* ───────── 다 했어요 → 잘했어! → 기록 · 부모님께 알리기 (S-8) ─────────
