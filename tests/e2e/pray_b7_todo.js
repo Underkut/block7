@@ -18,7 +18,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const docUrl = p => FS + '/v1/projects/' + PID + '/databases/(default)/documents/' + p;
 async function get(p) { const r = await fetch(docUrl(p), { headers: { Authorization: 'Bearer owner' } }); return r.json(); }
 async function until(fn, ms = 15000) { const t = Date.now(); while (Date.now() - t < ms) { try { const v = await fn(); if (v) return v; } catch (e) {} await sleep(300); } return null; }
-async function cloudState(uid) { const d = await get('users/' + uid + '/data/state'); return d.fields ? { rev: d.fields.rev && +d.fields.rev.integerValue, st: JSON.parse(d.fields.json.stringValue) } : null; }
+async function cloudState(uid) { const d = await get('users/' + uid + '/data/state'); return d.fields ? { rev: d.fields.rev && +d.fields.rev.integerValue, st: JSON.parse((d.fields.jz ? require('zlib').inflateRawSync(Buffer.from(d.fields.jz.bytesValue, 'base64')).toString() : d.fields.json.stringValue)) } : null; }
 (async () => {
   await fetch(FS + '/emulator/v1/projects/' + PID + '/databases/(default)/documents', { method: 'DELETE' });
   await fetch(AUTH + '/emulator/v1/projects/' + PID + '/accounts', { method: 'DELETE' });

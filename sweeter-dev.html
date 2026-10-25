@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-5";
+const APP_VERSION = "v. 26-1025-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -48683,7 +48683,7 @@ function _fbWriteBackup(json,rev){
   try{
     const slot=Math.floor(Date.now()/60000)%3;
     fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('backup_'+slot)
-      .set({json,rev:rev||0,ts:Date.now(),dev:_deviceId(),devLabel:_deviceLabel(),kind:'auto-merge'})
+      .set({jz:_fbZField(json),rev:rev||0,ts:Date.now(),dev:_deviceId(),devLabel:_deviceLabel(),kind:'auto-merge'})
       .catch(e=>console.warn('자동 백업 저장 실패(동기화에는 영향 없음):',(e&&e.code)||e));
   }catch(e){}
 }
@@ -49126,6 +49126,13 @@ function _fbDocJson(d){
   if(d.jz!=null)return _fbUnz(d.jz);
   return(typeof d.json==='string'&&d.json)?d.json:null;
 }
+// 쓰는 모양 (v26-1025-6) — 압축 { jz } 로만 쓴다(json 은 안 쓴다). fflate 가 없으면 던진다 → 쓰지 않고 재시도.
+//   ⚠️ 쓰는 곳은 셋뿐이다 — 올리기(_fbCommit) · 강제 쓰기(_fbForceWrite) · 자동 백업(_fbWriteBackup). 새로 만들면 여기를 거친다.
+function _fbZ(json){
+  if(typeof fflate==='undefined')throw new Error('압축 도구가 없어 올릴 수 없어요');
+  return fflate.deflateSync(fflate.strToU8(String(json)),{level:6});
+}
+function _fbZField(json){return firebase.firestore.Blob.fromUint8Array(_fbZ(json));}
 // 저장된 크기(바이트) — 압축이면 압축된 크기
 function _fbDocBytes(d){
   if(!d)return 0;
@@ -49139,7 +49146,7 @@ async function _fbCommit(){
   if(_fbCommitBusy){_fbCommitAgain=true;return;}
   _fbCommitBusy=true;
   const uid=_fbUser.uid;
-  let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null;
+  let ok=false,mergedApply=null,backupJson=null,backupRev=0,outJson=null,outRev=0,seqAtWrite=0,legacyVer=null,outZBytes=0;
   // ⚠️ 트랜잭션은 재실행될 수 있다 → 안에서는 판정만 하고 보관은 커밋 성공 뒤에.
   let cfPending=null;
   // 제품 분리용 — 클라우드에 원래 있던 설정을 되돌려 놓을 때 쓴다 (_psProject)
@@ -49188,8 +49195,9 @@ async function _fbCommit(){
       // 제품 칸막이(_psProject) → 기기 칸막이(_dsProject) 순으로 되돌린다
       const _prior=priorState||_fbBaseObj();
       outJson=JSON.stringify(_dsProject(_psProject(outState,_prior),_prior));
+      const outZ=_fbZ(outJson);outZBytes=outZ.length;
       tx.set(userDocRef(uid),{
-        json:outJson,rev:outRev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,
+        jz:firebase.firestore.Blob.fromUint8Array(outZ),rev:outRev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       });
     });
@@ -49206,7 +49214,7 @@ async function _fbCommit(){
     // 오프라인이면 트랜잭션은 즉시 실패한다(오프라인 큐에 안 들어감).
     // localStorage에는 항상 최신 ST가 있으므로 유실은 없다 — 재시도만 예약.
     console.warn('동기화 커밋 실패(재시도 예정):',(err&&err.code)||err);
-    try{_fbLastErr={code:String((err&&err.code)||''),msg:String((err&&err.message)||err||'').slice(0,200),at:Date.now(),bytes:outJson?_fbBytes(outJson):0};}catch(e){}
+    try{_fbLastErr={code:String((err&&err.code)||''),msg:String((err&&err.message)||err||'').slice(0,200),at:Date.now(),bytes:outZBytes||(outJson?_fbBytes(outJson):0),raw:outJson?_fbBytes(outJson):0};}catch(e){}
     _fbScheduleRetry();
   }finally{
     _fbCommitBusy=false;
@@ -49239,7 +49247,7 @@ async function _fbForceWrite(stateObj){
     const snap=await tx.get(userDocRef(uid));
     const cur=snap.exists?(snap.data()||{}):{};
     rev=((typeof cur.rev==='number')?cur.rev:0)+1;
-    tx.set(userDocRef(uid),{json,rev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    tx.set(userDocRef(uid),{jz:_fbZField(json),rev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
   _fbSetBase(json,rev,uid);
   _fbCleanSeq=_fbDirtySeq; // 방금 올린 것이 곧 최신 — 미전송 표시 해제
@@ -49341,7 +49349,7 @@ function _fbDiagBlock(){
   return `<div style="${box}"><div style="font-weight:700;color:var(--tx);">이 기기 올리기 — 실패하고 있어요</div>
     마지막 실패: ${_cfEsc(_dfWhen(e.at))}<br>
     까닭: ${_cfEsc(e.code||'(코드 없음)')} — ${_cfEsc(e.msg)}<br>
-    올리려던 크기: ${e.bytes?Math.round(e.bytes/1024).toLocaleString()+' KB (한도 1,024 KB)':'(재지 못함)'}
+    올리려던 크기: ${e.bytes?Math.round(e.bytes/1024).toLocaleString()+' KB (한도 1,024 KB)'+(e.raw&&e.raw!==e.bytes?` · 압축 전 ${Math.round(e.raw/1024).toLocaleString()} KB`:''):'(재지 못함)'}
     ${big?'<br><b style="color:var(--danger,#e5484d);">문서가 한도(1MB)를 넘어 올라가지 못해요.</b>':''}</div>`;
 }
 window.checkDataRecovery=async function(){
