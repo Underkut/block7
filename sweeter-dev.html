@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-13  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-14  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4472,6 +4472,9 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg-foldable>.sg-h .sg-sum{margin-left:auto;margin-right:-6px;min-width:0;flex:0 1 auto;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
   font-size:12px;letter-spacing:0;color:var(--tx2);opacity:1;transition:opacity .2s;}
 .sg-foldable.open>.sg-h .sg-sum{opacity:0;}
+/* 접혀 있을 때만 제목 왼쪽 끝에 그 묶음의 아이콘 (v26-1025-14) — 펴면 폭이 스르륵 줄며 사라진다 */
+.sg-foldable>.sg-h .sg-fic{flex:none;width:15px;height:15px;margin-right:-4px;color:var(--tx3);opacity:1;transition:width .3s cubic-bezier(.22,.8,.24,1),margin .3s cubic-bezier(.22,.8,.24,1),opacity .2s;}
+.sg-foldable.open>.sg-h .sg-fic{width:0;margin-right:-12px;opacity:0;}
 .sg-foldable>.sg-h .sg-chev{flex:none;color:var(--tx3);transition:transform .3s cubic-bezier(.22,.8,.24,1);}
 /* 제목 바로 아래 설명은 접히는 겹 안으로 들어가므로 예전 '.sg-h+.sg-note' 자리를 여기서 */
 .sg-fin>.sg-note:first-child{margin:0 6px 10px;}
@@ -4480,8 +4483,8 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg-foldable.open>.sg-fbody{grid-template-rows:1fr;}
 .sg-fin{overflow:hidden;min-height:0;padding-top:6px;opacity:0;transition:opacity .22s;}
 .sg-foldable.open .sg-fin{opacity:1;}
-.sg-foldable.sg-noanim>.sg-fbody,.sg-foldable.sg-noanim .sg-fin,.sg-foldable.sg-noanim .sg-chev,.sg-foldable.sg-noanim .sg-sum{transition:none;}
-@media (prefers-reduced-motion:reduce){.sg-fbody,.sg-fin,.sg-foldable .sg-chev,.sg-foldable .sg-sum{transition:none;}}
+.sg-foldable.sg-noanim>.sg-fbody,.sg-foldable.sg-noanim .sg-fin,.sg-foldable.sg-noanim .sg-chev,.sg-foldable.sg-noanim .sg-sum,.sg-foldable.sg-noanim .sg-fic{transition:none;}
+@media (prefers-reduced-motion:reduce){.sg-fbody,.sg-fin,.sg-foldable .sg-chev,.sg-foldable .sg-sum,.sg-foldable .sg-fic{transition:none;}}
 /* 계정 탭 맨 위 로그인 카드 */
 .sg-acct{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:14px;margin-top:16px;}
 .sg-av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;background:rgba(var(--ac-rgb),.14);color:var(--ac-tx);}
@@ -6553,7 +6556,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-13";
+const APP_VERSION = "v. 26-1025-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44710,6 +44713,27 @@ function _sgDevClass(){
   const w=document.documentElement.clientWidth||window.innerWidth||1200;   // 안드로이드: screen.width 아님
   return w<600?'phone':w<1024?'tablet':'pc';
 }
+// 접힌 묶음 제목 왼쪽 끝 아이콘 (v26-1025-14, HB 가 시안에서 고름) — 열쇠는 _SG_FOLD 의 제목과 한 글자도 같게
+const _SG_FOLD_IC={
+  '못 끝낸 할일':'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4M9 15h6M13 13l2 2-2 2"/>',
+  '입력':'<rect x="3" y="8" width="18" height="8" rx="4"/><path d="M8 10.3v3.4"/>',
+  '할일 글자':'<path d="M4 6h16M4 12h13a3 3 0 0 1 0 6h-4"/><path d="M15 16l-2 2 2 2"/><path d="M4 18h5"/>',
+  '주간 · 월간':'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M9 10v10M15 10v10M3.5 15h17"/>',
+  '넘기기':'<path d="M6 7l5 5-5 5M13 7l5 5-5 5"/>',
+  '개발자에게 쪽지':'<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
+  '구글 캘린더':'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.8"/>',
+  '시리로 할일 넣기':'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>',
+  '데이터 복구':'<path d="M7 18.5a4 4 0 0 1-.6-8A6 6 0 0 1 18 9.5a4.5 4.5 0 0 1 0 9z"/><path d="M12 16v-5M9.8 13l2.2-2.2 2.2 2.2"/>',
+  '두 기기가 다르게 고친 것':'<path d="M12 20.5V13L6 6M12 13l6-7"/><path d="M6 10.5V6h4.5M18 10.5V6h-4.5"/>',
+  '보일 것':'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  '구간 제목 옆 말씀 기록':'<path d="M12 19.5C6 15 3.5 11.5 3.5 8.5A4.3 4.3 0 0 1 12 6.4a4.3 4.3 0 0 1 8.5 2.1c0 3-2.5 6.5-8.5 11z"/>',
+  '태그 그림':'<path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8 8z"/><circle cx="8" cy="8" r="1.3"/>',
+  '이미지에 넣을 것':'<rect x="3.5" y="5" width="13" height="12" rx="2"/><path d="M4 15l4-3.5 3 2.5 2-1.5 3.5 3"/><path d="M19.5 15v6M16.5 18h6"/>',
+  '이미지 크기':'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><rect x="6.5" y="10.5" width="7" height="7" rx="1"/>',
+  '글로 공유할 때':'<path d="M9.5 7h-3A1.5 1.5 0 0 0 5 8.5V12h4.5zM9.5 12c0 3-1.5 4.5-4 5M19 7h-3a1.5 1.5 0 0 0-1.5 1.5V12H19zM19 12c0 3-1.5 4.5-4 5"/>',
+  '명제 제목':'<path d="M4 6h11M9.5 6v14"/><path d="M18.5 7.2c0.48 1.90 0.95 2.38 2.8 2.8-1.85 0.42-2.32 0.90-2.8 2.8-0.48-1.90-0.95-2.38-2.8-2.8 1.85-0.42 2.32-0.90 2.8-2.8z"/><path d="M16 16.4c0.27 1.09 0.54 1.36 1.6 1.6-1.06 0.24-1.33 0.51-1.6 1.6-0.27-1.09-0.54-1.36-1.6-1.6 1.06-0.24 1.33-0.51 1.6-1.6z"/>',
+  '테마':'<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-.9.7-1.5 1.7-1.5h2.2a4 4 0 0 0 4-4c0-4-3.8-7-8.5-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>'
+};
 function _sgTitle(g){
   const h=g.querySelector(':scope>.sg-h');if(!h)return '';
   let t='';h.childNodes.forEach(n=>{
@@ -44744,6 +44768,7 @@ function _sgFoldInit(){
       while(h.nextSibling)inner.appendChild(h.nextSibling);
       body.appendChild(inner);g.appendChild(body);
       h.insertAdjacentHTML('beforeend','<span class="sg-sum"></span><svg class="sg-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');
+      if(_SG_FOLD_IC[k])h.insertAdjacentHTML('afterbegin','<svg class="sg-fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+_SG_FOLD_IC[k]+'</svg>');
       h.setAttribute('role','button');h.tabIndex=0;
       h.addEventListener('click',e=>{if(e.target.closest('button:not(.sg-h),.vset-dashbtn'))return;sgGroupToggle(g);});
       h.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sgGroupToggle(g);}});
