@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-9";
+const APP_VERSION = "v. 26-1025-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6583,8 +6583,18 @@ const _PS_OWN=['versePush'];
 // 그래서 클라우드의 그 칸은 그대로 멈춰 있고, 병합에서도 충돌이 나지 않는다.
 const _DEVICE_SCOPED=[
   'verseCurrentIdx',      // 지금 보고 있는 말씀 — 맥에서 넘긴 것이 아이폰을 따라다니면 안 된다
-  'verseLastShownDate'    // 오늘 말씀을 이미 보여줬는가 — 기기마다 다르다
+  'verseLastShownDate',   // 오늘 말씀을 이미 보여줬는가 — 기기마다 다르다
+  'verseLastShownSec'     // 이 구간 말씀으로 이미 넘겼는가 — 위 둘과 짝 (v. 26-1025-10, ROADMAP B-1).
+                          //   공유하면 다른 기기가 찍은 도장 때문에 이 기기 말씀이 그 구간에 안 넘어간다.
 ];
+// 기기 전용 칸을 뺀 모양 — 충돌 판정 · 비교 화면이 견주지 않게 (v. 26-1025-10, ROADMAP B-1).
+// ⚠️ 이 칸들은 클라우드에 멈춘 옛 값이 남아 있어 이 기기 값과 늘 다르다. 견주면 가짜 충돌·가짜 차이가 뜬다.
+function _dsStrip(state){
+  if(!state||!state.settings)return state;
+  const s=Object.assign({},state.settings);
+  _DEVICE_SCOPED.forEach(k=>{delete s[k];});
+  return Object.assign({},state,{settings:s});
+}
 const _DS_KEY='b7v1_devsettings';       // 이 기기 전용 (클라우드 동기화 대상 아님)
 let _dsCache=null;
 function _dsRead(){
@@ -48580,7 +48590,9 @@ function _cfDetect(base,local,cloud,merged,opts){
     });
   });
   // ② 설정 (키 단위)
-  _cfScanKeys('setting','settings/',b.settings,l.settings,c.settings,out,opts,k=>'설정 · '+_dfSetLabel(k));
+  // 기기 전용 칸은 충돌이 될 수 없다 — 기기마다 따로 산다 (_DEVICE_SCOPED, ROADMAP B-1)
+  const _dsx=o=>(typeof _dsStrip==='function')?(_dsStrip({settings:o||{}}).settings):o;
+  _cfScanKeys('setting','settings/',_dsx(b.settings),_dsx(l.settings),_dsx(c.settings),out,opts,k=>'설정 · '+_dfSetLabel(k));
   // ③ 말씀 모음 · 연락처 (id 단위)
   _cfScanById('collection','verseCollections/',b.verseCollections,l.verseCollections,c.verseCollections,out,opts);
   _cfScanById('contact','contacts/',b.contacts,l.contacts,c.contacts,out,opts);
@@ -48792,7 +48804,12 @@ function _cfMine(r){
   }
   return false;
 }
-function _cfOpen(){return _cfList.filter(r=>!r.resolvedAt&&_cfMine(r));}
+// 예전에 기기 전용 칸(지금 보는 말씀 등)으로 적힌 가짜 충돌은 보이지 않는다 (ROADMAP B-1)
+function _cfDevOnly(r){
+  return r&&r.entityType==='setting'&&typeof _DEVICE_SCOPED!=='undefined'
+    &&_DEVICE_SCOPED.includes(String(r.entityId||'').replace(/^settings\//,''));
+}
+function _cfOpen(){return _cfList.filter(r=>!r.resolvedAt&&_cfMine(r)&&!_cfDevOnly(r));}
 function _cfOpenCount(){return _cfOpen().length;}
 // 같은 자리의 충돌은 번호가 같으므로 덮어쓴다 — 두 번 쌓이지 않는다.
 function _cfStore(list){
@@ -49297,11 +49314,14 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 // 강제 쓰기(데이터 복구용) — 병합 없이 지정 상태를 rev+1로 올린다
 async function _fbForceWrite(stateObj){
   const uid=window._fbUser.uid;
-  const json=JSON.stringify(stateObj);
+  let json=JSON.stringify(stateObj);
   let rev=0;
   await fbDB.runTransaction(async tx=>{
     const snap=await tx.get(userDocRef(uid));
     const cur=snap.exists?(snap.data()||{}):{};
+    // 기기 전용 칸은 클라우드에 있던 값을 그대로 둔다 — 평소 올리기(_fbCommit)와 같은 칸막이 (ROADMAP B-1)
+    let prior=null;try{const pj=_fbDocJson(cur);prior=pj?JSON.parse(pj):null;}catch(e){}
+    json=JSON.stringify(_dsProject(stateObj,prior));
     rev=((typeof cur.rev==='number')?cur.rev:0)+1;
     tx.set(userDocRef(uid),{jz:_fbZField(json),rev,dev:_deviceId(),devLabel:_deviceLabel(),appVer:APP_VERSION,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
@@ -49449,8 +49469,10 @@ window.checkDataRecovery=async function(){
     if(!ls&&!rs){out.style.display='block';out.innerHTML='<div style="font-size:12px;color:var(--tx3);">비교할 데이터가 없어요.</div>';btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
     // ⚠️ 여기가 이 화면의 핵심 — 숫자만 나란히 놓으면 "다르다" 만 알 뿐 고를 수가 없다.
     //    양쪽이 서로에게 없는 것을 **이름을 대고** 적는다 (2026-09-04 HB 지적).
-    const onlyLocal=(local&&remote)?_dfBrief(remote,local,8):null;   // 클라우드 → 이 기기
-    const onlyCloud=(local&&remote)?_dfBrief(local,remote,8):null;   // 이 기기 → 클라우드
+    // 기기 전용 칸(지금 보는 말씀 등)은 원래 기기마다 다르다 — 차이로 보이지 않는다 (ROADMAP B-1)
+    const _l=_dsStrip(local),_r=_dsStrip(remote);
+    const onlyLocal=(local&&remote)?_dfBrief(_r,_l,8):null;   // 클라우드 → 이 기기
+    const onlyCloud=(local&&remote)?_dfBrief(_l,_r,8):null;   // 이 기기 → 클라우드
     const myDev=(typeof _deviceId==='function')?_deviceId():null;
     const writer=meta.devLabel?_cfEsc(meta.devLabel):(meta.dev?(meta.dev===myDev?'이 기기':'다른 기기'):'기록 없음');
     const mine=(typeof _deviceLabel==='function')?_cfEsc(_deviceLabel()):'이 기기';

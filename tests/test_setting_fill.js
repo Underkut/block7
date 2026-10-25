@@ -143,7 +143,24 @@ console.log('\n시나리오 7 — 제품별 설정 칸');
   sc.eq('⭐ Sweeter 에서 정한 0.8 을 따른다', r.merged.productSettings.sweeter.vfTextScale, 0.8);
 }
 
-// ═══ 8. B-1(기기 전용 칸) 시나리오는 HB 확인 전이라 tests/pending_b1_devonly.js 에 따로 둔다 ═══
+// ═══ 8. ⭐ B-1 — 기기 전용 칸은 충돌이 될 수 없다 ═══
+//     클라우드의 멈춘 값이 7 → 50 으로 움직였다(다른 기기의 강제 올리기). 이 기기는 제 자리 81.
+console.log('\n시나리오 8 — 기기 전용 칸');
+{
+  M.devKeys.forEach(k => {
+    const v = { verseCurrentIdx: [7, 81, 50], verseLastShownDate: ['2026-10-20', '2026-10-25', '2026-10-24'],
+                verseLastShownSec: ['2026-10-20@am', '2026-10-25@pm', '2026-10-24@night'] }[k] || [1, 2, 3];
+    const r = run({ settings: { [k]: v[0] } }, { settings: { [k]: v[1] } }, { settings: { [k]: v[2] } });
+    sc.eq(`⭐ ${M.setLabel(k)} — 충돌 아님`, ids(r), []);
+    // 클라우드에서 그 칸이 아예 없어진 경우도 (처음 올리는 계정 · 옛 백업)
+    const r2 = run({ settings: { [k]: v[0] } }, { settings: { [k]: v[1] } }, { settings: {} });
+    sc.eq(`${M.setLabel(k)} — 클라우드에서 사라져도 충돌 아님`, ids(r2), []);
+  });
+  sc.eq('⭐ 말씀 마지막 표시 구간도 기기 전용 (그 기기 말씀 자리와 짝)', M.devKeys.includes('verseLastShownSec'), true);
+  // 다른 설정은 예전처럼 충돌로 잡힌다
+  const r = run({ settings: { theme: 'dark' } }, { settings: { theme: 'light' } }, { settings: { theme: 'system' } });
+  sc.eq('기기 전용이 아닌 설정은 예전처럼 충돌', ids(r), ['settings/theme']);
+}
 
 // ═══ 9. 충돌 화면 이름 — 코드 이름이 아니라 설정창에 쓰는 이름 ═══
 console.log('\n시나리오 9 — 설정 이름표');
