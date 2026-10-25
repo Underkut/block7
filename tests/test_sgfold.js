@@ -19,7 +19,7 @@ console.log('시나리오 1 — 표의 제목은 실제 묶음 제목');
   const missing = Object.keys(_SG_FOLD).filter(k => titles.filter(t => t === k).length !== 1);
   sc.eq('표의 제목마다 묶음이 꼭 하나', missing, []);
   sc.eq('값은 phone · tablet · all 뿐 (all = 어느 기기든 처음엔 접힘, v26-1025-8)', Object.values(_SG_FOLD).every(v => v === 'phone' || v === 'tablet' || v === 'all'), true);
-  sc.eq('구글 캘린더 · 데이터 복구는 처음엔 접힘', [_SG_FOLD['구글 캘린더'], _SG_FOLD['데이터 복구']], ['all', 'all']);
+  sc.eq('구글 캘린더 · 데이터 복구 · 시리로 할일 넣기는 처음엔 접힘', [_SG_FOLD['구글 캘린더'], _SG_FOLD['데이터 복구'], _SG_FOLD['시리로 할일 넣기']], ['all', 'all', 'all']);
   const core = ['시간 구간', '말씀 알림', '지금 쓰는 모음', '모양', '다음 구절로'];
   sc.eq('탭의 본론은 접지 않는다', core.filter(k => k in _SG_FOLD), []);
 }
