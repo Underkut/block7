@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-2";
+const APP_VERSION = "v. 26-1025-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -36319,7 +36319,7 @@ async function _siriMakeKeyNow(){
     showToast('시리 주소를 만들었어요\n‘주소 복사’ 를 눌러\n단축어에 붙여 넣으세요');
   }catch(e){
     console.warn('시리 주소 만들기 실패',e);
-    _siriMsg='주소를 만들지 못했어요 — 서버가 아직 준비되지 않았거나 인터넷이 끊겼어요';
+    _siriMsg='주소를 만들지 못했어요 — 시리 서버를 아직 올리지 않았을 수 있어요 (docs/siri/setup.md 1번)';
   }finally{_siriBusy=false;_siriRenderSettings();}
 }
 // ⚠️ 복사는 누른 그 순간 동기적으로 시작해야 한다 (아이폰 홈 화면 앱)
@@ -49104,6 +49104,11 @@ window.fbPushState=function(){
 }
 
 // 트랜잭션 커밋 — 이 함수만이 users/{uid}/data/state 를 쓴다(강제 복구 제외).
+// ── 올리기 실패 진단 (v26-1025-3) ── 실패 까닭을 콘솔에만 남기던 것을 데이터 복구 화면에서 보이게.
+// 아이폰처럼 콘솔을 볼 수 없는 기기에서 '왜 안 올라가나' 를 알 길이 없었다. 동작은 바꾸지 않는다(기록만).
+// 크기: Firestore 문서 한 장은 1MiB(1,048,576 바이트)까지 — 한글은 글자당 3바이트라 글자 수로는 못 잰다.
+let _fbLastErr=null;
+function _fbBytes(str){try{return unescape(encodeURIComponent(String(str||''))).length;}catch(e){return 0;}}
 async function _fbCommit(){
   if(!_fbUser||!_fbInitLoaded)return;
   if(_fbCommitBusy){_fbCommitAgain=true;return;}
@@ -49162,7 +49167,7 @@ async function _fbCommit(){
         updatedAt:firebase.firestore.FieldValue.serverTimestamp()
       });
     });
-    ok=true;
+    ok=true;_fbLastErr=null;
     _fbSetBase(outJson,outRev,uid);
     if(seqAtWrite===_fbDirtySeq)_fbCleanSeq=_fbDirtySeq; // 도중 새 편집 없으면 클린
     if(mergedApply){
@@ -49175,6 +49180,7 @@ async function _fbCommit(){
     // 오프라인이면 트랜잭션은 즉시 실패한다(오프라인 큐에 안 들어감).
     // localStorage에는 항상 최신 ST가 있으므로 유실은 없다 — 재시도만 예약.
     console.warn('동기화 커밋 실패(재시도 예정):',(err&&err.code)||err);
+    try{_fbLastErr={code:String((err&&err.code)||''),msg:String((err&&err.message)||err||'').slice(0,200),at:Date.now(),bytes:outJson?_fbBytes(outJson):0};}catch(e){}
     _fbScheduleRetry();
   }finally{
     _fbCommitBusy=false;
@@ -49272,6 +49278,19 @@ window.inspectRecoveryDate=function(){
     <textarea readonly style="width:100%;height:110px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px;color:var(--tx);font-family:monospace;font-size:10px;box-sizing:border-box;">${fmt(rDay)}</textarea>
   `;
 }
+// 이 기기의 올리기 상태 — 못 올린 것이 있는지, 마지막 실패 까닭과 올리려던 크기
+function _fbDiagBlock(){
+  const pend=(typeof _fbCleanSeq!=='undefined')&&_fbCleanSeq!==_fbDirtySeq;
+  const e=_fbLastErr;
+  const box=`background:var(--s2);border:1px solid ${e?'var(--danger,#e5484d)':'var(--bd2)'};border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.8;margin-bottom:8px;word-break:break-word;`;
+  if(!e)return `<div style="${box}"><div style="font-weight:700;color:var(--tx);">이 기기 올리기</div>${pend?'올릴 것이 남아 있어요 · 아직 실패 기록은 없어요':'올릴 것이 없어요 · 실패 기록 없음'}</div>`;
+  const big=e.bytes>1048576||/size|exceeds|too large/i.test(e.msg);
+  return `<div style="${box}"><div style="font-weight:700;color:var(--tx);">이 기기 올리기 — 실패하고 있어요</div>
+    마지막 실패: ${_cfEsc(_dfWhen(e.at))}<br>
+    까닭: ${_cfEsc(e.code||'(코드 없음)')} — ${_cfEsc(e.msg)}<br>
+    올리려던 크기: ${e.bytes?Math.round(e.bytes/1024).toLocaleString()+' KB (한도 1,024 KB)':'(재지 못함)'}
+    ${big?'<br><b style="color:var(--danger,#e5484d);">문서가 한도(1MB)를 넘어 올라가지 못해요.</b>':''}</div>`;
+}
 window.checkDataRecovery=async function(){
   const btn=document.getElementById('dataRecoveryCheckBtn');
   const out=document.getElementById('dataRecoveryResult');
@@ -49286,7 +49305,7 @@ window.checkDataRecovery=async function(){
       if(doc.exists&&doc.data()){
         const d=doc.data();
         if(d.json)remote=JSON.parse(d.json);
-        meta={dev:d.dev,devLabel:d.devLabel,rev:d.rev,appVer:d.appVer,
+        meta={dev:d.dev,devLabel:d.devLabel,rev:d.rev,appVer:d.appVer,bytes:_fbBytes(d.json),
               at:(d.updatedAt&&typeof d.updatedAt.toMillis==='function')?d.updatedAt.toMillis():null};
       }
     }catch(e){showToast('클라우드 데이터를 불러오지 못했어요');btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
@@ -49312,8 +49331,9 @@ window.checkDataRecovery=async function(){
       <div style="background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.8;margin-bottom:8px;">
         <div style="font-weight:700;color:var(--tx);">클라우드에 마지막으로 쓴 기록</div>
         기기: ${writer}${meta.appVer?` · 앱 ${_cfEsc(meta.appVer)}`:''}${typeof meta.rev==='number'?` · 클라우드 판 ${meta.rev}`:''}<br>
-        시각: ${_cfEsc(_dfWhen(meta.at))}
+        시각: ${_cfEsc(_dfWhen(meta.at))}${meta.bytes?`<div>문서 크기: ${Math.round(meta.bytes/1024).toLocaleString()} KB (한도 1,024 KB)</div>`:''}
       </div>
+      ${_fbDiagBlock()}
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <div style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx2);line-height:1.7;">
           <div style="font-weight:700;color:var(--tx);margin-bottom:3px;">이 기기 (${mine})</div>
