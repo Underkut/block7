@@ -100,7 +100,8 @@ console.log('\n[6] 설정 — JSON 통짜가 아니라 다른 자리만');
   sc.eq('값도 사람 말로', has(L, '「목록」에서', '「카드」로 바꿨어요'), true);
   sc.eq('영문 이름표가 새어 나오지 않는다', /c2|view|list|card(?!\uFF5C)/.test(L.join('|')), false);
   sc.eq('안 달라진 c1 은 안 나온다', L.join('|').includes('말씀 카드 1번'), false);
-  sc.eq('모르는 키도 갈래는 짚는다', S.setLabel('verseWidgetTag'), '말씀 위젯 · Tag');
+  sc.eq('모르는 키도 갈래는 짚는다', S.setLabel('verseWidgetNew'), '말씀 위젯 · New');
+  sc.eq('이름표가 생긴 키는 화면 이름 (v. 26-1025-9)', S.setLabel('verseWidgetTag'), '말씀 위젯 · 태그');
   sc.eq('아는 키는 그대로', S.setLabel('layout'), '화면 배치');
 }
 
