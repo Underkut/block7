@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-8";
+const APP_VERSION = "v. 26-1025-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -47732,6 +47732,26 @@ function _mgWhole(b,l,c,baseKnown){
 // 객체의 키(날짜·구간id·설정키 등) 단위 3자 병합. 삭제 반영 규칙:
 // base에 있었는데 한쪽이 지웠고 다른 쪽은 base 그대로 → 삭제 확정.
 // 한쪽은 지우고 다른 쪽은 내용을 바꿈 → 바꾼 쪽 유지(데이터 보존 우선).
+// ── 처음값 채우기는 편집이 아니다 (v. 26-1025-9, ROADMAP B-2) ──
+// 옛 버전으로 마지막에 맞춘 기기는 기준점에 새 설정 키가 없다. 새 버전으로 켜면 _settingsDefaults(또는
+// 화면 그리기의 빈 칸 {})가 값을 채우는데, 그것을 '이 기기가 새로 만든 값' 으로 읽으면 다른 기기에서 사람이
+// 정한 값(HB: 일정 이름 길이 3)을 처음값(12)으로 덮고 충돌로 적는다. → 기준에 없던 키에서 한쪽만 처음값이면
+// 다른 쪽을 따른다. 둘 다 사람이 정한 값이면 예전 그대로(_mgWhole). 충돌 판정(_cfScanKeys)도 같은 경계.
+function _mgIsFill(k,v){
+  if(v&&typeof v==='object'&&!Object.keys(v).length)return true;
+  return typeof _settingsDefaults!=='undefined'&&Object.prototype.hasOwnProperty.call(_settingsDefaults,k)
+    &&_mgJ(v)===_mgJ(_settingsDefaults[k]);
+}
+function _mgFillSide(k,b,l,c){
+  if(b!==undefined||l===undefined||c===undefined||_mgJ(l)===_mgJ(c))return null;
+  const lf=_mgIsFill(k,l),cf=_mgIsFill(k,c);
+  return (lf&&!cf)?'c':(cf&&!lf)?'l':null;
+}
+function _mgSetting(b,l,c,baseKnown,k){
+  const f=_mgFillSide(k,b,l,c);
+  if(f)return f==='c'?c:l;
+  return _mgWhole(b,l,c,baseKnown);
+}
 function _mgContainerKeys(b,l,c,baseKnown,mergeOne){
   const out={};
   const keys=new Set([...Object.keys(l||{}),...Object.keys(c||{}),...(baseKnown?Object.keys(b||{}):[])]);
@@ -47746,7 +47766,7 @@ function _mgContainerKeys(b,l,c,baseKnown,mergeOne){
       if(baseKnown&&bv!==undefined&&_mgJ(lv)===_mgJ(bv))return; // 상대가 지움
       out[k]=lv;return;
     }
-    const v=mergeOne(bv,lv,cv);
+    const v=mergeOne(bv,lv,cv,k);
     if(v!==undefined)out[k]=v;
   });
   return out;
@@ -47984,9 +48004,9 @@ function _fbMerge(base,local,cloud,preferCloud){
             ||k==='verseKeepLog'||k==='verseThereLog'||k==='bibleReadLog')v=_mgLogFlat(bv,lv,cv,baseKnown);
     // 인앱 성경 표시 — 절마다 3자 비교. 두 기기가 서로 다른 절을 칠해도 다 산다 (v26-1006-4)
     else if(k==='bibleMarks'||k==='bibleNotes'||k==='bibleInk'||k==='bibleOrig'||k==='bibleToRead')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
-    else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>_mgWhole(b2,l2,c2,baseKnown));
+    else if(k==='settings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2,k2)=>_mgSetting(b2,l2,c2,baseKnown,k2));
     else if(k==='productSettings')v=_mgContainerKeys(bv,lv,cv,baseKnown,(b2,l2,c2)=>
-      _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3)=>_mgWhole(b3,l3,c3,baseKnown)));
+      _mgContainerKeys(b2,l2,c2,baseKnown,(b3,l3,c3,k3)=>_mgSetting(b3,l3,c3,baseKnown,k3)));
     else if(k==='verseCollections'||k==='contacts')v=_mgById(bv,lv,cv,baseKnown);
     else v=_mgWhole(bv,lv,cv,baseKnown);
     if(v!==undefined)out[k]=v;
@@ -48083,7 +48103,28 @@ const _DF_SET_LABEL={
   addInputPosition:'입력칸 위치',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
   hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
   hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
-  dviewMarkOn:'일간 표시 켜기',doneFxGlow:'완료 효과 Glow',doneFxRipple:'완료 효과 Ripple'};
+  dviewMarkOn:'일간 표시 켜기',doneFxGlow:'완료 효과 Glow',doneFxRipple:'완료 효과 Ripple',
+  // ↓ v. 26-1025-9 (ROADMAP B-2) — 충돌 화면에 코드 이름(evChipMax 등)이 그대로 보이던 것. 설정창 글자를 따른다.
+  evChipMax:'일정 이름 길이',taskOverflow:'긴 할일',moveSecPicker:'옮길 때 구간 고르기',
+  showAllBtn:'D뷰 단추 · 모든 구간(A)',showStarBtn:'D뷰 단추 · 기본 구간(★)',showExpandAllBtn:'D뷰 단추 · 모두 펴기·접기',
+  showTodoFilterBtn:'D뷰 단추 · 할일 있는 구간',showEventFilterBtn:'D뷰 단추 · 일정 있는 구간',showCompletedBtn:'D뷰 단추 · 완료한 할일',
+  showFlagFilterBtn:'D뷰 단추 · 깃발',showContactFilterBtn:'D뷰 단추 · 연락처',
+  showWMTodoBtn:'주간 · 월간 단추 · 할일',showWMEventBtn:'주간 · 월간 단추 · 일정',showWMMemBtn:'주간 · 월간 단추 · 암송',
+  verseSneakCat:'상단 말씀 한 줄 · 대분류',verseSneakTopic:'상단 말씀 한 줄 · 소주제',verseSneakRef:'상단 말씀 한 줄 · 장절',
+  verseSneakFirstWord:'상단 말씀 한 줄 · 본문',verseSneakTag:'상단 말씀 한 줄 · 태그',verseSneakStyle:'상단 말씀 한 줄 · 모양',
+  verseFullCat:'상단 말씀 펼침 · 대분류',verseFullTopic:'상단 말씀 펼침 · 소주제',verseFullRef:'상단 말씀 펼침 · 장절',verseFullTag:'상단 말씀 펼침 · 태그',
+  verseWidgetCat:'말씀 위젯 · 대분류',verseWidgetTopic:'말씀 위젯 · 소주제',verseWidgetText:'말씀 위젯 · 본문',
+  verseWidgetRef:'말씀 위젯 · 장절',verseWidgetTag:'말씀 위젯 · 태그',verseWidgetTextSize:'말씀 위젯 · 본문 글자 크기',verseWidgetRefSize:'말씀 위젯 · 장절 글자 크기',
+  verseCardCat:'말씀 카드 · 대분류',verseCardTopic:'말씀 카드 · 소주제',verseCardTag:'말씀 카드 · 태그',
+  verseCardLike:'말씀 카드 · 좋아요',verseCardMem:'말씀 카드 · 암송',verseCardDeeper:'말씀 카드 · Deeper',verseCardEven:'말씀 카드 · Even Deeper',verseCardShare:'말씀 카드 · 공유',
+  imgInclLeft:'이미지에 넣을 것 · 강조 표시',imgInclActions:'이미지에 넣을 것 · 주제, 태그',imgInclBlock7:'이미지에 넣을 것 · BLOCK7 표시',imgInclArt:'이미지에 넣을 것 · 태그 그림',
+  txtInclCat:'글로 나눌 때 · 대분류',txtInclTopic:'글로 나눌 때 · 소주제',txtInclTag:'글로 나눌 때 · 태그',
+  txtRefStyle:'장절 형식',txtRefBracket:'장절 괄호',txtRefPos:'장절 자리',
+  shareSizeMobile:'이미지 크기 · 휴대폰',shareSizePc:'이미지 크기 · PC',shareSizeSns:'이미지 크기 · SNS',
+  vgTagExcludeOn:'구절 적은 태그 감추기',vgTagExcludeMax:'구절 적은 태그 · 이 개수 이하면 감추기',
+  vgBookExcludeOn:'구절 적은 성경 감추기',vgBookExcludeMax:'구절 적은 성경 · 이 개수 이하면 감추기',
+  dviewMarkLike:'일간 표시 · 좋아요',dviewMarkMem:'일간 표시 · 암송',dviewMarkDeeper:'일간 표시 · Deeper',dviewMarkEven:'일간 표시 · Even Deeper',
+  collFilters:'말씀 모음 필터',bibleHistHide:'성경 기록 숨김',vListPrefs:'목록 보기 방식',versePush:'말씀 알림(푸시)',versePushPool:'말씀 알림 목록'};
 function _dfSetLabel(k){
   k=String(k==null?'':k);
   if(_DF_SET_LABEL[k])return _DF_SET_LABEL[k];
@@ -48490,6 +48531,8 @@ function _cfScanKeys(type,prefix,b,l,c,out,opts,labelOf){
     const bv=(b||{})[k],lv=(l||{})[k],cv=(c||{})[k];
     if(!_cfDiffer(lv,cv))return;
     if(bv===undefined){
+      // 처음값으로 채운 쪽은 만든 것이 아니다 — 병합이 다른 쪽을 따른다 (_mgFillSide, B-2)
+      if(type==='setting'&&typeof _mgFillSide==='function'&&_mgFillSide(k,bv,lv,cv))return;
       // 기준에 없던 것을 양쪽이 서로 다르게 새로 만들었다
       if(lv!==undefined&&cv!==undefined)
         out.push(_cfMake(type,prefix+k,null,null,lv,cv,labelOf?labelOf(k):k,opts));
