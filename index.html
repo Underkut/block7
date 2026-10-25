@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-6  [production]  -->
+<!-- BLOCK7  v. 26-1025-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-6";
+const APP_VERSION = "v. 26-1025-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -36151,8 +36151,11 @@ function _prayTodoPlace(items,secIds,parse){
   }).filter(Boolean);
 }
 let _prayTodoUnsub=null,_prayTodoBusy=false,_prayTodoReady=()=>false;
+// 마지막 받기 기록 (v26-1025-7) — 데이터 복구 화면 '쪽지함' 칸이 보여 준다. 콘솔이 없는 아이폰에서 '왜 안 들어왔나' 를 보려고.
+let _prayTodoLast=null;
 async function _prayTodoPull(){
-  if(_prayTodoBusy||DEV_MODE||APP_PRODUCT!=='block7'||!_prayTodoReady())return 0;
+  if(_prayTodoBusy||DEV_MODE||APP_PRODUCT!=='block7')return 0;
+  if(!_prayTodoReady()){_prayTodoLast={at:Date.now(),skip:'첫 클라우드 읽기 전이라 건너뜀'};return 0;}
   const uid=_prayUid();if(!uid)return 0;
   _prayTodoBusy=true;
   try{
@@ -36164,6 +36167,7 @@ async function _prayTodoPull(){
       return it;
     });
     const put=_prayTodoPlace(items,SECS.map(s=>s.id),_siriPlace);
+    _prayTodoLast={at:Date.now(),got:items.length,put:put.map(p=>p.date+' · '+p.sec+' · '+p.text).slice(0,5)};
     if(!put.length)return 0;
     beforeSave();
     put.forEach(p=>getBigs(p.date,p.sec).push({text:p.text,done:false}));
@@ -36172,7 +36176,7 @@ async function _prayTodoPull(){
     try{const ae=document.activeElement;if(!(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'))){const v=currentViewKey();if(v==='weekly')renderWeekly();else if(v==='monthly')renderMonthly();else{renderToday();refreshTaskViewsLive();}}}catch(e){}
     showToast(_todoInboxToast(put,todayKey(),id=>(SECS.find(s=>s.id===id)||{}).name||''));
     return put.length;
-  }catch(e){console.warn('기도노트 할일 받기 실패',e);return 0;}
+  }catch(e){console.warn('기도노트 할일 받기 실패',e);_prayTodoLast={at:Date.now(),err:String((e&&(e.code||e.message))||e)};return 0;}
   finally{_prayTodoBusy=false;}
 }
 // 열려 있는 동안 쪽지가 오면 바로 받는다 (쪽지함 하나만 지켜본다 — 읽기 한 번 값)
@@ -36184,7 +36188,7 @@ function _prayTodoWatch(ready){
   try{
     _prayTodoUnsub=_prayDb().doc('pray/'+uid+'/c/b7inbox').onSnapshot(d=>{
       if(d.exists&&(d.data().items||[]).length)_prayTodoPull();
-    },()=>{});
+    },e=>{_prayTodoLast={at:Date.now(),err:'지켜보기 실패: '+String((e&&e.code)||e)};});
   }catch(e){}
 }
 // ═══════ 기도노트 → 할일 받기 끝 ═══════
@@ -49339,6 +49343,19 @@ function _fbSizeBlock(local){
     <div style="font-weight:700;color:var(--tx);">이 기기 자료 — 큰 것부터</div>
     ${rows.map(r=>`<div style="display:flex;gap:8px;"><span style="flex:1;white-space:pre-wrap;">${_cfEsc(r.k)}</span><span>${Math.round(r.b/1024).toLocaleString()} KB</span></div>`).join('')}</div>`;
 }
+// 쪽지함 칸 — 기다리는 쪽지 · 지켜보기 · 마지막 받기 · [지금 받기]
+function _inboxDiagBlock(inbox){
+  const box='background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.8;margin-bottom:8px;word-break:break-word;';
+  const w=t=>{try{return _dfWhen(t);}catch(e){return '';}};
+  const L=(typeof _prayTodoLast!=='undefined')?_prayTodoLast:null;
+  const items=(inbox&&inbox.items)||[];
+  const wait=!inbox?'':inbox.err?`읽지 못함 — ${_cfEsc(inbox.err)}`:`기다리는 쪽지 ${items.length}개`+items.slice(0,5).map(n=>`<div style="margin-left:8px;">· ${_cfEsc((n&&n.from==='siri'?'시리':'기도노트')+' — '+((n&&(n.say||n.text))||''))}</div>`).join('');
+  const last=!L?'아직 받은 적 없음 (이번에 연 뒤로)':L.err?`실패 — ${_cfEsc(L.err)}`:L.skip?_cfEsc(L.skip):`꺼낸 ${L.got}개 · 넣은 ${L.put.length}개`+L.put.map(t=>`<div style="margin-left:8px;">→ ${_cfEsc(t)}</div>`).join('');
+  return `<div style="${box}"><div style="font-weight:700;color:var(--tx);">쪽지함 (시리 · 기도노트 → 할일)</div>
+    ${wait}<div>지켜보기: ${(typeof _prayTodoUnsub!=='undefined'&&_prayTodoUnsub)?'켜짐':'꺼짐'}</div>
+    <div>마지막 받기${L?' ('+_cfEsc(w(L.at))+')':''}: ${last}</div>
+    <button class="settings-btn" style="width:100%;margin-top:6px;" onclick="_prayTodoPull().then(n=>{showToast(n?('할일 '+n+'개를 넣었어요'):'넣은 것이 없어요');try{checkDataRecovery();}catch(e){}})">쪽지함에서 지금 받기</button></div>`;
+}
 // 이 기기의 올리기 상태 — 못 올린 것이 있는지, 마지막 실패 까닭과 올리려던 크기
 function _fbDiagBlock(){
   const pend=(typeof _fbCleanSeq!=='undefined')&&_fbCleanSeq!==_fbDirtySeq;
@@ -49371,6 +49388,10 @@ window.checkDataRecovery=async function(){
               at:(d.updatedAt&&typeof d.updatedAt.toMillis==='function')?d.updatedAt.toMillis():null};
       }
     }catch(e){showToast('클라우드 데이터를 불러오지 못했어요');btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
+    // 쪽지함 (시리 · 기도노트 → 할일) — 기다리는 쪽지 · 마지막 받기 (v26-1025-7)
+    let inbox=null;
+    try{const ib=await _prayDb().doc('pray/'+window._fbUser.uid+'/c/b7inbox').get();inbox={items:ib.exists?(ib.data().items||[]):[]};}
+    catch(e){inbox={err:String((e&&e.code)||e)};}
     const ls=_recoverySummary(local),rs=_recoverySummary(remote);
     window._recoveryLocal=local;window._recoveryRemote=remote; // 날짜별 원본 조회용으로 보관
     if(!ls&&!rs){out.style.display='block';out.innerHTML='<div style="font-size:12px;color:var(--tx3);">비교할 데이터가 없어요.</div>';btn.disabled=false;btn.textContent='로컬 ↔ 클라우드 비교하기';return;}
@@ -49396,6 +49417,7 @@ window.checkDataRecovery=async function(){
         시각: ${_cfEsc(_dfWhen(meta.at))}${meta.bytes?`<div>문서 크기: ${Math.round(meta.bytes/1024).toLocaleString()} KB (한도 1,024 KB)${meta.raw?` · 압축됨 (풀면 ${Math.round(meta.raw/1024).toLocaleString()} KB)`:''}</div>`:''}
       </div>
       ${_fbDiagBlock()}
+      ${_inboxDiagBlock(inbox)}
       ${_fbSizeBlock(local)}
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <div style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx2);line-height:1.7;">
