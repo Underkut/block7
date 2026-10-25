@@ -83,7 +83,8 @@ async function until(fn, ms = 15000) { const t = Date.now(); while (Date.now() -
   console.log('③ B 가 고친다');
   await B.page.evaluate(d => { beforeSave(); getBigs(d, 'am').push({ text: 'B 가 넣은 할일', done: false }); save(); }, D);
   const c3 = await until(async () => { const c = await cloud(); return c.st.days[D].big.am.length === 3 ? c : null; });
-  ok('③ 풀어 합친 뒤 올린다 (이 단계는 json)', !!c3 && !c3.d.jz && typeof c3.d.json === 'string', c3 && Object.keys(c3.d));
+  // 1단계(v. 26-1025-5)에서는 json 으로, 3단계(v. 26-1025-6)부터는 jz 로 올린다
+  ok('③ 풀어 합친 뒤 올린다 (지금은 jz)', !!c3 && !!c3.d.jz && !('json' in c3.d), c3 && Object.keys(c3.d));
   const a3 = await until(async () => { const t = await texts(A.page, D, 'am'); return t.length === 3 ? t : null; });
   ok('③ A 도 받는다', !!a3, a3);
 

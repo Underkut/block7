@@ -6,7 +6,7 @@
 const { SRC, slice, makeScorer } = require('./_load');
 const sc = makeScorer();
 const C = slice('async function _fbCommit(){', 'function _fbScheduleRetry(){');
-sc.eq('① 실패 → 기록 + 재시도 예약 그대로', /_fbLastErr=\{code:[\s\S]*bytes:outJson\?_fbBytes\(outJson\):0\};\}catch\(e\)\{\}\s*_fbScheduleRetry\(\);/.test(C), true);
+sc.eq('① 실패 → 기록 + 재시도 예약 그대로', /_fbLastErr=\{code:[\s\S]*bytes:outZBytes\|\|\(outJson\?_fbBytes\(outJson\):0\),raw:[^}]*\};\}catch\(e\)\{\}\s*_fbScheduleRetry\(\);/.test(C), true);
 sc.eq('① 성공 → 기록 지움', /ok=true;_fbLastErr=null;/.test(C), true);
 const B = new Function(slice('let _fbLastErr=null;', 'async function _fbCommit(){') + '; return _fbBytes;')();
 sc.eq('② 바이트 — 영문 1 · 한글 3', [B('ab'), B('가나'), B(''), B(null)], [2, 6, 0, 0]);

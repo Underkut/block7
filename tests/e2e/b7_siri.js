@@ -30,7 +30,7 @@ async function until(fn, ms = 15000) { const t = Date.now(); while (Date.now() -
 async function inboxLen(uid) { const d = await get('pray/' + uid + '/c/b7inbox'); return ((d.fields && d.fields.items && d.fields.items.arrayValue.values) || []).length; }
 async function cloudTexts(uid, date, sec) {
   const d = await get('users/' + uid + '/data/state'); if (!d.fields) return null;
-  const st = JSON.parse(d.fields.json.stringValue); const day = (st.days || {})[date] || {};
+  const st = JSON.parse((d.fields.jz ? require('zlib').inflateRawSync(Buffer.from(d.fields.jz.bytesValue, 'base64')).toString() : d.fields.json.stringValue)); const day = (st.days || {})[date] || {};
   return ((day.big || {})[sec] || []).map(b => b.text);
 }
 // 한국 날짜 + n일
