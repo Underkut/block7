@@ -42,8 +42,8 @@ HB: 아이폰에서 한 할일이 맥 · 패드로 안 간다. 진단(v. 26-1025
 | D-2 | 무엇이 큰지 — '이 기기 자료 — 큰 것부터' 표 (`_fbSizeRows`) | ✅ v. 26-1025-4 · ⏳ HB 캡처 |
 | D-3 | 표: 말씀 모음 747 KB(TLC 설교명제 395 · TLC 말씀구절 283 · HB 69) · days 117 · settings 69(versePushPool 53) → **압축**으로 결정(HB "권하는 순서로") | ✅ 2026-10-25 |
 | Z-1 | 읽기: 앱 · 기도노트 · 새 알림 서버가 `{json}` · `{jz}` 둘 다 읽는다. 쓰기는 예전 그대로 | ✅ v. 26-1025-5 · `test_fbzip` 17 · e2e `b7_fbzip` 12 |
-| Z-2 | HB: 옛 말씀 예약 일시중지 → 서버 올리기 (`docs/push/setup.md` 1 · 2) | ⏳ HB 차례 |
-| Z-3 | 쓰기: 올리기 · 강제 쓰기 · 자동 백업을 `jz` 로 (json 은 안 씀) → 아이폰이 풀린다 | 준비됨 v. 26-1025-6 · `test_fbzip` 22 · e2e `b7_fbzip_write` 11 (풀면 1,036 KB → 225 KB) · ⏳ Z-2 뒤 병합 |
+| Z-2 | HB: 옛 말씀 예약 일시중지 → 서버 올리기 (`docs/push/setup.md` 1 · 2) | ✅ 2026-10-25 HB (일시중지는 그 전에 · 서버 올림 성공) |
+| Z-3 | 쓰기: 올리기 · 강제 쓰기 · 자동 백업을 `jz` 로 (json 은 안 씀) → 아이폰이 풀린다 | ✅ v. 26-1025-6 · `test_fbzip` 22 · e2e `b7_fbzip_write` 11 (풀면 1,036 KB → 225 KB) · ⏳ HB 아이폰 확인 |
 
 - 압축 모양: `jz` = UTF-8 JSON 을 raw DEFLATE 한 **바이트**(base64 아님 — 33% 손해). 앱은 fflate(`<script id="fflate">`, 동기),
   서버는 zlib, 기도노트는 DecompressionStream. 한글 말씀으로 재어 4배 넘게 준다(1,046 KB → 250 KB 안팎) · 내려받기 요금도 그만큼 준다(P-5).
@@ -66,7 +66,7 @@ HB: 아이폰 시리에게 말해서 BLOCK7 에 할일이 들어가게. 말하�
 | Q-0 | 길 고르기 — (가) 주소로 열기 / (나) 우체통. HB 가 (나) | ✅ 2026-10-25 |
 | Q-1 | 앱: 말 풀기(`_siriParse`) · 쪽지함 받기에 잇기 · 토스트 · 설정 → 계정 '시리로 할일 넣기'(주소 만들기 · 복사 · 단축어 만드는 법) | ✅ v. 26-1025-2 · `tests/test_siri.js` 66 |
 | Q-2 | 서버 `b7siri`(`wallet-functions/`, 묶음 wallet): 주소 만들기 `/key`(로그인 토큰) · 받기(주소 열쇠 + 말) → 쪽지함에 한 줄 | ✅ 코드 v. 26-1025-2 · `tests/test_b7siri.js` 33 · 끝까지 `tests/e2e/b7_siri.js` 16(에뮬레이터 · 기기 셋) |
-| Q-3 | HB: 서버 올리기(**P-4 차례 그대로** — 옛 말씀 예약 일시중지 먼저) → 설정에서 주소 복사 → 단축어 만들기 → 말해 보기 | ⏳ HB 차례 — `docs/siri/setup.md` |
+| Q-3 | HB: 서버 올리기(**P-4 차례 그대로** — 옛 말씀 예약 일시중지 먼저) → 설정에서 주소 복사 → 단축어 만들기 → 말해 보기 | 서버 ✅ 2026-10-25 · ⏳ HB 주소 · 단축어 — `docs/siri/setup.md` |
 
 **정해 둔 것과 하지 말 것**
 - 시리는 앱스토어 앱하고만 바로 말한다 → 아이폰 '단축어' 가 서버로 보낸다. (가) 주소로 열기는 아이폰이 **사파리**로 열어
@@ -96,7 +96,7 @@ Sweeter 말씀 알림도 같이 쓰고 싶다. → 셋을 **요금 낭비 없이
 | P-2 | 새 알림 서버 `b7push` — `wallet-functions/`(Node 22)에 얹음 · '예약표'(`b7plan`) · 말씀(간격·시각) + 할일(하루 요약·구간 시작) · 1분 틱은 `studyTick` 에 | ✅ 코드 v. 26-1024-13 · `tests/test_b7push.js` 72 (앱 함수와 120 경우 나란히) |
 | P-3 | Sweeter 말씀 알림 **(가) 두 앱이 설정을 따로** — `versePush`·`versePushPool` 을 `_PRODUCT_SCOPED` 로(`versePush` 는 `_PS_OWN`: 물려받지 않음) · 기기 등록에 `product` · 서비스워커가 제 주소로 엶 | ✅ v. 26-1024-13 · `test_prodsettings` 9 · `test_notif_sw` 9 |
 | P-5 | **진짜 요금** — 앱이 상태 문서 전체를 너무 자주 내려받는 것 줄이기 (데이터 계층, 시험 먼저) | 조사 ✅ · **지금은 안 고친다**(아래 'P-5 조사') · 예산 알림으로 지켜봄 |
-| P-4 | HB: 옛 말씀 예약 **일시중지** → `firebase deploy --only functions:wallet` → 시험 · 며칠 뒤 옛 서버 지우기 | ⏳ HB 차례 — `docs/push/setup.md` |
+| P-4 | HB: 옛 말씀 예약 **일시중지** → `firebase deploy --only functions:wallet` → 시험 · 며칠 뒤 옛 서버 지우기 | 일시중지 ✅ · 서버 올림 ✅ 2026-10-25 · ⏳ 시험(`docs/push/setup.md` 3) · 며칠 뒤 옛 서버 지우기(4) |
 
 **고쳐 쓴 것 (P-1, HB 결제 화면 2026-10-24) — 아래 P-0 의 '요금 뿌리' 짐작은 틀렸다**
 - 90일 합 ₩3,841 중 **₩3,202 = Cloud Firestore Internet Data Transfer Out**(47.5 GiB) · ₩639 = Firestore 읽기(567만 번).
