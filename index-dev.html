@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-10";
+const APP_VERSION = "v. 26-1025-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6584,10 +6584,10 @@ const _PS_OWN=['versePush'];
 const _DEVICE_SCOPED=[
   'verseCurrentIdx',      // 지금 보고 있는 말씀 — 맥에서 넘긴 것이 아이폰을 따라다니면 안 된다
   'verseLastShownDate',   // 오늘 말씀을 이미 보여줬는가 — 기기마다 다르다
-  'verseLastShownSec'     // 이 구간 말씀으로 이미 넘겼는가 — 위 둘과 짝 (v. 26-1025-10, ROADMAP B-1).
+  'verseLastShownSec'     // 이 구간 말씀으로 이미 넘겼는가 — 위 둘과 짝 (v. 26-1025-11, ROADMAP B-1).
                           //   공유하면 다른 기기가 찍은 도장 때문에 이 기기 말씀이 그 구간에 안 넘어간다.
 ];
-// 기기 전용 칸을 뺀 모양 — 충돌 판정 · 비교 화면이 견주지 않게 (v. 26-1025-10, ROADMAP B-1).
+// 기기 전용 칸을 뺀 모양 — 충돌 판정 · 비교 화면이 견주지 않게 (v. 26-1025-11, ROADMAP B-1).
 // ⚠️ 이 칸들은 클라우드에 멈춘 옛 값이 남아 있어 이 기기 값과 늘 다르다. 견주면 가짜 충돌·가짜 차이가 뜬다.
 function _dsStrip(state){
   if(!state||!state.settings)return state;
@@ -26012,7 +26012,7 @@ function _rpMonthGridHTML(y,m,fixedH){
   const wmMode=ST.settings.wmViewMode||'todo';
   // fixedH가 있으면 그리드 전체 높이를 고정하고 날짜 행들이 균등하게 늘어난다
   const rows=Math.ceil((fd+dim)/7);
-  const sizedStyle=fixedH?` style="height:${fixedH}px;grid-template-rows:auto repeat(${rows},1fr);"`:'';
+  const sizedStyle=fixedH?` style="height:${fixedH}px;grid-template-rows:auto repeat(${rows},minmax(0,1fr));"`:'';
   // 본 M뷰와 동일한 "오늘 주간 기준" 테두리 색: 같은 주=mct/mct-2,
   // 이전/이후 주로 갈수록 mcc-grey-0..4로 흐려진다.
   const todayWeekStart=new Date(today);todayWeekStart.setDate(today.getDate()-today.getDay());
@@ -26022,7 +26022,7 @@ function _rpMonthGridHTML(y,m,fixedH){
     return Math.round((c-todayWeekStart)/(7*86400000));
   };
   const weekFadeClass=diff=>diff===0?null:` mcc-grey-${Math.min(Math.abs(diff)-1,4)}`;
-  let h=`<div class="rp-mcg mcg"${sizedStyle}>${DOW.map((d,i)=>`<div class="mcdow${i===0&&ST.settings.sundayRed!==false?' sun-red':''}">${d}</div>`).join('')}${Array(fd).fill('<div class="mcc empty"></div>').join('')}`;
+  let h=`<div class="rp-mcg mcg${fixedH?' mcg-fixed':''}"${sizedStyle}>${DOW.map((d,i)=>`<div class="mcdow${i===0&&ST.settings.sundayRed!==false?' sun-red':''}">${d}</div>`).join('')}${Array(fd).fill('<div class="mcc empty"></div>').join('')}`;
   let _mLanes=null;   // 여러 날 일정의 띠 자리 (일정 모드에서만 만든다)
   for(let d=1;d<=dim;d++){
     const cellDate=new Date(y,m,d);
@@ -26121,7 +26121,7 @@ function _rpAttachVResize(host){
         const h0=grids[0].getBoundingClientRect().height;
         mv=y=>{
           const nh=Math.max(200,Math.min(h0+(y-y0)/perGrid,700));
-          grids.forEach(g=>{g.style.height=nh+'px';});
+          grids.forEach(g=>{g.style.height=nh+'px';g.classList.add('mcg-fixed');g.style.gridTemplateRows=`auto repeat(${Math.ceil(g.querySelectorAll('.mcc').length/7)},minmax(0,1fr))`;_mFitCells(g);});
           return nh;
         };
         commit=px=>_rpSetMGridH(type,px);
@@ -33119,6 +33119,7 @@ function renderLayout(){
   _attachVliMenus(pc);
   _rpAttachHeaderDrag(pc);
   _rpAttachVResize(pc);
+  pc.querySelectorAll('.rp-mcg.mcg-fixed').forEach(_mFitCells);   // 위젯 월간뷰도 넘치는 줄은 아래부터 가림
   _attachWeeklyPaneDrag();
   // 말씀카드: 제스처를 붙이고 본문을 컨테이너 폭에 맞춰 앉힌다.
   // 폭은 붙인 다음에야 잴 수 있으므로 반드시 여기(마지막)에서 한다.
@@ -43247,18 +43248,20 @@ let _monthlySwipeAttached=false;
 // 화면 크기가 기기마다 달라 이 기기에만 기억한다 (_lsk).
 function _mGridH(){try{const v=Number(localStorage.getItem(_lsk('mGridH')));return v>0?v:null;}catch(e){return null;}}
 function _mGridSetH(v){try{if(v)localStorage.setItem(_lsk('mGridH'),String(Math.round(v)));else localStorage.removeItem(_lsk('mGridH'));}catch(e){}}
+// 고정 높이 칸에서 다 못 들어가는 줄을 아래부터 감춘다 — M뷰 본체와 2/3단 월간 위젯이 함께 쓴다.
+function _mFitCells(g){
+  const fixed=g.classList.contains('mcg-fixed');
+  g.querySelectorAll('.mcc').forEach(c=>{
+    const kids=[...c.children].filter(x=>!x.classList.contains('mcd'));
+    if(!fixed){kids.forEach(x=>{x.style.visibility='';});return;}
+    const lim=c.getBoundingClientRect().bottom-4;
+    kids.forEach(x=>{x.style.visibility=(x.getBoundingClientRect().bottom<=lim)?'':'hidden';});
+  });
+}
 function _mGridApplyH(rows){
   const g=document.getElementById('mGridArea'),grip=document.getElementById('mGrip');if(!g)return;
   // 줄인 칸에서 다 못 들어가는 줄은 반쯤 잘려 보이지 않게 통째로 감춘다 (아래 줄부터)
-  const fit=()=>{
-    const fixed=g.classList.contains('mcg-fixed');
-    g.querySelectorAll('.mcc').forEach(c=>{
-      const kids=[...c.children].filter(x=>!x.classList.contains('mcd'));
-      if(!fixed){kids.forEach(x=>{x.style.visibility='';});return;}
-      const lim=c.getBoundingClientRect().bottom-4;
-      kids.forEach(x=>{x.style.visibility=(x.getBoundingClientRect().bottom<=lim)?'':'hidden';});
-    });
-  };
+  const fit=()=>_mFitCells(g);
   const put=H=>{
     if(H){g.classList.add('mcg-fixed');g.style.height=H+'px';g.style.gridTemplateRows=`auto repeat(${rows},minmax(0,1fr))`;}
     else{g.classList.remove('mcg-fixed');g.style.height='';g.style.gridTemplateRows='';}
