@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-3  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1025-4  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6553,7 +6553,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-3";
+const APP_VERSION = "v. 26-1025-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -49278,6 +49278,33 @@ window.inspectRecoveryDate=function(){
     <textarea readonly style="width:100%;height:110px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px;color:var(--tx);font-family:monospace;font-size:10px;box-sizing:border-box;">${fmt(rDay)}</textarea>
   `;
 }
+// 무엇이 자리를 차지하나 (v26-1025-4) — 큰 칸부터. 말씀 모음은 모음마다, 설정은 큰 항목만 한 단계 더 연다.
+function _fbSizeRows(obj){
+  const rows=[];if(!obj||typeof obj!=='object')return rows;
+  const kb=v=>_fbBytes(JSON.stringify(v===undefined?null:v));
+  Object.keys(obj).forEach(k=>rows.push({k,b:kb(obj[k])}));
+  rows.sort((a,b)=>b.b-a.b);
+  const out=rows.slice(0,10);
+  (Array.isArray(obj.verseCollections)?obj.verseCollections:[]).forEach(c=>{
+    if(!c||typeof c!=='object')return;
+    const sub=Object.keys(c).map(k=>({k,b:kb(c[k])})).sort((a,b)=>b.b-a.b).slice(0,3).map(r=>r.k+' '+Math.round(r.b/1024)+'KB').join(', ');
+    out.push({k:'  모음 「'+(c.name||c.id||'?')+'」 ('+sub+')',b:kb(c)});
+  });
+  if(obj.settings&&typeof obj.settings==='object'){
+    Object.keys(obj.settings).map(k=>({k:'  settings.'+k,b:kb(obj.settings[k])})).sort((a,b)=>b.b-a.b).slice(0,5).forEach(r=>out.push(r));
+  }
+  if(obj.days&&typeof obj.days==='object'){
+    let tr=0;Object.values(obj.days).forEach(d=>{if(d&&d.trash)tr+=kb(d.trash);});
+    out.push({k:'  days 안 휴지통(trash)',b:tr});
+  }
+  return out;
+}
+function _fbSizeBlock(local){
+  const rows=_fbSizeRows(local);if(!rows.length)return '';
+  return `<div style="background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:9px 11px;font-size:11px;color:var(--tx2);line-height:1.7;margin-bottom:8px;word-break:break-word;">
+    <div style="font-weight:700;color:var(--tx);">이 기기 자료 — 큰 것부터</div>
+    ${rows.map(r=>`<div style="display:flex;gap:8px;"><span style="flex:1;white-space:pre-wrap;">${_cfEsc(r.k)}</span><span>${Math.round(r.b/1024).toLocaleString()} KB</span></div>`).join('')}</div>`;
+}
 // 이 기기의 올리기 상태 — 못 올린 것이 있는지, 마지막 실패 까닭과 올리려던 크기
 function _fbDiagBlock(){
   const pend=(typeof _fbCleanSeq!=='undefined')&&_fbCleanSeq!==_fbDirtySeq;
@@ -49334,6 +49361,7 @@ window.checkDataRecovery=async function(){
         시각: ${_cfEsc(_dfWhen(meta.at))}${meta.bytes?`<div>문서 크기: ${Math.round(meta.bytes/1024).toLocaleString()} KB (한도 1,024 KB)</div>`:''}
       </div>
       ${_fbDiagBlock()}
+      ${_fbSizeBlock(local)}
       <div style="display:flex;gap:8px;margin-bottom:8px;">
         <div style="flex:1;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--tx2);line-height:1.7;">
           <div style="font-weight:700;color:var(--tx);margin-bottom:3px;">이 기기 (${mine})</div>
