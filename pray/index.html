@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1025-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1025-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1025-1';
+const APP_VERSION = 'v. 26-1025-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4129,12 +4129,20 @@ function b7Load(force) {
     try {
       await fbLoad(); const uid = SY.user.uid;
       const r = await Promise.all([FB.db.doc('users/' + uid + '/data/state').get(), FB.db.doc('pray/' + uid + '/c/b7inbox').get()]);
-      let st = {}; if (r[0].exists) { try { st = JSON.parse((r[0].data() || {}).json || '{}') || {}; } catch (e) { st = {}; } }
+      let st = {}; if (r[0].exists) { try { st = JSON.parse(await b7DocJson(r[0].data() || {}) || '{}') || {}; } catch (e) { st = {}; } }
       B7.st = st; B7.pend = r[1].exists ? (r[1].data().items || []) : []; B7.uid = uid; B7.at = Date.now();
       return { ok: 1 };
     } catch (e) { return { err: fbErr(e) }; } finally { B7.load = null; }
   })();
   return B7.load;
+}
+// BLOCK7 상태 문서 — 예전 { json } · 압축 { jz } 둘 다 읽는다 (BLOCK7 v26-1025-5 · ROADMAP '클라우드 문서 1MB 한도')
+async function b7DocJson(d) {
+  if (d && d.jz != null) {
+    const u8 = typeof d.jz.toUint8Array === 'function' ? d.jz.toUint8Array() : d.jz;
+    return await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+  }
+  return (d && d.json) || '';
 }
 function b7L() { return UI.layers.find(x => x.type === 'b7todo'); }
 function b7Paint() { const k = UI.layers.findIndex(x => x.type === 'b7todo'); if (k < 0) return; const el = liveLayerEls()[k]; if (el) fillLayer(el, UI.layers[k]); }

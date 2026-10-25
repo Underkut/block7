@@ -169,7 +169,7 @@ console.log('\n시나리오 6 — 소스 확인');
   const direct=(SRC.match(/localStorage\.setItem\(LS_KEY,/g)||[]).length;
   sc.eq('ST 를 직접 적는 곳은 _lsPutST 안 한 곳뿐', direct, 1);
   sc.eq('rawSave 가 _lsPutST 를 부른다', /function rawSave\(\)\{[\s\S]{0,200}_lsPutST\(\);/.test(SRC), true);
-  sc.eq('부팅 — 기준점을 적은 뒤에 ST 를 적는다', /_fbSetBase\(data\.json,cloudRev,user\.uid\);\s*_lsPutST\(\);/.test(SRC), true);
+  sc.eq('부팅 — 기준점을 적은 뒤에 ST 를 적는다', /_fbSetBase\(initJson,cloudRev,user\.uid\);\s*_lsPutST\(\);/.test(SRC), true);
   sc.eq('부팅 병합의 갈림길이 시험과 같다', /if\(persisted&&persisted\.json!==JSON\.stringify\(ST\)\)\{/.test(SRC), true);
   sc.eq('원격 반영도 _lsPutST', /applyRemoteState\(stateObj\);\s*_lsPutST\(\);/.test(SRC), true);
   sc.eq('기준점 메타에 시각', /JSON\.stringify\(\{rev:_fbLastSeenRev,uid:[^}]*,at:Date\.now\(\)\}\)/.test(SRC), true);

@@ -114,7 +114,7 @@ console.log('시나리오 1 — 빈 기기는 "통째로 받는" 길로 간다')
   sc.eq('소스의 갈림길이 그대로인가',
         SRC.includes('if(persisted&&persisted.json!==JSON.stringify(ST)){'), true);
   sc.eq('아니면 통째로 받는다',
-        SRC.includes('applyRemoteState(JSON.parse(data.json));'), true);
+        SRC.includes('applyRemoteState(JSON.parse(initJson));'), true);
 }
 
 // ═══ 2. 통째로 받으면 무엇이 남는가 ═══

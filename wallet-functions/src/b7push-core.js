@@ -61,9 +61,13 @@ function logicalKey(M, dsh) {
 }
 
 // ── 상태 읽기 ──
+// 상태 문서는 두 모양 — 예전 { json } · 압축 { jz: 바이트(UTF-8 JSON 을 raw DEFLATE) } (앱 v26-1025-5, ROADMAP '클라우드 문서 1MB 한도')
 function parseState(raw) {
   if (!raw) return null;
-  try { return raw.json ? JSON.parse(raw.json) : raw; } catch (e) { return null; }
+  try {
+    if (raw.jz != null) return JSON.parse(require("zlib").inflateRawSync(Buffer.from(raw.jz)).toString("utf8"));
+    return raw.json ? JSON.parse(raw.json) : raw;
+  } catch (e) { return null; }
 }
 function versePushOf(st, product) {
   const s = (st && st.settings) || {};
