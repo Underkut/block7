@@ -66,4 +66,18 @@ console.log('\n시나리오 4 — 배선 · 움직임');
   sc.eq('값이 바뀌면 요약도', SRC.includes("p.addEventListener('click',later);p.addEventListener('change',later);"), true);
 }
 
+console.log('\n시나리오 5 — 접힌 제목 왼쪽 끝 아이콘 (v26-1025-14)');
+{
+  const icSrc = slice('const _SG_FOLD_IC={', '};') + '};';
+  const IC = new Function(icSrc.replace('const _SG_FOLD_IC=', 'return ').replace(/;\s*$/, ''))();
+  sc.eq('접는 묶음마다 아이콘이 꼭 하나 (빠진 것 없음)', Object.keys(_SG_FOLD).filter(k => !IC[k]), []);
+  sc.eq('표에 없는 제목의 아이콘은 없다', Object.keys(IC).filter(k => !(k in _SG_FOLD)), []);
+  sc.eq('그림은 path · rect · circle 뿐 (따옴표 깨짐 없음)', Object.values(IC).every(v => /^(<(path|rect|circle)\b[^<>']*\/>)+$/.test(v)), true);
+  const init = slice('function _sgFoldInit(){', 'function sgGroupToggle');
+  sc.eq('제목 줄 맨 앞에 넣는다', init.includes("h.insertAdjacentHTML('afterbegin','<svg class=\"sg-fic\""), true);
+  sc.eq('제목 읽기는 svg 를 건너뛴다 (기억 열쇠가 안 바뀐다)', slice('function _sgTitle(g){', 'function _sgFoldMem').includes('svg'), true);
+  sc.eq('펴면 폭이 줄며 사라진다', SRC.includes('.sg-foldable.open>.sg-h .sg-fic{width:0;margin-right:-12px;opacity:0;}'), true);
+  sc.eq('움직임 줄이기면 끈다', /prefers-reduced-motion:reduce\)\{[^}]*\.sg-foldable \.sg-fic\{transition:none;\}/.test(SRC), true);
+}
+
 sc.done();
