@@ -18,7 +18,7 @@ const big = mk({ code: 'invalid-argument', msg: 'Document exceeds maximum size',
 sc.eq('② 1MiB 넘음 → 한도를 넘었다고', [/실패하고 있어요/.test(big), /invalid-argument/.test(big), /1,074 KB/.test(big), /한도\(1MB\)를 넘어/.test(big)], [true, true, true, true]);
 sc.eq('② 다른 까닭이면 한도 말은 없음', /한도\(1MB\)를 넘어/.test(mk({ code: 'permission-denied', msg: 'x', at: 1, bytes: 5000 }, 1, 2)), false);
 const R = slice('window.checkDataRecovery=async function(){', '<button class="settings-btn" style="width:100%;background:var(--ac)');
-sc.eq('③ 비교 화면에 문서 크기 · 올리기 상태', [/bytes:_fbBytes\(d\.json\)/.test(R), /문서 크기:/.test(R), /\$\{_fbDiagBlock\(\)\}/.test(R)], [true, true, true]);
+sc.eq('③ 비교 화면에 문서 크기 · 올리기 상태', [/bytes:_fbDocBytes\(d\)/.test(R), /문서 크기:/.test(R), /\$\{_fbDiagBlock\(\)\}/.test(R)], [true, true, true]);
 const SZ = new Function('_fbBytes', slice('function _fbSizeRows(obj){', 'function _fbSizeBlock(local){') + '; return _fbSizeRows;')(B);
 const rows = SZ({ days: { '2026-10-25': { trash: [{ text: '가'.repeat(100) }] } }, verseCollections: [{ name: 'TLC', verses: ['나'.repeat(3000)], sheet: 'x' }], settings: { a: 'x', big: '다'.repeat(2000) }, tiny: 1 });
 sc.eq('④ 크기 — 큰 것부터 · 모음마다 · 설정 큰 항목 · 휴지통', [rows[0].k, rows.some(r => /모음 「TLC」 \(verses 9KB/.test(r.k)), rows.some(r => r.k === '  settings.big'), rows.some(r => /휴지통/.test(r.k) && r.b > 300)], ['verseCollections', true, true, true]);
