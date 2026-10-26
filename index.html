@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1026-3  [production]  -->
+<!-- BLOCK7  v. 26-1026-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2980,7 +2980,16 @@ body.split-d #todayView.animating{overflow:hidden;}
 .tm-grp .tm-chev{margin-left:auto;color:var(--tx3);flex-shrink:0;}
 .tm-grp.open{background:var(--s2);color:var(--tx);}
 .tm-subgrp.task-menu-sub-float{min-width:196px;}
-.task-menu-sub-float .tm-back,.task-menu-sub-float .tm-back-sep{display:none;}
+.task-menu-sub-float .tm-back:not(.tm-back-dup),.task-menu-sub-float .tm-back-sep{display:none;}
+/* 복제 판 우상단 '지금 것은 완료 ☐' — 두 줄 · 왼쪽 정렬. PC 에서 떠 나가는 판은 '‹ 복제' 만 감춘다 (v26-1026-4) */
+.tm-back-dup{justify-content:space-between;align-items:center;}
+.task-menu-sub-float .tm-back-dup .tm-back-t{display:none;}
+.task-menu-sub-float .tm-back-dup{justify-content:flex-end;}
+.dup-done{display:inline-flex;align-items:flex-end;gap:5px;font-size:10.5px;line-height:1.25;color:var(--tx3);text-align:left;cursor:pointer;padding:2px 2px 2px 8px;margin:-2px -2px -2px 0;}
+.dup-done-box{width:11px;height:11px;border:1.5px solid var(--tx3);border-radius:2px;flex-shrink:0;margin-bottom:1px;position:relative;box-sizing:border-box;}
+.dup-done.on{color:var(--tx);}
+.dup-done.on .dup-done-box{background:var(--tx);border-color:var(--tx);}
+.dup-done.on .dup-done-box::after{content:'';position:absolute;left:2.5px;top:.5px;width:3px;height:6px;border:solid var(--bg,#fff);border-width:0 1.5px 1.5px 0;transform:rotate(45deg);}
 .secpick-back{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
   font-size:12.5px;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .secpick-back:hover,.secpick-back:active{background:var(--s2);color:var(--tx2);}
@@ -6556,7 +6565,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1026-3";
+const APP_VERSION = "v. 26-1026-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9163,7 +9172,9 @@ try{
   </div>
   <div class="task-menu-item tm-grp" id="tmGrp_dup" data-grp="dup" onclick="_tmSubTap(event,'dup',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7.2" y="7.2" width="9.3" height="9.3" rx="1.9"/><path d="M4.4 12.8V5.9a1.5 1.5 0 0 1 1.5-1.5h6.9"/></svg></span>복제<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
   </div>
-  <div class="task-menu-item tm-grp" id="tmGrp_next" data-grp="next" onclick="_tmSubTap(event,'next',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.8 7.2 14.8 13.2 7.4"/><path d="M16.9 3.2 15.9 8.7 11.5 5.1Z" fill="currentColor" stroke-width="1.1"/></svg></span>완료 후 다음 할일<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
+  <div class="task-menu-item tm-grp" id="tmGrp_next" data-grp="next" onclick="_tmSubTap(event,'next',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 10.8 7.2 14.8 13.2 7.4"/><path d="M16.9 3.2 15.9 8.7 11.5 5.1Z" fill="currentColor" stroke-width="1.1"/></svg></span>지금 완료 후 다음<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
+  </div>
+  <div class="task-menu-item tm-grp" id="tmGrp_nextY" data-grp="nextY" onclick="_tmSubTap(event,'nextY',this)"><span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.6 14.8 4.2 10.8 8.2 14.8 14.2 7.4"/><path d="M17.9 3.2 16.9 8.7 12.5 5.1Z" fill="currentColor" stroke-width="1.1"/></svg></span>어제 완료 후 다음<svg class="tm-chev" width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg>
   </div>
   <div class="task-menu-sep"></div>
   <div class="task-menu-item" id="dailyToggleItem" onclick="toggleDailyRepeat()">
@@ -9203,7 +9214,7 @@ try{
   </div>
   </div>
   <div class="tm-subgrp" id="tmSub_dup" data-grp="dup" style="display:none">
-  <div class="secpick-back tm-back" onclick="_tmSubHide()">‹ <span>복제</span></div>
+  <div class="secpick-back tm-back tm-back-dup" onclick="_tmSubHide()"><span class="tm-back-t">‹ <span>복제</span></span><span class="dup-done" id="dupDoneBox" role="checkbox" aria-checked="false" onclick="_dupDoneToggle(event)"><span class="dup-done-t">지금 것은<br>완료</span><span class="dup-done-box"></span></span></div>
   <div class="task-menu-sep tm-back-sep"></div>
   <div class="task-menu-item" data-act="dup" data-cnt-days="0" onclick="duplicateTaskTo(0)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5H3.4V4.4a1 1 0 0 1 1-1h9.1V4" opacity=".55"/><circle cx="11.3" cy="11.5" r="3.6" fill="currentColor" stroke="none"/></svg></span>오늘로
@@ -9227,7 +9238,7 @@ try{
   </div>
   </div>
   <div class="tm-subgrp" id="tmSub_next" data-grp="next" style="display:none">
-  <div class="secpick-back tm-back" onclick="_tmSubHide()">‹ <span>완료 후 다음 할일</span></div>
+  <div class="secpick-back tm-back" onclick="_tmSubHide()">‹ <span>지금 완료 후 다음</span></div>
   <div class="task-menu-sep tm-back-sep"></div>
   <div class="task-menu-item" data-act="next" data-cnt-days="1" onclick="nextAfterDoneTo(1)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>내일로
@@ -9235,12 +9246,12 @@ try{
   <div class="task-menu-item" data-act="next" data-cnt-days="7" onclick="nextAfterDoneTo(7)">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
   </div>
-  <div class="task-menu-item" data-act="next" onclick="nextAfterDoneYesterday()">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><g transform="rotate(180 10 10)"><path d="M15 4.5v11L7 10z"/><rect x="4" y="4.5" width="2" height="11" rx=".5"/></g></svg></span>어제 했고, 이제 오늘
-  </div>
   <div class="task-menu-item" id="nextSecRow" data-act="next" data-cnt-days="0"
        data-secpick="always" onclick="_secPickOpenFromRow(this)">
-    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h11M4.5 15.5h11"/><path d="M10 7.6v4.8M7.9 10.3 10 12.4l2.1-2.1"/></svg></span>오늘 다른 구간으로
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h10L5 15h8"/><path d="M17 15l-3.6-2.5v5z" fill="currentColor" stroke-width="1"/></svg></span>오늘 다른 구간으로
+  </div>
+  <div class="task-menu-item" data-act="next" onclick="nextAfterDoneYesterday()">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><g transform="rotate(180 10 10)"><path d="M15 4.5v11L7 10z"/><rect x="4" y="4.5" width="2" height="11" rx=".5"/></g></svg></span>어제 했고, 이제 오늘
   </div>
   <div class="task-menu-item" id="nextDateLabelRow" data-act="next" data-when="pick" style="position:relative;display:flex;align-items:center;cursor:pointer;">
     <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13M7 3v3M13 3v3"/></svg></span><span id="dateLabelText">날짜 지정</span>
@@ -9249,6 +9260,27 @@ try{
              font-size:16px;-webkit-appearance:none;cursor:pointer;"
       onchange="nextAfterDonePicked(this.value)"
       onfocus="prepNextDatePicker()">
+  </div>
+  </div>
+  <div class="tm-subgrp" id="tmSub_nextY" data-grp="nextY" style="display:none">
+  <div class="secpick-back tm-back" onclick="_tmSubHide()">‹ <span>어제 완료 후 다음</span></div>
+  <div class="task-menu-sep tm-back-sep"></div>
+  <div class="task-menu-item" data-act="nextY" data-yd="0" onclick="nextAfterDoneYday(0)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><circle cx="10" cy="10" r="4.2"/></svg></span>오늘로
+  </div>
+  <div class="task-menu-item" data-act="nextY" data-yd="1" onclick="nextAfterDoneYday(1)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M6 4.5v11l9-5.5z"/></svg></span>내일로
+  </div>
+  <div class="task-menu-item" data-act="nextY" data-yd="7" onclick="nextAfterDoneYday(7)">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5v11l6.5-5.5z"/><path d="M9.5 4.5v11l6.5-5.5z"/></svg></span>다음 주로
+  </div>
+  <div class="task-menu-item" id="nextYDateLabelRow" data-act="nextY" data-when="pick" style="position:relative;display:flex;align-items:center;cursor:pointer;">
+    <span class="task-menu-icon"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="1.6"/><path d="M3.5 8h13M7 3v3M13 3v3"/></svg></span><span>날짜 지정</span>
+    <input type="date" id="nextYDatePickerInput"
+      style="position:absolute;inset:0;width:100%;height:100%;opacity:0;border:none;
+             font-size:16px;-webkit-appearance:none;cursor:pointer;"
+      onchange="nextAfterDoneYdayPicked(this.value)"
+      onfocus="prepNextYDatePicker()">
   </div>
   </div>
  <!-- 구간 판 (v26-0917-1) — PC 에선 .task-menu-sub-float 로 오른쪽에 떠 나가고,
@@ -39149,11 +39181,14 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
     'duplicateTaskToPickedDate(this.value)',duplicateTaskToPickedDate);
   _wireTaskMenuDateRow('nextDateLabelRow','nextDatePickerInput',
     'nextAfterDonePicked(this.value)',nextAfterDonePicked);
+  _wireTaskMenuDateRow('nextYDateLabelRow','nextYDatePickerInput',
+    'nextAfterDoneYdayPicked(this.value)',nextAfterDoneYdayPicked);
 
   // 옮길 곳에 이미 할일이 몇 개 있는지 줄 오른쪽에 적어 둔다 (v26-0904-3, HB).
   // 화면을 옮기지 않고도 그 날 사정을 알 수 있다.
   _fillTaskMenuCounts();
   if(typeof _thereIconSync==='function')_thereIconSync();   // 기도 노트로 줄의 기도손 그림 (There 와 같은 그림)
+  _dupDoneReset();           // '지금 것은 완료' 는 열 때마다 꺼진 채로
   _tmSubReset();             // 지난번에 열어 둔 한 뎁스 판도 남아 있지 않게
   _secPickBack(true);        // 지난번에 열어 둔 구간 판이 남아 있지 않게
                              // (true = 높이는 여기서 재지 않는다. 아래 주석 참고)
@@ -41698,6 +41733,19 @@ function _freshTaskCopy(item){
   return copy;
 }
 
+// 복제 판 우상단 '지금 것은 완료' (v26-1026-4) — 켜 두면 복제하면서 원본을 완료 체크한다.
+// 메뉴를 열 때마다 꺼진 채로 시작한다(_dupDoneReset). 날짜 지정·구간 판을 거쳐도 실행 순간에 읽는다.
+let _dupDone=false;
+function _dupDoneSync(){const b=document.getElementById('dupDoneBox');if(b){b.classList.toggle('on',_dupDone);b.setAttribute('aria-checked',_dupDone?'true':'false');}}
+function _dupDoneReset(){_dupDone=false;_dupDoneSync();}
+function _dupDoneToggle(e){if(e){e.stopPropagation();e.preventDefault();}_dupDone=!_dupDone;_dupDoneSync();}
+// 원본을 완료로 — 하위도 따라 완료 · 긴급 표시는 풀린다 ('어제 완료'·'완료 후 다음' 과 같은 규칙)
+function _finishOriginal(item){
+  if(!item||item.done)return false;
+  item.done=true;_subSetAll(item,true);
+  if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(item);
+  return true;
+}
 function duplicateTaskTo(days,toSec){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
@@ -41711,6 +41759,7 @@ function duplicateTaskTo(days,toSec){
   // 복제는 원본을 그대로 둔다 (splice 하지 않는다).
   const copy=_freshTaskCopy(item);
   beforeSave();
+  const fin=_dupDone&&_finishOriginal(item);
   const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
   dest.push(copy);
   save();
@@ -41719,7 +41768,7 @@ function duplicateTaskTo(days,toSec){
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요`,toKey,
+  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요${fin?'\n원래 것은 완료 체크했어요':''}`,toKey,
     {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
@@ -41777,6 +41826,7 @@ function prepTaskMenuDatePicker(inpId){
 function prepDatePicker(){prepTaskMenuDatePicker('datePickerInput');}
 function prepDupDatePicker(){prepTaskMenuDatePicker('dupDatePickerInput');}
 function prepNextDatePicker(){prepTaskMenuDatePicker('nextDatePickerInput');}
+function prepNextYDatePicker(){prepTaskMenuDatePicker('nextYDatePickerInput');}
 
 // 달력을 연 지 200ms 도 안 돼 날아온 change 는 사람이 고른 것이 아니다(위 주석).
 function _datePickArmed(inpId){
@@ -41853,6 +41903,7 @@ function duplicateTaskToPickedDate(dateStr,toSec){
 
   beforeSave();
   const copy=_freshTaskCopy(item);
+  const fin=_dupDone&&_finishOriginal(item);
   const dest=type==='big'?getBigs(dateStr,destSec):getSmalls(dateStr,destSec);
   dest.push(copy);
   save();renderSecBody(secId);
@@ -41860,7 +41911,7 @@ function duplicateTaskToPickedDate(dateStr,toSec){
   updateTotal();refreshTaskViewsLive();
   _taskMenuCtx=null;
   closeTaskMenu_keepCtx();
-  _toastWithJump(_moveDateToastMsg(dateStr,destSec,'복제'),dateStr,
+  _toastWithJump(_moveDateToastMsg(dateStr,destSec,'복제')+(fin?'\n원래 것은 완료 체크했어요':''),dateStr,
     {key:dateStr,secId:destSec,type,idx:dest.length-1});
 }
 // "8월 17일 월요일 오전 날짜로 이동했어요" — 어느 날짜·구간으로 옮겼는지
@@ -41975,10 +42026,11 @@ function _dayTaskSecs(key){
 // 숫자 왼쪽에는 할일이 있는 구간마다 색 점 하나 — 판을 열지 않고도 그 숫자가
 // 어느 구간 것인지 보인다 (v26-0917-1, HB).
 function _fillTaskMenuCounts(){
-  document.querySelectorAll('#taskMenu [data-cnt-days]').forEach(row=>{
-    const days=parseInt(row.dataset.cntDays,10);
+  document.querySelectorAll('#taskMenu [data-cnt-days],#taskMenu [data-yd]').forEach(row=>{
+    const yd=row.dataset.yd!==undefined;           // 어제 완료 후 다음 — 실제 오늘 기준
+    const days=parseInt(yd?row.dataset.yd:row.dataset.cntDays,10);
     if(isNaN(days))return;
-    const key=tKey(addDays(viewDate,days));
+    const key=tKey(addDays(yd?_todayDateObj():viewDate,days));
     const n=_dayTaskCount(key);
     let dots=row.querySelector('.task-menu-dots');
     if(!dots){dots=document.createElement('span');dots.className='task-menu-dots';row.appendChild(dots);}
@@ -42012,7 +42064,7 @@ function _fillTaskMenuCounts(){
 // (v26-1015-4, HB) 세 줄 중 하나를 누르면(PC 는 올리면) 그 줄이 품은 목적지 목록이 판으로 나온다.
 // 방식은 구간 판·로고 메뉴 '말씀 목록' 과 같다 — PC 는 오른쪽에 띄우고, 손가락 기기는 메뉴 자리에서
 // 바뀐다('‹ 되돌아가기' 줄이 생긴다). 둘을 다르게 고치지 말 것.
-let _tmSub=null;            // {kind:'move'|'dup'|'next', float:bool}
+let _tmSub=null;            // {kind:'move'|'dup'|'next'|'nextY', float:bool}
 let _tmSubTimer=null;
 function _tmSubPanel(kind){return document.getElementById('tmSub_'+kind);}
 function _tmSubReset(){
@@ -42151,12 +42203,67 @@ function nextAfterDoneTo(days,toSec,dateStr,tail){
   }else _focusNewTaskInput(toKey,destSec,type,ni,0,nu.text);
 }
 // 어제 한 일을 오늘 이어서 — 누른 할일은 완료로 두고, 같은 구간 '오늘'에 새 할일을 만든다
-function nextAfterDoneYesterday(){nextAfterDoneTo(0,undefined,todayKey(),' 어제 했고, 이제 오늘');}
+function nextAfterDoneYesterday(){nextAfterDoneYday(0);}
+// 어제 완료 후 다음 (v26-1026-4, HB) — 누른 할일을 **어제 날짜로 옮겨 완료**하고, 오늘(실제 오늘)을 기준으로
+// 고른 날·구간에 이어 적을 새 할일을 만든다. '지금 완료 후 다음' 판의 '어제 했고, 이제 오늘' 도 같은 길이다.
+// ⚠️ 기준은 보고 있는 날이 아니라 **실제 오늘**이다 — 며칠 전 할일을 열어도 '어제 했다' 는 어제다.
+function _todayDateObj(){const t=String(todayKey()).split('-').map(Number);return new Date(t[0],t[1]-1,t[2]);}
+function nextAfterDoneYday(days,toSec,dateStr){
+  if(!_taskMenuCtx)return;
+  const {type,secId,idx}=_taskMenuCtx;
+  const destSec=toSec||secId;
+  const fromKey=tKey();
+  const tdy=_todayDateObj();
+  const yKey=tKey(addDays(tdy,-1));
+  const toKey=dateStr||tKey(addDays(tdy,days||0));
+  const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
+  const item=src[idx];
+  if(!item){closeTaskMenu();return;}
+  beforeSave();
+  _finishOriginal(item);
+  if(fromKey!==yKey){            // 어제 칸으로 옮긴다 (이미 어제를 보고 있으면 제자리)
+    src.splice(idx,1);
+    (type==='big'?getBigs(yKey,secId):getSmalls(yKey,secId)).push(_movedTaskCopy(item,-1));
+  }
+  const tail=toKey===todayKey()?' 어제 했고, 이제 오늘':' 어제 완료했고, 이제';
+  const nu={text:String(item.text||'').replace(/\s+$/,'')+tail,done:false};
+  if(item.contactTask)nu.contactTask=true;
+  const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
+  dest.push(nu);
+  const ni=dest.length-1;
+  save();
+  _revealSec(destSec);
+  renderSecBody(secId);
+  if(destSec!==secId&&toKey===fromKey)renderSecBody(destSec);
+  updateTotal();
+  refreshTaskViewsLive();
+  closeTaskMenu();
+  const base=String(item.text||'').trim();
+  const shortT=base.length>14?base.slice(0,14)+'…':base;
+  const where=_withSecRo(_dayLabel(toKey),destSec);
+  showToast(`${shortT?'“'+shortT+'”\n':''}어제 날짜로 완료 체크했어요 ✓\n${where} 다음 할일을 만들었어요\n이어서 적어 주세요`);
+  if(toKey!==fromKey){
+    const onD=(document.querySelector('.tab.on')||{}).id==='tabD';
+    if(onD&&typeof navigateDate==='function')navigateDate(_dayKeyDiff(fromKey,toKey));
+    else goToDate(toKey);
+    setTimeout(()=>_focusNewTaskInput(toKey,destSec,type,ni,0,nu.text),onD?420:120);
+  }else _focusNewTaskInput(toKey,destSec,type,ni,0,nu.text);
+}
+function nextAfterDoneYdayPicked(dateStr,toSec){
+  if(!dateStr||!_taskMenuCtx)return;
+  if(!_datePickArmed('nextYDatePickerInput'))return;
+  if(toSec===undefined){
+    _secPickOpen({act:'nextY',dateStr,toKey:dateStr,label:'어제 완료 후 다음 · 날짜 지정'},
+      document.getElementById('nextYDateLabelRow'));
+    return;
+  }
+  nextAfterDoneYday(0,toSec,dateStr);
+}
 function nextAfterDonePicked(dateStr,toSec){
   if(!dateStr||!_taskMenuCtx)return;
   if(!_datePickArmed('nextDatePickerInput'))return;
   if(toSec===undefined){
-    _secPickOpen({act:'next',dateStr,toKey:dateStr,label:'완료 후 다음 할일 · 날짜 지정'},
+    _secPickOpen({act:'next',dateStr,toKey:dateStr,label:'지금 완료 후 다음 · 날짜 지정'},
       document.getElementById('nextDateLabelRow'));
     return;
   }
@@ -42178,7 +42285,7 @@ function _focusNewTaskInput(key,secId,type,idx,tries,expect){
   try{inp.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}
 }
 
-let _secPickSpec=null;      // {act:'move'|'dup'|'next', days|dateStr, toKey, label}
+let _secPickSpec=null;      // {act:'move'|'dup'|'next'|'nextY', days|dateStr, toKey, label}
 let _secPickCloseTimer=null;
 let _secPickWired=false;
 
@@ -42202,13 +42309,19 @@ function _secPickSecs(hereSec){
 // 줄 하나가 뜻하는 목적지. 날짜 지정 줄은 날짜를 고른 뒤에야 알 수 있어 여기선 null.
 function _secPickSpecFor(row){
   if(!row)return null;
-  const act=row.dataset.act==='dup'?'dup':row.dataset.act==='next'?'next':'move';
+  const act=row.dataset.act==='dup'?'dup':row.dataset.act==='next'?'next':row.dataset.act==='nextY'?'nextY':'move';
+  if(act==='nextY'){      // 어제 완료 후 다음 — 날은 실제 오늘 기준
+    const yd=parseInt(row.dataset.yd,10);
+    if(isNaN(yd))return null;
+    return {act,days:yd,toKey:tKey(addDays(_todayDateObj(),yd)),
+            label:'어제 완료 후 다음 · '+(yd===0?'오늘':yd===1?'내일':'다음 주')};
+  }
   const days=parseInt(row.dataset.cntDays,10);
   if(isNaN(days))return null;
   const base=days===-1?'어제':days===0?'오늘':days===1?'내일':'다음 주';
   const done=row.dataset.done==='1';
   return {act,days,done,toKey:tKey(addDays(viewDate,days)),
-          label:(act==='dup'?'복제':act==='next'?'완료 후 다음 할일':'이동')+' · '+(done?'어제 완료':base)};
+          label:(act==='dup'?'복제':act==='next'?'지금 완료 후 다음':'이동')+' · '+(done?'어제 완료':base)};
 }
 // 판을 연 손이 마우스였는가 (v26-1007-3, HB 신고).
 // ⚠️ 기기로 가르면 안 된다 — 터치 화면이 달린 노트북·윈도 PC 는 _isTouchDevice()
@@ -42327,10 +42440,12 @@ function _secPickChoose(secId){
   if(spec.dateStr){
     if(spec.act==='dup')duplicateTaskToPickedDate(spec.dateStr,secId);
     else if(spec.act==='next')nextAfterDonePicked(spec.dateStr,secId);
+    else if(spec.act==='nextY')nextAfterDoneYdayPicked(spec.dateStr,secId);
     else moveTaskToPickedDate(spec.dateStr,secId);
   }else{
     if(spec.act==='dup')duplicateTaskTo(spec.days,secId);
     else if(spec.act==='next')nextAfterDoneTo(spec.days,secId);
+    else if(spec.act==='nextY')nextAfterDoneYday(spec.days,secId);
     else moveTaskTo(spec.days,secId,spec.done);
   }
 }

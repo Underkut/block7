@@ -8,7 +8,7 @@
 //  ⑤ '@' 자동 표시는 새로 적을 때(_newTask)와, 편집을 마칠 때 **새로** 생긴 '@' 에만 — 이미 있던 글은 건드리지 않는다
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
-const SRC = slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
+const SRC = slice('// 원본을 완료로 —', 'function duplicateTaskTo(') + '\n' + slice('// ── 완료 후 다음 할일 ──', 'let _secPickSpec=null;') + '\n' +
   slice('// 새로 적는 할일 — 글에', 'function toggleTaskContact(){');
 
 const T = '2026-10-15';
@@ -38,13 +38,14 @@ function makeEnv(items, tabId) {
     _subSetAll: (it, done) => { (it.subs || []).forEach(s => { s.done = !!done; }); },
     _clearUrgentOnDone: it => { delete it.urgent; delete it.urgentRank; },
     _revealSec: id => { log.reveal = (log.reveal || []).concat(id); return false; },
+    _movedTaskCopy: (it, d) => ({ text: it.text, done: !!it.done, moved: d }),
     _datePickArmed: () => true, _secPickOn: () => false, _secPickOpen() {},
     document: { querySelector: sel => (sel === '.tab.on' ? { id: tabId } : inp), activeElement: null },
     setTimeout: f => f(),
   };
   env.getBigs(T, 'am').push(...items);
   const names = Object.keys(env);
-  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDonePicked,_autoContactMark,_newTask};';
+  const body = SRC + '\nreturn {nextAfterDoneTo,nextAfterDoneYesterday,nextAfterDoneYday,nextAfterDoneYdayPicked,_dupDone:()=>_dupDone,nextAfterDonePicked,_autoContactMark,_newTask};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
   return { ST, api, log, inp };
 }
@@ -151,13 +152,32 @@ console.log('\n시나리오 7 — 꺼 둔 · 접어 둔 구간은 열어서 보�
   e = mk(['am'], []);
   sc.eq('이미 열려 있으면 아무 일 없다', [e.api._revealSec('am'), e.n().saves], [false, 0]);
 }
-console.log("\n시나리오 8 — '어제 했고, 이제 오늘': 원래는 완료, 오늘(같은 구간)에 새 할일");
+console.log("\n시나리오 8 — '어제 했고, 이제 오늘': 원래는 어제 칸으로 옮겨 완료, 오늘(같은 구간)에 새 할일");
 {
   const { ST, api, inp } = makeEnv([{ text: '운동 ', done: false, contactTask: true }]);
   inp.value = '운동 어제 했고, 이제 오늘';
   api.nextAfterDoneYesterday();
-  sc.eq('원래 할일은 완료', at(ST, T)[0].done, true);
+  sc.eq('보던 날 칸에서는 빠진다', at(ST, T).length, 0);
+  const old = at(ST, '2026-10-19')[0];
+  sc.eq('어제(실제 오늘 기준) 칸에 완료로 있다', [old.text, old.done], ['운동 ', true]);
   const nu = at(ST, '2026-10-20')[0];
   sc.eq('오늘에 새 할일 · 글 · 연락할 일 물려받음', [nu.text, nu.done, nu.contactTask], ['운동 어제 했고, 이제 오늘', false, true]);
+}
+
+console.log("\n시나리오 9 — 어제 완료 후 다음: 내일로 · 다음 주로 · 날짜 지정");
+{
+  let e = makeEnv([{ text: '심방', done: false }]);
+  e.api.nextAfterDoneYday(1);
+  sc.eq('내일(실제 오늘 기준 10-21)에 새 할일', [at(e.ST, '2026-10-21')[0].text, at(e.ST, '2026-10-21')[0].done], ['심방 어제 완료했고, 이제', false]);
+  sc.eq('원래 것은 어제 칸에 완료', [at(e.ST, '2026-10-19')[0].done, at(e.ST, T).length], [true, 0]);
+  e = makeEnv([{ text: '청소', done: false }]);
+  e.api.nextAfterDoneYday(7);
+  sc.eq('다음 주 = 오늘+7', at(e.ST, '2026-10-27').length, 1);
+  e = makeEnv([{ text: '빨래', done: false }]);
+  e.api.nextAfterDoneYdayPicked('2026-11-02', 'pm');
+  sc.eq('날짜 지정 + 구간', [at(e.ST, '2026-11-02', 'pm')[0].text, at(e.ST, '2026-10-19')[0].done], ['빨래 어제 완료했고, 이제', true]);
+  e = makeEnv([]);
+  e.api.nextAfterDoneYday(1);
+  sc.eq('할일이 없으면(이미 사라짐) 아무것도 안 만든다', Object.keys(e.ST.days).filter(k => k !== T && at(e.ST, k).length), []);
 }
 sc.done();
