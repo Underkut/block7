@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1026-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1026-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6556,7 +6556,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1026-2";
+const APP_VERSION = "v. 26-1026-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7260,6 +7260,17 @@ try{
           7. ‘보러 가기’ 아래에 <b style="font-weight:500;">URL 열기</b> 추가 → 주소 칸에 <b style="font-weight:500;">https://block7.my/</b> (‘취소’ 아래는 비워 둬요)<br>
           8. 맨 위 이름을 <b style="font-weight:500;">블럭세븐 할일</b> 로 바꾸고 완료<br>
           <span style="color:var(--tx3);">날을 빼면 오늘 · 구간을 빼면 오늘은 지금 구간, 다른 날은 첫 구간이에요. 날은 오늘 · 내일 · 모레 · 글피 · ‘10월 30일’ · ‘30일’, 구간은 내 구간 이름(새벽 · 오전 · 점심 …)으로 말해요.</span>
+        </div></div></div>
+<div class="settings-row sr-fold" role="button" aria-expanded="false" onclick="sgFold(this)" style="margin-top:6px;"><div class="settings-row-text"><div class="settings-row-label" style="font-size:13px;">위젯용 단축어 만드는 법</div><div class="settings-row-desc">홈 화면에서 눌러 날 · 구간 · 할일을 차례로 넣어요</div></div><svg class="sr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>
+        <div class="sg-fold"><div><div class="settings-row-desc" id="siriHow2" style="line-height:1.75;padding:4px 0 6px;">
+          위 단축어와 같은 주소를 써요. 먼저 만든 단축어를 <b style="font-weight:500;">복제</b>해서 고치면 편해요.<br>
+          1. 맨 위에 <b style="font-weight:500;">목록에서 선택</b> 추가 → 프롬프트 ‘언제요?’ → 항목을 위에서부터 <b style="font-weight:500;">오늘 · 내일 · 모레 · 글피</b><br>
+          2. <b style="font-weight:500;">목록에서 선택</b> 한 번 더 → 프롬프트 ‘어느 구간이요?’ → 항목을 위에서부터 <b style="font-weight:500;">지금 구간</b> 과 내 구간 이름(새벽 · 오전 · 점심 …)<br>
+          3. <b style="font-weight:500;">입력 요청</b> → ‘무엇을 넣을까요?’<br>
+          4. <b style="font-weight:500;">텍스트</b> 추가 → 칸에 <b style="font-weight:500;">선택한 항목(1번) 선택한 항목(2번) 입력</b> 을 띄어서 이어 붙여요<br>
+          5. <b style="font-weight:500;">URL 콘텐츠 가져오기</b> — 주소 · POST · JSON · 키 <b style="font-weight:500;">text</b> 는 위와 같고, 값만 방금 만든 <b style="font-weight:500;">텍스트</b><br>
+          6. <b style="font-weight:500;">결과 보기</b> (원하면 위처럼 ‘메뉴에서 선택’도) → 이름은 <b style="font-weight:500;">블럭세븐 할일 넣기</b> 등으로 → 홈 화면에 추가하면 위젯처럼 눌러 써요<br>
+          <span style="color:var(--tx3);">첫 항목이 ‘오늘’ · ‘지금 구간’ 이라 두 번 눌러 넘기면 지금 구간에 들어가요. 오늘이 아닌 날에 ‘지금 구간’ 을 고르면 펼친 첫 구간이에요.</span>
         </div></div></div>
         </div>
       </div>
@@ -36303,7 +36314,9 @@ function _siriParse(say,at,secs,vis,startH){
     const re=new RegExp('^'+o.k.split(/\s+/).map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\\s?')+_SIRI_SPART+_SIRI_SEP);
     if((m=re.exec(s))){sec=o.x;s=s.slice(m[0].length);break;}
   }
-  if(!sec){
+  // 위젯 단축어의 '지금 구간' — 구간을 고르지 않은 것과 같다 (아래 ③ 이 정한다). '지금 병원' 같은 보통 말은 안 쪼갠다
+  if(!sec&&(m=new RegExp('^지금\\s?구간'+_SIRI_SPART+_SIRI_SEP).exec(s)))s=s.slice(m[0].length);
+  else if(!sec){
     for(const [w,min] of _SIRI_TIMEWORDS){
       if((m=new RegExp('^'+w+_SIRI_SPART+_SIRI_SEP).exec(s))){const hit=_siriSecAt(list,min);if(hit){sec=hit;s=s.slice(m[0].length);}break;}
     }
