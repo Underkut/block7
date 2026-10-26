@@ -209,4 +209,64 @@ console.log("\n시나리오 5 — 주소창 주소 · '웹에 게시' 주소 둘
   sc.eq('엉뚱한 주소는 빈손',_sheetCsvEndpoints('https://example.com/x').length,0);
 }
 
+// ═══ 같은 말씀이 시트에 두 줄 (2026-10-26 HB 신고) ═══
+// 시트 '블럭7 암송말씀' 에 로마서 8:14(주일예배 · Led by the Spirit) 가 4-26 · 8-09 두 번,
+// 갈라디아서 6:9(라이프라인 · Do Not Lose Heart) 가 9-13 · 9-20 두 번 있다.
+// 예전엔 열쇠(장절+대분류+소주제) 하나에 앱 구절 하나만 짝지어, 두 번째 줄이 매번
+// '새로 추가' 되고 지난번에 추가한 것은 '시트에서 사라졌다' 로 휴지통에 갔다.
+// → 동기화할 때마다 '+1, 휴지통 1' 이 뜨고 휴지통에 같은 말씀이 쌓였다.
+console.log('\n시나리오 — 같은 말씀이 시트에 두 줄 있어도 매번 들고나지 않는다');
+{
+  const twin=d=>({cat:'주일예배',topic:'Led by the Spirit',krText:'무릇 하나님의 영으로',ref:'로마서 8:14',tags:[],d});
+  const items=()=>[...sheetItems(20),twin('2026-04-26'),twin('2026-08-09')];
+  const coll=makeColl(20);
+  const r1=_syncSheetVersesIntoColl(coll,items(),{kind:'google',gid:'g1'});
+  sc.eq('처음엔 둘 다 추가',r1.added,2);
+  const r2=_syncSheetVersesIntoColl(coll,items(),{kind:'google',gid:'g1'});
+  sc.eq('두 번째: 추가 없음',r2.added,0);
+  sc.eq('두 번째: 휴지통 없음',r2.removed,0);
+  const r3=_syncSheetVersesIntoColl(coll,items(),{kind:'google',gid:'g1'});
+  sc.eq('세 번째도 추가 0 · 휴지통 0',[r3.added,r3.removed].join(),'0,0');
+  const tw=coll.verses.filter(v=>v.ref==='로마서 8:14');
+  sc.eq('앱에는 딱 두 개',tw.length,2);
+  sc.eq('날짜가 줄마다 제자리',tw.map(v=>v.d).sort().join(),'2026-04-26,2026-08-09');
+  sc.eq('휴지통에 쌓인 것 없음',tw.filter(v=>v.del).length,0);
+}
+console.log('\n시나리오 — 이미 휴지통에 쌓인 같은 말씀 복사본은 걷어낸다');
+{
+  const coll=makeColl(20);
+  const mk=(d,del)=>{const v={cat:'주일예배',topic:'Led by the Spirit',krText:'무릇 하나님의 영으로',
+    ref:'로마서 8:14',tags:[],src:'google',gid:'g1',d};if(del)v.del=del;return v;};
+  coll.verses.push(mk('2026-04-26'));
+  for(let i=0;i<30;i++)coll.verses.push(mk('2026-08-09','simple'));   // 사고로 쌓인 것
+  coll.verses.push(mk('2026-08-09'));                                   // 지난번에 추가된 것
+  const twin=d=>({cat:'주일예배',topic:'Led by the Spirit',krText:'무릇 하나님의 영으로',ref:'로마서 8:14',tags:[],d});
+  const r=_syncSheetVersesIntoColl(coll,[...sheetItems(20),twin('2026-04-26'),twin('2026-08-09')],{kind:'google',gid:'g1'});
+  sc.eq('추가 0 · 휴지통 0 · 복원 0',[r.added,r.removed,r.restored].join(),'0,0,0');
+  const tw=coll.verses.filter(v=>v.ref==='로마서 8:14');
+  sc.eq('살아 있는 두 개만 남음',tw.length,2);
+  sc.eq('둘 다 살아 있음',tw.filter(v=>!v.del).length,2);
+  sc.eq('다른 구절은 그대로',coll.verses.length,22);
+}
+console.log('\n시나리오 — 두 줄 중 하나를 \'삭제 유지\' 했으면 그대로 둔다');
+{
+  const coll=makeColl(3);
+  const mk=(d,del)=>{const v={cat:'주일예배',topic:'L',krText:'무릇',ref:'로마서 8:14',tags:[],src:'google',gid:'g1',d};if(del)v.del=del;return v;};
+  coll.verses.push(mk('2026-04-26'),mk('2026-08-09','keep'));
+  const t=d=>({cat:'주일예배',topic:'L',krText:'무릇',ref:'로마서 8:14',tags:[],d});
+  const r=_syncSheetVersesIntoColl(coll,[...sheetItems(3),t('2026-04-26'),t('2026-08-09')],{kind:'google',gid:'g1'});
+  sc.eq('추가 0',r.added,0);
+  sc.eq('삭제 유지는 그대로 숨김',coll.verses.filter(v=>v.del==='keep').length,1);
+  sc.eq('한 개만 보임',coll.verses.filter(v=>v.ref==='로마서 8:14'&&!v.del).length,1);
+}
+console.log('\n시나리오 — 시트에서 두 줄 중 하나를 지우면 하나만 휴지통으로');
+{
+  const coll=makeColl(20);
+  const mk=d=>({cat:'주일예배',topic:'L',krText:'무릇',ref:'로마서 8:14',tags:[],src:'google',gid:'g1',d});
+  coll.verses.push(mk('2026-04-26'),mk('2026-08-09'));
+  const r=_syncSheetVersesIntoColl(coll,[...sheetItems(20),{cat:'주일예배',topic:'L',krText:'무릇',ref:'로마서 8:14',tags:[],d:'2026-08-09'}],{kind:'google',gid:'g1'});
+  sc.eq('휴지통 1',r.removed,1);
+  sc.eq('남은 것은 8-09',coll.verses.filter(v=>v.ref==='로마서 8:14'&&!v.del).map(v=>v.d).join(),'2026-08-09');
+}
+
 sc.done();

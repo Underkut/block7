@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1025-14  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1026-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6556,7 +6556,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1025-14";
+const APP_VERSION = "v. 26-1026-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -11458,10 +11458,29 @@ function _gSrcId(g){
 function _syncSheetVersesIntoColl(coll,items,srcInfo){
   if(!coll)return{added:0,restored:0,updated:0,removed:0};
   if(!Array.isArray(coll.verses))coll.verses=[];
+  // ⚠️ 열쇠 하나에 구절 **여러 개**를 둔다 (v26-1026-1, HB 신고).
+  //    같은 말씀이 같은 예배 · 같은 소주제로 시트에 두 줄 있는 일이 실제로 있다
+  //    (로마서 8:14 가 4-26 · 8-09 설교에 두 번). 예전엔 열쇠마다 하나만 짝지어
+  //    두 번째 줄이 매번 '새로 추가' 되고, 지난번에 추가한 것은 '시트에 없다' 로
+  //    휴지통에 갔다 → 동기화마다 '+1, 휴지통 1' · 휴지통에 같은 말씀이 쌓였다.
+  //    (tests/test_sheet.js '같은 말씀이 시트에 두 줄')
   const byKey=new Map(),byRef=new Map(),claimed=new Set();
+  // 짝 고르기: 날짜가 같은 것 → 본문이 같은 것 → 살아 있는 것 → 삭제 유지 → 삭제 심플.
+  // 날짜를 먼저 봐야 두 줄이 서로 자리를 바꾸며 날짜를 덮어쓰지 않는다.
+  const _pick=(list,it)=>{
+    let best=null,bs=-1;
+    (list||[]).forEach(v=>{
+      if(claimed.has(v))return;
+      const sc=(it.d&&String(v.d||'')===String(it.d)?8:0)+(v.krText===it.krText?4:0)+
+        (!v.del?2:v.del==='keep'?1:0);
+      if(sc>bs){bs=sc;best=v;}
+    });
+    return best;
+  };
   coll.verses.forEach(v=>{
     const k=_verseIdentity(v.ref,v.cat,v.topic,v.pid);
-    if(!byKey.has(k))byKey.set(k,v);
+    if(!byKey.has(k))byKey.set(k,[]);
+    byKey.get(k).push(v);
     const r=String(v.ref||'').trim();
     if(!byRef.has(r))byRef.set(r,[]);
     byRef.get(r).push(v);
@@ -11489,8 +11508,7 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
     if(!it.krText||(!it.ref&&!it.pid))return;
     const newCat=it.cat||'나의 암송',newTopic=it.topic||'',newTags=it.tags||[];
     const key=_verseIdentity(it.ref,newCat,newTopic,it.pid);
-    let ex=byKey.get(key);
-    if(ex&&claimed.has(ex))ex=null;
+    let ex=_pick(byKey.get(key),it);
     if(!ex){
       // 소주제가 바뀐 항목을 이어받는다 — 단 "어느 것을 이어받을지 분명할 때만".
       // ⚠️ 예전엔 장절만 같으면 아무거나 집어와 대분류·소주제를 덮어썼다.
@@ -11589,7 +11607,9 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       if(it.q)nv.q=String(it.q);                                // 묵상 질문
       if(it.img)nv.img=String(it.img);                          // 사진 주소
       if(it.yt)nv.yt=String(it.yt);                             // 유튜브 영상 id
-      coll.verses.push(nv);claimed.add(nv);byKey.set(key,nv);
+      coll.verses.push(nv);claimed.add(nv);
+      if(!byKey.has(key))byKey.set(key,[]);
+      byKey.get(key).push(nv);
       const r=String(it.ref||'').trim();
       if(!byRef.has(r))byRef.set(r,[]);
       byRef.get(r).push(nv);
@@ -11631,6 +11651,20 @@ function _syncSheetVersesIntoColl(coll,items,srcInfo){
       blocked=doomed.length;
     }else{
       doomed.forEach(v=>{v.del='simple';removed++;_bump(v.cat,'removed');});
+    }
+  }
+  // 위 사고(같은 말씀 두 줄)로 휴지통에 쌓인 **복사본**을 걷는다.
+  // 이번 시트가 확인한 구절과 신원 · 본문 · 날짜가 모두 같은 '삭제 심플' 만 —
+  // 똑같은 것이 이미 살아 있어 잃는 것이 없다. 삭제 유지 · 다른 시트 것은 안 건드린다.
+  if(srcInfo&&srcInfo.kind==='google'&&claimed.size){
+    const live=new Set();
+    claimed.forEach(v=>{ if(!v.del)live.add(_verseIdentity(v.ref,v.cat,v.topic,v.pid)+'\u0003'+v.krText+'\u0003'+(v.d||'')); });
+    const onlyOne=((coll.google||[]).length<=1);
+    for(let i=coll.verses.length-1;i>=0;i--){
+      const v=coll.verses[i];
+      if(claimed.has(v)||v.del!=='simple'||v.src!=='google')continue;
+      if(!(gid?(v.gid===gid||(!v.gid&&onlyOne)):onlyOne))continue;
+      if(live.has(_verseIdentity(v.ref,v.cat,v.topic,v.pid)+'\u0003'+v.krText+'\u0003'+(v.d||'')))coll.verses.splice(i,1);
     }
   }
   // 파싱이 깨져 들어온 유령 구절(장절이 장절 같지 않은 구글 유래 항목) 정리.
