@@ -15,9 +15,15 @@ const dayKey = (ms) => { const w = kst(ms); return `${w.y}-${z(w.mo)}-${z(w.d)}`
 const monthKey = (ms) => { const w = kst(ms); return `${w.y}${z(w.mo)}`; };   // invoice.month 모양 'YYYYMM'
 
 // 1분 틱마다 묻는다 — 15:00 넘었고 오늘 아직 안 했으면 (늦은 틱 · 서버를 3시 넘어 올린 날도 그날 한 번)
+// 오늘 읽기에 실패했으면 한 시간마다 다시 (기록이 막 들어오기 시작한 날 · 잠깐의 오류)
+const RETRY_MS = 3600e3;
 function shouldRun(now, meta) {
-  return kst(now).hm >= SEND_HM && (!meta || meta.day !== dayKey(now));
+  if (kst(now).hm < SEND_HM) return false;
+  if (!meta || meta.day !== dayKey(now)) return true;
+  return meta.ok === false && now - (meta.at || 0) >= RETRY_MS;
 }
+// 표가 아직 없다 = 내보내기를 켰지만 첫 기록이 아직 (구글이 몇 시간 뒤에 표를 만든다)
+const notReady = (err) => /matches no table|not found: table/i.test(String(err || ""));
 
 // 표에서 이번 달을 세는 질의 — 표 이름 끝(결제 계정 번호)을 몰라도 되게 * 로 받는다
 function query(project, dataset) {
@@ -52,12 +58,14 @@ function message(row, now) {
   return { title, body: lines.join("\n") };
 }
 function failMessage(now, err) {
-  const w = kst(now);
-  const notFound = /not ?found|404/i.test(String(err || ""));
+  const w = kst(now), e = String(err || "");
+  if (notReady(e)) return message(null, now);
+  const noSet = /not found: dataset|dataset .* (was )?not found/i.test(e);
   return {
     title: `${w.mo}월 요금 · 확인 못 했어요`,
-    body: notFound ? "결제 내보내기가 아직 안 켜져 있어요.\n(docs/push/billing.md 1~2번)" : "결제 기록을 읽지 못했어요.\n내일 다시 볼게요.",
+    body: noSet ? "저장할 곳(billing)을 찾지 못했어요.\n(docs/push/billing.md 1번)"
+      : "결제 기록을 읽지 못했어요. 한 시간마다 다시 볼게요.\n까닭: " + e.replace(/\s+/g, " ").slice(0, 90),
   };
 }
 
-module.exports = { SEND_HM, kst, dayKey, monthKey, shouldRun, query, message, failMessage, won };
+module.exports = { SEND_HM, RETRY_MS, notReady, kst, dayKey, monthKey, shouldRun, query, message, failMessage, won };

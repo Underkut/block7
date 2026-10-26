@@ -46,7 +46,11 @@ console.log('\n④ 질의');
   sc.eq('표 이름 끝을 * 로', q.includes('`block7-8f24e.billing.gcp_billing_export_v1_*`'), true);
   sc.eq('이번 달만', q.includes('invoice.month = @month'), true);
   sc.eq('절감액(credits) 을 더한다', /UNNEST\(credits\)/.test(q), true);
-  sc.eq('설정이 안 됐을 때 알림', B.failMessage(at('2026-10-27T15:00'), 'Not found: Dataset block7-8f24e:billing').body.startsWith('결제 내보내기가 아직 안 켜져 있어요'), true);
+  sc.eq('저장할 곳이 없을 때', B.failMessage(at('2026-10-27T15:00'), 'Not found: Dataset block7-8f24e:billing was not found in location asia-northeast3').body.startsWith('저장할 곳(billing)을 찾지 못했어요'), true);
+  sc.eq('표가 아직 없을 때 = 기록이 아직', B.failMessage(at('2026-10-27T15:00'), 'Error: Table block7-8f24e:billing.gcp_billing_export_v1_*: Wildcard table matches no table').body.startsWith('아직 결제 기록이 안 들어왔어요'), true);
+  sc.eq('다른 오류는 까닭을 한 줄 싣는다', B.failMessage(at('2026-10-27T15:00'), 'Access Denied: bigquery.jobs.create').body.includes('까닭: Access Denied'), true);
+  sc.eq('오늘 실패 → 한 시간 뒤 다시', [B.shouldRun(at('2026-10-27T15:30'), { day: '2026-10-27', ok: false, at: at('2026-10-27T15:00') }), B.shouldRun(at('2026-10-27T16:00'), { day: '2026-10-27', ok: false, at: at('2026-10-27T15:00') })], [false, true]);
+  sc.eq('오늘 성공했으면 다시 안 함', B.shouldRun(at('2026-10-27T18:00'), { day: '2026-10-27', ok: true, at: at('2026-10-27T15:00') }), false);
 }
 
 console.log('\n⑤ 받는 사람은 개발자 한 사람');

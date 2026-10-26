@@ -35,12 +35,13 @@ exports.b7Bill = async function b7Bill(now) {
   const ref = getFirestore().doc("b7meta/bill");
   const claimed = await getFirestore().runTransaction(async (tx) => {
     const s = await tx.get(ref);
-    if (!B.shouldRun(now, s.exists ? s.data() : null)) return false;
+    const m = s.exists ? s.data() : null;
+    if (!B.shouldRun(now, m)) return false;
     tx.set(ref, { day: B.dayKey(now), at: now }, { merge: true });
-    return true;
+    return { retry: !!(m && m.day === B.dayKey(now)) };   // 오늘 이미 실패 알림을 보냈으면 또 보내지 않는다
   });
   if (!claimed) return;
-  let msg, row = null;
+  let msg, row = null, err = "";
   try {
     const { BigQuery } = require("@google-cloud/bigquery");
     const [rows] = await new BigQuery({ projectId: PROJECT }).query({ query: B.query(PROJECT, DATASET), params: { month: B.monthKey(now) }, location: LOCATION });
@@ -48,8 +49,11 @@ exports.b7Bill = async function b7Bill(now) {
     msg = B.message(row, now);
   } catch (e) {
     console.warn("b7Bill query", e.message);
-    msg = B.failMessage(now, e.message);
+    err = String(e.message || e);
+    msg = B.failMessage(now, err);
   }
-  await ref.set({ ok: !!row, cost: row ? Number(row.cost) || 0 : null, credits: row ? Number(row.credits) || 0 : null }, { merge: true });
+  const ok = !!(row && Number(row.n));   // 표가 비었거나 못 읽었으면 한 시간 뒤 다시
+  await ref.set({ ok, err: err.slice(0, 300), cost: row ? Number(row.cost) || 0 : null, credits: row ? Number(row.credits) || 0 : null }, { merge: true });
+  if (claimed.retry && !ok) return;   // 다시 해 봤는데 또 안 됨 — 알림은 하루 한 번만
   try { await sendToDev(msg); } catch (e) { console.warn("b7Bill send", e.message); }
 };
