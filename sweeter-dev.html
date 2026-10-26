@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1026-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1026-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2987,10 +2987,10 @@ body.split-d #todayView.animating{overflow:hidden;}
 .task-menu-sub-float .tm-back-dup{justify-content:flex-end;}
 .dup-done{display:inline-block;font-size:10.5px;line-height:1.3;color:var(--tx3);text-align:left;cursor:pointer;padding:2px 2px 2px 8px;margin:-2px -2px -2px 0;}
 /* 체크박스는 글 안(둘째 줄 '완료' 바로 뒤)에 두어 윗줄 '것은' 아래에 맞는다 */
-.dup-done-box{display:inline-block;vertical-align:-2px;margin-left:5px;width:11px;height:11px;border:1.5px solid var(--tx3);border-radius:2px;position:relative;box-sizing:border-box;}
+.dup-done-box{display:inline-block;vertical-align:0;margin-left:4px;width:8px;height:8px;border:1px solid currentColor;border-radius:1.5px;position:relative;box-sizing:border-box;}
 .dup-done.on{color:var(--tx);}
-.dup-done.on .dup-done-box{background:var(--tx);border-color:var(--tx);}
-.dup-done.on .dup-done-box::after{content:'';position:absolute;left:2.5px;top:.5px;width:3px;height:6px;border:solid var(--bg,#fff);border-width:0 1.5px 1.5px 0;transform:rotate(45deg);}
+/* 켜졌을 때도 칠하지 않는다 — 글자와 같은 가는 선으로 안에 체크만 (v26-1026-6, HB: 둔탁하다) */
+.dup-done.on .dup-done-box::after{content:'';position:absolute;left:2.1px;top:.3px;width:2px;height:4.2px;border:solid currentColor;border-width:0 1px 1px 0;transform:rotate(45deg);}
 .secpick-back{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
   font-size:12.5px;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .secpick-back:hover,.secpick-back:active{background:var(--s2);color:var(--tx2);}
@@ -6566,7 +6566,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1026-5";
+const APP_VERSION = "v. 26-1026-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
