@@ -118,7 +118,7 @@ console.log('\n시나리오 5 — 실제로 오늘·내일·다음 주·어제�
 
 console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
 {
-  const src = slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');
+  const src = slice('let _dupDone=false;', 'function duplicateTaskTo(') + slice('function duplicateTaskToPickedDate(', '// "8월 17일 월요일');
   const from=[{text:'세금 내기',done:true,flag:true,manualCarryCount:5}];
   const to=[];
   const calls=[];
@@ -126,14 +126,14 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
   // 자리(달력에서 고르면 곧바로 복제)를 지킨다.
   const make = new Function('_taskMenuCtx','_datePickArmed','tKey','getBigs','getSmalls',
     'beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive',
-    'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy','_secPickOn',
-    `${src}; return duplicateTaskToPickedDate;`);
+    'closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy','_secPickOn','_subSetAll',
+    `${src}; return {dup:duplicateTaskToPickedDate,set:v=>{_dupDone=v;}};`);
   const rec=(name)=>(...args)=>{calls.push([name,...args]);};
   const freshCopy=new Function(`${DUPRUN}; return _freshTaskCopy;`)();
   const dup=make({type:'big',secId:'am',idx:0},()=>true,()=>'today',
     (key)=>key==='today'?from:to,(key)=>key==='today'?from:to,
     rec('before'),rec('save'),rec('render'),rec('total'),rec('refresh'),rec('close'),rec('jump'),
-    (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy,()=>false);
+    (d,s,verb)=>`${d} ${s} ${verb||'이동'}`,freshCopy,()=>false,it=>{(it.subs||[]).forEach(x=>{x.done=true;});}).dup;
 
   dup('2026-09-20','am');
   sc.eq('원본은 그 자리에 남는다', from.length, 1);
@@ -141,16 +141,27 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
   sc.eq('복제라고 안내하며 갈 곳도 알려 준다', calls.at(-1),
     ['jump','2026-09-20 am 복제','2026-09-20',{key:'2026-09-20',secId:'am',type:'big',idx:0}]);
 
+  // '지금 것은 완료' 를 켜 두면 복제하면서 원본을 완료 체크한다 (v26-1026-4)
+  const mk=(on)=>{const f=[{text:'보고서',done:false,urgent:true}],t=[];
+    const m=new Function('_taskMenuCtx','_datePickArmed','tKey','getBigs','getSmalls','beforeSave','save','renderSecBody','updateTotal','refreshTaskViewsLive','closeTaskMenu_keepCtx','_toastWithJump','_moveDateToastMsg','_freshTaskCopy','_secPickOn','_subSetAll','_clearUrgentOnDone',
+      `${src}; return {dup:duplicateTaskToPickedDate,set:v=>{_dupDone=v;}};`)(
+      {type:'big',secId:'am',idx:0},()=>true,()=>'today',k=>k==='today'?f:t,k=>k==='today'?f:t,
+      ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},(d,s,v)=>v,freshCopy,()=>false,()=>{},it=>{delete it.urgent;});
+    m.set(on);m.dup('2026-09-20','am');return {f,t};};
+  const on=mk(true),off=mk(false);
+  sc.eq('켜면 원본이 완료로 바뀐다 · 사본은 새 할일', [on.f[0].done,on.f[0].urgent,on.t[0].done], [true,undefined,false]);
+  sc.eq('끄면 원본은 그대로', [off.f[0].done,off.t.length], [false,1]);
+
   // 달력을 연 지 200ms 안에 저 혼자 날아온 change 는 무시한다
   const to2=[];
   const dup2=make({type:'big',secId:'am',idx:0},()=>false,()=>'today',
     (key)=>key==='today'?from:to2,(key)=>key==='today'?from:to2,
-    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false);
+    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false,it=>{(it.subs||[]).forEach(x=>{x.done=true;});}).dup;
   dup2('2026-09-20');
   sc.eq('무장 전 change 는 복제하지 않는다', to2.length, 0);
   sc.eq('빈 날짜면 아무 일도 없다', (()=>{const t=[];const d=make({type:'big',secId:'am',idx:0},
     ()=>true,()=>'today',(k)=>k==='today'?from:t,(k)=>k==='today'?from:t,
-    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false);d('');return t.length;})(), 0);
+    ()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>{},()=>'',freshCopy,()=>false,it=>{(it.subs||[]).forEach(x=>{x.done=true;});}).dup;d('');return t.length;})(), 0);
 }
 
 console.log('\n시나리오 7 — 두 날짜 줄이 각각 자기 입력칸에 연결된다');

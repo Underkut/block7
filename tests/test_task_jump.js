@@ -159,7 +159,7 @@ console.log('\n시나리오 5 — 개수를 메뉴 줄 오른쪽에 적는다');
   fill();
   const cnt=r=>r.querySelector('.task-menu-cnt');
   const dots=r=>r.querySelector('.task-menu-dots');
-  sc.eq('개수를 붙일 줄만 고른다', made[0], '#taskMenu [data-cnt-days]');
+  sc.eq('개수를 붙일 줄만 고른다', made[0], '#taskMenu [data-cnt-days],#taskMenu [data-yd]');
   sc.eq('내일 줄에 3', cnt(rows[0]).textContent, '3');
   sc.eq('다음 주 줄에 0', cnt(rows[1]).textContent, '0');
   sc.eq('0 인 날은 옅게', cnt(rows[1]).classList.contains('zero'), true);

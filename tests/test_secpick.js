@@ -27,7 +27,7 @@ console.log('시나리오 1 — 목적지 줄마다 어디로 가는지 적혀 �
   sc.eq('이동 6줄(어제 완료 포함) · 복제 5줄', {move:acts.filter(a=>a==='move').length, dup:acts.filter(a=>a==='dup').length},
     {move:6, dup:5});
   // 날짜 지정 두 줄은 달력이 먼저다 — 날짜를 알아야 그 날 구간을 보여줄 수 있다
-  sc.eq('날짜 지정 세 줄은 달력 먼저 (이동 · 복제 · 완료 후 다음 할일)', (MENU.match(/data-when="pick"/g)||[]).length, 3);
+  sc.eq('날짜 지정 세 줄은 달력 먼저 (이동 · 복제 · 지금 완료 후 다음 · 어제 완료 후 다음)', (MENU.match(/data-when="pick"/g)||[]).length, 4);
   sc.eq('오늘 다른 구간으로 줄', MENU.includes('id="todaySecRow"'), true);
   sc.eq('그 줄은 설정과 무관하게 판을 연다',
     /id="todaySecRow"[\s\S]{0,200}data-secpick="always"/.test(MENU), true);
