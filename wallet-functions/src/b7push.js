@@ -118,6 +118,8 @@ exports.b7Due = async function b7Due() {
     try { await runOne(d.id, now); } catch (e) { console.warn("b7push run", d.id, e.message); }
   }
   if (!lastScan || C.minOf(now) % 30 === 0) { lastScan = now; await rescan(now); }
+  // 요금 알림 — 오후 3시 넘었고 오늘 아직이면 개발자 한 사람에게 (b7bill.js). 알림과 실패를 서로 넘기지 않는다
+  await require("./b7bill").b7Bill(now).catch((e) => console.warn("b7Bill", e.message));
 };
 
 async function uidOf(req) {
