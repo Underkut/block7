@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1027-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1027-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6589,7 +6589,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1027-3";
+const APP_VERSION = "v. 26-1027-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -16141,6 +16141,7 @@ function bibleClose(){
   _brCloseSheets();
   ['brPick','brFindP','brDashP'].forEach(id=>_brEl(id).classList.remove('on'));
   _brEl('bibleRd').classList.remove('on');_brOpen=false;_brCover(false);
+  _embedDone('bible');
 }
 // 뒤 화면 쉬게 하기 (v26-1010-10, HB — 아이패드 미니에서만 스크롤 걸림). 성경이 열려 있는 동안
 // ① 뒤 화면의 바탕이 손을 받지 않고(html.br-cover — CSS 참고) ② 뒤에서 혼자 돌던 그리기(_rollTick·
@@ -16275,7 +16276,7 @@ function _brProgSync(){
 // (v26-1007-7~8 에는 말씀 대시보드를 열었다 — 그때 쓰던 접어 두기(_brParked)는 남아 있지만 이제 안 쓴다)
 let _brParked=false,_brDashRange='m';
 function _brOpenDash(){_brDashRender();_brEl('brDashBody').scrollTop=0;_brEl('brDashP').classList.add('on');}
-const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽기 계획'};
+const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽기 계획',pray:'기도노트'};
 function _brFmtMin(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
 function _brDashRender(){
   const $=_brEl,books=_brBooks(),CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],now=Date.now(),DAY=864e5;
@@ -31535,6 +31536,7 @@ function closeVerseAggPopup(){
   closeKeepSwitch();
   document.getElementById('vAggOverlay').style.display='none';
   document.getElementById('vAggModal').style.display='none';
+  _embedDone('keep');
 }
 // ══════ 이름 자동 롤링 (v26-0904-10, HB) ══════
 // 이름이 **여럿**이면 세로로 한 줄씩 넘기고(플립시계), 이름이 **하나인데
@@ -43746,6 +43748,22 @@ function _bibleBtnLongPress(el){
   el.addEventListener('click',e=>{if(fired){e.preventDefault();e.stopImmediatePropagation();}},true);
   el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();bibleToReadMenu(el);});
 }
+// ── 다른 앱 안의 겹 화면으로 열기 (HB 2026-10-27 P2) — 기도노트 There 좌상단 '저장' · '성경' 이 sweeter.my/index.html?embed=… 를
+//   iframe 으로 띄운다(같은 주소라 로그인 · 자료가 그대로). ?embed=bible[&b=43&c=3] = 성경(그 장 · 없으면 마지막 읽던 곳),
+//   ?embed=keep = 저장한 말씀. 그 화면을 닫으면 부모에게 {b7embed:'close'} 를 보내 겹 화면을 내리게 한다.
+//   iframe 이 아니면(주소창에 직접 쳐도) 아무 일도 하지 않는다.
+const _EMBED=(function(){try{if(window.parent===window)return '';return new URLSearchParams(location.search).get('embed')||'';}catch(e){return '';}})();
+function _embedDone(kind){if(!_EMBED||kind!==_EMBED)return;try{window.parent.postMessage({b7embed:'close'},location.origin);}catch(e){}}
+function _embedStart(){
+  if(!_EMBED)return;
+  document.documentElement.classList.add('b7-embed');
+  const q=new URLSearchParams(location.search);
+  if(_EMBED==='bible'){
+    const b=parseInt(q.get('b'),10),c=parseInt(q.get('c'),10);
+    if(b>=1&&b<=66&&c>=1){_brNextSrc='pray';bibleOpen(b-1,c,0);}else bibleOpenLast('pray');
+  }else if(_EMBED==='keep')openKeepListPopup('');
+  try{window.parent.postMessage({b7embed:'ready'},location.origin);}catch(e){}
+}
 function _initBibleBtnMenus(){['gnbBibleBtn','swDeeperBtn'].forEach(id=>_bibleBtnLongPress(document.getElementById(id)));}
 function _initHdrDateLongPress(){
   const el=document.getElementById('hDate');
@@ -46779,6 +46797,7 @@ function initAppUI(){
   initDateSwipe();
   _initHdrDateLongPress();
   _initBibleBtnMenus();
+  if(_EMBED)setTimeout(_embedStart,60);
   setupCrossViewSwipeZones();
   attachPullToToday('dateSwipeCatcher',()=>navigateDate(0),'오늘로');
 
