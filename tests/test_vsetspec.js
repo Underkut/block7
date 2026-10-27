@@ -96,7 +96,7 @@ console.log('\n시나리오 4 — 말씀 위젯 탭 (뷰탭에서 이동)');
 {
   const p = panel('widget');
   sc.eq('묶음: 줄마다 보일 것 (미드·파워)', p.includes('<div class="sg" data-lv="mp">') && p.includes('<div class="sg-h">줄마다 보일 것</div>'), true);
-  sc.eq('묶음: 글자 크기 (파워만)', p.includes('<div class="sg" data-lv="p">'), true);
+  sc.eq('묶음: 글자 크기 (파워만)', /<div class="sg" data-lv="p"( data-fold-key="[^"]*")?>/.test(p), true);   // 접힘 열쇠(v26-1027-1)는 붙어도 된다
   sc.eq('위젯 항목 버튼이 여기로 옮겨왔다', p.includes('setVerseWidgetText') && p.includes('setVWRefSize3'), true);
   sc.eq('본문/장절은 항목 이름 서식(뎁스 규칙)',
         (p.match(/<div class="settings-row-label">(본문|장절)<\/div>/g) || []).length, 2);

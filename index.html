@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1026-6  [production]  -->
+<!-- BLOCK7  v. 26-1027-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6566,7 +6566,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1026-6";
+const APP_VERSION = "v. 26-1027-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6919,7 +6919,7 @@ try{
       <div class="sg" data-lv="mp">
         <div class="sg-h">하루</div>
         <div class="sg-card">
-          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16M7 17a5 5 0 0 1 10 0"/><path d="M12 5v5M9.5 7.5L12 5l2.5 2.5"/></svg><div class="settings-row-text"><div class="settings-row-label">하루가 바뀌는 시각</div><div class="settings-row-desc">이 시각 전까지는 어제로 쳐요 — 새벽 2시까지 일하면 어제 할일</div></div><select class="settings-select sr-select" id="setDayStart" onchange="updateSetting('dayStartHour',parseInt(this.value))">
+          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V6.5M12 12l2.5 1.5"/><path d="M12 3.5v.01"/></svg><div class="settings-row-text"><div class="settings-row-label">하루가 바뀌는 시각</div><div class="settings-row-desc">이 시각 전까지는 어제로 쳐요 — 새벽 2시까지 일하면 어제 할일</div></div><select class="settings-select sr-select" id="setDayStart" onchange="updateSetting('dayStartHour',parseInt(this.value))">
           ${''}
         </select></div>
           <div class="settings-row stack" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><div class="settings-row-text"><div class="settings-row-label">시간 고르는 단위</div><div class="settings-row-desc">일정 · 알림 · 구간 시각을 몇 분씩 고를지 (하루가 바뀌는 시각은 늘 1시간 단위)</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="timeStep1" onclick="setTimeStep(1)">1분</button><button class="theme-pick-btn" id="timeStep10" onclick="setTimeStep(10)">10분</button><button class="theme-pick-btn" id="timeStep15" onclick="setTimeStep(15)">15분</button><button class="theme-pick-btn" id="timeStep30" onclick="setTimeStep(30)">30분</button><button class="theme-pick-btn" id="timeStep60" onclick="setTimeStep(60)">1시간</button></div></div></div>
@@ -6929,7 +6929,7 @@ try{
         <div class="sg-h">못 끝낸 할일</div>
         <div class="sg-card">
           <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h12M13 8l4 4-4 4"/><path d="M5 6v12"/></svg><div class="settings-row-text"><div class="settings-row-label">다음날로 자동 넘기기</div><div class="settings-row-desc">하루가 끝나면 못 끝낸 할일을 다음날로</div></div><label class="settings-toggle"><input type="checkbox" id="setAutoCarry" onchange="updateSetting('autoCarryOver',this.checked)"><span class="settings-toggle-track"></span></label></div>
-          <div class="settings-row stack"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H7M11 8l-4 4 4 4"/><path d="M19 6v12"/></svg><div class="settings-row-text"><div class="settings-row-label">지금 오늘로 가져오기</div><div class="settings-row-desc">고른 기간의 못 끝낸 할일을 지금 오늘로</div></div><div class="sr-ctl"><div class="sg-seg" id="carryScopeRow"><button class="theme-pick-btn" id="carryScopeYesterday" onclick="setCarryScope('yesterday')">어제</button><button class="theme-pick-btn" id="carryScopeWeek" onclick="setCarryScope('week')">이번 주</button><button class="theme-pick-btn" id="carryScopeMonth" onclick="setCarryScope('month')">이번 달</button><button class="theme-pick-btn" id="carryScopeCustom" onclick="setCarryScope('custom')">직접</button></div>
+          <div class="settings-row stack"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 10V5.5h12v13h-12V14"/><path d="M2.5 14.5c3.2-3.4 7.7-3.9 11.6-1.5"/><path d="M16.2 14.6l-4.6.4 2.4-4z" fill="currentColor"/></svg><div class="settings-row-text"><div class="settings-row-label">지금 오늘로 가져오기</div><div class="settings-row-desc">고른 기간의 못 끝낸 할일을 지금 오늘로</div></div><div class="sr-ctl"><div class="sg-seg" id="carryScopeRow"><button class="theme-pick-btn" id="carryScopeYesterday" onclick="setCarryScope('yesterday')">어제</button><button class="theme-pick-btn" id="carryScopeWeek" onclick="setCarryScope('week')">이번 주</button><button class="theme-pick-btn" id="carryScopeMonth" onclick="setCarryScope('month')">이번 달</button><button class="theme-pick-btn" id="carryScopeCustom" onclick="setCarryScope('custom')">직접</button></div>
             <div id="carryCustomRow" style="display:none;gap:8px;align-items:center;margin:10px 0 0;flex-wrap:wrap;">
           <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--tx3);">시작
             <input type="date" id="carryCustomFrom" onchange="save()" style="font-size:12px;padding:3px 5px;background:var(--s2);border:1px solid var(--bd2);border-radius:6px;color:var(--tx);color-scheme:dark;"></label>
@@ -6954,8 +6954,8 @@ try{
         <div class="sg-h">블럭</div>
         <div class="sg-card">
           <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/></svg><div class="settings-row-text"><div class="settings-row-label">빅 블럭 경고</div><div class="settings-row-desc">하루에 이 개수를 넘으면 경고 색</div></div><input type="number" class="settings-number" id="setBigLimit" min="1" max="20" onchange="updateSetting('bigLimit',parseInt(this.value)||6)"></div>
-          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 쓰기</div><div class="settings-row-desc">구간마다 스몰 블럭 칸을 보여요</div></div><label class="settings-toggle"><input type="checkbox" id="setShowSmallBlocks" onchange="updateSetting('showSmallBlocks',this.checked)"><span class="settings-toggle-track"></span></label></div>
-          <div class="settings-row sub" data-lv="mp" data-cond="smallBlocks"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 경고</div><div class="settings-row-desc">한 구간에 이 개수를 넘으면 경고 색</div></div><input type="number" class="settings-number" id="setSmallLimit" min="1" max="20" onchange="updateSetting('smallLimit',parseInt(this.value)||2)"></div>
+          <div class="settings-row" data-lv="mp"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="10" height="10" rx="1.8"/><rect x="16" y="16" width="4" height="4" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 쓰기</div><div class="settings-row-desc">구간마다 스몰 블럭 칸을 보여요</div></div><label class="settings-toggle"><input type="checkbox" id="setShowSmallBlocks" onchange="updateSetting('showSmallBlocks',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row sub" data-lv="mp" data-cond="smallBlocks"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l9 15.5H3z"/><path d="M12 10v4.5M12 17v.01"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭 경고</div><div class="settings-row-desc">한 구간에 이 개수를 넘으면 경고 색</div></div><input type="number" class="settings-number" id="setSmallLimit" min="1" max="20" onchange="updateSetting('smallLimit',parseInt(this.value)||2)"></div>
         </div>
       </div>
       <div class="sg" data-lv="p">
@@ -6983,7 +6983,7 @@ try{
       <div class="sg" id="sgTaskText" data-lv="mp" data-prod="b7">
         <div class="sg-h">할일 글자</div>
         <div class="sg-card">
-          <div class="settings-row stack" id="secTaskOverflow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 12h16M4 16h9"/><path d="M16 16h4M18 14l2 2-2 2"/></svg><div class="settings-row-text"><div class="settings-row-label">긴 할일</div><div class="settings-row-desc">한 줄을 넘칠 때 — 고칠 때는 늘 여러 줄</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="taskOvf_shrink" onclick="updateSetting('taskOverflow','shrink')">줄여서</button><button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">흐르게</button><button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button></div></div></div>
+          <div class="settings-row stack" id="secTaskOverflow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16M4 15h9M15.5 15h.01M18 15h.01M20.5 15h.01"/></svg><div class="settings-row-text"><div class="settings-row-label">긴 할일</div><div class="settings-row-desc">한 줄을 넘칠 때 — 고칠 때는 늘 여러 줄</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="taskOvf_shrink" onclick="updateSetting('taskOverflow','shrink')">줄여서</button><button class="theme-pick-btn" id="taskOvf_scroll" onclick="updateSetting('taskOverflow','scroll')">흐르게</button><button class="theme-pick-btn" id="taskOvf_clip" onclick="updateSetting('taskOverflow','clip')">그대로</button></div></div></div>
           <div class="settings-row stack" id="secEvChipMax"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="8" rx="4"/><path d="M8 12h6"/></svg><div class="settings-row-text"><div class="settings-row-label">일정 이름 길이</div><div class="settings-row-desc">할일 줄 위 일정 칩의 글자 수 — 넘치면 …, 누르면 전체</div></div><div class="sr-ctl"><div class="sr-slider"><input type="range" class="uiscale-slider" id="evChipMaxSlider" min="3" max="12" step="1" value="12" oninput="evChipMaxInput(this)" onchange="evChipMaxCommit(this)"><span id="evChipMaxLabel" style="font-family:var(--font-number);">12자</span></div>
             <div class="evchip-preview" id="evChipPreview"></div></div></div>
         </div>
@@ -6992,9 +6992,9 @@ try{
         <div class="sg-h">주간 · 월간</div>
         <div class="sg-card">
           <div class="settings-row stack" id="secDow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg><div class="settings-row-text"><div class="settings-row-label">요일 표기</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="dowBtnLetterLord" onclick="updateSetting('dowFormat','letter-lord')">L M T W</button><button class="theme-pick-btn" id="dowBtnLetterSun" onclick="updateSetting('dowFormat','letter-sun')">S M T W</button><button class="theme-pick-btn" id="dowBtnKorean" onclick="updateSetting('dowFormat','korean')">일 월 화</button></div></div></div>
-          <div class="settings-row sub"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16"/><circle cx="8.5" cy="14.5" r="1.4" fill="currentColor" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">주일을 빨갛게</div><div class="settings-row-desc">일요일 날짜 · 요일을 붉게</div></div><label class="settings-toggle"><input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row sub"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16"/><circle cx="8.5" cy="14.5" r="1.4" fill="var(--sun-red)" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">주일을 빨갛게</div><div class="settings-row-desc">일요일 날짜 · 요일을 붉게</div></div><label class="settings-toggle"><input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)"><span class="settings-toggle-track"></span></label></div>
           <div class="settings-row stack" data-lv="p" id="secMonthTitle"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">달 이름</div><div class="settings-row-desc">월간 뷰 · 월간 위젯의 달 제목</div></div><div class="sr-ctl"><div class="sg-seg" id="monthTitleFormatBtns"></div></div></div>
-          <div class="settings-row sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">연도도 보이기</div><div class="settings-row-desc">달 이름 위에 작게</div></div><label class="settings-toggle"><input type="checkbox" id="setMonthTitleYear" onchange="updateSetting('monthTitleYear',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7l4 5 4-5M9 12v5"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">연도도 보이기</div><div class="settings-row-desc">달 이름 위에 작게</div></div><label class="settings-toggle"><input type="checkbox" id="setMonthTitleYear" onchange="updateSetting('monthTitleYear',this.checked)"><span class="settings-toggle-track"></span></label></div>
         </div>
       </div>
       <div class="sg" id="sgSwipe" data-lv="p">
@@ -7124,7 +7124,7 @@ try{
       <div class="sg" id="sgLvIcon" data-lv="p">
         <div class="sg-h">설정창</div>
         <div class="sg-card">
-          <div class="settings-row stack" id="secUiLevelSet"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="12" r="2.5"/><circle cx="17" cy="12" r="2.5"/><path d="M12 7v10"/></svg><div class="settings-row-text"><div class="settings-row-label">등급 아이콘 모양</div><div class="settings-row-desc">맨 위 이지 · 미드 · 파워 그림</div></div><div class="sr-ctl"><div class="sg-seg"><button class="settings-btn uilv-set-btn" id="uiLvSetAnimal" onclick="setUiLevelIconSet('animal')" aria-label="동물"></button><button class="settings-btn uilv-set-btn" id="uiLvSetSquare" onclick="setUiLevelIconSet('square')" aria-label="사각"></button></div></div></div>
+          <div class="settings-row stack" id="secUiLevelSet"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><circle cx="6.5" cy="16" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></svg><div class="settings-row-text"><div class="settings-row-label">등급 아이콘 모양</div><div class="settings-row-desc">맨 위 이지 · 미드 · 파워 그림</div></div><div class="sr-ctl"><div class="sg-seg"><button class="settings-btn uilv-set-btn" id="uiLvSetAnimal" onclick="setUiLevelIconSet('animal')" aria-label="동물"></button><button class="settings-btn uilv-set-btn" id="uiLvSetSquare" onclick="setUiLevelIconSet('square')" aria-label="사각"></button></div></div></div>
         </div>
       </div>
 
@@ -7162,9 +7162,9 @@ try{
         <div class="sg-card">
           <div class="settings-row"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10.5 20.5a1.6 1.6 0 0 0 3 0"/></svg><div class="settings-row-text"><div class="settings-row-label">하루 할일 요약</div><div class="settings-row-desc"><span id="notifyStatusDesc">정한 시각에 오늘 할일 · 일정을 한 번에 — 아이폰은 홈 화면에 추가한 앱에서만</span></div></div><label class="settings-toggle"><input type="checkbox" id="setNotifyEnabled" onchange="onNotifyMasterToggle(this.checked)"><span class="settings-toggle-track"></span></label></div>
           <div class="settings-row sub" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg><div class="settings-row-text"><div class="settings-row-label">보낼 시각</div></div><span id="morningTimeSlot" style="display:inline-flex;"></span></div>
-          <div class="settings-row stack sub" data-lv="p" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><div class="settings-row-text"><div class="settings-row-label">제목 끝말</div><div class="settings-row-desc">'오늘' 뒤에 붙는 말 (예: 오늘 화이팅!) — 직접 넣은 말은 길게 눌러 고치기 · 지우기</div></div><div class="sr-ctl"><div class="sg-chips" id="morningSfxRow"></div></div></div>
+          <div class="settings-row stack sub" data-lv="p" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8.5M15.5 9v3.5c0 1.5-.8 2.5-2 3M19.5 9v3.5c0 1.5-.8 2.5-2 3"/></svg><div class="settings-row-text"><div class="settings-row-label">제목 끝말</div><div class="settings-row-desc">'오늘' 뒤에 붙는 말 (예: 오늘 화이팅!) — 직접 넣은 말은 길게 눌러 고치기 · 지우기</div></div><div class="sr-ctl"><div class="sg-chips" id="morningSfxRow"></div></div></div>
           <div class="settings-row" data-lv="mp" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M12 8v3l2 1"/></svg><div class="settings-row-text"><div class="settings-row-label">구간 시작 알림</div><div class="settings-row-desc">구간이 시작될 때 그 구간 할일 · 일정을 (남은 게 있을 때만)</div></div><label class="settings-toggle"><input type="checkbox" id="setNotifySections" onchange="updateNotifySub('sections',this.checked)"><span class="settings-toggle-track"></span></label></div>
-          <div class="settings-row stack sub" data-lv="p" data-notif-sub="sections"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6h14M5 11h14M5 16h9"/></svg><div class="settings-row-text"><div class="settings-row-label">구간 알림 끝말</div><div class="settings-row-desc">구간 이름 뒤에 붙는 말 — 구간 탭에서 구간마다 '알림 문구' 를 정하면 그게 먼저</div></div><div class="sr-ctl"><div class="sg-chips" id="sectionSfxRow"></div></div></div>
+          <div class="settings-row stack sub" data-lv="p" data-notif-sub="sections"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h8.5M15.5 9v3.5c0 1.5-.8 2.5-2 3M19.5 9v3.5c0 1.5-.8 2.5-2 3"/></svg><div class="settings-row-text"><div class="settings-row-label">구간 알림 끝말</div><div class="settings-row-desc">구간 이름 뒤에 붙는 말 — 구간 탭에서 구간마다 '알림 문구' 를 정하면 그게 먼저</div></div><div class="sr-ctl"><div class="sg-chips" id="sectionSfxRow"></div></div></div>
           <div class="settings-row sub" data-lv="mp" data-notif-sub="on"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="5" height="5" rx="1"/><rect x="14" y="5" width="5" height="5" rx="1"/><rect x="5" y="14" width="5" height="5" rx="1"/><rect x="14" y="14" width="5" height="5" rx="1"/></svg><div class="settings-row-text"><div class="settings-row-label">스몰 블럭도 넣기</div><div class="settings-row-desc">끄면 빅 블럭 · 일정만</div></div><label class="settings-toggle"><input type="checkbox" id="setNotifyIncludeSmall" onchange="updateNotifySub('includeSmall',this.checked)"><span class="settings-toggle-track"></span></label></div>
         </div>
       </div>
@@ -7548,7 +7548,7 @@ try{
       </div>
       </div>
 
-      <div class="sg" data-lv="p">
+      <div class="sg" data-lv="p" data-fold-key="위젯 글자 크기">
         <div class="sg-h">글자 크기</div>
         <div class="sg-card sg-pad">
         <div class="settings-row">
@@ -7663,7 +7663,7 @@ try{
 
       <div class="vsettings-tab-content settings-tab-content" id="vstab-full">
 <!-- ── 전체화면 본문 크기 ── -->
-      <div class="sg">
+      <div class="sg" data-fold-key="전체화면 글자 크기">
         <div class="sg-h">글자 크기</div>
         <div class="sg-card sg-pad">
         <div class="settings-row-desc" style="margin-bottom:8px;">전체화면 본문만 — 작을수록 줄 간격이 넓어져 여백이 살아요</div>
@@ -44854,7 +44854,7 @@ function sgFold(row){
 // ── 묶음 접기 — 기기 폭에 따라 (v26-1024-20, HB S-5) ──
 // HB: "폰에서는 접으면 좋겠는 게 많고, 태블릿은 좀 괜찮고, PC 는 다 괜찮다."
 // 길고 덜 바꾸는 묶음만 이 표에 둔다. 'phone' = 폰에서 접혀 열림 · 'tablet' = 태블릿까지 접힘.
-// PC(폭 1024 이상)는 처음에 다 편다. 탭의 본론(시간 구간 · 말씀 알림 · 지금 쓰는 모음 · 모양)은 넣지 않는다.
+// PC(폭 1024 이상)는 처음에 다 편다. 탭의 본론(시간 구간 · 말씀 알림 · 지금 쓰는 모음 · 모양 · 다음 구절로)은 'open' — 접을 수 있되 처음엔 펴 둔다(v26-1025-15).
 // 열쇠는 묶음 제목(.sg-h) — 제목을 바꾸면 여기도 바꾼다 (tests/test_sgfold.js 가 표의 제목이 실제로 있는지 본다).
 // 사람이 한 번 접거나 펴면 **그 기기가 기억**한다(_lsk('sgFold')) — 기기 폭 기본값보다 먼저.
 // 접힌 제목 줄 끝에는 지금 고른 값이 한 줄로 나온다(_sgFoldSum) — 열지 않아도 무엇인지 보이게.
@@ -44866,7 +44866,15 @@ const _SG_FOLD={
   '이미지에 넣을 것':'phone','이미지 크기':'phone','글로 공유할 때':'phone',
   '명제 제목':'tablet','테마':'tablet',
   // 계정 탭 (v26-1025-8, HB) — 'all' = 폭과 상관없이 처음엔 접힘
-  '구글 캘린더':'all','시리로 할일 넣기':'all','데이터 복구':'all','두 기기가 다르게 고친 것':'all'
+  '구글 캘린더':'all','시리로 할일 넣기':'all','데이터 복구':'all','두 기기가 다르게 고친 것':'all',
+  // v26-1025-15 (HB "최대한 다 접을 수 있게") — 나머지 묶음도 접는다
+  '하루':'phone','블럭':'phone','끝냈을 때':'phone','위 단추':'phone','설정창':'phone','색 묶음':'phone',
+  '할일':'phone','이 기기':'phone','백업':'phone','시트 편집 문':'phone',
+  '줄마다 보일 것':'phone','위젯 글자 크기':'phone','월간 뷰 암송':'phone','태그 타일뷰':'phone','There 단추':'phone',
+  '전체화면 글자 크기':'phone','강조 표시':'phone','반응 횟수':'phone','Deeper 로 열 성경':'phone','성경 사이트 열 곳':'phone','There 화면':'phone',
+  // 탭의 본론 — 접을 수는 있지만 'open' = 어느 기기든 처음엔 펴 둔다
+  '모양':'open','시간 구간':'open','지금 쓰는 모음':'open','다음 구절로':'open','말씀 알림':'open'
+  // 접지 않는 곳: 계정 탭 로그인 카드(제목 줄 없음) · 받은 쪽지(제 펼침 ▾ 가 이미 있음)
 };
 // 요약을 고른 단추 글자로 만들 수 없는 묶음만 따로
 const _SG_FOLD_SUM={
@@ -44897,9 +44905,37 @@ const _SG_FOLD_IC={
   '이미지 크기':'<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><rect x="6.5" y="10.5" width="7" height="7" rx="1"/>',
   '글로 공유할 때':'<path d="M9.5 7h-3A1.5 1.5 0 0 0 5 8.5V12h4.5zM9.5 12c0 3-1.5 4.5-4 5M19 7h-3a1.5 1.5 0 0 0-1.5 1.5V12H19zM19 12c0 3-1.5 4.5-4 5"/>',
   '명제 제목':'<path d="M4 6h11M9.5 6v14"/><path d="M18.5 7.2c0.48 1.90 0.95 2.38 2.8 2.8-1.85 0.42-2.32 0.90-2.8 2.8-0.48-1.90-0.95-2.38-2.8-2.8 1.85-0.42 2.32-0.90 2.8-2.8z"/><path d="M16 16.4c0.27 1.09 0.54 1.36 1.6 1.6-1.06 0.24-1.33 0.51-1.6 1.6-0.27-1.09-0.54-1.36-1.6-1.6 1.06-0.24 1.33-0.51 1.6-1.6z"/>',
-  '테마':'<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-.9.7-1.5 1.7-1.5h2.2a4 4 0 0 0 4-4c0-4-3.8-7-8.5-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>'
+  '테마':'<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-.9.7-1.5 1.7-1.5h2.2a4 4 0 0 0 4-4c0-4-3.8-7-8.5-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="14.5" cy="7.5" r="1"/>',
+  // v26-1027-1 (HB 두 번째 · 세 번째 시안) — 새로 접게 된 묶음
+  '하루':'<path d="M3 18h18M7 18a5 5 0 0 1 10 0"/><path d="M12 6v3M5.6 9.6l1.8 1.8M18.4 9.6l-1.8 1.8"/>',
+  '블럭':'<rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/><rect x="8.5" y="4" width="7" height="7" rx="1.2"/>',
+  '끝냈을 때':'<path d="M4 12.5l4.5 4.5L17 8"/><path d="M19 3.5c.3 1.5.9 2.1 2.5 2.5-1.6.4-2.2 1-2.5 2.5-.3-1.5-.9-2.1-2.5-2.5 1.6-.4 2.2-1 2.5-2.5z"/>',
+  '모양':'<circle cx="12" cy="12" r="4.5"/><path d="M12 7.5a4.5 4.5 0 0 1 0 9z" fill="currentColor" stroke="none"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+  '위 단추':'<rect x="2.5" y="9" width="5.5" height="6" rx="3"/><rect x="9.25" y="9" width="5.5" height="6" rx="3"/><rect x="16" y="9" width="5.5" height="6" rx="3"/>',
+  '설정창':'<path d="M5 19v-4M12 19v-9M19 19V5"/>',
+  '색 묶음':'<rect x="4" y="3.5" width="6" height="17" rx="1.5"/><path d="M10 8.5l4.3-2.5a1.5 1.5 0 0 1 2 .6l4.4 7.6a1.5 1.5 0 0 1-.5 2L10 20.5"/><path d="M7 16.5h.01"/>',
+  '시간 구간':'<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5M12 12l7.4 4.2M12 12l-7.4 4.2"/>',
+  '할일':'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  '이 기기':'<rect x="4" y="3.5" width="9" height="17" rx="2.2"/><path d="M7.5 17.5h2M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/>',
+  '백업':'<rect x="3" y="4" width="18" height="5" rx="1.2"/><path d="M4.5 9v9.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V9M10 13h4"/>',
+  '시트 편집 문':'<rect x="3" y="4" width="13" height="13" rx="1.5"/><path d="M3 8.5h13M3 13h13M8 4v13"/><path d="M14 21l.6-2.4 5-5a1.4 1.4 0 0 1 2 2l-5 5z"/>',
+  '지금 쓰는 모음':'<rect x="4" y="4" width="4" height="16" rx="1"/><rect x="9.5" y="4" width="4" height="16" rx="1"/><path d="M15.4 5.3l3.6-1 3.4 15.4-3.6 1z"/>',
+  '다음 구절로':'<path d="M6 6l7 6-7 6M17 6v12"/>',
+  '줄마다 보일 것':'<path d="M3.5 7h10M3.5 12h10M3.5 17h10"/><path d="M18 8.6c-1.6-1.1-2.2-1.9-2.2-2.6a1.1 1.1 0 0 1 2.2-.3 1.1 1.1 0 0 1 2.2.3c0 .7-.6 1.5-2.2 2.6z"/><path d="M16 17l1.4 1.4L20.2 15.6"/>',
+  '위젯 글자 크기':'<path d="M4 6h10M9 6v13M18.5 5v14M16.5 7l2-2 2 2M16.5 17l2 2 2-2"/>',
+  '월간 뷰 암송':'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/>',
+  '태그 타일뷰':'<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+  'There 단추':'<rect x="9" y="11" width="6" height="9.5" rx="1"/><path d="M12 11V9"/><path d="M12 3.5c1.5 1.8 2 2.8 2 3.6a2 2 0 0 1-4 0c0-.8.5-1.8 2-3.6z"/>',
+  '전체화면 글자 크기':'<path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M9 9h6M12 9v6.5"/>',
+  '강조 표시':'<path d="M14 4.5l5.5 5.5-7.5 7.5H7.5V13z"/><path d="M4 20.5h9"/>',
+  '반응 횟수':'<path d="M4 20h16M7 20v-6M12 20V8M17 20v-9"/>',
+  'Deeper 로 열 성경':'<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M12 6.5v7M9.5 9h5"/>',
+  '성경 사이트 열 곳':'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>',
+  'There 화면':'<path d="M3 17.5h18M7 20.5h10M12 3.5v11M8.5 7.5h7"/>',
+  '말씀 알림':'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'
 };
 function _sgTitle(g){
+  if(g.dataset.foldKey)return g.dataset.foldKey;   // 같은 제목이 둘인 묶음(글자 크기)은 열쇠를 따로 (v26-1025-15)
   const h=g.querySelector(':scope>.sg-h');if(!h)return '';
   let t='';h.childNodes.forEach(n=>{
     if(n.nodeType===3)t+=n.textContent;
@@ -44915,6 +44951,7 @@ function _sgFoldMemPut(k,open){
 // 접기 기본값: 그 기기 폭에서 접어 둘 묶음인가
 function _sgFoldDefaultOpen(rule,dev){
   if(rule==='all')return false;     // 어느 기기든 처음엔 접힘
+  if(rule==='open')return true;     // 어느 기기든 처음엔 펴짐 (탭의 본론, v26-1025-15)
   if(dev==='pc')return true;
   if(dev==='tablet')return rule!=='tablet';
   return false;                     // 폰은 표에 있는 묶음을 다 접는다
