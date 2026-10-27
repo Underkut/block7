@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1027-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1027-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1027-1';
+const APP_VERSION = 'v. 26-1027-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1368,6 +1368,48 @@ function answeredList(db) {
   return out;
 }
 
+// ── 기록 › 기도한 날 — 달력 아래 약식 대시보드 숫자 (HB 2026-10-27 P3′) ──
+// 새로 저장하는 것 없이 이미 있는 기록만 읽는다: dt = 날마다 There 합({ s, by }) · ss = There 낱개({ date, time, d, app }) ·
+// db.log[날].d = 그날 기도한 항목 · last = 항목을 마지막으로 기도한 날. month = 'YYYY-MM' (달력에 보이는 달)
+const GL_SLOTS = [['새벽', 4, 7], ['아침', 7, 10], ['낮', 10, 14], ['오후', 14, 18], ['저녁', 18, 22], ['밤', 22, 28]];
+function monthGlance(db, dt, ss, month, today) {
+  const y = +month.slice(0, 4), m = +month.slice(5, 7);
+  const a = month + '-01', b = ymd(new Date(y, m, 0)), end = b < today ? b : today;
+  const has = d => !!((dt[d] || {}).s);
+  const sumIn = (p, q) => { let t = 0; for (const d in dt) if (d >= p && d <= q) t += dt[d].s || 0; return t; };
+  // 이어서 머문 날 — 오늘이 든 달에서만. 오늘 아직 안 머물렀으면 어제부터 센다(아침에 0 으로 꺾이지 않게)
+  let streak = 0;
+  if (a <= today && today <= b) { let d = has(today) ? today : addDays(today, -1); while (has(d)) { streak++; d = addDays(d, -1); } }
+  let best = 0, bestA = '', run = 0, runA = '';
+  for (let d = a; d <= end; d = addDays(d, 1)) { if (has(d)) { if (!run) runA = d; run++; if (run > best) { best = run; bestA = runA; } } else run = 0; }
+  // 지난달과 — 하루 평균으로 견준다(이달은 지난 날까지만 나눈다: 10월 27일에 '한 달치' 와 견주면 늘 지는 셈)
+  const secs = sumIn(a, b), days = end >= a ? daysBetween(a, end) + 1 : 0;
+  const pa = ymd(new Date(y, m - 2, 1)), pb = addDays(a, -1), prev = sumIn(pa, pb), pdays = daysBetween(pa, pb) + 1;
+  // 어디서 · 언제
+  const by = {}, slot = GL_SLOTS.map(() => 0);
+  ss.forEach(x => {
+    if (x.date < a || x.date > b) return;
+    by[x.app] = (by[x.app] || 0) + x.d;
+    const mm = /^(\d{1,2}):(\d{2})/.exec(x.time || ''); if (!mm) return;
+    let h = +mm[1]; if (h < 4) h += 24;
+    const k = GL_SLOTS.findIndex(s => h >= s[1] && h < s[2]); if (k >= 0) slot[k] += x.d;
+  });
+  // 많이 기도한 항목 — 이달 기도한 날 수
+  const cnt = {};
+  for (const d in db.log || {}) if (d >= a && d <= b) ((db.log[d] || {}).d || []).forEach(id => { cnt[id] = (cnt[id] || 0) + 1; });
+  const alive = t => t && !t.arch && !t.ansAt;
+  const top = Object.keys(cnt).map(id => ({ t: findT(db, id) || findG(db, id), n: cnt[id] })).filter(o => alive(o.t))
+    .sort((p, q) => q.n - p.n || p.t.name.localeCompare(q.t.name, 'ko')).slice(0, 3);
+  // 오래 못 한 기도 — 지도에 있는(그룹에 든) 항목 중 마지막 기도가 가장 먼 것. 한 번도 안 한 것은 셈하지 않는다(새로 넣은 것이 늘 위로 오지 않게)
+  const placed = new Set(); (db.G || []).forEach(g => groupPids(g).forEach(id => placed.add(id)));
+  const stale = (db.T || []).filter(t => alive(t) && t.kind !== 'group' && t.last && t.last < today && placed.has(t.id))
+    .sort((p, q) => p.last.localeCompare(q.last) || p.name.localeCompare(q.name, 'ko')).slice(0, 2)
+    .map(t => ({ t: t, ago: daysBetween(t.last, today) }));
+  const ans = answeredList(db).filter(x => { const d = x.tp ? x.tp.ans : x.at; return d && d >= a && d <= b; }).length;
+  return { streak, best, bestA, bestB: best ? addDays(bestA, best - 1) : '', secs, days, avg: days ? secs / days : 0,
+    prev, prevAvg: prev / pdays, by, slot, top, stale, ans, isNow: a <= today && today <= b };
+}
+
 // ── 보관 · 항목 응답 (O-5, HB 2026-10-19) ──
 // t.arch = 보관한 날 · t.ansAt = 항목 전체가 응답된 날. 둘 중 하나라도 있으면 지도 · 오늘 · 목록 · 한 장 · 검색에서 빠진다.
 // 그룹 줄(segs)은 건드리지 않는다 — 표시만 감춘다. 풀면 칸을 비우는 것뿐이라 원래 자리로 돌아온다.
@@ -2232,6 +2274,25 @@ textarea.field{min-height:72px;line-height:1.6}
 .cal-d.f{color:var(--tx3);opacity:.5}
 .cal-d.t{border-color:var(--ac);color:var(--ac-tx)}
 .cal-sum{display:flex;align-items:center;justify-content:space-between;gap:12px;width:calc(100% - 40px);margin:12px 20px 0;padding:10px 4px 10px 0;text-align:left;font-size:13px;color:var(--tx2)}
+.gl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 20px 8px}
+.gl-c{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch;text-align:left;background:var(--s1);border-radius:14px;padding:13px 15px;min-width:0}
+.gl-c.w{grid-column:1/-1}
+.gl-c h4{margin:0 0 6px;font-size:11.5px;font-weight:400;color:var(--tx3)}
+.gl-n{font-size:25px;font-weight:300;line-height:1.15;color:var(--tx);font-variant-numeric:tabular-nums}
+.gl-n small{font-size:12.5px;color:var(--tx2);margin-left:3px}
+.gl-s{display:block;font-size:11.5px;color:var(--tx2);margin-top:3px}
+.gl-bar{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:4px 0 9px}
+.gl-lg{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:11.5px;color:var(--tx2)}
+.gl-lg i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.gl-sl{display:flex;align-items:flex-end;gap:5px;height:58px}
+.gl-sl div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.gl-sl i{display:block;width:100%;max-height:40px;border-radius:4px 4px 2px 2px;background:var(--ac);opacity:.8}
+.gl-sl span{font-size:10px;color:var(--tx3)}
+.gl-li{display:flex;justify-content:space-between;gap:8px;width:100%;padding:6px 0;border-top:1px solid var(--s2);font-size:13px;text-align:left}
+.gl-li:first-of-type{border-top:0}
+.gl-li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gl-li small{color:var(--tx3);flex-shrink:0}
+.gl-ans{margin-top:6px;color:var(--ans,var(--tx2))}
 .cal-sum small{display:block;font-size:11.5px;color:var(--tx3);margin-top:1px}
 .cal-sum .ico{width:22px;height:22px;flex-shrink:0;color:var(--tx2)}
 .cal-d.sel{border-color:var(--tx)}
@@ -2868,6 +2929,7 @@ function openFocusMap(k, who) {
 function focusStart(deck, at) {
   F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false;
   F.ct0 = F.t0; F.cacc = 0; F.ca = F.t0;   // 지금 카드에 머문 시간 (O-2)
+  awakeOn();   // P4 — 한 장씩 기도도 There 중. 누른 손짓 안에서 불러야 영상이 돈다(setTimeout 금지)
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button></span><span class="f-pos" id="fPos"></span>' +
     '<span><span class="f-time" id="fTime">0:00</span><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
@@ -2992,6 +3054,7 @@ function flushFocusTime() { if (!F.on) return; const d = F.paused ? 0 : (Date.no
 function closeFocus() {
   focusCardLog(false); flushFocusTime(); save();
   F.on = false; clearInterval(F.tick);
+  awakeOff();
   const el = $('focus'); el.classList.remove('on'); el.innerHTML = '';
   refresh();
 }
@@ -3339,8 +3402,39 @@ function renderCal() {
       (ids.length ? ids.map(id => { const t = findAny(DB, id); return t ? '<button class="tag" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>' : ''; }).join('') : '<span class="hint" style="padding:0">이날은 기도한 항목 기록이 없습니다</span>') + '</div>';
       h += prayTimesHTML(UI.calDay);
   }
+  h += calGlanceHTML(TDASH.collect(c ? c.log : null, DB.log), dt);
   if (SY.user) thereRefresh(false);
   return h;
+}
+// 달력 아래 약식 대시보드 (HB 2026-10-27 P3′ 시안 A) — 카드 네 칸. 숫자는 monthGlance, 카드를 누르면 There 대시보드 그 달로
+function calGlanceHTML(ss, dt) {
+  const r = monthGlance(DB, dt, ss, UI.calMonth, TODAY);
+  if (!r.secs && !r.top.length && !r.stale.length) return '';
+  const md = d => { const p = parseYmd(d); return (p.getMonth() + 1) + '/' + p.getDate(); };
+  const mins = v => Math.round(v / 60);
+  const go = ' data-a="there-dash" data-v="month" data-soft="1" data-at="' + UI.calMonth + '-01"';
+  let h = '<div class="gl">';
+  // ① 이어서 머문 날 (오늘이 든 달) · 지난 달이면 가장 길게
+  h += '<button class="gl-c"' + go + '><h4>' + (r.isNow ? '이어서 머문 날' : '가장 길게 이어서') + '</h4>' +
+    (r.isNow ? '<div class="gl-n">' + r.streak + '<small>일째</small></div>' + (r.best > 1 ? '<div class="gl-s">이달 가장 길게 ' + r.best + '일 (' + md(r.bestA) + '–' + md(r.bestB) + ')</div>' : '')
+      : '<div class="gl-n">' + r.best + '<small>일</small></div>' + (r.best ? '<div class="gl-s">' + md(r.bestA) + '–' + md(r.bestB) + '</div>' : '')) + '</button>';
+  // ② 지난달과 — 하루 평균
+  const dv = mins(r.avg) - mins(r.prevAvg);
+  h += '<button class="gl-c"' + go + '><h4>지난달과 견주면</h4><div class="gl-n">' + (r.prev ? (dv > 0 ? '+' : dv < 0 ? '−' : '') + Math.abs(dv) + '<small>분</small>' : '—') + '</div>' +
+    '<div class="gl-s">하루 평균 ' + mins(r.avg) + '분' + (r.prev ? ' · 지난달 ' + mins(r.prevAvg) + '분' : ' · 지난달 기록 없음') + '</div></button>';
+  // ③ 어디서 머물렀나 — 네 앱 비율
+  const apps = TDASH.APPS.filter(x => r.by[x[0]]), tot = apps.reduce((t, x) => t + r.by[x[0]], 0);
+  if (tot) h += '<button class="gl-c w"' + go + '><h4>어디서 머물렀나</h4><div class="gl-bar">' + apps.map(x => '<i style="flex:' + r.by[x[0]] + ';background:' + x[2] + '"></i>').join('') + '</div>' +
+    '<div class="gl-lg">' + apps.map(x => '<span><i style="background:' + x[2] + '"></i>' + x[1] + ' ' + TDASH.dur(r.by[x[0]]) + '</span>').join('') + '</div></button>';
+  // ④ 주로 이 시간에
+  const smax = Math.max(...r.slot);
+  if (smax) h += '<button class="gl-c"' + go + '><h4>주로 이 시간에</h4><div class="gl-sl">' + GL_SLOTS.map((x, k) => '<div><i style="height:' + Math.max(r.slot[k] ? 8 : 3, Math.round(r.slot[k] / smax * 100)) + '%' + (r.slot[k] ? '' : ';opacity:.25') + '"></i><span>' + x[0] + '</span></div>').join('') + '</div></button>';
+  // ⑤ 이번 달 많이 기도한
+  if (r.top.length) h += '<div class="gl-c"><h4>이번 달 많이 기도한</h4>' + r.top.map(o => '<button class="gl-li" data-a="' + (o.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>' + o.n + '일</small></button>').join('') + '</div>';
+  // ⑥ 오래 못 한 기도 · 이달 응답
+  if (r.stale.length || r.ans) h += '<div class="gl-c w"><h4>오래 못 한 기도</h4>' + r.stale.map(o => '<button class="gl-li" data-a="open" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>마지막 ' + shortDate(o.t.last) + ' · ' + o.ago + '일 전</small></button>').join('') +
+    (r.ans ? '<button class="gl-s gl-ans" data-a="hist-tab" data-v="ans">이번 달 응답 ' + r.ans + '건</button>' : '') + '</div>';
+  return h + '</div>';
 }
 // 그날 기도노트가 잰 기도 시간 — 줄마다 누르면 고치기 · 지우기 (H-2). BLOCK7 · Sweeter · 성경 몫은 그 앱 것이라 여기 없다
 const PT_SRC = { map: '기도 지도 (There)', focus: '한 장씩 기도하기', manual: '직접 적은 시간' };
@@ -6721,19 +6815,47 @@ function mtColors(box) {
 }
 // ── There 중 화면 자동 잠금 막기 (HB 2026-10-18) — 설정에서 켜고 끈다, 처음엔 끔. 화면 켜 두기(Screen Wake Lock)는
 //    아이폰 홈 화면 앱도 iOS 16.4 부터 지원한다. 앱을 벗어나면 기기가 저절로 풀고, There 가 끝나면(thereStop) 우리가 푼다.
-let WAKE = null;
-function awakeSupported() { return !!(navigator.wakeLock && navigator.wakeLock.request); }
+// ⚠️ 아이패드 미니에서 안 듣던 것 (HB 2026-10-27 P4) — 까닭 둘:
+//    ① '한 장씩 기도하기'(F) 화면에서는 아예 걸지 않았다 — 지도 There(MT) 에서만 걸었다. → 두 화면 다 'There 중' 으로 본다.
+//    ② iPadOS 18.4 보다 낮으면 홈 화면 앱에서 wakeLock.request 가 성공한 척하고 아무 일도 안 한다(WebKit 버그).
+//       기기가 몰래 풀기도 한다. → 풀리면 다시 걸고, 소리 없는 1초짜리 영상을 보이지 않게 돌려 둔다(NoSleep 방식 —
+//       iOS 는 영상이 도는 동안 자동 잠금을 미룬다). 영상은 누른 손짓 안에서 틀어야 해서 There · 한 장 시작에서 부른다.
+let WAKE = null, WAKE_V = null;
+const WAKE_MP4 = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMrbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAlV0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHNbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABeG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAThzdGJsAAAAuHN0c2QAAAAAAAAAAQAAAKhhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAAEABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAALmF2Y0MBQsAe/+EAFmdCwB7ZHsBEAAADAAQAAAMACDxYuSABAAVoy4PLIAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAAApAAAAKQAAAABhzdHRzAAAAAAAAAAEAAAACAABAAAAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAACAAAAAQAAABxzdHN6AAAAAAAAAAAAAAACAAAChgAAAAoAAAAUc3RjbwAAAAAAAAABAAADWwAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAAKYbWRhdAAAAnAGBf//bNxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTEgc2NlbmVjdXQ9NDAgaW50cmFfcmVmcmVzaD0wIHJjX2xvb2thaGVhZD00MCByYz1jcmYgbWJ0cmVlPTEgY3JmPTIzLjAgcWNvbXA9MC42MCBxcG1pbj0wIHFwbWF4PTY5IHFwc3RlcD00IGlwX3JhdGlvPTEuNDAgYXE9MToxLjAwAIAAAAAOZYiEBb///w9FAAFPf4AAAAAGQZo4CvqA';
+function awakeSupported() { return !!((navigator.wakeLock && navigator.wakeLock.request) || document.createElement('video').canPlayType('video/mp4')); }
 function awakePref() { return devPref('awake', false) === true; }
+function awakeWanted() { return awakePref() && (MT.on || F.on) && !document.hidden; }
 function awakeOn() {
-  if (!awakePref() || !awakeSupported() || WAKE) return;
-  navigator.wakeLock.request('screen').then(l => { WAKE = l; l.addEventListener('release', () => { if (WAKE === l) WAKE = null; }); if (!MT.on) awakeOff(); }).catch(() => {});
+  if (!awakeWanted()) return;
+  if (navigator.wakeLock && navigator.wakeLock.request && !WAKE) {
+    navigator.wakeLock.request('screen').then(l => {
+      WAKE = l;
+      l.addEventListener('release', () => { if (WAKE === l) { WAKE = null; setTimeout(awakeOn, 400); } });   // 몰래 풀리면 다시 (아직 There 면)
+      if (!awakeWanted()) awakeOff();
+    }).catch(() => {});
+  }
+  if (!WAKE_V) {
+    const v = WAKE_V = document.createElement('video');
+    v.muted = true; v.loop = true; v.playsInline = true;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', ''); v.setAttribute('aria-hidden', 'true');
+    v.style.cssText = 'position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:.01;pointer-events:none;z-index:-1';
+    v.src = WAKE_MP4;
+    document.body.appendChild(v);
+  }
+  if (WAKE_V.paused) { const pr = WAKE_V.play(); if (pr && pr.catch) pr.catch(() => {}); }
 }
-function awakeOff() { const l = WAKE; WAKE = null; if (l) try { l.release(); } catch (e) {} }
+function awakeOff() {
+  if (MT.on || F.on) { if (awakePref()) return; }   // 한쪽(지도 There ↔ 한 장)이 아직이면 그대로
+  const l = WAKE; WAKE = null; if (l) try { l.release(); } catch (e) {}
+  if (WAKE_V) try { WAKE_V.pause(); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) awakeOn(); });   // 돌아오면 다시 건다 (나가면 기기가 푼다)
 ACT['awake-toggle'] = el => {
   if (!awakeSupported()) { toast('이 기기·브라우저에서는\n화면 켜 두기를 지원하지 않아요'); return; }
   const on = !awakePref();
   setDevPref('awake', on);
   el.classList.toggle('on', on); el.setAttribute('aria-checked', on);
+  if (on) awakeOn(); else awakeOff();
   toast(on ? 'There 중에는 화면이 꺼지지 않아요\n(앱을 벗어나면 풀려요)' : 'There 중에도 화면이\n자동으로 잠길 수 있어요');
 };
 function thereStart() {
@@ -7240,15 +7362,17 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     injectCSS();
     opts = opts || {};
     const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}) };
-    // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭 · 탭마다 마지막으로 본 날 / 주 / 달. 이 기기의 localStorage 에만 둔다.
+    // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
     const mem = (function () { try { const m = JSON.parse(localStorage.getItem(KEY) || '{}'); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; } })();
     const VIEWS = ['day', 'week', 'month'], okView = v => VIEWS.indexOf(v) >= 0;
     const okDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
     S.pin = okView(mem.pin) ? mem.pin : null;
-    S.ats = {}; VIEWS.forEach(v => { S.ats[v] = okDate(mem.at && mem.at[v]) && mem.at[v] <= S.today ? mem.at[v] : S.today; });
-    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, at: S.ats })); } catch (e) {} };
+    // 탭마다 본 날 / 주 / 달은 **열려 있는 동안만** 기억한다 (HB 2026-10-27 P5): 새로 열면 세 탭 모두 오늘이 든 날 · 주 · 달,
+    //   열린 채로 옮겨 두면 다른 탭에 갔다 와도 그 자리. 예전엔 이 기기에 남겨서 다음에 열어도 지난 날짜로 열렸다.
+    S.ats = {}; VIEWS.forEach(v => { S.ats[v] = S.today; });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view })); } catch (e) {} };
     // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
     //   opts.soft = 부른 쪽은 그 탭을 '권할' 뿐 — 고정한 탭이 있으면 고정이 이긴다 (HB 2026-10-19:
     //   기도노트 기록 › 기도한 날 합계 줄이 '달' 을 콕 집어 열어서, 고정(점)은 보이는데 늘 달로 열렸다).

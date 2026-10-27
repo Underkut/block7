@@ -3,7 +3,7 @@
 // 규칙
 //  ① 열 때 탭: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주 · 부른 쪽이 '권하기만'(soft) 하면 고정이 이긴다
 //  ② 탭을 길게 누르기(터치) · 우클릭(마우스) = 고정 / 해제. 고정한 탭 글자 위에 점(.pin). 한 번에 하나.
-//  ③ 탭마다 마지막으로 본 날 / 주 / 달을 따로 기억한다 (탭을 바꿔도 다른 탭의 날짜로 점프하지 않는다)
+//  ③ 탭마다 마지막으로 본 날 / 주 / 달을 따로 기억한다 — 열려 있는 동안만. 새로 열면 세 탭 모두 오늘 (HB 2026-10-27 P5)
 //  ④ 이미 열린 탭을 다시 누르면 오늘 기준
 //  ⑤ 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (왼쪽 가장자리 시작과 세로 밀기는 뺀다)
 //  ⑥ 기억은 이 기기의 localStorage 에만 (store 이름 칸)
@@ -96,9 +96,14 @@ console.log('\n시나리오 3 — 탭마다 마지막으로 본 날 / 주 / 달�
   d.click('view', 'day');
   sc.eq('일간으로 돌아가면 아까 보던 날', d.S.at, '2026-10-13');
   d = mk({ view: 'day' });
-  sc.eq('다시 열어도 일간의 마지막 날', d.S.at, '2026-10-13');
+  sc.eq('닫았다 새로 열면 일간은 오늘 (P5)', d.S.at, TODAY);
   d.click('view', 'week');
-  sc.eq('다시 열어도 주간의 마지막 주', d.S.at, '2026-10-05');
+  sc.eq('새로 연 뒤 주간도 이번 주 (P5)', d.S.at, TODAY);
+  d.click('prev');
+  d.click('view', 'day'); d.click('view', 'week');
+  sc.eq('열린 동안은 옮겨 둔 주를 기억', d.S.at, '2026-10-05');
+  d = mk();
+  sc.eq('다시 열면 마지막 탭(주)으로, 날짜는 오늘', [d.S.view, d.S.at], ['week', TODAY]);
   d.click('view', 'month');
   d.click('prev');
   sc.eq('달: 한 달 전 1일', d.S.at, '2026-09-01');
@@ -149,7 +154,7 @@ console.log('\n시나리오 6 — 기억은 이 기기(localStorage) 의 store �
   const keys = Object.keys(mem);
   sc.eq('칸 하나만 쓴다', keys, ['tst.v1']);
   const v = JSON.parse(mem['tst.v1']);
-  sc.eq('고정 · 마지막 탭 · 탭별 날짜가 든다', [v.pin, v.last, Object.keys(v.at).sort()], ['month', 'day', ['day', 'month', 'week']]);
+  sc.eq('고정 · 마지막 탭만 든다 (탭별 날짜는 남기지 않는다 · P5)', [v.pin, v.last, v.at], ['month', 'day', undefined]);
   mem['tst.v1'] = '{망가진 글';
   const d2 = mk();
   sc.eq('망가진 기억은 무시하고 처음처럼', [d2.S.view, d2.S.pin], ['week', null]);
@@ -162,7 +167,7 @@ console.log('\n시나리오 6 — 기억은 이 기기(localStorage) 의 store �
   for (const k in mem) delete mem[k];
   mem['tst.v1'] = JSON.stringify({ pin: 'day', last: 'week', at: { day: '2026-10-14' } });
   const a = mk({ view: 'month', soft: true, at: '2026-09-01' });
-  sc.eq('⭐①-soft 하루로 고정했으면 권한 달이 아니라 하루 · 날짜도 하루 탭 것 그대로', [a.m.state.view, a.m.state.at], ['day', '2026-10-14']);
+  sc.eq('⭐①-soft 하루로 고정했으면 권한 달이 아니라 하루 · 날짜는 오늘 (권한 날짜를 하루 탭에 쓰지 않는다 · P5)', [a.m.state.view, a.m.state.at], ['day', TODAY]);
   const b = mk({ view: 'month', at: '2026-09-01' });
   sc.eq('①-soft 콕 집은 것(soft 아님)은 예전대로 그 탭', [b.m.state.view, b.m.state.at], ['month', '2026-09-01']);
   mem['tst.v1'] = JSON.stringify({ pin: null, last: 'week' });
