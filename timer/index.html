@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1027-1 -->
+<!-- KAIROS v. 26-1027-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -579,7 +579,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1027-1';
+const APP_VERSION='v. 26-1027-2';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1733,6 +1733,7 @@ let lastTap=0;
 $('desk').addEventListener('click',e=>{
   if(ringTap&&Date.now()-ringTap<1500){ringTap=0;exitDesk();return;}   // 끝나서 깜빡일 때 아무 데나 톡 = 나가기
   const b=e.target.closest('[data-dk]');
+  if(!b&&e.target.closest('#deskDial')){const r=R();if(r.state==='run'||r.state==='pause'){if(r.state==='run')pause();else start();showCtl();drawDesk();return;}}   // 탁상 파이 톡 = 멈춤/재개
   if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;exitDesk();return;}lastTap=now;showCtl();return;}
   const k=b.dataset.dk;showCtl();
   if(k==='play'){const r=R();if(r.state==='run')pause();else{start();clearTimeout(deskT);}}
