@@ -37,7 +37,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   findT, findG, groupPids, groupsOf, childrenOf, topGroups, kidsOf, groupHeadcount, linkSub, moveSub, unplaceSub, canNest, nestGroup, canPromote, promoteSub, copyLineLinked, linkedLines, syncLine, removeFromGroup, looksLikeNames, suggestCat, makeEntry, effMarkMap, markOf, markLinkCandidates, markLinkName, fillLineCats, parseEntryText, dropOrphans, parseLineText, lineToText,
   removeTarget, removeGroup, buildToday, todayCount, toggleDone, postpone, slotDue, intervalOf,
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
-  buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList,
+  buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
   exportBackup, readBackup, bakDevice, bakName, _themeTokens, themeById,
   cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
@@ -914,6 +914,32 @@ const MAPCSV = [
     const m = A.normDB(A.merge3(B, L, R));
     sc.eq('㉔ 넣기 vs 그 그룹에 항목 더하기 → 서브 그룹이 되고 항목은 셋 다', [m.G.find(g => g.id === 'g2').parent, m.G.find(g => g.id === 'g2').lines.map(l => l.id)], ['g1', ['Lp1', 'Lp2', 'Lp9']]); }
   const ok = mk(); sc.eq('㉔ 보통 자료는 normDB 가 손대지 않는다', JSON.stringify(A.normDB(JSON.parse(JSON.stringify(ok))).G.map(g => [g.id, g.parent])), JSON.stringify(ok.G.map(g => [g.id, g.parent])));
+}
+
+// ㉕ 기록 › 기도한 날 약식 대시보드 (P3′) — 있는 기록만 읽어 숫자를 낸다 (이름은 지어낸 것)
+{
+  const db = A.emptyDB();
+  const mkT = (id, name, last) => { const t = A.newTarget('person', name); t.id = id; t.last = last; db.T.push(t); return t; };
+  mkT('a', '가람', '2026-10-27'); mkT('b', '나래', '2026-09-28'); mkT('c', '다온', '2026-10-03'); mkT('d', '라온', '');
+  const z = mkT('e', '마루', '2026-09-01'); z.arch = '2026-10-01';             // 보관한 것은 빠진다
+  const g = A.newGroup('모임', '#555'); g.id = 'G1'; g.lines = ['a', 'b', 'c', 'd', 'e'].map(id => ({ id: 'L' + id, segs: [[id]], r: {}, text: '' })); db.G.push(g);
+  db.log = { '2026-10-25': { d: ['a', 'b'] }, '2026-10-26': { d: ['a'] }, '2026-10-27': { d: ['a', 'c'] }, '2026-09-30': { d: ['b'] } };
+  const dt = {}, ss = [];
+  const put = (date, time, d, app) => { ss.push({ date, time, d, app }); const o = dt[date] || (dt[date] = { s: 0, by: {} }); o.s += d; };
+  ['2026-10-12', '2026-10-13', '2026-10-14'].forEach(d => put(d, '06:10', 600, 'pray'));   // 사흘 이어서 (가장 길게)
+  put('2026-10-26', '07:30', 300, 'block7'); put('2026-10-25', '23:00', 300, 'sweeter'); put('2026-10-25', '01:30', 120, 'pray');
+  put('2026-09-10', '08:00', 2700, 'bible');
+  const r = A.monthGlance(db, dt, ss, '2026-10', '2026-10-27');
+  sc.eq('㉕ 오늘 아직이면 어제부터 이어서 센다 (25 · 26 → 2일)', r.streak, 2);
+  sc.eq('㉕ 이달 가장 길게 · 그 날짜', [r.best, r.bestA, r.bestB], [3, '2026-10-12', '2026-10-14']);
+  sc.eq('㉕ 하루 평균은 지난 날(27일)까지로 나눈다', [r.secs, r.days, Math.round(r.avg)], [2520, 27, 93]);
+  sc.eq('㉕ 지난달 하루 평균', Math.round(r.prevAvg), 90);
+  sc.eq('㉕ 앱별 합', r.by, { pray: 1920, block7: 300, sweeter: 300 });
+  sc.eq('㉕ 시간대 — 새벽 1:30 은 밤, 23시는 밤, 6시는 새벽, 7:30 은 아침', r.slot, [1800, 300, 0, 0, 0, 420]);
+  sc.eq('㉕ 많이 기도한 항목 — 이달 날 수 순 · 지난달 것은 안 센다', r.top.map(o => [o.t.name, o.n]), [['가람', 3], ['나래', 1], ['다온', 1]]);
+  sc.eq('㉕ 오래 못 한 기도 — 보관한 것 · 한 번도 안 한 것은 빼고 먼 순', r.stale.map(o => [o.t.name, o.ago]), [['나래', 29], ['다온', 24]]);
+  const r2 = A.monthGlance(db, dt, ss, '2026-09', '2026-10-27');
+  sc.eq('㉕ 지난 달을 보면 이어서 머문 날은 0 (오늘이 든 달에서만)', [r2.streak, r2.isNow, r2.days], [0, false, 30]);
 }
 
 sc.done();

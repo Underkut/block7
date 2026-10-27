@@ -396,15 +396,17 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     injectCSS();
     opts = opts || {};
     const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}) };
-    // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭 · 탭마다 마지막으로 본 날 / 주 / 달. 이 기기의 localStorage 에만 둔다.
+    // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
     const mem = (function () { try { const m = JSON.parse(localStorage.getItem(KEY) || '{}'); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; } })();
     const VIEWS = ['day', 'week', 'month'], okView = v => VIEWS.indexOf(v) >= 0;
     const okDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
     S.pin = okView(mem.pin) ? mem.pin : null;
-    S.ats = {}; VIEWS.forEach(v => { S.ats[v] = okDate(mem.at && mem.at[v]) && mem.at[v] <= S.today ? mem.at[v] : S.today; });
-    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, at: S.ats })); } catch (e) {} };
+    // 탭마다 본 날 / 주 / 달은 **열려 있는 동안만** 기억한다 (HB 2026-10-27 P5): 새로 열면 세 탭 모두 오늘이 든 날 · 주 · 달,
+    //   열린 채로 옮겨 두면 다른 탭에 갔다 와도 그 자리. 예전엔 이 기기에 남겨서 다음에 열어도 지난 날짜로 열렸다.
+    S.ats = {}; VIEWS.forEach(v => { S.ats[v] = S.today; });
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view })); } catch (e) {} };
     // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
     //   opts.soft = 부른 쪽은 그 탭을 '권할' 뿐 — 고정한 탭이 있으면 고정이 이긴다 (HB 2026-10-19:
     //   기도노트 기록 › 기도한 날 합계 줄이 '달' 을 콕 집어 열어서, 고정(점)은 보이는데 늘 달로 열렸다).
