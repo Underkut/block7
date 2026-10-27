@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1024-3 -->
+<!-- KAIROS v. 26-1027-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -579,7 +579,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1024-3';
+const APP_VERSION='v. 26-1027-1';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1019,23 +1019,33 @@ function rawMin(e){
   const cv=$('dial'),b=cv.getBoundingClientRect(),dx=e.clientX-(b.left+b.width/2),dy=e.clientY-(b.top+b.height/2);
   return {m:rawMinute(dx,dy,C().dir),dist:Math.hypot(dx,dy)/(b.width/2)};
 }
-$('dial').addEventListener('pointerdown',e=>{
-  const {m,dist}=rawMin(e);if(dist>1.02)return;
+function beginDrag(e,m){
   const r=R();
   if(r.state==='done'||r.state==='wait'){r.rt=r.state==='wait'?r.rt:null;}
-  e.preventDefault();$('dial').setPointerCapture(e.pointerId);
   dragging=true;wasRun=r.state==='run';
   const cur=remainMs()/60000;
   const base=Math.floor(Math.max(0,cur-1e-6)/LAP)*LAP;
   dragVal=Math.min(MAXMIN,base+m);prevRaw=m;lastWhole=-1;dragVis=-1;
   applyDrag();
+}
+// 도는 중·멈춘 중에는 파이를 톡 = 멈춤/재개 (좌하단 단추와 같다). 끌면 예전처럼 시간을 바꾼다
+let tapP=null;
+$('dial').addEventListener('pointerdown',e=>{
+  const {m,dist}=rawMin(e);if(dist>1.02)return;
+  const r=R();
+  e.preventDefault();$('dial').setPointerCapture(e.pointerId);
+  if(r.state==='run'||r.state==='pause'){tapP={x:e.clientX,y:e.clientY,t:Date.now()};return;}
+  beginDrag(e,m);
 });
 $('dial').addEventListener('pointermove',e=>{
+  if(tapP){if(Math.hypot(e.clientX-tapP.x,e.clientY-tapP.y)<10)return;tapP=null;beginDrag(e,rawMin(e).m);return;}
   if(!dragging)return;
   const {m}=rawMin(e);dragVal=dragStep(dragVal,prevRaw,m);prevRaw=m;
   applyDrag();
 });
-const endDrag=()=>{if(!dragging)return;dragging=false;dragVis=-1;
+const endDrag=e=>{
+  if(tapP){const t=tapP;tapP=null;if(e&&e.type==='pointerup'&&Date.now()-t.t<600){const r=R();if(r.state==='run')pause();else if(r.state==='pause')start();}return;}
+  if(!dragging)return;dragging=false;dragVis=-1;
   const r=R();
   if(wasRun&&r.left>0){setRun({state:'run',endAt:Date.now()+r.left});loop();}
   else if(r.left<=0&&wasRun){setRun({state:'idle'});}
@@ -1158,7 +1168,8 @@ function ring(){
 }
 // 끝 알림(소리 · 깜빡임 · 진동)은 화면을 누를 때까지 계속
 function stopRing(){if(ringStop){cutAudio();try{window.speechSynthesis&&speechSynthesis.cancel();}catch(e){}}clearTimeout(ringT);clearInterval(vibT);ringStop=0;if(flashOn){$('flash').classList.remove('go');flashOn=0;}try{navigator.vibrate&&navigator.vibrate(0);}catch(e){}}
-document.addEventListener('pointerdown',()=>{if(ringStop)stopRing();},true);
+let ringTap=0;   // 울리던 중에 누른 때 — 탁상 화면이면 그 누름은 '나가기'
+document.addEventListener('pointerdown',()=>{ringTap=(ringStop||flashOn)?Date.now():0;if(ringStop)stopRing();},true);
 function alertEnd(say){
   const col=colorHex(R().color);
   ring();
@@ -1720,6 +1731,7 @@ $('pg0').addEventListener('click',e=>{if(!e.target.isConnected||e.target.closest
 // 빈 곳 한 번 = 단추 보이기 · 두 번 = 나가기
 let lastTap=0;
 $('desk').addEventListener('click',e=>{
+  if(ringTap&&Date.now()-ringTap<1500){ringTap=0;exitDesk();return;}   // 끝나서 깜빡일 때 아무 데나 톡 = 나가기
   const b=e.target.closest('[data-dk]');
   if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;exitDesk();return;}lastTap=now;showCtl();return;}
   const k=b.dataset.dk;showCtl();
