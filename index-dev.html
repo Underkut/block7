@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1027-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1027-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3399,6 +3399,29 @@ body.split-d.lay3 #colR{display:block;grid-column:5;grid-row:2;}
 /* 주간뷰 패널: 좌+중 또는 중+우 상단 가로지름 */
 body.split-d.lay3 #weeklyPane.on-lc{display:block;grid-column:1/4;grid-row:1;min-width:0;padding:14px 0 8px 14px;}
 body.split-d.lay3 #weeklyPane.on-cr{display:block;grid-column:3/6;grid-row:1;min-width:0;padding:14px 14px 8px 0;}
+/* 월간뷰 2단 (B1): 2단 화면에선 할일 · 위젯 위쪽 전체 폭 */
+body.split-d.lay2.mw-full #pageContent{flex-wrap:wrap;}
+body.split-d.lay2.mw-full #colL{flex:1 1 0;}
+body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-width:0;padding:14px 14px 0;}
+#monthPaneInner:empty{display:none;}
+#weeklyPaneInner:not(:empty)+#monthPaneInner .rp-widget{margin-top:10px;}
+.rp-wmore{position:absolute;left:6px;top:4px;z-index:2;width:30px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--tx3);opacity:.7;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.rp-wmore:hover{opacity:1;color:var(--tx2);}
+/* 떠 있는 작은 메뉴 — 말씀 전체화면 좌상단 '저장' 메뉴(.vf-keep-switch)와 같은 유리 모양 (B1 · A1, HB 2026-10-27) */
+.b7-pop{position:fixed;z-index:9000;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
+  padding:5px 6px;color:var(--tx);
+  background:color-mix(in srgb,var(--bg) 38%,transparent);
+  -webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
+  border:1px solid color-mix(in srgb,var(--tx3) 38%,transparent);
+  border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
+  opacity:0;transform:translateY(-7px) scale(.985);transform-origin:top left;
+  transition:opacity .24s ease,transform .28s cubic-bezier(.22,.72,.25,1);}
+.b7-pop.open{opacity:1;transform:translateY(0) scale(1);}
+.b7-pop-head{position:sticky;top:-5px;z-index:1;margin:-5px -6px 4px;padding:7px 9px;font:400 10px/1.2 var(--font-ui);color:var(--tx3);
+  background:color-mix(in srgb,var(--bg) 78%,transparent);
+  -webkit-backdrop-filter:blur(12px) saturate(150%);backdrop-filter:blur(12px) saturate(150%);
+  border-bottom:1px solid color-mix(in srgb,var(--tx3) 22%,transparent);}
+.b7-pop .keep-switch-row.on{background:color-mix(in srgb,var(--tx) 12%,transparent);}
 /* 주간뷰가 덮은 쪽 경계선은 아랫부분(row2)만 */
 body.split-d.lay3.wk-lc #layDiv1{grid-row:2/3;}
 body.split-d.lay3.wk-cr #layDiv2{grid-row:2/3;}
@@ -6566,7 +6589,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1027-2";
+const APP_VERSION = "v. 26-1027-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -14063,6 +14086,7 @@ const _ESC_CLOSERS=[
   // There 대시보드 전체 화면 (v26-1013) — 열려 있을 때만 있는 상자
   ['tdashOv',         ()=>TDASH.close(), ()=>typeof TDASH!=='undefined'&&TDASH.isOpen()],
   // 작은 메뉴류 (가장 위)
+  ['b7Pop',           ()=>_b7PopClose()],   // 월간뷰 1단/2단 · 성경 단추 읽기모음 (B1 · A1)
   ['eventEditMenu',   ()=>closeEventEditMenu()],
   ['taskMenu',        ()=>{if(_secPickSpec){_secPickBack();return;}closeTaskMenu();}],
   ['contactMenu',     ()=>closeContactMenu()],
@@ -24860,10 +24884,15 @@ function renderSecEvents(secId, animate=false){
 //   값이 없거나(0, 예전 기본) 범위 밖이면 12 로 본다.
 // 시각(앞의 '19:30')과 여러 날 꼬리표(~10.26)는 세지 않는다 — 이름만 줄인다.
 function _evChipN(){const v=(ST.settings&&ST.settings.evChipMax)|0;return v?Math.max(3,Math.min(12,v)):12;}
+// ⚠️ 이름 앞에 시각을 글자로 적은 일정(시각 칸은 비고 이름이 '12.3 서희나 …' · '18 태원고 …')은 그 숫자까지 세어
+//   5자면 '12.3 …' 처럼 이름이 하나도 안 남았다 — 칩마다 길이가 들쭉날쭉한 까닭 (HB 2026-10-27 B2 디버그).
+//   그래서 맨 앞 시각 한 덩이(시 0~24, '.' · ':' 뒤 분, '~' 범위까지)는 그대로 보이고 세지 않는다.
+const _EVCHIP_HEAD=/^\s*(?:[01]?\d|2[0-4])(?:[.:][0-5]?\d)?(?:\s*[~\-–]\s*(?:[01]?\d|2[0-4])(?:[.:][0-5]?\d)?)?\s+(?=\S)/;
 function _evChipCut(t){
-  const n=_evChipN();
-  const a=Array.from(String(t||''));
-  return a.length>n?a.slice(0,n).join('')+'…':a.join('');
+  const n=_evChipN(), s=String(t||'');
+  const m=_EVCHIP_HEAD.exec(s), head=m?m[0]:'';
+  const a=Array.from(s.slice(head.length));
+  return head+(a.length>n?a.slice(0,n).join('')+'…':a.join(''));
 }
 // 미리보기 — BLOCK7 을 쓰는 사람의 한 주에 있을 법한 긴 이름 셋 (예배 · 소그룹 · 사역 준비)
 const _EVCHIP_SAMPLES=[
@@ -33032,6 +33061,59 @@ function setVcTheme(id,key){
   save();renderVcSettings();renderRightPanel();
 }
 // ══════ 말씀카드 위젯 끝 ══════
+// ── 월간뷰 위젯 1단 / 2단 (HB 2026-10-27 B1) ──
+// L.mWide = true 면 월간뷰 위젯이 두 칸을 차지한다. 자리는 위젯이 놓인 쪽을 따른다:
+//   3단 — 주간뷰가 켜져 있으면 주간뷰와 같은 칸(주간뷰 아래), 아니면 좌 · 중 → 좌+중, 우 → 중+우
+//   2단 — 할일 · 위젯 위쪽 전체 폭.   1단(폰)은 위젯이 없으니 그대로.
+// 배치(L.cols)는 건드리지 않는다 — 1단으로 되돌리면 원래 자리에 그대로 있다.
+function _monthWideSide(L,mode){
+  if(!L||!L.mWide||mode<2)return null;
+  const col=['left','center','right'].find(c=>(L.cols[c]||[]).includes('monthSingle'));
+  if(!col)return null;
+  if(mode===2)return'full';
+  if(L.weekly!=='none')return L.weekly;
+  return col==='right'?'cr':'lc';
+}
+function rpMonthWideMenu(ev,btn){
+  if(ev)ev.stopPropagation();
+  const on=!!_lay().mWide;
+  _b7Pop(btn,'월간뷰 너비',[
+    {label:'1단',sub:'기본',on:!on,fn:()=>rpSetMonthWide(false)},
+    {label:'2단',sub:'두 칸 차지',on:on,fn:()=>rpSetMonthWide(true)}]);
+}
+// 떠 있는 작은 메뉴 하나 — 단추 아래에 연다. 밖을 누르면 닫힌다. rows = [{label, sub, on, fn}]
+function _b7PopClose(){const m=document.getElementById('b7Pop');if(!m)return;m.classList.remove('open');m.id='';setTimeout(()=>m.remove(),260);}
+function _b7Pop(anchor,title,rows){
+  if(document.getElementById('b7Pop')){_b7PopClose();return;}
+  const m=document.createElement('div');m.id='b7Pop';m.className='b7-pop';m.setAttribute('role','menu');
+  m.innerHTML=(title?'<div class="b7-pop-head">'+esc(title)+'</div>':'')+(rows.length?rows.map((r,i)=>
+    '<div class="keep-switch-row'+(r.on?' on':'')+'" role="menuitem" data-i="'+i+'"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(r.label)+'</span>'+
+    (r.sub!=null&&r.sub!==''?'<span style="opacity:.65;font-size:10px;">'+esc(String(r.sub))+'</span>':'')+'</div>').join('')
+    :'<div class="keep-switch-row" style="opacity:.65;">비어 있어요</div>');
+  m.addEventListener('click',e=>{const row=e.target.closest('[data-i]');if(!row)return;e.stopPropagation();const r=rows[+row.dataset.i];_b7PopClose();if(r&&r.fn)r.fn();});
+  document.body.appendChild(m);
+  const r=anchor.getBoundingClientRect(),W=document.documentElement.clientWidth,H=window.innerHeight;
+  let top=r.bottom+6;if(top+m.offsetHeight>H-8)top=Math.max(8,r.top-6-m.offsetHeight);
+  m.style.top=Math.round(top)+'px';
+  m.style.left=Math.round(Math.max(8,Math.min(r.left,W-m.offsetWidth-8)))+'px';
+  if(typeof _menuLockScroll==='function')try{_menuLockScroll(m);}catch(e){}
+  requestAnimationFrame(()=>m.classList.add('open'));
+  setTimeout(()=>{
+    const close=e=>{const cur=document.getElementById('b7Pop');if(cur!==m){document.removeEventListener('pointerdown',close,true);return;}
+      if(m.contains(e.target))return;document.removeEventListener('pointerdown',close,true);_b7PopClose();};
+    document.addEventListener('pointerdown',close,true);
+  },0);
+}
+function rpSetMonthWide(on){
+  const L=_lay();
+  if(!!L.mWide===!!on)return;
+  beforeSave();
+  if(on)L.mWide=true;else delete L.mWide;
+  save();
+  renderLayout();
+  const mode=document.body.classList.contains('split-d')?_layMode():1;
+  showToast(on?(mode>=2?'월간뷰를 두 칸으로\n넓혔어요':'월간뷰 두 칸은\n넓은 화면(2단 · 3단)에서 보여요'):'월간뷰를 한 칸으로\n되돌렸어요');
+}
 function _rpWidgetHTML(w){
   if(_vcIs(w.type)){
     const id=_vcIdOf(w.type),cfg=_vcGet(id);
@@ -33046,7 +33128,8 @@ function _rpWidgetHTML(w){
   }
   if(w.type==='monthSingle'){
     const s=_rpMonthState.single||(_rpMonthState.single=_rpMonthOf(0));
-    return`<div class="rp-widget rp-mslide" data-rpswipe="single" data-wtype="monthSingle">
+    return`<div class="rp-widget rp-mslide" data-rpswipe="single" data-wtype="monthSingle" style="position:relative;">
+      <button class="rp-wmore" onclick="rpMonthWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="월간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
       <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
       <div class="rp-mbody">
         <div class="rp-mnav">
@@ -33096,8 +33179,12 @@ function renderLayout(){
   const mode=active?_layMode():1;
   document.body.classList.toggle('lay2',mode===2);
   document.body.classList.toggle('lay3',mode===3);
-  document.body.classList.toggle('wk-lc',mode===3&&L.weekly==='lc');
-  document.body.classList.toggle('wk-cr',mode===3&&L.weekly==='cr');
+  // 월간뷰 2단 (HB 2026-10-27 B1) — 주간뷰가 쓰던 '두 칸 가로지르는 자리'(#weeklyPane)에 함께 올린다
+  const mwSide=_monthWideSide(L,mode);
+  const spanSide=mode===3?(L.weekly!=='none'?L.weekly:mwSide):null;
+  document.body.classList.toggle('wk-lc',spanSide==='lc');
+  document.body.classList.toggle('wk-cr',spanSide==='cr');
+  document.body.classList.toggle('mw-full',mwSide==='full');
 
   const colL=document.getElementById('colL'),
         colC=document.getElementById('colC'),
@@ -33126,6 +33213,7 @@ function renderLayout(){
   }else{
     colWidgets.left=['todo'];
   }
+  if(mwSide)['left','center','right'].forEach(c=>{colWidgets[c]=colWidgets[c].filter(t=>t!=='monthSingle');});
 
   // ── 각 컬럼 렌더링 ──
   ['left','center','right'].forEach(cname=>{
@@ -33175,7 +33263,13 @@ function renderLayout(){
   const pane=document.getElementById('weeklyPane');
   const paneInner=document.getElementById('weeklyPaneInner');
   if(pane&&paneInner){
-    pane.classList.remove('on-lc','on-cr');
+    pane.classList.remove('on-lc','on-cr','on-full');
+    // 월간뷰 2단 칸 — 주간뷰 아래(또는 홀로). 2단 화면에선 위쪽 전체 폭
+    let mwHost=document.getElementById('monthPaneInner');
+    if(!mwHost){mwHost=document.createElement('div');mwHost.id='monthPaneInner';pane.appendChild(mwHost);}
+    mwHost.innerHTML=mwSide?_rpWidgetHTML({type:'monthSingle'}):'';
+    if(mwSide==='full')pane.classList.add('on-full');
+    else if(mode===3&&L.weekly==='none'&&mwSide)pane.classList.add(mwSide==='lc'?'on-lc':'on-cr');
     if(mode===3&&L.weekly!=='none'){
       pane.classList.add(L.weekly==='lc'?'on-lc':'on-cr');
       // 전체 W뷰와 id 충돌 방지: 한쪽만 내용 보유
@@ -43620,6 +43714,39 @@ function _hdrCalRender(){
   g.innerHTML=out;
 }
 // #hDate 롱터치(모바일)/우클릭(데스크탑) → 달력. 짧게 탭하면 기존대로 '오늘로'.
+// ── 성경 단추 길게 누르기 · 우클릭 = 읽기 계획(읽기모음) 메뉴 (HB 2026-10-27 A1) ──
+// 톡은 예전대로 마지막 읽던 곳. 길게(0.5초) · 우클릭이면 단추 아래에 읽기 계획 장 목록이 뜨고, 고르면 그 장으로.
+// 모양은 말씀 전체화면 좌상단 '저장' 메뉴와 같은 유리 메뉴(_b7Pop).
+function bibleToReadMenu(anchor){
+  const books=_brBooks();
+  const rows=_brTRList().filter(x=>x&&x.b>=1&&x.b<=books.length).map(x=>({
+    label:_bibleShort(books[x.b-1])+' '+x.c+_brUnit(x.b-1),
+    on:false,fn:()=>{_brNextSrc='toread';bibleOpen(x.b-1,x.c,0);}}));
+  if(!rows.length)rows.push({label:'읽기 계획이 비어 있어요',sub:'성경에서 + 로 담기',on:false,fn:()=>bibleOpenLast('gnb')});
+  _b7Pop(anchor,'읽기 계획',rows);
+}
+function _bibleBtnLongPress(el){
+  if(!el||el._trBound)return;
+  el._trBound=true;
+  el.style.webkitTouchCallout='none';
+  let timer=null,fired=false,sx=0,sy=0;
+  el.addEventListener('touchstart',e=>{
+    fired=false;const t0=e.touches&&e.touches[0];if(t0){sx=t0.clientX;sy=t0.clientY;}
+    timer=setTimeout(()=>{timer=null;fired=true;if(navigator.vibrate)try{navigator.vibrate(10);}catch(_){}bibleToReadMenu(el);},500);
+  },{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!timer||!e.touches||!e.touches[0])return;
+    if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10){clearTimeout(timer);timer=null;}
+  },{passive:true});
+  el.addEventListener('touchend',e=>{
+    if(timer){clearTimeout(timer);timer=null;}
+    if(fired){e.preventDefault();setTimeout(()=>{fired=false;},400);}   // 이어지는 click(성경 열기) 억제
+  },{passive:false});
+  el.addEventListener('touchcancel',()=>{if(timer){clearTimeout(timer);timer=null;}},{passive:true});
+  el.addEventListener('click',e=>{if(fired){e.preventDefault();e.stopImmediatePropagation();}},true);
+  el.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();bibleToReadMenu(el);});
+}
+function _initBibleBtnMenus(){['gnbBibleBtn','swDeeperBtn'].forEach(id=>_bibleBtnLongPress(document.getElementById(id)));}
 function _initHdrDateLongPress(){
   const el=document.getElementById('hDate');
   if(!el||el._calBound)return;
@@ -46651,6 +46778,7 @@ function initAppUI(){
   updateUrBtns();
   initDateSwipe();
   _initHdrDateLongPress();
+  _initBibleBtnMenus();
   setupCrossViewSwipeZones();
   attachPullToToday('dateSwipeCatcher',()=>navigateDate(0),'오늘로');
 
