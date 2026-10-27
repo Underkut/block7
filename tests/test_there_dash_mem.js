@@ -40,7 +40,7 @@ function mk(opts) {
     fire('touchmove', { touches: [{ clientX: x1, clientY: y1 }] });
     fire('touchend', { changedTouches: [{ clientX: x1, clientY: y1 }] });
   };
-  return { m, S: m.state, el, click, ctxmenu, swipe };
+  return { m, S: m.state, el, click, ctxmenu, swipe, fireCtx: e => fire('contextmenu', e) };
 }
 const wait = ms => { const t = Date.now(); while (Date.now() - t < ms); };   // 길게 누른 직후 0.7초는 따라오는 클릭을 삼킨다
 const reset = () => { Object.keys(mem).forEach(k => delete mem[k]); };
@@ -176,5 +176,23 @@ console.log('\n시나리오 6 — 기억은 이 기기(localStorage) 의 store �
   mem['tst.v1'] = JSON.stringify({ pin: 'month', last: 'week' });
   const d = mk({ view: 'month', soft: true, at: '2026-09-01' });
   sc.eq('①-soft 권한 탭이 고정과 같으면 그 날짜로', [d.m.state.view, d.m.state.at], ['month', '2026-09-01']);
+}
+console.log('\n시나리오 7 — 기도 항목 이름: 톡 = 상세 · 우클릭 = 한 장씩 기도 (P3′-2, HB 2026-10-27)');
+{
+  reset();
+  const got = [];
+  const prayLog = { [TODAY]: { ses: [{ d: 120, time: '06:00', src: 'focus' }], fc: [{ n: '가람', k: '모임', d: 90, a: 1, amen: true }, { n: '모르는이', d: 30, a: 2 }] } };
+  const d = mk({ view: 'day', local: { prayLog }, item: { has: n => n === '가람', open: n => got.push('open:' + n), pray: n => got.push('pray:' + n) } });
+  sc.eq('아는 이름만 누를 수 있게 그린다', [/data-td="item" data-v="가람"/.test(d.el.innerHTML), /data-td="item" data-v="모르는이"/.test(d.el.innerHTML)], [true, false]);
+  const ib = { dataset: { td: 'item', v: '가람' }, disabled: false };
+  wait(720);
+  d.el.onclick({ target: { closest: () => ib }, stopPropagation() {} });
+  let pd = 0;
+  sc.eq('톡 = 상세', got, ['open:가람']);
+  const d2 = mk({ view: 'day', local: { prayLog }, item: { has: () => true, open: n => got.push('open:' + n), pray: n => got.push('pray:' + n) } });
+  d2.fireCtx({ target: { closest: s => (/item/.test(s) ? ib : null) }, preventDefault() { pd = 1; }, stopPropagation() {} });
+  sc.eq('우클릭 = 그 항목부터 한 장씩 기도 · 기본 메뉴 막기', [got[1], pd], ['pray:가람', 1]);
+  const d3 = mk({ view: 'day', local: { prayLog } });
+  sc.eq('item 을 안 넘기면(BLOCK7 · Sweeter) 글자 그대로', /data-td="item"/.test(d3.el.innerHTML), false);
 }
 sc.done();
