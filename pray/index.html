@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1027-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1027-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1027-3';
+const APP_VERSION = 'v. 26-1027-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2166,6 +2166,7 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .hero-name{width:100%;border:0;background:transparent;outline:none;font-family:var(--serif);font-size:32px;font-weight:400;letter-spacing:-.01em;padding:4px 0;border-bottom:1px solid transparent;transition:border-color .2s}
 .hero-name:focus{border-bottom-color:var(--bd2)}
 .hero-sub{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+[data-lp]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* 길게 누르기 단추 · 줄 — 글자 선택 · 미리보기가 뜨지 않게 (P2-3) */
 .tag{height:30px;padding:0 12px;border-radius:15px;font-size:12.5px;display:inline-flex;align-items:center;gap:5px;background:var(--s1);color:var(--tx2);border:1px solid var(--bd)}
 .tag.g{background:var(--gc);color:#fff;border-color:transparent}
 .tag.add{border-style:dashed}
@@ -2422,11 +2423,22 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .focus{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 .focus.on{display:flex;animation:fin .35s var(--ease)}
 @keyframes fin{from{opacity:0}to{opacity:1}}
-.emb{position:fixed;inset:0;z-index:400;background:var(--bg);opacity:0;transform:translateY(14px);transition:opacity .3s cubic-bezier(.22,.8,.24,1),transform .3s cubic-bezier(.22,.8,.24,1)}
-.emb.on{opacity:1;transform:none}
-.emb iframe{width:100%;height:100%;border:0;display:block;background:var(--bg)}
+.emb{position:fixed;inset:0;z-index:400;background:var(--bg);visibility:hidden;pointer-events:none;opacity:0;transition:opacity .25s ease,visibility 0s linear .25s}
+.emb.on{visibility:visible;pointer-events:auto;opacity:1;transition:opacity .25s ease}
+.emb iframe{width:100%;height:100%;border:0;display:block;background:var(--bg);opacity:0;transition:opacity .22s ease}
+.emb.shown iframe{opacity:1}
 .emb-x{position:absolute;top:calc(var(--sat) + 10px);right:10px;width:40px;height:40px;display:none;align-items:center;justify-content:center;color:var(--tx2);border-radius:20px;background:color-mix(in srgb,var(--bg) 60%,transparent)}
 .emb.stuck .emb-x{display:flex}
+.kv{position:fixed;inset:0;z-index:390;background:var(--bg);display:flex;flex-direction:column;opacity:0;transform:translateX(24px);transition:opacity .3s cubic-bezier(.22,.8,.24,1),transform .3s cubic-bezier(.22,.8,.24,1)}
+.kv.on{opacity:1;transform:none}
+.kv-top{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:calc(var(--sat) + 8px) 6px 6px}
+.kv-top b{text-align:center;font-weight:500;font-size:15px}
+.kv-top b small{margin-left:6px;font-size:12px;color:var(--tx3);font-weight:400}
+.kv-list{flex:1;overflow:auto;padding:6px 22px calc(var(--sab) + 30px);-webkit-overflow-scrolling:touch}
+.kv-v{padding:16px 0;border-bottom:1px solid var(--bd)}
+.kv-v p{margin:0 0 8px;font-size:16px;line-height:1.65;color:var(--tx);word-break:keep-all}
+.kv-ref{font-size:12.5px;color:var(--ac-tx)}
+.kv-ref span{margin-left:8px;color:var(--tx3)}
 .gpop{position:fixed;z-index:420;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;padding:5px 6px;color:var(--tx);
   background:color-mix(in srgb,var(--bg) 38%,transparent);-webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
   border:1px solid color-mix(in srgb,var(--tx3) 38%,transparent);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
@@ -2435,8 +2447,12 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .gpop-h{position:sticky;top:-5px;margin:-5px -6px 4px;padding:7px 9px;font-size:10px;color:var(--tx3);background:color-mix(in srgb,var(--bg) 78%,transparent);border-bottom:1px solid color-mix(in srgb,var(--tx3) 22%,transparent)}
 .gpop-r{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:8px 6px;font-size:12.5px;text-align:left;border-radius:6px}
 .gpop-r small{font-size:10px;opacity:.65}
+.gpop-r span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gpop-sort{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:7px 6px}
+.gpop-sort button{font-size:10.5px;color:var(--tx3);padding:3px 1px}
+.gpop-sort button.on{color:var(--tx);font-weight:700}
 .gpop-r:active{opacity:.6}
-.f-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:calc(var(--sat) + 8px) 6px 0 6px;position:relative;z-index:2}
+.f-top{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:calc(var(--sat) + 8px) 6px 0 6px;position:relative;z-index:2}
 .f-time{font-size:13px;color:var(--tx3);font-variant-numeric:tabular-nums;margin-right:6px}
 .f-top>span:last-child{display:flex;align-items:center;justify-content:flex-end}
 .f-pos{font-size:13px;color:var(--tx2)}
@@ -2595,7 +2611,8 @@ const ICONS = {
   sun: '<circle cx="12" cy="13" r="4"/><line x1="12" y1="3" x2="12" y2="5.5"/><line x1="4.5" y1="13" x2="2.5" y2="13"/><line x1="21.5" y1="13" x2="19.5" y2="13"/><line x1="6.3" y1="7.3" x2="5" y2="6"/><line x1="17.7" y1="7.3" x2="19" y2="6"/><line x1="3" y1="20" x2="21" y2="20"/>',
   map: '<rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/>',
   list: '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
-  keep: '<path d="M7 3.5h10a.5.5 0 0 1 .5.5v16.2l-5.5-4-5.5 4V4a.5.5 0 0 1 .5-.5z"/>',
+  keep: '<path d="M7 3.5h10v15.6L12 15.3l-5 3.8z"/>',   // BLOCK7 말씀 전체화면 '저장' 단추와 같은 그림
+  bible: '<g transform="scale(1.2)"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></g>',   // BLOCK7 · Sweeter 성경 단추와 같은 그림 (P2-2)
   book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
   card: '<rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/>',
   phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
@@ -2941,13 +2958,26 @@ function openFocusMap(k, who) {
   if (i < 0) i = deck.findIndex(d => under.has(d.g));
   focusStart(deck, Math.max(0, i));
 }
+// 기도 항목 하나부터 한 장씩 (HB 2026-10-27 P3′ — 기록 › 기도한 날 · There 대시보드에서 길게 누르기 · 우클릭)
+//   지도 차례대로 이어지게 지도 덱에서 그 자리부터. 그룹이면 그 그룹의 첫 항목부터. 지도에 없으면(보관 · 거름) 그 하나만.
+function focusFromItem(id) {
+  const t = findAny(DB, id); if (!t) { toast('찾을 수 없는 기도 항목입니다'); return; }
+  if (TDASH.isOpen()) TDASH.close();
+  if (F.on) closeFocus();
+  if (MT.on) thereStop('page');
+  let deck = mapDeck(), i = deck.findIndex(d => t.kind === 'group' ? d.g === id : d.id === id);
+  if (i < 0) { if (t.kind === 'group') { toast('이 그룹에는 기도할 이름이 없습니다'); return; } const g = groupsOf(DB, id)[0]; deck = [{ id: id, sec: 'map', g: g ? g.id : '' }]; i = 0; }
+  focusStart(deck, i);
+}
 function focusStart(deck, at) {
   F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false;
   F.ct0 = F.t0; F.cacc = 0; F.ca = F.t0;   // 지금 카드에 머문 시간 (O-2)
   awakeOn();   // P4 — 한 장씩 기도도 There 중. 누른 손짓 안에서 불러야 영상이 돈다(setTimeout 금지)
+  if (SY.user) thereRefresh(false);   // 저장 목록 · 읽기 계획도 이때 새로 받아 둔다 (5분 넘게 묵었으면)
+  setTimeout(embedWarm, 600);   // 1027-2 — 성경을 뒤에서 미리 켜 둔다(누르면 바로). 카드가 먼저 그려지도록 조금 뒤에
   const el = $('focus');
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button>' +
-    '<button class="ib" data-a="embed-keep" aria-label="저장한 말씀">' + ico('keep') + '</button><button class="ib" data-a="embed-bible" data-lp="toread" aria-label="성경 (길게 누르면 읽기 계획)">' + ico('book') + '</button></span><span class="f-pos" id="fPos"></span>' +
+    '<button class="ib" data-a="embed-keep" aria-label="저장한 말씀">' + ico('keep') + '</button><button class="ib" data-a="embed-bible" data-lp="toread" aria-label="성경 (길게 누르면 읽기 계획)">' + ico('bible') + '</button></span><span class="f-pos" id="fPos"></span>' +
     '<span><span class="f-time" id="fTime">0:00</span><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
     '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
     '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>';
@@ -3069,7 +3099,7 @@ function focusSecs() { return F.tot + (F.paused ? 0 : Math.max(0, (Date.now() - 
 function flushFocusTime() { if (!F.on) return; const d = F.paused ? 0 : (Date.now() - F.t0) / 1000; if (d > 0) { addPraySession(DB, F.start || F.t0, d, 'focus', F.sid); F.tot += d; } F.t0 = Date.now(); }
 function closeFocus() {
   focusCardLog(false); flushFocusTime(); save();
-  F.on = false; clearInterval(F.tick); embedClose(true);
+  F.on = false; clearInterval(F.tick); embedDrop(); keepViewClose(); const gp = $('gPop'); if (gp) gp.remove();
   awakeOff();
   const el = $('focus'); el.classList.remove('on'); el.innerHTML = '';
   refresh();
@@ -3415,7 +3445,7 @@ function renderCal() {
     const o = dt[UI.calDay];
     h += '<div class="label">' + shortDate(UI.calDay) + '<small>' + ids.length + '개' + (o ? ' · ' + TDASH.dur(o.s) : '') + '</small>' +
       (o ? '<button class="r" data-a="there-dash" data-v="day" data-at="' + UI.calDay + '" style="font-weight:400;color:var(--tx3);letter-spacing:0">그날 자세히</button>' : '') + '</div><div class="chips2">' +
-      (ids.length ? ids.map(id => { const t = findAny(DB, id); return t ? '<button class="tag" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>' : ''; }).join('') : '<span class="hint" style="padding:0">이날은 기도한 항목 기록이 없습니다</span>') + '</div>';
+      (ids.length ? ids.map(id => { const t = findAny(DB, id); return t ? '<button class="tag" data-lp="focus" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>' : ''; }).join('') : '<span class="hint" style="padding:0">이날은 기도한 항목 기록이 없습니다</span>') + '</div>';
       h += prayTimesHTML(UI.calDay);
   }
   h += calGlanceHTML(TDASH.collect(c ? c.log : null, DB.log), dt);
@@ -3446,9 +3476,9 @@ function calGlanceHTML(ss, dt) {
   const smax = Math.max(...r.slot);
   if (smax) h += '<button class="gl-c"' + go + '><h4>주로 이 시간에</h4><div class="gl-sl">' + GL_SLOTS.map((x, k) => '<div><i style="height:' + Math.max(r.slot[k] ? 8 : 3, Math.round(r.slot[k] / smax * 100)) + '%' + (r.slot[k] ? '' : ';opacity:.25') + '"></i><span>' + x[0] + '</span></div>').join('') + '</div></button>';
   // ⑤ 이번 달 많이 기도한
-  if (r.top.length) h += '<div class="gl-c"><h4>이번 달 많이 기도한</h4>' + r.top.map(o => '<button class="gl-li" data-a="' + (o.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>' + o.n + '일</small></button>').join('') + '</div>';
+  if (r.top.length) h += '<div class="gl-c"><h4>이번 달 많이 기도한</h4>' + r.top.map(o => '<button class="gl-li" data-lp="focus" data-a="' + (o.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>' + o.n + '일</small></button>').join('') + '</div>';
   // ⑥ 오래 못 한 기도 · 이달 응답
-  if (r.stale.length || r.ans) h += '<div class="gl-c w"><h4>오래 못 한 기도</h4>' + r.stale.map(o => '<button class="gl-li" data-a="open" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>마지막 ' + shortDate(o.t.last) + ' · ' + o.ago + '일 전</small></button>').join('') +
+  if (r.stale.length || r.ans) h += '<div class="gl-c w"><h4>오래 못 한 기도</h4>' + r.stale.map(o => '<button class="gl-li" data-lp="focus" data-a="open" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>마지막 ' + shortDate(o.t.last) + ' · ' + o.ago + '일 전</small></button>').join('') +
     (r.ans ? '<button class="gl-s gl-ans" data-a="hist-tab" data-v="ans">이번 달 응답 ' + r.ans + '건</button>' : '') + '</div>';
   return h + '</div>';
 }
@@ -3968,7 +3998,7 @@ function askText(title, value, placeholder, fn, opt) {
 
 // ═══ 동작 ═══
 const ACT = {};
-function doAct(el, e) { const f = ACT[el.dataset.a]; if (f) f(el, e); }
+function doAct(el, e) { if (el._lpFired) { el._lpFired = false; return; } const f = ACT[el.dataset.a]; if (f) f(el, e); }   // 길게 누른 뒤 따라오는 톡은 삼킨다
 // 기도한 시간 고치기 (H-2) — 단추 동작은 ACT 가 생긴 뒤에 단다
 ACT['pt-step'] = el => { const i = $('ptMin'); if (!i) return; i.value = Math.max(0, Math.min(1440, (parseInt(i.value, 10) || 0) + +el.dataset.v)); };
 ACT['pt-edit'] = el => {
@@ -4127,67 +4157,156 @@ ACT['sort-today'] = () => choose('오늘 목록 정렬', [
   { v: 'imp', label: '중요도 순', desc: '중요도 → 긴급도 → 이름' }, { v: 'urg', label: '긴급도 순' }, { v: 'name', label: '이름 순' },
   { v: 'mine', label: '내 순서', desc: '줄을 길게 눌러 끌어 정한 순서' }], DB.set.sorts.today || 'imp', v => { DB.set.sorts.today = v; save(); renderView(); });
 ACT.focus = () => openFocus();
-// ── There 좌상단 '저장' · '성경' (HB 2026-10-27 P2 · A1) ──
-// 기도노트에는 말씀 모음도 성경도 없다. 같은 주소(sweeter.my)의 Sweeter 를 겹 화면(iframe)으로 띄운다 — 로그인 · 자료가 그대로다.
-//   Sweeter 쪽은 ?embed=bible|keep 을 받으면 그 화면만 열고, 닫으면 {b7embed:'close'} 를 보낸다(index.html _EMBED).
-//   한 장씩 기도 시간은 그동안에도 그대로 흐른다(There 중).
-// 성경 단추 길게 누르기 · 우클릭 = 읽기 계획(읽기모음) 장 목록 — Sweeter 가 이 기기에 남긴 상태(b7v1_sweeter)에서 읽기만 한다.
+// ── There 좌상단 '저장' · '성경' (HB 2026-10-27 P2 · A1 · 1027-2 다듬기) ──
+// 기도노트에는 말씀 모음도 성경도 없다. 둘 다 BLOCK7 · Sweeter 의 것을 보여 준다.
+//  · 저장 — 말씀 전체화면 좌상단 '저장' 목록(폴더)과 같은 모양을 **기도노트가 직접** 그린다(바로 뜨고, 기도노트 테마).
+//           자료: 로그인했으면 클라우드 users/{uid}/data/state 에서 There 기록과 함께 받아 둔 것(WORD_KEY),
+//           아니면 이 기기의 Sweeter 상태(b7v1_sweeter). 읽기만 한다.
+//  · 성경 — 성경 읽기 화면은 Sweeter 것을 쓴다. 한 장씩 기도를 열 때 뒤에서 미리 켜 두고(?embed=wait),
+//           누르면 {b7embed:'open'} 을 보내 그 자리에서 연다 → 로딩이 안 보인다. 색은 기도노트 테마를 넘긴다.
+//    (1027-2 HB: 누를 때마다 Sweeter 를 새로 켜서 로딩이 보였고, 저장은 폴더 목록이 아니라 다른 화면이 떴다)
 const BIBLE_SHORT = ["창","출","레","민","신","수","삿","룻","삼상","삼하","왕상","왕하","대상","대하","스","느","에","욥","시","잠","전","아","사","렘","애","겔","단","호","욜","암","옵","욘","미","나","합","습","학","슥","말","마","막","눅","요","행","롬","고전","고후","갈","엡","빌","골","살전","살후","딤전","딤후","딛","몬","히","약","벧전","벧후","요일","요이","요삼","유","계"];
-function embedURL(kind, b, c) { return new URL('../index.html', location.href).href.split('#')[0] + '?embed=' + kind + (b ? '&b=' + b + '&c=' + c : ''); }
-function embedOpen(kind, b, c) {
-  embedClose(true);
-  const L = document.createElement('div'); L.id = 'embedLayer'; L.className = 'emb';
-  L.innerHTML = '<iframe title="' + (kind === 'keep' ? '저장한 말씀' : '성경') + '" src="' + esc(embedURL(kind, b, c)) + '"></iframe><button class="emb-x" data-a="embed-close" aria-label="닫기">' + ico('x') + '</button>';
-  document.body.appendChild(L);
-  requestAnimationFrame(() => L.classList.add('on'));
-  // 6초 안에 아무 소식이 없으면(오프라인 · 로그인 화면) 닫기 단추를 보인다 — 갇히지 않게
-  L._t = setTimeout(() => L.classList.add('stuck'), 6000);
-  L.querySelector('iframe').addEventListener('load', () => { clearTimeout(L._t); L._t = setTimeout(() => L.classList.add('stuck'), 2500); });
+const WORD_KEY = 'pray.word.v1';
+// 저장 · 읽기 계획에 쓸 것만 추린다 — 저장한 말씀의 본문(모음에 있는 것) · 목록 차례 설정 · 읽기 계획
+function wordPick(st) {
+  st = st || {};
+  const keep = st.verseKeepLog && typeof st.verseKeepLog === 'object' ? st.verseKeepLog : {};
+  const refs = new Set(); Object.keys(keep).forEach(d => (keep[d] || []).forEach(e => { if (e && e.ref) refs.add(String(e.ref)); }));
+  const vs = {};
+  (st.verseCollections || []).forEach(c => ((c && c.verses) || []).forEach(v => { if (v && !v.del && refs.has(v.ref) && !vs[v.ref]) vs[v.ref] = { t: String(v.krText || ''), tp: String(v.topic || '') }; }));
+  const set = st.settings || {};
+  return { keep: keep, vs: vs, order: Array.isArray(set.keepListOrder) ? set.keepListOrder.map(String) : [], toRead: st.bibleToRead && typeof st.bibleToRead === 'object' ? st.bibleToRead : {} };
 }
-function embedClose(now) {
-  const L = $('embedLayer'); if (!L) return;
-  L.id = ''; clearTimeout(L._t);
-  if (now) { L.remove(); return; }
-  L.classList.remove('on'); setTimeout(() => L.remove(), 320);
+function wordData() {
+  try { const o = JSON.parse(localStorage.getItem(WORD_KEY) || 'null'); if (o && SY.user && o.uid === SY.user.uid && o.w) return o.w; } catch (e) {}
+  try { return wordPick(JSON.parse(localStorage.getItem('b7v1_sweeter') || 'null')); } catch (e) { return wordPick(null); }
 }
-window.addEventListener('message', e => {
-  if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
-  if (e.data.b7embed === 'close') embedClose();
-  else if (e.data.b7embed === 'ready') { const L = $('embedLayer'); if (L) { clearTimeout(L._t); L.classList.remove('stuck'); } }
-});
-function bibleToRead() {
-  try { const st = JSON.parse(localStorage.getItem('b7v1_sweeter') || 'null'); const all = st && st.bibleToRead; if (!all || typeof all !== 'object') return [];
-    const key = x => x.o != null ? x.o : -(x.at || 0) / 1e13;
-    return Object.keys(all).map(k => all[k]).filter(x => x && x.b >= 1 && x.b <= 66 && x.c >= 1).sort((x, y) => key(x) - key(y) || (y.at || 0) - (x.at || 0));
-  } catch (e) { return []; }
+// 저장 목록 — BLOCK7 _keepEntries · _keepLists 와 같은 셈 (목록 이름은 항목의 lst, 없거나 '저장됨' 이면 '기본')
+function keepEntries(w) {
+  const m = new Map();
+  Object.keys(w.keep).forEach(d => (w.keep[d] || []).forEach(e => {
+    if (!e || !e.ref) return;
+    const ref = String(e.ref), n = e.lst != null ? String(e.lst).trim() : '', list = !n || n === '저장됨' ? '기본' : n, when = d + ' ' + (e.time || '');
+    const k = list + '\u0001' + ref, g = m.get(k);
+    if (!g) { m.set(k, { ref: ref, list: list, when: when, first: when }); return; }
+    if (when > g.when) g.when = when; if (when < g.first) g.first = when;
+  }));
+  return [...m.values()];
 }
-function readPlanMenu(anchor) {
-  const old = $('rpMenu'); if (old) { old.remove(); return; }
-  const list = bibleToRead();
-  const m = document.createElement('div'); m.id = 'rpMenu'; m.className = 'gpop'; m.setAttribute('role', 'menu');
-  m.innerHTML = '<div class="gpop-h">읽기 계획</div>' + (list.length ? list.map(x => '<button class="gpop-r" role="menuitem" data-b="' + x.b + '" data-c="' + x.c + '">' + BIBLE_SHORT[x.b - 1] + ' ' + x.c + (x.b === 19 ? '편' : '장') + '</button>').join('')
-    : '<button class="gpop-r" data-b="" style="opacity:.7">읽기 계획이 비어 있어요<small>성경에서 + 로 담기</small></button>');
+const KEEP_SORTS = [['recent', '최신순'], ['alpha', 'ㄱㄴㄷ순'], ['count', '많은순'], ['manual', '내순서']];
+function keepLists(w, mode) {
+  const m = new Map();
+  keepEntries(w).forEach(x => { const g = m.get(x.list) || m.set(x.list, { n: x.list, cnt: 0, when: '', first: '' }).get(x.list); g.cnt++; if (x.when > g.when) g.when = x.when; if (!g.first || x.first < g.first) g.first = x.first; });
+  const arr = [...m.values()], recent = (a, b) => b.when.localeCompare(a.when);
+  const nm = n => n.replace(/[\p{Extended_Pictographic}\p{Regional_Indicator}\p{Emoji_Modifier}️‍]/gu, '').trim();
+  const byName = (a, b) => { const an = nm(a.n), bn = nm(b.n), ak = /^[가-힣ㄱ-ㅎ]/.test(an) ? 0 : 1, bk = /^[가-힣ㄱ-ㅎ]/.test(bn) ? 0 : 1; return ak - bk || an.localeCompare(bn, 'ko'); };
+  if (mode === 'alpha') return arr.sort(byName);
+  if (mode === 'count') return arr.sort((a, b) => b.cnt - a.cnt || byName(a, b));
+  if (mode === 'manual') { const at = n => { const i = w.order.indexOf(n); return i < 0 ? 1e9 : i; }; return arr.sort((a, b) => at(a.n) - at(b.n) || recent(a, b)); }
+  return arr.sort(recent);
+}
+// 떠 있는 유리 메뉴 (BLOCK7 말씀 전체화면 '저장' 메뉴 모양) — head = 머리줄 HTML, rows = [{label, sub, fn}]
+function glassPop(anchor, head, rows, id) {
+  const old = $('gPop'); if (old) { old.remove(); if (old.dataset.k === id) return null; }
+  const m = document.createElement('div'); m.id = 'gPop'; m.dataset.k = id || ''; m.className = 'gpop'; m.setAttribute('role', 'menu');
   document.body.appendChild(m);
+  const draw = (h, rs) => {
+    m.innerHTML = h + (rs.length ? rs.map((r, i) => '<button class="gpop-r" role="menuitem" data-i="' + i + '"><span>' + esc(r.label) + '</span>' + (r.sub != null && r.sub !== '' ? '<small>' + esc(String(r.sub)) + '</small>' : '') + '</button>').join('')
+      : '<div class="gpop-r" style="opacity:.65">비어 있어요</div>');
+    m._rows = rs;
+  };
+  draw(head, rows); m._draw = draw;
   const r = anchor.getBoundingClientRect(), W = document.documentElement.clientWidth;
   m.style.top = Math.round(r.bottom + 6) + 'px'; m.style.left = Math.round(Math.max(8, Math.min(r.left, W - m.offsetWidth - 8))) + 'px';
   requestAnimationFrame(() => m.classList.add('open'));
-  m.addEventListener('click', e => { const b = e.target.closest('.gpop-r'); if (!b) return; e.stopPropagation(); m.remove(); embedOpen('bible', +b.dataset.b || 0, +b.dataset.c || 0); });
-  setTimeout(() => { const off = e => { if (m.contains(e.target)) return; document.removeEventListener('pointerdown', off, true); m.remove(); }; document.addEventListener('pointerdown', off, true); }, 0);
+  m.addEventListener('click', e => {
+    e.stopPropagation();
+    const t = e.target.closest('[data-ks]'); if (t && m._sort) { m._sort(t.dataset.ks); return; }
+    const b = e.target.closest('.gpop-r[data-i]'); if (!b) return;
+    const row = m._rows[+b.dataset.i]; m.remove(); if (row && row.fn) row.fn();
+  });
+  setTimeout(() => { const off = e => { if (m.contains(e.target) || !m.isConnected) { if (!m.isConnected) document.removeEventListener('pointerdown', off, true); return; } document.removeEventListener('pointerdown', off, true); m.remove(); }; document.addEventListener('pointerdown', off, true); }, 0);
+  return m;
 }
-ACT['embed-keep'] = () => embedOpen('keep');
-ACT['embed-bible'] = (el) => { if (el && el._lpFired) { el._lpFired = false; return; } embedOpen('bible'); };
-ACT['embed-close'] = () => embedClose();
-// 길게 누르기(0.5초) · 우클릭 — data-lp="toread" 단추
+function keepMenu(anchor) {
+  const w = wordData();
+  let mode = devPref('keepSort', 'recent'); if (!KEEP_SORTS.some(k => k[0] === mode)) mode = 'recent';
+  const head = md => '<div class="gpop-h gpop-sort">' + KEEP_SORTS.map(k => '<button data-ks="' + k[0] + '" class="' + (k[0] === md ? 'on' : '') + '">' + k[1] + '</button>').join('') + '</div>';
+  const rows = md => keepLists(w, md).map(L => ({ label: L.n, sub: L.cnt, fn: () => keepView(L.n) }));
+  const m = glassPop(anchor, head(mode), rows(mode), 'keep');
+  if (m) m._sort = md => { setDevPref('keepSort', md); m._draw(head(md), rows(md)); };
+}
+// 저장 목록 하나 — 그 말씀을 차례로 (최근 저장 순). 본문은 말씀 모음에 있는 것만 · 없으면 장절만
+function keepView(name) {
+  const w = wordData(), list = keepEntries(w).filter(x => x.list === name).sort((a, b) => b.when.localeCompare(a.when));
+  const L = document.createElement('div'); L.className = 'kv'; L.id = 'keepView';
+  L.innerHTML = '<div class="kv-top"><span></span><b>' + esc(name) + '<small>' + list.length + '</small></b><button class="ib" data-a="keep-close" aria-label="닫기">' + ico('x') + '</button></div><div class="kv-list">' +
+    (list.length ? list.map(x => { const v = w.vs[x.ref]; return '<div class="kv-v">' + (v && v.t ? '<p>' + esc(v.t) + '</p>' : '') + '<div class="kv-ref">' + esc(x.ref) + (v && v.tp ? '<span>' + esc(v.tp) + '</span>' : '') + '</div></div>'; }).join('') : '<div class="hint">이 목록은 비어 있어요</div>') + '</div>';
+  document.body.appendChild(L);
+  requestAnimationFrame(() => L.classList.add('on'));
+}
+function keepViewClose() { const L = $('keepView'); if (!L) return; L.id = ''; L.classList.remove('on'); setTimeout(() => L.remove(), 300); }
+ACT['keep-close'] = () => keepViewClose();
+// 성경 — 미리 켜 두기
+function embedURL() { return new URL('../index.html', location.href).href.split('#')[0] + '?embed=wait'; }
+function embedTheme() {
+  const cs = getComputedStyle(document.documentElement), t = {};
+  ['bg', 's1', 's2', 'tx', 'tx2', 'tx3', 'bd', 'bd2', 'ac', 'ac-tx'].forEach(k => { const v = cs.getPropertyValue('--' + k).trim(); if (v) t[k] = v; });
+  return t;
+}
+function embedWarm() {
+  if ($('embedLayer')) return;
+  const L = document.createElement('div'); L.id = 'embedLayer'; L.className = 'emb';
+  L.innerHTML = '<iframe title="성경" src="' + esc(embedURL()) + '"></iframe><button class="emb-x" data-a="embed-close" aria-label="닫기">' + ico('x') + '</button>';
+  document.body.appendChild(L);
+}
+function embedOpen(kind, b, c) {
+  embedWarm();
+  const L = $('embedLayer'), f = L.querySelector('iframe');
+  L.classList.remove('stuck', 'shown'); L.classList.add('on');
+  const send = () => { try { f.contentWindow.postMessage({ b7embed: 'open', kind: kind, b: b || 0, c: c || 0, theme: embedTheme() }, location.origin); } catch (e) {} };
+  send(); if (!L._loaded) f.addEventListener('load', send, { once: true });
+  // 2.5초 안에 열렸다는 소식이 없으면(로그인 전 · 오프라인) 있는 그대로 보이고 닫기 단추를 낸다 — 갇히지 않게
+  clearTimeout(L._t); L._t = setTimeout(() => L.classList.add('shown', 'stuck'), 2500);
+}
+function embedHide() { const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
+function embedDrop() { const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
+  const L = $('embedLayer'); if (!L) return;
+  if (e.data.b7embed === 'idle') L._loaded = true;
+  else if (e.data.b7embed === 'ready') { clearTimeout(L._t); L._loaded = true; if (L.classList.contains('on')) L.classList.add('shown'); }
+  else if (e.data.b7embed === 'close') embedHide();
+});
+function bibleToRead() {
+  const all = wordData().toRead || {}, key = x => x.o != null ? x.o : -(x.at || 0) / 1e13;
+  return Object.keys(all).map(k => all[k]).filter(x => x && x.b >= 1 && x.b <= 66 && x.c >= 1).sort((x, y) => key(x) - key(y) || (y.at || 0) - (x.at || 0));
+}
+function readPlanMenu(anchor) {
+  const list = bibleToRead();
+  glassPop(anchor, '<div class="gpop-h">읽기 계획</div>', list.length ? list.map(x => ({ label: BIBLE_SHORT[x.b - 1] + ' ' + x.c + (x.b === 19 ? '편' : '장'), fn: () => embedOpen('bible', x.b, x.c) }))
+    : [{ label: '읽기 계획이 비어 있어요', sub: '성경에서 + 로 담기', fn: () => embedOpen('bible') }], 'toread');
+}
+ACT['embed-keep'] = el => keepMenu(el);
+ACT['embed-bible'] = () => embedOpen('bible');
+ACT['embed-close'] = () => embedHide();
+// 길게 누르기(0.5초) · 우클릭 — data-lp 단추 · 줄. 'toread' = 읽기 계획 메뉴, 'focus' = 그 기도 항목부터 한 장씩 기도 (P3′)
+//   길게 누른 뒤 따라오는 톡(click)은 doAct 가 삼킨다 (_lpFired)
+function longPressAct(b) {
+  if (b.dataset.lp === 'toread') readPlanMenu(b);
+  else if (b.dataset.lp === 'focus') focusFromItem(b.dataset.id);
+}
 (function () {
   let t = null, el = null, sx = 0, sy = 0;
   document.addEventListener('touchstart', e => {
-    const b = e.target.closest && e.target.closest('[data-lp="toread"]'); if (!b) return;
+    const b = e.target.closest && e.target.closest('[data-lp]'); if (!b) return;
     el = b; b._lpFired = false; const p = e.touches[0]; sx = p.clientX; sy = p.clientY;
-    t = setTimeout(() => { t = null; b._lpFired = true; if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {} readPlanMenu(b); }, 500);
+    t = setTimeout(() => { t = null; b._lpFired = true; if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {} longPressAct(b); }, 500);
   }, { passive: true });
   document.addEventListener('touchmove', e => { if (t && Math.hypot(e.touches[0].clientX - sx, e.touches[0].clientY - sy) > 10) { clearTimeout(t); t = null; } }, { passive: true });
-  document.addEventListener('touchend', e => { if (t) { clearTimeout(t); t = null; } if (el && el._lpFired) { e.preventDefault(); setTimeout(() => { if (el) el._lpFired = false; }, 400); } }, { passive: false });
-  document.addEventListener('contextmenu', e => { const b = e.target.closest && e.target.closest('[data-lp="toread"]'); if (!b) return; e.preventDefault(); readPlanMenu(b); });
+  document.addEventListener('touchend', e => { if (t) { clearTimeout(t); t = null; } if (el && el._lpFired) { e.preventDefault(); const k = el; setTimeout(() => { k._lpFired = false; }, 450); } }, { passive: false });
+  document.addEventListener('touchcancel', () => { if (t) { clearTimeout(t); t = null; } }, { passive: true });
+  document.addEventListener('contextmenu', e => { const b = e.target.closest && e.target.closest('[data-lp]'); if (!b) return; e.preventDefault(); longPressAct(b); });
 })();
 ACT['focus-close'] = () => closeFocus();
 // 한 장 화면의 지도 단추 — 그룹 · 서브 그룹을 띠 색과 함께 요약해 보여 주고 고르면 그 그룹으로 (HB 2026-10-15)
@@ -6989,8 +7108,10 @@ async function loadWordThere() {
   if (!SY.user) return null;
   await fbLoad();
   const uid = SY.user.uid, snap = await FB.db.doc('users/' + uid + '/data/state').get();
-  let log = {};
-  if (snap.exists) { try { log = (JSON.parse((snap.data() || {}).json || '{}').verseThereLog) || {}; } catch (e) { log = {}; } }
+  let log = {}, st = null;
+  if (snap.exists) { try { st = JSON.parse((snap.data() || {}).json || '{}'); log = st.verseThereLog || {}; } catch (e) { log = {}; } }
+  // 저장 목록 · 읽기 계획도 같은 문서에서 추려 둔다 (1027-2 — 한 장씩 기도의 '저장' · 성경 길게 누르기)
+  if (st) try { localStorage.setItem(WORD_KEY, JSON.stringify({ uid: uid, at: Date.now(), w: wordPick(st) })); } catch (e) {}
   try { localStorage.setItem(THERE_CACHE_KEY, JSON.stringify({ uid: uid, at: Date.now(), log: log })); } catch (e) { /* 남기지 못하면 다음에 다시 받는다 */ }
   return log;
 }
@@ -7001,6 +7122,8 @@ function thereRefresh(force) {
   if (!force && c && Date.now() - c.at < 5 * 60000) return;
   THERE_BUSY = loadWordThere().then(() => { THERE_BUSY = null; if (UI.tab === 'hist' && UI.histTab === 'days') renderView(); }, () => { THERE_BUSY = null; });
 }
+// 이름 → 기도 항목 (보관 안 한 것 먼저, 없으면 그룹)
+function itemByName(n) { n = String(n || '').trim(); if (!n) return null; return DB.T.find(t => t.name === n && !isShelved(t)) || DB.T.find(t => t.name === n) || DB.G.find(g => g.name === n) || null; }
 function openThereDash(view, at, soft) {
   if (MT.on) thereStop('page');
   const c = thereCache();
@@ -7009,6 +7132,8 @@ function openThereDash(view, at, soft) {
     local: { prayLog: DB.log, thereLog: c ? c.log : null },
     load: SY.user ? () => loadWordThere().then(l => ({ thereLog: l })) : null,
     note: SY.user ? '' : '로그인하면 BLOCK7 · Sweeter · 성경 기록도 함께 보입니다 (설정 › 계정).',
+    // 기도 항목 이름 — 톡 = 상세, 길게 · 우클릭 = 그 항목부터 한 장씩 기도 (P3′-2). 이름으로 찾는다(기록에 id 가 없다)
+    item: { has: n => !!itemByName(n), open: n => { const t = itemByName(n); if (!t) return; TDASH.close(); if (t.kind === 'group') pushLayer({ type: 'group', id: t.id }); else openTarget(t.id); }, pray: n => { const t = itemByName(n); if (t) focusFromItem(t.id); } },
     onClose: () => { if (UI.tab === 'hist') renderView(); }
   });
 }
@@ -7151,6 +7276,9 @@ const TDASH = (function () {
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
     return out;
   }
+  // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
+  //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
+  const itemName = (S, n, tag) => S.item && S.item.has(n) ? '<' + tag + ' class="tdash-item" data-td="item" data-v="' + esc(n) + '">' + esc(n) + '</' + tag + '>' : '<' + tag + '>' + esc(n) + '</' + tag + '>';
   // 기간 안의 Map 기도 · 한 장 기도를 이름마다 모아 오래 한 순서로
   function mapTop(S, a, b, n) {
     const m = {}; const put = (k, d) => { const o = m[k] || (m[k] = { s: 0, n: 0 }); o.s += d; o.n++; };
@@ -7159,7 +7287,7 @@ const TDASH = (function () {
     const ks = Object.keys(m).sort((x, y) => m[y].s - m[x].s).slice(0, n || 5);
     if (!ks.length) return '';
     return '<div class="tdash-sec"><h4 style="color:#5b8fcc">무엇을 위해 기도했나 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· Map 기도 · 한 장 기도</span></h4>' +
-      ks.map(k => '<div class="tdash-li"><span>' + esc(k) + '</span><small>' + dur(m[k].s) + ' · ' + m[k].n + '번</small></div>').join('') + '</div>';
+      ks.map(k => '<div class="tdash-li">' + itemName(S, k, 'span') + '<small>' + dur(m[k].s) + ' · ' + m[k].n + '번</small></div>').join('') + '</div>';
   }
   // 날마다 합계 {date:{s, by:{app:초}}}
   function dayTotals(ss) {
@@ -7203,6 +7331,7 @@ const TDASH = (function () {
 .tdash-toast b{color:#f4f0e8;font-weight:700}
 .tdash-toast small{display:block;margin-top:8px;font-size:14px;color:#8d887e}
 .tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.tdash-item{cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -7404,7 +7533,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     if (mp.length) {
       const sum = mp.reduce((s, x) => s + x.d, 0);
       h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0"><b>' + esc(x.k) + '</b>' +
+        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
         (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
     }
     // 한 장 기도로 누구를 — 이름마다 머문 시간 · 아멘 / 넘김 (위 '한 장씩 기도하기' 시간 안의 몫)
@@ -7412,7 +7541,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     if (fc.length) {
       const sum = fc.reduce((s, x) => s + x.d, 0), am = fc.filter(x => x.amen).length;
       h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0"><b>' + esc(x.n) + '</b>' +
+        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
         '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em></div>').join('') + '</div>';
     }
     return h;
@@ -7439,7 +7568,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function mount(el, opts) {
     injectCSS();
     opts = opts || {};
-    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}) };
+    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null };
     // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
@@ -7532,6 +7661,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         }
         return;
       }
+      if (a === 'item') { e.stopPropagation(); if (S.item && S.item.open) S.item.open(b.dataset.v); return; }
       if (a === 'day') { e.stopPropagation(); tabTransit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
       else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
@@ -7543,14 +7673,19 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         : '<b>' + VN[v] + ' 탭</b>의<br><b>고정을 풀었어요</b><br>앞으로는 <b>마지막으로 본 탭</b>으로<br>There 대시보드가 열려요');
     };
     const segBtn = e => e.target.closest && e.target.closest('.tdash-seg [data-td="view"]');
+    const itemBtn = e => e.target.closest && e.target.closest('[data-td="item"]');
+    const itemPray = b => { lpAt = Date.now(); if (S.item && S.item.pray) S.item.pray(b.dataset.v); };
     el.addEventListener('pointerdown', e => {
-      const b = segBtn(e); if (!b || e.pointerType === 'mouse') return;
+      const b = segBtn(e), it = b ? null : itemBtn(e); if ((!b && !it) || e.pointerType === 'mouse') return;
       lpX = e.clientX; lpY = e.clientY; clearTimeout(lpTm);
-      lpTm = setTimeout(() => { lpTm = 0; if (navigator.vibrate) navigator.vibrate(10); togglePin(b.dataset.v); }, 520);
+      lpTm = setTimeout(() => { lpTm = 0; if (navigator.vibrate) navigator.vibrate(10); if (b) togglePin(b.dataset.v); else itemPray(it); }, 520);
     });
     el.addEventListener('pointermove', e => { if (lpTm && Math.hypot(e.clientX - lpX, e.clientY - lpY) > 10) { clearTimeout(lpTm); lpTm = 0; } });
     ['pointerup', 'pointercancel'].forEach(n => el.addEventListener(n, () => { clearTimeout(lpTm); lpTm = 0; }));
-    el.addEventListener('contextmenu', e => { const b = segBtn(e); if (!b) return; e.preventDefault(); e.stopPropagation(); clearTimeout(lpTm); lpTm = 0; togglePin(b.dataset.v); });
+    el.addEventListener('contextmenu', e => {
+      const b = segBtn(e), it = b ? null : itemBtn(e); if (!b && !it) return;
+      e.preventDefault(); e.stopPropagation(); clearTimeout(lpTm); lpTm = 0; if (b) togglePin(b.dataset.v); else itemPray(it);
+    });
     // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 손가락을 따라 판이 움직이고,
     // 놓을 때 폭의 4분의 1 넘게(또는 빠르게) 밀었으면 넘어가고 아니면 제자리로 돌아온다.
     // 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
@@ -7636,18 +7771,38 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
     // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
     const m = mount(ov.querySelector('.tdash-body'), Object.assign({}, opts, { onView: v => { sub.textContent = VNAME[v] || ''; if (onV) onV(v); } }));
-    // 왼쪽 가장자리에서 오른쪽으로 밀어 닫기 — 손가락을 따라 밀려 나간다 (HB 2026-10-13)
-    let sx = 0, sy = 0, on = false, dx = 0;
-    ov.addEventListener('touchstart', e => { const t = e.touches[0]; on = e.touches.length === 1 && t.clientX < 28; sx = t.clientX; sy = t.clientY; dx = 0; if (on) ov.style.transition = 'none'; }, { passive: true });
+    // 닫는 손짓 둘 — 손가락을 따라 밀려 나간다 (HB 2026-10-13 · 2026-10-27 P3′-3)
+    //  ① 왼쪽 가장자리(EDGE)에서 오른쪽으로 밀기. EDGE 는 안쪽 좌우 넘기기가 빼는 폭(32)과 같아야 한다 —
+    //     예전엔 28 이라 28~32px 에서 시작한 밀기는 어느 쪽도 받지 않았다.
+    //  ② 머리(THERE 줄 · D W M 줄)를 아래로 끌어내리기 — 맨 위에 있을 때만(스크롤 중이면 스크롤)
+    const EDGE = 32;
+    let sx = 0, sy = 0, on = '', dx = 0, dy = 0, t0 = 0;
+    const head = t => t && t.closest && t.closest('.tdash-top,.tdash-stick');
+    ov.addEventListener('touchstart', e => {
+      const t = e.touches[0]; dx = dy = 0; sx = t.clientX; sy = t.clientY; t0 = Date.now();
+      on = e.touches.length !== 1 ? '' : t.clientX < EDGE ? 'x' : (head(e.target) && ov.scrollTop <= 0 ? 'y?' : '');
+      if (on === 'x') ov.style.transition = 'none';
+    }, { passive: true });
     ov.addEventListener('touchmove', e => {
-      if (!on) return; const t = e.touches[0]; dx = t.clientX - sx;
-      if (Math.abs(t.clientY - sy) > Math.abs(dx) && dx < 30) { on = false; ov.style.transform = ''; ov.style.transition = ''; return; }
-      if (dx > 0) { e.preventDefault(); ov.style.transform = 'translateX(' + dx + 'px)'; }
+      if (!on) return; const t = e.touches[0]; dx = t.clientX - sx; dy = t.clientY - sy;
+      if (on === 'y?') {                                  // 머리에서 시작 — 아래로 먼저 움직였을 때만 끌어내리기
+        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { on = ''; return; }
+        if (dy > 10 && dy > Math.abs(dx)) { on = 'y'; ov.style.transition = 'none'; } else if (dy < -6) { on = ''; return; } else return;
+      }
+      if (on === 'x') {
+        if (Math.abs(dy) > Math.abs(dx) && dx < 30) { on = ''; ov.style.transform = ''; ov.style.transition = ''; return; }
+        if (dx > 0) { e.preventDefault(); ov.style.transform = 'translateX(' + dx + 'px)'; }
+      } else if (on === 'y') { e.preventDefault(); ov.style.transform = 'translateY(' + Math.max(0, dy) + 'px)'; ov.style.opacity = String(1 - Math.min(Math.max(0, dy) / innerHeight, 0.5)); }
     }, { passive: false });
-    ov.addEventListener('touchend', () => {
-      if (!on) return; on = false; ov.style.transition = 'transform .22s,opacity .22s';
-      if (dx > Math.min(110, innerWidth * 0.28)) { ov.style.transform = 'translateX(100%)'; close(); } else ov.style.transform = '';
-    });
+    const done = () => {
+      if (!on) return; const k = on; on = ''; ov.style.transition = 'transform .24s cubic-bezier(.22,.8,.24,1),opacity .24s';
+      const fast = (k === 'x' ? dx : dy) / Math.max(1, Date.now() - t0) > 0.6;
+      if (k === 'x' && (dx > Math.min(110, innerWidth * 0.28) || (fast && dx > 40))) { ov.style.transform = 'translateX(100%)'; close(); }
+      else if (k === 'y' && (dy > Math.min(140, innerHeight * 0.18) || (fast && dy > 50))) { ov.style.transform = 'translateY(100%)'; close(); }
+      else { ov.style.transform = ''; ov.style.opacity = ''; }
+    };
+    ov.addEventListener('touchend', done);
+    ov.addEventListener('touchcancel', () => { if (on) { dx = dy = 0; done(); } });
     const key = e => { if (e.key === 'Escape' && OV === ov && opts.esc !== false) { e.preventDefault(); e.stopPropagation(); close(); } };
     document.addEventListener('keydown', key, true);
     OV = ov; ov._key = key; ov._onClose = opts.onClose;
