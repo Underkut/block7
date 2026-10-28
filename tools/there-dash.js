@@ -41,7 +41,7 @@ const TDASH = (function () {
     if (m < 1) return '1분 미만';
     return (h ? h + '시간' : '') + (h && mm ? ' ' : '') + (mm ? mm + '분' : '');
   }
-  const hm = sec => { const m = Math.round((sec || 0) / 60); return Math.floor(m / 60) + ':' + p2(m % 60); };
+  // 시간은 늘 '1시간 55분' 처럼 말로 dur() — 예전 '1:55'(hm)는 16분 · 23분 옆에서 헷갈려 없앴다 (HB 2026-10-29)
 
   // ── 모으기: 두 기록 → 한 모양 [{date,t,time,d,app,src,label}] ──
   function collect(thereLog, prayLog) {
@@ -175,7 +175,7 @@ const TDASH = (function () {
     const o = wordPray(ss), tot = o.word + o.pray; if (!tot) return '';
     const on = WP.filter(a => o[a[0]] > 0);
     return '<div class="tdash-bar">' + on.map(a => '<i style="display:block;flex:0 0 ' + (o[a[0]] / tot * 100).toFixed(2) + '%;background:' + a[2] + '"></i>').join('') + '</div>' +
-      '<div class="tdash-leg">' + on.map(a => '<div><span><i class="tdash-dot" style="background:' + a[2] + '"></i>' + a[1] + '</span><b>' + hm(o[a[0]]) + '</b></div>').join('') + '</div>';
+      '<div class="tdash-leg">' + on.map(a => '<div><span><i class="tdash-dot" style="background:' + a[2] + '"></i>' + a[1] + '</span><b>' + dur(o[a[0]]) + '</b></div>').join('') + '</div>';
   }
   // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
   //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
@@ -283,7 +283,7 @@ const TDASH = (function () {
 .tdash-cal button.t{outline:1.5px solid var(--tx);outline-offset:2px}
 .tdash-hm{display:flex;align-items:center;gap:4px;justify-content:flex-end;font-size:11px;color:var(--tx3)}
 .tdash-hm i{width:14px;height:14px;border-radius:4px;display:block}
-.tdash-src{display:grid;grid-template-columns:minmax(0,128px) minmax(0,1fr) 44px;align-items:center;gap:10px;font-size:12.5px}
+.tdash-src{display:grid;grid-template-columns:minmax(0,128px) minmax(0,1fr) auto;align-items:center;gap:10px;font-size:12.5px}
 .tdash-src span:first-child{color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tdash-src span:last-child{text-align:right}
 .tdash-trk{height:8px;background:var(--s2);border-radius:4px;overflow:hidden}
@@ -361,7 +361,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function legend(by, tot) {
     if (!tot) return '';
     return '<div class="tdash-bar">' + appsIn(by).map(a => '<i style="display:block;flex:0 0 ' + (by[a[0]] / tot * 100).toFixed(2) + '%;background:' + a[2] + '"></i>').join('') + '</div>' +
-      '<div class="tdash-leg">' + appsIn(by).map(a => '<div><span><i class="tdash-dot" style="background:' + a[2] + '"></i>' + esc(a[1]) + '</span><b>' + hm(by[a[0]]) + '</b></div>').join('') + '</div>';
+      '<div class="tdash-leg">' + appsIn(by).map(a => '<div><span><i class="tdash-dot" style="background:' + a[2] + '"></i>' + esc(a[1]) + '</span><b>' + dur(by[a[0]]) + '</b></div>').join('') + '</div>';
   }
   function bigNum(sec) {
     const m = Math.round(sec / 60), h = Math.floor(m / 60), mm = m % 60;
@@ -386,7 +386,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     if (!ks.length) return '';
     const max = m[ks[0]].s;
     return '<div class="tdash-card"><div class="tdash-ct">어디서 시작했나</div><div style="display:flex;flex-direction:column;gap:10px">' +
-      ks.map(k => { const ap = k.split('|')[0], nm = k.slice(ap.length + 1); return '<div class="tdash-src"><span title="' + esc(nm) + '">' + esc(nm) + '</span><div class="tdash-trk"><i style="width:' + Math.max(3, m[k].s / max * 100).toFixed(1) + '%;background:' + APP[ap].color + '"></i></div><span>' + hm(m[k].s) + '</span></div>'; }).join('') +
+      ks.map(k => { const ap = k.split('|')[0], nm = k.slice(ap.length + 1); return '<div class="tdash-src"><span title="' + esc(nm) + '">' + esc(nm) + '</span><div class="tdash-trk"><i style="width:' + Math.max(3, m[k].s / max * 100).toFixed(1) + '%;background:' + APP[ap].color + '"></i></div><span>' + dur(m[k].s) + '</span></div>'; }).join('') +
       '</div></div>';
   }
   function bySlot(ss) {
