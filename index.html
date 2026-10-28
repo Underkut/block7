@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-5  [production]  -->
+<!-- BLOCK7  v. 26-1028-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1416,7 +1416,9 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
   .vf-nav i{display:none;}
 }
 /* ── 말씀 타일 그리드 (필터 → 인스타형 타일뷰) ──
-   z-index 195: 전체화면(190) 위, 말씀 메뉴(.task-menu 200) 아래 */
+   z-index 195: 전체화면(190) 위, 말씀 메뉴(.task-menu 200) 아래
+   .under-vf = 겹 화면(_EMBED)에서 타일을 눌러 전체화면을 열었을 때 — 전체화면 아래(185)에 깔아 둔다 (vgPick) */
+#verseGrid.under-vf{z-index:185;}
 #verseGrid{
   /* inset:-1px 인 까닭은 #verseFull 과 같다 (가장자리 흰 줄, v26-0904-5) */
   position:fixed;inset:-1px;z-index:195;background:var(--vf-bgimg,var(--bg));display:none;
@@ -6612,7 +6614,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-5";
+const APP_VERSION = "v. 26-1028-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17690,6 +17692,7 @@ function _vfRestoreCovers(){
 }
 function closeVerseFull(){
   closeVfKeepSwitch();
+  {const gd=document.getElementById('verseGrid');if(gd)gd.classList.remove('under-vf');}   // 겹 화면: 아래 깔아 둔 타일뷰가 다시 위로
   // 알림으로 열 때 숨겨 뒀던 화면들을 먼저 되살린다.
   // ⚠️ 아래 대시보드 훅(setTimeout)보다 "먼저, 동기적으로" 되살려야 한다 —
   //    타일뷰가 되살아나면 _vgIsOpen() 이 true 가 되어 대시보드가 겹쳐 뜨지 않는다.
@@ -23826,6 +23829,7 @@ function openVerseGrid(kind,val,cardId,limitRefs,listPool){
   _vgState.sortMode='date';_vgState.dateOrder='recent';
   if(!_vgState.cols)_vgState.cols=3;
   const gd=document.getElementById('verseGrid');if(!gd)return;
+  gd.classList.remove('under-vf');   // 전체화면 제목으로 다시 열면 전체화면 위로 (BLOCK7 과 같다)
   _vgSyncFilterLabel();
   gd.style.display='flex';
   _vgSalt=(Math.random()*1e9)|0;  // 열 때마다 타일 색 배치를 섞는다
@@ -23918,8 +23922,21 @@ function vgPick(i){
   //    반대로 하면 closeVerseGrid() 안에서 '전체화면이 아직 없다'로 읽혀
   //    대시보드가 되살아나고(z-index 4601), 그 뒤에 뜬 전체화면(190)이
   //    그 아래 깔려 아무것도 안 보였다.
-  if(!_verseFullIsOpen()){const el=document.getElementById('verseFull');if(el)el.style.display='flex';}
-  closeVerseGrid();
+  if(!_verseFullIsOpen()){
+    const el=document.getElementById('verseFull');
+    if(el){
+      el.style.display='flex';
+      // ⚠️ 손짓(위아래 넘기기 · 왼쪽 가장자리 닫기)은 openVerseFull 에서만 붙었다 — 전체화면을 한 번도 안 연 채 타일뷰에서
+      //    바로 들어오면 넘기기도 닫기 밀기도 안 됐다 (HB 2026-10-28, 기도노트 안 Sweeter 에서 드러남). 여기서도 붙인다(두 번 불러도 안전).
+      el.style.transition='';el.style.transform='';el.style.opacity='';
+      if(el._edgeBackReset)el._edgeBackReset();
+      _initVerseFullGestures();_initVfCatSheet();
+    }
+  }
+  // 다른 앱 안의 겹 화면(_EMBED)에서는 타일뷰를 닫지 않고 전체화면 **아래**에 깔아 둔다 (HB 2026-10-28) —
+  //   ×나 가장자리 밀기로 전체화면을 닫으면 그 타일뷰로 돌아오고(밀어 닫는 동안 아래에 비친다), 타일뷰를 닫아야 부르던 앱으로.
+  if(_embedOn()){const gd=document.getElementById('verseGrid');if(gd)gd.classList.add('under-vf');}
+  else closeVerseGrid();
   const _pr=_vgTilePreset(v);           // 누른 타일의 패턴+색을 그대로 가져간다
   _vfCurPattern=_pr.pattern;_vfVariantIdx=_pr.variantIdx;
   // 이전/다음은 방금 보던 타일 목록 안에서 돈다 (홈 목록이면 본 시퀀스 그대로)
@@ -44047,6 +44064,7 @@ function _embedIdleSoon(){
   },90);
 }
 function _embedDone(){_embedIdleSoon();}
+function _embedOn(){try{return !!_EMBED;}catch(e){return false;}}
 function _embedTheme(t){
   const el=document.getElementById('bibleRd');if(!el||!t||typeof t!=='object')return;
   Object.keys(t).forEach(k=>{if(/^[a-z0-9-]{1,16}$/.test(k)&&typeof t[k]==='string'&&t[k].length<60)el.style.setProperty('--'+k,t[k]);});
