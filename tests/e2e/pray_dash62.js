@@ -46,7 +46,7 @@ const ORIGIN = process.env.APP_ORIGIN || 'http://127.0.0.1:5502';
   ok('⭐② 다른 앱 기록이 오면 말씀 / 기도 두 갈래', JSON.stringify(await leg()) === '["말씀","기도"]', await leg());
   ok('② 흐름에 말씀이 시간 순서로 끼어든다', (await p.evaluate(() => [...document.querySelectorAll('#tdashOv .tdash-blk .tdash-ses span')].map(x => x.textContent))).join() === '05:40,07:55,12:30');
   ok('⭐③ 아래 칸 차례', JSON.stringify(h4.slice(1).map(x => x.split(' ·')[0])) === JSON.stringify(['오늘 기도한 이름', '다가오는 날', '오래 못 한 기도']), h4);
-  ok('③ 그룹 줄 숫자', JSON.stringify(await txt('#tdashOv .tdash-gr em')) === JSON.stringify(['2 / 2 · 모두 기도했습니다', '3 / 4 · 다온', '0 / 1 · 하늘']), await txt('#tdashOv .tdash-gr em'));
+  ok('③ 그룹 줄 숫자 — 처음엔 기도한 그룹만(선교는 접힘, 2026-10-29)', JSON.stringify(await txt('#tdashOv .tdash-gr em')) === JSON.stringify(['2 / 2 · 모두 기도했습니다', '3 / 4 · 다온']), await txt('#tdashOv .tdash-gr em'));
   // ⑤ 다가오는 날 이름 톡 → 상세가 위에 · 대시보드 그대로
   await p.evaluate(() => { const ov = document.getElementById('tdashOv'); ov.scrollTop = 400; });
   await p.evaluate(() => { const r = [...document.querySelectorAll('#tdashOv .tdash-li[data-td="item"]')].find(x => x.textContent.includes('가람')); r.click(); });

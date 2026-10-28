@@ -7,6 +7,7 @@
 //  ④ 날마다 합계 · 주(월요일부터) · 달 경계
 //  ⑤ 덩어리가 index.html · index-dev.html · sweeter-dev.html · pray/index.html 에 원본과 같은 글자로 있다
 //  ⑨ 하루의 흐름(1028-3 6-2a) — 기도 한 번 아래 그 안의 이름(fc = 같은 sid · mp = 그 지도 There 시작 ~ 다음 지도 There 시작 전) · 남은 이름은 끝 한 줄 · 말씀 / 기도 두 갈래
+//  ⑩ 잇달아 한 기도 합치기(HB 2026-10-29) — 같은 갈래가 사이에 다른 기록 없이 한 시간 안에 이어지면 한 줄 · 같은 이름은 한 칩
 //  ⑧ 전체 화면(아이폰): 시계 줄은 THERE 줄이 덮고 · 고정 영역 바탕은 양옆 여백까지 · 열린 동안 페이지 바탕/theme-color 는 대시보드 색, 닫으면 되돌림
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -111,6 +112,22 @@ const T = ctx.T;
   sc.eq('⑨ 합계는 그대로 (흐름은 다시 더하지 않는다)', ss.reduce((a, x) => a + x.d, 0), 840 + 360 + 840 + 360 + 120 + 600);
   sc.eq('⭐⑨ 말씀 / 기도 두 갈래 — 말씀 = BLOCK7 · Sweeter · 성경', T.wordPray(ss.filter(x => x.date === D)), { word: 1200, pray: 1920 });
   sc.eq('⑨ 기도노트 기록이 없는 날(BLOCK7 · Sweeter 만)', T.dayFlow(T.collect(there, {}), {}, D).map(r => r.kids.length), [0, 0]);
+}
+// ⑩ 잇달아 한 기도 합치기 (HB 2026-10-29 사진 — 한 장씩 기도하기가 네 번 줄줄이)
+{
+  const D = '2026-10-29', at = (h, m, s2) => new Date(2026, 9, 29, h, m || 0, s2 || 0).getTime();
+  const pray = { [D]: { s: 0, ses: [
+      { id: 'A', t: at(3, 51), time: '03:51', d: 20, src: 'focus' }, { id: 'B', t: at(4, 37), time: '04:37', d: 15, src: 'focus' },
+      { id: 'C', t: at(4, 37, 30), time: '04:37', d: 12, src: 'focus' }, { id: 'M', t: at(9, 0), time: '09:00', d: 60, src: 'map' },
+      { id: 'E', t: at(11, 0), time: '11:00', d: 30, src: 'focus' }],
+    fc: [{ id: 'a', s: 'A', pid: 'x', n: '추수감사영상', a: at(3, 51), d: 4, amen: false }, { id: 'b', s: 'B', pid: 'y', n: '스캇', a: at(4, 37), d: 2, amen: false },
+         { id: 'c', s: 'C', pid: 'y', n: '스캇', a: at(4, 37, 30), d: 3, amen: true }, { id: 'e', s: 'E', pid: 'y', n: '스캇', a: at(11, 0), d: 9, amen: true }] } };
+  const there = { [D]: [{ ref: '시편 1:1', time: '10:00', t: at(10, 0), d: 60, app: 'block7', src: 'gnb' }] };
+  const fl = T.mergeFlow(T.dayFlow(T.collect(there, pray), pray, D));
+  sc.eq('⭐⑩ 한 시간 안에 이어진 한 장 기도 셋은 한 줄 · 사이에 말씀이 끼면 따로', fl.map(r => (r.x.app === 'pray' ? (r.x.ids || [r.x.id]).join('+') : '말씀') + ':' + r.x.d), ['A+B+C:47', 'M:60', '말씀:60', 'E:30']);
+  sc.eq('⭐⑩ 합친 줄의 같은 이름은 한 칩 — 시간 합 · 아멘 하나라도 · 카드 id 모두', fl[0].kids.map(k => [k.n, k.d, k.amen, k.ids.join()]), [['추수감사영상', 4, false, 'a'], ['스캇', 5, true, 'b,c']]);
+  sc.eq('⑩ 원래 줄은 그대로 (보여 주기만)', [pray[D].ses.length, fl[0].xs.length], [5, 3]);
+  sc.eq('⑩ 한 시간 넘게 떨어지면 따로', T.mergeFlow(T.dayFlow(T.collect({}, pray), pray, D)).map(r => (r.x.ids || [r.x.id]).join('+')), ['A+B+C', 'M', 'E']);
 }
 // ⑧ 전체 화면 — 아이폰 홈 화면 앱 사진 (HB 2026-10-25): 맨 위 구멍 · 큰 숫자 옆 '(' · 아래 띠 색
 {
