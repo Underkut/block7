@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1028-1 -->
+<!-- KAIROS v. 26-1028-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -248,7 +248,7 @@ html.isdark #pdz .dimz{background:rgba(255,255,255,.35)}
 .desk .bgl{position:absolute;inset:0;background:var(--bg);opacity:0;transition:opacity .45s ease}
 .desk.on .bgl{opacity:1}
 .desk .dd,.desk .info{position:relative}
-.desk canvas{will-change:transform}
+.desk canvas{will-change:transform;outline:0;-webkit-tap-highlight-color:transparent;background:transparent}
 .desk .info{opacity:0;transition:opacity .25s ease}
 .desk.on .info{opacity:1;transition:opacity .45s ease .32s}
 .desk .dd{width:min(92vw,62vh);height:min(92vw,62vh);display:grid;place-items:center}
@@ -268,10 +268,11 @@ html.isdark #pdz .dimz{background:rgba(255,255,255,.35)}
 .desk .dk{position:absolute;z-index:2;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .35s cubic-bezier(.22,.8,.24,1);color:var(--tx2)}
 .desk.ctlon .dk{opacity:1;pointer-events:auto;transform:none;transition:opacity .3s ease,transform .35s cubic-bezier(.22,.8,.24,1)}
 .desk:not(.ctlon) .dk{transition:opacity 1.2s ease,transform 1.3s ease}   /* 사라질 때는 천천히 */
-.desk .dkbar{transform:translateY(28px)}
+.desk .dkbar,.desk .dkadj{transform:translateY(28px)}
 .desk .sun{transform:translateY(-28px)}
 .desk .dk button{height:48px;min-width:52px;display:grid;place-items:center;font-size:16px;font-weight:300;color:var(--tx2);font-variant-numeric:tabular-nums}
 .desk .dkbar{left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.desk .dkadj{left:0;right:0;bottom:calc(72px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(4,1fr);justify-items:center;max-width:380px;margin:0 auto}
 .desk .dkbar .pp{justify-self:end;margin-right:8px}
 .desk .dkbar .ex{justify-self:start;margin-left:8px}
 .desk .dkbar .gap{width:24px}
@@ -564,6 +565,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
   <div class="info"><span class="lapchip" id="dLap" hidden></span><div class="digits" id="dDigits"></div><div class="sub" id="dSub"></div><div class="next" id="dNext"></div></div>
   <div class="dim"></div>
   <div class="dk sun"><button data-dk="dim" aria-label="어둡게"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"><circle class="core" cx="12" cy="12" r="4"/><g class="rays"><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g></svg></button></div>
+  <div class="dk dkadj"><button data-dk="-5">−5</button><button data-dk="-1">−1</button><button data-dk="1">+1</button><button data-dk="5">+5</button></div>
   <div class="dk dkbar">
     <button class="pp" data-dk="play" id="dkPlay" aria-label="멈춤"></button>
     <span class="gap"></span>
@@ -581,7 +583,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1028-1';
+const APP_VERSION='v. 26-1028-2';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1303,7 +1305,7 @@ function openSheet(title,body,foot,onClose){
 }
 function closeSheet(){$('scrim').classList.remove('on');$('sheet').classList.remove('on');if(onSheetClose){const f=onSheetClose;onSheetClose=null;f();}}
 $('sheetX').onclick=closeSheet;$('scrim').onclick=closeSheet;
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('cfm').classList.contains('on'))closeCfm(false);else if($('sheet').classList.contains('on'))closeSheet();else if($('desk').classList.contains('on'))exitDesk();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('cfm').classList.contains('on'))closeCfm(false);else if($('sheet').classList.contains('on'))closeSheet();else if($('desk').classList.contains('on'))leaveDesk();}});
 
 // ── 프리셋: 누르면 바로 시작 · 길게 누르면 떠오른다 ──
 // 0.45초 누르고 있으면 칩이 떠올라 손가락을 따라다닌다(진동). 동시에 놓는 자리 둘이 나타난다:
@@ -1683,7 +1685,7 @@ $('gear').onclick=openSettings;
 let ctlT=0;
 function drawDesk(){
   const r=R(),ms=remainMs(),col=colorHex(r.color),dd=$('deskDD');
-  const s=Math.floor(Math.min(dd.clientWidth,dd.clientHeight));
+  const s=Math.floor(Math.min(dd.clientWidth,dd.clientHeight)/2)*2;   // 짝수 정수 — 소수 크기면 캔버스 오른쪽·아래 가장자리에 줄이 비쳤다
   if(s>40)drawDial($('deskDial'),s,ms/60000,col,false,{total:r.total/60000,run:r.state==='run'});
   $('dDigits').textContent=fmt(ms);
   const lt=lapText(ms);$('dLap').hidden=!lt;$('dLap').textContent=lt;$('dLap').style.background=col;
@@ -1695,6 +1697,8 @@ function drawDesk(){
     pp.innerHTML=on?'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3" height="14" rx="1"/><rect x="14.5" y="5" width="3" height="14" rx="1"/></svg>'
       :'<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.2v13.6a.8.8 0 0 0 1.2.7l10.6-6.8a.8.8 0 0 0 0-1.4L9.2 4.5A.8.8 0 0 0 8 5.2z"/></svg>';}
 }
+// 캔버스는 네모라 모서리(원 밖)도 눌린다 — 원 안쪽만 파이 톡으로 친다
+function inDial(e){const b=$('deskDial').getBoundingClientRect();return Math.hypot(e.clientX-(b.left+b.width/2),e.clientY-(b.top+b.height/2))<=b.width*.5;}
 // 들어가고 나올 때 원은 겹치지 않고 제자리에서 미끄러져 간다 (배경만 옅게 들어온다)
 const quiet=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 let flyT=0;
@@ -1726,6 +1730,12 @@ function exitDesk(slid){
   if(slid){$('dial').style.visibility='';const dc=$('deskDial');dc.style.transition='none';dc.style.transform='';}   // 밀어서 나갔으면 원은 날지 않는다 — 화면째 이미 나갔다
   else fly('main');d.classList.remove('on','dimmed','ctlon');syncWake();
   try{document.fullscreenElement&&document.exitFullscreen();}catch(e){}
+}
+// 사용자가 나가는 모든 길(버튼 · 밀기 · 두 번 톡 · ESC)은 타이머도 처음으로 돌린다
+function leaveDesk(slid){
+  const was=R().state;
+  if(was==='run'||was==='pause'||was==='done'){reset();if(was!=='done')toast('처음으로 돌렸어요\n흐른 시간은 기록에 남겼어요');}
+  exitDesk(slid);
 }
 function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>$('desk').classList.remove('ctlon'),2500);}
 $('deskBtn').onclick=()=>enterDesk();
@@ -1766,21 +1776,21 @@ function swEnd(e){
   const d=s0.ax==='x'?e.clientX-s0.x:s0.y-e.clientY,full=s0.ax==='x'?W:H;
   const go=e.type==='pointerup'&&(d>full/4||(dt<300&&d>40));
   if(!go){swSet('',1,true);return;}
-  if(quiet()){swSet('',1,false);exitDesk(true);return;}
+  if(quiet()){swSet('',1,false);leaveDesk(true);return;}
   swSet(s0.ax==='x'?`translateX(${W}px)`:`translateY(${-H}px)`,0,true);
-  setTimeout(()=>{exitDesk(true);setTimeout(()=>swSet('',1,false),600);},300);   // .desk 는 .56초 뒤에 숨는다 — 그다음에 제자리로
+  setTimeout(()=>{leaveDesk(true);setTimeout(()=>swSet('',1,false),600);},300);   // .desk 는 .56초 뒤에 숨는다 — 그다음에 제자리로
 }
 $('desk').addEventListener('pointerup',swEnd);$('desk').addEventListener('pointercancel',swEnd);
 $('desk').addEventListener('click',e=>{
   if(swEat){swEat=0;return;}   // 민 손가락이 남긴 톡은 버린다
-  if(ringTap&&Date.now()-ringTap<1500){ringTap=0;exitDesk();return;}   // 끝나서 깜빡일 때 아무 데나 톡 = 나가기
+  if(ringTap&&Date.now()-ringTap<1500){ringTap=0;leaveDesk();return;}   // 끝나서 깜빡일 때 아무 데나 톡 = 나가기
   const b=e.target.closest('[data-dk]');
-  if(!b&&e.target.closest('#deskDial')){const r=R();if(r.state==='run'||r.state==='pause'){if(r.state==='run')pause();else start();showCtl();drawDesk();return;}}   // 탁상 파이 톡 = 멈춤/재개
-  if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;exitDesk();return;}lastTap=now;showCtl();return;}
+  if(!b&&e.target.closest('#deskDial')&&inDial(e)){const r=R();if(r.state==='run'||r.state==='pause'){if(r.state==='run')pause();else start();showCtl();drawDesk();return;}}   // 탁상 파이 톡 = 멈춤/재개
+  if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;leaveDesk();return;}lastTap=now;showCtl();return;}
   const k=b.dataset.dk;showCtl();
   if(k==='play'){const r=R();if(r.state==='run')pause();else{start();clearTimeout(deskT);}}
   else if(k==='dim')$('desk').classList.toggle('dimmed');
-  else if(k==='out')exitDesk();
+  else if(k==='out'){leaveDesk();return;}
   else adjust(+k);
   drawDesk();
 });
