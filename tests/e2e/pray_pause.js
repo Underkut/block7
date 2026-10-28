@@ -13,7 +13,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await p.goto((process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/pray/index.html'); await p.waitForFunction(() => typeof DB === 'object');
   await p.evaluate(() => { const a = newTarget('person', '가람'), c = newTarget('person', '다온'); DB.T.push(a, c); focusStart([{ id: a.id, sec: 'top' }, { id: c.id, sec: 'top' }], 0); });
   await sleep(400);
-  ok('① 단추 차례', (await p.evaluate(() => [...document.querySelectorAll('#fBtns button')].map(x => x.textContent).join('|'))) === '이전|잠시 멈춤|다음에|아멘');
+  ok('① 단추 차례', (await p.evaluate(() => [...document.querySelectorAll('#fBtns button')].map(x => x.getAttribute('aria-label') || x.textContent).join('|'))) === '이전|잠시 멈춤|다음에|아멘');
   await sleep(1200);
   await p.click('[data-a="focus-pause"]'); await sleep(400);
   const s1 = await p.evaluate(() => focusSecs());

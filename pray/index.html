@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-7';
+const APP_VERSION = 'v. 26-1028-8';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2554,10 +2554,11 @@ body.emb-up:not(.emb-peek) #focus,body.emb-up:not(.emb-peek) #app{visibility:hid
 .f-btns .ghost{flex:1;height:56px;border-radius:28px;font-size:15px}
 .f-btns .cta{flex:2;margin:0;height:56px;border-radius:28px;font-size:16px}
 /* 잠시 멈춤 (1028-3 3) — 글자가 많아 절반 크기 (HB) */
-.f-btns .ghost.f-pz{font-size:7.5px;padding:0 4px;white-space:nowrap}
+/* 일시정지 모양 — 음악 앱처럼 세로줄 둘 (HB 1028-3) */
+.f-btns .ghost.f-pz{padding:0;display:flex;align-items:center;justify-content:center}
+.f-pz svg{width:15px;height:15px;fill:currentColor}
+.f-pzbig svg{width:46px;height:46px;fill:var(--tx);opacity:.42;display:block}
 .f-veil{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
-.f-veil b{font-family:var(--serif);font-size:20px;font-weight:400;color:var(--tx)}
-.f-veil small{font-size:12.5px;color:var(--tx3)}
 .focus .f-stage,.focus .f-bot{transition:opacity .35s var(--ease),filter .35s var(--ease)}
 .focus.held .f-veil{opacity:1;pointer-events:auto}
 .focus.held .f-top{z-index:4}
@@ -3071,9 +3072,9 @@ function focusStart(deck, at) {
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button>' +
     '<button class="ib" data-a="embed-keep" aria-label="저장한 말씀">' + ico('keep') + '</button><button class="ib" data-a="embed-bible" data-lp="toread" aria-label="성경 (길게 누르면 읽기 계획)">' + ico('bible') + '</button></span><span class="f-pos" id="fPos"></span>' +
     '<span><span class="f-time" id="fTime">0:00</span><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
-    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost f-pz" data-a="focus-pause">잠시 멈춤</button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
+    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost f-pz" data-a="focus-pause" aria-label="잠시 멈춤"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx=".9"/><rect x="14" y="5" width="4" height="14" rx=".9"/></svg></button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
     '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>' +
-    '<div class="f-veil" data-a="focus-resume" aria-label="이어서 기도하기"><b>잠시 멈춤</b><small>누르면 이어서</small></div>';
+    '<div class="f-veil" data-a="focus-resume" aria-label="이어서 기도하기">'+'<i class="f-pzbig"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx=".9"/><rect x="14" y="5" width="4" height="14" rx=".9"/></svg></i></div>';
   el.classList.add('on');
   focusCard(false);
   clearInterval(F.tick);
