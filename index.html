@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-1  [production]  -->
+<!-- BLOCK7  v. 26-1028-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6603,7 +6603,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-1";
+const APP_VERSION = "v. 26-1028-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -46023,28 +46023,57 @@ function _carryPendingCount(scopeFilter){
     if(dk>=todayK||!scopeFilter(dk,todayK))return;
     const day=ST.days[dk];if(!day)return;
     SECS.forEach(sec=>{
-      n+=(day.big?.[sec.id]||[]).filter(b=>b.text?.trim()&&!b.done).length;
-      n+=(day.small?.[sec.id]||[]).filter(s=>s.text?.trim()&&!s.done).length;
+      n+=(day.big?.[sec.id]||[]).filter(_carryWants).length;
+      n+=(day.small?.[sec.id]||[]).filter(_carryWants).length;
     });
   });
   return n;
+}
+// ── 반복 할일의 이월 (HB 2026-10-28 B3-0 · B3-1, tests/test_carry_repeat.js) ──
+// 반복 할일(rid 가 있거나 규칙을 든 원본)은 **옮기지 않는다** — 지난 날 자리에 미완료로 둔다.
+// 예전엔 rid 를 단 채 옮겨, 오늘 생긴 반복분과 겹쳐 두 줄 · '이번 주' 범위면 여러 줄이 되었고,
+// 원본이 미완료면 원본을 지난 날에서 빼 반복 규칙까지 사라졌다.
+//   · 오늘이 그 반복이 생기는 날이면 → 아무것도 안 가져온다 (오늘 것이 곧 그 일)
+//   · 아니면(매주 반복의 다른 요일 등) → 반복 속성을 뺀 하루짜리 사본을 하나만
+// 한 번 본 지난 날 것은 rc:1 — 내일 아침이나 '지금 가져오기' 가 또 가져오지 않게.
+function _carryIsRep(it){return !!(it&&(it.rid||_isRepRoot(it)));}
+function _carryWants(it){return !!(it&&it.text?.trim()&&!it.done&&!(it.rc&&_carryIsRep(it)));}
+function _repOnDay(k,rid){
+  if(!rid)return false;
+  if(_ridPresentOn(k,rid))return true;
+  const root=_taskRepRootOf(rid);
+  return !!(root&&root.k<=k&&(root.k===k||eventRepeatsOnDate(root.item,root.k,k)));
 }
 // 실제 이월 실행 (대상 범위 내 미완료 할일 → 오늘). 자동/수동 공용.
 function _doCarry(scopeFilter){
   const todayK=todayKey();
   const pastKeys=Object.keys(ST.days).filter(k=>k<todayK&&scopeFilter(k,todayK)).sort();
   let movedCount=0;
+  const repSeen=new Set();   // 같은 반복은 사본 하나만
   pastKeys.forEach(dk=>{
     const day=ST.days[dk];if(!day)return;
     SECS.forEach(sec=>{
       const bigs=day.big?.[sec.id]||[];
       const smalls=day.small?.[sec.id]||[];
-      const ub=bigs.filter(b=>b.text?.trim()&&!b.done);
-      const us=smalls.filter(s=>s.text?.trim()&&!s.done);
+      const repB=bigs.filter(b=>_carryWants(b)&&_carryIsRep(b)),repS=smalls.filter(s=>_carryWants(s)&&_carryIsRep(s));
+      const ub=bigs.filter(b=>_carryWants(b)&&!_carryIsRep(b));
+      const us=smalls.filter(s=>_carryWants(s)&&!_carryIsRep(s));
+      // 반복 할일 → 제자리에 두고, 오늘 생기지 않는 반복만 반복 뺀 사본을 하나
+      [[repB,'big'],[repS,'small']].forEach(([list,type])=>list.forEach(it=>{
+        it.rc=1;
+        const rid=it.rid||null;
+        if(rid&&(repSeen.has(rid)||_repOnDay(todayK,rid)))return;
+        if(rid)repSeen.add(rid);
+        const cp={text:it.text,done:false,autoCarryCount:(it.autoCarryCount||0)+1,manualCarryCount:it.manualCarryCount||0};
+        if(it.flag)cp.flag=true;if(it.contactTask)cp.contactTask=true;
+        _carryTaskExtras(it,cp,true);if(it.subOpen)cp.subOpen=true;
+        (type==='big'?getBigs(todayK,sec.id):getSmalls(todayK,sec.id)).push(cp);
+        movedCount++;
+      }));
       if(!ub.length&&!us.length)return;
       movedCount+=ub.length+us.length;
-      if(day.big)day.big[sec.id]=bigs.filter(b=>b.done||!b.text?.trim());
-      if(day.small)day.small[sec.id]=smalls.filter(s=>s.done||!s.text?.trim());
+      if(day.big)day.big[sec.id]=bigs.filter(b=>!ub.includes(b));
+      if(day.small)day.small[sec.id]=smalls.filter(s=>!us.includes(s));
       const tB=getBigs(todayK,sec.id),tS=getSmalls(todayK,sec.id);
       // rid(반복 묶음 이름표)를 함께 옮긴다 — 안 그러면 오늘 실체가 또 만들어져
       // 같은 할일이 두 줄로 보인다. repeat(규칙)은 원본에만 있으므로 안 옮긴다.
