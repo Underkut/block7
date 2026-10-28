@@ -43,6 +43,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok('⭐④ 잇달아 한 한 장 기도 넷이 한 줄 · 같은 이름은 한 칩', rows.length === 1 && /4번/.test(rows[0]) && (rows[0].match(/스캇/g) || []).length === 1, rows);
   await p.evaluate(() => document.querySelector('#tdashOv .tdash-blk .tdash-ses em').click()); await sleep(450);
   ok('⭐④ 합친 줄 톡 → 어느 기도를 고칠지 고르는 창(넷)', await p.evaluate(() => !!SHEET && SHEET.querySelectorAll('.opt').length === 4), await p.evaluate(() => SHEET && SHEET.textContent));
+  const opts = await p.evaluate(() => [...SHEET.querySelectorAll('.opt')].map(o => o.textContent));
+  ok('⭐④ 고르는 줄마다 시작 시각(초까지) · 길이 · 그 안 이름(● 아멘) — 같은 분이어도 구별된다 (HB 2026-10-29)', opts.length === 4 && new Set(opts.map(x => x.split(' 시작')[0])).size === 4 && /스캇 3초 ●/.test(opts[3]) && /성희 1초/.test(opts[3]) && /영상 3초/.test(opts[0]), opts);
   await p.evaluate(() => closeSheet(true)); await p.evaluate(() => TDASH.close(true)); await sleep(300);
   await p.evaluate(() => { UI.histTab = 'days'; UI.calDay = TODAY; showTab('hist'); }); await sleep(400);
   ok('⭐④ 기록 탭도 한 줄 · 4번', await p.evaluate(() => document.querySelectorAll('#v-hist .row.pled').length === 1 && document.querySelector('#v-hist .row.pled .pl-k').textContent.includes('4번')));

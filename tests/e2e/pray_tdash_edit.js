@@ -57,17 +57,23 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(D => { TDASH.close(true); openThereDash('day', D); }, D); await sleep(600);
   // ④ 톡 → 고치기 창 (대시보드 위)
   await p.evaluate(() => document.querySelectorAll('#tdashOv [data-ed="fc"]')[1].querySelector('em').click()); await sleep(450);
-  const sh = await p.evaluate(() => { const w = document.querySelector('.sh-wrap'); return w ? { z: +getComputedStyle(w).zIndex, name: document.getElementById('tdName').value, v: document.getElementById('ptMin').value } : null; });
-  ok('⭐④ 톡 → 고치기 창이 대시보드 위에 · 이름 · 초', sh && sh.z > 99990 && sh.name === '다온' && sh.v === '180', sh);
+  const sh = await p.evaluate(() => { const w = document.querySelector('.sh-wrap'); return w ? { z: +getComputedStyle(w).zIndex, name: document.querySelector('.td-pickb span').textContent, typed: !!document.querySelector('.sh-wrap input:not(#ptMin)'), v: document.getElementById('ptMin').value } : null; });
+  ok('⭐④ 톡 → 고치기 창이 대시보드 위에 · 이름 · 초 · 이름은 손으로 치는 칸이 아니다', sh && sh.z > 99990 && sh.name === '다온' && sh.v === '180' && !sh.typed, sh);
   await p.click('[data-a="td-ok"]'); await sleep(400);
   ok('④ 안 바꾸고 저장 = 조용히 닫힘', await p.evaluate(() => !SHEET && !document.getElementById('toast').classList.contains('on')));
   await p.evaluate(() => document.querySelectorAll('#tdashOv [data-ed="fc"]')[1].querySelector('em').click()); await sleep(450);
-  await p.fill('#tdName', '가람'); await p.fill('#ptMin', '500'); await p.click('[data-a="td-ok"]'); await sleep(400);
+  await p.fill('#ptMin', '500'); await p.click('[data-a="td-pick"]'); await sleep(450);   // 기도 지도에서 고르기 — 먼저 고친 시간은 지켜야 한다
+  ok('⭐④ 기도 항목 → 약식 기도 지도 · 찾기 칸으로 거름', await p.evaluate(() => !!document.querySelector('.td-pick') && ['가람', '다온'].every(n => document.querySelector('.td-pick .tag.td-pk[data-n="' + n + '"]'))));
+  await p.fill('#tdPickQ', '가람'); await sleep(100);
+  ok('④ 찾기 — 가람만', await p.evaluate(() => [...document.querySelectorAll('.td-pick .tag.td-pk')].filter(b => b.style.display !== 'none').map(b => b.textContent).join() === '가람'));
+  await p.click('.td-pick .tag.td-pk[data-n="가람"]'); await sleep(450);
+  ok('④ 고르면 고치기 창으로 · 바뀐 이름 · 시간 그대로', await p.evaluate(() => document.querySelector('.td-pickb span').textContent.startsWith('가람') && document.getElementById('ptMin').value === '500'));
+  await p.click('[data-a="td-ok"]'); await sleep(400);
   const s4 = await st();
   ok('⭐④ 항목 · 시간 고침 → 넘친 140초만큼 한 번도 늚 (240+500=740)', s4.fc[1][0] === '가람' && s4.fc[1][1] === 500 && s4.ses[0] === 740 && s4.s === s0.s + 140, s4);
   await p.evaluate(() => document.querySelectorAll('#tdashOv [data-ed="fc"]')[1].querySelector('em').click()); await sleep(450);
-  await p.fill('#tdName', '없는이름'); await p.click('[data-a="td-ok"]'); await sleep(300);
-  ok('④ 없는 이름은 안 받음 (창 그대로)', await p.evaluate(() => !!SHEET));
+  await p.click('[data-a="td-pick"]'); await sleep(400); await p.evaluate(() => closeSheet()); await sleep(450);
+  ok('④ 고르기를 그냥 닫으면 고치기 창으로 돌아감 (항목 그대로)', await p.evaluate(() => !!SHEET && !!SHEET._td && document.querySelector('.td-pickb span').textContent === '가람'));
   await p.evaluate(() => closeSheet(true));
   // ⑤ 한 번 지우기
   await swipe('#tdashOv [data-ed="ses"]', -300);
