@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-4  [production]  -->
+<!-- BLOCK7  v. 26-1028-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -582,6 +582,11 @@ html{-webkit-text-size-adjust:100%;background:var(--bg);
       말씀 카드(.vc-body 등 var(--vf-bgimg,var(--bg)) 를 쓰는 곳)가 할일 화면에서도
       전체화면 배경을 물려받아 색이 바뀐다. 이 변수는 여기서만 쓴다. */
 html.vf-open{background:var(--vf-page-bg,var(--bg));}
+/* 다른 앱(기도노트) 안의 겹 화면일 때 (_EMBED, HB 2026-10-28) — 앱 바탕은 **투명**, 뒤 화면들은 숨긴다.
+   성경 · 타일뷰 · 전체화면만 제 배경으로 뜨고, 그것을 밀어 닫는 동안에는 iframe 너머 **부르던 앱 화면**이 비친다
+   (예전엔 Sweeter 첫 화면이 잠깐 보였다). color-scheme 을 정해 두는 까닭: 부모와 다르면 브라우저가 iframe 을 불투명하게 칠한다. */
+html.b7-embed,html.b7-embed.vf-open,html.b7-embed body,html.b7-embed.vf-open body{background:transparent !important;color-scheme:normal !important;}
+html.b7-embed body>header,html.b7-embed #verseBarWrap,html.b7-embed #pageWrap,html.b7-embed #swHome,html.b7-embed #swBoot{visibility:hidden !important;}
 html.vf-open body{background:var(--vf-page-bg,var(--bg)) !important;}
 body{
   font-family:var(--font-ui),-apple-system,sans-serif;
@@ -6607,7 +6612,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-4";
+const APP_VERSION = "v. 26-1028-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17697,6 +17702,7 @@ function closeVerseFull(){
   _vfSyncPageBg();                // 바탕을 앱 색으로 되돌린다 (타일뷰가 남았으면 그대로 둔다)
   _vfOverrideVerse=null;
   _vfClearNav();
+  _embedIdleSoon();
 }
 // 전체화면·타일뷰가 떠 있는 동안에만 앱 바탕(html·body)을 같은 배경으로 칠한다
 // (가장자리 흰 줄 막기, v26-0904-6). 여는 자리·닫는 자리 네 곳에서 부른다.
@@ -23884,6 +23890,7 @@ function closeVerseGrid(){
   _vgCardTarget=null;_vgState.limitKind=null;
   // 대시보드에서 넘어온 경우 그 화면으로 되돌린다
   if(!_verseFullIsOpen())_vDashMaybeReturn();
+  _embedIdleSoon();
 }
 function _vgIsOpen(){const gd=document.getElementById('verseGrid');return!!(gd&&gd.style.display==='flex');}
 // 타일 탭 → 그 구절을 릴스에 띄우고 그리드 닫기. 활성 모음 안이면 idx 이동,
@@ -44026,18 +44033,30 @@ function _bibleBtnLongPress(el){
 //   theme = 부모 앱의 색 변수 — 성경 화면(#bibleRd)에만 씌운다(이 앱의 설정은 건드리지 않는다).
 //   iframe 이 아니면(주소창에 직접 쳐도) 아무 일도 하지 않는다.
 const _EMBED=(function(){try{if(window.parent===window)return '';return new URLSearchParams(location.search).get('embed')||'';}catch(e){return '';}})();
-let _embedKind=_EMBED,_embedReady=false,_embedPend=null;
+let _embedReady=false,_embedPend=null,_embedIdleT=0;
 function _embedPost(m){try{window.parent.postMessage(m,location.origin);}catch(e){}}
-function _embedDone(kind){if(!_EMBED||kind!==_embedKind)return;_embedPost({b7embed:'close'});}
+// 성경 · 타일뷰 · 전체화면 · 저장 팝업이 **모두** 닫혔을 때만 부모에게 '닫혔다' (HB 2026-10-28) —
+//   타일을 누르면 타일뷰가 닫히고 전체화면이 열린다(vgPick). 그 사이에 알리면 겹 화면이 통째로 내려간다. 그래서 조금 기다렸다 본다.
+function _embedIdleSoon(){
+  try{if(!_EMBED)return;}catch(e){return;}   // 이 줄보다 먼저(부팅 중) 불려도 TDZ 로 깨지지 않게
+  clearTimeout(_embedIdleT);
+  _embedIdleT=setTimeout(()=>{
+    const agg=document.getElementById('vAggModal');
+    if(_brOpen||_verseFullIsOpen()||_vgIsOpen()||(agg&&agg.style.display&&agg.style.display!=='none'))return;
+    _embedPost({b7embed:'close'});
+  },90);
+}
+function _embedDone(){_embedIdleSoon();}
 function _embedTheme(t){
   const el=document.getElementById('bibleRd');if(!el||!t||typeof t!=='object')return;
   Object.keys(t).forEach(k=>{if(/^[a-z0-9-]{1,16}$/.test(k)&&typeof t[k]==='string'&&t[k].length<60)el.style.setProperty('--'+k,t[k]);});
 }
 function _embedRun(m){
-  _embedKind=m.kind;_embedTheme(m.theme);
+  _embedTheme(m.theme);
   const b=parseInt(m.b,10),c=parseInt(m.c,10);
   if(m.kind==='bible'){if(b>=1&&b<=66&&c>=1){_brNextSrc='pray';bibleOpen(b-1,c,0);}else bibleOpenLast('pray');}
   else if(m.kind==='keep')openKeepListPopup('');
+  else if(m.kind==='keepgrid'&&m.name)openVerseGrid('keep',String(m.name));   // 저장 목록 하나 → 그 목록의 타일뷰 (말씀 전체화면 저장 메뉴 → 제목 누르기와 같은 화면)
   _embedPost({b7embed:'ready',kind:m.kind});
 }
 function _embedStart(){
