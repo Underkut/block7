@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-6';
+const APP_VERSION = 'v. 26-1028-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2553,6 +2553,19 @@ body.emb-up:not(.emb-peek) #focus,body.emb-up:not(.emb-peek) #app{visibility:hid
 .f-btns{display:flex;gap:12px}
 .f-btns .ghost{flex:1;height:56px;border-radius:28px;font-size:15px}
 .f-btns .cta{flex:2;margin:0;height:56px;border-radius:28px;font-size:16px}
+/* 잠시 멈춤 (1028-3 3) — 글자가 많아 절반 크기 (HB) */
+.f-btns .ghost.f-pz{font-size:7.5px;padding:0 4px;white-space:nowrap}
+.f-veil{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;opacity:0;pointer-events:none;transition:opacity .35s var(--ease)}
+.f-veil b{font-family:var(--serif);font-size:20px;font-weight:400;color:var(--tx)}
+.f-veil small{font-size:12.5px;color:var(--tx3)}
+.focus .f-stage,.focus .f-bot{transition:opacity .35s var(--ease),filter .35s var(--ease)}
+.focus.held .f-veil{opacity:1;pointer-events:auto}
+.focus.held .f-top{z-index:4}
+.focus.held .f-stage{opacity:.28;filter:blur(1.5px)}
+.focus.held .f-bot{opacity:.28}
+.focus.held .pts .pt{animation-play-state:paused}
+.focus.held .f-time{animation:fHeld 1.6s ease-in-out infinite}
+@keyframes fHeld{50%{opacity:.35}}
 .f-note{margin-top:12px;text-align:center;font-size:11.5px;color:var(--tx3)}
 .f-end{text-align:center}
 .f-end .f-name{font-size:30px}
@@ -2774,7 +2787,8 @@ function saveNow() {
 document.addEventListener('visibilitychange', () => {
   // 한 장 기도: 다른 앱으로 나가거나 화면이 꺼지면 시간 재기를 멈춘다 — There 와 같다 (HB 2026-10-18). 돌아오면 거기서 다시 센다
   if (document.visibilityState === 'hidden') { if (F.on) { if (!F.paused) F.cacc += (Date.now() - F.ct0) / 1000; flushFocusTime(); F.paused = true; } saveNow(); }
-  else { if (F.on && F.paused) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } if (syncToday()) { refresh(); setTimeout(() => { try { staleNudge(); } catch (e) {} }, 800); } }
+  // 손으로 멈춘 것(F.hold, 1028-3 3)은 돌아와도 멈춘 채
+  else { if (F.on && F.paused && !F.hold) { F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0; } if (syncToday()) { refresh(); setTimeout(() => { try { staleNudge(); } catch (e) {} }, 800); } }
 });
 window.addEventListener('pagehide', saveNow);
 
@@ -3048,7 +3062,7 @@ function focusFromItem(id) {
   focusStart(deck, i);
 }
 function focusStart(deck, at) {
-  F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false;
+  F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false; F.hold = false;
   F.ct0 = F.t0; F.cacc = 0; F.ca = F.t0;   // 지금 카드에 머문 시간 (O-2)
   awakeOn();   // P4 — 한 장씩 기도도 There 중. 누른 손짓 안에서 불러야 영상이 돈다(setTimeout 금지)
   if (SY.user) thereRefresh(false);   // 저장 목록 · 읽기 계획도 이때 새로 받아 둔다 (5분 넘게 묵었으면)
@@ -3057,8 +3071,9 @@ function focusStart(deck, at) {
   el.innerHTML = '<div class="pts">' + particles() + '</div><div class="f-top"><span style="display:flex"><button class="ib" data-a="focus-map" aria-label="기도 지도">' + MAP_ICO + '</button>' +
     '<button class="ib" data-a="embed-keep" aria-label="저장한 말씀">' + ico('keep') + '</button><button class="ib" data-a="embed-bible" data-lp="toread" aria-label="성경 (길게 누르면 읽기 계획)">' + ico('bible') + '</button></span><span class="f-pos" id="fPos"></span>' +
     '<span><span class="f-time" id="fTime">0:00</span><button class="ib" data-a="focus-close" aria-label="닫기">' + ico('x') + '</button></span></div><div class="f-stage" id="fStage"></div>' +
-    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
-    '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>';
+    '<div class="f-bot"><div class="f-btns" id="fBtns"><button class="ghost" id="fPrev" data-a="focus-prev">이전</button><button class="ghost f-pz" data-a="focus-pause">잠시 멈춤</button><button class="ghost" data-a="focus-skip">다음에</button><button class="cta" data-a="focus-amen">아멘</button></div>' +
+    '<div class="f-note">이 화면에 머문 시간은 기도 시간으로 쌓입니다</div></div>' +
+    '<div class="f-veil" data-a="focus-resume" aria-label="이어서 기도하기"><b>잠시 멈춤</b><small>누르면 이어서</small></div>';
   el.classList.add('on');
   focusCard(false);
   clearInterval(F.tick);
@@ -4443,6 +4458,21 @@ ACT['focus-close'] = () => closeFocus();
 ACT['focus-map'] = () => focusPickGroup();
 ACT['focus-amen'] = () => focusNext(true);
 ACT['focus-skip'] = () => focusNext(false);
+// 잠시 멈춤 (HB 1028-3 3) — '이전' 과 '다음에' 사이 단추. 시간 · 빛이 서고 카드가 옅어지며 '잠시 멈춤 · 누르면 이어서'.
+// 앱을 벗어날 때 저절로 멈추는 것(F.paused)과 같은 길을 쓰되, F.hold 로 '손으로 멈춤' 을 표시해 돌아와도 이어 세지 않는다.
+function focusPause() {
+  if (!F.on || F.hold) return;
+  if (!F.paused) F.cacc += (Date.now() - F.ct0) / 1000;
+  flushFocusTime(); F.paused = true; F.hold = true;
+  $('focus').classList.add('held');
+}
+function focusResume() {
+  if (!F.on || !F.hold) return;
+  F.hold = false; F.paused = false; F.t0 = Date.now(); F.ct0 = F.t0;
+  $('focus').classList.remove('held');
+}
+ACT['focus-pause'] = () => focusPause();
+ACT['focus-resume'] = () => focusResume();
 ACT['focus-prev'] = () => focusPrev();
 // 한 장 기도 중 같은 그룹 · 서브 그룹에 항목 더하기 (O-3) — 지금 줄 바로 뒤에 넣고, 덱에도 지금 카드 바로 뒤에 끼운다(곧 다음 차례)
 function focusAddLine(v, detail) {
