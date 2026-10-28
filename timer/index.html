@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1028-4 -->
+<!-- KAIROS v. 26-1028-5 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -269,6 +269,7 @@ html.isdark #pdz .dimz{background:rgba(255,255,255,.35)}
 .desk.ctlon .dk{opacity:1;pointer-events:auto;transform:none;transition:opacity .3s ease,transform .35s cubic-bezier(.22,.8,.24,1)}
 .desk:not(.ctlon) .dk{transition:opacity 1.2s ease,transform 1.3s ease}   /* 사라질 때는 천천히 */
 .desk .dkbar,.desk .dkadj{transform:translateY(28px)}
+.desk.ctlgo:not(.ctlon) .dk{transition:opacity .35s ease,transform .35s ease}   /* 아래로 밀어 내릴 땐 빨리 사라진다 */
 .desk .sun{transform:translateY(-28px)}
 .desk .dk button{height:48px;min-width:52px;display:grid;place-items:center;font-size:16px;font-weight:300;color:var(--tx2);font-variant-numeric:tabular-nums}
 .desk .dkbar{left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
@@ -583,7 +584,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1028-4';
+const APP_VERSION='v. 26-1028-5';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1728,7 +1729,7 @@ function exitDesk(slid){
   const d=$('desk');if(!d.classList.contains('on'))return;
   drawAll();
   if(slid){$('dial').style.visibility='';const dc=$('deskDial');dc.style.transition='none';dc.style.transform='';
-    if(!quiet()){const md=$('dial');md.style.transition='none';md.style.opacity='0';md.getBoundingClientRect();   // 나온 화면의 파이는 디졸브 인
+    if(!quiet()){const md=$('app');md.style.transition='none';md.style.opacity='0';md.getBoundingClientRect();   // 나온 화면은 통째로 빈 데서 디졸브 인
       md.style.transition='opacity .6s ease';md.style.opacity='1';setTimeout(()=>{md.style.transition='';md.style.opacity='';},700);}}   // 밀어서 나갔으면 원은 날지 않는다 — 화면째 이미 나갔다
   else fly('main');d.classList.remove('on','dimmed','ctlon');syncWake();
   try{document.fullscreenElement&&document.exitFullscreen();}catch(e){}
@@ -1739,7 +1740,15 @@ function leaveDesk(slid){
   if(was==='run'||was==='pause'||was==='done'){reset();if(was!=='done')toast('처음으로 돌렸어요\n흐른 시간은 기록에 남겼어요');}
   exitDesk(slid);
 }
-function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>$('desk').classList.remove('ctlon'),1500);}
+// 두 번 톡 나가기 — 화면 전체가 옅어져 나가고, 아래는 빈 화면이었다가 디졸브 인 (밀어서 나가는 것과 같은 결)
+let fading=0;
+function fadeLeave(){
+  if(fading)return;
+  if(quiet()){leaveDesk(true);return;}
+  fading=1;swDial(0);swSet('',0,true);
+  setTimeout(()=>{leaveDesk(true);setTimeout(()=>{swSet('',1,false);fading=0;},600);},300);
+}
+function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>{if(R().state!=='pause')$('desk').classList.remove('ctlon');},1500);}   // 멈춤일 땐 메뉴를 둔다
 $('deskBtn').onclick=()=>enterDesk();
 // 도는 중 여백 톡 = 다시 탁상. ⚠️ 단추를 누르면 그 안 그림이 곧바로 새로 그려져 눌린 것이 화면에서 떨어진다 —
 // 떨어진 것은 '단추 안' 인지 알 수 없으니 여백으로 치지 않는다 (예전엔 ▶ 를 누르자마자 탁상으로 들어갔다)
@@ -1752,7 +1761,7 @@ let sw=null,swEat=0;
 const EDGE=28;
 const swFade=f=>Math.max(0,1-Math.pow(f/.8,2.5));   // 처음엔 거의 그대로 남고 끝으로 가며 사라진다 (절반 ≈ .7)
 // 밀기 중 아래 화면의 파이를 감춘다 · 못 미쳐 돌아오면 되살린다 (나가면 exitDesk 가 디졸브로 들인다)
-function swDial(v){const md=$('dial');md.style.transition='none';md.style.opacity=v?'':'0';}
+function swDial(v){const md=$('app');md.style.transition='none';md.style.opacity=v?'':'0';}   // 파이 · 숫자 · 단추 · 탭 줄까지 #app 통째로
 function swSet(t,o,anim){const d=$('desk');d.style.transition=anim?'transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s ease':'none';d.style.transform=t;d.style.opacity=o;}
 $('desk').addEventListener('pointerdown',e=>{
   if(sw||e.button>0)return;
@@ -1765,18 +1774,34 @@ $('desk').addEventListener('pointermove',e=>{
     if(Math.hypot(dx,dy)<10)return;
     if(sw.edge&&dx>0&&Math.abs(dx)>Math.abs(dy))sw.ax='x';
     else if(dy<0&&Math.abs(dy)>Math.abs(dx))sw.ax='y';
+    else if(dy>0&&Math.abs(dy)>Math.abs(dx)&&$('desk').classList.contains('ctlon'))sw.ax='d';   // 메뉴 떠 있을 때 아래로 = 메뉴 내리기
     else{sw=null;swEat=1;return;}   // 다른 쪽으로 민 것도 톡이 아니다
     try{$('desk').setPointerCapture(e.pointerId);}catch(_){}
-    swDial(0);   // 밀리는 동안 아래 드러나는 화면은 파이 없는 빈 화면
+    if(sw.ax==='d')clearTimeout(ctlT);
+    else swDial(0);   // 밀리는 동안 아래 드러나는 화면은 통째로 빈 화면
   }
   const W=innerWidth,H=innerHeight;
+  if(sw.ax==='d'){ctlDrag(Math.max(0,dy));return;}
   if(sw.ax==='x'){const v=dx>0?dx:dx*.25;swSet(`translateX(${v}px)`,swFade(Math.max(0,v)/W));}
   else{const v=dy<0?dy:dy*.25;swSet(`translateY(${v}px)`,swFade(Math.max(0,-v)/H));}
 });
+// 하단 메뉴를 손가락 따라 내리다가 놓으면 마저 내려가며 사라진다 (못 미치면 제자리로)
+const ctlEls=()=>$('desk').querySelectorAll('.dkbar,.dkadj');
+function ctlDrag(v,anim){ctlEls().forEach(el=>{el.style.transition=anim?'transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s ease':'none';el.style.transform=`translateY(${v}px)`;el.style.opacity=Math.max(0,1-v/90);});}
+function ctlClear(){ctlEls().forEach(el=>{el.style.transition=el.style.transform=el.style.opacity='';});$('desk').classList.remove('ctlgo');}
+function ctlHide(){
+  const d=$('desk');clearTimeout(ctlT);d.classList.add('ctlgo');
+  ctlEls().forEach(el=>{el.style.transition='transform .35s ease-in,opacity .35s ease';el.style.transform='translateY(90px)';el.style.opacity='0';});
+  d.classList.remove('ctlon');setTimeout(ctlClear,500);
+}
 function swEnd(e){
   if(!sw||e.pointerId!==sw.id)return;
   const s0=sw;sw=null;if(!s0.ax)return;
   swEat=1;
+  if(s0.ax==='d'){const dy=e.clientY-s0.y,dt=Date.now()-s0.t;
+    if(e.type==='pointerup'&&(dy>40||(dt<300&&dy>20)))ctlHide();
+    else{ctlDrag(0,true);setTimeout(ctlClear,350);showCtl();}
+    return;}
   const W=innerWidth,H=innerHeight,dt=Date.now()-s0.t;
   const d=s0.ax==='x'?e.clientX-s0.x:s0.y-e.clientY,full=s0.ax==='x'?W:H;
   const go=e.type==='pointerup'&&(d>full/4||(dt<300&&d>40));
@@ -1791,9 +1816,9 @@ $('desk').addEventListener('click',e=>{
   if(ringTap&&Date.now()-ringTap<1500){ringTap=0;leaveDesk();return;}   // 끝나서 깜빡일 때 아무 데나 톡 = 나가기
   const b=e.target.closest('[data-dk]');
   if(!b&&e.target.closest('#deskDial')&&inDial(e)){const r=R();if(r.state==='run'||r.state==='pause'){if(r.state==='run')pause();else start();showCtl();drawDesk();return;}}   // 탁상 파이 톡 = 멈춤/재개
-  if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;leaveDesk();return;}lastTap=now;showCtl();return;}
+  if(!b){const now=Date.now();if(now-lastTap<330){lastTap=0;fadeLeave();return;}lastTap=now;showCtl();return;}
   const k=b.dataset.dk;showCtl();
-  if(k==='play'){const r=R();if(r.state==='run')pause();else{start();clearTimeout(deskT);}}
+  if(k==='play'){const r=R();if(r.state==='run')pause();else{start();clearTimeout(deskT);}showCtl();}   // 바뀐 상태로 다시 잰다
   else if(k==='dim')$('desk').classList.toggle('dimmed');
   else if(k==='out'){leaveDesk();return;}
   else adjust(+k);
