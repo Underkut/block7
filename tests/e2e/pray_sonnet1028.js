@@ -1,5 +1,5 @@
 // 기도노트 1028-3 Sonnet 묶음 — 1(빈 목록 안내) · 4(이번 장 시계) · 5-4(대시보드 복귀 · 토스트) · 6-1(오늘 펼침)
-// ⚠️ check.sh 가 돌리지 않는다. 저장소 뿌리에서: python3 -m http.server 5502 &   node tests/e2e/pray_sonnet1028.js
+// ⚠️ check.sh 가 돌리지 않는다. 저장소 뿌리에서: python3 -m http.server 5503 &   node tests/e2e/pray_sonnet1028.js
 const { chromium } = require(process.env.PW || 'playwright');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 (async () => {
@@ -7,7 +7,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   let pass = 0, fail = 0; const ok = (n, c, i) => { if (c) { pass++; console.log('  ✓ ' + n); } else { fail++; console.log('  ✗ ' + n, JSON.stringify(i)); } };
   const ctx = await b.newContext({ serviceWorkers: 'block', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const p = await ctx.newPage(); p.on('pageerror', e => console.log('ERR', e.message));
-  await p.goto((process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/pray/index.html'); await p.waitForFunction(() => typeof DB === 'object');
+  await p.goto((process.env.APP_ORIGIN || 'http://127.0.0.1:5503') + '/pray/index.html'); await p.waitForFunction(() => typeof DB === 'object');
   ok('⭐6-1 기도한 날 처음엔 오늘이 골라짐', await p.evaluate(() => UI.calDay === TODAY));
   await p.evaluate(() => { const a = newTarget('person', '가람'), c = newTarget('person', '다온'); DB.T.push(a, c); window._a = a; focusStart([{ id: a.id, sec: 'top' }, { id: c.id, sec: 'top' }], 0); });
   await sleep(1400);
@@ -34,10 +34,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(() => { const ov = document.getElementById('tdashOv'); const sp = document.createElement('div'); sp.style.height = '1500px'; ov.appendChild(sp); window._ov = ov; ov.scrollTop = 300; window._st = ov.scrollTop; });
   await p.evaluate(() => { const el = [...document.querySelectorAll('#tdashOv .tdash-item')].find(x => /가람/.test(x.textContent)); if (el) el.click(); });
   await sleep(300);
+  await p.evaluate(() => document.documentElement.classList.add('iosgap'));   // 아이폰 홈 화면 앱 — #app 이 테마색을 칠한다
   const opened = await p.evaluate(() => UI.layers.length);
   if (!opened) { console.log(await p.evaluate(() => document.querySelector('#tdashOv') && document.querySelector('#tdashOv').innerText.slice(0, 300))); console.log('  (대시보드에서 항목 줄을 못 찾아 5-4 건너뜀)'); }
   else {
     ok('⭐5-4 상세가 떠 있는 동안 대시보드는 닫히지 않고 그대로', await p.evaluate(() => document.getElementById('tdashOv') === window._ov && window._ov.classList.contains('in')));
+    ok('⭐5-4 아이패드 · 아이폰: 상세 뒤가 상세 바탕색 빈 화면이 아니다(#app 투명)', await p.evaluate(() => getComputedStyle(document.getElementById('app')).backgroundColor === 'rgba(0, 0, 0, 0)'));
     await p.evaluate(() => { window._seen = []; const ov = window._ov; window._iv = setInterval(() => window._seen.push(+getComputedStyle(ov).opacity), 16); });
     await p.click('[data-a="layer-cancel"]'); await sleep(900);
     ok('⭐5-4 돌아올 때 같은 대시보드 · 투명해진 적 없음(디졸브 · 깜빡임 없음)', await p.evaluate(() => { clearInterval(window._iv); return document.getElementById('tdashOv') === window._ov && Math.min(...window._seen) === 1; }));
