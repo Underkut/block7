@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-8';
+const APP_VERSION = 'v. 26-1028-9';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2145,6 +2145,16 @@ button.pl{min-width:34px;height:30px;border-radius:8px;font-size:14px}
 .masonry.dm1 .dn,.masonry.dm2 .dn,.masonry.dm3 .dn{filter:saturate(.5) contrast(.88);opacity:var(--dn-op,.62)}
 .masonry.dm1 .gcard.dn .sgb.dn,.masonry.dm2 .gcard.dn .sgb.dn,.masonry.dm3 .gcard.dn .sgb.dn{filter:none;opacity:1}
 .masonry.dm3 .gcard.dn:not(.mx-out),.masonry.dm3 .sgb.dn:not(.mx-out){display:none}
+/* 흐림 단위 (HB 1028-3 7) — du-g 그룹만 · du-s 서브 그룹까지(예전 그대로) · du-i 기도 항목 하나씩까지.
+   du-g 면 서브 그룹 표시를 끈다 · du-i 면 이름(.pn.dn)도 흐리고, 2단계는 다 기도한 줄을 접고, 3단계는 이름까지 숨긴다.
+   이미 흐린 그룹 · 서브 그룹 안에서는 두 번 흐리지 않는다 */
+.du-seg button{padding:6px 12px;font-size:13px}
+.masonry.du-g .sgb.dn{filter:none !important;opacity:1 !important}
+.masonry.du-g.dm3 .sgb.dn:not(.mx-out){display:block}
+.masonry.du-g.dm2 .sgb.dn .ln:not(.mx-out){display:block}
+.masonry.du-i.dm1 .pn.dn,.masonry.du-i.dm2 .pn.dn,.masonry.du-i.dm3 .pn.dn{filter:saturate(.5) contrast(.88);opacity:var(--dn-op,.62)}
+.masonry.du-i .gcard.dn .pn.dn,.masonry.du-i .sgb.dn .pn.dn{filter:none;opacity:1}
+.masonry.du-i.dm2 .ln.dn:not(.mx-out),.masonry.du-i.dm3 .ln.dn:not(.mx-out),.masonry.du-i.dm3 .pn.dn:not(.mx-out){display:none}
 .masonry.dm2 .gcard.dn .ln:not(.mx-out),.masonry.dm2 .gcard.dn .addw:not(.mx-out),.masonry.dm2 .sgb.dn .ln:not(.mx-out){display:none}
 .masonry.pk2 .gcard.pkx:not(.mx-out),.masonry.pk2 .sgb.pkx:not(.mx-out),.masonry.pk2 .gcard.pkgo>.gb>.ln:not(.mx-out){display:none}
 .masonry.pk1 .gcard.pkx,.masonry.pk1 .gcard:not(.pkx) .sgb.pkx,.masonry.pk1 .gcard.pkgo:not(.pkx)>.ghw{opacity:.38}
@@ -3049,7 +3059,10 @@ function openFocusMap(k, who) {
   let i = who ? deck.findIndex(d => d.id === who) : -1;
   if (i < 0 && p.t === 'l') { const l = (findG(DB, p.gid).lines || []).find(x => x.id === p.lid); const ids = l ? linePids(l) : []; i = deck.findIndex(d => ids.indexOf(d.id) >= 0); }
   if (i < 0) i = deck.findIndex(d => under.has(d.g));
-  focusStart(deck, Math.max(0, i));
+  const r = deckSkipAmen(deck, Math.max(0, i), who);
+  if (r.i < 0) { toast('여기서부터 끝까지\n오늘 모두 아멘했습니다'); return; }
+  if (r.skipped) toast('오늘 아멘한 ' + r.skipped + '명은\n건너뜁니다');
+  focusStart(r.deck, r.i);
 }
 // 기도 항목 하나부터 한 장씩 (HB 2026-10-27 P3′ — 기록 › 기도한 날 · There 대시보드에서 길게 누르기 · 우클릭)
 //   지도 차례대로 이어지게 지도 덱에서 그 자리부터. 그룹이면 그 그룹의 첫 항목부터. 지도에 없으면(보관 · 거름) 그 하나만.
@@ -3060,7 +3073,9 @@ function focusFromItem(id) {
   if (MT.on) thereStop('page');
   let deck = mapDeck(), i = deck.findIndex(d => t.kind === 'group' ? d.g === id : d.id === id);
   if (i < 0) { if (t.kind === 'group') { toast('이 그룹에는 기도할 이름이 없습니다'); return; } const g = groupsOf(DB, id)[0]; deck = [{ id: id, sec: 'map', g: g ? g.id : '' }]; i = 0; }
-  focusStart(deck, i);
+  const r = deckSkipAmen(deck, i, t.kind === 'group' ? '' : id);   // 항목 하나를 콕 집었으면 그것은 남긴다
+  if (r.i < 0) { toast('여기서부터 끝까지\n오늘 모두 아멘했습니다'); return; }
+  focusStart(r.deck, r.i);
 }
 function focusStart(deck, at) {
   F.on = true; F.deck = deck; F.i = at; F.t0 = Date.now(); F.start = F.t0; F.sid = uid(); F.sent = {}; F.tot = 0; F.paused = false; F.hold = false;
@@ -3225,8 +3240,9 @@ function focusPickGroup(back) {
   choose('그룹 고르기', opts, it && it.sec === 'map' ? it.g : '', v => {
     let deck = F.deck; if (!it || it.sec !== 'map') deck = mapDeck();
     const under = new Set([v]); const sub = id => kidsOf(DB, id).forEach(c => { under.add(c.id); sub(c.id); }); sub(v);
-    const i = deck.findIndex(d => under.has(d.g));
-    if (i < 0) { toast('그 그룹에는 기도할 이름이 없습니다'); return; }
+    if (!deck.some(d => under.has(d.g))) { toast('그 그룹에는 기도할 이름이 없습니다'); return; }
+    const am = amenToday(), i = deck.findIndex(d => under.has(d.g) && !am.has(d.id));   // 오늘 아멘한 이름은 건너뛴다 (1028-3 7)
+    if (i < 0) { toast('그 그룹은\n오늘 모두 아멘했습니다'); return; }
     focusCardLog(false);
     if (deck !== F.deck) { flushFocusTime(); F.deck = deck; }
     F.i = i; focusCard(true);
@@ -3282,10 +3298,11 @@ function mapCards(src, opt) {
     if (k && edKey === k) return '<div class="ln ined sel"' + selAttr(k) + '>' + editor(k, UI.mapEdit.isNew ? '' : lineToText(DB, l), '이름 — / 로 나누기 · Tab 다음 항목 · Enter 마침') + '</div>';
     if (l.text && !(l.segs || []).length) return '<div class="ln note' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + esc(l.text) + lk(l) + '</div>';
     if (src.live && (l.segs || []).length && !linePids(l).some(pid => src.person(pid))) return '';   // 줄의 이름이 모두 보관 · 응답 — 줄째 감춘다
-    return '<div class="ln' + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + (l.segs || []).map(seg => seg.map(pid => {
+    const lp = ds ? linePids(l).filter(pid => src.person(pid)) : [], lnDone = lp.length > 0 && lp.every(pid => ds.has(pid));   // 줄의 이름을 다 기도함 (항목 단위 흐림)
+    return '<div class="ln' + (lnDone ? ' dn' : '') + selCls(k) + '"' + (k ? selAttr(k) : '') + '>' + (l.segs || []).map(seg => seg.map(pid => {
       const p = src.person(pid); if (!p) return '';
       const role = l.r && l.r[pid];
-      const cls = 'pn' + (mk(p) === 'gray' ? ' rest' : '') + (role === '인도' ? ' lead' : '') +
+      const cls = 'pn' + (ds && ds.has(pid) ? ' dn' : '') + (mk(p) === 'gray' ? ' rest' : '') + (role === '인도' ? ' lead' : '') +
         (filt && filt.indexOf(mk(p)) < 0 ? ' dim' : '') + (q && p.name.indexOf(q) >= 0 ? ' hit' : '');
       const style = mk(p) && mk(p) !== 'gray' ? ' style="--pc:' + markVar(mk(p)) + '"' : '';
       const inner = (role && role !== '인도' ? '<span class="role">' + esc(role) + '</span>' : '') + esc(p.name);
@@ -3310,7 +3327,7 @@ function mapCards(src, opt) {
   const SUBICO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 3.1v9.6a3.1 3.1 0 0 0 3.1 3.1h5"/><path d="M4.6 7.3h8.1"/><circle cx="15.3" cy="7.3" r="2.6"/><circle cx="15.3" cy="15.8" r="2.6"/></svg>';
   // ⚠️ 3줄 · 타겟 · + 는 다시 그리지 않고 이름표만 바꾼다 — 바뀌는 것만 스르륵 (HB 2026-10-13). 그래서 늘 다 그려 둔다
   const ds = src.live ? doneSet() : null;
-  const mcls = src.live ? ' dm' + doneMode() + ' d' + depth + (pk ? ' pk' + (pk.mode || 0) : '') + (opt && opt.addOff ? ' addoff' : '') : '';
+  const mcls = src.live ? ' dm' + doneMode() + ' du-' + doneUnit() + ' d' + depth + (pk ? ' pk' + (pk.mode || 0) : '') + (opt && opt.addOff ? ' addoff' : '') : '';
   return '<div class="masonry' + (src.live ? ' mjs' : '') + mcls + '">' + tops.map(g => {
     const kids = src.kids(g.id).filter(showG);
     const gSel = !!pk && pk.ids.has(g.id);
@@ -3367,6 +3384,10 @@ function pickSet(ids) { DB.set.mapPick = ids.length ? { d: TODAY, ids } : null; 
 // '기도한 그룹' = 그 그룹(큰 그룹은 서브 그룹까지)의 이름이 모두 오늘 기도함(log[오늘].d)에 든 것. 이름이 하나도 없는 그룹은 아니다.
 function doneMode() { const n = devPref('doneMode', 0); return n === 1 || n === 2 || n === 3 ? n : 0; }
 const DONE_LBL = ['그대로', '흐리게', '그룹만 남기기', '숨기기'];
+// 흐림 단위 (HB 1028-3 7) — 'g' 다 기도한 그룹만 · 's' 서브 그룹도(예전 그대로 · 처음값) · 'i' 기도 항목 하나씩도. 기기마다 (devPref)
+const DONE_UNITS = [['g', '그룹'], ['s', '서브'], ['i', '항목']];   // 설정 줄이 좁아 짧게 (토스트는 DONE_UNIT_LONG)
+const DONE_UNIT_LONG = { g: '그룹', s: '서브 그룹', i: '기도 항목' };
+function doneUnit() { const u = devPref('doneUnit', 's'); return u === 'g' || u === 'i' ? u : 's'; }
 function doneIco(n) { return n === 3 ? '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 12 10.5 16.5 18 6"/><line x1="3.2" y1="14.6" x2="20.8" y2="12.2"/></svg>' : ico('check'); }
 // 지도 체크 단추 1단계 이후 '오늘 기도한 그룹' 의 투명도(%) — 기기마다 설정에서 조정 (HB 2026-10-18). 기본 30 (HB 2026-10-18)
 function doneOp() { const n = Number(devPref('doneOp', 30)); return Math.max(10, Math.min(90, Math.round(n))) || 30; }
@@ -3954,7 +3975,8 @@ LAYERS.settings = () => {
     THERE_ORDER.map(k => '<button class="tpk' + (k === thereKey() ? ' on' : '') + '" data-a="there-icon" data-v="' + k + '" aria-label="' + esc(THERE_ICONS[k].name) + '"><span class="there-ic">' + THERE_ICONS[k].svg + '</span><span>' + esc(THERE_ICONS[k].name) + '</span></button>').join('') + '</div></div>' +
     '<button class="set-r" data-a="marks">' + MKICO + '표시색 이름<span class="v">' + ico('chevR') + '</span></button>' +
     '<div class="set-r">' + ico('sun') + '<span>There 중 화면 꺼짐 막기' + (awakeSupported() ? '' : '<small class="rsub">이 기기에서는 쓸 수 없어요</small>') + '</span><button class="tgl' + (awakePref() && awakeSupported() ? ' on' : '') + '" data-a="awake-toggle" role="switch" aria-checked="' + (awakePref() && awakeSupported()) + '" aria-label="There 중 화면 꺼짐 막기"><i></i></button></div>' +
-    '<div class="set-r">' + ico('check') + '기도한 그룹 흐림<input type="range" class="rng" min="10" max="90" step="1" value="' + doneOp() + '" data-live="doneop" aria-label="기도한 그룹 투명도"><b id="doneOpV" class="rngv">' + doneOp() + '%</b></div>' + donePrevHTML() + '</div>';
+    '<div class="set-r">' + ico('check') + '오늘 기도한 것 흐림<input type="range" class="rng" min="10" max="90" step="1" value="' + doneOp() + '" data-live="doneop" aria-label="오늘 기도한 것 투명도"><b id="doneOpV" class="rngv">' + doneOp() + '%</b></div>' +
+    '<div class="set-r" style="gap:10px">' + ico('list') + '흐림 단위<div class="seg du-seg" style="margin:0 0 0 auto">' + DONE_UNITS.map(u => '<button class="' + (doneUnit() === u[0] ? 'on' : '') + '" data-a="done-unit" data-v="' + u[0] + '">' + u[1] + '</button>').join('') + '</div></div>' + donePrevHTML() + '</div>';
   P.push(b); b = '';   // ② 화면
   b += '<div class="label">분류</div><div class="set-g"><button class="set-r" data-a="cats">' + ico('folder') + '구분<span class="v">' + DB.cats.length + ico('chevR') + '</span></button>' +
     '<button class="set-r" data-a="subcats">' + ico('folder') + '부서 상위 분류<span class="v">' + DB.subs.length + ico('chevR') + '</span></button>' +
@@ -4869,6 +4891,13 @@ function mapPickPaint() {
   });
 }
 function mapKeepScroll(fn) { const v = $('v-map'), y = v ? v.scrollTop : 0; fn(); const w = $('v-map'); if (w) w.scrollTop = y; }
+// 흐림 단위 고르기 (설정) — 지도에 바로 보이게 이름표만 바꾼다
+ACT['done-unit'] = el => {
+  setDevPref('doneUnit', el.dataset.v);
+  el.parentNode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
+  document.querySelectorAll('.masonry.mjs').forEach(m => { m.classList.remove('du-g', 'du-s', 'du-i'); m.classList.add('du-' + doneUnit()); });
+  toast('오늘 기도한 것을\n' + DONE_UNIT_LONG[doneUnit()] + ' 단위로 흐립니다');
+};
 ACT['map-done-mode'] = () => {
   const n = (doneMode() + 1) % 4; setDevPref('doneMode', n);
   const b = mapBtnEl('done');
@@ -6437,6 +6466,15 @@ function mapHoldMenu(k, who) {
 }
 // 지도 차례대로 이름 펼치기 — 그룹마다 항목 먼저, 다음 서브 그룹. 같은 이름은 처음 나온 자리에만.
 // 지도에서 표시 색으로 걸러 둔 채 들어가면 걸러서 켜진 이름만 기도한다 — 그룹 끝 메뉴도 그 기준으로 나온다 (HB 2026-10-18)
+// 오늘 한 장 기도에서 '아멘' 한 이름 (HB 1028-3 7) — 지도 차례로 그룹 · 서브 그룹을 다시 기도할 때 건너뛴다
+function amenToday() { return new Set(((DB.log[TODAY] || {}).fc || []).filter(x => x && x.amen).map(x => x.pid)); }
+// 덱에서 아멘한 이름을 뺀다. keep = 사람이 콕 집어 누른 이름(그것은 남긴다). at = 원래 덱의 자리 → 그 자리 또는 그 뒤 첫 남은 자리
+//   돌려주는 것 { deck, i, skipped } · 그 자리부터 끝까지 다 아멘했으면 i = -1
+function deckSkipAmen(deck, at, keep) {
+  const am = amenToday(), ok = d => !am.has(d.id) || d.id === keep, out = deck.filter(ok);
+  let first = -1; for (let k = at; k < deck.length; k++) if (ok(deck[k])) { first = k; break; }
+  return { deck: out, i: first < 0 ? -1 : out.indexOf(deck[first]), skipped: deck.length - out.length };
+}
 function mapDeck() {
   const out = [], seen = new Set(), done = new Set();
   const walk = (g, top) => { if (done.has(g.id)) return; done.add(g.id);
