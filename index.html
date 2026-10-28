@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-8  [production]  -->
+<!-- BLOCK7  v. 26-1028-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-8";
+const APP_VERSION = "v. 26-1028-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -54174,7 +54174,7 @@ if(DEV_MODE){
 // ⚠️ 원본은 tools/there-dash.js 하나다. ./tools/sync-there-dash.sh 가 index.html 과 pray/index.html 의
 //    there-dash 스크립트 덩어리에 **같은 글자로** 넣는다 — 손으로 한쪽만 고치지 말 것
 //    (tests/test_there_dash.js 가 세 벌이 같은지 본다).
-// 세 앱의 There(머문 시간) 기록을 한 모양으로 모아 주 · 달 · 하루로 보여 준다. **읽기만 한다.**
+// 세 앱의 There(머문 시간) 기록을 한 모양으로 모아 주 · 달 · 하루로 보여 준다. **읽기만 한다** — 고치기 · 지우기는 부른 쪽이 opts.edit 로 맡는다(기도노트 기록 줄만, 1028-3).
 //   thereLog = BLOCK7 · Sweeter 의 verseThereLog  {"YYYY-MM-DD":[{ref,time,t,d,sec,app,src}]}
 //   prayLog  = 기도노트 DB.log                    {"YYYY-MM-DD":{d,p,k,s,ses:[{id,t,time,d,src}],mp:[{id,a,t,pid,d,n,k}]}}
 //   mp = Map 기도(지도 There 안에서 누른 그룹 · 항목에 머문 시간). **합계에 더하지 않는다** — 그 시간은 지도 There(ses)에 이미 들어 있다.
@@ -54236,7 +54236,7 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0)); if (!d) return;
         seen += d;
-        out.push({ date: date, t: +e.t || 0, time: e.time || '', d: d, app: 'pray', src: String(e.src || ''), ref: '' });
+        out.push({ date: date, t: +e.t || 0, time: e.time || '', d: d, app: 'pray', src: String(e.src || ''), ref: '', id: String(e.id || '') });
       });
       const rest = Math.round(+L.s || 0) - seen;
       if (rest > 0) out.push({ date: date, t: 0, time: '', d: rest, app: 'pray', src: '', ref: '', old: true });
@@ -54255,8 +54255,8 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0));
         const key = (+e.a || +e.t || 0) + '|' + (e.k || e.n || '');
-        const o = by[key] || (by[key] = { date: date, t: +e.a || +e.t || 0, k: String(e.k || e.n || '이름 없음'), names: [], d: 0 });
-        o.d += d; if (e.n && o.names.indexOf(e.n) < 0) o.names.push(String(e.n));
+        const o = by[key] || (by[key] = { date: date, t: +e.a || +e.t || 0, k: String(e.k || e.n || '이름 없음'), names: [], d: 0, ids: [] });
+        o.d += d; if (e.id) o.ids.push(String(e.id)); if (e.n && o.names.indexOf(e.n) < 0) o.names.push(String(e.n));
       });
       Object.keys(by).forEach(x => { const o = by[x]; if (o.t) { const dt = new Date(o.t); o.time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); } else o.time = ''; out.push(o); });
     });
@@ -54273,7 +54273,7 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0)), a = +e.a || +e.t || 0;
         let time = ''; if (a) { const dt = new Date(a); time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); }
-        out.push({ date: date, t: a, time: time, n: String(e.n || '이름 없음'), k: String(e.k || ''), d: d, amen: !!e.amen });
+        out.push({ date: date, t: a, time: time, n: String(e.n || '이름 없음'), k: String(e.k || ''), d: d, amen: !!e.amen, id: String(e.id || '') });
       });
     });
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
@@ -54282,6 +54282,12 @@ const TDASH = (function () {
   // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
   //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
   const itemName = (S, n, tag) => S.item && S.item.has(n) ? '<' + tag + ' class="tdash-item" data-td="item" data-v="' + esc(n) + '">' + esc(n) + '</' + tag + '>' : '<' + tag + '>' + esc(n) + '</' + tag + '>';
+  // 고칠 수 있는 줄 (HB 1028-3 5-1 · 5-2) — 부른 쪽이 opts.edit 를 주면(기도노트) 기도노트 기록 줄만:
+  //   톡 = 고치기(edit.open) · 왼쪽으로 밀기 = 지우기(edit.del). 이름 글자(tdash-item)를 누르면 예전대로 상세.
+  //   BLOCK7 · Sweeter · 성경 줄은 그 앱 것이라 여기서 못 고친다.
+  const edRow = (S, kind, date, ids, inner) => S.edit && ids
+    ? '<div class="tdash-sw"><div class="tdash-ses tdash-ed" data-ed="' + kind + '" data-d="' + esc(date) + '" data-v="' + esc(ids) + '">' + inner + '</div></div>'
+    : '<div class="tdash-ses">' + inner + '</div>';
   // 기간 안의 Map 기도 · 한 장 기도를 이름마다 모아 오래 한 순서로
   function mapTop(S, a, b, n) {
     const m = {}; const put = (k, d) => { const o = m[k] || (m[k] = { s: 0, n: 0 }); o.s += d; o.n++; };
@@ -54397,6 +54403,10 @@ const TDASH = (function () {
 .tdash-ses b{display:block;font-size:14.5px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tdash-ses small{display:block;font-size:12px;color:var(--tx3)}
 .tdash-ses em{font-style:normal;font-size:14px;font-variant-numeric:tabular-nums}
+/* 고칠 수 있는 줄 — 왼쪽으로 밀면 뒤의 '지우기' 가 드러난다 (HB 1028-3 5-1) */
+.tdash-sw{position:relative;overflow:hidden}
+.tdash-sw::before{content:"지우기";position:absolute;inset:0 0 1px 0;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;background:#5a2a2a;color:#f1d6d2;font-size:13px}
+.tdash-ed{position:relative;background:var(--bg);cursor:pointer;-webkit-tap-highlight-color:transparent;will-change:transform}
 .tdash-note{font-size:11.5px;color:#6c6962;line-height:1.6}
 .tdash-empty{padding:28px 0;text-align:center;color:var(--tx3);font-size:13.5px}
 .tdash-ov{position:fixed;inset:0;z-index:99990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -54528,24 +54538,24 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     }
     const by = {}; ss.forEach(x => { by[x.app] = (by[x.app] || 0) + x.d; });
     h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>' + FIX;
-    h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x =>
-      '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
-      esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+    h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x => edRow(S, 'ses', d, x.app === 'pray' ? (x.old ? '-' : x.id) : '',
+      '<span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
+      esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
     // 지도 There 안에서 누른 것들 — 위 '기도 지도' 시간 안에 든 몫이라 합계에는 다시 더하지 않는다
     const mp = mapPrayers(S.data.prayLog, d, d);
     if (mp.length) {
       const sum = mp.reduce((s, x) => s + x.d, 0);
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
-        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x => edRow(S, 'mp', d, x.ids.join(','),
+        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
+        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
     }
     // 한 장 기도로 누구를 — 이름마다 머문 시간 · 아멘 / 넘김 (위 '한 장씩 기도하기' 시간 안의 몫)
     const fc = focusPrayers(S.data.prayLog, d, d);
     if (fc.length) {
       const sum = fc.reduce((s, x) => s + x.d, 0), am = fc.filter(x => x.amen).length;
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
-        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em></div>').join('') + '</div>';
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x => edRow(S, 'fc', d, x.id,
+        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
+        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em>')).join('') + '</div>';
     }
     return h;
   }
@@ -54571,7 +54581,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function mount(el, opts) {
     injectCSS();
     opts = opts || {};
-    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null };
+    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null, edit: opts.edit && typeof opts.edit.open === 'function' ? opts.edit : null };
     // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
@@ -54650,7 +54660,13 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const atEnd = () => S.view === 'day' ? S.at >= S.today : S.view === 'week' ? add(weekStart(S.at), 6) >= S.today : monthEnd(S.at) >= S.today;
     const after = () => { save(); if (opts.onView) opts.onView(S.view); };
     el.onclick = e => {
-      const b = e.target.closest && e.target.closest('[data-td]'); if (!b || b.disabled) return;
+      const b = e.target.closest && e.target.closest('[data-td]');
+      if (!b) {   // 기도노트 기록 줄 — 톡 = 고치기
+        const r = S.edit && e.target.closest && e.target.closest('[data-ed]');
+        if (r && Date.now() - lpAt >= 700 && !swAt()) { e.stopPropagation(); S.edit.open(edInfo(r)); }
+        return;
+      }
+      if (b.disabled) return;
       const a = b.dataset.td;
       if (Date.now() - lpAt < 700) { e.stopPropagation(); return; }   // 길게 눌러 고정한 뒤 따라오는 클릭
       if (a === 'view') {
@@ -54692,25 +54708,44 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 손가락을 따라 판이 움직이고,
     // 놓을 때 폭의 4분의 1 넘게(또는 빠르게) 밀었으면 넘어가고 아니면 제자리로 돌아온다.
     // 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
-    let sx = 0, sy = 0, sOn = false, lock = false, dx = 0, st = 0;
+    let sx = 0, sy = 0, sOn = false, lock = false, dx = 0, st = 0, row = null, rowOn = false, rowAt = 0;
+    const edInfo = r => ({ kind: r.dataset.ed, date: r.dataset.d, ids: r.dataset.v === '-' ? [] : r.dataset.v.split(',').filter(Boolean) });
+    const swAt = () => Date.now() - rowAt < 400;   // 밀어 지운 손짓 끝에 따라오는 클릭은 삼킨다
+    // 줄을 왼쪽으로 밀기 — 손가락을 따라가다 놓을 때 폭의 3분의 1 넘게(또는 빠르게) 밀었으면 끝까지 나가며 높이가 접히고 지운다
+    const rowFollow = x => { row.style.transition = 'none'; row.style.transform = 'translateX(' + Math.min(0, x) + 'px)'; };
+    const rowRelease = (r, x, fast) => {
+      const w = r.offsetWidth || 320;
+      rowAt = Date.now();
+      if (-x < w / 3 && !fast) { r.style.transition = 'transform .26s ' + EASE; r.style.transform = ''; return; }
+      const wrap = r.parentNode, info = edInfo(r);
+      if (still()) { S.edit.del(info); return; }
+      r.style.transition = 'transform .2s cubic-bezier(.4,0,1,1)'; r.style.transform = 'translateX(' + (-w) + 'px)';
+      setTimeout(() => {
+        wrap.style.height = wrap.offsetHeight + 'px'; wrap.offsetHeight;
+        wrap.style.transition = 'height .22s ' + EASE + ',opacity .22s'; wrap.style.height = '0px'; wrap.style.opacity = '0';
+        setTimeout(() => S.edit.del(info), 230);
+      }, 200);
+    };
     const follow = x => {
       const w = el.clientWidth || 360, k = x < 0 && atEnd() ? 0.22 : 1;     // 더 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게
       const px = x * k, op = 1 - Math.min(Math.abs(px) / w, 0.55);
       panes().forEach(p => { p.style.transition = 'none'; p.style.transform = 'translateX(' + px + 'px)'; p.style.opacity = op; });
     };
     const release = fn => panes().forEach(p => { p.style.transition = fn ? 'none' : 'transform .26s ' + EASE + ',opacity .26s'; p.style.transform = ''; p.style.opacity = ''; });
-    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32 && !S.busy; lock = false; dx = 0; sx = t.clientX; sy = t.clientY; st = Date.now(); }, { passive: true });
+    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32 && !S.busy; lock = false; dx = 0; sx = t.clientX; sy = t.clientY; st = Date.now(); rowOn = false;
+      row = S.edit && S.edit.del && e.target.closest ? e.target.closest('[data-ed]') : null; }, { passive: true });
     el.addEventListener('touchmove', e => {
       if (!sOn) return; const t = e.touches[0]; dx = t.clientX - sx; const dy = t.clientY - sy;
       if (!lock) {
         if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { sOn = false; return; }     // 세로로 밀고 있다 = 스크롤
-        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) lock = true; else return;
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) { lock = true; rowOn = !!row && dx < 0; } else return;
       }
-      follow(dx);
+      if (rowOn) rowFollow(dx); else follow(dx);
     }, { passive: true });
     el.addEventListener('touchend', e => {
       if (!sOn) return; sOn = false;
       const t = e.changedTouches[0], x = t.clientX - sx, y = t.clientY - sy;
+      if (rowOn) { rowOn = false; rowRelease(row, x, x <= -40 && -x / Math.max(1, Date.now() - st) > 0.5); return; }
       if (Math.abs(x) < 24 || Math.abs(x) < Math.abs(y) * 1.6) { release(); return; }
       const w = el.clientWidth || 360, fast = Math.abs(x) >= 40 && Math.abs(x) / Math.max(1, Date.now() - st) > 0.5;
       const k = x > 0 ? -1 : 1;                 // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
@@ -54721,7 +54756,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
       const k0 = x > 0 ? -1 : 1;
       exitFrom(k0, x, 1 - Math.min(Math.abs(x) / w, 0.55), () => { step(k); after(); draw(); animIn(k); S.busy = false; });
     }, { passive: true });
-    el.addEventListener('touchcancel', () => { if (lock) release(); sOn = false; }, { passive: true });
+    el.addEventListener('touchcancel', () => { if (rowOn && row) { row.style.transition = 'transform .26s ' + EASE; row.style.transform = ''; rowOn = false; } else if (lock) release(); sOn = false; }, { passive: true });
     save();
     draw();
     if (opts.load) {
@@ -54774,6 +54809,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
     // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
     const m = mount(ov.querySelector('.tdash-body'), Object.assign({}, opts, { onView: v => { sub.textContent = VNAME[v] || ''; if (onV) onV(v); } }));
+    ov._m = m;
     // 닫는 손짓 둘 — 손가락을 따라 밀려 나간다 (HB 2026-10-13 · 2026-10-27 P3′-3)
     //  ① 왼쪽 가장자리(EDGE)에서 오른쪽으로 밀기. EDGE 는 안쪽 좌우 넘기기가 빼는 폭(32)과 같아야 한다 —
     //     예전엔 28 이라 28~32px 에서 시작한 밀기는 어느 쪽도 받지 않았다.
@@ -54823,7 +54859,8 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     ov.classList.remove('in'); setTimeout(() => ov.remove(), 240);
   }
   const isOpen = () => !!OV;
-  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
+  const redraw = () => { if (OV && OV._m) OV._m.redraw(); };   // 부른 쪽이 기록을 고친 뒤 (기도노트 5-1 · 5-2)
+  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC };
 })();
 </script>
 </body>
