@@ -16,6 +16,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const p = await ctx.newPage(); p.on('pageerror', e => console.log('ERR', e.message));
   await p.goto((process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/pray/index.html'); await p.waitForFunction(() => typeof DB === 'object');
   const D = await p.evaluate(() => {
+    document.documentElement.classList.add('iosgap');   // 아이패드 · 아이폰 홈 화면 앱처럼 (#app 이 테마색을 칠한다)
     const a = newTarget('person', '가람'), c = newTarget('person', '다온'); DB.T.push(a, c);
     const t0 = Date.now() - 3 * 3600e3, D = dayOf(t0);
     addPraySession(DB, t0, 600, 'focus', 'S1');

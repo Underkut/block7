@@ -39,7 +39,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
   exportBackup, readBackup, bakDevice, bakName, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, delPraySession, editPrayKid, delPrayKid, sesKids, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, dayGlance, delPraySession, editPrayKid, delPrayKid, sesKids, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -1002,6 +1002,35 @@ const MAPCSV = [
     sc.eq('5-3 아멘이면 skip 이어도 남김(방어)', !!A.addFocusCard(db, D, 'S1', pid, 0, 30000, 30, true, '가족', true), true);
     sc.eq('5-3 skip 아닌 넘김(이전 · 닫기)은 그대로 남김', !!A.addFocusCard(db, D, 'S2', pid, 0, 30000, 30, false, '가족', false), true);
   }
+}
+
+// ㉗ There D탭 아래 네 칸 (HB 1028-3 6-2b) — 오늘 기도한 이름(그룹마다) · 다가오는 날 · 오래 못 한 기도 · 감사
+{
+  const T0 = '2026-10-28';   // 수요일
+  const db = A.emptyDB();
+  const P = {}; ['가람', '나래', '다온', '라온', '마루', '사랑', '아라', '하늘', '보관'].forEach(n => { const t = A.newTarget('person', n); db.T.push(t); P[n] = t; });
+  P['가람'].topics = [A.newTopic('취업 면접 (11/3)'), A.newTopic('어머니 건강')];
+  P['라온'].topics = [A.newTopic('결혼 준비 11월 20일')];          // 7일 넘음
+  P['하늘'].topics = [A.newTopic('비자 10/30')]; P['하늘'].last = '2026-10-09';
+  P['아라'].last = '2026-10-19'; P['마루'].last = '2026-10-20'; P['사랑'].last = '2026-10-27';
+  P['보관'].arch = '2026-10-01'; P['보관'].last = '2026-09-01';
+  const nd = A.newTarget('person', '11/1 수련회 준비'); db.T.push(nd); P.nd = nd;
+  const G = (n, ids, parent) => { const g = A.newGroup(n, '#888'); if (parent) g.parent = parent.id; g.lines = ids.map((id, i) => ({ id: n + i, segs: [[id]], r: {}, text: '' })); db.G.push(g); return g; };
+  const fam = G('가족', [P['가람'].id, P['나래'].id]), yo = G('청년부', [P['다온'].id, P['라온'].id, P['보관'].id]);
+  G('새가족', [P['사랑'].id, P['아라'].id, P['라온'].id], yo); G('선교', [P['하늘'].id, P['마루'].id]); G('빈 그룹', []);
+  db.log[T0] = { d: [P['가람'].id, P['나래'].id, P['라온'].id], p: {}, k: [], s: 0 };
+  const sh = A.answeredList; P['다온'].topics = [Object.assign(A.newTopic('새 가족 정착'), { ans: '2026-10-26' })]; P['나래'].topics = [Object.assign(A.newTopic('수능 평안'), { ans: '2026-10-25' })];
+  const r = A.dayGlance(db, T0, T0);
+  const row = o => [o.g.name, o.done.length + '/' + o.n];
+  sc.eq('⭐㉗ 그룹마다 오늘 기도한 이름 — 큰 그룹은 서브 그룹까지 합(겹치는 이름 한 번) · 보관한 이름 · 빈 그룹은 빼고', r.groups.map(o => [row(o), o.subs.map(row)]),
+    [[['가족', '2/2'], []], [['청년부', '1/4'], [['새가족', '1/3']]], [['선교', '0/2'], []]]);
+  sc.eq('㉗ 아직 기도하지 못한 이름', r.groups[1].left.map(id => db.T.find(t => t.id === id).name), ['다온', '사랑', '아라']);
+  sc.eq('⭐㉗ 다가오는 날 — 이름 · 열린 기도 제목 속 날짜, 오늘부터 7일 안, 가까운 순', r.soon.map(o => [o.t.name, o.what, o.date, o.left]),
+    [['하늘', '비자 10/30', '2026-10-30', 2], ['11/1 수련회 준비', '11/1 수련회 준비', '2026-11-01', 4], ['가람', '취업 면접 (11/3)', '2026-11-03', 6]]);
+  sc.eq('⭐㉗ 오래 못 한 기도 — 지도에 든 이름 중 마지막 기도가 먼 셋 · 오늘 기도한 것 · 보관한 것 빼고', r.stale.map(o => [o.t.name, o.ago]), [['하늘', 19], ['아라', 9], ['마루', 8]]);
+  sc.eq('⭐㉗ 감사 — 이번 주(월 10/26 부터) 응답만', r.thanks.map(o => [o.t.name, o.tp && o.tp.t, o.at]), [['다온', '새 가족 정착', '2026-10-26']]);
+  const past = A.dayGlance(db, '2026-10-27', T0);
+  sc.eq('⭐㉗ 지난 날 — 그룹 칸만(다가오는 날 · 오래 못 한 기도 · 감사는 오늘만 뜻이 있다)', [past.groups.length, past.soon.length, past.stale.length, past.thanks.length], [3, 0, 0, 0]);
 }
 
 sc.done();

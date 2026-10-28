@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1029-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1029-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1029-1';
+const APP_VERSION = 'v. 26-1029-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1486,6 +1486,39 @@ function monthGlance(db, dt, ss, month, today) {
   const ans = answeredList(db).filter(x => { const d = x.tp ? x.tp.ans : x.at; return d && d >= a && d <= b; }).length;
   return { streak, best, bestA, bestB: best ? addDays(bestA, best - 1) : '', secs, days, avg: days ? secs / days : 0,
     prev, prevAvg: prev / pdays, by, slot, top, stale, ans, isNow: a <= today && today <= b };
+}
+
+// ── There D탭 아래 네 칸 (HB 1028-3 6-2b) — 새로 저장하는 것 없이 이미 있는 기록만 읽는다 ──
+//  groups: 그룹마다 그날 기도한 이름 [{g, n, done:[id], left:[id], subs:[같은 모양]}]. 이름 = 지도 그룹에 든 사람 · 항목(보관 · 응답한 것 빼고).
+//          큰 그룹은 서브 그룹까지 합한다(겹치는 이름은 한 번) — 서브 그룹은 따로 한 줄씩. 이름이 하나도 없는 그룹은 뺀다.
+//  soon:   (오늘만) 이름 · 열린 기도 제목 속 날짜(nameDate)가 오늘부터 7일 안 — 가까운 순 다섯 [{t, what, date, left}]
+//  stale:  (오늘만) 오래 못 한 기도 셋 — 지도에 든 이름 중 마지막 기도(last)가 가장 먼 것. 오늘 기도한 것 · 한 번도 안 한 것은 뺀다(달력 아래 요약과 같은 잣대)
+//  thanks: (오늘만) 이번 주(월요일부터) 응답한 기도 제목 · 항목 [{t, tp, at}]
+//  지난 날을 볼 때는 groups 만 — 그날 '다가오는 날' · '오래 못 한' 은 뜻이 없다
+function dayGlance(db, date, today) {
+  const alive = t => !!t && !isShelved(t);
+  const ds = new Set(((db.log || {})[date] || {}).d || []);
+  const one = (g, ids) => { const all = [...new Set(ids)].filter(id => alive(findT(db, id))); return { g: g, n: all.length, done: all.filter(id => ds.has(id)), left: all.filter(id => !ds.has(id)) }; };
+  const groups = topGroups(db).map(g => {
+    const kids = kidsOf(db, g.id), o = one(g, groupPids(g).concat(...kids.map(groupPids)));
+    o.subs = kids.map(k => one(k, groupPids(k))).filter(x => x.n);
+    return o;
+  }).filter(o => o.n);
+  const out = { groups: groups, soon: [], stale: [], thanks: [] };
+  if (date !== today) return out;
+  const end = addDays(today, 7);
+  db.T.filter(alive).forEach(t => {
+    const put = txt => { const d = nameDate(txt, today); if (d && d >= today && d <= end) out.soon.push({ t: t, what: txt, date: d, left: daysBetween(today, d) }); };
+    put(t.name); (t.topics || []).filter(tp => !tp.ans).forEach(tp => put(tp.t));
+  });
+  out.soon = out.soon.sort((p, q) => p.date.localeCompare(q.date) || p.t.name.localeCompare(q.t.name, 'ko')).slice(0, 5);
+  const placed = new Set(); (db.G || []).forEach(g => groupPids(g).forEach(id => placed.add(id)));
+  out.stale = db.T.filter(t => alive(t) && t.kind !== 'group' && t.last && t.last < today && placed.has(t.id) && !ds.has(t.id))
+    .sort((p, q) => p.last.localeCompare(q.last) || p.name.localeCompare(q.name, 'ko')).slice(0, 3).map(t => ({ t: t, ago: daysBetween(t.last, today) }));
+  const ws = addDays(today, -((parseYmd(today).getDay() + 6) % 7));   // 이번 주 월요일
+  out.thanks = answeredList(db).map(x => ({ t: x.t, tp: x.tp, at: x.tp ? x.tp.ans : x.at })).filter(o => o.at && o.at >= ws && o.at <= today)
+    .sort((p, q) => q.at.localeCompare(p.at)).slice(0, 5);
+  return out;
 }
 
 // ── 보관 · 항목 응답 (O-5, HB 2026-10-19) ──
@@ -7368,20 +7401,48 @@ function openThereDash(view, at, soft) {
     load: SY.user ? () => loadWordThere().then(l => ({ thereLog: l })) : null,
     note: SY.user ? '' : '로그인하면 BLOCK7 · Sweeter · 성경 기록도 함께 보입니다 (설정 › 계정).',
     // 기도 항목 이름 — 톡 = 상세, 길게 · 우클릭 = 그 항목부터 한 장씩 기도 (P3′-2). 이름으로 찾는다(기록에 id 가 없다)
-    item: { has: n => !!itemByName(n), open: n => {
-      const t = itemByName(n); if (!t) return;
+    item: { has: n => !!itemByName(n), topics: tdTopics, open: n => {
+      const t = tdItem(n); if (!t) return;
       // 대시보드는 닫지 않고 상세를 그 위에 얹는다 — 닫으면 처음 화면으로 다시 열려 스크롤이 사라지고, 사이에 기록 화면이 비쳤다
       TD_OPTS.esc = false;   // 상세가 떠 있는 동안 Esc 는 상세가 받는다(앱의 닫기 표)
       document.body.classList.add('td-under');
       if (t.kind === 'group') pushLayer({ type: 'group', id: t.id }); else openTarget(t.id);
       const top = UI.layers[UI.layers.length - 1]; if (top) top.fromDash = true;
-    }, pray: n => { const t = itemByName(n); if (t) focusFromItem(t.id); } },
+    }, pray: n => { const t = tdItem(n); if (t) focusFromItem(t.id); } },
+    extra: tdExtraHTML,   // D탭 아래 네 칸 (1028-3 6-2b)
     edit: { open: tdEdit, del: tdDel },   // 기도노트 기록 줄 — 톡 = 고치기, 왼쪽으로 밀기 = 지우기 (1028-3 5-1 · 5-2)
     onClose: () => { tdUnderOff(); if (UI.tab === 'hist') renderView(); }
   };
   TDASH.open(TD_OPTS);
 }
 let TD_OPTS = null;
+// 대시보드가 넘기는 이름 — 흐름의 이름은 글자, 아래 네 칸은 '#id'(그룹과 사람 이름이 같아도 헷갈리지 않게)
+function tdItem(n) { n = String(n || ''); return n[0] === '#' ? findAny(DB, n.slice(1)) : itemByName(n); }
+// 흐름에서 이름 옆에 보일 기도 제목 — 열린 것 둘까지
+function tdTopics(n) { const t = tdItem(n); if (!t) return ''; const a = (t.topics || []).filter(tp => !tp.ans && tp.t).map(tp => tp.t); return a.slice(0, 2).join(' · ') + (a.length > 2 ? ' 외 ' + (a.length - 2) : ''); }
+// ── There D탭 아래 네 칸 (HB 1028-3 6-2b) — 오늘 기도한 이름 → 다가오는 날 → 오래 못 한 기도 → 감사. 내용 없는 칸은 숨긴다 ──
+//   숫자 · 규칙은 pray-core dayGlance(tests/test_pray.js ㉗). 성경 구절 · '양 · 목양' 같은 말은 쓰지 않는다(HB — 일반 성도가 쓰는 앱)
+//   이름 줄: 톡 = 상세(대시보드 위에 얹힘 — td-under) · 길게 = 그 이름부터 한 장 기도 / 그룹 줄: 톡 = 그 그룹부터 한 장 기도(오늘 아멘한 이름은 건너뜀)
+function tdExtraHTML(date, isToday) {
+  const r = dayGlance(DB, date, TODAY);
+  const head = (t, sub) => '<h4 style="color:#5b8fcc">' + t + (sub ? ' <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + sub + '</span>' : '') + '</h4>';
+  const nm = id => (findAny(DB, id) || {}).name || '';
+  const dots = o => o.n <= 12 ? '<span class="tdash-dots">' + Array.from({ length: o.n }, (_, i) => '<i' + (i < o.done.length ? ' class="on"' : '') + '></i>').join('') + '</span>'
+    : '<span class="tdash-gbar"><i style="width:' + Math.round(o.done.length / o.n * 100) + '%"></i></span>';
+  const gRow = (o, sub) => '<div class="tdash-gr' + (sub ? ' sub' : '') + '" data-td="pray" data-v="#' + esc(o.g.id) + '" role="button"><b>' + esc(o.g.name) + '</b>' + dots(o) + '<em>' + o.done.length + ' / ' + o.n +
+    (!o.left.length ? ' · 모두 기도했습니다' : o.left.length <= 2 ? ' · ' + esc(o.left.map(nm).join(' · ')) : '') + '</em></div>';
+  const li = (t, what, right, cls) => '<div class="tdash-li tdash-item" data-td="item" data-v="#' + esc(t.id) + '"><span>' + esc(t.name) + (what ? '<span class="tdash-what">' + esc(what) + '</span>' : '') + '</span><small' + (cls ? ' class="' + cls + '"' : '') + '>' + right + '</small></div>';
+  const md = d => { const p = parseYmd(d); return (p.getMonth() + 1) + '/' + p.getDate() + ' (' + WEEK[p.getDay()] + ')'; };
+  const first = t => { const a = (t.topics || []).filter(tp => !tp.ans && tp.t); return a.length ? a[0].t : ''; };
+  let h = '';
+  if (r.groups.length) h += '<div class="tdash-sec">' + head((isToday ? '오늘' : '이날') + ' 기도한 이름', '그룹마다 몇 명') +
+    r.groups.map(o => gRow(o, false) + o.subs.map(x => gRow(x, true)).join('')).join('') + '<span class="tdash-note" style="margin-top:8px">줄을 누르면 그 그룹부터 한 장 기도 — 오늘 아멘한 이름은 건너뜁니다</span></div>';
+  if (r.soon.length) h += '<div class="tdash-sec">' + head('다가오는 날', '이름 · 기도 제목 속 날짜') +
+    r.soon.map(o => li(o.t, o.what !== o.t.name ? o.what : '', md(o.date) + ' · ' + (o.left === 0 ? '오늘' : o.left === 1 ? '내일' : o.left + '일 뒤'), o.left <= 2 ? 'soon' : '')).join('') + '</div>';
+  if (r.stale.length) h += '<div class="tdash-sec">' + head('오래 못 한 기도') + r.stale.map(o => li(o.t, first(o.t), o.ago + '일 전')).join('') + '</div>';
+  if (r.thanks.length) h += '<div class="tdash-sec">' + head('감사', '이번 주 응답') + r.thanks.map(o => li(o.t, o.tp ? o.tp.t : '', shortDate(o.at) + ' 응답')).join('') + '</div>';
+  return h;
+}
 // 상세가 닫혀 대시보드가 다시 드러날 때 — 기록이 바뀌었을 수 있고(취소는 DB 를 통째로 되돌림) 읽던 자리는 그대로 둔다
 function tdUnderOff() {
   if (TD_OPTS) TD_OPTS.esc = undefined;
@@ -7593,15 +7654,63 @@ const TDASH = (function () {
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
     return out;
   }
+  // 하루의 흐름 (HB 1028-3 6-2a) — 그날 기록을 시간 순서 한 줄로: [{x: collect 한 줄 | null, kids:[이름]}]
+  //   기도노트의 기도 한 번(ses)에는 그 안의 이름을 접어 넣는다 — 따로 나오던 'Map 기도' · '한 장 기도' 목록을 대신한다:
+  //     한 장 카드(fc) = fc.s 가 그 한 번의 id · Map 기도(mp) = 그 지도 There 가 시작한 때부터 다음 지도 There 가 시작하기 전까지 누른 것
+  //     (기도노트 sesKids 와 같은 잣대). mp 는 한 번 누른 것(같은 시작 · 같은 이름)이 한 줄이다 — mapPrayers 와 같다.
+  //   어느 기도에도 안 붙는 이름(날을 넘긴 기도 · 지운 기도의 옛 조각)은 버리지 않고 끝에 x:null 한 줄로 모은다.
+  //   kid = {kind:'fc'|'mp', ids, n, k, names, d, amen, t}
+  function dayFlow(ss, prayLog, date) {
+    const L = (prayLog || {})[date] || {}, sec = v => Math.max(0, Math.round(+v || 0));
+    const fcAll = (Array.isArray(L.fc) ? L.fc : []).filter(Boolean), mpAll = (Array.isArray(L.mp) ? L.mp : []).filter(Boolean);
+    const day = ss.filter(x => x.date === date).slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99') || ((a.t || 0) - (b.t || 0)));
+    const mapStarts = day.filter(x => x.app === 'pray' && x.src === 'map' && x.t).map(x => x.t).sort((a, b) => a - b);
+    const used = new Set(), aOf = e => +e.a || +e.t || 0;
+    const fcKid = e => ({ kind: 'fc', ids: [String(e.id || '')], n: String(e.n || '이름 없음'), k: String(e.k || ''), names: [], d: sec(e.d), amen: !!e.amen, t: aOf(e) });
+    const mpKids = list => {
+      const by = {}, out = [];
+      list.forEach(e => {
+        const key = aOf(e) + '|' + (e.k || e.n || '');
+        let o = by[key];
+        if (!o) { o = by[key] = { kind: 'mp', ids: [], n: String(e.k || e.n || '이름 없음'), k: '', names: [], d: 0, amen: false, t: aOf(e) }; out.push(o); }
+        o.d += sec(e.d); if (e.id) o.ids.push(String(e.id)); if (e.n && o.names.indexOf(String(e.n)) < 0) o.names.push(String(e.n));
+      });
+      return out;
+    };
+    const byT = (a, b) => a.t - b.t;
+    const rows = day.map(x => {
+      let kids = [];
+      if (x.app === 'pray' && x.id) {
+        if (x.src === 'map') {
+          const nx = mapStarts.find(t => t > x.t) || Infinity;
+          const m = mpAll.filter(e => !used.has(e) && aOf(e) >= x.t && aOf(e) < nx); m.forEach(e => used.add(e)); kids = mpKids(m);
+        }
+        const f = fcAll.filter(e => !used.has(e) && e.s === x.id); f.forEach(e => used.add(e)); kids = kids.concat(f.map(fcKid));
+      }
+      return { x: x, kids: kids.sort(byT) };
+    });
+    const lf = fcAll.filter(e => !used.has(e)), lm = mpAll.filter(e => !used.has(e));
+    if (lf.length || lm.length) rows.push({ x: null, kids: lf.map(fcKid).concat(mpKids(lm)).sort(byT) });
+    return rows;
+  }
+  // 말씀(BLOCK7 · Sweeter · 성경) / 기도(기도노트) 두 갈래 합 (HB 1028-3 6-2a — 세 앱 같이)
+  function wordPray(ss) { let word = 0, pray = 0; ss.forEach(x => { if (x.app === 'pray') pray += x.d; else word += x.d; }); return { word: word, pray: pray }; }
+  const WP = [['word', '말씀', '#a892d6'], ['pray', '기도', '#5b8fcc']];
+  function wpLegend(ss) {
+    const o = wordPray(ss), tot = o.word + o.pray; if (!tot) return '';
+    const on = WP.filter(a => o[a[0]] > 0);
+    return '<div class="tdash-bar">' + on.map(a => '<i style="display:block;flex:0 0 ' + (o[a[0]] / tot * 100).toFixed(2) + '%;background:' + a[2] + '"></i>').join('') + '</div>' +
+      '<div class="tdash-leg">' + on.map(a => '<div><span><i class="tdash-dot" style="background:' + a[2] + '"></i>' + a[1] + '</span><b>' + hm(o[a[0]]) + '</b></div>').join('') + '</div>';
+  }
   // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
   //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
   const itemName = (S, n, tag) => S.item && S.item.has(n) ? '<' + tag + ' class="tdash-item" data-td="item" data-v="' + esc(n) + '">' + esc(n) + '</' + tag + '>' : '<' + tag + '>' + esc(n) + '</' + tag + '>';
   // 고칠 수 있는 줄 (HB 1028-3 5-1 · 5-2) — 부른 쪽이 opts.edit 를 주면(기도노트) 기도노트 기록 줄만:
   //   톡 = 고치기(edit.open) · 왼쪽으로 밀기 = 지우기(edit.del). 이름 글자(tdash-item)를 누르면 예전대로 상세.
   //   BLOCK7 · Sweeter · 성경 줄은 그 앱 것이라 여기서 못 고친다.
-  const edRow = (S, kind, date, ids, inner) => S.edit && ids
-    ? '<div class="tdash-sw"><div class="tdash-ses tdash-ed" data-ed="' + kind + '" data-d="' + esc(date) + '" data-v="' + esc(ids) + '">' + inner + '</div></div>'
-    : '<div class="tdash-ses">' + inner + '</div>';
+  const edRow = (S, kind, date, ids, inner, cls) => S.edit && ids
+    ? '<div class="tdash-sw"><div class="' + (cls || 'tdash-ses') + ' tdash-ed" data-ed="' + kind + '" data-d="' + esc(date) + '" data-v="' + esc(ids) + '">' + inner + '</div></div>'
+    : '<div class="' + (cls || 'tdash-ses') + '">' + inner + '</div>';
   // 기간 안의 Map 기도 · 한 장 기도를 이름마다 모아 오래 한 순서로
   function mapTop(S, a, b, n) {
     const m = {}; const put = (k, d) => { const o = m[k] || (m[k] = { s: 0, n: 0 }); o.s += d; o.n++; };
@@ -7718,7 +7827,30 @@ const TDASH = (function () {
 .tdash-ses small{display:block;font-size:12px;color:var(--tx3)}
 .tdash-ses em{font-style:normal;font-size:14px;font-variant-numeric:tabular-nums}
 /* 고칠 수 있는 줄 — 왼쪽으로 밀면 뒤의 '지우기' 가 드러난다 (HB 1028-3 5-1) */
+/* 흐름 (1028-3 6-2a) — 기도 한 번(tdash-ses)과 그 아래 이름(tdash-kid)이 한 덩어리(tdash-blk), 줄은 덩어리 끝에만 */
+.tdash-blk{border-bottom:1px solid var(--bd);padding-bottom:4px}
+.tdash-blk .tdash-ses{border-bottom:0}
+.tdash-kid{display:grid;grid-template-columns:48px 4px minmax(0,1fr) auto;gap:12px;align-items:center;padding:6px 0;position:relative;background:var(--bg)}
+.tdash-kid>i{align-self:stretch;justify-self:center;width:2px;border-radius:1px;background:#2a3446}
+.tdash-kn{font-size:13.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tdash-kn small{margin-left:7px;font-size:12px;color:var(--tx3)}
+.tdash-kid em{font-style:normal;font-size:12.5px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.tdash-kid.lo .tdash-kn{color:var(--tx2)}
+.tdash-am{display:inline-block;width:5px;height:5px;border-radius:3px;background:#dab87a;margin-left:7px;vertical-align:2px}
 .tdash-sw{position:relative;overflow:hidden}
+/* 부른 쪽 칸 (기도노트 1028-3 6-2b) — 그룹 줄 · 점 · 이름 옆 글 */
+.tdash-gr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tdash-gr b{font-weight:400;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tdash-gr.sub b{padding-left:14px;font-size:13.5px;color:var(--tx2)}
+.tdash-gr.sub b::before{content:"└ ";color:var(--tx3)}
+.tdash-gr em{font-style:normal;font-size:12.5px;color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tdash-dots{display:flex;gap:4px}
+.tdash-dots i{width:8px;height:8px;border-radius:4px;background:#2a2d33}
+.tdash-dots i.on{background:#5b8fcc}
+.tdash-gbar{display:block;width:64px;height:6px;border-radius:3px;background:#2a2d33;overflow:hidden}
+.tdash-gbar i{display:block;height:100%;background:#5b8fcc}
+.tdash-what{margin-left:7px;font-size:12.5px;color:var(--tx3)}
+.tdash-li .soon{color:#dab87a}
 .tdash-sw::before{content:"지우기";position:absolute;inset:0 0 1px 0;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;background:#5a2a2a;color:#f1d6d2;font-size:13px}
 .tdash-ed{position:relative;background:var(--bg);cursor:pointer;-webkit-tap-highlight-color:transparent;will-change:transform}
 .tdash-note{font-size:11.5px;color:#6c6962;line-height:1.6}
@@ -7841,8 +7973,10 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   }
   function viewDay(S) {
     const d = S.at, ss = inRange(S.ss, d, d), tot = total(ss), pd = parse(d);
+    // 부른 쪽이 더 보여 줄 칸(기도노트: 오늘 기도한 이름 · 다가오는 날 · 오래 못 한 기도 · 감사) — 기록이 없는 날에도 보인다
+    const ex = S.extra ? (S.extra(d, d === S.today) || '') : '';
     let h = nav(S, (pd.getMonth() + 1) + '월 ' + pd.getDate() + '일 ' + (pd.getDay() ? WK[pd.getDay()] + '요일' : '주일'), (tot ? dur(tot) + ' · ' + ss.length + '번' : '기록 없음'), d >= S.today);
-    if (!tot) return h + FIX + '<div class="tdash-empty">이날은 기록이 없습니다</div>';
+    if (!tot) return h + FIX + '<div class="tdash-empty">이날은 기록이 없습니다</div>' + ex;
     const timed = ss.filter(x => /^\d{1,2}:\d{2}/.test(x.time));
     if (timed.length) {
       h += '<div><div class="tdash-tl">' + timed.map(x => {
@@ -7850,28 +7984,29 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         return '<i style="left:' + st.toFixed(2) + '%;width:' + Math.max(0.6, x.d / 60 / 1440 * 100).toFixed(2) + '%;background:' + APP[x.app].color + '"></i>';
       }).join('') + '</div><div class="tdash-tlh"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>24시</span></div></div>';
     }
-    const by = {}; ss.forEach(x => { by[x.app] = (by[x.app] || 0) + x.d; });
-    h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>' + FIX;
-    h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x => edRow(S, 'ses', d, x.app === 'pray' ? (x.old ? '-' : x.id) : '',
-      '<span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
-      esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
-    // 지도 There 안에서 누른 것들 — 위 '기도 지도' 시간 안에 든 몫이라 합계에는 다시 더하지 않는다
-    const mp = mapPrayers(S.data.prayLog, d, d);
-    if (mp.length) {
-      const sum = mp.reduce((s, x) => s + x.d, 0);
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x => edRow(S, 'mp', d, x.ids.join(','),
-        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
-        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
-    }
-    // 한 장 기도로 누구를 — 이름마다 머문 시간 · 아멘 / 넘김 (위 '한 장씩 기도하기' 시간 안의 몫)
-    const fc = focusPrayers(S.data.prayLog, d, d);
-    if (fc.length) {
-      const sum = fc.reduce((s, x) => s + x.d, 0), am = fc.filter(x => x.amen).length;
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x => edRow(S, 'fc', d, x.id,
-        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
-        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em>')).join('') + '</div>';
-    }
-    return h;
+    // 맨 위 막대 — 앱별이 아니라 말씀 · 기도 두 갈래 (1028-3 6-2a · 세 앱 같이). W · M 은 앱별 그대로
+    h += '<div style="display:flex;flex-direction:column;gap:12px">' + wpLegend(ss) + '</div>' + FIX;
+    // 흐름 — 말씀과 기도가 시간 순서 한 줄로, 기도 한 번 아래에 그 안의 이름 (따로 나오던 Map 기도 · 한 장 기도 목록 대신)
+    const tm = sec => sec < 60 ? (sec || 0) + '초' : dur(sec);
+    const kidRow = k => {
+      const tp = S.item && S.item.topics ? S.item.topics(k.n) : '';
+      const sub = k.kind === 'mp' ? (k.names.length > 1 || (k.names[0] && k.names[0] !== k.n) ? k.names.join(' · ') : tp) : tp;
+      return edRow(S, k.kind, d, k.ids.join(','), '<span></span><i></i><div class="tdash-kn">' + itemName(S, k.n, 'span') + (sub ? '<small>' + esc(sub) + '</small>' : '') +
+        (k.amen ? '<i class="tdash-am" aria-label="아멘"></i>' : '') + '</div><em>' + tm(k.d) + '</em>', 'tdash-kid' + (k.kind === 'fc' && !k.amen ? ' lo' : ''));
+    };
+    const rowTop = (x, kids) => {
+      if (!x) return '<div class="tdash-ses"><span>—</span><i style="background:#5b8fcc;opacity:.4"></i><div style="min-width:0"><b>이름만 남은 기록</b><small>기도 시간과 이어지지 않은 이름</small></div><em></em></div>';
+      let title = x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There'), sub = APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(');
+      if (x.app === 'pray' && kids.length) {
+        const am = kids.filter(k => k.amen).length, mp = kids.filter(k => k.kind === 'mp').length, fc = kids.length - mp;
+        sub = [fc ? fc + '명' + (am ? ' · 아멘 ' + am : '') : '', mp ? 'Map 기도 ' + mp + '번' : ''].filter(Boolean).join(' · ');
+      }
+      return edRow(S, 'ses', d, x.app === 'pray' ? (x.old ? '-' : x.id) : '',
+        '<span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></div><em>' + dur(x.d) + '</em>');
+    };
+    h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">흐름 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 말씀과 기도가 한 줄로</span></h4>' +
+      dayFlow(S.ss, S.data.prayLog, d).map(r => '<div class="tdash-blk">' + rowTop(r.x, r.kids) + r.kids.map(kidRow).join('') + '</div>').join('') + '</div>';
+    return h + ex;
   }
   function nav(S, title, sub, atEnd) {
     return '<div class="tdash-nav"><button data-td="prev" aria-label="이전">' + CHEV(-1) + '</button><div><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></div>' +
@@ -7895,7 +8030,8 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function mount(el, opts) {
     injectCSS();
     opts = opts || {};
-    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null, edit: opts.edit && typeof opts.edit.open === 'function' ? opts.edit : null };
+    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null, edit: opts.edit && typeof opts.edit.open === 'function' ? opts.edit : null,
+      extra: typeof opts.extra === 'function' ? opts.extra : null };   // D탭 아래 부른 쪽 칸 (기도노트 1028-3 6-2b) — (날, 오늘인가) → HTML
     // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
@@ -7995,6 +8131,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         return;
       }
       if (a === 'item') { e.stopPropagation(); if (S.item && S.item.open) S.item.open(b.dataset.v); return; }
+      if (a === 'pray') { e.stopPropagation(); if (S.item && S.item.pray) S.item.pray(b.dataset.v); return; }   // 부른 쪽 칸의 그룹 줄 — 그 그룹부터 한 장 기도 (기도노트 6-2b)
       if (a === 'day') { e.stopPropagation(); tabTransit(1, () => { S.view = 'day'; setAt(b.dataset.v); after(); }); }
       else if (a === 'prev' || a === 'next') { e.stopPropagation(); const k = a === 'prev' ? -1 : 1; transit(k, () => { step(k); after(); }); }
     };
@@ -8174,7 +8311,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   }
   const isOpen = () => !!OV;
   const redraw = () => { if (OV && OV._m) OV._m.redraw(); };   // 부른 쪽이 기록을 고친 뒤 (기도노트 5-1 · 5-2)
-  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC };
+  return { collect, mapPrayers, focusPrayers, dayFlow, wordPray, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC };
 })();
 </script>
 </body>
