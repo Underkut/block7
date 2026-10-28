@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1028-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1028-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-3';
+const APP_VERSION = 'v. 26-1028-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2432,6 +2432,8 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 /* 겹 화면(Sweeter)이 떠 있는 동안 한 장 기도의 반짝이를 멈춘다 (HB 2026-10-28 '기도노트 안에서 한 박자 느리다') —
    겹 화면은 투명이라(밀어 닫을 때 비치게) 아래가 움직이면 위의 Sweeter 가 움직일 때마다 둘을 함께 다시 그린다 */
 body.emb-up .pts .pt,body.emb-up .pts{animation-play-state:paused !important}
+/* 겹 화면이 덮고 있는 동안 한 장 기도는 아예 그리지 않는다 — 밀려 나가는 동안(emb-peek)만 보인다 */
+body.emb-up:not(.emb-peek) #focus,body.emb-up:not(.emb-peek) #app{visibility:hidden}
 .gpop{position:fixed;z-index:420;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;padding:5px 6px;color:var(--tx);
   background:color-mix(in srgb,var(--bg) 38%,transparent);-webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
   border:1px solid color-mix(in srgb,var(--tx3) 38%,transparent);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
@@ -2605,7 +2607,7 @@ const ICONS = {
   map: '<rect x="3.5" y="3.5" width="7" height="9" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="5" rx="1.5"/><rect x="3.5" y="15.5" width="7" height="5" rx="1.5"/><rect x="13.5" y="11.5" width="7" height="9" rx="1.5"/>',
   list: '<line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
   keep: '<path d="M7 3.5h10v15.6L12 15.3l-5 3.8z"/>',   // BLOCK7 말씀 전체화면 '저장' 단추와 같은 그림
-  bible: '<g transform="scale(1.2)"><path d="M10 5.2C8.4 4 6.2 3.6 3 3.8v11.4c3.2-.2 5.4.2 7 1.4 1.6-1.2 3.8-1.6 7-1.4V3.8c-3.2-.2-5.4.2-7 1.4z"/><path d="M10 5.2v11.4"/></g>',   // BLOCK7 · Sweeter 성경 단추와 같은 그림 (P2-2)
+  bible: '<path d="M12 6.24C10.08 4.8 7.44 4.32 3.6 4.56v13.68c3.84-.24 6.48.24 8.4 1.68 1.92-1.44 4.56-1.92 8.4-1.68V4.56c-3.84-.24-6.48.24-8.4 1.68z"/><path d="M12 6.24v13.68"/>',   // 1.2배를 좌표로 (transform 으로 키우면 선도 굵어졌다 · HB 2026-10-28)   // BLOCK7 · Sweeter 성경 단추와 같은 그림 (P2-2)
   book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
   card: '<rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/>',
   phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
@@ -4266,14 +4268,15 @@ function embedOpen(kind, b, c, name) {
   // 2.5초 안에 열렸다는 소식이 없으면(로그인 전 · 오프라인) 있는 그대로 보이고 닫기 단추를 낸다 — 갇히지 않게
   clearTimeout(L._t); L._t = setTimeout(() => L.classList.add('shown', 'stuck'), 2500);
 }
-function embedHide() { document.body.classList.remove('emb-up'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
-function embedDrop() { document.body.classList.remove('emb-up'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
+function embedHide() { document.body.classList.remove('emb-up', 'emb-peek'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
+function embedDrop() { document.body.classList.remove('emb-up', 'emb-peek'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
   const L = $('embedLayer'); if (!L) return;
   if (e.data.b7embed === 'idle') L._loaded = true;
   else if (e.data.b7embed === 'ready') { clearTimeout(L._t); L._loaded = true; if (L.classList.contains('on')) { L.classList.add('shown'); document.body.classList.add('emb-up'); } }
   else if (e.data.b7embed === 'close') embedHide();
+  else if (e.data.b7embed === 'peek') document.body.classList.toggle('emb-peek', !!e.data.on);
 });
 function bibleToRead() {
   const all = wordData().toRead || {}, key = x => x.o != null ? x.o : -(x.at || 0) / 1e13;
@@ -7019,6 +7022,14 @@ let WAKE = null, WAKE_V = null;
 const WAKE_MP4 = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAMrbW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAB9AAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAlV0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAB9AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAABAAAAAQAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAfQAAAAAAABAAAAAAHNbWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAABAAAAAgABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABeG1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAThzdGJsAAAAuHN0c2QAAAAAAAAAAQAAAKhhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAABAAEABIAAAASAAAAAAAAAABFUxhdmM2MC4zMS4xMDIgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAALmF2Y0MBQsAe/+EAFmdCwB7ZHsBEAAADAAQAAAMACDxYuSABAAVoy4PLIAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAAApAAAAKQAAAABhzdHRzAAAAAAAAAAEAAAACAABAAAAAABRzdHNzAAAAAAAAAAEAAAABAAAAHHN0c2MAAAAAAAAAAQAAAAEAAAACAAAAAQAAABxzdHN6AAAAAAAAAAAAAAACAAAChgAAAAoAAAAUc3RjbwAAAAAAAAABAAADWwAAAGJ1ZHRhAAAAWm1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAG1kaXJhcHBsAAAAAAAAAAAAAAAALWlsc3QAAAAlqXRvbwAAAB1kYXRhAAAAAQAAAABMYXZmNjAuMTYuMTAwAAAACGZyZWUAAAKYbWRhdAAAAnAGBf//bNxF6b3m2Ui3lizYINkj7u94MjY0IC0gY29yZSAxNjQgcjMxMDggMzFlMTlmOSAtIEguMjY0L01QRUctNCBBVkMgY29kZWMgLSBDb3B5bGVmdCAyMDAzLTIwMjMgLSBodHRwOi8vd3d3LnZpZGVvbGFuLm9yZy94MjY0Lmh0bWwgLSBvcHRpb25zOiBjYWJhYz0wIHJlZj0zIGRlYmxvY2s9MTowOjAgYW5hbHlzZT0weDE6MHgxMTEgbWU9aGV4IHN1Ym1lPTcgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0xNiBjaHJvbWFfbWU9MSB0cmVsbGlzPTEgOHg4ZGN0PTAgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9MCB3ZWlnaHRwPTAga2V5aW50PTI1MCBrZXlpbnRfbWluPTEgc2NlbmVjdXQ9NDAgaW50cmFfcmVmcmVzaD0wIHJjX2xvb2thaGVhZD00MCByYz1jcmYgbWJ0cmVlPTEgY3JmPTIzLjAgcWNvbXA9MC42MCBxcG1pbj0wIHFwbWF4PTY5IHFwc3RlcD00IGlwX3JhdGlvPTEuNDAgYXE9MToxLjAwAIAAAAAOZYiEBb///w9FAAFPf4AAAAAGQZo4CvqA';
 function awakeSupported() { return !!((navigator.wakeLock && navigator.wakeLock.request) || document.createElement('video').canPlayType('video/mp4')); }
 function awakePref() { return devPref('awake', false) === true; }
+// 영상 대비책이 필요한가 — wakeLock 이 없거나, iOS · iPadOS 18.4 미만(홈 화면 앱에서 되는 척만 한다)
+function wakeNeedsVideo() {
+  if (!(navigator.wakeLock && navigator.wakeLock.request)) return true;
+  const ua = navigator.userAgent || '';
+  let m = /OS (\d+)_(\d+)/.exec(ua);
+  if (!m && /Macintosh/.test(ua) && navigator.maxTouchPoints > 1) m = /Version\/(\d+)\.(\d+)/.exec(ua);   // iPadOS 는 맥처럼 보인다
+  return !!m && (+m[1] * 100 + +m[2]) < 1804;
+}
 function awakeWanted() { return awakePref() && (MT.on || F.on) && !document.hidden; }
 function awakeOn() {
   if (!awakeWanted()) return;
@@ -7029,6 +7040,7 @@ function awakeOn() {
       if (!awakeWanted()) awakeOff();
     }).catch(() => {});
   }
+  if (!wakeNeedsVideo()) return;   // 화면 켜 두기가 제대로 되는 기기(iOS 18.4+)는 영상을 돌리지 않는다 — 늘 도는 영상은 화면을 무겁게 한다
   if (!WAKE_V) {
     const v = WAKE_V = document.createElement('video');
     v.muted = true; v.loop = true; v.playsInline = true;
