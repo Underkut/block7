@@ -6,6 +6,7 @@
 //  ③ 기도노트 ses 와 합계 s 를 **두 번 세지 않는다** (s 는 ses 를 이미 품고 있다)
 //  ④ 날마다 합계 · 주(월요일부터) · 달 경계
 //  ⑤ 덩어리가 index.html · index-dev.html · sweeter-dev.html · pray/index.html 에 원본과 같은 글자로 있다
+//  ⑨ 하루의 흐름(1028-3 6-2a) — 기도 한 번 아래 그 안의 이름(fc = 같은 sid · mp = 그 지도 There 시작 ~ 다음 지도 There 시작 전) · 남은 이름은 끝 한 줄 · 말씀 / 기도 두 갈래
 //  ⑧ 전체 화면(아이폰): 시계 줄은 THERE 줄이 덮고 · 고정 영역 바탕은 양옆 여백까지 · 열린 동안 페이지 바탕/theme-color 는 대시보드 색, 닫으면 되돌림
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -86,6 +87,30 @@ const T = ctx.T;
   sc.eq('⭐⑦ 처음 본 차례 · 이름 · 그룹 · 아멘', fc.map(x => [x.time, x.n, x.k, x.d, x.amen]), [['06:30', '가나', '가족', 40, true], ['06:30', '다라', '가족', 10, false]]);
   sc.eq('⭐⑦ 합계는 한 장 기도 시간 그대로', T.collect({}, pray).reduce((a, x) => a + x.d, 0), 120);
   sc.eq('⑦ 기간 밖 · fc 없는 날은 빈 목록', [T.focusPrayers(pray, '2026-10-20', '2026-10-21').length, T.focusPrayers({ '2026-10-01': { s: 3 } }).length], [0, 0]);
+}
+// ⑨ 하루의 흐름 (HB 1028-3 6-2a)
+{
+  const D = '2026-10-28', at = (h, m) => new Date(2026, 9, 28, h, m || 0).getTime();
+  const there = { [D]: [{ ref: '시편 23:1', time: '07:55', t: at(7, 55), d: 840, app: 'block7', src: 'gnb' }, { ref: '', time: '21:30', t: at(21, 30), d: 360, app: 'sweeter', src: 'bible' }] };
+  const pray = { [D]: { s: 840 + 360 + 120 + 600, ses: [
+      { id: 'F1', t: at(5, 40), time: '05:40', d: 840, src: 'focus' },
+      { id: 'M1', t: at(12, 30), time: '12:30', d: 360, src: 'map' },
+      { id: 'M2', t: at(20, 0), time: '20:00', d: 120, src: 'map' },
+      { id: 'X1', t: at(22, 10), time: '22:10', d: 600, src: 'manual' }],
+    fc: [{ id: 'c2', s: 'F1', pid: 'b', n: '나래', k: '가족', a: at(5, 43), d: 130, amen: true }, { id: 'c1', s: 'F1', pid: 'a', n: '가람', k: '가족', a: at(5, 40), d: 180, amen: true },
+         { id: 'c3', s: 'F1', pid: 'c', n: '다온', k: '청년부', a: at(5, 45), d: 20, amen: false }, { id: 'c9', s: 'OLD', pid: 'z', n: '하늘', k: '', a: at(4, 0), d: 30, amen: true }],
+    mp: [{ id: 'm1', a: at(12, 31), t: at(12, 34), pid: 'd', d: 90, n: '마루', k: '청년부' }, { id: 'm2', a: at(12, 31), t: at(12, 34), pid: 'e', d: 90, n: '바다', k: '청년부' },
+         { id: 'm3', a: at(20, 1), t: at(20, 2), pid: 'f', d: 60, n: '사랑', k: '사랑' }, { id: 'm0', a: at(11, 0), t: at(11, 1), pid: 'g', d: 30, n: '아라', k: '아라' }] } };
+  const ss = T.collect(there, pray), fl = T.dayFlow(ss, pray, D);
+  const top = r => r.x ? (r.x.app === 'pray' ? r.x.src : r.x.app) : '남은';
+  sc.eq('⭐⑨ 말씀과 기도가 시간 순서 한 줄로', fl.map(r => (r.x ? r.x.time : '-') + ' ' + top(r)), ['05:40 focus', '07:55 block7', '12:30 map', '20:00 map', '21:30 bible', '22:10 manual', '- 남은']);
+  sc.eq('⭐⑨ 한 장 기도 아래 같은 sid 카드 — 처음 본 차례', fl[0].kids.map(k => [k.kind, k.n, k.d, k.amen, k.ids.join()]), [['fc', '가람', 180, true, 'c1'], ['fc', '나래', 130, true, 'c2'], ['fc', '다온', 20, false, 'c3']]);
+  sc.eq('⭐⑨ 지도 There 아래 그 시작부터 다음 지도 There 전까지 누른 것 (한 번 누른 것은 한 줄)', [fl[2].kids.map(k => [k.kind, k.n, k.names.join(','), k.d, k.ids.join()]), fl[3].kids.map(k => k.n)], [[['mp', '청년부', '마루,바다', 180, 'm1,m2']], ['사랑']]);
+  sc.eq('⑨ 말씀 · 직접 적은 기도에는 이름이 없다', [fl[1].kids.length, fl[5].kids.length], [0, 0]);
+  sc.eq('⭐⑨ 어느 기도에도 안 붙는 이름(지난 sid · 첫 지도 There 전에 누른 것)은 끝 한 줄로 — 버리지 않는다', fl[6].kids.map(k => k.n).sort(), ['아라', '하늘']);
+  sc.eq('⑨ 합계는 그대로 (흐름은 다시 더하지 않는다)', ss.reduce((a, x) => a + x.d, 0), 840 + 360 + 840 + 360 + 120 + 600);
+  sc.eq('⭐⑨ 말씀 / 기도 두 갈래 — 말씀 = BLOCK7 · Sweeter · 성경', T.wordPray(ss.filter(x => x.date === D)), { word: 1200, pray: 1920 });
+  sc.eq('⑨ 기도노트 기록이 없는 날(BLOCK7 · Sweeter 만)', T.dayFlow(T.collect(there, {}), {}, D).map(r => r.kids.length), [0, 0]);
 }
 // ⑧ 전체 화면 — 아이폰 홈 화면 앱 사진 (HB 2026-10-25): 맨 위 구멍 · 큰 숫자 옆 '(' · 아래 띠 색
 {
