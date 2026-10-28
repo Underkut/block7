@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-5';
+const APP_VERSION = 'v. 26-1028-6';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2558,6 +2558,9 @@ body.emb-up:not(.emb-peek) #focus,body.emb-up:not(.emb-peek) #app{visibility:hid
 .f-end .f-name{font-size:30px}
 .pt{position:absolute;bottom:-10px;width:3px;height:3px;border-radius:2px;background:var(--ac);opacity:0;animation:rise linear infinite;z-index:1}
 @keyframes rise{0%{transform:translateY(0);opacity:0}12%{opacity:.55}100%{transform:translateY(-82vh);opacity:0}}
+/* 위에서 내려오는 빛 (1028-3 2) — 올라가는 것보다 느리고 옅게, 눈처럼 */
+.pt.dn{bottom:auto;top:-10px;animation-name:fall}
+@keyframes fall{0%{transform:translateY(0);opacity:0}14%{opacity:.4}100%{transform:translateY(82vh);opacity:0}}
 
 /* ── 알림 ── */
 /* 토스트는 늘 화면 한가운데 — 뜻 단위로 줄을 바꾼다(\n). 모든 앱 공통 지침 (CLAUDE.md '토스트') */
@@ -3061,14 +3064,58 @@ function focusStart(deck, at) {
   clearInterval(F.tick);
   F.tick = setInterval(() => { const s = Math.floor(focusSecs()); const n = $('fTime'); if (n) n.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
 }
+// ── 한 장 기도의 빛 알갱이 (HB 1028-3 2) — 올라가는 것(up) · 위에서 내려오는 것(dn) 두 갈래 ──
+// 손가락으로 양을 고른다: 화면 **아래 절반**에서 위로 밀면 올라가는 빛이 늘고 아래로 밀면 준다.
+// **위 절반**에서 아래로 밀면 내려오는 빛이 늘고 위로 밀면 준다. 고른 양은 이 기기에만 남긴다(devPref 'fdots' — 화면 크기마다 맞는 양이 다르다).
+// 처음값: 올라가는 것은 예전 그대로 16 · 내려오는 것은 아주 조금 3.
+const FDOT = { up: 16, dn: 3, max: 48, px: 16 };   // px = 손가락이 이만큼 움직일 때마다 하나
+function fdotsGet() { const o = devPref('fdots', null) || {}, n = (v, d) => Number.isFinite(+v) && v !== null ? Math.max(0, Math.min(FDOT.max, Math.round(+v))) : d; return { up: n(o.up, FDOT.up), dn: n(o.dn, FDOT.dn) }; }
+// fresh = 지금 막 더한 것 — 화면 가장자리에서 막 나오게(중간에서 갑자기 생기지 않게)
+function particle(dn, fresh) {
+  const left = (6 + Math.random() * 88).toFixed(1), dur = (dn ? 14 : 10) + Math.random() * 12, sz = dn ? (Math.random() < .5 ? 2 : 3) : (Math.random() < .3 ? 4 : (Math.random() < .5 ? 3 : 2));
+  const delay = fresh ? -Math.random() * dur * 0.06 : -Math.random() * 20;
+  return '<i class="pt' + (dn ? ' dn' : '') + '" style="left:' + left + '%;width:' + sz + 'px;height:' + sz + 'px;animation-duration:' + dur.toFixed(1) + 's;animation-delay:' + delay.toFixed(1) + 's"></i>';
+}
 function particles() {
-  let s = '';
-  for (let k = 0; k < 16; k++) {
-    const left = (6 + Math.random() * 88).toFixed(1), dur = (10 + Math.random() * 12).toFixed(1), delay = (-Math.random() * 20).toFixed(1), sz = Math.random() < .3 ? 4 : (Math.random() < .5 ? 3 : 2);
-    s += '<i class="pt" style="left:' + left + '%;width:' + sz + 'px;height:' + sz + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's"></i>';
-  }
+  const c = fdotsGet(); let s = '';
+  for (let k = 0; k < c.up; k++) s += particle(false);
+  for (let k = 0; k < c.dn; k++) s += particle(true);
   return s;
 }
+// 지금 화면의 알갱이 수를 n 에 맞춘다 — 더할 땐 가장자리에서 나오고, 뺄 땐 스르륵 옅어지며 사라진다
+function fdotsShow(kind, n) {
+  const box = document.querySelector('#focus .pts'); if (!box) return;
+  const dn = kind === 'dn', cur = [...box.querySelectorAll(dn ? '.pt.dn:not(.gone)' : '.pt:not(.dn):not(.gone)')];
+  if (cur.length < n) { let h = ''; for (let k = cur.length; k < n; k++) h += particle(dn, true); box.insertAdjacentHTML('beforeend', h); }
+  else cur.slice(n).forEach(x => { x.classList.add('gone'); if (x.animate && !mxQuiet()) x.animate([{ filter: 'opacity(1)' }, { filter: 'opacity(0)' }], { duration: 380, fill: 'forwards' }).onfinish = () => x.remove(); else x.remove(); });
+}
+(function () {
+  let st = null;
+  document.addEventListener('touchstart', e => {
+    st = null;
+    if (!F.on || UI.layers.length || SHEET || e.touches.length !== 1 || !e.target.closest || !e.target.closest('#focus') || e.target.closest('.f-top,button,a,input,textarea,.gpop')) return;
+    const t = e.touches[0]; if (t.clientX < 28) return;   // 왼쪽 가장자리 = 닫기 밀기
+    const c = fdotsGet(), kind = t.clientY > innerHeight / 2 ? 'up' : 'dn';
+    st = { y0: t.clientY, x0: t.clientX, kind: kind, n0: c[kind], n: c[kind], lock: false };
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0], dx = t.clientX - st.x0, dy = t.clientY - st.y0;
+    if (!st.lock) {
+      if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) { st = null; return; }   // 옆으로 = 카드 넘기기
+      if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx) * 1.2) st.lock = true; else return;
+    }
+    // 아래 절반: 위로(dy<0) 늘림 · 위 절반: 아래로(dy>0) 늘림 — 빛이 가는 쪽으로 밀면 는다
+    const k = Math.round((st.kind === 'up' ? -dy : dy) / FDOT.px), n = Math.max(0, Math.min(FDOT.max, st.n0 + k));
+    if (n !== st.n) { st.n = n; fdotsShow(st.kind, n); }
+  }, { passive: true });
+  const end = () => {
+    if (!st) return; const s2 = st; st = null;
+    if (!s2.lock || s2.n === s2.n0) return;
+    const c = fdotsGet(); c[s2.kind] = s2.n; setDevPref('fdots', c);
+  };
+  document.addEventListener('touchend', end, { passive: true });
+  document.addEventListener('touchcancel', end, { passive: true });
+})();
 function focusCardHTML() {
   if (F.i >= F.deck.length) {
     const secs = Math.floor(focusSecs());
