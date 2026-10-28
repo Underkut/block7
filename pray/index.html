@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1028-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1028-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-2';
+const APP_VERSION = 'v. 26-1028-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2429,6 +2429,9 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .emb.shown iframe{opacity:1}
 .emb-x{position:absolute;top:calc(var(--sat) + 10px);right:10px;width:40px;height:40px;display:none;align-items:center;justify-content:center;color:var(--tx2);border-radius:20px;background:color-mix(in srgb,var(--bg) 60%,transparent)}
 .emb.stuck .emb-x{display:flex}
+/* 겹 화면(Sweeter)이 떠 있는 동안 한 장 기도의 반짝이를 멈춘다 (HB 2026-10-28 '기도노트 안에서 한 박자 느리다') —
+   겹 화면은 투명이라(밀어 닫을 때 비치게) 아래가 움직이면 위의 Sweeter 가 움직일 때마다 둘을 함께 다시 그린다 */
+body.emb-up .pts .pt,body.emb-up .pts{animation-play-state:paused !important}
 .gpop{position:fixed;z-index:420;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;padding:5px 6px;color:var(--tx);
   background:color-mix(in srgb,var(--bg) 38%,transparent);-webkit-backdrop-filter:blur(10px) saturate(150%);backdrop-filter:blur(10px) saturate(150%);
   border:1px solid color-mix(in srgb,var(--tx3) 38%,transparent);border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.28);
@@ -4263,13 +4266,13 @@ function embedOpen(kind, b, c, name) {
   // 2.5초 안에 열렸다는 소식이 없으면(로그인 전 · 오프라인) 있는 그대로 보이고 닫기 단추를 낸다 — 갇히지 않게
   clearTimeout(L._t); L._t = setTimeout(() => L.classList.add('shown', 'stuck'), 2500);
 }
-function embedHide() { const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
-function embedDrop() { const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
+function embedHide() { document.body.classList.remove('emb-up'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
+function embedDrop() { document.body.classList.remove('emb-up'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
   const L = $('embedLayer'); if (!L) return;
   if (e.data.b7embed === 'idle') L._loaded = true;
-  else if (e.data.b7embed === 'ready') { clearTimeout(L._t); L._loaded = true; if (L.classList.contains('on')) L.classList.add('shown'); }
+  else if (e.data.b7embed === 'ready') { clearTimeout(L._t); L._loaded = true; if (L.classList.contains('on')) { L.classList.add('shown'); document.body.classList.add('emb-up'); } }
   else if (e.data.b7embed === 'close') embedHide();
 });
 function bibleToRead() {
