@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1028-3 -->
+<!-- KAIROS v. 26-1028-4 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -583,7 +583,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1028-3';
+const APP_VERSION='v. 26-1028-4';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1751,6 +1751,8 @@ let lastTap=0;
 let sw=null,swEat=0;
 const EDGE=28;
 const swFade=f=>Math.max(0,1-Math.pow(f/.8,2.5));   // 처음엔 거의 그대로 남고 끝으로 가며 사라진다 (절반 ≈ .7)
+// 밀기 중 아래 화면의 파이를 감춘다 · 못 미쳐 돌아오면 되살린다 (나가면 exitDesk 가 디졸브로 들인다)
+function swDial(v){const md=$('dial');md.style.transition='none';md.style.opacity=v?'':'0';}
 function swSet(t,o,anim){const d=$('desk');d.style.transition=anim?'transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s ease':'none';d.style.transform=t;d.style.opacity=o;}
 $('desk').addEventListener('pointerdown',e=>{
   if(sw||e.button>0)return;
@@ -1765,6 +1767,7 @@ $('desk').addEventListener('pointermove',e=>{
     else if(dy<0&&Math.abs(dy)>Math.abs(dx))sw.ax='y';
     else{sw=null;swEat=1;return;}   // 다른 쪽으로 민 것도 톡이 아니다
     try{$('desk').setPointerCapture(e.pointerId);}catch(_){}
+    swDial(0);   // 밀리는 동안 아래 드러나는 화면은 파이 없는 빈 화면
   }
   const W=innerWidth,H=innerHeight;
   if(sw.ax==='x'){const v=dx>0?dx:dx*.25;swSet(`translateX(${v}px)`,swFade(Math.max(0,v)/W));}
@@ -1777,8 +1780,8 @@ function swEnd(e){
   const W=innerWidth,H=innerHeight,dt=Date.now()-s0.t;
   const d=s0.ax==='x'?e.clientX-s0.x:s0.y-e.clientY,full=s0.ax==='x'?W:H;
   const go=e.type==='pointerup'&&(d>full/4||(dt<300&&d>40));
-  if(!go){swSet('',1,true);return;}
-  if(quiet()){swSet('',1,false);leaveDesk(true);return;}
+  if(!go){swSet('',1,true);swDial(1);return;}
+  if(quiet()){swSet('',1,false);swDial(1);leaveDesk(true);return;}
   swSet(s0.ax==='x'?`translateX(${W}px)`:`translateY(${-H}px)`,0,true);
   setTimeout(()=>{leaveDesk(true);setTimeout(()=>swSet('',1,false),600);},300);   // .desk 는 .56초 뒤에 숨는다 — 그다음에 제자리로
 }
