@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-9';
+const APP_VERSION = 'v. 26-1028-10';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4435,7 +4435,15 @@ function embedOpen(kind, b, c, name) {
   // 2.5초 안에 열렸다는 소식이 없으면(로그인 전 · 오프라인) 있는 그대로 보이고 닫기 단추를 낸다 — 갇히지 않게
   clearTimeout(L._t); L._t = setTimeout(() => L.classList.add('shown', 'stuck'), 2500);
 }
-function embedHide() { document.body.classList.remove('emb-up', 'emb-peek'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.classList.remove('on', 'shown', 'stuck'); }
+// 밀어 닫아 내려가는 길(emb-peek)이면 옅게 지우지 않고 바로 내린다 — 내용은 이미 밀려 나갔고 iframe 은 투명하다.
+//   옅게 지우는 0.25초 동안은 한 장 기도와 겹 화면이 함께 그려져 한 박자 걸렸다 (HB 2026-10-28 깜빡임)
+function embedHide() {
+  const peek = document.body.classList.contains('emb-peek');
+  document.body.classList.remove('emb-up', 'emb-peek'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t);
+  if (peek) { L.style.transition = 'none'; const f = L.querySelector('iframe'); if (f) f.style.transition = 'none'; }
+  L.classList.remove('on', 'shown', 'stuck');
+  if (peek) requestAnimationFrame(() => requestAnimationFrame(() => { L.style.transition = ''; const f = L.querySelector('iframe'); if (f) f.style.transition = ''; }));
+}
 function embedDrop() { document.body.classList.remove('emb-up', 'emb-peek'); const L = $('embedLayer'); if (!L) return; clearTimeout(L._t); L.id = ''; L.remove(); }
 window.addEventListener('message', e => {
   if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
