@@ -991,4 +991,17 @@ const MAPCSV = [
     sc.eq('⭐㉖ 두 기기 병합 — 지운 카드는 안 살아나고 늘린 시간은 남는다', [m.fc.length, m.ses.find(x => x.id === t.f).d, m.s, A.sesSum(m)], [1, 660, 660 + 300 + 120, 660 + 300 + 120]); }
 }
 
+// ── 1028-3 5-3: '다음에' 로 넘긴 카드는 기도 기록(fc)에 안 남긴다 — 시간 합계(ses)는 한 번의 기록이라 그대로 ──
+{
+  const db = A.seedDB();
+  const t = db.T[0] || null;
+  const pid = t ? t.id : null;
+  if (pid) {
+    const D = '2026-10-28';
+    sc.eq('⭐5-3 다음에(skip) = 기록 안 남김', [A.addFocusCard(db, D, 'S1', pid, 0, 30000, 30, false, '가족', true), (db.log[D] || {}).fc], [null, undefined]);
+    sc.eq('5-3 아멘이면 skip 이어도 남김(방어)', !!A.addFocusCard(db, D, 'S1', pid, 0, 30000, 30, true, '가족', true), true);
+    sc.eq('5-3 skip 아닌 넘김(이전 · 닫기)은 그대로 남김', !!A.addFocusCard(db, D, 'S2', pid, 0, 30000, 30, false, '가족', false), true);
+  }
+}
+
 sc.done();
