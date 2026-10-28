@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-3  [production]  -->
+<!-- BLOCK7  v. 26-1029-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-3";
+const APP_VERSION = "v. 26-1029-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -54438,10 +54438,11 @@ const TDASH = (function () {
 .tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .tdash-item{cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
+.tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px;position:relative}
+.tdash-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:8px;background:#272a32;pointer-events:none}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
-.tdash-seg button.on{background:#272a32;color:var(--tx);font-weight:500}
-.tdash-seg button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tdash-seg button.on{color:var(--tx);font-weight:500}
+.tdash-seg button{position:relative;z-index:1;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tdash-seg button.pin::before{content:"";position:absolute;top:2px;left:50%;width:3.5px;height:3.5px;margin-left:-1.75px;border-radius:50%;background:#dab87a}
 .tdash-nav{display:flex;align-items:center;justify-content:space-between}
 .tdash-nav button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
@@ -54696,7 +54697,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const n = v.indexOf(NAVEND), navH = n >= 0 ? v.slice(0, n) : '', v2 = n >= 0 ? v.slice(n + NAVEND.length) : v;
     const i = v2.indexOf(FIX), fix = i >= 0 ? v2.slice(0, i) : v2, rest = i >= 0 ? v2.slice(i + FIX.length) : '';
     // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
-    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
+    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg"><i class="tdash-pill"></i>' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
       '<div data-pane2="1">' + navH + '</div><div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
@@ -54739,7 +54740,15 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
       S.ss = collect(S.data.thereLog, S.data.prayLog);
       el.classList.add('tdash');
       const sy = el.scrollTop;
+      const oldOn = el.querySelector && el.querySelector('.tdash-seg button.on');
+      const from = oldOn ? { l: oldOn.offsetLeft, w: oldOn.offsetWidth } : null;
       el.innerHTML = html(S); el.scrollTop = sy;
+      // 선택 네모는 컷으로 켜지고 꺼지지 않고 옆 탭으로 미끄러져 간다 (HB 2026-10-29)
+      const on = el.querySelector && el.querySelector('.tdash-seg button.on'), pill = on && on.parentNode.querySelector('.tdash-pill');
+      if (!pill) return;
+      pill.style.left = on.offsetLeft + 'px'; pill.style.width = on.offsetWidth + 'px';
+      if (from && (from.l !== on.offsetLeft || from.w !== on.offsetWidth) && !still() && pill.animate)
+        pill.animate([{ transform: 'translateX(' + (from.l - on.offsetLeft) + 'px)', width: from.w + 'px' }, { transform: 'none', width: on.offsetWidth + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
     };
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
     const EASE = 'cubic-bezier(.4,0,.2,1)';

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1029-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1029-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1029-6';
+const APP_VERSION = 'v. 26-1029-7';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -3742,7 +3742,7 @@ function dayLedgerHTML(date, o) {
       kids + (r.kids.length && rest >= 60 ? '<div class="pl-rest">이름 없이 머문 시간 ' + tm(rest) + '</div>' : '') + '</div></div>';
   };
   if (fl.length) h += '<div class="set-g pl-g">' + fl.map(block).join('') + '</div>';
-  if (loose.length) h += '<div class="pl-loose"><span>시간 없이 \'기도함\'만 누른 이름</span>' + loose.map(id => { const t = findAny(DB, id); return '<button class="tag" data-lp="focus" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>'; }).join('') + '</div>';
+  if (loose.length) h += '<div class="pl-loose"><span>오늘 페이지에서 기도함 체크</span>' + loose.map(id => { const t = findAny(DB, id); return '<button class="tag" data-lp="focus" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>'; }).join('') + '</div>';
   if (!fl.length && !loose.length) h += '<div class="hint" style="padding-top:2px">이날 기도노트에서 잰 기도 시간이 없습니다.</div>';
   return h + '<div class="pl-add"><button data-a="pt-add" data-v="' + date + '">+ 기도 시간 더하기</button></div>';
 }
@@ -7906,10 +7906,11 @@ const TDASH = (function () {
 .tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .tdash-item{cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px}
+.tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px;position:relative}
+.tdash-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:8px;background:#272a32;pointer-events:none}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
-.tdash-seg button.on{background:#272a32;color:var(--tx);font-weight:500}
-.tdash-seg button{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tdash-seg button.on{color:var(--tx);font-weight:500}
+.tdash-seg button{position:relative;z-index:1;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tdash-seg button.pin::before{content:"";position:absolute;top:2px;left:50%;width:3.5px;height:3.5px;margin-left:-1.75px;border-radius:50%;background:#dab87a}
 .tdash-nav{display:flex;align-items:center;justify-content:space-between}
 .tdash-nav button{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--tx2)}
@@ -8164,7 +8165,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const n = v.indexOf(NAVEND), navH = n >= 0 ? v.slice(0, n) : '', v2 = n >= 0 ? v.slice(n + NAVEND.length) : v;
     const i = v2.indexOf(FIX), fix = i >= 0 ? v2.slice(0, i) : v2, rest = i >= 0 ? v2.slice(i + FIX.length) : '';
     // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
-    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg">' +
+    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg"><i class="tdash-pill"></i>' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
       '<div data-pane2="1">' + navH + '</div><div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
@@ -8207,7 +8208,15 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
       S.ss = collect(S.data.thereLog, S.data.prayLog);
       el.classList.add('tdash');
       const sy = el.scrollTop;
+      const oldOn = el.querySelector && el.querySelector('.tdash-seg button.on');
+      const from = oldOn ? { l: oldOn.offsetLeft, w: oldOn.offsetWidth } : null;
       el.innerHTML = html(S); el.scrollTop = sy;
+      // 선택 네모는 컷으로 켜지고 꺼지지 않고 옆 탭으로 미끄러져 간다 (HB 2026-10-29)
+      const on = el.querySelector && el.querySelector('.tdash-seg button.on'), pill = on && on.parentNode.querySelector('.tdash-pill');
+      if (!pill) return;
+      pill.style.left = on.offsetLeft + 'px'; pill.style.width = on.offsetWidth + 'px';
+      if (from && (from.l !== on.offsetLeft || from.w !== on.offsetWidth) && !still() && pill.animate)
+        pill.animate([{ transform: 'translateX(' + (from.l - on.offsetLeft) + 'px)', width: from.w + 'px' }, { transform: 'none', width: on.offsetWidth + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
     };
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
     const EASE = 'cubic-bezier(.4,0,.2,1)';
