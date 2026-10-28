@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1027-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1028-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1027-4';
+const APP_VERSION = 'v. 26-1028-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4177,9 +4177,22 @@ function wordPick(st) {
   const set = st.settings || {};
   return { keep: keep, vs: vs, order: Array.isArray(set.keepListOrder) ? set.keepListOrder.map(String) : [], toRead: st.bibleToRead && typeof st.bibleToRead === 'object' ? st.bibleToRead : {} };
 }
+// 클라우드에서 추려 둔 것(로그인했을 때)과 이 기기의 Sweeter 상태를 함께 본다 — 칸마다 클라우드가 비어 있으면 이 기기 것.
+//   (예전엔 클라우드 것이 있기만 하면 그것만 봐서, 그것이 비어 있으면 저장 목록 · 읽기 계획이 통째로 비었다)
 function wordData() {
-  try { const o = JSON.parse(localStorage.getItem(WORD_KEY) || 'null'); if (o && SY.user && o.uid === SY.user.uid && o.w) return o.w; } catch (e) {}
-  try { return wordPick(JSON.parse(localStorage.getItem('b7v1_sweeter') || 'null')); } catch (e) { return wordPick(null); }
+  let c = null, l = null;
+  try { const o = JSON.parse(localStorage.getItem(WORD_KEY) || 'null'); if (o && SY.user && o.uid === SY.user.uid && o.w) c = o.w; } catch (e) {}
+  try { l = wordPick(JSON.parse(localStorage.getItem('b7v1_sweeter') || 'null')); } catch (e) { l = wordPick(null); }
+  if (!c) return l;
+  const has = o => o && Object.keys(o).length > 0;
+  return { keep: has(c.keep) ? c.keep : l.keep, vs: Object.assign({}, l.vs, c.vs), order: c.order.length ? c.order : l.order, toRead: has(c.toRead) ? c.toRead : l.toRead };
+}
+// 메뉴를 열 때 1분 넘게 묵었으면 뒤에서 새로 받아, 메뉴가 아직 떠 있으면 다시 그린다
+function wordFresh(then) {
+  if (!SY.user) return;
+  let at = 0; try { at = (JSON.parse(localStorage.getItem(WORD_KEY) || 'null') || {}).at || 0; } catch (e) {}
+  if (Date.now() - at < 60000) return;
+  loadWordThere().then(() => { if (then) then(); }, () => {});
 }
 // 저장 목록 — BLOCK7 _keepEntries · _keepLists 와 같은 셈 (목록 이름은 항목의 lst, 없거나 '저장됨' 이면 '기본')
 function keepEntries(w) {
@@ -4229,12 +4242,14 @@ function glassPop(anchor, head, rows, id) {
   return m;
 }
 function keepMenu(anchor) {
-  const w = wordData();
+  let w = wordData();
   let mode = devPref('keepSort', 'recent'); if (!KEEP_SORTS.some(k => k[0] === mode)) mode = 'recent';
   const head = md => '<div class="gpop-h gpop-sort">' + KEEP_SORTS.map(k => '<button data-ks="' + k[0] + '" class="' + (k[0] === md ? 'on' : '') + '">' + k[1] + '</button>').join('') + '</div>';
   const rows = md => keepLists(w, md).map(L => ({ label: L.n, sub: L.cnt, fn: () => keepView(L.n) }));
   const m = glassPop(anchor, head(mode), rows(mode), 'keep');
-  if (m) m._sort = md => { setDevPref('keepSort', md); m._draw(head(md), rows(md)); };
+  if (!m) return;
+  m._sort = md => { mode = md; setDevPref('keepSort', md); m._draw(head(md), rows(md)); };
+  wordFresh(() => { if (m.isConnected) { w = wordData(); m._draw(head(mode), rows(mode)); } });
 }
 // 저장 목록 하나 — 그 말씀을 차례로 (최근 저장 순). 본문은 말씀 모음에 있는 것만 · 없으면 장절만
 function keepView(name) {
@@ -4284,8 +4299,9 @@ function bibleToRead() {
 }
 function readPlanMenu(anchor) {
   const list = bibleToRead();
-  glassPop(anchor, '<div class="gpop-h">읽기 계획</div>', list.length ? list.map(x => ({ label: BIBLE_SHORT[x.b - 1] + ' ' + x.c + (x.b === 19 ? '편' : '장'), fn: () => embedOpen('bible', x.b, x.c) }))
+  const m = glassPop(anchor, '<div class="gpop-h">읽기 계획</div>', list.length ? list.map(x => ({ label: BIBLE_SHORT[x.b - 1] + ' ' + x.c + (x.b === 19 ? '편' : '장'), fn: () => embedOpen('bible', x.b, x.c) }))
     : [{ label: '읽기 계획이 비어 있어요', sub: '성경에서 + 로 담기', fn: () => embedOpen('bible') }], 'toread');
+  if (m) wordFresh(() => { if (m.isConnected) { m.remove(); readPlanMenu(anchor); } });
 }
 ACT['embed-keep'] = el => keepMenu(el);
 ACT['embed-bible'] = () => embedOpen('bible');
@@ -7108,8 +7124,10 @@ async function loadWordThere() {
   if (!SY.user) return null;
   await fbLoad();
   const uid = SY.user.uid, snap = await FB.db.doc('users/' + uid + '/data/state').get();
+  // ⚠️ 문서는 2026-10-25 부터 압축 칸(jz)에 있다 — 예전 칸(json)만 읽으면 빈 자료가 되어 There 시간 · 저장 목록 · 읽기 계획이
+  //    전부 비어 보였다(HB 2026-10-28 신고). b7DocJson 이 둘 다 읽는다. 못 풀면 던진다 — 빈 것으로 덮어 두지 않게.
   let log = {}, st = null;
-  if (snap.exists) { try { st = JSON.parse((snap.data() || {}).json || '{}'); log = st.verseThereLog || {}; } catch (e) { log = {}; } }
+  if (snap.exists) { st = JSON.parse(await b7DocJson(snap.data() || {}) || '{}') || {}; log = st.verseThereLog || {}; }
   // 저장 목록 · 읽기 계획도 같은 문서에서 추려 둔다 (1027-2 — 한 장씩 기도의 '저장' · 성경 길게 누르기)
   if (st) try { localStorage.setItem(WORD_KEY, JSON.stringify({ uid: uid, at: Date.now(), w: wordPick(st) })); } catch (e) {}
   try { localStorage.setItem(THERE_CACHE_KEY, JSON.stringify({ uid: uid, at: Date.now(), log: log })); } catch (e) { /* 남기지 못하면 다음에 다시 받는다 */ }
