@@ -3,6 +3,7 @@
 //  ① 지난번에 열어 둔 전체화면 · 타일뷰가 남아 있어도 새로 열면 치워진다
 //  ② 치우며 부모에게 '닫혔다' 를 보내지 않는다 (겹 화면이 내려가면 안 된다)
 //  ③ 곧바로 연 타일뷰를 왼쪽 가장자리에서 밀어 닫으면 전체화면이 뜨지 않고 겹 화면이 닫힌다
+//  ④ 그 끝에 한 장 기도가 한 번 감춰졌다 나타나는 깜빡임이 없다 (닫혔다를 먼저 보낸다)
 //     (예전엔 Sweeter 의 '타일뷰 → 전체화면으로 복귀' 가 돌아 상관없는 말씀이 툭 떴다 — 손짓도 없이 ×로만 닫힘)
 const { chromium } = require(process.env.PW || 'playwright');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -28,7 +29,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   await fr.evaluate(() => { bibleClose(); openVerseGridHome(); });
   await sleep(600);
   ok('③ 타일뷰가 열림', await fr.evaluate(() => _vgIsOpen()));
-  await p.evaluate(() => { window._closed = 0; });
+  await p.evaluate(() => { window._closed = 0; window._seq = []; window.addEventListener('message', e => { if (e.data && (e.data.b7embed === 'close' || e.data.b7embed === 'peek')) window._seq.push(e.data.b7embed === 'peek' ? 'peek:' + e.data.on : 'close'); });
+    window._hid = 0; new MutationObserver(() => { const c = document.body.classList; if (c.contains('emb-up') && !c.contains('emb-peek') && window._seq.includes('peek:true')) window._hid++; }).observe(document.body, { attributes: true, attributeFilter: ['class'] }); });
   await fr.evaluate(() => new Promise(res => {
     const g = document.getElementById('verseGrid'), T = x => new Touch({ identifier: 1, target: g, clientX: x, clientY: 500 });
     const fire = (n, x) => g.dispatchEvent(new TouchEvent(n, { bubbles: true, cancelable: true, touches: n === 'touchend' ? [] : [T(x)], changedTouches: [T(x)] }));
@@ -38,6 +40,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const s3 = await fr.evaluate(() => ({ vf: _verseFullIsOpen(), vfd: document.getElementById('verseFull').style.display, vg: _vgIsOpen() }));
   ok('⭐③ 밀어 닫으면 타일뷰만 닫히고 전체화면은 안 뜬다', !s3.vg && !s3.vf && s3.vfd !== 'flex', s3);
   ok('⭐③ 부모에게 닫혔다 → 한 장 기도로', (await p.evaluate(() => window._closed)) >= 1);
+  const seq = await p.evaluate(() => window._seq);
+  ok('⭐④ 밀어 닫은 끝 — 닫혔다가 비침 끄기보다 먼저 (한 장 기도가 한 번도 감춰지지 않음 = 깜빡임 없음)', seq.indexOf('close') >= 0 && seq.indexOf('close') < seq.lastIndexOf('peek:false') && (await p.evaluate(() => window._hid)) === 0, [seq, await p.evaluate(() => window._hid)]);
   console.log('통과 ' + pass + ' / 실패 ' + fail);
   await b.close();
 })();
