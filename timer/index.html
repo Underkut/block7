@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1028-2 -->
+<!-- KAIROS v. 26-1028-3 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -583,7 +583,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1028-2';
+const APP_VERSION='v. 26-1028-3';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -1727,7 +1727,9 @@ function exitDesk(slid){
   clearTimeout(deskT);
   const d=$('desk');if(!d.classList.contains('on'))return;
   drawAll();
-  if(slid){$('dial').style.visibility='';const dc=$('deskDial');dc.style.transition='none';dc.style.transform='';}   // 밀어서 나갔으면 원은 날지 않는다 — 화면째 이미 나갔다
+  if(slid){$('dial').style.visibility='';const dc=$('deskDial');dc.style.transition='none';dc.style.transform='';
+    if(!quiet()){const md=$('dial');md.style.transition='none';md.style.opacity='0';md.getBoundingClientRect();   // 나온 화면의 파이는 디졸브 인
+      md.style.transition='opacity .6s ease';md.style.opacity='1';setTimeout(()=>{md.style.transition='';md.style.opacity='';},700);}}   // 밀어서 나갔으면 원은 날지 않는다 — 화면째 이미 나갔다
   else fly('main');d.classList.remove('on','dimmed','ctlon');syncWake();
   try{document.fullscreenElement&&document.exitFullscreen();}catch(e){}
 }
@@ -1737,7 +1739,7 @@ function leaveDesk(slid){
   if(was==='run'||was==='pause'||was==='done'){reset();if(was!=='done')toast('처음으로 돌렸어요\n흐른 시간은 기록에 남겼어요');}
   exitDesk(slid);
 }
-function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>$('desk').classList.remove('ctlon'),2500);}
+function showCtl(){$('desk').classList.add('ctlon');clearTimeout(ctlT);ctlT=setTimeout(()=>$('desk').classList.remove('ctlon'),1500);}
 $('deskBtn').onclick=()=>enterDesk();
 // 도는 중 여백 톡 = 다시 탁상. ⚠️ 단추를 누르면 그 안 그림이 곧바로 새로 그려져 눌린 것이 화면에서 떨어진다 —
 // 떨어진 것은 '단추 안' 인지 알 수 없으니 여백으로 치지 않는다 (예전엔 ▶ 를 누르자마자 탁상으로 들어갔다)
