@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1028-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6603,7 +6603,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-2";
+const APP_VERSION = "v. 26-1028-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -36165,15 +36165,19 @@ function _memoMoveTaskToDate(k){
   const item=src[c.idx];
   if(!item)return;
   beforeSave();
-  src.splice(c.idx,1);
-  const moved=_movedTaskCopy(item,_dayKeyDiff(fromKey,k));
-  const dest=_taskArrOf(c.type,c.secId,k);
-  dest.push(moved);
+  let at;
+  if(typeof _taskIsRep==='function'&&_taskIsRep(item))at=_repMoveApply(c.type,c.secId,c.idx,fromKey,k,c.secId,'one').idx;   // 반복은 이 날만 (B3-2)
+  else{
+    src.splice(c.idx,1);
+    const dest=_taskArrOf(c.type,c.secId,k);
+    dest.push(_movedTaskCopy(item,_dayKeyDiff(fromKey,k)));
+    at=dest.length-1;
+  }
   save();
   closeTaskMemo();
   renderSecBody(c.secId);updateTotal();refreshTaskViewsLive();
   _toastWithJump(_dayLabel(k)+'로 옮겼어요',k,
-    {key:k,secId:c.secId,type:c.type,idx:dest.length-1});
+    {key:k,secId:c.secId,type:c.type,idx:at});
 }
 // 폰 주소록에 넣기 — .vcf 한 장을 만들어 내려준다. 아이폰에서 그 파일을 열면
 // '새 연락처 추가' 화면이 바로 뜬다. (앱 안 연락처와는 따로다 — 앱 연락처는
@@ -41405,8 +41409,8 @@ function _repScopeAsk(opt){
   const title=document.getElementById('repScopeTitle');
   if(!list||!title){if(opt.onPick)opt.onPick('all');return;}
   const verb=(opt.mode==='delete')?'삭제':'수정';
-  title.textContent=`반복되는 ${kindWord}이에요 — 어디까지 ${verb}할까요?`;
-  const rows=[
+  title.textContent=opt.title||`반복되는 ${kindWord}이에요 — 어디까지 ${verb}할까요?`;
+  const rows=opt.rows||[
     ['one',   `이 ${kindWord}만`,        '고른 날짜 하나에만 적용해요'],
     ['future',`이번 및 이후 ${kindWord}`, '이 날짜부터 앞으로 모두 적용해요'],
     ['all',   `모든 ${kindWord}`,        '지난 것까지 이 반복 전체에 적용해요']
@@ -41800,6 +41804,62 @@ function _movedTaskCopy(item,days){
   return moved;
 }
 
+// ── 반복 할일 옮기기 (HB 2026-10-28 B3-2, tests/test_repeat_move.js) ──
+// 예전엔 반복의 그날 것을 빼서 daily 표시를 단 사본으로 보냈다 → 그날 반복이 다시 생겨
+// (오늘 · 앞날) 두 군데 보이고, 사본엔 반복 아이콘이 남았다. 원본을 옮기면 규칙이 사라졌다.
+//   one    — 이 날만 옮기기: 그 날을 반복의 '뺀 날' 로(원본이면 감추기만), 보낸 곳엔 하루짜리
+//   future — 이후 반복도 함께: 옛 반복은 그 전날로 끝내고, 보낸 날부터 같은 규칙으로 새로 시작
+//            (매주면 요일이 보낸 날의 요일로 바뀐다 — 규칙이 '원본과 같은 요일' 이라서)
+function _taskIsRep(it){return !!(it&&(it.rid||(typeof _isRepRoot==='function'&&_isRepRoot(it))));}
+function _repPlain(it){delete it.rid;delete it.daily;delete it.rk;delete it.repeat;delete it.rc;return it;}
+function _repMoveApply(type,secId,idx,fromKey,toKey,destSec,scope){
+  const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
+  const item=src[idx];if(!item)return null;
+  const rid=item.rid,isRoot=_isRepRoot(item);
+  const root=isRoot?{k:fromKey,item}:_taskRepRootOf(rid);
+  const moved=_repPlain(_movedTaskCopy(item,_dayKeyDiff(fromKey,toKey)));
+  if(scope==='future'){
+    const rule=JSON.parse(JSON.stringify((root&&root.item.repeat)||_taskRepFallback(item)));
+    delete rule.ex;
+    if(rule.until&&rule.until<toKey)delete rule.until;
+    if(!root||fromKey<=root.k){
+      if(rid)_repPurgeTasks(rid,null,false);else src.splice(idx,1);
+    }else{
+      root.item.repeat.until=_dayKeyBefore(fromKey);
+      _repPurgeTasks(rid,fromKey,false);
+    }
+    moved.rid=_newRid();moved.repeat=rule;
+  }else{
+    if(isRoot)_repAddEx(item,fromKey);   // 원본은 지우면 규칙이 사라진다 — 그 날만 감춘다
+    else{src.splice(idx,1);if(root)_repAddEx(root.item,fromKey);}
+  }
+  const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
+  dest.push(moved);
+  return{item:moved,idx:dest.length-1};
+}
+// 옮기기 메뉴(내일로 · 다음 주로 · 어제로 · 날짜 지정)에서 반복 할일이면 두 갈래를 묻는다.
+// pre(item) — 고른 뒤 옮기기 직전에 할 일('어제 완료' 의 완료 체크). after(r,scope) — 그리고 알리기.
+function _repMoveAsk(type,secId,idx,fromKey,toKey,destSec,pre,after){
+  const item=(type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx];
+  if(!item)return;
+  const[y,m,d]=toKey.split('-').map(Number),dw=new Date(y,m-1,d).getDay();
+  const root=_isRepRoot(item)?item:(_taskRepRootOf(item.rid)||{}).item;
+  const weekly=_repKindOf(root||item)==='w';
+  _repScopeAsk({kind:'task',title:'반복 할일이에요 — 어떻게 옮길까요?',
+    rows:[['one','이 날만 옮기기','반복은 그대로, 이 날만 빠져요'],
+          ['future','이후 반복도 함께 옮기기',`${m}/${d}(${_DOW_KO[dw]})부터 ${weekly?`매주 ${_DOW_KO[dw]}요일로`:'다시 반복해요'}`]],
+    onPick:sc=>{
+      beforeSave();
+      const it=(type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx];
+      if(it&&pre)pre(it);
+      const r=_repMoveApply(type,secId,idx,fromKey,toKey,destSec,sc);
+      save();
+      renderSecBody(secId);if(destSec!==secId&&toKey===fromKey)renderSecBody(destSec);
+      updateTotal();refreshTaskViewsLive();
+      if(r&&after)after(r,sc);
+    }});
+}
+
 // 두 날짜 사이가 며칠인지 (오늘→내일이면 1). '날짜 지정' 으로 내일을 골라도
 // 메뉴의 '내일로' 와 똑같이 굴러가게 하려고 쓴다.
 function _dayKeyDiff(fromKey,toKey){
@@ -41819,6 +41879,13 @@ function moveTaskTo(days,toSec,markDone){
   const toKey=tKey(toDate);
   // 같은 날 같은 구간 = 갈 곳이 없다. 그냥 두면 목록 맨 아래로 자리만 바뀐다.
   if(days===0&&destSec===secId){closeTaskMenu();return;}
+  if(typeof _taskIsRep==='function'&&_taskIsRep((type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx])){
+    closeTaskMenu();
+    _repMoveAsk(type,secId,idx,fromKey,toKey,destSec,
+      it=>{if(markDone&&!it.done){it.done=true;_subSetAll(it,true);if(typeof _clearUrgentOnDone==='function')_clearUrgentOnDone(it);}},
+      (r,sc)=>_toastWithJump(`${_moveLabel(days,secId,destSec)}${markDone?' 완료 체크해서':''} 이동했어요\n${sc==='one'?'반복은 그대로예요':'이후 반복도 함께 옮겼어요'}`,toKey,{key:toKey,secId:destSec,type,idx:r.idx}));
+    return;
+  }
   beforeSave();
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=src[idx];
@@ -41892,7 +41959,9 @@ function duplicateTaskTo(days,toSec){
   if(!item)return;
 
   // 복제는 원본을 그대로 둔다 (splice 하지 않는다).
-  const copy=_freshTaskCopy(item);
+  // 반복 할일의 복제본은 하루짜리다 (HB 2026-10-28 B3-2 — 묻지 않는다)
+  const _rp=typeof _taskIsRep==='function'&&_taskIsRep(item);
+  const copy=_freshTaskCopy(item);if(_rp)_repPlain(copy);
   beforeSave();
   const fin=_dupDone&&_finishOriginal(item);
   const dest=type==='big'?getBigs(toKey,destSec):getSmalls(toKey,destSec);
@@ -41903,7 +41972,7 @@ function duplicateTaskTo(days,toSec){
   updateTotal();
   refreshTaskViewsLive();
   closeTaskMenu();
-  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요${fin?'\n원래 것은 완료 체크했어요':''}`,toKey,
+  _toastWithJump(`${_moveLabel(days,secId,destSec)} 복제했어요${_rp?'\n복제본은 하루짜리예요':''}${fin?'\n원래 것은 완료 체크했어요':''}`,toKey,
     {key:toKey,secId:destSec,type,idx:dest.length-1});
 }
 
@@ -42002,6 +42071,12 @@ function moveTaskToPickedDate(dateStr,toSec){
   const {type,secId,idx}=_taskMenuCtx;
   const destSec=toSec||secId;
   const fromKey=tKey();
+  if(typeof _taskIsRep==='function'&&_taskIsRep((type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId))[idx])){
+    _taskMenuCtx=null;closeTaskMenu_keepCtx();
+    _repMoveAsk(type,secId,idx,fromKey,dateStr,destSec,null,
+      (r,sc)=>_toastWithJump(_moveDateToastMsg(dateStr,destSec)+`\n${sc==='one'?'반복은 그대로예요':'이후 반복도 함께 옮겼어요'}`,dateStr,{key:dateStr,secId:destSec,type,idx:r.idx}));
+    return;
+  }
   beforeSave();
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
   const item=src[idx];
@@ -42037,7 +42112,7 @@ function duplicateTaskToPickedDate(dateStr,toSec){
   if(!item)return;
 
   beforeSave();
-  const copy=_freshTaskCopy(item);
+  const copy=_freshTaskCopy(item);if(typeof _taskIsRep==='function'&&_taskIsRep(item))_repPlain(copy);
   const fin=_dupDone&&_finishOriginal(item);
   const dest=type==='big'?getBigs(dateStr,destSec):getSmalls(dateStr,destSec);
   dest.push(copy);
@@ -42357,8 +42432,11 @@ function nextAfterDoneYday(days,toSec,dateStr){
   beforeSave();
   _finishOriginal(item);
   if(fromKey!==yKey){            // 어제 칸으로 옮긴다 (이미 어제를 보고 있으면 제자리)
+    if(typeof _taskIsRep==='function'&&_taskIsRep(item))_repMoveApply(type,secId,idx,fromKey,yKey,secId,'one');   // 반복은 이 날만 (B3-2)
+    else{
     src.splice(idx,1);
     (type==='big'?getBigs(yKey,secId):getSmalls(yKey,secId)).push(_movedTaskCopy(item,-1));
+    }
   }
   const tail=toKey===todayKey()?' 어제 했고, 이제 오늘':' 어제 완료했고, 이제';
   const nu={text:String(item.text||'').replace(/\s+$/,'')+tail,done:false};
