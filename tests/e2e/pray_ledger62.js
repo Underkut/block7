@@ -34,11 +34,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok('⭐① 위 이름 칩 줄은 없고 기도함만 누른 아라만 한 줄', s1.oldChips === 0 && JSON.stringify(s1.loose) === '["아라"]', s1);
   // ② 고치기 창
   await p.click('#v-hist .row.pled .pl-h'); await sleep(400);
-  ok('② 기도 한 번 톡 → 시간 고치기 창(14분)', await p.evaluate(() => !!SHEET && document.getElementById('ptMin').value === '14'));
+  const sh2 = await p.evaluate(() => ({ t: SHEET.querySelector('.sh-t').textContent, info: (SHEET.querySelector('.td-info') || {}).textContent, v: document.getElementById('ptMin').value }));
+  ok('⭐② 기도 한 번 톡 → 시간 고치기 창 — 시작 시각(초까지) · 길이 · 그 안 이름(● 아멘)', sh2.v === '14' && /05:40:00 시작 · 한 장씩 기도하기/.test(sh2.t) && /14분 동안/.test(sh2.t) && sh2.info === '가람 3분 ● · 나래 2분 10초 ●', sh2);
   await p.click('[data-a="pt-ok"]'); await sleep(400);
   ok('② 안 바꾸고 저장 = 조용히 닫힘', await p.evaluate(() => !SHEET && !document.getElementById('toast').classList.contains('on')));
   await p.click('#v-hist .pl-chip'); await sleep(400);
-  ok('⭐② 이름 칩 톡 → 항목 · 시간 고치기 창(가람 · 180초)', await p.evaluate(() => !!SHEET && document.getElementById('tdName').value === '가람' && document.getElementById('ptMin').value === '180'));
+  ok('⭐② 이름 칩 톡 → 항목 · 시간 고치기 창(가람 · 180초)', await p.evaluate(() => !!SHEET && document.querySelector('.td-pickb span').textContent === '가람' && document.getElementById('ptMin').value === '180'));
   await p.evaluate(() => closeSheet(true));
   // ③ 밀어 지우기
   const box = await p.evaluate(() => { const r = document.querySelector('#v-hist .row.pled').getBoundingClientRect(); return { x: r.right - 40, y: r.top + 30 }; });

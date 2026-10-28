@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1029-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1029-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1029-4';
+const APP_VERSION = 'v. 26-1029-5';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2522,6 +2522,20 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .pl-h{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px 10px;font-size:15px;text-align:left;color:var(--tx)}
 .pl-h .pl-n{flex:1;min-width:0}
 .pl-h .pl-k{font-size:12.5px;color:var(--tx3)}
+/* 고치기 창 설명 · 기도 항목 고르기 (HB 2026-10-29) */
+.td-info{margin:2px 20px 4px;padding:10px 12px;border-radius:10px;background:var(--s2);font-size:13px;color:var(--tx2);line-height:1.55}
+.td-pickb{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;flex:1;margin:0}
+.td-pickb small{color:var(--ac-tx);font-size:12px}
+.td-pickb svg{width:20px;height:20px;flex-shrink:0;color:var(--tx2)}
+.td-hint{padding:4px 20px 0 82px;font-size:11.5px;color:var(--tx3)}
+#tdPickQ{margin:4px 20px 6px;width:calc(100% - 40px)}
+.td-pick{padding:0 16px 12px}
+.td-pg{padding:8px 4px 6px;border-bottom:1px solid var(--bd)}
+.td-pgh{font-size:12.5px;color:var(--tx2);padding-left:10px;border-left:3px solid var(--gc);margin-bottom:6px}
+.td-pgh .td-pk{font-weight:600;color:var(--tx)}
+.td-pgb{display:flex;flex-wrap:wrap;gap:6px}
+.td-pgb:empty{display:none}
+.tag.td-pk.on{background:var(--ac);color:var(--on-accent);border-color:var(--ac)}
 .pl-h .v{color:var(--tx2);font-size:14px;display:flex;align-items:center;gap:6px}
 .pl-h .v .ico{width:16px;height:16px}
 .pl-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px 74px}
@@ -3731,18 +3745,22 @@ function dayLedgerHTML(date, o) {
   return h + '<div class="pl-add"><button data-a="pt-add" data-v="' + date + '">+ 기도 시간 더하기</button></div>';
 }
 // 분 고르기 창 — 고치기와 더하기가 같이 쓴다
+// opt.add = 새로 더하기(분) · 아니면 고치기(opt.was 초 — 10분 미만이면 초로 고친다, tdTimeHTML) · opt.info = 제목 아래 붙일 설명 HTML
 function ptSheet(title, sub, mins, opt) {
-  const w = openSheet('<div class="sh-t">' + esc(title) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' +
-    (opt.time ? '<div class="pt-time"><label for="ptAt">시작한 때</label><input type="time" id="ptAt" class="field" value="' + opt.time + '"></div>' : '') +
-    '<div class="pt-step"><button data-a="pt-step" data-v="-5">−5</button><button data-a="pt-step" data-v="-1">−1</button>' +
+  const step = opt.add ? '<div class="pt-step" data-unit="m"><button data-a="pt-step" data-v="-5">−5</button><button data-a="pt-step" data-v="-1">−1</button>' +
     '<label class="pt-num"><input id="ptMin" type="number" inputmode="numeric" min="0" max="1440" value="' + mins + '" aria-label="분"><span>분</span></label>' +
-    '<button data-a="pt-step" data-v="1">+1</button><button data-a="pt-step" data-v="5">+5</button></div>' +
+    '<button data-a="pt-step" data-v="1">+1</button><button data-a="pt-step" data-v="5">+5</button></div>' : tdTimeHTML(opt.was || 0);
+  const w = openSheet('<div class="sh-t">' + esc(title) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</div>' + (opt.info || '') +
+    (opt.time ? '<div class="pt-time"><label for="ptAt">시작한 때</label><input type="time" id="ptAt" class="field" value="' + opt.time + '"></div>' : '') + step +
     '<div class="sh-acts">' + (opt.del ? '<button class="ghost" data-a="pt-del" style="color:var(--danger)">지우기</button>' : '') + '<button class="cta" data-a="pt-ok">저장</button></div>');
   w._pt = opt; return w;
 }
-function ptApply(mins) {
+// 고르는 칸의 값을 초로 (분 칸이면 × 60)
+function ptReadSecs() { const box = document.querySelector('.sh-wrap .pt-step'), v = parseInt(($('ptMin') || {}).value, 10) || 0; return { secs: box && box.dataset.unit === 's' ? v : v * 60, v: v, unit: box ? box.dataset.unit : 'm' }; }
+const ptTm = v => v < 60 ? (v || 0) + '초' : v % 60 && v < 600 ? Math.floor(v / 60) + '분 ' + (v % 60) + '초' : TDASH.dur(v);
+function ptApply(secs) {
   const w = SHEET, o = w && w._pt; if (!o) return;
-  const secs = Math.max(0, Math.round(mins)) * 60;
+  secs = Math.max(0, Math.round(secs));
   if (o.add) {
     if (!secs) { toast('몇 분인지 적어 주세요'); return; }
     const tv = ($('ptAt') && $('ptAt').value) || '12:00', hm = tv.split(':').map(Number), d = parseYmd(o.date);
@@ -3758,7 +3776,7 @@ function ptApply(mins) {
   if (o.id) { if (secs) editPraySession(DB, o.date, o.id, secs); else delPraySession(DB, o.date, o.id); } else editLegacyRest(DB, o.date, secs);
   save(); refresh(); if (TDASH.isOpen()) TDASH.redraw();
   const back = () => { const v = JSON.parse(snap); if (v) DB.log[o.date] = v; else delete DB.log[o.date]; save(); refresh(); if (TDASH.isOpen()) TDASH.redraw(); toast('되돌렸습니다'); };
-  toast(secs ? '기도 시간을 ' + Math.round(o.was / 60) + '분 → ' + Math.round(secs / 60) + '분으로 고쳤어요\nThere 대시보드에도 그대로' : '그 기도 시간을 지웠어요\nThere 대시보드에서도 빠집니다', '되돌리기', back);
+  toast(secs ? '기도 시간을 ' + ptTm(o.was) + ' → ' + ptTm(secs) + '으로 고쳤어요\nThere 대시보드에도 그대로' : '그 기도 시간을 지웠어요\nThere 대시보드에서도 빠집니다', '되돌리기', back);
 }
 function renderAnswers() {
   const mode = DB.set.sorts.answers || 'recent';
@@ -4257,7 +4275,7 @@ ACT['pt-add'] = el => {
 ACT['pl-ses'] = el => tdEdit({ kind: 'ses', date: el.dataset.d, ids: el.dataset.v ? el.dataset.v.split(',') : [] });   // 그날의 장부 (6-2c)
 ACT['pl-kid'] = el => tdEdit({ kind: el.dataset.k, date: el.dataset.d, ids: el.dataset.v.split(',').filter(Boolean) });
 ACT['pl-del'] = el => { closeOpenRow(); tdDel({ kind: 'ses', date: el.dataset.d, ids: el.dataset.v ? el.dataset.v.split(',') : [] }); };
-ACT['pt-ok'] = () => { const i = $('ptMin'), v = parseInt(i && i.value, 10) || 0, o = SHEET && SHEET._pt; if (o && !o.add && v === Math.round(o.was / 60)) { closeSheet(); return; } ptApply(v); };   // 안 바꾸고 저장 = 조용히 닫기
+ACT['pt-ok'] = () => { const r = ptReadSecs(), o = SHEET && SHEET._pt; if (o && !o.add && r.v === (r.unit === 's' ? Math.round(o.was) : Math.round(o.was / 60))) { closeSheet(); return; } ptApply(r.secs); };   // 안 바꾸고 저장 = 조용히 닫기
 ACT['pt-del'] = () => { if (!confirm('이 기도 시간을 지울까요?')) return; ptApply(0); };
 ACT.stab = el => stabSettle(+el.dataset.v);
 ACT['mark-link'] = el => {
@@ -7535,46 +7553,85 @@ function tdTimeHTML(secs) {
     '<label class="pt-num"><input id="ptMin" type="number" inputmode="numeric" min="0" max="' + (s ? 3600 : 1440) + '" value="' + (s ? Math.round(secs) : Math.round(secs / 60)) + '" aria-label="' + (s ? '초' : '분') + '"><span>' + (s ? '초' : '분') + '</span></label>' +
     '<button data-a="pt-step" data-v="' + (s ? 10 : 1) + '">' + (s ? '+10' : '+1') + '</button><button data-a="pt-step" data-v="' + (s ? 30 : 5) + '">' + (s ? '+30' : '+5') + '</button></div>';
 }
+// ── 기도 기록 고치기 창 (5-1 · 5-2 · HB 2026-10-29 '뭐가 뭔지 어떻게 아니') ──
+// 창마다 '무엇을 고치는지' 를 보여 준다: 시작 시각(같은 분이면 초까지) · 길이 · 그 안에서 기도한 이름(● 아멘)
+const hms = (ms, sec) => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + (sec ? ':' + String(d.getSeconds()).padStart(2, '0') : ''); };
+// 기도 한 번 안의 이름 — '스캇브래너 3초 ● · 성희브래너 1초'
+function sesKidsText(L, e) {
+  const k = sesKids(L, e), a = k.fc.map(x => (x.n || '이름 없음') + ' ' + ptTm(Number(x.d) || 0) + (x.amen ? ' ●' : ''));
+  const by = {}; k.mp.forEach(x => { const key = (x.a || 0) + '|' + (x.k || x.n); by[key] = by[key] || { k: x.k || x.n, d: 0 }; by[key].d += Number(x.d) || 0; });
+  Object.keys(by).forEach(key => a.push(by[key].k + ' ' + ptTm(by[key].d)));
+  return a.length ? a.join(' · ') : '이름 없이 머문 시간만 (넘기는 사이 · 말씀 읽은 때)';
+}
+function sesInfoHTML(L, e) { return '<div class="td-info">' + esc(sesKidsText(L, e)) + '</div>'; }
 function tdEdit(info) {
   const D = info.date, L = DB.log[D] || {};
   if (info.kind === 'ses' && info.ids.length > 1) {   // 잇달아 한 기도를 합친 줄 — 어느 한 번을 고칠지 고른다
     const list = info.ids.map(id => (L.ses || []).find(x => x && x.id === id)).filter(Boolean);
-    choose('어느 기도를 고칠까요?', list.map(e => ({ v: e.id, label: (e.time || '—') + ' · ' + (PT_SRC[e.src] || '기도'), desc: TDASH.dur(e.d) })), '', v => tdEdit({ kind: 'ses', date: D, ids: [v] }), '잇달아 한 기도 ' + list.length + '번을 한 줄로 보여 줍니다', { x: true });
+    choose('어느 기도를 고칠까요?', list.map(e => ({ v: e.id, label: hms(e.t, true) + ' 시작 · ' + ptTm(Number(e.d) || 0) + ' 동안', desc: sesKidsText(L, e) })), '', v => tdEdit({ kind: 'ses', date: D, ids: [v] }),
+      (PT_SRC[list[0].src] || '기도') + '를 잇달아 ' + list.length + '번 — 한 줄로 묶어 보여 줍니다. 시작 시각 · 길이 · 그 안에서 기도한 이름(● 아멘)', { x: true });
     return;
   }
   if (info.kind === 'ses') {
     const id = info.ids[0] || '', e = id ? (L.ses || []).find(x => x && x.id === id) : null;
     if (id && !e) return;
     const secs = e ? Number(e.d) || 0 : legacyRest(L), k = e ? sesKids(L, e) : null, n = k ? k.fc.length + k.mp.length : 0;
-    ptSheet(shortDate(D) + (e ? ' ' + (e.time || '') : '') + ' 기도 시간', (e ? (PT_SRC[e.src] || '기도') : '10월 12일 전 기록 — 줄 없이 합계만 남은 몫') +
-      (n ? ' · 안의 이름 ' + n + '개는 줄인 시간보다 길면 같은 비율로 줄어듭니다' : ''), Math.round(secs / 60), { date: D, id: id, was: secs, del: true });
+    ptSheet(shortDate(D) + ' ' + (e ? hms(e.t, true) + ' 시작 · ' + (PT_SRC[e.src] || '기도') : '시간만 남은 기록'),
+      e ? ptTm(secs) + ' 동안' + (n ? ' · 줄이면 안의 이름도 같은 비율로 줄어듭니다' : '') : '10월 12일 전 기록 — 줄 없이 합계만 남은 몫',
+      0, { date: D, id: id, was: secs, del: true, info: e ? sesInfoHTML(L, e) : '' });
     return;
   }
   const arr = Array.isArray(L[info.kind]) ? L[info.kind] : [], rows = info.ids.map(i => arr.find(x => x && x.id === i)).filter(Boolean);
   if (!rows.length) return;
-  const name = info.kind === 'fc' ? rows[0].n : (rows[0].k || rows[0].n), secs = rows.reduce((s, x) => s + (Number(x.d) || 0), 0);
-  const a = Number(rows[0].a) || Number(rows[0].t) || 0, tm = a ? new Date(a) : null;
-  const names = [...new Set(DB.T.filter(t => !isShelved(t)).map(t => t.name).concat(DB.G.map(g => g.name)).filter(Boolean))];
-  const w = openSheet('<div class="sh-t">' + esc(shortDate(D) + (tm ? ' ' + String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0') : '')) + ' 기도 기록<small>' +
-    (info.kind === 'fc' ? '한 장 기도' : 'Map 기도') + ' · 시간을 늘려 그 기도 한 번보다 길어지면 그 한 번도 같이 늘어납니다</small></div>' +
-    '<div class="pt-time"><label for="tdName">기도 항목</label><input id="tdName" class="field" list="tdNames" value="' + esc(name) + '" autocomplete="off" enterkeyhint="done"></div>' +
-    '<datalist id="tdNames">' + names.map(n => '<option value="' + esc(n) + '">').join('') + '</datalist>' + tdTimeHTML(secs) +
-    '<div class="sh-acts"><button class="ghost" data-a="td-del" style="color:var(--danger)">지우기</button><button class="cta" data-a="td-ok">저장</button></div>');
-  w._td = { info: info, name: name, secs: secs };
+  const name = info.kind === 'fc' ? rows[0].n : (rows[0].k || rows[0].n), secs = rows.reduce((a, x) => a + (Number(x.d) || 0), 0);
+  tdKidSheet({ info: info, name: name, pid: '', secs: secs, cur: secs });
 }
+// 이름 한 칸(카드 · Map 기도) 고치기 창 — 기도 항목은 손으로 치지 않고 '기도 지도에서 고르기' 로만 (HB 2026-10-29: 목록에 없는 글을 쳐도 되나?)
+function tdKidSheet(st) {
+  const D = st.info.date, L = DB.log[D] || {}, arr = L[st.info.kind] || [], rows = st.info.ids.map(i => arr.find(x => x && x.id === i)).filter(Boolean);
+  if (!rows.length) return;
+  const par = kidParent(L, st.info.kind, rows[0]), a = Number(rows[0].a) || Number(rows[0].t) || 0;
+  const where = (par ? (PT_SRC[par.src] || '기도') + ' ' + hms(par.t, true) + ' 시작' : '') + (rows.length > 1 ? ' 외 ' + (rows.length - 1) + '번 합침' : '');
+  const amen = st.info.kind === 'fc' ? (rows.some(x => x.amen) ? ' · 아멘함' : ' · 아멘 안 함') : '';
+  const shown = st.pid ? (findAny(DB, st.pid) || {}).name : st.name;
+  const w = openSheet('<div class="sh-t">' + esc(st.name) + ' — ' + (st.info.kind === 'fc' ? '한 장 기도' : 'Map 기도') + ' 기록' +
+    '<small>' + esc(shortDate(D) + (a ? ' ' + hms(a, true) : '') + (where ? ' · ' + where : '') + amen) + '</small></div>' +
+    '<div class="pt-time"><label>기도 항목</label><button class="field td-pickb" data-a="td-pick"><span>' + esc(shown) + (st.pid ? ' <small>(바꿈)</small>' : '') + '</span>' + MAP_ICO + '</button></div>' +
+    '<div class="td-hint">다른 기도 항목으로 옮기려면 눌러서 기도 지도에서 고르세요</div>' + tdTimeHTML(st.cur) +
+    '<div class="sh-acts"><button class="ghost" data-a="td-del" style="color:var(--danger)">지우기</button><button class="cta" data-a="td-ok">저장</button></div>');
+  w._td = st;
+}
+// 기도 지도를 약식으로 — 그룹(띠 색) 아래 이름 칩. 위 찾기 칸으로 거른다. 고르면 고치기 창으로 돌아간다(× · 밖 누르기도 그대로 돌아감)
+function tdPickSheet(st) {
+  const alive = t => t && !isShelved(t);
+  const chip = (id, cur) => { const t = findAny(DB, id); return alive(t) || (t && t.kind === 'group') ? '<button class="tag td-pk' + (id === cur ? ' on' : '') + '" data-a="pick" data-v="' + id + '" data-n="' + esc(t.name) + '">' + esc(t.name) + '</button>' : ''; };
+  const cur = st.pid || ((st.info.kind === 'fc' ? (DB.log[st.info.date].fc || []).find(x => x.id === st.info.ids[0]) : null) || {}).pid || '';
+  const placed = new Set();
+  const grp = (g, d) => { const ids = [...new Set(groupPids(g))]; ids.forEach(id => placed.add(id));
+    return '<div class="td-pg" data-n="' + esc(g.name) + '"><div class="td-pgh" style="--gc:' + esc(g.color || '#888') + '">' + (d ? '└ ' : '') + '<button class="td-pk" data-a="pick" data-v="' + g.id + '" data-n="' + esc(g.name) + '">' + esc(g.name) + '</button></div>' +
+      '<div class="td-pgb">' + ids.map(id => chip(id, cur)).join('') + '</div></div>' + kidsOf(DB, g.id).map(k => grp(k, d + 1)).join(''); };
+  let body = topGroups(DB).map(g => grp(g, 0)).join('');
+  const rest = DB.T.filter(t => alive(t) && !placed.has(t.id));
+  if (rest.length) body += '<div class="td-pg" data-n="그룹 밖"><div class="td-pgh" style="--gc:var(--tx3)">그룹 밖</div><div class="td-pgb">' + rest.map(t => chip(t.id, cur)).join('') + '</div></div>';
+  const w = openSheet('<div class="sh-t">기도 항목 고르기<button class="sh-x" data-a="sheet-close" aria-label="닫기"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button><small>' + esc(st.name) + ' 기록을 옮길 이름 · 그룹을 고르세요</small></div>' +
+    '<input class="field" id="tdPickQ" placeholder="이름 찾기" autocomplete="off" enterkeyhint="search"><div class="sh-b td-pick">' + body + '</div>', v => { st.pid = v === cur && !st.pid ? '' : v; tdKidSheet(st); });
+  w._onClose = () => tdKidSheet(st);
+  const q = $('tdPickQ');
+  if (q) q.addEventListener('input', () => { const t = q.value.trim(); w.querySelectorAll('.td-pg').forEach(pg => { let any = !t || pg.dataset.n.indexOf(t) >= 0;
+    pg.querySelectorAll('.td-pgb .td-pk').forEach(b => { const hit = !t || b.dataset.n.indexOf(t) >= 0 || pg.dataset.n.indexOf(t) >= 0; b.style.display = hit ? '' : 'none'; if (hit) any = true; }); pg.style.display = any ? '' : 'none'; }); });
+}
+ACT['td-pick'] = () => { const st = SHEET && SHEET._td; if (!st) return; st.cur = ptReadSecs().secs; SHEET._onClose = null; tdPickSheet(st); };
 ACT['td-del'] = () => { const o = SHEET && SHEET._td; if (!o) return; closeSheet(); tdDel(o.info); };
 ACT['td-ok'] = () => {
   const o = SHEET && SHEET._td; if (!o) return;
-  const nm = String(($('tdName') || {}).value || '').trim(), box = document.querySelector('.sh-wrap .pt-step'), v = parseInt(($('ptMin') || {}).value, 10) || 0;
-  const secs = box && box.dataset.unit === 's' ? v : v * 60, unchangedT = box && box.dataset.unit === 'm' ? Math.round(o.secs / 60) === v : o.secs === v;
-  let pid = null;
-  if (nm !== o.name) { const t = itemByName(nm); if (!t) { toast('\'' + nm + '\' 이라는 기도 항목이 없습니다\n목록에서 골라 주세요'); return; } pid = t.id; }
+  const r = ptReadSecs(), secs = r.secs, unchangedT = r.unit === 'm' ? Math.round(o.secs / 60) === r.v : o.secs === r.v;
+  const t = o.pid ? findAny(DB, o.pid) : null, pid = t && t.name !== o.name ? t.id : null;   // 같은 이름을 골랐으면 바꾼 것이 아니다
   closeSheet();
   if (!pid && unchangedT) return;   // 바꾼 것이 없으면 조용히 닫는다
   if (!secs && !pid) { tdDel(o.info); return; }
   const D = o.info.date, snap = tdSnap(D);
   if (!editPrayKid(DB, D, o.info.kind, o.info.ids, { pid: pid, secs: unchangedT ? null : secs })) return;
-  tdAfter(D, snap, '고쳤어요' + (pid ? '\n' + o.name + ' → ' + nm : '') + (unchangedT ? '' : '\n시간 ' + TDASH.dur(o.secs) + ' → ' + TDASH.dur(secs)));
+  tdAfter(D, snap, '고쳤어요' + (pid ? '\n' + o.name + ' → ' + t.name : '') + (unchangedT ? '' : '\n시간 ' + ptTm(o.secs) + ' → ' + ptTm(secs)));
 };
 // 지도 There 단추 — 길게 누르기 · 오른쪽 누르기 = 대시보드 (짧게 누르기는 예전대로 시간 재기)
 (function () {
