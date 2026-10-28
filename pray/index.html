@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1028-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1029-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-12';
+const APP_VERSION = 'v. 26-1029-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2427,6 +2427,7 @@ textarea.field{min-height:72px;line-height:1.6}
 #layers.top{z-index:65}
 /* There 대시보드 위에 상세를 얹을 때 — 대시보드는 닫지 않고 아래에 그대로 둔다(스크롤 · 탭 · 날 유지, 닫힘 · 디졸브 없음) */
 body.td-under #app{z-index:99992}   /* #app 이 쌓임 맥락이라 #layers 만 올려선 안 된다 */
+body.td-under #app{background:transparent}   /* 아이패드 · 아이폰 홈 화면 앱은 #app 이 테마색을 칠한다(.iosgap #app) — 그대로면 상세 뒤가 대시보드 대신 상세 바탕색 빈 화면으로 보였다 */
 body.td-under #app>*:not(#layers){visibility:hidden}   /* 넓은 화면에서 상세 옆으로 기록 화면이 비치지 않게 */
 /* 한 장 기도(#focus, 맨 위 z-index)를 덮고 상세 · 설정 창이 뜰 때 — #app 이 통째로 하나의 층이라 안쪽 z-index 로는 못 이긴다. 앱을 위로 올리고 창 말고는 감춘다 (HB 신고 2026-10-19) */
 body.f-layer #app{z-index:70}
