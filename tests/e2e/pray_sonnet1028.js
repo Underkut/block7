@@ -31,12 +31,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   // 5-4 — 대시보드 → 항목 상세 → 취소 = 대시보드 D탭 · 토스트 없음
   await p.evaluate(() => { DB.log[TODAY] = { d: [window._a.id], p: {}, k: [], s: 60, ses: [{ id: 's1', t: Date.now() - 6e4, time: '09:00', d: 60, src: 'focus' }], fc: [{ id: 'c1', s: 's1', pid: window._a.id, n: '가람', k: '1순위', a: Date.now() - 6e4, t: Date.now(), d: 40, amen: true }] }; save(); openThereDash('day', TODAY); });
   await sleep(600);
+  await p.evaluate(() => { const ov = document.getElementById('tdashOv'); const sp = document.createElement('div'); sp.style.height = '1500px'; ov.appendChild(sp); window._ov = ov; ov.scrollTop = 300; window._st = ov.scrollTop; });
   await p.evaluate(() => { const el = [...document.querySelectorAll('#tdashOv .tdash-item')].find(x => /가람/.test(x.textContent)); if (el) el.click(); });
   await sleep(300);
   const opened = await p.evaluate(() => UI.layers.length);
   if (!opened) { console.log(await p.evaluate(() => document.querySelector('#tdashOv') && document.querySelector('#tdashOv').innerText.slice(0, 300))); console.log('  (대시보드에서 항목 줄을 못 찾아 5-4 건너뜀)'); }
   else {
-    await p.click('[data-a="layer-cancel"]'); await sleep(700);
+    ok('⭐5-4 상세가 떠 있는 동안 대시보드는 닫히지 않고 그대로', await p.evaluate(() => document.getElementById('tdashOv') === window._ov && window._ov.classList.contains('in')));
+    await p.evaluate(() => { window._seen = []; const ov = window._ov; window._iv = setInterval(() => window._seen.push(+getComputedStyle(ov).opacity), 16); });
+    await p.click('[data-a="layer-cancel"]'); await sleep(900);
+    ok('⭐5-4 돌아올 때 같은 대시보드 · 투명해진 적 없음(디졸브 · 깜빡임 없음)', await p.evaluate(() => { clearInterval(window._iv); return document.getElementById('tdashOv') === window._ov && Math.min(...window._seen) === 1; }));
+    ok('⭐5-4 읽던 스크롤 자리 그대로', await p.evaluate(() => window._st > 0 && window._ov.scrollTop === window._st), await p.evaluate(() => [window._st, window._ov.scrollTop]));
     ok('⭐5-4-1 취소로 닫으면 대시보드 D탭', await p.evaluate(() => TDASH.isOpen() && /Today/.test((document.querySelector('[data-tdsub]') || {}).textContent || '')));
     ok('⭐5-4-2 바꾼 것 없으면 되돌렸습니다 토스트 없음', await p.evaluate(() => !/바꾼 것을 되돌렸/.test(document.body.innerText)));
   }

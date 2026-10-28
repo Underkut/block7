@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1028-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1028-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-11';
+const APP_VERSION = 'v. 26-1028-12';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2425,6 +2425,9 @@ textarea.field{min-height:72px;line-height:1.6}
 .pal button{aspect-ratio:1;border-radius:50%;background:var(--c);transition:transform .15s}
 .pal button.on{box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--c)}
 #layers.top{z-index:65}
+/* There 대시보드 위에 상세를 얹을 때 — 대시보드는 닫지 않고 아래에 그대로 둔다(스크롤 · 탭 · 날 유지, 닫힘 · 디졸브 없음) */
+body.td-under #app{z-index:99992}   /* #app 이 쌓임 맥락이라 #layers 만 올려선 안 된다 */
+body.td-under #app>*:not(#layers){visibility:hidden}   /* 넓은 화면에서 상세 옆으로 기록 화면이 비치지 않게 */
 /* 한 장 기도(#focus, 맨 위 z-index)를 덮고 상세 · 설정 창이 뜰 때 — #app 이 통째로 하나의 층이라 안쪽 z-index 로는 못 이긴다. 앱을 위로 올리고 창 말고는 감춘다 (HB 신고 2026-10-19) */
 body.f-layer #app{z-index:70}
 body.f-layer #app>:not(#layers){visibility:hidden}
@@ -3730,7 +3733,7 @@ function popLayer() {
   setTimeout(() => el.remove(), 360);
   refresh({ skipTopEl: el });
   // There 대시보드에서 항목 이름을 눌러 열었던 상세면 닫을 때 그 대시보드 · 같은 탭 · 같은 날로 돌아간다 (1028-3 5-4)
-  if (gone && gone.fromDash && !UI.layers.length) { const b = gone.fromDash; setTimeout(() => openThereDash(b.view, b.at), 0); }
+  if (gone && gone.fromDash && !UI.layers.length) tdUnderOff();
 }
 function liveLayerEls() { return [...$('layers').children].filter(e => !e.classList.contains('out')); }
 function fillLayer(el, L) {
@@ -4190,7 +4193,7 @@ ACT['mark-link'] = el => {
   save(); refresh(); toast(markName(m) + ' — ' + markLinkMembers(DB, k).length + '개에 이어졌습니다');
 };
 ACT['mark-unlink'] = el => { delete DB.markLinks[el.dataset.m]; save(); refresh(); };
-function closeAllLayers() { $('layers').classList.remove('has'); liveLayerEls().forEach(x => { x.classList.remove('in'); x.classList.add('out'); setTimeout(() => x.remove(), 360); }); UI.layers = []; }
+function closeAllLayers() { $('layers').classList.remove('has'); liveLayerEls().forEach(x => { x.classList.remove('in'); x.classList.add('out'); setTimeout(() => x.remove(), 360); }); UI.layers = []; tdUnderOff(); }
 ACT.tab = el => { if (UI.layers.length) closeAllLayers(); showTab(el.dataset.tab); $('v-' + el.dataset.tab).scrollTop = 0; };
 ACT.pop = () => popLayer();
 ACT.settings = () => pushLayer({ type: 'settings' });
@@ -7358,7 +7361,7 @@ function itemByName(n) { n = String(n || '').trim(); if (!n) return null; return
 function openThereDash(view, at, soft) {
   if (MT.on) thereStop('page');
   const c = thereCache();
-  TDASH.open({
+  TD_OPTS = {
     today: TODAY, view: view || undefined, soft: !!soft, store: 'pray.tdash', at: at && at <= TODAY ? at : undefined,
     local: { prayLog: DB.log, thereLog: c ? c.log : null },
     load: SY.user ? () => loadWordThere().then(l => ({ thereLog: l })) : null,
@@ -7366,13 +7369,25 @@ function openThereDash(view, at, soft) {
     // 기도 항목 이름 — 톡 = 상세, 길게 · 우클릭 = 그 항목부터 한 장씩 기도 (P3′-2). 이름으로 찾는다(기록에 id 가 없다)
     item: { has: n => !!itemByName(n), open: n => {
       const t = itemByName(n); if (!t) return;
-      const ov = $('tdashOv'), st = ov && ov._m && ov._m.state, back = st ? { view: st.view, at: st.ats[st.view] } : null;   // 닫을 때 돌아올 탭 · 날
-      TDASH.close(); if (t.kind === 'group') pushLayer({ type: 'group', id: t.id }); else openTarget(t.id);
-      const top = UI.layers[UI.layers.length - 1]; if (top && back) top.fromDash = back;
+      // 대시보드는 닫지 않고 상세를 그 위에 얹는다 — 닫으면 처음 화면으로 다시 열려 스크롤이 사라지고, 사이에 기록 화면이 비쳤다
+      TD_OPTS.esc = false;   // 상세가 떠 있는 동안 Esc 는 상세가 받는다(앱의 닫기 표)
+      document.body.classList.add('td-under');
+      if (t.kind === 'group') pushLayer({ type: 'group', id: t.id }); else openTarget(t.id);
+      const top = UI.layers[UI.layers.length - 1]; if (top) top.fromDash = true;
     }, pray: n => { const t = itemByName(n); if (t) focusFromItem(t.id); } },
     edit: { open: tdEdit, del: tdDel },   // 기도노트 기록 줄 — 톡 = 고치기, 왼쪽으로 밀기 = 지우기 (1028-3 5-1 · 5-2)
-    onClose: () => { if (UI.tab === 'hist') renderView(); }
-  });
+    onClose: () => { tdUnderOff(); if (UI.tab === 'hist') renderView(); }
+  };
+  TDASH.open(TD_OPTS);
+}
+let TD_OPTS = null;
+// 상세가 닫혀 대시보드가 다시 드러날 때 — 기록이 바뀌었을 수 있고(취소는 DB 를 통째로 되돌림) 읽던 자리는 그대로 둔다
+function tdUnderOff() {
+  if (TD_OPTS) TD_OPTS.esc = undefined;
+  if (!document.body.classList.contains('td-under')) return;
+  setTimeout(() => { if (!UI.layers.length) document.body.classList.remove('td-under'); }, 380);   // 상세가 밀려 나가는 동안(.34초)은 대시보드 위에 둔다
+  const ov = $('tdashOv'), st = ov && ov._m && ov._m.state; if (!st) return;
+  st.data.prayLog = DB.log; if (TDASH.isOpen()) TDASH.redraw();
 }
 ACT['there-dash'] = el => openThereDash(el.dataset.v, el.dataset.at, el.dataset.soft === '1');
 // ── There 대시보드의 기도노트 기록 줄 고치기 · 지우기 (HB 1028-3 5-1 · 5-2) ──
