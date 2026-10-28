@@ -258,7 +258,14 @@ function displayEvents(st, k, secId) {
       else if (ev.g && !ev.repeat) { const n = spanN(ev, dsh); if (n > 1 && dayDiff(ok, k) < n) spans.push(ev); }
     });
   });
-  return [...spans, ...own, ...sortByTime(virtual)];
+  // 앱과 같게 — 시간 있는 반복 일정은 자기보다 늦은 첫 일정 앞에 끼운다 (v26-1028-8)
+  const out = [...own];
+  sortByTime(virtual).forEach((v) => {
+    if (!v.time) { out.push(v); return; }
+    const at = out.findIndex((o) => o.time && o.time > v.time);
+    if (at < 0) out.push(v); else out.splice(at, 0, v);
+  });
+  return [...spans, ...out];
 }
 // 알림에 싣는 한 구간의 줄들 — 일정 먼저, 그 다음 안 끝난 할일 (예전 block7Notify 와 같은 차례)
 function secItems(st, k, secId, includeSmall, todayK) {

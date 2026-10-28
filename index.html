@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-7  [production]  -->
+<!-- BLOCK7  v. 26-1028-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2736,6 +2736,18 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
   font-family:inherit;outline:none;resize:vertical;
 }
 .memo-hint{margin-top:11px;font-size:11px;line-height:1.7;color:var(--tx3);}
+/* 연필·체크 버튼 — 가리키면 녹색 (v26-1028-8, HB) */
+#memoEditBtn:hover{color:var(--ok);}
+/* 네 모서리를 잡고 크기를 바꾼다 (v26-1028-8, HB). 크기를 정하면 .sized 가 붙어
+   팝업이 세로 칸(flex)이 되고, 보기·입력 칸이 남는 높이를 다 채운다. */
+.memo-grip{position:absolute;width:18px;height:18px;z-index:2;touch-action:none;}
+.memo-grip[data-c="nw"]{left:0;top:0;cursor:nwse-resize;}
+.memo-grip[data-c="ne"]{right:0;top:0;cursor:nesw-resize;}
+.memo-grip[data-c="sw"]{left:0;bottom:0;cursor:nesw-resize;}
+.memo-grip[data-c="se"]{right:0;bottom:0;cursor:nwse-resize;}
+.memo-modal.sized{display:flex!important;flex-direction:column;max-height:none;max-width:none;overflow:hidden;}
+.memo-modal.sized .memo-view{flex:1;min-height:0;overflow-y:auto;}
+.memo-modal.sized .memo-edit{flex:1;min-height:0;resize:none;}
 
 
 /* sm inline ghost — always visible at bottom, no + button */
@@ -6617,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-7";
+const APP_VERSION = "v. 26-1028-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8300,6 +8312,7 @@ try{
   <div class="memo-view" id="memoView"></div>
   <textarea class="memo-edit" id="memoEdit" style="display:none" placeholder="메모를 적어 주세요."></textarea>
   <div class="memo-hint" id="memoHint"></div>
+  <span class="memo-grip" data-c="nw"></span><span class="memo-grip" data-c="ne"></span><span class="memo-grip" data-c="sw"></span><span class="memo-grip" data-c="se"></span>
 </div>
 
 <!-- 로고 롱터치 메뉴 — 네비게이토 180 verse bar controls -->
@@ -24853,7 +24866,16 @@ function getDisplayEvents(k,secId){
   // elsewhere. Virtual (repeated-from-another-day) events have no
   // stored position on THIS date, so they're appended after own,
   // sorted by time among themselves.
-  return [...spans,...own,...sortEventsByTime(virtual)];
+  // 반복 일정도 시간 자리에 끼운다 (v26-1028-8, HB — 매주 도는 '20.3 기도회' 가 늘 맨 뒤로 밀려
+  // 시계 정렬을 눌러도 '21.3 송번역' 뒤에 남았다). own 의 순서는 그대로 두고, 시간 있는 반복 일정만
+  // 자기보다 늦은 첫 일정 앞에 넣는다. 시간 없는 것은 예전처럼 끝에.
+  const out=[...own];
+  sortEventsByTime(virtual).forEach(v=>{
+    if(!v.time){out.push(v);return;}
+    const at=out.findIndex(o=>o.time&&o.time>v.time);
+    if(at<0)out.push(v);else out.splice(at,0,v);
+  });
+  return [...spans,...out];
 }
 
 // Default sort: by time ascending, with timeless events first (so
@@ -35977,6 +35999,7 @@ function openTaskMemo(type,secId,idx,startEdit){
   const md=document.getElementById('taskMemoModal');
   if(!ov||!md)return;
   ov.style.display='block';md.style.display='block';
+  _memoApplySize(md);
   _memoRender();
   if(_memoEditing)setTimeout(()=>{const e=document.getElementById('memoEdit');if(e)e.focus();},60);
 }
@@ -35991,6 +36014,42 @@ function closeTaskMemo(){
   _memoCtx=null;_memoEditing=false;
   if(c)_subRerender(c.type,c.secId);
 }
+// ── 메모 팝업 크기 — 네 모서리로 조절, 이 기기에만 기억 (v26-1028-8, HB) ──
+// 중심(translate -50%)에 붙은 팝업이라 한 모서리를 끈 만큼 양쪽으로 함께 커진다 → 변화량을 두 배로.
+function _memoClampSize(w,h){
+  const vw=document.documentElement.clientWidth,vh=window.innerHeight;
+  return {w:Math.round(Math.max(220,Math.min(w,vw-16))),h:Math.round(Math.max(200,Math.min(h,vh-16)))};
+}
+function _memoApplySize(md){
+  let sz=null;
+  try{sz=JSON.parse(localStorage.getItem(_lsk('memoSize'))||'null');}catch(e){}
+  if(sz&&sz.w&&sz.h){
+    const c=_memoClampSize(sz.w,sz.h);
+    md.style.width=c.w+'px';md.style.height=c.h+'px';md.classList.add('sized');
+  }else{md.style.width='';md.style.height='';md.classList.remove('sized');}
+}
+(function _memoWireGrips(){
+  const md=document.getElementById('taskMemoModal');if(!md)return;
+  md.querySelectorAll('.memo-grip').forEach(g=>{
+    g.addEventListener('pointerdown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const c=g.dataset.c,r=md.getBoundingClientRect();
+      const x0=e.clientX,y0=e.clientY,w0=r.width,h0=r.height;
+      const sx=c.includes('e')?1:-1,sy=c.includes('s')?1:-1;
+      md.classList.add('sized');md.style.width=w0+'px';md.style.height=h0+'px';
+      try{g.setPointerCapture(e.pointerId);}catch(_){}
+      const mv=ev=>{
+        const s=_memoClampSize(w0+sx*2*(ev.clientX-x0),h0+sy*2*(ev.clientY-y0));
+        md.style.width=s.w+'px';md.style.height=s.h+'px';
+      };
+      const up=()=>{
+        g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);
+        try{localStorage.setItem(_lsk('memoSize'),JSON.stringify({w:parseInt(md.style.width),h:parseInt(md.style.height)}));}catch(_){}
+      };
+      g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up);
+    });
+  });
+})();
 function toggleTaskMemoEdit(){
   if(!_memoCtx)return;
   if(_memoEditing)_memoSaveEdit();
