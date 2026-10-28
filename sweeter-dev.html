@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-12  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1028-13  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-12";
+const APP_VERSION = "v. 26-1028-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44127,7 +44127,8 @@ function _embedPost(m){try{window.parent.postMessage(m,location.origin);}catch(e
 function _embedIdleSoon(){
   try{if(!_EMBED)return;}catch(e){return;}   // 이 줄보다 먼저(부팅 중) 불려도 TDZ 로 깨지지 않게
   clearTimeout(_embedIdleT);
-  _embedIdleT=setTimeout(()=>{if(_embedAllClosed())_embedPost({b7embed:'close'});},90);
+  // × 등으로 닫힐 때도 투명하게 바꾼 뒤 알린다 — 부르던 앱이 겹 화면을 옅게 지우는 동안 바탕색 판이 덮지 않게 (다음에 열 때 되돌림)
+  _embedIdleT=setTimeout(()=>{if(_embedAllClosed()){document.documentElement.classList.add('b7-peek');_embedPost({b7embed:'close'});}},90);
 }
 function _embedAllClosed(){
   const agg=document.getElementById('vAggModal');
@@ -44151,6 +44152,7 @@ function _embedTheme(t){
 }
 function _embedRun(m){
   _embedTheme(m.theme);
+  document.documentElement.classList.remove('b7-peek');   // 지난번에 밀어 닫혀 투명한 채 내려갔다 — 다시 불투명(평소)으로 (_embedWatchPeek)
   // 열 때마다 빈 판에서 시작한다 (HB 2026-10-28 사진) — 기도노트는 이 iframe 을 미리 켜 두고 **다시 쓴다**.
   //   지난번에 열어 둔 말씀 전체화면 · 타일뷰가 남아 있으면 새 화면이 그 위에 얹혀, 새 타일뷰를 밀어 닫는 동안
   //   상관없는 전체화면이 아래에 비쳤다. 저장 팝업도 같다. 성경은 열면서 제자리를 다시 잡으니 그대로 둔다.
@@ -44171,7 +44173,10 @@ function _embedWatchPeek(){
     // 밀어 닫기가 끝났는데 남은 화면이 없으면 '닫혔다' 를 **먼저** 보낸다 (HB 2026-10-28 '돌아온 뒤 한 번 깜빡') —
     //   예전엔 비침(peek)을 먼저 끄고 0.09초 뒤에 닫혔다를 보냈다. 그 사이 부르던 앱은 겹 화면이 덮고 있다고 보고
     //   제 화면을 감췄고, 이 앱은 불투명 바탕으로 돌아와 한 번 번쩍였다.
-    if(!on&&_embedAllClosed()){clearTimeout(_embedIdleT);_embedPost({b7embed:'close'});}
+    //   그리고 이때는 **비침을 끄지 않는다** (HB 2026-10-28 '깜빡임이 약해졌지만 아직') — 끄면 이 iframe 이 불투명 바탕으로
+    //   돌아오고, 부르던 앱이 겹 화면을 0.25초 동안 옅게 지우는 사이 그 바탕이 한 장 기도를 덮었다가 사라졌다(12화면).
+    //   투명한 채로 내려가게 두고, 다음에 열 때(_embedRun) 불투명으로 되돌린다.
+    if(!on&&_embedAllClosed()){clearTimeout(_embedIdleT);_embedPost({b7embed:'close'});return;}
     document.documentElement.classList.toggle('b7-peek',on);
     _embedPost({b7embed:'peek',on});
   };
