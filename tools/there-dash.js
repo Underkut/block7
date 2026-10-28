@@ -413,7 +413,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     h += '<div class="tdash-card"><div class="tdash-ct">날마다<small>막대를 누르면 그날</small></div><div class="tdash-cols">' + days.map(d => {
       const o = dt[d];
       const inner = o ? APPS.slice().reverse().filter(x => o.by[x[0]]).map(x => '<i style="height:' + (o.by[x[0]] / max * 134).toFixed(1) + 'px;background:' + x[2] + '"></i>').join('') : '<i></i>';
-      // ⚠️ <button> 이 아니라 <div> — 아이폰(WebKit)은 단추 안을 내용 폭으로 줄여 그려, 글자 없는 막대(<i>)가 폭 0 이 되어 안 보였다 (HB 2026-10-29 사진)
+      // ⚠️ 단추(button) 태그가 아니라 div 에 role=button — 아이폰(WebKit)은 단추 안을 내용 폭으로 줄여 그려, 글자 없는 막대가 폭 0 이 되어 안 보였다 (HB 2026-10-29 사진)
       return '<div role="button" tabindex="0" class="tdash-col' + (o ? '' : ' z') + (d === S.today ? ' on' : '') + '" data-td="day" data-v="' + d + '" aria-label="' + d + ' ' + (o ? dur(o.s) : '기록 없음') + '">' + inner + '</div>';
     }).join('') + '</div><div class="tdash-lbl">' + days.map(d => '<span' + (d === S.today ? ' class="on"' : '') + '>' + (parse(d).getDay() === 0 ? '주일' : WK[parse(d).getDay()]) + '</span>').join('') + '</div></div>';
     h += topRefs(ss, S.refLabel);
