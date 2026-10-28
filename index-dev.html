@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-9  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1028-10  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-9";
+const APP_VERSION = "v. 26-1028-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44130,6 +44130,15 @@ function _embedIdleSoon(){
   },90);
 }
 function _embedDone(){_embedIdleSoon();}
+function _embedClean(){
+  try{
+    if(_verseFullIsOpen())closeVerseFull();
+    const gd=document.getElementById('verseGrid');if(gd){gd.classList.remove('under-vf');if(_vgIsOpen())closeVerseGrid();}
+    const agg=document.getElementById('vAggModal');if(agg&&agg.style.display&&agg.style.display!=='none'&&typeof closeVerseAggPopup==='function'){if(_keepSwitchIsOpen())closeKeepSwitch();closeVerseAggPopup();}
+    ['verseFull','verseGrid'].forEach(id=>{const el=document.getElementById(id);if(el){el.style.transition='';el.style.transform='';el.style.opacity='';}});
+    clearTimeout(_embedIdleT);   // 치우며 걸린 '닫혔다' 알림은 거둔다 — 지금 새로 여는 중이다
+  }catch(e){}
+}
 function _embedOn(){try{return !!_EMBED;}catch(e){return false;}}
 function _embedTheme(t){
   const el=document.getElementById('bibleRd');if(!el||!t||typeof t!=='object')return;
@@ -44138,6 +44147,10 @@ function _embedTheme(t){
 }
 function _embedRun(m){
   _embedTheme(m.theme);
+  // 열 때마다 빈 판에서 시작한다 (HB 2026-10-28 사진) — 기도노트는 이 iframe 을 미리 켜 두고 **다시 쓴다**.
+  //   지난번에 열어 둔 말씀 전체화면 · 타일뷰가 남아 있으면 새 화면이 그 위에 얹혀, 새 타일뷰를 밀어 닫는 동안
+  //   상관없는 전체화면이 아래에 비쳤다. 저장 팝업도 같다. 성경은 열면서 제자리를 다시 잡으니 그대로 둔다.
+  _embedClean();
   const b=parseInt(m.b,10),c=parseInt(m.c,10);
   if(m.kind==='bible'){if(b>=1&&b<=66&&c>=1){_brNextSrc='pray';bibleOpen(b-1,c,0);}else bibleOpenLast('pray');}
   else if(m.kind==='keep')openKeepListPopup('');
