@@ -39,7 +39,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
   exportBackup, readBackup, bakDevice, bakName, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, delPraySession, editPrayKid, delPrayKid, sesKids, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -940,6 +940,55 @@ const MAPCSV = [
   sc.eq('㉕ 오래 못 한 기도 — 보관한 것 · 한 번도 안 한 것은 빼고 먼 순', r.stale.map(o => [o.t.name, o.ago]), [['나래', 29], ['다온', 24]]);
   const r2 = A.monthGlance(db, dt, ss, '2026-09', '2026-10-27');
   sc.eq('㉕ 지난 달을 보면 이어서 머문 날은 0 (오늘이 든 달에서만)', [r2.streak, r2.isNow, r2.days], [0, false, 30]);
+}
+
+// ㉖ 기도 한 번 안의 조각(한 장 카드 fc · Map 기도 mp) — 고치기 · 지우기 (HB 1028-3 5-1 · 5-2 · 6-2-2)
+//    지킬 것: 조각의 합 ≤ 그 한 번의 시간 · 날 합계 s = 줄 합 · 조각을 지워도 그 한 번의 시간은 그대로
+{
+  const D = '2026-10-28', at = (h, m) => new Date(2026, 9, 28, h, m || 0).getTime();
+  const mk = () => {
+    const db = A.emptyDB(); const a = A.newTarget('person', '가람'), b = A.newTarget('person', '나래'), c = A.newTarget('person', '다온'); db.T.push(a, b, c);
+    const f = A.addPraySession(db, at(7), 600, 'focus', 'S1');
+    A.addFocusCard(db, D, 'S1', a.id, at(7), at(7, 4), 240, true, '가족');
+    A.addFocusCard(db, D, 'S1', b.id, at(7, 4), at(7, 7), 180, false, '가족');
+    const m1 = A.addPraySession(db, at(9), 300, 'map'), m2 = A.addPraySession(db, at(20), 120, 'map');
+    A.addMapPrayer(db, D, [a.id, b.id], at(9), at(9, 2), '가족');      // 120초 → 60 · 60
+    A.addMapPrayer(db, D, [c.id], at(20), at(20, 1), '다온');           // 다음 지도 There 몫
+    return { db, a, b, c, f: f.id, m1: m1.id, m2: m2.id, L: db.log[D] };
+  };
+  const sum = (L, k) => (L[k] || []).reduce((s, x) => s + x.d, 0);
+  { const t = mk(), k = A.sesKids(t.L, t.L.ses.find(x => x.id === t.m1));
+    sc.eq('㉖ 지도 There 의 조각 = 그 시작부터 다음 지도 There 전까지 누른 것', [k.mp.length, k.mp.map(x => x.n).sort().join()], [2, '가람,나래']);
+    sc.eq('㉖ 한 장 기도의 조각 = 같은 sid 카드', A.sesKids(t.L, t.L.ses.find(x => x.id === t.f)).fc.length, 2); }
+  { const t = mk();
+    A.editPraySession(t.db, D, t.f, 300);
+    sc.eq('⭐㉖ 6-2-2 한 번을 10분 → 5분: 카드(4분 · 3분)가 같은 비율로 줄어 합이 5분', [sum(t.L, 'fc'), t.L.fc.map(x => x.d)], [300, [171, 129]]);
+    A.editPraySession(t.db, D, t.f, 900);
+    sc.eq('㉖ 늘리면 카드는 그대로 (늘어난 몫은 이름 없는 시간)', sum(t.L, 'fc'), 300); }
+  { const t = mk(); const s0 = t.L.s;
+    A.editPrayKid(t.db, D, 'fc', [t.L.fc[0].id], { secs: 120 });
+    sc.eq('⭐㉖ 카드 시간을 줄이면 그 한 번 · 합계는 그대로', [t.L.fc[0].d, t.L.s, t.L.ses[0].d], [120, s0, 600]);
+    A.editPrayKid(t.db, D, 'fc', [t.L.fc[0].id], { secs: 540 });
+    sc.eq('⭐㉖ 카드를 남은 몫보다 늘리면 그 한 번 · 합계도 넘친 만큼 는다 (540+180=720)', [t.L.ses[0].d, t.L.s - s0], [720, 120]); }
+  { const t = mk();
+    A.editPrayKid(t.db, D, 'fc', [t.L.fc[1].id], { pid: t.c.id });
+    sc.eq('㉖ 카드의 기도 항목 바꾸기 — 이름 · id', [t.L.fc[1].pid === t.c.id, t.L.fc[1].n], [true, '다온']);
+    sc.eq('㉖ 없는 항목 · 없는 줄', [A.editPrayKid(t.db, D, 'fc', [t.L.fc[1].id], { pid: 'nope' }), A.editPrayKid(t.db, D, 'fc', ['nope'], { secs: 9 })], [null, null]); }
+  { const t = mk(); const ids = t.L.mp.filter(x => x.k === '가족').map(x => x.id);
+    A.editPrayKid(t.db, D, 'mp', ids, { secs: 60 });
+    sc.eq('㉖ Map 기도 한 줄(여러 이름) 시간 — 비율대로 나눈다', t.L.mp.filter(x => x.k === '가족').map(x => x.d), [30, 30]);
+    A.editPrayKid(t.db, D, 'mp', ids, { pid: t.c.id });
+    sc.eq('㉖ Map 기도를 사람 하나로 바꾸면 한 줄로 합친다', t.L.mp.filter(x => x.a === at(9)).map(x => [x.n, x.k, x.d]), [['다온', '다온', 60]]); }
+  { const t = mk(); const s0 = t.L.s;
+    sc.eq('⭐㉖ 카드 지우기 — 이름표만 떼고 시간은 그대로', [A.delPrayKid(t.db, D, 'fc', [t.L.fc[0].id]), t.L.fc.length, t.L.s, t.L.ses[0].d], [1, 1, s0, 600]); }
+  { const t = mk(); const s0 = t.L.s;
+    const r = A.delPraySession(t.db, D, t.m1);
+    sc.eq('⭐㉖ 지도 There 한 번 지우기 — 시간 0 · 합계에서 빠짐 · 그 안의 Map 기도만 함께 지움', [r.kids, t.L.s, t.L.mp.map(x => x.n)], [2, s0 - 300, ['다온']]); }
+  // 두 기기 — 한쪽이 카드를 지우고 한쪽이 그 한 번을 늘렸다
+  { const t = mk(), base = JSON.parse(JSON.stringify(t.db)), L = JSON.parse(JSON.stringify(t.db)), R = JSON.parse(JSON.stringify(t.db));
+    A.delPrayKid(L, D, 'fc', [L.log[D].fc[0].id]); A.editPraySession(R, D, t.f, 660);
+    const m = A.merge3(base, L, R).log[D];
+    sc.eq('⭐㉖ 두 기기 병합 — 지운 카드는 안 살아나고 늘린 시간은 남는다', [m.fc.length, m.ses.find(x => x.id === t.f).d, m.s, A.sesSum(m)], [1, 660, 660 + 300 + 120, 660 + 300 + 120]); }
 }
 
 sc.done();

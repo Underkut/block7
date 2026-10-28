@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1028-4';
+const APP_VERSION = 'v. 26-1028-5';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -984,7 +984,84 @@ function editPraySession(db, date, sid, secs) {
   secs = Math.max(0, Math.min(86400, Math.round(Number(secs) || 0)));
   const was = Math.max(0, Number(e.d) || 0);
   e.d = secs; L.s = Math.max(0, (Number(L.s) || 0) + secs - was);
+  if (secs < was) fitKids(L, e);   // 6-2-2 — 줄인 시간보다 안의 조각(카드 · Map 기도)이 길면 같은 비율로 줄인다
   return { was: was, now: secs };
+}
+// ── 기도 한 번(ses) 안의 조각 — 한 장 기도 카드(fc) · Map 기도(mp) (HB 1028-3 6-2-2) ──
+// 조각은 그 한 번의 시간을 '누구를 위해' 로 나눈 이름표다. 합계에는 더하지 않는다(ses 가 이미 품고 있다).
+// 그래서 지킬 것은 하나: **조각의 합 ≤ 그 한 번의 시간.** 남는 몫은 '이름 없이 머문 시간'(넘기는 사이 · 카드 밖)이다.
+//  · fc 는 s(한 장 기도 한 번의 sid) = ses.id 로 이어진다.
+//  · mp 는 이은 칸이 없다 — 같은 날 그 지도 There 가 시작한 때부터 다음 지도 There 가 시작하기 전까지 누른 것.
+function sesKids(L, e) {
+  if (!L || !e) return { fc: [], mp: [] };
+  const fc = (Array.isArray(L.fc) ? L.fc : []).filter(x => x && e.id && x.s === e.id);
+  let mp = [];
+  if (e.src === 'map' && Array.isArray(L.mp)) {
+    const t0 = Number(e.t) || 0, nx = (Array.isArray(L.ses) ? L.ses : []).filter(x => x && x !== e && x.src === 'map' && (Number(x.t) || 0) > t0).reduce((m, x) => Math.min(m, Number(x.t)), Infinity);
+    mp = L.mp.filter(x => x && (Number(x.a) || Number(x.t) || 0) >= t0 && (Number(x.a) || Number(x.t) || 0) < nx);
+  }
+  return { fc, mp };
+}
+// 조각이 든 ses 를 찾는다 — fc 는 sid, mp 는 시각
+function kidParent(L, kind, x) {
+  const ses = Array.isArray(L && L.ses) ? L.ses : [];
+  if (kind === 'fc') return ses.find(e => e && e.id === x.s) || null;
+  return ses.find(e => e && e.src === 'map' && sesKids(L, e).mp.indexOf(x) >= 0) || null;
+}
+const kidSum = k => k.fc.concat(k.mp).reduce((s, x) => s + Math.max(0, Number(x.d) || 0), 0);
+// 한 번의 시간을 줄였더니 조각의 합이 넘치면 — 조각들을 **같은 비율로** 줄여 딱 맞춘다. 늘리면 조각은 그대로(늘어난 몫은 이름 없는 시간)
+function fitKids(L, e) {
+  const k = sesKids(L, e), sum = kidSum(k), cap = Math.max(0, Number(e.d) || 0);
+  if (sum <= cap || !sum) return 0;
+  const all = k.fc.concat(k.mp), r = cap / sum;
+  let left = cap;
+  all.forEach((x, i) => { const v = i === all.length - 1 ? Math.max(0, left) : Math.min(left, Math.floor((Number(x.d) || 0) * r)); x.d = v; left -= v; });
+  return all.length;
+}
+// 기도 한 번 지우기 — 시간은 0(줄은 남겨 두 기기 병합이 '시간 차이' 로 읽게, 위 editPraySession 과 같다) · 그 안의 조각은 함께 지운다
+function delPraySession(db, date, sid) {
+  const L = db.log[date]; if (!L || !Array.isArray(L.ses)) return null;
+  const e = L.ses.find(x => x && x.id === sid); if (!e) return null;
+  const k = sesKids(L, e), r = editPraySession(db, date, sid, 0);
+  if (k.fc.length) L.fc = L.fc.filter(x => k.fc.indexOf(x) < 0);
+  if (k.mp.length) L.mp = L.mp.filter(x => k.mp.indexOf(x) < 0);
+  return { was: r.was, kids: k.fc.length + k.mp.length };
+}
+// 조각 하나(fc) · 한 번 누른 Map 기도(mp 여러 줄 — 대시보드 한 줄)를 고친다. ids = 그 줄의 id 들.
+//   o.secs: 새 시간(초). 늘려서 그 한 번의 남은 몫을 넘으면 **그 한 번도 같이 는다**(합계 s 도) — 조각의 합 ≤ 한 번의 시간을 지킨다.
+//           줄이면 한 번의 시간은 그대로다(줄인 몫은 이름 없이 머문 시간이 된다 — 화면에 머문 시간은 기도 시간이다).
+//   o.pid: 기도 항목을 바꾼다. fc 는 그 항목으로(k = 그 항목의 첫 그룹 이름). mp 는 누른 이름(k)을 바꾸고,
+//          사람 하나로 바꾸면 여러 줄을 한 줄로 합친다(그룹 하나를 눌렀던 것 → 그 사람 하나).
+function editPrayKid(db, date, kind, ids, o) {
+  const L = db.log[date]; if (!L) return null;
+  const arr = Array.isArray(L[kind]) ? L[kind] : null; if (!arr) return null;
+  const rows = (ids || []).map(id => arr.find(x => x && x.id === id)).filter(Boolean); if (!rows.length) return null;
+  const was = rows.reduce((s, x) => s + (Number(x.d) || 0), 0);
+  if (o && o.pid) {
+    const t = findAny(db, o.pid); if (!t) return null;
+    if (kind === 'fc') { const g = groupsOf(db, t.id)[0]; rows[0].pid = t.id; rows[0].n = t.name; rows[0].k = t.kind === 'group' ? t.name : (g ? g.name : ''); }
+    else if (t.kind === 'group') rows.forEach(x => { x.k = t.name; });
+    else {
+      const keep = rows[0]; keep.pid = t.id; keep.n = t.name; keep.k = t.name; keep.d = was;
+      L.mp = arr.filter(x => rows.indexOf(x) <= 0); rows.length = 1;
+    }
+  }
+  if (o && o.secs != null) {
+    const now = Math.max(0, Math.min(86400, Math.round(Number(o.secs) || 0))), cur = rows.reduce((s, x) => s + (Number(x.d) || 0), 0);
+    if (now !== cur) {
+      let left = now;   // 여러 줄이면 지금 비율대로 나눈다
+      rows.forEach((x, i) => { const v = i === rows.length - 1 ? left : (cur ? Math.round((Number(x.d) || 0) * now / cur) : Math.floor(now / rows.length)); x.d = Math.max(0, Math.min(left, v)); left -= x.d; });
+      const e = kidParent(L, kind, rows[0]);
+      if (e) { const over = kidSum(sesKids(L, e)) - (Number(e.d) || 0); if (over > 0) editPraySession(db, date, e.id, (Number(e.d) || 0) + over); }
+    }
+  }
+  return { was: was, now: rows.reduce((s, x) => s + (Number(x.d) || 0), 0) };
+}
+// 조각 지우기 — 이름표만 뗀다. 그 한 번의 시간은 그대로(이름 없이 머문 시간). 시간까지 빼려면 그 한 번을 고친다
+function delPrayKid(db, date, kind, ids) {
+  const L = db.log[date]; if (!L || !Array.isArray(L[kind])) return 0;
+  const n = L[kind].length; L[kind] = L[kind].filter(x => !(x && (ids || []).indexOf(x.id) >= 0));
+  return n - L[kind].length;
 }
 function legacyRest(L) { return Math.max(0, Math.round(Number(L && L.s) || 0) - sesSum(L)); }
 function editLegacyRest(db, date, secs) {
@@ -2484,6 +2561,9 @@ body.emb-up:not(.emb-peek) #focus,body.emb-up:not(.emb-peek) #app{visibility:hid
 
 /* ── 알림 ── */
 /* 토스트는 늘 화면 한가운데 — 뜻 단위로 줄을 바꾼다(\n). 모든 앱 공통 지침 (CLAUDE.md '토스트') */
+/* There 대시보드(z 99990) 위에서 고치기 창 · 알림이 보이게 (1028-3 5-2) */
+html.tdash-on .sh-wrap{z-index:99995}
+html.tdash-on #toast{z-index:100002}
 #toast{position:fixed;left:50%;top:50%;width:max-content;max-width:min(86vw,420px);transform:translate(-50%,-50%) scale(.96);opacity:0;z-index:300;
   background:var(--tx);color:var(--bg);border-radius:16px;padding:18px 24px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;
   font-size:15px;line-height:1.65;white-space:pre-line;word-break:keep-all;transition:transform .3s var(--ease),opacity .25s;pointer-events:none;box-shadow:0 14px 40px -8px var(--shadow-color)}
@@ -3510,9 +3590,11 @@ function ptApply(mins) {
     return;
   }
   closeSheet();
-  if (o.id) editPraySession(DB, o.date, o.id, secs); else editLegacyRest(DB, o.date, secs);
-  save(); refresh();
-  const back = () => { if (o.id) editPraySession(DB, o.date, o.id, o.was); else editLegacyRest(DB, o.date, o.was); save(); refresh(); toast('되돌렸습니다'); };
+  // 되돌리기는 그날 기록을 통째로 — 줄이거나 지우면 안의 조각(카드 · Map 기도)도 함께 바뀐다 (1028-3 6-2-2)
+  const snap = JSON.stringify(DB.log[o.date] || null);
+  if (o.id) { if (secs) editPraySession(DB, o.date, o.id, secs); else delPraySession(DB, o.date, o.id); } else editLegacyRest(DB, o.date, secs);
+  save(); refresh(); if (TDASH.isOpen()) TDASH.redraw();
+  const back = () => { const v = JSON.parse(snap); if (v) DB.log[o.date] = v; else delete DB.log[o.date]; save(); refresh(); if (TDASH.isOpen()) TDASH.redraw(); toast('되돌렸습니다'); };
   toast(secs ? '기도 시간을 ' + Math.round(o.was / 60) + '분 → ' + Math.round(secs / 60) + '분으로 고쳤어요\nThere 대시보드에도 그대로' : '그 기도 시간을 지웠어요\nThere 대시보드에서도 빠집니다', '되돌리기', back);
 }
 function renderAnswers() {
@@ -3995,7 +4077,7 @@ function askText(title, value, placeholder, fn, opt) {
 const ACT = {};
 function doAct(el, e) { if (el._lpFired) { el._lpFired = false; return; } const f = ACT[el.dataset.a]; if (f) f(el, e); }   // 길게 누른 뒤 따라오는 톡은 삼킨다
 // 기도한 시간 고치기 (H-2) — 단추 동작은 ACT 가 생긴 뒤에 단다
-ACT['pt-step'] = el => { const i = $('ptMin'); if (!i) return; i.value = Math.max(0, Math.min(1440, (parseInt(i.value, 10) || 0) + +el.dataset.v)); };
+ACT['pt-step'] = el => { const i = $('ptMin'); if (!i) return; i.value = Math.max(0, Math.min(+i.max || 1440, (parseInt(i.value, 10) || 0) + +el.dataset.v)); };
 ACT['pt-edit'] = el => {
   const date = el.dataset.d, id = el.dataset.v, L = DB.log[date] || {};
   const e = id ? (L.ses || []).find(x => x && x.id === id) : null;
@@ -4006,7 +4088,7 @@ ACT['pt-add'] = el => {
   const now = new Date(), hh = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
   ptSheet(shortDate(el.dataset.v) + ' 기도 시간 더하기', '재지 못한 기도를 직접 적습니다', 10, { date: el.dataset.v, add: true, time: hh });
 };
-ACT['pt-ok'] = () => { const i = $('ptMin'); ptApply(parseInt(i && i.value, 10) || 0); };
+ACT['pt-ok'] = () => { const i = $('ptMin'), v = parseInt(i && i.value, 10) || 0, o = SHEET && SHEET._pt; if (o && !o.add && v === Math.round(o.was / 60)) { closeSheet(); return; } ptApply(v); };   // 안 바꾸고 저장 = 조용히 닫기
 ACT['pt-del'] = () => { if (!confirm('이 기도 시간을 지울까요?')) return; ptApply(0); };
 ACT.stab = el => stabSettle(+el.dataset.v);
 ACT['mark-link'] = el => {
@@ -7146,10 +7228,75 @@ function openThereDash(view, at, soft) {
     note: SY.user ? '' : '로그인하면 BLOCK7 · Sweeter · 성경 기록도 함께 보입니다 (설정 › 계정).',
     // 기도 항목 이름 — 톡 = 상세, 길게 · 우클릭 = 그 항목부터 한 장씩 기도 (P3′-2). 이름으로 찾는다(기록에 id 가 없다)
     item: { has: n => !!itemByName(n), open: n => { const t = itemByName(n); if (!t) return; TDASH.close(); if (t.kind === 'group') pushLayer({ type: 'group', id: t.id }); else openTarget(t.id); }, pray: n => { const t = itemByName(n); if (t) focusFromItem(t.id); } },
+    edit: { open: tdEdit, del: tdDel },   // 기도노트 기록 줄 — 톡 = 고치기, 왼쪽으로 밀기 = 지우기 (1028-3 5-1 · 5-2)
     onClose: () => { if (UI.tab === 'hist') renderView(); }
   });
 }
 ACT['there-dash'] = el => openThereDash(el.dataset.v, el.dataset.at, el.dataset.soft === '1');
+// ── There 대시보드의 기도노트 기록 줄 고치기 · 지우기 (HB 1028-3 5-1 · 5-2) ──
+// info = { kind: 'ses'(기도 한 번) | 'fc'(한 장 기도 카드) | 'mp'(Map 기도 한 번 누름), date, ids }
+// 되돌리기는 그날 기록 통째로 얼려 둔 것을 되살린다 — 조각까지 함께 고치는 일이 있어 한 칸씩 되돌리면 어긋난다.
+// 규칙(조각의 합 ≤ 그 한 번의 시간 등)은 pray-core 의 delPraySession · editPrayKid · delPrayKid 에 있다(tests/test_pray.js ㉖).
+const tdSnap = date => JSON.stringify(DB.log[date] || null);
+function tdAfter(date, snap, msg) {
+  save(); refresh(); if (TDASH.isOpen()) TDASH.redraw();
+  toast(msg, '되돌리기', () => { const v = JSON.parse(snap); if (v) DB.log[date] = v; else delete DB.log[date]; save(); refresh(); if (TDASH.isOpen()) TDASH.redraw(); toast('되돌렸습니다'); });
+}
+function tdDel(info) {
+  const D = info.date, snap = tdSnap(D);
+  let msg;
+  if (info.kind === 'ses') {
+    if (!info.ids.length) { if (!editLegacyRest(DB, D, 0)) return TDASH.redraw(); msg = '그 기도 시간을 지웠어요\nThere 대시보드 합계에서도 빠집니다'; }
+    else { const r = delPraySession(DB, D, info.ids[0]); if (!r) return TDASH.redraw(); msg = '그 기도 시간을 지웠어요' + (r.kids ? '\n그 안의 이름 ' + r.kids + '개도 함께' : '\nThere 대시보드 합계에서도 빠집니다'); }
+  } else {
+    if (!delPrayKid(DB, D, info.kind, info.ids)) return TDASH.redraw();
+    msg = '기록에서 뺐어요\n기도한 시간은 그대로 둡니다';
+  }
+  tdAfter(D, snap, msg);
+}
+// 시간 단위 — 짧은 조각(10분 미만)은 초로, 나머지는 분으로 고친다
+function tdTimeHTML(secs) {
+  const s = secs < 600;
+  return '<div class="pt-step" data-unit="' + (s ? 's' : 'm') + '"><button data-a="pt-step" data-v="' + (s ? -30 : -5) + '">' + (s ? '−30' : '−5') + '</button><button data-a="pt-step" data-v="' + (s ? -10 : -1) + '">' + (s ? '−10' : '−1') + '</button>' +
+    '<label class="pt-num"><input id="ptMin" type="number" inputmode="numeric" min="0" max="' + (s ? 3600 : 1440) + '" value="' + (s ? Math.round(secs) : Math.round(secs / 60)) + '" aria-label="' + (s ? '초' : '분') + '"><span>' + (s ? '초' : '분') + '</span></label>' +
+    '<button data-a="pt-step" data-v="' + (s ? 10 : 1) + '">' + (s ? '+10' : '+1') + '</button><button data-a="pt-step" data-v="' + (s ? 30 : 5) + '">' + (s ? '+30' : '+5') + '</button></div>';
+}
+function tdEdit(info) {
+  const D = info.date, L = DB.log[D] || {};
+  if (info.kind === 'ses') {
+    const id = info.ids[0] || '', e = id ? (L.ses || []).find(x => x && x.id === id) : null;
+    if (id && !e) return;
+    const secs = e ? Number(e.d) || 0 : legacyRest(L), k = e ? sesKids(L, e) : null, n = k ? k.fc.length + k.mp.length : 0;
+    ptSheet(shortDate(D) + (e ? ' ' + (e.time || '') : '') + ' 기도 시간', (e ? (PT_SRC[e.src] || '기도') : '10월 12일 전 기록 — 줄 없이 합계만 남은 몫') +
+      (n ? ' · 안의 이름 ' + n + '개는 줄인 시간보다 길면 같은 비율로 줄어듭니다' : ''), Math.round(secs / 60), { date: D, id: id, was: secs, del: true });
+    return;
+  }
+  const arr = Array.isArray(L[info.kind]) ? L[info.kind] : [], rows = info.ids.map(i => arr.find(x => x && x.id === i)).filter(Boolean);
+  if (!rows.length) return;
+  const name = info.kind === 'fc' ? rows[0].n : (rows[0].k || rows[0].n), secs = rows.reduce((s, x) => s + (Number(x.d) || 0), 0);
+  const a = Number(rows[0].a) || Number(rows[0].t) || 0, tm = a ? new Date(a) : null;
+  const names = [...new Set(DB.T.filter(t => !isShelved(t)).map(t => t.name).concat(DB.G.map(g => g.name)).filter(Boolean))];
+  const w = openSheet('<div class="sh-t">' + esc(shortDate(D) + (tm ? ' ' + String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0') : '')) + ' 기도 기록<small>' +
+    (info.kind === 'fc' ? '한 장 기도' : 'Map 기도') + ' · 시간을 늘려 그 기도 한 번보다 길어지면 그 한 번도 같이 늘어납니다</small></div>' +
+    '<div class="pt-time"><label for="tdName">기도 항목</label><input id="tdName" class="field" list="tdNames" value="' + esc(name) + '" autocomplete="off" enterkeyhint="done"></div>' +
+    '<datalist id="tdNames">' + names.map(n => '<option value="' + esc(n) + '">').join('') + '</datalist>' + tdTimeHTML(secs) +
+    '<div class="sh-acts"><button class="ghost" data-a="td-del" style="color:var(--danger)">지우기</button><button class="cta" data-a="td-ok">저장</button></div>');
+  w._td = { info: info, name: name, secs: secs };
+}
+ACT['td-del'] = () => { const o = SHEET && SHEET._td; if (!o) return; closeSheet(); tdDel(o.info); };
+ACT['td-ok'] = () => {
+  const o = SHEET && SHEET._td; if (!o) return;
+  const nm = String(($('tdName') || {}).value || '').trim(), box = document.querySelector('.sh-wrap .pt-step'), v = parseInt(($('ptMin') || {}).value, 10) || 0;
+  const secs = box && box.dataset.unit === 's' ? v : v * 60, unchangedT = box && box.dataset.unit === 'm' ? Math.round(o.secs / 60) === v : o.secs === v;
+  let pid = null;
+  if (nm !== o.name) { const t = itemByName(nm); if (!t) { toast('\'' + nm + '\' 이라는 기도 항목이 없습니다\n목록에서 골라 주세요'); return; } pid = t.id; }
+  closeSheet();
+  if (!pid && unchangedT) return;   // 바꾼 것이 없으면 조용히 닫는다
+  if (!secs && !pid) { tdDel(o.info); return; }
+  const D = o.info.date, snap = tdSnap(D);
+  if (!editPrayKid(DB, D, o.info.kind, o.info.ids, { pid: pid, secs: unchangedT ? null : secs })) return;
+  tdAfter(D, snap, '고쳤어요' + (pid ? '\n' + o.name + ' → ' + nm : '') + (unchangedT ? '' : '\n시간 ' + TDASH.dur(o.secs) + ' → ' + TDASH.dur(secs)));
+};
 // 지도 There 단추 — 길게 누르기 · 오른쪽 누르기 = 대시보드 (짧게 누르기는 예전대로 시간 재기)
 (function () {
   let tm = 0, x0 = 0, y0 = 0;
@@ -7183,7 +7330,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.se
 // ⚠️ 원본은 tools/there-dash.js 하나다. ./tools/sync-there-dash.sh 가 index.html 과 pray/index.html 의
 //    there-dash 스크립트 덩어리에 **같은 글자로** 넣는다 — 손으로 한쪽만 고치지 말 것
 //    (tests/test_there_dash.js 가 세 벌이 같은지 본다).
-// 세 앱의 There(머문 시간) 기록을 한 모양으로 모아 주 · 달 · 하루로 보여 준다. **읽기만 한다.**
+// 세 앱의 There(머문 시간) 기록을 한 모양으로 모아 주 · 달 · 하루로 보여 준다. **읽기만 한다** — 고치기 · 지우기는 부른 쪽이 opts.edit 로 맡는다(기도노트 기록 줄만, 1028-3).
 //   thereLog = BLOCK7 · Sweeter 의 verseThereLog  {"YYYY-MM-DD":[{ref,time,t,d,sec,app,src}]}
 //   prayLog  = 기도노트 DB.log                    {"YYYY-MM-DD":{d,p,k,s,ses:[{id,t,time,d,src}],mp:[{id,a,t,pid,d,n,k}]}}
 //   mp = Map 기도(지도 There 안에서 누른 그룹 · 항목에 머문 시간). **합계에 더하지 않는다** — 그 시간은 지도 There(ses)에 이미 들어 있다.
@@ -7245,7 +7392,7 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0)); if (!d) return;
         seen += d;
-        out.push({ date: date, t: +e.t || 0, time: e.time || '', d: d, app: 'pray', src: String(e.src || ''), ref: '' });
+        out.push({ date: date, t: +e.t || 0, time: e.time || '', d: d, app: 'pray', src: String(e.src || ''), ref: '', id: String(e.id || '') });
       });
       const rest = Math.round(+L.s || 0) - seen;
       if (rest > 0) out.push({ date: date, t: 0, time: '', d: rest, app: 'pray', src: '', ref: '', old: true });
@@ -7264,8 +7411,8 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0));
         const key = (+e.a || +e.t || 0) + '|' + (e.k || e.n || '');
-        const o = by[key] || (by[key] = { date: date, t: +e.a || +e.t || 0, k: String(e.k || e.n || '이름 없음'), names: [], d: 0 });
-        o.d += d; if (e.n && o.names.indexOf(e.n) < 0) o.names.push(String(e.n));
+        const o = by[key] || (by[key] = { date: date, t: +e.a || +e.t || 0, k: String(e.k || e.n || '이름 없음'), names: [], d: 0, ids: [] });
+        o.d += d; if (e.id) o.ids.push(String(e.id)); if (e.n && o.names.indexOf(e.n) < 0) o.names.push(String(e.n));
       });
       Object.keys(by).forEach(x => { const o = by[x]; if (o.t) { const dt = new Date(o.t); o.time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); } else o.time = ''; out.push(o); });
     });
@@ -7282,7 +7429,7 @@ const TDASH = (function () {
         if (!e) return;
         const d = Math.max(0, Math.round(+e.d || 0)), a = +e.a || +e.t || 0;
         let time = ''; if (a) { const dt = new Date(a); time = p2(dt.getHours()) + ':' + p2(dt.getMinutes()); }
-        out.push({ date: date, t: a, time: time, n: String(e.n || '이름 없음'), k: String(e.k || ''), d: d, amen: !!e.amen });
+        out.push({ date: date, t: a, time: time, n: String(e.n || '이름 없음'), k: String(e.k || ''), d: d, amen: !!e.amen, id: String(e.id || '') });
       });
     });
     out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0) || (a.t - b.t));
@@ -7291,6 +7438,12 @@ const TDASH = (function () {
   // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
   //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
   const itemName = (S, n, tag) => S.item && S.item.has(n) ? '<' + tag + ' class="tdash-item" data-td="item" data-v="' + esc(n) + '">' + esc(n) + '</' + tag + '>' : '<' + tag + '>' + esc(n) + '</' + tag + '>';
+  // 고칠 수 있는 줄 (HB 1028-3 5-1 · 5-2) — 부른 쪽이 opts.edit 를 주면(기도노트) 기도노트 기록 줄만:
+  //   톡 = 고치기(edit.open) · 왼쪽으로 밀기 = 지우기(edit.del). 이름 글자(tdash-item)를 누르면 예전대로 상세.
+  //   BLOCK7 · Sweeter · 성경 줄은 그 앱 것이라 여기서 못 고친다.
+  const edRow = (S, kind, date, ids, inner) => S.edit && ids
+    ? '<div class="tdash-sw"><div class="tdash-ses tdash-ed" data-ed="' + kind + '" data-d="' + esc(date) + '" data-v="' + esc(ids) + '">' + inner + '</div></div>'
+    : '<div class="tdash-ses">' + inner + '</div>';
   // 기간 안의 Map 기도 · 한 장 기도를 이름마다 모아 오래 한 순서로
   function mapTop(S, a, b, n) {
     const m = {}; const put = (k, d) => { const o = m[k] || (m[k] = { s: 0, n: 0 }); o.s += d; o.n++; };
@@ -7406,6 +7559,10 @@ const TDASH = (function () {
 .tdash-ses b{display:block;font-size:14.5px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tdash-ses small{display:block;font-size:12px;color:var(--tx3)}
 .tdash-ses em{font-style:normal;font-size:14px;font-variant-numeric:tabular-nums}
+/* 고칠 수 있는 줄 — 왼쪽으로 밀면 뒤의 '지우기' 가 드러난다 (HB 1028-3 5-1) */
+.tdash-sw{position:relative;overflow:hidden}
+.tdash-sw::before{content:"지우기";position:absolute;inset:0 0 1px 0;display:flex;align-items:center;justify-content:flex-end;padding-right:18px;background:#5a2a2a;color:#f1d6d2;font-size:13px}
+.tdash-ed{position:relative;background:var(--bg);cursor:pointer;-webkit-tap-highlight-color:transparent;will-change:transform}
 .tdash-note{font-size:11.5px;color:#6c6962;line-height:1.6}
 .tdash-empty{padding:28px 0;text-align:center;color:var(--tx3);font-size:13.5px}
 .tdash-ov{position:fixed;inset:0;z-index:99990;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
@@ -7537,24 +7694,24 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     }
     const by = {}; ss.forEach(x => { by[x.app] = (by[x.app] || 0) + x.d; });
     h += '<div style="display:flex;flex-direction:column;gap:12px">' + legend(by, tot) + '</div>' + FIX;
-    h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x =>
-      '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
-      esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+    h += '<div class="tdash-sec">' + ss.slice().sort((a, b) => (a.time || '99').localeCompare(b.time || '99')).map(x => edRow(S, 'ses', d, x.app === 'pray' ? (x.old ? '-' : x.id) : '',
+      '<span>' + esc(x.time || '—') + '</span><i style="background:' + APP[x.app].color + '"></i><div style="min-width:0"><b>' +
+      esc(x.ref ? S.refLabel(x.ref) : x.app === 'pray' ? (SRC[x.src] || '기도') : (x.app === 'bible' ? '성경' : 'There')) + '</b><small>' + esc(APP[x.app].name + ' · ' + srcName(x).replace(/^기도노트 \(/, '(')) + '</small></div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
     // 지도 There 안에서 누른 것들 — 위 '기도 지도' 시간 안에 든 몫이라 합계에는 다시 더하지 않는다
     const mp = mapPrayers(S.data.prayLog, d, d);
     if (mp.length) {
       const sum = mp.reduce((s, x) => s + x.d, 0);
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
-        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em></div>').join('') + '</div>';
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">Map 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· 기도 지도 시간 중 ' + esc(dur(sum)) + '</span></h4>' + mp.map(x => edRow(S, 'mp', d, x.ids.join(','),
+        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:.55"></i><div style="min-width:0">' + itemName(S, x.k, 'b') +
+        (x.names.length > 1 || (x.names[0] && x.names[0] !== x.k) ? '<small>' + esc(x.names.join(' · ')) + '</small>' : '') + '</div><em>' + dur(x.d) + '</em>')).join('') + '</div>';
     }
     // 한 장 기도로 누구를 — 이름마다 머문 시간 · 아멘 / 넘김 (위 '한 장씩 기도하기' 시간 안의 몫)
     const fc = focusPrayers(S.data.prayLog, d, d);
     if (fc.length) {
       const sum = fc.reduce((s, x) => s + x.d, 0), am = fc.filter(x => x.amen).length;
-      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x =>
-        '<div class="tdash-ses"><span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
-        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em></div>').join('') + '</div>';
+      h += '<div class="tdash-sec"><h4 style="color:#5b8fcc">한 장 기도 <span style="font-weight:400;color:var(--tx3);letter-spacing:0">· ' + fc.length + '명 · 아멘 ' + am + ' · ' + esc(dur(sum)) + '</span></h4>' + fc.map(x => edRow(S, 'fc', d, x.id,
+        '<span>' + esc(x.time || '—') + '</span><i style="background:#5b8fcc;opacity:' + (x.amen ? '.85' : '.3') + '"></i><div style="min-width:0">' + itemName(S, x.n, 'b') +
+        '<small>' + esc((x.k ? x.k + ' · ' : '') + (x.amen ? '아멘' : '넘김')) + '</small></div><em>' + (x.d < 60 ? (x.d || 0) + '초' : dur(x.d)) + '</em>')).join('') + '</div>';
     }
     return h;
   }
@@ -7580,7 +7737,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function mount(el, opts) {
     injectCSS();
     opts = opts || {};
-    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null };
+    const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null, edit: opts.edit && typeof opts.edit.open === 'function' ? opts.edit : null };
     // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
     const KEY = (opts.store || 'tdash') + '.v1';
@@ -7659,7 +7816,13 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const atEnd = () => S.view === 'day' ? S.at >= S.today : S.view === 'week' ? add(weekStart(S.at), 6) >= S.today : monthEnd(S.at) >= S.today;
     const after = () => { save(); if (opts.onView) opts.onView(S.view); };
     el.onclick = e => {
-      const b = e.target.closest && e.target.closest('[data-td]'); if (!b || b.disabled) return;
+      const b = e.target.closest && e.target.closest('[data-td]');
+      if (!b) {   // 기도노트 기록 줄 — 톡 = 고치기
+        const r = S.edit && e.target.closest && e.target.closest('[data-ed]');
+        if (r && Date.now() - lpAt >= 700 && !swAt()) { e.stopPropagation(); S.edit.open(edInfo(r)); }
+        return;
+      }
+      if (b.disabled) return;
       const a = b.dataset.td;
       if (Date.now() - lpAt < 700) { e.stopPropagation(); return; }   // 길게 눌러 고정한 뒤 따라오는 클릭
       if (a === 'view') {
@@ -7701,25 +7864,44 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     // 화면 어디서든 좌우로 밀면 그 탭 안에서 이전 / 다음 (탭 전환이 아니다). 손가락을 따라 판이 움직이고,
     // 놓을 때 폭의 4분의 1 넘게(또는 빠르게) 밀었으면 넘어가고 아니면 제자리로 돌아온다.
     // 왼쪽 가장자리(전체 화면 닫기 밀기)에서 시작한 것은 뺀다.
-    let sx = 0, sy = 0, sOn = false, lock = false, dx = 0, st = 0;
+    let sx = 0, sy = 0, sOn = false, lock = false, dx = 0, st = 0, row = null, rowOn = false, rowAt = 0;
+    const edInfo = r => ({ kind: r.dataset.ed, date: r.dataset.d, ids: r.dataset.v === '-' ? [] : r.dataset.v.split(',').filter(Boolean) });
+    const swAt = () => Date.now() - rowAt < 400;   // 밀어 지운 손짓 끝에 따라오는 클릭은 삼킨다
+    // 줄을 왼쪽으로 밀기 — 손가락을 따라가다 놓을 때 폭의 3분의 1 넘게(또는 빠르게) 밀었으면 끝까지 나가며 높이가 접히고 지운다
+    const rowFollow = x => { row.style.transition = 'none'; row.style.transform = 'translateX(' + Math.min(0, x) + 'px)'; };
+    const rowRelease = (r, x, fast) => {
+      const w = r.offsetWidth || 320;
+      rowAt = Date.now();
+      if (-x < w / 3 && !fast) { r.style.transition = 'transform .26s ' + EASE; r.style.transform = ''; return; }
+      const wrap = r.parentNode, info = edInfo(r);
+      if (still()) { S.edit.del(info); return; }
+      r.style.transition = 'transform .2s cubic-bezier(.4,0,1,1)'; r.style.transform = 'translateX(' + (-w) + 'px)';
+      setTimeout(() => {
+        wrap.style.height = wrap.offsetHeight + 'px'; wrap.offsetHeight;
+        wrap.style.transition = 'height .22s ' + EASE + ',opacity .22s'; wrap.style.height = '0px'; wrap.style.opacity = '0';
+        setTimeout(() => S.edit.del(info), 230);
+      }, 200);
+    };
     const follow = x => {
       const w = el.clientWidth || 360, k = x < 0 && atEnd() ? 0.22 : 1;     // 더 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게
       const px = x * k, op = 1 - Math.min(Math.abs(px) / w, 0.55);
       panes().forEach(p => { p.style.transition = 'none'; p.style.transform = 'translateX(' + px + 'px)'; p.style.opacity = op; });
     };
     const release = fn => panes().forEach(p => { p.style.transition = fn ? 'none' : 'transform .26s ' + EASE + ',opacity .26s'; p.style.transform = ''; p.style.opacity = ''; });
-    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32 && !S.busy; lock = false; dx = 0; sx = t.clientX; sy = t.clientY; st = Date.now(); }, { passive: true });
+    el.addEventListener('touchstart', e => { const t = e.touches[0]; sOn = e.touches.length === 1 && t.clientX >= 32 && !S.busy; lock = false; dx = 0; sx = t.clientX; sy = t.clientY; st = Date.now(); rowOn = false;
+      row = S.edit && S.edit.del && e.target.closest ? e.target.closest('[data-ed]') : null; }, { passive: true });
     el.addEventListener('touchmove', e => {
       if (!sOn) return; const t = e.touches[0]; dx = t.clientX - sx; const dy = t.clientY - sy;
       if (!lock) {
         if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { sOn = false; return; }     // 세로로 밀고 있다 = 스크롤
-        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) lock = true; else return;
+        if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.2) { lock = true; rowOn = !!row && dx < 0; } else return;
       }
-      follow(dx);
+      if (rowOn) rowFollow(dx); else follow(dx);
     }, { passive: true });
     el.addEventListener('touchend', e => {
       if (!sOn) return; sOn = false;
       const t = e.changedTouches[0], x = t.clientX - sx, y = t.clientY - sy;
+      if (rowOn) { rowOn = false; rowRelease(row, x, x <= -40 && -x / Math.max(1, Date.now() - st) > 0.5); return; }
       if (Math.abs(x) < 24 || Math.abs(x) < Math.abs(y) * 1.6) { release(); return; }
       const w = el.clientWidth || 360, fast = Math.abs(x) >= 40 && Math.abs(x) / Math.max(1, Date.now() - st) > 0.5;
       const k = x > 0 ? -1 : 1;                 // 오른쪽으로 밀면 이전, 왼쪽으로 밀면 다음
@@ -7730,7 +7912,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
       const k0 = x > 0 ? -1 : 1;
       exitFrom(k0, x, 1 - Math.min(Math.abs(x) / w, 0.55), () => { step(k); after(); draw(); animIn(k); S.busy = false; });
     }, { passive: true });
-    el.addEventListener('touchcancel', () => { if (lock) release(); sOn = false; }, { passive: true });
+    el.addEventListener('touchcancel', () => { if (rowOn && row) { row.style.transition = 'transform .26s ' + EASE; row.style.transform = ''; rowOn = false; } else if (lock) release(); sOn = false; }, { passive: true });
     save();
     draw();
     if (opts.load) {
@@ -7783,6 +7965,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const sub = ov.querySelector('[data-tdsub]'), onV = opts.onView;
     // 제목 옆 작은 글자 = 지금 보는 판 (Today · Week · Month)
     const m = mount(ov.querySelector('.tdash-body'), Object.assign({}, opts, { onView: v => { sub.textContent = VNAME[v] || ''; if (onV) onV(v); } }));
+    ov._m = m;
     // 닫는 손짓 둘 — 손가락을 따라 밀려 나간다 (HB 2026-10-13 · 2026-10-27 P3′-3)
     //  ① 왼쪽 가장자리(EDGE)에서 오른쪽으로 밀기. EDGE 는 안쪽 좌우 넘기기가 빼는 폭(32)과 같아야 한다 —
     //     예전엔 28 이라 28~32px 에서 시작한 밀기는 어느 쪽도 받지 않았다.
@@ -7832,7 +8015,8 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     ov.classList.remove('in'); setTimeout(() => ov.remove(), 240);
   }
   const isOpen = () => !!OV;
-  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, APPS, SRC };
+  const redraw = () => { if (OV && OV._m) OV._m.redraw(); };   // 부른 쪽이 기록을 고친 뒤 (기도노트 5-1 · 5-2)
+  return { collect, mapPrayers, focusPrayers, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC };
 })();
 </script>
 </body>
