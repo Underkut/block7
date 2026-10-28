@@ -56,7 +56,9 @@ console.log('\n시나리오 4 — 거의 안 움직이고 놓으면 옮기지 �
     let dropAsked=0, moved=0;
     const ctx = {
       DR: Object.assign({active:true,type:'big',fromId:'am',fromI:0,el,_menuTimer:null}, DRinit),
-      document: { getElementById: stubEl, querySelectorAll: () => [], body:{style:{},dataset:{}} },
+      document: { getElementById: stubEl, querySelectorAll: () => [], querySelector: () => null, body:{style:{},dataset:{}} },
+      // 줄들이 비켜 주기 (B7-2) — 화면 일은 대역으로
+      _drBlurTaskInput(){}, _drSlotEnd: () => new Set(), _drGhostLand(){},
       clearDropIndicators(){}, tKey: () => '2026-10-08', beforeSave(){}, save(){},
       getBigs: () => { moved++; return [{text:'A'}]; }, getSmalls: () => { moved++; return []; },
       getDropTarget(){ dropAsked++; return {type:'small',toId:'am',toI:0}; },

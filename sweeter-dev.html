@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-3  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1028-4  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2798,6 +2798,10 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 }
 .sgi-inp::placeholder{color:var(--tx3);font-weight:400;font-size:12px;}
 
+/* 끌 때 줄들이 비켜 주기 (HB 2026-10-28 B7-2) — 잡은 줄의 원래 칸이 '빈자리' 가 되어 놓일 곳으로 옮겨 다닌다.
+   빈자리는 높이만 차지하고 보이지 않는다. 빈 목록의 점선 자리표는 빈자리가 들어오면 물러난다 */
+.swipe-wrap.dr-slot{visibility:hidden;}
+.big-list:has(>.dr-slot)>.sm-drop-ph,.sm-list:has(>.dr-slot)>.sm-drop-ph{display:none;}
 /* drag ghost */
 #dg{
   position:fixed;z-index:9999;pointer-events:none;border-radius:10px;
@@ -6603,7 +6607,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-3";
+const APP_VERSION = "v. 26-1028-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -37360,6 +37364,7 @@ function attachDrag(el,type,i,id){
     g.style.cssText=`display:block;width:${r.width}px;left:${cx-DR.offX}px;top:${cy-DR.offY}px;`+
       `opacity:.96;box-shadow:0 12px 36px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);`;
     el.classList.add('drag-active');
+    _drSlotBegin(el);
     document.body.style.userSelect='none';document.body.style.webkitUserSelect='none';
     // Lock whole-page scroll while actively dragging — without this,
     // the same finger movement that reorders the item also scrolls the
@@ -37423,6 +37428,10 @@ function attachDrag(el,type,i,id){
   // 클릭 판정 실패(HB, PC 빈 자리)가 났다. 클릭은 이제 그냥 클릭이다.
   let mouseMovePending=false;
   const MOUSE_DRAG_START_PX=4;
+  // 글자 위를 눌렀을 때 — 이미 고치는 중이던 칸이면 끌기는 '글자 고르기' 다(예전 그대로).
+  // 고치는 중이 아니었으면 움직이는 순간 줄 끌기로 넘어간다 (HB 2026-10-28 B7-1 —
+  // 예전엔 200ms 안에 6px 넘게 움직이면 끌기를 접어 버려, 바로 끌면 글자 편집으로 빠졌다).
+  let pressOnIdleText=false;
 
   function beginMouseDrag(){
     mousePressTimer=null;mouseMovePending=false;
@@ -37449,6 +37458,7 @@ function attachDrag(el,type,i,id){
     const heldInput=e.target.closest('input.bi-inp,input.si-inp');
     mousePressX=e.clientX;mousePressY=e.clientY;
     mouseDownActive=true;
+    pressOnIdleText=!!heldInput&&document.activeElement!==heldInput;
     if(heldInput){
       el.classList.add('pressing');
       mousePressTimer=setTimeout(beginMouseDrag,LONG_PRESS_MOUSE_INPUT);
@@ -37470,13 +37480,14 @@ function attachDrag(el,type,i,id){
     if(mouseMovePending){
       if(Math.abs(dx)>MOUSE_DRAG_START_PX||Math.abs(dy)>MOUSE_DRAG_START_PX)beginMouseDrag();
     }else if(mousePressTimer){
-      if(Math.abs(dx)>6||Math.abs(dy)>6)cancelMousePress();
+      if(pressOnIdleText&&(Math.abs(dx)>MOUSE_DRAG_START_PX||Math.abs(dy)>MOUSE_DRAG_START_PX)){clearTimeout(mousePressTimer);beginMouseDrag();}
+      else if(Math.abs(dx)>6||Math.abs(dy)>6)cancelMousePress();
     }
   });
   el.addEventListener('mouseup',()=>cancelMousePress());
   el.addEventListener('mouseleave',e=>{
     // 눌린 채 줄 밖으로 빠르게 끌어 나가면 mousemove 가 문턱 전에 끊길 수 있다 — 그때 시작한다.
-    if(mouseMovePending&&(e.buttons&1)){beginMouseDrag();return;}
+    if((mouseMovePending||(mousePressTimer&&pressOnIdleText))&&(e.buttons&1)){if(mousePressTimer)clearTimeout(mousePressTimer);beginMouseDrag();return;}
     if(mousePressTimer||mouseMovePending)cancelMousePress();
   });
 
@@ -37755,6 +37766,115 @@ function attachDrag(el,type,i,id){
   },{capture:true});
 }
 
+// ── 끌 때 줄들이 비켜 주기 (HB 2026-10-28 B7-2) ──
+// 예전엔 원래 줄이 흐릿하게 제자리에 남고, 놓일 곳에 가로선만 그었다.
+// 이제 스위터 · 기도노트와 같은 손맛 — 잡은 줄의 칸(빈자리)이 놓일 곳으로 옮겨 다니고,
+// 나머지 줄들은 FLIP 으로 미끄러져 비켜 준다 (속도 · 곡선은 _SW_SLIDE · _SW_EASE 그대로).
+// 어디에 놓일지 정하는 판단(getDropTarget — 구간 · 빅/스몰 · 순서)은 예전 그대로다. 빈자리는 그 결과를 보여 줄 뿐.
+// ⚠️ 놓일 곳을 셀 때는 비켜 주는 움직임(transform)을 뺀 '진짜 자리' 로 센다(_drRect) —
+//    움직이는 중의 화면 좌표로 세면 줄들이 서로 밀며 떨린다 (말씀 저장 목록 끌기와 같은 까닭).
+const _DRS={slot:null,home:null,touched:new Set(),homeT:null};
+function _drTy(el){
+  // 미끄러지는 동안엔 style.transform 이 이미 비어 있다(전환이 0 으로 데려가는 중) — 계산된 값을 읽는다
+  if(!el||!(el.style.transform||el.style.transition))return 0;
+  const m=getComputedStyle(el).transform;if(!m||m==='none')return 0;
+  const v=m.slice(m.indexOf('(')+1,-1).split(',').map(Number);
+  return (m.startsWith('matrix3d')?v[13]:v[5])||0;
+}
+function _drRect(el){
+  const r=el.getBoundingClientRect(),ts=el.closest('.ts');
+  const dy=_drTy(el)+(ts&&ts!==el?_drTy(ts):0);
+  return{left:r.left,right:r.right,width:r.width,height:r.height,top:r.top-dy,bottom:r.bottom-dy};
+}
+function _drFlipEls(){
+  const tv=document.getElementById('todayView');if(!tv)return[];
+  return[...tv.querySelectorAll('.ts'),...tv.querySelectorAll('.big-list>.swipe-wrap,.sm-list>.swipe-wrap,.sm-drop-ph')];
+}
+function _drSlotBegin(el){
+  const w=el.closest('.swipe-wrap');
+  _DRS.slot=w||null;_DRS.touched=new Set();
+  _DRS.home=w?{parent:w.parentNode,next:w.nextElementSibling}:null;
+  if(w)w.classList.add('dr-slot');
+}
+// 빈자리를 dt 자리로 (dt 가 없으면 원래 자리로) 옮기고, 나머지는 미끄러져 비켜 준다
+function _drPlace(dt,goHome){
+  const slot=_DRS.slot;if(!slot||!slot.isConnected||!_DRS.home)return;
+  // 놓을 곳이 없을 때(구간 사이의 틈 · 할일 판 밖)는 0.25초 더 그러면 그때 원래 자리로 —
+  // 구간을 넘어가는 순간마다 빈자리가 집에 다녀오며 출렁이지 않게
+  clearTimeout(_DRS.homeT);_DRS.homeT=null;
+  if(!(dt&&dt.parent)&&!goHome){_DRS.homeT=setTimeout(()=>{if(DR.active)_drPlace(null,true);},250);return;}
+  let parent,before;
+  if(dt&&dt.parent){parent=dt.parent;before=(dt.beforeEl&&dt.beforeEl!==slot&&parent.contains(dt.beforeEl))?dt.beforeEl:null;}
+  else{parent=_DRS.home.parent;before=_DRS.home.next;if(before&&before.parentNode!==parent)before=null;}
+  if(!parent||!parent.isConnected)return;
+  if(!before){   // 끝에 둔다 — 단, 빈 목록의 점선 자리표보다는 앞
+    const ph=parent.querySelector(':scope>.sm-drop-ph');if(ph)before=ph;
+  }
+  if(slot.parentNode===parent&&slot.nextElementSibling===before)return;
+  const els=_drFlipEls().filter(e=>e!==slot);
+  const quiet=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const was=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
+  parent.insertBefore(slot,before);
+  const ts=parent.closest('.ts');if(ts)_DRS.touched.add(ts.id.replace('ts-',''));
+  els.forEach(e=>{e.style.transition='none';e.style.transform='';});
+  if(quiet)return;
+  const now=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
+  const dTs=new Map();
+  els.forEach(e=>{if(e.classList.contains('ts'))dTs.set(e,was.get(e)-now.get(e));});
+  els.forEach(e=>{
+    let d=was.get(e)-now.get(e);
+    if(!e.classList.contains('ts')){const t=e.closest('.ts');if(t&&dTs.has(t))d-=dTs.get(t);}
+    if(Math.abs(d)>=0.5)e.style.transform='translateY('+d+'px)';
+  });
+  void document.body.offsetHeight;
+  requestAnimationFrame(()=>els.forEach(e=>{
+    if(!e.style.transform)return;
+    e.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+    e.style.transform='';
+  }));
+}
+// 끌기를 접을 때 — 비켜 주던 움직임을 거두고 빈자리 표시를 뗀다.
+// 빈자리가 다른 구간을 지나왔으면 그 구간들을 다시 그려 제자리로 (데이터는 그대로다)
+function _drSlotEnd(extraIds){
+  clearTimeout(_DRS.homeT);_DRS.homeT=null;
+  const slot=_DRS.slot,ids=new Set(_DRS.touched);
+  (extraIds||[]).forEach(x=>x&&ids.add(x));
+  _drFlipEls().forEach(e=>{e.style.transition='';e.style.transform='';});
+  if(slot){
+    slot.classList.remove('dr-slot');
+    const h=_DRS.home;
+    if(h&&h.parent&&h.parent.isConnected&&slot.isConnected&&!(slot.parentNode===h.parent&&slot.nextElementSibling===h.next))
+      h.parent.insertBefore(slot,(h.next&&h.next.parentNode===h.parent)?h.next:null);
+  }
+  _DRS.slot=null;_DRS.home=null;_DRS.touched=new Set();
+  return ids;
+}
+// 놓은 줄이 제 칸으로 미끄러져 들어간다 — 유령(#dg)이 새로 그린 줄 자리까지 날아가 겹친 뒤 사라진다
+function _drGhostLand(row){
+  const g=document.getElementById('dg');
+  const quiet=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const w=row&&(row.closest('.swipe-wrap')||row);
+  if(!g||!w||quiet||g.style.display==='none'){if(g)g.style.display='none';return;}
+  const r=w.getBoundingClientRect();
+  w.style.visibility='hidden';
+  const T=Math.round(_SW_SLIDE*0.6);
+  g.style.transition=`left ${T}ms cubic-bezier(.22,.8,.24,1),top ${T}ms cubic-bezier(.22,.8,.24,1),opacity ${T}ms ease,box-shadow ${T}ms ease`;
+  requestAnimationFrame(()=>{g.style.left=r.left+'px';g.style.top=r.top+'px';g.style.opacity='1';g.style.boxShadow='none';});
+  setTimeout(()=>{w.style.visibility='';g.style.display='none';g.style.transition='';},T+20);
+}
+
+function _drBlurTaskInput(){
+  const a=document.activeElement;
+  if(a&&a.matches&&a.matches('input.bi-inp,input.si-inp')){
+    try{const q=a.selectionEnd??a.value.length;a.setSelectionRange(q,q);}catch(_){}
+    a.blur();
+  }
+}
+// 끄는 동안 글자 칸은 포커스를 받지 않는다 — 글자 위에서 누른 채 끌면 브라우저가 '글자 고르기' 를
+// 이어 가며 손이 지나간 다른 줄의 칸에 포커스를 줬다 (B7-1). 글자 고르기도 함께 막는다.
+document.addEventListener('focusin',e=>{if(DR.active&&e.target.matches&&e.target.matches('input.bi-inp,input.si-inp'))_drBlurTaskInput();},true);
+document.addEventListener('selectstart',e=>{if(DR.active)e.preventDefault();},true);
+
 function getSecColor(id){
   const sec=SECS.find(s=>s.id===id);
   return sec?.color||'#5a70f8';
@@ -37796,7 +37916,7 @@ function getDropTarget(cx,cy){
     // Find which ts-body we're over first
     let targetTb=null;
     for(const tb of document.querySelectorAll('.ts-body')){
-      const r=tb.getBoundingClientRect();
+      const r=_drRect(tb);
       if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){targetTb=tb;break;}
     }
     // ── 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) ──
@@ -37806,7 +37926,7 @@ function getDropTarget(cx,cy){
     // 저절로 첫 번째 항목을 골라 그 앞에 넣는다 — 따로 분기할 필요가 없다.
     if(!targetTb){
       for(const hd of document.querySelectorAll('.ts-hd')){
-        const r=hd.getBoundingClientRect();
+        const r=_drRect(hd);
         if(cx>=r.left&&cx<=r.right&&cy>=r.top&&cy<=r.bottom){
           const ts=hd.closest('.ts');
           if(ts&&ts.id.indexOf('ts-')===0)
@@ -37829,7 +37949,7 @@ function getDropTarget(cx,cy){
       for(const bigItem of bigList.querySelectorAll('.big-item')){
         if(bigItem.classList.contains('drag-active'))continue; // check item, not wrap
         const wrap=bigItem.closest('.swipe-wrap')||bigItem;
-        const r=wrap.getBoundingClientRect();
+        const r=_drRect(wrap);
         candidates.push({type:'big',item:bigItem,wrap,r,
           idx:parseInt(bigItem.dataset.i)||0,list:bigList});
       }
@@ -37838,14 +37958,14 @@ function getDropTarget(cx,cy){
       for(const smItem of smList.querySelectorAll('.sm-item')){
         if(smItem.classList.contains('drag-active'))continue;
         const wrap=smItem.closest('.swipe-wrap')||smItem;
-        const r=wrap.getBoundingClientRect();
+        const r=_drRect(wrap);
         candidates.push({type:'small',item:smItem,wrap,r,
           idx:parseInt(smItem.dataset.i)||0,list:smList});
       }
       // 스몰 아이템이 없지만 placeholder(드롭존)가 보이는 경우 — 가상 candidate 추가
       const ph=smList.querySelector('.sm-drop-ph');
       if(ph&&!smList.querySelector('.sm-item')){
-        const r=ph.getBoundingClientRect();
+        const r=_drRect(ph);
         if(r.height>0){
           candidates.push({type:'small',item:ph,wrap:ph,r,idx:0,list:smList,_ph:true});
         }
@@ -37932,8 +38052,7 @@ function moveG(cx,cy){
     const g=document.getElementById('dg');
     if(g){g.style.left=(cx-DR.offX)+'px';g.style.top=(cy-DR.offY)+'px';}
     const dt=getStableDt(cx,cy);
-    if(dt&&dt.parent){showDropIndicator(dt.beforeEl,dt.parent,dt.color,dt.type);}
-    else clearDropIndicators();
+    _drPlace(dt);   // 선 대신 빈자리가 옮겨 가고 줄들이 비켜 준다 (B7-2)
     // 빅/스몰 힌트 레이블 — 스몰블럭이 꺼져 있으면 구분이 없으므로 표시하지 않는다
     const hint=document.getElementById('drag-zone-hint');
     const pill=document.getElementById('dz-pill-inner');
@@ -38003,6 +38122,7 @@ function cancelDragKeepingItem(){
   if(DR._menuTimer){clearTimeout(DR._menuTimer);DR._menuTimer=null;}
   document.getElementById('dg').style.display='none';
   DR.el?.classList.remove('drag-active');
+  _drSlotEnd();
   document.querySelectorAll('.dov,.drop-target').forEach(e=>{
     e.classList.remove('dov');e.classList.remove('drop-target');
   });
@@ -38019,10 +38139,15 @@ function cancelDragKeepingItem(){
 function endDrag(cx,cy){
   if(!DR.active)return;
   if(DR._menuTimer){clearTimeout(DR._menuTimer);DR._menuTimer=null;}
+  // ⚠️ 데이터를 옮기기 **전에** 글자 칸의 포커스를 푼다 (HB 2026-10-28 B7 시험 중 발견).
+  //    칸마다 '내 번호' 를 쥐고 있어서, 옮긴 뒤에 풀리면 옛 번호로 저장돼 다른 할일 글자를 덮어썼다.
+  _drBlurTaskInput();
   _stableDt=null;_stableY=0;
+  let _land=null;   // 놓은 뒤 유령이 날아가 앉을 줄
+  const _wasMoved=!!DR._moved;
   try{
-    document.getElementById('dg').style.display='none';
     DR.el?.classList.remove('drag-active');
+    const _touched=_drSlotEnd();
     document.querySelectorAll('.dov,.drop-target').forEach(e=>{e.classList.remove('dov');e.classList.remove('drop-target');});
     clearDropIndicators();
     document.body.style.userSelect='';document.body.style.webkitUserSelect='';
@@ -38055,10 +38180,19 @@ function endDrag(cx,cy){
         arr.splice(Math.max(0,Math.min(toI,arr.length)),0,item);
       }
       save();
-      new Set([DR.fromId,dt.toId]).forEach(id=>renderSecBody(id));
+      new Set([DR.fromId,dt.toId,..._touched]).forEach(id=>renderSecBody(id));
       updateTotal();
+      const fin=(dt.type==='big'?getBigs(k,dt.toId):getSmalls(k,dt.toId)).indexOf(item);
+      _land=document.querySelector(`#${dt.type==='big'?'bl':'sl'}-${dt.toId} .${dt.type==='big'?'big':'sm'}-item[data-i="${fin}"]`);
+    }else{
+      // 옮기지 않았다 — 빈자리가 지나온 구간만 다시 그려 제자리로, 유령은 원래 줄로 돌아가 앉는다
+      _touched.delete(DR.fromId);
+      _touched.forEach(id=>renderSecBody(id));
+      _land=DR.el&&DR.el.isConnected?DR.el:null;
     }
+    if(_wasMoved&&_land)_drGhostLand(_land);else document.getElementById('dg').style.display='none';
   }catch(e){
+    document.getElementById('dg').style.display='none';
     document.body.style.userSelect='';document.body.style.webkitUserSelect='';
     document.body.style.overflow='';delete document.body.dataset.scrollLockedForDrag;
     clearDropIndicators();try{renderSecBody(DR.fromId);}catch(e2){}
