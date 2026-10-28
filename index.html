@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-10  [production]  -->
+<!-- BLOCK7  v. 26-1028-11  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-10";
+const APP_VERSION = "v. 26-1028-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -24050,6 +24050,10 @@ function _initVerseGridGestures(){
     openVerseMemMenu(gd,null,{x:e.clientX,y:e.clientY});
   });
   _initEdgeBack(gd,()=>{                    // 왼쪽 가장자리 → 오른쪽 = 전체화면으로 복귀
+    // 다른 앱(기도노트) 안의 겹 화면이면 타일뷰는 부르던 앱에서 곧바로 열린 것 — 돌아갈 전체화면이 없다.
+    //   여기서 전체화면을 띄우면 밀어 닫은 뒤 상관없는 말씀이 툭 떴다(손짓도 안 붙은 채라 ×로만 닫혔다, HB 2026-10-28).
+    //   그래서 닫기만 한다 → 부르던 앱 화면으로. (전체화면 위에서 연 타일뷰는 under-vf 로 그 아래에 있어 이 손짓이 닿지 않는다)
+    if(_embedOn()){closeVerseGrid();return;}
     closeVerseGrid();
     if(!_verseFullIsOpen()){const fe=document.getElementById('verseFull');if(fe)fe.style.display='flex';}
     _verseFullRender();
