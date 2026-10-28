@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1028-6  [production]  -->
+<!-- BLOCK7  v. 26-1028-7  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -585,7 +585,10 @@ html.vf-open{background:var(--vf-page-bg,var(--bg));}
 /* 다른 앱(기도노트) 안의 겹 화면일 때 (_EMBED, HB 2026-10-28) — 앱 바탕은 **투명**, 뒤 화면들은 숨긴다.
    성경 · 타일뷰 · 전체화면만 제 배경으로 뜨고, 그것을 밀어 닫는 동안에는 iframe 너머 **부르던 앱 화면**이 비친다
    (예전엔 Sweeter 첫 화면이 잠깐 보였다). color-scheme 을 정해 두는 까닭: 부모와 다르면 브라우저가 iframe 을 불투명하게 칠한다. */
-html.b7-embed,html.b7-embed.vf-open,html.b7-embed body,html.b7-embed.vf-open body{background:transparent !important;color-scheme:normal !important;}
+html.b7-embed,html.b7-embed.vf-open,html.b7-embed body,html.b7-embed.vf-open body{background:var(--emb-bg,var(--bg)) !important;color-scheme:normal !important;}
+/* 평소엔 불투명(부르던 앱의 바탕색) — 투명하면 위가 움직일 때마다 아래 앱까지 함께 그려 한 박자 느려진다(HB 2026-10-28).
+   성경 · 타일뷰 · 전체화면이 **밀려 나가는 동안에만** 투명(b7-peek) — 그때 아래 앱 화면이 비친다 (_embedWatchPeek) */
+html.b7-embed.b7-peek,html.b7-embed.b7-peek.vf-open,html.b7-embed.b7-peek body,html.b7-embed.b7-peek.vf-open body{background:transparent !important;}
 html.b7-embed body>header,html.b7-embed #verseBarWrap,html.b7-embed #pageWrap,html.b7-embed #swHome,html.b7-embed #swBoot{visibility:hidden !important;}
 html.vf-open body{background:var(--vf-page-bg,var(--bg)) !important;}
 body{
@@ -6614,7 +6617,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1028-6";
+const APP_VERSION = "v. 26-1028-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -23830,6 +23833,10 @@ function openVerseGrid(kind,val,cardId,limitRefs,listPool){
   if(!_vgState.cols)_vgState.cols=3;
   const gd=document.getElementById('verseGrid');if(!gd)return;
   gd.classList.remove('under-vf');   // 전체화면 제목으로 다시 열면 전체화면 위로 (BLOCK7 과 같다)
+  // ⚠️ 저장 목록 타일뷰는 모을 때 val 이 아니라 '지금 열린 저장 목록'(window._vAggKeepList)을 본다(_aggEntriesForKind).
+  //    전체화면 저장 메뉴를 거치면 그 칸이 먼저 채워지지만, 이름만 들고 바로 열면(기도노트 '저장') **직전에 본 목록**이
+  //    나왔다 (HB 2026-10-28: '기도'(2개)를 눌렀는데 수십 개 · '사랑'을 눌렀는데 '기도'). 여기서 함께 맞춘다.
+  if(kind==='keep')window._vAggKeepList=String(val);
   _vgSyncFilterLabel();
   gd.style.display='flex';
   _vgSalt=(Math.random()*1e9)|0;  // 열 때마다 타일 색 배치를 섞는다
@@ -44067,6 +44074,7 @@ function _embedDone(){_embedIdleSoon();}
 function _embedOn(){try{return !!_EMBED;}catch(e){return false;}}
 function _embedTheme(t){
   const el=document.getElementById('bibleRd');if(!el||!t||typeof t!=='object')return;
+  if(typeof t.bg==='string'&&t.bg.length<60)document.documentElement.style.setProperty('--emb-bg',t.bg);
   Object.keys(t).forEach(k=>{if(/^[a-z0-9-]{1,16}$/.test(k)&&typeof t[k]==='string'&&t[k].length<60)el.style.setProperty('--'+k,t[k]);});
 }
 function _embedRun(m){
@@ -44077,9 +44085,23 @@ function _embedRun(m){
   else if(m.kind==='keepgrid'&&m.name)openVerseGrid('keep',String(m.name));   // 저장 목록 하나 → 그 목록의 타일뷰 (말씀 전체화면 저장 메뉴 → 제목 누르기와 같은 화면)
   _embedPost({b7embed:'ready',kind:m.kind});
 }
+// 밀려 나가는 중인가 — 손짓들은 모두 그 화면의 transform 을 바꾼다(가장자리 밀기 · 머리 끌어내리기 · 닫히며 나가기).
+//   손짓마다 고리를 다는 대신 세 화면의 style 만 지켜본다. 움직이는 동안 b7-peek + 부모에게 {b7embed:'peek', on}.
+function _embedWatchPeek(){
+  const ids=['bibleRd','verseFull','verseGrid'];let on=false;
+  const check=()=>{
+    const now=ids.some(id=>{const el=document.getElementById(id);if(!el)return false;const tf=el.style.transform;return !!tf&&tf!=='none'&&!/^translate[XY]?\(0(px)?\)$/.test(tf);});
+    if(now===on)return;on=now;
+    document.documentElement.classList.toggle('b7-peek',on);
+    _embedPost({b7embed:'peek',on});
+  };
+  const mo=new MutationObserver(check);
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)mo.observe(el,{attributes:true,attributeFilter:['style']});});
+}
 function _embedStart(){
   if(!_EMBED)return;
   document.documentElement.classList.add('b7-embed');
+  try{_embedWatchPeek();}catch(e){}
   _embedReady=true;
   if(_EMBED==='wait'){_embedPost({b7embed:'idle'});if(_embedPend){const m=_embedPend;_embedPend=null;_embedRun(m);}return;}
   const q=new URLSearchParams(location.search);
