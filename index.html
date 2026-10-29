@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-9  [production]  -->
+<!-- BLOCK7  v. 26-1029-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-9";
+const APP_VERSION = "v. 26-1029-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6660,8 +6660,15 @@ const _PS_OWN=['versePush'];
 const _DEVICE_SCOPED=[
   'verseCurrentIdx',      // 지금 보고 있는 말씀 — 맥에서 넘긴 것이 아이폰을 따라다니면 안 된다
   'verseLastShownDate',   // 오늘 말씀을 이미 보여줬는가 — 기기마다 다르다
-  'verseLastShownSec'     // 이 구간 말씀으로 이미 넘겼는가 — 위 둘과 짝 (v. 26-1025-11, ROADMAP B-1).
+  'verseLastShownSec',    // 이 구간 말씀으로 이미 넘겼는가 — 위 둘과 짝 (v. 26-1025-11, ROADMAP B-1).
                           //   공유하면 다른 기기가 찍은 도장 때문에 이 기기 말씀이 그 구간에 안 넘어간다.
+  // 화면 배치 — 2단·3단 위젯 자리 · 3단 칸 폭(c3) · 2단 우측 폭 (v. 26-1029-10, HB).
+  // 맥의 넓은 3단과 아이패드의 2단은 서로 다른 배치가 맞다. 한 기기에서 옮긴 것이 다른 기기를 흔들지 않는다.
+  // ⚠️ 칸 안의 말씀 카드 **설정**(verseCards)은 계정 공유 그대로다 — 그래서 위젯을 꺼도 카드 설정은 지우지 않는다
+  //    (다른 기기 배치에 같은 카드가 놓여 있을 수 있다. rpConfig · 끌어 끄기 참고).
+  'layout',               // 2단·3단 공용 배치 모델 (_lay)
+  'rightWidgets',         // 옛 배치 목록 — _lay() 가 처음 한 번 옮겨 담는 출처
+  'rightPanelRatio'       // 2단 우측 폭 비율
 ];
 // 기기 전용 칸을 뺀 모양 — 충돌 판정 · 비교 화면이 견주지 않게 (v. 26-1025-11, ROADMAP B-1).
 // ⚠️ 이 칸들은 클라우드에 멈춘 옛 값이 남아 있어 이 기기 값과 늘 다르다. 견주면 가짜 충돌·가짜 차이가 뜬다.
@@ -6686,12 +6693,18 @@ function _dsWrite(o){
   try{localStorage.setItem(_DS_KEY,JSON.stringify(_dsCache));}catch(e){}
 }
 // 지금 값을 이 기기 저장소에 적어 둔다 (rawSave 가 부른다 — 아주 가벼워야 한다)
+// ⚠️ 배치(layout)처럼 **묶음 값**은 제자리에서 고쳐지므로 같은 것(===)으로 견주면 늘 같아 보인다 —
+//    글자로 풀어 견주고, 베낀 것을 적어 둔다 (안 베끼면 앱이 고치는 그 묶음이 곧 저장소 기억이 된다).
 function _dsCapture(settings){
   if(!settings)return;
   const o=_dsRead();let changed=false;
   _DEVICE_SCOPED.forEach(k=>{
-    if(settings[k]===undefined)return;
-    if(o[k]!==settings[k]){o[k]=settings[k];changed=true;}
+    const v=settings[k];
+    if(v===undefined)return;
+    if(v!==null&&typeof v==='object'){
+      const j=JSON.stringify(v);
+      if(JSON.stringify(o[k])!==j){o[k]=JSON.parse(j);changed=true;}
+    }else if(o[k]!==v){o[k]=v;changed=true;}
   });
   if(changed)_dsWrite(o);
 }
@@ -6701,7 +6714,10 @@ function _dsOverlay(settings){
   if(!settings)return settings;
   const o=_dsRead();
   const out=Object.assign({},settings);
-  _DEVICE_SCOPED.forEach(k=>{if(o[k]!==undefined)out[k]=o[k];});
+  _DEVICE_SCOPED.forEach(k=>{
+    if(o[k]===undefined)return;
+    out[k]=(o[k]!==null&&typeof o[k]==='object')?JSON.parse(JSON.stringify(o[k])):o[k];   // 베껴 준다 — 위 _dsCapture 와 짝
+  });
   return out;
 }
 // 클라우드에 올릴 모양으로 되돌린다 — 원래 있던 값(prior)을 그대로 남긴다.
@@ -33506,9 +33522,10 @@ function _rpAttachChipDrag(list){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
-          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 그대로 없앤다
+          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 이 기기 배치에서 사라진다.
+          // ⚠️ 카드 설정(_vcRemove)은 지우지 않는다 — 배치는 기기별이라(_DEVICE_SCOPED) 다른 기기에
+          //    같은 카드가 놓여 있을 수 있고, 설정을 지우면 그 기기에서도 위젯이 사라진다 (v. 26-1029-10).
           if(_vcIs(type)&&(!key||key==='pool')){
-            _vcRemove(_vcIdOf(type));
             _lay();save();renderRpConfigList();renderLayout();
             return;
           }
@@ -33762,7 +33779,7 @@ function _rpAttachHeaderDrag(host){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
-          if(_vcIs(type))_vcRemove(_vcIdOf(type));   // 카드는 인스턴스라 설정도 함께 지운다
+          // 카드 설정은 지우지 않는다 — 다른 기기 배치에 같은 카드가 있을 수 있다 (위 rpConfig 와 같은 까닭, v. 26-1029-10)
           _lay();save();renderLayout();
           showToast(`${_rpWidgetName(type)} 위젯을 껐어요`);
         }:undefined,
@@ -48943,6 +48960,9 @@ function _fbCountItems(o){
 function _fbBulkLoss(cloud,out){
   const before=_fbCountByKind(cloud),after=_fbCountByKind(out);
   for(const k in before){
+    // 배치는 기기별이다(_DEVICE_SCOPED, v. 26-1029-10) — 이 기기 칸이 클라우드보다 적은 것은 손실이 아니라
+    // 이 기기가 고른 배치다. 세면 위젯을 덜 둔 기기가 '대량 손실' 로 읽혀, 아직 못 올린 할일까지 클라우드 것에 덮인다.
+    if(k==='layout'&&typeof _DEVICE_SCOPED!=='undefined'&&_DEVICE_SCOPED.includes('layout'))continue;
     if(before[k]<_FB_LOSS_MIN)continue;              // 원래 적으면 세지 않는다
     if(after[k]<before[k]*_FB_LOSS_KEEP)return true; // 한 갈래라도 절반 아래
   }
