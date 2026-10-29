@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-10  [production]  -->
+<!-- BLOCK7  v. 26-1030-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-10";
+const APP_VERSION = "v. 26-1030-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -6664,11 +6664,14 @@ const _DEVICE_SCOPED=[
                           //   공유하면 다른 기기가 찍은 도장 때문에 이 기기 말씀이 그 구간에 안 넘어간다.
   // 화면 배치 — 2단·3단 위젯 자리 · 3단 칸 폭(c3) · 2단 우측 폭 (v. 26-1029-10, HB).
   // 맥의 넓은 3단과 아이패드의 2단은 서로 다른 배치가 맞다. 한 기기에서 옮긴 것이 다른 기기를 흔들지 않는다.
-  // ⚠️ 칸 안의 말씀 카드 **설정**(verseCards)은 계정 공유 그대로다 — 그래서 위젯을 꺼도 카드 설정은 지우지 않는다
-  //    (다른 기기 배치에 같은 카드가 놓여 있을 수 있다. rpConfig · 끌어 끄기 참고).
   'layout',               // 2단·3단 공용 배치 모델 (_lay)
   'rightWidgets',         // 옛 배치 목록 — _lay() 가 처음 한 번 옮겨 담는 출처
-  'rightPanelRatio'       // 2단 우측 폭 비율
+  'rightPanelRatio',      // 2단 우측 폭 비율
+  // 위젯 안쪽까지 기기별 (v. 26-1030-1, HB — "위젯 높이 · 말씀 카드 안의 설정도 완전 다 기기별")
+  'rpWidgetHeights',      // 끌어서 정한 위젯 높이 (월간뷰 · 말씀 카드 · 말씀 목록)
+  'verseCards'            // 말씀 카드 · 말씀 목록 하나하나의 설정 — 보여줄 말씀 범위 · 배경 · 글자 크기 · 지금 보는 말씀
+  // ⚠️ 카드 설정이 기기별이라 위젯을 끌 때 카드 설정을 지워도(_vcRemove) 그 기기 것만 지워진다.
+  //    (v. 26-1029-10 에서는 카드 설정이 계정 공유라 지우지 않았다 — 다른 기기 위젯까지 사라졌다)
 ];
 // 기기 전용 칸을 뺀 모양 — 충돌 판정 · 비교 화면이 견주지 않게 (v. 26-1025-11, ROADMAP B-1).
 // ⚠️ 이 칸들은 클라우드에 멈춘 옛 값이 남아 있어 이 기기 값과 늘 다르다. 견주면 가짜 충돌·가짜 차이가 뜬다.
@@ -6678,7 +6681,10 @@ function _dsStrip(state){
   _DEVICE_SCOPED.forEach(k=>{delete s[k];});
   return Object.assign({},state,{settings:s});
 }
-const _DS_KEY='b7v1_devsettings';       // 이 기기 전용 (클라우드 동기화 대상 아님)
+// 이 기기 전용 (클라우드 동기화 대상 아님). 이름은 _lsk 로 — BLOCK7 운영본은 예전 그대로 'b7v1_devsettings'.
+// ⚠️ 예전엔 고정 이름이라 같은 block7.my 에 사는 개발본 · Sweeter 개발본이 이 칸을 같이 썼다.
+//    배치 · 카드 설정까지 담게 되자(v. 26-1030-1) 개발본을 한 번 열면 운영본 배치가 덮일 수 있어 갈랐다.
+const _DS_KEY=_lsk('devsettings');
 let _dsCache=null;
 function _dsRead(){
   if(_dsCache)return _dsCache;
@@ -33522,10 +33528,10 @@ function _rpAttachChipDrag(list){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
-          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 이 기기 배치에서 사라진다.
-          // ⚠️ 카드 설정(_vcRemove)은 지우지 않는다 — 배치는 기기별이라(_DEVICE_SCOPED) 다른 기기에
-          //    같은 카드가 놓여 있을 수 있고, 설정을 지우면 그 기기에서도 위젯이 사라진다 (v. 26-1029-10).
+          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 그대로 없앤다.
+          // 카드 설정도 기기별이라(_DEVICE_SCOPED, v. 26-1030-1) 이 기기 것만 지워진다.
           if(_vcIs(type)&&(!key||key==='pool')){
+            _vcRemove(_vcIdOf(type));
             _lay();save();renderRpConfigList();renderLayout();
             return;
           }
@@ -33779,7 +33785,7 @@ function _rpAttachHeaderDrag(host){
             const i=L.cols[c].indexOf(type);
             if(i>=0)L.cols[c].splice(i,1);
           });
-          // 카드 설정은 지우지 않는다 — 다른 기기 배치에 같은 카드가 있을 수 있다 (위 rpConfig 와 같은 까닭, v. 26-1029-10)
+          if(_vcIs(type))_vcRemove(_vcIdOf(type));   // 카드는 인스턴스라 설정도 함께 지운다 — 기기별이라 이 기기 것만 (v. 26-1030-1)
           _lay();save();renderLayout();
           showToast(`${_rpWidgetName(type)} 위젯을 껐어요`);
         }:undefined,

@@ -21,14 +21,14 @@ global.localStorage = {
   removeItem: k => { delete LS[k]; }
 };
 
-eval(slice('const _DEVICE_SCOPED=[', 'function _psIsDefault()')
+eval("var LS_KEY='b7v1';\n" + slice('function _lsk(name)', '\n') + '\n' + slice('const _DEVICE_SCOPED=[', 'function _psIsDefault()')
    + '\n' + slice('let _fbLastTouchTs=', '// 원격/병합 상태를 화면')
    + `\nglobal.D = {
         keys: _DEVICE_SCOPED,
         capture: _dsCapture, overlay: _dsOverlay, project: _dsProject,
         reset: () => { _dsCache = null; },
         detect: _cfDetect, merge: _fbMerge, guarded: _fbMergeGuarded, loss: _fbBulkLoss,
-        setBase: j => { _fbBaseJson = j; }
+        setBase: j => { _fbBaseJson = j; }, dsKey: _DS_KEY
       };`);
 
 function fresh() { Object.keys(LS).forEach(k => delete LS[k]); D.reset(); }
@@ -41,7 +41,8 @@ console.log('시나리오 1 — 배치 칸은 기기별, 카드 설정은 계정
   sc.eq('배치(2단·3단 · c3 포함)', D.keys.includes('layout'), true);
   sc.eq('옛 배치 목록', D.keys.includes('rightWidgets'), true);
   sc.eq('2단 우측 폭', D.keys.includes('rightPanelRatio'), true);
-  sc.eq('말씀 카드 설정은 계정 공유', D.keys.includes('verseCards'), false);
+  sc.eq('말씀 카드 설정도 기기별 (v. 26-1030-1)', D.keys.includes('verseCards'), true);
+  sc.eq('위젯 높이도 기기별 (v. 26-1030-1)', D.keys.includes('rpWidgetHeights'), true);
   sc.eq('예전 기기별 칸도 그대로', D.keys.includes('verseCurrentIdx'), true);
 }
 
@@ -142,14 +143,42 @@ console.log('\n시나리오 7 — 배치 칸 수는 대량 손실로 세지 않�
   sc.eq('할일 대량 손실은 그대로 잡는다', D.loss(many, { days: {} }), true);
 }
 
-// ═══ 8. ⚠️ ③ 위젯을 꺼도 말씀 카드 설정은 지우지 않는다 ═══
-//     카드 설정은 계정 공유 — 다른 기기 배치에 같은 카드가 놓여 있을 수 있다.
-console.log('\n시나리오 8 — 위젯 끄기가 카드 설정을 지우지 않는다');
+// ═══ 8. 위젯을 끄면 카드 설정을 지운다 — 기기별이라 이 기기 것만 (v. 26-1030-1) ═══
+//     v. 26-1029-10 에서는 카드 설정이 계정 공유라 지우지 않았다(다른 기기 위젯까지 사라져서).
+console.log('\n시나리오 8 — 위젯 끄기가 카드 설정을 지운다 (이 기기 것만)');
 {
-  const cfg = slice('function renderRpConfigList(', 'function _rpAttachChipDrag(');
-  sc.eq('설정 팝업에서 빼기: _vcRemove 를 부르지 않는다', /_vcRemove\(/.test(cfg), false);
-  const off = SRC.slice(SRC.indexOf('// 우상단 존에 드랍 → 위젯 끄기'), SRC.indexOf('onCommit:(key,idx)=>{', SRC.indexOf('// 우상단 존에 드랍 → 위젯 끄기')));
-  sc.eq('끌어서 끄기: _vcRemove 를 부르지 않는다', off.length > 0 && !/_vcRemove\(/.test(off), true);
+  const drag = slice('function _rpAttachChipDrag(', '// ── 드래그 재정렬 공용 헬퍼');
+  sc.eq('설정 팝업에서 빼기: 카드 설정도 지운다', /_vcRemove\(_vcIdOf\(type\)\)/.test(drag), true);
+  const a = SRC.indexOf('// 우상단 존에 드랍 → 위젯 끄기');
+  const off = SRC.slice(a, SRC.indexOf('onCommit:(key,idx)=>{', a));
+  sc.eq('끌어서 끄기: 카드 설정도 지운다', a > 0 && /_vcRemove\(/.test(off), true);
+}
+
+// ═══ 9. 카드 설정 · 높이는 클라우드로 안 올라간다 ═══
+console.log('\n시나리오 9 — 맥에서 만들고 지운 카드 · 바꾼 높이가 아이패드에 안 간다');
+{
+  fresh();
+  const cloud = { settings: { verseCards: { c1: { theme: 'ink' }, c2: { theme: null } }, rpWidgetHeights: { monthSingle: 300 } } };
+  // 맥: c2 를 끄고(지움) c3 를 새로 만들고, c1 배경을 바꾸고, 월간뷰를 늘렸다
+  const mac = { settings: { verseCards: { c1: { theme: 'dawn' }, c3: { theme: null } }, rpWidgetHeights: { monthSingle: 420, 'card#c3': 260 } } };
+  const up = D.project(clone(mac), cloud);
+  sc.eq('카드 설정은 클라우드 것 그대로', up.settings.verseCards, cloud.settings.verseCards);
+  sc.eq('높이도 클라우드 것 그대로', up.settings.rpWidgetHeights, cloud.settings.rpWidgetHeights);
+  D.capture(mac.settings);
+  const onMac = D.overlay(cloud.settings);
+  sc.eq('맥에서는 제 카드', Object.keys(onMac.verseCards).sort(), ['c1', 'c3']);
+  sc.eq('맥의 배경', onMac.verseCards.c1.theme, 'dawn');
+  sc.eq('맥의 높이', onMac.rpWidgetHeights.monthSingle, 420);
+}
+
+// ═══ 10. 기기 저장소 이름 — 운영본은 예전 그대로, 개발본 · Sweeter 는 따로 ═══
+//     ⚠️ 예전엔 고정 이름이라 block7.my 에 같이 사는 개발본 · Sweeter 개발본과 칸을 같이 썼다.
+console.log('\n시나리오 10 — 기기 저장소 이름');
+{
+  const lsk = (key, n) => key + '_' + n;     // _lsk 와 같은 규칙
+  sc.eq('BLOCK7 운영본은 예전 이름 그대로', D.dsKey, 'b7v1_devsettings');
+  sc.eq('소스가 _lsk 로 짓는다', /const _DS_KEY=_lsk\('devsettings'\)/.test(SRC), true);
+  sc.eq('Sweeter 개발본은 다른 칸', lsk('b7v1_sweeter_dev', 'devsettings') !== D.dsKey, true);
 }
 
 sc.done();
