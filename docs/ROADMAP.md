@@ -30,13 +30,13 @@ BLOCK7 은 여러 대화창(클로드 코드 여럿 · GPT Codex)이 번갈아 �
 
 # 진행 중
 
-## 1029 묶음 — There 대시보드 손보기 (HB 2026-10-29, Sonnet → Opus) — ⚠️ **배포는 3까지 끝낸 뒤 한꺼번에**
+## 1029 묶음 — There 대시보드 손보기 (HB 2026-10-29, Sonnet → Opus) — ✅ 1·3·3-2·4 배포됨 (PR #808), 2 결정 대기
 
 | 단계 | 무엇을 | 상태 |
 |---|---|---|
-| 1 | 기도한 날 '시간 없이 기도함만 누른 이름' → '오늘 페이지에서 기도함 체크' | ✅ 브랜치 `claude/there-seg-slide` 에 있음, 미배포 (기도노트 v. 26-1029-7) |
-| 4 | D/W/M 선택 네모가 컷이 아니라 미끄러져 이동 (`.tdash-pill`, draw 에서 옛 자리→새 자리 애니, 모션 줄이기면 컷) | ✅ 같은 브랜치, 미배포 (BLOCK7 v. 26-1029-4) |
-| 3 | D/M/W 왼쪽에 빨강·초록·파랑 점 **온오프 버튼**(꺼짐=옅음). 켜면 **그룹·서브그룹 = 할당 색 알약 · 기도 항목 = 표시색 글자** | ✅ 같은 브랜치, 미배포 — `tools/there-dash.js` `hueOf`·`hueAttr`·`hueIndex` · 기도노트 `tdPaint`·`hueOn/hueSet`(`pray.hue`) · BLOCK7 `_tdLoadPray` 가 `prayPaint` · `tests/test_there_dash.js` ⑪ · `tests/e2e/pray_hue1029.js` |
+| 1 | 기도한 날 '시간 없이 기도함만 누른 이름' → '오늘 페이지에서 기도함 체크' | ✅ PR #808 (기도노트 v. 26-1029-7) |
+| 4 | D/W/M 선택 네모가 컷이 아니라 미끄러져 이동 (`.tdash-pill`, draw 에서 옛 자리→새 자리 애니, 모션 줄이기면 컷) | ✅ PR #808 (BLOCK7 v. 26-1029-4) |
+| 3 | D/M/W 왼쪽에 빨강·초록·파랑 점 **온오프 버튼**(꺼짐=옅음). 켜면 **그룹·서브그룹 = 할당 색 알약 · 기도 항목 = 표시색 글자** | ✅ PR #808 — `tools/there-dash.js` `hueOf`·`hueAttr`·`hueIndex` · 기도노트 `tdPaint`·`hueOn/hueSet`(`pray.hue`) · BLOCK7 `_tdLoadPray` 가 `prayPaint` · `tests/test_there_dash.js` ⑪ · `tests/e2e/pray_hue1029.js` |
 | 3-2 | 기도한 날 페이지에도 같은 버튼 · 같은 동작 | ✅ 그날 줄(날짜 · 요약 · **'그날 자세히' 바로 왼쪽**) — 대시보드에서 D W M 왼쪽인 것과 같은 결. 값은 대시보드와 같은 `pray.hue`. 이름 칩 · '오늘 페이지에서 기도함 체크' 이름표 · 달 요약 카드 목록에 색. 앱 테마를 따른다(밝은 모드 = 옅은 바탕 짙은 글자). 그날 줄은 한 줄 고정(`.pl-lab`) · `tests/e2e/pray_hue1029.js` ⑥ |
 | 2 | (HB 고민 중) 아멘 노란 점에 범례를 달지 | ⏳ 결정 대기 |
 
