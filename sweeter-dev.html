@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-5  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1029-6  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2745,7 +2745,7 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 .memo-grip[data-c="ne"]{right:0;top:0;cursor:nesw-resize;}
 .memo-grip[data-c="sw"]{left:0;bottom:0;cursor:nesw-resize;}
 .memo-grip[data-c="se"]{right:0;bottom:0;cursor:nwse-resize;}
-.memo-modal.sized{display:flex!important;flex-direction:column;max-height:none;max-width:none;overflow:hidden;}
+.memo-modal.sized{flex-direction:column;max-height:none;max-width:none;overflow:hidden;}
 .memo-modal.sized .memo-view{flex:1;min-height:0;overflow-y:auto;}
 .memo-modal.sized .memo-edit{flex:1;min-height:0;resize:none;}
 
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-5";
+const APP_VERSION = "v. 26-1029-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -36029,7 +36029,7 @@ function _memoApplySize(md){
   try{sz=JSON.parse(localStorage.getItem(_lsk('memoSize'))||'null');}catch(e){}
   if(sz&&sz.w&&sz.h){
     const c=_memoClampSize(sz.w,sz.h);
-    md.style.width=c.w+'px';md.style.height=c.h+'px';md.classList.add('sized');
+    md.style.width=c.w+'px';md.style.height=c.h+'px';md.classList.add('sized');md.style.display='flex';
   }else{md.style.width='';md.style.height='';md.classList.remove('sized');}
 }
 (function _memoWireGrips(){
@@ -36040,7 +36040,7 @@ function _memoApplySize(md){
       const c=g.dataset.c,r=md.getBoundingClientRect();
       const x0=e.clientX,y0=e.clientY,w0=r.width,h0=r.height;
       const sx=c.includes('e')?1:-1,sy=c.includes('s')?1:-1;
-      md.classList.add('sized');md.style.width=w0+'px';md.style.height=h0+'px';
+      md.classList.add('sized');md.style.display='flex';md.style.width=w0+'px';md.style.height=h0+'px';
       try{g.setPointerCapture(e.pointerId);}catch(_){}
       const mv=ev=>{
         const s=_memoClampSize(w0+sx*2*(ev.clientX-x0),h0+sy*2*(ev.clientY-y0));
