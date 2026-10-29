@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-1029-4** · 전체 55,061줄 · 구역 466개 · 함수 3009개
+기준 버전 **v. 26-1029-5** · 전체 55,075줄 · 구역 466개 · 함수 3009개
 
 ---
 
@@ -35,7 +35,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 6,947~9,655 | 2,709줄 (5%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
 | 9,656~10,142 | 487줄 (1%) | JS | 동작 (자바스크립트) |
 | 10,143~54,197 | 44,055줄 (80%) | JS | 동작 (자바스크립트) |
-| 54,198~55,058 | 861줄 (2%) | JS | 동작 (자바스크립트) |
+| 54,198~55,072 | 875줄 (2%) | JS | 동작 (자바스크립트) |
 
 ---
 
@@ -519,7 +519,7 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 54,244 | 모으기: 두 기록 → 한 모양 [{date,t,time,d,app,src,label}] | `collect`, `mapPrayers`, `focusPrayers`, `dayFlow`, `mergeFlow`, `wordPray`, `wpLegend`, `hueIndex`, `hueOf`, `itemName`, `edRow`, `mapTop`, `dayTotals`, `inRange` … 외 3개 |
 | 54,443 | 그리기 | `injectCSS`, `legend`, `bigNum`, `cmpLine`, `topRefs`, `bySrc`, `bySlot`, `viewWeek`, `heat`, `viewMonth`, `viewDay`, `nav`, `html` |
 | 54,746 | 판 하나를 el 안에 연다 | `mount` |
-| 54,797 | 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 | `pageTint`, `open`, `close`, `isOpen`, `redraw` |
+| 54,810 | 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 | `pageTint`, `open`, `close`, `isOpen`, `redraw` |
 
 ---
 
