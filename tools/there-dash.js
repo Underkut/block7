@@ -179,7 +179,34 @@ const TDASH = (function () {
   }
   // 기도 항목 이름 — 부른 쪽(기도노트)이 아는 이름이면 누를 수 있게 (HB 2026-10-27 P3′-2):
   //   톡 = 상세(opts.item.open) · 길게 · 우클릭 = 그 항목부터 한 장씩 기도(opts.item.pray). 모르는 이름 · BLOCK7 · Sweeter 는 글자 그대로
-  const itemName = (S, n, tag) => S.item && S.item.has(n) ? '<' + tag + ' class="tdash-item" data-td="item" data-v="' + esc(n) + '">' + esc(n) + '</' + tag + '>' : '<' + tag + '>' + esc(n) + '</' + tag + '>';
+  // 색으로 보기 (HB 2026-10-29) — D W M 왼쪽 빨강 · 초록 · 파랑 점 단추로 켜고 끈다. 켜면 이름마다 제 색:
+  //   그룹 · 서브 그룹 = 할당 색의 **알약**(바탕) · 기도 항목 = 표시색의 **글자**. 점을 늘어놓지 않는다(이름이 많아 점투성이가 된다).
+  //   색은 부른 쪽이 안다 — opts.paint(이름 또는 '#id') → {g:'#색'} | {m:'red'} | null (기도노트: 이어진 표시색까지).
+  //   BLOCK7 · Sweeter 는 받아 온 기도노트 문서로 hueIndex 를 만들어 넘긴다(load 의 prayPaint — 직접 고른 표시색만).
+  const MK_OK = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];   // 회색은 '색 없음' 으로 본다(기도노트 목록과 같다)
+  function hueIndex(db) {
+    const n = {}, id = {}, put = (o, h) => { if (!o || !h) return; if (o.id) id[String(o.id)] = h; if (o.name) n[String(o.name)] = h; };
+    const G = Array.isArray(db && db.G) ? db.G : [], T = Array.isArray(db && db.T) ? db.T : [];
+    const hT = t => MK_OK.indexOf(t.mark) >= 0 ? { m: t.mark } : null, hG = g => /^#[0-9a-f]{3,8}$/i.test(String(g.color || '')) ? { g: String(g.color) } : null;
+    // 같은 이름이면 기도노트 itemByName 과 같은 차례로 이긴다: 보관 안 한 항목 > 보관한 항목 > 그룹
+    G.forEach(g => put(g, hG(g)));
+    T.filter(t => t && (t.arch || t.ansAt)).forEach(t => put(t, hT(t)));
+    T.filter(t => t && !(t.arch || t.ansAt)).forEach(t => put(t, hT(t)));
+    return { n: n, id: id };
+  }
+  const hueOf = (S, n) => {
+    if (!S.hue) return null;
+    n = String(n == null ? '' : n);
+    if (S.paint) { try { return S.paint(n) || null; } catch (e) { return null; } }
+    const x = S.data.prayPaint; if (!x) return null;
+    return (n[0] === '#' ? (x.id || {})[n.slice(1)] : (x.n || {})[n]) || null;
+  };
+  // 이름 하나에 붙일 글자(class · style) — 그룹은 알약, 항목은 글자색
+  const hueAttr = h => !h ? null : h.g ? { c: 'tdash-gp', s: '--hc:' + esc(h.g) } : MK_OK.indexOf(h.m) >= 0 ? { c: 'tdash-ic', s: '--hc:var(--mk-' + h.m + ')' } : null;
+  const itemName = (S, n, tag) => {
+    const a = hueAttr(hueOf(S, n)), cls = (S.item && S.item.has(n) ? 'tdash-item' : '') + (a ? (S.item && S.item.has(n) ? ' ' : '') + a.c : '');
+    return '<' + tag + (cls ? ' class="' + cls + '"' : '') + (S.item && S.item.has(n) ? ' data-td="item" data-v="' + esc(n) + '"' : '') + (a ? ' style="' + a.s + '"' : '') + '>' + esc(n) + '</' + tag + '>';
+  };
   // 고칠 수 있는 줄 (HB 1028-3 5-1 · 5-2) — 부른 쪽이 opts.edit 를 주면(기도노트) 기도노트 기록 줄만:
   //   톡 = 고치기(edit.open) · 왼쪽으로 밀기 = 지우기(edit.del). 이름 글자(tdash-item)를 누르면 예전대로 상세.
   //   BLOCK7 · Sweeter · 성경 줄은 그 앱 것이라 여기서 못 고친다.
@@ -239,7 +266,7 @@ const TDASH = (function () {
 .tdash-toast small{display:block;margin-top:8px;font-size:14px;color:#8d887e}
 .tdash-toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .tdash-item{cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tdash-hd{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
 .tdash-seg{display:flex;gap:2px;background:var(--s1);border-radius:10px;padding:3px;position:relative}
 .tdash-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:8px;background:#272a32;pointer-events:none}
 .tdash-seg button{font-size:12.5px;color:var(--tx3);padding:6px 12px;border-radius:8px}
@@ -312,6 +339,19 @@ const TDASH = (function () {
 .tdash-kn small{margin-left:7px;font-size:12px;color:var(--tx3)}
 .tdash-kid em{font-style:normal;font-size:12.5px;color:var(--tx2);font-variant-numeric:tabular-nums}
 .tdash-kid.lo .tdash-kn{color:var(--tx2)}
+.tdash{--mk-red:#ff6b6b;--mk-orange:#f5a35c;--mk-yellow:#f2cf5b;--mk-green:#6fd18b;--mk-blue:#6fa8ff;--mk-purple:#b48cff;--mk-pink:#f07cc8;--mk-gray:#7c8089}
+/* 색으로 보기 (HB 2026-10-29) — 꺼짐은 점이 옅고, 켜면 선명. 대시보드는 늘 어두운 판이라 표시색은 어두운 모드 값을 위에서 다시 정한다
+   (기도노트를 밝은 모드로 쓰면 앱의 --mk-* 가 짙은 색이라 검은 바탕에 묻힌다) */
+.tdash-hueb{display:flex;align-items:center;gap:4px;padding:10px 8px;margin-left:auto}
+.tdash-hueb i{width:6px;height:6px;border-radius:3px;opacity:.3;filter:saturate(.45);transition:opacity .3s,filter .3s}
+.tdash-hueb i:nth-child(1){background:#e5534b}.tdash-hueb i:nth-child(2){background:#4fbf73}.tdash-hueb i:nth-child(3){background:#4d8ff0}
+.tdash-hueb.on i{opacity:1;filter:none}
+/* 그룹 = 할당 색 알약 (짙은 색이 많아 바탕과 섞어 가라앉히고 글자는 밝게) · 항목 = 표시색 글자 */
+.tdash-gp{display:inline-block;max-width:100%;vertical-align:middle;padding:0 9px;border-radius:999px;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  background:var(--hc);background:color-mix(in srgb,var(--hc) 62%,#15171b);color:#f4f0e8}
+.tdash-ic{color:var(--hc)}
+.tdash-kid.lo .tdash-kn .tdash-ic{opacity:.75}
+.tdash-gr.hue .tdash-dots i.on,.tdash-gr.hue .tdash-gbar i{background:var(--gc);background:color-mix(in srgb,var(--gc) 72%,#fff)}
 .tdash-am{display:inline-block;width:5px;height:5px;border-radius:3px;background:#dab87a;margin-left:7px;vertical-align:2px}
 .tdash-sw{position:relative;overflow:hidden}
 /* 부른 쪽 칸 (기도노트 1028-3 6-2b) — 그룹 줄 · 점 · 이름 옆 글 */
@@ -453,7 +493,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   function viewDay(S) {
     const d = S.at, ss = inRange(S.ss, d, d), tot = total(ss), pd = parse(d);
     // 부른 쪽이 더 보여 줄 칸(기도노트: 오늘 기도한 이름 · 다가오는 날 · 오래 못 한 기도 · 감사) — 기록이 없는 날에도 보인다
-    const ex = S.extra ? (S.extra(d, d === S.today) || '') : '';
+    const ex = S.extra ? (S.extra(d, d === S.today, !!S.hue) || '') : '';
     // 고정 영역은 날짜 줄까지만 — 시간 막대 · 말씀/기도 막대도 함께 밀려 올라간다 (HB 2026-10-29: 고정 영역이 화면을 너무 많이 가렸다)
     let h = nav(S, (pd.getMonth() + 1) + '월 ' + pd.getDate() + '일 ' + (pd.getDay() ? WK[pd.getDay()] + '요일' : '주일'), (tot ? dur(tot) + ' · ' + ss.length + '번' : '기록 없음'), d >= S.today) + FIX;
     if (!tot) return h + '<div class="tdash-empty">이날은 기록이 없습니다</div>' + ex;
@@ -499,7 +539,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const n = v.indexOf(NAVEND), navH = n >= 0 ? v.slice(0, n) : '', v2 = n >= 0 ? v.slice(n + NAVEND.length) : v;
     const i = v2.indexOf(FIX), fix = i >= 0 ? v2.slice(0, i) : v2, rest = i >= 0 ? v2.slice(i + FIX.length) : '';
     // 위쪽 고정 영역 = 탭 + 날짜 줄(움직이지 않는다) + 요약(넘길 때 같이 넘어간다, 세로로는 고정). 그 아래가 밀린다
-    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span><div class="tdash-seg"><i class="tdash-pill"></i>' +
+    return '<div class="tdash-in"><div class="tdash-stick"><div class="tdash-hd"><span style="font-size:12.5px;color:var(--tx3)">' + esc(S.status || '') + '</span>' + (S.paint || S.data.prayPaint ? '<button class="tdash-hueb' + (S.hue ? ' on' : '') + '" data-td="hue" aria-pressed="' + !!S.hue + '" aria-label="색으로 보기 — ' + (S.hue ? '켜짐' : '꺼짐') + '"><i></i><i></i><i></i></button>' : '') + '<div class="tdash-seg"><i class="tdash-pill"></i>' +
       seg.map(s => '<button class="' + (S.view === s[0] ? 'on' : '') + (S.pin === s[0] ? ' pin' : '') + '" data-td="view" data-v="' + s[0] + '"' + (S.pin === s[0] ? ' aria-label="' + s[1] + ' — 열 때 첫 화면으로 고정됨"' : '') + '>' + s[1] + '</button>').join('') + '</div></div>' +
       '<div data-pane2="1">' + navH + '</div><div class="tdash-pane" data-pane="1">' + fix + '</div></div>' +
       '<div class="tdash-pane tdash-rest" data-pane="1">' + rest + (S.note ? '<span class="tdash-note">' + esc(S.note) + '</span>' : '') + '</div></div>';
@@ -512,6 +552,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     injectCSS();
     opts = opts || {};
     const S = { view: 'week', today: opts.today || ymd(new Date()), refLabel: opts.refLabel || (r => r), status: '', note: opts.note || '', data: Object.assign({}, opts.local || {}), item: opts.item && typeof opts.item.has === 'function' ? opts.item : null, edit: opts.edit && typeof opts.edit.open === 'function' ? opts.edit : null,
+      paint: typeof opts.paint === 'function' ? opts.paint : null,
       extra: typeof opts.extra === 'function' ? opts.extra : null, extraAct: typeof opts.extraAct === 'function' ? opts.extraAct : null };   // D탭 아래 부른 쪽 칸 (기도노트 1028-3 6-2b) — (날, 오늘인가) → HTML
     // 기기별 기억 (HB 2026-10-15) — 고정한 탭 · 마지막 탭. 이 기기의 localStorage 에만 둔다.
     //   opts.store = 저장 칸 이름 (앱마다 다르다 · BLOCK7 은 _lsk 로 만든 이름)
@@ -520,10 +561,13 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
     const VIEWS = ['day', 'week', 'month'], okView = v => VIEWS.indexOf(v) >= 0;
     const okDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
     S.pin = okView(mem.pin) ? mem.pin : null;
+    // 색으로 보기 — 부른 쪽이 opts.hue {get, set} 을 주면 그쪽에 둔다(기도노트: '기도한 날' 단추와 같은 값), 아니면 이 기기의 이 칸에
+    const HUE = opts.hue && typeof opts.hue.get === 'function' ? opts.hue : null;
+    S.hue = HUE ? !!HUE.get() : !!mem.hue;
     // 탭마다 본 날 / 주 / 달은 **열려 있는 동안만** 기억한다 (HB 2026-10-27 P5): 새로 열면 세 탭 모두 오늘이 든 날 · 주 · 달,
     //   열린 채로 옮겨 두면 다른 탭에 갔다 와도 그 자리. 예전엔 이 기기에 남겨서 다음에 열어도 지난 날짜로 열렸다.
     S.ats = {}; VIEWS.forEach(v => { S.ats[v] = S.today; });
-    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view })); } catch (e) {} };
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ pin: S.pin, last: S.view, hue: HUE ? undefined : S.hue })); } catch (e) {} };
     // 어느 탭으로 열까: 부른 쪽이 콕 집은 탭 > 고정한 탭 > 마지막으로 연 탭 > 주
     //   opts.soft = 부른 쪽은 그 탭을 '권할' 뿐 — 고정한 탭이 있으면 고정이 이긴다 (HB 2026-10-19:
     //   기도노트 기록 › 기도한 날 합계 줄이 '달' 을 콕 집어 열어서, 고정(점)은 보이는데 늘 달로 열렸다).
@@ -619,6 +663,15 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         }
         return;
       }
+      if (a === 'hue') {
+        e.stopPropagation(); S.hue = !S.hue; if (HUE && HUE.set) HUE.set(S.hue); save(); draw();
+        // 다시 그리면 CSS 전환이 안 걸린다 — 점은 옛 밝기에서, 판은 살짝 옅은 데서 스르륵
+        if (!still() && el.querySelectorAll) {
+          el.querySelectorAll('.tdash-hueb i').forEach(i => i.animate && i.animate([{ opacity: S.hue ? .3 : 1 }, { opacity: S.hue ? 1 : .3 }], { duration: 300, easing: EASE }));
+          panes().forEach(p => p.animate && p.animate([{ opacity: .55 }, { opacity: 1 }], { duration: 320, easing: EASE }));
+        }
+        return;
+      }
       if (a === 'item') { e.stopPropagation(); if (S.item && S.item.open) S.item.open(b.dataset.v); return; }
       if (a === 'pray') { e.stopPropagation(); if (S.item && S.item.pray) S.item.pray(b.dataset.v); return; }
       if (a === 'ext') { e.stopPropagation(); if (S.extraAct) { S.extraAct(b.dataset.v); draw(); } return; }   // 부른 쪽 칸의 접기 · 펼치기 등 — 바꾸고 다시 그린다   // 부른 쪽 칸의 그룹 줄 — 그 그룹부터 한 장 기도 (기도노트 6-2b)
@@ -706,6 +759,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
         r = r || {};
         if (r.thereLog) S.data.thereLog = r.thereLog;
         if (r.prayLog) S.data.prayLog = r.prayLog;
+        if (r.prayPaint) S.data.prayPaint = r.prayPaint;
         S.status = ''; S.note = r.note || opts.note || '';
         draw();
       }).catch(err => { S.status = ''; S.note = '다른 앱 기록을 받지 못했습니다' + (err && err.message ? ' — ' + err.message : '') + '. 이 앱 기록만 보입니다.'; draw(); });
@@ -801,5 +855,5 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
   }
   const isOpen = () => !!OV;
   const redraw = () => { if (OV && OV._m) OV._m.redraw(); };   // 부른 쪽이 기록을 고친 뒤 (기도노트 5-1 · 5-2)
-  return { collect, mapPrayers, focusPrayers, dayFlow, mergeFlow, wordPray, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC };
+  return { collect, mapPrayers, focusPrayers, dayFlow, mergeFlow, wordPray, dayTotals, weekStart, monthStart, monthEnd, add, dur, mount, open, close, isOpen, redraw, APPS, SRC, hueIndex };
 })();
