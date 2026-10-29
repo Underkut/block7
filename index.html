@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-1  [production]  -->
+<!-- BLOCK7  v. 26-1030-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3435,6 +3435,18 @@ body.split-d.lay2.mw-full #pageContent{flex-wrap:wrap;}
 body.split-d.lay2.mw-full #colL{flex:1 1 0;}
 body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-width:0;padding:14px 14px 0;}
 #monthPaneInner:empty{display:none;}
+/* 한 칸 주간뷰 (v. 26-1030-2) — 넘길 때 옆으로 미끄러지는 내용이 상자 밖으로 새지 않게 */
+.rp-wk-widget{overflow:hidden;}
+.rp-wk-slot #weeklyPaneInner{overflow-x:auto;}
+/* 두 칸 주간뷰의 좌상단 … 가 ‹ 와 겹치지 않게 위를 조금 더 띄운다 */
+body.wk-wide #weeklyPane{padding-top:26px;}
+#weeklyPane>.rp-wmore{top:3px;}
+/* 두 갈래 고르기 세그먼트 (주간뷰 · 월간뷰 너비) — There 대시보드 D W M 과 같은 모양, 앱 테마를 따른다 */
+.b7-pop.b7-pop-seg{width:auto;min-width:172px;}
+.b7-seg{display:flex;gap:2px;padding:3px;margin:1px 0;border-radius:10px;position:relative;background:color-mix(in srgb,var(--tx) 7%,transparent);}
+.b7-seg button{flex:1;position:relative;z-index:1;background:none;border:0;padding:7px 14px;border-radius:8px;font:400 12.5px/1.2 var(--font-ui),sans-serif;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+.b7-seg button.on{color:var(--tx);font-weight:500;}
+.b7-seg-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:8px;background:color-mix(in srgb,var(--tx) 15%,transparent);pointer-events:none;}
 #weeklyPaneInner:not(:empty)+#monthPaneInner .rp-widget{margin-top:10px;}
 .rp-wmore{position:absolute;left:6px;top:4px;z-index:2;width:30px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--tx3);opacity:.7;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .rp-wmore:hover{opacity:1;color:var(--tx2);}
@@ -6629,7 +6641,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-1";
+const APP_VERSION = "v. 26-1030-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -25816,8 +25828,9 @@ function _rpGetWidgets(){
 // ══ 레이아웃(1/2/3단) 설정 모델 ══
 // ST.settings.layout = {
 //   bp2, bp3   — 2단/3단 시작 화면폭(px, 사용자 설정)
-//   weekly     — 3단 주간뷰: 'none'|'lc'(좌+중 상단 차지)|'cr'(중+우 상단 차지)
-//                주간뷰는 위젯이지만 "두 단 상단 가로지름"이라는 특수 배치를 유지.
+//   (weekly)   — 옛 3단 주간뷰 자리 'none'|'lc'|'cr'. v. 26-1030-2 부터는 쓰지 않는다 —
+//                주간뷰도 cols 안에 자리를 갖고, 넓이는 wkWide (_lay 가 한 번 옮긴다).
+//   wkWide     — 주간뷰가 두 칸을 차지 (월간뷰 mWide 와 같은 모양). 자리는 놓인 칸을 따른다.
 //   cols       — {left:[],center:[],right:[]} 컬럼별 위젯 타입 스택.
 //                'todo'(할일뷰)도 일반 위젯처럼 이 안에 들어가 순서를 가진다.
 //                어느 컬럼에도 없는 타입(todo 제외) = 사용 안 함.
@@ -25834,7 +25847,6 @@ function _lay(){
     const olds=_rpGetWidgets().filter(w=>w.on).map(w=>w.type);
     ST.settings.layout={
       bp2:600,bp3:900,
-      weekly:'none',
       cols:{left:['todo'],center:[],right:olds},
       c3:[0.34,0.3],
     };
@@ -25848,6 +25860,14 @@ function _lay(){
     L.cols[tc].unshift('todo');
   }
   delete L.todoCol;
+  // ── 주간뷰도 칸 안에 자리를 갖는다 (v. 26-1030-2, HB) — 예전엔 3단에서만 두 칸 위를 가로질렀다.
+  //    옛 'lc'(좌+중) → 좌 칸 맨 위 · 'cr'(중+우) → 우 칸 맨 위, 둘 다 두 칸 넓이(wkWide) — 화면은 예전 그대로다.
+  //    배치는 기기별이라(_DEVICE_SCOPED) 새 모양이 클라우드로 가 옛 버전 기기를 헷갈리게 할 일은 없다.
+  if('weekly' in L){
+    const had=['left','center','right'].some(c=>L.cols[c].includes('weekly'));
+    if(!had&&(L.weekly==='lc'||L.weekly==='cr')){L.cols[L.weekly==='lc'?'left':'right'].unshift('weekly');L.wkWide=true;}
+    delete L.weekly;
+  }
   // ⚠️⚠️ 내가 **모르는** 위젯은 절대 지우지 않는다 — 따로 보관했다가 되돌린다.
   // 이것을 안 지켜서 실제로 사고가 났다: 0810 이전 버전의 _lay() 는 cols 안의
   // 'card#…'(말씀카드)를 "정의에 없는 타입"으로 보고 조용히 지웠다. 그 기기가
@@ -25903,7 +25923,7 @@ function _lay(){
         if(typeof t==='string'&&t)stash.push({c,i,t});   // 모르는 것 = 더 새 버전의 위젯
         return false;
       }
-      if(t==='weekly'||seen.has(t))return false;
+      if(seen.has(t))return false;
       seen.add(t);return true;
     });
   });
@@ -25917,7 +25937,6 @@ function _lay(){
   if(typeof L.bp2!=='number')L.bp2=600;
   if(typeof L.bp3!=='number')L.bp3=900;
   if(L.bp3<L.bp2+100)L.bp3=L.bp2+100;
-  if(!['none','lc','cr'].includes(L.weekly))L.weekly='none';
   if(!Array.isArray(L.c3)||L.c3.length!==2)L.c3=[0.34,0.3];
   return L;
 }
@@ -26193,11 +26212,13 @@ function uiScaleSet(v){
     });});
   },300);
 }
-// 주간뷰 위치 변경 ('none'|'lc'|'cr') — 할일뷰 제약 없음
+// 주간뷰 두 칸 자리로 옮기기 ('none'|'lc'|'cr') — 3단 위쪽 가로지른 주간뷰를 끌어 옮길 때 (v. 26-1030-2)
+//   'lc' → 좌 칸 맨 위 · 'cr' → 우 칸 맨 위 (넓이는 그대로 두 칸) · 'none' → 끄기
 function laySetWeekly(pos){
   const L=_lay();
   if(!['none','lc','cr'].includes(pos))return;
-  L.weekly=pos;
+  ['left','center','right'].forEach(c=>{const i=L.cols[c].indexOf('weekly');if(i>=0)L.cols[c].splice(i,1);});
+  if(pos!=='none')L.cols[pos==='lc'?'left':'right'].unshift('weekly');
   save();
   if(typeof renderRpConfigList==='function')renderRpConfigList();
   renderLayout();
@@ -33167,20 +33188,34 @@ function setVcTheme(id,key){
 //   3단 — 주간뷰가 켜져 있으면 주간뷰와 같은 칸(주간뷰 아래), 아니면 좌 · 중 → 좌+중, 우 → 중+우
 //   2단 — 할일 · 위젯 위쪽 전체 폭.   1단(폰)은 위젯이 없으니 그대로.
 // 배치(L.cols)는 건드리지 않는다 — 1단으로 되돌리면 원래 자리에 그대로 있다.
-function _monthWideSide(L,mode){
-  if(!L||!L.mWide||mode<2)return null;
-  const col=['left','center','right'].find(c=>(L.cols[c]||[]).includes('monthSingle'));
+function _layColOf(L,t){return['left','center','right'].find(c=>(L.cols[c]||[]).includes(t))||null;}
+// 주간뷰 두 칸 (v. 26-1030-2) — 월간뷰와 같은 규칙: 3단은 좌 · 중 → 좌+중, 우 → 중+우 / 2단은 위쪽 전체 폭
+function _wkWideSide(L,mode){
+  if(!L||!L.wkWide||mode<2)return null;
+  const col=_layColOf(L,'weekly');
   if(!col)return null;
   if(mode===2)return'full';
-  if(L.weekly!=='none')return L.weekly;
   return col==='right'?'cr':'lc';
 }
+function _monthWideSide(L,mode){
+  if(!L||!L.mWide||mode<2)return null;
+  const col=_layColOf(L,'monthSingle');
+  if(!col)return null;
+  if(mode===2)return'full';
+  const ws=_wkWideSide(L,mode);
+  if(ws)return ws;                       // 주간뷰도 두 칸이면 그 아래
+  return col==='right'?'cr':'lc';
+}
+// 3단에서 위쪽을 가로지른 쪽 ('lc'|'cr'|null) — 경계선 끌기가 어느 쌍을 지킬지 정한다
+function _laySpanSide(L){return _wkWideSide(L,3)||_monthWideSide(L,3);}
+// 주간뷰 · 월간뷰 … 메뉴 — 1단 · 2단 미끄러지는 세그먼트 (v. 26-1030-2, HB — There 대시보드 D W M 과 같은 결)
 function rpMonthWideMenu(ev,btn){
   if(ev)ev.stopPropagation();
-  const on=!!_lay().mWide;
-  _b7Pop(btn,'월간뷰 너비',[
-    {label:'1단',sub:'기본',on:!on,fn:()=>rpSetMonthWide(false)},
-    {label:'2단',sub:'두 칸 차지',on:on,fn:()=>rpSetMonthWide(true)}]);
+  _b7PopSeg(btn,'월간뷰 너비',['1단','2단'],_lay().mWide?1:0,i=>rpSetMonthWide(i===1));
+}
+function rpWeeklyWideMenu(ev,btn){
+  if(ev)ev.stopPropagation();
+  _b7PopSeg(btn,'주간뷰 너비',['1단','2단'],_lay().wkWide?1:0,i=>rpSetWeeklyWide(i===1));
 }
 // 떠 있는 작은 메뉴 하나 — 단추 아래에 연다. 밖을 누르면 닫힌다. rows = [{label, sub, on, fn}]
 function _b7PopClose(){const m=document.getElementById('b7Pop');if(!m)return;m.classList.remove('open');m.id='';setTimeout(()=>m.remove(),260);}
@@ -33192,6 +33227,10 @@ function _b7Pop(anchor,title,rows){
     (r.sub!=null&&r.sub!==''?'<span style="opacity:.65;font-size:10px;">'+esc(String(r.sub))+'</span>':'')+'</div>').join('')
     :'<div class="keep-switch-row" style="opacity:.65;">비어 있어요</div>');
   m.addEventListener('click',e=>{const row=e.target.closest('[data-i]');if(!row)return;e.stopPropagation();const r=rows[+row.dataset.i];_b7PopClose();if(r&&r.fn)r.fn();});
+  _b7PopMount(m,anchor);
+}
+// 단추 아래에 붙이고, 밖을 누르면 닫는다 (_b7Pop · _b7PopSeg 공용)
+function _b7PopMount(m,anchor){
   document.body.appendChild(m);
   const r=anchor.getBoundingClientRect(),W=document.documentElement.clientWidth,H=window.innerHeight;
   let top=r.bottom+6;if(top+m.offsetHeight>H-8)top=Math.max(8,r.top-6-m.offsetHeight);
@@ -33205,6 +33244,34 @@ function _b7Pop(anchor,title,rows){
     document.addEventListener('pointerdown',close,true);
   },0);
 }
+// 두 갈래 고르기 — 항목 줄 대신 세그먼트 하나. 누르는 순간 네모가 옆으로 미끄러져 간다
+// (There 대시보드 D W M 과 같은 길이 · 곡선, tools/there-dash.js 의 slidePill). 바뀐 화면은 바로 그린다.
+// 메뉴는 열어 둔다 — 미끄러지는 것이 보이고, 곧바로 되돌릴 수도 있다. 밖을 누르면 닫힌다.
+const _B7SEG_MS=420,_B7SEG_EASE='cubic-bezier(.25,.1,.25,1)';
+function _b7PopSeg(anchor,title,labels,cur,pick){
+  if(document.getElementById('b7Pop')){_b7PopClose();return;}
+  const m=document.createElement('div');m.id='b7Pop';m.className='b7-pop b7-pop-seg';m.setAttribute('role','menu');
+  m.innerHTML=(title?'<div class="b7-pop-head">'+esc(title)+'</div>':'')+
+    '<div class="b7-seg" role="radiogroup"><i class="b7-seg-pill"></i>'+labels.map((l,i)=>
+      '<button type="button" role="radio" data-i="'+i+'" aria-checked="'+(i===cur)+'"'+(i===cur?' class="on"':'')+'>'+esc(l)+'</button>').join('')+'</div>';
+  const seg=m.querySelector('.b7-seg'),pill=m.querySelector('.b7-seg-pill');
+  const place=b=>{pill.style.left=b.offsetLeft+'px';pill.style.width=b.offsetWidth+'px';};
+  m.addEventListener('click',e=>{
+    const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();
+    if(b.classList.contains('on'))return;
+    const sg=seg.getBoundingClientRect(),r=pill.getBoundingClientRect();
+    seg.querySelectorAll('button').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on));});
+    if(pill.getAnimations)pill.getAnimations().forEach(a=>a.cancel());
+    place(b);
+    if(!_tfQuiet()&&pill.animate)
+      pill.animate([{transform:'translateX('+(r.left-sg.left-b.offsetLeft)+'px)',width:r.width+'px'},{transform:'none',width:b.offsetWidth+'px'}],
+        {duration:_B7SEG_MS,easing:_B7SEG_EASE});
+    const i=+b.dataset.i;
+    setTimeout(()=>pick(i),0);    // 네모가 먼저 출발하고 화면은 그 뒤에 — 누른 손맛이 늦지 않게
+  });
+  _b7PopMount(m,anchor);
+  const on=seg.querySelector('button.on');if(on)place(on);
+}
 function rpSetMonthWide(on){
   const L=_lay();
   if(!!L.mWide===!!on)return;
@@ -33214,6 +33281,16 @@ function rpSetMonthWide(on){
   renderLayout();
   const mode=document.body.classList.contains('split-d')?_layMode():1;
   showToast(on?(mode>=2?'월간뷰를 두 칸으로\n넓혔어요':'월간뷰 두 칸은\n넓은 화면(2단 · 3단)에서 보여요'):'월간뷰를 한 칸으로\n되돌렸어요');
+}
+function rpSetWeeklyWide(on){
+  const L=_lay();
+  if(!!L.wkWide===!!on)return;
+  beforeSave();
+  if(on)L.wkWide=true;else delete L.wkWide;
+  save();
+  renderLayout();
+  const mode=document.body.classList.contains('split-d')?_layMode():1;
+  showToast(on?(mode>=2?'주간뷰를 두 칸으로\n넓혔어요':'주간뷰 두 칸은\n넓은 화면(2단 · 3단)에서 보여요'):'주간뷰를 한 칸으로\n되돌렸어요');
 }
 function _rpWidgetHTML(w){
   if(_vcIs(w.type)){
@@ -33226,6 +33303,15 @@ function _rpWidgetHTML(w){
     // 테두리·배경 없는 프레임리스 위젯 (기존 할일뷰 영역 디자인 유지)
     // 상단 ≡ 그랩 핸들: 드래그 시작 위치 표시 (추가 여백 없이 오버레이)
     return`<div class="rp-widget rp-todo-widget" data-wtype="todo"><div class="rp-grab" title="드래그로 위치 이동"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div><div class="rp-todo-slot"></div></div>`;
+  }
+  if(w.type==='weekly'){
+    // 한 칸 주간뷰 (v. 26-1030-2). 내용(#weeklyPaneInner)은 renderLayout 이 이 슬롯으로 옮겨 넣는다 —
+    // 주간뷰 그리기 · 넘기기 · 밀기가 전부 그 한 요소를 보므로 두 벌 만들지 않는다.
+    return`<div class="rp-widget rp-wk-widget" data-wtype="weekly" style="position:relative;">
+      <button class="rp-wmore" onclick="rpWeeklyWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="주간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
+      <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
+      <div class="rp-wk-slot"></div>
+    </div>`;
   }
   if(w.type==='monthSingle'){
     const s=_rpMonthState.single||(_rpMonthState.single=_rpMonthOf(0));
@@ -33282,12 +33368,20 @@ function renderLayout(){
   const mode=active?_layMode():1;
   document.body.classList.toggle('lay2',mode===2);
   document.body.classList.toggle('lay3',mode===3);
-  // 월간뷰 2단 (HB 2026-10-27 B1) — 주간뷰가 쓰던 '두 칸 가로지르는 자리'(#weeklyPane)에 함께 올린다
+  // 두 칸 가로지르는 자리(#weeklyPane) — 주간뷰 두 칸(v. 26-1030-2) · 월간뷰 두 칸(HB 2026-10-27 B1) 이 함께 쓴다
+  const wkSide=_wkWideSide(L,mode);
   const mwSide=_monthWideSide(L,mode);
-  const spanSide=mode===3?(L.weekly!=='none'?L.weekly:mwSide):null;
+  const spanSide=mode===3?(wkSide||mwSide):null;
+  const fullSide=mode===2&&(wkSide==='full'||mwSide==='full');
+  // 주간뷰가 D 화면 어딘가(칸 안 · 두 칸 자리)에 떠 있는가 — 2단부터 (1단 폰은 위젯이 없다)
+  const wkShown=mode>=2&&!!_layColOf(L,'weekly');
   document.body.classList.toggle('wk-lc',spanSide==='lc');
   document.body.classList.toggle('wk-cr',spanSide==='cr');
-  document.body.classList.toggle('mw-full',mwSide==='full');
+  document.body.classList.toggle('mw-full',fullSide);
+  document.body.classList.toggle('wk-shown',wkShown);
+  document.body.classList.toggle('wk-wide',wkShown&&!!wkSide);
+  // 주간뷰 내용은 한 요소다 — 칸을 다시 그리기 전에 쥐어 둔다 (슬롯이 지워져도 살아 있게)
+  const wkInner=document.getElementById('weeklyPaneInner');
 
   const colL=document.getElementById('colL'),
         colC=document.getElementById('colC'),
@@ -33317,6 +33411,7 @@ function renderLayout(){
     colWidgets.left=['todo'];
   }
   if(mwSide)['left','center','right'].forEach(c=>{colWidgets[c]=colWidgets[c].filter(t=>t!=='monthSingle');});
+  if(wkSide)['left','center','right'].forEach(c=>{colWidgets[c]=colWidgets[c].filter(t=>t!=='weekly');});
 
   // ── 각 컬럼 렌더링 ──
   ['left','center','right'].forEach(cname=>{
@@ -33362,34 +33457,44 @@ function renderLayout(){
     }
   }
 
-  // ── 3단 주간뷰 패널 ──
+  // ── 두 칸 자리(#weeklyPane) · 주간뷰 ──
   const pane=document.getElementById('weeklyPane');
-  const paneInner=document.getElementById('weeklyPaneInner');
+  const paneInner=wkInner;
   if(pane&&paneInner){
     pane.classList.remove('on-lc','on-cr','on-full');
     // 월간뷰 2단 칸 — 주간뷰 아래(또는 홀로). 2단 화면에선 위쪽 전체 폭
     let mwHost=document.getElementById('monthPaneInner');
     if(!mwHost){mwHost=document.createElement('div');mwHost.id='monthPaneInner';pane.appendChild(mwHost);}
     mwHost.innerHTML=mwSide?_rpWidgetHTML({type:'monthSingle'}):'';
-    if(mwSide==='full')pane.classList.add('on-full');
-    else if(mode===3&&L.weekly==='none'&&mwSide)pane.classList.add(mwSide==='lc'?'on-lc':'on-cr');
-    if(mode===3&&L.weekly!=='none'){
-      pane.classList.add(L.weekly==='lc'?'on-lc':'on-cr');
+    if(fullSide)pane.classList.add('on-full');
+    else if(spanSide)pane.classList.add(spanSide==='lc'?'on-lc':'on-cr');
+    // 주간뷰 내용의 자리: 한 칸이면 그 위젯 슬롯, 아니면 두 칸 자리(월간뷰 위)
+    const slot=(wkShown&&!wkSide)?document.querySelector('#pageContent .rp-wk-widget .rp-wk-slot'):null;
+    if(slot){if(paneInner.parentElement!==slot)slot.appendChild(paneInner);}
+    else if(paneInner.parentElement!==pane||paneInner.nextElementSibling!==mwHost)pane.insertBefore(paneInner,mwHost);
+    if(wkShown){
       // 전체 W뷰와 id 충돌 방지: 한쪽만 내용 보유
       const wv=document.getElementById('weeklyView');
       if(wv)wv.innerHTML='';
       renderWeekly(paneInner);
-      // 상단 ≡ 그랩 핸들 (없으면 1회 주입)
-      if(!pane.querySelector('.rp-grab')){
+    }else paneInner.innerHTML='';
+    // 두 칸 주간뷰의 상단 ≡ 그랩 · 좌상단 … (한 칸일 땐 위젯 껍데기가 갖고 있다)
+    const og=pane.querySelector(':scope>.rp-grab'),om=pane.querySelector(':scope>.rp-wmore');
+    if(wkShown&&wkSide){
+      if(!og){
         const g=document.createElement('div');
         g.className='rp-grab';g.title='드래그로 위치 이동';
         g.innerHTML='<svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg>';
         pane.insertBefore(g,pane.firstChild);
       }
-    }else{
-      const og=pane.querySelector('.rp-grab');if(og)og.remove();
-      paneInner.innerHTML='';
-    }
+      if(!om){
+        const b=document.createElement('button');
+        b.className='rp-wmore';b.setAttribute('aria-label','주간뷰 너비 (1단 · 2단)');
+        b.setAttribute('onclick','rpWeeklyWideMenu(event,this)');b.setAttribute('onpointerdown','event.stopPropagation()');
+        b.innerHTML='<svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg>';
+        pane.insertBefore(b,pane.firstChild);
+      }
+    }else{if(og)og.remove();if(om)om.remove();}
   }
 
   // ── 폭 적용 + 인터랙션 연결 ──
@@ -33450,31 +33555,28 @@ function renderRpConfigList(){
   const mode=_layMode();
   const inCols=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
   // 사용 안 함: 어느 컬럼에도 없는 타입. todo는 항상 배치되어 있으므로 제외.
-  // weekly는 L.weekly==='none'일 때 풀에 나타난다.
+  // 주간뷰도 다른 위젯처럼 칸 안의 칩이다 (v. 26-1030-2). 두 칸 넓이는 위젯의 … 에서 고른다.
   // '사용 안 함' 은 두 줄로 묶어 보여준다 (말씀 카드·말씀 목록 / 뷰).
   // 말씀 위젯 둘은 개수 제한이 없어 **늘 맨 앞 줄에 남아 있다** — 끌어다 놓으면
   // 새 위젯이 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다.
   // 반응·저장 폴더는 위젯을 만든 뒤 헤더의 범위 단추로 고른다 (v26-0904-7).
   const poolRows=[
     [VC_NEW,VL_NEW],
-    ['weekly','monthSingle','monthTriple'].filter(t=>t==='weekly'?L.weekly==='none':!inCols.has(t)),
+    ['weekly','monthSingle','monthTriple'].filter(t=>!inCols.has(t)),
   ];
   const COLN={left:'좌',center:'중',right:'우'};
   const chip=t=>`<div class="rp-chip" data-wtype="${t}">
       <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_rpChipName(t)}</span>
       <span class="rp-cfg-drag"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="16" y2="7"/><line x1="4" y1="13" x2="16" y2="13"/></svg></span>
     </div>`;
-  // 주간뷰 칩: lc면 좌 박스 맨 위, cr이면 우 박스 맨 위에 표시 (두 단 상단 차지라
-  // 컬럼 내 세로 순서는 무의미 — 항상 맨 위 고정 표기)
-  const wkChipIn=c=>(L.weekly==='lc'&&c==='left')||(L.weekly==='cr'&&c==='right');
   const colBox=c=>`<div style="flex:1;min-width:0;">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);text-align:center;margin-bottom:5px;">${COLN[c]}</div>
       <div class="rp-cfg-col" data-col="${c}">
-        ${wkChipIn(c)?chip('weekly'):''}${L.cols[c].map(chip).join('')}
+        ${L.cols[c].map(chip).join('')}
       </div>
     </div>`;
   list.innerHTML=`
-    <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">위젯 배치 <span style="font-weight:400;color:var(--tx3);">${mode===2?'(2단에선 중·우가 우측에 합쳐 보여요 · 주간뷰는 3단에서만)':'(주간뷰: 좌=좌+중 차지, 우=중+우 차지)'}</span></div>
+    <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">위젯 배치 <span style="font-weight:400;color:var(--tx3);">${mode===2?'(2단에선 중·우가 우측에 합쳐 보여요)':'(주간뷰 · 월간뷰 두 칸 넓이는 위젯 좌상단 … 에서)'}</span></div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">${colBox('left')}${colBox('center')}${colBox('right')}</div>
     <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">사용 안 함</div>
     <div class="rp-cfg-col pool" data-col="pool">${
@@ -33490,36 +33592,18 @@ function _rpAttachChipDrag(list){
   list.querySelectorAll('.rp-chip').forEach(chipEl=>{
     const handle=chipEl; // 칩 전체가 드래그 영역
     const type=chipEl.getAttribute('data-wtype');
-    // 주간뷰 칩: 좌 박스=좌+중, 우 박스=중+우, 풀=끄기 (중 박스는 대상 아님 →
-    // 2D 거리로 가까운 쪽에 자연 귀속)
-    const containers=type==='weekly'
-      ?allBoxes.filter(c=>c.key==='left'||c.key==='right'||c.key==='pool')
-      :allBoxes;
+    const containers=allBoxes;
     const begin=(x,y)=>{
       _ghostDragStart({
         srcEl:chipEl,containers,rowSelector:'.rp-chip',clientX:x,clientY:y,
-        // 주간뷰 칩: 실제 차지 형태(좌+중 / 중+우)대로 두 박스 상단 가로지름 라인
-        lineFor:type==='weekly'?(key)=>{
-          if(key==='pool')return null;
-          const box=c2=>list.querySelector(`.rp-cfg-col[data-col="${c2}"]`);
-          const a=box(key==='left'?'left':'center'),b=box(key==='left'?'center':'right');
-          if(!a||!b)return null;
-          const ra=a.getBoundingClientRect(),rb=b.getBoundingClientRect();
-          return{left:Math.round(ra.left),top:Math.round(ra.top+3),width:Math.round(rb.right-ra.left)};
-        }:undefined,
         onCommit:(key,idx)=>{
           const L=_lay();
           // '말씀카드' 칩은 만들기 버튼이다 — 끌어다 놓으면 새 카드가 하나 생기고
           // 칩은 '사용 안 함' 맨 앞 줄에 그대로 다시 나타난다 (개수 제한 없음).
           if(type===VC_NEW||type===VL_NEW){
             if(!key||key==='pool'){renderRpConfigList();return;}
-            const wkOff=((L.weekly==='lc'&&key==='left')||(L.weekly==='cr'&&key==='right'))?1:0;
-            vcAddCard(key,idx-wkOff,type===VL_NEW?'list':'card');
+            vcAddCard(key,idx,type===VL_NEW?'list':'card');
             renderRpConfigList();renderLayout();
-            return;
-          }
-          if(type==='weekly'){
-            laySetWeekly(key==='left'?'lc':key==='right'?'cr':'none');
             return;
           }
           if(type==='todo'&&(!key||key==='pool'))return; // todo는 끌 수 없음
@@ -33536,10 +33620,8 @@ function _rpAttachChipDrag(list){
             return;
           }
           if(key&&key!=='pool'){
-            // 대상 박스 맨 위에 주간뷰 칩이 표기 중이면 그만큼 idx 보정
-            const wkOffset=((L.weekly==='lc'&&key==='left')||(L.weekly==='cr'&&key==='right'))?1:0;
             const arr=L.cols[key];
-            const at=Math.max(0,Math.min(idx-wkOffset,arr.length));
+            const at=Math.max(0,Math.min(idx,arr.length));
             arr.splice(at,0,type);
           }
           _lay();save();renderRpConfigList();renderLayout();
@@ -33830,7 +33912,7 @@ function _attachWeeklyPaneDrag(){
   ttl._wkDrag=true;
   ttl.style.cursor='grab';
   const begin=(x,y)=>{
-    if(_layMode()!==3)return;
+    if(_layMode()!==3||!document.body.classList.contains('wk-wide'))return;
     const colL=document.getElementById('colL'),colR=document.getElementById('colR');
     if(!colL||!colR)return;
     const colC=document.getElementById('colC');
@@ -33973,7 +34055,7 @@ function _layInitDividers(){
       const total=W()-2*GAP;
       const a0=Math.round(W()*L.c3[0]), b0=Math.round(W()*L.c3[1]);
       let a=clamp(x-14,min,total-2*min);
-      if(L.weekly==='cr'){
+      if(_laySpanSide(L)==='cr'){
         // 좌가 단독 단: 좌 폭이 변하면 중+우 쌍이 "드래그 시작 전 내부 비율"을
         // 유지한 채 남은 폭을 나눠 갖는다
         const c0=total-a0-b0;
@@ -34011,7 +34093,7 @@ function _layInitDividers(){
         const a0=Math.round(W()*L.c3[0]), b0=Math.round(W()*L.c3[1]);
         const c0=total-a0-b0;
         let b=clamp(x-a0-GAP-14,min,total-a0-min);
-        if(L.weekly==='lc'){
+        if(_laySpanSide(L)==='lc'){
           // 우가 단독 단: 경계 이동 = 좌+중 쌍의 총폭 변화 →
           // 쌍 내부는 "드래그 시작 전 비율(a0:b0)"을 유지하며 함께 분배
           const ra=(a0+b0)>0?a0/(a0+b0):0.5;
@@ -39309,7 +39391,8 @@ function _kbWEls(){
   const out=[...document.querySelectorAll('#pageContent .rp-widget[data-wtype]')]
     .filter(el=>el.getClientRects().length>0);
   const pane=document.getElementById('weeklyPane');
-  if(pane&&pane.getClientRects().length>0){pane.dataset.wtype='weekly';out.push(pane);}
+  // 두 칸 주간뷰일 때만 — 한 칸 주간뷰는 위젯 목록에 이미 있고, 월간뷰 혼자 두 칸이면 그 안의 위젯이 잡힌다
+  if(pane&&document.body.classList.contains('wk-wide')&&pane.getClientRects().length>0){pane.dataset.wtype='weekly';out.push(pane);}
   return out;
 }
 function _kbWName(el){return el?(el.dataset.wtype||''):'';}
@@ -43176,11 +43259,10 @@ function wmFs(d){
   document.querySelectorAll('.wmfs').forEach(b=>{const[a,c]=b.querySelectorAll('button');if(a)a.disabled=v<=_WMFS_MIN;if(c)c.disabled=v>=_WMFS_MAX;});
 }
 
-// 주간 패널(3단)이 지금 실제로 떠 있는지
+// D 화면에 주간뷰(#weeklyPaneInner)가 떠 있는지 — 두 칸 자리든 한 칸 위젯이든 (v. 26-1030-2, renderLayout 의 wk-shown)
 function _wkPaneActive(){
-  const pane=document.getElementById('weeklyPane');
-  return !!pane&&document.body.classList.contains('split-d')&&
-    (pane.classList.contains('on-lc')||pane.classList.contains('on-cr'));
+  return document.body.classList.contains('split-d')&&document.body.classList.contains('wk-shown')&&
+    !!document.getElementById('weeklyPaneInner');
 }
 function renderWeekly(hostEl){
   // 인자 없이 불려도(별/시간구간 토글, ‹› 등 주간뷰 내부 조작 후 재렌더링)
