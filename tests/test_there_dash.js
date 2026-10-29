@@ -8,6 +8,7 @@
 //  ⑤ 덩어리가 index.html · index-dev.html · sweeter-dev.html · pray/index.html 에 원본과 같은 글자로 있다
 //  ⑨ 하루의 흐름(1028-3 6-2a) — 기도 한 번 아래 그 안의 이름(fc = 같은 sid · mp = 그 지도 There 시작 ~ 다음 지도 There 시작 전) · 남은 이름은 끝 한 줄 · 말씀 / 기도 두 갈래
 //  ⑩ 잇달아 한 기도 합치기(HB 2026-10-29) — 같은 갈래가 사이에 다른 기록 없이 한 시간 안에 이어지면 한 줄 · 같은 이름은 한 칩
+//  ⑪ 색으로 보기(HB 2026-10-29) — 그룹 = 할당 색 · 항목 = 표시색(회색은 색 없음) · 같은 이름은 보관 안 한 항목 > 보관한 항목 > 그룹
 //  ⑧ 전체 화면(아이폰): 시계 줄은 THERE 줄이 덮고 · 고정 영역 바탕은 양옆 여백까지 · 열린 동안 페이지 바탕/theme-color 는 대시보드 색, 닫으면 되돌림
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -153,5 +154,20 @@ const T = ctx.T;
   tc.pageTint(true); tc.pageTint(false);              // 열린 채 다시 열기(open 은 close(true) 먼저) → 닫기
   sc.eq('⭐⑧ 닫으면 앱이 마지막에 둔 색으로 되돌린다 · 감시도 멈춤', [cls.has('tdash-on'), meta.c, !!(obs && obs.on)], [false, '#123456', false]);
   sc.eq('⑧ open 은 칠하고 close 는 되돌린다', [/fit\(\); window\.addEventListener\('resize', fit\); ov\._fit = fit;\n    pageTint\(true\);/.test(SRC), /removeEventListener\('resize', ov\._fit\);\n    pageTint\(false\);/.test(SRC)], [true, true]);
+}
+// ⑪ 색으로 보기 — hueIndex (BLOCK7 · Sweeter 가 받아 온 기도노트 문서로 만든다)
+{
+  const db = {
+    G: [{ id: 'g1', name: '가족', color: '#1f4f8f' }, { id: 'g2', name: '연탄', color: '#9a7712' }, { id: 'g3', name: '색 이상', color: 'red;x' }],
+    T: [{ id: 't1', name: '김가나', mark: 'red' }, { id: 't2', name: '이다라', mark: 'gray' }, { id: 't3', name: '연탄', mark: 'blue' },
+        { id: 't4', name: '박마바', mark: 'green', arch: 1 }, { id: 't5', name: '박마바', mark: 'pink' }, { id: 't6', name: '최사아', mark: '' }]
+  };
+  const x = T.hueIndex(db), j = o => JSON.stringify(o);
+  sc.eq('⭐⑪ 그룹은 할당 색 · 항목은 표시색', [j(x.n['가족']), j(x.n['김가나'])], [j({ g: '#1f4f8f' }), j({ m: 'red' })]);
+  sc.eq('⑪ 회색 · 빈 표시색 · 이상한 색 글자는 색 없음', [x.n['이다라'], x.n['최사아'], x.n['색 이상']].map(v => v === undefined), [true, true, true]);
+  sc.eq('⭐⑪ 같은 이름 — 항목이 그룹을 이기고, 보관 안 한 항목이 보관한 항목을 이긴다', [j(x.n['연탄']), j(x.n['박마바'])], [j({ m: 'blue' }), j({ m: 'pink' })]);
+  sc.eq('⑪ #id 로도 찾는다 (그룹과 항목 이름이 같아도 갈린다)', [j(x.id.g2), j(x.id.t3)], [j({ g: '#9a7712' }), j({ m: 'blue' })]);
+  sc.eq('⑪ 빈 문서도 깨지지 않는다', j(T.hueIndex(null)), j({ n: {}, id: {} }));
+  sc.eq('⑪ 대시보드는 늘 어두운 판 — 표시색을 어두운 모드 값으로 다시 정한다', /\.tdash\{--mk-red:#ff6b6b;/.test(SRC), true);
 }
 sc.done();
