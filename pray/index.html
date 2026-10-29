@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1029-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1029-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1029-8';
+const APP_VERSION = 'v. 26-1029-9';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -5137,7 +5137,7 @@ ACT['pick-num'] = el => {
 //    손가락을 밀어 고른 뒤 떼면 저장. 밀지 않고 떼면 판이 남아 한 번 더 눌러 고른다. PC 는 예전처럼 눌러서 아래 창.
 //    누르자마자 움직이면(0.15초 안) 화면 넘기기 — 판을 띄우지 않는다.
 const NP = { st: null, el: null };
-function npClose() { if (NP.el) { const e = NP.el; NP.el = null; e.classList.remove('in'); setTimeout(() => e.remove(), 160); } NP.st = null; }
+function npClose() { NP.tc = null; if (NP.el) { const e = NP.el; NP.el = null; e.classList.remove('in'); setTimeout(() => e.remove(), 160); } NP.st = null; }
 function npShow(st) {
   const t = findAny(DB, st.id); if (!t) return;
   document.querySelectorAll('.npop').forEach(x => x.remove()); NP.el = null;   // 혹시 남은 판은 먼저 치운다 (A14 — 판이 둘 겹쳐 하나가 영영 남았다)
@@ -5196,13 +5196,27 @@ window.addEventListener('pointerup', e => {
   if (st.moved) { npClose(); return; }   // 판 밖에서 뗐다 — 바꾸지 않고 닫기
   NP.keep = { id: st.id, f: st.f };   // 밀지 않고 뗐다 — 판을 남겨 한 번 더 눌러 고른다
 }, true);
-function npCancel(e) { const st = NP.st; if (!st || (e.pointerId !== st.pid && st.mode !== 'open')) return; clearTimeout(st.timer); if (st.mode === 'open') npClose(); NP.st = null; }
+// ⚠️ A15 (HB 2026-10-29): 판이 뜬 뒤 손가락을 판 쪽으로 밀면 브라우저가 '화면 끌기' 로 여겨 pointercancel 을 보내거나
+//    잡은 단추를 놓아(lostpointercapture) 판이 사라졌다. 이제는 판을 남기고, 그 뒤 손가락은 touch 신호로 따라간다.
+function npCancel(e) {
+  const st = NP.st; if (!st || (e.pointerId !== st.pid && st.mode !== 'open')) return; clearTimeout(st.timer); NP.st = null;
+  if (st.mode === 'open' && NP.el) { NP.tc = { id: st.id, f: st.f }; NP.keep = NP.tc; }
+}
 window.addEventListener('pointercancel', npCancel, true);
 window.addEventListener('lostpointercapture', npCancel, true);   // ② 잡은 단추가 다시 그려져 사라지면 오는 신호
 document.addEventListener('visibilitychange', () => { if (document.hidden) npClose(); });   // ③
 // 판이 떠 있는 동안 숫자 칸 누르기(click)가 아래 창을 또 열지 않게 — 판과 아래 창이 겹쳐 보였다
 window.addEventListener('click', e => { if ((NP.el || NP.st) && e.target.closest && e.target.closest('.pl[data-a="pick-num"]')) { e.preventDefault(); e.stopPropagation(); } }, true);
-document.addEventListener('touchmove', e => { if (NP.st && NP.st.mode === 'open') e.preventDefault(); }, { passive: false });
+document.addEventListener('touchmove', e => {
+  if (NP.st && NP.st.mode === 'open') e.preventDefault();
+  if (NP.tc && NP.el) { e.preventDefault(); const p = e.touches[0]; if (p) { npTouch(); npMark(p.clientX, p.clientY); } }
+}, { passive: false });
+document.addEventListener('touchend', e => {   // A15 — 끌기 신호로 바뀐 뒤 뗀 자리
+  const tc = NP.tc; if (!tc) return; NP.tc = null;
+  const b = NP.el && NP.el.querySelector('button.hov'); if (!b) return;   // 아무 숫자도 안 지났으면 판을 남겨 한 번 더 누르게
+  e.preventDefault(); GS.suppress = Date.now(); NP.keep = null; npClose(); npSave(tc.id, tc.f, b.dataset.v);
+}, { passive: false });
+document.addEventListener('touchcancel', () => { NP.tc = null; });
 document.addEventListener('contextmenu', e => { if (NP.st && e.target.closest && e.target.closest('.pl')) e.preventDefault(); });
 ACT['add-target'] = () => {
   let kind = 'person', cat = (DB.cats.find(c => c.person) || {}).id || '';
