@@ -25,6 +25,7 @@ function asProduct(name){
   const box={};
   const src='const APP_PRODUCT='+JSON.stringify(name)+';'
           + 'const APP_PRODUCT_DEFAULT="block7";'
+          + 'const LS_KEY="b7v1";function _lsk(n){return LS_KEY+"_"+n;}'   // _DS_KEY 가 _lsk 로 짓는다 (v. 26-1030-1)
           + 'const _PRODUCT_SCOPED=[' + LAYER.split('const _PRODUCT_SCOPED=[')[1];
   const fn=new Function(src+'\nreturn {_psIsDefault,_psOverlay,_psProject,_PRODUCT_SCOPED};');
   Object.assign(box,fn());

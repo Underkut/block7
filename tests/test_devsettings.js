@@ -23,7 +23,7 @@ global.localStorage = {
   removeItem: k => { delete LS[k]; }
 };
 
-eval(sliceDev('const _DEVICE_SCOPED=[', 'function _psIsDefault()')
+eval("var LS_KEY='b7v1';\n" + sliceDev('function _lsk(name)', '\n') + '\n' + sliceDev('const _DEVICE_SCOPED=[', 'function _psIsDefault()')
    + '\n' + sliceDev('let _fbLastTouchTs=', '// 원격/병합 상태를 화면')
    + `\nglobal.D = {
         keys: _DEVICE_SCOPED,
