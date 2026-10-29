@@ -4,6 +4,7 @@
 //  ② 켜면 그룹 = 할당 색 알약(흐름 · 오늘 기도한 이름) · 항목 = 표시색 글자 · 회색/색 없음은 그대로
 //  ③ 값은 이 기기에(pray.hue) — 닫았다 열어도 그대로 · 끄면 색이 다 빠진다
 //  ④ 부른 쪽이 paint 를 안 주고 load 로 prayPaint 를 주면(BLOCK7 · Sweeter 모양) 그때 단추가 생기고 같은 색
+//  ⑥ 기록 › 기도한 날(3-2): 그날 줄의 '그날 자세히' 왼쪽에 같은 단추 · 같은 값 · 이름 칩(그룹 알약 · 항목 글자) · 밝은 모드는 옅은 바탕 짙은 글자
 //  ⑤ 선택 네모(.tdash-pill)는 하나 — 탭을 바꾸면 눌린 탭 자리로 옮겨 간다
 const { chromium } = require(process.env.PW || 'playwright');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -76,6 +77,26 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const mid = await pill();
   await sleep(700);
   ok('⭐⑤ M 을 누르면 미끄러져 가는 중(중간에는 아직 M 자리가 아니다) → 끝나면 M 자리', mid.dx < -5 && JSON.stringify(await pill()) === JSON.stringify({ n: 1, dx: 0, w: 0, v: 'M' }), [mid, await pill()]);
+  // ⑥ 기도한 날
+  await p.evaluate(() => { TDASH.close(true); hueSet(false); UI.histTab = 'days'; UI.calDay = TODAY; showTab('hist'); }); await sleep(400);
+  const hs = () => p.evaluate(() => { const v = document.getElementById('v-hist'), bt = v.querySelector('.label .hue-b'), cs = el => getComputedStyle(el);
+    return { btn: !!bt, on: bt && bt.classList.contains('on'), nextR: bt && !!(bt.nextElementSibling && bt.nextElementSibling.classList.contains('r')),
+      gp: [...v.querySelectorAll('.hue-gp')].map(x => x.textContent.split(/\d/)[0] + '|' + cs(x).backgroundColor + '|' + cs(x).color),
+      ic: [...v.querySelectorAll('.hue-ic')].map(x => x.textContent.split(/\d/)[0] + '|' + cs(x).color) }; });
+  let h = await hs();
+  ok('⭐⑥ 기도한 날: 그날 줄 · 그날 자세히 왼쪽에 단추 · 꺼짐이면 색 없음', h.btn && h.nextR && !h.on && !h.gp.length && !h.ic.length, h);
+  await p.click('#v-hist .label .hue-b'); await sleep(400);
+  h = await hs();
+  ok('⭐⑥ 켜면 Map 기도 그룹 칩(연탄)은 알약 · 표시색 이름(가나)은 글자', h.on && h.gp.some(x => x.startsWith('연탄')) && h.ic.some(x => x.startsWith('가나')), h);
+  ok('⑥ 회색 · 색 없는 이름(마바 · 사아)은 그대로', !h.ic.concat(h.gp).some(x => /^(마바|사아)/.test(x)), h);
+  ok('⭐⑥ 같은 값 — 대시보드를 열면 켜진 채', await p.evaluate(() => { openThereDash('day', TODAY); const on = document.querySelector('#tdashOv .tdash-hueb').classList.contains('on'); TDASH.close(true); return on; }));
+  await p.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/days-dark.png' : '/dev/null', fullPage: true }).catch(() => {});
+  await p.evaluate(() => { document.documentElement.dataset.mode = 'light'; renderView(); }); await sleep(300);
+  h = await hs();
+  const dark = await p.evaluate(() => { document.documentElement.dataset.mode = ''; return 0; });
+  ok('⑥ 밝은 모드: 그룹 알약은 옅은 바탕 · 짙은 글자 (흰 글자가 아니다)', h.gp.length && h.gp.every(x => !/\|rgb\(244, 240, 232\)$/.test(x)), h.gp);
+  await p.evaluate(() => { document.documentElement.dataset.mode = 'light'; renderView(); });
+  await p.screenshot({ path: process.env.SHOT_DIR ? process.env.SHOT_DIR + '/days-light.png' : '/dev/null', fullPage: true }).catch(() => {});
   console.log('통과 ' + pass + ' / 실패 ' + fail);
   await b.close();
   process.exit(fail ? 1 : 0);

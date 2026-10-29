@@ -2544,6 +2544,22 @@ body.f-layer #app>:not(#layers){visibility:hidden}
 .pl-chip em{font-style:normal;color:var(--tx3);font-size:11.5px;font-variant-numeric:tabular-nums}
 .pl-chip.am::before{content:"";width:5px;height:5px;border-radius:3px;background:var(--ac)}
 .pl-chip.lo{color:var(--tx2)}
+/* 색으로 보기 (HB 2026-10-29 · 1029 묶음 3-2) — There 대시보드와 같은 단추 · 같은 값(pray.hue). 그룹 = 할당 색 알약 · 기도 항목 = 표시색 글자.
+   여기는 앱 테마를 따른다: 표시색은 앱의 --mk-*(모드마다 이미 맞춘 값), 그룹 알약은 어두우면 색을 바탕에 섞어 가라앉히고 글자를 밝게,
+   밝으면 옅은 색 바탕에 짙은 글자 (그룹 색은 짙은 것이 많아 밝은 바탕에 꽉 칠하면 무겁다) */
+.hue-b{display:flex;align-items:center;gap:4px;padding:8px 6px;margin-left:auto;letter-spacing:0}
+.hue-b i{width:6px;height:6px;border-radius:3px;opacity:.3;filter:saturate(.45);transition:opacity .3s,filter .3s}
+.hue-b i:nth-child(1){background:#e5534b}.hue-b i:nth-child(2){background:#4fbf73}.hue-b i:nth-child(3){background:#4d8ff0}
+.hue-b.on i{opacity:1;filter:none}
+.label .hue-b+.r{margin-left:2px}
+/* 그날 줄은 한 줄로 — 날짜 · 단추 · '그날 자세히' 는 꺾이지 않고, 넘치면 가운데 요약(small)만 줄임표 */
+.pl-lab{white-space:nowrap}
+.pl-lab small{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hue-gp{background:var(--hc);background:color-mix(in srgb,var(--hc) 58%,var(--bg));color:#f4f0e8;border-color:transparent}
+html[data-mode="light"] .hue-gp{background:color-mix(in srgb,var(--hc) 16%,var(--s1));color:var(--hc);color:color-mix(in srgb,var(--hc) 82%,#000)}
+.hue-gp em{color:inherit;opacity:.72}
+span.hue-gp{display:inline-block;max-width:100%;padding:0 9px;border-radius:999px;line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.hue-ic{color:var(--hc)}
 .pl-rest{padding:0 16px 12px 74px;margin-top:-4px;font-size:11.5px;color:var(--tx3)}
 .pl-orph{border-top:1px solid var(--bd)}
 .pl-loose{margin:10px 16px 0;padding:10px 14px;border:1px solid var(--bd);border-radius:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--tx2)}
@@ -3706,9 +3722,9 @@ function calGlanceHTML(ss, dt) {
   const smax = Math.max(...r.slot);
   if (smax) h += '<button class="gl-c"' + go + '><h4>주로 이 시간에</h4><div class="gl-sl">' + GL_SLOTS.map((x, k) => '<div><i style="height:' + Math.max(r.slot[k] ? 8 : 3, Math.round(r.slot[k] / smax * 100)) + '%' + (r.slot[k] ? '' : ';opacity:.25') + '"></i><span>' + x[0] + '</span></div>').join('') + '</div></button>';
   // ⑤ 이번 달 많이 기도한
-  if (r.top.length) h += '<div class="gl-c"><h4>이번 달 많이 기도한</h4>' + r.top.map(o => '<button class="gl-li" data-lp="focus" data-a="' + (o.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>' + o.n + '일</small></button>').join('') + '</div>';
+  if (r.top.length) h += '<div class="gl-c"><h4>이번 달 많이 기도한</h4>' + r.top.map(o => '<button class="gl-li" data-lp="focus" data-a="' + (o.t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + o.t.id + '"><span>' + hueName(o.t.id, o.t.name) + '</span><small>' + o.n + '일</small></button>').join('') + '</div>';
   // ⑥ 오래 못 한 기도 · 이달 응답
-  if (r.stale.length || r.ans) h += '<div class="gl-c w"><h4>오래 못 한 기도</h4>' + r.stale.map(o => '<button class="gl-li" data-lp="focus" data-a="open" data-id="' + o.t.id + '"><span>' + esc(o.t.name) + '</span><small>마지막 ' + shortDate(o.t.last) + ' · ' + o.ago + '일 전</small></button>').join('') +
+  if (r.stale.length || r.ans) h += '<div class="gl-c w"><h4>오래 못 한 기도</h4>' + r.stale.map(o => '<button class="gl-li" data-lp="focus" data-a="open" data-id="' + o.t.id + '"><span>' + hueName(o.t.id, o.t.name) + '</span><small>마지막 ' + shortDate(o.t.last) + ' · ' + o.ago + '일 전</small></button>').join('') +
     (r.ans ? '<button class="gl-s gl-ans" data-a="hist-tab" data-v="ans">이번 달 응답 ' + r.ans + '건</button>' : '') + '</div>';
   return h + '</div>';
 }
@@ -3727,11 +3743,12 @@ function dayLedgerHTML(date, o) {
   const loose = ids.filter(id => !inKid.has(id));
   const secs = Math.max(0, Math.round(Number(L.s) || 0)), am = fcs.filter(x => x.amen).length;
   const pd = parseYmd(date), tm = v => v < 60 ? (v || 0) + '초' : TDASH.dur(v);
-  let h = '<div class="label">' + shortDate(date) + ' ' + (pd.getDay() ? WEEK[pd.getDay()] + '요일' : '주일') + '<small>' + [secs ? '기도 ' + TDASH.dur(secs) : '', ids.length ? '이름 ' + ids.length : '', am ? '아멘 ' + am : ''].filter(Boolean).join(' · ') + '</small>' +
+  let h = '<div class="label pl-lab">' + shortDate(date) + ' ' + (pd.getDay() ? WEEK[pd.getDay()] + '요일' : '주일') + '<small>' + [secs ? '기도 ' + TDASH.dur(secs) : '', ids.length ? '이름 ' + ids.length : '', am ? '아멘 ' + am : ''].filter(Boolean).join(' · ') + '</small>' + HUE_BTN() +
     (o ? '<button class="r" data-a="there-dash" data-v="day" data-at="' + date + '" style="font-weight:400;color:var(--tx3);letter-spacing:0">그날 자세히</button>' : '') + '</div>';
   const pidOf = k => { if (k.kind === 'fc') { const e = fcs.find(x => x.id === k.ids[0]); return e && findAny(DB, e.pid) ? e.pid : ''; } const t = itemByName(k.n); return t ? t.id : ''; };
   const chip = k => { const pid = pidOf(k), more = k.kind === 'mp' && k.names.length && !(k.names.length === 1 && k.names[0] === k.n) ? ' · ' + k.names.join(' · ') : '';
-    return '<button class="pl-chip' + (k.amen ? ' am' : k.kind === 'fc' ? ' lo' : '') + '" data-a="pl-kid" data-k="' + k.kind + '" data-d="' + date + '" data-v="' + esc(k.ids.join(',')) + '"' + (pid ? ' data-lp="focus" data-id="' + pid + '"' : '') + '>' +
+    const hu = hueAttr(pid);
+    return '<button class="pl-chip' + (k.amen ? ' am' : k.kind === 'fc' ? ' lo' : '') + hueCls(hu) + '"' + hueSty(hu) + ' data-a="pl-kid" data-k="' + k.kind + '" data-d="' + date + '" data-v="' + esc(k.ids.join(',')) + '"' + (pid ? ' data-lp="focus" data-id="' + pid + '"' : '') + '>' +
       esc(k.n) + '<em>' + esc(tm(k.d) + more) + '</em></button>'; };
   const block = r => {
     const kids = r.kids.length ? '<div class="pl-chips">' + r.kids.map(chip).join('') + '</div>' : '';
@@ -3742,7 +3759,7 @@ function dayLedgerHTML(date, o) {
       kids + (r.kids.length && rest >= 60 ? '<div class="pl-rest">이름 없이 머문 시간 ' + tm(rest) + '</div>' : '') + '</div></div>';
   };
   if (fl.length) h += '<div class="set-g pl-g">' + fl.map(block).join('') + '</div>';
-  if (loose.length) h += '<div class="pl-loose"><span>오늘 페이지에서 기도함 체크</span>' + loose.map(id => { const t = findAny(DB, id); return '<button class="tag" data-lp="focus" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>'; }).join('') + '</div>';
+  if (loose.length) h += '<div class="pl-loose"><span>오늘 페이지에서 기도함 체크</span>' + loose.map(id => { const t = findAny(DB, id), hu = hueAttr(id); return '<button class="tag' + hueCls(hu) + '"' + hueSty(hu) + ' data-lp="focus" data-a="' + (t.kind === 'group' ? 'open-group' : 'open') + '" data-id="' + id + '">' + esc(t.name) + '</button>'; }).join('') + '</div>';
   if (!fl.length && !loose.length) h += '<div class="hint" style="padding-top:2px">이날 기도노트에서 잰 기도 시간이 없습니다.</div>';
   return h + '<div class="pl-add"><button data-a="pt-add" data-v="' + date + '">+ 기도 시간 더하기</button></div>';
 }
@@ -7492,6 +7509,21 @@ function tdPaint(n) {
   if (t.kind === 'group') return /^#[0-9a-f]{3,8}$/i.test(String(t.color || '')) ? { g: t.color } : null;
   const m = mk(t); return m && m !== 'gray' ? { m: m } : null;
 }
+// 이 앱 화면(기도한 날)에 붙일 색 — {c: 'hue-gp' | 'hue-ic', s: style} · 꺼져 있거나 색이 없으면 null
+function hueAttr(id) {
+  if (!id || !hueOn()) return null;
+  const p = tdPaint('#' + id); if (!p) return null;
+  return p.g ? { c: 'hue-gp', s: '--hc:' + esc(p.g) } : { c: 'hue-ic', s: '--hc:' + markVar(p.m) };
+}
+const hueCls = a => a ? ' ' + a.c : '', hueSty = a => a ? ' style="' + a.s + '"' : '';
+const hueName = (id, name) => { const a = hueAttr(id); return a ? '<span class="' + a.c + '" style="' + a.s + '">' + esc(name) + '</span>' : esc(name); };
+const HUE_BTN = () => '<button class="hue-b' + (hueOn() ? ' on' : '') + '" data-a="hue" aria-pressed="' + hueOn() + '" aria-label="색으로 보기 — ' + (hueOn() ? '켜짐' : '꺼짐') + '"><i></i><i></i><i></i></button>';
+ACT.hue = () => {
+  const on = !hueOn(); hueSet(on); renderView();
+  if (mxQuiet()) return;   // 다시 그리면 CSS 전환이 안 걸린다 — 점은 옛 밝기에서, 장부는 살짝 옅은 데서 스르륵 (대시보드와 같은 결)
+  document.querySelectorAll('#v-hist .hue-b i').forEach(i => i.animate && i.animate([{ opacity: on ? .3 : 1 }, { opacity: on ? 1 : .3 }], { duration: 300, easing: 'cubic-bezier(.4,0,.2,1)' }));
+  document.querySelectorAll('#v-hist .pl-g, #v-hist .pl-loose, #v-hist .gl').forEach(x => x.animate && x.animate([{ opacity: .55 }, { opacity: 1 }], { duration: 320, easing: 'cubic-bezier(.4,0,.2,1)' }));
+};
 function tdTopics(n) { const t = tdItem(n); if (!t) return ''; const a = (t.topics || []).filter(tp => !tp.ans && tp.t).map(tp => tp.t); return a.slice(0, 2).join(' · ') + (a.length > 2 ? ' 외 ' + (a.length - 2) : ''); }
 // ── There D탭 아래 네 칸 (HB 1028-3 6-2b) — 오늘 기도한 이름 → 다가오는 날 → 오래 못 한 기도 → 감사. 내용 없는 칸은 숨긴다 ──
 //   숫자 · 규칙은 pray-core dayGlance(tests/test_pray.js ㉗). 성경 구절 · '양 · 목양' 같은 말은 쓰지 않는다(HB — 일반 성도가 쓰는 앱)
