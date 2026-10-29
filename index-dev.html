@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1029-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2822,7 +2822,7 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 
 /* 끌 때 줄들이 비켜 주기 (HB 2026-10-28 B7-2) — 잡은 줄의 원래 칸이 '빈자리' 가 되어 놓일 곳으로 옮겨 다닌다.
    빈자리는 높이만 차지하고 보이지 않는다. 빈 목록의 점선 자리표는 빈자리가 들어오면 물러난다 */
-.swipe-wrap.dr-slot{visibility:hidden;}
+.swipe-wrap.dr-slot,.sub-row.sub-dr-slot{visibility:hidden;}
 .big-list:has(>.dr-slot)>.sm-drop-ph,.sm-list:has(>.dr-slot)>.sm-drop-ph{display:none;}
 /* drag ghost */
 #dg{
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-6";
+const APP_VERSION = "v. 26-1029-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35762,6 +35762,158 @@ function makeSubPanel(type,secId,idx,item,secColor){
   panel.appendChild(_makeSubGhost(type,secId,idx));
   return panel;
 }
+// ── 하위 줄 끌어 순서 바꾸기 (HB 2026-10-29) ──
+// 빅·스몰 끌기(attachDrag)와 같은 손맛이다 — 길게 누르면(터치 LONG_PRESS_TOUCH, PC 는 눌린 채 4px)
+// 줄이 들려 손을 따라오고(#dg 유령, 같은 그림자·바탕), 잡은 줄의 칸이 '빈자리' 가 되어 놓일 곳으로
+// 옮겨 다니며 나머지 줄은 FLIP 으로 비켜 준다(_SW_SLIDE · _SW_EASE 그대로). 놓으면 유령이 제 칸으로 내려앉는다.
+// 들린 채 움직이지 않고 350ms 더 있으면 끌기를 접고 하위 메뉴(위로·아래로·꺼내기·삭제)를 연다 — 빅블럭과 같다.
+// 같은 할일 안에서만 옮긴다(판 밖으로는 못 나간다). 데이터는 메뉴의 위로·아래로와 같은 splice 한 번(_subReorder).
+// ⚠️ 놓일 곳은 비켜 주는 움직임을 뺀 '진짜 자리'(_drRect)로 센다 — 화면 좌표로 세면 줄들이 서로 밀며 떨린다.
+const _SDR={active:false,landing:false,mp:null};
+function _subReorder(type,secId,idx,from,to){
+  const a=_subsOf(_taskArrOf(type,secId)[idx]);
+  if(!a[from]||to<0||to>=a.length||to===from)return false;
+  beforeSave();
+  const one=a.splice(from,1)[0];
+  a.splice(to,0,one);
+  save();
+  return true;
+}
+function _sdrRows(panel){return [...panel.querySelectorAll(':scope>.sub-row')];}
+function _sdrQuiet(){return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}
+function _sdrStart(row,type,secId,idx,j,cx,cy,r0){
+  const panel=row.parentNode;
+  if(!panel||_SDR.active||_SDR.landing)return false;
+  const a=document.activeElement;if(a&&row.contains(a))a.blur();
+  try{const sel=window.getSelection&&window.getSelection();if(sel&&sel.removeAllRanges)sel.removeAllRanges();}catch(_){}
+  const r=r0||row.getBoundingClientRect();
+  Object.assign(_SDR,{active:true,row,panel,type,secId,idx,j,offX:cx-r.left,offY:cy-r.top,sx:cx,sy:cy,moved:false,menuT:null});
+  const g=document.getElementById('dg');g.innerHTML='';
+  const cl=row.cloneNode(true);
+  const sc=getComputedStyle(panel).getPropertyValue('--sec-color');
+  cl.style.cssText=`width:${r.width}px;pointer-events:none;margin:0;`+
+    `background:var(--drag-ghost-bg);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);`;
+  if(sc)cl.style.setProperty('--sec-color',sc.trim());
+  g.appendChild(cl);
+  g.style.cssText=`display:block;width:${r.width}px;left:${cx-_SDR.offX}px;top:${cy-_SDR.offY}px;`+
+    `opacity:.96;box-shadow:0 12px 36px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);`;
+  row.classList.add('sub-dr-slot');
+  document.body.style.userSelect='none';document.body.style.webkitUserSelect='none';
+  document.body.style.overflow='hidden';document.body.dataset.scrollLockedForDrag='1';
+  if(navigator.vibrate)navigator.vibrate(30);
+  return true;
+}
+// 빈자리를 before 앞으로 옮기고, 나머지 줄은 미끄러져 비켜 준다 (_drPlace 와 같은 FLIP)
+function _sdrPlace(before){
+  const {row,panel}=_SDR;
+  if(!row.isConnected||row.nextElementSibling===before)return;
+  const els=[...panel.children].filter(e=>e!==row);
+  const was=new Map(els.map(e=>[e,e.getBoundingClientRect().top]));
+  panel.insertBefore(row,before);
+  els.forEach(e=>{e.style.transition='none';e.style.transform='';});
+  if(_sdrQuiet())return;
+  els.forEach(e=>{const d=was.get(e)-e.getBoundingClientRect().top;if(Math.abs(d)>=0.5)e.style.transform='translateY('+d+'px)';});
+  void panel.offsetHeight;
+  requestAnimationFrame(()=>els.forEach(e=>{
+    if(!e.style.transform)return;
+    e.style.transition='transform '+(_SW_SLIDE/1000)+'s '+_SW_EASE;
+    e.style.transform='';
+  }));
+}
+function _sdrMove(cx,cy){
+  if(!_SDR.active)return;
+  if(!_SDR.moved&&(Math.abs(cx-_SDR.sx)>6||Math.abs(cy-_SDR.sy)>6)){_SDR.moved=true;clearTimeout(_SDR.menuT);_SDR.menuT=null;}
+  const g=document.getElementById('dg');
+  g.style.left=(cx-_SDR.offX)+'px';g.style.top=(cy-_SDR.offY)+'px';
+  let before=null;
+  for(const o of _sdrRows(_SDR.panel)){
+    if(o===_SDR.row)continue;
+    const rr=_drRect(o);
+    if(cy<rr.top+rr.height/2){before=o;break;}
+  }
+  if(!before)before=_SDR.panel.querySelector(':scope>.sub-ghost');
+  _sdrPlace(before);
+}
+// commit=false 는 놓지 않고 접는 것(메뉴로 넘어갈 때 · 터치 취소) — 데이터는 그대로
+function _sdrEnd(commit){
+  if(!_SDR.active)return;
+  const {row,panel,type,secId,idx,j}=_SDR;
+  _SDR.active=false;clearTimeout(_SDR.menuT);_SDR.menuT=null;
+  document.body.style.userSelect='';document.body.style.webkitUserSelect='';
+  document.body.style.overflow='';delete document.body.dataset.scrollLockedForDrag;
+  const to=row.isConnected?_sdrRows(panel).indexOf(row):-1;
+  const g=document.getElementById('dg');
+  const finish=()=>{
+    _SDR.landing=false;
+    [...panel.children].forEach(e=>{e.style.transition='';e.style.transform='';});
+    row.classList.remove('sub-dr-slot');
+    if(commit&&to>=0&&to!==j&&_subReorder(type,secId,idx,j,to))_subRerender(type,secId);
+    else if(to>=0&&to!==j)_subRerender(type,secId);   // 접었는데 빈자리가 움직였으면 제자리로
+  };
+  if(!commit||to<0||_sdrQuiet()||!g||g.style.display==='none'){if(g)g.style.display='none';finish();return;}
+  // 놓은 줄이 제 칸으로 내려앉는다 (_drGhostLand 와 같은 곡선 · 시간)
+  _SDR.landing=true;
+  const r=row.getBoundingClientRect();
+  const T=Math.round(_SW_SLIDE*0.6);
+  g.style.transition=`left ${T}ms cubic-bezier(.22,.8,.24,1),top ${T}ms cubic-bezier(.22,.8,.24,1),opacity ${T}ms ease,box-shadow ${T}ms ease`;
+  requestAnimationFrame(()=>{g.style.left=r.left+'px';g.style.top=r.top+'px';g.style.opacity='1';g.style.boxShadow='none';});
+  setTimeout(()=>{g.style.display='none';g.style.transition='';finish();},T+20);
+}
+function _wireSubDrag(row,type,secId,idx,j){
+  // ── 터치: 60ms 넘게 가만히 있으면 '누르는 중' — 그때부터 스크롤을 붙잡고, LONG_PRESS_TOUCH 에 들린다 ──
+  let pT=null,gT=null,pending=false,sx=0,sy=0,r0=null,menuOpened=false;
+  const clear=()=>{clearTimeout(pT);clearTimeout(gT);pT=gT=null;pending=false;row.classList.remove('pressing');};
+  row.addEventListener('touchstart',e=>{
+    if(_SDR.active||_SDR.landing||e.touches.length>1)return;
+    if(e.target.closest('.sub-chk,.sub-del'))return;
+    const t=e.touches[0];sx=t.clientX;sy=t.clientY;r0=row.getBoundingClientRect();menuOpened=false;
+    gT=setTimeout(()=>{gT=null;pending=true;row.classList.add('pressing');},60);
+    pT=setTimeout(()=>{
+      pT=null;clear();
+      if(!_sdrStart(row,type,secId,idx,j,sx,sy,r0))return;
+      _SDR.menuT=setTimeout(()=>{
+        _SDR.menuT=null;
+        if(_SDR.active&&_SDR.row===row&&!_SDR.moved){_sdrEnd(false);menuOpened=true;openSubRowMenu(type,secId,idx,j,{x:sx,y:sy});}
+      },350);
+    },LONG_PRESS_TOUCH);
+  },{passive:true});
+  row.addEventListener('touchmove',e=>{
+    const t=e.touches[0];if(!t)return;
+    if(_SDR.active&&_SDR.row===row){if(e.cancelable)e.preventDefault();_sdrMove(t.clientX,t.clientY);return;}
+    if(pT||gT){
+      if(Math.abs(t.clientX-sx)>6||Math.abs(t.clientY-sy)>6){clear();return;}   // 스크롤이 시작됐다
+      if(pending&&e.cancelable)e.preventDefault();
+    }
+  },{passive:false});
+  row.addEventListener('touchend',e=>{
+    clear();
+    // 끈 뒤의 탭이 글자 칸을 열지 않게 · 방금 연 메뉴를 손 떼는 탭이 바깥 누르기로 닫지 않게
+    if(menuOpened){menuOpened=false;if(e.cancelable)e.preventDefault();}
+    if(_SDR.active&&_SDR.row===row){if(e.cancelable)e.preventDefault();_sdrEnd(true);}
+  },{passive:false});
+  row.addEventListener('touchcancel',()=>{clear();if(_SDR.active&&_SDR.row===row)_sdrEnd(false);});
+  // ── 마우스: 눌린 채 4px 움직이면 들린다 (빅블럭의 빈 자리 끌기와 같다). 고치는 중인 글자 칸은 글자 고르기 ──
+  row.addEventListener('mousedown',e=>{
+    if(e.button!==0||_SDR.active||_SDR.landing)return;
+    if(e.target.closest('.sub-chk,.sub-del'))return;
+    const inp=e.target.closest('.sub-inp');
+    if(inp&&document.activeElement===inp)return;
+    _SDR.mp={row,type,secId,idx,j,x:e.clientX,y:e.clientY};
+  });
+}
+document.addEventListener('mousemove',e=>{
+  const mp=_SDR.mp;
+  if(mp&&!_SDR.active){
+    if(!(e.buttons&1)){_SDR.mp=null;return;}
+    if(Math.abs(e.clientX-mp.x)>4||Math.abs(e.clientY-mp.y)>4){
+      _SDR.mp=null;
+      if(_sdrStart(mp.row,mp.type,mp.secId,mp.idx,mp.j,mp.x,mp.y))_SDR.moved=true;
+    }
+  }
+  if(_SDR.active&&!_SDR.menuT){e.preventDefault();_sdrMove(e.clientX,e.clientY);}
+});
+document.addEventListener('mouseup',()=>{_SDR.mp=null;if(_SDR.active&&!_SDR.menuT)_sdrEnd(true);});
+document.addEventListener('focusin',e=>{if(_SDR.active&&e.target.matches&&e.target.matches('.sub-inp'))e.target.blur();},true);
 function _makeSubRow(type,secId,idx,j,sub){
   const row=document.createElement('div');
   row.className='sub-row'+((sub&&sub.done)?' done':'');
@@ -35822,21 +35974,12 @@ function _makeSubRow(type,secId,idx,j,sub){
 
   row.append(chk,inp,del);
 
-  // 보조 동작은 롱터치/우클릭으로 — 앱 전체 규칙 그대로
-  let lpTimer=null;
-  const clearLp=()=>{if(lpTimer){clearTimeout(lpTimer);lpTimer=null;}};
-  row.addEventListener('touchstart',e=>{
-    if(e.target.closest('input'))return;
-    lpTimer=setTimeout(()=>{
-      lpTimer=null;
-      const t=e.touches&&e.touches[0];
-      openSubRowMenu(type,secId,idx,j,t?{x:t.clientX,y:t.clientY}:null);
-    },500);
-  },{passive:true});
-  ['touchend','touchcancel','touchmove'].forEach(ev=>
-    row.addEventListener(ev,clearLp,{passive:true}));
+  // 보조 동작은 롱터치/우클릭으로 — 앱 전체 규칙 그대로.
+  // 길게 누르면 끌기가 먼저 시작되고, 움직이지 않으면 이어서 메뉴가 열린다 (빅블럭과 같다, _wireSubDrag)
+  _wireSubDrag(row,type,secId,idx,j);
   row.addEventListener('contextmenu',e=>{
-    e.preventDefault();e.stopPropagation();clearLp();
+    e.preventDefault();e.stopPropagation();
+    if(_SDR.active)return;
     openSubRowMenu(type,secId,idx,j,{x:e.clientX,y:e.clientY});
   });
   return row;
@@ -35953,14 +36096,7 @@ function closeSubRowMenu(){
 function _subMoveFromMenu(dir){
   const c=_subMenuCtx;if(!c)return;
   closeSubRowMenu();
-  const a=_subsOf(_taskArrOf(c.type,c.secId)[c.idx]);
-  const to=c.j+dir;
-  if(to<0||to>=a.length)return;
-  beforeSave();
-  const one=a.splice(c.j,1)[0];
-  a.splice(to,0,one);
-  save();
-  _subRerender(c.type,c.secId);
+  if(_subReorder(c.type,c.secId,c.idx,c.j,c.j+dir))_subRerender(c.type,c.secId);
 }
 function _subRemoveFromMenu(){
   const c=_subMenuCtx;if(!c)return;
