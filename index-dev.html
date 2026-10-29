@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1029-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-8";
+const APP_VERSION = "v. 26-1029-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -38820,7 +38820,7 @@ function setActiveSingle(type,secId,idx){
 
 function isAnyInputFocused(){
   const a=document.activeElement;
-  return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA');
+  return !!(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable));
 }
 
 // Activate an item by clicking its row-spacer (B-zone). Desktop only.
@@ -39157,25 +39157,9 @@ document.addEventListener('keydown',e=>{
   const inTaskInput=editing&&document.activeElement.closest('.big-item,.sm-item');
 
   // ── While editing a big/small task's text ──
-  if(inTaskInput){
-    const row=document.activeElement.closest('.big-item,.sm-item');
-    const type=row.classList.contains('big-item')?'big':'small';
-    const secId=row.dataset.id;
-    const idx=parseInt(row.dataset.i);
-
-    if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.shiftKey&&!e.metaKey&&!e.altKey){
-      e.preventDefault();
-      const list=buildFlatList();
-      const i=findFlatIndex(list,type,secId,idx);
-      if(i<0)return;
-      const ni=e.key==='ArrowUp'?i-1:i+1;
-      if(ni<0||ni>=list.length)return;
-      const it=list[ni];
-      focusItemInput(it.type,it.secId,it.idx);
-    }
-    // Enter/Tab already handled by each input's own onkeydown (unchanged).
-    return;
-  }
+  // ⚠️ 글자를 치는 중(할일행 편집 · 팝업 입력칸 어디든)에는 블럭7 단축키를 **전부** 끈다
+  //    (v26-1029-9, HB). ↑↓ 행 이동 · ⌘⇧ 뷰 전환까지 — 그 칸 자체의 Enter/Tab 만 남는다.
+  if(inTaskInput||editing)return;
 
   // ⚠️ 다른 입력창에 글자를 쓰는 중이면 아래 전역 단축키를 태우지 않는다.
   //    새 할일 고스트 입력·셀 할일·검색창 등은 .big-item/.sm-item 안에 있지
@@ -39183,7 +39167,6 @@ document.addEventListener('keydown',e=>{
   //    으로 새어나갔다. 날짜가 바뀐 뒤 blur 커밋이 돌면서 쓰던 할일이
   //    어제 할일로 저장되는 사고가 있었다 (v26-0802-5).
   //    ⌘⇧ 조합(뷰 전환)은 아래에서 따로 처리하므로 여기서 막지 않는다.
-  if(editing&&!e.metaKey&&!e.ctrlKey)return;
 
   // ── Not editing text: arrow-key driven selection ──
   if(e.key==='ArrowUp'||e.key==='ArrowDown'){
@@ -54033,6 +54016,7 @@ function _kbHelpKey(e){
     return false;
   }
   if(e.code!=='Slash'||!e.metaKey||e.ctrlKey||e.altKey)return false;
+  if(typeof isAnyInputFocused==='function'&&isAnyInputFocused())return false;   // 글자 치는 중엔 끈다 (v26-1029-9)
   if(_swKbHelpOpen()){closeSwKbHelp();return true;}
   if(_kbOverlayOpen())return false;
   openSwKbHelp();
