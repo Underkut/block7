@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1029-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1029-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6629,7 +6629,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1029-4";
+const APP_VERSION = "v. 26-1029-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -54780,19 +54780,32 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
       else if (S.view === 'week') setAt(add(weekStart(S.at), 7 * k));
       else { const d = parse(monthStart(S.at)); setAt(ymd(new Date(d.getFullYear(), d.getMonth() + k, 1))); }
     };
+    // 탭 네모 미끄러짐 (HB 2026-10-29 '시작이 느리고 움직임은 빠르다') — 예전엔 판이 나간 뒤(≈190ms) 다시 그릴 때 출발해 280ms 에 갔다.
+    //   이제 **누르는 순간** 출발해 PILL_MS 동안 간다. 판 전환 중에 다시 그려지면 draw 가 그 중간 자리에서 남은 시간만큼 이어 간다.
+    const PILL_MS = 420, PILL_EASE = 'cubic-bezier(.25,.1,.25,1)', PILL = { end: 0 };   // 예전 280ms · (.22,.8,.24,1) 는 앞에서 거의 다 가 버려 '빠르다'
+    const slidePill = b => {
+      const pl = b.parentNode && b.parentNode.querySelector && b.parentNode.querySelector('.tdash-pill'); if (!pl || still() || !pl.animate) return;
+      const sg = pl.parentNode.getBoundingClientRect(), r = pl.getBoundingClientRect();
+      pl.getAnimations().forEach(x => x.cancel());
+      pl.style.left = b.offsetLeft + 'px'; pl.style.width = b.offsetWidth + 'px';
+      pl.animate([{ transform: 'translateX(' + (r.left - sg.left - b.offsetLeft) + 'px)', width: r.width + 'px' }, { transform: 'none', width: b.offsetWidth + 'px' }], { duration: PILL_MS, easing: PILL_EASE });
+      PILL.end = Date.now() + PILL_MS;
+    };
     const draw = () => {
       S.ss = collect(S.data.thereLog, S.data.prayLog);
       el.classList.add('tdash');
       const sy = el.scrollTop;
-      const oldOn = el.querySelector && el.querySelector('.tdash-seg button.on');
-      const from = oldOn ? { l: oldOn.offsetLeft, w: oldOn.offsetWidth } : null;
+      // 지금 보이는 네모 자리(미끄러지는 중이면 그 중간) — 다시 그린 뒤 거기서 이어 간다
+      const op = el.querySelector && el.querySelector('.tdash-pill'), sg = op && op.parentNode;
+      const from = op && op.offsetWidth ? { l: op.getBoundingClientRect().left - sg.getBoundingClientRect().left, w: op.getBoundingClientRect().width } : null;
       el.innerHTML = html(S); el.scrollTop = sy;
       // 선택 네모는 컷으로 켜지고 꺼지지 않고 옆 탭으로 미끄러져 간다 (HB 2026-10-29)
       const on = el.querySelector && el.querySelector('.tdash-seg button.on'), pill = on && on.parentNode.querySelector('.tdash-pill');
       if (!pill) return;
       pill.style.left = on.offsetLeft + 'px'; pill.style.width = on.offsetWidth + 'px';
-      if (from && (from.l !== on.offsetLeft || from.w !== on.offsetWidth) && !still() && pill.animate)
-        pill.animate([{ transform: 'translateX(' + (from.l - on.offsetLeft) + 'px)', width: from.w + 'px' }, { transform: 'none', width: on.offsetWidth + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+      const left = PILL.end - Date.now();   // 누르는 순간 이미 출발했다(slidePill) — 남은 시간만큼 이어서
+      if (from && left > 30 && !still() && pill.animate)
+        pill.animate([{ transform: 'translateX(' + (from.l - on.offsetLeft) + 'px)', width: from.w + 'px' }, { transform: 'none', width: on.offsetWidth + 'px' }], { duration: left, easing: 'cubic-bezier(.3,.6,.4,1)' });
     };
     // ── 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 ──
     const EASE = 'cubic-bezier(.4,0,.2,1)';
@@ -54857,6 +54870,7 @@ html.tdash-on,html.tdash-on body{background:#0d0e10 !important}
           if (S.at === S.today) return;
           transit(S.today > S.at ? 1 : -1, () => { setAt(S.today); after(); });
         } else {                                 // 다른 탭은 그 탭에서 마지막으로 보던 날로
+          slidePill(b);
           tabTransit(VIEWS.indexOf(v) > VIEWS.indexOf(S.view) ? 1 : -1, () => { S.view = v; S.at = S.ats[v]; after(); });
         }
         return;

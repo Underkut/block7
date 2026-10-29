@@ -73,10 +73,12 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const pill = () => p.evaluate(() => { const ov = document.getElementById('tdashOv'), pl = ov.querySelectorAll('.tdash-pill'), on = ov.querySelector('.tdash-seg button.on');
     return { n: pl.length, dx: Math.round(pl[0].getBoundingClientRect().left - on.getBoundingClientRect().left), w: Math.round(pl[0].getBoundingClientRect().width - on.getBoundingClientRect().width), v: on.textContent }; });
   ok('⑤ 네모 하나 · D 자리', JSON.stringify(await pill()) === JSON.stringify({ n: 1, dx: 0, w: 0, v: 'D' }), await pill());
-  await p.click('#tdashOv .tdash-seg [data-v="month"]'); await p.waitForFunction(() => document.querySelector('#tdashOv .tdash-seg button.on').textContent === 'M'); await sleep(60);
-  const mid = await pill();
+  const x0 = (await pill()).dx;
+  await p.click('#tdashOv .tdash-seg [data-v="month"]'); await sleep(60);
+  const early = await p.evaluate(() => { const pl = document.querySelector('#tdashOv .tdash-pill'), sg = pl.parentNode; return [Math.round(pl.getBoundingClientRect().left - sg.getBoundingClientRect().left), document.querySelector('#tdashOv .tdash-seg button.on').textContent]; });
+  ok('⭐⑤ 누르는 순간 출발 — 판이 바뀌기 전(아직 D 가 켜진 때)에 네모가 이미 움직인다', early[1] === 'D' && early[0] > 5, early);
   await sleep(700);
-  ok('⭐⑤ M 을 누르면 미끄러져 가는 중(중간에는 아직 M 자리가 아니다) → 끝나면 M 자리', mid.dx < -5 && JSON.stringify(await pill()) === JSON.stringify({ n: 1, dx: 0, w: 0, v: 'M' }), [mid, await pill()]);
+  ok('⭐⑤ 판이 바뀐 뒤에도 끊기지 않고 M 자리에 닿는다 · 네모 하나', JSON.stringify(await pill()) === JSON.stringify({ n: 1, dx: 0, w: 0, v: 'M' }), await pill());
   // ⑥ 기도한 날
   await p.evaluate(() => { TDASH.close(true); hueSet(false); UI.histTab = 'days'; UI.calDay = TODAY; showTab('hist'); }); await sleep(400);
   const hs = () => p.evaluate(() => { const v = document.getElementById('v-hist'), bt = v.querySelector('.label .hue-b'), cs = el => getComputedStyle(el);
