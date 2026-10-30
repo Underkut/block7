@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!-- 바자회 팝업 코너 계좌 안내 · v. 26-1031-5 · 원본은 bank/index.html(연탄) 에서 갈라져 나왔다 — 은행 표를 고치면 둘 다 고친다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>사랑나눔 바자회 · 팝업 코너</title>
+<link rel="canonical" href="https://sweeter.my/bank/bazaar-popup/">
+<meta property="og:title" content="2026 사랑나눔 가을바자회 · 팝업 코너">
+<meta property="og:image" content="https://sweeter.my/bank/bazaar-popup/hero.jpg">
+<meta property="og:description" content="카카오뱅크 3333-32-0125567 · 박윤정">
+<style>
+:root{--bg:#f7f2fc;--card:#fefcff;--ink:#35204f;--sub:#8a7a9e;--line:#e8dcf5;--accent:#8a3ffc;--navy:#4b2a7a}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1012;--card:#1b1c1f;--ink:#f2f3f5;--sub:#9a9ea6;--line:#2a2b2f;--accent:#b98bff}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background-image:radial-gradient(circle at 10% 0,#ecdcff 0,transparent 45%),radial-gradient(circle at 100% 30%,#ffd9ef 0,transparent 40%);background-attachment:fixed;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;padding:16px 16px calc(36px + env(safe-area-inset-bottom));display:flex;justify-content:center}
+main{width:100%;max-width:440px}
+.acc{background:var(--card);border-radius:26px;box-shadow:0 10px 30px rgba(90,50,140,.12)!important;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.herow{position:relative}
+.hero-tag{position:absolute;left:50%;top:79%;transform:translate(-50%,-50%) rotate(-2deg);white-space:nowrap;font-size:clamp(20px,6.4vw,28px);font-weight:800;letter-spacing:.04em;color:#fff;background:linear-gradient(90deg,#8a3ffc,#e0459b);padding:6px 20px 7px;border-radius:14px;box-shadow:0 6px 16px rgba(90,30,140,.32);border:2px solid rgba(255,255,255,.85)}
+.hero{display:block;width:100%;aspect-ratio:1672/941;object-fit:cover;background:#fbf0dc}
+.top{position:relative;padding:18px 22px 4px;text-align:center}
+.x-unused{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,22,40,.45) 0%,rgba(15,22,40,0) 60%),linear-gradient(180deg,rgba(15,20,35,.10) 0%,rgba(15,20,35,.05) 35%,rgba(15,22,40,.82) 100%)}
+.top>*{position:relative}
+.church{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;color:var(--sub);margin-bottom:10px}
+.church img{height:26px}
+@media (prefers-color-scheme:dark){.church img{filter:brightness(0) invert(1);opacity:.7}}
+.mission{display:inline-block;font-size:13.5px;font-weight:700;color:#fff;background:linear-gradient(90deg,#8a3ffc,#e0459b);padding:7px 15px;border-radius:999px;margin-bottom:10px;box-shadow:0 4px 12px rgba(138,63,252,.25);transform:rotate(-1.5deg)}
+.top h1.t{font-size:24px;color:var(--ink);margin:0 0 4px;letter-spacing:-.01em}
+.top small{display:block;font-size:14px;color:var(--sub)}
+.top small b{font-weight:700}
+.top h1{font-weight:700}
+.row>div{min-width:0}
+.row{border-top:1.5px dashed var(--line);margin:14px 18px 0;padding-left:4px!important;padding-right:4px!important;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:20px 22px 22px}
+.bank{font-size:15px;color:var(--sub);display:flex;align-items:center;gap:7px}
+.dot{width:18px;height:18px;border-radius:5px;background:#ffe300 url(../logos/kakao.png) center/cover}
+.num{font-size:clamp(20px,6.6vw,28px);font-weight:700;letter-spacing:.01em;margin-top:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.copy{flex:none;display:flex;align-items:center;gap:5px;border:1.6px solid var(--accent);color:var(--accent);background:none;border-radius:999px;padding:9px 16px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.copy svg{width:17px;height:17px}
+h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
+.hint{font-size:14px;color:var(--sub);margin:0 4px 14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.grid a{box-shadow:0 2px 8px rgba(90,50,140,.06);position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 2px 10px;background:var(--card);border:1px solid var(--line);border-radius:18px;color:var(--ink);text-decoration:none;font-size:12.5px;transition:transform .15s}
+.grid a:active{transform:scale(.96)}
+.grid i{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.05;text-align:center}
+.grid i img{display:none}.grid i.logo{background:none!important;box-shadow:none!important;font-size:0}.grid i.logo img{display:block;width:100%;height:100%;border-radius:14px;object-fit:cover}
+.badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:999px;white-space:nowrap}
+.safe{font-size:13px;color:var(--sub);text-align:center;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:5px}
+.safe svg{width:14px;height:14px}
+.market{display:block;width:calc(100% + 32px);margin:28px -16px 0;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 82%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 22%,#000 82%,transparent 100%)}
+.place{text-align:center;font-size:13.5px;color:var(--sub);line-height:1.8;margin-top:14px}.place b{color:var(--ink);font-weight:600}
+.foot{display:block;margin:22px auto 0;height:64px;opacity:.85}
+@media (prefers-color-scheme:dark){.foot{filter:brightness(0) invert(1);opacity:.55}}
+#toast{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,12,18,.32);opacity:0;pointer-events:none;transition:opacity .22s}
+#toast.on{opacity:1;pointer-events:auto}
+.tbox{position:relative;width:100%;max-width:310px;background:var(--card);color:var(--ink);border-radius:22px;padding:26px 22px 20px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.22);transform:translateY(10px) scale(.97);transition:transform .3s cubic-bezier(.22,.8,.24,1)}
+#toast.on .tbox{transform:none}
+.tic{width:52px;height:52px;margin:0 auto 12px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:#f1e6ff;color:#8a3ffc}
+.tic svg{width:26px;height:26px}.tic img{width:52px;height:52px;border-radius:15px}
+.tt{font-size:17px;font-weight:700;margin-bottom:6px}
+.td{font-size:14.5px;color:var(--sub);line-height:1.6;white-space:pre-line}
+.tbtn{display:block;width:100%;margin-top:18px;border:0;border-radius:14px;padding:14px;font:inherit;font-size:15.5px;font-weight:600;background:var(--accent);color:#fff;cursor:pointer}
+.tx{position:absolute;top:12px;right:12px;width:30px;height:30px;border:0;background:none;color:var(--sub);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.tx svg{width:18px;height:18px}
+</style>
+</head>
+<body>
+<main>
+  <section class="acc">
+    <div class="herow"><img class="hero" src="hero.jpg" alt="특별한 사랑과 나눔의 축제! 2026 사랑나눔 가을바자회"><span class="hero-tag">팝업 코너</span></div>
+    <div class="top"><div class="church"><img src="../logo.png" alt="">주님의교회</div><span class="mission">🎪 사랑나눔 바자회 - 팝업 코너</span><h1 class="t">입금 계좌</h1><small>받는 분 · <b>박윤정</b></small></div>
+    <div class="row">
+      <div><div class="bank"><span class="dot"></span>카카오뱅크</div><div class="num">3333-32-0125567</div></div>
+      <button class="copy" onclick="copyAcc()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>복사</button>
+    </div>
+  </section>
+
+  <h2>내 은행을 누르면 바로 송금 페이지로</h2>
+  <p class="hint">계좌번호는 자동으로 복사되고, 은행 앱이 열려요</p>
+  <nav class="grid" id="apps"></nav>
+  <p class="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>비밀번호는 여기서 받지 않아요 · 송금은 내 은행 앱에서</p>
+  <p class="place">📍 <b>주님의 교회</b> 라운지 및 앞마당<br>따뜻한 나눔에 함께해 주셔서 감사합니다 🧡</p>
+  <img class="market" src="market.jpg" alt="">
+  <img class="foot" src="../logo.png" alt="주님의교회">
+</main>
+<div id="toast"><div class="tbox"><button class="tx" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="tic" id="tic"></div><div class="tt" id="tt"></div><div class="td" id="td"></div><button class="tbtn" id="tbtn"></button></div></div>
+<script>
+const ACC='3333320125567', ACC_TXT='카카오뱅크 3333-32-0125567 박윤정';
+// [이름, 바탕색, 글자색, 표시, 앱 주소(scheme), 앱 이름, 자동입력, 로고 키, 앱스토어 ID, 안드로이드 패키지, 안드로이드 주소(다를 때만)]
+// 앱 주소가 null 이면 '복사 + 직접 열기 안내' 만 한다 (공개된 주소를 못 찾은 은행 — 2026-10-30 조사)
+// ✔ = 아이폰에서 열리는 것을 HB 가 확인함 · 신한·SC·씨티·우체국·새마을금고·부산은 HB 가 찾아 준 주소(2026-10-30)
+const APPS=[
+  ['토스','#0064ff','#fff','toss','supertoss://send?bank='+encodeURIComponent('카카오뱅크')+'&accountNo='+ACC+'&origin=qr','토스',1,'toss','839333328','viva.republica.toss'], // ✔
+  ['카카오뱅크','#ffe300','#1a1a1a','B','kakaobank://','카카오뱅크',0,'kakao','1258016944','com.kakaobank.channel'], // ✔
+  ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹',0,'kb','373742138','com.kbstar.kbbank','kbbank://call'], // ✔
+  ['신한은행','#0046ff','#fff','SOL','shinhansol://','신한 SOL뱅크',0,'shinhan','357484932','com.shinhan.sbanking'], // ✔
+  ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹',0,'woori','1470181651','com.wooribank.smart.npib','wooribank://'], // ✔
+  ['NH스마트','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
+  ['지역농협','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
+  ['하나은행','#008c73','#fff','1Q','hanabank-oqf://','하나원큐',0,'hana','6743190232','com.hanabank.oqf'],
+  ['NH콕뱅크','#fff','#1d9b5e','콕','nhcok://','NH콕뱅크',0,'nhcok','1131147442','nh.smart.nhcok'],
+  ['지역농협 콕','#fff','#1d9b5e','콕','nhcok://','NH콕뱅크',0,'nhcok','1131147442','nh.smart.nhcok'],
+  ['IBK기업','#fff','#0b4ea2','i-ONE','ionebank://','i-ONE Bank',0,'ibk','1460543865','com.ibk.android.ionebank'],
+  ['케이뱅크','#0b1d8c','#fff','K','ukbanksmartbank://','케이뱅크',0,'kbank','1178872627','com.kbankwith.smartbank','ukbanksmartbankshortcut://'],
+  ['새마을금고','#fff','#0062b1','MG','kfccsb://','MG더뱅킹',0,'mg','425089902','com.smg.spbs'],
+  ['우체국','#e5322d','#fff','우체국','com.epost.psf.sd://','우체국뱅킹',0,'epost','554920991','com.epost.psf.sdsi'],
+  ['신협','#fff','#0058a3','ON',null,'신협 ON뱅크',0,'cu','1484456647','kr.co.cu.onbank'],
+  ['부산은행','#fff','#d6001c','BNK','bslink://call','BNK부산은행',0,'busan','1445137607','kr.co.busanbank.mbp'],
+  ['iM뱅크','#00a29a','#fff','iM','mbanking://','iM뱅크',0,'im','1067748687','kr.co.dgb.dgbm'],
+  ['경남은행','#fff','#d6001c','BNK','kakaoed1616004f7cc49ecf503b70e9221365://kakaolink','BNK경남은행',0,'kyongnam','678852685','com.knb.psb','alopex://psb'],
+  ['수협은행','#fff','#0a5aa8','Sh','kakao4251fde6ccd98c9326127797ddd3aad0://kakaolink','수협 파트너뱅크',0,'suhyup','1229985989','com.suhyup.psmb','suhyuppsmb://suhyuplink'],
+  ['광주은행','#fff','#2a50d8','Wa','kakao6ec8812a5d4d44c18cadd24f2dd65eca://kakaolink','광주은행',0,'kjbank','1576149106','com.kjbank.asb.pbanking','kjbank://asb'],
+  ['전북은행','#0b3fd8','#fff','JB','jbprivatebank://','전북은행',0,'jbbank','1547903285','kr.co.jbbank.privatebank'],
+  ['SC제일','#fff','#0473ea','SC','scbmobile://','SC제일은행',0,'sc','1457418899','com.scbank.ma30'],
+  ['SBI저축은행','#fff','#0a7fd8','SBI','saidabank://deep_link_url','사이다뱅크',0,'sbi','','com.sbi.saidabank','sbi://sbi_url'],
+  ['산업은행','#00468c','#fff','KDB','smartkdb://','KDB산업은행',0,'kdb','','co.kr.kdb.android.smartkdb','smartkdbnvs://'],
+  ['제주은행','#fff','#0a4fe0','J','newjbanksmart://action','제주은행',0,'jeju','6443788309','com.jejubank.smartnew'],
+  ['씨티은행','#0c5bb5','#fff','citi','citimobileapp://','씨티모바일',0,'citi','1179759666','kr.co.citibank.citimobile','citimobileapp://smartpay'],
+];
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent), isAnd=/Android/.test(navigator.userAgent);
+const store=a=>isIOS?(a[8]?'https://apps.apple.com/kr/app/id'+a[8]:null):'https://play.google.com/store/apps/details?id='+a[9];
+// 안드로이드는 intent 주소로 연다 — 앱이 없으면 크롬이 스토어(fallback)로 넘긴다
+const href=a=>{ if(!a[4]) return '#'; if(!isAnd) return a[4];
+  const [sch,rest]=(a[10]||a[4]).split('://');
+  return 'intent://'+rest+'#Intent;scheme='+sch+';package='+a[9]+';S.browser_fallback_url='+encodeURIComponent(store(a))+';end'; };
+document.getElementById('apps').innerHTML=APPS.map((a,i)=>
+  `<a href="${href(a)}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}"><img src="../logos/${a[7]}.png" alt="" onload="this.parentNode.classList.add('logo')" onerror="this.remove()">${a[3]}</i>${a[0]}</a>`).join('');
+document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',e=>{
+  const a=APPS[el.dataset.i];
+  copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
+  if(!a[4]){ e.preventDefault(); toast(a,a[5]+' 앱을 직접 열어\n받는 분 계좌에 붙여넣어 주세요'); return; }
+  if(isAnd) return;
+  // 아이폰: 저절로 스토어로 넘기지 않는다 — 신한처럼 '앱에서 열기' 확인창이 뜨는 앱은
+  // 확인을 누르기 전에 넘어가 버린다(2026-10-30 HB). 안내만 띄우고, 누르면 스토어로.
+  const t=setTimeout(()=>{ if(!document.hidden) toast(a, store(a)?a[5]+' 앱이 열리지 않았나요?\n앱이 없다면 아래에서 받아 주세요':a[5]+' 앱을 직접 열어\n받는 분 계좌에 붙여넣어 주세요', store(a)?['앱스토어에서 받기',()=>location.href=store(a)]:null); },1800);
+  document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
+}));
+function copyText(s){
+  try{ const ta=document.createElement('textarea'); ta.value=s; ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+    ta.setSelectionRange(0,s.length); document.execCommand('copy'); ta.remove(); }catch(e){}
+  try{ navigator.clipboard&&navigator.clipboard.writeText(s); }catch(e){}
+}
+function copyAcc(){ copyText(ACC_TXT); toast(null,'은행 앱에서 받는 분 계좌에\n붙여넣어 주세요'); }
+// 안내 상자: 무엇을 했나(제목) / 어떻게 하면 되나(본문) / 할 일(버튼). 바깥 · × 를 누르면 닫힌다.
+const T=document.getElementById('toast'); let tt,tact;
+const CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+function toast(a,body,act){
+  document.getElementById('tic').innerHTML=a?`<img src="../logos/${a[7]}.png" alt="" onerror="this.outerHTML=CHECK">`:CHECK;
+  document.getElementById('tt').textContent='계좌번호를 복사했어요';
+  document.getElementById('td').textContent=body;
+  tact=act; const b=document.getElementById('tbtn'); b.textContent=act?act[0]:'확인';
+  T.classList.add('on'); clearTimeout(tt);
+  if(!act) tt=setTimeout(closeT,Math.min(9000,Math.max(3000,body.length*200)));
+}
+function closeT(){ T.classList.remove('on'); }
+T.onclick=e=>{ if(e.target===T||e.target.closest('.tx')) closeT(); };
+document.getElementById('tbtn').onclick=()=>{ closeT(); if(tact) tact[1](); };
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeT(); });
+</script>
+</body>
+</html>
