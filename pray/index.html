@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1030-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1030-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1030-3';
+const APP_VERSION = 'v. 26-1030-4';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2322,6 +2322,8 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .kh-its{display:flex;flex-wrap:wrap;gap:0 14px}
 .kh-it{white-space:nowrap}
 .kh-it b{color:var(--tx2);font-weight:600;margin-right:5px}
+/* , . / 는 글자가 작아 묻힌다 — 제 이름 바로 앞에 하나씩 · 크고 진하게 (HB 2026-10-30) */
+.kh-new b.kh-p{display:inline-block;min-width:9px;margin:0 3px 0 10px;color:var(--tx);font-size:15px;font-weight:700;line-height:1;text-align:center;vertical-align:-1px}
 .kh-more{flex-shrink:0;display:inline-flex;align-items:center;gap:1px;color:var(--ac-tx);white-space:nowrap}
 .kh-more .ico{width:14px;height:14px}
 .kbx-t .kbx-tt{flex:1;text-align:center}
@@ -4523,7 +4525,7 @@ function kbHintBar() {
   return '<button class="kbhint" data-a="kb-help" aria-label="단축키 모두 보기"><span class="kh-rows">' +
     '<span class="kh-row"><span class="kh-ic" title="키보드">' + KBICO + '</span><span class="kh-its">' +
       it('↑↓←→', '고르기') + it('Enter', '이름 수정') + it('sh Enter', '상세') + it('Tab', '하나 더') +
-      it('del', '지우기') + it('alt ↑↓', '옮기기') + it(',\u2002.\u2002/', '그룹 · 서브 그룹 · 항목 새로 만들기') + '</span></span>' +
+      it('del', '지우기') + it('alt ↑↓', '옮기기') + '<span class="kh-it kh-new">새로 만들기<b class="kh-p">,</b>그룹<b class="kh-p">.</b>서브 그룹<b class="kh-p">/</b>항목</span>' + '</span></span>' +
     '<span class="kh-row"><span class="kh-ic" title="마우스">' + mouseIco('') + '</span><span class="kh-its">' +
       KB_MOUSE.slice(0, 4).map(m => it(m.k, m.t)).join('') + '</span></span>' +
     '</span><span class="kh-more">모두 보기' + ico('chevR') + '</span></button>';

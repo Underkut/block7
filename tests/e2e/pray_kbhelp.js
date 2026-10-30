@@ -64,7 +64,7 @@ const mid = (p, sel) => p.evaluate(s => { const r = document.querySelector(s).ge
   await p.click('#v-map .kb-i'); await sleep(500);
   const bar = await p.evaluate(() => { const h = document.querySelector('#v-map .kbhint'); return h ? { t: h.textContent, rows: h.querySelectorAll('.kh-row').length, boxes: h.querySelectorAll('kbd,.kh-its .mico').length } : null; });
   ok('⭐⑤ 요약 띠: 키보드 줄 · 마우스 줄 · 글쇠 상자 · 그림 없이 미니멀', bar && bar.rows === 2 && bar.boxes === 0, bar);
-  ok('⑤ 요약 띠 순서 Enter → Shift Enter → Tab · \'새로 만들기\'', bar && /Enter이름 수정.*(⇧|Shift\+)Enter상세.*Tab하나 더/.test(bar.t) && bar.t.includes('항목 새로 만들기'), bar && bar.t);
+  ok('⑤ 요약 띠 순서 Enter → Shift Enter → Tab · \'새로 만들기\'', bar && /Enter이름 수정.*(⇧|Shift\+)Enter상세.*Tab하나 더/.test(bar.t) && bar.t.includes('새로 만들기,그룹.서브 그룹/항목'), bar && bar.t);
   ok('⑤ 요약 띠 낱말: 이름 수정 · 클릭 · 더블클릭 · 우클릭', bar && ['이름 수정', '클릭', '더블클릭', '우클릭', '메뉴'].every(w => bar.t.includes(w)) && !bar.t.includes('고치기'), bar && bar.t);
   await p.click('#v-map .kb-i'); await sleep(500);
   const full = await p.evaluate(() => { const s = SHEET && SHEET.querySelector('.kbx'); return s ? { t: SHEET.textContent, mice: s.querySelectorAll('.kbx-mc').length, groups: s.querySelectorAll('.kbx-g').length, x: !!SHEET.querySelector('.sh-x') } : null; });
