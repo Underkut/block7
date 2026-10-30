@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- KAIROS v. 26-1028-6 -->
+<!-- KAIROS v. 26-1030-1 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -584,7 +584,7 @@ html.boot *,html.boot *::before,html.boot *::after{transition:none!important;ani
 
 <script id="timer-core">
 // ═══ 타이머 핵심 규칙 — 화면 없이 돈다. tests/test_timer.js 가 이 덩어리만 떼어 시험한다 ═══
-const APP_VERSION='v. 26-1028-6';
+const APP_VERSION='v. 26-1030-1';
 // 색: 구글 레드 + 성경 앱 절 메뉴 7색(화면 순서 그대로) + 커스텀(#rrggbb)
 const COLORS=[
   {k:'g',hex:'#EA4335',name:'구글 레드'},
@@ -615,6 +615,18 @@ function rawMinute(dx,dy,dir){
 function dragStep(val,prevRaw,raw){
   let d=raw-prevRaw;if(d>30)d-=60;if(d<-30)d+=60;
   return Math.max(0,Math.min(MAXMIN,val+d));
+}
+// 눈금 자석 — 손가락 값(val) → 보이는 값. sn = 눈금 간격(10 · 5 · 0 = 안 붙임)
+// 눈금 둘레 R(간격의 30%) 안에서만 당긴다: 안쪽 35% 는 눈금에 딱 붙어 있고(멈춤),
+// 바깥쪽은 손가락을 부드럽게 따라잡는다. 끊김 없이 이어지므로 숫자가 두세 칸씩 튀지 않고,
+// 9분 · 11분 같은 사이 값도 모두 고를 수 있다. 가장자리의 빠르기는 손가락과 같아(1배) 떨어질 때도 덜컥이지 않는다
+function snapPull(val,sn){
+  if(!sn)return val;
+  const near=Math.round(val/sn)*sn,d=val-near,R=sn*.3,t=Math.abs(d)/R;
+  if(t>=1)return val;
+  if(t<=.35)return near;
+  const u=(t-.35)/.65,g=2.35*u*u-1.35*u*u*u;   // g(0)=0 · g(1)=1 · 처음 기울기 0 · 끝 기울기 손가락과 같게
+  return Math.max(0,Math.min(MAXMIN,near+Math.sign(d)*R*g));
 }
 // 프리셋 끌어 옮기기 — 끄는 칸의 가운데(cx)가 이웃 칸의 가운데를 넘으면 그 자리로.
 // mids: 끌기 시작할 때 잰 칸마다의 가운데 x · i0: 끄는 칸
@@ -1019,7 +1031,19 @@ function loop(){
 function addLog(m,label,color){if(m<0.5)return;S.log.push({t:Date.now(),m:Math.round(m),label:label||Math.round(m)+'분',color});save();if(tab===2)renderStats();}
 
 // ── 원 끌기 — 손가락을 따라간다. 12시를 넘기면 다음 바퀴로 (세 바퀴까지) ──
-let dragging=false,dragVal=0,prevRaw=0,lastWhole=-1,wasRun=false;
+let dragging=false,dragVal=0,prevRaw=0,lastWhole=-1,stuckAt=-2,wasRun=false;
+// 손끝 떨림 — 안드로이드는 navigator.vibrate. 아이폰(사파리 18~)엔 그게 없어서
+// 숨긴 스위치(<input switch>)를 한 번 바꿔 기기의 '딸깍' 을 빌린다. 둘 다 없으면 조용히 넘어간다
+let hapEl=null;
+function haptic(ms){
+  if(!C().vib)return;
+  if(navigator.vibrate){try{navigator.vibrate(ms);}catch(e){}return;}
+  if(ms<10)return;   // 아이폰의 딸깍은 세기가 하나뿐 → 1분 눈금마다 울리면 시끄럽다. 눈금에 붙을 때만
+  try{if(!hapEl){hapEl=document.createElement('label');hapEl.setAttribute('aria-hidden','true');
+    hapEl.style.cssText='position:fixed;left:-99px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+    const i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;hapEl.appendChild(i);document.body.appendChild(hapEl);}
+    hapEl.click();}catch(e){}
+}
 function rawMin(e){
   const cv=$('dial'),b=cv.getBoundingClientRect(),dx=e.clientX-(b.left+b.width/2),dy=e.clientY-(b.top+b.height/2);
   return {m:rawMinute(dx,dy,C().dir),dist:Math.hypot(dx,dy)/(b.width/2)};
@@ -1030,7 +1054,7 @@ function beginDrag(e,m){
   dragging=true;wasRun=r.state==='run';
   const cur=remainMs()/60000;
   const base=Math.floor(Math.max(0,cur-1e-6)/LAP)*LAP;
-  dragVal=Math.min(MAXMIN,base+m);prevRaw=m;lastWhole=-1;dragVis=-1;
+  dragVal=Math.min(MAXMIN,base+m);prevRaw=m;lastWhole=-1;stuckAt=-2;dragVis=-1;
   applyDrag();
 }
 // 도는 중·멈춘 중에는 파이를 톡 = 멈춤/재개 (좌하단 단추와 같다). 끌면 예전처럼 시간을 바꾼다
@@ -1066,9 +1090,12 @@ function easeVis(){
   visRaf=requestAnimationFrame(step);
 }
 function applyDrag(){
-  const sn=+C().snap||0,near=sn?Math.round(dragVal/sn)*sn:0,stuck=sn&&Math.abs(dragVal-near)<=sn*.2,whole=stuck?near:Math.round(dragVal);
-  dragGoal=stuck?near:dragVal;if(dragVis<0)dragVis=dragGoal;easeVis();
-  if(whole!==lastWhole){lastWhole=whole;if(C().vib&&navigator.vibrate)try{navigator.vibrate(4);}catch(e){}}
+  const sn=+C().snap||0,shown=snapPull(dragVal,sn),near=sn?Math.round(dragVal/sn)*sn:-1,stuck=sn&&shown===near,whole=Math.round(shown);
+  dragGoal=shown;if(dragVis<0)dragVis=dragGoal;easeVis();
+  // 눈금에 막 붙는 순간만 또렷한 '딸깍', 1분 지날 때는 아주 옅게 (끌기 시작한 자리는 울리지 않는다)
+  if(stuck&&stuckAt!==near&&stuckAt!==-2){haptic(14);lastWhole=whole;}
+  else if(whole!==lastWhole){if(lastWhole>=0&&!stuck)haptic(3);lastWhole=whole;}
+  stuckAt=stuck?near:-1;
   const ms=whole*60000,r=R();
   Object.assign(r,{state:wasRun?'pause':'idle',left:ms,total:ms,endAt:0,pid:null,label:wasRun?r.label:''});
   if(!wasRun){r.rt=null;}
