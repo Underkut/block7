@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 헌금 계좌 안내 · v. 26-1030-7 -->
+<!-- 헌금 계좌 안내 · v. 26-1030-8 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -63,12 +63,12 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
 const ACC='1005101854890', ACC_TXT='우리은행 1005-101-854890 주님의교회';
 // [이름, 바탕색, 글자색, 표시, 앱 주소(scheme), 앱 이름, 자동입력, 로고 키, 앱스토어 ID, 안드로이드 패키지]
 // 앱 주소가 null 이면 '복사 + 직접 열기 안내' 만 한다 (공개된 주소를 못 찾은 은행 — 2026-10-30 조사)
-// ✔ = 아이폰에서 열리는 것을 HB 가 확인함
+// ✔ = 아이폰에서 열리는 것을 HB 가 확인함 · 신한·SC·씨티·우체국·새마을금고·부산은 HB 가 찾아 준 주소(2026-10-30)
 const APPS=[
   ['토스','#0064ff','#fff','toss','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC+'&origin=qr','토스',1,'toss','839333328','viva.republica.toss'], // ✔
   ['카카오뱅크','#ffe300','#1a1a1a','B','kakaobank://','카카오뱅크',0,'kakao','1258016944','com.kakaobank.channel'], // ✔
   ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹',0,'kb','373742138','com.kbstar.kbbank'], // ✔
-  ['신한은행','#0046ff','#fff','SOL','newsolapp://','신한 SOL뱅크',0,'shinhan','357484932','com.shinhan.sbanking'], // ✔
+  ['신한은행','#0046ff','#fff','SOL','shinhansol://','신한 SOL뱅크',0,'shinhan','357484932','com.shinhan.sbanking'], // ✔
   ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹',0,'woori','1470181651','com.wooribank.smart.npib'], // ✔
   ['하나은행','#008c73','#fff','1Q','hanabank-oqf://','하나원큐',0,'hana','6743190232','com.hanabank.oqf'],
   ['NH스마트','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
@@ -76,7 +76,11 @@ const APPS=[
   ['IBK기업','#fff','#0b4ea2','i-ONE','ionebank://','i-ONE Bank',0,'ibk','1460543865','com.ibk.android.ionebank'],
   ['NH올원','#fff','#00a651','올원','nhallone://','NH올원뱅크',0,'nhallone','1641628055','com.nonghyup.nhallonebank'],
   ['iM뱅크','#00a29a','#fff','iM','mbanking://','iM뱅크',0,'im','1067748687','kr.co.dgb.dgbm'],
-  ['씨티은행','#0c5bb5','#fff','citi',null,'씨티모바일',0,'citi','1179759666','kr.co.citibank.citimobile'],
+  ['새마을금고','#fff','#0062b1','MG','kfccsb://','MG더뱅킹',0,'mg','425089902','com.smg.spbs'],
+  ['우체국','#e5322d','#fff','우체국','com.epost.psf.sd://','우체국뱅킹',0,'epost','554920991','com.epost.psf.sdsi'],
+  ['SC제일','#fff','#0473ea','SC','scbmobile://','SC제일은행',0,'sc','1457418899','com.scbank.ma30'],
+  ['부산은행','#fff','#d6001c','BNK','bslink://call','BNK부산은행',0,'busan','1445137607','kr.co.busanbank.mbp'],
+  ['씨티은행','#0c5bb5','#fff','citi','citimobileapp://','씨티모바일',0,'citi','1179759666','kr.co.citibank.citimobile'],
 ];
 const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent), isAnd=/Android/.test(navigator.userAgent);
 const store=a=>isIOS?'https://apps.apple.com/kr/app/id'+a[8]:'https://play.google.com/store/apps/details?id='+a[9];
