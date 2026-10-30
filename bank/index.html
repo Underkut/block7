@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- 헌금 계좌 안내 · v. 26-1030-1 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>주님의교회 계좌 안내</title>
+<meta name="description" content="주님의교회 계좌 안내 — 우리은행 1005-101-854890">
+<meta property="og:title" content="주님의교회 계좌 안내">
+<meta property="og:description" content="우리은행 1005-101-854890 · 예금주 주님의교회">
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--sub:#86868b;--line:#e8e6e1;--accent:#0067ac}
+@media (prefers-color-scheme:dark){:root{--bg:#111;--card:#1c1c1e;--ink:#f2f2f2;--sub:#98989d;--line:#2c2c2e;--accent:#4aa3e8}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;font-weight:300;min-height:100vh;display:flex;justify-content:center;padding:48px 16px calc(32px + env(safe-area-inset-bottom))}
+main{width:100%;max-width:420px}
+h1{font-size:15px;font-weight:400;color:var(--sub);text-align:center;letter-spacing:.02em;margin-bottom:20px}
+.card{background:var(--card);border-radius:20px;padding:32px 24px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.bank{font-size:14px;color:var(--accent);font-weight:500}
+.num{font-size:28px;font-weight:400;letter-spacing:.02em;margin:10px 0 6px;font-variant-numeric:tabular-nums;user-select:all}
+.holder{font-size:15px;color:var(--sub)}
+.copy{margin-top:24px;width:100%;border:0;border-radius:14px;padding:16px;font:inherit;font-size:16px;font-weight:500;background:var(--accent);color:#fff;cursor:pointer;transition:transform .15s}
+.copy:active{transform:scale(.98)}
+h2{font-size:13px;font-weight:400;color:var(--sub);text-align:center;margin:40px 0 14px}
+.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.apps a{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 4px;background:var(--card);border-radius:16px;color:var(--ink);text-decoration:none;font-size:13px}
+.apps i{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:600;font-size:15px;color:#fff}
+.note{font-size:12px;color:var(--sub);text-align:center;margin-top:18px;line-height:1.6}
+#toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.82);color:#fff;padding:14px 22px;border-radius:14px;font-size:15px;text-align:center;line-height:1.5;white-space:pre-line;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<main>
+  <h1>주님의교회 헌금 계좌</h1>
+  <section class="card">
+    <div class="bank">우리은행</div>
+    <div class="num" id="num">1005-101-854890</div>
+    <div class="holder">예금주 · 주님의교회</div>
+    <button class="copy" onclick="copyAcc()">계좌번호 복사</button>
+  </section>
+
+  <h2>은행 앱으로 바로 보내기</h2>
+  <nav class="apps" id="apps"></nav>
+  <p class="note">앱을 누르면 계좌번호가 먼저 복사됩니다.<br>앱에서 붙여넣기 하시면 됩니다.</p>
+</main>
+<div id="toast"></div>
+<script>
+const ACC='1005101854890', ACC_TXT='우리은행 1005-101-854890 주님의교회';
+// 앱 주소(scheme)는 앱 업데이트로 바뀔 수 있다 — 안 열리면 스토어로 넘긴다
+const APPS=[
+  ['토스','#0064ff','T','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC,'id839333328','viva.republica.toss'],
+  ['카카오뱅크','#ffcd00','K','kakaobank://','id1258016944','com.kakaobank.channel'],
+  ['우리WON','#0067ac','W','wooribank://','id1470181651','com.wooribank.smart.npib'],
+  ['KB스타뱅킹','#ffbc00','KB','kbbank://','id373742138','com.kbstar.kbbank'],
+  ['신한 SOL','#0046ff','S','newsolapp://','id357484932','com.shinhan.sbanking'],
+  ['NH올원','#00a651','NH','nhallonebank://','id1225924223','com.nh.cashcardapp'],
+];
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+document.getElementById('apps').innerHTML=APPS.map((a,i)=>
+  `<a href="${a[3]}" data-i="${i}"><i style="background:${a[1]}">${a[2]}</i>${a[0]}</a>`).join('');
+document.querySelectorAll('.apps a').forEach(el=>el.addEventListener('click',()=>{
+  const a=APPS[el.dataset.i];
+  copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
+  const t=setTimeout(()=>{ if(!document.hidden) location.href=isIOS
+    ?'https://apps.apple.com/kr/app/'+a[4]
+    :'https://play.google.com/store/apps/details?id='+a[5]; },1800);
+  document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
+}));
+function copyText(s){
+  try{ const ta=document.createElement('textarea'); ta.value=s; ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select();
+    ta.setSelectionRange(0,s.length); document.execCommand('copy'); ta.remove(); }catch(e){}
+  try{ navigator.clipboard&&navigator.clipboard.writeText(s); }catch(e){}
+}
+function copyAcc(){ copyText(ACC_TXT); toast('계좌번호를 복사했습니다\n은행 앱에서 붙여넣어 주세요'); }
+let tt; function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('on'),Math.min(9000,Math.max(3000,m.length*200))); }
+document.getElementById('toast').onclick=e=>e.currentTarget.classList.remove('on');
+</script>
+</body>
+</html>
