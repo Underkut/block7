@@ -1,70 +1,86 @@
 <!DOCTYPE html>
-<!-- 헌금 계좌 안내 · v. 26-1030-1 -->
+<!-- 헌금 계좌 안내 · v. 26-1030-2 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>주님의교회 계좌 안내</title>
-<meta name="description" content="주님의교회 계좌 안내 — 우리은행 1005-101-854890">
-<meta property="og:title" content="주님의교회 계좌 안내">
-<meta property="og:description" content="우리은행 1005-101-854890 · 예금주 주님의교회">
+<title>주님의교회 송금 안내</title>
+<meta property="og:title" content="주님의교회 송금 안내">
+<meta property="og:description" content="우리은행 1005-101-854890 · 주님의교회">
 <style>
-:root{--bg:#f6f5f2;--card:#fff;--ink:#1d1d1f;--sub:#86868b;--line:#e8e6e1;--accent:#0067ac}
-@media (prefers-color-scheme:dark){:root{--bg:#111;--card:#1c1c1e;--ink:#f2f2f2;--sub:#98989d;--line:#2c2c2e;--accent:#4aa3e8}}
+:root{--bg:#f4f5f8;--card:#fff;--ink:#16181d;--sub:#7b808a;--line:#e6e8ec;--accent:#2f5bea}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1012;--card:#1b1c1f;--ink:#f2f3f5;--sub:#9a9ea6;--line:#2a2b2f}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;font-weight:300;min-height:100vh;display:flex;justify-content:center;padding:48px 16px calc(32px + env(safe-area-inset-bottom))}
-main{width:100%;max-width:420px}
-h1{font-size:15px;font-weight:400;color:var(--sub);text-align:center;letter-spacing:.02em;margin-bottom:20px}
-.card{background:var(--card);border-radius:20px;padding:32px 24px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.bank{font-size:14px;color:var(--accent);font-weight:500}
-.num{font-size:28px;font-weight:400;letter-spacing:.02em;margin:10px 0 6px;font-variant-numeric:tabular-nums;user-select:all}
-.holder{font-size:15px;color:var(--sub)}
-.copy{margin-top:24px;width:100%;border:0;border-radius:14px;padding:16px;font:inherit;font-size:16px;font-weight:500;background:var(--accent);color:#fff;cursor:pointer;transition:transform .15s}
-.copy:active{transform:scale(.98)}
-h2{font-size:13px;font-weight:400;color:var(--sub);text-align:center;margin:40px 0 14px}
-.apps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.apps a{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 4px;background:var(--card);border-radius:16px;color:var(--ink);text-decoration:none;font-size:13px}
-.apps i{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:600;font-size:15px;color:#fff}
-.note{font-size:12px;color:var(--sub);text-align:center;margin-top:18px;line-height:1.6}
-#toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.82);color:#fff;padding:14px 22px;border-radius:14px;font-size:15px;text-align:center;line-height:1.5;white-space:pre-line;opacity:0;pointer-events:none;transition:opacity .25s}
-#toast.on{opacity:1}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;padding:28px 16px calc(36px + env(safe-area-inset-bottom));display:flex;justify-content:center}
+main{width:100%;max-width:440px}
+.title{font-size:22px;font-weight:700;margin-bottom:16px}.title b{color:var(--accent)}
+.acc{background:var(--card);border-radius:22px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.top{background:var(--accent);color:#fff;padding:18px 22px 20px}
+.top small{font-size:13px;opacity:.85}
+.top h1{font-size:25px;font-weight:700;margin-top:4px}.top h1 span{font-size:16px;font-weight:400;opacity:.9;margin-left:4px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:20px 22px 22px}
+.bank{font-size:15px;color:var(--sub);display:flex;align-items:center;gap:7px}
+.dot{width:16px;height:16px;border-radius:50%;background:linear-gradient(90deg,#3fb6e8 50%,#1b3fae 50%)}
+.num{font-size:28px;font-weight:700;letter-spacing:.01em;margin-top:6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.copy{flex:none;display:flex;align-items:center;gap:5px;border:1.6px solid var(--accent);color:var(--accent);background:none;border-radius:999px;padding:9px 16px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.copy svg{width:17px;height:17px}
+h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
+.hint{font-size:14px;color:var(--sub);margin:0 4px 14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.grid a{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 2px 10px;background:var(--card);border:1px solid var(--line);border-radius:18px;color:var(--ink);text-decoration:none;font-size:12.5px;transition:transform .15s}
+.grid a:active{transform:scale(.96)}
+.grid i{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.05;text-align:center}
+.badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:999px;white-space:nowrap}
+.safe{font-size:13px;color:var(--sub);text-align:center;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:5px}
+.safe svg{width:14px;height:14px}
+#toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,20,22,.88);color:#fff;padding:15px 24px;border-radius:16px;font-size:15px;text-align:center;line-height:1.55;white-space:pre-line;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.on{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
 <main>
-  <h1>주님의교회 헌금 계좌</h1>
-  <section class="card">
-    <div class="bank">우리은행</div>
-    <div class="num" id="num">1005-101-854890</div>
-    <div class="holder">예금주 · 주님의교회</div>
-    <button class="copy" onclick="copyAcc()">계좌번호 복사</button>
+  <div class="title"><b>송금하기</b> · 계좌 정보 확인</div>
+  <section class="acc">
+    <div class="top"><small>수취인</small><h1>주님의교회<span>님께</span></h1></div>
+    <div class="row">
+      <div><div class="bank"><span class="dot"></span>우리은행</div><div class="num">1005-101-854890</div></div>
+      <button class="copy" onclick="copyAcc()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/></svg>복사</button>
+    </div>
   </section>
 
-  <h2>은행 앱으로 바로 보내기</h2>
-  <nav class="apps" id="apps"></nav>
-  <p class="note">앱을 누르면 계좌번호가 먼저 복사됩니다.<br>앱에서 붙여넣기 하시면 됩니다.</p>
+  <h2>내 은행을 누르면 바로 송금</h2>
+  <p class="hint">은행 앱이 열리고, 계좌번호는 자동으로 복사돼요</p>
+  <nav class="grid" id="apps"></nav>
+  <p class="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>비밀번호는 여기서 받지 않아요 · 송금은 내 은행 앱에서</p>
 </main>
 <div id="toast"></div>
 <script>
 const ACC='1005101854890', ACC_TXT='우리은행 1005-101-854890 주님의교회';
-// 앱 주소(scheme)는 앱 업데이트로 바뀔 수 있다 — 안 열리면 스토어로 넘긴다
+// [이름, 바탕색, 글자색, 표시, 앱 주소, 스토어 검색어, 자동입력]
+// 앱 주소는 은행이 공개한 것이 아니라 바뀔 수 있다 — 안 열리면 스토어로 넘긴다
 const APPS=[
-  ['토스','#0064ff','T','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC,'id839333328','viva.republica.toss'],
-  ['카카오뱅크','#ffcd00','K','kakaobank://','id1258016944','com.kakaobank.channel'],
-  ['우리WON','#0067ac','W','wooribank://','id1470181651','com.wooribank.smart.npib'],
-  ['KB스타뱅킹','#ffbc00','KB','kbbank://','id373742138','com.kbstar.kbbank'],
-  ['신한 SOL','#0046ff','S','newsolapp://','id357484932','com.shinhan.sbanking'],
-  ['NH올원','#00a651','NH','nhallonebank://','id1225924223','com.nh.cashcardapp'],
+  ['토스','#0064ff','#fff','toss','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC+'&origin=qr','토스',1],
+  ['카카오뱅크','#ffe300','#1a1a1a','B','kakaobank://','카카오뱅크'],
+  ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹'],
+  ['신한은행','#0046ff','#fff','SOL','newsolapp://','신한 SOL뱅크'],
+  ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹'],
+  ['하나은행','#008c73','#fff','1Q','hanapush://','하나원큐'],
+  ['NH스마트','#0f4fc4','#fff','NH','nhallonebank://','NH스마트뱅킹'],
+  ['케이뱅크','#0b1d8c','#fff','K','kbankapp://','케이뱅크'],
+  ['IBK기업','#fff','#0b4ea2','i-ONE','ibkmobile://','i-ONE Bank'],
+  ['NH콕뱅크','#fff','#1d9b5e','콕','nhcokbank://','NH콕뱅크'],
+  ['SC제일','#fff','#0473ea','SC','scbank://','SC제일은행'],
+  ['씨티은행','#0c5bb5','#fff','citi','citimobile://','씨티모바일'],
 ];
 const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
 document.getElementById('apps').innerHTML=APPS.map((a,i)=>
-  `<a href="${a[3]}" data-i="${i}"><i style="background:${a[1]}">${a[2]}</i>${a[0]}</a>`).join('');
-document.querySelectorAll('.apps a').forEach(el=>el.addEventListener('click',()=>{
+  `<a href="${a[4]}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}">${a[3]}</i>${a[0]}</a>`).join('');
+document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',()=>{
   const a=APPS[el.dataset.i];
   copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
   const t=setTimeout(()=>{ if(!document.hidden) location.href=isIOS
-    ?'https://apps.apple.com/kr/app/'+a[4]
-    :'https://play.google.com/store/apps/details?id='+a[5]; },1800);
+    ?'https://apps.apple.com/kr/search?term='+encodeURIComponent(a[5])
+    :'https://play.google.com/store/search?c=apps&q='+encodeURIComponent(a[5]); },1800);
   document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
 }));
 function copyText(s){
