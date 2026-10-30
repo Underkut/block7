@@ -20,7 +20,7 @@ if (!m) { console.error('timer-core 덩어리를 못 찾았습니다'); process.
 const ctx = { console, Math, JSON, Number, Object, Set, Array, String, isFinite };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { pushPlan, APP_VERSION, KEY, COLORS, dragSlot, moveItem, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
+this.A = { pushPlan, APP_VERSION, KEY, COLORS, dragSlot, moveItem, colorHex, MAXMIN, LAP, fmt, lapText, rawMinute, dragStep, snapPull, routineSeq, normState, seed, CFG_DEFAULT };`, ctx);
 const A = ctx.A;
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
@@ -113,6 +113,26 @@ sc.eq('⑦ 색 = 구글 레드 + 성경 7색', A.COLORS.map(c => c.hex), ['#EA43
   sc.eq('⑨ 스위치를 끄면 지운다', A.pushPlan(run, Object.assign({}, cfg, { lock: false })), null);
   sc.eq('⑨ 알림 주소 · 기기 번호가 없으면 맡기지 않는다', [A.pushPlan(run, Object.assign({}, cfg, { lockTok: '' })), A.pushPlan(run, Object.assign({}, cfg, { dev: '' }))], [null, null]);
   sc.eq('⑨ 새 설정 기본값은 꺼짐', A.CFG_DEFAULT.lock, false);
+}
+
+// ⑩ 눈금 자석(snapPull) — 붙을 때 숫자가 두세 칸씩 튀지 않고, 사이 값도 다 고를 수 있다 (v. 26-1030-1)
+{
+  sc.eq('⑩ 안 붙임(0)이면 손가락 그대로', A.snapPull(8.7, 0), 8.7);
+  sc.eq('⑩ 10분 눈금 가까이는 딱 붙는다', [A.snapPull(9, 10), A.snapPull(10.9, 10), A.snapPull(59.2, 10)], [10, 10, 60]);
+  sc.eq('⑩ 눈금에서 멀면 손가락 그대로', [A.snapPull(15, 10), A.snapPull(6.5, 10), A.snapPull(3, 5) - 3 < 1e-9], [15, 6.5, true]);
+  for (const sn of [5, 10]) {
+    let prev = A.snapPull(0, sn), maxJump = 0, mono = true;
+    const seen = new Set();
+    for (let v = 0; v <= A.MAXMIN; v += 0.01) {
+      const x = A.snapPull(v, sn);
+      maxJump = Math.max(maxJump, Math.abs(x - prev));
+      if (x < prev - 1e-9) mono = false;
+      prev = x; seen.add(Math.round(x));
+    }
+    sc.eq(`⑩ ${sn}분: 끊김 없이 이어진다 (한 걸음 0.01분에 0.03분 넘게 안 뛴다 · 지금 ${maxJump.toFixed(4)})`, maxJump < 0.03, true);
+    sc.eq(`⑩ ${sn}분: 손가락을 거꾸로 움직이지 않는다`, mono, true);
+    sc.eq(`⑩ ${sn}분: 0~180분 모든 1분을 고를 수 있다`, seen.size === A.MAXMIN + 1, true);
+  }
 }
 
 sc.done();
