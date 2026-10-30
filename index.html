@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-2  [production]  -->
+<!-- BLOCK7  v. 26-1030-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3438,16 +3438,17 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 /* 한 칸 주간뷰 (v. 26-1030-2) — 넘길 때 옆으로 미끄러지는 내용이 상자 밖으로 새지 않게 */
 .rp-wk-widget{overflow:hidden;}
 .rp-wk-slot #weeklyPaneInner{overflow-x:auto;}
-/* 두 칸 주간뷰의 좌상단 … 가 ‹ 와 겹치지 않게 위를 조금 더 띄운다 */
-body.wk-wide #weeklyPane{padding-top:26px;}
-#weeklyPane>.rp-wmore{top:3px;}
+#wkPaneHost:empty{display:none;}
+/* 주간뷰 높이를 정했으면 구간 줄들이 나눠 갖고, 넘치는 글은 칸이 자른다 (v. 26-1030-3) */
+.wkg.wkg-fixed .wc{min-height:0;overflow:hidden;}
+.wkg.wkg-fixed .wlbl{min-height:0;overflow:hidden;}
 /* 두 갈래 고르기 세그먼트 (주간뷰 · 월간뷰 너비) — There 대시보드 D W M 과 같은 모양, 앱 테마를 따른다 */
 .b7-pop.b7-pop-seg{width:auto;min-width:172px;}
 .b7-seg{display:flex;gap:2px;padding:3px;margin:1px 0;border-radius:10px;position:relative;background:color-mix(in srgb,var(--tx) 7%,transparent);}
 .b7-seg button{flex:1;position:relative;z-index:1;background:none;border:0;padding:7px 14px;border-radius:8px;font:400 12.5px/1.2 var(--font-ui),sans-serif;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
 .b7-seg button.on{color:var(--tx);font-weight:500;}
 .b7-seg-pill{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:8px;background:color-mix(in srgb,var(--tx) 15%,transparent);pointer-events:none;}
-#weeklyPaneInner:not(:empty)+#monthPaneInner .rp-widget{margin-top:10px;}
+#wkPaneHost:not(:empty)+#monthPaneInner .rp-widget{margin-top:2px;}
 .rp-wmore{position:absolute;left:6px;top:4px;z-index:2;width:30px;height:22px;display:flex;align-items:center;justify-content:center;background:none;border:0;padding:0;color:var(--tx3);opacity:.7;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .rp-wmore:hover{opacity:1;color:var(--tx2);}
 /* 일정 글자 크기 − + (B5) — 테두리 없는 아이콘 둘. 월간뷰는 바로 위 › 와 헷갈리지 않게 간격을 넉넉히 */
@@ -6641,7 +6642,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-2";
+const APP_VERSION = "v. 26-1030-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26212,17 +26213,6 @@ function uiScaleSet(v){
     });});
   },300);
 }
-// 주간뷰 두 칸 자리로 옮기기 ('none'|'lc'|'cr') — 3단 위쪽 가로지른 주간뷰를 끌어 옮길 때 (v. 26-1030-2)
-//   'lc' → 좌 칸 맨 위 · 'cr' → 우 칸 맨 위 (넓이는 그대로 두 칸) · 'none' → 끄기
-function laySetWeekly(pos){
-  const L=_lay();
-  if(!['none','lc','cr'].includes(pos))return;
-  ['left','center','right'].forEach(c=>{const i=L.cols[c].indexOf('weekly');if(i>=0)L.cols[c].splice(i,1);});
-  if(pos!=='none')L.cols[pos==='lc'?'left':'right'].unshift('weekly');
-  save();
-  if(typeof renderRpConfigList==='function')renderRpConfigList();
-  renderLayout();
-}
 // 위젯별 표시 중인 달 상태 (세션 한정, 저장 안 함)
 let _rpMonthState={single:null,triple:null};
 function _rpMonthOf(offset){
@@ -26299,6 +26289,18 @@ function _rpSetMGridH(type,px){
   ST.settings.rpWidgetHeights[type]=Math.max(200,Math.min(Math.round(px),700));
   save();
 }
+// 주간뷰 위젯 높이 (v. 26-1030-3) — 주 칸 판(.wkg) 전체 높이. 값이 있으면 구간 줄들이 그 높이를 똑같이 나눠 갖고
+// 넘치는 글은 칸이 자른다 (월간뷰 위젯과 같은 결). 없으면 예전처럼 내용 높이.
+const WK_H_MIN=160,WK_H_MAX=1400;
+function _rpWkH(){
+  const hh=(ST.settings.rpWidgetHeights||{}).weekly;
+  return(typeof hh==='number'&&hh>=WK_H_MIN)?hh:null;
+}
+function _rpSetWkH(px){
+  if(!ST.settings.rpWidgetHeights)ST.settings.rpWidgetHeights={};
+  ST.settings.rpWidgetHeights.weekly=Math.max(WK_H_MIN,Math.min(Math.round(px),WK_H_MAX));
+  save();
+}
 // 말씀 목록 위젯(암송/좋아요/Deeper)의 드래그 지정 높이 — 같은 저장소를 쓰되
 // 목록은 짧게도 쓸 수 있어 최소 80px. 값이 있으면 설정의 목록 높이 비율보다 우선.
 function _rpVListH(type){
@@ -26337,6 +26339,18 @@ function _rpAttachVResize(host){
           return nh;
         };
         commit=px=>_rpSetVCardH(_vcIdOf(type),px);
+      }else if(type==='weekly'){
+        // 주간뷰: 주 칸 판(.wkg)의 높이 — 구간 줄들이 나눠 갖는다
+        const g=wEl?wEl.querySelector('.wkg'):null;
+        if(!g)return;
+        const h0=g.getBoundingClientRect().height;
+        const rows=Math.max(1,g.querySelectorAll('.wlbl').length);
+        mv=y=>{
+          const nh=Math.max(WK_H_MIN,Math.min(h0+(y-y0),WK_H_MAX));
+          g.style.height=nh+'px';g.classList.add('wkg-fixed');g.style.gridTemplateRows=`auto repeat(${rows},minmax(0,1fr))`;
+          return nh;
+        };
+        commit=px=>_rpSetWkH(px);
       }else if(isList){
         const sc=wEl?wEl.querySelector('.vl-scroll'):null;
         if(!sc)return;
@@ -33305,12 +33319,14 @@ function _rpWidgetHTML(w){
     return`<div class="rp-widget rp-todo-widget" data-wtype="todo"><div class="rp-grab" title="드래그로 위치 이동"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div><div class="rp-todo-slot"></div></div>`;
   }
   if(w.type==='weekly'){
-    // 한 칸 주간뷰 (v. 26-1030-2). 내용(#weeklyPaneInner)은 renderLayout 이 이 슬롯으로 옮겨 넣는다 —
-    // 주간뷰 그리기 · 넘기기 · 밀기가 전부 그 한 요소를 보므로 두 벌 만들지 않는다.
+    // 주간뷰 위젯 (v. 26-1030-2 · 26-1030-3). 한 칸이면 칸 안에, 두 칸이면 두 칸 자리(#wkPaneHost)에 이 껍데기가 놓이고,
+    // 내용(#weeklyPaneInner)은 renderLayout 이 슬롯으로 옮겨 넣는다 — 그리기 · 넘기기 · 밀기가 전부 그 한 요소를 보므로 두 벌 만들지 않는다.
+    // 껍데기가 늘 같아서 월간뷰처럼 위 ≡ 로 옮기고 · 우상단으로 끌어 끄고 · 아래 ≡ 로 높이를 바꾼다 (HB 2026-10-30).
     return`<div class="rp-widget rp-wk-widget" data-wtype="weekly" style="position:relative;">
       <button class="rp-wmore" onclick="rpWeeklyWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="주간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
       <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
       <div class="rp-wk-slot"></div>
+      <div class="rp-vresize" data-vrtype="weekly" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
     </div>`;
   }
   if(w.type==='monthSingle'){
@@ -33468,33 +33484,23 @@ function renderLayout(){
     mwHost.innerHTML=mwSide?_rpWidgetHTML({type:'monthSingle'}):'';
     if(fullSide)pane.classList.add('on-full');
     else if(spanSide)pane.classList.add(spanSide==='lc'?'on-lc':'on-cr');
-    // 주간뷰 내용의 자리: 한 칸이면 그 위젯 슬롯, 아니면 두 칸 자리(월간뷰 위)
-    const slot=(wkShown&&!wkSide)?document.querySelector('#pageContent .rp-wk-widget .rp-wk-slot'):null;
+    // 주간뷰 두 칸 — 월간뷰 두 칸처럼 위젯 껍데기째 이 자리에 (월간뷰보다 위)
+    let wkHost=document.getElementById('wkPaneHost');
+    if(!wkHost){wkHost=document.createElement('div');wkHost.id='wkPaneHost';}
+    if(wkHost.nextElementSibling!==mwHost)pane.insertBefore(wkHost,mwHost);
+    wkHost.innerHTML=(wkShown&&wkSide)?_rpWidgetHTML({type:'weekly'}):'';
+    // 주간뷰 내용의 자리: 그 위젯 슬롯 (한 칸이든 두 칸이든). 안 보일 땐 두 칸 자리 안에서 비워 둔다
+    const slot=wkShown?document.querySelector('#pageContent .rp-wk-widget .rp-wk-slot'):null;
     if(slot){if(paneInner.parentElement!==slot)slot.appendChild(paneInner);}
-    else if(paneInner.parentElement!==pane||paneInner.nextElementSibling!==mwHost)pane.insertBefore(paneInner,mwHost);
+    else if(paneInner.parentElement!==pane)pane.appendChild(paneInner);
     if(wkShown){
       // 전체 W뷰와 id 충돌 방지: 한쪽만 내용 보유
       const wv=document.getElementById('weeklyView');
       if(wv)wv.innerHTML='';
       renderWeekly(paneInner);
     }else paneInner.innerHTML='';
-    // 두 칸 주간뷰의 상단 ≡ 그랩 · 좌상단 … (한 칸일 땐 위젯 껍데기가 갖고 있다)
-    const og=pane.querySelector(':scope>.rp-grab'),om=pane.querySelector(':scope>.rp-wmore');
-    if(wkShown&&wkSide){
-      if(!og){
-        const g=document.createElement('div');
-        g.className='rp-grab';g.title='드래그로 위치 이동';
-        g.innerHTML='<svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg>';
-        pane.insertBefore(g,pane.firstChild);
-      }
-      if(!om){
-        const b=document.createElement('button');
-        b.className='rp-wmore';b.setAttribute('aria-label','주간뷰 너비 (1단 · 2단)');
-        b.setAttribute('onclick','rpWeeklyWideMenu(event,this)');b.setAttribute('onpointerdown','event.stopPropagation()');
-        b.innerHTML='<svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg>';
-        pane.insertBefore(b,pane.firstChild);
-      }
-    }else{if(og)og.remove();if(om)om.remove();}
+    // 예전(v. 26-1030-2 까지) 두 칸 자리에 직접 달던 ≡ · … 는 이제 껍데기가 갖는다 — 남아 있으면 치운다
+    pane.querySelectorAll(':scope>.rp-grab,:scope>.rp-wmore').forEach(e=>e.remove());
   }
 
   // ── 폭 적용 + 인터랙션 연결 ──
@@ -33505,7 +33511,6 @@ function renderLayout(){
   _rpAttachHeaderDrag(pc);
   _rpAttachVResize(pc);
   pc.querySelectorAll('.rp-mcg.mcg-fixed').forEach(_mFitCells);   // 위젯 월간뷰도 넘치는 줄은 아래부터 가림
-  _attachWeeklyPaneDrag();
   // 말씀카드: 제스처를 붙이고 본문을 컨테이너 폭에 맞춰 앉힌다.
   // 폭은 붙인 다음에야 잴 수 있으므로 반드시 여기(마지막)에서 한다.
   _vcAttachGestures(pc);
@@ -33901,72 +33906,8 @@ function _rpAttachHeaderDrag(host){
     if(needExtra){extraHandle._hdrDrag=true;bindHold(extraHandle,begin);}
   });
 }
-// 3단 주간뷰 패널 헤더(주 제목) 드래그 → 좌 드롭=좌+중, 우 드롭=중+우
-// (중앙 드롭은 2D 거리상 가까운 쪽으로 자연 귀속 — Q1 확정 스펙)
-function _attachWeeklyPaneDrag(){
-  const pane=document.getElementById('weeklyPane');
-  if(!pane)return;
-  const ttl=pane.querySelector('.mttl');
-  const grab=pane.querySelector('.rp-grab');
-  if(!ttl||ttl._wkDrag)return;
-  ttl._wkDrag=true;
-  ttl.style.cursor='grab';
-  const begin=(x,y)=>{
-    if(_layMode()!==3||!document.body.classList.contains('wk-wide'))return;
-    const colL=document.getElementById('colL'),colR=document.getElementById('colR');
-    if(!colL||!colR)return;
-    const colC=document.getElementById('colC');
-    _ghostDragStart({
-      srcEl:ttl,visualEl:pane,
-      containers:[{el:colL,key:'lc'},{el:colR,key:'cr'}],
-      rowSelector:'.rp-widget',clientX:x,clientY:y,
-      onOff:()=>{laySetWeekly('none');showToast('주간뷰 위젯을 껐어요');},
-      // 실제 들어갈 자리: 좌+중 또는 중+우 두 단의 상단을 가로지르는 라인
-      lineFor:(key)=>{
-        const pcTop=document.getElementById('pageContent').getBoundingClientRect().top;
-        const a=(key==='lc'?colL:colC).getBoundingClientRect();
-        const b=(key==='lc'?colC:colR).getBoundingClientRect();
-        return{left:Math.round(a.left),top:Math.round(pcTop+14),width:Math.round(b.right-a.left)};
-      },
-      onCommit:(key)=>{if(key==='lc'||key==='cr')laySetWeekly(key);}
-    });
-  };
-  ttl.addEventListener('mousedown',e=>{
-    if(e.target.closest('button'))return;
-    if(Date.now()-(window._rpLastTouchTs||0)<700)return;
-    e.preventDefault();begin(e.clientX,e.clientY);
-  });
-  ttl.addEventListener('touchstart',e=>{
-    if(e.target.closest('button'))return;
-    window._rpLastTouchTs=Date.now();
-    let x=e.touches[0].clientX,y=e.touches[0].clientY;
-    const tm=ev=>{if(ev.touches[0]){x=ev.touches[0].clientX;y=ev.touches[0].clientY;}};
-    ttl.addEventListener('touchmove',tm,{passive:true});
-    const t=setTimeout(()=>{ttl.removeEventListener('touchmove',tm);begin(x,y);},300);
-    const cancel=()=>{clearTimeout(t);ttl.removeEventListener('touchmove',tm);
-      ttl.removeEventListener('touchend',cancel);ttl.removeEventListener('touchcancel',cancel);};
-    ttl.addEventListener('touchend',cancel,{once:true});
-    ttl.addEventListener('touchcancel',cancel,{once:true});
-  },{passive:true});
-  if(grab&&!grab._wkDrag){
-    grab._wkDrag=true;
-    grab.addEventListener('mousedown',e=>{
-      if(Date.now()-(window._rpLastTouchTs||0)<700)return;
-      e.preventDefault();begin(e.clientX,e.clientY);
-    });
-    grab.addEventListener('touchstart',e=>{
-      window._rpLastTouchTs=Date.now();
-      let x=e.touches[0].clientX,y=e.touches[0].clientY;
-      const tm=ev=>{if(ev.touches[0]){x=ev.touches[0].clientX;y=ev.touches[0].clientY;}};
-      grab.addEventListener('touchmove',tm,{passive:true});
-      const t=setTimeout(()=>{grab.removeEventListener('touchmove',tm);begin(x,y);},300);
-      const cancel=()=>{clearTimeout(t);grab.removeEventListener('touchmove',tm);
-        grab.removeEventListener('touchend',cancel);grab.removeEventListener('touchcancel',cancel);};
-      grab.addEventListener('touchend',cancel,{once:true});
-      grab.addEventListener('touchcancel',cancel,{once:true});
-    },{passive:true});
-  }
-}
+// (예전 _attachWeeklyPaneDrag — 두 칸 주간뷰를 주 제목으로 끌던 것 — 은 v. 26-1030-3 에 지웠다.
+//  주간뷰가 늘 위젯 껍데기를 가져 _rpAttachHeaderDrag 가 다른 위젯과 똑같이 옮기고 끈다.)
 // 창 크기 변경 시 레이아웃(1/2/3단) 재평가
 window.addEventListener('resize',()=>{
   // iOS에서 date input 포커스 → 피커가 뜨며 뷰포트가 리사이즈되는데,
@@ -39390,9 +39331,7 @@ function _kbWOn(){
 function _kbWEls(){
   const out=[...document.querySelectorAll('#pageContent .rp-widget[data-wtype]')]
     .filter(el=>el.getClientRects().length>0);
-  const pane=document.getElementById('weeklyPane');
-  // 두 칸 주간뷰일 때만 — 한 칸 주간뷰는 위젯 목록에 이미 있고, 월간뷰 혼자 두 칸이면 그 안의 위젯이 잡힌다
-  if(pane&&document.body.classList.contains('wk-wide')&&pane.getClientRects().length>0){pane.dataset.wtype='weekly';out.push(pane);}
+  // (v. 26-1030-3) 주간뷰는 두 칸이어도 위젯 껍데기(.rp-widget[data-wtype=weekly])라 위 목록에 이미 있다
   return out;
 }
 function _kbWName(el){return el?(el.dataset.wtype||''):'';}
@@ -43300,11 +43239,13 @@ function renderWeekly(hostEl){
     return ` wc-grey-${Math.min(n,4)}`; // 0 = yesterday/tomorrow (start of the grey gradient), 1-4 = progressively fainter
   }
 
+  // D 화면 위젯으로 그릴 때만 끌어서 정한 높이를 쓴다 — 전체 W 화면은 예전 그대로 (v. 26-1030-3)
+  const _wkFixH=(el&&el.id==='weeklyPaneInner'&&_wkPaneActive())?_rpWkH():null;
   let h=`<div id="wViewTopStrip" style="height:14px;margin:-14px -14px 0;position:relative;z-index:1;"></div>
     <div class="mnav"><button class="nav-btn" onclick="navigateWeek(-1)">‹</button><div class="mttl">${weekOffsetLabel(wOffset)}</div><button class="nav-btn" onclick="navigateWeek(1)">›</button></div>
     ${_makeWMViewBtnsHTML()}
     <div class="add-row" id="addRowWeekly"></div>
-    <div class="wscr" id="wkGridArea"><div class="wkg">
+    <div class="wscr" id="wkGridArea"><div class="wkg${_wkFixH?' wkg-fixed':''}"${_wkFixH?` style="height:${_wkFixH}px;grid-template-rows:auto repeat(${vis.length},minmax(0,1fr));"`:''}>
     <div class="wh"></div>
     ${dates.map((d,i)=>{
       const dk=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
