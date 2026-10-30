@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-5  [production]  -->
+<!-- BLOCK7  v. 26-1030-6  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3234,6 +3234,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 .rep-scope-list{display:flex;flex-direction:column;gap:7px;}
 .rep-scope-btn{
   width:100%;padding:12px 13px;border-radius:9px;text-align:left;
+  display:flex;align-items:center;gap:12px;
   background:var(--s2);border:1px solid var(--bd2);color:var(--tx);
   font-family:var(--font-ui),sans-serif;font-size:13px;font-weight:600;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -3244,6 +3245,8 @@ body.split-d #todayView.animating{overflow:hidden;}
   display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--tx3);line-height:1.5;word-break:keep-all;
 }
 .rep-scope-btn.danger{color:var(--ov);}
+.rep-scope-btn .rep-scope-txt{flex:1;min-width:0;}
+.rep-scope-btn .rep-scope-ic{flex-shrink:0;opacity:.6;}
 
 .event-repeat-sub-grid{
   display:grid;grid-template-columns:repeat(auto-fit,minmax(38px,1fr));
@@ -6652,7 +6655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-5";
+const APP_VERSION = "v. 26-1030-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40763,7 +40766,7 @@ function _evDeleteAt(p){
   save();
   renderSecEvents(p.secId);
   refreshTaskViewsLive();   // 주간/월간 위젯 즉시 반영
-  showToast('일정을 지웠어요'+_evGcalNote(stored));
+  showToast(_toastName(stored.text)+'일정을 지웠어요'+_evGcalNote(stored));
 }
 
 // ══ 구글 캘린더 양방향 — 본체 (v26-1023-1) ══════════════════════════════
@@ -41879,6 +41882,17 @@ function _taskSetRepeat(type,secId,idx,kind){
 // 구글 캘린더가 반복 일정을 고치거나 지울 때 묻는 그 세 갈래다.
 // 여기서는 **묻기만** 한다 — 실제로 무엇을 하는지는 아래 _rep*Apply 들이 맡는다.
 let _repScopeCb=null,_repScopeCancel=null;
+// 세 갈래를 한눈에 가르는 그림 (v. 26-1030-6, HB 스케치) — 굵은 막대 = 고른 날
+//   이 날만 ┃ · 이후 ┃→ · 모두 ←┃→ . 반복 범위 묻기는 모두 _repScopeAsk 한 곳을 지나 일정·할일·옮기기 어디서나 같다
+const _REP_SCOPE_IC=(()=>{
+  const sv=b=>`<svg class="rep-scope-ic" width="30" height="16" viewBox="0 0 30 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+  const bar=x=>`<path d="M${x} 2.5v11" stroke-width="2.6"/>`;
+  return{
+    one:sv(bar(15)),
+    future:sv(bar(9)+'<path d="M9 8h15M21 5l3 3-3 3" stroke-width="1.5"/>'),
+    all:sv(bar(15)+'<path d="M4 8h22M7 5L4 8l3 3M23 5l3 3-3 3" stroke-width="1.5"/>')
+  };
+})();
 function _repScopeAsk(opt){
   const kindWord=(opt.kind==='event')?'일정':'할일';
   const list=document.getElementById('repScopeList');
@@ -41895,7 +41909,7 @@ function _repScopeAsk(opt){
   rows.forEach(r=>{
     const b=document.createElement('button');
     b.className='rep-scope-btn'+((opt.mode==='delete'&&r[0]!=='one')?' danger':'');
-    b.innerHTML=`${esc(r[1])}<span class="rep-scope-sub">${esc(r[2])}</span>`;
+    b.innerHTML=`<span class="rep-scope-txt">${esc(r[1])}<span class="rep-scope-sub">${esc(r[2])}</span></span>${_REP_SCOPE_IC[r[0]]||''}`;
     b.onclick=()=>_repScopePick(r[0]);
     list.appendChild(b);
   });
@@ -42023,6 +42037,8 @@ function _evScopeRows(mode,occ,ev,k){
     ['all',   '모든 일정',        `${_evMd(root?root.k:k)}부터 지난 것까지 반복 전체를 ${v}`]
   ];
 }
+// 무엇을 지웠는지 — 토스트 첫 줄에 이름 (v. 26-1030-6, HB). 길면 줄여서
+function _toastName(t){const x=String(t||'').replace(/\s+/g,' ').trim();return x?(x.length>24?x.slice(0,23)+'…':x)+'\n':'';}
 // 구글 캘린더에 이어진 일정이면 토스트에 한 줄 — 맞추기가 1.5초 뒤 같은 일을 구글에 한다(_gcalOnSave)
 function _evGcalNote(ev){
   try{
@@ -42178,7 +42194,7 @@ function _evDeleteApply(p,scope){
   save();
   renderSecEvents(p.secId);
   refreshTaskViewsLive();
-  showToast((scope==='one'?`${_evMd(p.occ)} 하루만 지웠어요\n반복은 그대로예요`
+  showToast(_toastName(target.text)+(scope==='one'?`${_evMd(p.occ)} 하루만 지웠어요\n반복은 그대로예요`
     :scope==='future'?`${_evMd(p.occ)}부터 앞으로 지웠어요`:'반복 전체를 지웠어요')+_evGcalNote(root?root.ev:target));
 }
 
@@ -42283,7 +42299,7 @@ function _taskDeleteApply(type,secId,idx,scope,dayKey){
   save();
   if(tKey()===k)renderSecBody(secId);else renderToday();
   updateTotal();refreshTaskViewsLive();
-  showToast(scope==='one'?'이 날짜만 지웠어요':scope==='future'?'이 날짜부터 앞으로 지웠어요':'반복 전체를 지웠어요');
+  showToast(_toastName(item.text)+(scope==='one'?'이 날짜만 지웠어요':scope==='future'?'이 날짜부터 앞으로 지웠어요':'반복 전체를 지웠어요'));
 }
 
 // ═══════ 할일 — 글자를 고쳤을 때 범위 묻기 ═══════

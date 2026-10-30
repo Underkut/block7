@@ -427,11 +427,16 @@ console.log('\n시나리오 20 — 일정: 주간뷰에서 누른 날만 지우�
   sc.eq('누른 날만 뺀 날에 적힌다', root.repeat.ex, [OCC]);
   sc.eq('10/30 에는 안 보인다', a.api.eventRepeatsOnDate(root, O, OCC), false);
   sc.eq('다음 주 11/6 에는 보인다', a.api.eventRepeatsOnDate(root, O, '2026-11-06'), true);
-  sc.eq('토스트에 날짜와 구글 한 줄', a.log.toasts[0], '10/30(금) 하루만 지웠어요\n반복은 그대로예요\n구글 캘린더에도 곧 반영돼요');
+  sc.eq('토스트: 이름 · 날짜 · 구글 한 줄', a.log.toasts[0], '기독교 역사\n10/30(금) 하루만 지웠어요\n반복은 그대로예요\n구글 캘린더에도 곧 반영돼요');
   // 구글에 안 이은 일정 · 구글을 끈 기기에서는 구글 줄이 없다
   const b = makeEnv(mk(), OCC);
   b.api._evDeleteApply({ dateKey: O, idx: 0, secId: 'pm', occ: OCC }, 'one');
-  sc.eq('구글을 안 켰으면 구글 줄은 없다', b.log.toasts[0], '10/30(금) 하루만 지웠어요\n반복은 그대로예요');
+  // 이름이 길면 줄여서 첫 줄에
+  const c = makeEnv({ [O]: { big: {}, small: {}, trash: [], events: { pm: [{ id: 'e2', time: '13:40', text: '아주 아주 긴 일정 이름이 들어가면 토스트가 넘치니까 줄인다', rid: 'r2', repeat: api0weekly() }] } } }, OCC);
+  c.api._evDeleteApply({ dateKey: O, idx: 0, secId: 'pm', occ: OCC }, 'all');
+  sc.eq('긴 이름은 24자로 줄여 첫 줄에', c.log.toasts[0].split('\n')[0], '아주 아주 긴 일정 이름이 들어가면 토스트…');
+  sc.eq('할일을 지워도 이름이 먼저', (() => { const t = makeEnv({ [OCC]: { big: { am: [{ text: '성경읽기', done: false, daily: true, rid: 'r1', repeat: rep() }] }, small: {}, trash: [], events: {} } }, OCC); t.api._taskDeleteApply('big', 'am', 0, 'one', OCC); return t.log.toasts[0]; })(), '성경읽기\n이 날짜만 지웠어요');
+  sc.eq('구글을 안 켰으면 구글 줄은 없다', b.log.toasts[0], '기독교 역사\n10/30(금) 하루만 지웠어요\n반복은 그대로예요');
 }
 
 console.log('\n시나리오 21 — 범위 묻기 문구에 날짜를 적는다');
