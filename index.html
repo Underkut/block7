@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-8  [production]  -->
+<!-- BLOCK7  v. 26-1030-9  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3463,7 +3463,8 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .wmfs-host{position:relative;}
 .wmfs.wmfs-abs{position:absolute;right:0;top:50%;transform:translateY(calc(-50% - 4px));}
 .wmfs.wmfs-head{position:absolute;right:6px;top:4px;z-index:2;}
-/* 주간 ⇄ 월간 [W|M] (v. 26-1030-8) — 미끄러지는 작은 세그먼트. 월간은 머리줄 오른쪽, 주간은 새벽 · 점심 줄 오른쪽 */
+/* 주간 ⇄ 월간 [W|M] (v. 26-1030-8) — 미끄러지는 작은 세그먼트. v. 26-1030-9 부터 둘 다 좌상단 … 바로 오른쪽에 고정 */
+.rp-wm-seg.rp-wm-abs{position:absolute;left:38px;top:3px;z-index:2;}
 .rp-whead-r{position:absolute;right:6px;top:3px;z-index:2;display:flex;align-items:center;gap:6px;}
 .rp-whead-r:empty{display:none;}
 .b7-seg.rp-wm-seg{display:inline-flex;flex:0 0 auto;gap:2px;padding:2px;margin:0;border-radius:8px;}
@@ -3471,8 +3472,24 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rp-wm-seg .b7-seg-pill{top:2px;bottom:2px;left:2px;width:24px;border-radius:6px;transition:transform .42s cubic-bezier(.25,.1,.25,1);}
 .rp-wm-seg.at-m .b7-seg-pill{transform:translateX(26px);}
 @media (prefers-reduced-motion:reduce){.rp-wm-seg .b7-seg-pill{transition:none;}}
-.add-row .rp-wm-seg{margin-left:auto;}
-.rp-wm-seg+.wmfs.wmfs-row{margin-left:6px;}
+/* 접힌 주간 · 월간 위젯 (v. 26-1030-9) — 일정 위주 요약. 테두리 · 상자 없이 글자만 */
+.rp-widget.rp-folded{cursor:pointer;}
+.rp-widget.rp-folded-line{padding-top:4px;padding-bottom:4px;}
+.rp-fold-line.rp-widget-title{justify-content:flex-start;gap:8px;margin:0;min-height:22px;padding:0 0 0 96px;
+  font:400 11.5px/1.3 var(--font-ui),sans-serif;letter-spacing:0;color:var(--tx2);}
+.rp-folded-line:not(:has(.rp-wm-seg)) .rp-fold-line.rp-widget-title{padding-left:40px;}   /* [W|M] 이 숨으면(둘 다 놓임) 그만큼 당긴다 */
+.rp-fold-line .rpf-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rp-fold-sum{display:flex;flex-direction:column;gap:3px;padding:2px 2px 2px;font:400 12px/1.35 var(--font-ui),sans-serif;color:var(--tx2);}
+.rpf-row{display:flex;align-items:baseline;gap:8px;min-width:0;}
+.rpf-row .rpf-d{flex:0 0 52px;}
+.rpf-evs{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rpf-d{color:var(--tx3);font-size:11px;white-space:nowrap;}
+.rpf-d.today{color:var(--ac-tx);font-weight:600;}
+.rpf-tm{font-family:var(--font-number);color:var(--tx2);font-size:.95em;}
+.rpf-sep,.rpf-more{color:var(--tx3);}
+.rpf-none{color:var(--tx3);}
+.rpf-fl{color:var(--sun-red);font-weight:500;white-space:nowrap;}
+.rpf-flrow .rpf-evs{color:var(--tx);}
 /* 떠 있는 작은 메뉴 — 말씀 전체화면 좌상단 '저장' 메뉴(.vf-keep-switch)와 같은 유리 모양 (B1 · A1, HB 2026-10-27) */
 .b7-pop{position:fixed;z-index:9000;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
   padding:5px 6px;color:var(--tx);
@@ -6665,7 +6682,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-8";
+const APP_VERSION = "v. 26-1030-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -33301,7 +33318,8 @@ function rpWeeklyWideMenu(ev,btn){
   _b7PopSeg(btn,'주간뷰 너비',['1단','2단'],_lay().wkWide?1:0,i=>rpSetWeeklyWide(i===1));
 }
 // ── 주간 ⇄ 월간 바꾸기 [W|M] (v. 26-1030-8, HB) ──
-// 2·3단 주간뷰 · 월간뷰 위젯 헤더 오른쪽(− + 바로 왼쪽). 누르면 **그 자리 위젯이** 주간 ↔ 월간(싱글)으로 바뀐다.
+// 2·3단 주간뷰 · 월간뷰 위젯 좌상단 … 바로 오른쪽에 **고정** (v. 26-1030-9, HB — 예전엔 − + 왼쪽이라 주간 · 월간에서 높이가 다르고
+// − + 가 있고 없음에 따라 좌우로도 옮겨 다녔다). 누르면 **그 자리 위젯이** 주간 ↔ 월간(싱글)으로 바뀐다.
 // HB (다): 둘 다 그 화면 단수 배치에 놓여 있으면 단추를 숨긴다 — 맞바꾸거나 합치지 않는다.
 // 손맛은 There 대시보드 D W M 과 같다: 누르는 순간 네모가 미끄러지기 시작하고(420ms), 판은 나가고(150ms) → 그리고 → 들어온다(300ms).
 // M 은 오른쪽 칸이라 W → M 은 왼쪽으로 나가고 오른쪽에서 들어온다.
@@ -33318,13 +33336,13 @@ function _rpWMSegHTML(type){
   if(!_rpWMSegOn(type))return'';
   const m=type==='monthSingle';
   const stop='onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"';
-  return`<div class="b7-seg rp-wm-seg${m?' at-m':''}" role="radiogroup" aria-label="주간 · 월간" ${stop}><i class="b7-seg-pill"></i>`+
+  return`<div class="b7-seg rp-wm-seg rp-wm-abs${m?' at-m':''}" role="radiogroup" aria-label="주간 · 월간" ${stop}><i class="b7-seg-pill"></i>`+
     `<button type="button" role="radio" aria-checked="${!m}"${m?'':' class="on"'} onclick="event.stopPropagation();rpSwapWM('${type}','W')">W</button>`+
     `<button type="button" role="radio" aria-checked="${m}"${m?' class="on"':''} onclick="event.stopPropagation();rpSwapWM('${type}','M')">M</button></div>`;
 }
 // 바뀌는 판 — 머리줄(… ≡ [W|M])은 그대로 두고 그 아래만 나가고 들어온다
 function _rpWMBodyEls(w){
-  return[...w.querySelectorAll('.rp-mbody,#weeklyPaneInner>.mnav,#weeklyPaneInner>.wscr')];
+  return[...w.querySelectorAll('.rp-mbody,.rp-fold,#weeklyPaneInner>.mnav,#weeklyPaneInner>.wscr')];
 }
 // 배치를 바꾼다 (화면은 안 건드린다 — 시험이 이것만 부른다)
 function _rpWMSwap(type,want){
@@ -33339,6 +33357,8 @@ function _rpWMSwap(type,want){
     const wide=type==='weekly'?!!L.wkWide:!!L.mWide,k=want==='weekly'?'wkWide':'mWide';
     if(wide)L[k]=true;else delete L[k];
   }
+  // 접힘도 자리를 따라간다 — 접어 둔 주간을 월간으로 바꿨는데 펼쳐져 나오면 안 된다 (v. 26-1030-9)
+  if(L.fold&&typeof L.fold==='object'){const f=L.fold[type];if(f)L.fold[want]=f;else delete L.fold[want];}
   // 보던 때를 이어 간다 — 주 → 그 주의 달 / 달 → 그 달의 첫 주 (이번 달이면 이번 주)
   const now=logicalNow();
   if(want==='monthSingle'){
@@ -33354,6 +33374,121 @@ function _rpWMSwap(type,want){
   }
   save();
   return true;
+}
+// ── 주간 · 월간 위젯 접기 (v. 26-1030-9, HB) ──
+// 헤더의 빈 곳(버튼 말고)을 누를 때마다 펼침 → 요약 → 한 줄 → 펼침 (HB (나)). 상태는 배치(L.fold, 기기별)에.
+// 접으면 늘 **오늘부터 앞으로** — 일정 위주, 할일은 깃발(중요)만, 암송은 뺀다 (HB 시안).
+//   한 줄 = 가장 가까운 일정 둘 + ⚑ 남은 수
+//   요약   = 일정 있는 날 최대 세 줄(주간은 이번 주 남은 날 · 월간은 30일 안, 한 날 일정 둘 + n) + ⚑ 깃발 할일 둘 + n
+const _RP_FOLD_NEXT={'':'sum',sum:'line',line:''};
+function _rpFoldOf(type){
+  const f=((_lay().fold)||{})[type];
+  return(f==='sum'||f==='line')?f:'';
+}
+// 오늘부터 앞으로의 일정 · 오늘의 깃발 할일 (화면을 안 건드린다 — 시험이 이것만 부른다)
+function _rpFoldData(type){
+  const now=logicalNow(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const span=type==='weekly'?(7-t0.getDay()):30;
+  const hhmm=z(now.getHours())+':'+z(now.getMinutes());
+  const seen=new Set(),days=[];
+  for(let i=0;i<span;i++){
+    const d=new Date(t0);d.setDate(t0.getDate()+i);
+    const k=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
+    let evs=SECS.flatMap(sc=>getDisplayEvents(k,sc.id));
+    evs=evs.filter(ev=>{
+      if(!ev||!String(ev.text||'').trim())return false;
+      if(i===0&&ev.time&&ev.time<hhmm&&!(ev._spanN>1))return false;   // 오늘 이미 지난 것
+      // 여러 날 일정은 처음 보이는 날 한 번만 (오늘 이어지는 중이면 오늘)
+      const key=(ev._spanN>1?(ev._spanFrom||k):k)+'|'+(ev.time||'')+'|'+ev.text;
+      if(seen.has(key))return false;
+      seen.add(key);return true;
+    });
+    evs.sort((a,b)=>(a.time||'')<(b.time||'')?-1:(a.time||'')>(b.time||'')?1:0);   // 종일(시간 없음) 먼저
+    if(evs.length)days.push({k,d,i,evs});
+  }
+  const tk=todayKey(),flags=[];
+  SECS.forEach(sc=>['big','small'].forEach(ty=>getDisplayTasks(tk,sc.id,ty).forEach(t=>{
+    if(t&&t.flag&&!t.done&&String(t.text||'').trim())flags.push(t);
+  })));
+  return{days,flags};
+}
+function _rpFoldDayLabel(x){
+  if(x.i===0)return'오늘';
+  if(x.i===1)return'내일';
+  return'일월화수목금토'[x.d.getDay()]+' '+(x.d.getMonth()+1)+'/'+x.d.getDate();
+}
+function _rpFoldEvHTML(ev){
+  const tm=ev.time?`<span class="rpf-tm">${esc(formatEventTime(ev.time))}</span> `:'';
+  return`<span class="rpf-ev">${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
+}
+function _rpFoldFlagTxt(t){return esc(String(t.text||'').replace(/\s+/g,' ').trim());}
+// 한 줄 — 머리줄(≡ 자리)에 그대로 들어간다. 이 줄을 잡고 끌어 옮길 수도 있다
+function _rpFoldLineRow(type){
+  const{days,flags}=_rpFoldData(type),items=[];
+  let lastDay=null;   // 같은 날 둘째 일정은 날 이름을 다시 안 쓴다 ('오늘 … · 오늘 …' 대신 '오늘 … · …')
+  days.forEach(x=>x.evs.forEach(ev=>{
+    if(items.length>=2)return;
+    items.push((lastDay===x.k?'':`<span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span> `)+_rpFoldEvHTML(ev));
+    lastDay=x.k;
+  }));
+  const body=items.length?items.join('<span class="rpf-sep"> · </span>'):'<span class="rpf-none">다가오는 일정 없음</span>';
+  const fl=flags.length?`<span class="rpf-fl" title="오늘 깃발 할일">⚑${flags.length}</span>`:'';
+  return`<div class="rp-widget-title rp-fold rp-fold-line"><span class="rpf-txt">${body}</span>${fl}</div>`;
+}
+// 요약 — 머리줄 아래에 일정 있는 날 세 줄 + 깃발 한 줄
+function _rpFoldSumHTML(type){
+  const{days,flags}=_rpFoldData(type);
+  let h='';
+  days.slice(0,3).forEach(x=>{
+    const more=x.evs.length-2;
+    h+=`<div class="rpf-row"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${x.evs.slice(0,2).map(_rpFoldEvHTML).join('<span class="rpf-sep"> · </span>')}${more>0?` <span class="rpf-more">+${more}</span>`:''}</span></div>`;
+  });
+  if(!days.length)h+=`<div class="rpf-row"><span class="rpf-none">다가오는 일정 없음</span></div>`;
+  if(flags.length){
+    const more=flags.length-2;
+    h+=`<div class="rpf-row rpf-flrow"><span class="rpf-d rpf-fl">⚑</span><span class="rpf-evs">${flags.slice(0,2).map(_rpFoldFlagTxt).join('<span class="rpf-sep"> · </span>')}${more>0?` <span class="rpf-more">+${more}</span>`:''}</span></div>`;
+  }
+  return`<div class="rp-fold rp-fold-sum">${h}</div>`;
+}
+function rpFoldCycle(type){
+  const L=_lay();
+  if(!L.fold||typeof L.fold!=='object'||Array.isArray(L.fold))L.fold={};
+  const old=document.querySelector('#pageContent .rp-widget[data-wtype="'+type+'"]');
+  const h0=old?old.getBoundingClientRect().height:0;
+  const nx=_RP_FOLD_NEXT[_rpFoldOf(type)];
+  if(nx)L.fold[type]=nx;else delete L.fold[type];
+  save();
+  renderLayout();
+  if(_tfQuiet()||!h0)return;
+  // 높이가 스르륵 — 접히고 펴진다 (CLAUDE.md 화면 전환). 끝에서 덜컥하지 않게 위젯 상자 하나만 움직인다
+  const n=document.querySelector('#pageContent .rp-widget[data-wtype="'+type+'"]');
+  if(!n||!n.animate)return;
+  const h1=n.getBoundingClientRect().height;
+  if(Math.abs(h1-h0)<2)return;
+  n.style.overflow='hidden';
+  const a=n.animate([{height:h0+'px'},{height:h1+'px'}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'});
+  const done=()=>{n.style.overflow='';};
+  a.onfinish=done;a.oncancel=done;
+  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'}));
+}
+// 헤더 빈 곳 누르기 → 접기 순환. 펼침일 땐 머리줄 · ‹ 제목 › 줄 · 여백만, 접힘일 땐 위젯 어디든(버튼 말고).
+// ⚠️ 끌어 옮긴 직후의 click 은 무시한다 (_rpDragEndTs) — 놓는 순간 접히면 안 된다.
+function _rpAttachFoldTap(host){
+  host.querySelectorAll('.rp-widget[data-wtype="weekly"],.rp-widget[data-wtype="monthSingle"]').forEach(w=>{
+    if(w._foldTap)return;w._foldTap=true;
+    w.addEventListener('click',e=>{
+      if(Date.now()-(window._rpDragEndTs||0)<400)return;
+      if(!_kbWOn())return;
+      const t=e.target;
+      if(t.closest('button,a,input,select,textarea,label,[onclick],.rp-wm-seg,.rp-vresize,.wmfs'))return;
+      const folded=w.classList.contains('rp-folded');
+      if(!folded){
+        if(t.closest('.rp-mcg,.rp-triple-row,.wscr,.add-row,.wmview-btns'))return;
+        if(t!==w&&!t.closest('.rp-widget-title,.mnav,.rp-mnav,#wViewTopStrip'))return;
+      }
+      rpFoldCycle(w.dataset.wtype);
+    });
+  });
 }
 function rpSwapWM(type,to){
   const want=to==='M'?'monthSingle':'weekly';
@@ -33485,18 +33620,29 @@ function _rpWidgetHTML(w){
     // 주간뷰 위젯 (v. 26-1030-2 · 26-1030-3). 한 칸이면 칸 안에, 두 칸이면 두 칸 자리(#wkPaneHost)에 이 껍데기가 놓이고,
     // 내용(#weeklyPaneInner)은 renderLayout 이 슬롯으로 옮겨 넣는다 — 그리기 · 넘기기 · 밀기가 전부 그 한 요소를 보므로 두 벌 만들지 않는다.
     // 껍데기가 늘 같아서 월간뷰처럼 위 ≡ 로 옮기고 · 우상단으로 끌어 끄고 · 아래 ≡ 로 높이를 바꾼다 (HB 2026-10-30).
-    return`<div class="rp-widget rp-wk-widget" data-wtype="weekly" style="position:relative;">
+    // 접힘(v. 26-1030-9): 한 줄 · 요약이면 내용 대신 요약을 껍데기가 직접 갖는다 — #weeklyPaneInner 는 비워 둔다
+    const wf=_rpFoldOf('weekly');
+    return`<div class="rp-widget rp-wk-widget${wf?' rp-folded rp-folded-'+wf:''}" data-wtype="weekly" style="position:relative;">
       <button class="rp-wmore" onclick="rpWeeklyWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="주간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
-      <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
-      <div class="rp-wk-slot"></div>
-      <div class="rp-vresize" data-vrtype="weekly" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>
+      ${_rpWMSegHTML('weekly')}
+      ${wf==='line'?_rpFoldLineRow('weekly'):`<div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>`}
+      ${wf==='sum'?_rpFoldSumHTML('weekly'):wf?'':'<div class="rp-wk-slot"></div>'}
+      ${wf?'':`<div class="rp-vresize" data-vrtype="weekly" title="드래그로 높이 조절"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>`}
     </div>`;
   }
   if(w.type==='monthSingle'){
     const s=_rpMonthState.single||(_rpMonthState.single=_rpMonthOf(0));
-    return`<div class="rp-widget rp-mslide" data-rpswipe="single" data-wtype="monthSingle" style="position:relative;">
-      <div class="rp-whead-r">${_rpWMSegHTML('monthSingle')}${_wmFsHTML('')}</div>
+    const mf=_rpFoldOf('monthSingle');
+    if(mf)return`<div class="rp-widget rp-folded rp-folded-${mf}" data-wtype="monthSingle" style="position:relative;">
       <button class="rp-wmore" onclick="rpMonthWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="월간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
+      ${_rpWMSegHTML('monthSingle')}
+      ${mf==='line'?_rpFoldLineRow('monthSingle'):`<div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>`}
+      ${mf==='sum'?_rpFoldSumHTML('monthSingle'):''}
+    </div>`;
+    return`<div class="rp-widget rp-mslide" data-rpswipe="single" data-wtype="monthSingle" style="position:relative;">
+      <div class="rp-whead-r">${_wmFsHTML('')}</div>
+      <button class="rp-wmore" onclick="rpMonthWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="월간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
+      ${_rpWMSegHTML('monthSingle')}
       <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
       <div class="rp-mbody">
         <div class="rp-mnav">
@@ -33553,12 +33699,14 @@ function renderLayout(){
   const spanSide=mode===3?(wkSide||mwSide):null;
   const fullSide=mode===2&&(wkSide==='full'||mwSide==='full');
   // 주간뷰가 D 화면 어딘가(칸 안 · 두 칸 자리)에 떠 있는가 — 2단부터 (1단 폰은 위젯이 없다)
-  const wkShown=mode>=2&&!!_layColOf(L,'weekly',mode);
+  // 주간뷰가 놓여 있는가 / 그 내용(#weeklyPaneInner)이 떠 있는가 — 접혀 있으면 껍데기(요약)만 (v. 26-1030-9)
+  const wkPlaced=mode>=2&&!!_layColOf(L,'weekly',mode);
+  const wkShown=wkPlaced&&!_rpFoldOf('weekly');
   document.body.classList.toggle('wk-lc',spanSide==='lc');
   document.body.classList.toggle('wk-cr',spanSide==='cr');
   document.body.classList.toggle('mw-full',fullSide);
   document.body.classList.toggle('wk-shown',wkShown);
-  document.body.classList.toggle('wk-wide',wkShown&&!!wkSide);
+  document.body.classList.toggle('wk-wide',wkPlaced&&!!wkSide);
   // 주간뷰 내용은 한 요소다 — 칸을 다시 그리기 전에 쥐어 둔다 (슬롯이 지워져도 살아 있게)
   const wkInner=document.getElementById('weeklyPaneInner');
 
@@ -33647,7 +33795,7 @@ function renderLayout(){
     let wkHost=document.getElementById('wkPaneHost');
     if(!wkHost){wkHost=document.createElement('div');wkHost.id='wkPaneHost';}
     if(wkHost.nextElementSibling!==mwHost)pane.insertBefore(wkHost,mwHost);
-    wkHost.innerHTML=(wkShown&&wkSide)?_rpWidgetHTML({type:'weekly'}):'';
+    wkHost.innerHTML=(wkPlaced&&wkSide)?_rpWidgetHTML({type:'weekly'}):'';
     // 주간뷰 내용의 자리: 그 위젯 슬롯 (한 칸이든 두 칸이든). 안 보일 땐 두 칸 자리 안에서 비워 둔다
     const slot=wkShown?document.querySelector('#pageContent .rp-wk-widget .rp-wk-slot'):null;
     if(slot){if(paneInner.parentElement!==slot)slot.appendChild(paneInner);}
@@ -33669,6 +33817,7 @@ function renderLayout(){
   _attachVliMenus(pc);
   _rpAttachHeaderDrag(pc);
   _rpAttachVResize(pc);
+  _rpAttachFoldTap(pc);
   pc.querySelectorAll('.rp-mcg.mcg-fixed').forEach(_mFitCells);   // 위젯 월간뷰도 넘치는 줄은 아래부터 가림
   // 말씀카드: 제스처를 붙이고 본문을 컨테이너 폭에 맞춰 앉힌다.
   // 폭은 붙인 다음에야 잴 수 있으므로 반드시 여기(마지막)에서 한다.
@@ -33948,10 +34097,16 @@ function _ghostDragStart(opt){
     }
   };
   place(opt.clientX??r.left+r.width/2,opt.clientY??r.top);
-  const mm=e=>place(e.clientX,e.clientY);
+  // 한 번도 움직이지 않고 놓으면 아무 일도 없다 (v. 26-1030-9) — 꾹 눌렀다 그냥 뗀 것이 '옮기기' 가 되면 안 된다.
+  // (두 칸 위젯은 포인터가 어느 칸 위에 있느냐로 자리가 정해져, 그냥 떼도 좌+중 ↔ 중+우 로 오갔다)
+  const sx0=opt.clientX??r.left+r.width/2,sy0=opt.clientY??r.top;
+  let moved=false;
+  const _place=place;
+  const placeM=(x,y)=>{if(!moved&&Math.hypot(x-sx0,y-sy0)>6)moved=true;_place(x,y);};
+  const mm=e=>placeM(e.clientX,e.clientY);
   // ⚠️ 손가락으로 끄는 동안 화면(뒤 배경 · 팝업)이 손가락을 따라 같이 밀렸다 (HB 2026-10-30) —
   //    touchmove 를 passive 로 달아 스크롤을 막지 못했다. 끄는 동안만 막는다.
-  const tm=e=>{if(e.cancelable)e.preventDefault();if(e.touches[0])place(e.touches[0].clientX,e.touches[0].clientY);};
+  const tm=e=>{if(e.cancelable)e.preventDefault();if(e.touches[0])placeM(e.touches[0].clientX,e.touches[0].clientY);};
   const up=()=>{
     document.removeEventListener('mousemove',mm);
     document.removeEventListener('mouseup',up);
@@ -33964,6 +34119,8 @@ function _ghostDragStart(opt){
     document.querySelectorAll('.rp-add-wrap.drop-dim').forEach(w=>w.classList.remove('drop-dim'));
     _srcRestore.classList.remove('rp-drag-src');
     window._rpDragSession=false;
+    window._rpDragEndTs=Date.now();   // 놓자마자 오는 click 은 접기가 무시한다
+    if(!moved)return;
     if(offHit&&typeof opt.onOff==='function'){opt.onOff();return;}
     if(targetIdx!==null){
       if(multi)onCommit(targetKey,targetIdx);
@@ -33981,10 +34138,18 @@ function _ghostDragStart(opt){
 function _rpAttachHeaderDrag(host){
   // 공용 홀드 진입 바인더 (마우스 즉시 / 터치 300ms 홀드)
   const bindHold=(handle,begin)=>{
+    // 마우스: 누른 채 5px 넘게 움직여야 끌기 시작 (v. 26-1030-9). 예전엔 누르는 즉시 시작해,
+    // 누르기만 해도 놓는 자리(포인터 아래 칸)로 '옮겨' 졌다 — 두 칸 위젯은 좌+중 ↔ 중+우 로 오갔다.
+    // 그냥 누른 것은 click 으로 남아 접기(_rpAttachFoldTap)가 받는다.
     handle.addEventListener('mousedown',e=>{
-      if(e.target.closest('button'))return;
+      if(e.button!==0||e.target.closest('button'))return;
       if(Date.now()-(window._rpLastTouchTs||0)<700)return; // 터치 후 가짜 mousedown 무시
-      e.preventDefault();begin(e.clientX,e.clientY);
+      e.preventDefault();
+      const sx=e.clientX,sy=e.clientY;
+      const mv=ev=>{if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>5){off();begin(ev.clientX,ev.clientY);}};
+      const off=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',off);};
+      document.addEventListener('mousemove',mv);
+      document.addEventListener('mouseup',off);
     });
     handle.addEventListener('touchstart',e=>{
       if(e.target.closest('button'))return;
@@ -43691,10 +43856,7 @@ function renderWeekly(hostEl){
   // +/- expand-all button (weekly view has no per-section collapse
   // concept) and refreshing renderWeekly() instead of renderToday().
   renderAddRow('addRowWeekly',renderWeekly,false);
-  {const ar=el.querySelector('#addRowWeekly'),fs=_wmFsHTML('wmfs-row');
-   // D 화면 위젯일 때만 [W|M] (v. 26-1030-8) — − + 바로 왼쪽. 전체 W 화면에는 없다
-   const sg=(el.id==='weeklyPaneInner'&&_wkPaneActive())?_rpWMSegHTML('weekly'):'';
-   if(ar&&(sg||fs))ar.insertAdjacentHTML('beforeend',sg+fs);}
+  {const ar=el.querySelector('#addRowWeekly'),fs=_wmFsHTML('wmfs-row');if(ar&&fs)ar.insertAdjacentHTML('beforeend',fs);}
 
   initWeeklySwipe();
   attachPullToToday('weekSwipeCatcher',()=>{wOffset=0;renderWeekly();},'이번주로');
