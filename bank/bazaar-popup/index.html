@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 바자회 팝업 코너 계좌 안내 · v. 26-1031-5 · 원본은 bank/index.html(연탄) 에서 갈라져 나왔다 — 은행 표를 고치면 둘 다 고친다 -->
+<!-- 바자회 팝업 코너 계좌 안내 · v. 26-1031-7 · 원본은 bank/index.html(연탄) 에서 갈라져 나왔다 — 은행 표를 고치면 둘 다 고친다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -45,6 +45,9 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
 .grid a:active{transform:scale(.96)}
 .grid i{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.05;text-align:center}
 .grid i img{display:none}.grid i.logo{background:none!important;box-shadow:none!important;font-size:0}.grid i.logo img{display:block;width:100%;height:100%;border-radius:14px;object-fit:cover}
+.morew{display:grid;grid-template-rows:0fr;transition:grid-template-rows .35s cubic-bezier(.22,.8,.24,1)}.morew>div{overflow:hidden;min-height:0}.morew.open{grid-template-rows:1fr}.morew #appsMore{padding-top:9px}
+.moreb{display:flex;align-items:center;justify-content:center;gap:4px;margin:12px auto 0;border:0;background:none;color:var(--accent);font:inherit;font-size:15px;font-weight:600;padding:8px 14px;cursor:pointer}.moreb svg{width:18px;height:18px;transition:transform .3s}.moreb.open svg{transform:rotate(180deg)}
+@media (prefers-reduced-motion:reduce){.morew,.moreb svg{transition:none}}
 .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:999px;white-space:nowrap}
 .safe{font-size:13px;color:var(--sub);text-align:center;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:5px}
 .safe svg{width:14px;height:14px}
@@ -79,6 +82,8 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
   <h2>내 은행을 누르면 바로 송금 페이지로</h2>
   <p class="hint">계좌번호는 자동으로 복사되고, 은행 앱이 열려요</p>
   <nav class="grid" id="apps"></nav>
+  <div class="morew" id="moreWrap"><div><nav class="grid" id="appsMore"></nav></div></div>
+  <button class="moreb" id="moreBtn" onclick="toggleMore()"><span>더 보기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <p class="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>비밀번호는 여기서 받지 않아요 · 송금은 내 은행 앱에서</p>
   <p class="place">📍 <b>주님의 교회</b> 라운지 및 앞마당<br>따뜻한 나눔에 함께해 주셔서 감사합니다 🧡</p>
   <img class="market" src="market.jpg" alt="">
@@ -96,12 +101,11 @@ const APPS=[
   ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹',0,'kb','373742138','com.kbstar.kbbank','kbbank://call'], // ✔
   ['신한은행','#0046ff','#fff','SOL','shinhansol://','신한 SOL뱅크',0,'shinhan','357484932','com.shinhan.sbanking'], // ✔
   ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹',0,'woori','1470181651','com.wooribank.smart.npib','wooribank://'], // ✔
-  ['NH스마트','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
-  ['지역농협','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
   ['하나은행','#008c73','#fff','1Q','hanabank-oqf://','하나원큐',0,'hana','6743190232','com.hanabank.oqf'],
+  ['NH스마트','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
   ['NH콕뱅크','#fff','#1d9b5e','콕','nhcok://','NH콕뱅크',0,'nhcok','1131147442','nh.smart.nhcok'],
-  ['지역농협 콕','#fff','#1d9b5e','콕','nhcok://','NH콕뱅크',0,'nhcok','1131147442','nh.smart.nhcok'],
   ['IBK기업','#fff','#0b4ea2','i-ONE','ionebank://','i-ONE Bank',0,'ibk','1460543865','com.ibk.android.ionebank'],
+  ['SC제일','#fff','#0473ea','SC','scbmobile://','SC제일은행',0,'sc','1457418899','com.scbank.ma30'],
   ['케이뱅크','#0b1d8c','#fff','K','ukbanksmartbank://','케이뱅크',0,'kbank','1178872627','com.kbankwith.smartbank','ukbanksmartbankshortcut://'],
   ['새마을금고','#fff','#0062b1','MG','kfccsb://','MG더뱅킹',0,'mg','425089902','com.smg.spbs'],
   ['우체국','#e5322d','#fff','우체국','com.epost.psf.sd://','우체국뱅킹',0,'epost','554920991','com.epost.psf.sdsi'],
@@ -112,7 +116,6 @@ const APPS=[
   ['수협은행','#fff','#0a5aa8','Sh','kakao4251fde6ccd98c9326127797ddd3aad0://kakaolink','수협 파트너뱅크',0,'suhyup','1229985989','com.suhyup.psmb','suhyuppsmb://suhyuplink'],
   ['광주은행','#fff','#2a50d8','Wa','kakao6ec8812a5d4d44c18cadd24f2dd65eca://kakaolink','광주은행',0,'kjbank','1576149106','com.kjbank.asb.pbanking','kjbank://asb'],
   ['전북은행','#0b3fd8','#fff','JB','jbprivatebank://','전북은행',0,'jbbank','1547903285','kr.co.jbbank.privatebank'],
-  ['SC제일','#fff','#0473ea','SC','scbmobile://','SC제일은행',0,'sc','1457418899','com.scbank.ma30'],
   ['SBI저축은행','#fff','#0a7fd8','SBI','saidabank://deep_link_url','사이다뱅크',0,'sbi','','com.sbi.saidabank','sbi://sbi_url'],
   ['산업은행','#00468c','#fff','KDB','smartkdb://','KDB산업은행',0,'kdb','','co.kr.kdb.android.smartkdb','smartkdbnvs://'],
   ['제주은행','#fff','#0a4fe0','J','newjbanksmart://action','제주은행',0,'jeju','6443788309','com.jejubank.smartnew'],
@@ -124,8 +127,13 @@ const store=a=>isIOS?(a[8]?'https://apps.apple.com/kr/app/id'+a[8]:null):'https:
 const href=a=>{ if(!a[4]) return '#'; if(!isAnd) return a[4];
   const [sch,rest]=(a[10]||a[4]).split('://');
   return 'intent://'+rest+'#Intent;scheme='+sch+';package='+a[9]+';S.browser_fallback_url='+encodeURIComponent(store(a))+';end'; };
-document.getElementById('apps').innerHTML=APPS.map((a,i)=>
-  `<a href="${href(a)}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}"><img src="../logos/${a[7]}.png" alt="" onload="this.parentNode.classList.add('logo')" onerror="this.remove()">${a[3]}</i>${a[0]}</a>`).join('');
+const TILES=APPS.map((a,i)=>
+  `<a href="${href(a)}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}"><img src="../logos/${a[7]}.png" alt="" onload="this.parentNode.classList.add('logo')" onerror="this.remove()">${a[3]}</i>${a[0]}</a>`);
+// 처음 두 줄(8개)만 보이고 나머지는 '더 보기' 로 편다 — 높이가 스르륵 펴진다
+document.getElementById('apps').innerHTML=TILES.slice(0,8).join('');
+document.getElementById('appsMore').innerHTML=TILES.slice(8).join('');
+function toggleMore(){ const w=document.getElementById('moreWrap'), b=document.getElementById('moreBtn'); const on=w.classList.toggle('open'); b.classList.toggle('open',on); b.querySelector('span').textContent=on?'접기':'은행 '+(TILES.length-8)+'곳 더 보기'; }
+toggleMore(); toggleMore();
 document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',e=>{
   const a=APPS[el.dataset.i];
   copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
