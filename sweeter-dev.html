@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1030-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6655,7 +6655,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-6";
+const APP_VERSION = "v. 26-1030-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35195,7 +35195,7 @@ function _openGhostInput(secId, type, pos){
     ghost.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 10px 9px 12px;background:rgba(var(--ac-rgb),.08);border:1px dashed var(--bd2);border-radius:8px;margin-bottom:4px;';
     const inp=document.createElement('input');
     inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx);font-family:var(--font-ui),sans-serif;font-size:14px;font-weight:500;';
-    inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
+    inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
     // ⚠️ 쓰기 시작한 "그 날짜"를 붙잡아 둔다. 커밋은 blur 후 100ms 뒤에 도는데,
     //    그 사이에 날짜가 넘어가면(←/→ 키·‹› 버튼·자정) tKey() 가 다른 날을
     //    가리켜 쓰던 할일이 엉뚱한 날짜에 저장됐다 (v26-0802-5).
@@ -35232,9 +35232,10 @@ function _openGhostInput(secId, type, pos){
     inp.onfocus=()=>{if(_blurT){clearTimeout(_blurT);_blurT=null;}};
     inp.onkeydown=e=>{
       // Enter = 등록하고 입력 모드 끝 / Tab = 등록하고 다음 입력칸 이어가기
+      // 휴대폰 자판의 '이동'(Enter)은 Tab 처럼 이어간다 — 빈 칸에서 누르면 끝 (v. 26-1030-7, HB)
       if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing){
         e.preventDefault();
-        const keepGoing=(e.key==='Tab');
+        const keepGoing=(e.key==='Tab')||_softEnter();
         const v=inp.value.trim();
         if(!v){committed=true;ghost.remove();return;}
         committed=true;
@@ -35279,7 +35280,7 @@ function _openGhostInput(secId, type, pos){
     ghost.style.cssText='display:flex;align-items:center;padding:7px 9px 7px 12px;margin-left:12px;background:var(--s2);border:1px dashed var(--bd2);border-radius:7px;margin-top:4px;';
     const inp=document.createElement('input');
     inp.type='text';inp.style.cssText='flex:1;background:transparent;border:none;outline:none;color:var(--tx2);font-family:var(--font-ui),sans-serif;font-size:13px;';
-    inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','done');
+    inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
     // ⚠️ 큰 할일 고스트와 같은 이유로 쓰기 시작한 날짜를 붙잡아 둔다 (v26-0802-5)
     const dayKey=tKey();
     let committed=false;
@@ -35331,9 +35332,10 @@ function _openGhostInput(secId, type, pos){
       if(_blurT){clearTimeout(_blurT);_blurT=null;_dlog('[고스트] 예약된 커밋 취소됨');}};
     inp.onkeydown=e=>{
       // Enter = 등록하고 입력 모드 끝 / Tab = 등록하고 다음 입력칸 이어가기
+      // 휴대폰 자판의 '이동'(Enter)은 Tab 처럼 이어간다 — 빈 칸에서 누르면 끝 (v. 26-1030-7, HB)
       if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing){
         e.preventDefault();
-        const keepGoing=(e.key==='Tab');
+        const keepGoing=(e.key==='Tab')||_softEnter();
         const v=inp.value.trim();
         if(!v){committed=true;ghost.remove();return;}
         inp.value='';committed=false;
@@ -35398,7 +35400,7 @@ function renderSecBody(id){
   inlineLabel.id=`til-${id}`;inlineLabel.textContent='빅';
   const inlineInp=document.createElement('input');
   inlineInp.type='text';inlineInp.className='ts-inline-inp';inlineInp.id=`tii-inp-${id}`;
-  inlineInp.setAttribute('inputmode','text');inlineInp.setAttribute('enterkeyhint','done');
+  inlineInp.setAttribute('inputmode','text');inlineInp.setAttribute('enterkeyhint','go');
   inlineInp.placeholder='내용 입력 후 엔터';
   inlineInp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
@@ -36042,7 +36044,7 @@ function _makeSubRow(type,secId,idx,j,sub){
 
   const inp=document.createElement('input');
   inp.type='text';inp.className='sub-inp';inp.value=(sub&&sub.text)||'';
-  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
   inp.placeholder='하위 할일';
   inp.onclick=e=>e.stopPropagation();
   inp.oninput=()=>{
@@ -36071,6 +36073,14 @@ function _makeSubRow(type,secId,idx,j,sub){
       const at=rows.indexOf(inp);
       if(at>=0&&rows[at+1])rows[at+1].focus();
       else _subFocusGhost(type,secId,idx);
+      // 비운 줄은 blur 에서 지워지며 판이 다시 그려진다 — 막 옮겨 간 칸도 같이 사라지니
+      // 새 판에서 같은 자리(지운 줄 다음 = 이제 j 번째)를 다시 찾아 건다 (v. 26-1030-7)
+      const ae=document.activeElement;
+      if(!ae||ae===document.body||!ae.isConnected){
+        const p2=document.getElementById(_subGhostId(type,secId,idx))?.closest('.sub-panel');
+        const r2=p2?p2.querySelectorAll('.sub-inp'):[];
+        if(r2[j])r2[j].focus();else _subFocusGhost(type,secId,idx);
+      }
     }
     if(e.key==='Escape'){e.preventDefault();inp.blur();}
   };
@@ -36101,6 +36111,7 @@ function _makeSubGhost(type,secId,idx){
   const ta=document.createElement('textarea');
   ta.className='sub-add';ta.rows=1;ta.id=_subGhostId(type,secId,idx);
   ta.placeholder='하위 할일 추가 (엔터)';
+  ta.setAttribute('enterkeyhint','go');   // 휴대폰 자판도 파란 '이동' — 넣고 이 칸에 그대로 (v. 26-1030-7)
   const fit=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';};
   let committing=false;
   const commit=()=>{
@@ -36115,7 +36126,13 @@ function _makeSubGhost(type,secId,idx){
   ta.oninput=fit;
   ta.onkeydown=e=>{
     if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229){
-      e.preventDefault();commit();
+      e.preventDefault();
+      // 휴대폰: 빈 칸에서 '이동' = 입력 끝 (안 그러면 끝낼 길이 위 띠 '완료' 뿐이다)
+      if(!ta.value.trim()&&_softEnter()){ta.value='';fit();ta.blur();return;}
+      commit();
+      // 넣으면 판이 다시 그려져 이 칸이 사라진다 → 새 칸에 **곧바로** 건다. _subAdd 의 40ms 뒤
+      // focus 만으로는 아이폰 자판이 내려갔다 올라온다 (v. 26-1030-7)
+      _subFocusGhost(type,secId,idx);
     }
     if(e.key==='Escape'){e.preventDefault();ta.value='';fit();ta.blur();}
   };
@@ -37198,7 +37215,7 @@ function _longEditOpen(inp){
   const cs=getComputedStyle(inp),h0=inp.offsetHeight;
   const ta=document.createElement('textarea');
   ta.className='task-lta';ta.rows=1;ta.value=inp.value;
-  ta.setAttribute('enterkeyhint','done');ta.spellcheck=false;
+  ta.setAttribute('enterkeyhint','go');ta.spellcheck=false;   // 휴대폰 '이동' = 다음 칸 (원래 칸의 처리로 넘긴다)
   ta.style.fontSize=cs.fontSize;ta.style.fontWeight=cs.fontWeight;ta.style.fontFamily=cs.fontFamily;ta.style.color=cs.color;
   inp.after(ta);row.classList.add('lta-on');
   const ob=inp.onblur;inp.onblur=null;
@@ -37307,7 +37324,7 @@ function makeBigItem(id,i,b,secColor){
 
   const inp=document.createElement('input');
   inp.type='text';inp.value=b.text||'';inp.className='bi-inp';
-  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
   inp.placeholder='빅 블럭';
   autoSizeInput(inp);
 
@@ -37333,7 +37350,14 @@ function makeBigItem(id,i,b,secColor){
   inp.onkeydown=e=>{
     // Enter = 편집을 마치고 그 줄을 고른 채로 빠져나온다 (Tab 은 예전처럼 다음 칸으로) — v26-1015-11, HB
     if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-      e.preventDefault();_finishEditKeepRow('big',id,i,inp);return;
+      e.preventDefault();
+      // 휴대폰 자판의 '이동' = 저장하고 다음 칸으로 (v. 26-1030-7, HB). 반복 할일의 글을 바꿨으면
+      // '어디까지 바꿀까' 를 물어야 하니 예전처럼 끝낸다 — 자판을 띄운 채 묻기 창을 덮지 않게.
+      if(_softEnter()){
+        const it=getBigs(tKey(),id)[i];
+        if(!(it&&it.rid&&inp.value!==_origText&&inp.value.trim())){_taskEnterNext('big',id,inp);return;}
+      }
+      _finishEditKeepRow('big',id,i,inp);return;
     }
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
@@ -37408,7 +37432,7 @@ function makeBigGhost(id,secColor){
   const icon=document.createElement('span');icon.className='ba-icon';icon.textContent='';
   const inp=document.createElement('input');
   inp.type='text';inp.className='ba-inp';
-  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
   let buf='';
   let justEntered=false; // flag: entered via Enter key, skip blur re-render
   inp.oninput=()=>{buf=inp.value;};
@@ -37533,7 +37557,7 @@ function makeSmItem(id,i,sm,secColor){
 
   const inp=document.createElement('input');
   inp.type='text';inp.value=sm.text||'';inp.className='si-inp';
-  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
   inp.placeholder='할 일';
   autoSizeInput(inp);
 
@@ -37555,7 +37579,14 @@ function makeSmItem(id,i,sm,secColor){
   };
   inp.onkeydown=e=>{
     if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
-      e.preventDefault();_finishEditKeepRow('small',id,i,inp);return;
+      e.preventDefault();
+      // 휴대폰 자판의 '이동' = 저장하고 다음 칸으로 (v. 26-1030-7, HB). 반복 할일의 글을 바꿨으면
+      // '어디까지 바꿀까' 를 물어야 하니 예전처럼 끝낸다 — 자판을 띄운 채 묻기 창을 덮지 않게.
+      if(_softEnter()){
+        const it=getSmalls(tKey(),id)[i];
+        if(!(it&&it.rid&&inp.value!==_origText&&inp.value.trim())){_taskEnterNext('small',id,inp);return;}
+      }
+      _finishEditKeepRow('small',id,i,inp);return;
     }
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
@@ -37621,7 +37652,7 @@ function makeSmInlineGhost(id,secColor){
   if(secColor)gh.style.setProperty('--sec-color',secColor);
   const inp=document.createElement('input');
   inp.type='text';inp.className='sgi-inp';inp.id=`sgi-${id}`;
-  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','next');
+  inp.setAttribute('inputmode','text');inp.setAttribute('enterkeyhint','go');
   let buf='';
   inp.oninput=()=>{buf=inp.value;};
   inp.onblur=()=>{
@@ -38871,6 +38902,38 @@ function parseItemKey(k){const [type,secId,idxStr]=k.split(':');return{type,secI
 // section in display order, all big items first, then all small items.
 // 글자 고치던 중 Enter — 저장(blur 가 한다)하고 입력칸을 빠져나와 그 줄을 '고른 줄' 로 둔다.
 // 이후 화살표로 이어서 고르고, Space 로 완료 · E/Enter 로 다시 고칠 수 있다.
+// ── 휴대폰 자판의 '이동' 키 = 다음 칸으로 (v. 26-1030-7, HB) ──
+// 할일 칸(빅 · 스몰 · 하위, 새로 쓸 때든 고칠 때든)의 오른쪽 아래 키를 파란 '이동'(enterkeyhint=go)으로 맞추고,
+// 누르면 지금 칸을 저장한 뒤 바로 아래 칸으로 커서가 간다. 자판 위 띠의 '완료'(blur)는 예전처럼 편집 끝.
+// ⚠️ PC 의 Enter 는 그대로다(v26-1015-11 HB: Enter = 편집 끝 · Tab = 다음 칸). 휴대폰 자판인지는 기기로 가른다 —
+//    자판 키가 하드웨어인지 화면 자판인지는 이벤트로 알 수 없다. 손가락이 주 입력인 기기(hover 없음 + 굵은 포인터)만.
+// ⚠️ focus 는 키 이벤트 안에서 **곧바로** 건다 — setTimeout 뒤로 미루면 아이폰 자판이 내려갔다 올라온다.
+function _softEnter(){
+  try{return !!(window.matchMedia&&matchMedia('(hover:none) and (pointer:coarse)').matches);}catch(e){return false;}
+}
+// 고치던 빅/스몰 줄 → 같은 목록의 다음 줄. 마지막 줄이면 새 할일 칸을 연다.
+// 옛 줄의 blur(저장 · 빈 줄 지우기 · 연락처 표시)는 그대로 돈다. 그 blur 가 목록을 다시 그려
+// 막 옮겨 간 칸이 사라졌으면, 붙잡아 둔 다음 할일(객체)로 새 칸을 다시 찾아 건다.
+function _taskEnterNext(type,secId,inp){
+  const big=type==='big';
+  const arrOf=()=>big?getBigs(tKey(),secId):getSmalls(tKey(),secId);
+  const cls=big?'bi-inp':'si-inp';
+  const inps=[...document.querySelectorAll(`#${big?'bl':'sl'}-${secId} .swipe-wrap:not([hidden]) .${cls}`)];
+  const at=inps.indexOf(inp);
+  const nRow=(at>=0&&inps[at+1])?inps[at+1].closest('.big-item,.sm-item'):null;
+  const nObj=nRow?arrOf()[parseInt(nRow.dataset.i)]:null;
+  const go=()=>{
+    if(nObj){
+      const j=arrOf().indexOf(nObj);
+      const el=j>=0?getRowEl(type,secId,j)?.querySelector('.'+cls):null;
+      if(el){el.focus();return;}
+    }
+    _openGhostInput(secId,type,'A');   // 목록 끝 다음 = 새로 쓰는 칸 (맨 아래에 붙는다)
+  };
+  go();
+  const ae=document.activeElement;
+  if(!ae||ae===document.body||!ae.isConnected||ae===inp)go();
+}
 function _finishEditKeepRow(type,secId,idx,inp){
   inp.blur();
   setTimeout(()=>{
