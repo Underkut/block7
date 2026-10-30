@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1030-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3154,7 +3154,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 /* ② 제목줄이 위쪽 여백을 가져갔으니 팝업 자신은 위 여백을 비운다.
    (안 비우면 제목줄이 붙을 때 20px 만큼 위로 튀어 오른다) */
-#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal,#taskMemoModal,#swKbHelpModal{padding-top:0;}
+#contactsModal,#taggedTasksModal,#syncConflictModal,#vcSetModal,#vsScopeModal,#taskMemoModal,#swKbHelpModal,#rpConfigModal{padding-top:0;}
 .event-modal:has(> .modal-head){padding-top:0;}
 .modal-head-gap{width:28px;flex-shrink:0;}   /* 왼쪽 여백 — 제목을 정중앙에 두기 위함 */
 .event-modal-text{
@@ -3604,6 +3604,16 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   user-select:none;-webkit-user-select:none;
 }
 .rp-cfg-col.pool .rp-chip{flex:0 0 auto;}
+/* 놓일 상자 (v. 26-1030-4) — 칸이든 '사용 안 함' 이든 같은 색 */
+.rp-cfg-col{transition:background .15s,border-color .15s;}
+.rp-cfg-col.drop-hot{background:color-mix(in srgb,var(--ac) 12%,transparent);border-color:var(--ac);border-style:solid;}
+/* 끄는 동안 원래 칩은 흐리게 — 위젯과 같은 문법 */
+.rp-chip.rp-drag-src{opacity:.35;}
+/* 새로 만드는 칩(말씀 카드 · 말씀 목록) — 끌어다 놓으면 하나 생긴다. 점선으로 '틀' 임을 알린다 */
+.rp-chip.rp-chip-new{background:transparent;border-style:dashed;color:var(--tx2);}
+.rp-cfg-head{font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;}
+.rp-cfg-head span{font-weight:400;color:var(--tx3);margin-left:4px;}
+.rp-cfg-foot{font-size:10px;color:var(--tx3);text-align:center;margin-top:10px;line-height:1.5;}
 .rp-cfg-drag{
   color:var(--tx3);cursor:grab;padding:6px 4px;display:flex;align-items:center;
   touch-action:none;-webkit-tap-highlight-color:transparent;
@@ -6642,7 +6652,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-3";
+const APP_VERSION = "v. 26-1030-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8740,13 +8750,15 @@ try{
 <div class="event-modal-overlay" id="rpConfigOverlay" style="display:none;z-index:4300;" onclick="closeRpConfig()"></div>
 <div class="event-modal" id="rpConfigModal" style="display:none;z-index:4310;width:400px;max-width:92vw;max-height:84vh;overflow-y:auto;">
   <div class="settings-verbadge" style="display:none;"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <div class="event-modal-title" style="margin:0;">위젯 설정</div>
-    <button onclick="closeRpConfig()" style="background:none;border:none;cursor:pointer;color:var(--tx3);padding:2px;display:flex;-webkit-tap-highlight-color:transparent;">
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>
+  <!-- 제목 가운데 · 우상단 × 하나 (CLAUDE.md 팝업 규칙, v. 26-1030-4). 팝업 전체가 스크롤되므로 sticky 제목줄 안에 -->
+  <div class="modal-head">
+    <span class="modal-head-gap"></span>
+    <div class="event-modal-title" style="margin:0;flex:1;min-width:0;">위젯 설정</div>
+    <button class="modal-x modal-x-inline" onclick="closeRpConfig()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l12 12M16 4L4 16"/></svg>
     </button>
   </div>
-  <div id="rpConfigList"></div>
+  <div id="rpConfigList" style="padding-top:4px;"></div>
 </div>
 
 <!-- 말씀카드 설정 (위젯 하나하나마다 따로) -->
@@ -25939,6 +25951,25 @@ function _lay(){
   if(typeof L.bp3!=='number')L.bp3=900;
   if(L.bp3<L.bp2+100)L.bp3=L.bp2+100;
   if(!Array.isArray(L.c3)||L.c3.length!==2)L.c3=[0.34,0.3];
+  // ── 2단 배치 (v. 26-1030-4, HB (가)) — 처음엔 예전 2단 화면 그대로(좌 = 좌, 우 = 중+우)에서 시작한다 ──
+  if(!L.cols2||typeof L.cols2!=='object'||Array.isArray(L.cols2)){
+    L.cols2={left:L.cols.left.slice(),right:[...L.cols.center,...L.cols.right]};
+  }
+  ['left','right'].forEach(c=>{if(!Array.isArray(L.cols2[c]))L.cols2[c]=[];});
+  delete L.cols2.center;
+  {
+    // 같은 것 두 번 · 설정이 사라진 카드 · 옛 반응별 목록 이름은 거른다. 모르는 위젯은 지우지 않는다(더 새 버전 것)
+    const seen2=new Set();
+    ['left','right'].forEach(c=>{
+      L.cols2[c]=L.cols2[c].filter(t=>{
+        if(typeof t!=='string'||!t||seen2.has(t))return false;
+        if(_vcIs(t)&&!_vcGet(_vcIdOf(t)))return false;
+        if(_VC_TYPE_KIND[t])return false;
+        seen2.add(t);return true;
+      });
+    });
+    if(!seen2.has('todo'))L.cols2.left.unshift('todo');
+  }
   return L;
 }
 function _colKey(c){return c;} // 'left'|'center'|'right' 그대로 키
@@ -26375,17 +26406,18 @@ function _rpAttachVResize(host){
       }
       let last=null;
       const mm=e=>{last=mv(e.clientY);};
-      const tm=e=>{if(e.touches[0])last=mv(e.touches[0].clientY);};
+      // 높이를 끄는 동안 화면이 같이 밀리지 않게 (위 _ghostDragStart 와 같은 까닭, v. 26-1030-4)
+      const tm=e=>{if(e.cancelable)e.preventDefault();if(e.touches[0])last=mv(e.touches[0].clientY);};
       const up=()=>{
         document.removeEventListener('mousemove',mm);
         document.removeEventListener('mouseup',up);
-        document.removeEventListener('touchmove',tm);
+        document.removeEventListener('touchmove',tm,{passive:false});
         document.removeEventListener('touchend',up);
         if(last!=null){commit(last);renderRightPanel();}
       };
       document.addEventListener('mousemove',mm);
       document.addEventListener('mouseup',up);
-      document.addEventListener('touchmove',tm,{passive:true});
+      document.addEventListener('touchmove',tm,{passive:false});
       document.addEventListener('touchend',up);
     };
     hd.addEventListener('mousedown',e=>{e.preventDefault();e.stopPropagation();start(e.clientY);});
@@ -32645,7 +32677,7 @@ function vcOpenFull(id){
 // placed 를 넘기면 그것을 쓴다 (_lay() 안에서 부를 땐 되돌이가 되므로 꼭 넘긴다).
 function _vcUnplacedForKind(kind,exceptId,placed){
   const p=placed||(()=>{const L=_lay();
-    return new Set([...L.cols.left,...L.cols.center,...L.cols.right]);})();
+    return _layAllPlaced(L);})();
   const all=_vcAll();
   return Object.keys(all).find(id=>{
     if(id===exceptId)return false;
@@ -32671,11 +32703,11 @@ const VC_NEW='card#+';
 const VL_NEW='card#+l';
 // 컬럼에 새 위젯을 넣는다 (칩을 끌어다 놓았을 때).
 // 새로 나는 위젯은 언제나 **말씀 모음 전체**(홈)를 본다.
-function vcAddCard(col,at,view){
-  const L=_lay();
-  const key=['left','center','right'].includes(col)?col:'left';
+function vcAddCard(col,at,view,mode){
+  const L=_lay(),m=mode===2?2:3;
+  const key=_layColKeys(m).includes(col)?col:'left';
   const id=_vcCreate(null,null,view);
-  const arr=L.cols[key];
+  const arr=_layColsFor(L,m)[key];
   arr.splice(Math.max(0,Math.min(at==null?arr.length:at,arr.length)),0,'card#'+id);
   _lay();save();
   return id;
@@ -33202,18 +33234,38 @@ function setVcTheme(id,key){
 //   3단 — 주간뷰가 켜져 있으면 주간뷰와 같은 칸(주간뷰 아래), 아니면 좌 · 중 → 좌+중, 우 → 중+우
 //   2단 — 할일 · 위젯 위쪽 전체 폭.   1단(폰)은 위젯이 없으니 그대로.
 // 배치(L.cols)는 건드리지 않는다 — 1단으로 되돌리면 원래 자리에 그대로 있다.
-function _layColOf(L,t){return['left','center','right'].find(c=>(L.cols[c]||[]).includes(t))||null;}
+// 화면 단수마다 배치가 따로다 (v. 26-1030-4, HB (가)) — 3단(과 1단 폰에서 여는 설정)은 L.cols(좌·중·우),
+// 2단은 L.cols2(좌·우). 예전엔 2단이 '중+우' 를 우 칸에 합쳐 보여 2단에서 순서를 정할 수 없었다.
+function _layColsFor(L,mode){return mode===2?L.cols2:L.cols;}
+function _layColKeys(mode){return mode===2?['left','right']:['left','center','right'];}
+function _layColOf(L,t,mode){
+  const m=mode||3,C=_layColsFor(L,m)||{};
+  return _layColKeys(m).find(c=>(C[c]||[]).includes(t))||null;
+}
+// 두 배치 어디에든 놓인 것 — 말씀 카드 설정을 지워도 되는지 · 쓰지 않는 카드 설정 찾기에 쓴다
+function _layAllPlaced(L){
+  const out=new Set();
+  [L.cols,L.cols2].forEach(C=>{if(C)['left','center','right'].forEach(c=>(C[c]||[]).forEach(t=>out.add(t)));});
+  return out;
+}
+// 그 단수 배치에서 위젯 하나를 뺀다. 말씀 카드는 **다른 단수 배치에도 없을 때만** 설정을 지운다 —
+// 2단에서 끈 카드가 3단 화면에서까지 사라지면 안 된다.
+function _layDrop(L,type,mode){
+  const C=_layColsFor(L,mode);
+  _layColKeys(mode).forEach(c=>{const i=C[c].indexOf(type);if(i>=0)C[c].splice(i,1);});
+  if(_vcIs(type)&&!_layAllPlaced(L).has(type))_vcRemove(_vcIdOf(type));
+}
 // 주간뷰 두 칸 (v. 26-1030-2) — 월간뷰와 같은 규칙: 3단은 좌 · 중 → 좌+중, 우 → 중+우 / 2단은 위쪽 전체 폭
 function _wkWideSide(L,mode){
   if(!L||!L.wkWide||mode<2)return null;
-  const col=_layColOf(L,'weekly');
+  const col=_layColOf(L,'weekly',mode);
   if(!col)return null;
   if(mode===2)return'full';
   return col==='right'?'cr':'lc';
 }
 function _monthWideSide(L,mode){
   if(!L||!L.mWide||mode<2)return null;
-  const col=_layColOf(L,'monthSingle');
+  const col=_layColOf(L,'monthSingle',mode);
   if(!col)return null;
   if(mode===2)return'full';
   const ws=_wkWideSide(L,mode);
@@ -33390,7 +33442,7 @@ function renderLayout(){
   const spanSide=mode===3?(wkSide||mwSide):null;
   const fullSide=mode===2&&(wkSide==='full'||mwSide==='full');
   // 주간뷰가 D 화면 어딘가(칸 안 · 두 칸 자리)에 떠 있는가 — 2단부터 (1단 폰은 위젯이 없다)
-  const wkShown=mode>=2&&!!_layColOf(L,'weekly');
+  const wkShown=mode>=2&&!!_layColOf(L,'weekly',mode);
   document.body.classList.toggle('wk-lc',spanSide==='lc');
   document.body.classList.toggle('wk-cr',spanSide==='cr');
   document.body.classList.toggle('mw-full',fullSide);
@@ -33408,7 +33460,7 @@ function renderLayout(){
   const colOf={left:colL,center:colC,right:colR};
 
   // ── 컬럼별 위젯 스택 계산 (todo 포함) ──
-  // 3단: 저장 배치 그대로 / 2단: 좌=cols.left, 우=cols.center+right (좌가 비면 교환)
+  // 3단: 저장 배치(cols) 그대로 / 2단: 2단 배치(cols2) 그대로 (v. 26-1030-4 — 예전엔 중+우 를 합쳤다)
   // 1단: 할일뷰만 (위젯 없음 — 기존 모바일 동작 유지)
   let colWidgets={left:[],center:[],right:[]};
   if(mode===3){
@@ -33416,13 +33468,9 @@ function renderLayout(){
     colWidgets.center=L.cols.center.slice();
     colWidgets.right=L.cols.right.slice();
   }else if(mode===2){
-    colWidgets.left=L.cols.left.slice();
-    colWidgets.right=[...L.cols.center,...L.cols.right];
-    if(!colWidgets.left.length&&colWidgets.right.length){
-      colWidgets.left=colWidgets.right;colWidgets.right=[];
-    }
-    // 2단에서 todo가 어느 쪽에도 없으면(이론상 불가) 좌측 맨 위
-    if(!colWidgets.left.includes('todo')&&!colWidgets.right.includes('todo'))colWidgets.left.unshift('todo');
+    // ⚠️ 예전엔 좌가 비면 좌우를 바꿔 보였다 — 이제 2단 배치를 직접 정하므로 바꾸지 않는다(바꾸면 끌어 놓는 칸이 어긋난다)
+    colWidgets.left=L.cols2.left.slice();
+    colWidgets.right=L.cols2.right.slice();
   }else{
     colWidgets.left=['todo'];
   }
@@ -33557,77 +33605,85 @@ function renderRpConfigList(){
   const list=document.getElementById('rpConfigList');
   if(!list)return;
   const L=_lay();
-  const mode=_layMode();
-  const inCols=new Set([...L.cols.left,...L.cols.center,...L.cols.right]);
-  // 사용 안 함: 어느 컬럼에도 없는 타입. todo는 항상 배치되어 있으므로 제외.
+  // 지금 화면 단수의 배치를 고친다 — 2단 화면이면 좌 · 우 두 칸(cols2), 아니면 좌 · 중 · 우(cols) (v. 26-1030-4, HB (가))
+  const pm=_layMode()===2?2:3;
+  const C=_layColsFor(L,pm),keys=_layColKeys(pm);
+  const inCols=new Set(keys.flatMap(c=>C[c]));
+  // 사용 안 함: 이 배치 어디에도 없는 것. todo는 항상 배치되어 있으므로 제외.
   // 주간뷰도 다른 위젯처럼 칸 안의 칩이다 (v. 26-1030-2). 두 칸 넓이는 위젯의 … 에서 고른다.
   // '사용 안 함' 은 두 줄로 묶어 보여준다 (말씀 카드·말씀 목록 / 뷰).
   // 말씀 위젯 둘은 개수 제한이 없어 **늘 맨 앞 줄에 남아 있다** — 끌어다 놓으면
-  // 새 위젯이 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다.
+  // 새 위젯이 하나 생기고, 칩은 그 자리에 그대로 다시 나타난다. 그래서 ≡ 대신 + 를 단다 (v. 26-1030-4).
   // 반응·저장 폴더는 위젯을 만든 뒤 헤더의 범위 단추로 고른다 (v26-0904-7).
   const poolRows=[
     [VC_NEW,VL_NEW],
     ['weekly','monthSingle','monthTriple'].filter(t=>!inCols.has(t)),
   ];
   const COLN={left:'좌',center:'중',right:'우'};
-  const chip=t=>`<div class="rp-chip" data-wtype="${t}">
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_rpChipName(t)}</span>
-      <span class="rp-cfg-drag"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="16" y2="7"/><line x1="4" y1="13" x2="16" y2="13"/></svg></span>
+  const ICON_GRAB='<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="4" y1="7" x2="16" y2="7"/><line x1="4" y1="13" x2="16" y2="13"/></svg>';
+  const ICON_NEW='<svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="10" y1="4" x2="10" y2="16"/><line x1="4" y1="10" x2="16" y2="10"/></svg>';
+  const chip=t=>{
+    const nm=_rpChipName(t),isNew=(t===VC_NEW||t===VL_NEW);
+    return`<div class="rp-chip${isNew?' rp-chip-new':''}${t==='todo'?' rp-chip-fixed':''}" data-wtype="${esc(t)}" title="${esc(isNew?nm+' — 칸에 끌어다 놓으면 새로 생겨요':(_rpWidgetName(t)||nm))}">
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(nm)}</span>
+      <span class="rp-cfg-drag">${isNew?ICON_NEW:ICON_GRAB}</span>
     </div>`;
+  };
   const colBox=c=>`<div style="flex:1;min-width:0;">
       <div style="font-size:10px;font-weight:700;color:var(--tx3);text-align:center;margin-bottom:5px;">${COLN[c]}</div>
       <div class="rp-cfg-col" data-col="${c}">
-        ${L.cols[c].map(chip).join('')}
+        ${C[c].map(chip).join('')}
       </div>
     </div>`;
+  const hint=pm===2
+    ?'2단 화면 배치예요 · 3단 배치는 따로 기억해요'
+    :'3단 화면 배치예요 · 2단 배치는 따로 기억해요';
   list.innerHTML=`
-    <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">위젯 배치 <span style="font-weight:400;color:var(--tx3);">${mode===2?'(2단에선 중·우가 우측에 합쳐 보여요)':'(주간뷰 · 월간뷰 두 칸 넓이는 위젯 좌상단 … 에서)'}</span></div>
-    <div style="display:flex;gap:8px;margin-bottom:10px;">${colBox('left')}${colBox('center')}${colBox('right')}</div>
-    <div style="font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;">사용 안 함</div>
+    <div class="rp-cfg-head">위젯 배치 <span>${hint}</span></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">${keys.map(colBox).join('')}</div>
+    <div class="rp-cfg-head">사용 안 함</div>
     <div class="rp-cfg-col pool" data-col="pool">${
       poolRows.filter(r=>r.length).map(r=>`<div class="rp-pool-row">${r.map(chip).join('')}</div>`).join('')
     }</div>
+    <div class="rp-cfg-foot">길게 눌러 끌어 옮겨요 · 주간뷰 · 월간뷰 두 칸 넓이는 위젯 좌상단 … 에서</div>
   `;
-  _rpAttachChipDrag(list);
+  _rpAttachChipDrag(list,pm);
 }
-// 설정 팝업 칩 드래그: 컬럼(좌/중/우) ↔ 사용 안 함 풀 간 이동 + 순서 변경
-function _rpAttachChipDrag(list){
+// 설정 팝업 칩 드래그: 칸(좌/중/우 · 2단은 좌/우) ↔ 사용 안 함 풀 간 이동 + 순서 변경
+function _rpAttachChipDrag(list,pm){
   const allBoxes=[...list.querySelectorAll('.rp-cfg-col')]
     .map(el=>({el,key:el.getAttribute('data-col')}));
   list.querySelectorAll('.rp-chip').forEach(chipEl=>{
     const handle=chipEl; // 칩 전체가 드래그 영역
     const type=chipEl.getAttribute('data-wtype');
-    const containers=allBoxes;
+    // 할일뷰는 끌 수 없다 — 놓을 자리로 '사용 안 함' 을 아예 보여주지 않는다
+    const containers=type==='todo'?allBoxes.filter(c=>c.key!=='pool'):allBoxes;
     const begin=(x,y)=>{
       _ghostDragStart({
         srcEl:chipEl,containers,rowSelector:'.rp-chip',clientX:x,clientY:y,
+        // 놓일 상자에 색을 입힌다. '사용 안 함' 은 순서가 없고 칩이 옆으로 늘어서
+        // 파란 줄이 폭 0 으로 안 보였다 — 상자 색만으로 알린다 (v. 26-1030-4, HB)
+        hot:true,lineless:['pool'],
         onCommit:(key,idx)=>{
           const L=_lay();
+          const C=_layColsFor(L,pm),keys=_layColKeys(pm);
           // '말씀카드' 칩은 만들기 버튼이다 — 끌어다 놓으면 새 카드가 하나 생기고
           // 칩은 '사용 안 함' 맨 앞 줄에 그대로 다시 나타난다 (개수 제한 없음).
           if(type===VC_NEW||type===VL_NEW){
             if(!key||key==='pool'){renderRpConfigList();return;}
-            vcAddCard(key,idx,type===VL_NEW?'list':'card');
+            vcAddCard(key,idx,type===VL_NEW?'list':'card',pm);
             renderRpConfigList();renderLayout();
             return;
           }
           if(type==='todo'&&(!key||key==='pool'))return; // todo는 끌 수 없음
-          // 원래 위치에서 제거
-          ['left','center','right'].forEach(c=>{
-            const i=L.cols[c].indexOf(type);
-            if(i>=0)L.cols[c].splice(i,1);
-          });
-          // 말씀카드는 인스턴스라 '사용 안 함'에 세워 둘 자리가 없다 — 빼면 그대로 없앤다.
-          // 카드 설정도 기기별이라(_DEVICE_SCOPED, v. 26-1030-1) 이 기기 것만 지워진다.
-          if(_vcIs(type)&&(!key||key==='pool')){
-            _vcRemove(_vcIdOf(type));
-            _lay();save();renderRpConfigList();renderLayout();
-            return;
-          }
-          if(key&&key!=='pool'){
-            const arr=L.cols[key];
-            const at=Math.max(0,Math.min(idx,arr.length));
-            arr.splice(at,0,type);
+          if(!key||key==='pool'){
+            // 빼기 — 이 단수 배치에서만. 카드 설정은 다른 단수 배치에도 없을 때만 지운다 (_layDrop)
+            _layDrop(L,type,pm);
+          }else{
+            if(!keys.includes(key))return;
+            keys.forEach(c=>{const i=C[c].indexOf(type);if(i>=0)C[c].splice(i,1);});
+            const arr=C[key];
+            arr.splice(Math.max(0,Math.min(idx,arr.length)),0,type);
           }
           _lay();save();renderRpConfigList();renderLayout();
         }
@@ -33639,11 +33695,13 @@ function _rpAttachChipDrag(list){
     });
     handle.addEventListener('touchstart',e=>{
       window._rpLastTouchTs=Date.now();
-      let x=e.touches[0].clientX,y=e.touches[0].clientY;
-      const tm=ev=>{if(ev.touches[0]){x=ev.touches[0].clientX;y=ev.touches[0].clientY;}};
+      const sx=e.touches[0].clientX,sy=e.touches[0].clientY;
+      let x=sx,y=sy,cancel=null;
+      // 누르고 있는 동안 12px 넘게 움직이면 팝업을 밀어 보려는 것 — 끌기를 시작하지 않는다 (위젯 헤더 끌기와 같은 규칙)
+      const tm=ev=>{if(!ev.touches[0])return;x=ev.touches[0].clientX;y=ev.touches[0].clientY;if(Math.hypot(x-sx,y-sy)>12&&cancel)cancel();};
       handle.addEventListener('touchmove',tm,{passive:true});
       const t=setTimeout(()=>{handle.removeEventListener('touchmove',tm);begin(x,y);},300);
-      const cancel=()=>{clearTimeout(t);handle.removeEventListener('touchmove',tm);
+      cancel=()=>{clearTimeout(t);handle.removeEventListener('touchmove',tm);
         handle.removeEventListener('touchend',cancel);handle.removeEventListener('touchcancel',cancel);};
       handle.addEventListener('touchend',cancel,{once:true});
       handle.addEventListener('touchcancel',cancel,{once:true});
@@ -33678,7 +33736,8 @@ function _ghostDragStart(opt){
   ghost.removeAttribute('id'); // ID 기반 CSS(#weeklyPane 등)가 고스트 스타일을 덮지 않게
   ghost.style.position='fixed';
   ghost.style.zIndex='9999';
-  ghost.style.display='block';
+  // 원래 모양 그대로(칩은 flex) — 예전엔 늘 block 이라 칩 고스트가 이름 · ≡ 두 줄로 갈라졌다 (v. 26-1030-4)
+  {const d=getComputedStyle(visualEl).display;ghost.style.display=(d&&d!=='none')?d:'block';}
   ghost.style.width=vr.width+'px';
   ghost.style.left=vr.left+'px';
   document.body.appendChild(ghost);
@@ -33731,10 +33790,19 @@ function _ghostDragStart(opt){
     if(offZone)offZone.classList.toggle('hot',offHit);
     if(offHit){
       targetIdx=null;targetKey=null;line.remove();
+      if(opt.hot&&multi)opt.containers.forEach(o=>o.el.classList.remove('drop-hot'));
       document.querySelectorAll('.rp-add-wrap.drop-dim').forEach(w=>w.classList.remove('drop-dim'));
       return;
     }
     targetIdx=idx;
+    // 놓일 상자 색 (opt.hot) — 설정 팝업의 칸 · '사용 안 함'
+    if(opt.hot&&multi)opt.containers.forEach(o=>o.el.classList.toggle('drop-hot',o===c));
+    // 순서가 없는 상자(opt.lineless) — 줄 없이 상자 색만
+    if(Array.isArray(opt.lineless)&&opt.lineless.includes(c.key)){
+      line.remove();
+      document.querySelectorAll('.rp-add-wrap.drop-dim').forEach(w=>w.classList.remove('drop-dim'));
+      return;
+    }
     // ── 스팬 라인 모드 (opt.lineFor): 주간뷰처럼 두 단에 걸치는 위젯은
     //    실제 들어갈 자리(두 컬럼 상단 가로지름)에 고정 위치 라인 표시 ──
     if(typeof opt.lineFor==='function'){
@@ -33769,13 +33837,16 @@ function _ghostDragStart(opt){
   };
   place(opt.clientX??r.left+r.width/2,opt.clientY??r.top);
   const mm=e=>place(e.clientX,e.clientY);
-  const tm=e=>{if(e.touches[0])place(e.touches[0].clientX,e.touches[0].clientY);};
+  // ⚠️ 손가락으로 끄는 동안 화면(뒤 배경 · 팝업)이 손가락을 따라 같이 밀렸다 (HB 2026-10-30) —
+  //    touchmove 를 passive 로 달아 스크롤을 막지 못했다. 끄는 동안만 막는다.
+  const tm=e=>{if(e.cancelable)e.preventDefault();if(e.touches[0])place(e.touches[0].clientX,e.touches[0].clientY);};
   const up=()=>{
     document.removeEventListener('mousemove',mm);
     document.removeEventListener('mouseup',up);
-    document.removeEventListener('touchmove',tm);
+    document.removeEventListener('touchmove',tm,{passive:false});
     document.removeEventListener('touchend',up);
     document.removeEventListener('touchcancel',up);
+    if(multi)opt.containers.forEach(o=>o.el.classList.remove('drop-hot'));
     ghost.remove();line.remove();
     if(offZone)offZone.remove();
     document.querySelectorAll('.rp-add-wrap.drop-dim').forEach(w=>w.classList.remove('drop-dim'));
@@ -33789,7 +33860,7 @@ function _ghostDragStart(opt){
   };
   document.addEventListener('mousemove',mm);
   document.addEventListener('mouseup',up);
-  document.addEventListener('touchmove',tm,{passive:true});
+  document.addEventListener('touchmove',tm,{passive:false});
   document.addEventListener('touchend',up);
   document.addEventListener('touchcancel',up);
 }
@@ -33868,36 +33939,19 @@ function _rpAttachHeaderDrag(host){
         // ⚠️ 예전엔 3단에서만 나왔다 — 2단에서도 위젯을 끌 수 있어야 한다
         //    (v26-0904-10, HB). 위젯을 놓을 수 있는 화면이면 끌 수도 있어야 짝이 맞는다.
         onOff:(mode>=2&&type!=='todo')?()=>{
-          ['left','center','right'].forEach(c=>{
-            const i=L.cols[c].indexOf(type);
-            if(i>=0)L.cols[c].splice(i,1);
-          });
-          if(_vcIs(type))_vcRemove(_vcIdOf(type));   // 카드는 인스턴스라 설정도 함께 지운다 — 기기별이라 이 기기 것만 (v. 26-1030-1)
+          // 이 단수 배치에서만 뺀다. 카드 설정은 다른 단수 배치에도 없을 때만 지운다 (_layDrop, v. 26-1030-4)
+          _layDrop(L,type,mode);
           _lay();save();renderLayout();
           showToast(`${_rpWidgetName(type)} 위젯을 껐어요`);
         }:undefined,
         onCommit:(key,idx)=>{
           if(!type||!_rpTypeOk(type))return;
-          if(mode===3){
-            ['left','center','right'].forEach(c=>{
-              const i=L.cols[c].indexOf(type);
-              if(i>=0)L.cols[c].splice(i,1);
-            });
-            const arr=L.cols[key];
-            arr.splice(Math.min(idx,arr.length),0,type);
-          }else{
-            // 2단 화면: 좌=cols.left / 우=cols.center+cols.right 로 병합 표시 중.
-            // 새 순서를 좌/우 그룹 경계 기준으로 다시 쪼개 저장.
-            const leftArr=L.cols.left.filter(t=>t!==type);
-            const rightArr=[...L.cols.center,...L.cols.right].filter(t=>t!==type);
-            if(key==='left')leftArr.splice(Math.min(idx,leftArr.length),0,type);
-            else rightArr.splice(Math.min(idx,rightArr.length),0,type);
-            const merged=[...leftArr,...rightArr];
-            if(new Set(merged).size!==merged.length)return; // 안전
-            L.cols.left=leftArr;
-            L.cols.center=rightArr;
-            L.cols.right=[];
-          }
+          // 그 단수 배치 안에서 옮긴다 — 3단은 cols, 2단은 cols2 (v. 26-1030-4. 예전 2단은 중+우 를 다시 쪼개 저장했다)
+          const C=_layColsFor(L,mode),keys=_layColKeys(mode);
+          if(!keys.includes(key))return;
+          keys.forEach(c=>{const i=C[c].indexOf(type);if(i>=0)C[c].splice(i,1);});
+          const arr=C[key];
+          arr.splice(Math.min(idx,arr.length),0,type);
           _lay();save();renderLayout();
         }
       });

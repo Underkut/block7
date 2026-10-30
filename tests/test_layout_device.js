@@ -147,11 +147,14 @@ console.log('\n시나리오 7 — 배치 칸 수는 대량 손실로 세지 않�
 //     v. 26-1029-10 에서는 카드 설정이 계정 공유라 지우지 않았다(다른 기기 위젯까지 사라져서).
 console.log('\n시나리오 8 — 위젯 끄기가 카드 설정을 지운다 (이 기기 것만)');
 {
+  // v. 26-1030-4: 2단 배치가 따로 생겨, 빼기는 _layDrop 한 곳에서 한다 — 카드 설정은 두 배치 어디에도 없을 때만 지운다
   const drag = slice('function _rpAttachChipDrag(', '// ── 드래그 재정렬 공용 헬퍼');
-  sc.eq('설정 팝업에서 빼기: 카드 설정도 지운다', /_vcRemove\(_vcIdOf\(type\)\)/.test(drag), true);
+  sc.eq('설정 팝업에서 빼기: _layDrop 으로', /_layDrop\(L,type,pm\)/.test(drag), true);
   const a = SRC.indexOf('// 우상단 존에 드랍 → 위젯 끄기');
   const off = SRC.slice(a, SRC.indexOf('onCommit:(key,idx)=>{', a));
-  sc.eq('끌어서 끄기: 카드 설정도 지운다', a > 0 && /_vcRemove\(/.test(off), true);
+  sc.eq('끌어서 끄기: _layDrop 으로', a > 0 && /_layDrop\(L,type,mode\)/.test(off), true);
+  const drop = slice('function _layDrop(', '\n}\n');
+  sc.eq('_layDrop 은 카드 설정을 지운다 (두 배치 어디에도 없을 때)', /_layAllPlaced\(L\)\.has\(type\)\)_vcRemove\(/.test(drop), true);
 }
 
 // ═══ 9. 카드 설정 · 높이는 클라우드로 안 올라간다 ═══

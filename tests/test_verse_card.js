@@ -70,6 +70,8 @@ global._hiRanges = (flat, ps) => ps
 eval(
   slice('const RP_WIDGET_DEFS={', 'function _rpGetWidgets(') +
   slice('// 이 버전이 "아는" 위젯인가.', 'function _colKey(') +
+  // 화면 단수마다 따로인 배치 도우미 (v. 26-1030-4) — vcAddCard · 쓰지 않는 카드 찾기가 쓴다
+  slice('// 화면 단수마다 배치가 따로다', '// 주간뷰 두 칸 (v. 26-1030-2)') +
   slice('// ══════ 말씀카드 위젯 = 카드 인스턴스 모델 ══════', '// ══════ 말씀카드 위젯 끝 ══════') +
   ';Object.assign(globalThis,{_lay,_vcIs,_vcIdOf,_vcAll,_vcGet,_vcCreate,_vcRemove,_vcNewId,' +
   '_rpWidgetName,_rpTypeOk,_vcVerses,_vcCurrent,_vcHash,_vcPatternKey,_vcThemeVars,_vcTextScale,' +
