@@ -57,7 +57,7 @@ const fakeDb = {
   doc: (p) => docRef(p),
   collection: (c) => ({
     doc: (id) => docRef(c + '/' + id),
-    where: (f, op, v) => ({ get: async () => { reads.push(c + '?' + f); return { docs: [...store.keys()].filter(k => k.startsWith(c + '/') && k.split('/').length === 2 && store.get(k)[f] === v).map(k => ({ ref: docRef(k) })) }; } }),
+    where: (f, op, v) => ({ get: async () => { reads.push(c + '?' + f); return { docs: [...store.keys()].filter(k => k.startsWith(c + '/') && k.split('/').length === 2 && store.get(k)[f] === v).map(k => ({ ref: docRef(k), get: (f2) => store.get(k)[f2] })) }; } }),
   }),
   batch: () => { const ops = []; return { delete: (r) => ops.push(() => { writes.push(r.path); store.delete(r.path); }), set: (r, d) => ops.push(() => put(r.path, d)), commit: async () => ops.forEach(f => f()) }; },
   runTransaction: async (fn) => fn({ get: async (r) => snap(r.path), set: (r, d, o) => put(r.path, d, o && o.merge), update: (r, d) => put(r.path, d, true) }),

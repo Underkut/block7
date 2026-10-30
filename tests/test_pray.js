@@ -20,6 +20,7 @@
 //  ⑭ BLOCK7 → 기도노트 우체통 — 고른 그룹(서브 그룹)의 맨 위 기도 항목으로 · 없는 그룹은 넣지 않고 셈
 //  ⑱ 백업 파일 이름 — Pr-{이메일3}-{기기}-{YY}-{MMDD}-{번호} · 두 기기 번호 이어짐(병합은 큰 값) · 오프라인 off · 날짜 바뀌면 1
 //  ㉔ 그룹 ↔ 서브 그룹 끌기(H-5) — 넣기는 제 서브 그룹이 없을 때만 · 올리기는 연동 안 된 것만 · 항목은 그대로 · 두 기기가 엇갈려도 두 단 · 모두 보임
+//  ㉘ 시리로 기도 넣기 — 우체통의 시리 쪽지(항목 · 서브 그룹 · 그룹 · 받은 기도) · 사람 카드 잇기 · 맨 위 · 그룹 차림표(siridir)
 //  ⑪ 기기 사이 맞추기(P-6) — 3자 병합 · 첫 로그인 표 · 대량 손실 방어 · 테마는 이 기기에만 · 덩어리 나누기
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -39,7 +40,7 @@ this.A = { PRAY_KEY, MARKS, MARK_FIXED, IV_DEFAULT, GRAY_IV, GROUP_IV_DEFAULT, S
   sortTargets, applyRanks, moveInArray, parseCSV, detectFormat, importSheet2, parseMapGrid,
   buildGroupsFromBlocks, sheetDate, makeSnap, snapNames, currentNames, diffNames, answeredList, monthGlance,
   exportBackup, readBackup, bakDevice, bakName, _themeTokens, themeById,
-  cloudOf, fromCloud, merge3, inboxApply, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, dayGlance, delPraySession, editPrayKid, delPrayKid, sesKids, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
+  cloudOf, fromCloud, merge3, inboxApply, siriDir, SIRI_HOLD, splitSlash, makePageHist, histRevert, syncPlan, addPraySession, addMapPrayer, addFocusCard, dayOf, setDayStart, dayStartOk, isShelved, liveT, shelve, unshelve, answerTarget, unanswerTarget, groupNamesOf, nameDate, staleByName, editPraySession, dayGlance, delPraySession, editPrayKid, delPrayKid, sesKids, editLegacyRest, legacyRest, sesSum, topicMatch, linkTopic, topicLink, newTopic, b7Secs, b7Todos, b7Note, B7_SECS, histKey, histRestore, makeHist, bulkLoss, isBlankDB, splitChunks, deq, SYNC_CHUNK };`, ctx);
 const A = ctx.A;
 const D = '2026-10-10';   // 토요일
 
@@ -643,7 +644,9 @@ const MAPCSV = [
   sc.eq('⑭ 서브 그룹으로 보낸 것은 서브 그룹에 (그룹 줄에는 안 생김)', [sub.lines.length, g.lines.some(l => db.T.find(x => x.id === l.segs[0][0]).name === '수련회 준비')], [1, false]);
   A.inboxApply(db, [{ id: 'm5', gid: g.id, text: '병원 심방', at: 5 }]);
   sc.eq('⑭ 같은 이름의 기도 항목은 카드를 같이 쓴다 (항목은 하나 · 줄은 둘)', [db.T.filter(x => x.name === '병원 심방').length, g.lines.length], [1, 3]);
-  sc.eq('⑭ 빈 우체통은 아무 일 없음', A.inboxApply(db, []), { n: 0, lost: 0 });
+  sc.eq('⑭ 빈 우체통은 아무 일 없음', A.inboxApply(db, []), { n: 0, lost: 0, held: 0, made: 0, siri: 0, b7: 0 });
+  sc.eq('⑭ BLOCK7 에서 넣은 수 (토스트)', A.inboxApply(db, [{ id: 'm7', gid: g.id, text: '토스트', at: 7, from: 'block7' }]).b7, 1);
+  sc.eq('⑭ BLOCK7 에서 온 것은 사람 이름과 같아도 기도 항목 (예전 그대로)', (A.inboxApply(db, [{ id: 'm6', gid: g.id, text: '가나', at: 6 }]), db.T.filter(x => x.name === '가나').map(x => x.kind).sort()), ['item', 'person']);
 }
 // ⑰ Map 기도 — 앞 기록부터 지금까지를 이름 수로 나눈다 · 시간 합계(s)는 건드리지 않는다(There 기록이 센다) · 이미 기도함은 안 뒤집는다
 {
@@ -1031,6 +1034,49 @@ const MAPCSV = [
   sc.eq('⭐㉗ 감사 — 이번 주(월 10/26 부터) 응답만', r.thanks.map(o => [o.t.name, o.tp && o.tp.t, o.at]), [['다온', '새 가족 정착', '2026-10-26']]);
   const past = A.dayGlance(db, '2026-10-27', T0);
   sc.eq('⭐㉗ 지난 날 — 그룹 칸만(다가오는 날 · 오래 못 한 기도 · 감사는 오늘만 뜻이 있다)', [past.groups.length, past.soon.length, past.stale.length, past.thanks.length], [3, 0, 0, 0]);
+}
+
+// ㉘ 시리로 기도 넣기 (HB 2026-10-30) — 서버(praysiri)가 우체통에 넣은 쪽지를 앱이 받는다. 이름은 지어낸 것
+{
+  const db = A.emptyDB();
+  const g = A.newGroup('청년부', '#1f4f8f'); db.G.push(g);
+  const s1 = A.newGroup('1셀', '#1f4f8f'); s1.parent = g.id; db.G.push(s1);
+  const f = A.newGroup('가족', '#3f7a2e'); db.G.push(f);
+  const p = A.newTarget('person', '김가나'); db.T.push(p);
+  s1.lines = [{ id: 'old', segs: [[p.id]], r: {}, text: '' }];
+  const S = (o) => Object.assign({ id: 'x' + Math.random(), from: 'siri', say: o.text, at: 1 }, o);
+  const r = A.inboxApply(db, [S({ gid: s1.id, text: '수련회 장소' }), S({ gid: g.id, text: '김가나' })]);
+  sc.eq('⭐㉘ 서브 그룹 · 그룹의 맨 위 줄로', [r.n, r.siri, db.T.find(t => t.id === s1.lines[0].segs[0][0]).name, s1.lines[1].id], [2, 2, '수련회 장소', 'old']);
+  sc.eq('⭐㉘ 이미 있는 사람 이름과 똑같으면 그 사람 카드 (HB 결정 3) — 새 카드가 안 생긴다', [g.lines[0].segs[0][0] === p.id, db.T.filter(t => t.name === '김가나').length], [true, 1]);
+  A.inboxApply(db, [S({ gid: f.id, text: '이사' }), S({ gid: g.id, text: '이사' })]);
+  sc.eq('㉘ 사람이 아니면 기도 항목 — 같은 이름 항목은 카드를 같이 쓴다', [db.T.filter(t => t.name === '이사').length, db.T.find(t => t.name === '이사').kind], [1, 'item']);
+  // 서브 그룹 만들기 — 그룹 바로 뒤(서브 그룹들 맨 위) · 색은 그룹 색 · 같은 이름은 또 만들지 않는다 · 서브 그룹을 가리켜도 두 단까지만
+  const r2 = A.inboxApply(db, [S({ kind: 'sub', gid: g.id, text: '새가족' }), S({ kind: 'sub', gid: g.id, text: '1셀' }), S({ kind: 'sub', gid: s1.id, text: '2셀' })]);
+  const kids = A.kidsOf(db, g.id).map(k => k.name);
+  sc.eq('㉘ 시리로 이미 있는 서브 그룹을 만들라고 해도 BLOCK7 수는 0 (토스트가 -1 로 세지 않게)', (() => { const r = A.inboxApply(db, [S({ kind: 'sub', gid: g.id, text: '1셀' })]); return [r.siri, r.made, r.b7, r.n]; })(), [1, 0, 0, 0]);
+  sc.eq('⭐㉘ 서브 그룹은 그 그룹 아래 맨 위에 · 같은 이름은 안 만든다 · 서브 그룹을 가리키면 그 그룹에', [r2.made, kids, db.G.indexOf(A.findG(db, g.id)) + 1 === db.G.findIndex(x => x.name === '2셀')], [2, ['2셀', '새가족', '1셀'], true]);
+  sc.eq('㉘ 새 서브 그룹 색은 그룹 색 · 줄은 비어 있다', [db.G.find(x => x.name === '새가족').color, db.G.find(x => x.name === '새가족').lines.length], ['#1f4f8f', 0]);
+  // 그룹 만들기 — 지도 맨 위 · 같은 이름은 안 만든다
+  const r3 = A.inboxApply(db, [S({ kind: 'group', gid: '', text: '중보팀' }), S({ kind: 'group', gid: '', text: '가족' })]);
+  sc.eq('⭐㉘ 그룹은 지도 맨 위 · 같은 이름은 안 만든다', [r3.made, A.topGroups(db).map(x => x.name)], [1, ['중보팀', '청년부', '가족']]);
+  // 받은 기도 — hold · 그룹이 그새 사라진 시리 쪽지(서브 그룹 만들기 포함) → '시리로 받은 기도'(없으면 맨 위에 만든다). 잃지 않는다
+  const r4 = A.inboxApply(db, [S({ hold: 1, gid: '', text: '청연부에 다라 회복' }), S({ gid: 'gone', text: '마바 이직' }), S({ kind: 'sub', gid: 'gone', text: '셋째' })]);
+  const hold = A.topGroups(db)[0];
+  sc.eq('⭐㉘ 못 알아들은 것 · 사라진 그룹 → 시리로 받은 기도(맨 위) · 하나도 안 잃는다', [hold.name, r4.held, r4.lost, hold.lines.map(l => A.findT(db, l.segs[0][0]).name)], [A.SIRI_HOLD, 3, 0, ['셋째', '마바 이직', '청연부에 다라 회복']]);
+  A.inboxApply(db, [S({ hold: 1, gid: '', text: '하나 더' })]);
+  sc.eq('㉘ 받은 기도 그룹은 하나만 (있으면 그것에)', A.topGroups(db).filter(x => x.name === A.SIRI_HOLD).length, 1);
+  sc.eq('㉘ BLOCK7 쪽지는 그룹이 사라지면 예전처럼 못 넣은 수로', A.inboxApply(db, [{ id: 'b', gid: 'gone', text: '할일', at: 1 }]), { n: 0, lost: 1, held: 0, made: 0, siri: 0, b7: 0 });
+  sc.eq('㉘ 빈 글은 아무 일 없음', A.inboxApply(db, [S({ gid: g.id, text: '  ' }), S({ kind: 'group', text: '' })]).n, 0);
+  // 그룹 차림표 — 지도 차례(그룹 → 그 서브 그룹) · 연동한 서브 그룹은 첫 자리에서 한 번 · 사람 · 항목 이름은 없다
+  const lk = A.newGroup('공동', '#000'); lk.parent = f.id; lk.also = [g.id]; db.G.push(lk);
+  const dir = A.siriDir(db);
+  sc.eq('⭐㉘ 차림표 — 지도 차례 · 그룹 다음에 그 서브 그룹', dir.g.map(e => e.n), [A.SIRI_HOLD, '중보팀', '청년부', '2셀', '새가족', '1셀', '공동', '가족']);
+  sc.eq('㉘ 차림표 모양 {i,n,p,a} · 연동 자리', dir.g.find(e => e.n === '공동'), { i: lk.id, n: '공동', p: f.id, a: [g.id] });
+  sc.eq('⭐㉘ 차림표에 사람 · 항목 이름이 없다', JSON.stringify(dir).indexOf('김가나') + JSON.stringify(dir).indexOf('이사'), -2);
+  db.set.sorts.map = 'name';
+  sc.eq('㉘ 지도를 이름순으로 보면 차림표도 이름순', A.siriDir(db).g.filter(e => !e.p).map(e => e.n), ['가족', A.SIRI_HOLD, '중보팀', '청년부']);
+  const nameless = A.newGroup('', '#000'); db.G.push(nameless);
+  sc.eq('㉘ 이름 없는 그룹(만드는 중)은 뺀다', A.siriDir(db).g.some(e => e.i === nameless.id), false);
 }
 
 sc.done();
