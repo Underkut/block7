@@ -9,6 +9,8 @@
 //  ⑥ BLOCK7 에서 지우면(메뉴 '삭제' 길) 구글에서도 지워지고 표시는 걷힌다
 //  ⑦ 구글에서 지우면 BLOCK7 에서도 지워진다
 //  ⑧ 맞추기는 되돌리기(undo) 목록에 들어가지 않는다
+//  ⑲ 주간·월간에서 연 일정 팝업: 반복 일정 '삭제' → 이 일정만 → 구글 원본에 그 날 EXDATE (v. 26-1030-5, HB)
+//     · 날짜를 바꿔 '이 날만 옮기기' → 구글 원본 EXDATE + 옮긴 날에 한 번짜리 (다른 회차는 그대로)
 const { chromium } = require(process.env.PW || 'playwright');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.html';
@@ -273,6 +275,37 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   ok('⑰ 모두 고치기 → 같은 구글 일정(같은 id)의 이름만 바뀐다 · 새 일정 없음', all2.m.summary === '새벽 기도회' && all2.m.status === 'confirmed' && all2.others.length === 0, all2);
   const excAfter = await p.evaluate(id => Object.values(__G.ev).filter(e => e.recurringEventId === id).map(e => [e.summary, e.status]), gDawn.id);
   ok('⑰ 모두 고치기 → 그 날 고친 회차는 원본 모양으로 돌아간다 (지워져 비지 않는다)', excAfter.length === 1 && excAfter[0][0] === '새벽 기도회' && excAfter[0][1] === 'confirmed', excAfter);
+
+  // ⑲ 주간·월간 일정 팝업의 '삭제' · 날짜 바꾸기 (v. 26-1030-5, HB) — 팝업 단추를 실제로 눌러 간다
+  await p.evaluate(D1 => { const sid = _secIdForTime('13:40'); getEvents(D1, sid).push({ id: 'ev' + Date.now(), time: '13:40', text: '기독교 역사', repeat: { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5] }, rid: 'rHist' }); save(); }, D1);
+  await sync();
+  const gHist = await p.evaluate(() => Object.values(__G.ev).find(e => e.summary === '기독교 역사' && e.recurrence));
+  const [D8h, D15h, D16h] = await p.evaluate(D1 => [gcalAddDays(D1, 7), gcalAddDays(D1, 14), gcalAddDays(D1, 15)], D1);
+  const openWk = (occ) => p.evaluate(([D1, occ]) => { const sid = _secIdForTime('13:40'); const i = getEvents(D1, sid).findIndex(e => e.rid === 'rHist'); wmEvEdit(null, D1, i, sid, occ); }, [D1, occ]);
+  await openWk(D8h);
+  const shown = await p.inputValue('#eventDateInput');
+  await p.click('#eventDeleteBtn');
+  const rows19 = await p.$$eval('#repScopeList .rep-scope-btn', bs => bs.map(b => b.textContent));
+  await p.click('#repScopeList .rep-scope-btn >> nth=0');
+  await sync();
+  const h1 = await p.evaluate(id => __G.ev[id], gHist.id);
+  const exLine = 'EXDATE;TZID=Asia/Seoul:' + D8h.replace(/-/g, '') + 'T134000';
+  ok('⑲ 팝업 날짜는 누른 날 · 삭제 → 세 갈래(날짜 적힘)', shown === D8h && rows19.length === 3 && rows19[0].includes(await p.evaluate(k => _evMd(k), D8h)), [shown, rows19]);
+  ok('⑲ 이 일정만 → 구글 원본에 그 날 EXDATE · 원본은 살아 있다', h1.status === 'confirmed' && (h1.recurrence || []).includes(exLine), h1.recurrence);
+  ok('⑲ BLOCK7: 그 날만 빠지고 2주 뒤는 비친다', await p.evaluate(([D8, D15]) => !SECS.some(s => getDisplayEvents(D8, s.id).some(e => e.text === '기독교 역사')) && SECS.some(s => getDisplayEvents(D15, s.id).some(e => e.text === '기독교 역사')), [D8h, D15h]));
+  // 날짜를 바꿔 '이 날만 옮기기'
+  await openWk(D15h);
+  await p.evaluate(D16 => { document.getElementById('eventDateInput').value = D16; onEventDateChange(D16); }, D16h);
+  await p.click('#eventSubmitBtn');
+  await p.click('#repScopeList .rep-scope-btn >> nth=0');
+  await sync(); await sync();
+  const h2 = await p.evaluate(id => ({ m: __G.ev[id], one: Object.values(__G.ev).filter(e => e.summary === '기독교 역사' && !e.recurrence && !e.recurringEventId && e.status !== 'cancelled'),
+    exc: Object.values(__G.ev).filter(e => e.recurringEventId === id) }), gHist.id);
+  ok('⑲ 이 날만 옮기기 → 원본 EXDATE 에 그 날도 · 옮긴 날에 한 번짜리 하나 · 다른 회차는 손대지 않음',
+    (h2.m.recurrence || []).includes('EXDATE;TZID=Asia/Seoul:' + D15h.replace(/-/g, '') + 'T134000') && h2.one.length === 1
+    && new Date(h2.one[0].start.dateTime).getDate() === Number(D16h.slice(8)) && h2.exc.length === 0, h2);
+  const w19 = await p.evaluate(() => __G.writes); await sync();
+  ok('⑲ 맞춘 뒤에는 조용하다', (await p.evaluate(() => __G.writes)) === w19);
 
   // ⑱ 등록하자마자 고른 캘린더 색 (구글에 가기 전에도) (v26-1024-11, HB)
   const colNow = await p.evaluate(D1 => {

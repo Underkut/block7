@@ -17,7 +17,7 @@ const RULE = slice('function _repRule(rep){', 'function getDisplayEvents(k,secId
 const SUBHELP = slice('// ── 하위·메모: 자료 다루기 (순수 함수) ──', '// ── 하위·메모: 화면 ──');
 const TASK = SUBHELP + '\n' + slice('// ═══════ 할일의 반복 ═══════', 'function moveTaskTo(days,toSec,markDone){');
 
-function makeEnv(days, todayK) {
+function makeEnv(days, todayK, extra) {
   const ST = { days: days || {} };
   const SECS = [{ id: 'am' }, { id: 'pm' }];
   const log = { toasts: [], trash: [] };
@@ -42,6 +42,7 @@ function makeEnv(days, todayK) {
     _eventModalSecId: null,
     document: { getElementById: () => null },
   };
+  Object.assign(env, extra || {});   // 시나리오마다 갈아끼울 것 (_secIdForTime · _gcalCfg)
   env.getBigs = (k, id) => { const d = env.getDay(k); if (!d.big[id]) d.big[id] = []; return d.big[id]; };
   env.getSmalls = (k, id) => { const d = env.getDay(k); if (!d.small[id]) d.small[id] = []; return d.small[id]; };
   env.getEvents = (k, id) => { const d = env.getDay(k); if (!d.events[id]) d.events[id] = []; return d.events[id]; };
@@ -54,6 +55,7 @@ function makeEnv(days, todayK) {
      '_migrateTaskRepeats', 'materializeRepeatsFor', 'ensureDailyRepeats', 'ensureRepeatsForView',
      'getDisplayTasks', '_repPurgeTasks', '_repPurgeEvents', '_repAddEx', '_repHiddenOn',
      '_evRepRootOf', '_evInSeries', '_evEditApply', '_evDeleteApply',
+     '_evMoveApply', '_evScopeRows', '_evMd', '_evSecFor', '_evGcalNote',
      '_taskDeleteApply', '_taskTextApply',
      '_taskRepWeekly', '_repKindOf', '_taskSetRepeat'].join(',') + '};';
   const api = new Function(...names, body)(...names.map(n => env[n]));
@@ -409,6 +411,125 @@ console.log('\n시나리오 19 — 반복 종류를 무엇으로 읽는가 (_rep
   sc.eq('매주 원본', api._repKindOf({ repeat: api0weekly() }), 'w');
   sc.eq('매주 실체(표시만)', api._repKindOf({ rid: 'rw', rk: 'w', daily: true }), 'w');
   sc.eq('매일 실체', api._repKindOf({ rid: 'r1', daily: true }), 'd');
+}
+
+console.log('\n시나리오 20 — 일정: 주간뷰에서 누른 날만 지우기 (v. 26-1030-5, HB)');
+{
+  // 8/28(금)에 만든 매주 일정을 주간뷰 10/30(금) 칸에서 눌러 '이 일정만' 지운다.
+  // 저장 자리는 원본 날(8/28), 누른 날(occ)은 10/30 — 지우는 기준은 언제나 누른 날이다.
+  const O = '2026-08-28', OCC = '2026-10-30';
+  const mk = () => ({ [O]: { big: {}, small: {}, trash: [], events: { pm: [{ id: 'e1', time: '13:40', text: '기독교 역사', rid: 'r1', repeat: api0weekly(),
+    g: { c: 'church', i: 'b7eve1', u: 'u1', h: 'h' } }] } } });
+  const a = makeEnv(mk(), OCC, { _gcalCfg: () => ({ on: true }) });
+  a.api._evDeleteApply({ dateKey: O, idx: 0, secId: 'pm', occ: OCC }, 'one');
+  const root = a.ST.days[O].events.pm[0];
+  sc.eq('원본은 그대로 남는다 (지우면 반복이 통째로 사라진다)', !!(root && root.repeat), true);
+  sc.eq('누른 날만 뺀 날에 적힌다', root.repeat.ex, [OCC]);
+  sc.eq('10/30 에는 안 보인다', a.api.eventRepeatsOnDate(root, O, OCC), false);
+  sc.eq('다음 주 11/6 에는 보인다', a.api.eventRepeatsOnDate(root, O, '2026-11-06'), true);
+  sc.eq('토스트에 날짜와 구글 한 줄', a.log.toasts[0], '10/30(금) 하루만 지웠어요\n반복은 그대로예요\n구글 캘린더에도 곧 반영돼요');
+  // 구글에 안 이은 일정 · 구글을 끈 기기에서는 구글 줄이 없다
+  const b = makeEnv(mk(), OCC);
+  b.api._evDeleteApply({ dateKey: O, idx: 0, secId: 'pm', occ: OCC }, 'one');
+  sc.eq('구글을 안 켰으면 구글 줄은 없다', b.log.toasts[0], '10/30(금) 하루만 지웠어요\n반복은 그대로예요');
+}
+
+console.log('\n시나리오 21 — 범위 묻기 문구에 날짜를 적는다');
+{
+  const { api } = makeEnv({ '2026-08-28': { big: {}, small: {}, trash: [], events: { pm: [{ id: 'e1', time: '13:40', text: '기독교 역사', rid: 'r1', repeat: api0weekly() }] } },
+                            '2026-10-23': { big: {}, small: {}, trash: [], events: { pm: [{ id: 'o1', time: '14:00', text: '기독교 역사(보강)', rid: 'r1' }] } } }, '2026-10-30');
+  const rows = api._evScopeRows('delete', '2026-10-30', { rid: 'r1', repeat: api0weekly() }, '2026-08-28');
+  sc.eq('세 갈래 차례', rows.map(r => r[0]), ['one', 'future', 'all']);
+  sc.eq('이 일정만 = 누른 날', rows[0][2], '10/30(금) 하루만 지워요');
+  sc.eq('이후 = 누른 날부터', rows[1][2], '10/30(금)부터 앞으로 모두 지워요');
+  sc.eq('모두 = 원본 날부터', rows[2][2], '8/28(금)부터 지난 것까지 반복 전체를 지워요');
+  const ov = api._evScopeRows('edit', '2026-10-23', { rid: 'r1' }, '2026-10-23');
+  sc.eq('하루만 고친 것을 눌러도 원본 날을 찾아 적는다', ov[2][2], '8/28(금)부터 지난 것까지 반복 전체를 고쳐요');
+}
+
+console.log('\n시나리오 22 — 반복 일정의 날짜를 바꾸면: 이 날만 옮기기');
+{
+  const O = '2026-09-11', OCC = '2026-09-18', TO = '2026-09-19';   // 금 → 토
+  const mk = (extraOcc) => ({
+    [O]: { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: api0weekly(), g: { c: 'church', i: 'b7eve1', u: 'u1', h: 'h' } }] } },
+    ...(extraOcc ? { [OCC]: { big: {}, small: {}, trash: [], events: { am: [extraOcc] } } } : {})
+  });
+  const a = makeEnv(mk(), O);
+  a.api._evMoveApply({ text: '기도회', time: '09:00', repeat: api0weekly(), secId: 'am', dateKey: O, editIdx: 0, occ: OCC, to: TO }, 'one');
+  const root = a.ST.days[O].events.am[0], moved = a.ST.days[TO].events.am[0];
+  sc.eq('누른 날은 뺀 날', root.repeat.ex, [OCC]);
+  sc.eq('반복 규칙은 그대로 (끝날 없음)', root.repeat.until, undefined);
+  sc.eq('보낸 날에 하루짜리가 선다', moved && moved.text, '기도회');
+  sc.eq('하루짜리는 묶음에서 떨어진다 (rid 없음 — 구글이 엉뚱한 회차를 고치지 않게)', [moved.rid, moved.repeat], [undefined, undefined]);
+  sc.eq('원본의 구글 캘린더를 물려받는다', moved.gc, 'church');
+  sc.eq('구글 고리는 물려받지 않는다 (구글엔 새 일정)', moved.g, undefined);
+  sc.eq('토스트: 무엇을 / 어디서 어디로 / 반복은', a.log.toasts[0], '일정을 옮겼어요\n9/18(금) → 9/19(토)\n반복은 그대로예요');
+
+  // 누른 날이 '하루만 고친 일정' 이었으면 그것은 걷고 구글에서도 지우라고 적는다
+  const ov = { id: 'o1', time: '10:00', text: '기도회(장소 변경)', rid: 'r1', g: { c: 'church', i: 'b7eve1_20260918T010000Z', u: 'u1', h: 'h' } };
+  const b = makeEnv(mk(ov), O, { _gcalTomb: (k, ev) => { const d = b.ST.days[k]; (d.gdel = d.gdel || []).push(ev.g.c + '|' + ev.g.i); } });
+  const rootB = b.ST.days[O].events.am[0];
+  rootB.repeat.ex = [OCC];
+  b.api._evMoveApply({ text: '기도회(장소 변경)', time: '10:00', repeat: null, secId: 'am', dateKey: OCC, editIdx: 0, occ: OCC, to: TO }, 'one');
+  sc.eq('하루만 고친 일정은 걷힌다', b.ST.days[OCC].events.am.length, 0);
+  sc.eq('구글 예외 회차를 지우라는 표시', b.ST.days[OCC].gdel, ['church|b7eve1_20260918T010000Z']);
+  sc.eq('보낸 날엔 고친 모양 그대로', b.ST.days[TO].events.am.map(e => [e.text, e.time, e.rid]), [['기도회(장소 변경)', '10:00', undefined]]);
+  sc.eq('뺀 날은 두 번 적히지 않는다', rootB.repeat.ex, [OCC]);
+}
+
+console.log('\n시나리오 23 — 반복 일정의 날짜를 바꾸면: 이후 반복도 함께 옮기기');
+{
+  const O = '2026-09-11';
+  const a = makeEnv({ [O]: { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: Object.assign(api0weekly(), { ex: ['2026-10-02'] }) }] } } }, O);
+  a.api._evMoveApply({ text: '기도회', time: '09:00', repeat: api0weekly(), secId: 'am', dateKey: O, editIdx: 0, occ: '2026-09-18', to: '2026-09-19' }, 'future');
+  const root = a.ST.days[O].events.am[0], fresh = a.ST.days['2026-09-19'].events.am[0];
+  sc.eq('옛 반복은 누른 날 전날까지', root.repeat.until, '2026-09-17');
+  sc.eq('보낸 날부터 새 묶음', !!(fresh.repeat && fresh.rid && fresh.rid !== 'r1'), true);
+  sc.eq('새 묶음은 끝날·뺀 날 없이 시작', [fresh.repeat.until, fresh.repeat.ex], [undefined, []]);
+  sc.eq('매주라 새 요일(토)에 되풀이', [a.api.eventRepeatsOnDate(fresh, '2026-09-19', '2026-09-26'), a.api.eventRepeatsOnDate(fresh, '2026-09-19', '2026-09-25')], [true, false]);
+
+  // 앞으로 당겨 옮기면(매일 12일 → 10일) 그 사이가 두 벌이 되지 않는다
+  const D0 = '2026-09-09';
+  const b = makeEnv({ [D0]: { big: {}, small: {}, trash: [], events: { am: [{ id: 'd1', time: '06:00', text: '새벽기도', rid: 'rd', repeat: rep() }] } } }, D0);
+  b.api._evMoveApply({ text: '새벽기도', time: '06:00', repeat: rep(), secId: 'am', dateKey: D0, editIdx: 0, occ: '2026-09-12', to: '2026-09-10' }, 'future');
+  sc.eq('옛 반복은 보낸 날 전날까지', b.ST.days[D0].events.am[0].repeat.until, '2026-09-09');
+  const freshD = b.ST.days['2026-09-10'].events.am[0];
+  sc.eq('10~11일은 새 묶음 하나만 (옛 것은 9일까지)', [b.api.eventRepeatsOnDate(b.ST.days[D0].events.am[0], D0, '2026-09-10'), b.api.eventRepeatsOnDate(b.ST.days[D0].events.am[0], D0, '2026-09-11'), !!freshD.repeat], [false, false, true]);
+
+  // 첫 회(원본 날)를 옮기면 옛 묶음은 통째로 걷히고 새 묶음만 남는다
+  const c = makeEnv({ [O]: { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: api0weekly() }] } } }, O);
+  c.api._evMoveApply({ text: '기도회', time: '09:00', repeat: api0weekly(), secId: 'am', dateKey: O, editIdx: 0, occ: O, to: '2026-09-12' }, 'future');
+  sc.eq('원본 날 자리는 빈다', c.ST.days[O].events.am.length, 0);
+  sc.eq('새 날에 새 묶음', !!c.ST.days['2026-09-12'].events.am[0].repeat, true);
+}
+
+console.log('\n시나리오 24 — 반복 일정 시각을 바꾸면 구간도 따라간다 (한 번짜리와 같은 규칙)');
+{
+  const secFor = t => (t >= '12:00' ? 'pm' : 'am');
+  const mk = () => ({ [T]: { big: {}, small: {}, trash: [], events: { am: [{ id: 'e1', time: '09:00', text: '기도회', rid: 'r1', repeat: rep() }] } } });
+  const a = makeEnv(mk(), T, { _secIdForTime: secFor });
+  a.api._evEditApply({ text: '기도회', time: '15:00', repeat: rep(), secId: 'am', dateKey: T, editIdx: 0, occ: '2026-09-12' }, 'one');
+  sc.eq('이 날만: 하루만 고친 것이 오후 구간에', (a.ST.days['2026-09-12'].events.pm || []).map(e => e.time), ['15:00']);
+  sc.eq('이 날만: 오전 구간엔 없다', (a.ST.days['2026-09-12'].events.am || []).length, 0);
+  // 그 하루만 고친 것을 다시 오전으로 — 오후에 있던 것은 걷힌다
+  const a2 = makeEnv(a.ST.days, T, { _secIdForTime: secFor });
+  a2.api._evEditApply({ text: '기도회', time: '08:00', repeat: null, secId: 'pm', dateKey: '2026-09-12', editIdx: 0, occ: '2026-09-12' }, 'one');
+  sc.eq('다시 고치면 옛 구간 것은 걷히고 새 구간에 하나', [(a.ST.days['2026-09-12'].events.pm || []).length, (a.ST.days['2026-09-12'].events.am || []).map(e => e.time)], [0, ['08:00']]);
+
+  const b = makeEnv(mk(), T, { _secIdForTime: secFor });
+  b.api._evEditApply({ text: '기도회', time: '19:00', repeat: rep(), secId: 'am', dateKey: T, editIdx: 0, occ: '2026-09-12' }, 'all');
+  sc.eq('모두: 원본이 오후 구간으로 옮겨 간다 (같은 날)', [(b.ST.days[T].events.am || []).length, (b.ST.days[T].events.pm || []).map(e => [e.id, e.time])], [0, [['e1', '19:00']]]);
+  sc.eq('모두: 규칙은 그대로', !!b.ST.days[T].events.pm[0].repeat, true);
+
+  const c = makeEnv(mk(), T, { _secIdForTime: secFor });
+  c.api._evEditApply({ text: '기도회', time: '13:00', repeat: rep(), secId: 'am', dateKey: T, editIdx: 0, occ: '2026-09-14' }, 'future');
+  sc.eq('이후: 새 묶음이 오후 구간에서 시작', (c.ST.days['2026-09-14'].events.pm || []).map(e => e.time), ['13:00']);
+  sc.eq('이후: 옛 묶음은 오전 그대로 · 전날까지', [c.ST.days[T].events.am[0].time, c.ST.days[T].events.am[0].repeat.until], ['09:00', '2026-09-13']);
+
+  // 시각이 없으면 있던 구간에 머문다
+  const d = makeEnv(mk(), T, { _secIdForTime: secFor });
+  d.api._evEditApply({ text: '기도회', time: null, repeat: rep(), secId: 'am', dateKey: T, editIdx: 0, occ: '2026-09-12' }, 'one');
+  sc.eq('시각 없는 하루만 고친 것은 있던 구간에', (d.ST.days['2026-09-12'].events.am || []).length, 1);
 }
 
 sc.done();
