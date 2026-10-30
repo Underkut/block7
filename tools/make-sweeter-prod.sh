@@ -174,6 +174,8 @@ cp -r bible "$OUT/bible"
 cp -r pray "$OUT/pray"
 # 헌금 계좌 안내(sweeter.my/bank/mission/) — 원본은 bank/ 한 벌. block7.my/bank/ 는 보조 주소.
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 계좌 안내가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
-mkdir -p "$OUT/bank/mission" && cp -r bank/. "$OUT/bank/mission/"
+# 바자회 팝업 코너(sweeter.my/bank/bazaar/) 는 bank/bazaar/ — ../logos 를 쓰므로 bank/ 를 통째로 함께 싣는다.
+mkdir -p "$OUT/bank" && cp -r bank/. "$OUT/bank/"
+mkdir -p "$OUT/bank/mission" && cp -r bank/. "$OUT/bank/mission/" && rm -rf "$OUT/bank/mission/bazaar"
 
 echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"

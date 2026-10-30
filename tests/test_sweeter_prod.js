@@ -238,6 +238,7 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
         (h[0].headers||[]).some(x=>x.source==='/pray/sw.js'), true);
   // 헌금 계좌 안내(sweeter.my/bank/mission/) — 빠지면 다음 배포 때 사라진다.
   sc.eq('⭐ 빌드가 계좌 안내(bank/ → bank/mission/)를 함께 담는다', mk.includes('cp -r bank/. "$OUT/bank/mission/"'), true);
+  sc.eq('⭐ 빌드가 바자회(bank/ → bank/bazaar/)를 함께 담는다', mk.includes('cp -r bank/. "$OUT/bank/"') && fs.existsSync(path.join(__dirname,'..','bank','bazaar','index.html')), true);
   const pwf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
   sc.eq('기도노트를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'pray/**'"), true);
   sc.eq('계좌 안내를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'bank/**'"), true);
