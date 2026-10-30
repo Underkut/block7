@@ -172,5 +172,8 @@ cp -r bible "$OUT/bible"
 #    (파이어베이스 배포는 사이트를 통째로 갈아 끼운다).
 #    tests/test_sweeter_prod.js 가 이 줄이 있는지 지킨다.
 cp -r pray "$OUT/pray"
+# 헌금 계좌 안내(sweeter.my/bank/mission/) — 원본은 bank/ 한 벌. block7.my/bank/ 는 보조 주소.
+# ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 계좌 안내가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
+mkdir -p "$OUT/bank/mission" && cp -r bank/. "$OUT/bank/mission/"
 
 echo "build-sweeter/ 준비 완료 — $(find "$OUT" -type f | wc -l) 개 파일"

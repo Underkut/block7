@@ -236,8 +236,11 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
         (h[0].redirects||[]).some(r=>/^\/pray\/?$/.test(r.source||'')), false);
   sc.eq('기도노트 서비스워커는 늘 새로 받는다',
         (h[0].headers||[]).some(x=>x.source==='/pray/sw.js'), true);
+  // 헌금 계좌 안내(sweeter.my/bank/mission/) — 빠지면 다음 배포 때 사라진다.
+  sc.eq('⭐ 빌드가 계좌 안내(bank/ → bank/mission/)를 함께 담는다', mk.includes('cp -r bank/. "$OUT/bank/mission/"'), true);
   const pwf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
   sc.eq('기도노트를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'pray/**'"), true);
+  sc.eq('계좌 안내를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'bank/**'"), true);
   sc.eq('올리기 전에 pray/ 가 담겼는지 본다', pwf.includes('test -f build-sweeter/pray/index.html'), true);
   // block7.my/pray/ 에도 같은 파일이 생긴다(깃헙 페이지) — 거기서 열리면 sweeter.my 로 넘긴다
   const pray=fs.readFileSync(path.join(__dirname,'..','pray','index.html'),'utf8');
