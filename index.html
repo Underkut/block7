@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-7  [production]  -->
+<!-- BLOCK7  v. 26-1030-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3463,6 +3463,16 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .wmfs-host{position:relative;}
 .wmfs.wmfs-abs{position:absolute;right:0;top:50%;transform:translateY(calc(-50% - 4px));}
 .wmfs.wmfs-head{position:absolute;right:6px;top:4px;z-index:2;}
+/* 주간 ⇄ 월간 [W|M] (v. 26-1030-8) — 미끄러지는 작은 세그먼트. 월간은 머리줄 오른쪽, 주간은 새벽 · 점심 줄 오른쪽 */
+.rp-whead-r{position:absolute;right:6px;top:3px;z-index:2;display:flex;align-items:center;gap:6px;}
+.rp-whead-r:empty{display:none;}
+.b7-seg.rp-wm-seg{display:inline-flex;flex:0 0 auto;gap:2px;padding:2px;margin:0;border-radius:8px;}
+.b7-seg.rp-wm-seg button{flex:0 0 24px;width:24px;padding:3px 0;border-radius:6px;font:500 10.5px/1.2 var(--font-ui),sans-serif;letter-spacing:.02em;}
+.rp-wm-seg .b7-seg-pill{top:2px;bottom:2px;left:2px;width:24px;border-radius:6px;transition:transform .42s cubic-bezier(.25,.1,.25,1);}
+.rp-wm-seg.at-m .b7-seg-pill{transform:translateX(26px);}
+@media (prefers-reduced-motion:reduce){.rp-wm-seg .b7-seg-pill{transition:none;}}
+.add-row .rp-wm-seg{margin-left:auto;}
+.rp-wm-seg+.wmfs.wmfs-row{margin-left:6px;}
 /* 떠 있는 작은 메뉴 — 말씀 전체화면 좌상단 '저장' 메뉴(.vf-keep-switch)와 같은 유리 모양 (B1 · A1, HB 2026-10-27) */
 .b7-pop{position:fixed;z-index:9000;width:min(230px,calc(100vw - 32px));max-height:44vh;overflow:auto;overscroll-behavior:contain;
   padding:5px 6px;color:var(--tx);
@@ -6655,7 +6665,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-7";
+const APP_VERSION = "v. 26-1030-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -33290,6 +33300,100 @@ function rpWeeklyWideMenu(ev,btn){
   if(ev)ev.stopPropagation();
   _b7PopSeg(btn,'주간뷰 너비',['1단','2단'],_lay().wkWide?1:0,i=>rpSetWeeklyWide(i===1));
 }
+// ── 주간 ⇄ 월간 바꾸기 [W|M] (v. 26-1030-8, HB) ──
+// 2·3단 주간뷰 · 월간뷰 위젯 헤더 오른쪽(− + 바로 왼쪽). 누르면 **그 자리 위젯이** 주간 ↔ 월간(싱글)으로 바뀐다.
+// HB (다): 둘 다 그 화면 단수 배치에 놓여 있으면 단추를 숨긴다 — 맞바꾸거나 합치지 않는다.
+// 손맛은 There 대시보드 D W M 과 같다: 누르는 순간 네모가 미끄러지기 시작하고(420ms), 판은 나가고(150ms) → 그리고 → 들어온다(300ms).
+// M 은 오른쪽 칸이라 W → M 은 왼쪽으로 나가고 오른쪽에서 들어온다.
+const _WM_SEG_MS=420,_WM_SEG_STEP=26;   // 단추 24px + 틈 2px
+let _wmSegAnim=null,_wmBusy=false;
+function _rpWMSegOn(type){
+  if(!document.body.classList.contains('split-d'))return false;
+  const mode=_layMode();
+  if(mode<2)return false;
+  const L=_lay(),other=type==='weekly'?'monthSingle':'weekly';
+  return !!_layColOf(L,type,mode)&&!_layColOf(L,other,mode);
+}
+function _rpWMSegHTML(type){
+  if(!_rpWMSegOn(type))return'';
+  const m=type==='monthSingle';
+  const stop='onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"';
+  return`<div class="b7-seg rp-wm-seg${m?' at-m':''}" role="radiogroup" aria-label="주간 · 월간" ${stop}><i class="b7-seg-pill"></i>`+
+    `<button type="button" role="radio" aria-checked="${!m}"${m?'':' class="on"'} onclick="event.stopPropagation();rpSwapWM('${type}','W')">W</button>`+
+    `<button type="button" role="radio" aria-checked="${m}"${m?' class="on"':''} onclick="event.stopPropagation();rpSwapWM('${type}','M')">M</button></div>`;
+}
+// 바뀌는 판 — 머리줄(… ≡ [W|M])은 그대로 두고 그 아래만 나가고 들어온다
+function _rpWMBodyEls(w){
+  return[...w.querySelectorAll('.rp-mbody,#weeklyPaneInner>.mnav,#weeklyPaneInner>.wscr')];
+}
+// 배치를 바꾼다 (화면은 안 건드린다 — 시험이 이것만 부른다)
+function _rpWMSwap(type,want){
+  const L=_lay(),mode=_layMode();
+  const C=_layColsFor(L,mode),col=_layColOf(L,type,mode);
+  if(!col||_layColOf(L,want,mode))return false;
+  beforeSave();
+  C[col][C[col].indexOf(type)]=want;
+  // 1칸/2칸 너비는 그 자리를 따라간다 — 단, 바뀌어 들어오는 쪽이 다른 단수 배치에서 쓰이지 않을 때만
+  // (wkWide · mWide 는 2단 · 3단 공용이라, 쓰이고 있으면 그 화면의 넓이를 흔든다)
+  if(!_layColOf(L,want,mode===2?3:2)){
+    const wide=type==='weekly'?!!L.wkWide:!!L.mWide,k=want==='weekly'?'wkWide':'mWide';
+    if(wide)L[k]=true;else delete L[k];
+  }
+  // 보던 때를 이어 간다 — 주 → 그 주의 달 / 달 → 그 달의 첫 주 (이번 달이면 이번 주)
+  const now=logicalNow();
+  if(want==='monthSingle'){
+    const a=new Date(now);a.setDate(a.getDate()+wOffset*7);
+    _rpMonthState.single={y:a.getFullYear(),m:a.getMonth()};
+  }else{
+    const st=_rpMonthState.single;
+    if(!st||(st.y===now.getFullYear()&&st.m===now.getMonth()))wOffset=0;
+    else{
+      const wk=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-x.getDay());return x;};
+      wOffset=Math.round((wk(new Date(st.y,st.m,1))-wk(now))/(7*86400000));
+    }
+  }
+  save();
+  return true;
+}
+function rpSwapWM(type,to){
+  const want=to==='M'?'monthSingle':'weekly';
+  if(want===type||_wmBusy||!_rpWMSegOn(type))return;
+  const w=document.querySelector('#pageContent .rp-widget[data-wtype="'+type+'"]');
+  const seg=w&&w.querySelector('.rp-wm-seg'),pill=seg&&seg.querySelector('.b7-seg-pill');
+  const quiet=_tfQuiet()||!(pill&&pill.animate);
+  if(seg){
+    seg.classList.toggle('at-m',want==='monthSingle');   // 네모는 누르는 순간 출발 (CSS 전이)
+    seg.querySelectorAll('button').forEach((b,i)=>{const on=(i===1)===(want==='monthSingle');b.classList.toggle('on',on);b.setAttribute('aria-checked',String(on));});
+  }
+  const dir=want==='monthSingle'?-1:1;
+  const outEls=(!quiet&&w)?_rpWMBodyEls(w):[];
+  const go=()=>{
+    // 다시 그리면 단추가 새로 생긴다 — 옛 네모가 지금 있던 자리에서 남은 시간만큼 이어 간다 (_rpWMSegResume)
+    let fromX=null;
+    if(!quiet&&pill&&pill.isConnected){try{fromX=new DOMMatrixReadOnly(getComputedStyle(pill).transform).m41;}catch(e){}}
+    _wmSegAnim=(quiet||fromX==null)?null:{toM:want==='monthSingle',fromX,end:t0+_WM_SEG_MS};
+    if(!_rpWMSwap(type,want)){_wmBusy=false;_wmSegAnim=null;renderLayout();return;}
+    renderLayout();
+    _wmBusy=false;
+    if(quiet)return;
+    const nw=document.querySelector('#pageContent .rp-widget[data-wtype="'+want+'"]');
+    if(nw)_rpWMBodyEls(nw).forEach(el=>el.animate([{transform:'translateX('+(-dir*24)+'px)',opacity:0},{transform:'none',opacity:1}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'}));
+  };
+  const t0=Date.now();
+  _wmBusy=true;
+  if(!outEls.length){go();return;}
+  outEls.forEach(el=>el.animate([{transform:'none',opacity:1},{transform:'translateX('+(dir*24)+'px)',opacity:0}],{duration:150,easing:'ease-in',fill:'forwards'}));
+  setTimeout(go,150);
+}
+function _rpWMSegResume(){
+  const a=_wmSegAnim;_wmSegAnim=null;
+  if(!a)return;
+  const left=a.end-Date.now();
+  if(left<=30)return;
+  const pill=document.querySelector('#pageContent .rp-wm-seg .b7-seg-pill');
+  if(!pill||!pill.animate)return;
+  pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+(a.toM?_WM_SEG_STEP:0)+'px)'}],{duration:left,easing:'cubic-bezier(.3,.6,.4,1)'});
+}
 // 떠 있는 작은 메뉴 하나 — 단추 아래에 연다. 밖을 누르면 닫힌다. rows = [{label, sub, on, fn}]
 function _b7PopClose(){const m=document.getElementById('b7Pop');if(!m)return;m.classList.remove('open');m.id='';setTimeout(()=>m.remove(),260);}
 function _b7Pop(anchor,title,rows){
@@ -33391,7 +33495,7 @@ function _rpWidgetHTML(w){
   if(w.type==='monthSingle'){
     const s=_rpMonthState.single||(_rpMonthState.single=_rpMonthOf(0));
     return`<div class="rp-widget rp-mslide" data-rpswipe="single" data-wtype="monthSingle" style="position:relative;">
-      ${_wmFsHTML('wmfs-head')}
+      <div class="rp-whead-r">${_rpWMSegHTML('monthSingle')}${_wmFsHTML('')}</div>
       <button class="rp-wmore" onclick="rpMonthWideMenu(event,this)" onpointerdown="event.stopPropagation()" aria-label="월간뷰 너비 (1단 · 2단)"><svg width="16" height="4" viewBox="0 0 16 4" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="14" cy="2" r="1.3"/></svg></button>
       <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
       <div class="rp-mbody">
@@ -33573,6 +33677,7 @@ function renderLayout(){
   _rollFit(pc);          // 헤더 이름이 자리보다 긴지는 그린 다음에야 잴 수 있다
   _rollStart();
   if(typeof _kbWSync==='function')_kbWSync();   // 다시 그리면 자판 표시가 날아간다
+  _rpWMSegResume();   // [W|M] 을 누른 뒤 다시 그렸으면 네모가 이어 미끄러진다
 }
 window.renderRightPanel=renderLayout; // 기존 호출부 호환 별칭
 // 위젯 추가 + 버튼 (미니멀: 테두리·원 없이 + 만) — 누르면 위젯 설정 팝업
@@ -43586,7 +43691,10 @@ function renderWeekly(hostEl){
   // +/- expand-all button (weekly view has no per-section collapse
   // concept) and refreshing renderWeekly() instead of renderToday().
   renderAddRow('addRowWeekly',renderWeekly,false);
-  {const ar=el.querySelector('#addRowWeekly'),fs=_wmFsHTML('wmfs-row');if(ar&&fs)ar.insertAdjacentHTML('beforeend',fs);}
+  {const ar=el.querySelector('#addRowWeekly'),fs=_wmFsHTML('wmfs-row');
+   // D 화면 위젯일 때만 [W|M] (v. 26-1030-8) — − + 바로 왼쪽. 전체 W 화면에는 없다
+   const sg=(el.id==='weeklyPaneInner'&&_wkPaneActive())?_rpWMSegHTML('weekly'):'';
+   if(ar&&(sg||fs))ar.insertAdjacentHTML('beforeend',sg+fs);}
 
   initWeeklySwipe();
   attachPullToToday('weekSwipeCatcher',()=>{wOffset=0;renderWeekly();},'이번주로');
