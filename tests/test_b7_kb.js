@@ -203,10 +203,8 @@ console.log('\n시나리오 3 — [ ] 는 위젯 안을 넘긴다');
   _b7BoardKey(K(']',{code:'BracketRight'}));
   sc.eq('할일 위젯이면 날짜 넘기기', CALLS, ['date1']);
   CALLS=[];
-  // 두 칸 주간뷰 패널도 한 식구다 — 주간뷰가 두 칸일 때만 (v. 26-1030-2: body.wk-wide.
-  //   한 칸 주간뷰는 보통 위젯으로 잡히고, 월간뷰 혼자 두 칸이면 패널을 '주간뷰' 로 세우지 않는다)
-  PANE=mkW('weekly',{top:0,bottom:600,left:810,right:1200});
-  BODY.classList.add('wk-wide');
+  // 주간뷰도 한 식구다 — v. 26-1030-3 부터는 두 칸이어도 보통 위젯 껍데기(.rp-widget[data-wtype=weekly])
+  WIDGETS.push(mkW('weekly',{top:0,bottom:600,left:810,right:1200}));
   _kbWSet('weekly');
   _b7BoardKey(K(']',{code:'BracketRight'}));
   sc.eq('주간뷰 패널이면 주 넘기기', CALLS, ['week1']);

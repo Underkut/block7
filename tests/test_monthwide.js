@@ -71,4 +71,20 @@ console.log('\n시나리오 4 — 옛 주간뷰 자리(L.weekly) 를 cols 로 �
   sc.eq('이미 cols 에 있으면 그 자리를 따른다', [L.cols.left, L.cols.center], [['todo'], ['weekly']]);
 }
 
+// ═══ 5. 주간뷰 높이 (v. 26-1030-3) — 기기별 칸(rpWidgetHeights)에, 범위 안으로 ═══
+console.log('\n시나리오 5 — 주간뷰 위젯 높이');
+{
+  global.ST = { settings: {} };
+  global.save = () => {};
+  eval(slice('const WK_H_MIN=', '// 말씀 목록 위젯(암송/좋아요/Deeper)의 드래그 지정 높이') + ';Object.assign(globalThis,{_rpWkH,_rpSetWkH,WK_H_MIN,WK_H_MAX});');
+  sc.eq('정한 적 없으면 내용 높이(null)', _rpWkH(), null);
+  _rpSetWkH(420.4);
+  sc.eq('정한 높이', _rpWkH(), 420);
+  sc.eq('위젯 높이 칸에 산다 (기기별)', ST.settings.rpWidgetHeights.weekly, 420);
+  _rpSetWkH(10);
+  sc.eq('너무 작으면 최소', _rpWkH(), WK_H_MIN);
+  _rpSetWkH(99999);
+  sc.eq('너무 크면 최대', _rpWkH(), WK_H_MAX);
+}
+
 sc.done();
