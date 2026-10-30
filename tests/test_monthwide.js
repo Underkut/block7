@@ -6,13 +6,14 @@
 // 주간뷰는 예전엔 cols 밖(L.weekly = 'none'|'lc'|'cr')에 살았다 → 이제 cols 안의 'weekly' + L.wkWide.
 const { slice, makeScorer } = require('./_load');
 const sc = makeScorer();
-eval(slice('function _layColOf(L,t){', 'function rpMonthWideMenu('));
+eval(slice('// 화면 단수마다 배치가 따로다', 'function rpMonthWideMenu('));
 
 const mk = (col, wide, wk) => {
   const cols = { left: ['todo'], center: [], right: [] };
   if (col) cols[col].push('monthSingle');
   const L = { mWide: wide, cols };
   if (wk) { cols[wk.col].unshift('weekly'); if (wk.wide) L.wkWide = true; }
+  L.cols2 = { left: cols.left.slice(), right: [...cols.center, ...cols.right] };   // 2단 배치 (v. 26-1030-4) — _lay 가 처음 만드는 모양
   return L;
 };
 
@@ -30,6 +31,7 @@ sc.eq('2단 화면 → 위쪽 전체 폭', _monthWideSide(mk('right', true), 2),
 console.log('\n시나리오 2 — 주간뷰 두 칸');
 sc.eq('한 칸이면 null', _wkWideSide(mk(null, false, { col: 'left', wide: false }), 3), null);
 sc.eq('주간뷰를 안 쓰면 null', _wkWideSide({ wkWide: true, cols: { left: ['todo'], center: [], right: [] } }, 3), null);
+sc.eq('⭐ 2단은 2단 배치를 본다 — 3단에만 있으면 2단엔 없다', _wkWideSide({ wkWide: true, cols: { left: ['todo', 'weekly'], center: [], right: [] }, cols2: { left: ['todo'], right: [] } }, 2), null);
 sc.eq('3단 · 좌 → 좌+중', _wkWideSide(mk(null, false, { col: 'left', wide: true }), 3), 'lc');
 sc.eq('3단 · 중 → 좌+중', _wkWideSide(mk(null, false, { col: 'center', wide: true }), 3), 'lc');
 sc.eq('3단 · 우 → 중+우', _wkWideSide(mk(null, false, { col: 'right', wide: true }), 3), 'cr');
@@ -85,6 +87,40 @@ console.log('\n시나리오 5 — 주간뷰 위젯 높이');
   sc.eq('너무 작으면 최소', _rpWkH(), WK_H_MIN);
   _rpSetWkH(99999);
   sc.eq('너무 크면 최대', _rpWkH(), WK_H_MAX);
+}
+
+
+// ═══ 6. 2단 배치를 따로 기억한다 (v. 26-1030-4, HB (가)) ═══
+console.log('\n시나리오 6 — 2단 배치(cols2)');
+{
+  const run = L => { ST.settings = { layout: L }; return _lay(); };
+  let L = run({ cols: { left: ['todo'], center: ['card#a'], right: ['monthSingle', 'weekly'] } });
+  sc.eq('처음엔 예전 2단 화면 그대로 (좌 = 좌, 우 = 중+우)', L.cols2, { left: ['todo'], right: ['card#a', 'monthSingle', 'weekly'] });
+  // 2단에서 순서를 바꿔도 3단은 그대로
+  L.cols2.right = ['weekly', 'card#a'];
+  L = _lay();
+  sc.eq('2단에서 고친 것이 남는다', L.cols2.right, ['weekly', 'card#a']);
+  sc.eq('3단 배치는 그대로', L.cols, { left: ['todo'], center: ['card#a'], right: ['monthSingle', 'weekly'] });
+  // 두 단수의 주간뷰 자리가 따로다
+  sc.eq('3단 주간뷰 칸', _layColOf(L, 'weekly', 3), 'right');
+  sc.eq('2단 주간뷰 칸', _layColOf(L, 'weekly', 2), 'right');
+  sc.eq('월간뷰는 2단에 없다', _layColOf(L, 'monthSingle', 2), null);
+  // 거르기: 같은 것 두 번 · 할일뷰 없음
+  L = run({ cols: { left: ['todo'], center: [], right: [] }, cols2: { left: ['weekly'], right: ['weekly', 'monthSingle'] } });
+  sc.eq('같은 것은 하나 · 할일뷰는 늘 있다', L.cols2, { left: ['todo', 'weekly'], right: ['monthSingle'] });
+  sc.eq('cols2 에 중 칸은 없다', 'center' in L.cols2, false);
+  // _layDrop — 카드 설정은 다른 단수에도 없을 때만 지운다
+  const removed = [];
+  global._vcRemove = id => removed.push(id);
+  L = run({ cols: { left: ['todo'], center: ['card#a'], right: [] }, cols2: { left: ['todo'], right: ['card#a', 'card#b'] } });
+  L.cols.right.push('card#b'); L.cols.center = ['card#a'];
+  L.cols.right = [];   // card#b 는 2단에만
+  _layDrop(L, 'card#a', 2);
+  sc.eq('2단에서 뺀 카드 — 3단에 있으니 설정은 남긴다', removed, []);
+  sc.eq('2단 배치에서는 빠졌다', L.cols2.right, ['card#b']);
+  sc.eq('3단 배치에는 그대로', L.cols.center, ['card#a']);
+  _layDrop(L, 'card#b', 2);
+  sc.eq('어디에도 없으면 설정도 지운다', removed, ['b']);
 }
 
 sc.done();
