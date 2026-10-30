@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-4  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1030-5  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3241,7 +3241,7 @@ body.split-d #todayView.animating{overflow:hidden;}
 }
 .rep-scope-btn:hover,.rep-scope-btn:active{background:var(--s1);border-color:var(--ac);}
 .rep-scope-btn .rep-scope-sub{
-  display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--tx3);line-height:1.5;
+  display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--tx3);line-height:1.5;word-break:keep-all;
 }
 .rep-scope-btn.danger{color:var(--ov);}
 
@@ -6652,7 +6652,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-4";
+const APP_VERSION = "v. 26-1030-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8230,6 +8230,9 @@ try{
       style="background:var(--bg);border:1px solid var(--bd2);border-radius:8px;padding:6px 9px;
       color:var(--tx);font-family:var(--font-number);font-size:12px;outline:none;">
     <span id="eventDateDow" style="font-size:11px;color:var(--tx3);font-family:var(--font-mono);"></span>
+    <button class="modal-x modal-x-inline" onclick="closeEventModal()" aria-label="닫기" style="margin:0 -8px 0 auto;">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+    </button>
   </div>
   <div id="eventSecPick" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
   <div id="eventCalPick" style="display:none;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
@@ -8255,8 +8258,9 @@ try{
     <button class="event-repeat-btn" id="eventDailyBtn">매일</button>
     <button class="event-repeat-btn" id="eventWeeklyBtn">매주</button>
   </div>
+  <!-- 닫기는 우상단 × (팝업 규칙). 고칠 때는 '취소' 자리에 '삭제' — 주간·월간에서 연 반복 일정도 그 날만 지울 수 있게 (v. 26-1030-5, HB) -->
   <div class="event-modal-actions">
-    <button class="settings-btn" onclick="closeEventModal()">취소</button>
+    <button class="settings-btn settings-btn-danger" id="eventDeleteBtn" onclick="deleteEventFromModal()" style="display:none">삭제</button>
     <button class="auth-btn" id="eventSubmitBtn" onclick="submitEventModal()">추가</button>
   </div>
 </div>
@@ -8281,7 +8285,7 @@ try{
   <button class="modal-x" onclick="closeRepScope()" aria-label="닫기">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
   </button>
-  <div class="event-modal-title" id="repScopeTitle" style="padding:0 28px;">반복되는 항목이에요</div>
+  <div class="event-modal-title" id="repScopeTitle" style="padding:0 28px;word-break:keep-all;">반복되는 항목이에요</div>
   <div class="rep-scope-list" id="repScopeList"></div>
 </div>
 
@@ -40214,17 +40218,22 @@ function _evSyncRange(prefer){
   syncRollDisplays();
 }
 
-function openEventModal(secId,editIdx,dateKey){
+function openEventModal(secId,editIdx,dateKey,occKey){
   const _sp=document.getElementById('eventSecPick');
   if(_sp){_sp.style.display='none';_sp.innerHTML='';}  // 구간 칩은 셀에서 열 때만 쓴다
   _eventModalSecId=secId;
   _eventModalEditIdx=(typeof editIdx==='number')?editIdx:null;
-  _eventModalDateKey=dateKey||tKey();
-  _eventModalOrigDateKey=_eventModalDateKey;   // 수정 중 날짜를 바꾸면 옮겨야 하므로 기억
+  _eventModalOrigDateKey=dateKey||tKey();   // 저장 자리(원본이 있는 날). 고칠 일정은 언제나 여기서 찾는다
   // 사용자가 실제로 누른 날짜 — 반복 일정은 여러 날에 비치므로, 저장 자리
-  // (_eventModalDateKey, 원본이 있는 날)와 **누른 날**이 다를 수 있다.
+  // (원본이 있는 날)와 **누른 날**이 다를 수 있다.
   // '이 일정만 / 이후 모두' 를 가르는 기준은 언제나 **누른 날**이다.
-  _eventModalOccKey=tKey();
+  _eventModalOccKey=occKey||tKey();
+  // 날짜 칸(_eventModalDateKey)은 '어느 날에 둘까' 다. 반복 일정은 누른 날을 보인다 —
+  // 예전엔 원본 날(8.28)이 떠서 10.30 을 누르고도 엉뚱한 날을 고치는 줄 알았다 (v. 26-1030-5, HB)
+  {
+    const _ed=_eventModalEditIdx!==null?getEvents(_eventModalOrigDateKey,secId)[_eventModalEditIdx]:null;
+    _eventModalDateKey=(_ed&&_evInSeries(_ed))?_eventModalOccKey:_eventModalOrigDateKey;
+  }
   _syncEventDateUI();
   document.getElementById('eventModalOverlay').style.display='block';
   document.getElementById('eventModal').style.display='block';
@@ -40243,12 +40252,13 @@ function openEventModal(secId,editIdx,dateKey){
   const timeBtn=document.getElementById('eventTimeToggleBtn');
   const pickersEl=document.getElementById('eventModalPickers');
   document.getElementById('eventSubmitBtn').textContent=_eventModalEditIdx!==null?'수정':'추가';
+  {const _db=document.getElementById('eventDeleteBtn');if(_db)_db.style.display=_eventModalEditIdx!==null?'':'none';}
   // 구글 캘린더를 이었으면 어느 캘린더에 둘지 고르는 칩 (v26-1024-1)
-  try{_gcalPickRender(_eventModalEditIdx!==null?getEvents(_eventModalDateKey,secId)[_eventModalEditIdx]:null);}catch(e){}
+  try{_gcalPickRender(_eventModalEditIdx!==null?getEvents(_eventModalOrigDateKey,secId)[_eventModalEditIdx]:null);}catch(e){}
 
   if(_eventModalEditIdx!==null){
     // Editing an existing event — pre-fill its current time/text/repeat.
-    const ev=getEvents(_eventModalDateKey,secId)[_eventModalEditIdx];
+    const ev=getEvents(_eventModalOrigDateKey,secId)[_eventModalEditIdx];
     document.getElementById('eventTextInput').value=ev?.text||'';
     _eventRepeat=ev&&ev.repeat?JSON.parse(JSON.stringify(ev.repeat)):{daily:false,daysOfWeek:[0,1,2,3,4,5,6],weekly:false,weeksOfMonth:[1,2,3,4,5]};
     if(ev&&ev.time){
@@ -40305,8 +40315,7 @@ function openEventModal(secId,editIdx,dateKey){
 // (repeated) occurrence, which must edit the real stored event at its
 // origin date rather than whatever date is currently on screen.
 function openEventModalForDate(dateKey,secId,editIdx,occKey){
-  openEventModal(secId,editIdx,dateKey);
-  if(occKey)_eventModalOccKey=occKey;
+  openEventModal(secId,editIdx,dateKey,occKey);
 }
 
 function setEventTimeToggle(on){
@@ -40373,14 +40382,18 @@ function submitEventModal(){
   // 구간·날짜를 함께 옮기는 일은 반복에서는 다루지 않는다 — 반복은 제 자리에서
   // 되풀이되는 것이 본질이라, 옮기려면 반복을 끄고 옮기는 편이 헷갈리지 않는다.
   if(_eventModalEditIdx!==null){
-    const _cur=getEvents(_eventModalDateKey||tKey(),_eventModalSecId)[_eventModalEditIdx];
+    // ⚠️ 고칠 일정은 저장 자리(원본 날)에서 찾는다 — 날짜 칸을 바꿨으면 그 날의 같은 번호 일정을 집게 된다
+    const _origK=_eventModalOrigDateKey||_eventModalDateKey||tKey();
+    const _cur=getEvents(_origK,_eventModalSecId)[_eventModalEditIdx];
     if(_cur&&_evInSeries(_cur)){
+      const occ=_eventModalOccKey||_origK;
       const payload={cal:(typeof _eventModalCal==='undefined')?null:_eventModalCal,   // 고른 캘린더 — 범위(하루만·이후·모두)에 맞는 일정에 적는다
         text,time,repeat,secId:_eventModalSecId,
-        dateKey:_eventModalDateKey||tKey(),editIdx:_eventModalEditIdx,
-        occ:_eventModalOccKey||_eventModalDateKey||tKey()};
+        dateKey:_origK,editIdx:_eventModalEditIdx,occ};
+      const to=_eventModalDateKey||occ;
       closeEventModal();
-      _repScopeAsk({kind:'event',mode:'edit',onPick:sc=>_evEditApply(payload,sc)});
+      if(to!==occ){payload.to=to;_evMoveAsk(payload);return;}   // 날짜를 바꿨다 = 옮기기 (할일 B3-2 와 같은 두 갈래)
+      _repScopeAsk({kind:'event',mode:'edit',rows:_evScopeRows('edit',occ,_cur,_origK),onPick:sc=>_evEditApply(payload,sc)});
       return;
     }
   }
@@ -40723,22 +40736,34 @@ function deleteEventFromMenu(){
   if(!_eventEditMenuCtx)return;
   const{secId,ev}=_eventEditMenuCtx;
   closeEventEditMenu();
-  // 반복 일정이면 "어디까지 지울까" 를 먼저 묻는다 (구글 캘린더와 같은 세 갈래).
   // 저장 자리(dateKey/idx)는 원본이 있는 날, occ 는 **사용자가 누른 날**이다.
-  const p=ev._virtualFrom
+  _evDeleteAt(ev._virtualFrom
     ?{dateKey:ev._virtualFrom,idx:ev._virtualIdx,secId,occ:tKey()}
-    :{dateKey:tKey(),idx:ev._ownIdx,secId,occ:tKey()};
-  const stored=getEvents(p.dateKey,secId)[p.idx];
-  if(stored&&_evInSeries(stored)){
-    _repScopeAsk({kind:'event',mode:'delete',onPick:sc=>_evDeleteApply(p,sc)});
+    :{dateKey:tKey(),idx:ev._ownIdx,secId,occ:tKey()});
+}
+// 일정 팝업의 '삭제' — 주간·월간에서 연 반복 일정도 **누른 날** 기준으로 묻는다 (v. 26-1030-5, HB)
+function deleteEventFromModal(){
+  if(_eventModalEditIdx===null||!_eventModalSecId)return;
+  const k=_eventModalOrigDateKey||tKey();
+  const p={dateKey:k,idx:_eventModalEditIdx,secId:_eventModalSecId,occ:_eventModalOccKey||k};
+  closeEventModal();
+  _evDeleteAt(p);
+}
+// 지우기 한 곳 — 반복 일정이면 "어디까지 지울까" 를 먼저 묻는다 (구글 캘린더와 같은 세 갈래)
+function _evDeleteAt(p){
+  const stored=getEvents(p.dateKey,p.secId)[p.idx];
+  if(!stored)return;
+  if(_evInSeries(stored)){
+    _repScopeAsk({kind:'event',mode:'delete',rows:_evScopeRows('delete',p.occ,stored,p.dateKey),onPick:sc=>_evDeleteApply(p,sc)});
     return;
   }
   beforeSave();
-  _gcalTomb(p.dateKey,getEvents(p.dateKey,secId)[p.idx]);   // 구글 캘린더에서 온(보낸) 일정이면 구글에서도 지우라는 표시
-  getEvents(p.dateKey,secId).splice(p.idx,1);
+  _gcalTomb(p.dateKey,stored);   // 구글 캘린더에서 온(보낸) 일정이면 구글에서도 지우라는 표시
+  getEvents(p.dateKey,p.secId).splice(p.idx,1);
   save();
-  renderSecEvents(secId);
+  renderSecEvents(p.secId);
   refreshTaskViewsLive();   // 주간/월간 위젯 즉시 반영
+  showToast('일정을 지웠어요'+_evGcalNote(stored));
 }
 
 // ══ 구글 캘린더 양방향 — 본체 (v26-1023-1) ══════════════════════════════
@@ -41982,6 +42007,46 @@ function _repKeepMarks(rule,oldRep){
   return out;
 }
 
+// ── 일정 범위 묻기에 쓰는 말 (v. 26-1030-5, HB) ──
+// '고른 날짜 하나에만' 대신 **그 날짜를 적어** 무엇이 지워지는지 한눈에 보이게 한다.
+function _evMd(k){
+  const[y,m,d]=String(k||'').split('-').map(Number);
+  if(!y||!m||!d)return String(k||'');
+  return`${m}/${d}(${_DOW_KO[new Date(y,m-1,d).getDay()]})`;
+}
+function _evScopeRows(mode,occ,ev,k){
+  const v=mode==='delete'?'지워요':'고쳐요';
+  const root=(ev&&ev.repeat&&_repRule(ev.repeat))?{k}:_evRepRootOf(ev&&ev.rid);
+  return[
+    ['one',   '이 일정만',        `${_evMd(occ)} 하루만 ${v}`],
+    ['future','이번 및 이후 일정', `${_evMd(occ)}부터 앞으로 모두 ${v}`],
+    ['all',   '모든 일정',        `${_evMd(root?root.k:k)}부터 지난 것까지 반복 전체를 ${v}`]
+  ];
+}
+// 구글 캘린더에 이어진 일정이면 토스트에 한 줄 — 맞추기가 1.5초 뒤 같은 일을 구글에 한다(_gcalOnSave)
+function _evGcalNote(ev){
+  try{
+    if(!ev||!ev.g||ev.g.ro||typeof _gcalCfg!=='function'||!_gcalCfg().on)return'';
+    return'\n구글 캘린더에도 곧 반영돼요';
+  }catch(e){return'';}
+}
+// 시각이 구간을 정한다 — 한 번짜리 일정(submitEventModal)과 같은 규칙. 시각이 없으면 있던 구간에 머문다.
+// 예전엔 반복 일정을 범위 골라 고치면 시각만 바뀌고 구간은 그대로였다(13:40 → 19:00 이 오후 줄에 남음).
+function _evSecFor(time,fallback){
+  return(time&&typeof _secIdForTime==='function'&&_secIdForTime(time))||fallback;
+}
+// 제자리에서 고친 일정을 시각에 맞는 구간으로 (날짜는 그대로)
+function _evRehome(k,fromSec,ev){
+  const toSec=_evSecFor(ev&&ev.time,fromSec);
+  const src=getEvents(k,fromSec);
+  if(toSec===fromSec){ST.days[k].events[fromSec]=_sortEventsKeepingTimeless(src);return fromSec;}
+  const i=src.indexOf(ev);if(i<0)return fromSec;
+  src.splice(i,1);
+  const dst=getEvents(k,toSec);dst.push(ev);
+  ST.days[k].events[toSec]=_sortEventsKeepingTimeless(dst);
+  return toSec;
+}
+
 // ═══════ 일정 — 범위에 따라 고치기 ═══════
 function _evEditApply(p,scope){
   const arr=getEvents(p.dateKey,p.secId);
@@ -41992,19 +42057,28 @@ function _evEditApply(p,scope){
   const rid=target.rid;
   let root=_evRepRootOf(rid);
   if(!root&&target.repeat&&_repRule(target.repeat))root={k:p.dateKey,secId:p.secId,idx:p.editIdx,ev:target};
+  const toSec=_evSecFor(p.time,p.secId);   // 새로 서는 일정(하루만 · 이후 새 묶음)이 갈 구간
+  let landed=p.secId;
 
   const putOverride=()=>{
     // 그 하루만 따로 서는 일정 — 규칙은 갖지 않고 rid 로만 묶음에 매여 있다
     // (구글 캘린더의 RECURRENCE-ID 예외와 같은 자리)
-    const dayArr=getEvents(p.occ,p.secId);
-    const kept=dayArr.filter(ev=>!(ev&&ev.rid===rid&&!(ev.repeat&&_repRule(ev.repeat))));
-    kept.push(_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text,rid},root?root.ev:target,p.cal));
-    ST.days[p.occ].events[p.secId]=_sortEventsKeepingTimeless(kept);
+    // 그 날 먼저 서 있던 것은 어느 구간에 있든 걷는다 — 시각을 바꿔 구간이 달라졌을 수 있다
+    const bag=getDay(p.occ).events;
+    Object.keys(bag).forEach(sid=>{
+      const a=bag[sid];if(!Array.isArray(a))return;
+      const kept=a.filter(ev=>!(ev&&ev.rid===rid&&!(ev.repeat&&_repRule(ev.repeat))));
+      if(kept.length!==a.length)bag[sid]=kept;
+    });
+    const dayArr=getEvents(p.occ,toSec);
+    dayArr.push(_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text,rid},root?root.ev:target,p.cal));
+    ST.days[p.occ].events[toSec]=_sortEventsKeepingTimeless(dayArr);
+    landed=toSec;
   };
 
   if(scope==='one'){
     if(root){_repAddEx(root.ev,p.occ);putOverride();}
-    else{target.text=p.text;target.time=p.time;}
+    else{target.text=p.text;target.time=p.time;landed=_evRehome(p.dateKey,p.secId,target);}
   } else if(scope==='future'){
     if(!root||p.occ<=root.k){
       const base=root?root.ev:target;
@@ -42012,6 +42086,7 @@ function _evEditApply(p,scope){
       if(p.cal!=null&&typeof _gcalPickApplyV==='function')_gcalPickApplyV(base,p.cal);
       const rule=_repKeepMarks(p.repeat,base.repeat);
       if(rule)base.repeat=rule;else delete base.repeat;
+      landed=root?_evRehome(root.k,root.secId,base):_evRehome(p.dateKey,p.secId,base);
     } else {
       // 원본은 어제까지만 살려 두고, 오늘부터는 **새 묶음**으로 다시 시작한다
       // (구글 캘린더도 원본에 UNTIL 을 걸고 새 반복을 만든다)
@@ -42022,9 +42097,10 @@ function _evEditApply(p,scope){
       if(rule){rule.until=undefined;delete rule.until;rule.ex=[];}
       const fresh=_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text,rid:_newRid()},root.ev,p.cal);
       if(rule)fresh.repeat=rule;
-      const dayArr=getEvents(p.occ,p.secId);
+      const dayArr=getEvents(p.occ,toSec);
       dayArr.push(fresh);
-      ST.days[p.occ].events[p.secId]=_sortEventsKeepingTimeless(dayArr);
+      ST.days[p.occ].events[toSec]=_sortEventsKeepingTimeless(dayArr);
+      landed=toSec;
     }
   } else { // all
     const base=root?root.ev:target;
@@ -42038,12 +42114,15 @@ function _evEditApply(p,scope){
     const _ovDays=_evOverrideDays(rid);
     if(base.repeat&&Array.isArray(base.repeat.ex)&&_ovDays.size)base.repeat.ex=base.repeat.ex.filter(d=>!_ovDays.has(d));
     _repPurgeEvents(rid,null,true);
+    landed=root?_evRehome(root.k,root.secId,base):_evRehome(p.dateKey,p.secId,base);
   }
   save();
   renderSecEvents(p.secId);
+  if(landed!==p.secId)renderSecEvents(landed);
   if(p.secId!==_eventModalSecId&&_eventModalSecId)renderSecEvents(_eventModalSecId);
   refreshTaskViewsLive();
-  showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+  showToast((scope==='one'?`${_evMd(p.occ)} 하루만 고쳤어요\n반복은 그대로예요`
+    :scope==='future'?`${_evMd(p.occ)}부터 앞으로 고쳤어요`:'반복 전체를 고쳤어요')+_evGcalNote(root?root.ev:target));
 }
 
 // 반복 묶음에서 하루만 따로 선 일정(규칙 없이 rid 로만 매인 것)이 있는 날짜들
@@ -42099,7 +42178,59 @@ function _evDeleteApply(p,scope){
   save();
   renderSecEvents(p.secId);
   refreshTaskViewsLive();
-  showToast(scope==='one'?'이 날짜만 지웠어요':scope==='future'?'이 날짜부터 앞으로 지웠어요':'반복 전체를 지웠어요');
+  showToast((scope==='one'?`${_evMd(p.occ)} 하루만 지웠어요\n반복은 그대로예요`
+    :scope==='future'?`${_evMd(p.occ)}부터 앞으로 지웠어요`:'반복 전체를 지웠어요')+_evGcalNote(root?root.ev:target));
+}
+
+// ═══════ 일정 — 반복 일정의 날짜를 바꿨을 때 (옮기기) ═══════
+// 할일 옮기기(B3-2, HB 결정)와 같은 두 갈래. 취소는 ×.
+//   one    — 이 날만 옮기기: 누른 날을 반복의 '뺀 날' 로, 보낸 날엔 **묶음에서 떨어진 하루짜리**
+//            ⚠️ rid 를 달지 않는다 — 달면 구글 맞추기(pendOv → instIdOf)가 보낸 날을 '원래 회차' 로 읽어
+//               엉뚱한 회차를 고친다. 구글에는 원본 EXDATE + 새 한 번짜리로 간다.
+//   future — 이후 반복도 함께: 옛 반복은 그 전날로 끝내고, 보낸 날부터 같은 규칙으로 새로 시작
+//            (매주면 요일이 보낸 날의 요일로 — 규칙이 '원본과 같은 요일' 이라서)
+function _evMoveAsk(p){
+  const[y,m,d]=p.to.split('-').map(Number),dw=new Date(y,m-1,d).getDay();
+  const weekly=!!(p.repeat&&p.repeat.weekly&&!p.repeat.daily);
+  _repScopeAsk({kind:'event',title:'반복 일정이에요 — 어떻게 옮길까요?',
+    rows:[['one','이 날만 옮기기',`${_evMd(p.occ)} → ${_evMd(p.to)}`],
+          ['future','이후 반복도 함께 옮기기',p.repeat?`${_evMd(p.to)}부터 ${weekly?`매주 ${_DOW_KO[dw]}요일로`:'다시 반복해요'}`
+            :`${_evMd(p.occ)}부터 반복을 끝내고 ${_evMd(p.to)}에 하루만`]],
+    onPick:sc=>_evMoveApply(p,sc)});
+}
+function _evMoveApply(p,scope){
+  const arr=getEvents(p.dateKey,p.secId);
+  const target=arr[p.editIdx];
+  if(!target){renderSecEvents(p.secId);return;}
+  beforeSave();
+  const rid=target.rid;
+  let root=_evRepRootOf(rid);
+  if(!root&&target.repeat&&_repRule(target.repeat))root={k:p.dateKey,secId:p.secId,idx:p.editIdx,ev:target};
+  const toSec=_evSecFor(p.time,p.secId);
+  const fresh=_evInheritCal({id:'ev'+Date.now(),time:p.time,text:p.text},root?root.ev:target,p.cal);
+  // 누른 날에 따로 서 있던 것(하루만 고친 일정) — 구글 예외 회차에 이어졌으면 구글에서도 걷는다
+  const dropTarget=()=>{if(typeof _gcalTomb==='function')_gcalTomb(p.dateKey,target);const i=arr.indexOf(target);if(i>=0)arr.splice(i,1);};
+  if(scope==='future'){
+    const cut=p.to<p.occ?p.to:p.occ;   // 앞으로 당겨 옮기면 그 사이가 두 벌이 되지 않게 옛 반복을 더 일찍 끝낸다
+    if(!root||cut<=root.k){
+      if(rid)_repPurgeEvents(rid,null,false);else dropTarget();
+    }else{
+      root.ev.repeat.until=_dayKeyBefore(cut);
+      _repPurgeEvents(rid,cut,true);
+    }
+    const rule=_repKeepMarks(p.repeat,null);
+    if(rule){delete rule.until;rule.ex=[];fresh.rid=_newRid();fresh.repeat=rule;}
+  }else{
+    if(root){_repAddEx(root.ev,p.occ);if(root.ev!==target)dropTarget();}
+    else dropTarget();
+  }
+  const dest=getEvents(p.to,toSec);dest.push(fresh);
+  ST.days[p.to].events[toSec]=_sortEventsKeepingTimeless(dest);
+  save();
+  renderSecEvents(p.secId);if(toSec!==p.secId)renderSecEvents(toSec);
+  refreshTaskViewsLive();
+  showToast((scope==='one'?`일정을 옮겼어요\n${_evMd(p.occ)} → ${_evMd(p.to)}\n반복은 그대로예요`
+    :`${_evMd(p.to)}부터 새 반복으로 옮겼어요`)+_evGcalNote(root?root.ev:target));
 }
 
 // ═══════ 할일 — 범위에 따라 지우기 ═══════

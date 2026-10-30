@@ -333,6 +333,26 @@ const day = (sec, evs, extra) => Object.assign({ big: {}, small: {}, trash: [], 
   sc.eq('⑱ 하루 종일 반복의 회차 id', pAll.remote[0] && pAll.remote[0].gid, 'b7evm_20261031');
 }
 
+// ⑲ 반복 일정 '이 날만 옮기기'(v. 26-1030-5) — 구글엔 원본 EXDATE + 새 한 번짜리. 옮긴 일정에 rid 를 달면 안 되는 까닭까지
+{
+  const M19 = { c: 'me', ev: { id: 'b7evm', status: 'confirmed', updated: 'u1', summary: '구역모임', recurrence: ['RRULE:FREQ=WEEKLY;BYDAY=SA'],
+    start: { dateTime: '2026-10-24T19:00:00+09:00', timeZone: 'Asia/Seoul' }, end: { dateTime: '2026-10-24T21:00:00+09:00', timeZone: 'Asia/Seoul' } } };
+  const P19 = A.gcalParseRecur(M19.ev, 0);
+  const R = { daily: false, daysOfWeek: [0,1,2,3,4,5,6], weekly: true, weeksOfMonth: [1,2,3,4,5] };
+  const master = { id: 'evM', time: '19:00', text: '구역모임', rid: 'rM', repeat: Object.assign({}, R, { ex: ['2026-10-31'] }),
+    g: { c: 'me', i: 'b7evm', u: 'u1', d: 120, rf: A.gcalRf(P19, []) } };
+  master.g.h = A.gcalHashEv('2026-10-24', Object.assign({}, master, { repeat: Object.assign({}, R, { ex: [] }) }), 0);
+  // 10/31(토) 회를 11/7(토)로 — 11/7 도 반복이 도는 날이다
+  const moved = { id: 'evMv', time: '19:00', text: '구역모임', gc: 'me' };   // _evMoveApply 'one' 이 만든 것 (rid 없음)
+  const p = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [master]), '2026-11-07': day('pm', [moved]) }, gevents: [M19], tz: 'Asia/Seoul' }));
+  sc.eq('⑲ 원본엔 누른 날 EXDATE · 옮긴 곳엔 새 한 번짜리', J(p.remote.map(x => [x.t, x.t === 'patch' ? x.body.recurrence : x.body.start.dateTime])),
+    J([['patch', ['RRULE:FREQ=WEEKLY;BYDAY=SA', 'EXDATE;TZID=Asia/Seoul:20261031T190000']], ['ins', new Date(2026, 10, 7, 19, 0).toISOString()]]));
+  const wrong = Object.assign({}, moved, { rid: 'rM' });
+  const pw = A.gcalPlan(base({ days: { '2026-10-24': day('pm', [master]), '2026-11-07': day('pm', [wrong]) }, gevents: [M19], tz: 'Asia/Seoul' }));
+  const ipw = pw.remote.find(x => x.t === 'instPatch');
+  sc.eq('⑲ (까닭) rid 를 달면 11/7 회차를 고쳐 버린다 — 10/31 이 아니라', ipw && ipw.gid, 'b7evm_20261107T100000Z');
+}
+
 // ⑦ 두 벌 접기
 {
   const days = { '2026-10-24': day('am', [linkedEv('ga', 'abc'), linkedEv('e1', 'abc')]) };
