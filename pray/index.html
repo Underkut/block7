@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1029-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1030-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1029-9';
+const APP_VERSION = 'v. 26-1030-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -734,23 +734,70 @@ function suggestCat(db, g, text) {
 // 글 하나를 구분과 함께 항목(줄)으로 만든다. catId '' = 나중에(구분 없이).
 // · 사람 구분: 이름으로 읽어 사람 카드에 그 구분을 단다
 // · 사람 아닌 구분: 글 전체가 기도 항목 카드 하나 (같은 이름이 있으면 그것을 쓴다)
-// ── BLOCK7 에서 '기도 노트로' 보낸 것 받기 (HB 2026-10-13) ──
-// items: [{id, gid, text, at, from}] — 고른 그룹(서브 그룹)의 **맨 위** 항목으로. 구분 · 표시색은 비워 둔 기도 항목(사람 아님).
-// 그룹이 그새 지워졌으면 넣지 않고 그 수를 돌려준다(lost). 같은 이름의 기도 항목이 있으면 그 카드를 같이 쓴다.
+// ── 우체통 받기 — BLOCK7 에서 '기도 노트로' 보낸 것 (HB 2026-10-13) · 시리로 넣은 것 (HB 2026-10-30) ──
+// items: [{id, gid, text, at, from, say?, kind?, hold?}] — 들어가는 자리는 늘 **맨 위**.
+// · 항목(kind 없음): 고른 그룹(서브 그룹)의 맨 위 줄로. 구분 · 표시색은 비워 둔 기도 항목. 같은 이름의 기도 항목이 있으면 그 카드를 같이 쓴다.
+//   시리로 온 것은 **이미 있는 사람 카드와 이름이 똑같으면 그 사람**을 잇는다(HB 결정 3).
+// · kind 'sub': gid 그룹 아래 서브 그룹 이름 text — 서브 그룹들 맨 위(그룹 바로 뒤). 같은 이름이 이미 있으면 만들지 않는다.
+// · kind 'group': 그룹 이름 text — 지도 맨 위. 같은 이름이 이미 있으면 만들지 않는다.
+// · hold 이거나, 시리로 온 것의 그룹이 그새 사라졌으면 '시리로 받은 기도' 그룹(없으면 지도 맨 위에 만든다)에 — 시리 것은 잃지 않는다.
+// BLOCK7 에서 온 것의 그룹이 사라졌으면 넣지 않고 그 수를 돌려준다(lost).
+// 돌려주는 값: { n: 넣은 항목 수, lost, held: 받은 기도로 간 수, made: 만든 그룹 · 서브 그룹 수, siri: 시리 쪽지 수(이미 있어 안 만든 것 포함), b7: BLOCK7 에서 넣은 항목 수 }
+const SIRI_HOLD = '시리로 받은 기도';
+function siriHoldGroup(db) {
+  let g = topGroups(db).find(x => x.name === SIRI_HOLD);
+  if (!g) { g = newGroup(SIRI_HOLD, GROUP_COLORS[topGroups(db).length % GROUP_COLORS.length]); db.G.unshift(g); }
+  return g;
+}
 function inboxApply(db, items) {
-  let n = 0, lost = 0;
-  (items || []).forEach(it => {
-    const s = String(it && it.text || '').replace(/\s+/g, ' ').trim();
-    if (!s) return;
-    const g = findG(db, it.gid);
-    if (!g) { lost++; return; }
-    let t = db.T.find(x => x.kind === 'item' && x.name === s);
+  let n = 0, lost = 0, held = 0, made = 0, siri = 0, b7 = 0;
+  const clean = v => String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+  const putLine = (g, s, person) => {
+    let t = person ? findPersonByName(db, s) : null;
+    if (!t) t = db.T.find(x => x.kind === 'item' && x.name === s);
     if (!t) { t = newTarget('item', s); db.T.push(t); }
     g.lines = g.lines || [];
     g.lines.unshift({ id: uid(), segs: [[t.id]], r: {}, text: '' });
     n++;
+  };
+  (items || []).forEach(it => {
+    const s = clean(it && it.text);
+    if (!s) return;
+    const fromSiri = it.from === 'siri';
+    if (it.kind === 'group') {
+      if (!topGroups(db).some(x => x.name === s)) { db.G.unshift(newGroup(s, GROUP_COLORS[topGroups(db).length % GROUP_COLORS.length])); made++; }
+      if (fromSiri) siri++;
+      return;
+    }
+    let g = it.hold ? null : findG(db, it.gid);
+    if (it.kind === 'sub' && g) {
+      if (g.parent) g = findG(db, g.parent) || g;   // 두 단까지만
+      if (!kidsOf(db, g.id).some(x => x.name === s)) {
+        const k = newGroup(s, g.color); k.parent = g.id;
+        db.G.splice(db.G.indexOf(g) + 1, 0, k); made++;
+      }
+      if (fromSiri) siri++;
+      return;
+    }
+    if (!g && (it.hold || fromSiri)) { g = siriHoldGroup(db); held++; }
+    if (!g) { lost++; return; }
+    putLine(g, s, fromSiri);
+    if (fromSiri) siri++; else b7++;
   });
-  return { n, lost };
+  return { n, lost, held, made, siri, b7 };
+}
+// ── 시리용 그룹 차림표 (HB 2026-10-30) — pray/{uid}/c/siridir 에 써 두면 서버(b7siri /pray)가 이것만 보고 말을 푼다 ──
+// 지도 차례(그룹 → 그 서브 그룹들). 사람 · 항목 이름은 넣지 않는다 — 그룹 이름 · 부모 · 연동한 자리만.
+// { v:1, g:[{i, n, p, a}] } (wallet-functions/src/praysiri-core.js dirOf 가 읽는 모양)
+function siriDir(db) {
+  let tops = topGroups(db).filter(g => g.name);
+  const mode = (db.set && db.set.sorts && db.set.sorts.map) || 'mine';
+  if (mode === 'name') tops = tops.slice().sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  if (mode === 'size') tops = tops.slice().sort((a, b) => groupHeadcount(db, b) - groupHeadcount(db, a));
+  const out = [], seen = new Set();
+  const add = g => { if (!g.name || seen.has(g.id)) return; seen.add(g.id); out.push({ i: g.id, n: g.name, p: g.parent || '', a: (g.also || []).slice() }); };
+  tops.forEach(t => { add(t); kidsOf(db, t.id).forEach(add); });
+  return { v: 1, g: out };
 }
 function makeEntry(db, text, catId) {
   const s = String(text || '').replace(/\s+/g, ' ').trim();
@@ -2825,7 +2872,8 @@ const ICONS = {
   pie: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5V12l7.3 4.2"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/>',
-  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>'
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><line x1="13.5" y1="6.5" x2="17.5" y2="10.5"/>',
+  mic: '<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="18" x2="12" y2="20.5"/>'
 };
 function ico(n, cls) { return '<svg class="ico ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
 
@@ -6981,8 +7029,54 @@ function accountBlock() {
     '<button class="set-r danger" id="syncAsk" data-a="sync-ask"' + (SY.pending ? '' : ' hidden') + '>맞추기 멈춤 — 눌러서 고르기</button>';
   let st = null; try { st = JSON.parse(localStorage.getItem(BEFORE_KEY) || 'null'); } catch (e) {}
   if (st && st.db) b += '<button class="set-r" data-a="sync-before">' + ico('up') + '맞추기 전에 남겨 둔 자료<span class="v">' + esc(shortDate(ymd(new Date(st.at)))) + ' · 백업 파일로</span></button>';
-  return b + '<button class="set-r" data-a="logout">로그아웃</button></div>';
+  return b + '<button class="set-r" data-a="logout">로그아웃</button></div>' + siriBlock();
 }
+// ── 시리로 기도 넣기 (HB 2026-10-30, docs/pray/siri-setup.md) ──
+// 주소(열쇠)는 서버 b7siri 의 /pray 가 준다 — BLOCK7 '시리로 할일 넣기' 와 같은 서버 · 열쇠는 따로(새로 만들어도 BLOCK7 주소는 그대로).
+// 주소는 이 기기에만 남는다(단축어에 붙여 넣을 때 한 번 쓰면 끝). 다른 기기에서 새로 만들면 이 주소는 멈춘다.
+const SIRI_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/b7siri';
+const SIRI_KEY = PRAY_KEY + '.siri', SIRI_HELP = 'https://github.com/Underkut/block7/blob/main/docs/pray/siri-setup.md';
+let siriBusy = false, siriMsg = '';
+function siriSaved() {
+  try { const v = JSON.parse(localStorage.getItem(SIRI_KEY) || 'null'); return v && v.url && SY.user && v.uid === SY.user.uid ? v : null; }
+  catch (e) { return null; }
+}
+function siriBlock() {
+  const sv = siriSaved(), d = sv ? new Date(sv.at) : null;
+  const st = siriBusy ? '만드는 중…' : siriMsg ? '' : sv ? '준비됨 · ' + (d.getMonth() + 1) + '/' + d.getDate() : '아직 없어요';
+  return '<div class="label">시리로 기도 넣기<small>"시리야, 기도 추가" — 아이폰 · 아이패드 단축어로</small></div><div class="set-g">' +
+    '<button class="set-r" data-a="siri-make"' + (siriBusy ? ' disabled' : '') + '>' + ico('mic') + (sv ? '주소 새로 만들기' : '주소 만들기') + '<span class="v">' + esc(st) + '</span></button>' +
+    (siriMsg ? '<div class="hint" style="padding:4px 14px 10px;color:var(--danger)">' + esc(siriMsg) + '</div>' : '') +
+    (sv ? '<button class="set-r" data-a="siri-copy">' + ico('link') + '주소 복사<span class="v">단축어에 붙여 넣기</span></button>' : '') +
+    '<button class="set-r" data-a="siri-help">' + ico('info') + '단축어 만드는 법<span class="v">' + ico('chevR') + '</span></button></div>';
+}
+async function siriMakeNow() {
+  const u = FB && FB.auth.currentUser; if (!u) { toast('로그인한 뒤에\n만들 수 있어요'); return; }
+  siriBusy = true; siriMsg = ''; refreshAccount();
+  try {
+    const tok = await u.getIdToken();
+    const r = await fetch(SIRI_FN + '/pray/key', { method: 'POST', headers: { Authorization: 'Bearer ' + tok } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.key) throw new Error(j.error || ('HTTP ' + r.status));
+    try { localStorage.setItem(SIRI_KEY, JSON.stringify({ uid: u.uid, url: SIRI_FN + '/pray?k=' + j.key, at: Date.now() })); } catch (e) {}
+    writeSiriDir();
+    toast('시리 주소를 만들었어요\n‘주소 복사’ 를 눌러\n단축어에 붙여 넣으세요');
+  } catch (e) {
+    console.warn('시리 주소 만들기 실패', e);
+    siriMsg = '만들지 못했어요 — 서버를 아직 안 올렸거나 인터넷이 끊겼어요';
+  } finally { siriBusy = false; refreshAccount(); }
+}
+ACT['siri-make'] = () => {
+  if (siriBusy) return;
+  if (siriSaved() && !confirm('새 주소를 만들면\n예전 주소로 만든 단축어는 멈춥니다.\n새로 만들까요?')) return;
+  siriMakeNow();
+};
+// ⚠️ 복사는 누른 그 순간 동기적으로 (아이폰 홈 화면 앱)
+ACT['siri-copy'] = () => {
+  const sv = siriSaved(); if (!sv) { refreshAccount(); return; }
+  toast(copyText(sv.url) ? '주소를 복사했어요\n단축어 ‘URL 콘텐츠 가져오기’ 의\nURL 칸에 붙여 넣으세요' : '복사하지 못했습니다');
+};
+ACT['siri-help'] = () => { window.open(SIRI_HELP, '_blank', 'noopener'); };
 
 // 고치는 중이면 받은 것을 그리지 않는다 — 쓰던 글자 · 열린 상세의 '취소'(열 때 모습으로 되돌림) · 끌기가 깨진다
 function uiBusy() {
@@ -7058,6 +7152,7 @@ async function syncNow() {
       // 그 사이에 다른 기기가 썼다 — 다시 받아 병합한다 (합친 것은 이미 이 기기에 있으니 잃지 않는다)
     }
     setStatus('ok');
+    writeSiriDir();
   } catch (e) {
     setStatus(navigator.onLine === false ? 'offline' : 'err', fbErr(e));
     if (SY.user) syncSoon(60000);
@@ -7123,8 +7218,22 @@ async function takeInbox() {
   if (!got.length) return;
   const r = inboxApply(DB, got.slice().sort((a, b) => (a.at || 0) - (b.at || 0)));
   HIST.sync(histKey(DB));   // BLOCK7 에서 온 것은 이 페이지에서 한 일이 아니다
-  if (r.n) { saveNow(); refresh(); syncSoon(300); }
-  toastBg(r.n ? 'BLOCK7 에서 ' + r.n + '개 들어왔습니다' + (r.lost ? ' · ' + r.lost + '개는 그룹이 없어 못 넣음' : '') : '보낸 그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
+  if (r.n || r.made) { saveNow(); refresh(); syncSoon(300); }
+  const L = [];
+  if (r.b7) L.push('BLOCK7 에서 ' + r.b7 + '개 들어왔습니다');
+  if (r.siri) L.push('시리에서 ' + r.siri + '개 들어왔습니다');
+  if (r.held) L.push('그중 ' + r.held + '개는 \'' + SIRI_HOLD + '\' 에\n옮겨 주세요');
+  if (r.lost) L.push((L.length ? '' : '보낸 ') + '그룹이 없어 ' + r.lost + '개를 못 넣었습니다');
+  if (L.length) toastBg(L.join('\n'));
+}
+// 시리용 그룹 차림표 — 맞추기가 끝날 때마다, 바뀌었으면 한 번 쓴다 (서버는 이것만 보고 말을 푼다)
+// ⚠️ 맞추기(덩어리 c/0 …)와 따로다. 숫자 이름이 아니라 덩어리 읽기 · 지우기와 섞이지 않는다
+async function writeSiriDir() {
+  if (!SY.user || !FB) return;
+  const j = JSON.stringify(siriDir(DB)), who = SY.user.uid;
+  if (SY.dirSent === who + j) return;
+  try { await FB.db.doc('pray/' + who + '/c/siridir').set(Object.assign(JSON.parse(j), { at: FB.fv.serverTimestamp() })); SY.dirSent = who + j; }
+  catch (e) { /* 다음 맞추기 때 다시 */ }
 }
 function startSync(user) {
   const was = SY.user && SY.user.uid;

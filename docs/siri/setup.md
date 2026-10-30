@@ -78,6 +78,7 @@ BLOCK7 이 열려 있으면 곧바로, 아니면 다음에 열 때 **내일 · �
 ## 어떻게 도는가 (클로드용)
 
 - 서버 `wallet-functions/src/b7siri.js` · 규칙 `b7siri-core.js` (`tests/test_b7siri.js`) — 열쇠 해시 `b7siri/{sha256}` = `{uid, at}` (보안 규칙에 없음, 서버만)
+- 열쇠는 앱마다 하나 (2026-10-30) — 기도노트 '시리로 기도 넣기'(`/pray`, `docs/pray/siri-setup.md`)는 `app:'pray'`. BLOCK7 열쇠(`app` 없음)를 새로 만들어도 기도노트 주소는 그대로이고, 서로의 주소로는 못 보낸다
 - 받으면 쪽지함 `pray/{uid}/c/b7inbox` 에 `{id, from:'siri', say, at, date, sec:'', text}` — 기도노트 '할일로 보내기' 와 같은 함
 - 앱이 꺼낼 때 `_siriParse(say, at, SECS, ST.vis, dayStartHour)` 로 푼다 (`tests/test_siri.js`). 갱신 전 앱은 `date`(그날) · 첫 구간 · `text`(들은 말 그대로)로 넣는다
 - 끝까지 시험: `tests/e2e/b7_siri.js` (에뮬레이터 + 진짜 서버 코드 + 기기 셋)
