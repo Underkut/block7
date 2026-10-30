@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 헌금 계좌 안내 · v. 26-1030-3 -->
+<!-- 헌금 계좌 안내 · v. 26-1030-4 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -60,31 +60,42 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
 <div id="toast"></div>
 <script>
 const ACC='1005101854890', ACC_TXT='우리은행 1005-101-854890 주님의교회';
-// [이름, 바탕색, 글자색, 표시, 앱 주소, 스토어 검색어, 자동입력]
-// 앱 주소는 은행이 공개한 것이 아니라 바뀔 수 있다 — 안 열리면 스토어로 넘긴다
+// [이름, 바탕색, 글자색, 표시, 앱 주소(scheme), 앱 이름, 자동입력, 로고 키, 앱스토어 ID, 안드로이드 패키지]
+// 앱 주소가 null 이면 '복사 + 직접 열기 안내' 만 한다 (공개된 주소를 못 찾은 은행 — 2026-10-30 조사)
+// ✔ = 아이폰에서 열리는 것을 HB 가 확인함
 const APPS=[
-  ['토스','#0064ff','#fff','toss','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC+'&origin=qr','토스',1,'toss'],
-  ['카카오뱅크','#ffe300','#1a1a1a','B','kakaobank://','카카오뱅크',0,'kakao'],
-  ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹',0,'kb'],
-  ['신한은행','#0046ff','#fff','SOL','newsolapp://','신한 SOL뱅크',0,'shinhan'],
-  ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹',0,'woori'],
-  ['하나은행','#008c73','#fff','1Q','hanaonequ://','하나원큐',0,'hana'],
-  ['NH스마트','#0f4fc4','#fff','NH','nhsmartbanking://','NH스마트뱅킹',0,'nh'],
-  ['케이뱅크','#0b1d8c','#fff','K','kbank://','케이뱅크',0,'kbank'],
-  ['IBK기업','#fff','#0b4ea2','i-ONE','ibkonebank://','i-ONE Bank',0,'ibk'],
-  ['NH콕뱅크','#fff','#1d9b5e','콕','nhcokbank://','NH콕뱅크',0,'nhcok'],
-  ['SC제일','#fff','#0473ea','SC','scfirstbank://','SC제일은행',0,'sc'],
-  ['씨티은행','#0c5bb5','#fff','citi','citimobileapp://','씨티모바일',0,'citi'],
+  ['토스','#0064ff','#fff','toss','supertoss://send?bank='+encodeURIComponent('우리')+'&accountNo='+ACC+'&origin=qr','토스',1,'toss','839333328','viva.republica.toss'], // ✔
+  ['카카오뱅크','#ffe300','#1a1a1a','B','kakaobank://','카카오뱅크',0,'kakao','1258016944','com.kakaobank.channel'], // ✔
+  ['국민은행','#ffbc00','#3d342b','KB','kbbank://','KB스타뱅킹',0,'kb','373742138','com.kbstar.kbbank'], // ✔
+  ['신한은행','#0046ff','#fff','SOL','newsolapp://','신한 SOL뱅크',0,'shinhan','357484932','com.shinhan.sbanking'], // ✔
+  ['우리은행','#fff','#1b3fae','WON','wooribank://','우리WON뱅킹',0,'woori','1470181651','com.wooribank.smart.npib'], // ✔
+  ['하나은행','#008c73','#fff','1Q',null,'하나원큐',0,'hana','6743190232','com.hanabank.oqf'],
+  ['NH스마트','#0f4fc4','#fff','NH','newnhsmartbanking://','NH스마트뱅킹',0,'nh','1444712671','nh.smart.banking'],
+  ['케이뱅크','#0b1d8c','#fff','K','ukbanksmartbank://','케이뱅크',0,'kbank','1178872627','com.kbankwith.smartbank'],
+  ['IBK기업','#fff','#0b4ea2','i-ONE','ionebank://','i-ONE Bank',0,'ibk','1460543865','com.ibk.android.ionebank'],
+  ['NH콕뱅크','#fff','#1d9b5e','콕',null,'NH콕뱅크',0,'nhcok','1131147442','nh.smart.nhcok'],
+  ['NH올원','#fff','#00a651','올원','nhallone://','NH올원뱅크',0,'nhallone','1641628055','com.nonghyup.nhallonebank'],
+  ['iM뱅크','#00a29a','#fff','iM','mbanking://','iM뱅크',0,'im','1067748687','kr.co.dgb.dgbm'],
+  ['새마을금고','#fff','#0062b1','MG',null,'MG더뱅킹',0,'mg','425089902','com.smg.spbs'],
+  ['우체국','#e5322d','#fff','우체국',null,'우체국뱅킹',0,'epost','554920991','com.epost.psf.sdsi'],
+  ['SC제일','#fff','#0473ea','SC',null,'SC제일은행',0,'sc','1457418899','com.scbank.ma30'],
+  ['씨티은행','#0c5bb5','#fff','citi',null,'씨티모바일',0,'citi','1179759666','kr.co.citibank.citimobile'],
 ];
-const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent), isAnd=/Android/.test(navigator.userAgent);
+const store=a=>isIOS?'https://apps.apple.com/kr/app/id'+a[8]:'https://play.google.com/store/apps/details?id='+a[9];
+// 안드로이드는 intent 주소로 연다 — 앱이 없으면 크롬이 스토어(fallback)로 넘긴다
+const href=a=>{ if(!a[4]) return '#'; if(!isAnd) return a[4];
+  const [sch,rest]=a[4].split('://');
+  return 'intent://'+rest+'#Intent;scheme='+sch+';package='+a[9]+';S.browser_fallback_url='+encodeURIComponent(store(a))+';end'; };
 document.getElementById('apps').innerHTML=APPS.map((a,i)=>
-  `<a href="${a[4]}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}"><img src="logos/${a[7]}.png" alt="" onload="this.parentNode.classList.add('logo')" onerror="this.remove()">${a[3]}</i>${a[0]}</a>`).join('');
-document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',()=>{
+  `<a href="${href(a)}" data-i="${i}">${a[6]?'<span class="badge">계좌 자동입력</span>':''}<i style="background:${a[1]};color:${a[2]};${a[1]=='#fff'?'box-shadow:inset 0 0 0 1px #e3e5e9':''}"><img src="logos/${a[7]}.png" alt="" onload="this.parentNode.classList.add('logo')" onerror="this.remove()">${a[3]}</i>${a[0]}</a>`).join('');
+document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',e=>{
   const a=APPS[el.dataset.i];
   copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
-  const t=setTimeout(()=>{ if(document.hidden) return;
-    if(isIOS) toast('계좌번호를 복사했습니다\n'+a[5]+' 앱을 직접 열어\n붙여넣어 주세요');
-    else location.href='https://play.google.com/store/search?c=apps&q='+encodeURIComponent(a[5]); },1800);
+  if(!a[4]){ e.preventDefault(); toast('계좌번호를 복사했습니다\n'+a[5]+' 앱을 열어\n붙여넣어 주세요'); return; }
+  if(isAnd) return;
+  // 아이폰: 앱이 안 열리면(화면이 그대로면) 그 앱의 스토어 쪽으로
+  const t=setTimeout(()=>{ if(!document.hidden) location.href=store(a); },1800);
   document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
 }));
 function copyText(s){
