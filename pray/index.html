@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1030-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1030-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1030-2';
+const APP_VERSION = 'v. 26-1030-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2314,16 +2314,14 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .mico .hl{fill:var(--ac);stroke:none}
 .mico .mk{stroke:var(--ac-tx);stroke-width:1.5}
 .mico .mt{fill:var(--ac-tx);stroke:none;font-family:inherit;font-size:8px;font-weight:700;text-anchor:middle}
-.kbhint{display:flex;align-items:center;gap:14px;width:calc(100% - 28px);margin:2px 14px 6px;padding:9px 12px 9px 10px;border-radius:12px;background:var(--s1);color:var(--tx3);font-size:12px;line-height:1.5;text-align:left}
-.kh-rows{flex:1;min-width:0;display:flex;flex-direction:column}
-.kh-row{display:flex;align-items:flex-start;gap:10px;padding:3px 0}
-.kh-row+.kh-row{margin-top:3px;padding-top:6px;border-top:1px solid var(--bd)}
-.kh-ic{flex:0 0 20px;height:20px;display:flex;align-items:center;justify-content:center;color:var(--tx3)}
-.kh-ic .mico{height:15px}
-.kh-its{display:flex;flex-wrap:wrap;gap:5px 16px}
-.kh-it{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.kh-m{display:inline-flex;align-items:center;gap:4px;color:var(--tx);font-weight:600}
-.kh-m .mico{height:15px}
+.kbhint{display:flex;align-items:center;gap:14px;width:calc(100% - 28px);margin:0 14px 6px;padding:6px 2px;background:none;color:var(--tx3);font-size:12px;line-height:1.6;text-align:left}
+.kh-rows{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.kh-row{display:flex;align-items:flex-start;gap:8px}
+.kh-ic{flex:0 0 16px;height:19px;display:flex;align-items:center;justify-content:center;color:var(--tx3);opacity:.7}
+.kh-ic .mico{height:12px;stroke-width:1.2}
+.kh-its{display:flex;flex-wrap:wrap;gap:0 14px}
+.kh-it{white-space:nowrap}
+.kh-it b{color:var(--tx2);font-weight:600;margin-right:5px}
 .kh-more{flex-shrink:0;display:inline-flex;align-items:center;gap:1px;color:var(--ac-tx);white-space:nowrap}
 .kh-more .ico{width:14px;height:14px}
 .kbx-t .kbx-tt{flex:1;text-align:center}
@@ -4059,10 +4057,10 @@ LAYERS.group = L => {
     '<button class="tag g" style="--gc:' + esc(g.color) + '" data-a="pick-color" data-id="' + g.id + '">띠 색 바꾸기</button>' +
     '<button class="tag" data-a="pick-parent" data-id="' + g.id + '">' + esc(parent ? '위 그룹 · ' + parent.name : '그룹') + '</button>' +
     '<span class="tag" style="border:0;background:transparent">' + groupHeadcount(DB, g) + '명</span></div></div>';
-  b += '<div class="label">항목<small>연필로 고치기 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="lines:' + g.id + '">' +
+  b += '<div class="label">항목<small>연필로 이름 수정 · 밀면 지우기 · 길게 눌러 옮기기</small></div><div class="rows" data-sort="lines:' + g.id + '">' +
     g.lines.map(l => '<div class="row lnrow" data-id="' + l.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="line" data-gid="' + g.id + '" data-id="' + l.id + '">지우기</button></div>' +
       '<div class="row-f" style="padding-left:20px"><div class="rb" data-a="edit-line" data-gid="' + g.id + '" data-id="' + l.id + '">' + lineView(l) + '</div>' +
-      '<button class="ib" data-a="edit-line" data-gid="' + g.id + '" data-id="' + l.id + '" aria-label="항목 고치기">' + ico('edit') + '</button></div></div>').join('') + '</div>' +
+      '<button class="ib" data-a="edit-line" data-gid="' + g.id + '" data-id="' + l.id + '" aria-label="항목 이름 수정">' + ico('edit') + '</button></div></div>').join('') + '</div>' +
     '<div class="addline"><input data-add="line" data-id="' + g.id + '" placeholder="이름 — \'김은중 / 담당 교사 / 가족\' 처럼 / 로 나눌 수 있어요" enterkeyhint="done"><button class="ib" data-a="add-line" data-id="' + g.id + '" aria-label="항목 더하기">' + ico('plus') + '</button></div>' +
     '<div style="padding:8px 20px 0"><button class="ghost" data-a="paste-lines" data-id="' + g.id + '">여러 항목 붙여넣기</button></div>';
   if (!g.parent) {
@@ -4256,7 +4254,7 @@ document.addEventListener('pointerdown', e => {
 function catLayer(kind) {
   const arr = kind === 'cats' ? DB.cats : DB.subs;
   const used = id => DB.T.filter(t => (kind === 'cats' ? t.cat : t.sub) === id).length;
-  let b = '<div class="hint">' + (kind === 'cats' ? '목록의 구분입니다 (성도 · 모임 · 부서 …).' : '부서를 성격에 따라 묶는 위 분류입니다.') + ' 이름을 눌러 고치고, 길게 눌러 순서를 바꾸고, 밀어서 지웁니다.</div>';
+  let b = '<div class="hint">' + (kind === 'cats' ? '목록의 구분입니다 (성도 · 모임 · 부서 …).' : '부서를 성격에 따라 묶는 위 분류입니다.') + ' 이름을 눌러 이름 수정, 길게 눌러 순서를 바꾸고, 밀어서 지웁니다.</div>';
   b += '<div class="rows" data-sort="' + kind + '">' + arr.map(c => '<div class="row" data-id="' + c.id + '" data-sw="1"><div class="sw-acts"><button class="sw-act del" data-a="del" data-k="' + kind + '" data-id="' + c.id + '">지우기</button></div>' +
     '<div class="row-f" style="padding-left:20px"><input data-f="' + (kind === 'cats' ? 'catname' : 'subname') + '" data-id="' + c.id + '" value="' + esc(c.name) + '" style="flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:15px;height:44px" autocomplete="off">' +
     '<span style="font-size:12.5px;color:var(--tx3);margin-right:8px">' + used(c.id) + '</span>' +
@@ -4292,7 +4290,7 @@ LAYERS.import = () => {
       '<div style="padding:14px 20px 0"><button class="ghost full" data-a="imp-file">' + ico('down') + 'CSV 파일 고르기</button><input type="file" id="impFile" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden></div>' +
       '<div class="label">또는 붙여넣기</div><textarea class="field" id="impText" rows="7" placeholder="여기에 붙여 넣기">' + esc(S.text) + '</textarea>' +
       '<div style="padding:14px 20px 0"><button class="cta" style="margin:0;width:100%" data-a="imp-read">읽기</button></div>' +
-      '<div class="hint" style="padding-top:16px">가져온 자료는 이 기기에만 저장됩니다. 이미 있는 것은 이름이 같으면 고쳐 쓰고, 지우지는 않습니다.</div>';
+      '<div class="hint" style="padding-top:16px">가져온 자료는 이 기기에만 저장됩니다. 이미 있는 것은 이름이 같으면 새 내용으로 바꾸고, 지우지는 않습니다.</div>';
     return { title: '시트에서 가져오기', body: b };
   }
   if (S.fmt === 'sheet2') {
@@ -4506,7 +4504,7 @@ const KBICO = '<svg class="mico" viewBox="0 0 24 20" style="aspect-ratio:24/20" 
 const PHONEICO = '<svg class="mico" viewBox="0 0 12 20" style="aspect-ratio:12/20" aria-hidden="true"><rect x="1.2" y="1.2" width="9.6" height="17.6" rx="2.2"/><path d="M5 15.6h2"/></svg>';
 const KB_MOUSE = [
   { b: 'l', k: '클릭', t: '상세 열기', d: '그룹 · 서브 그룹 · 항목 어디서나. 이름 위면 그 사람 카드', m: '톡' },
-  { b: 'l', x: 'dbl', k: '더블클릭', t: '이름 수정', d: '그 자리에서 바로 고쳐 씁니다', m: '두 번 톡' },
+  { b: 'l', x: 'dbl', k: '더블클릭', t: '이름 수정', d: '그 자리에서 바로 이름을 바꿉니다', m: '두 번 톡' },
   { b: 'r', k: '우클릭', t: '메뉴', d: '한 장씩 기도하기 · BLOCK7 할일로 보내기', m: '길게 눌렀다 떼기' },
   { b: 'l', x: 'drag', k: '끌기', t: '옮기기', d: '다른 그룹에 놓으면 옮깁니다(알림에서 연동으로 바꾸기). 오른쪽 위 구석 × 에 놓으면 지우기', m: '길게 눌러 끌기' },
   { b: 'l', x: 'drag', k: KBK.alt + ' + 끌기', t: '연동해 두기', d: '처음부터 두 그룹에 함께 둡니다 (항목만)' },
@@ -4514,19 +4512,20 @@ const KB_MOUSE = [
 ];
 const KB_KEYS = [
   ['고르기', [['↑ ↓ ← →', '화면에 보이는 자리대로 위 · 아래 · 왼쪽 · 오른쪽'], ['Esc', '고르기 풀기']]],
-  ['이름 수정', [['Enter', '고른 것의 이름 수정 · 한 번 더 누르면 마침'], ['Tab', '마치고 같은 자리에 하나 더 — 이어서 입력'], ['Esc', '고치던 것 취소'], ['sh+Enter', '상세 열기 (고치는 중이면 적고 열기)']]],
+  ['이름 수정', [['Enter', '고른 것의 이름 수정 · 한 번 더 누르면 마침'], ['sh+Enter', '상세 열기 (이름 수정 중이면 적고 열기)'], ['Tab', '마치고 같은 자리에 하나 더 — 이어서 입력'], ['Esc', '이름 수정 취소']]],
   ['새로 만들기', [[',', '새 그룹'], ['.', '고른 그룹 안에 새 서브 그룹'], ['/', '고른 그룹에 항목 — 항목을 골랐으면 그 바로 뒤']]],
   ['정리', [['alt+↑ ↓', '위아래로 옮기기 · 항목은 끝에서 옆 그룹으로'], ['del', '지우기 (되돌리기 있음)'], ['cmd+Z', '되돌리기'], ['cmd+sh+Z', '다시 하기']]]
 ];
 // 위 요약 띠 — 키보드 한 줄 · 마우스 한 줄. 누르면 모두 보기
 function kbHintBar() {
-  const it = (k, t) => '<span class="kh-it">' + k + '<span>' + t + '</span></span>';
+  // 위 띠는 미니멀하게 — 글쇠 상자 · 마우스 그림 없이 굵은 글자와 설명만 (HB 2026-10-30). 그림은 아래 모두 보기 창에만
+  const it = (k, t) => '<span class="kh-it"><b>' + esc(k.split(' ').map(x => KBK[x] || x).join(KBMAC ? '' : '+')) + '</b>' + t + '</span>';
   return '<button class="kbhint" data-a="kb-help" aria-label="단축키 모두 보기"><span class="kh-rows">' +
     '<span class="kh-row"><span class="kh-ic" title="키보드">' + KBICO + '</span><span class="kh-its">' +
-      it(kbd('↑ ↓ ← →'), '고르기') + it(kbd('Enter'), '이름 수정') + it(kbd('Tab'), '하나 더') + it(kbd('sh+Enter'), '상세') +
-      it(kbd('del'), '지우기') + it(kbd('alt+↑ ↓'), '옮기기') + it(kbd(', . /'), '그룹 · 서브 그룹 · 항목') + '</span></span>' +
+      it('↑↓←→', '고르기') + it('Enter', '이름 수정') + it('sh Enter', '상세') + it('Tab', '하나 더') +
+      it('del', '지우기') + it('alt ↑↓', '옮기기') + it(',\u2002.\u2002/', '그룹 · 서브 그룹 · 항목 새로 만들기') + '</span></span>' +
     '<span class="kh-row"><span class="kh-ic" title="마우스">' + mouseIco('') + '</span><span class="kh-its">' +
-      KB_MOUSE.slice(0, 4).map(m => it('<b class="kh-m">' + mouseIco(m.b, m.x) + m.k + '</b>', m.t)).join('') + '</span></span>' +
+      KB_MOUSE.slice(0, 4).map(m => it(m.k, m.t)).join('') + '</span></span>' +
     '</span><span class="kh-more">모두 보기' + ico('chevR') + '</span></button>';
 }
 const kbHelpOpen = () => openSheet('<div class="sh-t kbx-t"><span class="kbx-gap"></span><span class="kbx-tt">기도 지도 단축키</span>' +
@@ -5508,7 +5507,7 @@ ACT['paste-lines'] = el => askText('여러 항목 붙여넣기', '', '한 줄에
 }, { multi: true, ok: '넣기', hint: '시트에서 칸을 골라 복사해 붙여 넣어도 됩니다. 이름이 같으면 같은 사람으로 봅니다.' });
 ACT['edit-line'] = el => {
   const g = findG(DB, el.dataset.gid); if (!g) return; const l = g.lines.find(x => x.id === el.dataset.id); if (!l) return;
-  askText('항목 고치기', lineToText(DB, l), '이름 — / 로 나눌 수 있어요', v => {
+  askText('항목 이름 수정', lineToText(DB, l), '이름 — / 로 나눌 수 있어요', v => {
     const n = parseEntryText(DB, v);
     if (!n) { withUndo('항목을 지웠습니다', () => { g.lines = g.lines.filter(x => x.id !== l.id); }); return; }
     // 인도 표시는 이름이 그대로면 남긴다

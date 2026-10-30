@@ -1,4 +1,4 @@
-// 기도노트 지도 — PC 누르기를 휴대폰과 같게 · 단축키 안내 두 가지 (HB 2026-10-30, pray v. 26-1030-2).
+// 기도노트 지도 — PC 누르기를 휴대폰과 같게 · 단축키 안내 두 가지 (HB 2026-10-30, pray v. 26-1030-2 · 26-1030-3).
 // ⚠️ check.sh 가 돌리지 않는다. 저장소 뿌리에서: python3 -m http.server 5502 &   node tests/e2e/pray_kbhelp.js
 // 이름은 지어낸 것. 지키는 것:
 //  ① PC 클릭 = 상세 (그룹 → 그룹 상세 · 이름 → 사람 카드) · 누른 것이 골라진다
@@ -62,13 +62,15 @@ const mid = (p, sel) => p.evaluate(s => { const r = document.querySelector(s).ge
   // ⑤ i 단추: 0 → 1 (요약 띠) → 2 (모두 보기 창)
   await p.evaluate(() => setDevPref('kbHint', 0)); await p.evaluate(() => mapRender()); await sleep(200);
   await p.click('#v-map .kb-i'); await sleep(500);
-  const bar = await p.evaluate(() => { const h = document.querySelector('#v-map .kbhint'); return h ? { t: h.textContent, rows: h.querySelectorAll('.kh-row').length, kbd: h.querySelectorAll('kbd').length, mice: h.querySelectorAll('.kh-m .mico').length } : null; });
-  ok('⭐⑤ 요약 띠: 키보드 줄 · 마우스 줄', bar && bar.rows === 2 && bar.kbd >= 10 && bar.mice === 4, bar);
+  const bar = await p.evaluate(() => { const h = document.querySelector('#v-map .kbhint'); return h ? { t: h.textContent, rows: h.querySelectorAll('.kh-row').length, boxes: h.querySelectorAll('kbd,.kh-its .mico').length } : null; });
+  ok('⭐⑤ 요약 띠: 키보드 줄 · 마우스 줄 · 글쇠 상자 · 그림 없이 미니멀', bar && bar.rows === 2 && bar.boxes === 0, bar);
+  ok('⑤ 요약 띠 순서 Enter → Shift Enter → Tab · \'새로 만들기\'', bar && /Enter이름 수정.*(⇧|Shift\+)Enter상세.*Tab하나 더/.test(bar.t) && bar.t.includes('항목 새로 만들기'), bar && bar.t);
   ok('⑤ 요약 띠 낱말: 이름 수정 · 클릭 · 더블클릭 · 우클릭', bar && ['이름 수정', '클릭', '더블클릭', '우클릭', '메뉴'].every(w => bar.t.includes(w)) && !bar.t.includes('고치기'), bar && bar.t);
   await p.click('#v-map .kb-i'); await sleep(500);
   const full = await p.evaluate(() => { const s = SHEET && SHEET.querySelector('.kbx'); return s ? { t: SHEET.textContent, mice: s.querySelectorAll('.kbx-mc').length, groups: s.querySelectorAll('.kbx-g').length, x: !!SHEET.querySelector('.sh-x') } : null; });
   ok('⭐⑤ 모두 보기: 마우스 6칸 · 키보드 4묶음 · 우상단 ×', full && full.mice === 6 && full.groups === 4 && full.x, full && [full.mice, full.groups, full.x]);
   ok('⑤ \'고치기\' · \'오른쪽 누르기\' 없음 · 우클릭은 메뉴', full && !full.t.includes('고치기') && !full.t.includes('오른쪽 누르기') && full.t.includes('우클릭') && full.t.includes('한 장씩 기도하기'), full && full.t);
+  ok('⑤ 아래 창 순서 Enter → Shift Enter → Tab', full && /이름 수정 · 한 번 더 누르면 마침.*상세 열기.*하나 더/.test(full.t), full && full.t);
   ok('⑤ 휴대폰 짝 (톡 · 두 번 톡)', full && full.t.includes('휴대폰 — 톡') && full.t.includes('휴대폰 — 두 번 톡'));
   const fit = await p.evaluate(() => { const s = SHEET.querySelector('.sheet'); return [...SHEET.querySelectorAll('.kbx-r,.kbx-mc')].every(e => e.scrollWidth <= e.clientWidth + 1) && s.scrollWidth <= s.clientWidth + 1; });
   ok('⑤ 넘치는 칸 없음', fit);
