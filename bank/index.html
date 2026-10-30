@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<!-- 헌금 계좌 안내 · v. 26-1030-4 -->
+<!-- 헌금 계좌 안내 · v. 26-1030-5 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta name="format-detection" content="telephone=no">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>사랑의 연탄나눔 2026 재정 후원</title>
 <link rel="canonical" href="https://sweeter.my/bank/mission/">
@@ -52,8 +53,8 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
     </div>
   </section>
 
-  <h2>내 은행을 누르면 바로 송금</h2>
-  <p class="hint">은행 앱이 열리고, 계좌번호는 자동으로 복사돼요</p>
+  <h2>내 은행을 누르면 바로 송금 페이지로</h2>
+  <p class="hint">계좌번호는 자동으로 복사되고, 은행 앱이 열려요</p>
   <nav class="grid" id="apps"></nav>
   <p class="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>비밀번호는 여기서 받지 않아요 · 송금은 내 은행 앱에서</p>
 </main>
@@ -94,8 +95,9 @@ document.querySelectorAll('.grid a').forEach(el=>el.addEventListener('click',e=>
   copyText(ACC_TXT); // iOS: 탭 직후 동기로 복사
   if(!a[4]){ e.preventDefault(); toast('계좌번호를 복사했습니다\n'+a[5]+' 앱을 열어\n붙여넣어 주세요'); return; }
   if(isAnd) return;
-  // 아이폰: 앱이 안 열리면(화면이 그대로면) 그 앱의 스토어 쪽으로
-  const t=setTimeout(()=>{ if(!document.hidden) location.href=store(a); },1800);
+  // 아이폰: 저절로 스토어로 넘기지 않는다 — 신한처럼 '앱에서 열기' 확인창이 뜨는 앱은
+  // 확인을 누르기 전에 넘어가 버린다(2026-10-30 HB). 안내만 띄우고, 누르면 스토어로.
+  const t=setTimeout(()=>{ if(!document.hidden) toast('계좌번호를 복사했습니다\n'+a[5]+' 앱이 없다면\n여기를 눌러 받아 주세요',()=>location.href=store(a)); },1800);
   document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
 }));
 function copyText(s){
@@ -105,9 +107,9 @@ function copyText(s){
   try{ navigator.clipboard&&navigator.clipboard.writeText(s); }catch(e){}
 }
 function copyAcc(){ copyText(ACC_TXT); toast('계좌번호를 복사했습니다\n은행 앱에서 붙여넣어 주세요'); }
-let tt; function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
+let tt,tfn; function toast(m,fn){ tfn=fn; const el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('on'),Math.min(9000,Math.max(3000,m.length*200))); }
-document.getElementById('toast').onclick=e=>e.currentTarget.classList.remove('on');
+document.getElementById('toast').onclick=e=>{ e.currentTarget.classList.remove('on'); if(tfn){ const f=tfn; tfn=null; f(); } };
 </script>
 </body>
 </html>
