@@ -21,6 +21,7 @@ on:
       - 'fonts/**'
       - 'photos/**'
       - 'bible/**'          # 성경 본문 (개역한글)
+      - 'bank/**'           # 헌금 계좌 안내 (sweeter.my/bank/mission/)
       - 'pray/**'           # 기도노트 (sweeter.my/pray/) — 독립 앱이 같은 사이트에 얹혀 산다
       - 'firebase-messaging-sw.js'
       - 'tools/make-sweeter-prod.sh'
