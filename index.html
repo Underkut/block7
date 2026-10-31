@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-7  [production]  -->
+<!-- BLOCK7  v. 26-1031-8  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1896,6 +1896,94 @@ header .ai-b.gnb-gear{border:0;color:var(--tx2);}
 /* 떠 있는 작은 메뉴의 아이콘 칸 (_b7Pop rows[].icon) */
 .b7-pop-ic{flex:none;width:16px;height:16px;display:flex;align-items:center;justify-content:center;margin-right:9px;color:var(--tx2);}
 .b7-pop-ic svg{display:block;width:15px;height:15px;}
+/* ── 검색 (v. 26-1031-8, HB 1031 1-2) ── 폰은 전체화면, 넓은 화면은 가운데 팝업 */
+.gnb-srch{background:none;border:0;padding:0;width:26px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--tx2);cursor:pointer;-webkit-tap-highlight-color:transparent;flex:none;}
+.gnb-srch svg{display:block;}
+/* ⚠️ .event-modal 규칙이 파일 뒤쪽에 있어 같은 무게면 진다 — 두 클래스로 쓴다 */
+.event-modal.srch-modal{padding:0;width:min(560px,calc(100vw - 32px));height:min(82vh,780px);display:flex;flex-direction:column;overflow:hidden;animation:srchIn .2s cubic-bezier(.22,.8,.24,1);}
+@keyframes srchIn{from{opacity:0;}to{opacity:1;}}
+@media (max-width:640px){
+  .event-modal.srch-modal{top:0;left:0;transform:none;width:100vw;height:100vh;height:100dvh;border-radius:0;border:0;box-shadow:none;padding-top:env(safe-area-inset-top);}
+  .srch-ov{background:var(--bg);}
+}
+@media (prefers-reduced-motion:reduce){.event-modal.srch-modal{animation:none;}}
+.srch-top{display:flex;align-items:center;gap:8px;padding:12px 12px 10px 16px;flex:none;}
+.srch-field{flex:1;min-width:0;height:40px;border-radius:10px;background:var(--s2);display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;color:var(--tx3);}
+.srch-field input{flex:1;min-width:0;background:none;border:0;outline:none;color:var(--tx);font-family:inherit;font-size:16px;padding:0;-webkit-appearance:none;appearance:none;}
+.srch-field input::-webkit-search-cancel-button{display:none;}
+.srch-count{font-size:11.5px;color:var(--tx3);font-family:var(--font-number);flex:none;}
+.srch-clear{background:none;border:0;color:var(--tx3);padding:4px;display:flex;cursor:pointer;flex:none;}
+.srch-top .modal-x{flex:none;margin:0;}
+.srch-filters{flex:none;padding:0 16px 8px;border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:8px;}
+.srch-kinds{display:flex;gap:6px;flex-wrap:wrap;}
+.srch-kind{font-size:12.5px;padding:5px 11px;border-radius:14px;background:var(--s2);color:var(--tx2);border:0;cursor:pointer;font-family:inherit;}
+.srch-kind em{font-style:normal;opacity:.6;font-family:var(--font-number);}
+.srch-kind.on{background:var(--tx);color:var(--bg);}
+.srch-range{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--tx3);}
+.srch-range button{background:none;border:0;padding:2px 2px;color:var(--tx3);font-family:inherit;font-size:12px;cursor:pointer;}
+.srch-range button.on{color:var(--tx);font-weight:600;}
+.srch-range i{font-style:normal;opacity:.6;}
+.srch-range span{margin-left:auto;}
+.srch-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 16px 28px;}
+.srch-sec{padding-top:14px;}
+.srch-lbl{font-size:11px;letter-spacing:.12em;color:var(--tx3);padding:14px 0 7px;display:flex;align-items:center;}
+.srch-sec .srch-lbl{padding-top:0;}
+.srch-lbl-act{margin-left:auto;background:none;border:0;color:var(--tx3);font-size:11px;font-family:inherit;cursor:pointer;letter-spacing:0;padding:2px 0;}
+.srch-recent{display:flex;flex-wrap:wrap;gap:6px;}
+.srch-rc{font-size:13px;padding:6px 12px;border-radius:14px;background:var(--s2);color:var(--tx);border:0;font-family:inherit;cursor:pointer;}
+.srch-qk{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;background:none;border:0;border-bottom:1px solid var(--s2);color:var(--tx);font-family:inherit;font-size:14px;text-align:left;cursor:pointer;}
+.srch-qk i{width:22px;text-align:center;font-style:normal;color:var(--tx2);}
+.srch-qk .qk-flag{color:var(--so);}.srch-qk .qk-urgent{color:var(--ov);}.srch-qk .qk-contact{color:var(--ok);}.srch-qk .qk-weekEv{color:var(--ac-tx);}
+.srch-qk span{flex:1;}
+.srch-qk em{font-style:normal;font-size:12px;color:var(--tx3);font-family:var(--font-number);}
+.srch-tip{font-size:12px;color:var(--tx3);line-height:1.7;padding-top:18px;}
+.srch-empty{text-align:center;color:var(--tx3);font-size:13px;padding:40px 0;line-height:2;}
+.srch-more{font-size:11.5px;color:var(--tx3);text-align:center;padding:10px 0;}
+.srch-hit{background:rgba(var(--ac-rgb),.26);color:inherit;border-radius:3px;padding:0 1px;}
+.srch-row{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.srch-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:11px;color:var(--tx2);margin-top:4px;}
+.srch-meta b{color:var(--sec-color,var(--ac));font-weight:600;}
+.srch-chip{padding:0 6px;border-radius:9px;border:1px solid var(--bd);line-height:16px;}
+.srch-chip.c-flag{color:var(--so);border-color:rgba(224,136,48,.4);}
+.srch-chip.c-urg{color:var(--ov);border-color:rgba(232,64,64,.4);}
+.srch-chip.c-tel{color:var(--ok);border-color:rgba(34,196,110,.4);}
+/* 할일 — 실제 할일 행 모양을 빌린다: 빅 = 구간 색 옅은 상자 + 굵은 왼쪽 줄 · 스몰 = 들여 쓴 회색 상자 + 가는 줄 · 하위 = 상자 없이 세로선 + 네모 체크 */
+.srch-t{margin-bottom:7px;}
+.srch-tbox{display:flex;gap:9px;align-items:flex-start;}
+.srch-main{flex:1;min-width:0;}
+.srch-tx{font-size:14.5px;line-height:1.45;color:var(--tx);word-break:break-all;}
+.srch-memo{font-size:12px;color:var(--tx2);margin-top:3px;line-height:1.5;}
+.srch-go{color:var(--tx3);font-size:17px;align-self:center;opacity:.6;}
+.srch-chk{flex:none;width:16px;height:16px;margin-top:2px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--sec-color,var(--ac));}
+.srch-t.done .srch-chk{background:var(--sec-color,var(--ac));}
+.srch-t.done{opacity:.45;}
+.srch-big .srch-tbox{padding:9px 10px 9px 9px;border-radius:8px;background:color-mix(in srgb,var(--sec-color,var(--ac)) 10%,transparent);border:1px solid color-mix(in srgb,var(--sec-color,var(--ac)) 28%,transparent);border-left:3px solid var(--sec-color,var(--ac));}
+.srch-small{margin-left:12px;}
+.srch-small .srch-tbox{padding:7px 9px 7px 10px;border-radius:7px;background:var(--s2);border:1px solid var(--bd);border-left:1px solid var(--sec-color,var(--tx3));}
+.srch-small .srch-tx{font-size:13.5px;}
+.srch-small .srch-chk{width:14px;height:14px;border-width:1.3px;}
+.srch-sub .srch-tbox{margin-left:13px;padding:3px 2px 3px 11px;border-left:2px solid var(--sec-color,var(--ac));}
+.srch-sub .srch-tx{font-size:13px;color:var(--tx2);}
+.srch-sub .srch-chk{width:13px;height:13px;border-radius:4px;border:1px solid var(--bd2);}
+.srch-sub.done .srch-chk{background:var(--sec-color,var(--ac));border-color:var(--sec-color,var(--ac));}
+.srch-parent{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--tx3);padding:0 0 3px 2px;}
+.srch-parent i{width:3px;height:11px;border-radius:2px;background:var(--sec-color,var(--ac));opacity:.6;}
+/* 일정 */
+.srch-e{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--s2);}
+.srch-day{width:42px;flex:none;display:flex;flex-direction:column;align-items:center;line-height:1.15;}
+.srch-day span{font-size:11px;color:var(--tx2);}
+.srch-day b{font-size:19px;font-weight:300;color:var(--tx);font-family:var(--font-number);}
+.srch-day small{font-size:10px;color:var(--tx3);}
+.srch-eb{flex:1;min-width:0;border-left:2px solid var(--sec-color,var(--ac));padding-left:10px;}
+.srch-e .srch-meta span+span::before{content:'· ';opacity:.6;}
+/* 말씀 · 명제 */
+.srch-v{padding:12px 13px;margin-bottom:8px;border-radius:12px;background:var(--s2);}
+.srch-vh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.srch-vh b{font-size:13px;font-weight:600;color:var(--tx);}
+.srch-vh span{font-size:11px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.srch-vt{font-size:13.5px;line-height:1.7;color:var(--tx);font-weight:300;margin-top:5px;}
+.srch-v .srch-meta{gap:8px;color:var(--tx3);}
+.srch-p .srch-vt{font-weight:400;}
 /* undo/redo — true flat, no box */
 .ur-btn{
   background:none;border:none;box-shadow:none;
@@ -6739,7 +6827,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-7";
+const APP_VERSION = "v. 26-1031-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8238,6 +8326,9 @@ try{
     <!-- GNB B안 (v. 26-1031-7, HB 1031 1-1) — 휴지통 단추는 톱니 메뉴로 들어갔다. 네모 테두리 없음.
          ↩ ↪ (되돌리기) | 도구 — 가는 세로선 하나로 두 무리를 가른다. 돋보기는 이 선 바로 오른쪽 자리. -->
     <span class="gnb-sep" aria-hidden="true"></span>
+    <button class="gnb-srch" id="gnbSearchBtn" onclick="openSearch()" aria-label="검색" title="검색">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6 16.5 16.5"/></svg>
+    </button>
     <button class="ai-b settings-btn-icon gnb-gear" id="gnbGearBtn" onclick="_gnbGearTap(this)" oncontextmenu="_gnbGearMenu(event,this)" title="설정">
       <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="10" cy="10" r="2.5"/>
@@ -9493,6 +9584,26 @@ try{
 <div id="drag-zone-hint"><div class="dz-pill" id="dz-pill-inner"></div></div>
 
 <!-- Trash Panel -->
+<!-- 검색 (v. 26-1031-8, HB 1031 1-2) — 폰은 전체화면, 넓은 화면은 가운데 팝업 -->
+<div class="event-modal-overlay srch-ov" id="srchOverlay" style="display:none" onclick="closeSearch()"></div>
+<div class="event-modal srch-modal" id="srchModal" style="display:none" role="dialog" aria-label="검색">
+  <div class="srch-top">
+    <label class="srch-field" for="srchInput">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6 16.5 16.5"/></svg>
+      <input id="srchInput" type="search" enterkeyhint="search" autocomplete="off" placeholder="할일 · 일정 · 말씀 · 명제" aria-label="검색어" oninput="_srchInput(this.value)" onkeydown="_srchKey(event)">
+      <span class="srch-count" id="srchCount"></span>
+      <button class="srch-clear" id="srchClearBtn" onclick="event.preventDefault();_srchClear()" aria-label="검색어 지우기" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="6" y1="6" x2="14" y2="14"/><line x1="14" y1="6" x2="6" y2="14"/></svg>
+      </button>
+    </label>
+    <button class="modal-x modal-x-inline" onclick="closeSearch()" aria-label="닫기">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="5" y1="5" x2="15" y2="15"/><line x1="15" y1="5" x2="5" y2="15"/></svg>
+    </button>
+  </div>
+  <div class="srch-filters" id="srchFilters" style="display:none"></div>
+  <div class="srch-body" id="srchBody" onclick="_srchTap(event)"></div>
+</div>
+
 <div class="trash-panel" id="trashPanel" onclick="trashBgClick(event)">
   <div class="trash-sheet" id="trashSheet">
     <div class="trash-hdr">
@@ -14276,6 +14387,7 @@ const _ESC_CLOSERS=[
   ['logoMenu',        ()=>_logoMenuEsc()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   ['repScopeModal',   ()=>closeRepScope()],
+  ['srchModal',       ()=>closeSearch()],   // 검색 (v. 26-1031-8)
   // 팝업류
   ['swKbHelpModal',   ()=>closeSwKbHelp()],
   ['vpModal',         ()=>closeVPair()],
@@ -25976,6 +26088,298 @@ function clearTrash(){
   Object.keys(ST.days||{}).forEach(k=>{const d=ST.days[k];if(d&&Array.isArray(d.trash)&&d.trash.length)d.trash=[];});
   save();updateTrashBadge();renderTrashList();
 }
+
+// ═══════ 검색 (v. 26-1031-8, HB 1031 1-2) ═══════
+// 시안: https://claude.ai/artifact/SFqQs2zDiqeMiqDMZyGKit · 계획: docs/ROADMAP.md '1031'
+// ⚠️ 검색은 **읽기만** 한다. getBigs/getDay 처럼 없는 날을 만드는 함수를 쓰지 않고 ST.days 를 그대로 들여다본다.
+// ── 검색 엔진 ── (tests/test_search.js 가 이 덩어리만 떼어 시험한다)
+// 글자 비교 — 대소문자 · 띄어쓰기를 가리지 않는다 ('교통 민원' 으로 '교통민원' 이 찾아진다)
+function _srchNorm(t){return String(t==null?'':t).toLowerCase().replace(/\s+/g,'');}
+function _srchHas(t,nq){return !!nq&&_srchNorm(t).includes(nq);}
+function _srchDayNum(k){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));return m?Date.UTC(+m[1],+m[2]-1,+m[3])/86400000:NaN;}
+// 바로 모아 보기 — 검색어 없이 고르는 묶음
+const SRCH_QUICK=[
+  {id:'flag',   label:'중요 할일',  icon:'⚑'},
+  {id:'urgent', label:'긴급 할일',  icon:'!'},
+  {id:'contact',label:'연락할 일',  icon:'☎'},
+  {id:'carry',  label:'밀린 할일 (3번 넘게)', icon:'↺'},
+  {id:'weekEv', label:'이번 주 일정', icon:'◷'}
+];
+function _srchQuickTask(id,it){
+  if(!it||it.done)return false;
+  if(id==='flag')return !!it.flag;
+  if(id==='urgent')return !!it.urgent;
+  if(id==='contact')return !!it.contactTask;
+  if(id==='carry')return ((it.autoCarryCount||0)+(it.manualCarryCount||0))>=3;
+  return false;
+}
+// opt: {q, quick, range:'all'|'future'|'past', today:'YYYY-MM-DD', secs:[{id,name,color}], verses:[…]}
+// 돌려주는 것: {tasks:[{kind:'big'|'small'|'sub',k,secId,type,idx,subIdx,item,sub,memoHit,dist,repN}], events:[{k,secId,idx,ev,dist,repN}], verses:[v], props:[v]}
+function _srchRun(days,opt){
+  opt=opt||{};
+  const nq=_srchNorm(opt.q),quick=opt.quick||null;
+  const out={tasks:[],events:[],verses:[],props:[]};
+  if(!nq&&!quick)return out;
+  const today=_srchDayNum(opt.today),range=opt.range||'all';
+  const secIds=(opt.secs||[]).map(x=>x.id);
+  const inRange=k=>{const d=_srchDayNum(k)-today;if(isNaN(d))return range==='all';return range==='future'?d>=0:range==='past'?d<0:true;};
+  const dist=k=>{const d=_srchDayNum(k)-today;return isNaN(d)?1e9:(d>=0?d:0.5-d);}; // 앞으로가 같은 거리의 지난 날보다 먼저
+  Object.keys(days||{}).forEach(k=>{
+    const d=days[k];if(!d||!inRange(k))return;
+    const ids=secIds.length?secIds.concat(Object.keys(Object.assign({},d.big,d.small,d.events)).filter(x=>!secIds.includes(x))):Object.keys(Object.assign({},d.big,d.small,d.events));
+    ids.forEach(secId=>{
+      [['big',d.big],['small',d.small]].forEach(([type,box])=>{
+        const arr=box&&box[secId];if(!Array.isArray(arr))return;
+        arr.forEach((it,idx)=>{
+          if(!it||typeof it!=='object')return;
+          const subs=Array.isArray(it.subs)?it.subs:[];
+          if(quick){
+            if(_srchQuickTask(quick,it))out.tasks.push({kind:type,k,secId,type,idx,item:it,dist:dist(k)});
+            return;
+          }
+          const textHit=_srchHas(it.text,nq),memoHit=!textHit&&_srchHas(it.memo,nq);
+          if(textHit||memoHit)out.tasks.push({kind:type,k,secId,type,idx,item:it,memoHit,dist:dist(k)});
+          subs.forEach((sb,si)=>{
+            if(sb&&_srchHas(sb.text,nq))out.tasks.push({kind:'sub',k,secId,type,idx,subIdx:si,item:it,sub:sb,dist:dist(k)});
+          });
+        });
+      });
+      const evs=d.events&&d.events[secId];
+      if(Array.isArray(evs))evs.forEach((ev,idx)=>{
+        if(!ev||typeof ev!=='object')return;
+        if(quick==='weekEv'){const dd=_srchDayNum(k)-today;if(dd>=0&&dd<7)out.events.push({k,secId,idx,ev,dist:dist(k)});return;}
+        if(quick)return;
+        if(_srchHas(ev.text,nq)||_srchHas(ev.memo,nq)||_srchHas(ev.loc,nq))out.events.push({k,secId,idx,ev,dist:dist(k)});
+      });
+    });
+  });
+  // 반복 묶음(rid)은 한 줄만 — **다음 회차**(오늘 · 앞날 중 가장 가까운 것), 앞날이 없으면 가장 가까운 지난 회차.
+  // 나머지는 '↻ n' 으로 센다. (어제 회차보다 다음 회차가 쓸모 있다)
+  const byNear=(a,b)=>a.dist-b.dist||(a.k<b.k?-1:a.k>b.k?1:0)||(a.idx-b.idx)||((a.subIdx||0)-(b.subIdx||0));
+  const fut=r=>Number.isInteger(r.dist)&&r.dist<1e9;
+  const fold=(list,keyOf)=>{
+    list.sort(byNear);
+    const seen=new Map(),res=[];
+    list.forEach(r=>{
+      const key=keyOf(r);
+      if(!key){res.push(r);return;}
+      const cur=seen.get(key);
+      if(!cur){r.repN=1;seen.set(key,r);res.push(r);return;}
+      if(!fut(cur)&&fut(r)){r.repN=cur.repN+1;seen.set(key,r);res[res.indexOf(cur)]=r;return;}
+      cur.repN++;
+    });
+    return res.sort(byNear);
+  };
+  out.tasks=fold(out.tasks,r=>r.item.rid?r.kind+'|'+r.item.rid+'|'+(r.kind==='sub'?_srchNorm(r.sub.text):''):null);
+  out.events=fold(out.events,r=>r.ev.rid?'ev|'+r.ev.rid:null);
+  if(nq&&Array.isArray(opt.verses)){
+    opt.verses.forEach(v=>{
+      if(!v)return;
+      const hit=_srchHas(v.krText,nq)||_srchHas(v.ref,nq)||_srchHas(v.topic,nq)||_srchHas(v.cat,nq)||(v.tags||[]).some(t=>_srchHas(String(t).replace(/^#/,''),nq.replace(/^#/,'')));
+      if(!hit)return;
+      ((v.pid||v.kind==='prop')?out.props:out.verses).push(v);
+    });
+  }
+  return out;
+}
+// 글자에서 찾은 곳을 감싼다 — 띄어쓰기를 무시하고 찾았으니 원문 위치로 되짚는다. 돌려주는 것은 HTML.
+function _srchMark(text,q){
+  const t=String(text==null?'':text),nq=_srchNorm(q);
+  if(!nq)return esc(t);
+  const map=[];let flat='';
+  for(let i=0;i<t.length;i++){if(!/\s/.test(t[i])){map.push(i);flat+=t[i].toLowerCase();}}
+  const at=flat.indexOf(nq);
+  if(at<0)return esc(t);
+  const a=map[at],b=map[at+nq.length-1]+1;
+  return esc(t.slice(0,a))+'<mark class="srch-hit">'+esc(t.slice(a,b))+'</mark>'+esc(t.slice(b));
+}
+// 긴 말씀은 찾은 곳 둘레만 (앞뒤 …)
+function _srchSnippet(text,q,len){
+  const t=String(text||''),L=len||70;
+  if(t.length<=L)return t;
+  const nq=_srchNorm(q);let at=0;
+  if(nq){let flat='',map=[];for(let i=0;i<t.length;i++){if(!/\s/.test(t[i])){map.push(i);flat+=t[i].toLowerCase();}}const f=flat.indexOf(nq);if(f>=0)at=map[f];}
+  let a=Math.max(0,at-Math.floor(L/3)),b=Math.min(t.length,a+L);a=Math.max(0,b-L);
+  return (a>0?'… ':'')+t.slice(a,b)+(b<t.length?' …':'');
+}
+// ── 검색 엔진 끝 ──
+// ── 검색 화면 ──
+// 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
+// .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
+const _srch={q:'',quick:null,kind:'all',range:'all',last:[],timer:null};
+const SRCH_RECENT_MAX=8;
+function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
+function _srchRemember(q){
+  q=String(q||'').trim();if(!q)return;
+  try{const a=_srchRecent().filter(x=>x!==q);a.unshift(q);localStorage.setItem(_lsk('srchRecent'),JSON.stringify(a.slice(0,SRCH_RECENT_MAX)));}catch(e){}
+}
+function _srchForget(){try{localStorage.removeItem(_lsk('srchRecent'));}catch(e){}_srchRender();}
+function _srchIsOpen(){const m=document.getElementById('srchModal');return !!m&&m.style.display==='flex';}
+function openSearch(){
+  const ov=document.getElementById('srchOverlay'),m=document.getElementById('srchModal');
+  if(!ov||!m)return;
+  ov.style.display='block';m.style.display='flex';
+  const inp=document.getElementById('srchInput');
+  inp.value=_srch.q;
+  _srchRender();
+  // ⚠️ iOS: 키보드는 누른 그 자리에서 곧바로 focus 해야 올라온다 (await · setTimeout 뒤면 안 올라온다)
+  try{inp.focus({preventScroll:true});inp.select();}catch(e){}
+}
+function closeSearch(){
+  const ov=document.getElementById('srchOverlay'),m=document.getElementById('srchModal');
+  if(ov)ov.style.display='none';if(m)m.style.display='none';
+  const inp=document.getElementById('srchInput');if(inp)inp.blur();
+}
+function _srchInput(v){
+  _srch.q=v;_srch.quick=null;
+  clearTimeout(_srch.timer);_srch.timer=setTimeout(_srchRender,120);
+}
+function _srchKey(e){
+  if(e.key==='Enter'){e.preventDefault();_srchRemember(_srch.q);try{e.target.blur();}catch(_){}}
+}
+function _srchClear(){
+  _srch.q='';_srch.quick=null;
+  const inp=document.getElementById('srchInput');if(inp){inp.value='';try{inp.focus();}catch(e){}}
+  _srchRender();
+}
+function _srchPick(q){_srch.q=q;_srch.quick=null;_srch.kind='all';const inp=document.getElementById('srchInput');if(inp)inp.value=q;_srchRemember(q);_srchRender();}
+function _srchPickQuick(id){_srch.quick=id;_srch.q='';_srch.kind='all';const inp=document.getElementById('srchInput');if(inp)inp.value='';_srchRender();}
+function _srchSetKind(k){_srch.kind=k;_srchRender();}
+function _srchSetRange(r){_srch.range=r;_srchRender();}
+function _srchSecs(){return (SECS||[]).map(x=>({id:x.id,name:x.name,color:x.color||'#8892b4'}));}
+function _srchSecOf(id){return (SECS||[]).find(x=>x.id===id)||{id,name:'',color:'#8892b4'};}
+function _srchVerses(){try{return typeof ACTIVE_VERSES==='function'?(ACTIVE_VERSES()||[]):[];}catch(e){return[];}}
+function _srchResult(){
+  return _srchRun(ST.days,{q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses()});
+}
+function _srchDayTxt(k){
+  const dd=_srchDayNum(k)-_srchDayNum(_calKey());
+  if(dd===0)return '오늘';if(dd===1)return '내일';if(dd===-1)return '어제';
+  const [y,m,d]=String(k).split('-').map(Number);
+  const w=['일','월','화','수','목','금','토'][new Date(y,m-1,d).getDay()];
+  const yNow=+_calKey().slice(0,4);
+  return (y!==yNow?String(y).slice(2)+'.':'')+m+'.'+d+' '+w;
+}
+function _srchChip(t,cls){return '<span class="srch-chip'+(cls?' '+cls:'')+'">'+esc(t)+'</span>';}
+function _srchTaskHTML(r,i){
+  const it=r.item,sec=_srchSecOf(r.secId),q=_srch.q;
+  const subs=Array.isArray(it.subs)?it.subs:[];
+  const done=r.kind==='sub'?!!(r.sub&&r.sub.done):!!it.done;
+  const chips=[];
+  if(r.kind!=='sub'){
+    if(it.flag)chips.push(_srchChip('⚑ 중요','c-flag'));
+    if(it.urgent)chips.push(_srchChip('! 긴급','c-urg'));
+    if(it.contactTask)chips.push(_srchChip('☎ 연락','c-tel'));
+    const carry=(it.autoCarryCount||0)+(it.manualCarryCount||0);
+    if(carry>0&&!it.done)chips.push(_srchChip('밀림 '+carry));
+    if(subs.length)chips.push(_srchChip('하위 '+subs.filter(x=>x&&x.done).length+'/'+subs.length));
+    if(it.memo&&!r.memoHit)chips.push(_srchChip('메모'));
+  }
+  if(it.rid||r.repN>1)chips.push(_srchChip('↻ 반복'+(r.repN>1?' '+r.repN:'')));
+  const parent=r.kind==='sub'?'<div class="srch-parent"><i></i><span>'+esc(it.text||'')+' · 하위 '+subs.filter(x=>x&&x.done).length+'/'+subs.length+'</span></div>':'';
+  const text=r.kind==='sub'?r.sub.text:it.text;
+  const memo=r.memoHit?'<div class="srch-memo">메모 · '+_srchMark(_srchSnippet(it.memo,q,60),q)+'</div>':'';
+  return '<div class="srch-row srch-t srch-'+r.kind+(done?' done':'')+'" data-r="'+i+'" style="--sec-color:'+esc(sec.color||'#8892b4')+'">'+parent+
+    '<div class="srch-tbox"><span class="srch-chk" aria-hidden="true"></span><div class="srch-main">'+
+    '<div class="srch-tx">'+(q?_srchMark(text,q):esc(text))+'</div>'+memo+
+    '<div class="srch-meta"><b>'+esc(sec.name||'')+'</b><span>'+esc(_srchDayTxt(r.k))+(done?' · 완료':'')+'</span>'+chips.join('')+'</div>'+
+    '</div><span class="srch-go" aria-hidden="true">›</span></div></div>';
+}
+function _srchEventHTML(r,i){
+  const ev=r.ev,sec=_srchSecOf(r.secId),q=_srch.q;
+  const [y,m,d]=String(r.k).split('-').map(Number);
+  const w=['일','월','화','수','목','금','토'][new Date(y,m-1,d).getDay()];
+  const meta=[ev.time||'하루 종일',sec.name,ev.loc||'',(ev.rid||r.repN>1)?'↻ 반복'+(r.repN>1?' '+r.repN:''):''].filter(Boolean);
+  return '<div class="srch-row srch-e" data-r="'+i+'" style="--sec-color:'+esc(sec.color||'#8892b4')+'">'+
+    '<div class="srch-day"><span>'+w+'</span><b>'+d+'</b><small>'+m+'월</small></div>'+
+    '<div class="srch-eb"><div class="srch-tx">'+(q?_srchMark(ev.text,q):esc(ev.text||''))+'</div><div class="srch-meta">'+meta.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div></div></div>';
+}
+function _srchVerseHTML(v,i,prop){
+  const q=_srch.q;
+  const tags=(v.tags||[]).slice(0,3).map(t=>'<span>#'+esc(String(t).replace(/^#/,''))+'</span>').join('');
+  return '<div class="srch-row srch-v'+(prop?' srch-p':'')+'" data-r="'+i+'">'+
+    '<div class="srch-vh"><b>'+_srchMark(v.ref||'',q)+'</b><span>'+esc([v.cat,v.topic].filter(Boolean).join(' · '))+'</span></div>'+
+    '<div class="srch-vt">'+_srchMark(_srchSnippet(v.krText,q,prop?90:70),q)+'</div>'+
+    (tags?'<div class="srch-meta">'+tags+'</div>':'')+'</div>';
+}
+function _srchRender(){
+  const body=document.getElementById('srchBody'),fil=document.getElementById('srchFilters'),cnt=document.getElementById('srchCount'),clr=document.getElementById('srchClearBtn');
+  if(!body)return;
+  if(clr)clr.style.display=_srch.q?'':'none';
+  if(!_srch.q.trim()&&!_srch.quick){
+    fil.innerHTML='';fil.style.display='none';cnt.textContent='';_srch.last=[];
+    const rec=_srchRecent();
+    const qc=SRCH_QUICK.map(x=>{const r=_srchRun(ST.days,{quick:x.id,today:_calKey(),secs:_srchSecs()});return {x,n:x.id==='weekEv'?r.events.length:r.tasks.length};});
+    body.innerHTML=
+      (rec.length?'<div class="srch-sec"><div class="srch-lbl">최근 검색<button class="srch-lbl-act" onclick="_srchForget()">지우기</button></div><div class="srch-recent">'+
+        rec.map(r=>'<button class="srch-rc" data-q="'+esc(r)+'">'+esc(r)+'</button>').join('')+'</div></div>':'')+
+      '<div class="srch-sec"><div class="srch-lbl">바로 모아 보기</div>'+
+        qc.map(({x,n})=>'<button class="srch-qk" data-quick="'+x.id+'"><i class="qk-'+x.id+'">'+x.icon+'</i><span>'+esc(x.label)+'</span><em>'+n+'</em></button>').join('')+'</div>'+
+      '<div class="srch-tip">할일 · 하위 할일 · 메모 · 일정 · 말씀 · 명제를 함께 찾아요.<br>띄어쓰기는 달라도 괜찮아요.</div>';
+    return;
+  }
+  const res=_srchResult();
+  const n={tasks:res.tasks.length,events:res.events.length,verses:res.verses.length,props:res.props.length};
+  const total=n.tasks+n.events+n.verses+n.props;
+  cnt.textContent=total+'건';
+  const quickLbl=_srch.quick?(SRCH_QUICK.find(x=>x.id===_srch.quick)||{}).label:'';
+  const kinds=[['all','전체',total],['tasks','할일',n.tasks],['events','일정',n.events],['verses','말씀',n.verses],['props','명제',n.props]];
+  fil.style.display='';
+  fil.innerHTML='<div class="srch-kinds">'+(quickLbl?'<button class="srch-kind on srch-quick-on" onclick="_srchClear()">'+esc(quickLbl)+' ×</button>':'')+
+    kinds.filter(([k,,c])=>k==='all'||c>0).map(([k,l,c])=>'<button class="srch-kind'+(_srch.kind===k?' on':'')+'" onclick="_srchSetKind(\''+k+'\')">'+l+' <em>'+c+'</em></button>').join('')+'</div>'+
+    '<div class="srch-range">'+[['future','앞으로'],['all','전체'],['past','지난']].map(([k,l])=>'<button class="'+(_srch.range===k?'on':'')+'" onclick="_srchSetRange(\''+k+'\')">'+l+'</button>').join('<i>·</i>')+'<span>가까운 날짜순</span></div>';
+  const last=[];let html='';
+  const want=k=>_srch.kind==='all'||_srch.kind===k;
+  const LIM=150;
+  const group=(k,label,list,fn)=>{
+    if(!want(k)||!list.length)return;
+    html+='<div class="srch-lbl srch-glbl">'+label+' · '+list.length+'</div>';
+    list.slice(0,LIM).forEach(r=>{const i=last.length;last.push({k,r});html+=fn(r,i);});
+    if(list.length>LIM)html+='<div class="srch-more">가까운 '+LIM+'건만 보여요 — 검색어를 더 적어 보세요</div>';
+  };
+  group('tasks','할일',res.tasks,_srchTaskHTML);
+  group('events','일정',res.events,_srchEventHTML);
+  group('verses','말씀',res.verses,(v,i)=>_srchVerseHTML(v,i,false));
+  group('props','명제',res.props,(v,i)=>_srchVerseHTML(v,i,true));
+  _srch.last=last;
+  body.innerHTML=html||'<div class="srch-empty">찾은 것이 없어요'+(_srch.range!=='all'?'<br><button class="srch-lbl-act" onclick="_srchSetRange(\'all\')">전체 기간에서 찾기</button>':'')+'</div>';
+  body.scrollTop=0;
+}
+// 누르기 — 할일: 그 날 그 구간으로 가서 반짝 · 일정: 그 날 · 말씀 · 명제: 전체화면
+function _srchTap(e){
+  const rc=e.target.closest('[data-q]');if(rc){_srchPick(rc.dataset.q);return;}
+  const qk=e.target.closest('[data-quick]');if(qk){_srchPickQuick(qk.dataset.quick);return;}
+  const row=e.target.closest('[data-r]');if(!row)return;
+  const hit=_srch.last[+row.dataset.r];if(!hit)return;
+  if(_srch.q)_srchRemember(_srch.q);
+  if(hit.k==='tasks')_srchGoTask(hit.r);
+  else if(hit.k==='events')_srchGoDay(hit.r.k,hit.r.secId);
+  else _srchOpenVerse(hit.r);
+}
+function _srchBackToast(k){
+  showToast(_dayLabel(k)+'로 왔어요',false,{label:'검색으로 돌아가기',onClick:()=>openSearch()});
+}
+function _srchGoDay(k,secId){
+  closeSearch();
+  if(secId)_revealSec(secId);
+  goToDate(k);
+  _srchBackToast(k);
+}
+function _srchGoTask(r){
+  closeSearch();
+  _revealSec(r.secId);
+  _pendingTaskFlash={key:r.k,secId:r.secId,type:r.type,idx:r.idx};
+  goToDate(r.k);
+  _flashPendingTask();
+  _srchBackToast(r.k);
+}
+function _srchOpenVerse(v){
+  if(!ST.settings.verseBarOn)toggleVerseBarOn();
+  _vfOverrideVerse=null;
+  setVerseIdx(v.idx);
+  openVerseFull(true);   // 검색 화면은 닫지 않는다 — 숨겼다가 전체화면을 닫으면 되살아난다
+}
+
 
 // ═══════ TABS ═══════
 function sw(t,btn){
