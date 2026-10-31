@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-11  [production]  -->
+<!-- BLOCK7  v. 26-1031-12  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1933,7 +1933,10 @@ header .ai-b.gnb-gear{border:0;color:var(--tx2);}
 .srch-rc{font-size:13px;padding:6px 12px;border-radius:14px;background:var(--s2);color:var(--tx);border:0;font-family:inherit;cursor:pointer;}
 .srch-qk{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;background:none;border:0;border-bottom:1px solid var(--s2);color:var(--tx);font-family:inherit;font-size:14px;text-align:left;cursor:pointer;}
 .srch-qk i{width:22px;text-align:center;font-style:normal;color:var(--tx2);}
-.srch-qk .qk-flag{color:var(--so);}.srch-qk .qk-urgent{color:var(--ov);}.srch-qk .qk-contact{color:var(--ok);}.srch-qk .qk-weekEv{color:var(--ac-tx);}
+.srch-qk .qk-flag{color:var(--ov);}.srch-qk .qk-urgent{color:var(--ov);}.srch-qk .qk-contact{color:var(--ok);}.srch-qk .qk-weekEv{color:#4285F4;}
+.srch-qk i{display:flex;align-items:center;justify-content:center;}
+.qk-dots{display:flex;gap:2px;align-items:center;}.qk-dots b{width:5px;height:5px;border-radius:50%;background:#e8503f;display:block;}
+html[data-theme="light"] .qk-dots b{background:#e0432f;}
 .srch-qk span{flex:1;}
 .srch-qk em{font-style:normal;font-size:12px;color:var(--tx3);font-family:var(--font-number);}
 .srch-tip{font-size:12px;color:var(--tx3);line-height:1.7;padding-top:18px;}
@@ -6858,7 +6861,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-11";
+const APP_VERSION = "v. 26-1031-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7252,6 +7255,7 @@ try{
         </div>
             <button class="settings-btn sr-go" onclick="runCarryNow()">가져오기</button>
             <div class="settings-row-desc" id="carryDebugInfo"></div></div></div>
+          <div class="settings-row" data-lv="mp" id="secSrchCarry"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="2.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="2.2" fill="currentColor" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">검색 '밀린 할일' 기준</div><div class="settings-row-desc">이 횟수 이상 미뤄진 할일을 모아 보여요</div></div><input type="number" class="settings-number" id="setSrchCarryMin" min="1" max="30" onchange="updateSetting('srchCarryMin',Math.min(30,Math.max(1,parseInt(this.value)||3)))"></div>
           <div class="settings-row stack" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V7M10 17V10M14 17v-4M18 17v-2"/></svg><div class="settings-row-text"><div class="settings-row-label">넘긴 횟수 표시</div><div class="settings-row-desc">며칠째 넘어왔는지 옆에 — 오래될수록 진하게</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="carryModeNumber" onclick="updateSetting('carryBadgeMode','number')">숫자</button><button class="theme-pick-btn" id="carryModeIcon" onclick="updateSetting('carryBadgeMode','icon')"><span class="carry-preview-dot"></span><span class="carry-preview-diamond"></span></button></div></div></div>
           <div class="settings-row stack sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 17V7M10 17V10M14 17v-4M18 17v-2"/></svg><div class="settings-row-text"><div class="settings-row-label">셀 것</div><div class="settings-row-desc">자동으로 넘긴 것(a) · 직접 내일로 보낸 것(b)</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="carrySrcBoth" onclick="updateSetting('carryCountSource','both')">모두 a+b</button><button class="theme-pick-btn" id="carrySrcAuto" onclick="updateSetting('carryCountSource','auto')">자동만 a</button><button class="theme-pick-btn" id="carrySrcManual" onclick="updateSetting('carryCountSource','manual')">직접만 b</button></div></div></div>
         </div>
@@ -26133,19 +26137,23 @@ function _srchNorm(t){return String(t==null?'':t).toLowerCase().replace(/\s+/g,'
 function _srchHas(t,nq){return !!nq&&_srchNorm(t).includes(nq);}
 function _srchDayNum(k){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));return m?Date.UTC(+m[1],+m[2]-1,+m[3])/86400000:NaN;}
 // 바로 모아 보기 — 검색어 없이 고르는 묶음
+// 아이콘은 실제 화면의 것을 그대로 — 깃발 = 할일행 깃발(빨강) · 밀림 = 할일행 오른쪽 빨간 점 둘 · 일정 = 구글 파랑 (v. 26-1031-12, HB)
+// ⚠️ 긴급 할일 줄은 뺐다(HB '필요없어'). 엔진의 quick 'urgent' 는 남겨 두었지만 화면에서는 고를 길이 없다.
+const SRCH_CARRY_MIN_DEFAULT=3;
+function _srchCarryMin(set){const n=parseInt(set&&set.srchCarryMin,10);return n>=1&&n<=30?n:SRCH_CARRY_MIN_DEFAULT;}
 const SRCH_QUICK=[
-  {id:'flag',   label:'중요 할일',  icon:'⚑'},
-  {id:'urgent', label:'긴급 할일',  icon:'!'},
+  {id:'flag',   label:'중요 할일',  icon:'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg>'},
   {id:'contact',label:'연락할 일',  icon:'☎'},
-  {id:'carry',  label:'밀린 할일 (3번 넘게)', icon:'↺'},
+  {id:'carry',  label:'밀린 할일',  icon:'<span class="qk-dots" aria-hidden="true"><b></b><b></b></span>',hint:'carry'},
   {id:'weekEv', label:'이번 주 일정', icon:'◷'}
 ];
-function _srchQuickTask(id,it){
+function _srchQuickLabel(x,set){return x.id==='carry'?x.label+' ('+_srchCarryMin(set)+'번 이상)':x.label;}
+function _srchQuickTask(id,it,carryMin){
   if(!it||it.done)return false;
   if(id==='flag')return !!it.flag;
   if(id==='urgent')return !!it.urgent;
   if(id==='contact')return !!it.contactTask;
-  if(id==='carry')return ((it.autoCarryCount||0)+(it.manualCarryCount||0))>=3;
+  if(id==='carry')return ((it.autoCarryCount||0)+(it.manualCarryCount||0))>=(carryMin>=1?carryMin:3);
   return false;
 }
 // opt: {q, quick, range:'all'|'future'|'past', today:'YYYY-MM-DD', secs:[{id,name,color}], verses:[…]}
@@ -26169,7 +26177,7 @@ function _srchRun(days,opt){
           if(!it||typeof it!=='object')return;
           const subs=Array.isArray(it.subs)?it.subs:[];
           if(quick){
-            if(_srchQuickTask(quick,it))out.tasks.push({kind:type,k,secId,type,idx,item:it,dist:dist(k)});
+            if(_srchQuickTask(quick,it,opt.carryMin))out.tasks.push({kind:type,k,secId,type,idx,item:it,dist:dist(k)});
             return;
           }
           const textHit=_srchHas(it.text,nq),memoHit=!textHit&&_srchHas(it.memo,nq);
@@ -26276,12 +26284,25 @@ function _srchFilterFix(it,preset,set){
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
 // .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
-const _srch={q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
+const _srch={histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
 const SRCH_RECENT_MAX=8;
 function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
-function _srchRemember(q){
+function _srchRemember(q,auto){
   q=String(q||'').trim();if(!q)return;
-  try{const a=_srchRecent().filter(x=>x!==q);a.unshift(q);localStorage.setItem(_lsk('srchRecent'),JSON.stringify(a.slice(0,SRCH_RECENT_MAX)));}catch(e){}
+  try{
+    let a=_srchRecent();
+    // 엔터 없이 자동으로 남긴 말은 이어 칠수록 길어진다('연'→'연락'→'연락처') — 직전에 자동으로 남긴 줄이 이 말의 앞부분(또는 뒷부분)이면 새 줄을 더하지 않고 바꿔 쓴다
+    if(a[0]&&_srch.autoLast&&a[0]===_srch.autoLast&&a[0]!==q&&(q.startsWith(a[0])||a[0].startsWith(q)))a=a.slice(1);
+    _srch.autoLast=auto?q:'';
+    a=a.filter(x=>x!==q);a.unshift(q);localStorage.setItem(_lsk('srchRecent'),JSON.stringify(a.slice(0,SRCH_RECENT_MAX)));}catch(e){}
+}
+// 엔터를 안 쳐도 남긴다 — 결과가 있는 채로 2초 쉬었을 때 · 결과를 조금이라도 내려 봤을 때 (v. 26-1031-12, HB)
+const SRCH_IDLE_MS=2000,SRCH_SCROLL_PX=12;
+function _srchAutoRemember(){
+  clearTimeout(_srch.histTimer);
+  if(!_srchIsOpen()||!_srch.q.trim()||_srch.quick)return;
+  if(!_srch.last.length)return;   // 아무것도 못 찾은 말은 남기지 않는다
+  _srchRemember(_srch.q,true);
 }
 function _srchForget(){try{localStorage.removeItem(_lsk('srchRecent'));}catch(e){}_srchRender();}
 function _srchIsOpen(){const m=document.getElementById('srchModal');return !!m&&m.style.display==='flex';}
@@ -26297,7 +26318,7 @@ function openSearch(){
   try{inp.focus({preventScroll:true});inp.select();}catch(e){}
 }
 function closeSearch(){
-  _srchActClose();
+  _srchActClose();clearTimeout(_srch.histTimer);
   const ov=document.getElementById('srchOverlay'),m=document.getElementById('srchModal');
   if(ov)ov.style.display='none';if(m)m.style.display='none';
   const inp=document.getElementById('srchInput');if(inp)inp.blur();
@@ -26305,9 +26326,10 @@ function closeSearch(){
 function _srchInput(v){
   _srch.q=v;_srch.quick=null;
   clearTimeout(_srch.timer);_srch.timer=setTimeout(_srchRender,120);
+  clearTimeout(_srch.histTimer);_srch.histTimer=setTimeout(_srchAutoRemember,SRCH_IDLE_MS);
 }
 function _srchKey(e){
-  if(e.key==='Enter'){e.preventDefault();_srchRemember(_srch.q);try{e.target.blur();}catch(_){}}
+  if(e.key==='Enter'){e.preventDefault();clearTimeout(_srch.histTimer);_srchRemember(_srch.q);try{e.target.blur();}catch(_){}}
 }
 function _srchClear(){
   _srch.q='';_srch.quick=null;
@@ -26322,7 +26344,7 @@ function _srchSecs(){return (SECS||[]).map(x=>({id:x.id,name:x.name,color:x.colo
 function _srchSecOf(id){return (SECS||[]).find(x=>x.id===id)||{id,name:'',color:'#8892b4'};}
 function _srchVerses(){try{return typeof ACTIVE_VERSES==='function'?(ACTIVE_VERSES()||[]):[];}catch(e){return[];}}
 function _srchResult(){
-  return _srchRun(ST.days,{q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses()});
+  return _srchRun(ST.days,{carryMin:_srchCarryMin(ST.settings),q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses()});
 }
 function _srchDayTxt(k){
   const dd=_srchDayNum(k)-_srchDayNum(_calKey());
@@ -26381,12 +26403,12 @@ function _srchRender(keepScroll){
   if(!_srch.q.trim()&&!_srch.quick){
     fil.innerHTML='';fil.style.display='none';cnt.textContent='';_srch.last=[];
     const rec=_srchRecent();
-    const qc=SRCH_QUICK.map(x=>{const r=_srchRun(ST.days,{quick:x.id,today:_calKey(),secs:_srchSecs()});return {x,n:x.id==='weekEv'?r.events.length:r.tasks.length};});
+    const qc=SRCH_QUICK.map(x=>{const r=_srchRun(ST.days,{quick:x.id,today:_calKey(),secs:_srchSecs(),carryMin:_srchCarryMin(ST.settings)});return {x,n:x.id==='weekEv'?r.events.length:r.tasks.length};});
     body.innerHTML=
       (rec.length?'<div class="srch-sec"><div class="srch-lbl">최근 검색<button class="srch-lbl-act" onclick="_srchForget()">지우기</button></div><div class="srch-recent">'+
         rec.map(r=>'<button class="srch-rc" data-q="'+esc(r)+'">'+esc(r)+'</button>').join('')+'</div></div>':'')+
       '<div class="srch-sec"><div class="srch-lbl">바로 모아 보기</div>'+
-        qc.map(({x,n})=>'<button class="srch-qk" data-quick="'+x.id+'"><i class="qk-'+x.id+'">'+x.icon+'</i><span>'+esc(x.label)+'</span><em>'+n+'</em></button>').join('')+'</div>'+
+        qc.map(({x,n})=>'<button class="srch-qk" data-quick="'+x.id+'"><i class="qk-'+x.id+'">'+x.icon+'</i><span>'+esc(_srchQuickLabel(x,ST.settings))+'</span><em>'+n+'</em></button>').join('')+'</div>'+
       '<div class="srch-tip">할일 · 하위 할일 · 메모 · 일정 · 말씀 · 명제를 함께 찾아요.<br>띄어쓰기는 달라도 괜찮아요.</div>';
     return;
   }
@@ -26394,7 +26416,8 @@ function _srchRender(keepScroll){
   const n={tasks:res.tasks.length,events:res.events.length,verses:res.verses.length,props:res.props.length};
   const total=n.tasks+n.events+n.verses+n.props;
   cnt.textContent=total+'건';
-  const quickLbl=_srch.quick?(SRCH_QUICK.find(x=>x.id===_srch.quick)||{}).label:'';
+  const quickX=_srch.quick?SRCH_QUICK.find(x=>x.id===_srch.quick):null;
+  const quickLbl=quickX?_srchQuickLabel(quickX,ST.settings):'';
   const kinds=[['all','전체',total],['tasks','할일',n.tasks],['events','일정',n.events],['verses','말씀',n.verses],['props','명제',n.props]];
   fil.style.display='';
   fil.innerHTML='<div class="srch-kinds">'+(quickLbl?'<button class="srch-kind on srch-quick-on" onclick="_srchClear()">'+esc(quickLbl)+' ×</button>':'')+
@@ -26715,6 +26738,7 @@ function _srchBindLongPress(){
   const body=document.getElementById('srchBody');
   if(!body||body._lpBound)return;
   body._lpBound=true;
+  body.addEventListener('scroll',()=>{if(body.scrollTop>SRCH_SCROLL_PX&&_srch.q.trim()&&!_srch.quick)_srchAutoRemember();},{passive:true});
   let tm=null,x0=0,y0=0;
   const hitOf=el=>{const row=el&&el.closest&&el.closest('[data-r]');if(!row)return null;const h=_srch.last[+row.dataset.r];return h&&h.k!=='events'?{h,row}:null;};
   const cancel=()=>{clearTimeout(tm);tm=null;};
@@ -46470,6 +46494,7 @@ function renderSettingsPanel(){
   });
   document.getElementById('setSundayRed').checked=s.sundayRed!==false;
   _srchEvSync();
+  {const e=document.getElementById('setSrchCarryMin');if(e)e.value=_srchCarryMin(s);}
   document.getElementById('setBigLimit').value=s.bigLimit||6;
   document.getElementById('setSmallLimit').value=s.smallLimit||2;
   document.getElementById('setShowAllBtn').checked=s.showAllBtn!==false;
@@ -46665,6 +46690,7 @@ function updateSetting(key,value){
   }
   if(key==='taskOverflow'){_syncTaskOvfBtns();resizeAllInputs();}
   if(key==='srchEvView')_srchEvSync();
+  if(key==='srchCarryMin'&&typeof _srchIsOpen==='function'&&_srchIsOpen())_srchRender(true);
   if(key==='addInputPosition'){
     ['A','C'].forEach(p=>{
       const el=document.getElementById(`addPos${p}`);
@@ -50887,7 +50913,7 @@ const _DF_SET_LABEL={
   carryBadgeMode:'넘어온 할일 표시',carryCountSource:'넘어온 할일 세는 기준',
   periodBaseMode:'구간 기준',monthTitleFormat:'월 제목 표기',monthTitleYear:'월 제목에 연도',
   mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',wmEvFs:'주·월간 일정 글자 크기',showSmallBlocks:'스몰 블럭 보이기',
-  addInputPosition:'입력칸 위치',srchEvView:'검색에서 일정을 누르면',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
+  addInputPosition:'입력칸 위치',srchEvView:'검색에서 일정을 누르면',srchCarryMin:'검색 밀린 할일 기준',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
   hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
   hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
   dviewMarkOn:'일간 표시 켜기',doneFxGlow:'완료 효과 Glow',doneFxRipple:'완료 효과 Ripple',

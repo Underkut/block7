@@ -4,7 +4,7 @@
 const { makeScorer, slice } = require('./_load');
 const sc = makeScorer();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix};')(esc);
+const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix,SRCH_QUICK,_srchCarryMin,_srchQuickLabel};')(esc);
 const SECS = [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }];
 const days = () => ({
   '2026-10-31': {
@@ -140,6 +140,20 @@ console.log('\n시나리오 11 — 결과 할일이 D뷰 위 거르기 단추에
   sc.eq('완료 보임(값 없음 = 보임) → 그대로', f({ done: true }, null, {}), {});
   sc.eq('둘 다 걸리면 둘 다', f({ done: true }, 'flagFilter', { showCompletedTasks: false }), { marker: 'flag', showDone: true });
   sc.eq('깨진 값', f(null, 'flagFilter', {}), {});
+}
+
+console.log('\n시나리오 12 — 첫 화면 손질: 긴급 뺌 · 밀린 할일 기준을 설정에서 (v. 26-1031-12)');
+{
+  const q = api.SRCH_QUICK.map(x => x.id);
+  sc.eq('줄은 중요 · 연락 · 밀림 · 이번 주 일정 (긴급 없음)', q, ['flag', 'contact', 'carry', 'weekEv']);
+  sc.eq('기준 기본 3 · 설정값 · 엉뚱한 값은 3', [api._srchCarryMin({}), api._srchCarryMin({ srchCarryMin: 5 }), api._srchCarryMin({ srchCarryMin: 0 }), api._srchCarryMin({ srchCarryMin: 'x' }), api._srchCarryMin({ srchCarryMin: 99 })], [3, 5, 3, 3, 3]);
+  sc.eq('줄 이름에 기준이 따라간다', api._srchQuickLabel(api.SRCH_QUICK[2], { srchCarryMin: 5 }), '밀린 할일 (5번 이상)');
+  const d = { '2026-10-31': { big: { am: [{ text: 'a', autoCarryCount: 2 }, { text: 'b', autoCarryCount: 3 }, { text: 'c', autoCarryCount: 2, manualCarryCount: 3 }, { text: 'd', autoCarryCount: 9, done: true }] }, small: {}, events: {} } };
+  const n = m => api._srchRun(d, { quick: 'carry', carryMin: m, today: '2026-10-31', secs: SECS }).tasks.map(x => x.item.text).join('');
+  sc.eq('기준 3 → b c (끝낸 것 제외)', n(3), 'bc');
+  sc.eq('기준 5 → c', n(5), 'c');
+  sc.eq('기준 1 → a b c', n(1), 'abc');
+  sc.eq('기준을 안 주면 3', n(undefined), 'bc');
 }
 
 sc.done();
