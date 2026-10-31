@@ -90,7 +90,8 @@ console.log('\n시나리오 5 — 톱니와 개발자 버전');
 {
   // 톱니는 BLOCK7 설정 단추와 **같은 path** 여야 한다
   const cog=(SRC.match(/M10\.6 3\.2h-1\.2a\.8\.8 0 0 0-\.78\.62/g)||[]).length;
-  sc.eq('⭐ BLOCK7 톱니와 같은 그림을 쓴다 (두 곳)', cog, 2);
+  // v. 26-1031-7 — GNB 톱니 메뉴('설정 · 휴지통')의 설정 아이콘도 같은 그림이다 → 세 곳
+  sc.eq('⭐ BLOCK7 톱니와 같은 그림을 쓴다 (세 곳)', cog, 3);
   sc.eq('테두리·박스는 없다 (.sw-iconbtn)', SRC.includes('.sw-iconbtn{background:none;border:0;'), true);
   // 개발자 버전 — 클래스만 붙이면 _syncDevVerBadge 가 알아서 채운다
   sc.eq('배지가 Sweeter 바에 있다', SRC.includes('class="settings-verbadge sw-verbadge"'), true);
