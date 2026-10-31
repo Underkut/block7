@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-4  [production]  -->
+<!-- BLOCK7  v. 26-1031-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6728,7 +6728,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-4";
+const APP_VERSION = "v. 26-1031-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34981,7 +34981,7 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
     }
     btn.onclick=()=>{
       beforeSave();
-      ST.preset=null;ST.prevVis=null;
+      _presetVisTouched();
       ST.vis.push(sec.id);
       ST.vis.sort((a,b)=>SECS.findIndex(s=>s.id===a)-SECS.findIndex(s=>s.id===b));
       save();refreshFn();
@@ -35176,7 +35176,7 @@ function renderSecs(){
     rm.onclick=e=>{
       e.stopPropagation();
       beforeSave();
-      ST.preset=null;ST.prevVis=null;
+      _presetVisTouched();
       ST.vis=ST.vis.filter(i=>i!==sec.id);
       ST.collapsed=(ST.collapsed||[]).filter(i=>i!==sec.id);
       save();renderToday();
@@ -35259,7 +35259,7 @@ function renderSecs(){
     // swipe-left on header → hide entire section
     const hideSection=()=>{
       beforeSave();
-      ST.preset=null;ST.prevVis=null;
+      _presetVisTouched();
       ST.vis=ST.vis.filter(i=>i!==sec.id);
       ST.collapsed=(ST.collapsed||[]).filter(i=>i!==sec.id);
       save();renderToday();
@@ -43429,6 +43429,14 @@ function _moveDateToastMsg(dateStr,secId,verb){
 // ── 구간 열어 보이기 (v26-1015-9, HB) ──
 // 옮기거나 복제한 곳이 **지금 열려 있지 않은 구간**(구간 설정에서 꺼 둠 · 접어 둠)이면 '보러 가기' 가 그 구간 판을
 // 켜고 펼쳐서 보여 준다. '완료 후 다음 할일' 은 늘 그 구간을 열어 보여 준다 (_revealSec).
+// ── 구간을 손으로 켜고 끌 때 보기 단추 풀기 (v. 26-1031-5, HB) ──
+// ST.preset 한 칸을 '구간 보기'(A · ★ · 할일 · 일정)와 '할일 거르기'(깃발 · 연락)가 같이 쓴다.
+// 구간을 손으로 숨기거나 켜면 구간 보기는 더 이상 맞지 않으니 풀지만, 깃발 · 연락 거르기는
+// 구간과 상관없는 거르기라 **그대로 둔다.** (예전엔 꺽쇠로 구간을 숨기면 깃발 모드가 풀렸다)
+function _presetVisTouched(){
+  if(ST.preset!=='flagFilter'&&ST.preset!=='contactFilter')ST.preset=null;
+  ST.prevVis=null;
+}
 function _secClosed(secId){
   return !!secId&&(!(ST.vis||[]).includes(secId)||(ST.collapsed||[]).includes(secId));
 }
@@ -43436,7 +43444,7 @@ function _revealSec(secId){
   if(!secId||!_secClosed(secId))return false;
   beforeSave();
   if(!(ST.vis||[]).includes(secId)){
-    ST.preset=null;ST.prevVis=null;
+    _presetVisTouched();
     ST.vis=[...(ST.vis||[]),secId].sort((a,b)=>SECS.findIndex(x=>x.id===a)-SECS.findIndex(x=>x.id===b));
   }
   ST.collapsed=(ST.collapsed||[]).filter(i=>i!==secId);
@@ -44141,7 +44149,7 @@ function renderWeekly(hostEl){
     // D뷰 섹션 헤더의 ▲(숨기기) 버튼과 완전히 동일한 로직: ST.vis에서 빼면
     // addRowWeekly에 이미 있는 "숨은 섹션 복귀" 알약(●이름/카운트, D뷰와
     // 같은 디자인·위치)에 자동으로 나타난다 — 별도 UI를 새로 만들 필요가 없다.
-    h+=`<div class="wlbl" style="color:${sec.color};cursor:pointer" onclick="beforeSave();ST.preset=null;ST.prevVis=null;ST.vis=ST.vis.filter(i=>i!=='${sec.id}');save();renderWeekly();" title="눌러서 숨기기">${sec.name}</div>`;
+    h+=`<div class="wlbl" style="color:${sec.color};cursor:pointer" onclick="beforeSave();_presetVisTouched();ST.vis=ST.vis.filter(i=>i!=='${sec.id}');save();renderWeekly();" title="눌러서 숨기기">${sec.name}</div>`;
     dates.forEach((d,di)=>{
       const k=`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
       const diff=daysFromToday(d);
