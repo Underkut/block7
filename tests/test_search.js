@@ -4,7 +4,7 @@
 const { makeScorer, slice } = require('./_load');
 const sc = makeScorer();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix,SRCH_QUICK,_srchCarryMin,_srchQuickLabel};')(esc);
+const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix,SRCH_QUICK,_srchCarryMin,_srchQuickLabel,_srchParse,_srchPeriod,_srchKeyOf};')(esc);
 const SECS = [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }];
 const days = () => ({
   '2026-10-31': {
@@ -154,6 +154,64 @@ console.log('\n시나리오 12 — 첫 화면 손질: 긴급 뺌 · 밀린 할�
   sc.eq('기준 5 → c', n(5), 'c');
   sc.eq('기준 1 → a b c', n(1), 'abc');
   sc.eq('기준을 안 주면 3', n(undefined), 'bc');
+}
+
+console.log('\n시나리오 13 — 기간 말 (오늘 2026-10-31 토)');
+{
+  const P = (q, t) => { const r = api._srchParse(q, t || '2026-10-31'); return r.period ? [api._srchKeyOf(r.period.from), api._srchKeyOf(r.period.to), r.text] : null; };
+  sc.eq('다음 주 (일요일부터)', P('다음 주'), ['2026-11-01', '2026-11-07', '']);
+  sc.eq('다음주 붙여 써도', P('다음주 연락'), ['2026-11-01', '2026-11-07', '연락']);
+  sc.eq('이번 주', P('이번 주'), ['2026-10-25', '2026-10-31', '']);
+  sc.eq('지난주 · 저번 주', [P('지난주')[0], P('저번 주')[0]], ['2026-10-18', '2026-10-18']);
+  sc.eq('뒤에 붙여도', P('연락 11월'), ['2026-11-01', '2026-11-30', '연락']);
+  sc.eq('11월 3일', P('11월 3일 셀'), ['2026-11-03', '2026-11-03', '셀']);
+  sc.eq('11월3일 붙여 써도', P('11월3일'), ['2026-11-03', '2026-11-03', '']);
+  sc.eq('오늘 · 내일 · 어제', [P('오늘')[0], P('내일')[0], P('어제')[0]], ['2026-10-31', '2026-11-01', '2026-10-30']);
+  sc.eq('이번 달 · 다음 달 · 지난 달', [P('이번 달').slice(0, 2), P('다음 달')[1], P('지난달')[0]], [['2026-10-01', '2026-10-31'], '2026-11-30', '2026-09-01']);
+  sc.eq('10월에 1월 → 내년 1월', P('1월'), ['2027-01-01', '2027-01-31', '']);
+  sc.eq('10월에 8월 → 올해 8월', P('8월')[0], '2026-08-01');
+  sc.eq('12월 말에 다음 달 → 다음 해 1월', P('다음 달', '2026-12-30').slice(0, 2), ['2027-01-01', '2027-01-31']);
+  sc.eq('2월 30일은 기간이 아니다', P('2월 30일'), null);
+  sc.eq('13월은 기간이 아니다', P('13월'), null);
+  sc.eq('가운데 낀 기간 말은 글자로', P('연락 다음 주 모임'), null);
+  sc.eq('보통 말은 그대로', api._srchParse('연락처 정리', '2026-10-31').text, '연락처 정리');
+}
+
+console.log('\n시나리오 14 — 기간으로 거르기');
+{
+  const d = days();
+  const r = api._srchRun(d, { q: '다음 주', today: '2026-10-31', secs: SECS, verses });
+  sc.eq('기간만 → 그 주의 할일 · 일정 모두 (11.5 · 11.6)', r.tasks.map(x => x.k).sort(), ['2026-11-05', '2026-11-06']);
+  sc.eq('일정도', r.events.map(x => x.k), ['2026-11-06']);
+  sc.eq('말씀 · 명제는 날짜가 없어 안 나온다', r.verses.length + r.props.length, 0);
+  sc.eq('기간 + 글자', api._srchRun(d, { q: '연락 다음 주', today: '2026-10-31', secs: SECS, verses }).tasks.map(x => (x.sub || x.item).text).sort(), ['숙소 연락', '찬양 콘티 연락']);
+  sc.eq('기간이 앞으로/지난 단추보다 먼저', api._srchRun(d, { q: '이번 주 연락', range: 'future', today: '2026-10-31', secs: SECS }).tasks.some(x => x.k === '2026-10-30'), true);
+  sc.eq('빈 검색어는 여전히 아무것도', api._srchRun(d, { q: ' ', today: '2026-10-31' }).tasks.length, 0);
+}
+
+console.log('\n시나리오 15 — 성경 장절 (롬12 · 롬 12:12)');
+{
+  const B = ['로마서', '누가복음', '빌립보서'], AB = { 롬: 0, 눅: 1, 빌: 2 };
+  const parseRef = t => { const m = /^(.+?)\s*(\d+)(?:\s*:\s*(\d+)(?:-(\d+))?)?\s*$/.exec(String(t).trim()); if (!m) return null;
+    const nm = m[1].trim(); const b = AB[nm] !== undefined ? AB[nm] : B.indexOf(nm); if (b < 0) return null; return { b, c: +m[2], v: m[3] ? +m[3] : 0, v2: m[4] ? +m[4] : 0 }; };
+  const vs = verses.concat([{ idx: 9, ref: '로마서 12:1-2', krText: '너희 몸을 산 제물로' }, { idx: 10, ref: '로마서 8:28', krText: '모든 것이 합력하여' }]);
+  const r = api._srchRun({}, { q: '롬12', today: '2026-10-31', verses: vs, parseRef });
+  sc.eq('그 장 말씀 (롬 12:12 · 로마서 12:1-2) · 다른 장 제외', r.verses.map(v => v.idx).sort(), [0, 9]);
+  sc.eq('성경 본문 줄 정보', r.bible, { b: 0, c: 12, v: 0, v2: 0 });
+  sc.eq('절까지 적으면 그 절이 든 말씀만', api._srchRun({}, { q: '롬 12:2', today: '2026-10-31', verses: vs, parseRef }).verses.map(v => v.idx), [9]);
+  sc.eq('장절이 아닌 말은 성경 줄 없음', api._srchRun({}, { q: '연락', today: '2026-10-31', verses: vs, parseRef }).bible, null);
+  sc.eq('parseRef 를 안 주면 예전 그대로 (장절 글자가 같은 "롬 12:12" 만)', api._srchRun({}, { q: '롬12', today: '2026-10-31', verses: vs }).verses.map(v => v.idx), [0]);
+}
+
+console.log('\n시나리오 16 — @이름 (연락처 이름 · 별명)');
+{
+  const d = { '2026-10-31': { big: { am: [{ text: '@gd 에게 서류' }, { text: '@김집사 셀모임 장소' }, { text: '김 집사님 생일' }] }, small: {}, events: { am: [{ text: '@gd 점심' }] } } };
+  const contacts = [{ nick: 'gd', name: '김길동' }, { nick: '김집사', name: '김철수' }];
+  const t = q => api._srchRun(d, { q, today: '2026-10-31', secs: SECS, contacts });
+  sc.eq('@별명 그대로', t('@gd').tasks.map(x => x.item.text), ['@gd 에게 서류']);
+  sc.eq('@이름 → 그 사람의 @별명이 적힌 할일 · 일정', [t('@길동').tasks.map(x => x.item.text), t('@길동').events.length], [['@gd 에게 서류'], 1]);
+  sc.eq('@김 → 이름 · 별명에 김이 든 두 사람 (그냥 "김 집사님" 은 아님)', t('@김').tasks.map(x => x.item.text).sort(), ['@gd 에게 서류', '@김집사 셀모임 장소']);
+  sc.eq('연락처를 안 주면 글자 그대로만', api._srchRun(d, { q: '@길동', today: '2026-10-31', secs: SECS }).tasks.length, 0);
 }
 
 sc.done();
