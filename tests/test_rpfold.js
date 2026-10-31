@@ -21,8 +21,9 @@ global.esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
 global.formatEventTime = t => t;
 global._gcalEvTx = () => 'blue';
 
+global.save = () => {};
 eval(slice('const _RP_FOLD_NEXT=', 'function rpFoldCycle(')
-   + ';Object.assign(globalThis,{_RP_FOLD_NEXT,_rpFoldOf,_rpFoldData,_rpFoldLineRow,_rpFoldSumHTML});');
+   + ';Object.assign(globalThis,{_RP_FOLD_NEXT,_rpFoldOf,_rpFoldData,_rpFoldLineRow,_rpFoldSumHTML,_rpFoldSet,_rpFoldHandleHTML,_rpFoldSumH,RPF_SUM_MIN});');
 
 console.log('시나리오 1 — 누를 때마다 펼침 → 요약 → 한 줄 → 펼침 (HB (나))');
 {
@@ -72,8 +73,9 @@ console.log('\n시나리오 4 — 그리는 모양 (v. 26-1031-1: 넓으면 빈�
   sc.eq('한 줄은 머리줄(끌어 옮기는 손잡이) 자리에 들어간다', /class="rp-widget-title rp-fold rp-fold-line"/.test(line), true);
   const sum = _rpFoldSumHTML('weekly');
   sc.eq('요약 넓은 모양: 날 칸 둘', (sum.match(/class="rpf-col"/g) || []).length, 2);
-  sc.eq('요약 넓은 모양: 한 칸에 일정 셋 + 나머지 수', /넷째/.test(sum.split('rpf-narrow')[0]) === false && /\+1<\/span><\/div>/.test(sum), true);
-  sc.eq('요약 넓은 모양: ⚑ 칸 — 셋 + 나머지 수', /⚑ 오늘 깃발[\s\S]*C<\/span><span class="rpf-more">\+1/.test(sum), true);
+  sc.eq('요약 넓은 모양: 칸마다 일정을 다 그려 두고 몇 개인지 적어 둔다 (몇 개 보일지는 그린 뒤 _rpFoldFitSum)', /class="rpf-col" data-n="4"/.test(sum) && (sum.split('rpf-narrow')[0].match(/rpf-ci/g) || []).length === 5 + 4, true);
+  sc.eq('높이를 안 정했으면 칸마다 셋 (예전 모양)', /const RPF_SUM_CAP=3;/.test(SRC), true);
+  sc.eq('요약 넓은 모양: ⚑ 칸', /⚑ 오늘 깃발/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
   const narrow = sum.split('class="rpf-narrow"')[1] || '';
   sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more">\+3/.test(narrow), true);
   sc.eq('요약 좁은 모양: ⚑ 하나 + 나머지 수', /A <span class="rpf-more">\+3/.test(narrow), true);
@@ -97,6 +99,26 @@ console.log('\n시나리오 6 — [W|M] 은 좌상단 … 바로 오른쪽에 �
 {
   sc.eq('… 오른쪽 자리', /\.rp-wm-seg\.rp-wm-abs\{position:absolute;left:38px;top:3px;/.test(SRC), true);
   sc.eq('주간 내용 줄(− + 옆)에는 더 이상 없다', /_rpWMSegHTML\('weekly'\):'';\s*if\(ar/.test(SRC), false);
+}
+
+
+console.log('\n시나리오 7 — 아래 핸들 (v. 26-1031-2): 요약 높이 · 끝까지 올리면 한 줄 · 한 줄은 끌어 내리면 요약');
+{
+  ST.settings.layout = { fold: { weekly: 'sum' } };
+  ST.settings.rpWidgetHeights = {};
+  sc.eq('높이를 안 정했으면 예전 모양(고정 높이 없음)', /rpf-fixed/.test(_rpFoldSumHTML('weekly')), false);
+  _rpFoldSet('weekly', 'sum', 120.4);
+  sc.eq('요약 높이를 기기별 위젯 높이 칸에', ST.settings.rpWidgetHeights['fold#weekly'], 120);
+  sc.eq('그 높이로 그린다 (넘치는 것은 그린 뒤 아래부터 숨김)', /class="rp-fold rp-fold-sum rpf-fixed" style="height:120px"/.test(_rpFoldSumHTML('weekly')), true);
+  _rpFoldSet('weekly', 'line');
+  sc.eq('끝까지 올리면 한 줄로 — 높이 기억은 그대로', [_rpFoldOf('weekly'), ST.settings.rpWidgetHeights['fold#weekly']], ['line', 120]);
+  _rpFoldSet('weekly', 'sum', 80);
+  sc.eq('한 줄을 끌어 내리면 그 높이의 요약으로', [_rpFoldOf('weekly'), _rpFoldSumH('weekly')], ['sum', 80]);
+  _rpFoldSet('weekly', 'sum', 1);
+  sc.eq('너무 작은 값은 최소로', _rpFoldSumH('weekly'), RPF_SUM_MIN);
+  sc.eq('요약 핸들 = 보통 핸들', /class="rp-vresize" data-vrtype="fold#weekly"/.test(_rpFoldHandleHTML('weekly', 'sum')), true);
+  sc.eq('한 줄 핸들 = 얇은 핸들', /class="rp-vresize rp-vresize-slim" data-vrtype="foldline#weekly"/.test(_rpFoldHandleHTML('weekly', 'line')), true);
+  sc.eq('핸들을 놓은 직후 click 은 접기 순환으로 안 간다', /window\._rpDragEndTs=Date\.now\(\);   \/\/ 핸들을 놓으며/.test(SRC), true);
 }
 
 sc.done();
