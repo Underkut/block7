@@ -4,7 +4,7 @@
 const { makeScorer, slice } = require('./_load');
 const sc = makeScorer();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm};')(esc);
+const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff};')(esc);
 const SECS = [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }];
 const days = () => ({
   '2026-10-31': {
@@ -100,6 +100,31 @@ console.log('\n시나리오 8 — 긴 말씀은 찾은 곳 둘레만');
   const sn = api._srchSnippet(long, '연락', 40);
   sc.eq('찾은 곳이 들어 있다', sn.includes('연락'), true);
   sc.eq('앞뒤 … 표시', sn.startsWith('… ') && sn.endsWith(' …'), true);
+}
+
+console.log('\n시나리오 9 — 결과의 일정을 누르면 어디로 (4단계: 설정 D/W/M · 기본 M · 2·3단은 펼친 위젯 먼저)');
+{
+  const go = (w, m, o) => api._srchEvDest(w, m, o);
+  sc.eq('기본은 M — 1단은 단일 M뷰', go(undefined, 1, []), { to: 'm' });
+  sc.eq('1단 W → W뷰', go('w', 1, ['weekly']), { to: 'w' });
+  sc.eq('D 는 2·3단이어도 D뷰', go('d', 3, ['weekly', 'monthSingle']), { to: 'd' });
+  sc.eq('3단 M · 월간 위젯이 있으면 그 위젯', go('m', 3, ['weekly', 'monthSingle']), { to: 'widget', widget: 'monthSingle' });
+  sc.eq('2단 W · 주간 위젯', go('w', 2, ['monthSingle', 'weekly']), { to: 'widget', widget: 'weekly' });
+  sc.eq('M 을 골랐는데 주간 위젯만 → 주간 위젯', go('m', 2, ['weekly']), { to: 'widget', widget: 'weekly' });
+  sc.eq('W 를 골랐는데 세 달 위젯만 → 세 달', go('w', 3, ['monthTriple']), { to: 'widget', widget: 'monthTriple' });
+  sc.eq('펼친 위젯이 없으면 단일뷰', go('w', 3, []), { to: 'w' });
+  sc.eq('이상한 값은 M 으로', go('x', 1, []), { to: 'm' });
+}
+
+console.log('\n시나리오 10 — 주간뷰 몇 주 뒤 (일요일 시작 · 주간뷰 wOffset 과 같은 잣대)');
+{
+  const w = api._srchWeekOff;
+  sc.eq('같은 주 (토 10.31 → 일 10.25)', w('2026-10-31', '2026-10-25'), 0);
+  sc.eq('다음 날 일요일은 다음 주', w('2026-10-31', '2026-11-01'), 1);
+  sc.eq('지난주 토요일', w('2026-10-31', '2026-10-24'), -1);
+  sc.eq('해를 넘겨도', w('2026-12-30', '2027-01-03'), 1);
+  sc.eq('석 달 뒤', w('2026-10-31', '2027-01-31'), 14);
+  sc.eq('깨진 날짜는 0', w('2026-10-31', 'x'), 0);
 }
 
 sc.done();
