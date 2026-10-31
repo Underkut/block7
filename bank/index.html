@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 헌금 계좌 안내 · v. 26-1031-8 -->
+<!-- 헌금 계좌 안내 · v. 26-1031-9 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -12,7 +12,7 @@
 <meta property="og:description" content="우리은행 1005-101-854890 · 주님의교회">
 <style>
 :root{--bg:#efedfc;--card:#fff;--ink:#1f1a4d;--sub:#7d7aa3;--line:#e4e1f7;--accent:#3b2f8f;--coral:#f0505f}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1012;--card:#1b1c1f;--ink:#f2f3f5;--sub:#9a9ea6;--line:#2a2b2f;--accent:#a99cf5}}
+@media (prefers-color-scheme:dark){:root{--bg:#16141f;--card:#302f38;--ink:#f2f1f7;--sub:#a5a2b8;--line:#45434f;--accent:#b9adff}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:var(--bg) linear-gradient(180deg,#dcd8fb 0,#efedfc 380px,#f6f4ff 100%) no-repeat;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;padding:16px 16px calc(36px + env(safe-area-inset-bottom));display:flex;justify-content:center}
 main{width:100%;max-width:440px}
@@ -48,9 +48,21 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
 .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:10.5px;font-weight:600;padding:3px 7px;border-radius:999px;white-space:nowrap}
 .safe{font-size:13px;color:var(--sub);text-align:center;margin-top:20px;display:flex;align-items:center;justify-content:center;gap:5px}
 .safe svg{width:14px;height:14px}
+/* 다크: 새까만 판 대신 연탄빛 회색 — 좌우 끝을 살짝 어둡게 해 둥근 연탄 옆면 같은 입체감 */
+@media (prefers-color-scheme:dark){
+  body{background:#16141f linear-gradient(180deg,#2b2752 0,#1c1932 380px,#16141f 100%) no-repeat}
+  .acc,.grid a{background:linear-gradient(90deg,#27262e 0%,#35343e 30%,#3a3943 50%,#35343e 70%,#27262e 100%)}
+  .acc{box-shadow:0 12px 34px rgba(0,0,0,.35)}
+  .grid a{border-color:rgba(255,255,255,.07)}
+}
 .pfoot{display:block;width:calc(100% + 32px);margin:22px -16px -36px;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 45%);mask-image:linear-gradient(180deg,transparent 0,#000 45%)}
 @media (prefers-color-scheme:dark){.pfoot{display:none}}
 .foot{display:block;margin:30px auto 0;height:64px;opacity:.85}
+/* 맨 바닥: 포스터 풀잎 띠 한가운데에 교회 로고 */
+.bottom{position:relative;margin:30px -16px -36px}
+.bottom .pfoot{margin:0;width:100%}
+.bottom .foot{position:absolute;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);margin:0;height:60px;opacity:.9}
+@media (prefers-color-scheme:dark){.bottom{margin:34px 0 0}.bottom .foot{position:static;transform:none;margin:0 auto}}
 @media (prefers-color-scheme:dark){.foot{filter:brightness(0) invert(1);opacity:.55}}
 #toast{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(10,12,18,.32);opacity:0;pointer-events:none;transition:opacity .22s}
 #toast.on{opacity:1;pointer-events:auto}
@@ -82,8 +94,7 @@ h2{font-size:20px;font-weight:700;margin:30px 4px 4px}
   <div class="morew" id="moreWrap"><div><nav class="grid" id="appsMore"></nav></div></div>
   <button class="moreb" id="moreBtn" onclick="toggleMore()"><span>더 보기</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <p class="safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>비밀번호는 여기서 받지 않아요 · 송금은 내 은행 앱에서</p>
-  <img class="foot" src="logo.png" alt="주님의교회">
-  <img class="pfoot" src="poster-foot.jpg" alt="">
+  <div class="bottom"><img class="pfoot" src="poster-foot.jpg" alt=""><img class="foot" src="logo.png" alt="주님의교회"></div>
 </main>
 <div id="toast"><div class="tbox"><button class="tx" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button><div class="tic" id="tic"></div><div class="tt" id="tt"></div><div class="td" id="td"></div><button class="tbtn" id="tbtn"></button></div></div>
 <script>
