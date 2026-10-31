@@ -16,7 +16,7 @@ const SHOT = process.env.SHOT || '';
     save(); renderToday(); localStorage.removeItem(_lsk('srchRecent')); _srch.autoLast = ''; openSearch();
   });
   await p.waitForTimeout(300);
-  let s = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.srch-qk')].map(x => x.dataset.quick), lbl: [...document.querySelectorAll('.srch-qk > span')].map(x => x.textContent),
+  let s = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.srch-qk > i')].map(x => x.className.replace('qk-', '')), lbl: [...document.querySelectorAll('.srch-qk .qk-l')].map(x => x.textContent),
     flag: getComputedStyle(document.querySelector('.qk-flag')).color, red: (() => { const e = document.createElement('i'); e.style.color = 'var(--ov)'; document.body.appendChild(e); const c = getComputedStyle(e).color; e.remove(); return c; })(), flagSvg: !!document.querySelector('.qk-flag svg path[d^="M5 4 14.5"]'),
     dots: document.querySelectorAll('.qk-carry .qk-dots b').length, dotBg: getComputedStyle(document.querySelector('.qk-dots b')).backgroundColor,
     ev: getComputedStyle(document.querySelector('.qk-weekEv')).color, cnt: [...document.querySelectorAll('.srch-qk em')].map(x => x.textContent) }));
@@ -28,7 +28,7 @@ const SHOT = process.env.SHOT || '';
   if (SHOT) await p.screenshot({ path: SHOT + '/srch-home.png' });
   // 설정으로 기준 바꾸기
   await p.evaluate(() => { updateSetting('srchCarryMin', 4); _srchRender(); });
-  s = await p.evaluate(() => ({ lbl: document.querySelectorAll('.srch-qk > span')[2].textContent, cnt: document.querySelectorAll('.srch-qk em')[2].textContent }));
+  s = await p.evaluate(() => ({ lbl: document.querySelectorAll('.srch-qk .qk-l')[2].textContent, cnt: document.querySelectorAll('.srch-qk em')[2].textContent }));
   ok('기준 4로 → 줄 이름 · 개수가 따라간다', s.lbl === '밀린 할일 (4번 이상)' && s.cnt === '1', s);
   await p.evaluate(() => { closeSearch(); openSettings && openSettings(); });
   await p.waitForTimeout(300);
@@ -56,6 +56,25 @@ const SHOT = process.env.SHOT || '';
   await p.evaluate(() => { document.getElementById('srchBody').style.maxHeight = ''; _srchClear(); });
   await p.keyboard.type('연락 하나'); await p.keyboard.press('Enter'); await p.keyboard.type('X'); await p.waitForTimeout(2400);
   ok('엔터로 남긴 말은 그대로 둔다(자동으로 덮지 않는다)', (await rec()).includes('연락 하나'), await rec());
+  // 6 (v. 26-1031-14) — 접힌 줄에 항목마다 앞 몇 글자 · 누르면 펼친 요약 · 요약에서 완료 · 모두 보기
+  await p.evaluate(() => { _srch.qOpen = {}; _srchClear(); });
+  s = await p.evaluate(() => { const r = document.querySelectorAll('.srch-qk')[2], pk = r.querySelector('.qk-peek'), bs = [...pk.querySelectorAll('b')];
+    const pr = pk.getBoundingClientRect(); return { n: bs.length, shown: bs.filter(b => { const q = b.getBoundingClientRect(); return q.top < pr.bottom - 1 && q.width > 0; }).length, w: Math.round(bs[0].getBoundingClientRect().width), mask: getComputedStyle(bs[0]).webkitMaskImage || getComputedStyle(bs[0]).maskImage, h: Math.round(pr.height) }; });
+  ok('접힌 줄: 항목마다 짧게(≤4.4em) · 뒤로 옅어짐 · 한 줄 높이', s.n >= 2 && s.shown >= 2 && s.w <= 60 && /gradient/.test(s.mask) && s.h <= 18, s);
+  ok('항목이 없는 줄은 펼칠 수 없다', await p.evaluate(() => document.querySelectorAll('.srch-qk')[3].disabled === true));
+  await p.evaluate(() => document.querySelectorAll('.srch-qk')[2].click()); await p.waitForTimeout(450);
+  s = await p.evaluate(() => ({ open: document.querySelectorAll('.srch-qk')[2].classList.contains('open'), mini: [...document.querySelectorAll('[data-qbody="carry"] .srch-mini .m-x')].map(x => x.textContent), all: (document.querySelector('[data-qbody="carry"] .qk-all') || {}).textContent, srch: _srchIsOpen(), q: _srch.quick }));
+  ok('누르면 펼친 요약 (결과 화면으로 안 넘어감)', s.open && s.mini.length >= 2 && !s.q && s.srch && /결과로 모두 보기/.test(s.all), s);
+  if (SHOT) await p.screenshot({ path: SHOT + '/srch-quick-open.png' });
+  const t0 = await p.evaluate(() => document.querySelector('[data-qbody="carry"] .srch-mini .m-x').textContent);
+  await p.evaluate(() => document.querySelector('[data-qbody="carry"] .srch-mini .srch-chk').click()); await p.waitForTimeout(300);
+  s = await p.evaluate(t0 => { const all = Object.values(ST.days).flatMap(d => Object.values(d.big || {}).flat()); const it = all.find(x => x && x.text === t0); return { done: !!(it && it.done), open: !!document.querySelector('[data-qbody="carry"]') }; }, t0);
+  ok('요약의 동그라미 → 완료 · 펼친 채로', s.done && s.open, s);
+  await p.evaluate(() => document.querySelector('[data-qbody="carry"] .qk-all').click()); await p.waitForTimeout(250);
+  ok('모두 보기 → 결과 화면', await p.evaluate(() => _srch.quick === 'carry' && document.querySelectorAll('#srchBody .srch-t').length >= 1));
+  await p.evaluate(() => _srchClear()); await p.waitForTimeout(100);
+  await p.evaluate(() => document.querySelectorAll('.srch-qk')[2].click()); await p.waitForTimeout(450);
+  ok('다시 누르면 접힘', await p.evaluate(() => !document.querySelector('[data-qbody="carry"]') && !document.querySelectorAll('.srch-qk')[2].classList.contains('open')));
   // 5-1 ㄴ (v. 26-1031-13) — 이렇게도 찾아져요 · 기간 · 성경 장절 · @이름
   await p.evaluate(() => { _srchClear(); });
   s = await p.evaluate(() => [...document.querySelectorAll('.srch-how b')].map(x => x.textContent));
