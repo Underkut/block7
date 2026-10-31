@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-3  [production]  -->
+<!-- BLOCK7  v. 26-1031-4  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3474,7 +3474,8 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 @media (prefers-reduced-motion:reduce){.rp-wm-seg .b7-seg-pill{transition:none;}}
 /* 접힌 주간 · 월간 위젯 (v. 26-1030-9) — 일정 위주 요약. 테두리 · 상자 없이 글자만 */
 .rp-widget.rp-folded{cursor:pointer;}
-.rp-widget.rp-folded-line{padding-top:4px;padding-bottom:4px;}
+/* 한 줄: 글자 위아래 여백을 똑같이 (v. 26-1031-4, HB) — 핸들은 줄을 차지하지 않고 바닥에 얹힌다(아래 .rp-vresize-slim) */
+.rp-widget.rp-folded-line{padding-top:3px;padding-bottom:2px;}
 .rp-fold-line.rp-widget-title{justify-content:flex-start;gap:8px;margin:0;min-height:22px;padding:0 0 0 96px;
   font:400 11.5px/1.3 var(--font-ui),sans-serif;letter-spacing:0;color:var(--tx2);}
 .rp-folded-line:not(:has(.rp-wm-seg)) .rp-fold-line.rp-widget-title{padding-left:40px;}   /* [W|M] 이 숨으면(둘 다 놓임) 그만큼 당긴다 */
@@ -3506,7 +3507,9 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rp-folded .rp-vresize{margin-top:2px;}
 .rp-widget.rpf-toline .rp-fold-sum{opacity:.35;}
 /* 한 줄의 얇은 핸들 — 줄 아래 가는 막대 하나. 끌어 내리면 요약으로 */
-.rp-vresize.rp-vresize-slim{height:8px;margin:0 -12px -4px;}
+.rp-vresize.rp-vresize-slim{position:absolute;left:0;right:0;bottom:0;height:8px;margin:0;z-index:2;}
+/* 한 줄 ⇄ 요약 움직이는 동안 핸들은 위젯 바닥을 따라간다 — 자리(bottom)는 _rpMorphStart 의 draw 가 정한다 */
+.rp-widget.rpf-morphing>.rp-vresize{position:absolute;left:0;right:0;height:12px;margin:0;z-index:3;}
 /* 한 줄 ⇄ 요약 움직임 (v. 26-1031-3) — 잴 때만 쓰는 안 보이는 사본 · 위에 덮는 움직임 판 */
 .rp-widget.rpf-meas{position:absolute!important;left:-1px;top:-1px;width:calc(100% + 2px);height:auto!important;min-height:0!important;margin:0!important;visibility:hidden;pointer-events:none;}
 .rp-widget.rpf-morphing{overflow:hidden;}
@@ -6725,7 +6728,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-3";
+const APP_VERSION = "v. 26-1031-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -33745,6 +33748,8 @@ function _rpMorphStart(w,type){
     }
     if(vl&&fc){const t2=cl((P-.5)/.5,0,1);vl.style.left=fc.r.x+'px';vl.style.top=fc.r.y+'px';vl.style.height=Math.max(0,Math.min(lim,fc.r.y+fc.r.h)-fc.r.y)*eO(t2)+'px';vl.style.opacity=t2;}
     if(h1&&h2){const hp=cl((P-.25)/.35,0,1);h1.style.opacity=1-hp;h2.style.opacity=hp;}
+    // 핸들은 늘 위젯 바닥에 — 한 줄일 때 선 가운데가 바닥에서 4px, 요약(═)일 때 10px. 끄는 손을 그대로 따라 내려간다
+    if(hd)hd.style.bottom=lerp(-2,4,eIO(P))+'px';
   }
   function finish(state,target){
     cancelAnimationFrame(anim);_rpMorphNow=null;

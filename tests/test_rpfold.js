@@ -140,4 +140,11 @@ console.log('\n시나리오 8 — 한 줄 ⇄ 요약 움직임 (v. 26-1031-3): �
   sc.eq('모션 줄이기면 예전처럼 바로', /\(isFold\|\|isFoldLine\)&&!_tfQuiet\(\)/.test(SRC), true);
 }
 
+
+console.log('\n시나리오 9 — 한 줄 여백 · 핸들 자리 (v. 26-1031-4, HB)');
+{
+  sc.eq('한 줄 핸들은 줄을 차지하지 않고 바닥에 얹힌다 (글자 위아래 여백이 같게)', /\.rp-vresize\.rp-vresize-slim\{position:absolute;left:0;right:0;bottom:0;/.test(SRC), true);
+  sc.eq('움직이는 동안 핸들은 위젯 바닥에 붙어 손을 따라간다', /\.rp-widget\.rpf-morphing>\.rp-vresize\{position:absolute;/.test(SRC) && /hd\.style\.bottom=lerp\(-2,4,eIO\(P\)\)/.test(SRC), true);
+}
+
 sc.done();
