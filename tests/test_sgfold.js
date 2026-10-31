@@ -94,7 +94,7 @@ console.log('\n시나리오 6 — 펼친 줄 아이콘 다시 그림 (v26-1027-1
   sc.eq('연도도 보이기: M 대신 Y', rowIc('연도도 보이기').includes('M5 7l4 5 4-5M9 12v5'), true);
   sc.eq('같던 그림이 이제 서로 다르다 (스몰 블럭 쓰기 · 경고)', rowIc('스몰 블럭 쓰기') !== rowIc('스몰 블럭 경고'), true);
   sc.eq('제목 끝말 · 구간 알림 끝말은 같은 그림 (HB)', rowIc('제목 끝말').split('>').slice(1).join('>'), rowIc('구간 알림 끝말').split('>').slice(1).join('>'));
-  sc.eq('줄 아이콘 수 37 (v. 26-1031-9 "검색에서 일정을 누르면" 한 줄 더)', (SRC.match(/<svg class="sr-ic"/g) || []).length, 37);
+  sc.eq('줄 아이콘 수 38 (v. 26-1031-12 밀린 할일 기준 줄 포함, v. 26-1031-9 "검색에서 일정을 누르면" 한 줄 더)', (SRC.match(/<svg class="sr-ic"/g) || []).length, 38);
 }
 
 sc.done();
