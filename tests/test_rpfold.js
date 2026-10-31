@@ -44,7 +44,7 @@ console.log('\n시나리오 2 — 오늘부터 앞으로의 일정만');
   };
   TK = [];
   let D = _rpFoldData('weekly');
-  sc.eq('주간은 이번 주 남은 날(금 · 토)만', D.days.map(x => x.i), [0, 1]);
+  sc.eq('⭐ 주간은 오늘부터 7일 (v. 26-1031-1 — 예전 \'이번 주 남은 날\' 은 토요일엔 오늘뿐)', D.days.map(x => x.i), [0, 1, 3]);
   sc.eq('오늘: 이미 지난 일정은 빼고, 종일 먼저 · 시간순', D.days[0].evs.map(e => e.text), ['종일 일정', '보수교육', '셀']);
   D = _rpFoldData('monthSingle');
   sc.eq('월간은 30일 안', D.days.map(x => x.i), [0, 1, 3, 10]);
@@ -61,23 +61,27 @@ console.log('\n시나리오 3 — 할일은 오늘의 깃발(중요)만, 끝난 
   sc.eq('깃발 할일', _rpFoldData('weekly').flags.map(t => t.text), ['주보글', '영상기획']);
 }
 
-console.log('\n시나리오 4 — 그리는 모양');
+console.log('\n시나리오 4 — 그리는 모양 (v. 26-1031-1: 넓으면 빈자리를 쓴다)');
 {
-  EV = { [key(0)]: { pm: [{ text: '보수교육', time: '19:30' }, { text: '셀', time: '20:30' }, { text: '기도회', time: '21:00' }] }, [key(1)]: { am: [{ text: '지결', time: '09:00' }] } };
-  TK = [{ text: 'A', flag: true }, { text: 'B', flag: true }, { text: 'C', flag: true }];
+  EV = { [key(0)]: { pm: [{ text: '보수교육', time: '19:30' }, { text: '셀', time: '20:30' }, { text: '기도회', time: '21:00' }, { text: '넷째', time: '22:00' }] }, [key(1)]: { am: [{ text: '지결', time: '09:00' }] } };
+  TK = [{ text: 'A', flag: true }, { text: 'B', flag: true }, { text: 'C', flag: true }, { text: 'D', flag: true }];
   const line = _rpFoldLineRow('weekly');
-  sc.eq('한 줄: 가까운 일정 둘', (line.match(/class="rpf-ev"/g) || []).length, 2);
-  sc.eq('한 줄: 같은 날 둘째는 날 이름을 다시 안 쓴다', (line.match(/>오늘</g) || []).length, 1);
-  sc.eq('한 줄: ⚑ 남은 수', /⚑3/.test(line), true);
+  sc.eq('한 줄: 후보를 다 그려 둔다 (폭에 맞춰 숨기는 것은 그린 뒤 _rpFoldFit)', (line.match(/class="rpf-it"/g) || []).length, 5);
+  sc.eq('한 줄: 같은 날 둘째부터는 날 이름을 안 쓴다', [(line.match(/>오늘</g) || []).length, (line.match(/>내일</g) || []).length], [1, 1]);
+  sc.eq('한 줄: ⚑ 숫자(좁을 때)와 이름(넓을 때)을 둘 다 갖고 있다', [/rpf-flcnt">4</.test(line), (line.match(/class="rpf-fi"/g) || []).length], [true, 4]);
   sc.eq('한 줄은 머리줄(끌어 옮기는 손잡이) 자리에 들어간다', /class="rp-widget-title rp-fold rp-fold-line"/.test(line), true);
   const sum = _rpFoldSumHTML('weekly');
-  sc.eq('요약: 오늘 · 내일 두 줄 + 깃발 한 줄', (sum.match(/class="rpf-row/g) || []).length, 3);
-  sc.eq('요약: 한 날 일정 둘 + 나머지 수', /\+1<\/span>/.test(sum), true);
-  sc.eq('요약: 깃발 둘 + 나머지 수', /A<span class="rpf-sep"> · <\/span>B <span class="rpf-more">\+1/.test(sum), true);
+  sc.eq('요약 넓은 모양: 날 칸 둘', (sum.match(/class="rpf-col"/g) || []).length, 2);
+  sc.eq('요약 넓은 모양: 한 칸에 일정 셋 + 나머지 수', /넷째/.test(sum.split('rpf-narrow')[0]) === false && /\+1<\/span><\/div>/.test(sum), true);
+  sc.eq('요약 넓은 모양: ⚑ 칸 — 셋 + 나머지 수', /⚑ 오늘 깃발[\s\S]*C<\/span><span class="rpf-more">\+1/.test(sum), true);
+  const narrow = sum.split('class="rpf-narrow"')[1] || '';
+  sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more">\+3/.test(narrow), true);
+  sc.eq('요약 좁은 모양: ⚑ 하나 + 나머지 수', /A <span class="rpf-more">\+3/.test(narrow), true);
   EV = {}; TK = [];
-  sc.eq('일정 없으면 한 줄로 알린다', /다가오는 일정 없음/.test(_rpFoldLineRow('weekly')), true);
-  sc.eq('깃발 없으면 ⚑ 줄을 뺀다', /rpf-flrow/.test(_rpFoldSumHTML('weekly')), false);
+  sc.eq('일정 없으면 알린다', /다가오는 일정 없음/.test(_rpFoldLineRow('weekly')) && /다가오는 일정 없음/.test(_rpFoldSumHTML('weekly')), true);
+  sc.eq('깃발 없으면 ⚑ 를 뺀다', /⚑/.test(_rpFoldSumHTML('weekly')), false);
   sc.eq('암송은 다루지 않는다', /Memoriz|getMemorizations|LikeLog/.test(slice('function _rpFoldData(', 'function rpFoldCycle(')), false);
+  sc.eq('폭은 위젯 자신의 폭으로 — 요약은 컨테이너 쿼리, 한 줄은 그린 뒤 잰다', /\.rp-fold-sum\{container-type:inline-size/.test(SRC) && /_RPF_LINE_WIDE=560/.test(SRC), true);
 }
 
 console.log('\n시나리오 5 — 누르기만 하면 옮겨지지 않는다 (두 칸 위젯이 좌+중 ↔ 중+우 로 오가던 것)');

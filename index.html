@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1030-9  [production]  -->
+<!-- BLOCK7  v. 26-1031-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3478,8 +3478,31 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rp-fold-line.rp-widget-title{justify-content:flex-start;gap:8px;margin:0;min-height:22px;padding:0 0 0 96px;
   font:400 11.5px/1.3 var(--font-ui),sans-serif;letter-spacing:0;color:var(--tx2);}
 .rp-folded-line:not(:has(.rp-wm-seg)) .rp-fold-line.rp-widget-title{padding-left:40px;}   /* [W|M] 이 숨으면(둘 다 놓임) 그만큼 당긴다 */
-.rp-fold-line .rpf-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.rp-fold-sum{display:flex;flex-direction:column;gap:3px;padding:2px 2px 2px;font:400 12px/1.35 var(--font-ui),sans-serif;color:var(--tx2);}
+.rp-fold-line .rpf-txt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;}
+.rpf-it[hidden],.rpf-fi[hidden]{display:none;}
+/* ⚑ — 좁으면 숫자, 넓으면 이름(폭의 1/3 까지) */
+.rpf-flw{flex:0 1 auto;display:flex;align-items:center;gap:0;white-space:nowrap;min-width:0;}
+.rpf-flw.names .rpf-fl{margin-right:4px;}
+.rpf-flw .rpf-fln,.rpf-flw .rpf-flmore{display:none;}
+.rpf-flw.names{max-width:36%;}
+.rpf-flw.names .rpf-fln{display:block;overflow:hidden;min-width:0;color:var(--tx);}
+.rpf-flw.names .rpf-flmore{display:inline;margin-left:4px;}
+.rpf-flw.names .rpf-flmore:empty{display:none;}
+.rpf-flw.names .rpf-flcnt{display:none;}
+.rp-fold-sum{container-type:inline-size;padding:2px 2px 2px;font:400 12px/1.35 var(--font-ui),sans-serif;color:var(--tx2);}
+/* 요약 넓은 모양 (v. 26-1031-1): 날 칸 + ⚑ 칸. 날 칸은 한 줄짜리 그리드 — 안 들어가는 먼 날은 둘째 줄(높이 0)로 밀려 숨는다 */
+.rpf-wide{display:flex;gap:14px;align-items:flex-start;min-width:0;}
+.rpf-cols{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));grid-template-rows:auto;grid-auto-rows:0;row-gap:0;column-gap:14px;overflow:hidden;}
+.rpf-col,.rpf-flcol{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.rpf-col .rpf-d,.rpf-flcol .rpf-d{margin-bottom:1px;}
+.rpf-flcol{flex:0 0 clamp(150px,22%,220px);border-left:1px solid var(--bd);padding-left:14px;}
+.rpf-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.rpf-flt{color:var(--tx);}
+.rpf-flbelow{display:none;margin-top:8px;}
+.rpf-narrow{display:none;flex-direction:column;gap:3px;}
+/* 위젯 폭 640 · 480px 기준 — 컨테이너는 위젯 안쪽(좌우 여백 12px 씩 뺀 것)이라 24px 를 뺀 값으로 잰다 */
+@container (max-width:615px){.rpf-flcol{display:none;}.rpf-flbelow{display:block;}}
+@container (max-width:455px){.rpf-wide,.rpf-flbelow{display:none;}.rpf-narrow{display:flex;}}
 .rpf-row{display:flex;align-items:baseline;gap:8px;min-width:0;}
 .rpf-row .rpf-d{flex:0 0 52px;}
 .rpf-evs{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -6682,7 +6705,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1030-9";
+const APP_VERSION = "v. 26-1031-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -33378,8 +33401,12 @@ function _rpWMSwap(type,want){
 // ── 주간 · 월간 위젯 접기 (v. 26-1030-9, HB) ──
 // 헤더의 빈 곳(버튼 말고)을 누를 때마다 펼침 → 요약 → 한 줄 → 펼침 (HB (나)). 상태는 배치(L.fold, 기기별)에.
 // 접으면 늘 **오늘부터 앞으로** — 일정 위주, 할일은 깃발(중요)만, 암송은 뺀다 (HB 시안).
-//   한 줄 = 가장 가까운 일정 둘 + ⚑ 남은 수
-//   요약   = 일정 있는 날 최대 세 줄(주간은 이번 주 남은 날 · 월간은 30일 안, 한 날 일정 둘 + n) + ⚑ 깃발 할일 둘 + n
+//   v. 26-1031-1 (HB 시안 아티팩트에서 고름) — 넓을 때 빈자리를 쓴다. 폭은 화면 단수가 아니라 **위젯 자신의 폭**으로 본다.
+//   한 줄 = 폭만큼 일정을 늘어놓는다(다 들어가는 것까지만, 중간에서 안 자름) + ⚑ 는 이름(들어가는 만큼 + n).
+//           위젯이 560px 보다 좁으면 예전처럼 일정 둘 + ⚑ 숫자.  (_rpFoldFit 가 그린 뒤 재서 맞춘다)
+//   요약   = 480px 이상: 날마다 세로 칸(약 140px, 일정 셋 + n) — 폭이 모자라면 먼 날부터 생략 — 맨 오른쪽 ⚑ 오늘 깃발 칸(640px 이상, 셋 + n).
+//            480px 미만: 줄 모양 세 날, 한 날 일정 하나 + n (글자가 중간에 잘리지 않게).  (CSS 컨테이너 쿼리로 고른다)
+//   범위   = 주간은 오늘부터 7일 (HB — '이번 주 남은 날' 은 토요일엔 오늘 하루뿐이었다) · 월간은 30일.
 const _RP_FOLD_NEXT={'':'sum',sum:'line',line:''};
 function _rpFoldOf(type){
   const f=((_lay().fold)||{})[type];
@@ -33388,7 +33415,7 @@ function _rpFoldOf(type){
 // 오늘부터 앞으로의 일정 · 오늘의 깃발 할일 (화면을 안 건드린다 — 시험이 이것만 부른다)
 function _rpFoldData(type){
   const now=logicalNow(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  const span=type==='weekly'?(7-t0.getDay()):30;
+  const span=type==='weekly'?7:30;   // 주간: 오늘부터 7일 (v. 26-1031-1)
   const hhmm=z(now.getHours())+':'+z(now.getMinutes());
   const seen=new Set(),days=[];
   for(let i=0;i<span;i++){
@@ -33422,33 +33449,69 @@ function _rpFoldEvHTML(ev){
   return`<span class="rpf-ev">${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
 }
 function _rpFoldFlagTxt(t){return esc(String(t.text||'').replace(/\s+/g,' ').trim());}
-// 한 줄 — 머리줄(≡ 자리)에 그대로 들어간다. 이 줄을 잡고 끌어 옮길 수도 있다
+// 한 줄 — 머리줄(≡ 자리)에 그대로 들어간다. 이 줄을 잡고 끌어 옮길 수도 있다.
+// 후보를 넉넉히 다 그려 두고, 그린 뒤 _rpFoldFit 가 폭에 맞춰 뒤에서부터 숨긴다.
 function _rpFoldLineRow(type){
   const{days,flags}=_rpFoldData(type),items=[];
-  let lastDay=null;   // 같은 날 둘째 일정은 날 이름을 다시 안 쓴다 ('오늘 … · 오늘 …' 대신 '오늘 … · …')
-  days.forEach(x=>x.evs.forEach(ev=>{
-    if(items.length>=2)return;
-    items.push((lastDay===x.k?'':`<span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span> `)+_rpFoldEvHTML(ev));
-    lastDay=x.k;
+  days.forEach(x=>x.evs.forEach((ev,j)=>{
+    if(items.length>=14)return;
+    const lab=j===0?`<span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span> `:'';   // 같은 날 둘째부터는 날 이름 생략
+    items.push(`<span class="rpf-it">${items.length?'<span class="rpf-sep"> · </span>':''}${lab}${_rpFoldEvHTML(ev)}</span>`);
   }));
-  const body=items.length?items.join('<span class="rpf-sep"> · </span>'):'<span class="rpf-none">다가오는 일정 없음</span>';
-  const fl=flags.length?`<span class="rpf-fl" title="오늘 깃발 할일">⚑${flags.length}</span>`:'';
+  const body=items.length?items.join(''):'<span class="rpf-none">다가오는 일정 없음</span>';
+  const fl=flags.length?`<span class="rpf-flw" data-n="${flags.length}"><span class="rpf-fl">⚑</span><span class="rpf-fln">${flags.slice(0,8).map((t,i)=>`<span class="rpf-fi">${i?'<span class="rpf-sep"> · </span>':''}${_rpFoldFlagTxt(t)}</span>`).join('')}</span><span class="rpf-more rpf-flmore"></span><span class="rpf-fl rpf-flcnt">${flags.length}</span></span>`:'';
   return`<div class="rp-widget-title rp-fold rp-fold-line"><span class="rpf-txt">${body}</span>${fl}</div>`;
 }
-// 요약 — 머리줄 아래에 일정 있는 날 세 줄 + 깃발 한 줄
+// 요약 — 머리줄 아래. 넓은 모양(날 칸 + ⚑ 칸)과 좁은 모양(줄)을 둘 다 그려 두고 CSS 컨테이너 쿼리가 고른다
 function _rpFoldSumHTML(type){
   const{days,flags}=_rpFoldData(type);
-  let h='';
-  days.slice(0,3).forEach(x=>{
-    const more=x.evs.length-2;
-    h+=`<div class="rpf-row"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${x.evs.slice(0,2).map(_rpFoldEvHTML).join('<span class="rpf-sep"> · </span>')}${more>0?` <span class="rpf-more">+${more}</span>`:''}</span></div>`;
-  });
-  if(!days.length)h+=`<div class="rpf-row"><span class="rpf-none">다가오는 일정 없음</span></div>`;
-  if(flags.length){
-    const more=flags.length-2;
-    h+=`<div class="rpf-row rpf-flrow"><span class="rpf-d rpf-fl">⚑</span><span class="rpf-evs">${flags.slice(0,2).map(_rpFoldFlagTxt).join('<span class="rpf-sep"> · </span>')}${more>0?` <span class="rpf-more">+${more}</span>`:''}</span></div>`;
+  const more=n=>n>0?` <span class="rpf-more">+${n}</span>`:'';
+  const none='<span class="rpf-none">다가오는 일정 없음</span>';
+  // 넓은 모양: 날 칸 — 한 줄짜리 그리드라 폭에 안 들어가는 칸(먼 날)은 둘째 줄(높이 0)로 밀려 안 보인다
+  const cols=days.slice(0,12).map(x=>`<div class="rpf-col"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span>${
+    x.evs.slice(0,3).map(ev=>`<span class="rpf-ell">${_rpFoldEvHTML(ev)}</span>`).join('')}${x.evs.length>3?`<span class="rpf-more">+${x.evs.length-3}</span>`:''}</div>`).join('');
+  const flcol=flags.length?`<div class="rpf-flcol"><span class="rpf-d rpf-fl">⚑ 오늘 깃발</span>${flags.slice(0,3).map(t=>`<span class="rpf-ell rpf-flt">${_rpFoldFlagTxt(t)}</span>`).join('')}${flags.length>3?`<span class="rpf-more">+${flags.length-3}</span>`:''}</div>`:'';
+  const flrow=(k)=>flags.length?`<div class="rpf-row rpf-flrow"><span class="rpf-d rpf-fl">⚑</span><span class="rpf-evs">${flags.slice(0,k).map(_rpFoldFlagTxt).join('<span class="rpf-sep"> · </span>')}${more(flags.length-k)}</span></div>`:'';
+  const wide=`<div class="rpf-wide"><div class="rpf-cols">${cols||none}</div>${flcol}</div><div class="rpf-flbelow">${flrow(2)}</div>`;
+  // 좁은 모양: 줄 세 개, 한 날 일정 하나 + n — 중간에서 잘리지 않게
+  let narrow='';
+  days.slice(0,3).forEach(x=>{narrow+=`<div class="rpf-row"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${_rpFoldEvHTML(x.evs[0])}${more(x.evs.length-1)}</span></div>`;});
+  if(!days.length)narrow+=`<div class="rpf-row">${none}</div>`;
+  narrow+=flrow(1);
+  return`<div class="rp-fold rp-fold-sum">${wide}<div class="rpf-narrow">${narrow}</div></div>`;
+}
+// 한 줄을 폭에 맞춘다 — 그린 뒤 재서 뒤에서부터 숨긴다. 폭이 바뀌면(창 · 경계선 끌기) ResizeObserver 가 다시 부른다.
+const _RPF_LINE_WIDE=560;
+let _rpfRO=null;
+function _rpFoldFit(row){
+  const w=row.closest('.rp-widget');
+  if(!w||!row.isConnected)return;
+  const W=w.clientWidth;
+  if(!W)return;
+  const wide=W>=_RPF_LINE_WIDE;
+  const txt=row.querySelector('.rpf-txt'),its=[...row.querySelectorAll('.rpf-it')];
+  const fw=row.querySelector('.rpf-flw');
+  // ⚑: 넓으면 이름(들어가는 만큼 + n), 좁으면 숫자
+  if(fw){
+    const n=+fw.dataset.n||0,fis=[...fw.querySelectorAll('.rpf-fi')],mo=fw.querySelector('.rpf-flmore');
+    fw.classList.toggle('names',wide);
+    if(wide){
+      const box=fw.querySelector('.rpf-fln');
+      fis.forEach(e=>e.hidden=false);
+      let k=fis.length;
+      mo.textContent=n>k?'+'+(n-k):'';
+      while(k>1&&box.scrollWidth>box.clientWidth+1){fis[--k].hidden=true;mo.textContent='+'+(n-k);}
+    }
   }
-  return`<div class="rp-fold rp-fold-sum">${h}</div>`;
+  // 일정: 좁으면 둘까지, 넓으면 들어가는 만큼 — 중간에서 자르지 않고 통째로 숨긴다
+  its.forEach((e,i)=>e.hidden=!wide&&i>=2);
+  if(txt){let k=wide?its.length:Math.min(2,its.length);while(k>1&&txt.scrollWidth>txt.clientWidth+1)its[--k].hidden=true;}
+}
+function _rpFoldFitAll(host){
+  const rows=[...(host||document).querySelectorAll('.rp-fold-line')];
+  if(!rows.length)return;
+  if(!_rpfRO&&'ResizeObserver' in window)_rpfRO=new ResizeObserver(es=>es.forEach(e=>_rpFoldFit(e.target)));
+  rows.forEach(r=>{_rpFoldFit(r);if(_rpfRO)_rpfRO.observe(r);});
 }
 function rpFoldCycle(type){
   const L=_lay();
@@ -33818,6 +33881,7 @@ function renderLayout(){
   _rpAttachHeaderDrag(pc);
   _rpAttachVResize(pc);
   _rpAttachFoldTap(pc);
+  _rpFoldFitAll(pc);   // 접힌 한 줄을 폭에 맞춘다 (v. 26-1031-1)
   pc.querySelectorAll('.rp-mcg.mcg-fixed').forEach(_mFitCells);   // 위젯 월간뷰도 넘치는 줄은 아래부터 가림
   // 말씀카드: 제스처를 붙이고 본문을 컨테이너 폭에 맞춰 앉힌다.
   // 폭은 붙인 다음에야 잴 수 있으므로 반드시 여기(마지막)에서 한다.
