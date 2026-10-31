@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1031-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -1984,6 +1984,37 @@ header .ai-b.gnb-gear{border:0;color:var(--tx2);}
 .srch-vt{font-size:13.5px;line-height:1.7;color:var(--tx);font-weight:300;margin-top:5px;}
 .srch-v .srch-meta{gap:8px;color:var(--tx3);}
 .srch-p .srch-vt{font-weight:400;}
+.srch-row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+/* 동그라미 = 바로 완료 (4단계) — 눈에 보이는 것은 16px 이지만 누르는 자리는 넓게 */
+.srch-chk{position:relative;cursor:pointer;}
+.srch-chk::after{content:'';position:absolute;inset:-11px -9px;}
+/* 도착한 자리가 세 번 반짝 (검색 → 일정 · 4단계) */
+.srch-flash3{animation:taskFlashRing .62s ease-out 3;}
+/* 결과 롱터치 메뉴 (시안 '1-2 결과 롱터치 메뉴') — 검색 화면 위에 한 겹 */
+.srch-act{position:fixed;inset:0;z-index:310;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+.srch-act.open{display:flex;}
+.srch-act-in{width:100%;max-width:420px;max-height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;animation:srchActIn .26s cubic-bezier(.22,.8,.24,1);}
+@keyframes srchActIn{from{opacity:0;transform:translateY(8px) scale(.985);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion:reduce){.srch-act-in{animation:none;}}
+.srch-act-row{pointer-events:none;background:var(--s1);border-radius:12px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.srch-act-row .srch-row{margin:0;border-bottom:0;padding-top:0;padding-bottom:0;}
+.srch-act-row .srch-v{background:none;padding:2px 2px;}
+.srch-act-row .srch-go{display:none;}
+.srch-act-big{display:flex;gap:8px;}
+.srch-act-big button{flex:1;min-width:0;height:64px;border-radius:12px;background:var(--s1);border:0;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:var(--tx);}
+.srch-act-big button i{font-style:normal;display:flex;height:18px;align-items:center;}
+.srch-act-big button span{font-size:11.5px;color:var(--tx2);}
+.srch-act-big .a-ok i{color:var(--ok);}.srch-act-big .a-tel i{color:var(--ok);}.srch-act-big .a-go i{color:var(--ac-tx);}.srch-act-big .a-today i{color:var(--so);}
+.srch-act-big button:disabled{opacity:.35;cursor:default;}
+.srch-act-list{background:var(--s1);border-radius:12px;padding:3px 0;}
+.srch-act-list button,.srch-act-li{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;background:none;border:0;border-top:1px solid var(--s2);color:var(--tx);font-family:inherit;font-size:14px;text-align:left;cursor:pointer;position:relative;}
+.srch-act-list>:first-child{border-top:0;}
+.srch-act-list button>span,.srch-act-li>span{flex:1;min-width:0;}
+.srch-act-list button em{font-style:normal;font-size:12px;color:var(--tx3);white-space:nowrap;}
+.srch-act-list button.danger{color:var(--ov);}
+.srch-act-list button.back{color:var(--tx2);font-size:13px;}
+.srch-act-list input[type=date]{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;font-size:16px;-webkit-appearance:none;cursor:pointer;}
+.srch-act-dot{width:8px;height:8px;border-radius:50%;flex:none;}
 /* undo/redo — true flat, no box */
 .ur-btn{
   background:none;border:none;box-shadow:none;
@@ -6827,7 +6858,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-8";
+const APP_VERSION = "v. 26-1031-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7278,6 +7309,7 @@ try{
           <div class="settings-row sub"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16"/><circle cx="8.5" cy="14.5" r="1.4" fill="var(--sun-red)" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">주일을 빨갛게</div><div class="settings-row-desc">일요일 날짜 · 요일을 붉게</div></div><label class="settings-toggle"><input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)"><span class="settings-toggle-track"></span></label></div>
           <div class="settings-row stack" data-lv="p" id="secMonthTitle"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">달 이름</div><div class="settings-row-desc">월간 뷰 · 월간 위젯의 달 제목</div></div><div class="sr-ctl"><div class="sg-seg" id="monthTitleFormatBtns"></div></div></div>
           <div class="settings-row sub" data-lv="p"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7l4 5 4-5M9 12v5"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">연도도 보이기</div><div class="settings-row-desc">달 이름 위에 작게</div></div><label class="settings-toggle"><input type="checkbox" id="setMonthTitleYear" onchange="updateSetting('monthTitleYear',this.checked)"><span class="settings-toggle-track"></span></label></div>
+          <div class="settings-row stack" data-lv="mp" id="secSrchEv"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="M14.6 14.6 19 19"/></svg><div class="settings-row-text"><div class="settings-row-label">검색에서 일정을 누르면</div><div class="settings-row-desc">그 일정이 있는 칸으로 가서 세 번 반짝여요 · 넓은 화면은 펼쳐 둔 주간 · 월간 위젯에서</div></div><div class="sr-ctl"><div class="sg-seg"><button class="settings-btn" id="srchEvD" onclick="updateSetting('srchEvView','d')">D</button><button class="settings-btn" id="srchEvW" onclick="updateSetting('srchEvView','w')">W</button><button class="settings-btn" id="srchEvM" onclick="updateSetting('srchEvView','m')">M</button></div></div></div>
         </div>
       </div>
       <div class="sg" id="sgSwipe" data-lv="p">
@@ -9603,6 +9635,8 @@ try{
   <div class="srch-filters" id="srchFilters" style="display:none"></div>
   <div class="srch-body" id="srchBody" onclick="_srchTap(event)"></div>
 </div>
+<!-- 결과 롱터치 · 우클릭 메뉴 (v. 26-1031-9, 4단계) — 검색 화면(300) 바로 위. 메모 · 반복 범위 · 공유 같은 팝업은 이보다 위에 뜬다 -->
+<div class="srch-act" id="srchAct" role="dialog" aria-label="결과 메뉴" onclick="_srchActBg(event)"><div class="srch-act-in" id="srchActIn"></div></div>
 
 <div class="trash-panel" id="trashPanel" onclick="trashBgClick(event)">
   <div class="trash-sheet" id="trashSheet">
@@ -14387,6 +14421,7 @@ const _ESC_CLOSERS=[
   ['logoMenu',        ()=>_logoMenuEsc()],
   ['repeatSubPicker', ()=>closeRepeatSubPicker()],
   ['repScopeModal',   ()=>closeRepScope()],
+  ['srchAct',         ()=>_srchActClose(), el=>el.classList.contains('open')],   // 검색 결과 메뉴 (v. 26-1031-9)
   ['srchModal',       ()=>closeSearch()],   // 검색 (v. 26-1031-8)
   // 팝업류
   ['swKbHelpModal',   ()=>closeSwKbHelp()],
@@ -26202,11 +26237,32 @@ function _srchSnippet(text,q,len){
   let a=Math.max(0,at-Math.floor(L/3)),b=Math.min(t.length,a+L);a=Math.max(0,b-L);
   return (a>0?'… ':'')+t.slice(a,b)+(b<t.length?' …':'');
 }
+// 결과의 일정을 누르면 어디로 가나 (4단계, HB 1031) — 화면을 안 건드린다.
+//   want: 설정 'd' | 'w' | 'm' (없으면 m) · mode: 1 | 2 | 3 단 · open: 지금 펼쳐져 있는 주간 · 월간 위젯 종류들
+//   D 를 고르면 언제나 D뷰. W · M 은 2·3단이면 펼친 위젯에서(고른 쪽 먼저, 없으면 다른 쪽) — 위젯이 하나도 없을 때만 단일뷰
+function _srchEvDest(want,mode,open){
+  want=(want==='d'||want==='w')?want:'m';
+  if(want==='d')return {to:'d'};
+  if(mode>=2){
+    const has=new Set(open||[]);
+    const order=want==='w'?['weekly','monthSingle','monthTriple']:['monthSingle','monthTriple','weekly'];
+    const t=order.find(x=>has.has(x));
+    if(t)return {to:'widget',widget:t};
+  }
+  return {to:want};
+}
+// 오늘이 든 주에서 k 가 든 주까지 몇 주 (일요일 시작 — 주간뷰 wOffset 과 같은 잣대)
+function _srchWeekOff(today,k){
+  const a=_srchDayNum(today),b=_srchDayNum(k);
+  if(isNaN(a)||isNaN(b))return 0;
+  const sun=n=>n-((n%7)+7+4)%7;   // 1970-01-01(0) 은 목요일
+  return Math.round((sun(b)-sun(a))/7);
+}
 // ── 검색 엔진 끝 ──
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
 // .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
-const _srch={q:'',quick:null,kind:'all',range:'all',last:[],timer:null};
+const _srch={q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
 const SRCH_RECENT_MAX=8;
 function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
 function _srchRemember(q){
@@ -26221,11 +26277,13 @@ function openSearch(){
   ov.style.display='block';m.style.display='flex';
   const inp=document.getElementById('srchInput');
   inp.value=_srch.q;
+  _srchBindLongPress();
   _srchRender();
   // ⚠️ iOS: 키보드는 누른 그 자리에서 곧바로 focus 해야 올라온다 (await · setTimeout 뒤면 안 올라온다)
   try{inp.focus({preventScroll:true});inp.select();}catch(e){}
 }
 function closeSearch(){
+  _srchActClose();
   const ov=document.getElementById('srchOverlay'),m=document.getElementById('srchModal');
   if(ov)ov.style.display='none';if(m)m.style.display='none';
   const inp=document.getElementById('srchInput');if(inp)inp.blur();
@@ -26302,7 +26360,7 @@ function _srchVerseHTML(v,i,prop){
     '<div class="srch-vt">'+_srchMark(_srchSnippet(v.krText,q,prop?90:70),q)+'</div>'+
     (tags?'<div class="srch-meta">'+tags+'</div>':'')+'</div>';
 }
-function _srchRender(){
+function _srchRender(keepScroll){
   const body=document.getElementById('srchBody'),fil=document.getElementById('srchFilters'),cnt=document.getElementById('srchCount'),clr=document.getElementById('srchClearBtn');
   if(!body)return;
   if(clr)clr.style.display=_srch.q?'':'none';
@@ -26342,22 +26400,25 @@ function _srchRender(){
   group('verses','말씀',res.verses,(v,i)=>_srchVerseHTML(v,i,false));
   group('props','명제',res.props,(v,i)=>_srchVerseHTML(v,i,true));
   _srch.last=last;
+  const top=body.scrollTop;
   body.innerHTML=html||'<div class="srch-empty">찾은 것이 없어요'+(_srch.range!=='all'?'<br><button class="srch-lbl-act" onclick="_srchSetRange(\'all\')">전체 기간에서 찾기</button>':'')+'</div>';
-  body.scrollTop=0;
+  body.scrollTop=keepScroll?top:0;
 }
-// 누르기 — 할일: 그 날 그 구간으로 가서 반짝 · 일정: 그 날 · 말씀 · 명제: 전체화면
+// 누르기 — 할일: 그 날 그 구간으로 가서 반짝 · 동그라미: 그 자리에서 완료 · 일정: 설정한 D/W/M 의 그 칸 · 말씀 · 명제: 전체화면
 function _srchTap(e){
+  if(_srch.lpAt&&Date.now()-_srch.lpAt<700){_srch.lpAt=0;return;}   // 길게 눌러 메뉴를 연 손가락이 떨어질 때의 click
   const rc=e.target.closest('[data-q]');if(rc){_srchPick(rc.dataset.q);return;}
   const qk=e.target.closest('[data-quick]');if(qk){_srchPickQuick(qk.dataset.quick);return;}
   const row=e.target.closest('[data-r]');if(!row)return;
   const hit=_srch.last[+row.dataset.r];if(!hit)return;
   if(_srch.q)_srchRemember(_srch.q);
+  if(hit.k==='tasks'&&e.target.closest('.srch-chk')){_srchToggleDone(hit.r,row);return;}
   if(hit.k==='tasks')_srchGoTask(hit.r);
-  else if(hit.k==='events')_srchGoDay(hit.r.k,hit.r.secId);
+  else if(hit.k==='events')_srchGoEvent(hit.r);
   else _srchOpenVerse(hit.r);
 }
-function _srchBackToast(k){
-  showToast(_dayLabel(k)+'로 왔어요',false,{label:'검색으로 돌아가기',onClick:()=>openSearch()});
+function _srchBackToast(k,msg){
+  showToast(msg||(_dayLabel(k)+'로 왔어요'),false,{label:'검색으로 돌아가기',onClick:()=>openSearch()});
 }
 function _srchGoDay(k,secId){
   closeSearch();
@@ -26378,6 +26439,262 @@ function _srchOpenVerse(v){
   _vfOverrideVerse=null;
   setVerseIdx(v.idx);
   openVerseFull(true);   // 검색 화면은 닫지 않는다 — 숨겼다가 전체화면을 닫으면 되살아난다
+}
+
+// ── 일정 → D/W/M 그 칸 (4단계) ── 어디로 갈지는 _srchEvDest(엔진)가 정하고 여기는 화면만 옮긴다
+function _srchEvSync(){
+  const v=ST.settings.srchEvView||'m';
+  [['d','srchEvD'],['w','srchEvW'],['m','srchEvM']].forEach(([k,id])=>{const el=document.getElementById(id);if(el)el.classList.toggle('on',v===k);});
+}
+// 지금 펼쳐져 있는 주간 · 월간 위젯 — 그 단수 배치에 놓였고 접히지 않은 것 (renderLayout 의 wkPlaced 와 같은 잣대)
+function _srchOpenWidgets(mode){
+  const L=_lay();
+  return ['weekly','monthSingle','monthTriple'].filter(t=>!!_layColOf(L,t,mode)&&!_rpFoldOf(t));
+}
+// 도착한 칸을 세 번 반짝 — 화면이 아직 안 그려졌을 수 있어 몇 번 다시 찾는다
+function _srchFlash(find,tries){
+  const el=find();
+  if(!el){const n=(tries||0)+1;if(n<10)setTimeout(()=>_srchFlash(find,n),120);return;}
+  try{el.scrollIntoView({block:'nearest',inline:'nearest',behavior:_tfQuiet()?'auto':'smooth'});}catch(e){}
+  el.classList.remove('srch-flash3');void el.offsetWidth;el.classList.add('srch-flash3');
+  setTimeout(()=>el.classList.remove('srch-flash3'),2100);
+}
+function _srchGoEvent(r){
+  closeSearch();
+  if(r.secId)_revealSec(r.secId);
+  const mode=_layMode();
+  const dest=_srchEvDest(ST.settings.srchEvView,mode,mode>=2?_srchOpenWidgets(mode):[]);
+  const k=r.k,[y,m]=k.split('-').map(Number);
+  const wCell=host=>()=>{const h=document.querySelector(host);if(!h)return null;
+    return h.querySelector('.wc[data-k="'+k+'"][data-sec="'+r.secId+'"]')||h.querySelector('.wc[data-k="'+k+'"]');};
+  const mCell=host=>()=>{const h=document.querySelector(host);return h?h.querySelector('.mcc[data-k="'+k+'"]'):null;};
+  if(dest.to==='d'){
+    goToDate(k);
+    _srchFlash(()=>document.querySelector('#tsev-'+r.secId+' .ev-chip[data-ownidx="'+r.idx+'"]')||document.querySelector('#tsev-'+r.secId+' .ev-chip'));
+  }else if(dest.to==='widget'){
+    const t=dest.widget;
+    if(t==='weekly')wOffset=_srchWeekOff(todayKey(),k);
+    else if(t==='monthSingle')_rpMonthState.single={y,m:m-1};
+    else _rpMonthState.triple={y,m:m-1};   // 세 달의 가운데
+    const tv=document.getElementById('todayView');
+    if(tv&&tv.style.display==='none')sw('today',document.getElementById('tabD'));else renderLayout();
+    if(t==='weekly'){if(_wkPaneActive())renderWeekly();_srchFlash(wCell('#weeklyPaneInner'));}
+    else _srchFlash(mCell('.rp-widget[data-wtype="'+t+'"]'));
+    _srchBackToast(k,_dayLabel(k)+'\n'+(t==='weekly'?'주간':'월간')+' 위젯에서 보여 드려요');
+    return;
+  }else if(dest.to==='w'){
+    wOffset=_srchWeekOff(todayKey(),k);
+    sw('weekly',document.getElementById('tabW'));
+    _srchFlash(wCell('#weeklyView'));
+  }else{
+    mCur={y,m:m-1};
+    sw('monthly',document.getElementById('tabM'));
+    _srchFlash(mCell('#monthlyView'));
+  }
+  _srchBackToast(k);
+}
+
+// ── 동그라미 = 바로 완료 (4단계) ── 검색 화면에 머문다. 그 할일이 있는 **그 날짜** 것을 바꾼다.
+// D뷰 체크 단추(빅 · 스몰 · 하위)와 같은 규칙 — 부모를 체크하면 하위도 따라가고 긴급은 풀린다. 새 저장 길은 없다.
+function _srchItemOf(r){
+  const d=ST.days&&ST.days[r.k];
+  const grp=d&&(r.type==='big'?d.big:d.small);
+  const list=grp&&grp[r.secId];
+  const it=Array.isArray(list)?list[r.idx]:null;
+  return it&&it===r.item?it:null;    // 그새 바뀌었으면(동기화 · 다른 기기) 손대지 않는다
+}
+function _srchStale(){showToast('목록이 그새 바뀌었어요\n다시 찾아 보여 드릴게요');_srchRender(true);}
+function _srchToggleDone(r,rowEl){
+  const it=_srchItemOf(r);
+  if(!it){_srchStale();return;}
+  let done;
+  if(r.kind==='sub'){
+    const a=_subsOf(it),sb=a[r.subIdx];
+    if(!sb||sb!==r.sub){_srchStale();return;}
+    beforeSave();sb.done=!sb.done;_subSyncParent(it);done=sb.done;
+  }else{
+    beforeSave();it.done=!it.done;_subSetAll(it,it.done);
+    if(it.done)_clearUrgentOnDone(it);
+    done=it.done;
+  }
+  save();updateTotal();
+  if(tKey()===r.k)renderSecBody(r.secId);
+  refreshTaskViewsLive();
+  if(done&&rowEl)try{const c=rowEl.querySelector('.srch-chk');_playDoneFx(c&&c.getBoundingClientRect(),rowEl.getBoundingClientRect(),it);}catch(e){}
+  _srchRender(true);
+  if(r.k!==tKey()||!document.getElementById('todayView')||document.getElementById('todayView').style.display==='none')
+    showToast((done?'완료했어요':'완료를 풀었어요')+'\n'+_dayLabel(r.k,true)+' 할일');
+}
+
+// ── 결과 롱터치 · 우클릭 메뉴 (4단계, 시안 '1-2 결과 롱터치 메뉴') ──
+// 할일: 큰 단추 넷(완료 · 전화 · 보러 가기 · 오늘로) + 목록 · 말씀/명제: 전체화면 · 복사 · 공유 이미지 · 암송 · 저장 목록 · 성경
+// ⚠️ 동작은 D뷰 할일 메뉴의 함수를 **그대로** 부른다. 그 함수들은 '지금 보는 날(viewDate)' 과 _taskMenuCtx 를
+//    기준으로 돈다 → 부르는 동안만 결과의 날짜로 맞췄다가 곧장 되돌린다(_srchWithTask). 범위를 묻는 반복 할일은
+//    물을 때 날짜를 붙잡아 두므로(_repScopeAsk · _repMoveAsk) 되돌린 뒤에 골라도 그 날짜 것이 바뀐다.
+const _SRCH_IC={
+  ok:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.9 3.9L16 5.3"/></svg>',
+  tel:'<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h3l1.5 4-2 1.5a11 11 0 0 0 4.5 4.5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5C8.5 17 3 11.5 2.5 5.1A1.5 1.5 0 0 1 4 3.5z"/></svg>',
+  go:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10h12M11 5.5 15.5 10 11 14.5"/></svg>',
+  today:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5v9M6 8.8l4 3.9 4-3.9"/><path d="M4 16.5h12"/></svg>'
+};
+function _srchContactTel(text){
+  try{const c=(findMentionedContacts(text)||[]).find(x=>x&&String(x.phone||'').replace(/[^+\d]/g,''));
+    return c?{tel:String(c.phone).replace(/[^+\d]/g,''),name:c.name||c.nick||''}:null;}catch(e){return null;}
+}
+function _srchActOpen(hit,rowEl){
+  const box=document.getElementById('srchActIn'),ov=document.getElementById('srchAct');
+  if(!box||!ov||!hit)return;
+  _srch.act={hit,rowEl,panel:'main'};
+  _srchActDraw();
+  ov.classList.add('open');
+}
+function _srchActClose(){
+  const ov=document.getElementById('srchAct');if(ov)ov.classList.remove('open');
+  _srch.act=null;
+}
+function _srchActBg(e){
+  if(_srch.lpAt&&Date.now()-_srch.lpAt<700)return;   // 길게 누른 손가락이 떨어지며 생긴 click — 방금 연 메뉴를 닫지 않는다
+  if(e.target===e.currentTarget)_srchActClose();
+}
+function _srchActDraw(){
+  const A=_srch.act,box=document.getElementById('srchActIn');if(!A||!box)return;
+  const {hit}=A,r=hit.r;
+  const head='<div class="srch-act-row">'+(hit.k==='tasks'?_srchTaskHTML(r,-1):hit.k==='events'?_srchEventHTML(r,-1):_srchVerseHTML(r,-1,hit.k==='props'))+'</div>';
+  const B=(id,cls,ic,label,dis)=>'<button type="button" class="'+cls+'" data-a="'+id+'"'+(dis?' disabled':'')+'><i>'+ic+'</i><span>'+esc(label)+'</span></button>';
+  const R=(id,label,hint,cls,extra)=>'<button type="button" data-a="'+id+'"'+(cls?' class="'+cls+'"':'')+'><span>'+esc(label)+'</span>'+(hint?'<em>'+esc(hint)+'</em>':'')+(extra||'')+'</button>';
+  let html=head;
+  if(hit.k==='tasks'){
+    const it=r.item,sub=r.kind==='sub';
+    const text=sub?(r.sub&&r.sub.text):it.text;
+    const done=sub?!!(r.sub&&r.sub.done):!!it.done;
+    const ct=_srchContactTel(text)||(sub?null:_srchContactTel(it.text));
+    const today=todayKey();
+    html+='<div class="srch-act-big">'+
+      B('done','a-ok',_SRCH_IC.ok,done?'완료 풀기':'완료')+
+      B('tel','a-tel',_SRCH_IC.tel,'전화',!ct)+
+      B('go','a-go',_SRCH_IC.go,'보러 가기')+
+      (sub?'':B('today','a-today',_SRCH_IC.today,'오늘로',r.k===today))+'</div>';
+    if(!sub){
+      if(A.panel==='date'){
+        const t1=_srchKeyAdd(today,1),t7=_srchKeyAdd(today,7);
+        html+='<div class="srch-act-list">'+R('back','‹ 날짜 옮기기','','back')+
+          R('mv:'+t1,'내일로',_srchDayTxt(t1))+R('mv:'+t7,'다음 주로',_srchDayTxt(t7))+
+          '<div class="srch-act-li"><span>날짜 지정…</span><input type="date" id="srchActDate" aria-label="날짜 지정" value="'+r.k+'" onclick="try{this.showPicker()}catch(e){}" onchange="_srchActDate(this.value)"></div></div>';
+      }else if(A.panel==='sec'){
+        html+='<div class="srch-act-list">'+R('back','‹ 구간 옮기기','','back')+
+          (SECS||[]).filter(x=>x.id!==r.secId).map(x=>'<button type="button" data-a="sec:'+esc(x.id)+'"><i class="srch-act-dot" style="background:'+esc(x.color||'#8892b4')+'"></i><span>'+esc(x.name||'')+'</span></button>').join('')+'</div>';
+      }else{
+        const sec=_srchSecOf(r.secId);
+        html+='<div class="srch-act-list">'+
+          R('date','날짜 옮기기…',_srchDayTxt(r.k))+
+          R('sec','구간 옮기기…',sec.name||'')+
+          R('flag',it.flag?'⚑ 중요 끄기':'⚑ 중요 켜기')+
+          R('urgent',it.urgent?'! 긴급 끄기':'! 긴급 켜기')+
+          (ct?R('sms','문자 보내기',ct.name):'')+
+          R('memo',it.memo&&String(it.memo).trim()?'메모 보기 · 쓰기':'메모 쓰기')+
+          R('dup','복제','같은 날에 하나 더')+
+          R('del','삭제','휴지통으로','danger')+'</div>';
+      }
+    }
+  }else if(hit.k==='verses'||hit.k==='props'){
+    const prop=hit.k==='props';
+    const canBible=!!(r.ref&&typeof _brParseRef==='function'&&_brParseRef(r.ref));
+    html+='<div class="srch-act-list">'+
+      R('vfull','전체화면으로')+R('vcopy','복사')+R('vimg','공유 이미지')+
+      (prop?'':R('vmem','암송','기록'))+
+      R('vkeep','저장 목록에 담기')+
+      (canBible?R('vbible','성경에서 앞뒤 보기',r.ref):'')+'</div>';
+  }
+  box.innerHTML=html;
+  box.onclick=e=>{if(e.target.tagName==='INPUT')return;const b=e.target.closest('button[data-a]');if(!b||b.disabled)return;_srchActDo(b.dataset.a);};
+  box.scrollTop=0;
+}
+function _srchKeyAdd(k,n){const [y,m,d]=k.split('-').map(Number);const t=new Date(y,m-1,d+n);return t.getFullYear()+'-'+z(t.getMonth()+1)+'-'+z(t.getDate());}
+// D뷰 할일 메뉴의 함수를 그 결과의 날짜 · 자리로 부른다 — 끝나면 보던 날짜와 메뉴 자리를 되돌리고 다시 그린다
+function _srchWithTask(r,fn){
+  if(!_srchItemOf(r)){_srchActClose();_srchStale();return false;}
+  const keepDate=viewDate,keepCtx=_taskMenuCtx;
+  const [y,m,d]=r.k.split('-').map(Number);
+  viewDate=new Date(y,m-1,d);
+  _taskMenuCtx={type:r.type,secId:r.secId,idx:r.idx};
+  try{fn();}
+  finally{
+    viewDate=keepDate;_taskMenuCtx=keepCtx;
+    try{renderToday();}catch(e){}
+  }
+  return true;
+}
+function _srchActDone(){_srchActClose();_srchRender(true);}
+function _srchActDo(a){
+  const A=_srch.act;if(!A)return;
+  const hit=A.hit,r=hit.r;
+  if(hit.k==='tasks'){
+    const it=r.item;
+    if(a==='done'){_srchActClose();_srchToggleDone(r,A.rowEl&&A.rowEl.isConnected?A.rowEl:null);return;}
+    if(a==='go'){_srchActClose();_srchGoTask(r);return;}
+    if(a==='tel'||a==='sms'){
+      const ct=_srchContactTel(r.kind==='sub'?(r.sub&&r.sub.text):it.text)||_srchContactTel(it.text);
+      _srchActClose();if(ct)location.href=(a==='tel'?'tel:':'sms:')+ct.tel;return;
+    }
+    if(a==='date'||a==='sec'){A.panel=a;_srchActDraw();return;}
+    if(a==='back'){A.panel='main';_srchActDraw();return;}
+    const moveTo=(k,sec)=>{_srchWithTask(r,()=>moveTaskToPickedDate(k,sec));_srchActDone();};
+    if(a==='today'){moveTo(todayKey(),r.secId);return;}
+    if(a.indexOf('mv:')===0){moveTo(a.slice(3),r.secId);return;}
+    if(a.indexOf('sec:')===0){moveTo(r.k,a.slice(4));return;}
+    if(a==='pick')return;   // 날짜 칸이 받는다 (_srchActDate)
+    if(a==='flag'){_srchWithTask(r,()=>_doToggleFlag(r.type,r.secId,r.idx));_srchActDone();return;}
+    if(a==='urgent'){_srchWithTask(r,()=>_doToggleUrgent(r.type,r.secId,r.idx));_srchActDone();return;}
+    if(a==='dup'){_srchWithTask(r,()=>{_dupDoneReset();duplicateTaskTo(0);});_srchActDone();return;}
+    if(a==='memo'){_srchActClose();_srchWithTask(r,()=>openTaskMemo(r.type,r.secId,r.idx));return;}
+    if(a==='del'){
+      const rep=!!it.rid;
+      _srchWithTask(r,()=>_taskDeleteAt(r.type,r.secId,r.idx));
+      _srchActDone();
+      if(!rep)showToast(_toastName(it.text)+'휴지통으로 옮겼어요');
+      return;
+    }
+    return;
+  }
+  const v=r;
+  if(a==='vfull'){_srchActClose();_srchOpenVerse(v);return;}
+  if(a==='vcopy'){_srchActClose();_vfShareText(v);return;}   // ⚠️ 복사는 누른 그 자리에서 곧장(아이폰)
+  if(a==='vimg'){_srchActClose();openVfShareFor(v);vfShareDo('image');return;}
+  if(a==='vmem'){_srchActClose();_reactWithToast('mem',_reactKey(v));return;}
+  if(a==='vkeep'){_srchActClose();openKeepPicker(_reactKey(v));return;}
+  if(a==='vbible'){_srchActClose();bibleOpenRef(v.ref);return;}
+}
+function _srchActDate(val){
+  const A=_srch.act;if(!A||!val)return;
+  const r=A.hit.r;
+  if(val===r.k){A.panel='main';_srchActDraw();return;}
+  _srchWithTask(r,()=>moveTaskToPickedDate(val,r.secId));
+  _srchActDone();
+}
+// 길게 누르기(손가락) · 오른쪽 누르기(마우스) — 결과 줄에서만. 한 번만 단다.
+const SRCH_LP_MS=450;
+function _srchBindLongPress(){
+  const body=document.getElementById('srchBody');
+  if(!body||body._lpBound)return;
+  body._lpBound=true;
+  let tm=null,x0=0,y0=0;
+  const hitOf=el=>{const row=el&&el.closest&&el.closest('[data-r]');if(!row)return null;const h=_srch.last[+row.dataset.r];return h&&h.k!=='events'?{h,row}:null;};
+  const cancel=()=>{clearTimeout(tm);tm=null;};
+  body.addEventListener('touchstart',e=>{
+    cancel();if(e.touches.length!==1)return;
+    const t=hitOf(e.target);if(!t)return;
+    x0=e.touches[0].clientX;y0=e.touches[0].clientY;
+    tm=setTimeout(()=>{tm=null;_srch.lpAt=Date.now();try{navigator.vibrate&&navigator.vibrate(8);}catch(_){}_srchActOpen(t.h,t.row);},SRCH_LP_MS);
+  },{passive:true});
+  body.addEventListener('touchmove',e=>{if(!tm)return;const p=e.touches[0];if(Math.abs(p.clientX-x0)>8||Math.abs(p.clientY-y0)>8)cancel();},{passive:true});
+  body.addEventListener('touchend',cancel,{passive:true});
+  body.addEventListener('touchcancel',cancel,{passive:true});
+  body.addEventListener('contextmenu',e=>{
+    const t=hitOf(e.target);if(!t)return;
+    e.preventDefault();
+    if(_srch.act)return;   // 안드로이드는 길게 누르면 contextmenu 도 온다 — 이미 열었다
+    _srchActOpen(t.h,t.row);
+  });
 }
 
 
@@ -43975,6 +44292,7 @@ function _toastWithJump(msg,toKey,mark){
   const closed=!!(mark&&_secClosed(mark.secId));       // 같은 날이어도 닫힌 구간이면 '보러 가기' 를 준다
   if(!toKey||(toKey===backKey&&!closed)){showToast(msg);return;}
   showToast(msg,false,{label:'보러 가기',onClick:()=>{
+    if(typeof _srchIsOpen==='function'&&_srchIsOpen())closeSearch();
     if(mark)_revealSec(mark.secId);
     _pendingTaskFlash=mark||null;
     if(toKey===backKey){_flashPendingTask();return;}
@@ -45151,6 +45469,8 @@ function cellTodoSave(){
   },{passive:false});
 })();
 function refreshTaskViewsLive(){
+  // 검색 화면이 떠 있으면 결과도 따라 고친다 — 반복 할일의 범위를 고른 뒤(묻는 창) · 메모를 닫은 뒤처럼 늦게 바뀌는 것까지 (v. 26-1031-9)
+  if(typeof _srchIsOpen==='function'&&_srchIsOpen()&&(_srch.q.trim()||_srch.quick))setTimeout(()=>{if(_srchIsOpen())_srchRender(true);},0);
   const v=(typeof currentViewKey==='function')?currentViewKey():'today';
   if(v==='weekly'){if(typeof renderWeekly==='function')renderWeekly();return;}
   if(v==='monthly'){if(typeof renderMonthly==='function')renderMonthly();return;}
@@ -46111,6 +46431,7 @@ function renderSettingsPanel(){
     if(el)el.classList.toggle('on',pos===p);
   });
   document.getElementById('setSundayRed').checked=s.sundayRed!==false;
+  _srchEvSync();
   document.getElementById('setBigLimit').value=s.bigLimit||6;
   document.getElementById('setSmallLimit').value=s.smallLimit||2;
   document.getElementById('setShowAllBtn').checked=s.showAllBtn!==false;
@@ -46305,6 +46626,7 @@ function updateSetting(key,value){
     else if(typeof _vgSyncExcl==='function')_vgSyncExcl();
   }
   if(key==='taskOverflow'){_syncTaskOvfBtns();resizeAllInputs();}
+  if(key==='srchEvView')_srchEvSync();
   if(key==='addInputPosition'){
     ['A','C'].forEach(p=>{
       const el=document.getElementById(`addPos${p}`);
@@ -50527,7 +50849,7 @@ const _DF_SET_LABEL={
   carryBadgeMode:'넘어온 할일 표시',carryCountSource:'넘어온 할일 세는 기준',
   periodBaseMode:'구간 기준',monthTitleFormat:'월 제목 표기',monthTitleYear:'월 제목에 연도',
   mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',wmEvFs:'주·월간 일정 글자 크기',showSmallBlocks:'스몰 블럭 보이기',
-  addInputPosition:'입력칸 위치',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
+  addInputPosition:'입력칸 위치',srchEvView:'검색에서 일정을 누르면',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
   hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
   hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
   dviewMarkOn:'일간 표시 켜기',doneFxGlow:'완료 효과 Glow',doneFxRipple:'완료 효과 Ripple',
