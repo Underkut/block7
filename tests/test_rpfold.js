@@ -69,16 +69,16 @@ console.log('\n시나리오 4 — 그리는 모양 (v. 26-1031-1: 넓으면 빈�
   const line = _rpFoldLineRow('weekly');
   sc.eq('한 줄: 후보를 다 그려 둔다 (폭에 맞춰 숨기는 것은 그린 뒤 _rpFoldFit)', (line.match(/class="rpf-it"/g) || []).length, 5);
   sc.eq('한 줄: 같은 날 둘째부터는 날 이름을 안 쓴다', [(line.match(/>오늘</g) || []).length, (line.match(/>내일</g) || []).length], [1, 1]);
-  sc.eq('한 줄: ⚑ 숫자(좁을 때)와 이름(넓을 때)을 둘 다 갖고 있다', [/rpf-flcnt">4</.test(line), (line.match(/class="rpf-fi"/g) || []).length], [true, 4]);
+  sc.eq('한 줄: ⚑ 숫자(좁을 때)와 이름(넓을 때)을 둘 다 갖고 있다', [/rpf-flcnt" data-k="fcnt">4</.test(line), (line.match(/class="rpf-fi"/g) || []).length], [true, 4]);
   sc.eq('한 줄은 머리줄(끌어 옮기는 손잡이) 자리에 들어간다', /class="rp-widget-title rp-fold rp-fold-line"/.test(line), true);
   const sum = _rpFoldSumHTML('weekly');
   sc.eq('요약 넓은 모양: 날 칸 둘', (sum.match(/class="rpf-col"/g) || []).length, 2);
   sc.eq('요약 넓은 모양: 칸마다 일정을 다 그려 두고 몇 개인지 적어 둔다 (몇 개 보일지는 그린 뒤 _rpFoldFitSum)', /class="rpf-col" data-n="4"/.test(sum) && (sum.split('rpf-narrow')[0].match(/rpf-ci/g) || []).length === 5 + 4, true);
   sc.eq('높이를 안 정했으면 칸마다 셋 (예전 모양)', /const RPF_SUM_CAP=3;/.test(SRC), true);
-  sc.eq('요약 넓은 모양: ⚑ 칸', /⚑ 오늘 깃발/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
+  sc.eq('요약 넓은 모양: ⚑ 칸', /<span data-k="fl">⚑<\/span> <span data-k="flh">오늘 깃발/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
   const narrow = sum.split('class="rpf-narrow"')[1] || '';
-  sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more">\+3/.test(narrow), true);
-  sc.eq('요약 좁은 모양: ⚑ 하나 + 나머지 수', /A <span class="rpf-more">\+3/.test(narrow), true);
+  sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more" data-k="m0">\+3/.test(narrow), true);
+  sc.eq('요약 좁은 모양: ⚑ 하나 + 나머지 수', /A<\/span> <span class="rpf-more" data-k="fm">\+3/.test(narrow), true);
   EV = {}; TK = [];
   sc.eq('일정 없으면 알린다', /다가오는 일정 없음/.test(_rpFoldLineRow('weekly')) && /다가오는 일정 없음/.test(_rpFoldSumHTML('weekly')), true);
   sc.eq('깃발 없으면 ⚑ 를 뺀다', /⚑/.test(_rpFoldSumHTML('weekly')), false);
@@ -119,6 +119,25 @@ console.log('\n시나리오 7 — 아래 핸들 (v. 26-1031-2): 요약 높이 ·
   sc.eq('요약 핸들 = 보통 핸들', /class="rp-vresize" data-vrtype="fold#weekly"/.test(_rpFoldHandleHTML('weekly', 'sum')), true);
   sc.eq('한 줄 핸들 = 얇은 핸들', /class="rp-vresize rp-vresize-slim" data-vrtype="foldline#weekly"/.test(_rpFoldHandleHTML('weekly', 'line')), true);
   sc.eq('핸들을 놓은 직후 click 은 접기 순환으로 안 간다', /window\._rpDragEndTs=Date\.now\(\);   \/\/ 핸들을 놓으며/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 8 — 한 줄 ⇄ 요약 움직임 (v. 26-1031-3): 같은 글자를 짝짓는 이름표 · 핸들');
+{
+  EV = { [key(0)]: { pm: [{ text: '보수교육', time: '19:30' }, { text: '셀', time: '20:30' }] }, [key(1)]: { am: [{ text: '지결', time: '09:00' }] } };
+  TK = [{ text: 'A', flag: true }, { text: 'B', flag: true }];
+  const line = _rpFoldLineRow('weekly'), sum = _rpFoldSumHTML('weekly');
+  const keys = h => [...h.matchAll(/data-k="([^"]+)"/g)].map(m => m[1]);
+  const kl = new Set(keys(line)), ks = new Set(keys(sum));
+  ['d0', 'e0-0', 'e0-1', 'd1', 'e1-0', 'fl', 'f0', 'f1'].forEach(k => sc.eq(`'${k}' 가 두 모양 모두에 있다`, kl.has(k) && ks.has(k), true));
+  sc.eq('한 줄에만 있는 것 (⚑ 숫자)', kl.has('fcnt') && !ks.has('fcnt'), true);
+  sc.eq('요약에만 있는 것 (⚑ 칸 머리)', ks.has('flh') && !kl.has('flh'), true);
+  const hd = slice("const _RPF_H2=", "function _rpFoldSet(");
+  sc.eq('한 줄 핸들 = 다른 핸들과 같은 크기의 선 하나 (윗줄과 같은 길이 · 두께)', /_RPF_H1='<svg width="16" height="6" viewBox="0 0 20 8"[^']*stroke-width="1\.6"[^']*<line x1="4" y1="4" x2="16" y2="4"\/><\/svg>'/.test(SRC), true);
+  sc.eq('한 줄 핸들이 그 그림을 쓴다', /rp-vresize-slim[^`]*\$\{_RPF_H1\}/.test(hd), true);
+  sc.eq('움직이는 동안 핸들은 두 그림을 겹쳐 엇갈려 보인다 (선을 옮기지 않아 두께가 안 흔들림)', /class="rpf-hx"><span class="h1">\$\{_RPF_H1\}<\/span><span class="h2">\$\{_RPF_H2\}/.test(SRC), true);
+  sc.eq('끝나면 진짜 화면을 다시 그린다', /function finish\(state,target\)\{[\s\S]{0,400}renderLayout\(\);/.test(SRC), true);
+  sc.eq('모션 줄이기면 예전처럼 바로', /\(isFold\|\|isFoldLine\)&&!_tfQuiet\(\)/.test(SRC), true);
 }
 
 sc.done();

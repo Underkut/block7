@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1031-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3507,7 +3507,18 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rp-widget.rpf-toline .rp-fold-sum{opacity:.35;}
 /* 한 줄의 얇은 핸들 — 줄 아래 가는 막대 하나. 끌어 내리면 요약으로 */
 .rp-vresize.rp-vresize-slim{height:8px;margin:0 -12px -4px;}
-.rp-vresize-slim span{display:block;width:22px;height:2px;border-radius:1px;background:currentColor;opacity:.7;}
+/* 한 줄 ⇄ 요약 움직임 (v. 26-1031-3) — 잴 때만 쓰는 안 보이는 사본 · 위에 덮는 움직임 판 */
+.rp-widget.rpf-meas{position:absolute!important;left:-1px;top:-1px;width:calc(100% + 2px);height:auto!important;min-height:0!important;margin:0!important;visibility:hidden;pointer-events:none;}
+.rp-widget.rpf-morphing{overflow:hidden;}
+.rp-widget.rpf-morphing>.rp-fold-line .rpf-txt,.rp-widget.rpf-morphing>.rp-fold-line .rpf-flw,
+.rp-widget.rpf-morphing>.rp-fold-sum,.rp-widget.rpf-morphing>.rp-widget-title:not(.rp-fold-line)>span{visibility:hidden;}
+.rpf-morph{position:absolute;inset:0;pointer-events:none;z-index:1;font:400 12px/1.35 var(--font-ui),sans-serif;color:var(--tx2);}
+.rpf-morph .rpf-m{position:absolute;left:0;top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transform-origin:0 0;will-change:transform,opacity;}
+.rpf-morph .rpf-m>*{white-space:nowrap;}
+.rpf-morph.masked{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent calc(100% - 14px));mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent calc(100% - 14px));}
+.rpf-morph .rpf-vl{position:absolute;width:1px;background:var(--bd);}
+.rpf-hx{position:relative;display:block;width:16px;height:6px;}
+.rpf-hx>span{position:absolute;left:0;top:0;line-height:0;}
 .rp-widget.rpf-tosum{outline:1px dashed color-mix(in srgb,var(--ac) 55%,transparent);outline-offset:-1px;}
 /* 위젯 폭 640 · 480px 기준 — 컨테이너는 위젯 안쪽(좌우 여백 12px 씩 뺀 것)이라 24px 를 뺀 값으로 잰다 */
 @container (max-width:615px){.rpf-flcol{display:none;}.rpf-flbelow{display:block;}}
@@ -6714,7 +6725,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-2";
+const APP_VERSION = "v. 26-1031-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26423,8 +26434,13 @@ function _rpAttachVResize(host){
     const perGrid=type==='monthTriple'?3:1; // 트리플: 위젯 델타를 그리드 3개가 나눠 가짐
     const start=(y0)=>{
       const wEl=hd.closest('.rp-widget');
-      let mv,commit;
-      if(isFold){
+      let mv,commit,ms=null;
+      if((isFold||isFoldLine)&&!_tfQuiet()){
+        ms=_rpMorphStart(wEl,type.slice(isFold?5:9));
+        if(ms){mv=y=>{ms.drag(y-y0);return 1;};commit=()=>ms.release();}
+      }
+      if(ms){/* 한 줄 ⇄ 요약 움직임이 맡는다 */}
+      else if(isFold){   // (모션 줄이기면 예전처럼 바로 바뀐다)
         // 요약 높이 — 끄는 동안 바로 줄이고 늘린다. 한 줄 높이까지 올리면 놓을 때 한 줄로 (v. 26-1031-2)
         const ft=type.slice(5),box=wEl?wEl.querySelector('.rp-fold-sum'):null;
         if(!box)return;
@@ -26507,6 +26523,7 @@ function _rpAttachVResize(host){
         document.removeEventListener('touchmove',tm,{passive:false});
         document.removeEventListener('touchend',up);
         window._rpDragEndTs=Date.now();   // 핸들을 놓으며 생기는 click 이 접기 순환으로 가지 않게
+        if(ms){if(last!=null)ms.release();else ms.cancel();return;}   // 움직임이 끝나면 제가 다시 그린다
         if(last!=null){commit(last);renderRightPanel();}
         else if(isFoldLine||isFold)renderRightPanel();
       };
@@ -33483,22 +33500,22 @@ function _rpFoldDayLabel(x){
   if(x.i===1)return'내일';
   return'일월화수목금토'[x.d.getDay()]+' '+(x.d.getMonth()+1)+'/'+x.d.getDate();
 }
-function _rpFoldEvHTML(ev){
+function _rpFoldEvHTML(ev,k){
   const tm=ev.time?`<span class="rpf-tm">${esc(formatEventTime(ev.time))}</span> `:'';
-  return`<span class="rpf-ev">${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
+  return`<span class="rpf-ev"${k?` data-k="${k}"`:''}>${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
 }
 function _rpFoldFlagTxt(t){return esc(String(t.text||'').replace(/\s+/g,' ').trim());}
 // 한 줄 — 머리줄(≡ 자리)에 그대로 들어간다. 이 줄을 잡고 끌어 옮길 수도 있다.
 // 후보를 넉넉히 다 그려 두고, 그린 뒤 _rpFoldFit 가 폭에 맞춰 뒤에서부터 숨긴다.
 function _rpFoldLineRow(type){
   const{days,flags}=_rpFoldData(type),items=[];
-  days.forEach(x=>x.evs.forEach((ev,j)=>{
+  days.forEach((x,di)=>x.evs.forEach((ev,j)=>{
     if(items.length>=14)return;
-    const lab=j===0?`<span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span> `:'';   // 같은 날 둘째부터는 날 이름 생략
-    items.push(`<span class="rpf-it">${items.length?'<span class="rpf-sep"> · </span>':''}${lab}${_rpFoldEvHTML(ev)}</span>`);
+    const lab=j===0?`<span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span> `:'';   // 같은 날 둘째부터는 날 이름 생략
+    items.push(`<span class="rpf-it">${items.length?'<span class="rpf-sep"> · </span>':''}${lab}${_rpFoldEvHTML(ev,'e'+di+'-'+j)}</span>`);
   }));
   const body=items.length?items.join(''):'<span class="rpf-none">다가오는 일정 없음</span>';
-  const fl=flags.length?`<span class="rpf-flw" data-n="${flags.length}"><span class="rpf-fl">⚑</span><span class="rpf-fln">${flags.slice(0,8).map((t,i)=>`<span class="rpf-fi">${i?'<span class="rpf-sep"> · </span>':''}${_rpFoldFlagTxt(t)}</span>`).join('')}</span><span class="rpf-more rpf-flmore"></span><span class="rpf-fl rpf-flcnt">${flags.length}</span></span>`:'';
+  const fl=flags.length?`<span class="rpf-flw" data-n="${flags.length}"><span class="rpf-fl" data-k="fl">⚑</span><span class="rpf-fln">${flags.slice(0,8).map((t,i)=>`<span class="rpf-fi">${i?'<span class="rpf-sep"> · </span>':''}<span data-k="f${i}">${_rpFoldFlagTxt(t)}</span></span>`).join('')}</span><span class="rpf-more rpf-flmore" data-k="flm"></span><span class="rpf-fl rpf-flcnt" data-k="fcnt">${flags.length}</span></span>`:'';
   return`<div class="rp-widget-title rp-fold rp-fold-line"><span class="rpf-txt">${body}</span>${fl}</div>`;
 }
 // 요약 — 머리줄 아래. 넓은 모양(날 칸 + ⚑ 칸)과 좁은 모양(줄)을 둘 다 그려 두고 CSS 컨테이너 쿼리가 고른다.
@@ -33515,15 +33532,15 @@ function _rpFoldSumHTML(type){
   const none='<span class="rpf-none">다가오는 일정 없음</span>';
   const moreSpan='<span class="rpf-more rpf-cmore"></span>';
   // 넓은 모양: 날 칸 — 한 줄짜리 그리드라 폭에 안 들어가는 칸(먼 날)은 둘째 줄(높이 0)로 밀려 안 보인다
-  const cols=days.slice(0,12).map(x=>`<div class="rpf-col" data-n="${x.evs.length}"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span>${
-    x.evs.slice(0,12).map(ev=>`<span class="rpf-ell rpf-ci">${_rpFoldEvHTML(ev)}</span>`).join('')}${moreSpan}</div>`).join('');
-  const flcol=flags.length?`<div class="rpf-flcol" data-n="${flags.length}"><span class="rpf-d rpf-fl">⚑ 오늘 깃발</span>${flags.slice(0,12).map(t=>`<span class="rpf-ell rpf-flt rpf-ci">${_rpFoldFlagTxt(t)}</span>`).join('')}${moreSpan}</div>`:'';
-  const more=n=>n>0?` <span class="rpf-more">+${n}</span>`:'';
-  const flrow=(k)=>flags.length?`<div class="rpf-row rpf-flrow"><span class="rpf-d rpf-fl">⚑</span><span class="rpf-evs">${flags.slice(0,k).map(_rpFoldFlagTxt).join('<span class="rpf-sep"> · </span>')}${more(flags.length-k)}</span></div>`:'';
+  const cols=days.slice(0,12).map((x,di)=>`<div class="rpf-col" data-n="${x.evs.length}"><span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span>${
+    x.evs.slice(0,12).map((ev,j)=>`<span class="rpf-ell rpf-ci" data-k="e${di}-${j}">${_rpFoldEvHTML(ev)}</span>`).join('')}${moreSpan}</div>`).join('');
+  const flcol=flags.length?`<div class="rpf-flcol" data-n="${flags.length}"><span class="rpf-d rpf-fl"><span data-k="fl">⚑</span> <span data-k="flh">오늘 깃발</span></span>${flags.slice(0,12).map((t,i)=>`<span class="rpf-ell rpf-flt rpf-ci" data-k="f${i}">${_rpFoldFlagTxt(t)}</span>`).join('')}${moreSpan}</div>`:'';
+  const more=(n,k)=>n>0?` <span class="rpf-more"${k?` data-k="${k}"`:''}>+${n}</span>`:'';
+  const flrow=(k)=>flags.length?`<div class="rpf-row rpf-flrow"><span class="rpf-d rpf-fl"><span data-k="fl">⚑</span></span><span class="rpf-evs">${flags.slice(0,k).map((t,i)=>`<span data-k="f${i}">${_rpFoldFlagTxt(t)}</span>`).join('<span class="rpf-sep"> · </span>')}${more(flags.length-k,'fm')}</span></div>`:'';
   const wide=`<div class="rpf-wide"><div class="rpf-cols">${cols||none}</div>${flcol}</div><div class="rpf-flbelow">${flrow(2)}</div>`;
   // 좁은 모양: 날마다 한 줄, 한 날 일정 하나 + n — 중간에서 잘리지 않게. 높이에 맞춰 아래 줄부터 숨긴다
   let narrow='';
-  days.slice(0,12).forEach(x=>{narrow+=`<div class="rpf-row rpf-nr"><span class="rpf-d${x.i===0?' today':''}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${_rpFoldEvHTML(x.evs[0])}${more(x.evs.length-1)}</span></div>`;});
+  days.slice(0,12).forEach((x,di)=>{narrow+=`<div class="rpf-row rpf-nr"><span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${_rpFoldEvHTML(x.evs[0],'e'+di+'-0')}${more(x.evs.length-1,'m'+di)}</span></div>`;});
   if(!days.length)narrow+=`<div class="rpf-row">${none}</div>`;
   narrow+=flrow(1);
   return`<div class="rp-fold rp-fold-sum${H?' rpf-fixed':''}"${H?` style="height:${H}px"`:''}>${wide}<div class="rpf-narrow">${narrow}</div></div>`;
@@ -33602,9 +33619,12 @@ function _rpFoldFitAll(host){
 }
 // 접힌 위젯의 아래 핸들 (v. 26-1031-2) — 요약은 보통 핸들(높이), 한 줄은 얇은 핸들(끌어 늘리면 요약으로)
 const RPF_SUM_MIN=18,RPF_TO_SUM=18;
+// 핸들 그림 — 두 줄(═)은 다른 위젯과 같고, 한 줄은 그 윗줄과 같은 길이 · 같은 두께 하나 (HB 2026-10-31)
+const _RPF_H2='<svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg>';
+const _RPF_H1='<svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="4" x2="16" y2="4"/></svg>';
 function _rpFoldHandleHTML(type,f){
   return f==='line'
-    ?`<div class="rp-vresize rp-vresize-slim" data-vrtype="foldline#${type}" title="끌어 내리면 요약으로"><span></span></div>`
+    ?`<div class="rp-vresize rp-vresize-slim" data-vrtype="foldline#${type}" title="끌어 내리면 요약으로">${_RPF_H1}</div>`
     :`<div class="rp-vresize" data-vrtype="fold#${type}" title="드래그로 높이 조절 · 끝까지 올리면 한 줄로"><svg width="16" height="6" viewBox="0 0 20 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="2.5" x2="16" y2="2.5"/><line x1="4" y1="5.5" x2="16" y2="5.5"/></svg></div>`;
 }
 // 접힘 모양 · 요약 높이를 바꾸고 다시 그린다 (핸들을 놓을 때)
@@ -33619,12 +33639,161 @@ function _rpFoldSet(type,f,h){
   }
   save();
 }
+// ── 한 줄 ⇄ 요약을 손가락으로 — 부채처럼 펼쳐지고 접힌다 (v. 26-1031-3, HB) ──
+// 시안: https://claude.ai/artifact/2MQ1KPShC4ttZ1kFmRWR4v (HB: '부채 펼치는 애니메이션은 너무 좋고')
+// 두 모양을 위젯 안에 안 보이게 통째로 그려 글자 하나하나(data-k)의 자리를 잰 뒤, 위젯 높이 h 하나로 모든 글자의 자리를 정한다.
+//   · 끄는 동안 손가락을 그대로 따라간다 — 멈추면 멈추고 되돌리면 되감긴다
+//   · 같은 글자는 한 줄 자리 → 요약 자리로 곡선(아래로 먼저, 옆으로 천천히). 오른쪽 칸일수록 늦게 출발 = 부채
+//   · 한 줄에만 있는 것('·' · ⚑숫자)은 먼저 스러지고, 요약에만 있는 것(날 칸 머리 · +n · ═)은 왼쪽 칸부터 떠오른다
+//   · 놓으면 임계 감쇠 스프링 — 35% 넘으면 끝까지, 못 미치면 제자리. 요약 안에서는 한 줄 높이 단위로 맞춰 멈춘다
+// ⚠️ 끝나면 늘 _rpFoldSet + renderLayout 으로 진짜 화면을 다시 그린다 — 움직임 판은 잠깐 덮어 씌운 그림일 뿐이다.
+const _RPM_LH=17,_RPM_SNAP=_RPM_LH+3;
+let _rpMorphNow=null;
+function _rpMorphStart(w,type){
+  if(!w||!w.isConnected||_rpMorphNow)return null;
+  const L=_lay(),hh=ST.settings.rpWidgetHeights||(ST.settings.rpWidgetHeights={});
+  const from=_rpFoldOf(type)==='line'?'line':'sum';
+  // 두 모양을 그린다 — 요약은 높이 기억 없이(다 보이는 모양)
+  if(!L.fold||typeof L.fold!=='object'||Array.isArray(L.fold))L.fold={};
+  const keepF=L.fold[type],keepH=hh['fold#'+type];
+  L.fold[type]='line';const htmlL=_rpWidgetHTML({type});
+  L.fold[type]='sum';delete hh['fold#'+type];const htmlS=_rpWidgetHTML({type});
+  if(keepF)L.fold[type]=keepF;else delete L.fold[type];
+  if(keepH!=null)hh['fold#'+type]=keepH;
+  const mk=html=>{const t=document.createElement('div');t.innerHTML=html.trim();const c=t.firstElementChild;c.classList.add('rpf-meas');c.removeAttribute('data-wtype');w.appendChild(c);return c;};
+  const cL=mk(htmlL),cS=mk(htmlS);
+  const row=cL.querySelector('.rp-fold-line');if(row)_rpFoldFit(row);
+  const wr=w.getBoundingClientRect();
+  const rel=el=>{const r=el.getBoundingClientRect();return{x:r.left-wr.left,y:r.top-wr.top,w:r.width,h:r.height,el};};
+  const shown=el=>el.getClientRects().length>0;
+  const grab=c=>{const o={};c.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;if(!o[k]&&shown(el)&&el.textContent.trim())o[k]=rel(el);});return o;};
+  const A=grab(cL),B=grab(cS);
+  const gS=cS.querySelector('.rp-widget-title:not(.rp-fold-line)>span');if(gS)B.grab=rel(gS);
+  const box=cS.querySelector('.rp-fold-sum'),sb=rel(box);
+  const lineH=cL.getBoundingClientRect().height,fullH=cS.getBoundingClientRect().height;
+  const tail=fullH-(sb.y+sb.h);
+  const wide=getComputedStyle(cS.querySelector('.rpf-narrow')).display==='none';
+  // 칸 (넓을 때): 날 칸 · ⚑ 칸 — 폭에 안 들어가 숨은 먼 날 칸은 뺀다
+  const cols=[];
+  if(wide){
+    const cr=cS.querySelector('.rpf-cols');const cb=cr?rel(cr):null;
+    cS.querySelectorAll('.rpf-col,.rpf-flcol').forEach(c=>{
+      if(!shown(c))return;const r=rel(c);
+      if(cb&&c.classList.contains('rpf-col')&&r.y>=cb.y+cb.h-1){c.querySelectorAll('[data-k]').forEach(e=>delete B[e.dataset.k]);return;}
+      cols.push({keys:[...c.querySelectorAll('.rpf-ci')].map(e=>e.dataset.k),head:[...c.querySelectorAll('.rpf-d [data-k],.rpf-d[data-k]')].map(e=>e.dataset.k),n:+c.dataset.n||0,flag:c.classList.contains('rpf-flcol'),r});
+    });
+  }
+  const ciOf={};cols.forEach((c,i)=>{[...c.keys,...c.head].forEach(k=>ciOf[k]=i);});
+  const ncol=Math.max(1,cols.length);
+  const e0=B['e0-0'];
+  const minH=Math.ceil((e0?e0.y+e0.h:sb.y+_RPM_LH)+(wide&&e0?_RPM_SNAP:0)+tail);
+  let defH;
+  if(keepH!=null)defH=sb.y+keepH+tail;else{_rpFoldFitSum(box);defH=cS.getBoundingClientRect().height;}
+  defH=Math.max(minH,Math.min(fullH,defH));
+  // 움직임 판
+  const ov=document.createElement('div');ov.className='rpf-morph';
+  const nodes={};
+  new Set([...Object.keys(A),...Object.keys(B)]).forEach(k=>{
+    const org=(B[k]||A[k]).el,src=org.cloneNode(true);src.removeAttribute('hidden');src.querySelectorAll('[hidden]').forEach(e=>e.removeAttribute('hidden'));
+    // 떼어 온 글자는 부모(예: ⚑ 칸 머리의 빨간 작은 글씨)를 잃는다 — 보이던 색 · 크기 · 굵기를 그대로 입힌다
+    {const cs=getComputedStyle(org);src.style.color=cs.color;src.style.fontSize=cs.fontSize;src.style.fontWeight=cs.fontWeight;src.style.fontFamily=cs.fontFamily;}
+    const n=document.createElement('div');n.className='rpf-m';n.appendChild(src);ov.appendChild(n);nodes[k]=n;
+  });
+  const mores=cols.map(()=>{const n=document.createElement('div');n.className='rpf-m rpf-more';ov.appendChild(n);return n;});
+  let vl=null;const fc=cols.find(c=>c.flag);
+  if(fc){vl=document.createElement('div');vl.className='rpf-vl';ov.appendChild(vl);}
+  cL.remove();cS.remove();
+  w.appendChild(ov);w.classList.add('rpf-morphing');
+  // 핸들: 한 줄 그림과 ═ 그림을 겹쳐 두고 엇갈려 보이게 — 선을 움직이지 않아 두께가 흔들리지 않는다
+  const hd=w.querySelector(':scope>.rp-vresize');
+  if(hd)hd.innerHTML=`<span class="rpf-hx"><span class="h1">${_RPF_H1}</span><span class="h2">${_RPF_H2}</span></span>`;
+  const h1=hd&&hd.querySelector('.h1'),h2=hd&&hd.querySelector('.h2');
+  const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
+  const eIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,eO=t=>1-Math.pow(1-t,3);
+  const SC=11.5/12;   // 한 줄 글자 크기 / 요약 글자 크기
+  let h=from==='line'?lineH:w.getBoundingClientRect().height,h0=h,anim=0,dead=false;
+  function draw(){
+    if(!w.isConnected){dead=true;return;}
+    w.style.height=h+'px';
+    const P=cl((h-lineH)/(minH-lineH),0,1);
+    const lim=Math.max(h,minH)-tail;
+    ov.classList.toggle('masked',P>=1&&h<fullH-1);
+    const vis={},fits=k=>B[k]&&B[k].y+B[k].h<=lim+.5;
+    Object.keys(B).forEach(k=>{if(!(k in ciOf)&&fits(k))vis[k]=1;});
+    cols.forEach((c,ci)=>{
+      c.head.forEach(k=>{if(fits(k))vis[k]=1;});
+      let v=0;
+      c.keys.forEach((k,j)=>{const r=B[k];if(!r)return;const last=j===c.n-1;if(r.y+r.h<=lim+.5&&(last||r.y+r.h+_RPM_SNAP<=lim+.5)&&v===j){vis[k]=1;v++;}});
+      const m=mores[ci];
+      if(c.n>v&&c.head.some(k=>vis[k])){
+        const r=B[c.keys[v]]||B[c.keys[c.keys.length-1]];
+        m.textContent='+'+(c.n-v);m.style.transform=`translate(${r.x}px,${r.y}px)`;m.style.opacity=cl((P-.7)/.3,0,1);
+      }else m.style.opacity=0;
+    });
+    for(const k in nodes){
+      const n=nodes[k],a=A[k],b=vis[k]?B[k]:null,sn=B[k];
+      const ci=ciOf[k]||0,delay=wide?.22*ci/Math.max(1,ncol-1):0;
+      const t=cl((P-delay)/(1-.22),0,1);
+      let x=0,y=0,o=0,sc=1,mw=0;
+      if(a&&b){x=lerp(a.x,b.x,eIO(t));y=lerp(a.y,b.y,eO(t));o=1;sc=lerp(SC,1,eIO(t));mw=lerp(a.w,b.w,eIO(t));}
+      else if(a&&sn){x=lerp(a.x,sn.x,eIO(t));y=lerp(a.y,sn.y,eO(t));o=1-eO(cl(t/.4,0,1));sc=lerp(SC,1,eIO(t));mw=lerp(a.w,sn.w,eIO(t));}   // 제 칸 쪽으로 가며 일찍 스며든다
+      else if(a){x=a.x;y=a.y-4*eO(cl(P/.3,0,1));o=1-cl(P/.3,0,1);sc=SC;mw=a.w;}                                   // 한 줄에만: 먼저 스러짐
+      else if(b){const st=.3+.25*(wide?ci/Math.max(1,ncol-1):0),u=cl((P-st)/.42,0,1);x=b.x;y=b.y+6*(1-eO(u));o=eO(u);mw=b.w;}   // 요약에만: 왼쪽 칸부터 떠오름
+      // 펼쳐지는 동안에는 아직 낮은 위젯 밖으로 떨어지지 않게 — 아래 끝 바로 위에 머문다
+      if(P<1&&a)y=Math.min(y,Math.max(a.y,h-tail-_RPM_LH+1));
+      n.style.transform=`translate(${x}px,${y}px) scale(${sc})`;n.style.opacity=o;n.style.maxWidth=(mw/sc+3)+'px';
+    }
+    if(vl&&fc){const t2=cl((P-.5)/.5,0,1);vl.style.left=fc.r.x+'px';vl.style.top=fc.r.y+'px';vl.style.height=Math.max(0,Math.min(lim,fc.r.y+fc.r.h)-fc.r.y)*eO(t2)+'px';vl.style.opacity=t2;}
+    if(h1&&h2){const hp=cl((P-.25)/.35,0,1);h1.style.opacity=1-hp;h2.style.opacity=hp;}
+  }
+  function finish(state,target){
+    cancelAnimationFrame(anim);_rpMorphNow=null;
+    if(!dead&&w.isConnected){ov.remove();w.classList.remove('rpf-morphing');w.style.height='';}
+    if(state==='line')_rpFoldSet(type,'line');
+    else if(state==='sum')_rpFoldSet(type,'sum',target-sb.y-tail);
+    renderLayout();
+  }
+  function springTo(target,state){
+    cancelAnimationFrame(anim);
+    let v=0,last=performance.now();const K=210,C=2*Math.sqrt(K);
+    const step=now=>{
+      if(dead||!w.isConnected){_rpMorphNow=null;return;}
+      const dt=Math.min(.032,(now-last)/1000);last=now;
+      v+=(-K*(h-target)-C*v)*dt;h+=v*dt;
+      if(Math.abs(h-target)<.3&&Math.abs(v)<4){h=target;draw();finish(state,target);return;}
+      draw();anim=requestAnimationFrame(step);
+    };
+    anim=requestAnimationFrame(step);
+  }
+  const ses={
+    from,lineH,
+    drag(dy){
+      let nh=h0+dy;
+      if(nh<lineH)nh=lineH-(lineH-nh)*.2;              // 더 갈 데 없으면 고무줄처럼 뻑뻑하게
+      if(nh>fullH)nh=fullH+(nh-fullH)*.2;
+      h=nh;draw();
+    },
+    release(){
+      const P=(h-lineH)/(minH-lineH);
+      if(P<.35){springTo(lineH,'line');return;}
+      if(h<minH){springTo(from==='line'?defH:minH,'sum');return;}
+      springTo(Math.min(fullH,minH+Math.round((h-minH)/_RPM_SNAP)*_RPM_SNAP),'sum');
+    },
+    cancel(){finish(null);},
+    play(to){h0=h;to==='line'?springTo(lineH,'line'):springTo(defH,'sum');}
+  };
+  _rpMorphNow=ses;
+  draw();
+  return ses;
+}
 function rpFoldCycle(type){
   const L=_lay();
   if(!L.fold||typeof L.fold!=='object'||Array.isArray(L.fold))L.fold={};
   const old=document.querySelector('#pageContent .rp-widget[data-wtype="'+type+'"]');
   const h0=old?old.getBoundingClientRect().height:0;
   const nx=_RP_FOLD_NEXT[_rpFoldOf(type)];
+  // 요약 → 한 줄: 펼칠 때의 부채를 거꾸로 되감는다 (v. 26-1031-3)
+  if(nx==='line'&&!_tfQuiet()){const ms=_rpMorphStart(old,type);if(ms){ms.play('line');return;}}
   if(nx)L.fold[type]=nx;else delete L.fold[type];
   save();
   renderLayout();
