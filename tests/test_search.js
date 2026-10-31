@@ -4,7 +4,7 @@
 const { makeScorer, slice } = require('./_load');
 const sc = makeScorer();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff};')(esc);
+const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix};')(esc);
 const SECS = [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }];
 const days = () => ({
   '2026-10-31': {
@@ -125,6 +125,21 @@ console.log('\n시나리오 10 — 주간뷰 몇 주 뒤 (일요일 시작 · �
   sc.eq('해를 넘겨도', w('2026-12-30', '2027-01-03'), 1);
   sc.eq('석 달 뒤', w('2026-10-31', '2027-01-31'), 14);
   sc.eq('깨진 날짜는 0', w('2026-10-31', 'x'), 0);
+}
+
+console.log('\n시나리오 11 — 결과 할일이 D뷰 위 거르기 단추에 가려지면 무엇을 바꾸나 (v. 26-1031-10)');
+{
+  const f = api._srchFilterFix;
+  sc.eq('거르기 없음 → 바꿀 것 없음', f({ text: 'a' }, null, {}), {});
+  sc.eq('깃발만 보기 · 깃발 없는 할일 → 푼다', f({ text: 'a' }, 'flagFilter', {}), { marker: 'flag' });
+  sc.eq('깃발만 보기 · 깃발 할일 → 그대로', f({ text: 'a', flag: true }, 'flagFilter', {}), {});
+  sc.eq('연락만 보기 · 연락할 일 아님 → 푼다', f({ text: 'a', flag: true }, 'contactFilter', {}), { marker: 'contact' });
+  sc.eq('완료 숨김 · 완료한 할일 → 보이게', f({ done: true }, null, { showCompletedTasks: false }), { showDone: true });
+  sc.eq('✓ 단추가 설정에서 꺼져 있으면 단추도', f({ done: true }, null, { showCompletedTasks: false, showCompletedBtn: false }), { showDone: true, showDoneBtn: true });
+  sc.eq('완료 숨김이어도 안 끝낸 할일은 그대로', f({ done: false }, null, { showCompletedTasks: false, showCompletedBtn: false }), {});
+  sc.eq('완료 보임(값 없음 = 보임) → 그대로', f({ done: true }, null, {}), {});
+  sc.eq('둘 다 걸리면 둘 다', f({ done: true }, 'flagFilter', { showCompletedTasks: false }), { marker: 'flag', showDone: true });
+  sc.eq('깨진 값', f(null, 'flagFilter', {}), {});
 }
 
 sc.done();

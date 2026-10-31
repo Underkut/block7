@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-9  [production]  -->
+<!-- BLOCK7  v. 26-1031-10  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6858,7 +6858,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-9";
+const APP_VERSION = "v. 26-1031-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26258,6 +26258,20 @@ function _srchWeekOff(today,k){
   const sun=n=>n-((n%7)+7+4)%7;   // 1970-01-01(0) 은 목요일
   return Math.round((sun(b)-sun(a))/7);
 }
+// 결과 할일이 D뷰 위 거르기 단추에 가려지는가 — 보이려면 무엇을 바꿔야 하나 (v. 26-1031-10, HB). 화면 · 저장을 안 건드린다.
+//   marker: 깃발만 · 연락만 보기를 풀어야 함 (taskMarkerFilterPass 와 같은 잣대)
+//   showDone: 완료한 할일 숨기기를 꺼야 함(✓ 단추를 눌러 둔 상태로) · showDoneBtn: 그 ✓ 단추가 설정에서 꺼져 있어 함께 꺼낸다
+function _srchFilterFix(it,preset,set){
+  const fix={};
+  if(!it||typeof it!=='object')return fix;
+  if(preset==='flagFilter'&&!it.flag)fix.marker='flag';
+  else if(preset==='contactFilter'&&!it.contactTask)fix.marker='contact';
+  if(it.done&&set&&set.showCompletedTasks===false){
+    fix.showDone=true;
+    if(set.showCompletedBtn===false)fix.showDoneBtn=true;
+  }
+  return fix;
+}
 // ── 검색 엔진 끝 ──
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
@@ -26429,10 +26443,34 @@ function _srchGoDay(k,secId){
 function _srchGoTask(r){
   closeSearch();
   _revealSec(r.secId);
+  const notes=_srchUnfilter(r);
   _pendingTaskFlash={key:r.k,secId:r.secId,type:r.type,idx:r.idx};
   goToDate(r.k);
   _flashPendingTask();
-  _srchBackToast(r.k);
+  _srchBackToast(r.k,_dayLabel(r.k)+'로 왔어요'+(notes.length?'\n'+notes.join('\n'):''));
+}
+// 가 보니 위 거르기 단추에 가려 안 보이면 단추를 맞춘다 (v. 26-1031-10, HB) — 무엇을 바꿨는지 토스트 줄로 돌려준다.
+//   깃발만 · 연락만 보기 → 푼다(단추를 다시 누른 것과 같다) · 완료 숨김 → ✓ 단추를 눌러 둔다, 설정에서 그 단추가 꺼져 있으면 꺼내 둔다
+//   하위 할일이면 접혀 있던 하위 판도 편다. 되돌리기(↩) 한 번에 함께 풀린다(beforeSave 한 번).
+function _srchUnfilter(r){
+  const it=r.item,notes=[];
+  if(!it)return notes;
+  const fix=_srchFilterFix(it,ST.preset,ST.settings||{});
+  const openSub=r.kind==='sub'&&_subStat(it).n>0&&!it.subOpen;
+  if(!fix.marker&&!fix.showDone&&!openSub)return notes;
+  beforeSave();
+  if(fix.marker){
+    ST.preset=null;   // 깃발 · 연락 거르기만 푼다(단추를 다시 누른 것과 같다) — 구간 보기(A · ★ …)일 때는 여기 안 온다
+    notes.push((fix.marker==='flag'?'깃발만':'연락할 일만')+' 보기를 풀었어요');
+  }
+  if(fix.showDone){
+    ST.settings.showCompletedTasks=true;
+    notes.push('완료한 할일도 보이게 켰어요');
+    if(fix.showDoneBtn){ST.settings.showCompletedBtn=true;notes.push('✓ 단추도 꺼내 두었어요\n(설정 › 보기 › 위 단추)');}
+  }
+  if(openSub)it.subOpen=true;   // 하위 판을 펴 둔다 (_subToggleOpen 은 입력칸에 커서를 줘 자판이 올라오므로 값만)
+  save();
+  return notes;
 }
 function _srchOpenVerse(v){
   if(!ST.settings.verseBarOn)toggleVerseBarOn();

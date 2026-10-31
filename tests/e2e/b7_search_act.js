@@ -110,6 +110,30 @@ const SHOT = process.env.SHOT || '';
     s = await p.evaluate(() => (getBigs(__k3, 'pm').find(x => x.text === '수련회 연락 돌리기') || {}).memo || '');
     ok('메모는 그 날짜 할일에 저장', /숙소 연락처/.test(s), s);
 
+    // ②-2 D뷰 위 거르기에 가려진 할일 → 가면 단추를 맞춘다 (v. 26-1031-10)
+    await p.evaluate(() => { const it = getBigs(__k3, 'pm').find(x => x.text === '수련회 연락 돌리기'); it.done = true; it.subs.forEach(x => x.done = true); delete it.subOpen;
+      ST.preset = 'flagFilter'; ST.settings.showCompletedTasks = false; ST.settings.showCompletedBtn = false; ST.settings.showFlagFilterBtn = true; save(); renderToday(); });
+    await search(p, '목사님 연락');
+    await p.evaluate(() => document.querySelector('#srchBody .srch-sub').click()); await p.waitForTimeout(800);
+    s = await p.evaluate(() => {
+      const it = getBigs(__k3, 'pm').find(x => x.text === '수련회 연락 돌리기'), i = getBigs(__k3, 'pm').indexOf(it);
+      const row = document.querySelector('#tb-pm .big-item[data-i="' + i + '"]'), wrap = row && row.closest('.swipe-wrap');
+      return { preset: ST.preset, done: ST.settings.showCompletedTasks, btn: ST.settings.showCompletedBtn, subOpen: !!it.subOpen, day: tKey() === __k3,
+        visible: !!row && !(wrap && wrap.hidden) && row.getClientRects().length > 0, flash: !!document.querySelector('.task-flash'),
+        doneBtnOn: !!document.querySelector('.preset-btn.on[aria-pressed="true"]'), toast: (document.getElementById('_toast') || {}).innerText || '' };
+    });
+    ok('깃발만 보기 풀림 · 완료 보이기 켬 · ✓ 단추 꺼냄 · 하위 판 펼침', s.preset == null && s.done === true && s.btn === true && s.subOpen, s);
+    ok('그 할일이 실제로 보이고 반짝 · ✓ 단추가 눌린 채로 보인다', s.day && s.visible && s.flash && s.doneBtnOn, s);
+    ok('무엇을 바꿨는지 토스트에 줄로', /깃발만 보기를 풀었어요/.test(s.toast) && /완료한 할일도 보이게/.test(s.toast) && /✓ 단추도 꺼내/.test(s.toast), s.toast);
+    await p.evaluate(() => { const it = getBigs(__k3, 'pm').find(x => x.text === '수련회 연락 돌리기'); it.done = false; it.subs.forEach(x => x.done = false); save(); goToDate(__k); });
+    // 가리는 것이 없으면 아무것도 안 바꾼다
+    await p.evaluate(() => { ST.preset = null; ST.settings.showCompletedTasks = false; ST.settings.showCompletedBtn = false; save(); });
+    await search(p, '수련회 연락 돌리기');
+    await p.evaluate(() => document.querySelector('#srchBody .srch-big').click()); await p.waitForTimeout(500);
+    s = await p.evaluate(() => ({ done: ST.settings.showCompletedTasks, btn: ST.settings.showCompletedBtn, toast: (document.getElementById('_toast') || {}).innerText || '' }));
+    ok('안 끝낸 할일이면 완료 숨김 · 단추 설정은 그대로', s.done === false && s.btn === false && !/켰어요/.test(s.toast), s);
+    await p.evaluate(() => { ST.settings.showCompletedTasks = true; ST.settings.showCompletedBtn = true; save(); goToDate(__k); });
+
     // ③ 일정 → 기본 M
     const goEv = async () => { await search(p, '연락망'); await p.evaluate(() => document.querySelector('#srchBody .srch-e').click()); await p.waitForTimeout(500); };
     await goEv();

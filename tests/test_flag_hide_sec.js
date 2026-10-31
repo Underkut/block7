@@ -34,4 +34,8 @@ sc.eq('주간 이름 눌러 숨기기', /onclick="beforeSave\(\);_presetVisTouch
 // 남은 ST.preset=null 은 A · ★ 단추 자신이 '이전 보기로' 돌아갈 때뿐이다
 sc.eq('그 밖의 ST.preset=null 은 A · ★ 두 곳뿐', (SRC.match(/ST\.preset=null;ST\.prevVis=null;/g) || []).length, 2);
 
+// 검색에서 간 할일이 깃발 · 연락 거르기에 가려졌을 때만 푼다 (v. 26-1031-10) — 구간 보기 단추 상태는 안 건드린다
+const uf = SRC.slice(SRC.indexOf('function _srchUnfilter(r){'), SRC.indexOf('function _srchUnfilter(r){') + 900);
+sc.eq('검색 → 거르기 풀기는 fix.marker 일 때만', /if\(fix\.marker\)\{\s*ST\.preset=null;/.test(uf) && (uf.match(/ST\.preset=/g) || []).length === 1, true);
+
 sc.done();
