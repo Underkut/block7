@@ -54,6 +54,8 @@ eval(sliceDev('function _bibleRankOfRef(', '// verses를 keyFn 기준으로'));
 let _BIBLE_WHOLE=null;
 // 같은 까닭으로 Sweeter 블록의 맨 바깥 const/let 도 var 로 바꿔 떠온다.
 // (안 그러면 _SW_TILES 같은 것을 테스트에서 바꿔도 함수들은 딴 것을 본다)
+// 예배 이름 견주기 (띄어쓰기 무시) — 같은 날 예배 차례(_svcRank)가 쓴다
+eval(sliceDev('function _sermonCatNorm(', 'function _sermonListMap('));
 eval(sliceDev('function _swOn(){', '// ── DEV MODE BOOTSTRAP ──')
        .replace(/^(?:const|let) /gm,'var '));
 
@@ -1510,7 +1512,8 @@ console.log('\n시나리오 31 — 모음 필터와 최근 설교');
 
   // ② 같은 명제가 켜진 모음 둘에 있으면(내 모음 + 구독) 한 번만
   VERSES=all.concat([Object.assign({},all[5],{_code:'ABC123'})]);
-  sc.eq('겹친 명제는 한 번만', _swVersesFor({k:'recent'},{v:_swSermons(0)[0]}).length, 3);
+  // (같은 10/4 라도 이제 나중 예배인 라이프라인이 위라 — 시나리오 34 — 주일예배를 이름으로 찾는다)
+  sc.eq('겹친 명제는 한 번만', _swVersesFor({k:'recent'},{v:_swSermons(0).find(x=>x.cat==='주일예배')}).length, 3);
 
   // ③ 필터가 걸려 있어도 최근 설교는 **필터와 상관없이** 타일의 그날 그 설교
   //    (예: 대분류 필터로 라이프라인만 켜 둔 경우 — 거른 목록에는 주일예배가 없다)
@@ -1662,6 +1665,57 @@ console.log('\n시나리오 33 — 주간이라도 한 주치 안에서 흐름')
   global._getCollFilter=()=>({period:'all'});
   VERSES=[P('P1','주일예배','2026-08-30','마태복음 7:13',['은혜'])];
   sc.eq('기간이 없으면 예전 규칙', _swInsights(0), []);
+  delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
+}
+
+// ═══ 34. 같은 날 예배 차례 — 교회 설정 한 곳에서 (v. 26-1031-11, HB) ═══
+console.log('\n시나리오 34 — 같은 날이면 성찬예식 → 주일예배 → 라이프라인');
+{
+  // HB: "같은 날의 주일 안에서 시간 순서는 성찬예식 -> 주일예배 -> 라이프라인"
+  //     + 나중에 다른 교회는 관리자 페이지에서 정할 것 → 차례는 설정 한 곳에서만 읽는다.
+  APP_PRODUCT='sweeter';
+  global.getActiveColls=()=>['c1'];
+  global._getCollFilter=()=>({period:'month'});
+  global._vListRange=()=>({from:'2026-10-01',to:'2026-10-31'});
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const P=(pid,cat,d,ref)=>({idx:0,cat,topic:cat+d,krText:pid,ref,tags:[],hi:'',d,pid,kind:'prop'});
+  // 시트 차례를 일부러 섞어 둔다 (가나다로는 라이프라인 → 성찬예식 → 주일예배)
+  VERSES=[P('L1','라이프라인','2026-10-04','사무엘상 3:1'),
+          P('J1','주일예배','2026-10-04','마태복음 5:1'),
+          P('S1','성찬예식','2026-10-04','로마서 6:3'),
+          P('R1','리바이브드','2026-10-09','마가복음 1:1'),
+          P('L2','라이프라인 예배','2026-10-11','사무엘상 4:1'),
+          P('J2','주일 예배','2026-10-11','마태복음 6:1')];
+  const flow=_swInsights(0).find(x=>x.axis==='flow');
+  const W=flow.text.split(' \u2014 ')[0];
+  sc.eq('⭐ 같은 날은 성찬예식 → 주일예배 → 라이프라인', flow.text,
+        W+' \u2014 10/4 성찬예식 로마서 \u2192 10/4 주일예배 마태복음 \u2192 10/4 라이프라인 사무엘상'
+        +' \u2192 10/9 리바이브드 마가복음 \u2192 10/11 주일 예배 마태복음 \u2192 10/11 라이프라인 예배 사무엘상');
+  sc.eq('흐름 카드를 열면 같은 차례', _swVersesFor({k:'insight',s:0},{v:flow}).map(v=>v.pid),
+        ['S1','J1','L1','R1','J2','L2']);
+  // 최근 설교(최신순)는 같은 날이면 나중 예배가 위
+  global._getCollFilter=()=>({period:'all'});
+  VERSES=[P('S1','성찬예식','2026-10-04','로마서 6:3'),
+          P('L1','라이프라인','2026-10-04','사무엘상 3:1'),
+          P('J1','주일예배','2026-10-04','마태복음 5:1'),
+          P('J0','주일예배','2026-10-04','마태복음 5:2')];
+  sc.eq('최근 설교: 같은 날은 나중 예배가 위 (말씀 수보다 먼저)', _swSermons(0).map(o=>o.cat),
+        ['라이프라인','주일예배','성찬예식']);
+  // 규칙 자체
+  sc.eq('목록 이름으로 시작하면 같은 예배', _svcRank('라이프라인 예배'), _svcRank('라이프라인'));
+  sc.eq('띄어쓰기 무시', _svcRank('성찬 예식'), 0);
+  sc.eq('목록에 없는 예배는 뒤로', _svcRank('결혼예식'), _churchCfg().svcOrder.length);
+  sc.eq('목록 밖끼리는 가나다', ['인카운터','결혼예식'].sort((a,b)=>_svcCmp(a,b)), ['결혼예식','인카운터']);
+  // 나중에 관리자 페이지가 채울 자리 — 설정만 바꾸면 차례가 따라온다 (부르는 곳은 그대로)
+  const keep=_CHURCH_CFG_DEFAULT.svcOrder;
+  _CHURCH_CFG_DEFAULT.svcOrder=['라이프라인','주일예배'];
+  sc.eq('설정을 바꾸면 차례가 따라온다', ['주일예배','라이프라인','성찬예식'].sort((a,b)=>_svcCmp(a,b)),
+        ['라이프라인','주일예배','성찬예식']);
+  _CHURCH_CFG_DEFAULT.svcOrder=keep;
+  // 예배 이름을 흐름 · 설교 코드에 박지 않는다
+  const body=sliceDev('function _swSvcKey(','// ══════════════════════════════════════════════════════════\n//  \'나의 리듬\'')
+               .replace(/\/\/[^\n]*/g,'');
+  sc.eq('흐름 코드에 예배 이름을 박지 않는다', /성찬|라이프라인/.test(body), false);
   delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
 }
 
