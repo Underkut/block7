@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-12  [production]  -->
+<!-- BLOCK7  v. 26-1031-13  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1939,6 +1939,13 @@ header .ai-b.gnb-gear{border:0;color:var(--tx2);}
 html[data-theme="light"] .qk-dots b{background:#e0432f;}
 .srch-qk span{flex:1;}
 .srch-qk em{font-style:normal;font-size:12px;color:var(--tx3);font-family:var(--font-number);}
+.srch-how{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--tx2);line-height:1.6;}
+.srch-how b{color:var(--tx);font-weight:500;}
+.srch-period b{font-weight:600;color:var(--tx);margin-right:6px;}
+.srch-bible{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;background:var(--s2);margin-bottom:6px;font-size:14px;color:var(--tx);}
+.srch-bible-ic{color:var(--ac-tx);display:flex;}
+.srch-bible>span:nth-child(2){flex:1;min-width:0;}
+.srch-bible em{font-style:normal;font-size:12px;color:var(--tx3);}
 .srch-tip{font-size:12px;color:var(--tx3);line-height:1.7;padding-top:18px;}
 .srch-empty{text-align:center;color:var(--tx3);font-size:13px;padding:40px 0;line-height:2;}
 .srch-more{font-size:11.5px;color:var(--tx3);text-align:center;padding:10px 0;}
@@ -6861,7 +6868,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-12";
+const APP_VERSION = "v. 26-1031-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -16603,7 +16610,7 @@ function _brProgSync(){
 // (v26-1007-7~8 에는 말씀 대시보드를 열었다 — 그때 쓰던 접어 두기(_brParked)는 남아 있지만 이제 안 쓴다)
 let _brParked=false,_brDashRange='m';
 function _brOpenDash(){_brDashRender();_brEl('brDashBody').scrollTop=0;_brEl('brDashP').classList.add('on');}
-const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽기 계획',pray:'기도노트'};
+const _BR_SRC_NAME={dash:'대시보드',home:'성경 단추',gnb:'성경 단추',nav:'장 넘기기',pick:'책 고르기',search:'검색',srch:'돋보기 검색',deeper:'말씀 Deeper',list:'내 기록',recent:'최근 읽은 곳',resume:'다시 돌아옴',toread:'읽기 계획',pray:'기도노트'};
 function _brFmtMin(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+'시간 '+(m%60)+'분':m+'분';}
 function _brDashRender(){
   const $=_brEl,books=_brBooks(),CHS=[...BIBLE_CHAPTERS_OT,...BIBLE_CHAPTERS_NT],now=Date.now(),DAY=864e5;
@@ -26136,6 +26143,13 @@ function clearTrash(){
 function _srchNorm(t){return String(t==null?'':t).toLowerCase().replace(/\s+/g,'');}
 function _srchHas(t,nq){return !!nq&&_srchNorm(t).includes(nq);}
 function _srchDayNum(k){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));return m?Date.UTC(+m[1],+m[2]-1,+m[3])/86400000:NaN;}
+// 처음 화면 '이렇게도 찾아져요' — 실제로 되는 것만 적는다 (_srchParse · _srchRun 이 하는 일과 짝)
+const SRCH_HOW=[
+  ['롬12','로마서 12장 말씀 · 성경 본문으로'],
+  ['#기도','그 태그가 붙은 말씀'],
+  ['@김OO','그 사람이 적힌 할일 · 일정 (연락처 이름으로도)'],
+  ['11월 · 다음 주 연락','그 기간에서만 (앞이나 뒤에 붙여요)']
+];
 // 바로 모아 보기 — 검색어 없이 고르는 묶음
 // 아이콘은 실제 화면의 것을 그대로 — 깃발 = 할일행 깃발(빨강) · 밀림 = 할일행 오른쪽 빨간 점 둘 · 일정 = 구글 파랑 (v. 26-1031-12, HB)
 // ⚠️ 긴급 할일 줄은 뺐다(HB '필요없어'). 엔진의 quick 'urgent' 는 남겨 두었지만 화면에서는 고를 길이 없다.
@@ -26156,16 +26170,82 @@ function _srchQuickTask(id,it,carryMin){
   if(id==='carry')return ((it.autoCarryCount||0)+(it.manualCarryCount||0))>=(carryMin>=1?carryMin:3);
   return false;
 }
-// opt: {q, quick, range:'all'|'future'|'past', today:'YYYY-MM-DD', secs:[{id,name,color}], verses:[…]}
+// ── 검색어 해석 (v. 26-1031-13, HB 5-1) ──
+// 검색어 **맨 앞이나 맨 뒤**의 기간 말은 떼어 내 기간으로 쓴다 — '다음 주 연락' · '연락 11월' · '11월'(그 달 전부).
+//   오늘 · 내일 · 모레 · 어제 · 이번/다음/지난(저번) 주 · 이번/다음/지난(저번) 달 · N월 · N월 N일. 주는 일요일부터(주간뷰와 같다).
+//   N월은 오늘에서 가장 가까운 해의 그 달(10월에 '1월' 이면 내년 1월, '8월' 이면 올해 8월).
+function _srchKeyOf(n){const d=new Date(n*86400000);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
+function _srchMd(n){const d=new Date(n*86400000);return (d.getUTCMonth()+1)+'.'+d.getUTCDate();}
+function _srchPeriod(word,t){
+  const w=String(word||'').replace(/\s+/g,'');
+  if(!w||isNaN(t))return null;
+  const day=(a,label)=>({from:a,to:a,label});
+  const one={'오늘':0,'내일':1,'모레':2,'어제':-1,'그제':-2,'그저께':-2}[w];
+  if(one!==undefined)return day(t+one,w);
+  const sun=n=>n-((n%7)+7+4)%7;   // 1970-01-01(0) 은 목요일
+  const rel=/^(이번|다음|지난|저번)(주|달)$/.exec(w);
+  const sh={'이번':0,'다음':1,'지난':-1,'저번':-1};
+  const T=new Date(t*86400000),Y=T.getUTCFullYear(),M=T.getUTCMonth();
+  const month=(y,m)=>({from:Date.UTC(y,m,1)/86400000,to:Date.UTC(y,m+1,0)/86400000});
+  if(rel&&rel[2]==='주'){const a=sun(t)+7*sh[rel[1]];return {from:a,to:a+6,label:rel[1]+' 주'};}
+  if(rel){const r=month(Y,M+sh[rel[1]]);r.label=rel[1]+' 달';return r;}
+  const mm=/^(\d{1,2})월(?:(\d{1,2})일)?$/.exec(w);
+  if(mm){
+    const m=+mm[1]-1,dd=mm[2]?+mm[2]:0;
+    if(m<0||m>11)return null;
+    const cand=[Y-1,Y,Y+1].map(y=>{
+      if(dd){const n=Date.UTC(y,m,dd)/86400000;if(new Date(n*86400000).getUTCMonth()!==m)return null;return {from:n,to:n};}
+      return month(y,m);
+    }).filter(Boolean);
+    if(!cand.length)return null;
+    const gap=r=>t<r.from?r.from-t:t>r.to?t-r.to:0;
+    const best=cand.reduce((a,b)=>gap(b)<gap(a)?b:a);
+    best.label=(mm[1])+'월'+(dd?' '+dd+'일':'');
+    return best;
+  }
+  return null;
+}
+// 돌려주는 것: {text(기간 말을 뺀 나머지), period:{from,to,label}|null, ref:{b,c,v,v2}|null, at:'@ 뒤 이름'|''}
+function _srchParse(q,today,parseRef){
+  const raw=String(q==null?'':q).trim();
+  const out={text:raw,period:null,ref:null,at:''};
+  if(!raw)return out;
+  const t=_srchDayNum(today);
+  const w=raw.split(/\s+/);
+  // 앞에서 두 낱말 · 한 낱말, 그다음 뒤에서 두 낱말 · 한 낱말 ('다음 주' 처럼 띄어 쓴 것을 먼저 본다)
+  const tries=[[0,2],[0,1],[w.length-2,2],[w.length-1,1]];
+  for(const [i,n] of tries){
+    if(i<0||n>w.length)continue;
+    const wj=w.slice(i,i+n).join('');
+    if(n===2&&/^\d{1,2}월\d{1,2}일$/.test(wj)&&!_srchPeriod(wj,t))break;   // '2월 30일' — 없는 날이면 '2월' 로 줄이지 않고 글자로 둔다
+    const p=_srchPeriod(wj,t);
+    if(p){out.period=p;out.text=w.slice(0,i).concat(w.slice(i+n)).join(' ');break;}
+  }
+  const rest=out.text.trim();
+  if(/^@./.test(rest))out.at=rest.slice(1).trim();
+  if(rest&&!out.period&&typeof parseRef==='function'&&/\d/.test(rest)){try{out.ref=parseRef(rest)||null;}catch(e){out.ref=null;}}
+  return out;
+}
+// opt: {q, quick, range:'all'|'future'|'past', today:'YYYY-MM-DD', secs:[{id,name,color}], verses:[…],
+//       parseRef(장절 글 → {b,c,v,v2}|null) · contacts:[{nick,name}] · carryMin}
 // 돌려주는 것: {tasks:[{kind:'big'|'small'|'sub',k,secId,type,idx,subIdx,item,sub,memoHit,dist,repN}], events:[{k,secId,idx,ev,dist,repN}], verses:[v], props:[v]}
 function _srchRun(days,opt){
   opt=opt||{};
-  const nq=_srchNorm(opt.q),quick=opt.quick||null;
-  const out={tasks:[],events:[],verses:[],props:[]};
-  if(!nq&&!quick)return out;
+  const quick=opt.quick||null;
+  const P=quick?_srchParse('',opt.today):_srchParse(opt.q,opt.today,opt.parseRef);
+  const nq=_srchNorm(P.text);
+  const out={tasks:[],events:[],verses:[],props:[],parsed:P,bible:null};
+  const per=P.period;
+  if(!nq&&!quick&&!per)return out;
+  const all=!nq&&!quick&&!!per;     // 기간만 적었다 — 그 기간의 할일 · 일정을 모두
   const today=_srchDayNum(opt.today),range=opt.range||'all';
   const secIds=(opt.secs||[]).map(x=>x.id);
-  const inRange=k=>{const d=_srchDayNum(k)-today;if(isNaN(d))return range==='all';return range==='future'?d>=0:range==='past'?d<0:true;};
+  // @이름 — 연락처의 이름 · 별명에 그 글자가 들어 있으면 그 사람의 @별명이 적힌 것도 찾는다 (할일 글자에 적는 꼴은 '@별명')
+  const atN=P.at?_srchNorm(P.at):'';
+  const atTags=atN?(opt.contacts||[]).filter(c=>c&&c.nick&&(_srchNorm(c.nick).includes(atN)||_srchNorm(c.name).includes(atN))).map(c=>'@'+_srchNorm(c.nick)):[];
+  const hit=t=>_srchHas(t,nq)||(atTags.length&&atTags.some(a=>_srchNorm(t).includes(a)));
+  // 기간을 적었으면 그 기간만(앞으로/지난 단추보다 먼저)
+  const inRange=k=>{const n=_srchDayNum(k);if(per)return !isNaN(n)&&n>=per.from&&n<=per.to;const d=n-today;if(isNaN(d))return range==='all';return range==='future'?d>=0:range==='past'?d<0:true;};
   const dist=k=>{const d=_srchDayNum(k)-today;return isNaN(d)?1e9:(d>=0?d:0.5-d);}; // 앞으로가 같은 거리의 지난 날보다 먼저
   Object.keys(days||{}).forEach(k=>{
     const d=days[k];if(!d||!inRange(k))return;
@@ -26180,10 +26260,11 @@ function _srchRun(days,opt){
             if(_srchQuickTask(quick,it,opt.carryMin))out.tasks.push({kind:type,k,secId,type,idx,item:it,dist:dist(k)});
             return;
           }
-          const textHit=_srchHas(it.text,nq),memoHit=!textHit&&_srchHas(it.memo,nq);
+          if(all){if(String(it.text||'').trim())out.tasks.push({kind:type,k,secId,type,idx,item:it,dist:dist(k)});return;}
+          const textHit=hit(it.text),memoHit=!textHit&&hit(it.memo);
           if(textHit||memoHit)out.tasks.push({kind:type,k,secId,type,idx,item:it,memoHit,dist:dist(k)});
           subs.forEach((sb,si)=>{
-            if(sb&&_srchHas(sb.text,nq))out.tasks.push({kind:'sub',k,secId,type,idx,subIdx:si,item:it,sub:sb,dist:dist(k)});
+            if(sb&&hit(sb.text))out.tasks.push({kind:'sub',k,secId,type,idx,subIdx:si,item:it,sub:sb,dist:dist(k)});
           });
         });
       });
@@ -26192,7 +26273,7 @@ function _srchRun(days,opt){
         if(!ev||typeof ev!=='object')return;
         if(quick==='weekEv'){const dd=_srchDayNum(k)-today;if(dd>=0&&dd<7)out.events.push({k,secId,idx,ev,dist:dist(k)});return;}
         if(quick)return;
-        if(_srchHas(ev.text,nq)||_srchHas(ev.memo,nq)||_srchHas(ev.loc,nq))out.events.push({k,secId,idx,ev,dist:dist(k)});
+        if(all||hit(ev.text)||hit(ev.memo)||hit(ev.loc))out.events.push({k,secId,idx,ev,dist:dist(k)});
       });
     });
   });
@@ -26215,11 +26296,17 @@ function _srchRun(days,opt){
   };
   out.tasks=fold(out.tasks,r=>r.item.rid?r.kind+'|'+r.item.rid+'|'+(r.kind==='sub'?_srchNorm(r.sub.text):''):null);
   out.events=fold(out.events,r=>r.ev.rid?'ev|'+r.ev.rid:null);
-  if(nq&&Array.isArray(opt.verses)){
+  // 말씀 · 명제는 날짜가 없다 — 기간을 적었으면 찾지 않는다
+  const R=P.ref;
+  if(R)out.bible=R;
+  const refOf=v=>{if(!R||typeof opt.parseRef!=='function')return null;try{return opt.parseRef(String(v.ref||'').replace(/,.*$/,''));}catch(e){return null;}};
+  const refHit=v=>{const r=refOf(v);if(!r||r.b!==R.b||r.c!==R.c)return false;if(!R.v)return true;
+    const a=r.v||0,b=r.v2||a,x=R.v,y=R.v2||R.v;return !a||(a<=y&&b>=x);};
+  if(nq&&!per&&Array.isArray(opt.verses)){
     opt.verses.forEach(v=>{
       if(!v)return;
-      const hit=_srchHas(v.krText,nq)||_srchHas(v.ref,nq)||_srchHas(v.topic,nq)||_srchHas(v.cat,nq)||(v.tags||[]).some(t=>_srchHas(String(t).replace(/^#/,''),nq.replace(/^#/,'')));
-      if(!hit)return;
+      const h=_srchHas(v.krText,nq)||_srchHas(v.ref,nq)||_srchHas(v.topic,nq)||_srchHas(v.cat,nq)||(v.tags||[]).some(t=>_srchHas(String(t).replace(/^#/,''),nq.replace(/^#/,'')))||refHit(v);
+      if(!h)return;
       ((v.pid||v.kind==='prop')?out.props:out.verses).push(v);
     });
   }
@@ -26284,7 +26371,7 @@ function _srchFilterFix(it,preset,set){
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
 // .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
-const _srch={histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
+const _srch={hq:'',histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
 const SRCH_RECENT_MAX=8;
 function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
 function _srchRemember(q,auto){
@@ -26344,7 +26431,8 @@ function _srchSecs(){return (SECS||[]).map(x=>({id:x.id,name:x.name,color:x.colo
 function _srchSecOf(id){return (SECS||[]).find(x=>x.id===id)||{id,name:'',color:'#8892b4'};}
 function _srchVerses(){try{return typeof ACTIVE_VERSES==='function'?(ACTIVE_VERSES()||[]):[];}catch(e){return[];}}
 function _srchResult(){
-  return _srchRun(ST.days,{carryMin:_srchCarryMin(ST.settings),q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses()});
+  return _srchRun(ST.days,{carryMin:_srchCarryMin(ST.settings),q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses(),
+    parseRef:typeof _brParseRef==='function'?_brParseRef:null,contacts:ST.contacts||[]});
 }
 function _srchDayTxt(k){
   const dd=_srchDayNum(k)-_srchDayNum(_calKey());
@@ -26356,7 +26444,7 @@ function _srchDayTxt(k){
 }
 function _srchChip(t,cls){return '<span class="srch-chip'+(cls?' '+cls:'')+'">'+esc(t)+'</span>';}
 function _srchTaskHTML(r,i){
-  const it=r.item,sec=_srchSecOf(r.secId),q=_srch.q;
+  const it=r.item,sec=_srchSecOf(r.secId),q=_srch.hq;
   const subs=Array.isArray(it.subs)?it.subs:[];
   const done=r.kind==='sub'?!!(r.sub&&r.sub.done):!!it.done;
   const chips=[];
@@ -26380,7 +26468,7 @@ function _srchTaskHTML(r,i){
     '</div><span class="srch-go" aria-hidden="true">›</span></div></div>';
 }
 function _srchEventHTML(r,i){
-  const ev=r.ev,sec=_srchSecOf(r.secId),q=_srch.q;
+  const ev=r.ev,sec=_srchSecOf(r.secId),q=_srch.hq;
   const [y,m,d]=String(r.k).split('-').map(Number);
   const w=['일','월','화','수','목','금','토'][new Date(y,m-1,d).getDay()];
   const meta=[ev.time||'하루 종일',sec.name,ev.loc||'',(ev.rid||r.repN>1)?'↻ 반복'+(r.repN>1?' '+r.repN:''):''].filter(Boolean);
@@ -26389,7 +26477,7 @@ function _srchEventHTML(r,i){
     '<div class="srch-eb"><div class="srch-tx">'+(q?_srchMark(ev.text,q):esc(ev.text||''))+'</div><div class="srch-meta">'+meta.map(x=>'<span>'+esc(x)+'</span>').join('')+'</div></div></div>';
 }
 function _srchVerseHTML(v,i,prop){
-  const q=_srch.q;
+  const q=_srch.hq;
   const tags=(v.tags||[]).slice(0,3).map(t=>'<span>#'+esc(String(t).replace(/^#/,''))+'</span>').join('');
   return '<div class="srch-row srch-v'+(prop?' srch-p':'')+'" data-r="'+i+'">'+
     '<div class="srch-vh"><b>'+_srchMark(v.ref||'',q)+'</b><span>'+esc([v.cat,v.topic].filter(Boolean).join(' · '))+'</span></div>'+
@@ -26409,10 +26497,14 @@ function _srchRender(keepScroll){
         rec.map(r=>'<button class="srch-rc" data-q="'+esc(r)+'">'+esc(r)+'</button>').join('')+'</div></div>':'')+
       '<div class="srch-sec"><div class="srch-lbl">바로 모아 보기</div>'+
         qc.map(({x,n})=>'<button class="srch-qk" data-quick="'+x.id+'"><i class="qk-'+x.id+'">'+x.icon+'</i><span>'+esc(_srchQuickLabel(x,ST.settings))+'</span><em>'+n+'</em></button>').join('')+'</div>'+
+      '<div class="srch-sec srch-how"><div class="srch-lbl">이렇게도 찾아져요</div>'+
+        SRCH_HOW.map(([a,b])=>'<div><b>'+a+'</b> → '+esc(b)+'</div>').join('')+'</div>'+
       '<div class="srch-tip">할일 · 하위 할일 · 메모 · 일정 · 말씀 · 명제를 함께 찾아요.<br>띄어쓰기는 달라도 괜찮아요.</div>';
     return;
   }
   const res=_srchResult();
+  const P=res.parsed||{};
+  _srch.hq=_srch.quick?'':(P.text||'');   // 감싸기는 기간 말을 뺀 나머지로
   const n={tasks:res.tasks.length,events:res.events.length,verses:res.verses.length,props:res.props.length};
   const total=n.tasks+n.events+n.verses+n.props;
   cnt.textContent=total+'건';
@@ -26422,7 +26514,9 @@ function _srchRender(keepScroll){
   fil.style.display='';
   fil.innerHTML='<div class="srch-kinds">'+(quickLbl?'<button class="srch-kind on srch-quick-on" onclick="_srchClear()">'+esc(quickLbl)+' ×</button>':'')+
     kinds.filter(([k,,c])=>k==='all'||c>0).map(([k,l,c])=>'<button class="srch-kind'+(_srch.kind===k?' on':'')+'" onclick="_srchSetKind(\''+k+'\')">'+l+' <em>'+c+'</em></button>').join('')+'</div>'+
-    '<div class="srch-range">'+[['future','앞으로'],['all','전체'],['past','지난']].map(([k,l])=>'<button class="'+(_srch.range===k?'on':'')+'" onclick="_srchSetRange(\''+k+'\')">'+l+'</button>').join('<i>·</i>')+'<span>가까운 날짜순</span></div>';
+    (P.period
+      ?'<div class="srch-range srch-period"><b>기간</b>'+esc(P.period.label)+' · '+_srchMd(P.period.from)+(P.period.to!==P.period.from?'–'+_srchMd(P.period.to):'')+'<span>가까운 날짜순</span></div>'
+      :'<div class="srch-range">'+[['future','앞으로'],['all','전체'],['past','지난']].map(([k,l])=>'<button class="'+(_srch.range===k?'on':'')+'" onclick="_srchSetRange(\''+k+'\')">'+l+'</button>').join('<i>·</i>')+'<span>가까운 날짜순</span></div>');
   const last=[];let html='';
   const want=k=>_srch.kind==='all'||_srch.kind===k;
   const LIM=150;
@@ -26432,13 +26526,17 @@ function _srchRender(keepScroll){
     list.slice(0,LIM).forEach(r=>{const i=last.length;last.push({k,r});html+=fn(r,i);});
     if(list.length>LIM)html+='<div class="srch-more">가까운 '+LIM+'건만 보여요 — 검색어를 더 적어 보세요</div>';
   };
+  if(res.bible&&(want('verses')||_srch.kind==='all')){
+    const i=last.length;last.push({k:'bible',r:res.bible});
+    html+='<div class="srch-lbl srch-glbl">성경</div><div class="srch-row srch-bible" data-r="'+i+'"><span class="srch-bible-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5 L2 17 Q6 15.5 10 17 L10 5 Q6 3 2 5 Z"/><path d="M18 5 L18 17 Q14 15.5 10 17 L10 5 Q14 3 18 5 Z"/></svg></span><span>'+esc(_srchRefLabel(res.bible))+'</span><em>성경 본문으로 ›</em></div>';
+  }
   group('tasks','할일',res.tasks,_srchTaskHTML);
   group('events','일정',res.events,_srchEventHTML);
   group('verses','말씀',res.verses,(v,i)=>_srchVerseHTML(v,i,false));
   group('props','명제',res.props,(v,i)=>_srchVerseHTML(v,i,true));
   _srch.last=last;
   const top=body.scrollTop;
-  body.innerHTML=html||'<div class="srch-empty">찾은 것이 없어요'+(_srch.range!=='all'?'<br><button class="srch-lbl-act" onclick="_srchSetRange(\'all\')">전체 기간에서 찾기</button>':'')+'</div>';
+  body.innerHTML=html||'<div class="srch-empty">찾은 것이 없어요'+(!P.period&&_srch.range!=='all'?'<br><button class="srch-lbl-act" onclick="_srchSetRange(\'all\')">전체 기간에서 찾기</button>':'')+'</div>';
   body.scrollTop=keepScroll?top:0;
 }
 // 누르기 — 할일: 그 날 그 구간으로 가서 반짝 · 동그라미: 그 자리에서 완료 · 일정: 설정한 D/W/M 의 그 칸 · 말씀 · 명제: 전체화면
@@ -26450,9 +26548,21 @@ function _srchTap(e){
   const hit=_srch.last[+row.dataset.r];if(!hit)return;
   if(_srch.q)_srchRemember(_srch.q);
   if(hit.k==='tasks'&&e.target.closest('.srch-chk')){_srchToggleDone(hit.r,row);return;}
+  if(hit.k==='bible'){_srchOpenBible(hit.r);return;}
   if(hit.k==='tasks')_srchGoTask(hit.r);
   else if(hit.k==='events')_srchGoEvent(hit.r);
   else _srchOpenVerse(hit.r);
+}
+// 성경 장절 — '로마서 12장' · '로마서 12:1-3' · '시편 23편'
+function _srchRefLabel(R){
+  const books=[...BIBLE_ORDER_OT,...BIBLE_ORDER_NT],bk=books[R.b]||'';
+  if(R.v)return bk+' '+R.c+':'+R.v+(R.v2?'-'+R.v2:'');
+  return bk+' '+R.c+(bk==='시편'?'편':'장');
+}
+// 성경 본문으로 — 검색 화면은 그대로 두고 위에 연다(성경을 닫으면 검색으로 돌아온다)
+function _srchOpenBible(R){
+  _brNextSrc='srch';_brNextRef=_srchRefLabel(R).slice(0,40);
+  bibleOpen(R.b,R.c,R.v||0,R.v2||0);
 }
 function _srchBackToast(k,msg){
   showToast(msg||(_dayLabel(k)+'로 왔어요'),false,{label:'검색으로 돌아가기',onClick:()=>openSearch()});
@@ -26740,7 +26850,7 @@ function _srchBindLongPress(){
   body._lpBound=true;
   body.addEventListener('scroll',()=>{if(body.scrollTop>SRCH_SCROLL_PX&&_srch.q.trim()&&!_srch.quick)_srchAutoRemember();},{passive:true});
   let tm=null,x0=0,y0=0;
-  const hitOf=el=>{const row=el&&el.closest&&el.closest('[data-r]');if(!row)return null;const h=_srch.last[+row.dataset.r];return h&&h.k!=='events'?{h,row}:null;};
+  const hitOf=el=>{const row=el&&el.closest&&el.closest('[data-r]');if(!row)return null;const h=_srch.last[+row.dataset.r];return h&&h.k!=='events'&&h.k!=='bible'?{h,row}:null;};
   const cancel=()=>{clearTimeout(tm);tm=null;};
   body.addEventListener('touchstart',e=>{
     cancel();if(e.touches.length!==1)return;
