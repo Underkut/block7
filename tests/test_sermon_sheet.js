@@ -19,6 +19,8 @@ function z(n){return String(n).padStart(2,'0');}
 eval(slice('function _parseVDate(', 'function _looksLikeRef(').replace(/^const /gm,'var '));
 eval(slice('// ══ 명제집(설교 명제 DB) 시트 읽기', 'function _rowsToItems'));
 eval(slice('function _swSermonPool(', '// 성경: 장절에서'));
+// 같은 날 예배 차례 (교회 설정, v. 26-1031-11) — '최근 설교' 최신순이 쓴다
+eval(slice('const _CHURCH_CFG_DEFAULT=', "// ══════════════════════════════════════════════════════════\n//  '요즘 우리 교회'").replace(/^const /gm,'var '));
 
 // 실제 '설교 목록' 탭의 열 이름 (2026-09-22 시트 그대로)
 const SHEAD=['날짜','카테고리','설교 제목','설교자','영상 링크','영상 시각','주요 본문',

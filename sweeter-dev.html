@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-10  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1031-11  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6858,7 +6858,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-10";
+const APP_VERSION = "v. 26-1031-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -53389,7 +53389,8 @@ function _swSermons(sortIdx){
   const a=[...g.values()];
   if(sortIdx===1)a.sort((x,y)=>y.n-x.n||y.d.localeCompare(x.d));
   else if(sortIdx===2)a.sort((x,y)=>x.cat.localeCompare(y.cat,'ko'));
-  else a.sort((x,y)=>y.d.localeCompare(x.d)||y.n-x.n);
+  // 최신순 — 같은 날이면 **나중에 드린 예배가 위** (그날 차례를 거꾸로, v. 26-1031-11)
+  else a.sort((x,y)=>y.d.localeCompare(x.d)||_svcCmp(y.cat,x.cat,y.d)||y.n-x.n);
   return a;
 }
 // 그날 그 설교의 말씀과 명제 — 예배 종류(cat)와 날짜(d)가 **둘 다** 맞는 것만.
@@ -53541,6 +53542,42 @@ function _swToday(sortIdx){
   return idx.slice(0,3).map(k=>wrap(av[k]));
 }
 // ══════════════════════════════════════════════════════════
+//  교회 설정 — 교회마다 다른 것을 **한 곳**에 모은다 (v. 26-1031-11, HB)
+//  ────────────────────────────────────────────────────────
+//  지금은 우리 교회 하나라 기본값이 곧 값이다. 나중에 다른 교회로 넓히면
+//  관리자 페이지가 **같은 모양**의 값을 채운다(교회 그룹 문서 같은 곳).
+//  그때는 _churchCfg() 만 그 값을 기본값 위에 겹쳐 읽게 고치면 되고,
+//  부르는 곳(_svcRank · _svcCmp 를 쓰는 자리)은 한 글자도 안 바뀐다.
+//  ⚠️ 예배 이름을 코드 곳곳에 박지 말 것 — 같은 날 차례는 _svcRank 로만 묻는다.
+// ══════════════════════════════════════════════════════════
+const _CHURCH_CFG_DEFAULT={
+  // 같은 날 예배가 여럿일 때 드리는 차례 (앞이 먼저). HB 2026-10-31 —
+  // 주일에는 성찬예식 → 주일예배 → 라이프라인.
+  // 목록에 없는 예배는 목록 뒤로, 그들끼리는 가나다.
+  // 이름은 띄어쓰기를 무시하고, 목록 이름으로 **시작**하면 같은 예배로 본다
+  // ('라이프라인 예배' = '라이프라인' — 시트마다 표기가 조금씩 다르다).
+  svcOrder:['성찬예식','주일예배','라이프라인']
+};
+function _churchCfg(){
+  // 🔜 관리자 페이지가 생기면: 그 교회의 값(o)을 받아
+  //    Object.assign({},_CHURCH_CFG_DEFAULT,o) 로 돌려준다.
+  return _CHURCH_CFG_DEFAULT;
+}
+// 예배 하나의 그날 차례 번호 — 작을수록 먼저. d(날짜)는 지금 쓰지 않지만 미리 받는다:
+// 요일마다 차례가 다른 교회가 생기면 svcOrder 를 요일별로 두고 **여기서만** 고르면 된다.
+function _svcRank(cat,d){
+  const k=_sermonCatNorm(cat);
+  const list=(_churchCfg().svcOrder||[]).map(_sermonCatNorm).filter(Boolean);
+  let i=list.indexOf(k);
+  if(i<0&&k)i=list.findIndex(x=>k.indexOf(x)===0);
+  return i<0?list.length:i;
+}
+// 같은 날 두 예배를 견준다 — 먼저 드린 것이 앞. 둘 다 목록 밖이면 가나다.
+function _svcCmp(a,b,d){
+  return _svcRank(a,d)-_svcRank(b,d)
+    ||String(a==null?'':a).trim().localeCompare(String(b==null?'':b).trim(),'ko');
+}
+// ══════════════════════════════════════════════════════════
 //  '요즘 우리 교회' — 흐름을 읽어 권면한다 (v26-0922-2, HB)
 //  ────────────────────────────────────────────────────────
 //  재료는 **말씀 모음(설교 명제) 그 자체**다. 설교 날짜(d)로 최근 흐름을 자르고,
@@ -53618,12 +53655,18 @@ function _swMD(d){
 // ── 기간 안의 흐름 (v26-1005-5, HB) ─────────────────────────────
 // 예배 하나 = **날짜 + 예배 종류**. 10/4 처럼 하루에 주일·성찬·라이프라인이 있으면 셋이다.
 function _swSvcKey(v){return String(v.d||'')+'|'+(String(v.cat||'').trim()||'설교');}
+function _swSvcOf(k){const i=k.indexOf('|');return [k.slice(0,i),k.slice(i+1)];}
 function _swInsightsWin(f){
   const out=[],now=f.now,N=now.length,W=f.win.word;
   const push=(axis,key,text)=>{if(key&&text)out.push({axis,key,name:key,text});};
   const svc=new Map();
   now.forEach(v=>{const k=_swSvcKey(v);if(!svc.has(k))svc.set(k,[]);svc.get(k).push(v);});
-  const svcs=[...svc.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  // 날짜 차례, 같은 날이면 그날 드린 차례 (_svcCmp — 교회 설정). 예전엔 열쇠의
+  // 가나다라 10/4 가 '라이프라인 → 성찬예식 → 주일예배' 로 거꾸로 섰다 (v. 26-1031-11).
+  const svcs=[...svc.entries()].sort((a,b)=>{
+    const [da,ca]=_swSvcOf(a[0]),[db,cb]=_swSvcOf(b[0]);
+    return da.localeCompare(db)||_svcCmp(ca,cb,da);
+  });
   const S=svcs.length;
   const md=d=>{const m=/^\d{4}-(\d{2})-(\d{2})$/.exec(d);return m?(+m[1])+'/'+(+m[2]):'';};
   // ① 흐름 — 예배가 둘 이상이면 차례대로, 예배마다 가장 많이 펼친 성경
@@ -53747,7 +53790,8 @@ function _swVersesForInsight(g,sortIdx){
   const pool=f?f.now:_swPool();
   // 흐름 카드 — 그 기간의 말씀 전부를 **설교 차례대로** (v26-1005-5)
   if(g.axis==='flow')
-    return pool.map((v,i)=>[v,i]).sort((a,b)=>String(a[0].d).localeCompare(String(b[0].d))||a[1]-b[1]).map(x=>x[0]);
+    return pool.map((v,i)=>[v,i]).sort((a,b)=>String(a[0].d).localeCompare(String(b[0].d))
+      ||_svcCmp(a[0].cat,b[0].cat,String(a[0].d))||a[1]-b[1]).map(x=>x[0]);
   return pool.filter(v=>_swAxisKeys(v,g.axis).includes(g.key));
 }
 
