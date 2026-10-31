@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1031-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2869,6 +2869,9 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 .trash-clear:hover{opacity:1;}
 .trash-close-btn{background:none;border:none;color:var(--tx3);cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;}
 .trash-empty{color:var(--tx3);font-size:13px;text-align:center;padding:24px 0;}
+.trash-note{color:var(--tx3);font-size:11px;text-align:center;opacity:.8;}
+.trash-day{font-size:10.5px;color:var(--tx3);letter-spacing:.04em;padding:10px 2px 4px;}
+.trash-day:first-child{padding-top:2px;}
 .trash-item{
   display:flex;align-items:center;gap:10px;
   padding:10px 12px;border-radius:8px;
@@ -6728,7 +6731,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-5";
+const APP_VERSION = "v. 26-1031-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -25789,6 +25792,21 @@ let mCur={y:new Date().getFullYear(),m:new Date().getMonth()};
 let wOffset=0; // weeks away from the current real week (0 = this week, -1 = last week, 1 = next week, etc.)
 
 // ═══════ TRASH ═══════
+// ── 휴지통 (v. 26-1031-6, HB 1031 1-1-4) ──
+// 저장 모양은 예전 그대로다: 지운 날짜의 ST.days[k].trash 에 쌓이고, 동기화도 날짜 단위로 병합된다.
+// 바뀐 것은 셋 —
+//  ① 보여 줄 때 **모든 날을 모은다** (_trashAll, 최근 지운 것이 위). 예전엔 보고 있는 날짜 것만 보였다.
+//  ② 지울 때 할일을 **통째로** item 에 복사해 둔다. 예전엔 글자·완료·깃발·연락·밀림만 남겨서
+//     되살리면 긴급·메모·하위 할일이 사라졌다. 예전 항목(item 없음)은 예전 필드로 되살린다.
+//     반복 묶음 표시(rid·repeat)는 떼어 둔다 — 되살린 것은 **묶음에서 떨어진 하루짜리**다
+//     (1030-2 와 같은 까닭: rid 를 달고 돌아오면 묶음 쪽 맞추기가 엉뚱한 회차로 읽는다).
+//  ③ 30일 지난 것은 휴지통을 열 때 저절로 비운다 (_trashPurgeOld). 휴지통 안의 것만 지운다.
+const TRASH_KEEP_DAYS=30;
+function _trashClone(item){
+  let c;try{c=JSON.parse(JSON.stringify(item||{}));}catch(e){c={text:item&&item.text||''};}
+  delete c.rid;delete c.repeat;
+  return c;
+}
 function sendToTrash(k,type,secId,item){
   const sec=SECS.find(s=>s.id===secId);
   getTrash(k).unshift({
@@ -25799,19 +25817,56 @@ function sendToTrash(k,type,secId,item){
     contactTask:item.contactTask||false,
     autoCarryCount:item.autoCarryCount||0,
     manualCarryCount:item.manualCarryCount||0,
+    item:_trashClone(item),
     ts:Date.now()
   });
   rawSave();updateTrashBadge();
 }
+// 휴지통 항목이 언제 들어왔나 — ts 가 없는 아주 옛 항목은 그 날짜로 친다
+function _trashTs(e,k){
+  if(e&&typeof e.ts==='number')return e.ts;
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));
+  return m?new Date(+m[1],+m[2]-1,+m[3]).getTime():0;
+}
+// 날짜 이름 — '10월 28일 (화)' (_dfDay 는 동기화 화면 안쪽에 있어 여기서 못 부른다)
+function _trashDay(k){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(k||''));
+  if(!m)return String(k||'');
+  const w=['일','월','화','수','목','금','토'][new Date(+m[1],+m[2]-1,+m[3]).getDay()];
+  return `${+m[2]}월 ${+m[3]}일 (${w})`;
+}
+function _trashCut(now){return (now||Date.now())-TRASH_KEEP_DAYS*86400000;}
+// 모든 날의 휴지통 — [{k,i,e,ts}] 최근 것이 위. 30일 지난 것은 뺀다(지우지는 않는다).
+function _trashAll(now){
+  const cut=_trashCut(now),out=[];
+  Object.keys(ST.days||{}).forEach(k=>{
+    const t=ST.days[k]&&ST.days[k].trash;
+    if(!Array.isArray(t))return;
+    t.forEach((e,i)=>{if(!e)return;const ts=_trashTs(e,k);if(ts>=cut)out.push({k,i,e,ts});});
+  });
+  return out.sort((a,b)=>b.ts-a.ts);
+}
+function _trashCount(now){return _trashAll(now).length;}
+// 30일 지난 것 비우기 — 휴지통 배열 안의 것만. 지운 수를 돌려준다.
+function _trashPurgeOld(now){
+  const cut=_trashCut(now);let n=0;
+  Object.keys(ST.days||{}).forEach(k=>{
+    const d=ST.days[k];if(!d||!Array.isArray(d.trash)||!d.trash.length)return;
+    const keep=d.trash.filter(e=>e&&_trashTs(e,k)>=cut);
+    if(keep.length!==d.trash.length){n+=d.trash.length-keep.length;d.trash=keep;}
+  });
+  return n;
+}
 
 function updateTrashBadge(){
-  const k=tKey();const n=getTrash(k).length;
+  const n=_trashCount();
   const badge=document.getElementById('trashBadge');
-  badge.textContent=n>9?'9+':n||'';
-  badge.className='trash-badge'+(n>0?' on':'');
+  if(badge){badge.textContent=n>9?'9+':n||'';badge.className='trash-badge'+(n>0?' on':'');}
+  if(typeof _gnbGearSync==='function')_gnbGearSync(n);
 }
 
 function openTrash(){
+  if(_trashPurgeOld()>0)save();
   renderTrashList();
   document.getElementById('trashPanel').classList.add('op');
 }
@@ -25819,47 +25874,77 @@ function closeTrash(){document.getElementById('trashPanel').classList.remove('op
 function trashBgClick(e){if(e.target===document.getElementById('trashPanel'))closeTrash();}
 
 function renderTrashList(){
-  const k=tKey();const trash=getTrash(k);
+  const all=_trashAll();
   const list=document.getElementById('trashList');
-  if(trash.length===0){list.innerHTML='<div class="trash-empty">비어있어요</div>';return;}
+  if(all.length===0){list.innerHTML='<div class="trash-empty">비어있어요</div><div class="trash-note">지운 할일은 '+TRASH_KEEP_DAYS+'일 동안 여기 있어요</div>';return;}
   list.innerHTML='';
-  trash.forEach((item,i)=>{
+  let lastK=null;
+  all.forEach(({k,i,e})=>{
+    if(k!==lastK){
+      lastK=k;
+      const h=document.createElement('div');h.className='trash-day';
+      h.textContent=_trashDay(k)+(k===tKey()?' · 오늘 보는 날':'');
+      list.appendChild(h);
+    }
     const row=document.createElement('div');row.className='trash-item';
     const info=document.createElement('div');info.className='trash-item-info';
-    const txt=document.createElement('div');txt.className='trash-item-text';txt.textContent=item.text;
+    const txt=document.createElement('div');txt.className='trash-item-text';txt.textContent=e.text;
     const meta=document.createElement('div');meta.className='trash-item-meta';
-    meta.textContent=`${item.secName} · ${item.type==='big'?'빅':'스몰'}`;
+    const it=e.item||{};
+    const bits=[e.secName];
+    if(it.urgent)bits.push('긴급');
+    if(e.flag)bits.push('깃발');
+    if(Array.isArray(it.subs)&&it.subs.length)bits.push('하위 '+it.subs.length);
+    if(it.memo)bits.push('메모');
+    meta.textContent=bits.filter(Boolean).join(' · ');
     info.append(txt,meta);
     const typeLbl=document.createElement('span');typeLbl.className='trash-type';
-    typeLbl.textContent=item.type==='big'?'빅':'스몰';
+    typeLbl.textContent=e.type==='big'?'빅':'스몰';
     const restoreBtn=document.createElement('button');restoreBtn.className='trash-restore';
     restoreBtn.textContent='복원';
-    restoreBtn.onclick=()=>restoreFromTrash(i);
+    restoreBtn.onclick=()=>restoreFromTrash(k,i);
     row.append(info,typeLbl,restoreBtn);
     list.appendChild(row);
   });
 }
 
-function restoreFromTrash(i){
-  const k=tKey();const trash=getTrash(k);
-  beforeSave();
-  const item=trash.splice(i,1)[0];
-  const restored={text:item.text,done:item.done};
-  if(item.daily)restored.daily=true;
-  if(item.flag)restored.flag=true;
-  if(item.contactTask)restored.contactTask=true;
-  if(item.autoCarryCount)restored.autoCarryCount=item.autoCarryCount;
-  if(item.manualCarryCount)restored.manualCarryCount=item.manualCarryCount;
-  if(item.type==='big'){
-    getBigs(k,item.secId).push(restored);
-  } else {
-    getSmalls(k,item.secId).push(restored);
+// 되살릴 할일 — 통째로 남겨 둔 것(item)이 있으면 그것, 없으면 예전 필드로
+function _trashRestored(e){
+  if(e&&e.item&&typeof e.item==='object'){
+    const r=_trashClone(e.item);
+    if(typeof r.text!=='string')r.text=e.text||'';
+    return r;
   }
-  save();updateTrashBadge();renderTrashList();renderSecBody(item.secId);updateTotal();refreshTaskViewsLive();
+  const restored={text:e.text,done:e.done};
+  if(e.daily)restored.daily=true;
+  if(e.flag)restored.flag=true;
+  if(e.contactTask)restored.contactTask=true;
+  if(e.autoCarryCount)restored.autoCarryCount=e.autoCarryCount;
+  if(e.manualCarryCount)restored.manualCarryCount=e.manualCarryCount;
+  return restored;
+}
+// k = 지운 날짜(그 날로 돌아간다). 예전 부름(restoreFromTrash(i))은 보는 날짜로 읽는다.
+function restoreFromTrash(k,i){
+  if(typeof k==='number'&&i===undefined){i=k;k=tKey();}
+  const trash=getTrash(k);
+  const e=trash[i];if(!e)return;
+  beforeSave();
+  trash.splice(i,1);
+  const restored=_trashRestored(e);
+  if(e.type==='big')getBigs(k,e.secId).push(restored);
+  else getSmalls(k,e.secId).push(restored);
+  save();updateTrashBadge();renderTrashList();
+  if(k===tKey())renderSecBody(e.secId);
+  updateTotal();refreshTaskViewsLive();
+  if(k!==tKey())showToast(_toastName(e.text)+_trashDay(k)+' '+(e.secName||'')+'에\n되살렸어요');
 }
 
 function clearTrash(){
-  const k=tKey();beforeSave();getDay(k).trash=[];
+  const all=_trashAll();
+  if(!all.length)return;
+  if(!confirm(`휴지통의 ${all.length}건을 모두 지울까요?\n되돌릴 수 없어요`))return;
+  beforeSave();
+  Object.keys(ST.days||{}).forEach(k=>{const d=ST.days[k];if(d&&Array.isArray(d.trash)&&d.trash.length)d.trash=[];});
   save();updateTrashBadge();renderTrashList();
 }
 
