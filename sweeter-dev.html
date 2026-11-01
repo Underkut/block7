@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1101-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1101-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -2849,11 +2849,16 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
 }
 .sub-row.done .sub-inp{text-decoration:line-through;}
 .sub-del{
-  flex:none;background:none;border:none;color:var(--tx3);
+  flex:none;margin-left:auto;background:none;border:none;color:var(--tx3);
   font-size:14px;line-height:1;padding:2px 4px;cursor:pointer;opacity:0;
+  transition:opacity .12s,color .12s;
   -webkit-tap-highlight-color:transparent;
 }
+/* 할일행 × (.blk-del) 와 같은 규칙 (v. 26-1101-3, HB B2-3) — PC 는 가리킬 때만, 터치 기기는 늘 옅게 보인다.
+   예전엔 터치 기기에서 투명(opacity 0)이라 안 보이는데 누르면 지워졌다. */
 @media(hover:hover){.sub-row:hover .sub-del{opacity:1;}}
+@media(hover:none){.sub-del{opacity:.4;}}
+.sub-del:hover{color:var(--ov);}
 .sub-ghost{display:flex;align-items:flex-start;gap:7px;padding:3px 2px;}
 .sub-ghost-mark{
   flex:none;width:14px;height:14px;
@@ -2896,6 +2901,11 @@ html:not([data-theme="light"]) .blk-urgent-badge{color:#ff6152;}
   font-family:inherit;outline:none;resize:vertical;
 }
 .memo-hint{margin-top:11px;font-size:11px;line-height:1.7;color:var(--tx3);}
+/* 우하단 휴지통 (v. 26-1101-3, HB B2-1) — 아이콘만, 테두리 없이. 모서리 크기 손잡이(se)를 비켜 조금 안쪽 */
+.memo-foot{display:flex;justify-content:flex-end;margin-top:6px;flex:none;}
+.memo-del{background:none;border:none;padding:4px 6px;margin-right:6px;color:var(--tx3);cursor:pointer;line-height:0;
+  -webkit-tap-highlight-color:transparent;transition:color .12s;}
+.memo-del:hover{color:var(--ov);}
 /* 연필·체크 버튼 — 가리키면 녹색 (v26-1028-8, HB) */
 #memoEditBtn:hover{color:var(--ok);}
 /* 네 모서리를 잡고 크기를 바꾼다 (v26-1028-8, HB). 크기를 정하면 .sized 가 붙어
@@ -3113,6 +3123,7 @@ body.split-d #todayView.animating{overflow:hidden;}
   animation:menuIn .15s ease;
 }
 @keyframes menuIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.task-menu-item.danger{color:var(--danger,#e5484d);}   /* 메뉴의 지우는 줄 (v. 26-1101-3) */
 .task-menu-item{
   display:flex;align-items:center;gap:10px;
   padding:10px 14px;border-radius:8px;
@@ -6891,7 +6902,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1101-2";
+const APP_VERSION = "v. 26-1101-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8602,6 +8613,9 @@ try{
   <div class="memo-view" id="memoView"></div>
   <textarea class="memo-edit" id="memoEdit" style="display:none" placeholder="메모를 적어 주세요."></textarea>
   <div class="memo-hint" id="memoHint"></div>
+  <div class="memo-foot"><button class="memo-del" id="memoDelBtn" onclick="deleteTaskMemo()" aria-label="메모 지우기" title="메모 지우기" style="display:none">
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12"/><path d="M7.5 6V4.5h5V6"/><path d="M15 6l-.8 9.5H5.8L5 6"/></svg>
+  </button></div>
   <span class="memo-grip" data-c="nw"></span><span class="memo-grip" data-c="ne"></span><span class="memo-grip" data-c="sw"></span><span class="memo-grip" data-c="se"></span>
 </div>
 
@@ -16213,9 +16227,10 @@ function _brInkUl(kind,w,fs,seed){const R=_hiRng(seed);const out=[];
 let _brInkSel=null,_brInkG='h';
 const _BR_SIDE=40;                          // 이 띠에서 시작한 손짓은 긋기가 되지 않는다 (HB v26-1007-19)
 // 장 넘기기 ↔ 긋기 (v. 26-1101-2, HB S1 — "제스처 혼동"):
-//   빠른 가로 밀기 = 어디서든 장 넘기기(손을 따라온다) · 살짝(_BR_INK_HOLD) 누른 채 끌기 = 긋기 · 0.5초 그대로 = 절 메뉴
+//   빠른 가로 밀기 = 어디서든 장 넘기기(손을 따라온다) · 살짝(_BR_INK_HOLD) 누른 채 끌기 = 긋기 · 1초(_BR_VM_HOLD) 그대로 = 절 메뉴
 //   예전엔 자리로 갈랐다(좌우 40px 띠 = 넘기기, 글자 위 = 긋기) → 가운데서 밀면 긋기가 되고 왼쪽 끝 12px 은 닫기였다.
 const _BR_INK_HOLD=220;
+const _BR_VM_HOLD=1000;   // 절 메뉴는 1초 — 돋보기(긋기 준비)가 뜬 채로 끌기를 시작할 틈을 넉넉히 (v. 26-1101-3, HB)
 function _brSwQuiet(){return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}
 function _brSwPage(){return document.querySelector('#bibleRd .br-page');}
 // 더 갈 데가 있는가 (dd=1 다음 장 · -1 앞 장)
@@ -17128,13 +17143,13 @@ function _brBind(){
   document.querySelectorAll('#bibleRd [data-brclose]').forEach(b=>b.onclick=_brCloseSheets);
   document.querySelectorAll('#bibleRd .br-sheet').forEach(sh=>
     _sheetDrag(sh,[sh.querySelector('.br-grab'),sh.querySelector('.br-shead')],_brCloseSheets,$('brScrim')));
-  // 롱터치(0.5초) · 우클릭 → 절 메뉴. 롱터치 뒤에 따라오는 '누르기' 는 버린다 (절이 골라지지 않게)
+  // 롱터치(1초, _BR_VM_HOLD) · 우클릭 → 절 메뉴. 롱터치 뒤에 따라오는 '누르기' 는 버린다 (절이 골라지지 않게)
   let lp=null,lpFired=false;
   $('brChap').addEventListener('pointerdown',e=>{
     if(e.button>0)return;const v=e.target.closest('.br-v');if(!v||e.target.closest('[data-memo]'))return;
     lpFired=false;const x=e.clientX,y=e.clientY;
     if(Date.now()-(_brScrollAt||0)<250)return;   // 관성 스크롤을 멈추려는 손 — 메뉴를 띄우지 않는다
-    lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;inkDisarm();_brVmOpen(+v.dataset.v,x,y);},500)};
+    lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;inkDisarm();_brVmOpen(+v.dataset.v,x,y);},_BR_VM_HOLD)};
   },{passive:true});
   const lpCancel=e=>{if(!lp)return;if(e&&e.type==='pointermove'&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)<8)return;clearTimeout(lp.t);lp=null;};
   ['pointermove','pointerup','pointercancel'].forEach(t=>$('brChap').addEventListener(t,lpCancel,{passive:true}));
@@ -17143,7 +17158,7 @@ function _brBind(){
   $('brVMenuOv').addEventListener('pointerdown',e=>{e.preventDefault();_brVmClose();});
   $('brVMenu').addEventListener('click',e=>{const it=e.target.closest('[data-vm]');if(it)_brVmRun(it.dataset.vm);});
   // 본문에 긋기 (v26-1007-19, HB) — 글자 위를 **옆으로** 끌면 고른다. 위아래는 스크롤(.br-v 는 pan-y),
-  // 가만히 누르면 롱터치 메뉴(0.5초), 마우스는 어느 쪽으로 끌어도 긋기. 좌우 끝 _BR_SIDE 안에서 시작하면 장 넘기기 몫.
+  // 가만히 누르면 롱터치 메뉴(1초), 마우스는 어느 쪽으로 끌어도 긋기. 좌우 끝 _BR_SIDE 안에서 시작하면 장 넘기기 몫.
   // ⚠️ v26-1008-2 (HB — 아이폰에서 내리다 손 떼지 않고 올리면 조금 가다 막힌다): v26-1008-1 에서 긋기를
   //    받으려고 본문을 touch-action:pan-y 로 바꾼 뒤부터다. 아이폰은 pan-y 에서 방향을 바꾸면 스크롤을 놓는다.
   //    → 아이폰은 예전 manipulation 으로 되돌리고(#bibleRd.br-ios), 긋기는 **터치 이벤트**로 받는다
@@ -37653,7 +37668,7 @@ function _subReorder(type,secId,idx,from,to){
   const one=a.splice(from,1)[0];
   a.splice(to,0,one);
   save();
-  _repPropSoon();
+  _repPropCommit();
   return true;
 }
 function _sdrRows(panel){return [...panel.querySelectorAll(':scope>.sub-row')];}
@@ -37830,11 +37845,11 @@ function _makeSubRow(type,secId,idx,j,sub){
       _subPrune(item);
       _subSyncParent(item);
       save();_subRerender(type,secId);
-      _repPropSoon();
+      _repPropCommit();
       return;
     }
     rawSave();
-    _repPropSoon();
+    _repPropCommit();   // 글자를 고쳤으면(oninput 이 떠 둠) 여기서 묻는다. 안 고쳤으면 떠 둔 것이 없어 아무 일도 없다
   };
   inp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
@@ -37924,11 +37939,16 @@ function _makeSubGhost(type,secId,idx){
   setTimeout(fit,0);
   return gh;
 }
-// ── 반복 할일의 보조 속성 — 언제 물을까 (HB 2026-11-01 B1) ──
+// ── 반복 할일의 보조 속성 — 언제 물을까 (HB 2026-11-01 B1 · 고침 v. 26-1101-3) ──
 // 자료 쪽(_repPropApply)은 '할일의 반복' 장에 있다. 여기는 **묻는 때**만 정한다.
-// 바꾸기 **전에** _repPropBegin 으로 그 할일의 지금 모습을 떠 두고, 바꾼 뒤 _repPropSoon.
-// 그 할일의 하위 칸에 손이 남아 있는 동안(엔터로 줄줄이 넣는 중)은 기다렸다가, 손을 떼면 **한 번** 묻는다.
+// 바꾸기 **전에** _repPropBegin 으로 그 할일의 지금 모습을 떠 두고, 바꾼 뒤 _repPropCommit — **그 자리에서** 묻는다.
+// ⚠️ v. 26-1101-1 은 "그 할일의 하위 칸에 커서가 남아 있으면 기다렸다가" 물었다. 그런데 아이폰은 칸 밖을 눌러도
+//    커서가 칸에 남는다 → 다른 날로 넘어가 화면이 다시 그려질 때에야 떴다(HB 신고). 이제는 바꾼 그 순간 묻고,
+//    묻는 동안은 자판을 내려 창이 가리지 않게 했다가, 고른 뒤 하던 칸으로 커서를 돌려 놓는다.
+// 엔터로 줄줄이 넣는 흐름은 _repSess 가 지킨다 — 한 번 고른 범위를 같은 할일의 하위에 잠시(_REP_SESS_MS) 그대로 쓴다.
 let _repPend=null;
+let _repSess=null;            // {item,k,scope,t} — 하위 할일만. 메모 · 표시는 늘 묻는다
+const _REP_SESS_MS=90000;
 function _repPropBegin(type,secId,idx,field,dayKey){
   const k=dayKey||tKey();
   const item=_taskArrOf(type,secId,k)[idx];
@@ -37938,8 +37958,18 @@ function _repPropBegin(type,secId,idx,field,dayKey){
     return;
   }
   if(_repPend)_repPropAskNow();   // 다른 할일 것이 남아 있으면 그것부터 묻는다
-  _repPend={item,type,secId,k,before:_repPropSnap(item),fields:[field],t:null};
+  _repPend={item,type,secId,k,before:_repPropSnap(item),fields:[field],t:null,now:false};
+  // 받쳐 두기 — 글자만 고치고 커서가 남은 채(커밋 없이) 화면이 바뀌면, 손이 떠난 걸 보고 묻는다
+  _repPend.t=setTimeout(_repPropTick,1500);
 }
+// 바꾸기를 마쳤다 — 곧바로 묻는다 (막 그린 판에 커서가 돌아갈 틈 60ms 만 둔다)
+function _repPropCommit(ms){
+  const p=_repPend;if(!p)return;
+  p.now=true;
+  clearTimeout(p.t);
+  p.t=setTimeout(_repPropTick,ms==null?60:ms);
+}
+// 예전 이름 — 메모 창을 닫을 때처럼 '창이 닫힌 뒤' 물으면 되는 자리
 function _repPropSoon(ms){
   const p=_repPend;if(!p)return;
   clearTimeout(p.t);
@@ -37947,43 +37977,72 @@ function _repPropSoon(ms){
 }
 function _repPropIdx(p){return _taskArrOf(p.type,p.secId,p.k).indexOf(p.item);}
 function _repScopeOpen(){const m=document.getElementById('repScopeModal');return !!(m&&m.style.display==='block');}
-// 아직 손을 대고 있는가 — 묻는 창이 떠 있다 · 하위를 끄는 중 · 하위 메뉴 · 메모 창 · 그 할일의 하위 칸에 커서
+// 그 할일의 하위 판 안에 커서가 있으면 {ghost} 또는 {j} — 물은 뒤 돌려 놓을 자리
+function _repPropFocusIn(p){
+  const ae=document.activeElement;
+  if(!ae||!ae.isConnected||!ae.matches||!ae.matches('.sub-inp,.sub-add'))return null;
+  const idx=_repPropIdx(p);
+  const gh=idx>=0?document.getElementById(_subGhostId(p.type,p.secId,idx)):null;
+  const pn=gh&&gh.closest('.sub-panel');
+  if(!pn||ae.closest('.sub-panel')!==pn)return null;
+  if(ae.matches('.sub-add'))return{ghost:true};
+  return{j:[...pn.querySelectorAll('.sub-inp')].indexOf(ae)};
+}
+// 아직 기다릴 때인가 — 묻는 창이 떠 있다 · 하위를 끄는 중 · 하위 메뉴 · 메모 창.
+// 커밋 없이 받쳐 둔 것(now=false)만 '그 할일의 하위 칸에 커서' 도 기다린다.
 function _repPropBusy(p){
   if(_repScopeOpen())return true;
   if(_SDR.active||_subMenuCtx||_memoCtx)return true;
-  const ae=document.activeElement;
-  if(ae&&ae.isConnected&&ae.matches&&ae.matches('.sub-inp,.sub-add')){
-    const idx=_repPropIdx(p);
-    const gh=idx>=0?document.getElementById(_subGhostId(p.type,p.secId,idx)):null;
-    if(gh&&ae.closest('.sub-panel')===gh.closest('.sub-panel'))return true;
-  }
-  return false;
+  return !p.now&&!!_repPropFocusIn(p);
 }
 function _repPropTick(){
   const p=_repPend;if(!p)return;
-  if(_repPropBusy(p)){p.t=setTimeout(_repPropTick,400);return;}
+  if(_repPropBusy(p)){p.t=setTimeout(_repPropTick,p.now?120:400);return;}
   _repPropAskNow();
 }
+function _repPropRefocus(p,day,at){
+  if(!at)return;
+  const i=_taskArrOf(p.type,p.secId,p.k).indexOf(day);if(i<0)return;
+  if(at.ghost){_subFocusGhost(p.type,p.secId,i);return;}
+  const gh=document.getElementById(_subGhostId(p.type,p.secId,i));
+  const r=gh&&gh.closest('.sub-panel')?gh.closest('.sub-panel').querySelectorAll('.sub-inp'):[];
+  if(r[at.j])r[at.j].focus();else _subFocusGhost(p.type,p.secId,i);
+}
 function _repPropAskNow(){
+  if(!_repPend)return;
+  // 커서를 먼저 거둔다 — 휴대폰 자판이 묻는 창을 가리지 않게. blur 가 마저 넣는 것(_subAdd)은 같은 꾸러미에 합쳐진다
+  const at=_repPropFocusIn(_repPend);
+  if(at&&document.activeElement)document.activeElement.blur();
   const p=_repPend;_repPend=null;
   if(!p)return;
   clearTimeout(p.t);
   if(_repPropIdx(p)<0)return;   // 그새 사라졌다(지움 · 동기화) — 그 날 것만 바뀐 채로 둔다
-  if(_repPropKey(p.before,p.fields)===_repPropKey(_repPropSnap(p.item),p.fields))return;   // 결국 그대로다
-  const go=sc=>{const i=_repPropIdx(p);if(i>=0)_repPropApply(p.type,p.secId,i,p.k,p.fields,p.before,sc);};
+  if(_repPropKey(p.before,p.fields)===_repPropKey(_repPropSnap(p.item),p.fields)){_repPropRefocus(p,p.item,at);return;}   // 결국 그대로다
+  const subsOnly=p.fields.length===1&&p.fields[0]==='subs';
+  const go=(sc,quiet)=>{
+    const i=_repPropIdx(p);if(i<0)return;
+    _repPropApply(p.type,p.secId,i,p.k,p.fields,p.before,sc,quiet||(subsOnly?'이어서 고치는 하위 할일도 같은 범위로 바꿔요':''));
+    const day=_repPropDay||p.item;
+    if(subsOnly)_repSess={item:day,k:p.k,scope:sc,t:Date.now()};
+    _repPropRefocus(p,day,at);
+  };
+  // 방금 이 할일의 하위에서 범위를 골랐다 — 다시 묻지 않고 같은 범위로 (엔터로 줄줄이 넣는 흐름)
+  if(subsOnly&&_repSess&&_repSess.item===p.item&&_repSess.k===p.k&&Date.now()-_repSess.t<_REP_SESS_MS){go(_repSess.scope,true);return;}
   if(_repScopeOpen()){go('one');return;}   // 다른 물음이 떠 있다 — 그 날 것만 (덮어쓰면 앞 물음의 답이 엉뚱한 데로 간다)
   const word=p.fields.map(f=>_REP_PROP_WORD[f]).join(' · ');
   const c=word.charCodeAt(word.length-1)-0xAC00;
+  const nm=String(p.item.text||'').replace(/\s+/g,' ').trim();
   const md=_evMd(p.k);
   _repScopeAsk({
     kind:'task',mode:'edit',
-    title:`반복되는 할일이에요 — ${word}${(c>=0&&c<11172&&c%28)?'을':'를'} 어디까지 바꿀까요?`,
+    // 어느 할일인지 이름을 붙인다 — 화면이 바뀐 뒤 물어도 헷갈리지 않게
+    title:`반복 할일${nm?` 「${nm.length>14?nm.slice(0,13)+'…':nm}」`:''}의 ${word}${(c>=0&&c<11172&&c%28)?'을':'를'} 어디까지 바꿀까요?`,
     rows:[
       ['one',   '이 할일만',        `${md} 하루만 바꿔요`],
       ['future','이번 및 이후 할일', `${md}부터 앞으로 모두 바꿔요`],
       ['all',   '모든 할일',        '반복 전체에 바꿔요 — 지난 날짜의 기록은 그대로']
     ],
-    onPick:go,
+    onPick:sc=>go(sc),
     onCancel:()=>go('one')   // × 로 닫으면 그 날 것만 (원본이면 앞날에 새지 않게 따로 세운다)
   });
 }
@@ -38003,7 +38062,7 @@ function _subAdd(type,secId,idx,raw){
   save();
   _subRerender(type,secId);
   setTimeout(()=>_subFocusGhost(type,secId,idx),40);
-  _repPropSoon();
+  _repPropCommit();
 }
 function _subRemove(type,secId,idx,j){
   const item=_taskArrOf(type,secId)[idx];
@@ -38016,7 +38075,7 @@ function _subRemove(type,secId,idx,j){
   _subSyncParent(item);
   save();
   _subRerender(type,secId);
-  _repPropSoon();
+  _repPropCommit();
 }
 
 // ── 하위 줄 메뉴 (위로 · 아래로 · 꺼내기 · 삭제) ──
@@ -38083,7 +38142,7 @@ function _subPromoteFromMenu(){
   save();
   _subRerender(c.type,c.secId);
   showToast('"'+String(one.text||'').slice(0,14)+'" 을 따로 꺼냈어요');
-  _repPropSoon();
+  _repPropCommit();
 }
 
 // ═══════ 할일 메모 ═══════
@@ -38184,6 +38243,22 @@ function _memoSaveEdit(){
   save();
   _memoDirty=true;
 }
+// 메모 지우기 — 우하단 휴지통 (v. 26-1101-3, HB B2-1). 긴 글일 수 있어 한 번 묻는다. ↩ 로도 되살아난다
+function deleteTaskMemo(){
+  const item=_memoItem();
+  if(!item||!item.memo)return;
+  appConfirm('이 메모를 지울까요?',()=>{
+    const c=_memoCtx,it=_memoItem();
+    if(!c||!it)return;
+    _repPropBegin(c.type,c.secId,c.idx,'memo',c.k);   // 반복 할일이면 닫힌 뒤 '어디까지' 를 묻는다
+    beforeSave();
+    delete it.memo;
+    save();
+    _memoDirty=true;_memoEditing=false;   // 닫을 때 고치던 글을 다시 저장하지 않게
+    closeTaskMemo();
+    showToast('메모를 지웠어요\n↩ 로 되돌릴 수 있어요');
+  },{z:5300});
+}
 function _memoRender(){
   const item=_memoItem();
   if(!item)return;
@@ -38193,6 +38268,8 @@ function _memoRender(){
   const task=document.getElementById('memoTask');
   const btn=document.getElementById('memoEditBtn');
   if(task)task.textContent=String(item.text||'').slice(0,40);
+  const del=document.getElementById('memoDelBtn');
+  if(del)del.style.display=(item.memo&&String(item.memo).trim())?'':'none';   // 지울 메모가 있을 때만
   if(btn)btn.title=_memoEditing?'다 적었어요 (보기로)':'메모 고치기';
   if(btn)btn.innerHTML=_memoEditing
     ? '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l4 4 8-9"/></svg>'
@@ -38419,11 +38496,31 @@ function openContactsModalWith(phone,email,nickGuess){
 }
 
 // ── 할일 메뉴의 두 줄 ('하위 할일' · '메모') ──
+// v. 26-1101-3 (HB B2-2): 접기 · 펼치기는 할일행 왼쪽 단추로 충분하다 — 메뉴의 이 줄은
+//   하위가 없으면 '하위 할일 만들기'(판을 열고 추가 칸에 커서), 있으면 '하위 할일 전체 삭제'.
 function openSubsFromMenu(){
   if(!_taskMenuCtx)return;
   const {type,secId,idx}=_taskMenuCtx;
+  const item=_taskArrOf(type,secId)[idx];
   closeTaskMenu();
-  _subToggleOpen(type,secId,idx);   // 게이지와 같은 스위치 — 열려 있으면 접는다
+  if(!item)return;
+  const n=_subStat(item).n;
+  if(!n){_subToggleOpen(type,secId,idx,true);return;}
+  appConfirm(`하위 할일 ${n}개를 모두 지울까요?`,()=>_subRemoveAll(type,secId,idx));
+}
+function _subRemoveAll(type,secId,idx){
+  const item=_taskArrOf(type,secId)[idx];
+  if(!item||!_subStat(item).n)return;
+  _repPropBegin(type,secId,idx,'subs');
+  beforeSave();
+  const n=_subStat(item).n;
+  delete item.subs;
+  _subPrune(item);
+  const key=_subKey(type,secId,idx);if(_subEmptyOpen===key)_subEmptyOpen=null;
+  save();
+  _subRerender(type,secId);
+  showToast(`하위 할일 ${n}개를 지웠어요\n↩ 로 되돌릴 수 있어요`);
+  _repPropCommit();
 }
 function openMemoFromMenu(){
   if(!_taskMenuCtx)return;
@@ -41630,10 +41727,10 @@ function openTaskMenu(type, secId, idx, anchorEl, atPoint){
   const subItem=document.getElementById('subTaskMenuItem');
   if(subLabel&&subItem){
     const st=_subStat(item);
-    const opened=_subIsOpen(type,secId,idx,item);
-    subLabel.textContent=opened?'하위 할일 접기'
-                        :(st.n?('하위 할일 '+st.done+'/'+st.n):'하위 할일');
-    subItem.classList.toggle('on',st.n>0);
+    // 만들기 · 전체 삭제 (v. 26-1101-3, HB B2-2) — 접기는 할일행 왼쪽 단추 몫
+    subLabel.textContent=st.n?('하위 할일 전체 삭제 ('+st.n+')'):'하위 할일 만들기';
+    subItem.classList.toggle('on',false);
+    subItem.classList.toggle('danger',st.n>0);
   }
   const memoLabel=document.getElementById('memoMenuLabel');
   const memoItem=document.getElementById('memoMenuItem');
@@ -43346,7 +43443,7 @@ function _doToggleFlag(type,secId,idx){
   _taskFlipRender(secId,()=>renderSecBody(secId));
   showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
   refreshTaskViewsLive();
-  _repPropSoon(0);
+  _repPropCommit();
 }
 
 // ═══ 긴급 표시 ═══════════════════════════════════════════════════════
@@ -43520,7 +43617,7 @@ function toggleTaskContact(){
   closeTaskMenu();
   renderSecBody(secId);
   showToast(item.contactTask?'연락할 일로 표시했어요':'연락할 일 표시를 해제했어요');
-  _repPropSoon(0);
+  _repPropCommit();
 }
 
 // ═══════ 할일의 반복 ═══════
@@ -44233,6 +44330,10 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
   if(!item)return;
   const rid=item.rid;
   const root=_taskRepRootOf(rid);
+  // 글자를 옮겨 쓴다. 글에 '@' 가 새로 들어가 이 날 것이 '연락할 일' 로 표시됐으면(_autoContactMark) 그 표시도 함께 —
+  // 예전엔 글자만 퍼지고 표시는 이 날에만 남았다 (v. 26-1101-3). 표시를 **끄지는** 않는다(사람이 일부러 끈 날을 되살리지 않게)
+  const addContact=!!item.contactTask&&String(newText).indexOf('@')>=0&&String(oldText||'').indexOf('@')<0;
+  const tx=e=>{e.text=newText;if(addContact)e.contactTask=true;};
   beforeSave();
   if(scope==='one'){
     if(root&&root.item===item){
@@ -44243,6 +44344,7 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
       if(item.flag)one.flag=true;
       if(item.contactTask)one.contactTask=true;
       _carryTaskExtras(item,one,true);   // 하위 · 메모도 그 날 것 그대로 (예전엔 빠졌다 — v. 26-1101-1)
+      if(addContact)item.contactTask=false;   // '@' 로 붙은 표시는 이 날 것 몫 — 원본(앞날의 본보기)은 예전대로
       arr.splice(idx+1,0,one);
     } else {
       delete item.rid;      // 묶음에서 떼어 낸다 — 이 날짜만의 할일이 된다
@@ -44251,26 +44353,31 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
     }
   } else if(scope==='future'){
     if(!root||k<=root.k){
-      if(root)root.item.text=newText;
-      item.text=newText;
+      if(root)tx(root.item);
+      // 이미 생겨 있는 앞날 실체도 (v. 26-1101-3 — 예전엔 원본만 바뀌어 미리 열어 본 날은 옛 글자로 남았다)
+      _taskRepInstances(rid,k).forEach(e=>tx(e.item));
+      tx(item);
     } else {
       // 원본은 어제까지, 오늘부터는 새 묶음
       if(!root.item.repeat)root.item.repeat=_taskRepFallback(root.item);
-      root.item.repeat.until=_dayKeyBefore(k);
       const rule=_taskRepDefault();
       const oldRule=root.item.repeat;
       rule.daily=oldRule.daily;rule.daysOfWeek=(oldRule.daysOfWeek||[0,1,2,3,4,5,6]).slice();
       rule.weekly=oldRule.weekly;rule.weeksOfMonth=(oldRule.weeksOfMonth||[1,2,3,4,5]).slice();
-      _repPurgeTasks(rid,_dayKeyAfter(k),false);
-      item.rid=_newRid();
+      root.item.repeat.until=_dayKeyBefore(k);
+      // 앞날 실체는 지우지 않고 새 묶음으로 옮겨 단다 — 지우고 다시 만들면 그 날 해 둔 체크 · 하위 체크 · 긴급이
+      // 사라진다 (v. 26-1101-3, 보조 속성 '이후' 와 같은 길). 지난 날의 실체는 기록이라 그대로.
+      const nrid=_newRid();
+      _taskRepInstances(rid,_dayKeyAfter(k)).forEach(e=>{if(e.k<todayKey())return;e.item.rid=nrid;tx(e.item);});
+      item.rid=nrid;
       item.repeat=rule;
       item.daily=true;
-      item.text=newText;
+      tx(item);
     }
   } else { // all
-    if(root)root.item.text=newText;
-    _taskRepInstances(rid,todayKey()).forEach(e=>{e.item.text=newText;});
-    item.text=newText;
+    if(root)tx(root.item);
+    _taskRepInstances(rid,todayKey()).forEach(e=>tx(e.item));
+    tx(item);
   }
   save();
   if(tKey()===k)renderSecBody(secId);else renderToday();
@@ -44286,6 +44393,7 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
 // 글자 고치기와 같은 길이다 — 그 날 것은 이미 바뀌었고, 여기서는 "다른 날에도 퍼뜨릴까" 만 정한다.
 // ⚠️ 긴급 · 완료 · 하위의 체크는 여기 없다 — 날마다 따로인 상태다 (긴급은 하루 2개 한도).
 const _REP_PROPS=['subs','memo','flag','contactTask'];
+let _repPropDay=null;   // 고른 뒤 그 날을 맡는 할일 — 원본에서 '이 할일만' 이면 새로 선 할일 (커서를 돌려 놓을 자리)
 const _REP_PROP_WORD={subs:'하위 할일',memo:'메모',flag:'중요 표시',contactTask:'연락할 일 표시'};
 function _repPropSnap(item){
   return{subs:_subsCopy(item,true),memo:(item&&item.memo)||'',flag:!!(item&&item.flag),contactTask:!!(item&&item.contactTask)};
@@ -44321,10 +44429,12 @@ function _repPropRestore(dst,snap,fields){
   });
 }
 // item 은 이미 새 값이다. before = 바꾸기 전 스냅숏(_repPropSnap). 퍼뜨린 할일 수를 돌려준다.
-function _repPropApply(type,secId,idx,dayKey,fields,before,scope){
+// note: true 면 토스트 없이(같은 범위로 이어서) · 글이면 토스트 끝에 한 줄 더
+function _repPropApply(type,secId,idx,dayKey,fields,before,scope,note){
   const k=dayKey||tKey();
   const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
   const item=arr[idx];
+  _repPropDay=item||null;
   if(!item||!_taskIsRep(item))return 0;
   const isRoot=_isRepRoot(item);
   if(!item.rid)item.rid=_newRid();
@@ -44348,6 +44458,7 @@ function _repPropApply(type,secId,idx,dayKey,fields,before,scope){
       delete item.urgent;delete item.urgentRank;delete item.urgentAt;   // 감춰진 원본이 긴급 한도를 먹지 않게
       _repAddEx(item,k);
       arr.splice(idx+1,0,one);
+      _repPropDay=one;
     }
     // 실체면 할 것이 없다 — 이미 그 날 것만 바뀌었다
   } else if(scope==='future'&&!isRoot&&root&&k>root.k){
@@ -44379,8 +44490,10 @@ function _repPropApply(type,secId,idx,dayKey,fields,before,scope){
   save();
   if(tKey()===k)renderSecBody(secId);else renderToday();
   updateTotal();refreshTaskViewsLive();
-  const what=fields.map(f=>_REP_PROP_WORD[f]).join(' · ');
-  showToast(what+'\n'+(scope==='one'?'이 날짜만 바꿨어요':scope==='future'?'이 날짜부터 앞으로 바꿨어요':'반복 전체에 바꿨어요'));
+  if(note!==true){
+    const what=fields.map(f=>_REP_PROP_WORD[f]).join(' · ');
+    showToast(what+'\n'+(scope==='one'?'이 날짜만 바꿨어요':scope==='future'?'이 날짜부터 앞으로 바꿨어요':'반복 전체에 바꿨어요')+(note?'\n'+note:''));
+  }
   return n;
 }
 function _dayKeyAfter(k){
@@ -49830,7 +49943,7 @@ function addCustomSuffix(v,selectKey){
 // 환경 등에서 조용히 무시되는 경우가 있어(삭제가 아무 반응 없이 끝나던
 // 원인) 앱 UI로 대체한다. 사용법: appConfirm('...', ()=>{ 확인시 동작 })
 let _appConfirmCb=null;
-function appConfirm(msg,onYes){
+function appConfirm(msg,onYes,opt){
   const ov=document.getElementById('appConfirmOverlay');
   const md=document.getElementById('appConfirmModal');
   const ms=document.getElementById('appConfirmMsg');
@@ -49838,6 +49951,8 @@ function appConfirm(msg,onYes){
     if(confirm(msg)&&onYes)onYes();
     return;
   }
+  // 더 높은 팝업(메모 5201 등) 위에서 물을 때 — 그때만 올리고, 닫을 때 원래대로 (v. 26-1101-3)
+  ov.style.zIndex=(opt&&opt.z)?String(opt.z):'4440';md.style.zIndex=(opt&&opt.z)?String(opt.z+10):'4450';
   ms.textContent=msg;
   _appConfirmCb=typeof onYes==='function'?onYes:null;
   ov.style.display='block';md.style.display='block';
@@ -49846,8 +49961,8 @@ function _appConfirmResolve(ok){
   const cb=_appConfirmCb;_appConfirmCb=null;
   const ov=document.getElementById('appConfirmOverlay');
   const md=document.getElementById('appConfirmModal');
-  if(ov)ov.style.display='none';
-  if(md)md.style.display='none';
+  if(ov){ov.style.display='none';ov.style.zIndex='4440';}   // 높여 띄웠던 것을 원래대로
+  if(md){md.style.display='none';md.style.zIndex='4450';}
   if(ok&&cb)cb();
 }
 // ── 말씀 모음 동기화 결과 화면 (v26-0913) ──────────────────────

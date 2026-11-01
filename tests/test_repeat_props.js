@@ -253,4 +253,51 @@ console.log('시나리오 12 — (덤) 원본의 글자를 "이 할일만" 고�
   sc.eq('메모도', one.memo, '6시');
 }
 
+console.log('시나리오 13 — 글자 "이번 및 이후" 를 원본에서: 이미 생긴 앞날 실체도 새 글자로 (예전엔 원본만 바뀌었다)');
+{
+  const d = {
+    [T]: day([{ text: '운동', done: false, daily: true, rid: 'r1', repeat: rep() }]),
+    '2026-11-02': day([{ text: '운동', done: true, daily: true, rid: 'r1' }]),
+  };
+  const { ST, api } = makeEnv(d);
+  at(ST, T)[0].text = '아침 운동';
+  api._taskTextApply('big', 'am', 0, '운동', '아침 운동', 'future', T);
+  sc.eq('앞날 실체도 새 글자', at(ST, '2026-11-02')[0].text, '아침 운동');
+  sc.eq('앞날에 해 둔 체크는 그대로', at(ST, '2026-11-02')[0].done, true);
+}
+
+console.log('시나리오 14 — 글자 "이번 및 이후" 를 실체에서(쪼개기): 앞날 실체를 지우지 않고 옮겨 단다');
+{
+  const d = series();
+  d['2026-11-02'].big.am[0].done = true;
+  d['2026-11-02'].big.am[0].urgent = true;
+  const { ST, api } = makeEnv(d);
+  at(ST, T)[0].text = '저녁 운동';
+  api._taskTextApply('big', 'am', 0, '운동', '저녁 운동', 'future', T);
+  const today = at(ST, T)[0], next = at(ST, '2026-11-02')[0];
+  sc.eq('옛 원본은 어제까지 · 글자 그대로', [at(ST, '2026-10-30')[0].repeat.until, at(ST, '2026-10-30')[0].text], ['2026-10-31', '운동']);
+  sc.eq('앞날 실체는 새 묶음 · 새 글자', [next.rid === today.rid, next.text], [true, '저녁 운동']);
+  sc.eq('앞날의 체크 · 긴급은 지킨다 (예전엔 지우고 다시 만들어 사라졌다)', [next.done, next.urgent], [true, true]);
+  api.materializeRepeatsFor('2026-11-02');
+  sc.eq('두 벌이 되지 않는다', at(ST, '2026-11-02').length, 1);
+}
+
+console.log('시나리오 15 — 글에 "@" 를 넣어 연락할 일로 표시됐으면, 글자를 퍼뜨릴 때 그 표시도 함께');
+{
+  const { ST, api } = makeEnv(series());
+  const it = at(ST, T)[0];
+  it.text = '@철수 운동'; it.contactTask = true;   // _autoContactMark 가 한 일
+  api._taskTextApply('big', 'am', 0, '운동', '@철수 운동', 'all', T);
+  sc.eq('원본 · 앞날도 연락할 일', [at(ST, '2026-10-30')[0].contactTask, at(ST, '2026-11-02')[0].contactTask], [true, true]);
+  sc.eq('지난 실체는 기록이라 그대로', !!at(ST, '2026-10-31')[0].contactTask, false);
+}
+{
+  const d = { [T]: day([{ text: '운동', done: false, daily: true, rid: 'r1', repeat: rep() }]) };
+  const { ST, api } = makeEnv(d);
+  const it = at(ST, T)[0];
+  it.text = '@철수 운동'; it.contactTask = true;
+  api._taskTextApply('big', 'am', 0, '운동', '@철수 운동', 'one', T);
+  sc.eq('원본에서 "이 할일만": 원본은 표시 없이 · 그 날 것만 표시', [!!at(ST, T)[0].contactTask, at(ST, T)[1].contactTask], [false, true]);
+}
+
 sc.done();

@@ -74,8 +74,10 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await p.evaluate(() => { _brCloseSheets(); _brInkSel = null; _brInkPaint(); }); await sleep(300);
 
   pt = await charPt();
-  await touch('touchStart', pt.x, pt.y); await sleep(650); await touch('touchEnd'); await sleep(300);
-  ok('④ 0.6초 그대로 = 절 메뉴', await sheetOn('brVMenu'));
+  await touch('touchStart', pt.x, pt.y); await sleep(700);
+  ok('④ 0.7초엔 아직 돋보기만 (메뉴 없음)', !(await sheetOn('brVMenu')) && await p.evaluate(() => document.getElementById('brLoupe')?.classList.contains('on')));
+  await sleep(450); await touch('touchEnd'); await sleep(300);
+  ok('④ 1초 그대로 = 절 메뉴', await sheetOn('brVMenu'));
   ok('④ 긋기 표시가 남지 않는다', await p.evaluate(() => !_brInkSel && !document.getElementById('brLoupe')?.classList.contains('on')));
   await p.evaluate(() => _brVmClose()); await sleep(300);
 
