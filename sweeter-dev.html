@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1101-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6902,7 +6902,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1101-6";
+const APP_VERSION = "v. 26-1102-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35798,6 +35798,20 @@ function _layApplyWidths(mode){
   }
 }
 // 두 경계선 드래그: layDiv1(3단 전용, 좌/중), layDiv2(2단=우측폭, 3단=중/우)
+// ⚠️ 경계선을 끌고 놓으면 아이패드가 **손가락을 처음 댄 자리**에 '누름(click)' 을 한 번 만든다
+//    (잠깐 누르고 있다가 끈 손가락 = 길게 누름 → 놓을 때 그 시작점을 누른 것으로 친다. touch-action:none 이라
+//    스크롤로 취소되지도 않는다). 왼쪽으로 끌면 경계선이 떠난 그 시작점에 오른쪽 말씀카드가 와 있어서
+//    카드의 '누르면 전체화면' 이 열렸다 (HB 2026-11-02, 아이패드 — 오른쪽으로 끌면 그 자리가 할일 쪽 빈 곳이라 티가 안 났다).
+//    → ① touchstart 에서 preventDefault 로 그 손가락의 누름 만들기 자체를 끈다
+//      ② 그래도 오는 누름은 끌기가 끝난 직후 한 번만 window 붙잡기 단계에서 삼킨다.
+let _layDivEatClickTs=0;
+window.addEventListener('click',e=>{
+  if(!_layDivEatClickTs)return;
+  const fresh=Date.now()-_layDivEatClickTs<500;
+  _layDivEatClickTs=0;                    // 한 번만 — 다음 누름은 그대로 통한다
+  if(!fresh)return;
+  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+},true);
 function _layInitDividers(){
   const attach=(div,onMove,onEnd)=>{
     if(!div||div._dragAttached)return;
@@ -35810,13 +35824,17 @@ function _layInitDividers(){
       dragging=false;
       div.classList.remove('dragging');
       document.body.style.userSelect='';
+      _layDivEatClickTs=Date.now();         // 뒤따라오는 누름 한 번은 삼킨다 (위 ⚠️)
       if(lastX!==null)onEnd(lastX);
     };
     div.addEventListener('mousedown',e=>{
       e.preventDefault();dragging=true;lastX=null;
       div.classList.add('dragging');document.body.style.userSelect='none';
     });
-    div.addEventListener('touchstart',()=>{dragging=true;lastX=null;div.classList.add('dragging');},{passive:true});
+    div.addEventListener('touchstart',e=>{
+      if(e.cancelable)e.preventDefault();   // 이 손가락으로는 누름(click) · 길게 누름 · 글자 고르기를 만들지 않는다
+      dragging=true;lastX=null;div.classList.add('dragging');
+    },{passive:false});
     document.addEventListener('mousemove',mm);
     document.addEventListener('touchmove',tm,{passive:true});
     document.addEventListener('mouseup',end);
