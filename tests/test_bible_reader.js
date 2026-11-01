@@ -296,7 +296,7 @@ console.log('\n시나리오 13-8 — v26-1007-8 (HB) 절 롱터치 메뉴 · 고
   sc.eq('롱터치 메뉴 = 본문 복사 · 좋아요 · 저장 · 암송 · Deeper · Even · 공유 · There', (menu.match(/data-vm="[a-z]+"/g) || []).join(' '), 'data-vm="copy" data-vm="like" data-vm="keep" data-vm="mem" data-vm="deeper" data-vm="even" data-vm="share" data-vm="there"');
   sc.eq('말씀 설정은 없다', /말씀 설정/.test(menu), false);
   sc.eq('구분선은 본문 복사 아래 하나뿐', (menu.match(/task-menu-sep/g) || []).length, 1);
-  sc.eq('롱터치 0.5초 · 우클릭', /_brVmOpen\(\+v\.dataset\.v,x,y\);\},500\)/.test(SRC) && /addEventListener\('contextmenu'/.test(slice('function _brBind(', '// ESC')), true);
+  sc.eq('롱터치 1초(돋보기 뒤 틈, v. 26-1101-3 HB) · 우클릭', /const _BR_VM_HOLD=1000;/.test(SRC) && /_brVmOpen\(\+v\.dataset\.v,x,y\);\},_BR_VM_HOLD\)/.test(SRC) && /addEventListener\('contextmenu'/.test(slice('function _brBind(', '// ESC')), true);
   sc.eq('반응·도구 줄은 남은 단추 수만큼 고르게 (빈칸 없음)', /#bibleRd \.br-acts\{display:flex;justify-content:space-around;gap:4px;\}/.test(SRC), true);
   sc.eq('손을 멈추면 움직이던 방향으로 마무리', /const t=_brDir>0\?\(_brP>\.15\?1:0\):\(_brP<\.85\?0:1\);/.test(SRC), true);
 }
