@@ -481,7 +481,11 @@ console.log('\n시나리오 13-16 — 본문에 긋는 표시 (bibleInk, v26-100
   sc.eq('_PRODUCT_SCOPED 아님 — 두 제품이 같이 본다', /_PRODUCT_SCOPED\s*=\s*\[[^\]]*bibleInk/.test(SRC), false);
   sc.eq('큰 물결 = HB 가 정한 값', /const _BR_INK_UL=\{amp:\.12,per:\.6,bw:\.076,vary:\.45,tilt:0\};/.test(SRC), true);
   sc.eq('하트 8 · 별 3 · 체크 3', /const _BR_INK_NV=\{star:3,heart:8,check:3\};/.test(SRC), true);
-  sc.eq('장 넘기기는 좌우 여백에서만', /tx=\(x<=Math\.max\(_BR_SIDE,r\.left\)\|\|x>=Math\.min\(W-_BR_SIDE,r\.right\)\)\?x:null;/.test(SRC), true);
+  // v. 26-1101-2 (HB S1 — "제스처 혼동"): 자리(좌우 여백) 대신 **시간**으로 가른다 — 빠른 가로 밀기 = 어디서든 장 넘기기,
+  //   살짝 누른 채 끌기 = 긋기. 손짓 자체는 tests/e2e/b7_bible_swipe.js 가 아이폰 · 안드로이드 흉내로 본다.
+  sc.eq('긋기는 살짝 누른 뒤에만 (누르자마자 가로 = 장 넘기기)', /const _BR_INK_HOLD=220;/.test(SRC) && /if\(Math\.abs\(dx\)>Math\.abs\(dy\)\*1\.2&&!ip\.mouse&&!ip\.armed\)\{inkDisarm\(\);return;\}/.test(SRC), true);
+  sc.eq('장 넘기기는 긋기로 정해진 손짓을 건드리지 않는다', /if\(\(ip&&ip\.mode==='ink'\)\|\|Math\.abs\(dx\)<=Math\.abs\(dy\)\*1\.2/.test(SRC), true);
+  sc.eq('넘기기 감시자는 모두 passive (아이폰 스크롤을 붙잡지 않는다)', /\$\('brScroll'\)\.addEventListener\('touchmove',[\s\S]*?_brSwFollow\(dx\);\},\{passive:true\}\);/.test(SRC), true);
   sc.eq('원어찾기는 Even Deeper 가 켜진 계정에서만 (even-only)', /class="br-act even-only" id="brInkOrig"/.test(SRC), true);
   sc.eq('내 기록 › 표시 탭', /<h3>내 기록<\/h3>/.test(SRC) && /<button data-t="hl">표시<\/button>/.test(SRC), true);
 }

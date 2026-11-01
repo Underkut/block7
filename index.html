@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1101-1  [production]  -->
+<!-- BLOCK7  v. 26-1101-2  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6891,7 +6891,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1101-1";
+const APP_VERSION = "v. 26-1101-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -16211,7 +16211,46 @@ function _brInkUl(kind,w,fs,seed){const R=_hiRng(seed);const out=[];
   return out;}
 // ══ 본문에 긋기 — 화면 ══
 let _brInkSel=null,_brInkG='h';
-const _BR_SIDE=40;                          // 장 넘기기는 좌우 이만큼(또는 본문 밖 여백)에서 시작한 밀기만 (HB v26-1007-19)
+const _BR_SIDE=40;                          // 이 띠에서 시작한 손짓은 긋기가 되지 않는다 (HB v26-1007-19)
+// 장 넘기기 ↔ 긋기 (v. 26-1101-2, HB S1 — "제스처 혼동"):
+//   빠른 가로 밀기 = 어디서든 장 넘기기(손을 따라온다) · 살짝(_BR_INK_HOLD) 누른 채 끌기 = 긋기 · 0.5초 그대로 = 절 메뉴
+//   예전엔 자리로 갈랐다(좌우 40px 띠 = 넘기기, 글자 위 = 긋기) → 가운데서 밀면 긋기가 되고 왼쪽 끝 12px 은 닫기였다.
+const _BR_INK_HOLD=220;
+function _brSwQuiet(){return !!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);}
+function _brSwPage(){return document.querySelector('#bibleRd .br-page');}
+// 더 갈 데가 있는가 (dd=1 다음 장 · -1 앞 장)
+function _brSwCan(dd){const books=_brBooks(),b=_brCur.b,c=_brCur.c;
+  return dd>0?!(b===books.length-1&&c>=_bibleChapters(books[b])):!(b===0&&c<=1);}
+// 손을 따라간다. 더 갈 데 없는 쪽은 고무줄처럼 뻑뻑하게
+function _brSwFollow(dx){const el=_brSwPage();if(!el)return;const W=document.documentElement.clientWidth;
+  const d=_brSwCan(dx<0?1:-1)?dx:dx*.22;
+  el.style.transition='none';el.style.transform='translateX('+d.toFixed(1)+'px)';el.style.opacity=String(Math.max(.45,1-Math.abs(d)/W*.9).toFixed(3));}
+function _brSwBack(){const el=_brSwPage();if(!el)return;
+  el.style.transition='transform .26s cubic-bezier(.22,.8,.24,1),opacity .26s ease';el.style.transform='';el.style.opacity='';
+  setTimeout(()=>{if(!el.style.transform)el.style.transition='';},280);}
+// 놓았을 때 — 폭의 ¼ 넘게(빠른 튕김은 40px 넘게) 밀었으면 넘어가고, 못 미치면 제자리
+function _brSwRelease(dx,v){const W=document.documentElement.clientWidth,dd=dx<0?1:-1;
+  if(_brSwCan(dd)&&(Math.abs(dx)>W/4||(Math.abs(dx)>40&&Math.abs(v)>.45&&Math.sign(v)===Math.sign(dx))))_brStepAnim(dd,true);
+  else _brSwBack();}
+// 나가고(≈150ms) → 그리고 → 들어온다(≈300ms). 앞(다음 장)은 왼쪽으로 나가고 오른쪽에서 들어온다
+let _brSwBusy=false;
+function _brStepAnim(dd,fromSwipe){
+  const el=_brSwPage();
+  if(!el||_brSwQuiet()){if(el){el.style.transition='';el.style.transform='';el.style.opacity='';}return _brStep(dd);}
+  if(!_brSwCan(dd)){_brSwBack();return;}
+  if(_brSwBusy)return;_brSwBusy=true;
+  const W=document.documentElement.clientWidth;
+  el.style.transition='transform .15s ease-in,opacity .15s ease-in';
+  el.style.transform='translateX('+(dd>0?-1:1)*W*(fromSwipe?.6:.25)+'px)';el.style.opacity='0';
+  setTimeout(()=>{
+    el.style.transition='none';el.style.transform='translateX('+(dd>0?1:-1)*W*.25+'px)';el.style.opacity='0';
+    const fin=()=>{el.offsetWidth;   // eslint-disable-line — 들어올 자리를 먼저 잡는다
+      el.style.transition='transform .3s cubic-bezier(.22,.8,.24,1),opacity .3s ease';el.style.transform='';el.style.opacity='';
+      setTimeout(()=>{el.style.transition='';_brSwBusy=false;},320);};
+    let p;try{p=_brStep(dd);}catch(e){fin();throw e;}
+    Promise.resolve(p).then(fin,fin);
+  },150);
+}
 function _brInkPref(){const st=ST.settings||{};const p=Object.assign({p:'e',mono:false,sv:{}},st.bibleInkPref||{});p.sv=Object.assign({star:0,heart:0,check:0},p.sv||{});return p;}
 function _brInkPrefSet(patch){ST.settings.bibleInkPref=Object.assign(_brInkPref(),patch);save();}
 function _brChVerses(){const d=_BR_MEM.get(_brCur.b+1);return d?(d.c[_brCur.c-1]||[]):[];}
@@ -16575,7 +16614,7 @@ function _brStep(dd){
   let {b,c}=_brCur;const books=_brBooks();c+=dd;
   if(c<1){if(b===0)return;b--;c=_bibleChapters(books[b]);}
   else if(c>_bibleChapters(books[b])){if(b===65)return;b++;c=1;}
-  _brShow(b,c);
+  return _brShow(b,c);
 }
 function _brRerender(keepSheets){const sc=_brEl('brScroll'),y=sc.scrollTop;const keep=_brSess;_brSess=null;
   _brShow(_brCur.b,_brCur.c,0,0,!!keepSheets).then(()=>{sc.scrollTop=y;if(keep)_brSess=keep;});}
@@ -17084,7 +17123,7 @@ function _brSyncScope(){
 function _brBind(){
   const $=_brEl;
   $('brClose').onclick=bibleClose;
-  $('brPrev').onclick=()=>_brStep(-1);$('brNext').onclick=()=>_brStep(1);
+  $('brPrev').onclick=()=>_brStepAnim(-1);$('brNext').onclick=()=>_brStepAnim(1);
   $('brScrim').onclick=_brCloseSheets;
   document.querySelectorAll('#bibleRd [data-brclose]').forEach(b=>b.onclick=_brCloseSheets);
   document.querySelectorAll('#bibleRd .br-sheet').forEach(sh=>
@@ -17095,7 +17134,7 @@ function _brBind(){
     if(e.button>0)return;const v=e.target.closest('.br-v');if(!v||e.target.closest('[data-memo]'))return;
     lpFired=false;const x=e.clientX,y=e.clientY;
     if(Date.now()-(_brScrollAt||0)<250)return;   // 관성 스크롤을 멈추려는 손 — 메뉴를 띄우지 않는다
-    lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;_brVmOpen(+v.dataset.v,x,y);},500)};
+    lp={x,y,t:setTimeout(()=>{lpFired=true;lp=null;inkDisarm();_brVmOpen(+v.dataset.v,x,y);},500)};
   },{passive:true});
   const lpCancel=e=>{if(!lp)return;if(e&&e.type==='pointermove'&&Math.hypot(e.clientX-lp.x,e.clientY-lp.y)<8)return;clearTimeout(lp.t);lp=null;};
   ['pointermove','pointerup','pointercancel'].forEach(t=>$('brChap').addEventListener(t,lpCancel,{passive:true}));
@@ -17124,15 +17163,22 @@ function _brBind(){
   const inkStart=(x,y,id,mouse,tgt)=>{
     if(tgt&&tgt.closest&&tgt.closest('[data-memo]'))return;
     const W=document.documentElement.clientWidth;if(!mouse&&(x<_BR_SIDE||x>W-_BR_SIDE))return;
-    const st=_brCharAt(x,y);window._brInkDiag=(st?'시작O':'시작X')+'('+(_brCharHow||'-')+')';if(!st)return;ip={x,y,id,st,mode:null,mouse};};
+    const st=_brCharAt(x,y);window._brInkDiag=(st?'시작O':'시작X')+'('+(_brCharHow||'-')+')';if(!st)return;ip={x,y,id,st,mode:null,mouse};
+    // 손가락은 살짝 누르고 있어야 긋기 (v. 26-1101-2) — 준비되면 그 글자에 돋보기를 띄워 알린다. 그 전에 밀면 장 넘기기
+    if(!mouse){const me=ip;me.ht=setTimeout(()=>{if(ip!==me||me.mode)return;me.armed=true;me.prev=_brInkSel;
+      _brInkSel={s:me.st,e:me.st};_brInkPaint();_brLoupe(me.x,me.y);try{navigator.vibrate&&navigator.vibrate(8);}catch(x){}},_BR_INK_HOLD);}};
+  // 준비만 하고 긋지 않았다(놓음 · 세로 스크롤 · 절 메뉴) — 띄운 표시를 걷고 원래 고른 것으로
+  const inkDisarm=()=>{const p=ip;if(!p||p.mode)return;clearTimeout(p.ht);ip=null;
+    if(p.armed){_brInkSel=p.prev||null;_brInkPaint();_brLoupe();}};
   const inkMove=(x,y,cap)=>{if(!ip)return;const dx=x-ip.x,dy=y-ip.y;
     if(!ip.mode){if(Math.hypot(dx,dy)<(ip.mouse?5:9))return;
-      if(ip.mouse||Math.abs(dx)>Math.abs(dy)*1.2){ip.mode='ink';window._brInkDiag=(window._brInkDiag||'')+' 긋기';if(cap)cap();
+      if(Math.abs(dx)>Math.abs(dy)*1.2&&!ip.mouse&&!ip.armed){inkDisarm();return;}   // 누르자마자 가로 = 장 넘기기 몫
+      if(ip.mouse||ip.armed){clearTimeout(ip.ht);ip.mode='ink';window._brInkDiag=(window._brInkDiag||'')+' 긋기';if(cap)cap();
         if(lp){clearTimeout(lp.t);lp=null;}_brVmClose();_brCloseSheets();_brInkSel={s:ip.st,e:ip.st};}
-      else{ip=null;return;}}                 // 세로 = 스크롤 — 손을 놓는다
+      else{inkDisarm();return;}}             // 세로 = 스크롤 — 손을 놓는다
     const c=_brCharAt(x,y);if(c&&(c.v!==_brInkSel.e.v||c.i!==_brInkSel.e.i)){_brInkSel.e=c;_brInkPaint();}
     _brLoupe(x,y);};
-  const inkEnd=cancel=>{if(!ip)return;const p=ip;ip=null;_brLoupe();
+  const inkEnd=cancel=>{if(!ip)return;if(!ip.mode){inkDisarm();return;}const p=ip;ip=null;_brLoupe();
     if(p.mode!=='ink')return;inkFired=true;setTimeout(()=>{inkFired=false;},450);
     if(cancel||!_brInkSpans().length){_brInkSel=null;_brInkPaint();return;}
     _brInkOpen();};
@@ -17479,13 +17525,26 @@ function _brBind(){
     e.preventDefault();e.stopPropagation();e.target.blur();_brEsc();
   });
   // 넘기기: 옆으로 밀기 · 자판
-  let tx=null,ty=null;
-  // 장 넘기기는 좌우 여백에서 시작한 밀기만 (v26-1007-19, HB — 본문 위 가로 끌기는 긋기 몫)
-  $('brScroll').addEventListener('touchstart',e=>{const x=e.touches[0].clientX,W=document.documentElement.clientWidth,r=_brEl('brChap').getBoundingClientRect();
-    tx=(x<=Math.max(_BR_SIDE,r.left)||x>=Math.min(W-_BR_SIDE,r.right))?x:null;ty=e.touches[0].clientY;},{passive:true});
-  $('brScroll').addEventListener('touchend',e=>{if(tx==null)return;
-    const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;
-    if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)_brStep(dx<0?1:-1);},{passive:true});
+  // v. 26-1101-2 (HB S1): 어디서 시작하든 **빠른 가로 밀기** = 장 넘기기, 손을 따라온다.
+  //   긋기는 살짝 누른 채 끌기라(위 inkStart 의 _BR_INK_HOLD) 같은 손짓을 두고 다투지 않는다 —
+  //   같은 touchmove 를 긋기(#brChap)가 먼저 듣고, 긋기로 정해졌으면 여기서는 손을 뗀다.
+  //   감시자는 모두 passive — 아이폰 스크롤을 붙잡지 않는다(v26-1007-16). 가로로는 원래 스크롤할 것이 없다.
+  let sw=null;
+  const swOff=()=>{if(sw&&sw.mode==='sw')_brSwBack();sw=null;};
+  $('brScroll').addEventListener('touchstart',e=>{if(e.touches.length!==1||_brSwBusy){swOff();return;}
+    const t=e.touches[0],now=performance.now();sw={x:t.clientX,y:t.clientY,mode:null,lx:t.clientX,lt:now,v:0};},{passive:true});
+  $('brScroll').addEventListener('touchmove',e=>{if(!sw)return;if(e.touches.length!==1){swOff();return;}
+    const t=e.touches[0],dx=t.clientX-sw.x,dy=t.clientY-sw.y,now=performance.now();
+    if(!sw.mode){if(Math.hypot(dx,dy)<10)return;
+      if((ip&&ip.mode==='ink')||Math.abs(dx)<=Math.abs(dy)*1.2||document.querySelector('#bibleRd .br-pick.on')){sw=null;return;}
+      sw.mode='sw';if(lp){clearTimeout(lp.t);lp=null;}}
+    if(ip&&ip.mode==='ink'){swOff();return;}
+    const dt=Math.max(1,now-sw.lt);sw.v=sw.v*.4+((t.clientX-sw.lx)/dt)*.6;sw.lx=t.clientX;sw.lt=now;
+    _brSwFollow(dx);},{passive:true});
+  $('brScroll').addEventListener('touchend',e=>{if(!sw)return;const s=sw;sw=null;if(s.mode!=='sw')return;
+    if(performance.now()-s.lt>120)s.v=0;   // 멈췄다 놓으면 튕김이 아니다
+    _brSwRelease(e.changedTouches[0].clientX-s.x,s.v);},{passive:true});
+  $('brScroll').addEventListener('touchcancel',swOff,{passive:true});
   // 닫는 손짓 두 가지 (HB v26-1007-14) — 다른 전체화면과 같은 감각
   // ① 왼쪽 가장자리에서 오른쪽으로 밀기 (공용 _initEdgeBack)
   // ⚠️ v26-1007-16 (HB — 스크롤이 조금 가다 멈춘다): 예전엔 공용 _initEdgeBack 을 성경 화면 **전체**에 걸었다.
@@ -17523,7 +17582,7 @@ function _brBind(){
     if(!_brOpen)return;
     const tg=e.target&&e.target.tagName;if(tg==='TEXTAREA'||tg==='INPUT')return;
     if(document.querySelector('#bibleRd .br-pick.on, #bibleRd .br-sheet.on'))return;
-    if(e.key==='ArrowRight'){e.preventDefault();_brStep(1);}else if(e.key==='ArrowLeft'){e.preventDefault();_brStep(-1);}
+    if(e.key==='ArrowRight'){e.preventDefault();_brStepAnim(1);}else if(e.key==='ArrowLeft'){e.preventDefault();_brStepAnim(-1);}
   });
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(_brEl('bibleRd'))_brBind();});
