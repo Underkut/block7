@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1101-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1101-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6902,7 +6902,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1101-4";
+const APP_VERSION = "v. 26-1101-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -38046,6 +38046,33 @@ document.addEventListener('focusout',ev=>{
 },true);
 // ③ 앱을 벗어날 때
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_repPropFlushNow();});
+// ⑤ 자판만 내렸다 — 아이패드 자판의 '자판 내리기' 키(우하단)는 칸에서 커서를 빼지 않아 blur 가 오지 않는다
+//    (HB 2026-11-01 신고, 사진 · v. 26-1101-5). 화면에 보이는 높이(visualViewport)가 다시 커지는 것으로 안다.
+//    · 높이는 확대 배율을 곱해 잰다(두 손가락 확대로 줄어든 것을 자판으로 읽지 않게)
+//    · 가장 컸던 높이를 기준으로, 그보다 150px 넘게 작으면 '자판이 올라와 있다'. 폭이 바뀌면(돌림) 기준을 새로 잡는다
+//    · 하위를 넣을 때 판을 다시 그리며 자판이 잠깐 깜빡일 수 있다 — 0.35초 뒤에도 내려가 있을 때만 마침으로 본다
+//    · 마치면 칸의 커서도 거둔다 — 남겨 두면 그 칸을 다시 눌러도 focusin 이 안 와 편집 시작을 못 안다
+(function(){
+  const vv=window.visualViewport;if(!vv)return;
+  const H=()=>vv.height*(vv.scale||1);
+  let base=H(),w=window.innerWidth,up=false,t=null;
+  vv.addEventListener('resize',()=>{
+    if(window.innerWidth!==w){w=window.innerWidth;base=H();up=false;return;}
+    const h=H();
+    if(h>base)base=h;
+    const nowUp=base-h>150;
+    if(up&&!nowUp&&_subEdit){
+      clearTimeout(t);
+      t=setTimeout(()=>{
+        if(!_subEdit||base-H()>150)return;   // 다시 올라왔다(깜빡임) — 아직 편집 중
+        const ae=document.activeElement;
+        _subEditEnd();
+        if(ae&&ae.matches&&ae.matches('.sub-inp,.sub-add'))ae.blur();
+      },350);
+    }
+    up=nowUp;
+  });
+})();
 // 하위를 무엇을 바꿨는지 — "2개 추가 · 1개 삭제"
 function _repSubDiffWord(before,now){
   const b=(before.subs||[]).map(x=>x.text),n=(now.subs||[]).map(x=>x.text),pool=b.slice();
