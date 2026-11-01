@@ -5,7 +5,7 @@
 //   python3 -m http.server 5502 &   NODE_PATH=<playwright 있는 곳> node tests/e2e/b7_repeat_props.js
 // 지키는 것:
 //  ① 편집 중(하위 칸에 커서)에는 줄줄이 넣어도 묻지 않고, 다른 날에도 아직 안 퍼진다
-//  ② 마침 신호마다 한 번 묻는다 — 판 바깥 누름(커서가 남아 있어도 · 아이폰 흉내) · 빈 추가 칸에서 엔터 ·
+//  ② 마침 신호마다 한 번 묻는다 — 판 바깥 누름(커서가 남아 있어도 · 아이폰 흉내) · 빈 추가 칸에서 엔터 · 자판만 내림(아이패드) ·
 //     다른 날로 넘김(넘기기 전에) · 판 접기. 묻는 말에 할일 이름과 "n개 추가 · n개 삭제"
 //  ③ 편집 중의 × 는 모아서 · 편집 중이 아닐 때의 × 는 곧바로
 //  ④ 숨은 '이어 쓰기' 없음 — 지우기에서 고른 범위가 만들기에 조용히 쓰이지 않는다 (HB 신고 2026-11-01)
@@ -88,6 +88,20 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await pick('all'); await sleep(300);
   await p.evaluate(() => { viewDate = logicalNow(); renderToday(); }); await sleep(300);
   ok('② 고른 대로 내일 것에 (1장 → 2장)', (await subsOf('next', '독서')) === '2장', await subsOf('next', '독서'));
+
+  // ② 자판만 내림 — 아이패드 '자판 내리기' 키: 커서는 칸에 남고 blur 도 안 온다. 화면 높이로 안다 (HB 신고, v. 26-1101-5)
+  await p.evaluate(() => { window.__vvH = visualViewport.height; Object.defineProperty(visualViewport, 'height', { configurable: true, get: () => window.__vvH }); });
+  const kb = up => p.evaluate(up => { window.__vvH = up ? 480 : 844; visualViewport.dispatchEvent(new Event('resize')); }, up);
+  await addBox('운동'); await kb(true); await sleep(100);
+  await p.keyboard.type('플랭크'); await p.keyboard.press('Enter'); await sleep(200);
+  await kb(false); await sleep(60); await kb(true); await sleep(600);   // 판을 다시 그리며 자판이 깜빡인 것
+  ok('② 자판이 잠깐 깜빡인 것은 마침이 아니다', !(await asking()));
+  await kb(false); await sleep(200);
+  ok('② 자판을 내린 직후(0.35초 전)엔 아직', !(await asking()));
+  await sleep(500);
+  ok('② 자판만 내려도(커서가 칸에 남아도) 묻는다', await asking() && /1개 추가/.test(await title()), await title());
+  ok('② 칸의 커서도 거둔다', await p.evaluate(() => !document.activeElement || !document.activeElement.matches('.sub-inp,.sub-add')));
+  await pick('one'); await sleep(300);
 
   // ② 판 접기 = 마침
   await addBox('운동'); await p.keyboard.type('스쿼트'); await p.keyboard.press('Enter'); await sleep(250);
