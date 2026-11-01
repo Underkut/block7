@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1031-14  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1101-1  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6891,7 +6891,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1031-14";
+const APP_VERSION = "v. 26-1101-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -37589,10 +37589,12 @@ const _SDR={active:false,landing:false,mp:null};
 function _subReorder(type,secId,idx,from,to){
   const a=_subsOf(_taskArrOf(type,secId)[idx]);
   if(!a[from]||to<0||to>=a.length||to===from)return false;
+  _repPropBegin(type,secId,idx,'subs');
   beforeSave();
   const one=a.splice(from,1)[0];
   a.splice(to,0,one);
   save();
+  _repPropSoon();
   return true;
 }
 function _sdrRows(panel){return [...panel.querySelectorAll(':scope>.sub-row')];}
@@ -37756,7 +37758,7 @@ function _makeSubRow(type,secId,idx,j,sub){
   inp.onclick=e=>e.stopPropagation();
   inp.oninput=()=>{
     const a=_subsOf(_taskArrOf(type,secId)[idx]);
-    if(a[j]){a[j].text=inp.value;saveText();}
+    if(a[j]){_repPropBegin(type,secId,idx,'subs');a[j].text=inp.value;saveText();}
   };
   inp.onblur=()=>{
     const item=_taskArrOf(type,secId)[idx];
@@ -37764,13 +37766,16 @@ function _makeSubRow(type,secId,idx,j,sub){
     if(!a[j])return;
     a[j].text=inp.value;
     if(inp.value.trim()===''){          // 빈 줄은 스스로 사라진다 (본 할일과 같은 규칙)
+      _repPropBegin(type,secId,idx,'subs');
       beforeSave();a.splice(j,1);
       _subPrune(item);
       _subSyncParent(item);
       save();_subRerender(type,secId);
+      _repPropSoon();
       return;
     }
     rawSave();
+    _repPropSoon();
   };
   inp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
@@ -37860,11 +37865,75 @@ function _makeSubGhost(type,secId,idx){
   setTimeout(fit,0);
   return gh;
 }
+// ── 반복 할일의 보조 속성 — 언제 물을까 (HB 2026-11-01 B1) ──
+// 자료 쪽(_repPropApply)은 '할일의 반복' 장에 있다. 여기는 **묻는 때**만 정한다.
+// 바꾸기 **전에** _repPropBegin 으로 그 할일의 지금 모습을 떠 두고, 바꾼 뒤 _repPropSoon.
+// 그 할일의 하위 칸에 손이 남아 있는 동안(엔터로 줄줄이 넣는 중)은 기다렸다가, 손을 떼면 **한 번** 묻는다.
+let _repPend=null;
+function _repPropBegin(type,secId,idx,field,dayKey){
+  const k=dayKey||tKey();
+  const item=_taskArrOf(type,secId,k)[idx];
+  if(!item||!_taskIsRep(item))return;
+  if(_repPend&&_repPend.item===item&&_repPend.k===k){
+    if(!_repPend.fields.includes(field))_repPend.fields.push(field);
+    return;
+  }
+  if(_repPend)_repPropAskNow();   // 다른 할일 것이 남아 있으면 그것부터 묻는다
+  _repPend={item,type,secId,k,before:_repPropSnap(item),fields:[field],t:null};
+}
+function _repPropSoon(ms){
+  const p=_repPend;if(!p)return;
+  clearTimeout(p.t);
+  p.t=setTimeout(_repPropTick,ms==null?400:ms);
+}
+function _repPropIdx(p){return _taskArrOf(p.type,p.secId,p.k).indexOf(p.item);}
+function _repScopeOpen(){const m=document.getElementById('repScopeModal');return !!(m&&m.style.display==='block');}
+// 아직 손을 대고 있는가 — 묻는 창이 떠 있다 · 하위를 끄는 중 · 하위 메뉴 · 메모 창 · 그 할일의 하위 칸에 커서
+function _repPropBusy(p){
+  if(_repScopeOpen())return true;
+  if(_SDR.active||_subMenuCtx||_memoCtx)return true;
+  const ae=document.activeElement;
+  if(ae&&ae.isConnected&&ae.matches&&ae.matches('.sub-inp,.sub-add')){
+    const idx=_repPropIdx(p);
+    const gh=idx>=0?document.getElementById(_subGhostId(p.type,p.secId,idx)):null;
+    if(gh&&ae.closest('.sub-panel')===gh.closest('.sub-panel'))return true;
+  }
+  return false;
+}
+function _repPropTick(){
+  const p=_repPend;if(!p)return;
+  if(_repPropBusy(p)){p.t=setTimeout(_repPropTick,400);return;}
+  _repPropAskNow();
+}
+function _repPropAskNow(){
+  const p=_repPend;_repPend=null;
+  if(!p)return;
+  clearTimeout(p.t);
+  if(_repPropIdx(p)<0)return;   // 그새 사라졌다(지움 · 동기화) — 그 날 것만 바뀐 채로 둔다
+  if(_repPropKey(p.before,p.fields)===_repPropKey(_repPropSnap(p.item),p.fields))return;   // 결국 그대로다
+  const go=sc=>{const i=_repPropIdx(p);if(i>=0)_repPropApply(p.type,p.secId,i,p.k,p.fields,p.before,sc);};
+  if(_repScopeOpen()){go('one');return;}   // 다른 물음이 떠 있다 — 그 날 것만 (덮어쓰면 앞 물음의 답이 엉뚱한 데로 간다)
+  const word=p.fields.map(f=>_REP_PROP_WORD[f]).join(' · ');
+  const c=word.charCodeAt(word.length-1)-0xAC00;
+  const md=_evMd(p.k);
+  _repScopeAsk({
+    kind:'task',mode:'edit',
+    title:`반복되는 할일이에요 — ${word}${(c>=0&&c<11172&&c%28)?'을':'를'} 어디까지 바꿀까요?`,
+    rows:[
+      ['one',   '이 할일만',        `${md} 하루만 바꿔요`],
+      ['future','이번 및 이후 할일', `${md}부터 앞으로 모두 바꿔요`],
+      ['all',   '모든 할일',        '반복 전체에 바꿔요 — 지난 날짜의 기록은 그대로']
+    ],
+    onPick:go,
+    onCancel:()=>go('one')   // × 로 닫으면 그 날 것만 (원본이면 앞날에 새지 않게 따로 세운다)
+  });
+}
 function _subAdd(type,secId,idx,raw){
   const parts=_subParse(raw);
   if(!parts.length)return;
   const item=_taskArrOf(type,secId)[idx];
   if(!item)return;
+  _repPropBegin(type,secId,idx,'subs');
   beforeSave();
   if(!Array.isArray(item.subs))item.subs=[];
   parts.forEach(t=>item.subs.push({text:t,done:false}));
@@ -37875,17 +37944,20 @@ function _subAdd(type,secId,idx,raw){
   save();
   _subRerender(type,secId);
   setTimeout(()=>_subFocusGhost(type,secId,idx),40);
+  _repPropSoon();
 }
 function _subRemove(type,secId,idx,j){
   const item=_taskArrOf(type,secId)[idx];
   const a=_subsOf(item);
   if(!a[j])return;
+  _repPropBegin(type,secId,idx,'subs');
   beforeSave();
   a.splice(j,1);
   _subPrune(item);
   _subSyncParent(item);
   save();
   _subRerender(type,secId);
+  _repPropSoon();
 }
 
 // ── 하위 줄 메뉴 (위로 · 아래로 · 꺼내기 · 삭제) ──
@@ -37943,6 +38015,7 @@ function _subPromoteFromMenu(){
   const item=arr[c.idx];
   const a=_subsOf(item);
   if(!item||!a[c.j])return;
+  _repPropBegin(c.type,c.secId,c.idx,'subs');
   beforeSave();
   const one=a.splice(c.j,1)[0];
   _subPrune(item);
@@ -37951,6 +38024,7 @@ function _subPromoteFromMenu(){
   save();
   _subRerender(c.type,c.secId);
   showToast('"'+String(one.text||'').slice(0,14)+'" 을 따로 꺼냈어요');
+  _repPropSoon();
 }
 
 // ═══════ 할일 메모 ═══════
@@ -37984,6 +38058,7 @@ function closeTaskMemo(){
   if(md)md.style.display='none';
   const c=_memoCtx,dirty=_memoDirty;
   _memoCtx=null;_memoEditing=false;_memoDirty=false;
+  _repPropSoon(450);   // 반복 할일이면 메모를 다른 날에도 — 닫는 움직임이 끝난 뒤에 묻는다
   // 한 박자 늦게 닫히던 것 (v26-1029-8, HB) — 다시 그리기(넓은 화면이면 옆 칸까지)가 끝나야
   // 화면이 갱신돼서 팝업이 그만큼 남아 있었다. 먼저 닫힌 화면을 그리고 나서 다시 그린다.
   // 메모를 안 바꿨으면 다시 그릴 것도 없다 (메모 표시는 메모가 있느냐만 본다).
@@ -38044,6 +38119,7 @@ function _memoSaveEdit(){
   const v=ta.value;
   const now=String(item.memo||'');
   if(v===now)return;
+  _repPropBegin(_memoCtx.type,_memoCtx.secId,_memoCtx.idx,'memo',_memoCtx.k);
   beforeSave();
   if(v.trim())item.memo=v;else delete item.memo;
   save();
@@ -43203,6 +43279,7 @@ function _doToggleFlag(type,secId,idx){
   const arr=type==='big'?getBigs(k,secId):getSmalls(k,secId);
   const item=arr[idx];
   if(!item)return;
+  _repPropBegin(type,secId,idx,'flag',k);
   beforeSave();
   item.flag=!item.flag;
   if(item.flag)_reorderTaskPriority(arr);
@@ -43210,6 +43287,7 @@ function _doToggleFlag(type,secId,idx){
   _taskFlipRender(secId,()=>renderSecBody(secId));
   showToast(item.flag?'중요 표시했어요':'중요 표시를 해제했어요');
   refreshTaskViewsLive();
+  _repPropSoon(0);
 }
 
 // ═══ 긴급 표시 ═══════════════════════════════════════════════════════
@@ -43376,12 +43454,14 @@ function toggleTaskContact(){
   const arr=type==='big'?getBigs(tKey(),secId):getSmalls(tKey(),secId);
   const item=arr[idx];
   if(!item)return;
+  _repPropBegin(type,secId,idx,'contactTask');
   beforeSave();
   item.contactTask=!item.contactTask;
   save();
   closeTaskMenu();
   renderSecBody(secId);
   showToast(item.contactTask?'연락할 일로 표시했어요':'연락할 일 표시를 해제했어요');
+  _repPropSoon(0);
 }
 
 // ═══════ 할일의 반복 ═══════
@@ -44103,6 +44183,7 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
       const one={text:newText,done:false};
       if(item.flag)one.flag=true;
       if(item.contactTask)one.contactTask=true;
+      _carryTaskExtras(item,one,true);   // 하위 · 메모도 그 날 것 그대로 (예전엔 빠졌다 — v. 26-1101-1)
       arr.splice(idx+1,0,one);
     } else {
       delete item.rid;      // 묶음에서 떼어 낸다 — 이 날짜만의 할일이 된다
@@ -44136,6 +44217,112 @@ function _taskTextApply(type,secId,idx,oldText,newText,scope,dayKey){
   if(tKey()===k)renderSecBody(secId);else renderToday();
   updateTotal();refreshTaskViewsLive();
   showToast(scope==='one'?'이 날짜만 고쳤어요':scope==='future'?'이 날짜부터 앞으로 고쳤어요':'반복 전체를 고쳤어요');
+}
+
+// ═══════ 할일 — 보조 속성(하위 · 메모 · 중요 · 연락할 일)을 바꿨을 때 범위 묻기 ═══════
+// (HB 2026-11-01 B1, tests/test_repeat_props.js)
+// 반복 실체는 원본에서 이 넷을 물려받는다(materializeRepeatsFor). 그런데 글자만 범위를 묻고
+// 이 넷은 그 날 것만 바뀌었다 → 하위를 넣어도 그 날에만 생기고, 원본(첫 날)에서 바꾸면
+// 반대로 아직 안 생긴 앞날에 **묻지도 않고** 퍼졌다.
+// 글자 고치기와 같은 길이다 — 그 날 것은 이미 바뀌었고, 여기서는 "다른 날에도 퍼뜨릴까" 만 정한다.
+// ⚠️ 긴급 · 완료 · 하위의 체크는 여기 없다 — 날마다 따로인 상태다 (긴급은 하루 2개 한도).
+const _REP_PROPS=['subs','memo','flag','contactTask'];
+const _REP_PROP_WORD={subs:'하위 할일',memo:'메모',flag:'중요 표시',contactTask:'연락할 일 표시'};
+function _repPropSnap(item){
+  return{subs:_subsCopy(item,true),memo:(item&&item.memo)||'',flag:!!(item&&item.flag),contactTask:!!(item&&item.contactTask)};
+}
+// 바뀐 것이 있는가 — 하위는 **글자 목록만** 본다 (체크는 날마다 따로라 묻지 않는다)
+function _repPropKey(snap,fields){
+  return JSON.stringify(fields.map(f=>f==='subs'?(snap.subs||[]).map(s=>s.text):snap[f]));
+}
+// src(지금 값) 의 한 칸을 dst 에 옮긴다.
+// 하위는 글자 목록을 맞추되, dst 에 같은 글자가 있으면 그 체크를 지킨다 (그 날 이미 한 것).
+// 새로 생긴 하위의 체크는 fill — 앞날은 안 한 것, 지난 날은 부모의 완료를 따른다.
+function _repPropPut(dst,src,field,fill){
+  if(field==='subs'){
+    const want=_subsOf(src);
+    if(!want.length){delete dst.subs;delete dst.subOpen;return;}
+    const pool=_subsOf(dst).slice();
+    dst.subs=want.map(s=>{
+      const t=String((s&&s.text)||'');
+      const i=pool.findIndex(o=>o&&String(o.text||'')===t);
+      return{text:t,done:i>=0?!!pool.splice(i,1)[0].done:!!fill};
+    });
+    return;
+  }
+  if(field==='memo'){if(src.memo)dst.memo=src.memo;else delete dst.memo;return;}
+  if(src[field])dst[field]=true;else if(dst[field])dst[field]=false;
+}
+// 스냅숏(before) 으로 되돌린다 — 원본에서 '이 할일만' 을 고를 때
+function _repPropRestore(dst,snap,fields){
+  fields.forEach(f=>{
+    if(f==='subs'){if(snap.subs&&snap.subs.length)dst.subs=snap.subs.map(s=>({text:s.text,done:!!s.done}));else{delete dst.subs;delete dst.subOpen;}}
+    else if(f==='memo'){if(snap.memo)dst.memo=snap.memo;else delete dst.memo;}
+    else if(snap[f])dst[f]=true;else if(dst[f])dst[f]=false;
+  });
+}
+// item 은 이미 새 값이다. before = 바꾸기 전 스냅숏(_repPropSnap). 퍼뜨린 할일 수를 돌려준다.
+function _repPropApply(type,secId,idx,dayKey,fields,before,scope){
+  const k=dayKey||tKey();
+  const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  const item=arr[idx];
+  if(!item||!_taskIsRep(item))return 0;
+  const isRoot=_isRepRoot(item);
+  if(!item.rid)item.rid=_newRid();
+  const rid=item.rid;
+  const root=isRoot?{k,item}:_taskRepRootOf(rid);
+  const today=todayKey();
+  let n=0;
+  const put=(dst,dk)=>{
+    fields.forEach(f=>_repPropPut(dst,item,f,dk<today&&!!dst.done));
+    if(fields.includes('subs')&&dk>=today)_subSyncParent(dst);
+    n++;
+  };
+  beforeSave();
+  if(scope==='one'){
+    if(isRoot){
+      // 원본은 앞날의 본보기다 — 원본은 예전 값으로 두고 그 날을 '뺀 날' 로, 그 날엔 따로 선 할일
+      // (rid 는 단다 — 반복 표시가 남고, 나중에 '모두' 로 바꿀 때 함께 바뀐다. 규칙은 원본만 갖는다)
+      const one=JSON.parse(JSON.stringify(item));
+      delete one.repeat;
+      _repPropRestore(item,before,fields);
+      delete item.urgent;delete item.urgentRank;delete item.urgentAt;   // 감춰진 원본이 긴급 한도를 먹지 않게
+      _repAddEx(item,k);
+      arr.splice(idx+1,0,one);
+    }
+    // 실체면 할 것이 없다 — 이미 그 날 것만 바뀌었다
+  } else if(scope==='future'&&!isRoot&&root&&k>root.k){
+    // 원본은 어제까지, 이 날부터는 이 할일이 새 원본 (글자 고치기 · 옮기기와 같은 길)
+    if(!root.item.repeat)root.item.repeat=_taskRepFallback(root.item);
+    const rule=JSON.parse(JSON.stringify(root.item.repeat));
+    if(rule.until&&rule.until<=k)delete rule.until;
+    if(Array.isArray(rule.ex))rule.ex=rule.ex.filter(d=>d>k);
+    root.item.repeat.until=_dayKeyBefore(k);
+    const nrid=_newRid();
+    // 이미 생겨 있는 앞날 실체는 지우지 않고 새 묶음으로 옮겨 단다 — 지우고 다시 만들면
+    // 그 날 해 둔 체크 · 긴급이 사라진다. 지난 날의 실체는 기록이라 그대로 둔다.
+    _taskRepInstances(rid,_dayKeyAfter(k)).forEach(e=>{
+      if(e.k<today||e.item===root.item)return;
+      e.item.rid=nrid;put(e.item,e.k);
+    });
+    item.rid=nrid;
+    item.repeat=rule;
+    item.daily=true;
+  } else {
+    // future(원본이거나 원본보다 앞) · all — 원본과 앞날 실체에 퍼뜨린다. 지난 날의 실체는 기록이라 그대로
+    const from=(scope==='future')?k:today;
+    if(root&&root.item!==item)put(root.item,root.k);
+    _taskRepInstances(rid,from).forEach(e=>{
+      if(e.item===item||(root&&e.item===root.item))return;
+      put(e.item,e.k);
+    });
+  }
+  save();
+  if(tKey()===k)renderSecBody(secId);else renderToday();
+  updateTotal();refreshTaskViewsLive();
+  const what=fields.map(f=>_REP_PROP_WORD[f]).join(' · ');
+  showToast(what+'\n'+(scope==='one'?'이 날짜만 바꿨어요':scope==='future'?'이 날짜부터 앞으로 바꿨어요':'반복 전체에 바꿨어요'));
+  return n;
 }
 function _dayKeyAfter(k){
   const[y,m,d]=k.split('-').map(Number);

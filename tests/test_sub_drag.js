@@ -6,7 +6,10 @@ const SRC = slice('function _subReorder(type,secId,idx,from,to){', 'function _sd
 const subs = ['하나', '둘', '셋'].map(text => ({ text }));
 const arr = [{ text: '부모', subs }];
 let saves = 0;
-const env = { _subsOf: it => (it && Array.isArray(it.subs)) ? it.subs : [], _taskArrOf: () => arr, beforeSave() {}, save() { saves++; } };
+// 반복 할일이면 순서 바꾼 것을 다른 날에도 퍼뜨릴지 묻는다(_repPropBegin/_repPropSoon, tests/test_repeat_props.js) — 여기선 몇 번 불렸는지만 센다
+let asks = 0;
+const env = { _subsOf: it => (it && Array.isArray(it.subs)) ? it.subs : [], _taskArrOf: () => arr, beforeSave() {}, save() { saves++; },
+  _repPropBegin() {}, _repPropSoon() { asks++; } };
 const n = Object.keys(env);
 const _subReorder = new Function(...n, SRC + '\nreturn _subReorder;')(...n.map(k => env[k]));
 const now = () => subs.map(s => s.text);
@@ -24,4 +27,5 @@ sc.eq('없는 줄', _subReorder('big', 'am', 0, 5, 0), false);
 sc.eq('없는 부모', _subReorder('big', 'am', 9, 0, 1), false);
 sc.eq('순서 그대로', now(), ['둘', '하나', '셋']);
 sc.eq('저장 안 함', saves, before);
+sc.eq('안 옮겼으면 묻지도 않는다 (옮긴 두 번만)', asks, 2);
 sc.done();
