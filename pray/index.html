@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1030-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1102-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1030-5';
+const APP_VERSION = 'v. 26-1102-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2353,6 +2353,7 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .lfoot .ghost{flex:1;height:48px;border-radius:24px}
 .lfoot .cta{flex:2;margin:0;height:48px}
 .lfoot .lf-shelf{flex:0 0 auto;padding:0 18px;color:var(--tx2)}
+.lfoot .lf-del{flex:0 0 auto;padding:0 18px;color:#e5655b;border-color:rgba(229,101,91,.55)}
 .search{margin:8px 20px 2px;display:flex;align-items:center;gap:8px;height:42px;padding:0 12px;border-radius:12px;background:var(--s1);color:var(--tx3)}
 .search input{flex:1;border:0;background:transparent;outline:none;font-size:15px}
 
@@ -3941,7 +3942,7 @@ function fillLayer(el, L) {
   el.innerHTML = '<div class="lhead">' + (r.menu ? '<button class="ib" data-a="' + r.menu + '" aria-label="메뉴">' + ico('dots') + '</button>' : '<span style="width:44px"></span>') +
     '<div class="lh-title">' + esc(r.title) + '</div><button class="ib lh-x" data-a="pop" aria-label="닫기">' + ico('x') + '</button></div>' +
     '<div class="lbody">' + r.body + '</div>' +
-    (L.snap ? '<div class="lfoot"><button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button>' +
+    (L.snap ? '<div class="lfoot">' + (L.type === 'target' && findT(DB, L.id) ? '<button class="ghost lf-del" data-a="target-del">삭제</button>' : '') + '<button class="ghost" data-a="layer-cancel">취소</button><button class="cta" data-a="layer-ok">확인</button>' +
       (L.type === 'target' && findT(DB, L.id) && !isShelved(findT(DB, L.id)) ? '<button class="ghost lf-shelf" data-a="shelve-target" data-id="' + L.id + '">보관</button>' : '') + '</div>' : r.foot ? '<div class="lfoot">' + r.foot + '</div>' : '');
   const nb = el.querySelector('.lbody'); if (nb) nb.scrollTop = top;
 }
@@ -5458,6 +5459,11 @@ ACT['join-group'] = el => {
   if (!opts.length) { toast('먼저 지도에서 그룹을 만들어 주세요'); return; }
   choose(p.name + ' — 그룹에 넣기', opts, '', v => { const g = findG(DB, v); if (!g) return; g.lines.push({ id: uid(), segs: [[p.id]], r: {}, text: '' }); save(); refresh(); toast(g.name + ' 에 넣었습니다'); });
 };
+// 상세 왼쪽 아래 '삭제' (HB 2026-11-02) — … 메뉴의 지우기와 같다 (되돌리기 토스트)
+ACT['target-del'] = () => {
+  const L = UI.layers[UI.layers.length - 1]; const t = L && findT(DB, L.id); if (!t) return;
+  popLayer(); withUndo(t.name + ' 을(를) 지웠습니다', () => removeTarget(DB, t.id));
+};
 ACT['target-menu'] = () => {
   const L = UI.layers[UI.layers.length - 1]; const t = findT(DB, L.id); if (!t) return;
   choose(t.name, [{ v: 'del', label: '지우기', danger: true, desc: '되돌리기를 잠깐 띄웁니다' }], '', v => {
@@ -6771,7 +6777,11 @@ document.addEventListener('focusout', e => {
   const el = e.target;
   if (el && el.dataset && el.dataset.addin && el.value.trim()) {
     if (Date.now() - CHIPTAP < 800 || SHEET) return;   // 칩을 누른 것 · 새 구분 창이 뜬 것이면 그쪽이 넣는다
-    const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, false); return;
+    // 아이패드 '자판 내리기' 단추도 여기로 온다 — 포커스를 잃는 그 순간에 지도를 다시 그리면
+    //   아이폰·아이패드가 화면을 안 바꿔 글만 사라지고 칩 줄이 남았다 (HB 2026-11-02). 칩은 바로 접고, 넣기는 한 박자 뒤에.
+    const v = el.value, gid = el.dataset.addin; el.value = '';
+    const box = el.parentElement && el.parentElement.querySelector('.achips'); if (box) { box.hidden = true; box.innerHTML = ''; }
+    setTimeout(() => mapAddFromInput(gid, v, false), 0); return;
   }
   if (!(el && el.dataset && el.dataset.mapin) || !UI.mapEdit) return;
   if (Date.now() - MADD_DOWN < 700) return;   // 더하기 단추를 누르는 중 — 그 단추가 적고 새로 만든다 (다시 그리면 누른 단추가 사라진다)
