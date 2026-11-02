@@ -192,6 +192,14 @@ console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 
   sc.eq('드러남은 보임/안 보임 둘이 아니라 0~1 연속(rv) — 들어가는 높이에서 온전해지고 그 앞 RW 동안 서서히', /rv\[k\]=cl\(\(lim-\(need\[k\]!=null\?need\[k\]:B\[k\]\.y\+B\[k\]\.h\)\)\/RW\+1,0,1\)/.test(ms) && !/const vis=\{\}/.test(ms), true);
   sc.eq('줄 아래 끝은 줄 상자 기준(세로줄 달린 ⚑ 줄 여백 포함) — 진짜 화면의 맞춤과 같게', /const botOf=k=>\{const r=B\[k\];return r\.bar\?r\.y-r\.bar\.dy\+r\.bar\.h:r\.y\+r\.h;\};/.test(ms), true);
   sc.eq('놓으면 글자 줄의 아래 끝(stops)에 멈춘다 — 20px 반올림 아님', /springTo\(snapH\(h\),'sum'\)/.test(ms) && !/Math\.round\(\(h-minH\)\/_RPM_SNAP\)/.test(ms), true);
+  // v. 26-1102-10 — 가로폭이 바뀔 때도 같은 결
+  const fo = slice('const _RPF_UNITS=', 'function _rpFoldFitAll(');
+  sc.eq('가로폭: 맞춘 직후 새로 보이는 조각은 제자리에서 나타나고 사라진 조각은 복제본이 옅어진다', /kind:'in'/.test(fo) && /kind:'out'/.test(fo) && /\{opacity:0\},\{opacity:1\}\],\{duration:200/.test(fo) && /\{opacity:1\},\{opacity:0\}\],\{duration:140/.test(fo), true);
+  sc.eq('가로폭: 모양이 갈려 크게(40px↑) 옮겨진 조각은 옛 자리에서 옅어지며 새 자리에서 나타난다 — 조금씩 이어 바뀌는 것은 안 건드림', /Math\.abs\(o\.x-b\.x\)>40\|\|Math\.abs\(o\.y-b\.y\)>40/.test(fo) && /kind:'jump'/.test(fo), true);
+  sc.eq('가로폭: 조각은 DOM 노드 자체가 열쇠(모양이 갈리면 노드가 달라 저절로 맞바뀜) · 묶음 안 조각은 따로 안 함', /old\.m\.get\(n\)/.test(fo) && /nested=true/.test(fo), true);
+  sc.eq('가로폭: 높이가 6px 넘게 달라지면 위젯 상자를 스르륵(.24s)', /Math\.abs\(nh-old\.h\)>=6/.test(fo) && /\{duration:240,easing:'cubic-bezier\(\.22,\.8,\.24,1\)'\}/.test(fo), true);
+  sc.eq('가로폭: 처음 그릴 때 · 움직임 판 · 측정 사본 · 모션 줄이기에서는 효과를 건너뛴다', /!old\|\|!w\|\|!el\.animate\|\|_rpMorphNow\|\|w\.classList\.contains\('rpf-morphing'\)\|\|w\.classList\.contains\('rpf-meas'\)\|\|_tfQuiet\(\)/.test(fo), true);
+  sc.eq('복제본은 한 줄 안에서 줄바꿈 금지', /white-space:nowrap;/.test(fo), true);
   sc.eq('불투명도만 뭉근하게(.14s) · 끝낼 땐 전환이 끝난 뒤 갈아끼움(170ms)', /\.rpf-morph \.rpf-m,\.rpf-morph \.rpf-mbar\{transition:opacity \.14s linear;\}/.test(SRC) && /setTimeout\(\(\)=>finish\(state,target\),170\)/.test(ms) && /if\(fin\)return;fin=true;/.test(ms), true);
 }
 
