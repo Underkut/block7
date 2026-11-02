@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-12  [production]  -->
+<!-- BLOCK7  v. 26-1102-13  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6971,7 +6971,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-12";
+const APP_VERSION = "v. 26-1102-13";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -39652,8 +39652,7 @@ function makeBigItem(id,i,b,secColor){
   del.title='삭제';
   del.onclick=e=>{
     e.stopPropagation();
-    const kk=tKey();beforeSave();const removed=getBigs(kk,id).splice(i,1)[0];
-    sendToTrash(kk,'big',id,removed);save();renderSecBody(id);updateTotal();refreshTaskViewsLive();
+    _taskDeleteAt('big',id,i);   // 반복 할일이면 "어디까지 지울까" 를 먼저 묻는다 — 밀어 지우기 · 메뉴와 같은 길 (v. 26-1102-13)
   };
 
   div.append(chk,dh,urgentBadge,flagBadge,contactTaskBadge,
@@ -39880,8 +39879,7 @@ function makeSmItem(id,i,sm,secColor){
   const del=document.createElement('button');del.className='blk-del';del.textContent='×';
   del.onclick=e=>{
     e.stopPropagation();
-    const kk=tKey();beforeSave();const removed=getSmalls(kk,id).splice(i,1)[0];
-    sendToTrash(kk,'small',id,removed);save();renderSmList(id,secColor);updateSmCnt(id);refreshTaskViewsLive();
+    _taskDeleteAt('small',id,i);   // 반복 할일이면 "어디까지 지울까" 를 먼저 묻는다 (v. 26-1102-13)
   };
   div.append(del);
 
