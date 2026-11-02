@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -796,7 +796,7 @@ header{
   -webkit-tap-highlight-color:transparent;}
 .gnb-bible svg{width:16px;height:16px;display:block;}
 .gnb-there:hover,.gnb-bible:hover{color:var(--tx);}
-/* GNB 마우스 올림 — 모두 진해진다 (v. 26-1102-5, HB). 예전엔 There · 성경만 그랬다.
+/* GNB 마우스 올림 — 모두 진해진다 (v. 26-1102-6, HB). 예전엔 There · 성경만 그랬다.
    강조색은 '지금 고른 것 · 오늘' 의 뜻이라 마우스 올림에는 쓰지 않는다. 이미 강조색인 것(지금 탭 · 오늘 날짜 · 로고 7)은 그대로.
    ⚠️ 마우스가 있는 기기에서만 — 손가락 화면은 한 번 누른 색이 굳는다 (CLAUDE.md, .vl-sort-toggle 참고) */
 @media (hover:hover){
@@ -6927,7 +6927,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-5";
+const APP_VERSION = "v. 26-1102-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -37957,7 +37957,7 @@ function _makeSubRow(type,secId,idx,j,sub){
   _wireSubDrag(row,type,secId,idx,j);
   row.addEventListener('contextmenu',e=>{
     // 고치는 중인 하위 칸의 우클릭은 브라우저 메뉴(붙여넣기) 몫 (1101-E1)
-    if(e.target&&e.target.matches&&e.target.matches('.sub-inp')&&document.activeElement===e.target){e.stopPropagation();return;}
+    if(_rcKeepNative(e)){e.stopPropagation();return;}
     e.preventDefault();e.stopPropagation();
     if(_SDR.active)return;
     openSubRowMenu(type,secId,idx,j,{x:e.clientX,y:e.clientY});
@@ -39962,8 +39962,9 @@ function attachDrag(el,type,i,id){
   // ── Desktop: right-click → task move context menu ──
   el.addEventListener('contextmenu',e=>{
     // 고치는 중인 칸의 우클릭은 브라우저 메뉴(붙여넣기 · 맞춤법) 몫이다 (1101-E1)
-    const ae=document.activeElement;
-    if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA')&&el.contains(ae)&&e.target&&(e.target===ae||ae.contains(e.target)))return;
+    // ⚠️ 우클릭은 누르는 순간 그 칸에 포커스를 준다 → '지금 포커스' 로 판정하면 늘 브라우저 메뉴가 뜬다.
+    //    우클릭 **전부터** 고치던 칸이었는지(_rcKeepNative)로 가른다.
+    if(_rcKeepNative(e)&&el.contains(e.target))return;
     // Existing task text uses the same move menu as the rest of the row.
     // Letting inputs fall through to the browser selected a word and hid our menu.
     e.preventDefault();
@@ -41111,6 +41112,14 @@ function _txEditEl(){
   const ok=t==='TEXTAREA'||a.isContentEditable||(t==='INPUT'&&/^(text|search|url|email|tel|)$/i.test(a.getAttribute('type')||''));
   if(!ok)return null;
   return a.closest('#pageWrap')?a:null;
+}
+// 우클릭 직전에 이미 고치고 있던 칸을 기억한다 — 마우스 오른쪽 버튼도 누르는 순간 포커스를 옮기므로,
+// contextmenu 시점의 activeElement 는 '방금 누른 칸' 이라 고치던 칸과 구분이 안 된다 (글자 위 우클릭에 크롬 메뉴가 뜨던 까닭).
+let _rcPrev=null;
+window.addEventListener('mousedown',e=>{_rcPrev=e.button===2?document.activeElement:null;},true);
+function _rcKeepNative(e){
+  const ae=document.activeElement,t=e&&e.target;
+  return !!(ae&&t&&_rcPrev===ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA')&&(t===ae||ae.contains(t)));
 }
 function _txeZone(t){return !!(t&&t.closest&&t.closest('#pageWrap,body>header,#verseBarWrap'));}
 const _TXE={gest:false,ed:null,mv:false,after:new Map()};
