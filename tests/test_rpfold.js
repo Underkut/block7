@@ -199,6 +199,7 @@ console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 
   sc.eq('가로폭: 조각은 DOM 노드 자체가 열쇠(모양이 갈리면 노드가 달라 저절로 맞바뀜) · 묶음 안 조각은 따로 안 함', /old\.m\.get\(n\)/.test(fo) && /nested=true/.test(fo), true);
   sc.eq('가로폭: 높이가 6px 넘게 달라지면 위젯 상자를 스르륵(.24s)', /Math\.abs\(nh-old\.h\)>=6/.test(fo) && /\{duration:240,easing:'cubic-bezier\(\.22,\.8,\.24,1\)'\}/.test(fo), true);
   sc.eq('가로폭: 처음 그릴 때 · 움직임 판 · 측정 사본 · 모션 줄이기에서는 효과를 건너뛴다', /!old\|\|!w\|\|!el\.animate\|\|_rpMorphNow\|\|w\.classList\.contains\('rpf-morphing'\)\|\|w\.classList\.contains\('rpf-meas'\)\|\|_tfQuiet\(\)/.test(fo), true);
+  sc.eq('복제본(.rpf-ghost)은 조각으로 다시 세지 않는다 — 세면 복제본이 사라질 때 또 복제본이 생기는 연쇄로 끄는 내내 번쩍인다', /n\.closest\('\[hidden\],\.rpf-ghost'\)/.test(fo), true);
   sc.eq('복제본은 한 줄 안에서 줄바꿈 금지', /white-space:nowrap;/.test(fo), true);
   sc.eq('불투명도만 뭉근하게(.14s) · 끝낼 땐 전환이 끝난 뒤 갈아끼움(170ms)', /\.rpf-morph \.rpf-m,\.rpf-morph \.rpf-mbar\{transition:opacity \.14s linear;\}/.test(SRC) && /setTimeout\(\(\)=>finish\(state,target\),170\)/.test(ms) && /if\(fin\)return;fin=true;/.test(ms), true);
 }

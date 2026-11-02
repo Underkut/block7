@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-10  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-11  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6939,7 +6939,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-10";
+const APP_VERSION = "v. 26-1102-11";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34863,7 +34863,7 @@ function _rpfScan(el){
   const ce=sum?el.querySelector('.rpf-cols'):null,cb=ce&&ce.getClientRects().length?ce.getBoundingClientRect():null;
   const fixed=sum&&el.classList.contains('rpf-fixed');
   el.querySelectorAll(_RPF_UNITS[sum?'sum':'line']).forEach(n=>{
-    if(n.closest('[hidden]')||!n.getClientRects().length)return;
+    if(n.closest('[hidden],.rpf-ghost')||!n.getClientRects().length)return;   // ⚠️ 옅어지는 복제본(.rpf-ghost)은 세지 않는다 — 세면 복제본이 '새로 나타난 조각'이 되고, 사라질 때 또 복제본이 생겨 폭을 바꾸는 내내 번쩍인다
     const r=n.getBoundingClientRect();
     if(r.width<1&&r.height<1)return;
     if(cb&&n.closest('.rpf-cols')&&r.top>=cb.bottom-1)return;   // 날 칸 그리드에서 둘째 줄(높이 0)로 밀려 안 보이는 칸
