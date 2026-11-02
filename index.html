@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-14  [production]  -->
+<!-- BLOCK7  v. 26-1102-15  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -2074,6 +2074,7 @@ html[data-theme="light"] .qk-dots b{background:#e0432f;}
 .srch-act-list button,.srch-act-li{display:flex;align-items:center;gap:10px;width:100%;padding:12px 14px;background:none;border:0;border-top:1px solid var(--s2);color:var(--tx);font-family:inherit;font-size:14px;text-align:left;cursor:pointer;position:relative;}
 .srch-act-list>:first-child{border-top:0;}
 .srch-act-list button>span,.srch-act-li>span{flex:1;min-width:0;}
+.srch-act-list .srch-ri{display:flex;width:18px;flex:none;align-items:center;justify-content:center;color:var(--tx2);}
 .srch-act-list button em{font-style:normal;font-size:12px;color:var(--tx3);white-space:nowrap;}
 .srch-act-list button.danger{color:var(--ov);}
 .srch-act-list button.back{color:var(--tx2);font-size:13px;}
@@ -6984,7 +6985,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-14";
+const APP_VERSION = "v. 26-1102-15";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26342,7 +26343,8 @@ const SRCH_HOW=[
   ['롬12','로마서 12장 말씀 · 성경 본문으로'],
   ['#기도','그 태그가 붙은 말씀'],
   ['@김OO','그 사람이 적힌 할일 · 일정 (연락처 이름으로도)'],
-  ['11월 · 다음 주 연락','그 기간에서만 (앞이나 뒤에 붙여요)']
+  ['다음 주 연락','다음 주에 있는 \'연락\' 할일 · 일정만'],
+  ['11월','11월의 할일 · 일정 모두 (오늘 · 내일 · 이번 달도 돼요)']
 ];
 // 바로 모아 보기 — 검색어 없이 고르는 묶음
 // 아이콘은 실제 화면의 것을 그대로 — 깃발 = 할일행 깃발(빨강) · 밀림 = 할일행 오른쪽 빨간 점 둘 · 일정 = 구글 파랑 (v. 26-1031-12, HB)
@@ -26351,9 +26353,9 @@ const SRCH_CARRY_MIN_DEFAULT=3;
 function _srchCarryMin(set){const n=parseInt(set&&set.srchCarryMin,10);return n>=1&&n<=30?n:SRCH_CARRY_MIN_DEFAULT;}
 const SRCH_QUICK=[
   {id:'flag',   label:'중요 할일',  icon:'<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V3.5"/><path d="M5 4 14.5 4 12 7.5 14.5 11 5 11Z" fill="currentColor" stroke="none"/></svg>'},
-  {id:'contact',label:'연락할 일',  icon:'☎'},
+  {id:'contact',label:'연락할 일',  icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="#34a853" stroke="none" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>'},
   {id:'carry',  label:'밀린 할일',  icon:'<span class="qk-dots" aria-hidden="true"><b></b><b></b></span>',hint:'carry'},
-  {id:'weekEv', label:'이번 주 일정', icon:'◷'}
+  {id:'weekEv', label:'이번 주 일정', icon:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>'}
 ];
 function _srchQuickLabel(x,set){return x.id==='carry'?x.label+' ('+_srchCarryMin(set)+'번 이상)':x.label;}
 function _srchQuickTask(id,it,carryMin){
@@ -26550,18 +26552,23 @@ function _srchWeekOff(today,k){
 // 결과 할일이 D뷰 위 거르기 단추에 가려지는가 — 보이려면 무엇을 바꿔야 하나 (v. 26-1031-10, HB). 화면 · 저장을 안 건드린다.
 //   marker: 깃발만 · 연락만 보기를 풀어야 함 (taskMarkerFilterPass 와 같은 잣대)
 //   showDone: 완료한 할일 숨기기를 꺼야 함(✓ 단추를 눌러 둔 상태로) · showDoneBtn: 그 ✓ 단추가 설정에서 꺼져 있어 함께 꺼낸다
-function _srchFilterFix(it,preset,set){
+function _srchFilterFix(it,preset,set,type){
   const fix={};
   if(!it||typeof it!=='object')return fix;
   if(preset==='flagFilter'&&!it.flag)fix.marker='flag';
   else if(preset==='contactFilter'&&!it.contactTask)fix.marker='contact';
+  // 푼 거르기의 단추가 설정에서 꺼져 있으면 함께 꺼내 둔다 — 다시 걸고 싶을 때 누를 곳이 있어야 한다 (v. 26-1102-15, HB 11-②)
+  if(fix.marker==='flag'&&set&&set.showFlagFilterBtn!==true)fix.markerBtn=true;
+  if(fix.marker==='contact'&&set&&set.showContactFilterBtn!==true)fix.markerBtn=true;
+  // 스몰 블럭이 꺼져 있으면 스몰 목록이 통째로 숨는다 — 스몰 할일은 켜야 보인다 (11-①)
+  if(type==='small'&&set&&!set.showSmallBlocks)fix.smallOn=true;
   if(it.done&&set&&set.showCompletedTasks===false){
     fix.showDone=true;
     if(set.showCompletedBtn===false)fix.showDoneBtn=true;
   }
   return fix;
 }
-// 결과 할일 · 일정 정렬 (v. 26-1102-14, HB) — 화면 · 저장을 안 건드린다. 새 배열을 돌려준다.
+// 결과 할일 · 일정 정렬 (v. 26-1102-15, HB) — 화면 · 저장을 안 건드린다. 새 배열을 돌려준다.
 //   todo  ToDo배치순(기본): 가까운 날부터(앞으로가 같은 거리의 지난 날보다 먼저), 그 날 안은 할일뷰 차례 = 구간 → 빅 → 스몰 → 줄 → 하위
 //   ct    처음등록순 / ctDesc 최신등록순: 만든 시각(ct). ct 가 없는 예전 할일은 그보다 앞(오래된 것)이고, 그들끼리는 날짜 → 배치 순
 //   near  가까운 날짜순 (예전 기본 — 같은 날 안은 구간 구분 없이 줄 번호) · abc ㄱㄴㄷ순 (글자, 같으면 배치순)
@@ -26590,7 +26597,10 @@ function _srchSort(list,mode,secOrder){
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
 // .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
-const _srch={swAt:0,sort:'',ctLast:'',qOpen:{},hq:'',histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
+// 바로 모아 보기 펼침 상태는 이 기기에 기억한다 (v. 26-1102-15, HB 11-⑤) — 검색을 닫았다 열어도 앱을 다시 켜도 그대로
+function _srchQOpenLoad(){try{const o=JSON.parse(localStorage.getItem(_lsk('srchQOpen'))||'{}'),r={};if(o&&typeof o==='object')Object.keys(o).forEach(k=>{if(o[k]===true)r[k]=true;});return r;}catch(e){return{};}}
+function _srchQOpenSave(){try{localStorage.setItem(_lsk('srchQOpen'),JSON.stringify(_srch.qOpen));}catch(e){}}
+const _srch={swAt:0,sort:'',ctLast:'',qOpen:_srchQOpenLoad(),hq:'',histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
 const SRCH_RECENT_MAX=8;
 function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
 function _srchRemember(q,auto){
@@ -26657,7 +26667,7 @@ function _srchResult(){
   r.tasks=_srchSort(r.tasks,m,order);r.events=_srchSort(r.events,m,order);
   return r;
 }
-// 정렬 — 이 기기에만 기억 (v. 26-1102-14). 'ct' 단추는 누를 때마다 처음 ⇄ 최신
+// 정렬 — 이 기기에만 기억 (v. 26-1102-15). 'ct' 단추는 누를 때마다 처음 ⇄ 최신
 function _srchSortGet(){try{const v=localStorage.getItem(_lsk('srchSort'));return v==='ct'||v==='ctDesc'||SRCH_SORTS.includes(v)?v:'todo';}catch(e){return 'todo';}}
 function _srchSortMode(){if(!_srch.sort)_srch.sort=_srchSortGet();return _srch.sort;}
 function _srchSetSort(k){
@@ -26845,14 +26855,14 @@ function _srchQuickToggle(id){
   const ease='cubic-bezier(.22,.8,.24,1)';
   if(wasOpen){
     const el=body.querySelector('[data-qbody="'+id+'"]');
-    const done=()=>{delete _srch.qOpen[id];_srchRender(true);};
+    const done=()=>{delete _srch.qOpen[id];_srchQOpenSave();_srchRender(true);};
     if(!el||quiet||!el.animate){done();return;}
     const btn=body.querySelector('[data-qtog="'+id+'"]');if(btn)btn.classList.remove('open');
     const a=el.animate([{height:el.offsetHeight+'px',opacity:1},{height:'0px',opacity:0}],{duration:240,easing:ease});
     a.onfinish=done;
     return;
   }
-  _srch.qOpen[id]=true;
+  _srch.qOpen[id]=true;_srchQOpenSave();
   _srchRender(true);
   const el=body.querySelector('[data-qbody="'+id+'"]');
   if(el&&!quiet&&el.animate)el.animate([{height:'0px',opacity:0},{height:el.offsetHeight+'px',opacity:1}],{duration:300,easing:ease});
@@ -26892,13 +26902,21 @@ function _srchGoTask(r){
 function _srchUnfilter(r){
   const it=r.item,notes=[];
   if(!it)return notes;
-  const fix=_srchFilterFix(it,ST.preset,ST.settings||{});
+  const fix=_srchFilterFix(it,ST.preset,ST.settings||{},r.type);
   const openSub=r.kind==='sub'&&_subStat(it).n>0&&!it.subOpen;
-  if(!fix.marker&&!fix.showDone&&!openSub)return notes;
+  if(!fix.marker&&!fix.showDone&&!fix.smallOn&&!openSub)return notes;
   beforeSave();
   if(fix.marker){
     ST.preset=null;   // 깃발 · 연락 거르기만 푼다(단추를 다시 누른 것과 같다) — 구간 보기(A · ★ …)일 때는 여기 안 온다
     notes.push((fix.marker==='flag'?'깃발만':'연락할 일만')+' 보기를 풀었어요');
+    if(fix.markerBtn){
+      ST.settings[fix.marker==='flag'?'showFlagFilterBtn':'showContactFilterBtn']=true;
+      notes.push((fix.marker==='flag'?'깃발':'연락처')+' 단추도 꺼내 두었어요\n(설정 › 보기 › 위 단추)');
+    }
+  }
+  if(fix.smallOn){
+    ST.settings.showSmallBlocks=true;
+    notes.push('스몰 블럭도 보이게 켰어요\n(설정 › 보기)');
   }
   if(fix.showDone){
     ST.settings.showCompletedTasks=true;
@@ -27006,6 +27024,7 @@ function _srchToggleDone(r,rowEl){
 // ⚠️ 동작은 D뷰 할일 메뉴의 함수를 **그대로** 부른다. 그 함수들은 '지금 보는 날(viewDate)' 과 _taskMenuCtx 를
 //    기준으로 돈다 → 부르는 동안만 결과의 날짜로 맞췄다가 곧장 되돌린다(_srchWithTask). 범위를 묻는 반복 할일은
 //    물을 때 날짜를 붙잡아 두므로(_repScopeAsk · _repMoveAsk) 되돌린 뒤에 골라도 그 날짜 것이 바뀐다.
+const _SRCH_RI={date:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',sec:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="4.5" height="14" rx="1.5"/><rect x="9.75" y="5" width="4.5" height="14" rx="1.5"/><rect x="16" y="5" width="4.5" height="14" rx="1.5"/></svg>',flag:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 20V4"/><path d="M6 5h11l-3 4 3 4H6" fill="#e8503f" stroke="#e8503f"/></svg>',urgent:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 19v-6a6 6 0 0 1 12 0v6"/><path d="M4 19h16M12 3v2M4.5 6.5l1.5 1.5M19.5 6.5 18 8" stroke="#e8503f"/><path d="M6 19v-6a6 6 0 0 1 12 0v6" stroke="#e8503f"/></svg>',memo:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M9 11h7M9 15h7"/></svg>',dup:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5V6.2a2 2 0 0 0-2-2H6.2a2 2 0 0 0-2 2v7.3a2 2 0 0 0 2 2h2.3"/></svg>',del:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5.5M14 11v5.5"/></svg>'};
 const _SRCH_IC={
   ok:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5l3.9 3.9L16 5.3"/></svg>',
   tel:'<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h3l1.5 4-2 1.5a11 11 0 0 0 4.5 4.5l1.5-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5C8.5 17 3 11.5 2.5 5.1A1.5 1.5 0 0 1 4 3.5z"/></svg>',
@@ -27036,7 +27055,7 @@ function _srchActDraw(){
   const {hit}=A,r=hit.r;
   const head='<div class="srch-act-row">'+(hit.k==='tasks'?_srchTaskHTML(r,-1):hit.k==='events'?_srchEventHTML(r,-1):_srchVerseHTML(r,-1,hit.k==='props'))+'</div>';
   const B=(id,cls,ic,label,dis)=>'<button type="button" class="'+cls+'" data-a="'+id+'"'+(dis?' disabled':'')+'><i>'+ic+'</i><span>'+esc(label)+'</span></button>';
-  const R=(id,label,hint,cls,extra)=>'<button type="button" data-a="'+id+'"'+(cls?' class="'+cls+'"':'')+'><span>'+esc(label)+'</span>'+(hint?'<em>'+esc(hint)+'</em>':'')+(extra||'')+'</button>';
+  const R=(id,label,hint,cls,extra)=>'<button type="button" data-a="'+id+'"'+(cls?' class="'+cls+'"':'')+'>'+(_SRCH_RI[id]?'<i class="srch-ri">'+_SRCH_RI[id]+'</i>':'')+'<span>'+esc(label)+'</span>'+(hint?'<em>'+esc(hint)+'</em>':'')+(extra||'')+'</button>';
   let html=head;
   if(hit.k==='tasks'){
     const it=r.item,sub=r.kind==='sub';
@@ -27063,8 +27082,8 @@ function _srchActDraw(){
         html+='<div class="srch-act-list">'+
           R('date','날짜 옮기기…',_srchDayTxt(r.k))+
           R('sec','구간 옮기기…',sec.name||'')+
-          R('flag',it.flag?'⚑ 중요 끄기':'⚑ 중요 켜기')+
-          R('urgent',it.urgent?'! 긴급 끄기':'! 긴급 켜기')+
+          R('flag',it.flag?'중요 끄기':'중요 켜기')+
+          R('urgent',it.urgent?'긴급 끄기':'긴급 켜기')+
           (ct?R('sms','문자 보내기',ct.name):'')+
           R('memo',it.memo&&String(it.memo).trim()?'메모 보기 · 쓰기':'메모 쓰기')+
           R('dup','복제','같은 날에 하나 더')+
@@ -27147,7 +27166,7 @@ function _srchActDate(val){
   _srchActDone();
 }
 // 길게 누르기(손가락) · 오른쪽 누르기(마우스) — 결과 줄에서만. 한 번만 단다.
-// ── 결과 할일 밀기 (v. 26-1102-14, HB) — 오른쪽 → 완료(완료면 풀기) · 왼쪽 → 삭제 ──
+// ── 결과 할일 밀기 (v. 26-1102-15, HB) — 오른쪽 → 완료(완료면 풀기) · 왼쪽 → 삭제 ──
 // 손가락을 따라간다. 폭의 30%(최소 72px)를 넘기거나 빠르게 튕기면(40px · 250ms 안) 넘어가고, 못 미치면 제자리로.
 // 하위 할일은 지우는 길이 따로라 왼쪽은 고무줄처럼 뻑뻑하게만. 세로로 먼저 움직이면 스크롤에 맡긴다.
 // 동작은 동그라미(_srchToggleDone) · 메뉴 삭제(_taskDeleteAt)와 같은 함수 — 새 저장 길이 없다.
@@ -37794,7 +37813,7 @@ function _subsCopy(item,keepDone){
   return a.map(s=>({text:String((s&&s.text)||''),done:keepDone?!!(s&&s.done):false}));
 }
 function _carryTaskExtras(src,dst,keepDone){
-  // 만든 시각(ct)은 '같은 할일' 이 날짜만 바뀐 것(옮기기 · 이월 · 반복 회차)이면 물려받는다. 복제는 _freshTaskCopy 가 새로 찍는다 (v. 26-1102-14)
+  // 만든 시각(ct)은 '같은 할일' 이 날짜만 바뀐 것(옮기기 · 이월 · 반복 회차)이면 물려받는다. 복제는 _freshTaskCopy 가 새로 찍는다 (v. 26-1102-15)
   if(src&&src.ct)dst.ct=src.ct;
   const subs=_subsCopy(src,keepDone);
   if(subs)dst.subs=subs;
@@ -44156,7 +44175,7 @@ function toggleUrgentRank(){
 }
 
 // 새로 적는 할일 — 글에 '@' 가 들어 있으면 처음부터 '연락할 일' 로 표시한다 (고치는 경우는 아래 _autoContactMark).
-// 만든 시각 ct (ms) — 검색 '처음/최신 등록순' 이 본다 (v. 26-1102-14, HB). 이전 할일에는 없다(없으면 '오래된 것' 으로 친다).
+// 만든 시각 ct (ms) — 검색 '처음/최신 등록순' 이 본다 (v. 26-1102-15, HB). 이전 할일에는 없다(없으면 '오래된 것' 으로 친다).
 function _ctNow(it){if(it&&!it.ct)it.ct=Date.now();return it;}
 function _newTask(text){
   const it={text:text,done:false,ct:Date.now()};

@@ -78,7 +78,7 @@ const SHOT = process.env.SHOT || '';
   // 5-1 ㄴ (v. 26-1031-13) — 이렇게도 찾아져요 · 기간 · 성경 장절 · @이름
   await p.evaluate(() => { _srchClear(); });
   s = await p.evaluate(() => [...document.querySelectorAll('.srch-how b')].map(x => x.textContent));
-  ok('첫 화면에 "이렇게도 찾아져요" 네 줄', s.length === 4 && s[0] === '롬12', s);
+  ok('첫 화면에 "이렇게도 찾아져요" 다섯 줄', s.length === 5 && s[0] === '롬12', s);
   if (SHOT) await p.screenshot({ path: SHOT + '/srch-how.png' });
   const q = async t => { await p.evaluate(t => { const i = document.getElementById('srchInput'); i.value = t; _srchInput(t); }, t); await p.waitForTimeout(300); };
   await p.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 7 - d.getDay() + 1); const k = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); getBigs(k, 'am').push({ text: '다음주 할일 연락' }); window.__kn = k; save(); });
