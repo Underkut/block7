@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1024-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1102-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -727,7 +727,7 @@ body.pdark .verb{color:#8a8f99}.pr-top .verb{width:auto;height:auto;display:bloc
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1024-2";
+const APP_VERSION = "v. 26-1102-1";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2725,6 +2725,41 @@ $('pnav').addEventListener('click', e => { const b = e.target.closest('button');
 $('mirBar').addEventListener('click', e => { const b = e.target.closest('button'); if(!b) return;
   if(b.dataset.k){ PAR.sel = b.dataset.k; mirrorOn(); }
   else if(b.dataset.v){ goTab(b.dataset.v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x===b)); } });
+/* 아이 화면(보기만) — 홈 · 계획세우기 · 돌아보기를 좌우로 밀어 오간다. 손가락을 따라 움직이고, 놓으면 이어서 넘어간다 */
+const MIR_TABS = ['vHome','vAlloc','vLog'];
+function mirSetTab(v){ goTab(v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x.dataset.v===v)); }
+(() => { const el = $('app'); let sx = 0, sy = 0, on = false, lock = false, st = 0, busy = false;
+  const cur = () => document.querySelector('.view.on'), W = () => el.clientWidth || 360;
+  const idx = () => { const c = cur(); return c ? MIR_TABS.indexOf(c.id) : -1; };
+  const can = k => { const i = idx(); return i >= 0 && i+k >= 0 && i+k < MIR_TABS.length; };
+  const follow = x => { const c = cur(); if(!c) return; const px = x * (can(x < 0 ? 1 : -1) ? 1 : .22);      // 더 갈 데 없는 쪽은 고무줄처럼
+    c.style.transition = 'none'; c.style.transform = `translateX(${px}px)`; c.style.opacity = 1 - Math.min(Math.abs(px) / W(), .55); };
+  const release = () => { const c = cur(); if(!c) return; c.style.transition = `transform .26s ${PEASE},opacity .26s`; c.style.transform = ''; c.style.opacity = '';
+    setTimeout(() => { c.style.transition = ''; }, 280); };
+  function transit(k, x0){        // k=+1 앞(오른쪽 탭): 나가는 판은 왼쪽으로, 새 판은 오른쪽에서 들어온다
+    const c = cur(), v = MIR_TABS[idx()+k];
+    if(parStill() || !c.animate){ c.style.transform = c.style.opacity = c.style.transition = ''; mirSetTab(v); return; }
+    busy = true; const op0 = 1 - Math.min(Math.abs(x0) / W(), .55);
+    c.style.transition = 'none'; c.style.transform = ''; c.style.opacity = '';
+    c.animate([{opacity:op0, transform:`translateX(${x0}px)`}, {opacity:0, transform:`translateX(${-k*W()}px)`}], {duration:150, easing:'ease-in', fill:'forwards'});
+    setTimeout(() => { mirSetTab(v); const n = cur(); n.style.animation = 'none';
+      n.animate([{opacity:0, transform:`translateX(${k*W()}px)`}, {opacity:1, transform:'none'}], {duration:300, easing:PEASE}).onfinish = () => { n.style.animation = ''; };
+      busy = false; }, 150);
+  }
+  el.addEventListener('touchstart', e => { const t = e.touches[0];
+    on = !!MIR && document.body.classList.contains('mirror') && e.touches.length===1 && !busy && idx() >= 0 && !e.target.closest('.gtabs, .cxpick, .w-emo, input, textarea');
+    lock = false; sx = t.clientX; sy = t.clientY; st = Date.now(); }, {passive:true});
+  el.addEventListener('touchmove', e => { if(!on) return; const t = e.touches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if(!lock){ if(Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)){ on = false; return; }     // 세로 = 스크롤
+      if(Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)*1.2) lock = true; else return; }
+    follow(dx); }, {passive:true});
+  el.addEventListener('touchend', e => { if(!on) return; on = false; if(!lock) return;
+    const t = e.changedTouches[0], x = t.clientX - sx, y = t.clientY - sy, k = x > 0 ? -1 : 1;     // 오른쪽으로 밀면 이전 탭
+    const fast = Math.abs(x) >= 40 && Math.abs(x) / Math.max(1, Date.now() - st) > .5;
+    if(Math.abs(x) < Math.abs(y)*1.2 || (Math.abs(x) < W()*.25 && !fast) || !can(k)){ release(); return; }
+    buzz(6); transit(k, x); }, {passive:true});
+  el.addEventListener('touchcancel', () => { if(lock) release(); on = false; }, {passive:true});
+})();
 // 다른 부모님: 로그인한 뒤 코드로 같은 가족에 들어온다
 async function parentJoin(code){
   try{ await fbLoad(); const u = FB.auth.currentUser; if(!u || u.isAnonymous){ toast('먼저 로그인해 주세요'); return; }
