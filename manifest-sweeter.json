@@ -18,6 +18,12 @@
       "src": "icon-sweeter.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "icon-sweeter.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "launch_handler": {
