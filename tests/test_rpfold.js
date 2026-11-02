@@ -78,7 +78,7 @@ console.log('\n시나리오 4 — 그리는 모양 (v. 26-1031-1: 넓으면 빈�
   sc.eq('요약 넓은 모양: ⚑ 칸', /<span data-k="fl">⚑<\/span> <span data-k="flh">오늘 깃발/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
   const narrow = sum.split('class="rpf-narrow"')[1] || '';
   sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more" data-k="m0">\+3/.test(narrow), true);
-  sc.eq('요약 좁은 모양: ⚑ 하나 + 나머지 수', /A<\/span> <span class="rpf-more" data-k="fm">\+3/.test(narrow), true);
+  sc.eq('요약 좁은 모양: ⚑ 는 한 줄에 하나씩 다 그려 두고(보일 수는 그린 뒤 _rpfFitFlags) 처음엔 하나', /class="rpf-fll" data-n="4" data-cap="1"/.test(narrow) && (narrow.match(/rpf-fbi/g) || []).length === 4, true);
   EV = {}; TK = [];
   sc.eq('일정 없으면 알린다', /다가오는 일정 없음/.test(_rpFoldLineRow('weekly')) && /다가오는 일정 없음/.test(_rpFoldSumHTML('weekly')), true);
   sc.eq('깃발 없으면 ⚑ 를 뺀다', /⚑/.test(_rpFoldSumHTML('weekly')), false);
@@ -145,6 +145,23 @@ console.log('\n시나리오 9 — 한 줄 여백 · 핸들 자리 (v. 26-1031-4,
 {
   sc.eq('한 줄 핸들은 줄을 차지하지 않고 바닥에 얹힌다 (글자 위아래 여백이 같게)', /\.rp-vresize\.rp-vresize-slim\{position:absolute;left:0;right:0;bottom:0;/.test(SRC), true);
   sc.eq('움직이는 동안 핸들은 위젯 바닥에 붙어 손을 따라간다', /\.rp-widget\.rpf-morphing>\.rp-vresize\{position:absolute;/.test(SRC) && /hd\.style\.bottom=lerp\(-2,4,eIO\(P\)\)/.test(SRC), true);
+}
+
+
+console.log('\n시나리오 10 — 요약 ⚑ 목록은 높이만큼 (v. 26-1102-4) · 달성 줄 ⚑숫자 (HB (가))');
+{
+  global.document = global.document || {};
+  eval(slice('function _rpfFitFlags(', 'function _rpFoldFitSum(') + ';globalThis._rpfFitFlags=_rpfFitFlags;');
+  const rows = [0, 1, 2, 3].map(() => { const m = { textContent: '' }; return { hidden: false, querySelector: () => m, m }; });
+  const list = { dataset: { n: '6' }, querySelectorAll: () => rows };
+  _rpfFitFlags(list, 2);
+  sc.eq('앞 둘만 보이고 둘째 끝에 +4', [rows.map(r => r.hidden), rows[1].m.textContent, rows[0].m.textContent], [[false, false, true, true], '+4', '']);
+  _rpfFitFlags(list, 4);
+  sc.eq('넷 다 보이면(그려 둔 것 다) 남은 두 개만 +2', rows[3].m.textContent, '+2');
+  sc.eq('칸 아래 ⚑ 는 처음 둘, 정한 높이면 늘린다', /flList\(2\)/.test(SRC) && /while\(k>1&&below\.getBoundingClientRect\(\)\.bottom>lim\)_rpfFitFlags\(fll,--k\);/.test(SRC), true);
+  const ut = slice('function updateTotal(){', '\n}\n');
+  sc.eq('달성 줄: 남은 중요 할일 ⚑숫자 · 다 끝내면 ⚑✓ · 없으면 안 보임', /fAll=all\.filter\(b=>b\.flag\),fLeft=fAll\.filter\(b=>!b\.done\)\.length/.test(ut) && /fLeft\|\|'✓'/.test(ut) && /fAll\.length\?/.test(ut), true);
+  sc.eq('⚑ 는 n / m 과 띄어 둔다', /\.total-fl\{margin-left:9px;/.test(SRC), true);
 }
 
 sc.done();
