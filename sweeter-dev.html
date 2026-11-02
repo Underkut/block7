@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-11  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-12  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6565,6 +6565,38 @@ html[data-theme="light"] .sw-photo::after{
 /* 발견 — 문장이 곧 내용이다. 본문 글씨체로 또박또박. */
 .sw-cell.insight .sw-val{font-size:14.5px;line-height:1.5;font-weight:400;-webkit-line-clamp:4;}
 .sw-cell.insight .sw-val b{font-weight:700;color:var(--ac-tx);}
+/* 흐름 카드 — 예배 줄 타임라인 (C안, v. 26-1102-12 · _swFlowHTML).
+   점 색 = 성경. 1 = 강조색, 나머지는 **글자색과 섞어** 밝은 판에선 짙게 · 어두운 판에선
+   옅게 저절로 맞춘다 (판 테마마다 따로 정하지 않는다). 점 · 선은 % 자리라 폭이 바뀌어도 그대로. */
+.sw-cell.flow{--swf1:var(--ac);
+  --swf2:color-mix(in srgb,#4fa587 68%,var(--tx));
+  --swf3:color-mix(in srgb,#9a7fd0 68%,var(--tx));
+  --swf4:color-mix(in srgb,#c2a463 68%,var(--tx));}
+.sw-cell.flow{container-type:inline-size;justify-content:flex-start;}
+.sw-cell.flow .sw-kick{margin-bottom:0;}
+.sw-fw{margin-left:7px;font-weight:400;letter-spacing:.02em;color:var(--tx3);}
+.sw-fsay{position:relative;flex-shrink:0;margin-top:3px;font-size:13px;line-height:1.4;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sw-fs-2{display:none;}
+@container (min-width:350px){.sw-fs-2{display:inline;}.sw-fs-1{display:none;}}
+.sw-fsay b{font-weight:600;color:var(--ac-tx);}
+/* 줄 높이는 칸에 맞춰 10~18px — 가장 좁은 폰(360)에선 칸 높이가 92px 뿐이라 10px 까지 줄어든다 */
+.sw-flanes{position:relative;flex:1 1 0;min-height:calc(var(--n,4) * 10px);margin-top:3px;
+  display:grid;grid-template-rows:repeat(var(--n,4),minmax(10px,18px));align-content:center;}
+.sw-fl{display:flex;align-items:center;min-height:0;gap:6px;}
+.sw-fln{flex:0 0 58px;font-size:10px;line-height:1;color:var(--tx2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sw-fl.other .sw-fln{color:var(--tx3);}
+.sw-flt{position:relative;flex:1 1 auto;align-self:stretch;margin:0 5px;}
+.sw-flt::before{content:"";position:absolute;left:-5px;right:-5px;top:50%;height:1px;
+  background:var(--tx3);opacity:.28;}
+.sw-fs{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--c);opacity:.5;border-radius:1px;}
+.sw-fd{position:absolute;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--c);}
+/* 범례는 한 줄 — 안 들어가는 항목은 **통째로** 다음 줄(보이지 않는 줄)로 내려가 숨는다 (글자 중간에서 잘리지 않게) */
+.sw-fleg{position:relative;flex-shrink:0;display:flex;flex-wrap:wrap;gap:0 11px;margin-top:3px;height:13px;
+  font-size:10px;line-height:13px;color:var(--tx2);white-space:nowrap;overflow:hidden;}
+.sw-fleg span{display:inline-flex;align-items:center;gap:4px;}
+.sw-fleg i{width:6px;height:6px;border-radius:50%;background:var(--c);flex:0 0 auto;}
 .sw-cell.rhythm .sw-val{font-size:16px;font-weight:600;}
 /* 지금 이런 마음이라면 — 상황 하나가 크게 선다 */
 /* 말투로 건네는 한 줄 — **판 글씨체**로 쓴다 (v26-0922-6, HB 1).
@@ -6939,7 +6971,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-11";
+const APP_VERSION = "v. 26-1102-12";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -54636,6 +54668,84 @@ function _swMD(d){
 // 예배 하나 = **날짜 + 예배 종류**. 10/4 처럼 하루에 주일·성찬·라이프라인이 있으면 셋이다.
 function _swSvcKey(v){return String(v.d||'')+'|'+(String(v.cat||'').trim()||'설교');}
 function _swSvcOf(k){const i=k.indexOf('|');return [k.slice(0,i),k.slice(i+1)];}
+// ── 흐름 카드 그림 (C안, v. 26-1102-12, HB 2026-11-02) ─────────────
+// 예배마다 가로 줄 하나 · 날짜는 가로축 · 점 색 = 그 예배가 가장 많이 펼친 성경.
+// 위에 '이어 가는 성경' 한 문장, 아래에 색 범례. 시안: docs/ROADMAP.md 1031-2.
+//  · 줄은 **넷까지**(카드 높이). 갈래가 넷을 넘으면 교회 설정에 적힌 예배이거나
+//    두 번 넘게 드린 예배를 셋까지 남기고, 나머지는 맨 아래 '그 밖' 줄로 모은다.
+//  · 줄 차례는 같은 날 예배 차례(_svcCmp — 교회 설정)를 그대로 따른다.
+//  · 색은 많이 펼친 성경 넷까지(1 = 강조색). 나머지 성경은 흐린 점 + 범례 '그 밖 n'.
+//  ⚠️ 문장에 들어가는 것은 전부 센 값이다 — 한 줄에서 같은 성경이 두 번 넘게,
+//     그리고 그 줄의 절반 넘게일 때만 '이어 간다' 고 말한다 (지어내지 않는다).
+const _SW_FLOW_LANES=4,_SW_FLOW_HUES=4;
+// 받침이 있으면 a, 없으면 b ('주일예배는' · '성찬예식은' / '마태복음을' · '로마서를')
+function _swJo(w,a,b){
+  const c=String(w||'').trim().slice(-1).charCodeAt(0);
+  if(c>=0xAC00&&c<=0xD7A3)return w+((c-0xAC00)%28?a:b);
+  return w+a+'('+b+')';
+}
+function _swFlowDay(d){
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(d||''));
+  return m?Date.UTC(+m[1],+m[2]-1,+m[3])/864e5:NaN;
+}
+function _swFlowShape(svcs,win){
+  const list=(svcs||[]).filter(x=>x&&!isNaN(_swFlowDay(x.d)));
+  if(!list.length)return null;
+  // 가로축 — 거른 기간 그대로(이번 달이면 1일~말일). 열린 끝은 예배 날짜로 닫는다.
+  const ds=list.map(x=>_swFlowDay(x.d));
+  let lo=Math.min(...ds),hi=Math.max(...ds);
+  const wf=win&&_swFlowDay(win.from),wt=win&&_swFlowDay(win.to);
+  if(win&&String(win.from)>'1900'&&!isNaN(wf))lo=Math.min(lo,wf);
+  if(win&&String(win.to)<'2100'&&!isNaN(wt))hi=Math.max(hi,wt);
+  const span=Math.max(1,hi-lo);
+  const at=d=>Math.round((_swFlowDay(d)-lo)/span*1000)/10;   // 0~100 (%)
+  // 성경 색 — 펼친 예배 수가 많은 차례
+  const bc=new Map();
+  list.forEach(x=>{if(x.book)bc.set(x.book,(bc.get(x.book)||0)+1);});
+  const books=[...bc.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko'))
+    .map(([k,n],i)=>({k,n,hue:i<_SW_FLOW_HUES?i+1:0}));
+  const hueOf=new Map(books.map(b=>[b.k,b.hue]));
+  // 예배 갈래
+  const kinds=new Map();
+  list.forEach(x=>{
+    const c=String(x.cat||'').trim()||'설교';
+    if(!kinds.has(c))kinds.set(c,{cat:c,pts:[]});
+    kinds.get(c).pts.push(x);
+  });
+  let own=[...kinds.values()],rest=[];
+  if(own.length>_SW_FLOW_LANES){
+    const listed=k=>_svcRank(k.cat)<(_churchCfg().svcOrder||[]).length;
+    const keep=own.filter(k=>listed(k)||k.pts.length>1)
+      .sort((a,b)=>b.pts.length-a.pts.length||_svcCmp(a.cat,b.cat));
+    const pick=new Set((keep.length?keep:own.slice().sort((a,b)=>_svcCmp(a.cat,b.cat)))
+      .slice(0,_SW_FLOW_LANES-1));
+    rest=own.filter(k=>!pick.has(k));own=own.filter(k=>pick.has(k));
+  }
+  own.sort((a,b)=>_svcCmp(a.cat,b.cat));
+  const lane=(name,pts,other)=>{
+    pts=pts.slice().sort((a,b)=>a.d.localeCompare(b.d)||_svcCmp(a.cat,b.cat,a.d));
+    const dots=pts.map(x=>({x:at(x.d),hue:hueOf.get(x.book)||0,d:x.d,cat:x.cat,book:x.book}));
+    // 같은 성경이 잇달아 나오면 선으로 잇는다 ('그 밖' 줄은 서로 다른 예배라 잇지 않는다)
+    const segs=[];
+    if(!other)for(let i=1;i<dots.length;i++)
+      if(dots[i].book&&dots[i].book===dots[i-1].book)
+        segs.push({x:dots[i-1].x,w:Math.round((dots[i].x-dots[i-1].x)*10)/10,hue:dots[i].hue});
+    return {name,other:!!other,dots,segs};
+  };
+  const lanes=own.map(k=>lane(k.cat,k.pts,false));
+  if(rest.length)lanes.push(lane('그 밖',[].concat(...rest.map(k=>k.pts)),true));
+  // 이어 가는 성경 — 줄마다 가장 많이 펼친 성경이 두 번 넘게 · 그 줄의 절반 넘게
+  const runs=[];
+  own.forEach(k=>{
+    const m=new Map();k.pts.forEach(x=>{if(x.book)m.set(x.book,(m.get(x.book)||0)+1);});
+    const top=[...m.entries()].sort((a,b)=>b[1]-a[1])[0];
+    if(top&&top[1]>1&&top[1]*2>k.pts.length)runs.push({cat:k.cat,book:top[0],n:top[1]});
+  });
+  const two=runs.sort((a,b)=>b.n-a.n).slice(0,2).sort((a,b)=>_svcCmp(a.cat,b.cat));
+  let say=null;
+  if(two.length)say=two.map((r,i)=>({cat:r.cat,book:r.book,n:r.n,last:i===two.length-1}));
+  return {lo,hi,lanes,books,say,n:list.length};
+}
 function _swInsightsWin(f){
   const out=[],now=f.now,N=now.length,W=f.win.word;
   const push=(axis,key,text)=>{if(key&&text)out.push({axis,key,name:key,text});};
@@ -54656,6 +54766,11 @@ function _swInsightsWin(f){
       return md(k.slice(0,i))+' '+k.slice(i+1)+(b?' '+b.k:'');
     });
     push('flow',W+' 흐름',W+' 흐름 \u2014 '+steps.join(' \u2192 '));
+    // 그림 재료 (C안, v. 26-1102-12) — 문장(text)은 그대로 두고 읽기용(aria)으로 쓴다
+    out[out.length-1].flow=_swFlowShape(svcs.map(([k,vs])=>{
+      const [d,cat]=_swSvcOf(k),b=_swCount(vs,'book')[0];
+      return {d,cat,book:b?b.k:''};
+    }),f.win);
   }
   // ② 가장 많이 펼친 성경 — 예배가 여럿이면 '몇 번 가운데 몇 번', 하나면 말씀 수의 비율
   //    ⚠️ 예배가 여럿이면 **몇 번의 예배가 펼쳤나**로 고른다 — 말씀 수로 고르면
@@ -55251,6 +55366,40 @@ function _swCountText(k,n){
          need:'상황 '+n,ask:'질문 '+n}[k]||String(n);
 }
 
+// 흐름 카드 (C안) — _swFlowShape 의 모양을 그린다. 점 · 선은 % 자리라
+// 폭이 바뀌어도 다시 잴 것이 없고 동그라미가 찌그러지지 않는다 (SVG 를 늘이지 않는다).
+function _swFlowHTML(g){
+  const F=g.flow,E=_swEsc;
+  const hue=h=>h?'var(--swf'+h+')':'var(--tx3)';
+  const W=String(g.name||'').replace(/\s*흐름$/,'');
+  // 한 문장 — 카드 높이가 빠듯해 **한 줄**이다. 두 갈래가 한 줄에 안 들어가는 좁은 칸(폰)은
+  // 가장 많이 이어 간 하나만 (두 벌을 그려 두고 칸 폭으로 고른다 — .sw-fsay 의 컨테이너 쿼리)
+  const clause=(r,jo)=>E(_swJo(r.cat,'은','는'))+' <b>'+E(r.book)+'</b>'
+    +(jo?E(_swJo(r.book,'을','를').slice(r.book.length)):'');
+  let say;
+  if(F.say&&F.say.length>1){
+    const top=F.say.slice().sort((a,b)=>b.n-a.n)[0];
+    say='<span class="sw-fs-2">'+F.say.map(r=>clause(r,r.last)).join(', ')+' 이어 가요</span>'
+      +'<span class="sw-fs-1">'+clause(top,true)+' 이어 가고 있어요</span>';
+  }else if(F.say){
+    say=clause(F.say[0],true)+' 이어 가고 있어요';
+  }else{
+    say='예배 '+F.n+'번이 성경 '+F.books.length+'권을 펼쳤어요';
+  }
+  const lanes=F.lanes.map(l=>'<div class="sw-fl'+(l.other?' other':'')+'">'
+    +'<span class="sw-fln">'+E(l.name)+'</span><span class="sw-flt">'
+    +l.segs.map(s=>'<i class="sw-fs" style="left:'+s.x+'%;width:'+s.w+'%;--c:'+hue(s.hue)+'"></i>').join('')
+    +l.dots.map(d=>'<i class="sw-fd" style="left:'+d.x+'%;--c:'+hue(d.hue)+'"></i>').join('')
+    +'</span></div>').join('');
+  const shown=F.books.filter(b=>b.hue),more=F.books.filter(b=>!b.hue).reduce((a,b)=>a+b.n,0);
+  const leg=shown.map(b=>'<span><i style="--c:'+hue(b.hue)+'"></i>'+E(b.k)+' '+b.n+'</span>').join('')
+    +(more?'<span><i style="--c:var(--tx3)"></i>그 밖 '+more+'</span>':'');
+  return '<div class="sw-cell insight flow">'
+    +'<div class="sw-kick">흐름<span class="sw-fw">'+E((W?W+' · ':'')+'예배 '+F.n+'번')+'</span></div>'
+    +'<div class="sw-fsay">'+say+'</div>'
+    +'<div class="sw-flanes" role="img" style="--n:'+F.lanes.length+'" aria-label="'+E(g.text)+'">'+lanes+'</div>'
+    +'<div class="sw-fleg">'+leg+'</div></div>';
+}
 // ── 한 타일의 얼굴 ───────────────────────────────────────
 function _swEsc(s){return String(s==null?'':s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -55595,6 +55744,8 @@ function _swCellHTML(t,it,i){
       +'<div class="sw-val">'+_swEsc(v.krText)+'</div>'
       +(why?'<div class="sw-num">'+_swEsc(why)+'</div>':'')+'</div>';
   }
+  // 흐름 카드 — 그림으로 (C안, v. 26-1102-12)
+  if(t.k==='insight'&&g.axis==='flow'&&g.flow)return _swFlowHTML(g);
   // 발견 — 문장이 곧 내용이다. 눌러야 할 말(key)을 강조색으로 짚어 준다.
   if(t.k==='insight'){
     const tx=_swEsc(g.text).replace('\u2018'+_swEsc(g.key)+'\u2019',

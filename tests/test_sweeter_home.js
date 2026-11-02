@@ -1719,4 +1719,64 @@ console.log('\n시나리오 34 — 같은 날이면 성찬예식 → 주일예�
   delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
 }
 
+// ═══ 35. 흐름 카드를 그림으로 — 예배 줄 타임라인 (C안, v. 26-1102-12, HB) ═══
+console.log('\n시나리오 35 — 흐름 카드: 예배마다 가로 줄 · 점 색 = 성경');
+{
+  // HB: 한 문장으로 이어진 흐름이 알아보기 힘들다 → 시안 C 를 골랐다 (2026-11-02).
+  APP_PRODUCT='sweeter';
+  global.getActiveColls=()=>['c1'];
+  global._getCollFilter=()=>({period:'month'});
+  global._vListRange=()=>({from:'2026-10-01',to:'2026-10-31'});
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+  const P=(pid,cat,d,ref)=>({idx:0,cat,topic:cat+d,krText:pid,ref,tags:[],hi:'',d,pid,kind:'prop'});
+  // 보내 주신 화면의 10월 (예배 11번 · 여섯 갈래)
+  VERSES=[P('a','성찬예식','2026-10-04','로마서 6:3'),P('b','주일예배','2026-10-04','마태복음 5:1'),
+          P('c','라이프라인','2026-10-04','사무엘상 3:1'),P('d','리바이브드','2026-10-09','마가복음 1:1'),
+          P('e','주일예배','2026-10-11','마태복음 6:1'),P('f','인카운터','2026-10-16','마가복음 2:1'),
+          P('g','결혼예식','2026-10-17','마태복음 19:5'),P('h','주일예배','2026-10-18','마태복음 7:1'),
+          P('i','라이프라인','2026-10-18','사무엘상 4:1'),P('j','주일예배','2026-10-25','마태복음 8:1'),
+          P('k','라이프라인','2026-10-25','사무엘상 5:1')];
+  const g=_swInsights(0).find(x=>x.axis==='flow');
+  const F=g.flow;
+  sc.eq('예배 11번', F.n, 11);
+  sc.eq('⭐ 줄은 넷 — 교회 설정 차례 + 그 밖', F.lanes.map(l=>l.name), ['성찬예식','주일예배','라이프라인','그 밖']);
+  sc.eq('그 밖에 한 번씩 드린 셋', F.lanes[3].dots.length, 3);
+  sc.eq('그 밖은 선으로 잇지 않는다', F.lanes[3].segs.length, 0);
+  sc.eq('주일예배 마태복음 넷이 선 셋으로 이어진다', F.lanes[1].segs.length, 3);
+  sc.eq('가로축은 거른 기간(10/1~10/31) — 10/4 는 10%', F.lanes[1].dots[0].x, 10);
+  sc.eq('10/25 는 80%', F.lanes[1].dots[3].x, 80);
+  sc.eq('성경 색은 많이 펼친 차례', F.books.map(b=>b.k+b.hue), ['마태복음1','사무엘상2','마가복음3','로마서4']);
+  sc.eq('결혼예식(그 밖)의 마태복음도 같은 색', F.lanes[3].dots.find(d=>d.cat==='결혼예식').hue, 1);
+  const html=_swCellHTML({k:'insight',s:0},[{kind:'val',v:g}],0);
+  sc.eq('⭐ 이어 가는 성경 한 문장 (넓은 칸)', html.includes('주일예배는 <b>마태복음</b>, 라이프라인은 <b>사무엘상</b>을 이어 가요'), true);
+  // 폰처럼 좁은 칸은 한 줄에 둘이 안 들어가 가장 많이 이어 간 하나만 (CSS 가 칸 폭으로 고른다)
+  sc.eq('좁은 칸엔 하나만', html.includes('<span class="sw-fs-1">주일예배는 <b>마태복음</b>을 이어 가고 있어요</span>'), true);
+  sc.eq('머리말에 예배 수', html.includes('예배 11번</span>'), true);
+  sc.eq('범례 (마태복음 = 주일 4 + 결혼예식 1)', html.includes('마태복음 5')&&html.includes('사무엘상 3')&&html.includes('마가복음 2')&&html.includes('로마서 1'), true);
+  sc.eq('읽기용으로 예전 문장을 단다', html.includes('aria-label="'+_swEsc(g.text)+'"'), true);
+  sc.eq('줄 넷을 그린다', (html.match(/class="sw-fl[ "]/g)||[]).length, 4);
+  sc.eq('점 열하나', (html.match(/class="sw-fd"/g)||[]).length, 11);
+  // 갈래가 넷 이하면 모두 제 줄
+  VERSES=[P('a','주일예배','2026-10-04','마태복음 5:1'),P('b','수요예배','2026-10-07','요한복음 1:1'),
+          P('c','주일예배','2026-10-11','로마서 1:1')];
+  const g2=_swInsights(0).find(x=>x.axis==='flow');
+  sc.eq('넷 이하면 그 밖이 없다', g2.flow.lanes.map(l=>l.name), ['주일예배','수요예배']);
+  sc.eq('다른 성경끼리는 잇지 않는다', g2.flow.lanes[0].segs.length, 0);
+  sc.eq('이어 가는 것이 없으면 지어내지 않는다', g2.flow.say, null);
+  sc.eq('그때는 센 값으로', _swCellHTML({k:'insight',s:0},[{kind:'val',v:g2}],0).includes('예배 3번이 성경 3권을 펼쳤어요'), true);
+  // 성경이 다섯 권 넘으면 나머지는 흐린 점 + 범례 '그 밖'
+  VERSES=['창세기 1:1','출애굽기 1:1','레위기 1:1','민수기 1:1','신명기 1:1','여호수아 1:1']
+    .map((r,i)=>P('x'+i,'주일예배','2026-10-0'+(i+1),r));
+  const g3=_swInsights(0).find(x=>x.axis==='flow');
+  sc.eq('색은 넷까지', g3.flow.books.filter(b=>b.hue).length, 4);
+  sc.eq('범례 그 밖 2', _swCellHTML({k:'insight',s:0},[{kind:'val',v:g3}],0).includes('그 밖 2'), true);
+  // 조사
+  sc.eq('받침 있음', _swJo('성찬예식','은','는')+_swJo('마태복음','을','를'), '성찬예식은마태복음을');
+  sc.eq('받침 없음', _swJo('주일예배','은','는')+_swJo('로마서','을','를'), '주일예배는로마서를');
+  // 흐름 아닌 발견 카드는 예전 그대로
+  const book=_swInsights(0).find(x=>x.axis==='book');
+  sc.eq('다른 발견 카드는 문장 그대로', _swCellHTML({k:'insight',s:0},[{kind:'val',v:book}],0).includes('sw-val'), true);
+  delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
+}
+
 sc.done();
