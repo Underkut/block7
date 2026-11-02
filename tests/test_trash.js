@@ -24,7 +24,7 @@ function boot(days, today) {
   const fn = new Function('ST', 'SECS', 'getDay', 'getTrash', 'getBigs', 'getSmalls', 'tKey', 'document', '_toastName', 'env',
     `const save=()=>env.saves++,rawSave=()=>{},beforeSave=()=>{},showToast=t=>env.toasts.push(t),
      renderSecBody=s=>env.rendered.push(s),updateTotal=()=>{},refreshTaskViewsLive=()=>{},confirm=()=>env.confirmAns,
-     openSettings=()=>env.opened.push('settings'),_b7Pop=(a,t,rows)=>env.opened.push('menu:'+rows.map(r=>r.label+(r.sub?' '+r.sub:'')).join('/'));
+     openSettings=()=>env.opened.push('settings'),exportBackup=()=>env.opened.push('backup'),window={matchMedia:()=>({matches:!!env.narrow})},_b7Pop=(a,t,rows)=>env.opened.push('menu:'+rows.map(r=>r.label+(r.sub?' '+r.sub:'')).join('/'));
      ${SRC_T}
      return {_gnbGearTap,_gnbGearMenu,sendToTrash,_trashAll,_trashCount,_trashPurgeOld,restoreFromTrash,clearTrash,openTrash,_trashRestored};`);
   const api = fn(ST, SECS, getDay, getTrash, getBigs, getSmalls, tKey, document, _toastName, env);
@@ -113,17 +113,19 @@ console.log('\n시나리오 6 — 전체 삭제는 모든 날 · 묻고 나서')
   sc.eq('예면 모든 날 비움', [ST.days['2026-10-28'].trash.length, ST.days['2026-10-31'].trash.length], [0, 0]);
 }
 
-console.log('\n시나리오 7 — 톱니 (GNB B안, v. 26-1031-7): 비면 곧장 설정 · 차 있으면 메뉴 · 우클릭은 늘 메뉴');
+console.log('\n시나리오 7 — 톱니 (v. 26-1102-2): 좁은 폰은 늘 메뉴(설정/휴지통/백업) · 넓은 화면은 곧장 설정 · 우클릭은 늘 메뉴');
 {
-  const { api, env } = boot({ '2026-10-20': { big: {}, small: {}, trash: [{ type: 'big', secId: 'am', text: '서른하루', ts: D(31) }] } });
-  api._gnbGearTap({});
-  sc.eq('30일 지난 것뿐이면 빈 것으로 친다 → 설정', env.opened, ['settings']);
+  const { api, env } = boot();
+  env.narrow = false; api._gnbGearTap({});
+  sc.eq('넓은 화면 → 곧장 설정', env.opened, ['settings']);
+  env.narrow = true; api._gnbGearTap({});
+  sc.eq('좁은 화면 + 빈 휴지통 → 그래도 메뉴', env.opened[1], 'menu:설정/휴지통/백업');
   api.sendToTrash('2026-10-31', 'big', 'am', { text: 'x' });
   api._gnbGearTap({});
-  sc.eq('차 있으면 메뉴 (설정 / 휴지통 1)', env.opened[1], 'menu:설정/휴지통 1');
+  sc.eq('차 있으면 휴지통 줄에 개수', env.opened[2], 'menu:설정/휴지통 1/백업');
   const { api: a2, env: e2 } = boot();
-  a2._gnbGearMenu({ preventDefault() {}, stopPropagation() {} }, {});
-  sc.eq('우클릭은 비어도 메뉴', e2.opened, ['menu:설정/휴지통']);
+  e2.narrow = false; a2._gnbGearMenu({ preventDefault() {}, stopPropagation() {} }, {});
+  sc.eq('우클릭은 넓어도 메뉴', e2.opened, ['menu:설정/휴지통/백업']);
 }
 
 sc.done();
