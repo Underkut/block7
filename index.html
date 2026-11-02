@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-4  [production]  -->
+<!-- BLOCK7  v. 26-1102-5  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -796,6 +796,17 @@ header{
   -webkit-tap-highlight-color:transparent;}
 .gnb-bible svg{width:16px;height:16px;display:block;}
 .gnb-there:hover,.gnb-bible:hover{color:var(--tx);}
+/* GNB 마우스 올림 — 모두 진해진다 (v. 26-1102-5, HB). 예전엔 There · 성경만 그랬다.
+   강조색은 '선택됨 · 오늘' 의 뜻이라 마우스 올림에는 쓰지 않는다. 이미 강조색인 것(지금 탭 · 오늘 날짜 · 로고 7)은 그대로.
+   ⚠️ 마우스가 있는 기기에서만 — 손가락 화면은 한 번 누른 색이 굳는다 (CLAUDE.md, .vl-sort-toggle 참고) */
+@media (hover:hover){
+  header .logo,header .tab,header .date-nav-hint,header .gnb-srch,header .ai-b.gnb-gear,header .ur-btn{transition:color .12s;}
+  header .logo:hover{color:var(--tx);}
+  header .tab:not(.on):hover{color:var(--tx);}
+  header .date-nav-hint:hover{color:var(--tx);}
+  header #hDate:not(.is-today):hover #hDateText{color:var(--tx)!important;}
+  header .gnb-srch:hover,header .ai-b.gnb-gear:hover{color:var(--tx);}
+}
 body.vb-on .gnb-there,body.vb-on .gnb-bible{display:block;}
 /* 1단 + 상단 말씀: D W M → 한 칸 피커 (v26-1007-7, HB 가+다)
    글자 + 아래 점 셋(몇 번째인지) · 누르면 아래로 메뉴 · 좌우로 밀면 **손을 따라 움직이다가**
@@ -6916,7 +6927,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-4";
+const APP_VERSION = "v. 26-1102-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -40810,6 +40821,7 @@ function updateHeaderDate(){
   //    --tx2 #676f53). 그러면 오늘인지 아닌지가 구분되지 않는다.
   //    --ac-tx 는 글자색들과 ΔE 34 이상 벌어지도록 계산된 값이다.
   el.style.color=isT?'var(--ac-tx)':'var(--tx2)';
+  {const hd=document.getElementById('hDate');if(hd)hd.classList.toggle('is-today',!!isT);}   // 마우스 올림 진하게에서 '오늘' 강조색은 지킨다
   el.title=isT?'오늘':'탭하면 오늘로';
   document.getElementById('dateBack').style.display='flex';
   document.getElementById('dateFwd').style.display='flex';
