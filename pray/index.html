@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1102-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1102-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1102-1';
+const APP_VERSION = 'v. 26-1102-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -5748,7 +5748,13 @@ document.addEventListener('change', e => {
   refresh({ skipTop: true });
 });
 document.addEventListener('input', e => {
-  if (e.target.dataset && e.target.dataset.addin) { addChipsRender(e.target); return; }
+  if (e.target.dataset && e.target.dataset.addin) {
+    // 마지막으로 쓴 글을 기억한다 — 아이패드 '자판 내리기' 는 한글을 조합하는 중이면 칸을 비운 채 포커스를 뺀다 (HB 2026-11-02)
+    //   조합 취소로 비워진 것('deleteCompositionText' · 조합 중)은 사람이 지운 것이 아니므로 기억을 지우지 않는다
+    const it = e.inputType || '', el = e.target;
+    if (el.value || !(e.isComposing || /Composition/.test(it))) el._last = el.value;
+    addChipsRender(e.target); return;
+  }
   if (e.target.dataset && e.target.dataset.f === 'markname') { markSugRender(e.target); return; }
   const el = e.target;
   if (el.dataset && el.dataset.live === 'mapq') {
@@ -5765,8 +5771,8 @@ document.addEventListener('keydown', e => {
   if (el.dataset && el.dataset.addin) {
     if (e.isComposing || e.keyCode === 229) return;
     if (addChipsKey(e, el)) return;
-    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey && el.value.trim())) { e.preventDefault(); const v = el.value; el.value = ''; mapAddFromInput(el.dataset.addin, v, true); return; }
-    if (e.key === 'Escape') { e.preventDefault(); el.value = ''; el.blur(); return; }
+    if (e.key === 'Enter' || (e.key === 'Tab' && !e.shiftKey && el.value.trim())) { e.preventDefault(); const v = el.value; el.value = ''; el._last = ''; mapAddFromInput(el.dataset.addin, v, true); return; }
+    if (e.key === 'Escape') { e.preventDefault(); el.value = ''; el._last = ''; el.blur(); return; }
     return;
   }
   if (mapKey(e)) return;
@@ -6112,7 +6118,7 @@ ACT['add-pick'] = el => {
       name = String(name || '').trim(); if (!name) return;
       let c = DB.cats.find(x => x.name === name);
       if (!c) { c = { id: uid(), name: name, person: looksLikeNames(v) }; DB.cats.push(c); }
-      inp.value = ''; mapAddFromInput(gid, v, true, c.id); toast('\'' + name + '\' 구분을 만들어 넣었습니다');
+      inp.value = ''; inp._last = ''; mapAddFromInput(gid, v, true, c.id); toast('\'' + name + '\' 구분을 만들어 넣었습니다');
     }, { ok: '만들고 넣기', hint: '쓰던 「' + v.trim() + '」 에 이 구분을 붙여 넣습니다.' });
     return;
   }
@@ -6775,7 +6781,18 @@ function mapDeck() {
 // 고치는 칸 밖을 누르면 그대로 적고 마친다
 document.addEventListener('focusout', e => {
   const el = e.target;
+  if (el && el.dataset && el.dataset.addin && !el.value.trim()) {
+    // 조합 중에 자판이 내려가 칸이 비었을 수 있다 — 한 박자 뒤 칸 · 기억한 글을 보고 넣거나, 칩 줄만 접는다
+    setTimeout(() => {
+      if (document.activeElement === el || Date.now() - CHIPTAP < 800 || SHEET) return;
+      const v = (el.value || '').trim() || (el._last || '').trim(), gid = el.dataset.addin; el.value = ''; el._last = '';
+      const box = el.parentElement && el.parentElement.querySelector('.achips'); if (box) { box.hidden = true; box.innerHTML = ''; }
+      if (v) mapAddFromInput(gid, v, false);
+    }, 60);
+    return;
+  }
   if (el && el.dataset && el.dataset.addin && el.value.trim()) {
+    el._last = '';
     if (Date.now() - CHIPTAP < 800 || SHEET) return;   // 칩을 누른 것 · 새 구분 창이 뜬 것이면 그쪽이 넣는다
     // 아이패드 '자판 내리기' 단추도 여기로 온다 — 포커스를 잃는 그 순간에 지도를 다시 그리면
     //   아이폰·아이패드가 화면을 안 바꿔 글만 사라지고 칩 줄이 남았다 (HB 2026-11-02). 칩은 바로 접고, 넣기는 한 박자 뒤에.
