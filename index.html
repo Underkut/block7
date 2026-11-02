@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-13  [production]  -->
+<!-- BLOCK7  v. 26-1102-14  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1942,6 +1942,10 @@ header .gnb-gear svg{width:15.4px;height:15.4px;stroke-width:1.45;}
 .srch-range button.on{color:var(--tx);font-weight:600;}
 .srch-range i{font-style:normal;opacity:.6;}
 .srch-range span{margin-left:auto;}
+.srch-sort{display:flex;align-items:center;flex-wrap:wrap;gap:2px 4px;font-size:12px;color:var(--tx3);}
+.srch-sort button{background:none;border:0;padding:2px 2px;color:var(--tx3);font-family:inherit;font-size:12px;cursor:pointer;white-space:nowrap;}
+.srch-sort button.on{color:var(--tx);font-weight:600;}
+.srch-sort i{font-style:normal;opacity:.6;}
 .srch-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 16px 28px;}
 .srch-sec{padding-top:14px;}
 .srch-lbl{font-size:11px;letter-spacing:.12em;color:var(--tx3);padding:14px 0 7px;display:flex;align-items:center;}
@@ -2035,6 +2039,15 @@ html[data-theme="light"] .qk-dots b{background:#e0432f;}
 .srch-vt{font-size:13.5px;line-height:1.7;color:var(--tx);font-weight:300;margin-top:5px;}
 .srch-v .srch-meta{gap:8px;color:var(--tx3);}
 .srch-p .srch-vt{font-weight:400;}
+.srch-t{position:relative;}
+.srch-sw-bg{position:absolute;inset:0;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;pointer-events:none;z-index:0;}
+.srch-sw-bg[data-dir="ok"]{background:color-mix(in srgb,var(--ok) 22%,transparent);}
+.srch-sw-bg[data-dir="del"]{background:color-mix(in srgb,var(--ov) 22%,transparent);}
+.srch-sw-bg .sw-ok{color:var(--ok);display:flex;}.srch-sw-bg .sw-del{color:var(--ov);display:flex;}
+.srch-sw-bg[data-dir="ok"] .sw-del,.srch-sw-bg[data-dir="del"] .sw-ok{visibility:hidden;}
+.srch-swiping>:not(.srch-sw-bg){position:relative;z-index:1;transform:translateX(var(--sw,0));}
+.srch-sw-anim>:not(.srch-sw-bg){transition:transform .24s cubic-bezier(.22,.8,.24,1);}
+.srch-sw-anim>.srch-sw-bg{transition:opacity .24s ease;}
 .srch-row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
 /* 동그라미 = 바로 완료 (4단계) — 눈에 보이는 것은 16px 이지만 누르는 자리는 넓게 */
 .srch-chk{position:relative;cursor:pointer;}
@@ -6971,7 +6984,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-13";
+const APP_VERSION = "v. 26-1102-14";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -26548,11 +26561,36 @@ function _srchFilterFix(it,preset,set){
   }
   return fix;
 }
+// 결과 할일 · 일정 정렬 (v. 26-1102-14, HB) — 화면 · 저장을 안 건드린다. 새 배열을 돌려준다.
+//   todo  ToDo배치순(기본): 가까운 날부터(앞으로가 같은 거리의 지난 날보다 먼저), 그 날 안은 할일뷰 차례 = 구간 → 빅 → 스몰 → 줄 → 하위
+//   ct    처음등록순 / ctDesc 최신등록순: 만든 시각(ct). ct 가 없는 예전 할일은 그보다 앞(오래된 것)이고, 그들끼리는 날짜 → 배치 순
+//   near  가까운 날짜순 (예전 기본 — 같은 날 안은 구간 구분 없이 줄 번호) · abc ㄱㄴㄷ순 (글자, 같으면 배치순)
+// secOrder: 구간 id 차례 배열 (할일뷰에 보이는 차례). 일정은 ct 가 없으니 등록순에서 날짜 → 배치 순.
+const SRCH_SORTS=['todo','ct','near','abc'];
+function _srchSort(list,mode,secOrder){
+  const a=(list||[]).slice();
+  const so=new Map((secOrder||[]).map((id,i)=>[id,i]));
+  const sec=r=>so.has(r.secId)?so.get(r.secId):999;
+  const typ=r=>r.type==='small'?1:0;
+  const lay=(x,y)=>sec(x)-sec(y)||typ(x)-typ(y)||(x.idx-y.idx)||((x.subIdx||0)-(y.subIdx||0));
+  const dayAsc=(x,y)=>x.k<y.k?-1:x.k>y.k?1:0;
+  const near=(x,y)=>(x.dist-y.dist)||dayAsc(x,y);
+  const txt=r=>String(r.ev?r.ev.text:(r.kind==='sub'&&r.sub?r.sub.text:(r.item&&r.item.text))||'');
+  const ctOf=r=>(r.item&&+r.item.ct)||0;
+  const cmp={
+    todo:(x,y)=>near(x,y)||lay(x,y),
+    near:(x,y)=>near(x,y)||(x.idx-y.idx)||((x.subIdx||0)-(y.subIdx||0)),   // 예전 기본 그대로 — 그 날 안은 구간을 가리지 않은 줄 번호
+    abc:(x,y)=>txt(x).localeCompare(txt(y),'ko')||dayAsc(x,y)||lay(x,y),
+    ct:(x,y)=>{const p=ctOf(x),q=ctOf(y);if(!p!==!q)return p?1:-1;return (p-q)||dayAsc(x,y)||lay(x,y);}
+  };
+  if(mode==='ctDesc')return a.sort(cmp.ct).reverse();
+  return a.sort(cmp[mode]||cmp.todo);
+}
 // ── 검색 엔진 끝 ──
 // ── 검색 화면 ──
 // 폰(좁은 화면)은 전체화면, 넓은 화면은 가운데 팝업 — 1/2/3단과 상관없이 같은 자리.
 // .event-modal 짝으로 만들어서 말씀 전체화면을 열면 저절로 숨었다가 닫으면 되살아난다(_vfHideCovers).
-const _srch={qOpen:{},hq:'',histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
+const _srch={swAt:0,sort:'',ctLast:'',qOpen:{},hq:'',histTimer:null,autoLast:'',q:'',quick:null,kind:'all',range:'all',last:[],timer:null,lpAt:0,act:null};
 const SRCH_RECENT_MAX=8;
 function _srchRecent(){try{const a=JSON.parse(localStorage.getItem(_lsk('srchRecent'))||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'&&x.trim()).slice(0,SRCH_RECENT_MAX):[];}catch(e){return[];}}
 function _srchRemember(q,auto){
@@ -26581,6 +26619,7 @@ function openSearch(){
   const inp=document.getElementById('srchInput');
   inp.value=_srch.q;
   _srchBindLongPress();
+  _srchBindSwipe();
   _srchRender();
   // ⚠️ iOS: 키보드는 누른 그 자리에서 곧바로 focus 해야 올라온다 (await · setTimeout 뒤면 안 올라온다)
   try{inp.focus({preventScroll:true});inp.select();}catch(e){}
@@ -26612,8 +26651,29 @@ function _srchSecs(){return (SECS||[]).map(x=>({id:x.id,name:x.name,color:x.colo
 function _srchSecOf(id){return (SECS||[]).find(x=>x.id===id)||{id,name:'',color:'#8892b4'};}
 function _srchVerses(){try{return typeof ACTIVE_VERSES==='function'?(ACTIVE_VERSES()||[]):[];}catch(e){return[];}}
 function _srchResult(){
-  return _srchRun(ST.days,{carryMin:_srchCarryMin(ST.settings),q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses(),
+  const r=_srchRun(ST.days,{carryMin:_srchCarryMin(ST.settings),q:_srch.q,quick:_srch.quick,range:_srch.range,today:_calKey(),secs:_srchSecs(),verses:_srchVerses(),
     parseRef:typeof _brParseRef==='function'?_brParseRef:null,contacts:ST.contacts||[]});
+  const order=(SECS||[]).map(x=>x.id),m=_srchSortMode();
+  r.tasks=_srchSort(r.tasks,m,order);r.events=_srchSort(r.events,m,order);
+  return r;
+}
+// 정렬 — 이 기기에만 기억 (v. 26-1102-14). 'ct' 단추는 누를 때마다 처음 ⇄ 최신
+function _srchSortGet(){try{const v=localStorage.getItem(_lsk('srchSort'));return v==='ct'||v==='ctDesc'||SRCH_SORTS.includes(v)?v:'todo';}catch(e){return 'todo';}}
+function _srchSortMode(){if(!_srch.sort)_srch.sort=_srchSortGet();return _srch.sort;}
+function _srchSetSort(k){
+  const cur=_srchSortMode();
+  let v=k;
+  if(k==='ct')v=cur==='ct'?'ctDesc':cur==='ctDesc'?'ct':(_srch.ctLast||'ct');
+  if(v==='ct'||v==='ctDesc')_srch.ctLast=v;
+  _srch.sort=v;
+  try{localStorage.setItem(_lsk('srchSort'),v);}catch(e){}
+  _srchRender();
+}
+function _srchSortBar(){
+  const m=_srchSortMode(),ctOn=m==='ct'||m==='ctDesc';
+  const ctLbl=ctOn?(m==='ct'?'처음등록순':'최신등록순'):((_srch.ctLast==='ctDesc')?'최신등록순':'처음등록순');
+  const B=(k,l,on)=>'<button class="'+(on?'on':'')+'" onclick="_srchSetSort(\''+k+'\')"'+(k==='ct'?' title="누를 때마다 처음 ⇄ 최신"':'')+'>'+l+'</button>';
+  return '<div class="srch-sort">'+B('todo','ToDo배치순',m==='todo')+'<i>·</i>'+B('ct',ctLbl,ctOn)+'<i>·</i>'+B('near','가까운 날짜순',m==='near')+'<i>·</i>'+B('abc','ㄱㄴㄷ순',m==='abc')+'</div>';
 }
 function _srchDayTxt(k){
   const dd=_srchDayNum(k)-_srchDayNum(_calKey());
@@ -26701,8 +26761,8 @@ function _srchRender(keepScroll){
   fil.innerHTML='<div class="srch-kinds">'+(quickLbl?'<button class="srch-kind on srch-quick-on" onclick="_srchClear()">'+esc(quickLbl)+' ×</button>':'')+
     kinds.filter(([k,,c])=>k==='all'||c>0).map(([k,l,c])=>'<button class="srch-kind'+(_srch.kind===k?' on':'')+'" onclick="_srchSetKind(\''+k+'\')">'+l+' <em>'+c+'</em></button>').join('')+'</div>'+
     (P.period
-      ?'<div class="srch-range srch-period"><b>기간</b>'+esc(P.period.label)+' · '+_srchMd(P.period.from)+(P.period.to!==P.period.from?'–'+_srchMd(P.period.to):'')+'<span>가까운 날짜순</span></div>'
-      :'<div class="srch-range">'+[['future','앞으로'],['all','전체'],['past','지난']].map(([k,l])=>'<button class="'+(_srch.range===k?'on':'')+'" onclick="_srchSetRange(\''+k+'\')">'+l+'</button>').join('<i>·</i>')+'<span>가까운 날짜순</span></div>');
+      ?'<div class="srch-range srch-period"><b>기간</b>'+esc(P.period.label)+' · '+_srchMd(P.period.from)+(P.period.to!==P.period.from?'–'+_srchMd(P.period.to):'')+'</div>'
+      :'<div class="srch-range">'+[['future','앞으로'],['all','전체'],['past','지난']].map(([k,l])=>'<button class="'+(_srch.range===k?'on':'')+'" onclick="_srchSetRange(\''+k+'\')">'+l+'</button>').join('<i>·</i>')+'</div>')+_srchSortBar();
   const last=[];let html='';
   const want=k=>_srch.kind==='all'||_srch.kind===k;
   const LIM=150;
@@ -26728,6 +26788,7 @@ function _srchRender(keepScroll){
 // 누르기 — 할일: 그 날 그 구간으로 가서 반짝 · 동그라미: 그 자리에서 완료 · 일정: 설정한 D/W/M 의 그 칸 · 말씀 · 명제: 전체화면
 function _srchTap(e){
   if(_srch.lpAt&&Date.now()-_srch.lpAt<700){_srch.lpAt=0;return;}   // 길게 눌러 메뉴를 연 손가락이 떨어질 때의 click
+  if(_srch.swAt&&Date.now()-_srch.swAt<500){_srch.swAt=0;return;}   // 밀고 난 손가락의 click
   const rc=e.target.closest('[data-q]');if(rc){_srchPick(rc.dataset.q);return;}
   const qt=e.target.closest('[data-qtog]');if(qt){_srchQuickToggle(qt.dataset.qtog);return;}
   const qk=e.target.closest('[data-quick]');if(qk){_srchPickQuick(qk.dataset.quick);return;}
@@ -27065,7 +27126,7 @@ function _srchActDo(a){
       const rep=!!it.rid;
       _srchWithTask(r,()=>_taskDeleteAt(r.type,r.secId,r.idx));
       _srchActDone();
-      if(!rep)showToast(_toastName(it.text)+'휴지통으로 옮겼어요');
+      if(!rep)_srchDelToast(it);
       return;
     }
     return;
@@ -27086,6 +27147,82 @@ function _srchActDate(val){
   _srchActDone();
 }
 // 길게 누르기(손가락) · 오른쪽 누르기(마우스) — 결과 줄에서만. 한 번만 단다.
+// ── 결과 할일 밀기 (v. 26-1102-14, HB) — 오른쪽 → 완료(완료면 풀기) · 왼쪽 → 삭제 ──
+// 손가락을 따라간다. 폭의 30%(최소 72px)를 넘기거나 빠르게 튕기면(40px · 250ms 안) 넘어가고, 못 미치면 제자리로.
+// 하위 할일은 지우는 길이 따로라 왼쪽은 고무줄처럼 뻑뻑하게만. 세로로 먼저 움직이면 스크롤에 맡긴다.
+// 동작은 동그라미(_srchToggleDone) · 메뉴 삭제(_taskDeleteAt)와 같은 함수 — 새 저장 길이 없다.
+const SRCH_SW_LOCK=10;
+function _srchDelToast(it){
+  showToast(_toastName(it&&it.text)+'휴지통으로 옮겼어요',false,{label:'되돌리기',onClick:()=>{doUndo();if(_srchIsOpen())_srchRender(true);}});
+}
+function _srchSwPaint(S){
+  const r=S.row;
+  if(!S.bg){
+    S.bg=document.createElement('div');S.bg.className='srch-sw-bg';
+    S.bg.innerHTML='<span class="sw-ok">'+_SRCH_IC.ok+'</span><span class="sw-del"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h12M8 6V4.5h4V6M5.5 6l.8 10h7.4l.8-10"/></svg></span>';
+    r.insertBefore(S.bg,r.firstChild);r.classList.add('srch-swiping');
+  }
+  r.style.setProperty('--sw',S.dx+'px');
+  S.bg.dataset.dir=S.dx>=0?'ok':'del';
+  S.bg.style.opacity=String(Math.min(1,Math.abs(S.dx)/S.th));
+}
+function _srchSwEnd(S,after){
+  const r=S.row;
+  const clean=()=>{r.classList.remove('srch-swiping','srch-sw-anim');r.style.removeProperty('--sw');if(S.bg)S.bg.remove();if(after)after();};
+  if(_tfQuiet()){clean();return;}
+  r.classList.add('srch-sw-anim');
+  requestAnimationFrame(()=>{r.style.setProperty('--sw','0px');if(S.bg)S.bg.style.opacity='0';});
+  setTimeout(clean,260);
+}
+function _srchSwCommit(S){
+  const r=S.row,hit=S.hit,w=r.offsetWidth||320,dir=S.dx>0?1:-1;
+  const act=()=>{
+    if(dir>0){_srchToggleDone(hit.r,null);return;}
+    const it=hit.r.item,rep=!!(it&&it.rid);
+    if(!_srchWithTask(hit.r,()=>_taskDeleteAt(hit.r.type,hit.r.secId,hit.r.idx)))return;
+    _srchRender(true);
+    if(!rep)_srchDelToast(it);
+  };
+  if(_tfQuiet()){act();return;}
+  r.classList.add('srch-sw-anim');r.style.setProperty('--sw',(dir*w)+'px');
+  setTimeout(act,170);
+}
+function _srchBindSwipe(){
+  const body=document.getElementById('srchBody');
+  if(!body||body._swBound)return;
+  body._swBound=true;
+  let S=null;
+  body.addEventListener('touchstart',e=>{
+    S=null;if(e.touches.length!==1)return;
+    const row=e.target.closest('.srch-row.srch-t');if(!row||!body.contains(row))return;
+    const hit=_srch.last[+row.dataset.r];if(!hit||hit.k!=='tasks')return;
+    const p=e.touches[0];
+    S={row,hit,x0:p.clientX,y0:p.clientY,dx:0,lock:null,t0:0,bg:null,canDel:hit.r.kind!=='sub',th:Math.max(72,(row.offsetWidth||300)*0.3)};
+  },{passive:true});
+  body.addEventListener('touchmove',e=>{
+    if(!S)return;
+    const p=e.touches[0],dx=p.clientX-S.x0,dy=p.clientY-S.y0;
+    if(!S.lock){
+      if(Math.abs(dx)<SRCH_SW_LOCK&&Math.abs(dy)<SRCH_SW_LOCK)return;
+      if(Math.abs(dx)<=Math.abs(dy)*1.3||_srch.act){S=null;return;}   // 세로 · 메뉴가 떠 있으면 손대지 않는다
+      S.lock='x';S.t0=Date.now();S.xl=dx;
+    }
+    e.preventDefault();
+    S.dx=(dx<0&&!S.canDel)?dx*0.25:dx;   // 더 갈 데 없는 쪽은 고무줄
+    _srchSwPaint(S);
+  },{passive:false});
+  const end=()=>{
+    const s=S;S=null;
+    if(!s||s.lock!=='x')return;
+    _srchSwAtNow();
+    const fast=Math.abs(s.dx)>40&&Date.now()-s.t0<250;
+    const ok=(Math.abs(s.dx)>=s.th||fast)&&(s.dx>0||s.canDel);
+    if(ok)_srchSwCommit(s);else _srchSwEnd(s);
+  };
+  body.addEventListener('touchend',end,{passive:true});
+  body.addEventListener('touchcancel',()=>{const s=S;S=null;if(s&&s.lock==='x')_srchSwEnd(s);},{passive:true});
+}
+function _srchSwAtNow(){_srch.swAt=Date.now();}
 const SRCH_LP_MS=450;
 function _srchBindLongPress(){
   const body=document.getElementById('srchBody');
@@ -37212,7 +37349,7 @@ function _openGhostInput(secId, type, pos){
       ghost.remove();
       if(!v)return;
       beforeSave();
-      if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
+      if(pos==='C')getBigs(dayKey,secId).unshift(_newTask(v));
       else getBigs(dayKey,secId).push(_newTask(v));
       save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
       // 날짜가 넘어간 뒤라면 지금 화면은 다른 날이므로 목록을 다시 그리지 않는다
@@ -37246,7 +37383,7 @@ function _openGhostInput(secId, type, pos){
         committed=true;
         inp.value='';committed=false;
         beforeSave();
-        if(pos==='C')getBigs(dayKey,secId).unshift({text:v,done:false});
+        if(pos==='C')getBigs(dayKey,secId).unshift(_newTask(v));
         else getBigs(dayKey,secId).push(_newTask(v));
         save();updateTotal();updateSecSummary(secId);refreshTaskViewsLive();
         if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
@@ -37295,7 +37432,7 @@ function _openGhostInput(secId, type, pos){
       ghost.remove();
       if(!v)return;
       beforeSave();
-      if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
+      if(pos==='C')getSmalls(dayKey,secId).unshift(_newTask(v));
       else getSmalls(dayKey,secId).push(_newTask(v));
       save();
       if(dayKey!==tKey())return;   // 날짜가 넘어갔으면 지금 화면은 다른 날이다
@@ -37345,7 +37482,7 @@ function _openGhostInput(secId, type, pos){
         if(!v){committed=true;ghost.remove();return;}
         inp.value='';committed=false;
         beforeSave();
-        if(pos==='C')getSmalls(dayKey,secId).unshift({text:v,done:false});
+        if(pos==='C')getSmalls(dayKey,secId).unshift(_newTask(v));
         else getSmalls(dayKey,secId).push(_newTask(v));
         save();
         if(!keepGoing){                    // Enter — 고스트를 걷고 입력 모드 종료
@@ -37657,6 +37794,8 @@ function _subsCopy(item,keepDone){
   return a.map(s=>({text:String((s&&s.text)||''),done:keepDone?!!(s&&s.done):false}));
 }
 function _carryTaskExtras(src,dst,keepDone){
+  // 만든 시각(ct)은 '같은 할일' 이 날짜만 바뀐 것(옮기기 · 이월 · 반복 회차)이면 물려받는다. 복제는 _freshTaskCopy 가 새로 찍는다 (v. 26-1102-14)
+  if(src&&src.ct)dst.ct=src.ct;
   const subs=_subsCopy(src,keepDone);
   if(subs)dst.subs=subs;
   if(src&&src.memo)dst.memo=src.memo;
@@ -38984,7 +39123,7 @@ async function _prayTodoPull(){
     _prayTodoLast={at:Date.now(),got:items.length,put:put.map(p=>p.date+' · '+p.sec+' · '+p.text).slice(0,5)};
     if(!put.length)return 0;
     beforeSave();
-    put.forEach(p=>getBigs(p.date,p.sec).push({text:p.text,done:false}));
+    put.forEach(p=>getBigs(p.date,p.sec).push(_ctNow({text:p.text,done:false})));
     save();
     // ⚠️ _fbApplyRenders 는 로그인 덩어리 안이라 여기서 못 부른다 — 지금 보는 판만 다시 그린다. 글자를 치는 중이면 그 칸을 지키려고 건너뛴다
     try{const draw=()=>{const v=currentViewKey();if(v==='weekly')renderWeekly();else if(v==='monthly')renderMonthly();else{renderToday();refreshTaskViewsLive();}};
@@ -44017,8 +44156,10 @@ function toggleUrgentRank(){
 }
 
 // 새로 적는 할일 — 글에 '@' 가 들어 있으면 처음부터 '연락할 일' 로 표시한다 (고치는 경우는 아래 _autoContactMark).
+// 만든 시각 ct (ms) — 검색 '처음/최신 등록순' 이 본다 (v. 26-1102-14, HB). 이전 할일에는 없다(없으면 '오래된 것' 으로 친다).
+function _ctNow(it){if(it&&!it.ct)it.ct=Date.now();return it;}
 function _newTask(text){
-  const it={text:text,done:false};
+  const it={text:text,done:false,ct:Date.now()};
   if(String(text||'').indexOf('@')>=0)it.contactTask=true;
   return it;
 }
@@ -45084,6 +45225,7 @@ function _freshTaskCopy(item){
   // 하위 할일·메모도 '무엇을 하는 일인가' 를 말해 주는 것이라 물려받는다.
   // 다만 하위의 **완료 표시는 지운다** — 사본은 그 날 새로 하는 일이다.
   _carryTaskExtras(item,copy,false);
+  copy.ct=Date.now();   // 복제는 그 날 새로 만든 할일 — 만든 시각도 새로
   return copy;
 }
 
@@ -46470,8 +46612,8 @@ function cellTodoSave(){
   const bigs=getBigs(ctx.k,ctx.secId);
   const limit=(ST.settings&&ST.settings.bigLimit)||6;
   const slot=bigs.findIndex(b=>!(b.text&&b.text.trim()));
-  if(slot>=0)bigs[slot]={...bigs[slot],text,done:false};
-  else if(bigs.length<limit)bigs.push({text,done:false});
+  if(slot>=0)bigs[slot]=_ctNow({...bigs[slot],text,done:false});
+  else if(bigs.length<limit)bigs.push(_ctNow({text,done:false}));
   else{showToast('이 구간의 할일이 가득 찼어요');closeCellTodo();return;}
   save();
   closeCellTodo();
