@@ -182,6 +182,12 @@ console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 
   const open = hd.hidden;
   _rpfFitFlags(list, 0);
   sc.eq('보이는 깃발이 없으면 머리글도 접는다', [open, hd.hidden], [false, true]);
+  // v. 26-1102-8 — 움직임 판(한 줄 ⇄ 요약): 세로줄은 글자 사본에 붙이지 않고 따로 그린다
+  const ms = slice('function _rpMorphStart(', 'function rpFoldCycle(');
+  sc.eq('움직임 판: 글자 사본에서 세로줄(rpf-fbar)을 떼고 줄은 따로(rpf-mbar) 그려 글자와 함께 움직인다', /src\.classList\.remove\('rpf-fbar'\)/.test(ms) && /className='rpf-mbar'/.test(ms) && /bd\.n\.style\.transform=`translate\(\$\{x-bd\.dx\}px,\$\{y-bd\.dy\}px\)`/.test(ms), true);
+  sc.eq('움직임 판: 줄 크기는 접는 계산 전에 잰다 (뒤에 재면 숨겨진 줄이 높이 0)', /o\[k\]\.bar=\{dx:/.test(ms) || /\.bar=\{dx:o\[k\]\.x-br\.x/.test(ms), true);
+  sc.eq('움직임 판 원점은 위젯 테두리 안쪽 — 테두리만큼 빼야 끝난 뒤 화면과 안 어긋난다', /x:r\.left-wr\.left-w\.clientLeft,y:r\.top-wr\.top-w\.clientTop/.test(ms), true);
+  sc.eq('움직임 판 세로줄 CSS', /\.rpf-morph \.rpf-mbar\{position:absolute;/.test(SRC), true);
 }
 
 sc.done();
