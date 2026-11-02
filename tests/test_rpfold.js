@@ -188,6 +188,11 @@ console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 
   sc.eq('움직임 판: 줄 크기는 접는 계산 전에 잰다 (뒤에 재면 숨겨진 줄이 높이 0)', /o\[k\]\.bar=\{dx:/.test(ms) || /\.bar=\{dx:o\[k\]\.x-br\.x/.test(ms), true);
   sc.eq('움직임 판 원점은 위젯 테두리 안쪽 — 테두리만큼 빼야 끝난 뒤 화면과 안 어긋난다', /x:r\.left-wr\.left-w\.clientLeft,y:r\.top-wr\.top-w\.clientTop/.test(ms), true);
   sc.eq('움직임 판 세로줄 CSS', /\.rpf-morph \.rpf-mbar\{position:absolute;/.test(SRC), true);
+  // v. 26-1102-9 — 글자가 툭툭 켜지고 꺼지던 것 → 연속
+  sc.eq('드러남은 보임/안 보임 둘이 아니라 0~1 연속(rv) — 들어가는 높이에서 온전해지고 그 앞 RW 동안 서서히', /rv\[k\]=cl\(\(lim-\(need\[k\]!=null\?need\[k\]:B\[k\]\.y\+B\[k\]\.h\)\)\/RW\+1,0,1\)/.test(ms) && !/const vis=\{\}/.test(ms), true);
+  sc.eq('줄 아래 끝은 줄 상자 기준(세로줄 달린 ⚑ 줄 여백 포함) — 진짜 화면의 맞춤과 같게', /const botOf=k=>\{const r=B\[k\];return r\.bar\?r\.y-r\.bar\.dy\+r\.bar\.h:r\.y\+r\.h;\};/.test(ms), true);
+  sc.eq('놓으면 글자 줄의 아래 끝(stops)에 멈춘다 — 20px 반올림 아님', /springTo\(snapH\(h\),'sum'\)/.test(ms) && !/Math\.round\(\(h-minH\)\/_RPM_SNAP\)/.test(ms), true);
+  sc.eq('불투명도만 뭉근하게(.14s) · 끝낼 땐 전환이 끝난 뒤 갈아끼움(170ms)', /\.rpf-morph \.rpf-m,\.rpf-morph \.rpf-mbar\{transition:opacity \.14s linear;\}/.test(SRC) && /setTimeout\(\(\)=>finish\(state,target\),170\)/.test(ms) && /if\(fin\)return;fin=true;/.test(ms), true);
 }
 
 sc.done();

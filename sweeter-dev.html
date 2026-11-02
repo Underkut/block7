@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3728,6 +3728,8 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rpf-morph.masked{-webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent calc(100% - 14px));mask-image:linear-gradient(to bottom,#000 calc(100% - 34px),transparent calc(100% - 14px));}
 .rpf-morph .rpf-vl{position:absolute;width:1px;background:var(--bd);}
 .rpf-morph .rpf-mbar{position:absolute;left:0;top:0;width:2px;will-change:transform,opacity;}
+/* 불투명도만 살짝 뭉근하게 — 손가락을 따라가는 자리(transform)는 그대로 즉시, 켜지고 꺼지는 것만 부드럽게 (v. 26-1102-9) */
+.rpf-morph .rpf-m,.rpf-morph .rpf-mbar{transition:opacity .14s linear;}
 .rpf-hx{position:relative;display:block;width:16px;height:6px;}
 .rpf-hx>span{position:absolute;left:0;top:0;line-height:0;}
 .rp-widget.rpf-tosum{outline:1px dashed color-mix(in srgb,var(--ac) 55%,transparent);outline-offset:-1px;}
@@ -6936,7 +6938,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-8";
+const APP_VERSION = "v. 26-1102-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34932,11 +34934,23 @@ function _rpMorphStart(w,type){
   }
   const ciOf={};cols.forEach((c,i)=>{[...c.keys,...c.head].forEach(k=>ciOf[k]=i);});
   const ncol=Math.max(1,cols.length);
+  // 글자마다 '온전히 들어가려면 필요한 아래 끝'. 칸의 마지막이 아니면 아래에 +n 자리를 남긴다(진짜 화면의 맞춤 규칙과 같다).
+  // 아래 끝은 '줄 상자' 기준 — 세로줄 달린 ⚑ 줄은 글자보다 1.5px 아래까지 차지한다(진짜 화면의 맞춤도 줄 상자로 잰다)
+  const botOf=k=>{const r=B[k];return r.bar?r.y-r.bar.dy+r.bar.h:r.y+r.h;};
+  const need={};
+  Object.keys(B).forEach(k=>{if(k!=='grab')need[k]=botOf(k);});
+  cols.forEach(c=>c.keys.forEach((k,j)=>{if(B[k])need[k]=botOf(k)+(j<c.n-1?_RPM_SNAP:0);}));
   const e0=B['e0-0'];
   const minH=Math.ceil((e0?e0.y+e0.h:sb.y+_RPM_LH)+(wide&&e0?_RPM_SNAP:0)+tail);
   let defH;
   if(keepH!=null)defH=sb.y+keepH+tail;else{_rpFoldFitSum(box);defH=cS.getBoundingClientRect().height;}
   defH=Math.max(minH,Math.min(fullH,defH));
+  // 놓을 때 멈출 높이 — 글자 줄의 아래 끝(+아래 여백)에 맞춘다. 예전엔 20px 단위로 반올림해서 줄 높이(19.2·20)와 어긋나
+  // 어떤 땐 한 줄 · 어떤 땐 두 줄씩 늘고 줄었다. 이제 늘 '한 줄씩'.
+  const stops=(()=>{const st=new Set([Math.ceil(minH),Math.ceil(fullH)]);
+    Object.keys(B).forEach(k=>{if(k!=='grab')st.add(Math.ceil(need[k]+tail));});
+    return[...st].filter(v=>v>=minH&&v<=fullH).sort((a,b)=>a-b);})();
+  const snapH=hh=>stops.reduce((b,v)=>Math.abs(v-hh)<Math.abs(b-hh)?v:b,stops[0]);
   // 움직임 판
   const ov=document.createElement('div');ov.className='rpf-morph';
   const nodes={};
@@ -34964,6 +34978,7 @@ function _rpMorphStart(w,type){
   const h1=hd&&hd.querySelector('.h1'),h2=hd&&hd.querySelector('.h2');
   const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
   const eIO=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,eO=t=>1-Math.pow(1-t,3);
+  const eS=t=>t*t*(3-2*t);   // 완만한 S 곡선 — 시작이 가파르지 않아 흐려지는 것이 툭 꺼지지 않는다
   const SC=11.5/12;   // 한 줄 글자 크기 / 요약 글자 크기
   let h=from==='line'?lineH:w.getBoundingClientRect().height,h0=h,anim=0,dead=false;
   function draw(){
@@ -34972,27 +34987,29 @@ function _rpMorphStart(w,type){
     const P=cl((h-lineH)/(minH-lineH),0,1);
     const lim=Math.max(h,minH)-tail;
     ov.classList.toggle('masked',P>=1&&h<fullH-1);
-    const vis={},fits=k=>B[k]&&B[k].y+B[k].h<=lim+.5;
-    Object.keys(B).forEach(k=>{if(!(k in ciOf)&&fits(k))vis[k]=1;});
+    // 글자가 드러나는 정도 rv(0~1) — 위젯 아래 끝이 그 글자 밑에 닿기 직전 RW 구간 동안 서서히 나타나, 들어가는 높이에서 온전해진다.
+    // (예전엔 보임/안 보임 둘뿐이라 선을 넘는 순간 글자가 툭툭 켜지고 꺼졌다 — 3px 사이에 불투명도 0→1)
+    // rv 는 들어가는 높이(진짜 화면의 맞춤과 같은 곳)에서 딱 1 — 그 앞 RW 동안 서서히 켜진다
+    const RW=16,rv={};
+    Object.keys(B).forEach(k=>{rv[k]=cl((lim-(need[k]!=null?need[k]:B[k].y+B[k].h))/RW+1,0,1);});
     cols.forEach((c,ci)=>{
-      c.head.forEach(k=>{if(fits(k))vis[k]=1;});
-      let v=0;
-      c.keys.forEach((k,j)=>{const r=B[k];if(!r)return;const last=j===c.n-1;if(r.y+r.h<=lim+.5&&(last||r.y+r.h+_RPM_SNAP<=lim+.5)&&v===j){vis[k]=1;v++;}});
-      const m=mores[ci];
-      if(c.n>v&&c.head.some(k=>vis[k])){
-        const r=B[c.keys[v]]||B[c.keys[c.keys.length-1]];
-        m.textContent='+'+(c.n-v);m.style.transform=`translate(${r.x}px,${r.y}px)`;m.style.opacity=cl((P-.7)/.3,0,1);
+      let v=0;while(v<c.keys.length&&rv[c.keys[v]]>=1)v++;
+      const m=mores[ci],hv=Math.max(0,...c.head.map(k=>rv[k]||0)),nx=c.keys[v];
+      if(c.n>v&&hv>0){
+        const r=B[nx]||B[c.keys[c.keys.length-1]];
+        // +n 은 다음 줄이 드러나는 만큼 흐려진다 — 줄이 자리를 넘겨받는 듯 바뀐다
+        m.textContent='+'+(c.n-v);m.style.transform=`translate(${r.x}px,${r.y}px)`;m.style.opacity=cl((P-.5)/.5,0,1)*(1-(nx?rv[nx]:0))*hv;
       }else m.style.opacity=0;
     });
     for(const k in nodes){
-      const n=nodes[k],a=A[k],b=vis[k]?B[k]:null,sn=B[k];
+      const n=nodes[k],a=A[k],sn=B[k],rk=sn?rv[k]:0;
       const ci=ciOf[k]||0,delay=wide?.22*ci/Math.max(1,ncol-1):0;
       const t=cl((P-delay)/(1-.22),0,1);
       let x=0,y=0,o=0,sc=1,mw=0;
-      if(a&&b){x=lerp(a.x,b.x,eIO(t));y=lerp(a.y,b.y,eO(t));o=1;sc=lerp(SC,1,eIO(t));mw=lerp(a.w,b.w,eIO(t));}
-      else if(a&&sn){x=lerp(a.x,sn.x,eIO(t));y=lerp(a.y,sn.y,eO(t));o=1-eO(cl(t/.4,0,1));sc=lerp(SC,1,eIO(t));mw=lerp(a.w,sn.w,eIO(t));}   // 제 칸 쪽으로 가며 일찍 스며든다
-      else if(a){x=a.x;y=a.y-4*eO(cl(P/.3,0,1));o=1-cl(P/.3,0,1);sc=SC;mw=a.w;}                                   // 한 줄에만: 먼저 스러짐
-      else if(b){const st=.3+.25*(wide?ci/Math.max(1,ncol-1):0),u=cl((P-st)/.42,0,1);x=b.x;y=b.y+6*(1-eO(u));o=eO(u);mw=b.w;}   // 요약에만: 왼쪽 칸부터 떠오름
+      // 한 줄에도 요약에도 있는 글자: 제 자리로 가며 — 요약에 아직 안 들어가면(rk 낮음) 제 칸 쪽으로 가며 일찍 스며들고, 들어가면(rk 1) 또렷하다. 둘 사이는 이어진다
+      if(a&&sn){x=lerp(a.x,sn.x,eIO(t));y=lerp(a.y,sn.y,eO(t));o=Math.max(rk,1-eS(cl(t/.6,0,1)));sc=lerp(SC,1,eIO(t));mw=lerp(a.w,sn.w,eIO(t));}
+      else if(a){x=a.x;y=a.y-4*eS(cl(P/.55,0,1));o=1-eS(cl(P/.55,0,1));sc=SC;mw=a.w;}                                   // 한 줄에만: 먼저 스러짐
+      else if(sn){const st=.3+.25*(wide?ci/Math.max(1,ncol-1):0),u=cl((P-st)/.5,0,1);x=sn.x;y=sn.y+6*(1-eO(u))+4*(1-rk);o=eS(u)*rk;mw=sn.w;}   // 요약에만: 왼쪽 칸부터 떠오르고, 드러나는 줄은 살짝 올라오며 나타남
       // 펼쳐지는 동안에는 아직 낮은 위젯 밖으로 떨어지지 않게 — 아래 끝 바로 위에 머문다
       if(P<1&&a)y=Math.min(y,Math.max(a.y,h-tail-_RPM_LH+1));
       n.style.transform=`translate(${x}px,${y}px) scale(${sc})`;n.style.opacity=o;n.style.maxWidth=(mw/sc+3)+'px';
@@ -35003,7 +35020,9 @@ function _rpMorphStart(w,type){
     // 핸들은 늘 위젯 바닥에 — 한 줄일 때 선 가운데가 바닥에서 4px, 요약(═)일 때 10px. 끄는 손을 그대로 따라 내려간다
     if(hd)hd.style.bottom=lerp(-2,4,eIO(P))+'px';
   }
+  let fin=false;
   function finish(state,target){
+    if(fin)return;fin=true;
     cancelAnimationFrame(anim);_rpMorphNow=null;
     if(!dead&&w.isConnected){ov.remove();w.classList.remove('rpf-morphing');w.style.height='';}
     if(state==='line')_rpFoldSet(type,'line');
@@ -35017,7 +35036,8 @@ function _rpMorphStart(w,type){
       if(dead||!w.isConnected){_rpMorphNow=null;return;}
       const dt=Math.min(.032,(now-last)/1000);last=now;
       v+=(-K*(h-target)-C*v)*dt;h+=v*dt;
-      if(Math.abs(h-target)<.3&&Math.abs(v)<4){h=target;draw();finish(state,target);return;}
+      // 멈추면 켜지고 꺼지는 것(불투명도 전환 .14s)이 다 끝난 뒤에 진짜 화면으로 갈아끼운다 — 안 그러면 막 드러난 줄이 반쯤 투명한 채로 있다 확 또렷해진다
+      if(Math.abs(h-target)<.3&&Math.abs(v)<4){h=target;draw();setTimeout(()=>finish(state,target),170);return;}
       draw();anim=requestAnimationFrame(step);
     };
     anim=requestAnimationFrame(step);
@@ -35034,7 +35054,7 @@ function _rpMorphStart(w,type){
       const P=(h-lineH)/(minH-lineH);
       if(P<.35){springTo(lineH,'line');return;}
       if(h<minH){springTo(from==='line'?defH:minH,'sum');return;}
-      springTo(Math.min(fullH,minH+Math.round((h-minH)/_RPM_SNAP)*_RPM_SNAP),'sum');
+      springTo(snapH(h),'sum');
     },
     cancel(){finish(null);},
     play(to){h0=h;to==='line'?springTo(lineH,'line'):springTo(defH,'sum');}
