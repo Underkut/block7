@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-2  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1102-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1890,13 +1890,16 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
 .settings-btn-icon svg{display:block;width:14.7px;height:14.7px;flex-shrink:0;position:relative;top:0.5px;}
 /* GNB B안 (v. 26-1031-7, HB) — 톱니도 네모 없이. 누르는 자리는 그대로(32×24) 두고 테두리만 뺀다. */
 header .ai-b.gnb-gear{border:0;color:var(--tx2);}
+/* 우상단 네 아이콘 결 맞춤 (v. 26-1102-3, HB) — 화면에서 선 굵기 ≈1.1px 로 같게: 돋보기 15px·1.5 기준.
+   백업 14px·1.4(면이 넓어 커 보여서 작게) · 휴지통 14px·1.3(선이 많아 굵어 보여서) · 톱니 15.4px·1.45 */
+header .gnb-gear svg{width:15.4px;height:15.4px;stroke-width:1.45;}
 .gnb-sep{width:1px;height:12px;background:var(--bd);flex:none;}
-.gnb-trash-dot{position:absolute;top:2px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--ov);display:none;pointer-events:none;}
+.gnb-trash-dot{position:absolute;top:2.5px;right:5.5px;width:4px;height:4px;border-radius:50%;background:var(--ov);display:none;pointer-events:none;}
 .gnb-trash-dot.on{display:block;}
 /* 넓은 화면은 휴지통 · 백업이 밖에, 좁은 폰은 톱니 메뉴 안에 (v. 26-1102-2, HB). 기준 520px = _GNB_NARROW */
 @media (max-width:519px){.gnb-wide{display:none !important;}}
 @media (min-width:520px){#gnbTrashDot{display:none !important;}}
-#gnbTrashDotW{top:5px;right:3px;}
+#gnbTrashDotW{top:5.5px;right:3.5px;}
 /* 떠 있는 작은 메뉴의 아이콘 칸 (_b7Pop rows[].icon) */
 .b7-pop-ic{flex:none;width:16px;height:16px;display:flex;align-items:center;justify-content:center;margin-right:9px;color:var(--tx2);}
 .b7-pop-ic svg{display:block;width:15px;height:15px;}
@@ -6906,7 +6909,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-2";
+const APP_VERSION = "v. 26-1102-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -8412,10 +8415,10 @@ try{
     </button>
     <!-- 넓은 화면(520px 이상)에서만 밖에 보인다 (v. 26-1102-2, HB). 좁으면 톱니 메뉴 안 '휴지통 · 백업'. -->
     <button class="gnb-srch gnb-wide" id="gnbBackupBtn" onclick="exportBackup()" aria-label="백업 내려받기" title="백업 내려받기">
-      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3.5h9.6L16.5 6.4V15.5a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1z"/><path d="M6.8 3.5v3.6h5.6V3.5"/><rect x="6.3" y="11" width="7.4" height="5.5" rx=".4"/></svg>
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.6 4h8.8l2.6 2.6v8.6a.8.8 0 0 1-.8.8H4.6a.8.8 0 0 1-.8-.8V4.8a.8.8 0 0 1 .8-.8z"/><path d="M7 4v3.2h5V4"/><path d="M6.6 16v-4.4h6.8V16"/></svg>
     </button>
     <button class="gnb-srch gnb-wide" id="gnbTrashBtn" style="position:relative;" onclick="openTrash()" aria-label="휴지통" title="휴지통">
-      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M7.3 5.5V4a1 1 0 0 1 1-1h3.4a1 1 0 0 1 1 1v1.5M15.3 5.5l-.9 10.3a1 1 0 0 1-1 .9H6.6a1 1 0 0 1-1-.9l-.9-10.3"/><line x1="8.3" y1="8.7" x2="8.3" y2="13.6"/><line x1="11.7" y1="8.7" x2="11.7" y2="13.6"/></svg>
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M7.3 5.5V4a1 1 0 0 1 1-1h3.4a1 1 0 0 1 1 1v1.5M15.3 5.5l-.9 10.3a1 1 0 0 1-1 .9H6.6a1 1 0 0 1-1-.9l-.9-10.3"/><line x1="8.3" y1="8.7" x2="8.3" y2="13.6"/><line x1="11.7" y1="8.7" x2="11.7" y2="13.6"/></svg>
       <span class="gnb-trash-dot" id="gnbTrashDotW" aria-hidden="true"></span>
     </button>
     <button class="ai-b settings-btn-icon gnb-gear" id="gnbGearBtn" onclick="_gnbGearTap(this)" oncontextmenu="_gnbGearMenu(event,this)" title="설정">
