@@ -138,16 +138,22 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
     await p.mouse.move(box.x + 30, box.y + 2); await sleep(100);
     ok('⑧ 그 칸에서 끌어도 줄 끌기 안 됨(글자 고르기)', await p.evaluate(() => !DR.active));
     await p.mouse.up(); await sleep(100);
-    const cm = await p.evaluate(() => { const inp = document.activeElement; const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 10, clientY: 10 }); inp.dispatchEvent(ev); return { prevented: ev.defaultPrevented, menu: document.getElementById('taskMenu').style.display === 'block' }; });
-    ok('⑧ 고치는 칸 우클릭은 브라우저 메뉴(막지 않음 · 할일 메뉴 없음)', !cm.prevented && !cm.menu, cm);
+    // 진짜 오른쪽 버튼으로 (누르는 순간 포커스가 옮겨지는 것까지 재현 — 2026-11-02 '글자 위 우클릭에 크롬 메뉴' 사고)
+    await p.evaluate(() => { window.__cm = null; document.addEventListener('contextmenu', ev => { setTimeout(() => { window.__cm = { prevented: ev.defaultPrevented, menu: document.getElementById('taskMenu').style.display === 'block' }; }, 0); }); });
+    await p.mouse.click(box.x, box.y, { button: 'right' }); await sleep(200);
+    const cm = await p.evaluate(() => window.__cm);
+    ok('⑧ 고치는 칸 우클릭은 브라우저 메뉴(막지 않음 · 할일 메뉴 없음)', cm && !cm.prevented && !cm.menu, cm);
     await p.evaluate(() => document.activeElement.blur()); await sleep(300);
     // ⑨ 대조
     const box2 = await p.evaluate(() => { const r = [...document.querySelectorAll('#todayView .bi-inp')].find(x => x.value === '운동').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
     await p.mouse.move(box2.x, box2.y); await p.mouse.down(); await p.mouse.move(box2.x, box2.y + 20, { steps: 4 }); await sleep(100);
     ok('⑨ (대조) 편집 아닐 때 글자 누르고 끌면 줄 끌기', await p.evaluate(() => DR.active));
     await p.mouse.up(); await sleep(300);
-    const cm2 = await p.evaluate(() => { const el = [...document.querySelectorAll('#todayView .bi-inp')].find(x => x.value === '운동'); const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 100, clientY: 100 }); el.dispatchEvent(ev); return document.getElementById('taskMenu').style.display === 'block'; });
-    ok('⑨ (대조) 편집 아닐 때 우클릭 → 할일 메뉴', cm2);
+    // 진짜 오른쪽 버튼 — 글자(입력칸) 바로 위. 누르는 순간 칸이 포커스를 받아도 앱 메뉴가 떠야 한다
+    await p.evaluate(() => { window.__cm = null; });
+    await p.mouse.click(box2.x, box2.y, { button: 'right' }); await sleep(200);
+    const cm2 = await p.evaluate(() => ({ menu: document.getElementById('taskMenu').style.display === 'block', cm: window.__cm }));
+    ok('⑨ (대조) 편집 아닐 때 글자 위 우클릭 → 할일 메뉴(크롬 메뉴 아님)', cm2.menu && cm2.cm && cm2.cm.prevented, cm2);
     await ctx.close();
   }
   await b.close();
