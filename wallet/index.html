@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 용돈 친구들 v. 26-1102-1 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
+<!-- 용돈 친구들 v. 26-1102-2 — BLOCK7 과 별개인 독립 앱 (wallet/) -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -727,7 +727,7 @@ body.pdark .verb{color:#8a8f99}.pr-top .verb{width:auto;height:auto;display:bloc
 
 <script>
 'use strict';
-const APP_VERSION = "v. 26-1102-1";
+const APP_VERSION = "v. 26-1102-2";
 const AK = ['cash','card','bank'];                       // 자산: 현금 · 체크카드 · 통장 (v26-1009-5 에 통장 추가)
 const okA = a => AK.includes(a) ? a : 'cash';
 const KEY = 'allowance.v1';      // 저장 키는 v1 그대로 — 모자란 칸은 불러올 때 migrate() 가 채운다
@@ -2727,7 +2727,7 @@ $('mirBar').addEventListener('click', e => { const b = e.target.closest('button'
   else if(b.dataset.v){ goTab(b.dataset.v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x===b)); } });
 /* 아이 화면(보기만) — 홈 · 계획세우기 · 돌아보기를 좌우로 밀어 오간다. 손가락을 따라 움직이고, 놓으면 이어서 넘어간다 */
 const MIR_TABS = ['vHome','vAlloc','vLog'];
-function mirSetTab(v){ goTab(v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x.dataset.v===v)); }
+function mirSetTab(v){ document.querySelectorAll('.view').forEach(x => { x.style.animation = ''; }); goTab(v); document.querySelectorAll('#mirSeg button').forEach(x => x.classList.toggle('on', x.dataset.v===v)); }
 (() => { const el = $('app'); let sx = 0, sy = 0, on = false, lock = false, st = 0, busy = false;
   const cur = () => document.querySelector('.view.on'), W = () => el.clientWidth || 360;
   const idx = () => { const c = cur(); return c ? MIR_TABS.indexOf(c.id) : -1; };
@@ -2741,9 +2741,9 @@ function mirSetTab(v){ goTab(v); document.querySelectorAll('#mirSeg button').for
     if(parStill() || !c.animate){ c.style.transform = c.style.opacity = c.style.transition = ''; mirSetTab(v); return; }
     busy = true; const op0 = 1 - Math.min(Math.abs(x0) / W(), .55);
     c.style.transition = 'none'; c.style.transform = ''; c.style.opacity = '';
-    c.animate([{opacity:op0, transform:`translateX(${x0}px)`}, {opacity:0, transform:`translateX(${-k*W()}px)`}], {duration:150, easing:'ease-in', fill:'forwards'});
-    setTimeout(() => { mirSetTab(v); const n = cur(); n.style.animation = 'none';
-      n.animate([{opacity:0, transform:`translateX(${k*W()}px)`}, {opacity:1, transform:'none'}], {duration:300, easing:PEASE}).onfinish = () => { n.style.animation = ''; };
+    const out = c.animate([{opacity:op0, transform:`translateX(${x0}px)`}, {opacity:0, transform:`translateX(${-k*W()}px)`}], {duration:150, easing:'ease-in', fill:'forwards'});
+    setTimeout(() => { mirSetTab(v); out.cancel(); const n = cur(); n.style.animation = 'none';     // 기본 등장 효과는 꺼 둔다(다시 돌면 깜빡임) · 나간 판의 '투명 유지'는 걷는다(안 걷으면 돌아올 때 빈 화면)
+      n.animate([{opacity:0, transform:`translateX(${k*W()}px)`}, {opacity:1, transform:'none'}], {duration:300, easing:PEASE});
       busy = false; }, 150);
   }
   el.addEventListener('touchstart', e => { const t = e.touches[0];
