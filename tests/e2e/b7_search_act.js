@@ -69,7 +69,7 @@ const SHOT = process.env.SHOT || '';
     s = await p.evaluate(() => ({ open: document.getElementById('srchAct').classList.contains('open'), big: [...document.querySelectorAll('.srch-act-big button span')].map(x => x.textContent), list: [...document.querySelectorAll('.srch-act-list button span')].map(x => x.textContent) }));
     ok('메뉴가 열린다 (손가락을 떼도 안 닫힘)', s.open, s);
     ok('큰 단추 넷: 완료 · 전화 · 보러 가기 · 오늘로', JSON.stringify(s.big) === JSON.stringify(['완료 풀기', '전화', '보러 가기', '오늘로']), s.big);
-    ok('목록: 날짜 · 구간 · 중요 · 긴급 · 메모 · 복제 · 삭제', ['날짜 옮기기…', '구간 옮기기…', '⚑ 중요 켜기', '! 긴급 켜기', '메모 쓰기', '복제', '삭제'].every(x => s.list.includes(x)), s.list);
+    ok('목록: 날짜 · 구간 · 중요 · 긴급 · 메모 · 복제 · 삭제', ['날짜 옮기기…', '구간 옮기기…', '중요 켜기', '긴급 켜기', '메모 쓰기', '복제', '삭제'].every(x => s.list.includes(x)), s.list);
     if (SHOT) await p.screenshot({ path: SHOT + '/srch-act-' + w + '.png' });
     await p.keyboard.press('Escape'); await p.waitForTimeout(150);
     s = await p.evaluate(() => ({ m: document.getElementById('srchAct').classList.contains('open'), sr: _srchIsOpen() }));

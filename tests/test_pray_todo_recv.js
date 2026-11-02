@@ -34,7 +34,7 @@ sc.eq('⭐⑤ 받기 전에 준비 확인(_prayTodoReady)', /!_prayTodoReady\(\)
 sc.eq('⭐⑤ 로그인 덩어리 안 이름을 직접 쓰지 않는다', /\b(_fbInitLoaded|fbDB|_fbApplyRenders)\b/.test(CODE), false);
 sc.eq('⑤ 로그인 덩어리가 준비 함수를 넘긴다', /_prayTodoWatch\(\(\)=>_fbInitLoaded\)/.test(SRC), true);
 sc.eq('⑥ BLOCK7 에서만 · 개발본 아님', [/APP_PRODUCT!=='block7'/.test(pull), /DEV_MODE/.test(pull)], [true, true]);
-sc.eq('⑥ 사람이 넣는 길 그대로', /beforeSave\(\);[\s\S]*getBigs\(p\.date,p\.sec\)\.push\(\{text:p\.text,done:false\}\)\);[\s\S]*save\(\);/.test(pull), true);
+sc.eq('⑥ 사람이 넣는 길 그대로 (만든 시각 ct 도 함께 — v. 26-1102-14)', /beforeSave\(\);[\s\S]*getBigs\(p\.date,p\.sec\)\.push\(_ctNow\(\{text:p\.text,done:false\}\)\)\);[\s\S]*save\(\);/.test(pull), true);
 // 개발본 · Sweeter 개발본에도 같은 덩어리가 있다(만드는 도구가 그대로 옮긴다)
 ['index-dev.html', 'sweeter-dev.html'].forEach(f => {
   const t = fs.readFileSync(path.join(__dirname, '..', f), 'utf8');

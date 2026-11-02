@@ -4,7 +4,7 @@
 const { makeScorer, slice } = require('./_load');
 const sc = makeScorer();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix,SRCH_QUICK,_srchCarryMin,_srchQuickLabel,_srchParse,_srchPeriod,_srchKeyOf};')(esc);
+const api = new Function('esc', slice('// ── 검색 엔진 ──', '// ── 검색 엔진 끝 ──') + '\nreturn {_srchRun,_srchMark,_srchSnippet,_srchNorm,_srchEvDest,_srchWeekOff,_srchFilterFix,SRCH_QUICK,_srchCarryMin,_srchQuickLabel,_srchParse,_srchPeriod,_srchKeyOf,_srchSort};')(esc);
 const SECS = [{ id: 'am', name: '오전' }, { id: 'pm', name: '오후' }];
 const days = () => ({
   '2026-10-31': {
@@ -131,15 +131,21 @@ console.log('\n시나리오 11 — 결과 할일이 D뷰 위 거르기 단추에
 {
   const f = api._srchFilterFix;
   sc.eq('거르기 없음 → 바꿀 것 없음', f({ text: 'a' }, null, {}), {});
-  sc.eq('깃발만 보기 · 깃발 없는 할일 → 푼다', f({ text: 'a' }, 'flagFilter', {}), { marker: 'flag' });
+  sc.eq('깃발만 보기 · 깃발 없는 할일 → 푼다', f({ text: 'a' }, 'flagFilter', {}), { marker: 'flag', markerBtn: true });
   sc.eq('깃발만 보기 · 깃발 할일 → 그대로', f({ text: 'a', flag: true }, 'flagFilter', {}), {});
-  sc.eq('연락만 보기 · 연락할 일 아님 → 푼다', f({ text: 'a', flag: true }, 'contactFilter', {}), { marker: 'contact' });
+  sc.eq('연락만 보기 · 연락할 일 아님 → 푼다', f({ text: 'a', flag: true }, 'contactFilter', {}), { marker: 'contact', markerBtn: true });
   sc.eq('완료 숨김 · 완료한 할일 → 보이게', f({ done: true }, null, { showCompletedTasks: false }), { showDone: true });
   sc.eq('✓ 단추가 설정에서 꺼져 있으면 단추도', f({ done: true }, null, { showCompletedTasks: false, showCompletedBtn: false }), { showDone: true, showDoneBtn: true });
   sc.eq('완료 숨김이어도 안 끝낸 할일은 그대로', f({ done: false }, null, { showCompletedTasks: false, showCompletedBtn: false }), {});
   sc.eq('완료 보임(값 없음 = 보임) → 그대로', f({ done: true }, null, {}), {});
-  sc.eq('둘 다 걸리면 둘 다', f({ done: true }, 'flagFilter', { showCompletedTasks: false }), { marker: 'flag', showDone: true });
+  sc.eq('둘 다 걸리면 둘 다', f({ done: true }, 'flagFilter', { showCompletedTasks: false }), { marker: 'flag', markerBtn: true, showDone: true });
   sc.eq('깨진 값', f(null, 'flagFilter', {}), {});
+  // v. 26-1102-15 (HB 11-①②)
+  sc.eq('깃발 거르기를 풀 때 단추가 켜져 있으면 단추는 그대로', f({ text: 'a' }, 'flagFilter', { showFlagFilterBtn: true }), { marker: 'flag' });
+  sc.eq('연락 단추가 꺼져 있으면 함께 꺼낸다', f({ text: 'a' }, 'contactFilter', { showContactFilterBtn: false }), { marker: 'contact', markerBtn: true });
+  sc.eq('스몰 블럭이 꺼져 있고 스몰 할일이면 켠다', f({ text: 'a' }, null, { showSmallBlocks: false }, 'small'), { smallOn: true });
+  sc.eq('스몰 블럭이 켜져 있으면 그대로', f({ text: 'a' }, null, { showSmallBlocks: true }, 'small'), {});
+  sc.eq('빅 할일은 스몰 설정과 상관없음', f({ text: 'a' }, null, { showSmallBlocks: false }, 'big'), {});
 }
 
 console.log('\n시나리오 12 — 첫 화면 손질: 긴급 뺌 · 밀린 할일 기준을 설정에서 (v. 26-1031-12)');
@@ -212,6 +218,29 @@ console.log('\n시나리오 16 — @이름 (연락처 이름 · 별명)');
   sc.eq('@이름 → 그 사람의 @별명이 적힌 할일 · 일정', [t('@길동').tasks.map(x => x.item.text), t('@길동').events.length], [['@gd 에게 서류'], 1]);
   sc.eq('@김 → 이름 · 별명에 김이 든 두 사람 (그냥 "김 집사님" 은 아님)', t('@김').tasks.map(x => x.item.text).sort(), ['@gd 에게 서류', '@김집사 셀모임 장소']);
   sc.eq('연락처를 안 주면 글자 그대로만', api._srchRun(d, { q: '@길동', today: '2026-10-31', secs: SECS }).tasks.length, 0);
+}
+
+console.log('\n시나리오 17 — 결과 정렬 (ToDo배치순 · 등록순 · 가까운 날짜순 · ㄱㄴㄷ순)');
+{
+  const R = (t, k, sec, type, idx, dist, ct) => ({ kind: type, type, k, secId: sec, idx, dist, item: Object.assign({ text: t }, ct ? { ct } : {}) });
+  const L = [
+    R('다', '2026-10-30', 'pm', 'big', 0, 1.5, 300),   // 어제 오후
+    R('가', '2026-10-30', 'am', 'small', 0, 1.5),       // 어제 오전 스몰 (예전 것)
+    R('라', '2026-10-30', 'am', 'big', 1, 1.5, 100),    // 어제 오전 빅 두째
+    R('나', '2026-11-07', 'am', 'big', 0, 7, 200),      // 앞날
+    R('마', '2026-10-30', 'am', 'big', 0, 1.5)          // 어제 오전 빅 첫째 (예전 것)
+  ];
+  const order = ['am', 'pm', 'night'], T = m => api._srchSort(L, m, order).map(r => r.item.text).join('');
+  sc.eq('ToDo배치순: 가까운 날 → 구간 → 빅 → 스몰 → 줄', T('todo'), '마라가다나');
+  sc.eq('처음등록순: ct 없는 예전 것(날짜 → 배치) → ct 오름', T('ct'), '마가라나다');
+  sc.eq('최신등록순: 그 거꾸로', T('ctDesc'), '다나라가마');
+  sc.eq('가까운 날짜순(예전 그대로 — 같은 날 안은 줄 번호)', T('near'), '다가마라나');
+  sc.eq('ㄱㄴㄷ순', T('abc'), '가나다라마');
+  sc.eq('모르는 값은 ToDo배치순', T('x'), T('todo'));
+  sc.eq('원래 배열은 그대로', L.map(r => r.item.text).join(''), '다가라나마');
+  const ev = [{ k: '2026-11-01', secId: 'pm', idx: 0, dist: 1, ev: { text: 'B' } }, { k: '2026-11-01', secId: 'am', idx: 0, dist: 1, ev: { text: 'A' } }];
+  sc.eq('일정도 같은 날 안은 구간 차례', api._srchSort(ev, 'todo', order).map(r => r.ev.text).join(''), 'AB');
+  sc.eq('일정 ㄱㄴㄷ순', api._srchSort(ev.slice().reverse(), 'abc', order).map(r => r.ev.text).join(''), 'AB');
 }
 
 sc.done();

@@ -128,8 +128,10 @@ console.log("\n시나리오 5 — '@' 자동 연락 표시");
 console.log("\n시나리오 6 — 새로 적을 때도 '@' 가 있으면 처음부터 연락할 일");
 {
   const { api } = makeEnv([]);
-  sc.eq("'@' 가 든 새 할일은 연락할 일", api._newTask('@홍길동 전화'), { text: '@홍길동 전화', done: false, contactTask: true });
-  sc.eq("'@' 가 없으면 평범한 새 할일", api._newTask('장보기'), { text: '장보기', done: false });
+  const noCt = o => { const c = Object.assign({}, o); delete c.ct; return c; };   // 만든 시각 ct 는 따로 본다 (v. 26-1102-14, test_task_ct)
+  sc.eq("새 할일에는 만든 시각(ct)", typeof api._newTask('x').ct, 'number');
+  sc.eq("'@' 가 든 새 할일은 연락할 일", noCt(api._newTask('@홍길동 전화')), { text: '@홍길동 전화', done: false, contactTask: true });
+  sc.eq("'@' 가 없으면 평범한 새 할일", noCt(api._newTask('장보기')), { text: '장보기', done: false });
   sc.eq('글 중간의 @ 도 같다', api._newTask('내일 a@b 에게 메일').contactTask, true);
 }
 

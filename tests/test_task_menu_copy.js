@@ -98,6 +98,8 @@ console.log('\n시나리오 5 — 실제로 오늘·내일·다음 주·어제�
   sc.eq('내일 복제 뒤 원본이 남는다', tomorrow.from.length, 1);
   sc.eq('원본은 하나도 안 바뀐다', tomorrow.from[0],
     {text:'전화하기',done:true,flag:true,contactTask:true,daily:true,manualCarryCount:2,autoCarryCount:3});
+  sc.eq('사본은 새 만든 시각(ct)을 갖는다 (v. 26-1102-14)', typeof tomorrow.to[0].ct, 'number');
+  delete tomorrow.to[0].ct;
   sc.eq('사본은 완료가 풀린 새 할일', tomorrow.to[0],
     {text:'전화하기',done:false,daily:true,flag:true,contactTask:true});
   sc.eq('사본에 이월 표시가 따라오지 않는다',
@@ -137,7 +139,8 @@ console.log('\n시나리오 6 — 날짜를 골라 복제한다 (v26-0904-2)');
 
   dup('2026-09-20','am');
   sc.eq('원본은 그 자리에 남는다', from.length, 1);
-  sc.eq('고른 날짜에 새 할일로 들어간다', to[0], {text:'세금 내기',done:false,flag:true});
+  sc.eq('사본은 새 만든 시각(ct)', typeof to[0].ct, 'number');
+  sc.eq('고른 날짜에 새 할일로 들어간다', Object.assign({}, to[0], { ct: undefined }), {text:'세금 내기',done:false,flag:true,ct:undefined});
   sc.eq('복제라고 안내하며 갈 곳도 알려 준다', calls.at(-1),
     ['jump','2026-09-20 am 복제','2026-09-20',{key:'2026-09-20',secId:'am',type:'big',idx:0}]);
 
