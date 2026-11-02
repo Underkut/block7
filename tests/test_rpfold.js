@@ -75,7 +75,7 @@ console.log('\n시나리오 4 — 그리는 모양 (v. 26-1031-1: 넓으면 빈�
   sc.eq('요약 넓은 모양: 날 칸 둘', (sum.match(/class="rpf-col"/g) || []).length, 2);
   sc.eq('요약 넓은 모양: 칸마다 일정을 다 그려 두고 몇 개인지 적어 둔다 (몇 개 보일지는 그린 뒤 _rpFoldFitSum)', /class="rpf-col" data-n="4"/.test(sum) && (sum.split('rpf-narrow')[0].match(/rpf-ci/g) || []).length === 5 + 4, true);
   sc.eq('높이를 안 정했으면 칸마다 셋 (예전 모양)', /const RPF_SUM_CAP=3;/.test(SRC), true);
-  sc.eq('요약 넓은 모양: ⚑ 칸', /<span data-k="fl">⚑<\/span> <span data-k="flh">오늘 깃발/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
+  sc.eq('요약 넓은 모양: ⚑ 칸', /<span data-k="fl">⚑<\/span> <span data-k="flh">오늘 중요/.test(sum) && /class="rpf-flcol" data-n="4"/.test(sum), true);
   const narrow = sum.split('class="rpf-narrow"')[1] || '';
   sc.eq('요약 좁은 모양: 한 날 일정 하나 + 나머지 수 (중간에서 안 잘리게)', /보수교육<\/span><\/span> <span class="rpf-more" data-k="m0">\+3/.test(narrow), true);
   sc.eq('요약 좁은 모양: ⚑ 는 한 줄에 하나씩 다 그려 두고(보일 수는 그린 뒤 _rpfFitFlags) 처음엔 하나', /class="rpf-fll" data-n="4" data-cap="1"/.test(narrow) && (narrow.match(/rpf-fbi/g) || []).length === 4, true);
@@ -153,7 +153,7 @@ console.log('\n시나리오 10 — 요약 ⚑ 목록은 높이만큼 (v. 26-1102
   global.document = global.document || {};
   eval(slice('function _rpfFitFlags(', 'function _rpFoldFitSum(') + ';globalThis._rpfFitFlags=_rpfFitFlags;');
   const rows = [0, 1, 2, 3].map(() => { const m = { textContent: '' }; return { hidden: false, querySelector: () => m, m }; });
-  const list = { dataset: { n: '6' }, querySelectorAll: () => rows };
+  const list = { dataset: { n: '6' }, querySelectorAll: () => rows, querySelector: () => null };
   _rpfFitFlags(list, 2);
   sc.eq('앞 둘만 보이고 둘째 끝에 +4', [rows.map(r => r.hidden), rows[1].m.textContent, rows[0].m.textContent], [[false, false, true, true], '+4', '']);
   _rpfFitFlags(list, 4);
@@ -162,6 +162,26 @@ console.log('\n시나리오 10 — 요약 ⚑ 목록은 높이만큼 (v. 26-1102
   const ut = slice('function updateTotal(){', '\n}\n');
   sc.eq('달성 줄: 남은 중요 할일 ⚑숫자 · 다 끝내면 ⚑✓ · 없으면 안 보임', /fAll=all\.filter\(b=>b\.flag\),fLeft=fAll\.filter\(b=>!b\.done\)\.length/.test(ut) && /fLeft\|\|'✓'/.test(ut) && /fAll\.length\?/.test(ut), true);
   sc.eq('⚑ 는 n / m 과 띄어 둔다', /\.total-fl\{margin-left:9px;/.test(SRC), true);
+}
+
+console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 · "오늘 중요" (v. 26-1102-7)');
+{
+  const fd = slice('function _rpFoldData(', 'function _rpFoldDayLabel(');
+  sc.eq('깃발마다 놓인 시간구간 색을 함께 돌려준다', /flagCols\.push\(sc\.color\|\|''\)/.test(fd) && /return\{days,flags,flagCols\}/.test(fd), true);
+  SECS = [{ id: 'am', color: '#28d880' }, { id: 'pm', color: '#3eaaf8' }];
+  EV = { [key(0)]: { pm: [{ text: '셀', time: '23:00' }] } };
+  TK = [{ text: 'A', flag: true }, { text: 'B', flag: true }, { text: 'C', flag: true }, { text: 'D', flag: true }];
+  const sum = _rpFoldSumHTML('weekly');
+  sc.eq('오른쪽 ⚑ 칸: 글자는 "오늘 중요" · 할일마다 구간 색 세로줄', !/오늘 깃발/.test(sum) && (sum.match(/class="rpf-ell rpf-flt rpf-ci rpf-fbar" style="--fc:#[0-9a-fA-F]+"/g) || []).length === 4, true);
+  sc.eq('아래 ⚑ 목록: "⚑ 오늘 중요" 머리글 하나 + 할일마다 색 세로줄 (앞 칸 52px 을 없애 여백을 줄임)', (sum.match(/class="rpf-flhd rpf-d rpf-fl"/g) || []).length === 2 && (sum.match(/rpf-fbi rpf-fbar" style="--fc:#/g) || []).length === 8 && !/rpf-d rpf-fl"><\/span><span class="rpf-evs">/.test(sum), true);
+  sc.eq('세로줄 CSS: 구간 색(--fc) · 살짝 들임', /\.rpf-fbar\{border-left:2px solid var\(--fc,var\(--ac\)\);margin-left:2px;/.test(SRC), true);
+  const rows = [0, 1].map(() => { const m = { textContent: '' }; return { hidden: false, querySelector: () => m, m }; });
+  const hd = { hidden: false };
+  const list = { dataset: { n: '2' }, querySelectorAll: () => rows, querySelector: q => q === '.rpf-flhd' ? hd : rows[0].m };
+  _rpfFitFlags(list, 2);
+  const open = hd.hidden;
+  _rpfFitFlags(list, 0);
+  sc.eq('보이는 깃발이 없으면 머리글도 접는다', [open, hd.hidden], [false, true]);
 }
 
 sc.done();
