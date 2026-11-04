@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1104-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1104-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1104-1';
+const APP_VERSION = 'v. 26-1104-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4361,6 +4361,7 @@ function askText(title, value, placeholder, fn, opt) {
     (opt && opt.hint ? '<div class="hint">' + esc(opt.hint) + '</div>' : '') +
     '<div class="sh-acts">' + (opt && opt.del ? '<button class="ghost" data-a="ask-del" style="color:var(--danger)">지우기</button>' : '') + '<button class="cta" data-a="ask-ok">' + esc((opt && opt.ok) || '저장') + '</button></div>', fn);
   w._del = opt && opt.del;
+  if (opt && opt.lines) { w._lines = opt.lines; w._linesWhat = opt.linesWhat || '항목'; }   // 여러 줄 붙여넣기 (mlPaste)
   setTimeout(() => { const i = $('askIn'); if (i) { i.focus(); if (!multi) i.setSelectionRange(i.value.length, i.value.length); } }, 360);
   return w;
 }
@@ -5022,11 +5023,14 @@ ACT['map-menu'] = () => choose('지도', [
 ACT['add-group'] = () => askText('새 그룹', '', '그룹 이름 (예: 조명팀)', v => {
   v = v.trim(); if (!v) return;
   const g = newGroup(v, GROUP_COLORS[DB.G.length % GROUP_COLORS.length]); DB.G.push(g); save(); refresh(); pushLayer({ type: 'group', id: g.id });
-}, { ok: '만들기' });
+}, { ok: '만들기', linesWhat: '그룹', lines: a => { a.forEach(v => DB.G.push(newGroup(v, GROUP_COLORS[DB.G.length % GROUP_COLORS.length]))); return a.length; } });
 ACT['add-sub'] = el => askText('새 서브 그룹', '', '이름 (예: 13세 가족)', v => {
   v = v.trim(); if (!v) return;
   const p = findG(DB, el.dataset.id); const g = newGroup(v, p ? p.color : GROUP_COLORS[0]); g.parent = el.dataset.id; DB.G.push(g); save(); refresh(); pushLayer({ type: 'group', id: g.id });
-}, { ok: '만들기' });
+}, { ok: '만들기', linesWhat: '서브 그룹', lines: a => {
+  const p = findG(DB, el.dataset.id); if (!p) return 0;
+  a.forEach(v => { const g = newGroup(v, p.color); g.parent = p.id; DB.G.push(g); }); return a.length;
+} });
 
 // 목록
 // ═══ 차분한 전환 (HB 2026-10-13) — 다시 그리지 않는다. 이름표만 바꾸고, 그 때문에 **나타나거나 사라지는 것만**
@@ -5362,6 +5366,7 @@ ACT['add-target'] = () => {
   w._kind = v => { kind = v; const c = DB.cats.find(x => x.person === (v === 'person')); if (c) cat = c.id; redraw(); };
   w._cat = v => { cat = v; const c = DB.cats.find(x => x.id === v); if (c) kind = c.person ? 'person' : 'item'; redraw(); };
   w._ok = () => { const nm = $('addName').value.trim(); if (!nm) { $('addName').focus(); return; } const t = newTarget(kind, nm); t.cat = cat; DB.T.push(t); save(); closeSheet(); refresh(); pushLayer({ type: 'target', id: t.id }); };
+  w._linesWhat = '사람 · 항목'; w._lines = a => { a.forEach(nm => { const t = newTarget(kind, nm); t.cat = cat; DB.T.push(t); }); return a.length; };   // 여러 줄 붙여넣기 — 고른 종류 · 구분 그대로
   setTimeout(() => { const i = $('addName'); if (i) i.focus(); }, 360);
 };
 ACT['add-kind'] = el => SHEET && SHEET._kind && SHEET._kind(el.dataset.v);
@@ -5513,6 +5518,56 @@ ACT['paste-lines'] = el => askText('여러 항목 붙여넣기', '', '한 줄에
   let n = 0; v.split(/\n/).forEach(x => { const l = parseLineText(DB, x); if (l) { g.lines.push(l); fillLineCats(DB, l, g); n++; } });
   save(); refresh(); if (n) toast(n + '개 항목을 넣었습니다');
 }, { multi: true, ok: '넣기', hint: '시트에서 칸을 골라 복사해 붙여 넣어도 됩니다. 이름이 같으면 같은 사람으로 봅니다.' });
+// ═══ 여러 줄 붙여넣기 → 여러 개 한꺼번에 (HB 2026-11-04, BLOCK7 _mlPaste 와 같은 규칙) ═══
+// 엔터로 나뉜 목록을 한 줄 칸에 붙이면 "나눠 넣기 / 한 줄로 넣기" 를 묻는다. 칸마다 처리기를 달지 않고 여기 한 곳에서.
+//   · 줄 앞 목록 표시('-' '•' '1.' '☐' …)는 떼고 빈 줄은 버린다 · 한 번에 ML_MAX 개까지
+//   · ⚠️ 묻기 전에 칸을 먼저 비운다 — 묻는 판을 누르는 순간 칸이 포커스를 잃어 '바깥을 누르면 적기'(focusout)가
+//     돌면 같은 글이 두 번 들어간다. 고르면 둘 다 같은 add 를 탄다. 고르지 않고 닫으면 아무것도 안 넣는다.
+//   · 메모 · 실천 칸은 원래 여러 줄 칸(textarea)이라 여기 안 탄다
+const ML_MAX = 100;
+const ML_BUL = /^\s*(?:[-*+](?=\s)|[•·▪◦‣○●□■☐☑☒✓✔→▶]|\[[ xXvV]?\]|\(?\d{1,3}[.)](?=\s)|[①-⑳])\s*/;
+function mlLines(raw) { return String(raw == null ? '' : raw).split(/\r\n|\r|\n/).map(x => x.replace(ML_BUL, '').trim()).filter(Boolean); }
+// 이 칸에 여러 줄을 붙였을 때 무엇을 어디에 넣나 — { what, add(lines) → 넣은 수 }
+function mlTarget(el) {
+  const d = el.dataset || {};
+  if (d.addin) return { what: '항목', add: a => { const g = findG(DB, d.addin); if (!g) return 0; let n = 0; a.forEach(x => { const l = makeEntry(DB, x, suggestCat(DB, g, x)); if (l) { g.lines.push(l); n++; } }); if (n) UI.mapEdit = null; return n; } };
+  if (d.add === 'line') return { what: '항목', add: a => { const g = findG(DB, d.id); if (!g) return 0; let n = 0; a.forEach(x => { const l = parseEntryText(DB, x); if (l) { g.lines.push(l); fillLineCats(DB, l, g); n++; } }); return n; } };
+  if (d.add === 'topic') return { what: '기도제목', add: a => { const t = findAny(DB, d.id); if (!t) return 0; a.forEach(x => { const tp = newTopic(x); linkTopic(DB, t, tp); t.topics.push(tp); }); return a.length; } };
+  if (d.add === 'cats' || d.add === 'subcats') return { what: d.add === 'cats' ? '구분' : '분류', add: a => { a.forEach(v => (d.add === 'cats' ? DB.cats : DB.subs).push(d.add === 'cats' ? { id: uid(), name: v, person: false } : { id: uid(), name: v })); return a.length; } };
+  if ((el.id === 'askIn' || el.id === 'addName') && SHEET && SHEET._lines) return { what: SHEET._linesWhat || '항목', add: SHEET._lines, sheet: true };
+  return null;
+}
+document.addEventListener('paste', e => {
+  const el = e.target; if (!el || el.tagName !== 'INPUT') return;
+  const tg = mlTarget(el); if (!tg) return;
+  const cd = e.clipboardData, txt = cd ? (cd.getData('text/plain') || '') : '';
+  if (!/[\r\n]/.test(txt)) return;   // 한 줄이면 브라우저에 맡긴다
+  const v = el.value || '';
+  let a = v.length, b = v.length;
+  try { if (el.selectionStart != null) { a = el.selectionStart; b = el.selectionEnd; } } catch (_) {}
+  const whole = v.slice(0, a) + txt + v.slice(b);   // 쓰던 글이 있으면 그 자리에 끼운 모양 그대로 나눈다
+  const lines = mlLines(whole); if (lines.length < 2) return;
+  e.preventDefault();
+  el.value = ''; el._last = '';
+  try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch (_) {}   // 구분 칩 줄도 접힌다
+  const one = whole.split(/\r\n|\r|\n/).map(x => x.trim()).filter(Boolean).join(' ');
+  const take = lines.slice(0, ML_MAX);
+  const ask = () => choose('붙여 넣은 글이 ' + lines.length + '줄입니다', [
+    { v: 'split', label: tg.what + ' ' + take.length + '개로 나눠 넣기', desc: lines.length > ML_MAX ? '앞의 ' + ML_MAX + '줄만 넣습니다' : '한 줄에 하나씩' },
+    { v: 'one', label: '한 줄로 넣기', desc: one.length > 40 ? one.slice(0, 40) + '…' : one }
+  ], null, k => mlRun(tg, k === 'split' ? take : [one], k === 'split'), null, { x: true });
+  if (tg.sheet) { closeSheet(); setTimeout(ask, 360); }   // 새 그룹 · 새로 추가 판에서 붙였으면 그 판을 닫고 묻는다
+  else ask();
+}, true);
+function mlRun(tg, arr, split) {
+  const before = JSON.stringify(DB);
+  let n = 0;
+  try { n = tg.add(arr) || 0; } catch (err) { console.warn('[여러 줄 넣기]', err); DB = normDB(JSON.parse(before)); toast('넣지 못했습니다'); return; }
+  if (!n) return;
+  save(); refresh();
+  if (!split) return;   // 한 줄로 넣은 것은 평소 넣기와 같다
+  toast(tg.what + ' ' + n + '개를 넣었습니다', '되돌리기', () => { DB = normDB(JSON.parse(before)); save(); refresh(); toast('되돌렸습니다'); });
+}
 ACT['edit-line'] = el => {
   const g = findG(DB, el.dataset.gid); if (!g) return; const l = g.lines.find(x => x.id === el.dataset.id); if (!l) return;
   askText('항목 이름 수정', lineToText(DB, l), '이름 — / 로 나눌 수 있어요', v => {
