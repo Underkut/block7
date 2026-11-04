@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1104-2  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1104-3  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6988,7 +6988,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1104-2";
+const APP_VERSION = "v. 26-1104-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -9161,7 +9161,7 @@ try{
 <div class="event-modal" id="appConfirmModal" style="display:none;z-index:4450;width:290px;">
   <div id="appConfirmMsg" style="font-size:14px;line-height:1.65;color:var(--tx);margin-bottom:18px;white-space:pre-wrap;text-align:center;"></div>
   <div style="display:flex;gap:8px;">
-    <button class="settings-btn" onclick="_appConfirmResolve(false)">취소</button>
+    <button class="settings-btn" id="appConfirmNo" onclick="_appConfirmResolve(false,true)">취소</button>
     <button class="settings-btn" id="appConfirmOk" onclick="_appConfirmResolve(true)" style="border-color:var(--ac);color:var(--tx);">확인</button>
   </div>
 </div>
@@ -37453,6 +37453,7 @@ function _openGhostInput(secId, type, pos){
       if(e.key==='Escape'){committed=true;ghost.remove();}
     };
     inp.onclick=e=>e.stopPropagation();
+    _mlBind(inp,lines=>_mlAddTasks('big',dayKey,secId,lines,pos==='C'),{what:'빅블럭'});
     ghost.appendChild(inp);
     if(pos==='C')bigList.insertBefore(ghost,bigList.firstChild);
     else bigList.appendChild(ghost);
@@ -37549,6 +37550,7 @@ function _openGhostInput(secId, type, pos){
       if(e.key==='Escape'){committed=true;ghost.remove();}
     };
     inp.onclick=e=>e.stopPropagation();
+    _mlBind(inp,lines=>_mlAddTasks('small',dayKey,secId,lines,pos==='C'),{what:'스몰블럭'});
     ghost.appendChild(inp);
     if(pos==='C')smList.insertBefore(ghost,smList.firstChild);
     else smList.appendChild(ghost);
@@ -37591,6 +37593,10 @@ function renderSecBody(id){
   inlineInp.type='text';inlineInp.className='ts-inline-inp';inlineInp.id=`tii-inp-${id}`;
   inlineInp.setAttribute('inputmode','text');inlineInp.setAttribute('enterkeyhint','go');
   inlineInp.placeholder='내용 입력 후 엔터';
+  _mlBind(inlineInp,lines=>{
+    const t=document.getElementById(`tii-${id}`)?.dataset.itype||'big';
+    return _mlAddTasks(t==='big'?'big':'small',tKey(),id,lines,false);
+  },{what:'할일'});
   inlineInp.onkeydown=e=>{
     if((e.key==='Enter'||e.key==='Tab')&&!e.isComposing&&e.keyCode!==229){
       e.preventDefault();
@@ -39916,6 +39922,7 @@ function makeBigGhost(id,secColor){
     }
   };
   inp.onclick=e=>e.stopPropagation();
+  _mlBind(inp,lines=>_mlAddTasks('big',tKey(),id,lines,false),{what:'빅블럭'});
   ba.append(icon,inp);
   return ba;
 }
@@ -40124,6 +40131,7 @@ function makeSmInlineGhost(id,secColor){
     }
   };
   inp.onclick=e=>e.stopPropagation();
+  _mlBind(inp,lines=>_mlAddTasks('small',tKey(),id,lines,false),{what:'스몰블럭'});
   gh.appendChild(inp);
   return gh;
 }
@@ -42687,6 +42695,7 @@ let _contactEditId=null; // null = adding, otherwise the id being edited
 
 function openContactsModal(){
   _contactEditId=null;
+  ['cNick','cName'].forEach(id=>_mlBind(document.getElementById(id),_mlAddContacts,{what:'연락처',z:5100,oneToInput:true}));
   document.getElementById('contactsOverlay').style.display='block';
   document.getElementById('contactsModal').style.display='block';
   document.getElementById('cPickBtn').style.display=CONTACT_PICKER_SUPPORTED?'':'none';
@@ -42764,6 +42773,36 @@ function submitContact(){
     ST.contacts.push({id:'c'+Date.now(),nick,name,phone,email});
   }
   rawSave();clearContactForm();renderContactsList();
+}
+// 연락처 여러 명 한꺼번에 (v. 26-1104-3) — 줄마다 "이름 전화번호 이메일" (순서 · 쉼표 · 탭 상관없음)
+//   닉네임은 이름에서 띄어쓰기를 뺀 것 · 전화번호도 이메일도 없는 줄, 닉네임이 겹치는 줄은 건넌다
+function _mlContactParse(line){
+  let s=' '+String(line||'')+' ';
+  const em=(s.match(/[^\s,;<>()]+@[^\s,;<>()@]+\.[^\s,;<>()]+/)||[''])[0];
+  if(em)s=s.replace(em,' ');
+  const ph=(s.match(/\+?\d[\d\s\-().]{5,}\d/)||[''])[0];
+  if(ph)s=s.replace(ph,' ');
+  const name=s.replace(/[,;\t|]+/g,' ').replace(/\s+/g,' ').trim().replace(/^@/,'');
+  return {name,nick:name.replace(/\s+/g,''),phone:ph.trim(),email:em};
+}
+function _mlAddContacts(lines){
+  if(!Array.isArray(ST.contacts))ST.contacts=[];
+  const added=[];let bad=0,dup=0;
+  const base=Date.now();
+  lines.forEach((ln,i)=>{
+    const c=_mlContactParse(ln);
+    if(!c.nick||(!c.phone&&!c.email)){bad++;return;}
+    if(ST.contacts.some(x=>x.nick&&x.nick.toLowerCase()===c.nick.toLowerCase())){dup++;return;}
+    const id='c'+(base+i);
+    ST.contacts.push({id,nick:c.nick,name:c.name,phone:c.phone,email:c.email});
+    added.push(id);
+  });
+  const why=[bad&&`${bad}줄은 이름 · 전화번호(또는 이메일)를 못 찾아`,dup&&`${dup}줄은 닉네임이 겹쳐`].filter(Boolean).join(',\n');
+  if(added.length){rawSave();clearContactForm();renderContactsList();}
+  return {n:added.length,skip:why?why+' 건넜어요':'',undo:()=>{
+    ST.contacts=(ST.contacts||[]).filter(x=>added.indexOf(x.id)<0);
+    rawSave();renderContactsList();showToast('되돌렸어요');
+  }};
 }
 // Android Chrome only — pick straight from the phone's contacts and
 // pre-fill the form (nick stays whatever the user typed, or defaults
@@ -44231,6 +44270,71 @@ function _newTask(text){
   const it={text:text,done:false,ct:Date.now()};
   if(String(text||'').indexOf('@')>=0)it.contactTask=true;
   return it;
+}
+// ── 여러 줄 붙여넣기 → 할일 여럿 한꺼번에 (v. 26-1104-3, HB) ──
+// 엔터로 나뉜 목록을 복사해 한 줄 칸에 붙이면 "나눠 넣을까요 / 한 줄로" 를 묻는다.
+//   · 줄 앞의 목록 표시('-' '•' '1.' '☐' …)는 떼고 빈 줄은 버린다 · 한 번에 _ML_MAX 개까지
+//   · ⚠️ 묻기 전에 칸을 먼저 비운다 — 묻는 창을 누르는 순간 칸이 포커스를 잃어 '쓰던 글 적기(blur)' 가
+//     돌면 같은 글이 두 번 들어간다. 고르면 둘 다(나눠 · 한 줄) 같은 add(lines) 를 탄다.
+//     × · 바깥 · ESC 로 닫으면 아무것도 안 넣는다(복사한 글은 그대로 남아 있다).
+//   · 하위 할일은 여기 안 탄다 — 묻지 않고 바로 나눈다(2026-09-17 HB, _subParse)
+const _ML_MAX=100;
+const _ML_BUL=/^\s*(?:[-*+](?=\s)|[•·▪◦‣○●□■☐☑☒✓✔→▶]|\[[ xXvV]?\]|\(?\d{1,3}[.)](?=\s)|[①-⑳])\s*/;
+function _mlLines(raw){
+  return String(raw==null?'':raw).split(/\r\n|\r|\n/).map(x=>x.replace(_ML_BUL,'').trim()).filter(Boolean);
+}
+// add(lines) → 넣은 수, 또는 {n, skip:'못 넣은 까닭 한 줄', undo:fn}. undo 를 안 주면 앱 되돌리기(doUndo).
+// opt = {what:'할일', z:묻는 창 높이(더 높은 팝업 위에서 물을 때)}
+function _mlBind(inp,add,opt){
+  if(!inp||inp._mlOn)return;
+  inp._mlOn=true;
+  inp.addEventListener('paste',e=>_mlPaste(e,inp,add,opt||{}));
+}
+function _mlPaste(e,inp,add,opt){
+  const cd=e.clipboardData||window.clipboardData;
+  const txt=cd?(cd.getData('text/plain')||cd.getData('text')||''):'';
+  if(!/[\r\n]/.test(txt))return;                 // 한 줄이면 브라우저에 맡긴다
+  const v=inp.value||'';
+  let a=v.length,b=v.length;
+  try{if(inp.selectionStart!=null){a=inp.selectionStart;b=inp.selectionEnd;}}catch(_){}
+  const whole=v.slice(0,a)+txt+v.slice(b);       // 쓰던 글이 있으면 그 자리에 끼워 넣은 모양 그대로 나눈다
+  const lines=_mlLines(whole);
+  if(lines.length<2)return;
+  e.preventDefault();
+  inp.value='';
+  try{inp.dispatchEvent(new Event('input',{bubbles:true}));}catch(_){}   // 칸이 따로 기억한 글(buf)도 비운다
+  const one=whole.split(/\r\n|\r|\n/).map(x=>x.trim()).filter(Boolean).join(' ');
+  const take=lines.slice(0,_ML_MAX);
+  const what=opt.what||'할일';
+  const run=(arr,split)=>{
+    let r;
+    try{r=add(arr);}catch(err){console.warn('[여러 줄 넣기]',err);showToast('넣지 못했어요');return;}
+    const n=typeof r==='number'?r:((r&&r.n)||0);
+    const skip=r&&r.skip?'\n'+r.skip:'';
+    if(!n){if(skip)showToast(skip.slice(1));return;}
+    if(!split&&!skip)return;                      // 한 줄로 넣은 것은 따로 알리지 않는다(평소 넣기와 같다)
+    const undo=(r&&typeof r.undo==='function')?r.undo:doUndo;
+    showToast(`${what} ${n}개를 넣었어요${skip}`,false,{label:'되돌리기',onClick:undo});
+  };
+  appConfirm(`붙여 넣은 글이 ${lines.length}줄이에요.\n${what} ${take.length}개로 나눠 넣을까요?`+
+      (lines.length>_ML_MAX?`\n(앞의 ${_ML_MAX}줄만 넣어요)`:''),
+    ()=>run(take,true),
+    {yes:'나눠 넣기',no:'한 줄로 넣기',z:opt.z,
+     onNo:opt.oneToInput?()=>{inp.value=one;try{inp.focus();}catch(_){}}:()=>run([one],false)});
+}
+// opt.oneToInput — '한 줄로' 를 고르면 넣지 않고 이어 붙인 한 줄을 칸에 되돌려 놓는다(연락처)
+// 빅 · 스몰 새 칸들이 함께 쓰는 넣기 — 되돌리기 한 번에 다 풀리게 beforeSave 는 한 번만
+function _mlAddTasks(type,dayKey,secId,lines,top){
+  const arr=type==='big'?getBigs(dayKey,secId):getSmalls(dayKey,secId);
+  if(!arr)return 0;
+  beforeSave();
+  const items=lines.map(t=>_newTask(t));
+  if(top)arr.unshift(...items);else arr.push(...items);
+  save();
+  if(dayKey===tKey()&&document.getElementById(`tb-${secId}`))renderSecBody(secId);
+  updateTotal();updateSecSummary(secId);
+  if(typeof refreshTaskViewsLive==='function')refreshTaskViewsLive();
+  return items.length;
 }
 // 글에 '@' 가 새로 들어가면 '연락할 일' 로 자동 표시 — 편집을 마칠 때 한 번만.
 // 이미 '@' 가 있던 글은 건드리지 않는다 (사용자가 표시를 일부러 끈 것을 되살리지 않으려고).
@@ -46664,7 +46768,31 @@ function _openCellTodo(){
   const inp=document.getElementById('cellTodoInput');
   if(ov)ov.style.display='block';
   if(md)md.style.display='block';
-  if(inp){inp.value='';setTimeout(()=>inp.focus(),50);}
+  if(inp){
+    inp.value='';setTimeout(()=>inp.focus(),50);
+    _mlBind(inp,_cellTodoAddMany,{what:'할일',z:4600});   // 칸 팝업(4520) 위에서 묻는다
+  }
+}
+// 주간 · 월간 칸에 여러 줄을 붙였을 때 — 한 개 넣기(cellTodoSave)와 같은 규칙: 빈 자리부터 채우고 한도(bigLimit)까지
+function _cellTodoAddMany(lines){
+  const ctx=_cellAddCtx;if(!ctx)return 0;
+  const bigs=getBigs(ctx.k,ctx.secId);
+  const limit=(ST.settings&&ST.settings.bigLimit)||6;
+  beforeSave();
+  let n=0;
+  for(const text of lines){
+    const slot=bigs.findIndex(b=>!(b.text&&b.text.trim()));
+    if(slot>=0)bigs[slot]=_ctNow({...bigs[slot],text,done:false});
+    else if(bigs.length<limit)bigs.push(_ctNow({text,done:false}));
+    else break;
+    n++;
+  }
+  if(!n){UNDO_STACK.pop();updateUrBtns();closeCellTodo();return {n:0,skip:'이 구간의 할일이 가득 찼어요'};}
+  save();
+  closeCellTodo();
+  refreshTaskViewsLive();
+  if(typeof renderToday==='function'&&document.body.classList.contains('split-d'))renderToday();
+  return {n,skip:n<lines.length?`${lines.length-n}개는 자리가 없어 못 넣었어요 (한도 ${limit}개)`:''};
 }
 function closeCellTodo(){
   const ov=document.getElementById('cellTodoOverlay'),md=document.getElementById('cellTodoModal');
@@ -50578,7 +50706,8 @@ function addCustomSuffix(v,selectKey){
 // 앱 자체 확인 대화상자. 네이티브 confirm()은 iOS의 홈화면 설치(PWA)
 // 환경 등에서 조용히 무시되는 경우가 있어(삭제가 아무 반응 없이 끝나던
 // 원인) 앱 UI로 대체한다. 사용법: appConfirm('...', ()=>{ 확인시 동작 })
-let _appConfirmCb=null;
+let _appConfirmCb=null,_appConfirmNo=null;
+// opt = {z, yes:'확인 단추 글', no:'취소 단추 글', onNo:취소 단추를 눌렀을 때(바깥 · ESC 로 닫은 것은 아님)}
 function appConfirm(msg,onYes,opt){
   const ov=document.getElementById('appConfirmOverlay');
   const md=document.getElementById('appConfirmModal');
@@ -50590,16 +50719,22 @@ function appConfirm(msg,onYes,opt){
   // 더 높은 팝업(메모 5201 등) 위에서 물을 때 — 그때만 올리고, 닫을 때 원래대로 (v. 26-1101-3)
   ov.style.zIndex=(opt&&opt.z)?String(opt.z):'4440';md.style.zIndex=(opt&&opt.z)?String(opt.z+10):'4450';
   ms.textContent=msg;
+  const yb=document.getElementById('appConfirmOk'),nb=document.getElementById('appConfirmNo');
+  if(yb)yb.textContent=(opt&&opt.yes)||'확인';
+  if(nb)nb.textContent=(opt&&opt.no)||'취소';
   _appConfirmCb=typeof onYes==='function'?onYes:null;
+  _appConfirmNo=(opt&&typeof opt.onNo==='function')?opt.onNo:null;
   ov.style.display='block';md.style.display='block';
 }
-function _appConfirmResolve(ok){
+function _appConfirmResolve(ok,byBtn){
   const cb=_appConfirmCb;_appConfirmCb=null;
+  const no=_appConfirmNo;_appConfirmNo=null;
   const ov=document.getElementById('appConfirmOverlay');
   const md=document.getElementById('appConfirmModal');
   if(ov){ov.style.display='none';ov.style.zIndex='4440';}   // 높여 띄웠던 것을 원래대로
   if(md){md.style.display='none';md.style.zIndex='4450';}
   if(ok&&cb)cb();
+  else if(!ok&&byBtn&&no)no();
 }
 // ── 말씀 모음 동기화 결과 화면 (v26-0913) ──────────────────────
 // HB — "동기화 토스트가 몇 초 만에 사라져서 뭐가 바뀌었는지 놓친다.
