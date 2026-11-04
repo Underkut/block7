@@ -3,7 +3,7 @@
 > ⚠️ **이 문서는 `./tools/make-map.sh` 가 만듭니다. 손으로 고치지 마세요.**
 > index.html 을 고쳤으면 다시 돌려서 함께 커밋합니다.
 
-기준 버전 **v. 26-1104-1** · 전체 58,376줄 · 구역 493개 · 함수 3260개
+기준 버전 **v. 26-1104-2** · 전체 58,398줄 · 구역 493개 · 함수 3261개
 
 ---
 
@@ -34,8 +34,8 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 7,276~7,313 | 38줄 (0%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
 | 7,328~10,077 | 2,750줄 (5%) | HTML | 화면 뼈대 (버튼·팝업의 HTML) |
 | 10,078~10,564 | 487줄 (1%) | JS | 동작 (자바스크립트) |
-| 10,565~57,498 | 46,934줄 (80%) | JS | 동작 (자바스크립트) |
-| 57,499~58,373 | 875줄 (1%) | JS | 동작 (자바스크립트) |
+| 10,565~57,520 | 46,956줄 (80%) | JS | 동작 (자바스크립트) |
+| 57,521~58,395 | 875줄 (1%) | JS | 동작 (자바스크립트) |
 
 ---
 
@@ -390,163 +390,163 @@ index.html 은 146만 자라 **통째로 읽으면 안 됩니다.** 고칠 자�
 | 38,066 | 하위 줄 끌어 순서 바꾸기 (HB 2026-10-29) | `_subReorder`, `_sdrRows`, `_sdrQuiet`, `_sdrStart`, `_sdrPlace`, `_sdrMove`, `_sdrEnd`, `finish`, `_wireSubDrag` |
 | 38,166 | 터치: 60ms 넘게 가만히 있으면 '누르는 중' — 그때부터 스크롤을 붙잡고, LONG_PRESS_TOUCH 에 들린다 | `clear` |
 | 38,198 | 마우스: 눌린 채 4px 움직이면 들린다 (빅블럭의 빈 자리 끌기와 같다). 고치는 중인 글자 칸은 글자 고르기 | `_makeSubRow`, `_makeSubGhost`, `fit`, `commit` |
-| 38,355 | 반복 할일의 보조 속성 — 언제 물을까 (HB 2026-11-01 B1 · C안 v. 26-1101-4) | `_repPropBegin`, `_repPropCommit`, `_repPropSoon`, `_repPropIdx`, `_repScopeOpen`, `_repPropEditing`, `_repPropBusy`, `_repPropTick`, `_subEditPanel`, `_subEditEnd`, `_repPropFlushNow`, `H`, `_repSubDiffWord`, `b` … 외 4개 |
-| 38,566 | 하위 줄 메뉴 (위로 · 아래로 · 꺼내기 · 삭제) | `openSubRowMenu`, `row`, `closeSubRowMenu`, `_subMoveFromMenu`, `_subRemoveFromMenu`, `_subPromoteFromMenu`, `openTaskMemo`, `closeTaskMemo` |
-| 38,670 | 메모 팝업 크기 — 네 모서리로 조절, 이 기기에만 기억 (v26-1028-8, HB) | `_memoClampSize`, `_memoApplySize`, `toggleTaskMemoEdit`, `_memoItem`, `_memoSaveEdit`, `deleteTaskMemo`, `_memoRender`, `_memoViewHTML` |
-| 38,797 | 알아본 것을 눌렀을 때의 동작 메뉴 | `openMemoActMenu`, `row`, `closeMemoActMenu`, `_memoCopyText`, `memoActRun`, `_memoMoveTaskToDate`, `_memoSaveToPhone`, `name`, `openContactsModalWith`, `set` |
-| 38,983 | 할일 메뉴의 두 줄 ('하위 할일' · '메모') | `openSubsFromMenu`, `_subRemoveAll`, `openMemoFromMenu`, `_prayDb`, `_prayUid`, `_prayTree`, `_prayLoadGroups`, `_prayPickClose`, `_prayPlace`, `_prayPanel`, `_prayOpenGroups`, `_prayOpenKids`, `_prayPickHover`, `_prayPickTap` … 외 11개 |
-| 39,290 | 시리: 앱에 잇는 자리 | `_siriPlace`, `_siriSaved`, `_siriRenderSettings`, `siriMakeKey`, `_siriMakeKeyNow`, `siriCopyUrl`, `ok`, `makeBigWrap`, `getCarryCount`, `_playDoneFx`, `style`, `_fxGlow`, `_fxRipple`, `populateCarryBadge` … 외 3개 |
-| 39,561 | 행보다 긴 할일 (H-6, HB 2026-10-22) | `_ovfQueue`, `_ovfMode`, `_ovfClear`, `_ovfRun`, `_syncTaskOvfBtns`, `v` |
-| 39,629 | 긴 할일 고치기 — 여러 줄 칸 (H-6, HB 2026-10-22) | `_longEditOpen`, `close`, `back`, `_makeUrgentBadgeHTML`, `makeBigItem`, `isOver`, `makeBigGhost`, `updateTotal`, `makeSmWrap`, `makeSmItem`, `makeSmInlineGhost`, `openSmGhost`, `closeSmGhost`, `renderSmList` … 외 3개 |
-| 40,216 | Desktop: drag handle mousedown (instant drag — power users) | – |
-| 40,221 | Desktop: long-press anywhere on the row (mirrors mobile touch UX) | `beginMouseDrag`, `cancelMousePress` |
-| 40,296 | Desktop: right-click → task move context menu | – |
-| 40,308 | Mobile: long-press anywhere on element (including input/button areas) | `cancelPressTimer` |
-| 40,513 | Hold off the browser's scroll gesture WHILE the long-press | – |
-| 40,541 | 더블탭 = 중요 표시 토글, 트리플탭 = 긴급 표시 토글 | – |
-| 40,575 | 끌 때 줄들이 비켜 주기 (HB 2026-10-28 B7-2) | `_drTy`, `_drRect`, `_drFlipEls`, `_drSlotBegin`, `_drPlace`, `_drSlotEnd`, `_drGhostLand`, `_drBlurTaskInput`, `getSecColor`, `clearDropIndicators`, `showDropIndicator` |
-| 40,713 | Drop target: closest-item snap (no fallback flicker) | `getDropTarget` |
-| 40,728 | 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) | – |
-| 40,781 | 좌우 절반으로 빅/스몰 결정 | `getStableDt`, `moveG`, `_dragZoneMid`, `_updateDragHintBounds`, `cancelDragKeepingItem`, `endDrag`, `navigateDate`, `updateHeaderDate` |
-| 41,166 | GNB 날짜의 광학 보정 | `_syncHdrDateOptical`, `_dNavEl`, `initDateSwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd`, `onCancel`, `IS_TOUCH`, `itemKey`, `parseItemKey` |
-| 41,341 | 휴대폰 자판의 '이동' 키 = 다음 칸으로 (v. 26-1030-7, HB) | `_softEnter`, `_taskEnterNext`, `arrOf`, `nRow`, `go`, `_finishEditKeepRow`, `buildFlatList`, `findFlatIndex`, `getRowEl`, `refreshActiveVisuals`, `clearActive`, `setActiveSingle`, `isAnyInputFocused`, `_txEditEl` … 외 5개 |
-| 41,506 | 위쪽이 안 보이게 막힌 화면 되살리기 (1101-E1 ①, HB 아이패드 사진) | `heal`, `soon`, `_txeDefer`, `activateItem`, `focusItemInput`, `moveActiveSelection`, `scrollFlatIdxIntoView`, `scrollActiveIntoView` |
-| 41,662 | Lane model for ⇧⌘↑/↓ reordering | `buildLanes`, `findLaneIndex`, `moveActiveItems` |
-| 41,729 | Move the entire active group by exactly one flat step | `moveActiveItemsAcrossSection` |
-| 41,877 | While editing a big/small task's text | – |
-| 41,889 | Not editing text: arrow-key driven selection | – |
-| 41,920 | View-switching and date-navigation shortcuts (desktop, D/W/M views) | `_kbWOn`, `_kbWEls`, `_kbWName`, `_kbWSync`, `_kbWSet`, `_kbWStep`, `_kbWGo`, `_kbWPage`, `_kbWEnter` |
-| 42,091 | 할일 다루기 | `_kbSelItems`, `_kbAnchor`, `_kbSecId`, `_kbToggleDone`, `_kbReactivate`, `_kbDelete`, `_kbOneSel`, `arr`, `_b7TaskKey` |
-| 42,191 | 들어오는 문 | `_b7KbReady`, `_b7BoardKey` |
-| 42,214 | 위젯 포커스를 잡은 동안 | – |
-| 42,229 | 포커스를 잡기 전 — 여기서만 새 글쇠를 받는다 | `_kbWHint`, `wireActivateClick`, `openTaskMenu`, `arr`, `CONTACT_PICKER_SUPPORTED`, `findMentionedContacts`, `renderTaskTextHTML`, `_contactTaskSvg`, `_wireContactTaskBadge`, `makeContactBadges`, `contactBadgeCountChanged` |
-| 42,512 | @배지 액션 메뉴 | `openContactMenu`, `phone`, `email`, `closeContactMenu`, `contactAction` |
-| 42,589 | @닉네임으로 태그된 할일 모아보기 | `getTasksTaggedWithContact`, `showContactTasksPopup`, `closeContactTasksPopup` |
-| 42,663 | 연락처 관리 모달 | `openContactsModal`, `closeContactsModal`, `clearContactForm`, `startEditContact`, `editContact`, `c`, `renderContactsList`, `submitContact`, `dup`, `pickFromDeviceContacts` |
-| 42,764 | Event add modal | `syncRollDisplays` |
-| 42,792 | 일정 등록창의 시·분 목록 | `_evFillMins`, `_evSyncRange`, `sec`, `keep`, `openEventModal`, `openEventModalForDate`, `setEventTimeToggle`, `_syncEventDateUI`, `onEventDateChange`, `closeEventModal`, `onEventTimeToggle`, `submitEventModal`, `repeat`, `secId` |
-| 43,074 | 매일/매주 repeat buttons | `renderRepeatButtons`, `toggleEventDaily`, `toggleEventWeekly`, `attachRepeatBtnInteraction` |
-| 43,141 | Touch | – |
-| 43,173 | Mouse (desktop only — skipped when a touch already handled it) | `_attachRepeatButtons`, `attachFastTap`, `openRepeatSubPicker`, `closeRepeatSubPicker`, `openEventEditMenu`, `closeEventEditMenu`, `editEventFromMenu`, `deleteEventFromMenu`, `deleteEventFromModal`, `_evDeleteAt`, `_gcalTz`, `_gcalDsh`, `_gcalCfg`, `_gcalSetCfg` … 외 10개 |
-| 43,469 | 구글 쪽 바뀜 알아채기 (v26-1024-8, HB '구글에서 고친 것이 늦거나 안 온다') | `_gcalSeen`, `_gcalProbe`, `_gcalDefSec`, `_gcalFind`, `_gcalGone`, `_gcalTomb`, `_gcalOnSave`, `_gcalKick`, `_gcalRunRemote`, `bad`, `_gcalApplyLocal`, `gcalSync`, `_gcalBoot`, `_gcalAfterConnect` … 외 13개 |
-| 43,837 | 일정 입력창의 캘린더 고르기 (v26-1024-1, HB) | `_gcalPickRender`, `opts`, `draw` |
-| 43,870 | 여러 날 일정 (v26-1024-2, HB) | `_gcalSpanN`, `dsh`, `_gcalMD`, `_gcalSpanTag`, `_gcalLanes`, `_gcalMonthLanes`, `_wmEvClick`, `wmEvEdit`, `_gcalSegHTML`, `lb`, `_gcalPickApply`, `_gcalPickApplyV`, `closeTaskMenu`, `toggleTaskFlag` … 외 4개 |
-| 44,070 | 긴급 표시 스포트라이트 | `_applyUrgentSpotlight`, `_ensureUrgentSpotlightObserver`, `_urgentItemsOn`, `_clearUrgentOnDone`, `_doToggleUrgent`, `toggleTaskUrgent`, `toggleUrgentRank`, `_ctNow`, `_newTask`, `_autoContactMark`, `toggleTaskContact`, `_repBadgeFill`, `body`, `_taskRepDefault` … 외 8개 |
-| 44,334 | 옛 자료 옮겨심기 | `_migrateTaskRepeats` |
-| 44,368 | 그 날짜의 실체 만들기 | `materializeRepeatsFor`, `ensureDailyRepeats`, `ensureRepeatsForView` |
-| 44,410 | 보여주기용 앞날 미리보기 (저장하지 않는다) | `getDisplayTasks`, `own` |
-| 44,434 | 매일/매주 반복 켜고 끄기 | `toggleDailyRepeat`, `toggleWeeklyRepeat`, `_taskSetRepeat`, `_REP_SCOPE_IC`, `_repScopeAsk`, `kindWord`, `verb`, `closeRepScope`, `_repScopePick` |
-| 44,555 | 묶음을 훑어 지우기 | `_repPurgeTasks`, `_repPurgeEvents`, `_repAddEx`, `_repHiddenOn` |
-| 44,610 | 일정의 원본 찾기 | `_evRepRootOf`, `_evInSeries` |
-| 44,630 | 규칙을 물려줄 때 끝날·뺀 날은 잃지 않는다 | `_repKeepMarks` |
-| 44,643 | 일정 범위 묻기에 쓰는 말 (v. 26-1030-5, HB) | `_evMd`, `_evScopeRows`, `root`, `_toastName`, `_evGcalNote`, `_evSecFor`, `_evRehome`, `_evEditApply`, `putOverride`, `_evOverrideDays`, `_evInheritCal`, `_evDeleteApply`, `_evMoveAsk`, `_evMoveApply` … 외 19개 |
-| 45,147 | 반복 할일 옮기기 (HB 2026-10-28 B3-2, tests/test_repeat_move.js) | `_taskIsRep`, `_repPlain`, `_repMoveApply`, `_repMoveAsk`, `item`, `_dayKeyDiff`, `moveTaskTo`, `_moveLabel`, `_freshTaskCopy`, `_dupDoneSync`, `_dupDoneReset`, `_dupDoneToggle`, `_finishOriginal`, `duplicateTaskTo` … 외 14개 |
-| 45,487 | 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) | – |
-| 45,494 | 구간 열어 보이기 (v26-1015-9, HB) | – |
-| 45,497 | 구간을 손으로 켜고 끌 때 보기 단추 풀기 (v. 26-1031-5, HB) | `_presetVisTouched`, `_secClosed`, `_revealSec`, `_toastWithJump`, `_flashPendingTask`, `sel`, `_dayTaskCount`, `_dayTaskSecs`, `_fillTaskMenuCounts`, `_tmSubPanel`, `_tmSubReset`, `_tmSubHide`, `_tmSubOpen`, `_tmSlide` … 외 5개 |
-| 45,722 | 완료 후 다음 할일 | `nextAfterDoneTo`, `nextAfterDoneYesterday`, `_todayDateObj`, `nextAfterDoneYday`, `nextAfterDoneYdayPicked`, `nextAfterDonePicked`, `_focusNewTaskInput`, `sel`, `_secPickOn`, `_daySecTasks`, `_secPickSecs`, `_secPickSpecFor`, `_secPickFloat`, `_secPickRender` … 외 35개 |
-| 46,570 | 주간/월간 블럭 우클릭/롱터치 → 바로 입력 | `_cellDefaultSec`, `now`, `vis`, `_renderSecPick`, `list`, `openCellInput`, `mode`, `_openCellEvent`, `_openCellEventRepaint`, `_openCellTodo`, `sec`, `closeCellTodo`, `cellTodoSave`, `text` … 외 18개 |
-| 46,998 | M뷰 칸 높이 (v26-1024-6, HB) | `_mGridH`, `_mGridSetH`, `_mFitCells`, `_mGridApplyH`, `fit`, `minH`, `initMonthlySwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd` |
-| 47,143 | GNB 날짜 롱터치/우클릭 달력 | `openHdrCalendar`, `closeHdrCalendar`, `_closeHdrCalendarNow`, `hdrCalNav`, `hdrCalPick`, `hdrCalGoToday`, `_hdrCalRender` |
-| 47,208 | 성경 단추 길게 누르기 · 우클릭 = 읽기 계획(읽기모음) 메뉴 (HB 2026-10-27 A1) | `bibleToReadMenu`, `_bibleBtnLongPress`, `_EMBED`, `_embedPost`, `_embedIdleSoon`, `_embedAllClosed`, `_embedDone`, `_embedClean`, `_embedOn`, `_embedTheme`, `_embedRun`, `_embedWatchPeek`, `check`, `_embedStart` … 외 3개 |
-| 47,364 | Theme (dark / light / system) | `_effectiveMode`, `applyTheme`, `shown`, `_themeSummaryText`, `_renderThemeSummary`, `strip`, `openThemePicker`, `closeThemePicker`, `themePickerApply`, `themePickerPick`, `themePickerGroup`, `_renderThemePicker`, `_themePreviewHTML`, `resizeAllInputs` |
-| 47,545 | 설정창은 이 기기에서 마지막에 쓰던 탭으로 열린다 (v26-1024-19, HB) | `_setTabMemKey`, `_setTabMemGet`, `_setTabMemPut`, `_vsetStartTab`, `openAccountSettings`, `openSettings`, `_flashSettingsTab`, `closeSettings`, `closeSettingsOnBg`, `closeAccountSensitiveModals`, `renderSettingsPanel`, `_chk`, `_syncBpPickers`, `fill` … 외 7개 |
-| 47,986 | Section editor (name / color / add / remove / drag-reorder / star-select) | – |
-| 47,987 | Color preset picker (built-in BASIC/SPR/SMR/AUT/WNT + user-saved) | `currentMatchingPresetName`, `renderPresetList`, `makePresetChip`, `applyPreset`, `renderSectionEditor` |
-| 48,059 | 이 구간 위의 경계선 | `_makeBoundaryRow`, `_makeBoundaryRoll`, `sel`, `mk`, `paint`, `updateSectionBoundary`, `toggleStarSection` |
-| 48,340 | 아이콘 두 벌 | `uiLevelIconSet`, `_uiLvIconSVG`, `_renderUiLevelIcons`, `_renderVerseUiLevelIcons`, `setUiLevelIconSet`, `uiLevel`, `v`, `setUiLevel`, `_stabList`, `_lvApplyIn`, `applyUiLevel`, `verseUiLevel`, `v`, `setVerseUiLevel` … 외 3개 |
-| 48,521 | "앞의 스위치를 켰을 때만 나오는" 줄들 | `_syncCondRows`, `n` |
-| 48,538 | 설정창 묶음 카드 (v26-1024-15, HB — 타이머 설정창처럼 · 세 창 공통 규칙) | `_sgEdges`, `sgFold` |
-| 48,560 | 묶음 접기 — 기기 폭에 따라 (v26-1024-20, HB S-5) | `_sgDevClass`, `_sgTitle`, `_sgFoldMem`, `_sgFoldMemPut`, `_sgFoldDefaultOpen`, `_sgFoldInit`, `sgGroupToggle`, `_sgFoldSum`, `_sgFoldSumAll`, `switchSettingsTab`, `_initSettingsSwipe`, `N`, `getTrack`, `resolveTarget` … 외 2개 |
-| 48,884 | Drag-to-reorder for the section editor rows (mouse + touch) | `attachSecRowDrag`, `getWraps`, `onDown`, `onMove`, `onUp`, `addNewSection` |
-| 48,981 | 커스텀 구간 지우기 | `deleteSection`, `closeSecDelModal`, `_secDataCount`, `secDelDo`, `sec` |
-| 49,056 | 보관해 둔 구간 되살리기 | `renderSecArchive`, `restoreSecArchive`, `dropSecArchive` |
-| 49,113 | Full section-configuration presets (name + color + order + count | `renderSectionConfigList`, `saveCurrentSectionConfig`, `applySectionConfig`, `deleteSectionConfig` |
-| 49,202 | Backup / restore | – |
-| 49,203 | 백업에 담는 '말씀 쪽' (v26-0921-8, HB 4-5) | `_myProductSettings`, `_backupPayload`, `sw`, `exportBackup`, `_backupDownload`, `_bakDevice`, `buildBackupFilename`, `email`, `emailTag`, `bkKey`, `n`, `importBackup` |
-| 49,412 | Auto carry-over of unfinished tasks | `runAutoCarryOver`, `testAutoCarryOver`, `_carryScope`, `setCarryScope`, `_syncCarryScopeBtns`, `_carryDateInScope`, `_carryPendingCount` |
-| 49,517 | 반복 할일의 이월 (HB 2026-10-28 B3-0 · B3-1, tests/test_carry_repeat.js) | `_carryIsRep`, `_carryWants`, `_repOnDay`, `_doCarry`, `runCarryNow` |
-| 49,588 | 푸시 알림을 눌러 들어왔을 때 그 말씀 전체화면 띄우기 | – |
-| 49,593 | 알림 진단 기록 (서비스워커와 같은 캐시를 공유) | `_notifLog` |
-| 49,615 | 진단 기록 보조 저장소 (localStorage) | – |
-| 49,619 | IndexedDB (서비스워커와 같은 저장소) | `_withTimeout`, `_withOutcome`, `_outcomeText`, `_idbForget`, `_idbOpen`, `_idbRaw`, `_idbGetRaw`, `_idbSetRaw`, `_idbDelRaw`, `_idbGet`, `_idbSet`, `_idbDel`, `_idbGetOutcome`, `_idbSetOutcome` … 외 30개 |
-| 50,197 | 말씀 클릭 경로 테스트 | `testVerseClickPath` |
-| 50,229 | 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) | `_vpDiagFmt`, `_vpDiagHead`, `vpDiagRender`, `vpDiagToggle`, `vpDiagClear`, `vpDiagCopy`, `build`, `_vpDiagCopyFallback`, `initAppUI` |
-| 50,336 | 푸시 말씀 목록을 앱 켤 때 한 번 맞춘다 (v26-0901-4, HB) | – |
-| 50,352 | Day-change catch-up on wake | – |
-| 50,405 | 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) | `paintAppUIFromLocal`, `_notifySupport`, `_notifyGet`, `renderSuffixPickers`, `setNotifySuffix`, `addCustomSuffix`, `appConfirm`, `_appConfirmResolve` |
-| 50,582 | 말씀 모음 동기화 결과 화면 (v26-0913) | `_escHtml`, `showSyncResultModal`, `totalChg` |
-| 50,659 | 영상 링크가 없는 설교 (v26-1005-1, HB) | `_syncNoVideoHTML`, `a` |
-| 50,685 | "새로 들어온 말씀을 목록에 포함시키기" (v26-0916-2, HB) | `_syncIncludeInit`, `total`, `_syncGoBtn`, `syncIncludeOpenFull`, `list`, `_syncIncludeRender`, `bub`, `syncIncludeNow`, `syncIncludeUndo`, `_syncCatWeight`, `_syncGroupWeight`, `w`, `closeSyncResultModal` |
-| 50,815 | 따로 포함한 목록 (v26-0916-2, HB) | `openPlusList`, `closePlusList`, `setPlusTab`, `_plusAfterChange`, `plusRemoveKeys`, `plusRemoveCat`, `plusRemoveTopic`, `plusClearAll`, `renderPlusList`, `addRow` |
-| 50,930 | 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) | `openSfxMenu`, `left`, `closeSfxMenu`, `sfxMenuAction`, `renameCustomSuffix`, `removeCustomSuffix`, `refreshNotifyUI` |
-| 51,025 | 푸시 배관(토큰) 공용 | – |
-| 51,036 | 기기 구분 | `_deviceId`, `_deviceLabel`, `touch`, `_ensurePushToken`, `_releasePushTokenIfIdle` |
-| 51,150 | 이 기기에서 알림 받기 (기기별 스위치, v26-0828-7) | `setDeviceNotify`, `_syncDeviceNotifyUI` |
-| 51,178 | 할일 알림 스위치 (일반설정 → 푸시 알림) | `onNotifyMasterToggle`, `updateNotifySub` |
-| 51,208 | 알림 서버에 '예약을 다시 짜 주세요' (v26-1024-13) | `_pushReplan` |
-| 51,223 | 기기 등록에 앱 표시 (v26-1024-13) | `_pushTagProduct`, `initForegroundPush` |
-| 51,252 | 서비스워커 자기 복구 (v26-0802-5) | – |
-| 51,264 | 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) | – |
-| 51,295 | 알림 테스트 | `testLocalNotification`, `sendTestPush` |
-| 51,333 | 앱 버전 비교 ("v. YY-MMDD-N") | `_verNums`, `_verCmp`, `_upTries`, `_upSetTries`, `_upClearTries`, `_verTap`, `_upReloadFresh`, `_upSafeNow`, `_upApply`, `_upCheck`, `_fbSyncReady`, `authToggleMode`, `authSetLoading`, `authSubmit` … 외 2개 |
-| 51,565 | Firestore doc path: one document per user, holding their entire ST | `userDocRef`, `_fbSetBase`, `_fbLoadPersistedBase`, `_fbClearBase`, `_fbBaseObj` |
-| 51,652 | 3자 병합 엔진 | `_fbIsUserEdit`, `_fbDeviceIdle`, `_fbVerIsOlder`, `_mgWhole` |
-| 51,715 | 처음값 채우기는 편집이 아니다 (v. 26-1025-9, ROADMAP B-2) | `_mgIsFill`, `_mgFillSide`, `_mgSetting`, `_mgContainerKeys`, `_mgCountBag`, `_mgEntryArray`, `_mgLogFlat`, `_mgLogNested`, `_mgTaskArray`, `_mgTaskOne`, `_mgDay` |
-| 51,855 | 긴급 표시 한도(하루 2개)를 병합 뒤에도 지킨다 (v26-0914-3) | `_mgEnforceUrgentCap`, `_mgById`, `_fbHasAdoptedCloud`, `_fbCountArrays`, `_fbCountByKind`, `_fbCountItems`, `_fbBulkLoss`, `_fbMergeGuarded`, `_fbMerge`, `_dfJ`, `_dfSame`, `_dfCut`, `_dfQ`, `_dfDay` … 외 7개 |
-| 52,128 | 안쪽 이름표를 사람 말로 | `_dfSeg`, `_dfSegPath`, `_dfWord`, `_dfValS`, `_dfVal` |
-| 52,186 | 값 두 벌에서 **다른 자리만** 뽑는다 | `_dfDeep`, `_dfDeepLines`, `_dfKindName`, `_dfToday`, `_dfPush` |
-| 52,223 | 할일 한 구간(배열) | `_dfTaskKey`, `_dfArr` |
-| 52,272 | 날짜별 할일·일정 | `_dfDays`, `A` |
-| 52,290 | 말씀 모음 하나 | `_dfVKey`, `_dfColl1`, `_dfColls` |
-| 52,316 | 연락처 하나 | `_dfContact1`, `_dfContacts` |
-| 52,329 | 기록(암송·좋아요·담아두기·나눔·Deeper) | `_dfLogRefs`, `_dfLogs` |
-| 52,358 | 설정 | `_dfSettings`, `A` |
-| 52,373 | 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 | `_dfDiff`, `_dfBrief`, `_dfScale`, `k`, `days`, `_dfScaleText`, `_cfJ`, `_cfDiffer`, `_cfId`, `_cfSecLabel`, `_cfKindLabel`, `_cfText`, `_cfMake`, `_cfScanSection` … 외 11개 |
-| 52,735 | 충돌 보관 · 화면 | `_cfLoadLocal`, `_cfTrimmed`, `_cfSaveLocal` |
-| 52,765 | Sweeter 에서는 '말씀 쪽' 충돌만 보여 준다 (v26-0921-8, HB 4-5) | `_cfMine`, `_cfDevOnly`, `_cfOpen`, `_cfOpenCount`, `_cfStore`, `_cfPushCloud`, `_cfFetchCloud`, `_cfSyncVisibility`, `_fbCollectConflicts`, `_fbNoteConflicts` |
-| 52,877 | 화면 | `_cfWhoLabel`, `l`, `_cfEsc`, `_cfNiceLabel`, `_cfGroupName`, `_cfChoiceLabel`, `_cfCutRaw`, `_cfIsStamp`, `_cfStampNice`, `_cfExplain`, `cfToggleRaw`, `_cfBaseLine`, `_cfCardHTML`, `auto` … 외 10개 |
-| 53,163 | 올리기 실패 진단 (v26-1025-3) | – |
-| 53,166 | 클라우드 문서 포장 (v26-1025-5) | `_fbUnz`, `u8`, `_fbDocJson`, `_fbZ`, `_fbZField`, `_fbDocBytes`, `_fbBytes`, `_fbCommit`, `_fbScheduleRetry`, `_fbEnsureSync`, `_fbForceWrite` |
-| 53,310 | 데이터 복구: 로컬(localStorage) ↔ 클라우드(Firestore) 비교 | `_dayHasContent`, `_recoverySummary`, `inspectRecoveryDate`, `_fbSizeRows`, `_fbSizeBlock`, `_inboxDiagBlock`, `L`, `items`, `_fbDiagBlock`, `pend`, `checkDataRecovery`, `cleanupEmptyDays`, `fbForceUploadLocal` |
-| 53,547 | 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) | `_abLocalState`, `_abRankLabel`, `showAutoBackups`, `restoreAutoBackup`, `applyRemoteState`, `_fbWarnLegacyWriter`, `_fbHealFromLegacy`, `first`, `_fbMaybeSelfUpdate`, `fbStartListening`, `_swOn`, `_swBoardOn` |
-| 53,976 | 2차 (v26-0922-2, HB) | – |
-| 53,987 | 3차 (v26-0922-3, HB) — 시트의 '상황 태그'·'묵상 질문' 에서 나온다 | – |
-| 53,995 | 비었을 때의 안내는 **보는 사람에 따라 달라야 한다** (v26-0923-2) | `_swWin`, `roll`, `_swInWin`, `_swPool`, `_swRecIn`, `_swEmptyText`, `who` |
-| 54,085 | 담아두기 | `getKeepLog` |
-| 54,098 | 저장 목록 (v26-0831-11, HB) | `_keepListOf`, `n`, `_keepEntries`, `_keepLists` |
-| 54,168 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `_keepPairSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `byName`, `_keepListsOf`, `_swIsKept` … 외 10개 |
-| 54,363 | 저장 | `_swTilesRaw`, `_swVerRaw`, `_swLoadTiles`, `_swSaveTiles`, `_swSpareKinds` |
-| 54,415 | BLOCK7 에서 내 말씀 가져오기 | `_swCountVerses`, `_swBlock7Src`, `_swImportApply`, `swImportFromBlock7`, `_swSyncNotice` |
-| 54,512 | 말씀 모음 타일 | `_swColls`, `a` |
-| 54,536 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermonPool`, `_swSermons`, `_swSermonVerses`, `_swBooks`, `_swTags`, `_swEvenOn`, `_swReacts` |
-| 54,663 | 까닭 한 줄 (v26-0922-1, HB 2번 선택) | `_swAgo`, `_swLastTouch`, `add`, `_swWhyOf`, `key` |
-| 54,722 | 오늘의 말씀 (표지 카드) | `_swToday`, `_churchCfg`, `_svcRank`, `list`, `_svcCmp`, `_swAxisKeys`, `_swCount`, `_swFlow`, `_swMyWeight`, `_swMD` |
-| 54,854 | 기간 안의 흐름 (v26-1005-5, HB) | `_swSvcKey`, `_swSvcOf` |
-| 54,858 | 흐름 카드 그림 (C안, v. 26-1102-12, HB 2026-11-02) | `_swJo`, `_swFlowDay`, `_swFlowShape`, `list`, `lane`, `_swInsightsWin`, `push`, `_swInsights`, `push`, `_swVersesForInsight`, `_swRhythmGrid`, `_swRhythm`, `_swSigRhythm` |
-| 55,170 | 상황 태그를 **말투로** 바꾼다 (v26-0922-4 → -5 에서 전면 손질, HB) | `_swNeedSkip`, `_swNeedSay`, `bat`, `_swNeeds`, `_swAsks`, `_swValues`, `_swStrip`, `_swCountText`, `_swFlowHTML`, `clause` |
-| 55,590 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swHandFont`, `day`, `_swHiText`, `_swHiHTML`, `_swLoadPhotos`, `_swPhotoPick`, `_swPhotoFor`, `_swPhotoHTML`, `_swIllHTML`, `_swBigHTML`, `_swSigWrap` … 외 6개 |
-| 55,888 | 유튜브 썸네일 (v26-0922-10, HB: "타일 위아래가 비어서 안 이뻐") | `_swYtThumbFail`, `_swCellHTML` |
-| 56,014 | 타일마다 바탕 사진 켜고 끄기 (v26-0922-13, HB) | `_swPhIcon`, `_swPhOn`, `_swEditBtns`, `_swTogglePhoto`, `_swArrowHTML`, `_swThereHTML`, `_swFace`, `chip`, `_swOffTileEl` |
-| 56,129 | 그리기 | `_swTileClass` |
-| 56,134 | 첫 그림에 쓸 말씀을 미리 뽑아 둔다 (v26-0922-21, HB) | `_swSaveBootVerses`, `_swIntroSpan`, `_swRender` |
-| 56,230 | 편집 모드 | `_swEditOn`, `_swEditBtnSync`, `mine`, `board`, `swOpenCollFilter`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `w`, `_swNoMotion`, `_swTrack`, `_swTrackTo` |
-| 56,339 | 한 칸 넘기기 (PC 꺽쇠·자판이 쓴다) | `_swStep`, `_swRepaint` |
-| 56,366 | 누르면 전체화면 | `_swOpenVerse`, `_swGridTile`, `facet`, `_swVersesFor`, `_swTileOpen`, `md`, `label` |
-| 56,481 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
-| 56,513 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swDragHover` |
-| 56,563 | 판 끝에 닿으면 저절로 굴러간다 (v26-0922-15, HB) | `_swAutoScroll`, `_swAutoStop`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap`, `_swKbTiles`, `_swKbSync`, `_swKbSet`, `_swKbStep`, `_swKbGo`, `_swKbGoX`, `_swKbPage`, `_swKbSort` … 외 5개 |
-| 57,098 | 자판 단축키 도움말 | `_swKbHelpOpen`, `_kbHelpRows`, `sw`, `_swKbHelpFill`, `_kbHelpKey`, `openSwKbHelp`, `closeSwKbHelp` |
-| 57,237 | 형제 앱 열기 (v26-0921-2, HB) | `_sisterApp`, `dev`, `cross`, `_sisterFill`, `swCrossToggle`, `_swCrossBtnSync`, `_sisterStandalone`, `_sisterIsIOS`, `sisterGo`, `_swBoot` |
-| 57,345 | Sweeter 설정창 '계정' 탭 (v26-0921-8, HB 4-5) | `_swMergeAccountTab` |
-| 57,369 | Sweeter 설정창 '뷰' 탭 병합 (v26-0921-8, HB 4-4) | `_swFillMovedRows`, `_swMergeViewTab`, `_swCoverOn`, `_swMount` |
-| 57,447 | 좌상단 로고 — BLOCK7 과 **같은 손버릇**이다 (v26-0921-1, HB) | – |
-| 57,457 | 우상단 톱니 — 탭 = 설정 · 롱터치 = 설정 '계정' 탭 바로 (v26-1024-17, HB) | – |
-| 57,468 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll`, `TDASH`, `add`, `dur` |
-| 57,545 | 모으기: 두 기록 → 한 모양 [{date,t,time,d,app,src,label}] | `collect`, `mapPrayers`, `focusPrayers`, `dayFlow`, `mergeFlow`, `wordPray`, `wpLegend`, `hueIndex`, `hueOf`, `itemName`, `edRow`, `mapTop`, `dayTotals`, `inRange` … 외 3개 |
-| 57,744 | 그리기 | `injectCSS`, `legend`, `bigNum`, `cmpLine`, `topRefs`, `bySrc`, `bySlot`, `viewWeek`, `heat`, `viewMonth`, `viewDay`, `nav`, `html` |
-| 58,047 | 판 하나를 el 안에 연다 | `mount` |
-| 58,111 | 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 | `pageTint`, `open`, `close`, `isOpen`, `redraw` |
+| 38,355 | 반복 할일의 보조 속성 — 언제 물을까 (HB 2026-11-01 B1 · C안 v. 26-1101-4) | `_repPropBegin`, `_repPropCommit`, `_repPropSoon`, `_repPropIdx`, `_repScopeOpen`, `_repPropEditing`, `_repPropBusy`, `_repPropTick`, `_subEditPanel`, `_subEditEnd`, `_repPropFlushNow`, `H`, `H`, `_repSubDiffWord` … 외 5개 |
+| 38,588 | 하위 줄 메뉴 (위로 · 아래로 · 꺼내기 · 삭제) | `openSubRowMenu`, `row`, `closeSubRowMenu`, `_subMoveFromMenu`, `_subRemoveFromMenu`, `_subPromoteFromMenu`, `openTaskMemo`, `closeTaskMemo` |
+| 38,692 | 메모 팝업 크기 — 네 모서리로 조절, 이 기기에만 기억 (v26-1028-8, HB) | `_memoClampSize`, `_memoApplySize`, `toggleTaskMemoEdit`, `_memoItem`, `_memoSaveEdit`, `deleteTaskMemo`, `_memoRender`, `_memoViewHTML` |
+| 38,819 | 알아본 것을 눌렀을 때의 동작 메뉴 | `openMemoActMenu`, `row`, `closeMemoActMenu`, `_memoCopyText`, `memoActRun`, `_memoMoveTaskToDate`, `_memoSaveToPhone`, `name`, `openContactsModalWith`, `set` |
+| 39,005 | 할일 메뉴의 두 줄 ('하위 할일' · '메모') | `openSubsFromMenu`, `_subRemoveAll`, `openMemoFromMenu`, `_prayDb`, `_prayUid`, `_prayTree`, `_prayLoadGroups`, `_prayPickClose`, `_prayPlace`, `_prayPanel`, `_prayOpenGroups`, `_prayOpenKids`, `_prayPickHover`, `_prayPickTap` … 외 11개 |
+| 39,312 | 시리: 앱에 잇는 자리 | `_siriPlace`, `_siriSaved`, `_siriRenderSettings`, `siriMakeKey`, `_siriMakeKeyNow`, `siriCopyUrl`, `ok`, `makeBigWrap`, `getCarryCount`, `_playDoneFx`, `style`, `_fxGlow`, `_fxRipple`, `populateCarryBadge` … 외 3개 |
+| 39,583 | 행보다 긴 할일 (H-6, HB 2026-10-22) | `_ovfQueue`, `_ovfMode`, `_ovfClear`, `_ovfRun`, `_syncTaskOvfBtns`, `v` |
+| 39,651 | 긴 할일 고치기 — 여러 줄 칸 (H-6, HB 2026-10-22) | `_longEditOpen`, `close`, `back`, `_makeUrgentBadgeHTML`, `makeBigItem`, `isOver`, `makeBigGhost`, `updateTotal`, `makeSmWrap`, `makeSmItem`, `makeSmInlineGhost`, `openSmGhost`, `closeSmGhost`, `renderSmList` … 외 3개 |
+| 40,238 | Desktop: drag handle mousedown (instant drag — power users) | – |
+| 40,243 | Desktop: long-press anywhere on the row (mirrors mobile touch UX) | `beginMouseDrag`, `cancelMousePress` |
+| 40,318 | Desktop: right-click → task move context menu | – |
+| 40,330 | Mobile: long-press anywhere on element (including input/button areas) | `cancelPressTimer` |
+| 40,535 | Hold off the browser's scroll gesture WHILE the long-press | – |
+| 40,563 | 더블탭 = 중요 표시 토글, 트리플탭 = 긴급 표시 토글 | – |
+| 40,597 | 끌 때 줄들이 비켜 주기 (HB 2026-10-28 B7-2) | `_drTy`, `_drRect`, `_drFlipEls`, `_drSlotBegin`, `_drPlace`, `_drSlotEnd`, `_drGhostLand`, `_drBlurTaskInput`, `getSecColor`, `clearDropIndicators`, `showDropIndicator` |
+| 40,735 | Drop target: closest-item snap (no fallback flicker) | `getDropTarget` |
+| 40,750 | 구간 헤더(.ts-hd) 위에 놓았을 때도 받는다 (v26-0817-7, HB 13번) | – |
+| 40,803 | 좌우 절반으로 빅/스몰 결정 | `getStableDt`, `moveG`, `_dragZoneMid`, `_updateDragHintBounds`, `cancelDragKeepingItem`, `endDrag`, `navigateDate`, `updateHeaderDate` |
+| 41,188 | GNB 날짜의 광학 보정 | `_syncHdrDateOptical`, `_dNavEl`, `initDateSwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd`, `onCancel`, `IS_TOUCH`, `itemKey`, `parseItemKey` |
+| 41,363 | 휴대폰 자판의 '이동' 키 = 다음 칸으로 (v. 26-1030-7, HB) | `_softEnter`, `_taskEnterNext`, `arrOf`, `nRow`, `go`, `_finishEditKeepRow`, `buildFlatList`, `findFlatIndex`, `getRowEl`, `refreshActiveVisuals`, `clearActive`, `setActiveSingle`, `isAnyInputFocused`, `_txEditEl` … 외 5개 |
+| 41,528 | 위쪽이 안 보이게 막힌 화면 되살리기 (1101-E1 ①, HB 아이패드 사진) | `heal`, `soon`, `_txeDefer`, `activateItem`, `focusItemInput`, `moveActiveSelection`, `scrollFlatIdxIntoView`, `scrollActiveIntoView` |
+| 41,684 | Lane model for ⇧⌘↑/↓ reordering | `buildLanes`, `findLaneIndex`, `moveActiveItems` |
+| 41,751 | Move the entire active group by exactly one flat step | `moveActiveItemsAcrossSection` |
+| 41,899 | While editing a big/small task's text | – |
+| 41,911 | Not editing text: arrow-key driven selection | – |
+| 41,942 | View-switching and date-navigation shortcuts (desktop, D/W/M views) | `_kbWOn`, `_kbWEls`, `_kbWName`, `_kbWSync`, `_kbWSet`, `_kbWStep`, `_kbWGo`, `_kbWPage`, `_kbWEnter` |
+| 42,113 | 할일 다루기 | `_kbSelItems`, `_kbAnchor`, `_kbSecId`, `_kbToggleDone`, `_kbReactivate`, `_kbDelete`, `_kbOneSel`, `arr`, `_b7TaskKey` |
+| 42,213 | 들어오는 문 | `_b7KbReady`, `_b7BoardKey` |
+| 42,236 | 위젯 포커스를 잡은 동안 | – |
+| 42,251 | 포커스를 잡기 전 — 여기서만 새 글쇠를 받는다 | `_kbWHint`, `wireActivateClick`, `openTaskMenu`, `arr`, `CONTACT_PICKER_SUPPORTED`, `findMentionedContacts`, `renderTaskTextHTML`, `_contactTaskSvg`, `_wireContactTaskBadge`, `makeContactBadges`, `contactBadgeCountChanged` |
+| 42,534 | @배지 액션 메뉴 | `openContactMenu`, `phone`, `email`, `closeContactMenu`, `contactAction` |
+| 42,611 | @닉네임으로 태그된 할일 모아보기 | `getTasksTaggedWithContact`, `showContactTasksPopup`, `closeContactTasksPopup` |
+| 42,685 | 연락처 관리 모달 | `openContactsModal`, `closeContactsModal`, `clearContactForm`, `startEditContact`, `editContact`, `c`, `renderContactsList`, `submitContact`, `dup`, `pickFromDeviceContacts` |
+| 42,786 | Event add modal | `syncRollDisplays` |
+| 42,814 | 일정 등록창의 시·분 목록 | `_evFillMins`, `_evSyncRange`, `sec`, `keep`, `openEventModal`, `openEventModalForDate`, `setEventTimeToggle`, `_syncEventDateUI`, `onEventDateChange`, `closeEventModal`, `onEventTimeToggle`, `submitEventModal`, `repeat`, `secId` |
+| 43,096 | 매일/매주 repeat buttons | `renderRepeatButtons`, `toggleEventDaily`, `toggleEventWeekly`, `attachRepeatBtnInteraction` |
+| 43,163 | Touch | – |
+| 43,195 | Mouse (desktop only — skipped when a touch already handled it) | `_attachRepeatButtons`, `attachFastTap`, `openRepeatSubPicker`, `closeRepeatSubPicker`, `openEventEditMenu`, `closeEventEditMenu`, `editEventFromMenu`, `deleteEventFromMenu`, `deleteEventFromModal`, `_evDeleteAt`, `_gcalTz`, `_gcalDsh`, `_gcalCfg`, `_gcalSetCfg` … 외 10개 |
+| 43,491 | 구글 쪽 바뀜 알아채기 (v26-1024-8, HB '구글에서 고친 것이 늦거나 안 온다') | `_gcalSeen`, `_gcalProbe`, `_gcalDefSec`, `_gcalFind`, `_gcalGone`, `_gcalTomb`, `_gcalOnSave`, `_gcalKick`, `_gcalRunRemote`, `bad`, `_gcalApplyLocal`, `gcalSync`, `_gcalBoot`, `_gcalAfterConnect` … 외 13개 |
+| 43,859 | 일정 입력창의 캘린더 고르기 (v26-1024-1, HB) | `_gcalPickRender`, `opts`, `draw` |
+| 43,892 | 여러 날 일정 (v26-1024-2, HB) | `_gcalSpanN`, `dsh`, `_gcalMD`, `_gcalSpanTag`, `_gcalLanes`, `_gcalMonthLanes`, `_wmEvClick`, `wmEvEdit`, `_gcalSegHTML`, `lb`, `_gcalPickApply`, `_gcalPickApplyV`, `closeTaskMenu`, `toggleTaskFlag` … 외 4개 |
+| 44,092 | 긴급 표시 스포트라이트 | `_applyUrgentSpotlight`, `_ensureUrgentSpotlightObserver`, `_urgentItemsOn`, `_clearUrgentOnDone`, `_doToggleUrgent`, `toggleTaskUrgent`, `toggleUrgentRank`, `_ctNow`, `_newTask`, `_autoContactMark`, `toggleTaskContact`, `_repBadgeFill`, `body`, `_taskRepDefault` … 외 8개 |
+| 44,356 | 옛 자료 옮겨심기 | `_migrateTaskRepeats` |
+| 44,390 | 그 날짜의 실체 만들기 | `materializeRepeatsFor`, `ensureDailyRepeats`, `ensureRepeatsForView` |
+| 44,432 | 보여주기용 앞날 미리보기 (저장하지 않는다) | `getDisplayTasks`, `own` |
+| 44,456 | 매일/매주 반복 켜고 끄기 | `toggleDailyRepeat`, `toggleWeeklyRepeat`, `_taskSetRepeat`, `_REP_SCOPE_IC`, `_repScopeAsk`, `kindWord`, `verb`, `closeRepScope`, `_repScopePick` |
+| 44,577 | 묶음을 훑어 지우기 | `_repPurgeTasks`, `_repPurgeEvents`, `_repAddEx`, `_repHiddenOn` |
+| 44,632 | 일정의 원본 찾기 | `_evRepRootOf`, `_evInSeries` |
+| 44,652 | 규칙을 물려줄 때 끝날·뺀 날은 잃지 않는다 | `_repKeepMarks` |
+| 44,665 | 일정 범위 묻기에 쓰는 말 (v. 26-1030-5, HB) | `_evMd`, `_evScopeRows`, `root`, `_toastName`, `_evGcalNote`, `_evSecFor`, `_evRehome`, `_evEditApply`, `putOverride`, `_evOverrideDays`, `_evInheritCal`, `_evDeleteApply`, `_evMoveAsk`, `_evMoveApply` … 외 19개 |
+| 45,169 | 반복 할일 옮기기 (HB 2026-10-28 B3-2, tests/test_repeat_move.js) | `_taskIsRep`, `_repPlain`, `_repMoveApply`, `_repMoveAsk`, `item`, `_dayKeyDiff`, `moveTaskTo`, `_moveLabel`, `_freshTaskCopy`, `_dupDoneSync`, `_dupDoneReset`, `_dupDoneToggle`, `_finishOriginal`, `duplicateTaskTo` … 외 14개 |
+| 45,509 | 옮긴 뒤 "그 날짜로 가 볼까요?" (v26-0904-3, HB) | – |
+| 45,516 | 구간 열어 보이기 (v26-1015-9, HB) | – |
+| 45,519 | 구간을 손으로 켜고 끌 때 보기 단추 풀기 (v. 26-1031-5, HB) | `_presetVisTouched`, `_secClosed`, `_revealSec`, `_toastWithJump`, `_flashPendingTask`, `sel`, `_dayTaskCount`, `_dayTaskSecs`, `_fillTaskMenuCounts`, `_tmSubPanel`, `_tmSubReset`, `_tmSubHide`, `_tmSubOpen`, `_tmSlide` … 외 5개 |
+| 45,744 | 완료 후 다음 할일 | `nextAfterDoneTo`, `nextAfterDoneYesterday`, `_todayDateObj`, `nextAfterDoneYday`, `nextAfterDoneYdayPicked`, `nextAfterDonePicked`, `_focusNewTaskInput`, `sel`, `_secPickOn`, `_daySecTasks`, `_secPickSecs`, `_secPickSpecFor`, `_secPickFloat`, `_secPickRender` … 외 35개 |
+| 46,592 | 주간/월간 블럭 우클릭/롱터치 → 바로 입력 | `_cellDefaultSec`, `now`, `vis`, `_renderSecPick`, `list`, `openCellInput`, `mode`, `_openCellEvent`, `_openCellEventRepaint`, `_openCellTodo`, `sec`, `closeCellTodo`, `cellTodoSave`, `text` … 외 18개 |
+| 47,020 | M뷰 칸 높이 (v26-1024-6, HB) | `_mGridH`, `_mGridSetH`, `_mFitCells`, `_mGridApplyH`, `fit`, `minH`, `initMonthlySwipe`, `isSwipeZone`, `isExcluded`, `onStart`, `onMove`, `onEnd` |
+| 47,165 | GNB 날짜 롱터치/우클릭 달력 | `openHdrCalendar`, `closeHdrCalendar`, `_closeHdrCalendarNow`, `hdrCalNav`, `hdrCalPick`, `hdrCalGoToday`, `_hdrCalRender` |
+| 47,230 | 성경 단추 길게 누르기 · 우클릭 = 읽기 계획(읽기모음) 메뉴 (HB 2026-10-27 A1) | `bibleToReadMenu`, `_bibleBtnLongPress`, `_EMBED`, `_embedPost`, `_embedIdleSoon`, `_embedAllClosed`, `_embedDone`, `_embedClean`, `_embedOn`, `_embedTheme`, `_embedRun`, `_embedWatchPeek`, `check`, `_embedStart` … 외 3개 |
+| 47,386 | Theme (dark / light / system) | `_effectiveMode`, `applyTheme`, `shown`, `_themeSummaryText`, `_renderThemeSummary`, `strip`, `openThemePicker`, `closeThemePicker`, `themePickerApply`, `themePickerPick`, `themePickerGroup`, `_renderThemePicker`, `_themePreviewHTML`, `resizeAllInputs` |
+| 47,567 | 설정창은 이 기기에서 마지막에 쓰던 탭으로 열린다 (v26-1024-19, HB) | `_setTabMemKey`, `_setTabMemGet`, `_setTabMemPut`, `_vsetStartTab`, `openAccountSettings`, `openSettings`, `_flashSettingsTab`, `closeSettings`, `closeSettingsOnBg`, `closeAccountSensitiveModals`, `renderSettingsPanel`, `_chk`, `_syncBpPickers`, `fill` … 외 7개 |
+| 48,008 | Section editor (name / color / add / remove / drag-reorder / star-select) | – |
+| 48,009 | Color preset picker (built-in BASIC/SPR/SMR/AUT/WNT + user-saved) | `currentMatchingPresetName`, `renderPresetList`, `makePresetChip`, `applyPreset`, `renderSectionEditor` |
+| 48,081 | 이 구간 위의 경계선 | `_makeBoundaryRow`, `_makeBoundaryRoll`, `sel`, `mk`, `paint`, `updateSectionBoundary`, `toggleStarSection` |
+| 48,362 | 아이콘 두 벌 | `uiLevelIconSet`, `_uiLvIconSVG`, `_renderUiLevelIcons`, `_renderVerseUiLevelIcons`, `setUiLevelIconSet`, `uiLevel`, `v`, `setUiLevel`, `_stabList`, `_lvApplyIn`, `applyUiLevel`, `verseUiLevel`, `v`, `setVerseUiLevel` … 외 3개 |
+| 48,543 | "앞의 스위치를 켰을 때만 나오는" 줄들 | `_syncCondRows`, `n` |
+| 48,560 | 설정창 묶음 카드 (v26-1024-15, HB — 타이머 설정창처럼 · 세 창 공통 규칙) | `_sgEdges`, `sgFold` |
+| 48,582 | 묶음 접기 — 기기 폭에 따라 (v26-1024-20, HB S-5) | `_sgDevClass`, `_sgTitle`, `_sgFoldMem`, `_sgFoldMemPut`, `_sgFoldDefaultOpen`, `_sgFoldInit`, `sgGroupToggle`, `_sgFoldSum`, `_sgFoldSumAll`, `switchSettingsTab`, `_initSettingsSwipe`, `N`, `getTrack`, `resolveTarget` … 외 2개 |
+| 48,906 | Drag-to-reorder for the section editor rows (mouse + touch) | `attachSecRowDrag`, `getWraps`, `onDown`, `onMove`, `onUp`, `addNewSection` |
+| 49,003 | 커스텀 구간 지우기 | `deleteSection`, `closeSecDelModal`, `_secDataCount`, `secDelDo`, `sec` |
+| 49,078 | 보관해 둔 구간 되살리기 | `renderSecArchive`, `restoreSecArchive`, `dropSecArchive` |
+| 49,135 | Full section-configuration presets (name + color + order + count | `renderSectionConfigList`, `saveCurrentSectionConfig`, `applySectionConfig`, `deleteSectionConfig` |
+| 49,224 | Backup / restore | – |
+| 49,225 | 백업에 담는 '말씀 쪽' (v26-0921-8, HB 4-5) | `_myProductSettings`, `_backupPayload`, `sw`, `exportBackup`, `_backupDownload`, `_bakDevice`, `buildBackupFilename`, `email`, `emailTag`, `bkKey`, `n`, `importBackup` |
+| 49,434 | Auto carry-over of unfinished tasks | `runAutoCarryOver`, `testAutoCarryOver`, `_carryScope`, `setCarryScope`, `_syncCarryScopeBtns`, `_carryDateInScope`, `_carryPendingCount` |
+| 49,539 | 반복 할일의 이월 (HB 2026-10-28 B3-0 · B3-1, tests/test_carry_repeat.js) | `_carryIsRep`, `_carryWants`, `_repOnDay`, `_doCarry`, `runCarryNow` |
+| 49,610 | 푸시 알림을 눌러 들어왔을 때 그 말씀 전체화면 띄우기 | – |
+| 49,615 | 알림 진단 기록 (서비스워커와 같은 캐시를 공유) | `_notifLog` |
+| 49,637 | 진단 기록 보조 저장소 (localStorage) | – |
+| 49,641 | IndexedDB (서비스워커와 같은 저장소) | `_withTimeout`, `_withOutcome`, `_outcomeText`, `_idbForget`, `_idbOpen`, `_idbRaw`, `_idbGetRaw`, `_idbSetRaw`, `_idbDelRaw`, `_idbGet`, `_idbSet`, `_idbDel`, `_idbGetOutcome`, `_idbSetOutcome` … 외 30개 |
+| 50,219 | 말씀 클릭 경로 테스트 | `testVerseClickPath` |
+| 50,251 | 알림 진단 기록 뷰어 (말씀 설정 → 알림 탭) | `_vpDiagFmt`, `_vpDiagHead`, `vpDiagRender`, `vpDiagToggle`, `vpDiagClear`, `vpDiagCopy`, `build`, `_vpDiagCopyFallback`, `initAppUI` |
+| 50,358 | 푸시 말씀 목록을 앱 켤 때 한 번 맞춘다 (v26-0901-4, HB) | – |
+| 50,374 | Day-change catch-up on wake | – |
+| 50,427 | 첫 화면 빠른 그리기 (인계문서 5-3 · v26-0803-2) | `paintAppUIFromLocal`, `_notifySupport`, `_notifyGet`, `renderSuffixPickers`, `setNotifySuffix`, `addCustomSuffix`, `appConfirm`, `_appConfirmResolve` |
+| 50,604 | 말씀 모음 동기화 결과 화면 (v26-0913) | `_escHtml`, `showSyncResultModal`, `totalChg` |
+| 50,681 | 영상 링크가 없는 설교 (v26-1005-1, HB) | `_syncNoVideoHTML`, `a` |
+| 50,707 | "새로 들어온 말씀을 목록에 포함시키기" (v26-0916-2, HB) | `_syncIncludeInit`, `total`, `_syncGoBtn`, `syncIncludeOpenFull`, `list`, `_syncIncludeRender`, `bub`, `syncIncludeNow`, `syncIncludeUndo`, `_syncCatWeight`, `_syncGroupWeight`, `w`, `closeSyncResultModal` |
+| 50,837 | 따로 포함한 목록 (v26-0916-2, HB) | `openPlusList`, `closePlusList`, `setPlusTab`, `_plusAfterChange`, `plusRemoveKeys`, `plusRemoveCat`, `plusRemoveTopic`, `plusClearAll`, `renderPlusList`, `addRow` |
+| 50,952 | 커스텀 문구 칩 컨텍스트 메뉴 (수정/삭제) | `openSfxMenu`, `left`, `closeSfxMenu`, `sfxMenuAction`, `renameCustomSuffix`, `removeCustomSuffix`, `refreshNotifyUI` |
+| 51,047 | 푸시 배관(토큰) 공용 | – |
+| 51,058 | 기기 구분 | `_deviceId`, `_deviceLabel`, `touch`, `_ensurePushToken`, `_releasePushTokenIfIdle` |
+| 51,172 | 이 기기에서 알림 받기 (기기별 스위치, v26-0828-7) | `setDeviceNotify`, `_syncDeviceNotifyUI` |
+| 51,200 | 할일 알림 스위치 (일반설정 → 푸시 알림) | `onNotifyMasterToggle`, `updateNotifySub` |
+| 51,230 | 알림 서버에 '예약을 다시 짜 주세요' (v26-1024-13) | `_pushReplan` |
+| 51,245 | 기기 등록에 앱 표시 (v26-1024-13) | `_pushTagProduct`, `initForegroundPush` |
+| 51,274 | 서비스워커 자기 복구 (v26-0802-5) | – |
+| 51,286 | 앱이 화면에 떠 있을 때 도착한 푸시 (foreground) | – |
+| 51,317 | 알림 테스트 | `testLocalNotification`, `sendTestPush` |
+| 51,355 | 앱 버전 비교 ("v. YY-MMDD-N") | `_verNums`, `_verCmp`, `_upTries`, `_upSetTries`, `_upClearTries`, `_verTap`, `_upReloadFresh`, `_upSafeNow`, `_upApply`, `_upCheck`, `_fbSyncReady`, `authToggleMode`, `authSetLoading`, `authSubmit` … 외 2개 |
+| 51,587 | Firestore doc path: one document per user, holding their entire ST | `userDocRef`, `_fbSetBase`, `_fbLoadPersistedBase`, `_fbClearBase`, `_fbBaseObj` |
+| 51,674 | 3자 병합 엔진 | `_fbIsUserEdit`, `_fbDeviceIdle`, `_fbVerIsOlder`, `_mgWhole` |
+| 51,737 | 처음값 채우기는 편집이 아니다 (v. 26-1025-9, ROADMAP B-2) | `_mgIsFill`, `_mgFillSide`, `_mgSetting`, `_mgContainerKeys`, `_mgCountBag`, `_mgEntryArray`, `_mgLogFlat`, `_mgLogNested`, `_mgTaskArray`, `_mgTaskOne`, `_mgDay` |
+| 51,877 | 긴급 표시 한도(하루 2개)를 병합 뒤에도 지킨다 (v26-0914-3) | `_mgEnforceUrgentCap`, `_mgById`, `_fbHasAdoptedCloud`, `_fbCountArrays`, `_fbCountByKind`, `_fbCountItems`, `_fbBulkLoss`, `_fbMergeGuarded`, `_fbMerge`, `_dfJ`, `_dfSame`, `_dfCut`, `_dfQ`, `_dfDay` … 외 7개 |
+| 52,150 | 안쪽 이름표를 사람 말로 | `_dfSeg`, `_dfSegPath`, `_dfWord`, `_dfValS`, `_dfVal` |
+| 52,208 | 값 두 벌에서 **다른 자리만** 뽑는다 | `_dfDeep`, `_dfDeepLines`, `_dfKindName`, `_dfToday`, `_dfPush` |
+| 52,245 | 할일 한 구간(배열) | `_dfTaskKey`, `_dfArr` |
+| 52,294 | 날짜별 할일·일정 | `_dfDays`, `A` |
+| 52,312 | 말씀 모음 하나 | `_dfVKey`, `_dfColl1`, `_dfColls` |
+| 52,338 | 연락처 하나 | `_dfContact1`, `_dfContacts` |
+| 52,351 | 기록(암송·좋아요·담아두기·나눔·Deeper) | `_dfLogRefs`, `_dfLogs` |
+| 52,380 | 설정 | `_dfSettings`, `A` |
+| 52,395 | 본체 — 상태 a(이전) 에서 b(이후) 로 무엇이 달라졌나 | `_dfDiff`, `_dfBrief`, `_dfScale`, `k`, `days`, `_dfScaleText`, `_cfJ`, `_cfDiffer`, `_cfId`, `_cfSecLabel`, `_cfKindLabel`, `_cfText`, `_cfMake`, `_cfScanSection` … 외 11개 |
+| 52,757 | 충돌 보관 · 화면 | `_cfLoadLocal`, `_cfTrimmed`, `_cfSaveLocal` |
+| 52,787 | Sweeter 에서는 '말씀 쪽' 충돌만 보여 준다 (v26-0921-8, HB 4-5) | `_cfMine`, `_cfDevOnly`, `_cfOpen`, `_cfOpenCount`, `_cfStore`, `_cfPushCloud`, `_cfFetchCloud`, `_cfSyncVisibility`, `_fbCollectConflicts`, `_fbNoteConflicts` |
+| 52,899 | 화면 | `_cfWhoLabel`, `l`, `_cfEsc`, `_cfNiceLabel`, `_cfGroupName`, `_cfChoiceLabel`, `_cfCutRaw`, `_cfIsStamp`, `_cfStampNice`, `_cfExplain`, `cfToggleRaw`, `_cfBaseLine`, `_cfCardHTML`, `auto` … 외 10개 |
+| 53,185 | 올리기 실패 진단 (v26-1025-3) | – |
+| 53,188 | 클라우드 문서 포장 (v26-1025-5) | `_fbUnz`, `u8`, `_fbDocJson`, `_fbZ`, `_fbZField`, `_fbDocBytes`, `_fbBytes`, `_fbCommit`, `_fbScheduleRetry`, `_fbEnsureSync`, `_fbForceWrite` |
+| 53,332 | 데이터 복구: 로컬(localStorage) ↔ 클라우드(Firestore) 비교 | `_dayHasContent`, `_recoverySummary`, `inspectRecoveryDate`, `_fbSizeRows`, `_fbSizeBlock`, `_inboxDiagBlock`, `L`, `items`, `_fbDiagBlock`, `pend`, `checkDataRecovery`, `cleanupEmptyDays`, `fbForceUploadLocal` |
+| 53,569 | 자동 백업 보기·복원 (동기화 충돌 병합 시 남는 3슬롯) | `_abLocalState`, `_abRankLabel`, `showAutoBackups`, `restoreAutoBackup`, `applyRemoteState`, `_fbWarnLegacyWriter`, `_fbHealFromLegacy`, `first`, `_fbMaybeSelfUpdate`, `fbStartListening`, `_swOn`, `_swBoardOn` |
+| 53,998 | 2차 (v26-0922-2, HB) | – |
+| 54,009 | 3차 (v26-0922-3, HB) — 시트의 '상황 태그'·'묵상 질문' 에서 나온다 | – |
+| 54,017 | 비었을 때의 안내는 **보는 사람에 따라 달라야 한다** (v26-0923-2) | `_swWin`, `roll`, `_swInWin`, `_swPool`, `_swRecIn`, `_swEmptyText`, `who` |
+| 54,107 | 담아두기 | `getKeepLog` |
+| 54,120 | 저장 목록 (v26-0831-11, HB) | `_keepListOf`, `n`, `_keepEntries`, `_keepLists` |
+| 54,190 | 목록 차례 (v26-0831-19, HB) | `_keepSort`, `v`, `_keepPairSort`, `v`, `keepSetSort`, `keepTogglePairSort`, `_keepOrder`, `a`, `_keepSetOrder`, `_keepSortLists`, `recent`, `byName`, `_keepListsOf`, `_swIsKept` … 외 10개 |
+| 54,385 | 저장 | `_swTilesRaw`, `_swVerRaw`, `_swLoadTiles`, `_swSaveTiles`, `_swSpareKinds` |
+| 54,437 | BLOCK7 에서 내 말씀 가져오기 | `_swCountVerses`, `_swBlock7Src`, `_swImportApply`, `swImportFromBlock7`, `_swSyncNotice` |
+| 54,534 | 말씀 모음 타일 | `_swColls`, `a` |
+| 54,558 | 값 만들기 (진짜 데이터) | `_swLastVerses`, `_swSermonPool`, `_swSermons`, `_swSermonVerses`, `_swBooks`, `_swTags`, `_swEvenOn`, `_swReacts` |
+| 54,685 | 까닭 한 줄 (v26-0922-1, HB 2번 선택) | `_swAgo`, `_swLastTouch`, `add`, `_swWhyOf`, `key` |
+| 54,744 | 오늘의 말씀 (표지 카드) | `_swToday`, `_churchCfg`, `_svcRank`, `list`, `_svcCmp`, `_swAxisKeys`, `_swCount`, `_swFlow`, `_swMyWeight`, `_swMD` |
+| 54,876 | 기간 안의 흐름 (v26-1005-5, HB) | `_swSvcKey`, `_swSvcOf` |
+| 54,880 | 흐름 카드 그림 (C안, v. 26-1102-12, HB 2026-11-02) | `_swJo`, `_swFlowDay`, `_swFlowShape`, `list`, `lane`, `_swInsightsWin`, `push`, `_swInsights`, `push`, `_swVersesForInsight`, `_swRhythmGrid`, `_swRhythm`, `_swSigRhythm` |
+| 55,192 | 상황 태그를 **말투로** 바꾼다 (v26-0922-4 → -5 에서 전면 손질, HB) | `_swNeedSkip`, `_swNeedSay`, `bat`, `_swNeeds`, `_swAsks`, `_swValues`, `_swStrip`, `_swCountText`, `_swFlowHTML`, `clause` |
+| 55,612 | 한 타일의 얼굴 | `_swEsc`, `_swArtHTML`, `_swPipsHTML`, `_swHandFont`, `day`, `_swHiText`, `_swHiHTML`, `_swLoadPhotos`, `_swPhotoPick`, `_swPhotoFor`, `_swPhotoHTML`, `_swIllHTML`, `_swBigHTML`, `_swSigWrap` … 외 6개 |
+| 55,910 | 유튜브 썸네일 (v26-0922-10, HB: "타일 위아래가 비어서 안 이뻐") | `_swYtThumbFail`, `_swCellHTML` |
+| 56,036 | 타일마다 바탕 사진 켜고 끄기 (v26-0922-13, HB) | `_swPhIcon`, `_swPhOn`, `_swEditBtns`, `_swTogglePhoto`, `_swArrowHTML`, `_swThereHTML`, `_swFace`, `chip`, `_swOffTileEl` |
+| 56,151 | 그리기 | `_swTileClass` |
+| 56,156 | 첫 그림에 쓸 말씀을 미리 뽑아 둔다 (v26-0922-21, HB) | `_swSaveBootVerses`, `_swIntroSpan`, `_swRender` |
+| 56,252 | 편집 모드 | `_swEditOn`, `_swEditBtnSync`, `mine`, `board`, `swOpenCollFilter`, `swToggleEdit`, `_swAddTile`, `_swKillTile`, `_swSizeCells`, `w`, `_swNoMotion`, `_swTrack`, `_swTrackTo` |
+| 56,361 | 한 칸 넘기기 (PC 꺽쇠·자판이 쓴다) | `_swStep`, `_swRepaint` |
+| 56,388 | 누르면 전체화면 | `_swOpenVerse`, `_swGridTile`, `facet`, `_swVersesFor`, `_swTileOpen`, `md`, `label` |
+| 56,503 | 몸짓 (좌우만 — 세로는 스크롤에게 양보) | – |
+| 56,535 | 편집: 끌어서 자리 바꾸기 | `_swDragStart`, `_swDragMove`, `_swDragHole`, `_swDragHoleOff`, `_swDragHover` |
+| 56,585 | 판 끝에 닿으면 저절로 굴러간다 (v26-0922-15, HB) | `_swAutoScroll`, `_swAutoStop`, `_swReorder`, `_swInitGestures`, `_swFinishSwipe`, `_swSnap`, `_swKbTiles`, `_swKbSync`, `_swKbSet`, `_swKbStep`, `_swKbGo`, `_swKbGoX`, `_swKbPage`, `_swKbSort` … 외 5개 |
+| 57,120 | 자판 단축키 도움말 | `_swKbHelpOpen`, `_kbHelpRows`, `sw`, `_swKbHelpFill`, `_kbHelpKey`, `openSwKbHelp`, `closeSwKbHelp` |
+| 57,259 | 형제 앱 열기 (v26-0921-2, HB) | `_sisterApp`, `dev`, `cross`, `_sisterFill`, `swCrossToggle`, `_swCrossBtnSync`, `_sisterStandalone`, `_sisterIsIOS`, `sisterGo`, `_swBoot` |
+| 57,367 | Sweeter 설정창 '계정' 탭 (v26-0921-8, HB 4-5) | `_swMergeAccountTab` |
+| 57,391 | Sweeter 설정창 '뷰' 탭 병합 (v26-0921-8, HB 4-4) | `_swFillMovedRows`, `_swMergeViewTab`, `_swCoverOn`, `_swMount` |
+| 57,469 | 좌상단 로고 — BLOCK7 과 **같은 손버릇**이다 (v26-0921-1, HB) | – |
+| 57,479 | 우상단 톱니 — 탭 = 설정 · 롱터치 = 설정 '계정' 탭 바로 (v26-1024-17, HB) | – |
+| 57,490 | DEV MODE BOOTSTRAP | `fbPushState`, `authSignOut`, `checkDataRecovery`, `fbForceUploadLocal`, `showAutoBackups`, `restoreAutoBackup`, `openSyncConflicts`, `closeSyncConflicts`, `cfChoose`, `cfMergeAll`, `TDASH`, `add`, `dur` |
+| 57,567 | 모으기: 두 기록 → 한 모양 [{date,t,time,d,app,src,label}] | `collect`, `mapPrayers`, `focusPrayers`, `dayFlow`, `mergeFlow`, `wordPray`, `wpLegend`, `hueIndex`, `hueOf`, `itemName`, `edRow`, `mapTop`, `dayTotals`, `inRange` … 외 3개 |
+| 57,766 | 그리기 | `injectCSS`, `legend`, `bigNum`, `cmpLine`, `topRefs`, `bySrc`, `bySlot`, `viewWeek`, `heat`, `viewMonth`, `viewDay`, `nav`, `html` |
+| 58,069 | 판 하나를 el 안에 연다 | `mount` |
+| 58,133 | 부드러운 전환 (HB 2026-10-15) — 바꿀 때는 늘 옆으로 스르륵: 나가고 → 그리고 → 들어온다. 밀기는 손가락을 따라간다 | `pageTint`, `open`, `close`, `isOpen`, `redraw` |
 
 ---
 
