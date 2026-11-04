@@ -20,10 +20,11 @@ global.getDisplayTasks = (k, sec, ty) => (k === key(0) && ty === 'big' && sec ==
 global.esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
 global.formatEventTime = t => t;
 global._gcalEvTx = () => 'blue';
+global._gcalEvColor = ev => ev && ev.col || '';
 
 global.save = () => {};
 eval(slice('const _RP_FOLD_NEXT=', 'function rpFoldCycle(')
-   + ';Object.assign(globalThis,{_RP_FOLD_NEXT,_rpFoldOf,_rpFoldData,_rpFoldLineRow,_rpFoldSumHTML,_rpFoldSet,_rpFoldHandleHTML,_rpFoldSumH,RPF_SUM_MIN});');
+   + ';Object.assign(globalThis,{_evLeadMin,_rpFoldEvCmp,_rpFoldEvHTML,_RP_FOLD_NEXT,_rpFoldOf,_rpFoldData,_rpFoldLineRow,_rpFoldSumHTML,_rpFoldSet,_rpFoldHandleHTML,_rpFoldSumH,RPF_SUM_MIN});');
 
 console.log('시나리오 1 — 누를 때마다 펼침 → 요약 → 한 줄 → 펼침 (HB (나))');
 {
@@ -202,6 +203,30 @@ console.log('\n시나리오 11 — ⚑ 할일 왼쪽 시간구간 색 세로줄 
   sc.eq('복제본(.rpf-ghost)은 조각으로 다시 세지 않는다 — 세면 복제본이 사라질 때 또 복제본이 생기는 연쇄로 끄는 내내 번쩍인다', /n\.closest\('\[hidden\],\.rpf-ghost'\)/.test(fo), true);
   sc.eq('복제본은 한 줄 안에서 줄바꿈 금지', /white-space:nowrap;/.test(fo), true);
   sc.eq('불투명도만 뭉근하게(.14s) · 끝낼 땐 전환이 끝난 뒤 갈아끼움(170ms)', /\.rpf-morph \.rpf-m,\.rpf-morph \.rpf-mbar\{transition:opacity \.14s linear;\}/.test(SRC) && /setTimeout\(\(\)=>finish\(state,target\),170\)/.test(ms) && /if\(fin\)return;fin=true;/.test(ms), true);
+}
+
+console.log('시나리오 — 특별일정(종일) 맨 위 · 제목 앞 시각 읽기 · 소속 캘린더 색 바탕 (v. 26-1104-1, HB)');
+{
+  sc.eq('9.3 → 9시 30분', _evLeadMin('9.3 치과'), 570);
+  sc.eq('19.45 → 19:45', _evLeadMin('19.45 청년부'), 1185);
+  sc.eq('7.15 → 7:15', _evLeadMin('7.15 새벽기도'), 435);
+  sc.eq('시각이 없으면 null', _evLeadMin('가족 여행'), null);
+  sc.eq('25.1 · 9.75 는 시각이 아니다', [_evLeadMin('25.1 가'), _evLeadMin('9.75 가')], [null, null]);
+  sc.eq('1.2.3 같은 번호는 시각이 아니다', _evLeadMin('1.2.3 버전'), null);
+  const mk = (text, time, col) => ({ text, time, col });
+  const day = [mk('팀 미팅', '10:00'), mk('19.45 청년부'), mk('가족 여행'), mk('14:00 말고', '09:00'), mk('7.15 새벽기도'), mk('9.3 치과'), mk('교회 수련회')];
+  const out = day.slice().sort(_rpFoldEvCmp).map(e => e.text);
+  sc.eq('순서: 시각 없는 특별 → 시각 적힌 특별(시각순) → 일반 시간일정(시각순)',
+    out, ['가족 여행', '교회 수련회', '7.15 새벽기도', '9.3 치과', '19.45 청년부', '14:00 말고', '팀 미팅']);
+  sc.eq('시각 없는 특별일정끼리는 들어온 순서 그대로', ['가족 여행', '교회 수련회'], out.slice(0, 2));
+  const h1 = _rpFoldEvHTML(mk('가족 여행', '', '#3b6fd4'), '', true);
+  sc.eq('특별일정 행에는 캘린더 색 24% 바탕', /rpf-allday/.test(h1) && /#3b6fd4 24%/.test(h1), true);
+  const h2 = _rpFoldEvHTML(mk('치과', '10:00', '#3b6fd4'), '', true);
+  sc.eq('시간일정에는 바탕을 깔지 않는다', /rpf-allday/.test(h2), false);
+  const h3 = _rpFoldEvHTML(mk('가족 여행', '', '#3b6fd4'));
+  sc.eq('한 줄 모양(tint 없음)에는 바탕이 없다', /rpf-allday/.test(h3), false);
+  const h4 = _rpFoldEvHTML(mk('가족 여행', ''), '', true);
+  sc.eq('캘린더 색이 없으면 앱 강조색 바탕', /var\(--ac\) 20%/.test(h4), true);
 }
 
 sc.done();
