@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1102-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1104-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1102-2';
+const APP_VERSION = 'v. 26-1104-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -6807,6 +6807,30 @@ document.addEventListener('focusout', e => {
     if (UI.mapEdit && UI.mapEdit.key === el.dataset.mapin && document.activeElement !== el) { mapCommit(el.value); mapRender(); }
   }, 0);
 });
+
+// 아이패드 '자판 내리기' 키(우하단)는 blur 를 주지 않는다 — 칸에 커서가 남은 채 자판만 내려간다 (HB 2026-11-04, 세 번째 신고).
+//   자판이 내려간 것을 보이는 높이(visualViewport)로 알아채 커서를 거둔다 → 위 focusout 이 '바깥을 눌렀을 때' 와 똑같이 넣는다.
+//   BLOCK7 의 같은 장치와 같은 셈: 확대 배율을 곱해 재고, 가장 컸던 높이보다 150px 넘게 작으면 '올라와 있다',
+//   Enter 로 이어 쓰며 자판이 깜빡일 수 있어 0.35초 뒤에도 내려가 있을 때만.
+(function () {
+  const vv = window.visualViewport; if (!vv) return;
+  const H = () => vv.height * (vv.scale || 1);
+  let base = H(), w = window.innerWidth, up = false, t = null;
+  vv.addEventListener('resize', () => {
+    if (window.innerWidth !== w) { w = window.innerWidth; base = H(); up = false; return; }
+    const h = H(); if (h > base) base = h;
+    const nowUp = base - h > 150;
+    if (up && !nowUp) {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        if (base - H() > 150) return;
+        const ae = document.activeElement;
+        if (ae && ae !== document.body && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) ae.blur();
+      }, 350);
+    }
+    up = nowUp;
+  });
+})();
 
 // ═══ 손짓: 왼쪽 스와이프(지우기·내일로) · 길게 눌러 끌기(순서) · 가장자리 끌기(뒤로) · 창 끌어 닫기 ═══
 const GS = { st: null, suppress: 0, openRow: null };
