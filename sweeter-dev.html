@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1102-15  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1104-1  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -3709,6 +3709,9 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .rpf-col .rpf-d,.rpf-flcol .rpf-d{margin-bottom:1px;}
 .rpf-flcol{flex:0 0 clamp(150px,22%,220px);border-left:1px solid var(--bd);padding-left:14px;}
 .rpf-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+/* 특별일정 행 바탕 (v. 26-1104-1) — 칸 폭 가득, 좁은 모양은 글 길이만큼 */
+.rpf-allday{display:inline-block;max-width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:top;padding:0 5px;border-radius:4px;}
+.rpf-ci>.rpf-allday{display:block;}
 .rpf-flt{color:var(--tx);}
 .rpf-flbelow{display:none;margin-top:8px;}
 .rpf-fll{display:flex;flex-direction:column;gap:0;}
@@ -6985,7 +6988,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1102-15";
+const APP_VERSION = "v. 26-1104-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34877,6 +34880,24 @@ function _rpFoldOf(type){
   const f=((_lay().fold)||{})[type];
   return(f==='sum'||f==='line')?f:'';
 }
+// 특별일정 = 구글 종일일정(시각 없는 일정). HB 는 제목 맨 앞에 24시간제로 시각을 적는다 — 소수점 뒤가 분.
+//   9.3 → 9시 30분 · 19.45 → 19:45 · 7.15 → 7:15 (한 자리 분은 10 곱하기). 못 읽으면 null (v. 26-1104-1, HB)
+function _evLeadMin(text){
+  const m=/^\s*(\d{1,2})\.(\d{1,2})(?![\d.])/.exec(String(text||''));
+  if(!m)return null;
+  const h=+m[1],mi=m[2].length===1?+m[2]*10:+m[2];
+  return(h<=23&&mi<=59)?h*60+mi:null;
+}
+// 요약 정렬: 0 시각 없는 특별일정 → 1 시각 적힌 특별일정(시각순) → 2 일반 시간일정(시각순). 같은 칸 안은 들어온 순서 그대로
+function _rpFoldEvCmp(a,b){
+  const key=ev=>{
+    if(ev.time)return[2,String(ev.time)];
+    const m=_evLeadMin(ev.text);
+    return m===null?[0,'']:[1,String(1000+m)];
+  };
+  const x=key(a),y=key(b);
+  return x[0]-y[0]||(x[1]<y[1]?-1:x[1]>y[1]?1:0);
+}
 // 오늘부터 앞으로의 일정 · 오늘의 깃발 할일 (화면을 안 건드린다 — 시험이 이것만 부른다)
 function _rpFoldData(type){
   const now=logicalNow(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
@@ -34895,7 +34916,7 @@ function _rpFoldData(type){
       if(seen.has(key))return false;
       seen.add(key);return true;
     });
-    evs.sort((a,b)=>(a.time||'')<(b.time||'')?-1:(a.time||'')>(b.time||'')?1:0);   // 종일(시간 없음) 먼저
+    evs.sort(_rpFoldEvCmp);   // 특별일정(종일) 먼저 — 시간 안 적힌 것 → 적힌 것(시각순) → 일반 시간일정(시각순)
     if(evs.length)days.push({k,d,i,evs});
   }
   const tk=todayKey(),flags=[],flagCols=[];
@@ -34909,9 +34930,16 @@ function _rpFoldDayLabel(x){
   if(x.i===1)return'내일';
   return'일월화수목금토'[x.d.getDay()]+' '+(x.d.getMonth()+1)+'/'+x.d.getDate();
 }
-function _rpFoldEvHTML(ev,k){
+// tint: 요약 칸에서만 — 특별일정(시각 없음)은 소속 캘린더 색의 옅은 바탕을 행에 깐다 (주간 · 월간뷰 종일 띠와 같은 24%)
+function _rpFoldEvHTML(ev,k,tint){
   const tm=ev.time?`<span class="rpf-tm">${esc(formatEventTime(ev.time))}</span> `:'';
-  return`<span class="rpf-ev"${k?` data-k="${k}"`:''}>${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
+  let cls='rpf-ev',st='';
+  if(tint&&!ev.time){
+    const col=_gcalEvColor(ev);
+    cls+=' rpf-allday';
+    st=` style="background:${col?`color-mix(in srgb, ${col} 24%, transparent)`:'color-mix(in srgb, var(--ac) 20%, transparent)'};"`;
+  }
+  return`<span class="${cls}"${st}${k?` data-k="${k}"`:''}>${tm}<span style="color:${_gcalEvTx(ev)};">${esc(ev.text)}</span></span>`;
 }
 function _rpFoldFlagTxt(t){return esc(String(t.text||'').replace(/\s+/g,' ').trim());}
 // ⚑ 할일 왼쪽 세로줄의 색 — 그 할일이 놓인 시간구간 색 (같은 구간이 이어지면 줄도 이어진다)
@@ -34944,7 +34972,7 @@ function _rpFoldSumHTML(type){
   const moreSpan='<span class="rpf-more rpf-cmore"></span>';
   // 넓은 모양: 날 칸 — 한 줄짜리 그리드라 폭에 안 들어가는 칸(먼 날)은 둘째 줄(높이 0)로 밀려 안 보인다
   const cols=days.slice(0,12).map((x,di)=>`<div class="rpf-col" data-n="${x.evs.length}"><span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span>${
-    x.evs.slice(0,12).map((ev,j)=>`<span class="rpf-ell rpf-ci" data-k="e${di}-${j}">${_rpFoldEvHTML(ev)}</span>`).join('')}${moreSpan}</div>`).join('');
+    x.evs.slice(0,12).map((ev,j)=>`<span class="rpf-ell rpf-ci" data-k="e${di}-${j}">${_rpFoldEvHTML(ev,'',true)}</span>`).join('')}${moreSpan}</div>`).join('');
   const flcol=flags.length?`<div class="rpf-flcol" data-n="${flags.length}"><span class="rpf-d rpf-fl"><span data-k="fl">⚑</span> <span data-k="flh">오늘 중요</span></span>${flags.slice(0,12).map((t,i)=>`<span class="rpf-ell rpf-flt rpf-ci rpf-fbar"${_rpFoldFlagBar(flagCols[i])} data-k="f${i}">${_rpFoldFlagTxt(t)}</span>`).join('')}${moreSpan}</div>`:'';
   const more=(n,k)=>n>0?` <span class="rpf-more"${k?` data-k="${k}"`:''}>+${n}</span>`:'';
   // ⚑ 목록 (칸 아래 · 좁은 모양) — 한 줄에 하나씩. 높이를 안 정했으면 cap 개 + n, 정했으면 그 높이만큼 (v. 26-1102-4, HB —
@@ -34953,7 +34981,7 @@ function _rpFoldSumHTML(type){
   const wide=`<div class="rpf-wide"><div class="rpf-cols">${cols||none}</div>${flcol}</div><div class="rpf-flbelow">${flList(2)}</div>`;
   // 좁은 모양: 날마다 한 줄, 한 날 일정 하나 + n — 중간에서 잘리지 않게. 높이에 맞춰 아래 줄부터 숨긴다
   let narrow='';
-  days.slice(0,12).forEach((x,di)=>{narrow+=`<div class="rpf-row rpf-nr"><span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${_rpFoldEvHTML(x.evs[0],'e'+di+'-0')}${more(x.evs.length-1,'m'+di)}</span></div>`;});
+  days.slice(0,12).forEach((x,di)=>{narrow+=`<div class="rpf-row rpf-nr"><span class="rpf-d${x.i===0?' today':''}" data-k="d${di}">${_rpFoldDayLabel(x)}</span><span class="rpf-evs">${_rpFoldEvHTML(x.evs[0],'e'+di+'-0',true)}${more(x.evs.length-1,'m'+di)}</span></div>`;});
   if(!days.length)narrow+=`<div class="rpf-row">${none}</div>`;
   narrow+=flList(1);
   return`<div class="rp-fold rp-fold-sum${H?' rpf-fixed':''}"${H?` style="height:${H}px"`:''}>${wide}<div class="rpf-narrow">${narrow}</div></div>`;
