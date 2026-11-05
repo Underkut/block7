@@ -63,6 +63,36 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
   await p.waitForTimeout(1500);
   const r2 = await p.evaluate(ty => ({ f: _rpFoldOf(ty), junk: document.querySelectorAll('.rpf-morph,.rpf-meas').length }), t);
   ok('연타 뒤 마지막(요약)으로 끝남', r2.f === 'sum' && r2.junk === 0, r2);
+  // ── 1105-F 1단계: 바꾸는 방법 (버튼 · 헤더 터치) ──
+  const W = `#pageContent .rp-widget[data-wtype="${t}"]`;
+  const setF = f => p.evaluate(([ty, f]) => { const L = _lay(); L.fold = L.fold || {}; if (f) L.fold[ty] = f; else delete L.fold[ty]; save(); renderLayout(); }, [t, f]);
+  ok('처음 사용자 기본값은 버튼 방식', await p.evaluate(() => _settingsDefaults.foldSwitchMode === 'seg' && _foldSwMode() === 'seg'));
+  await setF(''); await p.waitForTimeout(300);
+  // … 메뉴 둘째 줄
+  await p.click(`${W} .rp-wmore`); await p.waitForTimeout(300);
+  const menu = await p.evaluate(() => { const m = document.getElementById('b7Pop'); return m ? { segs: m.querySelectorAll('.b7-seg').length, heads: [...m.querySelectorAll('.b7-pop-head')].map(h => h.textContent), on: [...m.querySelectorAll('.b7-seg')].map(sg => sg.querySelector('button.on')?.textContent) } : null; });
+  ok('… 메뉴 둘째 줄이 바꾸는 방법 (버튼 켜짐)', menu && menu.segs === 2 && menu.heads[1] === '풀 · 요약 바꾸는 방법' && menu.on[1] === '버튼', menu);
+  await p.click('#b7Pop .b7-seg[data-g="1"] button[data-i="1"]'); await p.waitForTimeout(500);
+  ok('… 메뉴에서 헤더 터치 → 설정값 · 설정창 단추 · 세그먼트 숨김이 함께', await p.evaluate(W => ST.settings.foldSwitchMode === 'tap' && document.getElementById('foldSwBtnTap').classList.contains('active') && !document.getElementById('foldSwBtnSeg').classList.contains('active') && !document.querySelector(W + ' .rp-fold-seg'), W));
+  await p.mouse.click(5, 5); await p.waitForTimeout(300);
+  // 헤더 터치: 풀 → 요약 → 풀 (한 줄로는 안 간다)
+  const tapHead = async () => { await p.click(`${W} .rp-widget-title`, { position: { x: 200, y: 6 } }); await p.waitForTimeout(1100); return p.evaluate(ty => _rpFoldOf(ty), t); };
+  const seq2 = [await tapHead(), await tapHead(), await tapHead(), await tapHead()];
+  ok('헤더 터치는 풀 ⇄ 요약만 오간다', JSON.stringify(seq2) === JSON.stringify(['sum', '', 'sum', '']), seq2);
+  await setF('line'); await p.waitForTimeout(300);
+  await p.click(`${W} .rp-fold-line`, { position: { x: 300, y: 8 } }); await p.waitForTimeout(1200);
+  ok('한 줄에서 누르면 요약으로 돌아온다', await p.evaluate(ty => _rpFoldOf(ty), t) === 'sum');
+  await setF('line'); await p.waitForTimeout(300);
+  const pad = await p.evaluate(W => { const el = document.querySelector(W + ' .rp-fold-line'); return [parseFloat(getComputedStyle(el).paddingLeft), !!document.querySelector(W + ' .rp-wm-seg:not(.rp-fold-seg)')]; }, W);
+  ok('한 줄 왼쪽 여백이 보이는 단추에 맞음 (헤더 터치: [▢|▭|―] 없음)', pad[0] === (pad[1] ? 96 : 40), pad);
+  // 설정창에서 버튼으로 되돌리면 … 메뉴와 세그먼트도 따라온다
+  await p.evaluate(() => updateSetting('foldSwitchMode', 'seg')); await p.waitForTimeout(400);
+  ok('설정창에서 버튼 → 세그먼트가 다시 보이고 헤더 터치는 안 먹는다', await p.evaluate(W => !!document.querySelector(W + ' .rp-fold-seg') && document.getElementById('foldSwBtnSeg').classList.contains('active'), W));
+  await setF(''); await p.waitForTimeout(300);
+  await p.click(`${W} .rp-widget-title`, { position: { x: 200, y: 6 } }); await p.waitForTimeout(800);
+  ok('버튼 방식에서 헤더를 눌러도 그대로', await p.evaluate(ty => _rpFoldOf(ty), t) === '');
+  await p.click(`${W} .rp-wmore`); await p.waitForTimeout(300);
+  ok('… 메뉴도 버튼으로 표시', await p.evaluate(() => document.querySelector('#b7Pop .b7-seg[data-g="1"] button.on')?.textContent) === '버튼');
   console.log(`\n결과: 통과 ${pass} / 실패 ${fail}`);
   await b.close(); process.exit(fail ? 1 : 0);
 })();

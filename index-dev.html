@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1105-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -3657,6 +3657,7 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 .wkg.wkg-fixed .wlbl{min-height:0;overflow:hidden;}
 /* 두 갈래 고르기 세그먼트 (주간뷰 · 월간뷰 너비) — There 대시보드 D W M 과 같은 모양, 앱 테마를 따른다 */
 .b7-pop.b7-pop-seg{width:auto;min-width:172px;}
+.b7-pop.b7-pop-seg .b7-seg button{white-space:nowrap;}   /* '헤더 터치' 가 두 줄로 갈라지지 않게 */
 .b7-seg{display:flex;gap:2px;padding:3px;margin:1px 0;border-radius:10px;position:relative;background:color-mix(in srgb,var(--tx) 7%,transparent);}
 .b7-seg button{flex:1;position:relative;z-index:1;background:none;border:0;padding:7px 14px;border-radius:8px;font:400 12.5px/1.2 var(--font-ui),sans-serif;color:var(--tx3);cursor:pointer;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
 .b7-seg button.on{color:var(--tx);font-weight:500;}
@@ -3690,11 +3691,14 @@ body.split-d.lay2 #weeklyPane.on-full{display:block;flex:0 0 100%;order:-1;min-w
 @media (prefers-reduced-motion:reduce){.rp-wm-seg .b7-seg-pill{transition:none;}}
 /* 접힌 주간 · 월간 위젯 (v. 26-1030-9) — 일정 위주 요약. 테두리 · 상자 없이 글자만 */
 .rp-widget.rp-folded{cursor:default;}
+.rp-foldtap .rp-widget.rp-folded{cursor:pointer;}
 /* 한 줄: 글자 위아래 여백을 똑같이 (v. 26-1031-4, HB) — 핸들은 줄을 차지하지 않고 바닥에 얹힌다(아래 .rp-vresize-slim) */
 .rp-widget.rp-folded-line{padding-top:3px;padding-bottom:2px;}
-.rp-fold-line.rp-widget-title{justify-content:flex-start;gap:8px;margin:0;min-height:22px;padding:0 0 0 186px;
+.rp-fold-line.rp-widget-title{justify-content:flex-start;gap:8px;margin:0;min-height:22px;padding:0 0 0 40px;
   font:400 11.5px/1.3 var(--font-ui),sans-serif;letter-spacing:0;color:var(--tx2);}
-.rp-folded-line:not(:has(.rp-wm-seg)) .rp-fold-line.rp-widget-title{padding-left:126px;}   /* [W|M] 이 숨으면(둘 다 놓임) 그만큼 당긴다 */
+.rp-folded-line:has(.rp-wm-seg:not(.rp-fold-seg)) .rp-fold-line.rp-widget-title{padding-left:96px;}   /* 왼쪽 단추에 맞춰 — [W|M] 만 */
+.rp-folded-line:has(.rp-fold-seg) .rp-fold-line.rp-widget-title{padding-left:126px;}                    /* [▢|▭|―] 만 (W|M 숨음) */
+.rp-folded-line:has(.rp-wm-seg:not(.rp-fold-seg)):has(.rp-fold-seg) .rp-fold-line.rp-widget-title{padding-left:186px;}   /* 둘 다 */
 .rp-fold-line{position:relative;}
 .rp-fold-line .rpf-txt{flex:1;min-width:0;overflow:hidden;white-space:nowrap;}
 .rpf-it[hidden],.rpf-fi[hidden]{display:none;}
@@ -6999,7 +7003,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-3";
+const APP_VERSION = "v. 26-1105-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7447,6 +7451,7 @@ try{
       <div class="sg" id="sgWeekMonth" data-lv="mp">
         <div class="sg-h">주간 · 월간</div>
         <div class="sg-card">
+          <div class="settings-row stack" id="secFoldSwitch"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M7 14.5h10"/></svg><div class="settings-row-text"><div class="settings-row-label">풀 · 요약 바꾸는 방법</div><div class="settings-row-desc">2·3단 주간 · 월간 위젯 — 헤더 터치는 풀과 요약 사이만 오가고, 한 줄은 요약에서 아래 핸들을 끌어 올려요</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="foldSwBtnSeg" title="W|M 오른쪽 [▢|▭|―] 단추로 고르기" onclick="updateSetting('foldSwitchMode','seg')">버튼</button><button class="theme-pick-btn" id="foldSwBtnTap" title="위젯 머리줄을 누르면 풀과 요약 사이를 오가요" onclick="updateSetting('foldSwitchMode','tap')">헤더 터치</button></div></div></div>
           <div class="settings-row stack" id="secDow"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg><div class="settings-row-text"><div class="settings-row-label">요일 표기</div></div><div class="sr-ctl"><div class="sg-seg"><button class="theme-pick-btn" id="dowBtnLetterLord" onclick="updateSetting('dowFormat','letter-lord')">L M T W</button><button class="theme-pick-btn" id="dowBtnLetterSun" onclick="updateSetting('dowFormat','letter-sun')">S M T W</button><button class="theme-pick-btn" id="dowBtnKorean" onclick="updateSetting('dowFormat','korean')">일 월 화</button></div></div></div>
           <div class="settings-row sub"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16"/><circle cx="8.5" cy="14.5" r="1.4" fill="var(--sun-red)" stroke="none"/></svg><div class="settings-row-text"><div class="settings-row-label">주일을 빨갛게</div><div class="settings-row-desc">일요일 날짜 · 요일을 붉게</div></div><label class="settings-toggle"><input type="checkbox" id="setSundayRed" onchange="updateSetting('sundayRed',this.checked)"><span class="settings-toggle-track"></span></label></div>
           <div class="settings-row stack" data-lv="p" id="secMonthTitle"><svg class="sr-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17V7l4 6 4-6v10"/><path d="M16 9h4M16 13h4"/></svg><div class="settings-row-text"><div class="settings-row-label">달 이름</div><div class="settings-row-desc">월간 뷰 · 월간 위젯의 달 제목</div></div><div class="sr-ctl"><div class="sg-seg" id="monthTitleFormatBtns"></div></div></div>
@@ -25064,7 +25069,7 @@ if(!ST.contacts)ST.contacts=[]; // [{id,nick,name,phone,email}] — @닉네임 �
 if(!ST.settings)ST.settings={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2};
 // Backfill any settings keys added in later versions so existing users
 // who already have a `settings` object don't end up with `undefined`.
-const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:12};
+const _settingsDefaults={autoCarryOver:false,dayStartHour:0,bigLimit:6,smallLimit:2,starSecs:['am','pm','night'],sectionConfigs:{},theme:'system',themePresetId:null,showAllBtn:false,showStarBtn:true,showExpandAllBtn:false,showTodoFilterBtn:true,showEventFilterBtn:false,showCompletedBtn:true,showFlagFilterBtn:false,showContactFilterBtn:false,showCompletedTasks:false,dowFormat:'korean',sundayRed:true,carryBadgeMode:'icon',carryCountSource:'both',verseBarOn:false,verseBarAutoRotate:true,verseCurrentIdx:1,verseLastShownDate:null,verseMode:'full',verseSneakCat:false,verseSneakTopic:false,verseSneakRef:true,verseSneakFirstWord:true,verseSneakTag:false,verseFullCat:true,verseFullTopic:true,verseFullRef:true,verseFullTag:true,verseCountScope:'all',vfThemes:['night','ink','dawn','sanctuary','paper','aurora','riso','neon'],vfThemeBySec:{},vfTextScale:0.6,vfArtOn:true,vfArtStyle:'organic',imgInclLeft:true,imgInclActions:true,imgInclBlock7:true,imgInclArt:true,txtInclCat:false,txtInclTopic:false,txtInclTag:false,txtRefStyle:'short',txtRefBracket:'square',txtRefPos:'before',shareSizeMobile:'qhd',shareSizePc:'4k',shareSizeSns:'1920',verseWidgetCat:false,verseWidgetTopic:false,verseWidgetText:true,verseWidgetRef:true,verseWidgetTag:false,verseWidgetTextSize:2,verseWidgetRefSize:2,verseRotateBySec:false,verseCards:{},verseCardCat:true,verseCardTopic:true,verseCardTag:true,verseCardLike:true,verseCardMem:true,verseCardDeeper:true,verseCardEven:true,verseCardShare:true,hiBold:true,hiPen:false,hiWave:false,hiStar:false,hiOverlap:2,hiStarMax:1,imgHi:true,uiLevelIconSet:'animal',verseUiLevel:'power',vgTagExcludeOn:true,vgTagExcludeMax:3,vgBookExcludeOn:true,vgBookExcludeMax:1,vfCycleMode:'repeat',propTitleFonts:['brush'],propTitleDissolve:true,propTitleTyping:true,periodBaseMode:'calendar',monthTitleFormat:'en3',monthTitleYear:true,vListHeightRatio:0.75,keepListSort:'recent',verseSneakStyle:'mono',linkOpenMode:'chrome',mviewMemMode:'cross',wmViewMode:'todo',foldSwitchMode:'seg',showWMTodoBtn:true,showWMEventBtn:true,showWMMemBtn:false,showSmallBlocks:false,dviewMarkOn:true,dviewMarkLike:true,dviewMarkMem:true,dviewMarkDeeper:true,dviewMarkEven:true,addInputPosition:'A',loopViews:true,notify:{enabled:false,morningTime:'07:00',sections:false,includeSmall:true,morningSuffix:'할 일',sectionSuffix:'할 일',customSuffixes:[]},verseAlarm:{enabled:false,secTimes:{},customTimes:[],poolMode:'all',poolCats:[],poolBooks:[]},doneFxGlow:true,doneFxRipple:true,moveSecPicker:false,taskOverflow:'shrink',evChipMax:12};
 Object.keys(_settingsDefaults).forEach(k=>{
   if(ST.settings[k]===undefined)ST.settings[k]=_settingsDefaults[k];
 });
@@ -34810,13 +34815,15 @@ function _monthWideSide(L,mode){
 // 3단에서 위쪽을 가로지른 쪽 ('lc'|'cr'|null) — 경계선 끌기가 어느 쌍을 지킬지 정한다
 function _laySpanSide(L){return _wkWideSide(L,3)||_monthWideSide(L,3);}
 // 주간뷰 · 월간뷰 … 메뉴 — 1단 · 2단 미끄러지는 세그먼트 (v. 26-1030-2, HB — There 대시보드 D W M 과 같은 결)
+// 둘째 줄: 풀 · 요약 바꾸는 방법 (v. 26-1105-4, HB) — 설정창 '주간 · 월간' 과 같은 값
+function _foldSwGroup(){return{title:'풀 · 요약 바꾸는 방법',labels:['버튼','헤더 터치'],cur:_foldSwMode()==='tap'?1:0,pick:i=>updateSetting('foldSwitchMode',i?'tap':'seg')};}
 function rpMonthWideMenu(ev,btn){
   if(ev)ev.stopPropagation();
-  _b7PopSeg(btn,'월간뷰 너비',['1단','2단'],_lay().mWide?1:0,i=>rpSetMonthWide(i===1));
+  _b7PopSegs(btn,[{title:'월간뷰 너비',labels:['1단','2단'],cur:_lay().mWide?1:0,pick:i=>rpSetMonthWide(i===1)},_foldSwGroup()]);
 }
 function rpWeeklyWideMenu(ev,btn){
   if(ev)ev.stopPropagation();
-  _b7PopSeg(btn,'주간뷰 너비',['1단','2단'],_lay().wkWide?1:0,i=>rpSetWeeklyWide(i===1));
+  _b7PopSegs(btn,[{title:'주간뷰 너비',labels:['1단','2단'],cur:_lay().wkWide?1:0,pick:i=>rpSetWeeklyWide(i===1)},_foldSwGroup()]);
 }
 // ── 주간 ⇄ 월간 바꾸기 [W|M] (v. 26-1030-8, HB) ──
 // 2·3단 주간뷰 · 월간뷰 위젯 좌상단 … 바로 오른쪽에 **고정** (v. 26-1030-9, HB — 예전엔 − + 왼쪽이라 주간 · 월간에서 높이가 다르고
@@ -34836,8 +34843,16 @@ function _rpWMSegOn(type){
 const _RPFS_ICO=['<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1.5" y="1.5" width="9" height="9" rx="1"/></svg>','<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="3.5" width="10" height="5" rx="1"/></svg>','<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><line x1="1.5" y1="6" x2="10.5" y2="6"/></svg>'];
 const _RPFS_NAME=['풀뷰 (전체 펼치기)','요약뷰','한 줄 뷰'];
 function _rpWMSegHTML(type){return _rpWMSegHTML0(type)+_rpFoldSegHTML(type);}
+// 풀 · 요약을 무엇으로 바꾸나 (v. 26-1105-4, HB) — 'seg' 버튼(기본) · 'tap' 헤더 터치. 설정창 '주간 · 월간' 과 위젯 … 메뉴 둘째 줄이 같은 값
+function _foldSwMode(){return ST.settings.foldSwitchMode==='tap'?'tap':'seg';}
+function _foldSwSync(){
+  const m=_foldSwMode();
+  const a=document.getElementById('foldSwBtnSeg'),b=document.getElementById('foldSwBtnTap');
+  if(a)a.classList.toggle('active',m==='seg');
+  if(b)b.classList.toggle('active',m==='tap');
+}
 function _rpFoldSegHTML(type){
-  if(!document.body.classList.contains('split-d')||_layMode()<2)return'';
+  if(!document.body.classList.contains('split-d')||_layMode()<2||_foldSwMode()==='tap')return'';
   const f=_rpFoldOf(type),cur=f==='sum'?1:f==='line'?2:0,to=['','sum','line'];
   const stop='onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()"';
   return`<div class="b7-seg rp-wm-seg rp-wm-abs rp-fold-seg at-${cur}${_rpWMSegOn(type)?'':' no-wm'}" role="radiogroup" aria-label="풀 · 요약 · 한 줄" ${stop}><i class="b7-seg-pill"></i>`+
@@ -35456,8 +35471,10 @@ function _rpFoldSegResume(){
   const an=pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+a.to+'px)'}],{duration:_WM_SEG_MS,easing:'cubic-bezier(.3,.6,.4,1)'});
   an.currentTime=Math.max(0,el);
 }
+// 헤더 터치 방식(설정 foldSwitchMode='tap', v. 26-1105-4)일 때만. 풀 ⇄ 요약만 오간다 — 한 줄은 요약에서 아래 핸들을 끌어 올려서만 들어간다.
+// 한 줄에서 누르면 요약으로 돌아온다(부채가 펼쳐진다).
 function _rpAttachFoldTap(host){
-  return;   // v. 26-1105-1: 헤더 누르기로 접던 것은 없앴다 — [풀|요약|한줄] 로 고른다
+  document.body.classList.toggle('rp-foldtap',_foldSwMode()==='tap');
   host.querySelectorAll('.rp-widget[data-wtype="weekly"],.rp-widget[data-wtype="monthSingle"]').forEach(w=>{
     if(w._foldTap)return;w._foldTap=true;
     w.addEventListener('click',e=>{
@@ -35470,7 +35487,9 @@ function _rpAttachFoldTap(host){
         if(t.closest('.rp-mcg,.rp-triple-row,.wscr,.add-row,.wmview-btns'))return;
         if(t!==w&&!t.closest('.rp-widget-title,.mnav,.rp-mnav,#wViewTopStrip'))return;
       }
-      rpFoldCycle(w.dataset.wtype);
+      if(_foldSwMode()!=='tap')return;
+      const ty=w.dataset.wtype;
+      rpFoldCycle(ty,_rpFoldOf(ty)==='sum'?'':'sum');
     });
   });
 }
@@ -35546,29 +35565,31 @@ function _b7PopMount(m,anchor){
 // (There 대시보드 D W M 과 같은 길이 · 곡선, tools/there-dash.js 의 slidePill). 바뀐 화면은 바로 그린다.
 // 메뉴는 열어 둔다 — 미끄러지는 것이 보이고, 곧바로 되돌릴 수도 있다. 밖을 누르면 닫힌다.
 const _B7SEG_MS=420,_B7SEG_EASE='cubic-bezier(.25,.1,.25,1)';
-function _b7PopSeg(anchor,title,labels,cur,pick){
+function _b7PopSeg(anchor,title,labels,cur,pick){_b7PopSegs(anchor,[{title,labels,cur,pick}]);}
+// 여러 줄 — 줄마다 제목 + 세그먼트 하나 (v. 26-1105-4: 주간 · 월간 위젯 … 메뉴의 둘째 줄)
+function _b7PopSegs(anchor,groups){
   if(document.getElementById('b7Pop')){_b7PopClose();return;}
   const m=document.createElement('div');m.id='b7Pop';m.className='b7-pop b7-pop-seg';m.setAttribute('role','menu');
-  m.innerHTML=(title?'<div class="b7-pop-head">'+esc(title)+'</div>':'')+
-    '<div class="b7-seg" role="radiogroup"><i class="b7-seg-pill"></i>'+labels.map((l,i)=>
-      '<button type="button" role="radio" data-i="'+i+'" aria-checked="'+(i===cur)+'"'+(i===cur?' class="on"':'')+'>'+esc(l)+'</button>').join('')+'</div>';
-  const seg=m.querySelector('.b7-seg'),pill=m.querySelector('.b7-seg-pill');
-  const place=b=>{pill.style.left=b.offsetLeft+'px';pill.style.width=b.offsetWidth+'px';};
+  m.innerHTML=groups.map((g,gi)=>(g.title?'<div class="b7-pop-head"'+(gi?' style="margin-top:8px;"':'')+'>'+esc(g.title)+'</div>':'')+
+    '<div class="b7-seg" role="radiogroup" data-g="'+gi+'"><i class="b7-seg-pill"></i>'+g.labels.map((l,i)=>
+      '<button type="button" role="radio" data-i="'+i+'" aria-checked="'+(i===g.cur)+'"'+(i===g.cur?' class="on"':'')+'>'+esc(l)+'</button>').join('')+'</div>').join('');
+  const place=(pill,b)=>{pill.style.left=b.offsetLeft+'px';pill.style.width=b.offsetWidth+'px';};
   m.addEventListener('click',e=>{
     const b=e.target.closest('button[data-i]');if(!b)return;e.stopPropagation();
     if(b.classList.contains('on'))return;
+    const seg=b.closest('.b7-seg'),pill=seg.querySelector('.b7-seg-pill'),g=groups[+seg.dataset.g];
     const sg=seg.getBoundingClientRect(),r=pill.getBoundingClientRect();
     seg.querySelectorAll('button').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-checked',String(on));});
     if(pill.getAnimations)pill.getAnimations().forEach(a=>a.cancel());
-    place(b);
+    place(pill,b);
     if(!_tfQuiet()&&pill.animate)
       pill.animate([{transform:'translateX('+(r.left-sg.left-b.offsetLeft)+'px)',width:r.width+'px'},{transform:'none',width:b.offsetWidth+'px'}],
         {duration:_B7SEG_MS,easing:_B7SEG_EASE});
     const i=+b.dataset.i;
-    setTimeout(()=>pick(i),0);    // 네모가 먼저 출발하고 화면은 그 뒤에 — 누른 손맛이 늦지 않게
+    setTimeout(()=>g.pick(i),0);    // 네모가 먼저 출발하고 화면은 그 뒤에 — 누른 손맛이 늦지 않게
   });
   _b7PopMount(m,anchor);
-  const on=seg.querySelector('button.on');if(on)place(on);
+  m.querySelectorAll('.b7-seg').forEach(seg=>{const on=seg.querySelector('button.on');if(on)place(seg.querySelector('.b7-seg-pill'),on);});
 }
 function rpSetMonthWide(on){
   const L=_lay();
@@ -48002,6 +48023,7 @@ function renderSettingsPanel(){
   document.getElementById('dowBtnLetterLord').classList.toggle('active',dowFmt==='letter-lord');
   document.getElementById('dowBtnLetterSun').classList.toggle('active',dowFmt==='letter-sun');
   document.getElementById('dowBtnKorean').classList.toggle('active',dowFmt==='korean');
+  _foldSwSync();
   _syncTaskOvfBtns();
 
   renderPresetList();
@@ -48194,6 +48216,7 @@ function updateSetting(key,value){
     }
     renderVerseBar();
   }
+  if(key==='foldSwitchMode'){_foldSwSync();if(document.body.classList.contains('split-d'))renderLayout();}
   if(key==='dowFormat'){
     document.getElementById('dowBtnLetterLord').classList.toggle('active',value==='letter-lord');
     document.getElementById('dowBtnLetterSun').classList.toggle('active',value==='letter-sun');
@@ -52328,7 +52351,7 @@ const _DF_SET_LABEL={
   showCompletedTasks:'완료한 할일 보이기',dowFormat:'요일 표기',sundayRed:'일요일 빨강',
   carryBadgeMode:'넘어온 할일 표시',carryCountSource:'넘어온 할일 세는 기준',
   periodBaseMode:'구간 기준',monthTitleFormat:'월 제목 표기',monthTitleYear:'월 제목에 연도',
-  mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',wmEvFs:'주·월간 일정 글자 크기',showSmallBlocks:'스몰 블럭 보이기',
+  mviewMemMode:'월간 암송 표시',wmViewMode:'주·월간 보기',foldSwitchMode:'주·월간 풀 · 요약 바꾸는 방법',wmEvFs:'주·월간 일정 글자 크기',showSmallBlocks:'스몰 블럭 보이기',
   addInputPosition:'입력칸 위치',srchEvView:'검색에서 일정을 누르면',srchCarryMin:'검색 밀린 할일 기준',loopViews:'뷰 순환',linkOpenMode:'링크 여는 방법',sheetEditUrl:'시트 편집 문 주소',
   hiBold:'강조 굵게',hiPen:'강조 펜',hiWave:'강조 물결',hiStar:'강조 별',
   hiOverlap:'강조 겹침',hiStarMax:'강조 별 최대',imgHi:'이미지에 강조',
