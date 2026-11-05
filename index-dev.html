@@ -35383,27 +35383,42 @@ function rpFoldCycle(type,target){
   }
   if(nx)L.fold[type]=nx;else delete L.fold[type];
   save();
-  renderLayout();
-  if(_tfQuiet()||!h0)return;
-  // 높이가 스르륵 — 접히고 펴진다 (CLAUDE.md 화면 전환). 끝에서 덜컥하지 않게 위젯 상자 하나만 움직인다
-  const n=document.querySelector('#pageContent .rp-widget[data-wtype="'+type+'"]');
-  if(!n||!n.animate)return;
-  const h1=n.getBoundingClientRect().height;
-  if(Math.abs(h1-h0)<2)return;
-  n.style.overflow='hidden';
-  // ⚠️ 전환하는 동안 요약의 '크기 바뀌면 스르륵'(_rpFoldFitOne)은 쉰다 — 안 쉬면 새로 그린 직후의 높이(최종)에서 지금 높이(옛)로
-  //   거꾸로 움직이는 높이 애니메이션을 하나 더 걸어, 툭 줄었다 → 다시 커졌다 → 또 툭 줄었다 (v. 26-1105-3, 프레임 기록으로 확인)
-  n._rpfTrans=true;
-  const a=n.animate([{height:h0+'px'},{height:h1+'px'}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'});
-  const done=()=>{n.style.overflow='';n._rpfTrans=false;
-    n.querySelectorAll('.rp-fold-sum,.rp-fold-line').forEach(el=>{if(el.isConnected)el._rpfSt={m:_rpfScan(el),h:n.getBoundingClientRect().height};});};
-  a.onfinish=done;a.oncancel=done;
-  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:230,delay:70,easing:'ease-out',fill:'backwards'}));
-  if(ghost){n.appendChild(ghost);const ga=ghost.animate([{opacity:1},{opacity:0}],{duration:170,easing:'ease-out',fill:'forwards'});ga.onfinish=ga.oncancel=()=>ghost.remove();}
+  _rpFoldTx=(_tfQuiet()||!h0)?null:{type,h0,ghost,t0:0,n:null};
+  renderLayout();   // 끝에서 _rpFoldTxApply 가 높이 · 흐림을 건다
 }
-// 헤더 빈 곳 누르기 → 접기 순환. 펼침일 땐 머리줄 · ‹ 제목 › 줄 · 여백만, 접힘일 땐 위젯 어디든(버튼 말고).
-// ⚠️ 끌어 옮긴 직후의 click 은 무시한다 (_rpDragEndTs) — 놓는 순간 접히면 안 된다.
-// 접기 고르기 [풀|요약|한줄] — 네모가 W|M 과 같은 길이·곡선으로 미끄러진다
+// 풀 ⇄ 요약 · 풀 ⇄ 한 줄 전환 (v. 26-1105-4). 높이가 스르륵 — 접히고 펴진다 (CLAUDE.md 화면 전환). 끝에서 덜컥하지 않게 위젯 상자 하나만 움직인다.
+// ⚠️ 전환은 '상태'로 둔다 — 전환 중에 화면을 또 그리면(아이패드에서 높이가 크게 바뀌면 주소창이 늘고 줄며 resize → renderLayout)
+//   위젯이 새로 만들어져 높이 움직임 · 옛 모양 사본이 통째로 끊겼다. 다시 그릴 때마다 renderLayout 끝에서 이것을 불러 흐른 만큼 이어 건다.
+let _rpFoldTx=null;   // {type, h0, ghost, t0, n}
+const _RPFX_MS=300;
+function _rpFoldTxApply(){
+  const tx=_rpFoldTx;if(!tx)return;
+  if(!tx.t0)tx.t0=Date.now();
+  const el=Date.now()-tx.t0;
+  const n=document.querySelector('#pageContent .rp-widget[data-wtype="'+tx.type+'"]');
+  if(el>=_RPFX_MS||!n||!n.animate){_rpFoldTx=null;if(tx.ghost)tx.ghost.remove();return;}
+  if(n===tx.n)return;   // 같은 위젯이면 이미 움직이는 중
+  tx.n=n;
+  const h1=n.getBoundingClientRect().height;
+  if(Math.abs(h1-tx.h0)>=2){
+    n.style.overflow='hidden';
+    // ⚠️ 전환하는 동안 요약의 '크기 바뀌면 스르륵'(_rpFoldFitOne)은 쉰다 — 안 쉬면 새로 그린 직후의 높이(최종)에서 지금 높이(옛)로
+    //   거꾸로 움직이는 높이 애니메이션을 하나 더 걸어, 툭 줄었다 → 다시 커졌다 → 또 툭 줄었다 (v. 26-1105-3, 프레임 기록으로 확인)
+    n._rpfTrans=true;
+    const a=n.animate([{height:tx.h0+'px'},{height:h1+'px'}],{duration:_RPFX_MS,easing:'cubic-bezier(.22,.8,.24,1)'});
+    a.currentTime=el;
+    const done=()=>{n.style.overflow='';n._rpfTrans=false;
+      if(_rpFoldTx===tx&&tx.n===n){_rpFoldTx=null;if(tx.ghost)tx.ghost.remove();}
+      n.querySelectorAll('.rp-fold-sum,.rp-fold-line').forEach(e=>{if(e.isConnected)e._rpfSt={m:_rpfScan(e),h:n.getBoundingClientRect().height};});};
+    a.onfinish=done;a.oncancel=done;
+  }
+  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(e=>{const f=e.animate([{opacity:0},{opacity:1}],{duration:230,delay:70,easing:'ease-out',fill:'backwards'});f.currentTime=el;});
+  const g=tx.ghost;
+  if(g){
+    if(el>=170){g.remove();tx.ghost=null;}
+    else{n.appendChild(g);const ga=g.animate([{opacity:1},{opacity:0}],{duration:170,easing:'ease-out',fill:'forwards'});ga.currentTime=el;ga.onfinish=()=>{g.remove();if(tx.ghost===g)tx.ghost=null;};}
+  }
+}
 let _foldSegAnim=null;
 function rpSetFold(type,to){
   if(to===_rpFoldOf(type))return;
@@ -35415,20 +35430,23 @@ function rpSetFold(type,to){
     if(pill&&pill.animate&&!_tfQuiet()){try{fromX=new DOMMatrixReadOnly(getComputedStyle(pill).transform).m41;}catch(e){}}
     seg.classList.remove('at-0','at-1','at-2');seg.classList.add('at-'+idx);
     seg.querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('on',i===idx);b.setAttribute('aria-checked',String(i===idx));});
-    _foldSegAnim=fromX==null?null:{to:idx*_WM_SEG_STEP,fromX,t0:Date.now()};
+    _foldSegAnim=fromX==null?null:{type,to:idx*_WM_SEG_STEP,fromX,t0:Date.now(),pill:null};
   }
   // 네모가 먼저 출발하도록 무거운 다시 그리기는 두 프레임 뒤에 — 바로 하면 네모가 첫 걸음을 못 떼고 툭 옮겨 간다
   if(_rpMorphNow)_rpMorphNow.cancel();
   if(_tfQuiet()){rpFoldCycle(type,to);return;}
   requestAnimationFrame(()=>requestAnimationFrame(()=>rpFoldCycle(type,to)));
 }
+// ⚠️ 한 번 쓰고 버리지 않는다 — 미끄러지는 중에 화면을 또 그리면(아이패드 주소창 resize 등) 단추가 새로 생겨
+//   네모가 끝자리로 툭 옮겨 갔다(가끔만 그런 까닭). 끝날 때까지 남겨 두고, 다시 그릴 때마다 새 네모에 흐른 만큼 이어 건다 (v. 26-1105-4)
 function _rpFoldSegResume(){
-  const a=_foldSegAnim;_foldSegAnim=null;
+  const a=_foldSegAnim;
   if(!a)return;
   const el=Date.now()-a.t0;
-  if(el>=_WM_SEG_MS-30)return;
-  const pill=document.querySelector('#pageContent .rp-fold-seg .b7-seg-pill');
-  if(!pill||!pill.animate)return;
+  if(el>=_WM_SEG_MS-30){_foldSegAnim=null;return;}
+  const pill=document.querySelector('#pageContent .rp-widget[data-wtype="'+a.type+'"] .rp-fold-seg .b7-seg-pill');
+  if(!pill||!pill.animate||pill===a.pill)return;
+  a.pill=pill;
   // 전체 길이로 그리되 이미 흐른 만큼 건너뛴다 — 다시 그리느라 늦어도 네모가 뒤처지지 않고 제 시간에 닿는다
   const an=pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+a.to+'px)'}],{duration:_WM_SEG_MS,easing:'cubic-bezier(.3,.6,.4,1)'});
   an.currentTime=Math.max(0,el);
@@ -35481,13 +35499,14 @@ function rpSwapWM(type,to){
   outEls.forEach(el=>el.animate([{transform:'none',opacity:1},{transform:'translateX('+(dir*24)+'px)',opacity:0}],{duration:150,easing:'ease-in',fill:'forwards'}));
   setTimeout(go,150);
 }
-function _rpWMSegResume(){
-  const a=_wmSegAnim;_wmSegAnim=null;
+function _rpWMSegResume(){   // _rpFoldSegResume 와 같은 까닭으로 끝날 때까지 남겨 둔다 (v. 26-1105-4)
+  const a=_wmSegAnim;
   if(!a)return;
   const el=_WM_SEG_MS-(a.end-Date.now());
-  if(el>=_WM_SEG_MS-30)return;
+  if(el>=_WM_SEG_MS-30){_wmSegAnim=null;return;}
   const pill=document.querySelector('#pageContent .rp-wm-seg:not(.rp-fold-seg) .b7-seg-pill');
-  if(!pill||!pill.animate)return;
+  if(!pill||!pill.animate||pill===a.pill)return;
+  a.pill=pill;
   const an=pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+(a.toM?_WM_SEG_STEP:0)+'px)'}],{duration:_WM_SEG_MS,easing:'cubic-bezier(.3,.6,.4,1)'});
   an.currentTime=Math.max(0,el);
 }
@@ -35790,6 +35809,7 @@ function renderLayout(){
   _rollFit(pc);          // 헤더 이름이 자리보다 긴지는 그린 다음에야 잴 수 있다
   _rollStart();
   if(typeof _kbWSync==='function')_kbWSync();   // 다시 그리면 자판 표시가 날아간다
+  _rpFoldTxApply();   // 풀 ⇄ 요약 높이 · 흐림 — 전환 중에 또 그려도 이어 간다
   _rpFoldSegResume();
   _rpWMSegResume();   // [W|M] 을 누른 뒤 다시 그렸으면 네모가 이어 미끄러진다
 }

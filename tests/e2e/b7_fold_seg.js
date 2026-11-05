@@ -33,6 +33,31 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
     let back = 0; for (let k = 1; k < hs.length; k++) if (Math.sign(hs[k] - hs[k - 1]) === -dir && Math.abs(hs[k] - hs[k - 1]) > 1) back++;
     ok(`${from || '풀'} → ${['풀', '요약', '한 줄'][i]}: 높이가 되돌아가지 않음 (${Math.round(s0)} → ${Math.round(s1)})`, back === 0 && dir !== 0, hs.map(Math.round));
   }
+  // 전환 중에 화면을 한 번 더 그려도(아이패드 주소창 resize → renderLayout) 네모 · 높이가 끊기지 않는다 (v. 26-1105-4 고친 것)
+  for (const [from, i] of [['', 1], ['sum', 0]]) {
+    await p.evaluate(([ty, f]) => { const L = _lay(); L.fold = L.fold || {}; if (f) L.fold[ty] = f; else delete L.fold[ty]; save(); renderLayout(); }, [t, from]);
+    await p.waitForTimeout(600);
+    const r = await p.evaluate(([ty, i]) => new Promise(done => {
+      const xs = [], hs = [], t0 = performance.now();
+      const f = () => {
+        const w = document.querySelector('#pageContent .rp-widget[data-wtype="' + ty + '"]');
+        const pl = w && w.querySelector('.rp-fold-seg .b7-seg-pill');
+        if (w) hs.push(w.getBoundingClientRect().height);
+        try { xs.push(new DOMMatrixReadOnly(getComputedStyle(pl).transform).m41); } catch (e) { }
+        if (performance.now() - t0 < 900) requestAnimationFrame(f); else done({ xs, hs });
+      };
+      requestAnimationFrame(f);
+      document.querySelector('#pageContent .rp-widget[data-wtype="' + ty + '"] .rp-fold-seg button:nth-of-type(' + (i + 1) + ')').click();
+      setTimeout(() => renderLayout(), 160);
+    }), [t, i]);
+    let big = 0; for (let k = 1; k < r.xs.length; k++) if (Math.abs(r.xs[k] - r.xs[k - 1]) > 7) big++;
+    const dir = Math.sign(r.hs[r.hs.length - 1] - r.hs[0]); let back = 0;
+    for (let k = 1; k < r.hs.length; k++) if (Math.sign(r.hs[k] - r.hs[k - 1]) === -dir && Math.abs(r.hs[k] - r.hs[k - 1]) > 1) back++;
+    // 높이: 한 프레임에 전체 변화의 30% 넘게(매끄러울 땐 많아야 20%) 뛰면 '툭'
+    const span = Math.abs(r.hs[r.hs.length - 1] - r.hs[0]); let cut = 0; for (let k = 1; k < r.hs.length; k++) if (Math.abs(r.hs[k] - r.hs[k - 1]) > span * 0.3) cut++;
+    ok(`${from || '풀'} → ${['풀', '요약'][i]} 중 다시 그리기: 네모가 툭 옮겨 가지 않음`, big === 0, r.xs.map(Math.round));
+    ok(`${from || '풀'} → ${['풀', '요약'][i]} 중 다시 그리기: 높이가 끊기지 않음`, back === 0 && cut === 0, r.hs.map(Math.round));
+  }
   // 연타: 끝나기 전에 다음을 눌러도 마지막 선택으로 끝난다
   for (const i of [1, 2, 0, 1]) { await p.click(`#pageContent .rp-widget[data-wtype="${t}"] .rp-fold-seg button:nth-of-type(${i + 1})`); await p.waitForTimeout(90); }
   await p.waitForTimeout(1500);
