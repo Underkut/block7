@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-5  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1105-6  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7003,7 +7003,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-5";
+const APP_VERSION = "v. 26-1105-6";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -34957,7 +34957,7 @@ function _rpFoldData(type){
   }
   const tk=todayKey(),flags=[],flagCols=[];
   SECS.forEach(sc=>['big','small'].forEach(ty=>getDisplayTasks(tk,sc.id,ty).forEach(t=>{
-    if(t&&t.flag&&!t.done&&String(t.text||'').trim()){flags.push(t);flagCols.push(sc.color||'');}   // 시간구간 색 — 요약의 ⚑ 할일 왼쪽 세로줄 (v. 26-1102-7)
+    if(t&&t.flag&&!t.done&&!(typeof _repHiddenOn==='function'&&_repHiddenOn(t,tk))&&String(t.text||'').trim()){flags.push(t);flagCols.push(sc.color||'');}   // 시간구간 색 — 요약의 ⚑ 할일 왼쪽 세로줄 (v. 26-1102-7)
   })));
   return{days,flags,flagCols};
 }
@@ -36645,8 +36645,8 @@ function renderAddRow(containerId='addRow',refreshFn=renderToday,includeExpandBt
   const k=tKey();
   const hidden=SECS.filter(s=>!ST.vis.includes(s.id));
   hidden.forEach(sec=>{
-    const bigPending=getBigs(k,sec.id).filter(b=>b.text?.trim()&&!b.done).length;
-    const smPending=getSmalls(k,sec.id).filter(s=>s.text?.trim()&&!s.done).length;
+    const bigPending=getBigs(k,sec.id).filter(b=>b.text?.trim()&&!b.done&&!_repHiddenOn(b,k)).length;
+    const smPending=getSmalls(k,sec.id).filter(s=>s.text?.trim()&&!s.done&&!_repHiddenOn(s,k)).length;
     const hasPending=bigPending>0||smPending>0;
     // sec.color is already a real hex value now (DEFAULT_SECS and the
     // settings color picker both store real hex codes) — no lookup needed.
@@ -46469,7 +46469,8 @@ function renderWeekly(hostEl){
       if(wmMode==='todo'){
         // 앞날 칸에는 아직 만들어지지 않은 반복 할일도 비춰 준다 (저장은 안 한다 —
         // 그 날짜를 실제로 펼쳐 볼 때 만들어진다)
-        const bigs=getDisplayTasks(k,sec.id,'big');const sms=getDisplayTasks(k,sec.id,'small');
+        // '이 날만 옮기기 · 지우기' 로 그 날 감춘 반복 원본은 D뷰처럼 여기서도 뺀다 (HB 2026-11-05)
+        const bigs=getDisplayTasks(k,sec.id,'big').filter(b=>!_repHiddenOn(b,k));const sms=getDisplayTasks(k,sec.id,'small').filter(x=>!_repHiddenOn(x,k));
         bigs.slice(0,2).forEach(b=>{if(b.text)h+=`<div class="wbig${b.done?' done':''}${b.flag?' wbig-flag':''}">${renderTaskTextHTML(b.text)}</div>`;});
         sms.slice(0,2).forEach(s=>h+=`<div class="wsm${s.done?' done':''}">${renderTaskTextHTML(s.text)}</div>`);
         const more=(bigs.length>2?bigs.length-2:0)+(sms.length>2?sms.length-2:0);
@@ -47188,8 +47189,8 @@ function renderMonthly(){
     const isT=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
     const isSun=(d-1+fd)%7===0&&ST.settings.sundayRed!==false;
     // 앞날 칸에는 아직 만들어지지 않은 반복 할일도 함께 센다 (저장은 안 한다)
-    const bigs=SECS.flatMap(s=>getDisplayTasks(k,s.id,'big')).filter(b=>b.text?.trim());
-    const smt=SECS.reduce((a,s)=>a+getDisplayTasks(k,s.id,'small').length,0);
+    const bigs=SECS.flatMap(s=>getDisplayTasks(k,s.id,'big')).filter(b=>b.text?.trim()&&!_repHiddenOn(b,k));   // 그 날 감춘 반복 원본은 뺀다
+    const smt=SECS.reduce((a,s)=>a+getDisplayTasks(k,s.id,'small').filter(x=>!_repHiddenOn(x,k)).length,0);
     const wdiff=weeksFromToday(cellDate);
     let cellCls;
     if(wdiff===0){cellCls=isT?' mct':' mct-2';}
@@ -49776,8 +49777,8 @@ function _carryPendingCount(scopeFilter){
     if(dk>=todayK||!scopeFilter(dk,todayK))return;
     const day=ST.days[dk];if(!day)return;
     SECS.forEach(sec=>{
-      n+=(day.big?.[sec.id]||[]).filter(_carryWants).length;
-      n+=(day.small?.[sec.id]||[]).filter(_carryWants).length;
+      n+=(day.big?.[sec.id]||[]).filter(it=>_carryWants(it,dk)).length;
+      n+=(day.small?.[sec.id]||[]).filter(it=>_carryWants(it,dk)).length;
     });
   });
   return n;
@@ -49790,7 +49791,9 @@ function _carryPendingCount(scopeFilter){
 //   · 아니면(매주 반복의 다른 요일 등) → 반복 속성을 뺀 하루짜리 사본을 하나만
 // 한 번 본 지난 날 것은 rc:1 — 내일 아침이나 '지금 가져오기' 가 또 가져오지 않게.
 function _carryIsRep(it){return !!(it&&(it.rid||_isRepRoot(it)));}
-function _carryWants(it){return !!(it&&it.text?.trim()&&!it.done&&!(it.rc&&_carryIsRep(it)));}
+// dk = 그 할일이 있는 날. '이 날만 옮기기 · 지우기' 로 그 날 감춘 반복 원본(_repHiddenOn)은 화면에 없는 것이라
+// 미완료로 세지도 가져오지도 않는다 — 가져오면 이미 옮긴 할일이 오늘 한 줄 더 생긴다 (HB 2026-11-05)
+function _carryWants(it,dk){return !!(it&&it.text?.trim()&&!it.done&&!(it.rc&&_carryIsRep(it))&&!(dk&&_repHiddenOn(it,dk)));}
 function _repOnDay(k,rid){
   if(!rid)return false;
   if(_ridPresentOn(k,rid))return true;
@@ -49808,9 +49811,9 @@ function _doCarry(scopeFilter){
     SECS.forEach(sec=>{
       const bigs=day.big?.[sec.id]||[];
       const smalls=day.small?.[sec.id]||[];
-      const repB=bigs.filter(b=>_carryWants(b)&&_carryIsRep(b)),repS=smalls.filter(s=>_carryWants(s)&&_carryIsRep(s));
-      const ub=bigs.filter(b=>_carryWants(b)&&!_carryIsRep(b));
-      const us=smalls.filter(s=>_carryWants(s)&&!_carryIsRep(s));
+      const repB=bigs.filter(b=>_carryWants(b,dk)&&_carryIsRep(b)),repS=smalls.filter(s=>_carryWants(s,dk)&&_carryIsRep(s));
+      const ub=bigs.filter(b=>_carryWants(b,dk)&&!_carryIsRep(b));
+      const us=smalls.filter(s=>_carryWants(s,dk)&&!_carryIsRep(s));
       // 반복 할일 → 제자리에 두고, 오늘 생기지 않는 반복만 반복 뺀 사본을 하나
       [[repB,'big'],[repS,'small']].forEach(([list,type])=>list.forEach(it=>{
         it.rc=1;

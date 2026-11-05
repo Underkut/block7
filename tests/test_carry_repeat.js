@@ -128,4 +128,18 @@ console.log('시나리오 7 — 반복 원본이 미완료여도(매주, 오늘�
   api.materializeRepeatsFor('2026-11-02');
   sc.eq('다음 월요일에도 생긴다', texts(ST, '2026-11-02'), ['주간보고']);
 }
+console.log('시나리오 8 — "이 날만 옮기기" 로 그 날 감춘 원본은 다음 날 다시 가져오지 않는다 (HB 2026-11-05)');
+{
+  // 월요일 원본을 '이 날만' 화요일로 옮겼다 → 원본은 월요일에 감춰지고(뺀 날), 화요일엔 하루짜리가 있다
+  const { ST, api } = makeEnv({
+    [Y2]: day([{ text: '주간보고', done: false, rid: 'w1', repeat: { ...W, ex: [Y2] } }]),
+    [Y]: day([{ text: '주간보고', done: true }]),
+  }, T);
+  sc.eq('센 개수 0 — 감춘 원본은 미완료로 세지 않는다', api._carryPendingCount(all), 0);
+  api._doCarry(all);
+  sc.eq('⭐ 오늘엔 아무것도 안 온다 (같은 할일 두 줄 금지)', texts(ST, T), []);
+  sc.eq('원본 규칙 그대로', !!ST.days[Y2].big.am[0].repeat, true);
+  api.materializeRepeatsFor('2026-11-02');
+  sc.eq('다음 월요일에도 생긴다', texts(ST, '2026-11-02'), ['주간보고']);
+}
 sc.done();
