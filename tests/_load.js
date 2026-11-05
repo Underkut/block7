@@ -20,7 +20,8 @@ function slice(startMark, endMark) {
 }
 
 // ── 개발본에서 떠오기 ──
-// ⚠️ 운영본(index.html)은 HB 가 개발본으로 확인하기 전에는 커밋되지 않는다
+// (2026-11-05 부터 개발본은 사람이 다루지 않는다 — check.sh 가 index.html 에서 다시 만드는 부산물)
+// ⚠️ 예전엔 운영본(index.html)이 HB 의 개발본 확인 전에는 커밋되지 않았다
 //    (CLAUDE.md 규칙). 그래서 아직 운영본에 없는 코드를 검사하는 테스트는
 //    **개발본(index-dev.html)** 에서 떠와야 한다 — 둘은 5줄(DEV_MODE 등)만
 //    다르고 앱 코드는 글자 하나까지 같다.
