@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-1  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1105-2  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -6994,7 +6994,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-1";
+const APP_VERSION = "v. 26-1105-2";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35371,7 +35371,16 @@ function rpFoldCycle(type,target){
   const nx=target!==undefined?target:_RP_FOLD_NEXT[_rpFoldOf(type)];
   if(nx===_rpFoldOf(type))return;
   // 요약 → 한 줄: 펼칠 때의 부채를 거꾸로 되감는다 (v. 26-1031-3)
-  if(nx==='line'&&_rpFoldOf(type)==='sum'&&!_tfQuiet()){const ms=_rpMorphStart(old,type);if(ms){ms.play('line');return;}}
+  // 요약 ⇄ 한 줄: 부채처럼 펼쳐지고 접힌다 (한 줄 → 요약도 같은 길, v. 26-1105-2)
+  if(!_tfQuiet()&&((nx==='line'&&_rpFoldOf(type)==='sum')||(nx==='sum'&&_rpFoldOf(type)==='line'))){const ms=_rpMorphStart(old,type);if(ms){ms.play(nx);return;}}
+  // 풀 ⇄ 요약 · 풀 ⇄ 한 줄: 옛 모양 사본을 위에 얹어 흐려 보내고, 새 모양은 높이와 함께 서서히 — 다시 그릴 때 빈 틈이 비쳐 번쩍이던 것을 막는다
+  let ghost=null;
+  if(old&&!_tfQuiet()&&old.animate){
+    ghost=old.cloneNode(true);ghost.removeAttribute('data-wtype');
+    ghost.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+    ghost.querySelectorAll('.rp-wm-seg,.rp-vresize,.rp-wmore,.rp-grab,.rp-whead-r').forEach(e=>e.remove());
+    ghost.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;margin:0;box-sizing:border-box;overflow:hidden;pointer-events:none;background:transparent;border-color:transparent;z-index:3;';
+  }
   if(nx)L.fold[type]=nx;else delete L.fold[type];
   save();
   renderLayout();
@@ -35385,7 +35394,8 @@ function rpFoldCycle(type,target){
   const a=n.animate([{height:h0+'px'},{height:h1+'px'}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'});
   const done=()=>{n.style.overflow='';};
   a.onfinish=done;a.oncancel=done;
-  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:220,easing:'ease-out'}));
+  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:240,delay:60,easing:'ease-out',fill:'backwards'}));
+  if(ghost){n.appendChild(ghost);const ga=ghost.animate([{opacity:1},{opacity:0}],{duration:200,easing:'ease-out',fill:'forwards'});ga.onfinish=ga.oncancel=()=>ghost.remove();}
 }
 // 헤더 빈 곳 누르기 → 접기 순환. 펼침일 땐 머리줄 · ‹ 제목 › 줄 · 여백만, 접힘일 땐 위젯 어디든(버튼 말고).
 // ⚠️ 끌어 옮긴 직후의 click 은 무시한다 (_rpDragEndTs) — 놓는 순간 접히면 안 된다.
@@ -35401,18 +35411,23 @@ function rpSetFold(type,to){
     if(pill&&pill.animate&&!_tfQuiet()){try{fromX=new DOMMatrixReadOnly(getComputedStyle(pill).transform).m41;}catch(e){}}
     seg.classList.remove('at-0','at-1','at-2');seg.classList.add('at-'+idx);
     seg.querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('on',i===idx);b.setAttribute('aria-checked',String(i===idx));});
-    _foldSegAnim=fromX==null?null:{to:idx*_WM_SEG_STEP,fromX,end:Date.now()+_WM_SEG_MS};
+    _foldSegAnim=fromX==null?null:{to:idx*_WM_SEG_STEP,fromX,t0:Date.now()};
   }
-  rpFoldCycle(type,to);
+  // 네모가 먼저 출발하도록 무거운 다시 그리기는 두 프레임 뒤에 — 바로 하면 네모가 첫 걸음을 못 떼고 툭 옮겨 간다
+  if(_rpMorphNow)_rpMorphNow.cancel();
+  if(_tfQuiet()){rpFoldCycle(type,to);return;}
+  requestAnimationFrame(()=>requestAnimationFrame(()=>rpFoldCycle(type,to)));
 }
 function _rpFoldSegResume(){
   const a=_foldSegAnim;_foldSegAnim=null;
   if(!a)return;
-  const left=a.end-Date.now();
-  if(left<=30)return;
+  const el=Date.now()-a.t0;
+  if(el>=_WM_SEG_MS-30)return;
   const pill=document.querySelector('#pageContent .rp-fold-seg .b7-seg-pill');
   if(!pill||!pill.animate)return;
-  pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+a.to+'px)'}],{duration:left,easing:'cubic-bezier(.3,.6,.4,1)'});
+  // 전체 길이로 그리되 이미 흐른 만큼 건너뛴다 — 다시 그리느라 늦어도 네모가 뒤처지지 않고 제 시간에 닿는다
+  const an=pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+a.to+'px)'}],{duration:_WM_SEG_MS,easing:'cubic-bezier(.3,.6,.4,1)'});
+  an.currentTime=Math.max(0,el);
 }
 function _rpAttachFoldTap(host){
   return;   // v. 26-1105-1: 헤더 누르기로 접던 것은 없앴다 — [풀|요약|한줄] 로 고른다
@@ -35465,11 +35480,12 @@ function rpSwapWM(type,to){
 function _rpWMSegResume(){
   const a=_wmSegAnim;_wmSegAnim=null;
   if(!a)return;
-  const left=a.end-Date.now();
-  if(left<=30)return;
-  const pill=document.querySelector('#pageContent .rp-wm-seg .b7-seg-pill');
+  const el=_WM_SEG_MS-(a.end-Date.now());
+  if(el>=_WM_SEG_MS-30)return;
+  const pill=document.querySelector('#pageContent .rp-wm-seg:not(.rp-fold-seg) .b7-seg-pill');
   if(!pill||!pill.animate)return;
-  pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+(a.toM?_WM_SEG_STEP:0)+'px)'}],{duration:left,easing:'cubic-bezier(.3,.6,.4,1)'});
+  const an=pill.animate([{transform:'translateX('+a.fromX+'px)'},{transform:'translateX('+(a.toM?_WM_SEG_STEP:0)+'px)'}],{duration:_WM_SEG_MS,easing:'cubic-bezier(.3,.6,.4,1)'});
+  an.currentTime=Math.max(0,el);
 }
 // 떠 있는 작은 메뉴 하나 — 단추 아래에 연다. 밖을 누르면 닫힌다. rows = [{label, sub, on, fn}]
 function _b7PopClose(){const m=document.getElementById('b7Pop');if(!m)return;m.classList.remove('open');m.id='';setTimeout(()=>m.remove(),260);}
