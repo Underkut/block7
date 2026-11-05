@@ -3885,6 +3885,11 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   padding:2px 8px;-webkit-tap-highlight-color:transparent;border-radius:6px;
 }
 .rp-mnav button:hover{color:var(--tx);}
+/* 월간(싱글) 위젯 ‹ › — 주간 위젯(.mnav .nav-btn)과 같은 자리 · 크기: 좌우 끝 (v. 26-1105-4, HB) */
+.rp-mnav.rp-mnav-edge{justify-content:normal;gap:10px;}
+.rp-mnav.rp-mnav-edge .rp-mttl{flex:1;}
+.rp-mnav.rp-mnav-edge button{color:var(--tx2);font-size:16px;font-weight:600;padding:4px 8px;line-height:1;border-radius:0;}
+.rp-mnav.rp-mnav-edge button:hover{color:var(--ac-tx);}
 /* 위젯 안 월간 그리드 — 본 M뷰의 .mcg/.mcc 축소판 */
 .rp-mcg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
 .rp-mcg .mcc{min-height:34px;padding:3px;}
@@ -35627,7 +35632,7 @@ function _rpWidgetHTML(w){
       ${_rpWMSegHTML('monthSingle')}
       <div class="rp-widget-title" style="justify-content:center;padding:1px 0 5px;"><span style="color:var(--tx3);opacity:.4;"><svg width="14" height="8" viewBox="0 0 20 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="3.5" x2="16" y2="3.5"/><line x1="4" y1="7" x2="16" y2="7"/></svg></span></div>
       <div class="rp-mbody">
-        <div class="rp-mnav">
+        <div class="rp-mnav rp-mnav-edge">
           <button onclick="rpChMonth('single',-1)">‹</button>
           <div class="rp-mttl" style="text-align:center;">${monthTitleHTML(s.y,s.m)}</div>
           <button onclick="rpChMonth('single',1)">›</button>
