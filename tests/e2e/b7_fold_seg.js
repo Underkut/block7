@@ -19,6 +19,20 @@ const APP = (process.env.APP_ORIGIN || 'http://127.0.0.1:5502') + '/index-dev.ht
     const r = await p.evaluate(ty => ({ f: _rpFoldOf(ty), on: [...document.querySelectorAll('#pageContent .rp-widget[data-wtype="' + ty + '"] .rp-fold-seg button')].findIndex(b => b.classList.contains('on')), junk: document.querySelectorAll('.rpf-morph,.rpf-meas').length, h: document.querySelector('#pageContent .rp-widget[data-wtype="' + ty + '"]').style.height }), t);
     ok(`→ ${f || '풀'}: 상태·버튼·찌꺼기`, r.f === f && r.on === i && r.junk === 0, r);
   }
+  // 높이가 한 방향으로만 움직인다 — 줄어드는 전환에서 '툭 줄었다 → 다시 커졌다 → 또 툭' 하면 실패 (v. 26-1105-3 고친 것)
+  for (const [from, i] of [['', 1], ['sum', 0], ['', 2], ['line', 0], ['line', 1], ['sum', 2]]) {
+    await p.evaluate(([ty, f]) => { const L = _lay(); L.fold = L.fold || {}; if (f) L.fold[ty] = f; else delete L.fold[ty]; save(); renderLayout(); }, [t, from]);
+    await p.waitForTimeout(500);
+    const hs = await p.evaluate(([ty, i]) => new Promise(done => {
+      const hs = [], t0 = performance.now();
+      const f = () => { const w = document.querySelector('#pageContent .rp-widget[data-wtype="' + ty + '"]'); if (w) hs.push(w.getBoundingClientRect().height); if (performance.now() - t0 < 1000) requestAnimationFrame(f); else done(hs); };
+      requestAnimationFrame(f);
+      document.querySelector('#pageContent .rp-widget[data-wtype="' + ty + '"] .rp-fold-seg button:nth-of-type(' + (i + 1) + ')').click();
+    }), [t, i]);
+    const s0 = hs[0], s1 = hs[hs.length - 1], dir = Math.sign(s1 - s0);
+    let back = 0; for (let k = 1; k < hs.length; k++) if (Math.sign(hs[k] - hs[k - 1]) === -dir && Math.abs(hs[k] - hs[k - 1]) > 1) back++;
+    ok(`${from || '풀'} → ${['풀', '요약', '한 줄'][i]}: 높이가 되돌아가지 않음 (${Math.round(s0)} → ${Math.round(s1)})`, back === 0 && dir !== 0, hs.map(Math.round));
+  }
   // 연타: 끝나기 전에 다음을 눌러도 마지막 선택으로 끝난다
   for (const i of [1, 2, 0, 1]) { await p.click(`#pageContent .rp-widget[data-wtype="${t}"] .rp-fold-seg button:nth-of-type(${i + 1})`); await p.waitForTimeout(90); }
   await p.waitForTimeout(1500);

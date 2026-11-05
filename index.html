@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-2  [production]  -->
+<!-- BLOCK7  v. 26-1105-3  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -6994,7 +6994,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-2";
+const APP_VERSION = "v. 26-1105-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -35115,7 +35115,7 @@ function _rpfGhost(el,n,o){
 function _rpFoldFitOne(el){
   const sum=el.classList.contains('rp-fold-sum'),fit=sum?_rpFoldFitSum:_rpFoldFit;
   const w=el.closest('.rp-widget'),old=el._rpfSt;
-  const skip=!old||!w||!el.animate||_rpMorphNow||w.classList.contains('rpf-morphing')||w.classList.contains('rpf-meas')||_tfQuiet();
+  const skip=!old||!w||!el.animate||_rpMorphNow||w._rpfTrans||w.classList.contains('rpf-morphing')||w.classList.contains('rpf-meas')||_tfQuiet();   // _rpfTrans: 풀 ⇄ 요약 전환 중 — 그 높이 움직임을 거꾸로 덮어쓰지 않게 (v. 26-1105-3)
   if(skip){
     fit(el);
     if(w&&el.isConnected&&!w.classList.contains('rpf-meas'))el._rpfSt={m:_rpfScan(el),h:w.getBoundingClientRect().height};
@@ -35379,7 +35379,7 @@ function rpFoldCycle(type,target){
     ghost=old.cloneNode(true);ghost.removeAttribute('data-wtype');
     ghost.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
     ghost.querySelectorAll('.rp-wm-seg,.rp-vresize,.rp-wmore,.rp-grab,.rp-whead-r').forEach(e=>e.remove());
-    ghost.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;margin:0;box-sizing:border-box;overflow:hidden;pointer-events:none;background:transparent;border-color:transparent;z-index:3;';
+    ghost.style.cssText='position:absolute;left:0;top:0;width:100%;height:'+h0+'px;margin:0;box-sizing:border-box;overflow:hidden;pointer-events:none;background:transparent;border-color:transparent;z-index:3;';
   }
   if(nx)L.fold[type]=nx;else delete L.fold[type];
   save();
@@ -35391,11 +35391,15 @@ function rpFoldCycle(type,target){
   const h1=n.getBoundingClientRect().height;
   if(Math.abs(h1-h0)<2)return;
   n.style.overflow='hidden';
+  // ⚠️ 전환하는 동안 요약의 '크기 바뀌면 스르륵'(_rpFoldFitOne)은 쉰다 — 안 쉬면 새로 그린 직후의 높이(최종)에서 지금 높이(옛)로
+  //   거꾸로 움직이는 높이 애니메이션을 하나 더 걸어, 툭 줄었다 → 다시 커졌다 → 또 툭 줄었다 (v. 26-1105-3, 프레임 기록으로 확인)
+  n._rpfTrans=true;
   const a=n.animate([{height:h0+'px'},{height:h1+'px'}],{duration:300,easing:'cubic-bezier(.22,.8,.24,1)'});
-  const done=()=>{n.style.overflow='';};
+  const done=()=>{n.style.overflow='';n._rpfTrans=false;
+    n.querySelectorAll('.rp-fold-sum,.rp-fold-line').forEach(el=>{if(el.isConnected)el._rpfSt={m:_rpfScan(el),h:n.getBoundingClientRect().height};});};
   a.onfinish=done;a.oncancel=done;
-  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:240,delay:60,easing:'ease-out',fill:'backwards'}));
-  if(ghost){n.appendChild(ghost);const ga=ghost.animate([{opacity:1},{opacity:0}],{duration:200,easing:'ease-out',fill:'forwards'});ga.onfinish=ga.oncancel=()=>ghost.remove();}
+  n.querySelectorAll('.rp-fold,.rp-mbody,.rp-wk-slot').forEach(el=>el.animate([{opacity:0},{opacity:1}],{duration:230,delay:70,easing:'ease-out',fill:'backwards'}));
+  if(ghost){n.appendChild(ghost);const ga=ghost.animate([{opacity:1},{opacity:0}],{duration:170,easing:'ease-out',fill:'forwards'});ga.onfinish=ga.oncancel=()=>ghost.remove();}
 }
 // 헤더 빈 곳 누르기 → 접기 순환. 펼침일 땐 머리줄 · ‹ 제목 › 줄 · 여백만, 접힘일 땐 위젯 어디든(버튼 말고).
 // ⚠️ 끌어 옮긴 직후의 click 은 무시한다 (_rpDragEndTs) — 놓는 순간 접히면 안 된다.
