@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-6  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1105-7  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7003,7 +7003,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-6";
+const APP_VERSION = "v. 26-1105-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -44848,6 +44848,16 @@ function _repAddEx(rootItem,dateKey){
 function _repHiddenOn(it,k){
   return !!(it&&_isRepRoot(it)&&_repBlocked(it.repeat,k));
 }
+// 자리(idx)가 그 날 **감춘 원본**을 가리키면, 화면에 보이는 같은 묶음의 할일 자리로 바로잡는다.
+// 원본이 갈라질 때(하위 · 메모를 '이 할일만' 으로 고침) 원본은 숨고 바로 뒤에 그 날의 할일이 선다.
+// 그 전에 열린 메뉴는 여전히 원본 자리를 가리켜 — 옮기기가 **숨은 원본**을 옮기고 화면의 할일은 남았다.
+// 남은 것을 '이번 및 이후' 로 지우면 원본까지 지워져 앞으로 올 주가 다 사라졌다 (HB 2026-11-05 신고)
+function _repVisIdx(arr,idx,k){
+  const it=arr&&arr[idx];
+  if(!it||!_repHiddenOn(it,k))return idx;
+  const j=arr.findIndex((x,i)=>i!==idx&&x&&x.rid&&x.rid===it.rid&&!_repHiddenOn(x,k));
+  return j>=0?j:idx;
+}
 
 // ── 일정의 원본 찾기 ──
 function _evRepRootOf(rid){
@@ -45132,6 +45142,7 @@ function _taskDeleteAt(type,secId,idx){
 function _taskDeleteApply(type,secId,idx,scope,dayKey){
   const k=dayKey||tKey();
   const arr=(type==='big')?getBigs(k,secId):getSmalls(k,secId);
+  idx=_repVisIdx(arr,idx,k);
   const item=arr[idx];
   if(!item){renderSecBody(secId);return;}
   const rid=item.rid;
@@ -45314,6 +45325,8 @@ function _repPropApply(type,secId,idx,dayKey,fields,before,scope,note){
       _repAddEx(item,k);
       arr.splice(idx+1,0,one);
       _repPropDay=one;
+      // 열려 있는 할일 메뉴가 이 원본을 가리키고 있으면 새로 선 그 날의 할일로 옮겨 단다 (위 _repVisIdx 참고)
+      if(typeof _taskMenuCtx!=='undefined'&&_taskMenuCtx&&_taskMenuCtx.type===type&&_taskMenuCtx.secId===secId&&_taskMenuCtx.idx===idx&&k===tKey())_taskMenuCtx.idx=idx+1;
     }
     // 실체면 할 것이 없다 — 이미 그 날 것만 바뀌었다
   } else if(scope==='future'&&!isRoot&&root&&k>root.k){
@@ -45396,6 +45409,7 @@ function _taskIsRep(it){return !!(it&&(it.rid||(typeof _isRepRoot==='function'&&
 function _repPlain(it){delete it.rid;delete it.daily;delete it.rk;delete it.repeat;delete it.rc;return it;}
 function _repMoveApply(type,secId,idx,fromKey,toKey,destSec,scope){
   const src=type==='big'?getBigs(fromKey,secId):getSmalls(fromKey,secId);
+  idx=_repVisIdx(src,idx,fromKey);
   const item=src[idx];if(!item)return null;
   const rid=item.rid,isRoot=_isRepRoot(item);
   const root=isRoot?{k:fromKey,item}:_taskRepRootOf(rid);

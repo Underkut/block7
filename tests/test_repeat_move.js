@@ -82,4 +82,19 @@ console.log('시나리오 4 — 원본 자신을 "이후 반복도 함께" 옮�
   sc.eq('내일 한 줄 (겹치지 않게 옛것 정리)', seen(S, T1), ['운동']);
   sc.eq('모레도 반복', seen(S, '2026-10-30'), ['운동']);
 }
+console.log('시나리오 5 — 숨은 원본 자리를 가리킨 채 "이 날만" 옮겨도 화면의 그 할일이 간다 (HB 2026-11-05 신고)');
+{
+  // 하위를 고친 뒤 '이 할일만' → 원본은 그 날 감춰지고(뺀 날) 바로 뒤에 그 날의 할일이 따로 선다.
+  // 메뉴는 그 전에 열려 원본 자리(0)를 가리킨다. 예전엔 숨은 원본이 옮겨지고 화면의 할일은 남았다 →
+  // 남은 것을 '이번 및 이후' 로 지우면 원본까지 지워져 앞으로 올 주가 전부 사라졌다.
+  const S = makeEnv({ [T]: day([
+    { text: '보고서', done: false, rid: 'w1', repeat: { ...W, ex: [T] }, subs: [{ text: '김', done: false }] },
+    { text: '보고서', done: false, rid: 'w1', daily: true, rk: 'w', subs: [{ text: '김', done: false }, { text: '노', done: true }] },
+  ]) }, T);
+  S.api._repMoveApply('big', 'am', 0, T, T1, 'am', 'one');
+  sc.eq('⭐ 오늘엔 아무것도 안 보인다 (화면의 할일이 갔다)', seen(S, T), []);
+  sc.eq('⭐ 원본(규칙)은 오늘 자리에 그대로', S.ST.days[T].big.am.map(b => !!b.repeat), [true]);
+  sc.eq('내일엔 그 날의 할일이 — 하위 체크까지', S.ST.days[T1].big.am.map(b => [b.text, b.rid, (b.subs || []).map(x => x.done)]), [['보고서', undefined, [false, true]]]);
+  sc.eq('⭐ 다음 주에도 반복이 산다', seen(S, '2026-11-04'), ['보고서']);
+}
 sc.done();
