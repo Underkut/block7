@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1104-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1105-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1104-2';
+const APP_VERSION = 'v. 26-1105-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -1970,7 +1970,7 @@ svg{display:block;flex-shrink:0}
 .view:not(#v-map){padding-left:max(0px,calc((100% - 760px) / 2));padding-right:max(0px,calc((100% - 760px) / 2))}
 #tabbar{padding-left:max(8px,calc((100% - 760px) / 2));padding-right:max(8px,calc((100% - 760px) / 2))}
 .view{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  padding:calc(var(--sat) + 8px) 0 calc(var(--sab) + 96px);display:none}
+  padding:0 0 calc(var(--sab) + 96px);display:none}
 .view.on{display:block}
 /* ⚠️ BLUE ROOM 글자(h1.br b)는 네 페이지 같은 자리에 **가만히** 있는다 (HB 2026-10-13) — 그 밖의 것만 스며 나온다 */
 /* ⚠️ 아래 메뉴로 **들어올 때만**(.enter) — .on 에 걸면 화면을 다시 그릴 때마다(PC 화살표 · 고치기) 전부 다시 스며 나와 깜빡였다 */
@@ -2007,6 +2007,10 @@ svg{display:block;flex-shrink:0}
 .vh h1.br span{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;font-weight:500;letter-spacing:.06em;color:var(--tx3)}
 /* 폰에서 단추가 다 안 들어가면 BLUE ROOM 은 첫 줄에 두고 단추 줄이 아래로 (HB 2026-10-13) */
 .vh{flex-wrap:wrap}
+/* 머리(상태바 아래 BLUE ROOM 줄)는 아래를 밀어도 올라가지 않는다 — 네 페이지 모두 (HB 2026-11-05).
+   위 여백(상태바 ~ 글자 머리)과 아래 여백(글자 바탕선 ~ 첫 내용)을 같게 맞췄다 */
+.view>.vh:first-child{position:sticky;top:0;z-index:25;background:var(--bg);padding-top:calc(var(--sat) + 6px)}
+#v-map .masonry{padding-top:0}   /* 지도는 머리 바로 아래에 카드가 붙으니 여기 여백까지 같은 13px 로 */
 .vh-acts{margin-left:auto}
 @media (max-width:600px){.vh{--bfs:26px}.vh h1.br b{letter-spacing:.13em}.ib{width:40px}.vh-acts .ib{width:36px}}
 .mkrow{display:flex;align-items:center;min-height:0}
