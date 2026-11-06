@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -124,6 +124,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:max(14px
 .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
 .bar .b{width:100%;max-width:22px;border-radius:4px 4px 2px 2px;background:var(--ac)}
 .bar .b.v{background:var(--ac-soft)}
+.bar .b.off{background:transparent;border-top:2px dotted var(--tx3);height:4px!important;border-radius:0}
 .bar .b.none{background:transparent;border:1px dashed var(--line2);height:6px!important}
 .bar .n{font-size:10.5px;color:var(--tx2);line-height:1.3}
 .barx{display:flex;gap:4px;margin-top:3px}
@@ -181,7 +182,23 @@ h3 .lnk{font-weight:500}
 .mx th.on span{color:inherit;opacity:.8}
 .mx.picking td.v:not(.hit){opacity:.28}
 .mx td.v.on{box-shadow:inset 0 0 0 2px var(--tx)}
-.mxbar{display:flex;align-items:center;gap:6px;margin:0 0 8px}
+.mxbar{display:flex;align-items:center;gap:6px;margin:6px 2px 12px;min-height:22px}
+.mx th.corner{padding:0;min-width:96px;position:sticky;left:0;z-index:2;background:var(--s1)}
+.corner-in{position:relative;display:flex;align-items:center;justify-content:center;height:100%;min-height:46px;padding:4px 26px 14px 10px}
+.ctot{font-weight:600;color:var(--tx)}
+.tri{position:absolute;width:26px;height:26px;display:grid;place-items:center;color:var(--ac);opacity:.85}
+.tri svg{width:10px;height:10px;fill:currentColor;transition:transform .3s cubic-bezier(.22,.8,.24,1)}
+.tri-h{right:0;top:50%;transform:translateY(-60%)}
+.tri-v{left:50%;bottom:-4px;transform:translateX(-50%)}
+.tri.fold svg{transform:rotate(180deg)}
+.tri:hover{opacity:1}
+.mxflow{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.mxc{border-radius:7px;padding:6px 9px;background:var(--s1);font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap}
+.mxc span{font-size:11px;color:var(--tx3);margin-left:5px;font-weight:400}
+.mxc.corner{padding:0;min-width:96px}
+.mxc.on{background:var(--ac);color:var(--on-ac)} .mxc.on span{color:inherit;opacity:.8}
+.mxwrap{position:relative;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+@media (max-width:480px){.mx{font-size:12px;border-spacing:2px}.mx th,.mx td{padding:5px 5px}}
 .axbtn{font-size:13px;padding:4px 10px;border-radius:8px;color:var(--tx3);background:var(--s2)}
 .axbtn.on{color:var(--tx);background:var(--paper);border:1px solid var(--line)}
 .bar[data-act]{cursor:pointer;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
@@ -214,6 +231,12 @@ h3 .lnk{font-weight:500}
 .grow{padding:5px 0;border-top:1px solid var(--line);cursor:pointer;flex-wrap:wrap}
 .grow:first-of-type{border-top:0}
 .grow .nm{font-weight:500}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.clamp.open{display:block;-webkit-line-clamp:unset}
+.clamp.cut:not(.open){-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent);mask-image:linear-gradient(180deg,#000 62%,transparent)}
+.morebtn{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ac);margin-top:3px;padding:2px 0}
+.morebtn i{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
+.morebtn i.up{transform:rotate(-135deg) translate(-1px,-1px)}
 .lbl2{font-size:12.5px;color:var(--tx2);margin:14px 2px 6px}
 @media print{
   header.top,.weeknav,.seg,.chips,.noprint{display:none!important}
@@ -230,10 +253,12 @@ h3 .lnk{font-weight:500}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-3';
+const APP_VERSION = 'v. 26-1106-4';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
-const WEEKS_LOADED = 12;                  // 제출 흐름 · 출석 추이에 쓰는 주 수
+const WEEKS_LOADED = 12;
+// 셀 케어는 2026년 10월에 시작한 새 시스템이다 (HB 11/6) — 그 전 주는 보여 주지 않는다. 주가 쌓이면 12주까지 늘어난다.
+const CC_START = '2026-10-01';                  // 제출 흐름 · 출석 추이에 쓰는 주 수
 
 // 셀 케어의 표시 이름 그대로 (그쪽 L.care · L.att · L.prayer)
 const CARE_LABEL = {
@@ -277,6 +302,19 @@ function stateOf(r) {
   return 'draft';
 }
 
+// 셀이 처음 보고서를 내기 전 주는 '미제출' 이 아니라 '아직 시작 전' 이다 (HB 11/6: 이흥배 셀 — 5주 다 냈는데 제출이 주황).
+// 12주 안에 낸 보고서가 하나라도 있으면, 가장 옛 제출보다 더 옛 주의 줄은 지운다. 한 번도 안 냈으면 그대로 둔다(진짜 미제출).
+// ⚠️ 한동안 안 내다가 다시 내기 시작한 셀도 같은 모양이라 '시작 전' 으로 읽힌다 — 12주 안에서는 둘을 가를 자료가 없다.
+function trimBeforeStart(byWeek, weeks) {
+  let oldest = -1;
+  weeks.forEach((w, i) => { if (isSubmitted(byWeek.get(w))) oldest = i; });
+  if (oldest < 0) return byWeek;
+  const out = new Map();
+  weeks.forEach((w, i) => { if (i <= oldest && byWeek.has(w)) out.set(w, byWeek.get(w)); });
+  return out;
+}
+// 모임을 못 해 출석을 안 받은 주(참석 0 · 결석 0)는 0명이 아니라 '쉼'
+function attTaken(r) { return !!(r && isSubmitted(r) && r.members_present != null && ((r.members_present || 0) + (r.members_absent || 0) + (r.visitors_present || 0)) > 0); }
 // 연속 주 수. byWeek: Map(week → 그 셀의 줄), weeks: 이번 주부터 거꾸로.
 // 이번 주를 냈으면 이번 주부터, 아직이면 지난주부터 센다(이번 주는 아직 기한 안일 수 있다).
 // 그 주에 셀 줄 자체가 없으면(셀이 없던 때) 거기서 끊는다.
@@ -396,8 +434,8 @@ function mergeSeen(seen, comments, cap) {
 function attendanceSeries(byWeek, weeks) {
   return weeks.slice().reverse().map(w => {
     const r = byWeek.get(w);
-    const ok = r && isSubmitted(r) && r.members_present != null;
-    return { week: w, has: !!ok, present: ok ? (r.members_present || 0) : 0, absent: ok ? (r.members_absent || 0) : 0, visitors: ok ? (r.visitors_present || 0) : 0 };
+    const ok = attTaken(r);
+    return { week: w, has: ok, off: !!(r && isSubmitted(r) && !ok), present: ok ? (r.members_present || 0) : 0, absent: ok ? (r.members_absent || 0) : 0, visitors: ok ? (r.visitors_present || 0) : 0 };
   });
 }
 function attendanceSummary(series) {
@@ -490,7 +528,7 @@ function newFaces(people, weeks) {
 function cellHealth(rows, reps) {
   const lv = (v, w, b) => v >= b ? 'bad' : v >= w ? 'warn' : 'ok';
   const sub = rows.filter(r => r && isSubmitted(r));
-  const pres = rows.slice().filter(r => r && isSubmitted(r) && r.members_present != null).map(r => r.members_present);
+  const pres = rows.filter(attTaken).map(r => r.members_present);
   const a = pres.slice(0, 4), b = pres.slice(4, 8);
   const avg = (x) => x.length ? x.reduce((s, v) => s + v, 0) / x.length : null;
   const drop = a.length && b.length && avg(b) > 0 ? (avg(b) - avg(a)) / avg(b) : 0;
@@ -644,7 +682,7 @@ function demoApi() {
     ['c1', 3, ['work_school'], '새 직장에 잘 적응하고 있다고 감사를 나눴습니다.', null, false],
     ['c2', 3, ['long_absence'], '3주째 모임에 오지 못해 따로 연락드렸습니다. 다음 주에는 오겠다고 하셨습니다.', null, false],
     ['c3', 0, ['faith'], '세례를 준비하고 싶다고 하셨습니다.', '세례 준비 과정을 잘 마치도록', false],
-    ['c3', 4, ['long_absence', 'update'], '연락은 닿았고 요즘 일이 많아 쉬고 있다고 합니다.', null, false],
+    ['c3', 4, ['long_absence', 'update'], '연락은 닿았고 요즘 일이 많아 쉬고 있다고 합니다. 회사에서 새 프로젝트를 맡아 주말에도 출근하는 날이 많고, 몸도 많이 지쳐 있다고 했습니다. 셀 모임 시간을 조금 늦추면 올 수 있을 것 같다고 해서 셀원들과 의논해 보기로 했습니다. 가족 모두 건강하게 지내고 있다는 소식도 함께 전해 주었습니다.', null, false],
     ['c4', 2, ['faith', 'care_needed'], '요즘 말씀 읽기가 어렵다고 솔직하게 나눴습니다. 함께 읽기 짝을 정했습니다.', '말씀에 다시 마음이 열리도록', true],
     ['c5', 0, ['health'], '허리 통증으로 오래 앉아 있기 힘들어 하십니다.', '통증이 줄고 잘 쉴 수 있도록', false],
   ];
@@ -690,7 +728,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-3 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-4 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -703,7 +741,7 @@ function scopeIds() {
 function cellRow(cellId, w) { return (S.byWeek.get(w) || []).find(r => r.cell_id === cellId); }
 function cellName(cellId) { for (const w of S.weeks) { const r = cellRow(cellId, w); if (r) return r.cell_name; } return ''; }
 function leaderOf(cellId) { for (const w of S.weeks) { const r = cellRow(cellId, w); if (r && r.leader_names) return r.leader_names; } return ''; }
-function cellWeekMap(cellId) { const m = new Map(); for (const w of S.weeks) { const r = cellRow(cellId, w); if (r) m.set(w, r); } return m; }
+function cellWeekMap(cellId) { const m = new Map(); for (const w of S.weeks) { const r = cellRow(cellId, w); if (r) m.set(w, r); } return trimBeforeStart(m, S.weeks); }
 function sortedCells() { return scopeIds().slice().sort((a, b) => cellName(a).localeCompare(cellName(b), 'ko')); }
 function memName(cellId, id, roster) {
   const m = S.members.get(id); if (m) return m.name;
@@ -718,7 +756,7 @@ async function loadBase() {
   const ctx = await api.ctx();
   if (!ctx) { S.ctx = null; return renderNoAccount(); }
   S.ctx = ctx;
-  S.weeks = weeksBack(ctx.this_week, WEEKS_LOADED);
+  S.weeks = weeksBack(ctx.this_week, WEEKS_LOADED).filter((w, i) => DEMO || i === 0 || w >= CC_START);
   const [asg, ...lists] = await Promise.all([api.assignments(ctx.profile.id).catch(() => []), ...S.weeks.map(w => api.weekStatus(w).catch(() => []))]);
   S.asg = asg || [];
   S.byWeek = new Map(S.weeks.map((w, i) => [w, lists[i] || []]));
@@ -861,6 +899,22 @@ function rerender() {
   if (PREF.tab === 'week' && PREF.weekMode === 'page') fillPage();
 }
 
+// 접고 펴기 — 같은 이름(data-flip)의 칸은 옛 자리에서 새 자리로 미끄러지고, 새로 생긴 칸은 스르륵 나타난다 (FLIP)
+function flipRender(change) {
+  const root = $('#panel'); if (!root || quiet()) return change();
+  const old = new Map([...root.querySelectorAll('[data-flip]')].map(el => [el.dataset.flip, el.getBoundingClientRect()]));
+  const hOld = root.offsetHeight;
+  change();
+  const els = [...root.querySelectorAll('[data-flip]')];
+  for (const el of els) {
+    const o = old.get(el.dataset.flip), n = el.getBoundingClientRect();
+    if (o) { const dx = o.left - n.left, dy = o.top - n.top; if (!dx && !dy && o.width === n.width) continue;
+      el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.8,.24,1)' }); }
+    else el.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 60, easing: 'cubic-bezier(.22,.8,.24,1)', fill: 'backwards' });
+  }
+  const hNew = root.offsetHeight;
+  if (hOld !== hNew) root.animate([{ height: hOld + 'px', overflow: 'hidden' }, { height: hNew + 'px', overflow: 'hidden' }], { duration: 320, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
 // 판 바꾸기 — 나가고(150ms) → 그리고 → 들어온다(300ms). 앞(오른쪽)은 왼쪽으로 나간다.
 let busyAnim = false;
 function transit(dir, change, fromX, el) {
@@ -895,7 +949,11 @@ function setSpan(n) {
 function bindSwipe() {
   const st = $('#stage'); if (!st) return;
   let x0 = 0, y0 = 0, dx = 0, on = false, lock = null, t0 = 0;
-  st.addEventListener('touchstart', e => { if (busyAnim || e.touches.length > 1) return; const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); }, { passive: true });
+  st.addEventListener('touchstart', e => {
+    if (busyAnim || e.touches.length > 1) return;
+    // ⚠️ 옆으로 밀리는 상자(이슈 표 등) 안에서 시작한 손짓은 탭 넘김에 쓰지 않는다 — 표를 밀면 탭까지 넘어가던 것 (HB 11/6)
+    const box = e.target.closest && e.target.closest('.mxwrap'); if (box && box.scrollWidth > box.clientWidth + 2) { on = false; return; }
+    const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); }, { passive: true });
   st.addEventListener('touchmove', e => {
     if (!on) return; const t = e.touches[0]; const ddx = t.clientX - x0, ddy = t.clientY - y0;
     if (lock == null) { if (Math.abs(ddx) < 8 && Math.abs(ddy) < 8) return; lock = Math.abs(ddx) > Math.abs(ddy) * 1.2 ? 'x' : 'y'; }
@@ -932,7 +990,7 @@ function waiting() { return S.loadedSpan < PREF.span ? '<div class="loading">보
 function weekSquares(cellId, big, sel) {
   const m = cellWeekMap(cellId);
   return `<div class="weeks${big ? ' big' : ''}" title="왼쪽이 옛날 · 오른쪽이 이번 주">` + S.weeks.slice().reverse().map((w, i, a) => {
-    const r = m.get(w); const now = i === a.length - 1 ? ' now' : ''; const on = sel === w ? ' on' : '';
+    const r = m.get(w); const now = i === a.length - 1 ? ' now' : ''; const on = sel === w ? ' on' : '';   // m 은 시작 전 주가 빠진 것
     const st = r ? stateOf(r) : 'none';
     const cls = !r ? 'gone' : isSubmitted(r) ? (st === 'submitted' ? 'w-sub' : 'w-half') : (now ? '' : 'w-miss');
     return `<span class="wk ${cls}${now}${on}" data-wk="${w}" data-cell="${esc(cellId)}" role="button" aria-label="${esc(weekLabel(w))}"></span>`;
@@ -1107,9 +1165,9 @@ function repCard(r, inCell) {
       ${abs.length ? `<div class="names muted small">결석: ${abs.map(x => esc(x.name) + (x.absence_reason ? '(' + esc(x.absence_reason) + ')' : '')).join(', ')}</div>` : ''}
       ${vis.length ? `<div class="names muted small">방문: ${vis.map(x => esc(x.name)).join(', ')}</div>` : ''}</div>`;
   if (d.notes.length) h += `<div class="sect"><div class="lbl">셀원 근황 · 이슈</div>${d.notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}">${who(n.member_id, nm(n.member_id))} ${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join(' ')}${n.leadership_attention_required ? ' <span class="pill warn">교역자 확인 필요</span>' : ''}
-      <div class="txt">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
+      <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
   const prays = d.newPrayers.map(p => ({ mid: p.member_id, who: nm(p.member_id), text: p.content, tag: '새' })).concat(d.open.map(p => ({ who: p.member_name, text: p.content, tag: PRAYER_LABEL[p.this_week_status] || '', note: p.this_week_note })));
-  if (prays.length) h += `<div class="sect"><div class="lbl">기도제목</div>${prays.map(p => `<div class="note">${who(p.mid, p.who, r.cell_id)} ${p.tag ? `<span class="pill ac">${esc(p.tag)}</span>` : ''}<div class="txt">${esc(p.text || '')}</div>${p.note ? `<div class="pray">이번 주: ${esc(p.note)}</div>` : ''}</div>`).join('')}</div>`;
+  if (prays.length) h += `<div class="sect"><div class="lbl">기도제목</div>${prays.map(p => `<div class="note">${who(p.mid, p.who, r.cell_id)} ${p.tag ? `<span class="pill ac">${esc(p.tag)}</span>` : ''}<div class="txt clamp">${esc(p.text || '')}</div>${p.note ? `<div class="pray">이번 주: ${esc(p.note)}</div>` : ''}</div>`).join('')}</div>`;
   if (rep.grace_notes && !rep.grace_none) h += `<div class="sect"><div class="lbl">은혜와 나눔</div><div class="txt" style="white-space:pre-wrap;font-size:14px">${esc(rep.grace_notes)}</div></div>`;
   if (rep.leader_message && rep.leader_message !== 'none') h += `<div class="sect"><div class="lbl">셀리더가 교역자에게</div><div class="small"><b>${esc(MSG_LABEL[rep.leader_message] || rep.leader_message)}</b>${rep.leader_message_note ? '<div style="white-space:pre-wrap">' + esc(rep.leader_message_note) + '</div>' : ''}</div></div>`;
   if (d.comments.length) h += d.comments.map(c => cmtBox(c)).join('');
@@ -1117,7 +1175,7 @@ function repCard(r, inCell) {
 }
 function cmtBox(c) {
   const text = c.content_ko && c.content_ko !== c.content ? c.content_ko : c.content;
-  return `<div class="cmt ${S.newIds.has(String(c.id)) ? 'new' : ''}"><div class="by">${esc(c.author_name || '담임')} 코멘트 · ${dateTime(c.created_at)}${S.newIds.has(String(c.id)) ? ' · 새 코멘트' : ''}</div><div class="txt">${esc(text || '')}</div>${c.content_ko && c.content_ko !== c.content ? `<div class="tiny muted" style="margin-top:4px;white-space:pre-wrap">원문: ${esc(c.content)}</div>` : ''}</div>`;
+  return `<div class="cmt ${S.newIds.has(String(c.id)) ? 'new' : ''}"><div class="by">${esc(c.author_name || '담임')} 코멘트 · ${dateTime(c.created_at)}${S.newIds.has(String(c.id)) ? ' · 새 코멘트' : ''}</div><div class="txt clamp">${esc(text || '')}</div>${c.content_ko && c.content_ko !== c.content ? `<div class="tiny muted" style="margin-top:4px;white-space:pre-wrap">원문: ${esc(c.content)}</div>` : ''}</div>`;
 }
 
 /* ---------- ② 기도제목 ---------- */
@@ -1141,7 +1199,7 @@ function viewPrayer() {
   let last = '';
   for (const p of show) {
     if (p.cellName !== last) { if (last) h += '</div>'; last = p.cellName; h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:16px 2px 6px">${esc(p.cellName)}</h3><div class="card" style="padding:4px 15px">`; }
-    h += `<div class="note">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}${p.items.map(it => `<div class="txt">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div>`;
+    h += `<div class="note">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}<div class="clamp">${p.items.map(it => `<div class="txt clamp">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div></div>`;
   }
   return h + (last ? '</div>' : '');
 }
@@ -1160,29 +1218,35 @@ function viewIssue() {
   const cOn = (c) => st.cells.includes(c), tOn = (t) => st.tags.includes(t);
   const any = st.cells.length || st.tags.length;
   const pass = (c, t) => (!st.cells.length || cOn(c)) && (!st.tags.length || tOn(t));
-  // 축마다 접기: 셀 축을 접으면 이슈로만, 이슈 축을 접으면 셀로만 거른다. 접힌 축의 반대쪽은 표 대신 칩으로 흘려 빈 공간을 없앤다.
-  h += `<div class="mxbar"><button class="axbtn ${st.foldCell ? '' : 'on'}" data-act="fold-cell">${st.foldCell ? '▸' : '▾'} 셀</button><button class="axbtn ${st.foldTag ? '' : 'on'}" data-act="fold-tag">${st.foldTag ? '▸' : '▾'} 이슈</button><span class="spacer"></span>${any ? `<button class="tiny" style="color:var(--ac)" data-mx="all|all">고른 것 지우기</button>` : ''}</div>`;
-  const chip = (key, label, n, on) => `<button class="chip ${on ? 'on' : ''}" data-mx="${key}">${esc(label)}<span class="n">${n}</span></button>`;
-  if (!st.foldCell && !st.foldTag) {
-    h += `<div class="mxwrap"><table class="mx${any ? ' picking' : ''}"><thead><tr><th class="corner" data-mx="all|all">전체 ${mx.total}</th>${mx.tags.map(t => `<th class="${t === 'attn' ? 'attn' : ''}${tOn(t) ? ' on' : ''}" data-mx="all|${t}">${esc(tagName(t))}<span>${mx.colTotal[t]}</span></th>`).join('')}</tr></thead><tbody>`
-      + mx.cells.map(c => `<tr><th class="${cOn(c) ? 'on' : ''}" data-mx="${esc(c)}|all">${esc(cellName(c))}<span>${mx.rowTotal[c]}</span></th>${mx.tags.map(t => { const n = mx.count[c + '|' + t] || 0;
-        return n ? `<td class="v${pass(c, t) ? ' hit' : ''}${cOn(c) && tOn(t) ? ' on' : ''}" data-mx="${esc(c)}|${t}" style="--a:${Math.min(1, .18 + n / mx.max * .7)}">${n}</td>` : `<td class="z"></td>`; }).join('')}</tr>`).join('')
-      + `</tbody></table></div><p class="tiny muted" style="margin:6px 2px 12px">셀 이름 · 이슈 이름을 여럿 고를 수 있습니다 · 칸을 누르면 그 셀과 그 이슈를 함께 고릅니다</p>`;
-  } else if (st.foldCell && !st.foldTag) {
-    h += `<div class="chips">${mx.tags.map(t => chip('all|' + t, tagName(t), mx.colTotal[t], tOn(t))).join('')}</div>`;
-  } else if (!st.foldCell && st.foldTag) {
-    h += `<div class="chips">${mx.cells.map(c => chip(c + '|all', cellName(c), mx.rowTotal[c], cOn(c))).join('')}</div>`;
+  // 축 접기 (HB 11/6 3차): 왼쪽 위 '전체' 칸의 두 삼각형 — ◁ 이슈(가로) 축을 왼쪽으로 접기 · △ 셀(세로) 축을 위로 접기.
+  // 셀 축을 접어도 이슈 머리줄(숫자 그대로)은 남는다. 이슈 축을 접으면 셀 머리들이 옆으로 흘러 다시 늘어선다 (빈 공간 없이).
+  const sn = (c) => cellName(c).replace(/\s*셀$/, '');   // 좁은 화면을 위해 표 안에서는 '셀' 을 뗀다
+  const corner = `<div class="corner-in"><span class="ctot">전체 ${mx.total}</span>
+      <button class="tri tri-h ${st.foldTag ? 'fold' : ''}" data-act="fold-tag" title="${st.foldTag ? '이슈 펼치기' : '이슈 접기'}" aria-label="${st.foldTag ? '이슈 펼치기' : '이슈 접기'}"><svg viewBox="0 0 10 10"><path d="M7 1.5 2.5 5 7 8.5z"/></svg></button>
+      <button class="tri tri-v ${st.foldCell ? 'fold' : ''}" data-act="fold-cell" title="${st.foldCell ? '셀 펼치기' : '셀 접기'}" aria-label="${st.foldCell ? '셀 펼치기' : '셀 접기'}"><svg viewBox="0 0 10 10"><path d="M1.5 7 5 2.5 8.5 7z"/></svg></button></div>`;
+  const thTag = (t) => `<th class="${t === 'attn' ? 'attn' : ''}${tOn(t) ? ' on' : ''}" data-mx="all|${t}" data-flip="t:${t}">${esc(tagName(t))}<span>${mx.colTotal[t]}</span></th>`;
+  const thCell = (c) => `<th class="${cOn(c) ? 'on' : ''}" data-mx="${esc(c)}|all" data-flip="c:${esc(c)}">${esc(sn(c))}<span>${mx.rowTotal[c]}</span></th>`;
+  if (!st.foldTag) {
+    h += `<div class="mxwrap"><table class="mx${any ? ' picking' : ''}"><thead><tr><th class="corner" data-flip="corner" data-mx="all|all">${corner}</th>${mx.tags.map(thTag).join('')}</tr></thead>`
+      + (st.foldCell ? '' : '<tbody>' + mx.cells.map(c => `<tr>${thCell(c)}${mx.tags.map(t => { const n = mx.count[c + '|' + t] || 0;
+        return n ? `<td class="v${pass(c, t) ? ' hit' : ''}${cOn(c) && tOn(t) ? ' on' : ''}" data-mx="${esc(c)}|${t}" data-flip="v:${esc(c)}|${t}" style="--a:${Math.min(1, .18 + n / mx.max * .7)}">${n}</td>` : `<td class="z"></td>`; }).join('')}</tr>`).join('') + '</tbody>')
+      + `</table></div>`;
+  } else {
+    // 이슈 축을 접으면: 셀 머리들이 '전체' 옆으로 흘러 줄바꿈된다
+    h += `<div class="mxflow${any ? ' picking' : ''}"><div class="mxc corner" data-flip="corner" data-mx="all|all">${corner}</div>`
+      + (st.foldCell ? '' : mx.cells.map(c => `<div class="mxc ${cOn(c) ? 'on' : ''}" data-mx="${esc(c)}|all" data-flip="c:${esc(c)}">${esc(sn(c))}<span>${mx.rowTotal[c]}</span></div>`).join('')) + '</div>';
   }
+  h += `<div class="mxbar">${any ? `<span class="tiny muted">${esc([st.cells.map(sn).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / '))}</span><span class="spacer"></span><button class="tiny" style="color:var(--ac)" data-mx="all|all">고른 것 지우기</button>`
+    : `<span class="tiny muted">셀 · 이슈를 여럿 고를 수 있습니다 · 칸은 둘을 함께</span>`}</div>`;
   const list = notes.filter(n => (!st.cells.length || cOn(n._cell)) && (!st.tags.length || st.tags.some(t => t === 'attn' ? n.leadership_attention_required : catsOf(n).includes(t))));
   const one = (n) => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${who(n.member_id, n._who)}<button class="tiny muted lnk" data-act="see-rep" data-cell="${esc(n._cell)}" data-week="${esc(n._week)}">${esc(n._cellName)} · ${esc(weekLabel(n._week))} ›</button>${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}</div>
-    <div class="txt">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`;
-  const title = [st.cells.map(cellName).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / ');
+    <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`;
+  const title = [st.cells.map(sn).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / ');
   if (!list.length) return h + '<p class="empty">고른 조건에 맞는 근황이 없습니다.</p>';
   if (st.tags.length === 1) return h + `<h3 class="grp">${esc(title)} · ${list.length}</h3><div class="card" style="padding:4px 15px">${list.map(one).join('')}</div>`;
   const groups = groupIssues(list).filter(g => !st.tags.length || st.tags.includes(g.key));
   const attnList = st.tags.includes('attn') ? list.filter(n => n.leadership_attention_required) : [];
-  return h + (title ? `<p class="small muted" style="margin:4px 2px 0">${esc(title)}</p>` : '')
-    + (attnList.length ? `<h3 class="grp">확인 필요 · ${attnList.length}</h3><div class="card" style="padding:4px 15px">${attnList.map(one).join('')}</div>` : '')
+  return h + (attnList.length ? `<h3 class="grp">확인 필요 · ${attnList.length}</h3><div class="card" style="padding:4px 15px">${attnList.map(one).join('')}</div>` : '')
     + groups.map(g => `<h3 class="grp">${esc(g.label)} · ${g.items.length}</h3><div class="card" style="padding:4px 15px">${g.items.map(one).join('')}</div>`).join('');
 }
 
@@ -1241,9 +1305,9 @@ function viewCare() {
   const fdState = { joined: ['ok', '셀원 됨'], again: ['ac', '다시 옴'], once: ['', '한 번 옴'], gone: ['warn', '끊김'] };
   let h = `<h3 class="grp" style="margin-top:14px">이번 주 연락할 분 · ${A.length}</h3><p class="tiny muted" style="margin:-2px 2px 8px">2주 넘게 결석 · 장기결석 · 돌봄 필요 · 건강 · 교역자 확인 필요 · 셀리더 요청 (최근 보고서 두 번 기준)</p>`;
   h += A.length ? A.map(x => x.kind === 'cell'
-    ? `<div class="card pcard" data-act="open-cell" data-cell="${esc(x.cellId)}" role="button"><div class="row"><span class="nm">${esc(cellName(x.cellId))}</span><span class="tiny muted">셀 전체</span><span class="spacer"></span>${x.reasons.map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>${x.note ? `<div class="txt small">${esc(x.note)}</div>` : ''}</div>`
+    ? `<div class="card pcard" data-act="open-cell" data-cell="${esc(x.cellId)}" role="button"><div class="row"><span class="nm">${esc(cellName(x.cellId))}</span><span class="tiny muted">셀 전체</span><span class="spacer"></span>${x.reasons.map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>${x.note ? `<div class="txt small clamp">${esc(x.note)}</div>` : ''}</div>`
     : `<div class="card pcard" data-act="person" data-mid="${esc(x.id)}" role="button"><div class="row" style="flex-wrap:wrap"><span class="nm">${esc(x.name || '(이름 없음)')}</span><span class="tiny muted">${esc(cellName(x.cellId))}</span><span class="spacer"></span>${x.reasons.map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>
-      ${x.note ? `<div class="txt small" style="margin-top:3px">${esc(x.note)}</div>` : ''}${S.people.get(x.id) ? dots(S.people.get(x.id), 8) : ''}</div>`).join('') : '<p class="empty">이번 주 특별히 살필 분이 없습니다.</p>';
+      ${x.note ? `<div class="txt small clamp" style="margin-top:3px">${esc(x.note)}</div>` : ''}${S.people.get(x.id) ? dots(S.people.get(x.id), 8) : ''}</div>`).join('') : '<p class="empty">이번 주 특별히 살필 분이 없습니다.</p>';
   h += `<h3 class="grp">출석이 줄어드는 분 · ${C.length}</h3><p class="tiny muted" style="margin:-2px 2px 8px">이전 8주엔 잘 오셨는데 최근 4주에 눈에 띄게 줄었습니다</p>`;
   h += C.length ? C.map(({ p, st }) => `<div class="card pcard" data-act="person" data-mid="${esc(p.id)}" role="button"><div class="row"><span class="nm">${esc(p.name)}</span><span class="tiny muted">${esc(cellName(p.cellId))}</span><span class="spacer"></span><span class="small muted">${Math.round(st.prevRate * 100)}% → <b style="color:var(--warn);font-weight:500">${Math.round(st.recentRate * 100)}%</b></span></div>${dots(p)}</div>`).join('') : '<p class="empty">눈에 띄게 줄어든 분이 없습니다.</p>';
   h += `<h3 class="grp">새 얼굴 · ${D.length}</h3><p class="tiny muted" style="margin:-2px 2px 8px">12주 안에 방문자로 온 분 — 다시 왔는지, 셀원이 되었는지</p>`;
@@ -1258,20 +1322,20 @@ function viewCellTab() {
   if (!ids.length) return '<p class="empty">보이는 셀이 없습니다.</p>';
   if (S.loadedSpan < 8 && !S.loadingCellTab) { S.loadingCellTab = true; loadDetails(8).then(() => { S.loadingCellTab = false; if (PREF.tab === 'cell') rerender(); }).catch(() => { S.loadingCellTab = false; }); }
   const ready = S.loadedSpan >= 8;
-  let h = '<p class="sub">셀마다 최근 8주 신호(출석 흐름 · 제출 · 무거운 이슈 · 셀리더 요청)와 12주 출석입니다.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>';
+  let h = '<p class="sub">셀마다 최근 8주 신호(출석 흐름 · 제출 · 무거운 이슈 · 셀리더 요청)와 12주 출석입니다. \'쉼\' 은 모임을 못 한 주, 점선은 보고서가 없던 주.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>';
   for (const c of ids) {
     const ser = attendanceSeries(cellWeekMap(c), S.weeks);
     const sm = attendanceSummary(ser);
     const max = Math.max(1, ...ser.map(x => x.present + x.visitors));
-    const rows8 = S.weeks.slice(0, 8).map(w => cellRow(c, w));
+    const cm = cellWeekMap(c); const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
     const reps = ready ? cellReps(c, 8) : [];
     const hl = ready ? cellHealth(rows8, reps) : null;
     const sig = ready ? leaderSignals(rows8, reps) : [];
     const light = (k, label) => `<div class="lt" title="${esc(hl[k].text)}"><i class="${hl[k].lv}"></i><span>${label}</span></div>`;
     h += `<div class="card"><div class="row"><button class="lnk" data-act="open-cell" data-cell="${esc(c)}"><h3 style="margin:0">${esc(cellName(c))}</h3></button><span class="tiny muted">${esc(leaderOf(c))}</span><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
       ${hl ? `<div class="lights">${light('att', '출석')}${light('sub', '제출')}${light('issue', '이슈')}${light('req', '요청')}</div><div class="tiny muted" style="margin-top:2px">${esc([hl.att.text, hl.sub.text, hl.issue.text, hl.req.text].join(' · '))}</div>` : '<div class="tiny muted" style="margin-top:6px">신호를 계산하는 중…</div>'}
-      ${sig.length ? `<div class="sigs"><span class="tiny muted">셀리더</span>${sig.map(x => `<span class="pill ${LV[x.lv]}" title="${esc(x.note || '')}">${esc(x.t)}</span>`).join('')}${sig.find(x => x.note) ? `<div class="tiny muted" style="width:100%">${esc(sig.filter(x => x.note).map(x => x.note).join(' · '))}</div>` : ''}</div>` : ''}
-      <div class="bars">${ser.map(x => x.has ? `<div class="bar" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
+      ${sig.length ? `<div class="sigs"><span class="tiny muted">셀리더</span>${sig.map(x => `<span class="pill ${LV[x.lv]}" title="${esc(x.note || '')}">${esc(x.t)}</span>`).join('')}${sig.find(x => x.note) ? `<div class="tiny muted clamp" style="width:100%">${esc(sig.filter(x => x.note).map(x => x.note).join(' · '))}</div>` : ''}</div>` : ''}
+      <div class="bars">${ser.map(x => x.has ? `<div class="bar" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : x.off ? `<div class="bar" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}" title="모임 못 함"><span class="n">쉼</span><div class="b off"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
       <div class="barx">${ser.map((x, i) => `<span>${esc(i && x.week.slice(5, 7) === ser[i - 1].week.slice(5, 7) ? String(+x.week.slice(8, 10)) : shortWeek(x.week))}</span>`).join('')}</div></div>`;
   }
   return h;
@@ -1318,13 +1382,35 @@ function personHtml() {
     if (!notes.length && !prays.length && att !== 'absent') continue;
     any = true;
     h += `<div class="lbl2"><button class="lnk" data-act="see-rep" data-cell="${esc(cellId)}" data-week="${w}">${esc(weekLabel(w))} ›</button>${att === 'absent' ? ' <span class="pill bad">결석</span>' : att === 'present' ? ' <span class="pill ok">출석</span>' : ''}</div>`;
-    if (notes.length || prays.length) h += `<div class="card">${notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}${n.leadership_attention_required ? '<span class="pill warn">확인 필요</span>' : ''}</div><div class="txt">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}
-      ${prays.map(x => `<div class="note"><span class="pill ac">${esc(x.tag)}</span><div class="txt">${esc(x.t)}</div>${x.note ? `<div class="pray">이번 주: ${esc(x.note)}</div>` : ''}</div>`).join('')}
+    if (notes.length || prays.length) h += `<div class="card">${notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}${n.leadership_attention_required ? '<span class="pill warn">확인 필요</span>' : ''}</div><div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}
+      ${prays.map(x => `<div class="note"><span class="pill ac">${esc(x.tag)}</span><div class="txt clamp">${esc(x.t)}</div>${x.note ? `<div class="pray">이번 주: ${esc(x.note)}</div>` : ''}</div>`).join('')}
       ${notes.length ? d.comments.map(c => cmtBox(c)).join('') : ''}</div>`;
   }
   if (!any) h += '<p class="empty">12주 동안 따로 적힌 근황 · 기도제목이 없습니다.</p>';
   return h + '<p class="tiny muted" style="text-align:center;margin-top:16px">코멘트는 그 주 보고서 전체에 달린 것입니다 · 왼쪽 끝에서 밀면 뒤로</p></div>';
 }
+
+/* ---------- 긴 글은 세 줄까지 (HB 11/6) ---------- */
+// .clamp 를 붙인 글이 세 줄을 넘으면 아래에 '더보기' 를 단다. 누르면 높이가 스르륵 펴지고, 다시 누르면 접힌다.
+function applyClamp(root) {
+  for (const el of (root || document).querySelectorAll('.clamp:not([data-ck])')) {
+    if (!el.offsetParent) continue;
+    el.dataset.ck = '1';
+    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more">더보기<i></i></button>'); }
+  }
+}
+function toggleClamp(btn) {
+  const el = btn.previousElementSibling; if (!el || !el.classList.contains('clamp')) return;
+  const open = !el.classList.contains('open');
+  const h0 = el.clientHeight;
+  el.classList.toggle('open', open);
+  btn.firstChild.textContent = open ? '접기' : '더보기'; btn.querySelector('i').classList.toggle('up', open);
+  const h1 = el.clientHeight;
+  if (!quiet()) el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+let _ckq = 0;
+new MutationObserver(() => { if (_ckq) return; _ckq = requestAnimationFrame(() => { _ckq = 0; applyClamp(document); }); }).observe(document.documentElement, { childList: true, subtree: true });
+addEventListener('resize', () => { for (const el of document.querySelectorAll('.clamp[data-ck]:not(.open)')) { el.removeAttribute('data-ck'); el.classList.remove('cut'); const b = el.nextElementSibling; if (b && b.dataset.act === 'more') b.remove(); } applyClamp(document); });
 
 /* ---------- G 이번 주 한 장 (이번 주 탭 맨 위) ---------- */
 function gCard() {
@@ -1338,7 +1424,7 @@ function gCard() {
   const head = `<button class="gh" data-act="g-tg"><b>이번 주 한 장</b><span class="tiny muted">${subRows.length}/${rows.length} 제출 · 출석 ${pres + abs ? Math.round(pres * 100 / (pres + abs)) + '%' : '—'}${S.newIds.size ? ' · 새 코멘트 ' + S.newIds.size : ''}</span><span class="spacer"></span><span class="chev2 ${PREF.gOpen ? 'on' : ''}">›</span></button>`;
   if (!PREF.gOpen) return `<div class="card gcard">${head}</div>`;
   let body = '<div class="gbody">';
-  body += `<div class="lbl">먼저 연락할 분</div>` + (A == null ? '<div class="tiny muted">출석 기록을 모으는 중…</div>' : A.length ? A.slice(0, 3).map(x => `<div class="row grow" ${x.kind === 'cell' ? `data-act="open-cell" data-cell="${esc(x.cellId)}"` : `data-act="person" data-mid="${esc(x.id)}"`} role="button"><span class="nm">${esc(x.kind === 'cell' ? cellName(x.cellId) : x.name)}</span><span class="tiny muted">${esc(x.kind === 'cell' ? '셀 전체' : cellName(x.cellId))}</span><span class="spacer"></span>${x.reasons.slice(0, 2).map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>`).join('') + (A.length > 3 ? `<button class="tiny lnk" style="color:var(--ac);margin-top:4px" data-tab="care">${A.length - 3}명 더 보기 ›</button>` : '') : '<div class="tiny muted">이번 주 특별히 살필 분이 없습니다.</div>');
+  body += `<div class="lbl">먼저 연락할 분</div>` + (A == null ? '<div class="tiny muted">출석 기록을 모으는 중…</div>' : A.length ? A.slice(0, S.gMore ? A.length : 3).map(x => `<div class="row grow" data-flip="g:${esc(x.id || x.cellId)}" ${x.kind === 'cell' ? `data-act="open-cell" data-cell="${esc(x.cellId)}"` : `data-act="person" data-mid="${esc(x.id)}"`} role="button"><span class="nm">${esc(x.kind === 'cell' ? cellName(x.cellId) : x.name)}</span><span class="tiny muted">${esc(x.kind === 'cell' ? '셀 전체' : cellName(x.cellId))}</span><span class="spacer"></span>${x.reasons.slice(0, 2).map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>`).join('') + (A.length > 3 ? `<button class="morebtn" data-act="g-more">${S.gMore ? '접기' : (A.length - 3) + '명 더 보기'}<i class="${S.gMore ? 'up' : ''}"></i></button>` : '') : '<div class="tiny muted">이번 주 특별히 살필 분이 없습니다.</div>');
   if (thanks.length) body += `<div class="lbl">감사 — 응답된 기도</div>` + thanks.slice(0, 3).map(({ c, x }) => `<div class="small">${who(null, x.member_name, c)} ${esc(x.content)}${x.this_week_note ? ' <span class="muted">— ' + esc(x.this_week_note) + '</span>' : ''}</div>`).join('');
   return `<div class="card gcard">${head}${body}</div></div>`;
 }
@@ -1459,12 +1545,14 @@ document.addEventListener('click', async (e) => {
     case 'open-cell': return openCell(d.cell, d.week || S.weeks[S.weekIdx]);
     case 'see-rep': if (S.pview) { closePerson(true); if (!S.view) return openCell(d.cell, d.week, true); } if (S.view && S.view.cell === d.cell) return cvGo(S.weeks.indexOf(d.week)); if (S.view) { S.view.cell = d.cell; S.view.idx = Math.max(0, S.weeks.indexOf(d.week)); return drawCell(); } return openCell(d.cell, d.week);
     case 'bar': if (S.tipAt && Date.now() - S.tipAt < 900) return; hideTip(); return openCell(d.cell, d.week);
-    case 'fold-cell': PREF.iss = Object.assign(issNorm(PREF.iss), { foldCell: !issNorm(PREF.iss).foldCell }); savePref(); return rerender();
-    case 'fold-tag': PREF.iss = Object.assign(issNorm(PREF.iss), { foldTag: !issNorm(PREF.iss).foldTag }); savePref(); return rerender();
+    case 'fold-cell': return flipRender(() => { PREF.iss = Object.assign(issNorm(PREF.iss), { foldCell: !issNorm(PREF.iss).foldCell }); savePref(); rerender(); });
+    case 'fold-tag': return flipRender(() => { PREF.iss = Object.assign(issNorm(PREF.iss), { foldTag: !issNorm(PREF.iss).foldTag }); savePref(); rerender(); });
     case 'cv-close': return closeCell(false);
     case 'person': hideTip(); return openPerson(d.mid);
     case 'pv-close': return closePerson(false);
-    case 'g-tg': PREF.gOpen = !PREF.gOpen; savePref(); return rerender();
+    case 'g-tg': return flipRender(() => { PREF.gOpen = !PREF.gOpen; savePref(); rerender(); });
+    case 'g-more': return flipRender(() => { S.gMore = !S.gMore; rerender(); });
+    case 'more': return toggleClamp(b);
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
     case 'leader-tg': PREF.showLeader = !PREF.showLeader; savePref(); rerender();
