@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-15 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -79,6 +79,9 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .stat .num{flex:none}
 .stat .nms{font-size:11.5px;line-height:1.4;color:var(--tx2);text-align:left;max-height:5.7em;overflow-y:auto;min-width:0;max-width:100%;scrollbar-width:none}
 .stats.withnames .stat{align-items:flex-start;padding:10px}
+.sortrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:2px 12px;margin:0 2px 6px}
+.sortrow button{font-size:12.5px;color:var(--tx3);padding:3px 0}
+.sortrow button.on{color:var(--ac);font-weight:500}
 .nmtg{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:32px;height:32px;display:grid;place-items:center;color:var(--tx3);opacity:.6;border-radius:8px}
 .nmtg.on{color:var(--ac);opacity:1}
 .nmtg svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round}
@@ -287,7 +290,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-14';
+const APP_VERSION = 'v. 26-1106-15';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -871,8 +874,8 @@ const TABS = [
   { id: 'week', label: '이번 주' }, { id: 'care', label: '살필 분' }, { id: 'issue', label: '이슈' },
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
-const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-14 까지의 '출석' 탭은 '셀' 탭이 되었다
+const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'base', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-15 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1145,6 +1148,20 @@ function statePill(r) {
   return { submitted: '<span class="pill ok">제출</span>', revision: '<span class="pill warn">수정 요청</span>', reediting: '<span class="pill warn">고치는 중</span>',
     draft: '<span class="pill ac">작성 중</span>', missing: '<span class="pill bad">미제출</span>', none: '<span class="pill">셀 없음</span>' }[st];
 }
+// 셀 줄 정렬 (HB 11/6): 기본(아직 → 작성 중 → 제출) · 이름 · 제출 빠른 순 · 미제출 연속 · 출석 낮은 순. 같으면 이름순.
+const WSORTS = [['base', '기본'], ['name', '이름'], ['time', '제출 빠른 순'], ['miss', '미제출 연속'], ['att', '출석 낮은 순']];
+function sortCmp(k, order) {
+  const nm = (a, b) => cellName(a.c).localeCompare(cellName(b.c), 'ko');
+  const BIG = 1e18;
+  const key = {
+    name: () => 0,
+    time: x => isSubmitted(x.r) && x.r.submitted_at ? new Date(x.r.submitted_at).getTime() || BIG : BIG,
+    miss: x => { const s = streakOf(cellWeekMap(x.c), S.weeks.slice(S.weekIdx)); return s.kind === 'miss' ? -s.run : 0; },
+    att: x => attTaken(x.r) ? x.r.members_present / ((x.r.members_present || 0) + (x.r.members_absent || 0) || 1) : BIG
+  }[k];
+  if (!key) return (a, b) => order(a) - order(b) || nm(a, b);
+  return (a, b) => key(a) - key(b) || nm(a, b);
+}
 function viewWeek() {
   const w = S.weeks[S.weekIdx]; const ids = sortedCells();
   const rows = ids.map(c => ({ c, r: cellRow(c, w) })).filter(x => x.r);
@@ -1156,7 +1173,7 @@ function viewWeek() {
   if (!rows.length) return head + `<p class="empty">${PREF.scope === 'mine' ? '이 주에 보이는 담당 셀이 없습니다.' : '이 주에 보이는 셀이 없습니다.'}</p>`;
   const g = gCard();
   const order = (x) => isSubmitted(x.r) ? 2 : (x.r.report_id ? 1 : 0);
-  rows.sort((a, b) => order(a) - order(b) || cellName(a.c).localeCompare(cellName(b.c), 'ko'));
+  rows.sort(sortCmp(PREF.wsort, order));
   const f = PREF.wfilter || 'all';
   const shown = f === 'sub' ? rows.filter(x => isSubmitted(x.r)) : f === 'miss' ? rows.filter(x => !isSubmitted(x.r)) : rows;
   // 세 칸이 곧 거르기 — 다시 누르면 전체로. 위 사람 단추가 칸 안의 셀리더 이름을 켜고 끈다 (HB 11/6: 줄이 아니라 칸 안에)
@@ -1165,13 +1182,14 @@ function viewWeek() {
     <button class="stat ${f === 'all' ? 'sel' : ''}" data-wf="all"><div class="num"><div class="v">${rows.length}</div><div class="k">${PREF.scope === 'mine' && S.mineIds.length ? '담당 셀' : '셀'}</div></div>${names(rows)}</button>
     <button class="stat ok ${f === 'sub' ? 'sel' : ''}" data-wf="sub"><div class="num"><div class="v">${sub.length}</div><div class="k">제출</div></div>${names(sub)}</button>
     <button class="stat ${miss.length ? 'warn' : ''} ${f === 'miss' ? 'sel' : ''}" data-wf="miss"><div class="num"><div class="v">${miss.length}</div><div class="k">${S.weekIdx === 0 ? '아직' : '미제출'}</div></div>${names(miss)}</button></div>`;
+  const sortRow = `<div class="sortrow noprint"><span class="tiny muted">정렬</span>${WSORTS.map(([k, l]) => `<button class="${(PREF.wsort || 'base') === k ? 'on' : ''}" data-act="wsort" data-k="${k}">${l}</button>`).join('')}</div>`;
   if (!shown.length) return h + `<p class="empty">${f === 'sub' ? '아직 낸 셀이 없습니다.' : '모두 냈습니다.'}</p>`;
-  h += '<div class="card" style="padding:4px 14px">' + shown.map(({ c, r }) => {
+  h += sortRow + '<div class="card" style="padding:4px 14px">' + shown.map(({ c, r }) => {
     const s = streakOf(cellWeekMap(c), S.weeks.slice(S.weekIdx));
     const txt = streakText(s);
     const hot = s.kind === 'miss' && s.run >= 2;
     const meta = r.submitted_at && isSubmitted(r) ? dateTime(r.submitted_at) : '';
-    return `<div class="cellrow" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}</div>
+    return `<div class="cellrow" data-flip="wc:${esc(c)}" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}</div>
       ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null)}</div>
       <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div><span class="chev">›</span></div>`;
   }).join('') + '</div>';
@@ -1936,6 +1954,7 @@ document.addEventListener('click', async (e) => {
     case 'more': return toggleClamp(b);
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
+    case 'wsort': if (PREF.wsort === d.k) return; return flipRender(() => { PREF.wsort = d.k; savePref(); rerender(); });
     case 'leader-tg': PREF.showLeader = !PREF.showLeader; savePref(); rerender();
       toast(PREF.showLeader ? '셀리더 이름을\n보여 드립니다' : '셀리더 이름을\n감췄습니다'); toast.at = Date.now(); return;
     case 'print': return window.print();
