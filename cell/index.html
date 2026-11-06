@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -284,7 +284,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-9';
+const APP_VERSION = 'v. 26-1106-10';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -676,7 +676,11 @@ function matchContacts(name, contacts, n) {
   for (const c of contacts || []) {
     let sc = keyScore(x, c.k != null ? c.k : normName(c.name)), swapped = false;
     if (sc < 1 && (c.alt || swapKeys(c)).some(a => a === x)) { sc = 1; swapped = true; }   // 성 · 이름이 바뀐 것은 꼭 같을 때만
-    if (sc >= 0.6) for (const t of c.tels) out.push(Object.assign({ name: c.name, tel: t, score: sc }, swapped ? { swapped: true } : {}));
+    // 별명 · 소속이 이름과 함께 저장된 것 ('하나엄마 김하나' · '청년부김하나' · N 칸 속 별명): 셀원 이름 전체가 연락처 이름 속에 그대로 있다 (HB 11/6)
+    const ck = c.k != null ? c.k : normName(c.name);
+    const nick = sc < 1 && x && ck !== x && (x.length >= 3 ? ck.includes(x) : String(c.name || '').normalize('NFC').split(/\s+/).map(normName).includes(x));
+    if (nick && sc < 0.8) sc = 0.8;
+    if (sc >= 0.6) for (const t of c.tels) out.push(Object.assign({ name: c.name, tel: t, score: sc }, swapped ? { swapped: true } : {}, nick ? { nick: true } : {}));
   }
   const seen = new Set();
   return out.sort((a, b) => b.score - a.score || a.name.length - b.name.length).filter(x => { const k = normPhone(x.tel); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, n || 3);
@@ -689,8 +693,8 @@ function autoFill(members, phones, sugOf) {
   for (const m of members || []) {
     if (phones[m.id] && phones[m.id].p) continue;
     const c = sugOf(m) || []; const ex = c.find(x => x.score === 1);
-    const pick = ex || (c.length === 1 ? c[0] : null);
-    if (pick) out[m.id] = Object.assign({ p: pick.tel, src: pick.name }, pick.swapped ? { swapped: true } : {});
+    const pick = ex || c.find(x => x.nick) || (c.length === 1 ? c[0] : null);
+    if (pick) out[m.id] = Object.assign({ p: pick.tel, src: pick.name }, pick.swapped ? { swapped: true } : {}, pick.nick ? { nick: true } : {});
   }
   return out;
 }
@@ -865,7 +869,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-9 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-10 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1647,7 +1651,7 @@ function setPhones(changes) {
   for (const [mid, v] of Object.entries(changes)) {
     prev[mid] = BOOK.phones[mid] || null;
     const m = S.members.get(mid) || {};
-    if (v) { const e = { n: m.name || '', c: cellName(m.cell_id) || '', p: fmtPhone(v.p), src: v.src || '', sw: !!v.swapped, at: Date.now() }; BOOK.phones[mid] = e; body[mid] = e; }
+    if (v) { const e = { n: m.name || '', c: cellName(m.cell_id) || '', p: fmtPhone(v.p), src: v.src || '', sw: !!v.swapped, nk: !!v.nick, at: Date.now() }; BOOK.phones[mid] = e; body[mid] = e; }
     else { delete BOOK.phones[mid]; body[mid] = DEMO ? null : firebase.firestore.FieldValue.delete(); }
     updateRow(mid);
   }
@@ -1687,9 +1691,9 @@ function rowHtml(m) {
   const sug = sugOf(m).filter(x => normPhone(x.tel) !== normPhone(p));
   return `<div class="bkrow${BOOK.focus === m.id ? ' focus' : ''}${BOOK.auto && BOOK.auto[m.id] && p ? ' auto' : ''}" id="bk-${esc(m.id)}" data-mid="${esc(m.id)}"><div class="row"><span class="nm">${esc(m.name)}</span>${m.member_type === 'visitor' ? '<span class="tiny muted">방문</span>' : ''}<span class="spacer"></span>
     <input type="tel" inputmode="tel" class="phin" data-mid="${esc(m.id)}" value="${esc(p)}" placeholder="010-0000-0000" ${FB.user ? '' : 'disabled'}>${p ? `<button class="phclr" data-act="clear-ph" data-mid="${esc(m.id)}" title="비우기" aria-label="비우기"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></svg></button>` : '<span class="phclr-gap"></span>'}</div>
-    ${p && e.src ? `<div class="src">연락처 '${esc(e.src)}' 에서 넣음${e.sw ? ' <span class="swp">성 · 이름이 바뀌어 저장된 연락처</span>' : ''}</div>` : ''}
+    ${p && e.src ? `<div class="src">연락처 '${esc(e.src)}' 에서 넣음${e.sw ? ' <span class="swp">성 · 이름이 바뀌어 저장된 연락처</span>' : ''}${e.nk ? ' <span class="swp">별명 · 소속과 함께 저장된 연락처</span>' : ''}</div>` : ''}
     ${!p && !sug.length && BOOK.contacts ? (BOOK.find === m.id ? `<div class="findbox"><input type="search" class="findin" data-mid="${esc(m.id)}" placeholder="연락처에 저장된 이름 · 번호 일부"><div class="sugs findres"></div></div>` : `<button class="lnk tiny" style="color:var(--ac);margin-top:4px" data-act="find" data-mid="${esc(m.id)}">연락처에서 찾기</button>`) : ''}
-    ${sug.length ? `<div class="sugs">${p ? '<span class="tiny muted">다른 후보 · 누르면 교체</span>' : ''}${sug.map(x => `<button class="sug" data-act="take" data-mid="${esc(m.id)}" data-tel="${esc(x.tel)}" data-src="${esc(x.name)}" ${x.swapped ? 'data-sw="1"' : ''}>${esc(x.name)} <b>${esc(x.tel)}</b>${x.swapped ? '<i>성·이름 바뀜</i>' : x.score < 1 ? '<i>비슷</i>' : ''}</button>`).join('')}</div>` : ''}</div>`;
+    ${sug.length ? `<div class="sugs">${p ? '<span class="tiny muted">다른 후보 · 누르면 교체</span>' : ''}${sug.map(x => `<button class="sug" data-act="take" data-mid="${esc(m.id)}" data-tel="${esc(x.tel)}" data-src="${esc(x.name)}" ${x.swapped ? 'data-sw="1"' : ''} ${x.nick ? 'data-nk="1"' : ''}>${esc(x.name)} <b>${esc(x.tel)}</b>${x.swapped ? '<i>성·이름 바뀜</i>' : x.nick ? '<i>별명 함께</i>' : x.score < 1 ? '<i>비슷</i>' : ''}</button>`).join('')}</div>` : ''}</div>`;
 }
 // 한 줄만 다시 그린다. 그 줄 번호 칸에 글자를 쓰는 중이면 건드리지 않는다.
 function updateRow(mid, fromServer) {
@@ -1787,7 +1791,7 @@ function contactsLoaded(list) {
   if (BOOK.autoN) setPhones(auto);
   toast('연락처 ' + BOOK.contacts.length + '명을 읽었습니다' + (BOOK.autoN ? '\n' + BOOK.autoN + '명은 바로 넣었습니다' : '')); toast.at = Date.now();
 }
-function takeSuggestion(mid, tel, src, sw) { if (BOOK.find === mid) BOOK.find = null; setPhones({ [mid]: { p: tel, src: src || '', swapped: !!sw } }); }
+function takeSuggestion(mid, tel, src, sw, nk) { if (BOOK.find === mid) BOOK.find = null; setPhones({ [mid]: { p: tel, src: src || '', swapped: !!sw, nick: !!nk } }); }
 
 /* ---------- 새 버전 (홈 화면 앱은 껐다 켜도 옛 파일을 쓸 수 있다) ---------- */
 // 서버의 index.html 을 캐시 없이 받아 APP_VERSION 을 비교한다. 새것이면 주소에 꼬리를 달아 새로 연다.
@@ -1901,7 +1905,7 @@ document.addEventListener('click', async (e) => {
     case 'fb-logout': return fbLogout();
     case 'vcf': return $('#vcfin') && $('#vcfin').click();
     case 'pick-contacts': return pickContacts();
-    case 'take': return takeSuggestion(d.mid, d.tel, d.src, d.sw);
+    case 'take': return takeSuggestion(d.mid, d.tel, d.src, d.sw, d.nk);
     case 'clear-ph': return setPhones({ [d.mid]: null });
     case 'find': { const was = BOOK.find; BOOK.find = d.mid; if (was) updateRow(was); updateRow(d.mid); const i = document.querySelector('#bk-' + CSS.escape(d.mid) + ' .findin'); if (i) i.focus(); return; }
     case 'pv-close': return closePerson(false);
