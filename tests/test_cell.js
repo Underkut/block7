@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -271,9 +271,24 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑮ 별명 · 소속과 함께 저장된 연락처도 바로 넣고 표시 (두 글자 이름은 따로 띄운 말일 때만)', J(Object.fromEntries(Object.entries(an).map(([k, v]) => [k, [v.p, !!v.nick]]))),
     { h: ['010-1000-2000', true], s: ['010-3000-4000', true], g: ['010-5000-6000', false] });
   sc.eq('⑮ 맞는 사람이 없으면 비움', A.matchContacts('최기쁨', C).length, 0);
-  sc.eq('⑮ 번호는 cellbook/{uid} 에만 — BLOCK7 상태 문서(users)는 건드리지 않는다', /collection\('cellbook'\)/.test(HTML) && !/collection\('users'\)/.test(HTML), true);
+  sc.eq('⑮ 번호는 cellbook/{uid} 에만 — users 는 심방 노트 설정(data/care) 읽기 하나뿐', /collection\('cellbook'\)/.test(HTML) && (HTML.match(/collection\('users'\)/g) || []).length === 1 && /collection\('users'\)\.doc\(FB\.user\.uid\)\.collection\('data'\)\.doc\('care'\)\.get\(\)/.test(HTML), true);
   sc.eq('⑮ 저장은 한 번에 몰아서 (번호마다 기다리지 않음)', /function setPhones\(changes\)/.test(HTML) && !/async function savePhone/.test(HTML), true);
   sc.eq('⑮ 연락처 파일 내용은 저장하지 않는다 (이 기기에도)', /lsSet\([^)]*contacts|localStorage\.setItem\([^)]*contacts/i.test(HTML), false);
+}
+
+// ⑯ J 심방 노트와 잇기 — 이름으로 맞추기 (지어낸 이름)
+{
+  const mem = [{ id: 'a', name: '강믿음' }, { id: 'b', name: '이두리' }, { id: 'c', name: '김하나' }, { id: 'd', name: '김하나' }, { id: 'e', name: '조은빛' }];
+  const vis = [{ name: '강믿음', ymd: '2026-09-14', text: 'x' }, { name: '강믿음 집사', ymd: '2026-10-20', text: 'y' }, { name: '두리 이', ymd: '2026-11-01', text: 'z' },
+    { name: '김하나', ymd: '2026-11-02' }, { name: '청년부조은빛', ymd: '2026-08-01' }, { name: '보관된분', ymd: '2020-01-01', archived: true }];
+  const L = A.linkVisits(mem, vis, '2026-11-06');
+  sc.eq('⑯ 같은 이름(직분 무시) · 성 이름 바뀜 · 이름이 통째로 든 것은 맞춘다', J(Object.keys(L).sort()), ['a', 'b', 'e']);
+  sc.eq('⑯ 같은 이름 셀원이 둘이면 맞추지 않는다', !!(L.c || L.d), false);
+  sc.eq('⑯ 마지막 심방 · 횟수 · 며칠 전 · 최근 순', J([L.a.last, L.a.n, L.a.days, L.a.recent.map(v => v.ymd)]), ['2026-10-20', 2, 17, ['2026-10-20', '2026-09-14']]);
+  sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab \}/.test(HTML), true);
+  const CARE_HTML = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8');
+  const cm = CARE_HTML.match(/<script id="care-core">([\s\S]*?)<\/script>/);
+  sc.eq('⑯ 심방 노트 care-core 에 셀 한눈에가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
 }
 
 // ⑩ 집 주소 · 버전
