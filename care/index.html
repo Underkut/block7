@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1106-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C0 연결 시험판 -->
+<!-- 심방 노트 v. 26-1106-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C0 연결 시험판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -105,9 +105,13 @@ a{color:var(--ac)}
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1106-1';
+const APP_VERSION = 'v. 26-1106-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
+// 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
+// ⚠️ 파이어베이스 키(FB_CFG.apiKey)를 쓰지 말 것 — 그 키는 로그인 · 동기화가 함께 쓰고, 제한을 고치면
+//    다른 앱이 멈출 수 있다고 구글이 경고했다. 공개되어도 되는 키다(페이지 안에 그대로 보인다).
+const PICKER_KEY = 'AIzaSyAOLbBCajy6vF33xN1PQWk1qnU7VoynuC8';
 const C0_MAX_ROWS = 10;                  // C0 쓰기 시험은 이 줄 수 이하인 시트(사본)에만
 
 // 응답 탭 오른쪽 끝에 앱이 더하는 열. 폼은 이 열을 건드리지 않는다
@@ -379,14 +383,14 @@ async function pick(kind) {
   try {
     const P = await picker(), t = await token();
     const view = new P.DocsView(kind === 'sheet' ? P.ViewId.SPREADSHEETS : P.ViewId.FORMS).setMode(P.DocsViewMode.LIST);
-    new P.PickerBuilder().addView(view).setOAuthToken(t).setDeveloperKey(FB_CFG.apiKey).setAppId(PICKER_APP_ID)
+    new P.PickerBuilder().addView(view).setOAuthToken(t).setDeveloperKey(PICKER_KEY).setAppId(PICKER_APP_ID)
       .setTitle(kind === 'sheet' ? '심방 시트를 고르세요' : '심방 폼을 고르세요')
       .setCallback(d => {
         if (d.action !== P.Action.PICKED || !d.docs || !d.docs[0]) return;
         const f = { id: d.docs[0].id, name: d.docs[0].name };
         save(kind === 'sheet' ? { sheet: f, test: null } : { form: f }); paint();
       }).build().setVisible(true);
-  } catch (e) { toast('고르기 창을 열지 못했습니다\n' + e.message + '\n(setup 2장 — Picker API · API 키)'); }
+  } catch (e) { toast('고르기 창을 열지 못했습니다\n' + e.message + '\n(setup 2장 — Picker API · 고르기 창 키)'); }
 }
 $('btnPickSheet').addEventListener('click', () => pick('sheet'));
 $('btnPickForm').addEventListener('click', () => pick('form'));

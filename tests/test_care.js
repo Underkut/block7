@@ -21,7 +21,7 @@ if (!m) { console.error('care-core 덩어리를 못 찾았습니다'); process.e
 const ctx = { console, Math, JSON, Number, Object, Set, Array, String, Date, isFinite };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { APP_VERSION, CARE_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
+this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -141,6 +141,8 @@ sc.eq('⑦ 10줄 이하만 쓴다 (진짜 시트 36줄은 거절)', J([A.canWrit
 sc.eq('⑨ block7.my 로 열리면 sweeter.my/care/ 로 넘긴다', HTML.includes("location.replace('https://sweeter.my/care/'"), true);
 sc.eq('⑨ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].includes(A.APP_VERSION), true);
 sc.eq('⑨ 로그인은 따로(앱 이름 care) — Sweeter 로그아웃과 묶이지 않게', HTML.includes("firebase.initializeApp(FB_CFG, 'care')"), true);
+sc.eq('⑨ 고르기 창은 전용 키로 — 로그인 · 동기화가 쓰는 파이어베이스 키가 아니다',
+  [/^AIza/.test(A.PICKER_KEY), A.PICKER_KEY !== 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', HTML.includes('.setDeveloperKey(PICKER_KEY)'), HTML.includes('setDeveloperKey(FB_CFG')], [true, true, true, false]);
 sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v1', 'b7timer_v1', 'pray.v1', 'b7wallet'].includes(A.CARE_KEY), false);
 
 sc.done();
