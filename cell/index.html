@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<!-- 셀 한눈에 v. 26-1106-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex, nofollow">
+<title>셀 한눈에</title>
+<script>
+// ⚠️ 셀 한눈에의 집은 sweeter.my/cell/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
+//    block7.my/cell/ 에도 같은 파일이 생긴다 → 로그인이 두 곳에 갈라지지 않게 sweeter.my 로 넘긴다.
+if (/^(www\.)?block7\.my$/.test(location.hostname)) {
+  location.replace('https://sweeter.my/cell/' + location.search + location.hash);
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f3f0; --paper:#ffffff; --s1:#f7f7f4; --s2:#ebebe6; --line:#e4e4de; --line2:#cfcfc7;
+  --tx:#1c1f1e; --tx2:#5b625f; --tx3:#8c928f;
+  --ac:#2f5f8a; --ac-soft:rgba(47,95,138,.10); --on-ac:#fff;
+  --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11);
+  --warn:#b0611f; --warn-soft:rgba(176,97,31,.12); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
+  --mine:#7a4fa0; --mine-soft:rgba(122,79,160,.09);
+  --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111312; --paper:#191c1b; --s1:#1d201f; --s2:#252927; --line:#2b2f2d; --line2:#3c413e;
+  --tx:#e8eae8; --tx2:#a7aeaa; --tx3:#78807c;
+  --ac:#8db8e0; --ac-soft:rgba(141,184,224,.13); --on-ac:#0f1a24;
+  --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13);
+  --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12);
+  --mine:#c7a3e6; --mine-soft:rgba(199,163,230,.11); color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);font-weight:400;word-break:keep-all;overflow-wrap:anywhere;
+  padding:0 max(16px,env(safe-area-inset-right)) 70px max(16px,env(safe-area-inset-left));-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:max(14px,env(safe-area-inset-top)) 0 0;margin:0 -2px}
+.topline{display:flex;align-items:center;gap:8px;min-height:36px}
+.topline h1{font-size:19px;font-weight:500;margin:0;flex:1;letter-spacing:-.2px}
+.iconbtn{width:34px;height:34px;display:grid;place-items:center;color:var(--tx2);border-radius:10px}
+.iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:8px 0 0;border-bottom:1px solid var(--line);position:relative}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1 0 auto;padding:9px 10px 10px;font-size:14px;color:var(--tx3);position:relative;white-space:nowrap}
+.tab.on{color:var(--tx);font-weight:500}
+.tab .dot{display:inline-block;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--mine);color:#fff;font-size:10.5px;line-height:16px;margin-left:4px;vertical-align:1px}
+.tabbar{position:absolute;bottom:-1px;height:2px;background:var(--tx);border-radius:2px;transition:transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1)}
+.sub{color:var(--tx2);font-size:13px;margin:10px 0 12px}
+.stage{overflow:hidden;touch-action:pan-y}
+.panel{will-change:transform,opacity}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 15px;margin-bottom:10px}
+.card h3{font-size:15px;font-weight:500;margin:0 0 6px}
+.muted{color:var(--tx3)} .small{font-size:13px} .tiny{font-size:12px}
+.row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--tx2);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ac{background:var(--ac-soft);color:var(--ac)} .pill.mine{background:var(--mine-soft);color:var(--mine)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 14px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+.stat .v{font-size:22px;font-weight:500;line-height:1.2}
+.stat .k{font-size:12px;color:var(--tx3)}
+.stat.warn .v{color:var(--warn)} .stat.ok .v{color:var(--ok)}
+.cellrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.cellrow:last-child{border-bottom:0}
+.cellrow .nm{font-weight:500}
+.cellrow .meta{font-size:12.5px;color:var(--tx3)}
+.weeks{display:flex;gap:3px;margin-top:5px}
+.wk{width:12px;height:12px;border-radius:3px;background:var(--s2)}
+.wk.sub{background:var(--ok)} .wk.miss{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)} .wk.now{outline:1.5px solid var(--tx3);outline-offset:1px}
+.wk.half{background:var(--warn)}
+.seg{display:inline-flex;background:var(--s2);border-radius:10px;padding:2px;gap:2px}
+.seg button{padding:5px 11px;border-radius:8px;font-size:13px;color:var(--tx2)}
+.seg button.on{background:var(--paper);color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chip{padding:5px 12px;border-radius:999px;border:1px solid var(--line2);font-size:13px;color:var(--tx2);background:var(--paper)}
+.chip.on{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+.chip .n{opacity:.6;margin-left:3px}
+.note{padding:9px 0;border-top:1px solid var(--line)}
+.note:first-of-type{border-top:0}
+.note .who{font-weight:500}
+.note .txt{white-space:pre-wrap;font-size:14px;margin-top:2px}
+.note .pray{white-space:pre-wrap;font-size:13.5px;color:var(--tx2);margin-top:3px}
+.note.attn{border-left:3px solid var(--warn);padding-left:10px}
+.cmt{background:var(--mine-soft);border-radius:12px;padding:10px 12px;margin-top:8px}
+.cmt .by{font-size:12.5px;color:var(--mine);font-weight:500}
+.cmt .txt{white-space:pre-wrap;font-size:14px;margin-top:2px}
+.cmt.new{box-shadow:inset 3px 0 0 var(--mine)}
+.repcard h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sect{margin-top:10px}
+.sect>.lbl{font-size:12px;color:var(--tx3);letter-spacing:.2px;margin-bottom:2px}
+.names{font-size:14px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:74px;margin-top:8px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
+.bar .b{width:100%;max-width:22px;border-radius:4px 4px 2px 2px;background:var(--ac)}
+.bar .b.v{background:var(--ac-soft)}
+.bar .b.none{background:transparent;border:1px dashed var(--line2);height:6px!important}
+.bar .n{font-size:10.5px;color:var(--tx2);line-height:1.3}
+.barx{display:flex;gap:4px;margin-top:3px}
+.barx span{flex:1;text-align:center;font-size:10px;color:var(--tx3);min-width:0;white-space:nowrap}
+.login{max-width:380px;margin:12vh auto 0}
+.login h1{font-size:24px;font-weight:500;margin:0 0 6px}
+input[type=email],input[type=text]{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font:inherit;margin-top:10px}
+.btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);font-size:14.5px;margin-top:12px}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:default}
+.err{color:var(--bad);font-size:13px;margin-top:8px;white-space:pre-line}
+.empty{color:var(--tx3);text-align:center;padding:26px 0;font-size:14px}
+.loading{color:var(--tx3);text-align:center;padding:40px 0;font-size:14px}
+.weeknav{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0 4px}
+.weeknav b{font-weight:500;min-width:120px;text-align:center}
+.weeknav button{width:34px;height:34px;border-radius:10px;color:var(--tx2);font-size:18px}
+.weeknav button:disabled{opacity:.25}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(28,31,30,.92);color:#fff;padding:13px 18px;border-radius:14px;font-size:14px;
+  white-space:pre-line;text-align:center;z-index:50;max-width:min(86vw,360px);box-shadow:0 10px 30px rgba(0,0,0,.25);transition:opacity .2s}
+.demo{background:var(--warn-soft);color:var(--tx);font-size:12.5px;border-radius:10px;padding:7px 11px;margin-top:8px;text-align:center}
+.ver{font-size:11.5px;color:var(--tx3);text-align:center;margin-top:24px}
+.menu{position:absolute;right:0;top:44px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;min-width:190px;z-index:20}
+.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px}
+.menu button:hover{background:var(--s1)}
+.menu .info{padding:6px 12px 8px;font-size:12px;color:var(--tx3);border-bottom:1px solid var(--line);margin-bottom:4px}
+@media print{
+  header.top,.weeknav,.seg,.chips,.noprint{display:none!important}
+  body{background:#fff;color:#000;padding:0}
+  .card{break-inside:avoid;border-color:#ccc}
+}
+@media (prefers-reduced-motion: reduce){.tabbar{transition:none}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+<div class="wrap" id="root"><div class="loading">불러오는 중…</div></div>
+<div class="toast" id="toast" hidden></div>
+<script id="cell-core">
+// 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
+// ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
+const APP_VERSION = 'v. 26-1106-1';
+const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
+const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
+const WEEKS_LOADED = 12;                  // 제출 흐름 · 출석 추이에 쓰는 주 수
+
+// 셀 케어의 표시 이름 그대로 (그쪽 L.care · L.att · L.prayer)
+const CARE_LABEL = {
+  update: '근황', prayer: '기도제목', faith: '신앙', health: '건강', family: '가정',
+  work_school: '직장 / 학업', relationship: '관계', long_absence: '장기결석', care_needed: '돌봄 필요', other: '기타'
+};
+const CARE_ORDER = ['faith', 'long_absence', 'update', 'health', 'family', 'work_school', 'relationship', 'care_needed', 'prayer', 'other'];
+const PRAYER_LABEL = { ongoing: '계속 기도', answered: '응답됨', closed: '종료' };
+const MSG_LABEL = { none: '', prayer: '기도가 필요합니다', contact: '연락 또는 상담이 필요합니다', advice: '교역자의 조언이 필요합니다', share_up: '상위 공유가 필요합니다' };
+
+function addDays(iso, n) { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+// 이번 주부터 거꾸로 n 주 (주 시작일 ISO)
+function weeksBack(thisWeek, n) { const out = []; for (let i = 0; i < n; i++) out.push(addDays(thisWeek, -7 * i)); return out; }
+function weekLabel(iso, withYear) {
+  const y = +iso.slice(0, 4), m = +iso.slice(5, 7), d = +iso.slice(8, 10);
+  return (withYear ? y + '년 ' : '') + m + '월 ' + Math.ceil(d / 7) + '주차';
+}
+function shortWeek(iso) { return (+iso.slice(5, 7)) + '/' + (+iso.slice(8, 10)); }
+
+// '내 분파셀' — 셀 케어 교역자 홈(viewLeadershipHome)과 같은 판정.
+// rows: get_week_status 한 주 · asg: leadership_assignments · meId · today(ISO)
+function pickMine(rows, asg, meId, today) {
+  const cur = new Set((asg || []).filter(a => a.start_date <= today && (!a.end_date || a.end_date >= today)).map(a => a.cell_id));
+  const mine = (rows || []).filter(r => !r.i_am_leader && r.review_mode === 'leadership' &&
+    (cur.has(r.cell_id) || r.responsible_leadership_id === meId || r.i_can_review));
+  return mine.map(r => r.cell_id);
+}
+
+// 냈는가 — 제출 · 수정 요청(냈다가 되돌려 받음) · 고치는 중(한 번이라도 냈음)
+function isSubmitted(r) {
+  if (!r || !r.report_id) return false;
+  return r.status === 'submitted' || r.status === 'revision_requested' || (r.status === 'draft' && (r.submission_no || 0) > 0);
+}
+function stateOf(r) {
+  if (!r) return 'none';
+  if (!r.report_id) return 'missing';
+  if (r.status === 'submitted') return 'submitted';
+  if (r.status === 'revision_requested') return 'revision';
+  if (r.status === 'draft' && (r.submission_no || 0) > 0) return 'reediting';
+  return 'draft';
+}
+
+// 연속 주 수. byWeek: Map(week → 그 셀의 줄), weeks: 이번 주부터 거꾸로.
+// 이번 주를 냈으면 이번 주부터, 아직이면 지난주부터 센다(이번 주는 아직 기한 안일 수 있다).
+// 그 주에 셀 줄 자체가 없으면(셀이 없던 때) 거기서 끊는다.
+function streakOf(byWeek, weeks) {
+  const thisDone = isSubmitted(byWeek.get(weeks[0]));
+  const from = thisDone ? 0 : 1;
+  if (from >= weeks.length || !byWeek.has(weeks[from])) return { thisDone, kind: null, run: 0, capped: false };
+  const kind = isSubmitted(byWeek.get(weeks[from])) ? 'sub' : 'miss';
+  let run = 0, i = from;
+  for (; i < weeks.length; i++) {
+    const r = byWeek.get(weeks[i]);
+    if (!r) break;
+    if ((isSubmitted(r) ? 'sub' : 'miss') !== kind) break;
+    run++;
+  }
+  return { thisDone, kind, run, capped: i === weeks.length };
+}
+function streakText(s) {
+  if (!s.kind) return '';
+  const n = s.run + (s.capped ? '주 넘게' : '주');
+  if (s.kind === 'sub') return (s.thisDone ? '' : '지난주까지 ') + n + ' 연속 제출';
+  return (s.thisDone ? '' : '지난주까지 ') + n + '째 미제출';
+}
+
+function catsOf(n) { const c = (n && n.categories && n.categories.length) ? n.categories : (n && n.category ? [n.category] : []); return c.length ? c : ['other']; }
+function catLabel(k) { return CARE_LABEL[k] || k; }
+
+// 이슈별 모으기. notes: care_notes (+ _cell · _week · _member 붙임). 태그 여럿이면 여러 묶음에 다 들어간다.
+function groupIssues(notes) {
+  const g = new Map();
+  for (const n of notes || []) for (const k of catsOf(n)) { if (!g.has(k)) g.set(k, []); g.get(k).push(n); }
+  const order = (k) => { const i = CARE_ORDER.indexOf(k); return i < 0 ? 99 : i; };
+  return [...g.entries()].sort((a, b) => order(a[0]) - order(b[0])).map(([k, list]) => ({
+    key: k, label: catLabel(k),
+    items: list.slice().sort((a, b) => String(b._week || '').localeCompare(String(a._week || '')) || String(a._cellName || '').localeCompare(String(b._cellName || ''), 'ko'))
+  }));
+}
+
+// 기도제목 모으기 — 세 군데서 온다: 새 기도제목(prayer_requests) · 돌봄 기록의 기도(care_notes.prayer) · 이어지는 기도(get_open_prayers).
+// 같은 사람의 같은 글은 한 번만 (가장 최근 주). 사람별로 묶어 셀 이름 → 사람 이름 순.
+function normText(t) { return String(t || '').replace(/\s+/g, ' ').trim(); }
+function collectPrayers(items) {
+  const seen = new Map();
+  for (const p of items || []) {
+    const text = normText(p.text); if (!text) continue;
+    const key = (p.cellId || '') + '|' + (p.who || '') + '|' + text;
+    const old = seen.get(key);
+    if (!old || String(p.week || '') > String(old.week || '')) seen.set(key, { ...p, text });
+  }
+  const people = new Map();
+  for (const p of seen.values()) {
+    const k = (p.cellId || '') + '|' + (p.who || '');
+    if (!people.has(k)) people.set(k, { cellId: p.cellId, cellName: p.cellName || '', who: p.who || '(이름 없음)', items: [] });
+    people.get(k).items.push(p);
+  }
+  const list = [...people.values()];
+  for (const x of list) x.items.sort((a, b) => String(b.week || '').localeCompare(String(a.week || '')));
+  return list.sort((a, b) => a.cellName.localeCompare(b.cellName, 'ko') || a.who.localeCompare(b.who, 'ko'));
+}
+
+// 코멘트: 처음 여는 기기는 지금 있는 것을 모두 '본 것' 으로 (처음부터 전부 '새' 로 뜨면 알림이 뜻을 잃는다)
+function unseenComments(comments, seen) {
+  if (seen == null) return [];
+  const s = new Set(seen);
+  return (comments || []).filter(c => c && c.id != null && !s.has(String(c.id)));
+}
+function mergeSeen(seen, comments, cap) {
+  const all = [...(seen || []), ...(comments || []).map(c => String(c.id))];
+  const uniq = [...new Set(all)];
+  return uniq.slice(Math.max(0, uniq.length - (cap || 800)));
+}
+
+// 출석 추이 — get_week_status 의 숫자만 쓴다 (보고서마다 따로 부르지 않는다)
+function attendanceSeries(byWeek, weeks) {
+  return weeks.slice().reverse().map(w => {
+    const r = byWeek.get(w);
+    const ok = r && isSubmitted(r) && r.members_present != null;
+    return { week: w, has: !!ok, present: ok ? (r.members_present || 0) : 0, absent: ok ? (r.members_absent || 0) : 0, visitors: ok ? (r.visitors_present || 0) : 0 };
+  });
+}
+function attendanceSummary(series) {
+  const pts = series.filter(x => x.has);
+  if (!pts.length) return { avg: null, last: null, delta: null, rate: null };
+  const avg = pts.reduce((s, x) => s + x.present, 0) / pts.length;
+  const last = pts[pts.length - 1];
+  const prev = pts.length > 1 ? pts[pts.length - 2] : null;
+  const tot = last.present + last.absent;
+  return { avg: Math.round(avg * 10) / 10, last: last.present, delta: prev ? last.present - prev.present : null, rate: tot ? Math.round(last.present * 100 / tot) : null };
+}
+
+// 한 번에 너무 많이 부르지 않게 — 동시에 n 개까지
+async function pool(items, n, fn) {
+  const out = new Array(items.length); let i = 0;
+  const work = async () => { while (i < items.length) { const k = i++; try { out[k] = await fn(items[k], k); } catch (e) { out[k] = { __err: e }; } } };
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, work));
+  return out;
+}
+</script>
+<script>
+'use strict';
+/* =====================================================================
+   셀 케어 연결 — 셀 케어 페이지에 공개된 값 그대로 (보호는 그쪽 DB 권한 규칙이 한다)
+   ⚠️ 읽기만. 여기 있는 함수 말고는 부르지 않는다.
+   ===================================================================== */
+const CC_URL = 'https://mcbbhsvvzqvtrxlbdcks.supabase.co';
+const CC_KEY = 'sb_publishable_hs84BPU44TEcr2wM6boXIw_Saktd9p3';
+const DEMO = /[?&]demo=1\b/.test(location.search);
+
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const quiet = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { } }
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false; t.style.opacity = '1';
+  const ms = Math.max(3000, Math.min(9000, String(msg).replace(/\s/g, '').length * 200));
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, ms);
+}
+document.addEventListener('click', () => { const t = $('#toast'); if (!t.hidden && Date.now() - (toast.at || 0) > 300) t.hidden = true; }, true);
+function dateTime(ts) { if (!ts) return ''; try { return new Date(ts).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (_) { return ''; } }
+function dayLabel(iso) { if (!iso) return ''; const d = new Date(iso + 'T00:00:00Z'); return (+iso.slice(5, 7)) + '월 ' + (+iso.slice(8, 10)) + '일 (' + '일월화수목금토'[d.getUTCDay()] + ')'; }
+function errText(e) {
+  const m = (e && (e.message || e.error_description || e.msg)) || String(e || '');
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return '인터넷 연결을 확인해 주세요.';
+  if (/JWT|jwt expired|invalid claim/i.test(m)) return '로그인이 만료되었습니다. 다시 로그인해 주세요.';
+  return m;
+}
+
+/* ---------- 읽기 창구: 진짜(셀 케어) / 미리보기(지어낸 자료) 가 같은 모양 ---------- */
+let sb = null;
+function realApi() {
+  if (!window.supabase) throw new Error('셀 케어 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.');
+  sb = sb || window.supabase.createClient(CC_URL, CC_KEY, { auth: { flowType: 'implicit', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  const rpc = async (name, args) => { const { data, error } = await sb.rpc(name, args || {}); if (error) throw error; return data; };
+  const q = async (p) => { const { data, error } = await p; if (error) throw error; return data || []; };
+  const chunks = (ids, n) => { const o = []; for (let i = 0; i < ids.length; i += n) o.push(ids.slice(i, i + n)); return o; };
+  const inMany = async (mk, ids) => (await Promise.all(chunks(ids, 60).map(c => q(mk(c))))).flat();
+  return {
+    ctx: () => rpc('get_my_context'),
+    assignments: (me) => q(sb.from('leadership_assignments').select('cell_id, start_date, end_date').eq('leadership_user_id', me)),
+    weekStatus: (w) => rpc('get_week_status', { p_week_start: w }),
+    reports: (ids) => inMany(c => sb.from('weekly_reports').select('*').in('id', c), ids),
+    notes: (ids) => inMany(c => sb.from('care_notes').select('*').in('report_id', c), ids),
+    newPrayers: (ids) => inMany(c => sb.from('prayer_requests').select('id, member_id, content, report_id').in('report_id', c), ids),
+    members: (cellIds) => inMany(c => sb.from('cell_members').select('id, name, cell_id').in('cell_id', c), cellIds),
+    roster: (id) => rpc('get_report_roster', { p_report: id }),
+    openPrayers: (id) => rpc('get_open_prayers', { p_report: id }),
+    comments: (id) => rpc('senior_comment_list', { p_report: id }),
+  };
+}
+
+/* ---------- 미리보기 자료 — 모두 지어낸 이름이다 (공개 저장소) ---------- */
+function demoApi() {
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' });
+  const dow = new Date(today + 'T00:00:00Z').getUTCDay();
+  const W = addDays(today, -((dow + 6) % 7));
+  const weeks = weeksBack(W, WEEKS_LOADED);
+  const cells = [
+    { id: 'c1', name: '샘플 1셀', leader: '홍길동', mem: ['김하나', '이두리', '박세나', '최다솜', '정나래'], pat: 'ssssssssssss' },
+    { id: 'c2', name: '샘플 2셀', leader: '이성도', mem: ['정다운', '최기쁨', '윤소망', '강믿음'], pat: '-sssssss-sss' },
+    { id: 'c3', name: '샘플 3셀', leader: '박성도', mem: ['노절제', '배자비', '서온유', '문평강', '조은빛', '한결'], pat: '---sssssssss' },
+    { id: 'c4', name: '샘플 4셀', leader: '최성도', mem: ['서은혜', '한사랑', '오새벽'], pat: 'sss-ssss-sss' },
+    { id: 'c5', name: '샘플 5셀', leader: '한성도', mem: ['문평안', '조온유', '임충성', '오화평'], pat: 'rssssssss---' },
+  ];
+  const at = (d, t) => d + 'T' + (t || '21:30') + ':00+09:00';
+  const rid = (c, w) => 'r-' + c + '-' + w;
+  const status = (w) => {
+    const wi = weeks.indexOf(w); if (wi < 0) return [];
+    return cells.map(c => {
+      const ch = c.pat[wi]; const sub = ch === 's' || ch === 'r';
+      const absent = sub ? (wi + c.mem.length) % 3 : null;
+      return { cell_id: c.id, cell_name: c.name, campus: '분당', review_mode: 'leadership', responsible_leadership_id: 'me', leader_names: c.leader,
+        report_id: sub ? rid(c.id, w) : (wi === 0 && c.id === 'c2' ? rid(c.id, w) : null), status: sub ? (ch === 'r' ? 'revision_requested' : 'submitted') : (wi === 0 && c.id === 'c2' ? 'draft' : null),
+        submission_no: sub ? 1 : 0, submitted_at: sub ? at(addDays(w, 3)) : null, review_status: sub ? 'reviewed' : null,
+        members_present: sub ? c.mem.length - absent : null, members_absent: sub ? absent : null, visitors_present: sub && wi % 4 === 1 ? 1 : 0,
+        i_am_leader: false, i_can_review: false };
+    });
+  };
+  const N = [
+    ['c1', 1, ['health', 'family'], '다음 주 수술을 앞두고 있어 가족들이 걱정이 많습니다.', '수술이 잘 되고 빨리 회복되도록', true],
+    ['c1', 3, ['work_school'], '새 직장에 잘 적응하고 있다고 감사를 나눴습니다.', null, false],
+    ['c2', 1, ['long_absence'], '3주째 모임에 오지 못해 따로 연락드렸습니다. 다음 주에는 오겠다고 하셨습니다.', null, false],
+    ['c3', 0, ['faith'], '세례를 준비하고 싶다고 하셨습니다.', '세례 준비 과정을 잘 마치도록', false],
+    ['c3', 4, ['update', 'relationship'], '이사를 마치고 새 동네 이웃들과 인사를 나누고 있습니다.', '새 이웃들과 좋은 관계를 맺도록', false],
+    ['c4', 2, ['faith', 'care_needed'], '요즘 말씀 읽기가 어렵다고 솔직하게 나눴습니다. 함께 읽기 짝을 정했습니다.', '말씀에 다시 마음이 열리도록', true],
+    ['c5', 0, ['health'], '허리 통증으로 오래 앉아 있기 힘들어 하십니다.', '통증이 줄고 잘 쉴 수 있도록', false],
+  ];
+  const repOf = (id) => { const [, c, w] = id.match(/^r-(c\d)-(.+)$/) || []; return { c, w }; };
+  return {
+    ctx: async () => ({ today, this_week: W, profile: { id: 'me', name: '미리보기 교역자' }, roles: ['leadership'], leader_cells: [] }),
+    assignments: async () => cells.map(c => ({ cell_id: c.id, start_date: '2020-01-01', end_date: null })),
+    weekStatus: async (w) => status(w),
+    reports: async (ids) => ids.map(id => { const { c, w } = repOf(id); const cell = cells.find(x => x.id === c); const wi = weeks.indexOf(w);
+      return { id, cell_id: c, week_start: w, status: 'submitted', meeting_held: !(c === 'c4' && wi === 2), meeting_cancel_reason: c === 'c4' && wi === 2 ? '셀리더 출장' : null,
+        meeting_date: addDays(w, 3), meeting_time: '19:30', meeting_place: cell.leader + ' 셀리더 댁',
+        grace_notes: wi % 2 ? '말씀을 나누며 서로 위로와 힘을 얻었습니다.' : '감사 제목을 한 사람씩 나눴습니다.', grace_none: false,
+        leader_message: c === 'c1' && wi === 0 ? 'contact' : 'none', leader_message_note: c === 'c1' && wi === 0 ? '셀원 한 분이 수술을 앞두고 있어 심방을 부탁드립니다.' : null,
+        submitted_at: at(addDays(w, 3)) }; }),
+    notes: async (ids) => ids.flatMap(id => { const { c, w } = repOf(id); const wi = weeks.indexOf(w);
+      return N.filter(n => n[0] === c && (wi === 0 || (wi === 1 && n[1] % 2 === 0))).map((n, i) => ({ id: id + '-n' + i, report_id: id, member_id: c + '-m' + n[1], categories: n[2], category: n[2][0], content: n[3], prayer: n[4], leadership_attention_required: n[5] })); }),
+    newPrayers: async (ids) => ids.flatMap(id => { const { c, w } = repOf(id); const wi = weeks.indexOf(w);
+      return wi === 0 && c !== 'c5' ? [{ id: id + '-p', report_id: id, member_id: c + '-m2', content: c === 'c2' ? '부모님 건강이 회복되도록' : '자녀가 새 학교에 잘 적응하도록' }] : []; }),
+    members: async (cellIds) => cells.filter(c => cellIds.includes(c.id)).flatMap(c => c.mem.map((n, i) => ({ id: c.id + '-m' + i, name: n, cell_id: c.id }))),
+    roster: async (id) => { const { c, w } = repOf(id); const cell = cells.find(x => x.id === c); const st = status(w).find(r => r.cell_id === c);
+      return cell.mem.map((n, i) => ({ member_id: c + '-m' + i, name: n, type_in_week: 'member', attendance: i < (st.members_absent || 0) ? 'absent' : 'present', absence_reason: i === 0 && st.members_absent ? '출장' : null, listed: true }))
+        .concat(st.visitors_present ? [{ member_id: c + '-v', name: '방문자 한빛', type_in_week: 'visitor', attendance: 'present', listed: true }] : []); },
+    openPrayers: async (id) => { const { c } = repOf(id); return c === 'c3' ? [{ prayer_id: 'op-' + c, member_name: '서온유', content: '가정의 평안을 위해', this_week_status: 'ongoing', this_week_note: '조금씩 나아지고 있습니다.' }] : []; },
+    comments: async (id) => { const { c, w } = repOf(id); const wi = weeks.indexOf(w);
+      if (c === 'c1' && wi === 0) return [{ id: 'cm1', target: 'report', author_name: '담임 목사님', content: '수술 소식 듣고 함께 기도하겠습니다. 심방 일정 잡아 주세요.', created_at: at(addDays(w, 4), '09:20') }];
+      if (c === 'c3' && wi === 3) return [{ id: 'cm2', target: 'report', author_name: '담임 사모님', content: '세례 준비 소식이 정말 반갑습니다.', created_at: at(addDays(w, 4), '15:00') }];
+      if (c === 'c4' && wi === 2) return [{ id: 'cm3', target: 'report', author_name: '담임 목사님', content: '말씀 읽기 짝, 좋은 생각입니다.', created_at: at(addDays(w, 5), '10:00') }];
+      return []; },
+  };
+}
+
+/* =====================================================================
+   상태
+   ===================================================================== */
+const TABS = [
+  { id: 'week', label: '이번 주' }, { id: 'prayer', label: '기도제목' }, { id: 'issue', label: '이슈' },
+  { id: 'comment', label: '코멘트' }, { id: 'att', label: '출석' },
+];
+const PREF = Object.assign({ tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all' }, lsGet(PREF_KEY, {}));
+const savePref = () => lsSet(PREF_KEY, PREF);
+const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), members: new Map(), loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
+// det: report_id → { rep, notes, newPrayers, comments, open, roster }
+
+function scopeIds() {
+  const all = [...new Set([].concat(...[...S.byWeek.values()].map(rows => rows.map(r => r.cell_id))))];
+  if (PREF.scope === 'mine' && S.mineIds.length) return S.mineIds;
+  return all;
+}
+function cellRow(cellId, w) { return (S.byWeek.get(w) || []).find(r => r.cell_id === cellId); }
+function cellName(cellId) { for (const w of S.weeks) { const r = cellRow(cellId, w); if (r) return r.cell_name; } return ''; }
+function leaderOf(cellId) { for (const w of S.weeks) { const r = cellRow(cellId, w); if (r && r.leader_names) return r.leader_names; } return ''; }
+function cellWeekMap(cellId) { const m = new Map(); for (const w of S.weeks) { const r = cellRow(cellId, w); if (r) m.set(w, r); } return m; }
+function sortedCells() { return scopeIds().slice().sort((a, b) => cellName(a).localeCompare(cellName(b), 'ko')); }
+function memName(cellId, id, roster) {
+  const m = S.members.get(id); if (m) return m.name;
+  const r = (roster || []).find(x => x.member_id === id); return r ? r.name : '';
+}
+
+/* =====================================================================
+   불러오기
+   ===================================================================== */
+async function loadBase() {
+  const api = S.api;
+  const ctx = await api.ctx();
+  if (!ctx) { S.ctx = null; return renderNoAccount(); }
+  S.ctx = ctx;
+  S.weeks = weeksBack(ctx.this_week, WEEKS_LOADED);
+  const [asg, ...lists] = await Promise.all([api.assignments(ctx.profile.id).catch(() => []), ...S.weeks.map(w => api.weekStatus(w).catch(() => []))]);
+  S.asg = asg || [];
+  S.byWeek = new Map(S.weeks.map((w, i) => [w, lists[i] || []]));
+  S.mineIds = pickMine(S.byWeek.get(S.weeks[0]), S.asg, ctx.profile.id, ctx.today);
+  S.det.clear(); S.loadedSpan = 0; S.weekIdx = 0;
+  renderShell();
+  loadDetails(Math.max(PREF.span, 1)).then(() => { refreshBadge(); rerender(); });
+}
+
+// 보고서 내용 — 고른 기간(주 수)만큼. 이미 받은 보고서는 다시 받지 않는다.
+async function loadDetails(span) {
+  if (S.loadingDet) await S.loadingDet;
+  const weeks = S.weeks.slice(0, span);
+  const ids = [];
+  for (const w of weeks) for (const c of scopeIds()) { const r = cellRow(c, w); if (r && isSubmitted(r) && !S.det.has(r.report_id)) ids.push(r.report_id); }
+  if (!ids.length) { S.loadedSpan = Math.max(S.loadedSpan, span); return; }
+  const api = S.api;
+  S.loadingDet = (async () => {
+    const needCells = scopeIds().filter(c => ![...S.members.values()].some(m => m.cell_id === c));
+    const [reps, notes, pr, mem] = await Promise.all([
+      api.reports(ids).catch(() => []), api.notes(ids).catch(() => []), api.newPrayers(ids).catch(() => []),
+      needCells.length ? api.members(needCells).catch(() => []) : Promise.resolve([])
+    ]);
+    for (const m of mem || []) S.members.set(m.id, m);
+    const cm = await pool(ids, 6, id => api.comments(id));
+    // 이어지는 기도는 셀마다 가장 최근 보고서 하나만 (그 시점의 '계속 기도' 목록이다)
+    const latest = new Map();
+    for (const id of ids) { const rep = (reps || []).find(r => r.id === id); if (!rep) continue; const o = latest.get(rep.cell_id); if (!o || rep.week_start > o.week_start) latest.set(rep.cell_id, rep); }
+    const openIds = [...latest.values()].map(r => r.id);
+    const op = await pool(openIds, 6, id => api.openPrayers(id));
+    ids.forEach((id, i) => {
+      const rep = (reps || []).find(r => r.id === id) || null;
+      const c = cm[i] && !cm[i].__err ? (cm[i] || []) : [];
+      const oi = openIds.indexOf(id);
+      S.det.set(id, { rep, notes: (notes || []).filter(n => n.report_id === id), newPrayers: (pr || []).filter(p => p.report_id === id),
+        comments: c.filter(x => !x.target || x.target === 'report'), open: oi >= 0 && op[oi] && !op[oi].__err ? (op[oi] || []) : [], roster: null });
+    });
+    S.loadedSpan = Math.max(S.loadedSpan, span);
+  })();
+  try { await S.loadingDet; } finally { S.loadingDet = null; }
+}
+async function ensureRoster(ids) {
+  const need = ids.filter(id => S.det.has(id) && !S.det.get(id).roster);
+  const res = await pool(need, 6, id => S.api.roster(id));
+  need.forEach((id, i) => { S.det.get(id).roster = res[i] && !res[i].__err ? (res[i] || []) : []; });
+}
+
+// 기간 안의 보고서 목록 (최근 주 → 셀 이름)
+function reportsIn(span) {
+  const out = [];
+  for (const w of S.weeks.slice(0, span)) for (const c of sortedCells()) {
+    const r = cellRow(c, w); if (!r || !isSubmitted(r)) continue;
+    const d = S.det.get(r.report_id); if (!d) continue;
+    out.push({ row: r, week: w, cellId: c, det: d });
+  }
+  return out;
+}
+function allComments() {
+  const out = [];
+  for (const x of reportsIn(S.loadedSpan)) for (const c of x.det.comments) out.push({ ...c, _cell: x.cellId, _cellName: cellName(x.cellId), _week: x.week, _rid: x.row.report_id });
+  return out.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+}
+function refreshBadge() {
+  const list = allComments();
+  let seen = lsGet(SEEN_KEY, null);
+  if (seen == null) { seen = mergeSeen([], list); lsSet(SEEN_KEY, seen); }   // 처음 여는 기기: 지금 것은 '본 것'
+  S.newIds = new Set(unseenComments(list, seen).map(c => String(c.id)));
+  const n = S.newIds.size;
+  const t = document.querySelector('.tab[data-tab="comment"]');
+  if (t) t.innerHTML = '코멘트' + (n ? `<span class="dot">${n}</span>` : '');
+  if (n && !refreshBadge.told) { refreshBadge.told = true; toast('담임 목사님 · 사모님\n새 코멘트 ' + n + '개'); toast.at = Date.now(); }
+}
+function markCommentsSeen() { lsSet(SEEN_KEY, mergeSeen(lsGet(SEEN_KEY, []), allComments())); }
+
+/* =====================================================================
+   화면 뼈대
+   ===================================================================== */
+const ICON = {
+  more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>',
+  print: '<svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v6H7z"/></svg>',
+};
+function renderShell() {
+  $('#root').innerHTML = `<header class="top"><div class="topline" style="position:relative"><h1>셀 한눈에</h1>
+      <button class="iconbtn" data-act="print" title="인쇄 · PDF">${ICON.print}</button>
+      <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
+      ${DEMO ? '<div class="demo">미리보기 — 지어낸 자료입니다. 셀 케어와 연결되지 않았습니다.</div>' : ''}
+      <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
+    <div class="stage" id="stage"><div class="panel" id="panel"></div></div>
+    <p class="ver">${esc(APP_VERSION)} · 셀 케어 보고서를 읽기만 합니다</p>`;
+  if (!TABS.some(t => t.id === PREF.tab)) PREF.tab = 'week';
+  markTab(); rerender(); bindSwipe();
+}
+function markTab() {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === PREF.tab));
+  const on = document.querySelector('.tab.on'), bar = $('#tabbar');
+  if (on && bar) { bar.style.width = on.offsetWidth + 'px'; bar.style.transform = `translateX(${on.offsetLeft}px)`; on.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+}
+function rerender() {
+  const p = $('#panel'); if (!p) return;
+  const fn = { week: viewWeek, prayer: viewPrayer, issue: viewIssue, comment: viewComment, att: viewAtt }[PREF.tab];
+  p.innerHTML = fn();
+  if (PREF.tab === 'comment' && S.newIds.size) { markCommentsSeen(); setTimeout(() => { S.newIds = new Set(); const t = document.querySelector('.tab[data-tab="comment"]'); if (t) t.textContent = '코멘트'; }, 400); }
+  if (PREF.tab === 'week' && PREF.weekMode === 'page') fillPage();
+}
+
+// 판 바꾸기 — 나가고(150ms) → 그리고 → 들어온다(300ms). 앞(오른쪽)은 왼쪽으로 나간다.
+let busyAnim = false;
+function transit(dir, change, fromX) {
+  const p = $('#panel');
+  if (!p || quiet() || busyAnim) { change(); return; }
+  busyAnim = true;
+  const w = p.offsetWidth || 360;
+  p.style.transition = 'transform .15s ease-in, opacity .15s ease-in';
+  p.style.transform = `translateX(${-dir * w * 0.35}px)`; p.style.opacity = '0';
+  setTimeout(() => {
+    change();
+    p.style.transition = 'none'; p.style.transform = `translateX(${dir * w * 0.35}px)`; p.style.opacity = '0';
+    void p.offsetWidth;
+    p.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1), opacity .3s cubic-bezier(.22,.8,.24,1)';
+    p.style.transform = 'translateX(0)'; p.style.opacity = '1';
+    setTimeout(() => { p.style.transition = ''; p.style.transform = ''; busyAnim = false; }, 320);
+  }, fromX != null ? 90 : 150);
+}
+function goTab(id) {
+  if (id === PREF.tab) return;
+  const a = TABS.findIndex(t => t.id === PREF.tab), b = TABS.findIndex(t => t.id === id);
+  transit(b > a ? 1 : -1, () => { PREF.tab = id; savePref(); markTab(); rerender(); window.scrollTo(0, 0); });
+}
+function setSpan(n) {
+  PREF.span = n; savePref();
+  if (S.loadedSpan >= n) return rerender();
+  rerender();
+  loadDetails(n).then(() => { refreshBadge(); rerender(); }).catch(e => toast(errText(e)));
+}
+
+// 손가락을 따라가는 좌우 넘김 (탭)
+function bindSwipe() {
+  const st = $('#stage'); if (!st) return;
+  let x0 = 0, y0 = 0, dx = 0, on = false, lock = null, t0 = 0;
+  st.addEventListener('touchstart', e => { if (busyAnim || e.touches.length > 1) return; const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); }, { passive: true });
+  st.addEventListener('touchmove', e => {
+    if (!on) return; const t = e.touches[0]; const ddx = t.clientX - x0, ddy = t.clientY - y0;
+    if (lock == null) { if (Math.abs(ddx) < 8 && Math.abs(ddy) < 8) return; lock = Math.abs(ddx) > Math.abs(ddy) * 1.2 ? 'x' : 'y'; }
+    if (lock !== 'x') return;
+    const i = TABS.findIndex(t => t.id === PREF.tab);
+    const edge = (ddx > 0 && i === 0) || (ddx < 0 && i === TABS.length - 1);
+    dx = edge ? ddx * 0.25 : ddx;
+    const p = $('#panel'); const w = p.offsetWidth || 360;
+    p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`; p.style.opacity = String(1 - Math.min(0.6, Math.abs(dx) / w));
+  }, { passive: true });
+  st.addEventListener('touchend', () => {
+    if (!on) return; on = false; if (lock !== 'x') return;
+    const p = $('#panel'); const w = p.offsetWidth || 360; const i = TABS.findIndex(t => t.id === PREF.tab);
+    const fast = Date.now() - t0 < 250 && Math.abs(dx) > 40;
+    const next = dx < 0 ? i + 1 : i - 1;
+    if ((Math.abs(dx) > w / 4 || fast) && next >= 0 && next < TABS.length) {
+      const dir = dx < 0 ? 1 : -1;
+      p.style.transition = 'transform .09s ease-in, opacity .09s ease-in'; p.style.transform = `translateX(${-dir * w * 0.5}px)`; p.style.opacity = '0';
+      transit(dir, () => { PREF.tab = TABS[next].id; savePref(); markTab(); rerender(); window.scrollTo(0, 0); }, dx);
+    } else {
+      p.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1), opacity .3s'; p.style.transform = 'translateX(0)'; p.style.opacity = '1';
+      setTimeout(() => { p.style.transition = ''; p.style.transform = ''; }, 320);
+    }
+  });
+}
+
+function spanSeg() {
+  return `<div class="seg noprint">${[[1, '이번 주'], [4, '4주'], [8, '8주'], [12, '12주']].map(([n, l]) => `<button class="${PREF.span === n ? 'on' : ''}" data-span="${n}">${l}</button>`).join('')}</div>`;
+}
+function waiting() { return S.loadedSpan < PREF.span ? '<div class="loading">보고서 내용을 불러오는 중…</div>' : ''; }
+
+/* ---------- ① 이번 주 ---------- */
+function weekSquares(cellId) {
+  const m = cellWeekMap(cellId);
+  return '<div class="weeks" title="왼쪽이 옛날 · 오른쪽이 이번 주">' + S.weeks.slice().reverse().map((w, i, a) => {
+    const r = m.get(w); const now = i === a.length - 1 ? ' now' : '';
+    if (!r) return `<span class="wk${now}" style="opacity:.35"></span>`;
+    const st = stateOf(r);
+    const cls = isSubmitted(r) ? (st === 'submitted' ? 'sub' : 'half') : (now ? '' : 'miss');
+    return `<span class="wk ${cls}${now}"></span>`;
+  }).join('') + '</div>';
+}
+function statePill(r) {
+  const st = stateOf(r);
+  return { submitted: '<span class="pill ok">제출</span>', revision: '<span class="pill warn">수정 요청</span>', reediting: '<span class="pill warn">고치는 중</span>',
+    draft: '<span class="pill ac">작성 중</span>', missing: '<span class="pill bad">미제출</span>', none: '<span class="pill">셀 없음</span>' }[st];
+}
+function viewWeek() {
+  const w = S.weeks[S.weekIdx]; const ids = sortedCells();
+  const rows = ids.map(c => ({ c, r: cellRow(c, w) })).filter(x => x.r);
+  const sub = rows.filter(x => isSubmitted(x.r));
+  const miss = rows.filter(x => !isSubmitted(x.r));
+  const head = `<div class="weeknav"><button data-act="wk-prev" ${S.weekIdx >= S.weeks.length - 1 ? 'disabled' : ''}>‹</button><b>${weekLabel(w, false)}${S.weekIdx === 0 ? ' · 이번 주' : ''}</b><button data-act="wk-next" ${S.weekIdx === 0 ? 'disabled' : ''}>›</button></div>
+    <div class="row" style="justify-content:center;margin:2px 0 12px"><div class="seg"><button class="${PREF.weekMode === 'status' ? 'on' : ''}" data-wmode="status">제출 현황</button><button class="${PREF.weekMode === 'page' ? 'on' : ''}" data-wmode="page">한 장으로 보기</button></div></div>`;
+  if (PREF.weekMode === 'page') return head + '<div id="page"><div class="loading">보고서를 모으는 중…</div></div>';
+  if (!rows.length) return head + `<p class="empty">${PREF.scope === 'mine' ? '이 주에 보이는 담당 셀이 없습니다.' : '이 주에 보이는 셀이 없습니다.'}</p>`;
+  const order = (x) => isSubmitted(x.r) ? 2 : (x.r.report_id ? 1 : 0);
+  rows.sort((a, b) => order(a) - order(b) || cellName(a.c).localeCompare(cellName(b.c), 'ko'));
+  let h = head + `<div class="stats"><div class="stat"><div class="v">${rows.length}</div><div class="k">${PREF.scope === 'mine' && S.mineIds.length ? '담당 셀' : '셀'}</div></div>
+    <div class="stat ok"><div class="v">${sub.length}</div><div class="k">제출</div></div>
+    <div class="stat ${miss.length ? 'warn' : ''}"><div class="v">${miss.length}</div><div class="k">${S.weekIdx === 0 ? '아직' : '미제출'}</div></div></div>`;
+  h += '<div class="card" style="padding:4px 14px">' + rows.map(({ c, r }) => {
+    const s = streakOf(cellWeekMap(c), S.weeks.slice(S.weekIdx));
+    const txt = streakText(s);
+    const hot = s.kind === 'miss' && s.run >= 2;
+    return `<button class="cellrow" data-act="open-rep" data-cell="${esc(c)}"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}</div>
+      <div class="meta">${esc(r.leader_names || '')}${r.submitted_at && isSubmitted(r) ? ' · ' + dateTime(r.submitted_at) : ''}</div>${weekSquares(c)}</div>
+      <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div></button>`;
+  }).join('') + '</div>';
+  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주). 초록 제출 · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
+  return h;
+}
+async function fillPage() {
+  const w = S.weeks[S.weekIdx];
+  const idx = S.weekIdx;
+  if (S.loadedSpan < idx + 1) await loadDetails(idx + 1).catch(() => {});
+  const list = sortedCells().map(c => cellRow(c, w)).filter(r => r && isSubmitted(r) && S.det.has(r.report_id));
+  await ensureRoster(list.map(r => r.report_id));
+  const box = $('#page'); if (!box || S.weekIdx !== idx || PREF.weekMode !== 'page' || PREF.tab !== 'week') return;
+  const missing = sortedCells().map(c => cellRow(c, w)).filter(r => r && !isSubmitted(r));
+  box.innerHTML = (list.length ? list.map(r => repCard(r)).join('') : '<p class="empty">이 주에 제출된 보고서가 없습니다.</p>')
+    + (missing.length ? `<div class="card"><h3>아직 안 낸 셀</h3><div class="small">${missing.map(r => esc(r.cell_name) + (r.leader_names ? ' <span class="muted">(' + esc(r.leader_names) + ')</span>' : '')).join(' · ')}</div></div>` : '');
+  if (fillPage.jump) { const el = document.getElementById('rep-' + fillPage.jump); fillPage.jump = null; if (el) el.scrollIntoView({ block: 'start', behavior: quiet() ? 'auto' : 'smooth' }); }
+}
+function repCard(r) {
+  const d = S.det.get(r.report_id); const rep = d.rep || {}; const roster = d.roster || [];
+  const listed = roster.filter(x => x.attendance && x.type_in_week !== 'visitor');
+  const pres = listed.filter(x => x.attendance === 'present'), abs = listed.filter(x => x.attendance === 'absent');
+  const vis = roster.filter(x => x.type_in_week === 'visitor' && x.attendance === 'present');
+  const nm = (id) => memName(r.cell_id, id, roster) || '(이름 없음)';
+  let h = `<div class="card repcard" id="rep-${esc(r.cell_id)}"><h3>${esc(r.cell_name)} <span class="muted small" style="font-weight:400">${esc(r.leader_names || '')}</span><span class="spacer"></span>${statePill(r)}</h3>
+    <div class="small muted">${rep.meeting_held === false ? '모임 못 함' + (rep.meeting_cancel_reason ? ' — ' + esc(rep.meeting_cancel_reason) : '') : [dayLabel(rep.meeting_date), rep.meeting_time ? esc(String(rep.meeting_time).slice(0, 5)) : '', esc(rep.meeting_place || '')].filter(Boolean).join(' · ')}${r.submitted_at ? ' · ' + dateTime(r.submitted_at) + ' 제출' : ''}</div>`;
+  if (rep.meeting_held !== false) h += `<div class="sect"><div class="lbl">출석 ${pres.length}/${listed.length}${vis.length ? ' · 방문 ' + vis.length : ''}</div>
+      <div class="names">${pres.map(x => esc(x.name)).join(', ') || '<span class="muted">—</span>'}</div>
+      ${abs.length ? `<div class="names muted small">결석: ${abs.map(x => esc(x.name) + (x.absence_reason ? '(' + esc(x.absence_reason) + ')' : '')).join(', ')}</div>` : ''}
+      ${vis.length ? `<div class="names muted small">방문: ${vis.map(x => esc(x.name)).join(', ')}</div>` : ''}</div>`;
+  if (d.notes.length) h += `<div class="sect"><div class="lbl">셀원 근황 · 이슈</div>${d.notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><span class="who">${esc(nm(n.member_id))}</span> ${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join(' ')}${n.leadership_attention_required ? ' <span class="pill warn">교역자 확인 필요</span>' : ''}
+      <div class="txt">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
+  const prays = d.newPrayers.map(p => ({ who: nm(p.member_id), text: p.content, tag: '새' })).concat(d.open.map(p => ({ who: p.member_name, text: p.content, tag: PRAYER_LABEL[p.this_week_status] || '', note: p.this_week_note })));
+  if (prays.length) h += `<div class="sect"><div class="lbl">기도제목</div>${prays.map(p => `<div class="note"><span class="who">${esc(p.who || '')}</span> ${p.tag ? `<span class="pill ac">${esc(p.tag)}</span>` : ''}<div class="txt">${esc(p.text || '')}</div>${p.note ? `<div class="pray">이번 주: ${esc(p.note)}</div>` : ''}</div>`).join('')}</div>`;
+  if (rep.grace_notes && !rep.grace_none) h += `<div class="sect"><div class="lbl">은혜와 나눔</div><div class="txt" style="white-space:pre-wrap;font-size:14px">${esc(rep.grace_notes)}</div></div>`;
+  if (rep.leader_message && rep.leader_message !== 'none') h += `<div class="sect"><div class="lbl">셀리더가 교역자에게</div><div class="small"><b>${esc(MSG_LABEL[rep.leader_message] || rep.leader_message)}</b>${rep.leader_message_note ? '<div style="white-space:pre-wrap">' + esc(rep.leader_message_note) + '</div>' : ''}</div></div>`;
+  if (d.comments.length) h += d.comments.map(c => cmtBox(c)).join('');
+  return h + '</div>';
+}
+function cmtBox(c) {
+  const text = c.content_ko && c.content_ko !== c.content ? c.content_ko : c.content;
+  return `<div class="cmt ${S.newIds.has(String(c.id)) ? 'new' : ''}"><div class="by">${esc(c.author_name || '담임')} 코멘트 · ${dateTime(c.created_at)}${S.newIds.has(String(c.id)) ? ' · 새 코멘트' : ''}</div><div class="txt">${esc(text || '')}</div>${c.content_ko && c.content_ko !== c.content ? `<div class="tiny muted" style="margin-top:4px;white-space:pre-wrap">원문: ${esc(c.content)}</div>` : ''}</div>`;
+}
+
+/* ---------- ② 기도제목 ---------- */
+function viewPrayer() {
+  let h = `<div class="row" style="margin:12px 0">${spanSeg()}</div>`;
+  const wait = waiting(); if (wait) return h + wait;
+  const items = [];
+  for (const x of reportsIn(PREF.span)) {
+    const nm = (id) => memName(x.cellId, id, x.det.roster) || '';
+    const cn = cellName(x.cellId);
+    for (const p of x.det.newPrayers) items.push({ cellId: x.cellId, cellName: cn, who: nm(p.member_id), text: p.content, week: x.week, kind: '새 기도제목' });
+    for (const n of x.det.notes) if (n.prayer) items.push({ cellId: x.cellId, cellName: cn, who: nm(n.member_id), text: n.prayer, week: x.week, kind: catsOf(n).map(catLabel).join(' · ') });
+    for (const p of x.det.open) items.push({ cellId: x.cellId, cellName: cn, who: p.member_name, text: p.content, week: x.week, kind: PRAYER_LABEL[p.this_week_status] || '계속 기도', note: p.this_week_note });
+  }
+  const people = collectPrayers(items);
+  const cells = [...new Set(people.map(p => p.cellId))];
+  if (PREF.prayCell !== 'all' && !cells.includes(PREF.prayCell)) PREF.prayCell = 'all';
+  h += `<div class="chips"><button class="chip ${PREF.prayCell === 'all' ? 'on' : ''}" data-pcell="all">전체<span class="n">${people.length}</span></button>${cells.map(c => `<button class="chip ${PREF.prayCell === c ? 'on' : ''}" data-pcell="${esc(c)}">${esc(cellName(c))}<span class="n">${people.filter(p => p.cellId === c).length}</span></button>`).join('')}</div>`;
+  const show = people.filter(p => PREF.prayCell === 'all' || p.cellId === PREF.prayCell);
+  if (!show.length) return h + '<p class="empty">이 기간에 적힌 기도제목이 없습니다.</p>';
+  let last = '';
+  for (const p of show) {
+    if (p.cellName !== last) { if (last) h += '</div>'; last = p.cellName; h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:16px 2px 6px">${esc(p.cellName)}</h3><div class="card" style="padding:4px 15px">`; }
+    h += `<div class="note"><span class="who">${esc(p.who)}</span>${p.items.map(it => `<div class="txt">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div>`;
+  }
+  return h + (last ? '</div>' : '');
+}
+
+/* ---------- ③ 이슈 ---------- */
+function viewIssue() {
+  let h = `<div class="row" style="margin:12px 0">${spanSeg()}</div>`;
+  const wait = waiting(); if (wait) return h + wait;
+  const notes = [];
+  for (const x of reportsIn(PREF.span)) for (const n of x.det.notes) notes.push({ ...n, _week: x.week, _cell: x.cellId, _cellName: cellName(x.cellId), _who: memName(x.cellId, n.member_id, x.det.roster) || '(이름 없음)' });
+  const groups = groupIssues(notes);
+  if (PREF.issue !== 'all' && PREF.issue !== 'attn' && !groups.some(g => g.key === PREF.issue)) PREF.issue = 'all';
+  const attn = notes.filter(n => n.leadership_attention_required);
+  h += `<div class="chips"><button class="chip ${PREF.issue === 'all' ? 'on' : ''}" data-issue="all">전체<span class="n">${notes.length}</span></button>${attn.length ? `<button class="chip ${PREF.issue === 'attn' ? 'on' : ''}" data-issue="attn">확인 필요<span class="n">${attn.length}</span></button>` : ''}${groups.map(g => `<button class="chip ${PREF.issue === g.key ? 'on' : ''}" data-issue="${esc(g.key)}">${esc(g.label)}<span class="n">${g.items.length}</span></button>`).join('')}</div>`;
+  if (!notes.length) return h + '<p class="empty">이 기간에 적힌 셀원 근황이 없습니다.</p>';
+  const one = (n) => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px"><span class="who">${esc(n._who)}</span><span class="tiny muted">${esc(n._cellName)} · ${esc(weekLabel(n._week))}</span>${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}</div>
+    <div class="txt">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`;
+  if (PREF.issue === 'all') return h + groups.map(g => `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:16px 2px 6px">${esc(g.label)} · ${g.items.length}</h3><div class="card" style="padding:4px 15px">${g.items.map(one).join('')}</div>`).join('');
+  const list = PREF.issue === 'attn' ? attn : (groups.find(g => g.key === PREF.issue) || { items: [] }).items;
+  return h + `<div class="card" style="padding:4px 15px">${list.map(one).join('')}</div>`;
+}
+
+/* ---------- ④ 코멘트 ---------- */
+function viewComment() {
+  let h = `<div class="row" style="margin:12px 0">${spanSeg()}</div>`;
+  const wait = waiting(); if (wait) return h + wait;
+  const list = allComments().filter(c => S.weeks.indexOf(c._week) < PREF.span);
+  if (!list.length) return h + '<p class="empty">이 기간에 담임 목사님 · 사모님 코멘트가 없습니다.</p>';
+  h += '<p class="sub">새 코멘트는 앱을 열 때 알려 드립니다 (휴대폰 알림은 아직 없습니다).</p>';
+  return h + list.map(c => `<div class="card"><div class="row"><b style="font-weight:500">${esc(c._cellName)}</b><span class="tiny muted">${esc(weekLabel(c._week))}</span><span class="spacer"></span><button class="tiny" style="color:var(--ac)" data-act="see-rep" data-cell="${esc(c._cell)}" data-week="${esc(c._week)}">보고서 보기 ›</button></div>${cmtBox(c)}</div>`).join('');
+}
+
+/* ---------- ⑤ 출석 ---------- */
+function viewAtt() {
+  const ids = sortedCells();
+  if (!ids.length) return '<p class="empty">보이는 셀이 없습니다.</p>';
+  let h = '<p class="sub">지난 12주 셀원 참석 수입니다. 옅은 칸은 방문자, 점선은 보고서가 없던 주.</p>';
+  for (const c of ids) {
+    const ser = attendanceSeries(cellWeekMap(c), S.weeks);
+    const sm = attendanceSummary(ser);
+    const max = Math.max(1, ...ser.map(x => x.present + x.visitors));
+    h += `<div class="card"><div class="row"><h3 style="margin:0">${esc(cellName(c))}</h3><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
+      <div class="bars">${ser.map(x => x.has ? `<div class="bar"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
+      <div class="barx">${ser.map((x, i) => `<span>${esc(i && x.week.slice(5, 7) === ser[i - 1].week.slice(5, 7) ? String(+x.week.slice(8, 10)) : shortWeek(x.week))}</span>`).join('')}</div></div>`;
+  }
+  return h;
+}
+
+/* =====================================================================
+   로그인
+   ===================================================================== */
+const LOGIN = { email: lsGet('cell_email', ''), sent: false, busy: false, msg: '' };
+function viewLogin() {
+  $('#root').innerHTML = `<div class="login"><h1>셀 한눈에</h1>
+    <p class="sub" style="margin:0 0 6px">셀 케어에서 쓰시는 이메일로 로그인합니다. 셀 케어 보고서를 <b>읽기만</b> 해서 다시 정리해 보여 드립니다.</p>
+    ${!LOGIN.sent ? `<input type="email" id="lg-email" placeholder="이메일" value="${esc(LOGIN.email)}" autocomplete="email" inputmode="email">
+      <button class="btn pri wide" data-act="send" ${LOGIN.busy ? 'disabled' : ''}>${LOGIN.busy ? '보내는 중…' : '로그인 코드 받기'}</button>`
+    : `<p class="small" style="margin:12px 0 0"><b>${esc(LOGIN.email)}</b> 로 보낸 숫자 코드를 넣어 주세요.</p>
+      <input type="text" id="lg-code" placeholder="숫자 코드" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
+      <button class="btn pri wide" data-act="verify" ${LOGIN.busy ? 'disabled' : ''}>${LOGIN.busy ? '확인 중…' : '로그인'}</button>
+      <button class="btn wide" data-act="back">이메일 다시 쓰기</button>`}
+    ${LOGIN.msg ? `<p class="err">${esc(LOGIN.msg)}</p>` : ''}
+    <p class="tiny muted" style="margin-top:22px">셀 케어 앱과 같은 계정이라, 셀 케어에서 보시던 셀만 보입니다. 이 앱은 셀 케어에 아무것도 쓰지 않으며, 성도 정보를 따로 저장하지 않습니다.</p>
+    <p style="text-align:center;margin-top:18px"><a href="?demo=1" style="color:var(--ac);font-size:13.5px">지어낸 자료로 미리보기 →</a></p>
+    <p class="ver">${esc(APP_VERSION)}</p></div>`;
+  const i = $('#lg-email') || $('#lg-code'); if (i) setTimeout(() => i.focus(), 50);
+}
+async function sendCode() {
+  const email = ($('#lg-email')?.value || '').trim().toLowerCase();
+  LOGIN.email = email; LOGIN.msg = '';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { LOGIN.msg = '이메일 주소를 다시 확인해 주세요.'; return viewLogin(); }
+  lsSet('cell_email', email);
+  LOGIN.busy = true; viewLogin();
+  try { realApi(); } catch (e) { LOGIN.busy = false; LOGIN.msg = e.message; return viewLogin(); }
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+  LOGIN.busy = false;
+  if (error) {
+    const m = error.message || '';
+    LOGIN.msg = /rate|security purposes|seconds/i.test(m) ? '메일을 너무 자주 요청했습니다.\n잠시 후 다시 시도해 주세요.'
+      : /signup|not allowed|not found|Signups|NOT_APPROVED|Database error/i.test(m) ? '셀 케어에 등록된 이메일이 아닙니다.\n셀 케어에서 쓰시는 이메일인지 확인해 주세요.'
+      : '메일을 보내지 못했습니다. (' + m + ')';
+    return viewLogin();
+  }
+  LOGIN.sent = true; viewLogin();
+}
+async function verifyCode() {
+  const token = ($('#lg-code')?.value || '').replace(/\D/g, '');
+  if (token.length < 6) { LOGIN.msg = '메일로 받은 숫자 코드를 그대로 넣어 주세요.'; return viewLogin(); }
+  LOGIN.busy = true; LOGIN.msg = ''; viewLogin();
+  const { error } = await sb.auth.verifyOtp({ email: LOGIN.email, token, type: 'email' });
+  LOGIN.busy = false;
+  if (error) { LOGIN.msg = '코드가 맞지 않거나 시간이 지났습니다.\n메일을 다시 받아 주세요.'; return viewLogin(); }
+  LOGIN.sent = false; startReal();
+}
+function renderNoAccount() {
+  $('#root').innerHTML = `<div class="login"><h1>셀 케어 명단에 없는 계정입니다</h1><p class="sub">로그인은 되었지만 셀 케어 명단에 이 이메일이 없거나 사용이 중지된 상태입니다.</p><button class="btn" data-act="logout">로그아웃</button></div>`;
+}
+function renderError(e) {
+  $('#root').innerHTML = `<div class="login"><h1>불러오지 못했습니다</h1><p class="err">${esc(errText(e))}</p>
+    <p class="tiny muted">셀 케어 앱의 구조가 바뀌었을 수도 있습니다. 계속되면 알려 주세요.</p>
+    <button class="btn pri" data-act="reload">다시 시도</button> <button class="btn" data-act="logout">로그아웃</button></div>`;
+}
+
+/* =====================================================================
+   누르기
+   ===================================================================== */
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act],[data-tab],[data-span],[data-wmode],[data-issue],[data-pcell]');
+  const menu = $('#menu');
+  if (menu && !e.target.closest('#menu') && !(b && b.dataset.act === 'menu')) menu.remove();
+  if (!b) return;
+  const d = b.dataset;
+  if (d.tab) return goTab(d.tab);
+  if (d.span) return setSpan(+d.span);
+  if (d.wmode) { PREF.weekMode = d.wmode; savePref(); return rerender(); }
+  if (d.issue) { PREF.issue = d.issue; savePref(); return rerender(); }
+  if (d.pcell) { PREF.prayCell = d.pcell; savePref(); return rerender(); }
+  switch (d.act) {
+    case 'send': return sendCode();
+    case 'verify': return verifyCode();
+    case 'back': LOGIN.sent = false; LOGIN.msg = ''; return viewLogin();
+    case 'wk-prev': if (S.weekIdx < S.weeks.length - 1) transit(-1, () => { S.weekIdx++; rerender(); }); return;
+    case 'wk-next': if (S.weekIdx > 0) transit(1, () => { S.weekIdx--; rerender(); }); return;
+    case 'open-rep': fillPage.jump = d.cell; PREF.weekMode = 'page'; savePref(); return rerender();
+    case 'see-rep': { const wi = S.weeks.indexOf(d.week); if (wi >= 0) S.weekIdx = wi; fillPage.jump = d.cell; PREF.weekMode = 'page'; PREF.tab = 'week'; savePref(); markTab(); rerender(); return; }
+    case 'print': return window.print();
+    case 'menu': {
+      if (menu) return menu.remove();
+      const who = S.ctx ? S.ctx.profile.name : '';
+      const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
+      m.innerHTML = `<div class="info">${esc(who)}${S.mineIds.length ? ' · 담당 셀 ' + S.mineIds.length + '곳' : ''}</div>
+        ${S.mineIds.length ? `<button data-act="scope">${PREF.scope === 'mine' ? '볼 수 있는 셀 전체 보기' : '내 담당 셀만 보기'}</button>` : ''}
+        <button data-act="reload">새로 불러오기</button>
+        <button data-act="logout">${DEMO ? '미리보기 끝내기' : '로그아웃'}</button>`;
+      b.parentElement.appendChild(m); return;
+    }
+    case 'scope': PREF.scope = PREF.scope === 'mine' ? 'all' : 'mine'; savePref(); menu && menu.remove();
+      toast(PREF.scope === 'mine' ? '내 담당 셀만\n보여 드립니다' : '볼 수 있는 셀을\n모두 보여 드립니다'); toast.at = Date.now();
+      rerender(); loadDetails(Math.max(PREF.span, S.weekIdx + 1)).then(() => { refreshBadge(); rerender(); }); return;
+    case 'reload': menu && menu.remove(); return start();
+    case 'logout': menu && menu.remove();
+      if (DEMO) { location.href = location.pathname; return; }
+      try { await sb.auth.signOut(); } catch (_) { }
+      S.ctx = null; return viewLogin();
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.id === 'lg-email') sendCode();
+  if (e.key === 'Enter' && e.target.id === 'lg-code') verifyCode();
+  if (e.key === 'Escape') { const m = $('#menu'); if (m) m.remove(); }
+});
+addEventListener('resize', () => markTab());
+
+/* =====================================================================
+   시작
+   ===================================================================== */
+async function startReal() {
+  $('#root').innerHTML = '<div class="loading">셀 케어에서 불러오는 중…</div>';
+  try { S.api = realApi(); await loadBase(); } catch (e) { renderError(e); }
+}
+async function start() {
+  if (DEMO) { S.api = demoApi(); try { await loadBase(); } catch (e) { renderError(e); } return; }
+  let api; try { api = realApi(); } catch (e) { return renderError(e); }
+  const { data } = await sb.auth.getSession();
+  if (data && data.session) return startReal();
+  viewLogin();
+}
+start();
+</script>
+</body>
+</html>

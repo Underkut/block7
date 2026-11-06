@@ -134,6 +134,18 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   권한을 '모든 시트 · 드라이브' 로 넓히지 말 것 — HB 결정은 "고른 파일만". 그 폴더를 고치면 HB 가 서버를 다시 올려야 한다 (`docs/care/setup.md` 3장).
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r care`)가 함께 싣는다. 빠지면 다음 배포 때 사라진다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
+### 셀 한눈에(`cell/`)도 따로 돈다 — 주소는 `sweeter.my/cell/`
+
+기도노트와 같은 사정이다: `cell/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+개발본 두 파일·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+교회 '셀 케어'(남이 만든 앱) 보고서를 HB 계정으로 **읽기만** 해서 다시 정리해 보여 준다.
+계획과 까닭은 `docs/ROADMAP.md` '1106-L'. 판단은 `<script id="cell-core">` 에 모았고 `tests/test_cell.js` 가 시험한다.
+
+- ⚠️⚠️ **셀 케어에 쓰지 말 것.** 부르는 함수는 읽기 다섯 개뿐이다(`test_cell` ⑧ 이 지킨다). 남의 시스템이다.
+- ⚠️ **성도 자료는 화면 메모리에만.** 저장소(공개) · 파이어베이스 · localStorage 에 내용을 두지 않는다.
+  시험 · 미리보기(`?demo=1`)는 지어낸 이름만.
+- sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r cell`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).
