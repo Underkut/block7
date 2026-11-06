@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -283,7 +283,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-7';
+const APP_VERSION = 'v. 26-1106-8';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -697,6 +697,7 @@ async function pool(items, n, fn) {
 const CC_URL = 'https://mcbbhsvvzqvtrxlbdcks.supabase.co';
 const CC_KEY = 'sb_publishable_hs84BPU44TEcr2wM6boXIw_Saktd9p3';
 const DEMO = /[?&]demo=1\b/.test(location.search);
+const TOUCH = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (_) { return false; } })();
 
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -849,7 +850,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-7 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-8 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1731,7 +1732,7 @@ function drawBook() {
   }
   bk.innerHTML = h + '<p class="tiny muted" style="text-align:center;margin-top:16px">번호를 고치면 칸을 벗어날 때 저장됩니다 · × 를 누르면 비웁니다</p></div>';
   bk.scrollTop = keepY;
-  if (BOOK.focus) { const el = document.getElementById('bk-' + BOOK.focus); if (el && groups.length) { el.scrollIntoView({ block: 'center' }); const i = el.querySelector('input'); if (i && FB.user) setTimeout(() => i.focus(), 300); BOOK.focus = null; } }
+  if (BOOK.focus) { const el = document.getElementById('bk-' + BOOK.focus); if (el && groups.length) { el.scrollIntoView({ block: 'center' }); const i = el.querySelector('input'); if (i && FB.user) if (!TOUCH) setTimeout(() => i.focus(), 300); BOOK.focus = null; } }
 }
 // 직접 찾기: 연락처 이름(다듬은 것) · 번호 숫자에 친 글자가 들어 있으면 최대 6개
 document.addEventListener('input', (e) => {
@@ -1805,7 +1806,9 @@ function viewLogin() {
     <p class="tiny muted" style="margin-top:22px">셀 케어 앱과 같은 계정이라, 셀 케어에서 보시던 셀만 보입니다. 이 앱은 셀 케어에 아무것도 쓰지 않으며, 성도 정보를 따로 저장하지 않습니다.</p>
     <p style="text-align:center;margin-top:18px"><a href="?demo=1" style="color:var(--ac);font-size:13.5px">지어낸 자료로 미리보기 →</a></p>
     <p class="ver">${esc(APP_VERSION)}</p></div>`;
-  const i = $('#lg-email') || $('#lg-code'); if (i) setTimeout(() => i.focus(), 50);
+  // ⚠️ 터치 기기에서는 저절로 커서를 넣지 않는다 — 아이폰 홈 화면 앱은 손가락 없이 넣은 커서에 키보드를 안 띄우고,
+  //    그 뒤로 칸을 눌러도 키보드가 안 떠 입력이 막힌다 (HB 11/6)
+  const i = $('#lg-email') || $('#lg-code'); if (i && !TOUCH) setTimeout(() => i.focus(), 50);
 }
 async function sendCode() {
   const email = ($('#lg-email')?.value || '').trim().toLowerCase();
