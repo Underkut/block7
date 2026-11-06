@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-19 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-20 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -296,7 +296,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-19';
+const APP_VERSION = 'v. 26-1106-20';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -881,7 +881,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-19 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-20 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1141,9 +1141,9 @@ function waiting() { return S.loadedSpan < PREF.span ? '<div class="loading">보
 
 /* ---------- ① 이번 주 ---------- */
 // 12주 네모 — 하나하나가 그 주 보고서다. 누르면 그 셀 화면의 그 주로 (big: 셀 화면 위 띠)
-function weekSquares(cellId, big, sel) {
+function weekSquares(cellId, big, sel, n) {   // n = 오른쪽(이번 주)부터 세어 몇 칸 그리나(없으면 12주 전부)
   const m = cellWeekMap(cellId);
-  return `<div class="weeks${big ? ' big' : ''}" title="왼쪽이 옛날 · 오른쪽이 이번 주">` + S.weeks.slice().reverse().map((w, i, a) => {
+  return `<div class="weeks${big ? ' big' : ''}" title="왼쪽이 옛날 · 오른쪽이 이번 주">` + S.weeks.slice(0, n || S.weeks.length).reverse().map((w, i, a) => {
     const r = m.get(w); const now = i === a.length - 1 ? ' now' : ''; const on = sel === w ? ' on' : '';   // m 은 시작 전 주가 빠진 것
     const st = r ? stateOf(r) : 'none';
     const cls = !r ? 'gone' : isSubmitted(r) ? (st === 'submitted' ? (attTaken(r) ? 'w-sub' : 'w-off') : 'w-half') : (now ? '' : 'w-miss');
@@ -1166,12 +1166,12 @@ function fourWeek(c, span) {
   if (S.weekIdx === 0 && m.has(ws[0]) && !isSubmitted(m.get(ws[0]))) ws = ws.slice(1);
   const rows = ws.slice(0, span || spanN()).map(w => m.get(w)).filter(Boolean);
   let roster = null; for (const w of S.weeks.slice(S.weekIdx)) { const r = m.get(w); if (attTaken(r)) { roster = (r.members_present || 0) + (r.members_absent || 0); break; } }
-  let held = 0, rest = 0, mis = 0, pres = 0, tot = 0;
+  let held = 0, rest = 0, mis = 0, pres = 0, tot = 0; const ex = ws.length < S.weeks.length - S.weekIdx;   // 마감 전이라 뺀 이번 주가 있나
   for (const r of rows) {
     if (attTaken(r)) { held++; pres += r.members_present || 0; tot += (r.members_present || 0) + (r.members_absent || 0); }
     else { rest++; if (!isSubmitted(r)) mis++; tot += roster || 0; }
   }
-  return { span: span || spanN(), n: rows.length, held, rest, mis, pct: !rows.length ? null : !held ? 0 : tot ? Math.round(pres * 100 / tot) : null };   // 모임이 한 번도 없으면(명단 수를 몰라도) 전부 결석 = 0%
+  return { ex, span: span || spanN(), n: rows.length, held, rest, mis, pct: !rows.length ? null : !held ? 0 : tot ? Math.round(pres * 100 / tot) : null };   // 모임이 한 번도 없으면(명단 수를 몰라도) 전부 결석 = 0%
 }
 function sortCmp(k, dir, info, order) {
   const sg = dir === 'desc' ? -1 : 1;
@@ -1188,6 +1188,8 @@ function sortCmp(k, dir, info, order) {
   // 제출역순(처음): 시작 안 함 → 작성 중 → 제출(늦게 낸 셀 먼저). 제출순은 그 반대.
   return (a, b) => { const d = order(a) - order(b); if (d) return sg * d; const ta = T(a), tb = T(b); if (ta != null && tb != null && ta !== tb) return sg * (tb - ta); return nm(a, b); };
 }
+// 줄의 네모 칸 수 = 센 기간. 보이는 주가 지난 주면 그 뒤 주도 함께 그리고, 마감 전이라 뺀 이번 주는 회색 칸으로 하나 더 붙는다.
+function sqN(f) { return S.weekIdx + f.span + (f.ex ? 1 : 0); }
 function fwLine(f) { return f.n ? `<div class="tiny muted fwl">${f.span}주 모임 ${f.held} · 쉼 ${f.rest}${f.mis ? '(미제출 ' + f.mis + ')' : ''}${f.pct != null ? ' · 출석 ' + f.pct + '%' : ''}</div>` : ''; }
 function viewWeek() {
   const w = S.weeks[S.weekIdx]; const ids = sortedCells();
@@ -1220,10 +1222,10 @@ function viewWeek() {
     const hot = s.kind === 'miss' && s.run >= 2;
     const meta = r.submitted_at && isSubmitted(r) ? dateTime(r.submitted_at) : '';
     return `<div class="cellrow" data-flip="wc:${esc(c)}" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}</div>
-      ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null)}${fwLine(info(c).fw)}</div>
+      ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null, sqN(info(c).fw))}${fwLine(info(c).fw)}</div>
       <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div><span class="chev">›</span></div>`;
   }).join('') + '</div>';
-  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 노랑 모임 없이 제출(쉼) · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
+  h += '<p class="tiny muted" style="text-align:center">네모 = 위 슬라이더로 고른 주 수 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 노랑 모임 없이 제출(쉼) · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
   return h;
 }
 /* ---------- 셀 하나 · 주차별 (전체화면) ---------- */
@@ -1826,7 +1828,7 @@ function drawBook() {
 document.addEventListener('input', (e) => {
   if (e.target && e.target.id === 'spanr') {   // 끄는 동안은 글자와 줄 아래 통계만 바꾼다(칸을 다시 그리면 끌던 손잡이가 끊긴다). 순서는 손을 뗄 때 바뀐다.
     PREF.wspan = Number(e.target.value); const v = $('#spanv'); if (v) v.textContent = spanN() + '주';
-    for (const row of document.querySelectorAll('.cellrow[data-cell]')) { const f = row.querySelector('.fwl'); if (f) f.outerHTML = fwLine(fourWeek(row.dataset.cell, spanN())); }
+    for (const row of document.querySelectorAll('.cellrow[data-cell]')) { const f = row.querySelector('.fwl'); const fw = fourWeek(row.dataset.cell, spanN()); if (f) f.outerHTML = fwLine(fw); const wk = row.querySelector('.weeks'); if (wk) wk.outerHTML = weekSquares(row.dataset.cell, false, S.weekIdx ? S.weeks[S.weekIdx] : null, sqN(fw)); }
     return;
   }
   const t = e.target; if (!t.classList || !t.classList.contains('findin')) return;
