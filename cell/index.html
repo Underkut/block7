@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-16 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-17 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -31,7 +31,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --tx:#1c1f1e; --tx2:#5b625f; --tx3:#8c928f;
   --ac:#2f5f8a; --ac-soft:rgba(47,95,138,.10); --on-ac:#fff;
   --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11);
-  --warn:#b0611f; --warn-soft:rgba(176,97,31,.12); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
+  --rest:#d9ae1e; --warn:#b0611f; --warn-soft:rgba(176,97,31,.12); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
   --mine:#7a4fa0; --mine-soft:rgba(122,79,160,.09);
   --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
 }
@@ -40,7 +40,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --tx:#e8eae8; --tx2:#a7aeaa; --tx3:#78807c;
   --ac:#8db8e0; --ac-soft:rgba(141,184,224,.13); --on-ac:#0f1a24;
   --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13);
-  --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12);
+  --rest:#e6cb62; --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12);
   --mine:#c7a3e6; --mine-soft:rgba(199,163,230,.11); color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -79,6 +79,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .stat .num{flex:none}
 .stat .nms{font-size:11.5px;line-height:1.4;color:var(--tx2);text-align:left;max-height:5.7em;overflow-y:auto;min-width:0;max-width:100%;scrollbar-width:none}
 .stats.withnames .stat{align-items:flex-start;padding:10px}
+.fwl{margin-top:3px}
 .sortrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:2px 12px;margin:0 2px 6px}
 .sortrow button{font-size:12.5px;color:var(--tx3);padding:3px 0}
 .sortrow button.on{color:var(--ac);font-weight:500}
@@ -102,7 +103,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .weeks.big .wk{width:20px;height:20px;border-radius:5px}
 /* ⚠️ 이름에 .sub 를 쓰지 말 것 — 설명 글 .sub(margin)과 겹쳐 네모가 아래로 밀린다 */
 .wk.w-sub{background:var(--ok)} .wk.w-miss{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)} .wk.now{outline:1.5px solid var(--tx3);outline-offset:1px} .wk.w-sub.now{background:var(--ac)}
-.wk.w-half{background:var(--warn)}
+.wk.w-half{background:var(--warn)} .wk.w-off{background:var(--rest)}
 .seg{display:inline-flex;background:var(--s2);border-radius:10px;padding:2px;gap:2px}
 .seg button{padding:5px 11px;border-radius:8px;font-size:13px;color:var(--tx2)}
 .seg button.on{background:var(--paper);color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -290,7 +291,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-16';
+const APP_VERSION = 'v. 26-1106-17';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -814,7 +815,7 @@ function demoApi() {
   const status = (w) => {
     const wi = weeks.indexOf(w); if (wi < 0) return [];
     return cells.map(c => {
-      const ch = c.pat[wi]; const ok = sub(c, wi); const ro = ok ? roster(c, wi) : [];
+      const ch = c.pat[wi]; const ok = sub(c, wi); const ro = ok && !(c.id === 'c4' && (wi === 2 || wi === 6)) ? roster(c, wi) : [];   // c4 의 2 · 6 번째 주는 모임을 못 한 주(출석 0 · 결석 0 = 쉼)
       const mem = ro.filter(x => x.type_in_week === 'member');
       return { cell_id: c.id, cell_name: c.name, campus: '분당', review_mode: c.mine ? 'senior_direct' : 'leadership', responsible_leadership_id: c.mine ? null : 'me', leader_names: c.leader,
         report_id: ok ? rid(c.id, w) : (wi === 0 && c.id === 'c2' ? rid(c.id, w) : null), status: ok ? (ch === 'r' ? 'revision_requested' : 'submitted') : (wi === 0 && c.id === 'c2' ? 'draft' : null),
@@ -874,8 +875,8 @@ const TABS = [
   { id: 'week', label: '이번 주' }, { id: 'care', label: '살필 분' }, { id: 'issue', label: '이슈' },
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
-const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'base', wdir: 'asc', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-16 까지의 '출석' 탭은 '셀' 탭이 되었다
+const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-17 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1139,7 +1140,7 @@ function weekSquares(cellId, big, sel) {
   return `<div class="weeks${big ? ' big' : ''}" title="왼쪽이 옛날 · 오른쪽이 이번 주">` + S.weeks.slice().reverse().map((w, i, a) => {
     const r = m.get(w); const now = i === a.length - 1 ? ' now' : ''; const on = sel === w ? ' on' : '';   // m 은 시작 전 주가 빠진 것
     const st = r ? stateOf(r) : 'none';
-    const cls = !r ? 'gone' : isSubmitted(r) ? (st === 'submitted' ? 'w-sub' : 'w-half') : (now ? '' : 'w-miss');
+    const cls = !r ? 'gone' : isSubmitted(r) ? (st === 'submitted' ? (attTaken(r) ? 'w-sub' : 'w-off') : 'w-half') : (now ? '' : 'w-miss');
     return `<span class="wk ${cls}${now}${on}" data-wk="${w}" data-cell="${esc(cellId)}" role="button" aria-label="${esc(weekLabel(w))}"></span>`;
   }).join('') + '</div>';
 }
@@ -1148,26 +1149,39 @@ function statePill(r) {
   return { submitted: '<span class="pill ok">제출</span>', revision: '<span class="pill warn">수정 요청</span>', reediting: '<span class="pill warn">고치는 중</span>',
     draft: '<span class="pill ac">작성 중</span>', missing: '<span class="pill bad">미제출</span>', none: '<span class="pill">셀 없음</span>' }[st];
 }
-// 셀 줄 정렬 (HB 11/6): 같은 글자를 다시 누르면 거꾸로 — 글자도 함께 바뀐다(빠른 순 ↔ 느린 순). 같으면 이름순.
-// 제출 시각 · 출석처럼 값이 없는 셀은 어느 쪽이든 맨 아래.
-const WSORTS = [['base', '아직 먼저', '제출 먼저'], ['name', '이름 가나다순', '이름 역순'], ['time', '제출 빠른 순', '제출 느린 순'], ['miss', '미제출 많은 순', '미제출 적은 순'], ['att', '출석 낮은 순', '출석 높은 순']];
-function sortCmp(k, dir, order) {
+// 셀 줄 정렬 (HB 11/6): 같은 글자를 다시 누르면 거꾸로 — 글자도 함께 바뀐다. 같으면 이름순. 값 없는 셀은 어느 쪽이든 맨 아래.
+// [키, 처음 글자, 다시 누른 글자]. 처음(기본)은 '제출역순' = 안 낸 셀이 위.
+const WSORTS = [['sub', '제출역순', '제출순'], ['miss', '미제출 많은 순', '미제출 적은 순'], ['rest', '쉼 많은 순', '모임 많은 순'], ['lead', '셀리더순', '셀리더역순'], ['att', '4주 출석 낮은 순', '4주 출석 높은 순']];
+// 지난 4주 통계 (HB 11/6): 모임 = 낸 보고서에 출석이 있는 주 · 쉼 = 그 밖(모임 못 함 + 미제출) · 출석 = 4주 출석 합 ÷ 4주 명단 합(쉼 주는 0명 출석).
+// 이번 주가 아직 안 냈으면(마감 전) 센 주에서 뺀다. 셀 시작 전 주는 줄이 없어 저절로 빠진다.
+function fourWeek(c) {
+  const m = cellWeekMap(c); let ws = S.weeks.slice(S.weekIdx);
+  if (S.weekIdx === 0 && m.has(ws[0]) && !isSubmitted(m.get(ws[0]))) ws = ws.slice(1);
+  const rows = ws.slice(0, 4).map(w => m.get(w)).filter(Boolean);
+  let roster = null; for (const w of S.weeks.slice(S.weekIdx)) { const r = m.get(w); if (attTaken(r)) { roster = (r.members_present || 0) + (r.members_absent || 0); break; } }
+  let held = 0, rest = 0, pres = 0, tot = 0;
+  for (const r of rows) {
+    if (attTaken(r)) { held++; pres += r.members_present || 0; tot += (r.members_present || 0) + (r.members_absent || 0); }
+    else { rest++; tot += roster || 0; }
+  }
+  return { n: rows.length, held, rest, pct: rows.length && tot ? Math.round(pres * 100 / tot) : null };
+}
+function sortCmp(k, dir, info, order) {
   const sg = dir === 'desc' ? -1 : 1;
   const nm = (a, b) => cellName(a.c).localeCompare(cellName(b.c), 'ko');
+  const T = x => isSubmitted(x.r) && x.r.submitted_at ? (new Date(x.r.submitted_at).getTime() || null) : null;
   const key = {
-    base: order,
-    name: () => 0,
-    time: x => isSubmitted(x.r) && x.r.submitted_at ? (new Date(x.r.submitted_at).getTime() || null) : null,
-    miss: x => { const s = streakOf(cellWeekMap(x.c), S.weeks.slice(S.weekIdx)); return s.kind === 'miss' ? -s.run : 0; },
-    att: x => attTaken(x.r) ? x.r.members_present / ((x.r.members_present || 0) + (x.r.members_absent || 0) || 1) : null
-  }[k] || order;
-  return (a, b) => {
-    if (k === 'name') return sg * nm(a, b);
-    const ka = key(a), kb = key(b);
-    if (ka == null || kb == null) return ka == null && kb == null ? nm(a, b) : ka == null ? 1 : -1;
-    return sg * (ka - kb) || nm(a, b);
-  };
+    miss: x => info(x.c).miss,
+    rest: x => -info(x.c).fw.rest,
+    att: x => info(x.c).fw.pct,
+    lead: x => (x.r.leader_names || '') || null
+  }[k];
+  if (k === 'lead') return (a, b) => { const ka = key(a), kb = key(b); if (ka == null || kb == null) return ka == null && kb == null ? nm(a, b) : ka == null ? 1 : -1; return sg * ka.localeCompare(kb, 'ko') || nm(a, b); };
+  if (key) return (a, b) => { const ka = key(a), kb = key(b); if (ka == null || kb == null) return ka == null && kb == null ? nm(a, b) : ka == null ? 1 : -1; return sg * (ka - kb) || nm(a, b); };
+  // 제출역순(처음): 시작 안 함 → 작성 중 → 제출(늦게 낸 셀 먼저). 제출순은 그 반대.
+  return (a, b) => { const d = order(a) - order(b); if (d) return sg * d; const ta = T(a), tb = T(b); if (ta != null && tb != null && ta !== tb) return sg * (tb - ta); return nm(a, b); };
 }
+function fwLine(f) { return f.n ? `<div class="tiny muted fwl">4주 모임 ${f.held} · 쉼 ${f.rest}${f.pct != null ? ' · 출석 ' + f.pct + '%' : ''}</div>` : ''; }
 function viewWeek() {
   const w = S.weeks[S.weekIdx]; const ids = sortedCells();
   const rows = ids.map(c => ({ c, r: cellRow(c, w) })).filter(x => x.r);
@@ -1179,7 +1193,9 @@ function viewWeek() {
   if (!rows.length) return head + `<p class="empty">${PREF.scope === 'mine' ? '이 주에 보이는 담당 셀이 없습니다.' : '이 주에 보이는 셀이 없습니다.'}</p>`;
   const g = gCard();
   const order = (x) => isSubmitted(x.r) ? 2 : (x.r.report_id ? 1 : 0);
-  rows.sort(sortCmp(PREF.wsort || 'base', PREF.wdir, order));
+  if (!WSORTS.some(x => x[0] === PREF.wsort)) { if (PREF.wsort !== 'base') PREF.wdir = 'asc'; PREF.wsort = 'sub'; }   // 옛 값('base' = 아직 먼저 = 제출역순 · time · name · att)은 제출 줄로
+  const memo = new Map(); const info = c => { let o = memo.get(c); if (!o) { const sk = streakOf(cellWeekMap(c), S.weeks.slice(S.weekIdx)); o = { miss: sk.kind === 'miss' ? -sk.run : 0, fw: fourWeek(c) }; memo.set(c, o); } return o; };
+  rows.sort(sortCmp(PREF.wsort, PREF.wdir, info, order));
   const f = PREF.wfilter || 'all';
   const shown = f === 'sub' ? rows.filter(x => isSubmitted(x.r)) : f === 'miss' ? rows.filter(x => !isSubmitted(x.r)) : rows;
   // 세 칸이 곧 거르기 — 다시 누르면 전체로. 위 사람 단추가 칸 안의 셀리더 이름을 켜고 끈다 (HB 11/6: 줄이 아니라 칸 안에)
@@ -1188,7 +1204,7 @@ function viewWeek() {
     <button class="stat ${f === 'all' ? 'sel' : ''}" data-wf="all"><div class="num"><div class="v">${rows.length}</div><div class="k">${PREF.scope === 'mine' && S.mineIds.length ? '담당 셀' : '셀'}</div></div>${names(rows)}</button>
     <button class="stat ok ${f === 'sub' ? 'sel' : ''}" data-wf="sub"><div class="num"><div class="v">${sub.length}</div><div class="k">제출</div></div>${names(sub)}</button>
     <button class="stat ${miss.length ? 'warn' : ''} ${f === 'miss' ? 'sel' : ''}" data-wf="miss"><div class="num"><div class="v">${miss.length}</div><div class="k">${S.weekIdx === 0 ? '아직' : '미제출'}</div></div>${names(miss)}</button></div>`;
-  const sortRow = `<div class="sortrow noprint"><span class="tiny muted">정렬</span>${WSORTS.map(([k, l, r]) => { const on = (PREF.wsort || 'base') === k; return `<button class="${on ? 'on' : ''}" data-act="wsort" data-k="${k}">${on && PREF.wdir === 'desc' ? r : l}</button>`; }).join('')}</div>`;
+  const sortRow = `<div class="sortrow noprint"><span class="tiny muted">정렬</span>${WSORTS.map(([k, l, r]) => { const on = PREF.wsort === k; return `<button class="${on ? 'on' : ''}" data-act="wsort" data-k="${k}">${on && PREF.wdir === 'desc' ? r : l}</button>`; }).join('')}</div>`;
   if (!shown.length) return h + `<p class="empty">${f === 'sub' ? '아직 낸 셀이 없습니다.' : '모두 냈습니다.'}</p>`;
   h += sortRow + '<div class="card" style="padding:4px 14px">' + shown.map(({ c, r }) => {
     const s = streakOf(cellWeekMap(c), S.weeks.slice(S.weekIdx));
@@ -1196,10 +1212,10 @@ function viewWeek() {
     const hot = s.kind === 'miss' && s.run >= 2;
     const meta = r.submitted_at && isSubmitted(r) ? dateTime(r.submitted_at) : '';
     return `<div class="cellrow" data-flip="wc:${esc(c)}" data-act="open-cell" data-cell="${esc(c)}" role="button"><div style="flex:1;min-width:0"><div class="row"><span class="nm">${esc(r.cell_name)}</span>${statePill(r)}${r.i_am_leader ? '<span class="pill mine">내 셀</span>' : ''}</div>
-      ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null)}</div>
+      ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null)}${fwLine(info(c).fw)}</div>
       <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div><span class="chev">›</span></div>`;
   }).join('') + '</div>';
-  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
+  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 노랑 모임 없이 제출(쉼) · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
   return h;
 }
 /* ---------- 셀 하나 · 주차별 (전체화면) ---------- */
@@ -1960,7 +1976,7 @@ document.addEventListener('click', async (e) => {
     case 'more': return toggleClamp(b);
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
-    case 'wsort': return flipRender(() => { if ((PREF.wsort || 'base') === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });
+    case 'wsort': return flipRender(() => { if (PREF.wsort === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });
     case 'leader-tg': PREF.showLeader = !PREF.showLeader; savePref(); rerender();
       toast(PREF.showLeader ? '셀리더 이름을\n보여 드립니다' : '셀리더 이름을\n감췄습니다'); toast.at = Date.now(); return;
     case 'print': return window.print();
