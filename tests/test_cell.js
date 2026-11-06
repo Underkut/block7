@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, pool };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, pool, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -44,7 +44,8 @@ sc.eq('① 주 이름은 셀 케어와 같이 (그 달 몇째 주)', A.weekLabel
     { cell_id: 'g', review_mode: 'leadership', responsible_leadership_id: 'other' },            // 지난 배정
   ];
   const asg = [{ cell_id: 'b', start_date: '2026-01-01', end_date: null }, { cell_id: 'g', start_date: '2025-01-01', end_date: '2026-06-30' }];
-  sc.eq('② 책임 · 지금 배정 · 확인 가능만, 담임 직접 · 내가 인도 · 지난 배정은 뺀다', J(A.pickMine(rows, asg, 'me', '2026-11-06')), ['a', 'b', 'f']);
+  sc.eq('② 책임 · 지금 배정 · 확인 가능 · 내가 인도(HB 11/6), 담임 직접 · 지난 배정은 뺀다', J(A.pickMine(rows, asg, 'me', '2026-11-06')), ['a', 'b', 'e', 'f']);
+  sc.eq('② 내가 인도하는 셀은 담임 직접 확인이어도 넣는다', J(A.pickMine([{ cell_id: 'h', review_mode: 'senior_direct', i_am_leader: true }], [], 'me', '2026-11-06')), ['h']);
   sc.eq('② 자료가 없어도 안 깨진다', J(A.pickMine(null, null, 'me', '2026-11-06')), []);
 }
 
@@ -72,6 +73,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('④ 12주 꽉 차면 "넘게"', A.streakText(s4), '12주 넘게 연속 제출');
   const s5 = A.streakOf(mk('ssss........'), W);
   sc.eq('④ 셀이 없던 주에서 끊는다 (새 셀은 넘게가 아니다)', A.streakText(s5), '4주 연속 제출');
+  sc.eq('④ 미제출이 12주 꽉 차면 "11주 넘게 미제출" (넘게째 아님)', A.streakText(A.streakOf(mk('------------'), W)), '지난주까지 11주 넘게 미제출');
   const s6 = A.streakOf(mk('-...........'), W);
   sc.eq('④ 이번 주에 새로 생긴 셀은 글이 없다', A.streakText(s6), '');
 }
@@ -110,6 +112,25 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑤-2 확인 필요가 없으면 그 열도 없다', A.issueMatrix([notes[1]]).tags.includes('attn'), false);
 }
 
+// ⑤-3 표 여럿 고르기 · 축 접기 (HB 11/6 2차)
+{
+  let v = A.issNorm({ cell: 'c1', tag: 'all' });
+  sc.eq('⑤-3 예전 모양({cell, tag})도 읽는다', J(v), { cells: ['c1'], tags: [], foldCell: false, foldTag: false });
+  v = A.issPick(v, 'c2|all'); v = A.issPick(v, 'all|health'); v = A.issPick(v, 'all|faith');
+  sc.eq('⑤-3 셀 · 이슈를 여럿 고른다', J([v.cells, v.tags]), [['c1', 'c2'], ['health', 'faith']]);
+  v = A.issPick(v, 'c1|all');
+  sc.eq('⑤-3 다시 누르면 뺀다', J(v.cells), ['c2']);
+  v = A.issPick(v, 'c3|family');
+  sc.eq('⑤-3 칸을 누르면 그 셀 · 그 이슈를 함께 넣는다', J([v.cells, v.tags]), [['c2', 'c3'], ['health', 'faith', 'family']]);
+  v = A.issPick(v, 'c3|family');
+  sc.eq('⑤-3 둘 다 골라진 칸을 다시 누르면 둘 다 뺀다', J([v.cells, v.tags]), [['c2'], ['health', 'faith']]);
+  const mx = { cells: ['c1', 'c2'], tags: ['health', 'family'] };
+  sc.eq('⑤-3 표에 없는 것은 거르는 값에서 버린다', J(A.issState(mx, v)), { foldCell: false, foldTag: false, cells: ['c2'], tags: ['health'] });
+  sc.eq('⑤-3 셀 축을 접으면 이슈로만 거른다', J(A.issState(mx, { ...v, foldCell: true }).cells), []);
+  sc.eq('⑤-3 이슈 축을 접으면 셀로만 거른다', J(A.issState(mx, { ...v, foldTag: true })), { foldCell: false, foldTag: true, cells: ['c2'], tags: [] });
+  sc.eq('⑤-3 전체를 누르면 고른 것을 지운다 (접기는 그대로)', J(A.issPick({ ...v, foldTag: true }, 'all|all')), { cells: [], tags: [], foldCell: false, foldTag: true });
+}
+
 // ⑥ 기도제목
 {
   const P = A.collectPrayers([
@@ -141,7 +162,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
     'note_comment_add', 'msg_post', 'msg_start', 'notice_create', 'lr_save', 'pastor_msg_save', 'add_attendee', 'move_report_week', 'cellcare_talk_add',
     'cellcare_senior_ack', 'save_push_subscription', 'request_access', 'report_login_problem', 'cellcare_report_open'];
   sc.eq('⑧ 셀 케어에 쓰는 함수를 부르지 않는다', writes.filter(w => code.includes(w)), []);
-  sc.eq('⑧ 표에 쓰는 동작(.insert · .update · .upsert · .delete)이 없다', /\.(insert|upsert|update|delete)\s*\(/.test(code.replace(/classList\.[a-z]+\(|\.delete\(\s*\)/g, '')), false);
+  sc.eq('⑧ 표에 쓰는 동작(.insert · .update · .upsert · from(..).delete)이 없다', /\.(insert|upsert|update)\s*\(/.test(code.replace(/reg\.update\(/g, '')) || /from\([^)]*\)[^;]*\.delete\(/.test(code), false);
   const rpcs = [...code.matchAll(/rpc\('([a-z_]+)'/g)].map(x => x[1]).sort();
   sc.eq('⑧ 부르는 함수는 읽기 다섯 개뿐', J([...new Set(rpcs)]), ['get_my_context', 'get_open_prayers', 'get_report_roster', 'get_week_status', 'senior_comment_list']);
   sc.eq('⑧ 계정을 새로 만들지 않는다 (shouldCreateUser:false)', /shouldCreateUser:\s*false/.test(code), true);
@@ -156,6 +177,46 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑨ 옛날 → 이번 주 순, 안 낸 주는 비움', J(s.map(x => [x.week, x.has, x.present])), [[W[2], false, 0], [W[1], true, 3], [W[0], true, 5]]);
   sc.eq('⑨ 평균 · 최근 · 지난번 대비 · 참석률', J(A.attendanceSummary(s)), { avg: 4, last: 5, delta: 2, rate: 83 });
   sc.eq('⑨ 기록이 없으면 비움', J(A.attendanceSummary([])), { avg: null, last: null, delta: null, rate: null });
+}
+
+// ⑫ 사람 단위 — 출석 흐름 · 연락할 분 · 줄어드는 분 · 새 얼굴 (L8~L10)
+{
+  const rowsOf = (id, cell, pat, extra) => [...pat].map((ch, i) => ch === '.' ? null : Object.assign({ member_id: id, cellId: cell, week: W[i], status: ch === 'o' ? 'present' : 'absent' }, extra ? extra(i) : {})).filter(Boolean);
+  const members = [{ id: 'm1', name: '김하나', cell_id: 'c1', member_type: 'member' }, { id: 'm2', name: '이두리', cell_id: 'c1', member_type: 'member' },
+    { id: 'm3', name: '박세나', cell_id: 'c2', member_type: 'member', joined_at: W[5] }, { id: 'm4', name: '서하늘', cell_id: 'c2', member_type: 'visitor' }];
+  const rows = [].concat(
+    rowsOf('m1', 'c1', 'xxx.oooooooo'),             // 이번 주부터 3번 결석 (셀이 안 낸 주는 건너뜀)
+    rowsOf('m2', 'c1', 'oxoxoooooooo'),             // 최근 4주 50% ← 이전 100%
+    rowsOf('m3', 'c2', 'ooooooo.....'),             // 방문(들어온 주 전) → 셀원
+    rowsOf('m4', 'c2', '......o.....', () => ({ visitor: true })));
+  const P = A.buildPeople(rows, members);
+  sc.eq('⑫ 사람마다 주별 출석', J([P.size, P.get('m1').wk.get(W[0]), P.get('m1').wk.has(W[3])]), [4, 'absent', false]);
+  const s1 = A.personStats(P.get('m1'), W);
+  sc.eq('⑫ 연속 결석은 기록 있는 주만 센다', s1.absentRun, 3);
+  const s2 = A.personStats(P.get('m2'), W);
+  sc.eq('⑫ 최근 4주 · 이전 8주 출석률', J([s2.recentRate, s2.prevRate]), [0.5, 1]);
+  sc.eq('⑫ 들어온 날 전에 온 주는 방문으로 읽는다', J([...P.get('m3').visitorWeeks]), [W[6]]);
+  const CL = A.careList(P, W, [{ member_id: 'm2', _cell: 'c1', categories: ['health'], leadership_attention_required: true, content: '수술' }], [{ cellId: 'c2', kind: 'contact', note: '심방 부탁' }]);
+  sc.eq('⑫ 연락할 분: 확인 필요 + 건강이 3주 결석보다 앞', J(CL.map(x => x.id || x.cellId)), ['m2', 'm1', 'c2']);
+  sc.eq('⑫ 이유 칩', J(CL[1].reasons.map(r => r.t)), ['3주 결석']);
+  sc.eq('⑫ 셀리더 요청은 셀 단위로', J([CL[2].kind, CL[2].reasons[0].t]), ['cell', '셀리더 요청 · 연락 또는 상담']);
+  sc.eq('⑫ 방문자는 결석으로 올리지 않는다', CL.some(x => x.id === 'm4'), false);
+  sc.eq('⑫ 줄어드는 분: 많이 줄어든 순 (100→25%, 100→50%)', J(A.dropping(P, W).map(x => x.p.id)), ['m1', 'm2']);
+  const NF = A.newFaces(P, W);
+  sc.eq('⑫ 새 얼굴: 끊긴 분이 먼저 · 셀원 된 분', J(NF.map(x => [x.p.id, x.state])), [['m4', 'gone'], ['m3', 'joined']]);
+}
+
+// ⑬ 셀 건강 · 셀리더 신호 (L11)
+{
+  const R = (st, pres, extra) => Object.assign({ report_id: st === 's' ? 'r' : null, status: st === 's' ? 'submitted' : null, members_present: pres }, extra || {});
+  const rows = [R('s', 2), R('-'), R('-'), R('s', 3), R('s', 5), R('s', 5), R('s', 6), R('s', 5)];
+  const reps = [{ rep: { leader_message: 'advice', leader_message_note: '조언 부탁', meeting_held: false, meeting_cancel_reason: '출장', submitted_at: '2026-11-08T10:00:00+09:00', meeting_date: '2026-11-03' }, notes: [{ categories: ['long_absence'] }] },
+    { rep: { leader_message: 'none', meeting_held: true, submitted_at: '2026-10-31T10:00:00+09:00', meeting_date: '2026-10-27' }, notes: [] }];
+  const h = A.cellHealth(rows, reps);
+  sc.eq('⑬ 신호등: 출석 32% 줄어듦 → 주황 · 2주 연속 미제출 → 빨강 · 요청 1번 → 주황', J([h.att.lv, h.sub.lv, h.req.lv]), ['warn', 'bad', 'warn']);
+  sc.eq('⑬ 제출 글', h.sub.text, '8주 중 6번 제출');
+  const sig = A.leaderSignals(rows, reps);
+  sc.eq('⑬ 셀리더 신호: 연속 미제출 · 늦은 제출 · 모임 못 함 · 조언 요청', J(sig.map(x => x.t)), ['2주 연속 미제출', '모임 뒤 사흘 넘겨 제출 2번', '모임 못 함 1번', '조언 요청 1번']);
 }
 
 // ⑩ 집 주소 · 버전
