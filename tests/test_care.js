@@ -9,6 +9,7 @@
 //  ⑤ 앱 열 · 새 탭 계획 — 있는 것은 건너뛰고 마지막 머리글 뒤에 붙인다 · 칸이 모자라면 늘린다 · 열 글자(A · Z · AA)
 //  ⑥ 폼 읽기 — 하나/여럿 · 기타 · 날짜(연도 없음) · 시트 머리글과 비교
 //  ⑦ C0 쓰기 시험은 10줄 이하(사본)에만 · 폼 줄이 앱 줄을 건드렸으면 잡아낸다 · 기록ID 붙이기는 상한까지만
+//  ⑩ C1 열람 — 줄 → 기록 · 보관(지우지 않고 감춤) · 필터(속성 안 '또는', 속성끼리 '그리고') · 성도 · 주 · 달 · 대시보드 셈
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -22,7 +23,8 @@ const ctx = { console, Math, JSON, Number, Object, Set, Array, String, Date, isF
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
-  splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches };`, ctx);
+  splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
+  ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -144,5 +146,63 @@ sc.eq('⑨ 로그인은 따로(앱 이름 care) — Sweeter 로그아웃과 묶�
 sc.eq('⑨ 고르기 창은 전용 키로 — 로그인 · 동기화가 쓰는 파이어베이스 키가 아니다',
   [/^AIza/.test(A.PICKER_KEY), A.PICKER_KEY !== 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', HTML.includes('.setDeveloperKey(PICKER_KEY)'), HTML.includes('setDeveloperKey(FB_CFG')], [true, true, true, false]);
 sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v1', 'b7timer_v1', 'pray.v1', 'b7wallet'].includes(A.CARE_KEY), false);
+
+// ⑩ C1 열람 — 지어낸 시트 (HB 시트 모양: 2020년 기록 · 연도 없는 날짜 · '보고 ○○' 기타 글 · 빈 칸)
+{
+  const H = HEAD.concat(['장소 · 메모']), ts = '11/6/2026 10:40:51';
+  const vals = [H,
+    [ts, '10/31', '가나다', '장년부', '지나가다 대화', '첫 줄\n둘째 줄', '신앙, 교회', '중보, 보고', '깊음', '바자회'],
+    [ts, '11/4', '라마바', '청년부', '티타임', '학교 이야기', '학교', '중보', '중간', ''],
+    [ts, '11/3', '사아자', '예배팀, 셀리더', '식사', '근황', '', '', '중간', ''],
+    ['5/21/2020 10:37:02', '5/21', '가나다', '두나미스', '보고 차카타', '옛 기록', '', '', '', ''],
+    ['', '', '', '', '', '', '', '', '', ''],
+    [ts, '11/1', '', '', '', '', '', '', '', ''],
+    [ts, '11/5', '라마바', '청년부', '전화', '기타 할 일', '관계', '연결, 상담 연결하기', '얕음', ''],
+  ];
+  const O = Object.assign({ cutoff: '2025-01-01' }, OPT);
+  const m = A.buildModel(vals, O);
+  sc.eq('⑩ 빈 줄은 건너뛰고, 이름 · 내용 다 없는 줄은 셈만', J([m.visits.length, m.skipped]), [5, 1]);
+  sc.eq('⑩ 최근 것부터 (날짜 내림차순)', J(m.visits.map(v => v.ymd)), ['2026-11-05', '2026-11-04', '2026-11-03', '2026-10-31', '2020-05-21']);
+  const old = m.visits.find(v => v.ymd === '2020-05-21');
+  sc.eq('⑩ 2020년 기록은 보관(감춤) — 지우지 않고 그대로 있다', J([old.archived, old.text, old.methodLabel, old.allRoles]), [true, '옛 기록', '보고 차카타', ['두나미스']]);
+  sc.eq('⑩ 보관 기준을 끄면 보관 안 함', A.buildModel(vals, Object.assign({}, O, { cutoff: '' })).visits.filter(v => v.archived).length, 0);
+  const g = m.visits.find(v => v.ymd === '2026-10-31');
+  sc.eq('⑩ 깊이 숫자 · 할 일 종류 색 · 장소 · 줄 번호 · 기록ID 없으면 줄 번호로', J([g.depthN, g.actions.map(a => a.k), g.place, g.row, g.key]), [3, ['k1', 'k3'], '바자회', 2, 'r2']);
+  const e = m.visits.find(v => v.ymd === '2026-11-05');
+  sc.eq("⑩ 폼 '기타' 로 적은 할 일은 기타 + 그 글", J(e.actions), [{ t: '연결', x: '', k: 'k2' }, { t: '기타', x: '상담 연결하기', k: 'k4' }]);
+  sc.eq('⑩ 선택지에 없는 태그도 보인다', J(e.allTags), ['관계']);
+  sc.eq('⑩ 성도의 구분은 가장 최근 기록 것', J(m.people['가나다'].roles), ['장년부']);
+  sc.eq('⑩ 깊이가 빈 옛 기록은 0', old.depthN, 0);
+  // 필터
+  const live = (f, q) => J(A.filterVisits(m.visits, f, q, false, '').map(v => v.name + v.ymd.slice(5)));
+  sc.eq('⑩ 보관 기록은 기본으로 안 보인다', A.filterVisits(m.visits, {}, '', false, '').length, 4);
+  sc.eq('⑩ 보관 함께 보기', A.filterVisits(m.visits, {}, '', true, '').length, 5);
+  sc.eq('⑩ 같은 속성 안은 또는 (중보 또는 연결)', live({ act: ['중보', '연결'] }), ['라마바11-05', '라마바11-04', '가나다10-31']);
+  sc.eq('⑩ 속성끼리는 그리고 (중보 그리고 청년부)', live({ act: ['중보'], role: ['청년부'] }), ['라마바11-04']);
+  sc.eq('⑩ 깊이는 숫자로 고른다', live({ depth: [2] }), ['라마바11-04', '사아자11-03']);
+  sc.eq('⑩ 여럿 구분 중 하나만 맞아도', live({ role: ['셀리더'] }), ['사아자11-03']);
+  sc.eq("⑩ '할 일 있는 기록만'", live({}, 'act'), ['라마바11-05', '라마바11-04', '가나다10-31']);
+  sc.eq('⑩ 찾기 — 이름 · 내용', J(A.filterVisits(m.visits, {}, '', false, '학교').map(v => v.name)), ['라마바']);
+  const FO = A.filterOptions(m.visits, OPT);
+  sc.eq('⑩ 필터 선택지 = 폼 순서 먼저 + 기록에 나온 기타', J([FO.tag.slice(-1)[0], FO.act.includes('기타'), FO.method[0], FO.role.includes('두나미스')]), ['관계', true, '지나가다 대화', false]);
+  // 날짜 셈
+  sc.eq('⑩ 주는 주일부터', J([A.weekStartOf('2026-11-06'), A.weekStartOf('2026-11-01'), A.weekStartOf('2026-11-07')]), ['2026-11-01', '2026-11-01', '2026-11-01']);
+  sc.eq('⑩ 11월 달력 5주 · 첫 칸 11/1 · 3월은 6주가 필요하면 6주', J([A.monthCells('2026-11').length, A.monthCells('2026-11')[0], A.monthCells('2026-08').length]), [35, '2026-11-01', 42]);
+  sc.eq('⑩ 날 말', J([A.relDay('2026-11-06', '2026-11-06'), A.relDay('2026-11-05', '2026-11-06'), A.relDay('2026-10-31', '2026-11-06'), A.relDay('', '2026-11-06')]), ['오늘', '어제', '6일 전', '날짜 모름']);
+  sc.eq('⑩ 달 넘김 날 셈', A.daysBetween('2026-10-31', '2026-11-06'), 6);
+  // 성도
+  const P = A.peopleList(m, m.visits.filter(v => !v.archived), '2026-11-30', 21);
+  const pg = P.find(p => p.name === '가나다');
+  sc.eq('⑩ 성도 — 보관 기록은 빼고 · 마지막 날 · 3주 넘으면 오래 못 만남', J([P.length, pg.visits.length, pg.last, pg.days, pg.stale]), [3, 1, '2026-10-31', 30, true]);
+  sc.eq('⑩ 최근 10주 띠 — 그 주 가장 깊은 대화', J(A.strip10(m.visits.filter(v => v.name === '라마바'), '2026-11-06').slice(-1)), [2]);
+  // 대시보드
+  const wk = A.weeklyDepth(m.visits.filter(v => !v.archived), '2026-11-06', 8);
+  sc.eq('⑩ 주별 — 8주 · 이번 주(11/1~)에 3번 · 깊이별 · 그 전 주 1번', J([wk.length, wk[7].t, wk[7].c, wk[6].t]), [8, 3, { 0: 0, 1: 1, 2: 2, 3: 0 }, 1]);
+  const hm = A.roleHeat(m.visits, '2026-11-06', ['청년부', '장년부'], 8);
+  sc.eq('⑩ 구분 × 주 칸표', J(hm.map(r => r.cells[7].n)), [2, 0]);
+  const sp = A.splitPeriods(m.visits.filter(v => !v.archived), '2026-11-06');
+  sc.eq('⑩ 최근 4주 / 그 전 4주', J([sp.last4.length, sp.prev4.length]), [4, 0]);
+  { const c = A.countBy(sp.last4, v => v.allTags); sc.eq('⑩ 세기 — 여럿 칸은 하나씩', Object.keys(c).sort().map(k => k + c[k]), ['관계1', '교회1', '신앙1', '학교1']); }
+}
 
 sc.done();
