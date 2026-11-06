@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -212,11 +212,40 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const rows = [R('s', 2), R('-'), R('-'), R('s', 3), R('s', 5), R('s', 5), R('s', 6), R('s', 5)];
   const reps = [{ rep: { leader_message: 'advice', leader_message_note: '조언 부탁', meeting_held: false, meeting_cancel_reason: '출장', submitted_at: '2026-11-08T10:00:00+09:00', meeting_date: '2026-11-03' }, notes: [{ categories: ['long_absence'] }] },
     { rep: { leader_message: 'none', meeting_held: true, submitted_at: '2026-10-31T10:00:00+09:00', meeting_date: '2026-10-27' }, notes: [] }];
-  const h = A.cellHealth(rows, reps);
-  sc.eq('⑬ 신호등: 출석 32% 줄어듦 → 주황 · 2주 연속 미제출 → 빨강 · 요청 1번 → 주황', J([h.att.lv, h.sub.lv, h.req.lv]), ['warn', 'bad', 'warn']);
-  sc.eq('⑬ 제출 글', h.sub.text, '8주 중 6번 제출');
+  const m8 = new Map(rows.map((r, i) => [W[i], r.report_id ? Object.assign({ members_absent: 1 }, r) : r]));
+  const st = A.periodStats(m8, W.slice(0, 8), 8, true);
+  const h = A.cellHealth(rows, reps, st);
+  sc.eq('⑬ 8주 통계: 이번 주를 냈으니 8주 전부 센다 (미제출 2 · 쉼 0 · 모임 6)', J([st.n, st.mis, st.off, st.held]), [8, 2, 0, 6]);
+  sc.eq('⑬ 신호등: 미제출 25%(2/8) → 주황 · 쉼 0 → 초록 · 요청 1번 → 주황', J([h.sub.lv, h.rest.lv, h.req.lv]), ['warn', 'ok', 'warn']);
+  sc.eq('⑬ 제출 글', h.sub.text, '미제출 2/8주 25%');
   const sig = A.leaderSignals(rows, reps);
   sc.eq('⑬ 셀리더 신호: 연속 미제출 · 늦은 제출 · 모임 못 함 · 조언 요청', J(sig.map(x => x.t)), ['2주 연속 미제출', '모임 뒤 사흘 넘겨 제출 2번', '모임 못 함 1번', '조언 요청 1번']);
+}
+
+// ⑬-2 기간 통계 · 신호등 % 기준 (HB 11/6: 이번 주 탭 정렬과 같은 계산)
+{
+  const E = (pres, abs) => ({ report_id: 'r', status: 'submitted', members_present: pres, members_absent: abs });
+  const OFF = { report_id: 'r', status: 'submitted', members_present: 0, members_absent: 0 };
+  const MISS = { report_id: null, status: null };
+  const mk = (list) => new Map(list.map((r, i) => [W[i], r]));
+  // 이번 주 아직 안 냄(뺀다) · 3 출석 1 결석 · 안 냄 · 쉼
+  const a = A.periodStats(mk([MISS, E(3, 1), MISS, OFF]), W.slice(0, 4), 3, true);
+  sc.eq('⑬-2 이번 주 마감 전 미제출은 센 주에서 뺀다 (뒤 3주를 센다)', J([a.ex, a.n, a.held, a.mis, a.off]), [true, 3, 1, 1, 1]);
+  sc.eq('⑬-2 출석 = 3 ÷ (4+4+4) · 쉼과 미제출은 결석', a.pct, 25);
+  const ha = A.cellHealth([], [], a);
+  sc.eq('⑬-2 출석 25% → 빨강 · 미제출 1/3 → 주황 · 쉼 1/3 → 주황', J([ha.att.lv, ha.sub.lv, ha.rest.lv]), ['bad', 'warn', 'warn']);
+  const b = A.periodStats(mk([MISS, E(3, 1), MISS, OFF]), W.slice(0, 4), 3, false);
+  sc.eq('⑬-2 지난 주를 보는 중이면 그 주 미제출도 결석으로 센다', J([b.ex, b.n, b.mis]), [false, 3, 2]);
+  const good = A.periodStats(mk([E(4, 0), E(4, 0), E(4, 0), E(3, 1)]), W.slice(0, 4), 4, true);
+  const hg = A.cellHealth([], [], good);
+  sc.eq('⑬-2 잘 오는 셀: 출석 94% 초록 · 미제출 0 초록 · 쉼 0 초록', J([good.pct, hg.att.lv, hg.sub.lv, hg.rest.lv]), [94, 'ok', 'ok', 'ok']);
+  const mid = A.periodStats(mk([E(3, 2), E(3, 2), E(3, 2), E(3, 2)]), W.slice(0, 4), 4, true);
+  sc.eq('⑬-2 출석 60% → 주황', A.cellHealth([], [], mid).att.lv, 'warn');
+  const none = A.periodStats(mk([MISS, MISS, MISS, MISS]), W.slice(0, 4), 4, true);
+  sc.eq('⑬-2 모임이 한 번도 없으면 명단 수를 몰라도 출석 0% · 미제출 3/3 → 빨강', J([none.pct, none.n, A.cellHealth([], [], none).sub.lv]), [0, 3, 'bad']);
+  const fresh = A.periodStats(mk([E(3, 1)]), W.slice(0, 4), 4, true);
+  const hf = A.cellHealth([], [], fresh);
+  sc.eq('⑬-2 보고서가 1주뿐인 새 셀은 판단 보류(회색)', J([hf.att.lv, hf.sub.lv, hf.rest.lv]), ['na', 'na', 'na']);
 }
 
 // ⑭ 시작 전 주 · 모임 못 한 주 (HB 11/6 3차: 이흥배 셀 — 5주 다 냈는데 제출이 주황, 0명 막대)
