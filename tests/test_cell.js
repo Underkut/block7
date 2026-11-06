@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, pool, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -217,6 +217,20 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑬ 제출 글', h.sub.text, '8주 중 6번 제출');
   const sig = A.leaderSignals(rows, reps);
   sc.eq('⑬ 셀리더 신호: 연속 미제출 · 늦은 제출 · 모임 못 함 · 조언 요청', J(sig.map(x => x.t)), ['2주 연속 미제출', '모임 뒤 사흘 넘겨 제출 2번', '모임 못 함 1번', '조언 요청 1번']);
+}
+
+// ⑭ 시작 전 주 · 모임 못 한 주 (HB 11/6 3차: 이흥배 셀 — 5주 다 냈는데 제출이 주황, 0명 막대)
+{
+  const S_ = (sub) => sub ? { report_id: 'r', status: 'submitted', members_present: 3, members_absent: 1 } : { report_id: null };
+  const m = new Map([[W[0], S_(1)], [W[1], S_(1)], [W[2], S_(1)], [W[3], S_(0)], [W[4], S_(0)]]);
+  sc.eq('⑭ 처음 낸 주보다 옛 주(셀은 있었지만 시작 전)는 뺀다', J([...A.trimBeforeStart(m, W).keys()]), [W[0], W[1], W[2]]);
+  const never = new Map([[W[0], S_(0)], [W[1], S_(0)]]);
+  sc.eq('⑭ 한 번도 안 낸 셀은 그대로 (진짜 미제출)', A.trimBeforeStart(never, W).size, 2);
+  const off = { report_id: 'r', status: 'submitted', members_present: 0, members_absent: 0, visitors_present: 0 };
+  sc.eq('⑭ 참석 0 · 결석 0 은 출석을 안 받은 주(쉼)', A.attTaken(off), false);
+  const ser = A.attendanceSeries(new Map([[W[0], off]]), [W[0]]);
+  sc.eq('⑭ 막대: 쉼으로 표시하고 평균에 넣지 않는다', J([ser[0].has, ser[0].off, A.attendanceSummary(ser).avg]), [false, true, null]);
+  sc.eq('⑭ 셀 케어 시작(2026-10) 전 주는 보여 주지 않는다', /const CC_START = '2026-10-01'/.test(HTML) && /w >= CC_START/.test(HTML), true);
 }
 
 // ⑩ 집 주소 · 버전
