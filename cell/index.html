@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -49,9 +49,10 @@ body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);font-weight:
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:640px;margin:0 auto}
-header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:max(14px,env(safe-area-inset-top)) 0 0;margin:0 -2px}
-.topline{display:flex;align-items:center;gap:8px;min-height:36px}
-.topline h1{font-size:19px;font-weight:500;margin:0;flex:1;letter-spacing:-.2px}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 0 0;margin:0 -2px}
+.topline{display:flex;align-items:center;gap:8px;min-height:34px}
+.topline h1{font-size:19px;font-weight:500;margin:0;flex:1;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.topline h1 img{width:24px;height:24px;border-radius:6px;border:0;box-shadow:none;flex:none;display:block}
 .iconbtn{width:34px;height:34px;display:grid;place-items:center;color:var(--tx2);border-radius:10px}
 .iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin:8px 0 0;border-bottom:1px solid var(--line);position:relative}
@@ -97,7 +98,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:max(14px
 .weeks.big{gap:6px;justify-content:center;margin:10px 0 2px}
 .weeks.big .wk{width:20px;height:20px;border-radius:5px}
 /* ⚠️ 이름에 .sub 를 쓰지 말 것 — 설명 글 .sub(margin)과 겹쳐 네모가 아래로 밀린다 */
-.wk.w-sub{background:var(--ok)} .wk.w-miss{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)} .wk.now{outline:1.5px solid var(--tx3);outline-offset:1px}
+.wk.w-sub{background:var(--ok)} .wk.w-miss{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)} .wk.now{outline:1.5px solid var(--tx3);outline-offset:1px} .wk.w-sub.now{background:var(--ac)}
 .wk.w-half{background:var(--warn)}
 .seg{display:inline-flex;background:var(--s2);border-radius:10px;padding:2px;gap:2px}
 .seg button{padding:5px 11px;border-radius:8px;font-size:13px;color:var(--tx2)}
@@ -157,7 +158,7 @@ body.cvopen{overflow:hidden}
 .cv{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;
   padding:0 max(16px,env(safe-area-inset-right)) 60px max(16px,env(safe-area-inset-left));box-shadow:-8px 0 30px rgba(0,0,0,.12)}
 .cvin{max-width:640px;margin:0 auto}
-.cvhead{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:8px;padding:max(12px,env(safe-area-inset-top)) 0 6px}
+.cvhead{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) 0 6px}
 .cvtitle{flex:1;text-align:center;display:flex;flex-direction:column;line-height:1.3}
 .cvtitle b{font-weight:500;font-size:17px}
 .modal-head-gap{width:34px;flex:none}
@@ -235,7 +236,7 @@ h3 .lnk{font-weight:500}
 .clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .clamp.open{display:block;-webkit-line-clamp:unset}
 .clamp.cut:not(.open){-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent);mask-image:linear-gradient(180deg,#000 62%,transparent)}
-.morebtn{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ac);margin-top:3px;padding:2px 0}
+.morebtn{display:flex;width:fit-content;margin-left:auto;align-items:center;gap:5px;font-size:12.5px;color:var(--ac);margin-top:3px;padding:2px 0}
 .morebtn i{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
 .morebtn i.up{transform:rotate(-135deg) translate(-1px,-1px)}
 .lbl2{font-size:12.5px;color:var(--tx2);margin:14px 2px 6px}
@@ -243,6 +244,8 @@ h3 .lnk{font-weight:500}
 .bk{z-index:36}
 .phbtn{width:34px;height:34px;display:grid;place-items:center;flex:none;color:var(--ok)}
 .phbtn svg{width:20px;height:20px;fill:currentColor}
+.phbtn{text-decoration:none}
+.cvhead:has(.phslot .phbtn+.phbtn) .rgap{width:68px}
 .phbtn.none{color:var(--tx3);opacity:.45}
 .phslot{display:contents}
 .callmenu{position:fixed;z-index:70;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:6px;min-width:190px}
@@ -284,7 +287,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-10';
+const APP_VERSION = 'v. 26-1106-11';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -869,7 +872,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-10 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-11 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1016,7 +1019,7 @@ const ICON = {
   print: '<svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v6H7z"/></svg>',
 };
 function renderShell() {
-  $('#root').innerHTML = `<header class="top"><div class="topline" style="position:relative"><h1>셀 한눈에</h1>
+  $('#root').innerHTML = `<header class="top"><div class="topline" style="position:relative"><h1><img src="favicon.png" alt="" width="24" height="24">셀 한눈에</h1>
       <button class="iconbtn" data-act="print" title="인쇄 · PDF">${ICON.print}</button>
       <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
       ${DEMO ? '<div class="demo">미리보기 — 지어낸 자료입니다. 셀 케어와 연결되지 않았습니다.</div>' : ''}
@@ -1172,7 +1175,7 @@ function viewWeek() {
       ${meta ? `<div class="meta">${meta}</div>` : ''}${weekSquares(c, false, S.weekIdx ? w : null)}</div>
       <div style="text-align:right;font-size:12.5px;min-width:86px" class="${hot ? '' : 'muted'}">${hot ? '<span style="color:var(--bad)">' + esc(txt) + '</span>' : esc(txt)}</div><span class="chev">›</span></div>`;
   }).join('') + '</div>';
-  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
+  h += '<p class="tiny muted" style="text-align:center">네모 12칸 = 지난 12주 (오른쪽 끝이 이번 주) · 네모를 누르면 그 주 보고서<br>초록 제출 · 파랑 이번 주 제출 · 주황 수정 요청/고치는 중 · 빨강 미제출</p>';
   return h;
 }
 /* ---------- 셀 하나 · 주차별 (전체화면) ---------- */
@@ -1510,7 +1513,7 @@ function personHtml() {
   const mid = S.pview.mid; const p = S.people && S.people.get(mid); const m = S.members.get(mid) || {};
   const cellId = m.cell_id || (p && p.cellId); const name = m.name || (p && p.name) || '(이름 없음)';
   const st = p ? personStats(p, S.weeks) : null;
-  let h = `<div class="cvin"><div class="cvhead"><span class="phslot">${phoneBtn(mid)}</span><div class="cvtitle"><b>${esc(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div>
+  let h = `<div class="cvin"><div class="cvhead"><span class="phslot">${phoneBtn(mid)}</span><div class="cvtitle"><b>${esc(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div><span class="modal-head-gap rgap"></span>
     <button class="modal-x" data-act="pv-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
   h += `<div class="card"><div class="row"><span class="small">출석 ${st ? st.present + ' / ' + st.seq.length : '—'}</span><span class="spacer"></span>${st && st.absentRun >= 2 ? `<span class="pill bad">${st.absentRun}주 결석</span>` : ''}${st && st.lastPresent ? `<span class="tiny muted">마지막 출석 ${esc(shortWeek(st.lastPresent))}</span>` : ''}</div>${p ? dots(p) : '<div class="tiny muted">출석 기록을 모으는 중…</div>'}</div>`;
   let any = false;
@@ -1538,7 +1541,7 @@ function applyClamp(root) {
   for (const el of (root || document).querySelectorAll('.clamp:not([data-ck])')) {
     if (!el.offsetParent) continue;
     el.dataset.ck = '1';
-    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more">더보기<i></i></button>'); }
+    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more">more<i></i></button>'); }
   }
 }
 function toggleClamp(btn) {
@@ -1546,7 +1549,7 @@ function toggleClamp(btn) {
   const open = !el.classList.contains('open');
   const h0 = el.clientHeight;
   el.classList.toggle('open', open);
-  btn.firstChild.textContent = open ? '접기' : '더보기'; btn.querySelector('i').classList.toggle('up', open);
+  btn.firstChild.textContent = open ? 'less' : 'more'; btn.querySelector('i').classList.toggle('up', open);
   const h1 = el.clientHeight;
   if (!quiet()) el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
@@ -1664,9 +1667,11 @@ function setPhones(changes) {
   return true;
 }
 const PHONE_SVG = '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>';
+const SMS_SVG = '<svg viewBox="0 0 24 24"><path d="M12 4c5.2 0 9 3.1 9 7 0 2-1 3.8-2.6 5.1.1 1.3.6 2.5 1.4 3.4-1.9-.1-3.5-.8-4.7-1.7-.9.2-1.9.3-3.1.3-5.2 0-9-3.1-9-7.1 0-3.9 3.8-7 9-7z"/></svg>';
 function phoneBtn(mid) {
   const p = phoneOf(mid);
-  return p ? `<button class="phbtn" data-act="call" data-mid="${esc(mid)}" title="${esc(p)} 전화 · 문자" aria-label="전화 · 문자">${PHONE_SVG}</button>`
+  const d = normPhone(p || '');
+  return p ? `<a class="phbtn" href="tel:${d}" title="${esc(p)} 전화" aria-label="전화 걸기">${PHONE_SVG}</a><a class="phbtn" href="sms:${d}" title="${esc(p)} 문자" aria-label="문자 보내기">${SMS_SVG}</a>`
     : `<button class="phbtn none" data-act="book" data-mid="${esc(mid)}" title="전화번호 넣기" aria-label="전화번호 넣기">${PHONE_SVG}</button>`;
 }
 function showCall(btn, mid) {
