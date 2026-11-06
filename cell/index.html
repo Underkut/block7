@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-26 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-27 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -130,6 +130,11 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .sect{margin-top:10px}
 .sect>.lbl{font-size:12px;color:var(--tx3);letter-spacing:.2px;margin-bottom:2px}
 .names{font-size:14px}
+.barscroll{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.barscroll::-webkit-scrollbar{display:none}
+.barin{min-width:100%}
+.bar.gray .b{background:var(--tx3);opacity:.35}
+.bar.gray .n{color:var(--tx3);opacity:.6}
 .bars{display:flex;align-items:flex-end;gap:4px;height:74px;margin-top:8px}
 .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
 .bar .b{width:100%;max-width:22px;border-radius:4px 4px 2px 2px;background:var(--ac)}
@@ -306,7 +311,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-26';
+const APP_VERSION = 'v. 26-1106-27';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -938,7 +943,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, cspan: 4, issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-26 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-27 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1107,6 +1112,7 @@ function rerender() {
   const p = $('#panel'); if (!p) return;
   const fn = { week: viewWeek, care: viewCare, prayer: viewPrayer, issue: viewIssue, comment: viewComment, cell: viewCellTab }[PREF.tab];
   p.innerHTML = fn();
+  if (PREF.tab === 'cell') for (const el of p.querySelectorAll('.barscroll')) el.scrollLeft = el.scrollWidth;   // 막대는 이번 주(오른쪽 끝)부터 보인다
   if (PREF.tab === 'comment' && S.newIds.size) { markCommentsSeen(); setTimeout(() => { S.newIds = new Set(); const t = document.querySelector('.tab[data-tab="comment"]'); if (t) t.textContent = '코멘트'; }, 400); }
   if (PREF.tab === 'week' && PREF.weekMode === 'page') fillPage();
 }
@@ -1165,7 +1171,7 @@ function bindSwipe() {
     if (busyAnim || e.touches.length > 1) return;
     // ⚠️ 옆으로 밀리는 상자(이슈 표 등) 안에서 시작한 손짓은 탭 넘김에 쓰지 않는다 — 표를 밀면 탭까지 넘어가던 것 (HB 11/6)
     if (e.target.closest && e.target.closest('.spanbox')) { on = false; return; }   // 슬라이더를 끄는 손은 탭 넘김에 쓰지 않는다
-    const box = e.target.closest && e.target.closest('.mxwrap'); if (box && box.scrollWidth > box.clientWidth + 2) { on = false; return; }
+    const box = e.target.closest && e.target.closest('.mxwrap,.barscroll'); if (box && box.scrollWidth > box.clientWidth + 2) { on = false; return; }
     const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); }, { passive: true });
   st.addEventListener('touchmove', e => {
     if (!on) return; const t = e.touches[0]; const ddx = t.clientX - x0, ddy = t.clientY - y0;
@@ -1567,12 +1573,19 @@ function viewCellTab() {
   const ready = S.loadedSpan >= 8;
   const cn = cspanN(); const T = thrNorm(PREF.thr);
   let h = `<div class="sortrow noprint"><label class="spanbox" title="신호 기간 (주)"><b id="cspanv">${cn}주</b><input type="range" id="cspanr" min="2" max="8" step="1" value="${cn}" aria-label="신호 기간 주 수"></label></div>
-    <p class="sub">셀마다 신호와 12주 출석입니다. <b>출석 · 제출 · 쉼</b>은 위 슬라이더의 기간(쉼 · 미제출은 결석으로 센 출석률 ${T.attOk}%↑ 초록 · ${T.attWarn}%↑ 주황 · 미제출 · 쉼은 없으면 초록 · ${T.ratioBad}% 미만 주황 · 이상 빨강), <b>이슈 · 요청</b>은 최근 8주. 보고서가 ${T.minN}주 미만이면 회색(판단 보류). 기준은 메뉴 › 신호 기준. \'쉼\' 은 모임을 못 한 주, 점선은 보고서가 없던 주.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>`;
+    <p class="sub">셀마다 신호와 주별 출석입니다. <b>출석 · 제출 · 쉼</b>은 위 슬라이더의 기간(쉼 · 미제출은 결석으로 센 출석률 ${T.attOk}%↑ 초록 · ${T.attWarn}%↑ 주황 · 미제출 · 쉼은 없으면 초록 · ${T.ratioBad}% 미만 주황 · 이상 빨강), <b>이슈 · 요청</b>은 최근 8주. 보고서가 ${T.minN}주 미만이면 회색(판단 보류). 기준은 메뉴 › 신호 기준. \'쉼\' 은 모임을 못 한 주, 점선은 보고서가 없던 주.<br>막대는 슬라이더 기간만큼이고, 센 기간 밖의 먼 주는 회색 · 6주 이상이면 막대 칸을 옆으로 밀어 이전 주를 봅니다.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>`;
   for (const c of ids) {
-    const ser = attendanceSeries(cellWeekMap(c), S.weeks);
-    const sm = attendanceSummary(ser);
+    const cm = cellWeekMap(c);
+    // 막대 (HB 11/6): 슬라이더 기간(N)만큼. 5칸이 한눈에 보이고, 4주 이하면 센 기간 밖의 먼 주는 회색 · 6주 이상이면 상자 안에서 옆으로 밀어 이전 주를 본다.
+    // 센 기간 = 이번 주가 마감 전이면 그 주를 빼고 N주 (periodStats 와 같다).
+    const pend = cm.has(S.weeks[0]) && !isSubmitted(cm.get(S.weeks[0])) ? 1 : 0;
+    const shown = Math.min(S.weeks.length, Math.max(5, cn + pend));
+    const ser = attendanceSeries(cm, S.weeks.slice(0, shown));   // 옛날 → 이번 주
+    const idxOf = (k) => ser.length - 1 - k;                     // 이번 주 = 0
+    const inWin = (k) => { const i = idxOf(k); return i >= pend && i < pend + cn; };
+    const sm = attendanceSummary(ser.filter((x, k) => inWin(k)));
     const max = Math.max(1, ...ser.map(x => x.present + x.visitors));
-    const cm = cellWeekMap(c); const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
+    const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
     const reps = ready ? cellReps(c, 8) : [];
     const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true), PREF.thr) : null;
     const sig = ready ? leaderSignals(rows8, reps) : [];
@@ -1580,8 +1593,8 @@ function viewCellTab() {
     h += `<div class="card"><div class="row"><button class="lnk" data-act="open-cell" data-cell="${esc(c)}"><h3 style="margin:0">${esc(cellName(c))}</h3></button><span class="tiny muted">${esc(leaderOf(c))}</span><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
       ${hl ? `<div class="lights">${light('att', '출석')}${light('sub', '제출')}${light('rest', '쉼')}${light('issue', '이슈')}${light('req', '요청')}</div><div class="tiny muted" style="margin-top:2px">${esc([hl.att.text, hl.sub.text, hl.rest.text, hl.issue.text, hl.req.text].join(' · '))}</div>` : '<div class="tiny muted" style="margin-top:6px">신호를 계산하는 중…</div>'}
       ${sig.length ? `<div class="sigs"><span class="tiny muted">셀리더</span>${sig.map(x => `<span class="pill ${LV[x.lv]}" title="${esc(x.note || '')}">${esc(x.t)}</span>`).join('')}${sig.find(x => x.note) ? `<div class="tiny muted clamp" style="width:100%">${esc(sig.filter(x => x.note).map(x => x.note).join(' · '))}</div>` : ''}</div>` : ''}
-      <div class="bars">${ser.map(x => x.has ? `<div class="bar" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : x.off ? `<div class="bar" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}" title="모임 못 함"><span class="n">쉼</span><div class="b off"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
-      <div class="barx">${ser.map((x, i) => `<span>${esc(i && x.week.slice(5, 7) === ser[i - 1].week.slice(5, 7) ? String(+x.week.slice(8, 10)) : shortWeek(x.week))}</span>`).join('')}</div></div>`;
+      <div class="barscroll"><div class="barin" style="${ser.length > 5 ? `width:${ser.length * 20}%` : ''}"><div class="bars">${ser.map((x, k) => x.has ? `<div class="bar${inWin(k) ? '' : ' gray'}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : x.off ? `<div class="bar${inWin(k) ? '' : ' gray'}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}" title="모임 못 함"><span class="n">쉼</span><div class="b off"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
+      <div class="barx">${ser.map((x, i) => `<span>${esc(i && x.week.slice(5, 7) === ser[i - 1].week.slice(5, 7) ? String(+x.week.slice(8, 10)) : shortWeek(x.week))}</span>`).join('')}</div></div></div></div>`;
   }
   return h;
 }
