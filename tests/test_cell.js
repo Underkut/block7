@@ -243,6 +243,8 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑬-2 출석 60% → 주황', A.cellHealth([], [], mid).att.lv, 'warn');
   const none = A.periodStats(mk([MISS, MISS, MISS, MISS]), W.slice(0, 4), 4, true);
   sc.eq('⑬-2 모임이 한 번도 없으면 명단 수를 몰라도 출석 0% · 미제출 3/3 → 빨강', J([none.pct, none.n, A.cellHealth([], [], none).sub.lv]), [0, 3, 'bad']);
+  const hn = A.cellHealth([MISS, MISS, MISS], [], none);
+  sc.eq('⑬-2 계속 미제출이면 출석 · 제출은 빨강, 쉼 · 이슈 · 요청은 초록이 아니라 회색(알 수 없음)', J([hn.att.lv, hn.sub.lv, hn.rest.lv, hn.issue.lv, hn.req.lv]), ['bad', 'bad', 'na', 'na', 'na']);
   const fresh = A.periodStats(mk([E(3, 1)]), W.slice(0, 4), 4, true);
   const hf = A.cellHealth([], [], fresh);
   sc.eq('⑬-2 보고서가 1주뿐인 새 셀은 판단 보류(회색)', J([hf.att.lv, hf.sub.lv, hf.rest.lv]), ['na', 'na', 'na']);
