@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -233,6 +233,24 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑭ 셀 케어 시작(2026-10) 전 주는 보여 주지 않는다', /const CC_START = '2026-10-01'/.test(HTML) && /w >= CC_START/.test(HTML), true);
 }
 
+// ⑮ 명단 · 전화번호 (L15) — 연락처 파일 · 이름 맞추기 · 번호 모양
+{
+  sc.eq('⑮ 이름 다듬기: 괄호 · 직분 · 빈칸을 뗀다', J(['김하나 집사님(청년부)', '이 두리', '박세나 권사', '정다운형제'].map(A.normName)), ['김하나', '이두리', '박세나', '정다운']);
+  sc.eq('⑮ 같음 1 · 품음 .8 · 한 글자 다름 .6 · 다름 0', J([A.nameScore('김하나', '김하나 집사'), A.nameScore('하나', '김하나'), A.nameScore('윤소망이', '윤소방이'), A.nameScore('김하나', '이두리')]), [1, 0.8, 0.6, 0]);
+  sc.eq('⑮ 두 글자 이름은 한 글자 다름으로 맞추지 않는다', A.nameScore('한결', '한별'), 0);
+  sc.eq('⑮ 번호 모양', J(['01012345678', '+82 10-1234-5678', '02 123 4567', '031-1234-5678'].map(A.fmtPhone)), ['010-1234-5678', '010-1234-5678', '02-123-4567', '031-1234-5678']);
+  const vcf = ['BEGIN:VCARD', 'VERSION:3.0', 'N:김;하나;;;', 'FN:김하나 집사', 'TEL;type=CELL;type=VOICE;type=pref:010-1111-2222', 'item1.TEL:+82 10 1111 2222', 'END:VCARD',
+    'BEGIN:VCARD', 'VERSION:3.0', 'FN:이두리', 'TEL;TYPE=CELL:010-3333-', ' 4444', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:번호없는분', 'END:VCARD',
+    'BEGIN:VCARD', 'N:박;세나;;;', 'TEL:02-555-6666', 'END:VCARD'].join('\r\n');
+  const C = A.parseVcf(vcf);
+  sc.eq('⑮ vCard: FN(없으면 N) · 같은 번호 한 번 · 접힌 줄 펴기 · 번호 없는 분 버림', J(C), [{ name: '김하나 집사', tels: ['010-1111-2222'] }, { name: '이두리', tels: ['010-3333-4444'] }, { name: '박세나', tels: ['02-555-6666'] }]);
+  sc.eq('⑮ 셀원 이름에 맞는 후보 (점수 순)', J(A.matchContacts('김하나', C.concat([{ name: '김하나B', tels: ['010-9999-0000'] }])).map(x => [x.tel, x.score])), [['010-1111-2222', 1], ['010-9999-0000', 0.8]]);
+  sc.eq('⑮ 맞는 사람이 없으면 비움', A.matchContacts('최기쁨', C).length, 0);
+  sc.eq('⑮ 번호는 cellbook/{uid} 에만 — BLOCK7 상태 문서(users)는 건드리지 않는다', /collection\('cellbook'\)/.test(HTML) && !/collection\('users'\)/.test(HTML), true);
+  sc.eq('⑮ 연락처 파일 내용은 저장하지 않는다 (이 기기에도)', /lsSet\([^)]*contacts|localStorage\.setItem\([^)]*contacts/i.test(HTML), false);
+}
+
 // ⑩ 집 주소 · 버전
 sc.eq('⑩ block7.my 로 열리면 sweeter.my/cell/ 로 넘긴다', HTML.includes("location.replace('https://sweeter.my/cell/'"), true);
 sc.eq('⑩ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].includes(A.APP_VERSION), true);
@@ -242,7 +260,7 @@ sc.eq('⑩ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].include
   sc.eq('⑪ 홈 화면에서 따로 열린다 (standalone · /cell/ 안에서만)', [man.display, man.start_url, man.scope], ['standalone', '/cell/', '/cell/']);
   sc.eq('⑪ 아이콘 파일이 있다', ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].every(f => fs.existsSync(path.join(__dirname, '..', 'cell', f))), true);
   sc.eq('⑪ 페이지가 manifest · 아이폰 아이콘을 건다', HTML.includes('rel="manifest" href="manifest.json"') && HTML.includes('rel="apple-touch-icon"'), true);
-  sc.eq('⑪ 입력칸 글자 16px (작으면 아이폰이 확대해 옆으로 넘친다)', /input\[type=email\],input\[type=text\]\{[^}]*font-size:16px/.test(HTML), true);
+  sc.eq('⑪ 입력칸 글자 16px (작으면 아이폰이 확대해 옆으로 넘친다)', /input\[type=email\],input\[type=text\],input\[type=password\]\{[^}]*font-size:16px/.test(HTML), true);
 }
 sc.eq('⑩ 검색에 안 잡히게 (noindex)', /name="robots" content="noindex/.test(HTML), true);
 
