@@ -19,11 +19,11 @@ const sc = makeScorer();
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'cell', 'index.html'), 'utf8');
 const m = HTML.match(/<script id="cell-core">([\s\S]*?)<\/script>/);
 if (!m) { console.error('cell-core 덩어리를 못 찾았습니다'); process.exit(2); }
-const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, Promise, isFinite };
+const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date, Promise, isFinite, TextEncoder, TextDecoder, Uint8Array };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, buildPeople, personStats, careList, dropping, newFaces, cellHealth, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -246,8 +246,21 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const C = A.parseVcf(vcf);
   sc.eq('⑮ vCard: FN(없으면 N) · 같은 번호 한 번 · 접힌 줄 펴기 · 번호 없는 분 버림', J(C), [{ name: '김하나 집사', tels: ['010-1111-2222'] }, { name: '이두리', tels: ['010-3333-4444'] }, { name: '박세나', tels: ['02-555-6666'] }]);
   sc.eq('⑮ 셀원 이름에 맞는 후보 (점수 순)', J(A.matchContacts('김하나', C.concat([{ name: '김하나B', tels: ['010-9999-0000'] }])).map(x => [x.tel, x.score])), [['010-1111-2222', 1], ['010-9999-0000', 0.8]]);
+  // HB 11/6: 연락처에 분명히 있는데 못 찾던 것
+  const nfd = ['BEGIN:VCARD', 'FN:' + '김하나'.normalize('NFD'), 'TEL:010-1111-2222', 'END:VCARD'].join('\n');
+  sc.eq('⑮ 맥 · 아이폰 파일의 풀어 쓴 한글(NFD)도 같은 이름', A.matchContacts('김하나', A.parseVcf(nfd)).length, 1);
+  const qp = ['BEGIN:VCARD', 'VERSION:2.1', 'FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=EA=B9=80=ED=95=98=EB=82=98', 'TEL;CELL:010-7777-8888', 'END:VCARD',
+    'BEGIN:VCARD', 'VERSION:2.1', 'FN;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=EC=9D=B4=EB=91=90=', '=EB=A6=AC', 'TEL;CELL:010-1212-3434', 'END:VCARD'].join('\r\n');
+  sc.eq('⑮ 안드로이드 파일의 QUOTED-PRINTABLE 이름 (줄 잇기 포함)', J(A.parseVcf(qp).map(c => c.name)), ['김하나', '이두리']);
+  const P2 = A.prepContacts(C);
+  const auto = A.autoFill([{ id: 'a', name: '김하나' }, { id: 'b', name: '이두리' }, { id: 'c', name: '최기쁨' }], { b: { p: '010-0000-0000' } }, (m) => A.matchContacts(m.name, P2, 3));
+  sc.eq('⑮ 후보 하나 · 번호 없음 → 바로 넣고 어느 연락처인지 남긴다 (이미 번호 있으면 그대로)', J(auto), { a: { p: '010-1111-2222', src: '김하나 집사' } });
+  const P3 = A.prepContacts([{ name: '김하나B', tels: ['010-9999-0000'] }, { name: '김 하나', tels: ['010-1111-2222'] }, { name: '박세나1', tels: ['010-5555-1111'] }, { name: '박세나2', tels: ['010-5555-2222'] }]);
+  const auto2 = A.autoFill([{ id: 'a', name: '김하나' }, { id: 's', name: '박세나' }], {}, (m) => A.matchContacts(m.name, P3, 3));
+  sc.eq('⑮ 띄어쓰기만 다른 꼭 같은 이름이 있으면 비슷한 후보가 여럿이어도 먼저 넣는다 · 비슷한 것만 여럿이면 넣지 않는다', J(auto2), { a: { p: '010-1111-2222', src: '김 하나' } });
   sc.eq('⑮ 맞는 사람이 없으면 비움', A.matchContacts('최기쁨', C).length, 0);
   sc.eq('⑮ 번호는 cellbook/{uid} 에만 — BLOCK7 상태 문서(users)는 건드리지 않는다', /collection\('cellbook'\)/.test(HTML) && !/collection\('users'\)/.test(HTML), true);
+  sc.eq('⑮ 저장은 한 번에 몰아서 (번호마다 기다리지 않음)', /function setPhones\(changes\)/.test(HTML) && !/async function savePhone/.test(HTML), true);
   sc.eq('⑮ 연락처 파일 내용은 저장하지 않는다 (이 기기에도)', /lsSet\([^)]*contacts|localStorage\.setItem\([^)]*contacts/i.test(HTML), false);
 }
 
