@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1106-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1106-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -415,7 +415,7 @@ a.wl{color:inherit;text-decoration:none}
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1106-3';
+const APP_VERSION = 'v. 26-1106-4';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -590,6 +590,28 @@ function idPatches(values, nowMs, max) {
   return out;
 }
 
+// ───────── 기기끼리 설정 맞추기 ─────────
+// 고른 시트 · 폼과 화면 기준만 계정 문서 users/{uid}/data/care 에 둔다 — 폰에서 고르면 PC 도 같은 파일을 연다.
+// (구글 '고른 파일만' 권한은 계정에 붙어 있어서, 다른 기기도 파일 id 만 알면 열 수 있다)
+// ⚠️ 심방 내용은 여기 넣지 않는다. 파일 이름 · id · 기준값뿐이다. BLOCK7 은 data/ 아래에서 state · backup_0~2 ·
+//    conflicts 만 이름으로 읽으므로 이 문서와 부딪치지 않는다.
+const CFG_DOC = 'data/care';
+const CFG_FIELDS = ['sheet', 'form', 'responder', 'cutoff', 'stale'];
+function pickCfg(o) { const r = {}; CFG_FIELDS.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); if (o && o.at) r.at = o.at; return r; }
+// 나중에 고친 쪽을 따른다. 시각 없는 옛 기기 값(이 기능 전에 고른 것)은 계정 것보다 뒤로 친다.
+// → { local: 이 기기에 쓸 값(없으면 null), push: 계정에 올릴 값(없으면 null) }
+function mergeCfg(local, cloud, now) {
+  const l = pickCfg(local), c = cloud ? pickCfg(cloud) : null;
+  const lHas = CFG_FIELDS.some(k => l[k] !== undefined), la = l.at || 0, ca = c ? (c.at || 0) : -1;
+  if (!c) return lHas ? { local: null, push: Object.assign(l, { at: la || now }) } : { local: null, push: null };
+  if (la > ca) return { local: null, push: l };
+  if (ca > la || !lHas) {
+    const keep = {}; Object.keys(local || {}).forEach(k => { if (!CFG_FIELDS.includes(k) && k !== 'at') keep[k] = local[k]; });
+    return { local: Object.assign(keep, c), push: null };
+  }
+  return { local: null, push: null };
+}
+
 // ───────── C1 열람 (읽기만) ─────────
 // 응답 탭 값 → 화면이 쓰는 모양. 시트는 고치지 않는다. 내용은 화면 메모리에만 둔다(기기에 저장하지 않는다).
 const DEPTH_N = { '깊음': 3, '중간': 2, '얕음': 1 };
@@ -728,11 +750,11 @@ function countBy(visits, pick) { const m = {}; visits.forEach(v => [].concat(pic
 // ───────────────────────────── 연결 (로그인 · 열쇠 · 구글 API) ─────────────────────────────
 const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
   storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
-const FB_JS = ['app', 'auth'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
 const GCAL_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/gcal';
 const $ = id => document.getElementById(id);
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
-let AUTH = null, USER = null, TOK = null, AUTH_READY = false;
+let AUTH = null, DB = null, USER = null, TOK = null, AUTH_READY = false;
 
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function toast(msg, ms) {
@@ -749,7 +771,7 @@ function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Objec
 async function fbInit() {
   for (const s of FB_JS) await load(s);
   const app = firebase.apps.find(a => a.name === 'care') || firebase.initializeApp(FB_CFG, 'care');
-  AUTH = app.auth();
+  AUTH = app.auth(); DB = app.firestore();
   AUTH.onAuthStateChanged(u => {
     USER = u; TOK = null; AUTH_READY = true; DATA.state = 'idle'; DATA.model = null;
     if (u) googleStatus(); else render();
@@ -772,8 +794,28 @@ let G = { connected: false, email: '', checked: false };
 async function googleStatus() {
   try { const j = await fn('/status'); G = { connected: !!j.connected, email: j.email || '', checked: true }; }
   catch (e) { G = { connected: false, email: '', checked: true, err: '열쇠 서버에 닿지 못했습니다.\n잠시 뒤 다시 열어 주세요.' }; }
+  if (G.connected) await cfgSync();
   render();
   if (G.connected && saved().sheet) loadData();
+}
+// 계정의 설정 문서와 이 기기를 맞춘다 (실패해도 이 기기 값으로 그대로 돈다)
+async function cfgSync() {
+  if (!USER || !DB) return false;
+  try {
+    const ref = DB.doc('users/' + USER.uid + '/' + CFG_DOC), snap = await ref.get();
+    const before = JSON.stringify(pickCfg(saved()));
+    const r = mergeCfg(saved(), snap.exists ? snap.data() : null, Date.now());
+    if (r.local) { try { localStorage.setItem(CARE_KEY, JSON.stringify(r.local)); } catch (e) {} }
+    if (r.push) await ref.set(r.push);
+    const changed = !!r.local && JSON.stringify(pickCfg(r.local)) !== before;
+    if (changed) { DATA.form = null; }
+    return changed;
+  } catch (e) { return false; }
+}
+// 고르기 · 기준 바꾸기는 이 기기에 적고(시각과 함께) 계정에도 올린다
+function saveCfg(patch) {
+  save(Object.assign({}, patch, { at: Date.now() }));
+  if (USER && DB) DB.doc('users/' + USER.uid + '/' + CFG_DOC).set(pickCfg(saved())).catch(() => {});
 }
 async function googleConnect() {
   try { const j = await fn('/start', { ret: 'https://sweeter.my/care/', care: true }); location.href = j.url; }
@@ -827,7 +869,8 @@ async function pick(kind) {
       .setCallback(d => {
         if (d.action !== P.Action.PICKED || !d.docs || !d.docs[0]) return;
         const f = { id: d.docs[0].id, name: d.docs[0].name };
-        save(kind === 'sheet' ? { sheet: f, test: null } : { form: f, responder: '' });
+        if (kind === 'sheet') save({ test: null }); else DATA.form = null;
+        saveCfg(kind === 'sheet' ? { sheet: f } : { form: f, responder: '' });
         toast((kind === 'sheet' ? '시트' : '폼') + '를 골랐습니다\n' + f.name);
         loadData();
       }).build().setVisible(true);
@@ -847,7 +890,7 @@ async function loadData(quiet) {
     const vals = await readTab(s.id, tab.title);
     let form = DATA.form;
     const f = saved().form;
-    if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); form = formSummary(fj); save({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
+    if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
     const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션') } : {};
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
@@ -876,8 +919,11 @@ async function loadCal() {
   } catch (e) { DATA.cal = []; DATA.calErr = '캘린더를 읽지 못했습니다'; }
   render();
 }
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && DATA.state === 'ok' && Date.now() - DATA.at > 30000) loadData(true);
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !USER || !G.connected) return;
+  if (Date.now() - (DATA.at || 0) <= 30000) return;
+  const changed = await cfgSync();   // 다른 기기에서 시트를 바꿨으면 그것을 따른다
+  if (changed) loadData(); else if (DATA.state === 'ok') loadData(true);
 });
 
 // ───────────────────────────── 화면 상태 ─────────────────────────────
@@ -1209,7 +1255,7 @@ function lSettings(L) {
   h += '<div class="h-sec">그 밖에</div><div class="set"><div class="srow"><span class="t">오래 못 만남 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [14, 21, 28, 42].map(n => '<button class="opt" data-act="stale" data-v="' + n + '" aria-pressed="' + (pf.stale === n) + '">' + n / 7 + '주</button>').join('') + '</div></div>' +
     '<button class="srow" data-act="layer" data-v="c0"><span class="t">연결 시험 (C0)</span><span class="v">›</span><div class="d" style="text-align:left">시트 · 폼 · 캘린더가 앱과 맞물리는지 다시 확인합니다</div></button></div>';
-  h += '<p class="muted" style="margin-top:22px">심방 노트 ' + APP_VERSION + ' · 심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다.</p>';
+  h += '<p class="muted" style="margin-top:22px">심방 노트 ' + APP_VERSION + ' · 심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다. 고른 시트 · 폼과 위 기준은 계정에 저장되어 다른 기기에서도 같게 열립니다.</p>';
   return h + '</div>';
 }
 
@@ -1239,7 +1285,7 @@ const T1 = step('t1', async () => {
 });
 const T2 = step('t2', async () => {
   const f = needForm(), form = await gapi('https://forms.googleapis.com/v1/forms/' + f.id);
-  FORM0 = formSummary(form); save({ responder: form.responderUri || '' });
+  FORM0 = formSummary(form); saveCfg({ responder: form.responderUri || '' });
   let cmp = ''; const s = saved().sheet;
   if (s) { const info = await readTabs(s.id), tab = findResponsesTab(info.tabs); if (tab) { const d = formVsSheet(FORM0, tab.header); cmp = '\n시트와 비교: ' + (d.notInSheet.length || d.notInForm.length ? '폼에만 ' + (esc(d.notInSheet.join(', ')) || '없음') + ' · 시트에만 ' + (esc(d.notInForm.join(', ')) || '없음') : '질문과 머리글이 모두 같습니다'); } }
   return '질문 <b>' + FORM0.length + '개</b>\n' + FORM0.map(q => '· ' + esc(q.title) + ' — ' + (q.kind === 'choice' ? (q.multi ? '여럿' : '하나') + ' ' + q.options.length + '개' + (q.other ? ' + 기타' : '') : q.kind === 'date' ? '날짜' + (q.includeYear ? '' : '(연도 없음)') : q.kind === 'long' ? '긴 글' : '짧은 글')).join('\n') + cmp;
@@ -1490,8 +1536,8 @@ document.addEventListener('click', e => {
   else if (a === 'attrk') S.attrK = v;
   else if (a === 'gopen') S.gopen[v] = !S.gopen[v];
   else if (a === 'psort') S.pSort = v;
-  else if (a === 'cutoff') { save({ cutoff: v }); rebuild(); }
-  else if (a === 'stale') save({ stale: +v });
+  else if (a === 'cutoff') { saveCfg({ cutoff: v }); rebuild(); }
+  else if (a === 'stale') saveCfg({ stale: +v });
   else return;
   render();
 });
