@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, pool };`, ctx);
+  catsOf, groupIssues, issueMatrix, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, pool };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -93,6 +93,23 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑤ 이름은 셀 케어 표시 그대로', g[1].label, '장기결석');
 }
 
+// ⑤-2 셀 × 이슈 표 (HB 11/6: 셀 거르기 + 이슈 거르기를 한 판에)
+{
+  const notes = [
+    { _cell: 'c2', _cellName: '샘플 2셀', categories: ['health', 'family'], leadership_attention_required: true },
+    { _cell: 'c1', _cellName: '샘플 1셀', categories: ['faith'] },
+    { _cell: 'c1', _cellName: '샘플 1셀', categories: ['health'] },
+    { _cell: 'c2', _cellName: '샘플 2셀', categories: ['health'] },
+  ];
+  const mx = A.issueMatrix(notes);
+  sc.eq('⑤-2 줄 = 셀 이름순', J(mx.cells), ['c1', 'c2']);
+  sc.eq('⑤-2 열 = 확인 필요 먼저, 그다음 정해 둔 이슈 순', J(mx.tags), ['attn', 'faith', 'health', 'family']);
+  sc.eq('⑤-2 칸 숫자', J([mx.count['c2|health'], mx.count['c1|health'], mx.count['c2|attn'], mx.count['c1|family'] || 0]), [2, 1, 1, 0]);
+  sc.eq('⑤-2 줄 합계는 근황 건수(태그 여럿이어도 한 건)', J([mx.rowTotal.c1, mx.rowTotal.c2, mx.total]), [2, 2, 4]);
+  sc.eq('⑤-2 열 합계 · 가장 큰 칸', J([mx.colTotal.health, mx.max]), [3, 2]);
+  sc.eq('⑤-2 확인 필요가 없으면 그 열도 없다', A.issueMatrix([notes[1]]).tags.includes('attn'), false);
+}
+
 // ⑥ 기도제목
 {
   const P = A.collectPrayers([
@@ -144,6 +161,14 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
 // ⑩ 집 주소 · 버전
 sc.eq('⑩ block7.my 로 열리면 sweeter.my/cell/ 로 넘긴다', HTML.includes("location.replace('https://sweeter.my/cell/'"), true);
 sc.eq('⑩ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].includes(A.APP_VERSION), true);
+// ⑪ 홈 화면 앱 (HB 11/6) · 아이폰 확대 넘침
+{
+  const man = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'cell', 'manifest.json'), 'utf8'));
+  sc.eq('⑪ 홈 화면에서 따로 열린다 (standalone · /cell/ 안에서만)', [man.display, man.start_url, man.scope], ['standalone', '/cell/', '/cell/']);
+  sc.eq('⑪ 아이콘 파일이 있다', ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'].every(f => fs.existsSync(path.join(__dirname, '..', 'cell', f))), true);
+  sc.eq('⑪ 페이지가 manifest · 아이폰 아이콘을 건다', HTML.includes('rel="manifest" href="manifest.json"') && HTML.includes('rel="apple-touch-icon"'), true);
+  sc.eq('⑪ 입력칸 글자 16px (작으면 아이폰이 확대해 옆으로 넘친다)', /input\[type=email\],input\[type=text\]\{[^}]*font-size:16px/.test(HTML), true);
+}
 sc.eq('⑩ 검색에 안 잡히게 (noindex)', /name="robots" content="noindex/.test(HTML), true);
 
 // pool — 동시에 n 개까지, 실패해도 나머지는 받는다
