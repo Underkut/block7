@@ -10,6 +10,7 @@
 //  ⑥ 폼 읽기 — 하나/여럿 · 기타 · 날짜(연도 없음) · 시트 머리글과 비교
 //  ⑦ C0 쓰기 시험은 10줄 이하(사본)에만 · 폼 줄이 앱 줄을 건드렸으면 잡아낸다 · 기록ID 붙이기는 상한까지만
 //  ⑩ C1 열람 — 줄 → 기록 · 보관(지우지 않고 감춤) · 필터(속성 안 '또는', 속성끼리 '그리고') · 성도 · 주 · 달 · 대시보드 셈
+//  ⑪ 기기끼리 설정 맞추기 — 고른 시트 · 폼 · 보관 기준만 계정에(users/{uid}/data/care), 나중에 고친 쪽을 따른다 · 심방 내용 · 시험 상태는 안 올린다
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -24,6 +25,7 @@ vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
+  CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -203,6 +205,35 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const sp = A.splitPeriods(m.visits.filter(v => !v.archived), '2026-11-06');
   sc.eq('⑩ 최근 4주 / 그 전 4주', J([sp.last4.length, sp.prev4.length]), [4, 0]);
   { const c = A.countBy(sp.last4, v => v.allTags); sc.eq('⑩ 세기 — 여럿 칸은 하나씩', Object.keys(c).sort().map(k => k + c[k]), ['관계1', '교회1', '신앙1', '학교1']); }
+}
+
+// ⑪ 기기끼리 설정 맞추기
+{
+  const NOW = 1000;
+  const S1 = { id: 'S1', name: '진짜 시트' }, S2 = { id: 'S2', name: '사본' };
+  sc.eq('⑪ 올리는 칸은 다섯뿐 — 심방 내용 · 시험 상태(test)는 없다', J(A.CFG_FIELDS), ['sheet', 'form', 'responder', 'cutoff', 'stale']);
+  sc.eq('⑪ 문서 자리', A.CFG_DOC, 'data/care');
+  sc.eq('⑪ 고르기 — 시험 상태 · 모르는 칸은 뺀다', J(A.pickCfg({ sheet: S1, test: { before: [['x']] }, junk: 1, at: 5 })), { sheet: S1, at: 5 });
+  // 폰에서 골랐다(시각 없음 — 예전 판), 계정엔 아직 없다 → 지금 시각을 붙여 올린다
+  let r = A.mergeCfg({ sheet: S1, form: S2, test: {} }, null, NOW);
+  sc.eq('⑪ 계정에 없으면 이 기기 것을 올린다(시각을 붙여)', J([r.local, r.push]), [null, { sheet: S1, form: S2, at: NOW }]);
+  // PC: 아무것도 안 골랐다 → 계정 것을 받는다
+  r = A.mergeCfg({}, { sheet: S1, form: S2, at: NOW }, NOW + 5);
+  sc.eq('⑪ 빈 기기는 계정 것을 받는다 (PC 문제)', J([r.local, r.push]), [{ sheet: S1, form: S2, at: NOW }, null]);
+  // PC 에 예전에 사본을 골라 둔 것(시각 없음)이 있어도 계정 것이 이긴다
+  r = A.mergeCfg({ sheet: S2 }, { sheet: S1, at: NOW }, NOW + 5);
+  sc.eq('⑪ 시각 없는 옛 기기 값보다 계정 것이 먼저', J(r.local.sheet), S1);
+  // 둘 다 시각이 있으면 나중 것
+  r = A.mergeCfg({ sheet: S2, at: NOW + 9 }, { sheet: S1, at: NOW }, NOW + 10);
+  sc.eq('⑪ 이 기기에서 더 나중에 골랐으면 올린다', J([r.local, r.push && r.push.sheet]), [null, S2]);
+  r = A.mergeCfg({ sheet: S2, at: NOW }, { sheet: S1, at: NOW + 9 }, NOW + 10);
+  sc.eq('⑪ 다른 기기에서 더 나중에 골랐으면 받는다', J(r.local.sheet), S1);
+  r = A.mergeCfg({ sheet: S1, at: NOW }, { sheet: S1, at: NOW }, NOW + 10);
+  sc.eq('⑪ 같으면 아무것도 안 한다', J([r.local, r.push]), [null, null]);
+  r = A.mergeCfg({}, null, NOW);
+  sc.eq('⑪ 둘 다 비었으면 아무것도 안 한다', J([r.local, r.push]), [null, null]);
+  r = A.mergeCfg({ sheet: S1, test: { id: 'T' } }, { sheet: S2, at: NOW }, NOW + 1);
+  sc.eq('⑪ 받을 때 이 기기의 시험 상태는 남긴다', J(r.local.test), { id: 'T' });
 }
 
 sc.done();
