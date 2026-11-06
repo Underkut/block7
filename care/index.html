@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<!-- 심방 노트 v. 26-1106-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C0 연결 시험판 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f3f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101312" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex">
+<title>심방 노트</title>
+<script>
+// ⚠️ 심방 노트의 집은 sweeter.my/care/ 하나다. 깃헙 페이지가 저장소를 통째로 내보내
+//    block7.my/care/ 에도 같은 파일이 생기는데, 구글 연결이 돌아오는 자리(열쇠 서버 okRet)는
+//    sweeter.my/care/ 뿐이다 → 그 주소로 열리면 sweeter.my 로 넘긴다 (기도노트와 같은 사정).
+if (/^(www\.)?block7\.my$/.test(location.hostname)) {
+  location.replace('https://sweeter.my/care/' + location.search + location.hash);
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=Noto+Serif+KR:wght@600&display=swap" rel="stylesheet">
+<style>
+/* C0 연결 시험판: 한 줄로 내려가는 단계 카드. 본 화면(C1~)은 시안 2차를 따른다. */
+:root{
+  --bg:#f2f3f1; --paper:#ffffff; --s1:#f7f8f6; --s2:#eceeeb; --line:#e3e6e2; --line2:#ccd1cb;
+  --tx:#1b2120; --tx2:#5a6460; --tx3:#8b938f;
+  --ac:#2b6a5c; --ac-soft:rgba(43,106,92,.10); --on-ac:#ffffff;
+  --warn:#b0611f; --warn-soft:rgba(176,97,31,.11); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
+  --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  --serif:'Noto Serif KR','AppleMyungjo',serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101312; --paper:#181c1a; --s1:#1c211f; --s2:#232826; --line:#2a302d; --line2:#3b423e;
+  --tx:#e7eae7; --tx2:#a6aeaa; --tx3:#77807b;
+  --ac:#80c6b3; --ac-soft:rgba(128,198,179,.13); --on-ac:#0e1a16;
+  --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12); color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);word-break:keep-all;overflow-wrap:anywhere;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 60px max(16px,env(safe-area-inset-left))}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.wrap{max-width:560px;margin:0 auto}
+h1{font-family:var(--serif);font-size:26px;margin:8px 0 2px}
+.sub{color:var(--tx2);font-size:13.5px;margin:0 0 18px}
+.ver{font-size:11.5px;color:var(--tx3)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.card p{margin:4px 0 0;color:var(--tx2);font-size:13.5px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.btn{padding:9px 16px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);font-size:14px}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.btn:disabled{opacity:.45;cursor:default}
+input{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font:inherit;margin-top:8px}
+.st{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:var(--s2);color:var(--tx3)}
+.st.ok{background:var(--ac);color:var(--on-ac)} .st.bad{background:var(--bad);color:#fff} .st.run{background:var(--warn-soft);color:var(--warn)}
+.out{margin-top:10px;font-size:13px;color:var(--tx2);white-space:pre-line;background:var(--s1);border-radius:10px;padding:10px 12px}
+.out:empty{display:none}
+.out b{color:var(--tx)}
+.warn{background:var(--warn-soft);color:var(--tx);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
+.file{font-size:13px;color:var(--tx2);margin-top:6px}
+.file b{color:var(--tx);font-weight:500}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:min(88vw,360px);background:var(--tx);color:var(--paper);padding:12px 16px;border-radius:14px;font-size:14px;white-space:pre-line;text-align:center;z-index:50}
+a{color:var(--ac)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>심방 노트</h1>
+  <p class="sub">연결 시험판(C0) — 시트 · 폼 · 캘린더가 앱과 잘 맞물리는지 확인합니다. <span class="ver" id="ver"></span></p>
+
+  <div class="card" id="cLogin">
+    <h2><span class="st" id="sLogin">1</span>로그인</h2>
+    <p id="loginMsg">BLOCK7 · Sweeter 와 같은 계정으로 들어옵니다.</p>
+    <form id="loginForm" autocomplete="on">
+      <input id="em" type="email" placeholder="이메일" autocomplete="username" required>
+      <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password" required>
+      <div class="row"><button class="btn pri" type="submit">로그인</button></div>
+    </form>
+    <div class="row" id="loggedRow" hidden><button class="btn" id="btnLogout" type="button">로그아웃</button></div>
+  </div>
+
+  <div class="card" id="cGoogle">
+    <h2><span class="st" id="sGoogle">2</span>구글 연결</h2>
+    <p id="gMsg">구글 캘린더를 연결할 때와 같은 화면이 뜹니다. "고른 파일만" 권한을 함께 묻습니다.</p>
+    <div class="row"><button class="btn pri" id="btnGoogle" disabled>구글 연결</button></div>
+  </div>
+
+  <div class="card" id="cPick">
+    <h2><span class="st" id="sPick">3</span>시트 · 폼 고르기</h2>
+    <p>구글 드라이브 창에서 <b>심방 시트</b>와 <b>심방 폼</b>을 하나씩 고릅니다. 앱은 고른 두 파일만 열 수 있습니다.</p>
+    <div class="warn">C0 시험은 <b>사본</b>으로 합니다. 폼 사본과 그 응답 시트를 고르세요(만드는 법: docs/care/setup.md 4장). 진짜 시트는 읽기 시험만 하고, 줄이 10개 넘는 시트에는 쓰지 않습니다.</div>
+    <div class="file" id="fSheet">시트: 아직 안 고름</div>
+    <div class="file" id="fForm">폼: 아직 안 고름</div>
+    <div class="row"><button class="btn" id="btnPickSheet" disabled>시트 고르기</button><button class="btn" id="btnPickForm" disabled>폼 고르기</button></div>
+  </div>
+
+  <div class="card" id="cTests">
+    <h2>연결 시험</h2>
+    <p>위에서부터 차례로 누릅니다. 1~3은 읽기만 하고, 4~5는 사본에만 씁니다.</p>
+    <div id="tests"></div>
+  </div>
+</div>
+
+<!-- ───────────────────────────── 규칙 (화면 없이 도는 덩어리) ─────────────────────────────
+     tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단은 전부 여기 둔다.
+     ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
+<script id="care-core">
+const APP_VERSION = 'v. 26-1106-1';
+const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
+const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
+const C0_MAX_ROWS = 10;                  // C0 쓰기 시험은 이 줄 수 이하인 시트(사본)에만
+
+// 응답 탭 오른쪽 끝에 앱이 더하는 열. 폼은 이 열을 건드리지 않는다
+const APP_COLS = ['기록ID', '출처', '심방일', '수정', '확인', '보관'];
+// 앱이 만드는 탭과 머리글 (시안 2차 '시트 모양')
+const TABS = {
+  '성도': ['성도ID', '이름', '부르는 이름', '구분', '메모', '기도노트', 'BLOCK7 연락처', '상태'],
+  '액션': ['액션ID', '기록ID', '성도', '종류', '세부', '내용', '기한', '상태', '완료일', 'BLOCK7 할일'],
+  '덧붙임': ['기록ID', '시각', '쓴 사람', '내용'],
+  '계획': ['계획ID', '성도', '날짜', '시간', '방식', '장소', '물어볼 것', '상태', '캘린더 일정ID', '기록ID'],
+  '속성': ['속성', '값', '상위 값', '순서', '숨김', '별칭', '폼 질문 번호', '폼 선택지 번호'],
+};
+// 폼 질문 = 시트 머리글. **열은 순서가 아니라 이름으로 찾는다** (폼에 질문이 늘면 열이 밀린다)
+const Q = {
+  ts: ['타임스탬프', 'Timestamp'], date: ['심방 날짜'], name: ['성도 이름'], depth: ['대화 깊이'],
+  roles: ['구분'], method: ['전화 / 만남'], text: ['내용'], tags: ['태그'], acts: ['액션'], place: ['장소 · 메모'],
+};
+
+function norm(h) { return String(h == null ? '' : h).replace(/\s+/g, ' ').trim(); }
+
+// 머리글 한 줄 → { map: {ts:열, name:열, …, '@기록ID':열 …}, cols: {머리글: 열} }
+function headerMap(row) {
+  const cols = {}, map = {};
+  (row || []).forEach((h, i) => { const n = norm(h); if (n && !(n in cols)) cols[n] = i; });
+  for (const k in Q) for (const name of Q[k]) if (name in cols) { map[k] = cols[name]; break; }
+  APP_COLS.forEach(c => { if (c in cols) map['@' + c] = cols[c]; });
+  return { map, cols };
+}
+function isResponsesHeader(row) { const { map } = headerMap(row); return map.name != null && map.text != null; }
+// 탭 목록 [{title, header}] 에서 응답 탭 찾기 — 'Form Responses 1' 이름에 기대지 않는다
+function findResponsesTab(tabs) { return (tabs || []).find(t => isResponsesHeader(t.header)) || null; }
+
+function colLetter(i) { let s = ''; i = Math.floor(i); do { s = String.fromCharCode(65 + (i % 26)) + s; i = Math.floor(i / 26) - 1; } while (i >= 0); return s; }
+
+// 응답 탭에 더할 앱 열. 이미 있는 것은 건너뛰고, 마지막으로 차 있는 머리글 바로 뒤부터 붙인다
+function planColumns(header, columnCount) {
+  const h = header || [];
+  let last = -1; h.forEach((x, i) => { if (norm(x)) last = i; });
+  const have = new Set(h.map(norm));
+  const add = APP_COLS.filter(c => !have.has(c));
+  const start = last + 1, need = start + add.length;
+  return { add, start, grow: Math.max(0, need - (columnCount || 0)) };
+}
+function planTabs(titles) { const have = new Set((titles || []).map(norm)); return Object.keys(TABS).filter(t => !have.has(t)); }
+
+// ── 날짜 ──
+// 시트 날짜 숫자(1899-12-30 기준 날 수) → 'YYYY-MM-DD'
+function serialYmd(n) { const d = new Date(Math.round((n - 25569) * 86400000)); return d.toISOString().slice(0, 10); }
+function ymd3(y, m, d) { return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
+// 타임스탬프 → 'YYYY-MM-DD'. 숫자(시트 날짜) · '11/6/2026 10:40:51'(미국식) · '2026. 11. 6 오전…' · ISO
+function tsYmd(v) {
+  if (typeof v === 'number' && isFinite(v)) return serialYmd(v);
+  const s = norm(v); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return ymd3(+m[1], +m[2], +m[3]);
+  if ((m = s.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/))) return ymd3(+m[1], +m[2], +m[3]);
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return ymd3(+m[3], +m[1], +m[2]);
+  return '';
+}
+// 심방 날짜 칸 → 'YYYY-MM-DD'. 폼의 날짜 질문은 '연도 없이' 라 "10/31" 로 온다 → 연도는 타임스탬프에서.
+// 적은 날보다 심방 날이 일주일 넘게 '뒤' 면 지난해로 본다 (1월 2일에 12월 30일 심방을 적은 경우)
+function visitYmd(dateCell, tsCell) {
+  if (typeof dateCell === 'number' && isFinite(dateCell)) return serialYmd(dateCell);
+  const s = norm(dateCell); let m;
+  const full = tsYmd(s); if (full) return full;
+  if (!(m = s.match(/^(\d{1,2})\s*[\/.월]\s*(\d{1,2})/))) return '';
+  const ts = tsYmd(tsCell); if (!ts) return '';
+  const y = +ts.slice(0, 4), cand = ymd3(y, +m[1], +m[2]);
+  const late = (Date.parse(cand) - Date.parse(ts)) / 86400000;
+  return late > 7 ? ymd3(y - 1, +m[1], +m[2]) : cand;
+}
+
+// ── 여럿 고르기 칸 ──
+// 폼은 고른 것을 ', ' 로 잇는다. 그런데 선택지 자체에 쉼표가 든 것이 있다('카톡, 문자').
+// 그래서 아는 선택지를 먼저(긴 것부터) 맞추고, 남은 조각은 '기타' 글로 둔다.
+function splitMulti(cell, known) {
+  const s = norm(cell); if (!s) return { vals: [], etc: [] };
+  const toks = s.split(/\s*,\s*/), K = new Set((known || []).map(norm)), vals = [], etc = [];
+  for (let i = 0; i < toks.length;) {
+    let hit = 0;
+    for (let j = toks.length; j > i; j--) { if (K.has(toks.slice(i, j).join(', '))) { hit = j - i; break; } }
+    if (hit) { vals.push(toks.slice(i, i + hit).join(', ')); i += hit; } else { if (toks[i]) etc.push(toks[i]); i++; }
+  }
+  return { vals, etc };
+}
+function splitOne(cell, known) { const s = norm(cell); if (!s) return { val: '', etc: '' }; return (known || []).map(norm).includes(s) ? { val: s, etc: '' } : { val: '', etc: s }; }
+
+// 응답 탭 한 줄 → 기록 하나 (읽기만. 시트 글은 고치지 않는다)
+function rowToVisit(row, map, opts) {
+  const o = opts || {}, at = k => (map[k] == null ? '' : row[map[k]]);
+  const roles = splitMulti(at('roles'), o.roles), tags = splitMulti(at('tags'), o.tags), acts = splitMulti(at('acts'), o.acts);
+  const meth = splitOne(at('method'), o.methods);
+  const ymd = norm(at('@심방일')) || visitYmd(at('date'), at('ts'));
+  return {
+    id: norm(at('@기록ID')), src: norm(at('@출처')) || '폼', ymd, name: norm(at('name')), text: String(at('text') || ''),
+    depth: norm(at('depth')), roles: roles.vals, rolesEtc: roles.etc, method: meth.val, methodEtc: meth.etc,
+    place: norm(at('place')), tags: tags.vals, tagsEtc: tags.etc, acts: acts.vals, actsEtc: acts.etc,
+    archived: !!norm(at('@보관')),
+  };
+}
+
+// ── 폼 ──
+// Forms API forms.get 결과 → 질문 목록 [{qid, title, kind, multi, options, other, includeYear}]
+function formSummary(form) {
+  return ((form && form.items) || []).filter(it => it.questionItem && it.questionItem.question).map(it => {
+    const q = it.questionItem.question, r = { qid: q.questionId || '', title: norm(it.title), kind: 'other', multi: false, options: [], other: false };
+    if (q.choiceQuestion) {
+      r.kind = 'choice'; r.multi = q.choiceQuestion.type === 'CHECKBOX';
+      (q.choiceQuestion.options || []).forEach(op => { if (op.isOther) r.other = true; else if (op.value != null) r.options.push(norm(op.value)); });
+    } else if (q.textQuestion) r.kind = q.textQuestion.paragraph ? 'long' : 'short';
+    else if (q.dateQuestion) { r.kind = 'date'; r.includeYear = !!q.dateQuestion.includeYear; }
+    return r;
+  });
+}
+// 폼 질문과 시트 머리글이 같은지 — 폼이 쓰는 열 이름 = 질문 제목
+function formVsSheet(summary, header) {
+  const have = new Set((header || []).map(norm)), titles = new Set((summary || []).map(q => q.title));
+  const skip = new Set(APP_COLS.concat(Q.ts));
+  return {
+    notInSheet: (summary || []).map(q => q.title).filter(t => !have.has(t)),
+    notInForm: (header || []).map(norm).filter(h => h && !skip.has(h) && !titles.has(h)),
+  };
+}
+function optionsOf(summary, title) { const q = (summary || []).find(x => x.title === title); return q ? q.options : []; }
+
+// ── C0 쓰기 시험 ──
+function canWriteC0(dataRows) { return dataRows <= C0_MAX_ROWS; }
+function newId(prefix, now, rnd) { return prefix + Number(now).toString(36).toUpperCase() + Math.floor(rnd * 1296).toString(36).toUpperCase().padStart(2, '0'); }
+// 앱이 넣는 시험 줄 — 머리글 길이만큼, 이름으로 찾은 칸에만. 타임스탬프는 시트 날짜 숫자(RAW)로 넣어 폼 줄과 같은 꼴로 보이게
+function testRowValues(header, map, id, nowMs) {
+  const row = new Array((header || []).length).fill('');
+  const put = (k, v) => { if (map[k] != null) row[map[k]] = v; };
+  const day = new Date(nowMs), serial = nowMs / 86400000 + 25569 - day.getTimezoneOffset() / 1440;
+  const ymd = new Date(nowMs - day.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  put('ts', serial); put('date', (+ymd.slice(5, 7)) + '/' + (+ymd.slice(8, 10)));
+  put('name', '시험 성도 (지워도 됨)'); put('text', '심방 노트 C0 연결 시험 줄입니다.'); put('depth', '얕음');
+  put('@기록ID', id); put('@출처', '앱 시험'); put('@심방일', ymd);
+  return row;
+}
+// 폼으로 하나 낸 뒤 다시 읽은 것을 앞의 것과 비교한다.
+// before · after = 응답 탭 값 (첫 줄 머리글). testId = 앱이 넣은 시험 줄의 기록ID
+function verifyAfterForm(before, after, testId) {
+  const hb = headerMap(after[0] || []).map, idc = hb['@기록ID'], problems = [];
+  const find = (rows) => rows.findIndex((r, i) => i > 0 && idc != null && norm(r[idc]) === testId);
+  const ib = find(before), ia = find(after);
+  if (ia < 0) problems.push('앱이 넣은 시험 줄이 사라졌습니다');
+  else if (ib >= 0) {
+    const a = after[ia], b = before[ib], n = Math.max(a.length, b.length);
+    for (let c = 0; c < n; c++) if (norm(a[c]) !== norm(b[c])) { problems.push('시험 줄의 ' + (c + 1) + '번째 칸이 바뀌었습니다'); break; }
+  }
+  const beforeIds = new Set(before.slice(1).map(r => JSON.stringify(r)));
+  const added = after.slice(1).map((r, i) => ({ r, row: i + 2 })).filter(x => !beforeIds.has(JSON.stringify(x.r)));
+  const formRows = added.filter(x => idc == null || !norm(x.r[idc]));
+  if (!formRows.length) problems.push('폼으로 낸 새 줄을 찾지 못했습니다 — 폼을 제출했는지 봐 주세요');
+  formRows.forEach(x => { if (APP_COLS.some(c => hb['@' + c] != null && norm(x.r[hb['@' + c]]))) problems.push(x.row + '번째 줄의 앱 열에 폼이 무언가를 썼습니다'); });
+  if (norm(JSON.stringify(after[0])) !== norm(JSON.stringify(before[0]))) problems.push('머리글이 바뀌었습니다');
+  return { ok: !problems.length, problems, formRows: formRows.map(x => x.row), testRow: ia + 1 };
+}
+// 기록ID 가 빈 줄에 id 를 붙일 자리 — 한 번에 max 줄까지만 (밖에서 받은 자료로 쓰는 일에는 상한을 둔다)
+function idPatches(values, nowMs, max) {
+  const map = headerMap(values[0] || []).map, idc = map['@기록ID'], out = [];
+  if (idc == null) return out;
+  for (let i = 1; i < values.length && out.length < max; i++) {
+    const r = values[i]; if (!r || !r.some(x => norm(x))) continue;
+    if (!norm(r[idc])) out.push({ row: i + 1, id: newId('C', nowMs + i, ((i * 37) % 1296) / 1296), ymd: visitYmd(map.date != null ? r[map.date] : '', map.ts != null ? r[map.ts] : '') });
+  }
+  return out;
+}
+</script>
+
+<script>
+// ───────────────────────────── 화면 · 연결 ─────────────────────────────
+document.getElementById('ver').textContent = APP_VERSION;
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const GCAL_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/gcal';
+const $ = id => document.getElementById(id);
+let AUTH = null, USER = null, TOK = null;
+
+function toast(msg, ms) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+  const close = () => t.remove(); t.addEventListener('click', close);
+  setTimeout(close, ms || Math.min(9000, Math.max(3000, msg.length * 200)));
+}
+function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('불러오기 실패: ' + src)); document.head.appendChild(s); }); }
+function saved() { try { return JSON.parse(localStorage.getItem(CARE_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Object.assign(saved(), patch))); } catch (e) {} }
+
+// ── 로그인 (앱 이름 'care' — Sweeter · 기도노트 로그인과 묶이지 않게. 계정이 같으면 uid 도 같다) ──
+async function fbInit() {
+  for (const s of FB_JS) await load(s);
+  const app = firebase.apps.find(a => a.name === 'care') || firebase.initializeApp(FB_CFG, 'care');
+  AUTH = app.auth();
+  AUTH.onAuthStateChanged(u => { USER = u; TOK = null; paint(); if (u) googleStatus(); });
+}
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { await AUTH.signInWithEmailAndPassword($('em').value.trim(), $('pw').value); }
+  catch (err) { toast('로그인하지 못했습니다\n' + (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' ? '이메일이나 비밀번호를 다시 봐 주세요' : (err.code || err.message))); }
+});
+$('btnLogout').addEventListener('click', () => AUTH && AUTH.signOut());
+
+// ── 열쇠 서버 (BLOCK7 구글 캘린더와 같은 서버 · 같은 열쇠) ──
+async function fn(path, body) {
+  const t = await USER.getIdToken();
+  const r = await fetch(GCAL_FN + path, { method: 'POST', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error || ('서버 ' + r.status)); e.status = r.status; throw e; }
+  return j;
+}
+async function token() {
+  if (TOK && TOK.exp > Date.now() + 60000) return TOK.v;
+  const j = await fn('/token');
+  TOK = { v: j.access_token, exp: Date.now() + (j.expires_in || 3600) * 1000 };
+  return TOK.v;
+}
+let G = { connected: false, email: '' };
+async function googleStatus() {
+  try { const j = await fn('/status'); G = { connected: !!j.connected, email: j.email || '' }; }
+  catch (e) { G = { connected: false, email: '', err: e.status === 404 ? '' : '서버에 닿지 못했습니다 — 열쇠 서버를 다시 올렸는지 봐 주세요 (setup 3장)' }; }
+  paint();
+}
+$('btnGoogle').addEventListener('click', async () => {
+  try { const j = await fn('/start', { ret: 'https://sweeter.my/care/', care: true }); location.href = j.url; }
+  catch (e) { toast('구글 연결을 시작하지 못했습니다\n' + e.message); }
+});
+// 구글 동의 화면에서 돌아옴 (block7.my/gcal/ 쪽지가 ?gcal=ok 를 붙여 보낸다)
+(function () {
+  const q = new URLSearchParams(location.search), r = q.get('gcal'); if (!r) return;
+  history.replaceState(null, '', location.pathname);
+  setTimeout(() => toast(r === 'ok' ? '구글을 연결했습니다' : r === 'cancel' ? '구글 연결을 취소했습니다' : '구글 연결에 실패했습니다\n다시 눌러 주세요'), 300);
+})();
+
+// ── 구글 API ──
+async function gapi(url, opt) {
+  const o = opt || {}, t = await token();
+  const r = await fetch(url, { method: o.method || 'GET', headers: Object.assign({ Authorization: 'Bearer ' + t }, o.body ? { 'Content-Type': 'application/json' } : {}), body: o.body ? JSON.stringify(o.body) : undefined });
+  if (r.status === 204) return {};
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error((j.error && j.error.message) || ('구글 ' + r.status)); e.status = r.status; throw e; }
+  return j;
+}
+const SH = 'https://sheets.googleapis.com/v4/spreadsheets/';
+const rng = (title, a1) => encodeURIComponent("'" + title.replace(/'/g, "''") + "'!" + a1);
+async function sheetMeta(id) { return gapi(SH + id + '?fields=properties.title,sheets.properties(sheetId,title,gridProperties)'); }
+async function readTab(id, title) {
+  const j = await gapi(SH + id + '/values/' + rng(title, 'A1:ZZ') + '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER');
+  return j.values || [];
+}
+async function readTabs(id) {
+  const meta = await sheetMeta(id), tabs = [];
+  for (const s of meta.sheets || []) {
+    const p = s.properties, h = await gapi(SH + id + '/values/' + rng(p.title, '1:1'));
+    tabs.push({ title: p.title, sheetId: p.sheetId, cols: (p.gridProperties || {}).columnCount || 0, header: (h.values && h.values[0]) || [] });
+  }
+  return { title: meta.properties.title, tabs };
+}
+
+// ── 고르기 창 (Google Picker) ──
+let PICKER = null;
+async function picker() {
+  if (PICKER) return PICKER;
+  await load('https://apis.google.com/js/api.js');
+  await new Promise(res => gapi_load(res));
+  PICKER = window.google.picker; return PICKER;
+}
+function gapi_load(cb) { window.gapi.load('picker', { callback: cb }); }
+async function pick(kind) {
+  try {
+    const P = await picker(), t = await token();
+    const view = new P.DocsView(kind === 'sheet' ? P.ViewId.SPREADSHEETS : P.ViewId.FORMS).setMode(P.DocsViewMode.LIST);
+    new P.PickerBuilder().addView(view).setOAuthToken(t).setDeveloperKey(FB_CFG.apiKey).setAppId(PICKER_APP_ID)
+      .setTitle(kind === 'sheet' ? '심방 시트를 고르세요' : '심방 폼을 고르세요')
+      .setCallback(d => {
+        if (d.action !== P.Action.PICKED || !d.docs || !d.docs[0]) return;
+        const f = { id: d.docs[0].id, name: d.docs[0].name };
+        save(kind === 'sheet' ? { sheet: f, test: null } : { form: f }); paint();
+      }).build().setVisible(true);
+  } catch (e) { toast('고르기 창을 열지 못했습니다\n' + e.message + '\n(setup 2장 — Picker API · API 키)'); }
+}
+$('btnPickSheet').addEventListener('click', () => pick('sheet'));
+$('btnPickForm').addEventListener('click', () => pick('form'));
+
+// ── 시험 단계 ──
+const R = {};   // 단계별 결과 {st:'ok'|'bad'|'run', out}
+function step(key, fnc) {
+  return async () => {
+    R[key] = { st: 'run', out: '도는 중…' }; paint();
+    try { const out = await fnc(); R[key] = { st: 'ok', out: out || '' }; }
+    catch (e) { R[key] = { st: 'bad', out: esc(e.message || String(e)) }; }
+    paint();
+  };
+}
+function needSheet() { const s = saved().sheet; if (!s) throw new Error('먼저 시트를 고르세요'); return s; }
+function needForm() { const f = saved().form; if (!f) throw new Error('먼저 폼을 고르세요'); return f; }
+let FORM = null;
+
+const T1 = step('t1', async () => {
+  const s = needSheet(), info = await readTabs(s.id), tab = findResponsesTab(info.tabs);
+  if (!tab) throw new Error('"성도 이름" · "내용" 머리글이 있는 탭을 찾지 못했습니다');
+  const vals = await readTab(s.id, tab.title), { map } = headerMap(vals[0] || []);
+  const rows = vals.slice(1).filter(r => r.some(x => norm(x)));
+  const opts = FORM ? { roles: optionsOf(FORM, '구분'), methods: optionsOf(FORM, '전화 / 만남'), tags: optionsOf(FORM, '태그'), acts: optionsOf(FORM, '액션') } : {};
+  const vs = rows.map(r => rowToVisit(r, map, opts)), dated = vs.filter(v => v.ymd).length;
+  const etc = {}; vs.forEach(v => v.methodEtc && (etc[v.methodEtc] = 1)); vs.forEach(v => v.tagsEtc.concat(v.rolesEtc, v.actsEtc).forEach(x => etc[x] = 1));
+  const years = {}; vs.forEach(v => { if (v.ymd) years[v.ymd.slice(0, 4)] = (years[v.ymd.slice(0, 4)] || 0) + 1; });
+  const found = Object.keys(Q).filter(k => map[k] != null).length, appCols = APP_COLS.filter(c => map['@' + c] != null);
+  return '탭 <b>' + esc(tab.title) + '</b> · 기록 <b>' + rows.length + '줄</b>\n' +
+    '찾은 질문 열 ' + found + ' / ' + Object.keys(Q).length + (map.place == null ? ' (장소 · 메모 열 없음 — 폼에 질문을 더하면 생깁니다)' : '') + '\n' +
+    '날짜 읽기 ' + dated + ' / ' + rows.length + ' · 해마다 ' + Object.keys(years).sort().map(y => y + '년 ' + years[y]).join(' · ') + '\n' +
+    '앱 열 ' + (appCols.length ? appCols.join(' · ') : '아직 없음') + '\n' +
+    (FORM ? '선택지에 없는 글(기타) ' + Object.keys(etc).length + '가지' : '(폼을 먼저 읽으면 선택지 · 기타 글도 가려 봅니다)');
+});
+const T2 = step('t2', async () => {
+  const f = needForm(), form = await gapi('https://forms.googleapis.com/v1/forms/' + f.id);
+  FORM = formSummary(form); save({ responder: form.responderUri || '' });
+  let cmp = '';
+  const s = saved().sheet;
+  if (s) { const info = await readTabs(s.id), tab = findResponsesTab(info.tabs); if (tab) { const d = formVsSheet(FORM, tab.header); cmp = '\n시트와 비교: ' + (d.notInSheet.length || d.notInForm.length ? '폼에만 ' + (esc(d.notInSheet.join(', ')) || '없음') + ' · 시트에만 ' + (esc(d.notInForm.join(', ')) || '없음') : '질문과 머리글이 모두 같습니다'); } }
+  return '질문 <b>' + FORM.length + '개</b>\n' + FORM.map(q => '· ' + esc(q.title) + ' — ' + (q.kind === 'choice' ? (q.multi ? '여럿' : '하나') + ' ' + q.options.length + '개' + (q.other ? ' + 기타' : '') : q.kind === 'date' ? '날짜' + (q.includeYear ? '' : '(연도 없음)') : q.kind === 'long' ? '긴 글' : '짧은 글')).join('\n') + cmp;
+});
+const T3 = step('t3', async () => {
+  const list = await gapi('https://www.googleapis.com/calendar/v3/users/me/calendarList?minAccessRole=writer');
+  const cal = (list.items || []).find(c => norm(c.summary) === '심방');
+  if (!cal) throw new Error("'심방' 캘린더를 찾지 못했습니다 — 구글 캘린더에서 이름이 정확히 '심방' 인 캘린더를 만들어 주세요 (setup 5장)");
+  const d = new Date(Date.now() + 86400000), day = d.toISOString().slice(0, 10), next = new Date(d.getTime() + 86400000).toISOString().slice(0, 10);
+  const ev = await gapi('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(cal.id) + '/events', { method: 'POST', body: { summary: '심방 노트 연결 시험 (곧 지워짐)', start: { date: day }, end: { date: next } } });
+  // 방금 만든 일정 하나만 지운다 (그 id 하나)
+  await gapi('https://www.googleapis.com/calendar/v3/calendars/' + encodeURIComponent(cal.id) + '/events/' + encodeURIComponent(ev.id), { method: 'DELETE' });
+  save({ calId: cal.id });
+  return "'심방' 캘린더를 찾았고, 시험 일정을 넣었다가 지웠습니다.";
+});
+const T4 = step('t4', async () => {
+  const s = needSheet(), info = await readTabs(s.id), tab = findResponsesTab(info.tabs);
+  if (!tab) throw new Error('응답 탭을 찾지 못했습니다');
+  const vals = await readTab(s.id, tab.title), rows = vals.slice(1).filter(r => r.some(x => norm(x))).length;
+  if (!canWriteC0(rows)) throw new Error('이 시트에는 기록이 ' + rows + '줄 있습니다. C0 쓰기 시험은 사본(' + C0_MAX_ROWS + '줄 이하)에서만 합니다.');
+  const pc = planColumns(tab.header, tab.cols), reqs = [];
+  if (pc.grow) reqs.push({ appendDimension: { sheetId: tab.sheetId, dimension: 'COLUMNS', length: pc.grow } });
+  const newTabs = planTabs(info.tabs.map(t => t.title));
+  newTabs.forEach(t => reqs.push({ addSheet: { properties: { title: t } } }));
+  if (reqs.length) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: reqs } });
+  const data = [];
+  if (pc.add.length) data.push({ range: "'" + tab.title + "'!" + colLetter(pc.start) + '1', values: [pc.add] });
+  newTabs.forEach(t => data.push({ range: "'" + t + "'!A1", values: [TABS[t]] }));
+  if (data.length) await gapi(SH + s.id + '/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
+  return '앱 열 ' + (pc.add.length ? pc.add.join(' · ') + ' 을 ' + colLetter(pc.start) + '열부터 더했습니다' : '이미 있습니다') + '\n새 탭 ' + (newTabs.length ? newTabs.join(' · ') : '이미 있습니다');
+});
+const T5 = step('t5', async () => {
+  const s = needSheet(), info = await readTabs(s.id), tab = findResponsesTab(info.tabs);
+  const vals = await readTab(s.id, tab.title), rows = vals.slice(1).filter(r => r.some(x => norm(x))).length;
+  if (!canWriteC0(rows)) throw new Error('사본(' + C0_MAX_ROWS + '줄 이하)에서만 씁니다');
+  const { map } = headerMap(vals[0]); if (map['@기록ID'] == null) throw new Error('먼저 4번(준비)을 눌러 앱 열을 더하세요');
+  const id = newId('T', Date.now(), Math.random()), row = testRowValues(vals[0], map, id, Date.now());
+  await gapi(SH + s.id + '/values/' + rng(tab.title, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: [row] } });
+  const after = await readTab(s.id, tab.title);
+  save({ test: { id, title: tab.title, before: after } });
+  return '시험 줄을 넣었습니다 (기록ID ' + id + ').\n이제 아래 링크로 <b>폼을 하나 제출</b>한 뒤 6번을 누르세요.';
+});
+const T6 = step('t6', async () => {
+  const s = needSheet(), t = saved().test; if (!t) throw new Error('먼저 5번으로 시험 줄을 넣으세요');
+  const after = await readTab(s.id, t.title), v = verifyAfterForm(t.before, after, t.id);
+  if (!v.ok) throw new Error('맞물리지 않는 곳이 있습니다\n· ' + v.problems.join('\n· '));
+  // 폼으로 들어온 줄에 기록ID · 출처 · 심방일을 붙인다 (빈 칸만, 한 번에 5줄까지)
+  const { map } = headerMap(after[0]), ps = idPatches(after, Date.now(), 5), data = [];
+  ps.forEach(p => {
+    data.push({ range: "'" + t.title + "'!" + colLetter(map['@기록ID']) + p.row, values: [[p.id]] });
+    if (map['@출처'] != null) data.push({ range: "'" + t.title + "'!" + colLetter(map['@출처']) + p.row, values: [['폼']] });
+    if (map['@심방일'] != null && p.ymd) data.push({ range: "'" + t.title + "'!" + colLetter(map['@심방일']) + p.row, values: [[p.ymd]] });
+  });
+  if (data.length) await gapi(SH + s.id + '/values:batchUpdate', { method: 'POST', body: { valueInputOption: 'RAW', data } });
+  return '폼 줄 ' + v.formRows.length + '개가 앱 시험 줄을 건드리지 않고 들어왔습니다 ✓\n폼 줄에 기록ID ' + ps.length + '개를 붙였습니다.\n<b>C0 통과</b> — 폼과 앱이 같은 탭을 함께 써도 됩니다.';
+});
+
+const STEPS = [
+  ['t1', '시트 읽기', '응답 탭 · 질문 열 · 날짜를 읽어 봅니다 (읽기만)', T1],
+  ['t2', '폼 읽기', '질문 · 선택지를 읽고 시트 머리글과 비교합니다 (읽기만)', T2],
+  ['t3', "'심방' 캘린더", '캘린더를 찾고 시험 일정을 넣었다가 바로 지웁니다', T3],
+  ['t4', '사본 준비', '응답 탭에 앱 열, 새 탭 다섯을 더합니다 (10줄 이하 시트만)', T4],
+  ['t5', '앱으로 한 줄', '시험 줄을 하나 넣습니다 (사본만)', T5],
+  ['t6', '폼 제출 뒤 다시 확인', '폼 줄이 앱 줄을 건드리지 않았는지 보고, 폼 줄에 기록ID 를 붙입니다', T6],
+];
+function paint() {
+  const sv = saved(), g = USER && G.connected;
+  $('sLogin').className = 'st' + (USER ? ' ok' : ''); $('sLogin').textContent = USER ? '✓' : '1';
+  $('loginForm').hidden = !!USER; $('loggedRow').hidden = !USER;
+  $('loginMsg').textContent = USER ? (USER.email + ' 으로 들어왔습니다') : 'BLOCK7 · Sweeter 와 같은 계정으로 들어옵니다.';
+  $('btnGoogle').disabled = !USER; $('btnGoogle').textContent = g ? '다시 연결' : '구글 연결';
+  $('sGoogle').className = 'st' + (g ? ' ok' : ''); $('sGoogle').textContent = g ? '✓' : '2';
+  $('gMsg').textContent = g ? (G.email + ' 에 연결됨. 처음이면 "다시 연결"로 시트 · 폼 권한을 한 번 받아 주세요.') : (G.err || '구글 캘린더를 연결할 때와 같은 화면이 뜹니다. "고른 파일만" 권한을 함께 묻습니다.');
+  $('btnPickSheet').disabled = $('btnPickForm').disabled = !g;
+  $('fSheet').innerHTML = '시트: ' + (sv.sheet ? '<b>' + esc(sv.sheet.name) + '</b>' : '아직 안 고름');
+  $('fForm').innerHTML = '폼: ' + (sv.form ? '<b>' + esc(sv.form.name) + '</b>' : '아직 안 고름');
+  const pk = sv.sheet && sv.form; $('sPick').className = 'st' + (pk ? ' ok' : ''); $('sPick').textContent = pk ? '✓' : '3';
+  $('tests').innerHTML = STEPS.map(([k, name, desc], i) => {
+    const r = R[k] || {};
+    return '<div class="card" style="margin:12px 0 0;background:var(--s1)"><h2><span class="st ' + (r.st || '') + '">' + (r.st === 'ok' ? '✓' : r.st === 'bad' ? '!' : i + 1) + '</span>' + name + '</h2><p>' + desc + '</p>' +
+      (k === 't5' && sv.responder ? '<p><a href="' + esc(sv.responder) + '" target="_blank" rel="noopener">폼 열기 ↗</a></p>' : '') +
+      '<div class="row"><button class="btn' + (i === 0 ? ' pri' : '') + '" data-step="' + k + '"' + (g ? '' : ' disabled') + '>' + (r.st ? '다시' : '시험하기') + '</button></div><div class="out">' + (r.out || '') + '</div></div>';
+  }).join('');
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+$('tests').addEventListener('click', e => { const b = e.target.closest('[data-step]'); if (!b) return; const s = STEPS.find(x => x[0] === b.dataset.step); if (s) s[3](); });
+paint();
+fbInit().catch(e => toast('로그인 준비에 실패했습니다\n' + e.message));
+</script>
+</body>
+</html>

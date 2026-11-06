@@ -121,6 +121,19 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 `<script id="timer-core">` 에 모아 두었고 `tests/test_timer.js` 가 그것만 떼어 시험한다.
 저장은 그 기기 안뿐이다(`localStorage` 의 `b7timer_v1`, 내 소리 파일은 IndexedDB `b7timer`).
 
+### 심방 노트(`care/`)도 따로 돈다 — 주소는 `sweeter.my/care/`
+
+기도노트와 같은 사정이다: `care/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+개발본 두 파일·`version.txt` 는 해당하지 않는다. BLOCK7·Sweeter 작업과 **동시에 해도 된다.**
+계획과 까닭은 `docs/ROADMAP.md` '1106-C'. 시트 · 폼을 읽고 쓰는 판단은 `<script id="care-core">` 에 모았고
+`tests/test_care.js` 가 그것만 떼어 시험한다 — 읽기 · 쓰기 규칙을 고치면 시험부터 고친다.
+
+- ⚠️⚠️ **심방 내용은 HB 의 구글 시트에만 산다.** 저장소(공개) · 파이어베이스 · 서버 어디에도 두지 않는다.
+  시험 자료 · 커밋 메시지 · 시안에도 **실제 성도 이름 · 내용을 넣지 말 것** — 지어낸 이름만.
+- 구글 열쇠는 BLOCK7 캘린더와 **한 벌**이다(`gcal-functions/`, `care:true` 면 `drive.file` 을 더 묻는다).
+  권한을 '모든 시트 · 드라이브' 로 넓히지 말 것 — HB 결정은 "고른 파일만". 그 폴더를 고치면 HB 가 서버를 다시 올려야 한다 (`docs/care/setup.md` 3장).
+- sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r care`)가 함께 싣는다. 빠지면 다음 배포 때 사라진다 (`tests/test_sweeter_prod.js` 가 지킨다).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).

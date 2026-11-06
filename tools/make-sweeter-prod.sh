@@ -172,6 +172,10 @@ cp -r bible "$OUT/bible"
 #    (파이어베이스 배포는 사이트를 통째로 갈아 끼운다).
 #    tests/test_sweeter_prod.js 가 이 줄이 있는지 지킨다.
 cp -r pray "$OUT/pray"
+# 심방 노트(sweeter.my/care/, 1106-C) — 기도노트와 같은 사정의 독립 앱.
+# ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 심방 노트가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
+#    구글 연결이 돌아오는 자리(열쇠 서버 okRet)도 sweeter.my/care/ 하나뿐이다.
+cp -r care "$OUT/care"
 # 헌금 계좌 안내(sweeter.my/bank/mission/) — 원본은 bank/ 한 벌. block7.my/bank/ 는 보조 주소.
 # ⚠️ 이 줄이 빠지면 다음 Sweeter 배포 때 계좌 안내가 sweeter.my 에서 사라진다 (test_sweeter_prod.js 가 지킨다).
 # 바자회 달란트 부스(sweeter.my/bank/bazaar/) · 팝업 코너(/bank/bazaar-popup/) 는 bank/ 아래 폴더 — ../logos 를 쓰므로 bank/ 를 통째로 함께 싣는다.
