@@ -115,6 +115,8 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
 - ⚠️⚠️ **셀 케어에 쓰지 말 것.** 부르는 함수는 읽기 다섯 개뿐이다(`test_cell` ⑧ 이 지킨다). 남의 시스템이다.
 - ⚠️ **성도 자료는 화면 메모리에만.** 저장소(공개) · 파이어베이스 · localStorage 에 내용을 두지 않는다.
   시험 · 미리보기(`?demo=1`)는 지어낸 이름만.
+  **예외 하나: 전화번호**(HB 결정 11/6) — HB 파이어베이스 `cellbook/{uid}` 에만, BLOCK7 과 같은 계정(앱 이름 `cell`).
+  `users/{uid}` 는 건드리지 않는다. 연락처 파일 내용은 저장하지 않는다. 규칙 붙이기는 `docs/cell/firestore-rules.md`.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r cell`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는

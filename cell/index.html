@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -132,7 +132,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:max(14px
 .login{max-width:380px;margin:12vh auto 0}
 .login h1{font-size:24px;font-weight:500;margin:0 0 6px}
 /* ⚠️ 16px 미만이면 아이폰이 입력칸을 누를 때 확대하고, 그 탭은 확대를 기억해 화면이 옆으로 넘친다 (HB 11/6) */
-input[type=email],input[type=text]{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font:inherit;font-size:16px;margin-top:10px}
+input[type=email],input[type=text],input[type=password]{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font:inherit;font-size:16px;margin-top:10px}
 .btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);font-size:14.5px;margin-top:12px}
 .btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
 .btn.wide{width:100%}
@@ -238,6 +238,28 @@ h3 .lnk{font-weight:500}
 .morebtn i{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
 .morebtn i.up{transform:rotate(-135deg) translate(-1px,-1px)}
 .lbl2{font-size:12.5px;color:var(--tx2);margin:14px 2px 6px}
+/* 명단 · 전화번호 */
+.bk{z-index:36}
+.phbtn{width:34px;height:34px;display:grid;place-items:center;flex:none;color:var(--ok)}
+.phbtn svg{width:20px;height:20px;fill:currentColor}
+.phbtn.none{color:var(--tx3);opacity:.45}
+.phslot{display:contents}
+.callmenu{position:fixed;z-index:70;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:6px;min-width:190px}
+.callmenu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:var(--tx);text-decoration:none;font-size:15px}
+.callmenu a:hover{background:var(--s1)}
+.callmenu svg{width:18px;height:18px;fill:var(--ok)}
+.bkrow{padding:9px 0;border-top:1px solid var(--line)}
+.bkrow:first-child{border-top:0}
+.bkrow.focus{background:var(--ac-soft);margin:0 -14px;padding:9px 14px}
+.bkrow .nm{font-weight:500}
+.phin{width:150px!important;margin:0!important;padding:7px 10px!important;font-size:16px;border-radius:9px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font-variant-numeric:tabular-nums;transition:box-shadow .3s}
+.phin.saved{box-shadow:0 0 0 2px var(--ok)}
+.phin:disabled{opacity:.5}
+.sugs{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.sug{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--ok-soft);color:var(--tx)}
+.sug b{font-weight:500;color:var(--ok);font-variant-numeric:tabular-nums}
+.sug i{font-style:normal;font-size:11px;color:var(--warn);margin-left:4px}
+input[type=tel]{font-size:16px}
 @media print{
   header.top,.weeknav,.seg,.chips,.noprint{display:none!important}
   body{background:#fff;color:#000;padding:0}
@@ -253,7 +275,7 @@ h3 .lnk{font-weight:500}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-4';
+const APP_VERSION = 'v. 26-1106-5';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -559,6 +581,63 @@ function leaderSignals(rows, reps) {
   return sig;
 }
 
+/* ---------- 명단 · 전화번호 (L15) ---------- */
+// 이름 맞추기용으로 다듬기: 괄호 속 · 직분 · 호칭 · 빈칸 · 기호를 뗀다 ("김하나 집사님(청년부)" → "김하나")
+const TITLES = ['목사님', '목사', '전도사님', '전도사', '사모님', '사모', '장로님', '장로', '권사님', '권사', '집사님', '집사', '형제님', '형제', '자매님', '자매', '선생님', '셀리더', '리더', '간사', '님'];
+function normName(s) {
+  let t = String(s || '').replace(/\([^)]*\)|\[[^\]]*\]/g, ' ').replace(/[^\p{L}\p{N}]/gu, ' ').trim();
+  for (let k = 0; k < 2; k++) for (const ti of TITLES) t = t.replace(new RegExp('\\s*' + ti + '$'), '').trim();
+  return t.replace(/\s+/g, '').toLowerCase();
+}
+function editDist(a, b) {
+  const m = a.length, n = b.length; if (Math.abs(m - n) > 1) return 9;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i]); for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[m][n];
+}
+// 1 같음 · .8 한쪽이 다른 쪽을 품음(2글자 이상) · .6 한 글자 다름(3글자 이상)
+function nameScore(a, b) {
+  const x = normName(a), y = normName(b); if (!x || !y) return 0;
+  if (x === y) return 1;
+  if (Math.min(x.length, y.length) >= 2 && (x.includes(y) || y.includes(x))) return 0.8;
+  if (Math.min(x.length, y.length) >= 3 && editDist(x, y) === 1) return 0.6;
+  return 0;
+}
+function normPhone(s) {
+  let d = String(s || '').replace(/[^\d+]/g, '');
+  if (d.startsWith('+82')) d = '0' + d.slice(3).replace(/^0/, '');
+  return d.replace(/\D/g, '');
+}
+function fmtPhone(s) {
+  const d = normPhone(s);
+  if (/^01\d{8,9}$/.test(d)) return d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3') : d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (/^02\d{7,8}$/.test(d)) return d.length === 9 ? d.replace(/(\d{2})(\d{3})(\d{4})/, '$1-$2-$3') : d.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+  if (/^0\d{9,10}$/.test(d)) return d.length === 10 ? d.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3') : d.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  return String(s || '').trim();
+}
+// vCard(.vcf) 읽기 — 아이폰 · 맥 · 구글 내보내기. 접힌 줄을 펴고 FN(없으면 N)과 TEL 을 모은다. 번호 없는 사람은 버린다.
+function parseVcf(text) {
+  const lines = String(text || '').replace(/\r\n?/g, '\n').replace(/\n[ \t]/g, '').split('\n');
+  const out = []; let cur = null;
+  const val = (l) => l.slice(l.indexOf(':') + 1).replace(/\\,/g, ',').replace(/\;/g, ';').trim();
+  for (const l of lines) {
+    const key = l.split(':')[0].toUpperCase(), name = key.split(';')[0].replace(/^ITEM\d+\./, '');
+    if (name === 'BEGIN' && /VCARD/i.test(l)) cur = { name: '', n: '', tels: [] };
+    else if (name === 'END' && cur) { const nm = cur.name || cur.n; if (nm && cur.tels.length) out.push({ name: nm, tels: [...new Set(cur.tels)] }); cur = null; }
+    else if (cur && name === 'FN') cur.name = val(l);
+    else if (cur && name === 'N') { const p = val(l).split(';'); cur.n = ((p[0] || '') + (p[1] || '')).trim(); }
+    else if (cur && name === 'TEL') { const t = fmtPhone(val(l)); if (normPhone(t).length >= 8) cur.tels.push(t); }
+  }
+  return out;
+}
+// 셀원 한 사람에게 맞는 연락처 후보 (점수 높은 순, 최대 n 개 · 번호마다 한 줄)
+function matchContacts(name, contacts, n) {
+  const out = [];
+  for (const c of contacts || []) { const sc = nameScore(name, c.name); if (sc >= 0.6) for (const t of c.tels) out.push({ name: c.name, tel: t, score: sc }); }
+  const seen = new Set();
+  return out.sort((a, b) => b.score - a.score || a.name.length - b.name.length).filter(x => { const k = normPhone(x.tel); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, n || 3);
+}
+
 // 한 번에 너무 많이 부르지 않게 — 동시에 n 개까지
 async function pool(items, n, fn) {
   const out = new Array(items.length); let i = 0;
@@ -728,7 +807,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-4 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-5 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -882,7 +961,7 @@ function renderShell() {
       <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
     <div class="stage" id="stage"><div class="panel" id="panel"></div></div>
     <p class="ver">${esc(APP_VERSION)} · 셀 케어 보고서를 읽기만 합니다</p>
-    <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="tip" id="tip" hidden></div>`;
+    <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="cv bk" id="bk" hidden></div><div class="callmenu" id="callmenu" hidden></div><div class="tip" id="tip" hidden></div>`;
   if (!TABS.some(t => t.id === PREF.tab)) PREF.tab = 'week';
   markTab(); rerender(); bindSwipe(); bindCellSwipe(); bindBarTips();
 }
@@ -1054,7 +1133,7 @@ function closeCell(fromPop) {
   cv.style.transition = 'transform .26s cubic-bezier(.4,0,.6,1)'; cv.style.transform = 'translateX(100%)';
   setTimeout(done, 270);
 }
-addEventListener('popstate', () => { if (S._closing) { S._closing = false; return; } if (S.pview) return closePerson(true); if (S.view) closeCell(true); });
+addEventListener('popstate', () => { if (S._closing) { S._closing = false; return; } hideCall(); if (S.book) return closeBook(true); if (S.pview) return closePerson(true); if (S.view) closeCell(true); });
 function cellHead() {
   const v = S.view, w = S.weeks[v.idx];
   return `<div class="cvhead"><span class="modal-head-gap"></span><div class="cvtitle"><b>${esc(cellName(v.cell))}</b><span class="tiny muted">${esc(leaderOf(v.cell))}</span></div>
@@ -1105,6 +1184,7 @@ function bindEdgeBack(el, close) {
 }
 function bindCellSwipe() {
   if ($('#pv')) bindEdgeBack($('#pv'), closePerson);
+  if ($('#bk')) bindEdgeBack($('#bk'), closeBook);
   const cv = $('#cv'); if (!cv) return;
   let x0 = 0, y0 = 0, dx = 0, on = false, lock = null, t0 = 0, edge = false;
   cv.addEventListener('touchstart', e => { if (busyAnim || e.touches.length > 1 || !S.view) return; const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); edge = x0 < 28; }, { passive: true });
@@ -1368,7 +1448,7 @@ function personHtml() {
   const mid = S.pview.mid; const p = S.people && S.people.get(mid); const m = S.members.get(mid) || {};
   const cellId = m.cell_id || (p && p.cellId); const name = m.name || (p && p.name) || '(이름 없음)';
   const st = p ? personStats(p, S.weeks) : null;
-  let h = `<div class="cvin"><div class="cvhead"><span class="modal-head-gap"></span><div class="cvtitle"><b>${esc(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div>
+  let h = `<div class="cvin"><div class="cvhead"><span class="phslot">${phoneBtn(mid)}</span><div class="cvtitle"><b>${esc(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div>
     <button class="modal-x" data-act="pv-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
   h += `<div class="card"><div class="row"><span class="small">출석 ${st ? st.present + ' / ' + st.seq.length : '—'}</span><span class="spacer"></span>${st && st.absentRun >= 2 ? `<span class="pill bad">${st.absentRun}주 결석</span>` : ''}${st && st.lastPresent ? `<span class="tiny muted">마지막 출석 ${esc(shortWeek(st.lastPresent))}</span>` : ''}</div>${p ? dots(p) : '<div class="tiny muted">출석 기록을 모으는 중…</div>'}</div>`;
   let any = false;
@@ -1464,6 +1544,153 @@ async function showTip(bar) {
 function hideTip() { const t = $('#tip'); if (t) t.hidden = true; S.tipFor = null; }
 
 /* =====================================================================
+   명단 · 전화번호 (L15) — 번호는 HB 파이어베이스 cellbook/{uid} 에만 (BLOCK7 · 기도노트와 같은 계정)
+   ⚠️ users/{uid}(BLOCK7 상태 문서)는 건드리지 않는다. 연락처 파일 내용은 저장하지 않는다(고른 번호만).
+   ===================================================================== */
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, loading: null };
+const BOOK = { phones: {}, loaded: false, err: '', contacts: null, focus: null };
+function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); document.head.appendChild(el); }); }
+async function fbInit() {
+  if (DEMO) { FB.ready = true; FB.user = FB.user || { email: '미리보기 (저장 안 됨)', uid: 'demo' }; BOOK.loaded = true; return; }
+  if (FB.app) return; if (FB.loading) return FB.loading;
+  FB.loading = (async () => {
+    for (const s of FB_JS) await loadJs(s);
+    FB.app = firebase.apps.find(a => a.name === 'cell') || firebase.initializeApp(FB_CFG, 'cell');
+    FB.auth = FB.app.auth(); FB.db = FB.app.firestore();
+    FB.auth.onAuthStateChanged(u => {
+      FB.user = u; FB.ready = true;
+      if (FB.unsub) { FB.unsub(); FB.unsub = null; }
+      if (u) { lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
+        e => { BOOK.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 주세요 (docs/cell/firestore-rules.md).' : '번호를 불러오지 못했습니다. ' + (e && e.message || ''); phoneUi(); }); }
+      else { BOOK.phones = {}; BOOK.loaded = false; }
+      phoneUi();
+    });
+  })();
+  try { await FB.loading; } catch (e) { FB.err = '로그인 도구를 불러오지 못했습니다.'; FB.loading = null; throw e; }
+}
+async function fbLogin() {
+  const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
+  if (!em || !pw) { FB.err = '이메일과 비밀번호를 넣어 주세요.'; return drawBook(); }
+  FB.busy = true; FB.err = ''; drawBook();
+  try { await fbInit(); await FB.auth.signInWithEmailAndPassword(em.trim(), pw); toast('로그인했습니다\n전화번호를 불러옵니다'); toast.at = Date.now(); }
+  catch (e) { FB.err = /wrong-password|invalid-credential|user-not-found|invalid-login/i.test(e.code || e.message) ? '이메일이나 비밀번호가 맞지 않습니다.' : '로그인하지 못했습니다. ' + (e.message || ''); }
+  FB.busy = false; drawBook();
+}
+async function fbLogout() { try { await FB.auth.signOut(); } catch (_) { } lsSet('cell_fb', 0); drawBook(); }
+function phoneOf(mid) { const x = BOOK.phones[mid]; return x && x.p ? x.p : ''; }
+async function savePhone(mid, raw) {
+  if (!FB.user) { toast('로그인하면\n번호를 저장할 수 있습니다'); toast.at = Date.now(); return false; }
+  const m = S.members.get(mid) || {}; const p = fmtPhone(raw);
+  if (DEMO) { if (normPhone(p).length >= 8) BOOK.phones[mid] = { n: m.name, p }; else delete BOOK.phones[mid]; return true; }
+  const ref = FB.db.collection('cellbook').doc(FB.user.uid);
+  try {
+    if (normPhone(p).length >= 8) await ref.set({ phones: { [mid]: { n: m.name || '', c: cellName(m.cell_id) || '', p, at: Date.now() } }, at: Date.now(), v: APP_VERSION }, { merge: true });
+    else if (!String(raw || '').trim()) await ref.set({ phones: { [mid]: firebase.firestore.FieldValue.delete() }, at: Date.now() }, { merge: true });
+    else { toast('번호 모양이 아닙니다\n다시 확인해 주세요'); toast.at = Date.now(); return false; }
+    return true;
+  } catch (e) { toast(e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다\n보안 규칙을 붙여 주세요' : '저장하지 못했습니다\n' + (e.message || '')); toast.at = Date.now(); return false; }
+}
+const PHONE_SVG = '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>';
+function phoneBtn(mid) {
+  const p = phoneOf(mid);
+  return p ? `<button class="phbtn" data-act="call" data-mid="${esc(mid)}" title="${esc(p)} 전화 · 문자" aria-label="전화 · 문자">${PHONE_SVG}</button>`
+    : `<button class="phbtn none" data-act="book" data-mid="${esc(mid)}" title="전화번호 넣기" aria-label="전화번호 넣기">${PHONE_SVG}</button>`;
+}
+function showCall(btn, mid) {
+  const p = phoneOf(mid); if (!p) return; const d = normPhone(p); const cm = $('#callmenu');
+  if (!cm.hidden && cm.dataset.mid === mid) return hideCall();
+  cm.dataset.mid = mid;
+  cm.innerHTML = `<div class="tiny muted" style="padding:4px 12px 6px">${esc(personName(mid))} · ${esc(p)}</div><a href="tel:${d}">${PHONE_SVG}<span>전화</span></a><a href="sms:${d}"><svg viewBox="0 0 24 24"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4 3v-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg><span>문자</span></a>`;
+  cm.hidden = false; const r = btn.getBoundingClientRect();
+  cm.style.left = Math.max(8, Math.min(innerWidth - 200, r.left)) + 'px'; cm.style.top = (r.bottom + 6) + 'px';
+  if (!quiet()) cm.animate([{ opacity: 0, transform: 'translateY(-4px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+function hideCall() { const cm = $('#callmenu'); if (cm) cm.hidden = true; }
+function phoneUi() {
+  if (S.pview) { const slot = document.querySelector('#pv .phslot'); if (slot) slot.innerHTML = phoneBtn(S.pview.mid); }
+  if (S.book) { const a = document.activeElement; if (!(a && a.closest && a.closest('#bk') && a.tagName === 'INPUT')) drawBook(); }
+}
+
+// 명단 화면
+function openBook(focusMid) {
+  BOOK.focus = focusMid; const first = !S.book; S.book = true;
+  if (first) history.pushState({ bk: 1 }, '');
+  const bk = $('#bk'); bk.hidden = false; document.body.classList.add('cvopen');
+  if (first && !quiet()) { bk.style.transition = 'none'; bk.style.transform = 'translateX(100%)'; void bk.offsetWidth;
+    bk.style.transition = 'transform .32s cubic-bezier(.22,.8,.24,1)'; bk.style.transform = 'translateX(0)'; setTimeout(() => { bk.style.transition = ''; }, 340); }
+  drawBook();
+  ensureMembers(scopeIds()).then(() => drawBook());
+  fbInit().then(() => drawBook()).catch(() => drawBook());
+}
+function closeBook(fromPop) {
+  if (!S.book) return; const bk = $('#bk');
+  const done = () => { bk.hidden = true; bk.style.transform = ''; bk.style.transition = ''; bk.innerHTML = ''; S.book = false; BOOK.contacts = null; if (!S.view && !S.pview) document.body.classList.remove('cvopen'); phoneUi(); };
+  if (!fromPop) { S._closing = true; history.back(); }
+  if (quiet()) return done();
+  bk.style.transition = 'transform .26s cubic-bezier(.4,0,.6,1)'; bk.style.transform = 'translateX(100%)'; setTimeout(done, 270);
+}
+function bookMembers() {
+  const by = new Map();
+  for (const m of S.members.values()) { if (m.active === false || !scopeIds().includes(m.cell_id)) continue; if (!by.has(m.cell_id)) by.set(m.cell_id, []); by.get(m.cell_id).push(m); }
+  return sortedCells().filter(c => by.has(c)).map(c => ({ c, list: by.get(c).sort((a, b) => String(a.name).localeCompare(String(b.name), 'ko')) }));
+}
+function drawBook() {
+  const bk = $('#bk'); if (!bk || !S.book) return;
+  const keepY = bk.scrollTop;
+  const acc = !FB.ready && !FB.err ? '<div class="tiny muted">로그인 도구를 불러오는 중…</div>'
+    : FB.user ? `<div class="row"><span class="small">${esc(FB.user.email || '')} <span class="muted">· 로그인됨</span></span><span class="spacer"></span><button class="tiny lnk" style="color:var(--tx3)" data-act="fb-logout">로그아웃</button></div>${BOOK.err ? `<p class="err">${esc(BOOK.err)}</p>` : ''}`
+    : `<p class="small muted" style="margin:0 0 4px">번호는 HB님 계정(BLOCK7 · Sweeter · 기도노트와 같은 이메일)에 저장해 여러 기기에서 같이 봅니다.</p>
+       <input type="email" id="fb-em" placeholder="이메일" autocomplete="email"><input type="password" id="fb-pw" placeholder="비밀번호" autocomplete="current-password">
+       <button class="btn pri" data-act="fb-login" ${FB.busy ? 'disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button>${FB.err ? `<p class="err">${esc(FB.err)}</p>` : ''}`;
+  const groups = bookMembers();
+  const nC = BOOK.contacts ? BOOK.contacts.length : 0;
+  const canPick = 'contacts' in navigator && 'select' in (navigator.contacts || {});
+  const exact = BOOK.contacts ? groups.flatMap(g => g.list).filter(m => !phoneOf(m.id) && (() => { const c = matchContacts(m.name, BOOK.contacts, 3); return c.length === 1 && c[0].score === 1; })()).length : 0;
+  let h = `<div class="cvin"><div class="cvhead"><span class="modal-head-gap"></span><div class="cvtitle"><b>명단 · 전화번호</b><span class="tiny muted">담당 셀 셀원</span></div>
+      <button class="modal-x" data-act="bk-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="card">${acc}</div>
+    <div class="card"><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" style="margin:0" data-act="vcf">연락처 파일 넣기</button>${canPick ? '<button class="btn" style="margin:0" data-act="pick-contacts">연락처에서 고르기</button>' : ''}
+      <input type="file" id="vcfin" accept=".vcf,text/vcard,text/x-vcard" hidden></div>
+      ${nC ? `<p class="small" style="margin:8px 0 0">연락처 ${nC}명을 읽었습니다. 셀원 옆에 비슷한 이름의 번호가 뜹니다. <span class="muted">(이 화면을 닫으면 연락처는 잊습니다)</span></p>${exact ? `<button class="btn pri" style="margin-top:8px" data-act="take-all">이름이 꼭 같은 ${exact}명 한 번에 넣기</button>` : ''}`
+      : `<details class="tiny muted" style="margin-top:8px"><summary>아이폰에서 연락처 파일 만드는 법</summary><ol style="margin:6px 0 0 18px;padding:0"><li>연락처 앱 → 왼쪽 위 '목록'</li><li>'모든 연락처'를 길게 누르기 → '내보내기'</li><li>'파일에 저장' → 여기서 '연락처 파일 넣기'로 그 파일 고르기</li></ol><p style="margin:6px 0 0">맥: 연락처 앱 → ⌘A → 파일 › 내보내기 › vCard 내보내기 → 에어드롭</p></details>`}</div>`;
+  if (!groups.length) h += '<div class="loading">셀원 명단을 불러오는 중…</div>';
+  for (const g of groups) {
+    h += `<h3 class="grp">${esc(cellName(g.c))} · ${g.list.length}</h3><div class="card" style="padding:2px 14px">` + g.list.map(m => {
+      const p = phoneOf(m.id); const sug = BOOK.contacts ? matchContacts(m.name, BOOK.contacts, 3).filter(x => normPhone(x.tel) !== normPhone(p)) : [];
+      return `<div class="bkrow${BOOK.focus === m.id ? ' focus' : ''}" id="bk-${esc(m.id)}"><div class="row"><span class="nm">${esc(m.name)}</span>${m.member_type === 'visitor' ? '<span class="tiny muted">방문</span>' : ''}<span class="spacer"></span>
+        <input type="tel" inputmode="tel" class="phin" data-mid="${esc(m.id)}" value="${esc(p)}" placeholder="010-0000-0000" ${FB.user ? '' : 'disabled'}></div>
+        ${sug.length ? `<div class="sugs">${sug.map(x => `<button class="sug" data-act="take" data-mid="${esc(m.id)}" data-tel="${esc(x.tel)}">${esc(x.name)} <b>${esc(x.tel)}</b>${x.score < 1 ? '<i>비슷</i>' : ''}</button>`).join('')}</div>` : ''}</div>`;
+    }).join('') + '</div>';
+  }
+  bk.innerHTML = h + '<p class="tiny muted" style="text-align:center;margin-top:16px">번호를 고치면 칸을 벗어날 때 저장됩니다 · 비우면 지워집니다</p></div>';
+  bk.scrollTop = keepY;
+  if (BOOK.focus) { const el = document.getElementById('bk-' + BOOK.focus); if (el && groups.length) { el.scrollIntoView({ block: 'center' }); const i = el.querySelector('input'); if (i && FB.user) setTimeout(() => i.focus(), 300); BOOK.focus = null; } }
+}
+document.addEventListener('change', async (e) => {
+  const t = e.target;
+  if (t.id === 'vcfin' && t.files && t.files[0]) {
+    try { const txt = await t.files[0].text(); BOOK.contacts = parseVcf(txt); toast(BOOK.contacts.length ? '연락처 ' + BOOK.contacts.length + '명을 읽었습니다' : '번호가 든 연락처를\n찾지 못했습니다'); toast.at = Date.now(); }
+    catch (_) { toast('파일을 읽지 못했습니다'); toast.at = Date.now(); }
+    return drawBook();
+  }
+  if (t.classList && t.classList.contains('phin')) { const ok = await savePhone(t.dataset.mid, t.value); if (ok) { t.value = fmtPhone(t.value); t.classList.add('saved'); setTimeout(() => t.classList.remove('saved'), 900); } }
+});
+async function pickContacts() {
+  try { const got = await navigator.contacts.select(['name', 'tel'], { multiple: true });
+    const add = (got || []).map(c => ({ name: (c.name || [])[0] || '', tels: (c.tel || []).map(fmtPhone).filter(x => normPhone(x).length >= 8) })).filter(c => c.name && c.tels.length);
+    BOOK.contacts = (BOOK.contacts || []).concat(add); drawBook(); } catch (_) { }
+}
+async function takeSuggestion(mid, tel) { if (await savePhone(mid, tel)) { BOOK.phones[mid] = Object.assign({}, BOOK.phones[mid], { p: fmtPhone(tel) }); drawBook(); } }
+async function takeAllExact() {
+  const list = bookMembers().flatMap(g => g.list).filter(m => !phoneOf(m.id)).map(m => ({ m, c: matchContacts(m.name, BOOK.contacts, 3) })).filter(x => x.c.length === 1 && x.c[0].score === 1);
+  let n = 0; for (const x of list) if (await savePhone(x.m.id, x.c[0].tel)) { BOOK.phones[x.m.id] = { p: fmtPhone(x.c[0].tel) }; n++; }
+  toast(n + '명의 번호를\n넣었습니다'); toast.at = Date.now(); drawBook();
+}
+
+/* =====================================================================
    로그인
    ===================================================================== */
 const LOGIN = { email: lsGet('cell_email', ''), sent: false, busy: false, msg: '' };
@@ -1526,6 +1753,7 @@ document.addEventListener('click', async (e) => {
   const menu = $('#menu');
   if (menu && !e.target.closest('#menu') && !(b && b.dataset.act === 'menu')) menu.remove();
   if (!(b && b.dataset.act === 'bar') && !(S.tipAt && Date.now() - S.tipAt < 900)) hideTip();
+  if (!e.target.closest('#callmenu') && !(b && b.dataset.act === 'call')) hideCall();
   if (!b) return;
   const d = b.dataset;
   if (d.wk) { if (S.view && S.view.cell === d.cell) return cvGo(S.weeks.indexOf(d.wk)); return openCell(d.cell, d.wk); }
@@ -1549,6 +1777,15 @@ document.addEventListener('click', async (e) => {
     case 'fold-tag': return flipRender(() => { PREF.iss = Object.assign(issNorm(PREF.iss), { foldTag: !issNorm(PREF.iss).foldTag }); savePref(); rerender(); });
     case 'cv-close': return closeCell(false);
     case 'person': hideTip(); return openPerson(d.mid);
+    case 'book': menu && menu.remove(); hideCall(); return openBook(d.mid || null);
+    case 'bk-close': return closeBook(false);
+    case 'call': return showCall(b, d.mid);
+    case 'fb-login': return fbLogin();
+    case 'fb-logout': return fbLogout();
+    case 'vcf': return $('#vcfin') && $('#vcfin').click();
+    case 'pick-contacts': return pickContacts();
+    case 'take': return takeSuggestion(d.mid, d.tel);
+    case 'take-all': return takeAllExact();
     case 'pv-close': return closePerson(false);
     case 'g-tg': return flipRender(() => { PREF.gOpen = !PREF.gOpen; savePref(); rerender(); });
     case 'g-more': return flipRender(() => { S.gMore = !S.gMore; rerender(); });
@@ -1564,6 +1801,7 @@ document.addEventListener('click', async (e) => {
       const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
       m.innerHTML = `<div class="info">${esc(who)}${S.mineIds.length ? ' · 담당 셀 ' + S.mineIds.length + '곳' : ''}</div>
         ${S.mineIds.length ? `<button data-act="scope">${PREF.scope === 'mine' ? '볼 수 있는 셀 전체 보기' : '내 담당 셀만 보기'}</button>` : ''}
+        <button data-act="book">명단 · 전화번호</button>
         <button data-act="reload">새로 불러오기</button>
         <button data-act="logout">${DEMO ? '미리보기 끝내기' : '로그아웃'}</button>`;
       b.parentElement.appendChild(m); return;
@@ -1581,7 +1819,8 @@ document.addEventListener('click', async (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.id === 'lg-email') sendCode();
   if (e.key === 'Enter' && e.target.id === 'lg-code') verifyCode();
-  if (e.key === 'Escape') { const m = $('#menu'); if (m) return m.remove(); if (S.pview) return closePerson(false); if (S.view) closeCell(false); }
+  if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin();
+  if (e.key === 'Escape') { const m = $('#menu'); if (m) return m.remove(); if (!$('#callmenu').hidden) return hideCall(); if (S.book) return closeBook(false); if (S.pview) return closePerson(false); if (S.view) closeCell(false); }
   if (S.view && !S.pview && e.key === 'ArrowLeft') cvGo(S.view.idx + 1);
   if (S.view && !S.pview && e.key === 'ArrowRight') cvGo(S.view.idx - 1);
 });
@@ -1595,6 +1834,7 @@ async function startReal() {
   try { S.api = realApi(); await loadBase(); } catch (e) { renderError(e); }
 }
 async function start() {
+  if (lsGet('cell_fb', 0)) fbInit().catch(() => {});   // 한 번 로그인한 기기는 전화번호를 바로 받아 둔다
   if (DEMO) { S.api = demoApi(); try { await loadBase(); } catch (e) { renderError(e); } return; }
   let api; try { api = realApi(); } catch (e) { return renderError(e); }
   const { data } = await sb.auth.getSession();
