@@ -244,7 +244,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
     'BEGIN:VCARD', 'FN:번호없는분', 'END:VCARD',
     'BEGIN:VCARD', 'N:박;세나;;;', 'TEL:02-555-6666', 'END:VCARD'].join('\r\n');
   const C = A.parseVcf(vcf);
-  sc.eq('⑮ vCard: FN(없으면 N) · 같은 번호 한 번 · 접힌 줄 펴기 · 번호 없는 분 버림', J(C), [{ name: '김하나 집사', tels: ['010-1111-2222'] }, { name: '이두리', tels: ['010-3333-4444'] }, { name: '박세나', tels: ['02-555-6666'] }]);
+  sc.eq('⑮ vCard: FN(없으면 N) · 같은 번호 한 번 · 접힌 줄 펴기 · 번호 없는 분 버림', J(C.map(c => ({ name: c.name, tels: c.tels }))), [{ name: '김하나 집사', tels: ['010-1111-2222'] }, { name: '이두리', tels: ['010-3333-4444'] }, { name: '박세나', tels: ['02-555-6666'] }]);
   sc.eq('⑮ 셀원 이름에 맞는 후보 (점수 순)', J(A.matchContacts('김하나', C.concat([{ name: '김하나B', tels: ['010-9999-0000'] }])).map(x => [x.tel, x.score])), [['010-1111-2222', 1], ['010-9999-0000', 0.8]]);
   // HB 11/6: 연락처에 분명히 있는데 못 찾던 것
   const nfd = ['BEGIN:VCARD', 'FN:' + '김하나'.normalize('NFD'), 'TEL:010-1111-2222', 'END:VCARD'].join('\n');
@@ -258,6 +258,13 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const P3 = A.prepContacts([{ name: '김하나B', tels: ['010-9999-0000'] }, { name: '김 하나', tels: ['010-1111-2222'] }, { name: '박세나1', tels: ['010-5555-1111'] }, { name: '박세나2', tels: ['010-5555-2222'] }]);
   const auto2 = A.autoFill([{ id: 'a', name: '김하나' }, { id: 's', name: '박세나' }], {}, (m) => A.matchContacts(m.name, P3, 3));
   sc.eq('⑮ 띄어쓰기만 다른 꼭 같은 이름이 있으면 비슷한 후보가 여럿이어도 먼저 넣는다 · 비슷한 것만 여럿이면 넣지 않는다', J(auto2), { a: { p: '010-1111-2222', src: '김 하나' } });
+  // HB 11/6: 성 칸 · 이름 칸이 바뀌어 저장된 연락처
+  const sw = A.prepContacts(A.parseVcf(['BEGIN:VCARD', 'N:하나;김;;;', 'FN:하나 김', 'TEL:010-2020-3030', 'END:VCARD',
+    'BEGIN:VCARD', 'FN:두리이', 'TEL:010-4040-5050', 'END:VCARD', 'BEGIN:VCARD', 'N:세나;박;;;', 'TEL:010-6060-7070', 'END:VCARD'].join('\n')));
+  sc.eq('⑮ 성 · 이름이 바뀐 연락처를 찾고 표시한다 (띄운 것 · 붙은 것 · N 칸만 있는 것)', J(['김하나', '이두리', '박세나'].map(n => { const c = A.matchContacts(n, sw); return c[0] ? [c[0].tel, !!c[0].swapped] : null; })),
+    [['010-2020-3030', true], ['010-4040-5050', true], ['010-6060-7070', true]]);
+  const aw = A.autoFill([{ id: 'x', name: '김하나' }], {}, (m) => A.matchContacts(m.name, sw, 3));
+  sc.eq('⑮ 바뀐 것도 꼭 같으면 바로 넣고 표시를 남긴다', J(aw), { x: { p: '010-2020-3030', src: '하나 김', swapped: true } });
   sc.eq('⑮ 맞는 사람이 없으면 비움', A.matchContacts('최기쁨', C).length, 0);
   sc.eq('⑮ 번호는 cellbook/{uid} 에만 — BLOCK7 상태 문서(users)는 건드리지 않는다', /collection\('cellbook'\)/.test(HTML) && !/collection\('users'\)/.test(HTML), true);
   sc.eq('⑮ 저장은 한 번에 몰아서 (번호마다 기다리지 않음)', /function setPhones\(changes\)/.test(HTML) && !/async function savePhone/.test(HTML), true);
