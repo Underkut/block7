@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -246,6 +246,23 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const fresh = A.periodStats(mk([E(3, 1)]), W.slice(0, 4), 4, true);
   const hf = A.cellHealth([], [], fresh);
   sc.eq('⑬-2 보고서가 1주뿐인 새 셀은 판단 보류(회색)', J([hf.att.lv, hf.sub.lv, hf.rest.lv]), ['na', 'na', 'na']);
+}
+
+// ⑬-3 신호 기준값 (HB 11/6: 설정에서 정한다)
+{
+  const E = (pres, abs) => ({ report_id: 'r', status: 'submitted', members_present: pres, members_absent: abs });
+  const mk = (list) => new Map(list.map((r, i) => [W[i], r]));
+  const st = A.periodStats(mk([E(3, 2), E(3, 2), E(3, 2), E(3, 2)]), W.slice(0, 4), 4, true);   // 출석 60%
+  sc.eq('⑬-3 처음값: 출석 60% → 주황', A.cellHealth([], [], st).att.lv, 'warn');
+  sc.eq('⑬-3 초록 경계를 60 으로 낮추면 → 초록', A.cellHealth([], [], st, { attOk: 60, attWarn: 30 }).att.lv, 'ok');
+  sc.eq('⑬-3 주황 경계를 70 으로 올리면(초록 80) → 빨강', A.cellHealth([], [], st, { attOk: 80, attWarn: 70 }).att.lv, 'bad');
+  const one = A.periodStats(mk([{ report_id: null }, E(4, 0), { report_id: null }, E(4, 0)]), W.slice(0, 4), 3, true);   // 미제출 1/3
+  sc.eq('⑬-3 제출 빨강 경계 50 이면 33% 는 주황 · 30 이면 빨강', J([A.cellHealth([], [], one).sub.lv, A.cellHealth([], [], one, { ratioBad: 30 }).sub.lv]), ['warn', 'bad']);
+  const two = A.periodStats(mk([E(3, 1), E(3, 1)]), W.slice(0, 2), 2, true);
+  sc.eq('⑬-3 회색 경계: 2주 자료는 처음값에선 판단 · 3주 미만이면 보류', J([A.cellHealth([], [], two).att.lv, A.cellHealth([], [], two, { minN: 3 }).att.lv]), ['ok', 'na']);
+  sc.eq('⑬-3 정리: 잘못된 값은 처음값 · 주황 ≥ 초록이면 둘 다 처음값', J([A.thrNorm({ attOk: 'abc', ratioBad: 500, minN: 0 }), A.thrNorm({ attOk: 50, attWarn: 60 }), A.thrNorm(null)]),
+    [{ attOk: 75, attWarn: 40, ratioBad: 50, minN: 2 }, { attOk: 75, attWarn: 40, ratioBad: 50, minN: 2 }, { attOk: 75, attWarn: 40, ratioBad: 50, minN: 2 }]);
+  sc.eq('⑬-3 메뉴에 신호 기준이 있고 기준은 이 기기(PREF)에만 둔다', /data-act="thr">신호 기준/.test(HTML) && !/cellbook[\s\S]{0,80}thr/.test(HTML), true);
 }
 
 // ⑭ 시작 전 주 · 모임 못 한 주 (HB 11/6 3차: 이흥배 셀 — 5주 다 냈는데 제출이 주황, 0명 막대)

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-25 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-26 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -162,6 +162,15 @@ input[type=email],input[type=text],input[type=password]{width:100%;padding:11px 
 .menu{position:absolute;right:0;top:44px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;min-width:190px;z-index:20}
 .menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px}
 .menu button:hover{background:var(--s1)}
+.thrwrap{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.4);display:grid;place-items:center;padding:16px}
+.thrcard{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:10px 16px 16px;width:min(100%,380px);max-height:90vh;overflow:auto}
+.thrhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.thrhead b{font-weight:500;font-size:16px}
+.thrgrp{margin:12px 0 2px;font-size:13.5px}
+.thrrow{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:14px;color:var(--tx2)}
+.thrrow>span:first-child{width:42px;flex:none}
+.thrrow input{width:68px;margin:0;padding:8px 10px;text-align:right;font-size:16px}
+.thrreset{display:block;margin:16px auto 0;font-size:13px;color:var(--tx3);text-decoration:underline dotted;text-underline-offset:3px}
 .menu .info{padding:6px 12px 8px;font-size:12px;color:var(--tx3);border-bottom:1px solid var(--line);margin-bottom:4px}
 body.cvopen{overflow:hidden}
 .cv{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;
@@ -297,7 +306,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-25';
+const APP_VERSION = 'v. 26-1106-26';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -585,17 +594,26 @@ function periodStats(m, weeks, span, curFirst) {
   }
   return { ex, span, n: rows.length, held, off, mis, rest: off + mis, pct: !rows.length ? null : !held ? 0 : tot ? Math.round(pres * 100 / tot) : null };   // 모임이 한 번도 없으면(명단 수를 몰라도) 전부 결석 = 0%
 }
+// 신호 기준값(HB 11/6: 설정에서 정한다). attOk/attWarn = 출석률 초록 · 주황 경계(%) · ratioBad = 제출 · 쉼 빨강 경계(%) · minN = 이 주 수 미만이면 회색.
+const THR_DEFAULT = { attOk: 75, attWarn: 40, ratioBad: 50, minN: 2 };
+function thrNorm(t) {
+  const n = (k, lo, hi) => { const raw = t && t[k] != null && t[k] !== '' ? Number(t[k]) : NaN; const v = Math.round(raw); return v >= lo && v <= hi ? v : THR_DEFAULT[k]; };   // 비었거나 이상한 값은 처음값
+  const o = { attOk: n('attOk', 1, 100), attWarn: n('attWarn', 0, 99), ratioBad: n('ratioBad', 1, 100), minN: n('minN', 1, 8) };
+  if (o.attWarn >= o.attOk) { o.attOk = THR_DEFAULT.attOk; o.attWarn = THR_DEFAULT.attWarn; }   // 주황 경계가 초록 경계보다 낮아야 한다
+  return o;
+}
 // E 셀 건강 신호등. 출석 · 제출 · 쉼은 기간 통계(st) 의 % 로, 이슈 · 요청은 최근 8주(rows · reps)로.
-// 출석 75%↑ 초록 · 40%↑ 주황 · 그 밑 빨강. 제출(미제출 비율) · 쉼(쉰 주 비율)은 0 초록 · 절반 미만 주황 · 절반 이상 빨강. 보고서가 2주 미만이면 회색(na = 판단 보류).
-function cellHealth(rows, reps, st) {
+// 출석 attOk↑ 초록 · attWarn↑ 주황 · 그 밑 빨강. 제출(미제출 비율) · 쉼(쉰 주 비율)은 0 초록 · ratioBad 미만 주황 · 이상 빨강. 보고서가 minN 주 미만이면 회색(na = 판단 보류). 처음값 75 · 40 · 50 · 2.
+function cellHealth(rows, reps, st, thr) {
+  const T = thrNorm(thr);
   const lv = (v, w, b) => v >= b ? 'bad' : v >= w ? 'warn' : 'ok';
   const sub = rows.filter(r => r && isSubmitted(r));
   const heavy = reps.reduce((s, d) => s + d.notes.filter(n => n.leadership_attention_required || catsOf(n).some(k => HEAVY[k] >= 2)).length, 0);
   const asks = reps.filter(d => d.rep && d.rep.leader_message && d.rep.leader_message !== 'none').length;
-  const few = !st || st.n < 2;
-  const ratio = (c) => c === 0 ? 'ok' : c * 2 >= st.n ? 'bad' : 'warn';
+  const few = !st || st.n < T.minN;
+  const ratio = (c) => c === 0 ? 'ok' : c * 100 / st.n >= T.ratioBad ? 'bad' : 'warn';
   return {
-    att: few ? { lv: 'na', text: '자료 부족' } : { lv: st.pct == null ? 'na' : st.pct >= 75 ? 'ok' : st.pct >= 40 ? 'warn' : 'bad', text: st.span + '주 출석 ' + (st.pct == null ? '—' : st.pct + '%') },
+    att: few ? { lv: 'na', text: '자료 부족' } : { lv: st.pct == null ? 'na' : st.pct >= T.attOk ? 'ok' : st.pct >= T.attWarn ? 'warn' : 'bad', text: st.span + '주 출석 ' + (st.pct == null ? '—' : st.pct + '%') },
     sub: few ? { lv: 'na', text: '자료 부족' } : { lv: ratio(st.mis), text: '미제출 ' + st.mis + '/' + st.n + '주 ' + Math.round(st.mis * 100 / st.n) + '%' },
     rest: few ? { lv: 'na', text: '자료 부족' } : { lv: ratio(st.off), text: '쉼 ' + st.off + '/' + st.n + '주 ' + Math.round(st.off * 100 / st.n) + '%' },
     issue: { lv: sub.length ? lv(heavy / sub.length, 0.5, 1.5) : 'ok', text: '무거운 이슈 ' + heavy + '건' },
@@ -920,7 +938,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', wsort: 'sub', wdir: 'asc', wspan: 4, cspan: 4, issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-25 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-26 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1076,7 +1094,7 @@ function renderShell() {
       <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
     <div class="stage" id="stage"><div class="panel" id="panel"></div></div>
     <p class="ver"><button class="verbtn" data-act="upd" title="새 버전 확인">${esc(APP_VERSION)} · 새 버전 확인</button><br>셀 케어 보고서를 읽기만 합니다</p>
-    <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="cv bk" id="bk" hidden></div><div class="callmenu" id="callmenu" hidden></div><div class="tip" id="tip" hidden></div>`;
+    <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="cv bk" id="bk" hidden></div><div class="callmenu" id="callmenu" hidden></div><div class="tip" id="tip" hidden></div><div class="thrwrap" id="thr" hidden></div>`;
   if (!TABS.some(t => t.id === PREF.tab)) PREF.tab = 'week';
   markTab(); rerender(); bindSwipe(); bindCellSwipe(); bindBarTips();
 }
@@ -1547,16 +1565,16 @@ function viewCellTab() {
   if (!ids.length) return '<p class="empty">보이는 셀이 없습니다.</p>';
   if (S.loadedSpan < 8 && !S.loadingCellTab) { S.loadingCellTab = true; loadDetails(8).then(() => { S.loadingCellTab = false; if (PREF.tab === 'cell') rerender(); }).catch(() => { S.loadingCellTab = false; }); }
   const ready = S.loadedSpan >= 8;
-  const cn = cspanN();
+  const cn = cspanN(); const T = thrNorm(PREF.thr);
   let h = `<div class="sortrow noprint"><label class="spanbox" title="신호 기간 (주)"><b id="cspanv">${cn}주</b><input type="range" id="cspanr" min="2" max="8" step="1" value="${cn}" aria-label="신호 기간 주 수"></label></div>
-    <p class="sub">셀마다 신호와 12주 출석입니다. <b>출석 · 제출 · 쉼</b>은 위 슬라이더의 기간(쉼 · 미제출은 결석으로 센 출석률 75%↑ 초록 · 40%↑ 주황 · 미제출 · 쉼은 없으면 초록 · 절반 미만 주황 · 절반 이상 빨강), <b>이슈 · 요청</b>은 최근 8주. 보고서가 2주 미만이면 회색(판단 보류). \'쉼\' 은 모임을 못 한 주, 점선은 보고서가 없던 주.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>`;
+    <p class="sub">셀마다 신호와 12주 출석입니다. <b>출석 · 제출 · 쉼</b>은 위 슬라이더의 기간(쉼 · 미제출은 결석으로 센 출석률 ${T.attOk}%↑ 초록 · ${T.attWarn}%↑ 주황 · 미제출 · 쉼은 없으면 초록 · ${T.ratioBad}% 미만 주황 · 이상 빨강), <b>이슈 · 요청</b>은 최근 8주. 보고서가 ${T.minN}주 미만이면 회색(판단 보류). 기준은 메뉴 › 신호 기준. \'쉼\' 은 모임을 못 한 주, 점선은 보고서가 없던 주.<br>막대에 마우스를 올리거나 길게 누르면 누가 왔는지, 누르면 그 주 보고서.</p>`;
   for (const c of ids) {
     const ser = attendanceSeries(cellWeekMap(c), S.weeks);
     const sm = attendanceSummary(ser);
     const max = Math.max(1, ...ser.map(x => x.present + x.visitors));
     const cm = cellWeekMap(c); const rows8 = S.weeks.slice(0, 8).map(w => cm.get(w) || null);
     const reps = ready ? cellReps(c, 8) : [];
-    const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true)) : null;
+    const hl = ready ? cellHealth(rows8, reps, periodStats(cm, S.weeks, cn, true), PREF.thr) : null;
     const sig = ready ? leaderSignals(rows8, reps) : [];
     const light = (k, label) => `<div class="lt" title="${esc(hl[k].text)}"><i class="${hl[k].lv}"></i><span>${label}</span></div>`;
     h += `<div class="card"><div class="row"><button class="lnk" data-act="open-cell" data-cell="${esc(c)}"><h3 style="margin:0">${esc(cellName(c))}</h3></button><span class="tiny muted">${esc(leaderOf(c))}</span><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
@@ -1927,6 +1945,31 @@ function drawBook() {
   if (BOOK.focus) { const el = document.getElementById('bk-' + BOOK.focus); if (el && groups.length) { el.scrollIntoView({ block: 'center' }); const i = el.querySelector('input'); if (i && FB.user) if (!TOUCH) setTimeout(() => i.focus(), 300); BOOK.focus = null; } }
 }
 // 직접 찾기: 연락처 이름(다듬은 것) · 번호 숫자에 친 글자가 들어 있으면 최대 6개
+// 신호 기준 창 (HB 11/6): 셀 탭 색띠의 % 경계를 이 기기에서 정한다.
+function openThr() { drawThr(); const w = $('#thr'); w.hidden = false; if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); }
+function closeThr() { const w = $('#thr'); if (w) w.hidden = true; }
+function syncThr() { const T = thrNorm(PREF.thr); for (const i of document.querySelectorAll('#thr .thrin')) i.value = T[i.dataset.thrk]; }   // 칸을 다시 그리지 않고 값만 맞춘다(입력 중인 칸을 지우면 오류)
+function drawThr() {
+  const T = thrNorm(PREF.thr);
+  const row = (k, a, b, lo, hi) => `<label class="thrrow"><span>${a}</span><input type="number" inputmode="numeric" class="thrin" data-thrk="${k}" min="${lo}" max="${hi}" value="${T[k]}"><span>${b}</span></label>`;
+  $('#thr').innerHTML = `<div class="thrcard" role="dialog" aria-label="신호 기준">
+    <div class="thrhead"><span class="modal-head-gap"></span><b>신호 기준</b><button class="modal-x" data-act="thr-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="tiny muted">셀 탭 색띠에 쓰는 경계입니다. 이 기기에 저장됩니다.</p>
+    <div class="thrgrp">출석 <span class="tiny muted">(쉼 · 미제출은 결석으로 센 출석률)</span></div>
+    ${row('attOk', '초록', '% 이상', 1, 100)}${row('attWarn', '주황', '% 이상 (그 아래 빨강)', 0, 99)}
+    <div class="thrgrp">제출 · 쉼 <span class="tiny muted">(미제출 · 쉰 주의 비율)</span></div>
+    ${row('ratioBad', '빨강', '% 이상 (없으면 초록 · 그 사이 주황)', 1, 100)}
+    <div class="thrgrp">자료가 적을 때</div>
+    ${row('minN', '회색', '주 미만이면 판단 보류', 1, 8)}
+    <button class="thrreset" data-act="thr-reset">처음값으로 (${THR_DEFAULT.attOk} · ${THR_DEFAULT.attWarn} · ${THR_DEFAULT.ratioBad} · ${THR_DEFAULT.minN})</button></div>`;
+}
+document.addEventListener('change', (e) => {
+  const k = e.target && e.target.dataset && e.target.dataset.thrk; if (!k) return;
+  const cur = thrNorm(PREF.thr); const next = Object.assign({}, cur, { [k]: e.target.value });
+  const fixed = thrNorm(next);
+  if (JSON.stringify(fixed) !== JSON.stringify(next) && (k === 'attOk' || k === 'attWarn') && fixed.attOk === THR_DEFAULT.attOk && fixed.attWarn === THR_DEFAULT.attWarn && (next.attWarn >= next.attOk)) { toast('초록 경계가 주황 경계보다\n높아야 합니다'); toast.at = Date.now(); }
+  PREF.thr = fixed; savePref(); syncThr(); if (PREF.tab === 'cell') rerender();
+});
 document.addEventListener('input', (e) => {
   if (e.target && e.target.id === 'cspanr') { PREF.cspan = Number(e.target.value); const v = $('#cspanv'); if (v) v.textContent = cspanN() + '주'; return; }   // 끄는 동안은 숫자만, 신호는 손 뗄 때
   if (e.target && e.target.id === 'spanr') {   // 끄는 동안은 글자와 줄 아래 통계만 바꾼다(칸을 다시 그리면 끌던 손잡이가 끊긴다). 순서는 손을 뗄 때 바뀐다.
@@ -2107,6 +2150,7 @@ document.addEventListener('click', async (e) => {
       m.innerHTML = `<div class="info">${esc(who)}${S.mineIds.length ? ' · 담당 셀 ' + S.mineIds.length + '곳' : ''}</div>
         ${S.mineIds.length ? `<button data-act="scope">${PREF.scope === 'mine' ? '볼 수 있는 셀 전체 보기' : '내 담당 셀만 보기'}</button>` : ''}
         <button data-act="book">명단 · 전화번호</button>
+        <button data-act="thr">신호 기준</button>
         <button data-act="reload">새로 불러오기</button>
         <button data-act="logout">${DEMO ? '미리보기 끝내기' : '로그아웃'}</button>`;
       b.parentElement.appendChild(m); return;
@@ -2114,6 +2158,9 @@ document.addEventListener('click', async (e) => {
     case 'scope': PREF.scope = PREF.scope === 'mine' ? 'all' : 'mine'; savePref(); menu && menu.remove();
       toast(PREF.scope === 'mine' ? '내 담당 셀만\n보여 드립니다' : '볼 수 있는 셀을\n모두 보여 드립니다'); toast.at = Date.now();
       S.people = null; rerender(); loadDetails(Math.max(PREF.span, S.weekIdx + 1, 4)).then(() => { refreshBadge(); rerender(); }).then(() => loadPeople()).then(() => rerender()).catch(() => {}); return;
+    case 'thr': menu && menu.remove(); return openThr();
+    case 'thr-close': return closeThr();
+    case 'thr-reset': PREF.thr = null; savePref(); syncThr(); if (PREF.tab === 'cell') rerender(); toast('신호 기준을\n처음값으로 되돌렸습니다'); toast.at = Date.now(); return;
     case 'reload': menu && menu.remove(); return start();
     case 'logout': menu && menu.remove();
       if (DEMO) { location.href = location.pathname; return; }
@@ -2132,7 +2179,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.id === 'lg-email') sendCode();
   if (e.key === 'Enter' && e.target.id === 'lg-code') verifyCode();
   if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin();
-  if (e.key === 'Escape') { const m = $('#menu'); if (m) return m.remove(); if (!$('#callmenu').hidden) return hideCall(); if (S.book) return closeBook(false); if (S.pview) return closePerson(false); if (S.view) closeCell(false); }
+  if (e.key === 'Escape') { const m = $('#menu'); if (m) return m.remove(); if (!$('#thr').hidden) return closeThr(); if (!$('#callmenu').hidden) return hideCall(); if (S.book) return closeBook(false); if (S.pview) return closePerson(false); if (S.view) closeCell(false); }
   if (S.view && !S.pview && e.key === 'ArrowLeft') cvGo(S.view.idx + 1);
   if (S.view && !S.pview && e.key === 'ArrowRight') cvGo(S.view.idx - 1);
 });
