@@ -4,7 +4,8 @@
  * ⚠️ 이 서버는 사용자 상태(users/{uid})를 절대 읽거나 쓰지 않는다 — 병합이 두 군데가 되면 깨진다.
  *
  * gcal (HTTP, asia-northeast3)
- *   POST /start  {ret}  (Bearer 파이어베이스 ID 토큰)  구글 동의 화면 주소를 만들어 준다
+ *   POST /start  {ret, care}  (Bearer 파이어베이스 ID 토큰)  구글 동의 화면 주소를 만들어 준다
+ *                       care:true 면 심방 노트(sweeter.my/care/)용 권한(drive.file)을 함께 묻는다 — 아래 CARE_SCOPES
  *   POST /fin {code,state,error}  구글이 block7.my/gcal/ 로 돌려보낸 것을 그 쪽지가 넘겨준다
  *                       → 갱신 토큰을 gcalTokens/{uid} 에 맡기고 {ret, result} (돌아갈 앱 주소)를 알려 준다
  *   POST /token         (Bearer) 한 시간짜리 열쇠(access token)를 새로 받아 준다
@@ -34,9 +35,14 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
   "https://www.googleapis.com/auth/calendar.events",
 ];
+// 심방 노트(sweeter.my/care/, 1106-C)가 덧붙여 묻는 권한. 열쇠는 BLOCK7 캘린더와 **한 벌**이다 —
+// include_granted_scopes 로 받으므로 어느 쪽이 다시 연결해도 앞서 받은 권한이 함께 남는다.
+// drive.file = HB 가 구글 파일 고르기 창에서 **고른 파일만**(심방 시트 · 심방 폼) 열 수 있다 (HB 결정 2026-11-06, '가').
+//   ⚠️ 'spreadsheets' · 'drive' 처럼 모든 파일을 여는 권한으로 넓히지 말 것 — 심방 기록은 민감 정보다.
+const CARE_SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 const APP_DEFAULT = "https://block7.my/";
-// 돌아갈 주소는 BLOCK7 운영본 자리만 받는다 (아무 데로나 돌려보내는 문이 되지 않게)
-const okRet = (u) => typeof u === "string" && /^https:\/\/(block7\.my|underkut\.github\.io\/block7)\//.test(u);
+// 돌아갈 주소는 BLOCK7 운영본 자리와 심방 노트 자리만 받는다 (아무 데로나 돌려보내는 문이 되지 않게)
+const okRet = (u) => typeof u === "string" && /^https:\/\/(block7\.my|underkut\.github\.io\/block7|sweeter\.my\/care)\//.test(u);
 // 구글이 돌려보내는 자리는 block7.my 안에 둔다 (v26-1023-2) — 구글 '앱 게시' 는 승인된 도메인을
 // HB 소유 도메인으로 요구하는데 cloudfunctions.net 은 HB 것이 아니다. 그 쪽지(gcal/index.html)가 /fin 을 부른다.
 const REDIRECT_URI = "https://block7.my/gcal/";
@@ -100,7 +106,7 @@ exports.gcal = onRequest(
         const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
         u.search = new URLSearchParams({
           client_id: cid(), redirect_uri: redirectUri(), response_type: "code",
-          scope: SCOPES.join(" "), access_type: "offline", prompt: "consent",
+          scope: SCOPES.concat(req.body && req.body.care === true ? CARE_SCOPES : []).join(" "), access_type: "offline", prompt: "consent",
           include_granted_scopes: "true", state,
         }).toString();
         res.json({ url: u.toString() });

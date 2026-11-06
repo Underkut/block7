@@ -247,6 +247,12 @@ console.log('\n시나리오 6 — 무엇을 올리는가');
   const pray=fs.readFileSync(path.join(__dirname,'..','pray','index.html'),'utf8');
   sc.eq('block7.my 로 열리면 sweeter.my/pray/ 로 넘긴다',
         pray.includes("location.replace('https://sweeter.my/pray/'"), true);
+  // 심방 노트(sweeter.my/care/, 1106-C) — 기도노트와 같은 사정. 빠지면 다음 Sweeter 배포 때 사라진다.
+  sc.eq('⭐ 빌드가 심방 노트(care/)를 함께 담는다', /^cp -r care "\$OUT\/care"$/m.test(mk), true);
+  sc.eq('심방 노트를 고쳐도 Sweeter 배포가 돈다', pwf.includes("- 'care/**'"), true);
+  sc.eq('올리기 전에 care/ 가 담겼는지 본다', pwf.includes('test -f build-sweeter/care/index.html'), true);
+  sc.eq('⭐ /care 를 손으로 넘기는 규칙이 없다 (고리 방지)',
+        (h[0].redirects||[]).some(r=>/^\/care\/?$/.test(r.source||'')), false);
 
   // 배포 워크플로 — 열쇠가 없어도 빨개지지 않아야 한다
   const wf=fs.readFileSync(path.join(__dirname,'..','.github','workflows','deploy-sweeter.yml'),'utf8');
