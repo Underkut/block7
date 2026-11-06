@@ -245,8 +245,9 @@ h3 .lnk{font-weight:500}
 .clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 .clamp.open{display:block;-webkit-line-clamp:unset}
 .clamp.cut:not(.open){-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent);mask-image:linear-gradient(180deg,#000 62%,transparent)}
-.morebtn{display:flex;width:fit-content;margin-left:auto;align-items:center;gap:5px;font-size:12.5px;color:var(--ac);margin-top:3px;padding:2px 0}
-.morebtn i{width:6px;height:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
+.morebtn{display:flex;align-items:center;justify-content:center;width:44px;height:24px;margin:-11px auto 0;padding:0;position:relative;z-index:1;color:var(--ac);transition:margin-top .28s cubic-bezier(.22,.8,.24,1)}
+.clamp.open+.morebtn,.morebtn.gmore{margin-top:2px}
+.morebtn i{width:8px;height:8px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
 .morebtn i.up{transform:rotate(-135deg) translate(-1px,-1px)}
 .lbl2{font-size:12.5px;color:var(--tx2);margin:14px 2px 6px}
 /* 명단 · 전화번호 */
@@ -872,7 +873,7 @@ function demoApi() {
     reports: async (ids) => ids.map(id => { const { c, w, cell, wi } = repOf(id);
       return { id, cell_id: c, week_start: w, status: 'submitted', meeting_held: !(c === 'c4' && (wi === 2 || wi === 6)), meeting_cancel_reason: c === 'c4' && (wi === 2 || wi === 6) ? '셀리더 출장' : null,
         meeting_date: addDays(w, 3), meeting_time: '19:30', meeting_place: cell.leader + ' 셀리더 댁',
-        grace_notes: wi % 2 ? '말씀을 나누며 서로 위로와 힘을 얻었습니다.' : '감사 제목을 한 사람씩 나눴습니다.', grace_none: false,
+        grace_notes: wi % 2 ? '말씀을 나누며 서로 위로와 힘을 얻었습니다.' : '감사 제목을 한 사람씩 나눴습니다. 지난주에 아프던 분이 회복되어 함께 감사했고, 새로 오신 분이 자기소개를 하며 어색함이 풀렸습니다. 말씀 나눔에서는 용서에 대해 오래 이야기했고, 각자 마음에 걸리던 사람을 위해 짧게 기도한 뒤 간식을 나누며 마쳤습니다.', grace_none: false,
         leader_message: c === 'c1' && wi === 0 ? 'contact' : c === 'c3' && wi === 3 ? 'advice' : 'none',
         leader_message_note: c === 'c1' && wi === 0 ? '셀원 한 분이 수술을 앞두고 있어 심방을 부탁드립니다.' : c === 'c3' && wi === 3 ? '모임 분위기가 가라앉아 조언을 구합니다.' : null,
         submitted_at: at(addDays(w, 3)) }; }),
@@ -1389,7 +1390,7 @@ function repCard(r, inCell) {
       <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
   const prays = d.newPrayers.map(p => ({ mid: p.member_id, who: nm(p.member_id), text: p.content, tag: '새' })).concat(d.open.map(p => ({ who: p.member_name, text: p.content, tag: PRAYER_LABEL[p.this_week_status] || '', note: p.this_week_note })));
   if (prays.length) h += `<div class="sect"><div class="lbl">기도제목</div>${prays.map(p => `<div class="note">${who(p.mid, p.who, r.cell_id)} ${p.tag ? `<span class="pill ac">${esc(p.tag)}</span>` : ''}<div class="txt clamp">${esc(p.text || '')}</div>${p.note ? `<div class="pray">이번 주: ${esc(p.note)}</div>` : ''}</div>`).join('')}</div>`;
-  if (rep.grace_notes && !rep.grace_none) h += `<div class="sect"><div class="lbl">은혜와 나눔</div><div class="txt" style="white-space:pre-wrap;font-size:14px">${esc(rep.grace_notes)}</div></div>`;
+  if (rep.grace_notes && !rep.grace_none) h += `<div class="sect"><div class="lbl">은혜와 나눔</div><div class="txt clamp" style="white-space:pre-wrap;font-size:14px">${esc(rep.grace_notes)}</div></div>`;
   if (rep.leader_message && rep.leader_message !== 'none') h += `<div class="sect"><div class="lbl">셀리더가 교역자에게</div><div class="small"><b>${esc(MSG_LABEL[rep.leader_message] || rep.leader_message)}</b>${rep.leader_message_note ? '<div style="white-space:pre-wrap">' + esc(rep.leader_message_note) + '</div>' : ''}</div></div>`;
   if (d.comments.length) h += d.comments.map(c => cmtBox(c)).join('');
   return h + '</div>';
@@ -1420,7 +1421,7 @@ function viewPrayer() {
   let last = '';
   for (const p of show) {
     if (p.cellName !== last) { if (last) h += '</div>'; last = p.cellName; h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:16px 2px 6px">${esc(p.cellName)}</h3><div class="card" style="padding:4px 15px">`; }
-    h += `<div class="note">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}<div class="clamp">${p.items.map(it => `<div class="txt clamp">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div></div>`;
+    h += `<div class="note">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}<div>${p.items.map(it => `<div class="txt clamp">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div></div>`;
   }
   return h + (last ? '</div>' : '');
 }
@@ -1618,7 +1619,7 @@ function applyClamp(root) {
   for (const el of (root || document).querySelectorAll('.clamp:not([data-ck])')) {
     if (!el.offsetParent) continue;
     el.dataset.ck = '1';
-    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more">more<i></i></button>'); }
+    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>'); }
   }
 }
 function toggleClamp(btn) {
@@ -1626,7 +1627,7 @@ function toggleClamp(btn) {
   const open = !el.classList.contains('open');
   const h0 = el.clientHeight;
   el.classList.toggle('open', open);
-  btn.firstChild.textContent = open ? 'less' : 'more'; btn.querySelector('i').classList.toggle('up', open);
+  btn.setAttribute('aria-label', open ? '접기' : '더 보기'); btn.querySelector('i').classList.toggle('up', open);
   const h1 = el.clientHeight;
   if (!quiet()) el.animate([{ height: h0 + 'px' }, { height: h1 + 'px' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
@@ -1646,7 +1647,7 @@ function gCard() {
   const head = `<button class="gh" data-act="g-tg"><b>이번 주 한 장</b><span class="tiny muted">${subRows.length}/${rows.length} 제출 · 출석 ${pres + abs ? Math.round(pres * 100 / (pres + abs)) + '%' : '—'}${S.newIds.size ? ' · 새 코멘트 ' + S.newIds.size : ''}</span><span class="spacer"></span><span class="chev2 ${PREF.gOpen ? 'on' : ''}">›</span></button>`;
   if (!PREF.gOpen) return `<div class="card gcard">${head}</div>`;
   let body = '<div class="gbody">';
-  body += `<div class="lbl">먼저 연락할 분</div>` + (A == null ? '<div class="tiny muted">출석 기록을 모으는 중…</div>' : A.length ? A.slice(0, S.gMore ? A.length : 3).map(x => `<div class="row grow" data-flip="g:${esc(x.id || x.cellId)}" ${x.kind === 'cell' ? `data-act="open-cell" data-cell="${esc(x.cellId)}"` : `data-act="person" data-mid="${esc(x.id)}"`} role="button"><span class="nm">${esc(x.kind === 'cell' ? cellName(x.cellId) : x.name)}</span><span class="tiny muted">${esc(x.kind === 'cell' ? '셀 전체' : cellName(x.cellId))}</span><span class="spacer"></span>${x.reasons.slice(0, 2).map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>`).join('') + (A.length > 3 ? `<button class="morebtn" data-act="g-more">${S.gMore ? '접기' : (A.length - 3) + '명 더 보기'}<i class="${S.gMore ? 'up' : ''}"></i></button>` : '') : '<div class="tiny muted">이번 주 특별히 살필 분이 없습니다.</div>');
+  body += `<div class="lbl">먼저 연락할 분</div>` + (A == null ? '<div class="tiny muted">출석 기록을 모으는 중…</div>' : A.length ? A.slice(0, S.gMore ? A.length : 3).map(x => `<div class="row grow" data-flip="g:${esc(x.id || x.cellId)}" ${x.kind === 'cell' ? `data-act="open-cell" data-cell="${esc(x.cellId)}"` : `data-act="person" data-mid="${esc(x.id)}"`} role="button"><span class="nm">${esc(x.kind === 'cell' ? cellName(x.cellId) : x.name)}</span><span class="tiny muted">${esc(x.kind === 'cell' ? '셀 전체' : cellName(x.cellId))}</span><span class="spacer"></span>${x.reasons.slice(0, 2).map(r => `<span class="pill ${LV[r.lv]}">${esc(r.t)}</span>`).join('')}</div>`).join('') + (A.length > 3 ? `<button class="morebtn gmore" data-act="g-more" aria-label="${S.gMore ? '접기' : (A.length - 3) + '명 더 보기'}" title="${S.gMore ? '접기' : (A.length - 3) + '명 더 보기'}"><i class="${S.gMore ? 'up' : ''}"></i></button>` : '') : '<div class="tiny muted">이번 주 특별히 살필 분이 없습니다.</div>');
   if (thanks.length) body += `<div class="lbl">감사 — 응답된 기도</div>` + thanks.slice(0, 3).map(({ c, x }) => `<div class="small">${who(null, x.member_name, c)} ${esc(x.content)}${x.this_week_note ? ' <span class="muted">— ' + esc(x.this_week_note) + '</span>' : ''}</div>`).join('');
   return `<div class="card gcard">${head}${body}</div></div>`;
 }
