@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -287,7 +287,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-12';
+const APP_VERSION = 'v. 26-1106-13';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -872,7 +872,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-12 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-13 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1617,7 +1617,7 @@ const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 
 const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
 const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, loading: null };
 const BOOK = { phones: {}, loaded: false, err: '', contacts: null, focus: null, sug: new Map(), auto: null, autoN: 0 };
-function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); document.head.appendChild(el); }); }
+function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); setTimeout(() => rej(new Error('시간 초과')), 20000); document.head.appendChild(el); }); }
 async function fbInit() {
   if (DEMO) { FB.ready = true; FB.user = FB.user || { email: '미리보기 (저장 안 됨)', uid: 'demo' }; BOOK.loaded = true; return; }
   if (FB.app) return; if (FB.loading) return FB.loading;
@@ -1625,6 +1625,8 @@ async function fbInit() {
     for (const s of FB_JS) await loadJs(s);
     FB.app = firebase.apps.find(a => a.name === 'cell') || firebase.initializeApp(FB_CFG, 'cell');
     FB.auth = FB.app.auth(); FB.db = FB.app.firestore();
+    // 로그인 상태 답이 10초 넘게 안 오면(아이폰 저장소가 막힌 때) '로그인 안 됨' 으로 보여 로그인 칸이라도 쓰게 한다
+    setTimeout(() => { if (!FB.ready) { FB.ready = true; phoneUi(); } }, 10000);
     FB.auth.onAuthStateChanged(u => {
       FB.user = u; FB.ready = true;
       if (FB.unsub) { FB.unsub(); FB.unsub = null; }
@@ -1634,7 +1636,7 @@ async function fbInit() {
       phoneUi();
     });
   })();
-  try { await FB.loading; } catch (e) { FB.err = '로그인 도구를 불러오지 못했습니다.'; FB.loading = null; throw e; }
+  try { await FB.loading; } catch (e) { FB.err = '로그인 도구를 불러오지 못했습니다.\n인터넷 연결을 확인하고 이 화면을 다시 열어 주세요.'; FB.loading = null; phoneUi(); throw e; }
 }
 async function fbLogin() {
   const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
@@ -1686,7 +1688,13 @@ function showCall(btn, mid) {
 function hideCall() { const cm = $('#callmenu'); if (cm) cm.hidden = true; }
 function phoneUi() {
   if (S.pview) { const slot = document.querySelector('#pv .phslot'); if (slot) slot.innerHTML = phoneBtn(S.pview.mid); }
-  if (S.book) { if (!document.querySelector('#bk .bkrow')) drawBook(); else for (const el of document.querySelectorAll('#bk .bkrow')) updateRow(el.dataset.mid, true); }
+  // ⚠️ 로그인 상태가 바뀌면(불러오는 중 → 로그인됨/안 됨) 계정 칸 · 번호 칸 잠금까지 통째로 다시 그린다.
+  //    예전엔 셀원 줄이 이미 있으면 줄만 고쳐서, 계정 칸이 '로그인 도구를 불러오는 중…' 에 멈춰 있었다 (HB 11/6, 홈 화면 앱)
+  if (S.book) {
+    const st = (FB.ready ? 1 : 0) + ':' + (FB.user ? FB.user.uid : '') + ':' + (FB.err ? 1 : 0) + ':' + (BOOK.err ? 1 : 0);
+    if (st !== BOOK.drawnSt || !document.querySelector('#bk .bkrow')) drawBook();
+    else for (const el of document.querySelectorAll('#bk .bkrow')) updateRow(el.dataset.mid, true);
+  }
 }
 
 // 명단 한 줄 — 번호 칸 · 들어간 연락처 · 비우기 · 다른 후보
@@ -1734,6 +1742,7 @@ function bookMembers() {
 }
 function drawBook() {
   const bk = $('#bk'); if (!bk || !S.book) return;
+  BOOK.drawnSt = (FB.ready ? 1 : 0) + ':' + (FB.user ? FB.user.uid : '') + ':' + (FB.err ? 1 : 0) + ':' + (BOOK.err ? 1 : 0);
   const keepY = bk.scrollTop;
   const acc = !FB.ready && !FB.err ? '<div class="tiny muted">로그인 도구를 불러오는 중…</div>'
     : FB.user ? `<div class="row"><span class="small">${esc(FB.user.email || '')} <span class="muted">· 로그인됨</span></span><span class="spacer"></span><button class="tiny lnk" style="color:var(--tx3)" data-act="fb-logout">로그아웃</button></div>${BOOK.err ? `<p class="err">${esc(BOOK.err)}</p>` : ''}`
