@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1106-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1106-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -287,7 +287,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1106-13';
+const APP_VERSION = 'v. 26-1106-14';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -872,7 +872,7 @@ const TABS = [
   { id: 'prayer', label: '기도제목' }, { id: 'comment', label: '코멘트' }, { id: 'cell', label: '셀' },
 ];
 const PREF = Object.assign({ iss: { cells: [], tags: [], foldCell: false, foldTag: false }, wfilter: 'all', showLeader: true, tab: 'week', span: 4, scope: 'mine', weekMode: 'status', issue: 'all', prayCell: 'all', gOpen: true }, lsGet(PREF_KEY, {}));
-if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-13 까지의 '출석' 탭은 '셀' 탭이 되었다
+if (PREF.tab === 'att') PREF.tab = 'cell';   // v. 26-1106-14 까지의 '출석' 탭은 '셀' 탭이 되었다
 const savePref = () => lsSet(PREF_KEY, PREF);
 const S = { api: null, ctx: null, weeks: [], byWeek: new Map(), asg: [], mineIds: [], weekIdx: 0, det: new Map(), rosters: new Map(), members: new Map(), memCells: new Set(), people: null, loadingPeople: null, pview: null, view: null, loadedSpan: 0, loadingDet: null, comments: [], newIds: new Set(), err: '' };
 // det: report_id → { rep, notes, newPrayers, comments, open, roster }
@@ -1758,9 +1758,16 @@ function drawBook() {
     <div class="card"><div class="row" style="flex-wrap:wrap;gap:8px"><button class="btn" style="margin:0" data-act="vcf">연락처 파일 넣기</button>${canPick ? '<button class="btn" style="margin:0" data-act="pick-contacts">연락처에서 고르기</button>' : ''}
       <input type="file" id="vcfin" accept=".vcf,text/vcard,text/x-vcard" hidden></div>
       ${nC ? `<p class="small" style="margin:8px 0 0">연락처 ${nC}명을 읽었습니다. 셀원 옆에 비슷한 이름의 번호가 뜹니다. <span class="muted">(이 화면을 닫으면 연락처는 잊습니다)</span></p>${BOOK.autoN ? `<p class="small" style="margin:6px 0 0;color:var(--ok)">후보가 하나뿐인 ${BOOK.autoN}명은 바로 넣었습니다 (이름이 꼭 같거나 후보가 하나뿐). 아래 초록 줄에서 들어간 연락처를 확인하고, 틀리면 × 로 비우거나 다른 후보를 눌러 교체해 주세요.</p>` : ''}`
-      : `<details class="tiny muted" style="margin-top:8px"><summary>아이폰에서 연락처 파일 만드는 법</summary><ol style="margin:6px 0 0 18px;padding:0"><li>연락처 앱 → 왼쪽 위 '목록'</li><li>'모든 연락처'를 길게 누르기 → '내보내기'</li><li>'파일에 저장' → 여기서 '연락처 파일 넣기'로 그 파일 고르기</li></ol><p style="margin:6px 0 0">맥: 연락처 앱 → ⌘A → 파일 › 내보내기 › vCard 내보내기 → 에어드롭</p></details>`}</div>`;
+      : `<details class="tiny muted" style="margin-top:8px"><summary>아이폰에서 연락처 파일 만드는 법</summary><ol style="margin:6px 0 0 18px;padding:0"><li>연락처 앱 → 왼쪽 위 '목록'</li><li>'모든 연락처'를 길게 누르기 → '내보내기'</li><li>'파일에 저장' → 여기서 '연락처 파일 넣기'로 그 파일 고르기</li></ol><p style="margin:6px 0 0">맥: 연락처 앱 → ⌘A → 파일 › 내보내기 › vCard 내보내기 → 에어드롭</p></details>
+      <details class="tiny muted" style="margin-top:6px"><summary>안드로이드에서 연락처 파일 만드는 법</summary><p style="margin:6px 0 0">크롬에서 열었다면 위 '연락처에서 고르기' 로 바로 고를 수 있습니다. 파일로 넣으려면:</p><ol style="margin:6px 0 0 18px;padding:0"><li>삼성 연락처 앱 → 왼쪽 위 ≡ → '연락처 관리' → '연락처 가져오기/내보내기' → '내보내기' → 저장 위치 고르기</li><li>구글 연락처 앱 → 아래 '고치기 및 관리'(또는 설정) → '파일로 내보내기' → .vcf 저장</li><li>여기서 '연락처 파일 넣기' 로 그 파일 고르기</li></ol></details>`}</div>`;
   if (!groups.length) h += '<div class="loading">셀원 명단을 불러오는 중…</div>';
-  for (const g of groups) {
+  // '연락처 없는 성도' — 누르면 번호 없는 분들을 맨 위 한 묶음으로 (셀 묶음에서는 빼서 같은 줄이 두 번 나오지 않게)
+  const missing = groups.flatMap(g => g.list).filter(m => !phoneOf(m.id));
+  if (groups.length) h += `<div class="row" style="margin:14px 2px 0"><button class="lnk small" style="color:var(--ac);font-weight:500" data-act="miss-first">${BOOK.missFirst ? '셀별로 모두 보기' : '연락처 없는 성도 ' + missing.length + '명 먼저 보기'}</button></div>`;
+  if (BOOK.missFirst && missing.length) h += `<h3 class="grp" style="color:var(--warn)">연락처 없는 성도 · ${missing.length}</h3><div class="card" style="padding:2px 14px">` + missing.map(m => rowHtml(m).replace('<span class="nm">', `<span class="tiny muted" style="margin-right:2px">${esc(cellName(m.cell_id).replace(/\s*셀$/, ''))}</span><span class="nm">`)).join('') + '</div>';
+  const shownMiss = BOOK.missFirst ? new Set(missing.map(m => m.id)) : new Set();
+  for (const g0 of groups) {
+    const g = { c: g0.c, list: g0.list.filter(m => !shownMiss.has(m.id)) }; if (!g.list.length) continue;
     h += `<h3 class="grp">${esc(cellName(g.c))} · ${g.list.length}</h3><div class="card" style="padding:2px 14px">` + g.list.map(rowHtml).join('') + '</div>';
   }
   bk.innerHTML = h + '<p class="tiny muted" style="text-align:center;margin-top:16px">번호를 고치면 칸을 벗어날 때 저장됩니다 · × 를 누르면 비웁니다</p></div>';
@@ -1921,6 +1928,7 @@ document.addEventListener('click', async (e) => {
     case 'pick-contacts': return pickContacts();
     case 'take': return takeSuggestion(d.mid, d.tel, d.src, d.sw, d.nk);
     case 'clear-ph': return setPhones({ [d.mid]: null });
+    case 'miss-first': BOOK.missFirst = !BOOK.missFirst; drawBook(); $('#bk').scrollTop = 0; return;
     case 'find': { const was = BOOK.find; BOOK.find = d.mid; if (was) updateRow(was); updateRow(d.mid); const i = document.querySelector('#bk-' + CSS.escape(d.mid) + ' .findin'); if (i) i.focus(); return; }
     case 'pv-close': return closePerson(false);
     case 'g-tg': return flipRender(() => { PREF.gOpen = !PREF.gOpen; savePref(); rerender(); });
