@@ -406,11 +406,13 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('㉑ 돌아온 요약에서 주인공(셀원 A)은 생략 · 다른 성도는 이름으로', A.deanon('· 셀원 A는 셀원 B 성도와 기도함\n· 셀원 A 집사님이 이직 고민', r.map, true), '· 이두리 성도와 기도함\n· 이직 고민');
   sc.eq('㉑ 주인공을 모르면(셀 전체 카드) 생략하지 않는다', A.deanon('· 셀원 A 기도', { A: '강믿음' }, false), '· 강믿음 기도');
   sc.eq('㉑ 주인공이 글에 없어도 A 자리는 주인공 몫', J(A.anonText('이두리 소식', ['이두리'], '강믿음').map), { A: '강믿음', B: '이두리' });
-  sc.eq('㉑ 요약 · 핵심으로 바꿔도 글 앞 표시(🙏 · 이번 주:)를 남긴다', /function markOf\(el\)/.test(HTML) && /el\.innerHTML = `\$\{esc\(markOf\(el\)\)\}\$\{NOLBL_TABS/.test(HTML), true);
+  sc.eq('㉑ 요약 · 핵심으로 바꿔도 글 앞 표시(🙏 · 이번 주:)를 남긴다', /function markOf\(el\)/.test(HTML) && /el\.innerHTML = `\$\{markHtml\(el\)\}\$\{NOLBL_TABS/.test(HTML), true);
   sc.eq('㉑ 이슈 · 기도제목 · 코멘트 탭은 줄마다 핵심 알약을 달지 않는다', /const NOLBL_TABS = \['issue', 'prayer', 'comment'\]/.test(HTML), true);
   sc.eq('㉑ 모두 요약 · 핵심 보기는 탭마다 따로 (한 탭에서 켜도 다른 탭 단추는 꺼진 모양)', /const kwOn = \(\) => !!\(PREF\.aiKwT && PREF\.aiKwT\[PREF\.tab\]\)/.test(HTML) && !/PREF\.aiKw\b(?!T)/.test(HTML) && !/PREF\.aiAll\b(?!T)/.test(HTML), true);
   sc.eq('㉑ 이슈 탭: 별 아래 기도 보기 / 접기 (모드와 상관없이)', /data-act="pray-tg">\$\{pr \? '기도 접기' : '기도 보기'\}/.test(HTML) && /\.hidepray \.pray,/.test(HTML), true);
 }
+
+sc.eq('㉒ 기도 표시는 작은 \'기도\' 알약 (HB 11/7 시안 B · 🙏 없음)', !/pray clamp">🙏/.test(HTML) && (HTML.match(/<div class="pray clamp"><span class="praytag">기도<\/span>/g) || []).length === 3, true);
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
 {
