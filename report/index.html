@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 사역 한눈에 v. 26-1107-1 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
+<!-- 사역 한눈에 v. 26-1107-2 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -97,6 +97,15 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .nth{font-size:12.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--tx2)}
 .nth.on{background:var(--tx);border-color:var(--tx);color:var(--bg)}
 .lnk{color:var(--ac);font-size:13px}
+.picker .pkh{font-size:12px;color:var(--tx3);margin:12px 0 6px}
+.pks{display:flex;flex-wrap:wrap;gap:6px}
+.pk{font-size:13.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);color:var(--tx)}
+.pk:hover{border-color:var(--ac)}
+.pk.had{opacity:.45;cursor:default}
+.picker input,.picker textarea{font:inherit;font-size:16px;color:var(--tx);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:7px 10px}
+.picker textarea{width:100%;resize:vertical}
+.pkpaste{margin-top:12px}
+.pkpaste summary{font-size:13px;color:var(--ac);cursor:pointer}
 .del{color:var(--tx3);font-size:12.5px}
 .btn{display:inline-block;padding:9px 16px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);font-size:14px}
 .btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
@@ -123,7 +132,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 <script id="report-core">
 // 사역 한눈에 — 화면 없이 도는 판단. tests/test_report.js 가 이것만 떼어 시험한다.
 // 교회 보고서의 한 주는 **일요일부터 토요일까지**, 금요일 오후 5시에 그 주 보고가 회의 자료로 전달된다 (공개 사용 안내).
-const APP_VERSION = 'v. 26-1107-1';
+const APP_VERSION = 'v. 26-1107-2';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const FREQ = { weekly: '매주', biweekly: '격주', nth: '몇째 주' };
 const PREF_KEY = 'report_pref_v1', BOOK_KEY = 'report_book_v1';   // 이 기기: 화면 취향 · 시간표 사본(로그인 전에도 쓰게)
@@ -162,7 +171,7 @@ function normSlot(s) {
 }
 function normBook(b) {
   const o = b || {};
-  return { v: 1, at: +o.at || 0, depts: (o.depts || []).map(d => ({ id: d.id || newId('d'), name: String(d.name || '').slice(0, 40), role: d.role === 'view' ? 'view' : 'write',
+  return { v: 1, at: +o.at || 0, catalog: [...new Set((o.catalog || []).map(x => String(x || '').trim().slice(0, 20)).filter(Boolean))].slice(0, 80), depts: (o.depts || []).map(d => ({ id: d.id || newId('d'), name: String(d.name || '').slice(0, 40), role: d.role === 'view' ? 'view' : 'write',
     slots: (d.slots || []).map(normSlot) })).filter(d => d.name || d.slots.length) };
 }
 // 기기 사본과 계정 것 중 나중에 고친 쪽 (at 이 큰 쪽)
@@ -180,6 +189,21 @@ function weekPlan(book, weekStart) {
     for (const d of (book && book.depts) || []) for (const s of d.slots) if (occursOn(s, day)) out.push({ day, dept: d, slot: s });
   }
   return out.sort((a, b) => a.day.localeCompare(b.day) || (a.slot.end || '99').localeCompare(b.slot.end || '99'));
+}
+// 부서 고르기 — 자주 있는 이름(일반적인 것만, 교회마다 다르면 붙여 넣기로 채운다)
+const PRESET = ['예배팀', '음향팀', '조명팀', '영상팀', '방송팀', 'PD', '성찬위원', '송번역팀', '안내위원', '새가족 환영팀', '주차팀', '꽃꽂이',
+  '영아부', '유치부', '유년부', '초등부', '중등부', '고등부', '청년부', '주일학교 교사'];
+// 교회 보고서 화면에서 복사한 글 → 부서 이름들. 줄마다 하나, 머리글 · 숫자 · 표시 글은 버린다.
+//   예: "▾ 예배/기술팀 5/5" → "예배/기술팀" · "● 조명팀" → "조명팀" · "내 파트 · 이번 주" / "보고 있음 임시저장 아직 없음" → 버림
+const PASTE_SKIP = /^(내\s*파트|이번\s*주|보고\s*있음|임시저장|아직\s*없음|홈|내\s*보고서|공지|확인|예배위원|예배\s*PD|주일예배|목회|주간\s*요약|회의\s*자료|비공개|관리|기기\s*설정|라이트|다크|설정|사용\s*안내|로그아웃|메뉴|보고\s*작성|주중\s*기도회|이번\s*주\s*공지)/;
+function parseDeptList(text) {
+  const out = [];
+  for (let line of String(text || '').normalize('NFC').split(/\r?\n|,|·/)) {
+    line = line.replace(/[▾▸▴▶▼•●○◦·\-–—*#]/g, ' ').replace(/\b\d+\s*\/\s*\d+\b/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!line || line.length > 20 || /^\d+$/.test(line) || PASTE_SKIP.test(line) || /\d{1,2}\/\d{1,2}/.test(line)) continue;
+    if (!out.includes(line)) out.push(line);
+  }
+  return out;
 }
 function slotText(s) {
   const f = s.freq === 'nth' ? (s.nth.length ? s.nth.map(x => x === 'last' ? '마지막' : x + '째').join(' · ') + ' 주' : '몇째 주(고르기 전)') : FREQ[s.freq];
@@ -352,9 +376,30 @@ function viewDepts() {
     const list = S.book.depts.filter(d => d.role === role);
     h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:18px 2px 8px">${role === 'write' ? '내가 쓰는 부서' : '봐 주는 부서'} · ${list.length}</h3>`;
     h += list.map(deptCard).join('');
-    h += `<button class="lnk" data-act="add-dept" data-role="${role}">+ ${role === 'write' ? '쓰는' : '봐 주는'} 부서 더하기</button>`;
+    h += S.pick === role ? pickerHtml(role) : `<button class="lnk" data-act="pick-open" data-role="${role}">+ ${role === 'write' ? '쓰는' : '봐 주는'} 부서 더하기</button>`;
   }
   return h;
+}
+// 부서 고르기 판 — 눌러서 넣는다. 교회 보고서에서 복사한 목록 · 자주 있는 이름 · 직접 쓰기
+function pickerHtml(role) {
+  const have = new Set(S.book.depts.map(d => d.name));
+  const chip = (n) => `<button class="pk ${have.has(n) ? 'had' : ''}" data-act="pick" data-name="${esc(n)}" ${have.has(n) ? 'disabled' : ''}>${esc(n)}${have.has(n) ? ' ✓' : ''}</button>`;
+  const cat = S.book.catalog || [];
+  return `<div class="card picker"><div class="row"><b style="font-weight:500">${role === 'write' ? '내가 쓰는' : '봐 주는'} 부서 고르기</b><span class="spacer"></span><button class="del" data-act="pick-close">닫기</button></div>
+    ${cat.length ? `<div class="pkh">교회 보고서에서 가져온 목록</div><div class="pks">${cat.map(chip).join('')}</div>` : ''}
+    <div class="pkh">자주 있는 이름</div><div class="pks">${PRESET.filter(n => !cat.includes(n)).map(chip).join('')}</div>
+    <div class="pkh">직접 쓰기</div><div class="row" style="gap:6px"><input type="text" id="pk-new" placeholder="부서 이름" maxlength="20" style="flex:1;min-width:0"><button class="btn" data-act="pick-typed">넣기</button></div>
+    <details class="pkpaste"${cat.length ? '' : ' open'}><summary>교회 보고서의 부서 목록 붙여 넣기</summary>
+      <p class="tiny muted" style="margin:6px 0">교회 보고서 왼쪽 '내 파트' 목록(또는 보고 작성 화면의 부서 목록)을 길게 눌러 복사해서 아래에 붙여 넣으세요. 이름만 골라 위에 칩으로 만들어 둡니다(이 목록은 계정에 함께 저장).</p>
+      <textarea id="pk-paste" rows="5" placeholder="예)&#10;예배/기술팀 5/5&#10;● 조명팀&#10;● 성찬위원&#10;● 송번역팀"></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn" data-act="pick-paste">목록 만들기</button>${cat.length ? '<span class="spacer"></span><button class="del" data-act="pick-clear">가져온 목록 비우기</button>' : ''}</div></details></div>`;
+}
+function addDept(name, role) {
+  name = String(name || '').trim().slice(0, 40); if (!name) return;
+  if (S.book.depts.some(d => d.name === name)) { toast(name + '\n이미 있습니다'); return; }
+  S.book.depts.push({ id: newId('d'), name, role: role === 'view' ? 'view' : 'write', slots: [normSlot({ dow: 0 })] });
+  saveBook(); rerender();
+  toast(name + '\n' + (role === 'view' ? '봐 주는 부서' : '내가 쓰는 부서') + '로 넣었습니다\n모임 요일 · 시각을 맞춰 주세요');
 }
 function deptCard(d) {
   return `<div class="card dept" data-dept="${esc(d.id)}"><div class="head"><input type="text" value="${esc(d.name)}" placeholder="부서 이름 (예: 조명팀)" data-f="name" maxlength="40">
@@ -389,8 +434,15 @@ document.addEventListener('click', (e) => {
     case 'wk': { const dir = +d.d; return transit(dir, () => { S.week = addDays(S.week, 7 * dir); rerender(); }); }
     case 'fb-login': return fbLogin();
     case 'fb-logout': return fbLogout();
-    case 'add-dept': S.book.depts.push({ id: newId('d'), name: '', role: d.role === 'view' ? 'view' : 'write', slots: [normSlot({ dow: 0 })] });
-      saveBook(); rerender(); { const ins = document.querySelectorAll('#panel .dept input[data-f="name"]'); const i = [...ins].find(x => !x.value); if (i && !TOUCH) i.focus(); } return;
+    case 'pick-open': S.pick = d.role; rerender(); return;
+    case 'pick-close': S.pick = null; rerender(); return;
+    case 'pick': return addDept(d.name, S.pick);
+    case 'pick-typed': { const i = $('#pk-new'); if (i && i.value.trim()) addDept(i.value, S.pick); return; }
+    case 'pick-paste': { const t = $('#pk-paste'); const names = parseDeptList(t ? t.value : '');
+      if (!names.length) { toast('부서 이름을\n찾지 못했습니다'); return; }
+      S.book.catalog = [...new Set((S.book.catalog || []).concat(names))].slice(0, 80); saveBook(); rerender();
+      toast('부서 ' + names.length + '개를\n목록으로 만들었습니다'); return; }
+    case 'pick-clear': S.book.catalog = []; saveBook(); rerender(); return;
     case 'role': if (dept) { dept.role = d.v; saveBook(); rerender(); toast(dept.role === 'write' ? (dept.name || '이 부서') + '\n내가 쓰는 부서로 옮겼습니다' : (dept.name || '이 부서') + '\n봐 주는 부서로 옮겼습니다'); } return;
     case 'add-slot': if (dept) { dept.slots.push(normSlot({ dow: dept.slots.length ? dept.slots[dept.slots.length - 1].dow : 0 })); saveBook(); rerender(); } return;
     case 'del-slot': if (dept && slot) { dept.slots = dept.slots.filter(s => s !== slot); saveBook(); rerender(); } return;
@@ -422,7 +474,7 @@ document.addEventListener('change', (e) => {
   else { const tx = t.closest('[data-slot]').querySelector('.tiny.muted:last-child'); if (tx) tx.textContent = slotText(slot); }
 });
 function nextDow(dow) { const t = todayYmd(); return addDays(t, (dow - dowOf(t) + 7) % 7); }
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin(); if (e.key === 'Escape') { if ($('#layer')) return closeLayer(false); const m = $('#menu'); if (m) m.remove(); } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.id === 'pk-new') { e.preventDefault(); if (e.target.value.trim()) addDept(e.target.value, S.pick); } if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin(); if (e.key === 'Escape') { if ($('#layer')) return closeLayer(false); const m = $('#menu'); if (m) m.remove(); } });
 addEventListener('resize', () => markTab());
 
 /* ---------- 새 버전 (셀 한눈에와 같은 방법) ---------- */
@@ -439,7 +491,7 @@ if (!EMBED) { setTimeout(() => checkUpdate(false), 4000);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 600000) { checkUpdate.at = Date.now(); checkUpdate(false); } }); }
 
 /* ---------- 시작 ---------- */
-if (DEMO) S.book = normBook({ at: 1, depts: [
+if (DEMO) S.book = normBook({ at: 1, catalog: ['예배팀', '조명팀', '성찬위원', 'PD', '송번역팀', '부산 캠퍼스'], depts: [
   { name: '조명팀', role: 'write', slots: [{ dow: 0, end: '13:30', freq: 'weekly', label: '주일 2부' }] },
   { name: '성찬위원', role: 'write', slots: [{ dow: 0, end: '12:00', freq: 'nth', nth: [1], label: '첫째 주일 성찬' }] },
   { name: '새가족 환영팀', role: 'write', slots: [{ dow: 6, end: '15:00', freq: 'biweekly', anchor: addDays(weekStartSun(todayYmd()), 6) }] },
