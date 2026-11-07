@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 사역 한눈에 v. 26-1107-2 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
+<!-- 사역 한눈에 v. 26-1107-3 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -97,6 +97,14 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .nth{font-size:12.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--tx2)}
 .nth.on{background:var(--tx);border-color:var(--tx);color:var(--bg)}
 .lnk{color:var(--ac);font-size:13px}
+.flow{display:flex;gap:6px;margin:6px 0 10px}
+.fp{flex:1;border:1px solid var(--line);border-radius:12px;padding:7px 8px;text-align:center;background:var(--paper);display:flex;flex-direction:column;gap:1px;min-width:0}
+.fp b{font-weight:500;font-size:13px} .fp span{font-size:11.5px;color:var(--tx2)} .fp i{font-style:normal;font-size:11px;color:var(--tx3)}
+.fp.past{opacity:.5} .fp.cur{border-color:var(--ac);background:var(--ac-soft)}
+.chores .chore{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--line)}
+.chores .chore:first-of-type{border-top:0}
+.chores.urgent{border-color:var(--warn)} .warnt{color:var(--warn)}
+button.pill{border:0;cursor:pointer;font:inherit;font-size:12px}
 .picker .pkh{font-size:12px;color:var(--tx3);margin:12px 0 6px}
 .pks{display:flex;flex-wrap:wrap;gap:6px}
 .pk{font-size:13.5px;padding:5px 12px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);color:var(--tx)}
@@ -132,7 +140,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 <script id="report-core">
 // 사역 한눈에 — 화면 없이 도는 판단. tests/test_report.js 가 이것만 떼어 시험한다.
 // 교회 보고서의 한 주는 **일요일부터 토요일까지**, 금요일 오후 5시에 그 주 보고가 회의 자료로 전달된다 (공개 사용 안내).
-const APP_VERSION = 'v. 26-1107-2';
+const APP_VERSION = 'v. 26-1107-3';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const FREQ = { weekly: '매주', biweekly: '격주', nth: '몇째 주' };
 const PREF_KEY = 'report_pref_v1', BOOK_KEY = 'report_book_v1';   // 이 기기: 화면 취향 · 시간표 사본(로그인 전에도 쓰게)
@@ -209,6 +217,41 @@ function slotText(s) {
   const f = s.freq === 'nth' ? (s.nth.length ? s.nth.map(x => x === 'last' ? '마지막' : x + '째').join(' · ') + ' 주' : '몇째 주(고르기 전)') : FREQ[s.freq];
   return f + ' ' + DOW[s.dow] + '요일' + (s.end ? ' · ' + s.end + ' 끝' : '');
 }
+
+// ---- W2: 시간표만으로 도는 것 (제출 여부는 모른다 — 모임이 끝났는데 '다 썼어요' 를 안 눌렀으면 챙길 것으로 본다) ----
+// 한 주 흐름: 수 9시(보고 쓰기 시작) → 금 17시(회의 자료로 전달) → 다음 주 화요일(회의). 시각은 HB 가 바꿀 수 있게 이 표 한 곳에만 둔다.
+const FLOW = [{ dow: 3, hm: '09:00', key: 'start', label: '보고 쓰기 시작' }, { dow: 5, hm: '17:00', key: 'due', label: '회의 자료로 전달 (마감)' }, { dow: 2, hm: '', key: 'meet', label: '회의', next: true }];
+function minsOf(ymd, hm) { return Math.round(new Date(ymd + 'T00:00:00Z') / 6e4) + (hm ? (+hm.slice(0, 2)) * 60 + (+hm.slice(3, 5)) : 0); }
+function flowDays(ws) { return FLOW.map(f => Object.assign({}, f, { day: addDays(ws, f.dow + (f.next ? 7 : 0)) })); }
+// 지금(today · hm)이 흐름 어디인가: 각 지점이 지났나
+function flowState(ws, today, hm) {
+  const now = minsOf(today, hm);
+  return flowDays(ws).map(f => Object.assign(f, { past: minsOf(f.day, f.hm || '23:59') < now, today: f.day === today }));
+}
+// 마감까지 남은 분 (음수 = 지남)
+function dueLeft(ws, today, hm) { return minsOf(addDays(ws, 5), '17:00') - minsOf(today, hm); }
+function leftText(m) {
+  if (m < 0) { const a = -m; return '마감 ' + (a >= 1440 ? Math.floor(a / 1440) + '일' : a >= 60 ? Math.floor(a / 60) + '시간' : a + '분') + ' 지남'; }
+  if (m >= 1440) return '마감까지 ' + Math.floor(m / 1440) + '일 ' + Math.floor(m % 1440 / 60) + '시간';
+  if (m >= 60) return '마감까지 ' + Math.floor(m / 60) + '시간 ' + (m % 60) + '분';
+  return '마감까지 ' + m + '분';
+}
+// 내가 쓸 보고: 이번 주 '씀' 부서 일정마다 모임 전 / 끝남(안 챙김) / 다 씀
+//   끝나는 시각이 없으면 그 날이 지나야 끝난 것으로 본다. done 은 { '주|칸id': true } (이 기기에만 둔다)
+function writeItems(book, ws, today, hm, done) {
+  const out = [];
+  for (const x of weekPlan(book, ws)) {
+    if (x.dept.role !== 'write') continue;
+    const key = ws + '|' + x.slot.id, over = x.day < today || (x.day === today && !!x.slot.end && x.slot.end <= hm);
+    out.push({ key, day: x.day, dept: x.dept, slot: x.slot, state: done && done[key] ? 'done' : over ? 'ended' : 'before' });
+  }
+  return out;
+}
+// 챙길 것(M1): 끝났는데 안 챙긴 보고 · 마감이 24시간 안이거나 지났으면 표시
+function chores(book, ws, today, hm, done) {
+  const items = writeItems(book, ws, today, hm, done), left = dueLeft(ws, today, hm), open = items.filter(i => i.state === 'ended');
+  return { open, before: items.filter(i => i.state === 'before'), done: items.filter(i => i.state === 'done'), left, urgent: open.length > 0 && left < 1440 };
+}
 </script>
 
 <script>
@@ -232,7 +275,9 @@ document.addEventListener('touchend', (e) => { const t = e.target; if (t && t.ma
 /* ---------- 상태 ---------- */
 const PREF = Object.assign({ tab: 'week' }, lsGet(PREF_KEY, {}));
 const savePref = () => lsSet(PREF_KEY, PREF);
-const S = { book: normBook(lsGet(BOOK_KEY, null)), week: weekStartSun(todayYmd()) };
+const DONE_KEY = 'report_done_v1';   // 이 기기에만: 다 썼다고 누른 보고 { '주|칸id': true } — 지난 주 것은 읽을 때 버린다
+const S = { book: normBook(lsGet(BOOK_KEY, null)), week: weekStartSun(todayYmd()), done: lsGet(DONE_KEY, {}) };
+function nowHm() { return new Date().toLocaleTimeString('sv-SE', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit' }); }
 const TABS = [{ id: 'week', label: '이번 주' }, { id: 'depts', label: '내 부서' }];
 
 /* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호, 셀 한눈에와 같은 로그인 칸 'cell') ----------
@@ -354,14 +399,35 @@ function viewWeek() {
     <p class="sub" style="text-align:center;margin-top:0">금요일 오후 5시에 그 주 보고가 회의 자료로 전달됩니다</p>`;
   if (!S.book.depts.length) return h + `<div class="card"><h3>먼저 '내 부서' 에 시간표를 적어 주세요</h3><p class="small muted" style="margin:0">부서마다 요일 · 끝나는 시각 · 매주/격주/몇째 주를 적어 두면, 이 화면에 요일별로 써야 할 보고와 봐 줄 보고가 나옵니다.</p><p style="margin:10px 0 0"><button class="btn pri" data-tab="depts">내 부서 적기</button></p></div>`;
   if (!plan.length) return h + '<p class="empty">이 주에는 시간표에 맞는 보고가 없습니다.</p>';
+  h += flowHtml(ws, today) + (thisWeek ? choresHtml(ws, today) : '');
+  const wi = Object.fromEntries(writeItems(S.book, ws, today, nowHm(), S.done).map(i => [i.key, i]));
   for (let i = 0; i < 7; i++) {
     const day = addDays(ws, i), items = plan.filter(x => x.day === day);
     if (!items.length) continue;
     h += `<div class="day${day === today ? ' today' : ''}"><div class="dayh"><b>${md(day)} (${DOW[i]})</b></div>` + items.map(x => `<div class="item">
         <span class="tm">${esc(x.slot.end || '—')}</span><div style="flex:1;min-width:0"><div class="nm">${esc(x.dept.name || '(이름 없음)')}</div>${x.slot.label ? `<div class="tiny muted">${esc(x.slot.label)}</div>` : ''}</div>
-        <span class="pill ${x.dept.role === 'write' ? 'ac' : 'mine'}">${x.dept.role === 'write' ? '내가 씀' : '봐 주기'}</span></div>`).join('') + '</div>';
+        ${x.dept.role === 'write' ? doneBtn(wi[ws + '|' + x.slot.id]) : '<span class="pill mine">봐 주기</span>'}</div>`).join('') + '</div>';
   }
   return h + '<p class="tiny muted" style="text-align:center;margin-top:14px">좌우로 밀면 주가 바뀝니다 · 제출 여부는 교회 보고서 자료를 잇는 단계(W3)에서 붙습니다</p>';
+}
+
+// W2 — 이번 주 흐름 · 챙길 것 · 내가 쓸 보고 (시간표만으로: 제출 여부는 모른다 — '다 썼어요' 를 직접 누른다)
+function doneBtn(it) {
+  if (!it) return '';
+  const lab = it.state === 'done' ? '✓ 씀' : it.state === 'ended' ? '안 챙김' : '내가 씀';
+  return `<button class="pill ${it.state === 'done' ? 'ok' : it.state === 'ended' ? 'warn' : 'ac'}" data-act="done" data-key="${esc(it.key)}" aria-label="다 썼어요 표시">${lab}</button>`;
+}
+function flowHtml(ws, today) {
+  const st = flowState(ws, today, nowHm()), cur = st.findIndex(f => !f.past);
+  return `<div class="flow">${st.map((f, i) => `<div class="fp${f.past ? ' past' : ''}${i === cur ? ' cur' : ''}"><b>${DOW[f.dow]}${f.hm ? ' ' + (+f.hm.slice(0, 2)) + '시' : ''}</b><span>${esc(f.label)}</span><i>${md(f.day)}</i></div>`).join('')}</div>`;
+}
+function choresHtml(ws, today) {
+  const c = chores(S.book, ws, today, nowHm(), S.done);
+  if (!c.open.length && !c.before.length && !c.done.length) return '';
+  const head = c.open.length ? `<h3>챙길 것 ${c.open.length}</h3>` : `<h3>이번 주 쓸 보고</h3>`;
+  const rows = c.open.map(i => `<div class="chore"><span><b>${esc(i.dept.name)}</b><span class="tiny muted"> · ${md(i.day)}(${DOW[dowOf(i.day)]}) 모임 끝남</span></span><button class="btn" data-act="done" data-key="${esc(i.key)}">다 썼어요</button></div>`).join('');
+  const rest = c.open.length ? '' : `<p class="small muted" style="margin:0">${c.before.length ? '아직 모임 전인 보고 ' + c.before.length + '개' : '모두 챙겼습니다 ✓'}${c.done.length ? ' · 쓴 보고 ' + c.done.length + '개' : ''}</p>`;
+  return `<div class="card chores${c.urgent ? ' urgent' : ''}">${head}${rows}${rest}<div class="tiny ${c.left < 1440 ? 'warnt' : 'muted'}" style="margin-top:6px">${leftText(c.left)}</div></div>`;
 }
 
 // ② 내 부서 — 쓰는 부서 / 봐 주는 부서 · 시간표
@@ -432,6 +498,9 @@ document.addEventListener('click', (e) => {
   switch (d.act) {
     case 'switch': return openLayer('/cell/' + (DEMO ? '?demo=1' : ''));
     case 'wk': { const dir = +d.d; return transit(dir, () => { S.week = addDays(S.week, 7 * dir); rerender(); }); }
+    case 'done': { const k = b.dataset.key; if (!k) return; if (S.done[k]) delete S.done[k]; else S.done[k] = true;
+      const cur = weekStartSun(todayYmd()); for (const x of Object.keys(S.done)) if (!x.startsWith(cur + '|') && x.slice(0, 10) < addDays(cur, -14)) delete S.done[x];
+      lsSet(DONE_KEY, S.done); toast(S.done[k] ? '다 썼다고 표시했습니다\n한 번 더 누르면 되돌립니다' : '표시를 되돌렸습니다'); return rerender(); }
     case 'fb-login': return fbLogin();
     case 'fb-logout': return fbLogout();
     case 'pick-open': S.pick = d.role; rerender(); return;
