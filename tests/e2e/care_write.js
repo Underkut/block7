@@ -1,3 +1,4 @@
+// (1108-S2 뒤: 지우기는 열람 화면 우상단 휴지통 단추 — ⋯ 메뉴는 없어졌다)
 // 심방 노트 C2 쓰기 — 실제 화면을 누르며 가짜 구글 시트에 쓰이는 것을 본다 (node tests/e2e/care_write.js)
 // 구글 시트 · 폼 · 캘린더 · 열쇠 서버는 이 파일 안의 가짜가 대신한다. 이름 · 내용은 모두 지어낸 것.
 //
@@ -11,6 +12,7 @@
 //  ⑦ 폼 줄(타임스탬프 · 질문 칸)은 앱 열 말고는 한 글자도 안 바뀐다
 //  ⑨ (코덱스 검토 PR 962) 지우다 멈춘 뒤 다시 지워도 휴지통 백업은 하나 · 휴지통 탭이 비었거나 머리글 없이 백업이 먼저 들어가도 바로잡는다
 //  ⑩ (같은 검토) 지우는 도중 다른 기기가 앞줄을 지워 한 줄 밀려도 엉뚱한 기록을 휴지통에 넣지 않는다
+//  ⑪ (C2-4) 폼 ↔ '속성' 탭 — 처음엔 폼 선택지를 탭으로 · 폼에서 더함 → 탭 · 앱에서 더함/숨김/다시 쓰기 → 폼 · '기타' 글을 선택지로 · 폼에 '장소 · 메모' 질문 · 다시 맞춰도 폼을 또 고치지 않는다
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -28,7 +30,7 @@ const ROWS = [
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
 const LOG = [];
-const HOOK = { failDel: false, shift: false };   // 일부러 일으키는 사고
+const HOOK = { failDel: false, shift: false, failForm: false };   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
 const colN = L => L.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
 function parseRange(r) {
@@ -41,19 +43,31 @@ function parseRange(r) {
 }
 function setCell(t, row, col, v) { const T = tab(t); while (T.rows.length < row) T.rows.push([]); const r = T.rows[row - 1]; while (r.length <= col) r.push(''); r[col] = v; }
 function trim(rows) { return rows.map(r => { const c = r.slice(); while (c.length && (c[c.length - 1] === '' || c[c.length - 1] == null)) c.pop(); return c; }); }
-const FORM = { responderUri: 'https://example.invalid/form', items: [
+const FORM = { revisionId: 'rev1', responderUri: 'https://example.invalid/form', items: [
   ['구분', 'CHECKBOX', ['예배인도자', '예배팀', '셀리더', '셀원', '장년부', '청년부', '중고등부']],
   ['전화 / 만남', 'RADIO', ['지나가다 대화', '티타임', '식사', '전화', '카톡, 문자']],
   ['태그', 'CHECKBOX', ['신앙', '교회', '가정', '직장', '학교', '건강']],
   ['액션', 'CHECKBOX', ['중보', '연결', '보고']],
   ['대화 깊이', 'RADIO', ['깊음', '중간', '얕음']],
-].map(([title, type, ops], i) => ({ title, questionItem: { question: { questionId: 'q' + i, choiceQuestion: { type, options: ops.map(v => ({ value: v })).concat([{ isOther: true }]) } } } })) };
+].map(([title, type, ops], i) => ({ itemId: 'it' + i, title, questionItem: { question: { questionId: 'q' + i, choiceQuestion: { type, options: ops.map(v => ({ value: v })).concat([{ isOther: true }]) } } } })) };
 
 async function route(r) {
   const u = new URL(r.request().url()), m = r.request().method(), body = r.request().postData() ? JSON.parse(r.request().postData()) : null;
   const json = (o) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
   if (u.host.includes('cloudfunctions')) return json(u.pathname.endsWith('/status') ? { connected: true, email: 'test@example.com' } : { access_token: 'fake', expires_in: 3600 });
-  if (u.host === 'forms.googleapis.com') return json(FORM);
+  if (u.host === 'forms.googleapis.com') {
+    if (m === 'POST' && HOOK.failForm) { HOOK.failForm = false; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
+    if (m === 'POST') {   // forms.batchUpdate — 판 번호가 다르면 거절
+      if (!body.writeControl || body.writeControl.requiredRevisionId !== FORM.revisionId) return r.fulfill({ status: 400, contentType: 'application/json', body: '{"error":{"message":"revision"}}' });
+      body.requests.forEach(q => {
+        if (q.updateItem) { const it = FORM.items[q.updateItem.location.index]; it.questionItem.question.choiceQuestion.options = q.updateItem.item.questionItem.question.choiceQuestion.options; }
+        if (q.createItem) FORM.items.splice(q.createItem.location.index, 0, Object.assign({ itemId: 'new' + FORM.items.length }, q.createItem.item));
+      });
+      FORM.revisionId = 'rev' + (+FORM.revisionId.slice(3) + 1); LOG.push(['form', body.requests.length]);
+      return json({});
+    }
+    return json(FORM);
+  }
   if (u.host === 'www.googleapis.com') return json({ items: [] });
   if (u.host !== 'sheets.googleapis.com') return r.abort();
   const p = u.pathname.replace('/v4/spreadsheets/S', '');
@@ -164,7 +178,6 @@ async function route(r) {
   const others = before.filter(x => !x.includes('"새사람"'));
   const del = async () => {
     await page.click('.card:has-text("새사람")'); await tidy();
-    await page.click('.layer [data-act="menu"]'); await tidy();
     await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
   };
   await del();
@@ -195,10 +208,8 @@ async function route(r) {
   const lmb = R.rows.find(r => r[2] === '라마바'), lid = lmb[9];
   HOOK.failDel = true;
   await page.click('.card:has-text("라마바")'); await tidy();
-  await page.click('.layer [data-act="menu"]'); await tidy();
   await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
   eq('⑨ 지우기가 끊기면 원래 줄은 그대로 · 빈 휴지통 탭에 머리글이 생기고 백업 하나', [!!R.rows.find(r => r[9] === lid), T()[0][0], T().length], [true, '기록ID', 2]);
-  await page.click('.layer [data-act="menu"]'); await tidy();
   await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
   eq('⑨ 다시 지우면 지워지고 휴지통 백업은 여전히 하나', [!!R.rows.find(r => r[9] === lid), T().filter(r => r[0] === lid).length], [false, 1]);
   // ⑨ 머리글 없이 백업 줄이 첫 줄에 들어간 휴지통 — 머리글을 끼워 넣고 둘 다 읽힌다
@@ -208,7 +219,6 @@ async function route(r) {
   await page.evaluate(() => { S.showArch = true; render(); });
   const sid = R.rows.find(r => r[2] === '사아자')[9];
   await page.click('.card:has-text("사아자")'); await tidy();
-  await page.click('.layer [data-act="menu"]'); await tidy();
   HOOK.shift = true;
   await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1500);
   const sa = T().find(r => r[0] === sid);
@@ -216,6 +226,52 @@ async function route(r) {
   eq('⑩ (장치 확인) 지우는 도중 앞줄이 정말 사라졌다 · 끊김도 정말 일어났다', [HOOK.shift, HOOK.failDel], [false, false]);
   eq('⑩ 휴지통에 들어간 것은 사아자 자신 (밀린 다른 기록이 아님)', [!!sa, sa && JSON.parse(sa[5])['성도 이름'], sa && JSON.parse(sa[5])['기록ID'] === sid], [true, '사아자', true]);
   eq('⑩ 응답 탭 — 사아자만 빠지고(가나다는 다른 기기가 지움) 머리글만 남음', R.rows.map(r => r[2]), ['성도 이름']);
+
+  // ⑪ 속성 · 폼 맞추기
+  const A_ = () => tab('속성').rows.slice(1), opts = t => FORM.items.find(i => i.title === t).questionItem.question.choiceQuestion.options.map(o => o.isOther ? '(기타)' : o.value);
+  const reload = async () => { await page.evaluate(() => loadData(true)); await page.waitForTimeout(1500); };
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await reload();
+  eq('⑪ 처음 — 폼 선택지가 속성 탭으로 (구분 7 · 방식 5 · 태그 6 · 액션 3, 대화 깊이는 빼고)', [A_().length, A_().every(r => r[6])], [21, true]);
+  FORM.items[2].questionItem.question.choiceQuestion.options.splice(6, 0, { value: '진로' }); FORM.revisionId = 'rev50';
+  await reload();
+  eq('⑪ 폼에서 더함 → 속성 탭에 한 줄', !!A_().find(r => r[0] === '태그' && r[1] === '진로'), true);
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('.layer [data-act="layer"][data-v="attrs"]'); await page.waitForTimeout(600);
+  await page.fill('#aadd2', '관계'); await page.click('.layer [data-act="attradd"][data-k="태그"]'); await page.waitForTimeout(1500);
+  eq('⑪ 앱에서 더함 → 폼 선택지 끝(기타 앞)에 · 탭에 맞춘 표시', [opts('태그').slice(-2), !!A_().find(r => r[1] === '관계' && r[6])], [['관계', '(기타)'], true]);
+  await page.click('.layer [data-act="attrhide"][data-k="태그"][data-v="건강"]'); await page.waitForTimeout(1500);
+  eq('⑪ 앱에서 숨김 → 폼에서 빠지고 탭에 숨김', [opts('태그').includes('건강'), (A_().find(r => r[1] === '건강') || [])[4]], [false, '숨김']);
+  await page.click('.layer [data-act="attrhide"][data-k="태그"][data-v="건강"]'); await page.waitForTimeout(1500);
+  eq('⑪ 다시 쓰기 → 폼에 다시 · 숨김 풀림', [opts('태그').includes('건강'), (A_().find(r => r[1] === '건강') || [])[4]], [true, '']);
+  // '기타' 글을 선택지로 — 구분에 '두나미스' 가 기타로 적힌 기록
+  R.rows.push(['11/7/2026 10:00:00', '11/7', '차카타', '셀원, 두나미스', '전화', '기타 구분이 든 기록', '', '', '얕음', 'C900', '폼', '2026-11-07']);
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await reload();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('.layer [data-act="layer"][data-v="attrs"]'); await page.waitForTimeout(600);
+  eq("⑪ '기타' 로 들어온 글이 후보로 보인다", await page.$$eval('.layer .etcc', x => x.map(e => e.textContent).join(' ')).then(t => t.includes('두나미스')), true);
+  if (process.env.SHOT) { await page.evaluate(() => document.querySelector('.layer:last-child').scrollTo(0, 0)); await page.screenshot({ path: process.env.SHOT + '/attrs.png' }); }
+  await page.click('.layer [data-act="etcpromote"][data-v="두나미스"]'); await page.waitForTimeout(1500);
+  eq("⑪ 선택지로 → 폼 구분에 더해지고 지난 기록도 선택지로 읽힌다", [opts('구분').includes('두나미스'), await page.evaluate(() => { const v = M().visits.find(x => x.name === '차카타'); return v && v.roles.includes('두나미스') && !v.rolesEtc.length; })], [true, true]);
+  // '장소 · 메모' 질문
+  await page.click('.layer [data-act="addplace"]'); await page.waitForTimeout(1500);
+  eq("⑪ 폼에 '장소 · 메모' — '전화 / 만남' 바로 뒤에", FORM.items.map(i => i.title).slice(1, 3), ['전화 / 만남', '장소 · 메모']);
+  // (코덱스 검토 PR 976) ① 폼 고치기가 한 번 실패 → 맞춘 표시가 안 남고, 다음 맞춤에 폼에 더해진다(숨겨지지 않는다)
+  HOOK.failForm = true;
+  await page.fill('#aadd2', '봉사'); await page.click('.layer [data-act="attradd"][data-k="태그"]'); await page.waitForTimeout(1500);
+  const bs = () => A_().find(r => r[1] === '봉사') || [];
+  eq('⑪ 폼 고치기가 실패하면 탭엔 줄만 있고 맞춘 표시는 없다 · 폼엔 아직 없다', [bs()[1], bs()[6] || '', opts('태그').includes('봉사'), HOOK.failForm], ['봉사', '', false, false]);
+  await page.click('.layer [data-act="attrsync"]'); await page.waitForTimeout(1500);
+  eq('⑪ 다음 맞춤 → 폼에 더해지고 숨겨지지 않는다', [opts('태그').includes('봉사'), !!bs()[6], bs()[4] || ''], [true, true, '']);
+  // ② 앱을 켜 둔 채 폼에서 선택지를 지운다 → 입력 칩에서도 빠진다
+  FORM.items[0].questionItem.question.choiceQuestion.options = FORM.items[0].questionItem.question.choiceQuestion.options.filter(o => o.value !== '셀원'); FORM.revisionId = 'rev90';
+  await page.click('.layer [data-act="attrsync"]'); await page.waitForTimeout(1800);
+  eq('⑪ 폼에서 지운 선택지 → 탭에선 숨김 · 입력 칩(폼 선택지)에서도 빠진다', [(A_().find(r => r[1] === '셀원') || [])[4], await page.evaluate(() => DATA.opts.roles.includes('셀원'))], ['숨김', false]);
+  // 다시 맞춰도 폼을 또 고치지 않는다
+  const nForm = LOG.filter(x => x[0] === 'form').length;
+  await reload(); await reload();
+  eq('⑪ 다시 맞춰도 폼 · 탭을 또 고치지 않는다', [LOG.filter(x => x[0] === 'form').length, A_().length], [nForm, 25]);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
