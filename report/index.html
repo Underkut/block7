@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<!-- 사역 한눈에 v. 26-1107-1 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f3f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111312" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex, nofollow">
+<title>사역 한눈에</title>
+<!-- 홈 화면 앱 · 파비콘 — 아이콘은 임시(셀 한눈에 것). HB 가 디자인을 주면 icon-192/512 · apple-touch-icon · favicon 네 장만 바꾼다 -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="사역 한눈에">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>
+// ⚠️ 사역 한눈에의 집은 sweeter.my/report/ 하나다. 깃헙 페이지가 block7.my/report/ 에도 같은 파일을 내보내므로 넘긴다.
+if (/^(www\.)?block7\.my$/.test(location.hostname)) {
+  location.replace('https://sweeter.my/report/' + location.search + location.hash);
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* 셀 한눈에와 같은 색 · 글꼴 — 로고로 오가도 한 앱처럼 보이게 */
+:root{
+  --bg:#f3f3f0; --paper:#ffffff; --s1:#f7f7f4; --s2:#ebebe6; --line:#e4e4de; --line2:#cfcfc7;
+  --tx:#1c1f1e; --tx2:#5b625f; --tx3:#8c928f;
+  --ac:#2f5f8a; --ac-soft:rgba(47,95,138,.10); --on-ac:#fff;
+  --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11);
+  --warn:#b0611f; --warn-soft:rgba(176,97,31,.12); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
+  --mine:#7a4fa0; --mine-soft:rgba(122,79,160,.09);
+  --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111312; --paper:#191c1b; --s1:#1d201f; --s2:#252927; --line:#2b2f2d; --line2:#3c413e;
+  --tx:#e8eae8; --tx2:#a7aeaa; --tx3:#78807c;
+  --ac:#8db8e0; --ac-soft:rgba(141,184,224,.13); --on-ac:#0f1a24;
+  --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13);
+  --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12);
+  --mine:#c7a3e6; --mine-soft:rgba(199,163,230,.11); color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);word-break:keep-all;overflow-wrap:anywhere;
+  padding:0 max(16px,env(safe-area-inset-right)) 70px max(16px,env(safe-area-inset-left));-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 0 0;margin:0 -2px}
+.topline{display:flex;align-items:center;gap:8px;min-height:34px;position:relative}
+.topline h1{font-size:19px;font-weight:500;margin:0;flex:1;letter-spacing:-.2px;display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:6px;flex:none}
+.logo img{width:24px;height:24px;border-radius:6px;display:block}
+.logo .sw{font-size:11px;color:var(--tx3);font-weight:400}
+.iconbtn{width:34px;height:34px;display:grid;place-items:center;color:var(--tx2);border-radius:10px}
+.iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tabs{display:flex;gap:2px;margin:8px 0 0;border-bottom:1px solid var(--line);position:relative}
+.tab{flex:1 0 auto;padding:9px 10px 10px;font-size:14px;color:var(--tx3)}
+.tab.on{color:var(--tx);font-weight:500}
+.tabbar{position:absolute;bottom:-1px;height:2px;background:var(--tx);border-radius:2px;transition:transform .3s cubic-bezier(.22,.8,.24,1),width .3s cubic-bezier(.22,.8,.24,1)}
+.stage{overflow:hidden;touch-action:pan-y}
+.panel{will-change:transform,opacity}
+.sub{color:var(--tx2);font-size:13px;margin:10px 0 12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px}
+.card h3{font-size:15px;font-weight:500;margin:0 0 6px}
+.muted{color:var(--tx3)} .small{font-size:13px} .tiny{font-size:12px}
+.row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+.pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--tx2);white-space:nowrap}
+.pill.ac{background:var(--ac-soft);color:var(--ac)} .pill.mine{background:var(--mine-soft);color:var(--mine)} .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
+.weeknav{display:flex;align-items:center;justify-content:center;gap:6px;margin:12px 0 8px}
+.weeknav b{font-weight:500;min-width:150px;text-align:center}
+.weeknav button{width:34px;height:34px;border-radius:10px;color:var(--tx2);font-size:18px}
+.day{margin-bottom:8px}
+.dayh{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--tx3);margin:12px 2px 5px}
+.dayh b{font-weight:500;color:var(--tx2)}
+.day.today .dayh b{color:var(--ac)}
+.day.today .dayh::after{content:'오늘';font-size:11px;color:var(--ac);background:var(--ac-soft);border-radius:999px;padding:0 7px}
+.item{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--paper);border:1px solid var(--line);border-radius:12px;margin-bottom:6px}
+.item .nm{font-weight:500}
+.item .tm{font-variant-numeric:tabular-nums;color:var(--tx2);font-size:13px;min-width:44px}
+.dept{padding:12px 14px}
+.dept .head{display:flex;align-items:center;gap:8px}
+.dept .head input{flex:1;font-weight:500;min-width:0}
+.dept .head .seg{flex:none}
+.seg{display:inline-flex;background:var(--s2);border-radius:10px;padding:2px;gap:2px}
+.seg button{padding:5px 11px;border-radius:8px;font-size:13px;color:var(--tx2);white-space:nowrap}
+.seg button.on{background:var(--paper);color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.slot{border-top:1px solid var(--line);padding:10px 0 4px;margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.slot select,.slot input,.dept input,.login input{font:inherit;font-size:16px;color:var(--tx);background:var(--paper);border:1px solid var(--line2);border-radius:9px;padding:6px 9px}
+.slot input[type=time]{width:136px}
+.slot input.lbl{flex:1 1 140px;min-width:0}
+.nths{display:flex;gap:4px;flex-wrap:wrap}
+.nth{font-size:12.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--tx2)}
+.nth.on{background:var(--tx);border-color:var(--tx);color:var(--bg)}
+.lnk{color:var(--ac);font-size:13px}
+.del{color:var(--tx3);font-size:12.5px}
+.btn{display:inline-block;padding:9px 16px;border-radius:999px;border:1px solid var(--line2);background:var(--paper);font-size:14px}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.empty{color:var(--tx3);text-align:center;padding:24px 0;font-size:14px}
+.err{color:var(--bad);font-size:13px;white-space:pre-line}
+.login input{width:100%;margin-top:8px}
+.demo{background:var(--warn-soft);font-size:12.5px;border-radius:10px;padding:7px 11px;margin-top:8px;text-align:center}
+.ver{font-size:11.5px;color:var(--tx3);text-align:center;margin-top:24px}
+.verbtn{color:inherit;font-size:inherit;text-decoration:underline dotted;text-underline-offset:3px}
+.toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(28,31,30,.92);color:#fff;padding:13px 18px;border-radius:14px;font-size:14px;white-space:pre-line;text-align:center;z-index:120;max-width:min(86vw,360px)}
+.menu{position:absolute;right:0;top:44px;background:var(--paper);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;min-width:190px;z-index:20}
+.menu button{display:block;width:100%;text-align:left;padding:9px 12px;border-radius:8px;font-size:14px}
+.menu .info{padding:6px 12px 8px;font-size:12px;color:var(--tx3);border-bottom:1px solid var(--line);margin-bottom:4px}
+/* 셀 ↔ 사역 겹 화면 (같은 앱 안에서 상대 앱을 덮어 보이기) */
+.layer{position:fixed;inset:0;z-index:100;background:var(--bg);box-shadow:-8px 0 30px rgba(0,0,0,.12)}
+.layer iframe{border:0;width:100%;height:100%;display:block;background:var(--bg)}
+@media (prefers-reduced-motion: reduce){.tabbar{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="empty">불러오는 중…</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script id="report-core">
+// 사역 한눈에 — 화면 없이 도는 판단. tests/test_report.js 가 이것만 떼어 시험한다.
+// 교회 보고서의 한 주는 **일요일부터 토요일까지**, 금요일 오후 5시에 그 주 보고가 회의 자료로 전달된다 (공개 사용 안내).
+const APP_VERSION = 'v. 26-1107-1';
+const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+const FREQ = { weekly: '매주', biweekly: '격주', nth: '몇째 주' };
+const PREF_KEY = 'report_pref_v1', BOOK_KEY = 'report_book_v1';   // 이 기기: 화면 취향 · 시간표 사본(로그인 전에도 쓰게)
+
+function ymdUTC(d) { return d.toISOString().slice(0, 10); }
+function addDays(ymd, n) { const d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return ymdUTC(d); }
+function dowOf(ymd) { return new Date(ymd + 'T00:00:00Z').getUTCDay(); }
+function weekStartSun(ymd) { return addDays(ymd, -dowOf(ymd)); }
+function daysInMonth(ymd) { const y = +ymd.slice(0, 4), m = +ymd.slice(5, 7); return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+// 그 달의 몇째 그 요일인가 (1~5) · 그 달의 마지막 그 요일인가
+function nthOf(ymd) { return Math.ceil(+ymd.slice(8, 10) / 7); }
+function isLastOf(ymd) { return +ymd.slice(8, 10) + 7 > daysInMonth(ymd); }
+
+// 한 시간칸이 그 날에 있는가
+//   weekly: 그 요일 매주 · biweekly: 기준 날짜(anchor)부터 2주마다 · nth: 그 달의 몇째 주(1~5, 'last' = 마지막)
+function occursOn(slot, ymd) {
+  if (!slot || dowOf(ymd) !== +slot.dow) return false;
+  const f = slot.freq || 'weekly';
+  if (f === 'weekly') return true;
+  if (f === 'nth') { const ns = slot.nth || []; return ns.includes(nthOf(ymd)) || (ns.includes('last') && isLastOf(ymd)); }
+  if (f === 'biweekly') {
+    if (!slot.anchor) return true;
+    const diff = Math.round((new Date(ymd + 'T00:00:00Z') - new Date(slot.anchor + 'T00:00:00Z')) / 864e5);
+    return diff % 14 === 0;
+  }
+  return false;
+}
+// 시간표 모양 다듬기 — 모르는 값은 버리고 기본값을 채운다
+function newId(p) { return (p || 'x') + Math.random().toString(36).slice(2, 9); }
+function normSlot(s) {
+  const o = s || {};
+  const freq = FREQ[o.freq] ? o.freq : 'weekly';
+  return { id: o.id || newId('s'), dow: Math.min(6, Math.max(0, +o.dow || 0)), end: /^\d{1,2}:\d{2}$/.test(o.end || '') ? o.end : '',
+    freq, nth: freq === 'nth' ? (o.nth || []).filter(x => x === 'last' || (x >= 1 && x <= 5)) : [], anchor: freq === 'biweekly' && /^\d{4}-\d{2}-\d{2}$/.test(o.anchor || '') ? o.anchor : '',
+    label: String(o.label || '').slice(0, 40) };
+}
+function normBook(b) {
+  const o = b || {};
+  return { v: 1, at: +o.at || 0, depts: (o.depts || []).map(d => ({ id: d.id || newId('d'), name: String(d.name || '').slice(0, 40), role: d.role === 'view' ? 'view' : 'write',
+    slots: (d.slots || []).map(normSlot) })).filter(d => d.name || d.slots.length) };
+}
+// 기기 사본과 계정 것 중 나중에 고친 쪽 (at 이 큰 쪽)
+function pickBook(local, cloud) {
+  const l = normBook(local), c = cloud ? normBook(cloud) : null;
+  if (!c) return { book: l, push: l.depts.length ? l : null };
+  if (l.at > c.at) return { book: l, push: l };
+  return { book: c, push: null };
+}
+// 한 주(일~토)의 보고 일정 — 날짜순 · 같은 날은 끝나는 시각순
+function weekPlan(book, weekStart) {
+  const out = [];
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(weekStart, i);
+    for (const d of (book && book.depts) || []) for (const s of d.slots) if (occursOn(s, day)) out.push({ day, dept: d, slot: s });
+  }
+  return out.sort((a, b) => a.day.localeCompare(b.day) || (a.slot.end || '99').localeCompare(b.slot.end || '99'));
+}
+function slotText(s) {
+  const f = s.freq === 'nth' ? (s.nth.length ? s.nth.map(x => x === 'last' ? '마지막' : x + '째').join(' · ') + ' 주' : '몇째 주(고르기 전)') : FREQ[s.freq];
+  return f + ' ' + DOW[s.dow] + '요일' + (s.end ? ' · ' + s.end + ' 끝' : '');
+}
+</script>
+
+<script>
+'use strict';
+const DEMO = /[?&]demo=1\b/.test(location.search);
+const EMBED = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();   // 셀 한눈에 안 겹 화면으로 열렸나
+const TOUCH = (() => { try { return matchMedia('(pointer: coarse)').matches; } catch (_) { return false; } })();
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const quiet = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { } }
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; toast.at = Date.now(); clearTimeout(toast.t);
+  toast.t = setTimeout(() => { t.hidden = true; }, Math.max(3000, Math.min(9000, String(msg).replace(/\s/g, '').length * 200))); }
+document.addEventListener('click', () => { const t = $('#toast'); if (!t.hidden && Date.now() - (toast.at || 0) > 300) t.hidden = true; }, true);
+function todayYmd() { return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' }); }
+function md(ymd) { return (+ymd.slice(5, 7)) + '/' + (+ymd.slice(8, 10)); }
+// 아이폰 홈 화면 앱: 손가락을 뗄 때 직접 커서를 넣어 키보드를 띄운다 (셀 한눈에와 같은 까닭)
+document.addEventListener('touchend', (e) => { const t = e.target; if (t && t.matches && t.matches('input:not([type=checkbox]):not([disabled]),select,textarea') && document.activeElement !== t) t.focus(); }, { passive: true });
+
+/* ---------- 상태 ---------- */
+const PREF = Object.assign({ tab: 'week' }, lsGet(PREF_KEY, {}));
+const savePref = () => lsSet(PREF_KEY, PREF);
+const S = { book: normBook(lsGet(BOOK_KEY, null)), week: weekStartSun(todayYmd()) };
+const TABS = [{ id: 'week', label: '이번 주' }, { id: 'depts', label: '내 부서' }];
+
+/* ---------- 계정 (BLOCK7 과 같은 이메일 · 비밀번호, 셀 한눈에와 같은 로그인 칸 'cell') ----------
+   ⚠️ 앱 이름을 셀 한눈에와 같은 'cell' 로 둔다 — 같은 sweeter.my 라 한 번 로그인하면 두 앱이 같이 로그인된다.
+   시간표는 셀 한눈에의 전화번호 문서 cellbook/{uid} 의 'report' 칸에 둔다 (보안 규칙을 새로 붙일 필요가 없다).
+   성도 정보는 여기 없다 — 부서 이름 · 요일 · 시각뿐. users/{uid} 는 건드리지 않는다. */
+const FB_CFG = { apiKey: 'AIzaSyDeMIzExHqyeqHQrqpPbcOJqYO9a7qmrkE', authDomain: 'block7-8f24e.firebaseapp.com', projectId: 'block7-8f24e',
+  storageBucket: 'block7-8f24e.firebasestorage.app', messagingSenderId: '517626689480', appId: '1:517626689480:web:92ea52eeebc24277ef72fd' };
+const FB_JS = ['app', 'auth', 'firestore'].map(n => 'https://www.gstatic.com/firebasejs/10.12.2/firebase-' + n + '-compat.js');
+const FB = { app: null, auth: null, db: null, user: null, ready: false, err: '', busy: false, unsub: null, loading: null };
+function loadJs(src) { return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('불러오기 실패')); setTimeout(() => rej(new Error('시간 초과')), 20000); document.head.appendChild(el); }); }
+async function fbInit() {
+  if (DEMO) { FB.ready = true; FB.user = { email: '미리보기 (저장 안 됨)', uid: 'demo' }; return; }
+  if (FB.app) return; if (FB.loading) return FB.loading;
+  FB.loading = (async () => {
+    for (const s of FB_JS) await loadJs(s);
+    FB.app = firebase.apps.find(a => a.name === 'cell') || firebase.initializeApp(FB_CFG, 'cell');
+    FB.auth = FB.app.auth(); FB.db = FB.app.firestore();
+    setTimeout(() => { if (!FB.ready) { FB.ready = true; rerender(); } }, 10000);
+    FB.auth.onAuthStateChanged(u => {
+      FB.user = u; FB.ready = true;
+      if (FB.unsub) { FB.unsub(); FB.unsub = null; }
+      if (u) FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => {
+        const r = pickBook(S.book, d.exists ? d.data().report : null);
+        S.book = r.book; lsSet(BOOK_KEY, S.book); if (r.push) cloudSave();
+        if (!editing()) rerender();
+      }, e => { FB.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.' : '시간표를 불러오지 못했습니다.'; rerender(); });
+      rerender();
+    });
+  })();
+  try { await FB.loading; } catch (e) { FB.err = '로그인 도구를 불러오지 못했습니다.\n인터넷 연결을 확인해 주세요.'; FB.loading = null; rerender(); }
+}
+async function fbLogin() {
+  const em = ($('#fb-em') || {}).value, pw = ($('#fb-pw') || {}).value;
+  if (!em || !pw) { FB.err = '이메일과 비밀번호를 넣어 주세요.'; return rerender(); }
+  FB.busy = true; FB.err = ''; rerender();
+  try { await fbInit(); await FB.auth.signInWithEmailAndPassword(em.trim(), pw); toast('로그인했습니다\n시간표를 맞춥니다'); }
+  catch (e) { FB.err = /wrong-password|invalid-credential|user-not-found|invalid-login/i.test(e.code || e.message) ? '이메일이나 비밀번호가 맞지 않습니다.' : '로그인하지 못했습니다. ' + (e.message || ''); }
+  FB.busy = false; rerender();
+}
+async function fbLogout() { try { await FB.auth.signOut(); } catch (_) { } rerender(); }
+// 시간표 저장 — 이 기기 사본은 바로, 계정은 잠깐 모아서
+function saveBook() {
+  S.book.at = Date.now(); lsSet(BOOK_KEY, S.book);
+  clearTimeout(saveBook.t); saveBook.t = setTimeout(cloudSave, 600);
+}
+function cloudSave() {
+  if (DEMO || !FB.user || !FB.db) return;
+  FB.db.collection('cellbook').doc(FB.user.uid).set({ report: S.book }, { merge: true })
+    .catch(e => { toast(e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다' : '시간표를 계정에 저장하지 못했습니다\n이 기기에는 남아 있습니다'); });
+}
+function editing() { const a = document.activeElement; return !!(a && a.closest && a.closest('#panel') && /INPUT|SELECT|TEXTAREA/.test(a.tagName)); }
+
+/* ---------- 셀 ↔ 사역 겹 화면 ----------
+   홈 화면 앱에서 다른 주소를 열면 아이폰은 브라우저 창으로 띄운다. 그래서 상대 앱을 **이 앱 안 전체 화면 겹**으로 띄운다.
+   겹 안에서 로고를 누르면 겹이 걷힌다(postMessage). 같은 sweeter.my · 같은 앱 저장 공간이라 로그인도 하나. */
+function openLayer(url) {
+  if (EMBED) { try { parent.postMessage({ type: 'b7-layer-close' }, location.origin); } catch (_) { } return; }
+  if ($('#layer')) return;
+  const el = document.createElement('div'); el.className = 'layer'; el.id = 'layer';
+  el.innerHTML = `<iframe src="${url}" title="셀 한눈에"></iframe>`;
+  document.body.appendChild(el); history.pushState({ layer: 1 }, '');
+  if (!quiet()) el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+function closeLayer(fromPop) {
+  const el = $('#layer'); if (!el) return;
+  if (!fromPop) { closeLayer.skip = true; history.back(); }
+  const done = () => el.remove();
+  if (quiet()) return done();
+  el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 260, easing: 'cubic-bezier(.4,0,.6,1)' }).onfinish = done;
+}
+addEventListener('popstate', () => { if (closeLayer.skip) { closeLayer.skip = false; return; } if ($('#layer')) closeLayer(true); });
+addEventListener('message', (e) => { if (e.origin === location.origin && e.data && e.data.type === 'b7-layer-close') closeLayer(false); });
+
+/* ---------- 화면 ---------- */
+const ICON = { more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>' };
+function renderShell() {
+  $('#root').innerHTML = `<header class="top"><div class="topline">
+      <h1><button class="logo" data-act="switch" title="${EMBED ? '셀 한눈에로 돌아가기' : '셀 한눈에로'}" aria-label="셀 한눈에로"><img src="favicon.png" alt="" width="24" height="24"></button>사역 한눈에</h1>
+      <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
+      ${DEMO ? '<div class="demo">미리보기 — 지어낸 부서입니다. 저장되지 않습니다.</div>' : ''}
+      <nav class="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
+    <div class="stage" id="stage"><div class="panel" id="panel"></div></div>
+    <p class="ver"><button class="verbtn" data-act="upd">${esc(APP_VERSION)} · 새 버전 확인</button><br>부서 보고 시간표 — 교회 보고서 자료 연결은 다음 단계(W3)</p>`;
+  markTab(); rerender(); bindSwipe();
+}
+function markTab() {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === PREF.tab));
+  const on = $('.tab.on'), bar = $('#tabbar'); if (on && bar) { bar.style.width = on.offsetWidth + 'px'; bar.style.transform = `translateX(${on.offsetLeft}px)`; }
+}
+function rerender() { const p = $('#panel'); if (!p) return; p.innerHTML = PREF.tab === 'depts' ? viewDepts() : viewWeek(); }
+let busyAnim = false;
+function transit(dir, change) {
+  const p = $('#panel'); if (!p || quiet() || busyAnim) return change();
+  busyAnim = true; const w = p.offsetWidth || 360;
+  p.style.transition = 'transform .15s ease-in, opacity .15s ease-in'; p.style.transform = `translateX(${-dir * w * 0.35}px)`; p.style.opacity = '0';
+  setTimeout(() => { change(); p.style.transition = 'none'; p.style.transform = `translateX(${dir * w * 0.35}px)`; void p.offsetWidth;
+    p.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1), opacity .3s cubic-bezier(.22,.8,.24,1)'; p.style.transform = ''; p.style.opacity = '1';
+    setTimeout(() => { p.style.transition = ''; busyAnim = false; }, 320); }, 150);
+}
+// 이번 주 탭에서는 좌우로 밀면 주가 바뀐다 (손가락을 따라감)
+function bindSwipe() {
+  const st = $('#stage'); let x0 = 0, y0 = 0, dx = 0, on = false, lock = null, t0 = 0;
+  st.addEventListener('touchstart', e => { if (busyAnim || PREF.tab !== 'week' || e.touches.length > 1) return; const t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; on = true; lock = null; t0 = Date.now(); }, { passive: true });
+  st.addEventListener('touchmove', e => { if (!on) return; const t = e.touches[0]; const a = t.clientX - x0, b = t.clientY - y0;
+    if (lock == null) { if (Math.abs(a) < 8 && Math.abs(b) < 8) return; lock = Math.abs(a) > Math.abs(b) * 1.2 ? 'x' : 'y'; }
+    if (lock !== 'x') return; dx = a; const p = $('#panel'); p.style.transition = 'none'; p.style.transform = `translateX(${dx}px)`; p.style.opacity = String(1 - Math.min(.6, Math.abs(dx) / (p.offsetWidth || 360))); }, { passive: true });
+  st.addEventListener('touchend', () => { if (!on) return; on = false; if (lock !== 'x') return; const p = $('#panel'); const w = p.offsetWidth || 360;
+    if (Math.abs(dx) > w / 4 || (Date.now() - t0 < 250 && Math.abs(dx) > 40)) { const dir = dx < 0 ? 1 : -1; transit(dir, () => { S.week = addDays(S.week, 7 * dir); rerender(); }); }
+    else { p.style.transition = 'transform .3s cubic-bezier(.22,.8,.24,1), opacity .3s'; p.style.transform = ''; p.style.opacity = '1'; setTimeout(() => { p.style.transition = ''; }, 320); } });
+}
+
+// ① 이번 주 — 내 시간표로 본 이 주의 보고 (일~토)
+function viewWeek() {
+  const today = todayYmd(), ws = S.week, we = addDays(ws, 6);
+  const plan = weekPlan(S.book, ws);
+  const thisWeek = ws === weekStartSun(today);
+  let h = `<div class="weeknav"><button data-act="wk" data-d="-1">‹</button><b>${md(ws)} – ${md(we)}${thisWeek ? ' · 이번 주' : ''}</b><button data-act="wk" data-d="1">›</button></div>
+    <p class="sub" style="text-align:center;margin-top:0">금요일 오후 5시에 그 주 보고가 회의 자료로 전달됩니다</p>`;
+  if (!S.book.depts.length) return h + `<div class="card"><h3>먼저 '내 부서' 에 시간표를 적어 주세요</h3><p class="small muted" style="margin:0">부서마다 요일 · 끝나는 시각 · 매주/격주/몇째 주를 적어 두면, 이 화면에 요일별로 써야 할 보고와 봐 줄 보고가 나옵니다.</p><p style="margin:10px 0 0"><button class="btn pri" data-tab="depts">내 부서 적기</button></p></div>`;
+  if (!plan.length) return h + '<p class="empty">이 주에는 시간표에 맞는 보고가 없습니다.</p>';
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(ws, i), items = plan.filter(x => x.day === day);
+    if (!items.length) continue;
+    h += `<div class="day${day === today ? ' today' : ''}"><div class="dayh"><b>${md(day)} (${DOW[i]})</b></div>` + items.map(x => `<div class="item">
+        <span class="tm">${esc(x.slot.end || '—')}</span><div style="flex:1;min-width:0"><div class="nm">${esc(x.dept.name || '(이름 없음)')}</div>${x.slot.label ? `<div class="tiny muted">${esc(x.slot.label)}</div>` : ''}</div>
+        <span class="pill ${x.dept.role === 'write' ? 'ac' : 'mine'}">${x.dept.role === 'write' ? '내가 씀' : '봐 주기'}</span></div>`).join('') + '</div>';
+  }
+  return h + '<p class="tiny muted" style="text-align:center;margin-top:14px">좌우로 밀면 주가 바뀝니다 · 제출 여부는 교회 보고서 자료를 잇는 단계(W3)에서 붙습니다</p>';
+}
+
+// ② 내 부서 — 쓰는 부서 / 봐 주는 부서 · 시간표
+function viewDepts() {
+  let h = `<p class="sub">교회 보고서에서 <b>내가 쓰는 부서</b>와 <b>나에게 봐 달라고 한 부서</b>를 적어 둡니다. 부서마다 모임 요일 · 끝나는 시각과 매주 / 격주 / 몇째 주를 고릅니다.</p>`;
+  h += `<div class="card login">${!FB.ready && !FB.err ? '<div class="tiny muted">로그인 도구를 불러오는 중…</div>'
+    : FB.user ? `<div class="row"><span class="small">${esc(FB.user.email || '')} <span class="muted">· 로그인됨 · 시간표가 계정에 저장됩니다</span></span><span class="spacer"></span>${DEMO ? '' : '<button class="del" data-act="fb-logout">로그아웃</button>'}</div>`
+    : `<p class="small muted" style="margin:0">BLOCK7 · 셀 한눈에와 같은 이메일로 로그인하면 시간표가 계정에 저장돼 폰 · PC 가 같이 봅니다. 로그인 전에는 이 기기에만 저장됩니다.</p>
+       <input type="email" id="fb-em" placeholder="이메일" autocomplete="email"><input type="password" id="fb-pw" placeholder="비밀번호" autocomplete="current-password">
+       <p style="margin:8px 0 0"><button class="btn pri" data-act="fb-login" ${FB.busy ? 'disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button></p>`}${FB.err ? `<p class="err">${esc(FB.err)}</p>` : ''}</div>`;
+  for (const role of ['write', 'view']) {
+    const list = S.book.depts.filter(d => d.role === role);
+    h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:18px 2px 8px">${role === 'write' ? '내가 쓰는 부서' : '봐 주는 부서'} · ${list.length}</h3>`;
+    h += list.map(deptCard).join('');
+    h += `<button class="lnk" data-act="add-dept" data-role="${role}">+ ${role === 'write' ? '쓰는' : '봐 주는'} 부서 더하기</button>`;
+  }
+  return h;
+}
+function deptCard(d) {
+  return `<div class="card dept" data-dept="${esc(d.id)}"><div class="head"><input type="text" value="${esc(d.name)}" placeholder="부서 이름 (예: 조명팀)" data-f="name" maxlength="40">
+      <div class="seg"><button class="${d.role === 'write' ? 'on' : ''}" data-act="role" data-v="write">씀</button><button class="${d.role === 'view' ? 'on' : ''}" data-act="role" data-v="view">봐 주기</button></div></div>
+    ${d.slots.map(s => slotRow(d, s)).join('')}
+    <div class="row" style="margin-top:8px"><button class="lnk" data-act="add-slot">+ 모임 시간 더하기</button><span class="spacer"></span><button class="del" data-act="del-dept">부서 지우기</button></div></div>`;
+}
+function slotRow(d, s) {
+  return `<div class="slot" data-slot="${esc(s.id)}">
+    <select data-f="dow" aria-label="요일">${DOW.map((n, i) => `<option value="${i}" ${+s.dow === i ? 'selected' : ''}>${n}요일</option>`).join('')}</select>
+    <input type="time" data-f="end" value="${esc(s.end)}" aria-label="끝나는 시각">
+    <select data-f="freq" aria-label="반복">${Object.entries(FREQ).map(([k, n]) => `<option value="${k}" ${s.freq === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    ${s.freq === 'nth' ? `<div class="nths">${[1, 2, 3, 4, 5, 'last'].map(n => `<button class="nth ${s.nth.includes(n) ? 'on' : ''}" data-act="nth" data-n="${n}">${n === 'last' ? '마지막' : n + '째'}</button>`).join('')}</div>` : ''}
+    ${s.freq === 'biweekly' ? `<label class="tiny muted">기준 날짜 <input type="date" data-f="anchor" value="${esc(s.anchor)}"></label>` : ''}
+    <input type="text" class="lbl" data-f="label" value="${esc(s.label)}" placeholder="모임 이름 (예: 주일 2부)" maxlength="40">
+    <button class="del" data-act="del-slot" aria-label="이 시간 지우기">지우기</button>
+    <div class="tiny muted" style="width:100%">${esc(slotText(s))}${s.freq === 'biweekly' && !s.anchor ? ' — 기준 날짜를 고르면 그 주부터 2주마다' : ''}</div></div>`;
+}
+function findDept(el) { const c = el.closest('[data-dept]'); return c ? S.book.depts.find(d => d.id === c.dataset.dept) : null; }
+function findSlot(el, d) { const c = el.closest('[data-slot]'); return c && d ? d.slots.find(s => s.id === c.dataset.slot) : null; }
+
+/* ---------- 누르기 · 고치기 ---------- */
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act],[data-tab]'); const menu = $('#menu');
+  if (menu && !e.target.closest('#menu') && !(b && b.dataset.act === 'menu')) menu.remove();
+  if (!b) return; const d = b.dataset;
+  if (d.tab) { if (d.tab === PREF.tab) return; const a = TABS.findIndex(t => t.id === PREF.tab), z = TABS.findIndex(t => t.id === d.tab);
+    return transit(z > a ? 1 : -1, () => { PREF.tab = d.tab; savePref(); markTab(); rerender(); scrollTo(0, 0); }); }
+  const dept = findDept(b), slot = findSlot(b, dept);
+  switch (d.act) {
+    case 'switch': return openLayer('/cell/' + (DEMO ? '?demo=1' : ''));
+    case 'wk': { const dir = +d.d; return transit(dir, () => { S.week = addDays(S.week, 7 * dir); rerender(); }); }
+    case 'fb-login': return fbLogin();
+    case 'fb-logout': return fbLogout();
+    case 'add-dept': S.book.depts.push({ id: newId('d'), name: '', role: d.role === 'view' ? 'view' : 'write', slots: [normSlot({ dow: 0 })] });
+      saveBook(); rerender(); { const ins = document.querySelectorAll('#panel .dept input[data-f="name"]'); const i = [...ins].find(x => !x.value); if (i && !TOUCH) i.focus(); } return;
+    case 'role': if (dept) { dept.role = d.v; saveBook(); rerender(); toast(dept.role === 'write' ? (dept.name || '이 부서') + '\n내가 쓰는 부서로 옮겼습니다' : (dept.name || '이 부서') + '\n봐 주는 부서로 옮겼습니다'); } return;
+    case 'add-slot': if (dept) { dept.slots.push(normSlot({ dow: dept.slots.length ? dept.slots[dept.slots.length - 1].dow : 0 })); saveBook(); rerender(); } return;
+    case 'del-slot': if (dept && slot) { dept.slots = dept.slots.filter(s => s !== slot); saveBook(); rerender(); } return;
+    case 'del-dept': if (dept && confirm((dept.name || '이 부서') + ' 를 지울까요?')) { S.book.depts = S.book.depts.filter(x => x !== dept); saveBook(); rerender(); toast((dept.name || '부서') + '를\n지웠습니다'); } return;
+    case 'nth': if (slot) { const n = d.n === 'last' ? 'last' : +d.n; slot.nth = slot.nth.includes(n) ? slot.nth.filter(x => x !== n) : slot.nth.concat(n); saveBook(); rerender(); } return;
+    case 'upd': return checkUpdate(true);
+    case 'menu': {
+      if (menu) return menu.remove();
+      const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
+      m.innerHTML = `<div class="info">${esc(FB.user ? FB.user.email : '로그인 전')}</div><button data-act="switch">셀 한눈에로</button>${DEMO ? '<button data-act="demo-off">미리보기 끝내기</button>' : '<button data-act="demo-on">지어낸 자료로 미리보기</button>'}`;
+      b.parentElement.appendChild(m); return;
+    }
+    case 'demo-on': location.href = location.pathname + '?demo=1'; return;
+    case 'demo-off': location.href = location.pathname; return;
+  }
+});
+document.addEventListener('change', (e) => {
+  const t = e.target; const f = t.dataset && t.dataset.f; if (!f) return;
+  const dept = findDept(t); if (!dept) return; const slot = findSlot(t, dept);
+  if (f === 'name') { dept.name = t.value.trim().slice(0, 40); saveBook(); return; }
+  if (!slot) return;
+  if (f === 'dow') slot.dow = +t.value;
+  if (f === 'end') slot.end = t.value;
+  if (f === 'freq') { slot.freq = t.value; if (slot.freq !== 'nth') slot.nth = []; if (slot.freq === 'biweekly' && !slot.anchor) slot.anchor = nextDow(slot.dow); }
+  if (f === 'anchor') slot.anchor = t.value;
+  if (f === 'label') slot.label = t.value.trim().slice(0, 40);
+  Object.assign(slot, normSlot(slot)); saveBook();
+  if (['dow', 'freq', 'anchor'].includes(f) || f === 'end') { const box = t.closest('[data-slot]'); if (box) box.outerHTML = slotRow(dept, slot); }
+  else { const tx = t.closest('[data-slot]').querySelector('.tiny.muted:last-child'); if (tx) tx.textContent = slotText(slot); }
+});
+function nextDow(dow) { const t = todayYmd(); return addDays(t, (dow - dowOf(t) + 7) % 7); }
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.target.id === 'fb-pw' || e.target.id === 'fb-em')) fbLogin(); if (e.key === 'Escape') { if ($('#layer')) return closeLayer(false); const m = $('#menu'); if (m) m.remove(); } });
+addEventListener('resize', () => markTab());
+
+/* ---------- 새 버전 (셀 한눈에와 같은 방법) ---------- */
+async function checkUpdate(manual) {
+  try {
+    const r = await fetch(location.pathname + '?nc=' + Date.now(), { cache: 'no-store' });
+    const m = (await r.text()).match(/const APP_VERSION = '([^']+)'/); if (!m) throw new Error('x');
+    if (m[1] === APP_VERSION) { if (manual) toast('지금이 최신입니다\n' + APP_VERSION); return; }
+    toast('새 버전 ' + m[1] + '\n받아서 다시 엽니다');
+    setTimeout(() => location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]) + (DEMO ? '&demo=1' : '')), 900);
+  } catch (_) { if (manual) toast('새 버전을 확인하지 못했습니다\n인터넷 연결을 확인해 주세요'); }
+}
+if (!EMBED) { setTimeout(() => checkUpdate(false), 4000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 600000) { checkUpdate.at = Date.now(); checkUpdate(false); } }); }
+
+/* ---------- 시작 ---------- */
+if (DEMO) S.book = normBook({ at: 1, depts: [
+  { name: '조명팀', role: 'write', slots: [{ dow: 0, end: '13:30', freq: 'weekly', label: '주일 2부' }] },
+  { name: '성찬위원', role: 'write', slots: [{ dow: 0, end: '12:00', freq: 'nth', nth: [1], label: '첫째 주일 성찬' }] },
+  { name: '새가족 환영팀', role: 'write', slots: [{ dow: 6, end: '15:00', freq: 'biweekly', anchor: addDays(weekStartSun(todayYmd()), 6) }] },
+  { name: '송번역팀', role: 'view', slots: [{ dow: 3, end: '21:00', freq: 'weekly', label: '수요 기도회' }, { dow: 0, end: '13:30', freq: 'weekly', label: '주일 2부' }] },
+  { name: '2부 예배팀', role: 'view', slots: [{ dow: 6, end: '19:00', freq: 'weekly', label: '리허설' }] }] });
+renderShell();
+fbInit().then(rerender).catch(() => {});
+</script>
+</body>
+</html>
