@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1107-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1107-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -427,7 +427,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1107-2';
+const APP_VERSION = 'v. 26-1107-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -759,6 +759,18 @@ function restoreRow(header, json) {
   Object.keys(o).forEach(k => { const i = h.indexOf(norm(k)); if (i < 0) lost.push(k); else row[i] = o[k]; });
   return { row, lost };
 }
+// 읽은 줄이 정말 그 기록인지 — 줄 번호를 찾은 뒤 다른 기기가 앞쪽 줄을 지우면 같은 번호에 다른 기록이 온다
+function rowHasId(map, row, id) { return map['@기록ID'] != null && !!norm(id) && norm((row || [])[map['@기록ID']]) === norm(id); }
+// 휴지통 탭 첫 줄 상태 — 'ok' 머리글 · 'empty' 비었음 · 'data' 머리글 없이 백업 줄이 먼저 들어감(만들다 끊긴 경우) · 'other' 남의 것
+function trashHeadState(first) {
+  const h = (first || []).map(norm);
+  if (!h.some(Boolean)) return 'empty';
+  if (h[0] === TRASH_HEAD[0] && h.includes('원래 줄')) return 'ok';
+  if (h[0] && /^\{/.test(h[5] || '')) return 'data';
+  return 'other';
+}
+// 휴지통에 그 기록의 백업이 꼭 하나, 방금 적은 내용 그대로 있는가 — 이것을 확인한 뒤에만 원래 줄을 지운다
+function backupMatches(values, id, json) { const it = parseTrash(values).filter(x => x.id === norm(id)); return it.length === 1 && it[0].json === json; }
 function parseTrash(values) {
   const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
   const ci = { id: c('기록ID'), name: c('성도 이름'), ymd: c('심방일'), at: c('지운 시각'), who: c('지운 사람'), data: c('원래 줄') };
@@ -1119,6 +1131,14 @@ async function rowOf(s, title, map, recId) {
   if (r < 0) throw new Error('시트에서 이 기록을 찾지 못했습니다.\n다른 곳에서 지웠을 수 있습니다.');
   return r;
 }
+// 그 기록의 줄을 찾아 읽는다 — 읽은 줄의 기록ID 가 맞을 때만 돌려준다(다른 기기가 앞줄을 지워 밀렸으면 다시 찾는다)
+async function readRowById(s, title, map, id) {
+  for (let i = 0; i < 3; i++) {
+    const r = await rowOf(s, title, map, id), cur = ((await readRange(s.id, title, r + ':' + r))[0]) || [];
+    if (rowHasId(map, cur, id)) return { r, cur };
+  }
+  throw new Error('시트 줄이 계속 움직여 이 기록을 확실히 찾지 못했습니다.\n잠시 뒤 다시 해 주세요 — 아무것도 쓰지 않았습니다.');
+}
 async function writeNew(rec) {
   const { s, title, head, map } = await freshHead(), now = Date.now(), id = newId('C', now, Math.random());
   const { row, lost } = newRowValues(head, map, rec, id, now);
@@ -1127,7 +1147,7 @@ async function writeNew(rec) {
 }
 async function writeEdit(v, rec) {
   const { s, title, head, map } = await freshHead(), now = Date.now();
-  const r = await rowOf(s, title, map, v.id), cur = ((await readRange(s.id, title, r + ':' + r))[0]) || [];
+  const { r, cur } = await readRowById(s, title, map, v.id);
   const was = (DATA.vals && DATA.vals[v.row - 1]) || cur, pt = editPatch(head, map, cur, rec, now);
   if (!pt.cells.length) return { none: true, lost: pt.lost };
   const conf = conflictCells(was, cur, pt.cells);
@@ -1137,7 +1157,7 @@ async function writeEdit(v, rec) {
 }
 // 되돌리기 — 고친 칸을 고치기 전 값으로 (그 기록을 다시 찾아서)
 async function undoEdit(recId, cells) {
-  const { s, title, map } = await freshHead(), r = await rowOf(s, title, map, recId);
+  const { s, title, map } = await freshHead(), { r } = await readRowById(s, title, map, recId);
   await batchValues(s.id, cells.map(c => ({ range: a1(title, map[c.k], r), values: [[c.prev]] })));
 }
 async function writeAddendum(v, text) {
@@ -1162,19 +1182,30 @@ async function trashTabId(s, make) {
   let t = find(await sheetMeta(s.id));
   if (!t && make) {
     await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: TRASH_TAB } } }] } });
-    await batchValues(s.id, [{ range: "'" + TRASH_TAB + "'!A1", values: [TRASH_HEAD] }]);
     t = find(await sheetMeta(s.id));
+  }
+  // 머리글 확인 · 복구 — 만들다 끊겨 빈 탭이거나 백업 줄이 첫 줄에 들어갔어도 바로잡는다 (남의 탭이면 손대지 않는다)
+  if (t && make) {
+    const st = trashHeadState(((await readRange(s.id, TRASH_TAB, '1:1'))[0]) || []);
+    if (st === 'data') await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ insertDimension: { range: { sheetId: t.sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, inheritFromBefore: false } }] } });
+    if (st === 'empty' || st === 'data') await batchValues(s.id, [{ range: "'" + TRASH_TAB + "'!A1", values: [TRASH_HEAD] }]);
+    if (st === 'other') throw new Error("시트의 '휴지통' 탭 첫 줄이 앱이 쓰는 머리글이 아닙니다.\n그 탭 이름을 바꾸거나 첫 줄을 비워 주세요 — 지우지 않았습니다.");
   }
   return t ? t.sheetId : null;
 }
 async function deleteVisit(v) {
   if (!(await ensurePrepared())) return false;
   const { s, title, head, map } = await freshHead();
-  const r = await rowOf(s, title, map, v.id), cur = ((await readRange(s.id, title, r + ':' + r))[0]) || [];
+  const { cur } = await readRowById(s, title, map, v.id);                 // 그 기록이 맞는 줄을 읽고
   await trashTabId(s, true);
-  await appendTo(s.id, TRASH_TAB, trashRow(head, cur, v, stampLocal(Date.now()), USER ? USER.email : ''));   // 먼저 휴지통에 옮겨 적고
-  const r2 = await rowOf(s, title, map, v.id);                                                               // 그 줄이 아직 그 기록인지 다시 보고
-  await deleteOneRow(s.id, DATA.tab.sheetId, r2);                                                             // 그 한 줄만 지운다
+  const tr = trashRow(head, cur, v, stampLocal(Date.now()), USER ? USER.email : '');
+  const ex = findRowById((await readTab(s.id, TRASH_TAB)).map(x => [x[0]]), v.id);
+  if (ex === -2) throw new Error('휴지통에 이 기록이 이미 둘 있습니다 — 지우지 않았습니다.\n시트의 휴지통 탭에서 한쪽을 정리해 주세요.');
+  if (ex > 0) await batchValues(s.id, [{ range: a1(TRASH_TAB, 0, ex), values: [tr] }]);   // 앞서 지우다 멈춘 백업이 있으면 지금 내용으로 덮어쓴다(둘로 늘지 않게)
+  else await appendTo(s.id, TRASH_TAB, tr);                                                 // 휴지통에 옮겨 적고
+  if (!backupMatches(await readTab(s.id, TRASH_TAB), v.id, tr[5])) throw new Error('휴지통에 옮겨 적은 것을 확인하지 못해 지우지 않았습니다.');
+  const { r: r2 } = await readRowById(s, title, map, v.id);               // 그 줄이 아직 그 기록인지 다시 보고
+  await deleteOneRow(s.id, DATA.tab.sheetId, r2);                          // 그 한 줄만 지운다
   return true;
 }
 async function readTrash(s) { return (await trashTabId(s, false)) == null ? [] : parseTrash(await readTab(s.id, TRASH_TAB)); }

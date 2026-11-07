@@ -31,7 +31,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
   joinMulti, splitEtc, blankRecord, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
-  TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
+  TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -308,6 +308,12 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const T = A.parseTrash([A.TRASH_HEAD, tr, ['C8', '가나다', '2026-10-31', '2026-11-07 11:00', 'a@b', '{"내용":"둘"}'], ['', '', '', '', '', '']]);
   sc.eq('⑭ 휴지통 목록 — 최근에 지운 것부터 · 빈 줄 버림 · 줄 번호', J(T.map(x => [x.id, x.row, x.text])), [['C8', 3, '둘'], ['C7', 2, '학교 이야기\n둘째 줄']]);
   sc.eq('⑭ 휴지통 줄 찾기는 기록ID 로 (같은 함수)', A.findRowById([['기록ID'], ['C7'], ['C8']], 'C8'), 3);
+  // 코덱스 검토(PR 962) — 두 기기 · 끊김
+  const map = A.headerMap(H).map;
+  sc.eq('⑭ 읽은 줄이 그 기록인지 — 다른 기기가 앞줄을 지워 한 줄 밀렸으면 아니다', J([A.rowHasId(map, row, 'C7'), A.rowHasId(map, row, 'C8'), A.rowHasId(map, row, '')]), [true, false, false]);
+  sc.eq('⑭ 휴지통 첫 줄 — 머리글 · 비었음 · 만들다 끊겨 백업이 먼저 · 남의 것', J([A.trashHeadState(A.TRASH_HEAD), A.trashHeadState([]), A.trashHeadState(tr), A.trashHeadState(['메모', '아무거나'])]), ['ok', 'empty', 'data', 'other']);
+  const tv = [A.TRASH_HEAD, tr];
+  sc.eq('⑭ 휴지통에 꼭 하나, 방금 적은 그대로일 때만 원래 줄을 지운다', J([A.backupMatches(tv, 'C7', tr[5]), A.backupMatches(tv, 'C7', '{}'), A.backupMatches([A.TRASH_HEAD, tr, tr], 'C7', tr[5]), A.backupMatches([A.TRASH_HEAD], 'C7', tr[5])]), [true, false, false, false]);
 }
 
 sc.done();

@@ -9,6 +9,8 @@
 //  ⑤ 할 일 체크 → '액션' 탭에 한 줄 · 풀기 → 같은 줄의 상태만
 //  ⑥ 덧붙이기 → '덧붙임' 탭에 한 줄, 원래 이야기는 그대로
 //  ⑦ 폼 줄(타임스탬프 · 질문 칸)은 앱 열 말고는 한 글자도 안 바뀐다
+//  ⑨ (코덱스 검토 PR 962) 지우다 멈춘 뒤 다시 지워도 휴지통 백업은 하나 · 휴지통 탭이 비었거나 머리글 없이 백업이 먼저 들어가도 바로잡는다
+//  ⑩ (같은 검토) 지우는 도중 다른 기기가 앞줄을 지워 한 줄 밀려도 엉뚱한 기록을 휴지통에 넣지 않는다
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -26,6 +28,7 @@ const ROWS = [
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
 const LOG = [];
+const HOOK = { failDel: false, shift: false };   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
 const colN = L => L.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
 function parseRange(r) {
@@ -56,7 +59,9 @@ async function route(r) {
   const p = u.pathname.replace('/v4/spreadsheets/S', '');
   if (p === '' && m === 'GET') return json({ properties: { title: '시험 시트' }, sheets: SHEET.tabs.map(t => ({ properties: { sheetId: t.id, title: t.title, gridProperties: { columnCount: t.cols } } })) });
   if (p === ':batchUpdate') {
+    if (HOOK.failDel && body.requests.some(q => q.deleteDimension && q.deleteDimension.range.sheetId === 0)) { HOOK.failDel = false; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
     body.requests.forEach(q => {
+      if (q.insertDimension) { const g = q.insertDimension.range; SHEET.tabs.find(t => t.id === g.sheetId).rows.splice(g.startIndex, 0, ...Array.from({ length: g.endIndex - g.startIndex }, () => [])); }
       if (q.appendDimension) tab(SHEET.tabs.find(t => t.id === q.appendDimension.sheetId).title).cols += q.appendDimension.length;
       if (q.addSheet) SHEET.tabs.push({ id: SHEET.tabs.length, title: q.addSheet.properties.title, cols: 26, rows: [] });
       if (q.deleteDimension) { const g = q.deleteDimension.range; SHEET.tabs.find(t => t.id === g.sheetId).rows.splice(g.startIndex, g.endIndex - g.startIndex); }
@@ -71,6 +76,7 @@ async function route(r) {
   if ((mm = p.match(/^\/values\/(.+):append$/))) { const R = parseRange(mm[1]); body.values.forEach(v => { tab(R.title).rows.push(v.slice()); LOG.push(['append', R.title, v]); }); return json({}); }
   if ((mm = p.match(/^\/values\/(.+)$/))) {
     const R = parseRange(mm[1]), T = tab(R.title); if (!T) return r.fulfill({ status: 400, body: '{}' });
+    if (HOOK.shift && R.title === 'Form Responses 1' && R.rowOnly > 2) { HOOK.shift = false; T.rows.splice(1, 1); }   // 다른 기기가 앞줄(2번째 줄)을 막 지웠다
     let vals = trim(T.rows);
     if (R.rowOnly) vals = [vals[R.rowOnly - 1] || []];
     else if (R.colOnly != null) vals = vals.map(x => [x[R.colOnly] == null ? '' : x[R.colOnly]]);
@@ -182,6 +188,34 @@ async function route(r) {
   await page.click('.layer [data-act="tpurge"]'); await page.waitForTimeout(1200);
   eq('⑧ 완전히 지우기 → 휴지통 · 응답 탭 어디에도 없다', [T().length, !!R.rows.find(r => r[9] === vid)], [1, false]);
   eq('⑧ 할 일 · 덧붙임 탭은 지우기와 상관없이 그대로', [tab('액션').rows.length, tab('덧붙임').rows.length], [2, 2]);
+
+  // ⑨ 지우다 멈춘 뒤 다시 — 휴지통 탭은 비어 있는(머리글도 없는) 상태에서 시작
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  tab('휴지통').rows = [];
+  const lmb = R.rows.find(r => r[2] === '라마바'), lid = lmb[9];
+  HOOK.failDel = true;
+  await page.click('.card:has-text("라마바")'); await tidy();
+  await page.click('.layer [data-act="menu"]'); await tidy();
+  await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
+  eq('⑨ 지우기가 끊기면 원래 줄은 그대로 · 빈 휴지통 탭에 머리글이 생기고 백업 하나', [!!R.rows.find(r => r[9] === lid), T()[0][0], T().length], [true, '기록ID', 2]);
+  await page.click('.layer [data-act="menu"]'); await tidy();
+  await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
+  eq('⑨ 다시 지우면 지워지고 휴지통 백업은 여전히 하나', [!!R.rows.find(r => r[9] === lid), T().filter(r => r[0] === lid).length], [false, 1]);
+  // ⑨ 머리글 없이 백업 줄이 첫 줄에 들어간 휴지통 — 머리글을 끼워 넣고 둘 다 읽힌다
+  tab('휴지통').rows = T().slice(1);
+  // ⑩ 지우는 도중 다른 기기가 앞줄(가나다)을 지운다 — 대상은 사아자(보관 기록)
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await page.evaluate(() => { S.showArch = true; render(); });
+  const sid = R.rows.find(r => r[2] === '사아자')[9];
+  await page.click('.card:has-text("사아자")'); await tidy();
+  await page.click('.layer [data-act="menu"]'); await tidy();
+  HOOK.shift = true;
+  await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1500);
+  const sa = T().find(r => r[0] === sid);
+  eq('⑨ 머리글이 다시 맨 위 · 앞서 지운 백업도 그대로 남았다', [T()[0][0], !!T().find(r => r[0] === lid)], ['기록ID', true]);
+  eq('⑩ (장치 확인) 지우는 도중 앞줄이 정말 사라졌다 · 끊김도 정말 일어났다', [HOOK.shift, HOOK.failDel], [false, false]);
+  eq('⑩ 휴지통에 들어간 것은 사아자 자신 (밀린 다른 기록이 아님)', [!!sa, sa && JSON.parse(sa[5])['성도 이름'], sa && JSON.parse(sa[5])['기록ID'] === sid], [true, '사아자', true]);
+  eq('⑩ 응답 탭 — 사아자만 빠지고(가나다는 다른 기기가 지움) 머리글만 남음', R.rows.map(r => r[2]), ['성도 이름']);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
