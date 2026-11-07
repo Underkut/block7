@@ -11,6 +11,8 @@
 //  ⑦ C0 쓰기 시험은 10줄 이하(사본)에만 · 폼 줄이 앱 줄을 건드렸으면 잡아낸다 · 기록ID 붙이기는 상한까지만
 //  ⑩ C1 열람 — 줄 → 기록 · 보관(지우지 않고 감춤) · 필터(속성 안 '또는', 속성끼리 '그리고') · 성도 · 주 · 달 · 대시보드 셈
 //  ⑪ 기기끼리 설정 맞추기 — 고른 시트 · 폼 · 보관 기준만 계정에(users/{uid}/data/care), 나중에 고친 쪽을 따른다 · 심방 내용 · 시험 상태는 안 올린다
+//  ⑫ C2 쓰기 — 새 줄은 이름으로 찾은 칸에만 · 안 바꾼 기록을 저장하면 칸이 하나도 안 바뀐다 · 바뀐 칸만 · 그사이 시트에서 고친 칸은 잡는다 · 같은 기록ID 가 둘이면 쓰지 않는다
+//  ⑬ 할 일 체크('액션' 탭) · 덧붙임 탭
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -26,6 +28,8 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
+  joinMulti, splitEtc, blankRecord, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
+  actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -234,6 +238,55 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('⑪ 둘 다 비었으면 아무것도 안 한다', J([r.local, r.push]), [null, null]);
   r = A.mergeCfg({ sheet: S1, test: { id: 'T' } }, { sheet: S2, at: NOW }, NOW + 1);
   sc.eq('⑪ 받을 때 이 기기의 시험 상태는 남긴다', J(r.local.test), { id: 'T' });
+}
+
+// ⑫ C2 쓰기
+{
+  const H = HEAD.concat(['기록ID', '출처', '심방일', '수정', '확인', '보관']), map = A.headerMap(H).map, NOW = Date.parse('2026-11-07T09:30:00+09:00');
+  const rec = { name: ' 가나다 ', ymd: '2026-11-06', roles: ['예배팀', '셀리더'], rolesEtc: '두나미스', method: '카톡, 문자', methodEtc: '', place: '카페', text: '첫 줄\r\n둘째 줄 ', depth: '깊음',
+    tags: ['신앙'], tagsEtc: '관계, 진로', acts: ['중보', '연결'], actsEtc: '병문안 가기' };
+  sc.eq('⑫ 이름 · 이야기는 꼭 (이야기가 없으면 방식이라도)', J(A.validateRecord({ name: '', ymd: '', text: '' })), ['성도 이름을 적어 주세요', '날짜를 골라 주세요', '나눈 이야기나 방식 중 하나는 적어 주세요']);
+  sc.eq('⑫ 맞는 기록은 통과', J(A.validateRecord(rec)), []);
+  const c = A.recordCells(rec);
+  sc.eq('⑫ 칸 꼴 — 날짜는 폼처럼 월/일 · 연도는 심방일 · 여럿은 ", " · 기타는 끝에', J([c.date, c['@심방일'], c.name, c.roles, c.method, c.tags, c.acts, c.text]),
+    ['11/6', '2026-11-06', '가나다', '예배팀, 셀리더, 두나미스', '카톡, 문자', '신앙, 관계, 진로', '중보, 연결, 병문안 가기', '첫 줄\n둘째 줄']);
+  const nr = A.newRowValues(H, map, rec, 'C1', NOW);
+  sc.eq('⑫ 새 줄 — 머리글 길이 · 기록ID · 출처 앱 · 타임스탬프는 시트 날짜 숫자', J([nr.row.length, nr.row[map['@기록ID']], nr.row[map['@출처']], A.serialYmd(nr.row[map.ts])]), [H.length, 'C1', '앱', '2026-11-07']);
+  sc.eq('⑫ 시트에 장소 칸이 없으면 쓰지 않고 알린다', J(nr.lost), ['place']);
+  sc.eq('⑫ 쓴 줄을 다시 읽으면 같은 기록', J((() => { const v = A.rowToVisit(nr.row, map, OPT); return [v.name, v.ymd, v.roles, v.rolesEtc, v.method, v.tags, v.tagsEtc, v.acts, v.actsEtc, v.depth]; })()),
+    ['가나다', '2026-11-06', ['예배팀', '셀리더'], ['두나미스'], '카톡, 문자', ['신앙'], ['관계', '진로'], ['중보', '연결'], ['병문안 가기'], '깊음']);
+  // 폼이 쓴 줄을 읽어 그대로 저장 → 아무 칸도 안 바뀐다
+  const formRow = [46332.4, '11/4', '라마바', '셀리더, 예배팀', '보고 차카타', '셀원 근황\n건강', '건강, 교회', '보고, 중보', '중간', 'C9', '폼', '2026-11-04', '', '', ''];
+  const v0 = A.rowToVisit(formRow, map, OPT);
+  sc.eq('⑫ 안 바꾸고 저장하면 칸이 하나도 안 바뀐다 (여럿 칸 순서 · 기타 방식 · 여러 줄)', J(A.editPatch(H, map, formRow, A.recordFromVisit(v0), NOW).cells), []);
+  const r2 = A.recordFromVisit(v0); r2.depth = '깊음'; r2.tags = ['교회'];
+  const pt = A.editPatch(H, map, formRow, r2, NOW);
+  sc.eq('⑫ 바꾼 칸만 + 수정 시각', J(pt.cells.map(x => [x.k, x.value, x.prev])), [['tags', '교회', '건강, 교회'], ['depth', '깊음', '중간'], ['@수정', '2026-11-07T00:30:00.000Z', '']]);
+  sc.eq('⑫ 날짜 칸이 날짜 숫자여도 같은 날이면 안 고친다', J(A.editPatch(H, map, Object.assign(formRow.slice(), { 1: 46330 }), A.recordFromVisit(A.rowToVisit(Object.assign(formRow.slice(), { 1: 46330 }), map, OPT)), NOW).cells), []);
+  const now = formRow.slice(); now[map.depth] = '얕음';
+  sc.eq('⑫ 그사이 시트에서 같은 칸을 고쳤으면 잡는다', J(A.conflictCells(formRow, now, pt.cells)), ['depth']);
+  sc.eq('⑫ 다른 칸이 바뀐 것은 부딪침이 아니다', J(A.conflictCells(formRow, Object.assign(formRow.slice(), { 5: '다른 내용' }), pt.cells)), []);
+  const ids = [['기록ID'], ['C1'], [''], ['C2'], ['C1x']];
+  sc.eq('⑫ 기록ID 로 줄 찾기 · 없으면 -1', J([A.findRowById(ids, 'C2'), A.findRowById(ids, 'C3')]), [4, -1]);
+  sc.eq('⑫ 같은 기록ID 가 둘이면 -2 (쓰지 않는다)', A.findRowById([['기록ID'], ['C1'], ['C1']], 'C1'), -2);
+  sc.eq("⑫ 칸 주소 — 탭 이름의 ' 는 두 번", A.a1("HB's 탭", 10, 5), "'HB''s 탭'!K5");
+  sc.eq('⑫ 새 기록 꼴 — 오늘 · 지난번 구분', J([A.blankRecord('2026-11-07', { roles: ['청년부'] }).ymd, A.blankRecord('2026-11-07', { roles: ['청년부'] }).roles]), ['2026-11-07', ['청년부']]);
+}
+// ⑬ 할 일 체크 · 덧붙임
+{
+  const act = [A.ACT_TAB_HEAD, ['A1', 'C1', '가나다', '중보', '', '', '', '마침', '2026-11-06', ''], ['A2', 'C1', '가나다', '기타', '', '병문안 가기', '', '할 일', '', '']];
+  const st = A.parseActionTab(act);
+  sc.eq('⑬ 액션 탭 읽기 — 열쇠 = 기록ID|종류|내용', J(Object.keys(st)), ['C1|중보|', 'C1|기타|병문안 가기']);
+  const v = { id: 'C1', name: '가나다', actions: [{ t: '중보', x: '', k: 'k1' }, { t: '연결', x: '', k: 'k2' }, { t: '기타', x: '병문안 가기', k: 'k4' }] };
+  A.attachExtras({ visits: [v] }, st, {});
+  sc.eq('⑬ 체크 붙이기 — 마침만 done', J(v.actions.map(a => a.done)), [true, false, false]);
+  sc.eq('⑬ 액션 탭에 없는 할 일을 체크 → 한 줄 더한다', J(A.checkPlan(st, v, v.actions[1], true, '2026-11-07', 'A9')), { append: ['A9', 'C1', '가나다', '연결', '', '', '', '마침', '2026-11-07', ''] });
+  sc.eq('⑬ 있는 줄은 상태 · 완료일만', J(A.checkPlan(st, v, v.actions[2], true, '2026-11-07', 'A9')), { update: { row: 3, cells: { '상태': '마침', '완료일': '2026-11-07' } } });
+  sc.eq('⑬ 풀기 → 할 일 · 완료일 비움', J(A.checkPlan(st, v, v.actions[0], false, '2026-11-07', 'A9')), { update: { row: 2, cells: { '상태': '할 일', '완료일': '' } } });
+  sc.eq('⑬ 기록ID 없는 기록(준비 전)은 체크가 안 붙는다', (() => { const w = { id: '', actions: [{ t: '중보', x: '' }] }; A.attachExtras({ visits: [w] }, { '|중보|': { st: '마침' } }, {}); return w.actions[0].done; })(), false);
+  const ad = A.parseAddenda([['기록ID', '시각', '쓴 사람', '내용'], ['C1', '2026-11-07 10:00', 'a@b', '둘째'], ['C1', '2026-11-06 09:00', 'a@b', '첫째'], ['C2', '', '', ''], ['', 'x', 'y', '주인 없음']]);
+  sc.eq('⑬ 덧붙임 — 기록마다 시각순 · 빈 줄 · 주인 없는 줄은 버린다', J([Object.keys(ad), ad.C1.map(x => x.x)]), [['C1'], ['첫째', '둘째']]);
+  sc.eq('⑬ 기록ID 붙이기 상한', A.ID_PATCH_MAX <= 500, true);
 }
 
 sc.done();
