@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1107-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -427,7 +427,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1107-3';
+const APP_VERSION = 'v. 26-1108-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -635,6 +635,14 @@ function joinMulti(vals, etc) { return (vals || []).concat((etc || []).map(norm)
 function splitEtc(s) { return String(s || '').split(/\s*[,，]\s*/).map(norm).filter(Boolean); }
 
 // 기록 하나(화면 입력 꼴) — 새 기록의 빈 꼴
+// 나눈 이야기를 '나눈 이야기 1 · 2 …' 로 나눠 적는다 — 저장은 여전히 한 칸의 글(시트 모양 그대로), 제목 줄만 글 안에 들어간다.
+function addTalk(text) {
+  const t = String(text || '').replace(/\r/g, '').trim();
+  if (!t) return '나눈 이야기 1\n';
+  let max = 0; t.replace(/^나눈 이야기 (\d+)[ \t]*$/gm, (_, n) => { max = Math.max(max, +n); });
+  if (!max) return '나눈 이야기 1\n' + t + '\n\n나눈 이야기 2\n';
+  return t + '\n\n나눈 이야기 ' + (max + 1) + '\n';
+}
 function blankRecord(today, last) {
   return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', text: '', depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '' };
 }
@@ -1599,7 +1607,7 @@ function lEdit(L) {
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   h += DATA.hasPlace ? '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 · 메모 (예: 수요예배 후 카페)" aria-label="장소 · 메모"></div>'
     : '<p class="hint">장소 · 메모 칸은 시트에 아직 없습니다. 폼에 \'장소 · 메모\' 질문을 더하면 생깁니다.</p>';
-  h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea></div>';
+  h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea><button class="btn" data-act="addtalk" style="margin-top:8px">+ 이야기 나누기</button><div class="hint">맥락이 달라질 때 누르면 \'나눈 이야기 1 · 2 …\' 제목 줄이 생깁니다.</div></div>';
   h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   h += '<div class="fld"><span class="lb">태그 <small>여럿</small></span><div class="opts">' + FO.tag.map(x => chip('#' + esc(x), f.tags.includes(x), 'ftog', 'tags', x)).join('') + '</div><input class="inp etc" data-f="tagsEtc" value="' + esc(f.tagsEtc) + '" placeholder="기타 태그 (쉼표로 여럿)" aria-label="태그 기타"></div>';
   h += '<div class="fld"><span class="lb">할 일 <small>여럿</small></span><div class="opts">' + FO.act.filter(x => x !== '기타').map(x => chip(esc(x), f.acts.includes(x), 'ftog', 'acts', x, ACT_KIND[x] || 'k4')).join('') + '</div><input class="inp etc" data-f="actsEtc" value="' + esc(f.actsEtc) + '" placeholder="기타 할 일 (예: 병문안 일정 잡기)" aria-label="할 일 기타"></div>';
@@ -1940,6 +1948,13 @@ document.addEventListener('click', e => {
     else if (a === 'fone') { L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = ''; }
     else { const p = M().people[v] || {}, RO = filterOptions(M().visits, DATA.opts).role; L.form.name = v; L.form.roles = (p.roles || []).filter(x => RO.includes(x)); L.form.rolesEtc = (p.roles || []).filter(x => !RO.includes(x)).join(', '); }
     render(); return;
+  }
+  if (a === 'addtalk') {
+    const L = topLayer(); if (!L || L.type !== 'edit') return;
+    const ta = document.querySelector('textarea[data-f="text"]'); if (ta) L.form.text = ta.value;
+    L.form.text = addTalk(L.form.text); L.dirty = true; render();
+    const t2 = document.querySelector('textarea[data-f="text"]'); if (t2) { t2.focus(); t2.setSelectionRange(t2.value.length, t2.value.length); t2.scrollTop = t2.scrollHeight; }
+    return;
   }
   if (a === 'tick') {
     const vv = byKey(v), act = vv && vv.actions[+k]; if (!act) return;

@@ -29,7 +29,7 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
-  joinMulti, splitEtc, blankRecord, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
+  joinMulti, splitEtc, blankRecord, addTalk, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
@@ -316,4 +316,9 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('⑭ 휴지통에 꼭 하나, 방금 적은 그대로일 때만 원래 줄을 지운다', J([A.backupMatches(tv, 'C7', tr[5]), A.backupMatches(tv, 'C7', '{}'), A.backupMatches([A.TRASH_HEAD, tr, tr], 'C7', tr[5]), A.backupMatches([A.TRASH_HEAD], 'C7', tr[5])]), [true, false, false, false]);
 }
 
+// ⑮ 나눈 이야기 나누기 — '나눈 이야기 1 · 2 …' 제목 줄
+sc.eq('⑮ 빈 칸에서 누르면 1번 제목', A.addTalk(''), '나눈 이야기 1\n');
+sc.eq('⑮ 이미 쓴 글이 있으면 그것을 1번으로 묶고 2번을 연다', A.addTalk('학교 이야기\n둘째 줄'), '나눈 이야기 1\n학교 이야기\n둘째 줄\n\n나눈 이야기 2\n');
+sc.eq('⑮ 번호는 가장 큰 번호 다음', A.addTalk('나눈 이야기 1\n가\n\n나눈 이야기 2\n나'), '나눈 이야기 1\n가\n\n나눈 이야기 2\n나\n\n나눈 이야기 3\n');
+sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다', A.validateRecord(Object.assign(A.blankRecord('2026-11-08', null), { name: '가나다', text: A.addTalk('가') })).length, 0);
 sc.done();
