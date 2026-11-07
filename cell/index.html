@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -281,6 +281,16 @@ h3 .lnk{font-weight:500}
 .clamp.cut:not(.open){-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent);mask-image:linear-gradient(180deg,#000 62%,transparent)}
 .morebtn{display:flex;align-items:center;justify-content:center;width:44px;height:24px;margin:-11px auto 0;padding:0;position:relative;z-index:1;color:var(--tx3);opacity:.7;transition:margin-top .28s cubic-bezier(.22,.8,.24,1)}
 .clamp.open+.morebtn,.morebtn.gmore{margin-top:2px}
+.aibtn{display:flex;align-items:center;justify-content:center;width:32px;height:24px;margin:-24px 0 0 auto;position:relative;z-index:1;color:var(--tx3);opacity:.75}
+.aibtn svg{width:15px;height:15px;fill:currentColor}
+.aibtn.has{color:var(--ac);opacity:1}
+.aibtn.on svg{fill:none;stroke:var(--ac);stroke-width:1.6}
+.aibtn.busy svg{animation:aispin 1.1s linear infinite}
+@keyframes aispin{to{transform:rotate(360deg)}}
+.clamp.aisum{display:block;-webkit-line-clamp:unset;-webkit-mask-image:none;mask-image:none;white-space:pre-line}
+.clamp.aisum+.morebtn{visibility:hidden}
+.ailbl{display:inline-block;font-size:11px;color:var(--ac);background:var(--ac-soft);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px}
+.aisteps{margin:6px 0 10px;padding-left:20px;font-size:13.5px;line-height:1.6;color:var(--tx2)}
 .morebtn i{width:7px;height:7px;border-right:1.3px solid currentColor;border-bottom:1.3px solid currentColor;transform:rotate(45deg) translateY(-2px);transition:transform .25s}
 .morebtn i.up{transform:rotate(-135deg) translate(-1px,-1px)}
 .lbl2{font-size:12.5px;color:var(--tx2);margin:14px 2px 6px}
@@ -331,7 +341,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-4';
+const APP_VERSION = 'v. 26-1107-5';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -648,6 +658,38 @@ function cellHealth(rows, reps, st, thr) {
 }
 // 셀리더 심방 알약 색 (HB 11/7): 기록 없음 = 빨강 · 한 달(30일) 넘음 = 주황 · 2주(14일) 넘음 = 노랑 · 2주 이내 = 초록
 function leaderLevel(days) { return days == null ? 'bad' : days >= 30 ? 'warn' : days >= 14 ? 'yel' : 'ok'; }
+// L17 AI 요약 (HB 11/7): 바깥 AI(제미나이 무료 단계)로 보내기 전에 아는 이름을 '셀원 A' 로 바꾼다 — 성 이름 붙여 쓴 것 · 띄어 쓴 것 ·
+// 세 글자 이름의 이름만(뒤에 성도 · 형제 · 님 · 이가 … 가 올 때). 처음 나온 순서로 A, B, C … 돌아온 요약은 표를 보고 이름을 되돌린다.
+const AI_KEY = 'cell_ai_key', AI_STORE = 'cell_ai_sum', AI_MAX = 400;
+const AI_HONOR = '(?=\\s*(?:성도|형제|자매|집사|권사|장로|청년|님|씨|이가|이는|이를|이의|이와|이도|이랑|이네|이에게))';
+function reEsc(t) { return t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function anonText(text, names) {
+  const list = [...new Set((names || []).map(n => String(n || '').normalize('NFC').replace(/\s+/g, '')).filter(n => n.length >= 2 && /^[가-힣]+$/.test(n)))];
+  const pats = [];
+  for (const n of list) { pats.push({ n, re: [...n].map(reEsc).join('\\s?') }); if (n.length === 3) pats.push({ n, re: reEsc(n.slice(1)) + AI_HONOR }); }
+  pats.sort((a, b) => b.re.length - a.re.length);
+  const map = {}, byName = {}; let i = 0;
+  const label = (k) => String.fromCharCode(65 + (k % 26)) + (k >= 26 ? String(Math.floor(k / 26) + 1) : '');
+  if (!pats.length) return { text: String(text || ''), map };
+  const re = new RegExp(pats.map(x => '(' + x.re + ')').join('|'), 'g');
+  const out = String(text || '').normalize('NFC').replace(re, (...m) => {
+    const gi = m.slice(1, pats.length + 1).findIndex(x => x !== undefined); const n = pats[gi].n;
+    if (!byName[n]) { byName[n] = label(i++); map[byName[n]] = n; }
+    return '셀원 ' + byName[n];
+  });
+  return { text: out, map };
+}
+function deanon(t, map) { return String(t || '').replace(/셀원 ([A-Z][0-9]*)/g, (m, k) => (map && map[k]) || m); }
+function textKey(t) { let h = 0x811c9dc5; const x = String(t || '').replace(/\s+/g, ' ').trim(); for (let i = 0; i < x.length; i++) { h ^= x.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36) + x.length.toString(36); }
+function aiPrompt(t) {
+  return '다음은 교회 셀 보고서의 한 대목입니다. 목회자가 한눈에 보도록 핵심만 한국어 존댓말로 2~3줄로 요약해 주세요.\n'
+    + '각 줄은 "· " 로 시작합니다. "셀원 A" 같은 표기는 바꾸지 말고 그대로 쓰세요. 원문에 없는 내용은 지어내지 마세요. 요약만 쓰세요.\n\n' + t;
+}
+function aiTrim(store, max) {   // 오래된 것부터 버려 max 개만 남긴다
+  const ks = Object.keys(store || {}); if (ks.length <= max) return store;
+  const keep = ks.sort((a, b) => (store[b].at || 0) - (store[a].at || 0)).slice(0, max); const o = {}; for (const k of keep) o[k] = store[k]; return o;
+}
+
 // F 셀리더 돌봄 신호: 늦어지는 제출 · 연속 미제출 · 모임 못 함 · 조언 요청
 function leaderSignals(rows, reps) {
   const sig = [];
@@ -1705,7 +1747,8 @@ function applyClamp(root) {
   for (const el of (root || document).querySelectorAll('.clamp:not([data-ck])')) {
     if (!el.offsetParent) continue;
     el.dataset.ck = '1';
-    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>'); }
+    if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); const k = textKey(el.textContent); el.dataset.aik = k;
+      el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>' + aiBtn(k)); }
   }
 }
 function toggleClamp(btn) {
@@ -1719,7 +1762,87 @@ function toggleClamp(btn) {
 }
 let _ckq = 0;
 new MutationObserver(() => { if (_ckq) return; _ckq = requestAnimationFrame(() => { _ckq = 0; applyClamp(document); }); }).observe(document.documentElement, { childList: true, subtree: true });
-addEventListener('resize', () => { for (const el of document.querySelectorAll('.clamp[data-ck]:not(.open)')) { el.removeAttribute('data-ck'); el.classList.remove('cut'); const b = el.nextElementSibling; if (b && b.dataset.act === 'more') b.remove(); } applyClamp(document); });
+addEventListener('resize', () => { for (const el of document.querySelectorAll('.clamp[data-ck]:not(.open)')) { el.removeAttribute('data-ck'); el.classList.remove('cut'); if (el.classList.contains('aisum')) continue; const b = el.nextElementSibling; if (b && b.dataset.act === 'more') { const a = b.nextElementSibling; if (a && a.dataset.act === 'ai') a.remove(); b.remove(); } } applyClamp(document); });
+
+/* ---------- L17 AI 요약 (HB 11/7) ----------
+   접힌 긴 글의 오른쪽 끝 별(✦)을 누르면 제미나이(무료 단계)가 2~3줄로 요약한다. 보내기 전에 아는 이름은 '셀원 A' 로 바꾼다(anonText).
+   열쇠는 이 기기(localStorage)에만. 한 번 만든 요약은 이 기기에 저장해(HB 결정) 다음부터 별로 원문 ↔ 요약을 바로 오간다.
+   ⚠️ 셀 한눈에의 '성도 내용은 화면 메모리에만' 규칙의 예외는 이 요약 저장 하나다 — 파이어베이스 · 저장소로 올리지 말 것. */
+const SPARK = '<svg viewBox="0 0 24 24"><path d="M12 2c.7 5.3 4.7 9.3 10 10-5.3.7-9.3 4.7-10 10-.7-5.3-4.7-9.3-10-10 5.3-.7 9.3-4.7 10-10z"/></svg>';
+const AI = { orig: new WeakMap(), store: null };
+function aiStore() { if (!AI.store) AI.store = lsGet(AI_STORE, {}) || {}; return AI.store; }
+function aiGet(k) { return k && aiStore()[k] ? aiStore()[k].s : ''; }
+function aiPut(k, sum) { const st = aiStore(); st[k] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store); }
+function aiBtn(k) { return `<button class="aibtn${aiGet(k) ? ' has' : ''}" data-act="ai" aria-label="AI 요약" title="AI 요약">${SPARK}</button>`; }
+function aiNames() {
+  const s = new Set(); for (const m of S.members.values()) s.add(m.name);
+  if (S.people) for (const p of S.people.values()) s.add(p.name);
+  for (const l of leaderMembers()) s.add(l.name);
+  return [...s].filter(Boolean);
+}
+function aiShow(el, btn, sum) {
+  if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
+  const h0 = el.clientHeight;
+  el.innerHTML = `<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); btn.classList.add('has', 'on');
+  if (!quiet()) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+function aiHide(el, btn) {
+  const h0 = el.clientHeight;
+  if (AI.orig.has(el)) el.innerHTML = AI.orig.get(el);
+  el.classList.remove('aisum'); btn.classList.remove('on');
+  if (!quiet()) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+async function aiCall(text) {
+  const key = lsGet(AI_KEY, '');
+  const { text: anon, map } = anonText(text, aiNames());
+  if (DEMO) return deanon('· (미리보기) ' + anon.slice(0, 50) + '…', map);
+  let last = null;
+  for (const model of ['gemini-flash-latest', 'gemini-2.5-flash']) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: aiPrompt(anon) }] }], generationConfig: { temperature: 0.2 } }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 404) { last = j; continue; }
+    if (!r.ok) {
+      const msg = (j.error && j.error.message) || '';
+      if (r.status === 429) throw new Error('무료 사용량을 잠시 넘었습니다.\n1~2분 뒤 다시 눌러 주세요.');
+      if (r.status === 400 && /API key/i.test(msg) || r.status === 401 || r.status === 403) throw new Error('AI 열쇠가 맞지 않습니다.\n메뉴(⋯) › AI 요약에서 다시 넣어 주세요.');
+      throw new Error('AI 요약을 못 했습니다\n' + (msg || ('구글 ' + r.status)).slice(0, 80));
+    }
+    const parts = ((((j.candidates || [])[0] || {}).content || {}).parts) || [];
+    const out = parts.filter(p => !p.thought).map(p => p.text || '').join('').trim();
+    if (!out) throw new Error('AI 가 빈 요약을 돌려주었습니다.\n다시 눌러 주세요.');
+    return deanon(out, map);
+  }
+  throw new Error('AI 모델을 찾지 못했습니다\n' + ((last && last.error && last.error.message) || '').slice(0, 80));
+}
+async function aiClick(btn) {
+  let el = btn.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling;
+  if (!el || btn.classList.contains('busy')) return;
+  if (el.classList.contains('aisum')) return aiHide(el, btn);
+  const k = el.dataset.aik || textKey(el.textContent);
+  const have = aiGet(k); if (have) return aiShow(el, btn, have);
+  if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
+  btn.classList.add('busy');
+  try { const sum = await aiCall(el.textContent); aiPut(k, sum); if (el.isConnected) aiShow(el, btn, sum); }
+  catch (e) { toast(e.message || String(e)); toast.at = Date.now(); }
+  finally { btn.classList.remove('busy'); }
+}
+function openAiCfg() { drawAiCfg(); const w = $('#thr'); w.hidden = false; if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); }
+function drawAiCfg() {
+  const key = lsGet(AI_KEY, ''), n = Object.keys(aiStore()).length;
+  $('#thr').innerHTML = `<div class="thrcard" role="dialog" aria-label="AI 요약">
+    <div class="thrhead"><span class="modal-head-gap"></span><b>AI 요약</b><button class="modal-x" data-act="thr-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="small" style="margin:6px 0 2px">긴 글 오른쪽 끝의 별(✦)을 누르면 구글 제미나이가 2~3줄로 요약합니다. 다시 누르면 원문으로 돌아옵니다.</p>
+    <div class="thrgrp">제미나이 열쇠 받기 (무료)</div>
+    <ol class="aisteps"><li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--ac)">aistudio.google.com/apikey</a> 를 엽니다</li>
+      <li>구글 계정으로 들어가 <b>Create API key</b>(API 키 만들기)를 누릅니다</li>
+      <li>나온 긴 글자(AIza 로 시작)를 <b>복사</b>해 아래 칸에 붙여 넣고 <b>저장</b></li></ol>
+    <input type="password" id="aikey" placeholder="AIza…" autocomplete="off" value="${esc(key)}">
+    <div class="row" style="gap:8px;margin-top:8px"><button class="btn pri" style="margin:0" data-act="ai-save">저장</button>${key ? '<button class="btn" style="margin:0" data-act="ai-del">열쇠 지우기</button>' : ''}</div>
+    <p class="tiny muted" style="margin:10px 0 0">· 열쇠와 요약은 <b>이 기기에만</b> 저장됩니다.<br>· 요약할 때 글이 구글로 보내집니다. 아는 이름은 '셀원 A' 처럼 바꿔 보내고, 돌아온 요약에서 다시 이름으로 바꿉니다.<br>· 무료 단계는 구글이 보낸 글을 서비스 개선에 쓸 수 있습니다. 1분에 여러 번 누르면 잠시 쉬어 갑니다.</p>
+    ${n ? `<button class="thrreset" data-act="ai-clear">저장된 요약 ${n}개 지우기</button>` : ''}</div>`;
+}
 
 /* ---------- G 이번 주 한 장 (이번 주 탭 맨 위) ---------- */
 function gCard() {
@@ -2250,6 +2373,12 @@ document.addEventListener('click', async (e) => {
     case 'g-tg': return flipRender(() => { PREF.gOpen = !PREF.gOpen; savePref(); rerender(); });
     case 'g-more': return flipRender(() => { S.gMore = !S.gMore; rerender(); });
     case 'more': return toggleClamp(b);
+    case 'ai': e.stopPropagation(); return aiClick(b);
+    case 'ai-cfg': menu && menu.remove(); return openAiCfg();
+    case 'ai-save': { const v = ($('#aikey') || {}).value || ''; const k = v.trim(); if (k) lsSet(AI_KEY, k); else { try { localStorage.removeItem(AI_KEY); } catch (_) { } }
+      closeThr(); toast(k ? 'AI 열쇠를 저장했습니다\n긴 글 끝의 별(✦)을 눌러 보세요' : 'AI 열쇠를 지웠습니다'); toast.at = Date.now(); return; }
+    case 'ai-del': try { localStorage.removeItem(AI_KEY); } catch (_) { } drawAiCfg(); toast('AI 열쇠를 지웠습니다'); toast.at = Date.now(); return;
+    case 'ai-clear': AI.store = {}; lsSet(AI_STORE, {}); for (const x of document.querySelectorAll('.aibtn.has:not(.on)')) x.classList.remove('has'); drawAiCfg(); toast('저장된 요약을 지웠습니다'); toast.at = Date.now(); return;
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
     case 'wsort': return flipRender(() => { if (PREF.wsort === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });
@@ -2264,6 +2393,7 @@ document.addEventListener('click', async (e) => {
         ${S.mineIds.length ? `<button data-act="scope">${PREF.scope === 'mine' ? '볼 수 있는 셀 전체 보기' : '내 담당 셀만 보기'}</button>` : ''}
         <button data-act="book">명단 · 전화번호</button>
         <button data-act="thr">신호 기준</button>
+        <button data-act="ai-cfg">AI 요약</button>
         <button data-act="reload">새로 불러오기</button>
         <button data-act="logout">${DEMO ? '미리보기 끝내기' : '로그아웃'}</button>`;
       b.parentElement.appendChild(m); return;
