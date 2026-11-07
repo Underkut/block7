@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -341,7 +341,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-5';
+const APP_VERSION = 'v. 26-1107-6';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -684,6 +684,15 @@ function textKey(t) { let h = 0x811c9dc5; const x = String(t || '').replace(/\s+
 function aiPrompt(t) {
   return '다음은 교회 셀 보고서의 한 대목입니다. 목회자가 한눈에 보도록 핵심만 한국어 존댓말로 2~3줄로 요약해 주세요.\n'
     + '각 줄은 "· " 로 시작합니다. "셀원 A" 같은 표기는 바꾸지 말고 그대로 쓰세요. 원문에 없는 내용은 지어내지 마세요. 요약만 쓰세요.\n\n' + t;
+}
+// 계정 맞추기 (HB 11/7): 열쇠 · 요약은 cellbook/{uid} 의 ai 칸에도 둔다 — 계정이 기준. 이 기기에 먼저 있던 것은 처음 한 번만 올린다
+// (한 번 맞춘 뒤 계정에 없는 것은 다른 기기에서 지운 것이니 따라 지운다 — 다시 올리면 '지우기' 가 되살아난다).
+function aiSync(local, cloud, migrated, localKey) {
+  const c = (cloud && cloud.sum) || {}, ck = (cloud && cloud.key) || '';
+  if (migrated) return { store: Object.assign({}, c), key: ck, push: null };
+  const sum = {}; for (const k of Object.keys(local || {})) if (!c[k]) sum[k] = local[k];
+  const push = {}; if (Object.keys(sum).length) push.sum = sum; if (!ck && localKey) push.key = localKey;
+  return { store: Object.assign({}, c, sum), key: ck || localKey || '', push: Object.keys(push).length ? push : null };
 }
 function aiTrim(store, max) {   // 오래된 것부터 버려 max 개만 남긴다
   const ks = Object.keys(store || {}); if (ks.length <= max) return store;
@@ -1766,13 +1775,28 @@ addEventListener('resize', () => { for (const el of document.querySelectorAll('.
 
 /* ---------- L17 AI 요약 (HB 11/7) ----------
    접힌 긴 글의 오른쪽 끝 별(✦)을 누르면 제미나이(무료 단계)가 2~3줄로 요약한다. 보내기 전에 아는 이름은 '셀원 A' 로 바꾼다(anonText).
-   열쇠는 이 기기(localStorage)에만. 한 번 만든 요약은 이 기기에 저장해(HB 결정) 다음부터 별로 원문 ↔ 요약을 바로 오간다.
-   ⚠️ 셀 한눈에의 '성도 내용은 화면 메모리에만' 규칙의 예외는 이 요약 저장 하나다 — 파이어베이스 · 저장소로 올리지 말 것. */
+   열쇠와 한 번 만든 요약은 HB 계정 cellbook/{uid} 의 ai 칸에 두고(HB 결정 11/7 — 기기끼리 맞춤) 이 기기에도 사본을 둔다.
+   ⚠️ 셀 한눈에의 '성도 내용은 화면 메모리에만' 규칙의 예외다 — 저장소 · users/{uid} 에는 두지 말 것. */
 const SPARK = '<svg viewBox="0 0 24 24"><path d="M12 2c.7 5.3 4.7 9.3 10 10-5.3.7-9.3 4.7-10 10-.7-5.3-4.7-9.3-10-10 5.3-.7 9.3-4.7 10-10z"/></svg>';
 const AI = { orig: new WeakMap(), store: null };
 function aiStore() { if (!AI.store) AI.store = lsGet(AI_STORE, {}) || {}; return AI.store; }
 function aiGet(k) { return k && aiStore()[k] ? aiStore()[k].s : ''; }
-function aiPut(k, sum) { const st = aiStore(); st[k] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store); }
+function aiPut(k, sum) {
+  const st = aiStore(); st[k] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store);
+  const patch = { [k]: st[k] }; for (const x of Object.keys(st)) if (!AI.store[x]) patch[x] = firebase.firestore.FieldValue.delete();   // 상한 넘친 옛 것은 계정에서도
+  aiCloud({ sum: patch });
+}
+function aiCloud(patch) { if (DEMO || !FB.user || !FB.db) return; FB.db.collection('cellbook').doc(FB.user.uid).set({ ai: patch, at: Date.now() }, { merge: true }).catch(() => {}); }
+function aiFromCloud(ai) {   // cellbook 문서가 바뀔 때마다 (다른 기기에서 만든 요약 · 바꾼 열쇠가 여기로 온다)
+  if (!FB.user) return;
+  const mig = lsGet('cell_ai_mig', '') === FB.user.uid;
+  const r = aiSync(aiStore(), ai || null, mig, lsGet(AI_KEY, ''));
+  AI.store = r.store; lsSet(AI_STORE, AI.store);
+  if (r.key) lsSet(AI_KEY, r.key); else { try { localStorage.removeItem(AI_KEY); } catch (_) { } }
+  if (r.push) aiCloud(r.push);
+  lsSet('cell_ai_mig', FB.user.uid);
+  for (const b of document.querySelectorAll('.aibtn')) { let el = b.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling; if (el) b.classList.toggle('has', !!aiGet(el.dataset.aik)); }
+}
 function aiBtn(k) { return `<button class="aibtn${aiGet(k) ? ' has' : ''}" data-act="ai" aria-label="AI 요약" title="AI 요약">${SPARK}</button>`; }
 function aiNames() {
   const s = new Set(); for (const m of S.members.values()) s.add(m.name);
@@ -1837,10 +1861,10 @@ function drawAiCfg() {
     <div class="thrgrp">제미나이 열쇠 받기 (무료)</div>
     <ol class="aisteps"><li><a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--ac)">aistudio.google.com/apikey</a> 를 엽니다</li>
       <li>구글 계정으로 들어가 <b>Create API key</b>(API 키 만들기)를 누릅니다</li>
-      <li>나온 긴 글자(AIza 로 시작)를 <b>복사</b>해 아래 칸에 붙여 넣고 <b>저장</b></li></ol>
-    <input type="password" id="aikey" placeholder="AIza…" autocomplete="off" value="${esc(key)}">
+      <li>나온 긴 글자(AIza… 또는 AQ.… 로 시작 — 둘 다 됩니다)를 <b>복사</b>해 아래 칸에 붙여 넣고 <b>저장</b></li></ol>
+    <input type="password" id="aikey" placeholder="AIza… 또는 AQ.…" autocomplete="off" value="${esc(key)}">
     <div class="row" style="gap:8px;margin-top:8px"><button class="btn pri" style="margin:0" data-act="ai-save">저장</button>${key ? '<button class="btn" style="margin:0" data-act="ai-del">열쇠 지우기</button>' : ''}</div>
-    <p class="tiny muted" style="margin:10px 0 0">· 열쇠와 요약은 <b>이 기기에만</b> 저장됩니다.<br>· 요약할 때 글이 구글로 보내집니다. 아는 이름은 '셀원 A' 처럼 바꿔 보내고, 돌아온 요약에서 다시 이름으로 바꿉니다.<br>· 무료 단계는 구글이 보낸 글을 서비스 개선에 쓸 수 있습니다. 1분에 여러 번 누르면 잠시 쉬어 갑니다.</p>
+    <p class="tiny muted" style="margin:10px 0 0">${FB.user ? '· 열쇠와 요약은 <b>계정에 저장</b>되어 같은 계정으로 들어온 다른 기기에도 함께 보입니다.' : '· 지금은 열쇠와 요약이 <b>이 기기에만</b> 있습니다. 메뉴(⋯) › 명단 · 전화번호에서 로그인하면 다른 기기와 맞춰집니다.'}<br>· 요약할 때 글이 구글로 보내집니다. 아는 이름은 '셀원 A' 처럼 바꿔 보내고, 돌아온 요약에서 다시 이름으로 바꿉니다.<br>· 무료 단계는 구글이 보낸 글을 서비스 개선에 쓸 수 있습니다. 1분에 여러 번 누르면 잠시 쉬어 갑니다.</p>
     ${n ? `<button class="thrreset" data-act="ai-clear">저장된 요약 ${n}개 지우기</button>` : ''}</div>`;
 }
 
@@ -1917,7 +1941,7 @@ async function fbInit() {
     FB.auth.onAuthStateChanged(u => {
       FB.user = u; FB.ready = true;
       if (FB.unsub) { FB.unsub(); FB.unsub = null; }
-      if (u) { setTimeout(() => careLoad(), 300); lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
+      if (u) { setTimeout(() => careLoad(), 300); lsSet('cell_fb', 1); FB.unsub = FB.db.collection('cellbook').doc(u.uid).onSnapshot(d => { try { aiFromCloud(d.exists ? d.data().ai : null); } catch (_) { } BOOK.phones = (d.exists && d.data().phones) || {}; BOOK.loaded = true; BOOK.err = ''; phoneUi(); },
         e => { BOOK.err = e && e.code === 'permission-denied' ? '서버 권한이 아직 없습니다.\n보안 규칙을 붙여 주세요 (docs/cell/firestore-rules.md).' : '번호를 불러오지 못했습니다. ' + (e && e.message || ''); phoneUi(); }); }
       else { BOOK.phones = {}; BOOK.loaded = false; }
       phoneUi();
@@ -2376,9 +2400,10 @@ document.addEventListener('click', async (e) => {
     case 'ai': e.stopPropagation(); return aiClick(b);
     case 'ai-cfg': menu && menu.remove(); return openAiCfg();
     case 'ai-save': { const v = ($('#aikey') || {}).value || ''; const k = v.trim(); if (k) lsSet(AI_KEY, k); else { try { localStorage.removeItem(AI_KEY); } catch (_) { } }
+      if (!DEMO && FB.user) aiCloud({ key: k || firebase.firestore.FieldValue.delete() });
       closeThr(); toast(k ? 'AI 열쇠를 저장했습니다\n긴 글 끝의 별(✦)을 눌러 보세요' : 'AI 열쇠를 지웠습니다'); toast.at = Date.now(); return; }
-    case 'ai-del': try { localStorage.removeItem(AI_KEY); } catch (_) { } drawAiCfg(); toast('AI 열쇠를 지웠습니다'); toast.at = Date.now(); return;
-    case 'ai-clear': AI.store = {}; lsSet(AI_STORE, {}); for (const x of document.querySelectorAll('.aibtn.has:not(.on)')) x.classList.remove('has'); drawAiCfg(); toast('저장된 요약을 지웠습니다'); toast.at = Date.now(); return;
+    case 'ai-del': try { localStorage.removeItem(AI_KEY); } catch (_) { } if (!DEMO && FB.user) aiCloud({ key: firebase.firestore.FieldValue.delete() }); drawAiCfg(); toast('AI 열쇠를 지웠습니다'); toast.at = Date.now(); return;
+    case 'ai-clear': AI.store = {}; lsSet(AI_STORE, {}); if (!DEMO && FB.user) aiCloud({ sum: firebase.firestore.FieldValue.delete() }); for (const x of document.querySelectorAll('.aibtn.has:not(.on)')) x.classList.remove('has'); drawAiCfg(); toast('저장된 요약을 지웠습니다'); toast.at = Date.now(); return;
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
     case 'wsort': return flipRender(() => { if (PREF.wsort === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });

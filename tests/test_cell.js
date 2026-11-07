@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, AI_KEY, AI_STORE, AI_MAX };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, AI_KEY, AI_STORE, AI_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -365,7 +365,14 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const st = {}; for (let i = 0; i < 5; i++) st['k' + i] = { s: 'x', at: i };
   sc.eq('⑱ 저장한 요약은 상한까지만(오래된 것부터 버림)', Object.keys(A.aiTrim(st, 3)).sort(), ['k2', 'k3', 'k4']);
   sc.eq('⑱ 저장 이름이 다른 앱과 겹치지 않는다', [A.AI_KEY, A.AI_STORE].every(k => /^cell_/.test(k)), true);
-  sc.eq('⑱ 열쇠 · 요약은 이 기기(localStorage)에만 — 파이어베이스로 올리지 않는다', /cellbook[^\n]*(AI_STORE|AI_KEY|aiStore)/.test(HTML) || /collection\([^)]*\)[^\n]*(AI_STORE|aiStore)/.test(HTML), false);
+  // 계정 맞추기 (HB 11/7)
+  const loc = { a: { s: '이 기기 것', at: 1 }, b: { s: '둘 다', at: 2 } }, cl = { key: 'K1', sum: { b: { s: '둘 다', at: 2 }, c: { s: '다른 기기 것', at: 3 } } };
+  const first = A.aiSync(loc, cl, false, 'K0');
+  sc.eq('⑱ 처음 맞출 때: 합치고, 이 기기에만 있던 요약만 올린다 · 열쇠는 계정 것', J([Object.keys(first.store).sort(), Object.keys(first.push.sum), first.push.key, first.key]), [['a', 'b', 'c'], ['a'], undefined, 'K1']);
+  sc.eq('⑱ 계정에 열쇠가 없으면 이 기기 열쇠를 올린다', A.aiSync({}, null, false, 'K0').push, { key: 'K0' });
+  const later = A.aiSync(loc, { sum: { c: { s: 'x', at: 3 } } }, true, 'K0');
+  sc.eq('⑱ 한 번 맞춘 뒤엔 계정이 기준 (다른 기기에서 지운 요약 · 열쇠는 따라 지운다, 되살려 올리지 않음)', J([Object.keys(later.store), later.key, later.push]), [['c'], '', null]);
+  sc.eq('⑱ 계정 칸은 cellbook 의 ai 하나 — users/{uid} 에는 두지 않는다', /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.set\(\{ ai: patch/.test(HTML) && !/collection\('users'\)[^\n]*\bai\b/.test(HTML), true);
   sc.eq('⑱ 접힌 긴 글마다 별 단추(더보기 옆)', /'<button class="morebtn" data-act="more" aria-label="더 보기"><i><\/i><\/button>' \+ aiBtn\(k\)/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon\) \}\]/.test(HTML), true);
 }
