@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -347,6 +347,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const lead = [{ id: 'L1:0', name: '송재혁' }, { id: 'L2:0', name: '안성일' }];
   const LL = A.linkVisits(lead, [{ name: '안성일 셀리더', ymd: '2026-11-07' }, { name: '송재혁', ymd: '2026-10-01' }], '2026-11-07');
   sc.eq('⑰ 셀리더(이름 글자만 있음)도 같은 규칙으로 맞춘다', J([LL['L1:0'].days, LL['L2:0'].days]), [37, 0]);
+  sc.eq('⑰ 셀리더 알약 색: 없음 빨강 · 30일 넘음 주황 · 14일 넘음 노랑 · 이내 초록', J([null, 30, 45, 14, 29, 13, 0].map(d => A.leaderLevel(d))), ['bad', 'warn', 'warn', 'yel', 'yel', 'ok', 'ok']);
   sc.eq('⑰ 셀 카드의 셀리더 줄에 심방 알약을 붙인다', /careLeaderChip\(c\)\}\$\{sig\.map/.test(HTML), true);
 }
 
