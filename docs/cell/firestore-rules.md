@@ -30,5 +30,6 @@ BLOCK7 · Sweeter · 기도노트 · 용돈 친구들의 규칙은 건드리지 
 ## 클라우드 모양 (참고)
 
 - `cellbook/{uid}` — `phones`: { 셀원 id(셀 케어 cell_members.id) → { n: 이름, c: 셀 이름, p: 번호, at } } · `at` · `v`(앱 버전)
+- `ai`(HB 결정 11/7): { key: 제미나이 열쇠, sum: { 글 열쇠(textKey) → { s: 요약, at } } } — 400개 상한 · 같은 규칙으로 덮여 새 규칙이 필요 없다
 - 연락처 파일(.vcf) 내용은 어디에도 저장하지 않는다. 고른 번호만 남긴다.
 - `users/{uid}`(BLOCK7 · Sweeter 상태 문서)는 건드리지 않는다.
