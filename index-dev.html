@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-3  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-4  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7019,7 +7019,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-3";
+const APP_VERSION = "v. 26-1107-4";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -17729,7 +17729,9 @@ function _brBind(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(_brEl('bibleRd'))_brBind();});
 else if(_brEl('bibleRd'))_brBind();
 // 앱이 켜지고 조금 뒤 — 성경 전체를 뒤에서 받아 둔다 (B-4, HB 2026-10-06)
-setTimeout(()=>{try{bibleStartPreload();}catch(e){}},6000);
+// ⚠️ 다른 앱(기도노트) 안의 겹 화면(_EMBED)에서는 받지 않는다 (1107-SW 2-c) — 한 장씩 기도를 시작할 때마다 숨은 겹이 켜져
+//    66권을 받으러 갔다. 겹 화면이 읽는 책은 그때그때 받아 같은 보관함에 둔다(_brGet), 66권 미리 받기는 Sweeter 를 직접 켰을 때 한다.
+setTimeout(()=>{try{if(_embedOn())return;bibleStartPreload();}catch(e){}},6000);
 
 function showMemorizationPopup(dateKey,secId){
   let entries=[];
@@ -51714,10 +51716,54 @@ function _upSafeNow(){
   if(window._fbHasPending&&window._fbHasPending())return false;
   const ae=document.activeElement;
   if(ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.isContentEditable))return false;
+  if(_upBusyScreen())return false;
   return true;
 }
+// 지금 그 화면 안에 있는가 — There · 성경 · 말씀 전체화면 · 타일뷰 (1107-SW 2-a, v. 26-1107-4)
+//   There 를 켠 채 새 버전이 오면 토스트 + 새로 고침으로 기도가 끊겼다(시간은 pagehide 로 저장되지만).
+//   이 화면들 안에서는 미루고, 닫혀 홈으로 돌아오면 다시 본다(_upWaitHome).
+//   ⚠️ 이 조각은 시험(test_update)이 따로 떠서 돌린다 — 다른 구역의 이름은 typeof 로 물어본다.
+function _upBusyScreen(){
+  try{
+    if(typeof _tf!=='undefined'&&_tf&&_tf.run)return true;
+    if(typeof _brOpen!=='undefined'&&_brOpen)return true;
+    if(typeof _verseFullIsOpen==='function'&&_verseFullIsOpen())return true;
+    if(typeof _vgIsOpen==='function'&&_vgIsOpen())return true;
+  }catch(e){}
+  return false;
+}
+// 그 화면이 닫혀 홈으로 돌아오면 — 한숨(3초 남짓) 돌린 뒤 다시 시도한다. 다시 열리면 처음부터 센다.
+let _upWaitT=0;
+function _upWaitHome(want){
+  if(_upWaitT)return;
+  let calm=0;
+  _upWaitT=setInterval(()=>{
+    if(_upReloading){clearInterval(_upWaitT);_upWaitT=0;return;}
+    if(!_upSafeNow()){calm=0;return;}
+    if(++calm<2)return;
+    clearInterval(_upWaitT);_upWaitT=0;
+    _upApply(want);
+  },1500);
+}
+// Sweeter 는 **오래 켜 둔 창만** 새로 고친다 (1107-SW 2-b ㉡, v. 26-1107-4 · HB 2026-11-07 고름).
+//   버전표는 2주에 110번 바뀌었고 대부분 BLOCK7 할일 변경인데, Sweeter 도 매번 화면이 새로 불러와졌다.
+//   ⚠️ 'Sweeter 파일이 달라졌을 때만' 은 못 가린다 — Sweeter 파일이 BLOCK7 코드를 통째로 품어 매번 달라진다.
+//   그래서: 켠 지 6시간이 안 된 창은 묻지도 않고, 넘은 창도 **다시 앞으로 불러올 때만**(보던 중에 갑자기 말고) 본다.
+//   켤 때는 늘 새 판이다(sweeter.my 의 index.html 은 no-cache).
+//   ⚠️ 옛 창이 옛 모양으로 쓰는 것(2026-10-25 맥미니)은 _fbMaybeSelfUpdate 가 따로 막는다 —
+//      다른 기기가 새 판으로 클라우드에 쓰면 이 창도 곧바로 새로 고친다. 그것은 이 규칙과 상관없이 그대로 둔다.
+//   버전 배지를 직접 누르는 길(_verTap)도 그대로 — 기다리지 않고 받고 싶을 때.
+const _UP_SW_AGE_MS=6*60*60*1000;
+const _upBornAt=Date.now();
+function _upHold(why){
+  // 다른 앱(기도노트) 안의 겹 화면은 스스로 새로 고치지 않는다 (2-c) — 부르는 앱이 다시 켜질 때 새 판으로 다시 만든다.
+  try{if(typeof _embedOn==='function'&&_embedOn())return true;}catch(e){}
+  if(typeof APP_PRODUCT==='undefined'||APP_PRODUCT!=='sweeter')return false;
+  return why!=='front'||(Date.now()-_upBornAt)<_UP_SW_AGE_MS;
+}
 function _upApply(want){
-  if(_upReloading||!_upSafeNow())return;
+  if(_upReloading)return;
+  if(!_upSafeNow()){if(_upBusyScreen())_upWaitHome(want);return;}
   const tried=_upTries(want);
   if(tried>=2){
     // 두 번 해 봤는데도 옛 것이 온다 — 더 하면 무한 새로고침이다. 한 번만 알린다.
@@ -51733,8 +51779,8 @@ function _upApply(want){
     location.replace(location.pathname+'?v='+encodeURIComponent(want));}catch(e){}},1200);return;}
   _upReloadFresh();
 }
-async function _upCheck(){
-  if(_upBusy||_upReloading)return;
+async function _upCheck(why){
+  if(_upBusy||_upReloading||_upHold(why))return;
   const now=Date.now();
   if(_upLastCheck&&(now-_upLastCheck)<_UP_MIN_MS)return;
   _upLastCheck=now;_upBusy=true;
@@ -51752,7 +51798,7 @@ async function _upCheck(){
 // 보는 때 — 부팅하고 조금 뒤 한 번, 그리고 앱을 다시 앞으로 불러올 때마다.
 // ⚠️ 부팅 직후가 아니라 4초 뒤다. 첫 그림·로그인·클라우드 읽기와 다투지 않게.
 setTimeout(()=>{_upCheck();},4000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck('front');});
 // 열어만 두고 안 만지는 창도 11분마다 묻는다 (v26-1025-8, HB). 2026-10-25 맥미니의 옛 창이 화면 전환 없이 켜져만 있어
 // 새 버전을 못 받았고, 시리 쪽지를 꺼내 간 뒤 압축 문서를 못 읽어 할일이 그 창에 갇혔다. 새로 고침은 _upApply 가
 // 안전할 때만 한다(못 올린 편집 · 글자 치는 중이면 다음 기회). 간격은 _UP_MIN_MS(10분)보다 조금 길게 — 타이머가 앞당겨지면 건너뛰므로.
