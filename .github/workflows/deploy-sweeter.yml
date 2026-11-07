@@ -25,6 +25,7 @@ on:
       - 'pray/**'           # 기도노트 (sweeter.my/pray/) — 독립 앱이 같은 사이트에 얹혀 산다
       - 'care/**'           # 심방 노트 (sweeter.my/care/) — 같은 사정
       - 'cell/**'           # 셀 한눈에 (sweeter.my/cell/) — 같은 사정
+      - 'report/**'         # 사역 한눈에 (sweeter.my/report/) — 같은 사정
       - 'firebase-messaging-sw.js'
       - 'tools/make-sweeter-prod.sh'
       - 'firebase.json'
@@ -68,6 +69,7 @@ jobs:
           test -f build-sweeter/pray/index.html || { echo "기도노트(pray/)가 빠졌습니다 — 이대로 올리면 sweeter.my/pray/ 가 사라집니다"; exit 1; }
           test -f build-sweeter/care/index.html || { echo "심방 노트(care/)가 빠졌습니다 — 이대로 올리면 sweeter.my/care/ 가 사라집니다"; exit 1; }
           test -f build-sweeter/cell/index.html || { echo "셀 한눈에(cell/)가 빠졌습니다 — 이대로 올리면 sweeter.my/cell/ 가 사라집니다"; exit 1; }
+          test -f build-sweeter/report/index.html || { echo "사역 한눈에(report/)가 빠졌습니다 — 이대로 올리면 sweeter.my/report/ 가 사라집니다"; exit 1; }
           echo "확인 완료"
 
       - name: 파이어베이스 호스팅으로 올리기

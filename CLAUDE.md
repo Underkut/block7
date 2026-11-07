@@ -123,6 +123,18 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   시트 읽는 규칙은 `/care/` 의 `care-core` 를 그대로 불러 쓴다 — `buildModel` · `findResponsesTab` 이름을 바꾸면 `test_cell` ⑯ 이 걸린다.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r cell`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
+### 사역 한눈에(`report/`)도 따로 돈다 — 주소는 `sweeter.my/report/`
+
+셀 한눈에와 같은 사정이다: `report/index.html` 은 **독립 앱**이고 제 `APP_VERSION` 을 갖는다.
+교회 '교회 보고서'(부서 보고서) 쪽을 HB 눈으로 정리한다. 계획과 까닭은 `docs/ROADMAP.md` '1106-W'.
+판단은 `<script id="report-core">` 에 모았고 `tests/test_report.js` 가 시험한다.
+
+- **셀 한눈에 ↔ 사역 한눈에는 좌상단 로고로 오간다 — 링크가 아니라 '앱 안 겹 화면'(iframe)이다.**
+  홈 화면 앱에서 다른 주소를 열면 아이폰이 브라우저 창으로 띄우기 때문이다. 겹 안에서 로고 → `b7-layer-close` 로 걷힌다.
+- 로그인은 셀 한눈에와 **같은 칸**(파이어베이스 앱 이름 `cell`). 시간표(부서 · 요일 · 시각)는 `cellbook/{uid}` 의 `report` 칸에 둔다 — 새 보안 규칙이 필요 없다.
+- ⚠️ 교회 보고서 앱의 자료 구조를 **바깥에서 들여다보지 말 것**(2026-11-06 안전장치가 막음). 구조는 만든 분께 받는다(W3).
+- sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r report`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
+
 규칙 문서는 **`CLAUDE.md` 하나가 원본**이다. `AGENTS.md`(Codex 용)는
 `./tools/make-agents.sh` 가 만든다 — **손으로 고치지 말 것.**
 규칙을 바꿨으면 그 스크립트를 돌려 둘을 함께 커밋한다 (`check.sh` 가 검사한다).
