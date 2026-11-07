@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-10  [production]  -->
+<!-- BLOCK7  v. 26-1108-1  [production]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -7042,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-10";
+const APP_VERSION = "v. 26-1108-1";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -52148,7 +52148,7 @@ function _fbBaseObj(){
   if(!_fbBaseJson)return null;
   try{return JSON.parse(_fbBaseJson);}catch(e){return null;}
 }
-// ── 기준점 압축 (v. 26-1107-10, 1107-SW 6 — HB 아이패드 BLOCK7 64% · Sweeter 59%) ──
+// ── 기준점 압축 (v. 26-1108-1, 1107-SW 6 — HB 아이패드 BLOCK7 64% · Sweeter 59%) ──
 // 기준점은 상태 한 벌 통째라 ST 만큼 크다(그때 76만 자씩, 칸의 3분의 1). 병합할 때만 읽으니 줄여 둔다.
 // ST(켤 때 첫 그림이 읽는다)는 그대로 둔다 — 저장마다 압축 비용이 들어서 다음 일이다.
 // 모양: 'z1:<바이트 수>:<글자 수>:' + zlib(UTF-8 JSON) 을 한 글자에 15비트씩(U+0020~U+801F —

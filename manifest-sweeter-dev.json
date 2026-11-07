@@ -15,12 +15,12 @@
       "type": "image/png"
     },
     {
-      "src": "icon-sweeter.png",
+      "src": "icon-sweeter-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "icon-sweeter.png",
+      "src": "icon-sweeter-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

@@ -266,12 +266,12 @@ console.log('\n시나리오 8 — 아이콘 파일');
   sc.eq('개발본 파비콘이 Sweeter 것', swdev.includes('<link rel="icon" href="icon-sweeter.png">'), true);
   sc.eq('개발본 홈화면 아이콘도', swdev.includes('<link rel="apple-touch-icon" href="icon-sweeter.png">'), true);
   const mdev=JSON.parse(fs.readFileSync(R('manifest-sweeter-dev.json'),'utf8'));
-  sc.eq('개발본 manifest 도', [...new Set(mdev.icons.map(i=>i.src))], ['icon-sweeter.png']);
+  sc.eq('개발본 manifest 도', [...new Set(mdev.icons.map(i=>i.src))].sort(), ['icon-sweeter-512.png','icon-sweeter.png']);
 
   // ⚠️ BLOCK7 운영본의 아이콘은 **예전 그대로**여야 한다
   sc.eq('⭐ BLOCK7 은 icon.png 그대로', SRC.includes('<link rel="apple-touch-icon" href="icon.png">'), true);
   const mb7=JSON.parse(fs.readFileSync(R('manifest.json'),'utf8'));
-  sc.eq('BLOCK7 manifest 도 그대로', [...new Set(mb7.icons.map(i=>i.src))], ['icon.png']);
+  sc.eq('BLOCK7 manifest 도 그대로', [...new Set(mb7.icons.map(i=>i.src))].sort(), ['icon-512.png','icon.png']);
 
   // ⚠️ 운영본 파비콘은 **주소 자체가 달라야** 한다. 첫 배포가 sweeter.my/icon.png
   //    로 BLOCK7 아이콘을 내보냈고, 내용만 바꾸니 브라우저가 옛 그림을 계속
@@ -282,7 +282,8 @@ console.log('\n시나리오 8 — 아이콘 파일');
   sc.eq('⭐ 홈화면 아이콘 주소도',
         mkp.includes(`'<link rel="apple-touch-icon" href="icon-sweeter.png">'`), true);
   const msw=JSON.parse(fs.readFileSync(R('manifest-sweeter.json'),'utf8'));
-  sc.eq('⭐ 운영본 manifest 도 새 이름', [...new Set(msw.icons.map(i=>i.src))], ['icon-sweeter.png']);
+  sc.eq('⭐ 운영본 manifest 도 새 이름', [...new Set(msw.icons.map(i=>i.src))].sort(), ['icon-sweeter-512.png','icon-sweeter.png']);
+  sc.eq('⭐ 운영본이 512 파일도 싣는다', fs.readFileSync(R('tools/make-sweeter-prod.sh'),'utf8').includes('cp icon-sweeter-512.png'), true);
 
   // 운영본 빌드 — 이름은 그대로 두고 내용물만 Sweeter 것으로
   if(fs.existsSync(R('build-sweeter/index.html'))){

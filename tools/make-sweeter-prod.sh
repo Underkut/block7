@@ -133,6 +133,7 @@ cp icon-sweeter.png "$OUT/icon.png"
 # 로고 메뉴의 형제 줄 그림이 빌드마다 깨진다.
 cp icon-sweeter.png "$OUT/icon-sweeter.png"
 cp icon-block7.png  "$OUT/icon-block7.png"
+cp icon-sweeter-512.png "$OUT/icon-sweeter-512.png"   # manifest 의 512 자리 (홈 화면 설치 · 시작 화면)
 cp firebase-messaging-sw.js "$OUT/firebase-messaging-sw.js"
 
 # ⚠️ 점검 페이지(404). 두 가지 일을 한다 —
