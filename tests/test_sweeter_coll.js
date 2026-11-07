@@ -83,7 +83,7 @@ console.log('\n시나리오 2 — 세는 단위');
   const html=_swCellHTML(_SW_TILES[0],_swStrip(_SW_TILES[0]),0);
   sc.eq('첫 칸은 곧 첫 모음', /내 모음/.test(html), true);
   sc.eq('제목 칸은 없다', /말씀 모음/.test(html), false);
-  sc.eq("아랫줄은 '모음 3' 이라고 센다", _swCountText('coll',3), '모음 3');
+  sc.eq("아랫줄은 '모음 3개' 라고 센다", _swCountText('coll',3), '모음 3개');
   sc.eq('설교·권·가지로 세지 않는다',
         /편의 설교|\d권|가지/.test(_swCountText('coll',3)), false);
 }
@@ -161,6 +161,23 @@ console.log('\n시나리오 7 — 처음 켰을 때 놓인다');
   sc.eq('두 번 끼우지 않는다', _swLoadTiles().map(t=>t.k), ['last']);
   _SW_TILES=[{k:'last',s:0}];
   sc.eq('＋ 줄에 나온다', _swSpareKinds().indexOf('coll')>=0, true);
+}
+
+// ═══ 1107-SW 9 — 날짜 없는 분류는 '설교' 가 아니라 '주제' (HB 2026-11-07) ═══
+console.log('\n시나리오 1107-SW9 — 모음 칸의 설교 · 주제');
+{
+  const D=(ref,cat,d)=>Object.assign(V(ref,cat),{d});
+  COLLS={
+    nav:{name:'주제 모음',verses:[D('요 1:1','하나님을 알아감',''),D('히 1:8','승리안에서 행함',''),D('롬 1:1','그리스도께 순종함','')]},
+    ch:{name:'교회',verses:[D('마 5:13','주일예배','2026-06-21'),D('마 5:14','수요예배','2026-06-24'),D('시 1:1','나의 암송','')]}
+  };
+  ACTIVE=['nav','ch'];
+  const a=_swColls(0),by=n=>a.find(x=>x.name===n);
+  sc.eq('날짜 없는 모음은 설교 0 · 주제 3', [by('주제 모음').cats,by('주제 모음').topics], [0,3]);
+  sc.eq('섞인 모음은 날짜 있는 분류만 설교', [by('교회').cats,by('교회').topics], [2,0]);
+  const face=g=>_swCellHTML({k:'coll',s:0},[{kind:'val',v:g}],0);
+  sc.eq("주제 모음 칸에 '주제 3개'", /주제 3개/.test(face(by('주제 모음')))&&!/설교/.test(face(by('주제 모음'))), true);
+  sc.eq("교회 칸에 '설교 2편'", /설교 2편/.test(face(by('교회'))), true);
 }
 
 sc.done();

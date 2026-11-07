@@ -95,12 +95,18 @@ console.log('\n시나리오 2 — 최근 설교 묶기');
   const name=_swSermons(2);
   sc.eq('이름 순 첫째', name[0].cat, '꿀보다 더 다니이다');
 
-  // ⚠️ 대분류가 비어 있는 구절도 어딘가에는 들어가야 한다. 빠뜨리면 화면의
-  //    합계가 실제 말씀 수보다 적어져 "말씀이 사라진 것처럼" 보인다.
+  // ⚠️ 1107-SW 9 (HB 2026-11-07) — 설교 날짜가 있는 판에서는 **날짜 있는 것만** 설교다.
+  //    날짜 없는 구절(나의 암송 등)은 이 타일에 섞이지 않는다 (성경 · 태그 · 모음 타일에는 그대로 있다).
   VERSES=VERSES.concat([V('요 3:16','','')]);
   const withBlank=_swSermons(0);
-  sc.eq('대분류가 빈 구절은 나의 암송으로', withBlank.some(g=>g.cat==='나의 암송'), true);
-  sc.eq('합계가 맞는다', withBlank.reduce((a,g)=>a+g.n,0), VERSES.length);
+  sc.eq('날짜 없는 구절은 설교로 세지 않는다', withBlank.some(g=>g.cat==='나의 암송'), false);
+  sc.eq('합계 = 날짜 있는 말씀 수', withBlank.reduce((a,g)=>a+g.n,0), VERSES.length-1);
+  // 날짜 있는 것이 하나도 없으면(새 사용자 · 네비게이토 180) 주제로 읽는다 —
+  // 그때는 대분류가 빈 구절도 어딘가에 들어가야 한다 (빠뜨리면 '말씀이 사라진 것처럼' 보인다).
+  VERSES=[V('요 1:1','하나님을 알아감',''),V('히 1:8','하나님을 알아감',''),V('요 3:16','','')];
+  const topic=_swSermons(0);
+  sc.eq('주제 — 대분류가 빈 구절은 나의 암송으로', topic.some(g=>g.cat==='나의 암송'), true);
+  sc.eq('주제 — 합계가 맞는다', topic.reduce((a,g)=>a+g.n,0), VERSES.length);
 }
 
 // ═══ 3. 마지막에 만난 말씀 — 반응 기록에서 최신순 ═══
@@ -225,7 +231,10 @@ console.log('\n시나리오 6 — 소스에 고정');
         SRC_DEV.includes('_swFinishSwipe(_swG.dx||0);'), true);
   // 길게 눌러 편집에 들어가면 **손을 떼지 않고 바로** 끌 수 있어야 한다
   sc.eq('길게 누른 그 손으로 바로 끈다',
-        SRC_DEV.includes('_swDragStart(gel,gi,gx,gy);  // 누르고 있던 **그 타일 그대로** 끈다'), true);
+        SRC_DEV.includes('_swDragStart(gel,gi,gx,gy,r0);  // 누르고 있던 **그 타일 그대로** 끈다'), true);
+  // 편집에 들어가며 판이 다시 짜여도(감춘 빈 카드 · 빈칸 메우기 풀림) 잡은 자리는 들어가기 전 것으로 (1107-SW 4)
+  sc.eq('잡은 자리는 편집에 들어가기 전에 잰다',
+        /const r0=gel\.getBoundingClientRect\(\);\s*_swEditOn\(\);/.test(SRC_DEV), true);
   // 잡은 자리를 기억해야 손가락에 붙는다 (안 그러면 100px 쯤 떨어져 끌린다)
   sc.eq('잡은 자리를 기억한다', SRC_DEV.includes('gx:x-r.left,gy:y-r.top'), true);
   sc.eq('다시 그릴 때마다 거리를 새로 잰다',
@@ -671,10 +680,11 @@ console.log('\n시나리오 17 — 매거진 얼굴 · 편집 중 스크롤 · �
   sc.eq('장절은 본문 위 머리말로', hL.includes('<div class="sw-kick">마태복음 5:13</div>'), true);
   // ── ② 개수는 아랫줄에 언제나 있다 (예전엔 첫 칸에서만 보였다)
   sc.eq('아랫줄에 개수',
-        hL.includes('<div class="sw-pips"><span class="sw-cnt">말씀 1</span>'), true);
-  sc.eq('세는 단위는 종류마다',
-        [_swCountText('recent',3),_swCountText('book',3),_swCountText('react',3)],
-        ['설교 3편','3권','3가지']);
+        hL.includes('<div class="sw-pips"><span class="sw-cnt">말씀 1개</span>'), true);
+  // 꼴은 늘 '이름 숫자 단위' (1107-SW 10, HB '나' 안)
+  sc.eq('세는 꼴은 이름 숫자 단위',
+        [_swCountText('recent',3),_swCountText('book',3),_swCountText('react',3),_swCountText('tag',3),_swCountText('today',3)],
+        ['설교 3편','성경 3권','반응 3가지','태그 3개','말씀 3개']);
   // ── ③ 차례 번호 — 목차의 그 번호
   sc.eq('첫 타일은 01', hL.includes('<b class="sw-ix">01</b>'), true);
   sc.eq('셋째 타일은 03', _swFace(_SW_TILES[2]).includes('<b class="sw-ix">03</b>'), true);
@@ -1777,6 +1787,107 @@ console.log('\n시나리오 35 — 흐름 카드: 예배마다 가로 줄 · 점
   const book=_swInsights(0).find(x=>x.axis==='book');
   sc.eq('다른 발견 카드는 문장 그대로', _swCellHTML({k:'insight',s:0},[{kind:'val',v:book}],0).includes('sw-val'), true);
   delete global.getActiveColls; delete global._getCollFilter; delete global._vListRange;
+}
+
+// ═══ 1107-SW 묶음 4 — 처음 쓰는 사람의 판 (HB 2026-11-07, 시안 ① 가 · ② 가 · ③ 가 · ④ 나) ═══
+console.log('\n시나리오 1107-SW4 — 처음 쓰는 사람의 판');
+{
+  // 새 사용자 — 네비게이토 180 처럼 날짜 없는 말씀, 기록 없음
+  VERSES=[V('요 1:1','하나님을 알아감',''),V('히 1:8','하나님을 알아감',''),
+          V('롬 12:1','그리스도께 순종함',''),V('빌 4:13','승리안에서 행함','')];
+  VERSES_ALL=null;
+  ST={settings:{},verseKeepLog:{}};
+  LIKE={}; MEM={}; DEEP={}; EVEN={}; SHARE={};
+  _SW_EDIT=false;
+  _SW_TILES=_SW_DEFAULT_TILES.map(k=>({k,s:0,p:0}));
+  const byK=k=>_SW_TILES.find(t=>t.k===k);
+  _swQuietMap=_swQuietCalc();
+  // ① 빈 카드
+  sc.eq('시트가 있어야 차는 셋은 감춘다', ['ask','insight','need'].map(k=>_swQuiet(byK(k))), ['hide','hide','hide']);
+  sc.eq('기록 셋은 앞의 한 장만 남긴다', ['last','react','rhythm'].map(k=>_swQuiet(byK(k))), ['gather','hide','hide']);
+  sc.eq('차 있는 타일은 그대로', ['today','recent','tag','coll','book'].map(k=>_swQuiet(byK(k))), ['','','','','']);
+  sc.eq('감춘 타일은 sw-hid (DOM 에는 남는다)', _swTileClass(byK('ask')), 'sw-tile k-ask sw-hid');
+  sc.eq('모은 한 장은 1칸', _swTileClass(byK('last')), 'sw-tile k-last sw-gather');
+  const gf=_swFace(byK('last'));
+  sc.eq('모은 한 장의 이름', gf.includes('<span class="sw-nm">나의 말씀 기록</span>'), true);
+  sc.eq('모은 한 장은 ♡ 를 권한다', gf.includes('♡'), true);
+  sc.eq('모은 한 장에는 정렬 칩이 없다', gf.includes('sw-sc'), false);
+  sc.eq('저장된 차례는 그대로 (판 모습만 바뀐다)', _SW_TILES.map(t=>t.k), _SW_DEFAULT_TILES);
+  // 누르면 같은 말을 토스트로
+  TOAST=''; _swTileOpen(_SW_TILES.indexOf(byK('last')));
+  sc.eq('모은 한 장을 누르면 같은 안내', TOAST, _SW_GATHER_TEXT);
+  // 편집 중에는 아무것도 감추지 않는다 (켜 둔 타일이 안 보이면 끄지도 옮기지도 못한다)
+  _SW_EDIT=true;
+  sc.eq('편집 중엔 감추지 않는다', _swQuietCalc().size, 0);
+  _SW_EDIT=false;
+  // 기간 필터로 비었으면 감추지 않는다 — 까닭을 말해야 고장으로 안 보인다
+  const _w0=_swWin;
+  _swWin=()=>({from:'2026-01-01',to:'2026-12-31',word:'올해'});
+  sc.eq('기간 필터가 걸려 있으면 감추지 않는다', _swQuietCalc().size, 0);
+  _swWin=_w0;
+  // 좋아요 하나 — 기록 셋이 예전대로 돌아온다
+  LIKE={'2026-08-20':[{ref:'요 1:1',time:'09:10'}]};
+  _swQuietMap=_swQuietCalc();
+  sc.eq('기록이 생기면 한 장으로 모으지 않는다',
+        ['last','react','rhythm'].some(k=>_swQuiet(byK(k))==='gather'), false);
+  sc.eq('이어서 볼 말씀은 다시 넓은 타일', _swTileClass(byK('last')), 'sw-tile k-last wide ');
+  LIKE={};
+  // 못 센 타일은 감추지 않는다 ('못 그렸어요' 가 맞다, 1-h)
+  const _s0=_swStrip;
+  _swStrip=t=>{if(t.k==='ask')throw new Error('x');return _s0(t);};
+  sc.eq('못 센 타일은 감추지 않는다', _swQuietCalc().has(byK('ask')), false);
+  _swStrip=_s0;
+
+  // ③ 최근 설교 → 주제
+  sc.eq('날짜가 하나도 없으면 주제로 읽는다', _swSermonTopic(), true);
+  sc.eq('타일 이름 주제별 말씀', _swTypeName('recent'), '주제별 말씀');
+  sc.eq('숫자 주제 n개', _swCountText('recent',3), '주제 3개');
+  sc.eq('정렬 칩 첫 이름은 차례', _swSortName({k:'recent',s:0}), '차례');
+  sc.eq('주제 — 모음에 담긴 차례 그대로', _swSermons(0).map(g=>g.cat), ['하나님을 알아감','그리스도께 순종함','승리안에서 행함']);
+  sc.eq('주제 — 얼굴 이름도', _swFace(byK('recent')).includes('<span class="sw-nm">주제별 말씀</span>'), true);
+  VERSES=VERSES.concat([V('마 5:13','언덕 위의 도시','2026-06-21')]);
+  sc.eq('설교 날짜가 하나라도 있으면 최근 설교', [_swTypeName('recent'),_swCountText('recent',1),_swSortName({k:'recent',s:0})],
+        ['최근 설교','설교 1편','최근']);
+  sc.eq('그때는 설교만', _swSermons(0).map(g=>g.cat), ['언덕 위의 도시']);
+
+  // ② 번호 = 화면에 보이는 차례 (빈칸 메우기 dense 와 같은 셈)
+  const mm=w=>({matchMedia:q=>({matches:w>=+(/min-width:(\d+)/.exec(q)||[0,0])[1]})});
+  const _win=global.window;
+  _swQuietMap=new Map();
+  _SW_TILES=['today','ask','insight','recent','tag'].map(k=>({k,s:0,p:0}));
+  global.window=Object.assign({},_win,mm(744));
+  sc.eq('아이패드 세로는 3열', _swColsNow(), 3);
+  _swIxMap=_swIxCalc();
+  sc.eq('1칸 타일이 빈칸으로 올라온 차례로 번호', _SW_TILES.map(t=>t.k+_swIxOf(t)),
+        ['today1','ask4','insight5','recent2','tag3']);
+  sc.eq('얼굴에도 그 번호', _swFace(_SW_TILES[3]).includes('<b class="sw-ix">02</b>'), true);
+  global.window=Object.assign({},_win,mm(390));
+  sc.eq('폰은 2열', _swColsNow(), 2);
+  _swIxMap=_swIxCalc();
+  sc.eq('폰은 빈칸이 안 생겨 차례 그대로', _SW_TILES.map(t=>_swIxOf(t)), [1,2,3,4,5]);
+  global.window=Object.assign({},_win,mm(744));
+  _SW_EDIT=true; _swIxMap=_swIxCalc();
+  sc.eq('편집 중엔 저장된 차례 번호', _SW_TILES.map(t=>_swIxOf(t)), [1,2,3,4,5]);
+  _SW_EDIT=false;
+  // 감춘 타일은 번호를 받지 않고, 모은 한 장은 1칸으로 센다
+  _SW_TILES=['today','ask','last','recent'].map(k=>({k,s:0,p:0}));
+  _swQuietMap=new Map([[_SW_TILES[1],'hide'],[_SW_TILES[2],'gather']]);
+  _swIxMap=_swIxCalc();
+  sc.eq('감춘 타일은 건너뛰고 모은 한 장은 1칸', [_swIxMap.has(_SW_TILES[1]),_swIxOf(_SW_TILES[2]),_swIxOf(_SW_TILES[3])], [false,2,3]);
+  global.window=_win; _swQuietMap=new Map(); _swIxMap=new Map();
+
+  // 열 수 문턱은 CSS 와 같아야 한다 — 어긋나면 번호가 화면과 다르게 매겨진다
+  const css=[...SRC_DEV.matchAll(/@media \(min-width:(\d+)px\)\{ \.sw-board\{grid-template-columns:repeat\((\d+),/g)].map(m=>[+m[1],+m[2]]);
+  sc.eq('CSS 열 문턱 다섯', css.length, 5);
+  sc.eq('JS 열 수가 CSS 문턱과 같다', css.every(([w,c])=>{global.window=Object.assign({},_win,mm(w));const a=_swColsNow();
+        global.window=Object.assign({},_win,mm(w-1));const b=_swColsNow();return a===c&&b===c-1;}), true);
+  global.window=_win;
+  sc.eq('빈칸 메우기는 편집이 아닐 때만', SRC_DEV.includes('.sw-board:not(.edit){grid-auto-flow:row dense;}'), true);
+  sc.eq('감춘 타일은 display:none', SRC_DEV.includes('.sw-tile.sw-hid{display:none;}'), true);
+  sc.eq('편집에 들어가면 감춘 것을 꺼내 칠한다',
+        /_swQuietMap=new Map\(\);\s*_SW_TILES\.forEach\(\(t,i\)=>\{if\(was\.get\(t\)\)_swRepaint\(i\);\}\);\s*_swRenumber\(\);/.test(SRC_DEV), true);
+  sc.eq('자판은 감춘 타일에 서지 않는다', (SRC_DEV.match(/el\.classList\.contains\('sw-hid'\)\)return;/g)||[]).length, 2);
+  _SW_TILES=[];
 }
 
 sc.done();
