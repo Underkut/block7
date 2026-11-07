@@ -119,6 +119,8 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   시험 · 미리보기(`?demo=1`)는 지어낸 이름만.
   **예외 하나: 전화번호**(HB 결정 11/6) — HB 파이어베이스 `cellbook/{uid}` 에만, BLOCK7 과 같은 계정(앱 이름 `cell`).
   `users/{uid}` 는 건드리지 않는다. 연락처 파일 내용은 저장하지 않는다. 규칙 붙이기는 `docs/cell/firestore-rules.md`.
+  **예외 둘: AI 요약**(HB 결정 11/7) — 제미나이 열쇠와 한 번 만든 요약을 **이 기기 localStorage 에만**(`cell_ai_key` · `cell_ai_sum`, 400개 상한).
+  파이어베이스 · 저장소로 올리지 말 것. 바깥으로 보낼 땐 아는 이름을 `anonText` 로 '셀원 A' 로 바꿔 보낸다(`test_cell` ⑱).
   **심방 노트 잇기(J)**: 심방 노트가 둔 `users/{uid}/data/care`(고른 시트 id)를 **읽기만** 하고, 같은 구글 열쇠로 그 시트를 읽는다.
   시트 읽는 규칙은 `/care/` 의 `care-core` 를 그대로 불러 쓴다 — `buildModel` · `findResponsesTab` 이름을 바꾸면 `test_cell` ⑯ 이 걸린다.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r cell`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).

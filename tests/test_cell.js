@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, AI_KEY, AI_STORE, AI_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -349,6 +349,25 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑰ 셀리더(이름 글자만 있음)도 같은 규칙으로 맞춘다', J([LL['L1:0'].days, LL['L2:0'].days]), [37, 0]);
   sc.eq('⑰ 셀리더 알약 색: 없음 빨강 · 30일 넘음 주황 · 14일 넘음 노랑 · 이내 초록', J([null, 30, 45, 14, 29, 13, 0].map(d => A.leaderLevel(d))), ['bad', 'warn', 'warn', 'yel', 'yel', 'ok', 'ok']);
   sc.eq('⑰ 셀 카드의 셀리더 줄에 심방 알약을 붙인다', /careLeaderChip\(c\)\}\$\{sig\.map/.test(HTML), true);
+}
+
+// ⑱ L17 AI 요약 — 바깥으로 보내기 전에 이름 가리기 · 돌아오면 되돌리기 · 이 기기에만 (지어낸 이름)
+{
+  const names = ['강믿음', '이두리', '조은빛', '박하'];
+  const r = A.anonText('강믿음 성도는 이직 고민. 두리 자매가 함께 기도하기로. 강 믿음 집사님 가정도 평안. 은빛이가 결석. 은빛 하늘은 맑음. 박하 차를 마심', names);
+  sc.eq('⑱ 성 이름 · 띄어 쓴 이름 · 이름만(뒤에 자매 · 이가) 을 셀원 A, B … 로 바꾼다', r.text, '셀원 A 성도는 이직 고민. 셀원 B 자매가 함께 기도하기로. 셀원 A 집사님 가정도 평안. 셀원 C이가 결석. 은빛 하늘은 맑음. 셀원 D 차를 마심');
+  sc.eq('⑱ 표는 처음 나온 순서', J(r.map), { A: '강믿음', B: '이두리', C: '조은빛', D: '박하' });
+  sc.eq('⑱ 보낸 글에 원래 이름이 남지 않는다', ['강믿음', '이두리', '조은빛'].some(n => r.text.includes(n)), false);
+  sc.eq('⑱ 돌아온 요약은 이름으로 되돌린다 (모르는 표는 그대로)', A.deanon('· 셀원 A 이직 기도 · 셀원 B 동행 · 셀원 Z', r.map), '· 강믿음 이직 기도 · 이두리 동행 · 셀원 Z');
+  sc.eq('⑱ 이름이 없으면 글 그대로', A.anonText('평안한 한 주', []).text, '평안한 한 주');
+  sc.eq('⑱ 요약 열쇠: 빈칸 차이는 같은 글 · 글이 다르면 다른 열쇠', [A.textKey('가 나  다') === A.textKey(' 가 나 다 '), A.textKey('가나다') === A.textKey('가나라')], [true, false]);
+  sc.eq('⑱ 요청 글: 이름표를 그대로 쓰라고 한다', /"셀원 A" 같은 표기는 바꾸지 말고/.test(A.aiPrompt('x')), true);
+  const st = {}; for (let i = 0; i < 5; i++) st['k' + i] = { s: 'x', at: i };
+  sc.eq('⑱ 저장한 요약은 상한까지만(오래된 것부터 버림)', Object.keys(A.aiTrim(st, 3)).sort(), ['k2', 'k3', 'k4']);
+  sc.eq('⑱ 저장 이름이 다른 앱과 겹치지 않는다', [A.AI_KEY, A.AI_STORE].every(k => /^cell_/.test(k)), true);
+  sc.eq('⑱ 열쇠 · 요약은 이 기기(localStorage)에만 — 파이어베이스로 올리지 않는다', /cellbook[^\n]*(AI_STORE|AI_KEY|aiStore)/.test(HTML) || /collection\([^)]*\)[^\n]*(AI_STORE|aiStore)/.test(HTML), false);
+  sc.eq('⑱ 접힌 긴 글마다 별 단추(더보기 옆)', /'<button class="morebtn" data-act="more" aria-label="더 보기"><i><\/i><\/button>' \+ aiBtn\(k\)/.test(HTML), true);
+  sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon\) \}\]/.test(HTML), true);
 }
 
 // ⑩ 집 주소 · 버전
