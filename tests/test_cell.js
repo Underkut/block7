@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, AI_KEY, AI_STORE, AI_MAX };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiModelOrder, sseTexts, AI_MODELS, AI_KEY, AI_STORE, AI_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -365,6 +365,11 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const st = {}; for (let i = 0; i < 5; i++) st['k' + i] = { s: 'x', at: i };
   sc.eq('⑱ 저장한 요약은 상한까지만(오래된 것부터 버림)', Object.keys(A.aiTrim(st, 3)).sort(), ['k2', 'k3', 'k4']);
   sc.eq('⑱ 저장 이름이 다른 앱과 겹치지 않는다', [A.AI_KEY, A.AI_STORE].every(k => /^cell_/.test(k)), true);
+  // 빠르게 (HB 11/7)
+  sc.eq('⑱ 가벼운(생각 없는) 모델부터 · 된 모델은 맨 앞으로', J([A.AI_MODELS[0], A.aiModelOrder('gemini-2.5-flash')[0], A.aiModelOrder('엉뚱')[0], A.aiModelOrder('gemini-2.5-flash').length]), ['gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-flash-lite-latest', 4]);
+  const sse = A.sseTexts('data: {"candidates":[{"content":{"parts":[{"text":"· 가"}]}}]}\n\ndata: {"candidates":[{"content":{"parts":[{"thought":true,"text":"생각"},{"text":"나"}]}}]}\ndata: {"cand');
+  sc.eq('⑱ 흘려 받기: 줄마다 글만 · 생각 글은 뺌 · 덜 온 줄은 남김', J([sse.texts, sse.rest]), [['· 가', '나'], 'data: {"cand']);
+  sc.eq('⑱ 흘려 받는 주소 · 답 길이 상한', /:streamGenerateContent\?alt=sse/.test(HTML) && /maxOutputTokens: 600/.test(HTML), true);
   // 계정 맞추기 (HB 11/7)
   const loc = { a: { s: '이 기기 것', at: 1 }, b: { s: '둘 다', at: 2 } }, cl = { key: 'K1', sum: { b: { s: '둘 다', at: 2 }, c: { s: '다른 기기 것', at: 3 } } };
   const first = A.aiSync(loc, cl, false, 'K0');
@@ -375,6 +380,13 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 계정 칸은 cellbook 의 ai 하나 — users/{uid} 에는 두지 않는다', /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.set\(\{ ai: patch/.test(HTML) && !/collection\('users'\)[^\n]*\bai\b/.test(HTML), true);
   sc.eq('⑱ 접힌 긴 글마다 별 단추(더보기 옆)', /'<button class="morebtn" data-act="more" aria-label="더 보기"><i><\/i><\/button>' \+ aiBtn\(k\)/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon\) \}\]/.test(HTML), true);
+}
+
+// ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
+{
+  const bad = []; const re = /<script(?: id="[^"]+")?>([\s\S]*?)<\/script>/g; let mm;
+  while ((mm = re.exec(HTML))) { try { new Function(mm[1]); } catch (e) { bad.push(e.message); } }
+  sc.eq('⑲ 모든 스크립트 덩어리가 문법상 읽힌다', bad, []);
 }
 
 // ⑩ 집 주소 · 버전

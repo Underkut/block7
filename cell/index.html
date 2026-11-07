@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -341,7 +341,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-6';
+const APP_VERSION = 'v. 26-1107-7';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -693,6 +693,19 @@ function aiSync(local, cloud, migrated, localKey) {
   const sum = {}; for (const k of Object.keys(local || {})) if (!c[k]) sum[k] = local[k];
   const push = {}; if (Object.keys(sum).length) push.sum = sum; if (!ck && localKey) push.key = localKey;
   return { store: Object.assign({}, c, sum), key: ck || localKey || '', push: Object.keys(push).length ? push : null };
+}
+// 빠르게 (HB 11/7 '너무 오래 걸린다'): ①생각(thinking) 없는 가벼운 모델부터 ②글이 오는 대로 흘려 보여 줌(스트리밍) ③답 길이 상한.
+// 된 모델은 이 기기에 기억해 다음부터 그 모델로 바로 (없는 모델을 두드리는 왕복을 줄인다).
+const AI_MODELS = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-2.5-flash'];
+function aiModelOrder(good) { return good && AI_MODELS.includes(good) ? [good, ...AI_MODELS.filter(m => m !== good)] : AI_MODELS.slice(); }
+// 스트리밍 응답(SSE) 한 덩어리에서 'data: {…}' 줄마다 글을 뽑는다 → { texts: [...], rest: 아직 덜 온 줄 }
+function sseTexts(buf) {
+  const lines = buf.split('\n'), rest = lines.pop(), texts = [];
+  for (const l of lines) {
+    const m = l.match(/^data:\s*(.+)$/); if (!m) continue;
+    try { const j = JSON.parse(m[1]); for (const p of ((((j.candidates || [])[0] || {}).content || {}).parts) || []) if (!p.thought && p.text) texts.push(p.text); } catch (_) { }
+  }
+  return { texts, rest };
 }
 function aiTrim(store, max) {   // 오래된 것부터 버려 max 개만 남긴다
   const ks = Object.keys(store || {}); if (ks.length <= max) return store;
@@ -1816,25 +1829,30 @@ function aiHide(el, btn) {
   el.classList.remove('aisum'); btn.classList.remove('on');
   if (!quiet()) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
-async function aiCall(text) {
+async function aiCall(text, onPart) {
   const key = lsGet(AI_KEY, '');
   const { text: anon, map } = anonText(text, aiNames());
   if (DEMO) return deanon('· (미리보기) ' + anon.slice(0, 50) + '…', map);
   let last = null;
-  for (const model of ['gemini-flash-latest', 'gemini-2.5-flash']) {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST',
+  for (const model of aiModelOrder(lsGet('cell_ai_model', ''))) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`, { method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: aiPrompt(anon) }] }], generationConfig: { temperature: 0.2 } }) });
-    const j = await r.json().catch(() => ({}));
-    if (r.status === 404) { last = j; continue; }
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: aiPrompt(anon) }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 600 } }) });
     if (!r.ok) {
-      const msg = (j.error && j.error.message) || '';
+      const j = await r.json().catch(() => ({})); const msg = (j.error && j.error.message) || '';
+      if (r.status === 404 || (r.status === 400 && /model|not (found|supported)/i.test(msg) && !/API key/i.test(msg))) { last = j; continue; }
       if (r.status === 429) throw new Error('무료 사용량을 잠시 넘었습니다.\n1~2분 뒤 다시 눌러 주세요.');
       if (r.status === 400 && /API key/i.test(msg) || r.status === 401 || r.status === 403) throw new Error('AI 열쇠가 맞지 않습니다.\n메뉴(⋯) › AI 요약에서 다시 넣어 주세요.');
       throw new Error('AI 요약을 못 했습니다\n' + (msg || ('구글 ' + r.status)).slice(0, 80));
     }
-    const parts = ((((j.candidates || [])[0] || {}).content || {}).parts) || [];
-    const out = parts.filter(p => !p.thought).map(p => p.text || '').join('').trim();
+    lsSet('cell_ai_model', model);
+    let out = '', buf = '';
+    const rd = r.body && r.body.getReader ? r.body.getReader() : null, dec = new TextDecoder();
+    if (rd) { for (;;) { const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true }).replace(/\r/g, '');
+        const x = sseTexts(buf); buf = x.rest; if (x.texts.length) { out += x.texts.join(''); if (onPart) onPart(deanon(out.trim(), map)); } } }
+    else buf = (await r.text()).replace(/\r/g, '');
+    out += sseTexts(buf + '\n').texts.join('');
+    out = out.trim();
     if (!out) throw new Error('AI 가 빈 요약을 돌려주었습니다.\n다시 눌러 주세요.');
     return deanon(out, map);
   }
@@ -1848,8 +1866,10 @@ async function aiClick(btn) {
   const have = aiGet(k); if (have) return aiShow(el, btn, have);
   if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
   btn.classList.add('busy');
-  try { const sum = await aiCall(el.textContent); aiPut(k, sum); if (el.isConnected) aiShow(el, btn, sum); }
-  catch (e) { toast(e.message || String(e)); toast.at = Date.now(); }
+  const orig = el.textContent; let shown = false;
+  const part = (t) => { if (!el.isConnected) return; if (!shown) { aiShow(el, btn, t); shown = true; } else el.innerHTML = `<span class="ailbl">AI 요약</span>${esc(t)}`; };   // 오는 대로 흘려 보여 준다
+  try { const sum = await aiCall(orig, part); aiPut(k, sum); if (el.isConnected) { if (shown) el.innerHTML = `<span class="ailbl">AI 요약</span>${esc(sum)}`; else aiShow(el, btn, sum); } }
+  catch (e) { if (shown && el.isConnected) aiHide(el, btn); toast(e.message || String(e)); toast.at = Date.now(); }
   finally { btn.classList.remove('busy'); }
 }
 function openAiCfg() { drawAiCfg(); const w = $('#thr'); w.hidden = false; if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); }
