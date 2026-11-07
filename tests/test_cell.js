@@ -361,7 +361,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 돌아온 요약은 이름으로 되돌린다 (모르는 표는 그대로)', A.deanon('· 셀원 A 이직 기도 · 셀원 B 동행 · 셀원 Z', r.map), '· 강믿음 이직 기도 · 이두리 동행 · 셀원 Z');
   sc.eq('⑱ 이름이 없으면 글 그대로', A.anonText('평안한 한 주', []).text, '평안한 한 주');
   sc.eq('⑱ 요약 열쇠: 빈칸 차이는 같은 글 · 글이 다르면 다른 열쇠', [A.textKey('가 나  다') === A.textKey(' 가 나 다 '), A.textKey('가나다') === A.textKey('가나라')], [true, false]);
-  sc.eq('⑱ 요청 글: 이름표를 그대로 쓰라고 한다', /"셀원 A" 같은 표기는 바꾸지 말고/.test(A.aiPrompt('x')), true);
+  sc.eq('⑱ 요청 글: 이름표를 그대로 쓰라고 한다', /"셀원 A" 는 이 글의 주인공이니 이름 없이 생략/.test(A.aiPrompt('x')) && /다른 사람\("셀원 B" 같은 표기\)은 바꾸지 말고/.test(A.aiPrompt('x')), true);
   const st = {}; for (let i = 0; i < 5; i++) st['k' + i] = { s: 'x', at: i };
   sc.eq('⑱ 저장한 요약은 상한까지만(오래된 것부터 버림)', Object.keys(A.aiTrim(st, 3)).sort(), ['k2', 'k3', 'k4']);
   sc.eq('⑱ 저장 이름이 다른 앱과 겹치지 않는다', [A.AI_KEY, A.AI_STORE].every(k => /^cell_/.test(k)), true);
@@ -382,7 +382,7 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 요약 길이: 한 · 두 · 세 문장을 요청 글에 담는다', [1, 2, 3, undefined].map(n => /(한|두|세) 문장으로 요약/.exec(A.aiPrompt('x', n))[1]), ['한', '두', '세', '두']);
   sc.eq('⑱ 설정창 이름 · 처음값 두 문장 · 별 누르면 펼침', /한 문장으로|\$\{AI_LENS\[n\]\}으로/.test(HTML) && /\? n : 2/.test(HTML) && /AI\.opened\.add\(el\)/.test(HTML), true);
   sc.eq('⑱ 앱 이름 셀 inside', /<title>셀 inside<\/title>/.test(HTML), true);
-  sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
+  sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\), subject\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
 }
 
 // ⑳ 1107-2 셀 inside C1 · C2 — 여러 글 한 번에 (지어낸 글)
@@ -390,13 +390,26 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   const L = Array.from({ length: 23 }, (_, i) => ({ text: '가'.repeat(i === 5 ? 6000 : 100) }));
   sc.eq('⑳ 묶음: 10개씩 · 글자가 너무 많으면 일찍 끊는다', A.aiChunks(L, A.AI_CHUNK, 6000).map(c => c.length), [5, 1, 10, 7]);
   const pk = A.aiBatchPrompt(['셀원 A 이직 고민', '기도 부탁'], 'kw', 2), ps = A.aiBatchPrompt(['x'], 'sum', 1);
-  sc.eq('⑳ 핵심 요청: 명사형 · 번호 · JSON 배열 · 이름표 그대로', [/명사형 핵심어/.test(pk), /\[1\]\n셀원 A 이직 고민/.test(pk), /\[2\]\n기도 부탁/.test(pk), /문자열 2개가 든 JSON 배열/.test(pk), /"셀원 A" 같은 표기는 바꾸지 말고/.test(pk)], [true, true, true, true, true]);
+  sc.eq('⑳ 핵심 요청: 명사형 · 번호 · JSON 배열 · 이름표 그대로', [/명사형 핵심어/.test(pk), /\[1\]\n셀원 A 이직 고민/.test(pk), /\[2\]\n기도 부탁/.test(pk), /문자열 2개가 든 JSON 배열/.test(pk), /"셀원 A" 는 그 글의 주인공이니 이름 없이 생략/.test(pk)], [true, true, true, true, true]);
   sc.eq('⑳ 요약 요청은 설정한 길이를 따른다', /한 문장으로 요약/.test(ps), true);
   sc.eq('⑳ 답 꺼내기: ```json 감싸기 · 앞말 · 개수 넘침 · 깨진 답', [J(A.aiParseArr('```json\n["가 · 나", "다"]\n```', 2)), J(A.aiParseArr('여기 있습니다: ["a","b","c"]', 2)), A.aiParseArr('엉망', 2)], [['가 · 나', '다'], ['a', 'b'], null]);
   sc.eq('⑳ 탭 아래 오른쪽 별 둘(모두 요약 · 핵심 보기)', /data-act="ai-all"/.test(HTML) && /data-act="ai-kw"/.test(HTML) && /id="aibar"/.test(HTML), true);
-  sc.eq('⑳ 묶어 보낼 때도 anonText 를 거친다', /const an = items\.map\(x => anonText\(x\.text, names\)\)/.test(HTML) && /aiBatchPrompt\(an\.map\(a => a\.text\)/.test(HTML), true);
+  sc.eq('⑳ 묶어 보낼 때도 anonText 를 거친다', /const a = anonText\(x\.text, names, sj\)/.test(HTML) && /aiBatchPrompt\(an\.map\(a => a\.text\)/.test(HTML), true);
   sc.eq('⑳ 한꺼번에 요약 · 핵심 만들기 전에 확인을 받는다', /confirm\(`이 화면의 접힌 글 \$\{miss\.length\}개를 AI 로 요약할까요/.test(HTML) && /confirm\(`이 화면의 본문 \$\{miss\.length\}개를 AI 로 핵심만/.test(HTML), true);
   sc.eq('⑳ 핵심도 계정 ai 칸(kw)에 · 이 기기 이름 cell_', /aiCloud\(\{ kw: patch \}\)/.test(HTML) && /const AI_KW = 'cell_ai_kw'/.test(HTML), true);
+}
+
+// ㉑ HB 11/7 셀 inside 다듬기 — 주인공 생략 · 기도 표시 남김 · 탭마다 따로 · 기도 접기 (지어낸 이름)
+{
+  const r = A.anonText('이두리 성도와 강믿음 집사가 함께 기도', ['강믿음', '이두리'], '강믿음');
+  sc.eq('㉑ 글의 주인공은 늘 셀원 A · 다른 성도는 B 부터', [r.text, J(r.map)], ['셀원 B 성도와 셀원 A 집사가 함께 기도', { A: '강믿음', B: '이두리' }]);
+  sc.eq('㉑ 돌아온 요약에서 주인공(셀원 A)은 생략 · 다른 성도는 이름으로', A.deanon('· 셀원 A는 셀원 B 성도와 기도함\n· 셀원 A 집사님이 이직 고민', r.map, true), '· 이두리 성도와 기도함\n· 이직 고민');
+  sc.eq('㉑ 주인공을 모르면(셀 전체 카드) 생략하지 않는다', A.deanon('· 셀원 A 기도', { A: '강믿음' }, false), '· 강믿음 기도');
+  sc.eq('㉑ 주인공이 글에 없어도 A 자리는 주인공 몫', J(A.anonText('이두리 소식', ['이두리'], '강믿음').map), { A: '강믿음', B: '이두리' });
+  sc.eq('㉑ 요약 · 핵심으로 바꿔도 글 앞 표시(🙏 · 이번 주:)를 남긴다', /function markOf\(el\)/.test(HTML) && /el\.innerHTML = `\$\{esc\(markOf\(el\)\)\}\$\{NOLBL_TABS/.test(HTML), true);
+  sc.eq('㉑ 이슈 · 기도제목 · 코멘트 탭은 줄마다 핵심 알약을 달지 않는다', /const NOLBL_TABS = \['issue', 'prayer', 'comment'\]/.test(HTML), true);
+  sc.eq('㉑ 모두 요약 · 핵심 보기는 탭마다 따로 (한 탭에서 켜도 다른 탭 단추는 꺼진 모양)', /const kwOn = \(\) => !!\(PREF\.aiKwT && PREF\.aiKwT\[PREF\.tab\]\)/.test(HTML) && !/PREF\.aiKw\b(?!T)/.test(HTML) && !/PREF\.aiAll\b(?!T)/.test(HTML), true);
+  sc.eq('㉑ 이슈 탭: 별 아래 기도 보기 / 접기 (모드와 상관없이)', /data-act="pray-tg">\$\{pr \? '기도 접기' : '기도 보기'\}/.test(HTML) && /\.hidepray \.pray,/.test(HTML), true);
 }
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
