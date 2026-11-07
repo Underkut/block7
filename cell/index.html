@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1107-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1108-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -124,6 +124,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .note .who{font-weight:500}
 .note .txt{white-space:pre-wrap;font-size:14px;margin-top:2px}
 .note .pray{white-space:pre-wrap;font-size:13.5px;color:var(--tx2);margin-top:3px}
+.praytag{display:inline-block;font-size:11px;line-height:1.5;color:var(--ac);background:var(--ac-soft);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px}
 .note.attn{border-left:3px solid var(--warn);padding-left:10px}
 .cmt{background:var(--mine-soft);border-radius:12px;padding:10px 12px;margin-top:8px}
 .cmt .by{font-size:12.5px;color:var(--mine);font-weight:500}
@@ -356,7 +357,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-12';
+const APP_VERSION = 'v. 26-1108-1';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1548,7 +1549,7 @@ function repCard(r, inCell) {
       ${abs.length ? `<div class="names muted small">결석: ${abs.map(x => esc(x.name) + (x.absence_reason ? '(' + esc(x.absence_reason) + ')' : '')).join(', ')}</div>` : ''}
       ${vis.length ? `<div class="names muted small">방문: ${vis.map(x => esc(x.name)).join(', ')}</div>` : ''}</div>`;
   if (d.notes.length) h += `<div class="sect"><div class="lbl">셀원 근황 · 이슈</div>${d.notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}">${who(n.member_id, nm(n.member_id))} ${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join(' ')}${n.leadership_attention_required ? ' <span class="pill warn">교역자 확인 필요</span>' : ''}
-      <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
+      <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp"><span class="praytag">기도</span>${esc(n.prayer)}</div>` : ''}</div>`).join('')}</div>`;
   const prays = d.newPrayers.map(p => ({ mid: p.member_id, who: nm(p.member_id), text: p.content, tag: '새' })).concat(d.open.map(p => ({ who: p.member_name, text: p.content, tag: PRAYER_LABEL[p.this_week_status] || '', note: p.this_week_note })));
   if (prays.length) h += `<div class="sect"><div class="lbl">기도제목</div>${prays.map(p => `<div class="note">${who(p.mid, p.who, r.cell_id)} ${p.tag ? `<span class="pill ac">${esc(p.tag)}</span>` : ''}<div class="txt clamp">${esc(p.text || '')}</div>${p.note ? `<div class="pray clamp">이번 주: ${esc(p.note)}</div>` : ''}</div>`).join('')}</div>`;
   if (rep.grace_notes && !rep.grace_none) h += `<div class="sect"><div class="lbl">은혜와 나눔</div><div class="txt clamp" style="white-space:pre-wrap;font-size:14px">${esc(rep.grace_notes)}</div></div>`;
@@ -1623,7 +1624,7 @@ function viewIssue() {
     : `<span class="tiny muted">셀 · 이슈를 여럿 고를 수 있습니다 · 칸은 둘을 함께</span>`}</div>`;
   const list = notes.filter(n => (!st.cells.length || cOn(n._cell)) && (!st.tags.length || st.tags.some(t => t === 'attn' ? n.leadership_attention_required : catsOf(n).includes(t))));
   const one = (n) => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${who(n.member_id, n._who)}<button class="tiny muted lnk" data-act="see-rep" data-cell="${esc(n._cell)}" data-week="${esc(n._week)}">${esc(n._cellName)} · ${esc(weekLabel(n._week))} ›</button>${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}</div>
-    <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp">🙏 ${esc(n.prayer)}</div>` : ''}</div>`;
+    <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp"><span class="praytag">기도</span>${esc(n.prayer)}</div>` : ''}</div>`;
   const title = [st.cells.map(sn).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / ');
   if (!list.length) return h + '<p class="empty">고른 조건에 맞는 근황이 없습니다.</p>';
   if (st.tags.length === 1) return h + `<h3 class="grp">${esc(title)} · ${list.length}</h3><div class="card" style="padding:4px 15px">${list.map(one).join('')}</div>`;
@@ -1800,7 +1801,7 @@ function personHtml() {
     if (!notes.length && !prays.length && att !== 'absent') continue;
     any = true;
     h += `<div class="lbl2"><button class="lnk" data-act="see-rep" data-cell="${esc(cellId)}" data-week="${w}">${esc(weekLabel(w))} ›</button>${att === 'absent' ? ' <span class="pill bad">결석</span>' : att === 'present' ? ' <span class="pill ok">출석</span>' : ''}</div>`;
-    if (notes.length || prays.length) h += `<div class="card">${notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}${n.leadership_attention_required ? '<span class="pill warn">확인 필요</span>' : ''}</div><div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp">🙏 ${esc(n.prayer)}</div>` : ''}</div>`).join('')}
+    if (notes.length || prays.length) h += `<div class="card">${notes.map(n => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}${n.leadership_attention_required ? '<span class="pill warn">확인 필요</span>' : ''}</div><div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp"><span class="praytag">기도</span>${esc(n.prayer)}</div>` : ''}</div>`).join('')}
       ${prays.map(x => `<div class="note"><span class="pill ac">${esc(x.tag)}</span><div class="txt clamp">${esc(x.t)}</div>${x.note ? `<div class="pray clamp">이번 주: ${esc(x.note)}</div>` : ''}</div>`).join('')}
       ${notes.length ? d.comments.map(c => cmtBox(c)).join('') : ''}</div>`;
   }
@@ -1873,7 +1874,7 @@ function aiShow(el, btn, sum, still) {
   if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
   const h0 = el.clientHeight;
   if (!el.classList.contains('open')) { el.classList.add('open'); AI.opened.add(el); const mb = el.nextElementSibling; if (mb && mb.classList.contains('morebtn')) { mb.setAttribute('aria-label', '접기'); const i = mb.querySelector('i'); if (i) i.classList.add('up'); } }   // 접혀 있었어도 요약을 누르면 펼친다
-  el.innerHTML = `${esc(markOf(el))}<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); if (btn) btn.classList.add('has', 'on');
+  el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); if (btn) btn.classList.add('has', 'on');
   if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 function aiHide(el, btn, still) {
@@ -1921,8 +1922,8 @@ async function aiClick(btn) {
   if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
   btn.classList.add('busy');
   const orig = bodyOf(el); let shown = false;
-  const part = (t) => { if (!el.isConnected) return; if (!shown) { aiShow(el, btn, t); shown = true; } else el.innerHTML = `${esc(markOf(el))}<span class="ailbl">AI 요약</span>${esc(t)}`; };   // 오는 대로 흘려 보여 준다
-  try { const sum = await aiCall(orig, part, subjOf(el)); aiPut(k, sum); if (el.isConnected) { if (shown) el.innerHTML = `${esc(markOf(el))}<span class="ailbl">AI 요약</span>${esc(sum)}`; else aiShow(el, btn, sum); } }
+  const part = (t) => { if (!el.isConnected) return; if (!shown) { aiShow(el, btn, t); shown = true; } else el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(t)}`; };   // 오는 대로 흘려 보여 준다
+  try { const sum = await aiCall(orig, part, subjOf(el)); aiPut(k, sum); if (el.isConnected) { if (shown) el.innerHTML = `${markHtml(el)}<span class="ailbl">AI 요약</span>${esc(sum)}`; else aiShow(el, btn, sum); } }
   catch (e) { if (shown && el.isConnected) aiHide(el, btn); toast(e.message || String(e)); toast.at = Date.now(); }
   finally { btn.classList.remove('busy'); }
 }
@@ -1943,7 +1944,10 @@ function kwPutMany(pairs) {
 function subjOf(el) { const box = el.closest('.note, .pcard'); if (!box || box.dataset.act === 'open-cell') return ''; const w = box.querySelector('.who, .nm'); return w ? w.textContent.trim() : ''; }
 // 글 앞 표시(🙏 · '이번 주:' · '•')는 요약 · 핵심으로 바꿔도 남긴다 (HB 11/7: 이슈 탭에서 기도 표시가 사라지던 것)
 function bodyOf(el) { return elText(el).slice(markOf(el).length); }   // AI 에는 표시를 떼고 보낸다(되돌아와 두 번 붙지 않게)
-function markOf(el) { const m = elText(el).match(/^\s*(🙏\s*|이번 주:\s*|•\s*)/); return m ? m[1] : ''; }
+// 기도 표시 = 작은 '기도' 알약 (HB 11/7 시안 B — 🙏 이모지가 튀어서)
+const PRAYTAG = '<span class="praytag">기도</span>';
+function markOf(el) { if (/^\s*<span class="praytag">/.test(AI.orig.get(el) || el.innerHTML)) return '기도'; const m = elText(el).match(/^\s*(🙏\s*|이번 주:\s*|•\s*)/); return m ? m[1] : ''; }
+function markHtml(el) { const m = markOf(el); return m === '기도' ? PRAYTAG : esc(m); }
 const NOLBL_TABS = ['issue', 'prayer', 'comment'];   // 본문만 있는 탭은 줄마다 '핵심' 알약을 달지 않는다 (HB 11/7: 시각 중복)
 const allOn = () => !!(PREF.aiAllT && PREF.aiAllT[PREF.tab]);   // 모두 요약 · 핵심 보기는 탭마다 따로 (HB 11/7)
 const kwOn = () => !!(PREF.aiKwT && PREF.aiKwT[PREF.tab]);
@@ -1955,7 +1959,7 @@ function kwShow(el, kw, still) {
   if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
   if (!el.classList.contains('aikw')) { AI.pre = AI.pre || new WeakMap(); AI.pre.set(el, { html: el.innerHTML, sum: el.classList.contains('aisum') }); }
   const h0 = el.clientHeight;
-  el.innerHTML = `${esc(markOf(el))}${NOLBL_TABS.includes(PREF.tab) ? '' : '<span class="ailbl kw">핵심</span>'}${esc(kw)}`; el.classList.add('aikw', 'aisum');
+  el.innerHTML = `${markHtml(el)}${NOLBL_TABS.includes(PREF.tab) ? '' : '<span class="ailbl kw">핵심</span>'}${esc(kw)}`; el.classList.add('aikw', 'aisum');
   if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 function kwHide(el, still) {
