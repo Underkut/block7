@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -74,7 +74,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .spacer{flex:1}
 .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--tx2);white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
-.pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ac{background:var(--ac-soft);color:var(--ac)} .pill.mine{background:var(--mine-soft);color:var(--mine)}
+.pill.yel{background:rgba(217,174,30,.16);color:var(--rest)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ac{background:var(--ac-soft);color:var(--ac)} .pill.mine{background:var(--mine-soft);color:var(--mine)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:4px 0 14px}
 .stat{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;position:relative;width:100%;transition:border-color .2s,box-shadow .2s}
 .stat.sel{border-color:var(--tx);box-shadow:inset 0 0 0 1px var(--tx)}
@@ -331,7 +331,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-3';
+const APP_VERSION = 'v. 26-1107-4';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -646,6 +646,8 @@ function cellHealth(rows, reps, st, thr) {
     req: reps.length ? { lv: lv(asks, 1, 3), text: '셀리더 요청 ' + asks + '번' } : { lv: 'na', text: '요청: 낸 보고서 없음' },
   };
 }
+// 셀리더 심방 알약 색 (HB 11/7): 기록 없음 = 빨강 · 한 달(30일) 넘음 = 주황 · 2주(14일) 넘음 = 노랑 · 2주 이내 = 초록
+function leaderLevel(days) { return days == null ? 'bad' : days >= 30 ? 'warn' : days >= 14 ? 'yel' : 'ok'; }
 // F 셀리더 돌봄 신호: 늦어지는 제출 · 연속 미제출 · 모임 못 함 · 조언 요청
 function leaderSignals(rows, reps) {
   const sig = [];
@@ -1883,11 +1885,16 @@ function leaderMembers() {   // 셀리더는 이름 글자만 있다(보고서�
 function careRelink() {
   if (!CARE.visits) return; const today = S.ctx && S.ctx.today;
   CARE.link = linkVisits([...S.members.values()], CARE.visits, today);
-  const lm = leaderMembers(); const ll = linkVisits(lm, CARE.visits, today); CARE.llink = {};
-  for (const m of lm) if (ll[m.id]) (CARE.llink[m.cell] = CARE.llink[m.cell] || []).push(Object.assign({ name: m.name }, ll[m.id]));
+  const lm = leaderMembers(); CARE.lm = lm; CARE.lres = linkVisits(lm, CARE.visits, today);
 }
 function careLeaderChip(cellId) {
-  return CARE.state !== 'ok' ? '' : (CARE.llink && CARE.llink[cellId] || []).map(c => `<span class="pill ${c.days != null && c.days > STALE ? 'warn' : ''}" title="심방 노트 · ${esc(c.name)}">심방 ${esc(shortWeek(c.last))}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span>`).join('');
+  if (CARE.state !== 'ok' || !CARE.lm) return '';
+  const mine = CARE.lm.filter(m => m.cell === cellId);
+  return mine.map(m => {
+    const r = CARE.lres && CARE.lres[m.id], who = mine.length > 1 ? m.name + ' ' : '';
+    return r ? `<span class="pill ${leaderLevel(r.days)}" title="심방 노트 · ${esc(m.name)}">${esc(who)}심방 ${esc(shortWeek(r.last))}${r.days != null ? ' · ' + r.days + '일 전' : ''}</span>`
+      : `<span class="pill bad" title="심방 노트 · ${esc(m.name)}">${esc(who)}심방 없음</span>`;
+  }).join('');
 }
 function careDemo() {
   const ago = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
