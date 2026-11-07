@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1108-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1108-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -24,7 +24,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=Nanum+Myeongjo:wght@800&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f3f3f0; --paper:#ffffff; --s1:#f7f7f4; --s2:#ebebe6; --line:#e4e4de; --line2:#cfcfc7;
@@ -55,6 +55,11 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .logo{display:flex;align-items:center;flex:none}
 .layer{position:fixed;inset:0;z-index:100;background:var(--bg);box-shadow:-8px 0 30px rgba(0,0,0,.12)}
 .layer iframe{border:0;width:100%;height:100%;display:block;background:var(--bg)}
+.nm-k{font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:1.32em;line-height:1}
+.nm{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}
+.nm-s{font-family:'Dancing Script',cursive;font-weight:700;font-size:.9em;color:#8a3f9c;letter-spacing:0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .nm-s{color:#c58ad4}}
+:root[data-theme="dark"] .nm-s{color:#c58ad4}
 .topline h1 img{width:24px;height:24px;border-radius:6px;border:0;box-shadow:none;flex:none;display:block}
 .iconbtn{width:34px;height:34px;display:grid;place-items:center;color:var(--tx2);border-radius:10px}
 .iconbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -357,7 +362,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1108-1';
+const APP_VERSION = 'v. 26-1108-2';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1226,7 +1231,7 @@ const ICON = {
   print: '<svg viewBox="0 0 24 24"><path d="M7 9V4h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v6H7z"/></svg>',
 };
 function renderShell() {
-  $('#root').innerHTML = `<header class="top"><div class="topline" style="position:relative"><h1><button class="logo" data-act="switch" title="${EMBED ? '사역 한눈에로 돌아가기' : '사역 한눈에로'}" aria-label="사역 한눈에로"><img src="favicon.png" alt="" width="24" height="24"></button>셀 inside</h1>
+  $('#root').innerHTML = `<header class="top"><div class="topline" style="position:relative"><h1><button class="logo" data-act="switch" title="${EMBED ? '사역 한눈에로 돌아가기' : '사역 한눈에로'}" aria-label="사역 한눈에로"><img src="favicon.png" alt="" width="24" height="24"></button><span class="nm"><span class="nm-k">셀</span><span class="nm-s">inside</span></span></h1>
       <button class="iconbtn" data-act="print" title="인쇄 · PDF">${ICON.print}</button>
       <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
       ${DEMO ? '<div class="demo">미리보기 — 지어낸 자료입니다. 셀 케어와 연결되지 않았습니다.</div>' : ''}
@@ -2581,7 +2586,7 @@ if (!EMBED) setTimeout(() => { checkUpdate.at = Date.now(); checkUpdate(false); 
    ===================================================================== */
 const LOGIN = { email: lsGet('cell_email', ''), sent: false, busy: false, msg: '' };
 function viewLogin() {
-  $('#root').innerHTML = `<div class="login"><h1>셀 inside</h1>
+  $('#root').innerHTML = `<div class="login"><h1><span class="nm"><span class="nm-k">셀</span><span class="nm-s">inside</span></span></h1>
     <p class="sub" style="margin:0 0 6px">셀 케어에서 쓰시는 이메일로 로그인합니다. 셀 케어 보고서를 <b>읽기만</b> 해서 다시 정리해 보여 드립니다.</p>
     ${!LOGIN.sent ? `<input type="email" id="lg-email" placeholder="이메일" value="${esc(LOGIN.email)}" autocomplete="email" inputmode="email">
       <button class="btn pri wide" data-act="send" ${LOGIN.busy ? 'disabled' : ''}>${LOGIN.busy ? '보내는 중…' : '로그인 코드 받기'}</button>`
