@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -282,9 +282,9 @@ h3 .lnk{font-weight:500}
 .morebtn{display:flex;align-items:center;justify-content:center;width:44px;height:24px;margin:-11px auto 0;padding:0;position:relative;z-index:1;color:var(--tx3);opacity:.7;transition:margin-top .28s cubic-bezier(.22,.8,.24,1)}
 .clamp.open+.morebtn,.morebtn.gmore{margin-top:2px}
 .aibtn{display:flex;align-items:center;justify-content:center;width:32px;height:24px;margin:-24px 0 0 auto;position:relative;z-index:1;color:var(--tx3);opacity:.75}
-.aibtn svg{width:15px;height:15px;fill:currentColor}
+.aibtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
 .aibtn.has{color:var(--ac);opacity:1}
-.aibtn.on svg{fill:none;stroke:var(--ac);stroke-width:1.6}
+.aibtn.on svg{fill:currentColor}
 .aibtn.busy svg{animation:aispin 1.1s linear infinite}
 @keyframes aispin{to{transform:rotate(360deg)}}
 .clamp.aisum{display:block;-webkit-line-clamp:unset;-webkit-mask-image:none;mask-image:none;white-space:pre-line}
@@ -341,7 +341,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-7';
+const APP_VERSION = 'v. 26-1107-8';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
