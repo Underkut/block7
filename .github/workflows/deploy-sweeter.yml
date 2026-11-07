@@ -18,6 +18,8 @@ on:
       - 'version.txt'
       - 'manifest-sweeter.json'
       - 'icon.png'
+      - 'icon-sweeter.png'  # Sweeter 파비콘 · 홈 화면 아이콘
+      - 'icon-block7.png'
       - 'fonts/**'
       - 'photos/**'
       - 'bible/**'          # 성경 본문 (개역한글)

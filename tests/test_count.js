@@ -97,7 +97,7 @@ console.log('\n시나리오 — 채운 아이콘은 개인 카운트만 본다')
   sc.eq('전체화면: 전체 집계 경로에 setCnt 가 없다',
         /_fetchVerseStat\(ref\)\.then\(st=>\{[\s\S]*?setCnt\(/.test(vf), false);
   sc.eq('전체화면: setText 는 아이콘을 안 건드린다',
-        SRC.includes("const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;};"),
+        SRC.includes("const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el){el.textContent=val;el.classList.toggle('vf-cnt0',!(+val>0));}};"),
         true);
 
   // 말씀카드 위젯 (_vcSyncCounts)
