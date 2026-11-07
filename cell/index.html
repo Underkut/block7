@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 한눈에 v. 26-1107-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 한눈에 v. 26-1107-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -331,7 +331,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-2';
+const APP_VERSION = 'v. 26-1107-3';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1640,7 +1640,7 @@ function cellCardsHtml() {
     const light = (k, label) => `<div class="lt" title="${esc(hl[k].text)}"><i class="${hl[k].lv}"></i><span>${label}</span></div>`;
     h += `<div class="card"><div class="row"><button class="lnk" data-act="open-cell" data-cell="${esc(c)}"><h3 style="margin:0">${esc(cellName(c))}</h3></button><span class="tiny muted">${esc(leaderOf(c))}</span><span class="spacer"></span><span class="small muted">${sm.avg == null ? '기록 없음' : '평균 ' + sm.avg + '명 · 최근 ' + sm.last + '명' + (sm.delta ? (sm.delta > 0 ? ' ▲' + sm.delta : ' ▼' + (-sm.delta)) : '') + (sm.rate != null ? ' · ' + sm.rate + '%' : '')}</span></div>
       ${hl ? `<div class="lights">${light('att', '출석')}${light('sub', '제출')}${light('rest', '쉼')}${light('issue', '이슈')}${light('req', '요청')}</div><div class="tiny muted" style="margin-top:2px">${esc([hl.att.text, hl.sub.text, hl.rest.text, hl.issue.text, hl.req.text].join(' · '))}</div>` : '<div class="tiny muted" style="margin-top:6px">신호를 계산하는 중…</div>'}
-      ${sig.length ? `<div class="sigs"><span class="tiny muted">셀리더</span>${sig.map(x => `<span class="pill ${LV[x.lv]}" title="${esc(x.note || '')}">${esc(x.t)}</span>`).join('')}${sig.find(x => x.note) ? `<div class="tiny muted clamp" style="width:100%">${esc(sig.filter(x => x.note).map(x => x.note).join(' · '))}</div>` : ''}</div>` : ''}
+      ${sig.length || careLeaderChip(c) ? `<div class="sigs"><span class="tiny muted">셀리더</span>${careLeaderChip(c)}${sig.map(x => `<span class="pill ${LV[x.lv]}" title="${esc(x.note || '')}">${esc(x.t)}</span>`).join('')}${sig.find(x => x.note) ? `<div class="tiny muted clamp" style="width:100%">${esc(sig.filter(x => x.note).map(x => x.note).join(' · '))}</div>` : ''}</div>` : ''}
       <div class="barscroll"><div class="barin" style="${ser.length > 5 ? `width:${ser.length * 20}%` : ''}"><div class="bars">${ser.map((x, k) => x.has ? `<div class="bar${inWin(k) ? '' : ' gray'}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}"><span class="n">${x.present}</span>${x.visitors ? `<div class="b v" style="height:${x.visitors / max * 52}px"></div>` : ''}<div class="b" style="height:${Math.max(2, x.present / max * 52)}px"></div></div>` : x.off ? `<div class="bar${inWin(k) ? '' : ' gray'}" data-act="bar" data-cell="${esc(c)}" data-week="${x.week}" title="모임 못 함"><span class="n">쉼</span><div class="b off"></div></div>` : '<div class="bar"><div class="b none"></div></div>').join('')}</div>
       <div class="barx">${ser.map((x, i) => `<span>${esc(i && x.week.slice(5, 7) === ser[i - 1].week.slice(5, 7) ? String(+x.week.slice(8, 10)) : shortWeek(x.week))}</span>`).join('')}</div></div></div></div>`;
   }
@@ -1852,12 +1852,12 @@ async function careFn(path) {
 }
 async function careLoad() {
   if (DEMO) return careDemo();
-  if (!FB.user || CARE.state === 'loading') return;
-  CARE.state = 'loading';
+  if (!FB.user || CARE.busy) return;
+  CARE.busy = true; if (CARE.state !== 'ok') CARE.state = 'loading';   // 이미 보이는 기록은 다시 받는 동안 그대로 둔다
   try {
     const cfg = await FB.db.collection('users').doc(FB.user.uid).collection('data').doc('care').get();
-    const sheet = cfg.exists && cfg.data().sheet; if (!sheet || !sheet.id) { CARE.state = 'nosheet'; return phoneUi(); }
-    const st = await careFn('/status'); if (!st.connected) { CARE.state = 'nogoogle'; return phoneUi(); }
+    const sheet = cfg.exists && cfg.data().sheet; if (!sheet || !sheet.id) { CARE.state = 'nosheet'; CARE.busy = false; return phoneUi(); }
+    const st = await careFn('/status'); if (!st.connected) { CARE.state = 'nogoogle'; CARE.busy = false; return phoneUi(); }
     const tok = (await careFn('/token')).access_token;
     const g = async (u) => { const r = await fetch(u, { headers: { Authorization: 'Bearer ' + tok } }); const j = await r.json().catch(() => ({})); if (!r.ok) { const e = new Error((j.error && j.error.message) || ('구글 ' + r.status)); e.status = r.status; throw e; } return j; };
     const SH = 'https://sheets.googleapis.com/v4/spreadsheets/', rng = (t, a) => encodeURIComponent("'" + t.replace(/'/g, "''") + "'!" + a);
@@ -1869,10 +1869,26 @@ async function careLoad() {
     const model = core.buildModel(vals, {});
     CARE.sheet = sheet; CARE.n = model.visits.length; CARE.visits = model.visits; careRelink();
     CARE.state = 'ok'; CARE.err = ''; CARE.at = Date.now();
-  } catch (e) { CARE.state = 'err'; CARE.err = e.status === 403 || e.status === 404 ? '심방 시트를 열 권한이 없습니다.\n심방 노트에서 구글을 다시 연결해 주세요.' : (e.message || String(e)); }
-  phoneUi(); if (['care', 'week'].includes(PREF.tab)) rerender();
+  } catch (e) { if (CARE.state === 'ok') { CARE.busy = false; return; }   // 다시 받다 실패해도 이미 보이던 기록은 그대로
+    CARE.state = 'err'; CARE.err = e.status === 403 || e.status === 404 ? '심방 시트를 열 권한이 없습니다.\n심방 노트에서 구글을 다시 연결해 주세요.' : (e.message || String(e)); }
+  CARE.busy = false;
+  phoneUi(); if (['care', 'week', 'cell'].includes(PREF.tab)) rerender();
+  const pv = $('#pv'); if (S.pview && pv && !pv.hidden) { const top = pv.scrollTop; pv.innerHTML = personHtml(); pv.scrollTop = top; }   // 먼저 열어 둔 사람 화면에도 기록이 나타나게
 }
-function careRelink() { if (CARE.visits) CARE.link = linkVisits([...S.members.values()], CARE.visits, S.ctx && S.ctx.today); }
+function leaderMembers() {   // 셀리더는 이름 글자만 있다(보고서의 leader_names) — 셀마다 가짜 셀원으로 세워 같은 규칙으로 맞춘다
+  const out = [];
+  for (const c of scopeIds()) for (const [i, nm] of leaderOf(c).split(/[,·/&+]|\s{2,}| 와 | 및 /).map(x => x.trim()).filter(Boolean).entries()) out.push({ id: 'L' + c + ':' + i, name: nm, cell: c });
+  return out;
+}
+function careRelink() {
+  if (!CARE.visits) return; const today = S.ctx && S.ctx.today;
+  CARE.link = linkVisits([...S.members.values()], CARE.visits, today);
+  const lm = leaderMembers(); const ll = linkVisits(lm, CARE.visits, today); CARE.llink = {};
+  for (const m of lm) if (ll[m.id]) (CARE.llink[m.cell] = CARE.llink[m.cell] || []).push(Object.assign({ name: m.name }, ll[m.id]));
+}
+function careLeaderChip(cellId) {
+  return CARE.state !== 'ok' ? '' : (CARE.llink && CARE.llink[cellId] || []).map(c => `<span class="pill ${c.days != null && c.days > STALE ? 'warn' : ''}" title="심방 노트 · ${esc(c.name)}">심방 ${esc(shortWeek(c.last))}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span>`).join('');
+}
 function careDemo() {
   const ago = (n) => { const d = new Date(Date.now() - n * 864e5); return d.toISOString().slice(0, 10); };
   CARE.visits = [{ name: '강믿음', ymd: ago(52), text: '이직 고민을 나눴습니다. 기도 부탁.', methodLabel: '티타임', allTags: ['직장'] },
@@ -1886,7 +1902,10 @@ function careChip(mid) {
   return `<span class="pill ${c.days != null && c.days > STALE ? 'warn' : ''}" title="심방 노트">심방 ${esc(shortWeek(c.last))}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span>`;
 }
 function careCard(mid) {
-  if (CARE.state !== 'ok') return CARE.state === 'loading' ? '<div class="card tiny muted">심방 기록을 불러오는 중…</div>' : '';
+  if (CARE.state !== 'ok') {
+    const why = { loading: '심방 기록을 불러오는 중…', nosheet: '심방 노트에서 아직 시트를 고르지 않았습니다.', nogoogle: '심방 노트에서 구글을 먼저 연결해 주세요.', err: CARE.err }[CARE.state];
+    return why ? `<div class="card tiny muted" style="white-space:pre-line">${esc(why)}</div>` : '';
+  }
   const c = CARE.link[mid];
   if (!c) return '<div class="card"><div class="row"><span class="small">심방</span><span class="spacer"></span><span class="tiny muted">심방 노트에 기록이 없습니다</span></div></div>';
   return `<div class="card"><div class="row"><span class="small">심방 ${c.n}번</span><span class="spacer"></span><span class="tiny ${c.days > STALE ? '' : 'muted'}" style="${c.days > STALE ? 'color:var(--warn)' : ''}">마지막 ${esc(c.last)}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span></div>
@@ -2277,6 +2296,17 @@ document.addEventListener('keydown', (e) => {
   if (S.view && !S.pview && e.key === 'ArrowRight') cvGo(S.view.idx - 1);
 });
 addEventListener('resize', () => markTab());
+// 손가락으로 끌다가 앱이 바뀌면(홈 막대 · 옆 끌기) touchend 가 안 와서 판이 밀리고 흐린 채 남던 것 (HB 11/7) — 끌던 흔적(transition:none 인 채 남은 translateX)을 걷는다
+function unstick() {
+  if (busyAnim) return;
+  for (const id of ['panel', 'cvp', 'cv', 'pv', 'bk']) {
+    const el = document.getElementById(id); if (!el) continue;
+    if (el.style.transition === 'none' && /^translateX\(/.test(el.style.transform)) { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; }
+  }
+}
+document.addEventListener('touchcancel', () => setTimeout(unstick, 0), { passive: true });
+addEventListener('pageshow', unstick);
+document.addEventListener('visibilitychange', () => { unstick(); if (document.visibilityState === 'visible' && FB.user && CARE.state === 'ok' && Date.now() - CARE.at > 120000) careLoad(); });
 
 /* =====================================================================
    시작
