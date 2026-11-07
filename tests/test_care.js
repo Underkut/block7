@@ -13,6 +13,7 @@
 //  ⑪ 기기끼리 설정 맞추기 — 고른 시트 · 폼 · 보관 기준만 계정에(users/{uid}/data/care), 나중에 고친 쪽을 따른다 · 심방 내용 · 시험 상태는 안 올린다
 //  ⑫ C2 쓰기 — 새 줄은 이름으로 찾은 칸에만 · 안 바꾼 기록을 저장하면 칸이 하나도 안 바뀐다 · 바뀐 칸만 · 그사이 시트에서 고친 칸은 잡는다 · 같은 기록ID 가 둘이면 쓰지 않는다
 //  ⑬ 할 일 체크('액션' 탭) · 덧붙임 탭
+//  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -30,6 +31,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
   joinMulti, splitEtc, blankRecord, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
+  TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -287,6 +289,25 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const ad = A.parseAddenda([['기록ID', '시각', '쓴 사람', '내용'], ['C1', '2026-11-07 10:00', 'a@b', '둘째'], ['C1', '2026-11-06 09:00', 'a@b', '첫째'], ['C2', '', '', ''], ['', 'x', 'y', '주인 없음']]);
   sc.eq('⑬ 덧붙임 — 기록마다 시각순 · 빈 줄 · 주인 없는 줄은 버린다', J([Object.keys(ad), ad.C1.map(x => x.x)]), [['C1'], ['첫째', '둘째']]);
   sc.eq('⑬ 기록ID 붙이기 상한', A.ID_PATCH_MAX <= 500, true);
+}
+
+// ⑭ 지우기 → 휴지통
+{
+  const H = HEAD.concat(['기록ID', '출처', '심방일', '수정', '확인', '보관']);
+  const row = [46332.4, '11/4', '라마바', '청년부', '식사', '학교 이야기\n둘째 줄', '학교', '중보', '중간', 'C7', '폼', '2026-11-04', '', '', ''];
+  const tr = A.trashRow(H, row, { id: 'C7', name: '라마바', ymd: '2026-11-04' }, '2026-11-07 10:00', 'a@b');
+  sc.eq('⑭ 휴지통 줄 — 기록ID · 이름 · 심방일 · 지운 시각 · 사람 · 원래 줄', J(tr.slice(0, 5)), ['C7', '라마바', '2026-11-04', '2026-11-07 10:00', 'a@b']);
+  sc.eq('⑭ 원래 줄은 빈 칸 빼고 머리글: 값', Object.keys(JSON.parse(tr[5])).length, 12);
+  sc.eq('⑭ 되살리기 — 같은 머리글이면 같은 줄', J(A.restoreRow(H, tr[5]).row), J(row));
+  const H2 = ['Timestamp', '장소 · 메모'].concat(H.slice(1));   // 그사이 폼에 질문이 하나 더 생겨 열이 밀렸다
+  const rr = A.restoreRow(H2, tr[5]);
+  sc.eq('⑭ 열이 밀려도 이름으로 제자리 · 새 칸은 빈 값', J([rr.row[0], rr.row[1], rr.row[3], rr.row[10]]), [46332.4, '', '라마바', 'C7']);
+  const rl = A.restoreRow(H.filter(x => x !== '태그'), tr[5]);
+  sc.eq('⑭ 지금 시트에 없는 칸은 lost 로 알린다', J(rl.lost), ['태그']);
+  sc.eq('⑭ 깨진 원래 줄은 되살리지 않는다', A.restoreRow(H, '{깨짐').bad, true);
+  const T = A.parseTrash([A.TRASH_HEAD, tr, ['C8', '가나다', '2026-10-31', '2026-11-07 11:00', 'a@b', '{"내용":"둘"}'], ['', '', '', '', '', '']]);
+  sc.eq('⑭ 휴지통 목록 — 최근에 지운 것부터 · 빈 줄 버림 · 줄 번호', J(T.map(x => [x.id, x.row, x.text])), [['C8', 3, '둘'], ['C7', 2, '학교 이야기\n둘째 줄']]);
+  sc.eq('⑭ 휴지통 줄 찾기는 기록ID 로 (같은 함수)', A.findRowById([['기록ID'], ['C7'], ['C8']], 'C8'), 3);
 }
 
 sc.done();
