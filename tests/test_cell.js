@@ -23,7 +23,7 @@ const ctx = { console, Math, JSON, Number, Object, Set, Map, Array, String, Date
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
 this.A = { APP_VERSION, SEEN_KEY, PREF_KEY, WEEKS_LOADED, addDays, weeksBack, weekLabel, pickMine, isSubmitted, stateOf, streakOf, streakText,
-  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiModelOrder, sseTexts, AI_MODELS, AI_KEY, AI_STORE, AI_MAX };`, ctx);
+  catsOf, groupIssues, issueMatrix, issNorm, issPick, issState, collectPrayers, unseenComments, mergeSeen, attendanceSeries, attendanceSummary, trimBeforeStart, attTaken, pool, normName, nameScore, normPhone, fmtPhone, parseVcf, matchContacts, prepContacts, autoFill, linkVisits, buildPeople, personStats, careList, dropping, newFaces, cellHealth, periodStats, thrNorm, THR_DEFAULT, leaderSignals, leaderLevel, anonText, deanon, textKey, aiPrompt, aiTrim, aiSync, aiModelOrder, sseTexts, AI_MODELS, aiChunks, aiBatchPrompt, aiParseArr, AI_CHUNK, AI_KEY, AI_STORE, AI_MAX };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 주 목록
@@ -383,6 +383,20 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 설정창 이름 · 처음값 두 문장 · 별 누르면 펼침', /한 문장으로|\$\{AI_LENS\[n\]\}으로/.test(HTML) && /\? n : 2/.test(HTML) && /AI\.opened\.add\(el\)/.test(HTML), true);
   sc.eq('⑱ 앱 이름 셀 inside', /<title>셀 inside<\/title>/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
+}
+
+// ⑳ 1107-2 셀 inside C1 · C2 — 여러 글 한 번에 (지어낸 글)
+{
+  const L = Array.from({ length: 23 }, (_, i) => ({ text: '가'.repeat(i === 5 ? 6000 : 100) }));
+  sc.eq('⑳ 묶음: 10개씩 · 글자가 너무 많으면 일찍 끊는다', A.aiChunks(L, A.AI_CHUNK, 6000).map(c => c.length), [5, 1, 10, 7]);
+  const pk = A.aiBatchPrompt(['셀원 A 이직 고민', '기도 부탁'], 'kw', 2), ps = A.aiBatchPrompt(['x'], 'sum', 1);
+  sc.eq('⑳ 핵심 요청: 명사형 · 번호 · JSON 배열 · 이름표 그대로', [/명사형 핵심어/.test(pk), /\[1\]\n셀원 A 이직 고민/.test(pk), /\[2\]\n기도 부탁/.test(pk), /문자열 2개가 든 JSON 배열/.test(pk), /"셀원 A" 같은 표기는 바꾸지 말고/.test(pk)], [true, true, true, true, true]);
+  sc.eq('⑳ 요약 요청은 설정한 길이를 따른다', /한 문장으로 요약/.test(ps), true);
+  sc.eq('⑳ 답 꺼내기: ```json 감싸기 · 앞말 · 개수 넘침 · 깨진 답', [J(A.aiParseArr('```json\n["가 · 나", "다"]\n```', 2)), J(A.aiParseArr('여기 있습니다: ["a","b","c"]', 2)), A.aiParseArr('엉망', 2)], [['가 · 나', '다'], ['a', 'b'], null]);
+  sc.eq('⑳ 탭 아래 오른쪽 별 둘(모두 요약 · 핵심 보기)', /data-act="ai-all"/.test(HTML) && /data-act="ai-kw"/.test(HTML) && /id="aibar"/.test(HTML), true);
+  sc.eq('⑳ 묶어 보낼 때도 anonText 를 거친다', /const an = items\.map\(x => anonText\(x\.text, names\)\)/.test(HTML) && /aiBatchPrompt\(an\.map\(a => a\.text\)/.test(HTML), true);
+  sc.eq('⑳ 한꺼번에 요약 · 핵심 만들기 전에 확인을 받는다', /confirm\(`이 화면의 접힌 글 \$\{miss\.length\}개를 AI 로 요약할까요/.test(HTML) && /confirm\(`이 화면의 본문 \$\{miss\.length\}개를 AI 로 핵심만/.test(HTML), true);
+  sc.eq('⑳ 핵심도 계정 ai 칸(kw)에 · 이 기기 이름 cell_', /aiCloud\(\{ kw: patch \}\)/.test(HTML) && /const AI_KW = 'cell_ai_kw'/.test(HTML), true);
 }
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
