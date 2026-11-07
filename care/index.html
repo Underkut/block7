@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -421,6 +421,18 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .trow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
 .trow .t2{color:var(--tx2);font-size:13px;margin:2px 0}
 .tbtn{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.pcard{display:grid;grid-template-columns:1fr;gap:8px;padding:12px 0}
+.pmain{display:grid;grid-template-columns:48px 1fr;gap:12px;width:100%;text-align:left}
+.pdate{display:flex;flex-direction:column;align-items:center;line-height:1.25}.pdate b{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.pbody{display:flex;flex-direction:column;gap:2px;min-width:0}.pcal{display:inline-flex;align-items:center;gap:4px}.pcal svg{width:13px;height:13px;stroke:currentColor;stroke-width:1.6;fill:none}
+.pacts{display:flex;justify-content:flex-end;gap:8px}.pcard.late .pdate b{color:var(--warn)}
+.evp{padding:3px 9px;border-radius:6px;border:1px dashed var(--tx3);color:var(--tx);font-size:13px}
+.btn.danger{color:#b03a3a;border-color:color-mix(in srgb,#b03a3a 40%,transparent)}
+button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;text-align:left}
+.title-ed{display:flex;align-items:center;gap:6px;margin:6px 0 2px;grid-column:1/-1;flex-wrap:wrap}
+.title-ed input{width:90px;padding:7px 9px;border-radius:9px;border:1px solid var(--line2);background:var(--paper);color:var(--tx);font:inherit;font-size:14px}
+.title-ed .nmv{padding:7px 10px;border-radius:9px;background:var(--s2);font-size:14px}
+.preview{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--tx2);margin-top:4px}
 .arow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
 .arow.hid span{color:var(--tx3)}.arow small{font-size:11.5px;color:var(--tx3);margin-left:4px}
 .aadd{display:flex;gap:8px;margin:10px 0 4px}.aadd .inp{flex:1;min-width:0;padding:8px 11px;font-size:14px}
@@ -437,7 +449,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-4';
+const APP_VERSION = 'v. 26-1108-5';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -618,7 +630,7 @@ function idPatches(values, nowMs, max) {
 // ⚠️ 심방 내용은 여기 넣지 않는다. 파일 이름 · id · 기준값뿐이다. BLOCK7 은 data/ 아래에서 state · backup_0~2 ·
 //    conflicts 만 이름으로 읽으므로 이 문서와 부딪치지 않는다.
 const CFG_DOC = 'data/care';
-const CFG_FIELDS = ['sheet', 'form', 'responder', 'cutoff', 'stale'];
+const CFG_FIELDS = ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf'];   // calPre · calSuf: '심방' 일정 제목 앞 · 뒤 글자(C3)
 function pickCfg(o) { const r = {}; CFG_FIELDS.forEach(k => { if (o && o[k] !== undefined) r[k] = o[k]; }); if (o && o.at) r.at = o.at; return r; }
 // 나중에 고친 쪽을 따른다. 시각 없는 옛 기기 값(이 기능 전에 고른 것)은 계정 것보다 뒤로 친다.
 // → { local: 이 기기에 쓸 값(없으면 null), push: 계정에 올릴 값(없으면 null) }
@@ -871,6 +883,99 @@ function etcCandidates(visits, title, rows) {
   (visits || []).forEach(v => [].concat(v[f] || []).forEach(x => { x = norm(x); if (x && !known.has(x)) cnt[x] = (cnt[x] || 0) + 1; }));
   return Object.keys(cnt).map(val => ({ val, n: cnt[val] })).sort((a, b) => b.n - a.n || a.val.localeCompare(b.val));
 }
+// ── 심방 계획 · '심방' 캘린더 (C3) ──
+// 계획 하나 = 시트 '계획' 탭 한 줄 + '심방' 캘린더 일정 하나. 일정에는 제목(성도 이름)과 보이지 않는 표식
+// (extendedProperties.private: careApp='care', careId=계획ID)만 둔다 — 장소 · 물어볼 것은 앱(시트)에만 (HB 결정 8).
+// 맞추는 규칙(planCalSync):
+//  · 시간 · 날짜는 **캘린더가 이긴다** — 앱에서 고치면 그 자리에서 일정도 고치므로, 둘이 다르면 캘린더 쪽에서 옮긴 것이다
+//  · 캘린더에서 지움(cancelled) → 계획 '취소됨'. 일정을 못 찾으면(목록에 없음) 아무것도 안 한다
+//  · 일정ID 가 빈 계획 → 같은 표식의 일정이 이미 있으면 그것을 이어 붙이고(만들다 끊긴 경우), 없으면 만든다
+//  · 같은 계획의 일정이 둘 이상(두 기기가 같이 만듦) → 계획이 가리키는 것만 남기고 지운다
+//  · 지우기는 한 번에 CAL_DEL_MAX 개까지, 그리고 **우리 표식이 붙은 일정만** 지운다
+const PLAN_TAB = '계획';
+const PLAN_NOCAL = '없음';                 // '캘린더에 안 넣음' 을 고른 계획의 일정ID 칸
+const PLAN_ST = { todo: '예정', done: '기록됨', cancel: '취소됨' };
+const CAL_DEL_MAX = 5, CAL_CREATE_MAX = 10;
+const DONE_MARK = '✓ ';
+function parsePlans(values) {
+  const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
+  const ci = { id: c('계획ID'), name: c('성도'), date: c('날짜'), time: c('시간'), method: c('방식'), place: c('장소'), why: c('물어볼 것'), st: c('상태'), ev: c('캘린더 일정ID'), rec: c('기록ID') };
+  if (ci.id < 0 || ci.name < 0 || ci.date < 0) return out;
+  const g = (r, k) => (ci[k] < 0 ? '' : r[ci[k]]);
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], id = norm(r[ci.id]); if (!id) continue;
+    const d = g(r, 'date'), date = typeof d === 'number' ? serialYmd(d) : (tsYmd(d) || norm(d));
+    const t = g(r, 'time'), time = typeof t === 'number' ? String(Math.floor(t * 24)).padStart(2, '0') + ':' + String(Math.round(t * 1440) % 60).padStart(2, '0') : norm(t);
+    out.push({ row: i + 1, id, name: norm(g(r, 'name')), date, time: /^\d{1,2}:\d{2}$/.test(time) ? time.padStart(5, '0') : '', method: norm(g(r, 'method')), place: norm(g(r, 'place')),
+      why: String(g(r, 'why') || ''), status: norm(g(r, 'st')) || PLAN_ST.todo, evId: norm(g(r, 'ev')), recId: norm(g(r, 'rec')) });
+  }
+  return out;
+}
+function calTitle(name, pre, suf) { return (pre || '') + norm(name) + (suf || ''); }
+// 일정 시각 → 이 기기 기준 { date, time } (하루 종일이면 time '')
+function evWhen(ev) {
+  const s = (ev && ev.start) || {};
+  if (s.date) return { date: s.date, time: '' };
+  if (!s.dateTime) return { date: '', time: '' };
+  const d = new Date(s.dateTime);
+  return { date: ymdOf(d), time: String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') };
+}
+// 계획 → 일정 몸통 (시간 없으면 하루 종일, 있으면 한 시간)
+function calEventBody(p, pre, suf, tz, done) {
+  const b = { summary: (done ? DONE_MARK : '') + calTitle(p.name, pre, suf), extendedProperties: { private: { careApp: 'care', careId: p.id } } };
+  if (p.time) {
+    const [hh, mm] = p.time.split(':').map(Number), endMin = hh * 60 + mm + 60;
+    const endDate = endMin >= 1440 ? ymdAdd(p.date, 1) : p.date, em = endMin % 1440;
+    b.start = { dateTime: p.date + 'T' + p.time + ':00', timeZone: tz };
+    b.end = { dateTime: endDate + 'T' + String(Math.floor(em / 60)).padStart(2, '0') + ':' + String(em % 60).padStart(2, '0') + ':00', timeZone: tz };
+  } else { b.start = { date: p.date }; b.end = { date: ymdAdd(p.date, 1) }; }
+  return b;
+}
+function evCareId(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return pr && pr.careApp === 'care' ? norm(pr.careId) : ''; }
+// 계획 줄 · 우리 표식이 붙은 일정들 → 할 일
+function planCalSync(plans, events, pre, suf) {
+  const out = { planCells: [], create: [], patch: [], del: [], n: { moved: 0, canceled: 0, created: 0, adopted: 0, dup: 0, titled: 0, heldBack: 0 } };
+  const byId = new Map(), byCare = {};
+  (events || []).forEach(e => { byId.set(e.id, e); const c = evCareId(e); if (c && e.status !== 'cancelled') (byCare[c] = byCare[c] || []).push(e); });
+  const del = id => { if (out.del.length < CAL_DEL_MAX) { if (!out.del.includes(id)) out.del.push(id); } else out.n.heldBack++; };
+  (plans || []).forEach(p => {
+    if (p.evId === PLAN_NOCAL) return;
+    const mine = byCare[p.id] || [];
+    let ev = p.evId ? byId.get(p.evId) : null, evId = p.evId;
+    if (!evId && mine.length) {   // 만들다 끊긴 것 — 이미 만든 일정을 이어 붙인다
+      ev = mine[0]; evId = ev.id; out.planCells.push({ id: p.id, row: p.row, cells: { '캘린더 일정ID': evId } }); out.n.adopted++;
+    }
+    mine.filter(e => e.id !== evId).forEach(e => { del(e.id); out.n.dup++; });   // 두 기기가 같이 만든 여벌
+    if (p.status === PLAN_ST.todo) {
+      if (!evId) { if (out.create.length < CAL_CREATE_MAX) { out.create.push(p.id); out.n.created++; } return; }
+      if (!ev) return;                                                     // 목록에 없다 — 모르는 일은 하지 않는다
+      if (ev.status === 'cancelled') { out.planCells.push({ id: p.id, row: p.row, cells: { '상태': PLAN_ST.cancel } }); out.n.canceled++; return; }
+      const w = evWhen(ev);
+      if (w.date && (w.date !== p.date || w.time !== p.time)) { out.planCells.push({ id: p.id, row: p.row, cells: { '날짜': w.date, '시간': w.time } }); out.n.moved++; }
+      if (norm(ev.summary) !== norm(calTitle(p.name, pre, suf))) { out.patch.push({ evId, body: { summary: calTitle(p.name, pre, suf) } }); out.n.titled++; }
+    } else if (ev && ev.status !== 'cancelled') {
+      if (p.status === PLAN_ST.done && norm(ev.summary) !== norm(DONE_MARK + calTitle(p.name, pre, suf))) { out.patch.push({ evId, body: { summary: DONE_MARK + calTitle(p.name, pre, suf) } }); out.n.titled++; }
+      if (p.status === PLAN_ST.cancel && evCareId(ev) === p.id) del(evId);   // 앱에서 취소했는데 일정이 남아 있다 → 지운다(우리 표식인 것만)
+    }
+  });
+  return out;
+}
+// 계획 → 새 기록 꼴 (기록 쓰기)
+function recordFromPlan(p, people) {
+  const per = (people && people[p.name]) || {};
+  return Object.assign(blankRecord(p.date, { roles: per.roles || [] }), { name: p.name, method: p.method, place: p.place });
+}
+// 계획 탭에 쓸 줄 (머리글 이름으로 자리 찾기)
+const PLAN_FIELDS = { '계획ID': 'id', '성도': 'name', '날짜': 'date', '시간': 'time', '방식': 'method', '장소': 'place', '물어볼 것': 'why', '상태': 'status', '캘린더 일정ID': 'evId', '기록ID': 'recId' };
+function planRow(header, p) { return (header || []).map(h => { const k = PLAN_FIELDS[norm(h)]; return k ? (p[k] == null ? '' : p[k]) : ''; }); }
+// 제안 — 오래 못 만난 분에게 '물어볼 것' 을 채워 둔다 (남은 할 일 · 지난 이야기 첫 줄)
+function planWhyFor(person) {
+  const vs = (person && person.visits) || [], last = vs[0], open = [].concat(...vs.map(v => v.actions.filter(a => !a.done).map(a => a.t === '기타' && a.x ? a.x : a.t)));
+  const lines = [];
+  if (open.length) lines.push('남은 할 일: ' + Array.from(new Set(open)).join(', '));
+  if (last && norm(last.text)) lines.push('지난번(' + (+last.ymd.slice(5, 7)) + '/' + (+last.ymd.slice(8)) + '): ' + String(last.text).split('\n').find(x => x.trim()).trim().slice(0, 60));
+  return lines.join('\n');
+}
 function stampLocal(nowMs) { const d = new Date(nowMs); return ymdOf(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
 // ───────── C1 열람 (읽기만) ─────────
@@ -1037,6 +1142,7 @@ async function fbInit() {
   AUTH = app.auth(); DB = app.firestore();
   AUTH.onAuthStateChanged(u => {
     USER = u; TOK = null; AUTH_READY = true; DATA.state = 'idle'; DATA.model = null;
+    DATA.calId = null; DATA.calOurs = null; DATA.cal = []; DATA.plans = null;   // 계정이 바뀌면 남의 캘린더 · 계획을 들고 있지 않게 (코덱스 검토 PR 977)
     if (u) googleStatus(); else render();
   });
 }
@@ -1157,6 +1263,7 @@ async function loadData(quiet) {
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
     DATA.actStatus = parseActionTab(tabNames.includes('액션') ? await readTab(s.id, '액션') : []);
     DATA.addenda = parseAddenda(tabNames.includes('덧붙임') ? await readTab(s.id, '덧붙임') : []);
+    DATA.plans = tabNames.includes(PLAN_TAB) ? parsePlans(await readTab(s.id, PLAN_TAB)) : [];
     let form = DATA.form;
     const f = saved().form;
     if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
@@ -1391,22 +1498,158 @@ async function addPlaceQuestion() {
   await gapi(FORMS + f.id + ':batchUpdate', { method: 'POST', body: { requests: [rq], writeControl: { requiredRevisionId: fj.revisionId } } });
   DATA.form = null; toast('폼에 \'장소 · 메모\' 질문을 더했습니다\n시트에 그 칸이 생기면 앱에서도 바로 씁니다'); await loadData(true);
 }
+// ── 계획 쓰기 (C3) — 계획 줄을 먼저 적고 일정을 만든다. 일정 만들기가 끊기면 다음 맞춤이 (표식으로 찾아) 이어 붙이거나 다시 만든다
+async function ensurePlanTab(s) { if (!(await ensurePrepared())) return false; const m = await sheetMeta(s.id); if (!(m.sheets || []).some(x => x.properties.title === PLAN_TAB)) throw new Error('계획 탭이 없습니다 — 설정에서 시트 준비를 다시 해 주세요'); return true; }
+async function savePlan(L) {
+  const f = L.form;
+  if (!norm(f.name)) { toast('성도 이름을 적어 주세요'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { toast('날짜를 골라 주세요'); return; }
+  const s = saved().sheet; if (!(await ensurePlanTab(s))) return;
+  const p = { name: norm(f.name), date: f.date, time: f.time || '', method: f.method || norm(f.methodEtc), place: norm(f.place), why: String(f.why || '').trim() };
+  let calNote = '';
+  if (!L.planId) {
+    Object.assign(p, { id: newId('P', Date.now(), Math.random()), status: PLAN_ST.todo, evId: f.cal ? '' : PLAN_NOCAL, recId: '' });
+    const { h } = await planTab(s);
+    await appendTo(s.id, PLAN_TAB, planRow(h, p));
+    if (f.cal) { try { await planSet(s, p.id, { '캘린더 일정ID': await evInsert(p) }); } catch (e) { calNote = '\n캘린더에는 다음에 다시 넣습니다'; } }
+    L.dirty = false; closeLayer(true); toast('계획을 적었습니다' + (f.cal && !calNote ? '\n\'심방\' 캘린더에도 넣었습니다' : calNote));
+  } else {
+    const old = (DATA.plans || []).find(x => x.id === L.planId); if (!old) throw new Error('이 계획을 찾지 못했습니다');
+    await planSet(s, old.id, { '성도': p.name, '날짜': p.date, '시간': p.time, '방식': p.method, '장소': p.place, '물어볼 것': p.why });
+    const real = old.evId && old.evId !== PLAN_NOCAL, np = Object.assign({}, old, p);
+    try {
+      if (real && f.cal) { const sv = saved(), b = calEventBody(np, sv.calPre, sv.calSuf, TZ); await evPatch(old.evId, { summary: b.summary, start: b.start, end: b.end }); }
+      else if (real && !f.cal) { await evDelete(old.evId); await planSet(s, old.id, { '캘린더 일정ID': PLAN_NOCAL }); }
+      else if (!real && f.cal) { await planSet(s, old.id, { '캘린더 일정ID': '' }); await planSet(s, old.id, { '캘린더 일정ID': await evInsert(np) }); }
+    } catch (e) { calNote = '\n⚠️ 캘린더 일정은 고치지 못했습니다\n한 번 더 저장해 주세요 (그대로 두면 캘린더 쪽 시간으로 돌아갑니다)'; }
+    L.dirty = false; closeLayer(true); toast('계획을 고쳤습니다' + calNote);
+  }
+  await loadData(true);
+}
+async function cancelPlan(id) {
+  const s = saved().sheet, p = (DATA.plans || []).find(x => x.id === id); if (!p) return;
+  await planSet(s, id, { '상태': PLAN_ST.cancel });
+  if (p.evId && p.evId !== PLAN_NOCAL) { try { await evDelete(p.evId); } catch (e) { /* 다음 맞춤이 지운다 */ } }
+}
+// 기록은 저장했는데 계획 표시(기록됨)가 끊긴 것 — 이 기기에 계획ID · 기록ID 만 적어 두고 다음에 다시 한다 (코덱스 검토 PR 977)
+const PEND_KEY = 'care_plan_done_v1';
+function pendDone() { try { return JSON.parse(localStorage.getItem(PEND_KEY) || '[]') || []; } catch (e) { return []; } }
+function setPendDone(a) { try { if (a.length) localStorage.setItem(PEND_KEY, JSON.stringify(a)); else localStorage.removeItem(PEND_KEY); } catch (e) {} }
+async function finishPlan(planId, recId) {
+  for (let i = 0; i < 2; i++) { try { await markPlanDone(planId, recId); return true; } catch (e) { /* 한 번 더 */ } }
+  setPendDone(pendDone().filter(x => x.planId !== planId).concat([{ planId, recId }]));
+  toast('기록은 저장했습니다\n계획을 \'기록됨\' 으로 바꾸지 못해 다음에 다시 합니다', 6000);
+  return false;
+}
+async function retryPendDone() {
+  const a = pendDone(); if (!a.length) return;
+  const keep = [];
+  for (const x of a) {
+    const p = (DATA.plans || []).find(q => q.id === x.planId);
+    if (!p || p.status !== PLAN_ST.todo) continue;   // 이미 됐거나 없는 계획
+    try { await markPlanDone(x.planId, x.recId); } catch (e) { keep.push(x); }
+  }
+  setPendDone(keep);
+  if (keep.length < a.length) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); render(); }
+}
+async function markPlanDone(id, recId) {
+  const s = saved().sheet, p = (DATA.plans || []).find(x => x.id === id); if (!p) return;
+  await planSet(s, id, { '상태': PLAN_ST.done, '기록ID': recId || '' });
+  if (p.evId && p.evId !== PLAN_NOCAL) { try { const sv = saved(); await evPatch(p.evId, { summary: DONE_MARK + calTitle(p.name, sv.calPre, sv.calSuf) }); } catch (e) { /* 다음 맞춤이 고친다 */ } }
+}
+// '심방' 캘린더에만 있는 일정 → 계획으로 (일정엔 표식만 붙인다)
+async function importCalEvent(evId) {
+  const e = (DATA.cal || []).find(x => x.id === evId); if (!e) return;
+  const s = saved().sheet; if (!(await ensurePlanTab(s))) return;
+  const sv = saved(); let name = e.title;
+  if (sv.calPre && name.startsWith(sv.calPre)) name = name.slice(sv.calPre.length);
+  if (sv.calSuf && name.endsWith(sv.calSuf)) name = name.slice(0, -sv.calSuf.length);
+  const p = { id: newId('P', Date.now(), Math.random()), name: norm(name), date: e.ymd, time: e.time, method: '', place: '', why: '', status: PLAN_ST.todo, evId: e.id, recId: '' };
+  const { h } = await planTab(s);
+  await appendTo(s.id, PLAN_TAB, planRow(h, p));
+  await evPatch(e.id, { extendedProperties: { private: { careApp: 'care', careId: p.id } } });
+  toast('계획으로 가져왔습니다\n' + p.name + ' · ' + md(p.date)); await loadData(true);
+}
 const BUSY = { on: false };
 async function busy(fn) { if (BUSY.on) return; BUSY.on = true; document.body.classList.add('busy'); try { return await fn(); } finally { BUSY.on = false; document.body.classList.remove('busy'); } }
 // '심방' 캘린더 — 앞으로 3주 일정 (읽기만. 계획 만들기는 C3)
-async function loadCal() {
+const TZ = (Intl.DateTimeFormat().resolvedOptions().timeZone) || 'Asia/Seoul';
+const enc = encodeURIComponent;
+async function calId() {
+  if (DATA.calId) return DATA.calId;
+  const list = await gapi(CAL + 'users/me/calendarList?minAccessRole=writer'), c = (list.items || []).find(x => norm(x.summary) === '심방');
+  DATA.calId = c ? c.id : null; return DATA.calId;
+}
+const evUrl = (cid, id) => CAL + 'calendars/' + enc(cid) + '/events' + (id ? '/' + enc(id) : '');
+async function evInsert(p, done) { const cid = await calId(); if (!cid) throw new Error("'심방' 캘린더가 없습니다"); const sv = saved(); return (await gapi(evUrl(cid), { method: 'POST', body: calEventBody(p, sv.calPre, sv.calSuf, TZ, done) })).id; }
+async function evPatch(id, body) { const cid = await calId(); await gapi(evUrl(cid, id), { method: 'PATCH', body }); }
+async function evDelete(id) { const cid = await calId(); try { await gapi(evUrl(cid, id), { method: 'DELETE' }); } catch (e) { if (e.status !== 404 && e.status !== 410) throw e; } }
+// '심방' 캘린더 — 우리 표식 일정(지운 것 포함, 맞추기용)과 우리 것이 아닌 일정(보기용)
+async function loadCal(noSync) {
   try {
-    const list = await gapi(CAL + 'users/me/calendarList?minAccessRole=reader');
-    const cal = (list.items || []).find(c => norm(c.summary) === '심방');
-    if (!cal) { DATA.cal = []; DATA.calErr = "'심방' 캘린더가 없습니다"; render(); return; }
+    const cid = await calId();
+    if (!cid) { DATA.cal = []; DATA.calOurs = []; DATA.calErr = "'심방' 캘린더가 없습니다"; render(); return; }
+    let ours = [], tok = '';
+    for (let i = 0; i < 4; i++) {
+      const j = await gapi(evUrl(cid) + '?privateExtendedProperty=' + enc('careApp=care') + '&showDeleted=true&maxResults=250' + (tok ? '&pageToken=' + enc(tok) : ''));
+      ours = ours.concat(j.items || []); tok = j.nextPageToken; if (!tok) break;
+    }
+    DATA.calOurs = ours;
     const t0 = new Date(); t0.setHours(0, 0, 0, 0); const t1 = new Date(t0.getTime() + 35 * 86400000);
-    const ev = await gapi(CAL + 'calendars/' + encodeURIComponent(cal.id) + '/events?singleEvents=true&orderBy=startTime&maxResults=50&timeMin=' + encodeURIComponent(ymdAdd(ymdOf(t0), -14) + 'T00:00:00Z') + '&timeMax=' + encodeURIComponent(t1.toISOString()));
-    DATA.cal = (ev.items || []).filter(e => e.status !== 'cancelled').map(e => ({
-      id: e.id, title: norm(e.summary), ymd: (e.start.date || ymdOf(new Date(e.start.dateTime))),
-      time: e.start.dateTime ? new Date(e.start.dateTime).toTimeString().slice(0, 5) : '', link: e.htmlLink || '' }));
+    const ev = await gapi(evUrl(cid) + '?singleEvents=true&orderBy=startTime&maxResults=50&timeMin=' + enc(ymdAdd(ymdOf(t0), -14) + 'T00:00:00Z') + '&timeMax=' + enc(t1.toISOString()));
+    DATA.cal = (ev.items || []).filter(e => e.status !== 'cancelled' && !evCareId(e)).map(e => { const w = evWhen(e); return { id: e.id, title: norm(e.summary), ymd: w.date, time: w.time, link: e.htmlLink || '' }; });
     DATA.calErr = '';
-  } catch (e) { DATA.cal = []; DATA.calErr = '캘린더를 읽지 못했습니다'; }
+  } catch (e) { DATA.cal = []; DATA.calOurs = null; DATA.calId = null; DATA.calErr = '캘린더를 읽지 못했습니다'; }
   render();
+  if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.plans) await retryPendDone();
+  if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.calOurs) {
+    try { if (await calSync()) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); await loadCal(true); } } catch (e) { /* 다음에 다시 */ }
+  }
+}
+// 계획 ↔ '심방' 캘린더 맞추기 (규칙은 care-core planCalSync)
+let CAL_SYNCING = false;
+const CAL_GONE_MAX = 2;   // 한 번에 '목록에도 없고 물어봐도 없음' 으로 취소할 계획 수
+async function calSync() {
+  if (CAL_SYNCING || !DATA.plans) return false;
+  CAL_SYNCING = true;
+  try {
+    const s = saved().sheet, sv = saved(), cid = await calId(); if (!cid) return false;
+    const evs = (DATA.calOurs || []).slice(), have = new Set(evs.map(e => e.id));
+    // 지운 일정은 목록에서 빠질 수 있다 → 계획이 가리키는데 목록에 없는 일정은 하나씩 직접 물어본다(10개까지)
+    // 못 찾음(404)이 여럿이면 엉뚱한 캘린더를 보고 있을 수 있다 → 그때는 아무것도 취소하지 않는다 (지우는 쪽엔 상한)
+    const gone = [];
+    for (const p of DATA.plans.filter(x => x.status === PLAN_ST.todo && x.evId && x.evId !== PLAN_NOCAL && !have.has(x.evId)).slice(0, 10)) {
+      try { evs.push(await gapi(evUrl(cid, p.evId))); } catch (e) { if (e.status === 404 || e.status === 410) gone.push({ id: p.evId, status: 'cancelled' }); }
+    }
+    if (gone.length <= CAL_GONE_MAX) gone.forEach(g => evs.push(g));
+    const plan = planCalSync(DATA.plans, evs, sv.calPre, sv.calSuf);
+    let changed = false;
+    for (const pc of plan.planCells) { await planSet(s, pc.id, pc.cells); changed = true; }
+    for (const id of plan.create) { const p = DATA.plans.find(x => x.id === id); try { const eid = await evInsert(p); await planSet(s, id, { '캘린더 일정ID': eid }); changed = true; } catch (e) { /* 다음에 */ } }
+    for (const x of plan.patch) { try { await evPatch(x.evId, x.body); changed = true; } catch (e) { } }
+    for (const id of plan.del) { try { await evDelete(id); changed = true; } catch (e) { } }
+    const m = [];
+    if (plan.n.moved) m.push('캘린더에서 옮긴 계획 ' + plan.n.moved + '개를 따라 옮겼습니다');
+    if (plan.n.canceled) m.push('캘린더에서 지운 계획 ' + plan.n.canceled + '개를 취소로 바꿨습니다');
+    if (m.length) toast(m.join('\n'));
+    return changed;
+  } finally { CAL_SYNCING = false; }
+}
+// 계획 탭 쓰기 — 언제나 계획ID 로 줄을 새로 찾는다
+async function planTab(s) { const v = await readTab(s.id, PLAN_TAB); return { v, h: (v[0] || []).map(norm) }; }
+async function planSet(s, id, cells) {
+  const { v, h } = await planTab(s), r = findRowById(v.map(x => [x[h.indexOf('계획ID')]]), id);
+  if (r === -2) throw new Error('계획 탭에 같은 계획ID 가 둘 있습니다 — 쓰지 않았습니다.');
+  if (r < 0) throw new Error('계획 탭에서 이 계획을 찾지 못했습니다.');
+  await batchValues(s.id, Object.keys(cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1(PLAN_TAB, h.indexOf(k), r), values: [[cells[k]]] })));
+}
+function calItems() {   // 달력 · 성도 흐름에 띄울 것 = 예정 계획 + 우리 것이 아닌 '심방' 일정
+  const ps = (DATA.plans || []).filter(p => p.status === PLAN_ST.todo).map(p => ({ planId: p.id, title: p.name, ymd: p.date, time: p.time }));
+  return ps.concat(calOthers());
+}
+function calOthers() {   // 계획이 이미 가리키는 일정은 빼고 (표식 붙이기가 끊긴 경우 두 번 가져오지 않게)
+  const used = new Set((DATA.plans || []).map(p => p.evId).filter(Boolean));
+  return (DATA.cal || []).filter(e => !used.has(e.id));
 }
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState !== 'visible' || !USER || !G.connected) return;
@@ -1476,7 +1719,7 @@ function head(title, left, right) {
   return '<div class="ph-head r2"><span></span><h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
-  const f = S.view === 'plan' ? '' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
+  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
   return f + '<nav class="ph-nav">' + TABS_NAV.map(t => { const on = S.view === t[0] || (t[0] === 'week' && S.view === 'month');
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
@@ -1591,30 +1834,67 @@ function lPerson(L) {
   if (tk.length) h += '<div class="h-sec">자주 나온 이야기</div><div class="cloud">' + tk.map(x => '<span style="font-size:' + Math.min(24, 13 + tc[x] * 3) + 'px;' + (tc[x] > 1 ? 'color:var(--tx);font-weight:500' : '') + '">#' + esc(x) + '</span>').join('') + '</div>';
   const open = [].concat(...live.map(v => v.actions.map((a, i) => ({ a, v, i })).filter(o => !o.a.done)));
   if (open.length) h += '<div class="h-sec">남은 할 일<small>' + open.length + '</small></div>' + open.map(o => todoRow(o.v, o.a, o.i)).join('');
-  const up = (DATA.cal || []).filter(e => e.ymd >= t && e.title.includes(n));
+  const up = calItems().filter(e => e.ymd >= t && (e.planId ? e.title === n : e.title.includes(n)));
   h += '<div class="h-sec">흐름<small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
-  up.forEach(e => { h += '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
+  up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
   h += vs.map(tlRow).join('') + '</div>';
   if (all.length > vs.length) h += '<button class="send" data-act="arch" style="margin-top:10px">보관 기록 함께 보기</button>';
   return h + '</div>';
 }
 
 // ───────────────────────────── 계획 (C1: 제안 · '심방' 캘린더 읽기만) ─────────────────────────────
+function planCard(p) {
+  const t = today(), past = p.date < t, d = p.date;
+  return '<div class="card pcard' + (past ? ' late' : '') + '"><button class="pmain" data-act="planopen" data-v="' + esc(p.id) + '"><span class="pdate"><span class="muted">' + DOW[dowOf(d)] + '</span><b>' + (+d.slice(8)) + '</b><span class="muted">' + (+d.slice(5, 7)) + '월</span></span>' +
+    '<span class="pbody"><span class="c-top"><span class="nm">' + esc(p.name) + '</span><span class="roles">' + esc(p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
+    (p.place ? '<span class="muted">' + esc(p.place) + '</span>' : '') + (p.why ? '<span class="c-txt">' + esc(p.why) + '</span>' : '') +
+    '<span class="muted pcal">' + (p.evId === PLAN_NOCAL ? '캘린더에 넣지 않음' : p.evId ? IC.cal + '\'심방\' 캘린더' : '캘린더에 넣는 중…') + ' · ' + relDay(p.date, t) + '</span></span></button>' +
+    '<div class="pacts"><button class="btn' + (p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button></div></div>';
+}
 function vPlan() {
   const t = today(), pf = prefs(), all = M().visits.filter(v => !v.archived);
-  const P = peopleList(M(), all, t, pf.stale).filter(p => p.stale).sort((a, b) => (a.last || '').localeCompare(b.last || ''));
+  const plans = DATA.plans || [], todo = plans.filter(p => p.status === PLAN_ST.todo).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const planned = new Set(todo.map(p => p.name));
+  const P = peopleList(M(), all, t, pf.stale).filter(p => p.stale && !planned.has(p.name)).sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   let h = head('심방 계획', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">';
-  h += '<div class="h-sec" style="margin-top:6px">이런 분은 어떠세요<small>' + Math.round(pf.stale / 7) + '주 넘게 못 만남</small></div>';
+  const late = todo.filter(p => p.date < t), next = todo.filter(p => p.date >= t);
+  if (late.length) h += '<div class="h-sec" style="margin-top:6px">지난 계획 — 기록할까요?<small>' + late.length + '</small></div>' + late.map(planCard).join('');
+  h += '<div class="h-sec"' + (late.length ? '' : ' style="margin-top:6px"') + '>다가오는 계획<small>' + next.length + '</small></div>';
+  h += next.length ? next.map(planCard).join('') : '<p class="empty">아직 계획이 없습니다. 아래 "+ 계획" 으로 만들거나, 제안에서 골라 보세요.</p>';
+  h += '<div class="h-sec">이런 분은 어떠세요<small>' + Math.round(pf.stale / 7) + '주 넘게 못 만남</small></div>';
   if (!P.length) h += '<p class="empty">오래 못 만난 분이 없습니다.</p>';
-  P.forEach(p => { const lv = p.visits[0]; h += '<button class="todo" style="grid-template-columns:1fr auto;width:100%" data-act="person" data-v="' + esc(p.name) + '"><div class="lab">' + esc(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + ' · ' + esc(firstLine(lv.text)).slice(0, 40) + '</small></div><span class="ago old">' + p.days + '일</span></button>'; });
-  h += '<div class="h-sec">\'심방\' 캘린더<small>앞으로 5주</small></div>';
-  const ev = (DATA.cal || []).filter(e => e.ymd >= t);
-  if (DATA.cal == null) h += '<p class="empty">읽는 중…</p>';
-  else if (DATA.calErr) h += '<p class="empty">' + esc(DATA.calErr) + '</p>';
-  else if (!ev.length) h += '<p class="empty">예정된 일정이 없습니다.</p>';
-  ev.forEach(e => { h += '<a class="todo" style="grid-template-columns:48px 1fr auto;text-decoration:none;color:inherit" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span style="text-align:center;line-height:1.2"><span class="muted">' + DOW[dowOf(e.ymd)] + '</span><br><b style="font-weight:500;font-size:17px">' + (+e.ymd.slice(8)) + '</b></span><div class="lab">' + esc(e.title) + '<small>' + md(e.ymd) + (e.time ? ' · ' + e.time : '') + ' · ' + relDay(e.ymd, t) + '</small></div><span class="muted">' + IC.out + '</span></a>'; });
-  h += '<div class="note">계획 만들기 · \'심방\' 캘린더에 넣기 · 계획에서 기록 쓰기는 <b>C3</b> 에서 열립니다. 지금은 구글 캘린더에서 \'심방\' 캘린더에 일정을 넣으면 여기와 달력에 보입니다.</div>';
+  P.forEach(p => { const lv = p.visits[0]; h += '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(p.name) + '">' + esc(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + '</small></button><button class="send" data-act="addplan" data-v="' + esc(p.name) + '">계획 +</button></div>'; });
+  const others = calOthers().filter(e => e.ymd >= t);
+  if (others.length) {
+    h += '<div class="h-sec">\'심방\' 캘린더에만 있는 일정<small>' + others.length + '</small></div>';
+    others.forEach(e => { h += '<div class="todo" style="grid-template-columns:1fr auto"><div class="lab">' + esc(e.title) + '<small>' + md(e.ymd) + (e.time ? ' · ' + e.time : '') + ' · ' + relDay(e.ymd, t) + '</small></div><button class="send" data-act="calimport" data-v="' + esc(e.id) + '">계획으로</button></div>'; });
+  }
+  if (DATA.calErr) h += '<p class="note">' + esc(DATA.calErr) + ' — 구글 캘린더에서 이름이 정확히 \'심방\' 인 캘린더를 만들어 주세요.</p>';
+  const gone = plans.filter(p => p.status !== PLAN_ST.todo && p.date >= ymdAdd(t, -30)).sort((a, b) => b.date.localeCompare(a.date));
+  if (gone.length) {
+    h += '<button class="donefold" data-act="showdoneplan">' + (S.showDonePlan ? '지난 계획 접기 ⌃' : '최근 30일 지난 계획 ' + gone.length + '개 ⌄') + '</button>';
+    if (S.showDonePlan) h += gone.map(p => '<div class="lrow"><span class="d">' + md(p.date) + '</span><span><b style="font-weight:500">' + esc(p.name) + '</b> · ' + (p.status === PLAN_ST.done ? '<span style="color:var(--ac)">✓ 기록됨</span>' : '<span class="muted">취소됨</span>') + (p.recId ? ' <button class="send" data-act="open" data-v="' + esc(p.recId) + '">기록 보기 ›</button>' : '') + '</span></div>').join('');
+  }
   return h + '</div>' + nav();
+}
+// 새 계획 · 계획 고치기 (겹 화면)
+function lPlanEdit(L) {
+  const f = L.form, sv = saved(), methods = filterOptions(M().visits, DATA.opts).method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true));
+  let h = lhead(L.planId ? '계획 고치기' : '새 계획', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  h += '<div class="fsec">누구를</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + suggHtml(L) + '</div></div>';
+  h += '<div class="fsec">언제 · 어떻게</div><div class="fld" style="display:flex;gap:8px"><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜"><input class="inp" type="time" data-f="time" value="' + esc(f.time) + '" aria-label="시간 (비우면 하루 종일)"></div><p class="hint">시간을 비우면 하루 종일 일정이 됩니다.</p>';
+  h += '<div class="fld"><div class="opts" id="methodChips">' + methods.map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div></div>';
+  h += '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 (예: 수요예배 후 카페)" aria-label="장소"></div>';
+  h += '<div class="fsec">물어볼 것</div><div class="fld"><textarea class="inp" data-f="why" rows="4" placeholder="지난 이야기 · 남은 할 일 · 이번에 여쭤볼 것" aria-label="물어볼 것">' + esc(f.why) + '</textarea></div>';
+  h += '<div class="fsec">캘린더</div><div class="set"><div class="srow"><span class="t">\'심방\' 캘린더에 넣기</span><button class="tgl' + (f.cal ? ' on' : '') + '" data-act="plancal" aria-label="캘린더에 넣기"></button>' +
+    '<div class="preview">일정 제목<span class="evp">' + esc(calTitle(f.name || '성도 이름', sv.calPre, sv.calSuf)) + '</span></div><div class="d">장소 · 물어볼 것은 일정에 넣지 않습니다. 제목 앞뒤 글자는 설정에서 바꿉니다.</div></div></div>';
+  if (L.planId) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn" data-act="plan2rec" data-v="' + esc(L.planId) + '">기록 쓰기</button><button class="btn danger" data-act="plancancel" data-v="' + esc(L.planId) + '">계획 취소</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saveplan">' + (L.planId ? '고친 것 저장' : '계획 저장') + '</button></div>';
+}
+function openPlanEdit(id, preset) {
+  if (id) { const p = (DATA.plans || []).find(x => x.id === id); if (!p) return; openLayer('planedit', { planId: id, form: { name: p.name, date: p.date, time: p.time, method: p.method, methodEtc: '', place: p.place, why: p.why, cal: p.evId !== PLAN_NOCAL } }); return; }
+  const name = (preset && preset.name) || '', per = name ? peopleList(M(), M().visits.filter(v => !v.archived), today(), prefs().stale).find(x => x.name === name) : null;
+  openLayer('planedit', { planId: null, form: { name, date: ymdAdd(today(), 1), time: '', method: '', methodEtc: '', place: '', why: per ? planWhyFor(per) : '', cal: true } });
 }
 
 // ───────────────────────────── 달력 ─────────────────────────────
@@ -1623,10 +1903,12 @@ function wline(v) {
   const acts = v.actions.map(ak).join('');
   return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + esc(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (acts ? '<div class="r2">' + acts + '</div>' : '') + '</button>';
 }
-function eline(e) { return '<a class="wl plan" href="' + esc(e.link) + '" target="_blank" rel="noopener"><div class="r1"><span class="planbadge">심방 캘린더' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></a>'; }
+function eline(e) {
+  if (e.planId) return '<button class="wl plan" data-act="planopen" data-v="' + esc(e.planId) + '"><div class="r1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></button>';
+  return '<a class="wl plan" href="' + esc(e.link) + '" target="_blank" rel="noopener"><div class="r1"><span class="planbadge">심방 캘린더' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></a>'; }
 function vWeek() {
   const s = ymdAdd(weekStartOf(today()), 7 * S.wk), e = ymdAdd(s, 6);
-  const L = V().filter(v => v.ymd >= s && v.ymd <= e), EV = (DATA.cal || []).filter(x => x.ymd >= s && x.ymd <= e);
+  const L = V().filter(v => v.ymd >= s && v.ymd <= e), EV = calItems().filter(x => x.ymd >= s && x.ymd <= e);
   let h = head('달력', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + wmSeg() + '<div class="pane" id="pane">';
   h += '<div class="wk-head"><button data-act="wk" data-v="-1" aria-label="지난주">' + IC.l + '</button><b>' + md(s).replace('/', '월 ') + '일 – ' + md(e).replace('/', '월 ') + '일</b><button data-act="wk" data-v="1" aria-label="다음 주">' + IC.r + '</button></div>';
   h += fline();
@@ -1646,12 +1928,12 @@ function vMonth() {
   h += '<p class="sentence">' + (+ym.slice(5)) + '월에 <b>' + ppl.size + '명</b>과 <b>' + inM.length + '번</b> 만났고, 깊은 대화는 <b>' + deep + '번</b>입니다.</p>';
   h += '<div class="cal">' + DOW.map(x => '<div class="h">' + x + '</div>').join('');
   cells.forEach(k => {
-    const dv = L.filter(v => v.ymd === k), de = (DATA.cal || []).filter(x => x.ymd === k);
+    const dv = L.filter(v => v.ymd === k), de = calItems().filter(x => x.ymd === k);
     const items = dv.map(v => '<span class="nmc d' + v.depthN + '">' + esc(v.name) + '</span>').concat(de.map(x => '<span class="nmc pl">' + esc(x.title) + '</span>'));
     h += '<button class="cell' + (k.slice(0, 7) !== ym ? ' out' : '') + (k === S.mday ? ' sel' : '') + (k === today() ? ' now' : '') + '" data-act="mday" data-v="' + k + '"><span class="n">' + (+k.slice(8)) + '</span>' + items.slice(0, 3).join('') + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + '</span>' : '') + '</button>';
   });
   h += '</div><div class="muted legend"><span><span class="nmc d3">이름</span> 깊음</span><span><span class="nmc d2">이름</span> 중간</span><span><span class="nmc d1">이름</span> 얕음</span><span><span class="nmc pl">이름</span> 심방 캘린더</span></div>';
-  const sel = L.filter(v => v.ymd === S.mday), sele = (DATA.cal || []).filter(x => x.ymd === S.mday);
+  const sel = L.filter(v => v.ymd === S.mday), sele = calItems().filter(x => x.ymd === S.mday);
   h += '<div class="dhead"><b>' + dayLabel(S.mday) + '</b><span>' + (sel.length + sele.length) + '</span></div>' + (sel.length || sele.length ? sel.map(wline).join('') + sele.map(eline).join('') : '<p class="empty">이 날은 기록이 없습니다.</p>');
   return h + '</div></div>' + nav();
 }
@@ -1770,6 +2052,7 @@ function lEdit(L) {
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   h += DATA.hasPlace ? '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 · 메모 (예: 수요예배 후 카페)" aria-label="장소 · 메모"></div>'
     : '<p class="hint">장소 · 메모 칸은 시트에 아직 없습니다. 폼에 \'장소 · 메모\' 질문을 더하면 생깁니다.</p>';
+  if (L.planWhy) h += '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>';
   h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea><button class="btn" data-act="addtalk" style="margin-top:8px">+ 이야기 나누기</button><div class="hint">맥락이 달라질 때 누르면 \'나눈 이야기 1 · 2 …\' 제목 줄이 생깁니다.</div></div>';
   h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   h += '<div class="fld"><span class="lb">태그 <small>여럿</small></span><div class="opts">' + offer('tags', FO.tag, f.tags).map(x => chip('#' + esc(x), f.tags.includes(x), 'ftog', 'tags', x)).join('') + '</div><input class="inp etc" data-f="tagsEtc" value="' + esc(f.tagsEtc) + '" placeholder="기타 태그 (쉼표로 여럿)" aria-label="태그 기타"></div>';
@@ -1820,6 +2103,7 @@ async function saveRecord(L) {
   try {
     if (!L.key) {
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
+      if (L.planId) await finishPlan(L.planId, r.id);
       toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : ''));
     } else {
       const v = byKey(L.key) || M().visits.find(x => x.row === L.row);
@@ -1850,6 +2134,7 @@ function lSettings(L) {
     '<div class="srow"><span class="t">보관 기록 함께 보기</span><button class="tgl' + (S.showArch ? ' on' : '') + '" data-act="arch" aria-label="보관 기록 함께 보기"></button></div></div>';
   h += '<div class="h-sec">그 밖에</div><div class="set"><div class="srow"><span class="t">오래 못 만남 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [14, 21, 28, 42].map(n => '<button class="opt" data-act="stale" data-v="' + n + '" aria-pressed="' + (pf.stale === n) + '">' + n / 7 + '주</button>').join('') + '</div></div>' +
+    '<div class="srow"><span class="t">\'심방\' 일정 제목</span><span></span><div class="title-ed"><input id="calPre" placeholder="앞 글자" value="' + esc(sv.calPre || '') + '" aria-label="이름 앞 글자"><span class="nmv">성도 이름</span><input id="calSuf" placeholder="뒤 글자" value="' + esc(sv.calSuf || '') + '" aria-label="이름 뒤 글자"></div><div class="d">미리 보기: <b id="calPrev">' + esc(calTitle('김하늘', sv.calPre, sv.calSuf)) + '</b> · 바꾸면 이미 넣은 일정 제목도 고칩니다</div></div>' +
     '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button>' +
     '<button class="srow" data-act="trash"><span class="t">휴지통</span><span class="v">›</span><div class="d" style="text-align:left">지운 기록 되살리기</div></button>' +
     '<button class="srow" data-act="layer" data-v="c0"><span class="t">연결 시험 (C0)</span><span class="v">›</span><div class="d" style="text-align:left">시트 · 폼 · 캘린더가 앱과 맞물리는지 다시 확인합니다</div></button></div>';
@@ -1989,7 +2274,7 @@ function gate() {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -2015,7 +2300,7 @@ let lid = 0;
 function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type, id: type + (++lid) }, extra || {})); render(); }
 function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
-  const top = topLayer(); if (!force && top.type === 'edit' && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
+  const top = topLayer(); if (!force && (top.type === 'edit' || top.type === 'planedit') && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
   const done = () => { S.layers.pop(); S.menu = null; render(); };
   if (!el || RM.matches) return done();
   el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
@@ -2096,10 +2381,16 @@ function searchInput(e) {
   if (nr && or) or.replaceWith(nr); else render();
 }
 document.addEventListener('input', searchInput);
+document.addEventListener('input', e => { if (e.target.id === 'calPre' || e.target.id === 'calSuf') { const pv = $('calPrev'); if (pv) pv.textContent = calTitle('김하늘', ($('calPre') || {}).value, ($('calSuf') || {}).value); } });
+document.addEventListener('change', e => {
+  if (e.target.id !== 'calPre' && e.target.id !== 'calSuf') return;
+  saveCfg({ calPre: ($('calPre') || {}).value || '', calSuf: ($('calSuf') || {}).value || '' });
+  busy(async () => { try { if (DATA.prepared && await calSync()) { toast('일정 제목을 바꿨습니다'); await loadData(true); } } catch (err) { /* 다음에 */ } });
+});
 document.addEventListener('input', e => {
-  const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!f || !L || L.type !== 'edit') return;
+  const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit')) return;
   L.form[f] = e.target.value; L.dirty = true;
-  if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); }
+  if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
 });
 document.addEventListener('compositionend', searchInput);
@@ -2125,7 +2416,7 @@ document.addEventListener('click', e => {
   if (a === 'prepare') { busy(ensurePrepared).then(() => render()); return; }
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
-    const L = topLayer(); if (!L || L.type !== 'edit') return; L.dirty = true;
+    const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit')) return; L.dirty = true;
     if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); }
     else if (a === 'fone') { L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = ''; }
     else { const p = M().people[v] || {}, RO = filterOptions(M().visits, DATA.opts).role; L.form.name = v; L.form.roles = (p.roles || []).filter(x => RO.includes(x)); L.form.rolesEtc = (p.roles || []).filter(x => !RO.includes(x)).join(', '); }
@@ -2148,6 +2439,21 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'trash') { openLayer('trash'); loadTrash(topLayer()); return; }
+  if (a === 'addplan') { openPlanEdit(null, { name: v || '' }); return; }
+  if (a === 'planopen') { openPlanEdit(v); return; }
+  if (a === 'plancal') { const L = topLayer(); if (L && L.type === 'planedit') { L.form.cal = !L.form.cal; L.dirty = true; render(); } return; }
+  if (a === 'saveplan') { const L = topLayer(); if (L && L.type === 'planedit') busy(async () => { try { await savePlan(L); } catch (e) { toast('계획을 저장하지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'plancancel') {
+    if (!confirm('이 계획을 취소할까요?\n\'심방\' 캘린더의 일정도 지웁니다.')) return;
+    busy(async () => { try { await cancelPlan(v); S.layers = S.layers.filter(L => L.planId !== v); toast('계획을 취소했습니다'); await loadData(true); } catch (e) { toast('취소하지 못했습니다\n' + e.message); } }); return;
+  }
+  if (a === 'plan2rec') {
+    const p = (DATA.plans || []).find(x => x.id === v); if (!p) return;
+    if (pendDone().some(x => x.planId === v)) { toast('이 계획의 기록은 이미 저장했습니다\n\'기록됨\' 표시를 다시 합니다'); busy(async () => { try { await retryPendDone(); render(); } catch (e) { } }); return; }
+    S.layers = S.layers.filter(L => L.planId !== v);
+    openLayer('edit', { key: null, form: recordFromPlan(p, M().people), planId: p.id, planWhy: p.why }); return;
+  }
+  if (a === 'calimport') { busy(async () => { try { await importCalEvent(v); } catch (e) { toast('가져오지 못했습니다\n' + e.message); } }); return; }
   if (a === 'attrsync') { busy(async () => { try { const p = await syncAttrs(); toast(attrSyncMsg(p) || '폼과 선택지가 모두 같습니다'); await loadData(true); } catch (e) { toast('맞추지 못했습니다\n' + e.message); } }); return; }
   if (a === 'addplace') { busy(async () => { try { await addPlaceQuestion(); } catch (e) { toast('폼에 더하지 못했습니다\n' + e.message); } }); return; }
   if (a === 'attradd' || a === 'etcpromote') {
@@ -2203,6 +2509,7 @@ document.addEventListener('click', e => {
   else if (a === 'attrk') S.attrK = v;
   else if (a === 'gopen') S.gopen[v] = !S.gopen[v];
   else if (a === 'showdone') S.showDone = !S.showDone;
+  else if (a === 'showdoneplan') S.showDonePlan = !S.showDonePlan;
   else if (a === 'psort') S.pSort = v;
   else if (a === 'cutoff') { saveCfg({ cutoff: v }); rebuild(); }
   else if (a === 'stale') saveCfg({ stale: +v });

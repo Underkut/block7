@@ -13,6 +13,8 @@
 //  ⑨ (코덱스 검토 PR 962) 지우다 멈춘 뒤 다시 지워도 휴지통 백업은 하나 · 휴지통 탭이 비었거나 머리글 없이 백업이 먼저 들어가도 바로잡는다
 //  ⑩ (같은 검토) 지우는 도중 다른 기기가 앞줄을 지워 한 줄 밀려도 엉뚱한 기록을 휴지통에 넣지 않는다
 //  ⑪ (C2-4) 폼 ↔ '속성' 탭 — 처음엔 폼 선택지를 탭으로 · 폼에서 더함 → 탭 · 앱에서 더함/숨김/다시 쓰기 → 폼 · '기타' 글을 선택지로 · 폼에 '장소 · 메모' 질문 · 다시 맞춰도 폼을 또 고치지 않는다
+//  ⑫ (C3) 계획 ↔ '심방' 캘린더 — 만들기 · 캘린더에서 옮김/지움 따라가기 · 제목 앞뒤 글자 · 만들다 끊긴 일정 이어 붙이기 · 여벌 지우기 ·
+//     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -30,7 +32,8 @@ const ROWS = [
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
 const LOG = [];
-const HOOK = { failDel: false, shift: false, failForm: false };   // 일부러 일으키는 사고
+const HOOK = { failDel: false, shift: false, failForm: false, failPlanSet: 0 };
+const CAL = { seq: 0, events: [] };   // 가짜 '심방' 캘린더의 일정들   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
 const colN = L => L.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
 function parseRange(r) {
@@ -68,7 +71,30 @@ async function route(r) {
     }
     return json(FORM);
   }
-  if (u.host === 'www.googleapis.com') return json({ items: [] });
+  if (u.host === 'www.googleapis.com') {   // 가짜 구글 캘린더 — '심방' 캘린더 하나
+    const P = u.pathname.replace('/calendar/v3/', ''), q = u.searchParams;
+    if (P === 'users/me/calendarList') return json({ items: [{ id: 'cal1', summary: '심방' }, { id: 'cal2', summary: '개인' }] });
+    let mm;
+    if (P === 'calendars/cal1/events') {
+      if (m === 'POST') { const e = Object.assign({ id: 'ev' + (++CAL.seq), status: 'confirmed', htmlLink: 'https://example.invalid/ev' }, body); CAL.events.push(e); LOG.push(['cal+', e.summary]); return json(e); }
+      const pe = q.get('privateExtendedProperty');
+      let items = CAL.events.filter(e => q.get('showDeleted') === 'true' || e.status !== 'cancelled');
+      if (pe) { const [k, v] = pe.split('='); items = items.filter(e => e.extendedProperties && e.extendedProperties.private && e.extendedProperties.private[k] === v); }
+      return json({ items: JSON.parse(JSON.stringify(items)) });
+    }
+    if ((mm = P.match(/^calendars\/cal1\/events\/(.+)$/))) {
+      const e = CAL.events.find(x => x.id === decodeURIComponent(mm[1]));
+      if (!e) return r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":{"message":"Not Found"}}' });
+      if (m === 'DELETE') { if (e.status === 'cancelled') return r.fulfill({ status: 410, contentType: 'application/json', body: '{"error":{"message":"Gone"}}' }); e.status = 'cancelled'; LOG.push(['cal-', e.id]); return r.fulfill({ status: 204, body: '' }); }
+      if (m === 'PATCH') {
+        const pr = body.extendedProperties && body.extendedProperties.private;
+        Object.assign(e, body); if (pr) e.extendedProperties = { private: Object.assign({}, pr) };
+        LOG.push(['cal~', e.id, Object.keys(body)]); return json(e);
+      }
+      return json(JSON.parse(JSON.stringify(e)));
+    }
+    return r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":{"message":"Not Found"}}' });   // 다른 계정의 캘린더 등
+  }
   if (u.host !== 'sheets.googleapis.com') return r.abort();
   const p = u.pathname.replace('/v4/spreadsheets/S', '');
   if (p === '' && m === 'GET') return json({ properties: { title: '시험 시트' }, sheets: SHEET.tabs.map(t => ({ properties: { sheetId: t.id, title: t.title, gridProperties: { columnCount: t.cols } } })) });
@@ -83,6 +109,7 @@ async function route(r) {
     LOG.push(['struct', body.requests.map(q => Object.keys(q)[0])]); return json({});
   }
   if (p === '/values:batchUpdate') {
+    if (HOOK.failPlanSet > 0 && body.data.some(d => decodeURIComponent(d.range).startsWith("'계획'!"))) { HOOK.failPlanSet--; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
     body.data.forEach(d => { const R = parseRange(d.range); d.values[0].forEach((v, i) => setCell(R.title, R.row, R.col + i, v)); LOG.push(['set', d.range, d.values[0]]); });
     return json({});
   }
@@ -100,7 +127,7 @@ async function route(r) {
 }
 
 (async () => {
-  const b = await chromium.launch(), page = await b.newPage({ viewport: { width: 420, height: 900 } });
+  const b = await chromium.launch(), page = await b.newPage({ viewport: { width: 420, height: 900 }, timezoneId: 'Asia/Seoul' });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   page.on('dialog', d => d.accept());
   await page.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
@@ -272,6 +299,113 @@ async function route(r) {
   const nForm = LOG.filter(x => x[0] === 'form').length;
   await reload(); await reload();
   eq('⑪ 다시 맞춰도 폼 · 탭을 또 고치지 않는다', [LOG.filter(x => x[0] === 'form').length, A_().length], [nForm, 25]);
+
+  // ⑫ 계획 ↔ '심방' 캘린더
+  const PT = () => tab('계획').rows, PH = () => PT()[0], prow = n => { const r = PT().find(x => x[1] === n) || []; const o = {}; PH().forEach((h, i) => { o[h] = r[i] == null ? '' : r[i]; }); return o; };
+  const evOf = id => CAL.events.find(e => e.id === id) || {};
+  const ymdP = d => { const t = new Date(); t.setDate(t.getDate() + d); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
+  const D2 = ymdP(2), D3 = ymdP(3), D1 = ymdP(1);
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await page.click('.ph-nav [data-act="tab"][data-v="plan"]'); await tidy();
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '하하하');
+  await page.fill('.layer [data-f="date"]', D2); await page.fill('.layer [data-f="time"]', '14:00');
+  await page.fill('.layer [data-f="why"]', '지난번 이야기 이어서');
+  await page.click('.layer [data-act="fone"][data-k="method"][data-v="티타임"]');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/planedit.png' });
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
+  let ph = prow('하하하'), ev = evOf(ph['캘린더 일정ID']);
+  eq('⑫ 새 계획 → 계획 탭 한 줄(예정 · 방식 · 물어볼 것) · 캘린더 일정ID', [ph['날짜'], ph['시간'], ph['방식'], ph['물어볼 것'], ph['상태'], /^ev/.test(ph['캘린더 일정ID'])], [D2, '14:00', '티타임', '지난번 이야기 이어서', '예정', true]);
+  eq('⑫ 일정 — 제목은 이름만 · 14시부터 한 시간 · 보이지 않는 표식 · 물어볼 것은 일정에 없다', [ev.summary, ev.start && ev.start.dateTime, ev.end && ev.end.dateTime, ev.extendedProperties.private.careId === ph['계획ID'], JSON.stringify(ev).includes('지난번')], ['하하하', D2 + 'T14:00:00', D2 + 'T15:00:00', true, false]);
+  eq('⑫ 계획 화면에 카드', await page.$$eval('.pcard .nm', x => x.map(e => e.textContent)), ['하하하']);
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/plan.png' });
+  // 캘린더에서 옮김 → 계획이 따라간다
+  ev.start = { dateTime: D3 + 'T15:30:00+09:00' }; ev.end = { dateTime: D3 + 'T16:30:00+09:00' };
+  await reload();
+  ph = prow('하하하');
+  eq('⑫ 캘린더에서 옮김 → 계획 날짜 · 시간이 따라간다', [ph['날짜'], ph['시간']], [D3, '15:30']);
+  // 제목 앞 글자
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.fill('#calPre', '심방 · '); await page.press('#calPre', 'Tab'); await page.waitForTimeout(1800);
+  eq('⑫ 설정에서 앞 글자 → 이미 넣은 일정 제목도 바뀐다', evOf(ph['캘린더 일정ID']).summary, '심방 · 하하하');
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  // 캘린더에서 지움 → 계획 취소됨
+  evOf(ph['캘린더 일정ID']).status = 'cancelled';
+  await reload();
+  eq('⑫ 캘린더에서 지움 → 계획 취소됨', prow('하하하')['상태'], '취소됨');
+  // 만들다 끊긴 일정 이어 붙이기 + 두 기기가 같이 만든 여벌
+  const hd = PH(), mk = o => hd.map(h => o[h] == null ? '' : o[h]);
+  tab('계획').rows.push(mk({ '계획ID': 'P_cut', '성도': '거거거', '날짜': D2, '시간': '', '상태': '예정', '캘린더 일정ID': '' }));
+  CAL.events.push({ id: 'evcut', status: 'confirmed', summary: '심방 · 거거거', start: { date: D2 }, end: { date: D3 }, extendedProperties: { private: { careApp: 'care', careId: 'P_cut' } } });
+  tab('계획').rows.push(mk({ '계획ID': 'P_dup', '성도': '너너너', '날짜': D2, '시간': '', '상태': '예정', '캘린더 일정ID': 'evd1' }));
+  CAL.events.push({ id: 'evd1', status: 'confirmed', summary: '심방 · 너너너', start: { date: D2 }, end: { date: D3 }, extendedProperties: { private: { careApp: 'care', careId: 'P_dup' } } });
+  CAL.events.push({ id: 'evd2', status: 'confirmed', summary: '심방 · 너너너', start: { date: D2 }, end: { date: D3 }, extendedProperties: { private: { careApp: 'care', careId: 'P_dup' } } });
+  const nIns = LOG.filter(x => x[0] === 'cal+').length;
+  await reload();
+  eq('⑫ 만들다 끊긴 계획 → 있던 일정을 이어 붙이고 새로 만들지 않는다', [prow('거거거')['캘린더 일정ID'], LOG.filter(x => x[0] === 'cal+').length], ['evcut', nIns]);
+  eq('⑫ 같은 계획의 여벌 일정 → 계획이 가리키는 것만 남긴다', [evOf('evd1').status, evOf('evd2').status], ['confirmed', 'cancelled']);
+  // 계획 → 기록
+  await page.click('.pcard:has-text("거거거") [data-act="plan2rec"]'); await tidy();
+  eq('⑫ 기록 쓰기 — 이름 · 날짜가 채워져 있다', [await page.inputValue('.layer [data-f="name"]'), await page.$eval('.layer [data-f="ymd"]', e => e.value).catch(() => '?')], ['거거거', D2]);
+  await page.fill('.layer [data-f="text"]', '계획대로 만남');
+  await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
+  const gr = R.rows.find(r => r[2] === '거거거') || [];
+  eq('⑫ 기록 저장 → 계획 기록됨 · 기록ID 이어짐 · 일정 제목에 ✓', [!!gr.length, prow('거거거')['상태'], prow('거거거')['기록ID'] === gr[9], evOf('evcut').summary], [true, '기록됨', true, '✓ 심방 · 거거거']);
+  // 캘린더에만 있는 일정 → 계획으로
+  CAL.events.push({ id: 'evx', status: 'confirmed', summary: '심방 · 더더더', start: { dateTime: D1 + 'T19:00:00+09:00' }, end: { dateTime: D1 + 'T20:00:00+09:00' }, htmlLink: 'https://example.invalid/evx' });
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await reload();
+  await page.click('.ph-nav [data-act="tab"][data-v="plan"]'); await tidy();
+  await page.click('[data-act="calimport"][data-v="evx"]'); await page.waitForTimeout(1800);
+  ph = prow('더더더');
+  eq("⑫ '심방' 캘린더에만 있던 일정 → 계획으로 (앞 글자 떼고 이름만) · 일정에 표식", [ph['날짜'], ph['시간'], ph['캘린더 일정ID'], evOf('evx').extendedProperties.private.careId === ph['계획ID']], [D1, '19:00', 'evx', true]);
+  eq('⑫ 가져온 뒤엔 "계획으로" 단추가 사라진다 · 카드로 보인다', [await page.$$eval('[data-act="calimport"]', x => x.length), await page.$$eval('.pcard .nm', x => x.map(e => e.textContent).includes('더더더'))], [0, true]);
+  // 앱에서 취소 → 일정 지움
+  await page.click('.pcard:has-text("더더더") [data-act="planopen"]'); await tidy();
+  await page.click('.layer [data-act="plancancel"]'); await page.waitForTimeout(1800);
+  eq('⑫ 앱에서 계획 취소 → 계획 취소됨 · 일정 지움', [prow('더더더')['상태'], evOf('evx').status], ['취소됨', 'cancelled']);
+  // 캘린더에 안 넣기
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '러러러'); await page.fill('.layer [data-f="date"]', D3);
+  await page.click('.layer [data-act="plancal"]');
+  const nIns2 = LOG.filter(x => x[0] === 'cal+').length;
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
+  await reload();
+  eq("⑫ 캘린더에 안 넣기 → 일정ID '없음' · 일정 안 만든다(다시 맞춰도)", [prow('러러러')['캘린더 일정ID'], LOG.filter(x => x[0] === 'cal+').length], ['없음', nIns2]);
+  // (코덱스 검토 PR 977) ① 기록은 저장됐는데 계획 표시가 끊김 → 같은 기록을 두 번 만들지 않고, 다음에 '기록됨' 으로
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '머머머'); await page.fill('.layer [data-f="date"]', D1);
+  await page.click('.layer [data-act="plancal"]');
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1500);
+  await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await tidy();
+  await page.fill('.layer [data-f="text"]', '만났음');
+  HOOK.failPlanSet = 9;
+  await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
+  const nMe = () => R.rows.filter(r => r[2] === '머머머').length;
+  eq('⑫ 계획 표시가 끊기면 — 기록은 하나 저장 · 계획은 아직 예정 · (장치 확인) 끊김이 정말 일어남', [nMe(), prow('머머머')['상태'], HOOK.failPlanSet <= 7], [1, '예정', true]);
+  HOOK.failPlanSet = 0;
+  await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await page.waitForTimeout(1500);
+  eq('⑫ 남은 계획에서 다시 \'기록 쓰기\' → 새 기록 창을 열지 않고 \'기록됨\' 으로 맞춘다', [await page.$$eval('.layer [data-act="saverec"]', x => x.length), nMe(), prow('머머머')['상태'], prow('머머머')['기록ID'] === (R.rows.find(r => r[2] === '머머머') || [])[9]], [0, 1, '기록됨', true]);
+  // ② 엉뚱한 캘린더(다른 계정 것)를 보고 있으면 — 캘린더를 못 읽었으니 계획을 하나도 취소하지 않는다
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '버버버'); await page.fill('.layer [data-f="date"]', D3);
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
+  await page.evaluate(() => { DATA.calId = 'calOld'; DATA.calOurs = []; });
+  await reload();
+  eq('⑫ 다른 캘린더를 보고 있어도 예정 계획이 취소되지 않는다', prow('버버버')['상태'], '예정');
+  await page.evaluate(() => { DATA.calId = null; });
+  // ③ 못 찾는 일정이 여럿이면(엉뚱한 곳을 보는 신호) 취소하지 않는다 · 하나면 취소
+  const mk2 = (id, n, ev) => tab('계획').rows.push(PH().map(h => ({ '계획ID': id, '성도': n, '날짜': D3, '상태': '예정', '캘린더 일정ID': ev })[h] || ''));
+  mk2('P_g1', '서서서', 'evnone1'); mk2('P_g2', '어어어', 'evnone2'); mk2('P_g3', '저저저', 'evnone3');
+  await reload();
+  eq('⑫ 못 찾는 일정이 셋 → 하나도 취소하지 않는다', ['서서서', '어어어', '저저저'].map(n => prow(n)['상태']), ['예정', '예정', '예정']);
+  tab('계획').rows = tab('계획').rows.filter(r => !['P_g2', 'P_g3'].includes(r[0]));
+  await reload();
+  eq('⑫ 못 찾는 일정이 하나 → 그 계획은 취소됨', prow('서서서')['상태'], '취소됨');
+  // 다시 맞춰도 아무것도 안 바뀐다
+  const nCal = LOG.filter(x => /^cal/.test(x[0])).length, nSet = LOG.filter(x => x[0] === 'set').length;
+  await reload();
+  eq('⑫ 다시 맞춰도 캘린더 · 계획 탭을 또 고치지 않는다', [LOG.filter(x => /^cal/.test(x[0])).length, LOG.filter(x => x[0] === 'set').length], [nCal, nSet]);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
