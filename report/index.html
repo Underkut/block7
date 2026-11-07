@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 사역 한눈에 v. 26-1107-3 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
+<!-- 사역 한눈에 v. 26-1107-4 — 부서 보고서(교회 보고서) 쪽 독립 앱 (report/ → sweeter.my/report/) · W0 뼈대 + W1 내 부서 · 보고 시간표 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -140,7 +140,7 @@ button.pill{border:0;cursor:pointer;font:inherit;font-size:12px}
 <script id="report-core">
 // 사역 한눈에 — 화면 없이 도는 판단. tests/test_report.js 가 이것만 떼어 시험한다.
 // 교회 보고서의 한 주는 **일요일부터 토요일까지**, 금요일 오후 5시에 그 주 보고가 회의 자료로 전달된다 (공개 사용 안내).
-const APP_VERSION = 'v. 26-1107-3';
+const APP_VERSION = 'v. 26-1107-4';
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 const FREQ = { weekly: '매주', biweekly: '격주', nth: '몇째 주' };
 const PREF_KEY = 'report_pref_v1', BOOK_KEY = 'report_book_v1';   // 이 기기: 화면 취향 · 시간표 사본(로그인 전에도 쓰게)
@@ -338,7 +338,7 @@ function openLayer(url) {
   if (EMBED) { try { parent.postMessage({ type: 'b7-layer-close' }, location.origin); } catch (_) { } return; }
   if ($('#layer')) return;
   const el = document.createElement('div'); el.className = 'layer'; el.id = 'layer';
-  el.innerHTML = `<iframe src="${url}" title="셀 한눈에"></iframe>`;
+  el.innerHTML = `<iframe src="${url}" title="셀 inside"></iframe>`;
   document.body.appendChild(el); history.pushState({ layer: 1 }, '');
   if (!quiet()) el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 320, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
@@ -356,7 +356,7 @@ addEventListener('message', (e) => { if (e.origin === location.origin && e.data 
 const ICON = { more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>' };
 function renderShell() {
   $('#root').innerHTML = `<header class="top"><div class="topline">
-      <h1><button class="logo" data-act="switch" title="${EMBED ? '셀 한눈에로 돌아가기' : '셀 한눈에로'}" aria-label="셀 한눈에로"><img src="favicon.png" alt="" width="24" height="24"></button>사역 한눈에</h1>
+      <h1><button class="logo" data-act="switch" title="${EMBED ? '셀 inside로 돌아가기' : '셀 inside로'}" aria-label="셀 inside로"><img src="favicon.png" alt="" width="24" height="24"></button>사역 한눈에</h1>
       <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
       ${DEMO ? '<div class="demo">미리보기 — 지어낸 부서입니다. 저장되지 않습니다.</div>' : ''}
       <nav class="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
@@ -435,7 +435,7 @@ function viewDepts() {
   let h = `<p class="sub">교회 보고서에서 <b>내가 쓰는 부서</b>와 <b>나에게 봐 달라고 한 부서</b>를 적어 둡니다. 부서마다 모임 요일 · 끝나는 시각과 매주 / 격주 / 몇째 주를 고릅니다.</p>`;
   h += `<div class="card login">${!FB.ready && !FB.err ? '<div class="tiny muted">로그인 도구를 불러오는 중…</div>'
     : FB.user ? `<div class="row"><span class="small">${esc(FB.user.email || '')} <span class="muted">· 로그인됨 · 시간표가 계정에 저장됩니다</span></span><span class="spacer"></span>${DEMO ? '' : '<button class="del" data-act="fb-logout">로그아웃</button>'}</div>`
-    : `<p class="small muted" style="margin:0">BLOCK7 · 셀 한눈에와 같은 이메일로 로그인하면 시간표가 계정에 저장돼 폰 · PC 가 같이 봅니다. 로그인 전에는 이 기기에만 저장됩니다.</p>
+    : `<p class="small muted" style="margin:0">BLOCK7 · 셀 inside와 같은 이메일로 로그인하면 시간표가 계정에 저장돼 폰 · PC 가 같이 봅니다. 로그인 전에는 이 기기에만 저장됩니다.</p>
        <input type="email" id="fb-em" placeholder="이메일" autocomplete="email"><input type="password" id="fb-pw" placeholder="비밀번호" autocomplete="current-password">
        <p style="margin:8px 0 0"><button class="btn pri" data-act="fb-login" ${FB.busy ? 'disabled' : ''}>${FB.busy ? '로그인 중…' : '로그인'}</button></p>`}${FB.err ? `<p class="err">${esc(FB.err)}</p>` : ''}</div>`;
   for (const role of ['write', 'view']) {
@@ -521,7 +521,7 @@ document.addEventListener('click', (e) => {
     case 'menu': {
       if (menu) return menu.remove();
       const m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
-      m.innerHTML = `<div class="info">${esc(FB.user ? FB.user.email : '로그인 전')}</div><button data-act="switch">셀 한눈에로</button>${DEMO ? '<button data-act="demo-off">미리보기 끝내기</button>' : '<button data-act="demo-on">지어낸 자료로 미리보기</button>'}`;
+      m.innerHTML = `<div class="info">${esc(FB.user ? FB.user.email : '로그인 전')}</div><button data-act="switch">셀 inside로</button>${DEMO ? '<button data-act="demo-off">미리보기 끝내기</button>' : '<button data-act="demo-on">지어낸 자료로 미리보기</button>'}`;
       b.parentElement.appendChild(m); return;
     }
     case 'demo-on': location.href = location.pathname + '?demo=1'; return;

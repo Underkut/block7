@@ -1,6 +1,6 @@
 {
-  "name": "셀 한눈에",
-  "short_name": "셀 한눈에",
+  "name": "셀 inside",
+  "short_name": "셀 inside",
   "description": "셀 케어 보고서를 내 분파셀 기준으로 다시 정리해 봅니다 (읽기 전용)",
   "lang": "ko",
   "start_url": "/cell/",

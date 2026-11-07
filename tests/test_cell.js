@@ -379,7 +379,10 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 한 번 맞춘 뒤엔 계정이 기준 (다른 기기에서 지운 요약 · 열쇠는 따라 지운다, 되살려 올리지 않음)', J([Object.keys(later.store), later.key, later.push]), [['c'], '', null]);
   sc.eq('⑱ 계정 칸은 cellbook 의 ai 하나 — users/{uid} 에는 두지 않는다', /collection\('cellbook'\)\.doc\(FB\.user\.uid\)\.set\(\{ ai: patch/.test(HTML) && !/collection\('users'\)[^\n]*\bai\b/.test(HTML), true);
   sc.eq('⑱ 접힌 긴 글마다 별 단추(더보기 옆)', /'<button class="morebtn" data-act="more" aria-label="더 보기"><i><\/i><\/button>' \+ aiBtn\(k\)/.test(HTML), true);
-  sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon\) \}\]/.test(HTML), true);
+  sc.eq('⑱ 요약 길이: 한 · 두 · 세 문장을 요청 글에 담는다', [1, 2, 3, undefined].map(n => /(한|두|세) 문장으로 요약/.exec(A.aiPrompt('x', n))[1]), ['한', '두', '세', '두']);
+  sc.eq('⑱ 설정창 이름 · 처음값 두 문장 · 별 누르면 펼침', /한 문장으로|\$\{AI_LENS\[n\]\}으로/.test(HTML) && /\? n : 2/.test(HTML) && /AI\.opened\.add\(el\)/.test(HTML), true);
+  sc.eq('⑱ 앱 이름 셀 inside', /<title>셀 inside<\/title>/.test(HTML), true);
+  sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\)\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
 }
 
 // ⑲ 파일 전체 문법 — 화면 쪽 스크립트에 문법 오류가 나면 앱이 통째로 안 뜬다 (11/7 고치다 한 번 걸림)
