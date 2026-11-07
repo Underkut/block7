@@ -156,16 +156,119 @@ const reset = () => { FETCHED = []; RELOADED = 0; REPLACED = null; TOASTS = [];
   await _upCheck();
   sc.eq('10분 안에는 다시 묻지 않는다', FETCHED.length, n);
 
+  // ═══ 3-2. 그 화면 안에서는 미룬다 (1107-SW 2-a) ═══
+  // There(기도) · 성경 · 말씀 전체화면 · 타일뷰를 쓰는 중에 새로 고치면 끊긴다.
+  // 닫혀 홈으로 돌아오면 그때 다시 해 본다.
+  console.log('\n시나리오 3-2 — There · 성경 · 전체화면 · 타일뷰 중에는 미룬다');
+  {
+    const realSI = global.setInterval, realCI = global.clearInterval;
+    let ticks = [];
+    global.setInterval = fn => { ticks.push(fn); return ticks.length; };
+    global.clearInterval = () => { ticks = []; };
+    // _upReloadFresh 는 fetch 를 기다린 뒤 새로 고친다 — 한 박자 기다려 본다
+    const tick = async () => { ticks.slice().forEach(f => f()); await new Promise(r => setImmediate(r)); };
+    const cases = [
+      ['There', () => { global._tf = { run: true }; }, () => { global._tf.run = false; }],
+      ['성경', () => { global._brOpen = true; }, () => { global._brOpen = false; }],
+      ['전체화면', () => { global._verseFullIsOpen = () => true; }, () => { global._verseFullIsOpen = () => false; }],
+      ['타일뷰', () => { global._vgIsOpen = () => true; }, () => { global._vgIsOpen = () => false; }],
+    ];
+    for (const [name, open, close] of cases) {
+      reset(); ticks = []; _upWaitT = 0; VERFILE = 'v. 26-0921-10';
+      open();
+      await _upCheck();
+      sc.eq(`⭐ ${name} 중에는 새로 고치지 않는다`, [RELOADED, REPLACED], [0, null]);
+      sc.eq(`${name} — 토스트도 띄우지 않는다`, TOASTS.length, 0);
+      sc.eq(`${name} — 시도한 것으로 세지 않는다`, SESSION[_lsk('upTry')], undefined);
+      await tick(); await tick(); await tick();
+      sc.eq(`${name} — 열려 있는 동안은 계속 기다린다`, RELOADED, 0);
+      close();
+      await tick();
+      sc.eq(`${name} — 닫히자마자는 아니다(한숨 돌린 뒤)`, RELOADED, 0);
+      await tick();
+      sc.eq(`⭐ ${name} 를 닫고 홈으로 오면 그때 새로 고친다`, RELOADED, 1);
+      sc.eq(`${name} — 기다리기를 멈춘다`, ticks.length, 0);
+    }
+    // 닫았다가 곧 다시 열면 처음부터 센다
+    reset(); ticks = []; _upWaitT = 0; VERFILE = 'v. 26-0921-10';
+    global._brOpen = true; await _upCheck();
+    global._brOpen = false; await tick();
+    global._brOpen = true; await tick();
+    global._brOpen = false; await tick();
+    sc.eq('다시 열면 처음부터 센다', RELOADED, 0);
+    await tick();
+    sc.eq('그리고 다시 닫힌 뒤에 한다', RELOADED, 1);
+    global._brOpen = false;
+    global.setInterval = realSI; global.clearInterval = realCI;
+  }
+
+  // ═══ 3-3. Sweeter 는 오래 켜 둔 창만 (1107-SW 2-b ㉡) ═══
+  console.log('\n시나리오 3-3 — Sweeter 는 6시간 넘게 켠 창을 앞으로 불러올 때만');
+  {
+    global.APP_PRODUCT = 'sweeter';
+    reset(); VERFILE = 'v. 26-0921-10';
+    await _upCheck();
+    sc.eq('⭐ 11분마다 · 부팅 때 묻는 길은 묻지도 않는다', FETCHED.length, 0);
+    reset();
+    await _upCheck('front');
+    sc.eq('⭐ 켠 지 6시간이 안 됐으면 앞으로 불러와도 안 한다', [FETCHED.length, RELOADED], [0, 0]);
+    const born = _upBornAt;
+    _upBornAt = Date.now() - 6 * 60 * 60 * 1000 - 1000;
+    reset();
+    await _upCheck();
+    sc.eq('6시간이 넘어도 보던 중(앞으로 불러온 게 아니면)엔 안 한다', [FETCHED.length, RELOADED], [0, 0]);
+    reset();
+    await _upCheck('front');
+    sc.eq('⭐ 6시간 넘게 켠 창을 앞으로 불러오면 새로 고친다', RELOADED, 1);
+    reset(); ACTIVE = { tagName: 'TEXTAREA' };
+    await _upCheck('front');
+    sc.eq('그때도 글자 치는 중이면 안 한다', RELOADED, 0);
+    _upBornAt = born;
+    global.APP_PRODUCT = 'block7';
+    reset(); VERFILE = 'v. 26-0921-10';
+    await _upCheck();
+    sc.eq('⭐ BLOCK7 은 예전 그대로 (켠 지 얼마 안 돼도 새로 고친다)', RELOADED, 1);
+    reset();
+    await _upCheck('front');
+    sc.eq('BLOCK7 — 앞으로 불러올 때도 그대로', RELOADED, 1);
+    delete global.APP_PRODUCT;
+    reset();
+    await _upCheck();
+    sc.eq('제품 이름을 모르면 BLOCK7 처럼 한다', RELOADED, 1);
+  }
+
+  // ═══ 3-4. 기도노트 안의 겹 화면은 스스로 새로 고치지 않는다 (1107-SW 2-c) ═══
+  console.log('\n시나리오 3-4 — 겹 화면(_EMBED)');
+  {
+    global._embedOn = () => true;
+    for (const p of ['block7', 'sweeter']) {
+      global.APP_PRODUCT = p;
+      reset(); VERFILE = 'v. 26-0921-10';
+      await _upCheck(); await _upCheck('front');
+      sc.eq(`⭐ 겹 화면(${p})은 버전을 묻지도 · 새로 고치지도 않는다`, [FETCHED.length, RELOADED], [0, 0]);
+    }
+    delete global._embedOn; delete global.APP_PRODUCT;
+    // 버전 배지를 직접 누르는 길은 막지 않는다
+    sc.eq('배지 누르기는 _upHold 를 보지 않는다',
+          /async function _verTap\(el\)\{[\s\S]{0,700}_upHold/.test(SRC_DEV), false);
+    // 성경 66권 미리 받기도 겹 화면에서는 하지 않는다
+    sc.eq('⭐ 겹 화면에서는 성경 66권 미리 받기를 건너뛴다',
+          SRC_DEV.includes('setTimeout(()=>{try{if(_embedOn())return;bibleStartPreload();}catch(e){}},6000);'), true);
+    // 옛 모양으로 쓰는 것을 막는 길(_fbMaybeSelfUpdate)은 이 규칙에 묶이지 않는다
+    sc.eq('낡은 탭 막이는 그대로 (오래 켠 창 규칙에 안 묶인다)',
+          /function _fbMaybeSelfUpdate[\s\S]{0,900}_upHold/.test(SRC_DEV), false);
+  }
+
   // ═══ 4. 코드가 지켜야 할 모양 ═══
   console.log('\n시나리오 4 — 지켜야 할 모양');
   // 개발본에도 있어야 한다 (로그인 뭉치 안에 두면 개발본에는 아예 없다)
-  sc.eq('개발본에도 있다', SRC_DEV.includes('async function _upCheck()'), true);
+  sc.eq('개발본에도 있다', SRC_DEV.includes('async function _upCheck(why)'), true);
   sc.eq('낡은 탭 자동 갱신도 같은 길을 쓴다',
         /function _fbMaybeSelfUpdate[\s\S]{0,900}_upReloadFresh\(\);/.test(SRC_DEV), true);
   sc.eq('그냥 reload 하지 않는다',
         /_fbReloading=true;[\s\S]{0,300}location\.reload\(\);\}catch\(e\)\{\}\},1500\)/.test(SRC_DEV), false);
   sc.eq('앞으로 불러올 때마다 본다',
-        SRC_DEV.includes("document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck();});"), true);
+        SRC_DEV.includes("document.addEventListener('visibilitychange',()=>{if(!document.hidden)_upCheck('front');});"), true);
   sc.eq('미전송 편집을 물어볼 통로가 있다',
         SRC_DEV.includes('window._fbHasPending=function(){'), true);
 
