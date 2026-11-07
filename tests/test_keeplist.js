@@ -563,7 +563,7 @@ console.log('\n시나리오 21 — 한 목록에 겹쳐 담기지 않는다 · �
   sc.eq('한 군데라도 담겼을 때만 채운 책갈피', vf.includes('const on=n>0;'), true);
   // 처음 그려지기 전에도 빈칸이 아니라 0 이다
   sc.eq('HTML 기본값도 0',
-        SRC_DEV.includes('<span class="vf-cnt" id="vfCntkeep">0</span>'), true);
+        SRC_DEV.includes('<span class="vf-cnt vf-cnt0" id="vfCntkeep">0</span>'), true);
   sc.eq('빈칸을 안 쓴다', SRC_DEV.includes('id="vfCntkeep">&nbsp;'), false);
 }
 

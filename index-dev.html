@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1105-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-3  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -453,9 +453,18 @@ function applyThemeVars(id,mode,el){
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- 글꼴은 <link> 로 부른다 — <style> 안 @import 는 글꼴 CSS 가 올 때까지 첫 그림을 막는다 (v. 26-1107-3).
+     SUIT 는 BLOCK7 일정 칩 하나만 쓰므로 Sweeter 에서는 부르지 않는다(바로 아래 작은 스크립트). -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600;700&display=swap">
+<script>
+(function(){try{
+  if(document.documentElement.getAttribute('data-product')==='sweeter')return;
+  var l=document.createElement('link');l.rel='stylesheet';
+  l.href='https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css';
+  document.head.appendChild(l);
+}catch(e){}})();
+</script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Pretendard:wght@300;400;500;600;700&display=swap');
-@import url('https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css');
 /* 숫자가 없는 순수 문자 라벨(D/W/M 탭, 요일 머리글)만 모노스페이스로 남긴다.
    가운데 점 있는 0 이 나오던 나머지는 전부 --font-number 로 갈랐다
    (HB 요청, 26-0822-2 — "앱의 모든 숫자를 점 없는 Pretendard 숫자로"). */
@@ -1212,6 +1221,7 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
    같은 링 애니메이션을 재사용하되 짧게 세 번 반복한다. */
 .settings-tab.tab-flash{animation:taskFlashRing .5s ease-out 3;border-radius:8px;}
 .vf-cnt{font-size:11px;font-family:var(--font-number);color:var(--vf-tx3,var(--tx3));line-height:1;}
+.vf-cnt.vf-cnt0{display:none;}   /* 0 이면 감춘다 (v. 26-1107-3) */
 .vf-act-like{color:var(--sun-red);}  /* 좋아요만 빨강 */
 /* 명제에서 안 쓰는 단추 (v26-0831-7) — 암송·Even.
    ⚠️ 클래스로만 감춘다. style.display 를 직접 건드리면 다른 장치가 감춰 둔
@@ -5719,6 +5729,7 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sw-ttl{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.01em;}
 .sw-sub{font-family:var(--font-ui);font-size:10px;letter-spacing:.06em;
   color:var(--tx3);margin-top:1px;}
+@media (max-width:374px){.sw-sub{display:none;}}   /* 아이폰 SE: 부제가 두 줄로 꺾이므로 감춘다 (v. 26-1107-3) */
 .sw-barbtn{background:none;border:1px solid var(--bd);color:var(--tx2);border-radius:20px;
   padding:5px 12px;font:400 11px/1 var(--font-ui);cursor:pointer;}
 /* 좌상단 로고 묶음 — 로고와 제목이 한 덩어리로 눌린다 (BLOCK7 의 로고와 같은 자리) */
@@ -6538,7 +6549,7 @@ html[data-product="sweeter"] .auth-switch button.auth-signup{color:var(--bgd-tx)
 /* ③④ 덮개 + 그레인 */
 .sw-photo::after{content:"";position:absolute;inset:0;z-index:2;border-radius:15px;
   background-image:var(--sw-grain),
-    linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.08) 24%,
+    linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.18) 26%,
       rgba(0,0,0,.08) 56%,rgba(0,0,0,.38));
   background-size:120px 120px,100% 100%;
   background-repeat:repeat,no-repeat;}
@@ -6565,6 +6576,9 @@ html[data-theme="light"] .sw-photo::after{
   background-image:var(--sw-grain),
     linear-gradient(180deg,rgba(255,255,255,.52),rgba(255,255,255,.14) 22%,
       rgba(255,255,255,.16) 54%,rgba(255,255,255,.60));}
+/* 사진 타일의 머리줄(번호 · 이름)은 사진에 묻히지 않게 옅은 그늘을 깐다 (v. 26-1107-3) */
+.sw-face:has(.sw-photo) .sw-lab{text-shadow:0 0 6px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.4);}
+html[data-theme="light"] .sw-face:has(.sw-photo) .sw-lab{text-shadow:0 0 6px rgba(255,255,255,.8);}
 /* 사진이 깔린 칸은 손그림을 물린다 — 둘이 겹치면 둘 다 지저분해진다 */
 .sw-cell.has-photo .sw-art{display:none;}
 /* ══ 삽화 (v26-0922-6, HB 6·7·8) ══════════════════════════
@@ -7005,7 +7019,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1105-8";
+const APP_VERSION = "v. 26-1107-3";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7906,7 +7920,7 @@ try{
           </span>
         </div>
         <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:8px;">여기서 뽑아 알림 · 말씀 카드 · 상단 말씀에 써요</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;"><span data-prod="b7">여기서 뽑아 알림 · 말씀 카드 · 상단 말씀에 써요</span><span data-prod="sw">여기서 뽑아 알림 · 말씀 카드에 써요</span></div>
         <div id="collBtnRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
 
         <!-- 말씀 목록 기간 기준 (말씀 모음 필터의 주간/월간/연간에도 적용) -->
@@ -8145,7 +8159,7 @@ try{
       <div class="sg">
         <div class="sg-h">강조 표시</div>
         <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:8px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. 전체화면과 말씀카드에 함께 적용돼요. 여러 개를 골라도 되고, 전부 끄면 강조가 없어요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;">구글 시트 '강조 문구' 열에 적은 말을 본문에서 도드라지게 해요. <span data-prod="b7">전체화면과 말씀카드에 함께 적용돼요.</span><span data-prod="sw">말씀 전체화면에 적용돼요.</span> 여러 개를 골라도 되고, 전부 끄면 강조가 없어요. 시트에 적힌 게 없으면 그냥 평소대로 보여요.</div>
         <!-- 네 가지를 붙여 놓은 한 덩어리. 복수 선택이라 라디오가 아니다.
              두 개 이상 켜면 오른쪽에 '겹쳐쓰기'가 나타난다 (자리가 좁으면 아래로 접힌다) -->
         <div class="hi-ctl-row">
@@ -8211,7 +8225,7 @@ try{
       <div class="sg">
         <div class="sg-h">테마</div>
         <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:8px;">전체화면·타일뷰·공유 이미지에 함께 적용돼요. 하나만 고르면 하루 종일 그 패턴, 둘 이상 고르면 아래에서 시간구간마다 배정할 수 있어요.</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;"><span data-prod="b7">전체화면·타일뷰·공유 이미지에 함께 적용돼요. 하나만 고르면 하루 종일 그 패턴, 둘 이상 고르면 아래에서 시간구간마다 배정할 수 있어요.</span><span data-prod="sw">전체화면·공유 이미지에 함께 적용돼요. 하나만 고르면 하루 종일 그 패턴, 둘 이상 고르면 아래에서 시간대마다 정할 수 있어요.</span></div>
         <div id="vfThemeChips" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
         <div id="vfSecAssign" style="margin-top:12px;"></div>
       </div>
@@ -8322,7 +8336,7 @@ try{
       <div class="sg" data-lv="p">
         <div class="sg-h">이미지 크기</div>
         <div class="sg-card sg-pad">
-        <div class="settings-row-desc" style="margin-bottom:8px;">말씀영역·위젯에서 공유할 때 쓰는 크기예요. 전체화면·타일뷰에서는 보던 화면 그대로 저장돼요.</div>
+        <div class="settings-row-desc" style="margin-bottom:8px;"><span data-prod="b7">말씀영역·위젯에서 공유할 때 쓰는 크기예요. 전체화면·타일뷰에서는 보던 화면 그대로 저장돼요.</span><span data-prod="sw">말씀을 이미지로 공유할 때 쓰는 크기예요. 전체화면에서는 보던 화면 그대로 저장돼요.</span></div>
         <div class="settings-subtitle subtitle-lg">폰</div>
         <div style="display:flex;gap:6px;">
           <button id="ssM_fhd" class="settings-btn" style="flex:1;" onclick="setShareSize('mobile','fhd')">FHD+</button>
@@ -8419,7 +8433,7 @@ try{
         <div class="settings-row" style="margin-top:14px;">
           <div class="settings-row-text">
             <div class="settings-row-label">이 기기에서 받기</div>
-            <div class="settings-row-desc">끄면 <b>이 기기만</b> 조용해요 — 다른 기기는 그대로 · 할일 알림도 함께</div>
+            <div class="settings-row-desc">끄면 <b>이 기기만</b> 조용해요 — 다른 기기는 그대로<span data-prod="b7"> · 할일 알림도 함께</span></div>
           </div>
           <label class="settings-toggle">
             <input type="checkbox" id="setDevNotifyV" onchange="setDeviceNotify(this.checked)">
@@ -9280,41 +9294,41 @@ try{
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M12 20C5.5 15 3 12 3 8.6 3 6 5 4 7.4 4 9 4 10.6 4.9 12 6.7 13.4 4.9 15 4 16.6 4 19 4 21 6 21 8.6 21 12 18.5 15 12 20Z"/></svg>
-      </span><span class="vf-cnt" id="vfCntlike">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCntlike">0</span>
     </button>
     <button class="vf-act vf-act-keep" id="vfActkeep" onclick="vfAct('keep')" aria-label="저장">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M7 3h10a1 1 0 0 1 1 1v17l-6-4.2L6 21V4a1 1 0 0 1 1-1z"/></svg>
-      </span><span class="vf-cnt" id="vfCntkeep">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCntkeep">0</span>
     </button>
     <button class="vf-act vf-act-mem" id="vfActmem" onclick="vfAct('mem')" aria-label="암송 완료 체크">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 6.4"/></svg>
-      </span><span class="vf-cnt" id="vfCntmem">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCntmem">0</span>
     </button>
     <button class="vf-act vf-act-deeper" id="vfActdeeper" onclick="vfAct('deeper')" aria-label="Deeper">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v13Q7.5 17 12 18.6Q16.5 17 21 18.5V5.5Q16.5 3.6 12 5.5Q7.5 3.6 3 5.5Z"/><path d="M12 5.5v13.1"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.5v13Q7.5 17 11 18.4V5.4Q7.5 3.6 3 5.5Z"/><path fill="currentColor" d="M21 5.5v13Q16.5 17 13 18.4V5.4Q16.5 3.6 21 5.5Z"/></svg>
-      </span><span class="vf-cnt" id="vfCntdeeper">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCntdeeper">0</span>
     </button>
     <button class="vf-act vf-act-even even-only" id="vfActeven" onclick="vfAct('even')" aria-label="Even Deeper">
       <span class="vf-ic">
         <svg class="ic-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6l7 6 7-6"/><path d="M5 13l7 6 7-6"/></svg>
         <svg class="ic-fill" viewBox="0 0 24 24"><path fill="currentColor" d="M5 5 L19 5 L12 12 Z"/><path fill="currentColor" d="M5 13 L19 13 L12 20 Z"/></svg>
-      </span><span class="vf-cnt" id="vfCnteven">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCnteven">0</span>
     </button>
     <button class="vf-act vf-act-share" id="vfActshare" onclick="openVfShare()" aria-label="공유">
       <span class="vf-ic">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2Z"/></svg>
-      </span><span class="vf-cnt" id="vfCntshare">0</span>
+      </span><span class="vf-cnt vf-cnt0" id="vfCntshare">0</span>
     </button>
     <!-- There — 기도·예배 (v26-0923-5, HB). 맨 아래. 그림은 설정에서 고른 하나를
          _thereIconSync() 가 넣는다 (세 벌 중 하나). 숫자는 이 말씀에서 연 횟수. -->
     <button class="vf-act vf-act-there" id="vfActthere" onclick="openThereFromVf()" aria-label="There">
-      <span class="vf-ic"><span class="there-ic" data-there-ic></span></span><span class="vf-cnt" id="vfCntthere">0</span>
+      <span class="vf-ic"><span class="there-ic" data-there-ic></span></span><span class="vf-cnt vf-cnt0" id="vfCntthere">0</span>
     </button>
     </div>
   </div>
@@ -19576,10 +19590,10 @@ function _vfSyncCounts(){
   //    아이콘은 항상 **로그인한 나 자신이 그 반응을 했는지**만 본다.
   //    그래서 전체 집계를 받아와도 아이콘(on 클래스)은 건드리지 않는다.
   const setCnt=(id,val)=>{
-    const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;
+    const el=document.getElementById('vfCnt'+id);if(el){el.textContent=val;el.classList.toggle('vf-cnt0',!(+val>0));}
     const btn=document.getElementById('vfAct'+id);if(btn)btn.classList.toggle('on',(+val)>0); // 1+ → 채움 아이콘
   };
-  const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el)el.textContent=val;};
+  const setText=(id,val)=>{const el=document.getElementById('vfCnt'+id);if(el){el.textContent=val;el.classList.toggle('vf-cnt0',!(+val>0));}};
   // 내 로컬 집계를 먼저 즉시 표시 — '구독자 전체'일 때도 원격 응답 전까지의
   // 폴백이 되고, 오프라인/규칙 미설정 시엔 이 값이 그대로 유지된다.
   // 이 값이 곧 채운 아이콘의 기준이기도 하다 — 아래 전체 집계로는 다시 안 바뀐다.
@@ -20617,7 +20631,7 @@ function _shotDraw(o){
       paths.forEach(d=>{const P=new Path2D(d);(filled&&!ic.line)?ctx.fill(P,'evenodd'):ctx.stroke(P);});
       ctx.restore();
       const cnt=btn.querySelector('.vf-cnt');
-      if(cnt&&cnt.textContent){
+      if(cnt&&cnt.textContent&&!cnt.classList.contains('vf-cnt0')){
         const cs=getComputedStyle(cnt),f=_shotFont(cs),cr=cnt.getBoundingClientRect();
         ctx.font=`${cs.fontWeight} ${f.size*SC}px ${cs.fontFamily}`;
         ctx.fillStyle=cs.color;ctx.textAlign='center';ctx.textBaseline='middle';
@@ -56280,7 +56294,7 @@ function _swCellHTML(t,it,i){
     //    않게 — 사진이 오면 그 위를 덮으므로 보이지 않는다.
     return '<div class="sw-cell sermon'+(th?' has-photo':'')+'">'+deco+th
       +'<div class="sw-val">'+_swEsc(g.cat)+'</div>'
-      +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' \u00b7 '+g.d:''))+'</div></div>';
+      +'<div class="sw-num">'+_swEsc('말씀 '+g.n+(g.d?' \u00b7 '+(_swMD(g.d)||g.d):''))+'</div></div>';
   }
   if(t.k==='react')
     return '<div class="sw-cell stat">'+deco+_swIllHTML(g.kind)
@@ -56354,6 +56368,15 @@ function _swThereHTML(k){
   if(_SW_THERE_KINDS.indexOf(k)<0)return '';
   let ic='';try{ic=_thereIcHTML();}catch(_){return '';}   // 시험은 이 구간만 떠 간다
   return '<button class="sw-there" data-swthere="1" aria-label="There" title="There">'+ic+'</button>';
+}
+// 타일 하나의 계산이 깨져도 그 뒤 타일이 줄줄이 안 그려지지 않게 — 그 타일만 '못 그렸어요' (v. 26-1107-3).
+// ⚠️ 값을 고치지 않는다. 그리기만 건너뛴다.
+function _swFaceSafe(t){
+  try{return _swFace(t);}
+  catch(e){
+    try{console.warn('타일 그리기 실패:',t&&t.k,e);}catch(_){}
+    return '<div class="sw-face"><div class="sw-empty">못 그렸어요</div></div>';
+  }
 }
 function _swFace(t){
   const T=_SW_TYPES[t.k],it=_swStrip(t),n=it.length;
@@ -56499,7 +56522,7 @@ function _swRender(){
     el.className=_swTileClass(t);
     el.dataset.swi=i;
     el.dataset.swk=t.k;   // FLIP 이 옛 자리와 짝지을 때 쓰는 이름표
-    el.innerHTML=_swFace(t)+_swEditBtns(t);
+    el.innerHTML=_swFaceSafe(t)+_swEditBtns(t);
     // ⚠️ 흐른 만큼 빼서 **음수**가 되면 '그만큼 이미 지난 것' 으로 친다 —
     //    다시 그려도 처음부터 다시 돌지 않고 이어서 스며든다.
     if(intro)el.style.animationDelay=
@@ -56653,7 +56676,7 @@ function _swRepaint(i){
   const el=b.querySelector('[data-swi="'+i+'"]');if(!el)return;
   const t=_SW_TILES[i];
   el.className=_swTileClass(t);   // sw-dragging 도 여기서 사라진다
-  el.innerHTML=_swFace(t)+_swEditBtns(t);
+  el.innerHTML=_swFaceSafe(t)+_swEditBtns(t);
   _swKbSync();                    // className 을 새로 준 자리라 표시도 다시 (v26-0921-12)
 }
 
@@ -57674,7 +57697,7 @@ function _swMergeAccountTab(){
 // v26-1024-15 — 일반설정창이 묶음 카드가 되어, 낱칸 넷이 아니라 **묶음째** 옮긴다:
 //   '모양'(밝기 · 색 테마 · 글자 크기)은 맨 위에, '설정창'(등급 아이콘 모양)은 맨 아래에.
 //   세 창 공통 규칙 — 같은 줄은 어느 창에서나 같은 묶음 · 같은 생김.
-const _SW_VIEWTAB_MOVE=['sgLook'];
+const _SW_VIEWTAB_MOVE=['sgLook','secDow'];   // secDow = 요일 표기 (v. 26-1107-3, HB: Sweeter 에서도 바꾸게)
 const _SW_VIEWTAB_TAIL=['sgLvIcon'];
 // 옮겨 온 칸들의 **값**을 채운다.
 // ⚠️ 값을 채우는 것은 예나 지금이나 renderSettingsPanel() 이다. Sweeter 는

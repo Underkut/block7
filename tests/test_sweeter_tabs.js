@@ -174,7 +174,7 @@ console.log('\n시나리오 5-2 — 빈 탭이 남지 않는다');
 console.log('\n시나리오 6 — 붙박이');
 {
   sc.eq('옮길 묶음 목록은 한 곳에',
-        SRC.includes("const _SW_VIEWTAB_MOVE=['sgLook'];") && SRC.includes("const _SW_VIEWTAB_TAIL=['sgLvIcon'];"), true);
+        SRC.includes("const _SW_VIEWTAB_MOVE=['sgLook','secDow'];") && SRC.includes("const _SW_VIEWTAB_TAIL=['sgLvIcon'];"), true);
   ['sgLook','sgLvIcon'].forEach(id=>
     sc.eq('HTML 에 손잡이가 있다: '+id, new RegExp(`<div class="sg" id="${id}"`).test(SRC), true));
   sc.eq("'모양' 묶음 안에 밝기 · 색 테마 · 글자 크기",
