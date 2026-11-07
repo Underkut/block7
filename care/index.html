@@ -821,9 +821,11 @@ function parseAttrRows(values) {
   }
   return out;
 }
-// 폼 질문 요약 · '속성' 탭 줄 → 맞출 것. append: 탭에 더할 줄 · update: 탭 칸 고치기 · form: {질문번호: 새 선택지 목록}
+// 폼 질문 요약 · '속성' 탭 줄 → 맞출 것. append: 탭에 더할 줄 · update: 탭 칸 고치기(지금 써도 되는 것) · form: {질문번호: 새 선택지 목록}
+// mark: '맞춘 표시'(폼 질문 번호) — **폼 고치기가 성공한 뒤에만** 쓴다. 먼저 쓰고 폼 고치기가 실패하면 다음 맞춤이 그 값을
+//       '폼에서 뺐다' 로 읽어 숨겨 버린다 (코덱스 검토 PR 976).
 function planAttrSync(summary, rows, managed) {
-  const out = { append: [], update: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } };
+  const out = { append: [], update: [], mark: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } };
   (managed || ATTR_MANAGED).forEach(title => {
     const q = (summary || []).find(x => x.title === title && x.kind === 'choice'); if (!q) return;
     const mine = (rows || []).filter(r => r.attr === title && !r.parent), byVal = new Map(mine.map(r => [r.val, r]));
@@ -833,10 +835,10 @@ function planAttrSync(summary, rows, managed) {
       const inForm = q.options.includes(r.val);
       if (!r.hidden && !inForm) {
         if (r.qid) { out.update.push({ row: r.row, k: '숨김', v: '숨김' }); out.n.hidFromForm++; }   // 폼에서 뺐다 → 앱에서도 숨김
-        else { opts.push(r.val); changed = true; out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); out.n.toForm++; }   // 앱에서 새로 → 폼에도
-      } else if (!r.hidden && inForm && !r.qid) out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid });
+        else { opts.push(r.val); changed = true; out.mark.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); out.n.toForm++; }   // 앱에서 새로 → 폼에도
+      } else if (!r.hidden && inForm && !r.qid) out.mark.push({ row: r.row, k: '폼 질문 번호', v: q.qid });
       else if (r.hidden && inForm) {
-        if (removed < FORM_REMOVE_MAX) { opts = opts.filter(x => x !== r.val); changed = true; removed++; out.n.removeFromForm++; if (!r.qid) out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); }
+        if (removed < FORM_REMOVE_MAX) { opts = opts.filter(x => x !== r.val); changed = true; removed++; out.n.removeFromForm++; if (!r.qid) out.mark.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); }
         else out.n.heldBack++;
       }
     });
@@ -1331,8 +1333,11 @@ async function syncAttrs() {
     const reqs = formUpdateRequests(fj, plan.form);
     // 판 번호를 함께 보낸다 — 그사이 다른 곳에서 폼이 바뀌었으면 구글이 거절하고, 다음에 다시 읽어 맞춘다
     if (reqs.length) await gapi(FORMS + f.id + ':batchUpdate', { method: 'POST', body: { requests: reqs, writeControl: { requiredRevisionId: fj.revisionId } } });
+    // 맞춘 표시는 폼 고치기가 성공한 뒤에만 (실패하면 위에서 멈춰 표시가 안 남고, 다음에 다시 폼에 더하려 한다)
+    if (plan.mark.length) await batchValues(s.id, plan.mark.filter(u => h.indexOf(u.k) >= 0).map(u => ({ range: a1('속성', h.indexOf(u.k), u.row), values: [[u.v]] })));
     DATA.attrRows = parseAttrRows((await attrTab(s)).v); DATA.attrAt = Date.now(); DATA.formRaw = fj;
-    if (reqs.length || plan.append.length) DATA.form = null;
+    // 바뀐 것이 하나라도 있으면 폼을 새로 읽게 — 폼에서 지운 선택지가 입력 칩에 남지 않게 (코덱스 검토 PR 976)
+    if (reqs.length || plan.append.length || plan.update.length || plan.mark.length) { DATA.form = null; DATA.formRaw = null; }
     plan.seeding = seeding;
     return plan;
   } finally { ATTR_SYNCING = false; }
@@ -1352,7 +1357,7 @@ async function autoSyncAttrs() {
   try {
     const p = await syncAttrs(); const msg = attrSyncMsg(p);
     if (msg) toast(msg);
-    if (p && (p.append.length || p.n.toForm || p.n.removeFromForm || p.n.hidFromForm)) await loadData(true);
+    if (p && (p.append.length || p.update.length || p.mark.length || p.n.toForm || p.n.removeFromForm)) await loadData(true);
     else render();
   } catch (e) { DATA.attrErr = e.status === 400 ? '그사이 폼이 바뀌어 다음에 다시 맞춥니다' : '폼과 맞추지 못했습니다 — ' + e.message; render(); }
 }

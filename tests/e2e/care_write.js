@@ -30,7 +30,7 @@ const ROWS = [
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
 const LOG = [];
-const HOOK = { failDel: false, shift: false };   // 일부러 일으키는 사고
+const HOOK = { failDel: false, shift: false, failForm: false };   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
 const colN = L => L.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
 function parseRange(r) {
@@ -56,6 +56,7 @@ async function route(r) {
   const json = (o) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o) });
   if (u.host.includes('cloudfunctions')) return json(u.pathname.endsWith('/status') ? { connected: true, email: 'test@example.com' } : { access_token: 'fake', expires_in: 3600 });
   if (u.host === 'forms.googleapis.com') {
+    if (m === 'POST' && HOOK.failForm) { HOOK.failForm = false; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
     if (m === 'POST') {   // forms.batchUpdate — 판 번호가 다르면 거절
       if (!body.writeControl || body.writeControl.requiredRevisionId !== FORM.revisionId) return r.fulfill({ status: 400, contentType: 'application/json', body: '{"error":{"message":"revision"}}' });
       body.requests.forEach(q => {
@@ -256,10 +257,21 @@ async function route(r) {
   // '장소 · 메모' 질문
   await page.click('.layer [data-act="addplace"]'); await page.waitForTimeout(1500);
   eq("⑪ 폼에 '장소 · 메모' — '전화 / 만남' 바로 뒤에", FORM.items.map(i => i.title).slice(1, 3), ['전화 / 만남', '장소 · 메모']);
+  // (코덱스 검토 PR 976) ① 폼 고치기가 한 번 실패 → 맞춘 표시가 안 남고, 다음 맞춤에 폼에 더해진다(숨겨지지 않는다)
+  HOOK.failForm = true;
+  await page.fill('#aadd2', '봉사'); await page.click('.layer [data-act="attradd"][data-k="태그"]'); await page.waitForTimeout(1500);
+  const bs = () => A_().find(r => r[1] === '봉사') || [];
+  eq('⑪ 폼 고치기가 실패하면 탭엔 줄만 있고 맞춘 표시는 없다 · 폼엔 아직 없다', [bs()[1], bs()[6] || '', opts('태그').includes('봉사'), HOOK.failForm], ['봉사', '', false, false]);
+  await page.click('.layer [data-act="attrsync"]'); await page.waitForTimeout(1500);
+  eq('⑪ 다음 맞춤 → 폼에 더해지고 숨겨지지 않는다', [opts('태그').includes('봉사'), !!bs()[6], bs()[4] || ''], [true, true, '']);
+  // ② 앱을 켜 둔 채 폼에서 선택지를 지운다 → 입력 칩에서도 빠진다
+  FORM.items[0].questionItem.question.choiceQuestion.options = FORM.items[0].questionItem.question.choiceQuestion.options.filter(o => o.value !== '셀원'); FORM.revisionId = 'rev90';
+  await page.click('.layer [data-act="attrsync"]'); await page.waitForTimeout(1800);
+  eq('⑪ 폼에서 지운 선택지 → 탭에선 숨김 · 입력 칩(폼 선택지)에서도 빠진다', [(A_().find(r => r[1] === '셀원') || [])[4], await page.evaluate(() => DATA.opts.roles.includes('셀원'))], ['숨김', false]);
   // 다시 맞춰도 폼을 또 고치지 않는다
   const nForm = LOG.filter(x => x[0] === 'form').length;
   await reload(); await reload();
-  eq('⑪ 다시 맞춰도 폼 · 탭을 또 고치지 않는다', [LOG.filter(x => x[0] === 'form').length, A_().length], [nForm, 24]);
+  eq('⑪ 다시 맞춰도 폼 · 탭을 또 고치지 않는다', [LOG.filter(x => x[0] === 'form').length, A_().length], [nForm, 25]);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

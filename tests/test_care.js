@@ -328,20 +328,23 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   const S0 = A.formSummary(FORM), qid = t => S0.find(q => q.title === t).qid;
   const HEADA = A.TABS['속성'];
   // 폼을 그대로 탭에 옮긴 것처럼 줄을 만들어 주는 도구
-  const tabFrom = (plan, base) => { const v = (base || [HEADA]).map(r => r.slice()); plan.append.forEach(r => v.push(r)); plan.update.forEach(u => { v[u.row - 1][HEADA.indexOf(u.k)] = u.v; }); return v; };
+  const tabFrom = (plan, base, noMark) => { const v = (base || [HEADA]).map(r => r.slice()); plan.append.forEach(r => v.push(r)); plan.update.concat(noMark ? [] : plan.mark).forEach(u => { v[u.row - 1][HEADA.indexOf(u.k)] = u.v; }); return v; };
   const sumWith = (title, opts) => S0.map(q => q.title === title ? Object.assign({}, q, { options: opts }) : q);
   sc.eq('⑯ 폼 요약에 질문 자리 · 종류', J([S0[3].idx, S0[3].ctype]), [3, 'CHECKBOX']);
   const seed = A.planAttrSync(S0, A.parseAttrRows([HEADA]));
   sc.eq('⑯ 처음 — 폼 선택지를 탭으로 (구분 7 · 방식 5 · 태그 6 · 액션 3) · 폼은 안 고친다', J([seed.append.length, Object.keys(seed.form).length, seed.n.fromForm]), [21, 0, 21]);
   sc.eq('⑯ 대화 깊이는 맞추지 않는다', seed.append.some(r => r[0] === '대화 깊이'), false);
   const T1 = tabFrom(seed), R1 = A.parseAttrRows(T1);
-  sc.eq('⑯ 한 번 맞추면 다시 맞춰도 할 일 없음', J(A.planAttrSync(S0, R1)), J({ append: [], update: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } }));
+  sc.eq('⑯ 한 번 맞추면 다시 맞춰도 할 일 없음', J(A.planAttrSync(S0, R1)), J({ append: [], update: [], mark: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } }));
   // 폼에서 '진로' 를 더했다
   const p2 = A.planAttrSync(sumWith('태그', OPT.tags.concat(['진로'])), R1);
   sc.eq('⑯ 폼에서 새로 → 탭에 한 줄(맞춘 표시와 함께)', J(p2.append), [['태그', '진로', '', 7, '', '', qid('태그'), '']]);
   // 앱에서 '관계' 를 더했다(폼 질문 번호 없음)
   const T3 = T1.concat([['태그', '관계', '', 7, '', '', '', '']]), p3 = A.planAttrSync(S0, A.parseAttrRows(T3));
-  sc.eq('⑯ 앱에서 새로 → 폼 선택지 끝에 · 탭엔 맞춘 표시', J([p3.form[qid('태그')], p3.update]), [OPT.tags.concat(['관계']), [{ row: T3.length, k: '폼 질문 번호', v: qid('태그') }]]);
+  sc.eq('⑯ 앱에서 새로 → 폼 선택지 끝에 · 맞춘 표시는 따로(폼 고치기 뒤에 쓴다)', J([p3.form[qid('태그')], p3.mark, p3.update]), [OPT.tags.concat(['관계']), [{ row: T3.length, k: '폼 질문 번호', v: qid('태그') }], []]);
+  // (코덱스 검토 PR 976) 폼 고치기가 실패해 맞춘 표시가 안 남았다 → 다음에도 숨기지 않고 다시 폼에 더하려 한다
+  const p3b = A.planAttrSync(S0, A.parseAttrRows(tabFrom(p3, T3, true)));
+  sc.eq('⑯ 폼 고치기가 실패했으면 다음 맞춤도 숨기지 않고 다시 폼에 더한다', J([p3b.n.toForm, p3b.n.hidFromForm, p3b.update]), [1, 0, []]);
   sc.eq('⑯ 그다음엔 할 일 없음', A.planAttrSync(sumWith('태그', OPT.tags.concat(['관계'])), A.parseAttrRows(tabFrom(p3, T3))).update.length, 0);
   // 폼에서 '학교' 를 뺐다
   const p4 = A.planAttrSync(sumWith('태그', OPT.tags.filter(x => x !== '학교')), R1);
