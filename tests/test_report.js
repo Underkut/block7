@@ -19,7 +19,7 @@ if (!m) { console.error('report-core 덩어리를 못 찾았습니다'); process
 const ctx = { console, Math, JSON, Number, Object, Array, String, Date };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { APP_VERSION, DOW, FREQ, weekStartSun, nthOf, isLastOf, occursOn, normSlot, normBook, pickBook, weekPlan, slotText, addDays };`, ctx);
+this.A = { APP_VERSION, DOW, FREQ, weekStartSun, nthOf, isLastOf, occursOn, normSlot, normBook, pickBook, weekPlan, slotText, addDays, parseDeptList, PRESET };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -58,6 +58,18 @@ const plan = A.weekPlan(book, '2026-11-01');
 sc.eq('⑤ 첫째 주: 일요일 성찬(12:00) → 조명(13:30) → 수요일 송번역', J(plan.map(x => [x.day, x.dept.name])), [['2026-11-01', '성찬위원'], ['2026-11-01', '조명팀'], ['2026-11-04', '송번역팀']]);
 sc.eq('⑤ 둘째 주에는 성찬위원이 없다', A.weekPlan(book, '2026-11-08').map(x => x.dept.name).includes('성찬위원'), false);
 sc.eq('⑤ 시간칸 글', A.slotText(book.depts[1].slots[0]), '1째 주 일요일 · 12:00 끝');
+
+// ⑤-2 부서 고르기 — 교회 보고서 화면에서 복사한 글을 부서 이름으로 (지어낸 화면 글)
+{
+  const pasted = ['TLC 교회 보고서', '이번 주 11/1(일) - 11/7(토)', '내 파트 · 이번 주', '▾ 예배/기술팀 5/5', '● 예배팀', '● 조명팀', '● 성찬위원', '● PD', '● 송번역팀',
+    '▾ 부산캠퍼스 1/1', '● 부산 캠퍼스', '● 보고 있음 ● 임시저장 ○ 아직 없음', '주간 요약', '로그아웃'].join('\n');
+  sc.eq('⑤-2 붙여 넣은 글에서 부서 이름만 (머리 숫자 · 날짜 · 메뉴 · 표시 글은 버림)', J(A.parseDeptList(pasted)),
+    ['TLC 교회 보고서', '예배/기술팀', '예배팀', '조명팀', '성찬위원', 'PD', '송번역팀', '부산캠퍼스', '부산 캠퍼스']);
+  sc.eq('⑤-2 같은 이름은 한 번 · 빈 글은 빈 목록', J([A.parseDeptList('조명팀\n조명팀\n'), A.parseDeptList('')]), [['조명팀'], []]);
+  const nb = A.normBook({ catalog: ['조명팀', '조명팀', '', 'x'.repeat(30)], depts: [] });
+  sc.eq('⑤-2 가져온 목록은 시간표와 함께 저장 (겹침 없이 · 20자까지)', J([nb.catalog.length, nb.catalog[1].length]), [2, 20]);
+  sc.eq('⑤-2 자주 있는 이름 목록이 있다', A.PRESET.includes('조명팀') && A.PRESET.includes('성찬위원'), true);
+}
 
 // ⑥ 셀 한눈에와 잇기 · 저장 자리
 sc.eq('⑥ 사역 → 셀: 로고가 /cell/ 을 겹 화면으로', /case 'switch': return openLayer\('\/cell\/'/.test(HTML), true);
