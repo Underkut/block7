@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1107-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1107-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -287,6 +287,16 @@ h3 .lnk{font-weight:500}
 .aibtn.on svg{fill:currentColor}
 .aibtn.busy svg{animation:aispin 1.1s linear infinite}
 @keyframes aispin{to{transform:rotate(360deg)}}
+.aibar{position:relative;height:0;z-index:2}
+.aibar .in{position:absolute;right:0;top:10px;display:flex;gap:0}
+.aibar.row{height:30px}
+.aibar button{display:flex;align-items:center;justify-content:center;width:32px;height:24px;color:var(--tx3);opacity:.8}
+.aibar button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.aibar button.on{color:var(--ac);opacity:1}
+.aibar button.on svg{fill:currentColor}
+.aibar button.busy svg{animation:aispin 1.1s linear infinite}
+.ailbl.kw{color:var(--ok);background:var(--ok-soft)}
+.clamp.aikw{color:var(--tx)}
 .clamp.aisum{display:block;-webkit-line-clamp:unset;-webkit-mask-image:none;mask-image:none;white-space:pre-line}
 .clamp.aisum+.morebtn{visibility:hidden}
 .ailbl{display:inline-block;font-size:11px;color:var(--ac);background:var(--ac-soft);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px}
@@ -341,7 +351,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-9';
+const APP_VERSION = 'v. 26-1107-10';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -686,6 +696,26 @@ function aiPrompt(t, n) {
   const L = AI_LENS[n] || AI_LENS[2];
   return '다음은 교회 셀 보고서의 한 대목입니다. 목회자가 한눈에 보도록 핵심만 한국어 존댓말로 ' + L + '으로 요약해 주세요. ' + (n === 1 ? '한 줄만 쓰세요.' : '문장마다 줄을 바꿉니다.') + '\n'
     + '각 줄은 "· " 로 시작합니다. "셀원 A" 같은 표기는 바꾸지 말고 그대로 쓰세요. 원문에 없는 내용은 지어내지 마세요. 요약만 쓰세요.\n\n' + t;
+}
+// 1107-2 셀 inside C1 · C2: 여러 글을 한 번에 묶어 보낸다(무료 단계는 1분 요청 수가 정해져 있어 하나씩 보내면 금방 막힌다).
+// 글마다 번호를 붙여 보내고, 답은 같은 순서의 JSON 문자열 배열로 받는다. kind: 'sum' = 요약(설정 길이) · 'kw' = 핵심(명사형 몇 마디)
+const AI_CHUNK = 10;
+function aiChunks(list, n, maxChars) {   // n 개씩 · 글자 수가 너무 많으면 더 일찍 끊는다
+  const out = []; let cur = [], len = 0;
+  for (const x of list) { const l = String(x.text || '').length; if (cur.length && (cur.length >= n || len + l > maxChars)) { out.push(cur); cur = []; len = 0; } cur.push(x); len += l; }
+  if (cur.length) out.push(cur); return out;
+}
+function aiBatchPrompt(texts, kind, n) {
+  const head = kind === 'kw'
+    ? '다음은 교회 셀 보고서의 글 ' + texts.length + '개입니다. 각 글에서 맥락만 남겨 **명사형 핵심어** 2~4개를 " · " 로 이어 아주 짧게 쓰세요 (예: "이직 고민 · 가족 기도 요청"). 문장으로 쓰지 마세요.\n'
+    : '다음은 교회 셀 보고서의 글 ' + texts.length + '개입니다. 목회자가 한눈에 보도록 각 글을 한국어 존댓말로 ' + (AI_LENS[n] || AI_LENS[2]) + '으로 요약하세요. 각 줄은 "· " 로 시작합니다.\n';
+  return head + '"셀원 A" 같은 표기는 바꾸지 말고 그대로 쓰세요. 원문에 없는 내용은 지어내지 마세요.\n'
+    + '답은 글 순서대로 문자열 ' + texts.length + '개가 든 JSON 배열 하나만 쓰세요.\n\n'
+    + texts.map((t, i) => '[' + (i + 1) + ']\n' + t).join('\n\n');
+}
+function aiParseArr(raw, n) {   // 모델이 ```json 으로 감싸거나 앞뒤에 말을 붙여도 배열만 꺼낸다
+  const t = String(raw || ''); const a = t.indexOf('['), b = t.lastIndexOf(']'); if (a < 0 || b <= a) return null;
+  try { const arr = JSON.parse(t.slice(a, b + 1)); if (!Array.isArray(arr)) return null; return arr.slice(0, n).map(x => typeof x === 'string' ? x.trim() : (x == null ? '' : String(x).trim())); } catch (_) { return null; }
 }
 // 계정 맞추기 (HB 11/7): 열쇠 · 요약은 cellbook/{uid} 의 ai 칸에도 둔다 — 계정이 기준. 이 기기에 먼저 있던 것은 처음 한 번만 올린다
 // (한 번 맞춘 뒤 계정에 없는 것은 다른 기기에서 지운 것이니 따라 지운다 — 다시 올리면 '지우기' 가 되살아난다).
@@ -1188,7 +1218,7 @@ function renderShell() {
       <button class="iconbtn" data-act="menu" title="메뉴">${ICON.more}</button></div>
       ${DEMO ? '<div class="demo">미리보기 — 지어낸 자료입니다. 셀 케어와 연결되지 않았습니다.</div>' : ''}
       <nav class="tabs" id="tabs">${TABS.map(t => `<button class="tab" data-tab="${t.id}">${t.label}</button>`).join('')}<span class="tabbar" id="tabbar"></span></nav></header>
-    <div class="stage" id="stage"><div class="panel" id="panel"></div></div>
+    <div class="stage" id="stage"><div class="aibar noprint" id="aibar"></div><div class="panel" id="panel"></div></div>
     <p class="ver"><button class="verbtn" data-act="upd" title="새 버전 확인">${esc(APP_VERSION)} · 새 버전 확인</button><br>셀 케어 보고서를 읽기만 합니다</p>
     <div class="cv" id="cv" hidden></div><div class="cv pv" id="pv" hidden></div><div class="cv bk" id="bk" hidden></div><div class="callmenu" id="callmenu" hidden></div><div class="tip" id="tip" hidden></div><div class="thrwrap" id="thr" hidden></div>`;
   if (!TABS.some(t => t.id === PREF.tab)) PREF.tab = 'week';
@@ -1206,6 +1236,7 @@ function rerender() {
   if (PREF.tab === 'cell') for (const el of p.querySelectorAll('.barscroll')) el.scrollLeft = el.scrollWidth;   // 막대는 이번 주(오른쪽 끝)부터 보인다
   if (PREF.tab === 'comment' && S.newIds.size) { markCommentsSeen(); setTimeout(() => { S.newIds = new Set(); const t = document.querySelector('.tab[data-tab="comment"]'); if (t) t.textContent = '코멘트'; }, 400); }
   if (PREF.tab === 'week' && PREF.weekMode === 'page') fillPage();
+  drawAiBar();
 }
 
 // 접고 펴기 — 같은 이름(data-flip)의 칸은 옛 자리에서 새 자리로 미끄러지고, 새로 생긴 칸은 스르륵 나타난다 (FLIP)
@@ -1773,6 +1804,7 @@ function applyClamp(root) {
     el.dataset.ck = '1';
     if (el.scrollHeight > el.clientHeight + 2) { el.classList.add('cut'); const k = textKey(el.textContent); el.dataset.aik = k;
       el.insertAdjacentHTML('afterend', '<button class="morebtn" data-act="more" aria-label="더 보기"><i></i></button>' + aiBtn(k)); }
+    aiApplyModes(el);
   }
 }
 function toggleClamp(btn) {
@@ -1800,8 +1832,8 @@ function aiLen() { const n = +lsGet('cell_ai_len', 2); return AI_LENS[n] ? n : 2
 function aiK(k) { const n = aiLen(); return n === 2 ? k : k + '#' + n; }
 function aiGet(k) { k = k && aiK(k); return k && aiStore()[k] ? aiStore()[k].s : ''; }
 function aiPut(k, sum) {
-  const st = aiStore(); st[aiK(k)] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store);
-  const patch = { [k]: st[k] }; for (const x of Object.keys(st)) if (!AI.store[x]) patch[x] = firebase.firestore.FieldValue.delete();   // 상한 넘친 옛 것은 계정에서도
+  const kk = aiK(k), st = aiStore(); st[kk] = { s: sum, at: Date.now() }; AI.store = aiTrim(st, AI_MAX); lsSet(AI_STORE, AI.store);
+  const patch = { [kk]: st[kk] }; for (const x of Object.keys(st)) if (!AI.store[x]) patch[x] = firebase.firestore.FieldValue.delete();   // 상한 넘친 옛 것은 계정에서도
   aiCloud({ sum: patch });
 }
 function aiCloud(patch) { if (DEMO || !FB.user || !FB.db) return; FB.db.collection('cellbook').doc(FB.user.uid).set({ ai: patch, at: Date.now() }, { merge: true }).catch(() => {}); }
@@ -1813,6 +1845,8 @@ function aiFromCloud(ai) {   // cellbook 문서가 바뀔 때마다 (다른 기�
   if (r.key) lsSet(AI_KEY, r.key); else { try { localStorage.removeItem(AI_KEY); } catch (_) { } }
   if (ai && AI_LENS[ai.len]) lsSet('cell_ai_len', ai.len);
   if (r.push) aiCloud(r.push);
+  const rk = aiSync(kwStore(), { sum: (ai && ai.kw) || {} }, mig, '');   // 핵심(C2)도 같은 규칙
+  AI.kw = rk.store; lsSet(AI_KW, AI.kw); if (rk.push && rk.push.sum) aiCloud({ kw: rk.push.sum });
   lsSet('cell_ai_mig', FB.user.uid);
   for (const b of document.querySelectorAll('.aibtn')) { let el = b.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling; if (el) b.classList.toggle('has', !!aiGet(el.dataset.aik)); }
 }
@@ -1823,19 +1857,19 @@ function aiNames() {
   for (const l of leaderMembers()) s.add(l.name);
   return [...s].filter(Boolean);
 }
-function aiShow(el, btn, sum) {
+function aiShow(el, btn, sum, still) {
   if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
   const h0 = el.clientHeight;
   if (!el.classList.contains('open')) { el.classList.add('open'); AI.opened.add(el); const mb = el.nextElementSibling; if (mb && mb.classList.contains('morebtn')) { mb.setAttribute('aria-label', '접기'); const i = mb.querySelector('i'); if (i) i.classList.add('up'); } }   // 접혀 있었어도 요약을 누르면 펼친다
-  el.innerHTML = `<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); btn.classList.add('has', 'on');
-  if (!quiet()) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+  el.innerHTML = `<span class="ailbl">AI 요약</span>${esc(sum)}`; el.classList.add('aisum'); if (btn) btn.classList.add('has', 'on');
+  if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
-function aiHide(el, btn) {
+function aiHide(el, btn, still) {
   const h0 = el.clientHeight;
   if (AI.orig.has(el)) el.innerHTML = AI.orig.get(el);
-  el.classList.remove('aisum'); btn.classList.remove('on');
+  el.classList.remove('aisum'); if (btn) btn.classList.remove('on');
   if (AI.opened.has(el)) { AI.opened.delete(el); el.classList.remove('open'); const mb = el.nextElementSibling; if (mb && mb.classList.contains('morebtn')) { mb.setAttribute('aria-label', '더 보기'); const i = mb.querySelector('i'); if (i) i.classList.remove('up'); } }   // 우리가 펼친 것만 다시 접는다
-  if (!quiet()) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+  if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
 }
 async function aiCall(text, onPart) {
   const key = lsGet(AI_KEY, '');
@@ -1880,9 +1914,119 @@ async function aiClick(btn) {
   catch (e) { if (shown && el.isConnected) aiHide(el, btn); toast(e.message || String(e)); toast.at = Date.now(); }
   finally { btn.classList.remove('busy'); }
 }
+/* ---------- 1107-2 셀 inside C1 · C2 (HB 11/7) ----------
+   탭 아래 오른쪽 별 둘. C1(✦) = 화면의 접힌 글을 한꺼번에 요약 → 그 뒤엔 '모두 요약 ↔ 모두 원본' 바꾸기.
+   C2(✦+작은 별) = 화면의 모든 본문(짧은 글까지)을 명사형 핵심 몇 마디로 → 그 뒤엔 '핵심 보기' 켜고 끄기. 새 글이 생기면 다시 눌러 그것만 만든다.
+   여러 글을 AI_CHUNK 개씩 묶어 한 번에 보낸다(무료 사용량). 핵심도 요약과 같이 계정 cellbook ai.kw 에 둔다. */
+const SPARK2 = '<svg viewBox="0 0 24 24"><path d="M10 4c.6 4.3 3.7 7.4 8 8-4.3.6-7.4 3.7-8 8-.6-4.3-3.7-7.4-8-8 4.3-.6 7.4-3.7 8-8z"/><path d="M19.5 1.5c.2 1.5 1 2.3 2.5 2.5-1.5.2-2.3 1-2.5 2.5-.2-1.5-1-2.3-2.5-2.5 1.5-.2 2.3-1 2.5-2.5z"/></svg>';
+const AI_KW = 'cell_ai_kw';
+function kwStore() { if (!AI.kw) AI.kw = lsGet(AI_KW, {}) || {}; return AI.kw; }
+function kwGet(k) { return k && kwStore()[k] ? kwStore()[k].s : ''; }
+function kwPutMany(pairs) {
+  const st = kwStore(), patch = {}; for (const [k, v] of pairs) { st[k] = { s: v, at: Date.now() }; patch[k] = st[k]; }
+  AI.kw = aiTrim(st, AI_MAX * 2); for (const x of Object.keys(st)) if (!AI.kw[x]) patch[x] = DEMO ? null : firebase.firestore.FieldValue.delete();
+  lsSet(AI_KW, AI.kw); aiCloud({ kw: patch });
+}
+function elKey(el) { return el.dataset.aik || (el.dataset.aik0 || (el.dataset.aik0 = textKey(AI.orig.has(el) ? (() => { const d = document.createElement('div'); d.innerHTML = AI.orig.get(el); return d.textContent; })() : el.textContent))); }
+function elText(el) { if (!AI.orig.has(el)) return el.textContent; const d = document.createElement('div'); d.innerHTML = AI.orig.get(el); return d.textContent; }
+function starOf(el) { let b = el.nextElementSibling; if (b && b.dataset.act === 'more') b = b.nextElementSibling; return b && b.dataset.act === 'ai' ? b : null; }
+function kwShow(el, kw, still) {
+  if (!AI.orig.has(el)) AI.orig.set(el, el.innerHTML);
+  if (!el.classList.contains('aikw')) { AI.pre = AI.pre || new WeakMap(); AI.pre.set(el, { html: el.innerHTML, sum: el.classList.contains('aisum') }); }
+  const h0 = el.clientHeight;
+  el.innerHTML = `<span class="ailbl kw">핵심</span>${esc(kw)}`; el.classList.add('aikw', 'aisum');
+  if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+function kwHide(el, still) {
+  if (!el.classList.contains('aikw')) return;
+  const p = AI.pre && AI.pre.get(el); const h0 = el.clientHeight;
+  el.innerHTML = p ? p.html : (AI.orig.get(el) || el.innerHTML); el.classList.remove('aikw'); if (!(p && p.sum)) el.classList.remove('aisum');
+  if (!quiet() && !still) el.animate([{ height: h0 + 'px', opacity: .4 }, { height: el.clientHeight + 'px', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' });
+}
+// 새로 그려진 글에 지금 모드를 입힌다 (탭을 옮겨도 '모두 요약' · '핵심 보기' 가 이어지게)
+function aiApplyModes(el) {
+  if (PREF.aiAll === 'sum' && el.dataset.aik) { const s = aiGet(el.dataset.aik), b = starOf(el); if (s && b) aiShow(el, b, s, true); }
+  if (PREF.aiKw) { const k = kwGet(elKey(el)); if (k) kwShow(el, k, true); }
+}
+function panelTexts(all) { return [...document.querySelectorAll('#panel .clamp')].filter(el => el.offsetParent && (all || el.dataset.aik) && elText(el).trim()); }
+function drawAiBar() {
+  const bar = $('#aibar'), p = $('#panel'); if (!bar || !p) return;
+  const busy = AI.bulk || '';
+  bar.innerHTML = `<div class="in"><button class="${PREF.aiAll === 'sum' ? 'on' : ''}${busy === 'sum' ? ' busy' : ''}" data-act="ai-all" title="화면의 접힌 글 모두 AI 요약" aria-label="모두 AI 요약">${SPARK}</button>`
+    + `<button class="${PREF.aiKw ? 'on' : ''}${busy === 'kw' ? ' busy' : ''}" data-act="ai-kw" title="핵심만 보기 (AI)" aria-label="핵심만 보기">${SPARK2}</button></div>`;
+  const first = p.firstElementChild; bar.classList.toggle('row', !(first && first.matches('h3.grp')));   // 첫 줄이 제목이면 그 오른쪽에 얹고, 아니면 한 줄을 차지한다
+}
+async function aiBatchCall(items, kind) {   // items: [{ text }] → 같은 순서의 결과 문자열 (못 받은 칸은 '')
+  const key = lsGet(AI_KEY, ''); const names = aiNames();
+  const an = items.map(x => anonText(x.text, names));
+  if (DEMO) return an.map((a, i) => deanon(kind === 'kw' ? '(미리보기) ' + a.text.replace(/\s+/g, ' ').slice(0, 14) + ' · 핵심' : '· (미리보기) ' + a.text.slice(0, 40) + '…', a.map));
+  let last = null;
+  for (const model of aiModelOrder(lsGet('cell_ai_model', ''))) {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: aiBatchPrompt(an.map(a => a.text), kind, aiLen()) }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 3000, responseMimeType: 'application/json' } }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const msg = (j.error && j.error.message) || '';
+      if (r.status === 404 || (r.status === 400 && /model|not (found|supported)/i.test(msg) && !/API key/i.test(msg))) { last = j; continue; }
+      const e = new Error(r.status === 429 ? '무료 사용량을 잠시 넘었습니다.\n1~2분 뒤 다시 눌러 주세요.' : (r.status === 400 && /API key/i.test(msg) || r.status === 401 || r.status === 403) ? 'AI 열쇠가 맞지 않습니다.\n메뉴(⋯) › AI 요약에서 다시 넣어 주세요.' : 'AI 요약을 못 했습니다\n' + (msg || ('구글 ' + r.status)).slice(0, 80));
+      e.status = r.status; throw e;
+    }
+    lsSet('cell_ai_model', model);
+    const parts = ((((j.candidates || [])[0] || {}).content || {}).parts) || [];
+    const arr = aiParseArr(parts.filter(p => !p.thought).map(p => p.text || '').join(''), items.length) || [];
+    return an.map((a, i) => arr[i] ? deanon(arr[i], a.map) : '');
+  }
+  throw new Error('AI 모델을 찾지 못했습니다\n' + ((last && last.error && last.error.message) || '').slice(0, 80));
+}
+async function aiRunBatch(kind, els, keyOf, put) {   // 묶음마다 보내고, 받은 것부터 바로 화면에 입힌다
+  AI.bulk = kind; drawAiBar(); let done = 0, fail = null;
+  try {
+    for (const ch of aiChunks(els.map(el => ({ el, text: elText(el) })), AI_CHUNK, 6000)) {
+      let res; try { res = await aiBatchCall(ch, kind); } catch (e) { fail = e; break; }
+      const pairs = []; ch.forEach((x, i) => { if (res[i]) { pairs.push([keyOf(x.el), res[i], x.el]); done++; } });
+      put(pairs);
+    }
+  } finally { AI.bulk = ''; drawAiBar(); }
+  return { done, fail };
+}
+async function aiAllClick() {
+  if (AI.bulk) return;
+  const els = panelTexts(false); const miss = els.filter(el => !aiGet(el.dataset.aik));
+  if (!miss.length) {   // 다 있으면 '모두 요약 ↔ 모두 원본' 바꾸기
+    if (!els.length) { toast('이 화면에는\n요약할 긴 글이 없습니다'); toast.at = Date.now(); return; }
+    PREF.aiAll = PREF.aiAll === 'sum' ? 'orig' : 'sum'; savePref();
+    for (const el of els) { const b = starOf(el); if (el.classList.contains('aikw')) continue; if (PREF.aiAll === 'sum') { if (!el.classList.contains('aisum')) aiShow(el, b, aiGet(el.dataset.aik)); } else if (el.classList.contains('aisum')) aiHide(el, b); }
+    drawAiBar(); toast(PREF.aiAll === 'sum' ? '모두 AI 요약으로\n보여 드립니다' : '모두 원문으로\n보여 드립니다'); toast.at = Date.now(); return;
+  }
+  if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
+  if (!confirm(`이 화면의 접힌 글 ${miss.length}개를 AI 로 요약할까요?` + (els.length > miss.length ? `\n(이미 요약한 ${els.length - miss.length}개는 저장된 것을 씁니다)` : ''))) return;
+  PREF.aiAll = 'sum'; savePref();
+  for (const el of els) { const s = aiGet(el.dataset.aik); if (s && !el.classList.contains('aisum') && !el.classList.contains('aikw')) aiShow(el, starOf(el), s); }
+  const r = await aiRunBatch('sum', miss, el => el.dataset.aik, pairs => { for (const [k, v, el] of pairs) { aiPut(k, v); if (el.isConnected && !el.classList.contains('aikw')) aiShow(el, starOf(el), v); } });
+  toast(r.fail ? `${r.done}개를 요약했습니다\n${r.fail.message}` : `${r.done}개를 요약했습니다\n별을 다시 누르면 모두 원문으로`); toast.at = Date.now();
+}
+async function aiKwClick() {
+  if (AI.bulk) return;
+  const els = panelTexts(true); const miss = els.filter(el => !kwGet(elKey(el)));
+  if (!miss.length || (PREF.aiKw && !confirmMore(miss.length))) {   // 다 있으면(또는 새 글을 만들지 않기로 하면) 켜고 끄기
+    if (!els.length) { toast('이 화면에는\n본문이 없습니다'); toast.at = Date.now(); return; }
+    PREF.aiKw = !PREF.aiKw; savePref();
+    for (const el of els) { if (PREF.aiKw) { const k = kwGet(elKey(el)); if (k) kwShow(el, k); } else kwHide(el); }
+    drawAiBar(); toast(PREF.aiKw ? '핵심만\n보여 드립니다' : '핵심 보기를\n껐습니다'); toast.at = Date.now(); return;
+  }
+  if (!DEMO && !lsGet(AI_KEY, '')) return openAiCfg();
+  if (!PREF.aiKw && !confirm(`이 화면의 본문 ${miss.length}개를 AI 로 핵심만 남길까요?` + (els.length > miss.length ? `\n(이미 만든 ${els.length - miss.length}개는 저장된 것을 씁니다)` : ''))) return;
+  PREF.aiKw = true; savePref();
+  for (const el of els) { const k = kwGet(elKey(el)); if (k) kwShow(el, k); }
+  const r = await aiRunBatch('kw', miss, el => elKey(el), pairs => { kwPutMany(pairs.map(([k, v]) => [k, v])); for (const [, v, el] of pairs) if (el.isConnected && PREF.aiKw) kwShow(el, v); });
+  toast(r.fail ? `${r.done}개의 핵심을 만들었습니다\n${r.fail.message}` : `${r.done}개의 핵심을 만들었습니다\n다시 누르면 핵심 보기를 끕니다`); toast.at = Date.now();
+}
+// 핵심 보기가 켜져 있는데 새 글이 생겼을 때: 새 글만 만들지 묻는다 (아니오 = 그냥 끄기)
+function confirmMore(n) { return confirm(`핵심이 아직 없는 새 글이 ${n}개 있습니다.\n이것만 핵심을 만들까요?\n(취소하면 핵심 보기를 끕니다)`); }
 function openAiCfg() { drawAiCfg(); const w = $('#thr'); w.hidden = false; if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); }
 function drawAiCfg() {
-  const key = lsGet(AI_KEY, ''), n = Object.keys(aiStore()).length;
+  const key = lsGet(AI_KEY, ''), n = Object.keys(aiStore()).length + Object.keys(kwStore()).length;
   $('#thr').innerHTML = `<div class="thrcard" role="dialog" aria-label="AI 요약">
     <div class="thrhead"><span class="modal-head-gap"></span><b>AI 요약</b><button class="modal-x" data-act="thr-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p class="small" style="margin:6px 0 2px">긴 글 오른쪽 끝의 별(✦)을 누르면 구글 제미나이가 요약합니다. 다시 누르면 원문으로 돌아옵니다.</p>
@@ -1895,7 +2039,7 @@ function drawAiCfg() {
     <input type="password" id="aikey" placeholder="AIza… 또는 AQ.…" autocomplete="off" value="${esc(key)}">
     <div class="row" style="gap:8px;margin-top:8px"><button class="btn pri" style="margin:0" data-act="ai-save">저장</button>${key ? '<button class="btn" style="margin:0" data-act="ai-del">열쇠 지우기</button>' : ''}</div>
     <p class="tiny muted" style="margin:10px 0 0">${FB.user ? '· 열쇠와 요약은 <b>계정에 저장</b>되어 같은 계정으로 들어온 다른 기기에도 함께 보입니다.' : '· 지금은 열쇠와 요약이 <b>이 기기에만</b> 있습니다. 메뉴(⋯) › 명단 · 전화번호에서 로그인하면 다른 기기와 맞춰집니다.'}<br>· 요약할 때 글이 구글로 보내집니다. 아는 이름은 '셀원 A' 처럼 바꿔 보내고, 돌아온 요약에서 다시 이름으로 바꿉니다.<br>· 무료 단계는 구글이 보낸 글을 서비스 개선에 쓸 수 있습니다. 1분에 여러 번 누르면 잠시 쉬어 갑니다.</p>
-    ${n ? `<button class="thrreset" data-act="ai-clear">저장된 요약 ${n}개 지우기</button>` : ''}</div>`;
+    ${n ? `<button class="thrreset" data-act="ai-clear">저장된 요약 · 핵심 ${n}개 지우기</button>` : ''}</div>`;
 }
 
 /* ---------- G 이번 주 한 장 (이번 주 탭 맨 위) ---------- */
@@ -2428,6 +2572,8 @@ document.addEventListener('click', async (e) => {
     case 'g-more': return flipRender(() => { S.gMore = !S.gMore; rerender(); });
     case 'more': return toggleClamp(b);
     case 'ai': e.stopPropagation(); return aiClick(b);
+    case 'ai-all': return aiAllClick();
+    case 'ai-kw': return aiKwClick();
     case 'ai-len': { const n = +d.n; if (!AI_LENS[n]) return; lsSet('cell_ai_len', n); if (!DEMO && FB.user) aiCloud({ len: n });
       for (const x of document.querySelectorAll('.aibtn')) { let el = x.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling; if (el && !el.classList.contains('aisum')) x.classList.toggle('has', !!aiGet(el.dataset.aik)); }
       drawAiCfg(); toast('요약 길이: ' + AI_LENS[n] + '으로\n새로 요약할 때부터 적용됩니다'); toast.at = Date.now(); return; }
@@ -2436,7 +2582,7 @@ document.addEventListener('click', async (e) => {
       if (!DEMO && FB.user) aiCloud({ key: k || firebase.firestore.FieldValue.delete() });
       closeThr(); toast(k ? 'AI 열쇠를 저장했습니다\n긴 글 끝의 별(✦)을 눌러 보세요' : 'AI 열쇠를 지웠습니다'); toast.at = Date.now(); return; }
     case 'ai-del': try { localStorage.removeItem(AI_KEY); } catch (_) { } if (!DEMO && FB.user) aiCloud({ key: firebase.firestore.FieldValue.delete() }); drawAiCfg(); toast('AI 열쇠를 지웠습니다'); toast.at = Date.now(); return;
-    case 'ai-clear': AI.store = {}; lsSet(AI_STORE, {}); if (!DEMO && FB.user) aiCloud({ sum: firebase.firestore.FieldValue.delete() }); for (const x of document.querySelectorAll('.aibtn.has:not(.on)')) x.classList.remove('has'); drawAiCfg(); toast('저장된 요약을 지웠습니다'); toast.at = Date.now(); return;
+    case 'ai-clear': AI.store = {}; lsSet(AI_STORE, {}); AI.kw = {}; lsSet(AI_KW, {}); PREF.aiKw = false; PREF.aiAll = 'orig'; savePref(); if (!DEMO && FB.user) { aiCloud({ sum: firebase.firestore.FieldValue.delete() }); aiCloud({ kw: firebase.firestore.FieldValue.delete() }); } for (const el of document.querySelectorAll('.clamp.aikw')) kwHide(el, true); drawAiBar(); for (const x of document.querySelectorAll('.aibtn.has:not(.on)')) x.classList.remove('has'); drawAiCfg(); toast('저장된 요약을 지웠습니다'); toast.at = Date.now(); return;
     case 'cv-prev': return S.view && cvGo(S.view.idx + 1);
     case 'cv-next': return S.view && cvGo(S.view.idx - 1);
     case 'wsort': return flipRender(() => { if (PREF.wsort === d.k) PREF.wdir = PREF.wdir === 'desc' ? 'asc' : 'desc'; else { PREF.wsort = d.k; PREF.wdir = 'asc'; } savePref(); rerender(); });
