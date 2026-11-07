@@ -339,6 +339,17 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑯ 심방 노트 care-core 에 셀 한눈에가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
 }
 
+// ⑰ 11/7 HB 실기기: 앱을 바꿨다 돌아오면 판이 밀려 있던 것 · 심방 기록 늦게 오면 열린 사람 화면이 비던 것 · 셀리더도 심방과 맞춘다
+{
+  sc.eq('⑰ 끌다 앱이 바뀌면(touchcancel · pageshow · visibilitychange) 끌던 흔적을 걷는다', /document\.addEventListener\('touchcancel'/.test(HTML) && /addEventListener\('pageshow', unstick\)/.test(HTML) && /function unstick\(\)/.test(HTML), true);
+  sc.eq('⑰ 심방 기록을 다 받으면 열려 있는 사람 화면도 다시 그린다', /S\.pview && pv && !pv\.hidden\) \{ const top = pv\.scrollTop; pv\.innerHTML = personHtml\(\)/.test(HTML), true);
+  sc.eq('⑰ 연결이 안 되면 사람 화면에 이유를 보여 준다(말없이 숨기지 않음)', /nosheet: '심방 노트에서 아직 시트를 고르지 않았습니다\.', nogoogle:[^}]*err: CARE\.err \}\[CARE\.state\]/.test(HTML), true);
+  const lead = [{ id: 'L1:0', name: '송재혁' }, { id: 'L2:0', name: '안성일' }];
+  const LL = A.linkVisits(lead, [{ name: '안성일 셀리더', ymd: '2026-11-07' }, { name: '송재혁', ymd: '2026-10-01' }], '2026-11-07');
+  sc.eq('⑰ 셀리더(이름 글자만 있음)도 같은 규칙으로 맞춘다', J([LL['L1:0'].days, LL['L2:0'].days]), [37, 0]);
+  sc.eq('⑰ 셀 카드의 셀리더 줄에 심방 알약을 붙인다', /careLeaderChip\(c\)\}\$\{sig\.map/.test(HTML), true);
+}
+
 // ⑩ 집 주소 · 버전
 sc.eq('⑩ block7.my 로 열리면 sweeter.my/cell/ 로 넘긴다', HTML.includes("location.replace('https://sweeter.my/cell/'"), true);
 sc.eq('⑩ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].includes(A.APP_VERSION), true);
