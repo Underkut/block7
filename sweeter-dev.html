@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-9  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-10  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7042,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-9";
+const APP_VERSION = "v. 26-1107-10";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -52148,7 +52148,7 @@ function _fbBaseObj(){
   if(!_fbBaseJson)return null;
   try{return JSON.parse(_fbBaseJson);}catch(e){return null;}
 }
-// ── 기준점 압축 (v. 26-1107-9, 1107-SW 6 — HB 아이패드 BLOCK7 64% · Sweeter 59%) ──
+// ── 기준점 압축 (v. 26-1107-10, 1107-SW 6 — HB 아이패드 BLOCK7 64% · Sweeter 59%) ──
 // 기준점은 상태 한 벌 통째라 ST 만큼 크다(그때 76만 자씩, 칸의 3분의 1). 병합할 때만 읽으니 줄여 둔다.
 // ST(켤 때 첫 그림이 읽는다)는 그대로 둔다 — 저장마다 압축 비용이 들어서 다음 일이다.
 // 모양: 'z1:<바이트 수>:<글자 수>:' + zlib(UTF-8 JSON) 을 한 글자에 15비트씩(U+0020~U+801F —
@@ -53011,8 +53011,8 @@ function _cfMake(type,path,field,base,local,remote,label,opts){
     serverObservedAt:opts.serverObservedAt||null,
     remoteWroteAt:opts.remoteWroteAt||null,          // 다른 기기가 클라우드에 올린 시각 (알 수 있을 때만)
     detectedAt:opts.now||Date.now(),
-    summary:null, choice:null, resolvedAt:null,
-    restore:{local:local===undefined?null:local, remote:remote===undefined?null:remote}
+    summary:null, choice:null, resolvedAt:null
+    // restore 는 새로 적지 않는다 (v26-1107-10) — 읽는 곳이 없고 local · remote 와 같은 값을 두 벌 더 안았다. 옛 기록의 restore 는 그대로 둔다.
   };
 }
 // 하루 안 한 구간의 배열을 본다. _mgTaskArray 와 **같은 경계**를 써야 한다 —
@@ -53301,8 +53301,16 @@ function _cfLoadLocal(){
 //    1MB 를 넘겨 **저장이 통째로 실패**한다 → 글자 수로도 자른다.
 //    버리는 순서는 "이미 정한 것 → 오래된 것" — 아직 안 정한 최신 것을 끝까지 지킨다.
 const _CF_MAX_CHARS=300000;
+// 사람이 이미 고른 기록은 30일 지나면 버린다 (v26-1107-10, ROADMAP 1107-SW 6-2, HB 결정).
+// ⛔ resolvedAt 이 없는(아직 안 고른) 기록은 나이와 상관없이 **절대** 버리지 않는다 — 진 쪽 값의 유일한 사본이다.
+// 기기 칸 저장 · 클라우드 받기 · 클라우드 올리기 세 곳에 같은 거르기를 건다 (받기에 안 걸면 되살아난다).
+const _CF_KEEP_DAYS=30;
+function _cfFresh(list,now){
+  const t=(now==null?Date.now():now)-_CF_KEEP_DAYS*86400000;
+  return (list||[]).filter(r=>!(r&&r.resolvedAt&&r.resolvedAt<t));
+}
 function _cfTrimmed(){
-  let list=_cfList.slice(-_CF_MAX);
+  let list=_cfFresh(_cfList).slice(-_CF_MAX);
   const fits=l=>{try{return JSON.stringify(l).length<=_CF_MAX_CHARS;}catch(e){return false;}};
   while(list.length&&!fits(list)){
     const at=list.findIndex(r=>r.resolvedAt);
@@ -53381,12 +53389,13 @@ async function _cfFetchCloud(){
     const s=await fbDB.collection('users').doc(_fbUser.uid).collection('data').doc('conflicts').get();
     const d=s.exists?(s.data()||{}):{};
     if(!Array.isArray(d.list))return;
-    d.list.forEach(rec=>{
+    _cfFresh(d.list).forEach(rec=>{
       if(!rec||!rec.conflictId)return;
       const at=_cfList.findIndex(r=>r.conflictId===rec.conflictId);
       if(at<0)_cfList.push(rec);
       else if(rec.resolvedAt&&!_cfList[at].resolvedAt)_cfList[at]=rec;  // 다른 기기가 이미 정함
     });
+    _cfList=_cfFresh(_cfList);
     if(_cfList.length>_CF_MAX)_cfList=_cfList.slice(-_CF_MAX);
     _cfSaveLocal();_cfSyncVisibility();
   }catch(e){console.warn('충돌 기록 조회 실패:',(e&&e.code)||e);}

@@ -51,7 +51,9 @@ eval(sliceDev('let _fbLastTouchTs=', '// 원격/병합 상태를 화면')
         trimmed: _cfTrimmed,
         saveLocal: _cfSaveLocal,
         loadLocal: _cfLoadLocal,
-        maxChars: _CF_MAX_CHARS
+        maxChars: _CF_MAX_CHARS,
+        fetchCloud: _cfFetchCloud,
+        pushCloud: _cfPushCloud
       };`);
 
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -102,7 +104,8 @@ console.log('\n시나리오 3 — 같은 칸을 서로 다르게 고침');
   sc.eq('이 기기 값 보관', c.local, true);
   sc.eq('다른 기기 값 보관', c.remote, 'later');
   sc.eq('기기 이름도 남는다', [c.localDeviceLabel, c.remoteDeviceLabel], ['맥', '아이폰']);
-  sc.eq('되살릴 원본이 있다', !!c.restore && c.restore.remote === 'later', true);
+  sc.eq('되살릴 원본이 있다 (local/remote)', [c.local, c.remote], [true, 'later']);
+  sc.eq('restore 는 새로 적지 않는다 (v26-1107-10)', 'restore' in c, false);
   sc.eq('아직 안 골랐다', [c.choice, c.resolvedAt], [null, null]);
 }
 
@@ -434,4 +437,45 @@ console.log('\n시나리오 빈 칸 — 기준에 없던 구간의 [] 는 충돌
   sc.eq('병합은 다른 기기 것을 받는다', r.merged.days['2026-10-22'].big.am.length, 2);
 }
 
-sc.done();
+// ═══ 정한 지 30일 지난 기록은 버린다 (v26-1107-10, ROADMAP 1107-SW 6-2) ═══
+// ⛔ 아직 안 고른 것(resolvedAt 없음)은 나이와 상관없이 지우지 않는다 — 진 쪽 값의 유일한 사본이다.
+// 세 곳에 같은 거르기: 기기 칸 저장 · 클라우드 받기(안 걸면 되살아난다) · 클라우드 올리기.
+console.log('\n시나리오 6-2 — 고른 지 30일 넘은 기록 정리');
+{
+  const DAY = 86400000, now = Date.now();
+  const rec = (id, resolvedAt) => ({ conflictId: id, entityType: 'setting', entityId: 'settings/' + id,
+    base: 1, local: 2, remote: 3, choice: resolvedAt ? 'local' : null, resolvedAt: resolvedAt });
+  // ① 31일 → 버림 · 29일 → 남음
+  S.setList([rec('old31', now - 31 * DAY), rec('new29', now - 29 * DAY)]);
+  sc.eq('① 31일 지난 것은 버리고 29일은 남는다', S.trimmed().map(r => r.conflictId), ['new29']);
+  S.saveLocal();
+  sc.eq('① 기기 칸에도 같다', S.loadLocal().map(r => r.conflictId), ['new29']);
+  // ② 안 고른 것은 1년이 지나도 남는다
+  const open = rec('open1y', null); open.detectedAt = now - 365 * DAY;
+  S.setList([open, rec('old40', now - 40 * DAY)]);
+  sc.eq('② 안 고른 것은 1년 지나도 남는다', S.trimmed().map(r => r.conflictId), ['open1y']);
+  // ③ 클라우드에 옛 고른 기록이 있어도 받기에서 안 되살아난다
+  const cloudDoc = { list: [rec('old31', now - 31 * DAY), rec('new5', now - 5 * DAY), rec('cloudOpen', null)] };
+  global.fbDB = { collection: () => ({ doc: () => ({ collection: () => ({ doc: () => ({
+    get: async () => ({ exists: true, data: () => cloudDoc }),
+    set: doc => { pushed = doc; return Promise.resolve(); } }) }) }) }) };
+  let pushed = null;
+  window._fbUser = global._fbUser = { uid: 'u1' };
+  S.setList([]);
+  await_(S.fetchCloud()).then(() => {
+    sc.eq('③ 받기에서 옛 고른 기록은 안 되살아난다', S.list().map(r => r.conflictId).sort(), ['cloudOpen', 'new5']);
+    // ④ 올리기에도 안 실린다
+    S.setList([rec('old31', now - 31 * DAY), rec('new3', now - 3 * DAY), open]);
+    S.pushCloud();
+    sc.eq('④ 올리기에 옛 고른 기록이 안 실린다', pushed.list.map(r => r.conflictId), ['new3', 'open1y']);
+    // ⑤ 새 기록에 restore 없음 (저장을 거쳐도)
+    S.setList([]);
+    const made = detect({ days: { '2026-08-28': day([{ text: 'a', done: false }]) } },
+      { days: { '2026-08-28': day([{ text: 'a', done: true }]) } },
+      { days: { '2026-08-28': day([{ text: 'a', done: 'later' }]) } }).list;
+    sc.eq('⑤ 새 기록 한 건', made.length, 1);
+    sc.eq('⑤ 새 기록에 restore 칸 없음', made.some(r => 'restore' in r), false);
+    sc.done();
+  });
+}
+function await_(p) { return p; }
