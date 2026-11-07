@@ -32,7 +32,7 @@ const ROWS = [
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
 const LOG = [];
-const HOOK = { failDel: false, shift: false, failForm: false };
+const HOOK = { failDel: false, shift: false, failForm: false, failPlanSet: 0 };
 const CAL = { seq: 0, events: [] };   // 가짜 '심방' 캘린더의 일정들   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
 const colN = L => L.split('').reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
@@ -93,7 +93,7 @@ async function route(r) {
       }
       return json(JSON.parse(JSON.stringify(e)));
     }
-    return r.abort();
+    return r.fulfill({ status: 404, contentType: 'application/json', body: '{"error":{"message":"Not Found"}}' });   // 다른 계정의 캘린더 등
   }
   if (u.host !== 'sheets.googleapis.com') return r.abort();
   const p = u.pathname.replace('/v4/spreadsheets/S', '');
@@ -109,6 +109,7 @@ async function route(r) {
     LOG.push(['struct', body.requests.map(q => Object.keys(q)[0])]); return json({});
   }
   if (p === '/values:batchUpdate') {
+    if (HOOK.failPlanSet > 0 && body.data.some(d => decodeURIComponent(d.range).startsWith("'계획'!"))) { HOOK.failPlanSet--; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
     body.data.forEach(d => { const R = parseRange(d.range); d.values[0].forEach((v, i) => setCell(R.title, R.row, R.col + i, v)); LOG.push(['set', d.range, d.values[0]]); });
     return json({});
   }
@@ -371,6 +372,36 @@ async function route(r) {
   await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
   await reload();
   eq("⑫ 캘린더에 안 넣기 → 일정ID '없음' · 일정 안 만든다(다시 맞춰도)", [prow('러러러')['캘린더 일정ID'], LOG.filter(x => x[0] === 'cal+').length], ['없음', nIns2]);
+  // (코덱스 검토 PR 977) ① 기록은 저장됐는데 계획 표시가 끊김 → 같은 기록을 두 번 만들지 않고, 다음에 '기록됨' 으로
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '머머머'); await page.fill('.layer [data-f="date"]', D1);
+  await page.click('.layer [data-act="plancal"]');
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1500);
+  await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await tidy();
+  await page.fill('.layer [data-f="text"]', '만났음');
+  HOOK.failPlanSet = 9;
+  await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
+  const nMe = () => R.rows.filter(r => r[2] === '머머머').length;
+  eq('⑫ 계획 표시가 끊기면 — 기록은 하나 저장 · 계획은 아직 예정 · (장치 확인) 끊김이 정말 일어남', [nMe(), prow('머머머')['상태'], HOOK.failPlanSet <= 7], [1, '예정', true]);
+  HOOK.failPlanSet = 0;
+  await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await page.waitForTimeout(1500);
+  eq('⑫ 남은 계획에서 다시 \'기록 쓰기\' → 새 기록 창을 열지 않고 \'기록됨\' 으로 맞춘다', [await page.$$eval('.layer [data-act="saverec"]', x => x.length), nMe(), prow('머머머')['상태'], prow('머머머')['기록ID'] === (R.rows.find(r => r[2] === '머머머') || [])[9]], [0, 1, '기록됨', true]);
+  // ② 엉뚱한 캘린더(다른 계정 것)를 보고 있으면 — 캘린더를 못 읽었으니 계획을 하나도 취소하지 않는다
+  await page.click('.fab[data-act="addplan"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '버버버'); await page.fill('.layer [data-f="date"]', D3);
+  await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1800);
+  await page.evaluate(() => { DATA.calId = 'calOld'; DATA.calOurs = []; });
+  await reload();
+  eq('⑫ 다른 캘린더를 보고 있어도 예정 계획이 취소되지 않는다', prow('버버버')['상태'], '예정');
+  await page.evaluate(() => { DATA.calId = null; });
+  // ③ 못 찾는 일정이 여럿이면(엉뚱한 곳을 보는 신호) 취소하지 않는다 · 하나면 취소
+  const mk2 = (id, n, ev) => tab('계획').rows.push(PH().map(h => ({ '계획ID': id, '성도': n, '날짜': D3, '상태': '예정', '캘린더 일정ID': ev })[h] || ''));
+  mk2('P_g1', '서서서', 'evnone1'); mk2('P_g2', '어어어', 'evnone2'); mk2('P_g3', '저저저', 'evnone3');
+  await reload();
+  eq('⑫ 못 찾는 일정이 셋 → 하나도 취소하지 않는다', ['서서서', '어어어', '저저저'].map(n => prow(n)['상태']), ['예정', '예정', '예정']);
+  tab('계획').rows = tab('계획').rows.filter(r => !['P_g2', 'P_g3'].includes(r[0]));
+  await reload();
+  eq('⑫ 못 찾는 일정이 하나 → 그 계획은 취소됨', prow('서서서')['상태'], '취소됨');
   // 다시 맞춰도 아무것도 안 바뀐다
   const nCal = LOG.filter(x => /^cal/.test(x[0])).length, nSet = LOG.filter(x => x[0] === 'set').length;
   await reload();

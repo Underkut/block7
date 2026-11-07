@@ -1142,6 +1142,7 @@ async function fbInit() {
   AUTH = app.auth(); DB = app.firestore();
   AUTH.onAuthStateChanged(u => {
     USER = u; TOK = null; AUTH_READY = true; DATA.state = 'idle'; DATA.model = null;
+    DATA.calId = null; DATA.calOurs = null; DATA.cal = []; DATA.plans = null;   // 계정이 바뀌면 남의 캘린더 · 계획을 들고 있지 않게 (코덱스 검토 PR 977)
     if (u) googleStatus(); else render();
   });
 }
@@ -1530,6 +1531,27 @@ async function cancelPlan(id) {
   await planSet(s, id, { '상태': PLAN_ST.cancel });
   if (p.evId && p.evId !== PLAN_NOCAL) { try { await evDelete(p.evId); } catch (e) { /* 다음 맞춤이 지운다 */ } }
 }
+// 기록은 저장했는데 계획 표시(기록됨)가 끊긴 것 — 이 기기에 계획ID · 기록ID 만 적어 두고 다음에 다시 한다 (코덱스 검토 PR 977)
+const PEND_KEY = 'care_plan_done_v1';
+function pendDone() { try { return JSON.parse(localStorage.getItem(PEND_KEY) || '[]') || []; } catch (e) { return []; } }
+function setPendDone(a) { try { if (a.length) localStorage.setItem(PEND_KEY, JSON.stringify(a)); else localStorage.removeItem(PEND_KEY); } catch (e) {} }
+async function finishPlan(planId, recId) {
+  for (let i = 0; i < 2; i++) { try { await markPlanDone(planId, recId); return true; } catch (e) { /* 한 번 더 */ } }
+  setPendDone(pendDone().filter(x => x.planId !== planId).concat([{ planId, recId }]));
+  toast('기록은 저장했습니다\n계획을 \'기록됨\' 으로 바꾸지 못해 다음에 다시 합니다', 6000);
+  return false;
+}
+async function retryPendDone() {
+  const a = pendDone(); if (!a.length) return;
+  const keep = [];
+  for (const x of a) {
+    const p = (DATA.plans || []).find(q => q.id === x.planId);
+    if (!p || p.status !== PLAN_ST.todo) continue;   // 이미 됐거나 없는 계획
+    try { await markPlanDone(x.planId, x.recId); } catch (e) { keep.push(x); }
+  }
+  setPendDone(keep);
+  if (keep.length < a.length) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); render(); }
+}
 async function markPlanDone(id, recId) {
   const s = saved().sheet, p = (DATA.plans || []).find(x => x.id === id); if (!p) return;
   await planSet(s, id, { '상태': PLAN_ST.done, '기록ID': recId || '' });
@@ -1577,14 +1599,16 @@ async function loadCal(noSync) {
     const ev = await gapi(evUrl(cid) + '?singleEvents=true&orderBy=startTime&maxResults=50&timeMin=' + enc(ymdAdd(ymdOf(t0), -14) + 'T00:00:00Z') + '&timeMax=' + enc(t1.toISOString()));
     DATA.cal = (ev.items || []).filter(e => e.status !== 'cancelled' && !evCareId(e)).map(e => { const w = evWhen(e); return { id: e.id, title: norm(e.summary), ymd: w.date, time: w.time, link: e.htmlLink || '' }; });
     DATA.calErr = '';
-  } catch (e) { DATA.cal = []; DATA.calErr = '캘린더를 읽지 못했습니다'; }
+  } catch (e) { DATA.cal = []; DATA.calOurs = null; DATA.calId = null; DATA.calErr = '캘린더를 읽지 못했습니다'; }
   render();
-  if (!noSync && DATA.prepared && DATA.calOurs) {
+  if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.plans) await retryPendDone();
+  if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.calOurs) {
     try { if (await calSync()) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); await loadCal(true); } } catch (e) { /* 다음에 다시 */ }
   }
 }
 // 계획 ↔ '심방' 캘린더 맞추기 (규칙은 care-core planCalSync)
 let CAL_SYNCING = false;
+const CAL_GONE_MAX = 2;   // 한 번에 '목록에도 없고 물어봐도 없음' 으로 취소할 계획 수
 async function calSync() {
   if (CAL_SYNCING || !DATA.plans) return false;
   CAL_SYNCING = true;
@@ -1592,9 +1616,12 @@ async function calSync() {
     const s = saved().sheet, sv = saved(), cid = await calId(); if (!cid) return false;
     const evs = (DATA.calOurs || []).slice(), have = new Set(evs.map(e => e.id));
     // 지운 일정은 목록에서 빠질 수 있다 → 계획이 가리키는데 목록에 없는 일정은 하나씩 직접 물어본다(10개까지)
+    // 못 찾음(404)이 여럿이면 엉뚱한 캘린더를 보고 있을 수 있다 → 그때는 아무것도 취소하지 않는다 (지우는 쪽엔 상한)
+    const gone = [];
     for (const p of DATA.plans.filter(x => x.status === PLAN_ST.todo && x.evId && x.evId !== PLAN_NOCAL && !have.has(x.evId)).slice(0, 10)) {
-      try { evs.push(await gapi(evUrl(cid, p.evId))); } catch (e) { if (e.status === 404 || e.status === 410) evs.push({ id: p.evId, status: 'cancelled' }); }
+      try { evs.push(await gapi(evUrl(cid, p.evId))); } catch (e) { if (e.status === 404 || e.status === 410) gone.push({ id: p.evId, status: 'cancelled' }); }
     }
+    if (gone.length <= CAL_GONE_MAX) gone.forEach(g => evs.push(g));
     const plan = planCalSync(DATA.plans, evs, sv.calPre, sv.calSuf);
     let changed = false;
     for (const pc of plan.planCells) { await planSet(s, pc.id, pc.cells); changed = true; }
@@ -2076,7 +2103,7 @@ async function saveRecord(L) {
   try {
     if (!L.key) {
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
-      if (L.planId) { try { await markPlanDone(L.planId, r.id); } catch (e) { /* 계획 표시는 다음에 */ } }
+      if (L.planId) await finishPlan(L.planId, r.id);
       toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : ''));
     } else {
       const v = byKey(L.key) || M().visits.find(x => x.row === L.row);
@@ -2422,6 +2449,7 @@ document.addEventListener('click', e => {
   }
   if (a === 'plan2rec') {
     const p = (DATA.plans || []).find(x => x.id === v); if (!p) return;
+    if (pendDone().some(x => x.planId === v)) { toast('이 계획의 기록은 이미 저장했습니다\n\'기록됨\' 표시를 다시 합니다'); busy(async () => { try { await retryPendDone(); render(); } catch (e) { } }); return; }
     S.layers = S.layers.filter(L => L.planId !== v);
     openLayer('edit', { key: null, form: recordFromPlan(p, M().people), planId: p.id, planWhy: p.why }); return;
   }
