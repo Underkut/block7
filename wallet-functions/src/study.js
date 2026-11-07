@@ -109,7 +109,8 @@ exports.studyTick = onSchedule({ schedule: "every 1 minutes", timeZone: "Asia/Se
   // 서로 실패를 넘기지 않게 따로 감싼다
   const timer = require("./timer").timerDue().catch((e) => console.warn("timerDue", e.message));
   const b7 = require("./b7push").b7Due().catch((e) => console.warn("b7Due", e.message));
-  try { await studyDue(); } finally { await timer; await b7; }
+  const cell = require("./cellpush").cellDue().catch((e) => console.warn("cellDue", e.message));   // 셀 inside 새 코멘트 (10분에 한 번)
+  try { await studyDue(); } finally { await timer; await b7; await cell; }
 });
 async function studyDue() {
   const now = Date.now();

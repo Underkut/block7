@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1107-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1107-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -356,7 +356,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1107-11';
+const APP_VERSION = 'v. 26-1107-12';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -2048,6 +2048,89 @@ async function aiKwClick() {
 }
 // 핵심 보기가 켜져 있는데 새 글이 생겼을 때: 새 글만 만들지 묻는다 (아니오 = 그냥 끄기)
 function confirmMore(n) { return confirm(`핵심이 아직 없는 새 글이 ${n}개 있습니다.\n이것만 핵심을 만들까요?\n(취소하면 핵심 보기를 끕니다)`); }
+/* ---------- L4 새 코멘트 알림 (HB 동의 11/7) ----------
+   서버(wallet-functions/src/cellpush.js)가 10분마다 셀 케어를 읽기만 해서 처음 보는 코멘트를 이 기기로 푸시한다.
+   ① 이 기기 알림 허락 · /cell/sw.js · 기기 등록(cellbook/{uid}.push.tokens) ② '서버 몫' 셀 케어 로그인을 따로 하나 만들어(이메일 코드) 서버에 맡긴다.
+   ⚠️ 앱의 셀 케어 로그인 열쇠를 넘기지 않는다 — 같은 열쇠를 두 곳에서 쓰면 셀 케어가 둘 다 끊는다. */
+const PUSH_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/cellpush';
+const FCM_VAPID = 'BORlzx8_k0YgJyVlwh-RmPmXkXkX6X3w2R-FlFkd1uXIb15waShnzjiE1tW3iwOI86Fyn1tw32uD5tKOwa2jtog';   // BLOCK7 과 같은 프로젝트 키
+const PUSH = { st: null, step: '', email: '', busy: false, msg: '', sb2: null };
+async function pushFn(path, body) {
+  const t = await FB.user.getIdToken();
+  const r = await fetch(PUSH_FN + path, { method: body ? 'POST' : 'GET', headers: Object.assign({ Authorization: 'Bearer ' + t }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || ('서버 ' + r.status)); return j;
+}
+function openPushCfg() { const w = $('#thr'); w.hidden = false; PUSH.msg = ''; drawPushCfg(); if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+  if (!DEMO) fbInit().then(() => { drawPushCfg(); if (FB.user) pushFn('/status').then(j => { PUSH.st = j; drawPushCfg(); }).catch(e => { PUSH.st = { err: e.message }; drawPushCfg(); }); }).catch(() => {}); }
+function drawPushCfg() {
+  const w = $('#thr'); if (!w || w.hidden) return;
+  const st = PUSH.st, on = st && st.on, iosWeb = /iPhone|iPad/.test(navigator.userAgent) && !navigator.standalone;
+  let body;
+  if (DEMO) body = '<p class="small">미리보기에서는 알림을 켤 수 없습니다.</p>';
+  else if (!FB.user) body = '<p class="small">먼저 메뉴(⋯) › <b>명단 · 전화번호</b>에서 BLOCK7 계정으로 로그인해 주세요.<br>그 계정으로 이 기기와 알림 서버를 잇습니다.</p>';
+  else if (PUSH.step === 'code') body = `<p class="small"><b>${esc(PUSH.email)}</b> 로 셀 케어 숫자 코드를 한 번 더 보냈습니다.<br>알림 서버만 쓰는 로그인입니다 (지금 앱 로그인은 그대로).</p>
+      <input type="text" id="pcode" inputmode="numeric" autocomplete="one-time-code" placeholder="숫자 코드">
+      <button class="btn pri" style="margin:8px 0 0" data-act="push-code" ${PUSH.busy ? 'disabled' : ''}>${PUSH.busy ? '확인 중…' : '확인'}</button>`;
+  else body = `<p class="small" style="margin:6px 0">${on ? '<b style="color:var(--ok)">켜져 있습니다.</b> 10분마다 새 코멘트를 확인합니다.' : '새 담임 · 사모 코멘트가 달리면 이 기기로 알려 드립니다 (10분마다 확인).'}</p>
+      ${st && st.last ? `<p class="tiny muted" style="margin:0">마지막 확인 ${esc(dateTime(st.last))} · 받는 기기 ${st.devices || 0}대</p>` : ''}
+      ${st && st.err ? `<p class="tiny err" style="margin:4px 0 0">${esc(st.err)}</p>` : ''}
+      ${iosWeb ? '<p class="tiny err">아이폰 · 아이패드는 <b>홈 화면에 추가한 셀 inside 아이콘</b>으로 열어야 알림을 받을 수 있습니다.</p>' : ''}
+      <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn pri" style="margin:0" data-act="push-on" ${PUSH.busy ? 'disabled' : ''}>${PUSH.busy ? '잇는 중…' : on ? '이 기기도 받기' : '알림 켜기'}</button>
+        ${on ? '<button class="btn" style="margin:0" data-act="push-test">시험 알림</button><button class="btn" style="margin:0" data-act="push-off">알림 끄기</button>' : ''}</div>
+      <p class="tiny muted" style="margin:12px 0 0">· 알림에는 <b>누가 · 어느 셀</b>만 나옵니다. 코멘트 내용은 싣지 않습니다.<br>· 켜려면 셀 케어 숫자 코드를 한 번 더 받습니다 — 알림 서버 몫 로그인을 따로 만들기 위해서입니다.<br>· 셀 케어는 읽기만 합니다. 맡긴 로그인은 알림 끄기를 누르면 서버에서 지웁니다.</p>`;
+  w.innerHTML = `<div class="thrcard" role="dialog" aria-label="새 코멘트 알림">
+    <div class="thrhead"><span class="modal-head-gap"></span><b>새 코멘트 알림</b><button class="modal-x" data-act="thr-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    ${body}${PUSH.msg ? `<p class="tiny ${/못|실패|않|없/.test(PUSH.msg) ? 'err' : 'muted'}" style="margin:8px 0 0;white-space:pre-line">${esc(PUSH.msg)}</p>` : ''}</div>`;
+}
+// ① 이 기기: 알림 허락 → 워커 → 토큰 → 계정에 적기
+async function pushDevice() {
+  if (!('serviceWorker' in navigator) || !('Notification' in window)) throw new Error('이 브라우저는 알림을 받을 수 없습니다');
+  const perm = await Notification.requestPermission(); if (perm !== 'granted') throw new Error('알림 권한이 허용되지 않았습니다');
+  await loadJs('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+  if (firebase.messaging.isSupported && !(await firebase.messaging.isSupported())) throw new Error('이 환경에서는 알림이 지원되지 않습니다.\n아이폰은 홈 화면 아이콘으로 열어 주세요');
+  const reg = await navigator.serviceWorker.register('/cell/sw.js', { scope: '/cell/' });
+  await navigator.serviceWorker.ready;
+  const tok = await FB.app.messaging().getToken({ vapidKey: FCM_VAPID, serviceWorkerRegistration: reg });
+  if (!tok) throw new Error('기기 등록 번호를 받지 못했습니다');
+  await FB.db.collection('cellbook').doc(FB.user.uid).set({ push: { tokens: { [tok]: { at: Date.now(), ua: navigator.userAgent.slice(0, 80) } } } }, { merge: true });
+  lsSet('cell_push_tok', tok);
+}
+async function pushOn() {
+  PUSH.busy = true; PUSH.msg = ''; drawPushCfg();
+  try {
+    await pushDevice();
+    if (PUSH.st && PUSH.st.on) { PUSH.msg = '이 기기도 알림을 받습니다'; return; }
+    // ② 서버 몫 로그인 — 앱 로그인과 섞이지 않게 저장하지 않는 별도 연결로 (이메일 코드 한 번 더)
+    const { data } = await sb.auth.getSession(); const email = (data && data.session && data.session.user && data.session.user.email) || LOGIN.email;
+    if (!email) throw new Error('셀 케어 이메일을 찾지 못했습니다. 셀 케어에 다시 로그인해 주세요');
+    PUSH.sb2 = window.supabase.createClient(CC_URL, CC_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cellpush-srv' } });
+    const { error } = await PUSH.sb2.auth.signInWithOtp({ email, options: { shouldCreateUser: false } }); if (error) throw error;
+    PUSH.email = email; PUSH.step = 'code';
+  } catch (e) { PUSH.msg = errText(e); }
+  finally { PUSH.busy = false; drawPushCfg(); }
+}
+async function pushCode() {
+  const token = (($('#pcode') || {}).value || '').trim(); if (!token) return;
+  PUSH.busy = true; drawPushCfg();
+  try {
+    const { data, error } = await PUSH.sb2.auth.verifyOtp({ email: PUSH.email, token, type: 'email' }); if (error) throw error;
+    const rt = data && data.session && data.session.refresh_token; if (!rt) throw new Error('셀 케어 로그인 열쇠를 받지 못했습니다');
+    PUSH.sb2 = null;   // 이 연결은 다시 쓰지 않는다 — 열쇠는 이제 서버 몫이다
+    await pushFn('/link', { rt });
+    PUSH.step = ''; PUSH.st = await pushFn('/status').catch(() => ({ on: true }));
+    PUSH.msg = '켰습니다.\n새 코멘트가 오면 알려 드립니다 (10분마다 확인)';
+  } catch (e) { PUSH.msg = errText(e); }
+  finally { PUSH.busy = false; drawPushCfg(); }
+}
+async function pushOff() {
+  try {
+    await pushFn('/off', {});
+    const tok = lsGet('cell_push_tok', ''); if (tok) await FB.db.collection('cellbook').doc(FB.user.uid).set({ push: { tokens: { [tok]: firebase.firestore.FieldValue.delete() } } }, { merge: true }).catch(() => {});
+    PUSH.st = { on: false }; PUSH.msg = '알림을 껐습니다.\n서버에 맡긴 셀 케어 로그인도 지웠습니다';
+  } catch (e) { PUSH.msg = errText(e); }
+  drawPushCfg();
+}
 function openAiCfg() { drawAiCfg(); const w = $('#thr'); w.hidden = false; if (!quiet()) w.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160 }); }
 function drawAiCfg() {
   const key = lsGet(AI_KEY, ''), n = Object.keys(aiStore()).length + Object.keys(kwStore()).length;
@@ -2603,6 +2686,11 @@ document.addEventListener('click', async (e) => {
       for (const x of document.querySelectorAll('.aibtn')) { let el = x.previousElementSibling; while (el && !el.classList.contains('clamp')) el = el.previousElementSibling; if (el && !el.classList.contains('aisum')) x.classList.toggle('has', !!aiGet(el.dataset.aik)); }
       drawAiCfg(); toast('요약 길이: ' + AI_LENS[n] + '으로\n새로 요약할 때부터 적용됩니다'); toast.at = Date.now(); return; }
     case 'ai-cfg': menu && menu.remove(); return openAiCfg();
+    case 'push-cfg': menu && menu.remove(); return openPushCfg();
+    case 'push-on': return pushOn();
+    case 'push-code': return pushCode();
+    case 'push-off': return pushOff();
+    case 'push-test': pushFn('/test').then(j => { PUSH.msg = '시험 알림을 보냈습니다 (' + (j.success || 0) + '/' + (j.total || 0) + '대)'; drawPushCfg(); }).catch(e => { PUSH.msg = e.message; drawPushCfg(); }); return;
     case 'ai-save': { const v = ($('#aikey') || {}).value || ''; const k = v.trim(); if (k) lsSet(AI_KEY, k); else { try { localStorage.removeItem(AI_KEY); } catch (_) { } }
       if (!DEMO && FB.user) aiCloud({ key: k || firebase.firestore.FieldValue.delete() });
       closeThr(); toast(k ? 'AI 열쇠를 저장했습니다\n긴 글 끝의 별(✦)을 눌러 보세요' : 'AI 열쇠를 지웠습니다'); toast.at = Date.now(); return; }
@@ -2623,6 +2711,7 @@ document.addEventListener('click', async (e) => {
         <button data-act="book">명단 · 전화번호</button>
         <button data-act="thr">신호 기준</button>
         <button data-act="ai-cfg">AI 요약</button>
+        <button data-act="push-cfg">새 코멘트 알림</button>
         <button data-act="reload">새로 불러오기</button>
         <button data-act="logout">${DEMO ? '미리보기 끝내기' : '로그아웃'}</button>`;
       b.parentElement.appendChild(m); return;
@@ -2641,7 +2730,7 @@ document.addEventListener('click', async (e) => {
     case 'reload': menu && menu.remove(); return start();
     case 'logout': menu && menu.remove();
       if (DEMO) { location.href = location.pathname; return; }
-      try { await sb.auth.signOut(); } catch (_) { }
+      try { await sb.auth.signOut({ scope: 'local' }); } catch (_) { }   // ⚠️ 이 기기만 — 전체 로그아웃이면 새 코멘트 알림 서버 몫 로그인도 끊긴다
       S.ctx = null; return viewLogin();
   }
 });
@@ -2689,6 +2778,7 @@ async function start() {
   if (data && data.session) return startReal();
   viewLogin();
 }
+(() => { const t = (location.search.match(/[?&]tab=([a-z]+)/) || [])[1]; if (t && TABS.some(x => x.id === t)) { PREF.tab = t; savePref(); } })();   // 알림을 누르면 ?tab=comment 로 열린다
 start();
 </script>
 </body>

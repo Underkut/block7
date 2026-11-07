@@ -123,6 +123,9 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   **예외 둘: AI 요약**(HB 결정 11/7) — 제미나이 열쇠와 한 번 만든 요약을 **`cellbook/{uid}` 의 `ai` 칸**(기기끼리 맞춤, 400개 상한)과
   이 기기 사본(`cell_ai_key` · `cell_ai_sum`)에. 계정이 기준(`aiSync`). 저장소 · `users/{uid}` 에는 두지 말 것.
   바깥으로 보낼 땐 아는 이름을 `anonText` 로 '셀원 A' 로 바꿔 보낸다(`test_cell` ⑱).
+  **새 코멘트 알림(L4, HB 동의 11/7)**: 서버 `wallet-functions/src/cellpush.js` 가 10분마다 셀 케어를 **읽기만**(읽기 함수 셋 · `test_cellpush` ①).
+  서버 몫 셀 케어 로그인을 **따로** 만들어 `cellpush/{uid}`(보안 규칙에 없음 = 서버만)에 맡긴다 — 앱 열쇠를 넘기면 셀 케어가 둘 다 끊는다.
+  알림에 코멘트 **내용을 싣지 말 것**(누가 · 어느 셀만). 앱 로그아웃은 `scope: 'local'` 을 지킬 것. 순서 · 까닭은 `docs/cell/push-setup.md`.
   **심방 노트 잇기(J)**: 심방 노트가 둔 `users/{uid}/data/care`(고른 시트 id)를 **읽기만** 하고, 같은 구글 열쇠로 그 시트를 읽는다.
   시트 읽는 규칙은 `/care/` 의 `care-core` 를 그대로 불러 쓴다 — `buildModel` · `findResponsesTab` 이름을 바꾸면 `test_cell` ⑯ 이 걸린다.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r cell`)가 함께 싣는다 (`tests/test_sweeter_prod.js` 가 지킨다).
