@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1108-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1108-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -130,6 +130,23 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .note .txt{white-space:pre-wrap;font-size:14px;margin-top:2px}
 .note .pray{white-space:pre-wrap;font-size:13.5px;color:var(--tx2);margin-top:3px}
 .praytag{display:inline-block;font-size:11px;line-height:1.5;color:var(--ac);background:var(--ac-soft);border-radius:999px;padding:0 7px;margin-right:6px;vertical-align:1px}
+/* 근황 · 기도 글의 층 나누기 (11/8 HB: 이름 · 곁글 · 꼬리표 · 본문이 한 덩어리로 보이던 것)
+   이름 = 가장 크고 진하게 · 셀/주차 = 작고 옅게 · 꼬리표 = 상자 없이 오른쪽 끝 옅은 글자 · 본문 = 보통 · 기도 = 왼쪽 가는 줄로 한 칸 들여 */
+.note{padding:13px 0 12px}
+.note .who{font-size:15.5px;font-weight:600;letter-spacing:-.2px;color:var(--tx)}
+.note .who.lnk{border-bottom:0}
+.note .txt{font-size:14.5px;line-height:1.65;margin-top:4px}
+.note .pray{margin-top:8px;padding:1px 0 1px 11px;border-left:2px solid color-mix(in srgb,var(--ac) 55%,transparent);line-height:1.6}
+.note .pray .praytag{background:none;padding:0;margin-right:7px;font-size:11.5px;font-weight:600;letter-spacing:.4px;vertical-align:0}
+.nhd{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}
+.nhd .nmeta{font-size:12px;color:var(--tx3);font-weight:400}
+.nhd .ntags{margin-left:auto;display:flex;align-items:baseline}
+.ntags .pill{background:none;padding:0;border-radius:0;font-size:11.5px;color:var(--tx3)}
+.ntags .pill.warn{color:var(--warn)}
+.ntags .pill+.pill::before{content:'·';margin:0 5px;color:var(--line2)}
+.pnote>.who{display:inline-block;margin-bottom:3px}
+.pnote .txt{padding-left:11px;text-indent:-11px}
+.pnote .pmeta{font-size:11.5px;color:var(--tx3);margin-left:3px}
 .note.attn{border-left:3px solid var(--warn);padding-left:10px}
 .cmt{background:var(--mine-soft);border-radius:12px;padding:10px 12px;margin-top:8px}
 .cmt .by{font-size:12.5px;color:var(--mine);font-weight:500}
@@ -362,7 +379,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1108-2';
+const APP_VERSION = 'v. 26-1108-3';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1588,7 +1605,7 @@ function viewPrayer() {
   let last = '';
   for (const p of show) {
     if (p.cellName !== last) { if (last) h += '</div>'; last = p.cellName; h += `<h3 style="font-size:13px;font-weight:500;color:var(--tx3);margin:16px 2px 6px">${esc(p.cellName)}</h3><div class="card" style="padding:4px 15px">`; }
-    h += `<div class="note">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}<div>${p.items.map(it => `<div class="txt clamp">• ${esc(it.text)} <span class="tiny muted">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray clamp">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div></div>`;
+    h += `<div class="note pnote">${who(p.items.find(i => i.mid) && p.items.find(i => i.mid).mid, p.who, p.cellId)}<div>${p.items.map(it => `<div class="txt clamp">• ${esc(it.text)} <span class="pmeta">${esc(shortWeek(it.week))}${it.kind ? ' · ' + esc(it.kind) : ''}</span></div>${it.note ? `<div class="pray clamp">이번 주: ${esc(it.note)}</div>` : ''}`).join('')}</div></div>`;
   }
   return h + (last ? '</div>' : '');
 }
@@ -1628,7 +1645,7 @@ function viewIssue() {
   h += `<div class="mxbar">${any ? `<span class="tiny muted">${esc([st.cells.map(sn).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / '))}</span><span class="spacer"></span><button class="tiny" style="color:var(--ac)" data-mx="all|all">고른 것 지우기</button>`
     : `<span class="tiny muted">셀 · 이슈를 여럿 고를 수 있습니다 · 칸은 둘을 함께</span>`}</div>`;
   const list = notes.filter(n => (!st.cells.length || cOn(n._cell)) && (!st.tags.length || st.tags.some(t => t === 'attn' ? n.leadership_attention_required : catsOf(n).includes(t))));
-  const one = (n) => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="row" style="flex-wrap:wrap;gap:6px">${who(n.member_id, n._who)}<button class="tiny muted lnk" data-act="see-rep" data-cell="${esc(n._cell)}" data-week="${esc(n._week)}">${esc(n._cellName)} · ${esc(weekLabel(n._week))} ›</button>${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}</div>
+  const one = (n) => `<div class="note ${n.leadership_attention_required ? 'attn' : ''}"><div class="nhd">${who(n.member_id, n._who)}<button class="nmeta lnk" data-act="see-rep" data-cell="${esc(n._cell)}" data-week="${esc(n._week)}">${esc(n._cellName)} · ${esc(weekLabel(n._week))} ›</button><span class="ntags">${catsOf(n).map(k => `<span class="pill">${esc(catLabel(k))}</span>`).join('')}</span></div>
     <div class="txt clamp">${esc(n.content || '')}</div>${n.prayer ? `<div class="pray clamp"><span class="praytag">기도</span>${esc(n.prayer)}</div>` : ''}</div>`;
   const title = [st.cells.map(sn).join(' · '), st.tags.map(tagName).join(' · ')].filter(Boolean).join(' / ');
   if (!list.length) return h + '<p class="empty">고른 조건에 맞는 근황이 없습니다.</p>';
