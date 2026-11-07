@@ -19,7 +19,7 @@ if (!m) { console.error('report-core 덩어리를 못 찾았습니다'); process
 const ctx = { console, Math, JSON, Number, Object, Array, String, Date };
 vm.createContext(ctx);
 vm.runInContext(m[1] + `
-this.A = { APP_VERSION, DOW, FREQ, weekStartSun, nthOf, isLastOf, occursOn, normSlot, normBook, pickBook, weekPlan, slotText, addDays, parseDeptList, PRESET };`, ctx);
+this.A = { APP_VERSION, DOW, FREQ, weekStartSun, nthOf, isLastOf, occursOn, normSlot, normBook, pickBook, weekPlan, slotText, FLOW, flowState, dueLeft, leftText, writeItems, chores, addDays, parseDeptList, PRESET };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // ① 한 주
@@ -84,5 +84,26 @@ sc.eq('⑦ 2번째 줄 버전 주석 = APP_VERSION', HTML.split('\n')[1].include
 const man = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'report', 'manifest.json'), 'utf8'));
 sc.eq('⑦ 홈 화면 앱은 /report/ 안에서', [man.display, man.start_url, man.scope], ['standalone', '/report/', '/report/']);
 sc.eq('⑦ 아이콘 파일이 있다', ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'favicon.png'].every(f => fs.existsSync(path.join(__dirname, '..', 'report', f))), true);
+
+// ⑧ W2 — 흐름 · 마감 · 챙길 것 (제출 여부는 모르니 '다 썼어요' 를 누른 것만 쓴 것으로 본다)
+{
+  const ws = '2026-11-01';   // 11/1(일) ~ 11/7(토)
+  sc.eq('⑧ 흐름: 수 9시 → 금 17시 → 다음 주 화요일(11/10)', J(A.flowState(ws, '2026-11-02', '10:00').map(f => [f.day, f.hm])), [['2026-11-04', '09:00'], ['2026-11-06', '17:00'], ['2026-11-10', '']]);
+  sc.eq('⑧ 월요일엔 아무것도 안 지남 · 목요일엔 수요일 지점만 지남', J([A.flowState(ws, '2026-11-02', '10:00').map(f => f.past), A.flowState(ws, '2026-11-05', '10:00').map(f => f.past)]), [[false, false, false], [true, false, false]]);
+  sc.eq('⑧ 마감 남은 시간: 금 16:00 → 60분 · 토 17:00 → 지남', [A.dueLeft(ws, '2026-11-06', '16:00'), A.dueLeft(ws, '2026-11-07', '17:00')], [60, -1440]);
+  sc.eq('⑧ 남은 시간 글', [A.leftText(60), A.leftText(1500), A.leftText(-1440), A.leftText(-90), A.leftText(20)], ['마감까지 1시간 0분', '마감까지 1일 1시간', '마감 1일 지남', '마감 1시간 지남', '마감까지 20분']);
+  const bk = A.normBook({ depts: [
+    { id: 'a', name: '조명팀', role: 'write', slots: [{ id: 's1', dow: 0, end: '13:30', freq: 'weekly' }] },
+    { id: 'b', name: '송번역팀', role: 'view', slots: [{ id: 's2', dow: 3, end: '21:00', freq: 'weekly' }] },
+    { id: 'c', name: '성찬위원', role: 'write', slots: [{ id: 's3', dow: 5, end: '20:00', freq: 'weekly' }] }] });
+  const st = (today, hm, done) => { const c = A.chores(bk, ws, today, hm, done); return J([c.open.map(i => i.dept.name), c.before.map(i => i.dept.name), c.done.map(i => i.dept.name), c.urgent]); };
+  sc.eq('⑧ 일요일 13:00 — 조명팀 모임 전 · 아직 챙길 것 없음', st('2026-11-01', '13:00', {}), [[], ['조명팀', '성찬위원'], [], false]);
+  sc.eq('⑧ 일요일 14:00 — 모임이 끝났는데 안 눌렀으면 챙길 것 (봐 주는 부서는 안 셈)', st('2026-11-01', '14:00', {}), [['조명팀'], ['성찬위원'], [], false]);
+  sc.eq('⑧ 다 썼어요를 누르면 챙길 것에서 빠짐', st('2026-11-01', '14:00', { [ws + '|s1']: true }), [[], ['성찬위원'], ['조명팀'], false]);
+  sc.eq('⑧ 금요일 21:00 — 성찬위원 끝남 · 마감 지남 → 급함', st('2026-11-06', '21:00', { [ws + '|s1']: true }), [['성찬위원'], [], ['조명팀'], true]);
+  sc.eq('⑧ 목요일 — 일요일 보고 안 챙겼고 마감 24시간 넘게 남으면 급하지 않음', st('2026-11-04', '10:00', {}), [['조명팀'], ['성찬위원'], [], false]);
+  sc.eq('⑧ 목요일 밤 — 마감이 24시간 안이면 급함', st('2026-11-05', '18:00', {}), [['조명팀'], ['성찬위원'], [], true]);
+  sc.eq('⑧ 다른 주의 표시는 이번 주에 영향 없음', st('2026-11-01', '14:00', { ['2026-10-25|s1']: true }), [['조명팀'], ['성찬위원'], [], false]);
+}
 
 sc.done();
