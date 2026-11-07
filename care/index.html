@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -421,6 +421,12 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .trow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
 .trow .t2{color:var(--tx2);font-size:13px;margin:2px 0}
 .tbtn{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.arow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.arow.hid span{color:var(--tx3)}.arow small{font-size:11.5px;color:var(--tx3);margin-left:4px}
+.aadd{display:flex;gap:8px;margin:10px 0 4px}.aadd .inp{flex:1;min-width:0;padding:8px 11px;font-size:14px}
+.etcs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.etcc{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--s1);border:1px solid var(--line)}
+.etcc small{color:var(--tx3)}.etcc button{color:var(--ac);font-size:12.5px;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -431,7 +437,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-3';
+const APP_VERSION = 'v. 26-1108-4';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -541,10 +547,10 @@ function rowToVisit(row, map, opts) {
 // ── 폼 ──
 // Forms API forms.get 결과 → 질문 목록 [{qid, title, kind, multi, options, other, includeYear}]
 function formSummary(form) {
-  return ((form && form.items) || []).filter(it => it.questionItem && it.questionItem.question).map(it => {
-    const q = it.questionItem.question, r = { qid: q.questionId || '', title: norm(it.title), kind: 'other', multi: false, options: [], other: false };
+  return ((form && form.items) || []).map((it, idx) => ({ it, idx })).filter(o => o.it.questionItem && o.it.questionItem.question).map(({ it, idx }) => {
+    const q = it.questionItem.question, r = { qid: q.questionId || '', itemId: it.itemId || '', idx, title: norm(it.title), kind: 'other', multi: false, options: [], other: false };
     if (q.choiceQuestion) {
-      r.kind = 'choice'; r.multi = q.choiceQuestion.type === 'CHECKBOX';
+      r.kind = 'choice'; r.multi = q.choiceQuestion.type === 'CHECKBOX'; r.ctype = q.choiceQuestion.type;
       (q.choiceQuestion.options || []).forEach(op => { if (op.isOther) r.other = true; else if (op.value != null) r.options.push(norm(op.value)); });
     } else if (q.textQuestion) r.kind = q.textQuestion.paragraph ? 'long' : 'short';
     else if (q.dateQuestion) { r.kind = 'date'; r.includeYear = !!q.dateQuestion.includeYear; }
@@ -793,6 +799,75 @@ function parseTrash(values) {
     out.push({ row: i + 1, id: norm(r[ci.id]), name: norm(r[ci.name]), ymd: norm(r[ci.ymd]), at: ci.at < 0 ? '' : norm(r[ci.at]), who: ci.who < 0 ? '' : norm(r[ci.who]), text: String(d['내용'] || ''), json: r[ci.data] });
   }
   return out.sort((a, b) => b.at.localeCompare(a.at));
+}
+// ── 속성 관리 · 폼 선택지 맞추기 (C2-4) ──
+// 선택지 목록의 원본은 시트 '속성' 탭 한 곳. 폼과 앱이 둘 다 그것을 따른다 (HB 결정 9 — 자동으로 서로 맞춤).
+// '폼 질문 번호' 칸이 차 있으면 "폼과 맞춘 적이 있는 값" 이다 — 이것으로 '폼에서 뺐다' 와 '앱에서 새로 만들었다' 를 가른다.
+// ⚠️ 폼에서 선택지를 빼는 것은 **앱에서 직접 숨긴 값만**, 한 번에 FORM_REMOVE_MAX 개까지. 폼을 고칠 때는 판 번호(revisionId)를 함께 보낸다.
+// 세부 값(상위 값) · 별칭 · 이름 바꾸기는 아직 다루지 않는다(그 칸은 읽고 그대로 둔다).
+const ATTR_MANAGED = ['구분', '전화 / 만남', '태그', '액션'];     // '대화 깊이' 는 막대 3칸과 이어져 있어 고정
+const FORM_REMOVE_MAX = 5;
+const ATTR_ETC_FIELD = { '구분': 'rolesEtc', '전화 / 만남': 'methodEtc', '태그': 'tagsEtc', '액션': 'actsEtc' };
+function parseAttrRows(values) {
+  const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [], seen = new Set();
+  const ci = { attr: c('속성'), val: c('값'), parent: c('상위 값'), order: c('순서'), hidden: c('숨김'), qid: c('폼 질문 번호') };
+  if (ci.attr < 0 || ci.val < 0) return out;
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], attr = norm(r[ci.attr]), val = norm(r[ci.val]); if (!attr || !val) continue;
+    const parent = ci.parent < 0 ? '' : norm(r[ci.parent]), key = attr + '|' + parent + '|' + val;
+    if (seen.has(key)) continue; seen.add(key);   // 두 기기가 같은 값을 같이 더해 두 줄이 되어도 하나로
+    const hv = ci.hidden < 0 ? '' : norm(r[ci.hidden]);
+    out.push({ row: i + 1, attr, val, parent, order: ci.order < 0 ? '' : r[ci.order], hidden: !!hv && !/^(n|no|아니오|false|0)$/i.test(hv), qid: ci.qid < 0 ? '' : norm(r[ci.qid]) });
+  }
+  return out;
+}
+// 폼 질문 요약 · '속성' 탭 줄 → 맞출 것. append: 탭에 더할 줄 · update: 탭 칸 고치기 · form: {질문번호: 새 선택지 목록}
+function planAttrSync(summary, rows, managed) {
+  const out = { append: [], update: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } };
+  (managed || ATTR_MANAGED).forEach(title => {
+    const q = (summary || []).find(x => x.title === title && x.kind === 'choice'); if (!q) return;
+    const mine = (rows || []).filter(r => r.attr === title && !r.parent), byVal = new Map(mine.map(r => [r.val, r]));
+    let opts = q.options.slice(), changed = false, removed = 0;
+    q.options.forEach((v, i) => { if (!byVal.has(v)) { out.append.push([title, v, '', i + 1, '', '', q.qid, '']); out.n.fromForm++; } });
+    mine.forEach(r => {
+      const inForm = q.options.includes(r.val);
+      if (!r.hidden && !inForm) {
+        if (r.qid) { out.update.push({ row: r.row, k: '숨김', v: '숨김' }); out.n.hidFromForm++; }   // 폼에서 뺐다 → 앱에서도 숨김
+        else { opts.push(r.val); changed = true; out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); out.n.toForm++; }   // 앱에서 새로 → 폼에도
+      } else if (!r.hidden && inForm && !r.qid) out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid });
+      else if (r.hidden && inForm) {
+        if (removed < FORM_REMOVE_MAX) { opts = opts.filter(x => x !== r.val); changed = true; removed++; out.n.removeFromForm++; if (!r.qid) out.update.push({ row: r.row, k: '폼 질문 번호', v: q.qid }); }
+        else out.n.heldBack++;
+      }
+    });
+    if (changed) out.form[q.qid] = opts;
+  });
+  return out;
+}
+// 폼 고치기 요청 — 선택지만 바꾼다(질문 글 · 종류 · '기타' 칸은 그대로)
+function formUpdateRequests(formRaw, formOps) {
+  const reqs = [];
+  ((formRaw && formRaw.items) || []).forEach((it, idx) => {
+    const q = it.questionItem && it.questionItem.question; if (!q || !q.choiceQuestion || !formOps[q.questionId]) return;
+    const other = (q.choiceQuestion.options || []).some(o => o.isOther);
+    reqs.push({ updateItem: { item: { itemId: it.itemId, title: it.title, questionItem: { question: { questionId: q.questionId, choiceQuestion: { type: q.choiceQuestion.type,
+      options: formOps[q.questionId].map(v => ({ value: v })).concat(other ? [{ isOther: true }] : []) } } } }, location: { index: idx }, updateMask: 'questionItem.question.choiceQuestion.options' } });
+  });
+  return reqs;
+}
+// '장소 · 메모' 질문 — 없으면 '전화 / 만남' 바로 뒤에 짧은 글 질문을 하나 (있으면 null)
+const PLACE_TITLE = '장소 · 메모';
+function placeQuestionRequest(formRaw) {
+  const items = (formRaw && formRaw.items) || [];
+  if (items.some(it => norm(it.title) === PLACE_TITLE)) return null;
+  const m = items.findIndex(it => norm(it.title) === '전화 / 만남');
+  return { createItem: { item: { title: PLACE_TITLE, questionItem: { question: { required: false, textQuestion: { paragraph: false } } } }, location: { index: m < 0 ? items.length : m + 1 } } };
+}
+// 기록에 '기타' 글로 들어온 것 — 선택지로 만들 후보 (많이 나온 것부터, 이미 선택지인 것 · 숨긴 것은 빼고)
+function etcCandidates(visits, title, rows) {
+  const f = ATTR_ETC_FIELD[title], cnt = {}, known = new Set((rows || []).filter(r => r.attr === title).map(r => r.val));
+  (visits || []).forEach(v => [].concat(v[f] || []).forEach(x => { x = norm(x); if (x && !known.has(x)) cnt[x] = (cnt[x] || 0) + 1; }));
+  return Object.keys(cnt).map(val => ({ val, n: cnt[val] })).sort((a, b) => b.n - a.n || a.val.localeCompare(b.val));
 }
 function stampLocal(nowMs) { const d = new Date(nowMs); return ymdOf(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
@@ -1082,12 +1157,13 @@ async function loadData(quiet) {
     DATA.addenda = parseAddenda(tabNames.includes('덧붙임') ? await readTab(s.id, '덧붙임') : []);
     let form = DATA.form;
     const f = saved().form;
-    if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
+    if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
     const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션') } : {};
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda);
     DATA.state = 'ok'; DATA.err = ''; DATA.at = Date.now();
+    if (DATA.prepared && saved().form) setTimeout(autoSyncAttrs, 0);   // 폼 ↔ '속성' 탭 맞추기 (조용히, 바뀐 것만 알림)
   } catch (e) {
     DATA.state = 'err';
     DATA.err = e.status === 403 || e.status === 404 ? '시트를 열 권한이 없습니다.\n설정에서 "다시 연결" 뒤 시트를 다시 골라 주세요.' : (e.message || String(e));
@@ -1238,6 +1314,77 @@ async function restoreTrash(recId) {
   }
   await dropTrashRow(s, recId);
   return lost;
+}
+// ── 속성 관리 · 폼 선택지 맞추기 (C2-4) ──
+const FORMS = 'https://forms.googleapis.com/v1/forms/';
+let ATTR_SYNCING = false;
+function attrRowFor(h, row8) { const arr = new Array(h.length).fill(''); TABS['속성'].forEach((n, i) => { const j = h.indexOf(n); if (j >= 0) arr[j] = row8[i] == null ? '' : row8[i]; }); return arr; }
+async function attrTab(s) { const v = await readTab(s.id, '속성'); return { v, h: ((v[0] || []).map(norm)) }; }
+async function syncAttrs() {
+  if (ATTR_SYNCING || !DATA.prepared || !saved().form) return null;
+  ATTR_SYNCING = true;
+  try {
+    const s = saved().sheet, f = saved().form, fj = await gapi(FORMS + f.id), { v, h } = await attrTab(s);
+    const seeding = !parseAttrRows(v).length, plan = planAttrSync(formSummary(fj), parseAttrRows(v));
+    if (plan.append.length) await gapi(SH + s.id + '/values/' + rng('속성', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: plan.append.map(r => attrRowFor(h, r)) } });
+    if (plan.update.length) await batchValues(s.id, plan.update.filter(u => h.indexOf(u.k) >= 0).map(u => ({ range: a1('속성', h.indexOf(u.k), u.row), values: [[u.v]] })));
+    const reqs = formUpdateRequests(fj, plan.form);
+    // 판 번호를 함께 보낸다 — 그사이 다른 곳에서 폼이 바뀌었으면 구글이 거절하고, 다음에 다시 읽어 맞춘다
+    if (reqs.length) await gapi(FORMS + f.id + ':batchUpdate', { method: 'POST', body: { requests: reqs, writeControl: { requiredRevisionId: fj.revisionId } } });
+    DATA.attrRows = parseAttrRows((await attrTab(s)).v); DATA.attrAt = Date.now(); DATA.formRaw = fj;
+    if (reqs.length || plan.append.length) DATA.form = null;
+    plan.seeding = seeding;
+    return plan;
+  } finally { ATTR_SYNCING = false; }
+}
+function attrSyncMsg(p) {
+  if (!p) return '';
+  if (p.seeding) return p.append.length ? '폼 선택지 ' + p.append.length + '개를\n시트 \'속성\' 탭에 옮겨 두었습니다' : '';
+  const m = [];
+  if (p.n.fromForm) m.push('폼에서 새 선택지 ' + p.n.fromForm + '개를 가져왔습니다');
+  if (p.n.toForm) m.push('폼에도 ' + p.n.toForm + '개를 더했습니다');
+  if (p.n.removeFromForm) m.push('숨긴 선택지 ' + p.n.removeFromForm + '개를 폼에서 뺐습니다');
+  if (p.n.hidFromForm) m.push('폼에서 뺀 ' + p.n.hidFromForm + '개를 숨겼습니다');
+  if (p.n.heldBack) m.push('나머지 ' + p.n.heldBack + '개는 다음에 폼에서 뺍니다');
+  return m.join('\n');
+}
+async function autoSyncAttrs() {
+  try {
+    const p = await syncAttrs(); const msg = attrSyncMsg(p);
+    if (msg) toast(msg);
+    if (p && (p.append.length || p.n.toForm || p.n.removeFromForm || p.n.hidFromForm)) await loadData(true);
+    else render();
+  } catch (e) { DATA.attrErr = e.status === 400 ? '그사이 폼이 바뀌어 다음에 다시 맞춥니다' : '폼과 맞추지 못했습니다 — ' + e.message; render(); }
+}
+// 탭 한 줄의 칸 고치기 · 새 줄 — 고친 뒤 곧바로 폼과 맞춘다
+async function attrWrite(fn) {
+  if (!(await ensurePrepared())) return;
+  const s = saved().sheet, { v, h } = await attrTab(s), rows = parseAttrRows(v);
+  await fn(s, h, rows);
+  const p = await syncAttrs(); toast(attrSyncMsg(p) || '시트 \'속성\' 탭을 고쳤습니다'); await loadData(true);
+}
+async function attrAdd(title, val) {
+  val = norm(val); if (!val) return;
+  await attrWrite(async (s, h, rows) => {
+    const ex = rows.find(r => r.attr === title && !r.parent && r.val === val);
+    if (ex && !ex.hidden) throw new Error('이미 있는 선택지입니다');
+    if (ex) await batchValues(s.id, ['숨김', '폼 질문 번호'].filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1('속성', h.indexOf(k), ex.row), values: [['']] })));
+    else await gapi(SH + s.id + '/values/' + rng('속성', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: [attrRowFor(h, [title, val, '', rows.filter(r => r.attr === title).length + 1, '', '', '', ''])] } });
+  });
+}
+// 숨기기 · 다시 쓰기 — 다시 쓸 땐 '맞춘 표시' 도 지워 앱에서 새로 만든 것처럼 폼에 다시 더한다
+async function attrHide(title, val) {
+  await attrWrite(async (s, h, rows) => {
+    const r = rows.find(x => x.attr === title && !x.parent && x.val === val); if (!r) throw new Error('탭에서 그 선택지를 찾지 못했습니다');
+    const cells = r.hidden ? [['숨김', ''], ['폼 질문 번호', '']] : [['숨김', '숨김']];
+    await batchValues(s.id, cells.filter(c => h.indexOf(c[0]) >= 0).map(c => ({ range: a1('속성', h.indexOf(c[0]), r.row), values: [[c[1]]] })));
+  });
+}
+async function addPlaceQuestion() {
+  const f = saved().form, fj = await gapi(FORMS + f.id), rq = placeQuestionRequest(fj);
+  if (!rq) { toast('폼에 이미 \'장소 · 메모\' 질문이 있습니다'); return; }
+  await gapi(FORMS + f.id + ':batchUpdate', { method: 'POST', body: { requests: [rq], writeControl: { requiredRevisionId: fj.revisionId } } });
+  DATA.form = null; toast('폼에 \'장소 · 메모\' 질문을 더했습니다\n시트에 그 칸이 생기면 앱에서도 바로 씁니다'); await loadData(true);
 }
 const BUSY = { on: false };
 async function busy(fn) { if (BUSY.on) return; BUSY.on = true; document.body.classList.add('busy'); try { return await fn(); } finally { BUSY.on = false; document.body.classList.remove('busy'); } }
@@ -1611,19 +1758,39 @@ function lEdit(L) {
   let h = lhead(L.key ? '기록 고치기' : '새 기록', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<div class="fsec">누구를</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + suggHtml(L) + '</div>' +
     (norm(f.name) && !known(f.name) ? '<div class="hint">처음 적는 이름입니다. 이름이 맞는지 한 번 봐 주세요.</div>' : '') + '</div>';
-  h += '<div class="fld"><span class="lb">구분 <small>여럿</small></span><div class="opts">' + FO.role.map(x => chip(esc(x), f.roles.includes(x), 'ftog', 'roles', x)).join('') + '</div><input class="inp etc" data-f="rolesEtc" value="' + esc(f.rolesEtc) + '" placeholder="기타 (쉼표로 여럿)" aria-label="구분 기타"></div>';
+  // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
+  const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
+  h += '<div class="fld"><span class="lb">구분 <small>여럿</small></span><div class="opts">' + offer('roles', FO.role, f.roles).map(x => chip(esc(x), f.roles.includes(x), 'ftog', 'roles', x)).join('') + '</div><input class="inp etc" data-f="rolesEtc" value="' + esc(f.rolesEtc) + '" placeholder="기타 (쉼표로 여럿)" aria-label="구분 기타"></div>';
   h += '<div class="fsec">언제 · 어떻게</div><div class="fld"><input class="inp" type="date" data-f="ymd" value="' + esc(f.ymd) + '" aria-label="심방 날짜"></div>';
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   h += DATA.hasPlace ? '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 · 메모 (예: 수요예배 후 카페)" aria-label="장소 · 메모"></div>'
     : '<p class="hint">장소 · 메모 칸은 시트에 아직 없습니다. 폼에 \'장소 · 메모\' 질문을 더하면 생깁니다.</p>';
   h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea><button class="btn" data-act="addtalk" style="margin-top:8px">+ 이야기 나누기</button><div class="hint">맥락이 달라질 때 누르면 \'나눈 이야기 1 · 2 …\' 제목 줄이 생깁니다.</div></div>';
   h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
-  h += '<div class="fld"><span class="lb">태그 <small>여럿</small></span><div class="opts">' + FO.tag.map(x => chip('#' + esc(x), f.tags.includes(x), 'ftog', 'tags', x)).join('') + '</div><input class="inp etc" data-f="tagsEtc" value="' + esc(f.tagsEtc) + '" placeholder="기타 태그 (쉼표로 여럿)" aria-label="태그 기타"></div>';
-  h += '<div class="fld"><span class="lb">할 일 <small>여럿</small></span><div class="opts">' + FO.act.filter(x => x !== '기타').map(x => chip(esc(x), f.acts.includes(x), 'ftog', 'acts', x, ACT_KIND[x] || 'k4')).join('') + '</div><input class="inp etc" data-f="actsEtc" value="' + esc(f.actsEtc) + '" placeholder="기타 할 일 (예: 병문안 일정 잡기)" aria-label="할 일 기타"></div>';
+  h += '<div class="fld"><span class="lb">태그 <small>여럿</small></span><div class="opts">' + offer('tags', FO.tag, f.tags).map(x => chip('#' + esc(x), f.tags.includes(x), 'ftog', 'tags', x)).join('') + '</div><input class="inp etc" data-f="tagsEtc" value="' + esc(f.tagsEtc) + '" placeholder="기타 태그 (쉼표로 여럿)" aria-label="태그 기타"></div>';
+  h += '<div class="fld"><span class="lb">할 일 <small>여럿</small></span><div class="opts">' + offer('acts', FO.act.filter(x => x !== '기타'), f.acts).map(x => chip(esc(x), f.acts.includes(x), 'ftog', 'acts', x, ACT_KIND[x] || 'k4')).join('') + '</div><input class="inp etc" data-f="actsEtc" value="' + esc(f.actsEtc) + '" placeholder="기타 할 일 (예: 병문안 일정 잡기)" aria-label="할 일 기타"></div>';
   if (L.key) h += '<p class="muted">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '시트에 적기') + '</button></div>';
 }
 function topLayer() { return S.layers[S.layers.length - 1]; }
+function lAttrs(L) {
+  let h = lhead('속성 관리', L) + '<div class="ph-body">';
+  if (!saved().form) return h + '<p class="empty">설정에서 심방 폼을 먼저 골라 주세요. 선택지는 폼과 함께 맞춥니다.</p></div>';
+  if (!DATA.prepared) return h + '<p class="empty">시트를 먼저 준비해야 합니다.</p><button class="btn pri" data-act="prepare">시트 준비하기</button></div>';
+  h += '<p class="muted">선택지는 시트의 \'속성\' 탭에 있고 구글폼과 저절로 맞춥니다. 여기서 더하거나 숨기면 폼도 바뀝니다. 숨겨도 지난 기록은 그대로 보입니다.</p>';
+  h += '<div class="srow" style="border-bottom:1px solid var(--line)"><span class="t">폼과 맞춤</span><button class="v ok" data-act="attrsync">지금 맞추기</button><div class="d">' + (DATA.attrErr ? esc(DATA.attrErr) : DATA.attrAt ? new Date(DATA.attrAt).toTimeString().slice(0, 5) + ' 에 맞춤' : '맞추는 중…') + '</div></div>';
+  if (DATA.formRaw && placeQuestionRequest(DATA.formRaw)) h += '<div class="note">폼에 <b>\'장소 · 메모\'</b> 질문이 없습니다. 더하면 앱 입력 화면에도 장소 칸이 열립니다.<div class="row" style="margin-top:8px"><button class="btn pri" data-act="addplace">폼에 더하기</button></div></div>';
+  const S0 = DATA.formRaw ? formSummary(DATA.formRaw) : [];
+  ATTR_MANAGED.forEach((t, i) => {
+    const rows = (DATA.attrRows || []).filter(r => r.attr === t && !r.parent), q = S0.find(x => x.title === t);
+    h += '<div class="h-sec">' + esc(t) + '<small>' + (q ? (q.multi ? '여럿 고르기' : '하나 고르기') : '폼에 이 질문이 없습니다') + '</small></div>';
+    rows.forEach(r => { h += '<div class="arow' + (r.hidden ? ' hid' : '') + '"><span>' + (t === '태그' ? '#' : '') + esc(r.val) + (r.hidden ? ' <small>숨김</small>' : '') + '</span><button class="send" data-act="attrhide" data-k="' + esc(t) + '" data-v="' + esc(r.val) + '">' + (r.hidden ? '다시 쓰기' : '숨기기') + '</button></div>'; });
+    h += '<div class="aadd"><input class="inp" id="aadd' + i + '" placeholder="새 선택지" aria-label="' + esc(t) + ' 새 선택지"><button class="btn" data-act="attradd" data-k="' + esc(t) + '" data-v="aadd' + i + '">더하기</button></div>';
+    const ec = M() ? etcCandidates(M().visits, t, DATA.attrRows) : [];
+    if (ec.length) h += '<div class="etcs"><span class="muted">\'기타\' 로 들어온 글</span>' + ec.slice(0, 8).map(c => '<span class="etcc">' + esc(c.val) + ' <small>' + c.n + '번</small><button data-act="etcpromote" data-k="' + esc(t) + '" data-v="' + esc(c.val) + '">선택지로</button></span>').join('') + '</div>';
+  });
+  return h + '</div>';
+}
 function lTrash(L) {
   let h = lhead('휴지통', L) + '<div class="ph-body"><p class="muted">지운 기록은 시트의 \'휴지통\' 탭에 그대로 있습니다. 되살리면 처음 모습 그대로 돌아오고, 할 일 체크와 덧붙임도 다시 붙습니다.</p>';
   if (L.loading) return h + '<p class="empty">읽는 중…</p></div>';
@@ -1678,6 +1845,7 @@ function lSettings(L) {
     '<div class="srow"><span class="t">보관 기록 함께 보기</span><button class="tgl' + (S.showArch ? ' on' : '') + '" data-act="arch" aria-label="보관 기록 함께 보기"></button></div></div>';
   h += '<div class="h-sec">그 밖에</div><div class="set"><div class="srow"><span class="t">오래 못 만남 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [14, 21, 28, 42].map(n => '<button class="opt" data-act="stale" data-v="' + n + '" aria-pressed="' + (pf.stale === n) + '">' + n / 7 + '주</button>').join('') + '</div></div>' +
+    '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button>' +
     '<button class="srow" data-act="trash"><span class="t">휴지통</span><span class="v">›</span><div class="d" style="text-align:left">지운 기록 되살리기</div></button>' +
     '<button class="srow" data-act="layer" data-v="c0"><span class="t">연결 시험 (C0)</span><span class="v">›</span><div class="d" style="text-align:left">시트 · 폼 · 캘린더가 앱과 맞물리는지 다시 확인합니다</div></button></div>';
   h += '<p class="muted" style="margin-top:22px">심방 노트 ' + APP_VERSION + ' · 심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다. 고른 시트 · 폼과 위 기준은 계정에 저장되어 다른 기기에서도 같게 열립니다.</p>';
@@ -1816,7 +1984,7 @@ function gate() {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -1975,6 +2143,14 @@ document.addEventListener('click', e => {
     return;
   }
   if (a === 'trash') { openLayer('trash'); loadTrash(topLayer()); return; }
+  if (a === 'attrsync') { busy(async () => { try { const p = await syncAttrs(); toast(attrSyncMsg(p) || '폼과 선택지가 모두 같습니다'); await loadData(true); } catch (e) { toast('맞추지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'addplace') { busy(async () => { try { await addPlaceQuestion(); } catch (e) { toast('폼에 더하지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'attradd' || a === 'etcpromote') {
+    const val = a === 'attradd' ? (($(v) || {}).value || '') : v;
+    if (!norm(val)) return;
+    busy(async () => { try { await attrAdd(k, val); } catch (e) { toast('더하지 못했습니다\n' + e.message); } }); return;
+  }
+  if (a === 'attrhide') { busy(async () => { try { await attrHide(k, v); } catch (e) { toast('바꾸지 못했습니다\n' + e.message); } }); return; }
   if (a === 'delrec') {
     const vv = byKey(v); if (!vv) return; S.menu = null;
     if (!confirm('이 기록을 휴지통으로 옮길까요?\n\n시트의 \'휴지통\' 탭에 그대로 남고,\n설정 › 휴지통에서 언제든 되살릴 수 있습니다.')) { render(); return; }

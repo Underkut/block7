@@ -14,6 +14,7 @@
 //  ⑫ C2 쓰기 — 새 줄은 이름으로 찾은 칸에만 · 안 바꾼 기록을 저장하면 칸이 하나도 안 바뀐다 · 바뀐 칸만 · 그사이 시트에서 고친 칸은 잡는다 · 같은 기록ID 가 둘이면 쓰지 않는다
 //  ⑬ 할 일 체크('액션' 탭) · 덧붙임 탭
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
+//  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -31,7 +32,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
   joinMulti, splitEtc, blankRecord, addTalk, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
-  TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash, rowHasId, trashHeadState, backupMatches,
+  TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
+  ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
@@ -321,4 +323,50 @@ sc.eq('⑮ 빈 칸에서 누르면 1번 제목', A.addTalk(''), '나눈 이야�
 sc.eq('⑮ 이미 쓴 글이 있으면 그것을 1번으로 묶고 2번을 연다', A.addTalk('학교 이야기\n둘째 줄'), '나눈 이야기 1\n학교 이야기\n둘째 줄\n\n나눈 이야기 2\n');
 sc.eq('⑮ 번호는 가장 큰 번호 다음', A.addTalk('나눈 이야기 1\n가\n\n나눈 이야기 2\n나'), '나눈 이야기 1\n가\n\n나눈 이야기 2\n나\n\n나눈 이야기 3\n');
 sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다', A.validateRecord(Object.assign(A.blankRecord('2026-11-08', null), { name: '가나다', text: A.addTalk('가') })).length, 0);
+// ⑯ 속성 · 폼 맞추기
+{
+  const S0 = A.formSummary(FORM), qid = t => S0.find(q => q.title === t).qid;
+  const HEADA = A.TABS['속성'];
+  // 폼을 그대로 탭에 옮긴 것처럼 줄을 만들어 주는 도구
+  const tabFrom = (plan, base) => { const v = (base || [HEADA]).map(r => r.slice()); plan.append.forEach(r => v.push(r)); plan.update.forEach(u => { v[u.row - 1][HEADA.indexOf(u.k)] = u.v; }); return v; };
+  const sumWith = (title, opts) => S0.map(q => q.title === title ? Object.assign({}, q, { options: opts }) : q);
+  sc.eq('⑯ 폼 요약에 질문 자리 · 종류', J([S0[3].idx, S0[3].ctype]), [3, 'CHECKBOX']);
+  const seed = A.planAttrSync(S0, A.parseAttrRows([HEADA]));
+  sc.eq('⑯ 처음 — 폼 선택지를 탭으로 (구분 7 · 방식 5 · 태그 6 · 액션 3) · 폼은 안 고친다', J([seed.append.length, Object.keys(seed.form).length, seed.n.fromForm]), [21, 0, 21]);
+  sc.eq('⑯ 대화 깊이는 맞추지 않는다', seed.append.some(r => r[0] === '대화 깊이'), false);
+  const T1 = tabFrom(seed), R1 = A.parseAttrRows(T1);
+  sc.eq('⑯ 한 번 맞추면 다시 맞춰도 할 일 없음', J(A.planAttrSync(S0, R1)), J({ append: [], update: [], form: {}, n: { fromForm: 0, toForm: 0, hidFromForm: 0, removeFromForm: 0, heldBack: 0 } }));
+  // 폼에서 '진로' 를 더했다
+  const p2 = A.planAttrSync(sumWith('태그', OPT.tags.concat(['진로'])), R1);
+  sc.eq('⑯ 폼에서 새로 → 탭에 한 줄(맞춘 표시와 함께)', J(p2.append), [['태그', '진로', '', 7, '', '', qid('태그'), '']]);
+  // 앱에서 '관계' 를 더했다(폼 질문 번호 없음)
+  const T3 = T1.concat([['태그', '관계', '', 7, '', '', '', '']]), p3 = A.planAttrSync(S0, A.parseAttrRows(T3));
+  sc.eq('⑯ 앱에서 새로 → 폼 선택지 끝에 · 탭엔 맞춘 표시', J([p3.form[qid('태그')], p3.update]), [OPT.tags.concat(['관계']), [{ row: T3.length, k: '폼 질문 번호', v: qid('태그') }]]);
+  sc.eq('⑯ 그다음엔 할 일 없음', A.planAttrSync(sumWith('태그', OPT.tags.concat(['관계'])), A.parseAttrRows(tabFrom(p3, T3))).update.length, 0);
+  // 폼에서 '학교' 를 뺐다
+  const p4 = A.planAttrSync(sumWith('태그', OPT.tags.filter(x => x !== '학교')), R1);
+  sc.eq('⑯ 폼에서 뺌 → 앱에서 숨김 (폼은 안 고침)', J([p4.update.map(u => [T1[u.row - 1][1], u.k]), Object.keys(p4.form)]), [[['학교', '숨김']], []]);
+  // 앱에서 '건강' 을 숨겼다
+  const T5 = T1.map(r => r.slice()); T5[T5.findIndex(r => r[1] === '건강')][4] = '숨김';
+  const p5 = A.planAttrSync(S0, A.parseAttrRows(T5));
+  sc.eq('⑯ 앱에서 숨김 → 폼에서 뺀다', J(p5.form[qid('태그')]), OPT.tags.filter(x => x !== '건강'));
+  sc.eq('⑯ 숨긴 값이 폼에 없으면 할 일 없음', Object.keys(A.planAttrSync(sumWith('태그', OPT.tags.filter(x => x !== '건강')), A.parseAttrRows(T5)).form).length, 0);
+  // 한꺼번에 많이 숨겨도 폼에서는 다섯까지만
+  const T6 = T1.map(r => r.slice()); T6.forEach((r, i) => { if (i && r[0] === '구분') r[4] = '숨김'; });
+  const p6 = A.planAttrSync(S0, A.parseAttrRows(T6));
+  sc.eq('⑯ 폼에서 빼기는 한 번에 다섯까지 · 나머지는 미룬다', J([p6.n.removeFromForm, p6.n.heldBack, p6.form[qid('구분')].length]), [A.FORM_REMOVE_MAX, 2, 2]);
+  sc.eq('⑯ 같은 값이 두 줄이어도 하나로 읽는다', A.parseAttrRows(T1.concat([T1[1].slice()])).length, 21);
+  // 폼 요청 모양
+  const FR = JSON.parse(JSON.stringify(FORM)); FR.items.forEach((it, i) => { it.itemId = 'i' + i; });
+  const rq = A.formUpdateRequests(FR, { [qid('태그')]: ['신앙', '관계'] });
+  sc.eq('⑯ 폼 요청 — 선택지만 · 기타 칸은 끝에 그대로 · 자리 번호', J([rq.length, rq[0].updateItem.location.index, rq[0].updateItem.updateMask, rq[0].updateItem.item.questionItem.question.choiceQuestion.options]),
+    [1, 6, 'questionItem.question.choiceQuestion.options', [{ value: '신앙' }, { value: '관계' }, { isOther: true }]]);
+  const pq = A.placeQuestionRequest(FR);
+  sc.eq("⑯ '장소 · 메모' 질문 — '전화 / 만남' 바로 뒤에 짧은 글로", J([pq.createItem.location.index, pq.createItem.item.title, pq.createItem.item.questionItem.question.textQuestion.paragraph]), [5, '장소 · 메모', false]);
+  sc.eq("⑯ 이미 있으면 더하지 않는다", A.placeQuestionRequest({ items: FR.items.concat([{ title: '장소 · 메모', questionItem: { question: { textQuestion: {} } } }]) }), null);
+  // 기타 후보
+  const vs = [{ rolesEtc: ['두나미스'], tagsEtc: ['관계'] }, { rolesEtc: ['두나미스', '새가족'], tagsEtc: [] }, { rolesEtc: ['청년부'] }];
+  sc.eq('⑯ 기타 글 후보 — 많이 나온 것부터 · 이미 선택지인 것은 빼고', J(A.etcCandidates(vs, '구분', R1)), [{ val: '두나미스', n: 2 }, { val: '새가족', n: 1 }]);
+}
+
 sc.done();
