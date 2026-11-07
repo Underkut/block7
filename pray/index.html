@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1105-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1107-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1105-1';
+const APP_VERSION = 'v. 26-1107-1';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4484,12 +4484,12 @@ ACT['layer-cancel'] = () => {
   popLayer(); if (changed) toast('바꾼 것을 되돌렸습니다');
 };
 function kbHintMode() { const n = devPref('kbHint', 0); return n === 1 || n === 2 ? n : 0; }
-// i 단추: 0 숨김(옅음) → 1 위 한 줄(일반색) → 2 모두 보기 창(강조색) → 창을 닫으면 0
+// i 단추: 0 숨김(옅음) ⇄ 1 위 한 줄(일반색). 한 줄을 다시 누르면 접힌다. 모두 보기 창은 위 띠를 눌러 연다 (1107)
 ACT['kb-i'] = () => {
-  const n = (kbHintMode() + 1) % 3; setDevPref('kbHint', n);
-  const b = document.querySelector('#v-map .kb-i'); btnTone(b, n === 2 ? 'on' : n === 1 ? '' : 'dim');
+  const n = kbHintMode() === 1 ? 0 : 1; setDevPref('kbHint', n);
+  const b = document.querySelector('#v-map .kb-i'); btnTone(b, n === 1 ? '' : 'dim');
   if (n === 1) { mapKeepScroll(renderView); slideIn(document.querySelector('#v-map .kbhint')); }
-  else if (n === 2) ACT['kb-help']();
+  else { const h = document.querySelector('#v-map .kbhint'); if (h) slideOut(h, () => mapKeepScroll(renderView)); else mapKeepScroll(renderView); }
 };
 ACT['kb-help'] = () => { kbHelpOpen(); setDevPref('kbHint', 2); btnTone(document.querySelector('#v-map .kb-i'), 'on'); if (SHEET) SHEET._onClose = () => { setDevPref('kbHint', 0); mapKeepScroll(renderView); }; };
 // ── 단축키 안내 (i 단추) — 위 요약 띠 · 아래 모두 보기 창 (HB 2026-10-30) ──
