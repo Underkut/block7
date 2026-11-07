@@ -382,6 +382,9 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ 요약 길이: 한 · 두 · 세 문장을 요청 글에 담는다', [1, 2, 3, undefined].map(n => /(한|두|세) 문장으로 요약/.exec(A.aiPrompt('x', n))[1]), ['한', '두', '세', '두']);
   sc.eq('⑱ 설정창 이름 · 처음값 두 문장 · 별 누르면 펼침', /한 문장으로|\$\{AI_LENS\[n\]\}으로/.test(HTML) && /\? n : 2/.test(HTML) && /AI\.opened\.add\(el\)/.test(HTML), true);
   sc.eq('⑱ 앱 이름 셀 inside', /<title>셀 inside<\/title>/.test(HTML), true);
+  // HB 11/8: PC 에서 만든 요약 · 열쇠가 폰에 없었다 — 셀 케어 로그인과 계정 로그인이 따로라, 계정에 로그인 안 한 기기는 조용히 이 기기에만 남겼다
+  sc.eq('⑱ 계정에 못 올리면 조용히 넘기지 않는다 (catch 가 비어 있지 않음 · 토스트)', !/\{ ai: patch, at: Date\.now\(\) \}, \{ merge: true \}\)\.catch\(\(\) => \{\}\)/.test(HTML) && /AI 요약을 계정에 올리지 못했습니다/.test(HTML), true);
+  sc.eq('⑱ AI 설정창이 계정 상태를 보여 준다 (이메일 · 계정에 있는 열쇠 · 요약 · 핵심 수 · 로그인 단추)', /<span id="aiacct">\$\{aiAcctHtml\(\)\}<\/span>/.test(HTML) && /data-act="ai-login"/.test(HTML) && /case 'ai-login': closeThr\(\); return openBook\(null\);/.test(HTML) && /AI\.cloud = \{ key: !!\(ai && ai\.key\)/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\), subject\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
 }
 
