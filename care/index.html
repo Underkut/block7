@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -64,6 +64,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 /* 폰 안 — 공통 */
 .ph-head{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:calc(10px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));min-height:58px;position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--paper) 94%,transparent);backdrop-filter:blur(8px)}
+.ph-head.r2{grid-template-columns:88px 1fr 88px}
+.ph-head .acts{display:flex;justify-content:flex-end}
+.ph-head.acts-only{grid-template-columns:1fr auto}
+.ph-head a.ic{text-decoration:none}
 .ph-head h3{margin:0;text-align:center;font-size:16px;font-weight:600}
 .ph-head .ic{width:44px;height:44px;display:grid;place-items:center;color:var(--tx2)}
 .ph-head .ic svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.7;fill:none}
@@ -427,7 +431,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-1';
+const APP_VERSION = 'v. 26-1108-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1277,7 +1281,8 @@ const IC = {
   l: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   r: '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
-  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 01-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 010-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 012.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 014 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 012.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 010 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+  sheet: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9.5h16M4 14.5h16M10 4v16"/></svg>',
   cal: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>',
@@ -1289,7 +1294,7 @@ const IC = {
   n_collect: '<svg viewBox="0 0 24 24"><path d="M4 20h16M7 20v-6M12 20V8M17 20v-9"/></svg>'
 };
 const MI = {
-  '지나가다 대화': '<svg viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"/><path d="M10 21l2-6-2.5-2.5L11 8l3 2.5 3 1M9.5 12.5L7 14"/></svg>',
+  '지나가다 대화': '<svg viewBox="0 0 24 24"><path d="M4 16v-2.4C4 11.5 3 10.5 3 8c0-2.7 1.5-6 4.5-6C9.4 2 10 3.8 10 5.5c0 3.1-2 5.7-2 8.7V16a2 2 0 1 1-4 0z"/><path d="M20 20v-2.4c0-2.1 1-3.1 1-5.6 0-2.7-1.5-6-4.5-6C14.6 6 14 7.8 14 9.5c0 3.1 2 5.7 2 8.7V20a2 2 0 1 0 4 0z"/><path d="M16 17h4M4 13h4"/></svg>',
   '티타임': '<svg viewBox="0 0 24 24"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1 1 1.5 1 2.5M11.5 3.5c0 1 1 1.5 1 2.5"/></svg>',
   '식사': '<svg viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3 3.5-3 7h3v11"/></svg>',
   '전화': '<svg viewBox="0 0 24 24"><path d="M6 4h3l1.5 4-2 1.3a10 10 0 0 0 6.2 6.2L16 13.5l4 1.5v3a2 2 0 0 1-2.2 2A15 15 0 0 1 4 6.2 2 2 0 0 1 6 4z"/></svg>',
@@ -1314,8 +1319,9 @@ function firstLine(t) { return String(t || '').split('\n').find(x => x.trim()) |
 
 // ── 머리 · 아래 탭 · 필터 줄 ──
 function head(title, left, right) {
-  const b = x => x ? '<button class="ic" data-act="' + x[0] + '" data-v="' + (x[3] || '') + '" aria-label="' + x[1] + '">' + IC[x[2]] + '</button>' : '<span></span>';
-  return '<div class="ph-head">' + b(left) + '<h3>' + title + '</h3>' + b(right) + '</div>';
+  // 설정(톱니)은 늘 우상단 맨 오른쪽, 찾기(돋보기)는 그 바로 왼쪽. left 는 옛 호출 모양 그대로 받되 쓰지 않는다.
+  const b = x => '<button class="ic" data-act="' + x[0] + '" data-v="' + (x[3] || '') + '" aria-label="' + x[1] + '">' + IC[x[2]] + '</button>';
+  return '<div class="ph-head r2"><span></span><h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
   const f = S.view === 'plan' ? '' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
@@ -1366,8 +1372,11 @@ function vList() {
 function sheetRowUrl(v) { const s = saved().sheet; return s && DATA.tab ? 'https://docs.google.com/spreadsheets/d/' + s.id + '/edit#gid=' + DATA.tab.sheetId + '&range=A' + v.row : ''; }
 function lDetail(L) {
   const v = byKey(L.key); if (!v) return lhead('', L) + '<div class="ph-body"><p class="empty">이 기록을 찾지 못했습니다.</p></div>';
-  let h = lhead('', L, ['menu', '이 기록 메뉴', 'menu']) + '<div class="ph-body">';
-  if (S.menu === v.key) h += '<div class="pop"><button data-act="edit" data-v="' + esc(v.key) + '">' + IC.pen + '고치기</button><a href="' + esc(sheetRowUrl(v)) + '" target="_blank" rel="noopener">' + IC.out + '시트에서 이 줄 열기</a><button class="danger" data-act="delrec" data-v="' + esc(v.key) + '">' + IC.trash + '지우기 (휴지통으로)</button></div>';
+  const dv = esc(v.key), url = sheetRowUrl(v);
+  let h = '<div class="ph-head acts-only"><span></span><span class="acts"><button class="ic" data-act="edit" data-v="' + dv + '" aria-label="고치기">' + IC.pen + '</button>' +
+    '<a class="ic" href="' + esc(url) + '" target="_blank" rel="noopener" aria-label="시트에서 이 줄 열기">' + IC.sheet + '</a>' +
+    '<button class="ic" data-act="delrec" data-v="' + dv + '" aria-label="휴지통으로">' + IC.trash + '</button>' +
+    '<button class="ic" data-act="close" aria-label="닫기">' + IC.x + '</button></span></div><div class="ph-body">';
   if (v.review) h += '<div class="review"><b>확인 필요</b> · 자동으로 들어온 기록입니다. 확인 단추는 C2 에서 열립니다.</div>';
   if (v.archived) h += '<div class="review" style="background:var(--s2)">보관된 기록입니다. 시트에는 그대로 있습니다.</div>';
   h += '<button data-act="person" data-v="' + esc(v.name) + '"><div class="dt-name">' + esc(v.name || '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
