@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1107-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1107-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -413,6 +413,10 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .pop button{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ac)}
 .sugg small{color:var(--tx3);font-size:11.5px}
 .todo .send{padding-top:0}
+.pop .danger,.send.danger{color:#b03a3a}
+.trow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.trow .t2{color:var(--tx2);font-size:13px;margin:2px 0}
+.tbtn{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
 </style>
 </head>
 <body>
@@ -423,7 +427,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1107-1';
+const APP_VERSION = 'v. 26-1107-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -735,6 +739,48 @@ function attachExtras(model, statusMap, addenda) {
     v.addn = (v.id && addenda[v.id]) || [];
   });
   return model;
+}
+// ── 지우기 → '휴지통' 탭 (C2-3) ──
+// 지운 기록은 시트에서 바로 사라지지 않고 휴지통 탭에 **원래 줄 통째로** 옮겨 둔다. 되살리면 응답 탭 끝에 그대로 돌아온다
+// (기록ID 가 같아서 할 일 체크 · 덧붙임도 다시 붙는다). 원래 줄은 {머리글: 값} 으로 적는다 — 그사이 폼에 질문이 늘어
+// 열 순서가 바뀌어도 이름으로 제자리를 찾게.
+// ⚠️ 한 번에 지우는 줄은 언제나 **하나**다. 지우기 직전에 그 줄의 기록ID 를 다시 읽어 맞을 때만 지운다.
+const TRASH_TAB = '휴지통';
+const TRASH_HEAD = ['기록ID', '성도 이름', '심방일', '지운 시각', '지운 사람', '원래 줄'];
+function trashRow(header, row, v, stamp, who) {
+  const o = {};
+  (header || []).forEach((h, i) => { const k = norm(h), x = (row || [])[i]; if (k && x !== '' && x != null) o[k] = x; });
+  return [v.id, v.name, v.ymd, stamp, who || '', JSON.stringify(o)];
+}
+// 휴지통 줄 → 지금 머리글에 맞춘 응답 줄. 지금 시트에 없는 칸은 lost 로 알린다
+function restoreRow(header, json) {
+  let o = {}; try { o = JSON.parse(json) || {}; } catch (e) { return { row: null, lost: [], bad: true }; }
+  const h = (header || []).map(norm), row = new Array(h.length).fill(''), lost = [];
+  Object.keys(o).forEach(k => { const i = h.indexOf(norm(k)); if (i < 0) lost.push(k); else row[i] = o[k]; });
+  return { row, lost };
+}
+// 읽은 줄이 정말 그 기록인지 — 줄 번호를 찾은 뒤 다른 기기가 앞쪽 줄을 지우면 같은 번호에 다른 기록이 온다
+function rowHasId(map, row, id) { return map['@기록ID'] != null && !!norm(id) && norm((row || [])[map['@기록ID']]) === norm(id); }
+// 휴지통 탭 첫 줄 상태 — 'ok' 머리글 · 'empty' 비었음 · 'data' 머리글 없이 백업 줄이 먼저 들어감(만들다 끊긴 경우) · 'other' 남의 것
+function trashHeadState(first) {
+  const h = (first || []).map(norm);
+  if (!h.some(Boolean)) return 'empty';
+  if (h[0] === TRASH_HEAD[0] && h.includes('원래 줄')) return 'ok';
+  if (h[0] && /^\{/.test(h[5] || '')) return 'data';
+  return 'other';
+}
+// 휴지통에 그 기록의 백업이 꼭 하나, 방금 적은 내용 그대로 있는가 — 이것을 확인한 뒤에만 원래 줄을 지운다
+function backupMatches(values, id, json) { const it = parseTrash(values).filter(x => x.id === norm(id)); return it.length === 1 && it[0].json === json; }
+function parseTrash(values) {
+  const h = ((values && values[0]) || []).map(norm), c = n => h.indexOf(n), out = [];
+  const ci = { id: c('기록ID'), name: c('성도 이름'), ymd: c('심방일'), at: c('지운 시각'), who: c('지운 사람'), data: c('원래 줄') };
+  if (ci.id < 0 || ci.data < 0) return out;
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || []; if (!norm(r[ci.id])) continue;
+    let d = {}; try { d = JSON.parse(r[ci.data]) || {}; } catch (e) { d = {}; }
+    out.push({ row: i + 1, id: norm(r[ci.id]), name: norm(r[ci.name]), ymd: norm(r[ci.ymd]), at: ci.at < 0 ? '' : norm(r[ci.at]), who: ci.who < 0 ? '' : norm(r[ci.who]), text: String(d['내용'] || ''), json: r[ci.data] });
+  }
+  return out.sort((a, b) => b.at.localeCompare(a.at));
 }
 function stampLocal(nowMs) { const d = new Date(nowMs); return ymdOf(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
@@ -1085,6 +1131,14 @@ async function rowOf(s, title, map, recId) {
   if (r < 0) throw new Error('시트에서 이 기록을 찾지 못했습니다.\n다른 곳에서 지웠을 수 있습니다.');
   return r;
 }
+// 그 기록의 줄을 찾아 읽는다 — 읽은 줄의 기록ID 가 맞을 때만 돌려준다(다른 기기가 앞줄을 지워 밀렸으면 다시 찾는다)
+async function readRowById(s, title, map, id) {
+  for (let i = 0; i < 3; i++) {
+    const r = await rowOf(s, title, map, id), cur = ((await readRange(s.id, title, r + ':' + r))[0]) || [];
+    if (rowHasId(map, cur, id)) return { r, cur };
+  }
+  throw new Error('시트 줄이 계속 움직여 이 기록을 확실히 찾지 못했습니다.\n잠시 뒤 다시 해 주세요 — 아무것도 쓰지 않았습니다.');
+}
 async function writeNew(rec) {
   const { s, title, head, map } = await freshHead(), now = Date.now(), id = newId('C', now, Math.random());
   const { row, lost } = newRowValues(head, map, rec, id, now);
@@ -1093,7 +1147,7 @@ async function writeNew(rec) {
 }
 async function writeEdit(v, rec) {
   const { s, title, head, map } = await freshHead(), now = Date.now();
-  const r = await rowOf(s, title, map, v.id), cur = ((await readRange(s.id, title, r + ':' + r))[0]) || [];
+  const { r, cur } = await readRowById(s, title, map, v.id);
   const was = (DATA.vals && DATA.vals[v.row - 1]) || cur, pt = editPatch(head, map, cur, rec, now);
   if (!pt.cells.length) return { none: true, lost: pt.lost };
   const conf = conflictCells(was, cur, pt.cells);
@@ -1103,7 +1157,7 @@ async function writeEdit(v, rec) {
 }
 // 되돌리기 — 고친 칸을 고치기 전 값으로 (그 기록을 다시 찾아서)
 async function undoEdit(recId, cells) {
-  const { s, title, map } = await freshHead(), r = await rowOf(s, title, map, recId);
+  const { s, title, map } = await freshHead(), { r } = await readRowById(s, title, map, recId);
   await batchValues(s.id, cells.map(c => ({ range: a1(title, map[c.k], r), values: [[c.prev]] })));
 }
 async function writeAddendum(v, text) {
@@ -1119,6 +1173,59 @@ async function writeCheck(v, a, done) {
   if (plan.append) await gapi(SH + s.id + '/values/' + rng('액션', 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: [plan.append] } });
   else { const h = (av[0] || []).map(norm); await batchValues(s.id, Object.keys(plan.update.cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1('액션', h.indexOf(k), plan.update.row), values: [[plan.update.cells[k]]] }))); }
   return true;
+}
+// ── 지우기 · 되살리기 (C2-3) — 언제나 한 줄씩, 지우기 직전에 그 줄의 기록ID 를 다시 확인한다 ──
+async function appendTo(id, title, row) { await gapi(SH + id + '/values/' + rng(title, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: [row] } }); }
+async function deleteOneRow(id, sheetId, row) { await gapi(SH + id + ':batchUpdate', { method: 'POST', body: { requests: [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex: row - 1, endIndex: row } } }] } }); }
+async function trashTabId(s, make) {
+  const find = m => (m.sheets || []).map(x => x.properties).find(p => p.title === TRASH_TAB);
+  let t = find(await sheetMeta(s.id));
+  if (!t && make) {
+    await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: TRASH_TAB } } }] } });
+    t = find(await sheetMeta(s.id));
+  }
+  // 머리글 확인 · 복구 — 만들다 끊겨 빈 탭이거나 백업 줄이 첫 줄에 들어갔어도 바로잡는다 (남의 탭이면 손대지 않는다)
+  if (t && make) {
+    const st = trashHeadState(((await readRange(s.id, TRASH_TAB, '1:1'))[0]) || []);
+    if (st === 'data') await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ insertDimension: { range: { sheetId: t.sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, inheritFromBefore: false } }] } });
+    if (st === 'empty' || st === 'data') await batchValues(s.id, [{ range: "'" + TRASH_TAB + "'!A1", values: [TRASH_HEAD] }]);
+    if (st === 'other') throw new Error("시트의 '휴지통' 탭 첫 줄이 앱이 쓰는 머리글이 아닙니다.\n그 탭 이름을 바꾸거나 첫 줄을 비워 주세요 — 지우지 않았습니다.");
+  }
+  return t ? t.sheetId : null;
+}
+async function deleteVisit(v) {
+  if (!(await ensurePrepared())) return false;
+  const { s, title, head, map } = await freshHead();
+  const { cur } = await readRowById(s, title, map, v.id);                 // 그 기록이 맞는 줄을 읽고
+  await trashTabId(s, true);
+  const tr = trashRow(head, cur, v, stampLocal(Date.now()), USER ? USER.email : '');
+  const ex = findRowById((await readTab(s.id, TRASH_TAB)).map(x => [x[0]]), v.id);
+  if (ex === -2) throw new Error('휴지통에 이 기록이 이미 둘 있습니다 — 지우지 않았습니다.\n시트의 휴지통 탭에서 한쪽을 정리해 주세요.');
+  if (ex > 0) await batchValues(s.id, [{ range: a1(TRASH_TAB, 0, ex), values: [tr] }]);   // 앞서 지우다 멈춘 백업이 있으면 지금 내용으로 덮어쓴다(둘로 늘지 않게)
+  else await appendTo(s.id, TRASH_TAB, tr);                                                 // 휴지통에 옮겨 적고
+  if (!backupMatches(await readTab(s.id, TRASH_TAB), v.id, tr[5])) throw new Error('휴지통에 옮겨 적은 것을 확인하지 못해 지우지 않았습니다.');
+  const { r: r2 } = await readRowById(s, title, map, v.id);               // 그 줄이 아직 그 기록인지 다시 보고
+  await deleteOneRow(s.id, DATA.tab.sheetId, r2);                          // 그 한 줄만 지운다
+  return true;
+}
+async function readTrash(s) { return (await trashTabId(s, false)) == null ? [] : parseTrash(await readTab(s.id, TRASH_TAB)); }
+async function dropTrashRow(s, recId) {
+  const sid = await trashTabId(s, false); if (sid == null) return;
+  const r = findRowById(await readRange(s.id, TRASH_TAB, 'A:A'), recId);
+  if (r === -2) throw new Error('휴지통에 같은 기록ID 가 둘 있습니다 — 지우지 않았습니다.');
+  if (r > 0) await deleteOneRow(s.id, sid, r);
+}
+// 되살리기 — 응답 탭에 이미 있으면(지우기가 중간에 멈췄던 경우) 휴지통 줄만 걷는다
+async function restoreTrash(recId) {
+  const { s, title, head, map } = await freshHead(), it = (await readTrash(s)).find(x => x.id === recId);
+  if (!it) throw new Error('휴지통에서 이 기록을 찾지 못했습니다.');
+  let lost = [];
+  if (findRowById(await readRange(s.id, title, colLetter(map['@기록ID']) + ':' + colLetter(map['@기록ID'])), recId) === -1) {
+    const rr = restoreRow(head, it.json); if (rr.bad) throw new Error('휴지통 줄이 깨져 되살리지 못했습니다.');
+    await appendTo(s.id, title, rr.row); lost = rr.lost;
+  }
+  await dropTrashRow(s, recId);
+  return lost;
 }
 const BUSY = { on: false };
 async function busy(fn) { if (BUSY.on) return; BUSY.on = true; document.body.classList.add('busy'); try { return await fn(); } finally { BUSY.on = false; document.body.classList.remove('busy'); } }
@@ -1164,6 +1271,7 @@ const IC = {
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   gear: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg>',
   cal: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>',
   out: '<svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M10 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4"/></svg>',
   n_list: '<svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>',
@@ -1251,7 +1359,7 @@ function sheetRowUrl(v) { const s = saved().sheet; return s && DATA.tab ? 'https
 function lDetail(L) {
   const v = byKey(L.key); if (!v) return lhead('', L) + '<div class="ph-body"><p class="empty">이 기록을 찾지 못했습니다.</p></div>';
   let h = lhead('', L, ['menu', '이 기록 메뉴', 'menu']) + '<div class="ph-body">';
-  if (S.menu === v.key) h += '<div class="pop"><button data-act="edit" data-v="' + esc(v.key) + '">' + IC.pen + '고치기</button><a href="' + esc(sheetRowUrl(v)) + '" target="_blank" rel="noopener">' + IC.out + '시트에서 이 줄 열기</a></div>';
+  if (S.menu === v.key) h += '<div class="pop"><button data-act="edit" data-v="' + esc(v.key) + '">' + IC.pen + '고치기</button><a href="' + esc(sheetRowUrl(v)) + '" target="_blank" rel="noopener">' + IC.out + '시트에서 이 줄 열기</a><button class="danger" data-act="delrec" data-v="' + esc(v.key) + '">' + IC.trash + '지우기 (휴지통으로)</button></div>';
   if (v.review) h += '<div class="review"><b>확인 필요</b> · 자동으로 들어온 기록입니다. 확인 단추는 C2 에서 열립니다.</div>';
   if (v.archived) h += '<div class="review" style="background:var(--s2)">보관된 기록입니다. 시트에는 그대로 있습니다.</div>';
   h += '<button data-act="person" data-v="' + esc(v.name) + '"><div class="dt-name">' + esc(v.name || '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
@@ -1499,6 +1607,20 @@ function lEdit(L) {
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '시트에 적기') + '</button></div>';
 }
 function topLayer() { return S.layers[S.layers.length - 1]; }
+function lTrash(L) {
+  let h = lhead('휴지통', L) + '<div class="ph-body"><p class="muted">지운 기록은 시트의 \'휴지통\' 탭에 그대로 있습니다. 되살리면 처음 모습 그대로 돌아오고, 할 일 체크와 덧붙임도 다시 붙습니다.</p>';
+  if (L.loading) return h + '<p class="empty">읽는 중…</p></div>';
+  if (L.err) return h + '<p class="empty">' + esc(L.err) + '</p></div>';
+  if (!(L.items || []).length) return h + '<p class="empty">휴지통이 비어 있습니다.</p></div>';
+  h += L.items.map(it => '<div class="trow"><div><b>' + esc(it.name || '(이름 없음)') + '</b> <span class="muted">' + md(it.ymd) + ' 심방</span><div class="t2">' + esc(firstLine(it.text)).slice(0, 60) + '</div><small class="muted">' + esc(it.at) + ' 지움</small></div>' +
+    '<div class="tbtn"><button class="btn" data-act="trestore" data-v="' + esc(it.id) + '">되살리기</button><button class="send danger" data-act="tpurge" data-v="' + esc(it.id) + '">완전히 지우기</button></div></div>').join('');
+  return h + '</div>';
+}
+async function loadTrash(L) {
+  L.loading = true; L.err = ''; render();
+  try { L.items = await readTrash(saved().sheet); } catch (e) { L.err = '휴지통을 읽지 못했습니다\n' + e.message; }
+  L.loading = false; render();
+}
 function openEdit(key) {
   if (key) { const v = byKey(key); if (!v) return; openLayer('edit', { key, row: v.row, form: recordFromVisit(v) }); }
   else { const last = null; openLayer('edit', { key: null, form: blankRecord(today(), last) }); }
@@ -1539,6 +1661,7 @@ function lSettings(L) {
     '<div class="srow"><span class="t">보관 기록 함께 보기</span><button class="tgl' + (S.showArch ? ' on' : '') + '" data-act="arch" aria-label="보관 기록 함께 보기"></button></div></div>';
   h += '<div class="h-sec">그 밖에</div><div class="set"><div class="srow"><span class="t">오래 못 만남 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [14, 21, 28, 42].map(n => '<button class="opt" data-act="stale" data-v="' + n + '" aria-pressed="' + (pf.stale === n) + '">' + n / 7 + '주</button>').join('') + '</div></div>' +
+    '<button class="srow" data-act="trash"><span class="t">휴지통</span><span class="v">›</span><div class="d" style="text-align:left">지운 기록 되살리기</div></button>' +
     '<button class="srow" data-act="layer" data-v="c0"><span class="t">연결 시험 (C0)</span><span class="v">›</span><div class="d" style="text-align:left">시트 · 폼 · 캘린더가 앱과 맞물리는지 다시 확인합니다</div></button></div>';
   h += '<p class="muted" style="margin-top:22px">심방 노트 ' + APP_VERSION + ' · 심방 내용은 구글 시트에만 있고, 이 앱은 화면에 띄우기만 합니다. 고른 시트 · 폼과 위 기준은 계정에 저장되어 다른 기기에서도 같게 열립니다.</p>';
   return h + '</div>';
@@ -1676,7 +1799,7 @@ function gate() {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -1824,6 +1947,33 @@ document.addEventListener('click', e => {
       const to = !act.done; act.done = to; render();
       try { if (!(await writeCheck(vv, act, to))) { act.done = !to; render(); return; } toast(to ? '마침으로 표시했습니다' : '다시 할 일로 돌렸습니다', 2500); await loadData(true); }
       catch (e) { act.done = !to; render(); toast('저장하지 못했습니다\n' + e.message); }
+    });
+    return;
+  }
+  if (a === 'trash') { openLayer('trash'); loadTrash(topLayer()); return; }
+  if (a === 'delrec') {
+    const vv = byKey(v); if (!vv) return; S.menu = null;
+    if (!confirm('이 기록을 휴지통으로 옮길까요?\n\n시트의 \'휴지통\' 탭에 그대로 남고,\n설정 › 휴지통에서 언제든 되살릴 수 있습니다.')) { render(); return; }
+    busy(async () => {
+      try {
+        if (!(await deleteVisit(vv))) return;
+        S.layers = S.layers.filter(L => L.key !== vv.key); render();
+        toast('휴지통으로 옮겼습니다\n' + vv.name + ' · ' + md(vv.ymd), 0, { label: '되돌리기', fn: () => busy(async () => {
+          try { await restoreTrash(vv.id); toast('되살렸습니다'); await loadData(true); } catch (e) { toast('되살리지 못했습니다\n' + e.message); } }) });
+        await loadData(true);
+      } catch (e) { toast('지우지 못했습니다\n' + e.message); }
+    });
+    return;
+  }
+  if (a === 'trestore' || a === 'tpurge') {
+    const L = topLayer(); if (!L || L.type !== 'trash') return;
+    if (a === 'tpurge' && !confirm('완전히 지울까요?\n\n시트의 휴지통 탭에서도 없어져 되살릴 수 없습니다.')) return;
+    busy(async () => {
+      try {
+        if (a === 'trestore') { const lost = await restoreTrash(v); toast('되살렸습니다' + (lost.length ? '\n지금 시트에 없는 칸(' + lost.join(', ') + ')은 빠졌습니다' : '')); }
+        else { await dropTrashRow(saved().sheet, v); toast('완전히 지웠습니다'); }
+        await loadTrash(L); await loadData(true);
+      } catch (e) { toast((a === 'trestore' ? '되살리지' : '지우지') + ' 못했습니다\n' + e.message); }
     });
     return;
   }
