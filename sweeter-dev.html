@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-8  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-9  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7042,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-8";
+const APP_VERSION = "v. 26-1107-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -25217,7 +25217,7 @@ function _lsDiagRender(){
   let h='<div class="lsd-bar'+(r.warn?' warn':'')+'"><i style="width:'+Math.min(100,Math.max(r.tot?1:0,r.pct))+'%"></i></div>'+
     '<div class="lsd-head">'+esc(_lsdN(r.tot))+' 씀 · 한도 약 260만 자의 '+r.pct+'%</div>'+
     line('지금 상태',_lsdN(r.st),'할일 · 말씀 · 기록 전부')+
-    line('동기화 기준점',_lsdN(r.base),'같은 내용 한 벌 더')+
+    line('동기화 기준점',_lsdN(r.base),'같은 내용 한 벌 더 · 줄여 둠')+
     (r.mine?line('이 앱 그 밖',_lsdN(r.mine),'화면 기억 · 충돌 기록 등'):'');
   r.apps.forEach(([a,n])=>{h+=line(a,_lsdN(n));});
   if(typeof _lsTight!=='undefined'&&_lsTight)h+='<div class="lsd-warn">⚠ 이번에 이 기기에 적지 못한 적이 있어요 — 클라우드에는 그대로 올라가요</div>';
@@ -52113,7 +52113,6 @@ if(typeof window!=='undefined')window._fbHasPending=function(){
 };
 // 기기 로컬 전용. 이름은 _lsk 가 제품·빌드별로 가른다 (위 '이 기기 전용 저장 키 이름').
 const _FB_BASE_KEY=_lsk('syncbase'),_FB_META_KEY=_lsk('syncmeta');
-
 function _fbSetBase(json,rev,uid){
   _fbBaseJson=json;
   _fbLastSeenRev=(typeof rev==='number')?rev:0;
@@ -52124,7 +52123,7 @@ function _fbSetBase(json,rev,uid){
   //    적다가 하나라도 실패하면 둘 다 치운다 (기준점·메타가 어긋난 채 남지 않게).
   try{
     if(typeof _lsTight!=='undefined'&&_lsTight)throw 0;
-    localStorage.setItem(_FB_BASE_KEY,json||'');
+    localStorage.setItem(_FB_BASE_KEY,_lszPack(json));   // 압축해서 (아래 '기준점 압축')
     localStorage.setItem(_FB_META_KEY,JSON.stringify({rev:_fbLastSeenRev,uid:uid||(_fbUser&&_fbUser.uid)||null,at:Date.now()}));
   }catch(e){try{localStorage.removeItem(_FB_BASE_KEY);localStorage.removeItem(_FB_META_KEY);}catch(e2){}}
 }
@@ -52136,7 +52135,7 @@ function _fbLoadPersistedBase(uid){
     //    '이 기기에 못 적은 것' 이다. 기준점 없이 켜면 클라우드를 그대로 받는다 — 클라우드는 기준점보다 늘 같거나 새것이다.
     //    옛 메타(at 없음)는 예전대로 믿는다.
     if(meta.at){const st=+(localStorage.getItem(_lsk('stsaved'))||0);if(!(st>=meta.at))return null;}
-    const json=localStorage.getItem(_FB_BASE_KEY);
+    const json=_lszUnpack(localStorage.getItem(_FB_BASE_KEY));   // 두 모양 다 · 못 풀면 null = 기준점 없음
     if(!json)return null;
     return{json,rev:(typeof meta.rev==='number')?meta.rev:0};
   }catch(e){return null;}
@@ -52149,6 +52148,57 @@ function _fbBaseObj(){
   if(!_fbBaseJson)return null;
   try{return JSON.parse(_fbBaseJson);}catch(e){return null;}
 }
+// ── 기준점 압축 (v. 26-1107-9, 1107-SW 6 — HB 아이패드 BLOCK7 64% · Sweeter 59%) ──
+// 기준점은 상태 한 벌 통째라 ST 만큼 크다(그때 76만 자씩, 칸의 3분의 1). 병합할 때만 읽으니 줄여 둔다.
+// ST(켤 때 첫 그림이 읽는다)는 그대로 둔다 — 저장마다 압축 비용이 들어서 다음 일이다.
+// 모양: 'z1:<바이트 수>:<글자 수>:' + zlib(UTF-8 JSON) 을 한 글자에 15비트씩(U+0020~U+801F —
+//   짝 없는 서로게이트가 생기지 않아 어느 브라우저 저장 칸에서도 글자가 바뀌지 않는다).
+// 읽기는 **두 모양 다** — '{' 로 시작하면 예전 JSON. 그 밖이거나 풀다 틀리면 **기준점 없음**
+//   (= 클라우드 그대로 받기, B-46 의 안전한 쪽). 깨진 기준점으로 병합하면 '지웠다' 로 읽힌다.
+// ⚠️ fflate 의 unzlibSync 는 검사합(adler32)을 보지 않는다 → 직접 셈해 견주고, 글자 수 · 앞뒤 '{' '}' 도 본다.
+// ⚠️ fflate 가 없으면 예전 JSON 그대로 적는다(읽기가 둘 다 읽으니 섞여도 된다).
+// ⚠️ 메모리의 _fbBaseJson 은 늘 JSON 이다 — 압축은 기기 저장 칸에 적고 읽을 때만.
+function _lszPack(json){
+  json=String(json||'');
+  if(!json||typeof fflate==='undefined')return json;
+  try{
+    const u=fflate.zlibSync(fflate.strToU8(json),{level:4});
+    const parts=[],buf=[];let acc=0,bits=0;
+    for(let i=0;i<u.length;i++){
+      acc=(acc<<8)|u[i];bits+=8;
+      if(bits>=15){bits-=15;buf.push(((acc>>>bits)&0x7FFF)+32);acc&=(1<<bits)-1;
+        if(buf.length>=8192){parts.push(String.fromCharCode.apply(null,buf));buf.length=0;}}
+    }
+    if(bits>0)buf.push(((acc<<(15-bits))&0x7FFF)+32);
+    if(buf.length)parts.push(String.fromCharCode.apply(null,buf));
+    return 'z1:'+u.length+':'+json.length+':'+parts.join('');
+  }catch(e){return json;}
+}
+function _lszUnpack(s){
+  if(typeof s!=='string'||!s)return null;
+  if(s.charCodeAt(0)===123)return s;                 // '{' — 예전 모양
+  try{
+    const m=/^z1:(\d+):(\d+):/.exec(s);
+    if(!m||typeof fflate==='undefined')return null;
+    const n=+m[1],len=+m[2],u=new Uint8Array(n);
+    let acc=0,bits=0,j=0,i=m[0].length;
+    for(;i<s.length&&j<n;i++){
+      const c=s.charCodeAt(i)-32;if(c<0||c>0x7FFF)return null;
+      acc=(acc<<15)|c;bits+=15;
+      while(bits>=8&&j<n){bits-=8;u[j++]=(acc>>>bits)&255;}
+      acc&=(1<<bits)-1;
+    }
+    if(j<n||i!==s.length||n<6)return null;           // 모자라거나 남으면 깨진 것
+    const d=fflate.unzlibSync(u);
+    let a=1,b=0;                                     // 검사합(adler32)을 직접 본다
+    for(let k=0;k<d.length;){const e=Math.min(k+3800,d.length);for(;k<e;k++){a+=d[k];b+=a;}a%=65521;b%=65521;}
+    if((((b<<16)|a)>>>0)!==(((u[n-4]<<24)|(u[n-3]<<16)|(u[n-2]<<8)|u[n-1])>>>0))return null;
+    const json=fflate.strFromU8(d);
+    if(json.length!==len||json.charCodeAt(0)!==123||json.charCodeAt(len-1)!==125)return null;
+    return json;
+  }catch(e){return null;}
+}
+
 
 // ── 3자 병합 엔진 ──
 // base=마지막 일치점(모르면 null) / local=이 기기의 ST / cloud=지금 클라우드.

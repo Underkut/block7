@@ -22,8 +22,10 @@
 //  ② 제품·빌드가 갈리면 이름도 갈린다
 //  ③ 옛 규칙이면 사고가 **실제로 재현된다** (이 시험이 거짓 안심이 아니라는 증거)
 //  ④ 새 규칙이면 클라우드가 살아남는다
-const { SRC, sliceDev, makeScorer } = require('./_load');
+const { SRC, slice, sliceDev, makeScorer } = require('./_load');
 const sc = makeScorer();
+// 기준점 압축(v. 26-1107-9, 시나리오 8) — 앱 안의 fflate 를 진짜 앱처럼 전역에 둔다
+new Function(slice('<script id="fflate">', '</script>').replace('<script id="fflate">', ''))();
 
 global.document={visibilityState:'visible',addEventListener:()=>{}};
 
@@ -170,6 +172,32 @@ console.log('\n시나리오 6 — 로그아웃은 제 칸만 지운다');
   asProduct('b7v1_sweeter_dev',()=>_fbClearBase());
   sc.eq('Sweeter 칸만 지워졌다', STORE['b7v1_sweeter_dev_syncbase'], undefined);
   sc.eq('BLOCK7 칸은 그대로다', STORE['b7v1_syncbase']!==undefined, true);
+}
+
+// ═══ 8. 기준점을 압축해 적어도 제 칸만 읽는다 (v. 26-1107-9, 1107-SW 6) ═══
+console.log('\n시나리오 8 — 압축 기준점도 제품마다 따로');
+{
+  Object.keys(STORE).forEach(k=>delete STORE[k]);
+  const stamp=()=>localStorage.setItem(_lsk('stsaved'),String(Date.now()+1000));
+  const a=fullState(),b=fullState();b.verseCollections[0].verses.length=10;
+  asProduct('b7v1',()=>{_fbSetBase(J(a),7,'hb');stamp();});
+  asProduct('b7v1_sweeter',()=>{_fbSetBase(J(b),3,'hb');stamp();});
+  sc.eq('둘 다 압축 모양으로 제 칸에', [STORE['b7v1_syncbase'].slice(0,3),STORE['b7v1_sweeter_syncbase'].slice(0,3)], ['z1:','z1:']);
+  sc.eq('⭐ 각자 제 것을 그대로 되읽는다', [
+    asProduct('b7v1',()=>(_fbLoadPersistedBase('hb')||{}).json)===J(a),
+    asProduct('b7v1_sweeter',()=>(_fbLoadPersistedBase('hb')||{}).json)===J(b)], [true,true]);
+  // 새로 설치한 Sweeter 개발본 — BLOCK7 의 압축 기준점이 같은 도메인에 있어도 못 읽는다 → 방어가 켜진다
+  const got=asProduct('b7v1_sweeter_dev',()=>_fbLoadPersistedBase('hb'));
+  sc.eq('⭐ 남의 압축 기준점을 읽지 않는다', got, null);
+  const out=asProduct('b7v1_sweeter_dev',()=>_fbMergeGuarded(got,emptyState(),fullState(),false));
+  sc.eq('⭐ 말씀이 살아남는다', nVerses(out), 40);
+  // 한쪽은 예전 JSON, 한쪽은 압축 — 섞여 있어도 각자 읽는다 (판을 늦게 받은 기기)
+  STORE['b7v1_syncbase']=J(a);
+  sc.eq('예전 모양 · 압축 모양이 섞여도', [
+    asProduct('b7v1',()=>(_fbLoadPersistedBase('hb')||{}).json)===J(a),
+    asProduct('b7v1_sweeter',()=>(_fbLoadPersistedBase('hb')||{}).json)===J(b)], [true,true]);
+  asProduct('b7v1_sweeter',()=>_fbClearBase());
+  sc.eq('로그아웃은 제 칸만', [STORE['b7v1_sweeter_syncbase'],STORE['b7v1_syncbase']!==undefined], [undefined,true]);
 }
 
 // ═══ 7. 클라우드 문서는 여전히 **하나를 같이 쓴다** ═══
