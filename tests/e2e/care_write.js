@@ -9,6 +9,7 @@
 //  ⑤ 할 일 체크 → '액션' 탭에 한 줄 · 풀기 → 같은 줄의 상태만
 //  ⑥ 덧붙이기 → '덧붙임' 탭에 한 줄, 원래 이야기는 그대로
 //  ⑦ 폼 줄(타임스탬프 · 질문 칸)은 앱 열 말고는 한 글자도 안 바뀐다
+//  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
 const FILE = 'file://' + path.join(__dirname, '..', '..', 'care', 'index.html');
@@ -58,6 +59,7 @@ async function route(r) {
     body.requests.forEach(q => {
       if (q.appendDimension) tab(SHEET.tabs.find(t => t.id === q.appendDimension.sheetId).title).cols += q.appendDimension.length;
       if (q.addSheet) SHEET.tabs.push({ id: SHEET.tabs.length, title: q.addSheet.properties.title, cols: 26, rows: [] });
+      if (q.deleteDimension) { const g = q.deleteDimension.range; SHEET.tabs.find(t => t.id === g.sheetId).rows.splice(g.startIndex, g.endIndex - g.startIndex); }
     });
     LOG.push(['struct', body.requests.map(q => Object.keys(q)[0])]); return json({});
   }
@@ -149,6 +151,37 @@ async function route(r) {
   eq('⑥ 원래 이야기는 그대로', R.rows[1][5], '첫 이야기');
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/detail.png' });
   eq('⑥ 상세에 덧붙임이 보인다', await page.$$eval('.layer .addn', x => x.map(e => e.textContent).join('')).then(t => t.includes('나중에 들은 이야기')), true);
+
+  // ⑧ 지우기 — '새사람'
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  const before = R.rows.map(r => JSON.stringify(r)), victim = R.rows.find(r => r[2] === '새사람'), vid = victim[9];
+  const others = before.filter(x => !x.includes('"새사람"'));
+  const del = async () => {
+    await page.click('.card:has-text("새사람")'); await tidy();
+    await page.click('.layer [data-act="menu"]'); await tidy();
+    await page.click('.layer [data-act="delrec"]'); await page.waitForTimeout(1200);
+  };
+  await del();
+  const T = () => tab('휴지통').rows;
+  eq('⑧ 응답 탭에서 그 한 줄만 빠졌다 (나머지 줄은 그대로)', [R.rows.length, JSON.stringify(R.rows.map(r => JSON.stringify(r)))], [before.length - 1, JSON.stringify(others)]);
+  eq('⑧ 휴지통 탭에 기록ID · 이름 · 원래 줄', [T()[0][0], T()[1][0] === vid, T()[1][1], JSON.parse(T()[1][5])['내용']], ['기록ID', true, '새사람', '새로 적은 이야기\n둘째 줄']);
+  eq('⑧ 목록에서 사라졌다', await page.$$eval('.card .nm', x => x.map(e => e.textContent).includes('새사람')), false);
+  await page.click('.toast-act'); await page.waitForTimeout(1200);
+  const back = R.rows.find(r => r[9] === vid);
+  eq('⑧ 되돌리기 → 같은 기록ID · 같은 칸으로 돌아오고 휴지통은 비었다', [JSON.stringify(back) === JSON.stringify(victim), T().length], [true, 1]);
+  await del();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('.layer [data-act="trash"]'); await page.waitForTimeout(900);
+  eq('⑧ 설정 › 휴지통에 보인다', await page.$$eval('.layer .trow b', x => x.map(e => e.textContent)), ['새사람']);
+  await page.click('.layer [data-act="trestore"]'); await page.waitForTimeout(1200);
+  eq('⑧ 휴지통에서 되살리기 → 돌아오고 휴지통 비움', [!!R.rows.find(r => r[9] === vid), T().length], [true, 1]);
+  for (let i = 0; i < 3; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await del();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('.layer [data-act="trash"]'); await page.waitForTimeout(900);
+  await page.click('.layer [data-act="tpurge"]'); await page.waitForTimeout(1200);
+  eq('⑧ 완전히 지우기 → 휴지통 · 응답 탭 어디에도 없다', [T().length, !!R.rows.find(r => r[9] === vid)], [1, false]);
+  eq('⑧ 할 일 · 덧붙임 탭은 지우기와 상관없이 그대로', [tab('액션').rows.length, tab('덧붙임').rows.length], [2, 2]);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
