@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-7  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-8  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4820,6 +4820,17 @@ html[data-theme="light"] .sec-edit-time-inp{color-scheme:light;}
 .sg.sg-empty{display:none;}
 .sg-card{background:var(--bg);border-radius:16px;padding:0 14px;}
 .sg-card.sg-pad{padding:14px;}
+/* 이 기기 저장 칸 (v. 26-1107-8) — 얇은 막대 하나 + 이름 · 크기 줄 */
+#lsDiagBody .lsd-bar{height:3px;border-radius:2px;background:var(--bd);overflow:hidden;margin:2px 0 10px;}
+#lsDiagBody .lsd-bar i{display:block;height:100%;background:var(--ac);border-radius:2px;}
+#lsDiagBody .lsd-bar.warn i{background:var(--danger,#e5484d);}
+#lsDiagBody .lsd-head{font-size:13px;color:var(--tx);font-weight:400;margin-bottom:6px;}
+#lsDiagBody .lsd-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;font-size:12.5px;color:var(--tx2);font-weight:300;}
+#lsDiagBody .lsd-row em{font-style:normal;color:var(--tx3);font-size:11px;margin-left:6px;}
+#lsDiagBody .lsd-row b{font-weight:400;color:var(--tx);font-family:var(--font-number);white-space:nowrap;}
+#lsDiagBody .lsd-warn{font-size:12px;color:var(--danger,#e5484d);margin-top:8px;line-height:1.5;}
+#lsDiagBody .lsd-note{font-size:11px;color:var(--tx3);margin-top:8px;line-height:1.55;font-weight:300;}
+#lsDiagBody .lsd-top{word-break:break-all;}
 .sg-card>*{border-top:1px solid var(--bd);}
 .sg-card>.sg-top,.sg-card>.sg-fold,.sg-card.sg-pad>*{border-top:0;}
 .sg-card>.settings-row,.sg-fold .settings-row{padding:13px 0;gap:12px;align-items:center;}
@@ -7031,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-7";
+const APP_VERSION = "v. 26-1107-8";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7688,6 +7699,12 @@ try{
         </div>
         <input type="file" id="importFileInput2" accept="application/json" style="display:none" onchange="importBackup(this.files[0])">
         </div>
+      </div>
+
+      <!-- 이 기기 저장 칸 (v. 26-1107-8, 1107-SW 6) — 읽기만 · 그리는 것은 _lsDiagRender. 접힌 제목 줄 끝이 '한 줄' 이다 -->
+      <div class="sg" id="sgLsDiag">
+        <div class="sg-h">이 기기 저장 칸</div>
+        <div class="sg-card sg-pad"><div id="lsDiagBody"></div></div>
       </div>
 
       <!-- 동기화 충돌 — 늘 보인다 · 처음엔 접힘 (v26-1025-12, HB). 예전엔 0건이면 숨어서 '없어졌다' 로 보였다 -->
@@ -14773,6 +14790,7 @@ function switchVerseSettingsTab(id,btn,direction){
   const idx=list.indexOf(id);
   if(idx<0)return;
   _currentVerseSettingsTabIdx=idx;
+  if(id==='account')try{_lsDiagRender();}catch(e){}   // 저장 칸 숫자는 열 때마다 새로 (Sweeter 계정 탭)
   if(btn)_setTabMemPut('v',id);   // 탭 단추를 누른 것 — 다음에 이 탭으로 연다 (v26-1024-19)
 
   const track=document.getElementById('verseSettingsTabTrack');
@@ -25138,6 +25156,85 @@ function rawSave(){
   _lsPutST();
   if(typeof fbPushState==='function')fbPushState();
 }
+// ── 이 기기 저장 칸 진단 (v. 26-1107-8, 1107-SW 6 — HB) ──
+// 설정 '계정' 탭의 묶음 '이 기기 저장 칸' 한 줄. **읽기만 한다** — 무엇도 지우거나 고쳐 쓰지 않는다.
+// 까닭: 이 기기에 상태 전체를 두 벌(ST + 동기화 기준점) 압축 없이 두고, sweeter.my 의 다른 앱
+//    (기도노트 · 심방 · 셀 · 사역)도 같은 칸을 나눠 쓴다. 사파리는 사이트마다 약 5MB(한글 한 글자 2바이트 → 약 260만 자).
+//    차면 조용히 못 적는다(B-46 · `_lsPutST`). 압축할지는 HB 기기들의 실제 숫자를 보고 정한다 — 그 숫자를 보는 자리.
+// ⚠️ 글자 수로 센다(키 + 값). 바이트로 바꾸지 말 것 — 한도 '약 260만 자' 와 같은 자로 재야 % 가 맞다.
+// ⚠️ 다른 앱 이름표는 이름 앞머리로만 짐작한다. 모르는 것은 '그 밖' — 틀린 이름보다 낫다.
+const _LSD_LIMIT=2.6e6;
+function _lsdFamily(k){       // b7v1 집안: 가장 긴 앞머리 = 그 키의 주인 (b7v1_sweeter_dev ⊃ b7v1_sweeter ⊃ b7v1)
+  const fam=['b7v1_sweeter_dev','b7v1_sweeter','b7v1_dev','b7v1'];
+  for(const p of fam)if(k===p||k.indexOf(p+'_')===0)return p;
+  return '';
+}
+function _lsdAppName(k){
+  const f=_lsdFamily(k);
+  if(f)return {b7v1:'BLOCK7',b7v1_dev:'BLOCK7 개발본',b7v1_sweeter:'Sweeter',b7v1_sweeter_dev:'Sweeter 개발본'}[f];
+  const t=[[/^pray/,'기도노트'],[/^b7care/,'심방 노트'],[/^cell_/,'셀 한눈에'],[/^report_/,'사역 한눈에'],[/^b7timer/,'타이머'],[/^(b7wallet|wallet)/,'용돈 친구들'],[/^(b7study|study)/,'공부 친구들']];
+  for(const [re,n] of t)if(re.test(k))return n;
+  return '그 밖';
+}
+// rows = [[키, 값 글자 수], …] · me = 이 앱의 저장 칸 이름(LS_KEY)
+function _lsDiagCalc(rows,me){
+  const r={tot:0,st:0,base:0,mine:0,apps:[],top:[],pct:0,warn:false};
+  const apps={};
+  (rows||[]).forEach(([k,n])=>{
+    const sz=String(k).length+(+n||0);r.tot+=sz;
+    r.top.push([k,sz]);
+    if(k===me)r.st+=sz;
+    else if(k===me+'_syncbase'||k===me+'_syncmeta')r.base+=sz;
+    else if(_lsdFamily(k)===_lsdFamily(me)&&_lsdFamily(me))r.mine+=sz;
+    else{const a=_lsdAppName(k);apps[a]=(apps[a]||0)+sz;}
+  });
+  r.apps=Object.keys(apps).map(a=>[a,apps[a]]).sort((a,b)=>b[1]-a[1]);
+  r.top.sort((a,b)=>b[1]-a[1]);r.top=r.top.slice(0,6);
+  r.pct=Math.round(r.tot/_LSD_LIMIT*100);
+  r.warn=r.pct>=70;
+  return r;
+}
+function _lsdN(n){            // 840000 → '84만 자' · 52000 → '5.2만 자' · 3100 → '3.1천 자'
+  n=+n||0;
+  if(n>=1e5)return Math.round(n/1e4)+'만 자';
+  if(n>=1e4)return (Math.round(n/1e3)/10)+'만 자';
+  if(n>=1e3)return (Math.round(n/1e2)/10)+'천 자';
+  return n+'자';
+}
+function _lsDiagSumText(r){return (r.warn?'⚠ ':'')+_lsdN(r.tot)+' · '+r.pct+'%';}
+let _lsDiagLast=null;
+function _lsDiagRead(){
+  const rows=[];
+  try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);rows.push([k,(localStorage.getItem(k)||'').length]);}}catch(e){}
+  return _lsDiagCalc(rows,LS_KEY);
+}
+function _lsDiagRender(){
+  const box=document.getElementById('lsDiagBody');if(!box)return;
+  let r;try{r=_lsDiagRead();}catch(e){return;}
+  _lsDiagLast=r;
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const line=(a,b,sub)=>'<div class="lsd-row"><span>'+esc(a)+(sub?'<em>'+esc(sub)+'</em>':'')+'</span><b>'+esc(b)+'</b></div>';
+  let h='<div class="lsd-bar'+(r.warn?' warn':'')+'"><i style="width:'+Math.min(100,Math.max(r.tot?1:0,r.pct))+'%"></i></div>'+
+    '<div class="lsd-head">'+esc(_lsdN(r.tot))+' 씀 · 한도 약 260만 자의 '+r.pct+'%</div>'+
+    line('지금 상태',_lsdN(r.st),'할일 · 말씀 · 기록 전부')+
+    line('동기화 기준점',_lsdN(r.base),'같은 내용 한 벌 더')+
+    (r.mine?line('이 앱 그 밖',_lsdN(r.mine),'화면 기억 · 충돌 기록 등'):'');
+  r.apps.forEach(([a,n])=>{h+=line(a,_lsdN(n));});
+  if(typeof _lsTight!=='undefined'&&_lsTight)h+='<div class="lsd-warn">⚠ 이번에 이 기기에 적지 못한 적이 있어요 — 클라우드에는 그대로 올라가요</div>';
+  else if(r.warn)h+='<div class="lsd-warn">⚠ 거의 찼어요. 차면 이 기기에 적지 못해요(클라우드에는 올라가요)</div>';
+  h+='<div class="lsd-note">사파리 기준 사이트마다 약 5MB — 기기 용량과 따로예요. 같은 주소의 다른 앱도 이 칸을 나눠 써요.<span id="lsdIdb"></span></div>'+
+    '<div class="lsd-note lsd-top">큰 것: '+r.top.map(([k,n])=>esc(k)+' '+esc(_lsdN(n))).join(' · ')+'</div>';
+  box.innerHTML=h;
+  // 성경 · 그림 보관함(IndexedDB 등)은 한도가 따로다 — 있으면 덧붙이기만
+  try{
+    if(navigator.storage&&navigator.storage.estimate)navigator.storage.estimate().then(e=>{
+      const el=document.getElementById('lsdIdb');if(!el||!e||!e.usage)return;
+      el.textContent=' 성경 · 그림 보관함은 한도가 따로라 여기 세지 않아요(지금 '+(e.usage/1048576).toFixed(1)+'MB).';
+    }).catch(()=>{});
+  }catch(e){}
+  try{const g=box.closest('.sg');if(g&&typeof _sgFoldSum==='function')_sgFoldSum(g);}catch(e){}
+}
+// ── 이 기기 저장 칸 진단 끝 ──
 
 // ═══════ UNDO / REDO ═══════
 const UNDO_STACK=[];
@@ -47960,6 +48057,7 @@ function renderSettingsPanel(){
   const s=ST.settings;
   try{_gcalRenderSettings();}catch(e){}
   try{_siriRenderSettings();}catch(e){}
+  try{_lsDiagRender();}catch(e){}   // 이 기기 저장 칸 (v. 26-1107-8)
   try{_evChipSync();}catch(e){}
   setTimeout(_syncCondRows,0);   // 값들을 다 채운 뒤 보이기/감추기를 맞춘다
   document.getElementById('setAutoCarry').checked=!!s.autoCarryOver;
@@ -48891,6 +48989,7 @@ const _SG_FOLD={
   '명제 제목':'tablet','테마':'tablet',
   // 계정 탭 (v26-1025-8, HB) — 'all' = 폭과 상관없이 처음엔 접힘
   '구글 캘린더':'all','시리로 할일 넣기':'all','데이터 복구':'all','두 기기가 다르게 고친 것':'all',
+  '이 기기 저장 칸':'all',   // v. 26-1107-8 — 접힌 제목 줄 끝의 '84만 자 · 32%' 가 진단 한 줄
   // v26-1025-15 (HB "최대한 다 접을 수 있게") — 나머지 묶음도 접는다
   '하루':'phone','블럭':'phone','끝냈을 때':'phone','위 단추':'phone','설정창':'phone','색 묶음':'phone',
   '할일':'phone','이 기기':'phone','백업':'phone','시트 편집 문':'phone',
@@ -48904,7 +49003,8 @@ const _SG_FOLD={
 const _SG_FOLD_SUM={
   '테마':()=>{try{return _vfSelectedPatterns().map(k=>VF_PATTERNS[k].label).join(' · ');}catch(e){return '';}},
   '구글 캘린더':()=>{const e=document.getElementById('gcalStatus');return e?e.textContent.trim():'';},
-  '두 기기가 다르게 고친 것':()=>{try{const n=_cfOpenCount();return n?n+'건':'없음';}catch(e){return '';}}
+  '두 기기가 다르게 고친 것':()=>{try{const n=_cfOpenCount();return n?n+'건':'없음';}catch(e){return '';}},
+  '이 기기 저장 칸':()=>{try{return _lsDiagSumText(_lsDiagLast||_lsDiagRead());}catch(e){return '';}}
 };
 function _sgDevClass(){
   const w=document.documentElement.clientWidth||window.innerWidth||1200;   // 안드로이드: screen.width 아님
@@ -48922,6 +49022,7 @@ const _SG_FOLD_IC={
   '시리로 할일 넣기':'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>',
   '데이터 복구':'<path d="M7 18.5a4 4 0 0 1-.6-8A6 6 0 0 1 18 9.5a4.5 4.5 0 0 1 0 9z"/><path d="M12 16v-5M9.8 13l2.2-2.2 2.2 2.2"/>',
   '두 기기가 다르게 고친 것':'<path d="M12 20.5V13L6 6M12 13l6-7"/><path d="M6 10.5V6h4.5M18 10.5V6h-4.5"/>',
+  '이 기기 저장 칸':'<path d="M4.5 6c0-1.4 3.4-2.5 7.5-2.5s7.5 1.1 7.5 2.5-3.4 2.5-7.5 2.5S4.5 7.4 4.5 6zM4.5 6v12c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5V6M4.5 12c0 1.4 3.4 2.5 7.5 2.5s7.5-1.1 7.5-2.5"/>',
   '보일 것':'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
   '구간 제목 옆 말씀 기록':'<path d="M12 19.5C6 15 3.5 11.5 3.5 8.5A4.3 4.3 0 0 1 12 6.4a4.3 4.3 0 0 1 8.5 2.1c0 3-2.5 6.5-8.5 11z"/>',
   '태그 그림':'<path d="M3.5 12V4.5a1 1 0 0 1 1-1H12l8.5 8.5-8 8z"/><circle cx="8" cy="8" r="1.3"/>',
@@ -49065,6 +49166,7 @@ function switchSettingsTab(id,btn,direction){
   const idx=list.indexOf(id);
   if(idx<0)return;
   _currentSettingsTabIdx=idx;
+  if(id==='account')try{_lsDiagRender();}catch(e){}   // 저장 칸 숫자는 열 때마다 새로
   if(btn)_setTabMemPut('g',id);   // 탭 단추를 누른 것 — 다음에 이 탭으로 연다 (v26-1024-19)
 
   // Slide the track to show the correct panel
