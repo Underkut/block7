@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1107-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1107-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -4285,7 +4285,12 @@ body.split-d.lay2 #totalRow,body.split-d.lay3 #totalRow{cursor:grab;}
   font-family:var(--font-ui),sans-serif;
 }
 .auth-switch button.auth-signup{color:var(--bgd-tx);}
+.auth-forgot{text-align:center;margin-top:12px;font-size:12px;}
+.auth-forgot button{background:none;border:none;color:var(--tx3);font-size:12px;cursor:pointer;padding:0 4px;font-family:var(--font-ui),sans-serif;text-decoration:underline;text-underline-offset:3px;}
+.auth-forgot.hidden{display:none;}
+.auth-error.auth-ok{color:var(--tx2);}
 .auth-error{
+  white-space:pre-line;
   color:var(--ov);font-size:12px;margin-top:10px;text-align:center;
   min-height:16px;
 }
@@ -7019,7 +7024,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1107-4";
+const APP_VERSION = "v. 26-1107-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -7333,6 +7338,8 @@ window._fbScriptsReady=new Promise(resolve=>{
     </div>
 
     <button class="auth-btn" id="authSubmitBtn" onclick="authSubmit()">로그인</button>
+
+    <div class="auth-forgot" id="authForgotRow"><button type="button" onclick="authForgot()">비밀번호를 잊으셨나요?</button></div>
 
     <div class="auth-switch" id="authSwitchRow">
       계정이 없으신가요? <button class="auth-signup" onclick="authToggleMode()">회원가입</button>
@@ -51719,7 +51726,7 @@ function _upSafeNow(){
   if(_upBusyScreen())return false;
   return true;
 }
-// 지금 그 화면 안에 있는가 — There · 성경 · 말씀 전체화면 · 타일뷰 (1107-SW 2-a, v. 26-1107-4)
+// 지금 그 화면 안에 있는가 — There · 성경 · 말씀 전체화면 · 타일뷰 (1107-SW 2-a, v. 26-1107-5)
 //   There 를 켠 채 새 버전이 오면 토스트 + 새로 고침으로 기도가 끊겼다(시간은 pagehide 로 저장되지만).
 //   이 화면들 안에서는 미루고, 닫혀 홈으로 돌아오면 다시 본다(_upWaitHome).
 //   ⚠️ 이 조각은 시험(test_update)이 따로 떠서 돌린다 — 다른 구역의 이름은 typeof 로 물어본다.
@@ -51745,7 +51752,7 @@ function _upWaitHome(want){
     _upApply(want);
   },1500);
 }
-// Sweeter 는 **오래 켜 둔 창만** 새로 고친다 (1107-SW 2-b ㉡, v. 26-1107-4 · HB 2026-11-07 고름).
+// Sweeter 는 **오래 켜 둔 창만** 새로 고친다 (1107-SW 2-b ㉡, v. 26-1107-5 · HB 2026-11-07 고름).
 //   버전표는 2주에 110번 바뀌었고 대부분 BLOCK7 할일 변경인데, Sweeter 도 매번 화면이 새로 불러와졌다.
 //   ⚠️ 'Sweeter 파일이 달라졌을 때만' 은 못 가린다 — Sweeter 파일이 BLOCK7 코드를 통째로 품어 매번 달라진다.
 //   그래서: 켠 지 6시간이 안 된 창은 묻지도 않고, 넘은 창도 **다시 앞으로 불러올 때만**(보던 중에 갑자기 말고) 본다.
@@ -51872,6 +51879,34 @@ window.authToggleMode = function(){
     ? '계정이 없으신가요? <button class="auth-signup" onclick="authToggleMode()">회원가입</button>'
     : '이미 계정이 있으신가요? <button onclick="authToggleMode()">로그인</button>';
   document.getElementById('authError').textContent='';
+  document.getElementById('authError').classList.remove('auth-ok');
+  document.getElementById('authForgotRow')?.classList.toggle('hidden',_authMode!=='login');
+}
+
+// 비밀번호 찾기 — 이메일 칸의 주소로 재설정 메일을 보낸다 (1107-SW 3).
+// ⚠️ 가입 여부는 알려주지 않는다: 없는 주소여도 똑같이 "보냈어요" (계정 추측 방지).
+window.authForgot = async function(){
+  const email=document.getElementById('authEmail').value.trim();
+  const errEl=document.getElementById('authError');
+  errEl.classList.remove('auth-ok');
+  errEl.textContent='';
+  if(!email){errEl.textContent='위 이메일 칸에 주소를 먼저 적어주세요.';document.getElementById('authEmail').focus();return;}
+  authSetLoading(true);
+  try{
+    try{fbAuth.languageCode='ko';}catch(_){}
+    await fbAuth.sendPasswordResetEmail(email);
+    errEl.classList.add('auth-ok');
+    errEl.textContent='비밀번호 재설정 메일을 보냈어요.\n받은 편지함(스팸함도)을 확인해주세요.';
+  }catch(e){
+    const code=(e&&e.code)||'';
+    if(code.includes('user-not-found')){
+      errEl.classList.add('auth-ok');
+      errEl.textContent='비밀번호 재설정 메일을 보냈어요.\n받은 편지함(스팸함도)을 확인해주세요.';
+    }else if(code.includes('too-many-requests')){
+      errEl.textContent='잠시 후에 다시 시도해주세요.';
+    }else errEl.textContent=authErrorMessage(e);
+  }
+  authSetLoading(false);
 }
 
 function authSetLoading(on){
