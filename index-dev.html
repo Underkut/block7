@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1108-8  [DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1108-9  [DEV — no Firebase]  -->
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1125,7 +1125,7 @@ body.vb-on:not(.lay-multi) .gnb-rp-dots{display:flex;gap:2.5px;position:absolute
 .vf-tagchip{pointer-events:auto;cursor:pointer;}
 #vfCat:active,#vfTopic:active,.vf-tagchip:active{opacity:.5;}
 /* 대분류 오른쪽 예배 날짜 (월/일) — 회색·작게. ::after 라 textContent(캡처·필터)는 그대로 (v26-1108-8) */
-#vfCat[data-d]::after{content:attr(data-d);margin-left:7px;font-size:11px;font-weight:400;color:var(--vf-tx,var(--tx));opacity:.45;letter-spacing:.02em;vertical-align:1px;font-family:var(--font-number,inherit);}
+#vfCat[data-d]::after{content:attr(data-d);margin-left:6px;font-size:8.5px;font-weight:400;color:var(--vf-tx,var(--tx));opacity:.45;letter-spacing:-.01em;vertical-align:baseline;font-family:var(--font-number,inherit);}
 /* 우측 세로 액션 스택 */
 .vf-actions{
   display:flex;flex-direction:column;gap:13px;align-items:center;
@@ -7044,7 +7044,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1108-8";
+const APP_VERSION = "v. 26-1108-9";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
