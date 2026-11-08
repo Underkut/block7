@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -80,7 +80,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ph-head .ic svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.7;fill:none}
 #app{max-width:720px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative}
 .ph-body{padding:0 max(18px,env(safe-area-inset-right,0px)) calc(120px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
-.ph-nav{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:720px;bottom:0;display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--paper) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);z-index:3}
+.ph-nav{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:720px;bottom:0;display:grid;grid-template-columns:repeat(6,1fr);padding:8px 4px calc(10px + env(safe-area-inset-bottom,0px));background:color-mix(in srgb,var(--paper) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);z-index:3}
 .ph-nav button{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--tx3);padding:4px 0}
 .ph-nav button svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.6;fill:none}
 .ph-nav button[aria-current="true"]{color:var(--ac)}
@@ -209,9 +209,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .wl .r1 .sp{flex:1}
 .wl .r2{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .wl.plan .r1 .nm{font-weight:500}
-.pm{display:inline-flex;align-items:center;gap:4px;font:400 11.5px var(--sans);color:var(--tx2);margin-left:6px;white-space:nowrap;vertical-align:middle}
-.dt-when .pm:first-child{margin-left:0}
-.pm i{width:8px;height:8px;border-radius:50%;background:var(--pm);flex:none}
+/* 1108-C3 기도노트 표시색 = 이름 글자색 · 설정의 '색으로 보기' 단추(점 셋)는 기도노트와 같은 모양 */
+.hue-ic{color:var(--hc)}
+.nmc.d3 .hue-ic{color:color-mix(in srgb,var(--hc) 45%,var(--on-ac))}
+.hue-b{display:inline-flex;align-items:center;gap:4px;padding:8px 6px;letter-spacing:0}
+.hue-b i{width:6px;height:6px;border-radius:3px;opacity:.3;filter:saturate(.45);transition:opacity .3s,filter .3s}
+.hue-b i:nth-child(1){background:#e5534b}.hue-b i:nth-child(2){background:#4fbf73}.hue-b i:nth-child(3){background:#4d8ff0}
+.hue-b.on i{opacity:1;filter:none}
+.srow .hue-ctl{display:inline-flex;align-items:center;gap:2px}
+.ibtn{width:26px;height:26px;display:inline-grid;place-items:center;color:var(--tx3)}
+.ibtn svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.6;fill:none}
+.ibtn[aria-pressed="true"]{color:var(--ac)}
+.hue-leg{grid-column:1/-1;display:grid;gap:8px;margin-top:6px;font-size:13.5px}
+.hue-leg div{display:flex;justify-content:space-between;gap:8px}
+.hue-leg small{color:var(--tx3);font-size:12px}
 .pills .opt{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
 .opt.lift{transform:scale(1.08);box-shadow:var(--shadow);background:var(--paper);border-color:var(--ac);position:relative;z-index:2;transition:transform .12s var(--ease)}
 body.dragging{cursor:grabbing}
@@ -360,6 +371,8 @@ textarea.inp{min-height:118px;resize:vertical;line-height:1.65}
 @keyframes up{from{transform:translate(-50%,30px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){.sheet{animation:none}}
 .grab{width:38px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 12px}
+.grab{position:relative;cursor:grab}.grab::before{content:"";position:absolute;inset:-14px -70px}   /* 1108-C1 손잡이는 작아도 잡는 자리는 넉넉하게 */
+.sheet.drag{animation:none}
 .sh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .sh-top b{font-size:16px}
 .sh-top button{color:var(--ac);font-size:13px}
@@ -503,7 +516,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-1';
+const APP_VERSION = 'v. 26-1109-2';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1601,7 +1614,19 @@ async function loadPray(force) {
   } catch (e) { DATA.pray = { idx: {}, people: [], at: Date.now(), err: e.code || e.message }; }
   if (USER && USER.uid === uid) render();
 }
-function pm(name) { const x = DATA.pray && DATA.pray.idx[nameKey(name)]; return x ? '<span class="pm" style="--pm:var(--mk-' + x.m + ')" title="기도노트 표시"><i></i>' + esc(x.label) + '</span>' : ''; }
+// 1108-C3 기도노트 표시색 = 이름 글자색 (기도노트 '색으로 보기' 와 같은 결 — 회색 · 색 없음은 칠하지 않는다). 켜고 끄기는 이 기기에만
+const HUE_KEY = 'care.hue';
+function hueOn() { try { return localStorage.getItem(HUE_KEY) !== '0'; } catch (e) { return true; } }
+function hueSet(v) { try { localStorage.setItem(HUE_KEY, v ? '1' : '0'); } catch (e) { /* 이번만 */ } }
+function hueOf(name) { const x = hueOn() && DATA.pray && DATA.pray.idx[nameKey(name)]; return x && x.m && x.m !== 'gray' ? x : null; }
+function nm(name) { const x = hueOf(name); return x ? '<span class="hue-ic" style="--hc:var(--mk-' + x.m + ')" title="' + esc(x.label) + '">' + esc(name) + '</span>' : esc(name); }
+const MK_ORDER = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'];
+function hueLegend() {   // 지금 쓰는 색 · 기도노트가 붙인 이름 · 몇 분
+  const idx = (DATA.pray && DATA.pray.idx) || {}, by = {};
+  Object.keys(idx).forEach(k => { const x = idx[k]; if (!x.m || x.m === 'gray') return; (by[x.m] = by[x.m] || { label: x.label, n: 0 }).n++; });
+  return MK_ORDER.filter(m => by[m]).map(m => ({ m, label: by[m].label, n: by[m].n }));
+}
+const HUE_BTN = () => '<button class="hue-b' + (hueOn() ? ' on' : '') + '" data-act="hue" aria-pressed="' + hueOn() + '" aria-label="이름 색 — ' + (hueOn() ? '켜짐' : '꺼짐') + '"><i></i><i></i><i></i></button>';
 function rebuild() { if (DATA.vals) DATA.model = attachExtras(buildModel(DATA.vals, Object.assign({ cutoff: prefs().cutoff }, DATA.opts || {})), DATA.actStatus || {}, DATA.addenda || {}); }
 
 // ───────────────────────────── 쓰기 (C2) ─────────────────────────────
@@ -2070,7 +2095,7 @@ document.addEventListener('visibilitychange', async () => {
 // ───────────────────────────── 화면 상태 ─────────────────────────────
 const S = { view: 'list', layers: [], filt: { act: [], tag: [], role: [], method: [], depth: [], src: [] }, quick: '', q: '', searching: false,
   wk: 0, mo: today().slice(0, 7), mday: today(), grp: 'dash', attrK: 'tag', gopen: {}, sheet: false, acc: 'act', pSort: 'old', showArch: false, menu: null };
-const TABS_NAV = [['list', '기록', 'n_list'], ['people', '성도', 'n_people'], ['plan', '계획', 'n_plan'], ['week', '달력', 'n_cal'], ['collect', '한눈에', 'n_collect']];
+const TABS_NAV = [['list', '심방', 'n_list'], ['attend', '출석', 'n_att'], ['people', '성도', 'n_people'], ['week', '달력', 'n_cal'], ['plan', '계획', 'n_plan'], ['collect', '한눈에', 'n_collect']];   // 1108-C2 출석은 제 탭
 function M() { return DATA.model; }
 function V() { return filterVisits(M().visits, S.filt, S.quick, S.showArch, S.q); }
 function byKey(k) { return M().visits.find(v => v.key === k); }
@@ -2091,7 +2116,10 @@ const IC = {
   trash: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
   pen: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>',
   out: '<svg viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M10 6H6a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4"/></svg>',
-  n_list: '<svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9"/></svg>',
+  n_list: '<svg viewBox="0 0 24 24"><path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 11.5h1.5a2.5 2.5 0 0 1 0 5H16M8.5 3.5c0 1 1 1.5 1 2.5M12 3.5c0 1 1 1.5 1 2.5"/></svg>',   // 심방 = 커피잔 (1108-C2)
+  n_att: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.2"/></svg>',
+  paste: '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="16" rx="2"/><path d="M9 5V3.5h6V5M9 11h6M9 15h4"/></svg>',
   n_people: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.8-3.2 3-5 5.5-5s4.7 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.5 14.3c2.3.2 4 1.8 4.7 4.2"/></svg>',
   n_plan: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>',
   n_cal: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8 3v4M16 3v4"/><circle cx="8.5" cy="14" r=".6"/><circle cx="12" cy="14" r=".6"/><circle cx="15.5" cy="14" r=".6"/><circle cx="8.5" cy="17" r=".6"/><circle cx="12" cy="17" r=".6"/></svg>',
@@ -2128,7 +2156,7 @@ function head(title, left, right) {
   return '<div class="ph-head r2"><span></span><h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
-  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'people' ? '<button class="fab" data-act="attadd">' + IC.plus + '출석</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
+  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'attend' ? '<button class="fab" data-act="attadd">' + IC.plus + '출석</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
   return f + '<nav class="ph-nav">' + TABS_NAV.map(t => { const on = S.view === t[0] || (t[0] === 'week' && S.view === 'month');
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
@@ -2145,7 +2173,7 @@ function fline() {
 // ───────────────────────────── 기록 ─────────────────────────────
 function card(v) {
   const acts = v.actions.map(ak).join('');
-  return '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + esc(v.name || '(이름 없음)') + '</span>' + pm(v.name) + '<span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' +
+  return '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + (v.name ? nm(v.name) : '(이름 없음)') + '</span>' + '<span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' +
     '<div class="c-txt">' + esc(v.text || '(내용 없음)') + '</div><div class="c-bot">' + depth(v.depthN) + '<span class="tags">' + tags(v) + '</span>' + (acts ? '<span class="acts">' + acts + '</span>' : '') + '</div></button>';
 }
 function vList() {
@@ -2183,7 +2211,7 @@ function lDetail(L) {
     '<button class="ic" data-act="close" aria-label="닫기">' + IC.x + '</button></span></div><div class="ph-body">';
   if (v.review) h += '<div class="review"><b>확인 필요</b> · 자동으로 들어온 기록입니다. 확인 단추는 C2 에서 열립니다.</div>';
   if (v.archived) h += '<div class="review" style="background:var(--s2)">보관된 기록입니다. 시트에는 그대로 있습니다.</div>';
-  h += '<button data-act="person" data-v="' + esc(v.name) + '"><div class="dt-name">' + esc(v.name || '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
+  h += '<button data-act="person" data-v="' + esc(v.name) + '"><div class="dt-name">' + (v.name ? nm(v.name) : '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
   h += '<div class="attrs">' +
     '<div><span class="k">구분</span><span>' + (esc(v.allRoles.join(' · ')) || '<span class="muted">—</span>') + '</span></div>' +
     '<div><span class="k">방식</span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + (meth(v) || '<span class="muted">—</span>') + (v.place ? '<span class="muted">· ' + esc(v.place) + '</span>' : '') + '</span></div>' +
@@ -2232,7 +2260,7 @@ function vPeople() {
   let P = peopleList(M(), V(), t, pf.stale);
   let h = head('성도', ['layer', '설정', 'gear', 'settings'], ['search', '찾기', 'search']) + '<div class="ph-body">';
   if (S.searching) h += '<div class="srch"><span>' + IC.search + '</span><input id="q" placeholder="이름 찾기" value="' + esc(S.q) + '" autocomplete="off"></div>';
-  h += '<div id="results">' + (S.q ? '' : attSummaryHtml()) + '<div class="seg" role="group"><button data-act="psort" data-v="old" aria-pressed="' + (S.pSort === 'old') + '">오래 못 만난 순</button><button data-act="psort" data-v="recent" aria-pressed="' + (S.pSort === 'recent') + '">최근 순</button><button data-act="psort" data-v="role" aria-pressed="' + (S.pSort === 'role') + '">구분별</button></div>' + fline();
+  h += '<div id="results"><div class="seg" role="group"><button data-act="psort" data-v="old" aria-pressed="' + (S.pSort === 'old') + '">오래 못 만난 순</button><button data-act="psort" data-v="recent" aria-pressed="' + (S.pSort === 'recent') + '">최근 순</button><button data-act="psort" data-v="role" aria-pressed="' + (S.pSort === 'role') + '">구분별</button></div>' + fline();
   const RO = (DATA.opts && DATA.opts.roles) || [];
   if (S.pSort === 'old') P.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   else if (S.pSort === 'recent') P.sort((a, b) => (b.last || '').localeCompare(a.last || ''));
@@ -2245,19 +2273,19 @@ function vPeople() {
     if (S.pSort === 'role' && (p.roles[0] || '구분 없음') !== lastR) { lastR = p.roles[0] || '구분 없음'; h += '<div class="dhead"><b>' + esc(lastR) + '</b><span></span></div>'; }
     const strip = strip10(p.visits, t).map(lv => '<i class="v' + lv + '"></i>').join('');
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
-    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + esc(p.name) + '</span>' + pm(p.name) + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
+    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
   if (!fcount() && !S.quick) {
     const q = nameKey(S.q), only = attendOnlyPeople(AT(), Object.keys(M().people)).filter(x => !q || nameKey(x.name).includes(q)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
-    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + esc(x.name) + '</span>' + pm(x.name) + '<span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
+    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + nm(x.name) + '</span>' + '<span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
   }
   return h + '</div></div>' + nav();
 }
 function lPerson(L) {
   const n = L.name, t = today(), all = M().visits.filter(v => v.name === n), vs = all.filter(v => S.showArch || !v.archived), p = M().people[n] || { roles: [] };
   let h = lhead('', L) + '<div class="ph-body">';
-  h += '<div class="dt-name">' + esc(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + pm(n) + '</div>';
+  h += '<div class="dt-name">' + nm(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + '</div>';
   const live = all.filter(v => !v.archived), deep = live.filter(v => v.depthN === 3).length, lv = live[0];
   h += '<p class="sentence" style="margin-top:12px">' + (!all.length ? '아직 심방 기록이 없습니다.' : live.length ? '심방 <b>' + live.length + '번</b>, 그중 깊은 대화 <b>' + deep + '번</b>. 마지막은 <b>' + relDay(lv.ymd, t) + '</b>' + (lv.methodLabel ? '(' + esc(lv.methodLabel) + ')' : '') + '입니다.' : '보관된 기록만 있습니다.') + '</p>';
   const tc = countBy(live, v => v.allTags), tk = Object.keys(tc).sort((a, b) => tc[b] - tc[a]);
@@ -2281,7 +2309,7 @@ function AT() { return DATA.attend || []; }
 function attSub(a) { return [[a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · '); }
 function attRowHtml(a, withName) {
   const sub = attSub(a), memo = firstLine(a.memo || '');
-  return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + esc(a.name) + '</b>' + pm(a.name) : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
+  return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + nm(a.name) + '</b>' : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
     (sub || a.memo ? '<span class="t2">' + esc(sub) + (sub && a.memo ? ' · ' : '') + (a.memo ? esc(memo) : '') + '</span>' : '') + '</span></button>';
 }
 function attSvcOptions() { const s = ATTO().svc.slice(); AT().forEach(a => { if (a.svc && !s.includes(a.svc)) s.push(a.svc); }); return s; }
@@ -2294,22 +2322,16 @@ function attSuggHtml(L) {
   const parts = String(L.form.name || '').split(/[,，、]/), q = norm(parts[parts.length - 1]); if (!q) return '';
   return attNames().filter(n => n !== q && nameKey(n).includes(nameKey(q))).slice(0, 6).map(n => {
     const last = attendOf(AT(), n)[0];
-    return '<button data-act="attpick" data-v="' + esc(n) + '">' + esc(n) + pm(n) + (last ? ' <small>' + md(last.date) + ' ' + esc(last.svc) + '</small>' : '') + '</button>';
+    return '<button data-act="attpick" data-v="' + esc(n) + '">' + nm(n) + (last ? ' <small>' + md(last.date) + ' ' + esc(last.svc) + '</small>' : '') + '</button>';
   }).join('');
 }
-function attSummaryHtml() {
-  const L = AT();
-  if (!L.length) return '<button class="attsum" data-act="attlist"><span><b>출석</b><small>예배 · 모임 · 개인 기도에 온 분을 적어 둡니다</small></span>' + IC.r + '</button>';
-  const d = L[0].date, day = L.filter(a => a.date === d), q = attQuiet(L, today()).length;
-  return '<button class="attsum" data-act="attlist"><span><b>출석 · ' + md(d) + ' ' + day.length + '명' + (q ? ' <em>· 요즘 안 보이는 분 ' + q + '</em>' : '') + '</b><small>' + esc(day.slice(0, 4).map(a => a.name).join(', ') + (day.length > 4 ? ' 외' : '')) + '</small></span>' + IC.r + '</button>';
-}
-function lAttList(L) {
-  const all = AT(), n = L.n || 60, list = all.slice(0, n);
-  let h = lhead('출석', L) + '<div class="ph-body" style="padding-bottom:110px">';
-  h += '<p class="muted">예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
+// 1108-C2 출석 탭 — 예전 '성도 탭 위 요약 칸 → 겹 화면 목록' 을 탭 하나로
+function vAttend() {
+  const all = AT(), n = S.attN || 60, list = all.slice(0, n);
+  let h = head('출석', null, ['attpaste', '붙여 넣기', 'paste']) + '<div class="ph-body">';
   const quiet = attQuiet(all, today());
-  if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + esc(o.name) + pm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
-  if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+ 출석" 으로 한 분씩 적거나, 메모를 그대로 붙여 넣어 보세요.</p>';
+  if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + nm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
+  if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+ 출석" 으로 한 분씩 적거나, 오른쪽 위 붙여 넣기로 메모를 그대로 넣어 보세요.<br>예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
   let last = null;
   list.forEach(a => {
     if (a.date !== last) { if (last !== null) h += '</div>'; h += '<div class="dhead"><b>' + dayLabel(a.date) + '</b><span>' + all.filter(x => x.date === a.date).length + '명</span></div><div class="tl">'; last = a.date; }
@@ -2317,7 +2339,7 @@ function lAttList(L) {
   });
   if (last !== null) h += '</div>';
   if (all.length > n) h += '<button class="send" data-act="attmore" style="margin-top:10px">더 보기 (' + (all.length - n) + ')</button>';
-  return h + '</div><div class="ph-foot" style="display:flex;gap:8px"><button class="btn" data-act="attpaste">붙여 넣기</button><button class="btn pri" data-act="attadd">+ 출석</button></div>';
+  return h + '</div>' + nav();
 }
 // ── 1108-B3 출석 입력 — 칸마다 알약 + 직접 적기(접어 둠) · 알약은 여기서 더하고, 끌어 옮기고, 길게 눌러 고치고 지운다 ──
 function ATTO() { return attOptsUse(DATA.attOpts, AT()); }
@@ -2453,7 +2475,7 @@ async function saveAttPaste(L) {
 function planCard(p) {
   const t = today(), past = p.date < t, d = p.date;
   return '<div class="card pcard' + (past ? ' late' : '') + '"><button class="pmain" data-act="planopen" data-v="' + esc(p.id) + '"><span class="pdate"><span class="muted">' + DOW[dowOf(d)] + '</span><b>' + (+d.slice(8)) + '</b><span class="muted">' + (+d.slice(5, 7)) + '월</span></span>' +
-    '<span class="pbody"><span class="c-top"><span class="nm">' + esc(p.name) + '</span><span class="roles">' + esc(p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
+    '<span class="pbody"><span class="c-top"><span class="nm">' + nm(p.name) + '</span><span class="roles">' + esc(p.time || '시간 미정') + '</span><span class="sp"></span>' + meth({ methodLabel: p.method }) + '</span>' +
     (p.place ? '<span class="muted">' + esc(p.place) + '</span>' : '') + (p.why ? '<span class="c-txt">' + esc(p.why) + '</span>' : '') +
     '<span class="muted pcal">' + (p.evId === PLAN_NOCAL ? '캘린더에 넣지 않음' : p.evId ? IC.cal + '\'심방\' 캘린더' : '캘린더에 넣는 중…') + ' · ' + relDay(p.date, t) + '</span></span></button>' +
     '<div class="pacts"><button class="btn' + (p.date <= t ? ' pri' : '') + '" data-act="plan2rec" data-v="' + esc(p.id) + '">기록 쓰기</button></div></div>';
@@ -2470,7 +2492,7 @@ function vPlan() {
   h += next.length ? next.map(planCard).join('') : '<p class="empty">아직 계획이 없습니다. 아래 "+ 계획" 으로 만들거나, 제안에서 골라 보세요.</p>';
   h += '<div class="h-sec">이런 분은 어떠세요<small>' + Math.round(pf.stale / 7) + '주 넘게 못 만남</small></div>';
   if (!P.length) h += '<p class="empty">오래 못 만난 분이 없습니다.</p>';
-  P.forEach(p => { const lv = p.visits[0]; h += '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(p.name) + '">' + esc(p.name) + pm(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + '</small></button><button class="send" data-act="addplan" data-v="' + esc(p.name) + '">계획 +</button></div>'; });
+  P.forEach(p => { const lv = p.visits[0]; h += '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(p.name) + '">' + nm(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + '</small></button><button class="send" data-act="addplan" data-v="' + esc(p.name) + '">계획 +</button></div>'; });
   const others = calOthers().filter(e => e.ymd >= t);
   if (others.length) {
     h += '<div class="h-sec">\'심방\' 캘린더에만 있는 일정<small>' + others.length + '</small></div>';
@@ -2480,7 +2502,7 @@ function vPlan() {
   const gone = plans.filter(p => p.status !== PLAN_ST.todo && p.date >= ymdAdd(t, -30)).sort((a, b) => b.date.localeCompare(a.date));
   if (gone.length) {
     h += '<button class="donefold" data-act="showdoneplan">' + (S.showDonePlan ? '지난 계획 접기 ⌃' : '최근 30일 지난 계획 ' + gone.length + '개 ⌄') + '</button>';
-    if (S.showDonePlan) h += gone.map(p => '<div class="lrow"><span class="d">' + md(p.date) + '</span><span><b style="font-weight:500">' + esc(p.name) + '</b> · ' + (p.status === PLAN_ST.done ? '<span style="color:var(--ac)">✓ 기록됨</span>' : '<span class="muted">취소됨</span>') + (p.recId ? ' <button class="send" data-act="open" data-v="' + esc(p.recId) + '">기록 보기 ›</button>' : '') + '</span></div>').join('');
+    if (S.showDonePlan) h += gone.map(p => '<div class="lrow"><span class="d">' + md(p.date) + '</span><span><b style="font-weight:500">' + nm(p.name) + '</b> · ' + (p.status === PLAN_ST.done ? '<span style="color:var(--ac)">✓ 기록됨</span>' : '<span class="muted">취소됨</span>') + (p.recId ? ' <button class="send" data-act="open" data-v="' + esc(p.recId) + '">기록 보기 ›</button>' : '') + '</span></div>').join('');
   }
   return h + '</div>' + nav();
 }
@@ -2508,7 +2530,7 @@ function openPlanEdit(id, preset) {
 function wmSeg() { return '<div class="seg" role="group" aria-label="주간 · 월간"><button data-act="tab" data-v="week" aria-pressed="' + (S.view === 'week') + '">주간</button><button data-act="tab" data-v="month" aria-pressed="' + (S.view === 'month') + '">월간</button></div>'; }
 function wline(v) {
   const acts = v.actions.map(ak).join('');
-  return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + esc(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (acts ? '<div class="r2">' + acts + '</div>' : '') + '</button>';
+  return '<button class="wl" data-act="open" data-v="' + esc(v.key) + '"><div class="r1">' + dm(v.depthN) + '<span class="nm">' + nm(v.name) + '</span><span class="roles">' + esc(v.allRoles[0] || '') + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' + (acts ? '<div class="r2">' + acts + '</div>' : '') + '</button>';
 }
 function eline(e) {
   if (e.planId) return '<button class="wl plan" data-act="planopen" data-v="' + esc(e.planId) + '"><div class="r1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></button>';
@@ -2516,7 +2538,7 @@ function eline(e) {
 // 1108-B4 달력에 무엇을 띄울지 — 심방(기록 · 계획 · '심방' 일정) / 출석. 둘 다 끌 수는 없다(끄면 다른 쪽이 켜진다). 이 기기에 기억
 function calShow() { const c = saved().calShow; return c && (c.v || c.a) ? { v: !!c.v, a: !!c.a } : { v: true, a: false }; }
 function calSw() { const c = calShow(); return '<div class="calsw" role="group" aria-label="달력에 띄울 것"><button class="opt" data-act="calsw" data-v="v" aria-pressed="' + c.v + '">심방</button><button class="opt" data-act="calsw" data-v="a" aria-pressed="' + c.a + '">출석</button></div>'; }
-function aline(a) { const sub = attSub(a); return '<button class="wl att" data-act="attopen" data-v="' + esc(a.id) + '"><div class="r1"><span class="planbadge att">' + esc(a.svc || '출석') + '</span><span class="nm">' + esc(a.name) + '</span>' + pm(a.name) + '</div>' + (sub ? '<div class="why">' + esc(sub) + '</div>' : '') + '</button>'; }
+function aline(a) { const sub = attSub(a); return '<button class="wl att" data-act="attopen" data-v="' + esc(a.id) + '"><div class="r1"><span class="planbadge att">' + esc(a.svc || '출석') + '</span><span class="nm">' + nm(a.name) + '</span>' + '</div>' + (sub ? '<div class="why">' + esc(sub) + '</div>' : '') + '</button>'; }
 function vWeek() {
   const s = ymdAdd(weekStartOf(today()), 7 * S.wk), e = ymdAdd(s, 6);
   const C = calShow(), L = C.v ? V().filter(v => v.ymd >= s && v.ymd <= e) : [], EV = C.v ? calItems().filter(x => x.ymd >= s && x.ymd <= e) : [], AA = C.a ? AT().filter(a => a.date >= s && a.date <= e) : [];
@@ -2542,7 +2564,7 @@ function vMonth() {
   h += '<div class="cal">' + DOW.map(x => '<div class="h">' + x + '</div>').join('');
   cells.forEach(k => {
     const dv = L.filter(v => v.ymd === k), de = CI.filter(x => x.ymd === k), da = AA.filter(a => a.date === k);
-    const items = dv.map(v => '<span class="nmc d' + v.depthN + '">' + esc(v.name) + '</span>').concat(de.map(x => '<span class="nmc pl">' + esc(x.title) + '</span>'), da.map(a => '<span class="nmc at">' + esc(a.name) + '</span>'));
+    const items = dv.map(v => '<span class="nmc d' + v.depthN + '">' + nm(v.name) + '</span>').concat(de.map(x => '<span class="nmc pl">' + esc(x.title) + '</span>'), da.map(a => '<span class="nmc at">' + nm(a.name) + '</span>'));
     h += '<button class="cell' + (k.slice(0, 7) !== ym ? ' out' : '') + (k === S.mday ? ' sel' : '') + (k === today() ? ' now' : '') + '" data-act="mday" data-v="' + k + '"><span class="n">' + (+k.slice(8)) + '</span>' + items.slice(0, 3).join('') + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + '</span>' : '') + '</button>';
   });
   h += '</div><div class="muted legend"><span><span class="nmc d3">이름</span> 깊음</span><span><span class="nmc d2">이름</span> 중간</span><span><span class="nmc d1">이름</span> 얕음</span><span><span class="nmc pl">이름</span> 심방 캘린더</span>' + (C.a ? '<span><span class="nmc at">이름</span> 출석</span>' : '') + '</div>';
@@ -2607,7 +2629,7 @@ function vDash(L) {
   const tr = Object.keys(Object.assign({}, tc, tp)).map(x => ({ lab: '#' + esc(x), n: tc[x] || 0, p: tp[x] || 0, tip: '#' + x + ' · 최근 4주 ' + (tc[x] || 0) + '번 · 그 전 4주 ' + (tp[x] || 0) + '번' })).sort((a, b) => b.n - a.n || b.p - a.p);
   h += '<div class="panel"><div class="pt"><b>자주 나온 이야기</b><span>막대 최근 4주 · 세로선 그 전 4주</span></div>' + (tr.length ? hbars(tr) : '<p class="empty">없습니다.</p>') + '</div>';
   const P = peopleList(M(), M().visits.filter(v => !v.archived), t, pf.stale).filter(p => p.stale).sort((a, b) => (a.last || '').localeCompare(b.last || ''));
-  h += '<div class="panel"><div class="pt"><b>' + Math.round(pf.stale / 7) + '주 넘게 못 만난 분</b><span>' + P.length + '명</span></div>' + (P.length ? P.slice(0, 8).map(p => '<button class="lrow" data-act="person" data-v="' + esc(p.name) + '" style="grid-template-columns:1fr auto"><span><b style="font-weight:500">' + esc(p.name) + '</b> <span class="roles">' + esc(p.roles.join(' · ')) + '</span></span><span style="color:var(--warn)">' + relDay(p.last, t) + '</span></button>').join('') : '<p class="empty">없습니다.</p>') + '</div>';
+  h += '<div class="panel"><div class="pt"><b>' + Math.round(pf.stale / 7) + '주 넘게 못 만난 분</b><span>' + P.length + '명</span></div>' + (P.length ? P.slice(0, 8).map(p => '<button class="lrow" data-act="person" data-v="' + esc(p.name) + '" style="grid-template-columns:1fr auto"><span><b style="font-weight:500">' + nm(p.name) + '</b> <span class="roles">' + esc(p.roles.join(' · ')) + '</span></span><span style="color:var(--warn)">' + relDay(p.last, t) + '</span></button>').join('') : '<p class="empty">없습니다.</p>') + '</div>';
   return h;
 }
 function vCollect() {
@@ -2640,7 +2662,7 @@ function vCollect() {
     const key = ak2 + ':' + r.val, op = !!S.gopen[key], ppl = new Set(r.vs.map(v => v.name));
     const name = ak2 === 'depth' ? '<span style="display:inline-flex;gap:6px;align-items:center">' + dm(r.val) + DEPTH_NAME[r.val] + '</span>' : ak2 === 'tag' ? '#' + esc(r.val) : ak2 === 'method' ? '<span class="meth" style="font-size:14px;color:var(--tx)">' + (MI[r.val] || MI['기타']) + esc(r.val) + '</span>' : esc(r.val);
     h += '<div class="brow"><button style="width:100%" data-act="gopen" data-v="' + esc(key) + '"><div class="t"><span>' + name + '</span><em>' + r.vs.length + '번 · ' + ppl.size + '명 ' + (op ? '⌃' : '⌄') + '</em></div><div class="bar"><i style="width:' + (r.vs.length / mx * 100) + '%"></i></div></button>';
-    if (op) h += '<div class="in">' + r.vs.map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + md(v.ymd) + '</span><span><b style="font-weight:500">' + esc(v.name) + '</b> · ' + esc(firstLine(v.text)) + '</span></button>').join('') + '</div>';
+    if (op) h += '<div class="in">' + r.vs.map(v => '<button class="lrow" data-act="open" data-v="' + esc(v.key) + '"><span class="d">' + md(v.ymd) + '</span><span><b style="font-weight:500">' + nm(v.name) + '</b> · ' + esc(firstLine(v.text)) + '</span></button>').join('') + '</div>';
     h += '</div>';
   });
   return h + '</div>' + nav();
@@ -2651,7 +2673,7 @@ function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' 
 function suggHtml(L) {
   const q = norm(L.form.name); if (!q) return '';
   const names = Object.keys(M().people).filter(n => n !== q && n.includes(q)).slice(0, 6);
-  return names.map(n => { const p = M().people[n]; return '<button data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + pm(n) + ' <small>' + esc((p.roles || []).join(' · ')) + (p.last ? ' · ' + md(p.last) : '') + '</small></button>'; }).join('');
+  return names.map(n => { const p = M().people[n]; return '<button data-act="pickname" data-v="' + esc(n) + '">' + nm(n) + ' <small>' + esc((p.roles || []).join(' · ')) + (p.last ? ' · ' + md(p.last) : '') + '</small></button>'; }).join('');
 }
 function lEdit(L) {
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), known = n => !!M().people[norm(n)];
@@ -2732,6 +2754,12 @@ async function saveRecord(L) {
 }
 
 // ───────────────────────────── 설정 (겹 화면) ─────────────────────────────
+function hueLegendHtml() {
+  const L = hueLegend();
+  if (!DATA.pray || DATA.pray.none || DATA.pray.err) return '<div class="hue-leg"><small>' + (DATA.pray && DATA.pray.err ? '기도노트 표시색을 읽지 못했습니다' : '기도노트 자료가 아직 없습니다') + '</small></div>';
+  if (!L.length) return '<div class="hue-leg"><small>기도노트에서 색을 단 분이 아직 없습니다</small></div>';
+  return '<div class="hue-leg">' + L.map(x => '<div><span class="hue-ic" style="--hc:var(--mk-' + x.m + ')">' + esc(x.label) + '</span><small>' + x.n + '분</small></div>').join('') + '<small>색과 이름은 기도노트에서 정합니다. 회색(쉬는 분)은 칠하지 않습니다.</small></div>';
+}
 function lSettings(L) {
   const sv = saved(), pf = prefs(), nArch = M() ? M().visits.filter(v => v.archived).length : 0;
   let h = lhead('설정', L) + '<div class="ph-body">';
@@ -2741,6 +2769,8 @@ function lSettings(L) {
     '<div class="srow"><span class="t">심방 시트</span><button class="v ok" data-act="pick" data-v="sheet">다시 고르기</button><div class="d">' + esc(sv.sheet ? sv.sheet.name : '아직 안 고름') + (DATA.tab ? ' · 탭 ' + esc(DATA.tab.title) : '') + (M() ? ' · 기록 ' + M().visits.length + '줄' : '') + '</div></div>' +
     '<div class="srow"><span class="t">시트 준비</span>' + (DATA.prepared ? '<span class="v ok">준비됨</span>' : '<button class="v ok" data-act="prepare">준비하기</button>') + '<div class="d">' + (DATA.prepared ? '앱 열 · 탭이 있습니다. 앱에서 적고 고칠 수 있습니다.' : '앱에서 적으려면 처음 한 번 필요합니다 — 있던 기록은 건드리지 않습니다.') + '</div></div>' +
     '<div class="srow"><span class="t">심방 폼</span><button class="v ok" data-act="pick" data-v="form">다시 고르기</button><div class="d">' + esc(sv.form ? sv.form.name : '아직 안 고름 — 고르면 선택지를 폼과 같은 순서로 보여 줍니다') + (sv.responder ? ' · <a href="' + esc(sv.responder) + '" target="_blank" rel="noopener">폼 열기 ↗</a>' : '') + '</div></div></div>';
+  h += '<div class="h-sec">보기</div><div class="set"><div class="srow"><span class="t">이름 색</span><span class="hue-ctl">' + HUE_BTN() + '<button class="ibtn" data-act="hueinfo" aria-pressed="' + !!S.hueInfo + '" aria-label="표시색 설명">' + IC.info + '</button></span>' +
+    '<div class="d">기도노트에서 단 표시색으로 이름 글자를 칠합니다' + (hueOn() ? '' : ' (꺼짐)') + '</div>' + (S.hueInfo ? hueLegendHtml() : '') + '</div></div>';
   h += '<div class="h-sec">지난 기록 보관</div><div class="set"><div class="srow"><span class="t">보관 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [['', '보관 안 함'], ['2024-01-01', '2024년 이전'], ['2025-01-01', '2025년 이전'], ['2026-01-01', '2026년 이전']].map(o => '<button class="opt" data-act="cutoff" data-v="' + o[0] + '" aria-pressed="' + (pf.cutoff === o[0]) + '">' + o[1] + '</button>').join('') +
     '</div><div class="d">보관된 기록 <b>' + nArch + '건</b>은 시트에 그대로 두고 앱 화면에서만 감춥니다. 지우지 않습니다.</div></div>' +
@@ -2894,8 +2924,8 @@ function loadingHtml(msg, step) {
 }
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
-const VIEWS = { list: vList, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attlist: lAttList, attedit: lAttEdit, attpaste: lAttPaste };
+const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -3081,11 +3111,11 @@ document.addEventListener('click', e => {
   if (a === 'b7date') { const L = topLayer(); if (L && L.type === 'b7send') { L.form.date = v; render(); } return; }
   if (a === 'b7send') { const L = topLayer(); if (L && L.type === 'b7send') busy(async () => { try { await sendB7(L); } catch (e) { toast('보내지 못했습니다\n' + e.message); } }); return; }
   if (a === 'calsw') { const c = calShow(); c[v] = !c[v]; if (!c.v && !c.a) c[v === 'v' ? 'a' : 'v'] = true; save({ calShow: c }); render(); return; }
-  if (a === 'attlist') { openLayer('attlist'); return; }
+  if (a === 'attlist') { S.layers = []; goTab('attend'); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
   if (a === 'attopen') { if (v) openAttEdit(v); return; }
   if (a === 'attpaste') { openLayer('attpaste', { form: { paste: '' } }); return; }
-  if (a === 'attmore') { const L = topLayer(); if (L && L.type === 'attlist') { L.n = (L.n || 60) + 60; render(); } return; }
+  if (a === 'attmore') { S.attN = (S.attN || 60) + 60; render(); return; }
   if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
   if (a === 'aone' || a === 'attpick') {
     const L = topLayer(); if (!L || L.type !== 'attedit') return; L.dirty = true;
@@ -3185,6 +3215,8 @@ document.addEventListener('click', e => {
   else if (a === 'unf') { const val = k === 'depth' ? +v : v, arr = S.filt[k]; arr.splice(arr.indexOf(val), 1); }
   else if (a === 'quick') S.quick = S.quick === v ? '' : v;
   else if (a === 'clear') { for (const x in S.filt) S.filt[x] = []; S.quick = ''; }
+  else if (a === 'hue') { hueSet(!hueOn()); toast(hueOn() ? '이름을 기도노트 표시색으로\n칠합니다' : '이름 색을 껐습니다'); }
+  else if (a === 'hueinfo') S.hueInfo = !S.hueInfo;
   else if (a === 'arch') { S.showArch = !S.showArch; toast(S.showArch ? '보관 기록도 함께 봅니다' : '보관 기록을 다시 감춥니다'); }
   else if (a === 'mday') S.mday = v;
   else if (a === 'grp') { S.grp = v; if (S.view !== 'collect') { goTab('collect'); return; } }
@@ -3258,6 +3290,45 @@ document.addEventListener('touchend', () => {
   swEnd(el, RM.matches ? d > size / 4 : (d > size / 4 || fast), mode);
 });
 document.addEventListener('touchcancel', () => { if (SW.el && SW.on) swEnd(SW.el, false); SW.el = null; });
+// 1108-C1 보기 조건(필터) 시트 끌어내려 닫기 — 손잡이 · 머리줄은 언제든, 안쪽은 맨 위까지 올려 둔 때만.
+//   손가락을 따라 내려가고(위로는 고무줄처럼 뻑뻑하게), 높이의 ¼ 넘게 또는 빠르게 튕기면 닫히고, 못 미치면 제자리로.
+const SD = { el: null, y0: 0, x0: 0, t0: 0, d: 0, on: false };
+function sheetClose(el) {
+  const veil = document.querySelector('#app .veil');
+  if (!el || RM.matches) { S.sheet = false; render(); return; }
+  el.classList.add('drag');
+  el.style.transition = 'transform .22s ease-in'; el.style.transform = 'translate(-50%,100%)';
+  if (veil) { veil.style.transition = 'opacity .22s ease-in'; veil.style.opacity = '0'; }
+  setTimeout(() => { S.sheet = false; render(); }, 230);
+}
+document.addEventListener('touchstart', e => {
+  const el = e.target.closest && e.target.closest('#app .sheet'); if (!el || e.touches.length !== 1) return;
+  const top = e.target.closest('.grab,.sh-top'); if (!top && el.scrollTop > 0) return;
+  const t = e.touches[0]; Object.assign(SD, { el, y0: t.clientY, x0: t.clientX, t0: Date.now(), d: 0, on: false, top: !!top });
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!SD.el) return;
+  const t = e.touches[0], dy = t.clientY - SD.y0, dx = t.clientX - SD.x0;
+  if (!SD.on) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    if (Math.abs(dx) > Math.abs(dy) || (dy < 0 && !SD.top) || SD.el.scrollTop > 0) { SD.el = null; return; }   // 위로 · 옆으로는 안쪽 굴리기
+    SD.on = true; SD.el.classList.add('drag'); SD.el.style.transition = '';
+  }
+  e.preventDefault();
+  SD.d = dy > 0 ? dy : -Math.sqrt(-dy) * 2;   // 위로는 고무줄
+  SD.el.style.transform = 'translate(-50%,' + SD.d + 'px)';
+  const veil = document.querySelector('#app .veil'); if (veil) veil.style.opacity = String(Math.max(0, 1 - Math.max(0, SD.d) / SD.el.clientHeight));
+}, { passive: false });
+function sdEnd(cancel) {
+  const { el, d, t0, on } = SD; SD.el = null; if (!el || !on) return;
+  const fast = d > 40 && Date.now() - t0 < 260;
+  if (!cancel && (d > el.clientHeight / 4 || (fast && !RM.matches))) return sheetClose(el);
+  el.style.transition = 'transform .26s cubic-bezier(.22,.8,.24,1)'; el.style.transform = '';
+  const veil = document.querySelector('#app .veil'); if (veil) { veil.style.transition = 'opacity .26s'; veil.style.opacity = ''; }
+  setTimeout(() => { el.style.transition = ''; }, 280);
+}
+document.addEventListener('touchend', () => sdEnd(false));
+document.addEventListener('touchcancel', () => sdEnd(true));
 // PC: ESC 는 × 와 같은 일 — 가장 위 것부터
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
