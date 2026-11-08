@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -457,7 +457,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-7';
+const APP_VERSION = 'v. 26-1108-8';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -954,6 +954,8 @@ function calEventBody(p, pre, suf, tz, done) {
   } else { b.start = { date: p.date }; b.end = { date: ymdAdd(p.date, 1) }; }
   return b;
 }
+function evOurs(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return !!pr && pr.careApp === 'care'; }
+function evRecId(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return pr && pr.careApp === 'care' ? norm(pr.careRec) : ''; }
 function evCareId(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return pr && pr.careApp === 'care' ? norm(pr.careId) : ''; }
 // 계획 줄 · 우리 표식이 붙은 일정들 → 할 일
 function planCalSync(plans, events, pre, suf) {
@@ -981,6 +983,39 @@ function planCalSync(plans, events, pre, suf) {
       if (p.status === PLAN_ST.cancel && evCareId(ev) === p.id) del(evId);   // 앱에서 취소했는데 일정이 남아 있다 → 지운다(우리 표식인 것만)
     }
   });
+  return out;
+}
+// ── 계획 없이 적은 기록도 '심방' 캘린더에 (C3c, HB 2026-11-08) ──
+// 기록 하나 = 그날 하루 종일 "✓ 이름" 일정 하나 (표식 careRec = 기록ID). 기록 날짜는 시트가 정답 → 일정이 다르면 기록 쪽으로 맞춘다.
+// 계획에서 온 기록(계획에 진짜 일정이 있고 그 계획의 기록ID 가 이 기록)은 계획 일정이 대신하므로 건너뛴다.
+const REC_CAL_FROM = '2026-10-01';        // HB: 2026년 10월부터
+const REC_CREATE_MAX = 30, REC_DEL_MAX = 5;
+function recEventBody(v, pre, suf, sheet) {
+  return { summary: DONE_MARK + calTitle(v.name, pre, suf), extendedProperties: { private: { careApp: 'care', careRec: v.id, careSheet: sheet || '' } }, start: { date: v.ymd }, end: { date: ymdAdd(v.ymd, 1) } };
+}
+function evSheet(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return pr ? norm(pr.careSheet) : ''; }
+// o = { pre, suf, from, sheet(지금 고른 시트 id), readOk(시트를 제대로 읽었나) }
+// ⚠️ (코덱스 검토 PR 983) 일정은 **지금 시트의 것만** 다룬다 — 다른 시트(예전에 고른 시트)의 기록 일정을 '기록이 없다' 로 읽어 지우지 않게.
+//    지우기는 readOk 일 때만 — 마지막 기록을 지워 시트가 비어도, 제대로 읽었으면 그 일정을 지운다.
+function recCalSync(visits, plans, events, o) {
+  const { pre, suf, from, sheet, readOk } = o || {};
+  const out = { create: [], patch: [], del: [], n: { created: 0, moved: 0, titled: 0, removed: 0, dup: 0, heldBack: 0 } };
+  const covered = new Set((plans || []).filter(p => p.recId && p.evId && p.evId !== PLAN_NOCAL).map(p => p.recId));
+  const want = new Map();
+  (visits || []).forEach(v => { if (v.id && v.ymd && v.ymd >= (from || REC_CAL_FROM) && !v.archived && !covered.has(v.id) && !want.has(v.id)) want.set(v.id, v); });
+  const have = {};
+  (events || []).forEach(e => { const r = evRecId(e); if (r && e.status !== 'cancelled' && sheet && evSheet(e) === sheet) (have[r] = have[r] || []).push(e); });
+  const del = id => { if (out.del.length < REC_DEL_MAX) out.del.push(id); else out.n.heldBack++; };
+  want.forEach((v, id) => {
+    const evs = have[id] || [];
+    if (!evs.length) { if (out.create.length < REC_CREATE_MAX) { out.create.push(id); out.n.created++; } else out.n.heldBack++; return; }
+    evs.slice(1).forEach(e => { del(e.id); out.n.dup++; });
+    const e = evs[0], b = recEventBody(v, pre, suf, sheet), body = {};
+    if (!(e.start && e.start.date === v.ymd && !e.start.dateTime)) { body.start = b.start; body.end = b.end; out.n.moved++; }
+    if (norm(e.summary) !== norm(b.summary)) { body.summary = b.summary; out.n.titled++; }
+    if (Object.keys(body).length) out.patch.push({ evId: e.id, body });
+  });
+  if (readOk) Object.keys(have).forEach(id => { if (!want.has(id)) have[id].forEach(e => { del(e.id); out.n.removed++; }); });
   return out;
 }
 // 계획 → 새 기록 꼴 (기록 쓰기)
@@ -1638,13 +1673,16 @@ async function loadCal(noSync) {
     DATA.calOurs = ours;
     const t0 = new Date(); t0.setHours(0, 0, 0, 0); const t1 = new Date(t0.getTime() + 35 * 86400000);
     const ev = await gapi(evUrl(cid) + '?singleEvents=true&orderBy=startTime&maxResults=50&timeMin=' + enc(ymdAdd(ymdOf(t0), -14) + 'T00:00:00Z') + '&timeMax=' + enc(t1.toISOString()));
-    DATA.cal = (ev.items || []).filter(e => e.status !== 'cancelled' && !evCareId(e)).map(e => { const w = evWhen(e); return { id: e.id, title: norm(e.summary), ymd: w.date, time: w.time, link: e.htmlLink || '' }; });
+    DATA.cal = (ev.items || []).filter(e => e.status !== 'cancelled' && !evOurs(e)).map(e => { const w = evWhen(e); return { id: e.id, title: norm(e.summary), ymd: w.date, time: w.time, link: e.htmlLink || '' }; });
     DATA.calErr = '';
   } catch (e) { DATA.cal = []; DATA.calOurs = null; DATA.calId = null; DATA.calErr = '캘린더를 읽지 못했습니다'; }
   render();
   if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.plans) await retryPendDone();
   if (!noSync && DATA.state === 'ok' && DATA.prepared && DATA.calOurs) {
-    try { if (await calSync()) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); await loadCal(true); } } catch (e) { /* 다음에 다시 */ }
+    let again = false;
+    try { if (await calSync()) { DATA.plans = parsePlans(await readTab(saved().sheet.id, PLAN_TAB)); again = true; } } catch (e) { /* 다음에 다시 */ }
+    try { if (await recSync()) again = true; } catch (e) { /* 다음에 다시 */ }
+    if (again) await loadCal(true);
   }
 }
 // 계획 ↔ '심방' 캘린더 맞추기 (규칙은 care-core planCalSync)
@@ -1673,6 +1711,24 @@ async function calSync() {
     if (plan.n.moved) m.push('캘린더에서 옮긴 계획 ' + plan.n.moved + '개를 따라 옮겼습니다');
     if (plan.n.canceled) m.push('캘린더에서 지운 계획 ' + plan.n.canceled + '개를 취소로 바꿨습니다');
     if (m.length) toast(m.join('\n'));
+    return changed;
+  } finally { CAL_SYNCING = false; }
+}
+// 기록 → '심방' 캘린더 ✓ 일정 (규칙은 care-core recCalSync). 시트를 제대로 읽은 판에서만
+async function recSync() {
+  if (DATA.state !== 'ok' || !DATA.prepared || !DATA.calOurs || !M() || CAL_SYNCING) return false;
+  CAL_SYNCING = true;
+  try {
+    const sv = saved(), cid = await calId(); if (!cid) return false;
+    // '기록됨' 표시가 끊겨 이 기기에 적어 둔 계획도 계획 일정이 있는 것으로 본다 (기록 일정을 겹쳐 만들지 않게)
+    const pend = pendDone().map(x => { const p = (DATA.plans || []).find(q => q.id === x.planId); return p ? Object.assign({}, p, { recId: x.recId }) : null; }).filter(Boolean);
+    const sid = sv.sheet && sv.sheet.id; if (!sid) return false;
+    const plan = recCalSync(M().visits, (DATA.plans || []).concat(pend), DATA.calOurs, { pre: sv.calPre, suf: sv.calSuf, sheet: sid, readOk: DATA.state === 'ok' });
+    const byId = new Map(M().visits.map(v => [v.id, v]));
+    let changed = false;
+    for (const id of plan.create) { try { await gapi(evUrl(cid), { method: 'POST', body: recEventBody(byId.get(id), sv.calPre, sv.calSuf, sid) }); changed = true; } catch (e) { /* 다음에 */ } }
+    for (const x of plan.patch) { try { await evPatch(x.evId, x.body); changed = true; } catch (e) { } }
+    for (const id of plan.del) { try { await evDelete(id); changed = true; } catch (e) { } }
     return changed;
   } finally { CAL_SYNCING = false; }
 }
@@ -2192,6 +2248,7 @@ function lSettings(L) {
   h += '<div class="h-sec">그 밖에</div><div class="set"><div class="srow"><span class="t">오래 못 만남 기준</span><span></span><div class="opts" style="grid-column:1/-1;margin-top:4px">' +
     [14, 21, 28, 42].map(n => '<button class="opt" data-act="stale" data-v="' + n + '" aria-pressed="' + (pf.stale === n) + '">' + n / 7 + '주</button>').join('') + '</div></div>' +
     '<div class="srow"><span class="t">\'심방\' 일정 제목</span><span></span><div class="title-ed"><input id="calPre" placeholder="앞 글자" value="' + esc(sv.calPre || '') + '" aria-label="이름 앞 글자"><span class="nmv">성도 이름</span><input id="calSuf" placeholder="뒤 글자" value="' + esc(sv.calSuf || '') + '" aria-label="이름 뒤 글자"></div><div class="d">미리 보기: <b id="calPrev">' + esc(calTitle('김하늘', sv.calPre, sv.calSuf)) + '</b> · 바꾸면 이미 넣은 일정 제목도 고칩니다</div></div>' +
+    '<div class="srow"><span class="t">지난 기록도 캘린더에</span><span></span><div class="d">' + REC_CAL_FROM.slice(0, 4) + '년 ' + (+REC_CAL_FROM.slice(5, 7)) + '월 ' + (+REC_CAL_FROM.slice(8)) + '일부터의 기록은 그날 \'심방\' 캘린더에 \'✓ 이름\' 으로 들어갑니다(계획 없이 적은 것 · 폼으로 적은 것 모두). 날짜는 기록을 따릅니다 — 옮기려면 기록을 고쳐 주세요.</div></div>' +
     '<div class="srow"><span class="t">BLOCK7 주간 · 월간에서 보기</span><span></span><div class="d">BLOCK7 설정 › 계정 › 구글 캘린더 › 가져올 캘린더에서 \'심방\' 을 켜면 BLOCK7 에도 계획이 보입니다. 거기서 옮기면 여기도 따라 옮겨집니다. (일정 제목 = 이름만 BLOCK7 계정에 들어갑니다)</div></div>' +
     '<button class="srow" data-act="layer" data-v="attrs"><span class="t">속성 관리</span><span class="v">›</span><div class="d" style="text-align:left">구분 · 방식 · 태그 · 할 일 선택지 — 구글폼과 저절로 맞춤</div></button>' +
     '<button class="srow" data-act="trash"><span class="t">휴지통</span><span class="v">›</span><div class="d" style="text-align:left">지운 기록 되살리기</div></button>' +
