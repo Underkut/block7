@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -206,6 +206,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .wl .r1 .sp{flex:1}
 .wl .r2{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .wl.plan .r1 .nm{font-weight:500}
+.attsum{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;margin:2px 0 12px;border-radius:14px;background:var(--s1);border:1px solid var(--line);text-align:left}
+.attsum span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.attsum b{font-weight:500;font-size:14.5px}
+.attsum small{font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attsum svg{width:18px;height:18px;stroke:var(--tx3);stroke-width:1.8;fill:none;flex:none}
+.planbadge.att{border-style:solid}
 .planbadge{font-size:11px;color:var(--tx2);border:1px dashed var(--tx3);border-radius:999px;padding:1px 7px;white-space:nowrap}
 .wl.plan .why{font-size:12.5px;color:var(--tx3);margin-top:3px}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line);margin-top:6px}
@@ -457,7 +463,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-8';
+const APP_VERSION = 'v. 26-1108-9';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1036,6 +1042,111 @@ function planWhyFor(person) {
 }
 function stampLocal(nowMs) { const d = new Date(nowMs); return ymdOf(d) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 
+// ───────── 1108-A 예배 출석 ('출석' 탭) ─────────
+// 특별히 돌볼 성도가 어느 예배(또는 부서 모임 · 개인 기도)에 · 언제 와서 · 언제 갔고 · 어디 앉았고 · 누구와 왔는지. 한 줄 = 한 사람의 한 번 출석.
+// 이름은 심방 기록 · 기도노트 · 셀에 없어도 된다(처음 보는 분도 적는다). 내용은 이 탭에만 — 다른 앱은 읽기만 한다.
+const ATT_TAB = '출석';
+const ATT_HEAD = ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 갔나', '자리', '함께', '메모', '적은 시각'];
+const ATT_KEYS = { '출석ID': 'id', '날짜': 'date', '성도': 'name', '예배 · 모임': 'svc', '언제 왔나': 'from', '언제 갔나': 'to', '자리': 'seat', '함께': 'with', '메모': 'memo', '적은 시각': 'at' };
+const ATT_SVC = ['주일 1부', '주일 2부', '주일 3부', '라이프라인', '수요예배', '금요예배', '부서 모임', '개인 기도'];   // HB 2026-11-08: 예배가 대부분이지만 모임 · 개인 기도도
+const ATT_FROM = ['처음부터', '찬양 중', '말씀 전', '말씀 중', '헌금부터'];
+const ATT_TO = ['끝까지', '축도 전', '기도 때 나감', '말씀 뒤 나감', '중간에 나감'];
+function nameKey(s) { return String(s == null ? '' : s).replace(/\s+/g, ''); }
+function attYmd(v) {
+  if (typeof v === 'number' && isFinite(v) && v > 20000) return serialYmd(v);
+  const s = norm(v), m = s.match(/^(\d{4})[-./]\s*(\d{1,2})[-./]\s*(\d{1,2})/);
+  return m ? ymd3(+m[1], +m[2], +m[3]) : '';
+}
+// 탭 → [{id, date, name, svc, from, to, seat, with, memo, at, row}] (최근 것 먼저). 열은 머리글 이름으로 찾는다.
+function parseAttend(values) {
+  const h = ((values && values[0]) || []).map(norm), out = [];
+  for (let i = 1; i < (values || []).length; i++) {
+    const r = values[i] || [], a = { row: i + 1 };
+    Object.keys(ATT_KEYS).forEach(k => { const j = h.indexOf(k); a[ATT_KEYS[k]] = j < 0 ? '' : r[j]; });
+    a.date = attYmd(a.date);
+    ['id', 'name', 'svc', 'from', 'to', 'seat', 'with', 'at'].forEach(k => { a[k] = norm(a[k]); });
+    a.memo = String(a.memo == null ? '' : a.memo).trim();
+    if (!a.name) continue;
+    out.push(a);
+  }
+  return out.sort((x, y) => (y.date || '').localeCompare(x.date || '') || y.row - x.row);
+}
+function attRow(header, a) { return (header || []).map(x => { const k = ATT_KEYS[norm(x)]; return k ? (a[k] == null ? '' : a[k]) : ''; }); }
+function validateAttend(a) {
+  const e = [];
+  if (!norm(a && a.name)) e.push('성도 이름을 적어 주세요');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test((a && a.date) || '')) e.push('날짜를 골라 주세요');
+  return e;
+}
+// 고치기 — 바뀐 칸만 { 머리글: 값 }
+function attPatch(old, a) {
+  const c = {};
+  Object.keys(ATT_KEYS).forEach(k => { const f = ATT_KEYS[k]; if (f === 'id' || f === 'at') return; if (norm(old[f]) !== norm(a[f]) || (f === 'memo' && String(old.memo || '').trim() !== String(a.memo || '').trim())) c[k] = a[f] == null ? '' : a[f]; });
+  return c;
+}
+function attendOf(list, name) { const k = nameKey(name); return k ? (list || []).filter(a => nameKey(a.name) === k) : []; }
+// 같은 사람의 지난 출석에서 자주 앉은 자리 · 자주 온 예배 (새로 적을 때 미리 채움)
+function attHabit(list, name) {
+  const mine = attendOf(list, name).slice(0, 8), top = k => { const c = {}; mine.forEach(a => { if (a[k]) c[a[k]] = (c[a[k]] || 0) + 1; }); return Object.keys(c).sort((x, y) => c[y] - c[x])[0] || ''; };
+  return { svc: top('svc'), seat: top('seat') };
+}
+// 예배 이름 다듬기 — '주일3부' '주일 3부 예배' → '주일 3부', '라이프 라인' → '라이프라인'. 모르면 그대로.
+function attSvcNorm(s) {
+  const t = norm(s).replace(/\s*예배$/, ''), m = t.replace(/\s+/g, '').match(/^주일(\d)부$/);
+  if (m) return '주일 ' + m[1] + '부';
+  if (/^라이프\s*라인$/.test(t)) return '라이프라인';
+  if (/^(개인)?\s*기도(하러|\s*옴|\s*왔음|\s*오심)?$/.test(t) || /^개인\s*기도/.test(t)) return '개인 기도';
+  const wk = nameKey(s).match(/^(수요|금요)(제자)?(예배)?$/); if (wk) return wk[1] + (wk[2] || '') + '예배';
+  return t;
+}
+function isSvcLine(s, known) {
+  const t = attSvcNorm(s); if (!t) return false;
+  if (/^주일 \d부$/.test(t) || t === '라이프라인' || t === '개인 기도') return true;
+  if (/(모임|기도회|훈련|연습|리허설|성경공부|셀모임)$/.test(nameKey(s)) && nameKey(s).length <= 14) return true;
+  if ((known || []).some(k => nameKey(attSvcNorm(k)) === nameKey(t))) return true;
+  return /^(주일|수요|금요|화요|목요|토요|새벽|주중)\S{0,6}$/.test(nameKey(s)) && /예배|부$|기도회|워십/.test(nameKey(s));
+}
+// HB 가 메모장에 적던 꼴을 그대로 붙여 넣으면 칸으로 나눈다. 빈 줄로 사람을 가른다.
+//   이름 / 11/8 / 주일3부 / 처음부터 참석 / 맨 앞 자리 / 끝까지 참석 / 아내와 함께 / (그 밖은 메모)
+// 날짜도 예배도 없는 덩어리(머리말 '기록' 같은 것)는 사람으로 보지 않는다.
+function parseAttendText(text, today, known) {
+  const blocks = String(text || '').replace(/\r/g, '').split(/\n\s*\n/), out = []; let skipped = 0;
+  const yr = +String(today || '').slice(0, 4) || new Date().getFullYear();
+  for (const b of blocks) {
+    const lines = b.split('\n').map(x => x.trim()).filter(Boolean); if (!lines.length) continue;
+    const a = { name: '', date: '', svc: '', from: '', to: '', seat: '', with: '', memo: '' }, memo = [];
+    lines.forEach((raw, i) => {
+      const s = raw.replace(/^[(（]\s*/, '').replace(/\s*[)）]$/, '').trim(), k = nameKey(s);
+      let m;
+      if (!a.date && (m = k.match(/^(\d{1,2})[\/.월](\d{1,2})일?$/))) {
+        let d = ymd3(yr, +m[1], +m[2]);
+        if (today && d > ymdAdd(today, 31)) d = ymd3(yr - 1, +m[1], +m[2]);
+        a.date = d; return;
+      }
+      if (!a.svc && isSvcLine(s, known)) { a.svc = attSvcNorm(s); return; }
+      if (!a.from && /처음부터/.test(k)) { a.from = '처음부터'; return; }
+      if (!a.from && (m = s.match(/^(.{1,12}?)\s*부터(\s*참석)?$/))) { a.from = norm(m[1]) + '부터'; return; }
+      if (!a.to && /^끝까지(참석)?$/.test(k)) { a.to = '끝까지'; return; }
+      if (!a.to && /(나감|나가|먼저\s*감|일찍\s*감)/.test(s) && s.length <= 20) { a.to = s; return; }
+      if (!a.with && (m = s.match(/^(.{1,12}?)\s*(와|과|랑|이랑|하고)\s*함께$/))) { a.with = norm(m[1]); return; }
+      if (!a.seat && s.length <= 20 && /(자리|좌석|앞|뒤|뒷|옆|부스|라운지|발코니|2층|1층|로비|입구|창가|가운데|중앙)/.test(s)) { a.seat = s; return; }
+      if (i === 0 && !a.name && s.length <= 12 && !/\d/.test(s)) { a.name = s; return; }
+      memo.push(s);
+    });
+    a.memo = memo.join('\n');
+    if (!a.name || (!a.date && !a.svc)) { skipped++; continue; }
+    if (!a.date) a.date = today || '';
+    out.push(a);
+  }
+  return { items: out, skipped };
+}
+// 성도 목록에 넣을 '출석만 있는 분' — 심방 기록 이름과 띄어쓰기 무시로 같으면 뺀다
+function attendOnlyPeople(list, visitNames) {
+  const have = new Set((visitNames || []).map(nameKey)), by = {};
+  (list || []).forEach(a => { const k = nameKey(a.name); if (!k || have.has(k)) return; if (!by[k] || (a.date || '') > (by[k].last || '')) by[k] = { name: a.name, last: a.date || '' }; });
+  return Object.keys(by).map(k => by[k]);
+}
+
 // ───────── C1 열람 (읽기만) ─────────
 // 응답 탭 값 → 화면이 쓰는 모양. 시트는 고치지 않는다. 내용은 화면 메모리에만 둔다(기기에 저장하지 않는다).
 const DEPTH_N = { '깊음': 3, '중간': 2, '얕음': 1 };
@@ -1322,6 +1433,7 @@ async function loadData(quiet) {
     DATA.actStatus = parseActionTab(tabNames.includes('액션') ? await readTab(s.id, '액션') : []);
     DATA.addenda = parseAddenda(tabNames.includes('덧붙임') ? await readTab(s.id, '덧붙임') : []);
     DATA.plans = tabNames.includes(PLAN_TAB) ? parsePlans(await readTab(s.id, PLAN_TAB)) : [];
+    DATA.attend = tabNames.includes(ATT_TAB) ? parseAttend(await readTab(s.id, ATT_TAB)) : [];
     let form = DATA.form;
     const f = saved().form;
     if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
@@ -1646,6 +1758,50 @@ async function importCalEvent(evId) {
   await evPatch(e.id, { extendedProperties: { private: { careApp: 'care', careId: p.id } } });
   toast('계획으로 가져왔습니다\n' + p.name + ' · ' + md(p.date)); await loadData(true);
 }
+// ── 1108-A 출석 — '출석' 탭 (처음 적을 때 만든다 · 응답 탭 준비와 상관없다) ──
+async function attTab(s) { const v = await readTab(s.id, ATT_TAB); return { v, h: (v[0] || []).map(norm) }; }
+async function ensureAttTab(s) {
+  const m = await sheetMeta(s.id), t = (m.sheets || []).find(x => x.properties.title === ATT_TAB);
+  if (!t) await gapi(SH + s.id + ':batchUpdate', { method: 'POST', body: { requests: [{ addSheet: { properties: { title: ATT_TAB } } }] } });
+  const { v, h } = await attTab(s);
+  if (!h.length || !h.some(Boolean)) { await batchValues(s.id, [{ range: "'" + ATT_TAB + "'!A1", values: [ATT_HEAD] }]); return ATT_HEAD.slice(); }
+  if (h.indexOf('출석ID') < 0 || h.indexOf('성도') < 0) throw new Error("'출석' 탭의 첫 줄이 앱이 아는 머리글이 아닙니다 — 쓰지 않았습니다.");
+  const miss = ATT_HEAD.filter(x => h.indexOf(x) < 0);   // 나중에 생긴 칸은 오른쪽 끝에 머리글만 더한다
+  if (miss.length) { await batchValues(s.id, [{ range: a1(ATT_TAB, h.length, 1), values: [miss] }]); return h.concat(miss); }
+  return h;
+}
+async function attWriteNew(items) {
+  const s = saved().sheet, h = await ensureAttTab(s), now = Date.now(), at = stampLocal(now);
+  const rows = items.map((a, i) => attRow(h, Object.assign({}, a, { id: newId('T', now + i, Math.random()), at, svc: attSvcNorm(a.svc) })));
+  await gapi(SH + s.id + '/values/' + rng(ATT_TAB, 'A1') + ':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', { method: 'POST', body: { values: rows } });
+  return rows.length;
+}
+// 줄 번호는 믿지 않는다 — 출석ID 열을 새로 읽어 찾고, 읽은 줄의 ID 가 맞을 때만 쓴다
+async function attFind(s, id) {
+  for (let i = 0; i < 3; i++) {
+    const { v, h } = await attTab(s), c = h.indexOf('출석ID'); if (c < 0) throw new Error("'출석' 탭에 출석ID 칸이 없습니다");
+    const r = findRowById(v.map(x => [x[c]]), id);
+    if (r === -2) throw new Error('같은 출석ID 가 둘 있습니다 — 쓰지 않았습니다.');
+    if (r < 0) throw new Error('이 출석 기록을 찾지 못했습니다.\n다른 곳에서 지웠을 수 있습니다.');
+    const cur = ((await readRange(s.id, ATT_TAB, r + ':' + r))[0]) || [];
+    if (norm(cur[c]) === norm(id)) return { r, h, cur };
+  }
+  throw new Error('시트 줄이 계속 움직여 확실히 찾지 못했습니다 — 아무것도 쓰지 않았습니다.');
+}
+async function attWriteEdit(old, a) {
+  const cells = attPatch(old, Object.assign({}, a, { svc: attSvcNorm(a.svc) })); if (!Object.keys(cells).length) return 0;
+  const s = saved().sheet, { r, h } = await attFind(s, old.id);
+  await batchValues(s.id, Object.keys(cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1(ATT_TAB, h.indexOf(k), r), values: [[cells[k]]] })));
+  return Object.keys(cells).length;
+}
+async function attDelete(a) {   // 언제나 한 줄 — 지우기 직전에 그 줄의 출석ID 를 다시 확인한다
+  const s = saved().sheet, { r, h, cur } = await attFind(s, a.id), m = await sheetMeta(s.id), t = (m.sheets || []).find(x => x.properties.title === ATT_TAB);
+  if (!t) throw new Error("'출석' 탭이 없습니다");
+  await deleteOneRow(s.id, t.properties.sheetId, r);
+  return { h, cur };
+}
+async function attRestore(h, cur) { const s = saved().sheet; await ensureAttTab(s); await appendTo(s.id, ATT_TAB, cur); }
+
 const BUSY = { on: false };
 async function busy(fn) { if (BUSY.on) return; BUSY.on = true; document.body.classList.add('busy'); try { return await fn(); } finally { BUSY.on = false; document.body.classList.remove('busy'); } }
 // '심방' 캘린더 — 앞으로 3주 일정 (읽기만. 계획 만들기는 C3)
@@ -1816,7 +1972,7 @@ function head(title, left, right) {
   return '<div class="ph-head r2"><span></span><h3>' + title + '</h3><span class="acts">' + (right ? b(right) : '') + b(['layer', '설정', 'gear', 'settings']) + '</span></div>';
 }
 function nav() {
-  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
+  const f = S.view === 'plan' ? '<button class="fab" data-act="addplan">' + IC.plus + '계획</button>' : S.view === 'people' ? '<button class="fab" data-act="attadd">' + IC.plus + '출석</button>' : '<button class="fab" data-act="addrec">' + IC.plus + '기록</button>';
   return f + '<nav class="ph-nav">' + TABS_NAV.map(t => { const on = S.view === t[0] || (t[0] === 'week' && S.view === 'month');
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
@@ -1920,7 +2076,7 @@ function vPeople() {
   let P = peopleList(M(), V(), t, pf.stale);
   let h = head('성도', ['layer', '설정', 'gear', 'settings'], ['search', '찾기', 'search']) + '<div class="ph-body">';
   if (S.searching) h += '<div class="srch"><span>' + IC.search + '</span><input id="q" placeholder="이름 찾기" value="' + esc(S.q) + '" autocomplete="off"></div>';
-  h += '<div id="results"><div class="seg" role="group"><button data-act="psort" data-v="old" aria-pressed="' + (S.pSort === 'old') + '">오래 못 만난 순</button><button data-act="psort" data-v="recent" aria-pressed="' + (S.pSort === 'recent') + '">최근 순</button><button data-act="psort" data-v="role" aria-pressed="' + (S.pSort === 'role') + '">구분별</button></div>' + fline();
+  h += '<div id="results">' + (S.q ? '' : attSummaryHtml()) + '<div class="seg" role="group"><button data-act="psort" data-v="old" aria-pressed="' + (S.pSort === 'old') + '">오래 못 만난 순</button><button data-act="psort" data-v="recent" aria-pressed="' + (S.pSort === 'recent') + '">최근 순</button><button data-act="psort" data-v="role" aria-pressed="' + (S.pSort === 'role') + '">구분별</button></div>' + fline();
   const RO = (DATA.opts && DATA.opts.roles) || [];
   if (S.pSort === 'old') P.sort((a, b) => (a.last || '').localeCompare(b.last || ''));
   else if (S.pSort === 'recent') P.sort((a, b) => (b.last || '').localeCompare(a.last || ''));
@@ -1935,6 +2091,11 @@ function vPeople() {
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
     h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + esc(p.name) + '</span><span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
   });
+  // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
+  if (!fcount() && !S.quick) {
+    const q = nameKey(S.q), only = attendOnlyPeople(AT(), Object.keys(M().people)).filter(x => !q || nameKey(x.name).includes(q)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
+    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + esc(x.name) + '</span><span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
+  }
   return h + '</div></div>' + nav();
 }
 function lPerson(L) {
@@ -1942,17 +2103,115 @@ function lPerson(L) {
   let h = lhead('', L) + '<div class="ph-body">';
   h += '<div class="dt-name">' + esc(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + '</div>';
   const live = all.filter(v => !v.archived), deep = live.filter(v => v.depthN === 3).length, lv = live[0];
-  h += '<p class="sentence" style="margin-top:12px">' + (live.length ? '심방 <b>' + live.length + '번</b>, 그중 깊은 대화 <b>' + deep + '번</b>. 마지막은 <b>' + relDay(lv.ymd, t) + '</b>' + (lv.methodLabel ? '(' + esc(lv.methodLabel) + ')' : '') + '입니다.' : '보관된 기록만 있습니다.') + '</p>';
+  h += '<p class="sentence" style="margin-top:12px">' + (!all.length ? '아직 심방 기록이 없습니다.' : live.length ? '심방 <b>' + live.length + '번</b>, 그중 깊은 대화 <b>' + deep + '번</b>. 마지막은 <b>' + relDay(lv.ymd, t) + '</b>' + (lv.methodLabel ? '(' + esc(lv.methodLabel) + ')' : '') + '입니다.' : '보관된 기록만 있습니다.') + '</p>';
   const tc = countBy(live, v => v.allTags), tk = Object.keys(tc).sort((a, b) => tc[b] - tc[a]);
   if (tk.length) h += '<div class="h-sec">자주 나온 이야기</div><div class="cloud">' + tk.map(x => '<span style="font-size:' + Math.min(24, 13 + tc[x] * 3) + 'px;' + (tc[x] > 1 ? 'color:var(--tx);font-weight:500' : '') + '">#' + esc(x) + '</span>').join('') + '</div>';
   const open = [].concat(...live.map(v => v.actions.map((a, i) => ({ a, v, i })).filter(o => !o.a.done)));
   if (open.length) h += '<div class="h-sec">남은 할 일<small>' + open.length + '</small></div>' + open.map(o => todoRow(o.v, o.a, o.i)).join('');
+  const att = attendOf(AT(), n);
+  h += '<div class="h-sec">출석<small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
+  if (att.length) h += '<div class="tl">' + att.slice(0, L.attAll ? 999 : 5).map(a => attRowHtml(a, false)).join('') + '</div>' + (att.length > 5 && !L.attAll ? '<button class="send" data-act="attall" style="margin-top:8px">출석 ' + att.length + '번 모두 보기</button>' : '');
+  h += '<button class="send" data-act="attadd" data-v="' + esc(n) + '" style="margin-top:8px">+ 출석 적기</button>';
   const up = calItems().filter(e => e.ymd >= t && (e.planId ? e.title === n : e.title.includes(n)));
   h += '<div class="h-sec">흐름<small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
   up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
   h += vs.map(tlRow).join('') + '</div>';
   if (all.length > vs.length) h += '<button class="send" data-act="arch" style="margin-top:10px">보관 기록 함께 보기</button>';
   return h + '</div>';
+}
+
+// ───────────────────────────── 출석 (1108-A) ─────────────────────────────
+function AT() { return DATA.attend || []; }
+function attSub(a) { return [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · '); }
+function attRowHtml(a, withName) {
+  const sub = attSub(a), memo = firstLine(a.memo || '');
+  return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + esc(a.name) + '</b>' : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
+    (sub || a.memo ? '<span class="t2">' + esc(sub) + (sub && a.memo ? ' · ' : '') + (a.memo ? esc(memo) : '') + '</span>' : '') + '</span></button>';
+}
+function attSvcOptions() { const s = ATT_SVC.slice(); AT().forEach(a => { if (a.svc && !s.includes(a.svc)) s.push(a.svc); }); return s; }
+function attNames() {   // 이름 후보 = 심방 기록 성도 + 출석에 적은 이름 (띄어쓰기 무시로 하나씩)
+  const seen = new Set(), out = [];
+  Object.keys((M() && M().people) || {}).concat(AT().map(a => a.name)).forEach(n => { const k = nameKey(n); if (k && !seen.has(k)) { seen.add(k); out.push(n); } });
+  return out;
+}
+function attSuggHtml(L) {
+  const q = norm(L.form.name); if (!q) return '';
+  return attNames().filter(n => n !== q && nameKey(n).includes(nameKey(q))).slice(0, 6).map(n => {
+    const last = attendOf(AT(), n)[0];
+    return '<button data-act="attpick" data-v="' + esc(n) + '">' + esc(n) + (last ? ' <small>' + md(last.date) + ' ' + esc(last.svc) + '</small>' : '') + '</button>';
+  }).join('');
+}
+function attSummaryHtml() {
+  const L = AT();
+  if (!L.length) return '<button class="attsum" data-act="attlist"><span><b>출석</b><small>예배 · 모임 · 개인 기도에 온 분을 적어 둡니다</small></span>' + IC.r + '</button>';
+  const d = L[0].date, day = L.filter(a => a.date === d);
+  return '<button class="attsum" data-act="attlist"><span><b>출석 · ' + md(d) + ' ' + day.length + '명</b><small>' + esc(day.slice(0, 4).map(a => a.name).join(', ') + (day.length > 4 ? ' 외' : '')) + '</small></span>' + IC.r + '</button>';
+}
+function lAttList(L) {
+  const all = AT(), n = L.n || 60, list = all.slice(0, n);
+  let h = lhead('출석', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  h += '<p class="muted">예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
+  if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+ 출석" 으로 한 분씩 적거나, 메모를 그대로 붙여 넣어 보세요.</p>';
+  let last = null;
+  list.forEach(a => {
+    if (a.date !== last) { if (last !== null) h += '</div>'; h += '<div class="dhead"><b>' + dayLabel(a.date) + '</b><span>' + all.filter(x => x.date === a.date).length + '명</span></div><div class="tl">'; last = a.date; }
+    h += attRowHtml(a, true);
+  });
+  if (last !== null) h += '</div>';
+  if (all.length > n) h += '<button class="send" data-act="attmore" style="margin-top:10px">더 보기 (' + (all.length - n) + ')</button>';
+  return h + '</div><div class="ph-foot" style="display:flex;gap:8px"><button class="btn" data-act="attpaste">붙여 넣기</button><button class="btn pri" data-act="attadd">+ 출석</button></div>';
+}
+function attChips(k, opts, cur) { return '<div class="opts">' + opts.map(x => '<button class="opt" data-act="aone" data-k="' + k + '" data-v="' + esc(x) + '" aria-pressed="' + (cur === x) + '">' + esc(x) + '</button>').join('') + '</div>'; }
+function lAttEdit(L) {
+  const f = L.form, known = attNames().some(n => nameKey(n) === nameKey(f.name)), svcs = attSvcOptions();
+  let h = lhead(L.id ? '출석 고치기' : '출석 적기', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  h += '<div class="fsec">누가</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + attSuggHtml(L) + '</div>' +
+    (norm(f.name) && !known ? '<div class="hint">처음 적는 이름입니다. 심방 기록이 없어도 그대로 적힙니다.</div>' : '') + '</div>';
+  h += '<div class="fsec">언제 · 어디</div><div class="fld"><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜"></div>';
+  h += '<div class="fld"><span class="lb">예배 · 모임</span>' + attChips('svc', svcs, f.svc) + '<input class="inp etc" data-f="svc" data-etc="1" value="' + esc(svcs.includes(f.svc) ? '' : f.svc) + '" placeholder="그 밖의 모임 (예: 청년부 모임)" aria-label="예배 · 모임 직접 적기"></div>';
+  h += '<div class="fsec">어떻게</div>';
+  h += '<div class="fld"><span class="lb">언제 왔나</span>' + attChips('from', ATT_FROM, f.from) + '<input class="inp etc" data-f="from" data-etc="1" value="' + esc(ATT_FROM.includes(f.from) ? '' : f.from) + '" placeholder="직접 적기" aria-label="언제 왔나 직접 적기"></div>';
+  h += '<div class="fld"><span class="lb">언제 갔나</span>' + attChips('to', ATT_TO, f.to) + '<input class="inp etc" data-f="to" data-etc="1" value="' + esc(ATT_TO.includes(f.to) ? '' : f.to) + '" placeholder="직접 적기 (예: 기도 때 일찍 나감?)" aria-label="언제 갔나 직접 적기"></div>';
+  h += '<div class="fld"><input class="inp" data-f="seat" value="' + esc(f.seat) + '" placeholder="자리 (예: 맨 앞, 음향부스 뒤)" aria-label="자리"></div>';
+  h += '<div class="fld"><input class="inp" data-f="with" value="' + esc(f.with) + '" placeholder="함께 온 분 (예: 아내)" aria-label="함께 온 분"></div>';
+  h += '<div class="fsec">메모</div><div class="fld"><textarea class="inp" data-f="memo" rows="3" placeholder="본 것 · 들은 것" aria-label="메모">' + esc(f.memo) + '</textarea></div>';
+  if (L.id) h += '<div class="row" style="display:flex;gap:8px;margin-top:18px"><button class="btn danger" data-act="attdel" data-v="' + esc(L.id) + '">이 출석 지우기</button></div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attsave">' + (L.id ? '고친 것 저장' : '시트에 적기') + '</button></div>';
+}
+function attPreviewHtml(L) {
+  const r = parseAttendText(L.form.paste, today(), attSvcOptions());
+  if (!r.items.length) return '<p class="hint">' + (norm(L.form.paste) ? '사람을 찾지 못했습니다. 이름 · 날짜(또는 예배) 를 줄마다 적고, 사람 사이는 빈 줄로 띄워 주세요.' : '') + '</p>';
+  return '<div class="h-sec">이렇게 적습니다<small>' + r.items.length + '명' + (r.skipped ? ' · 건너뜀 ' + r.skipped : '') + '</small></div><div class="tl">' + r.items.map(a => attRowHtml(Object.assign({ id: '' }, a), true)).join('') + '</div>';
+}
+function lAttPaste(L) {
+  let h = lhead('출석 붙여 넣기', L) + '<div class="ph-body" style="padding-bottom:110px">';
+  h += '<p class="muted">메모장에 적던 꼴 그대로 붙여 넣으세요. 사람 사이는 빈 줄로 띄웁니다.<br>첫 줄 = 이름, 그다음 날짜(11/8) · 예배 · 모임 · 처음부터/헌금부터 · 끝까지/나감 · 자리 · ○○와 함께 — 나머지는 메모가 됩니다.</p>';
+  h += '<div class="fld"><textarea class="inp" data-f="paste" rows="9" placeholder="김하늘&#10;11/8&#10;주일 3부&#10;처음부터 참석&#10;맨 앞 자리&#10;끝까지 참석" aria-label="붙여 넣을 메모">' + esc(L.form.paste) + '</textarea></div>';
+  h += '<div id="attPrev">' + attPreviewHtml(L) + '</div>';
+  return h + '</div><div class="ph-foot"><button class="btn pri" data-act="attpastesave">시트에 적기</button></div>';
+}
+function openAttEdit(id, name) {
+  if (id) { const a = AT().find(x => x.id === id); if (!a) return; openLayer('attedit', { id, form: { name: a.name, date: a.date, svc: a.svc, from: a.from, to: a.to, seat: a.seat, with: a.with, memo: a.memo } }); return; }
+  const hb = name ? attHabit(AT(), name) : { svc: '', seat: '' };
+  openLayer('attedit', { id: null, form: { name: name || '', date: today(), svc: hb.svc, from: '', to: '', seat: hb.seat, with: '', memo: '' } });
+}
+async function saveAttend(L) {
+  const errs = validateAttend(L.form); if (errs.length) { toast(errs.join('\n')); return; }
+  const f = Object.assign({}, L.form, { name: norm(L.form.name) });
+  if (!L.id) { await attWriteNew([f]); L.dirty = false; closeLayer(true); toast('출석을 적었습니다\n' + f.name + ' · ' + md(f.date) + (f.svc ? ' ' + attSvcNorm(f.svc) : '')); }
+  else {
+    const old = AT().find(x => x.id === L.id); if (!old) throw new Error('이 출석 기록을 찾지 못했습니다');
+    const n = await attWriteEdit(old, f); L.dirty = false; closeLayer(true); toast(n ? '고쳤습니다\n' + n + '칸' : '바뀐 것이 없습니다');
+  }
+  await loadData(true);
+}
+async function saveAttPaste(L) {
+  const r = parseAttendText(L.form.paste, today(), attSvcOptions());
+  if (!r.items.length) { toast('적을 사람을 찾지 못했습니다'); return; }
+  if (r.items.length > 30) { toast('한 번에 30명까지 적습니다\n나눠서 붙여 넣어 주세요'); return; }
+  const n = await attWriteNew(r.items); L.dirty = false; closeLayer(true);
+  toast('출석 ' + n + '명을 적었습니다\n' + r.items.map(a => a.name).join(', '));
+  await loadData(true);
 }
 
 // ───────────────────────────── 계획 (C1: 제안 · '심방' 캘린더 읽기만) ─────────────────────────────
@@ -2389,7 +2648,7 @@ function gate() {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attlist: lAttList, attedit: lAttEdit, attpaste: lAttPaste };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -2415,7 +2674,7 @@ let lid = 0;
 function openLayer(type, extra) { S.menu = null; S.layers.push(Object.assign({ type, id: type + (++lid) }, extra || {})); render(); }
 function closeLayer(force) {
   const lay = $('layers'), el = lay.lastElementChild; if (!S.layers.length) return;
-  const top = topLayer(); if (!force && (top.type === 'edit' || top.type === 'planedit') && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
+  const top = topLayer(); if (!force && ['edit', 'planedit', 'attedit', 'attpaste'].includes(top.type) && top.dirty && !confirm('적던 내용을 버릴까요?')) return;
   const done = () => { S.layers.pop(); S.menu = null; render(); };
   if (!el || RM.matches) return done();
   el.animate([{ transform: 'none' }, { transform: 'translateX(100%)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = done;
@@ -2503,7 +2762,14 @@ document.addEventListener('change', e => {
   busy(async () => { try { if (DATA.prepared && await calSync()) { toast('일정 제목을 바꿨습니다'); await loadData(true); } } catch (err) { /* 다음에 */ } });
 });
 document.addEventListener('input', e => {
-  const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit' && L.type !== 'b7send')) return;
+  const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (!f || !L || (L.type !== 'edit' && L.type !== 'planedit' && L.type !== 'b7send' && L.type !== 'attedit' && L.type !== 'attpaste')) return;
+  if (L.type === 'attpaste') { L.form[f] = e.target.value; L.dirty = !!norm(e.target.value); const pv = $('attPrev'); if (pv) pv.innerHTML = attPreviewHtml(L); return; }
+  if (L.type === 'attedit') {
+    L.form[f] = e.target.value; L.dirty = true;
+    if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = attSuggHtml(L); }
+    if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
+    return;
+  }
   if (L.type === 'b7send') { L.form[f] = e.target.value; if (f === 'date') document.querySelectorAll('.layer:last-child [data-act="b7date"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value))); return; }
   L.form[f] = e.target.value; L.dirty = true;
   if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
@@ -2558,6 +2824,32 @@ document.addEventListener('click', e => {
   if (a === 'b7open') { openB7Send(v, +k); return; }
   if (a === 'b7date') { const L = topLayer(); if (L && L.type === 'b7send') { L.form.date = v; render(); } return; }
   if (a === 'b7send') { const L = topLayer(); if (L && L.type === 'b7send') busy(async () => { try { await sendB7(L); } catch (e) { toast('보내지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'attlist') { openLayer('attlist'); return; }
+  if (a === 'attadd') { openAttEdit(null, v || ''); return; }
+  if (a === 'attopen') { if (v) openAttEdit(v); return; }
+  if (a === 'attpaste') { openLayer('attpaste', { form: { paste: '' } }); return; }
+  if (a === 'attmore') { const L = topLayer(); if (L && L.type === 'attlist') { L.n = (L.n || 60) + 60; render(); } return; }
+  if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
+  if (a === 'aone' || a === 'attpick') {
+    const L = topLayer(); if (!L || L.type !== 'attedit') return; L.dirty = true;
+    if (a === 'aone') L.form[k] = L.form[k] === v ? '' : v;
+    else { L.form.name = v; if (!L.id) { const hb = attHabit(AT(), v); if (!L.form.svc) L.form.svc = hb.svc; if (!L.form.seat) L.form.seat = hb.seat; } }
+    render(); return;
+  }
+  if (a === 'attsave') { const L = topLayer(); if (L && L.type === 'attedit') busy(async () => { try { await saveAttend(L); } catch (e) { toast('출석을 저장하지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'attpastesave') { const L = topLayer(); if (L && L.type === 'attpaste') busy(async () => { try { await saveAttPaste(L); } catch (e) { toast('출석을 적지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'attdel') {
+    const at = AT().find(x => x.id === v); if (!at) return;
+    if (!confirm('이 출석 기록을 지울까요?\n' + at.name + ' · ' + md(at.date) + ' ' + (at.svc || ''))) return;
+    busy(async () => {
+      try {
+        const r = await attDelete(at); S.layers = S.layers.filter(L => L.id !== v); render();
+        toast('지웠습니다\n' + at.name + ' · ' + md(at.date), 0, { label: '되돌리기', fn: () => busy(async () => { try { await attRestore(r.h, r.cur); toast('되살렸습니다'); await loadData(true); } catch (e) { toast('되살리지 못했습니다\n' + e.message); } }) });
+        await loadData(true);
+      } catch (e) { toast('지우지 못했습니다\n' + e.message); }
+    });
+    return;
+  }
   if (a === 'addplan') { openPlanEdit(null, { name: v || '' }); return; }
   if (a === 'planopen') { openPlanEdit(v); return; }
   if (a === 'plancal') { const L = topLayer(); if (L && L.type === 'planedit') { L.form.cal = !L.form.cal; L.dirty = true; render(); } return; }

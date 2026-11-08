@@ -17,6 +17,7 @@
 //     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
 //  ⑬ (C3b) 할 일 → BLOCK7 할일 — 쪽지함에 쪽지 한 줄(종류 · 이름 · 날짜만, 나눈 이야기 없음) · 액션 탭에 보낸 날 · 보낸 뒤 단추에 날짜 · 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
 //  ⑭ (C3c) 기록도 '심방' 캘린더에 — 2026-10-01 부터 기록마다 ✓ 하루 종일 하나 · 계획에서 온 기록은 건너뜀 · 기록 날짜를 고치면 일정도 · 캘린더에서 옮겨도 기록 날짜로 · 지운 기록의 일정은 지움 · 다시 맞춰도 그대로
+//  ⑮ (1108-A) 출석 — 처음 적을 때 출석 탭 · 한 줄 · 붙여 넣기로 여럿 · 사람 화면 출석 · 고치기는 바뀐 칸만 · 지우기는 그 한 줄 · 되돌리기 · 출석만 있는 새 이름도 성도 목록에
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -473,6 +474,50 @@ async function route(r) {
   await reload();
   eq('⑭ 다시 맞춰도 캘린더를 또 고치지 않는다', LOG.filter(x => /^cal/.test(x[0])).length, nR);
   eq("⑭ 기록 일정은 '캘린더에만 있는 일정' 에 안 나온다", await page.evaluate(() => calOthers().filter(e => e.title.startsWith('✓')).length), 0);
+
+  // ⑮ 출석 (1108-A)
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.click('.ph-nav [data-act="tab"][data-v="people"]'); await page.waitForTimeout(700);
+  eq('⑮ 성도 탭 단추는 + 출석 · 출석 요약 칸', [await page.$$eval('.fab[data-act="attadd"]', x => x.length), await page.$$eval('.attsum', x => x.length)], [1, 1]);
+  await page.click('.fab[data-act="attadd"]'); await tidy();
+  await page.fill('.layer [data-f="name"]', '새손님');
+  await page.click('.layer [data-act="aone"][data-k="svc"][data-v="개인 기도"]');
+  await page.fill('.layer [data-f="seat"]', '기도실');
+  await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
+  const AT_ = () => tab('출석').rows, tH = () => AT_()[0], tc = (r, k) => r[tH().indexOf(k)];
+  const todayK = await page.evaluate(() => today());
+  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 갔나', '자리', '함께', '메모', '적은 시각']);
+  eq('⑮ 한 줄 — 이름 · 예배 · 모임 · 자리 · 날짜(오늘) · 출석ID', AT_().slice(1).map(r => [tc(r, '성도'), tc(r, '예배 · 모임'), tc(r, '자리'), tc(r, '날짜') === todayK, /^T/.test(tc(r, '출석ID'))]), [['새손님', '개인 기도', '기도실', true, true]]);
+  eq('⑮ (시험 준비) 머머머는 심방 기록이 있는 분', await page.evaluate(() => !!M().people['머머머']), true);
+  await page.click('.attsum'); await tidy();
+  await page.click('.layer [data-act="attpaste"]'); await tidy();
+  await page.fill('.layer:last-child [data-f="paste"]', ['기록', '', '머머머', '11/8', '주일3부', '처음부터 참석', '맨 앞 자리', '끝까지 참석', '', '타파하', '11/8', '라이프라인', '헌금부터 참석', '음향부스 뒷자리', '(기도 때 일찍 나감?)', '남편과 함께', '다음 주도 오신다 함'].join('\n'));
+  await tidy();
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_paste.png' });
+  eq('⑮ 붙여 넣기 미리 보기 — 두 분 · 머리말은 건너뜀', await page.$eval('#attPrev .h-sec small', e => e.textContent), '2명 · 건너뜀 1');
+  await page.click('[data-act="attpastesave"]'); await page.waitForTimeout(1500);
+  const byN = n => AT_().slice(1).find(r => tc(r, '성도') === n) || [];
+  eq('⑮ 붙여 넣기 → 칸마다 나뉘어 적힌다', ['머머머', '타파하'].map(n => { const r = byN(n); return [tc(r, '날짜'), tc(r, '예배 · 모임'), tc(r, '언제 왔나'), tc(r, '언제 갔나'), tc(r, '자리'), tc(r, '함께'), tc(r, '메모')]; }),
+    [['2026-11-08', '주일 3부', '처음부터', '끝까지', '맨 앞 자리', '', ''], ['2026-11-08', '라이프라인', '헌금부터', '기도 때 일찍 나감?', '음향부스 뒷자리', '남편', '다음 주도 오신다 함']]);
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_people.png', fullPage: true });
+  eq('⑮ 출석만 있는 새 이름(새손님 · 타파하)도 성도 목록에 — 심방 기록 있는 머머머는 원래 목록', (await page.$$eval('.prow .nm', x => x.map(e => e.textContent))).filter(n => ['새손님', '타파하', '머머머'].includes(n)).sort(), ['머머머', '새손님', '타파하']);
+  eq('⑮ 출석만 적은 분 칸 — 새손님 · 타파하 (심방 기록 있는 머머머는 아님)', await page.evaluate(() => attendOnlyPeople(AT(), Object.keys(M().people)).map(x => x.name).sort()), ['새손님', '타파하']);
+  await page.click('.prow:has-text("머머머")'); await tidy();
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_person.png', fullPage: true });
+  eq('⑮ 사람 화면에 출석', await page.$$eval('.layer:last-child .tl .planbadge.att', x => x.map(e => e.textContent)), ['주일 3부']);
+  await page.click('.layer:last-child [data-act="attopen"]'); await tidy();
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_edit.png', fullPage: true });
+  await page.fill('.layer:last-child [data-f="seat"]', '둘째 줄');
+  const n5 = LOG.length;
+  await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
+  eq('⑮ 고치기 — 자리 칸 하나만 쓴다', LOG.slice(n5).filter(x => x[0] === 'set').map(x => decodeURIComponent(x[1]).replace(/\d+$/, '') + '=' + x[2][0]), ["'출석'!G=둘째 줄"]);
+  const nRows = AT_().length;
+  await page.click('.layer:last-child [data-act="attopen"]'); await tidy();
+  await page.click('.layer:last-child [data-act="attdel"]'); await page.waitForTimeout(1500);
+  eq('⑮ 지우기 — 그 한 줄만 빠진다', [AT_().length, !!byN('머머머').length, !!byN('타파하').length], [nRows - 1, false, true]);
+  await page.click('.toast-act'); await page.waitForTimeout(1500);
+  eq('⑮ 되돌리기 — 같은 출석ID 로 돌아온다', [AT_().length, tc(byN('머머머'), '자리')], [nRows, '둘째 줄']);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

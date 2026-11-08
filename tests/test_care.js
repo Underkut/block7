@@ -18,6 +18,7 @@
 //  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
 //  ⑲ 기록도 '심방' 캘린더에 — 2026-10-01 부터 · ✓ 하루 종일 · 계획에서 온 기록은 건너뜀 · 날짜 · 이름은 시트가 이김 · 지운 기록의 일정은 지움(상한 · 우리 표식만 · 시트를 못 읽었으면 안 지움) · 여벌
 //  ⑰ 계획 · '심방' 캘린더 — 계획 줄 읽기 · 일정 모양(제목은 이름만 + 앞뒤 글자, 표식만) · 캘린더에서 옮김 → 계획 따라감 · 지움 → 취소됨 · 만들다 끊긴 일정 이어 붙이기 · 두 기기 여벌 지우기(상한) · 기록됨 → ✓
+//  ⑳ 출석 — 메모 꼴 붙여 넣기를 칸으로 · 예배 · 모임 · 개인 기도 · 탭은 머리글 이름으로 · 띄어쓰기 무시로 사람 맞춤 · 바뀐 칸만 고침
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -38,7 +39,8 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
-  ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
+  ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
+  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -470,6 +472,33 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('⑲ 다른 시트(또는 시트 표시 없는) 기록 일정은 지우지 않는다', J(other.del), []);
   sc.eq('⑲ 마지막 기록을 지워 시트가 비어도 — 제대로 읽었으면 그 일정을 지운다', J(A.recCalSync([], [], [rev('EX', 'C99', '2026-10-20')], O()).del), ['EX']);
   sc.eq('⑲ 만들기는 한 번에 30까지(나머지는 다음에)', J([A.recCalSync(lots, [], [], O()).create.length, A.recCalSync(lots, [], [], O()).n.heldBack]), [A.REC_CREATE_MAX, 10]);
+}
+
+// ⑳ 출석 (1108-A) — 이름 · 내용은 모두 지어낸 것
+{
+  sc.eq("⑳ 탭 이름 '출석' · 머리글 — '예배 · 모임' (예배 · 부서 모임 · 개인 기도)", [A.ATT_TAB, A.ATT_HEAD[3]], ['출석', '예배 · 모임']);
+  sc.eq('⑳ 고르는 칩에 모임 · 개인 기도도', ['부서 모임', '개인 기도'].every(x => A.ATT_SVC.includes(x)), true);
+  const memo = ['기록', '', '가나다', '11/8 ', '주일3부 ', '처음부터 참석', '예배팀 ', '맨 앞 자리', '끝까지 참석', '', '', '라마바', '11/8 ', '라이프라인 ', '헌금부터 참석', '음향부스 뒷자리', '(기도 때 일찍 나감?)', '', '', '사아자', '11/8', '주일 2부', '라운지에서 ', '아내와 함께', '라이프라인도 오신다 했으나 안 오심'].join('\n');
+  const r = A.parseAttendText(memo, '2026-11-08', A.ATT_SVC);
+  sc.eq('⑳ 메모 꼴 붙여 넣기 — 세 분 · 머리말 한 덩어리 건너뜀', [r.items.length, r.skipped], [3, 1]);
+  sc.eq('⑳ 첫 분 — 주일3부 → 주일 3부 · 처음부터 · 끝까지 · 자리 · 나머지는 메모', J(r.items[0]), { name: '가나다', date: '2026-11-08', svc: '주일 3부', from: '처음부터', to: '끝까지', seat: '맨 앞 자리', with: '', memo: '예배팀' });
+  sc.eq('⑳ 둘째 — 헌금부터 · 괄호 속 나감 · 뒷자리', J([r.items[1].svc, r.items[1].from, r.items[1].to, r.items[1].seat]), ['라이프라인', '헌금부터', '기도 때 일찍 나감?', '음향부스 뒷자리']);
+  sc.eq("⑳ 셋째 — '아내와 함께' · '라이프라인도 …' 는 예배가 아니라 메모", J([r.items[2].svc, r.items[2].seat, r.items[2].with, r.items[2].memo]), ['주일 2부', '라운지에서', '아내', '라이프라인도 오신다 했으나 안 오심']);
+  const r2 = A.parseAttendText('차카타\n11/5\n개인 기도\n\n파하\n청년부 모임\n\n거너\n수요 예배\n\n12/30 혼자\n주일 1부', '2026-11-08', A.ATT_SVC);
+  sc.eq('⑳ 개인 기도 · ○○ 모임 · 수요 예배 → 수요예배 · 날짜 없으면 오늘', J(r2.items.map(a => [a.name, a.date, a.svc])), [['차카타', '2026-11-05', '개인 기도'], ['파하', '2026-11-08', '청년부 모임'], ['거너', '2026-11-08', '수요예배']]);
+  sc.eq('⑳ 한 달 넘게 앞 날짜는 지난해로 (1월에 12/28 을 적을 때)', A.parseAttendText('가나\n12/28\n주일 1부', '2027-01-03', A.ATT_SVC).items[0].date, '2026-12-28');
+  const vals = [['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 갔나', '자리', '함께', '메모', '적은 시각'],
+    ['T1', '2026-11-01', '가나다', '주일 3부', '', '', '맨 앞', '', '', ''], ['T2', 46334, '가 나다', '주일 3부', '', '', '맨 앞', '', '두 줄\n메모', ''], ['T3', '2026-11-08', '라마바', '개인 기도', '', '', '', '', '', ''], ['', '', '', '', '', '', '', '', '', '']];
+  const P = A.parseAttend(vals);
+  sc.eq('⑳ 탭 읽기 — 최근 먼저(같은 날이면 나중에 적은 줄 먼저) · 날짜 숫자도 · 빈 줄 건너뜀 · 메모 줄바꿈 그대로', J(P.map(a => [a.id, a.date, a.row])), [['T3', '2026-11-08', 4], ['T2', '2026-11-08', 3], ['T1', '2026-11-01', 2]]);
+  sc.eq('⑳ 열은 머리글 이름으로 — 순서가 달라도', J(A.parseAttend([['성도', '출석ID', '날짜'], ['가나다', 'T9', '2026-11-08']]).map(a => [a.id, a.name, a.date])), [['T9', '가나다', '2026-11-08']]);
+  sc.eq('⑳ 사람 맞추기는 띄어쓰기 무시', A.attendOf(P, '가나다').map(a => a.id), ['T2', 'T1']);
+  sc.eq('⑳ 자주 온 예배 · 자리를 새로 적을 때 미리', J(A.attHabit(P, '가나다')), { svc: '주일 3부', seat: '맨 앞' });
+  sc.eq('⑳ 줄 만들기 — 머리글 자리대로', J(A.attRow(['성도', '출석ID', '모르는 칸', '날짜'], { id: 'T5', name: '가나다', date: '2026-11-08' })), ['가나다', 'T5', '', '2026-11-08']);
+  sc.eq('⑳ 고치기 — 바뀐 칸만', J(A.attPatch(P[2], Object.assign({}, P[2], { seat: '둘째 줄' }))), { '자리': '둘째 줄' });
+  sc.eq('⑳ 안 바꾸면 쓸 칸 없음', J(A.attPatch(P[2], Object.assign({}, P[2]))), {});
+  sc.eq('⑳ 이름 · 날짜 없으면 안 적는다', J([A.validateAttend({ name: '', date: '2026-11-08' }).length, A.validateAttend({ name: '가', date: '11/8' }).length, A.validateAttend({ name: '가', date: '2026-11-08' }).length]), [1, 1, 0]);
+  sc.eq('⑳ 출석만 있는 분 — 심방 이름(띄어쓰기 무시)과 같으면 뺀다', J(A.attendOnlyPeople(P, ['가나다'])), [{ name: '라마바', last: '2026-11-08' }]);
 }
 
 sc.done();
