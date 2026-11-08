@@ -465,6 +465,10 @@ async function route(r) {
   R.rows.splice(R.rows.indexOf(pr), 1);
   await reload();
   eq('⑭ 기록이 시트에서 빠지면 그 일정을 지운다', evFor('C950').length, 0);
+  // (코덱스 검토 PR 983) 예전에 고른 다른 시트의 기록 일정은 지우지 않는다
+  CAL.events.push({ id: 'evOther', status: 'confirmed', summary: '✓ 심방 · 다른시트', start: { date: '2026-10-20' }, end: { date: '2026-10-21' }, extendedProperties: { private: { careApp: 'care', careRec: 'CZ1', careSheet: 'S_OTHER' } } });
+  await reload();
+  eq('⑭ 다른 시트의 기록 일정은 그대로 · 이 시트 일정엔 시트 표시', [evOf('evOther').status, recEv().filter(e => e.id !== 'evOther').every(e => e.extendedProperties.private.careSheet === 'S')], ['confirmed', true]);
   const nR = LOG.filter(x => /^cal/.test(x[0])).length;
   await reload();
   eq('⑭ 다시 맞춰도 캘린더를 또 고치지 않는다', LOG.filter(x => /^cal/.test(x[0])).length, nR);

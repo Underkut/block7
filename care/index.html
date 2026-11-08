@@ -990,28 +990,32 @@ function planCalSync(plans, events, pre, suf) {
 // 계획에서 온 기록(계획에 진짜 일정이 있고 그 계획의 기록ID 가 이 기록)은 계획 일정이 대신하므로 건너뛴다.
 const REC_CAL_FROM = '2026-10-01';        // HB: 2026년 10월부터
 const REC_CREATE_MAX = 30, REC_DEL_MAX = 5;
-function recEventBody(v, pre, suf) {
-  return { summary: DONE_MARK + calTitle(v.name, pre, suf), extendedProperties: { private: { careApp: 'care', careRec: v.id } }, start: { date: v.ymd }, end: { date: ymdAdd(v.ymd, 1) } };
+function recEventBody(v, pre, suf, sheet) {
+  return { summary: DONE_MARK + calTitle(v.name, pre, suf), extendedProperties: { private: { careApp: 'care', careRec: v.id, careSheet: sheet || '' } }, start: { date: v.ymd }, end: { date: ymdAdd(v.ymd, 1) } };
 }
-// visits 는 시트를 제대로 읽은 것이어야 한다(빈 목록이면 지우지 않는다)
-function recCalSync(visits, plans, events, pre, suf, from) {
+function evSheet(ev) { const pr = ev && ev.extendedProperties && ev.extendedProperties.private; return pr ? norm(pr.careSheet) : ''; }
+// o = { pre, suf, from, sheet(지금 고른 시트 id), readOk(시트를 제대로 읽었나) }
+// ⚠️ (코덱스 검토 PR 983) 일정은 **지금 시트의 것만** 다룬다 — 다른 시트(예전에 고른 시트)의 기록 일정을 '기록이 없다' 로 읽어 지우지 않게.
+//    지우기는 readOk 일 때만 — 마지막 기록을 지워 시트가 비어도, 제대로 읽었으면 그 일정을 지운다.
+function recCalSync(visits, plans, events, o) {
+  const { pre, suf, from, sheet, readOk } = o || {};
   const out = { create: [], patch: [], del: [], n: { created: 0, moved: 0, titled: 0, removed: 0, dup: 0, heldBack: 0 } };
   const covered = new Set((plans || []).filter(p => p.recId && p.evId && p.evId !== PLAN_NOCAL).map(p => p.recId));
   const want = new Map();
   (visits || []).forEach(v => { if (v.id && v.ymd && v.ymd >= (from || REC_CAL_FROM) && !v.archived && !covered.has(v.id) && !want.has(v.id)) want.set(v.id, v); });
   const have = {};
-  (events || []).forEach(e => { const r = evRecId(e); if (r && e.status !== 'cancelled') (have[r] = have[r] || []).push(e); });
+  (events || []).forEach(e => { const r = evRecId(e); if (r && e.status !== 'cancelled' && sheet && evSheet(e) === sheet) (have[r] = have[r] || []).push(e); });
   const del = id => { if (out.del.length < REC_DEL_MAX) out.del.push(id); else out.n.heldBack++; };
   want.forEach((v, id) => {
     const evs = have[id] || [];
     if (!evs.length) { if (out.create.length < REC_CREATE_MAX) { out.create.push(id); out.n.created++; } else out.n.heldBack++; return; }
     evs.slice(1).forEach(e => { del(e.id); out.n.dup++; });
-    const e = evs[0], b = recEventBody(v, pre, suf), body = {};
+    const e = evs[0], b = recEventBody(v, pre, suf, sheet), body = {};
     if (!(e.start && e.start.date === v.ymd && !e.start.dateTime)) { body.start = b.start; body.end = b.end; out.n.moved++; }
     if (norm(e.summary) !== norm(b.summary)) { body.summary = b.summary; out.n.titled++; }
     if (Object.keys(body).length) out.patch.push({ evId: e.id, body });
   });
-  if ((visits || []).length) Object.keys(have).forEach(id => { if (!want.has(id)) have[id].forEach(e => { del(e.id); out.n.removed++; }); });
+  if (readOk) Object.keys(have).forEach(id => { if (!want.has(id)) have[id].forEach(e => { del(e.id); out.n.removed++; }); });
   return out;
 }
 // 계획 → 새 기록 꼴 (기록 쓰기)
@@ -1718,10 +1722,11 @@ async function recSync() {
     const sv = saved(), cid = await calId(); if (!cid) return false;
     // '기록됨' 표시가 끊겨 이 기기에 적어 둔 계획도 계획 일정이 있는 것으로 본다 (기록 일정을 겹쳐 만들지 않게)
     const pend = pendDone().map(x => { const p = (DATA.plans || []).find(q => q.id === x.planId); return p ? Object.assign({}, p, { recId: x.recId }) : null; }).filter(Boolean);
-    const plan = recCalSync(M().visits, (DATA.plans || []).concat(pend), DATA.calOurs, sv.calPre, sv.calSuf);
+    const sid = sv.sheet && sv.sheet.id; if (!sid) return false;
+    const plan = recCalSync(M().visits, (DATA.plans || []).concat(pend), DATA.calOurs, { pre: sv.calPre, suf: sv.calSuf, sheet: sid, readOk: DATA.state === 'ok' });
     const byId = new Map(M().visits.map(v => [v.id, v]));
     let changed = false;
-    for (const id of plan.create) { try { await gapi(evUrl(cid), { method: 'POST', body: recEventBody(byId.get(id), sv.calPre, sv.calSuf) }); changed = true; } catch (e) { /* 다음에 */ } }
+    for (const id of plan.create) { try { await gapi(evUrl(cid), { method: 'POST', body: recEventBody(byId.get(id), sv.calPre, sv.calSuf, sid) }); changed = true; } catch (e) { /* 다음에 */ } }
     for (const x of plan.patch) { try { await evPatch(x.evId, x.body); changed = true; } catch (e) { } }
     for (const id of plan.del) { try { await evDelete(id); changed = true; } catch (e) { } }
     return changed;

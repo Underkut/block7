@@ -440,31 +440,36 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
 // ⑲ 기록도 '심방' 캘린더에
 {
   const vs = [{ id: 'C1', name: '가나다', ymd: '2026-10-05' }, { id: 'C2', name: '라마바', ymd: '2026-09-30' }, { id: 'C3', name: '사아자', ymd: '2026-11-02' }, { id: '', name: '준비 전', ymd: '2026-11-03' }, { id: 'C5', name: '보관', ymd: '2026-11-04', archived: true }];
-  const rev = (id, rec, date, o) => Object.assign({ id, status: 'confirmed', summary: '✓ ' + ({ C1: '가나다', C3: '사아자' }[rec] || rec), start: { date }, end: { date }, extendedProperties: { private: { careApp: 'care', careRec: rec } } }, o || {});
+  const rev = (id, rec, date, o) => Object.assign({ id, status: 'confirmed', summary: '✓ ' + ({ C1: '가나다', C3: '사아자' }[rec] || rec), start: { date }, end: { date }, extendedProperties: { private: { careApp: 'care', careRec: rec, careSheet: 'S' } } }, o || {});
+  const O = (o) => Object.assign({ sheet: 'S', readOk: true }, o || {});
   sc.eq('⑲ 기준 날짜는 HB 결정대로 2026-10-01', A.REC_CAL_FROM, '2026-10-01');
-  const r0 = A.recCalSync(vs, [], []);
+  const r0 = A.recCalSync(vs, [], [], O());
   sc.eq('⑲ 2026-10-01 부터 · 기록ID 있는 것 · 보관 아닌 것만 만든다', J(r0.create), ['C1', 'C3']);
-  const b = A.recEventBody(vs[0], '심방 · ', '');
-  sc.eq('⑲ 일정 — ✓ + 제목(앞뒤 글자) · 그날 하루 종일 · 표식 careRec', J([b.summary, b.start, b.end, b.extendedProperties.private]), ['✓ 심방 · 가나다', { date: '2026-10-05' }, { date: '2026-10-06' }, { careApp: 'care', careRec: 'C1' }]);
+  const b = A.recEventBody(vs[0], '심방 · ', '', 'S');
+  sc.eq('⑲ 일정 — ✓ + 제목(앞뒤 글자) · 그날 하루 종일 · 표식 careRec', J([b.summary, b.start, b.end, b.extendedProperties.private]), ['✓ 심방 · 가나다', { date: '2026-10-05' }, { date: '2026-10-06' }, { careApp: 'care', careRec: 'C1', careSheet: 'S' }]);
   sc.eq('⑲ 기록 일정은 계획 표식(careId)이 아니다 · 그래도 우리 것', [A.evCareId(b), A.evRecId(b), A.evOurs(b), A.evOurs({ summary: '남의 것' })], ['', 'C1', true, false]);
   const plans = [{ id: 'P1', recId: 'C3', evId: 'E9', status: '기록됨' }];
-  sc.eq('⑲ 계획에서 온 기록(계획 일정이 있음)은 건너뛴다', J(A.recCalSync(vs, plans, []).create), ['C1']);
-  sc.eq("⑲ 계획이 '캘린더에 안 넣음' 이었으면 기록 일정은 만든다", J(A.recCalSync(vs, [{ recId: 'C3', evId: '없음' }], []).create), ['C1', 'C3']);
-  const same = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')]);
+  sc.eq('⑲ 계획에서 온 기록(계획 일정이 있음)은 건너뛴다', J(A.recCalSync(vs, plans, [], O()).create), ['C1']);
+  sc.eq("⑲ 계획이 '캘린더에 안 넣음' 이었으면 기록 일정은 만든다", J(A.recCalSync(vs, [{ recId: 'C3', evId: '없음' }], [], O()).create), ['C1', 'C3']);
+  const same = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')], O());
   sc.eq('⑲ 같으면 할 일 없음', J([same.create, same.patch, same.del]), [[], [], []]);
-  const mv = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-09'), rev('E3', 'C3', '2026-11-02', { summary: '사아자 메모' })]);
+  const mv = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-09'), rev('E3', 'C3', '2026-11-02', { summary: '사아자 메모' })], O());
   sc.eq('⑲ 날짜 · 제목은 시트가 이긴다 — 옮긴 일정은 기록 날짜로 · 고친 제목은 되돌림', J(mv.patch), [{ evId: 'E1', body: { start: { date: '2026-10-05' }, end: { date: '2026-10-06' } } }, { evId: 'E3', body: { summary: '✓ 사아자' } }]);
-  sc.eq('⑲ 시간 있는 일정으로 바뀌었으면 하루 종일로 되돌림', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05', { start: { dateTime: '2026-10-05T10:00:00+09:00' } }), rev('E3', 'C3', '2026-11-02')]).patch.map(x => Object.keys(x.body))), [['start', 'end']]);
-  const gone = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EX', 'C99', '2026-10-20'), rev('EO', 'C2', '2026-09-30')]);
+  sc.eq('⑲ 시간 있는 일정으로 바뀌었으면 하루 종일로 되돌림', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05', { start: { dateTime: '2026-10-05T10:00:00+09:00' } }), rev('E3', 'C3', '2026-11-02')], O()).patch.map(x => Object.keys(x.body))), [['start', 'end']]);
+  const gone = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EX', 'C99', '2026-10-20'), rev('EO', 'C2', '2026-09-30')], O());
   sc.eq('⑲ 지운 기록 · 기준 날짜 앞 기록의 일정은 지운다', J(gone.del.sort()), ['EO', 'EX']);
-  sc.eq('⑲ 시트를 못 읽었으면(빈 목록) 하나도 안 지운다', J(A.recCalSync([], [], [rev('EX', 'C99', '2026-10-20')]).del), []);
-  sc.eq('⑲ 이미 지운(cancelled) 일정 · 남의 일정은 건드리지 않는다', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EZ', 'C99', '2026-10-20', { status: 'cancelled' }), { id: 'N', status: 'confirmed', summary: '✓ 가나다', start: { date: '2026-10-05' } }]).del), []);
-  const many = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')].concat([1, 2, 3, 4, 5, 6, 7].map(i => rev('G' + i, 'Cg' + i, '2026-10-20'))));
+  sc.eq('⑲ 시트를 못 읽었으면 하나도 안 지운다', J(A.recCalSync([], [], [rev('EX', 'C99', '2026-10-20')], O({ readOk: false })).del), []);
+  sc.eq('⑲ 이미 지운(cancelled) 일정 · 남의 일정은 건드리지 않는다', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EZ', 'C99', '2026-10-20', { status: 'cancelled' }), { id: 'N', status: 'confirmed', summary: '✓ 가나다', start: { date: '2026-10-05' } }], O()).del), []);
+  const many = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')].concat([1, 2, 3, 4, 5, 6, 7].map(i => rev('G' + i, 'Cg' + i, '2026-10-20'))), O());
   sc.eq('⑲ 지우기는 한 번에 다섯까지', J([many.del.length, many.n.heldBack]), [A.REC_DEL_MAX, 2]);
-  const dup = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E1b', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')]);
+  const dup = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E1b', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')], O());
   sc.eq('⑲ 같은 기록의 여벌 일정은 하나만 남긴다', J(dup.del), ['E1b']);
   const lots = Array.from({ length: 40 }, (_, i) => ({ id: 'L' + i, name: 'n' + i, ymd: '2026-10-10' }));
-  sc.eq('⑲ 만들기는 한 번에 30까지(나머지는 다음에)', J([A.recCalSync(lots, [], []).create.length, A.recCalSync(lots, [], []).n.heldBack]), [A.REC_CREATE_MAX, 10]);
+  // (코덱스 검토 PR 983) ① 다른 시트의 기록 일정은 지우지 않는다 ② 마지막 기록을 지워 시트가 비어도(제대로 읽었으면) 일정을 지운다
+  const other = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EA', 'CA1', '2026-10-20', { extendedProperties: { private: { careApp: 'care', careRec: 'CA1', careSheet: 'OTHER' } } }), rev('EN', 'CN1', '2026-10-20', { extendedProperties: { private: { careApp: 'care', careRec: 'CN1' } } })], O());
+  sc.eq('⑲ 다른 시트(또는 시트 표시 없는) 기록 일정은 지우지 않는다', J(other.del), []);
+  sc.eq('⑲ 마지막 기록을 지워 시트가 비어도 — 제대로 읽었으면 그 일정을 지운다', J(A.recCalSync([], [], [rev('EX', 'C99', '2026-10-20')], O()).del), ['EX']);
+  sc.eq('⑲ 만들기는 한 번에 30까지(나머지는 다음에)', J([A.recCalSync(lots, [], [], O()).create.length, A.recCalSync(lots, [], [], O()).n.heldBack]), [A.REC_CREATE_MAX, 10]);
 }
 
 sc.done();
