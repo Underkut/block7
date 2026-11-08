@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-9 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -36,6 +36,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --warn:#b0611f; --warn-soft:rgba(176,97,31,.11);
   --k1:#2a78d6; --k2:#1baf7a; --k3:#eb6834; --k4:#8b938f;
   --deep:#2b6a5c;
+  --mk-red:#d6373a; --mk-orange:#d4731a; --mk-yellow:#a88406; --mk-green:#2f9a55; --mk-blue:#2d6ad1; --mk-purple:#7a4fd4; --mk-pink:#c4428f; --mk-gray:#8b9099;
   --shadow:0 1px 2px rgba(20,30,26,.05),0 10px 30px rgba(20,30,26,.08);
   --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
   --serif:'Noto Serif KR','AppleMyungjo',serif;
@@ -49,6 +50,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --warn:#e6a467; --warn-soft:rgba(230,164,103,.14);
   --k1:#3987e5; --k2:#199e70; --k3:#d95926; --k4:#77807b;
   --deep:#80c6b3;
+  --mk-red:#ff6b6b; --mk-orange:#f5a35c; --mk-yellow:#f2cf5b; --mk-green:#6fd18b; --mk-blue:#6fa8ff; --mk-purple:#b48cff; --mk-pink:#f07cc8; --mk-gray:#7c8089;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101312; --paper:#181c1a; --s1:#1c211f; --s2:#232826; --line:#2a302d; --line2:#3b423e;
@@ -57,6 +59,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --warn:#e6a467; --warn-soft:rgba(230,164,103,.14);
   --k1:#3987e5; --k2:#199e70; --k3:#d95926; --k4:#77807b;
   --deep:#80c6b3;
+  --mk-red:#ff6b6b; --mk-orange:#f5a35c; --mk-yellow:#f2cf5b; --mk-green:#6fd18b; --mk-blue:#6fa8ff; --mk-purple:#b48cff; --mk-pink:#f07cc8; --mk-gray:#7c8089;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -206,6 +209,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .wl .r1 .sp{flex:1}
 .wl .r2{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
 .wl.plan .r1 .nm{font-weight:500}
+.pm{display:inline-flex;align-items:center;gap:4px;font:400 11.5px var(--sans);color:var(--tx2);margin-left:6px;white-space:nowrap;vertical-align:middle}
+.dt-when .pm:first-child{margin-left:0}
+.pm i{width:8px;height:8px;border-radius:50%;background:var(--pm);flex:none}
 .attsum{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;margin:2px 0 12px;border-radius:14px;background:var(--s1);border:1px solid var(--line);text-align:left}
 .attsum span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .attsum b{font-weight:500;font-size:14.5px}
@@ -463,7 +469,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-9';
+const APP_VERSION = 'v. 26-1108-10';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1147,6 +1153,45 @@ function attendOnlyPeople(list, visitNames) {
   return Object.keys(by).map(k => by[k]);
 }
 
+// ───────── 1108-A2 기도노트 표시색 (읽기만) ─────────
+// 표시색의 원본은 기도노트(HB 2026-11-08). 기도노트가 계정에 둔 덩어리(pray/{uid} + c/0…)를 읽어 사람 이름 → 색을 만든다.
+// 색 이름은 기도노트가 붙인 이름 그대로(빨강 '1순위' · 회색 '쉬는 분' 만 뜻이 고정). 여기서는 아무것도 쓰지 않는다.
+const PRAY_MARKS = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'gray'];   // 기도노트 MARKS 와 같은 차례 — 앞 색이 먼저
+const PRAY_FIXED = { red: '1순위', gray: '쉬는 분' };
+const PRAY_COLOR_NAME = { red: '빨강', orange: '주황', yellow: '노랑', green: '초록', blue: '파랑', purple: '보라', pink: '핑크', gray: '회색' };
+// 기도노트의 '색을 묶음 · 분류에 이어 두기'(markLinks) 를 같은 규칙으로 풀어 사람마다 색을 정한다
+function prayLinkMembers(db, k) {
+  const T = db.T || [], G = db.G || [];
+  if (!k) return [];
+  if (k.t === 'cat') return T.filter(t => t.cat === k.id).map(t => t.id);
+  if (k.t === 'sub') return T.filter(t => t.sub === k.id).map(t => t.id);
+  const pids = g => { const a = []; (g.lines || []).forEach(l => (l.segs || []).forEach(s => (s || []).forEach(p => a.push(p)))); return a; };
+  const g = G.find(x => x.id === k.id); if (!g) return [];
+  const ids = pids(g); if (!g.parent) G.filter(c => c.parent === g.id || (c.also || []).indexOf(g.id) >= 0).forEach(c => pids(c).forEach(p => ids.push(p)));
+  return ids;
+}
+// → { 이름열쇠: { m, label, name } } — 같은 이름이 둘이면 앞 차례 색(빨강 쪽)이 이긴다
+function prayMarkIndex(db) {
+  const out = {}; if (!db || !Array.isArray(db.T)) return out;
+  const eff = new Map();
+  PRAY_MARKS.forEach(m => { const k = (db.markLinks || {})[m]; if (k && !PRAY_FIXED[m]) prayLinkMembers(db, k).forEach(id => { if (!eff.has(id)) eff.set(id, m); }); });
+  db.T.forEach(t => {
+    if (!t || t.kind !== 'person' || !norm(t.name)) return;
+    const m = (PRAY_MARKS.includes(t.mark) ? t.mark : '') || eff.get(t.id) || ''; if (!m) return;
+    const key = nameKey(t.name), cur = out[key];
+    if (cur && PRAY_MARKS.indexOf(cur.m) <= PRAY_MARKS.indexOf(m)) return;
+    out[key] = { m, label: PRAY_FIXED[m] || norm((db.marks || {})[m]) || PRAY_COLOR_NAME[m], name: norm(t.name) };
+  });
+  return out;
+}
+function prayPeople(db) { return db && Array.isArray(db.T) ? db.T.filter(t => t && t.kind === 'person' && norm(t.name)).map(t => norm(t.name)) : []; }
+// 덩어리 읽기 — 머리(wid · n)와 덩어리들의 wid 가 모두 같을 때만 믿는다 (쓰는 도중 읽은 것은 버림)
+function prayJoin(meta, parts) {
+  if (!meta || !meta.wid || !(meta.n > 0) || !parts || parts.length !== meta.n) return null;
+  if (!parts.every(p => p && p.wid === meta.wid && typeof p.s === 'string')) return null;
+  try { return JSON.parse(parts.map(p => p.s).join('')); } catch (e) { return null; }
+}
+
 // ───────── C1 열람 (읽기만) ─────────
 // 응답 탭 값 → 화면이 쓰는 모양. 시트는 고치지 않는다. 내용은 화면 메모리에만 둔다(기기에 저장하지 않는다).
 const DEPTH_N = { '깊음': 3, '중간': 2, '얕음': 1 };
@@ -1311,7 +1356,7 @@ async function fbInit() {
   AUTH = app.auth(); DB = app.firestore();
   AUTH.onAuthStateChanged(u => {
     USER = u; TOK = null; AUTH_READY = true; DATA.state = 'idle'; DATA.model = null;
-    DATA.calId = null; DATA.calOurs = null; DATA.cal = []; DATA.plans = null;   // 계정이 바뀌면 남의 캘린더 · 계획을 들고 있지 않게 (코덱스 검토 PR 977)
+    DATA.calId = null; DATA.calOurs = null; DATA.cal = []; DATA.plans = null; DATA.pray = null;   // 계정이 바뀌면 남의 캘린더 · 계획을 들고 있지 않게 (코덱스 검토 PR 977)
     if (u) googleStatus(); else render();
   });
 }
@@ -1449,7 +1494,25 @@ async function loadData(quiet) {
   }
   render();
   loadCal();
+  loadPray();
 }
+// 1108-A2 기도노트 표시색 — pray/{uid} 덩어리를 **읽기만** 한다(화면 메모리에만). 못 읽어도 색만 안 보일 뿐 나머지는 그대로
+async function loadPray(force) {
+  if (!USER || !DB) return;
+  if (!force && DATA.pray && Date.now() - DATA.pray.at < 60000) return;
+  const uid = USER.uid;
+  try {
+    for (let k = 0; k < 3; k++) {
+      const ref = DB.doc('pray/' + uid), m = await ref.get();
+      if (!m.exists) { DATA.pray = { idx: {}, people: [], at: Date.now(), none: true }; break; }
+      const meta = m.data(), parts = await Promise.all(Array.from({ length: meta.n || 0 }, (_, i) => ref.collection('c').doc(String(i)).get()));
+      const db = prayJoin(meta, parts.map(p => (p.exists ? p.data() : null)));
+      if (db) { DATA.pray = { idx: prayMarkIndex(db), people: prayPeople(db), at: Date.now() }; break; }
+    }
+  } catch (e) { DATA.pray = { idx: {}, people: [], at: Date.now(), err: e.code || e.message }; }
+  if (USER && USER.uid === uid) render();
+}
+function pm(name) { const x = DATA.pray && DATA.pray.idx[nameKey(name)]; return x ? '<span class="pm" style="--pm:var(--mk-' + x.m + ')" title="기도노트 표시"><i></i>' + esc(x.label) + '</span>' : ''; }
 function rebuild() { if (DATA.vals) DATA.model = attachExtras(buildModel(DATA.vals, Object.assign({ cutoff: prefs().cutoff }, DATA.opts || {})), DATA.actStatus || {}, DATA.addenda || {}); }
 
 // ───────────────────────────── 쓰기 (C2) ─────────────────────────────
@@ -1549,9 +1612,13 @@ async function writeB7Mark(v, a, stamp) {
   else { const h = (av[0] || []).map(norm); await batchValues(s.id, Object.keys(plan.update.cells).filter(k => h.indexOf(k) >= 0).map(k => ({ range: a1('액션', h.indexOf(k), plan.update.row), values: [[plan.update.cells[k]]] }))); }
 }
 async function sendB7(L) {
-  const v = byKey(L.vkey), a = v && v.actions[L.i]; if (!a) return;
+  const v = L.pname ? null : byKey(L.vkey), a = v && v.actions[L.i]; if (!a && !L.pname) return;
   const note = b7Note(L.form.text, L.form.date, Date.now(), newId('B', Date.now(), Math.random()));
   if (!note) { toast(norm(L.form.text) ? '날짜를 골라 주세요' : '보낼 글을 적어 주세요'); return; }
+  if (L.pname) {   // 1108-A2 사람 화면에서 — 할 일 줄이 없으니 쪽지만 (시트에는 적지 않는다)
+    if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
+    await inboxPush(note); closeLayer(true); toast('BLOCK7 할일로 보냈습니다\n' + md(note.date) + ' · ' + note.text); return;
+  }
   if (!USER || !DB) { toast('로그인한 뒤에 보낼 수 있습니다'); return; }
   await inboxPush(note);
   let marked = true; try { await writeB7Mark(v, a, note.date); } catch (e) { marked = false; }
@@ -1989,7 +2056,7 @@ function fline() {
 // ───────────────────────────── 기록 ─────────────────────────────
 function card(v) {
   const acts = v.actions.map(ak).join('');
-  return '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + esc(v.name || '(이름 없음)') + '</span><span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' +
+  return '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + esc(v.name || '(이름 없음)') + '</span>' + pm(v.name) + '<span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' +
     '<div class="c-txt">' + esc(v.text || '(내용 없음)') + '</div><div class="c-bot">' + depth(v.depthN) + '<span class="tags">' + tags(v) + '</span>' + (acts ? '<span class="acts">' + acts + '</span>' : '') + '</div></button>';
 }
 function vList() {
@@ -2052,10 +2119,10 @@ function todoRow(v, a, i, sub) {
 }
 // 할 일 → BLOCK7 할일 (겹 화면) — 날짜 · 보낼 글을 보고 보낸다
 function lB7Send(L) {
-  const v = byKey(L.vkey), a = v && v.actions[L.i]; if (!a) return lhead('BLOCK7 할일로', L) + '<div class="ph-body"><p class="empty">이 할 일을 찾지 못했습니다.</p></div>';
+  const v = L.pname ? null : byKey(L.vkey), a = v && v.actions[L.i]; if (!a && !L.pname) return lhead('BLOCK7 할일로', L) + '<div class="ph-body"><p class="empty">이 할 일을 찾지 못했습니다.</p></div>';
   const f = L.form, t = today(), dchip = (d, lb) => '<button class="opt" data-act="b7date" data-v="' + d + '" aria-pressed="' + (f.date === d) + '">' + lb + '</button>';
   let h = lhead('BLOCK7 할일로', L) + '<div class="ph-body" style="padding-bottom:110px">';
-  if (a.b7) h += '<p class="note" style="margin-top:14px">' + md(a.b7) + ' 할일로 이미 보냈습니다 — 다시 보내면 BLOCK7 에 하나 더 생깁니다.</p>';
+  if (a && a.b7) h += '<p class="note" style="margin-top:14px">' + md(a.b7) + ' 할일로 이미 보냈습니다 — 다시 보내면 BLOCK7 에 하나 더 생깁니다.</p>';
   h += '<div class="fsec">언제</div><div class="fld"><div class="opts">' + dchip(t, '오늘') + dchip(ymdAdd(t, 1), '내일') + dchip(ymdAdd(t, 2), '모레') + '</div><input class="inp" type="date" data-f="date" value="' + esc(f.date) + '" aria-label="날짜" style="margin-top:8px"></div>';
   h += '<div class="fsec">보낼 글</div><div class="fld"><input class="inp" data-f="text" value="' + esc(f.text) + '" maxlength="200" aria-label="보낼 글"></div>';
   h += '<p class="hint">BLOCK7 이 열리면 그날 <b>첫 시간 구간</b>의 할일로 들어갑니다(기도노트 · 시리와 같은 길).<br>나눈 이야기 · 물어볼 것은 보내지 않습니다 — 이 한 줄만 BLOCK7 계정에 남습니다.</p>';
@@ -2089,19 +2156,19 @@ function vPeople() {
     if (S.pSort === 'role' && (p.roles[0] || '구분 없음') !== lastR) { lastR = p.roles[0] || '구분 없음'; h += '<div class="dhead"><b>' + esc(lastR) + '</b><span></span></div>'; }
     const strip = strip10(p.visits, t).map(lv => '<i class="v' + lv + '"></i>').join('');
     const dots = [].concat(...p.visits.filter(v => v.ymd >= c4).map(v => v.actions)).map(a => '<i style="--k:var(--' + a.k + ')"></i>').join('');
-    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + esc(p.name) + '</span><span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
+    h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + esc(p.name) + '</span>' + pm(p.name) + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
   if (!fcount() && !S.quick) {
     const q = nameKey(S.q), only = attendOnlyPeople(AT(), Object.keys(M().people)).filter(x => !q || nameKey(x.name).includes(q)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
-    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + esc(x.name) + '</span><span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
+    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + esc(x.name) + '</span>' + pm(x.name) + '<span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
   }
   return h + '</div></div>' + nav();
 }
 function lPerson(L) {
   const n = L.name, t = today(), all = M().visits.filter(v => v.name === n), vs = all.filter(v => S.showArch || !v.archived), p = M().people[n] || { roles: [] };
   let h = lhead('', L) + '<div class="ph-body">';
-  h += '<div class="dt-name">' + esc(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + '</div>';
+  h += '<div class="dt-name">' + esc(n) + '</div><div class="dt-when">' + esc(p.roles.join(' · ')) + pm(n) + '</div>';
   const live = all.filter(v => !v.archived), deep = live.filter(v => v.depthN === 3).length, lv = live[0];
   h += '<p class="sentence" style="margin-top:12px">' + (!all.length ? '아직 심방 기록이 없습니다.' : live.length ? '심방 <b>' + live.length + '번</b>, 그중 깊은 대화 <b>' + deep + '번</b>. 마지막은 <b>' + relDay(lv.ymd, t) + '</b>' + (lv.methodLabel ? '(' + esc(lv.methodLabel) + ')' : '') + '입니다.' : '보관된 기록만 있습니다.') + '</p>';
   const tc = countBy(live, v => v.allTags), tk = Object.keys(tc).sort((a, b) => tc[b] - tc[a]);
@@ -2111,7 +2178,7 @@ function lPerson(L) {
   const att = attendOf(AT(), n);
   h += '<div class="h-sec">출석<small>' + (att.length ? att.length + '번 · 마지막 ' + relDay(att[0].date, t) : '기록 없음') + '</small></div>';
   if (att.length) h += '<div class="tl">' + att.slice(0, L.attAll ? 999 : 5).map(a => attRowHtml(a, false)).join('') + '</div>' + (att.length > 5 && !L.attAll ? '<button class="send" data-act="attall" style="margin-top:8px">출석 ' + att.length + '번 모두 보기</button>' : '');
-  h += '<button class="send" data-act="attadd" data-v="' + esc(n) + '" style="margin-top:8px">+ 출석 적기</button>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="send" data-act="attadd" data-v="' + esc(n) + '">+ 출석 적기</button><button class="send" data-act="b7person" data-v="' + esc(n) + '">BLOCK7 할일로</button></div>';
   const up = calItems().filter(e => e.ymd >= t && (e.planId ? e.title === n : e.title.includes(n)));
   h += '<div class="h-sec">흐름<small>' + vs.length + '번' + (all.length > vs.length ? ' · 보관 ' + (all.length - vs.length) : '') + '</small></div><div class="tl">';
   up.forEach(e => { h += e.planId ? '<button class="tlx" data-act="planopen" data-v="' + esc(e.planId) + '"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(((DATA.plans || []).find(p => p.id === e.planId) || {}).why || '물어볼 것 없음').split('\n')[0] + '</span></span></button>' : '<a class="tlx" href="' + esc(e.link) + '" target="_blank" rel="noopener"><span class="d">' + md(e.ymd) + '</span><span><span class="t1"><span class="planbadge">\'심방\' 캘린더' + (e.time ? ' ' + e.time : '') + '</span></span><span class="t2">' + esc(e.title) + '</span></span></a>'; });
@@ -2125,20 +2192,20 @@ function AT() { return DATA.attend || []; }
 function attSub(a) { return [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · '); }
 function attRowHtml(a, withName) {
   const sub = attSub(a), memo = firstLine(a.memo || '');
-  return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + esc(a.name) + '</b>' : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
+  return '<button data-act="attopen" data-v="' + esc(a.id) + '"><span class="d">' + md(a.date) + '</span><span><span class="t1">' + (withName ? '<b style="font-weight:500">' + esc(a.name) + '</b>' + pm(a.name) : '') + '<span class="planbadge att">' + esc(a.svc || '출석') + '</span></span>' +
     (sub || a.memo ? '<span class="t2">' + esc(sub) + (sub && a.memo ? ' · ' : '') + (a.memo ? esc(memo) : '') + '</span>' : '') + '</span></button>';
 }
 function attSvcOptions() { const s = ATT_SVC.slice(); AT().forEach(a => { if (a.svc && !s.includes(a.svc)) s.push(a.svc); }); return s; }
 function attNames() {   // 이름 후보 = 심방 기록 성도 + 출석에 적은 이름 (띄어쓰기 무시로 하나씩)
   const seen = new Set(), out = [];
-  Object.keys((M() && M().people) || {}).concat(AT().map(a => a.name)).forEach(n => { const k = nameKey(n); if (k && !seen.has(k)) { seen.add(k); out.push(n); } });
+  Object.keys((M() && M().people) || {}).concat(AT().map(a => a.name), (DATA.pray && DATA.pray.people) || []).forEach(n => { const k = nameKey(n); if (k && !seen.has(k)) { seen.add(k); out.push(n); } });
   return out;
 }
 function attSuggHtml(L) {
   const q = norm(L.form.name); if (!q) return '';
   return attNames().filter(n => n !== q && nameKey(n).includes(nameKey(q))).slice(0, 6).map(n => {
     const last = attendOf(AT(), n)[0];
-    return '<button data-act="attpick" data-v="' + esc(n) + '">' + esc(n) + (last ? ' <small>' + md(last.date) + ' ' + esc(last.svc) + '</small>' : '') + '</button>';
+    return '<button data-act="attpick" data-v="' + esc(n) + '">' + esc(n) + pm(n) + (last ? ' <small>' + md(last.date) + ' ' + esc(last.svc) + '</small>' : '') + '</button>';
   }).join('');
 }
 function attSummaryHtml() {
@@ -2235,7 +2302,7 @@ function vPlan() {
   h += next.length ? next.map(planCard).join('') : '<p class="empty">아직 계획이 없습니다. 아래 "+ 계획" 으로 만들거나, 제안에서 골라 보세요.</p>';
   h += '<div class="h-sec">이런 분은 어떠세요<small>' + Math.round(pf.stale / 7) + '주 넘게 못 만남</small></div>';
   if (!P.length) h += '<p class="empty">오래 못 만난 분이 없습니다.</p>';
-  P.forEach(p => { const lv = p.visits[0]; h += '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(p.name) + '">' + esc(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + '</small></button><button class="send" data-act="addplan" data-v="' + esc(p.name) + '">계획 +</button></div>'; });
+  P.forEach(p => { const lv = p.visits[0]; h += '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(p.name) + '">' + esc(p.name) + pm(p.name) + ' <span class="roles">' + esc(p.roles.join(' · ')) + '</span><small>마지막 심방 ' + relDay(p.last, t) + (lv.methodLabel ? ' · ' + esc(lv.methodLabel) : '') + '</small></button><button class="send" data-act="addplan" data-v="' + esc(p.name) + '">계획 +</button></div>'; });
   const others = calOthers().filter(e => e.ymd >= t);
   if (others.length) {
     h += '<div class="h-sec">\'심방\' 캘린더에만 있는 일정<small>' + others.length + '</small></div>';
@@ -2410,7 +2477,7 @@ function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' 
 function suggHtml(L) {
   const q = norm(L.form.name); if (!q) return '';
   const names = Object.keys(M().people).filter(n => n !== q && n.includes(q)).slice(0, 6);
-  return names.map(n => { const p = M().people[n]; return '<button data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + ' <small>' + esc((p.roles || []).join(' · ')) + (p.last ? ' · ' + md(p.last) : '') + '</small></button>'; }).join('');
+  return names.map(n => { const p = M().people[n]; return '<button data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + pm(n) + ' <small>' + esc((p.roles || []).join(' · ')) + (p.last ? ' · ' + md(p.last) : '') + '</small></button>'; }).join('');
 }
 function lEdit(L) {
   const f = L.form, FO = filterOptions(M().visits, DATA.opts), known = n => !!M().people[norm(n)];
@@ -2822,6 +2889,7 @@ document.addEventListener('click', e => {
   }
   if (a === 'trash') { openLayer('trash'); loadTrash(topLayer()); return; }
   if (a === 'b7open') { openB7Send(v, +k); return; }
+  if (a === 'b7person') { openLayer('b7send', { pname: v, form: { date: today(), text: '연락 · ' + v } }); return; }
   if (a === 'b7date') { const L = topLayer(); if (L && L.type === 'b7send') { L.form.date = v; render(); } return; }
   if (a === 'b7send') { const L = topLayer(); if (L && L.type === 'b7send') busy(async () => { try { await sendB7(L); } catch (e) { toast('보내지 못했습니다\n' + e.message); } }); return; }
   if (a === 'attlist') { openLayer('attlist'); return; }

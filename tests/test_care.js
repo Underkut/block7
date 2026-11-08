@@ -19,6 +19,7 @@
 //  ⑲ 기록도 '심방' 캘린더에 — 2026-10-01 부터 · ✓ 하루 종일 · 계획에서 온 기록은 건너뜀 · 날짜 · 이름은 시트가 이김 · 지운 기록의 일정은 지움(상한 · 우리 표식만 · 시트를 못 읽었으면 안 지움) · 여벌
 //  ⑰ 계획 · '심방' 캘린더 — 계획 줄 읽기 · 일정 모양(제목은 이름만 + 앞뒤 글자, 표식만) · 캘린더에서 옮김 → 계획 따라감 · 지움 → 취소됨 · 만들다 끊긴 일정 이어 붙이기 · 두 기기 여벌 지우기(상한) · 기록됨 → ✓
 //  ⑳ 출석 — 메모 꼴 붙여 넣기를 칸으로 · 예배 · 모임 · 개인 기도 · 탭은 머리글 이름으로 · 띄어쓰기 무시로 사람 맞춤 · 바뀐 칸만 고침
+//  ㉑ 기도노트 표시색 — 기도노트 규칙대로(사람 색 · 묶음 · 분류에 이은 색, 앞 차례가 이김) · 색 이름은 기도노트 것 · 덩어리는 wid 가 같을 때만
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { makeScorer } = require('./_load');
@@ -40,7 +41,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
-  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople };`, ctx);
+  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -499,6 +500,22 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('⑳ 안 바꾸면 쓸 칸 없음', J(A.attPatch(P[2], Object.assign({}, P[2]))), {});
   sc.eq('⑳ 이름 · 날짜 없으면 안 적는다', J([A.validateAttend({ name: '', date: '2026-11-08' }).length, A.validateAttend({ name: '가', date: '11/8' }).length, A.validateAttend({ name: '가', date: '2026-11-08' }).length]), [1, 1, 0]);
   sc.eq('⑳ 출석만 있는 분 — 심방 이름(띄어쓰기 무시)과 같으면 뺀다', J(A.attendOnlyPeople(P, ['가나다'])), [{ name: '라마바', last: '2026-11-08' }]);
+}
+
+// ㉑ 기도노트 표시색 (1108-A2) — 읽기만, 색 이름은 기도노트 것
+{
+  const db = { T: [{ id: 'a', kind: 'person', name: '가나다', mark: 'blue' }, { id: 'b', kind: 'person', name: '라 마바', mark: '' }, { id: 'c', kind: 'item', name: '주일 예배', mark: 'red' },
+    { id: 'd', kind: 'person', name: '사아자', mark: '', cat: 'K' }, { id: 'e', kind: 'person', name: '가나다', mark: 'red' }, { id: 'f', kind: 'person', name: '무색', mark: '' }],
+    G: [{ id: 'g', lines: [{ segs: [['b']] }] }, { id: 'g2', parent: 'g', lines: [{ segs: [['f']] }] }], marks: { blue: '새가족', yellow: '' }, markLinks: { yellow: { t: 'group', id: 'g' }, green: { t: 'cat', id: 'K' }, red: { t: 'cat', id: 'K' } } };
+  const ix = A.prayMarkIndex(db), g = n => ix[n] ? [ix[n].m, ix[n].label] : null;
+  sc.eq('㉑ 같은 이름이 둘이면 앞 차례 색(빨강 1순위)', g('가나다'), ['red', '1순위']);
+  sc.eq('㉑ 묶음에 이어 둔 색 · 이름 없는 색은 색 이름 그대로(노랑) · 띄어쓰기 무시', g('라마바'), ['yellow', '노랑']);
+  sc.eq('㉑ 큰 묶음에 이은 색은 작은 묶음 사람에게도', g('무색'), ['yellow', '노랑']);
+  sc.eq('㉑ 분류에 이은 색 · 빨강 · 회색은 이어 두기를 받지 않는다', g('사아자'), ['green', '초록']);
+  sc.eq('㉑ 사람이 아닌 항목은 빼고 · 사람 이름 목록', [g('주일예배'), J(A.prayPeople(db))], [null, ['가나다', '라 마바', '사아자', '가나다', '무색']]);
+  sc.eq('㉑ 빈 것 · 모양이 다른 것은 빈 표', [J(A.prayMarkIndex(null)), J(A.prayMarkIndex({}))], [{}, {}]);
+  const s = JSON.stringify({ T: [] });
+  sc.eq('㉑ 덩어리 잇기 — wid 가 모두 같을 때만', [J(A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s.slice(0, 3) }, { wid: 'W', s: s.slice(3) }])), A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s.slice(0, 3) }, { wid: 'X', s: s.slice(3) }]), A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s }])], [{ T: [] }, null, null]);
 }
 
 sc.done();
