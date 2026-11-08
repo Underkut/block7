@@ -21,6 +21,7 @@
 //  ⑯ (1108-A2) 기도노트 표시색 — 덩어리를 읽기만 · 기도노트가 붙인 색 이름 · 묶음에 이어 둔 색 · 성도 목록 · 사람 화면 · 사람 화면에서 BLOCK7 할일(쪽지만)
 //  ⑰ (1108-A5) 요즘 안 보이는 분 — 성도 탭 요약에 수 · 출석 목록 맨 위에 늘 오던 분만
 //  ⑱ (1108-B) 휴대폰 — 칸 글자 16(아이폰 확대 막기) · 날짜 칸 폭 · 알약은 다시 그리지 않음(스크롤 · 쓰던 칸 그대로) · 쓰는 동안 아래 단추 감춤 · 쓰는 칸을 보이는 자리로
+//  ⑲ (1108-B2) 처음 열 때 시트 요청 두 번(탭 목록 + 모든 탭 한꺼번에) · 로딩 뼈대
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -37,7 +38,7 @@ const ROWS = [
   ['5/21/2020 10:37:02', '5/21', '사아자', '두나미스', '보고 차카타', '옛 기록', '', '', ''],
 ];
 const SHEET = { tabs: [{ id: 0, title: 'Form Responses 1', cols: 26, rows: [HEAD.slice()].concat(ROWS.map(r => r.slice())) }] };
-const LOG = [];
+const LOG = [], REQ = { sheets: 0 };
 const HOOK = { failDel: false, shift: false, failForm: false, failPlanSet: 0 };
 const CAL = { seq: 0, events: [] };   // 가짜 '심방' 캘린더의 일정들   // 일부러 일으키는 사고
 const tab = t => SHEET.tabs.find(x => x.title === t);
@@ -103,6 +104,8 @@ async function route(r) {
   }
   if (u.host !== 'sheets.googleapis.com') return r.abort();
   const p = u.pathname.replace('/v4/spreadsheets/S', '');
+  REQ.sheets++;
+  if (p === '/values:batchGet') return json({ valueRanges: u.searchParams.getAll('ranges').map(x => { const R = parseRange(encodeURIComponent(x)), T = tab(R.title); return { range: x, values: T ? trim(T.rows) : [] }; }) });
   if (p === '' && m === 'GET') return json({ properties: { title: '시험 시트' }, sheets: SHEET.tabs.map(t => ({ properties: { sheetId: t.id, title: t.title, gridProperties: { columnCount: t.cols } } })) });
   if (p === ':batchUpdate') {
     if (HOOK.failDel && body.requests.some(q => q.deleteDimension && q.deleteDimension.range.sheetId === 0)) { HOOK.failDel = false; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
@@ -139,8 +142,10 @@ async function route(r) {
   await page.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
   await page.addInitScript(() => { matchMedia = q => ({ matches: q.includes('reduce'), addEventListener() {}, addListener() {} }); });
   await page.goto(FILE); await page.waitForTimeout(400);
+  eq('⑲ 여는 동안엔 화면 뼈대 + 단계 막대', await page.evaluate(() => { AUTH_READY = true; USER = { uid: 'u' }; G.checked = false; render(); const r = [!!document.querySelector('.sk .sk-card'), !!document.querySelector('.sk .sk-bar b')]; USER = null; return r; }), [true, true]);
   await page.evaluate(() => { USER = { email: 'test@example.com', uid: 'u', getIdToken: async () => 'x' }; AUTH_READY = true; save({ sheet: { id: 'S', name: '시험 시트' }, form: { id: 'F', name: '시험 폼' } }); googleStatus(); });
   await page.waitForSelector('.card');
+  eq('⑲ (1108-B2) 처음 열 때 시트에 묻는 것은 두 번 — 탭 목록 · 모든 탭 한꺼번에', REQ.sheets, 2);
   const formRowsBefore = JSON.stringify(ROWS);
   const tidy = () => page.waitForTimeout(500);
 
