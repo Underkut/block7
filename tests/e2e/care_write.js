@@ -521,6 +521,12 @@ async function route(r) {
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_people.png', fullPage: true });
   eq('⑮ 출석만 있는 새 이름(새손님 · 타파하)도 성도 목록에 — 심방 기록 있는 머머머는 원래 목록', (await page.$$eval('.prow .nm', x => x.map(e => e.textContent))).filter(n => ['새손님', '타파하', '머머머'].includes(n)).sort(), ['머머머', '새손님', '타파하']);
   eq('⑮ 출석만 적은 분 칸 — 새손님 · 타파하 (심방 기록 있는 머머머는 아님)', await page.evaluate(() => attendOnlyPeople(AT(), Object.keys(M().people)).map(x => x.name).sort()), ['새손님', '타파하']);
+  // 1108-C 고침: 심방 기록이 모두 보관된 분도 출석이 있으면 '출석만 적은 분' 칸에 (예전엔 어디에도 안 나왔다)
+  { const r = await page.evaluate(() => {
+      const vs = M().visits.filter(v => v.name === '머머머'), was = vs.map(v => v.archived); vs.forEach(v => { v.archived = true; }); render();
+      const rows = [...document.querySelectorAll('.prow')].filter(e => e.querySelector('.nm').textContent === '머머머').map(e => e.querySelector('.roles').textContent);
+      vs.forEach((v, i) => { v.archived = was[i]; }); render(); return rows; });
+    eq('⑮ (1108-C) 심방 기록이 모두 보관된 분도 출석이 있으면 성도 탭에 — 한 번만 · 보관됨 표시', r, ['지난 심방은 보관됨']); }
   await page.click('.prow:has-text("머머머")'); await tidy();
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_person.png', fullPage: true });
   eq('⑮ 사람 화면에 출석', await page.$$eval('.layer:last-child .tl .planbadge.att', x => x.map(e => e.textContent)), ['주일 3부']);
