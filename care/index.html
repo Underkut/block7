@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-10 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -215,6 +215,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .attsum{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:11px 14px;margin:2px 0 12px;border-radius:14px;background:var(--s1);border:1px solid var(--line);text-align:left}
 .attsum span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .attsum b{font-weight:500;font-size:14.5px}
+.attsum em{font-style:normal;color:var(--warn);font-weight:500}
 .attsum small{font-size:12px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .attsum svg{width:18px;height:18px;stroke:var(--tx3);stroke-width:1.8;fill:none;flex:none}
 .planbadge.att{border-style:solid}
@@ -469,7 +470,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-10';
+const APP_VERSION = 'v. 26-1108-11';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1145,6 +1146,14 @@ function parseAttendText(text, today, known) {
     out.push(a);
   }
   return { items: out, skipped };
+}
+// 1108-A5 요즘 안 보이는 분 — 출석이 두 번 넘게 적힌 분(늘 오던 분) 가운데 마지막 출석이 기준(기본 14일) 넘게 지난 분. 오래된 순.
+const ATT_QUIET_DAYS = 14;
+function attQuiet(list, today, days) {
+  const d = days || ATT_QUIET_DAYS, by = {};
+  (list || []).forEach(a => { const k = nameKey(a.name); if (!k || !a.date) return; const o = by[k] || (by[k] = { name: a.name, n: 0, last: '', svc: '' }); o.n++; if (a.date > o.last) { o.last = a.date; o.svc = a.svc || ''; o.name = a.name; } });
+  return Object.keys(by).map(k => by[k]).filter(o => o.n >= 2 && o.last && daysBetween(o.last, today) >= d)
+    .map(o => Object.assign(o, { days: daysBetween(o.last, today) })).sort((a, b) => a.last.localeCompare(b.last));
 }
 // 성도 목록에 넣을 '출석만 있는 분' — 심방 기록 이름과 띄어쓰기 무시로 같으면 뺀다
 function attendOnlyPeople(list, visitNames) {
@@ -2211,13 +2220,15 @@ function attSuggHtml(L) {
 function attSummaryHtml() {
   const L = AT();
   if (!L.length) return '<button class="attsum" data-act="attlist"><span><b>출석</b><small>예배 · 모임 · 개인 기도에 온 분을 적어 둡니다</small></span>' + IC.r + '</button>';
-  const d = L[0].date, day = L.filter(a => a.date === d);
-  return '<button class="attsum" data-act="attlist"><span><b>출석 · ' + md(d) + ' ' + day.length + '명</b><small>' + esc(day.slice(0, 4).map(a => a.name).join(', ') + (day.length > 4 ? ' 외' : '')) + '</small></span>' + IC.r + '</button>';
+  const d = L[0].date, day = L.filter(a => a.date === d), q = attQuiet(L, today()).length;
+  return '<button class="attsum" data-act="attlist"><span><b>출석 · ' + md(d) + ' ' + day.length + '명' + (q ? ' <em>· 요즘 안 보이는 분 ' + q + '</em>' : '') + '</b><small>' + esc(day.slice(0, 4).map(a => a.name).join(', ') + (day.length > 4 ? ' 외' : '')) + '</small></span>' + IC.r + '</button>';
 }
 function lAttList(L) {
   const all = AT(), n = L.n || 60, list = all.slice(0, n);
   let h = lhead('출석', L) + '<div class="ph-body" style="padding-bottom:110px">';
   h += '<p class="muted">예배 · 부서 모임 · 개인 기도에 온 분을 적습니다. 시트의 \'출석\' 탭에만 저장됩니다.</p>';
+  const quiet = attQuiet(all, today());
+  if (quiet.length) h += '<div class="h-sec" style="margin-top:6px">요즘 안 보이는 분<small>' + ATT_QUIET_DAYS / 7 + '주 넘게 · 늘 오던 분</small></div>' + quiet.map(o => '<div class="todo" style="grid-template-columns:1fr auto"><button class="lab" data-act="person" data-v="' + esc(o.name) + '">' + esc(o.name) + pm(o.name) + '<small>마지막 ' + md(o.last) + (o.svc ? ' ' + esc(o.svc) : '') + ' · ' + Math.floor(o.days / 7) + '주째 · 출석 ' + o.n + '번</small></button><button class="send" data-act="b7person" data-v="' + esc(o.name) + '">BLOCK7</button></div>').join('');
   if (!all.length) h += '<p class="empty">아직 출석 기록이 없습니다. 아래 "+ 출석" 으로 한 분씩 적거나, 메모를 그대로 붙여 넣어 보세요.</p>';
   let last = null;
   list.forEach(a => {

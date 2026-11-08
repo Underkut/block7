@@ -19,6 +19,7 @@
 //  ⑭ (C3c) 기록도 '심방' 캘린더에 — 2026-10-01 부터 기록마다 ✓ 하루 종일 하나 · 계획에서 온 기록은 건너뜀 · 기록 날짜를 고치면 일정도 · 캘린더에서 옮겨도 기록 날짜로 · 지운 기록의 일정은 지움 · 다시 맞춰도 그대로
 //  ⑮ (1108-A) 출석 — 처음 적을 때 출석 탭 · 한 줄 · 붙여 넣기로 여럿 · 사람 화면 출석 · 고치기는 바뀐 칸만 · 지우기는 그 한 줄 · 되돌리기 · 출석만 있는 새 이름도 성도 목록에
 //  ⑯ (1108-A2) 기도노트 표시색 — 덩어리를 읽기만 · 기도노트가 붙인 색 이름 · 묶음에 이어 둔 색 · 성도 목록 · 사람 화면 · 사람 화면에서 BLOCK7 할일(쪽지만)
+//  ⑰ (1108-A5) 요즘 안 보이는 분 — 성도 탭 요약에 수 · 출석 목록 맨 위에 늘 오던 분만
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -549,6 +550,16 @@ async function route(r) {
   await page.click('.layer:last-child [data-act="b7person"]'); await tidy();
   await page.click('.layer:last-child [data-act="b7send"]'); await page.waitForTimeout(1200);
   eq('⑯ 사람 화면에서 BLOCK7 할일로 — 쪽지 하나 · 시트에는 안 씀', [(await page.evaluate(() => window.__inbox)).length - nIn, LOG.slice(nLog).filter(x => x[0] !== 'struct' && !/^cal/.test(x[0])).length], [1, 0]);
+
+  // ⑰ 요즘 안 보이는 분 (1108-A5)
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  { const h = tab('출석').rows[0], row = (id, n, d) => h.map(k => ({ '출석ID': id, '성도': n, '날짜': d, '예배 · 모임': '주일 1부' })[k] || '');
+    tab('출석').rows.push(row('TQ1', '뜸한분', '2026-09-20'), row('TQ2', '뜸한분', '2026-10-04'), row('TQ3', '한번분', '2026-09-20')); }
+  await reload();
+  eq('⑰ 성도 탭 출석 요약에 요즘 안 보이는 분 수', await page.$eval('.attsum em', e => e.textContent), '· 요즘 안 보이는 분 1');
+  await page.click('.attsum'); await tidy();
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_quiet.png' });
+  eq('⑰ 출석 목록 맨 위에 — 늘 오던 분만(한 번 온 분은 아님)', await page.$$eval('.layer:last-child .todo .lab', x => x.map(e => e.childNodes[0].textContent)), ['뜸한분']);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
