@@ -663,7 +663,7 @@ async function route(r) {
   {
   // ⑳ (1108-B3) 출석 입력 새로 — 이름 여럿 · 날짜 단추 · 알약 더하기 · 끌어 옮기기 · 이름 바꾸기 · 지우기 · 직접 적기는 접어 둠
   { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
-  await page.evaluate(() => goTab('people')); await page.waitForTimeout(500);
+  await page.evaluate(() => goTab('attend')); await page.waitForTimeout(500);
   await page.click('.fab[data-act="attadd"]'); await tidy();
   const LY = '.layer:last-child';
   eq('⑳ 직접 적기 칸은 처음엔 접혀 있다 · 날짜 단추 그제 · 어제 · 오늘 + 달력', [await page.$$eval(LY + ' [data-etc]', x => x.length), await page.$$eval(LY + ' [data-act="adate"]', x => x.map(e => e.textContent)), await page.$$eval(LY + ' .calbtn input[type=date]', x => x.length)], [0, ['그제', '어제', '오늘'], 1]);
