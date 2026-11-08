@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1108-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1108-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1108-2';
+const APP_VERSION = 'v. 26-1108-3';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -4061,7 +4061,7 @@ function careBlock(t) {
   if (CAREX.state !== 'ok') return '';
   const c = careOf(t.name); if (!c.att.length && !c.vis.length) return '';
   const md = y => y ? (+y.slice(5, 7)) + '/' + (+y.slice(8)) : '';
-  const sub = a => [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
+  const sub = a => [[a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
   let b = '<div class="label">심방 노트<small>읽기만 · 출석 ' + c.att.length + ' · 심방 ' + c.vis.length + '</small><a class="r" href="/care/" target="_blank" rel="noopener" style="font-weight:400;color:var(--tx3);font-size:12px">열기 ›</a></div><div class="carex">';
   c.att.slice(0, 3).forEach(a => { b += '<div><span class="d">' + md(a.date) + '</span><span><b>' + esc(a.svc || '출석') + '</b>' + (sub(a) ? ' · ' + esc(sub(a)) : '') + (a.memo ? '<small>' + esc(String(a.memo).split('\n')[0]) + '</small>' : '') + '</span></div>'; });
   if (c.vis[0]) { const v = c.vis[0]; b += '<div><span class="d">' + md(v.ymd) + '</span><span><b>심방</b>' + (v.methodLabel ? ' · ' + esc(v.methodLabel) : '') + (v.text ? '<small>' + esc(String(v.text).split('\n').find(x => x.trim()) || '') + '</small>' : '') + '</span></div>'; }
