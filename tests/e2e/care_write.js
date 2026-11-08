@@ -16,6 +16,7 @@
 //  ⑫ (C3) 계획 ↔ '심방' 캘린더 — 만들기 · 캘린더에서 옮김/지움 따라가기 · 제목 앞뒤 글자 · 만들다 끊긴 일정 이어 붙이기 · 여벌 지우기 ·
 //     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
 //  ⑬ (C3b) 할 일 → BLOCK7 할일 — 쪽지함에 쪽지 한 줄(종류 · 이름 · 날짜만, 나눈 이야기 없음) · 액션 탭에 보낸 날 · 보낸 뒤 단추에 날짜 · 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
+//  ⑭ (C3c) 기록도 '심방' 캘린더에 — 2026-10-01 부터 기록마다 ✓ 하루 종일 하나 · 계획에서 온 기록은 건너뜀 · 기록 날짜를 고치면 일정도 · 캘린더에서 옮겨도 기록 날짜로 · 지운 기록의 일정은 지움 · 다시 맞춰도 그대로
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -77,7 +78,7 @@ async function route(r) {
     if (P === 'users/me/calendarList') return json({ items: [{ id: 'cal1', summary: '심방' }, { id: 'cal2', summary: '개인' }] });
     let mm;
     if (P === 'calendars/cal1/events') {
-      if (m === 'POST') { const e = Object.assign({ id: 'ev' + (++CAL.seq), status: 'confirmed', htmlLink: 'https://example.invalid/ev' }, body); CAL.events.push(e); LOG.push(['cal+', e.summary]); return json(e); }
+      if (m === 'POST') { const e = Object.assign({ id: 'ev' + (++CAL.seq), status: 'confirmed', htmlLink: 'https://example.invalid/ev' }, body); CAL.events.push(e); LOG.push([e.extendedProperties && e.extendedProperties.private && e.extendedProperties.private.careRec ? 'calR+' : 'cal+', e.summary]); return json(e); }
       const pe = q.get('privateExtendedProperty');
       let items = CAL.events.filter(e => q.get('showDeleted') === 'true' || e.status !== 'cancelled');
       if (pe) { const [k, v] = pe.split('='); items = items.filter(e => e.extendedProperties && e.extendedProperties.private && e.extendedProperties.private[k] === v); }
@@ -442,6 +443,32 @@ async function route(r) {
   eq('⑬ 쪽지함이 끊기면 — 쪽지 없음 · 액션 탭 그대로 · 창은 열린 채', [(await page.evaluate(() => window.__inbox)).length, AT().length, await page.$$eval('.layer [data-act="b7send"]', x => x.length)], [1, nAct, 1]);
   await page.click('.layer [data-act="b7send"]'); await page.waitForTimeout(1500);
   eq("⑬ 다시 누르면 보내지고 줄이 생긴다", [(await page.evaluate(() => window.__inbox)).length, aRow('C950', '연결')[9] === await page.evaluate(() => today())], [2, true]);
+
+  // ⑭ 기록도 '심방' 캘린더에
+  const recEv = () => CAL.events.filter(e => e.status !== 'cancelled' && e.extendedProperties && e.extendedProperties.private && e.extendedProperties.private.careRec);
+  const evFor = id => recEv().filter(e => e.extendedProperties.private.careRec === id);
+  R.rows.push(['9/20/2026 10:00:00', '9/20', '하하옛', '셀원', '전화', '기준 날짜 앞 기록', '', '', '얕음', 'C960', '폼', '2026-09-20']);
+  R.rows.push(['11/8/2026 11:00:00', '11/1', '폼사람', '셀원', '식사', '폼으로 적은 기록(기록ID 는 앱이 붙임)', '', '', '중간']);
+  await reload(); await reload();
+  const want = await page.evaluate(() => { const cov = new Set((DATA.plans || []).filter(p => p.recId && p.evId && p.evId !== '없음').map(p => p.recId)); return M().visits.filter(v => v.id && v.ymd >= '2026-10-01' && !v.archived && !cov.has(v.id)).map(v => [v.id, v.name, v.ymd]).sort(); });
+  eq('⑭ 2026-10-01 부터의 기록마다 일정 하나 — ✓ 제목 · 그날 하루 종일', recEv().map(e => [e.extendedProperties.private.careRec, e.summary, e.start.date]).sort(), want.map(w => [w[0], '✓ 심방 · ' + w[1], w[2]]));
+  eq('⑭ 폼으로 들어온 기록도 들어간다 · 기준 날짜 앞(9/20)은 안 들어간다', [want.some(w => w[1] === '폼사람'), evFor('C960').length], [true, 0]);
+  const ggId = prow('거거거')['기록ID'];
+  eq('⑭ 계획에서 온 기록(거거거)은 계획 일정이 있어 따로 안 만든다', [!!ggId, evFor(ggId).length], [true, 0]);
+  // 기록 날짜를 고치면 일정도 · 캘린더에서 옮기면 기록 날짜로 되돌림
+  const pr = R.rows.find(r => r[2] === '파파파'); pr[1] = '10/15'; pr[11] = '2026-10-15';
+  evFor('C900')[0] && (evFor('C900')[0].start = { date: '2026-10-25' });
+  await reload();
+  eq('⑭ 기록 날짜를 고치면 일정도 그날로', evFor('C950').map(e => [e.start.date, e.end.date]), [['2026-10-15', '2026-10-16']]);
+  eq('⑭ 캘린더에서 옮긴 기록 일정은 기록 날짜로 돌아온다', evFor('C900').map(e => e.start.date), ['2026-11-07']);
+  // 지운 기록 → 일정 지움
+  R.rows.splice(R.rows.indexOf(pr), 1);
+  await reload();
+  eq('⑭ 기록이 시트에서 빠지면 그 일정을 지운다', evFor('C950').length, 0);
+  const nR = LOG.filter(x => /^cal/.test(x[0])).length;
+  await reload();
+  eq('⑭ 다시 맞춰도 캘린더를 또 고치지 않는다', LOG.filter(x => /^cal/.test(x[0])).length, nR);
+  eq("⑭ 기록 일정은 '캘린더에만 있는 일정' 에 안 나온다", await page.evaluate(() => calOthers().filter(e => e.title.startsWith('✓')).length), 0);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

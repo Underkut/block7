@@ -16,6 +16,7 @@
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
 //  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
+//  ⑲ 기록도 '심방' 캘린더에 — 2026-10-01 부터 · ✓ 하루 종일 · 계획에서 온 기록은 건너뜀 · 날짜 · 이름은 시트가 이김 · 지운 기록의 일정은 지움(상한 · 우리 표식만 · 시트를 못 읽었으면 안 지움) · 여벌
 //  ⑰ 계획 · '심방' 캘린더 — 계획 줄 읽기 · 일정 모양(제목은 이름만 + 앞뒤 글자, 표식만) · 캘린더에서 옮김 → 계획 따라감 · 지움 → 취소됨 · 만들다 끊긴 일정 이어 붙이기 · 두 기기 여벌 지우기(상한) · 기록됨 → ✓
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -35,7 +36,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   joinMulti, splitEtc, blankRecord, addTalk, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
-  PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
+  PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
@@ -434,6 +435,36 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq("⑱ 보낸 날 적기 — 줄이 있으면 'BLOCK7 할일' 칸만 (상태는 그대로)", J(A.b7MarkPlan(st, v, { t: '중보', x: '' }, '2026-11-09', 'A9')), { update: { row: 2, cells: { 'BLOCK7 할일': '2026-11-09' } } });
   const ap = A.b7MarkPlan(st, v, { t: '기타', x: '병문안' }, '2026-11-09', 'A9').append;
   sc.eq("⑱ 줄이 없으면 '할 일' 상태로 한 줄 — 칸 자리는 액션 탭 머리글대로", [ap.length, ap[A.ACT_TAB_HEAD.indexOf('상태')], ap[A.ACT_TAB_HEAD.indexOf('BLOCK7 할일')], ap[A.ACT_TAB_HEAD.indexOf('내용')]], [A.ACT_TAB_HEAD.length, '할 일', '2026-11-09', '병문안']);
+}
+
+// ⑲ 기록도 '심방' 캘린더에
+{
+  const vs = [{ id: 'C1', name: '가나다', ymd: '2026-10-05' }, { id: 'C2', name: '라마바', ymd: '2026-09-30' }, { id: 'C3', name: '사아자', ymd: '2026-11-02' }, { id: '', name: '준비 전', ymd: '2026-11-03' }, { id: 'C5', name: '보관', ymd: '2026-11-04', archived: true }];
+  const rev = (id, rec, date, o) => Object.assign({ id, status: 'confirmed', summary: '✓ ' + ({ C1: '가나다', C3: '사아자' }[rec] || rec), start: { date }, end: { date }, extendedProperties: { private: { careApp: 'care', careRec: rec } } }, o || {});
+  sc.eq('⑲ 기준 날짜는 HB 결정대로 2026-10-01', A.REC_CAL_FROM, '2026-10-01');
+  const r0 = A.recCalSync(vs, [], []);
+  sc.eq('⑲ 2026-10-01 부터 · 기록ID 있는 것 · 보관 아닌 것만 만든다', J(r0.create), ['C1', 'C3']);
+  const b = A.recEventBody(vs[0], '심방 · ', '');
+  sc.eq('⑲ 일정 — ✓ + 제목(앞뒤 글자) · 그날 하루 종일 · 표식 careRec', J([b.summary, b.start, b.end, b.extendedProperties.private]), ['✓ 심방 · 가나다', { date: '2026-10-05' }, { date: '2026-10-06' }, { careApp: 'care', careRec: 'C1' }]);
+  sc.eq('⑲ 기록 일정은 계획 표식(careId)이 아니다 · 그래도 우리 것', [A.evCareId(b), A.evRecId(b), A.evOurs(b), A.evOurs({ summary: '남의 것' })], ['', 'C1', true, false]);
+  const plans = [{ id: 'P1', recId: 'C3', evId: 'E9', status: '기록됨' }];
+  sc.eq('⑲ 계획에서 온 기록(계획 일정이 있음)은 건너뛴다', J(A.recCalSync(vs, plans, []).create), ['C1']);
+  sc.eq("⑲ 계획이 '캘린더에 안 넣음' 이었으면 기록 일정은 만든다", J(A.recCalSync(vs, [{ recId: 'C3', evId: '없음' }], []).create), ['C1', 'C3']);
+  const same = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')]);
+  sc.eq('⑲ 같으면 할 일 없음', J([same.create, same.patch, same.del]), [[], [], []]);
+  const mv = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-09'), rev('E3', 'C3', '2026-11-02', { summary: '사아자 메모' })]);
+  sc.eq('⑲ 날짜 · 제목은 시트가 이긴다 — 옮긴 일정은 기록 날짜로 · 고친 제목은 되돌림', J(mv.patch), [{ evId: 'E1', body: { start: { date: '2026-10-05' }, end: { date: '2026-10-06' } } }, { evId: 'E3', body: { summary: '✓ 사아자' } }]);
+  sc.eq('⑲ 시간 있는 일정으로 바뀌었으면 하루 종일로 되돌림', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05', { start: { dateTime: '2026-10-05T10:00:00+09:00' } }), rev('E3', 'C3', '2026-11-02')]).patch.map(x => Object.keys(x.body))), [['start', 'end']]);
+  const gone = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EX', 'C99', '2026-10-20'), rev('EO', 'C2', '2026-09-30')]);
+  sc.eq('⑲ 지운 기록 · 기준 날짜 앞 기록의 일정은 지운다', J(gone.del.sort()), ['EO', 'EX']);
+  sc.eq('⑲ 시트를 못 읽었으면(빈 목록) 하나도 안 지운다', J(A.recCalSync([], [], [rev('EX', 'C99', '2026-10-20')]).del), []);
+  sc.eq('⑲ 이미 지운(cancelled) 일정 · 남의 일정은 건드리지 않는다', J(A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02'), rev('EZ', 'C99', '2026-10-20', { status: 'cancelled' }), { id: 'N', status: 'confirmed', summary: '✓ 가나다', start: { date: '2026-10-05' } }]).del), []);
+  const many = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')].concat([1, 2, 3, 4, 5, 6, 7].map(i => rev('G' + i, 'Cg' + i, '2026-10-20'))));
+  sc.eq('⑲ 지우기는 한 번에 다섯까지', J([many.del.length, many.n.heldBack]), [A.REC_DEL_MAX, 2]);
+  const dup = A.recCalSync(vs, [], [rev('E1', 'C1', '2026-10-05'), rev('E1b', 'C1', '2026-10-05'), rev('E3', 'C3', '2026-11-02')]);
+  sc.eq('⑲ 같은 기록의 여벌 일정은 하나만 남긴다', J(dup.del), ['E1b']);
+  const lots = Array.from({ length: 40 }, (_, i) => ({ id: 'L' + i, name: 'n' + i, ymd: '2026-10-10' }));
+  sc.eq('⑲ 만들기는 한 번에 30까지(나머지는 다음에)', J([A.recCalSync(lots, [], []).create.length, A.recCalSync(lots, [], []).n.heldBack]), [A.REC_CREATE_MAX, 10]);
 }
 
 sc.done();
