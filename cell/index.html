@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1108-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1108-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -383,7 +383,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1108-6';
+const APP_VERSION = 'v. 26-1108-7';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -2381,7 +2381,7 @@ function prayDot(name) { const x = CARE.pmark && CARE.pmark.get(normName(name));
 function attCard(mid) {
   const c = CARE.alink && CARE.alink[mid]; if (CARE.state !== 'ok' || !(CARE.attend || []).length) return '';
   if (!c) return '<div class="card"><div class="row"><span class="small">예배 · 모임 출석</span><span class="spacer"></span><span class="tiny muted">심방 노트에 출석 기록이 없습니다</span></div></div>';
-  const sub = a => [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
+  const sub = a => [[a.from, a.seen ? a.seen + ' 보임' : '', a.to].filter(Boolean).join(' → '), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
   return `<div class="card"><div class="row"><span class="small">예배 · 모임 출석 ${c.n}번</span><span class="spacer"></span><span class="tiny muted">마지막 ${esc(c.last)}${c.days === 0 ? ' · 오늘' : c.days != null ? ' · ' + c.days + '일 전' : ''}</span></div>
     ${c.recent.map(v => `<div class="note"><div class="row" style="gap:6px;flex-wrap:wrap"><span class="tiny muted">${esc(v.ymd || '')}</span><span class="pill">${esc(v.att.svc || '출석')}</span></div>${sub(v.att) || v.att.memo ? `<div class="txt clamp">${esc([sub(v.att), v.att.memo].filter(Boolean).join(' · '))}</div>` : ''}</div>`).join('')}</div>`;
 }

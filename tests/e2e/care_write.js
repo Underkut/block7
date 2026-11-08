@@ -22,6 +22,7 @@
 //  ⑰ (1108-A5) 요즘 안 보이는 분 — 성도 탭 요약에 수 · 출석 목록 맨 위에 늘 오던 분만
 //  ⑱ (1108-B) 휴대폰 — 칸 글자 16(아이폰 확대 막기) · 날짜 칸 폭 · 알약은 다시 그리지 않음(스크롤 · 쓰던 칸 그대로) · 쓰는 동안 아래 단추 감춤 · 쓰는 칸을 보이는 자리로
 //  ⑲ (1108-B2) 처음 열 때 시트 요청 두 번(탭 목록 + 모든 탭 한꺼번에) · 로딩 뼈대
+//  ⑳ (1108-B3) 출석 입력 — 직접 적기는 접힘 · 날짜 단추 · 이름 여럿(한 줄씩) · 알약 더하기 → '출석 선택지' 탭 · 끌어 옮기기 · 오른쪽 단추 메뉴(이름 바꾸기 · 지우기) · 지난 기록은 그대로
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -119,10 +120,11 @@ async function route(r) {
   }
   if (p === '/values:batchUpdate') {
     if (HOOK.failPlanSet > 0 && body.data.some(d => decodeURIComponent(d.range).startsWith("'계획'!"))) { HOOK.failPlanSet--; return r.fulfill({ status: 500, contentType: 'application/json', body: '{"error":{"message":"잠깐 끊김"}}' }); }
-    body.data.forEach(d => { const R = parseRange(d.range); d.values[0].forEach((v, i) => setCell(R.title, R.row, R.col + i, v)); LOG.push(['set', d.range, d.values[0]]); });
+    body.data.forEach(d => { const R = parseRange(d.range); d.values.forEach((row, ri) => row.forEach((v, i) => setCell(R.title, R.row + ri, R.col + i, v))); LOG.push(['set', d.range, d.values[0]]); });
     return json({});
   }
   let mm;
+  if ((mm = p.match(/^\/values\/(.+):clear$/))) { const m2 = decodeURIComponent(mm[1]).match(/^'((?:[^']|'')*)'!A(\d+):B$/), T = tab(m2[1]); for (let i = +m2[2] - 1; i < T.rows.length; i++) { if (T.rows[i]) { T.rows[i][0] = ''; T.rows[i][1] = ''; } } LOG.push(['clear', m2[1], +m2[2]]); return json({}); }
   if ((mm = p.match(/^\/values\/(.+):append$/))) { const R = parseRange(mm[1]); body.values.forEach(v => { tab(R.title).rows.push(v.slice()); LOG.push(['append', R.title, v]); }); return json({}); }
   if ((mm = p.match(/^\/values\/(.+)$/))) {
     const R = parseRange(mm[1]), T = tab(R.title); if (!T) return r.fulfill({ status: 400, body: '{}' });
@@ -490,11 +492,12 @@ async function route(r) {
   await page.click('.fab[data-act="attadd"]'); await tidy();
   await page.fill('.layer [data-f="name"]', '새손님');
   await page.click('.layer [data-act="aone"][data-k="svc"][data-v="개인 기도"]');
+  await page.click('.layer [data-act="aetc"][data-k="seat"]'); await page.waitForTimeout(200);
   await page.fill('.layer [data-f="seat"]', '기도실');
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
   const AT_ = () => tab('출석').rows, tH = () => AT_()[0], tc = (r, k) => r[tH().indexOf(k)];
   const todayK = await page.evaluate(() => today());
-  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 갔나', '자리', '함께', '메모', '적은 시각']);
+  eq("⑮ 처음 적으면 '출석' 탭 + 머리글", tab('출석') ? tH() : null, ['출석ID', '날짜', '성도', '예배 · 모임', '언제 왔나', '언제 보였나', '언제 갔나', '자리', '함께', '메모', '적은 시각']);
   eq('⑮ 한 줄 — 이름 · 예배 · 모임 · 자리 · 날짜(오늘) · 출석ID', AT_().slice(1).map(r => [tc(r, '성도'), tc(r, '예배 · 모임'), tc(r, '자리'), tc(r, '날짜') === todayK, /^T/.test(tc(r, '출석ID'))]), [['새손님', '개인 기도', '기도실', true, true]]);
   eq('⑮ (시험 준비) 머머머는 심방 기록이 있는 분', await page.evaluate(() => !!M().people['머머머']), true);
   await page.click('.attsum'); await tidy();
@@ -516,10 +519,11 @@ async function route(r) {
   eq('⑮ 사람 화면에 출석', await page.$$eval('.layer:last-child .tl .planbadge.att', x => x.map(e => e.textContent)), ['주일 3부']);
   await page.click('.layer:last-child [data-act="attopen"]'); await tidy();
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_edit.png', fullPage: true });
+  if (!(await page.$('.layer:last-child [data-f="seat"]'))) { await page.click('.layer:last-child [data-act="aetc"][data-k="seat"]'); await page.waitForTimeout(200); }
   await page.fill('.layer:last-child [data-f="seat"]', '둘째 줄');
   const n5 = LOG.length;
   await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
-  eq('⑮ 고치기 — 자리 칸 하나만 쓴다', LOG.slice(n5).filter(x => x[0] === 'set').map(x => decodeURIComponent(x[1]).replace(/\d+$/, '') + '=' + x[2][0]), ["'출석'!G=둘째 줄"]);
+  eq('⑮ 고치기 — 자리 칸 하나만 쓴다', LOG.slice(n5).filter(x => x[0] === 'set').map(x => decodeURIComponent(x[1]).replace(/\d+$/, '') + '=' + x[2][0]), ["'출석'!H=둘째 줄"]);
   const nRows = AT_().length;
   await page.click('.layer:last-child [data-act="attopen"]'); await tidy();
   await page.click('.layer:last-child [data-act="attdel"]'); await page.waitForTimeout(1500);
@@ -603,6 +607,53 @@ async function route(r) {
     eq('⑱ 다 쓰면(자판 닫힘) 단추가 돌아온다', await mp.evaluate(l => getComputedStyle(document.querySelector(l + ' .ph-foot')).display, lay), 'block');
     if (process.env.SHOT) await mp.screenshot({ path: process.env.SHOT + '/b1_phone.png' });
     await mc.close();
+  }
+
+  {
+  // ⑳ (1108-B3) 출석 입력 새로 — 이름 여럿 · 날짜 단추 · 알약 더하기 · 끌어 옮기기 · 이름 바꾸기 · 지우기 · 직접 적기는 접어 둠
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => goTab('people')); await page.waitForTimeout(500);
+  await page.click('.fab[data-act="attadd"]'); await tidy();
+  const LY = '.layer:last-child';
+  eq('⑳ 직접 적기 칸은 처음엔 접혀 있다 · 날짜 단추 그제 · 어제 · 오늘 + 달력', [await page.$$eval(LY + ' [data-etc]', x => x.length), await page.$$eval(LY + ' [data-act="adate"]', x => x.map(e => e.textContent)), await page.$$eval(LY + ' .calbtn input[type=date]', x => x.length)], [0, ['그제', '어제', '오늘'], 1]);
+  await page.fill(LY + ' [data-f="name"]', '가가, 나나');
+  eq('⑳ 이름 여럿 안내', await page.$eval('#nameHint', e => e.textContent), '2분 — 같은 내용으로 한 분씩 한 줄씩 적힙니다.');
+  await page.click(LY + ' [data-act="adate"]:has-text("어제")');
+  await page.click(LY + ' [data-act="aoptadd"][data-k="svc"]'); await page.waitForTimeout(200);
+  await page.fill(LY + ' [data-optadd="svc"]', '새벽기도'); await page.press(LY + ' [data-optadd="svc"]', 'Enter'); await page.waitForTimeout(1200);
+  const OT = () => (tab('출석 선택지') || { rows: [] }).rows.slice(1).filter(r => r[0] === '예배 · 모임').map(r => r[1]);
+  eq("⑳ 알약 더하기 → '출석 선택지' 탭에 (기본 알약 + 새 것) · 바로 골라진다", [OT().slice(-2), await page.$eval(LY + ' [data-act="aone"][data-k="svc"][aria-pressed="true"]', e => e.dataset.v)], [['개인 기도', '새벽기도'], '새벽기도']);
+  await page.click(LY + ' [data-act="aone"][data-k="seen"][data-v="말씀 때"]');
+  const nR = tab('출석').rows.length;
+  await page.click('[data-act="attsave"]'); await page.waitForTimeout(1500);
+  const y1 = await page.evaluate(() => ymdAdd(today(), -1)), H2 = tab('출석').rows[0], col = k => H2.indexOf(k);
+  eq('⑳ 두 분 → 한 줄씩 · 같은 날(어제) · 같은 예배 · 언제 보였나', tab('출석').rows.slice(nR).map(r => [r[col('성도')], r[col('날짜')] === y1, r[col('예배 · 모임')], r[col('언제 보였나')]]), [['가가', true, '새벽기도', '말씀 때'], ['나나', true, '새벽기도', '말씀 때']]);
+  // 끌어 옮기기 (마우스: 바로 끌기) — '새벽기도' 를 맨 앞으로
+  await page.click('.fab[data-act="attadd"]'); await tidy();
+  const box = async v => { const r = await page.$eval(LY + ' [data-act="aone"][data-k="svc"][data-v="' + v + '"]', e => { const b = e.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; }); return r; };
+  const [sx, sy] = await box('새벽기도'), [tx, ty] = await box('주일 1부');
+  await page.mouse.move(sx, sy); await page.mouse.down(); await page.mouse.move(sx + 10, sy, { steps: 3 }); await page.mouse.move(tx - 8, ty, { steps: 12 }); await page.mouse.up(); await page.waitForTimeout(1200);
+  eq('⑳ 끌어 옮기면 순서가 탭에 그대로', OT().slice(0, 2), ['새벽기도', '주일 1부']);
+  eq('⑳ 끌기는 고르기가 아니다(눌린 것 없음)', await page.$$eval(LY + ' [data-act="aone"][data-k="svc"][aria-pressed="true"]', x => x.length), 0);
+  // 오른쪽 단추 → 메뉴 → 이름 바꾸기 · 지우기
+  await page.click(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽기도"]', { button: 'right' }); await page.waitForTimeout(300);
+  eq('⑳ 오른쪽 단추 = 메뉴', await page.$$eval(LY + ' .omenu button', x => x.map(e => e.textContent)), ['이름 바꾸기', '지우기', '취소']);
+  await page.evaluate(() => { window.prompt = () => '새벽 기도회'; });
+  await page.click(LY + ' [data-act="aoptren"]'); await page.waitForTimeout(1200);
+  eq('⑳ 이름 바꾸기 → 탭에서도', OT().slice(0, 1), ['새벽 기도회']);
+  await page.click(LY + ' [data-act="aone"][data-k="svc"][data-v="새벽 기도회"]', { button: 'right' }); await page.waitForTimeout(300);
+  await page.click(LY + ' [data-act="aoptdel"]'); await page.waitForTimeout(1200);
+  eq('⑳ 지우기 → 탭에서 빠지고 남는 아랫줄도 정리', [OT().includes('새벽 기도회'), tab('출석 선택지').rows.filter(r => r.length && r[0]).length - 1, (await page.evaluate(() => ATTO().svc.length))], [false, (await page.evaluate(() => Object.values(ATTO()).reduce((n, l) => n + l.length, 0))), await page.evaluate(() => ATTO().svc.length)]);
+  const lp = q => page.evaluate(q => { const el = document.querySelector(q), r = el.getBoundingClientRect(), o = { bubbles: true, pointerType: 'touch', clientX: r.x + 5, clientY: r.y + 5 }; el.dispatchEvent(new PointerEvent('pointerdown', o)); return new Promise(res => setTimeout(() => { el.dispatchEvent(new PointerEvent('pointerup', o)); el.click(); res(); }, 600)); }, q);
+  await lp(LY + ' [data-act="aone"][data-k="from"][data-v="처음부터"]'); await page.waitForTimeout(300);
+  eq('⑳ 손가락으로 길게(0.45초) 누르면 메뉴 · 뒤따르는 누름은 고르기가 아니다', [await page.$$eval(LY + ' .omenu', x => x.length), await page.evaluate(() => topLayer().form.from)], [1, '']);
+  await page.click(LY + ' .omenu [data-act="aoptx"]'); await page.waitForTimeout(200);
+  eq('⑳ 메뉴를 띄운 바로 뒤 취소도 먹히지 않는다', await page.$$eval(LY + ' .omenu', x => x.length), 0);
+  const sp = q => page.evaluate(q => { const el = document.querySelector(q), r = el.getBoundingClientRect(), o = { bubbles: true, pointerType: 'touch', clientX: r.x + 5, clientY: r.y + 5 }; el.dispatchEvent(new PointerEvent('pointerdown', o)); el.dispatchEvent(new PointerEvent('pointermove', Object.assign({}, o, { clientY: r.y + 40 }))); el.dispatchEvent(new PointerEvent('pointerup', o)); }, q);
+  await sp(LY + ' [data-act="aone"][data-k="from"][data-v="처음부터"]'); await page.waitForTimeout(600);
+  eq('⑳ 누르자마자 움직이면(화면 굴리기) 메뉴도 끌기도 아니다', await page.$$eval(LY + ' .omenu', x => x.length), 0);
+  eq('⑳ 지난 출석 기록은 그대로', tab('출석').rows.slice(nR).map(r => r[col('예배 · 모임')]), ['새벽기도', '새벽기도']);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
   eq('⑦ 화면 오류 없음', errs, []);
