@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -516,7 +516,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-2';
+const APP_VERSION = 'v. 26-1109-3';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2276,9 +2276,12 @@ function vPeople() {
     h += '<button class="prow" data-act="person" data-v="' + esc(p.name) + '"><div><span class="nm">' + nm(p.name) + '</span>' + '<span class="roles">' + esc(p.roles.join(' · ')) + '</span></div><div class="ago' + (p.stale ? ' old' : '') + '">' + relDay(p.last, t) + '</div><div class="r2"><span class="strip">' + strip + '</span><span class="dots">' + dots + '</span></div></button>';
   });
   // 출석만 적은 분 (심방 기록이 아직 없는 새 이름 포함) — 필터가 없을 때만
+  //   1108-C 고침: 심방 기록이 모두 보관(보관 기준 이전)된 분도 위 목록에선 빠지므로, 출석이 있으면 여기에 — 예전엔 어느 쪽에도 안 나왔다
   if (!fcount() && !S.quick) {
-    const q = nameKey(S.q), only = attendOnlyPeople(AT(), Object.keys(M().people)).filter(x => !q || nameKey(x.name).includes(q)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
-    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0]; return '<button class="prow" data-act="person" data-v="' + esc(x.name) + '"><div><span class="nm">' + nm(x.name) + '</span>' + '<span class="roles">심방 기록 없음</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
+    const live = [...new Set(M().visits.filter(v => !v.archived).map(v => v.name))], arch = {};
+    Object.keys(M().people).forEach(n => { arch[nameKey(n)] = n; });
+    const q = nameKey(S.q), only = attendOnlyPeople(AT(), live).filter(x => !q || nameKey(x.name).includes(q)).sort((a, b) => (b.last || '').localeCompare(a.last || ''));
+    if (only.length) h += '<div class="h-sec">출석만 적은 분<small>' + only.length + '</small></div>' + only.map(x => { const a = attendOf(AT(), x.name)[0], old = arch[nameKey(x.name)], n = old || x.name; return '<button class="prow" data-act="person" data-v="' + esc(n) + '"><div><span class="nm">' + nm(n) + '</span>' + '<span class="roles">' + (old ? '지난 심방은 보관됨' : '심방 기록 없음') + '</span></div><div class="ago">' + relDay(x.last, t) + '</div><div class="r2"><span class="muted">' + esc((a.svc || '출석') + (attSub(a) ? ' · ' + attSub(a) : '')) + '</span></div></button>'; }).join('');
   }
   return h + '</div></div>' + nav();
 }
