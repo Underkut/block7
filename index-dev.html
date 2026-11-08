@@ -41875,7 +41875,7 @@ document.addEventListener('focusout',()=>{
   document.addEventListener('input',e=>{if(typing(e.target))soon(80);},true);
   document.addEventListener('focusout',()=>soon(120),true);
   // 고치던 칸이 다시 그리기로 통째로 지워지면 focusout 이 안 온다 — 여백을 둔 동안만 가끔 다시 본다
-  setInterval(()=>{if(root.style.getPropertyValue('--kb-pad')||document.querySelector('.kb-spacer')))apply();},700);
+  setInterval(()=>{if(root.style.getPropertyValue('--kb-pad')||document.querySelector('.kb-spacer'))apply();},700);
 })();
 // 편집 중이면 미루고 true · 아니면 false (부른 쪽이 바로 그린다). 같은 key 는 한 번만.
 function _txeDefer(key,fn){
