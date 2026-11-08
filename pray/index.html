@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1107-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1108-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1108-1';
+const APP_VERSION = 'v. 26-1108-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2052,6 +2052,11 @@ svg{display:block;flex-shrink:0}
 .label{padding:22px 20px 8px;font-size:12.5px;font-weight:600;color:var(--ac-tx);letter-spacing:.05em;display:flex;align-items:center;gap:8px}
 .label small{font-weight:400;color:var(--tx3);letter-spacing:0}
 .label .r{margin-left:auto}
+.carex{padding:0 20px;display:flex;flex-direction:column}
+.carex>div{display:grid;grid-template-columns:42px 1fr;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd);font-size:13.5px}
+.carex .d{color:var(--tx3);font-size:12px;padding-top:1px;font-variant-numeric:tabular-nums}
+.carex b{font-weight:500}
+.carex small{display:block;color:var(--tx3);font-size:12.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hint{padding:6px 20px 0;font-size:12.5px;color:var(--tx3);line-height:1.6}
 
 /* ── 줄 (스와이프 · 끌기 공통) ── */
@@ -3999,6 +4004,7 @@ LAYERS.target = L => {
   b += '</div></div>';
   b += markPicker(t);
   b += shelfNote(t);
+  b += careBlock(t);   // 1108-A4 심방 노트의 출석 · 심방 (읽기만)
   b += topicsBlock(t);
   b += answerItemBlock(t);
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + t.id + '" placeholder="예) 전화 한번 하기 · 대화하며 풀기">' + esc(t.memo) + '</textarea>' +
@@ -4007,6 +4013,60 @@ LAYERS.target = L => {
   b += '<div class="label">메모</div><textarea class="field" rows="3" data-f="note" data-id="' + t.id + '" placeholder="마음에 두고 싶은 것">' + esc(t.note) + '</textarea>';
   return { title: kindLabel(t), body: b, menu: 'target-menu' };
 };
+// ── 1108-A4 심방 노트 잇기 (읽기만) — 사람 상세에 최근 출석 · 최근 심방 ──
+// 심방 노트가 고른 시트(users/{uid}/data/care 의 sheet.id)를 같은 구글 열쇠(gcal 열쇠 서버)로 읽는다. 셀 inside 의 J 와 같은 길.
+// 읽기 규칙은 /care/ 의 care-core 를 그대로 불러 쓴다. 내용은 화면 메모리에만 — 기도노트 DB · 이 기기 · 계정에 넣지 않는다.
+const CARE_FN = 'https://asia-northeast3-block7-8f24e.cloudfunctions.net/gcal';
+const CAREX = { state: 'idle', at: 0, uid: '', visits: [], attend: [] };
+async function careCoreP() {
+  if (careCoreP.c) return careCoreP.c;
+  const html = await (await fetch('/care/?nc=' + Date.now(), { cache: 'no-store' })).text();
+  const m = html.match(/<script id="care-core">([\s\S]*?)<\/script>/);
+  if (!m) throw new Error('심방 노트의 읽기 규칙을 찾지 못했습니다');
+  careCoreP.c = new Function(m[1] + '\n;return { buildModel, findResponsesTab, parseAttend: typeof parseAttend === \'function\' ? parseAttend : null };')();
+  return careCoreP.c;
+}
+async function careLoadP() {
+  if (!SY.user || !FB || CAREX.state === 'loading') return;
+  const uid = SY.user.uid;
+  if (CAREX.uid === uid && CAREX.state !== 'idle' && Date.now() - CAREX.at < 120000) return;
+  CAREX.state = 'loading'; CAREX.uid = uid;
+  try {
+    const cfg = await FB.db.doc('users/' + uid + '/data/care').get();
+    const sheet = cfg.exists && cfg.data().sheet; if (!sheet || !sheet.id) { CAREX.state = 'none'; CAREX.at = Date.now(); return; }
+    const call = async p => { const t = await SY.user.getIdToken(); const r = await fetch(CARE_FN + p, { method: 'POST', headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: '{}' }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || ('서버 ' + r.status)); return j; };
+    if (!(await call('/status')).connected) { CAREX.state = 'none'; CAREX.at = Date.now(); return; }
+    const tok = (await call('/token')).access_token;
+    const g = async u => { const r = await fetch(u, { headers: { Authorization: 'Bearer ' + tok } }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || ('구글 ' + r.status)); return j; };
+    const SH = 'https://sheets.googleapis.com/v4/spreadsheets/', rng = (t, a) => encodeURIComponent("'" + t.replace(/'/g, "''") + "'!" + a), Q = '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER';
+    const meta = await g(SH + sheet.id + '?fields=sheets.properties(title)'), titles = (meta.sheets || []).map(x => x.properties.title);
+    const tabs = []; for (const t of titles) { const h = await g(SH + sheet.id + '/values/' + rng(t, '1:1')); tabs.push({ title: t, header: (h.values && h.values[0]) || [] }); }
+    const core = await careCoreP(), tab = core.findResponsesTab(tabs);
+    const visits = tab ? core.buildModel((await g(SH + sheet.id + '/values/' + rng(tab.title, 'A1:ZZ') + Q)).values || [], {}).visits.filter(v => !v.archived) : [];
+    const attend = core.parseAttend && titles.includes('출석') ? core.parseAttend((await g(SH + sheet.id + '/values/' + rng('출석', 'A1:ZZ') + Q)).values || []) : [];
+    if (!SY.user || SY.user.uid !== uid) return;
+    Object.assign(CAREX, { state: 'ok', at: Date.now(), visits, attend });
+  } catch (e) { CAREX.state = 'err'; CAREX.at = Date.now(); }
+  // 지금 열린 상세가 사람이면 다시 그린다 (글을 쓰는 중이면 건드리지 않음 — 다음에 열 때 보인다)
+  const L = UI.layers[UI.layers.length - 1], el = topLayerEl(), a = document.activeElement;
+  if (L && L.type === 'target' && el && !(a && el.contains(a) && /INPUT|TEXTAREA/.test(a.tagName))) fillLayer(el, L);
+}
+function careOf(name) {
+  const k = nameKey(name); if (!k) return { att: [], vis: [] };
+  return { att: CAREX.attend.filter(a => nameKey(a.name) === k), vis: CAREX.visits.filter(v => nameKey(v.name) === k).sort((a, b) => (b.ymd || '').localeCompare(a.ymd || '')) };
+}
+function careBlock(t) {
+  if (!t || t.kind !== 'person' || !SY.user) return '';
+  if (CAREX.uid !== SY.user.uid || CAREX.state === 'idle' || Date.now() - CAREX.at > 120000) setTimeout(careLoadP, 0);
+  if (CAREX.state !== 'ok') return '';
+  const c = careOf(t.name); if (!c.att.length && !c.vis.length) return '';
+  const md = y => y ? (+y.slice(5, 7)) + '/' + (+y.slice(8)) : '';
+  const sub = a => [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
+  let b = '<div class="label">심방 노트<small>읽기만 · 출석 ' + c.att.length + ' · 심방 ' + c.vis.length + '</small><a class="r" href="/care/" target="_blank" rel="noopener" style="font-weight:400;color:var(--tx3);font-size:12px">열기 ›</a></div><div class="carex">';
+  c.att.slice(0, 3).forEach(a => { b += '<div><span class="d">' + md(a.date) + '</span><span><b>' + esc(a.svc || '출석') + '</b>' + (sub(a) ? ' · ' + esc(sub(a)) : '') + (a.memo ? '<small>' + esc(String(a.memo).split('\n')[0]) + '</small>' : '') + '</span></div>'; });
+  if (c.vis[0]) { const v = c.vis[0]; b += '<div><span class="d">' + md(v.ymd) + '</span><span><b>심방</b>' + (v.methodLabel ? ' · ' + esc(v.methodLabel) : '') + (v.text ? '<small>' + esc(String(v.text).split('\n').find(x => x.trim()) || '') + '</small>' : '') + '</span></div>'; }
+  return b + '</div>';
+}
 function markPicker(t) {
   return '<div class="label">표시<small>' + (t.mark ? esc(markName(t.mark)) : mk(t) ? esc(markName(mk(t))) + ' · 소속으로 이어진 색' : '없음') + '</small><button class="r" data-a="marks" style="font-weight:400;color:var(--tx3);letter-spacing:0">색 이름 정하기</button></div><div class="marks">' +
     MARKS.map(m => '<button class="mkb' + (t.mark === m ? ' on' : '') + '" data-a="set-mark" data-id="' + t.id + '" data-m="' + m + '" style="--m:' + markVar(m) + '" aria-label="' + esc(markName(m)) + '" aria-pressed="' + (t.mark === m) + '"><i></i></button>').join('') + '</div>';
