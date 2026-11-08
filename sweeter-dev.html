@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1108-4  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1108-5  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7042,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1108-4";
+const APP_VERSION = "v. 26-1108-5";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -41824,20 +41824,45 @@ document.addEventListener('focusout',()=>{
   const vv=window.visualViewport;if(!vv)return;
   const root=document.documentElement;
   const typing=el=>el&&el!==document.body&&(el.isContentEditable||el.tagName==='TEXTAREA'||(el.tagName==='INPUT'&&/^(text|search|email|url|tel|number|password|)$/.test(el.type||'')));
-  let t=null;
+  // ⚠️ 자판 높이를 innerHeight 로만 재지 말 것 (v. 26-1108-5) — 아이패드 홈 화면 앱은 자판이 뜰 때 innerHeight 도 함께 줄어
+  //    '자판 0' 으로 읽혔다. 그래서 짧은 할일은 아이패드가 스스로 올려 줘 됐고, 긴 할일(여러 줄 칸으로 바꿔 끼우며
+  //    preventScroll 로 커서를 옮긴다)은 아무도 안 올려 가려진 채였다. 자판이 없을 때 본 가장 큰 높이를 기준으로 잰다.
+  let t=null,base=0,w=window.innerWidth;
+  const full=()=>Math.max(base,window.innerHeight,root.clientHeight||0);
   const apply=()=>{
-    const ae=document.activeElement;
-    const kb=typing(ae)&&Math.abs((vv.scale||1)-1)<0.01?Math.max(0,Math.round(window.innerHeight-vv.height-vv.offsetTop)):0;
+    if(window.innerWidth!==w){w=window.innerWidth;base=0;}
+    const ae=document.activeElement,on=typing(ae)&&Math.abs((vv.scale||1)-1)<0.01;
+    if(!on)base=Math.max(base,Math.round(vv.height));
+    const kb=on?Math.max(0,Math.round(full()-vv.height)):0;
     const cur=parseInt(root.style.getPropertyValue('--kb-pad'))||0;
-    if(kb>150){
-      if(kb!==cur)root.style.setProperty('--kb-pad',kb+'px');
-      try{
-        const r=ae.getBoundingClientRect();
-        const room=vv.offsetTop+vv.height-12;   // 자판 윗선(여유 12px)
-        if(r.bottom>room)window.scrollBy(0,Math.round(r.bottom-room));
-      }catch(e){}
-    }else if(cur){root.style.removeProperty('--kb-pad');}
+    if(kb>150){if(Math.abs(kb-cur)>4)root.style.setProperty('--kb-pad',kb+'px');}
+    else if(cur)root.style.removeProperty('--kb-pad');
+    if(!on){document.querySelectorAll('.kb-spacer').forEach(x=>x.remove());return;}
+    // 쓰는 칸이 보이는 창 아래(자판 밑)로 내려가 있으면 자판 바로 위로 올린다 — 자판 높이를 어떻게 읽었든 늘 본다
+    // ⚠️ 넓은 화면(아이패드 두 칸)은 왼쪽 할일 칸(#colL)이 **제 상자 안에서** 스크롤된다 — 문서를 밀어도 칸이 안 움직인다
+    //    (v. 26-1108-3/4 가 아이패드에서 안 된 진짜 까닭). 칸을 품은 스크롤 상자를 찾아 그 안에 빈 자리를 두고 그것을 민다.
+    try{
+      const room=vv.offsetTop+vv.height-16;   // 자판 윗선(여유 16px)
+      let sc=ae.parentElement;
+      while(sc&&sc!==document.body&&sc!==root){const o=getComputedStyle(sc).overflowY;if(o==='auto'||o==='scroll')break;sc=sc.parentElement;}
+      const inner=sc&&sc!==document.body&&sc!==root;
+      if(inner){
+        const need=Math.max(0,Math.round(sc.getBoundingClientRect().bottom-room))+16;
+        let sp=sc.querySelector(':scope>.kb-spacer');
+        if(!sp){sp=document.createElement('div');sp.className='kb-spacer';sp.setAttribute('aria-hidden','true');sp.style.cssText='flex:none;pointer-events:none;';sc.appendChild(sp);}
+        if(Math.abs((parseInt(sp.style.height)||0)-need)>4)sp.style.height=need+'px';
+      }
+      const r=ae.getBoundingClientRect();
+      if(r.bottom>room&&r.top>vv.offsetTop){
+        const d=Math.round(Math.min(r.bottom-room,r.top-vv.offsetTop-8));
+        const se=inner?sc:(document.scrollingElement||root),y0=se.scrollTop;
+        if(inner)sc.scrollTop=y0+d;
+        else{window.scrollBy(0,d);if(Math.abs(se.scrollTop-y0)<1)se.scrollTop=y0+d;}   // scrollBy 가 안 먹는 브라우저
+        if(typeof _dlog==='function')_dlog('[자판 위로] '+(inner?(sc.id||sc.className):'문서')+' d='+d+' kb='+kb+' ih='+window.innerHeight+' vv='+Math.round(vv.height)+'/'+Math.round(vv.offsetTop)+' y '+y0+'→'+se.scrollTop);
+      }
+    }catch(e){}
   };
+  setTimeout(()=>{base=Math.max(base,Math.round(vv.height));},0);
   // 긴 할일은 누르면 여러 줄 칸으로 바뀌며 행이 늘어난다(0.3초 남짓) — 한 번만 맞추면 늘어나기 전 자리로 맞춰진다. 여러 번 다시 본다.
   const soon=ms=>{clearTimeout(t);t=setTimeout(apply,ms);};
   const again=()=>{[60,250,500,900].forEach(ms=>setTimeout(apply,ms));};
@@ -41845,6 +41870,8 @@ document.addEventListener('focusout',()=>{
   document.addEventListener('focusin',again,true);
   document.addEventListener('input',e=>{if(typing(e.target))soon(80);},true);
   document.addEventListener('focusout',()=>soon(120),true);
+  // 고치던 칸이 다시 그리기로 통째로 지워지면 focusout 이 안 온다 — 여백을 둔 동안만 가끔 다시 본다
+  setInterval(()=>{if(root.style.getPropertyValue('--kb-pad')||document.querySelector('.kb-spacer'))apply();},700);
 })();
 // 편집 중이면 미루고 true · 아니면 false (부른 쪽이 바로 그린다). 같은 key 는 한 번만.
 function _txeDefer(key,fn){
