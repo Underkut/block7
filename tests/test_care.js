@@ -41,7 +41,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
-  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin };`, ctx);
+  ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -516,6 +516,14 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('㉑ 빈 것 · 모양이 다른 것은 빈 표', [J(A.prayMarkIndex(null)), J(A.prayMarkIndex({}))], [{}, {}]);
   const s = JSON.stringify({ T: [] });
   sc.eq('㉑ 덩어리 잇기 — wid 가 모두 같을 때만', [J(A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s.slice(0, 3) }, { wid: 'W', s: s.slice(3) }])), A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s.slice(0, 3) }, { wid: 'X', s: s.slice(3) }]), A.prayJoin({ wid: 'W', n: 2 }, [{ wid: 'W', s: s }])], [{ T: [] }, null, null]);
+}
+
+// ㉒ 요즘 안 보이는 분 (1108-A5)
+{
+  const L = [{ name: '가나다', date: '2026-10-04', svc: '주일 1부' }, { name: '가 나다', date: '2026-10-18', svc: '주일 2부' }, { name: '라마바', date: '2026-10-18' }, { name: '사아자', date: '2026-10-11' }, { name: '사아자', date: '2026-11-01' }, { name: '차카', date: '2026-10-01' }, { name: '차카', date: '2026-10-25' }];
+  const q = A.attQuiet(L, '2026-11-08');
+  sc.eq('㉒ 기준 14일 · 두 번 넘게 온 분만 · 띄어쓰기 무시 · 오래된 순 · 마지막 예배', J(q.map(o => [o.name, o.n, o.last, o.days, o.svc])), [['가 나다', 2, '2026-10-18', 21, '주일 2부'], ['차카', 2, '2026-10-25', 14, '']]);
+  sc.eq('㉒ 한 번만 온 분(라마바) · 최근에 온 분(사아자)은 빼고 · 기준은 바꿀 수 있다', J([A.ATT_QUIET_DAYS, A.attQuiet(L, '2026-11-08', 30).length, A.attQuiet([], '2026-11-08').length]), [14, 0, 0]);
 }
 
 sc.done();
