@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-11 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -432,6 +432,15 @@ a.wl{color:inherit;text-decoration:none}
 body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;pointer-events:none}
 .addbox{margin-top:12px}.addbox .row{display:flex;gap:8px;margin-top:8px}
 .inp.etc{margin-top:8px;font-size:14px;padding:8px 11px}
+/* 1108-B 아이폰: 16 보다 작은 글자의 칸을 누르면 화면을 확대해 버린다(확대된 채 좌우로 밀려 잘려 보이던 것) → 손가락 기기에선 칸 글자 16 */
+@media (pointer:coarse){input,textarea,select,.inp,.inp.etc,.aadd .inp,.srch input{font-size:16px!important}}
+/* 아이폰 날짜 · 시간 칸은 제 폭을 고집해 화면 밖으로 삐져나온다 → 모양을 풀고 폭을 칸에 맞춘다 */
+input.inp[type=date],input.inp[type=time]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;min-height:44px;text-align:left}
+input.inp::-webkit-date-and-time-value{text-align:left}
+.layer{overflow-x:hidden}
+/* 글을 쓰는 동안: 아래 단추가 쓰는 칸을 덮지 않게 감추고, 마지막 칸도 자판 위로 올릴 수 있게 아래 여백을 넉넉히 */
+@media (pointer:coarse){body.typing .layer .ph-foot{display:none}
+body.typing .layer>.ph-body{padding-bottom:60vh!important}}
 .pop button{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--ac)}
 .sugg small{color:var(--tx3);font-size:11.5px}
 .todo .send{padding-top:0}
@@ -470,7 +479,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-11';
+const APP_VERSION = 'v. 26-1108-12';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2741,9 +2750,12 @@ function render() {
   S.layers.forEach((L, i) => {
     let el = have[i];
     if (!el || el.dataset.id !== L.id) { if (el) el.remove(); el = document.createElement('div'); el.className = 'layer'; el.dataset.id = L.id; el.style.zIndex = 20 + i; lay.appendChild(el); if (!RM.matches && !L.noAnim) el.animate([{ transform: 'translateX(100%)' }, { transform: 'none' }], { duration: 300, easing: 'cubic-bezier(.22,.8,.24,1)' }); L.noAnim = true; }
-    const b = el.querySelector('.ph-body'), st = b ? b.scrollTop : 0;
+    const b = el.querySelector('.ph-body'), st = b ? b.scrollTop : 0, lt = el.scrollTop;   // 겹 화면에선 .layer 자신이 스크롤한다 (1108-B)
+    const ae = document.activeElement, keep = ae && el.contains(ae) && ae.dataset && ae.dataset.f ? { f: ae.dataset.f, etc: ae.dataset.etc, s: ae.selectionStart, e: ae.selectionEnd } : null;
     el.innerHTML = LAYERS[L.type](L);
     const nb = el.querySelector('.ph-body'); if (nb) nb.scrollTop = st;
+    el.scrollTop = lt;
+    if (keep) { const ni = el.querySelector('[data-f="' + keep.f + '"]' + (keep.etc ? '[data-etc]' : '')); if (ni) { try { ni.focus({ preventScroll: true }); if (keep.s != null) ni.setSelectionRange(keep.s, keep.e); } catch (e) { } } el.scrollTop = lt; }
   });
   [...lay.children].slice(S.layers.length).forEach(el => el.remove());
   document.body.classList.toggle('locked', S.layers.length > 0 || S.sheet);
@@ -2877,8 +2889,12 @@ document.addEventListener('click', e => {
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit')) return; L.dirty = true;
-    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); }
-    else if (a === 'fone') { L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = ''; }
+    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); return; }
+    else if (a === 'fone') {
+      L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = '';
+      chipsSync(k, L.form[k]); if (k === 'method') { const ei = document.querySelector('.layer:last-child [data-f="methodEtc"]'); if (ei) ei.value = ''; }
+      return;
+    }
     else { const p = M().people[v] || {}, RO = filterOptions(M().visits, DATA.opts).role; L.form.name = v; L.form.roles = (p.roles || []).filter(x => RO.includes(x)); L.form.rolesEtc = (p.roles || []).filter(x => !RO.includes(x)).join(', '); }
     render(); return;
   }
@@ -2911,7 +2927,7 @@ document.addEventListener('click', e => {
   if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
   if (a === 'aone' || a === 'attpick') {
     const L = topLayer(); if (!L || L.type !== 'attedit') return; L.dirty = true;
-    if (a === 'aone') L.form[k] = L.form[k] === v ? '' : v;
+    if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; return; }
     else { L.form.name = v; if (!L.id) { const hb = attHabit(AT(), v); if (!L.form.svc) L.form.svc = hb.svc; if (!L.form.seat) L.form.seat = hb.seat; } }
     render(); return;
   }
@@ -3006,6 +3022,28 @@ document.addEventListener('click', e => {
   else return;
   render();
 });
+// 1108-B 알약 켜고 끄기를 그 자리에서 — 같은 칸(k)의 알약 중 v 만 눌린 모양으로
+function chipsSync(k, v, act) { document.querySelectorAll('.layer:last-child [data-act="' + (act || 'fone') + '"][data-k="' + k + '"]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); }
+// 1108-B 자판이 쓰는 칸을 가리지 않게 — 쓰는 동안 아래 단추를 감추고, 그 칸이 보이는 자리(자판 위)에 오도록 겹 화면을 굴린다
+function isField(el) { return !!el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !/^(button|checkbox|radio|range|file|date|time)$/i.test(el.type))); }
+function keepInView(el) {
+  const L = el && el.closest && el.closest('.layer'); if (!L || document.activeElement !== el) return;
+  const vv = window.visualViewport, top = (vv ? vv.offsetTop : 0) + 64, bot = (vv ? vv.offsetTop + vv.height : innerHeight) - 16, r = el.getBoundingClientRect();
+  let d = 0;
+  if (r.height > bot - top) d = r.top - top; else if (r.bottom > bot) d = r.bottom - bot; else if (r.top < top) d = r.top - top;
+  if (Math.abs(d) > 2) L.scrollBy({ top: d, behavior: RM.matches ? 'auto' : 'smooth' });
+}
+let typingT = 0;
+document.addEventListener('focusin', e => {
+  if (!isField(e.target) || !e.target.closest('.layer')) return;
+  clearTimeout(typingT); document.body.classList.add('typing');
+  setTimeout(() => keepInView(e.target), 350);   // 자판이 다 올라온 뒤에
+});
+document.addEventListener('focusout', () => {
+  clearTimeout(typingT);
+  typingT = setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 150);   // 칸에서 칸으로 옮길 땐 깜빡이지 않게
+});
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (isField(document.activeElement)) keepInView(document.activeElement); });
 // PC: ESC 는 × 와 같은 일 — 가장 위 것부터
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;

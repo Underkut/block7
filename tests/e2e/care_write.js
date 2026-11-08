@@ -20,6 +20,7 @@
 //  ⑮ (1108-A) 출석 — 처음 적을 때 출석 탭 · 한 줄 · 붙여 넣기로 여럿 · 사람 화면 출석 · 고치기는 바뀐 칸만 · 지우기는 그 한 줄 · 되돌리기 · 출석만 있는 새 이름도 성도 목록에
 //  ⑯ (1108-A2) 기도노트 표시색 — 덩어리를 읽기만 · 기도노트가 붙인 색 이름 · 묶음에 이어 둔 색 · 성도 목록 · 사람 화면 · 사람 화면에서 BLOCK7 할일(쪽지만)
 //  ⑰ (1108-A5) 요즘 안 보이는 분 — 성도 탭 요약에 수 · 출석 목록 맨 위에 늘 오던 분만
+//  ⑱ (1108-B) 휴대폰 — 칸 글자 16(아이폰 확대 막기) · 날짜 칸 폭 · 알약은 다시 그리지 않음(스크롤 · 쓰던 칸 그대로) · 쓰는 동안 아래 단추 감춤 · 쓰는 칸을 보이는 자리로
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -560,6 +561,44 @@ async function route(r) {
   await page.click('.attsum'); await tidy();
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/att_quiet.png' });
   eq('⑰ 출석 목록 맨 위에 — 늘 오던 분만(한 번 온 분은 아님)', await page.$$eval('.layer:last-child .todo .lab', x => x.map(e => e.childNodes[0].textContent)), ['뜸한분']);
+
+  // ⑱ (1108-B) 휴대폰 — 확대 · 밀림 · 튐 · 자판 가림
+  {
+    const { devices } = require('playwright');
+    const mc = await b.newContext(Object.assign({}, devices['iPhone 13'], { timezoneId: 'Asia/Seoul', viewport: { width: 375, height: 520 } }));
+    const mp = await mc.newPage(); mp.on('pageerror', e => errs.push('폰: ' + e.message)); mp.on('dialog', d => d.accept());
+    await mp.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
+    await mp.addInitScript(() => { const mm = matchMedia; matchMedia = q => (q.includes('reduce') ? { matches: true, addEventListener() {}, addListener() {} } : mm.call(window, q)); });
+    await mp.goto(FILE); await mp.waitForTimeout(400);
+    await mp.evaluate(() => { USER = { email: 'test@example.com', uid: 'u', getIdToken: async () => 'x' }; AUTH_READY = true; save({ sheet: { id: 'S', name: '시험 시트' }, form: { id: 'F', name: '시험 폼' } }); googleStatus(); });
+    await mp.waitForSelector('.card');
+    await mp.evaluate(() => openEdit(null)); await mp.waitForTimeout(500);
+    const fs16 = await mp.$$eval('.layer:last-child .inp', x => x.map(e => parseFloat(getComputedStyle(e).fontSize)).filter(n => n < 16).length);
+    eq('⑱ 휴대폰에선 입력 칸 글자가 모두 16 이상 (아이폰이 칸을 누를 때 확대하지 않게)', fs16, 0);
+    eq('⑱ 날짜 칸이 칸 폭을 넘지 않는다 · 화면이 옆으로 넓어지지 않는다', await mp.evaluate(() => { const d = document.querySelector('.layer:last-child input[type=date]'), p = d.parentElement.getBoundingClientRect(), r = d.getBoundingClientRect(); return r.right <= p.right + 1 && document.documentElement.scrollWidth <= innerWidth; }), true);
+    // 알약을 눌러도 화면을 다시 그리지 않는다 — 스크롤 · 쓰던 칸 그대로
+    const lay = '.layer:last-child';
+    await mp.evaluate(l => { document.querySelector(l).scrollTop = 260; }, lay);
+    await mp.focus(lay + ' [data-f="rolesEtc"]'); await mp.waitForTimeout(500);
+    const before = await mp.evaluate(l => { const L = document.querySelector(l); window.__inp = document.activeElement; return L.scrollTop; }, lay);
+    await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="ftog"][data-k="tags"][data-v="학교"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
+    await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="fone"][data-k="depth"][data-v="깊음"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
+    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]')].map(x => x.dataset.v) }; }, lay);
+    eq('⑱ 알약을 눌러도 스크롤이 그대로 · 쓰던 칸이 새로 만들어지지 않는다', [after.st === before, after.same], [true, true]);
+    eq('⑱ 알약 값은 그대로 들어가고 눌린 모양도 맞다', [after.form, after.pressed.sort()], [[['학교'], '깊음'], ['깊음', '학교']]);
+    // 이름 후보를 고르는 것처럼 다시 그려야 할 때도 스크롤 자리는 그대로
+    await mp.evaluate(l => { document.querySelector(l).scrollTop = 120; render(); }, lay);
+    eq('⑱ 다시 그려도 겹 화면 스크롤 자리 그대로', await mp.evaluate(l => document.querySelector(l).scrollTop, lay), 120);
+    // 자판: 쓰는 동안 아래 단추를 감추고, 쓰는 칸을 보이는 자리로
+    await mp.evaluate(l => { document.querySelector(l).scrollTop = 0; }, lay);
+    await mp.focus(lay + ' textarea[data-f="text"]'); await mp.waitForTimeout(800);
+    const kb = await mp.evaluate(l => { const f = document.querySelector(l + ' .ph-foot'), t = document.querySelector(l + ' textarea[data-f="text"]').getBoundingClientRect(); return { typing: document.body.classList.contains('typing'), foot: getComputedStyle(f).display, inView: t.top >= 0 && t.top < innerHeight - 40 }; }, lay);
+    eq("⑱ 글을 쓰는 동안 '시트에 적기' 단추를 감추고 · 쓰는 칸이 화면 안으로 올라온다", [kb.typing, kb.foot, kb.inView], [true, 'none', true]);
+    await mp.evaluate(() => document.activeElement.blur()); await mp.waitForTimeout(400);
+    eq('⑱ 다 쓰면(자판 닫힘) 단추가 돌아온다', await mp.evaluate(l => getComputedStyle(document.querySelector(l + ' .ph-foot')).display, lay), 'block');
+    if (process.env.SHOT) await mp.screenshot({ path: process.env.SHOT + '/b1_phone.png' });
+    await mc.close();
+  }
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
