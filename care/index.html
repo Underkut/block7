@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1108-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -411,6 +411,18 @@ textarea.inp{min-height:118px;resize:vertical;line-height:1.65}
 .pop svg,.todo svg{width:15px;height:15px;stroke:currentColor;stroke-width:1.7;fill:none}
 a.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px;color:inherit;text-decoration:none}
 a.wl{color:inherit;text-decoration:none}
+.sk{max-width:720px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 18px 40px}
+.sk-head{text-align:center;font-weight:600;font-size:16px;padding:6px 0 18px;color:var(--tx)}
+.sk-today{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.sk-today i,.sk-card i{display:block;border-radius:10px;background:linear-gradient(90deg,var(--s2) 0%,var(--s1) 40%,var(--s2) 80%);background-size:300% 100%;animation:skshine 1.4s ease-in-out infinite}
+.sk-today i{height:62px;border-radius:14px}
+.sk-card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:10px;display:flex;flex-direction:column;gap:9px}
+.sk-card i{height:12px}.sk-card i:first-child{height:15px}
+.sk-msg{margin-top:22px;text-align:center;font-size:13px;color:var(--tx2)}
+.sk-bar{height:3px;border-radius:2px;background:var(--s2);overflow:hidden;max-width:180px;margin:0 auto 10px}
+.sk-bar b{display:block;height:100%;background:var(--ac);border-radius:2px;transition:width .6s var(--ease)}
+@keyframes skshine{0%{background-position:100% 0}100%{background-position:-50% 0}}
+@media (prefers-reduced-motion:reduce){.sk-today i,.sk-card i{animation:none}.sk-bar b{transition:none}}
 .gate{max-width:440px;margin:0 auto;padding:calc(40px + env(safe-area-inset-top,0px)) 18px 40px}
 .gate h1{font-family:var(--serif);font-size:28px;margin:0}
 .gate .sub{color:var(--tx2);font-size:14px;margin:4px 0 22px}
@@ -479,7 +491,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-12';
+const APP_VERSION = 'v. 26-1108-13';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -1369,7 +1381,7 @@ function saved() { try { return JSON.parse(localStorage.getItem(CARE_KEY) || '{}
 function save(patch) { try { localStorage.setItem(CARE_KEY, JSON.stringify(Object.assign(saved(), patch))); } catch (e) {} }
 
 async function fbInit() {
-  for (const s of FB_JS) await load(s);
+  await load(FB_JS[0]); await Promise.all(FB_JS.slice(1).map(load));   // 1108-B2: app 다음 auth · firestore 는 함께 받는다
   const app = firebase.apps.find(a => a.name === 'care') || firebase.initializeApp(FB_CFG, 'care');
   AUTH = app.auth(); DB = app.firestore();
   AUTH.onAuthStateChanged(u => {
@@ -1393,6 +1405,7 @@ async function token() {
 }
 let G = { connected: false, email: '', checked: false };
 async function googleStatus() {
+  const pre = token().catch(() => null);   // 1108-B2: 연결 확인과 열쇠 받기를 함께 (연결 안 됐으면 버린다)
   try { const j = await fn('/status'); G = { connected: !!j.connected, email: j.email || '', checked: true }; }
   catch (e) { G = { connected: false, email: '', checked: true, err: '열쇠 서버에 닿지 못했습니다.\n잠시 뒤 다시 열어 주세요.' }; }
   if (G.connected) await cfgSync();
@@ -1444,6 +1457,15 @@ async function readTab(id, title) {
   const j = await gapi(SH + id + '/values/' + rng(title, 'A1:ZZ') + '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER');
   return j.values || [];
 }
+// 1108-B2 처음 열 때 — 탭 목록 한 번 + 모든 탭(휴지통 빼고) 값 한 번 = 요청 두 번. 예전엔 탭마다 머리줄 · 값을 차례로 읽었다(열 번 넘게)
+async function readAll(id) {
+  const meta = await sheetMeta(id), list = (meta.sheets || []).map(x => x.properties).filter(p => p.title !== TRASH_TAB);
+  const q = list.map(p => 'ranges=' + rng(p.title, 'A1:ZZ')).join('&');
+  const j = list.length ? await gapi(SH + id + '/values:batchGet?' + q + '&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER') : { valueRanges: [] };
+  const vr = j.valueRanges || [];
+  const tabs = list.map((p, i) => { const values = (vr[i] && vr[i].values) || []; return { title: p.title, sheetId: p.sheetId, cols: (p.gridProperties || {}).columnCount || 0, header: values[0] || [], values }; });
+  return { title: meta.properties.title, tabs, all: (meta.sheets || []).map(x => x.properties.title) };
+}
 async function readTabs(id) {
   const meta = await sheetMeta(id), tabs = [];
   for (const s of meta.sheets || []) {
@@ -1486,20 +1508,20 @@ async function loadData(quiet) {
   const s = saved().sheet; if (!s || !G.connected) { render(); return; }
   if (!quiet) { DATA.state = 'loading'; render(); }
   try {
-    const info = await readTabs(s.id), tab = findResponsesTab(info.tabs);
+    const f0 = saved().form, formP = f0 && !DATA.form ? gapi('https://forms.googleapis.com/v1/forms/' + f0.id).catch(() => null) : null;   // 폼은 시트와 함께 받는다
+    const info = await readAll(s.id), tab = findResponsesTab(info.tabs), V = t => { const x = info.tabs.find(y => y.title === t); return x ? x.values : []; };
     if (!tab) throw new Error('고른 시트에서 "성도 이름" · "내용" 머리글이 있는 탭을 찾지 못했습니다.\n심방 결과 시트를 골랐는지 봐 주세요.');
-    const vals = await readTab(s.id, tab.title);
-    const tabNames = info.tabs.map(t => t.title), hm = headerMap(vals[0] || []).map;
+    const vals = tab.values;
+    const tabNames = info.all, hm = headerMap(vals[0] || []).map;
     DATA.prepared = hm['@기록ID'] != null && tabNames.includes('액션') && tabNames.includes('덧붙임');
     DATA.hasPlace = hm.place != null;
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
-    DATA.actStatus = parseActionTab(tabNames.includes('액션') ? await readTab(s.id, '액션') : []);
-    DATA.addenda = parseAddenda(tabNames.includes('덧붙임') ? await readTab(s.id, '덧붙임') : []);
-    DATA.plans = tabNames.includes(PLAN_TAB) ? parsePlans(await readTab(s.id, PLAN_TAB)) : [];
-    DATA.attend = tabNames.includes(ATT_TAB) ? parseAttend(await readTab(s.id, ATT_TAB)) : [];
+    DATA.actStatus = parseActionTab(V('액션'));
+    DATA.addenda = parseAddenda(V('덧붙임'));
+    DATA.plans = parsePlans(V(PLAN_TAB));
+    DATA.attend = parseAttend(V(ATT_TAB));
     let form = DATA.form;
-    const f = saved().form;
-    if (f && !form) { try { const fj = await gapi('https://forms.googleapis.com/v1/forms/' + f.id); DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } catch (e) { form = null; } }
+    if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
     const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션') } : {};
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
@@ -2723,14 +2745,20 @@ function sheetHtml() {
 // ───────────────────────────── 들어오기 전 화면 (로그인 · 연결 · 고르기) ─────────────────────────────
 function gate() {
   let h = '<div class="gate"><h1>심방 노트</h1><p class="sub">심방 기록은 구글 시트에만 있고, 이 앱은 그것을 정리해 보여 줍니다.</p>';
-  if (!AUTH_READY) return h + '<p class="muted">준비하는 중…</p></div>';
+  if (!AUTH_READY) return loadingHtml('준비하는 중', 0);
   if (!USER) return h + '<form class="card" id="loginForm"><h2>로그인</h2><p class="muted">BLOCK7 · Sweeter 와 같은 계정으로 들어옵니다.</p><input id="em" type="email" placeholder="이메일" autocomplete="username" required><input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password" required><button class="btn pri" type="submit">로그인</button></form></div>';
-  if (!G.checked) return h + '<p class="muted">구글 연결을 확인하는 중…</p></div>';
+  if (!G.checked) return loadingHtml('구글 연결을 확인하는 중', 1);
   if (!G.connected) return h + '<div class="card"><h2>구글 연결</h2><p class="muted">' + esc(G.err || '구글 캘린더를 연결할 때와 같은 화면이 뜹니다. "고른 파일만" 권한을 묻습니다.') + '</p><button class="btn pri" data-act="gconnect">구글 연결</button></div></div>';
   const sv = saved();
   if (!sv.sheet) return h + '<div class="card"><h2>심방 시트 고르기</h2><p class="muted">구글 드라이브 창에서 심방 결과 시트(예: HB 심방 케어 (Responses))를 고릅니다. 앱은 고른 파일만 열 수 있습니다.</p><button class="btn pri" data-act="pick" data-v="sheet">시트 고르기</button></div></div>';
   if (DATA.state === 'err') return h + '<div class="card"><h2>시트를 읽지 못했습니다</h2><p class="muted" style="white-space:pre-line">' + esc(DATA.err) + '</p><div class="row"><button class="btn pri" data-act="reload">다시 읽기</button><button class="btn" data-act="pick" data-v="sheet">시트 다시 고르기</button><button class="btn" data-act="gconnect">다시 연결</button></div></div></div>';
-  return h + '<p class="muted">시트를 읽는 중…</p></div>';
+  return loadingHtml('시트를 읽는 중', 2);
+}
+// 1108-B2 처음 여는 동안 — 기록 화면의 뼈대가 은은히 빛나고, 세 단계 중 어디인지 아래 막대로
+function loadingHtml(msg, step) {
+  const card = w => '<div class="sk-card"><i style="width:' + w + '%"></i><i></i><i style="width:62%"></i></div>';
+  return '<div class="sk" aria-busy="true" aria-live="polite"><div class="sk-head">심방 노트</div><div class="sk-today"><i></i><i></i><i></i></div>' + card(38) + card(46) + card(30) +
+    '<div class="sk-msg"><div class="sk-bar"><b style="width:' + [22, 55, 82][step] + '%"></b></div>' + esc(msg) + '…</div></div>';
 }
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
