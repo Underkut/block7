@@ -1079,4 +1079,13 @@ const MAPCSV = [
   sc.eq('㉘ 이름 없는 그룹(만드는 중)은 뺀다', A.siriDir(db).g.some(e => e.i === nameless.id), false);
 }
 
+// (1108-A4) 심방 노트 잇기 — 읽기만 · 읽기 규칙은 care-core 그대로 · 사람 상세에만
+{
+  const care = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8'), cm = care.match(/<script id="care-core">([\s\S]*?)<\/script>/);
+  sc.eq('A4 심방 노트 care-core 에 기도노트가 쓰는 세 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && ['buildModel', 'findResponsesTab', 'parseAttend'].every(f => new RegExp('function ' + f + '\\(').test(cm[1])), true);
+  sc.eq('A4 심방 설정 문서(users/{uid}/data/care)는 읽기만 — 쓰는 곳이 없다', /doc\('users\/' \+ uid \+ '\/data\/care'\)\.get\(\)/.test(HTML) && !/data\/care'\)\.(set|update|delete)\(/.test(HTML), true);
+  sc.eq('A4 심방 내용은 화면 메모리에만 — CAREX 를 저장 · 맞추기에 넣지 않는다', !/(localStorage\.setItem|JSON\.stringify)\([^)]*CAREX/.test(HTML), true);
+  sc.eq('A4 사람 상세에만 붙는다 (기도 항목 · 묶음은 아님)', /function careBlock\(t\) \{\n  if \(!t \|\| t\.kind !== 'person'/.test(HTML) && /b \+= careBlock\(t\);/.test(HTML), true);
+}
+
 sc.done();
