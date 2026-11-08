@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- BLOCK7  v. 26-1108-6  [SWEETER DEV — no Firebase]  -->
+<!-- BLOCK7  v. 26-1108-7  [SWEETER DEV — no Firebase]  -->
 <html lang="ko" data-product="sweeter">
 <head>
 <meta charset="UTF-8">
@@ -7042,7 +7042,7 @@ if(DEV_MODE){
 // ═══════════════════════════════════════════════════════════
 // Format: v. YY-MMDD-N  (기준년도-기준날짜-그날의 배포번호)
 // Update this one line with every deploy to GitHub Pages.
-const APP_VERSION = "v. 26-1108-6";
+const APP_VERSION = "v. 26-1108-7";
 
 // 제품마다 따로 가져가야 하는 설정. **여기 없는 것은 두 제품이 공유한다.**
 // ⚠️ 공유가 명백히 틀린 것만 넣는다. 목록이 길어질수록 "한쪽에서 바꿨는데
@@ -41840,7 +41840,7 @@ document.addEventListener('focusout',()=>{
     const cur=parseInt(root.style.getPropertyValue('--kb-pad'))||0;
     if(kb>150){if(Math.abs(kb-cur)>4)root.style.setProperty('--kb-pad',kb+'px');}
     else if(cur)root.style.removeProperty('--kb-pad');
-    if(!on){document.querySelectorAll('.kb-spacer').forEach(x=>x.remove());_kbDiag(ae,0);return;}
+    if(!on){document.querySelectorAll('.kb-spacer').forEach(x=>x.remove());return;}
     // 쓰는 칸이 보이는 창 아래(자판 밑)로 내려가 있으면 자판 바로 위로 올린다 — 자판 높이를 어떻게 읽었든 늘 본다
     // ⚠️ 넓은 화면(아이패드 두 칸)은 왼쪽 할일 칸(#colL)이 **제 상자 안에서** 스크롤된다 — 문서를 밀어도 칸이 안 움직인다
     //    (v. 26-1108-3/4 가 아이패드에서 안 된 진짜 까닭). 칸을 품은 스크롤 상자를 찾아 그 안에 빈 자리를 두고 그것을 민다.
@@ -41865,26 +41865,6 @@ document.addEventListener('focusout',()=>{
         if(typeof _dlog==='function')_dlog('[자판 위로] '+(inner?(sc.id||sc.className):'문서')+' d='+d+' kb='+kb+' ih='+window.innerHeight+' vv='+Math.round(vv.height)+'/'+Math.round(vv.offsetTop)+' y '+y0+'→'+se.scrollTop);
       }
     }catch(e){}
-    _kbDiag(ae,kb);
-  };
-  // 개발자 계정에만: 자판 숫자를 화면 위에 작게 띄운다 — 기기 없이 세 번 헛짚었다(1108). 스크린숏 한 장이면 까닭이 보인다.
-  const _kbDiag=(ae,kb)=>{
-    let box=document.getElementById('kbDiagBox');
-    let dev=false;try{dev=typeof _isDevAccount==='function'&&_isDevAccount();}catch(e){}
-    if(!dev||!ae||!typing(ae)){if(box)box.remove();return;}
-    if(!box){box=document.createElement('div');box.id='kbDiagBox';
-      box.style.cssText='position:fixed;left:8px;right:8px;z-index:99999;pointer-events:none;font:11px/1.35 ui-monospace,monospace;color:#9f9;background:rgba(0,0,0,.82);padding:4px 6px;border-radius:6px;white-space:pre-wrap;';
-      document.body.appendChild(box);}
-    box.style.top=Math.round(vv.offsetTop+4)+'px';
-    let sc=ae.parentElement;while(sc&&sc!==document.body&&sc!==root){const o=getComputedStyle(sc).overflowY;if(o==='auto'||o==='scroll')break;sc=sc.parentElement;}
-    const r=ae.getBoundingClientRect(),se=document.scrollingElement||root;
-    const sr=sc&&sc.getBoundingClientRect?sc.getBoundingClientRect():null;
-    box.textContent=APP_VERSION+' 자판진단 '+ae.tagName+'.'+(ae.className||'')+'\n'+
-      'ih '+window.innerHeight+' ch '+root.clientHeight+' base '+base+' vv '+Math.round(vv.height)+'/'+Math.round(vv.offsetTop)+' x'+(vv.scale||1).toFixed(2)+' kb '+kb+' pad '+(root.style.getPropertyValue('--kb-pad')||'-')+'\n'+
-      '칸 '+Math.round(r.top)+'~'+Math.round(r.bottom)+' 보이는끝 '+Math.round(vv.offsetTop+vv.height)+'\n'+
-      '상자 '+(sc?(sc.id||sc.tagName)+' '+Math.round(sr.top)+'~'+Math.round(sr.bottom)+' y'+Math.round(sc.scrollTop)+'/'+sc.scrollHeight+'/'+sc.clientHeight:'-')+
-      ' 빈자리 '+((document.querySelector('.kb-spacer')||{}).style||{}).height+'\n'+
-      '문서 y'+Math.round(se.scrollTop)+'/'+se.scrollHeight+'/'+se.clientHeight;
   };
   setTimeout(()=>{base=Math.max(base,Math.round(vv.height));},0);
   // 긴 할일은 누르면 여러 줄 칸으로 바뀌며 행이 늘어난다(0.3초 남짓) — 한 번만 맞추면 늘어나기 전 자리로 맞춰진다. 여러 번 다시 본다.
@@ -41895,7 +41875,7 @@ document.addEventListener('focusout',()=>{
   document.addEventListener('input',e=>{if(typing(e.target))soon(80);},true);
   document.addEventListener('focusout',()=>soon(120),true);
   // 고치던 칸이 다시 그리기로 통째로 지워지면 focusout 이 안 온다 — 여백을 둔 동안만 가끔 다시 본다
-  setInterval(()=>{if(root.style.getPropertyValue('--kb-pad')||document.querySelector('.kb-spacer')||document.getElementById('kbDiagBox'))apply();},700);
+  setInterval(()=>{if(root.style.getPropertyValue('--kb-pad')||document.querySelector('.kb-spacer'))apply();},700);
 })();
 // 편집 중이면 미루고 true · 아니면 false (부른 쪽이 바로 그린다). 같은 key 는 한 번만.
 function _txeDefer(key,fn){
