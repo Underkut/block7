@@ -15,6 +15,7 @@
 //  ⑪ (C2-4) 폼 ↔ '속성' 탭 — 처음엔 폼 선택지를 탭으로 · 폼에서 더함 → 탭 · 앱에서 더함/숨김/다시 쓰기 → 폼 · '기타' 글을 선택지로 · 폼에 '장소 · 메모' 질문 · 다시 맞춰도 폼을 또 고치지 않는다
 //  ⑫ (C3) 계획 ↔ '심방' 캘린더 — 만들기 · 캘린더에서 옮김/지움 따라가기 · 제목 앞뒤 글자 · 만들다 끊긴 일정 이어 붙이기 · 여벌 지우기 ·
 //     계획 → 기록(✓) · 캘린더에만 있는 일정 가져오기 · 앱에서 취소 → 일정 지움 · 캘린더에 안 넣기
+//  ⑬ (C3b) 할 일 → BLOCK7 할일 — 쪽지함에 쪽지 한 줄(종류 · 이름 · 날짜만, 나눈 이야기 없음) · 액션 탭에 보낸 날 · 보낸 뒤 단추에 날짜 · 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -406,6 +407,41 @@ async function route(r) {
   const nCal = LOG.filter(x => /^cal/.test(x[0])).length, nSet = LOG.filter(x => x[0] === 'set').length;
   await reload();
   eq('⑫ 다시 맞춰도 캘린더 · 계획 탭을 또 고치지 않는다', [LOG.filter(x => /^cal/.test(x[0])).length, LOG.filter(x => x[0] === 'set').length], [nCal, nSet]);
+
+  // ⑬ 할 일 → BLOCK7 할일
+  await page.evaluate(() => {
+    window.__inbox = []; window.__inboxFail = 0;
+    window.firebase = { firestore: { FieldValue: { arrayUnion: x => ({ __u: x }) } } };
+    DB = { doc: p => ({ set: async (o, m) => { if (window.__inboxFail > 0) { window.__inboxFail--; throw new Error('잠깐 끊김'); } window.__inbox.push([p, o.items.__u, m]); } }) };
+  });
+  const T0 = await page.evaluate(() => today());
+  R.rows.push(['11/8/2026 09:00:00', +T0.slice(5, 7) + '/' + +T0.slice(8), '파파파', '셀원', '전화', '보낼 할 일이 있는 아주 사적인 기록', '', '중보, 연결', '중간', 'C950', '폼', T0]);
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await reload();
+  await page.click('.ph-nav [data-act="tab"][data-v="collect"]'); await tidy();
+  await page.click('[data-act="grp"][data-v="act"]'); await tidy();
+  const row = k => '.kgrp:has-text("' + k + '") .todo:has-text("파파파") [data-act="b7open"]';
+  await page.click(row('중보')); await tidy();
+  eq('⑬ 보낼 글 — 종류 · 이름', await page.inputValue('.layer [data-f="text"]'), '중보 · 파파파');
+  await page.click('.layer [data-act="b7date"]:has-text("내일")');
+  await page.fill('.layer [data-f="text"]', '중보 · 파파파 (전화)');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/b7send.png' });
+  await page.click('.layer [data-act="b7send"]'); await page.waitForTimeout(1800);
+  const ib = await page.evaluate(() => window.__inbox), D1s = await page.evaluate(() => ymdAdd(today(), 1));
+  const nt = (ib[0] || [])[1] || {};
+  eq('⑬ 쪽지함에 쪽지 한 줄 — 내 쪽지함 · 고친 글 · 내일 · sec 비움 · merge', [ib.length, (ib[0] || [])[0], nt.from, nt.text, nt.date, nt.sec, JSON.stringify((ib[0] || [])[2])], [1, 'pray/u/c/b7inbox', 'care', '중보 · 파파파 (전화)', D1s, '', '{"merge":true}']);
+  eq('⑬ 쪽지에 나눈 이야기는 없다', JSON.stringify(ib).includes('사적인'), false);
+  const AT = () => tab('액션').rows, aRow = (rec, t) => AT().find(r => r[1] === rec && r[3] === t) || [];
+  eq("⑬ 액션 탭 — 그 할 일 줄에 'BLOCK7 할일' = 보낸 날 · 상태는 '할 일'", [aRow('C950', '중보')[9], aRow('C950', '중보')[7]], [D1s, '할 일']);
+  eq('⑬ 보낸 뒤 단추에 날짜', await page.$$eval('.kgrp:has-text("중보") .todo:has-text("파파파") .b7b.sent', x => x.length), 1);
+  // 쪽지함 쓰기가 실패하면 시트에 아무것도 안 적는다
+  await page.evaluate(() => { window.__inboxFail = 1; });
+  const nAct = AT().length;
+  await page.click(row('연결')); await tidy();
+  await page.click('.layer [data-act="b7send"]'); await page.waitForTimeout(1500);
+  eq('⑬ 쪽지함이 끊기면 — 쪽지 없음 · 액션 탭 그대로 · 창은 열린 채', [(await page.evaluate(() => window.__inbox)).length, AT().length, await page.$$eval('.layer [data-act="b7send"]', x => x.length)], [1, nAct, 1]);
+  await page.click('.layer [data-act="b7send"]'); await page.waitForTimeout(1500);
+  eq("⑬ 다시 누르면 보내지고 줄이 생긴다", [(await page.evaluate(() => window.__inbox)).length, aRow('C950', '연결')[9] === await page.evaluate(() => today())], [2, true]);
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

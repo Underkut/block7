@@ -15,6 +15,7 @@
 //  ⑬ 할 일 체크('액션' 탭) · 덧붙임 탭
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
+//  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
 //  ⑰ 계획 · '심방' 캘린더 — 계획 줄 읽기 · 일정 모양(제목은 이름만 + 앞뒤 글자, 표식만) · 캘린더에서 옮김 → 계획 따라감 · 지움 → 취소됨 · 만들다 끊긴 일정 이어 붙이기 · 두 기기 여벌 지우기(상한) · 기록됨 → ✓
 //  ⑧ 열쇠 서버: 심방 노트는 '고른 파일만'(drive.file) 권한만 더 묻고, sweeter.my/care/ 로만 돌아간다
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -32,7 +33,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
   joinMulti, splitEtc, blankRecord, addTalk, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
-  actionKey, parseActionTab, checkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
+  actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
@@ -415,6 +416,24 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('⑰ 계획 → 기록 꼴 — 이름 · 날짜 · 방식 · 장소 · 지난 구분', J([rf.name, rf.ymd, rf.method, rf.place, rf.roles]), ['가나다', '2026-11-10', '전화', '카페', ['장년부']]);
   const why = A.planWhyFor({ visits: [{ ymd: '2026-10-31', text: '\n직장 일이 힘들다고 함\n둘째 줄', actions: [{ t: '중보', done: false }, { t: '기타', x: '병문안', done: false }, { t: '보고', done: true }] }] });
   sc.eq('⑰ 제안의 물어볼 것 — 남은 할 일 · 지난 이야기 첫 줄', why, '남은 할 일: 중보, 병문안\n지난번(10/31): 직장 일이 힘들다고 함');
+}
+
+// ⑱ 할 일 → BLOCK7 할일
+{
+  const v = { id: 'C1', name: ' 가나다 ', text: '아주 사적인 이야기', actions: [] };
+  sc.eq('⑱ 보낼 글 — 종류 · 이름 (기타는 그 글, 세부는 붙여서)', [A.b7Text(v, { t: '중보', x: '' }), A.b7Text(v, { t: '기타', x: '병문안 가기' }), A.b7Text(v, { t: '연결', x: '셀' })], ['중보 · 가나다', '병문안 가기 · 가나다', '연결 셀 · 가나다']);
+  const n = A.b7Note('  중보 ·\n가나다 ', '2026-11-09', 1700000000000, 'N1');
+  sc.eq('⑱ 쪽지 — BLOCK7 받기 꼴 {id, from, date, sec, text, at} · 줄바꿈은 한 칸 · sec 비움(첫 구간)', J(n), { id: 'N1', from: 'care', date: '2026-11-09', sec: '', text: '중보 · 가나다', at: 1700000000000 });
+  sc.eq('⑱ 쪽지에 나눈 이야기는 없다', JSON.stringify(n).includes('사적인'), false);
+  sc.eq('⑱ 빈 글 · 틀린 날짜는 보내지 않는다 · 200자까지', [A.b7Note('  ', '2026-11-09', 1, 'x'), A.b7Note('a', '11/9', 1, 'x'), A.b7Note('가'.repeat(300), '2026-11-09', 1, 'x').text.length], [null, null, 200]);
+  const act = [A.ACT_TAB_HEAD, ['A1', 'C1', '가나다', '중보', '', '', '', '할 일', '', '2026-11-08']];
+  const st = A.parseActionTab(act);
+  sc.eq("⑱ 액션 탭의 'BLOCK7 할일' 칸을 읽는다", st['C1|중보|'].b7, '2026-11-08');
+  const w = { id: 'C1', actions: [{ t: '중보', x: '' }, { t: '연결', x: '' }] }; A.attachExtras({ visits: [w] }, st, {});
+  sc.eq('⑱ 할 일에 보낸 날이 붙는다 (안 보낸 것은 빈 칸)', [w.actions[0].b7, w.actions[1].b7], ['2026-11-08', '']);
+  sc.eq("⑱ 보낸 날 적기 — 줄이 있으면 'BLOCK7 할일' 칸만 (상태는 그대로)", J(A.b7MarkPlan(st, v, { t: '중보', x: '' }, '2026-11-09', 'A9')), { update: { row: 2, cells: { 'BLOCK7 할일': '2026-11-09' } } });
+  const ap = A.b7MarkPlan(st, v, { t: '기타', x: '병문안' }, '2026-11-09', 'A9').append;
+  sc.eq("⑱ 줄이 없으면 '할 일' 상태로 한 줄 — 칸 자리는 액션 탭 머리글대로", [ap.length, ap[A.ACT_TAB_HEAD.indexOf('상태')], ap[A.ACT_TAB_HEAD.indexOf('BLOCK7 할일')], ap[A.ACT_TAB_HEAD.indexOf('내용')]], [A.ACT_TAB_HEAD.length, '할 일', '2026-11-09', '병문안']);
 }
 
 sc.done();

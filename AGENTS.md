@@ -135,6 +135,8 @@ BLOCK7·Sweeter 작업과 **같은 때에 돌려도 된다** (2026-10-10 HB 물�
   (폰에서 고르면 PC 도 같은 파일을 열게). 여기에 내용을 더하지 말 것 (`test_care` ⑪ 이 칸 목록을 지킨다).
 - 구글 열쇠는 BLOCK7 캘린더와 **한 벌**이다(`gcal-functions/`, `care:true` 면 `drive.file` 을 더 묻는다).
   권한을 '모든 시트 · 드라이브' 로 넓히지 말 것 — HB 결정은 "고른 파일만". 그 폴더를 고치면 HB 가 서버를 다시 올려야 한다 (`docs/care/setup.md` 3장).
+- **BLOCK7 로 가는 것(C3b)**: HB 가 누른 할 일 **한 줄**만 쪽지함 `pray/{uid}/c/b7inbox`(기도노트 · 시리와 같은 함, BLOCK7 은 그대로 받는다)에 —
+  종류 · 이름 · 날짜(HB 가 보고 고친 글). 나눈 이야기 · 물어볼 것은 싣지 말 것 (`test_care` ⑱ · e2e ⑬). 계획은 HB 가 BLOCK7 에서 '심방' 캘린더를 켤 때만 일정 제목(이름)으로 간다.
 - sweeter.my 에는 Sweeter 배포(`make-sweeter-prod.sh` 의 `cp -r care`)가 함께 싣는다. 빠지면 다음 배포 때 사라진다 (`tests/test_sweeter_prod.js` 가 지킨다).
 
 ### 셀 한눈에(`cell/`)도 따로 돈다 — 주소는 `sweeter.my/cell/`
