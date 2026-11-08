@@ -21,6 +21,7 @@ sc.eq('① 바른 쪽지 그대로', place([{ id: 'x', date: '2026-10-16', sec: 
 sc.eq('① 날짜 모양이 틀리거나 글이 비면 버린다', place([{ date: '10-16', sec: 'pm', text: 'a' }, { date: '2026-10-16', sec: 'pm', text: '   ' }, null, 'x'], secs), []);
 sc.eq('① 200자까지', place([{ date: '2026-10-16', sec: 'am', text: 'ㄱ'.repeat(300) }], secs)[0].text.length, 200);
 sc.eq('⭐② 지워진 구간이면 첫 구간으로', place([{ date: '2026-10-16', sec: 'gone', text: 'a' }], secs)[0].sec, 'dawn');
+sc.eq('② 심방 노트 쪽지(sec 비움 · from care) → 그날 첫 구간 · 어디서 왔는지 남김', place([{ id: 'B1', from: 'care', date: '2026-11-09', sec: '', text: '중보 · 가나다', at: 1 }], secs), [{ date: '2026-11-09', sec: 'dawn', text: '중보 · 가나다', from: 'care' }]);
 sc.eq('② 구간이 하나도 없으면 넣지 않는다', place([{ date: '2026-10-16', sec: 'am', text: 'a' }], []), []);
 sc.eq('② 이상한 자료에도 죽지 않는다', [place(null, secs).length, place(undefined, null).length], [0, 0]);
 sc.eq('⭐③ 한 번에 50개까지', place(Array.from({ length: 80 }, (_, i) => ({ date: '2026-10-16', sec: 'am', text: 't' + i })), secs).length, 50);
