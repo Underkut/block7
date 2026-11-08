@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 셀 inside v. 26-1108-5 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
+<!-- 셀 inside v. 26-1108-6 — BLOCK7·Sweeter 와 별개인 독립 앱 (cell/ → sweeter.my/cell/) · 셀 케어 보고서를 읽기만 해서 다시 정리해 본다 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -33,6 +33,7 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --ok:#2e7d5b; --ok-soft:rgba(46,125,91,.11);
   --rest:#d9ae1e; --warn:#b0611f; --warn-soft:rgba(176,97,31,.12); --bad:#b03a3a; --bad-soft:rgba(176,58,58,.10);
   --mine:#7a4fa0; --mine-soft:rgba(122,79,160,.09);
+  --mk-red:#d6373a; --mk-orange:#d4731a; --mk-yellow:#a88406; --mk-green:#2f9a55; --mk-blue:#2d6ad1; --mk-purple:#7a4fd4; --mk-pink:#c4428f; --mk-gray:#8b9099;
   --sans:'IBM Plex Sans KR','Pretendard',-apple-system,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -41,7 +42,8 @@ if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   --ac:#8db8e0; --ac-soft:rgba(141,184,224,.13); --on-ac:#0f1a24;
   --ok:#7fc9a5; --ok-soft:rgba(127,201,165,.13);
   --rest:#e6cb62; --warn:#e6a467; --warn-soft:rgba(230,164,103,.14); --bad:#e48080; --bad-soft:rgba(228,128,128,.12);
-  --mine:#c7a3e6; --mine-soft:rgba(199,163,230,.11); color-scheme:dark}}
+  --mine:#c7a3e6; --mine-soft:rgba(199,163,230,.11);
+  --mk-red:#ff6b6b; --mk-orange:#f5a35c; --mk-yellow:#f2cf5b; --mk-green:#6fd18b; --mk-blue:#6fa8ff; --mk-purple:#b48cff; --mk-pink:#f07cc8; --mk-gray:#7c8089; color-scheme:dark}}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--tx);font:15px/1.6 var(--sans);font-weight:400;word-break:keep-all;overflow-wrap:anywhere;
@@ -77,6 +79,8 @@ header.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env
 .muted{color:var(--tx3)} .small{font-size:13px} .tiny{font-size:12px}
 .row{display:flex;align-items:center;gap:8px}
 .spacer{flex:1}
+.pm{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--tx2);white-space:nowrap;font-weight:400}
+.pm i{width:8px;height:8px;border-radius:50%;background:var(--pm);flex:none}
 .pill{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;background:var(--s2);color:var(--tx2);white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .pill.yel{background:rgba(217,174,30,.16);color:var(--rest)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.ac{background:var(--ac-soft);color:var(--ac)} .pill.mine{background:var(--mine-soft);color:var(--mine)}
@@ -379,7 +383,7 @@ input[type=tel]{font-size:16px}
 <script id="cell-core">
 // 셀 한눈에 — 화면 없이 도는 판단만 모은 덩어리. tests/test_cell.js 가 이것만 떼어 시험한다.
 // ⚠️ 읽기만 한다. 셀 케어 DB 에 쓰는 함수는 이 앱 어디에서도 부르지 않는다 (test_cell ⑧ 이 지킨다).
-const APP_VERSION = 'v. 26-1108-5';
+const APP_VERSION = 'v. 26-1108-6';
 const SEEN_KEY = 'cell_seen_v1';          // 이미 본 코멘트 id 만 (내용은 두지 않는다)
 const PREF_KEY = 'cell_pref_v1';          // 화면 취향(고른 탭 · 기간 · 범위)
 const WEEKS_LOADED = 12;
@@ -1808,10 +1812,10 @@ function personHtml() {
   const mid = S.pview.mid; const p = S.people && S.people.get(mid); const m = S.members.get(mid) || {};
   const cellId = m.cell_id || (p && p.cellId); const name = m.name || (p && p.name) || '(이름 없음)';
   const st = p ? personStats(p, S.weeks) : null;
-  let h = `<div class="cvin"><div class="cvhead"><span class="phslot">${phoneBtn(mid)}</span><div class="cvtitle"><b>${esc(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div><span class="modal-head-gap rgap"></span>
+  let h = `<div class="cvin"><div class="cvhead"><span class="phslot">${phoneBtn(mid)}</span><div class="cvtitle"><b>${esc(name)} ${prayDot(name)}</b><span class="tiny muted">${esc(cellName(cellId))}${m.member_type === 'visitor' ? ' · 방문자' : ''}</span></div><span class="modal-head-gap rgap"></span>
     <button class="modal-x" data-act="pv-close" title="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`;
   h += `<div class="card"><div class="row"><span class="small">출석 ${st ? st.present + ' / ' + st.seq.length : '—'}</span><span class="spacer"></span>${st && st.absentRun >= 2 ? `<span class="pill bad">${st.absentRun}주 결석</span>` : ''}${st && st.lastPresent ? `<span class="tiny muted">마지막 출석 ${esc(shortWeek(st.lastPresent))}</span>` : ''}</div>${p ? dots(p) : '<div class="tiny muted">출석 기록을 모으는 중…</div>'}</div>`;
-  h += careCard(mid);
+  h += careCard(mid) + attCard(mid);
   let any = false;
   for (const w of S.weeks) {
     const r = cellRow(cellId, w); if (!r || !isSubmitted(r)) continue;
@@ -2315,7 +2319,7 @@ async function careCore() {
   const html = await (await fetch('/care/?nc=' + Date.now(), { cache: 'no-store' })).text();
   const m = html.match(/<script id="care-core">([\s\S]*?)<\/script>/);
   if (!m) throw new Error('심방 노트의 읽기 규칙을 찾지 못했습니다');
-  careCore.c = new Function(m[1] + '\n;return { buildModel, findResponsesTab };')();
+  careCore.c = new Function(m[1] + '\n;return { buildModel, findResponsesTab, parseAttend: typeof parseAttend === \'function\' ? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \'function\' ? prayMarkIndex : null, prayJoin: typeof prayJoin === \'function\' ? prayJoin : null };')();
   return careCore.c;
 }
 async function careFn(path) {
@@ -2340,6 +2344,10 @@ async function careLoad() {
     if (!tab) throw new Error('심방 시트에서 기록 탭을 찾지 못했습니다');
     const vals = (await g(SH + sheet.id + '/values/' + rng(tab.title, 'A1:ZZ') + '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER')).values || [];
     const model = core.buildModel(vals, {});
+    // 1108-A3 출석 탭 · 기도노트 표시색 — 둘 다 읽기만, 못 읽어도 심방 기록은 그대로 보인다
+    let attend = [];
+    if (core.parseAttend && (meta.sheets || []).some(x => x.properties.title === '출석')) { try { attend = core.parseAttend((await g(SH + sheet.id + '/values/' + rng('출석', 'A1:ZZ') + '?valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=SERIAL_NUMBER')).values || []); } catch (e) { attend = []; } }
+    CARE.attend = attend; await prayLoad(core);
     CARE.sheet = sheet; CARE.n = model.visits.length; CARE.visits = model.visits; careRelink();
     CARE.state = 'ok'; CARE.err = ''; CARE.at = Date.now();
   } catch (e) { if (CARE.state === 'ok') { CARE.busy = false; return; }   // 다시 받다 실패해도 이미 보이던 기록은 그대로
@@ -2357,6 +2365,25 @@ function careRelink() {
   if (!CARE.visits) return; const today = S.ctx && S.ctx.today;
   CARE.link = linkVisits([...S.members.values()], CARE.visits, today);
   const lm = leaderMembers(); CARE.lm = lm; CARE.lres = linkVisits(lm, CARE.visits, today);
+  CARE.alink = linkVisits([...S.members.values()], (CARE.attend || []).map(a => ({ name: a.name, ymd: a.date, att: a })), today);   // 출석도 같은 이름 맞추기 규칙으로
+}
+// 기도노트 표시색 (원본은 기도노트 · 여기선 읽기만) — 셀 한눈에의 이름 다듬기(직분 · 호칭 떼기)로 맞춘다
+async function prayLoad(core) {
+  CARE.pmark = CARE.pmark || new Map(); if (!core.prayMarkIndex || !FB.db || !FB.user) return;
+  try {
+    const ref = FB.db.collection('pray').doc(FB.user.uid), m = await ref.get(); if (!m.exists) { CARE.pmark = new Map(); return; }
+    const meta = m.data(), parts = await Promise.all(Array.from({ length: meta.n || 0 }, (_, i) => ref.collection('c').doc(String(i)).get()));
+    const db = core.prayJoin(meta, parts.map(p => (p.exists ? p.data() : null))); if (!db) return;
+    const ix = core.prayMarkIndex(db), mp = new Map(); Object.values(ix).forEach(x => { const k = normName(x.name); if (k && !mp.has(k)) mp.set(k, x); }); CARE.pmark = mp;
+  } catch (e) { /* 색만 안 보인다 */ }
+}
+function prayDot(name) { const x = CARE.pmark && CARE.pmark.get(normName(name)); return x ? `<span class="pm" style="--pm:var(--mk-${x.m})" title="기도노트 표시"><i></i>${esc(x.label)}</span>` : ''; }
+function attCard(mid) {
+  const c = CARE.alink && CARE.alink[mid]; if (CARE.state !== 'ok' || !(CARE.attend || []).length) return '';
+  if (!c) return '<div class="card"><div class="row"><span class="small">예배 · 모임 출석</span><span class="spacer"></span><span class="tiny muted">심방 노트에 출석 기록이 없습니다</span></div></div>';
+  const sub = a => [a.from && a.to ? a.from + ' → ' + a.to : (a.from || a.to), a.seat, a.with ? a.with + ' 함께' : ''].filter(Boolean).join(' · ');
+  return `<div class="card"><div class="row"><span class="small">예배 · 모임 출석 ${c.n}번</span><span class="spacer"></span><span class="tiny muted">마지막 ${esc(c.last)}${c.days === 0 ? ' · 오늘' : c.days != null ? ' · ' + c.days + '일 전' : ''}</span></div>
+    ${c.recent.map(v => `<div class="note"><div class="row" style="gap:6px;flex-wrap:wrap"><span class="tiny muted">${esc(v.ymd || '')}</span><span class="pill">${esc(v.att.svc || '출석')}</span></div>${sub(v.att) || v.att.memo ? `<div class="txt clamp">${esc([sub(v.att), v.att.memo].filter(Boolean).join(' · '))}</div>` : ''}</div>`).join('')}</div>`;
 }
 function careLeaderChip(cellId) {
   if (CARE.state !== 'ok' || !CARE.lm) return '';
@@ -2372,12 +2399,14 @@ function careDemo() {
   CARE.visits = [{ name: '강믿음', ymd: ago(52), text: '이직 고민을 나눴습니다. 기도 부탁.', methodLabel: '티타임', allTags: ['직장'] },
     { name: '이두리 집사', ymd: ago(9), text: '수술 일정 확인, 가족과 통화.', methodLabel: '전화', allTags: ['건강'] },
     { name: '조은빛', ymd: ago(80), text: '일이 많아 쉬고 있다고 함.', methodLabel: '카톡, 문자', allTags: ['직장'] }];
+  CARE.attend = [{ name: '강믿음', date: ago(0), svc: '주일 2부', from: '처음부터', to: '끝까지', seat: '뒷자리', with: '', memo: '' }, { name: '강믿음', date: ago(7), svc: '라이프라인', from: '헌금부터', to: '', seat: '', with: '', memo: '' }];
+  CARE.pmark = new Map([[normName('강믿음'), { m: 'yellow', label: '이슈' }], [normName('조은빛'), { m: 'gray', label: '쉬는 분' }]]);
   CARE.sheet = { name: '미리보기 심방 시트' }; CARE.n = CARE.visits.length; careRelink(); CARE.state = 'ok';
 }
 const STALE = 30;   // '오래 못 만남' — 마지막 심방이 30일 넘게 지남
 function careChip(mid) {
-  const c = CARE.link[mid]; if (!c) return '';
-  return `<span class="pill ${c.days != null && c.days > STALE ? 'warn' : ''}" title="심방 노트">심방 ${esc(shortWeek(c.last))}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span>`;
+  const c = CARE.link[mid], d = prayDot((S.members.get(mid) || {}).name || ''); if (!c) return d;
+  return d + `<span class="pill ${c.days != null && c.days > STALE ? 'warn' : ''}" title="심방 노트">심방 ${esc(shortWeek(c.last))}${c.days != null ? ' · ' + c.days + '일 전' : ''}</span>`;
 }
 function careCard(mid) {
   if (CARE.state !== 'ok') {

@@ -333,10 +333,15 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑯ 같은 이름(직분 무시) · 성 이름 바뀜 · 이름이 통째로 든 것은 맞춘다', J(Object.keys(L).sort()), ['a', 'b', 'e']);
   sc.eq('⑯ 같은 이름 셀원이 둘이면 맞추지 않는다', !!(L.c || L.d), false);
   sc.eq('⑯ 마지막 심방 · 횟수 · 며칠 전 · 최근 순', J([L.a.last, L.a.n, L.a.days, L.a.recent.map(v => v.ymd)]), ['2026-10-20', 2, 17, ['2026-10-20', '2026-09-14']]);
-  sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab \}/.test(HTML), true);
+  sc.eq('⑯ 심방 노트 읽기 규칙은 care-core 를 그대로 불러 쓴다 (따로 베끼지 않음)', /script id="care-core"/.test(HTML) && /return \{ buildModel, findResponsesTab, parseAttend: typeof parseAttend === \\'function\\' \? parseAttend : null, prayMarkIndex: typeof prayMarkIndex === \\'function\\' \? prayMarkIndex : null, prayJoin: typeof prayJoin === \\'function\\' \? prayJoin : null \}/.test(HTML), true);
   const CARE_HTML = fs.readFileSync(path.join(__dirname, '..', 'care', 'index.html'), 'utf8');
   const cm = CARE_HTML.match(/<script id="care-core">([\s\S]*?)<\/script>/);
   sc.eq('⑯ 심방 노트 care-core 에 셀 한눈에가 쓰는 두 함수가 있다 (이름이 바뀌면 여기서 걸린다)', !!cm && /function buildModel\(/.test(cm[1]) && /function findResponsesTab\(/.test(cm[1]), true);
+  sc.eq('⑯ (1108-A3) 출석 · 기도노트 색 읽기도 care-core 것을 그대로 — 세 함수가 있다', ['parseAttend', 'prayMarkIndex', 'prayJoin'].every(f => new RegExp('function ' + f + '\\(').test(cm[1])), true);
+  sc.eq('⑯ (1108-A3) 기도노트 · 출석은 읽기만 — pray 문서에 쓰는 곳이 없다', /collection\('pray'\)\.doc\(FB\.user\.uid\)/.test(HTML) && !/collection\('pray'\)[^;]*\.(set|update|delete)\(/.test(HTML), true);
+  { const att = [{ name: '이두리 집사', ymd: '2026-11-08' }, { name: '이 두리', ymd: '2026-11-01' }, { name: '처음손님', ymd: '2026-11-08' }];
+    const L2 = A.linkVisits([{ id: 'm1', name: '이두리' }], att, '2026-11-08');
+    sc.eq('⑯ (1108-A3) 출석도 같은 이름 맞추기 — 직분 · 띄어쓰기 무시 · 셀원 아닌 이름은 붙지 않는다', J([L2.m1.n, L2.m1.last, Object.keys(L2)]), [2, '2026-11-08', ['m1']]); }
 }
 
 // ⑰ 11/7 HB 실기기: 앱을 바꿨다 돌아오면 판이 밀려 있던 것 · 심방 기록 늦게 오면 열린 사람 화면이 비던 것 · 셀리더도 심방과 맞춘다
