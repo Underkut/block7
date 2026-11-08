@@ -23,6 +23,8 @@
 //  ⑱ (1108-B) 휴대폰 — 칸 글자 16(아이폰 확대 막기) · 날짜 칸 폭 · 알약은 다시 그리지 않음(스크롤 · 쓰던 칸 그대로) · 쓰는 동안 아래 단추 감춤 · 쓰는 칸을 보이는 자리로
 //  ⑲ (1108-B2) 처음 열 때 시트 요청 두 번(탭 목록 + 모든 탭 한꺼번에) · 로딩 뼈대
 //  ⑳ (1108-B3) 출석 입력 — 직접 적기는 접힘 · 날짜 단추 · 이름 여럿(한 줄씩) · 알약 더하기 → '출석 선택지' 탭 · 끌어 옮기기 · 오른쪽 단추 메뉴(이름 바꾸기 · 지우기) · 지난 기록은 그대로
+//  ㉑ (1108-B4) 닫기 손짓 — 가장자리 밀기 · 머리줄 내려끌기 · 못 미치면 제자리 · 굴리기는 아님 · 쓰던 글은 묻는다
+//  ㉒ (1108-B4) 달력 — 심방 · 출석 켜고 끄기 (둘 다 끌 수 없음 · 기억)
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -606,6 +608,30 @@ async function route(r) {
     await mp.evaluate(() => document.activeElement.blur()); await mp.waitForTimeout(400);
     eq('⑱ 다 쓰면(자판 닫힘) 단추가 돌아온다', await mp.evaluate(l => getComputedStyle(document.querySelector(l + ' .ph-foot')).display, lay), 'block');
     if (process.env.SHOT) await mp.screenshot({ path: process.env.SHOT + '/b1_phone.png' });
+    // ㉑ (1108-B4) 겹 화면 닫기 손짓 — 왼쪽 가장자리 밀기 · 머리줄 내려끌기 · 못 미치면 제자리
+    const swipe = (x0, y0, x1, y1, ms) => mp.evaluate(([x0, y0, x1, y1, ms]) => new Promise(res => {
+      const el = document.elementFromPoint(x0, y0), T = (x, y) => new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+      el.dispatchEvent(new TouchEvent('touchstart', { touches: [T(x0, y0)], changedTouches: [T(x0, y0)], bubbles: true, cancelable: true }));
+      let i = 0; const n = 8, step = () => { i++; const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n;
+        document.dispatchEvent(new TouchEvent('touchmove', { touches: [T(x, y)], changedTouches: [T(x, y)], bubbles: true, cancelable: true }));
+        if (i < n) setTimeout(step, ms / n); else { document.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [T(x, y)], bubbles: true, cancelable: true })); setTimeout(res, 450); } };
+      setTimeout(step, ms / n);
+    }), [x0, y0, x1, y1, ms]);
+    const nLay = () => mp.evaluate(() => S.layers.length);
+    await mp.evaluate(() => { S.layers = []; render(); openLayer('person', { name: '머머머' }); }); await mp.waitForTimeout(500);
+    await swipe(10, 300, 60, 302, 500);
+    eq('㉑ 가장자리에서 조금만 밀면 제자리 (닫히지 않음 · 판도 제자리)', [await nLay(), await mp.evaluate(() => document.querySelector('#layers > .layer').style.transform)], [1, '']);
+    await swipe(10, 300, 260, 305, 400);
+    eq('㉑ 왼쪽 가장자리에서 ¼ 넘게 밀면 닫힌다', await nLay(), 0);
+    await mp.evaluate(() => openLayer('person', { name: '머머머' })); await mp.waitForTimeout(500);
+    await swipe(200, 30, 200, 200, 300);
+    eq('㉑ 맨 위에서 머리줄을 ¼ 넘게 내려 끌면 닫힌다', await nLay(), 0);
+    await mp.evaluate(() => openLayer('person', { name: '머머머' })); await mp.waitForTimeout(500);
+    await swipe(200, 300, 200, 500, 500);
+    eq('㉑ 머리줄이 아닌 곳을 끌면(굴리기) 닫히지 않는다', await nLay(), 1);
+    await mp.evaluate(() => { openAttEdit(null); topLayer().form.memo = 'x'; topLayer().dirty = true; window.confirm = () => false; }); await mp.waitForTimeout(500);
+    await swipe(10, 300, 300, 300, 400);
+    eq('㉑ 쓰던 글이 있으면 묻고, 버리지 않으면 그대로', await nLay(), 2);
     await mc.close();
   }
 
@@ -655,6 +681,21 @@ async function route(r) {
   eq('⑳ 지난 출석 기록은 그대로', tab('출석').rows.slice(nR).map(r => r[col('예배 · 모임')]), ['새벽기도', '새벽기도']);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
+
+  // ㉒ (1108-B4) 달력에 출석 켜고 끄기
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => { S.wk = 0; goTab('week'); }); await page.waitForTimeout(500);
+  eq('㉒ 달력 기본은 심방만 · 출석 줄 없음', [await page.$$eval('.calsw [aria-pressed="true"]', x => x.map(e => e.textContent)), await page.$$eval('.wl.att', x => x.length)], [['심방'], 0]);
+  await page.click('.calsw [data-v="a"]'); await page.waitForTimeout(400);
+  const wkAtt = await page.evaluate(() => { const s = weekStartOf(today()), e = ymdAdd(s, 6); return AT().filter(a => a.date >= s && a.date <= e).length; });
+  eq('㉒ 출석을 켜면 그 주 출석이 날마다', [await page.$$eval('.wl.att', x => x.length), wkAtt > 0], [wkAtt, true]);
+  await page.click('.calsw [data-v="v"]'); await page.waitForTimeout(400);
+  eq('㉒ 심방을 끄면 출석만', [await page.$$eval('.day .wl:not(.att)', x => x.length), await page.$$eval('.wl.att', x => x.length)], [0, wkAtt]);
+  await page.click('.calsw [data-v="a"]'); await page.waitForTimeout(400);
+  eq('㉒ 둘 다 끌 수는 없다 — 출석을 끄면 심방이 켜진다', await page.$$eval('.calsw [aria-pressed="true"]', x => x.map(e => e.textContent)), ['심방']);
+  await page.click('.calsw [data-v="a"]'); await page.evaluate(() => goTab('month')); await page.waitForTimeout(500);
+  eq('㉒ 월간에도 출석 이름 · 기억해 둔 켜짐 그대로', [await page.$$eval('.cal .nmc.at', x => x.length) > 0, await page.$$eval('.calsw [aria-pressed="true"]', x => x.length)], [true, 2]);
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/b4_month.png', fullPage: true });
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1108-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -239,6 +239,9 @@ body.dragging{cursor:grabbing}
 .cell.sel{background:var(--ac-soft)}
 .cell.now .n{color:var(--ac);font-weight:600}
 .nmc{font-size:10.5px;line-height:1.35;padding:1px 3px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:clip;background:color-mix(in srgb,var(--deep) 14%,transparent);color:var(--tx)}
+.nmc.at{background:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ac) 60%,transparent);color:var(--ac)}
+.calsw{display:flex;gap:6px;margin:-4px 0 10px}.calsw .opt{padding:5px 12px;font-size:13px}
+.wl.att .why{font-size:12.5px;color:var(--tx3);margin-top:3px}
 .nmc.d3{background:var(--deep);color:var(--on-ac)}
 .nmc.d1{background:var(--s2);color:var(--tx2)}
 .nmc.pl{background:transparent;border:1px dashed var(--tx3);color:var(--tx2)}
@@ -500,7 +503,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1108-14';
+const APP_VERSION = 'v. 26-1109-1';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2510,35 +2513,41 @@ function wline(v) {
 function eline(e) {
   if (e.planId) return '<button class="wl plan" data-act="planopen" data-v="' + esc(e.planId) + '"><div class="r1"><span class="planbadge">계획' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></button>';
   return '<a class="wl plan" href="' + esc(e.link) + '" target="_blank" rel="noopener"><div class="r1"><span class="planbadge">심방 캘린더' + (e.time ? ' ' + e.time : '') + '</span><span class="nm">' + esc(e.title) + '</span></div></a>'; }
+// 1108-B4 달력에 무엇을 띄울지 — 심방(기록 · 계획 · '심방' 일정) / 출석. 둘 다 끌 수는 없다(끄면 다른 쪽이 켜진다). 이 기기에 기억
+function calShow() { const c = saved().calShow; return c && (c.v || c.a) ? { v: !!c.v, a: !!c.a } : { v: true, a: false }; }
+function calSw() { const c = calShow(); return '<div class="calsw" role="group" aria-label="달력에 띄울 것"><button class="opt" data-act="calsw" data-v="v" aria-pressed="' + c.v + '">심방</button><button class="opt" data-act="calsw" data-v="a" aria-pressed="' + c.a + '">출석</button></div>'; }
+function aline(a) { const sub = attSub(a); return '<button class="wl att" data-act="attopen" data-v="' + esc(a.id) + '"><div class="r1"><span class="planbadge att">' + esc(a.svc || '출석') + '</span><span class="nm">' + esc(a.name) + '</span>' + pm(a.name) + '</div>' + (sub ? '<div class="why">' + esc(sub) + '</div>' : '') + '</button>'; }
 function vWeek() {
   const s = ymdAdd(weekStartOf(today()), 7 * S.wk), e = ymdAdd(s, 6);
-  const L = V().filter(v => v.ymd >= s && v.ymd <= e), EV = calItems().filter(x => x.ymd >= s && x.ymd <= e);
-  let h = head('달력', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + wmSeg() + '<div class="pane" id="pane">';
+  const C = calShow(), L = C.v ? V().filter(v => v.ymd >= s && v.ymd <= e) : [], EV = C.v ? calItems().filter(x => x.ymd >= s && x.ymd <= e) : [], AA = C.a ? AT().filter(a => a.date >= s && a.date <= e) : [];
+  let h = head('달력', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + wmSeg() + calSw() + '<div class="pane" id="pane">';
   h += '<div class="wk-head"><button data-act="wk" data-v="-1" aria-label="지난주">' + IC.l + '</button><b>' + md(s).replace('/', '월 ') + '일 – ' + md(e).replace('/', '월 ') + '일</b><button data-act="wk" data-v="1" aria-label="다음 주">' + IC.r + '</button></div>';
   h += fline();
   const ppl = new Set(L.map(v => v.name)), deep = L.filter(v => v.depthN === 3).length, na = [].concat(...L.map(v => v.actions)).length;
-  h += '<p class="sentence">' + (S.wk === 0 ? '이번 주' : S.wk === -1 ? '지난주' : S.wk === 1 ? '다음 주' : '이 주') + ' <b>' + ppl.size + '명</b>을 만났습니다' + (L.length ? ' · 깊은 대화 <b>' + deep + '번</b> · 할 일 <b>' + na + '개</b>' : '') + (EV.length ? ' · \'심방\' 일정 <b>' + EV.length + '개</b>' : '') + '.</p>';
+  const wkName = S.wk === 0 ? '이번 주' : S.wk === -1 ? '지난주' : S.wk === 1 ? '다음 주' : '이 주', attN = new Set(AA.map(a => nameKey(a.name))).size;
+  h += '<p class="sentence">' + wkName + (C.v ? ' <b>' + ppl.size + '명</b>을 만났습니다' + (L.length ? ' · 깊은 대화 <b>' + deep + '번</b> · 할 일 <b>' + na + '개</b>' : '') + (EV.length ? ' · \'심방\' 일정 <b>' + EV.length + '개</b>' : '') : '') + (C.a ? (C.v ? ' · ' : ' ') + '출석 <b>' + attN + '명</b>' + (AA.length > attN ? '(' + AA.length + '번)' : '') : '') + '.</p>';
   for (let i = 0; i < 7; i++) {
-    const k = ymdAdd(s, i), dv = L.filter(v => v.ymd === k), de = EV.filter(x => x.ymd === k);
-    h += '<div class="day' + (i === 0 ? ' sun' : '') + (k === today() ? ' now' : '') + '"><div class="dn">' + DOW[i] + '<b>' + (+k.slice(8)) + '</b></div><div>' + (dv.length || de.length ? dv.map(wline).join('') + de.map(eline).join('') : '<div class="empty" style="padding-top:12px">—</div>') + '</div></div>';
+    const k = ymdAdd(s, i), dv = L.filter(v => v.ymd === k), de = EV.filter(x => x.ymd === k), da = AA.filter(a => a.date === k);
+    h += '<div class="day' + (i === 0 ? ' sun' : '') + (k === today() ? ' now' : '') + '"><div class="dn">' + DOW[i] + '<b>' + (+k.slice(8)) + '</b></div><div>' + (dv.length || de.length || da.length ? dv.map(wline).join('') + de.map(eline).join('') + da.map(aline).join('') : '<div class="empty" style="padding-top:12px">—</div>') + '</div></div>';
   }
   return h + '</div></div>' + nav();
 }
 function vMonth() {
-  const ym = S.mo, cells = monthCells(ym), L = V(), inM = L.filter(v => (v.ymd || '').slice(0, 7) === ym);
-  let h = head('달력', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + wmSeg() + '<div class="pane" id="pane">';
+  const C = calShow(), ym = S.mo, cells = monthCells(ym), L = C.v ? V() : [], inM = L.filter(v => (v.ymd || '').slice(0, 7) === ym), AA = C.a ? AT() : [], CI = C.v ? calItems() : [];
+  let h = head('달력', ['layer', '설정', 'gear', 'settings'], null) + '<div class="ph-body">' + wmSeg() + calSw() + '<div class="pane" id="pane">';
   h += '<div class="wk-head"><button data-act="mo" data-v="-1" aria-label="지난달">' + IC.l + '</button><b>' + ym.slice(0, 4) + '년 ' + (+ym.slice(5)) + '월</b><button data-act="mo" data-v="1" aria-label="다음 달">' + IC.r + '</button></div>' + fline();
   const ppl = new Set(inM.map(v => v.name)), deep = inM.filter(v => v.depthN === 3).length;
-  h += '<p class="sentence">' + (+ym.slice(5)) + '월에 <b>' + ppl.size + '명</b>과 <b>' + inM.length + '번</b> 만났고, 깊은 대화는 <b>' + deep + '번</b>입니다.</p>';
+  const aM = AA.filter(a => (a.date || '').slice(0, 7) === ym), aN = new Set(aM.map(a => nameKey(a.name))).size;
+  h += '<p class="sentence">' + (+ym.slice(5)) + '월에 ' + (C.v ? '<b>' + ppl.size + '명</b>과 <b>' + inM.length + '번</b> 만났고, 깊은 대화는 <b>' + deep + '번</b>입니다.' : '') + (C.a ? (C.v ? ' 출석은 ' : '출석은 ') + '<b>' + aN + '명</b>' + (aM.length > aN ? '(' + aM.length + '번)' : '') + '입니다.' : '') + '</p>';
   h += '<div class="cal">' + DOW.map(x => '<div class="h">' + x + '</div>').join('');
   cells.forEach(k => {
-    const dv = L.filter(v => v.ymd === k), de = calItems().filter(x => x.ymd === k);
-    const items = dv.map(v => '<span class="nmc d' + v.depthN + '">' + esc(v.name) + '</span>').concat(de.map(x => '<span class="nmc pl">' + esc(x.title) + '</span>'));
+    const dv = L.filter(v => v.ymd === k), de = CI.filter(x => x.ymd === k), da = AA.filter(a => a.date === k);
+    const items = dv.map(v => '<span class="nmc d' + v.depthN + '">' + esc(v.name) + '</span>').concat(de.map(x => '<span class="nmc pl">' + esc(x.title) + '</span>'), da.map(a => '<span class="nmc at">' + esc(a.name) + '</span>'));
     h += '<button class="cell' + (k.slice(0, 7) !== ym ? ' out' : '') + (k === S.mday ? ' sel' : '') + (k === today() ? ' now' : '') + '" data-act="mday" data-v="' + k + '"><span class="n">' + (+k.slice(8)) + '</span>' + items.slice(0, 3).join('') + (items.length > 3 ? '<span class="more">+' + (items.length - 3) + '</span>' : '') + '</button>';
   });
-  h += '</div><div class="muted legend"><span><span class="nmc d3">이름</span> 깊음</span><span><span class="nmc d2">이름</span> 중간</span><span><span class="nmc d1">이름</span> 얕음</span><span><span class="nmc pl">이름</span> 심방 캘린더</span></div>';
-  const sel = L.filter(v => v.ymd === S.mday), sele = calItems().filter(x => x.ymd === S.mday);
-  h += '<div class="dhead"><b>' + dayLabel(S.mday) + '</b><span>' + (sel.length + sele.length) + '</span></div>' + (sel.length || sele.length ? sel.map(wline).join('') + sele.map(eline).join('') : '<p class="empty">이 날은 기록이 없습니다.</p>');
+  h += '</div><div class="muted legend"><span><span class="nmc d3">이름</span> 깊음</span><span><span class="nmc d2">이름</span> 중간</span><span><span class="nmc d1">이름</span> 얕음</span><span><span class="nmc pl">이름</span> 심방 캘린더</span>' + (C.a ? '<span><span class="nmc at">이름</span> 출석</span>' : '') + '</div>';
+  const sel = L.filter(v => v.ymd === S.mday), sele = CI.filter(x => x.ymd === S.mday), sela = AA.filter(a => a.date === S.mday);
+  h += '<div class="dhead"><b>' + dayLabel(S.mday) + '</b><span>' + (sel.length + sele.length + sela.length) + '</span></div>' + (sel.length || sele.length || sela.length ? sel.map(wline).join('') + sele.map(eline).join('') + sela.map(aline).join('') : '<p class="empty">이 날은 기록이 없습니다.</p>');
   return h + '</div></div>' + nav();
 }
 
@@ -3071,6 +3080,7 @@ document.addEventListener('click', e => {
   if (a === 'b7person') { openLayer('b7send', { pname: v, form: { date: today(), text: '연락 · ' + v } }); return; }
   if (a === 'b7date') { const L = topLayer(); if (L && L.type === 'b7send') { L.form.date = v; render(); } return; }
   if (a === 'b7send') { const L = topLayer(); if (L && L.type === 'b7send') busy(async () => { try { await sendB7(L); } catch (e) { toast('보내지 못했습니다\n' + e.message); } }); return; }
+  if (a === 'calsw') { const c = calShow(); c[v] = !c[v]; if (!c.v && !c.a) c[v === 'v' ? 'a' : 'v'] = true; save({ calShow: c }); render(); return; }
   if (a === 'attlist') { openLayer('attlist'); return; }
   if (a === 'attadd') { openAttEdit(null, v || ''); return; }
   if (a === 'attopen') { if (v) openAttEdit(v); return; }
@@ -3210,6 +3220,44 @@ document.addEventListener('focusout', () => {
   typingT = setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 150);   // 칸에서 칸으로 옮길 땐 깜빡이지 않게
 });
 if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (isField(document.activeElement)) keepInView(document.activeElement); });
+// 1108-B4 겹 화면 닫기 손짓 — ① 왼쪽 가장자리(24px)에서 오른쪽으로 밀기 ② 맨 위에서 머리줄을 아래로 끌기.
+//   손가락을 따라 움직이고, 폭(높이)의 ¼ 넘게 또는 빠르게 튕기면 닫히고, 못 미치면 제자리로. 쓰던 글이 있으면 먼저 묻는다.
+const SW = { el: null, mode: '', x0: 0, y0: 0, t0: 0, d: 0 };
+function swEnd(el, close, mode) {
+  const back = () => { el.style.transition = 'transform .26s cubic-bezier(.22,.8,.24,1)'; el.style.transform = ''; setTimeout(() => { el.style.transition = ''; }, 280); };
+  if (!close) return back();
+  const top = topLayer();
+  if (top && ['edit', 'planedit', 'attedit', 'attpaste'].includes(top.type) && top.dirty && !confirm('적던 내용을 버릴까요?')) return back();
+  el.style.transition = 'transform .2s ease-in'; el.style.transform = mode === 'x' ? 'translateX(100%)' : 'translateY(100%)';
+  setTimeout(() => { el.style.transition = ''; S.layers.pop(); S.menu = null; render(); }, 210);
+}
+document.addEventListener('touchstart', e => {
+  const el = e.target.closest && e.target.closest('#layers > .layer'); if (!el || el !== $('layers').lastElementChild || e.touches.length !== 1) return;
+  if (e.target.closest('input,textarea,.pills,.omenu')) return;
+  const t = e.touches[0], head = e.target.closest('.ph-head');
+  const mode = t.clientX <= 24 ? 'x' : head && el.scrollTop <= 0 ? 'y' : '';
+  if (!mode) return;
+  Object.assign(SW, { el, mode, x0: t.clientX, y0: t.clientY, t0: Date.now(), d: 0, on: false });
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!SW.el) return;
+  const t = e.touches[0], dx = t.clientX - SW.x0, dy = t.clientY - SW.y0;
+  if (!SW.on) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    if (SW.mode === 'x' ? Math.abs(dy) > Math.abs(dx) || dx < 0 : Math.abs(dx) > Math.abs(dy) || dy < 0) { SW.el = null; return; }   // 다른 방향이면 손 뗀다(굴리기 등)
+    SW.on = true;
+  }
+  e.preventDefault();
+  SW.d = Math.max(0, SW.mode === 'x' ? dx : dy);
+  SW.el.style.transform = SW.mode === 'x' ? 'translateX(' + SW.d + 'px)' : 'translateY(' + SW.d + 'px)';
+}, { passive: false });
+document.addEventListener('touchend', () => {
+  if (!SW.el) return;
+  const { el, mode, d, t0, on } = SW; SW.el = null; if (!on) return;
+  const size = mode === 'x' ? el.clientWidth : el.clientHeight, fast = d > 40 && Date.now() - t0 < 260;
+  swEnd(el, RM.matches ? d > size / 4 : (d > size / 4 || fast), mode);
+});
+document.addEventListener('touchcancel', () => { if (SW.el && SW.on) swEnd(SW.el, false); SW.el = null; });
 // PC: ESC 는 × 와 같은 일 — 가장 위 것부터
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
