@@ -27,6 +27,8 @@
 //  ㉒ (1108-B4) 달력 — 심방 · 출석 켜고 끄기 (둘 다 끌 수 없음 · 기억)
 //  ㉓ (1108-C1) 보기 조건 시트 끌어내려 닫기 · (C2 출석 탭 · C3 이름 글자색은 ⑮ ⑯ ⑰ 에)
 //  ㉔ (1109) HB 가 폼에 '장소' · '사주심/사드림' 질문을 더함 → 시트 끝에 열 → 입력 · 고치기 화면에 칸 · 알약 → 그 열에 쓴다
+//  ㉘ (1109-T) 나눈 이야기 주제 칸 — 입력줄 Enter · 성도 ↔ 나 번갈아 · 이름표 바꾸기 · 줄 고치기 · 새 칸 · 칸 태그 · 붙여 넣기 · 칸 옮기기 · 합치기 · 지우기 → 시트 한 칸 글 · 다시 열면 그대로 · 안 바꾸면 안 쓴다
+//  ㉙ (1109-T4 · T5) 열람 대본 · 말풍선 · 접기 · 제목만 / 설정 탭 넷(보기 · BLOCK7 · 연결 · 그 밖에) · 마지막 탭 기억 / 성도 화면 칸 태그로 모아 보기
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -34,6 +36,10 @@ const FILE = 'file://' + path.join(__dirname, '..', '..', 'care', 'index.html');
 
 let pass = 0, fail = 0;
 const J0 = v => JSON.stringify(v);
+// 1109-T 나눈 이야기는 주제 칸의 입력줄로 넣는다 — [[누가(s 성도 · m 나 · n 메모), 글], …]
+// 1109-T5 설정은 탭 넷 — 그 탭을 먼저 누른다(넘기는 움직임 0.45초)
+const stab = async (pg, name) => { await pg.click('.layer:last-child [data-act="stab"]:text-is("' + name + '")'); await pg.waitForTimeout(500); };
+const talk = async (pg, lines, scope) => { scope = scope || '.layer:last-child'; for (const [w, t] of lines) { await pg.click(scope + ' [data-act="tkw"][data-v="' + w + '"]'); await pg.fill(scope + ' [data-f="tk:in"]', t); await pg.press(scope + ' [data-f="tk:in"]', 'Enter'); } };
 const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.stringify(want); if (a === b) { pass++; console.log('  ✓', name); } else { fail++; console.log('  ✗', name, '\n    결과:', a, '\n    기대:', b); } };
 
 // ── 가짜 시트 ──
@@ -168,7 +174,7 @@ async function route(r) {
   // ①② 새 기록
   await page.click('[data-act="addrec"]'); await tidy();
   await page.fill('[data-f="name"]', '새사람');
-  await page.fill('[data-f="text"]', '새로 적은 이야기\n둘째 줄');
+  await talk(page, [['s', '새로 적은 이야기'], ['m', '둘째 줄']]);
   await page.click('.layer [data-act="fone"][data-k="method"][data-v="카톡, 문자"]');
   await page.click('.layer [data-act="fone"][data-k="depth"][data-v="깊음"]');
   await page.click('.layer [data-act="ftog"][data-k="tags"][data-v="학교"]');
@@ -182,7 +188,7 @@ async function route(r) {
   eq('① 탭 다섯', SHEET.tabs.map(t => t.title), ['Form Responses 1', '성도', '액션', '덧붙임', '계획', '속성']);
   eq('① 있던 줄마다 기록ID · 출처 폼 · 심방일 (연도 붙여)', R.rows.slice(1, 4).map(r => [!!r[9], r[10], r[11]]), [[true, '폼', '2026-10-31'], [true, '폼', '2026-11-04'], [true, '폼', '2020-05-21']]);
   const nr = R.rows[4] || [];
-  eq('② 새 줄 — 이름 · 방식 · 이야기 · 태그 · 할 일(기타 끝에) · 깊이 · 출처 앱', [nr[2], nr[4], nr[5], nr[6], nr[7], nr[8], nr[10]], ['새사람', '카톡, 문자', '새로 적은 이야기\n둘째 줄', '학교', '중보, 병문안 가기', '깊음', '앱']);
+  eq('② 새 줄 — 이름 · 방식 · 이야기 · 태그 · 할 일(기타 끝에) · 깊이 · 출처 앱', [nr[2], nr[4], nr[5], nr[6], nr[7], nr[8], nr[10]], ['새사람', '카톡, 문자', '성도: 새로 적은 이야기\n나: 둘째 줄', '학교', '중보, 병문안 가기', '깊음', '앱']);
   eq('② 새 줄 기록ID · 심방일(오늘)', [/^C/.test(nr[9] || ''), (nr[11] || '').length], [true, 10]);
   eq('⑦ 폼 줄의 질문 칸은 그대로', JSON.stringify(R.rows.slice(1, 4).map(r => r.slice(0, 9))), formRowsBefore);
   await page.waitForSelector('.card');
@@ -238,20 +244,20 @@ async function route(r) {
   await del();
   const T = () => tab('휴지통').rows;
   eq('⑧ 응답 탭에서 그 한 줄만 빠졌다 (나머지 줄은 그대로)', [R.rows.length, JSON.stringify(R.rows.map(r => JSON.stringify(r)))], [before.length - 1, JSON.stringify(others)]);
-  eq('⑧ 휴지통 탭에 기록ID · 이름 · 원래 줄', [T()[0][0], T()[1][0] === vid, T()[1][1], JSON.parse(T()[1][5])['내용']], ['기록ID', true, '새사람', '새로 적은 이야기\n둘째 줄']);
+  eq('⑧ 휴지통 탭에 기록ID · 이름 · 원래 줄', [T()[0][0], T()[1][0] === vid, T()[1][1], JSON.parse(T()[1][5])['내용']], ['기록ID', true, '새사람', '성도: 새로 적은 이야기\n나: 둘째 줄']);
   eq('⑧ 목록에서 사라졌다', await page.$$eval('.card .nm', x => x.map(e => e.textContent).includes('새사람')), false);
   await page.click('.toast-act'); await page.waitForTimeout(1200);
   const back = R.rows.find(r => r[9] === vid);
   eq('⑧ 되돌리기 → 같은 기록ID · 같은 칸으로 돌아오고 휴지통은 비었다', [JSON.stringify(back) === JSON.stringify(victim), T().length], [true, 1]);
   await del();
-  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, '그 밖에');
   await page.click('.layer [data-act="trash"]'); await page.waitForTimeout(900);
   eq('⑧ 설정 › 휴지통에 보인다', await page.$$eval('.layer .trow b', x => x.map(e => e.textContent)), ['새사람']);
   await page.click('.layer [data-act="trestore"]'); await page.waitForTimeout(1200);
   eq('⑧ 휴지통에서 되살리기 → 돌아오고 휴지통 비움', [!!R.rows.find(r => r[9] === vid), T().length], [true, 1]);
   for (let i = 0; i < 3; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   await del();
-  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, '그 밖에');
   await page.click('.layer [data-act="trash"]'); await page.waitForTimeout(900);
   await page.click('.layer [data-act="tpurge"]'); await page.waitForTimeout(1200);
   eq('⑧ 완전히 지우기 → 휴지통 · 응답 탭 어디에도 없다', [T().length, !!R.rows.find(r => r[9] === vid)], [1, false]);
@@ -291,7 +297,7 @@ async function route(r) {
   FORM.items[2].questionItem.question.choiceQuestion.options.splice(6, 0, { value: '진로' }); FORM.revisionId = 'rev50';
   await reload();
   eq('⑪ 폼에서 더함 → 속성 탭에 한 줄', !!A_().find(r => r[0] === '태그' && r[1] === '진로'), true);
-  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, '연결');
   await page.click('.layer [data-act="layer"][data-v="attrs"]'); await page.waitForTimeout(600);
   await page.fill('#aadd2', '관계'); await page.click('.layer [data-act="attradd"][data-k="태그"]'); await page.waitForTimeout(1500);
   eq('⑪ 앱에서 더함 → 폼 선택지 끝(기타 앞)에 · 탭에 맞춘 표시', [opts('태그').slice(-2), !!A_().find(r => r[1] === '관계' && r[6])], [['관계', '(기타)'], true]);
@@ -303,7 +309,7 @@ async function route(r) {
   R.rows.push(['11/7/2026 10:00:00', '11/7', '차카타', '셀원, 두나미스', '전화', '기타 구분이 든 기록', '', '', '얕음', 'C900', '폼', '2026-11-07']);
   for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   await reload();
-  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, '연결');
   await page.click('.layer [data-act="layer"][data-v="attrs"]'); await page.waitForTimeout(600);
   eq("⑪ '기타' 로 들어온 글이 후보로 보인다", await page.$$eval('.layer .etcc', x => x.map(e => e.textContent).join(' ')).then(t => t.includes('두나미스')), true);
   if (process.env.SHOT) { await page.evaluate(() => document.querySelector('.layer:last-child').scrollTo(0, 0)); await page.screenshot({ path: process.env.SHOT + '/attrs.png' }); }
@@ -353,7 +359,7 @@ async function route(r) {
   ph = prow('하하하');
   eq('⑫ 캘린더에서 옮김 → 계획 날짜 · 시간이 따라간다', [ph['날짜'], ph['시간']], [D3, '15:30']);
   // 제목 앞 글자
-  await page.click('[data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('[data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, 'BLOCK7');
   await page.fill('#calPre', '심방 · '); await page.press('#calPre', 'Tab'); await page.waitForTimeout(1800);
   eq('⑫ 설정에서 앞 글자 → 이미 넣은 일정 제목도 바뀐다', evOf(ph['캘린더 일정ID']).summary, '심방 · 하하하');
   for (let i = 0; i < 4; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
@@ -375,7 +381,7 @@ async function route(r) {
   // 계획 → 기록
   await page.click('.pcard:has-text("거거거") [data-act="plan2rec"]'); await tidy();
   eq('⑫ 기록 쓰기 — 이름 · 날짜가 채워져 있다', [await page.inputValue('.layer [data-f="name"]'), await page.$eval('.layer [data-f="ymd"]', e => e.value).catch(() => '?')], ['거거거', D2]);
-  await page.fill('.layer [data-f="text"]', '계획대로 만남');
+  await talk(page, [['n', '계획대로 만남']]);
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
   const gr = R.rows.find(r => r[2] === '거거거') || [];
   eq('⑫ 기록 저장 → 계획 기록됨 · 기록ID 이어짐 · 일정 제목에 ✓', [!!gr.length, prow('거거거')['상태'], prow('거거거')['기록ID'] === gr[9], evOf('evcut').summary], [true, '기록됨', true, '✓ 심방 · 거거거']);
@@ -406,7 +412,7 @@ async function route(r) {
   await page.click('.layer [data-act="plancal"]');
   await page.click('.layer [data-act="saveplan"]'); await page.waitForTimeout(1500);
   await page.click('.pcard:has-text("머머머") [data-act="plan2rec"]'); await tidy();
-  await page.fill('.layer [data-f="text"]', '만났음');
+  await talk(page, [['n', '만났음']]);
   HOOK.failPlanSet = 9;
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(2000);
   const nMe = () => R.rows.filter(r => r[2] === '머머머').length;
@@ -577,7 +583,7 @@ async function route(r) {
   eq('⑯ 회색은 뜻이 고정(쉬는 분)', await pmOf('기도만'), ['gray', '쉬는 분']);
   const hueRows = () => page.$$eval('.prow', x => x.filter(e => /머머머|새손님/.test(e.querySelector('.nm').textContent)).map(e => { const c = e.querySelector('.nm .hue-ic'); return e.querySelector('.nm').textContent + ':' + (c ? c.getAttribute('style') : ''); })).then(a => a.sort());
   eq('⑯ (1108-C3) 성도 목록 — 이름 글자가 표시색 · 색점 · 색 이름 글자는 없다', [await hueRows(), await page.$$eval('.pm', x => x.length)], [['머머머:--hc:var(--mk-yellow)', '새손님:--hc:var(--mk-orange)'], 0]);
-  await page.click('.ph-head [data-act="layer"][data-v="settings"]'); await tidy();
+  await page.click('.ph-head [data-act="layer"][data-v="settings"]'); await tidy(); await stab(page, '보기');
   await page.click('.layer:last-child [data-act="hueinfo"]'); await tidy();
   eq('⑯ (1108-C3) 설정 i — 표시색 설명(기도노트 이름 · 몇 분, 회색은 뺌)', await page.$$eval('.layer:last-child .hue-leg div', x => x.map(e => e.textContent)), ['난해1분', '이슈1분']);
   await page.click('.layer:last-child [data-act="hue"]'); await tidy();
@@ -625,7 +631,7 @@ async function route(r) {
     const before = await mp.evaluate(l => { const L = document.querySelector(l); window.__inp = document.activeElement; return L.scrollTop; }, lay);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="ftog"][data-k="tags"][data-v="학교"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="fone"][data-k="depth"][data-v="깊음"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
-    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"]):not([data-act="aetc"])')].map(x => x.dataset.v) }; }, lay);
+    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"]):not([data-act="aetc"]):not([data-act="tkw"])')].map(x => x.dataset.v) }; }, lay);
     eq('⑱ 알약을 눌러도 스크롤이 그대로 · 쓰던 칸이 새로 만들어지지 않는다', [after.st === before, after.same], [true, true]);
     eq('⑱ 알약 값은 그대로 들어가고 눌린 모양도 맞다', [after.form, after.pressed.sort()], [[['학교'], '깊음'], ['깊음', '학교']]);
     // 이름 후보를 고르는 것처럼 다시 그려야 할 때도 스크롤 자리는 그대로
@@ -633,8 +639,8 @@ async function route(r) {
     eq('⑱ 다시 그려도 겹 화면 스크롤 자리 그대로', await mp.evaluate(l => document.querySelector(l).scrollTop, lay), 120);
     // 자판: 쓰는 동안 아래 단추를 감추고, 쓰는 칸을 보이는 자리로
     await mp.evaluate(l => { document.querySelector(l).scrollTop = 0; }, lay);
-    await mp.focus(lay + ' textarea[data-f="text"]'); await mp.waitForTimeout(800);
-    const kb = await mp.evaluate(l => { const f = document.querySelector(l + ' .ph-foot'), t = document.querySelector(l + ' textarea[data-f="text"]').getBoundingClientRect(); return { typing: document.body.classList.contains('typing'), foot: getComputedStyle(f).display, inView: t.top >= 0 && t.top < innerHeight - 40 }; }, lay);
+    await mp.focus(lay + ' [data-f="tk:in"]'); await mp.waitForTimeout(800);
+    const kb = await mp.evaluate(l => { const f = document.querySelector(l + ' .ph-foot'), t = document.querySelector(l + ' [data-f="tk:in"]').getBoundingClientRect(); return { typing: document.body.classList.contains('typing'), foot: getComputedStyle(f).display, inView: t.top >= 0 && t.top < innerHeight - 40 }; }, lay);
     eq("⑱ 글을 쓰는 동안 '시트에 적기' 단추를 감추고 · 쓰는 칸이 화면 안으로 올라온다", [kb.typing, kb.foot, kb.inView], [true, 'none', true]);
     await mp.evaluate(() => document.activeElement.blur()); await mp.waitForTimeout(400);
     eq('⑱ 다 쓰면(자판 닫힘) 단추가 돌아온다', await mp.evaluate(l => getComputedStyle(document.querySelector(l + ' .ph-foot')).display, lay), 'block');
@@ -753,7 +759,7 @@ async function route(r) {
     eq('㉔ 그제를 누르면 날짜 · 요일 글자가 따라감', [await page.evaluate(() => topLayer().form.ymd), await page.$eval('.layer:last-child .dsel', e => e.textContent)], await page.evaluate(() => { const y = ymdAdd(today(), -2); return [y, dayName(y)]; }));
     await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("오늘")'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="name"]', '장소사람');
-    await page.fill('.layer:last-child [data-f="text"]', '카페에서 만남');
+    await talk(page, [['n', '카페에서 만남']]);
     eq('㉔ 장소는 알약 + 직접 적기(접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);
     await page.click('.layer:last-child [data-act="aetc"][data-k="place"]'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="place"]', '역 앞 카페');
@@ -834,12 +840,113 @@ async function route(r) {
     await page.evaluate(() => { topLayer().dirty = false; localStorage.removeItem(CELL_SB_KEY); }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   }
 
+  // ㉘ (1109-T) 나눈 이야기 — 주제 칸 · 주고받기 → 시트 한 칸 글
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
+  { const LE = '.layer:last-child', IN = LE + ' [data-f="tk:in"]', RT = tab('Form Responses 1');
+    const on = () => page.$eval(LE + ' [data-act="tkw"][aria-pressed="true"]', e => e.dataset.v);
+    const lines = i => page.$$eval(LE + ' .tp[data-tp="' + i + '"] .ln', x => x.map(e => e.classList[1] + ':' + (e.querySelector('textarea') ? e.querySelector('textarea').value : e.querySelector('.tx').textContent)));
+    await page.fill(LE + ' [data-f="name"]', '주제사람');
+    eq('㉘ 처음엔 칸 하나 · 입력줄은 성도 차례', [await page.$$eval(LE + ' .tp', x => x.length), await on()], [1, 's']);
+    await page.fill(LE + ' [data-f="tk:t:0"]', '어머님 수술');
+    await page.click(LE + ' [data-act="tktags"][data-k="0"]'); await page.waitForTimeout(150);
+    await page.click(LE + ' [data-act="tktag"][data-k="0"][data-v="건강"]'); await page.waitForTimeout(100);
+    await page.click(LE + ' [data-act="tktag"][data-k="0"][data-v="가정"]'); await page.waitForTimeout(100);
+    await page.click(LE + ' [data-act="tktags"][data-k="0"]'); await page.waitForTimeout(150);
+    await page.fill(IN, '다음 주 수술해요'); await page.evaluate(q => { window.__in = document.querySelector(q); }, IN); await page.press(IN, 'Enter');
+    eq('㉘ Enter → 성도 말 한 줄 · 다음 차례는 저절로 나 · 입력 칸은 그대로 남아 자판이 안 내려간다', [await lines(0), await on(), await page.evaluate(q => document.querySelector(q) === window.__in && document.activeElement === window.__in && window.__in.value === '', IN)], [['s:다음 주 수술해요'], 'm', true]);
+    await page.fill(IN, '같이 기도해요'); await page.press(IN, 'Enter');
+    await page.fill(IN, '사흘 입원'); await page.press(IN, 'Enter');
+    await talk(page, [['n', '목소리가 지쳐 있었음']]);
+    eq('㉘ 성도 ↔ 나 번갈아 · 메모는 차례를 안 바꾼다', [await lines(0), await on()], [['s:다음 주 수술해요', 'm:같이 기도해요', 's:사흘 입원', 'n:목소리가 지쳐 있었음'], 'n']);
+    await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.waitForTimeout(100);
+    eq('㉘ 이름표를 누르면 성도 → 나', (await lines(0))[2], 'm:사흘 입원');
+    await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.waitForTimeout(100);
+    eq('㉘ 나 → 메모 → 성도', (await lines(0))[2], 's:사흘 입원');
+    await page.click(LE + ' [data-act="tkedit"][data-k="0:1"]'); await page.waitForTimeout(150);
+    await page.fill(LE + ' [data-f="tk:l:0:1"]', '전날 같이 기도해요'); await page.press(LE + ' [data-f="tk:l:0:1"]', 'Enter'); await page.waitForTimeout(200);
+    eq('㉘ 글을 누르면 고치고 Enter 로 마침', (await lines(0))[1], 'm:전날 같이 기도해요');
+    await page.click(LE + ' [data-act="tknew"]'); await page.waitForTimeout(400);
+    eq('㉘ 새 주제 칸 → 칸 둘 · 입력줄이 새 칸으로 · 성도 차례', [await page.$$eval(LE + ' .tp', x => x.length), await page.$$eval(LE + ' .tp.on', x => x.map(e => e.dataset.tp)), await on(), await page.evaluate(() => document.activeElement.dataset.f)], [2, ['1'], 's', 'tk:in']);
+    await talk(page, [['s', '큰아이가 입대해요']]);
+    await page.click(LE + ' [data-act="tktags"][data-k="1"]'); await page.waitForTimeout(150);
+    await page.fill(LE + ' [data-f="tk:g:1"]', '자녀 문제'); await page.press(LE + ' [data-f="tk:g:1"]', 'Enter'); await page.waitForTimeout(150);
+    await page.click(LE + ' [data-act="tktags"][data-k="1"]'); await page.waitForTimeout(150);
+    await page.click(LE + ' [data-act="tkw"][data-v="s"]');
+    await page.evaluate(q => { const dt = new DataTransfer(); dt.setData('text/plain', '그래도 걱정돼요\n나: 기도할게요'); document.querySelector(q).dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }, IN); await page.waitForTimeout(300);
+    eq('㉘ 여러 줄 붙여 넣기 → 줄마다 나눔(이름표는 알아보고, 없으면 고른 사람)', await lines(1), ['s:큰아이가 입대해요', 's:그래도 걱정돼요', 'm:기도할게요']);
+    await page.click(LE + ' [data-act="tkmenu"][data-k="1"]'); await page.waitForTimeout(150);
+    eq('㉘ 칸 메뉴 — 위로 · 아래로 · 앞 칸과 합치기 · 지우기', await page.$$eval(LE + ' .tp-menu button', x => x.map(e => e.textContent + (e.disabled ? '(끔)' : ''))), ['위로', '아래로(끔)', '앞 칸과 합치기', '지우기']);
+    await page.click(LE + ' [data-act="tkmove"][data-k="1"][data-v="-1"]'); await page.waitForTimeout(200);
+    eq('㉘ 위로 → 칸 차례가 바뀐다', await page.$$eval(LE + ' .tp-t', x => x.map(e => e.value)), ['', '어머님 수술']);
+    await page.click(LE + ' [data-act="tkmove"][data-k="0"][data-v="1"]'); await page.waitForTimeout(200);
+    await page.click(LE + ' [data-act="tknew"]'); await page.waitForTimeout(300); await talk(page, [['n', '덧말']]);
+    await page.click(LE + ' [data-act="tkmenu"][data-k="2"]'); await page.waitForTimeout(150);
+    await page.click(LE + ' [data-act="tkmerge"][data-k="2"]'); await page.waitForTimeout(200);
+    eq('㉘ 앞 칸과 합치기 → 말이 앞 칸 끝에', [await page.$$eval(LE + ' .tp', x => x.length), (await lines(1)).slice(-1)[0]], [2, 'n:덧말']);
+    await page.click(LE + ' [data-act="tknew"]'); await page.waitForTimeout(300);
+    await page.click(LE + ' [data-act="tkmenu"][data-k="2"]'); await page.waitForTimeout(150);
+    await page.click(LE + ' [data-act="tkdel"][data-k="2"]'); await page.waitForTimeout(200);
+    eq('㉘ 빈 칸 지우기는 묻지 않고 · 정리 태그 아래 칸 태그 안내', [await page.$$eval(LE + ' .tp', x => x.length), await page.$$eval(LE + ' .tk-auto .tp-tag', x => x.map(e => e.textContent))], [2, ['#건강', '#가정', '#자녀 문제']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/talk_edit.png', fullPage: true });
+    await page.click(LE + ' [data-act="saverec"]'); await page.waitForTimeout(1500);
+    const row = () => RT.rows.find(r => r[2] === '주제사람') || [];
+    eq('㉘ 시트 내용 칸 = ■ 줄 · 성도: · 나: · 메모(빈 줄 뒤) — 한 칸 글', row()[5], '■ 어머님 수술 #건강 #가정\n성도: 다음 주 수술해요\n나: 전날 같이 기도해요\n성도: 사흘 입원\n\n목소리가 지쳐 있었음\n\n■ #자녀 문제\n성도: 큰아이가 입대해요\n성도: 그래도 걱정돼요\n나: 기도할게요\n\n덧말');
+    eq('㉘ 태그 칸 = 칸 태그 모음', row()[6], '건강, 가정, 자녀 문제');
+    await page.evaluate(() => openEdit(M().visits.find(v => v.name === '주제사람').key)); await tidy();
+    eq('㉘ 고치기 → 칸 · 제목 · 태그가 그대로 돌아온다 · 정리 태그 알약은 눌려 있지 않다', [await page.$$eval(LE + ' .tp-t', x => x.map(e => e.value)), await page.$$eval(LE + ' .tp[data-tp="1"] .tp-tag', x => x.map(e => e.textContent)), await page.evaluate(() => topLayer().form.tags.length)], [['어머님 수술', ''], ['#자녀 문제'], 0]);
+    const n0 = LOG.length;
+    await page.click(LE + ' [data-act="saverec"]'); await page.waitForTimeout(1000);
+    eq('㉘ 안 바꾸고 저장 → 시트에 아무것도 안 쓴다', LOG.slice(n0).filter(x => x[0] === 'set').length, 0);
+  }
+
+  // ㉙ (1109-T4 · T5) 열람 — 대본 · 말풍선 · 접기 / 설정 탭 넷 · 마지막 탭 기억 / 성도 화면 주제로 보기
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  { const LE = '.layer:last-child', key = await page.evaluate(() => M().visits.find(v => v.name === '주제사람').key);
+    await page.evaluate(k => { saveCfg({ talk: 'b' }); openLayer('detail', { key: k }); }, key); await tidy();
+    eq('㉙ 열람(대본) — 칸마다 제목(없으면 주제 2) · 태그 · 줄 앞 이름표', [await page.$$eval(LE + ' .tv.b .tv-t', x => x.map(e => e.textContent)), await page.$$eval(LE + ' .tv-g', x => x.map(e => e.textContent)), await page.$$eval(LE + ' .tv-tp[data-i="0"] .ln', x => x.map(e => e.querySelector('.who').textContent + ':' + e.querySelector('.tx').textContent))],
+      [['어머님 수술', '주제 2'], ['#건강 #가정', '#자녀 문제'], ['성도:다음 주 수술해요', '나:전날 같이 기도해요', '성도:사흘 입원', '메모:목소리가 지쳐 있었음']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/talk_read_b.png' });
+    await page.click(LE + ' [data-act="tvfold"][data-k="0"]'); await page.waitForTimeout(500);
+    eq('㉙ 제목을 누르면 접히고 첫 성도 말 한 줄만', [await page.$$eval(LE + ' .tv-tp[data-i="0"] .ln', x => x.length), await page.$eval(LE + ' .tv-tp[data-i="0"] .tv-peek', e => e.textContent)], [0, '다음 주 수술해요']);
+    await page.click(LE + ' [data-act="tvall"]'); await page.waitForTimeout(300);
+    eq("㉙ '제목만' → 다 접힘 · 단추는 '모두 펴기'", [await page.$$eval(LE + ' .tv-tp.shut', x => x.length), await page.$eval(LE + ' [data-act="tvall"]', e => e.textContent)], [2, '모두 펴기']);
+    await page.click(LE + ' [data-act="tvall"]'); await page.waitForTimeout(300);
+    eq('㉙ 모두 펴기', await page.$$eval(LE + ' .tv-tp.shut', x => x.length), 0);
+    await page.evaluate(() => openLayer('settings')); await tidy();
+    eq('㉙ 설정 탭 차례 — 보기 · BLOCK7 · 연결 · 그 밖에', await page.$$eval(LE + ' [data-act="stab"]', x => x.map(e => e.textContent)), ['보기', 'BLOCK7', '연결', '그 밖에']);
+    await stab(page, '연결');
+    eq("㉙ '연결' 탭 — 로그인 · 구글 · 시트 · 시트 준비 · 폼 · 속성 관리", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['로그인', '구글', '심방 시트', '시트 준비', '심방 폼', '속성 관리']);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await page.evaluate(() => openLayer('settings')); await tidy();
+    eq('㉙ 다시 열면 마지막에 본 탭(이 기기에만 기억)', [await page.$eval(LE + ' [data-act="stab"][aria-pressed="true"]', e => e.textContent), await page.evaluate(() => 'stab' in pickCfg(saved()))], ['연결', false]);
+    await stab(page, '보기');
+    eq("㉙ '보기' 탭 — 대화 보기 · 이름 색 · 오래 못 만남 · 보관 기준 · 보관 기록", await page.$$eval(LE + ' #stPane .srow .t', x => x.map(e => e.textContent)), ['대화 보기', '이름 색', '오래 못 만남 기준', '보관 기준', '보관 기록 함께 보기']);
+    await page.click(LE + ' [data-act="talkmode"][data-v="a"]'); await page.waitForTimeout(300);
+    eq('㉙ 말풍선을 고르면 미리 보기도 말풍선 · 계정에 맞출 값(talk)', [await page.$$eval(LE + ' #stPane .tv.a .bb', x => x.length), await page.evaluate(() => pickCfg(saved()).talk)], [3, 'a']);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/settings_view.png' });
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    eq('㉙ 열람(말풍선) — 성도 왼쪽 · 나 오른쪽 · 메모 가운데 · 이름은 말이 바뀔 때만', [await page.$$eval(LE + ' .tv.a .tv-tp[data-i="0"] .tv-body > *', x => x.map(e => e.className + ':' + e.textContent)), await page.$eval(LE + ' .tv.a .bb.m', e => getComputedStyle(e).alignSelf)],
+      [['bb-who s:성도', 'bb s:다음 주 수술해요', 'bb-who m:나', 'bb m:전날 같이 기도해요', 'bb-who s:성도', 'bb s:사흘 입원', 'bb-n:목소리가 지쳐 있었음'], 'flex-end']);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/talk_read_a.png' });
+    await page.evaluate(() => saveCfg({ talk: 'b' }));
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await page.evaluate(() => openLayer('person', { name: '주제사람' })); await tidy();
+    eq('㉙ 성도 화면 — 자주 나온 이야기 = 칸 태그(누르는 단추)', await page.$$eval(LE + ' .cloud [data-act="ptag"]', x => x.map(e => e.textContent)), ['#가정', '#건강', '#자녀 문제']);
+    await page.click(LE + ' .cloud [data-act="ptag"][data-v="자녀 문제"]'); await page.waitForTimeout(300);
+    eq('㉙ 태그를 누르면 그 태그 주제 칸만 — 제목 · 성도 말 · 내 말 · 말 수', await page.$$eval(LE + ' .ptl button', x => x.map(e => [e.querySelector('.pt').firstChild.textContent, e.querySelector('.q').textContent, e.querySelector('.me').textContent, e.querySelector('.more').textContent])), [['주제 2', '성도큰아이가 입대해요', '나기도할게요', '말 3 · 메모 1']]);
+    if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/person_topics.png' });
+    await page.click(LE + ' .ptl button'); await tidy();
+    eq('㉙ 누르면 그 기록 열람', await page.evaluate(() => topLayer().type + ':' + byKey(topLayer().key).name), 'detail:주제사람');
+  }
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+
   // 1109-D1 버전 — 설정 맨 아래 버전은 단추, 좌상단 배지는 개발자 계정에만
   { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
   eq('㉕ 다른 사용자에게는 좌상단 버전 배지가 없다', await page.$$eval('.verbadge', x => x.length), 0);
   await page.evaluate(() => { USER.email = 'denartist@gmail.com'; render(); }); await page.waitForTimeout(200);
   eq('㉕ 개발자 계정이면 좌상단에 버전', await page.$eval('.ph-head .verbadge', e => e.textContent), await page.evaluate(() => APP_VERSION.replace(/^v\.\s*/, 'v')));
-  await page.evaluate(() => { USER.email = 'test@example.com'; render(); openLayer('settings'); }); await page.waitForTimeout(400);
+  await page.evaluate(() => { USER.email = 'test@example.com'; render(); openLayer('settings'); }); await page.waitForTimeout(400); await stab(page, '그 밖에');
   eq('㉕ 설정 맨 아래 버전은 누르는 단추', await page.$$eval('.layer:last-child button[data-act="vercheck"]', x => x.length), 1);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
 
