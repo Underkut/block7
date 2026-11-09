@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-3 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-4 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -516,7 +516,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-3';
+const APP_VERSION = 'v. 26-1109-4';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -538,8 +538,16 @@ const TABS = {
 // 폼 질문 = 시트 머리글. **열은 순서가 아니라 이름으로 찾는다** (폼에 질문이 늘면 열이 밀린다)
 const Q = {
   ts: ['타임스탬프', 'Timestamp'], date: ['심방 날짜'], name: ['성도 이름'], depth: ['대화 깊이'],
-  roles: ['구분'], method: ['전화 / 만남'], text: ['내용'], tags: ['태그'], acts: ['액션'], place: ['장소 · 메모'],
+  roles: ['구분'], method: ['전화 / 만남'], text: ['내용'], tags: ['태그'], acts: ['액션'], place: ['장소 · 메모', '장소'],
+  pay: ['사주심 / 사드림', '사주심/사드림'],
 };
+// 이름이 조금 달라도 알아보는 칸 — HB 가 폼에서 직접 더한 질문(2026-11-09 '장소' · '사주심/사드림')은 제목 꼴을 정해 둘 수 없다.
+// 띄어쓰기를 뺀 제목으로 본다. 위 Q 의 정확한 이름이 먼저다.
+const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림/.test(k) };
+const PAY_DEFAULT = ['사주심', '사드림'];
+function qLike(key, title) { const t = norm(title); return (Q[key] || []).includes(t) || (!!Q_LIKE[key] && Q_LIKE[key](t.replace(/\s+/g, ''))); }
+// 폼 질문 목록에서 그 칸의 질문 (없으면 null)
+function formQOf(summary, key) { return (summary || []).find(q => (Q[key] || []).includes(q.title)) || (summary || []).find(q => qLike(key, q.title)) || null; }
 
 function norm(h) { return String(h == null ? '' : h).replace(/\s+/g, ' ').trim(); }
 
@@ -549,6 +557,8 @@ function headerMap(row) {
   (row || []).forEach((h, i) => { const n = norm(h); if (n && !(n in cols)) cols[n] = i; });
   for (const k in Q) for (const name of Q[k]) if (name in cols) { map[k] = cols[name]; break; }
   APP_COLS.forEach(c => { if (c in cols) map['@' + c] = cols[c]; });
+  const used = new Set(Object.values(map));
+  for (const k in Q_LIKE) if (map[k] == null) { const n = Object.keys(cols).find(h => !used.has(cols[h]) && !APP_COLS.includes(h) && qLike(k, h)); if (n != null) { map[k] = cols[n]; used.add(cols[n]); } }
   return { map, cols };
 }
 function isResponsesHeader(row) { const { map } = headerMap(row); return map.name != null && map.text != null; }
@@ -618,7 +628,7 @@ function rowToVisit(row, map, opts) {
   return {
     id: norm(at('@기록ID')), src: norm(at('@출처')) || '폼', ymd, name: norm(at('name')), text: String(at('text') || ''),
     depth: norm(at('depth')), roles: roles.vals, rolesEtc: roles.etc, method: meth.val, methodEtc: meth.etc,
-    place: norm(at('place')), tags: tags.vals, tagsEtc: tags.etc, acts: acts.vals, actsEtc: acts.etc,
+    place: norm(at('place')), pay: norm(at('pay')), tags: tags.vals, tagsEtc: tags.etc, acts: acts.vals, actsEtc: acts.etc,
     archived: !!norm(at('@보관')),
   };
 }
@@ -733,12 +743,12 @@ function addTalk(text) {
   return t + '\n\n나눈 이야기 ' + (max + 1) + '\n';
 }
 function blankRecord(today, last) {
-  return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', text: '', depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '' };
+  return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', pay: '', text: '', depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '' };
 }
 // 시트에서 읽은 기록 → 고치기 입력 꼴 (그대로 다시 쓰면 칸이 하나도 안 바뀌어야 한다 — 시험 ⑫)
 function recordFromVisit(v) {
   return { name: v.name, ymd: v.ymd, roles: v.roles.slice(), rolesEtc: v.rolesEtc.join(', '), method: v.method, methodEtc: v.methodEtc,
-    place: v.place, text: v.text, depth: v.depth, tags: v.tags.slice(), tagsEtc: v.tagsEtc.join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', ') };
+    place: v.place, pay: v.pay || '', text: v.text, depth: v.depth, tags: v.tags.slice(), tagsEtc: v.tagsEtc.join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', ') };
 }
 function validateRecord(r) {
   const e = [];
@@ -753,7 +763,7 @@ function recordCells(r) {
   return {
     date: y ? (+y.slice(5, 7)) + '/' + (+y.slice(8, 10)) : '',   // 폼과 같은 '월/일' 꼴 (연도는 @심방일 에)
     name: norm(r.name), roles: joinMulti(r.roles, splitEtc(r.rolesEtc)),
-    method: norm(r.method) || norm(r.methodEtc), place: norm(r.place), text: String(r.text || '').replace(/\r/g, '').trim(),
+    method: norm(r.method) || norm(r.methodEtc), place: norm(r.place), pay: norm(r.pay), text: String(r.text || '').replace(/\r/g, '').trim(),
     tags: joinMulti(r.tags, splitEtc(r.tagsEtc)), acts: joinMulti(r.acts, splitEtc(r.actsEtc)), depth: norm(r.depth),
     '@심방일': y,
   };
@@ -955,7 +965,7 @@ function formUpdateRequests(formRaw, formOps) {
 const PLACE_TITLE = '장소 · 메모';
 function placeQuestionRequest(formRaw) {
   const items = (formRaw && formRaw.items) || [];
-  if (items.some(it => norm(it.title) === PLACE_TITLE)) return null;
+  if (items.some(it => qLike('place', it.title))) return null;   // HB 가 '장소' 로 직접 더한 것도 있는 것으로
   const m = items.findIndex(it => norm(it.title) === '전화 / 만남');
   return { createItem: { item: { title: PLACE_TITLE, questionItem: { question: { required: false, textQuestion: { paragraph: false } } } }, location: { index: m < 0 ? items.length : m + 1 } } };
 }
@@ -1575,7 +1585,8 @@ async function loadData(quiet) {
     const vals = tab.values;
     const tabNames = info.all, hm = headerMap(vals[0] || []).map;
     DATA.prepared = hm['@기록ID'] != null && tabNames.includes('액션') && tabNames.includes('덧붙임');
-    DATA.hasPlace = hm.place != null;
+    DATA.hasPlace = hm.place != null; DATA.hasPay = hm.pay != null;
+    DATA.payTitle = hm.pay != null ? norm(vals[0][hm.pay]) : '';
     if (DATA.prepared) await patchIds(s.id, tab.title, vals);
     DATA.actStatus = parseActionTab(V('액션'));
     DATA.addenda = parseAddenda(V('덧붙임'));
@@ -1584,7 +1595,7 @@ async function loadData(quiet) {
     DATA.attOpts = attOptsParse(V(ATT_OPT_TAB));
     let form = DATA.form;
     if (formP) { const fj = await formP; if (fj) { DATA.formRaw = fj; form = formSummary(fj); if ((fj.responderUri || '') !== saved().responder) saveCfg({ responder: fj.responderUri || '' }); } else form = null; }
-    const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션') } : {};
+    const opts = form ? { roles: optionsOf(form, '구분'), methods: optionsOf(form, '전화 / 만남'), tags: optionsOf(form, '태그'), acts: optionsOf(form, '액션'), pays: (formQOf(form, 'pay') || {}).options || [] } : {};
     const pf = prefs();
     DATA.form = form; DATA.opts = opts; DATA.tab = tab; DATA.vals = vals;
     DATA.model = attachExtras(buildModel(vals, Object.assign({ cutoff: pf.cutoff }, opts)), DATA.actStatus, DATA.addenda);
@@ -2214,7 +2225,7 @@ function lDetail(L) {
   h += '<button data-act="person" data-v="' + esc(v.name) + '"><div class="dt-name">' + (v.name ? nm(v.name) : '(이름 없음)') + ' <span style="font-size:16px;color:var(--tx3)">›</span></div></button><div class="dt-when">' + dayLabel(v.ymd) + '</div>';
   h += '<div class="attrs">' +
     '<div><span class="k">구분</span><span>' + (esc(v.allRoles.join(' · ')) || '<span class="muted">—</span>') + '</span></div>' +
-    '<div><span class="k">방식</span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + (meth(v) || '<span class="muted">—</span>') + (v.place ? '<span class="muted">· ' + esc(v.place) + '</span>' : '') + '</span></div>' +
+    '<div><span class="k">방식</span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + (meth(v) || '<span class="muted">—</span>') + (v.place ? '<span class="muted">· ' + esc(v.place) + '</span>' : '') + (v.pay ? '<span class="muted">· ' + esc(v.pay) + '</span>' : '') + '</span></div>' +
     '<div><span class="k">깊이</span><span>' + depth(v.depthN) + '</span></div>' +
     '<div><span class="k">태그</span><span style="display:flex;gap:8px;flex-wrap:wrap">' + (tags(v) || '<span class="muted">—</span>') + '</span></div></div>';
   h += '<div class="h-sec">이야기<button data-act="edit" data-v="' + esc(v.key) + '">고치기</button></div><div class="body-txt">' + (esc(v.text) || '<span class="muted">(내용 없음)</span>') + '</div>';
@@ -2690,6 +2701,11 @@ function lEdit(L) {
   h += '<div class="fld"><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
   h += DATA.hasPlace ? '<div class="fld"><input class="inp" data-f="place" value="' + esc(f.place) + '" placeholder="장소 · 메모 (예: 수요예배 후 카페)" aria-label="장소 · 메모"></div>'
     : '<p class="hint">장소 · 메모 칸은 시트에 아직 없습니다. 폼에 \'장소 · 메모\' 질문을 더하면 생깁니다.</p>';
+  // 사주심 · 사드림 — 폼에 그 질문이 있을 때만(시트에 열이 있어야 적을 수 있다). 하나만, 다시 누르면 풀린다
+  if (DATA.hasPay) {
+    const po = (DATA.opts && DATA.opts.pays && DATA.opts.pays.length ? DATA.opts.pays : PAY_DEFAULT).slice(); if (f.pay && !po.includes(f.pay)) po.push(f.pay);
+    h += '<div class="fld"><span class="lb">' + esc(DATA.payTitle || '사주심 / 사드림') + '</span><div class="opts">' + po.map(x => chip(esc(x), f.pay === x, 'fone', 'pay', x)).join('') + '</div></div>';
+  }
   if (L.planWhy) h += '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>';
   h += '<div class="fsec">나눈 이야기</div><div class="fld"><textarea class="inp" data-f="text" rows="6" placeholder="여러 줄 그대로 저장됩니다." aria-label="나눈 이야기">' + esc(f.text) + '</textarea><button class="btn" data-act="addtalk" style="margin-top:8px">+ 이야기 나누기</button><div class="hint">맥락이 달라질 때 누르면 \'나눈 이야기 1 · 2 …\' 제목 줄이 생깁니다.</div></div>';
   h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
@@ -2742,7 +2758,7 @@ async function saveRecord(L) {
     if (!L.key) {
       const r = await writeNew(L.form); L.dirty = false; closeLayer(true);
       if (L.planId) await finishPlan(L.planId, r.id);
-      toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : ''));
+      toast('새 기록을 시트에 적었습니다' + (r.lost.includes('place') ? '\n장소는 시트에 칸이 없어 빠졌습니다' : '') + (r.lost.includes('pay') ? '\n사주심 · 사드림은 시트에 칸이 없어 빠졌습니다' : ''));
     } else {
       const v = byKey(L.key) || M().visits.find(x => x.row === L.row);
       if (!v) throw new Error('이 기록을 찾지 못했습니다');

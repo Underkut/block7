@@ -26,6 +26,7 @@
 //  ㉑ (1108-B4) 닫기 손짓 — 가장자리 밀기 · 머리줄 내려끌기 · 못 미치면 제자리 · 굴리기는 아님 · 쓰던 글은 묻는다
 //  ㉒ (1108-B4) 달력 — 심방 · 출석 켜고 끄기 (둘 다 끌 수 없음 · 기억)
 //  ㉓ (1108-C1) 보기 조건 시트 끌어내려 닫기 · (C2 출석 탭 · C3 이름 글자색은 ⑮ ⑯ ⑰ 에)
+//  ㉔ (1109) HB 가 폼에 '장소' · '사주심/사드림' 질문을 더함 → 시트 끝에 열 → 입력 · 고치기 화면에 칸 · 알약 → 그 열에 쓴다
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -727,6 +728,28 @@ async function route(r) {
   await page.click('.calsw [data-v="a"]'); await page.evaluate(() => goTab('month')); await page.waitForTimeout(500);
   eq('㉒ 월간에도 출석 이름 · 기억해 둔 켜짐 그대로', [await page.$$eval('.cal .nmc.at', x => x.length) > 0, await page.$$eval('.calsw [aria-pressed="true"]', x => x.length)], [true, 2]);
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/b4_month.png', fullPage: true });
+
+  // ㉔ (1109) 폼에 '장소' · '사주심/사드림' 질문이 생김 → 시트 끝에 열 두 개
+  { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  { const RT = tab('Form Responses 1'); RT.rows[0].push('장소', '사주심/사드림'); const cP = RT.rows[0].length - 2, cY = cP + 1;
+    await page.evaluate(() => loadData(true)); await page.waitForTimeout(800);
+    await page.evaluate(() => openEdit(null)); await tidy();
+    eq('㉔ 입력 화면에 장소 칸 · 사주심 / 사드림 알약', [await page.$$eval('.layer:last-child [data-f="place"]', x => x.length), await page.$$eval('.layer:last-child [data-act="fone"][data-k="pay"]', x => x.map(e => e.dataset.v))], [1, ['사주심', '사드림']]);
+    await page.fill('.layer:last-child [data-f="name"]', '장소사람');
+    await page.fill('.layer:last-child [data-f="text"]', '카페에서 만남');
+    await page.fill('.layer:last-child [data-f="place"]', '역 앞 카페');
+    await page.click('.layer:last-child [data-act="fone"][data-k="pay"][data-v="사드림"]');
+    await page.click('.layer:last-child [data-act="saverec"]'); await page.waitForTimeout(1500);
+    const row = () => RT.rows.find(r => r[2] === '장소사람') || [];
+    eq('㉔ 새 기록 — 장소 · 사드림이 그 열에', [row()[cP], row()[cY]], ['역 앞 카페', '사드림']);
+    await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy();
+    eq('㉔ 고치기 화면 — 사드림이 눌려 있고 장소도 그대로', [await page.$eval('.layer:last-child [data-act="fone"][data-k="pay"][aria-pressed="true"]', e => e.dataset.v), await page.$eval('.layer:last-child [data-f="place"]', e => e.value)], ['사드림', '역 앞 카페']);
+    await page.click('.layer:last-child [data-act="fone"][data-k="pay"][data-v="사주심"]');
+    const n9 = LOG.length;
+    await page.click('.layer:last-child [data-act="saverec"]'); await page.waitForTimeout(1500);
+    eq('㉔ 고치기 — 사주심 칸 + 수정 시각만', [row()[cY], LOG.slice(n9).filter(x => x[0] === 'set').length], ['사주심', 2]);
+    if (process.env.SHOT) { await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy(); await page.screenshot({ path: process.env.SHOT + '/pay.png' }); await page.keyboard.press('Escape'); }
+  }
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
