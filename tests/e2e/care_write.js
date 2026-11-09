@@ -753,7 +753,7 @@ async function route(r) {
     await page.evaluate(() => loadData(true)); await page.waitForTimeout(800);
     await page.evaluate(() => openEdit(null)); await tidy();
     eq('㉔ 입력 화면에 장소 알약 칸 · 사주심 / 사드림 알약', [await page.$$eval('.layer:last-child .pills[data-k="place"]', x => x.length), await page.$$eval('.layer:last-child [data-act="aone"][data-k="pay"]', x => x.map(e => e.dataset.v))], [1, ['사주심', '사드림']]);
-    eq("㉔ 심방 입력 날짜 — 제목 '언제 · 어디서' · 그제 · 어제 · 오늘 · 달력 + 고른 날 요일", [await page.$$eval('.layer:last-child .fsec', x => x.map(e => e.textContent).includes('언제 · 어디서')), await page.$$eval('.layer:last-child [data-act="adate"][data-k="ymd"]', x => x.map(e => e.textContent)), await page.$eval('.layer:last-child .dsel', e => e.textContent)],
+    eq("㉔ 심방 입력 날짜 — 제목 '언제 · 어디서 · 어떻게' · 그제 · 어제 · 오늘 · 달력 + 고른 날 요일", [await page.$$eval('.layer:last-child .fsec', x => x.map(e => e.textContent).includes('언제 · 어디서 · 어떻게')), await page.$$eval('.layer:last-child [data-act="adate"][data-k="ymd"]', x => x.map(e => e.textContent)), await page.$eval('.layer:last-child .dsel', e => e.textContent)],
       [true, ['그제', '어제', '오늘'], await page.evaluate(() => dayName(today()))]);
     await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("그제")'); await page.waitForTimeout(200);
     eq('㉔ 그제를 누르면 날짜 · 요일 글자가 따라감', [await page.evaluate(() => topLayer().form.ymd), await page.$eval('.layer:last-child .dsel', e => e.textContent)], await page.evaluate(() => { const y = ymdAdd(today(), -2); return [y, dayName(y)]; }));
