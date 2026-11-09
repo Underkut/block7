@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-12 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -136,6 +136,29 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .fbtn.on{border-color:var(--ac);color:var(--ac)}
 .fchip{flex:none;display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--ac-soft);color:var(--ac);font-size:12.5px}
 .fchip i{font-style:normal;opacity:.6}
+/* 1109-G1 목록 자세히 / 간략히 */
+.fwrap{display:flex;align-items:center;gap:8px}.fwrap .fline{flex:1;min-width:0}
+.lmode{flex:none;display:flex;align-items:baseline;gap:3px;padding:6px 2px 10px 4px;font-size:12.5px;color:var(--tx3)}
+.lmode b{font-weight:400}.lmode b.on{color:var(--tx);font-weight:600}.lmode i{font-style:normal;opacity:.5}
+.dg{display:grid;grid-template-columns:44px 1fr;gap:12px;border-bottom:1px solid var(--line)}
+.dg:first-child{margin-top:6px}
+.dcol{display:flex;flex-direction:column;align-items:center;padding-top:14px;gap:1px;text-align:center}
+.dcol b{font-family:var(--mono);font-size:22px;font-weight:500;line-height:1.05;font-variant-numeric:tabular-nums}
+.dcol span{font-size:10.5px;color:var(--tx3);line-height:1.3;white-space:nowrap}
+.dcol .wd{font-size:11px;color:var(--tx2);margin-top:1px}.dcol .wd.sun{color:var(--warn)}
+.dcol .rel{color:var(--ac);font-weight:500;margin-top:2px}
+.dcards{min-width:0}
+.dcards .card{border-bottom:1px dashed var(--line)}.dcards .card:last-child{border-bottom:0}
+.vl-full .c-txt{color:var(--tx)}
+.bmon{font-size:11.5px;color:var(--tx3);letter-spacing:.04em;margin:14px 0 0;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.card.lrow{display:grid;grid-template-columns:38px 62px 1fr;gap:8px;align-items:baseline;padding:10px 0;text-align:left}
+.lrow .bd{font-family:var(--mono);font-size:12px;color:var(--tx3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.lrow .bd.sun{color:var(--warn)}.lrow .bd.same{visibility:hidden}
+.lrow .nm{font-family:var(--serif);font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .bt{min-width:0;display:flex;flex-direction:column}
+.lrow .bt1{font-size:13.5px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .bt2{font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.lrow .bt2 .rv{margin-right:5px}
 .dhead{display:flex;justify-content:space-between;align-items:baseline;margin:20px 0 2px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .dhead b{font-size:13.5px;font-weight:600}
 .dhead span{font-size:12px;color:var(--tx3)}
@@ -574,6 +597,38 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .cmp-row .btn{flex:none;border-radius:11px;padding:0 15px;min-height:44px}
 .tk-new{width:100%;border:1px dashed var(--line2);border-radius:14px;padding:13px;font-size:14px;color:var(--ac);display:flex;align-items:center;justify-content:center;gap:6px;text-align:center}
 .tk-new svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
+/* 1109-G2 새 기록 — 공통: 칸 제목 진하게 · 작은 제목 옅게 · 고른 알약 꽉 채움 · i 안내 */
+.edf .fsec{font-size:15px;color:var(--tx);letter-spacing:0;margin:22px 0 10px}
+.edf .fld .lb{font-size:12px;color:var(--tx3)}
+.edf .opt[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:var(--on-ac)}
+.edf .opt.kk[aria-pressed="true"]{background:var(--k);border-color:var(--k);color:#fff}
+.edf .opt.etc[aria-pressed="true"]{background:var(--ac-soft);color:var(--ac);border-color:var(--ac)}
+.edf .opt.pk{color:var(--ac);border-color:color-mix(in srgb,var(--ac) 50%,transparent)}
+.edf .opt.etc svg{width:12px;height:12px}
+.einf{order:3;flex:none;display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--line2);font:500 10.5px/1 var(--sans);color:var(--tx3)}
+.einf[aria-pressed="true"]{border-color:var(--ac);color:var(--ac)}
+.einfo-b{font-size:12.5px;line-height:1.6;color:var(--tx2);background:var(--s1);border-radius:10px;padding:9px 12px;margin:-4px 0 12px}
+/* A 넓은 화면 — 칸마다 흰 카드 */
+.layer>.ph-body.e-wide,.layer:has(>.ph-body.e-wide)>.ph-head{background:var(--bg)}
+.e-wide .eblk{background:var(--paper);border-radius:16px;padding:2px 16px 4px;margin:0 0 12px;border:1px solid var(--line)}
+.e-wide .eblk>.fsec:first-child{margin-top:14px}
+.e-wide .eblk>.fsec::after{display:none}
+.e-wide>.eblk:first-child{margin-top:8px}
+/* C 좁은 화면 — 고르는 칸은 한 줄씩, 누르면 그 자리에서 펴짐 */
+.crows{border-top:1px solid var(--line)}
+.crow{border-bottom:1px solid var(--line)}
+.crow-h{display:flex;align-items:center;gap:10px;width:100%;padding:13px 2px;font-size:14.5px;color:var(--tx);text-align:left}
+.crow-h .v{margin-left:auto;color:var(--tx2);font-size:13.5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62%}
+.crow-h .v.none{color:var(--tx3)}
+.crow-h svg{flex:none;width:16px;height:16px;stroke:var(--tx3);stroke-width:1.8;fill:none;transform:rotate(-90deg);transition:transform .3s cubic-bezier(.22,.8,.24,1)}
+.crow.open .crow-h svg{transform:none}
+.crow-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s cubic-bezier(.22,.8,.24,1)}
+.crow.open .crow-b{grid-template-rows:1fr}
+.crow-b>div{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s .3s}
+.crow.open .crow-b>div{visibility:visible;transition-delay:0s}
+.crow-b .fld{margin:0;padding:2px 0 14px}
+.crow-b .fld>.lb{display:none}
+@media (prefers-reduced-motion: reduce){.crow-b,.crow-h svg{transition:none}}
 .tk-auto{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-2px 0 8px;font-size:12px;color:var(--tx3)}
 @media (pointer:coarse){input,textarea,select,.inp,.inp.etc,.aadd .inp,.srch input{font-size:16px!important}}
 /* 아이폰 날짜 · 시간 칸은 제 폭을 고집해 화면 밖으로 삐져나온다 → 모양을 풀고 폭을 칸에 맞춘다 */
@@ -621,7 +676,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-12';
+const APP_VERSION = 'v. 26-1109-13';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -2499,20 +2554,53 @@ function nav() {
     return '<button data-act="tab" data-v="' + t[0] + '"' + (on ? ' aria-current="true"' : '') + '>' + IC[t[2]] + t[1] + '</button>'; }).join('') + '</nav>';
 }
 const FLAB = { act: '할 일', tag: '태그', role: '구분', method: '방식', depth: '대화 깊이', src: '들어온 길' };
-function fline() {
+function fline(mode) {
   const n = fcount();
-  let h = '<div class="fline"><button class="fbtn' + (n ? ' on' : '') + '" data-act="sheet">' + IC.filt + (n ? '필터 ' + n : '필터') + '</button>';
+  let h = (mode ? '<div class="fwrap">' : '') + '<div class="fline"><button class="fbtn' + (n ? ' on' : '') + '" data-act="sheet">' + IC.filt + (n ? '필터 ' + n : '필터') + '</button>';
   for (const k in S.filt) S.filt[k].forEach(x => { h += '<button class="fchip" data-act="unf" data-k="' + k + '" data-v="' + esc(x) + '">' + (k === 'tag' ? '#' : '') + esc(k === 'depth' ? '깊이 ' + DEPTH_NAME[x] : x) + ' <i>×</i></button>'; });
   if (S.quick) h += '<button class="fchip" data-act="quick" data-v="' + S.quick + '">' + (S.quick === 'review' ? '확인 필요만' : '남은 할 일 있는 기록만') + ' <i>×</i></button>';
   if (S.showArch) h += '<button class="fchip" data-act="arch">보관 기록 함께 <i>×</i></button>';
+  // 1109-G1 목록 '자세히 / 간략히' — 필터 줄 오른쪽 끝, 글자 단추 하나(지금 고른 쪽이 진하게). 이 기기에만 기억
+  if (mode) h += '</div><button class="lmode" data-act="lmode" aria-label="' + (mode === 'brief' ? '간략히 보는 중 — 누르면 자세히' : '자세히 보는 중 — 누르면 간략히') + '"><b' + (mode === 'full' ? ' class="on"' : '') + '>자세히</b><i>/</i><b' + (mode === 'brief' ? ' class="on"' : '') + '>간략히</b></button>';
   return h + '</div>';
 }
+function listMode() { return saved().lmode === 'brief' ? 'brief' : 'full'; }
 
 // ───────────────────────────── 기록 ─────────────────────────────
 function card(v) {
   const acts = v.actions.map(ak).join('');
   return '<button class="card' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><div class="c-top"><span class="nm">' + (v.name ? nm(v.name) : '(이름 없음)') + '</span>' + '<span class="roles">' + esc(v.allRoles.join(' · ')) + '</span>' + rv(v) + '<span class="sp"></span>' + meth(v) + '</div>' +
     '<div class="c-txt">' + esc(talkFlat(v.text) || '(내용 없음)') + '</div><div class="c-bot">' + depth(v.depthN) + '<span class="tags">' + tags(v) + '</span>' + (acts ? '<span class="acts">' + acts + '</span>' : '') + '</div></button>';
+}
+// 1109-G1 자세히(시안 B) — 왼쪽 날짜 기둥(큰 날 · 달 · 요일), 오른쪽에 그날 기록들. 날짜 · 사람 · 내용이 다른 자리에 선다
+function dcol(y) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(y || '')) return '<div class="dcol"><b>—</b><span>날짜 모름</span></div>';
+  const p = y.split('-'), n = daysBetween(y, today()), w = dowOf(y);
+  const mo = (p[0] !== today().slice(0, 4) ? p[0].slice(2) + '년 ' : '') + (+p[1]) + '월';
+  return '<div class="dcol"><b>' + (+p[2]) + '</b><span>' + mo + '</span><span class="wd' + (w === 0 ? ' sun' : '') + '">' + (w === 0 ? '주일' : DOW[w]) + '</span>' + (n === 0 || n === 1 ? '<span class="rel">' + (n ? '어제' : '오늘') + '</span>' : '') + '</div>';
+}
+function listFull(L) {
+  let h = '', i = 0;
+  while (i < L.length) {
+    const y = L[i].ymd; let j = i; while (j < L.length && L[j].ymd === y) j++;
+    h += '<div class="dg" aria-label="' + esc(dayLabel(y)) + ' ' + (j - i) + '명">' + dcol(y) + '<div class="dcards">' + L.slice(i, j).map(card).join('') + '</div></div>';
+    i = j;
+  }
+  return h;
+}
+// 1109-G1 간략히(시안 E) — 한 기록 한 줄: 날(같은 날이면 비움) · 이름 · 내용 한 줄 + 방식 · 남은 할 일. 달이 바뀌면 달 머리
+function listBrief(L) {
+  let h = '', lastM = null, lastD = null;
+  L.forEach(v => {
+    const ok = /^\d{4}-\d{2}-\d{2}$/.test(v.ymd || ''), m = ok ? v.ymd.slice(0, 7) : '';
+    if (m !== lastM) { h += '<div class="bmon">' + (ok ? (m.slice(0, 4) !== today().slice(0, 4) ? m.slice(0, 4) + '년 ' : '') + (+m.slice(5)) + '월' : '날짜 모름') + '</div>'; lastM = m; lastD = null; }
+    const d = ok ? (+v.ymd.slice(8)) + ' ' + DOW[dowOf(v.ymd)] : '—', open = v.actions.filter(a => !a.done).map(a => a.x ? (a.t === '기타' ? a.x : a.t) : a.t).filter(Boolean);
+    const sub = [v.methodLabel || ''].concat(open).filter(Boolean).join(' · ');
+    h += '<button class="card lrow' + (v.archived ? ' arch' : '') + '" data-act="open" data-v="' + esc(v.key) + '"><span class="bd' + (v.ymd === lastD ? ' same' : '') + (ok && dowOf(v.ymd) === 0 ? ' sun' : '') + '">' + d + '</span>' +
+      '<span class="nm">' + (v.name ? nm(v.name) : '(이름 없음)') + '</span><span class="bt"><span class="bt1">' + esc(talkFlat(v.text) || '(내용 없음)') + '</span>' + (sub || v.review ? '<span class="bt2">' + rv(v) + esc(sub) + '</span>' : '') + '</span></button>';
+    lastD = v.ymd;
+  });
+  return h;
 }
 function vList() {
   const L = V(), t = today(), all = M().visits.filter(v => !v.archived), pf = prefs();
@@ -2525,13 +2613,10 @@ function vList() {
   h += '<div class="today"><button data-act="tab" data-v="week"><b>' + nWeek + '</b><span>이번 주 심방</span></button>' +
     '<button class="a" data-act="quick" data-v="act" aria-pressed="' + (S.quick === 'act') + '"><b>' + nAct + '</b><span>남은 할 일</span></button>' +
     '<button class="w" data-act="tab" data-v="plan"><b>' + nStale + '</b><span>오래 못 만난 분</span></button></div>';
-  h += fline();
-  let last = null;
+  const mode = listMode();
+  h += fline(mode);
   if (!L.length) h += '<p class="empty">' + (M().visits.length ? '이 조건에 맞는 기록이 없습니다.' : '아직 기록이 없습니다. 아래 "기록"으로 첫 심방을 적어 보세요.') + '</p>';
-  L.forEach(v => {
-    if (v.ymd !== last) { const c = L.filter(x => x.ymd === v.ymd).length; h += '<div class="dhead"><b>' + dayLabel(v.ymd) + '</b><span>' + c + '명</span></div>'; last = v.ymd; }
-    h += card(v);
-  });
+  else h += '<div id="vlist" class="vl-' + mode + '">' + (mode === 'brief' ? listBrief(L) : listFull(L)) + '</div>';
   const nArch = M().visits.filter(v => v.archived).length;
   h += '<div class="foot-arc">' + (nArch && !S.showArch ? (pf.cutoff ? pf.cutoff.slice(0, 4) + '년 이전 ' : '') + '기록 ' + nArch + '건은 보관되어 있습니다 · <button data-act="arch">함께 보기</button><br>' : '') +
     '<span class="muted">' + new Date(DATA.at).toTimeString().slice(0, 5) + ' 에 시트에서 읽음 · <button data-act="reload">다시 읽기</button></span></div>';
@@ -2751,9 +2836,7 @@ function multiHtml(L, k, label, base, etcKey, ph, pre, kind) {
   const f = L.form, chosen = f[k] || [], list = base.concat(chosen.filter(x => !base.includes(x))), etcV = f[etcKey] || '', open = (L.open && L.open[k]) || !!norm(etcV);
   let h = '<div class="fld"><span class="lb">' + label + ' <small>여럿</small></span><div class="opts pills" data-k="' + k + '">';
   h += list.map(x => chip((pre || '') + esc(x), chosen.includes(x), 'ftog', k, x, kind ? kind(x) : '')).join('');
-  h += L.adding === k ? '<input class="inp optadd" data-optadd="' + k + '" placeholder="새 알약" enterkeyhint="done" autocomplete="off" aria-label="' + esc(label) + ' 알약 더하기">'
-    : '<button class="opt etc" data-act="aoptadd" data-k="' + k + '" aria-label="알약 더하기">' + IC.plus + '</button>';
-  h += '<button class="opt etc" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">직접 적기</button></div>';
+  h += plusHtml(L, k, label, open) + '</div>';
   if (open) h += '<input class="inp etc" data-f="' + etcKey + '" value="' + esc(etcV) + '" placeholder="' + esc(ph) + '" aria-label="' + esc(label) + ' 직접 적기">';
   return h + '</div>';
 }
@@ -2776,16 +2859,23 @@ function optCtx(L) {
   if (L.type === 'edit') return { opts: VISO, label: visOptLabel, change: visOptChange, note: '지난 심방 기록은 그대로입니다.' };
   return null;
 }
+// 알약 끝 단추 — 출석은 예전처럼 + · 직접 적기 둘. 심방 입력(1109-G2)은 '+ 더하기' 하나 → 누르면 '알약으로 더하기 · 이번 기록에만' 중에 고른다
+function plusHtml(L, k, label, open, noEtc) {
+  if (L.adding === k) return '<input class="inp optadd" data-optadd="' + k + '" placeholder="새 알약" enterkeyhint="done" autocomplete="off" aria-label="' + esc(label) + ' 알약 더하기">';
+  if (L.type === 'edit') {
+    if (noEtc) return '<button class="opt etc" data-act="aoptadd" data-k="' + k + '" aria-label="알약 더하기">' + IC.plus + '더하기</button>';
+    if (L.plus === k) return '<button class="opt etc pk" data-act="aoptadd" data-k="' + k + '">' + IC.plus + '알약으로 더하기</button><button class="opt etc pk" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">이번 기록에만</button>';
+    return '<button class="opt etc" data-act="aplus" data-k="' + k + '" aria-pressed="' + !!open + '">' + IC.plus + '더하기</button>';
+  }
+  return '<button class="opt etc" data-act="aoptadd" data-k="' + k + '" aria-label="알약 더하기">' + IC.plus + '</button>' + (noEtc ? '' : '<button class="opt etc" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">직접 적기</button>');
+}
 function attFieldHtml(L, k, noEtc) {
   const C = optCtx(L), f = L.form, cur = f[k] || '';
   let opts = C.opts()[k] || []; if (noEtc && cur && !opts.includes(cur)) opts = opts.concat([cur]);
   const open = !noEtc && ((L.open && L.open[k]) || (cur && !opts.includes(cur)));
   let h = '<div class="fld"><span class="lb">' + esc(C.label(k)) + '</span><div class="opts pills" data-k="' + k + '">';
   h += opts.map(v => '<button class="opt" data-act="aone" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + (cur === v) + '">' + esc(v) + '</button>').join('');
-  h += L.adding === k ? '<input class="inp optadd" data-optadd="' + k + '" placeholder="새 알약" enterkeyhint="done" autocomplete="off" aria-label="' + esc(C.label(k)) + ' 알약 더하기">'
-    : '<button class="opt etc" data-act="aoptadd" data-k="' + k + '" aria-label="알약 더하기">' + IC.plus + '</button>';
-  if (!noEtc) h += '<button class="opt etc" data-act="aetc" data-k="' + k + '" aria-pressed="' + !!open + '">직접 적기</button>';
-  h += '</div>';
+  h += plusHtml(L, k, C.label(k), open, noEtc) + '</div>';
   if (open) h += '<input class="inp etc" data-f="' + k + '" data-etc="1" value="' + esc(opts.includes(cur) ? '' : cur) + '" placeholder="직접 적기" aria-label="' + esc(C.label(k)) + ' 직접 적기">';
   return h + '</div>';
 }
@@ -3216,8 +3306,9 @@ function talkCardHtml(L, i) {
 }
 function talkHtml(L) {
   talkInit(L);
-  return '<div class="fsec">나눈 이야기<small class="fsc" data-tkcnt>주제 ' + L.talk.length + ' · 말 ' + talkCount(L) + '</small></div><div class="fld" id="talkBox">' + L.talk.map((tp, i) => talkCardHtml(L, i)).join('') +
-    '<button class="tk-new" data-act="tknew">' + IC.plus + '새 주제 칸</button><div class="hint" style="text-align:center">이야기 주제가 바뀌면 눌러 주세요. 칸마다 제목 · 태그가 따로 붙고, 시트에는 한 칸 글로 들어갑니다.</div></div>';
+  const inf = '이야기 주제가 바뀌면 \'새 주제 칸\' 을 눌러 주세요. 칸마다 제목 · 태그가 따로 붙고, 시트에는 한 칸 글로 들어갑니다.';   // 1109-G2 안내는 i 안으로
+  return '<div class="fsec">나눈 이야기<small class="fsc" data-tkcnt>주제 ' + L.talk.length + ' · 말 ' + talkCount(L) + '</small>' + einfo(L, 'talk', inf) + '</div>' + einfoBody(L, 'talk', inf) + '<div class="fld" id="talkBox">' + L.talk.map((tp, i) => talkCardHtml(L, i)).join('') +
+    '<button class="tk-new" data-act="tknew">' + IC.plus + '새 주제 칸</button></div>';
 }
 // 그 칸만 고쳐 그리기 — 입력줄(자판)은 그대로 둔다
 function talkPatch(L, i) {
@@ -3301,29 +3392,67 @@ function talkPasteIn(L, text) {
   L.talk.splice(L.tA + 1, 0, ...rest); L.tA += rest.length; L.tW = talkWhoAfter(L.talk[L.tA]); L.tD = ''; talkSync(L); render(); talkFocusIn();
   toast('붙여 넣은 글을\n' + (rest.length ? '주제 ' + rest.length + '칸 · ' : '') + '말 ' + n + '줄로 나눠 넣었습니다', 2500);
 }
+// 1109-G2 새 기록 — 넓은 화면(700px 이상, 태블릿 · PC) = 시안 A '칸마다 흰 카드', 좁은 화면(폰) = 시안 C '꼭 쓸 것 먼저'
+//   C: 누구 · 언제 · 나눈 이야기만 펴 두고, 고르는 칸(구분 · 어떻게 · 장소 · 깊이 · 태그 · 할 일)은 '고른 값 한 줄' → 누르면 그 자리에서 펴진다(하나씩)
+//   공통: 고른 알약은 꽉 채운 초록 · 칸 제목은 진하게 · 긴 안내는 칸 제목 옆 i 안으로 · + 와 직접 적기는 '+ 더하기' 하나로
+function editWide() { return (document.documentElement.clientWidth || innerWidth) >= 700; }
+function einfo(L, k, txt) { return txt ? '<button class="einf" data-act="einfo" data-k="' + k + '" aria-pressed="' + (L.info === k) + '" aria-label="도움말">i</button>' : ''; }
+function einfoBody(L, k, txt) { return L.info === k && txt ? '<div class="einfo-b">' + txt + '</div>' : ''; }
+function eSum(L, k) {
+  const f = L.form, j = (a, e, pre) => (a || []).map(x => (pre || '') + x).concat(norm(e || '') ? [norm(e)] : []).join(pre ? ' ' : ', ');
+  if (k === 'roles') return j(f.roles, f.rolesEtc);
+  if (k === 'method') return f.method || norm(f.methodEtc || '');
+  if (k === 'depth') return f.depth || '';
+  if (k === 'tags') return j(f.tags, f.tagsEtc, '#');
+  if (k === 'acts') return j(f.acts, f.actsEtc);
+  return f[k] || '';
+}
+// 알약은 눌러도 다시 그리지 않으므로(스크롤 · 쓰던 칸 그대로) 접힌 줄의 '고른 값' 글자만 그 자리에서 맞춘다
+function crowSync(L) {
+  if (!L || L.type !== 'edit') return;
+  document.querySelectorAll('.layer:last-child .crow').forEach(c => { const v = eSum(L, c.dataset.crow), e = c.querySelector('.crow-h .v'); if (e) { e.textContent = v || '고르기'; e.classList.toggle('none', !v); } });
+}
+function crow(L, k, label, body) {
+  const on = L.crow === k, v = eSum(L, k);
+  return '<div class="crow' + (on ? ' open' : '') + '" data-crow="' + k + '"><button class="crow-h" data-act="crow" data-k="' + k + '" aria-expanded="' + on + '"><span>' + esc(label) + '</span><span class="v' + (v ? '' : ' none') + '">' + esc(v || '고르기') + '</span>' + IC_CHEV + '</button><div class="crow-b"><div' + (on ? '' : ' inert') + '>' + body + '</div></div></div>';
+}
 function lEdit(L) {
-  const f = L.form, FO = filterOptions(M().visits, DATA.opts), known = n => !!M().people[norm(n)];
-  let h = lhead(L.key ? '기록 고치기' : '심방했어요', L) + '<div class="ph-body" style="padding-bottom:110px">';
-  h += '<div class="fsec">누구를</div><div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + suggHtml(L) + '</div>' + recentHtml(L) +
+  const f = L.form, FO = filterOptions(M().visits, DATA.opts), known = n => !!M().people[norm(n)], wide = editWide();
+  L.wide = wide;
+  let h = lhead(L.key ? '기록 고치기' : '심방했어요', L) + '<div class="ph-body edf ' + (wide ? 'e-wide' : 'e-narrow') + '" style="padding-bottom:110px">';
+  const nameF = '<div class="fld"><input class="inp" data-f="name" value="' + esc(f.name) + '" placeholder="성도 이름" autocomplete="off" aria-label="성도 이름"><div class="sugg" id="nameSugg">' + suggHtml(L) + '</div>' + recentHtml(L) +
     (norm(f.name) && !known(f.name) ? '<div class="hint">처음 적는 이름입니다. 이름이 맞는지 한 번 봐 주세요.</div>' : '') + '</div>';
   // 고를 수 있는 선택지 = 폼에 있는 것(숨긴 것 · 기타 글은 빼고) + 이 기록에 이미 고른 것
   const offer = (optKey, foList, chosen) => { const base = DATA.opts && DATA.opts[optKey] && DATA.opts[optKey].length ? DATA.opts[optKey] : foList; return base.concat((chosen || []).filter(x => !base.includes(x))); };
-  h += multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)');
-  h += '<div class="fsec">언제 · 어디서 · 어떻게</div>' + attDateHtml(f, 'ymd');
-  h += '<div class="fld"><span class="lb">어떻게</span><div class="opts" id="methodChips">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') + '</div><input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타"></div>';
+  const rolesF = multiHtml(L, 'roles', '구분', offer('roles', FO.role, []), 'rolesEtc', '직접 적기 (쉼표로 여럿)');
+  const mOpen = (L.open && L.open.method) || !!norm(f.methodEtc || '');
+  const methodF = '<div class="fld"><span class="lb">어떻게</span><div class="opts" id="methodChips" data-k="method">' + FO.method.filter(x => (DATA.opts && DATA.opts.methods ? DATA.opts.methods.includes(x) : true)).map(x => chip((MI[x] || MI['기타']) + esc(x), f.method === x, 'fone', 'method', x)).join('') +
+    '<button class="opt etc" data-act="aetc" data-k="method" aria-pressed="' + mOpen + '">' + IC.plus + '기타</button></div>' + (mOpen ? '<input class="inp etc" data-f="methodEtc" value="' + esc(f.methodEtc) + '" placeholder="기타 방식 (예: 가정 방문)" aria-label="방식 기타">' : '') + '</div>';
   // 1109-D2 장소 · 사주심/사드림 — 출석처럼 알약(더하기 · 길게 눌러 고치기 · 끌어 옮기기). 시트에 그 열이 있을 때만 적을 수 있다
-  h += DATA.hasPlace ? attFieldHtml(L, 'place') : '<p class="hint">장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.</p>';
-  if (DATA.hasPay) h += attFieldHtml(L, 'pay', true);
-  else if (formQOf(DATA.form, 'pay')) h += '<p class="hint">폼에는 \'' + esc(formQOf(DATA.form, 'pay').title) + '\' 질문이 있는데 시트에 아직 그 열이 없습니다. 시트 응답 탭 머리글을 봐 주세요.</p>';
-  if (DATA.hasPlace || DATA.hasPay) h += '<p class="hint">장소 · ' + esc(visOptLabel('pay')) + ' 알약은 누른 채 끌면 순서를 바꿉니다.</p>';
-  if (L.planWhy) h += '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>';
-  h += talkHtml(L);
-  h += '<div class="fsec">정리</div><div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
-  h += multiHtml(L, 'tags', '태그', offer('tags', FO.tag, []), 'tagsEtc', '직접 적기 (쉼표로 여럿)', '#');
-  { const tt = talkTags(L.talk); if (tt.length) h += '<div class="tk-auto">주제 칸 태그도 함께 저장됩니다 ' + tt.map(t => '<span class="tp-tag">#' + esc(t) + '</span>').join('') + '</div>'; }
-  h += multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4');
-  h += '<p class="hint">알약을 길게 누르면(PC 는 오른쪽 단추) 이름 바꾸기 · 지우기. 구분 · 태그 · 할 일은 구글폼 선택지도 함께 바뀝니다.</p>';
-  if (L.key) h += '<p class="muted">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
+  const placeF = DATA.hasPlace ? attFieldHtml(L, 'place') : '', payF = DATA.hasPay ? attFieldHtml(L, 'pay', true) : '';
+  let whereInfo = '';
+  if (!DATA.hasPlace) whereInfo += '장소 칸은 시트에 아직 없습니다. 폼에 \'장소\' 질문을 더하면 생깁니다.<br>';
+  if (!DATA.hasPay && formQOf(DATA.form, 'pay')) whereInfo += '폼에는 \'' + esc(formQOf(DATA.form, 'pay').title) + '\' 질문이 있는데 시트에 아직 그 열이 없습니다. 시트 응답 탭 머리글을 봐 주세요.<br>';
+  const pillInfo = '알약을 길게 누르면(PC 는 오른쪽 단추) 이름 바꾸기 · 지우기, 누른 채 끌면 순서를 바꿉니다. 구분 · 태그 · 할 일은 구글폼 선택지도 함께 바뀝니다.<br>\'+ 더하기\' 에서 알약으로 더하면 다음에도 쓰고, \'이번 기록에만\' 은 이 기록에만 적힙니다.';
+  const depthF = '<div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
+  const tagsF = multiHtml(L, 'tags', '태그', offer('tags', FO.tag, []), 'tagsEtc', '직접 적기 (쉼표로 여럿)', '#');
+  let ttF = ''; { const tt = talkTags(L.talk); if (tt.length) ttF = '<div class="tk-auto">주제 칸 태그도 함께 저장됩니다 ' + tt.map(t => '<span class="tp-tag">#' + esc(t) + '</span>').join('') + '</div>'; }
+  const actsF = multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4');
+  const planF = L.planWhy ? '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>' : '';
+  const sec = (k, t, info) => '<div class="fsec">' + t + einfo(L, k, info) + '</div>' + einfoBody(L, k, info);
+  if (wide) {
+    h += '<div class="eblk">' + sec('who', '누구를') + nameF + rolesF + '</div>';
+    h += '<div class="eblk">' + sec('when', '언제 · 어디서 · 어떻게', whereInfo + pillInfo) + attDateHtml(f, 'ymd') + methodF + placeF + payF + planF + '</div>';
+    h += '<div class="eblk">' + talkHtml(L) + '</div>';
+    h += '<div class="eblk">' + sec('sum', '정리', pillInfo) + depthF + tagsF + ttF + actsF + '</div>';
+  } else {
+    h += sec('who', '누구를 · 언제') + nameF + attDateHtml(f, 'ymd') + planF;
+    h += talkHtml(L);
+    h += sec('sum', '정리', whereInfo + pillInfo) + '<div class="crows">' + crow(L, 'roles', '구분', rolesF) + crow(L, 'method', '어떻게', methodF) +
+      (placeF ? crow(L, 'place', visOptLabel('place'), placeF) : '') + (payF ? crow(L, 'pay', visOptLabel('pay'), payF) : '') +
+      crow(L, 'depth', '대화 깊이', depthF) + crow(L, 'tags', '태그', tagsF) + crow(L, 'acts', '할 일', actsF) + '</div>' + ttF;
+  }
+  if (L.key) h += '<p class="muted" style="margin-top:12px">바꾼 칸만 시트에 씁니다. 저장한 뒤 잠깐 \'되돌리기\' 가 뜹니다.</p>';
   h += omenuHtml(L);
   return h + '</div><div class="ph-foot"><button class="btn pri" data-act="saverec">' + (L.key ? '고친 것 저장' : '완료') + '</button></div>';
 }
@@ -3777,6 +3906,7 @@ document.addEventListener('input', e => {
   if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
   if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
+  crowSync(L);
 });
 document.addEventListener('compositionend', searchInput);
 document.addEventListener('click', e => {
@@ -3807,11 +3937,11 @@ document.addEventListener('click', e => {
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit')) return; L.dirty = true;
-    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); return; }
+    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); crowSync(L); return; }
     else if (a === 'fone') {
       L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = '';
       chipsSync(k, L.form[k]); if (k === 'method') { const ei = document.querySelector('.layer:last-child [data-f="methodEtc"]'); if (ei) ei.value = ''; }
-      return;
+      crowSync(L); return;
     }
     else { const p = M().people[v] || {}, RO = filterOptions(M().visits, DATA.opts).role; L.form.name = v; L.form.roles = (p.roles || []).filter(x => RO.includes(x)); L.form.rolesEtc = (p.roles || []).filter(x => !RO.includes(x)).join(', '); }
     render(); return;
@@ -3845,7 +3975,7 @@ document.addEventListener('click', e => {
   if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
   if (a === 'aone' || a === 'attpick') {
     const L = topLayer(); if (!optCtx(L) || (a === 'attpick' && L.type !== 'attedit')) return; L.dirty = true;
-    if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; return; }
+    if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; crowSync(L); return; }
     else {
       const parts = String(L.form.name || '').split(/[,，、]/); parts[parts.length - 1] = (parts.length > 1 ? ' ' : '') + v; L.form.name = parts.join(',');
       if (!L.id && splitNames(L.form.name).length === 1) { const hb = attHabit(AT(), v); if (!L.form.svc) L.form.svc = hb.svc; if (!L.form.seat) L.form.seat = hb.seat; }
@@ -3853,7 +3983,10 @@ document.addEventListener('click', e => {
     render(); return;
   }
   if (a === 'adate') { const L = topLayer(); if (L && (L.type === 'attedit' || L.type === 'edit')) { L.form[k || 'date'] = v; L.dirty = true; render(); } return; }
-  if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child .pills[data-k="' + k + '"] ~ input.etc'); if (i) i.focus(); } } return; }
+  if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; L.plus = null; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child .pills[data-k="' + k + '"] ~ input.etc, .layer:last-child #methodChips[data-k="' + k + '"] ~ input.etc'); if (i) i.focus(); } } return; }
+  if (a === 'aplus') { const L = topLayer(); if (L) { L.plus = L.plus === k ? null : k; render(); } return; }
+  if (a === 'crow') { const L = topLayer(); if (L) { L.crow = L.crow === k ? null : k; L.plus = null; render(); } return; }
+  if (a === 'einfo') { const L = topLayer(); if (L) { L.info = L.info === k ? null : k; render(); } return; }
   if (a === 'cellpick') { openLayer('cellpick'); if (CELLS.state !== 'ok') loadCells(); return; }
   if (a === 'cellreload') { loadCells(); return; }
   if (a === 'cellname') {
@@ -3861,7 +3994,7 @@ document.addEventListener('click', e => {
     S.layers.pop(); E.form.name = v; E.dirty = true; render(); return;
   }
   if (a === 'recentmore') { const L = topLayer(); if (L && L.type === 'edit') { L.recentAll = !L.recentAll; render(); } return; }
-  if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
+  if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; L.plus = null; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
   if (a === 'aoptx') { const L = topLayer(); if (optCtx(L)) { L.omenu = null; render(); } return; }
   if (a === 'aoptren' || a === 'aoptdel') {
     const L = topLayer(), C = optCtx(L); if (!C || !L.omenu) return; const { k: kk, v: vv } = L.omenu; L.omenu = null;
@@ -3961,6 +4094,7 @@ document.addEventListener('click', e => {
   else if (a === 'clear') { for (const x in S.filt) S.filt[x] = []; S.quick = ''; }
   else if (a === 'hue') { hueSet(!hueOn()); toast(hueOn() ? '이름을 기도노트 표시색으로\n칠합니다' : '이름 색을 껐습니다'); }
   else if (a === 'hueinfo') S.hueInfo = !S.hueInfo;
+  else if (a === 'lmode') { save({ lmode: listMode() === 'brief' ? 'full' : 'brief' }); render(); const vl = $('vlist'); if (vl && !RM.matches) vl.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.22,.8,.24,1)' }); return; }
   else if (a === 'arch') { S.showArch = !S.showArch; toast(S.showArch ? '보관 기록도 함께 봅니다' : '보관 기록을 다시 감춥니다'); }
   else if (a === 'mday') S.mday = v;
   else if (a === 'grp') { S.grp = v; if (S.view !== 'collect') { goTab('collect'); return; } }
@@ -4004,6 +4138,8 @@ document.addEventListener('focusout', () => {
   clearTimeout(typingT);
   typingT = setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 150);   // 칸에서 칸으로 옮길 땐 깜빡이지 않게
 });
+// 1109-G2 폭이 700px 을 넘나들면(아이패드 돌리기 · PC 창 크기) 새 기록 화면을 A ⇄ C 로 다시 그린다
+addEventListener('resize', () => { const L = topLayer(); if (L && L.type === 'edit' && L.wide !== undefined && L.wide !== editWide()) render(); });
 if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (isField(document.activeElement)) keepInView(document.activeElement); else typingSync(); });
 // 1108-B4 겹 화면 닫기 손짓 — ① 왼쪽 가장자리(24px)에서 오른쪽으로 밀기 ② 맨 위에서 머리줄을 아래로 끌기.
 //   손가락을 따라 움직이고, 폭(높이)의 ¼ 넘게 또는 빠르게 튕기면 닫히고, 못 미치면 제자리로. 쓰던 글이 있으면 먼저 묻는다.
