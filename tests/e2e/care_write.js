@@ -42,7 +42,7 @@ const J0 = v => JSON.stringify(v);
 // 1109-T 나눈 이야기는 주제 칸의 입력줄로 넣는다 — [[누가(s 성도 · m 나 · n 메모), 글], …]
 // 1109-T5 설정은 탭 넷 — 그 탭을 먼저 누른다(넘기는 움직임 0.45초)
 const stab = async (pg, name) => { await pg.click('.layer:last-child [data-act="stab"]:text-is("' + name + '")'); await pg.waitForTimeout(500); };
-const talk = async (pg, lines, scope) => { scope = scope || '.layer:last-child'; for (const [w, t] of lines) { await pg.click(scope + ' [data-act="tkw"][data-v="' + w + '"]'); await pg.fill(scope + ' [data-f="tk:in"]', t); await pg.press(scope + ' [data-f="tk:in"]', 'Enter'); } };
+const talk = async (pg, lines, scope) => { scope = scope || '.layer:last-child'; for (const [w, t] of lines) { await pg.click(scope + ' [data-act="tkw"][data-v="' + w + '"]'); await pg.fill(scope + ' [data-f="tk:in"]', t); await pg.click(scope + ' [data-act="tkadd"]'); } };
 // 1109-G2 심방 입력은 '+ 더하기' 하나 → 누르면 '알약으로 더하기 · 이번 기록에만'. 그 둘을 꺼내 둔다
 const plus = async (pg, scope, k) => { if (await pg.$(scope + ' [data-act="aplus"][data-k="' + k + '"]')) { await pg.click(scope + ' [data-act="aplus"][data-k="' + k + '"]'); await pg.waitForTimeout(150); } };
 const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.stringify(want); if (a === b) { pass++; console.log('  ✓', name); } else { fail++; console.log('  ✗', name, '\n    결과:', a, '\n    기대:', b); } };
@@ -902,9 +902,11 @@ async function route(r) {
     await page.click(LE + ' [data-act="tktag"][data-k="0"][data-v="가정"]'); await page.waitForTimeout(100);
     await page.click(LE + ' [data-act="tktags"][data-k="0"]'); await page.waitForTimeout(150);
     await page.fill(IN, '다음 주 수술해요'); await page.evaluate(q => { window.__in = document.querySelector(q); }, IN); await page.press(IN, 'Enter');
-    eq('㉘ Enter → 성도 말 한 줄 · 다음 차례는 저절로 나 · 입력 칸은 그대로 남아 자판이 안 내려간다', [await lines(0), await on(), await page.evaluate(q => document.querySelector(q) === window.__in && document.activeElement === window.__in && window.__in.value === '', IN)], [['s:다음 주 수술해요'], 'm', true]);
-    await page.fill(IN, '같이 기도해요'); await page.press(IN, 'Enter');
-    await page.fill(IN, '사흘 입원'); await page.press(IN, 'Enter');
+    eq('㉘ (T6) 입력 칸에서 Enter = 줄바꿈(넣지 않음)', [await page.inputValue(IN), await lines(0)], ['다음 주 수술해요\n', []]);
+    await page.fill(IN, '다음 주 수술해요'); await page.click(LE + ' [data-act="tkadd"]');
+    eq('㉘ 넣기 → 성도 말 한 줄 · 다음 차례는 저절로 나 · 입력 칸은 그대로 남아 자판이 안 내려간다', [await lines(0), await on(), await page.evaluate(q => document.querySelector(q) === window.__in && document.activeElement === window.__in && window.__in.value === '', IN)], [['s:다음 주 수술해요'], 'm', true]);
+    await page.fill(IN, '같이 기도해요'); await page.click(LE + ' [data-act="tkadd"]');
+    await page.fill(IN, '사흘 입원'); await page.click(LE + ' [data-act="tkadd"]');
     await talk(page, [['n', '목소리가 지쳐 있었음']]);
     eq('㉘ 성도 ↔ 나 번갈아 · 메모는 차례를 안 바꾼다', [await lines(0), await on()], [['s:다음 주 수술해요', 'm:같이 기도해요', 's:사흘 입원', 'n:목소리가 지쳐 있었음'], 'n']);
     await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.waitForTimeout(100);
@@ -912,13 +914,18 @@ async function route(r) {
     await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.click(LE + ' [data-act="tkwho"][data-k="0:2"]'); await page.waitForTimeout(100);
     eq('㉘ 나 → 메모 → 성도', (await lines(0))[2], 's:사흘 입원');
     await page.click(LE + ' [data-act="tkedit"][data-k="0:1"]'); await page.waitForTimeout(150);
-    await page.fill(LE + ' [data-f="tk:l:0:1"]', '전날 같이 기도해요'); await page.press(LE + ' [data-f="tk:l:0:1"]', 'Enter'); await page.waitForTimeout(200);
-    eq('㉘ 글을 누르면 고치고 Enter 로 마침', (await lines(0))[1], 'm:전날 같이 기도해요');
+    await page.press(LE + ' [data-f="tk:l:0:1"]', 'Enter');
+    eq('㉘ (T6) 고치는 줄에서 Enter = 줄바꿈(마치지 않음)', await page.inputValue(LE + ' [data-f="tk:l:0:1"]'), '같이 기도해요\n');
+    await page.fill(LE + ' [data-f="tk:l:0:1"]', '전날 같이 기도해요'); await page.click(LE + ' .tp-n'); await page.waitForTimeout(200);
+    eq('㉘ 글을 누르면 고치고, 다른 곳을 누르면 마침', (await lines(0))[1], 'm:전날 같이 기도해요');
     await page.click(LE + ' [data-act="tknew"]'); await page.waitForTimeout(400);
     eq('㉘ 새 주제 칸 → 칸 둘 · 입력줄이 새 칸으로 · 성도 차례', [await page.$$eval(LE + ' .tp', x => x.length), await page.$$eval(LE + ' .tp.on', x => x.map(e => e.dataset.tp)), await on(), await page.evaluate(() => document.activeElement.dataset.f)], [2, ['1'], 's', 'tk:in']);
     await talk(page, [['s', '큰아이가 입대해요']]);
     await page.click(LE + ' [data-act="tktags"][data-k="1"]'); await page.waitForTimeout(150);
-    await page.fill(LE + ' [data-f="tk:g:1"]', '자녀 문제'); await page.press(LE + ' [data-f="tk:g:1"]', 'Enter'); await page.waitForTimeout(150);
+    eq('㉘ (T6) 칸에서 고른 태그는 정리 태그 알약에도 켜짐', await page.$$eval(LE + ' .pills[data-k="tags"] [aria-pressed="true"]', x => x.map(e => e.dataset.v).sort()), ['가정', '건강']);
+    await page.click(LE + ' [data-act="tkplus"][data-k="1"]'); await page.waitForTimeout(150);
+    await page.fill(LE + ' [data-f="tk:g:1"]', '자녀 문제'); await page.press(LE + ' [data-f="tk:g:1"]', 'Enter'); await page.waitForTimeout(2500);
+    eq("㉘ (T6) 칸 '+ 더하기' → 알약으로 더해 속성 탭에 · 칸 · 정리 태그에 켜짐", [tab('속성').rows.some(r => r[0] === '태그' && r[1] === '자녀 문제'), await page.$$eval(LE + ' .tp[data-tp="1"] .tp-tag', x => x.map(e => e.textContent)), await page.evaluate(() => topLayer().form.tags.includes('자녀 문제'))], [true, ['#자녀 문제'], true]);
     await page.click(LE + ' [data-act="tktags"][data-k="1"]'); await page.waitForTimeout(150);
     await page.click(LE + ' [data-act="tkw"][data-v="s"]');
     await page.evaluate(q => { const dt = new DataTransfer(); dt.setData('text/plain', '그래도 걱정돼요\n나: 기도할게요'); document.querySelector(q).dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })); }, IN); await page.waitForTimeout(300);
@@ -935,14 +942,14 @@ async function route(r) {
     await page.click(LE + ' [data-act="tknew"]'); await page.waitForTimeout(300);
     await page.click(LE + ' [data-act="tkmenu"][data-k="2"]'); await page.waitForTimeout(150);
     await page.click(LE + ' [data-act="tkdel"][data-k="2"]'); await page.waitForTimeout(200);
-    eq('㉘ 빈 칸 지우기는 묻지 않고 · 정리 태그 아래 칸 태그 안내', [await page.$$eval(LE + ' .tp', x => x.length), await page.$$eval(LE + ' .tk-auto .tp-tag', x => x.map(e => e.textContent))], [2, ['#건강', '#가정', '#자녀 문제']]);
+    eq('㉘ 빈 칸 지우기는 묻지 않음 · 정리 태그 = 칸 태그', [await page.$$eval(LE + ' .tp', x => x.length), (await page.$$eval(LE + ' .pills[data-k="tags"] [aria-pressed="true"]', x => x.map(e => e.dataset.v))).sort()], [2, ['가정', '건강', '자녀 문제']]);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/talk_edit.png', fullPage: true });
     await page.click(LE + ' [data-act="saverec"]'); await page.waitForTimeout(1500);
     const row = () => RT.rows.find(r => r[2] === '주제사람') || [];
     eq('㉘ 시트 내용 칸 = ■ 줄 · 성도: · 나: · 메모(빈 줄 뒤) — 한 칸 글', row()[5], '■ 어머님 수술 #건강 #가정\n성도: 다음 주 수술해요\n나: 전날 같이 기도해요\n성도: 사흘 입원\n\n목소리가 지쳐 있었음\n\n■ #자녀 문제\n성도: 큰아이가 입대해요\n성도: 그래도 걱정돼요\n나: 기도할게요\n\n덧말');
     eq('㉘ 태그 칸 = 칸 태그 모음', row()[6], '건강, 가정, 자녀 문제');
     await page.evaluate(() => openEdit(M().visits.find(v => v.name === '주제사람').key)); await tidy();
-    eq('㉘ 고치기 → 칸 · 제목 · 태그가 그대로 돌아온다 · 정리 태그 알약은 눌려 있지 않다', [await page.$$eval(LE + ' .tp-t', x => x.map(e => e.value)), await page.$$eval(LE + ' .tp[data-tp="1"] .tp-tag', x => x.map(e => e.textContent)), await page.evaluate(() => topLayer().form.tags.length)], [['어머님 수술', ''], ['#자녀 문제'], 0]);
+    eq('㉘ 고치기 → 칸 · 제목 · 태그가 그대로 · 정리 태그 알약도 켜져 있다', [await page.$$eval(LE + ' .tp-t', x => x.map(e => e.value)), await page.$$eval(LE + ' .tp[data-tp="1"] .tp-tag', x => x.map(e => e.textContent)), await page.evaluate(() => topLayer().form.tags.slice().sort())], [['어머님 수술', ''], ['#자녀 문제'], ['가정', '건강', '자녀 문제']]);
     const n0 = LOG.length;
     await page.click(LE + ' [data-act="saverec"]'); await page.waitForTimeout(1000);
     eq('㉘ 안 바꾸고 저장 → 시트에 아무것도 안 쓴다', LOG.slice(n0).filter(x => x[0] === 'set').length, 0);
