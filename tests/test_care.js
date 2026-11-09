@@ -43,7 +43,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -596,6 +596,14 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   sc.eq('㉕ 탭에 없는 칸(사주심)은 기본값으로', J([U.place, U.pay]), [['스타벅스'], ['사주심', '사드림']]);
   sc.eq('㉕ 탭에 쓸 줄', J(A.optsRows({ place: ['집'], pay: ['사주심'] }, A.VIS_OPT_FIELDS)), [['칸', '값'], ['장소', '집'], ['사주심 / 사드림', '사주심']]);
   sc.eq('㉕ 출석 선택지 읽기 · 쓰기는 예전 그대로', J(A.attOptsRows(A.attOptsParse([['칸', '값'], ['자리', '맨 앞']]))), [['칸', '값'], ['자리', '맨 앞']]);
+}
+
+// ㉖ (1109-E2) '누구를' 아래 최근 이름 — 심방 · 출석 합쳐 최근 순
+{
+  const V = [{ name: '가나다', ymd: '2026-10-01' }, { name: '라마바', ymd: '2026-11-05' }, { name: '가 나다', ymd: '2026-11-01' }, { name: '', ymd: '2026-11-09' }];
+  const T = [{ name: '사아자', date: '2026-11-08' }, { name: '라마바', date: '2026-10-01' }, { name: '차카타', date: '2026-11-05' }];
+  sc.eq('㉖ 마지막 날 최근 순 · 띄어쓰기만 다른 이름은 하나 · 같은 날은 가나다 순 · 빈 이름 뺌', J(A.recentNames(V, T)), ['사아자', '라마바', '차카타', '가나다']);
+  sc.eq('㉖ 비어 있으면 빈 목록', J(A.recentNames([], null)), []);
 }
 
 sc.done();
