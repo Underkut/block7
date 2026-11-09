@@ -401,6 +401,8 @@ sc.eq('③ 상태 이름', J(['submitted', 'revision_requested', 'draft'].map(s 
   sc.eq('⑱ K1 별을 누르면 계정 내용이 올 때까지 기다린 뒤 없을 때만 AI 를 부른다', /if \(!aiGet\(k\) && !DEMO\) \{ btn\.classList\.add\('busy'\); try \{ await aiReady\(\); \}/.test(HTML) && /AI\.loaded = true;/.test(HTML), true);
   sc.eq('⑱ K1 다른 기기에서 온 요약을 지금 화면에 입힌다', /aiRefreshShown\(\); aiAcctUi\(\);/.test(HTML) && /if \(s && s !== el\.dataset\.aiv\) aiShow\(el, b, s, true\)/.test(HTML), true);
   sc.eq('⑱ K1 로그인 안 한 기기에서 만들면 한 번 알린다', /aiCloud\(\{ sum: patch \}\); aiLocalNote\(\);/.test(HTML) && /aiCloud\(\{ kw: patch \}\); aiLocalNote\(\);/.test(HTML), true);
+  sc.eq('⑱ K3 보내기 뜻 아이콘은 단추가 아니다(span · aria-hidden) · 주인공 있는 글에만', /<span class="sendico" aria-hidden="true"/.test(HTML) && /\(DEMO && subjOf\(el\) \? sendRowHtml\(\) : ''\)/.test(HTML), true);
+  sc.eq('⑱ K3 화면 폭이 바뀌어 다시 접을 때 보내기 줄도 함께 걷는다 (겹쳐 쌓이지 않게)', /r\.classList\.contains\('sendrow'\)\) r\.remove\(\)/.test(HTML), true);
   sc.eq('⑱ 보내기 전에 anonText 를 거친다', /const \{ text: anon, map \} = anonText\(text, aiNames\(\), subject\)/.test(HTML) && /parts: \[\{ text: aiPrompt\(anon, aiLen\(\)\) \}\]/.test(HTML), true);
 }
 

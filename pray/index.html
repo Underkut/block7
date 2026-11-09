@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 기도노트 v. 26-1109-1 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
+<!-- 기도노트 v. 26-1109-2 — BLOCK7·Sweeter 와 별개인 독립 앱 (pray/ → sweeter.my/pray/) -->
 <html lang="ko" data-mode="dark">
 <head>
 <meta charset="utf-8">
@@ -26,7 +26,7 @@
 if (/^(www\.)?block7\.my$/.test(location.hostname)) {
   location.replace('https://sweeter.my/pray/' + location.search + location.hash);
 }
-const APP_VERSION = 'v. 26-1109-1';
+const APP_VERSION = 'v. 26-1109-2';
 </script>
 <script id="pray-core">
 // ═══════════════════════════════════════════════════════════
@@ -2406,6 +2406,12 @@ body.dragging #toast{pointer-events:none}   /* 끄는 동안 뜬 알림이 놓�
 .field{margin:6px 20px 0;width:calc(100% - 40px);min-height:46px;border:1px solid var(--bd);border-radius:12px;background:var(--s1);padding:11px 13px;font-size:15px;outline:none;resize:none;transition:border-color .2s;display:block}
 .field:focus{border-color:var(--ac)}
 textarea.field{min-height:72px;line-height:1.6}
+/* 1109-K2 메모 칸: 글을 치면 저절로 늘어남(화면 절반까지) · 우하단 손잡이로 높이를 정하면 그 높이를 지킴 */
+.notebox{position:relative}
+.notebox textarea.field{overflow-y:auto;padding-bottom:18px}
+.note-grip{position:absolute;right:20px;bottom:0;width:36px;height:36px;touch-action:none;cursor:ns-resize;-webkit-user-select:none;user-select:none}
+.note-grip::after{content:'';position:absolute;right:7px;bottom:7px;width:10px;height:10px;border-right:1.6px solid var(--tx3,#999);border-bottom:1.6px solid var(--tx3,#999);border-bottom-right-radius:4px;opacity:.55;transition:opacity .2s}
+.note-grip:hover::after,.note-grip.on::after{opacity:1}
 .addline{display:flex;align-items:center;gap:8px;margin:8px 20px 0;padding:0 6px 0 14px;border-radius:12px;border:1px dashed var(--bd2);min-height:46px}
 .addline input{flex:1;border:0;background:transparent;outline:none;font-size:15px;min-width:0}
 .addline .ib{width:38px;height:38px}
@@ -4010,9 +4016,48 @@ LAYERS.target = L => {
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + t.id + '" placeholder="예) 전화 한번 하기 · 대화하며 풀기">' + esc(t.memo) + '</textarea>' +
     '<div style="padding:10px 20px 0"' + (t.memo ? '' : ' hidden') + ' data-todo="1"><button class="ghost" data-a="todo" data-id="' + t.id + '">' + ico('up') + 'BLOCK7 할일로 보내기</button></div>';
   b += prioBlock(t) + daysBlock(t) + stripBlock(t);
-  b += '<div class="label">메모</div><textarea class="field" rows="3" data-f="note" data-id="' + t.id + '" placeholder="마음에 두고 싶은 것">' + esc(t.note) + '</textarea>';
+  b += '<div class="label">메모</div><div class="notebox"><textarea class="field" rows="3" data-f="note" data-id="' + t.id + '" placeholder="마음에 두고 싶은 것">' + esc(t.note) + '</textarea><span class="note-grip" aria-label="메모 칸 높이 조절 (두 번 누르면 저절로)" title="끌어서 높이 조절 · 두 번 누르면 저절로"></span></div>';
   return { title: kindLabel(t), body: b, menu: 'target-menu' };
 };
+// ── 1109-K2 메모 칸 높이 (HB 2026-11-09) ──
+// 처음엔 글 길이에 맞춰 저절로 늘어난다(화면 절반에서 멈추고 그 뒤는 칸 안 스크롤).
+// 우하단 손잡이로 끌어 높이를 정하면 그 높이를 지킨다(이 기기 'pray.noteh'). 손잡이를 두 번 누르면 다시 저절로.
+const NOTE_H = 'pray.noteh';
+function noteH() { try { return +localStorage.getItem(NOTE_H) || 0; } catch (e) { return 0; } }
+function noteFit(ta) {
+  if (!ta || !ta.isConnected) return;
+  const fixed = noteH(); if (fixed) { ta.style.height = fixed + 'px'; return; }
+  const max = Math.max(160, Math.round(window.innerHeight * 0.5));
+  ta.style.height = 'auto'; ta.style.height = Math.min(max, ta.scrollHeight + 2) + 'px';
+}
+document.addEventListener('input', e => { const t = e.target; if (t && t.matches && t.matches('.notebox textarea')) noteFit(t); });
+new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.matches('.notebox textarea')) noteFit(n); else if (n.querySelector) n.querySelectorAll('.notebox textarea').forEach(noteFit); } })
+  .observe(document.documentElement, { childList: true, subtree: true });
+(function () {
+  let st = null, lastTap = 0;
+  const stop = e => { if (e.target.closest && e.target.closest('.note-grip')) e.stopPropagation(); };
+  ['touchstart', 'touchmove', 'mousedown'].forEach(k => document.addEventListener(k, stop, true));   // 아래 화면(시트 닫기 끌기 · 스크롤)이 손잡이 손짓을 가져가지 않게
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest && e.target.closest('.note-grip'); if (!g) return;
+    e.preventDefault(); e.stopPropagation();
+    const ta = g.parentElement.querySelector('textarea'); if (!ta) return;
+    if (Date.now() - lastTap < 350) { try { localStorage.removeItem(NOTE_H); } catch (_) {} lastTap = 0; noteFit(ta); toast('메모 칸 높이를\n글 길이에 맞춥니다'); return; }
+    lastTap = Date.now();
+    st = { ta, g, y0: e.clientY, h0: ta.getBoundingClientRect().height, pid: e.pointerId, moved: false }; g.classList.add('on');
+    try { g.setPointerCapture(e.pointerId); } catch (_) {}
+  }, true);
+  document.addEventListener('pointermove', e => {
+    if (!st || e.pointerId !== st.pid) return; e.preventDefault();
+    const dy = e.clientY - st.y0; if (Math.abs(dy) > 3) st.moved = true;
+    st.ta.style.height = Math.max(72, Math.min(window.innerHeight * 0.8, st.h0 + dy)) + 'px';
+  }, true);
+  const end = e => {
+    if (!st || (e && e.pointerId !== st.pid)) return; st.g.classList.remove('on');
+    if (st.moved) { lastTap = 0; try { localStorage.setItem(NOTE_H, String(Math.round(st.ta.getBoundingClientRect().height))); } catch (_) {} }
+    st = null;
+  };
+  document.addEventListener('pointerup', end, true); document.addEventListener('pointercancel', end, true);
+})();
 // ── 1108-A4 심방 노트 잇기 (읽기만) — 사람 상세에 최근 출석 · 최근 심방 ──
 // 심방 노트가 고른 시트(users/{uid}/data/care 의 sheet.id)를 같은 구글 열쇠(gcal 열쇠 서버)로 읽는다. 셀 inside 의 J 와 같은 길.
 // 읽기 규칙은 /care/ 의 care-core 를 그대로 불러 쓴다. 내용은 화면 메모리에만 — 기도노트 DB · 이 기기 · 계정에 넣지 않는다.
@@ -4143,7 +4188,7 @@ LAYERS.group = L => {
   b += '<div class="label">실천</div><textarea class="field" rows="2" data-f="memo" data-id="' + g.id + '" placeholder="이 그룹을 위해 할 일">' + esc(g.memo) + '</textarea>' +
     '<div style="padding:10px 20px 0"' + (g.memo ? '' : ' hidden') + ' data-todo="1"><button class="ghost" data-a="todo" data-id="' + g.id + '">' + ico('up') + 'BLOCK7 할일로 보내기</button></div>';
   b += stripBlock(g);
-  b += '<div class="label">메모</div><textarea class="field" rows="3" data-f="note" data-id="' + g.id + '">' + esc(g.note) + '</textarea>';
+  b += '<div class="label">메모</div><div class="notebox"><textarea class="field" rows="3" data-f="note" data-id="' + g.id + '">' + esc(g.note) + '</textarea><span class="note-grip" aria-label="메모 칸 높이 조절 (두 번 누르면 저절로)" title="끌어서 높이 조절 · 두 번 누르면 저절로"></span></div>';
   return { title: parent ? parent.name + ' › 서브 그룹' : '그룹', body: b, menu: 'group-menu' };
 };
 function lineView(l) {
