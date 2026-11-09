@@ -37,7 +37,7 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
-  joinMulti, splitEtc, blankRecord, parseTalk, talkText, talkTags, talkPreview, talkTopicsOf, talkTagCounts, talkNext, talkCycle, talkPaste, recordTags, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
+  joinMulti, splitEtc, blankRecord, parseTalk, talkText, talkTags, talkPreview, talkTopicsOf, talkTagCounts, talkNext, talkCycle, talkPaste, talkTagSync, recordTags, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
@@ -352,11 +352,15 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   const H = HEAD.concat(['기록ID', '출처', '심방일', '수정', '확인', '보관']), map = A.headerMap(H).map;
   const row = ['', '11/9', '가나다', '장년부', '전화', TXT, '건강, 가정, 자녀 문제, 신앙', '', '깊음', 'C1', '앱', '2026-11-09', '', '', ''];
   const v = A.buildModel([H, row], { tags: OPT.tags, cutoff: '' }).visits[0], r = A.recordFromVisit(v);
-  sc.eq('⑮ 고치기 입력 꼴에는 직접 고른 태그만(칸 태그는 칸에)', J([r.tags, r.tagsEtc]), [['신앙'], '']);
-  sc.eq('⑮ 저장하면 칸 태그가 기록 태그 칸에 다시 합쳐진다', A.recordCells(r).tags, '신앙, 건강, 가정, 자녀 문제');
+  sc.eq('⑮ (T6) 고치기 입력 꼴의 태그 = 기록 태그 그대로(칸 태그도 정리 알약에 켜짐)', J([r.tags, r.tagsEtc]), [['건강', '가정', '신앙'], '자녀 문제']);
+  sc.eq('⑮ 저장하면 태그 칸 그대로', A.recordCells(r).tags, '건강, 가정, 신앙, 자녀 문제');
   sc.eq('⑮ 안 바꾸고 저장 → 칸이 하나도 안 바뀐다(태그 순서만 다른 것도 같은 값)', A.editPatch(H, map, row, r, 0).cells.length, 0);
-  const r2 = Object.assign({}, r, { text: A.talkText(A.parseTalk(TXT).slice(1)) });
-  sc.eq('⑮ 칸을 지우면 그 칸 태그도 기록 태그에서 빠진다(직접 고른 것은 남음)', A.recordCells(r2).tags, '신앙, 자녀 문제');
+  const r2 = J(r); A.talkTagSync(r2, ['건강', '가정', '자녀 문제'], ['자녀 문제'], OPT.tags); r2.text = A.talkText(A.parseTalk(TXT).slice(1));
+  sc.eq('⑮ 칸을 지우면 그 칸에만 있던 태그는 꺼진다(직접 고른 것은 남음)', A.recordCells(r2).tags, '신앙, 자녀 문제');
+  const r3 = { tags: ['신앙'], tagsEtc: '' }; A.talkTagSync(r3, [], ['건강', '새말'], OPT.tags);
+  sc.eq('⑮ 칸에서 켠 태그 → 알약에 있으면 알약, 없으면 직접 적기 · 이미 켜진 것은 그대로', J([r3.tags, r3.tagsEtc]), [['신앙', '건강'], '새말']);
+  A.talkTagSync(r3, ['건강', '새말'], [], OPT.tags);
+  sc.eq('⑮ 칸에서 끄면 정리 태그에서도 꺼짐', J([r3.tags, r3.tagsEtc]), [['신앙'], '']);
   sc.eq('⑮ 새 기록 — 칸 태그만 있어도 태그 칸에 들어간다', A.recordCells(Object.assign(A.blankRecord('2026-11-09', null), { name: '가', text: '■ #건강\n성도: 가' })).tags, '건강');
   // 성도 화면 주제로 보기
   const V = [{ key: 'a', ymd: '2026-11-09', text: TXT, allTags: ['건강'] }, { key: 'b', ymd: '2026-10-12', text: '그냥 메모', allTags: ['건강', '신앙'] }, { key: 'c', ymd: '2026-09-01', text: '가\n\n■ 둘\n나', allTags: ['직장'] }];

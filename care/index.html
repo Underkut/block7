@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-13 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-14 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -594,6 +594,7 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .cmp .seg button.m[aria-pressed="true"]{color:var(--ac);font-weight:600}
 .cmp-row{display:flex;gap:8px;margin-top:8px}
 .cmp-row .inp{flex:1;min-width:0}
+.cmp-row textarea.inp{min-height:44px;resize:none;line-height:1.55;overflow-y:auto}
 .cmp-row .btn{flex:none;border-radius:11px;padding:0 15px;min-height:44px}
 .tk-new{width:100%;border:1px dashed var(--line2);border-radius:14px;padding:13px;font-size:14px;color:var(--ac);display:flex;align-items:center;justify-content:center;gap:6px;text-align:center}
 .tk-new svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none}
@@ -676,7 +677,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-13';
+const APP_VERSION = 'v. 26-1109-14';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -983,11 +984,20 @@ function blankRecord(today, last) {
   return { name: '', ymd: today, roles: (last && last.roles) || [], rolesEtc: '', method: '', methodEtc: '', place: '', pay: '', text: '', depth: '', tags: [], tagsEtc: '', acts: [], actsEtc: '' };
 }
 // 시트에서 읽은 기록 → 고치기 입력 꼴 (그대로 다시 쓰면 칸이 하나도 안 바뀌어야 한다 — 시험 ⑫)
-// 1109-T: 기록 태그 = 주제 칸 태그 ∪ 직접 고른 태그. 입력 꼴에는 '직접 고른 것' 만 남기고, 저장(recordCells) 때 다시 합친다
+// 1109-T: 기록 태그 = 주제 칸 태그 ∪ 직접 고른 태그. 1109-T6(HB): 칸에서 고른 태그는 '정리' 태그 알약에도 켜진다 →
+//   입력 꼴의 tags 에 그대로 두고(talkTagSync 가 칸 태그가 늘고 줄 때 맞춘다), 저장(recordCells) 때도 한 번 더 합친다
 function recordFromVisit(v) {
-  const tt = talkTags(parseTalk(v.text));
   return { name: v.name, ymd: v.ymd, roles: v.roles.slice(), rolesEtc: v.rolesEtc.join(', '), method: v.method, methodEtc: v.methodEtc,
-    place: v.place, pay: v.pay || '', text: v.text, depth: v.depth, tags: v.tags.filter(t => !tt.includes(t)), tagsEtc: v.tagsEtc.filter(t => !tt.includes(t)).join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', ') };
+    place: v.place, pay: v.pay || '', text: v.text, depth: v.depth, tags: v.tags.slice(), tagsEtc: v.tagsEtc.join(', '), acts: v.acts.slice(), actsEtc: v.actsEtc.join(', ') };
+}
+// 칸 태그가 before → after 로 바뀌었을 때 기록 태그(r.tags · r.tagsEtc)를 맞춘다 — 새로 생긴 것은 켜고(알약에 있으면 알약, 없으면 직접 적기),
+// 어느 칸에도 안 남은 것은 끈다. 칸과 상관없이 직접 고른 태그는 건드리지 않는다
+function talkTagSync(r, before, after, known) {
+  const etc = splitEtc(r.tagsEtc), k = known || [];
+  after.filter(t => !before.includes(t)).forEach(t => { if (r.tags.includes(t) || etc.includes(t)) return; if (k.includes(t)) r.tags.push(t); else etc.push(t); });
+  before.filter(t => !after.includes(t)).forEach(t => { const i = r.tags.indexOf(t); if (i >= 0) r.tags.splice(i, 1); const j = etc.indexOf(t); if (j >= 0) etc.splice(j, 1); });
+  r.tagsEtc = etc.join(', ');
+  return r;
 }
 function recordTags(r) {
   const vals = (r.tags || []).slice(), etc = splitEtc(r.tagsEtc);
@@ -2997,12 +3007,14 @@ document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.da
 // 1109-T 주제 칸 — Enter · 줄 고치기 마침 · 여러 줄 붙여 넣기
 document.addEventListener('keydown', e => { const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (f && f.startsWith('tk:') && L && L.type === 'edit' && L.talk) talkKey(L, e); });
 document.addEventListener('focusout', e => {
-  const f = e.target.dataset && e.target.dataset.f; if (!f || !f.startsWith('tk:l:')) return;
+  const f = e.target.dataset && e.target.dataset.f;
+  if (f && f.startsWith('tk:g:')) { const v = e.target.value, L = topLayer(); setTimeout(() => { if (L && L === topLayer() && L.tAdd === +f.split(':')[2]) talkTagAdd(L, L.tAdd, v); }, 0); return; }
+  if (!f || !f.startsWith('tk:l:')) return;
   setTimeout(() => { const L = topLayer(); if (L && L.type === 'edit' && L.talk && 'tk:l:' + L.tEd === f) { talkEdCommit(L); render(); } }, 0);
 });
 document.addEventListener('paste', e => {
   const f = e.target.dataset && e.target.dataset.f, L = topLayer(); if (f !== 'tk:in' || !L || L.type !== 'edit' || !L.talk) return;
-  const t = (e.clipboardData && e.clipboardData.getData('text')) || ''; if (!/\n/.test(t.trim())) return;
+  const t = (e.clipboardData && e.clipboardData.getData('text')) || ''; if (!/\n/.test(t.trim()) || !/^\s*(■|성도\s*[:：]|나\s*[:：]|나눈 이야기\s*\d+\s*$)/m.test(t)) return;
   e.preventDefault(); talkPasteIn(L, t);
 });
 document.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.optadd) setTimeout(() => { if (document.contains(e.target)) attOptCommit(e.target); }, 0); });
@@ -3294,14 +3306,15 @@ function talkCardHtml(L, i) {
     '<button data-act="tkmerge" data-k="' + i + '"' + (i ? '' : ' disabled') + '>앞 칸과 합치기</button><button class="danger" data-act="tkdel" data-k="' + i + '">지우기</button></div>';
   h += '<div class="tp-tags">' + tp.tags.map(t => '<span class="tp-tag">#' + esc(t) + '</span>').join('') + '<button class="tp-tadd" data-act="tktags" data-k="' + i + '" aria-expanded="' + (L.tPick === i) + '">' + (L.tPick === i ? '다 골랐어요' : '+ 태그') + '</button></div>';
   if (L.tPick === i) {
-    const base = DATA.opts && DATA.opts.tags && DATA.opts.tags.length ? DATA.opts.tags : FO.tag, list = base.concat(tp.tags.filter(t => !base.includes(t)));
-    h += '<div class="tp-pick"><div class="opts">' + list.map(t => '<button class="opt" data-act="tktag" data-k="' + i + '" data-v="' + esc(t) + '" aria-pressed="' + tp.tags.includes(t) + '">#' + esc(t) + '</button>').join('') + '</div>' +
-      '<input class="inp" data-f="tk:g:' + i + '" placeholder="다른 태그 — 적고 Enter" autocomplete="off" enterkeyhint="done" aria-label="' + (i + 1) + '번 주제에 다른 태그"></div>';
+    const base = talkKnownTags(), list = base.concat(tp.tags.filter(t => !base.includes(t)));
+    h += '<div class="tp-pick"><div class="opts">' + list.map(t => '<button class="opt" data-act="tktag" data-k="' + i + '" data-v="' + esc(t) + '" aria-pressed="' + tp.tags.includes(t) + '">#' + esc(t) + '</button>').join('') +
+      (L.tAdd === i ? '<input class="inp optadd" data-f="tk:g:' + i + '" placeholder="새 알약" autocomplete="off" enterkeyhint="done" aria-label="' + (i + 1) + '번 주제에 태그 알약 더하기">' : '<button class="opt etc" data-act="tkplus" data-k="' + i + '" aria-label="태그 알약 더하기">' + IC.plus + '더하기</button>') + '</div>' +
+      '<div class="hint">여기서 고른 태그는 아래 \'정리\' 의 태그에도 함께 켜집니다.</div></div>';
   }
   h += '<div class="tp-lines" data-tplines>' + talkLinesHtml(L, i) + '</div>';
   if (on) h += '<div class="cmp"><div class="seg" role="group" aria-label="말한 사람" data-tpseg>' + talkSegHtml(L) + '</div>' +
-    '<div class="cmp-row"><input class="inp" data-f="tk:in" value="' + esc(L.tD) + '" placeholder="' + TK_PH[L.tW] + '" autocomplete="off" enterkeyhint="enter" aria-label="한 줄 넣기"><button class="btn pri" data-act="tkadd">넣기</button></div>' +
-    '<div class="hint">Enter 로 한 줄씩 — 다음 차례는 저절로 상대 쪽. 이름표를 누르면 성도 → 나 → 메모, 글을 누르면 고칩니다.</div></div>';
+    '<div class="cmp-row"><textarea class="inp" data-f="tk:in" rows="1" placeholder="' + TK_PH[L.tW] + '" autocomplete="off" aria-label="한 말 적기">' + esc(L.tD) + '</textarea><button class="btn pri" data-act="tkadd">넣기</button></div>' +
+    '<div class="hint">줄을 바꿔 가며 써도 됩니다. 다 쓰면 \'넣기\' — 다음 차례는 저절로 상대 쪽. 이름표를 누르면 성도 → 나 → 메모, 글을 누르면 고칩니다.</div></div>';
   return h + '</div>';
 }
 function talkHtml(L) {
@@ -3318,9 +3331,9 @@ function talkPatch(L, i) {
   if (sg) sg.innerHTML = talkSegHtml(L);
   if (cn) cn.textContent = tp.lines.length ? '말 ' + tp.lines.length : '';
   if (all) all.textContent = '주제 ' + L.talk.length + ' · 말 ' + talkCount(L);
-  const inp = card.querySelector('[data-f="tk:in"]'); if (inp) { inp.placeholder = TK_PH[L.tW]; if (inp.value !== L.tD) inp.value = L.tD; }
-  const auto = document.querySelector('.layer:last-child .tk-auto'); if (!auto !== !talkTags(L.talk).length) render();
+  const inp = card.querySelector('[data-f="tk:in"]'); if (inp) { inp.placeholder = TK_PH[L.tW]; if (inp.value !== L.tD) { inp.value = L.tD; talkGrow(inp); } }
 }
+function talkGrow(t) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight + 2, 240) + 'px'; }
 function talkFocusIn() { const i = document.querySelector('.layer:last-child [data-f="tk:in"]'); if (i) { try { i.focus({ preventScroll: true }); } catch (e) { i.focus(); } setTimeout(() => keepInView(i), 60); } }
 function talkAdd(L) {
   const t = String(L.tD || '').trim(); if (!t) { talkFocusIn(); return; }
@@ -3334,6 +3347,8 @@ function talkEdCommit(L) {
   if (tp && tp.lines[j] && !tp.lines[j].t.trim()) tp.lines.splice(j, 1);
   talkSync(L);
 }
+function talkKnownTags() { const FO = filterOptions(M().visits, DATA.opts); return DATA.opts && DATA.opts.tags && DATA.opts.tags.length ? DATA.opts.tags : FO.tag; }
+function talkTagsDo(L, fn) { const b = talkTags(L.talk); fn(); talkTagSync(L.form, b, talkTags(L.talk), talkKnownTags()); }
 function talkClick(L, a, k, v, b) {
   const ij = String(k || '').split(':').map(Number), i = ij[0];
   if (a === 'tkadd') { talkAdd(L); talkFocusIn(); return; }
@@ -3348,7 +3363,8 @@ function talkClick(L, a, k, v, b) {
   }
   if (a === 'tkmenu') { L.tMenu = L.tMenu === i ? -1 : i; render(); return; }
   if (a === 'tktags') { L.tPick = L.tPick === i ? -1 : i; talkActivate(L, i); render(); return; }
-  if (a === 'tktag') { const tg = L.talk[i].tags, x = tg.indexOf(v); if (x < 0) tg.push(v); else tg.splice(x, 1); talkSync(L); render(); return; }
+  if (a === 'tktag') { talkTagsDo(L, () => { const tg = L.talk[i].tags, x = tg.indexOf(v); if (x < 0) tg.push(v); else tg.splice(x, 1); }); talkSync(L); render(); return; }
+  if (a === 'tkplus') { L.tAdd = i; render(); const n = document.querySelector('.layer:last-child [data-f="tk:g:' + i + '"]'); if (n) n.focus(); return; }
   if (a === 'tkmove') {
     const j = i + (+v); if (j < 0 || j >= L.talk.length) return;
     const T = L.talk, t = T[i]; T[i] = T[j]; T[j] = t; L.tA = L.tA === i ? j : L.tA === j ? i : L.tA; L.tMenu = j; L.tPick = -1; L.tEd = ''; talkSync(L); render();
@@ -3362,10 +3378,10 @@ function talkClick(L, a, k, v, b) {
   }
   if (a === 'tkdel') {
     const n = L.talk[i].lines.length; if (n && !confirm((i + 1) + '번 주제 칸을 지울까요?\n말 ' + n + '줄이 함께 빠집니다.')) return;
-    const was = JSON.parse(JSON.stringify(L.talk)), wasA = L.tA;
-    L.talk.splice(i, 1); if (!L.talk.length) L.talk.push({ title: '', tags: [], lines: [] });
+    const was = JSON.parse(JSON.stringify(L.talk)), wasA = L.tA, wasTags = L.form.tags.slice(), wasEtc = L.form.tagsEtc;
+    talkTagsDo(L, () => L.talk.splice(i, 1)); if (!L.talk.length) L.talk.push({ title: '', tags: [], lines: [] });
     L.tA = Math.min(L.tA > i ? L.tA - 1 : L.tA, L.talk.length - 1); L.tW = talkWhoAfter(L.talk[L.tA]); L.tMenu = -1; L.tPick = -1; L.tEd = ''; talkSync(L); render();
-    if (n) toast((i + 1) + '번 칸을 지웠습니다', 6000, { label: '되돌리기', fn: () => { if (topLayer() !== L) return; L.talk = was; L.tA = wasA; L.tW = talkWhoAfter(L.talk[L.tA]); talkSync(L); render(); } });
+    if (n) toast((i + 1) + '번 칸을 지웠습니다', 6000, { label: '되돌리기', fn: () => { if (topLayer() !== L) return; L.talk = was; L.tA = wasA; L.form.tags = wasTags; L.form.tagsEtc = wasEtc; L.tW = talkWhoAfter(L.talk[L.tA]); talkSync(L); render(); } });
     return;
   }
 }
@@ -3378,18 +3394,28 @@ function talkInput(L, f, val) {
 function talkKey(L, e) {
   const f = e.target.dataset.f, p = f.split(':');
   if (e.key !== 'Enter' || e.isComposing || e.keyCode === 229) return;
-  if (p[1] === 'in') { e.preventDefault(); talkAdd(L); return; }
   if (p[1] === 't') { e.preventDefault(); if (talkActivate(L, +p[2])) render(); talkFocusIn(); return; }
-  if (p[1] === 'g') { e.preventDefault(); const t = norm(e.target.value).replace(/^#+/, ''), tg = L.talk[+p[2]].tags; if (t && !tg.includes(t)) { tg.push(t); talkSync(L); } render(); const n = document.querySelector('.layer:last-child [data-f="' + f + '"]'); if (n) n.focus(); return; }
-  if (p[1] === 'l' && !e.shiftKey) { e.preventDefault(); e.target.blur(); }
+  if (p[1] === 'g') { e.preventDefault(); talkTagAdd(L, +p[2], e.target.value); return; }
 }
-// 여러 줄 붙여 넣기 → 줄마다 나눠 넣는다(이름표 · ■ 는 알아본다)
+// 칸에서 '+ 더하기' — 정리 태그의 '+ 더하기' 와 같다: 알약으로 더해(속성 탭 · 폼) 다음에도 쓰고, 이 칸 · 정리 태그에 켠다
+function talkTagAdd(L, i, val) {
+  const t = norm(val).replace(/^#+/, ''); L.tAdd = -1;
+  if (t) {
+    talkTagsDo(L, () => { if (!L.talk[i].tags.includes(t)) L.talk[i].tags.push(t); });
+    if (!L.form.tags.includes(t)) { const etc = splitEtc(L.form.tagsEtc).filter(x => x !== t); L.form.tags.push(t); L.form.tagsEtc = etc.join(', '); }
+    talkSync(L);
+    if (!((DATA.opts || {}).tags || []).includes(t)) attrAdd('태그', t).catch(e => toast('선택지를 더하지 못했습니다\n' + e.message));
+  }
+  render();
+}
+// 여러 줄 붙여 넣기 → 줄마다 나눠 넣는다(이름표 · ■ 는 알아본다). 1109-T6: 이름표 · ■ 줄이 없는 글은 그냥 칸에 붙인다(한 말 안의 줄바꿈)
 function talkPasteIn(L, text) {
   const T = talkPaste(text, L.tW); if (!T.length) return;
+  const b = talkTags(L.talk);
   const first = T[0], rest = T.slice(1), cur = L.talk[L.tA]; let n = 0;
   if (!first.title && !first.tags.length) { cur.lines = cur.lines.concat(first.lines); n += first.lines.length; } else rest.unshift(first);
   rest.forEach(tp => n += tp.lines.length);
-  L.talk.splice(L.tA + 1, 0, ...rest); L.tA += rest.length; L.tW = talkWhoAfter(L.talk[L.tA]); L.tD = ''; talkSync(L); render(); talkFocusIn();
+  L.talk.splice(L.tA + 1, 0, ...rest); L.tA += rest.length; L.tW = talkWhoAfter(L.talk[L.tA]); L.tD = ''; talkTagSync(L.form, b, talkTags(L.talk), talkKnownTags()); talkSync(L); render(); talkFocusIn();
   toast('붙여 넣은 글을\n' + (rest.length ? '주제 ' + rest.length + '칸 · ' : '') + '말 ' + n + '줄로 나눠 넣었습니다', 2500);
 }
 // 1109-G2 새 기록 — 넓은 화면(700px 이상, 태블릿 · PC) = 시안 A '칸마다 흰 카드', 좁은 화면(폰) = 시안 C '꼭 쓸 것 먼저'
@@ -3436,7 +3462,7 @@ function lEdit(L) {
   const pillInfo = '알약을 길게 누르면(PC 는 오른쪽 단추) 이름 바꾸기 · 지우기, 누른 채 끌면 순서를 바꿉니다. 구분 · 태그 · 할 일은 구글폼 선택지도 함께 바뀝니다.<br>\'+ 더하기\' 에서 알약으로 더하면 다음에도 쓰고, \'이번 기록에만\' 은 이 기록에만 적힙니다.';
   const depthF = '<div class="fld"><span class="lb">대화 깊이</span><div class="seg" role="group" style="margin:0">' + ['얕음', '중간', '깊음'].map(d => '<button data-act="fone" data-k="depth" data-v="' + d + '" aria-pressed="' + (f.depth === d) + '" style="display:flex;justify-content:center;gap:6px;align-items:center">' + dm(DEPTH_N[d]) + d + '</button>').join('') + '</div></div>';
   const tagsF = multiHtml(L, 'tags', '태그', offer('tags', FO.tag, []), 'tagsEtc', '직접 적기 (쉼표로 여럿)', '#');
-  let ttF = ''; { const tt = talkTags(L.talk); if (tt.length) ttF = '<div class="tk-auto">주제 칸 태그도 함께 저장됩니다 ' + tt.map(t => '<span class="tp-tag">#' + esc(t) + '</span>').join('') + '</div>'; }
+  const ttF = '';   // 1109-T6: 칸 태그는 정리 태그 알약에 켜져 보인다(따로 안내 줄 없음)
   const actsF = multiHtml(L, 'acts', '할 일', offer('acts', FO.act.filter(x => x !== '기타'), []), 'actsEtc', '직접 적기 (예: 병문안 일정 잡기)', '', x => ACT_KIND[x] || 'k4');
   const planF = L.planWhy ? '<div class="note" style="margin-top:14px"><b>계획에 적어 둔 물어볼 것</b><br>' + esc(L.planWhy).replace(/\n/g, '<br>') + '</div>' : '';
   const sec = (k, t, info) => '<div class="fsec">' + t + einfo(L, k, info) + '</div>' + einfoBody(L, k, info);
@@ -3899,7 +3925,7 @@ document.addEventListener('input', e => {
     if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
     return;
   }
-  if (L.type === 'edit' && f.startsWith('tk:')) { talkInput(L, f, e.target.value); return; }
+  if (L.type === 'edit' && f.startsWith('tk:')) { talkInput(L, f, e.target.value); if (e.target.tagName === 'TEXTAREA') talkGrow(e.target); return; }
   if (L.type === 'b7send') { L.form[f] = e.target.value; if (f === 'date') document.querySelectorAll('.layer:last-child [data-act="b7date"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value))); return; }
   L.form[f] = e.target.value; L.dirty = true;
   if (f === 'ymd' && L.type === 'edit') { render(); return; }
