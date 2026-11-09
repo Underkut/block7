@@ -614,7 +614,7 @@ async function route(r) {
     const before = await mp.evaluate(l => { const L = document.querySelector(l); window.__inp = document.activeElement; return L.scrollTop; }, lay);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="ftog"][data-k="tags"][data-v="학교"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="fone"][data-k="depth"][data-v="깊음"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
-    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]')].map(x => x.dataset.v) }; }, lay);
+    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"])')].map(x => x.dataset.v) }; }, lay);
     eq('⑱ 알약을 눌러도 스크롤이 그대로 · 쓰던 칸이 새로 만들어지지 않는다', [after.st === before, after.same], [true, true]);
     eq('⑱ 알약 값은 그대로 들어가고 눌린 모양도 맞다', [after.form, after.pressed.sort()], [[['학교'], '깊음'], ['깊음', '학교']]);
     // 이름 후보를 고르는 것처럼 다시 그려야 할 때도 스크롤 자리는 그대로
@@ -736,6 +736,11 @@ async function route(r) {
     await page.evaluate(() => loadData(true)); await page.waitForTimeout(800);
     await page.evaluate(() => openEdit(null)); await tidy();
     eq('㉔ 입력 화면에 장소 알약 칸 · 사주심 / 사드림 알약', [await page.$$eval('.layer:last-child .pills[data-k="place"]', x => x.length), await page.$$eval('.layer:last-child [data-act="aone"][data-k="pay"]', x => x.map(e => e.dataset.v))], [1, ['사주심', '사드림']]);
+    eq("㉔ 심방 입력 날짜 — 제목 '언제 · 어디서' · 그제 · 어제 · 오늘 · 달력 + 고른 날 요일", [await page.$$eval('.layer:last-child .fsec', x => x.map(e => e.textContent).includes('언제 · 어디서')), await page.$$eval('.layer:last-child [data-act="adate"][data-k="ymd"]', x => x.map(e => e.textContent)), await page.$eval('.layer:last-child .dsel', e => e.textContent)],
+      [true, ['그제', '어제', '오늘'], await page.evaluate(() => dayName(today()))]);
+    await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("그제")'); await page.waitForTimeout(200);
+    eq('㉔ 그제를 누르면 날짜 · 요일 글자가 따라감', [await page.evaluate(() => topLayer().form.ymd), await page.$eval('.layer:last-child .dsel', e => e.textContent)], await page.evaluate(() => { const y = ymdAdd(today(), -2); return [y, dayName(y)]; }));
+    await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("오늘")'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="name"]', '장소사람');
     await page.fill('.layer:last-child [data-f="text"]', '카페에서 만남');
     eq('㉔ 장소는 알약 + 직접 적기(접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);

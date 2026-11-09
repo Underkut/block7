@@ -556,6 +556,8 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   const m = A.headerMap(H).map;
   sc.eq("㉔ '장소' · '사주심/사드림' 머리글을 알아본다", J([m.place, m.pay, m['@기록ID']]), [9, 10, 11]);
   sc.eq('㉔ 띄어쓰기 · 꼴이 달라도 (사주심 / 사드림 · 사드림 여부)', J([A.headerMap(['성도 이름', '내용', '사주심 / 사드림']).map.pay, A.headerMap(['성도 이름', '내용', '사드림 여부']).map.pay, A.headerMap(['성도 이름', '내용', '장소(카페 등)']).map.place]), [2, 2, 2]);
+  sc.eq("㉔ HB 폼의 실제 제목 'PAY'(대소문자 무시)도 사주심 칸", [A.headerMap(['성도 이름', '내용', '장소', 'PAY']).map.pay, A.headerMap(['성도 이름', '내용', 'Pay']).map.pay, A.headerMap(['성도 이름', '내용', 'PAYMENT 메모']).map.pay], [3, 2, undefined]);
+  sc.eq("㉔ 폼 질문 'PAY' 의 선택지를 읽는다", J(A.formQOf(A.formSummary({ items: [{ itemId: 'i8', title: 'PAY', questionItem: { question: { questionId: 'q8', choiceQuestion: { type: 'RADIO', options: [{ value: '사주심' }, { value: '사드림' }, { isOther: true }] } } } }] }), 'pay').options), ['사주심', '사드림']);
   sc.eq("㉔ '장소 · 메모' 가 있으면 그것이 먼저", A.headerMap(['장소', '장소 · 메모', '성도 이름', '내용']).map.place, 1);
   sc.eq('㉔ 없으면 칸도 없다(예전 시트 그대로)', [A.headerMap(HEAD).map.place, A.headerMap(HEAD).map.pay], [undefined, undefined]);
   const row = ['11/6/2026 10:40:51', '11/6', '가나다', '셀원', '티타임', '이야기', '', '', '중간', '역 앞 카페', '사주심', 'R1', '앱', '2026-11-06', ''];
