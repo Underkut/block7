@@ -30,6 +30,8 @@
 //  ㉚ (1109-J D) 다시 그려도 튀지 않기(바뀐 곳만 고침) · 끌어 옮기기 밀려나기 · '완료' 단추 숨은 채 남지 않기 · 알약 더하기 칸 자판 위 · 최근 이름 줄 옆으로
 //  ㉘ (1109-T) 나눈 이야기 주제 칸 — 입력줄 Enter · 성도 ↔ 나 번갈아 · 이름표 바꾸기 · 줄 고치기 · 새 칸 · 칸 태그 · 붙여 넣기 · 칸 옮기기 · 합치기 · 지우기 → 시트 한 칸 글 · 다시 열면 그대로 · 안 바꾸면 안 쓴다
 //  ㉙ (1109-T4 · T5) 열람 대본 · 말풍선 · 접기 · 제목만 / 설정 탭 넷(보기 · BLOCK7 · 연결 · 그 밖에) · 마지막 탭 기억 / 성도 화면 칸 태그로 모아 보기
+//  ㉛ (1109-G1) 목록 자세히(날짜 기둥) / 간략히(한 줄) · 이 기기에 기억
+//  ㉜ (1109-G2) 새 기록 — 넓은 화면 카드(A) · 폰 접힌 줄(C) · 폭 넘나들면 다시 그림 · 폰에서 적은 것이 시트에
 //  ⑧ 지우기 → 휴지통 탭에 원래 줄 · 응답 탭에서 그 한 줄만 빠진다 · 되돌리기 · 휴지통에서 되살리기 · 완전히 지우기
 const { chromium } = require('playwright');
 const path = require('path');
@@ -41,6 +43,8 @@ const J0 = v => JSON.stringify(v);
 // 1109-T5 설정은 탭 넷 — 그 탭을 먼저 누른다(넘기는 움직임 0.45초)
 const stab = async (pg, name) => { await pg.click('.layer:last-child [data-act="stab"]:text-is("' + name + '")'); await pg.waitForTimeout(500); };
 const talk = async (pg, lines, scope) => { scope = scope || '.layer:last-child'; for (const [w, t] of lines) { await pg.click(scope + ' [data-act="tkw"][data-v="' + w + '"]'); await pg.fill(scope + ' [data-f="tk:in"]', t); await pg.press(scope + ' [data-f="tk:in"]', 'Enter'); } };
+// 1109-G2 심방 입력은 '+ 더하기' 하나 → 누르면 '알약으로 더하기 · 이번 기록에만'. 그 둘을 꺼내 둔다
+const plus = async (pg, scope, k) => { if (await pg.$(scope + ' [data-act="aplus"][data-k="' + k + '"]')) { await pg.click(scope + ' [data-act="aplus"][data-k="' + k + '"]'); await pg.waitForTimeout(150); } };
 const eq = (name, got, want) => { const a = JSON.stringify(got), b = JSON.stringify(want); if (a === b) { pass++; console.log('  ✓', name); } else { fail++; console.log('  ✗', name, '\n    결과:', a, '\n    기대:', b); } };
 
 // ── 가짜 시트 ──
@@ -159,7 +163,7 @@ async function route(r) {
 }
 
 (async () => {
-  const b = await chromium.launch(), page = await b.newPage({ viewport: { width: 420, height: 900 }, timezoneId: 'Asia/Seoul' });
+  const b = await chromium.launch(), page = await b.newPage({ viewport: { width: 760, height: 900 }, timezoneId: 'Asia/Seoul' });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   page.on('dialog', d => d.accept());
   await page.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
@@ -180,7 +184,7 @@ async function route(r) {
   await page.click('.layer [data-act="fone"][data-k="depth"][data-v="깊음"]');
   await page.click('.layer [data-act="ftog"][data-k="tags"][data-v="학교"]');
   await page.click('.layer [data-act="ftog"][data-k="acts"][data-v="중보"]');
-  await page.click('.layer [data-act="aetc"][data-k="acts"]'); await page.waitForTimeout(150);   // 1109-E1 직접 적기는 접혀 있다
+  await plus(page, '.layer:last-child', 'acts'); await page.click('.layer [data-act="aetc"][data-k="acts"]'); await page.waitForTimeout(150);   // 1109-E1 직접 적기는 접혀 있다 · G2 '+ 더하기' 안에
   await page.fill('[data-f="actsEtc"]', '병문안 가기');
   if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '/edit.png', fullPage: false });
   await page.click('[data-act="saverec"]'); await page.waitForTimeout(1200);
@@ -626,13 +630,13 @@ async function route(r) {
     eq('⑱ 날짜 칸이 칸 폭을 넘지 않는다 · 화면이 옆으로 넓어지지 않는다', await mp.evaluate(() => { const d = document.querySelector('.layer:last-child input[type=date]'), p = d.parentElement.getBoundingClientRect(), r = d.getBoundingClientRect(); return r.right <= p.right + 1 && document.documentElement.scrollWidth <= innerWidth; }), true);
     // 알약을 눌러도 화면을 다시 그리지 않는다 — 스크롤 · 쓰던 칸 그대로
     const lay = '.layer:last-child';
-    await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="aetc"][data-k="roles"]'); await mp.waitForTimeout(200);
+    await mp.evaluate(q => { document.querySelector(q + ' [data-act="crow"][data-k="roles"]').click(); document.querySelector(q + ' [data-act="aplus"][data-k="roles"]').click(); document.querySelector(q + ' [data-act="aetc"][data-k="roles"]').click(); }, lay); await mp.waitForTimeout(400);   // G2 폰은 고르는 칸이 접힌 줄
     await mp.evaluate(l => { document.querySelector(l).scrollTop = 260; }, lay);
     await mp.focus(lay + ' [data-f="rolesEtc"]'); await mp.waitForTimeout(500);
     const before = await mp.evaluate(l => { const L = document.querySelector(l); window.__inp = document.activeElement; return L.scrollTop; }, lay);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="ftog"][data-k="tags"][data-v="학교"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
     await mp.evaluate(q => document.querySelector(q).click(), lay + ' [data-act="fone"][data-k="depth"][data-v="깊음"]');   // (tap 은 Playwright 가 먼저 굴려 보여 주므로 쓰지 않는다) await mp.waitForTimeout(200);
-    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"]):not([data-act="aetc"]):not([data-act="tkw"])')].map(x => x.dataset.v) }; }, lay);
+    const after = await mp.evaluate(l => { const L = document.querySelector(l); return { st: L.scrollTop, same: document.querySelector(l + ' [data-f="rolesEtc"]') === window.__inp, form: [topLayer().form.tags.slice(), topLayer().form.depth], pressed: [...document.querySelectorAll(l + ' [aria-pressed="true"]:not([data-act="adate"]):not([data-act="aetc"]):not([data-act="aplus"]):not([data-act="tkw"])')].map(x => x.dataset.v) }; }, lay);
     eq('⑱ 알약을 눌러도 스크롤이 그대로 · 쓰던 칸이 새로 만들어지지 않는다', [after.st === before, after.same], [true, true]);
     eq('⑱ 알약 값은 그대로 들어가고 눌린 모양도 맞다', [after.form, after.pressed.sort()], [[['학교'], '깊음'], ['깊음', '학교']]);
     // 이름 후보를 고르는 것처럼 다시 그려야 할 때도 스크롤 자리는 그대로
@@ -801,8 +805,8 @@ async function route(r) {
     await page.click('.layer:last-child [data-act="adate"][data-k="ymd"]:has-text("오늘")'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="name"]', '장소사람');
     await talk(page, [['n', '카페에서 만남']]);
-    eq('㉔ 장소는 알약 + 직접 적기(접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);
-    await page.click('.layer:last-child [data-act="aetc"][data-k="place"]'); await page.waitForTimeout(200);
+    eq('㉔ 장소는 알약 + 더하기(직접 적기 칸은 접힘)', [await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aplus"]', x => x.length), await page.$$eval('.layer:last-child [data-f="place"]', x => x.length)], [1, 0]);
+    await plus(page, '.layer:last-child', 'place'); await page.click('.layer:last-child [data-act="aetc"][data-k="place"]'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-f="place"]', '역 앞 카페');
     await page.click('.layer:last-child [data-act="aone"][data-k="pay"][data-v="사드림"]');
     await page.click('.layer:last-child [data-act="saverec"]'); await page.waitForTimeout(1500);
@@ -817,7 +821,7 @@ async function route(r) {
     // 1109-D2 장소 알약 — 입력 화면에서 더하기 → '심방 선택지' 탭 · 길게 눌러 이름 바꾸기 · 지우기(지난 기록은 그대로)
     await page.evaluate(() => openEdit(M().visits.find(v => v.name === '장소사람').key)); await tidy();
     eq('㉔ 탭이 비면 지난 기록에 쓴 장소가 알약으로', await page.$$eval('.layer:last-child .pills[data-k="place"] [data-act="aone"]', x => x.map(e => e.dataset.v).includes('역 앞 카페')), true);
-    await page.click('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
+    await plus(page, '.layer:last-child', 'place'); await page.click('.layer:last-child .pills[data-k="place"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
     await page.fill('.layer:last-child [data-optadd="place"]', '교회 카페'); await page.keyboard.press('Enter'); await page.waitForTimeout(1200);
     const vt = () => (tab('심방 선택지') || { rows: [] }).rows;
     eq("㉔ 알약 더하기 → '심방 선택지' 탭에 장소 줄 · 고른 것이 됨", [J0(vt().filter(r => r[0] === '장소').map(r => r[1])).includes('교회 카페'), await page.$eval('.layer:last-child .pills[data-k="place"] [aria-pressed="true"]', e => e.dataset.v)], [true, '교회 카페']);
@@ -837,7 +841,10 @@ async function route(r) {
   { const lays = await page.$$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
   await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
   { const LE = '.layer:last-child';
-    eq('㉖ 구분 · 태그 · 할 일 — 끝에 + · 직접 적기, 직접 적기 칸은 접혀 있다', await page.evaluate(L => ['roles', 'tags', 'acts'].map(k => [!!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aoptadd"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aetc"]'), !!document.querySelector(L + ' [data-f="' + k + 'Etc"]')]), LE), [[true, true, false], [true, true, false], [true, true, false]]);
+    eq("㉖ (G2) 구분 · 태그 · 할 일 — 끝에 '+ 더하기' 하나, 직접 적기 칸은 접혀 있다", await page.evaluate(L => ['roles', 'tags', 'acts'].map(k => [!!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aplus"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aoptadd"]'), !!document.querySelector(L + ' .pills[data-k="' + k + '"] [data-act="aetc"]'), !!document.querySelector(L + ' [data-f="' + k + 'Etc"]')]), LE), [[true, false, false, false], [true, false, false, false], [true, false, false, false]]);
+    await plus(page, LE, 'roles');
+    eq("㉖ (G2) '+ 더하기' 를 누르면 '알약으로 더하기 · 이번 기록에만' 둘", await page.$$eval(LE + ' .pills[data-k="roles"] .pk', x => x.map(e => e.dataset.act + ':' + e.textContent)), ['aoptadd:알약으로 더하기', 'aetc:이번 기록에만']);
+    await plus(page, LE, 'roles');
     const rn = await page.$$eval(LE + ' .recent .rn:not(.cellbtn)', x => x.map(e => e.textContent));
     eq('㉖ 최근 이름 한 줄 — 심방 · 출석 합쳐 최근 순(앱 규칙과 같게) · 한 줄 · 끝에 ›', [J0(rn) === J0(await page.evaluate(() => recentNames(M().visits, AT()).slice(0, 24))), await page.$eval(LE + ' .recent .rlist', e => getComputedStyle(e).flexWrap), await page.$eval(LE + ' .recent .rmore', e => e.getAttribute('aria-label'))], [true, 'nowrap', '더 보기']);
     await page.click(LE + ' .recent .rmore'); await page.waitForTimeout(200);
@@ -845,7 +852,7 @@ async function route(r) {
     await page.click(LE + ' .recent .rn:not(.cellbtn)'); await page.waitForTimeout(200);
     eq('㉖ 최근 이름을 누르면 이름 칸에', await page.evaluate(() => topLayer().form.name), rn[0]);
     const n0 = (tab('속성').rows || []).length;
-    await page.click(LE + ' .pills[data-k="tags"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
+    await plus(page, LE, 'tags'); await page.click(LE + ' .pills[data-k="tags"] [data-act="aoptadd"]'); await page.waitForTimeout(200);
     await page.fill(LE + ' [data-optadd="tags"]', '봉사'); await page.keyboard.press('Enter'); await page.waitForTimeout(2500);
     eq("㉖ 태그 + → 바로 골라지고 '속성' 탭 · 폼에 더해진다", [await page.evaluate(() => topLayer().form.tags.includes('봉사')), tab('속성').rows.some(r => r[0] === '태그' && r[1] === '봉사'), FORM.items.some(it => it.title === '태그' && JSON.stringify(it).includes('봉사'))], [true, true, true]);
     await page.click(LE + ' .pills[data-k="tags"] [data-v="봉사"]', { button: 'right' }); await page.waitForTimeout(300);
@@ -990,6 +997,70 @@ async function route(r) {
   await page.evaluate(() => { USER.email = 'test@example.com'; render(); openLayer('settings'); }); await page.waitForTimeout(400); await stab(page, '그 밖에');
   eq('㉕ 설정 맨 아래 버전은 누르는 단추', await page.$$eval('.layer:last-child button[data-act="vercheck"]', x => x.length), 1);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+
+  // ㉛ (1109-G1) 목록 '자세히 / 간략히' — 필터 줄 오른쪽 끝 글자 단추 · 자세히 = 왼쪽 날짜 기둥 · 간략히 = 한 줄씩 · 이 기기에 기억
+  { const lays = await page.$('.layer'); for (let i = 0; i < lays.length; i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); } }
+  await page.evaluate(() => { S.view = 'list'; S.searching = false; S.q = ''; for (const x in S.filt) S.filt[x] = []; S.quick = ''; save({ lmode: undefined }); render(); }); await page.waitForTimeout(300);
+  {
+    const want = await page.evaluate(() => { const L = V(); return { n: L.length, days: [...new Set(L.map(v => v.ymd))].length, first: L[0].ymd, dup: L.findIndex((v, i) => i && L[i - 1].ymd === v.ymd) }; });
+    eq('㉛ 처음은 자세히 — 단추는 필터 줄 오른쪽 끝, 자세히가 진하게', await page.evaluate(() => { const w = document.querySelector('.fwrap'), b = w && w.lastElementChild; return [!!w, b && b.dataset.act, b && b.querySelector('b.on').textContent, !!document.querySelector('#vlist.vl-full')]; }), [true, 'lmode', '자세히', true]);
+    eq('㉛ 자세히 — 날마다 왼쪽 기둥 하나(큰 날짜) · 기록은 오른쪽에 모두', await page.evaluate(() => [document.querySelectorAll('#vlist .dg').length, document.querySelector('#vlist .dg .dcol b').textContent, document.querySelectorAll('#vlist .dg .dcards .card').length]),
+      [want.days, String(+want.first.slice(8)), want.n]);
+    await page.click('[data-act="lmode"]'); await page.waitForTimeout(400);
+    eq('㉛ 누르면 간략히 — 한 기록 한 줄(날 · 이름 · 내용) · 이 기기에 기억', await page.evaluate(() => [!!document.querySelector('#vlist.vl-brief'), document.querySelectorAll('#vlist .lrow').length, [...document.querySelector('#vlist .lrow').children].map(e => e.className.split(' ')[0]), saved().lmode, document.querySelector('.lmode b.on').textContent]),
+      [true, want.n, ['bd', 'nm', 'bt'], 'brief', '간략히']);
+    eq('㉛ 간략히 — 달 머리가 있고 · 같은 날 둘째 줄부터 날짜를 비운다', await page.evaluate(i => [document.querySelectorAll('#vlist .bmon').length > 0, i < 0 || document.querySelectorAll('#vlist .lrow')[i].querySelector('.bd').classList.contains('same')], want.dup), [true, true]);
+    await page.evaluate(() => render()); await page.waitForTimeout(100);
+    eq('㉛ 다시 그려도 간략히 그대로', await page.evaluate(() => !!document.querySelector('#vlist.vl-brief')), true);
+    await page.click('#vlist .lrow'); await page.waitForTimeout(400);
+    eq('㉛ 간략히 줄을 누르면 그 기록 열람', await page.evaluate(() => topLayer() && topLayer().type), 'detail');
+    await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+    await page.click('[data-act="lmode"]'); await page.waitForTimeout(300);
+    eq('㉛ 다시 누르면 자세히', await page.evaluate(() => [!!document.querySelector('#vlist.vl-full'), saved().lmode]), [true, 'full']);
+  }
+
+  // ㉜ (1109-G2) 새 기록 — 넓은 화면(700px 이상) = 칸마다 흰 카드(A) · 폰 = 꼭 쓸 것 먼저 + 고르는 칸은 접힌 줄(C)
+  await page.evaluate(() => openEdit(null)); await page.waitForTimeout(500);
+  { const LE = '.layer:last-child';
+    eq('㉜ 넓은 화면 — 카드 넷(누구를 · 언제 · 이야기 · 정리) · 접힌 줄 없음', await page.evaluate(L => [!!document.querySelector(L + ' .edf.e-wide'), [...document.querySelectorAll(L + ' .eblk > .fsec:first-child')].map(e => e.firstChild.textContent.trim()), document.querySelectorAll(L + ' .crow').length], LE),
+      [true, ['누구를', '언제 · 어디서 · 어떻게', '나눈 이야기', '정리'], 0]);
+    await page.click(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'); await page.waitForTimeout(150);
+    eq('㉜ 고른 알약은 꽉 채운 초록', await page.$eval(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]', e => getComputedStyle(e).backgroundColor === getComputedStyle(document.querySelector('.layer:last-child .btn.pri')).backgroundColor), true);
+    const inf0 = await page.$eval(LE + ' .einfo-b', x => x.length);
+    await page.click(LE + ' [data-act="einfo"][data-k="sum"]'); await page.waitForTimeout(150);
+    eq('㉜ 긴 안내는 처음엔 감춤 → i 를 누르면 보임', [inf0, await page.$eval(LE + ' .einfo-b', x => x.length)], [0, 1]);
+    await page.evaluate(() => { topLayer().dirty = false; }); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+  }
+  {
+    const pc = await b.newContext({ viewport: { width: 375, height: 700 }, timezoneId: 'Asia/Seoul' });
+    const pp = await pc.newPage(); pp.on('pageerror', e => errs.push('폰 G2: ' + e.message)); pp.on('dialog', d => d.accept());
+    await pp.route(/.*/, r => (r.request().url().startsWith('file:') ? r.continue() : route(r)));
+    await pp.addInitScript(() => { matchMedia = q => ({ matches: q.includes('reduce'), addEventListener() {}, addListener() {} }); });
+    await pp.goto(FILE); await pp.waitForTimeout(400);
+    await pp.evaluate(() => { USER = { email: 'test@example.com', uid: 'u', getIdToken: async () => 'x' }; AUTH_READY = true; save({ sheet: { id: 'S', name: '시험 시트' }, form: { id: 'F', name: '시험 폼' } }); googleStatus(); });
+    await pp.waitForSelector('.card');
+    await pp.click('[data-act="addrec"]'); await pp.waitForTimeout(500);
+    const LE = '.layer:last-child';
+    const keys = await pp.$eval(LE + ' .crow', x => x.map(e => e.dataset.crow));
+    eq('㉜ 폰 — 누구 · 언제 · 이야기는 펴 있고, 고르는 칸은 접힌 줄(구분 · 어떻게 · … · 깊이 · 태그 · 할 일)', [await pp.$eval(LE + ' .edf.e-narrow', x => x.length), keys[0], keys[1], keys.slice(-3), await pp.$eval(LE + ' .crow.open', x => x.length), await pp.isVisible(LE + ' [data-f="name"]'), await pp.isVisible(LE + ' [data-f="tk:in"]')],
+      [1, 'roles', 'method', ['depth', 'tags', 'acts'], 0, true, true]);
+    eq('㉜ 접힌 줄의 알약은 보이지 않는다', await pp.isVisible(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'), false);
+    await pp.click(LE + ' [data-act="crow"][data-k="tags"]'); await pp.waitForTimeout(450);
+    await pp.click(LE + ' [data-act="ftog"][data-k="tags"][data-v="학교"]'); await pp.waitForTimeout(150);
+    eq('㉜ 줄을 누르면 펴지고 · 고른 값이 줄에 한 줄로', [await pp.$eval(LE + ' .crow[data-crow="tags"] .crow-h', e => e.getAttribute('aria-expanded')), await pp.$eval(LE + ' .crow[data-crow="tags"] .crow-h .v', e => e.textContent)], ['true', '#학교']);
+    await pp.click(LE + ' [data-act="crow"][data-k="depth"]'); await pp.waitForTimeout(450);
+    await pp.click(LE + ' [data-act="fone"][data-k="depth"][data-v="깊음"]'); await pp.waitForTimeout(150);
+    eq('㉜ 다른 줄을 펴면 앞 줄은 접힌다(하나씩)', [await pp.$eval(LE + ' .crow.open', x => x.map(e => e.dataset.crow)), await pp.$eval(LE + ' .crow[data-crow="depth"] .crow-h .v', e => e.textContent)], [['depth'], '깊음']);
+    await pp.fill(LE + ' [data-f="name"]', '폰사람');
+    await talk(pp, [['s', '폰에서 적은 이야기']]);
+    await pp.setViewportSize({ width: 820, height: 700 }); await pp.waitForTimeout(400);
+    eq('㉜ 폭이 700px 을 넘으면 카드(A)로 다시 그리고 · 쓰던 것은 그대로', await pp.evaluate(L => [!!document.querySelector(L + ' .edf.e-wide'), document.querySelector(L + ' [data-f="name"]').value, topLayer().form.tags.slice(), topLayer().form.depth], LE), [true, '폰사람', ['학교'], '깊음']);
+    await pp.setViewportSize({ width: 375, height: 700 }); await pp.waitForTimeout(400);
+    await pp.click(LE + ' [data-act="saverec"]'); await pp.waitForTimeout(1500);
+    const pr = (tab('Form Responses 1').rows || []).find(r => r[2] === '폰사람') || [];
+    eq('㉜ 폰에서 적은 기록 — 태그 · 깊이 · 이야기가 시트에', [pr[6], pr[8], pr[5]], ['학교', '깊음', '성도: 폰에서 적은 이야기']);
+    await pc.close();
+  }
 
   eq('⑦ 화면 오류 없음', errs, []);
   await b.close();
