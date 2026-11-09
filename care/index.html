@@ -624,7 +624,8 @@ body.busy{cursor:progress}body.busy .ph-foot .btn.pri,body.busy .ck{opacity:.55;
 .crow.open .crow-h svg{transform:none}
 .crow-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s cubic-bezier(.22,.8,.24,1)}
 .crow.open .crow-b{grid-template-rows:1fr}
-.crow-b>div{overflow:hidden;min-height:0}
+.crow-b>div{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s .3s}
+.crow.open .crow-b>div{visibility:visible;transition-delay:0s}
 .crow-b .fld{margin:0;padding:2px 0 14px}
 .crow-b .fld>.lb{display:none}
 @media (prefers-reduced-motion: reduce){.crow-b,.crow-h svg{transition:none}}
@@ -3406,6 +3407,11 @@ function eSum(L, k) {
   if (k === 'acts') return j(f.acts, f.actsEtc);
   return f[k] || '';
 }
+// 알약은 눌러도 다시 그리지 않으므로(스크롤 · 쓰던 칸 그대로) 접힌 줄의 '고른 값' 글자만 그 자리에서 맞춘다
+function crowSync(L) {
+  if (!L || L.type !== 'edit') return;
+  document.querySelectorAll('.layer:last-child .crow').forEach(c => { const v = eSum(L, c.dataset.crow), e = c.querySelector('.crow-h .v'); if (e) { e.textContent = v || '고르기'; e.classList.toggle('none', !v); } });
+}
 function crow(L, k, label, body) {
   const on = L.crow === k, v = eSum(L, k);
   return '<div class="crow' + (on ? ' open' : '') + '" data-crow="' + k + '"><button class="crow-h" data-act="crow" data-k="' + k + '" aria-expanded="' + on + '"><span>' + esc(label) + '</span><span class="v' + (v ? '' : ' none') + '">' + esc(v || '고르기') + '</span>' + IC_CHEV + '</button><div class="crow-b"><div' + (on ? '' : ' inert') + '>' + body + '</div></div></div>';
@@ -3900,6 +3906,7 @@ document.addEventListener('input', e => {
   if (e.target.dataset.etc) document.querySelectorAll('.layer:last-child [data-act="aone"][data-k="' + f + '"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === e.target.value)));
   if (f === 'name') { const sg = $('nameSugg'); if (sg) sg.innerHTML = suggHtml(L); const pv = document.querySelector('.layer:last-child .evp'); if (pv) pv.textContent = calTitle(L.form.name || '성도 이름', saved().calPre, saved().calSuf); }
   if (f === 'methodEtc' && e.target.value) { L.form.method = ''; document.querySelectorAll('#methodChips .opt').forEach(b => b.setAttribute('aria-pressed', 'false')); }
+  crowSync(L);
 });
 document.addEventListener('compositionend', searchInput);
 document.addEventListener('click', e => {
@@ -3930,11 +3937,11 @@ document.addEventListener('click', e => {
   if (a === 'saverec') { const L = topLayer(); if (L && L.type === 'edit') busy(() => saveRecord(L)); return; }
   if (a === 'ftog' || a === 'fone' || a === 'pickname') {
     const L = topLayer(); if (!L || (L.type !== 'edit' && L.type !== 'planedit')) return; L.dirty = true;
-    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); return; }
+    if (a === 'ftog') { const arr = L.form[k], i = arr.indexOf(v); if (i < 0) arr.push(v); else arr.splice(i, 1); b.setAttribute('aria-pressed', String(i < 0)); crowSync(L); return; }
     else if (a === 'fone') {
       L.form[k] = L.form[k] === v ? '' : v; if (k === 'method') L.form.methodEtc = '';
       chipsSync(k, L.form[k]); if (k === 'method') { const ei = document.querySelector('.layer:last-child [data-f="methodEtc"]'); if (ei) ei.value = ''; }
-      return;
+      crowSync(L); return;
     }
     else { const p = M().people[v] || {}, RO = filterOptions(M().visits, DATA.opts).role; L.form.name = v; L.form.roles = (p.roles || []).filter(x => RO.includes(x)); L.form.rolesEtc = (p.roles || []).filter(x => !RO.includes(x)).join(', '); }
     render(); return;
@@ -3968,7 +3975,7 @@ document.addEventListener('click', e => {
   if (a === 'attall') { const L = topLayer(); if (L && L.type === 'person') { L.attAll = true; render(); } return; }
   if (a === 'aone' || a === 'attpick') {
     const L = topLayer(); if (!optCtx(L) || (a === 'attpick' && L.type !== 'attedit')) return; L.dirty = true;
-    if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; return; }
+    if (a === 'aone') { L.form[k] = L.form[k] === v ? '' : v; chipsSync(k, L.form[k], 'aone'); const ei = document.querySelector('.layer:last-child [data-f="' + k + '"][data-etc]'); if (ei) ei.value = ''; crowSync(L); return; }
     else {
       const parts = String(L.form.name || '').split(/[,，、]/); parts[parts.length - 1] = (parts.length > 1 ? ' ' : '') + v; L.form.name = parts.join(',');
       if (!L.id && splitNames(L.form.name).length === 1) { const hb = attHabit(AT(), v); if (!L.form.svc) L.form.svc = hb.svc; if (!L.form.seat) L.form.seat = hb.seat; }
