@@ -13,6 +13,7 @@
 //  ⑪ 기기끼리 설정 맞추기 — 고른 시트 · 폼 · 보관 기준만 계정에(users/{uid}/data/care), 나중에 고친 쪽을 따른다 · 심방 내용 · 시험 상태는 안 올린다
 //  ⑫ C2 쓰기 — 새 줄은 이름으로 찾은 칸에만 · 안 바꾼 기록을 저장하면 칸이 하나도 안 바뀐다 · 바뀐 칸만 · 그사이 시트에서 고친 칸은 잡는다 · 같은 기록ID 가 둘이면 쓰지 않는다
 //  ⑬ 할 일 체크('액션' 탭) · 덧붙임 탭
+//  ⑮ (1109-T) 나눈 이야기 주제 칸 — 시트 한 칸 글 ↔ 칸 · 옛 글 · 폼 글은 그대로 메모 · 기록 태그 = 칸 태그 ∪ 직접 고른 것 · 안 바꾸면 칸이 안 바뀐다
 //  ⑭ 지우기 → 휴지통 — 원래 줄을 {머리글: 값} 으로 통째로 · 되살리면 지금 머리글 자리에 · 그사이 열이 밀려도 · 없는 칸은 알린다
 //  ⑯ 속성 · 폼 맞추기 — 처음엔 폼 선택지를 탭으로 · 폼에서 새로 → 앱에 · 앱에서 새로 → 폼에 · 폼에서 뺌 → 앱에서 숨김 · 앱에서 숨김 → 폼에서 뺌(상한) · 한 번 맞추면 다시 맞춰도 할 일 없음
 //  ⑱ 할 일 → BLOCK7 할일 — 보낼 글은 종류 · 이름뿐 · 쪽지 모양(BLOCK7 받기와 같은 꼴, sec 비움) · 빈 글 · 틀린 날짜는 안 보냄 · 보낸 날은 'BLOCK7 할일' 칸에만
@@ -36,7 +37,7 @@ vm.runInContext(m[1] + `
 this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, headerMap, findResponsesTab, colLetter, planColumns, planTabs, serialYmd, tsYmd, visitYmd,
   splitMulti, splitOne, rowToVisit, formSummary, formVsSheet, optionsOf, canWriteC0, newId, testRowValues, verifyAfterForm, idPatches,
   CFG_FIELDS, CFG_DOC, pickCfg, mergeCfg,
-  joinMulti, splitEtc, blankRecord, addTalk, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
+  joinMulti, splitEtc, blankRecord, parseTalk, talkText, talkTags, talkPreview, talkTopicsOf, talkTagCounts, talkNext, talkCycle, talkPaste, recordTags, recordFromVisit, validateRecord, recordCells, newRowValues, editPatch, conflictCells, findRowById, a1,
   actionKey, parseActionTab, checkPlan, b7Text, b7Note, b7MarkPlan, parseAddenda, attachExtras, ACT_TAB_HEAD, ID_PATCH_MAX, sheetSerial,
   TRASH_TAB, TRASH_HEAD, trashRow, restoreRow, parseTrash,
   PLAN_NOCAL, PLAN_ST, CAL_DEL_MAX, REC_CAL_FROM, REC_CREATE_MAX, REC_DEL_MAX, recEventBody, recCalSync, evOurs, evRecId, parsePlans, calTitle, evWhen, calEventBody, evCareId, planCalSync, recordFromPlan, planRow, planWhyFor,
@@ -228,7 +229,7 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
 {
   const NOW = 1000;
   const S1 = { id: 'S1', name: '진짜 시트' }, S2 = { id: 'S2', name: '사본' };
-  sc.eq('⑪ 올리는 칸 — 파일 · 기준값 · 일정 제목 앞뒤 글자뿐(심방 내용 · 시험 상태 없음)', J(A.CFG_FIELDS), ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf']);
+  sc.eq('⑪ 올리는 칸 — 파일 · 기준값 · 일정 제목 앞뒤 글자 · 대화 보기뿐(심방 내용 · 시험 상태 없음)', J(A.CFG_FIELDS), ['sheet', 'form', 'responder', 'cutoff', 'stale', 'calPre', 'calSuf', 'talk']);
   sc.eq('⑪ 문서 자리', A.CFG_DOC, 'data/care');
   sc.eq('⑪ 고르기 — 시험 상태 · 모르는 칸은 뺀다', J(A.pickCfg({ sheet: S1, test: { before: [['x']] }, junk: 1, at: 5 })), { sheet: S1, at: 5 });
   // 폰에서 골랐다(시각 없음 — 예전 판), 계정엔 아직 없다 → 지금 시각을 붙여 올린다
@@ -327,11 +328,42 @@ sc.eq('⑨ 이 기기 저장 이름이 다른 앱과 겹치지 않는다', ['b7v
   sc.eq('⑭ 휴지통에 꼭 하나, 방금 적은 그대로일 때만 원래 줄을 지운다', J([A.backupMatches(tv, 'C7', tr[5]), A.backupMatches(tv, 'C7', '{}'), A.backupMatches([A.TRASH_HEAD, tr, tr], 'C7', tr[5]), A.backupMatches([A.TRASH_HEAD], 'C7', tr[5])]), [true, false, false, false]);
 }
 
-// ⑮ 나눈 이야기 나누기 — '나눈 이야기 1 · 2 …' 제목 줄
-sc.eq('⑮ 빈 칸에서 누르면 1번 제목', A.addTalk(''), '나눈 이야기 1\n');
-sc.eq('⑮ 이미 쓴 글이 있으면 그것을 1번으로 묶고 2번을 연다', A.addTalk('학교 이야기\n둘째 줄'), '나눈 이야기 1\n학교 이야기\n둘째 줄\n\n나눈 이야기 2\n');
-sc.eq('⑮ 번호는 가장 큰 번호 다음', A.addTalk('나눈 이야기 1\n가\n\n나눈 이야기 2\n나'), '나눈 이야기 1\n가\n\n나눈 이야기 2\n나\n\n나눈 이야기 3\n');
-sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다', A.validateRecord(Object.assign(A.blankRecord('2026-11-08', null), { name: '가나다', text: A.addTalk('가') })).length, 0);
+// ⑮ (1109-T) 나눈 이야기 — 주제 칸 · 주고받기. 시트에는 한 칸 글 그대로
+{
+  const P = x => J(A.parseTalk(x)), L = (w, t) => ({ w, t });
+  sc.eq('⑮ 그냥 글(옛 기록 · 폼) = 주제 하나 · 메모 — 붙은 줄은 한 메모, 빈 줄이 가른다', P('허리가 아프셔서 기도함\n다음 달 다시 연락\n\n둘째 문단'),
+    [{ title: '', tags: [], lines: [L('n', '허리가 아프셔서 기도함\n다음 달 다시 연락'), L('n', '둘째 문단')] }]);
+  sc.eq('⑮ 그냥 글은 다시 써도 한 글자도 같다(■ 줄을 붙이지 않는다)', A.talkText(A.parseTalk('허리가 아프셔서 기도함\n다음 달 다시 연락\n\n둘째 문단')), '허리가 아프셔서 기도함\n다음 달 다시 연락\n\n둘째 문단');
+  sc.eq("⑮ 예전 '나눈 이야기 N' 제목 줄도 주제 칸으로", J(A.parseTalk('나눈 이야기 1\n이사 준비로 바쁨\n\n나눈 이야기 2\n딸 수능 기도 부탁').map(tp => [tp.title, tp.lines.map(l => l.t)])), [['', ['이사 준비로 바쁨']], ['', ['딸 수능 기도 부탁']]]);
+  const TXT = '■ 어머님 수술 #건강 #가정\n성도: 다음 주 화요일에 수술해요.\n나: 전날 같이 기도해요.\n성도: 사흘 입원\n\n목소리가 지쳐 있었음\n\n■ #자녀 문제\n성도: 큰아이가 입대해요.\n\n■ 구역 모임\n나: 천천히 오셔도 돼요.';
+  const T = A.parseTalk(TXT);
+  sc.eq('⑮ ■ 줄 = 제목 · 태그(띄어쓰기 든 태그도 \' #\' 로 가른다)', J(T.map(tp => [tp.title, tp.tags])), [['어머님 수술', ['건강', '가정']], ['', ['자녀 문제']], ['구역 모임', []]]);
+  sc.eq('⑮ 줄 맨 앞 성도: · 나: = 누가 한 말 · 빈 줄 뒤 이름표 없는 줄 = 메모', J(T[0].lines), [L('s', '다음 주 화요일에 수술해요.'), L('m', '전날 같이 기도해요.'), L('s', '사흘 입원'), L('n', '목소리가 지쳐 있었음')]);
+  sc.eq('⑮ 새 모양 글 → 칸 → 글 이 같다', A.talkText(T), TXT);
+  sc.eq('⑮ 한 말이 여러 줄이면 이어 붙는다 · 글 가운데의 나: 는 그냥 글 · 전각 콜론', J(A.parseTalk('성도: 첫 줄\n둘째 줄 나: 여기\n나：좋아요')[0].lines), [L('s', '첫 줄\n둘째 줄 나: 여기'), L('m', '좋아요')]);
+  sc.eq('⑮ 메모는 앞 말과 빈 줄로 떼어 쓴다(안 그러면 다시 읽을 때 앞 말에 붙는다)', A.talkText([{ title: '', tags: [], lines: [L('s', '가'), L('n', '나'), L('n', '다'), L('m', '라')] }]), '성도: 가\n\n나\n\n다\n나: 라');
+  sc.eq('⑮ 빈 말 · 빈 칸은 빠지고, 한 말 안의 빈 줄은 접힌다', A.talkText([{ title: '', tags: [], lines: [L('s', '  '), L('n', '')] }, { title: '둘', tags: [' 건강 ', '건강'], lines: [L('s', '가\n\n나 ')] }, { title: '', tags: [], lines: [] }]), '■ 둘 #건강\n성도: 가\n나');
+  sc.eq('⑮ 맨 앞 칸이 제목 없이 말만 있고 뒤에 칸이 있으면 뒤 칸만 ■', A.talkText([{ title: '', tags: [], lines: [L('n', '가')] }, { title: '', tags: [], lines: [L('n', '나')] }]), '가\n\n■\n나');
+  sc.eq('⑮ 칸 태그 모으기 · 목록 한 줄(이름표 · ■ 없이)', J([A.talkTags(T), A.talkPreview(TXT), A.talkPreview('■ 제목만'), A.talkPreview('')]), [['건강', '가정', '자녀 문제'], '다음 주 화요일에 수술해요.', '제목만', '']);
+  sc.eq('⑮ 입력줄 차례 — 성도 ↔ 나, 메모는 그대로 · 이름표 누르면 성도 → 나 → 메모', J(['s', 'm', 'n'].map(A.talkNext).concat(['s', 'm', 'n'].map(A.talkCycle))), ['m', 's', 'n', 'm', 'n', 's']);
+  sc.eq('⑮ 여러 줄 붙여 넣기 — 이름표 · ■ 는 알아보고, 없는 줄은 고른 사람 말로', J(A.talkPaste('■ 새 주제\n첫 말\n나: 내 말\n둘째 말', 's').map(tp => [tp.title, tp.lines])), [['새 주제', [L('s', '첫 말'), L('m', '내 말'), L('s', '둘째 말')]]]);
+  sc.eq('⑮ 메모로 붙여 넣으면 붙은 줄은 한 메모', J(A.talkPaste('가\n나', 'n')[0].lines), [L('n', '가\n나')]);
+  // 기록 태그 = 칸 태그 ∪ 직접 고른 것
+  const H = HEAD.concat(['기록ID', '출처', '심방일', '수정', '확인', '보관']), map = A.headerMap(H).map;
+  const row = ['', '11/9', '가나다', '장년부', '전화', TXT, '건강, 가정, 자녀 문제, 신앙', '', '깊음', 'C1', '앱', '2026-11-09', '', '', ''];
+  const v = A.buildModel([H, row], { tags: OPT.tags, cutoff: '' }).visits[0], r = A.recordFromVisit(v);
+  sc.eq('⑮ 고치기 입력 꼴에는 직접 고른 태그만(칸 태그는 칸에)', J([r.tags, r.tagsEtc]), [['신앙'], '']);
+  sc.eq('⑮ 저장하면 칸 태그가 기록 태그 칸에 다시 합쳐진다', A.recordCells(r).tags, '신앙, 건강, 가정, 자녀 문제');
+  sc.eq('⑮ 안 바꾸고 저장 → 칸이 하나도 안 바뀐다(태그 순서만 다른 것도 같은 값)', A.editPatch(H, map, row, r, 0).cells.length, 0);
+  const r2 = Object.assign({}, r, { text: A.talkText(A.parseTalk(TXT).slice(1)) });
+  sc.eq('⑮ 칸을 지우면 그 칸 태그도 기록 태그에서 빠진다(직접 고른 것은 남음)', A.recordCells(r2).tags, '신앙, 자녀 문제');
+  sc.eq('⑮ 새 기록 — 칸 태그만 있어도 태그 칸에 들어간다', A.recordCells(Object.assign(A.blankRecord('2026-11-09', null), { name: '가', text: '■ #건강\n성도: 가' })).tags, '건강');
+  // 성도 화면 주제로 보기
+  const V = [{ key: 'a', ymd: '2026-11-09', text: TXT, allTags: ['건강'] }, { key: 'b', ymd: '2026-10-12', text: '그냥 메모', allTags: ['건강', '신앙'] }, { key: 'c', ymd: '2026-09-01', text: '가\n\n■ 둘\n나', allTags: ['직장'] }];
+  const it = A.talkTopicsOf(V);
+  sc.eq('⑮ 주제 펼치기 — 칸마다 · 칸 하나뿐인 옛 기록은 기록 태그 · 칸 여럿인데 태그 없는 칸은 태그 없음', J(it.map(x => [x.key, x.i, x.tags])), [['a', 0, ['건강', '가정']], ['a', 1, ['자녀 문제']], ['a', 2, []], ['b', 0, ['건강', '신앙']], ['c', 0, []], ['c', 1, []]]);
+  sc.eq('⑮ 태그별 칸 수 — 많은 순 · 같으면 가나다', J(A.talkTagCounts(it)), [{ t: '건강', n: 2 }, { t: '가정', n: 1 }, { t: '신앙', n: 1 }, { t: '자녀 문제', n: 1 }]);
+}
 // ⑯ 속성 · 폼 맞추기
 {
   const S0 = A.formSummary(FORM), qid = t => S0.find(q => q.title === t).qid;
