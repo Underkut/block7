@@ -43,7 +43,7 @@ this.A = { APP_VERSION, CARE_KEY, PICKER_KEY, APP_COLS, TABS, C0_MAX_ROWS, heade
   ATTR_MANAGED, FORM_REMOVE_MAX, parseAttrRows, planAttrSync, formUpdateRequests, placeQuestionRequest, etcCandidates, rowHasId, trashHeadState, backupMatches,
   ymdAdd, daysBetween, weekStartOf, monthCells, relDay, buildModel, filterVisits, filterOptions, peopleList, strip10, weeklyDepth, roleHeat, splitPeriods, countBy, ARCHIVE_DEFAULT,
   ATT_TAB, ATT_HEAD, ATT_SVC, parseAttendText, parseAttend, attendOf, attHabit, attRow, attPatch, validateAttend, attendOnlyPeople, prayMarkIndex, prayPeople, prayJoin, attQuiet, ATT_QUIET_DAYS,
-  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames };`, ctx);
+  ATT_OPT_TAB, ATT_OPT_FIELDS, ATT_OPT_MAX, attOptDefaults, attOptsParse, attOptsUse, attOptsRows, attOptAdd, attOptRemove, attOptRename, attOptMove, splitNames, attDays, formQOf, PAY_DEFAULT, verNum, isNewer, isDevEmail, optsParse, optsRows, VIS_OPT_TAB, VIS_OPT_FIELDS, visOptDefaults, visOptsUse, recentNames, cellToken, cellGroups, CELL_SB_KEY };`, ctx);
 const A = ctx.A, J = v => JSON.parse(JSON.stringify(v));
 
 // 지금 시트 머리글 (2026-11-06 HB 시트에서 본 그대로) + 폼 선택지 (HB 캡처)
@@ -604,6 +604,25 @@ sc.eq('⑮ 저장은 한 칸 글 그대로 — 제목 줄도 글로 저장된다
   const T = [{ name: '사아자', date: '2026-11-08' }, { name: '라마바', date: '2026-10-01' }, { name: '차카타', date: '2026-11-05' }];
   sc.eq('㉖ 마지막 날 최근 순 · 띄어쓰기만 다른 이름은 하나 · 같은 날은 가나다 순 · 빈 이름 뺌', J(A.recentNames(V, T)), ['사아자', '라마바', '차카타', '가나다']);
   sc.eq('㉖ 비어 있으면 빈 목록', J(A.recentNames([], null)), []);
+}
+
+// ㉗ (1109-E3) '셀' 단추 — 셀 한눈에 로그인 읽기만 · 내 분파셀 셀원 · 셀 케어엔 읽기 넷뿐
+{
+  const now = Date.parse('2026-11-09T01:00:00Z'), sec = Math.floor(now / 1000);
+  sc.eq('㉗ 로그인 없음 · 깨진 값 · 만료(1분 안 남음) · 살아 있음 · 옛 꼴(currentSession)', J([
+    A.cellToken(null, now).state, A.cellToken('{깨짐', now).state, A.cellToken(JSON.stringify({ access_token: 'a', expires_at: sec + 30 }), now).state,
+    A.cellToken(JSON.stringify({ access_token: 'a', expires_at: sec + 3600 }), now), A.cellToken(JSON.stringify({ currentSession: { access_token: 'b', expires_at: sec + 3600 } }), now).tok]),
+    ['none', 'none', 'expired', { state: 'ok', tok: 'a' }, 'b']);
+  sc.eq('㉗ 열쇠 이름 = 셀 한눈에(supabase 기본 이름)', A.CELL_SB_KEY, 'sb-mcbbhsvvzqvtrxlbdcks-auth-token');
+  const G = A.cellGroups([{ cell_id: 'c2', cell_name: '나무셀', leader_names: '가리더' }, { cell_id: 'c1', cell_name: '하늘셀', leader_names: '나리더', i_am_leader: true }],
+    [{ cell_id: 'c2', name: '다다', active: true }, { cell_id: 'c2', name: '가가' }, { cell_id: 'c2', name: '빠짐', active: false }, { cell_id: 'c2', name: '떠남', left_at: '2026-01-01' }, { cell_id: 'c1', name: '라라' }, { cell_id: 'c2', name: '가가' }]);
+  sc.eq('㉗ 내가 인도하는 셀 먼저 · 셀원은 가나다 순 · 쉬는 분 · 떠난 분 · 겹침 뺌', J(G.map(g => [g.name, g.lead, g.members])), [['하늘셀', true, ['라라']], ['나무셀', false, ['가가', '다다']]]);
+  const code = HTML.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '');
+  const calls = [...code.matchAll(/ccFetch\('([a-z_\/]+)/g)].map(x => x[1]).sort();
+  sc.eq('㉗ 셀 케어에 부르는 것은 읽기 넷뿐', J([...new Set(calls)]), ['cell_members', 'leadership_assignments', 'rpc/get_my_context', 'rpc/get_week_status']);
+  sc.eq('㉗ 갱신 열쇠를 쓰지 않는다 · supabase 도구를 싣지 않는다(로그인을 건드릴 길이 없게)', [/refresh_token|grant_type/.test(code), /supabase-js|createClient\(/.test(code)], [false, false]);
+  const cell = fs.readFileSync(path.join(__dirname, '..', 'cell', 'index.html'), 'utf8');
+  sc.eq("㉗ 셀 한눈에의 cell-core 에 pickMine 이 있다(심방 노트가 그대로 불러 씀)", /<script id="cell-core">[\s\S]*?function pickMine\(/.test(cell), true);
 }
 
 sc.done();

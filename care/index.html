@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- 심방 노트 v. 26-1109-7 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
+<!-- 심방 노트 v. 26-1109-8 — BLOCK7·Sweeter 와 별개인 독립 앱 (care/ → sweeter.my/care/) · C1 열람판 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
@@ -233,6 +233,9 @@ body.dragging{cursor:grabbing}
 .pills .inp.optadd{width:auto;flex:0 1 150px;min-width:90px;padding:6px 12px;border-radius:999px;margin:0}
 .recent{position:relative;display:flex;gap:6px;overflow:hidden;white-space:nowrap;margin-top:8px;padding-right:34px}
 .recent.all{flex-wrap:wrap;white-space:normal}
+.recent .rn.cellbtn{color:var(--ac);border-color:var(--ac);font-weight:600}
+.cgrp{display:flex;width:100%;gap:8px;align-items:center;padding:13px 2px;border-bottom:1px solid var(--line);text-align:left}.cgrp b{font-weight:600}.cgrp .muted{flex:1;font-size:13px}.cgrp .v{color:var(--tx3)}
+.cmem{padding:10px 0 14px}
 .recent .rn{flex:none;font-size:12px;line-height:1.2;padding:5px 10px;border-radius:999px;border:1px solid var(--line);color:var(--tx2);background:transparent}
 .recent .rmore{position:absolute;right:0;top:0;bottom:0;width:34px;font-size:18px;color:var(--tx3);background:linear-gradient(90deg,transparent,var(--paper) 45%)}
 .recent.all .rmore{top:auto;height:28px}
@@ -525,7 +528,7 @@ button.tlx{display:grid;grid-template-columns:46px 1fr;gap:10px;width:100%;paddi
      tests/test_care.js 가 이 덩어리만 떼어 시험한다. 시트 · 폼을 읽고 쓰는 판단과 열람 셈은 전부 여기 둔다.
      ⚠️ 규칙을 고치면 시험부터 고친다. 계획 · 까닭은 docs/ROADMAP.md '1106-C'. -->
 <script id="care-core">
-const APP_VERSION = 'v. 26-1109-7';
+const APP_VERSION = 'v. 26-1109-8';
 const CARE_KEY = 'b7care_v1';            // 이 기기 저장(고른 파일 id · 시험 상태). 심방 내용은 담지 않는다
 const PICKER_APP_ID = '517626689480';    // 구글 클라우드 프로젝트 번호(block7-8f24e) — 고르기 창이 '이 앱이 고른 파일' 로 묶는 기준
 // 고르기 창 전용 공개 키 (HB 2026-11-06 만듦: 웹사이트 sweeter.my/* · Google Picker API 하나만).
@@ -554,7 +557,7 @@ const Q = {
 // 띄어쓰기를 뺀 제목으로 본다. 위 Q 의 정확한 이름이 먼저다.
 const Q_LIKE = { place: k => /^장소/.test(k), pay: k => /사주심|사드림|^pay$/i.test(k) };   // HB 폼 실제 제목은 'PAY'
 const PAY_DEFAULT = ['사주심', '사드림'];
-// 버전 'v. 26-1109-7' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
+// 버전 'v. 26-1109-8' → 견줄 수 있는 수. 꼴이 다르면 0 (그때는 '새 버전' 으로 보지 않는다)
 function verNum(v) { const m = String(v || '').match(/(\d{2})-(\d{4})-(\d+)/); return m ? (+(m[1] + m[2])) * 1000 + (+m[3]) : 0; }
 function isNewer(latest, mine) { return verNum(latest) > verNum(mine); }
 const DEV_EMAIL = 'denartist@gmail.com';   // BLOCK7 _isDevAccount 와 같은 판정
@@ -1331,6 +1334,23 @@ function recentNames(visits, attends) {
   (attends || []).forEach(a => add(a.name, a.date));
   return [...m.values()].sort((a, b) => (b.last > a.last ? 1 : b.last < a.last ? -1 : a.name.localeCompare(b.name))).map(o => o.name);
 }
+// 1109-E3 '셀' 단추 — 셀 한눈에(같은 sweeter.my)가 이 브라우저에 둔 셀 케어 로그인을 **읽기만** 한다.
+// 갱신 열쇠(refresh_token)는 쓰지 않는다 — 두 앱이 같은 열쇠를 돌려 쓰면 셀 케어가 둘 다 끊는다. 만료면 셀 한눈에를 한 번 열게 한다.
+const CELL_SB_KEY = 'sb-mcbbhsvvzqvtrxlbdcks-auth-token';
+function cellToken(raw, nowMs) {
+  let o = null; try { o = JSON.parse(raw || 'null'); } catch (e) { o = null; }
+  if (o && o.currentSession) o = o.currentSession;
+  if (!o || !o.access_token) return { state: 'none', tok: '' };
+  if (!o.expires_at || o.expires_at * 1000 < nowMs + 60000) return { state: 'expired', tok: '' };
+  return { state: 'ok', tok: o.access_token };
+}
+// 내 분파셀 줄(get_week_status 의 고른 줄) + 셀원 → [{id, name, leader, lead, members:[이름]}]. 내가 인도하는 셀 먼저, 그다음 이름 순
+function cellGroups(rows, members) {
+  const by = {};
+  (members || []).forEach(m => { if (!m || m.active === false || m.left_at || !norm(m.name)) return; (by[m.cell_id] = by[m.cell_id] || []).push(norm(m.name)); });
+  return (rows || []).map(r => ({ id: r.cell_id, name: norm(r.cell_name), leader: norm(r.leader_names), lead: !!r.i_am_leader, members: [...new Set(by[r.cell_id] || [])].sort((a, b) => a.localeCompare(b)) }))
+    .sort((a, b) => (b.lead - a.lead) || a.name.localeCompare(b.name));
+}
 function attDays(today) { return [[ymdAdd(today, -2), '그제'], [ymdAdd(today, -1), '어제'], [today, '오늘']]; }
 
 // ───────── C1 열람 (읽기만) ─────────
@@ -1487,6 +1507,57 @@ function toast(msg, ms, act) {
   setTimeout(close, ms || Math.min(9000, Math.max(act ? 6000 : 3000, msg.length * 200)));
 }
 function load(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('불러오기 실패: ' + src)); document.head.appendChild(s); }); }
+// ── 셀 명단 (1109-E3) — 셀 케어 읽기만. 명단은 화면 메모리에만 ──
+const CC_URL = 'https://mcbbhsvvzqvtrxlbdcks.supabase.co', CC_KEY = 'sb_publishable_hs84BPU44TEcr2wM6boXIw_Saktd9p3';
+const CELLS = { state: 'idle', err: '', groups: null, open: null };
+async function ccFetch(path, tok, body) {
+  const r = await fetch(CC_URL + '/rest/v1/' + path, body === undefined ? { headers: { apikey: CC_KEY, Authorization: 'Bearer ' + tok } }
+    : { method: 'POST', headers: { apikey: CC_KEY, Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { const e = new Error('셀 케어 ' + r.status); e.status = r.status; throw e; }
+  return r.json();
+}
+async function cellCore() {   // '내 분파셀' 판정은 셀 한눈에의 cell-core 를 그대로 불러 쓴다 (규칙을 두 군데 두지 않음)
+  if (cellCore.c) return cellCore.c;
+  const html = await (await fetch('../cell/index.html?nc=' + Date.now(), { cache: 'no-store' })).text();
+  const m = html.match(/<script id="cell-core">([\s\S]*?)<\/script>/); if (!m) throw new Error('셀 한눈에의 규칙을 찾지 못했습니다');
+  cellCore.c = new Function(m[1] + '\n;return { pickMine };')();
+  return cellCore.c;
+}
+async function loadCells() {
+  let t; try { t = cellToken(localStorage.getItem(CELL_SB_KEY), Date.now()); } catch (e) { t = { state: 'none', tok: '' }; }
+  if (!t.tok) { CELLS.state = t.state; render(); return; }
+  CELLS.state = 'loading'; render();
+  try {
+    const ctx = await ccFetch('rpc/get_my_context', t.tok, {});
+    if (!ctx || !ctx.profile) { CELLS.state = 'noacct'; render(); return; }
+    const [asg, rows, core] = await Promise.all([
+      ccFetch('leadership_assignments?select=cell_id,start_date,end_date&leadership_user_id=eq.' + encodeURIComponent(ctx.profile.id), t.tok).catch(() => []),
+      ccFetch('rpc/get_week_status', t.tok, { p_week_start: ctx.this_week }), cellCore()]);
+    const ids = core.pickMine(rows, asg, ctx.profile.id, ctx.today), mine = (rows || []).filter(r => ids.includes(r.cell_id));
+    const members = [];
+    for (let i = 0; i < ids.length; i += 40) members.push(...await ccFetch('cell_members?select=id,name,cell_id,member_type,active,left_at&cell_id=in.(' + ids.slice(i, i + 40).join(',') + ')', t.tok));
+    CELLS.groups = cellGroups(mine, members); CELLS.state = 'ok'; CELLS.err = '';
+  } catch (e) { CELLS.state = e.status === 401 ? 'expired' : 'err'; CELLS.err = e.message || String(e); }
+  render();
+}
+function lCellPick(L) {
+  let h = lhead('셀', L) + '<div class="ph-body">';
+  const go = '<a class="btn" href="../cell/" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px;text-decoration:none">셀 한눈에 열기</a>';
+  if (CELLS.state === 'loading' || CELLS.state === 'idle') return h + '<p class="empty">셀 명단을 읽는 중…</p></div>';
+  if (CELLS.state === 'none') return h + '<p class="empty">이 브라우저에 셀 한눈에 로그인이 없습니다.<br>같은 브라우저에서 셀 한눈에에 로그인한 뒤 다시 눌러 주세요.<br><small class="muted">홈 화면 앱은 앱마다 저장소가 따로라 브라우저에서 써 주세요.</small></p>' + go + '</div>';
+  if (CELLS.state === 'expired') return h + '<p class="empty">셀 한눈에 로그인이 오래되었습니다.<br>셀 한눈에를 한 번 열면 새로 이어집니다. 그 뒤 다시 눌러 주세요.</p>' + go + '</div>';
+  if (CELLS.state === 'noacct') return h + '<p class="empty">셀 케어에서 이 계정의 셀을 찾지 못했습니다.</p></div>';
+  if (CELLS.state === 'err') return h + '<p class="empty">셀 명단을 읽지 못했습니다<br>' + esc(CELLS.err) + '</p><button class="btn" data-act="cellreload">다시 읽기</button></div>';
+  const G = CELLS.groups || []; if (!G.length) return h + '<p class="empty">이번 주 내 분파셀이 없습니다.</p></div>';
+  h += '<p class="muted">셀을 누르면 셀원이 보입니다. 이름을 누르면 \'누구를\' 에 들어갑니다.</p>';
+  G.forEach(g => {
+    const open = CELLS.open === g.id || G.length === 1;
+    h += '<button class="cgrp" data-act="cellopen" data-v="' + esc(g.id) + '" aria-expanded="' + open + '"><b>' + esc(g.name) + '</b>' + (g.lead ? ' <small class="ak k2">내 셀</small>' : '') +
+      '<span class="muted">' + esc(g.leader) + ' · ' + g.members.length + '명</span><span class="v">' + (open ? '⌃' : '⌄') + '</span></button>';
+    if (open) h += '<div class="opts cmem">' + (g.members.length ? g.members.map(n => '<button class="opt" data-act="cellname" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') : '<span class="muted">셀원 명단이 없습니다</span>') + '</div>';
+  });
+  return h + '</div>';
+}
 // ── 새 버전 받기 (1109-D1) ──
 // 앱을 열 때 · 돌아올 때 서버의 index.html 을 다시 받아(cache:'reload' — 브라우저에 담아 둔 것도 새것으로 간다) 버전을 본다.
 // 새 버전이면 저절로 다시 연다. 쓰던 글이 있으면 끊지 않고 '받기' 단추만 띄운다.
@@ -2816,9 +2887,9 @@ function vCollect() {
 // ───────────────────────────── 새 기록 · 고치기 (겹 화면) ─────────────────────────────
 function chip(label, on, act, k, v, kk) { return '<button class="opt' + (kk ? ' kk' : '') + '"' + (kk ? ' style="--k:var(--' + kk + ')"' : '') + ' data-act="' + act + '" data-k="' + k + '" data-v="' + esc(v) + '" aria-pressed="' + !!on + '">' + label + '</button>'; }
 function recentHtml(L) {
-  const names = recentNames(M() ? M().visits : [], AT()); if (!names.length) return '';
+  const names = recentNames(M() ? M().visits : [], AT());
   const all = !!L.recentAll, show = names.slice(0, all ? 60 : 24);
-  return '<div class="recent' + (all ? ' all' : '') + '">' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') +
+  return '<div class="recent' + (all ? ' all' : '') + '"><button class="rn cellbtn" data-act="cellpick">셀</button>' + show.map(n => '<button class="rn" data-act="pickname" data-v="' + esc(n) + '">' + esc(n) + '</button>').join('') +
     '<button class="rmore" data-act="recentmore" aria-label="' + (all ? '접기' : '더 보기') + '">' + (all ? '‹' : '›') + '</button></div>';
 }
 function suggHtml(L) {
@@ -3082,7 +3153,7 @@ function loadingHtml(msg, step) {
 
 // ───────────────────────────── 그리기 · 전환 ─────────────────────────────
 const VIEWS = { list: vList, attend: vAttend, people: vPeople, plan: vPlan, week: vWeek, month: vMonth, collect: vCollect };
-const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste };
+const LAYERS = { detail: lDetail, person: lPerson, settings: lSettings, c0: lC0, edit: lEdit, trash: lTrash, attrs: lAttrs, planedit: lPlanEdit, b7send: lB7Send, attedit: lAttEdit, attpaste: lAttPaste, cellpick: lCellPick };
 function ready() { return USER && G.connected && saved().sheet && DATA.state === 'ok' && DATA.model; }
 let animating = false;
 function render() {
@@ -3287,6 +3358,13 @@ document.addEventListener('click', e => {
   }
   if (a === 'adate') { const L = topLayer(); if (L && (L.type === 'attedit' || L.type === 'edit')) { L.form[k || 'date'] = v; L.dirty = true; render(); } return; }
   if (a === 'aetc') { const L = topLayer(); if (optCtx(L)) { L.open = L.open || {}; L.open[k] = !L.open[k]; render(); if (L.open[k]) { const i = document.querySelector('.layer:last-child .pills[data-k="' + k + '"] ~ input.etc'); if (i) i.focus(); } } return; }
+  if (a === 'cellpick') { openLayer('cellpick'); if (CELLS.state !== 'ok') loadCells(); return; }
+  if (a === 'cellreload') { loadCells(); return; }
+  if (a === 'cellopen') { CELLS.open = CELLS.open === v ? null : v; render(); return; }
+  if (a === 'cellname') {
+    const E = S.layers[S.layers.length - 2]; if (!E || E.type !== 'edit') return;
+    S.layers.pop(); E.form.name = v; E.dirty = true; render(); return;
+  }
   if (a === 'recentmore') { const L = topLayer(); if (L && L.type === 'edit') { L.recentAll = !L.recentAll; render(); } return; }
   if (a === 'aoptadd') { const L = topLayer(); if (optCtx(L)) { L.adding = k; render(); const i = document.querySelector('.layer:last-child [data-optadd]'); if (i) i.focus(); } return; }
   if (a === 'aoptx') { const L = topLayer(); if (optCtx(L)) { L.omenu = null; render(); } return; }
